@@ -26,6 +26,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
+#include <lal/Random.h>
 #include <lal/TimeDelay.h>
 #include <lalapps.h>
 #include <processtable.h>
@@ -204,6 +205,40 @@ double greenwich_mean_sidereal_time( int gpssec, int gpsnan, int taiutc )
   return gmst;
 }
 
+/* output format for LIGO-TAMA simulations */
+int ligo_tama_output(FILE *fpout, SimBurstTable *simBursts)
+{
+  SimBurstTable *thisEvent=NULL;
+
+  thisEvent = simBursts;
+  fprintf(fpout,"# $I""d$\n");
+  fprintf(fpout,"# %s\n",thisEvent->waveform);
+  fprintf(fpout,"# geocent_peak_time\tnSec\tdtminus\t\tdtplus\t\tlongitude\tlatitude\tpolarization\tcoordinates\thrss\thpeak\tfreq\ttau\n");
+  fflush(fpout);
+
+  while ( thisEvent ){
+    fprintf(fpout,"%0d\t%0d\t%f\t%f\t%f\t%f\t%f\t%s\t%e\t%e\t%f\t%f\n",
+        thisEvent->geocent_peak_time.gpsSeconds,
+        thisEvent->geocent_peak_time.gpsNanoSeconds,
+        thisEvent->dtminus,
+        thisEvent->dtplus,
+        thisEvent->longitude,
+        thisEvent->latitude,
+        thisEvent->polarization,
+        thisEvent->coordinates,
+        thisEvent->hrss,
+        thisEvent->hpeak,
+        thisEvent->freq,
+        thisEvent->tau
+        );
+    thisEvent = thisEvent->next;
+  }
+  fprintf(fpout,"# $I""d$\n");
+
+  return 0;
+}
+
+
 int main( int argc, char *argv[] ){
 
   const long S2StartTime   = 729273613;  /* Feb 14 2003 16:00:00 UTC */
@@ -215,6 +250,8 @@ int main( int argc, char *argv[] ){
 
   size_t ninj;
   int rand_seed = 1;
+  RandomParams *randParams=NULL;
+  REAL4 deviate=0.0;
 
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
@@ -292,7 +329,7 @@ int main( int argc, char *argv[] ){
   memset( waveform, 0, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR) );
   memset( coordinates, 0, LIGOMETA_COORDINATES_MAX * sizeof(CHAR) );
   LALSnprintf( coordinates, LIGOMETA_COORDINATES_MAX * sizeof(CHAR), 
-            "EQUATORIAL" );
+      "EQUATORIAL" );
 
   /* parse the arguments */
   while ( 1 )
@@ -416,7 +453,7 @@ int main( int argc, char *argv[] ){
         this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%le", optarg );
         break;
 
-        
+
       case 'x':
         {
           tau = atof( optarg );
@@ -477,135 +514,143 @@ int main( int argc, char *argv[] ){
     }
   }
 
-  seed_random( rand_seed );
+
+  /* initialize random number generator */
+  LAL_CALL( LALCreateRandomParams( &status, &randParams, rand_seed ), &status);
 
   if ( ! *waveform )
   {
-    /* default to Tev's GeneratePPNInspiral as used in */
+    /* default to SineGaussian */
     LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
         "SineGaussian" );
   }
 
-    this_proc_param = procparams.processParamsTable;
+  this_proc_param = procparams.processParamsTable;
     procparams.processParamsTable = procparams.processParamsTable->next;
     free( this_proc_param );
 
-  /* create the detector time map structures */
-  place_and_gps = (LALPlaceAndGPS *) calloc( 1, sizeof(LALPlaceAndGPS) );
-  sky_pos =  (SkyPosition *) 	calloc( 1, sizeof(SkyPosition ) );
-  det_time_and_source = (DetTimeAndASource *) 
-    calloc( 1, sizeof(DetTimeAndASource));
-  sky_pos->system = COORDINATESYSTEM_EQUATORIAL;
+    /* create the detector time map structures */
+    place_and_gps = (LALPlaceAndGPS *) calloc( 1, sizeof(LALPlaceAndGPS) );
+    sky_pos =  (SkyPosition *) 	calloc( 1, sizeof(SkyPosition ) );
+    det_time_and_source = (DetTimeAndASource *) calloc( 1, sizeof(DetTimeAndASource));
+    sky_pos->system = COORDINATESYSTEM_EQUATORIAL;
 
-  /* create the first injection */
-  this_sim_burst = injections.simBurstTable = (SimBurstTable *)
-    calloc( 1, sizeof(SimBurstTable) );
+    /* create the first injection */
+    this_sim_burst = injections.simBurstTable = (SimBurstTable *)
+      calloc( 1, sizeof(SimBurstTable) );
 
-  /* make injection times at intervals of 100/pi seconds */
-  ninj = 1;
-  freq = flow;
-  while ( 1 )
-  {
-    long tsec;
-    long tnan;
-    double gmst;
-
-    /* compute tau if quality was specified */
-    if (use_quality) 
-      tau = quality / ( sqrt(2.0) * LAL_PI * freq);
-
-    tinj += (long long)( 1e9 * meanTimeStep );
-    if ( tinj > 1000000000LL * gpsEndTime )
+    /* make injection times at intervals of 100/pi seconds */
+    ninj = 1;
+    freq = flow;
+    while ( 1 )
     {
-      break;
+      long tsec;
+      long tnan;
+      double gmst;
+
+      /* compute tau if quality was specified */
+      if (use_quality) 
+        tau = quality / ( sqrt(2.0) * LAL_PI * freq);
+
+      tinj += (long long)( 1e9 * meanTimeStep );
+      if ( tinj > 1000000000LL * gpsEndTime )
+      {
+        break;
+      }
+
+      if ( ninj == 1 )
+      {
+        /* create the first injection */
+        this_sim_burst = injections.simBurstTable = (SimBurstTable *)
+          calloc( 1, sizeof(SimBurstTable) );
+      }
+      else
+      {
+        this_sim_burst = this_sim_burst->next = (SimBurstTable *)
+          calloc( 1, sizeof(SimBurstTable) );
+      }
+
+      ++ninj;
+
+      /* GPS time of burst */
+      tsec = this_sim_burst->geocent_peak_time.gpsSeconds = 
+        (long)( tinj / 1000000000LL );
+      tnan = this_sim_burst->geocent_peak_time.gpsNanoSeconds = 
+        (long)( tinj % 1000000000LL );
+
+      /* get gmst (radians) */
+      gmst =  greenwich_mean_sidereal_time( tsec, tnan, 32 );
+
+      /* save gmst (hours) in sim_burst table */
+      this_sim_burst->peak_time_gmst = gmst * 12.0 / LAL_PI;
+
+      /* populate the sim burst table */
+      memcpy( this_sim_burst->waveform, waveform, 
+          sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
+      memcpy( this_sim_burst->coordinates, coordinates, 
+          sizeof(CHAR) * LIGOMETA_COORDINATES_MAX );
+
+      LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
+      this_sim_burst->longitude = 2.0 * LAL_PI * deviate;
+
+      LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
+      this_sim_burst->latitude = LAL_PI - acos(2.0*deviate-1.0) ;
+
+      LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
+      this_sim_burst->polarization = 2.0 * LAL_PI * deviate;
+
+      this_sim_burst->hrss = sqrt( sqrt(2.0 * LAL_PI) * tau / 4.0 ) * hpeak;
+      this_sim_burst->hpeak = hpeak;
+      this_sim_burst->freq = freq;
+      this_sim_burst->tau = tau;
+      this_sim_burst->dtplus = 4.0 * tau;
+      this_sim_burst->dtminus = 4.0 * tau;
+      this_sim_burst->zm_number = 0;
+
+      place_and_gps->p_gps = &(this_sim_burst->geocent_peak_time);
+      det_time_and_source->p_det_and_time = place_and_gps;
+      sky_pos->longitude = this_sim_burst->longitude;
+      sky_pos->latitude = this_sim_burst->latitude;
+      det_time_and_source->p_source = sky_pos;
+
+      /* compute site arrival time for lho */
+      place_and_gps->p_detector = &lho;
+      LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
+            det_time_and_source), &status );
+      LAL_CALL( LALGPStoFloat( &status, &site_time, 
+            &(this_sim_burst->geocent_peak_time) ), &status );
+      site_time += time_diff;
+      LAL_CALL( LALFloatToGPS( &status, &(this_sim_burst->h_peak_time),
+            &site_time ), &status );
+
+      /* compute site arrival time for llo */
+      place_and_gps->p_detector = &llo;
+      LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
+            det_time_and_source), &status );
+      LAL_CALL( LALGPStoFloat( &status, &site_time, 
+            &(this_sim_burst->geocent_peak_time) ), &status );
+      site_time += time_diff;
+      LAL_CALL( LALFloatToGPS( &status, &(this_sim_burst->l_peak_time),
+            &site_time ), &status );
+
+      /* increment to next frequency and test it's still in band */
+      freq += deltaf;
+      if ( freq > fhigh ) freq=flow;
+
     }
 
-    if ( ninj == 1 )
+    memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
+
+    if ( userTag )
     {
-      /* create the first injection */
-      this_sim_burst = injections.simBurstTable = (SimBurstTable *)
-        calloc( 1, sizeof(SimBurstTable) );
+      LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
+          rand_seed, userTag, gpsStartTime, gpsEndTime - gpsStartTime );
     }
     else
     {
-      this_sim_burst = this_sim_burst->next = (SimBurstTable *)
-        calloc( 1, sizeof(SimBurstTable) );
+      LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
+          rand_seed, gpsStartTime, gpsEndTime - gpsStartTime );
     }
-
-    ++ninj;
-
-    /* GPS time of burst */
-    tsec = this_sim_burst->geocent_peak_time.gpsSeconds = 
-      (long)( tinj / 1000000000LL );
-    tnan = this_sim_burst->geocent_peak_time.gpsNanoSeconds = 
-      (long)( tinj % 1000000000LL );
-    
-    /* get gmst (radians) */
-    gmst =  greenwich_mean_sidereal_time( tsec, tnan, 32 );
-
-    /* save gmst (hours) in sim_burst table */
-    this_sim_burst->peak_time_gmst = gmst * 12.0 / LAL_PI;
-
-    /* populate the sim burst table */
-    memcpy( this_sim_burst->waveform, waveform, 
-        sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
-    this_sim_burst->longitude = 0.0;
-    this_sim_burst->latitude = 90.0;
-    memcpy( this_sim_burst->coordinates, coordinates, 
-        sizeof(CHAR) * LIGOMETA_COORDINATES_MAX );
-    this_sim_burst->polarization = 0.0;
-    this_sim_burst->hrss = sqrt( sqrt(2.0 * LAL_PI) * tau / 4.0 ) * hpeak;
-    this_sim_burst->hpeak = hpeak;
-    this_sim_burst->freq = freq;
-    this_sim_burst->tau = tau;
-    this_sim_burst->dtplus = 4.0 * tau;
-    this_sim_burst->dtminus = 4.0 * tau;
-    this_sim_burst->zm_number = 0;
-    
-    place_and_gps->p_gps = &(this_sim_burst->geocent_peak_time);
-    det_time_and_source->p_det_and_time = place_and_gps;
-    sky_pos->longitude = this_sim_burst->longitude;
-    sky_pos->latitude = this_sim_burst->latitude;
-    det_time_and_source->p_source = sky_pos;
-
-    /* compute site arrival time for lho */
-    place_and_gps->p_detector = &lho;
-    LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
-          det_time_and_source), &status );
-    LAL_CALL( LALGPStoFloat( &status, &site_time, 
-          &(this_sim_burst->geocent_peak_time) ), &status );
-    site_time += time_diff;
-    LAL_CALL( LALFloatToGPS( &status, &(this_sim_burst->h_peak_time),
-          &site_time ), &status );
-    
-    /* compute site arrival time for llo */
-    place_and_gps->p_detector = &llo;
-    LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
-          det_time_and_source), &status );
-    LAL_CALL( LALGPStoFloat( &status, &site_time, 
-          &(this_sim_burst->geocent_peak_time) ), &status );
-    site_time += time_diff;
-    LAL_CALL( LALFloatToGPS( &status, &(this_sim_burst->l_peak_time),
-          &site_time ), &status );
-
-    /* increment to next frequency and test it's still in band */
-    freq += deltaf;
-    if ( freq > fhigh ) freq=flow;
-  
-  }
-
-  memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
-
-  if ( userTag )
-  {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
-        rand_seed, userTag, gpsStartTime, gpsEndTime - gpsStartTime );
-  }
-  else
-  {
-    LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
-        rand_seed, gpsStartTime, gpsEndTime - gpsStartTime );
-  }
 
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
 
@@ -637,6 +682,24 @@ int main( int argc, char *argv[] ){
 
     LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
 
-  return 0;
+    {
+      FILE *fpout=NULL;
+
+      if ( userTag )
+      {
+        LALSnprintf( fname, sizeof(fname), "HLT-INJECTIONS_%d_%s-%d-%d.txt", 
+            rand_seed, userTag, gpsStartTime, gpsEndTime - gpsStartTime );
+      }
+      else
+      {
+        LALSnprintf( fname, sizeof(fname), "HLT-INJECTIONS_%d-%d-%d.txt", 
+            rand_seed, gpsStartTime, gpsEndTime - gpsStartTime );
+      }
+      fpout = fopen(fname,"w");
+      ligo_tama_output(fpout,injections.simBurstTable);
+      fclose(fpout);
+    }
+
+    return 0;
 }
-  
+
