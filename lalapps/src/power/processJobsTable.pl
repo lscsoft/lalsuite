@@ -7,9 +7,9 @@
 # - If status is P - pending, it submits job to condor and changes 
 #   the status to R - running
 # - If status is R - running, it checks to see if the output XML file 
-# is complete with records. If it is complete with records, the status
-# is changed to C - completed. If it is complete w/o records, the status
-# is changed to U - user review required.  E is used for error conditions.
+# is bigger than 3 KB. If it is, the status
+# is changed to C - completed. If it exists but is smaller than 3 KB, the status
+# is changed to U - user review required.  NF is returned if the output file is missing.
 #
 # Revision History
 # July, 2003 - Dennis Mackin <dsmackin@stupidlinux.com>  - Created the original version of the script
@@ -48,8 +48,8 @@ my %STATUS = (
 					R => "Running",
 					C => "Complete",
 					U => "User Review Required",
-					E => "Error");
-
+					E => "Error",
+					NF => "Output file not found");
 #-----------------------------------------------------------------------------------
 #  MAIN
 #-----------------------------------------------------------------------------------
@@ -83,8 +83,8 @@ if ($returnCode){
 }
 
 $t = localtime();
-print "Submitted jobs at $t\n";
-print LOG "Submitted jobs at $t\n";
+print "$0 finished at $t\n";
+print LOG "$0 finished at $t\n";
 close LOG;		
 									
 
@@ -184,39 +184,50 @@ STATEMENTS
 #  Returns status code
 #-----------------------------------------------------------------------------------
 sub f_checkForProgramCompletion{
-	
 	my $outfile = shift;
-	
 	#if the file exists, try to parse it 
 	if( -f $outfile){
-		use XML::DOM;
-		use XML::DOM::NodeList;
+		# Parsing XML file is better test but it
+		#  is too slow. I wrapped this code in a sub
+		# so it won't execute and then switched to a
+		# faster -s test. dsmackin 07/30/03
+		sub no_longer_used { 
+			use XML::DOM;
+			use XML::DOM::NodeList;
+			
+			my $parser = new XML::DOM::Parser;
+			my $doc = $parser->parsefile ($outfile);
+			
+			my $data = $doc->getElementsByTagName ("Stream")->item(0)->getFirstChild->getNodeValue;
+			
+			#clean the whitespace characters off the end of the string
+			$data =~ s/^\s*//;
+			$data =~ s/\s*$//;
+			
+			#put the rows into an array. Use the array length as the event count
+			my @events = split "\n", $data;
+			my $numEvents = scalar(@events);
+			
+			print "$numEvents found for $outfile.\n";
+			$doc->dispose();
+	
+			if($numEvents > 0 ) { #return status complete
+				return "C";
+			} else { #Need the user to look into this job. There's probably an error.
+				return "U";
+			}
+		}#READ NOTE ABOVE !
 		
-		my $parser = new XML::DOM::Parser;
-		my $doc = $parser->parsefile ($outfile);
-		
-		my $data = $doc->getElementsByTagName ("Stream")->item(0)->getFirstChild->getNodeValue;
-		
-		#clean the whitespace characters off the end of the string
-		$data =~ s/^\s*//;
-		$data =~ s/\s*$//;
-		
-		#put the rows into an array. Use the array length as the event count
-		my @events = split "\n", $data;
-		my $numEvents = scalar(@events);
-		
-		print "$numEvents found for $outfile.\n";
-		$doc->dispose();
-		
-		if($numEvents > 0 ) { #return status complete
-			return "C";
-		} else { #Need the user to look into this job. There's probably an error.
+		#my $size = -s $outfile;
+		#print "size=", $size, "\n";
+		if( -s $outfile < 3000){ # then file seems too small; might be an error
 			return "U";
+		}else{
+			return "C";
 		}
 	}
-
 	# No output. Return E for errror
-	return "E";
+	return "NF";
 }
 
 #-----------------------------------------------------------------------------------

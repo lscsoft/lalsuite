@@ -48,10 +48,10 @@ while(<TABLE>){
 	chomp;
 	my ($statusCode, $statusDescription, $startSec, $endSec, $cache, $xml) = split "\t";
 	$i++;
-	if ($statusCount{$statusCode}){
-		$statusCount{$statusCode}++;
+	if ($statusCount{$statusDescription}){
+		$statusCount{$statusDescription}++;
 	}else{
-		$statusCount{$statusCode} = 1;
+		$statusCount{$statusDescription} = 1;
 	}
 	
 	#get the length of data 
@@ -61,7 +61,7 @@ while(<TABLE>){
 }
 
 foreach(sort keys %statusCount){
-	print "$_=", $statusCount{$_},"\n";
+	print "$_ =", $statusCount{$_},"\n";
 }
 print "\nTOTAL = $i \n";
-print "Total Data Analyzed: $amountOfData\n\n";
+print "Total Seconds Analyzed: $amountOfData\n\n";
