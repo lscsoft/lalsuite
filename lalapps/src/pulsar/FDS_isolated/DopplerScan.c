@@ -427,7 +427,8 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
     TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   ENDFAIL( stat );
 
-  LALProjectMetric( stat->statusPtr, metric, 0 );
+  TRY (LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
+
   BEGINFAIL( stat )
     TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   ENDFAIL( stat );
@@ -576,7 +577,7 @@ plotGrid (LALStatus *stat,
 
 	  TRY( LALMetricWrapper( stat->statusPtr, metric, &metricPar, init->metricType ), stat);
 
-	  TRY( LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
+	  TRY (LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
 
 	  gaa = metric->data[INDEX_AA];
 	  gad = metric->data[INDEX_AD];
@@ -1182,7 +1183,7 @@ buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion, 
 void
 loadSkyGridFile (LALStatus *stat, DopplerScanGrid **grid, const CHAR *fname)
 {
-  LALConfigData *data = NULL;
+  LALParsedDataFile *data = NULL;
   DopplerScanGrid *node, head = empty_grid;
   UINT4 i;
 
@@ -1193,7 +1194,7 @@ loadSkyGridFile (LALStatus *stat, DopplerScanGrid **grid, const CHAR *fname)
   ASSERT ( *grid == NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
   ASSERT ( fname, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
 
-  TRY (LALLoadConfigFile (stat->statusPtr, &data, fname), stat);
+  TRY (LALParseDataFile (stat->statusPtr, &data, fname), stat);
 
   /* parse this list of lines into a sky-grid */
   node = &head;
@@ -1215,7 +1216,7 @@ loadSkyGridFile (LALStatus *stat, DopplerScanGrid **grid, const CHAR *fname)
 
     } /* for i < nLines */
 
-  TRY ( LALDestroyConfigData (stat->statusPtr, &data), stat);
+  TRY ( LALDestroyParsedDataFile (stat->statusPtr, &data), stat);
 
   *grid = head.next;	/* pass result */
 

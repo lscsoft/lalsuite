@@ -64,7 +64,7 @@ int
 main(int argc, char *argv[]) 
 {
   LALStatus status = empty_status;	/* initialize status */
-  LALConfigData *Fstats1 =NULL, *Fstats2 = NULL;
+  LALParsedDataFile *Fstats1 =NULL, *Fstats2 = NULL;
   const CHAR *line1, *line2;
   REAL8 freq1, freq2, a1, a2, d1, d2;
   REAL4 mean1, mean2, std1, std2, max1, max2;
@@ -88,9 +88,9 @@ main(int argc, char *argv[])
   if (uvar_help) 	/* help requested: we're done */
     exit (0);
 
-  /* read in the two Fstats-files (we (ab)use LALLoadConfigFile() for that purpose) */
-  LAL_CALL (LALLoadConfigFile (&status, &Fstats1, uvar_Fname1), &status);
-  LAL_CALL (LALLoadConfigFile (&status, &Fstats2, uvar_Fname2), &status);
+  /* read in the two Fstats-files (we use LALParseDataFile() for that purpose) */
+  LAL_CALL (LALParseDataFile (&status, &Fstats1, uvar_Fname1), &status);
+  LAL_CALL (LALParseDataFile (&status, &Fstats2, uvar_Fname2), &status);
 
   if ( Fstats2->lines->nTokens != Fstats2->lines->nTokens )
     {
@@ -159,8 +159,8 @@ main(int argc, char *argv[])
  
     } /* for i < nLines1 */
 
-  LAL_CALL ( LALDestroyConfigData ( &status, &Fstats1), &status);
-  LAL_CALL ( LALDestroyConfigData ( &status, &Fstats2), &status);
+  LAL_CALL ( LALDestroyParsedDataFile ( &status, &Fstats1), &status);
+  LAL_CALL ( LALDestroyParsedDataFile ( &status, &Fstats2), &status);
   LAL_CALL ( LALDestroyUserVars (&status), &status);
 
   LALCheckMemoryLeaks(); 
