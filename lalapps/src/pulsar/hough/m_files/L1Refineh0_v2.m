@@ -1,5 +1,5 @@
 % $Id$
-%only valind for initial 10 h_0 values
+%only valid for initial 10 h_0 values
 % 
 % script that look into L1kkoutput and create a file with the refine H0 values
 
@@ -7,7 +7,7 @@ clear
 
 Detector = 'H1';
 fileinput = strcat(Detector,'kkoutput_veto');
-fileoutput = strcat(Detector,'h0newband_veto');
+fileoutput = strcat(Detector,'h0newband');
 fid = fopen(fileoutput, 'w');
 
 
@@ -41,7 +41,9 @@ for j=1:nbands
    large = find(Ch0 > 0.955);
    h0max = h0val(large(1));
   end
-   fprintf(fid,'%d %d\n', h0min, h0max );
+%  fprintf(fid,'%d %d\n', h0min, h0max );
+  fprintf(fid,'%d %d %d %d %d %d\n', j-1, fmin(j), fmax(j), Nmax(j), h0min, h0max );
+
 end
 
 fclose(fid);
