@@ -5,6 +5,12 @@
 ##
 ## This script is not to be included in the distribution.
 
+cd packages/support/src
+m4 PrintVector.m4 > PrintVector.c
+m4 PrintTimeSeries.m4 > PrintTimeSeries.c
+m4 PrintFrequencySeries.m4 > PrintFrequencySeries.c
+cd ../../..
+
 cd packages/factories/src
 m4 VectorFactories.m4 > VectorFactories.c
 m4 VectorSequenceFactories.m4 > VectorSequenceFactories.c
