@@ -49,15 +49,9 @@ LALComputeFrequencySeries (
 
 
   /* make sure sizes are reasonable and agree */
-  /* MODIFIED -- JC
-   * n = dftParams->plan->size;
-   */
   ASSERT(timeSeries->data->length > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
   n = timeSeries->data->length;
-  /*
-  ASSERT ((INT4)timeSeries->data->length == n, status,
-          TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
-  */
+
   ASSERT(freqSeries->data->length == n/2 + 1, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
   ASSERT(dftParams->window->length == n, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
@@ -67,23 +61,13 @@ LALComputeFrequencySeries (
   freqSeries->f0    = timeSeries->f0;
   ASSERT(timeSeries->deltaT > 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
   freqSeries->deltaF = 1/((REAL8)(timeSeries->data->length)*timeSeries->deltaT); 
-  /* 
-   * OMITTED
-   *
-  freqSeries->name = timeSeries->name;
-  freqSeries->sampleUnits = timeSeries->sampleUnits;
-   */
-
-
   /* compute normalization factor */
   ASSERT(dftParams->sumofsquares > 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-  fac = 1 / sqrt( dftParams->sumofsquares);
-
+  fac = sqrt(n)*timeSeries->deltaT / sqrt( dftParams->sumofsquares);
 
   /* create temporary vector */
   LALCreateVector (status->statusPtr, &tmp, n);
   CHECKSTATUSPTR (status);
-
 
   /* compute windowed version of time series data */
   for (i = 0; i < n; i++)
