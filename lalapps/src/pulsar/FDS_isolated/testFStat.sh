@@ -1,8 +1,19 @@
 #!/bin/sh
-ephemdir=./ephems
-sftdir=./somedata
+sftdir=".."
+sftbase="SFT.0000"
+IFO="LHO"
 
-params=" -I 2 -y 03 -E $ephemdir -D $sftdir -f 300.0 -b 0.1 -a 2.2 -z 0.003 -d 0.8 -c 0.003 "
+CFSparams="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 \
+--FreqBand=0.2 --Alpha=2.2 --AlphaBand=0.003 --Delta=0.8 --DeltaBand=0.003"
+
+# test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
+if [ x$LAL_DATA_PATH = x ]; then
+    echo
+    echo "Need environment-variable LAL_DATA_PATH to point to your ephemeris-directory (e.g. /usr/local/share/lal)"
+    echo
+    exit
+fi
+
 
 if [ x$1 = x ]; then
     prog="./lalapps_ComputeFStatistic";
@@ -10,13 +21,21 @@ else
     prog=$1;
 fi
 
-echo "Starting run 1 ..."
-$prog $params
-echo "run 1 complete"
-echo `diff --brief Fstats Fstats.ref`
+echo "Running ComputeFStatistic-code '$prog' on test-data '$sftdir/$sftbase*'"
+if lalapps_ComputeFStatistic $CFSparams -v0; then
+    echo "done";
+else
+    echo "failed... exiting.";
+    exit
+fi
 
-echo "Starting run 2 ..."
-$prog @testFStat.cfg
-echo "run 2 complete"
-echo `diff --brief Fstats Fstats.ref`
+echo "Comparing output-file 'Fstats' with reference-version 'Fstats.ref' ..."
+
+if diff --brief Fstats Fstats.ref ; then
+    echo "OK. No differences found!"
+else
+    echo "OUCH... files differ. Something is wrong..."
+fi
+
+    
 
