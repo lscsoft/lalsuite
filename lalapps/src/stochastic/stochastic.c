@@ -116,7 +116,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* status pointer */
 	LALStatus status;
-	status.statusPtr = NULL;
 
 	/* output file */
 	FILE *out;
@@ -146,6 +145,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	SSSimStochBGOutput MCoutput;
 	MonteCarloParams MCparams;
 	MonteCarloInput MCinput;
+        UINT4 MCLength;
 
 	/* simulated output structures */
 	REAL4TimeSeries SimStochBGOne;
@@ -221,6 +221,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 	StochasticOmegaGWParameters omegaGWParams;
 	REAL4FrequencySeries omegaGW;
 
+	/* structures for LALInverseNoise */
+	StochasticInverseNoiseInput inverseNoiseInOne;
+	StochasticInverseNoiseInput inverseNoiseInTwo;
+	StochasticInverseNoiseOutput inverseNoiseOutOne;
+	StochasticInverseNoiseOutput inverseNoiseOutTwo;
+
 	/* structures for optimal filter normalisation */
 	StochasticOptimalFilterNormalizationInput normInput;
 	StochasticOptimalFilterNormalizationOutput normOutput;
@@ -243,12 +249,13 @@ INT4 main(INT4 argc, CHAR *argv[])
 	parseOptions(argc, argv);
 
 	/* error handler */
+	status.statusPtr = NULL;
 	lal_errhandler = LAL_ERR_EXIT;
 	set_debug_level( "7" );
 
 	/* open output file */
-	snprintf(outputFilename, LALNameLength, "output-%s%s-%d.dat", ifoOne, \
-			ifoTwo, (INT4)startTime);
+	LALSnprintf(outputFilename, LALNameLength, "output-%s%s-%d.dat", 
+            ifoOne, ifoTwo, (INT4)startTime);
 	if ((out = fopen(outputFilename, "w")) == NULL)
 	{
 		fprintf(stderr, "Can't open file for output...\n");
@@ -337,7 +344,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	MCinput.ifoTwo = ifoTwo;
 	MCinput.calCacheOne = calCacheOne;
 	MCinput.calCacheTwo = calCacheTwo;
-	UINT4 MCLength = MCparams.numSegment * MCparams.lengthSegment;
+	MCLength = MCparams.numSegment * MCparams.lengthSegment;
 
 	if (PRINT)
 	{
@@ -594,12 +601,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 			halfCalPSDOne.data->length * sizeof(*halfCalPSDOne.data->data));
 	memset(halfCalPSDTwo.data->data, 0, \
 			halfCalPSDTwo.data->length * sizeof(*halfCalPSDTwo.data->data));
-
-	/* structures for LALInverseNoise */
-	StochasticInverseNoiseInput inverseNoiseInOne;
-	StochasticInverseNoiseInput inverseNoiseInTwo;
-	StochasticInverseNoiseOutput inverseNoiseOutOne;
-	StochasticInverseNoiseOutput inverseNoiseOutTwo;
 
 	/* set inverse noise inputs */
 	inverseNoiseInOne.unCalibratedNoisePSD = &psdOne;
