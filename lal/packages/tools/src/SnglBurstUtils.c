@@ -379,16 +379,10 @@ LALClusterSnglBurstTable (
     thisEvent = prevEvent->next;    
   }
   
-  /*count the number of events in the modified list */
+  /* count the number of events in the modified list */
 
-  while (startEvent != NULL)
-  {
-    numModEvent = 1;
-    startEvent = startEvent->next;
-    numModEvent++;
-  }
-
-  *nevents = numModEvent;
+  for (*nevents = 1; startEvent; startEvent = startEvent->next)
+    *nevents++;
 
   /* normal exit */
   DETATCHSTATUSPTR (status);
