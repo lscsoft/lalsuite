@@ -20,6 +20,9 @@ RCSID( "$Id$" );
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 
+#define CANDLE_MASS1 1.4
+#define CANDLE_MASS2 1.4
+#define CANDLE_RHOSQ 8.0
 
 /*
  *
@@ -118,6 +121,9 @@ int main( int argc, char *argv[] )
   FindChirpSPTmpltParams       *fcTmpltParams  = NULL;
   FindChirpFilterParams        *fcFilterParams = NULL;
   FindChirpFilterInput         *fcFilterInput  = NULL;
+#if 0
+  FindChirpStandardCandle       candle;
+#endif
 
   /* inspiral template structures */
   INT4                          numTmplts    = 0;
@@ -191,6 +197,20 @@ int main( int argc, char *argv[] )
   /* make sure the pointer to the first event is null */
   savedEvents.snglInspiralTable = NULL;
 
+#if 0
+  /* create the standard candle */
+  memset( &candle, 0, sizeof(FindChirpStandardCandle) );
+  strncpy( candle.ifo, ifo, 2 * sizeof(CHAR) );
+  candle.tmplt.mass1 = CANDLE_MASS1;
+  candle.tmplt.mass2 = CANDLE_MASS2;
+  candle.rhosq       = CANDLE_RHOSQ;
+  candle.tmplt.totalMass = candle.tmplt.mass1 + candle.tmplt.mass2;
+  candle.tmplt.mu = candle.tmplt.mass1 * candle.tmplt.mass2 / 
+    candle.tmplt.totalMass;
+  candle.tmplt.eta = candle.tmplt.mu / candle.tmplt.totalMass;
+#endif
+
+  
 
   /*
    *
@@ -270,9 +290,16 @@ int main( int argc, char *argv[] )
       &status );
 
   /* determine if we need to resample the channel */
-  if ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon )
+  if ( vrbflg )
+  {
+    fprintf( stdout, "resampleParams.deltaT = %e\n", resampleParams.deltaT );
+    fprintf( stdout, "chan.deltaT = %e\n", chan.deltaT );
+  }
+  if ( ! ( fabs( resampleParams.deltaT - chan.deltaT ) < epsilon ) )
   {
     resampleChan = 1;
+    if ( vrbflg )
+      fprintf( stdout, "input channel will be resampled\n" );
 
     if ( resampFiltType == 0 )
     {
@@ -650,6 +677,31 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFindChirpSPData (&status, fcSegVec, dataSegVec, fcDataParams),
       &status );
 
+#if 0
+  /* compute the standard candle */
+  {
+      REAL4 cannonDist = 1.0; /* Mpc */
+      REAL4 m  = (REAL4) candle.tmplt.totalMass;
+      REAL4 mu = (REAL4) candle.tmplt.mu;
+      REAL4 distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1e6 * LAL_PC_SI);
+      REAL4 candleTmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
+        pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
+        pow( LAL_MTSUN_SI / (REAL4) chan.deltaT, -1.0/6.0 );
+
+      distNorm *= fcTmpltParams->dynRange;
+      candleTmpltNorm *= candleTmpltNorm;
+      candleTmpltNorm *= distNorm * distNorm;
+
+      candle.sigmasq = 4.0 * ( (REAL4) chan.deltaT / (REAL4) numPoints );
+      candle.sigmasq *= candleTmpltNorm * fcSegVec->data->segNorm;
+
+      candle.effDistance = sqrt( candle.sigmasq / candle.rhosq );
+
+      if ( vrbflg ) 
+        fprintf( stdout, "candle.effDistance = %e Mpc\n", candle.effDistance );
+    }
+#endif
+  
 
   /*
    *
