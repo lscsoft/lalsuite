@@ -263,7 +263,7 @@ except Warning, inst:
 num = len( patches.list )
 
 # Create SFT search job.
-searchJob = CondorDAGJob( "vanilla", "lalapps_QueryMetadataLFN" )
+searchJob = CondorDAGJob( "scheduler", "lalapps_QueryMetadataLFN" )
 searchJob.set_sub_file(                "QueryMetadataLFN.sub" )
 searchJob.set_stdout_file( outputDir + "QueryMetadataLFN.out" )
 searchJob.set_stderr_file( outputDir + "QueryMetadataLFN.err" )
@@ -275,7 +275,7 @@ searchJob.add_opt( "gps-end-time",   "%i" % end )
 searchJob.add_opt( "output", outputDir + sftList )
 
 # Create SFT collection job.
-collectJob = CondorDAGJob( "vanilla", "lalapps_GatherLFN" )
+collectJob = CondorDAGJob( "scheduler", "lalapps_GatherLFN" )
 collectJob.set_sub_file(                "GatherLFN.sub" )
 collectJob.set_stdout_file( outputDir + "GatherLFN.out" )
 collectJob.set_stderr_file( outputDir + "GatherLFN.err" )
@@ -285,7 +285,7 @@ collectJob.add_opt( "server", rls_server )
 collectJob.add_opt( "bucket", sharedDir )
 
 # Create SFT extraction job
-extractJob = CondorDAGJob( "standard",  "narrowBandExtract" )
+extractJob = CondorDAGJob( "scheduler",  "narrowBandExtract" )
 extractJob.set_sub_file(                "narrowBandExtract.sub" )
 extractJob.set_stdout_file( outputDir + "narrowBandExtract.out" )
 extractJob.set_stderr_file( outputDir + "narrowBandExtract.err" )
