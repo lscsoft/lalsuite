@@ -2956,7 +2956,7 @@ int main(int argc, char *argv[]){
     }
     else
       {
-	LALPrintError ("dlopen() failed: dlerror = %s\n", dlerror());
+	fprintf (stderr, "dlopen() failed: %s\n--> Running without screensaver graphics.", dlerror());
       }
     
   }
