@@ -21,7 +21,7 @@
 /*SECTION - HEADER - "LalMathematica.h" -------------------------------------- <lalLaTeX>
   \section{Header \texttt{LALMathematica.h}}
   \label{s:LALMathematica.h}
-  \newcommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
+  \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
 * Provides structures, functions and macro definitions for modules
 * that generate \MATHEMATICA notebooks. Currently, the only module using this header file 
 * is \texttt{Math3DPlot.c}, which generates 3D animated plots of template banks having
