@@ -87,7 +87,7 @@ static int ModifiedforClustering(
   tb2 = tb1 + ( NANOSEC * thisEvent->duration );
   LALGPStoINT8(&status, &tb_p, &(thisEvent->peak_time));
 
-  /* compute the start and stop frequencies of the prevEvent */
+  /* compute the start and stop frequencies of the thisEvent */
   fb1 = thisEvent->central_freq - 0.5 * thisEvent->bandwidth;
   fb2 = fb1 + thisEvent->bandwidth;
 
@@ -351,14 +351,13 @@ LALClusterSnglBurstTable (
 	ATTATCHSTATUSPTR (status);
 
 	startEvent = burstEvent;
-	thisEvent = burstEvent->next;
 
-	while (thisEvent != NULL) {
+	for(thisEvent = burstEvent->next; thisEvent; thisEvent = prevEvent->next) {
 		prevEvent = startEvent;
 
-		for (i = numModEvent; i > 0; i--) {
-			if (ModifiedforClustering(prevEvent,thisEvent)) {
-				for (j = i; j > 1; j--)
+		for(i = numModEvent; i > 0; i--) {
+			if(ModifiedforClustering(prevEvent,thisEvent)) {
+				for(j = i; j > 1; j--)
 					prevEvent = prevEvent->next;
 				prevEvent->next = thisEvent->next;
 				LALFree(thisEvent);
@@ -368,14 +367,12 @@ LALClusterSnglBurstTable (
 				prevEvent = prevEvent->next;
 		}
 
-		if (i == 0)
+		if(i == 0)
 			numModEvent++;
-
-		thisEvent = prevEvent->next;
 	}
 
 	/* count the number of events in the modified list */
-	for (*nevents = 1; startEvent; startEvent = startEvent->next)
+	for(*nevents = 1; startEvent; startEvent = startEvent->next)
 		*nevents++;
 
 	/* normal exit */
