@@ -170,11 +170,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALStatus status = blank_status;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
 
-  /* output file */
-  FILE *out;
-  CHAR baseName[FILENAME_MAX];
-  CHAR outputFilename[FILENAME_MAX];
-
   /* xml */
   CHAR xmlFileName[FILENAME_MAX];
   LIGOLwXMLStream xmlStream;
@@ -337,19 +332,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-stochastic-%d-%d.xml", \
       ifoOne, ifoTwo, startTime, endTime);
 
-  /* get output file name base name */
-  if (outputFilePath)
-  {
-    LALSnprintf(baseName, FILENAME_MAX, \
-        "%s/%s%s-stochastic-%d-%d", outputFilePath, ifoOne, ifoTwo, \
-        startTime, endTime);
-  }
-  else
-  {
-    LALSnprintf(baseName, FILENAME_MAX, "%s%s-stochastic-%d-%d", \
-        ifoOne, ifoTwo, startTime, endTime);
-  }
-  
   /* get number of segments */
   duration = endTime - startTime;
   numSegments = duration / segmentDuration;
@@ -387,12 +369,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   gpsEndTime.gpsNanoSeconds = 0;
 
   /* read data */
+  /*
   seriesOne = get_time_series(&status, ifoOne, frameCacheOne, channelOne, \
       gpsStartTime, gpsEndTime);
   seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
       gpsStartTime, gpsEndTime);
 
   exit(1);
+  */
 
   /* initialize gps time structure */
   gpsStartTime.gpsSeconds = startTime;
@@ -901,17 +885,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     /* initialize parameters for post analysis */
     yOpt = 0;
-
-    /* get output filename */
-    if (inject_flag)
-    {
-      LALSnprintf(outputFilename, FILENAME_MAX, "%s-%d.dat", baseName, \
-          MCLoop);
-    }
-    else
-    {
-      LALSnprintf(outputFilename, FILENAME_MAX, "%s.dat", baseName);
-    }
 
     for (n = 0; n < N; n++)
     {
@@ -1557,12 +1530,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         thisStoch->duration.gpsNanoSeconds = 0;
         thisStoch->cc_stat = y;
         thisStoch->cc_sigma = sqrt(varTheo);
-
-        /* output to file */
-        out = fopen(outputFilename, "a");
-        fprintf(out,"%d %e %e\n", gpsStartTime.gpsSeconds, y, \
-            sqrt(varTheo));
-        fclose(out);
       }
     }
 
