@@ -408,8 +408,8 @@ void FindNumberHarmonics (LALStatus    *status,
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
-  //ASSERT (LineHarmonicsInfo, status, SFTBINH_ENULL, SFTBINH_MSGENULL );
-  //ASSERT (fname, status, SFTBINH_ENULL, SFTBINH_MSGENULL );
+  /* ASSERT (LineHarmonicsInfo, status, SFTBINH_ENULL, SFTBINH_MSGENULL ); 
+  ASSERT (fname, status, SFTBINH_ENULL, SFTBINH_MSGENULL ); */
 
   /* open harmonics file for reading */
   fp = fopen( fname, "r");
