@@ -267,18 +267,30 @@ class CondorDAGNode:
     """
     self.__retry = retry
 
-  def write(self,fh):
+  def write_job(self,fh):
     """
-    Write the DAG entry for this node to the DAG file descriptor.
+    Write the DAG entry for this node's job to the DAG file descriptor.
     fh = descriptor of open DAG file.
     """
     fh.write( 'JOB ' + self.__name + ' ' + self.__job.get_sub_file() +  '\n' )
     fh.write( 'RETRY ' + self.__name + ' ' + str(self.__retry) + '\n' )
+
+  def write_vars(self,fh):
+    """
+    Write the variable (macro) arguments to the DAG file descriptor.
+    fh = descriptor of open DAG file.
+    """
     if self.__vars.keys():
       fh.write( 'VARS ' + self.__name )
       for k in self.__vars.keys():
         fh.write( ' ' + str(k) + '="' + str(self.__vars[k]) + '"' )
       fh.write( '\n' )
+
+  def write_parentss(self,fh):
+    """
+    Write the parent/child relations for this job to the DAG file descriptor.
+    fh = descriptor of open DAG file.
+    """
     for parent in self.__parents:
       fh.write( 'PARENT ' + parent + ' CHILD ' + str(self) + '\n' )
 
@@ -359,7 +371,11 @@ class CondorDAG:
     except:
       raise CondorDAGError, "Cannot open file " + self.__dag_file_path
     for node in self.__nodes:
-      node.write(dagfile)
+      node.write_job(dagfile)
+    for node in self.__nodes:
+      node.write_vars(dagfile)
+    for node in self.__nodes:
+      node.write_parents(dagfile)
     dagfile.close()
 
 
