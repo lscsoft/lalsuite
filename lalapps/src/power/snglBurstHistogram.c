@@ -58,11 +58,12 @@ int main(int argc, char **argv)
     static LALStatus         stat;
     INT4                     retVal=0;
     INT4                     inarg=1;
-    INT4                     first=1;
     BOOLEAN                  freqHistogram=TRUE;
+    BOOLEAN                  tfHistogram=FALSE;
     REAL4                    fstart=0.0,fstop=1000.0,df=0.0;
     REAL4                    threshold=1.0,logThreshold=0.0;
-    FILE                     *fpin;
+    FILE                     *fpin=NULL,*fpTFHist=NULL;
+    INT4                     fileCounter=0;
 
     CHAR                     inputfile[MAXSTR],line[MAXSTR];
 
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
 
     INT4                      nFreqBins=0;
     INT8                      *freqHistData=NULL;
-    INT8                      *freqHistData=NULL;
+    INT8                      *tmpHistData=NULL;
     size_t len;
 
     struct MetaioParseEnvironment triggerParseEnv;
@@ -110,6 +111,13 @@ int main(int argc, char **argv)
         {
             inarg++;
             sprintf(inputfile,"%s",argv[inarg++]);
+        }
+        /* time-frequency histogram */
+        else if ( !strcmp( argv[inarg], "--tfhist" ) )
+        {
+            inarg++;
+            fpTFHist=fopen(argv[inarg++],"w");
+            tfHistogram=TRUE;
         }
         /* threshold (in probability) to apply */
         else if ( !strcmp( argv[inarg], "--threshold" ) )
@@ -156,11 +164,13 @@ int main(int argc, char **argv)
      *****************************************************************/
     if ( freqHistogram ){
         nFreqBins = (INT4)( (fstop-fstart)/df );
-	/*        freqHistData = (INT8 *) LALCalloc(nFreqBins , sizeof(INT8));*/
+        freqHistData = (INT8 *) LALCalloc(nFreqBins , sizeof(INT8));
+        tmpHistData = (INT8 *) LALCalloc(nFreqBins , sizeof(INT8));
     }
 
-    freqHistData = (INT8 *) LALCalloc(800 , sizeof(INT8));
-    plgrnd= (INT8 *) LALCalloc(800 , sizeof(INT8));
+    if (tfHistogram){
+        fprintf(fpTFHist,"# fstart=%f, fstop=%f, df=%f\n",fstart,fstop,df);
+    }
 
     /*****************************************************************
      * OPEN FILE WITH LIST OF XML FILES (one file per line)
@@ -168,65 +178,82 @@ int main(int argc, char **argv)
     if ( !(fpin = fopen(inputfile,"r")) ){
         LALPrintError("Could not open input file\n");
     }
-    j=1;
+
     while ( getline(line, MAXSTR, fpin) ){
-        fprintf(stderr,"Processing file %s\n",line);
-	plgrnd[j]=j;
-    /******************************************************************
-     * OPEN XML FILE AND READ IT
-     *****************************************************************/
-    if ( (retVal = MetaioOpen( triggerEnv, line)) !=0 ){
-        fprintf(stderr, "Error opening injection file %s\n", line );
-        MetaioAbort( triggerEnv ); 
-        exit(2);
-    }
-
-    /* Locate the relevant columns */
-    iTriggerConfidence = MetaioFindColumn( triggerEnv, "CONFIDENCE");
-    iTriggerFreq       = MetaioFindColumn( triggerEnv, "CENTRAL_FREQ" );
-
-    /* Loop over the triggers */
-    first = 1;
-    while (1) {
-
-        /* assume candidate is an event unless proven otherwise */
-        retVal = MetaioGetRow(triggerEnv);
-        if ( retVal == -1 ) {
-            printf( "Error while getting row from injection or trigger file\n");
+        fileCounter++;
+        fprintf(stderr,"Processing file %i %s\n",fileCounter,line);
+    
+        /******************************************************************
+         * OPEN XML FILE AND READ IT
+         *****************************************************************/
+        if ( (retVal = MetaioOpen( triggerEnv, line)) !=0 ){
+            fprintf(stderr, "Error opening injection file %s\n", line );
             MetaioAbort( triggerEnv ); 
-            return 6;
-        } else if ( retVal == 0 ) {
-            /*-- Reached end of file --*/
-            break;
+            exit(2);
         }
 
-        /* get the confidence from the table */
-        tmpConfidence = triggerEnv->ligo_lw.table.elt[iTriggerConfidence].data.real_4;  
-        tmpFreq       = triggerEnv->ligo_lw.table.elt[iTriggerFreq].data.real_4;  
+        /* Locate the relevant columns */
+        iTriggerConfidence = MetaioFindColumn( triggerEnv, "CONFIDENCE");
+        iTriggerFreq       = MetaioFindColumn( triggerEnv, "CENTRAL_FREQ" );
 
-        /* require the confidence to exceed threshold */
-        if ( tmpConfidence < logThreshold ){
-            if (freqHistogram){
-	      if (fstart<tmpFreq<fstop){
-                freqHistData[j] += 1;
+        /* Loop over the triggers */
+        memset(tmpHistData, 0, nFreqBins*sizeof(INT8));
+        while (1) {
+
+            /* assume candidate is an event unless proven otherwise */
+            retVal = MetaioGetRow(triggerEnv);
+            if ( retVal == -1 ) {
+                printf( "Error while getting row from injection or trigger file\n");
+                MetaioAbort( triggerEnv ); 
+                return 6;
+            } else if ( retVal == 0 ) {
+                /*-- Reached end of file --*/
+                break;
+            }
+
+            /* get the confidence from the table */
+            tmpConfidence = triggerEnv->ligo_lw.table.elt[iTriggerConfidence].data.real_4;  
+            tmpFreq       = triggerEnv->ligo_lw.table.elt[iTriggerFreq].data.real_4;  
+
+            /* require the confidence to exceed threshold */
+            if ( tmpConfidence < logThreshold ){
+                if (freqHistogram){
+                    freqHistData[(INT4)(tmpFreq/df)] += 1;
+                    tmpHistData[(INT4)(tmpFreq/df)] += 1;
+                }
             }
         }
-    }
-    }
-    /********************************************************************
-     * SPIT OUT THE RESULTS
-     *******************************************************************/
-    if (freqHistogram){
-        FILE *fpFreqHist=NULL;
-        INT4 i;
-        fpFreqHist = fopen("freq-hist.txt","w");
-        for(i=0;i<nFreqBins;i++){
-            fprintf(fpFreqHist,"%f %i\n",fstart+i*df,freqHistData[i]);
+        /********************************************************************
+         * SPIT OUT THE RESULTS
+         *******************************************************************/
+        if (freqHistogram){
+            FILE *fpFreqHist=NULL;
+            INT4 i;
+            fpFreqHist = fopen("freq-hist.txt","w");
+            for(i=0;i<nFreqBins;i++){
+                fprintf(fpFreqHist,"%f %i\n",fstart+i*df,freqHistData[i]);
+            }
+            fclose(fpFreqHist);
         }
-        fclose(fpFreqHist);
+
+        /********************************************************************
+         * histograms as function of "time"
+         *******************************************************************/
+        if (tfHistogram){
+            INT4 i;
+            fprintf(fpTFHist,"%i ",fileCounter);
+            for(i=0;i<nFreqBins;i++){
+                fprintf(fpTFHist,"%i ",tmpHistData[i]);
+            }
+            fprintf(fpTFHist,"\n");
+        }
+
+
+        MetaioAbort(triggerEnv);
     }
 
-    MetaioAbort(triggerEnv);
+    if (tfHistogram){
+        fclose(fpTFHist);
     }
 
     return 0;
