@@ -176,6 +176,19 @@ data = pipeline.ScienceData()
 data.read(cp.get('input','segments'))
 data.make_chunks(length,overlap,1)
 
+# get the usertag from the config file
+try:
+  usertag = cp.get('pipeline','user-tag')
+except:
+  usertag = None
+
+if usertag:
+  df_job.add_opt('user-tag',usertag)
+  tmplt_job.add_opt('user-tag',usertag)
+  insp_job.add_opt('user-tag',usertag)
+  trig_job.add_opt('user-tag',usertag)
+  inca_job.add_opt('user-tag',usertag)
+
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
 ifo2 = cp.get('pipeline','ifo2')
@@ -246,8 +259,13 @@ for seg in data:
 
     trigbank = inspiral.TrigToTmpltNode(trig_job)
     trigbank.set_input(insp1.get_output())
-    trigbank.set_output(ifo2 + '-TRIGBANK_' + ifo1 + '-' + str(chunk.start())
-      + '-' + str(chunk.dur()) + '.xml')
+    if usertag:
+      trigbank.set_output(ifo2 + '-TRIGBANK_' + usertag + '_' + ifo1 + '-' 
+        + str(chunk.start()) + '-' + str(chunk.dur()) + '.xml')
+    else:
+      trigbank.set_output(ifo2 + '-TRIGBANK_' + ifo1 + '-' + str(chunk.start())
+        + '-' + str(chunk.dur()) + '.xml')
+
 
     if do_inspiral:
       trigbank.add_parent(insp1)
