@@ -96,7 +96,7 @@ main (  int argc, char **argv )
    REAL8 dt0, dt1, g00, g11, h00, h11, h01, ang, match;
 */
    REAL4Vector signal, correlation;
-   UINT4 numFcutTemplates=5;
+   UINT4 numFcutTemplates = 5, quietFlag = 0;
    void *noisemodel = LALLIGOIPsd;
    static RandomInspiralSignalIn randIn;
    static InspiralWaveOverlapIn overlapin;
@@ -106,7 +106,9 @@ main (  int argc, char **argv )
    static InspiralMetric metric;
    RealFFTPlan *fwdp=NULL,*revp=NULL;
    static InspiralTemplateList *tmpltList=NULL;
-
+   
+   
+   quietFlag = 0;	
    numFcutTemplates  = 5;
    randIn.useed = 128092;
    ntrials=2;
@@ -139,6 +141,8 @@ main (  int argc, char **argv )
 		   numFcutTemplates = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"-simType")==0)
 		   randIn.type = atoi(argv[++i]);
+	   else if (strcmp(argv[i],"-quiet")==0)
+		   quietFlag = 1;
 	   else if (strcmp(argv[i],"-mMax")==0)
 		   randIn.mMax = atoi(argv[++i]);
 	   else if (strcmp(argv[i],"-sigAmp")==0)
@@ -243,7 +247,8 @@ main (  int argc, char **argv )
    randIn.param.approximant = EOB;
    LALInspiralWaveLength (&status, &signal.length, randIn.param);
    randIn.param.approximant = approx;
-/* fprintf(stdout, "signal length = %d\n", signal.length);*/
+   if (!quietFlag)
+	fprintf(stdout, "signal length = %d\n", signal.length);
 /* REPORTSTATUS(&status); */
    correlation.length = signal.length;
    randIn.psd.length = signal.length/2 + 1;
@@ -272,28 +277,25 @@ main (  int argc, char **argv )
    tmpltList = (InspiralTemplateList *) LALMalloc (sizeof (InspiralTemplateList) * nlist);
 
    /* Print out the template parameters */
-
    for (i=0; i<nlist; i++)
    {
-	   /*
-	      Retain only those templates that have meaningful chirptimes:
-	    */
-	   tmpltList[i].params.psi0 = (REAL8) list->data[2*i];
-	   tmpltList[i].params.psi3 = (REAL8) list->data[2*i+1];
-	   tmpltList[i].params.fLower = randIn.param.fLower;
-	   tmpltList[i].params.nStartPad = randIn.param.nStartPad;
-	   tmpltList[i].params.startPhase = randIn.param.startPhase;
-	   tmpltList[i].params.nEndPad = randIn.param.nEndPad;
-	   tmpltList[i].params.tSampling = randIn.param.tSampling;
-	   tmpltList[i].params.fendBCV = randIn.param.fendBCV;
-	   tmpltList[i].params.massChoice = psi0Andpsi3;
-	   tmpltList[i].params.approximant = BCV;
+   	/*Retain only those templates that have meaningful chirptimes*/
+   	tmpltList[i].params.psi0 = (REAL8) list->data[2*i];
+   	tmpltList[i].params.psi3 = (REAL8) list->data[2*i+1];
+   	tmpltList[i].params.fLower = randIn.param.fLower;
+   	tmpltList[i].params.nStartPad = randIn.param.nStartPad;
+   	tmpltList[i].params.startPhase = randIn.param.startPhase;
+	tmpltList[i].params.nEndPad = randIn.param.nEndPad;
+	tmpltList[i].params.tSampling = randIn.param.tSampling;
+	tmpltList[i].params.fendBCV = randIn.param.fendBCV;
+	tmpltList[i].params.massChoice = psi0Andpsi3;
+	tmpltList[i].params.approximant = BCV;
    }
 
-   LALInspiralBCVFcutBank( &status, &tmpltList, &nlist, numFcutTemplates) ;
+	LALInspiralBCVFcutBank( &status, &tmpltList, &nlist, numFcutTemplates) ;
 
    if (nlist==0) exit(0);
-
+   if (!quietFlag){
    for (i=0; i<nlist; i++)
    {
 	   fprintf(stdout, "%e %e %e %e\n", 
@@ -302,7 +304,7 @@ main (  int argc, char **argv )
 			   tmpltList[i].params.totalMass, 
 			   tmpltList[i].params.fendBCV);
    }
-
+   }
 /* REPORTSTATUS(&status); */
 
    randIn.psd = *shf.data;
@@ -316,17 +318,18 @@ main (  int argc, char **argv )
 /* REPORTSTATUS(&status); */
    overlapin.fwdp = randIn.fwdp = fwdp;
    overlapin.revp = revp;
-
-
-   fprintf(stdout, "#---------------------------------------------------------------\n");
-   fprintf(stdout, "#Number of Coarse Bank Templates=%d\n",nlist);
-   fprintf(stdout, "#Signal Length=%d, Number of sims=%d\n", signal.length, ntrials);
-   fprintf(stdout, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n",
+   
+   if (!quietFlag){
+   	fprintf(stdout, "#---------------------------------------------------------------\n");
+	fprintf(stdout, "#Number of Coarse Bank Templates=%d\n",nlist);
+   	fprintf(stdout, "#Signal Length=%d, Number of sims=%d\n", signal.length, ntrials);
+   	fprintf(stdout, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n",
 		   randIn.psi0Min,randIn.psi0Max,randIn.psi3Min,randIn.psi3Max);
-   fprintf(stdout,"---------------------------------------------------------------\n");
-   fprintf(stdout, "#psi0Tmplt   psi0Sig    psi3Tmplt    psi3Sig    fFinalTmplt   fFinalSig  m1 m2 Overlap/SNR\n");
-   fprintf(stdout,"---------------------------------------------------------------\n");
-
+	fprintf(stdout,"---------------------------------------------------------------\n");
+   	fprintf(stdout, "#psi0Tmplt   psi0Sig    psi3Tmplt    psi3Sig    fFinalTmplt   fFinalSig  m1 m2 Overlap/SNR\n");
+   	fprintf(stdout,"---------------------------------------------------------------\n");
+	}
+   
    while (ntrials--) 
    {
       randIn.param.approximant = approx;

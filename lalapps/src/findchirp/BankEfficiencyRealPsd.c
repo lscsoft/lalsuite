@@ -244,9 +244,9 @@ main (  int argc, char **argv )
    randIn.param.approximant = EOB;
    LALInspiralWaveLength (&status, &signal.length, randIn.param);
    if (signal.length < length) 
-	   signal.length = length;
+	signal.length = length;
    else 
-	   return 1;
+   return 1;
    randIn.param.approximant = approx;
 /* fprintf(stdout, "signal length = %d\n", signal.length);*/
 /* REPORTSTATUS(&status); */
