@@ -72,7 +72,7 @@ RCSID( "$Id$" );
 
 #ifdef LALAPPS_CONDOR
 void init_image_with_file_name( char *ckpt_file_name );
-void ckpt_and_exit()
+void ckpt_and_exit( void );
 #endif
 
 
