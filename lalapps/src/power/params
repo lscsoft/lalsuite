@@ -4,9 +4,8 @@
 INSTRUMENT=H	#DON'T FORGET TO MAKE THIS MATCH WITH DATA CHANNEL
 TYPE=RDS_R_L1
 
-#DATA_SET_NAME=S2H2v02
-#DATA_QUALITY_FILE=/scratch/power/input/S2L1v02_segs.txt
-DATA_QUALITY_FILE=/scratch/power/input/injections.txt
+DATA_SET_NAME=S2H1v02
+DATA_QUALITY_FILE=/scratch/power/input/S2H1v02_segs.txt
 
 #To allow data outside of playground, set USE_PLAYGROUND to 0
 USE_PLAYGROUND=1
