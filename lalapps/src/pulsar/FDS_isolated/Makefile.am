@@ -5,7 +5,7 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 ## build everything completely static
-AM_LDFLAGS = -all-static
+##AM_LDFLAGS = -all-static
 
 if FRAME
 #FRAMEPROGRAMS = lalapps_FrComputeFStatistic
@@ -48,6 +48,6 @@ ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c 	rngmed.c rngmed.h cluster
 
 ## some optional BOINC-related stuff follows here:
 EXTRA_PROGRAMS = cfsBOINC
-cfsBOINC_SOURCES = $(CFSsources) cppdummy.C
-cfsBOINC_LDFLAGS =  -L$(HOME_BOINC)/lib -lboinc
-cfsBOINC_CPPFLAGS = -I$(HOME_BOINC)/include -DUSE_BOINC -DNO_BOINC_GRAPHICS
+cfsBOINC_SOURCES = $(CFSsources) screensaver/src/starlist.C screensaver/src/starsphere.C screensaver/src/user_text.C
+cfsBOINC_LDFLAGS =  -L$(HOME_BOINC)/lib -L$(HOME_OPENGL)/lib -static -lboinc -lboinc_api -lboinc_graphics_api -lGL -lboincglut -lglut
+cfsBOINC_CPPFLAGS = -I$(HOME_OPENGL)/include -I$(HOME_BOINC)/include -DUSE_BOINC ##-DNO_BOINC_GRAPHICS
