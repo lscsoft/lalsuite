@@ -59,8 +59,10 @@ LALTimeSeriesToTFPlane (
   ASSERT (input->dftParams, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
   ASSERT (input->dftParams->plan, status, TFTRANSFORM_ENULLP, 
           TFTRANSFORM_MSGENULLP);
-  ASSERT (input->dftParams->plan->plan, status, TFTRANSFORM_ENULLP, 
-          TFTRANSFORM_MSGENULLP);
+  /* OMITTED -- JC
+   * ASSERT (input->dftParams->plan->plan, status, TFTRANSFORM_ENULLP, 
+   *       TFTRANSFORM_MSGENULLP);
+   */
   ASSERT (input->dftParams->window, status, TFTRANSFORM_ENULLP, 
           TFTRANSFORM_MSGENULLP);
   ASSERT (input->dftParams->window->data, status, TFTRANSFORM_ENULLP, 
@@ -109,14 +111,18 @@ LALTimeSeriesToTFPlane (
   tseglength = 2 * nforig;
 
   ASSERT( nforig>0, status, TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);  
-  ASSERT( tseglength == (INT4)input->dftParams->plan->size, status, 
-          TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+  /* OMITTED -- JC
+   * ASSERT( tseglength == (INT4)input->dftParams->plan->size, status, 
+   *        TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+   */
   ASSERT( tseglength == (INT4)input->dftParams->window->length, status, 
           TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
 
   /* Supplied FFT plan must be in forward direction */
-  ASSERT( input->dftParams->plan->sign==1, status, 
-          TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+  /* OMITTED -- JC
+   * ASSERT( input->dftParams->plan->sign==1, status, 
+   *        TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+   */
   
   /* Input hetrydyne frequency must be non-negative */
   ASSERT(timeSeries->f0 >= 0.0, status, TFTRANSFORM_EPOSARG,

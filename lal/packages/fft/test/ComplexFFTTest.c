@@ -1,45 +1,41 @@
-#if 0 /* autodoc block */
+/**** <lalVerbatim file="ComplexFFTTestCV">
+ * $Id$
+ **** </lalVerbatim> */
 
-<lalVerbatim file="ComplexFFTTestCV">
-$Id$
-</lalVerbatim>
-
-<lalLaTeX>
-
-\subsection{Program \texttt{ComplexFFTTest.c}}
-\label{ss:ComplexFFTTest.c}
-
-Tests the routines in \verb+ComplexFFT.h+.
-
-\subsection*{Usage}
-\begin{verbatim}
-ComplexFFTTest [options]
-Options:
-  -h         print this message
-  -q         quiet: run silently
-  -v         verbose: print extra information
-  -d level   set lalDebugLevel to level
-\end{verbatim}
-
-\subsubsection*{Description}
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Success, normal exit.         \\
-\tt 1 & Subroutine failed.            \\
-\hline
-\end{tabular}
-
-\subsubsection*{Uses}
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{ComplexFFTTestCV}}
-
-</lalLaTeX>
-
-#endif /* autodoc block */
+/**** <lalLaTeX>
+ * 
+ * \subsection{Program \texttt{ComplexFFTTest.c}}
+ * \label{ss:ComplexFFTTest.c}
+ * 
+ * Tests the routines in \verb+ComplexFFT.h+.
+ * 
+ * \subsection*{Usage}
+ * \begin{verbatim}
+ * ComplexFFTTest [options]
+ * Options:
+ *   -h         print this message
+ *   -q         quiet: run silently
+ *   -v         verbose: print extra information
+ *   -d level   set lalDebugLevel to level
+ * \end{verbatim}
+ * 
+ * \subsubsection*{Description}
+ * \subsubsection*{Exit codes}
+ * \begin{tabular}{|c|l|}
+ * \hline
+ * Code & Explanation                   \\
+ * \hline
+ * \tt 0 & Success, normal exit.         \\
+ * \tt 1 & Subroutine failed.            \\
+ * \hline
+ * \end{tabular}
+ * 
+ * \subsubsection*{Uses}
+ * \subsubsection*{Notes}
+ * 
+ * \vfill{\footnotesize\input{ComplexFFTTestCV}}
+ * 
+ **** </lalLaTeX> */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,7 +64,7 @@ extern char *optarg;
 extern int   optind;
 
 int lalDebugLevel = 0;
-int verbose    = 0;
+int verbose       = 0;
 
 static void
 Usage( const char *program, int exitflag );
@@ -88,92 +84,92 @@ CheckErrorCodes( void );
 int
 main( int argc, char *argv[] )
 {
-  const UINT4 n       = 17;
-  const REAL4 epsilon = 1e-6;
+  const UINT4 n   = 17;
+  const REAL4 eps = 1e-6;
 
-  static LALStatus stat;
-  ComplexFFTPlan *pfwd = NULL;
-  ComplexFFTPlan *pinv = NULL;
-  COMPLEX8Vector *avec = NULL;
-  COMPLEX8Vector *bvec = NULL;
-  COMPLEX8Vector *cvec = NULL;
+  static LALStatus  status;
+  ComplexFFTPlan   *pfwd = NULL;
+  ComplexFFTPlan   *prev = NULL;
+  COMPLEX8Vector   *avec = NULL;
+  COMPLEX8Vector   *bvec = NULL;
+  COMPLEX8Vector   *cvec = NULL;
 
   FILE *fp;
-  INT4  i;
+  UINT4 i;
 
   ParseOptions( argc, argv );
 
   fp = verbose ? stdout : NULL ;
 
-  LALCCreateVector( &stat, &avec, n );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALCCreateVector( &status, &avec, n );
+  TestStatus( &status, CODES( 0 ), 1 );
 
-  LALCCreateVector( &stat, &bvec, n );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALCCreateVector( &status, &bvec, n );
+  TestStatus( &status, CODES( 0 ), 1 );
 
-  LALCCreateVector( &stat, &cvec, n );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALCCreateVector( &status, &cvec, n );
+  TestStatus( &status, CODES( 0 ), 1 );
 
-  LALEstimateFwdComplexFFTPlan( &stat, &pfwd, n );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALCreateForwardComplexFFTPlan( &status, &pfwd, n, 0 );
+  TestStatus( &status, CODES( 0 ), 1 );
 
-  LALEstimateInvComplexFFTPlan( &stat, &pinv, n );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALCreateReverseComplexFFTPlan( &status, &prev, n, 0 );
+  TestStatus( &status, CODES( 0 ), 1 );
 
 
-  for ( i = 0; i < (INT4) n; ++i )
+  for ( i = 0; i < n; ++i )
   {
-    avec->data[i].im = i % 5 - 2;
-    avec->data[i].re = i % 3 - 1;
+    avec->data[i].im = rand() % 5 - 2;
+    avec->data[i].re = rand() % 3 - 1;
     fp ? fprintf( fp, "%+.0f\t%+.0f\n", avec->data[i].re, avec->data[i].im )
        : 0;
   }
   fp ? fprintf( fp, "\n" ) : 0;
 
-  LALCOMPLEX8VectorFFT( &stat, bvec, avec, pfwd );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALCOMPLEX8VectorFFT( &status, bvec, avec, pfwd );
+  TestStatus( &status, CODES( 0 ), 1 );
 
-  for ( i = 0; i < (INT4) n; ++i )
+  for ( i = 0; i < n; ++i )
   {
     fp ? fprintf( fp, "%+f\t%+f\n", bvec->data[i].re, bvec->data[i].im ) : 0;
   }
   fp ? fprintf( fp, "\n" ) : 0;
 
-  LALCOMPLEX8VectorFFT( &stat, cvec, bvec, pinv );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALCOMPLEX8VectorFFT( &status, cvec, bvec, prev );
+  TestStatus( &status, CODES( 0 ), 1 );
 
-  for ( i = 0; i < (INT4) n; ++i )
+  for ( i = 0; i < n; ++i )
   {
     cvec->data[i].re /= n;
     cvec->data[i].im /= n;
     fp ? fprintf( fp, "%+.0f\t%+.0f\n", cvec->data[i].re, cvec->data[i].im )
        : 0;
-    if ( fabs( avec->data[i].re - cvec->data[i].re ) > epsilon )
+    if ( fabs( avec->data[i].re - cvec->data[i].re ) > eps )
     {
       fprintf( stderr, "FAIL: IFFT( FFT( a[] ) ) not equal to a[].\n" );
       return 1;
     }
-    if ( fabs( avec->data[i].im - cvec->data[i].im ) > epsilon )
+    if ( fabs( avec->data[i].im - cvec->data[i].im ) > eps )
     {
       fprintf( stderr, "FAIL: IFFT( FFT( a[] ) ) not equal to a[].\n" );
       return 1;
     }
   }
 
-  LALDestroyComplexFFTPlan( &stat, &pinv );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALDestroyComplexFFTPlan( &status, &prev );
+  TestStatus( &status, CODES( 0 ), 1 );
 
-  LALDestroyComplexFFTPlan( &stat, &pfwd );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALDestroyComplexFFTPlan( &status, &pfwd );
+  TestStatus( &status, CODES( 0 ), 1 );
 
-  LALCDestroyVector( &stat, &cvec );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALCDestroyVector( &status, &cvec );
+  TestStatus( &status, CODES( 0 ), 1 );
 
-  LALCDestroyVector( &stat, &bvec );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALCDestroyVector( &status, &bvec );
+  TestStatus( &status, CODES( 0 ), 1 );
 
-  LALCDestroyVector( &stat, &avec );
-  TestStatus( &stat, CODES( 0 ), 1 );
+  LALCDestroyVector( &status, &avec );
+  TestStatus( &status, CODES( 0 ), 1 );
 
   fp ? fprintf( fp, "\nChecking error codes:\n\n" ) : 0;
   CheckErrorCodes();
@@ -182,6 +178,14 @@ main( int argc, char *argv[] )
   return 0;
 }
 
+/* need to have definition of tagComplexFFTPlan to corrupt it */
+struct
+tagComplexFFTPlan
+{
+  INT4   sign;
+  UINT4  size;
+  void  *plan;
+};
 
 static void
 CheckErrorCodes( void )
@@ -189,7 +193,7 @@ CheckErrorCodes( void )
 #ifndef LAL_NDEBUG
   enum { Size = 19 };
   const UINT4 size = Size;
-  static LALStatus stat;
+  static LALStatus status;
   ComplexFFTPlan *plan;
   ComplexFFTPlan  aplan;
   COMPLEX8Vector  avec;
@@ -201,84 +205,84 @@ CheckErrorCodes( void )
   {
     aplan.size = size;
 
-    LALEstimateFwdComplexFFTPlan( &stat, NULL, size );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALEstimateInvComplexFFTPlan( &stat, NULL, size );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALMeasureFwdComplexFFTPlan( &stat, NULL, size );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALMeasureInvComplexFFTPlan( &stat, NULL, size );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENULL ), 1 );
+    LALEstimateFwdComplexFFTPlan( &status, NULL, size );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
+    LALEstimateInvComplexFFTPlan( &status, NULL, size );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
+    LALMeasureFwdComplexFFTPlan( &status, NULL, size );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
+    LALMeasureInvComplexFFTPlan( &status, NULL, size );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
 
     plan = &aplan;
-    LALEstimateFwdComplexFFTPlan( &stat, &plan, size );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENNUL ), 1 );
-    LALEstimateInvComplexFFTPlan( &stat, &plan, size );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENNUL ), 1 );
-    LALMeasureFwdComplexFFTPlan( &stat, &plan, size );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENNUL ), 1 );
-    LALMeasureInvComplexFFTPlan( &stat, &plan, size );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENNUL ), 1 );
+    LALEstimateFwdComplexFFTPlan( &status, &plan, size );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENNUL ), 1 );
+    LALEstimateInvComplexFFTPlan( &status, &plan, size );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENNUL ), 1 );
+    LALMeasureFwdComplexFFTPlan( &status, &plan, size );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENNUL ), 1 );
+    LALMeasureInvComplexFFTPlan( &status, &plan, size );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENNUL ), 1 );
 
     plan = NULL;
-    LALEstimateFwdComplexFFTPlan( &stat, &plan, 0 );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ESIZE ), 1 );
-    LALEstimateInvComplexFFTPlan( &stat, &plan, 0 );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ESIZE ), 1 );
-    LALMeasureFwdComplexFFTPlan( &stat, &plan, 0 );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ESIZE ), 1 );
-    LALMeasureInvComplexFFTPlan( &stat, &plan, 0 );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ESIZE ), 1 );
+    LALEstimateFwdComplexFFTPlan( &status, &plan, 0 );
+    TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
+    LALEstimateInvComplexFFTPlan( &status, &plan, 0 );
+    TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
+    LALMeasureFwdComplexFFTPlan( &status, &plan, 0 );
+    TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
+    LALMeasureInvComplexFFTPlan( &status, &plan, 0 );
+    TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
 
-    LALDestroyComplexFFTPlan( &stat, &plan );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALDestroyComplexFFTPlan( &stat, NULL );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENULL ), 1 );
+    LALDestroyComplexFFTPlan( &status, &plan );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
+    LALDestroyComplexFFTPlan( &status, NULL );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
 
     plan        = &aplan;
     avec.length = size;
     bvec.length = size;
     avec.data   = adat;
     bvec.data   = bdat;
-    LALCOMPLEX8VectorFFT( &stat, NULL, &avec, plan );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALCOMPLEX8VectorFFT( &stat, &bvec, NULL, plan );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENULL ), 1 );
-    LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, NULL );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENULL ), 1 );
+    LALCOMPLEX8VectorFFT( &status, NULL, &avec, plan );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
+    LALCOMPLEX8VectorFFT( &status, &bvec, NULL, plan );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
+    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, NULL );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
 
     avec.data = NULL;
     bvec.data = bdat;
-    LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENULL ), 1 );
+    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
 
     avec.data = adat;
     bvec.data = NULL;
-    LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ENULL ), 1 );
+    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
+    TestStatus( &status, CODES( COMPLEXFFTH_ENULL ), 1 );
 
     avec.data = adat;
     bvec.data = adat;
-    LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ESAME ), 1 );
+    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
+    TestStatus( &status, CODES( COMPLEXFFTH_ESAME ), 1 );
 
     aplan.size = 0;
     avec.data  = adat;
     avec.data  = bdat;
-    LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ESIZE ), 1 );
+    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
+    TestStatus( &status, CODES( COMPLEXFFTH_ESIZE ), 1 );
 
     aplan.size  = size;
     avec.length = 0;
     bvec.length = size;
-    LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ESZMM ), 1 );
+    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
+    TestStatus( &status, CODES( COMPLEXFFTH_ESZMM ), 1 );
 
     aplan.size  = size;
     avec.length = size;
     bvec.length = 0;
-    LALCOMPLEX8VectorFFT( &stat, &bvec, &avec, plan );
-    TestStatus( &stat, CODES( COMPLEXFFTH_ESZMM ), 1 );
+    LALCOMPLEX8VectorFFT( &status, &bvec, &avec, plan );
+    TestStatus( &status, CODES( COMPLEXFFTH_ESZMM ), 1 );
   }
 #endif
 

@@ -124,10 +124,8 @@ LALComputeSpectrum (
   ASSERT (parameters, status, SPECBUFFERH_ENULL, SPECBUFFERH_MSGENULL);
 
   /* make sure sizes are reasonable and agree */
-  n = parameters->plan->size;
+  n = timeSeries->data->length;
   ASSERT (n > 0, status, SPECBUFFERH_ESIZE, SPECBUFFERH_MSGESIZE);
-  ASSERT (timeSeries->data->length == n, status,
-          SPECBUFFERH_ESZMM, SPECBUFFERH_MSGESZMM);
   ASSERT (spectrum->data->length == n/2 + 1, status,
           SPECBUFFERH_ESZMM, SPECBUFFERH_MSGESZMM);
   ASSERT (parameters->window->length == n, status,

@@ -57,8 +57,10 @@ LALFreqSeriesToTFPlane (
   ASSERT (input->dftParams, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
   ASSERT (input->dftParams->plan, status, TFTRANSFORM_ENULLP, 
           TFTRANSFORM_MSGENULLP);
-  ASSERT (input->dftParams->plan->plan, status, TFTRANSFORM_ENULLP, 
-          TFTRANSFORM_MSGENULLP);
+  /* OMITTED -- JC
+   * ASSERT (input->dftParams->plan->plan, status, TFTRANSFORM_ENULLP, 
+   *       TFTRANSFORM_MSGENULLP);
+   */
   ASSERT (input->dftParams->window, status, TFTRANSFORM_ENULLP, 
           TFTRANSFORM_MSGENULLP);
   ASSERT (input->dftParams->window->data, status, TFTRANSFORM_ENULLP, 
@@ -109,14 +111,18 @@ LALFreqSeriesToTFPlane (
   ASSERT( fseglength >= nt, status, TFTRANSFORM_EINCOMP, 
           TFTRANSFORM_MSGEINCOMP);
 
-  ASSERT( fseglength == (INT4)input->dftParams->plan->size, status, 
-          TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+  /* OMITTED -- JC
+   * ASSERT( fseglength == (INT4)input->dftParams->plan->size, status, 
+   *        TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+   */
   ASSERT( fseglength == (INT4)input->dftParams->window->length, status, 
           TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
 
   /* Supplied FFT plan must be in inverse direction */
-  ASSERT( input->dftParams->plan->sign==-1, status, 
-          TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+  /* OMITTED -- JC
+   * ASSERT( input->dftParams->plan->sign==-1, status, 
+   *       TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+   */
 
   /* Input lowest frequency must be non-negative */
   ASSERT(freqSeries->f0 >= 0.0, status, TFTRANSFORM_EPOSARG,

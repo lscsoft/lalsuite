@@ -1,117 +1,105 @@
-#if 0  /* autodoc block */
+/**** <lalVerbatim file="ComplexFFTCV">
+ * $Id$
+ **** </lalVerbatim> */
 
-<lalVerbatim file="ComplexFFTCV">
-$Id$
-</lalVerbatim>
-
-<lalLaTeX>
-\subsection{Module \texttt{ComplexFFT.c}}
-\label{ss:ComplexFFT.c}
-
-Functions for performing complex FFTs.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ComplexFFTCP}
-\index{\texttt{LALEstimateFwdComplexFFTPlan()}}
-\index{\texttt{LALEstimateInvComplexFFTPlan()}}
-\index{\texttt{LALMeasureFwdComplexFFTPlan()}}
-\index{\texttt{LALMeasureInvComplexFFTPlan()}}
-\index{\texttt{LALDestroyComplexFFTPlan()}}
-\index{\texttt{LALCOMPLEX8VectorFFT()}}
-
-\subsubsection*{Description}
-
-This package provides a LAL-style interface with the FFTW fast Fourier
-transform package~\cite{fj:1998}.
-
-The routines \texttt{LALEstimateFwdComplexFFTPlan()},
-\texttt{LALEstimateInvComplexFFTPlan()}, \texttt{LALMeasureFwdComplexFFTPlan()}, and
-\texttt{LALMeasureInvComplexFFTPlan()} create plans for computing the forward and
-inverse FFTs.  The optimum plan is either estimated (reasonably fast) or
-measured (can be time-consuming, but gives better performance).  The routine
-\texttt{LALDestroyComplexFFTPlan()} destroys any of these flavours of plans.
-
-The routine \texttt{LALCOMPLEX8VectorFFT()} performs either the forward or
-inverse FFT depending on the plan.  The discrete Fourier transform $H_k$,
-$k=0\ldots n-1$ of a vector $h_j$, $j=0\ldots n-1$, of length $n$ is defined
-by
-\[
-  H_k = \sum_{j=0}^{n-1} h_j e^{2\pi ijk/n}
-\]
-and, similarly, the inverse Fourier transform is defined by
-\[
-  h_j = \frac{1}{n}\sum_{k=0}^{n-1} H_k e^{-2\pi ijk/n}.
-\]
-However, the present implementation of the inverse FFT omits the factor of
-$1/n$.
-
-
-\subsubsection*{Operating Instructions}
-
-\begin{verbatim}
-const UINT4 n = 17;   /* example length of sequence of vectors */
-
-static LALStatus status; 
-
-ComplexFFTPlan *pfwd = NULL;
-ComplexFFTPlan *pinv = NULL;
-COMPLEX8Vector *avec = NULL;
-COMPLEX8Vector *bvec = NULL;
-COMPLEX8Vector *cvec = NULL;
-
-/* create data vector and sequence */
-LALEstimateFwdComplexFFTPlan( &status, &pfwd, n );
-LALEstimateInvComplexFFTPlan( &status, &pinv, n );
-LALCCreateVector( &status, &avec, n );
-LALCCreateVector( &status, &bvec, n );
-LALCCreateVector( &status, &cvec, n );
-
-/* assign data ... */
-
-/* perform FFTs */
-LALCOMPLEX8VectorFFT( &status, bvec, avec, pfwd );
-LALCOMPLEX8VectorFFT( &status, cvec, bvec, pinv );
-
-/* destroy plans, vectors, and sequences */
-LALDestroyComplexFFTPlan( &status, &pfwd );
-LALDestroyComplexFFTPlan( &status, &pinv );
-LALCDestroyVector( &status, &avec );
-LALCDestroyVector( &status, &bvec );
-LALCDestroyVector( &status, &cvec );
-\end{verbatim}
-
-\subsubsection*{Algorithm}
-
-The FFTW~\cite{fj:1998} is used.
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\begin{enumerate}
-\item The sign convention used here agrees with the definition in
-\textit{Numerical Recipes}~\cite{ptvf:1992}, but is opposite from the one used
-by FFTW~\cite{fj:1998}.  It is also the opposite of that used by the
-\texttt{datacondAPI}.  To convert, use the relation:
-\verb+H_LAL[k] = H_datacond[n-k]+ (for $0<\verb+k+\le\verb+n/2+$).
-\item The result of the inverse FFT must be multiplied by $1/n$ to recover the
-original vector.  This is different from the convension used in the
-\texttt{datacondAPI} where the factor is applied by default.
-\item The size $n$ of the transform can be any positive integer; the
-performance is $O(n\log n)$.  However, better performance is obtained if $n$
-is the product of powers of 2, 3, 5, 7, and zero or one power of either 11 or
-13.  Transforms when $n$ is a power of 2 are especially fast.  See
-Ref.~\cite{fj:1998}.
-\item LALMalloc() is used by all the fftw routines.
-\end{enumerate}
-
-\vfill{\footnotesize\input{ComplexFFTCV}}
-
-</lalLaTeX>
-
-#endif /* autodoc block */
-
+/**** <lalLaTeX>
+ * \subsection{Module \texttt{ComplexFFT.c}}
+ * \label{ss:ComplexFFT.c}
+ * 
+ * Functions for performing complex FFTs.
+ * 
+ * \subsubsection*{Prototypes}
+ * \vspace{0.1in}
+ * \input{ComplexFFTCP}
+ * \index{\texttt{LALCreateForwardComplexFFTPlan()}}
+ * \index{\texttt{LALCreateReverseComplexFFTPlan()}}
+ * \index{\texttt{LALDestroyComplexFFTPlan()}}
+ * \index{\texttt{LALCOMPLEX8VectorFFT()}}
+ * 
+ * \subsubsection*{Description}
+ * 
+ * This package provides a LAL-style interface with the FFTW fast Fourier
+ * transform package~\cite{fj:1998}.
+ * 
+ * The routines \texttt{LALCreateForwardComplexFFTPlan()} and
+ * \texttt{LALCreateReverseComplexFFTPlan()} create plans for computing the
+ * forward and reverse FFTs of a given size.  The optimum plan is either
+ * estimated (reasonably fast) if the measure flag is zero, or measured (can be
+ * time-consuming, but gives better performance) if the measure flag is
+ * non-zero.  The routine \texttt{LALDestroyComplexFFTPlan()} destroys either
+ * of these flavours of plans.
+ * 
+ * The routine \texttt{LALCOMPLEX8VectorFFT()} performs either the forward or
+ * reverse FFT depending on the plan.  The discrete Fourier transform $H_k$,
+ * $k=0\ldots n-1$ of a vector $h_j$, $j=0\ldots n-1$, of length $n$ is defined
+ * by
+ * \[
+ *   H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
+ * \]
+ * and, similarly, the \emph{inverse} Fourier transform is defined by
+ * \[
+ *   h_j = \frac{1}{n}\sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}.
+ * \]
+ * However, the present implementation of the \emph{reverse} FFT omits the
+ * factor of $1/n$.  The input and output vectors must be distinct.
+ * 
+ * \subsubsection*{Operating Instructions}
+ * 
+ * \begin{verbatim}
+ * const UINT4 n = 17;
+ * static LALStatus status; 
+ * ComplexFFTPlan *pfwd = NULL;
+ * ComplexFFTPlan *prev = NULL;
+ * COMPLEX8Vector *avec = NULL;
+ * COMPLEX8Vector *bvec = NULL;
+ * COMPLEX8Vector *cvec = NULL;
+ * 
+ * LALCreateForwardComplexFFTPlan( &status, &pfwd, n, 0 );
+ * LALCreateReverseComplexFFTPlan( &status, &prev, n, 0 );
+ * LALCCreateVector( &status, &avec, n );
+ * LALCCreateVector( &status, &bvec, n );
+ * LALCCreateVector( &status, &cvec, n );
+ * 
+ * <assign data>
+ *
+ * LALCOMPLEX8VectorFFT( &status, bvec, avec, pfwd );
+ * LALCOMPLEX8VectorFFT( &status, cvec, bvec, prev );
+ *
+ * LALDestroyComplexFFTPlan( &status, &pfwd );
+ * LALDestroyComplexFFTPlan( &status, &prev );
+ * LALCDestroyVector( &status, &avec );
+ * LALCDestroyVector( &status, &bvec );
+ * LALCDestroyVector( &status, &cvec );
+ * \end{verbatim}
+ * 
+ * \subsubsection*{Algorithm}
+ * 
+ * The FFTW~\cite{fj:1998} is used.
+ * 
+ * \subsubsection*{Uses}
+ * 
+ * \subsubsection*{Notes}
+ * 
+ * \begin{enumerate}
+ * \item The sign convention used here is the opposite of the definition in
+ * \textit{Numerical Recipes}~\cite{ptvf:1992}, but agrees with the one used
+ * by FFTW~\cite{fj:1998} and the other LIGO software components.
+ * \item The result of the inverse FFT must be multiplied by $1/n$ to recover
+ * the original vector.  This is different from the \texttt{datacondAPI} where
+ * the factor is applied by default.
+ * \item The size $n$ of the transform can be any positive integer; the
+ * performance is $O(n\log n)$.  However, better performance is obtained if $n$
+ * is the product of powers of 2, 3, 5, 7, and zero or one power of either 11
+ * or 13.  Transforms when $n$ is a power of 2 are especially fast.  See
+ * Ref.~\cite{fj:1998}.
+ * \item LALMalloc() is used by all the fftw routines.
+ * \item The input and output vectors for \texttt+LALCOMPLEX8VectorFFT()+ must
+ * be distinct.
+ * \end{enumerate}
+ * 
+ * \vfill{\footnotesize\input{ComplexFFTCV}}
+ * 
+ **** </lalLaTeX> */
 
 #include <config.h>
 
@@ -134,15 +122,170 @@ NRCSID( COMPLEXFFTC, "$Id$" );
 #define FFTWHOOKS \
   do { fftw_malloc_hook = LALMalloc; fftw_free_hook = LALFree; } while(0)
 
+struct
+tagComplexFFTPlan
+{
+  INT4      sign;
+  UINT4     size;
+  fftw_plan plan;
+};
 
 /* <lalVerbatim file="ComplexFFTCP"> */  
+void
+LALCreateForwardComplexFFTPlan(
+    LALStatus       *status,
+    ComplexFFTPlan **plan,
+    UINT4            size,
+    INT4             measure
+    )
+{ /* </lalVerbatim> */
+  int flags = FFTW_THREADSAFE | ( measure ? FFTW_MEASURE : FFTW_ESTIMATE );
+  INITSTATUS( status, "LALCreateForwardComplexFFTPlan", COMPLEXFFTC );
+  FFTWHOOKS;
+
+  ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
+  ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
+  ASSERT( size > 0, status, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );
+
+  /* allocate memory */
+  *plan = LALMalloc( sizeof( **plan ) );
+  if ( ! *plan )
+  {
+    ABORT( status, COMPLEXFFTH_EALOC, COMPLEXFFTH_MSGEALOC );
+  }
+
+  /* assign plan fields */
+  (*plan)->size = size;
+  (*plan)->sign = -1;
+
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  (*plan)->plan = fftw_create_plan( size, FFTW_FORWARD, flags );
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  if ( !(*plan)->plan )
+  {
+    LALFree( *plan );
+    *plan = NULL;
+    ABORT( status, COMPLEXFFTH_EFFTW, COMPLEXFFTH_MSGEFFTW );
+  }
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="ComplexFFTCP"> */  
+void
+LALCreateReverseComplexFFTPlan(
+    LALStatus       *status,
+    ComplexFFTPlan **plan,
+    UINT4            size,
+    INT4             measure
+    )
+{ /* </lalVerbatim> */
+  int flags = FFTW_THREADSAFE | ( measure ? FFTW_MEASURE : FFTW_ESTIMATE );
+  INITSTATUS( status, "LALCreateReverseComplexFFTPlan", COMPLEXFFTC );
+  FFTWHOOKS;
+
+  ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
+  ASSERT( ! *plan, status, COMPLEXFFTH_ENNUL, COMPLEXFFTH_MSGENNUL );
+  ASSERT( size > 0, status, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );
+
+  /* allocate memory */
+  *plan = LALMalloc( sizeof( **plan ) );
+  if ( ! *plan )
+  {
+    ABORT( status, COMPLEXFFTH_EALOC, COMPLEXFFTH_MSGEALOC );
+  }
+
+  /* assign plan fields */
+  (*plan)->size = size;
+  (*plan)->sign = 1;
+
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  (*plan)->plan = fftw_create_plan( size, FFTW_BACKWARD, flags );
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  if ( !(*plan)->plan )
+  {
+    LALFree( *plan );
+    *plan = NULL;
+    ABORT( status, COMPLEXFFTH_EFFTW, COMPLEXFFTH_MSGEFFTW );
+  }
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="ComplexFFTCP"> */  
+void
+LALDestroyComplexFFTPlan (
+    LALStatus       *status,
+    ComplexFFTPlan **plan
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALDestroyComplexFFTPlan", COMPLEXFFTC );
+  FFTWHOOKS;
+
+  ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
+  ASSERT( *plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
+
+  /* destroy plan and set to NULL pointer */
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  fftw_destroy_plan( (*plan)->plan );
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LALFree( *plan );
+  *plan = NULL;
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="ComplexFFTCP"> */  
+void
+LALCOMPLEX8VectorFFT (
+    LALStatus      *status,
+    COMPLEX8Vector *output,
+    COMPLEX8Vector *input,
+    ComplexFFTPlan *plan
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALCOMPLEX8VectorFFT", COMPLEXFFTC );
+  FFTWHOOKS;
+
+  ASSERT( output, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
+  ASSERT( input, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
+  ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
+
+  ASSERT( output->data, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
+  ASSERT( input->data, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
+
+  /* make sure that it is not the same data! */
+  ASSERT( output->data != input->data, status,
+          COMPLEXFFTH_ESAME, COMPLEXFFTH_MSGESAME );
+
+  /* make sure that the lengths agree */
+  ASSERT( plan->size > 0, status, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );
+  ASSERT( output->length == plan->size, status,
+          COMPLEXFFTH_ESZMM, COMPLEXFFTH_MSGESZMM );
+  ASSERT( input->length == plan->size, status,
+          COMPLEXFFTH_ESZMM, COMPLEXFFTH_MSGESZMM );
+
+  fftw_one(
+      plan->plan,
+      (fftw_complex *)input->data,
+      (fftw_complex *)output->data
+      );
+
+  RETURN( status );
+}
+
+#ifdef KEEP_OLD_COMPLEX_FFT
+
 void
 LALEstimateFwdComplexFFTPlan (
     LALStatus       *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( stat, "LALEstimateFwdComplexFFTPlan", COMPLEXFFTC );
 
   FFTWHOOKS;
@@ -181,14 +324,13 @@ LALEstimateFwdComplexFFTPlan (
 }
 
 
-/* <lalVerbatim file="ComplexFFTCP"> */  
 void
 LALEstimateInvComplexFFTPlan (
     LALStatus       *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( stat, "LALEstimateInvComplexFFTPlan", COMPLEXFFTC );
 
   FFTWHOOKS;
@@ -227,14 +369,13 @@ LALEstimateInvComplexFFTPlan (
 }
 
 
-/* <lalVerbatim file="ComplexFFTCP"> */  
 void
 LALMeasureFwdComplexFFTPlan (
     LALStatus       *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( stat, "LALMeasureFwdComplexFFTPlan", COMPLEXFFTC );
 
   FFTWHOOKS;
@@ -273,14 +414,13 @@ LALMeasureFwdComplexFFTPlan (
 }
 
 
-/* <lalVerbatim file="ComplexFFTCP"> */  
 void
 LALMeasureInvComplexFFTPlan (
     LALStatus       *stat,
     ComplexFFTPlan **plan,
     UINT4            size
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( stat, "LALMeasureInvComplexFFTPlan", COMPLEXFFTC );
 
   FFTWHOOKS;
@@ -318,76 +458,4 @@ LALMeasureInvComplexFFTPlan (
   RETURN( stat );
 }
 
-
-/* <lalVerbatim file="ComplexFFTCP"> */  
-void
-LALDestroyComplexFFTPlan (
-    LALStatus       *stat,
-    ComplexFFTPlan **plan
-    )
-{ /* </lalVerbatim> */
-  INITSTATUS (stat, "LALDestroyComplexFFTPlan", COMPLEXFFTC);
-
-  FFTWHOOKS;
-
-  /* make sure that the argument is not NULL */
-  ASSERT( plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* check that the plan is not NULL */
-  ASSERT( *plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* destroy plan and set to NULL pointer */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
-  fftw_destroy_plan( (fftw_plan)(*plan)->plan );
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-  LALFree( *plan );
-  *plan = NULL;
-
-  /* normal exit */
-  RETURN( stat );
-}
-
-
-/* <lalVerbatim file="ComplexFFTCP"> */  
-void
-LALCOMPLEX8VectorFFT (
-    LALStatus      *stat,
-    COMPLEX8Vector *vout,
-    COMPLEX8Vector *vinp,
-    ComplexFFTPlan *plan
-    )
-{ /* </lalVerbatim> */
-  INITSTATUS( stat, "LALCOMPLEX8VectorFFT", COMPLEXFFTC );
-
-  FFTWHOOKS;
-
-  /* make sure that the arguments are not NULL */
-  ASSERT( vout, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-  ASSERT( vinp, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-  ASSERT( plan, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* make sure that the data exists */
-  ASSERT( vout->data, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-  ASSERT( vinp->data, stat, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
-
-  /* make sure that it is not the same data! */
-  ASSERT( vout->data != vinp->data, stat,
-          COMPLEXFFTH_ESAME, COMPLEXFFTH_MSGESAME );
-
-  /* make sure that the lengths agree */
-  ASSERT( plan->size > 0, stat, COMPLEXFFTH_ESIZE, COMPLEXFFTH_MSGESIZE );
-  ASSERT( vout->length == plan->size, stat,
-          COMPLEXFFTH_ESZMM, COMPLEXFFTH_MSGESZMM );
-  ASSERT( vinp->length == plan->size, stat,
-          COMPLEXFFTH_ESZMM, COMPLEXFFTH_MSGESZMM );
-
-  fftw_one(
-      (fftw_plan) plan->plan,
-      (fftw_complex *) vinp->data,
-      (fftw_complex *) vout->data
-      );
-
-  /* normal exit */
-  RETURN( stat );
-}
-
+#endif /* KEEP_OLD_COMPLEX_FFT */

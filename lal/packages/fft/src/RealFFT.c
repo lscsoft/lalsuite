@@ -1,179 +1,129 @@
-#if 0  /* autodoc block */
+/**** <lalVerbatim file="RealFFTCV">
+ * $Id$
+ **** </lalVerbatim> */
 
-<lalVerbatim file="RealFFTCV">
-$Id$
-</lalVerbatim>
-
-<lalLaTeX>
-\subsection{Module \texttt{RealFFT.c}}
-\label{ss:RealFFT.c}
-
-Functions for performing real FFTs.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{RealFFTCP}
-\index{\texttt{LALEstimateFwdRealFFTPlan()}}
-\index{\texttt{LALEstimateInvRealFFTPlan()}}
-\index{\texttt{LALMeasureFwdRealFFTPlan()}}
-\index{\texttt{LALMeasureInvRealFFTPlan()}}
-\index{\texttt{LALDestroyRealFFTPlan()}}
-\index{\texttt{LALREAL4VectorFFT()}}
-\index{\texttt{LALREAL4VectorSequenceFFT()}}
-\index{\texttt{LALFwdRealFFT()}}
-\index{\texttt{LALInvRealFFT()}}
-\index{\texttt{LALRealPowerSpectrum()}}
-\index{\texttt{LALFwdRealSequenceFFT()}}
-\index{\texttt{LALInvRealSequenceFFT()}}
-\index{\texttt{LALRealSequencePowerSpectrum()}}
-
-\subsubsection*{Description}
-
-This package provides a LAL-style interface with the FFTW fast Fourier
-transform package~\cite{fj:1998}.
-
-The routines \texttt{LALEstimateFwdRealFFTPlan()},
-\texttt{LALEstimateInvRealFFTPlan()}, \texttt{LALMeasureFwdRealFFTPlan()}, and
-\texttt{LALMeasureInvRealFFTPlan()} create plans for computing the forward
-(real-to-complex) and inverse (complex-to-real) FFTs.  The optimum plan is
-either estimated (reasonably fast) or measured (can be time-consuming, but
-gives better performance).  The routine \texttt{LALDestroyRealFFTPlan()}
-destroys any of these flavours of plans.
-
-The routines \texttt{LALREAL4VectorFFT()} and
-\texttt{LALREAL4VectorSequenceFFT()} are essentially direct calls to FFTW
-routines without any re-packing of the data.  These routines should not be used
-unless the user understands the packing used in FFTW.
-
-The routines \texttt{LALFwdRealFFT()} and \texttt{LALInvRealFFT()} perform the
-forward (real-to-complex) and inverse (complex-to-real) FFTs using the plans.
-The discrete Fourier transform $H_k$, $k=0\ldots \lfloor n/2\rfloor$ ($n/2$
-rounded down), of a vector $h_j$, $j=0\ldots n-1$, of length $n$ is defined by
-\[
-  H_k = \sum_{j=0}^{n-1} h_j e^{2\pi ijk/n}
-\]
-and, similarly, the inverse Fourier transform is defined by
-\[
-  h_j = \frac{1}{n} \sum_{k=0}^{n-1} H_k e^{-2\pi ijk/n}
-\]
-where $H_k$ for $\lfloor n/2\rfloor<k<n$ can be obtained from the relation
-$H_k=H_{n-k}^\ast$.  The present implementation of the inverse FFT omits the
-factor of $1/n$.
-
-The routines in this package require that the vector $h_j$, $j=0\ldots n-1$ be
-real; consequently, $H_k=H_{n-k}^\ast$ ($0\le k\le\lfloor n/2\rfloor$), i.e.,
-the negative frequency Fourier components are the complex conjugate of the
-positive frequency Fourier components when the data is real.  Therefore, one
-need compute and store only the first $\lfloor n/2\rfloor+1$ components of
-$H_k$; only the values of $H_k$ for $k=0\ldots \lfloor n/2\rfloor$ are
-returned (integer division is rounded down, e.g., $\lfloor 7/2\rfloor=3$).
-
-The routine \texttt{LALRealPowerSpectrum()} computes the power spectrum
-$P_k=|H_k|^2$, $k=0\ldots \lfloor n/2\rfloor$, of the data $h_j$,
-$j=0\ldots n-1$.
-
-The routines \texttt{LALFwdRealSequenceFFT()} and
-\texttt{LALInvRealSequenceFFT()} operate on sequences of vectors
-$\{h^{(0)}_{j_0},\ldots,h^{(m-1)}_{j_{m-1}}\}$, $j_0,\ldots,j_{m-1}=0\ldots
-n-1$, to produce the Fourier components
-$\{H^{(0)}_{k_0},\ldots,H^{(m-1)}_{k_{m-1}}\}$, $k_0,\ldots,k_{m-1}=0\ldots
-\lfloor n/2\rfloor$, and vice versa respectively.  Here, $m$ is the length of the sequence
-of vectors and $n$ and $\lfloor n/2\rfloor+1$ are the lengths of the vectors themselves.
-Similarly, the routine \texttt{LALRealSequencePowerSpectrum()} computes the power
-spectra $\{P^{(0)}_{k_0}=|H^(0)_{k_0}|^2,\ldots,P^{(m-1)}_{k_{m-1}}=
-|H^{(m-1)}_{k_{m-1}}|^2\}$, $k_0,\ldots,k_{m-1}=0\ldots n/2$, of the sequence
-of vectors $\{h^{(0)}_{j_0},\ldots,h^{(m-1)}_{j_{m-1}}\}$,
-$j_0,\ldots,j_{m-1}=0\ldots n-1$.
-
-\subsubsection*{Operating Instructions}
-
-\begin{verbatim}
-const INT4 m = 4;   /* example length of sequence of vectors */
-const INT4 n = 32;  /* example vector length */
-
-static LALStatus status; 
-
-RealFFTPlan            *pfwd = NULL;
-RealFFTPlan            *pinv = NULL;
-REAL4Vector            *hvec = NULL;
-COMPLEX8Vector         *Hvec = NULL;
-REAL4Vector            *Pvec = NULL;
-REAL4VectorSequence    *hseq = NULL;
-COMPLEX8VectorSequence *Hseq = NULL;
-REAL4VectorSequence    *Pseq = NULL;
-CreateVectorSequenceIn  seqinp;
-CreateVectorSequenceIn  seqout;
-
-/* create data vector and sequence */
-seqinp.length       = m;
-seqinp.vectorLength = n;
-seqout.length       = m;
-seqout.vectorLength = n/2 + 1;
-
-LALEstimateFwdRealFFTPlan( &status, &pfwd, n );
-LALEstimateInvRealFFTPlan( &status, &pinv, n );
-LALSCreateVector( &status, &hvec, n );
-LALCCreateVector( &status, &Hvec, n/2 + 1 );
-LALSCreateVector( &status, &Pvec, n/2 + 1 );
-LALSCreateVectorSequence( &status, &hseq, &seqinp );
-LALCCreateVectorSequence( &status, &Hseq, &seqout );
-LALSCreateVectorSequence( &status, &Pseq, &seqout );
-
-/* assign data ... */
-
-/* perform FFTs */
-LALFwdRealFFT( &status, Hvec, hvec, pfwd );
-LALInvRealFFT( &status, hvec, Hvec, pinv );
-LALRealPowerSpectrum( &status, Pvec, hvec, pfwd );
-LALFwdRealSequenceFFT( &status, Hseq, hseq, pfwd );
-LALInvRealSequenceFFT( &status, hseq, Hseq, pinv );
-LALRealSequencePowerSpectrum( &status, Pseq, hseq, pfwd );
-
-/* destroy plans, vectors, and sequences */
-LALDestroyRealFFTPlan( &status, &pfwd );
-LALDestroyRealFFTPlan( &status, &pinv );
-LALSDestroyVector( &status, &hvec );
-LALCDestroyVector( &status, &Hvec );
-LALSDestroyVector( &status, &Pvec );
-LALSDestroyVectorSequence( &status, &hseq );
-LALCDestroyVectorSequence( &status, &Hseq );
-LALSDestroyVectorSequence( &status, &Pseq );
-\end{verbatim}
-
-\subsubsection*{Algorithm}
-
-The FFTW~\cite{fj:1998} is used.
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\begin{enumerate}
-\item The sign convention used here agrees with the definition in
-\textit{Numerical Recipes}~\cite{ptvf:1992}, but is opposite from the one used
-by FFTW~\cite{fj:1998}.  It is also the opposite of that used by the
-\texttt{datacondAPI}.  To convert, use the relation:
-\verb+H_LAL[k].im = -H_datacondAPI[k].im+.
-\item The result of the inverse FFT must be multiplied by $1/n$ to recover the
-original vector.  This is unlike the \textit{Numerical
-Recipes}~\cite{ptvf:1992} convension where the factor is $2/n$ for real FFTs.
-This is also different from the \texttt{datacondAPI} where the normalization
-constant is applied by default.
-\item The size $n$ of the transform can be any positive integer; the
-performance is $O(n\log n)$.  However, better performance is obtained if $n$
-is the product of powers of 2, 3, 5, 7, and zero or one power of either 11 or
-13.  Transforms when $n$ is a power of 2 are especially fast.  See
-Ref.~\cite{fj:1998}.
-\item All of these routines leave the input array undamaged.  (Except for
-\verb+LALREAL4VectorFFT+ and \verb+LALREAL4VectorSequenceFFT+.)
-\item LALMalloc() is used by all the fftw routines.
-\end{enumerate}
-
-\vfill{\footnotesize\input{RealFFTCV}}
-
-</lalLaTeX>
-
-#endif /* autodoc block */
+/**** <lalLaTeX>
+ * \subsection{Module \texttt{RealFFT.c}}
+ * \label{ss:RealFFT.c}
+ * 
+ * Functions for performing real FFTs.
+ * 
+ * \subsubsection*{Prototypes}
+ * \vspace{0.1in}
+ * \input{RealFFTCP}
+ * \index{\texttt{LALCreateForwardRealFFTPlan()}}
+ * \index{\texttt{LALCreateReverseRealFFTPlan()}}
+ * \index{\texttt{LALDestroyRealFFTPlan()}}
+ * \index{\texttt{LALForwardRealFFT()}}
+ * \index{\texttt{LALReverseRealFFT()}}
+ * \index{\texttt{LALRealPowerSpectrum()}}
+ * \index{\texttt{LALREAL4VectorFFT()}}
+ * 
+ * \subsubsection*{Description}
+ * 
+ * This package provides a LAL-style interface with the FFTW fast Fourier
+ * transform package~\cite{fj:1998}.
+ * 
+ * The routines \texttt{LALCreateForwardRealFFTPlan()} and
+ * \texttt{LALCreateReverseRealFFTPlan()} create plans for computing the
+ * forward (real-to-complex) and reverse (complex-to-real) FFTs of a specified
+ * size.  The optimum plan is either estimated (reasonably fast) if the measure
+ * flag is zero, or measured (can be time-consuming, but gives better
+ * performance) if the measure flag is non-zero.  The routine
+ * \texttt{LALDestroyRealFFTPlan()} destroys any of these flavours of plans.
+ * 
+ * The routines \texttt{LALForwardRealFFT()} and \texttt{LALReverseRealFFT()}
+ * perform the forward (real-to-complex) and reverse (complex-to-real) FFTs
+ * using the plans.  The discrete Fourier transform $H_k$,
+ * $k=0\ldots\lfloor{n/2}\rfloor$ ($n/2$ rounded down), of a vector $h_j$,
+ * $j=0\ldots n-1$, of length $n$ is defined by
+ * \[
+ *   H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}
+ * \]
+ * and, similarly, the \emph{inverse} Fourier transform is defined by
+ * \[
+ *   h_j = \frac{1}{n} \sum_{k=0}^{n-1} H_k e^{2\pi ijk/n}
+ * \]
+ * where $H_k$ for $\lfloor{n/2}\rfloor<k<n$ can be obtained from the relation
+ * $H_k=H_{n-k}^\ast$.  The present implementation of the \emph{reverse} FFT
+ * omits the factor of $1/n$.
+ * 
+ * The routines in this package require that the vector $h_j$, $j=0\ldots n-1$
+ * be real; consequently, $H_k=H_{n-k}^\ast$ ($0\le k\le\lfloor n/2\rfloor$),
+ * i.e., the negative frequency Fourier components are the complex conjugate of
+ * the positive frequency Fourier components when the data is real.  Therefore,
+ * one need compute and store only the first $\lfloor n/2\rfloor+1$ components
+ * of $H_k$; only the values of $H_k$ for $k=0\ldots \lfloor n/2\rfloor$ are
+ * returned (integer division is rounded down, e.g., $\lfloor 7/2\rfloor=3$).
+ * 
+ * The routine \texttt{LALRealPowerSpectrum()} computes the power spectrum
+ * $P_k=|H_k|^2$, $k=0\ldots \lfloor n/2\rfloor$, of the data $h_j$,
+ * $j=0\ldots n-1$.
+ * 
+ * The routine \texttt{LALREAL4VectorFFT()} is essentially a direct calls to
+ * FFTW routines without any re-packing of the data.  This routine should not
+ * be used unless the user understands the packing used in FFTW.
+ * 
+ * \subsubsection*{Operating Instructions}
+ * 
+ * \begin{verbatim}
+ * const UINT4 n = 32;
+ * static LALStatus status; 
+ * RealFFTPlan            *pfwd = NULL;
+ * RealFFTPlan            *prev = NULL;
+ * REAL4Vector            *hvec = NULL;
+ * COMPLEX8Vector         *Hvec = NULL;
+ * REAL4Vector            *Pvec = NULL;
+ * 
+ * LALCreateForwardRealFFTPlan( &status, &pfwd, n );
+ * LALCreateReverseRealFFTPlan( &status, &prev, n );
+ * LALSCreateVector( &status, &hvec, n );
+ * LALCCreateVector( &status, &Hvec, n/2 + 1 );
+ * LALSCreateVector( &status, &Pvec, n/2 + 1 );
+ * 
+ * <assign data>
+ *
+ * LALRealPowerSpectrum( &status, Pvec, hvec, pfwd );
+ * LALForwardRealFFT( &status, Hvec, hvec, pfwd );
+ * LALReverseRealFFT( &status, hvec, Hvec, pinv );
+ * 
+ * LALDestroyRealFFTPlan( &status, &pfwd );
+ * LALDestroyRealFFTPlan( &status, &pinv );
+ * LALSDestroyVector( &status, &hvec );
+ * LALCDestroyVector( &status, &Hvec );
+ * LALSDestroyVector( &status, &Pvec );
+ * \end{verbatim}
+ * 
+ * \subsubsection*{Algorithm}
+ * 
+ * The FFTW~\cite{fj:1998} is used.
+ * 
+ * \subsubsection*{Uses}
+ * 
+ * \subsubsection*{Notes}
+ * 
+ * \begin{enumerate}
+ * \item The sign convention used here is the opposite of
+ * \textit{Numerical Recipes}~\cite{ptvf:1992}, but agrees with the one used
+ * by FFTW~\cite{fj:1998} and the other LIGO software components.
+ * \item The result of the reverse FFT must be multiplied by $1/n$ to recover
+ * the original vector.  This is unlike the \textit{Numerical
+ * Recipes}~\cite{ptvf:1992} convension where the factor is $2/n$ for real
+ * FFTs.  This is different from the \texttt{datacondAPI} where the
+ * normalization constant is applied by default.
+ * \item The size $n$ of the transform can be any positive integer; the
+ * performance is $O(n\log n)$.  However, better performance is obtained if $n$
+ * is the product of powers of 2, 3, 5, 7, and zero or one power of either 11
+ * or 13.  Transforms when $n$ is a power of 2 are especially fast.  See
+ * Ref.~\cite{fj:1998}.
+ * \item All of these routines leave the input array undamaged.  (Except for
+ * \verb+LALREAL4VectorFFT+.)
+ * \item LALMalloc() is used by all the fftw routines.
+ * \end{enumerate}
+ * 
+ * \vfill{\footnotesize\input{RealFFTCV}}
+ * 
+ **** </lalLaTeX> */
 
 
 #include <config.h>
@@ -191,30 +141,407 @@ Ref.~\cite{fj:1998}.
 #include <lal/RealFFT.h>
 #include <lal/FFTWMutex.h>
 
-#ifndef RFFTW_H
-typedef fftw_plan rfftw_plan;
-#define FFTW_REAL_TO_COMPLEX FFTW_FORWARD
-#define FFTW_COMPLEX_TO_REAL FFTW_BACKWARD
-rfftw_plan rfftw_create_plan( int, int, int );
-void rfftw_destroy_plan( rfftw_plan );
-void rfftw( rfftw_plan, int, fftw_real *, int, int, fftw_real *, int, int );
-void rfftw_one( rfftw_plan, fftw_real *, fftw_real * );
-#endif
-
-NRCSID (REALFFTC, "$Id$");
-
 /* tell FFTW to use LALMalloc and LALFree */
 #define FFTWHOOKS \
   do { fftw_malloc_hook = LALMalloc; fftw_free_hook = LALFree; } while(0)
 
+NRCSID( REALFFTC, "$Id$" );
+
+
+struct
+tagRealFFTPlan
+{
+  INT4       sign;
+  UINT4      size;
+  rfftw_plan plan;
+};
+
+
 /* <lalVerbatim file="RealFFTCP"> */  
+void
+LALCreateForwardRealFFTPlan(
+    LALStatus    *status,
+    RealFFTPlan **plan,
+    UINT4         size,
+    INT4          measure
+    )
+{ /* </lalVerbatim> */
+  int flags = FFTW_THREADSAFE | ( measure ? FFTW_MEASURE : FFTW_ESTIMATE );
+  INITSTATUS( status, "LALCreateForwardRealFFTPlan", REALFFTC );
+  FFTWHOOKS;
+
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  ASSERT( size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+
+  /* allocate memory */
+  *plan = (RealFFTPlan *) LALMalloc( sizeof( **plan ) );
+  if ( ! *plan )
+  {
+    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+  }
+
+  /* assign plan fields */
+  (*plan)->size = size;
+  (*plan)->sign = -1;
+
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  (*plan)->plan = rfftw_create_plan( size, FFTW_REAL_TO_COMPLEX, flags );
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  if ( ! (*plan)->plan )
+  {
+    LALFree( *plan );
+    *plan = NULL;
+    ABORT( status, REALFFTH_EFFTW, REALFFTH_MSGEFFTW );
+  }
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALCreateReverseRealFFTPlan(
+    LALStatus    *status,
+    RealFFTPlan **plan,
+    UINT4         size,
+    INT4          measure
+    )
+{ /* </lalVerbatim> */
+  int flags = FFTW_THREADSAFE | ( measure ? FFTW_MEASURE : FFTW_ESTIMATE );
+  INITSTATUS( status, "LALCreateReverseRealFFTPlan", REALFFTC );
+  FFTWHOOKS;
+
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( ! *plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  ASSERT( size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+
+  /* allocate memory */
+  *plan = (RealFFTPlan *) LALMalloc( sizeof( **plan ) );
+  if ( ! *plan )
+  {
+    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+  }
+
+  /* assign plan fields */
+  (*plan)->size = size;
+  (*plan)->sign = 1;
+
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  (*plan)->plan = rfftw_create_plan( size, FFTW_COMPLEX_TO_REAL, flags );
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  if ( ! (*plan)->plan )
+  {
+    LALFree( *plan );
+    *plan = NULL;
+    ABORT( status, REALFFTH_EFFTW, REALFFTH_MSGEFFTW );
+  }
+
+  RETURN( status );
+}
+  
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALDestroyRealFFTPlan(
+    LALStatus    *status,
+    RealFFTPlan **plan
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALDestroyRealFFTPlan", REALFFTC );
+  FFTWHOOKS;
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( *plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  /* destroy plan and set to NULL pointer */
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
+  rfftw_destroy_plan( (*plan)->plan );
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
+  LALFree( *plan );
+  *plan = NULL;
+
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALForwardRealFFT(
+    LALStatus      *status,
+    COMPLEX8Vector *output,
+    REAL4Vector    *input,
+    RealFFTPlan    *plan
+    )
+{ /* </lalVerbatim> */
+  fftw_real *tmp;
+  UINT4 n;
+  UINT4 k;
+
+  INITSTATUS( status, "LALForwardRealFFT", REALFFTC );
+
+  FFTWHOOKS;
+
+  ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  n = plan->size;
+  ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+  ASSERT( input->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+  ASSERT( output->length == n / 2 + 1, status,
+      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+
+  ASSERT( plan->sign == -1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
+
+  tmp = LALMalloc( n * sizeof( *tmp ) );
+  if ( ! tmp )
+  {
+    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+  }
+
+  rfftw_one( plan->plan, (fftw_real *) input->data, tmp );
+
+  /* dc component */
+  output->data[0].re = tmp[0];
+  output->data[0].im = 0;
+
+  /* other components */
+  for ( k = 1; k < ( n + 1 ) / 2; ++k ) /* k < n/2 rounded up */
+  {
+    output->data[k].re = tmp[k];
+    output->data[k].im = tmp[n - k];
+  }
+
+  /* Nyquist frequency */
+  if ( n % 2 == 0 ) /* n is even */
+  {
+    output->data[n / 2].re = tmp[n / 2];
+    output->data[n / 2].im = 0;
+  }
+
+  LALFree( tmp );
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALReverseRealFFT(
+    LALStatus      *status,
+    REAL4Vector    *output,
+    COMPLEX8Vector *input,
+    RealFFTPlan    *plan
+    )
+{ /* </lalVerbatim> */
+  fftw_real *tmp;
+  UINT4 n;
+  UINT4 k;
+
+  INITSTATUS( status, "LALReverseRealFFT", REALFFTC );
+  FFTWHOOKS;
+
+  ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  n = plan->size;
+  ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+  ASSERT( input->length == n / 2 + 1, status,
+      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+  ASSERT( output->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+
+  ASSERT( plan->sign == 1, status, REALFFTH_ESIGN, REALFFTH_MSGESIGN );
+
+  /* make sure that Nyquist is purely real if number of points is even */
+  ASSERT( n % 2 || input->data[n / 2].im == 0, status,
+      REALFFTH_EDATA, REALFFTH_MSGEDATA );
+
+  tmp = LALMalloc( n * sizeof( *tmp ) );
+  if ( ! tmp )
+  {
+    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+  }
+
+  /* dc component */
+  tmp[0] = input->data[0].re;
+
+  /* other components */
+  for ( k = 1; k < ( n + 1 ) / 2; ++k ) /* k < n / 2 rounded up */
+  {
+    tmp[k]     = input->data[k].re;
+    tmp[n - k] = input->data[k].im;
+  }
+
+  /* Nyquist component */
+  if ( n % 2 == 0 ) /* n is even */
+  {
+    tmp[n / 2] = input->data[n / 2].re;
+  }
+
+  rfftw_one( plan->plan, tmp, (fftw_real *) output->data );
+
+  LALFree( tmp );
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALRealPowerSpectrum (
+    LALStatus   *status,
+    REAL4Vector *spec,
+    REAL4Vector *data,
+    RealFFTPlan *plan
+    )
+{ /* </lalVerbatim> */
+  fftw_real *tmp;
+  UINT4 n;
+  UINT4 k;
+
+  INITSTATUS( status, "LALRealPowerSpectrum", REALFFTC );
+
+  FFTWHOOKS;
+
+  ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  ASSERT( spec->data, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  ASSERT( data->data, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  ASSERT( plan->plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+
+  n = plan->size;
+  ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+  ASSERT( data->length == n, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+  ASSERT( spec->length == n/2 + 1, status, REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+
+  tmp = LALMalloc( n * sizeof( *tmp ) );
+  if ( ! tmp )
+  {
+    ABORT( status, REALFFTH_EALOC, REALFFTH_MSGEALOC );
+  }
+
+  rfftw_one( plan->plan, (fftw_real *) data->data, tmp );
+
+  /* dc component */
+  spec->data[0] = tmp[0] * tmp[0];
+
+  /* other components */
+  for (k = 1; k < (n + 1)/2; ++k) /* k < n/2 rounded up */
+  {
+    REAL4 re = tmp[k];
+    REAL4 im = tmp[n - k];
+    spec->data[k] = re * re + im * im;
+  }
+
+  /* Nyquist frequency */
+  if (n % 2 == 0) /* n is even */
+    spec->data[n / 2] = tmp[n / 2] * tmp[n / 2];
+
+  LALFree( tmp );
+  RETURN( status );
+}
+
+
+/* <lalVerbatim file="RealFFTCP"> */  
+void
+LALREAL4VectorFFT(
+    LALStatus   *status,
+    REAL4Vector *output,
+    REAL4Vector *input,
+    RealFFTPlan *plan
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALREAL4VectorFFT", REALFFTC );
+
+  FFTWHOOKS;
+
+  ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  /* make sure that it is not the same data! */
+  ASSERT( output->data != input->data, status,
+      REALFFTH_ESAME, REALFFTH_MSGESAME );
+
+  ASSERT( plan->size > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+  ASSERT( output->length == plan->size, status,
+      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+  ASSERT( input->length == plan->size, status,
+      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+
+  rfftw_one( plan->plan, (fftw_real *)input->data, (fftw_real *)output->data );
+
+  RETURN( status );
+}
+
+
+#ifdef KEEP_OLD_REAL_FFT
+
+void
+LALREAL4VectorSequenceFFT(
+    LALStatus           *stat,
+    REAL4VectorSequence *vout,
+    REAL4VectorSequence *vinp,
+    RealFFTPlan         *plan
+    )
+{
+  INITSTATUS( stat, "LALREAL4VectorSequenceFFT", REALFFTC );
+
+  FFTWHOOKS;
+
+  /* make sure that the arguments are not NULL */
+  ASSERT( vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  /* make sure that the data exists */
+  ASSERT( vout->data, stat, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  ASSERT( vinp->data, stat, REALFFTH_ENULL, REALFFTH_MSGENULL );
+
+  /* make sure that it is not the same data! */
+  ASSERT( vout->data != vinp->data, stat, REALFFTH_ESAME, REALFFTH_MSGESAME );
+
+  /* make sure that the lengths agree */
+  ASSERT( plan->size > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
+  ASSERT( vout->vectorLength == plan->size, stat,
+      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+  ASSERT( vinp->vectorLength == plan->size, stat,
+      REALFFTH_ESZMM, REALFFTH_MSGESZMM );
+
+  ASSERT( vout->length > 0, stat, REALFFTH_ESLEN, REALFFTH_MSGESLEN );
+  ASSERT( vinp->length == vout->length, stat,
+      REALFFTH_ESLEN, REALFFTH_MSGESLEN );
+  rfftw(
+      (rfftw_plan) plan->plan, vout->length,
+      (fftw_real *)vinp->data, 1, plan->size,
+      (fftw_real *)vout->data, 1, plan->size
+      );
+
+  /* normal exit */
+  RETURN( stat );
+}
+
+
 void
 LALEstimateFwdRealFFTPlan (
     LALStatus    *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS (stat, "LALEstimateFwdRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
@@ -256,14 +583,13 @@ LALEstimateFwdRealFFTPlan (
   RETURN (stat);
 }
 
-/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALEstimateInvRealFFTPlan (
     LALStatus    *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS (stat, "LALEstimateInvRealFFTPlan", REALFFTC);
  
   FFTWHOOKS;
@@ -305,14 +631,13 @@ LALEstimateInvRealFFTPlan (
   RETURN (stat);
 }
 
-/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALMeasureFwdRealFFTPlan (
     LALStatus    *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS (stat, "LALMeasureFwdRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
@@ -354,14 +679,13 @@ LALMeasureFwdRealFFTPlan (
   RETURN (stat);
 }
 
-/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALMeasureInvRealFFTPlan (
     LALStatus    *stat,
     RealFFTPlan **plan,
     UINT4         size
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS (stat, "LALMeasureInvRealFFTPlan", REALFFTC);
 
   FFTWHOOKS;
@@ -403,122 +727,8 @@ LALMeasureInvRealFFTPlan (
   RETURN (stat);
 }
 
-/* <lalVerbatim file="RealFFTCP"> */  
-void
-LALDestroyRealFFTPlan (
-    LALStatus    *stat,
-    RealFFTPlan **plan
-    )
-{ /* </lalVerbatim> */
-  INITSTATUS (stat, "LALDestroyRealFFTPlan", REALFFTC);
-
-  FFTWHOOKS;
-
-  /* make sure that the argument is not NULL */
-  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-
-  /* check that the plan is not NULL */
-  ASSERT (*plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-
-  /* destroy plan and set to NULL pointer */
-  LAL_FFTW_PTHREAD_MUTEX_LOCK;
-  rfftw_destroy_plan ((rfftw_plan)(*plan)->plan);
-  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
-  LALFree (*plan);
-  *plan = NULL;
-
-  /* normal exit */
-  RETURN (stat);
-}
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
-void
-LALREAL4VectorFFT (
-    LALStatus   *stat,
-    REAL4Vector *vout,
-    REAL4Vector *vinp,
-    RealFFTPlan *plan
-    )
-{ /* </lalVerbatim> */
-  INITSTATUS (stat, "LALREAL4VectorFFT", REALFFTC);
-
-  FFTWHOOKS;
-
-  /* make sure that the arguments are not NULL */
-  ASSERT (vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-  ASSERT (vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-
-  /* make sure that the data exists */
-  ASSERT (vout->data, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-  ASSERT (vinp->data, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-
-  /* make sure that it is not the same data! */
-  ASSERT (vout->data != vinp->data, stat, REALFFTH_ESAME, REALFFTH_MSGESAME);
-
-  /* make sure that the lengths agree */
-  ASSERT (plan->size > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
-  ASSERT (vout->length == plan->size, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
-  ASSERT (vinp->length == plan->size, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
-
-  rfftw_one (
-      (rfftw_plan) plan->plan,
-      (fftw_real *)vinp->data,
-      (fftw_real *)vout->data
-      );
-
-  /* normal exit */
-  RETURN (stat);
-}
-
-
-/* <lalVerbatim file="RealFFTCP"> */  
-void
-LALREAL4VectorSequenceFFT (
-    LALStatus           *stat,
-    REAL4VectorSequence *vout,
-    REAL4VectorSequence *vinp,
-    RealFFTPlan         *plan
-    )
-{ /* </lalVerbatim> */
-  INITSTATUS (stat, "LALREAL4VectorSequenceFFT", REALFFTC);
-
-  FFTWHOOKS;
-
-  /* make sure that the arguments are not NULL */
-  ASSERT (vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-  ASSERT (vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-
-  /* make sure that the data exists */
-  ASSERT (vout->data, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-  ASSERT (vinp->data, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-
-  /* make sure that it is not the same data! */
-  ASSERT (vout->data != vinp->data, stat, REALFFTH_ESAME, REALFFTH_MSGESAME);
-
-  /* make sure that the lengths agree */
-  ASSERT (plan->size > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
-  ASSERT (vout->vectorLength == plan->size, stat,
-          REALFFTH_ESZMM, REALFFTH_MSGESZMM);
-  ASSERT (vinp->vectorLength == plan->size, stat,
-          REALFFTH_ESZMM, REALFFTH_MSGESZMM);
-
-  ASSERT (vout->length > 0, stat, REALFFTH_ESLEN, REALFFTH_MSGESLEN);
-  ASSERT (vinp->length == vout->length, stat, REALFFTH_ESLEN, REALFFTH_MSGESLEN);
-  rfftw (
-      (rfftw_plan) plan->plan, vout->length,
-      (fftw_real *)vinp->data, 1, plan->size,
-      (fftw_real *)vout->data, 1, plan->size
-      );
-
-  /* normal exit */
-  RETURN (stat);
-}
-
-
-/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALFwdRealFFT (
     LALStatus      *stat,
@@ -526,7 +736,7 @@ LALFwdRealFFT (
     REAL4Vector    *vinp,
     RealFFTPlan    *plan
     )
-{ /* </lalVerbatim> */
+{
   REAL4Vector *vtmp = NULL;
   UINT4        n;
   UINT4        k;
@@ -588,7 +798,6 @@ LALFwdRealFFT (
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALInvRealFFT (
     LALStatus      *stat,
@@ -596,7 +805,7 @@ LALInvRealFFT (
     COMPLEX8Vector *vinp,
     RealFFTPlan    *plan
     )
-{ /* </lalVerbatim> */
+{
   REAL4Vector *vtmp = NULL;
   UINT4        n;
   UINT4        k;
@@ -659,74 +868,7 @@ LALInvRealFFT (
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
-void
-LALRealPowerSpectrum (
-    LALStatus   *stat,
-    REAL4Vector *vout,
-    REAL4Vector *vinp,
-    RealFFTPlan *plan
-    )
-{ /* </lalVerbatim> */
-  REAL4Vector *vtmp = NULL;
-  UINT4        n;
-  UINT4        k;
 
-  INITSTATUS (stat, "LALRealPowerSpectrum", REALFFTC);
-  ATTATCHSTATUSPTR (stat);
-
-  FFTWHOOKS;
-
-  /* make sure that the arguments are not NULL */
-  ASSERT (vout, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-  ASSERT (vinp, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-  ASSERT (plan, stat, REALFFTH_ENULL, REALFFTH_MSGENULL);
-
-  /* make sure that the data pointers are not NULL */
-  ASSERT (vout->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
-  ASSERT (vinp->data, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
-  ASSERT (plan->plan, stat, REALFFTH_ENNUL, REALFFTH_MSGENNUL);
-
-  /* make sure that sizes agree */
-  n = plan->size;
-  ASSERT (n > 0, stat, REALFFTH_ESIZE, REALFFTH_MSGESIZE);
-  ASSERT (vinp->length == n, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
-  ASSERT (vout->length == n/2 + 1, stat, REALFFTH_ESZMM, REALFFTH_MSGESZMM);
-
-  /* make sure that the correct plan is being used */
-  ASSERT (plan->sign == 1, stat, REALFFTH_ESIGN, REALFFTH_MSGESIGN);
-
-  /* create temporary vector and check that it was created */
-  TRY (LALCreateVector (stat->statusPtr, &vtmp, n), stat);
-
-  /* perform the FFT */
-  TRY (LALREAL4VectorFFT (stat->statusPtr, vtmp, vinp, plan), stat);
-
-  /* DC component */
-  vout->data[0] = (vtmp->data[0])*(vtmp->data[0]);
-
-  /* other components */
-  for (k = 1; k < (n + 1)/2; ++k) /* k < n/2 rounded up */
-  {
-    REAL4 re = vtmp->data[k];
-    REAL4 im = vtmp->data[n - k];
-    vout->data[k] = re*re + im*im;
-  }
-
-  /* Nyquist frequency */
-  if (n % 2 == 0) /* n is even */
-    vout->data[n/2] = (vtmp->data[n/2])*(vtmp->data[n/2]);
-
-  /* destroy temporary vector and check that it was destroyed */
-  TRY (LALDestroyVector (stat->statusPtr, &vtmp), stat);
-
-  DETATCHSTATUSPTR (stat);
-  /* normal exit */
-  RETURN (stat);
-}
-
-
-/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALFwdRealSequenceFFT (
     LALStatus              *stat,
@@ -734,7 +876,7 @@ LALFwdRealSequenceFFT (
     REAL4VectorSequence    *vinp,
     RealFFTPlan            *plan
     )
-{ /* </lalVerbatim> */
+{
   REAL4VectorSequence    *vtmp = NULL;
   CreateVectorSequenceIn  sqin; 
 
@@ -810,7 +952,6 @@ LALFwdRealSequenceFFT (
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALInvRealSequenceFFT (
     LALStatus              *stat,
@@ -818,7 +959,7 @@ LALInvRealSequenceFFT (
     COMPLEX8VectorSequence *vinp,
     RealFFTPlan            *plan
     )
-{ /* </lalVerbatim> */
+{
   REAL4VectorSequence *vtmp = NULL;
   CreateVectorSequenceIn  sqin; 
 
@@ -897,7 +1038,6 @@ LALInvRealSequenceFFT (
 }
 
 
-/* <lalVerbatim file="RealFFTCP"> */  
 void
 LALRealSequencePowerSpectrum (
     LALStatus           *stat,
@@ -905,7 +1045,7 @@ LALRealSequencePowerSpectrum (
     REAL4VectorSequence *vinp,
     RealFFTPlan         *plan
     )
-{ /* </lalVerbatim> */
+{
   REAL4VectorSequence    *vtmp = NULL;
   CreateVectorSequenceIn  sqin; 
 
@@ -976,5 +1116,6 @@ LALRealSequencePowerSpectrum (
   /* normal exit */
   RETURN (stat);
 }
+#endif /* KEEP_OLD_REAL_FFT */
 
 #undef FFTWHOOKS

@@ -50,10 +50,15 @@ LALComputeFrequencySeries (
 
 
   /* make sure sizes are reasonable and agree */
-  n = dftParams->plan->size;
+  /* MODIFIED -- JC
+   * n = dftParams->plan->size;
+   */
+  n = timeSeries->data->length;
   ASSERT (n > 0, status, TFTRANSFORM_EPOSARG, TFTRANSFORM_MSGEPOSARG);
+  /*
   ASSERT ((INT4)timeSeries->data->length == n, status,
           TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+  */
   ASSERT ((INT4)freqSeries->data->length == n/2 + 1, status,
           TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
   ASSERT ((INT4)dftParams->window->length == n, status,

@@ -172,11 +172,13 @@ LALSZeroPadAndFFT(LALStatus                *status,
 
   /* check that length of FFT plan is correct */
   fullLength = 2 * length - 1;
+  /* OMITTED -- JC
   if (fullLength != fftPlan->size) {
     ABORT(  status,
          STOCHASTICCROSSCORRELATIONH_EMMLEN,
          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
   }
+  */
 
   /* check that pointer to complex frequency series for output is non-null */
   ASSERT(output != NULL, status, 

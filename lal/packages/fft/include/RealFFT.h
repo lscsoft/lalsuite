@@ -1,28 +1,24 @@
-#if 0 /* autodoc block */
+/**** <lalVerbatim file="RealFFTHV">
+ * $Id$
+ **** </lalVerbatim> */
 
-<lalVerbatim file="RealFFTHV">
-$Id$
-</lalVerbatim>
-
-<lalLaTeX>
-
-\section{Header \texttt{RealFFT.h}}
-\label{s:RealFFT.h}
-
-Performs real-to-complex and complex-to-real FFTs.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/RealFFT.h>
-\end{verbatim}
-
-\noindent Perform real-to-complex and complex-to-real fast Fourier transforms of
-vectors, and sequences of vectors using the package FFTW~\cite{fj:1998}.
-
-</lalLaTeX>
-
-#endif /* autodoc block */
-
+/**** <lalLaTeX>
+ *
+ * \section{Header \texttt{RealFFT.h}}
+ * \label{s:RealFFT.h}
+ * 
+ * Performs real-to-complex and complex-to-real FFTs.
+ * 
+ * \subsection*{Synopsis}
+ * \begin{verbatim}
+ * #include <lal/RealFFT.h>
+ * \end{verbatim}
+ * 
+ * \noindent Perform real-to-complex and complex-to-real fast Fourier
+ * transforms of vectors, and sequences of vectors using the package
+ * FFTW~\cite{fj:1998}.
+ * 
+ **** </lalLaTeX> */
 
 #ifndef _REALFFT_H
 #define _REALFFT_H
@@ -31,20 +27,16 @@ vectors, and sequences of vectors using the package FFTW~\cite{fj:1998}.
 
 #ifdef  __cplusplus
 extern "C" {
+#pragma }
 #endif
 
-NRCSID (REALFFTH, "$Id$");
+NRCSID( REALFFTH, "$Id$" );
 
-#if 0 /* autodoc block */
 
-<lalLaTeX>
-\subsection*{Error conditions}
-\input{RealFFTHErrTab}
-</lalLaTeX>
-
-<lalErrTable file="RealFFTHErrTab">
-
-#endif /* autodoc block */
+/**** <lalLaTeX>
+ * \subsection*{Error conditions}
+ **** </lalLaTeX> */
+/**** <lalErrTable> */
 
 #define REALFFTH_ENULL 1
 #define REALFFTH_ENNUL 2
@@ -54,6 +46,8 @@ NRCSID (REALFFTH, "$Id$");
 #define REALFFTH_ESAME 32
 #define REALFFTH_ESIGN 64
 #define REALFFTH_EDATA 128
+#define REALFFTH_EALOC 256
+#define REALFFTH_EFFTW 512
 
 #define REALFFTH_MSGENULL "Null pointer"
 #define REALFFTH_MSGENNUL "Non-null pointer"
@@ -63,42 +57,85 @@ NRCSID (REALFFTH, "$Id$");
 #define REALFFTH_MSGESAME "Input/Output data vectors are the same"
 #define REALFFTH_MSGESIGN "Incorrect plan sign"
 #define REALFFTH_MSGEDATA "Bad input data: DC/Nyquist should be real"
+#define REALFFTH_MSGEALOC "Memory allocation failed"
+#define REALFFTH_MSGEFFTW "Error in FFTW"
 
-#if 0 /* autodoc block */
-
-</lalErrTable>
-
-<lalLaTeX>
-
-\subsection*{Structures}
-
-\begin{verbatim}
+/**** </lalErrTable> */
+/**** <lalLaTeX>
+ * 
+ * \subsection*{Structures}
+ * 
+ **** </lalLaTeX> */
+/**** <lalVerbatim> */
 typedef struct tagRealFFTPlan RealFFTPlan;
-\end{verbatim}
+/**** </lalVerbatim> */
+/**** <lalLaTeX>
+ * 
+ * This structure contains the parameters necessary for performing an FFT of a
+ * given size and direction.  The contents should not be manually adjusted.
+ * 
+ * \newpage\input{RealFFTC}
+ * \newpage\input{RealFFTTestC}
+ **** </lalLaTeX> */
 
-This structure contains the parameters necessary for performing an FFT of a
-given size and direction.  The contents should not be manually adjusted.
+#define KEEP_OLD_REAL_FFT
 
-</lalLaTeX>
+void
+LALCreateForwardRealFFTPlan(
+    LALStatus    *status,
+    RealFFTPlan **plan,
+    UINT4         size,
+    INT4          measure
+    );
 
-#endif /* autodoc block */
+void
+LALCreateReverseRealFFTPlan(
+    LALStatus    *status,
+    RealFFTPlan **plan,
+    UINT4         size,
+    INT4          measure
+    );
 
-typedef struct
-tagRealFFTPlan
-{
-  INT4   sign;
-  UINT4  size;
-  void  *plan;
-}
-RealFFTPlan;
+void
+LALDestroyRealFFTPlan(
+    LALStatus    *status,
+    RealFFTPlan **plan
+    );
 
-#if 0 /* autodoc block */
+void
+LALForwardRealFFT(
+    LALStatus      *status,
+    COMPLEX8Vector *output,
+    REAL4Vector    *input,
+    RealFFTPlan    *plan
+    );
 
-<lalLaTeX>
-\newpage\input{RealFFTC}
-</lalLaTeX>
+void
+LALReverseRealFFT(
+    LALStatus      *status,
+    REAL4Vector    *output,
+    COMPLEX8Vector *input,
+    RealFFTPlan    *plan
+    );
 
-#endif /* autodoc block */
+void
+LALRealPowerSpectrum (
+    LALStatus   *status,
+    REAL4Vector *spec,
+    REAL4Vector *data,
+    RealFFTPlan *plan
+    );
+
+void
+LALREAL4VectorFFT(
+    LALStatus   *status,
+    REAL4Vector *output,
+    REAL4Vector *input,
+    RealFFTPlan *plan
+    );
+
+/** OLD ROUTINES **/
+#ifdef KEEP_OLD_REAL_FFT
 
 void
 LALEstimateFwdRealFFTPlan (
@@ -129,21 +166,6 @@ LALMeasureInvRealFFTPlan (
     );
 
 void
-LALDestroyRealFFTPlan (
-    LALStatus       *stat,
-    RealFFTPlan **plan
-    );
-
-
-void
-LALREAL4VectorFFT (
-    LALStatus      *stat,
-    REAL4Vector *vout,
-    REAL4Vector *vinp,
-    RealFFTPlan *plan
-    );
-
-void
 LALREAL4VectorSequenceFFT (
     LALStatus              *stat,
     REAL4VectorSequence *vout,
@@ -169,15 +191,6 @@ LALInvRealFFT (
     );
 
 void
-LALRealPowerSpectrum (
-    LALStatus      *stat,
-    REAL4Vector *vout,
-    REAL4Vector *vinp,
-    RealFFTPlan *plan
-    );
-
-
-void
 LALFwdRealSequenceFFT (
     LALStatus                 *stat,
     COMPLEX8VectorSequence *vout,
@@ -201,16 +214,10 @@ LALRealSequencePowerSpectrum (
     RealFFTPlan         *plan
     );
 
-#if 0 /* autodoc block */
-
-<lalLaTeX>
-\newpage\input{RealFFTTestC}
-\newpage\input{RealPowerSpectrumTestC}
-</lalLaTeX>
-
-#endif /* autodoc block */
+#endif /*  KEEP_OLD_REAL_FFT */
 
 #ifdef  __cplusplus
+#pragma {
 }
 #endif
 

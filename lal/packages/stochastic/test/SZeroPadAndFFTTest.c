@@ -179,6 +179,18 @@ ParseOptions (int argc, char *argv[]);
 #define SZEROPADANDFFTTESTC_MSGEUSE "Bad user-entered data"
 /***************************** </lalErrTable> */
 
+/*
+ * ADDED -- JC
+ * going to need to modify fields of RealFFTPlan...
+ * don't try this at home!
+ */
+struct tagRealFFTPlan
+{
+  INT4  sign;
+  UINT4 size;
+  void* junk;
+};
+
 int 
 main( int argc, char *argv[] )
 {
@@ -467,19 +479,21 @@ main( int argc, char *argv[] )
    goodOutput.data->length = SZEROPADANDFFTTESTC_LENGTH;
 
    /* test behavior for length mismatch between input series and plan parameter */
-   plan->size = 2 * SZEROPADANDFFTTESTC_LENGTH + 1;
-   LALSZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
-   if ( code = CheckStatus(&status,
-                           STOCHASTICCROSSCORRELATIONH_EMMLEN,
-                           STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
-                           SZEROPADANDFFTTESTC_ECHK,
-                           SZEROPADANDFFTTESTC_MSGECHK)) 
-   {
-     return code;
-   }
-   printf("  PASS: length mismatch between input series and plan parameter results in error:\n       \"%s\"\n",
-          STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
-   plan->size = SZEROPADANDFFTTESTC_FULLLENGTH;
+   /* OMITTED -- JC
+    * plan->size = 2 * SZEROPADANDFFTTESTC_LENGTH + 1;
+    * LALSZeroPadAndFFT(&status, &goodOutput, &goodInput, plan);
+    * if ( code = CheckStatus(&status,
+    *                        STOCHASTICCROSSCORRELATIONH_EMMLEN,
+    *                        STOCHASTICCROSSCORRELATIONH_MSGEMMLEN,
+    *                        SZEROPADANDFFTTESTC_ECHK,
+    *                        SZEROPADANDFFTTESTC_MSGECHK)) 
+    * {
+    *   return code;
+    * }
+    * printf("  PASS: length mismatch between input series and plan parameter results in error:\n       \"%s\"\n",
+    *       STOCHASTICCROSSCORRELATIONH_MSGEMMLEN);
+    * plan->size = SZEROPADANDFFTTESTC_FULLLENGTH;
+    */
 
    /* TEST VALID DATA HERE --------------------------------------------- */
 

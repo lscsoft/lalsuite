@@ -1,27 +1,23 @@
-#if 0 /* autodoc block */
+/**** <lalVerbatim file="ComplexFFTHV">
+ * $Id$
+ **** </lalVerbatim> */
 
-<lalVerbatim file="ComplexFFTHV">
-$Id$
-</lalVerbatim>
-
-<lalLaTeX>
-
-\section{Header \texttt{ComplexFFT.h}}
-\label{s:ComplexFFT.h}
-
-Performs complex-to-complex FFTs.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/ComplexFFT.h>
-\end{verbatim}
-
-Perform complex-to-complex fast Fourier transforms of vectors using the
-package FFTW~\cite{fj:1998}.
-
-</lalLaTeX>
-
-#endif /* autodoc block */
+/**** <lalLaTeX>
+ * 
+ * \section{Header \texttt{ComplexFFT.h}}
+ * \label{s:ComplexFFT.h}
+ * 
+ * Performs complex-to-complex FFTs.
+ * 
+ * \subsection*{Synopsis}
+ * \begin{verbatim}
+ * #include <lal/ComplexFFT.h>
+ * \end{verbatim}
+ * 
+ * Perform complex-to-complex fast Fourier transforms of vectors using the
+ * package FFTW~\cite{fj:1998}.
+ * 
+ **** </lalLaTeX> */
 
 #ifndef _COMPLEXFFT_H
 #define _COMPLEXFFT_H
@@ -30,20 +26,15 @@ package FFTW~\cite{fj:1998}.
 
 #ifdef  __cplusplus
 extern "C" {
+#pragma }
 #endif
 
 NRCSID( COMPLEXFFTH, "$Id$" );
 
-#if 0 /* autodoc block */
-
-<lalLaTeX>
-\subsection*{Error conditions}
-\input{ComplexFFTHErrTab}
-</lalLaTeX>
-
-<lalErrTable file="ComplexFFTHErrTab">
-
-#endif /* autodoc block */
+/**** <lalLaTeX>
+ * \subsection*{Error conditions}
+ **** </lalLaTeX> */
+/**** <lalErrTable> */
 
 #define COMPLEXFFTH_ENULL 1
 #define COMPLEXFFTH_ENNUL 2
@@ -51,6 +42,8 @@ NRCSID( COMPLEXFFTH, "$Id$" );
 #define COMPLEXFFTH_ESZMM 8
 #define COMPLEXFFTH_ESLEN 16
 #define COMPLEXFFTH_ESAME 32
+#define COMPLEXFFTH_EALOC 64
+#define COMPLEXFFTH_EFFTW 128
 
 #define COMPLEXFFTH_MSGENULL "Null pointer"
 #define COMPLEXFFTH_MSGENNUL "Non-null pointer"
@@ -58,42 +51,60 @@ NRCSID( COMPLEXFFTH, "$Id$" );
 #define COMPLEXFFTH_MSGESZMM "Size mismatch"
 #define COMPLEXFFTH_MSGESLEN "Invalid/mismatched sequence lengths"
 #define COMPLEXFFTH_MSGESAME "Input/Output data vectors are the same"
+#define COMPLEXFFTH_MSGEFFTW "Error in FFTW"
+#define COMPLEXFFTH_MSGEALOC "Memory allocation failed"
 
-#if 0 /* autodoc block */
-
-</lalErrTable>
-
-<lalLaTeX>
-
-\subsection*{Structures}
-
-\begin{verbatim}
+/**** </lalErrTable> */
+/**** <lalLaTeX>
+ * 
+ * \subsection*{Structures}
+ * 
+ **** </lalLaTeX> */
+/**** <lalVerbatim> */
 typedef struct tagComplexFFTPlan ComplexFFTPlan;
-\end{verbatim}
+/**** </lalVerbatim> */
+/**** <lalLaTeX>
+ * 
+ * This structure contains the parameters necessary for performing an FFT of a
+ * given size and direction.  The contents should not be manually adjusted.
+ * 
+ * \newpage\input{ComplexFFTC}
+ * \newpage\input{ComplexFFTTestC}
+ **** </lalLaTeX> */
 
-This structure contains the parameters necessary for performing an FFT of a
-given size and direction.  The contents should not be manually adjusted.
+#define KEEP_OLD_COMPLEX_FFT
 
-</lalLaTeX>
+void
+LALCreateForwardComplexPlan(
+    LALStatus       *status,
+    ComplexFFTPlan **plan,
+    UINT4            size,
+    INT4             measure
+    );
 
-#endif /* autodoc block */
+void
+LALCreateReverseComplexFFTPlan(
+    LALStatus       *status,
+    ComplexFFTPlan **plan,
+    UINT4            size,
+    INT4             measure
+    );
 
-typedef struct
-tagComplexFFTPlan
-{
-  INT4   sign;
-  UINT4  size;
-  void  *plan;
-}
-ComplexFFTPlan;
+void
+LALDestroyComplexFFTPlan (
+    LALStatus       *status,
+    ComplexFFTPlan **plan
+    );
 
-#if 0 /* autodoc block */
+void
+LALCOMPLEX8VectorFFT (
+    LALStatus      *status,
+    COMPLEX8Vector *output,
+    COMPLEX8Vector *input,
+    ComplexFFTPlan *plan
+    );
 
-<lalLaTeX>
-\newpage\input{ComplexFFTC}
-</lalLaTeX>
-
-#endif /* autodoc block */
+#ifdef KEEP_OLD_COMPLEX_FFT
 
 void
 LALEstimateFwdComplexFFTPlan (
@@ -123,30 +134,10 @@ LALMeasureInvComplexFFTPlan (
     UINT4            size
     );
 
-void
-LALDestroyComplexFFTPlan (
-    LALStatus          *stat,
-    ComplexFFTPlan **plan
-    );
-
-
-void
-LALCOMPLEX8VectorFFT (
-    LALStatus         *stat,
-    COMPLEX8Vector *vout,
-    COMPLEX8Vector *vinp,
-    ComplexFFTPlan *plan
-    );
-
-#if 0 /* autodoc block */
-
-<lalLaTeX>
-\newpage\input{ComplexFFTTestC}
-</lalLaTeX>
-
-#endif /* autodoc block */
+#endif /* KEEP_OLD_COMPLEX_FFT */
 
 #ifdef  __cplusplus
+#pragma {
 }
 #endif
 
