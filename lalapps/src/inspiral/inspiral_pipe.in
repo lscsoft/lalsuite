@@ -307,7 +307,7 @@ for seg in data:
       dag.add_node(insp1)
 
     trigbank = inspiral.TrigToTmpltNode(trig_job)
-    trigbank.set_input(insp1.get_output())
+    trigbank.add_var_arg(insp1.get_output())
     trigbank.set_start(chunk.start())
     trigbank.set_end(chunk.end())
     if usertag:
