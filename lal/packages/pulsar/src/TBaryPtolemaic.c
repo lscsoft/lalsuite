@@ -189,7 +189,7 @@ LALTBaryPtolemaic( LALStatus             *stat,
   ra=*(data++);
   dec=*(data);
   rot=LAL_TWOPI*(t-constants->tMidnight)/LAL_DAYSID_SI
-    +constants->latitude;
+    +constants->longitude;
   rev=LAL_TWOPI*(t-constants->tAutumn)/LAL_YRSID_SI;
   cosLat=cos(constants->latitude);
 
