@@ -367,7 +367,7 @@ const	INT4		two = 2;
 		fom->data[k - 2] = tempReal - (log(k * Y0k->data[k-1])) * (k-1)/2;
 
 		/*  fom = fom - log((N-k).*YkNk(N-k+1)).*(N-k-1)/2  */
-		fom->data[k - 2] = fom->data[k - 2] - log((N - k) * YkNk->data[N - k]) * ( N - k - 1) / 2;
+		fom->data[k - 2] = fom->data[k - 2] - log((N - k) * YkNk->data[N - k - 1]) * ( N - k - 1) / 2;
 
 		/*  fom = fom + lnIratio(N,50) */
 		fom->data[k - 2] = fom->data[k - 2] + temp->data[k - 2];
@@ -398,7 +398,11 @@ const	INT4		two = 2;
         CHECKSTATUSPTR( status );
 
 	/*  ndx = ndx + 2  */
-	(*index) = (*index) + 2;
+	(*index) = (*index) + 1;
+
+	if(( (*index) < 2 )||( (*index) > N - 2))
+	  fprintf(stdout,"index = %d\t%d\n",(*index),N);
+	fflush(stdout);
 
 	LALI4DestroyVector( status->statusPtr, &indexVector);
 	LALDDestroyVector( status->statusPtr, &temp);
