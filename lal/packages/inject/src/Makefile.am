@@ -1,13 +1,13 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libinject.la
 libinject_la_SOURCES =	\
-	GetInspiralParams.c	GeneratePPNInspiral.c \
-	GenerateSpinOrbitCW.c	GenerateEllipticSpinOrbitCW.c \
-	GenerateParabolicSpinOrbitCW.c \
-	GenerateTaylorCW.c	SimulateCoherentGW.c \
-	InjectVector.c		InjectTimeSeries.c \
-	CelestialCoordinates.c	TerrestrialCoordinates.c \
-	SkyCoordinates.c	SimulateSB.c \
+	GetInspiralParams.c		GeneratePPNInspiral.c \
+	GenerateSpinOrbitCW.c		GenerateEllipticSpinOrbitCW.c \
+	GenerateParabolicSpinOrbitCW.c	GenerateHyperbolicSpinOrbitCW.c \
+	GenerateTaylorCW.c		SimulateCoherentGW.c \
+	InjectVector.c			InjectTimeSeries.c \
+	CelestialCoordinates.c		TerrestrialCoordinates.c \
+	SkyCoordinates.c		SimulateSB.c \
 	SimulateInspiral.c
 ## Hack to get this working for now... change later
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../../date/include

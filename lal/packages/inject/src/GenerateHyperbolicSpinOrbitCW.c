@@ -1,23 +1,20 @@
-/****************** <lalVerbatim file="GenerateEllipticSpinOrbitCWCV">
+/**************** <lalVerbatim file="GenerateHyperbolicSpinOrbitCWCV">
 Author: Creighton, T. D.
 $Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
 
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
-\providecommand{\greatersim}{\stackrel{>}{\scriptstyle\sim}}
-
-\subsection{Module \texttt{GenerateEllipticSpinOrbitCW.c}}
-\label{ss:GenerateEllipticSpinOrbitCW.c}
+\subsection{Module \texttt{GenerateHyperbolicSpinOrbitCW.c}}
+\label{ss:GenerateHyperbolicSpinOrbitCW.c}
 
 Computes a continuous waveform with frequency drift and Doppler
-modulation from an elliptical orbital trajectory.
+modulation from a hyperbolic orbital trajectory.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{GenerateEllipticSpinOrbitCWCP}
-\idx{LALGenerateEllipticSpinOrbitCW()}
+\input{GenerateHyperbolicSpinOrbitCWCP}
+\idx{LALGenerateHyperbolicSpinOrbitCW()}
 
 \subsubsection*{Description}
 
@@ -28,8 +25,8 @@ orbital parameters in \verb@*params@, storing the result in
 In the \verb@*params@ structure, the routine uses all the ``input''
 fields specified in \verb@GenerateSpinOrbitCW.h@, and sets all of the
 ``output'' fields.  If \verb@params->f@=\verb@NULL@, no spindown
-modulation is performed.  If \verb@params->oneMinusEcc@$\notin(0,1]$
-(an open orbit), or if
+modulation is performed.  If \verb@params->oneMinusEcc@$\not<0$ (a
+non-hyperbolic orbit), or if
 \verb@params->rPeriNorm@$\times$\verb@params->angularSpeed@$\geq1$
 (faster-than-light speed at periapsis), an error is returned.
 
@@ -41,68 +38,80 @@ function will create and allocate space for \verb@output->a@,
 
 \subsubsection*{Algorithm}
 
-For elliptical orbits, we combine Eqs.~(\ref{eq:spinorbit-tr}),
+For hyperbolic orbits, we combine Eqs.~(\ref{eq:spinorbit-tr}),
 (\ref{eq:spinorbit-t}), and~(\ref{eq:spinorbit-upsilon}) to get $t_r$
-directly as a function of the eccentric anomaly $E$:
+directly as a function of $E$:
 \begin{eqnarray}
 t_r = t_p & + & \left(\frac{r_p \sin i}{c}\right)\sin\omega \nonumber\\
 \label{eq:tr-e1}
-	& + & \left(\frac{P}{2\pi}\right) \left( E +
-		\left[v_p(1-e)\cos\omega - e\right]\sin E
-		+ \left[v_p\sqrt{\frac{1-e}{1+e}}\sin\omega\right]
-			[\cos E - 1]\right) \;,
+	& + & \frac{1}{n} \left( -E +
+		\left[v_p(e-1)\cos\omega + e\right]\sinh E
+		- \left[v_p\sqrt{\frac{e-1}{e+1}}\sin\omega\right]
+			[\cosh E - 1]\right) \;,
 \end{eqnarray}
 where $v_p=r_p\dot{\upsilon}_p\sin i/c$ is a normalized velocity at
-periapsis and $P=2\pi\sqrt{(1+e)/(1-e)^3}/\dot{\upsilon}_p$ is the
-period of the orbit.  For simplicity we write this as:
+periapsis and $n=\dot{\upsilon}_p\sqrt{(1-e)^3/(1+e)}$ is a normalized
+angular speed for the orbit (the hyperbolic analogue of the mean
+angular speed for closed orbits).  For simplicity we write this as:
 \begin{equation}
 \label{eq:tr-e2}
-t_r = T_p + \frac{1}{n}\left( E + A\sin E + B[\cos E - 1] \right) \;,
+t_r = T_p + \frac{1}{n}\left( E + A\sinh E + B[\cosh E - 1] \right) \;,
 \end{equation}
 \begin{wrapfigure}{r}{0.28\textwidth}
-\vspace{-4ex}
+\vspace{-5ex}
 \begin{center}
-\resizebox{0.23\textwidth}{!}{\includegraphics{inject_eanomaly}} \\
+\resizebox{0.23\textwidth}{!}{\includegraphics{inject_hanomaly}} \\
 %\parbox{0.23\textwidth}{\caption{\label{fig:binary-orbit} Function to
 %be inverted to find eccentric anomaly.}}
 \end{center}
-\vspace{-4ex}
+\vspace{-5ex}
 \end{wrapfigure}
-where $T_p$ is the \emph{observed} time of periapsis passage and
-$n=2\pi/P$ is the mean angular speed around the orbit.  Thus the key
-numerical procedure in this routine is to invert the expression
-$x=E+A\sin E+B(\cos E - 1)$ to get $E(x)$.  We note that
-$E(x+2n\pi)=E(x)+2n\pi$, so we only need to solve this expression in
-the interval $[0,2\pi)$, sketched to the right.
+where $T_p$ is the \emph{observed} time of periapsis passage.  Thus
+the key numerical procedure in this routine is to invert the
+expression $x=E+A\sinh E+B(\cosh E - 1)$ to get $E(x)$.  This function
+is sketched to the right (solid line), along with an approximation
+used for making an initial guess (dotted line), as described later.
 
-We further note that $A^2+B^2<1$, although it approaches 1 when
+We note that $A^2-B^2<1$, although it approaches 1 when
 $e\rightarrow1$, or when $v_p\rightarrow1$ and either $e=0$ or
 $\omega=\pi$.  Except in this limit, Newton-Raphson methods will
 converge rapidly for any initial guess.  In this limit, though, the
-slope $dx/dE$ approaches zero at the point of inflection, and an
-initial guess or iteration landing near this point will send the next
-iteration off to unacceptably large or small values.  However, by
-restricting all initial guesses and iterations to the domain
-$E\in[0,2\pi)$, one will always end up on a trajectory branch that
-will converge uniformly.  This should converge faster than the more
-generically robust technique of bisection.
+slope $dx/dE$ approaches zero at $E=0$, and an initial guess or
+iteration landing near this point will send the next iteration off to
+unacceptably large or small values.  A hybrid root-finding strategy is
+used to deal with this, and with the exponential behaviour of $x$ at
+large $E$.
 
-In this algorithm, we start the computation with an arbitrary initial
-guess of $E=0$, and refine it until the we get agreement to within
-0.01 parts in part in $N_\mathrm{cyc}$ (where $N_\mathrm{cyc}$ is the
-larger of the number of wave cycles in an orbital period, or the
-number of wave cycles in the entire waveform being generated), or one
-part in $10^{15}$ (an order of magnitude off the best precision
-possible with \verb@REAL8@ numbers).  The latter case indicates that
-\verb@REAL8@ precision may fail to give accurate phasing, and one
-should consider modeling the orbit as a set of Taylor frequency
-coefficients \'{a} la \verb@LALGenerateTaylorCW()@.  On subsequent
-timesteps, we use the previous timestep as an initial guess, which is
-good so long as the timesteps are much smaller than an orbital period.
-This sequence of guesses will have to readjust itself once every orbit
-(as $E$ jumps from $2\pi$ down to 0), but this is relatively
-infrequent; we don't bother trying to smooth this out because the
-additional tests would probably slow down the algorithm overall.
+First, we compute $x=x_{\pm1}$ at $E=\pm1$.  If the desired $x$ lies
+in this range, we use a straightforward Newton-Raphson root finder,
+with the constraint that all guesses of $E$ are restricted to the
+domain $[-1,1]$.  This guarantees that the scheme will eventually find
+itself on a uniformly-convergent trajectory.
+
+Second, for $E$ outside of this range, $x$ is dominated by the
+exponential terms: $x\approx\frac{1}{2}(A+B)\exp(E)$ for $E\gg1$, and
+$x\approx-\frac{1}{2}(A-B)\exp(-E)$ for $E\ll-1$.  We therefore do an
+\emph{approximate} Newton-Raphson iteration on the function $\ln|x|$,
+where the approximation is that we take $d\ln|x|/d|E|\approx1$.  This
+involves computing an extra logarithm inside the loop, but gives very
+rapid convergence to high precision, since $\ln|x|$ is very nearly
+linear in these regions.
+
+At the start of the algorithm, we use an initial guess of
+$E=-\ln[-2(x-x_{-1})/(A-B)-\exp(1)]$ for $x<x_{-1}$, $E=x/x_{-1}$ for
+$x_{-1}\leq x\leq0$, $E=x/x_{+1}$ for $0\leq x\leq x_{+1}$, or
+$E=\ln[2(x-x_{+1})/(A+B)-\exp(1)]$ for $x>x_{+1}$.  We refine this
+guess until we get agreement to within 0.01 parts in part in
+$N_\mathrm{cyc}$ (where $N_\mathrm{cyc}$ is the larger of the number
+of wave cycles in a time $2\pi/n$, or the number of wave cycles in the
+entire waveform being generated), or one part in $10^{15}$ (an order
+of magnitude off the best precision possible with \verb@REAL8@
+numbers).  The latter case indicates that \verb@REAL8@ precision may
+fail to give accurate phasing, and one should consider modeling the
+orbit as a set of Taylor frequency coefficients \'{a} la
+\verb@LALGenerateTaylorCW()@.  On subsequent timesteps, we use the
+previous timestep as an initial guess, which is good so long as the
+timesteps are much smaller than $1/n$.
 
 Once a value of $E$ is found for a given timestep in the output
 series, we compute the system time $t$ via Eq.~(\ref{eq:spinorbit-t}),
@@ -112,35 +121,16 @@ and~(\ref{eq:taylorcw-phi}).  The Doppler shift on the frequency is
 then computed using Eqs.~(\ref{eq:spinorbit-upsilon})
 and~(\ref{eq:orbit-rdot}).  We use $\upsilon$ as an intermediate in
 the Doppler shift calculations, since expressing $\dot{R}$ directly in
-terms of $E$ results in expression of the form $(1-e)/(1-e\cos E)$,
+terms of $E$ results in expression of the form $(e-1)/(e\cosh E-1)$,
 which are difficult to simplify and face precision losses when
 $E\sim0$ and $e\rightarrow1$.  By contrast, solving for $\upsilon$ is
 numerically stable provided that the system \verb@atan2()@ function is
 well-designed.
 
-The routine does not account for variations in special relativistic or
-gravitational time dilation due to the elliptical orbit, nor does it
-deal with other gravitational effects such as Shapiro delay.  To a
-very rough approximation, the amount of phase error induced by
-gravitational redshift goes something like $\Delta\phi\sim
-fT(v/c)^2\Delta(r_p/r)$, where $f$ is the typical wave frequency, $T$
-is either the length of data or the orbital period (whichever is
-\emph{smaller}), $v$ is the \emph{true} (unprojected) speed at
-periapsis, and $\Delta(r_p/r)$ is the total range swept out by the
-quantity $r_p/r$ over the course of the observation.  Other
-relativistic effects such as special relativistic time dilation are
-comparable in magnitude.  We make a crude estimate of when this is
-significant by noting that $v/c\greatersim v_p$ but
-$\Delta(r_p/r)\lessim 2e/(1+e)$; we take these approximations as
-equalities and require that $\Delta\phi\lessim\pi$, giving:
-\begin{equation}
-\label{eq:relativistic-orbit}
-f_0Tv_p^2\frac{4e}{1+e}\lessim1 \;.
-\end{equation}
-When this critereon is violated, a warning is generated.  Furthermore,
-as noted earlier, when $v_p\geq1$ the routine will return an error, as
-faster-than-light speeds can cause the emission and reception times to
-be non-monotonic functions of one another.
+This routine does not account for relativistic timing variations, and
+issues warnings or errors based on the criterea of
+Eq.~(\ref{eq:relativistic-orbit}) in
+\verb@GenerateEllipticSpinOrbitCW.c@.
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -153,7 +143,7 @@ LALSnprintf()                 LALWarning()
 
 \subsubsection*{Notes}
 
-\vfill{\footnotesize\input{GenerateEllipticSpinOrbitCWCV}}
+\vfill{\footnotesize\input{GenerateHyperbolicSpinOrbitCWCV}}
 
 ******************************************************* </lalLaTeX> */
 
@@ -166,13 +156,13 @@ LALSnprintf()                 LALWarning()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
-NRCSID( GENERATEELLIPTICSPINORBITCWC, "$Id$" );
+NRCSID( GENERATEHYPERBOLICSPINORBITCWC, "$Id$" );
 
-/* <lalVerbatim file="GenerateEllipticSpinOrbitCWCP"> */
+/* <lalVerbatim file="GenerateHyperbolicSpinOrbitCWCP"> */
 void
-LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
-				CoherentGW            *output,
-				SpinOrbitCWParamStruc *params )
+LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
+				  CoherentGW            *output,
+				  SpinOrbitCWParamStruc *params )
 { /* </lalVerbatim> */
   UINT4 n, i;              /* number of and index over samples */
   UINT4 nSpin = 0, j;      /* number of and index over spindown terms */
@@ -181,25 +171,26 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
   REAL8 f, fPrev;          /* current and previous values of frequency */
   REAL4 df = 0.0;          /* maximum difference between f and fPrev */
   REAL8 phi;               /* current value of phase */
-  REAL8 p, vDotAvg;        /* orbital period, and 2*pi/(period) */
+  REAL8 vDotAvg;           /* nomalized orbital angular speed */
   REAL8 vp;                /* projected speed at periapsis */
   REAL8 upsilon, argument; /* true anomaly, and argument of periapsis */
   REAL8 eCosOmega;         /* eccentricity * cosine of argument */
   REAL8 tPeriObs;          /* time of observed periapsis */
   REAL8 spinOff;           /* spin epoch - orbit epoch */
-  REAL8 x;                 /* observed mean anomaly */
+  REAL8 x;                 /* observed ``mean anomaly'' */
+  REAL8 xPlus, xMinus;     /* limits where exponentials dominate */
   REAL8 dx, dxMax;         /* current and target errors in x */
   REAL8 a, b;              /* constants in equation for x */
   REAL8 ecc;               /* orbital eccentricity */
-  REAL8 oneMinusEcc, onePlusEcc; /* 1 - ecc and 1 + ecc */
-  REAL8 e = 0.0;                 /* eccentric anomaly */
-  REAL8 sine = 0.0, cose = 0.0;  /* sine of e, and cosine of e minus 1 */
+  REAL8 eccMinusOne, eccPlusOne; /* ecc - 1 and ecc + 1 */
+  REAL8 e;                       /* hyperbolic anomaly */
+  REAL8 sinhe, coshe;            /* sinh of e, and cosh of e minus 1 */
   REAL8 *fSpin = NULL;           /* pointer to Taylor coefficients */
   REAL4 *fData;                  /* pointer to frequency data */
   REAL8 *phiData;                /* pointer to phase data */
 
-  INITSTATUS( stat, "LALGenerateEllipticSpinOrbitCW",
-	      GENERATEELLIPTICSPINORBITCWC );
+  INITSTATUS( stat, "LALGenerateHyperbolicSpinOrbitCW",
+	      GENERATEHYPERBOLICSPINORBITCWC );
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter and output structures exist. */
@@ -228,19 +219,19 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
 
   /* Set up some constants (to avoid repeated calculation or
      dereferencing), and make sure they have acceptable values. */
-  oneMinusEcc = params->oneMinusEcc;
-  ecc = 1.0 - oneMinusEcc;
-  onePlusEcc = 1.0 + ecc;
-  if ( ecc < 0.0 || oneMinusEcc <= 0.0 ) {
+  eccMinusOne = -params->oneMinusEcc;
+  ecc = 1.0 + eccMinusOne;
+  eccPlusOne = 2.0 + eccMinusOne;
+  if ( eccMinusOne <= 0.0 ) {
     ABORT( stat, GENERATESPINORBITCWH_EECC,
 	   GENERATESPINORBITCWH_MSGEECC );
   }
   vp = params->rPeriNorm*params->angularSpeed;
+  vDotAvg = params->angularSpeed
+    *sqrt( eccMinusOne*eccMinusOne*eccMinusOne/eccPlusOne );
   n = params->length;
   dt = params->deltaT;
   f0 = fPrev = params->f0;
-  vDotAvg = params->angularSpeed
-    *sqrt( oneMinusEcc*oneMinusEcc*oneMinusEcc/onePlusEcc );
   if ( vp >= 1.0 ) {
     ABORT( stat, GENERATESPINORBITCWH_EFTL,
 	   GENERATESPINORBITCWH_MSGEFTL );
@@ -253,16 +244,15 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
 
   /* Set up some other constants. */
   twopif0 = f0*LAL_TWOPI;
-  phi0 = params->phi0;
+  phi0 = params->phi0; 
   argument = params->omega;
-  p = LAL_TWOPI/vDotAvg;
-  a = vp*oneMinusEcc*cos( argument ) + oneMinusEcc - 1.0;
-  b = vp*sqrt( oneMinusEcc/( onePlusEcc ) )*sin( argument );
+  a = vp*eccMinusOne*cos( argument ) + ecc;
+  b = -vp*sqrt( eccMinusOne/eccPlusOne )*sin( argument );
   eCosOmega = ecc*cos( argument );
-  if ( n*dt > p )
+  if ( n*dt*vDotAvg > LAL_TWOPI )
     dxMax = 0.01/( f0*n*dt );
   else
-    dxMax = 0.01/( f0*p );
+    dxMax = 0.01/( f0*LAL_TWOPI/vDotAvg );
   if ( dxMax < 1.0e-15 ) {
     dxMax = 1.0e-15;
 #ifndef NDEBUG
@@ -273,9 +263,9 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
 #ifndef NDEBUG
   if ( lalDebugLevel & LALWARNING ) {
     REAL8 tau = n*dt;
-    if ( tau > p )
-      tau = p;
-    if ( f0*tau*vp*vp*ecc/onePlusEcc > 0.25 )
+    if ( tau > LAL_TWOPI/vDotAvg )
+      tau = LAL_TWOPI/vDotAvg;
+    if ( f0*tau*vp*vp*ecc/eccPlusOne > 0.25 )
       LALWarning( stat, "Orbit may have significant relativistic"
 		  " effects that are not included" );
   }
@@ -292,6 +282,22 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
 		     params->spinEpoch.gpsSeconds );
   spinOff += 1.0e-9 * (REAL8)( params->orbitEpoch.gpsNanoSeconds -
 			       params->spinEpoch.gpsNanoSeconds );
+
+  /* Determine bounds of hybrid root-finding algorithm, and initial
+     guess for e. */
+  xMinus = 1.0 + a*sinh( -1.0 ) + b*cosh( -1.0 ) - b;
+  xPlus = -1.0 + a*sinh( 1.0 ) + b*cosh( 1.0 ) - b;
+  x = -vDotAvg*tPeriObs;
+  if ( x < xMinus )
+    e = -log( -2.0*( x - xMinus )/( a - b ) - exp( 1.0 ) );
+  else if ( x <= 0 )
+    e = x/xMinus;
+  else if ( x <= xPlus )
+    e = x/xPlus;
+  else
+    e = log( 2.0*( x - xPlus )/( a + b ) - exp( 1.0 ) );
+  sinhe = sinh( e );
+  coshe = cosh( e ) - 1.0;
 
   /* Allocate output structures. */
   if ( ( output->a = (REAL4TimeVectorSeries *)
@@ -369,29 +375,43 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
   fData = output->f->data->data;
   phiData = output->phi->data->data;
   for ( i = 0; i < n; i++ ) {
-    INT4 nOrb; /* number of orbits since the specified orbit epoch */
 
-    /* First, find x in the range [0,2*pi]. */
     x = vDotAvg*( i*dt - tPeriObs );
-    nOrb = (INT4)( x/LAL_TWOPI );
-    if ( x < 0.0 )
-      nOrb -= 1;
-    x -= LAL_TWOPI*nOrb;
 
-    /* Newton-Raphson iteration to find E(x). */
-    while ( fabs( dx = e + a*sine + b*cose - x ) > dxMax ) {
-      e -= dx/( 1.0 + a*cose + a - b*sine );
-      if ( e < 0.0 )
-	e = 0.0;
-      else if ( e > LAL_TWOPI )
-	e = LAL_TWOPI;
-      sine = sin( e );
-      cose = cos( e ) - 1.0;
+    /* Use approximate Newton-Raphson method on ln|x| if |x| > 1. */
+    if ( x < xMinus ) {
+      x = log( -x );
+      while ( fabs( dx = log( e - a*sinhe - b*coshe ) - x ) > dxMax ) {
+	e += dx;
+	sinhe = sinh( e );
+	coshe = cosh( e ) - 1.0;
+      }
+    }
+    else if ( x > xPlus ) {
+      x = log( x );
+      while ( fabs( dx = log( -e + a*sinhe + b*coshe ) - x ) > dxMax ) {
+	e -= dx;
+	sinhe = sinh( e );
+	coshe = cosh( e ) - 1.0;
+      }
+    }
+
+    /* Use ordinary Newton-Raphson method on x if |x| <= 1. */
+    else {
+      while ( fabs( dx = -e + a*sinhe + b*coshe - x ) > dxMax ) {
+	e -= dx/( -1.0 + a*coshe + a + b*sinhe );
+	if ( e < -1.0 )
+	  e = -1.0;
+	else if ( e > 1.0 )
+	  e = 1.0;
+	sinhe = sinh( e );
+	coshe = cosh( e ) - 1.0;
+      }
     }
 
     /* Compute source emission time, phase, and frequency. */
     phi = t = tPow =
-      vDotAvg*( e + LAL_TWOPI*nOrb - ecc*sine ) + spinOff;
+      vDotAvg*( ecc*sinhe - e ) + spinOff;
     f = 1.0;
     for ( j = 0; j < nSpin; j++ ) {
       f += fSpin[j]*tPow;
@@ -399,10 +419,10 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
     }
 
     /* Appy frequency Doppler shift. */
-    upsilon = 2.0*atan2( sqrt( -onePlusEcc*cose ),
-			 sqrt( oneMinusEcc*( cose + 2.0 ) ) );
+    upsilon = 2.0*atan2( sqrt( eccPlusOne*coshe ),
+			 sqrt( eccMinusOne*( coshe + 2.0 ) ) );
     f *= f0 / ( 1.0 + vp*( cos( argument + upsilon ) + eCosOmega )
-		/onePlusEcc );
+		/eccPlusOne );
     phi *= twopif0;
     if ( fabs( f - fPrev ) > df )
       df = fabs( f - fPrev );

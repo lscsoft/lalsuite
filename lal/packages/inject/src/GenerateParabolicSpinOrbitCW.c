@@ -5,8 +5,6 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 
-\providecommand{\lessim}{\stackrel{<}{\scriptstyle\sim}}
-
 \subsection{Module \texttt{GenerateParabolicSpinOrbitCW.c}}
 \label{ss:GenerateParabolicSpinOrbitCW.c}
 
@@ -110,6 +108,11 @@ $$
 where we have explicitly split off the coefficients $\cos\omega/2$ and
 $2\sin\omega$ that can be precomputed.
 
+This routine does not account for relativistic timing variations, and
+issues warnings or errors based on the criterea of
+Eq.~(\ref{eq:relativistic-orbit}) in
+\verb@GenerateEllipticSpinOrbitCW.c@.
+
 \subsubsection*{Uses}
 \begin{verbatim}
 LALMalloc()                   LALFree()
@@ -212,17 +215,18 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
     ABORT( stat, GENERATESPINORBITCWH_EFTL,
 	   GENERATESPINORBITCWH_MSGEFTL );
   }
-#ifndef NDEBUG
-  if ( vp >= 0.01 ) {
-    LALWarning( stat, "Orbit may have significant relativistic"
-		" effects that are not included" );
-  }
-#endif
   if ( vp <= 0.0 || dt <= 0.0 || f0 <= 0.0 || vDot6 <= 0.0 ||
        n == 0 ) {
     ABORT( stat, GENERATESPINORBITCWH_ESGN,
 	   GENERATESPINORBITCWH_MSGESGN );
   }
+#ifndef NDEBUG
+  if ( lalDebugLevel & LALWARNING ) {
+    if ( f0*n*dt*vp*vp > 0.5 )
+      LALWarning( stat, "Orbit may have significant relativistic"
+		  " effects that are not included" );
+  }
+#endif
 
   /* Compute offset between time series epoch and periapsis, and
      betweem periapsis and spindown reference epoch. */
