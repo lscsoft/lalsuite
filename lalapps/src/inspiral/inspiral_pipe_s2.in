@@ -408,6 +408,7 @@ for seg in l1_data:
         # make sure we have done one and only one datafind for the segment
         if not done_df_for_seg:
           df = inspiral.DataFindNode(df_job)
+          df.set_ifo('L1')
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
@@ -462,6 +463,7 @@ for seg in h1_data:
         # make sure we have done one and only one datafind for the segment
         if not done_df_for_seg:
           df = inspiral.DataFindNode(df_job)
+          df.set_ifo('H1')
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
@@ -517,6 +519,7 @@ for seg in h2_data:
         # make sure we have done one and only one datafind for the segment
         if not done_df_for_seg:
           df = inspiral.DataFindNode(df_job)
+          df.set_ifo('H2')
           df.set_start(seg.start() - pad)
           df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
