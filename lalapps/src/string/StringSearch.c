@@ -200,7 +200,7 @@ int main(int argc,char *argv[])
 
  if (ProcessData(CommandLineArgs)) return 4;
 
- if(CommandLineArgs.InjectionFile != NULL) 
+ if (CommandLineArgs.InjectionFile != NULL) 
    {
      if (AddInjections(CommandLineArgs)) return 3;
      /* high pass filter data again with added injection */
@@ -259,6 +259,10 @@ int AddInjections(struct CommandLineArgsTag CLA)
   COMPLEX8FrequencySeries *response = NULL;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
+  /* Get info from injection file */
+  LALSimBurstTableFromLIGOLw(&status, &injections, CLA.InjectionFile, startTime, stopTime);
+
+  /* make the response function */
   LALCreateCOMPLEX8FrequencySeries(&status, &response, CLA.ChannelName, GV.ht_proc.epoch, 
 				   0.0, 1.0 / (GV.ht_proc.data->length * GV.ht_proc.deltaT), 
 				   strainPerCount, GV.ht_proc.data->length / 2 + 1);
@@ -266,8 +270,7 @@ int AddInjections(struct CommandLineArgsTag CLA)
   for(i = 0; i < (int)response->data->length; i++)
 			response->data->data[i] = one;
 
-  LALSimBurstTableFromLIGOLw(&status, &injections, CLA.InjectionFile, startTime, stopTime);
-
+  /* Inject the signals into the data */
   LALBurstInjectSignals(&status, &GV.ht_proc, injections, response); 
 
   /* free the injection table */
@@ -959,20 +962,22 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'h':
       /* print usage/help message */
-      fprintf(stdout,"All arguments are required except -n. One of -k or -c must be specified. They are:\n");
-      fprintf(stdout,"\t-f\tFLOAT\t Low frequency cut-off.\n");
-      fprintf(stdout,"\t-b\tFLOAT\t Template bank low frequency cut-off.\n");
-      fprintf(stdout,"\t-t\tFLOAT\t SNR threshold.\n");
-      fprintf(stdout,"\t-F\tSTRING\t Name of frame cache file.\n");
-      fprintf(stdout,"\t-C\tSTRING\t Name of channel.\n");
-      fprintf(stdout,"\t-S\tINTEGER\t GPS start time.\n");
-      fprintf(stdout,"\t-E\tINTEGER\t GPS end time.\n");
-      fprintf(stdout,"\t-T\tINTEGER\t Number of seconds to truncate inverse square root of power spectrum.\n");
-      fprintf(stdout,"\t-N\tINTEGER\t Number of non-overlapping sub-segments, N. The 2N-1 segments analysed will overlap by 50%s. \n","%");
-      fprintf(stdout,"\t-k\t      \t Specifies a search for string kinks.\n");
-      fprintf(stdout,"\t-c\t      \t Specifies a search for string cusps.\n");
-      fprintf(stdout,"\t-n\t      \t Use fake gaussian noise.\n");
-      fprintf(stdout,"eg ./StringSearch -f 40.0 -F ht_cache -C H1:Calibrated-Strain -S 732847600 -E 732849648 -N 32 -b 100.0 -t 20.0 -c\n");
+      fprintf(stdout,"All arguments are required except -n and -i. One of -k or -c must be specified. They are:\n");
+      fprintf(stdout,"\t--low-freq-cutoff (-f)\t\tFLOAT\t Low frequency cut-off.\n");
+      fprintf(stdout,"\t--bank-low-freq-cutoff (-b)\tFLOAT\t Template bank low frequency cut-off.\n");
+      fprintf(stdout,"\t--threshold (-t)\t\tFLOAT\t SNR threshold.\n");
+      fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
+      fprintf(stdout,"\t--channel-name (-C)\t\tSTRING\t Name of channel.\n");
+      fprintf(stdout,"\t--injection-file (-i)\t\tSTRING\t Name of xml injection file.\n");
+      fprintf(stdout,"\t--gps-start-time (-S)\t\tINTEGER\t GPS start time.\n");
+      fprintf(stdout,"\t--gps-end-time (-E)\t\tINTEGER\t GPS end time.\n");
+      fprintf(stdout,"\t--settling-time (-T)\t\tINTEGER\t Number of seconds to truncate inverse square root of power spectrum.\n");
+      fprintf(stdout,"\t--no-of-segments (-N)\t\tINTEGER\t Number of non-overlapping sub-segments, N. The 2N-1 segments analysed will overlap by 50%s. \n","%");
+      fprintf(stdout,"\t--kink-search (-k)\t\tFLAG\t Specifies a search for string kinks.\n");
+      fprintf(stdout,"\t--cusp-search (-c)\t\tFLAG\t Specifies a search for string cusps.\n");
+      fprintf(stdout,"\t--fake-gaussian-noise (-n)\tFLAG\t Use fake gaussian noise.\n");
+      fprintf(stdout,"\t--help (-n)\t\t\tFLAG\t Print this message.\n");
+      fprintf(stdout,"eg ./lalapps_StringSearch --low-freq-cutoff 40.0 --bank-low-freq-cutoff 40.0 --threshold 80.0 --frame-cache ht_local_cache --channel-name H1:Calibrated-Strain --gps-start-time 732847600 --gps-end-time 732849648 --no-of-segments 32 --settling-time 8 --cusp-search\n");
       exit(0);
       break;
     default:
