@@ -4,6 +4,8 @@ libburstsearch_la_SOURCES = PowerETG.c SlopeETG.c StdBurstSearch.c TFClustersETG
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
+MAINTAINERCLEANFILES = Sequence.c TimeSeries.c
+EXTRA_DIST = SequenceC.m4 Sequence.m4 TimeSeriesC.m4 TimeSeries.m4
 dvi-local: .dvi-dep
 @DVIMKFILE@
 
