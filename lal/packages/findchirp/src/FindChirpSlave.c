@@ -421,7 +421,6 @@ LALFindChirpSlave (
         UINT4   tdLength = currentDataSeg->real4Data->data->length;
         UINT4   fdLength = currentDataSeg->spec->data->length;
 
-        REAL4 fourDeltaToverN  = ( 4.0 * (REAL4) deltaT ) / (REAL4) tdLength;
 
         /* create storeage for loudest event and (s|s) for each segment */
 #if 1
@@ -601,9 +600,10 @@ LALFindChirpSlave (
           for ( k = 0; k < fdLength; ++k )
           {
             if ( tmpltPower[k] )
-              sigNorm += (fcData[k].re * fcData[k].re) / tmpltPower[k];
+              sigNorm += ( fcData[k].re * fcData[k].re +
+                  fcData[k].im * fcData[k].im ) / tmpltPower[k];
           }
-          sigNorm *= fourDeltaToverN;
+          sigNorm *= ( 4.0 * (REAL4) deltaT ) / (REAL4) tdLength;
 #if 0
           fprintf( stdout, "sigNorm[%u] = %e\n", i, sigNorm );
           fflush( stdout );
