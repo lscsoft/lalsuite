@@ -79,6 +79,7 @@ LALFindChirpBCVData (
   REAL4                 I73 = 0.0;
   REAL4                 I53 = 0.0;
   REAL4                 I1 = 0.0;
+  REAL4                 segNormSum;
 
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
@@ -402,7 +403,9 @@ LALFindChirpBCVData (
     memset( fcSeg->a1->data, 0, fcSeg->a1->length * sizeof(REAL4) );
     memset( fcSeg->b1->data, 0, fcSeg->b1->length * sizeof(REAL4) );
     memset( fcSeg->b2->data, 0, fcSeg->b2->length * sizeof(REAL4) );
+    memset( fcSeg->segNorm->data, 0, fcSeg->segNorm->length * sizeof(REAL4) );
 
+    segNormSum = 0.0;
     /* 
      * moments necessary for the calculation of
      * the BCV normalization parameters
@@ -413,6 +416,9 @@ LALFindChirpBCVData (
       I73 += 4.0 * amp[k] * amp[k] * wtilde[k].re ;
       I53 += 4.0 * amp[k] *  ampBCV[k] * wtilde[k].re ;
       I1 += 4.0 * ampBCV[k] * ampBCV[k] * wtilde[k].re;  
+
+      segNormSum += amp[k] * amp[k] * wtilde[k].re;
+      fcSeg->segNorm->data[k] = segNormSum;
 
       /* calculation of a1, b1 and b2 for each ending frequency */
       /* making sure to avoid division by 0                     */
