@@ -1597,7 +1597,7 @@ void readDataPair(LALStatus *status,
   sampleRate = params->sampleRate;
 
   /* initialise status pointer */
-  INITSTATUS( status, "readDataPair",COHERENCEC );
+  INITSTATUS( status, "readDataPair", STOCHASTICC );
   ATTATCHSTATUSPTR( status );
 
   /* buffer start time */
