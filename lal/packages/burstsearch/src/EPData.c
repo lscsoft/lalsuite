@@ -48,7 +48,7 @@ LALCreateEPDataSegmentVector (
     ABORT( status, EPDATA_EALOC, EPDATA_MSGEALOC );
   }
 
-  for (i = 0; i < vectorPtr->length ; ++i)
+  for (i = 0; i < (INT4)vectorPtr->length ; ++i)
   {
     segPtr[i].data = (REAL4TimeSeries *) 
       LALMalloc (sizeof(REAL4TimeSeries));
@@ -102,7 +102,7 @@ LALDestroyEPDataSegmentVector (
 
   segPtr = (*vector)->data;
   
- for (i = 0; i < (*vector)->length; ++i)
+ for (i = 0; i < (INT4)(*vector)->length; ++i)
   {
     LALCDestroyVector (status->statusPtr, &segPtr[i].resp->data);
     CHECKSTATUSPTR (status);

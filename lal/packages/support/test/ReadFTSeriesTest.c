@@ -1272,13 +1272,13 @@ int main( void )
       > READFTSERIESTEST_TOL) 
   {
     fprintf(stderr,"DeltaT Mismatch [ReadFTSeriesTest:%d,%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFLS);
+	    status.statusDescription );
     return READFTSERIESTESTC_EFLS;
   }
   if (strcmp(dTimeSeries.name,dTimeSeries2.name) != 0) 
   {
     fprintf(stderr,"Name Mismatch [ReadFTSeriesTest:%d,%s]\n",status.statusCode,
-	    status.statusDescription, READFTSERIESTESTC_MSGEFLS);
+	    status.statusDescription );
     return READFTSERIESTESTC_EFLS;
   }
 

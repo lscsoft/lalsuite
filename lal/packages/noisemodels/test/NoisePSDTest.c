@@ -34,6 +34,7 @@ LALCheckMemoryLeaks
 
 \vfill{\footnotesize\input{NoisePSDTestCV}}
 </lalLaTeX>  */
+#include <lal/AVFactories.h>
 #include <lal/LALNoiseModels.h>
 
 INT4 lalDebugLevel=1;

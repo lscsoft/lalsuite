@@ -116,14 +116,14 @@ COMPLEX16RingDownParams;
 \newpage\input{LALRingDownC}
 </lalLaTeX>  */
 
-void LALCOMPLEX8RingDown
+void LALSRingDown
 (
 	LALStatus		*status,
 	COMPLEX8FrequencySeries	*result,
 	COMPLEX8RingDownParams		*params
 );
 
-void LALCOMPLEX16RingDown
+void LALDRingDown
 (
 	LALStatus		*status,
 	COMPLEX16FrequencySeries	*result,

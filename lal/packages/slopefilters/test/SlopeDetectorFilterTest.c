@@ -83,7 +83,7 @@ int lalDebugLevel = LALMSGLVL3;
 /* See the section (currently 7.4.1) of the LSD 
  * on "Status-reporting objects" for list of predefined debug levels */
 
-int main( int argc, char *argv[] )
+int main( void )
 {
   static LALStatus     status;
   REAL4Vector          *output;
@@ -107,7 +107,7 @@ int main( int argc, char *argv[] )
   REAL4  sampper = 0.00390625;  /* 1/256 */
   UINT4  i;
   UINT4  ntaps = (UINT4)SLOPEDETECTORFILTERTESTC_NTAPS;
-  UINT4  statustest;
+  /* UINT4  statustest; */
   SLOPEFilterParams fparams;
 
   /*******  CREATE A TEST VECTOR FOR DATA INPUT  ************/

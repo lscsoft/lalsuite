@@ -291,7 +291,7 @@ static REAL4 zbrent(REAL4 (*func)(REAL4, REAL4, REAL8, REAL8),
 		    REAL8 P0, REAL8 Q, REAL8 bpp)
 {
   INT4 iter;
-  REAL4 a=x1,b=x2,c=x2,d,e,min1,min2;
+  REAL4 a=x1,b=x2,c=x2,d=0,e=0,min1,min2;
   REAL4 fa=(*func)(bpp,a,Q,P0),fb=(*func)(bpp,b,Q,P0),fc,p,q,r,s,tol1,xm;
 
   if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0)) {
@@ -360,6 +360,7 @@ static REAL4 zbrent(REAL4 (*func)(REAL4, REAL4, REAL8, REAL8),
 
 #define MAXIT 20000
 
+#if 0
 static REAL4 NewtonRoot(void (*funcd)(REAL4, REAL4 *, REAL4 *, REAL8, REAL8, REAL8), 
              REAL4 x1, REAL4 x2,
              REAL4 xacc,
@@ -415,6 +416,7 @@ static REAL4 NewtonRoot(void (*funcd)(REAL4, REAL4 *, REAL4 *, REAL8, REAL8, REA
 	*/
         return rts;
 }
+#endif
 #undef MAXIT
 
 

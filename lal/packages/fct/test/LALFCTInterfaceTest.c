@@ -899,7 +899,7 @@ setupGlobals(LALStatus* const status, int argc, char **argv)
     UINT8 output_data_size = 0;
 
     /* I have to guess what the size of the list of chirp params will be */
-    const INT4 Nlist = 5000;
+    /* const INT4 Nlist = 5000; */
     
     INT4 i = 0;
 

@@ -45,7 +45,7 @@ void LALUnFormattedWiener
 
   /*  variable delcarations  */
   INT2			length;		/*  length of complex vector passed to LALFormattedWiener */ 
-  INT2			count1, count2, count3; /* iterators */
+  INT2			count1, count2/*, count3*/; /* iterators */
   REAL4Vector		*sz ;		/* zero padded version of WienerUnformattedInput.s */
   WienerFormattedInput	hstl;		/* finalproduct sentto LALFormattedWiener */
   RealFFTPlan		*plan;		/* plan used to create stil */
@@ -94,10 +94,10 @@ void LALUnFormattedWiener
   CHECKSTATUSPTR(stat);
 
   /* zero padding */
-  for (count1 = 0; count1 <(input->h->length)   ; count1++)
+  for (count1 = 0; count1 <(INT4)(input->h->length)   ; count1++)
       hstl.h->data[count1] = input->h->data[count1];
 
-  for (count1 = 0; count1 <(input->s->length)   ; count1++)
+  for (count1 = 0; count1 <(INT4)(input->s->length)   ; count1++)
       sz->data[count1] = input->s->data[count1];
 
   for (count2 = count1; count2 < (length); count2++)
@@ -140,7 +140,7 @@ void LALFormattedWiener
 { /* </lalVerbatim> */
 
   /*  Variable Declarations  */
-  INT2 delta;			/* difference in length between hstl.st & hstl.h */ 
+  /*INT2 delta;*/			/* difference in length between hstl.st & hstl.h */ 
   INT2 count1, count2;	        /* iterators */
   REAL4 N;			/* this is a real4 version of input->TotalLength */
   REAL4Vector *hz;		/* zero padded version of hstl.h */
@@ -195,7 +195,7 @@ void LALFormattedWiener
 
   /* zero padding the source data */
 
-  for (count1 = 0; count1 < (input->h->length); count1++)
+  for (count1 = 0; count1 < (INT4)(input->h->length); count1++)
   {
       hz->data[count1] = input->h->data[count1];
   }
@@ -216,7 +216,7 @@ void LALFormattedWiener
 
   /* taking the conplex conjucate of the transformed template */
 
-  for (count1 = 0; count1 < input->st->length; count1++)  
+  for (count1 = 0; count1 < (INT4)input->st->length; count1++)  
   {    
      conjs->data[count1].re = input->st->data[count1].re;
      conjs->data[count1].im = -(input->st->data[count1].im);
@@ -224,7 +224,7 @@ void LALFormattedWiener
 
 
   /* multitplying that result by the transformed source data */
-  for (count1 = 0; count1 < input->st->length; count1++)  
+  for (count1 = 0; count1 < (INT4)input->st->length; count1++)  
   {  
      qprime->data[count1].re = (conjs->data[count1].re * htil->data[count1].re)-(conjs->data[count1].im * htil->data[count1].im);
      qprime->data[count1].im = (conjs->data[count1].re * htil->data[count1].im)+(conjs->data[count1].im * htil->data[count1].re); 
@@ -246,12 +246,12 @@ void LALFormattedWiener
 
 
 
-  for (count1 = 0; count1 < input->h->length; count1++)
+  for (count1 = 0; count1 < (INT4)input->h->length; count1++)
       output->q->data[count1] = (1/N)*largeq->data[count1];
 
 
 
-  for (count2 = 0; count2 < (*(input->TotalLength)-input->h->length); count2++)
+  for (count2 = 0; count2 < (INT4)(*(input->TotalLength)-input->h->length); count2++)
   {
       output->z->data[count2] = (1/N)*largeq->data[count1];
       count1++;
@@ -277,7 +277,7 @@ void LALFormattedWiener
   LALDestroyRealFFTPlan(stat->statusPtr, &plan);
   CHECKSTATUSPTR(stat);
 
-  LALDestroyComplexFFTPlan(stat->statusPtr, &plan2);
+  LALDestroyRealFFTPlan(stat->statusPtr, &plan2);
   CHECKSTATUSPTR(stat); 
 
   DETATCHSTATUSPTR( stat );

@@ -135,6 +135,7 @@ REAL8 inner(const COMPLEX8Vector* const f, const COMPLEX8Vector* const g)
     return sum;
 }
 
+#if 0
 static
 void generateTimeDomainChirp(LALStatus* const status,
                              const REAL8 tau0,
@@ -225,6 +226,7 @@ void generateTimeDomainChirp(LALStatus* const status,
     write(fd_output, out->data, out->length*sizeof(*(out->data)));
 #endif
 }
+#endif
 
 static
 REAL4 maxPhi(LALFCTPhaseFn phi, const INT4 N)
@@ -405,6 +407,7 @@ generateFCTTemplate(const INT4 k, const INT4 k0,
 #endif
 }
 
+#if 0
 static
 void
 transformTimeDomainChirp(LALStatus* const status,
@@ -444,6 +447,7 @@ transformTimeDomainChirp(LALStatus* const status,
     LALCDestroyVector(status, &tmp_out);
     LALCDestroyVector(status, &tmp_in);
 }
+#endif
 
 static
 void

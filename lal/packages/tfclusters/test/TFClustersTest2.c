@@ -56,7 +56,7 @@ NRCSID (MAIN, "$Id$");
 int lalDebugLevel = LALMSGLVL3 | LALNMEMDBG;
 
 
-int main(int argc, char* argv[]) {
+int main(void) {
 
   static LALStatus status;
   REAL4TimeSeries tseries;

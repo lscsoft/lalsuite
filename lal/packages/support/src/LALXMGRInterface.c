@@ -27,6 +27,7 @@ Functions for creating XMGR graphs from LAL structures and functions.
 
 #include <math.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALStc.c>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/LALXMGRInterface.h>
@@ -301,7 +302,7 @@ LALXMGRGPSTimeToTitle(
   LALDateString( status->statusPtr, stopString, &thisDate );
   CHECKSTATUSPTR( status );
 
-  snprintf( title->data, title->length * sizeof(CHAR), 
+  LALSnprintf( title->data, title->length * sizeof(CHAR), 
       "%s from %s to %s", comment, startString->data, stopString->data );
 
   LALCHARDestroyVector( status->statusPtr, &startString );

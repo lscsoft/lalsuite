@@ -107,7 +107,7 @@ void LALUSPA (
 
    n0 = ceil (f/df);
    nn = ceil (ak.fn/df);
-   ASSERT (nn<signal->length/2, status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+   ASSERT (nn<(INT4)signal->length/2, status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
 
 /* 
    All frequency components below f0 and above fn are set to zero  
@@ -157,7 +157,7 @@ void LALUSPA (
       *(signal->data+signal->length-i) = -(REAL4) amp * sin(psi);
    }
    i = nn; 
-   while (i<=signal->length/2) 
+   while (i<=(INT4)signal->length/2) 
    {
       *(signal->data + i) = 0.;
       *(signal->data + signal->length - i) = 0.;

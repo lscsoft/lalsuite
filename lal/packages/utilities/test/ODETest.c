@@ -64,7 +64,6 @@ static int CircularOrbit( void )
 {
   enum { NUMDIM = 4, NUMSTP = 4 };
   const UINT4 ndim = NUMDIM;
-  const UINT4 nstp = NUMSTP;
   const REAL4 tend = 100;
   const REAL4 tstp = 0.01;
   static REAL4ODEParams params;
@@ -122,7 +121,6 @@ static int EccentricOrbit( void )
 {
   enum { NUMDIM = 4, NUMSTP = 6 };
   const UINT4 ndim = NUMDIM;
-  const UINT4 nstp = NUMSTP;
   const REAL4 nper = 3;
   static REAL4ODEParams params;
   static REAL4ODEIndep indep;

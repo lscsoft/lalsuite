@@ -105,6 +105,8 @@ NRCSID (GPSTOUTCC, "$Id$");
 #include <lal/Date.h>
 #include "date_value.h"
 
+struct tm *gmtime_r( const time_t *, struct tm * );
+char *asctime_r( const struct tm *, char * );
 
 /* latest time for which this routine will work: 2002-Sep-30 23:59:00 */
 /* 24 leap seconds because of the two interpolated ones: 1970-Jan-1 and

@@ -261,11 +261,11 @@ int main( int argc, char *argv[] )
 	if ( lalDebugLevel > 0 )
 	{
 		printf("MESG: q \n");
-		for (count = 0; count < result.q->length; count++)
+		for (count = 0; count < (INT4)result.q->length; count++)
 			printf("MESG: %f \n", result.q->data[count]);
 
 		printf("MESG: z \n");
-		for (count = 0; count < result.z->length; count++)
+		for (count = 0; count < (INT4)result.z->length; count++)
 			printf("MESG: %f \n", result.z->data[count]);
 	}
 

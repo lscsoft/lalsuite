@@ -514,6 +514,7 @@ void LALInspiralSetup (LALStatus *status,
 /* 	NOTES: Damour, Iyer and Sathyaprakash (1997). */
 /* ---------------------------------------------------------------------- */
 /* Subroutine */ 
+#if 0
 static void LALPadeCoeffs7(int n, double *cs, double *as)
 {
     /* System generated locals */
@@ -837,3 +838,4 @@ static void LALPadeCoeffs7(int n, double *cs, double *as)
     cs[7] = -(t188 + t214 + t236 + t255) * t3 * t19 * t260 * t262;
     return ;
 } /* LALPadeCoeffs7 */
+#endif

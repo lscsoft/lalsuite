@@ -60,12 +60,12 @@ int lalDebugLevel = LALMSGLVL3;
 
 
 
-int main(int argc, char* argv[]) {
+int main(void) {
 
   static LALStatus status;
   REAL4TimeSeries tseries;
   CListDir dir;
-  CList clist, list;
+  CList clist/*, list*/;
   TFCWParams twav;
   TFPlaneParams tspec;
   Spectrogram spower;
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
   RandomParams *params = NULL;
   REAL4Vector *vect = NULL;
 
-  REAL8 T, P;
+  REAL8 /*T,*/ P;
   UINT4 i, j, N;
   INT4 seed = 0;
 

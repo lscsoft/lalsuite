@@ -8,7 +8,7 @@ NRCSID (MAIN, "$Id$");
 
 int lalDebugLevel = LALMSGLVL3;
 
-int main(int argc, char* argv[]) {
+int main(void) {
 
   static LALStatus status;
   

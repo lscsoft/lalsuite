@@ -37,15 +37,15 @@ static void SDensity (REAL8 *dEgw, REAL8 nu)
   }
 
 int lalDebugLevel = 0;
-int main ()
+int main ( void )
  {
   static LALStatus status;
   AstroOmegaGeneralParams generalp;
-  AstroOmegaTemplatesParams pulsarp,modesp,binaryp;
+  AstroOmegaTemplatesParams pulsarp,modesp/*,binaryp*/;
   AstroOmegaGeneralSourceParams generalsp;
-  AstroOmegaTemplatesSourceParams pulsarsp,modessp,binarysp;
+  AstroOmegaTemplatesSourceParams pulsarsp,modessp/*,binarysp*/;
   AstroOmegaCosmoParams cosmop;
-  REAL8 zmax, nu, test;
+  REAL8 /* zmax,*/ nu, test;
 
   cosmop.ho=0.68;
   cosmop.density_matter=0.3;

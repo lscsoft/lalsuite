@@ -63,11 +63,10 @@ LALInitBarycenter(LALStatus *stat, EphemerisData *edat)
     FILE *fp1, *fp2; /* fp1 is table of Earth location; fp2 is for Sun*/
 
     INT4 j; /*dummy index*/
-    INT4 gpsYr, leap;  /*gpsYr + leap is the time on the GPS clock
+    INT4 gpsYr;  /*gpsYr + leap is the time on the GPS clock
                           at first instant of new year, UTC; equivalently
                           leap is # of leap secs added between Jan.6, 1980 and
                           Jan. 2 of given year */
-    INT4 t2000 = 630720013;
 
     INITSTATUS(stat,"LALInitBarycenter",LALINITBARYCENTERC);
     ATTATCHSTATUSPTR(stat);

@@ -100,6 +100,7 @@ NRCSID( DETECTORSITETESTC, "$Id$" );
 #define DETECTORSITETESTC_MSGEFLS "Incorrect answer for valid data"
 /***************************** </lalErrTable> */
 
+#if 0
 static void
 PrintLALDetector(LALDetector *detector)
 {
@@ -124,6 +125,7 @@ PrintLALDetector(LALDetector *detector)
          detector->frDetector.yArmAzimuthRadians);
   return;
 }
+#endif
 
 
 static int

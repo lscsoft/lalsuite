@@ -136,8 +136,8 @@ int main( int argc, char *argv[] )
 	COMPLEX16RingDownParams   *nullParams;
 	COMPLEX16RingDownParams   params;
 	COMPLEX16FrequencySeries  *nullOutput;
-	COMPLEX16FrequencySeries  output;
-	COMPLEX16Sequence         temp;
+	/* COMPLEX16FrequencySeries  output; */
+	/* COMPLEX16Sequence         temp; */
 	INT4			  code;
 
 	/*  Initialize Variables  */

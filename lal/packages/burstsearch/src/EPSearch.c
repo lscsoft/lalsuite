@@ -78,13 +78,13 @@ EPSearch (
 
     /* allocate temporary memory for spectrum */
     dummySpec = (REAL4 *)LALMalloc(fseries->data->length * sizeof(REAL4));
-    for (j=0 ; j<fseries->data->length ; j++)
+    for (j=0 ; j<(INT4)fseries->data->length ; j++)
     {
       dummySpec[j] = 0.0;
     }
 
     /* loop over data computing spectrum */
-    for ( i=0 ; i<tmpDutyCycle ; i++)
+    for ( i=0 ; i<(INT4)tmpDutyCycle ; i++)
     {
       /* point dummySegment to the segment to analyze */
       dummySegment = params->epSegVec->data + params->currentSegment + i;
@@ -96,20 +96,20 @@ EPSearch (
 
       /* normalize the data stream so that rms of Re or Im is 1 */
       redummy=imdummy=0.0;
-      for (j=0 ; j<fseries->data->length ; j++)
+      for (j=0 ; j<(INT4)fseries->data->length ; j++)
       {
         redummy = fseries->data->data[j].re ;
         imdummy = fseries->data->data[j].im ;
         dummySpec[j] += redummy*redummy + imdummy*imdummy;
       }
     }
-    for (j=0 ; j<fseries->data->length ; j++)
+    for (j=0 ; j<(INT4)fseries->data->length ; j++)
     {
       dummySpec[j] /= ((REAL4) tmpDutyCycle);
     }
 
     /* loop over data applying excess power method */
-    for ( i=0 ; i<tmpDutyCycle ; i++)
+    for ( i=0 ; i<(INT4)tmpDutyCycle ; i++)
     {
 
       /*
@@ -151,7 +151,7 @@ EPSearch (
 
       /* normalize the data stream so that rms of Re or Im is 1 */
       redummy=imdummy=0.0;
-      for (j=0 ; j<fseries->data->length ; j++)
+      for (j=0 ; j<(INT4)fseries->data->length ; j++)
       {
         REAL4 tmpVar = sqrt( 4 * dummySegment->data->deltaT / 
             dummySegment->spec->data->data[j] );

@@ -378,6 +378,7 @@ LALDR_InfNorm33Matrix(const REAL8 matrix[3][3])
 /*
  * Print out matrix
  */
+#if 0
 static void
 LALDR_Print33Matrix(const REAL8 matrix[3][3],
                     const CHAR *varname,
@@ -450,6 +451,7 @@ LALDR_Print33Matrix(const REAL8 matrix[3][3],
 
   return;
 }
+#endif
 
 
 
@@ -506,6 +508,7 @@ LALDR_EulerRotation(REAL8        rotationMatrix[3][3],
  * an LALDetector.  It stuffs its results in a SkyPosition structure in
  * RADIANS.
  */
+#if 0
 static void
 LALDR_GetEffectiveLoc(SkyPosition *eff_loc, const LALDetector *detector)
 {
@@ -593,6 +596,7 @@ LALDR_GetEffectiveLoc(SkyPosition *eff_loc, const LALDetector *detector)
     return;
     
 } /* END: GetEffectiveLoc() */
+#endif
 
 
 

@@ -40,8 +40,6 @@ int main(int argc, char *argv[])
   INT4                gps_utc = 0;
   INT4                tai_utc = 0;
   INT4                i = 0;
-  LALLeapSecFormat    format = LALLEAPSEC_GPSUTC;
-  LALLeapSecAccuracy  acc = LALLEAPSEC_STRICT;
   LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
 
 

@@ -39,6 +39,7 @@ LALInspiralCreateCoarseBank
 /* </lalErrTable> */
 
 #include <stdio.h>
+#include <lal/AVFactories.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 

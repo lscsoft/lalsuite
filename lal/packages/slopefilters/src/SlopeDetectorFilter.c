@@ -623,7 +623,7 @@ LALSlopeConvolutionFilter( LALStatus                *status,
     datalength = input_data->length;
     datain = input_data->data;
     /* check that the data array is of a usable length */
-    if ( (datalength < 0) ||
+    if ( ((INT4)datalength < 0) ||
 	 (datalength > MAX_SLOPE_DETECTOR_FILTER_ORDER) ) {
       ABORT( status, SLOPEDETECTORFILTERH_EINVFILTLEN, 
 	     SLOPEDETECTORFILTERH_MSGEINVFILTLEN );
@@ -715,7 +715,7 @@ void CreateGaussianTaps(UINT4 ntaps, REAL4 binoffset, REAL4* tap) {
 
 void CreatePeriodSineTaps(UINT4 ntaps, REAL4 binoffset, REAL4* tap) {
   UINT4 i;
-  REAL8 midbin,sigbins;
+  REAL8 midbin/*,sigbins*/;
   REAL8 offs;
   midbin = ((REAL8)ntaps - 1)/2;
   for(i=0;i<ntaps;++i) {
