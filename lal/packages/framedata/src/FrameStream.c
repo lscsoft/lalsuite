@@ -656,7 +656,7 @@ static struct FrVect *makeFrVect1D( struct FrameH *frame, int chtype,
     if ( ! adc || ! raw )
     {
       FrVectFree( vect );
-      adc ? free( adc ) : 0;
+      if ( adc ) free( adc );
       return NULL;
     }
     adc->classe = FrAdcDataDef();
@@ -969,7 +969,7 @@ LALFrWriteREAL4TimeSeries(
   CHAR prefix[256];
   CHAR fname[256];
   CHAR units[LALUnitNameSize];
-  CHARVector vnits = { LALUnitNameSize, units };
+  CHARVector vnits;
   struct FrFile *frfile;
   UINT4 nframes;
   INT8 t;
@@ -978,6 +978,9 @@ LALFrWriteREAL4TimeSeries(
   ASSERT( series, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( params, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ATTATCHSTATUSPTR( status );
+
+  vnits.length = sizeof( units );
+  vnits.data = units;
 
   strncpy( prefix, params->prefix ? params->prefix : "F", sizeof( prefix ) );
   
