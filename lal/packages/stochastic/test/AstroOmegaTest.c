@@ -33,7 +33,7 @@ NRCSID (ASTROOMEGATESTC, "$Id$");
 
 static void SDensity (REAL8 *dEgw, REAL8 nu)
  {  
-  *dEgw=pow(nu,3.);
+  *dEgw=9.27E35 * pow(nu,3.);
   return;
  }
 
@@ -46,35 +46,33 @@ int main ( void )
   AstroOmegaCosmoParams cosmop;
   REAL8 nu, test;
 
-  cosmop.ho = 0.68;
+  cosmop.ho = 0.65;
   cosmop.density_matter = 0.3;
   cosmop.density_vacuum = 0.7;
   cosmop.density_k = 0.;
   nu = 1100.;
   /*source*/
-  sourcep.fact = 2.88E-22;
+  sourcep.lambda = 4.84E-3;
   sourcep.numax = 4000.;
   sourcep.SDensitySource = SDensity;
   p.cosmoparams = cosmop;
   p.sourceparams = sourcep;
 
   
-   p.extraparams = &nu; 
-   LALAstroOmega (&status, &test, nu,&p);
-   if (fabs(test-6.74E-11) > 1.E-12)
-    {
-     printf("error! the right value is 6.74E-11 not %.2e\n",test);
-    }
-   else printf("omega(%f)= %.2e o.k\n", nu,test);
-
-
-   
-   /* 
+  p.extraparams = &nu; 
+  LALAstroOmega (&status, &test, nu,&p);
+  if (fabs(test-1.16E-10) > 1.E-12)
+   {
+    printf("error! the right value is 1.16E-10 not %.2e\n",test);
+   }
+  else printf("omega(%f)= %.2e o.k\n", nu,test);
+  
+   /*  
   for (nu = 0.;nu < sourcep.numax;nu = nu + 10.)
    {
     p.extraparams = &nu;
     LALAstroOmega (&status, &test, nu, &p);
     printf("%f\t %.2e\n", nu,test);}
-   */
+  */
   return 0;
   }

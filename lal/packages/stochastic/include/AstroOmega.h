@@ -40,8 +40,9 @@ These are function pointers corresponding to the spectral energy density of a si
 typedef void (REAL8LALSDensity) (REAL8 *output, REAL8 input);
 \end{verbatim}
 These are input structures corresponding to the model parameters (the cosmological model parameters and the source model parameters)
-cosmological model parameters:
+
 \begin{verbatim}
+cosmological model parameters:
 typedef struct
 tagAstroOmegaCosmoParams
  {
@@ -53,20 +54,18 @@ tagAstroOmegaCosmoParams
 AstroOmegaCosmoParams;
 \end{verbatim}
 
-source model parameters 
-\begin{verbatim}
+source parameters 
 typedef struct
 tagAstroOmegaSourceParams
  { 
    REAL8LALSDensity   *SDensitySource; single spectral energy density
    REAL8              numax; frequency cutoff in the source frame
-   REAL8              fact; takes into account different multiplicative factors, , see AstroOmega.c for details
+   REAL8              lambda; mass fraction of source progenitors expressed in inverse solar masses.
  }
 AstroOmegaSourceParams;
 
 
-model parameters (cosmological + source model)
-\begin{verbatim}
+model parameters (cosmological + source)
 typedef struct
 tagAstroOmegaParams
  {
@@ -104,7 +103,7 @@ tagAstroOmegaSourceParams
  { 
    REAL8LALSDensity   *SDensitySource;
    REAL8              numax;
-   REAL8              fact;
+   REAL8              lambda;
  }
 AstroOmegaSourceParams;
 

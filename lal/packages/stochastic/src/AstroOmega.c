@@ -104,7 +104,7 @@ the following program shows how to use the function LALAstroOmega
 #include <lal/LALConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/Integrate.h>
-#include "AstroOmega.h"
+#include <lal/AstroOmega.h>
 
 NRCSID (ASTROOMEGATESTC, "$Id$");
 
@@ -159,7 +159,7 @@ int main ()
 #include <lal/LALConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/Integrate.h>
-#include "AstroOmega.h"
+#include <lal/AstroOmega.h>
 
 NRCSID (ASTROOMEGAC, "$Id$");
 
@@ -173,7 +173,7 @@ void LALAstroOmega (LALStatus *s, REAL8 *omeganu, REAL8 nu, void *p)
    AstroOmegaParams params;
    AstroOmegaSourceParams sourcep;
    AstroOmegaCosmoParams cosmop;
-   REAL8 omegaz, zmax, numax, fact;   
+   REAL8 omegaz, zmax, numax, lambda;   
    INITSTATUS (s, "LALAstroOmega", ASTROOMEGAC);
    ATTATCHSTATUSPTR (s);
   
@@ -181,13 +181,13 @@ void LALAstroOmega (LALStatus *s, REAL8 *omeganu, REAL8 nu, void *p)
    cosmop=params.cosmoparams;
    sourcep = params.sourceparams;
    numax= sourcep.numax;
-   fact = sourcep.fact;
+   lambda = sourcep.lambda;
 
    if((nu >= numax)||(nu <= 0.)){*omeganu = 0.;}
    else
     {
      if (nu < (numax / 6.)) {zmax = 5.;}
-     else {zmax = (numax / nu)-1.;}
+     else {zmax = (numax / nu) - 1.;}
  
      zint.function = dAstroOmega;
      zint.xmin     = 0;
@@ -195,7 +195,7 @@ void LALAstroOmega (LALStatus *s, REAL8 *omeganu, REAL8 nu, void *p)
      zint.type     = ClosedInterval;
 
      LALDRombergIntegrate (s->statusPtr, &omegaz, &zint, &params); 
-     *omeganu = fact * nu * omegaz;
+     *omeganu = 4.66e-56 * lambda / (cosmop.ho * cosmop.ho) * nu * omegaz;
      }
   CHECKSTATUSPTR (s);
   DETATCHSTATUSPTR (s);
@@ -222,16 +222,13 @@ static void dAstroOmega (LALStatus *s, REAL8 *domegaz, REAL8 z, void *p)
   AstroOmegaSourceParams sourcep; 
   AstroOmegaCosmoParams cosmop;
   REAL8LALSDensity *SDensitySource;
-  REAL8 Rc, dEgw, nu, nuz, numax, fact;
+  REAL8 Rc, dEgw, nu, nuz;
   
   INITSTATUS (s, "dAstroOmega", ASTROOMEGAC);
   ATTATCHSTATUSPTR (s); 
   params = *((AstroOmegaParams *)p);
-  cosmop = params.cosmoparams;
   sourcep = params.sourceparams;
   SDensitySource = sourcep.SDensitySource;
-  numax = sourcep.numax;
-  fact = sourcep.fact;
   nu = *((REAL8 *)params.extraparams);
   
   /*frequency in the source frame*/
@@ -240,7 +237,7 @@ static void dAstroOmega (LALStatus *s, REAL8 *domegaz, REAL8 z, void *p)
   SDensitySource(&dEgw, nuz);
   /*cosmic formation rate*/
   SFR(&Rc, z); 
-  *domegaz = dEgw * (cosmop.ho / 0.65) * Rc / pow((1.+z),3.5);
+  *domegaz = dEgw * Rc / pow((1.+z),3.5);
   CHECKSTATUSPTR (s);
   DETATCHSTATUSPTR (s);
   RETURN (s);
