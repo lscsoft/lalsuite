@@ -23,7 +23,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/SFTfileIO.h>
-
+#include <lal/UserInput.h>
 #include <lal/GeneratePulsarSignal.h> 
 #include "./DriveHoughColor.h" /* proper path*/
 
