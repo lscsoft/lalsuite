@@ -938,8 +938,7 @@ static COMPLEX8FrequencySeries *cc_spectrum(LALStatus *status,
     COMPLEX8FrequencySeries *zero_pad_two,
     COMPLEX8FrequencySeries *response_one,
     COMPLEX8FrequencySeries *response_two,
-    REAL4FrequencySeries *opt_filter,
-    BOOLEAN match)
+    REAL4FrequencySeries *opt_filter)
 {
   /* variables */
   COMPLEX8FrequencySeries *series;
@@ -959,7 +958,7 @@ static COMPLEX8FrequencySeries *cc_spectrum(LALStatus *status,
   
   /* calculate spectrum */
   LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(status, series, \
-        &cc_input, match), status);
+        &cc_input, 1), status);
 
   return(series);
 }
@@ -982,6 +981,39 @@ static REAL8 cc_statistic(COMPLEX8FrequencySeries *cc_spectra)
   cc_stat *= 2 * cc_spectra->deltaF;
 
   return(cc_stat);
+}
+
+/* wrapper function to construct cross correlation spectrum from input
+ * time series */
+static COMPLEX8FrequencySeries *construct_cc_spectrum(LALStatus *status,
+    REAL4TimeSeries *segment_one,
+    REAL4TimeSeries *segment_two,
+    COMPLEX8FrequencySeries *response_one,
+    COMPLEX8FrequencySeries *response_two,
+    REAL4FrequencySeries *opt_filter,
+    UINT4 length,
+    REAL4Window *window)
+{
+  /* variables */
+  COMPLEX8FrequencySeries *zero_pad_one = NULL;
+  COMPLEX8FrequencySeries *zero_pad_two = NULL;
+  COMPLEX8FrequencySeries *cc_spectra = NULL;
+
+  /* zero pad and fft */
+  zero_pad_one = zero_pad_and_fft(status, segment_one, \
+      opt_filter->deltaF, length, window);
+  zero_pad_two = zero_pad_and_fft(status, segment_two, \
+      opt_filter->deltaF, length, window);
+
+  /* calculate cc spectrum */
+  cc_spectra = cc_spectrum(status, zero_pad_one, zero_pad_two, \
+      response_one, response_two, opt_filter);
+
+  /* destory zero pad structures */
+  XLALDestroyCOMPLEX8FrequencySeries(zero_pad_one);
+  XLALDestroyCOMPLEX8FrequencySeries(zero_pad_two);
+
+  return(cc_spectra);
 }
 
 /* display usage information */
@@ -1989,10 +2021,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL4FrequencySeries *calInvPsdOne = NULL;
   REAL4FrequencySeries *calInvPsdTwo = NULL;
 
-  /* zeropad and fft structures */
-  COMPLEX8FrequencySeries *hBarTildeOne = NULL;
-  COMPLEX8FrequencySeries *hBarTildeTwo = NULL;
-
   /* overlap reduction function */
   REAL4FrequencySeries *overlap;
 
@@ -2005,8 +2033,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* spectrum structures */
   REAL4FrequencySeries *omegaGW;
 
-  /* structures for CC spectrum and CC statistics */
-  BOOLEAN epochsMatch = 1;
+  /* structures for cross correlation spectrum */
   COMPLEX8FrequencySeries *ccSpectrum = NULL;
 
   /* error handler */
@@ -2503,18 +2530,13 @@ INT4 main(INT4 argc, CHAR *argv[])
         segmentTwo->data->data[i] = segTwo[segMiddle]->data[i];
       }
 
-      /* zero pad and fft */
-      hBarTildeOne = zero_pad_and_fft(&status, segmentOne, deltaF, \
-          segmentLength + 1, dataWindow);
-      hBarTildeTwo = zero_pad_and_fft(&status, segmentTwo, deltaF, \
-          segmentLength + 1, dataWindow);
-
       if (vrbflg)
-        fprintf(stdout, "Generating cross correlation spectrum...\n");
+        fprintf(stdout, "Constructing cross correlation spectrum...\n");
 
-      /* calculate cc spectrum */
-      ccSpectrum = cc_spectrum(&status, hBarTildeOne, hBarTildeTwo, \
-          responseOne, responseTwo, optFilter, epochsMatch);
+      /* construct cc spectrum */
+      ccSpectrum = construct_cc_spectrum(&status, segmentOne, segmentTwo, \
+          responseOne, responseTwo, optFilter, segmentLength + 1, \
+          dataWindow);
 
       if (cc_spectra_flag)
       {
@@ -2737,8 +2759,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   XLALDestroyREAL4FrequencySeries(overlap);
   XLALDestroyREAL4FrequencySeries(omegaGW);
   XLALDestroyREAL4Window(dataWindow);
-  XLALDestroyCOMPLEX8FrequencySeries(hBarTildeOne);
-  XLALDestroyCOMPLEX8FrequencySeries(hBarTildeTwo);
   if (inject_flag)
   {
     XLALDestroyREAL4TimeSeries(SimStochBGOne);
