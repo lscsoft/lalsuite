@@ -318,7 +318,7 @@ tagSnglInspiralTable
   LIGOTimeGPS   impulse_time;
   REAL8         template_duration;
   REAL8         event_duration;
-  INT4          threshold_crossings;
+  UINT4         threshold_crossings;
   REAL4         amplitude;
   REAL4         eff_distance;
   REAL4         coa_phase;
