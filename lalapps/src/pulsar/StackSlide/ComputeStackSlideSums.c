@@ -31,6 +31,7 @@
 /* 01/28/04 gam; Include what to glob for in params->sftDirectory rather than hard coding */
 /* 04/15/04 gam; Fix help when no command line arguments */
 /* 05/07/04 gam; add alternative to using glob */
+/* 05/07/04 gam; Do not check d_type when using readdir since it is often UNKOWN. */
 
 /*********************************************/
 /*                                           */
@@ -359,7 +360,8 @@ int SetGlobalVariables(StackSlideSearchParams *params)
   pSFTDir = opendir(sftDirectory);
   dirEntry = readdir(pSFTDir);
   while (dirEntry != NULL) {
-     if ( strstr(dirEntry->d_name,sftPattern) && (dirEntry->d_type == DT_REG) ) {
+     /* if ( strstr(dirEntry->d_name,sftPattern) && (dirEntry->d_type == DT_REG) ) */ /* 05/07/04 gam */
+     if ( strstr(dirEntry->d_name,sftPattern) ) {
         #ifdef DEBUG_READSFT_CODE
           fprintf(stdout,"d_name, d_type = %s, %i\n",dirEntry->d_name,dirEntry->d_type);
           fflush(stdout);
