@@ -150,6 +150,12 @@ except: pass
 if do_dax:
   do_datafind = False
 
+# set the file suffix
+if do_dax:
+  dagfilesuffix = '.dag'
+else:
+  dagfilesuffix = '.dax'
+
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
 cp.read(config_file)
@@ -167,19 +173,15 @@ else:
 basename = re.sub(r'\.ini',r'',config_file)
 tempfile.tempdir = log_path
 if usertag:
-  tempfile.template = basename + '.' + usertag + '.dag.log.'
+  tempfile.template = basename + '.' + usertag + dagfilesuffix + '.log.'
 else:
-  tempfile.template = basename + '.dag.log.'
+  tempfile.template = basename + dagfilesuffix + '.log.'
 logfile = tempfile.mktemp()
 fh = open( logfile, "w" )
 fh.close()
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
-if do_dax:
-  dagfilesuffix = '.dag'
-else:
-  dagfilesuffix = '.dax'
 if usertag:
   dag.set_dag_file(basename + '.' + usertag + dagfilesuffix)
 else:
