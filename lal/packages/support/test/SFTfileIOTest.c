@@ -51,17 +51,20 @@ NRCSID (SFTFILEIOTESTC, "$Id$");
 /* Error codes and messages */
 
 /************** <lalErrTable file="SFTFILEIOTESTCErrorTable"> */
-#define SFTFILEIOTESTC_ENORM 0
-#define SFTFILEIOTESTC_ESUB  1
-#define SFTFILEIOTESTC_EARG  2
-#define SFTFILEIOTESTC_EBAD  3
-#define SFTFILEIOTESTC_EFILE 4
+#define SFTFILEIOTESTC_ENORM 	0
+#define SFTFILEIOTESTC_ESUB  	1
+#define SFTFILEIOTESTC_EARG  	2
+#define SFTFILEIOTESTC_EBAD  	3
+#define SFTFILEIOTESTC_EFILE 	4
+#define SFTFILEIOTESTC_ESFTDIFF 5
 
 #define SFTFILEIOTESTC_MSGENORM "Normal exit"
 #define SFTFILEIOTESTC_MSGESUB  "Subroutine failed"
 #define SFTFILEIOTESTC_MSGEARG  "Error parsing arguments"
 #define SFTFILEIOTESTC_MSGEBAD  "Bad argument values"
 #define SFTFILEIOTESTC_MSGEFILE "Could not create output file"
+#define SFTFILEIOTESTC_MSGESFTDIFF "initial and final SFTs differ"
+
 /******************************************** </lalErrTable> */
 
 
@@ -123,15 +126,14 @@ char *lalWatch;
 int main(int argc, char *argv[]){ 
   static LALStatus       status;  /* LALStatus pointer */ 
   static SFTHeader      header;
-  static SFTtype          sft2;
-  SFTtype *sft1 = NULL;
+  static SFTtype          sft1;
+  SFTtype *sft2 = NULL;
   REAL8 fmin, fmax;
   
-  CHAR *fname;               /* The input filename */
-  CHAR *outfname;           /* output sft file name */
+  const CHAR *fname;               /* The input filename */
+  const CHAR *outfname;           /* output sft file name */
   INT4 arg;                         /* Argument counter */
-  INT4  length;
-  INT4 k;  
+  UINT4  length;
   UINT4 fminindex;
  
   fname = FILEIN;
@@ -173,9 +175,6 @@ int main(int argc, char *argv[]){
   /******************************************************************/
   
   SUB( LALReadSFTheader( &status, &header, fname),  &status );
-  printf("I am able to read the header \n");
-  printf("length = %d \n", header.length);
-  printf("time = %lf \n", header.timeBase);
  
   length = 10;
 /*
@@ -183,47 +182,44 @@ int main(int argc, char *argv[]){
  */
   fminindex = header.fminBinIndex + 5;
   length = 10;
-  sft2.data = NULL;
-  printf("now trying to reread the original sft with another function.\n");
-  
-  SUB( LALCCreateVector (&status, &(sft2.data), length),  &status ); 
-  SUB( LALReadSFTtype( &status, &sft2, fname, fminindex),  &status );
-  printf("..successful\n");
-  printf(" sft2 f0 = %lf \n", sft2.f0);
-  printf(" sft2 deltaF = %lf \n", sft2.deltaF);
+  sft1.data = NULL;
 
-
-  for (k=0; k < length; k++) {
-    printf("k=%d: frequency = %9.6g: ", k, sft2.f0 + sft2.deltaF*k);
-    printf("re = %g im = %g \n"  , sft2.data->data[k].re,sft2.data->data[k].im );
-  }
+  printf ("Testing LALReadSFTtype(), LALWriteSFTtoFile() and LALReadSFTfile()\n");
+  SUB( LALCCreateVector (&status, &(sft1.data), length),  &status ); 
+  SUB( LALReadSFTtype( &status, &sft1, fname, fminindex),  &status );
 
   /* write SFT to disk */
-  printf ("\nWriting this SFT to disk\n");
-  SUB (LALWriteSFTtoFile (&status, &sft2, OUTFILE), &status);
-
+  SUB (LALWriteSFTtoFile (&status, &sft1, OUTFILE), &status);
 
   /* try to do the same thing with ReadSFTfile() */
-  printf ("\nNow testing LALReadSFTfile():\n");
   fmin = fminindex / header.timeBase;
   fmax = (fminindex + length) / header.timeBase;
 
-  printf ("\nfmin = %f, fmax = %f\n", fmin, fmax);
-  SUB ( LALReadSFTfile (&status, &sft1, fmin, fmax, OUTFILE), &status);
+  SUB ( LALReadSFTfile (&status, &sft2, fmin, fmax, OUTFILE), &status);
 
-  printf(" sft1 f0 = %lf \n", sft1->f0);
-  printf(" sft1 deltaF = %lf \n", sft1->deltaF);
-  for (k=0; k < sft1->data->length; k++)
+  /* compare sft1 and sft2 */
+  if ( (sft1.epoch.gpsSeconds != sft2->epoch.gpsSeconds)
+       || (sft1.epoch.gpsNanoSeconds != sft2->epoch.gpsNanoSeconds)  )
     {
-      printf("k=%d: frequency = %9.6g: ", k, sft1->f0 + k * sft1->deltaF);
-      printf("re = %g im = %g \n"  , sft1->data->data[k].re, sft1->data->data[k].im );
+      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+      return SFTFILEIOTESTC_ESFTDIFF;
     }
-  
-
+  if ( (sft1.f0 != sft2->f0) || (sft1.deltaF != sft2->deltaF) ) {
+    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+    return SFTFILEIOTESTC_ESFTDIFF;
+  }
+  if ( sft1.data->length != sft2->data->length) {
+    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+    return SFTFILEIOTESTC_ESFTDIFF;
+  }
+  if ( memcmp (sft1.data->data, sft2->data->data, sft1.data->length) ) {
+    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+    return SFTFILEIOTESTC_ESFTDIFF;
+  }
  
-  SUB( LALCDestroyVector (&status, &(sft2.data) ),  &status );
-  LALCDestroyVector (&status, &(sft1->data) );
-  LALFree ( sft1 );
+  SUB( LALCDestroyVector (&status, &(sft2->data) ),  &status );
+  LALCDestroyVector (&status, &(sft1.data) );
+  LALFree ( sft2 );
 
   LALCheckMemoryLeaks(); 
 
