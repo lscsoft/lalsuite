@@ -4,31 +4,67 @@ lalapps_ring - filters data through a bank of ringdown filters
 
 .SH SYNOPSIS
 .B lalapps_ring
-.RB [ \-h ]
-.RB [ \-V ]
-.RB [ \-v ]
-.RB [ \-d 
+.RB [ \-\-help ]
+.RB [ \-\-version ]
+.RB [ \-\-verbose ]
+.RB [ \-\-debug\-level
 .IR dbglvl ] 
-.RB [ \-i 
-.IR infile ] 
-.RB [ \-o 
-.IR outfile ] 
-.RB [ \-k ]
-.RB [ \-s ]
-.RB [ \-f 
-.IR framefile ] 
-.RB [ \-r 
-.IR respfile ] 
-.RB [ \-c 
+.RB [ \-\-gps\-start\-time
+.IR startsec ] 
+.RB [ \-\-gps\-start\-time\-ns
+.IR startnan ] 
+.RB [ \-\-gps\-end\-time
+.IR endsec ] 
+.RB [ \-\-gps\-end\-time\-ns
+.IR endnan ] 
+.RB [ \-\-channel\-name
 .IR channel ] 
-.RB [ \-n 
-.IR numpoints ] 
-.RB [ \-t 
-.IR starttime ] 
-.RB [ \-b 
-.IR b0[,b1] ] 
-.RB [ \-\-
-.IR filterparams ] 
+.RB [ \-\-calibration\-frame\-cache
+.IR calcache ] 
+.RB [ \-\-response\-file
+.IR respfile ] 
+.RB [ \-\-data\-frame\-cache
+.IR datcache ] 
+.RB [ \-\-frame\-files
+.IR pattern ] 
+.RB [ \-\-frame\-path
+.IR path ] 
+.RB [ \-\-bank\-start\-template
+.IR bmin ] 
+.RB [ \-\-bank\-end\-template
+.IR bmax ] 
+.RB [ \-\-output\-file
+.IR outfile ] 
+.RB [ \-\-sample\-rate
+.IR srate ] 
+.RB [ \-\-user\-tag
+.IR tag ] 
+.RB [ \-\-userTag
+.IR tag ] 
+.RB [ \-\-filter\-params
+.IR parfile ] 
+.RB [ \-\-filter\-params
+.IR parfile ] 
+.RB \-\-filter\-segsz
+.IR npts
+.RB [ \-\-filter\-speclen
+.IR len ]
+.RB \-\-filter\-flow
+.IR flow
+.RB \-\-filter\-fmin
+.IR fmin
+.RB \-\-filter\-fmax
+.IR fmax
+.RB \-\-filter\-qmin
+.IR qmin
+.RB \-\-filter\-qmax
+.IR qmax
+.RB \-\-filter\-maxmm
+.IR maxmm
+.RB \-\-filter\-thresh
+.IR thrsh
+.RB [ \-\-filter\-scale
+.IR scale ]
 
 .SH DESCRIPTION
 .PP
@@ -37,56 +73,125 @@ in gravitational wave data.
 
 .SH OPTIONS
 .TP
-.BI \-h
+.BI \-\-help
 Print a help message.
 .TP
-.BI \-V
+.BI \-\-version
 Print the version information.
 .TP
-.BI \-v
+.BI \-\-verbose
 Verbose output.
 .TP
-.BI \-d " dbglvl"
+.BI \-\-debug\-level " dbglvl"
 Set LAL debug level to \fIdbglvl\fP.
 .TP
-.BI \-i " infile"
-Read filter parameters from input file \fIinfile\fP [stdin].
+.BI \-\-gps\-start\-time " startsec"
+Analyze data starting at GPS time \fIstartsec\fP seconds.
+[Default is to start at the beginning of available data.]
 .TP
-.BI \-o " outfile"
-Write the output to file \fIoutfile\fP [stdout].
+.BI \-\-gps\-start\-time\-ns " startnan"
+Analyze data starting \fIstartnan\fP nano-seconds after \fIstartsec\fP.
+[Default is to start at the beginning of available data.]
 .TP
-.BI \-k
-Keep filtering results (for use with option \-s).
+.BI \-\-gps\-end\-time " endsec"
+Analyze data ending at GPS time \fIendsec\fP seconds.
+[Default is to analyze 64 seconds of data after the start time.]
 .TP
-.BI \-s
-Save intermediate filtering results as .dat and snr\- files.
+.BI \-\-gps\-end\-time\-ns " endnan"
+Analyze data ending \fIendnan\fP nano-seconds after \fIendsec\fP.
+[Default is to analyze 64 seconds of data after the start time.]
 .TP
-.BI \-f " framefile"
-Read channel data from \fIframefile\fP [\*.gwf].
+.BI \-\-channel\-name " channel"
+Analyze the data channel \fIchannel\fP.
+[Default is \fIH1:LSC-AS_Q\fP.]
 .TP
-.BI \-r " respfile"
-Read response function data from \fIrespfile\fP [response.asc].
+.BI \-\-calibration\-frame\-cache " calcache"
+Get and update calibration information using the frame files specified
+in the cache file \fIcalcache\fP.
+[Default is to used a fixed ascii response function.]
 .TP
-.BI \-c " channel"
-Use channel \fIchannel\fP data [H1:LSC-AS_Q].
+.BI \-\-response\-file " respfile"
+Get calibration information from fixed response function ascii file
+\fIrespfile\fP.  [Default is \fIresponse.asc\fP.]
 .TP
-.BI \-n " numpoints"
-Use \fInumpoints\fP points of data [65536].
+.BI \-\-data\-frame\-cache " datcache"
+Get data to analyze from frame files specified in the cache file \fIdatcache\fP.
+[Default is to use specified frame files.]
 .TP
-.BI \-t " starttime"
-Use data starting at GPS time \fIstarttime\fP [start of frame data].
+.BI \-\-frame\-files " pattern"
+Specify the frame files containing the data to analyze using the pattern
+\fIpattern\fP.  [Default is \fI*.gwf\fP.]
 .TP
-.BI \-b " b0[,b1]"
-Filter only template numbers \fIb0\fP to \fIb1\fP in bank [0, end of bank].
+.BI \-\-frame\-path " path"
+Specify the directory \fIpath\fP which containing the frame files containing
+the data to analyze.  [Default is \fI.\fP.]
 .TP
-.BI \-\- " filterparams"
-Specify filter parameters as command line arguments \fIfilterparams\fP
-(see below for filter parameters).
+.BI \-\-bank\-start\-template " bmin"
+Specify the first template in the template bank to filter.
+[Default is 0, which is the first template.]
+.TP
+.BI \-\-bank\-end\-template " bmax"
+Specify the last template in the template bank to filter.
+[Default is the last template in the bank.]
+.TP
+.BI \-\-output\-file " outfile"
+Specify the output file to write event results.
+[Default is \fIIFO-RING-tstart-duration.xml\fP.]
+.TP
+.BI \-\-sample\-rate " srate"
+Specify the desired sampling rate \fIsrate\fP in Hz; the raw data will be
+resampled to this sampling rate if it is not already at this sampling rate.
+[Default is to use the raw sampling rate.]
+.TP
+.BI \-\-user\-tag " tag"
+.TP
+.BI \-\-userTag " tag"
+Specify an arbitrary user tag.
+.TP
+.BI \-\-filter\-params " parfile"
+Read filter parameters from file \fIparfile\fP.
+[Default is to read parameters from command line.]
+.TP
+.BI \-\-filter\fIfilterparam\fP " value"
+Specify the appropriate filter parameter \fIfilterparam\fP to \fIvalue\fP.
+Possible options are:
+.RS
+.TP
+.BI \-\-filter\-segsz " npts"
+Set filter parameter \fI-segsz\fP to value \fInpts\fP.
+.TP
+.BI \-\-filter\-speclen " len"
+Set filter parameter \fI-speclen\fP to value \fIlen\fP.
+.TP
+.BI \-\-filter\-flow " flow"
+Set filter parameter \fI-flow\fP to value \fIflow\fP.
+.TP
+.BI \-\-filter\-fmin " fmin"
+Set filter parameter \fI-fmin\fP to value \fIfmin\fP.
+.TP
+.BI \-\-filter\-fmax " fmax"
+Set filter parameter \fI-fmax\fP to value \fIfmax\fP.
+.TP
+.BI \-\-filter\-qmin " qmin"
+Set filter parameter \fI-qmin\fP to value \fIqmin\fP.
+.TP
+.BI \-\-filter\-qmax " qmax"
+Set filter parameter \fI-qmax\fP to value \fIqmax\fP.
+.TP
+.BI \-\-filter\-maxmm " maxmm"
+Set filter parameter \fI-maxmm\fP to value \fImaxmm\fP.
+.TP
+.BI \-\-filter\-thresh " thrsh"
+Set filter parameter \fI-thresh\fP to value \fIthrsh\fP.
+.TP
+.BI \-\-filter\-scale " scale"
+Set filter parameter \fI-scale\fP to value \fIscale\fP.
+.RE
 
 .SH FILTER PARAMETERS
 The filter parameters can be specified either on the command line as
-arguments following the \-\- option or in a resource file that is
-input using the \-i option (or from stdin).  As a resource file, each
+\fI--filter\fP-type options or in a resource file that is
+input using the \fI--filter-params\fP option.  As a resource file, each
 option-value pair should have their own line.
 .TP
 .BI \-segsz " npts"
@@ -169,7 +274,7 @@ All debugging messages are printed.
 For example, the command
 .PP
 .RS
-lalapps_ring -d "ERROR | INFO" ...
+lalapps_ring --debug-level "ERROR | INFO" ...
 .RE
 .PP
 will set the debug level so that error and information messages are printed.
