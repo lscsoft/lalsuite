@@ -98,13 +98,15 @@ LIGOTimeGPS gpsStartTime;               /* input data GPS start time    */
 INT8  gpsEndTimeNS      = 0;            /* input data GPS end time ns   */
 LIGOTimeGPS gpsEndTime;                 /* input data GPS end time      */
 INT8  inputLengthNS     = 0;            /* input data length ns         */
-UINT4 numRespPoints     = 0;            /* num points for calc response */
+INT4  numRespPoints     = 0;            /* num points for calc response */
 
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
 CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
 CHAR   ifo[3];                          /* two character ifo code       */
 CHAR  *channelName      = NULL;         /* channel string               */
-enum { undefined, real4, real8 } cal_data = undefined; /* cal data type */
+CHAR   outfileName[FILENAME_MAX];       /* output file name             */
+
+enum { undefined, real_4, real_8 } cal_data = undefined; /* cal data type */
 
 /* data conditioning parameters */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
@@ -197,6 +199,9 @@ int main( int argc, char *argv[] )
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
   searchsummvars.searchSummvarsTable = NULL;
+
+  /* zero out the outfileName */
+  memset( outfileName, 0, FILENAME_MAX * sizeof(CHAR) );
 
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
@@ -310,7 +315,7 @@ int main( int argc, char *argv[] )
     inj.epoch = chan.epoch;
     inj.sampleUnits = chan.sampleUnits;
     strcpy( inj.name, chan.name );
-      }  
+  }  
   else
   {
     inj.deltaT = 1.0/ sampleRate;
@@ -334,91 +339,93 @@ int main( int argc, char *argv[] )
    *
    */
 
-  /* read in the injection data from XML */
-  numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
-      gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds + injectSafety );
-
-  if ( numInjections < 0 )
+  if ( injectionFile )
   {
-    fprintf( stderr, "error: cannot read injection file" );
-    exit( 1 );
-  }
-  else if ( numInjections )
-  {
-    searchsumm.searchSummaryTable->nevents = numInjections;
-    memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
-    LAL_CALL( LALCCreateVector( &status, &(injResp.data), 
-	  numRespPoints / 2 + 1 ), &status );
-    injResp.epoch = inj.epoch ;
-    injResp.deltaF = 1.0 / ( numRespPoints * inj.deltaT );
-    strcpy( injResp.name, inj.name );
+    /* read in the injection data from XML */
+    numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
+	gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds + injectSafety );
 
-    if ( frInCacheName && ! cal_data)
+    if ( numInjections < 0 )
     {
-      /* generate the response function for the current time */
-      if ( vrbflg ) fprintf( stdout, 
-	  "generating response function at time %d sec %d ns\n"
-	  "length = %d points, deltaF = %e Hz\n",
-      injResp.epoch.gpsSeconds, injResp.epoch.gpsNanoSeconds,
-      injResp.data->length, injResp.deltaF );
-      injResp.sampleUnits = strainPerCount;
-
-      /* initialize the inj_calfacts */
-      memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
-      inj_calfacts.ifo = ifo;
-      durationNS = gpsEndTimeNS - gpsStartTimeNS;
-      LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration), 
-	    &durationNS ), &status );
-
-      LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
-	    &inj_calfacts ), &status );
-      inj_alpha = (REAL4) inj_calfacts.alpha.re;
-      inj_alphabeta = (REAL4) inj_calfacts.alphabeta.re;
-      if ( vrbflg ) fprintf( stdout, 
-	  "for injections, alpha = %f and alphabeta = %f\n",
-	  inj_alpha, inj_alphabeta);
+      fprintf( stderr, "error: cannot read injection file" );
+      exit( 1 );
     }
-    else 
+    else if ( numInjections )
     {
-      /* generate a unity response function for h(t) */
-      if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
-      injResp.sampleUnits = strainPerCount;
-      for ( k = 0; k < injResp.data->length; ++k )
+      searchsumm.searchSummaryTable->nevents = numInjections;
+      memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
+      LAL_CALL( LALCCreateVector( &status, &(injResp.data), 
+	    numRespPoints / 2 + 1 ), &status );
+      injResp.epoch = inj.epoch ;
+      injResp.deltaF = 1.0 / ( numRespPoints * inj.deltaT );
+      strcpy( injResp.name, inj.name );
+
+      if ( frInCacheName && ! cal_data)
       {
-	injResp.data->data[k].re = 1.0;
-	injResp.data->data[k].im = 0;
+	/* generate the response function for the current time */
+	if ( vrbflg ) fprintf( stdout, 
+	    "generating response function at time %d sec %d ns\n"
+	    "length = %d points, deltaF = %e Hz\n",
+	    injResp.epoch.gpsSeconds, injResp.epoch.gpsNanoSeconds,
+	    injResp.data->length, injResp.deltaF );
+	injResp.sampleUnits = strainPerCount;
+
+	/* initialize the inj_calfacts */
+	memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
+	inj_calfacts.ifo = ifo;
+	durationNS = gpsEndTimeNS - gpsStartTimeNS;
+	LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration), 
+	      &durationNS ), &status );
+
+	LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
+	      &inj_calfacts ), &status );
+	inj_alpha = (REAL4) inj_calfacts.alpha.re;
+	inj_alphabeta = (REAL4) inj_calfacts.alphabeta.re;
+	if ( vrbflg ) fprintf( stdout, 
+	    "for injections, alpha = %f and alphabeta = %f\n",
+	    inj_alpha, inj_alphabeta);
       }
-      if ( vrbflg ) fprintf( stdout, "done.\n" );
+      else 
+      {
+	/* generate a unity response function for h(t) */
+	if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
+	injResp.sampleUnits = strainPerCount;
+	for ( k = 0; k < injResp.data->length; ++k )
+	{
+	  injResp.data->data[k].re = 1.0;
+	  injResp.data->data[k].im = 0;
+	}
+	if ( vrbflg ) fprintf( stdout, "done.\n" );
 
+      }
+
+
+      /* inject the signals, preserving the channel name (Tev mangles it) */
+      LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", inj.name );
+
+      /* if injectOverhead option, then set inj.name to "ZENITH".  
+       * This causes no detector site to be found in the injection code so
+       * that the injection is done directly overhead (i.e. with a response 
+       * function of F+ = 1; Fx = 0) */
+      if ( injectOverhead )
+      {
+	LALSnprintf( inj.name, LALNameLength * sizeof(CHAR), "ZENITH" );
+      }
+
+      LAL_CALL( LALFindChirpInjectSignals( &status, &inj, injections, 
+	    &injResp ), &status );
+      LALSnprintf( inj.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
+
+      if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
+	  numInjections, injectionFile, inj.name );
+
+      LAL_CALL( LALCDestroyVector( &status, &(injResp.data) ), &status );
     }
-
-
-    /* inject the signals, preserving the channel name (Tev mangles it) */
-    LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", inj.name );
-
-    /* if injectOverhead option, then set inj.name to "ZENITH".  
-     * This causes no detector site to be found in the injection code so
-     * that the injection is done directly overhead (i.e. with a response 
-     * function of F+ = 1; Fx = 0) */
-    if ( injectOverhead )
+    else
     {
-      LALSnprintf( inj.name, LALNameLength * sizeof(CHAR), "ZENITH" );
+      if ( vrbflg ) fprintf( stdout, "no injections in this data\n" );
     }
-
-    LAL_CALL( LALFindChirpInjectSignals( &status, &inj, injections, 
-	  &injResp ), &status );
-    LALSnprintf( inj.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
-
-    if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
-	numInjections, injectionFile, inj.name );
-
-    LAL_CALL( LALCDestroyVector( &status, &(injResp.data) ), &status );
   }
-  else
-  {
-    if ( vrbflg ) fprintf( stdout, "no injections in this data\n" );
-  }
-
 
   /* 
    *
@@ -433,7 +440,7 @@ int main( int argc, char *argv[] )
     struct FrameH *outFrame   = NULL;
     REAL4TimeSeries output;
     UINT4 length;
-    
+
 
     memset( &output, 0, sizeof(REAL4TimeSeries) );
     output.deltaT = inj.deltaT;
@@ -441,7 +448,7 @@ int main( int argc, char *argv[] )
     output.data = (REAL4Vector *) LALCalloc( 1, sizeof(REAL4Vector) );
     length = numPoints / numFiles;
     output.data->length = length;
-    
+
     for ( n = 0; n < numFiles; ++n )
     {
       outFrame = NULL;
@@ -453,14 +460,14 @@ int main( int argc, char *argv[] )
 	strcpy( output.name, inj.name );
 	output.data->data = inj.data->data + n * length;
 	outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
-	    "INJ_ONLY" );
+	    "INSP_INJ_ONLY" );
       }
       /* write the raw data to frame */
       if ( writeRawData || writeRawPlusInj ) 
       {
 	strcpy( output.name, chan.name );
 	output.data->data = chan.data->data + n * length;
-	
+
 	if ( writeRawData )
 	{
 	  outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
@@ -468,25 +475,32 @@ int main( int argc, char *argv[] )
 	}
 	/* perform injections into this file's data only, preserve name*/
 	LAL_CALL( LALSSInjectTimeSeries( &status, &output, &inj ), &status );
-        strcpy( output.name, inj.name );
+	strcpy( output.name, inj.name );
 
 	if ( writeRawPlusInj )
 	{
-          outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
-	      "RAW_PLUS_INJ" );
+	  outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
+	      "RAW_PLUS_INSP_INJ" );
 	}
       }
+      if( !outfileName[0] )
+      {
+	/* output name not specified, set to IFO-INSPFRINJ-EPOCH-LENGTH.gwf */
+	LALSnprintf( outfileName, FILENAME_MAX * sizeof(CHAR), 
+	    "%s-INSPFRINJ", ifo );
+      }
+
       if( userTag )
       {
-        LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-          "%s-INSPFRINJ_%s-%d-%d.gwf", ifo, userTag, output.epoch.gpsSeconds, 
-	  frameLength );
+	LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
+	    "%s_%s-%d-%d.gwf", outfileName, userTag, output.epoch.gpsSeconds, 
+	    frameLength );
       }
       else
       {
-        LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-          "%s-INSPFRINJ-%d-%d.gwf", ifo, output.epoch.gpsSeconds, 
-	  frameLength );
+	LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
+	    "%s-%d-%d.gwf", outfileName, output.epoch.gpsSeconds, 
+	    frameLength );
 
       }
 
@@ -517,13 +531,13 @@ int main( int argc, char *argv[] )
   if( userTag )
   {
     LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-      "%s-INSPFRINJ_%s-%d-%d.xml", ifo, userTag, gpsStartTime.gpsSeconds, 
+	"%s_%s-%d-%d.xml", outfileName, userTag, gpsStartTime.gpsSeconds, 
 	gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
     LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-      "%s-INSPFRINJ-%d-%d.xml", ifo, gpsStartTime.gpsSeconds, 
+	"%s-%d-%d.xml", outfileName, gpsStartTime.gpsSeconds, 
 	gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
 
   }
@@ -582,13 +596,11 @@ int main( int argc, char *argv[] )
     }
   }
   /* write the summ_value table with the calibration data used for injections */
-  if ( frInCacheName )
+  if ( frInCacheName && injectionFile)
   {
-    if (injectionFile) 
-    {
-      ADD_SUMM_VALUE( "calibration alpha", "injection", inj_alpha, 0 );
-      ADD_SUMM_VALUE( "calibration alphabeta", "injection", inj_alphabeta, 0 );
-    }
+    ADD_SUMM_VALUE( "calibration alpha", "injection", inj_alpha, 0 );
+    ADD_SUMM_VALUE( "calibration alphabeta", "injection", inj_alphabeta, 0 );
+
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
 	&status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
@@ -657,36 +669,38 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define USAGE \
   "lalapps_inspfrinj [options]\n\n"\
-"  --help                     display this message\n"\
-"  --verbose                  print progress information\n"\
-"  --version                  print version information and exit\n"\
-"  --debug-level LEVEL        set the LAL debug level to LEVEL\n"\
-"  --user-tag STRING          set the process_params usertag to STRING\n"\
-"  --comment STRING           set the process table comment to STRING\n"\
+"  --help                    display this message\n"\
+"  --verbose                 print progress information\n"\
+"  --version                 print version information and exit\n"\
+"  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
+"  --user-tag STRING         set the process_params usertag to STRING\n"\
+"  --comment STRING          set the process table comment to STRING\n"\
 "\n"\
-"  --gps-start-time SEC       GPS second of data start time\n"\
-"  --gps-start-time-ns NS     GPS nanosecond of data start time\n"\
-"  --gps-end-time SEC         GPS second of data end time\n"\
-"  --gps-end-time-ns NS       GPS nanosecond of data end time\n"\
+"  --gps-start-time SEC      GPS second of data start time\n"\
+"  --gps-start-time-ns NS    GPS nanosecond of data start time\n"\
+"  --gps-end-time SEC        GPS second of data end time\n"\
+"  --gps-end-time-ns NS      GPS nanosecond of data end time\n"\
 "\n"\
-"  --frame-cache              obtain frame data from LAL frame cache FILE\n"\
-"  --calibration-cache FILE   obtain calibration from LAL frame cache FILE\n"\
-"  --calibrated-data TYPE     calibrated data of TYPE real4 or real8\n"\
-"  --num-resp-points          number of points used to determine response function\n"\
-"  --channel-name CHAN        read data from interferometer channel CHAN\n"\
+"  --frame-cache             obtain frame data from LAL frame cache FILE\n"\
+"  --calibration-cache FILE  obtain calibration from LAL frame cache FILE\n"\
+"  --calibrated-data TYPE    calibrated data of TYPE real_4 or real_8\n"\
+"  --num-resp-points N       num points to determine response function (4194304)\n"\
+"  --channel-name CHAN       read data from interferometer channel CHAN\n"\
 "\n"\
-"  --injection-file FILE      inject simulated inspiral signals from FILE\n"\
-"  --inject-overhead          inject signals from overhead detector\n"\
-"  --inject-safety SEC        inject signals ending up to SEC after gps end time\n"\
+"  --injection-file FILE     inject simulated inspiral signals from FILE\n"\
+"  --inject-overhead         inject signals from overhead detector\n"\
+"  --inject-safety SEC       inject signals ending up to SEC after gps end time\n"\
 "\n"\
-"  --write-raw-data           write out the raw frame files\n"\
-"  --write-inj-only           write out frames containing only injections\n"\
-"  --write-raw-plus-inj       write out frames containing raw data with inj\n"\
+"  --write-raw-data          write out the raw frame files\n"\
+"  --write-inj-only          write out frames containing only injections\n"\
+"  --write-raw-plus-inj      write out frames containing raw data with inj\n"\
 "\n"\
-"  --output-frame-length SEC  write out data in frames of length SEC\n"\
+"  --output-frame-length SEC write out data in frames of length SEC\n"\
+"  --output-file-name OUTPUT set output file names to OUTPUT-GPSTIME-LENGTH.gwf\n"\
+"                   if not set, default to IFO-INSPFRINJ-GPSTIME-LENGTH.gwf\n"\
 "\n"\
-"  --ifo  IFO                 specify the IFO (only if not reading frames)\n"\
-"  --sample-rate              data sample rate (only if not reading frames)\n"\
+"  --ifo  IFO                specify the IFO (only if not reading frames)\n"\
+"  --sample-rate             data sample rate (only if not reading frames)\n"\
 "\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
@@ -707,6 +721,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"gps-end-time-ns",         required_argument, 0,                'B'},
     {"channel-name",            required_argument, 0,                'c'},
     {"output-frame-length",     required_argument, 0,                'd'},
+    {"output-file-name",        required_argument, 0,                'f'},
     {"help",                    no_argument,       0,                'h'},
     {"dynamic-range-exponent",  required_argument, 0,                'l'},
     {"calibrated-data",         required_argument, 0,                'y'},
@@ -744,7 +759,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
     c = getopt_long_only( argc, argv, 
 	"A:B:N:S:V:Z:"
-	"a:b:c:d:e:hi:l:p:r:s:u:w:y:z:",
+	"a:b:c:d:f:hi:l:p:r:s:u:w:y:z:",
 	long_options, &option_index );
 
     /* detect the end of the options */
@@ -913,6 +928,18 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	ADD_PROCESS_PARAM( "int", "%d", frameLength );
 	break;
 
+      case 'f':
+	if ( LALSnprintf( outfileName, FILENAME_MAX * sizeof(CHAR), 
+	      "%s", optarg ) < 0 )
+	{
+	  fprintf( stderr, "invalid argument to --%s\n"
+	      "outfile name %s too long: string truncated\n",
+	      long_options[option_index].name, optarg );
+	  exit( 1 );
+	}
+	ADD_PROCESS_PARAM( "string", "%s", optarg );
+	break;
+
       case 'h':
 	fprintf( stdout, USAGE );
 	exit( 0 );
@@ -929,43 +956,43 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'N':
 	/* store the number of points used in computing the response */
-        numRespPoints = (INT4) atoi( optarg );
-        if ( numRespPoints < 2 || numRespPoints % 2 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "number of points must be an even positive integer,\n"
-              "(%d specified) \n", 
-              long_options[option_index].name, numRespPoints );
-          exit( 1 );
-        }
-        ADD_PROCESS_PARAM( "int", "%d", numRespPoints );
-        break;
+	numRespPoints = (INT4) atoi( optarg );
+	if ( numRespPoints < 2 || numRespPoints % 2 )
+	{
+	  fprintf( stderr, "invalid argument to --%s:\n"
+	      "number of points must be an even positive integer,\n"
+	      "(%d specified) \n", 
+	      long_options[option_index].name, numRespPoints );
+	  exit( 1 );
+	}
+	ADD_PROCESS_PARAM( "int", "%d", numRespPoints );
+	break;
 
       case 'y':	
 	/* specify which type of calibrated data */
 	{
-	  if ( ! strcmp( "real4", optarg ) )
+	  if ( ! strcmp( "real_4", optarg ) )
 	  {
-	    cal_data = real4;
+	    cal_data = real_4;
 	  }
-	  else if ( ! strcmp( "real8", optarg ) )
+	  else if ( ! strcmp( "real_8", optarg ) )
 	  {
-	    cal_data = real8;
+	    cal_data = real_8;
 	    fprintf( stderr, "Sorry, code not currently set up to\n"
-		"run on real8 data\n" );
+		"run on real_8 data\n" );
 	    exit( 1 );
 	  }
 	  else
 	  {
 	    fprintf( stderr, "invalid argument to --%s:\n"
 		"unknown data type specified;\n"
-		"%s (must be one of: real4, real8)\n",
+		"%s (must be one of: real_4, real_8)\n",
 		long_options[option_index].name, optarg);
 	    exit( 1 );
 	  }
 	  ADD_PROCESS_PARAM( "string", "%s", optarg );
-        }
-        break;
+	}
+	break;
 
       case 'r':
 	sampleRate = (INT4) atoi( optarg );
@@ -1221,14 +1248,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   /* check that we have then number of points to determine response fn */
   if ( numRespPoints < 0 )
   {
-    fprintf( stderr, "Must specify --num-resp-points\n"
+    fprintf( stderr, "--num-resp-points not specified\n"
 	"This gives the number of points used to obtain response,\n"
 	"Response has numRespPoints/2 + 1 points,\n"
-        "Frequency resolution of 1/(numRespPoints * delta T)\n");
-      exit( 1 );
+	"Frequency resolution of 1/(numRespPoints * delta T).\n"
+	"Setting it to a default value of 256 * 16384 = 4194304\n");
+    numRespPoints = 4194304;
   }
-  
-    
+
+
   return 0;
 }
 
