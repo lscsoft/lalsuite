@@ -113,7 +113,6 @@ LALExchangeInspiralTemplate (
     )
 {
   CHARVector box; /* a box to hold some bytes of data */
-  INT4Vector segmentIdVec;
 
   INITSTATUS (status, "LALExchangeInspiralTemplate", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
@@ -133,14 +132,40 @@ LALExchangeInspiralTemplate (
     /* send box */
     LALMPISendCHARVector (status->statusPtr, &box, dest, exchParams->mpiComm);
     CHECKSTATUSPTR (status);
+
+    /* exchange the length of the segmentId vector */
+    LALExchangeUINT4( status->statusPtr, &(tmplt->segmentIdVec->length),
+        exchParams );
+    CHECKSTATUSPTR (status);
+
+    /* and then send the vector */
+    LALMPISendINT4Vector( status->statusPtr, tmplt->segmentIdVec,
+        dest, exchParams->mpiComm);
+    CHECKSTATUSPTR (status);
   }
   else /* I am receiving */
   {
     INT4 source = exchParams->partnerProcNum;
+    UINT4      length;
 
     /* receive box */
     LALMPIRecvCHARVector (status->statusPtr, &box, source, exchParams->mpiComm);
     CHECKSTATUSPTR (status);
+
+    /* exchange the length of the segmentId vector */
+    LALExchangeUINT4( status->statusPtr, &length, exchParams );
+    CHECKSTATUSPTR (status);
+    
+    /* allocate the memory for it */
+    tmplt->segmentIdVec = NULL;
+    LALI4CreateVector( status->statusPtr, &(tmplt->segmentIdVec), length);
+    CHECKSTATUSPTR( status );
+
+    /* and then recv the vector */
+    LALMPIRecvINT4Vector( status->statusPtr, tmplt->segmentIdVec,
+        source, exchParams->mpiComm);
+    CHECKSTATUSPTR (status);
+    
   }
 
   DETATCHSTATUSPTR (status);
