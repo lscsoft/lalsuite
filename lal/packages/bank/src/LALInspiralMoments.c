@@ -159,7 +159,6 @@ LALGetInspiralMomentsBCV (
   UINT4 k;
   InspiralMomentsIn in;
   double q;
-  long i;
 
   INITSTATUS( status, "LALGetInspiralMomentsBCV", LALINSPIRALMOMENTSC );
   ATTATCHSTATUSPTR( status );
@@ -246,8 +245,8 @@ LALGetInspiralMomentsBCV (
       moments->alpha * moments->alpha*moments->i[0]) / in.norm;   
   /* 1 */
   q = -2; 
-  moments->M3[1][1] = (moments->i[1] -2.*moments->alpha * moments->i[-1] +    
-      moments->alpha * moments->alpha*moments->i[-3]) / in.norm;
+  moments->M3[1][1] = (moments->i[1] -2.*moments->alpha * moments->i[18] +    
+      moments->alpha * moments->alpha * moments->i[20]) / in.norm;
 
   moments->M3[1][0]=moments->M3[0][1] ;
 
