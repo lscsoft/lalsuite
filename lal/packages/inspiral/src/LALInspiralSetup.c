@@ -135,8 +135,8 @@ NRCSID (LALINSPIRALSETUPC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralSetupCP"> */
 void LALInspiralSetup (LALStatus *status,
-		       expnCoeffs *ak,
-		       InspiralTemplate *params) 
+                       expnCoeffs *ak,
+                       InspiralTemplate *params) 
 {  /* </lalVerbatim>  */
    
    int ieta;

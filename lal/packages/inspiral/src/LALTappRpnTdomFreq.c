@@ -56,39 +56,31 @@ t - t_{a} = - \int^{f}_{f_{a}} \frac{E^{\prime}(f)}{F(f)} df \,.
 In order to evaluate the integral we need to know the detailed form of $E^{\prime}(f)$ and $F(f)$. These
 are given by
 
-\begin{equation}
-\begin{split}
-E^{\prime} (f) & = \eta m \left[ - \frac{1}{3} (\pi m)^{2/3} f^{-1/3} + \frac{1}{18} (9+\eta) (\pi m)^{4/3}
-f^{1/3} \right.\\
-               &   \\
-               &   + \left. \frac{1}{8} (27-19 \eta + \eta^{2}/3) (\pi m)^{2} f \right]
-\end{split}
+\begin{eqnarray}
+E^{\prime} (f) & = & \eta m \left[ - \frac{1}{3} (\pi m)^{2/3} f^{-1/3} + \frac{1}{18} (9+\eta) (\pi m)^{4/3}
+f^{1/3} \right. \nonumber \\
+             &  + &   \left. \frac{1}{8} (27-19 \eta + \eta^{2}/3) (\pi m)^{2} f \right]
 \label{Eoff}
-\end{equation}
+\end{eqnarray}
 and
-\begin{equation}
-\begin{split}
-F(f) &  = - \frac{32}{5} \eta^{2} (\pi m f)^{10/3} \left[ 1 + \left( \frac{- 1247}{336} - \frac{35}{12}
-\eta \right)
-(\pi m f)^{2/3} + 4 \pi (\pi m f) \right. \\
-     &   \\
-     &  + \left. \left( -\frac{44711}{9072} + \frac{9271}{504} \eta + \frac{65}{18} \eta^{2} \right) (\pi m
-f)^{4/3}
+\begin{eqnarray}
+F(f) &  = & - \frac{32}{5} \eta^{2} (\pi m f)^{10/3} 
+\left[ 1 + \left( \frac{- 1247}{336} - \frac{35}{12} \eta \right)
+(\pi m f)^{2/3} + 4 \pi (\pi m f) \right. \nonumber \\
+     &  + & \left. \left( -\frac{44711}{9072} + \frac{9271}{504} \eta + 
+\frac{65}{18} \eta^{2} \right) (\pi m f)^{4/3}
 \right] \,.
-\end{split}
 \label{Foff}
-\end{equation}
+\end{eqnarray}
 This leads us to
-\begin{equation}
-\begin{split}
-t - t_{a} & = \tau_{N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] + \tau_{P^{1}N} \left[ 1 -
-\left( \frac{f}{f_{a}} \right)^{-2} \right] \\
-          &     \\
-          & - \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] + \tau_{P^{2}N}
+\begin{eqnarray}
+t - t_{a} & = & 
+\tau_{N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] + 
+\tau_{P^{1}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2} \right] \nonumber \\
+          & - & \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] + \tau_{P^{2}N}
 \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-4/3} \right]
-\end{split}
 \label{toff1}
-\end{equation}
+\end{eqnarray}
 where $\tau_{N}$ is usually referred to as the Newtonian chirp time, $\tau_{P^{1}N}$ is the first
 post--Newtonian chirp time, and so on for $\tau_{P^{1.5}N}$ and $\tau_{P^{2}N}$. Because the $f/f_{a}$ term
 appears throughout the above equations, the code works with the instantaneous frequency expressed in units
@@ -117,16 +109,13 @@ end
 Eq.(\ref{waveform1}), however, requires $f$ as a function of $t$. In order to obtain this we re--arrange
 Eq.(\ref{toff1})  into the form
  
-\begin{equation}
-\begin{split}
-t - t_{a} & - \tau_{N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] - \tau_{P^{1}N} \left[ 1 -
-\left( \frac{f}{f_{a}} \right)^{-2} \right] \\
-          &     \\
-          & + \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] - \tau_{P^{2}N}
+\begin{eqnarray}
+t - t_{a} & - & \tau_{N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] - \tau_{P^{1}N} \left[ 1 -
+\left( \frac{f}{f_{a}} \right)^{-2} \right] \nonumber \\
+          & + & \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] - \tau_{P^{2}N}
 \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-4/3} \right] = 0 \,.
-\end{split}
 \label{TappRpnTdomFreqtoff2}
-\end{equation}
+\end{eqnarray}
 The left--hand--side of Eq.(\ref{TappRpnTdomFreqtoff2}) is fed into a root--finding function,  which finds the value of
 $(f/f_{a})$
 which solves the equation for a given $t$, $t_{a}$, $\tau_{N}$, $\tau_{P^{1}N}$, $\tau_{P^{1.5}N}$ and
@@ -148,16 +137,14 @@ or,
 Once more, knowledge of the functions $E^{\prime}(f)$ (Eq.(\ref{Eoff})) and $F(f)$ (Eq.(\ref{Foff}))
 enables us to obtain the time dependence of the phase $\phi(t)$,
  
-\begin{equation}
-\begin{split}
-\phi(t) & = \frac{16 \pi f_{a} \tau_{N}}{5} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] + 4
-\pi f_{a}\tau_{P^{1}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-1} \right]  \\
-        &     \\ 
-        & - 5 \pi f_{a} \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2/3} \right] + 8 \pi
+\begin{eqnarray}
+\phi(t) & = & \frac{16 \pi f_{a} \tau_{N}}{5} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] + 4
+\pi f_{a}\tau_{P^{1}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-1} \right]  
+\nonumber \\
+        & - & 5 \pi f_{a} \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2/3} \right] + 8 \pi
 f_{a} \tau_{P^{2}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-1/3} \right] + \Phi \,.
-\end{split}
 \label{TappRpnTdomFreqphioff}
-\end{equation}
+\end{eqnarray}
  
 This part of the calculation is performed by the function \\ \texttt{TappRpnTdomFreqPhase}. The notation
 $\phi(t)$ on the LHS of this equation is used because although the formula actually tells us
@@ -177,10 +164,6 @@ formulations is
 v = (\pi m f)^{1/3} \,.
 \end{equation}
 
-
-
-
-
 \subsubsection*{Uses}
 
 \texttt{LALInspiralParameterCalc}
@@ -193,28 +176,11 @@ v = (\pi m f)^{1/3} \,.
 
 </lalLaTeX>  */
 
-
-
-
-
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
 
-
-
 NRCSID (LALTAPPRPNTDOMFREQC, "$Id$");
-
-/*
-void (*LALTappRpnTdomFreqPhase) (LALStatus *status,
-                                 REAL8 *phase, 
-                                 InspiralPhasesInput *params);
-
-void (*LALTappRpnTdomFreqTofF) (LALStatus *status,
-                                REAL8 *toff,
-			        REAL8 f,
-                                void *params);
-*/
 
 /*  <lalVerbatim file="LALTappRpnTdomFreqCP"> */
 void LALTappRpnTdomFreq(LALStatus *status, 
@@ -236,17 +202,13 @@ void LALTappRpnTdomFreq(LALStatus *status,
   INITSTATUS (status, "LALTappRpnTdomFreq", LALTAPPRPNTDOMFREQC);
   ATTATCHSTATUSPTR(status);
 
-
   ASSERT(output,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
   ASSERT(output->data,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
   ASSERT(params,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
-
-
   ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
 
   dt = 1.0/(params->tSampling);
   fs = params->fLower;

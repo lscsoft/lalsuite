@@ -34,16 +34,13 @@ equation, which is taken from Blanchet, Iyer, Will and Wiseman, CQG \textbf{13},
 abbreviate as BIWW from now
 on.
 
-\begin{equation}
-\begin{split}
-h_{+,\times} &=  \frac{2Gm \eta}{c^{2}_{0} r} \left(\frac{Gm \omega}{c^{3}_{0}} \right)^{2/3} \left\{
-\right. H^{(0)}_{+,\times} + x^{1/2} H^{(1/2)}_{+,\times}  \\
-             &      \\
-             & + x H^{(1)}_{+,\times} + x^{3/2} H^{(3/2)}_{+,\times} + x^{2} H^{(2)}_{+,\times} \left.
+\begin{eqnarray}
+h_{+,\times} &= & \frac{2Gm \eta}{c^{2}_{0} r} \left(\frac{Gm \omega}{c^{3}_{0}} \right)^{2/3} \left\{
+\right. H^{(0)}_{+,\times} + x^{1/2} H^{(1/2)}_{+,\times}  \nonumber \\
+             & +& x H^{(1)}_{+,\times} + x^{3/2} H^{(3/2)}_{+,\times} + x^{2} H^{(2)}_{+,\times} \left.
 \right\}.
 \label{H+cross}
-\end{split}
-\end{equation}
+\end{eqnarray}
 
 In this Eq. $x$ is defined as $x \equiv (Gm \omega/c^{3}_{0})^{2/3}$ where $\omega$ is the 2PN--accurate
 orbital frequency of the circular orbit, and $\omega=2 \pi/P$ where $P$ is the orbital period. $m \equiv
@@ -126,15 +123,13 @@ where $t_{c}$ is a constant which represents the instant of coalescence of the t
 constitute the binary. From BIWW we have the instantaneous orbital phase $\phi$ in terms of $\Theta$ as
 given by
  
-\begin{equation}
-\begin{split}
-\phi(t) = \phi_{c} - &  \frac{1}{\eta} \left\{ \Theta^{5/8} + \left( \frac{3715}{8064} + \frac{55}{96} \eta
-\right) \Theta^{3/8} - \frac{3 \pi}{4} \Theta^{1/4} \right.  \\
-                     &  + \left. \left( \frac{9275495}{14450688} + \frac{284875}{258048} \eta +
+\begin{eqnarray}
+\phi(t) & = & \phi_{c} - \frac{1}{\eta} \left\{ \Theta^{5/8} + \left( \frac{3715}{8064} + \frac{55}{96} \eta
+\right) \Theta^{3/8} - \frac{3 \pi}{4} \Theta^{1/4} \right.  \nonumber \\
+   &  + &  \left. \left( \frac{9275495}{14450688} + \frac{284875}{258048} \eta +
 \frac{1855}{2048} \eta^{2} \right) \Theta^{1/8} \right\}
-\end{split}
 \label{TappRpnTdomTimephioft}
-\end{equation}
+\end{eqnarray}
 where $\phi_{c}$ is a constant representing the value of the phase at instant $t_{c}$.
  
  
@@ -145,15 +140,13 @@ f_{GW}(t) = \frac{c^{3}_{0}}{G m \pi} \, x(t)^{3/2}
 \label{TappRpnTdomTimefofx}
 \end{equation}
 where $x(t)$ is given by
-\begin{equation}
-\begin{split}
-x(t) =  &  \frac{\Theta^{-1/4}}{4} \left\{  1 + \left(\frac{743}{4032} + \frac{11}{48} \eta \right)
-\Theta^{-1/4} - \frac{\pi}{5} \Theta^{-3/8} \right. \\
-     &  + \left. \left( \frac{19583}{254016} + \frac{24401}{193536} \eta + \frac{31}{288} \eta^{2} \right)
+\begin{eqnarray}
+x(t) & =  &  \frac{\Theta^{-1/4}}{4} \left\{  1 + \left(\frac{743}{4032} + \frac{11}{48} \eta \right)
+\Theta^{-1/4} - \frac{\pi}{5} \Theta^{-3/8} \right. \nonumber \\
+     &  + & \left. \left( \frac{19583}{254016} + \frac{24401}{193536} \eta + \frac{31}{288} \eta^{2} \right)
 \Theta^{-1/2} \right\}
-\end{split}
 \label{TappRpnTdomTimexoft}
-\end{equation}
+\end{eqnarray}
  
 All of the equations presented so far have included explicitly their dependence upon $G$ and $c$. The code
 uses units where $G=c=1$.
@@ -162,13 +155,7 @@ To summarise, equations (\ref{TappRpnTdomTimexoft}) and (\ref{TappRpnTdomTimefof
 Eq.(\ref{TappRpnTdomTimephioft}) is used to determine $\phi(t)$. These quantities are then substituted into
 Eq.(\ref{hoft2}) which defines $h(t)$.
  
-
-
-
-
-
 \subsubsection*{Algorithm}
-
 
 \subsubsection*{Uses}
 
@@ -183,33 +170,15 @@ Eq.(\ref{hoft2}) which defines $h(t)$.
 
 </lalLaTeX>  */
 
-
-
-
-
-
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-
-
 NRCSID (LALTAPPRPNTDOMTIMEC, "$Id$");
-
-
-/*
-void (*LALTappRpnTdomTimeFrequency) (LALStatus *status,
-                                     InspiralwaveFrequencyOutput *output,
-			             InspiralwaveFrequencyInput *params);
-
-void (*LALTappRpnTdomTimePhase) (LALStatus *status,
-                                 InspiralwavePhaseOutput *output,
-			         InspiralwavePhaseInput *params);
-*/
 
 /*  <lalVerbatim file="LALTappRpnTdomTimeCP"> */
 void LALTappRpnTdomTime (LALStatus *status,
                          REAL4Vector *output, 
-		         InspiralTemplate *params)
+                         InspiralTemplate *params)
 { /* </lalVerbatim>  */
   void (*LALTappRpnTdomTimeFrequency) (LALStatus *,
       InspiralwaveFrequencyOutput *, InspiralwaveFrequencyInput *);
@@ -239,9 +208,6 @@ void LALTappRpnTdomTime (LALStatus *status,
   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-
-  
-
   dt = 1.0/(params->tSampling);    /* The sampling rate  */
   fu = params->fCutoff;            /* The upper frequency cutoff  */
   phi = params->startPhase;        /* The initial phase  */
@@ -253,7 +219,6 @@ void LALTappRpnTdomTime (LALStatus *status,
 
   LALInspiralParameterCalc (status->statusPtr, params);
   CHECKSTATUSPTR(status);
-
 
   ASSERT(params->totalMass > 0.4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->totalMass < 100, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);

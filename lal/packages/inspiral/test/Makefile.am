@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = InspiralTest
-InspiralTest_SOURCES = InspiralTest.c
-InspiralTest_LDADD = $(top_builddir)/lib/liblal.la
+check_PROGRAMS = LALInspiralTest
+LALInspiralTest_SOURCES = LALInspiralTest.c
+LALInspiralTest_LDADD = $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = InspiralTest
+TESTS = LALInspiralTest
 CLEANFILES = *.dat

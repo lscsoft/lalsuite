@@ -26,15 +26,13 @@ system as a function of time up to second post-Nowtonian order. The method used 
 From Blanchet, Iyer, Will and Wiseman, CQG \textbf{13}, 575, 1996, the instantaneous orbital phase $\phi$
 is given in terms of the dimensionless time variable $\Theta$  by
 
-\begin{equation}
-\begin{split}
+\begin{eqnarray}
 \phi(t) = \phi_{c} - &  \frac{1}{\eta} \left\{ \Theta^{5/8} + \left( \frac{3715}{8064} + \frac{55}{96} \eta
 \right) \Theta^{3/8} - \frac{3 \pi}{4} \Theta^{1/4} \right.  \\
                      &  + \left. \left( \frac{9275495}{14450688} + \frac{284875}{258048} \eta +
 \frac{1855}{2048} \eta^{2} \right) \Theta^{1/8} \right\}
-\end{split}
 \label{phioft}
-\end{equation}
+\end{eqnarray}
 where $\phi_{c}$ is a constant which represents the value of the phase at instant $t_{c}$, which is the
 instant of coalescence of the two point--masses which constitute the binary.
 The dimensionless time variable $\Theta$ is given by
@@ -59,13 +57,6 @@ None.
 
 </lalLaTeX>  */
 
-
-
-
-
-
-
-
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
@@ -74,7 +65,7 @@ NRCSID (LALTAPPRPNTDOMTIMEPHASEC, "$Id$");
 /*  <lalVerbatim file="LALTappRpnTdomTimePhaseCP"> */
 void LALTappRpnTdomTimePhase0PN (LALStatus *status,
                                  InspiralwavePhaseOutput *output,
-			         InspiralwavePhaseInput *params) 
+                                 InspiralwavePhaseInput *params) 
 { /* </lalVerbatim>  */
 
   INITSTATUS (status, "LALTappRpnTdomTimePhase", LALTAPPRPNTDOMTIMEPHASEC);
@@ -87,7 +78,6 @@ void LALTappRpnTdomTimePhase0PN (LALStatus *status,
 
   RETURN(status);
 }
-
 
 /*  <lalVerbatim file="LALTappRpnTdomTimePhaseCP"> */
 void LALTappRpnTdomTimePhase1PN (LALStatus *status,

@@ -1,23 +1,27 @@
 /* 
    This code generates the chirp parameter space for a given
-   mMin and MMax as command line arguments. One can use
+   minimum companion mass mMin and maximum total mass MMax. One can use
    xmgr to plot the resulting file to plot as in the demo script.
-
    August 8 , 00.
 */
 #include <stdio.h>
 #include <lal/LALInspiral.h>
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel=4;
 
-int main (int argc, char *argv[]) {
-#if FIXME
+int main () {
    static InspiralTemplate p;
    static LALStatus status;
    double mmin, Mmax, totalMmax, compmmin, m2;
 
-   mmin = log10(atof(argv[1]));
-   Mmax = log10(atof(argv[2]));
+/**************************************************/
+/* Change the parameters of the search space here */
+/**************************************************/
+   mmin = 1.0;
+   Mmax = 40.;
+   mmin = log10(mmin);
+   Mmax = log10(Mmax);
+
    p.ieta=1; 
    p.fLower=40.0; 
    p.order = twoPN;
@@ -85,7 +89,4 @@ int main (int argc, char *argv[]) {
          p.tC);
    }
    return 0;
-#else
-   argc = 0; argv = NULL; return 77;
-#endif
 }

@@ -32,28 +32,24 @@ f_{GW}(t) = \frac{c^{3}_{0}}{G m \pi} \, x(t)^{3/2} \,\,.
 \label{fofx}
 \end{equation}
 Now, $x(t)$ is given by
-\begin{equation}
-\begin{split}
-x(t) =  &  \frac{\Theta^{-1/4}}{4} \left\{  1 + \left(\frac{743}{4032} + \frac{11}{48} \eta \right)
-\Theta^{-1/4} - \frac{\pi}{5} \Theta^{-3/8} \right. \\
-     &  + \left. \left( \frac{19583}{254016} + \frac{24401}{193536} \eta + \frac{31}{288} \eta^{2} \right)
+\begin{eqnarray}
+x(t) & =  &  \frac{\Theta^{-1/4}}{4} \left\{  1 + \left(\frac{743}{4032} + \frac{11}{48} \eta \right)
+\Theta^{-1/4} - \frac{\pi}{5} \Theta^{-3/8} \right. \nonumber \\
+     &  + & \left. \left( \frac{19583}{254016} + \frac{24401}{193536} \eta + \frac{31}{288} \eta^{2} \right)
 \Theta^{-1/2} \right\}
-\end{split}
 \label{xoft}
-\end{equation}
+\end{eqnarray}
 
 All of these equations have included explicitly their dependence upon $G$ and $c$. The code uses units
 where $G=c=1$.
 Alternatively, one can work in terms of $f_{GW}(t)$ itself rather than first calculating $x(t)$ and then
 finding $f_{GW}(t)$ from that. An equivalent expression derived in this way is
-\begin{equation}
-\begin{split}
-\omega (t) =  & \frac{c_{0}^{3}}{8 G m} \left\{ \Theta^{-3/8} + \left( \frac{743}{2688} + \frac{11}{32}
-\eta \right) \Theta^{-5/8} - \frac{3 \pi}{10} \Theta^{-3/4} \right. \\
-              & \left. \left( \frac{1\,855\,099}{14\,450\,688} + \frac{56\,975}{258\,048} \eta +
+\begin{eqnarray}
+\omega (t) & =  & \frac{c_{0}^{3}}{8 G m} \left\{ \Theta^{-3/8} + \left( \frac{743}{2688} + \frac{11}{32}
+\eta \right) \Theta^{-5/8} - \frac{3 \pi}{10} \Theta^{-3/4} \right. \nonumber \\
+            & \times  & \left. \left( \frac{1\,855\,099}{14\,450\,688} + \frac{56\,975}{258\,048} \eta +
 \frac{371}{2048} \eta^{2} \right) \Theta^{-7/8} \right\}
-\end{split}
-\end{equation}
+\end{eqnarray}
 where $\omega$ here is the \emph{orbital} frequency $\omega_{orb}$. Then one simply uses $f_{GW}=2f_{orb}$ and $f_{orb}=\omega_{orb}/2 \pi$, and so $f_{GW}=\omega_{orb}/ \pi$.
 
 \subsubsection*{Algorithm}
@@ -69,24 +65,15 @@ See Blanchett, Iyer, Will and Wiseman, CQG, 13, 575, 1996 for further details.
 
 </lalLaTeX>  */
 
-
-
-
-
-
-
-
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
-
-
 
 NRCSID (LALTAPPRPNTDOMTIMEFREQUENCYC, "$Id$");
 
 /*  <lalVerbatim file="LALTappRpnTdomTimeFrequencyCP"> */
 void LALTappRpnTdomTimeFrequency0PN (LALStatus *status,
                                      InspiralwaveFrequencyOutput *output,
-			             InspiralwaveFrequencyInput *params) 
+                                     InspiralwaveFrequencyInput *params) 
 { /* </lalVerbatim>  */
 
   REAL8 theta,theta2,theta4;
@@ -106,7 +93,6 @@ void LALTappRpnTdomTimeFrequency0PN (LALStatus *status,
 
   RETURN(status);
 }
-
 
 /*  <lalVerbatim file="LALTappRpnTdomTimeFrequencyCP"> */
 void LALTappRpnTdomTimeFrequency1PN (LALStatus *status,

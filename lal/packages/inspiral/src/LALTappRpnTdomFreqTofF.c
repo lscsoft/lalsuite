@@ -20,16 +20,14 @@ Module to calculate the LHS of Eq.(4) in the documentation for
 The module \texttt{LALTappRpnTdomFreqToff} calculates the quantity which we may call toff, which is given by
 the following equation:
 
-\begin{equation}
-\begin{split}
+\begin{eqnarray}
 \mathrm{toff} = t - t_{a}  &  - \tau_{N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-8/3} \right] -
 \tau_{P^{1}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-2} \right] \\
     &  \\
           & + \tau_{P^{1.5}N} \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-5/3} \right] - \tau_{P^{2}N}
 \left[ 1 - \left( \frac{f}{f_{a}} \right)^{-4/3} \right]  \,.
-\end{split}
 \label{toff}
-\end{equation}
+\end{eqnarray}
 
 The terms in this equation are defined as follows:
 The parameter $t$ represents time, $\tau_{N}$ is the Newtonian chirp time, $\tau_{P^{1}N}$ is the first
@@ -42,27 +40,21 @@ enters the lower end of the detectors bandwidth, and which can be defined alsewh
 \tau_{c} = \tau_{N} + \tau_{P^{1}N} - \tau_{P^{1.5}N} + \tau_{P^{2}N}
 \end{equation}
 then Eq.(\ref{toff}) becomes
-\begin{equation}
-\begin{split}
-\mathrm{toff} = t - t_{a}  &  - \tau_{N} + \tau_{N}\left( \frac{f}{f_{a}} \right)^{-8/3} - \tau_{P^{1}N} +
-\tau_{P^{1}N} \left( \frac{f}{f_{a}} \right)^{-2} \\
-      &      \\  
-      & + \tau_{P^{1.5}N} - \tau_{P^{1.5}N} \left( \frac{f}{f_{a}} \right)^{-5/3} - \tau_{P^{2}N} +
+\begin{eqnarray}
+\mathrm{toff} &  = & t - t_{a}  - \tau_{N} + \tau_{N}\left( \frac{f}{f_{a}} \right)^{-8/3} - \tau_{P^{1}N} +
+\tau_{P^{1}N} \left( \frac{f}{f_{a}} \right)^{-2} \nonumber \\
+      & + & \tau_{P^{1.5}N} - \tau_{P^{1.5}N} \left( \frac{f}{f_{a}} \right)^{-5/3} - \tau_{P^{2}N} +
 \tau_{P^{2}N} \left( \frac{f}{f_{a}} \right)^{-4/3}
-\end{split}
-\end{equation}
+\end{eqnarray}
 i.e.\
-\begin{equation}
-\begin{split}
-\mathrm{toff} = t - t_{a}  &  + \tau_{N} \left( \frac{f}{f_{a}} \right)^{-8/3} + \tau_{P^{1}N} \left(
-\frac{f}{f_{a}} \right)^{-2} \\
-   &   \\
-   & - \tau_{P^{1.5}N} \left( \frac{f}{f_{a}} \right)^{-5/3} + \tau_{P^{2}N} \left( \frac{f}{f_{a}}
+\begin{eqnarray}
+\mathrm{toff} &  = &  t - t_{a}  + \tau_{N} \left( \frac{f}{f_{a}} \right)^{-8/3} + \tau_{P^{1}N} \left(
+\frac{f}{f_{a}} \right)^{-2} \nonumber \\
+   & - & \tau_{P^{1.5}N} \left( \frac{f}{f_{a}} \right)^{-5/3} + \tau_{P^{2}N} \left( \frac{f}{f_{a}}
 \right)^{-4/3} -
 \tau_{c}
-\end{split}
 \label{toff2}
-\end{equation}
+\end{eqnarray}
 
 
 \subsubsection*{Algorithm}
@@ -85,47 +77,35 @@ further details.
 
 </lalLaTeX>  */
 
-
-
-
-
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
-
-
 
 NRCSID (LALTAPPRPNTDOMFREQTOFFC, "$Id$");
 
 /*  <lalVerbatim file="LALTappRpnTdomFreqTofFCP"> */   
-void LALTappRpnTdomFreqTofF0PN (LALStatus *status,
-                                REAL8 *toff,
-			        REAL8 f,
-                                void *params) 
+void LALTappRpnTdomFreqTofF0PN(LALStatus *status,
+                               REAL8 *toff,
+                               REAL8 f,
+                               void *params) 
 { /* </lalVerbatim>  */
 
   InspiralToffInput *toffIn;
-
 
   INITSTATUS (status, "LALTappRpnTdomFreqTofF", LALTAPPRPNTDOMFREQTOFFC);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(f > 0.0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
   toffIn = (InspiralToffInput *) params;
-
   ASSERT(toffIn->t >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
 
   *toff = toffIn->t 
         + toffIn->t0 / pow(f, (eightby3)) 
         - toffIn->tc;
 
-
   RETURN(status);
 }
 
-   
 /*  <lalVerbatim file="LALTappRpnTdomFreqTofFCP"> */   
 void LALTappRpnTdomFreqTofF1PN (LALStatus *status,
                                 REAL8 *toff,
@@ -135,9 +115,7 @@ void LALTappRpnTdomFreqTofF1PN (LALStatus *status,
 
   InspiralToffInput *toffIn;
 
-
   INITSTATUS (status, "LALTappRpnTdomFreqToff", LALTAPPRPNTDOMFREQTOFFC);
-
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(f > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
@@ -146,11 +124,9 @@ void LALTappRpnTdomFreqTofF1PN (LALStatus *status,
 
   ASSERT(toffIn->t >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-
   *toff = toffIn->t 
         + toffIn->t0 / pow(f, (eightby3)) 
         - toffIn->tc;
-
 
   RETURN(status);
 }

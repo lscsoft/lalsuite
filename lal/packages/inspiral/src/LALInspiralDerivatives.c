@@ -52,16 +52,6 @@ removed them.
 
 </lalLaTeX>  */
 
-
-
-
-
-
-
-
-
-
-
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 

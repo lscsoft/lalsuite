@@ -107,7 +107,6 @@ previously defined by the function \texttt{InspiralSetup}.
 
 \subsubsection*{Algorithm}
 
-
 \subsubsection*{Uses}
 None.
 
@@ -120,21 +119,11 @@ The Pade Approximant for the 1PN expansion is undefined, and so cannot be used.
 
 </lalLaTeX>  */
 
-
-
-
-
-
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
 NRCSID (LALCHOOSEMODELC, "$Id$");
-
-
-
-
 
 /*  <lalVerbatim file="LALChooseModelCP"> */
 static REAL8 dEt0(REAL8 v, expnCoeffs *ak) 

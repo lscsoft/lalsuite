@@ -77,8 +77,8 @@ grid point */
    list2 = (InspiralTemplateList *) LALMalloc(sizeof(InspiralTemplateList) * Nlist2);
    coarseIn.mMin = 1.0;
    coarseIn.MMax = 40.0;
-   coarseIn.mmCoarse = 0.90;
-   coarseIn.mmFine = 0.95;
+   coarseIn.mmCoarse = 0.80;
+   coarseIn.mmFine = 0.97;
    coarseIn.fLower = 40.;
    coarseIn.fUpper = 2000;
    coarseIn.iflso = 0;
@@ -89,6 +89,10 @@ grid point */
    coarseIn.approximant = taylor;
    coarseIn.domain = TimeDomain;
    coarseIn.space = Tau0Tau3;
+/* minimum value of eta */
+   coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) /
+      pow(coarseIn.MMax,2.);
+
    LALInspiralCreateCoarseBank(&status, list, &nlist, coarseIn);
    fprintf(stderr, "nlist=%d\n",nlist);
    for (i=0; i<nlist; i++) {
@@ -106,7 +110,7 @@ grid point */
   printf("&\n");
 
   fineIn.coarseIn = coarseIn;
-  for (j=0; j<nlist; j+=10) {
+  for (j=0; j<nlist; j+=48) {
      fineIn.templateList = list[j];
      LALInspiralCreateFineBank(&status, list2, &flist, fineIn);
      fprintf(stderr, "flist=%d\n",flist);

@@ -38,32 +38,17 @@ See the documentation for the module \texttt{LALTappRpnTdomTime} for further det
 
 </lalLaTeX>  */
 
-
-
-
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-
-
 NRCSID (LALTAPPRPNTDOMTIMEC, "$Id$");
 
-
-/*
-void (*LALTappRpnTdomTimeFrequency) (LALStatus *status,
-                                     InspiralwaveFrequencyOutput *output,
-			             InspiralwaveFrequencyInput *params);
-
-void (*LALTappRpnTdomTimePhase) (LALStatus *status,
-                                 InspiralwavePhaseOutput *output,
-			         InspiralwavePhaseInput *params);
-*/
 
 /*  <lalVerbatim file="LALTappRpnTdomTimeTemplatesCP"> */
 void LALTappRpnTdomTimeTemplates (LALStatus *status,
                                   REAL4Vector *signal1, 
                                   REAL4Vector *signal2, 
-		                  InspiralTemplate *params)
+                                  InspiralTemplate *params)
 { /* </lalVerbatim>  */
   void (*LALTappRpnTdomTimeFrequency) (LALStatus *,
       InspiralwaveFrequencyOutput *, InspiralwaveFrequencyInput *);
@@ -94,9 +79,6 @@ void LALTappRpnTdomTimeTemplates (LALStatus *status,
   ASSERT(params->nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
-
-  
 
   dt = 1.0/(params->tSampling);          /* The sampling rate  */
   fu = params->fCutoff;            /* The upper frequency cutoff  */

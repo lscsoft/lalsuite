@@ -47,48 +47,42 @@ void LALRungeKutta4(LALStatus *status,
 	            void *params)
 { /* </lalVerbatim>  */
 
-	INT4 i;
-	REAL8 xh,hh,h6;
+   INT4 i;
+   REAL8 xh,hh,h6;
 
    INITSTATUS(status, "LALRungeKutta4", LALRUNGEKUTTA4C);
-
 
    ASSERT (yout, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (yout->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (input, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
+   hh = input->h*0.5;
+   h6 = input->h/6.0;
+   xh = input->x+hh;
 
-	hh = input->h*0.5;
-	h6 = input->h/6.0;
-	xh = input->x+hh;
+   for (i=0;i<=input->n-1;i++) 
+      input->yt->data[i]=input->y->data[i]+hh*input->dydx->data[i];
 
+   input->function(input->yt, input->dyt, params);
 
-	for (i=0;i<=input->n-1;i++) input->yt->data[i]=input->y->data[i]+hh*input->dydx->data[i];
+   for (i=0;i<=input->n-1;i++) 
+      input->yt->data[i]=input->y->data[i]+hh*input->dyt->data[i];
 
-	input->function(input->yt, input->dyt, params);
+   input->function(input->yt, input->dym, params);	
 
+   for (i=0;i<=input->n-1;i++) {
+      input->yt->data[i]=input->y->data[i]+input->h*input->dym->data[i];
+      input->dym->data[i] += input->dyt->data[i];
+   }
+   input->function(input->yt, input->dyt, params);
 
- 
-	for (i=0;i<=input->n-1;i++) input->yt->data[i]=input->y->data[i]+hh*input->dyt->data[i];
-
-	input->function(input->yt, input->dym, params);	
-
-	for (i=0;i<=input->n-1;i++) {
-		input->yt->data[i]=input->y->data[i]+input->h*input->dym->data[i];
-		input->dym->data[i] += input->dyt->data[i];
-	}
-	input->function(input->yt, input->dyt, params);
-
-
-	for (i=0;i<=input->n-1;i++)
-		yout->data[i]=input->y->data[i]+h6*(input->dydx->data[i]+input->dyt->data[i]+2.0*input->dym->data[i]);
-
-
+   for (i=0;i<=input->n-1;i++)
+      yout->data[i]=
+         input->y->data[i] + 
+         h6*(input->dydx->data[i] + 
+         input->dyt->data[i] + 
+         2.0*input->dym->data[i]);
 
    RETURN (status);
-
-
-
-
 }

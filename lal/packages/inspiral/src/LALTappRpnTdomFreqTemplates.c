@@ -39,27 +39,11 @@ See the ducumentation for the function \texttt{LALTappRpnTdomFreq} for further d
 
 </lalLaTeX>  */
 
-
-
-
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
 
-
-
 NRCSID (LALTAPPRPNTDOMFREQC, "$Id$");
-
-/*
-void (*LALTappRpnTdomFreqPhase) (LALStatus *status,
-                                 REAL8 *phase, 
-                                 InspiralPhasesInput *params);
-
-void (*LALTappRpnTdomFreqTofF) (LALStatus *status,
-                                REAL8 *toff,
-			        REAL8 f,
-                                void *params);
-*/
 
 /*  <lalVerbatim file="LALTappRpnTdomFreqTemplatesCP"> */
 void LALTappRpnTdomFreqTemplates(LALStatus *status, 
@@ -79,23 +63,18 @@ void LALTappRpnTdomFreqTemplates(LALStatus *status,
   InspiralToffInput toffIn;
   void *funcParams;
 
-
   INITSTATUS (status, "LALTappRpnTdomFreq", LALTAPPRPNTDOMFREQC);
   ATTATCHSTATUSPTR(status);
-
 
   ASSERT(signal1,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
   ASSERT(signal1->data,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
   ASSERT(signal2,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
   ASSERT(signal2->data,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
   ASSERT(params,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
-
-
   ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
 
   dt = 1.0/(params->tSampling);
   fs = params->fLower;
@@ -104,8 +83,6 @@ void LALTappRpnTdomFreqTemplates(LALStatus *status,
   startShift = params->nStartPad;
   endShift = params->nEndPad;
   phase0 = params->startPhase;
-
-
 
   switch (params->order) {
      case newtonian:
@@ -140,14 +117,11 @@ void LALTappRpnTdomFreqTemplates(LALStatus *status,
   LALInspiralParameterCalc (status->statusPtr, params);
   CHECKSTATUSPTR(status);
 
-
   ASSERT(params->totalMass > 0.4, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->totalMass < 100, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->eta >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->eta <=0.25, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->mu >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
-
 
   toffIn.t0 = params->t0;
   toffIn.t2 = params->t2;
@@ -161,26 +135,22 @@ void LALTappRpnTdomFreqTemplates(LALStatus *status,
   phaseIn.p4 = 8.0 * fsPi * params->t4;
   phaseIn.pc = phaseIn.p0 + phaseIn.p2 - phaseIn.p3 + phaseIn.p4;
 
-
   totalMass = params->totalMass*LAL_MTSUN_SI;
 
   fLso = 1.0/(LAL_PI*totalMass*pow(6.0, 1.5));
 
   if (fu)
-  fHigh = (fu < fLso) ? fu/fs : fLso/fs;
+     fHigh = (fu < fLso) ? fu/fs : fLso/fs;
   else
-  fHigh = fLso/fs;
-
+     fHigh = fLso/fs;
 
   ASSERT(fHigh*fs < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(fHigh*fs > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
 
   toffIn.t = 0.0;
 
 /* Initialize the members of the structure which will be used as the input to
    the function which will calcute the frequency of the wave  */
-
 
   rootIn.xmax = 1.1*fu/fs;
   rootIn.xacc = 1.0e-8;
@@ -189,9 +159,7 @@ void LALTappRpnTdomFreqTemplates(LALStatus *status,
 
   i=0;
   while (i<startShift) 
-	signal1->data[i] = signal2->data[i++] = 0.0;
-
-
+    signal1->data[i] = signal2->data[i++] = 0.0;
 
 /* Now cast the input structure to argument 4 of BisectionFindRoot so that it 
   of type void * rather than InspiralToffInput  */
@@ -200,7 +168,6 @@ void LALTappRpnTdomFreqTemplates(LALStatus *status,
 
   LALDBisectionFindRoot(status->statusPtr, &freq, &rootIn, funcParams);
   CHECKSTATUSPTR(status);
-
   
   phaseIn.f=freq;
   count=1;
@@ -220,9 +187,8 @@ void LALTappRpnTdomFreqTemplates(LALStatus *status,
   }
 
   while (i < (int)signal1->length) 
-	signal1->data[i]= signal2->data[i++]=0.0;
+    signal1->data[i]= signal2->data[i++]=0.0;
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
-
 }

@@ -46,15 +46,6 @@ of these functions is set by a call to the function \texttt{CHooseModel}.
 
 </lalLaTeX>  */
 
-
-
-
-
-
-
-
-
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>

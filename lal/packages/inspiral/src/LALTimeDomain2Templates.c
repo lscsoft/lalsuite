@@ -42,10 +42,6 @@ See the documentation for the module \texttt{LALTimeDomain2} for further details
 
 </lalLaTeX>  */
 
-
-
-
-
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 

@@ -179,8 +179,8 @@ void LALInspiralParameterCalc (LALStatus *status,
 
                 A0 = 5./(256. * pow(piFl, eightby3));
                 A4 = 5./(128.0 * pow(piFl,fourby3)) * 3058673./1016064.;
-                B4 = 5429./1008 * 1016064./3058673;
-                C4 = 617./144. * 1016064./3058673;
+                B4 = 5429./1008 * 1016064./3058673.;
+                C4 = 617./144. * 1016064./3058673.;
                 Tau4In.t4 = params->t4;
                 Tau4In.A4 = A4 * pow(params->t0/A0, 0.2);
                 Tau4In.B4 = B4;
