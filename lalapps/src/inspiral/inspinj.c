@@ -211,8 +211,8 @@ double greenwich_mean_sidereal_time( int gpssec, int gpsnan, int taiutc )
   /* compute the gmst at 0h of the current day */
   gmst = 24110.54841
     + TpU * ( 8640184.812866
-	+ TpU * ( 0.093104
-	  - TpU * 6.2e-6 ) ); /* seconds */
+        + TpU * ( 0.093104
+          - TpU * 6.2e-6 ) ); /* seconds */
 
   /* add the sidereal time since the start of the day */
   t = fmod( t, 24.0 * 3600.0 ); /* seconds since start of day */
@@ -371,7 +371,7 @@ int read_source_mass_data( double **pm1, double **pm2 )
     { /* prepend path from env variable */
       const char *path = getenv( "LALAPPS_DATA_PATH" );
       LALSnprintf( fname, sizeof( fname ), "%s/%s",
-	  path ? path : PREFIX "/" PACKAGE "/share", basename );
+          path ? path : PREFIX "/" PACKAGE "/share", basename );
     }
     fp = fopen( fname, "r" );
   }
@@ -422,7 +422,7 @@ int read_source_data( void )
     { /* prepend path from env variable */
       const char *path = getenv( "LALAPPS_DATA_PATH" );
       LALSnprintf( fname, sizeof( fname ), "%s/%s",
-	  path ? path : PREFIX "/" PACKAGE "/share", basename );
+          path ? path : PREFIX "/" PACKAGE "/share", basename );
     }
     fp = fopen( fname, "r" );
   }
@@ -462,13 +462,13 @@ int read_source_data( void )
       int c;
 
       c = sscanf( line, "%s %c%le:%le %c%le:%le %le %le %le",
-	  source_data[i].name, &ra_sgn, &ra_h, &ra_m, &dec_sgn, &dec_d, &dec_m,
-	  &source_data[i].dist, &source_data[i].lum, &source_data[i].fudge );
+          source_data[i].name, &ra_sgn, &ra_h, &ra_m, &dec_sgn, &dec_d, &dec_m,
+          &source_data[i].dist, &source_data[i].lum, &source_data[i].fudge );
 
       if ( c != 10 )
       {
-	fprintf( stderr, "error parsing source datafile %s\n", sourceFileName );
-	exit( 1 );
+        fprintf( stderr, "error parsing source datafile %s\n", sourceFileName );
+        exit( 1 );
       }
 
       /* by convention, overall sign is carried only on hours/degrees entry */
@@ -476,9 +476,9 @@ int read_source_data( void )
       source_data[i].dec = ( dec_d + dec_m / 60.0 ) * LAL_PI / 180.0;
 
       if ( ra_sgn == '-' )
-	source_data[i].ra *= -1;
+        source_data[i].ra *= -1;
       if ( dec_sgn == '-' )
-	source_data[i].dec *= -1;
+        source_data[i].dec *= -1;
       source_data[i].dist *= KPC;
       ++i;
     }
@@ -535,7 +535,7 @@ int sky_position( double *dist, double *alpha, double *delta, char *source )
     if ( u < frac[i] )
     {
       LALSnprintf( source, sizeof(source)/sizeof(*source), 
-	  "%s", source_data[i].name );
+          "%s", source_data[i].name );
       *dist  = source_data[i].dist;
       *alpha = source_data[i].ra;
       *delta = source_data[i].dec;
@@ -633,7 +633,7 @@ int main( int argc, char *argv[] )
   MetadataTable         injections;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       xmlfp;
-  CHAR		       tamaFileName[256];
+  CHAR           tamaFileName[256];
 
   /* getopt arguments */
   struct option long_options[] =
@@ -644,12 +644,12 @@ int main( int argc, char *argv[] )
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
-    {"time-interval",		required_argument, 0,		     'i'},
+    {"time-interval",           required_argument, 0,                'i'},
     {"seed",                    required_argument, 0,                's'},
     {"waveform",                required_argument, 0,                'w'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
-    {"tama-output",		      no_argument, &tamaOutput,	      1 },
+    {"tama-output",                   no_argument, &tamaOutput,       1 },
     {"write-eff-dist",                no_argument, &writeDeff,        1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
     {0, 0, 0, 0}
@@ -664,9 +664,9 @@ int main( int argc, char *argv[] )
   proctable.processTable = (ProcessTable *) 
     calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-	&accuracy ), &status );
+        &accuracy ), &status );
   LAL_CALL( populate_process_table( &status, proctable.processTable, 
-	PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
@@ -683,7 +683,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-	"hf:m:a:b:t:s:w:i:", long_options, &option_index );
+        "hf:m:a:b:t:s:w:i:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -694,152 +694,152 @@ int main( int argc, char *argv[] )
     switch ( c )
     {
       case 0:
-	/* if this option set a flag, do nothing else now */
-	if ( long_options[option_index].flag != 0 )
-	{
-	  break;
-	}
-	else
-	{
-	  fprintf( stderr, "error parsing option %s with argument %s\n",
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	break;
+        /* if this option set a flag, do nothing else now */
+        if ( long_options[option_index].flag != 0 )
+        {
+          break;
+        }
+        else
+        {
+          fprintf( stderr, "error parsing option %s with argument %s\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
 
       case 'f':
-	optarg_len = strlen( optarg ) + 1;
-	sourceFileName = calloc( 1, optarg_len * sizeof(char) );
-	memcpy( sourceFileName, optarg, optarg_len * sizeof(char) );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "string", 
-	      "%s", optarg );
-	break;
+        optarg_len = strlen( optarg ) + 1;
+        sourceFileName = calloc( 1, optarg_len * sizeof(char) );
+        memcpy( sourceFileName, optarg, optarg_len * sizeof(char) );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "string", 
+              "%s", optarg );
+        break;
 
       case 'm':
-	optarg_len = strlen( optarg ) + 1;
-	massFileName = calloc( 1, optarg_len * sizeof(char) );
-	memcpy( massFileName, optarg, optarg_len * sizeof(char) );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "string", 
-	      "%s", optarg );
-	break;
+        optarg_len = strlen( optarg ) + 1;
+        massFileName = calloc( 1, optarg_len * sizeof(char) );
+        memcpy( massFileName, optarg, optarg_len * sizeof(char) );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "string", 
+              "%s", optarg );
+        break;
 
       case 'a':
-	gpsinput = atol( optarg );
-	if ( gpsinput < 441417609 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is prior to " 
-	      "Jan 01, 1994  00:00:00 UTC:\n"
-	      "(%ld specified)\n",
-	      long_options[option_index].name, gpsinput );
-	  exit( 1 );
-	}
-	if ( gpsinput > 999999999 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is after " 
-	      "Sep 14, 2011  01:46:26 UTC:\n"
-	      "(%ld specified)\n", 
-	      long_options[option_index].name, gpsinput );
-	  exit( 1 );
-	}
-	gpsStartTime = gpsinput;
-	tinj = 1000000000LL * gpsStartTime;
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "int", 
-	      "%ld", gpsinput );
-	break;
+        gpsinput = atol( optarg );
+        if ( gpsinput < 441417609 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is prior to " 
+              "Jan 01, 1994  00:00:00 UTC:\n"
+              "(%ld specified)\n",
+              long_options[option_index].name, gpsinput );
+          exit( 1 );
+        }
+        if ( gpsinput > 999999999 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is after " 
+              "Sep 14, 2011  01:46:26 UTC:\n"
+              "(%ld specified)\n", 
+              long_options[option_index].name, gpsinput );
+          exit( 1 );
+        }
+        gpsStartTime = gpsinput;
+        tinj = 1000000000LL * gpsStartTime;
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "int", 
+              "%ld", gpsinput );
+        break;
 
       case 'b':
-	gpsinput = atol( optarg );
-	if ( gpsinput < 441417609 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is prior to " 
-	      "Jan 01, 1994  00:00:00 UTC:\n"
-	      "(%ld specified)\n",
-	      long_options[option_index].name, gpsinput );
-	  exit( 1 );
-	}
-	if ( gpsinput > 999999999 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is after " 
-	      "Sep 14, 2011  01:46:26 UTC:\n"
-	      "(%ld specified)\n", 
-	      long_options[option_index].name, gpsinput );
-	  exit( 1 );
-	}
-	gpsEndTime = gpsinput;
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "int", 
-	      "%ld", gpsinput );
-	break;
+        gpsinput = atol( optarg );
+        if ( gpsinput < 441417609 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is prior to " 
+              "Jan 01, 1994  00:00:00 UTC:\n"
+              "(%ld specified)\n",
+              long_options[option_index].name, gpsinput );
+          exit( 1 );
+        }
+        if ( gpsinput > 999999999 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is after " 
+              "Sep 14, 2011  01:46:26 UTC:\n"
+              "(%ld specified)\n", 
+              long_options[option_index].name, gpsinput );
+          exit( 1 );
+        }
+        gpsEndTime = gpsinput;
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "int", 
+              "%ld", gpsinput );
+        break;
 
       case 's':
-	rand_seed = atoi( optarg );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "int", 
-	      "%d", rand_seed );
-	break;
+        rand_seed = atoi( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "int", 
+              "%d", rand_seed );
+        break;
 
       case 't':
-	{
-	  double tstep = atof( optarg );
-	  meanTimeStep = tstep ;
-	  this_proc_param = this_proc_param->next = 
-	    next_process_param( long_options[option_index].name, "float", 
-		"%le", tstep );
-	}
-	break;
+        {
+          double tstep = atof( optarg );
+          meanTimeStep = tstep ;
+          this_proc_param = this_proc_param->next = 
+            next_process_param( long_options[option_index].name, "float", 
+                "%le", tstep );
+        }
+        break;
 
       case 'i':
-	timeInterval = 1000000000LL * atof( optarg );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, 
-	      "float", "%le", timeInterval/1000000000 );
-	break;
+        timeInterval = 1000000000LL * atof( optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%le", timeInterval/1000000000 );
+        break;
 
       case 'w':
-	LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
-	    optarg );
-	this_proc_param = this_proc_param->next = 
-	  next_process_param( long_options[option_index].name, "string", 
-	      "%s", optarg );
+        LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
+            optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, "string", 
+              "%s", optarg );
         break;
 
       case 'Z':
-	/* create storage for the usertag */
-	optarg_len = strlen( optarg ) + 1;
-	userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-	memcpy( userTag, optarg, optarg_len );
+        /* create storage for the usertag */
+        optarg_len = strlen( optarg ) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
-	this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-	  calloc( 1, sizeof(ProcessParamsTable) );
-	LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-	    PROGRAM_NAME );
-	LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-	LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-	LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-	    optarg );
-	break;
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+            PROGRAM_NAME );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+            optarg );
+        break;
 
       case 'h':
-	fprintf( stderr, USAGE );
-	exit( 0 );
-	break;
+        fprintf( stderr, USAGE );
+        exit( 0 );
+        break;
 
       case '?':
-	fprintf( stderr, USAGE );
-	exit( 1 );
-	break;
+        fprintf( stderr, USAGE );
+        exit( 1 );
+        break;
 
       default:
-	fprintf( stderr, "unknown error while parsing options\n" );
-	fprintf( stderr, USAGE );
-	exit( 1 );
+        fprintf( stderr, "unknown error while parsing options\n" );
+        fprintf( stderr, USAGE );
+        exit( 1 );
     }
   }
 
@@ -852,7 +852,7 @@ int main( int argc, char *argv[] )
   {
     /* default to Tev's GeneratePPNInspiral as used in */
     LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
-	"GeneratePPNtwoPN" );
+        "GeneratePPNtwoPN" );
   }
 
   /* store the tamaOutput argument */
@@ -861,7 +861,7 @@ int main( int argc, char *argv[] )
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-	PROGRAM_NAME );
+        PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--tama-output" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
@@ -873,9 +873,9 @@ int main( int argc, char *argv[] )
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-	PROGRAM_NAME );
+        PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-	"--write-eff-dist" );
+        "--write-eff-dist" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
@@ -884,13 +884,13 @@ int main( int argc, char *argv[] )
   if ( ilwd )
   {
     LALSnprintf( procparams.processParamsTable->program, 
-	LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+        LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
     LALSnprintf( procparams.processParamsTable->param,
-	LIGOMETA_PARAM_MAX, "--ilwd" );
+        LIGOMETA_PARAM_MAX, "--ilwd" );
     LALSnprintf( procparams.processParamsTable->type, 
-	LIGOMETA_TYPE_MAX, "string" );
+        LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( procparams.processParamsTable->value, 
-	LIGOMETA_TYPE_MAX, " " );
+        LIGOMETA_TYPE_MAX, " " );
   }
   else
   {
@@ -932,22 +932,22 @@ int main( int argc, char *argv[] )
     fputs( "<ilwd name='injepochs::sequence' size='7'>\n", fp );
 
     fprintf( fp, 
-	"\t<lstring name='real:domain' size='4'>TIME</lstring>\n" );
+        "\t<lstring name='real:domain' size='4'>TIME</lstring>\n" );
     fprintf( fp, 
-	"\t<int_4u name='gps_sec:start_time' units='sec'>%ld</int_4u>\n",
-	gpsStartTime );
+        "\t<int_4u name='gps_sec:start_time' units='sec'>%ld</int_4u>\n",
+        gpsStartTime );
     fprintf( fp, 
-	"\t<int_4u name='gps_nan:start_time' units='nanosec'>0</int_4u>\n" );
+        "\t<int_4u name='gps_nan:start_time' units='nanosec'>0</int_4u>\n" );
     fprintf( fp, 
-	"\t<int_4u name='gps_sec:stop_time' units='sec'>%ld</int_4u>\n",
-	gpsEndTime );
+        "\t<int_4u name='gps_sec:stop_time' units='sec'>%ld</int_4u>\n",
+        gpsEndTime );
     fprintf( fp, 
-	"\t<int_4u name='gps_nan:stop_time' units='nanosec'>0</int_4u>\n");
+        "\t<int_4u name='gps_nan:stop_time' units='nanosec'>0</int_4u>\n");
     fprintf( fp,
-	"\t\t<real_8 name='time:step_size' units='sec'>%e</real_8>\n",
-	meanTimeStep );
+        "\t\t<real_8 name='time:step_size' units='sec'>%e</real_8>\n",
+        meanTimeStep );
     fprintf( fp, "\t<int_4u ndim='2' dims='2,%d' name='data' units='s,ns'>",
-	(int) ninj );
+        (int) ninj );
     fprintf( fp, "%ld 0", gpsStartTime );
   }
 
@@ -984,22 +984,22 @@ int main( int argc, char *argv[] )
 
     fprintf( fp, "\t<lstring name='real:domain' size='4'>TIME</lstring>\n" );
     fprintf( fp, 
-	"\t<int_4u name='gps_sec:start_time' units='sec'>%ld</int_4u>\n",
-	gpsStartTime );
+        "\t<int_4u name='gps_sec:start_time' units='sec'>%ld</int_4u>\n",
+        gpsStartTime );
     fprintf( fp, 
-	"\t<int_4u name='gps_nan:start_time' units='nanosec'>0</int_4u>\n" );
+        "\t<int_4u name='gps_nan:start_time' units='nanosec'>0</int_4u>\n" );
     fprintf( fp, 
-	"\t<int_4u name='gps_sec:stop_time' units='sec'>%ld</int_4u>\n",
-	gpsEndTime );
+        "\t<int_4u name='gps_sec:stop_time' units='sec'>%ld</int_4u>\n",
+        gpsEndTime );
     fprintf( fp, 
-	"\t<int_4u name='gps_nan:stop_time' units='nanosec'>0</int_4u>\n" );
+        "\t<int_4u name='gps_nan:stop_time' units='nanosec'>0</int_4u>\n" );
     fprintf( fp, 
-	"\t<real_8 name='time:step_size' units='sec'>%e</real_8>\n",
-	meanTimeStep );
+        "\t<real_8 name='time:step_size' units='sec'>%e</real_8>\n",
+        meanTimeStep );
 
     fprintf( fp, 
-	"\t<real_4 ndim='2' dims='%d,%d' name='data' units='" UNITS "'>",
-	numElem, (int) ninj );
+        "\t<real_4 ndim='2' dims='%d,%d' name='data' units='" UNITS "'>",
+        numElem, (int) ninj );
   }
 
   tlistelem = &tlisthead;
@@ -1029,15 +1029,17 @@ int main( int argc, char *argv[] )
     {
       if ( ilwd )
       {
-	fprintf( fp, " %e", injPar[elem] );
+        fprintf( fp, " %e", injPar[elem] );
       }
     }
 
     memcpy( this_sim_insp->waveform, waveform, 
-	sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
+        sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
     this_sim_insp->mass1 = injPar[m1Elem];
     this_sim_insp->mass2 = injPar[m2Elem];
     this_sim_insp->eta = injPar[etaElem];
+    this_sim_insp->mchirp = pow( injPar[etaElem], 0.6) * 
+      (injPar[m1Elem] + injPar[m2Elem]);
     this_sim_insp->distance = injPar[distElem] / MPC;
     this_sim_insp->longitude = injPar[lonElem];
     this_sim_insp->latitude = injPar[latElem];
@@ -1047,7 +1049,7 @@ int main( int argc, char *argv[] )
 
     /* populate the site specific information */
     LAL_CALL(LALPopulateSimInspiralSiteInfo( &status, this_sim_insp ), 
-	&status);
+        &status);
 
     /* inspinj has an independent way of calculating the effective distances.
        Calculate them instead using this */
@@ -1071,7 +1073,7 @@ int main( int argc, char *argv[] )
     if ( inj < ninj - 1 )
     {
       this_sim_insp = this_sim_insp->next = (SimInspiralTable *)
-	calloc( 1, sizeof(SimInspiralTable) );
+        calloc( 1, sizeof(SimInspiralTable) );
     }
   }
 
@@ -1087,12 +1089,12 @@ int main( int argc, char *argv[] )
   if ( userTag )
   {
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
-	rand_seed, userTag, gpsStartTime, gpsEndTime - gpsStartTime );
+        rand_seed, userTag, gpsStartTime, gpsEndTime - gpsStartTime );
   }
   else
   {
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
-	rand_seed, gpsStartTime, gpsEndTime - gpsStartTime );
+        rand_seed, gpsStartTime, gpsEndTime - gpsStartTime );
   }
 
   if ( ! ilwd )
@@ -1100,140 +1102,140 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
 
     LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-	  &accuracy ), &status );
+          &accuracy ), &status );
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 
-	&status );
+        &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, proctable, 
-	  process_table ), &status );
+          process_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
 
     if ( procparams.processParamsTable )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_params_table ), 
-	  &status );
+          &status );
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, procparams, 
-	    process_params_table ), &status );
+            process_params_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
     }
 
     if ( injections.simInspiralTable )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ), 
-	  &status );
+          &status );
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections, 
-	    sim_inspiral_table ), &status );
+            sim_inspiral_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
 
       /* write out text file for Tama */
       if ( tamaOutput )
       {
-	if ( userTag )
-	{
-	  LALSnprintf( tamaFileName, sizeof(tamaFileName), 
-	      "HLT-INJECTIONS_%d_%s-%d-%d.txt", rand_seed, userTag, 
-	      gpsStartTime, gpsEndTime - gpsStartTime );
-	}
-	else
-	{
-	  LALSnprintf( tamaFileName, sizeof(tamaFileName), 
-	      "HLT-INJECTIONS_%d-%d-%d.txt", rand_seed, gpsStartTime, 
-	      gpsEndTime - gpsStartTime );
-	}
-	fq = fopen( tamaFileName, "w" );
-	fprintf( fq, "Injections for joint LIGO-TAMA analysis \n" );
-	fprintf( fq, "geocentric end time  hanford end time   " );
-	fprintf( fq, "livingston end time   tama end time     " );
-	if ( writeDeff )
-	{
-	  fprintf( fq, "H d_eff(kpc) L d_eff(kpc) T d_eff(kpc) " );
-	}
-	fprintf( fq, "  mtotal        eta      distance(kpc) " );
-	fprintf( fq, " longitude     latitude    " );
-	fprintf( fq, "inclination   coa_phase   polarization");
-	fprintf( fq, "   tama pol  end-time GMST\n");
+        if ( userTag )
+        {
+          LALSnprintf( tamaFileName, sizeof(tamaFileName), 
+              "HLT-INJECTIONS_%d_%s-%d-%d.txt", rand_seed, userTag, 
+              gpsStartTime, gpsEndTime - gpsStartTime );
+        }
+        else
+        {
+          LALSnprintf( tamaFileName, sizeof(tamaFileName), 
+              "HLT-INJECTIONS_%d-%d-%d.txt", rand_seed, gpsStartTime, 
+              gpsEndTime - gpsStartTime );
+        }
+        fq = fopen( tamaFileName, "w" );
+        fprintf( fq, "Injections for joint LIGO-TAMA analysis \n" );
+        fprintf( fq, "geocentric end time  hanford end time   " );
+        fprintf( fq, "livingston end time   tama end time     " );
+        if ( writeDeff )
+        {
+          fprintf( fq, "H d_eff(kpc) L d_eff(kpc) T d_eff(kpc) " );
+        }
+        fprintf( fq, "  mtotal        eta      distance(kpc) " );
+        fprintf( fq, " longitude     latitude    " );
+        fprintf( fq, "inclination   coa_phase   polarization");
+        fprintf( fq, "   tama pol  end-time GMST\n");
 
-	this_sim_insp = injections.simInspiralTable;
-	while ( this_sim_insp )
-	{
-	  double injtime, ltime, htime, ttime;
-	  double psiTAMA = 0;
-	  double x[3];
-	  double y[3];
+        this_sim_insp = injections.simInspiralTable;
+        while ( this_sim_insp )
+        {
+          double injtime, ltime, htime, ttime;
+          double psiTAMA = 0;
+          double x[3];
+          double y[3];
 
-	  /* the z-axis for TAMA coordinated (orthogonal to nxT, xyT) */
-	  double nzT[3] = { -0.6180, +0.5272, +0.5832 };
+          /* the z-axis for TAMA coordinated (orthogonal to nxT, xyT) */
+          double nzT[3] = { -0.6180, +0.5272, +0.5832 };
 
-	  double theta;
-	  double phi;
-	  double psi;
+          double theta;
+          double phi;
+          double psi;
 
-	  double xDotz;
-	  double yDotz;
+          double xDotz;
+          double yDotz;
 
 
-	  /* turn the end times into floats */
-	  LAL_CALL( LALGPStoFloat( &status, &injtime, 
-		&(this_sim_insp->geocent_end_time) ),  &status );
-	  LAL_CALL( LALGPStoFloat( &status, &htime, 
-		&(this_sim_insp->h_end_time) ),  &status );
-	  LAL_CALL( LALGPStoFloat( &status, &ltime, 
-		&(this_sim_insp->l_end_time) ),  &status );
-	  LAL_CALL( LALGPStoFloat( &status, &ttime, 
-		&(this_sim_insp->t_end_time) ),  &status );
+          /* turn the end times into floats */
+          LAL_CALL( LALGPStoFloat( &status, &injtime, 
+                &(this_sim_insp->geocent_end_time) ),  &status );
+          LAL_CALL( LALGPStoFloat( &status, &htime, 
+                &(this_sim_insp->h_end_time) ),  &status );
+          LAL_CALL( LALGPStoFloat( &status, &ltime, 
+                &(this_sim_insp->l_end_time) ),  &status );
+          LAL_CALL( LALGPStoFloat( &status, &ttime, 
+                &(this_sim_insp->t_end_time) ),  &status );
 
-	  /* calculate the polarization angle for the TAMA detector */
-	  theta = 0.5 * LAL_PI - this_sim_insp->latitude;
-	  phi = this_sim_insp->longitude 
-	    - LAL_PI * this_sim_insp->end_time_gmst / 12.0;
-	  psi = this_sim_insp->polarization;
+          /* calculate the polarization angle for the TAMA detector */
+          theta = 0.5 * LAL_PI - this_sim_insp->latitude;
+          phi = this_sim_insp->longitude 
+            - LAL_PI * this_sim_insp->end_time_gmst / 12.0;
+          psi = this_sim_insp->polarization;
 
-	  x[0] = +( sin( phi ) * cos( psi ) 
-	      - sin( psi ) * cos( phi ) * cos( theta ) );
-	  x[1] = -( cos( phi ) * cos( psi ) 
-	      + sin( psi ) * sin( phi ) * cos( theta ) );
-	  x[2] = sin( psi ) * sin( theta );
-	  y[0] = -( sin( phi ) * sin( psi ) 
-	      + cos( psi ) * cos( phi ) * cos( theta ) );
-	  y[1] = +( cos( phi ) * sin( psi ) 
-	      - cos( psi ) * sin( phi ) * cos( theta ) );
-	  y[2] = cos( psi ) * sin( theta );
-	  xDotz = 0;
-	  yDotz = 0;
-	  for ( i = 0; i < 3; ++i )
-	  {  
-	    xDotz += x[i] * nzT[i];
-	    yDotz += y[i] * nzT[i];
-	  }
+          x[0] = +( sin( phi ) * cos( psi ) 
+              - sin( psi ) * cos( phi ) * cos( theta ) );
+          x[1] = -( cos( phi ) * cos( psi ) 
+              + sin( psi ) * sin( phi ) * cos( theta ) );
+          x[2] = sin( psi ) * sin( theta );
+          y[0] = -( sin( phi ) * sin( psi ) 
+              + cos( psi ) * cos( phi ) * cos( theta ) );
+          y[1] = +( cos( phi ) * sin( psi ) 
+              - cos( psi ) * sin( phi ) * cos( theta ) );
+          y[2] = cos( psi ) * sin( theta );
+          xDotz = 0;
+          yDotz = 0;
+          for ( i = 0; i < 3; ++i )
+          {  
+            xDotz += x[i] * nzT[i];
+            yDotz += y[i] * nzT[i];
+          }
 
-	  /* ensure the angle is between zero and 2 pi */
-	  psiTAMA = atan2( xDotz, yDotz );
-	  if ( psiTAMA < 0 )
-	  {
-	    psiTAMA += 2 * LAL_PI;
-	  }
+          /* ensure the angle is between zero and 2 pi */
+          psiTAMA = atan2( xDotz, yDotz );
+          if ( psiTAMA < 0 )
+          {
+            psiTAMA += 2 * LAL_PI;
+          }
 
-	  /* write out the entry */
-	  fprintf( fq, "%19.9f %19.9f %19.9f %19.9f ", injtime, htime, ltime,
-	      ttime );
-	  if ( writeDeff )
-	  {
-	    fprintf( fq, "%12.6e %12.6e %12.6e ", 
-		1.0e+03 * this_sim_insp->eff_dist_h,
-		1.0e+03 * this_sim_insp->eff_dist_l, 
-		1.0e+03 * this_sim_insp->eff_dist_t );
-	  }
-	  fprintf( fq, "%12.6e %12.6e %12.6e %12.6e %13.6e ",
-	      (this_sim_insp->mass1 + this_sim_insp->mass2), 
-	      this_sim_insp->eta, 1.0e+03 * this_sim_insp->distance,
-	      this_sim_insp->longitude, this_sim_insp->latitude );
-	  fprintf( fq, "%12.6e %12.6e %12.6e", 
-	      this_sim_insp->inclination, this_sim_insp->coa_phase,
-	      this_sim_insp->polarization );
-	  fprintf( fq, " %12.6e %12.6e\n", psiTAMA,
-	      this_sim_insp->end_time_gmst );
+          /* write out the entry */
+          fprintf( fq, "%19.9f %19.9f %19.9f %19.9f ", injtime, htime, ltime,
+              ttime );
+          if ( writeDeff )
+          {
+            fprintf( fq, "%12.6e %12.6e %12.6e ", 
+                1.0e+03 * this_sim_insp->eff_dist_h,
+                1.0e+03 * this_sim_insp->eff_dist_l, 
+                1.0e+03 * this_sim_insp->eff_dist_t );
+          }
+          fprintf( fq, "%12.6e %12.6e %12.6e %12.6e %13.6e ",
+              (this_sim_insp->mass1 + this_sim_insp->mass2), 
+              this_sim_insp->eta, 1.0e+03 * this_sim_insp->distance,
+              this_sim_insp->longitude, this_sim_insp->latitude );
+          fprintf( fq, "%12.6e %12.6e %12.6e", 
+              this_sim_insp->inclination, this_sim_insp->coa_phase,
+              this_sim_insp->polarization );
+          fprintf( fq, " %12.6e %12.6e\n", psiTAMA,
+              this_sim_insp->end_time_gmst );
 
-	  this_sim_insp = this_sim_insp->next;
-	}
+          this_sim_insp = this_sim_insp->next;
+        }
       }
 
     }
