@@ -34,6 +34,7 @@ LALComputeDetAMResponse()
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <errno.h>
 #include <lal/LALConfig.h>
 
 #include <lal/AVFactories.h>
@@ -45,6 +46,7 @@ LALComputeDetAMResponse()
 #include <lal/Units.h>
 
 #include <lal/PrintFTSeries.h>
+#include <lal/StreamOutput.h>
 
 NRCSID( LALTESTDETRESPONSE0C, "$Id$" );
 
@@ -52,11 +54,17 @@ NRCSID( LALTESTDETRESPONSE0C, "$Id$" );
 #define TRUE  1
 #define LALDR_MATRIXSIZE 3
 
-#define ROWS 128
-#define COLS 128
+/* these two constants are for the sky grid */
+#define NUM_DEC 11
+#define NUM_RA  20
+
+static const INT4 lim = NUM_RA * NUM_DEC;
 
 typedef REAL8 LALDR_3Vector[3];
 typedef REAL8 LALDR_33Matrix[3][3];
+
+typedef REAL4 skygrid_t[NUM_RA * NUM_DEC];
+
 
 int        lalDebugLevel = 0;
 BOOLEAN    verbose_p     = FALSE;
@@ -73,6 +81,15 @@ static REAL4 REAL4VectorRMS(REAL4Vector *pVector);
 static void PrintLALDetector(LALDetector * const detector);
 static void PrintDetResponse(const LALDetAMResponse * const response,
                              const char * const title);
+
+
+static void make_me_an_Sarray_sequence(LALStatus *status,
+                                       REAL4ArraySequence **sequence,
+                                       UINT4 rows, UINT4 cols, UINT4 length);
+
+static void print_diagnostics(LALStatus * const status,
+                              REAL4ArraySequence *sequence);
+
 
 static BOOLEAN almost_equal_real4_p(REAL4 a, REAL4 b, REAL4 tolerance);
 
@@ -592,6 +609,15 @@ LALDR_EulerRotation(LALDR_33Matrix * rotationMatrix,
 
 
 
+REAL4 skygrid_avg(const skygrid_t response);
+void  skygrid_square(skygrid_t square, const skygrid_t input);
+void  skygrid_sqrt(skygrid_t result, const skygrid_t input);
+INT4  skygrid_copy(skygrid_t dest, const skygrid_t src);
+void  skygrid_print(const skygrid_t input, const char * filename);
+void skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b);
+void skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b);
+
+FILE *xfopen(const char *path, const char *mode);
 
 #if 0
 /*
@@ -701,6 +727,7 @@ int main(int argc, char *argv[])
   REAL8             lmst1;
   LALPlaceAndGPS    det_and_gps;
   LALLeapSecAccuracy accuracy;
+  LALGPSandAcc      gps_and_acc;
   LALDetAndSource   det_and_pulsar;
   LALDetAMResponse  am_response;
   LALDetAMResponse  expected_resp;
@@ -716,16 +743,40 @@ int main(int argc, char *argv[])
   REAL8             d;
 
   LALDetAMResponseSeries    am_response_series = {NULL,NULL,NULL};
-  REAL4TimeSeries           plus_series, cross_series, scalar_series, circ_series, sum_series;
+  REAL4TimeSeries           plus_series, cross_series, scalar_series,
+    circ_series, sum_series;
+  REAL4                     mean;
   /* REAL4Vector               diffVector; */
   LALTimeIntervalAndNSample time_info;
 
-  LALTimeInterval   interval;
+  LALTimeInterval           interval;
 
   UINT4 k;
-  INT4 i, j, count;
+  INT4  i, j, count;
   REAL4 tolerance;
 
+  skygrid_t plus;
+  skygrid_t cross;
+  skygrid_t sqsum;
+  skygrid_t circ;
+  skygrid_t plus_sq_time_avg;
+  skygrid_t cross_sq_time_avg;
+  skygrid_t sum_of_sq_time_avg;
+  skygrid_t tmpskygrid;
+  skygrid_t tmpskygrid2;
+  skygrid_t theta;
+  skygrid_t phi;
+  INT4 declim = (NUM_DEC-1)/2;
+  FILE     *file_plus_sq_avg = NULL;
+  FILE     *file_cross_sq_avg = NULL;
+  FILE     *file_plus_at_0_0 = NULL;
+  FILE     *file_cross_at_0_0 = NULL;
+  FILE     *file_plus_at_5_10 = NULL;
+  FILE     *file_cross_at_5_10 = NULL;
+  FILE     *file_sum_sq_avg = NULL;
+  FILE     *file_sum_sq = NULL;
+  FILE     *file_theta = NULL;
+  FILE     *file_phi   = NULL;
   
   
   if (argc == 2)
@@ -1588,7 +1639,10 @@ int main(int argc, char *argv[])
   pulsar.equatorialCoords.system    = COORDINATESYSTEM_EQUATORIAL;
   pulsar.orientation                = deg_to_rad(-90.);  /* orientation */  
 
-  LALComputeDetAMResponse(&status, &am_response, &det_and_pulsar, &gps);
+  gps_and_acc.gps = gps;
+  gps_and_acc.accuracy = LALLEAPSEC_STRICT;
+  LALComputeDetAMResponse(&status, &am_response, &det_and_pulsar,
+                          &gps_and_acc);
 
   if (status.statusCode && lalDebugLevel > 0)
     {
@@ -1606,7 +1660,7 @@ int main(int argc, char *argv[])
   utcDate.unixDate.tm_mon  = LALMONTH_AUG;
   utcDate.unixDate.tm_year = 1990 - 1900;
 
-  accuracy = LALLEAPSEC_LOOSE;
+  accuracy = LALLEAPSEC_STRICT;
   LALUTCtoGPS(&status, &gps, &utcDate, &accuracy);
 
   expected_resp.plus   = -1.14595015045445e-01;
@@ -1639,9 +1693,9 @@ int main(int argc, char *argv[])
     printf("Starting vector test\n");
 
   /* fake detector */
-  detector.location[0] = LAL_AWGS84_SI;
+  detector.location[0] = 0.;
   detector.location[1] = 0.;
-  detector.location[2] = 0.;
+  detector.location[2] = LAL_AWGS84_SI;
   detector.response[0][0] = 0.;
   detector.response[1][1] = 0.5;
   detector.response[2][2] = -0.5;
@@ -1651,8 +1705,21 @@ int main(int argc, char *argv[])
   detector.type = LALDETECTORTYPE_ABSENT;
   strncpy(detector.frDetector.name, "FAKE", LALNameLength);
 
+
+  /* Make a fake detector by specifying frame format detector */
+  strncpy(frdet.name, "FAKE FAKE, NOT THE REAL MCCOY", LALNameLength);
+  frdet.vertexLongitudeRadians = (REAL8)deg_to_rad(0.);
+  frdet.vertexLatitudeRadians  = (REAL8)deg_to_rad(90.); /* @ N pole */
+  frdet.vertexElevation        = 0.;
+  frdet.xArmAltitudeRadians    = 0.;
+  frdet.yArmAltitudeRadians    = 0.;
+  frdet.xArmAzimuthRadians     = deg_to_rad(90.);
+  frdet.yArmAzimuthRadians     = deg_to_rad( 0.);
+
+  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+
   /* override - try the cached LHO */
-  detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  /* detector = lalCachedDetectors[LALDetectorIndexLHODIFF]; */
 
   if (verbose_p)
     {
@@ -1690,9 +1757,11 @@ int main(int argc, char *argv[])
     
   time_info.epoch.gpsSeconds     = 61094;
   time_info.epoch.gpsNanoSeconds = 640000000;
-  time_info.deltaT               = 1800;
-  time_info.nSample              = 50;
-
+  time_info.deltaT               = 60;
+  /* time_info.nSample              = 17*24*60; */
+  time_info.nSample              = 24*60;
+  time_info.accuracy             = LALLEAPSEC_STRICT;
+  
   LALComputeDetAMResponseSeries(&status,
                                 &am_response_series,
                                 &det_and_pulsar,
@@ -1764,6 +1833,7 @@ int main(int argc, char *argv[])
       sum_series.f0 = am_response_series.pPlus->f0;
       sum_series.sampleUnits = lalDimensionlessUnit;
 
+      mean = 0.;
       for (k = 0; k < circ_series.data->length; ++k)
         {
           /* sqrt(Fplus^2 + Fcross^2) */
@@ -1779,7 +1849,13 @@ int main(int argc, char *argv[])
              + am_response_series.pCross->data->data[k])
             * (am_response_series.pPlus->data->data[k]
                + am_response_series.pCross->data->data[k]);
+
+          mean += sum_series.data->data[k];
         }
+
+      mean /= (REAL8)(sum_series.data->length);
+
+      printf("mean = % 14.7e\n", mean);
 
       LALSPrintTimeSeries(&circ_series, "circ_series.txt");
       LALSPrintTimeSeries(&sum_series, "sum_series.txt");
@@ -1822,6 +1898,155 @@ int main(int argc, char *argv[])
     }
 
 
+  print_separator_maybe();
+
+  
+  /*
+   * Loop over whole sky
+   */
+  printf("ALOHA\n");
+
+  /* use Livingston */
+  /* detector = lalCachedDetectors[LALDetectorIndexLLODIFF]; */
+  
+  if (lalDebugLevel >= 1)
+    {
+      printf("\nStarting whole-sky test...\n");
+      PrintLALDetector(&detector);
+      count = 0;
+      printf("NUM_RA = %d; NUM_DEC = %d\n", NUM_RA, NUM_DEC);
+
+      file_plus_sq_avg  = xfopen("plus_sq_avg.txt", "w");
+      file_cross_sq_avg = xfopen("cross_sq_avg.txt", "w");
+      file_plus_at_0_0  = xfopen("plus_at_0_0.txt", "w");
+      file_cross_at_0_0 = xfopen("cross_at_0_0.txt", "w");
+      file_plus_at_5_10 = xfopen("plus_at_5_10.txt", "w");
+      file_cross_at_5_10 = xfopen("cross_at_5_10.txt", "w");
+      file_sum_sq_avg = xfopen("sum_sq_avg.txt", "w");
+      file_sum_sq = xfopen("sum_sq.txt", "w");
+      file_theta = xfopen("theta.txt", "w");
+      file_phi   = xfopen("phi.txt", "w");
+
+      printf("Done opening files.\n");
+      
+      gps.gpsSeconds     = time_info.epoch.gpsSeconds;
+      gps.gpsNanoSeconds = time_info.epoch.gpsNanoSeconds;
+      LALFloatToInterval(&status, &interval, &(time_info.deltaT));
+
+      printf("CUBAAN\n");
+
+      /* FIXME */
+      /* only need to print out the (phi, theta) grid once */
+      for (j = 0; j < NUM_RA; ++j)
+        {
+          for (i = -declim; i <= declim; ++i)
+            {
+              
+            }
+        }
+
+      printf("N sample = %d\n", time_info.nSample);
+      
+      for (k = 0; k < time_info.nSample; ++k)
+        {
+          for (j = 0; j < NUM_RA; ++j)
+            {
+              pulsar.equatorialCoords.longitude =
+                (REAL8)j/(REAL8)NUM_RA * LAL_TWOPI; /* RA */
+
+              for (i = -declim; i <= declim; ++i)
+                {
+                  INT4 cnt = j*NUM_DEC + i + declim;
+
+                  pulsar.equatorialCoords.latitude =
+                    acos((REAL8)i/(REAL8)NUM_DEC);
+
+                  LALComputeDetAMResponse(&status, &am_response,
+                                          &det_and_pulsar, &gps_and_acc);
+                  plus[cnt]  = am_response.plus;
+                  cross[cnt] = am_response.cross;
+                  sqsum[cnt] = (plus[cnt] * plus[cnt])
+                    + (cross[cnt] * cross[cnt]);
+
+                  if (i == 0 && j == 0)
+                    {
+                      fprintf(file_plus_at_0_0, "% 14.9e\n", plus[cnt]);
+                      fprintf(file_cross_at_0_0, "% 14.9e\n", cross[cnt]);
+                      fprintf(file_sum_sq, "% 14.9e\n", sqsum[cnt]);
+                    }
+
+                  if (i == 5 && j == 10)
+                    {
+                      fprintf(file_plus_at_5_10, "% 14.9e\n", plus[cnt]);
+                      fprintf(file_cross_at_5_10, "% 14.9e\n", cross[cnt]);
+                    }
+                }
+            }
+          
+          /* print out avg. square over sky for each time step */
+          skygrid_square(tmpskygrid, plus);
+          fprintf(file_plus_sq_avg, "% 14.9e\n", skygrid_avg(tmpskygrid));
+
+          skygrid_square(tmpskygrid2, cross);
+          fprintf(file_cross_sq_avg, "% 14.9e\n", skygrid_avg(tmpskygrid2));
+
+          skygrid_scalar_mult(tmpskygrid, tmpskygrid, 1./time_info.nSample);
+          skygrid_add(plus_sq_time_avg, plus_sq_time_avg, tmpskygrid);
+
+          skygrid_scalar_mult(tmpskygrid2, tmpskygrid2, 1./time_info.nSample);
+          skygrid_add(cross_sq_time_avg, cross_sq_time_avg, tmpskygrid2);
+
+          skygrid_add(sum_of_sq_time_avg, plus_sq_time_avg, cross_sq_time_avg);
+
+          if (k == 300)
+            {
+              skygrid_print(plus, "plus.txt");
+              skygrid_print(cross, "cross.txt");
+
+              skygrid_square(tmpskygrid, plus);
+              skygrid_square(tmpskygrid2, cross);
+              skygrid_add(tmpskygrid, tmpskygrid, tmpskygrid2);
+              printf("avg(F+^2 + Fx^2) = % 14.8e\n", skygrid_avg(tmpskygrid));
+            }
+
+          /* increment observation time */
+          LALIncrementGPS(&status, &(gps_and_acc.gps), &(gps_and_acc.gps),
+                          &interval);
+        }
+      printf("\n");
+
+      skygrid_print(plus_sq_time_avg, "plus_sq_time_avg.txt");
+      skygrid_print(cross_sq_time_avg, "cross_sq_time_avg.txt");
+      skygrid_print(sum_of_sq_time_avg, "sum_of_sq_time_avg.txt");
+
+      fprintf(file_plus_sq_avg, "\n");
+      fprintf(file_cross_sq_avg, "\n");
+      fprintf(file_plus_at_0_0, "\n");
+      fprintf(file_cross_at_0_0, "\n");
+      fprintf(file_plus_at_5_10, "\n");
+      fprintf(file_cross_at_5_10, "\n");
+      fprintf(file_sum_sq_avg, "\n");
+      fprintf(file_sum_sq, "\n");
+
+      if (verbose_p)
+        printf("avg(F+^2 + Fx^2) = % 14.8e\n", skygrid_avg(sqsum));
+
+      fclose(file_plus_sq_avg);
+      fclose(file_cross_sq_avg);
+      fclose(file_plus_at_0_0);
+      fclose(file_cross_at_0_0);
+      fclose(file_plus_at_5_10);
+      fclose(file_cross_at_5_10);
+      fclose(file_sum_sq_avg);
+      fclose(file_sum_sq);
+      fclose(file_theta);
+      fclose(file_phi);
+    }
+
+
+  /*
+   * Housekeeping
+   */
   LALSDestroyVector(&status, &(am_response_series.pPlus->data));
   LALSDestroyVector(&status, &(am_response_series.pCross->data));
   LALSDestroyVector(&status, &(am_response_series.pScalar->data));
@@ -1829,32 +2054,6 @@ int main(int argc, char *argv[])
   LALSDestroyVector(&status, &(sum_series.data));
 
   LALCheckMemoryLeaks();
-
-  print_separator_maybe();
-
-  /*
-   * Loop over whole sky
-   */
-  if (lalDebugLevel >= 8)
-    {
-      printf("\nStarting whole-sky test...\n");
-      count = 0;
-      printf("ROWS = %d; COLS = %d\n", ROWS, COLS);
-      for (j = -ROWS; j <= ROWS; ++j)
-        {
-          pulsar.equatorialCoords.longitude = acos((REAL8)j/(REAL8)ROWS); /* RA */
-          for (i = -COLS; i <= COLS; ++i)
-            {
-              ++count;
-
-              pulsar.equatorialCoords.latitude = acos((REAL8)i/(REAL8)COLS);
-
-              LALComputeDetAMResponse(&status, &am_response, &det_and_pulsar, &gps);
-              printf("% 10.5e\t", am_response.plus);
-            }
-          printf("\n");
-        }
-    }
 
   return 0;
 } /* END: main() */
@@ -2324,3 +2523,140 @@ static BOOLEAN detector_ok_p(const LALDetector * const computed,
           && frdetector_ok_p(&(computed->frDetector), &(expected->frDetector)));
 }
 
+
+
+REAL4 skygrid_avg(const skygrid_t response)
+{
+  INT4 i;
+  REAL4 retval = 0.;
+
+  for (i = 0; i < lim; ++i)
+    retval += response[i];
+
+  retval /= lim;
+
+  return retval;
+}
+
+
+
+
+void skygrid_square(skygrid_t square, const skygrid_t input)
+{
+  INT4 i;
+
+  for (i = 0; i < lim; ++i)
+    square[i] = (input[i]) * (input[i]);
+  
+ }
+
+
+
+void skygrid_sqrt(skygrid_t result, const skygrid_t input)
+{
+  INT4 i;
+
+  for (i = 0; i < lim; ++i)
+    result[i] = (REAL4)sqrt((double)(input[i]));
+}
+
+
+
+INT4 skygrid_copy(skygrid_t dest, const skygrid_t src)
+{
+  INT4 i;
+
+  for (i = 0; i < lim; ++i)
+    dest[i] = src[i];
+
+  return i;
+}
+
+
+
+void skygrid_print(const skygrid_t input, const char * filename)
+{
+  INT4 i, j;
+  FILE * outfile = NULL;
+
+  outfile = xfopen(filename, "w");
+
+  for (i = 0; i < NUM_RA; ++i)
+    {
+      for (j = 0; j < NUM_DEC; ++j)
+        fprintf(outfile, "% 14.8e\t", input[i*NUM_DEC + j]);
+      fprintf(outfile, "\n");
+    }
+
+  fclose(outfile);
+}
+
+
+
+void skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b)
+{
+  INT4 i;
+
+  for (i = 0; i < lim; ++i)
+    sum[i] = a[i] + b[i];
+}
+
+void skygrid_scalar_mult(skygrid_t result, const skygrid_t a, REAL4 b)
+{
+  INT4 i;
+
+  for (i = 0; i < lim; ++i)
+    result[i] = b * a[i];
+}
+
+/*
+ * only handle 2-dimensional arrays
+ */
+static void make_me_an_Sarray_sequence(LALStatus *status,
+                                       REAL4ArraySequence **sequence,
+                                       UINT4 rows, UINT4 cols, UINT4 length)
+{
+  CreateArraySequenceIn params;
+  UINT4Vector           dimLength;
+  UINT4                 data[] = {2, rows, cols};
+
+  dimLength.length = 3;
+  dimLength.data   = data;
+  params.length    = length;
+  params.dimLength = &dimLength;
+
+  LALSCreateArraySequence(status, sequence, &params);
+}
+
+
+
+static void print_diagnostics(LALStatus * const status,
+                              REAL4ArraySequence *sequence)
+{
+  UINT4 i;
+  
+  printf("statusCode = %d\n", status->statusCode);
+  printf("sequence->length   = %u\n", sequence->length);
+  printf("sequence->dimLength->length = %u\n", sequence->dimLength->length);
+  for (i = 0; i < sequence->dimLength->length; ++i)
+    {
+      printf("sequence->dimLength->data[%d] = % 5d\n", i,
+             sequence->dimLength->data[i]);
+    }
+}
+
+
+FILE *xfopen(const char *path, const char *mode)
+{
+  FILE *f = NULL;
+
+  f = fopen(path, mode);
+
+  if (f == NULL)
+    {
+      fprintf(stderr, "%s: ", path);
+      perror("could not open file");
+      exit(errno);
+    }
+  return f;
+}

@@ -34,6 +34,7 @@ detected at a given time.
 #include <lal/LALConstants.h>
 #include <lal/DetectorSite.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/Date.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -208,6 +209,29 @@ tagLALDetAMResponseSeries
 }
 LALDetAMResponseSeries;
 
+/* <lalLaTeX>
+\subsubsection*{Structure \texttt{LALGPSandAcc}}
+\idx[Type]{LALGPSandAcc}
+
+This structure aggregates GPS time and leap second accuracy requirement
+for converting GPS time to sidereal time (implicitly used in
+\texttt{LALComputeDetAMResponse()}).
+
+\begin{description}
+\item[\texttt{LIGOTimeGPS gps}] The GPS time
+\item[\texttt{LALLeapSecAccuracy accuracy}] The accuracy parameter
+\end{description}
+
+</lalLaTeX> */
+typedef struct
+tagLALGPSandAcc
+{
+  LIGOTimeGPS        gps;      /* GPS time */
+  LALLeapSecAccuracy accuracy; /* required accuracy in leap second
+                                  handling */
+}
+LALGPSandAcc;
+
 
 /* <lalLaTeX>
 \subsubsection*{Structure \texttt{LALTimeIntervalAndNSample}}
@@ -221,6 +245,7 @@ This structure encapsulates time and sampling information for computing a
 \item[\texttt{LIGOTimeGPS epoch}] The start time $t_0$ of the time series
 \item[\texttt{REAL8 deltaT}] The sampling interval $\Delta t$, in seconds
 \item[\texttt{UINT4 nSample}] The total number of samples to be computed
+\item[\texttt{LALLeapSecAccuracy accuracy}] The required accuracy for handling leap seconds
 \end{description}
 
 </lalLaTeX> */
@@ -231,6 +256,7 @@ tagLALTimeIntervalAndNSample
   LIGOTimeGPS     epoch;
   REAL8           deltaT;    /* sampling interval */
   UINT4           nSample;   /* number of samples */
+  LALLeapSecAccuracy accuracy; /* accuracy for handling leap-seconds */
 }
 LALTimeIntervalAndNSample;
 
@@ -258,7 +284,7 @@ void
 LALComputeDetAMResponse( LALStatus             *status,
                          LALDetAMResponse      *pResponse,
                          const LALDetAndSource *pDetAndSrc,
-                         const LIGOTimeGPS     *pGPS);
+                         const LALGPSandAcc    *pGPSandAcc);
 
 /*
  * Gives a time series of the detector's response to plus and cross

@@ -655,10 +655,11 @@ void
 LALComputeDetAMResponse( LALStatus             *status,
                          LALDetAMResponse      *pResponse,
                          const LALDetAndSource *pDetAndSrc,
-                         const LIGOTimeGPS     *pGPS)
+                         const LALGPSandAcc    *pGPSandAcc)
 { /* </lalVerbatim> */
 
   char infostr[1024];
+  LALMSTUnitsAndAcc units_and_acc;
   
   /* We need to express the metric perturbation tensor in the Earth-fixed 
    * frame, and then take its dot product with the detector response tensor
@@ -701,7 +702,7 @@ LALComputeDetAMResponse( LALStatus             *status,
   ASSERT(pDetAndSrc != NULL, status,
          DETRESPONSEH_ENULLINPUT, DETRESPONSEH_MSGENULLINPUT);
 
-  ASSERT(pGPS != (LIGOTimeGPS *)NULL, status,
+  ASSERT(pGPSandAcc != (LALGPSandAcc *)NULL, status,
          DETRESPONSEH_ENULLINPUT, DETRESPONSEH_MSGENULLINPUT);
 
   /* source coordinates must be in equatorial system */
@@ -726,12 +727,16 @@ LALComputeDetAMResponse( LALStatus             *status,
    * into Earth-fixed basis
    * Extract the angles (for convenience):
    */
+  units_and_acc.units = MST_RAD;
+  units_and_acc.accuracy = pGPSandAcc->accuracy;
   /* compute phi */
-  TRY( LALGPStoGMST1(status->statusPtr, &gmst, pGPS, MST_RAD), status );
+  TRY( LALGPStoGMST1(status->statusPtr, &gmst, &(pGPSandAcc->gps),
+                     &units_and_acc), status );
 
   if (lalDebugLevel > 4)
     {
-      sprintf(infostr, "gps  = %9d:%9d\n", pGPS->gpsSeconds, pGPS->gpsNanoSeconds);
+      sprintf(infostr, "gps  = %9d:%9d\n", pGPSandAcc->gps.gpsSeconds,
+              pGPSandAcc->gps.gpsNanoSeconds);
       sprintf(infostr, "gmst = %g radians", gmst);
       LALInfo(status, infostr);
     }
@@ -878,6 +883,7 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
   LALDetAMResponse  instResponse;
   LIGOTimeGPS       gps;
   LIGOTimeGPS       tmpgps;
+  LALGPSandAcc      gps_and_acc;
   LALTimeInterval   dt;
   UINT4             i;
   char              infostr[128];
@@ -999,9 +1005,11 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
           sprintf(infostr, "LALComputeDetAMResponseSeries: i = %d\n", i);
           LALInfo(status, infostr);
         }
-      
+
+      gps_and_acc.gps = gps;
+      gps_and_acc.accuracy = pTimeInfo->accuracy;
       TRY( LALComputeDetAMResponse(status->statusPtr, &instResponse,
-                                   pDetAndSource, &gps), status );
+                                   pDetAndSource, &gps_and_acc), status );
 
       pResponseSeries->pPlus->data->data[i]   = instResponse.plus;
       pResponseSeries->pCross->data->data[i]  = instResponse.cross;
