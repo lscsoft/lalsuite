@@ -845,7 +845,18 @@ class ScienceData:
         start = seg.end() - length
         end = seg.end()
         middle = start + length / 2
+        pstart = end - seg.unused() - trig_overlap
+        pmiddle = pstart + (end - pstart) / 2
         if (not play) or ( play 
-          and ( s2play(start-sl) or s2play(middle-sl) or s2play(end-sl) ) ):
+          and ( s2play(pstart-sl) or s2play(pmiddle-sl) or s2play(end-sl) ) ):
           seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
         seg.set_unused(0)
+
+
+
+
+
+
+
+
+
