@@ -262,9 +262,24 @@ LALFindChirpBCVFilterSegment (
     chirpTime = fabs(c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8);
 #endif
 
+#if 0
     /* temporarily set chirpTime equal to 0.5 seconds */
     chirpTime = 0.5;
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
+#endif
+
+
+    /* Calculate deltaEventIndex : the only acceptable clustering */
+    /* is "window" method, for BCV                                */
+    if ( params->clusterMethod == window )
+    {
+      deltaEventIndex=(UINT4) rint((params->clusterWindow/params->deltaT)+1.0);
+    }
+    else if ( params->clusterMethod == tmplt ) 
+    {
+      ABORT( status, FINDCHIRPBCVH_ECLUW, FINDCHIRPBCVH_MSGECLUW );
+    }
+       
 
     /* ignore corrupted data at start and end */
     ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
@@ -645,7 +660,7 @@ LALFindChirpBCVFilterSegment (
           thisEvent->end_time.gpsSeconds = j;
           thisEvent->snr = newmodqsq;
         }
-        else if ( params->maximiseOverChirp &&
+        else if ( ! params->clusterMethod == noClustering &&
             j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
             newmodqsq > thisEvent->snr )
         {
@@ -654,7 +669,7 @@ LALFindChirpBCVFilterSegment (
           thisEvent->snr = newmodqsq;
         }
         else if (j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
-              ! params->maximiseOverChirp)
+              params->clusterMethod == noClustering )
         {
           /* clean up this event */
           SnglInspiralTable *lastEvent;
