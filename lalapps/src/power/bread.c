@@ -95,6 +95,12 @@ int main(int argc, char **argv)
     INT4                     maxConfidenceFlag=0;
     REAL4                    maxConfidence=0.0;
 
+    /* time window */
+    INT4                     trigStartTimeFlag=0;
+    INT4                     trigStartTime=0;
+    INT4                     trigStopTimeFlag=0;
+    INT4                     trigStopTime=0;
+
     /* duration thresholds */
     INT4                     minDurationFlag=0;
     REAL4                    minDuration=0.0;
@@ -157,6 +163,8 @@ int main(int argc, char **argv)
 	    {"max-amplitude",   required_argument,  0,  'k'},
 	    {"min-snr",         required_argument,  0,  'l'},
 	    {"max-snr",         required_argument,  0,  'm'},
+	    {"trig-start-time", required_argument,  0,  'q'},
+	    {"trig-stop-time",   required_argument,  0,  'r'},
 	    {"noplayground",	no_argument,        0,	'n'},
 	    {"help",		no_argument,	    0,	'o'}, 
 	    {"sort",		no_argument,	    0,	'p'},
@@ -289,6 +297,22 @@ int main(int argc, char **argv)
 	    }
 	    break;
     
+	case 'q':
+	    /* only events with time after this are selected */
+            {
+              trigStartTimeFlag = 1;
+              trigStartTime = atoi( optarg );
+	    }
+	    break;
+   
+	case 'r':
+	    /* only events with time before this are selected */
+            {
+              trigStopTimeFlag = 1;
+              trigStopTime = atoi( optarg );
+	    }
+	    break;
+   
 	case 'o':
 	    /* print help */
 	    {
@@ -397,6 +421,14 @@ int main(int argc, char **argv)
      ***************************************************************/
     tmpEvent = burstEventList;
     while ( tmpEvent ){
+
+      /* check if in after specified time window */
+      if( trigStartTimeFlag && !(tmpEvent->start_time.gpsSeconds > trigStartTime) )
+        pass = FALSE;
+
+      /* check if in before specified end time */
+      if( trigStopTimeFlag && !(tmpEvent->start_time.gpsSeconds < trigStopTime) )
+        pass = FALSE;
 
       /* check the confidence */
       if( maxConfidenceFlag && !(tmpEvent->confidence < maxConfidence) )
