@@ -13,14 +13,25 @@ Test code for the inspiral bank modules.
 \begin{verbatim}
 BankEfficiency [options]
 
--n : number of trials
--seed : seed for random generation 
--mm : minimal match 
--fl : lower frequency cutoff
--mMin : minimal mass of component stars 
--mMax : maximal mass of component stars 
--alpha : BCV amplitude correction parameter 
--approximant : Post-Newtonian model such as TaylorT1, PadeT1, EOB, BCV ...
+
+The options are :
+   -alpha : BCV amplitude correction parameter
+   -approximant : Post-Newtonian model such as TaylorT1, PadeT1, EOB, BCV ...  
+-fl : lower frequency cutoff             
+-mMin : minimal mass of component stars   
+-mMax : maximal mass of component stars    
+-mm : minimal match for template bank   
+-n : number of trials                  
+-numFcut : number of layers in Fcut dimension
+-order : order of PN model                  
+-quiet : if this flag is present, the output is restricted to the min
+-seed : seed for random generation         
+-sigAmp : amplitude of the signal            
+-simType : type of simulation, 0, 1 or 2    
+-x0Max : Max value of psi0 
+-x1Min : Min value of psi  
+		  
+
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -189,18 +200,21 @@ main (  int argc, char **argv )
 	   {
 		   fprintf(stderr,"\nUSAGE: %s [options]\n", argv[0]);
 		   fprintf(stderr,"The options are (with default values in brackets)\n");
+		   fprintf(stderr,"      -alpha : BCV amplitude correction parameter (%7.2f)\n",randIn.param.alpha);
 		   fprintf(stderr,"-approximant : Post-Newtonian model such as TaylorT1, PadeT1, EOB, BCV ...  (PadeT1)\n");
+		   fprintf(stderr,"         -fl : lower frequency cutoff             (%7.2f) Hz\n", randIn.param.fLower);
 		   fprintf(stderr,"       -mMin : minimal mass of component stars    (%7.2f) SolarMass\n", randIn.mMin);
 		   fprintf(stderr,"       -mMax : maximal mass of component stars    (%7.2f) SolarMass\n", randIn.mMax);
-		   fprintf(stderr,"     -sigAmp : amplitude of the signal            (%7.2f)\n", randIn.SignalAmp);
-		   fprintf(stderr,"      -alpha : BCV amplitude correction parameter (%7.2f)\n",randIn.param.alpha);
-		   fprintf(stderr,"         -fl : lower frequency cutoff             (%7.2f) Hz\n", randIn.param.fLower);
-		   fprintf(stderr,"      -order : order of PN model                  (%7.2d)\n", randIn.param.order);
-		   fprintf(stderr,"    -numFcut : number of layers in Fcut dimension (%7.2d)\n", numFcutTemplates);
 		   fprintf(stderr,"         -mm : minimal match for template bank    (%7.3f)\n", bankParams.minimalMatch);
-		   fprintf(stderr,"       -seed : seed for random generation         (%d)\n", randIn.useed);
 		   fprintf(stderr,"          -n : number of trials                   (%d)\n", ntrials);
+		   fprintf(stderr,"    -numFcut : number of layers in Fcut dimension (%7.2d)\n", numFcutTemplates);
+		   fprintf(stderr,"      -order : order of PN model                  (%7.2d)\n", randIn.param.order);
+		   fprintf(stderr,"      -quiet : if this flag is present, the output is restricted to the minimum\n");
+		   fprintf(stderr,"       -seed : seed for random generation         (%d)\n", randIn.useed);
+		   fprintf(stderr,"     -sigAmp : amplitude of the signal            (%7.2f)\n", randIn.SignalAmp);
 		   fprintf(stderr,"    -simType : type of simulation, 0, 1 or 2      (%d)\n\n", randIn.type);
+		   fprintf(stderr,"      -x0Max : Max value of psi0 (%7.2f)\n\n", bankParams.x0Max);
+		   fprintf(stderr,"      -x1Min : Min value of psi  (%7.2f)\n\n", bankParams.x1Min);
 		   return 1;	
 
 	   }
