@@ -149,6 +149,33 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('inca.sub')
 
+
+class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_thinca job used by the inspiral pipeline. The static options are
+  read from the section [thinca] in the ini file.  The stdout and stderr from
+  the job are directed to the logs directory.  The path to the executable is 
+  determined from the ini file.
+  """
+  def __init__(self,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','thinca')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
+    
+    for sec in ['thinca']:
+      self.add_ini_opts(cp,sec)
+
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    self.set_stdout_file('logs/thinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/thinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('thinca.sub')
+
+
 class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_sire job used by the inspiral pipeline. The stdout and stderr from
@@ -457,6 +484,134 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     if self.get_ifo_tag():
       basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag 
+
+    return basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
+
+class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+  """
+  A ThincaNode runs an instance of the inspiral coincidence code in a Condor
+  DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_inca.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__ifo_g1 = None
+    self.__ifo_h1 = None
+    self.__ifo_h2 = None
+    self.__ifo_l1 = None
+    self.__ifo_t1 = None
+    self.__ifo_v1 = None
+    self.__usertag = job.get_config('pipeline','user-tag')
+    
+  def set_ifo(self, ifo):
+    """
+    Add the interferometer to the list of ifos
+    ifo = IFO code (e.g. G1,L1, H1 or H2).
+    """
+    if ifo == 'G1':
+      self.add_var_opt('g1-triggers','')
+      self.__ifo_g1 = 'G1'
+    elif ifo == 'H1':
+      self.add_var_opt('h1-triggers','')
+      self.__ifo_h1 = 'H1'
+    elif ifo == 'H2':
+      self.add_var_opt('h2-triggers','')
+      self.__ifo_h2 = 'H2'
+    elif ifo == 'L1':
+      self.add_var_opt('l1-triggers','')
+      self.__ifo_l1 = 'L1'
+    elif ifo == 'T1':
+      self.add_var_opt('t1-triggers','')
+      self.__ifo_t1 = 'T1'
+    elif ifo == 'V1':
+      self.add_var_opt('v1-triggers','')
+      self.__ifo_v1 = 'V1'
+
+  def get_ifo_g1(self):
+    """
+    Returns the IFO code of g1.
+    """
+    return self.__ifo_g1
+    
+  def get_ifo_h1(self):
+    """
+    Returns the IFO code of h1.
+    """
+    return self.__ifo_h1
+
+  def get_ifo_h2(self):
+    """
+    Returns the IFO code of h2.
+    """
+    return self.__ifo_h2
+
+  def get_ifo_l1(self):
+    """
+    Returns the IFO code of l1.
+    """
+    return self.__ifo_l1
+
+  def get_ifo_t1(self):
+    """
+    Returns the IFO code of t1.
+    """
+    return self.__ifo_t1
+
+  def get_ifo_v1(self):
+    """
+    Returns the IFO code of v1.
+    """
+    return self.__ifo_v1
+
+  def get_ifos(self):
+    """
+    Returns the ordered list of ifos.
+    """
+    ifos = ''
+    if self.get_ifo_g1():
+      ifos += self.get_ifo_g1()
+    if self.get_ifo_h1():
+      ifos += self.get_ifo_h1()
+    if self.get_ifo_h2():
+      ifos += self.get_ifo_h2()
+    if self.get_ifo_l1():
+      ifos += self.get_ifo_l1()
+    if self.get_ifo_t1():
+      ifos += self.get_ifo_t1()
+    if self.get_ifo_v1():
+      ifos += self.get_ifo_v1()
+
+    return ifos
+
+  def set_user_tag(self,usertag):
+    """
+    Set the usertag for a given job
+    """
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    """
+    Returns the usertag of the job
+    """
+    return self.__usertag
+
+  def get_output(self):
+    """
+    Returns the file name of output from thinca.  This must be kept
+    synchronized with the name of the output file in thinca.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifos():
+      raise InspiralError, "Start time, end time or ifos have not been set"
+    
+    basename = self.get_ifos() + '-THINCA'
+
     if self.__usertag:
       basename += '_' + self.__usertag 
 

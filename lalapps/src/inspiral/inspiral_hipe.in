@@ -138,7 +138,7 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,snr,
 
 ##############################################################################
 # function to do inca on single IFO data  
-def single_inca(ifo_analyzed,ifo_name,ifo_single,single_inca_job,dag,
+def single_coinc(ifo_analyzed,ifo_name,ifo_single,single_coinc_job,dag,
   usertag=None):
   """
   Run inca on the single coincident times from each of the IFOs. Since the way 
@@ -147,13 +147,13 @@ def single_inca(ifo_analyzed,ifo_name,ifo_single,single_inca_job,dag,
   ifo_analyzed = the analyzed chunks for the IFO
   ifo_name = the name of the IFO
   ifo_single = the single IFO science segments 
-  single_inca_job = the condor job to do single IFO inca
+  single_coinc_job = the condor job to do single IFO inca
   dag = the DAG to attach the nodes to
   """
 
-  single_inca_analyzed = []
+  single_coinc_analyzed = []
   for seg in ifo_single:
-    sinca = inspiral.IncaNode(single_inca_job)
+    sinca = inspiral.IncaNode(single_coinc_job)
     sinca.set_start(seg.start())
     sinca.set_end(seg.end())
     sinca.set_ifo_a(ifo_name)
@@ -164,17 +164,18 @@ def single_inca(ifo_analyzed,ifo_name,ifo_single,single_inca_job,dag,
       if inspiral.overlap_test(ifo_done.get_chunk(),seg):
         sinca.add_var_arg(ifo_done.get_dag_node().get_output())
         if do_inspiral: sinca.add_parent(ifo_done.get_dag_node())
+    
     if do_coincidence: dag.add_node(sinca)
-    single_inca_analyzed.append(AnalyzedIFOData(seg,sinca))
+    single_coinc_analyzed.append(AnalyzedIFOData(seg,sinca))
 
-  return single_inca_analyzed
+  return single_coinc_analyzed
   
 ##############################################################################
-# function to do inca on double IFO data  
-def double_inca(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name, 
-  ifo_ab_double,double_inca_job,dt,kappa,epsilon,dag,usertag=None):
+# function to do thinca on double IFO data  
+def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name, 
+  ifo_double,double_coinc_job,dt,dag,usertag=None):
   """
-  Run inca on the double coincident times from each of the sets of IFOs. 
+  Run thinca on the double coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
   for all three cases. 
   
@@ -182,49 +183,91 @@ def double_inca(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
   ifo_a_name = the name of the first IFO
   ifo_b_analyzed = the analyzed chunks for the second IFO
   ifo_b_name = the name of the second IFO
-  ifo_ab_double = the double coincident IFO science segments 
-  double_inca_job = the condor job to do two IFO inca
+  ifo_double = the double coincident IFO science segments 
+  double_coinc_job = the condor job to do two IFO thinca
   dt = the time coincidence window
-  kappa = inca error parameter 
-  epsilon = inca error parameter
   dag = the DAG to attach the nodes to
   """
 
-  double_inca_analyzed = []
-  for seg in ifo_ab_double:
-    inca = inspiral.IncaNode(double_inca_job)
-    inca.set_start(seg.start())
-    inca.set_end(seg.end())
-    inca.set_ifo_a(ifo_a_name)
-    inca.set_ifo_b(ifo_b_name)
-    inca.set_ifo_tag(ifo_a_name + ifo_b_name)
-    inca.add_var_opt('dt',dt)
-    inca.add_var_opt('kappa',kappa)
-    inca.add_var_opt('epsilon',epsilon)
-    inca.add_var_opt('parameter-test',cp.get('coincidence-parameters',
+  double_coinc_analyzed = []
+  for seg in ifo_double:
+    thinca = inspiral.ThincaNode(double_coinc_job)
+    thinca.set_start(seg.start())
+    thinca.set_end(seg.end())
+    for ifo in [ifo_a_name, ifo_b_name]:
+      thinca.set_ifo(ifo)
+    thinca.add_var_opt('dt',dt)
+    thinca.add_var_opt('parameter-test',cp.get('coincidence-parameters',
       'parameter-test'))
 
     # add all IFO A master chunks that overlap with segment to input
     for done in ifo_a_analyzed:
       if inspiral.overlap_test(done.get_chunk(),seg):
-        inca.add_var_arg(done.get_dag_node().get_output())
-        if do_inspiral: inca.add_parent(done.get_dag_node())
+        thinca.add_var_arg(done.get_dag_node().get_output())
+        if do_inspiral: thinca.add_parent(done.get_dag_node())
     # add all IFO B master chunks that overlap with segment to input
     for done in ifo_b_analyzed:
       if inspiral.overlap_test(done.get_chunk(),seg):
-        inca.add_var_arg(done.get_dag_node().get_output())
-        if do_inspiral: inca.add_parent(done.get_dag_node())
-    if do_coincidence: dag.add_node(inca)
-    double_inca_analyzed.append(AnalyzedIFOData(seg,inca))
+        thinca.add_var_arg(done.get_dag_node().get_output())
+        if do_inspiral: thinca.add_parent(done.get_dag_node())
+    if do_coincidence: dag.add_node(thinca)
+    double_coinc_analyzed.append(AnalyzedIFOData(seg,thinca))
 
-  return double_inca_analyzed
+  return double_coinc_analyzed
 
 ##############################################################################
 # function to do inca on triple IFO data 
-#
-# This is waiting for the triple and higher coincident inca to be finished
-# and the coinc inspiral table reading and writing routines
+def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
+  ifo_c_analyzed,ifo_c_name,ifo_triple,triple_coinc_job,dt,dag,
+  usertag=None):
+  """
+  Run thinca on the double coincident times from each of the sets of IFOs. 
+  Since the way we treat all this data is the same, this function is the same 
+  for all three cases. 
+  
+  ifo_a_analyzed = the analyzed chunks for the first IFO
+  ifo_a_name = the name of the first IFO
+  ifo_b_analyzed = the analyzed chunks for the second IFO
+  ifo_b_name = the name of the second IFO
+  ifo_c_analyzed = the analyzed chunks for the third IFO
+  ifo_c_name = the name of the third IFO
+  ifo_triple = the triple coincident IFO science segments 
+  triple_coinc_job = the condor job to do three IFO thinca
+  dt = the time coincidence window
+  dag = the DAG to attach the nodes to
+  """
 
+  triple_coinc_analyzed = []
+  for seg in ifo_triple:
+    thinca = inspiral.ThincaNode(double_coinc_job)
+    thinca.set_start(seg.start())
+    thinca.set_end(seg.end())
+    for ifo in [ifo_a_name, ifo_b_name, ifo_c_name]:
+      thinca.set_ifo(ifo)
+    thinca.add_var_opt('dt',dt)
+    thinca.add_var_opt('parameter-test',cp.get('coincidence-parameters',
+      'parameter-test'))
+
+    # add all IFO A master chunks that overlap with segment to input
+    for done in ifo_a_analyzed:
+      if inspiral.overlap_test(done.get_chunk(),seg):
+        thinca.add_var_arg(done.get_dag_node().get_output())
+        if do_inspiral: thinca.add_parent(done.get_dag_node())
+    # add all IFO B master chunks that overlap with segment to input
+    for done in ifo_b_analyzed:
+      if inspiral.overlap_test(done.get_chunk(),seg):
+        thinca.add_var_arg(done.get_dag_node().get_output())
+        if do_inspiral: thinca.add_parent(done.get_dag_node())
+    # add all IFO C master chunks that overlap with segment to input
+    for done in ifo_c_analyzed:
+      if inspiral.overlap_test(done.get_chunk(),seg):
+        thinca.add_var_arg(done.get_dag_node().get_output())
+        if do_inspiral: thinca.add_parent(done.get_dag_node())
+    
+    if do_coincidence: dag.add_node(thinca)
+    triple_coinc_analyzed.append(AnalyzedIFOData(seg,thinca))
+
+  return triple_coinc_analyzed
 
 ##############################################################################
 # function to do sweep up data using sire  
@@ -477,8 +520,10 @@ df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 tmplt_job = inspiral.TmpltBankJob(cp)
 insp_job = inspiral.InspiralJob(cp)
 single_inca_job = inspiral.IncaJob(cp)
-double_inca_job = inspiral.IncaJob(cp)
-hh_inca_job = inspiral.IncaJob(cp)
+thinca_h1h2_job = inspiral.ThincaJob(cp)
+thinca_h1l1_job = inspiral.ThincaJob(cp)
+thinca_h2l1_job = inspiral.ThincaJob(cp)
+thinca_h1h2l1_job = inspiral.ThincaJob(cp)
 sire_job = inspiral.SireJob(cp)
 sire_clust_job = inspiral.SireJob(cp)
 
@@ -492,8 +537,10 @@ df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
 insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
 single_inca_job.set_sub_file( basename + '.s_inca' + subsuffix )
-double_inca_job.set_sub_file( basename + '.d_inca' + subsuffix )
-hh_inca_job.set_sub_file( basename + '.hh_inca' + subsuffix )
+thinca_h1h2_job.set_sub_file( basename + '.thinca_h1h2' + subsuffix )
+thinca_h1l1_job.set_sub_file( basename + '.thinca_h1l1' + subsuffix )
+thinca_h2l1_job.set_sub_file( basename + '.thinca_h2l1' + subsuffix )
+thinca_h1h2l1_job.set_sub_file( basename + '.thinca_h1h2l1' + subsuffix )
 sire_job.set_sub_file( basename + '.sire' + subsuffix )
 sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
 
@@ -503,8 +550,11 @@ if usertag:
   tmplt_job.add_opt('user-tag',usertag)
   insp_job.add_opt('user-tag',usertag)
   single_inca_job.add_opt('user-tag',usertag)
-  double_inca_job.add_opt('user-tag',usertag)
-  hh_inca_job.add_opt('user-tag',usertag)
+  thinca_h1h2_job.add_opt('user-tag',usertag)
+  thinca_h1l1_job.add_opt('user-tag',usertag)
+  thinca_h2l1_job.add_opt('user-tag',usertag)
+  thinca_h1h2l1_job.add_opt('user-tag',usertag)
+
   sire_job.add_opt('user-tag',usertag)
   sire_clust_job.add_opt('user-tag',usertag)
 
@@ -515,8 +565,10 @@ if condor_prio:
   tmplt_job.add_condor_cmd('priority',condor_prio)
   insp_job.add_condor_cmd('priority',condor_prio)
   single_inca_job.add_condor_cmd('priority',condor_prio)
-  double_inca_job.add_condor_cmd('priority',condor_prio)
-  hh_inca_job.add_condor_cmd('priority',condor_prio)
+  thinca_h1h2_job.add_condor_cmd('priority',condor_prio)
+  thinca_h1l1_job.add_condor_cmd('priority',condor_prio)
+  thinca_h2l1job.add_condor_cmd('priority',condor_prio)
+  thinca_h1h2l1_job.add_condor_cmd('priority',condor_prio)
   sire_job.add_condor_cmd('priority',condor_prio)
   sire_clust_job.add_condor_cmd('priority',condor_prio)
 
@@ -544,23 +596,32 @@ except:
 if play_data_mask == 'playground_only':
   playground_only = 2
   single_inca_job.add_opt('playground-only',' ')
-  double_inca_job.add_opt('playground-only',' ')
+  thinca_h1h2_job.add_opt('data-type','playground_only')
+  thinca_h1l1_job.add_opt('data-type','playground_only')
+  thinca_h2l1_job.add_opt('data-type','playground_only')
+  thinca_h1h2l1_job.add_opt('data-type','playground_only')
   sire_job.add_opt('playground-only',' ')
   sire_clust_job.add_opt('playground-only',' ')
 
 elif play_data_mask == 'exclude_playground':
   playground_only = 0
   single_inca_job.add_opt('no-playground',' ')
-  double_inca_job.add_opt('no-playground',' ')
+  thinca_h1h2_job.add_opt('data-type','exclude_play')
+  thinca_h1l1_job.add_opt('data-type','exclude_play')
+  thinca_h2l1_job.add_opt('data-type','exclude_play')
+  thinca_h1h2l1_job.add_opt('data-type','exclude_play')
   sire_job.add_opt('exclude-playground',' ')
   sire_clust_job.add_opt('exclude-playground',' ')
 
 elif play_data_mask == 'all_data':
   playground_only = 0
   single_inca_job.add_opt('no-playground',' ')
-  double_inca_job.add_opt('no-playground',' ')
-  sire_job.add_opt('exclude-playground',' ')
-  sire_clust_job.add_opt('exclude-playground',' ')
+  thinca_h1h2_job.add_opt('data-type','all_data')
+  thinca_h1l1_job.add_opt('data-type','all_data')
+  thinca_h2l1_job.add_opt('data-type','all_data')
+  thinca_h1h2l1_job.add_opt('data-type','all_data')
+  sire_job.add_opt('all-data',' ')
+  sire_clust_job.add_opt('all-data',' ')
 
 else:
   print "Invalid playground data mask " + play_data_mask + " specified"
@@ -577,19 +638,9 @@ h1_chisq = cp.get('inspiral-thresholds','h1-chisq-threshold')
 h2_chisq = cp.get('inspiral-thresholds','h2-chisq-threshold')
 
 ##############################################################################
-# get the coincidence parameters from the values in the ini file
+# get the time coincidence parameters from the values in the ini file
 hh_dt = cp.get('coincidence-parameters','hh-dt')
-hh_kappa = cp.get('coincidence-parameters','hh-kappa')
-hh_epsilon = cp.get('coincidence-parameters','hh-epsilon')
-
 hl_dt = cp.get('coincidence-parameters','hl-dt')
-hl_kappa = cp.get('coincidence-parameters','hl-kappa')
-hl_epsilon = cp.get('coincidence-parameters','hl-epsilon')
-
-##############################################################################
-# make sure we use the range cut for analyzing the LHO conincidences
-hh_inca_job.add_opt('ifo-b-range-cut',None)
-hh_inca_job.add_opt('ifo-b-snr-threshold',h2_snr)
 
 ##############################################################################
 # add the sire parameters to the sire jobs
@@ -833,18 +884,18 @@ print "setting up jobs to inca single IFO data...",
 sys.stdout.flush()
 
 # H1
-h1_single_inca_nodes = []
-h1_single_inca_nodes = single_inca(h1_chunks_analyzed,'H1',h1_single_data,
+h1_single_coinc_nodes = []
+h1_single_coinc_nodes = single_coinc(h1_chunks_analyzed,'H1',h1_single_data,
   single_inca_job,dag,usertag)
 
 # H2
-h2_single_inca_nodes = []
-h2_single_inca_nodes = single_inca(h2_chunks_analyzed,'H2',h2_single_data,
+h2_single_coinc_nodes = []
+h2_single_coinc_nodes = single_coinc(h2_chunks_analyzed,'H2',h2_single_data,
   single_inca_job,dag,usertag)
 
 # L1
-l1_single_inca_nodes = []
-l1_single_inca_nodes = single_inca(l1_chunks_analyzed,'L1',l1_single_data,
+l1_single_coinc_nodes = []
+l1_single_coinc_nodes = single_coinc(l1_chunks_analyzed,'L1',l1_single_data,
   single_inca_job,dag, usertag)
 
 print "done"
@@ -852,25 +903,22 @@ print "done"
 ##############################################################################
 # Step 6: Run inca on each of the disjoint sets of double coincidence data
 
-print "setting up jobs to inca double IFO data...",
+print "setting up thinca jobs on double IFO data...",
 
 # H1-H2
-h1_h2_double_inca_nodes = []
-h1_h2_double_inca_nodes = double_inca(h1_chunks_analyzed,'H1',
-  h2_chunks_analyzed,'H2',h1_h2_double_data,hh_inca_job,hh_dt,hh_kappa,
-  hh_epsilon,dag,usertag)
-
+h1_h2_double_coinc_nodes = []
+h1_h2_double_coinc_nodes = double_coinc(h1_chunks_analyzed,'H1',
+  h2_chunks_analyzed,'H2',h1_h2_double_data,thinca_h1h2_job,hh_dt,dag,usertag)
+  
 # H1-L1
-h1_l1_double_inca_nodes = []
-h1_l1_double_inca_nodes = double_inca(h1_chunks_analyzed,'H1',
-  l1_chunks_analyzed,'L1',h1_l1_double_data,double_inca_job,hl_dt,hl_kappa,
-  hl_epsilon,dag,usertag)
+h1_l1_double_coinc_nodes = []
+h1_l1_double_coinc_nodes = double_coinc(h1_chunks_analyzed,'H1',
+  l1_chunks_analyzed,'L1',h1_l1_double_data,thinca_h1l1_job,hh_dt,dag,usertag)
 
 # H2-L1
-h2_l1_double_inca_nodes = []
-h2_l1_double_inca_nodes = double_inca(h2_chunks_analyzed,'H2',
-  l1_chunks_analyzed,'L1',h2_l1_double_data,double_inca_job,hl_dt,hl_kappa,
-  hl_epsilon,dag,usertag)
+h2_l1_double_coinc_nodes = []
+h2_l1_double_coinc_nodes = double_coinc(h2_chunks_analyzed,'H2',
+  l1_chunks_analyzed,'L1',h2_l1_double_data,thinca_h2l1_job,hl_dt,dag,usertag)
 
 print "done"
 
@@ -878,9 +926,15 @@ print "done"
 # Step 7: Run inca on each of the disjoint sets of triple coincidence data
 # since we do not have a triple coincidence tester, we leave this blank
 
-print "setting up jobs to inca three IFO data...",
+print "setting up thinca jobs on three IFO data...",
 
-print "This analysis code does not yet exist"
+# H1-H2-L1
+h1_h2_l1_triple_coinc_nodes = []
+h1_h2_l1_triple_coinc_nodes = triple_coinc(h1_chunks_analyzed,'H1',
+  h2_chunks_analyzed,'H2',l1_chunks_analyzed,'L1',h1_h2_l1_triple_data,
+  thinca_h1h2l1_job,hl_dt,dag,usertag)
+
+print "done"
 
 ############################################################################## 
 # Step 9: Run sire on each of the types of single/double/triple data
@@ -891,13 +945,13 @@ if do_sire:
   if do_one_ifo:
     # a clustered and unclustered sire for each of the single IFO configs
     if do_h1 and len(h1_single_data):
-      sire_segs(h1_single_inca_nodes,'output_a','H1-SIRE_SINGLE_IFO',sire_job,
+      sire_segs(h1_single_coinc_nodes,'output_a','H1-SIRE_SINGLE_IFO',sire_job,
         sire_clust_job,dag,usertag)
     if do_h2 and len(h2_single_data):
-      sire_segs(h2_single_inca_nodes,'output_a','H2-SIRE_SINGLE_IFO',sire_job,
+      sire_segs(h2_single_coinc_nodes,'output_a','H2-SIRE_SINGLE_IFO',sire_job,
         sire_clust_job,dag,usertag)
     if do_l1 and len(l1_single_data):
-      sire_segs(l1_single_inca_nodes,'output_a','L1-SIRE_SINGLE_IFO',sire_job,
+      sire_segs(l1_single_coinc_nodes,'output_a','L1-SIRE_SINGLE_IFO',sire_job,
         sire_clust_job,dag,usertag)
    
 
@@ -905,24 +959,17 @@ if do_sire:
   if do_two_ifo:  
     # a clustered and unclustered sire for each of the double IFO configs
     if do_h1 and do_h2 and len(h1_h2_double_data):
-      sire_segs(h1_h2_double_inca_nodes,'output_a','H1-SIRE_H1H2',sire_job,
+      sire_segs(h1_h2_double_coinc_nodes,'output','H1H2-SIRE',sire_job,
         sire_clust_job,dag,usertag)
-      sire_segs(h1_h2_double_inca_nodes,'output_b','H2-SIRE_H1H2',sire_job,
-        sire_clust_job,dag,usertag)
-
-    if do_h1 and do_l1 and len(h1_l1_double_data):
-      sire_segs(h1_l1_double_inca_nodes,'output_a','H1-SIRE_H1L1',sire_job,
-        sire_clust_job,dag,usertag)
-      sire_segs(h1_l1_double_inca_nodes,'output_b','L1-SIRE_H1L1',sire_job,
-        sire_clust_job,dag,usertag)
-
       
+    if do_h1 and do_l1 and len(h1_l1_double_data):
+      sire_segs(h1_l1_double_coinc_nodes,'output','H1L1-SIRE',sire_job,
+        sire_clust_job,dag,usertag)
+     
     if do_h2 and do_l1 and len(h2_l1_double_data):
-      sire_segs(h2_l1_double_inca_nodes,'output_a','H2-SIRE_H2L1',sire_job,
+      sire_segs(h2_l1_double_inca_nodes,'output','H2L1-SIRE',sire_job,
         sire_clust_job,dag,usertag)
-      sire_segs(h2_l1_double_inca_nodes,'output_b','L1-SIRE_H2L1',sire_job,
-        sire_clust_job,dag,usertag)
-  
+ 
 print "done"
   
 ##############################################################################
