@@ -205,9 +205,9 @@ LALFindChirpBCVFilterSegment (
   if ( input->segment->chisqBinVec->length )
   {
     /* 
-     * at this point, numChisqBins is only used as a 
-     * criterion on whether we will do a chisq test or not.
-     * normally we would have: 
+     * at this point, numChisqBins is only used as a parameter
+     * on the basis of which we decide whether we will do a chisq test or not.
+     * the actual number of chisq bins is: 
      * numChisqBins = input->segment->chisqBinVec->length - 1;
      */
     numChisqBins = input->segment->chisqBinVec->length ;
@@ -390,15 +390,12 @@ LALFindChirpBCVFilterSegment (
   if ( params->rhosqVec )
     memset( params->rhosqVec->data->data, 0, numPoints * sizeof( REAL4 ) );
 
-  /* normalisation */
-  /*  For the BCV templates, templateNorm is equal to                      */
-  /*  (5*eta/96) * (M/pi^2)^(2/3) (Tsun/Dt)^(-1/3) (2*Msun(L)*d/1Mpc)^2,   */
-  /* the square of the normalization factor that multiplies the template   */
-
   rhosqThresh = params->rhosqThresh;
 
   params->norm = norm = deltaT / ((REAL4) numPoints) ;
-  /* XXX notice the difference with SP: no factor of 4 in norm XXX */
+  /* notice difference from corresponding factor in the sp templates: */
+  /* no factor of 4 (taken care of in inputData and inputDataBCV      */
+  /* and no segnorm, since we already multiplied by a1, b1 and b2.    */
 
 
   /* normalized snr threhold */
@@ -690,7 +687,7 @@ LALFindChirpBCVFilterSegment (
 
           /* calculate the numerators and the denominators */
           Num1 = qBCV[timeIndex].re + q[timeIndex].im ;
-          Num2 = qBCV[timeIndex].re - q[timeIndex].re ;
+          Num2 = qBCV[timeIndex].re - q[timeIndex].im ;
           Den1 = q[timeIndex].re - qBCV[timeIndex].im ;
           Den2 = q[timeIndex].re + qBCV[timeIndex].im ;
 
@@ -700,11 +697,7 @@ LALFindChirpBCVFilterSegment (
           thisEvent->coa_phase = - 0.5 * InvTan1 + 0.5 * InvTan2 ;
           omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
           thisEvent->alpha = - b2 * tan(omega) / ( a1 + b1*tan(omega) );
-          /* thisEvent->alpha *= pow(deltaT, 2/3); */ /* check this factor */
-#if 0
-          /* actually record alpha * fcut^(2/3) which must be b/t 0 and 1 */
-          thisEvent->alpha *= pow((input->tmplt->fFinal) , 2.0/3.0);   
-#endif
+          /* thisEvent->alpha *= pow(deltaT, 2/3); */ /* check this factor */ 
 
           /* copy the template into the event */
           thisEvent->psi0   = (REAL4) input->tmplt->psi0; 
@@ -737,11 +730,9 @@ LALFindChirpBCVFilterSegment (
             thisEvent->chisq     = 0;
             thisEvent->chisq_dof = 0;
           }
-          thisEvent->sigmasq = ( 1 / ( 4.0 * a1 * a1 * a1 * a1) ) * norm 
-             * input->fcTmplt->tmpltNorm;
+          thisEvent->sigmasq = input->fcTmplt->tmpltNorm;
           thisEvent->eff_distance =
-            (input->fcTmplt->tmpltNorm * (1 / (16.0 *a1*a1*a1*a1))
-             ) / thisEvent->snr;
+            input->fcTmplt->tmpltNorm / norm / thisEvent->snr;
           thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
 
           thisEvent->snr *= norm;      
@@ -811,7 +802,7 @@ LALFindChirpBCVFilterSegment (
 
     /* calculate the numerators and the denominators */
     Num1 = qBCV[timeIndex].re + q[timeIndex].im ;
-    Num2 = qBCV[timeIndex].re - q[timeIndex].re ;
+    Num2 = qBCV[timeIndex].re - q[timeIndex].im ;
     Den1 = q[timeIndex].re - qBCV[timeIndex].im ;
     Den2 = q[timeIndex].re + qBCV[timeIndex].im ;
 
@@ -823,10 +814,6 @@ LALFindChirpBCVFilterSegment (
     omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
     thisEvent->alpha = - b2 * tan(omega) / ( a1 + b1*tan(omega) );
     /* thisEvent->alpha *= pow(deltaT, 2/3);*/ /* check this factor */
-#if 0
-    /* actually record alpha * fcut^(2/3) which must be b/t 0 and 1 */
-    thisEvent->alpha *= pow( (input->tmplt->fFinal), 2.0/3.0);   
-#endif
 
 
     /* copy the template into the event */
@@ -862,12 +849,10 @@ LALFindChirpBCVFilterSegment (
       thisEvent->chisq     = 0;
       thisEvent->chisq_dof = 0;
     }
-    thisEvent->sigmasq = ( 1 / ( 4.0 * a1 * a1 * a1 * a1) ) * norm
-        * input->fcTmplt->tmpltNorm;
-    thisEvent->eff_distance =
-        (input->fcTmplt->tmpltNorm * (1 / (16.0 *a1*a1*a1*a1) ) ) /
-          thisEvent->snr;
-    thisEvent->eff_distance = sqrt( thisEvent->eff_distance ); 
+    thisEvent->sigmasq = input->fcTmplt->tmpltNorm;
+    thisEvent->eff_distance = input->fcTmplt->tmpltNorm / norm /
+      thisEvent->snr;
+    thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
 
     thisEvent->snr *=  norm ;   
     thisEvent->snr = sqrt( thisEvent->snr );
