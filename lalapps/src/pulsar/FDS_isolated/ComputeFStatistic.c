@@ -50,13 +50,9 @@ BOOLEAN FILE_FSTATS = 1;
 
 #ifndef USE_BOINC
 #define USE_BOINC 0
-#else
-#define USE_BOINC 1
 #endif
 
-#ifdef NO_BOINC_GRAPHICS
-#define NO_BOINC_GRAPHICS 1
-#else
+#ifndef NO_BOINC_GRAPHICS
 #define NO_BOINC_GRAPHICS 0
 #endif
 
