@@ -1,9 +1,8 @@
 /*
  * stochastic.c - SGWB Standalone Analysis Pipeline
  *
- * Tania Regimbau <Tania.Regimbau@astro.cf.ac.uk>
  * Adam Mercer <ram@star.sr.bham.ac.uk>
- *
+ * Tania Regimbau <Tania.Regimbau@astro.cf.ac.uk>
  *
  * $Id$
  */
@@ -111,9 +110,9 @@ REAL4 omegaRef = 1.;
 
 /* monte carlo parameters */
 /* at the moment the code cannot do monte carlo with overlapped Hann window */
-REAL4 scaleFactor = 1.;
-INT4 seed = 1;
-INT4 NLoop = 1;
+REAL4 scaleFactor;
+INT4 seed;
+INT4 NLoop;
 
 /* window parameters */
 /* 60 s for pure Hann, 1 s for Tukey, 0s for rectangular window */
@@ -121,19 +120,19 @@ INT4 hannDuration = 1;
 
 /* high pass filtering parameters */
 REAL4 highPassFreq = 40.;
-REAL4 highPassAt;
+REAL4 highPassAtten;
 INT4  highPassOrder = 6;
 
 /* number of bins for frequency masking */ 
 INT4 maskBin = 1;
 
 /* arguments associated with test flag */
-INT4 testInter = 0;
-INT4 testSeg = 0;
-INT4 testTrial = 0;
+INT4 testInter;
+INT4 testSeg;
+INT4 testTrial;
 
 /* output file */
-CHAR outputFilePath[200];
+CHAR *outputFilePath;
 
 INT4 main(INT4 argc, CHAR *argv[])
 {
@@ -335,7 +334,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     segmentShift = segmentDuration / 2;
   }
 
-  if ((sampleRate == resampleRate)&&(high_pass_flag == 0))
+  if ((sampleRate == resampleRate) && (high_pass_flag == 0))
   {
     padData = 0;
   }
@@ -383,9 +382,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       &status );
   LAL_CALL( LALSCreateVector(&status, &(interval2.data), intervalLength), \
       &status );
-  memset( interval1.data->data, 0, \
+  memset(interval1.data->data, 0, \
       interval1.data->length * sizeof(*interval1.data->data));
-  memset( interval2.data->data, 0, \
+  memset(interval2.data->data, 0, \
       interval2.data->length * sizeof(*interval2.data->data));
 
   segmentPad1.data = segmentPad2.data = NULL;
@@ -393,9 +392,9 @@ INT4 main(INT4 argc, CHAR *argv[])
         segmentPadLength), &status );
   LAL_CALL( LALSCreateVector(&status, &(segmentPad2.data), \
         segmentPadLength), &status );
-  memset( segmentPad1.data->data, 0, \
+  memset(segmentPad1.data->data, 0, \
       segmentPad1.data->length * sizeof(*segmentPad1.data->data));
-  memset( segmentPad2.data->data, 0, \
+  memset(segmentPad2.data->data, 0, \
       segmentPad2.data->length * sizeof(*segmentPad2.data->data));
 
   segment1.data = segment2.data = NULL;
@@ -403,9 +402,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       &status );
   LAL_CALL( LALSCreateVector(&status, &(segment2.data), segmentLength), \
       &status );
-  memset( segment1.data->data, 0, \
+  memset(segment1.data->data, 0, \
       segment1.data->length * sizeof(*segment1.data->data));
-  memset( segment2.data->data, 0, \
+  memset(segment2.data->data, 0, \
       segment2.data->length * sizeof(*segment2.data->data));
 
 
@@ -413,13 +412,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     segPad1[i]= segPad2[i] = NULL;
     LAL_CALL( LALCreateVector(&status, &(segPad1[i]), segmentPadLength), \
-        &status);
+        &status );
     LAL_CALL( LALCreateVector(&status, &(segPad2[i]), segmentPadLength), \
-        &status);
+        &status );
 
-    memset( segPad1[i]->data, 0, \
+    memset(segPad1[i]->data, 0, \
         segPad1[i]->length * sizeof(*segPad1[i]->data));
-    memset( segPad2[i]->data, 0, \
+    memset(segPad2[i]->data, 0, \
         segPad2[i]->length * sizeof(*segPad2[i]->data));
   }
 
@@ -427,13 +426,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     seg1[i]= seg2[i] = NULL;
     LAL_CALL( LALCreateVector(&status, &(seg1[i]), segmentLength), \
-        &status);
+        &status );
     LAL_CALL( LALCreateVector(&status, &(seg2[i]), segmentLength), \
-        &status);
+        &status );
 
-    memset( seg1[i]->data, 0, \
+    memset(seg1[i]->data, 0, \
         seg1[i]->length * sizeof(*seg1[i]->data));
-    memset( seg2[i]->data, 0, \
+    memset(seg2[i]->data, 0, \
         seg2[i]->length * sizeof(*seg2[i]->data));
   }
 
@@ -520,26 +519,26 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     MCresponse1.data = MCresponse2.data = NULL;
     LAL_CALL( LALCCreateVector(&status, &(MCresponse1.data), MCfreqLength), \
-        &status);
+        &status );
     LAL_CALL( LALCCreateVector(&status, &(MCresponse2.data), MCfreqLength), \
-        &status);
+        &status );
 
-    memset( MCresponse1.data->data, 0, \
+    memset(MCresponse1.data->data, 0, \
         MCresponse1.data->length * sizeof(*MCresponse1.data->data));
-    memset( MCresponse2.data->data, 0, \
+    memset(MCresponse2.data->data, 0, \
         MCresponse2.data->length * sizeof(*MCresponse2.data->data));
 
     for (i = 0; i < numSegments; i++)
     {
       MCresp1[i]= MCresp2[i] = NULL;
       LAL_CALL( LALCCreateVector( &status, &(MCresp1[i]), MCfreqLength), \
-          &status);
+          &status );
       LAL_CALL( LALCCreateVector( &status, &(MCresp2[i]), MCfreqLength), \
-          &status);
+          &status );
 
-      memset( MCresp1[i]->data, 0, \
+      memset(MCresp1[i]->data, 0, \
           MCresp1[i]->length * sizeof(*MCresp1[i]->data));
-      memset( MCresp2[i]->data, 0, \
+      memset(MCresp2[i]->data, 0, \
           MCresp2[i]->length * sizeof(*MCresp2[i]->data));
     }
   }
@@ -579,9 +578,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       &status );
   LAL_CALL( LALCreateVector(&status, &(psdTemp2.data), psdTempLength), \
       &status );
-  memset( psdTemp1.data->data, 0, \
+  memset(psdTemp1.data->data, 0, \
       psdTemp1.data->length * sizeof(*psdTemp1.data->data));
-  memset( psdTemp2.data->data, 0, \
+  memset(psdTemp2.data->data, 0, \
       psdTemp2.data->length * sizeof(*psdTemp2.data->data));
 
   /* reduced frequency band PSDs */
@@ -633,9 +632,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       &status );
   LAL_CALL( LALCCreateVector(&status, &(responseTemp2.data), respLength), \
       &status );
-  memset( responseTemp1.data->data, 0, \
+  memset(responseTemp1.data->data, 0, \
       responseTemp1.data->length * sizeof(*responseTemp1.data->data));
-  memset( responseTemp2.data->data, 0, \
+  memset(responseTemp2.data->data, 0, \
       responseTemp2.data->length * sizeof(*responseTemp2.data->data));
 
   /* reduced frequency band response functions */
@@ -659,22 +658,22 @@ INT4 main(INT4 argc, CHAR *argv[])
       &status );
   LAL_CALL( LALCCreateVector(&status, &(response2.data), filterLength), \
       &status );
-  memset( response1.data->data, 0, \
+  memset(response1.data->data, 0, \
       response1.data->length * sizeof(*response1.data->data));
-  memset( response2.data->data, 0, \
+  memset(response2.data->data, 0, \
       response2.data->length * sizeof(*response2.data->data));
 
   for (i = 0; i < numSegments; i++)
   {
     resp1[i]= resp2[i] = NULL;
     LAL_CALL( LALCCreateVector( &status, &(resp1[i]), filterLength), \
-        &status);
+        &status );
     LAL_CALL( LALCCreateVector( &status, &(resp2[i]), filterLength), \
-        &status);
+        &status );
 
-    memset( resp1[i]->data, 0, \
+    memset(resp1[i]->data, 0, \
         resp1[i]->length * sizeof(*resp1[i]->data));
-    memset( resp2[i]->data, 0, \
+    memset(resp2[i]->data, 0, \
         resp2[i]->length * sizeof(*resp2[i]->data));
   }
 
@@ -714,9 +713,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       &status );
   LAL_CALL( LALCreateVector(&status, &(calInvPsd2.data), filterLength), \
       &status );
-  memset( calInvPsd1.data->data, 0, \
+  memset(calInvPsd1.data->data, 0, \
       calInvPsd1.data->length * sizeof(*calInvPsd1.data->data));
-  memset( calInvPsd2.data->data, 0, \
+  memset(calInvPsd2.data->data, 0, \
       calInvPsd2.data->length * sizeof(*calInvPsd2.data->data));
 
   /* set inverse noise inputs */
@@ -744,7 +743,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   dataWindow.data = NULL;
   LAL_CALL( LALSCreateVector(&status, &(dataWindow.data), segmentLength), \
       &status );
-  memset( dataWindow.data->data, 0, \
+  memset(dataWindow.data->data, 0, \
       dataWindow.data->length * sizeof(*dataWindow.data->data));
 
   if (vrbflg)
@@ -772,7 +771,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* allocate memory for hann window */
     hannWindow = NULL;
     LAL_CALL( LALSCreateVector(&status, &hannWindow, hannLength), &status );
-    memset( hannWindow->data, 0, \
+    memset(hannWindow->data, 0, \
         hannWindow->length * sizeof(*hannWindow->data));
 
     /* generate hann window */
@@ -803,7 +802,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     highpassParam.f1 = -1.0;
     highpassParam.f2 = highPassFreq;
     highpassParam.a1 = -1.0;
-    highpassParam.a2 = highPassAt;
+    highpassParam.a2 = highPassAtten;
   }
 
   /* zeropad lengths */
@@ -829,9 +828,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       &status );
   LAL_CALL( LALCCreateVector(&status, &(hBarTilde2.data), fftDataLength), \
       &status );
-  memset( hBarTilde1.data->data, 0, \
+  memset(hBarTilde1.data->data, 0, \
       hBarTilde1.data->length * sizeof(*hBarTilde1.data->data));
-  memset( hBarTilde2.data->data, 0, \
+  memset(hBarTilde2.data->data, 0, \
       hBarTilde2.data->length * sizeof(*hBarTilde2.data->data));
 
   /* set zeropad parameters */
@@ -856,7 +855,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* allocate memory for overlap reduction function */
   overlap.data = NULL;
   LAL_CALL( LALCreateVector(&status, &(overlap.data), filterLength), &status );
-  memset( overlap.data->data, 0, \
+  memset(overlap.data->data, 0, \
       overlap.data->length * sizeof(*overlap.data->data));
 
   /* set parameters for overlap reduction function */
@@ -897,7 +896,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* allocate memory for spectrum */
   omegaGW.data = NULL;
   LAL_CALL( LALCreateVector(&status, &(omegaGW.data), filterLength), &status );
-  memset( omegaGW.data->data, 0, \
+  memset(omegaGW.data->data, 0, \
       omegaGW.data->length * sizeof(*omegaGW.data->data));
 
   /* set omegaGW parameters */
@@ -1060,7 +1059,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   optFilter.data = NULL;
   LAL_CALL( LALCreateVector(&status, &(optFilter.data), filterLength), \
       &status );
-  memset( optFilter.data->data, 0, \
+  memset(optFilter.data->data, 0, \
       optFilter.data->length * sizeof(*optFilter.data->data));
 
   /* set optimal filter inputs */
@@ -1079,7 +1078,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   ccSpectrum.data = NULL;
   LAL_CALL( LALCCreateVector(&status, &(ccSpectrum.data), filterLength), \
       &status );
-  memset( ccSpectrum.data->data, 0, \
+  memset(ccSpectrum.data->data, 0, \
       ccSpectrum.data->length * sizeof(*ccSpectrum.data->data));
 
   /* set CC inputs */
@@ -1125,7 +1124,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* read data */
     streamParams.duration = intervalDuration + (2 * padData);
     streamParams.startTime = gpsStartPadTime.gpsSeconds;
-    LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
+    LAL_CALL( readDataPair(&status, &streamPair, &streamParams), &status );
 
     /* skip segment if data not found or corrupted with 0 values */
     /*
@@ -1340,7 +1339,8 @@ INT4 main(INT4 argc, CHAR *argv[])
                 gpsStartPadTime.gpsSeconds);
           }
 
-          LAL_CALL(readDataPair(&status, &streamPair, &streamParams), &status);
+          LAL_CALL( readDataPair(&status, &streamPair, &streamParams), \
+              &status );
 
           /* store in memory */
           for (i = 0; i < segmentPadLength; i++)
@@ -1803,6 +1803,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
   */
 
+  free(frameCache1);
+  free(frameCache2);
+  free(calCache1);
+  free(calCache2);
+  free(outputFilePath);
+
   return 0;
 }
 
@@ -1845,10 +1851,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   " -U, --test-interval N               interval number for test\n"\
   " -V, --test-segment N                segment number test\n"\
   " -W, --test-trial N                  trial number for test\n"\
-  " -z, --debug-level N                 debugging level\n"\
-  "\n"
+  " -z, --debug-level N                 debugging level\n"
 
-/* parse command line options */
+/* parse and check command line options */
 void parseOptions(INT4 argc, CHAR *argv[])
 {
   int c = -1;
@@ -1916,7 +1921,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     switch(c)
     {
       case 0:
-        /* If this option set a flag, do nothing else now. */
+        /* if this option set a flag, do nothing else now */
         if (long_options[option_index].flag != 0)
           break;
         printf ("option %s", long_options[option_index].name);
@@ -1926,7 +1931,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         break;
 
       case 'h':
-        /* HELP!!! */
+        /* display usage info */
         fprintf(stdout, USAGE);
         exit(0);
         break;
@@ -1939,7 +1944,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         if (startTime < 441217609)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
-              "GPS start time is prior to 1 January 1994 00:00:00 UTC " \
+              "GPS start time is prior to 1 January 1994 00:00:00 UTC: " \
               "(%lld specified)\n", long_options[option_index].name, \
               startTime);
           exit(1);
@@ -1947,7 +1952,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         if (startTime > 999999999)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
-              "GPS start time is after 14 September 2011 01:46:26 UTC " \
+              "GPS start time is after 14 September 2011 01:46:26 UTC: " \
               "(%lld specified)\n", long_options[option_index].name, \
               startTime);
           exit(1);
@@ -1963,7 +1968,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         if (stopTime < 441217609)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
-              "GPS end time is prior to 1 January 1994 00:00:00 UTC " \
+              "GPS end time is prior to 1 January 1994 00:00:00 UTC: " \
               "(%lld specified)\n", long_options[option_index].name, \
               stopTime);
           exit(1);
@@ -1971,7 +1976,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
         if (stopTime > 999999999)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
-              "GPS end time is after 14 September 2011 01:46:26 UTC " \
+              "GPS end time is after 14 September 2011 01:46:26 UTC: " \
               "(%lld specified)\n", long_options[option_index].name, \
               stopTime);
           exit(1);
@@ -1980,53 +1985,157 @@ void parseOptions(INT4 argc, CHAR *argv[])
         break;
 
       case 'L':
-        /* duration */
+        /* interval duration */
         intervalDuration = atoi(optarg);
+
+        /* check */
+        if (intervalDuration <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Interval duration must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name, \
+              intervalDuration);
+          exit(1);
+        }
         break;
 
       case 'l':
-        /* duration */
+        /* segment duration */
         segmentDuration = atoi(optarg);
+
+        /* check */
+        if (segmentDuration <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Segment duration must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name, \
+              segmentDuration);
+          exit(1);
+        }
+
         break;
 
       case 'A':
         /* sample rate */
         sampleRate = atoi(optarg);
+
+        /* check */
+        if (sampleRate < 2 || sampleRate > 16384 || sampleRate % 2)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Sample rate must be a power of 2 between 2 and 16384: " \
+              "inclusive: (%d specified)\n", long_options[option_index].name, \
+              sampleRate);
+          exit(1);
+        }
+
         break;
 
       case 'a':
-        /* resampling */
+        /* resample rate */
         resampleRate = atoi(optarg);
+
+        /* check */
+        if (resampleRate < 2 || resampleRate > 16384 || resampleRate % 2)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Resample rate must be a power of 2 between 2 and 16384: " \
+              "inclusive: (%d specified)\n", long_options[option_index].name, \
+              resampleRate);
+          exit(1);
+        }
+
         break;
 
       case 'f':
-        /* minimal frequency */
+        /* minimum frequency */
         fMin = atoi(optarg);
+
+        /* check */
+        if (fMin < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Minimum frequency is less than 0 Hz: (%d specified)\n", \
+              long_options[option_index].name, fMin);
+          exit(1);
+        }
+
         break;
 
       case 'F':
-        /* maximal frequency */
+        /* maximum frequency */
         fMax = atoi(optarg);
+
+        /* check */
+        if (fMax < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Maximum frequency is less than 0 Hz: (%d specified)\n", \
+              long_options[option_index].name, fMax);
+          exit(1);
+        }
+
         break;
 
       case 'w':
         /* hann window duration */
         hannDuration = atoi(optarg);
+
+        /* check */
+        if (hannDuration < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Hann duartion is less than 0: (%d specified)\n", \
+              long_options[option_index].name, hannDuration);
+          exit(1);
+        }
+
         break;
 
       case 'k':
         /* high pass knee filter frequency */
-        highPassFreq= atof(optarg);
+        highPassFreq = atof(optarg);
+
+        /* check */
+        if (highPassFreq < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "High pass knee frequency is less than 0 Hz: (%f specified)\n", \
+              long_options[option_index].name, highPassFreq);
+          exit(1);
+        }
+
         break;
 
       case 'p':
         /* high pass filter attenuation */
-        highPassAt = atof(optarg);
+        highPassAtten = atof(optarg);
+
+        /* check */
+        if (highPassAtten < 0.0 || highPassAtten > 1.0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "High pass attenuation must be in the range [0:1]: " \
+              "(%f specified)\n", long_options[option_index].name, \
+              highPassAtten);
+          exit(1);
+        }
+
         break;
 
       case 'P':
         /* high pass filter order */
         highPassOrder = atoi(optarg);
+
+        /* check */
+        if (highPassOrder <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "High pass order must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, highPassOrder);
+          exit(1);
+        }
+
         break;
 
       case 'i':
@@ -2051,7 +2160,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
         }
         else
         {
-          fprintf(stderr, "First IFO not recognised...\n");
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "IFO should be H1, H2 or L1: (%s specified)\n", \
+              long_options[option_index].name, ifo1);
           exit(1);
         }
 
@@ -2079,7 +2190,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
         }
         else
         {
-          fprintf(stderr, "Second IFO not recognised...\n");
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "IFO should be H1, H2 or L1: (%s specified)\n", \
+              long_options[option_index].name, ifo2);
           exit(1);
         }
 
@@ -2121,6 +2234,16 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'b':
         /* bin for frequency mask */
         maskBin = atoi(optarg);
+
+        /* check */
+        if (maskBin <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Number of bins to mask must be greater than 0: " \
+              "(%d specified)\n", long_options[option_index].name, maskBin);
+          exit(1);
+        }
+
         break;
 
       case 'o':
@@ -2134,33 +2257,75 @@ void parseOptions(INT4 argc, CHAR *argv[])
         break;
 
       case 'N':
-        /* number of injection */
+        /* number of injections */
         NLoop = atoi(optarg);
         break;
 
       case 'S':
         /* directory for output files */
-        strncpy(outputFilePath, optarg, LALNameLength);
+        optarg_len = strlen(optarg) + 1;
+        outputFilePath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(outputFilePath, optarg, optarg_len);
         break;
 
       case 'U':
         /* interval number for test */
         testInter = atoi(optarg);
+
+        /* check */
+        if (testInter < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Test interval must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, testInter);
+          exit(1);
+        }
+
         break;
 
       case 'V':
         /* segment number for test */
         testSeg = atoi(optarg);
+
+        /* check */
+        if (testSeg < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Test segment must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, testSeg);
+          exit(1);
+        }
+
         break;
 
       case 'W':
-        /* trial  number for test */
+        /* trial number for test */
         testTrial = atoi(optarg);
+
+        /* check */
+        if (testTrial < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Test trial must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, testTrial);
+          exit(1);
+        }
+
         break;
 
       case 'z':
         /* set debug level */
-        set_debug_level( optarg );
+        set_debug_level(optarg);
+
+        /* check */
+        if (atoi(optarg) < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Debug level must be greater than 0: (%d specified)\n", \
+              long_options[option_index].name, atoi(optarg));
+          exit(1);
+        }
+
         break;
 
       case 'v':
@@ -2174,18 +2339,83 @@ void parseOptions(INT4 argc, CHAR *argv[])
         break;
 
       default:
-        fprintf(stderr, "unknown error while parsing options\n");
+        fprintf(stderr, "Unknown error while parsing options\n");
         exit(1);
     }
   }
 
   if (optind < argc)
   {
-    fprintf(stderr, "extraneous command line arguments:\n");
+    fprintf(stderr, "Extraneous command line arguments:\n");
     while(optind < argc)
     {
       fprintf(stderr, "%s\n", argv[optind++]);
     }
+    exit(1);
+  }
+
+  /* check arguments */
+
+  /* start time same as stop time */
+  if (startTime == stopTime)
+  {
+    fprintf(stderr, "Start time same as stop time; no analysis to perform\n");
+    exit(1);
+  }
+
+  /* stop time before start time */
+  if (startTime > stopTime)
+  {
+    fprintf(stderr, "Invalid start/stop time; stop time (%lld) is before " \
+        "start time (%lld)\n", stopTime, startTime);
+    exit(1);
+  }
+
+  /* interval/segment length */
+  if (intervalDuration < segmentDuration)
+  {
+    fprintf(stderr, "Invalid interval duration (%d); must be greater than " \
+        "segment duration (%d)\n", intervalDuration, segmentDuration);
+    exit(1);
+  }
+
+  /* interval length multiple of segment length */
+  if (intervalDuration % segmentDuration)
+  {
+    fprintf(stderr, "Invalid interval duration (%d); must be a multiple of " \
+        "segment duration (%d)\n", intervalDuration, segmentDuration);
+    exit(1);
+  }
+
+  /* resample rate greater than sample rate */
+  if (resampleRate > sampleRate)
+  {
+    fprintf(stderr, "Invalid resample rate (%d); must be less than sample " \
+        "rate (%d)\n", resampleRate, sampleRate);
+    exit(1);
+  }
+
+  /* min frequency same as max */
+  if (fMin == fMax)
+  {
+    fprintf(stderr, "Minimum frequency same as maximum; no analysis to " \
+        "perform\n");
+    exit(1);
+  }
+
+  /* max frequency less than min */
+  if (fMin > fMax)
+  {
+    fprintf(stderr, "Invalid frequency band; maximum frequency (%d Hz) is " \
+        "before minimum\nfrequency (%d Hz)\n", fMax, fMin);
+    exit(1);
+  }
+
+  /* hann duration greater than segment duration */
+  if (hannDuration > segmentDuration)
+  {
+    fprintf(stderr, "Invalid hann duration (%d); must be less than, or " \
+        "equal to segment\nduration (%d)\n", hannDuration, segmentDuration);
     exit(1);
   }
 
@@ -2251,8 +2481,8 @@ void readDataPair(LALStatus *status,
   dataStream1.data = NULL;
   LALSCreateVector( status->statusPtr, &(dataStream1.data), \
       sampleRate * (params->duration + (2 * buffer)));
-  CHECKSTATUSPTR (status);
-  memset( dataStream1.data->data, 0, \
+  CHECKSTATUSPTR( status );
+  memset(dataStream1.data->data, 0, \
       dataStream1.data->length * sizeof(*dataStream1.data->data));
 
   if (vrbflg)
@@ -2262,9 +2492,9 @@ void readDataPair(LALStatus *status,
 
   /* open first frame cache */
   LALFrCacheImport(status->statusPtr, &frCache1, params->frameCache1);
-  CHECKSTATUSPTR (status);
+  CHECKSTATUSPTR( status );
   LALFrCacheOpen(status->statusPtr, &frStream1, frCache1);
-  CHECKSTATUSPTR (status);
+  CHECKSTATUSPTR( status );
 
   if (vrbflg)
   {
@@ -2273,10 +2503,10 @@ void readDataPair(LALStatus *status,
 
   /* read first channel */
   LALFrSeek(status->statusPtr, &(bufferStartTime), frStream1);
-  CHECKSTATUSPTR (status);
+  CHECKSTATUSPTR( status );
   LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream1, &frChanIn1, \
       frStream1);
-  CHECKSTATUSPTR (status);
+  CHECKSTATUSPTR( status );
 
   /* resample */
   if (resampleRate != sampleRate)
@@ -2315,10 +2545,10 @@ void readDataPair(LALStatus *status,
 
     /* read in second channel */
     LALFrSeek(status->statusPtr, &(bufferStartTime), frStream1);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR( status );
     LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream2, &frChanIn2, \
         frStream1);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR( status );
 
     if (vrbflg)
     {
@@ -2327,7 +2557,7 @@ void readDataPair(LALStatus *status,
 
     /* close frame cache */
     LALFrClose(status->statusPtr, &frStream1);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR( status );
   }
   else
   {
@@ -2338,7 +2568,7 @@ void readDataPair(LALStatus *status,
 
     /* close first frame cache */
     LALFrClose(status->statusPtr, &frStream1);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR( status );
 
     if (vrbflg)
     {
@@ -2347,9 +2577,9 @@ void readDataPair(LALStatus *status,
 
     /* open second frame cache and read in second channel */
     LALFrCacheImport(status->statusPtr, &frCache2, params->frameCache2);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR( status );
     LALFrCacheOpen(status->statusPtr, &frStream2, frCache2);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR( status );
 
     if (vrbflg)
     {
@@ -2358,10 +2588,10 @@ void readDataPair(LALStatus *status,
 
     /* read in second channel */
     LALFrSeek(status->statusPtr, &(bufferStartTime), frStream2);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR( status );
     LALFrGetREAL4TimeSeries(status->statusPtr, &dataStream2,
         &frChanIn2, frStream2);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR( status );
 
     if (vrbflg)
     {
@@ -2370,7 +2600,7 @@ void readDataPair(LALStatus *status,
 
     /* close second frame stream */
     LALFrClose(status->statusPtr, &frStream2);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR( status );
   }
 
   /* resample */
@@ -2384,7 +2614,7 @@ void readDataPair(LALStatus *status,
     /* resample */
     LALResampleREAL4TimeSeries(status->statusPtr, &dataStream2, \
         &resampleParams);
-    CHECKSTATUSPTR (status);
+    CHECKSTATUSPTR( status );
   }
 
   /* build output */
@@ -2411,9 +2641,9 @@ void readDataPair(LALStatus *status,
 
   /* clean up */
   LALSDestroyVector(status->statusPtr, &(dataStream1.data));
-  CHECKSTATUSPTR (status);
+  CHECKSTATUSPTR( status );
   LALSDestroyVector(status->statusPtr, &(dataStream2.data));
-  CHECKSTATUSPTR (status);
+  CHECKSTATUSPTR( status );
 
   /* return status */
   DETATCHSTATUSPTR( status );
