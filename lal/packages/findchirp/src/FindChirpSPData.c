@@ -136,8 +136,10 @@ LALFindChirpSPDataInit (
         params->numPoints, 0 );
   BEGINFAIL( status )
   {
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
+    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
+        status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
+        status );
 
     LALFree( dataParamPtr );
     *output = NULL;
@@ -149,9 +151,12 @@ LALFindChirpSPDataInit (
       params->numPoints );
   BEGINFAIL( status )
   {
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), status ); 
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
+    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), 
+        status ); 
+    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
+        status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
+        status );
 
     LALFree( dataParamPtr );
     *output = NULL;
@@ -163,10 +168,14 @@ LALFindChirpSPDataInit (
       params->numPoints/2 + 1 );
   BEGINFAIL( status )
   {
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), status ); 
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), status ); 
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), 
+        status ); 
+    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), 
+        status ); 
+    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
+        status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
+        status );
 
     LALFree( dataParamPtr );
     *output = NULL;
@@ -179,11 +188,16 @@ LALFindChirpSPDataInit (
       params->numPoints/2 + 1 );
   BEGINFAIL( status )
   {
-    TRY( LALCDestroyVector( status->statusPtr, &dataParamPtr->wtildeVec), status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), status ); 
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), status ); 
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );
+    TRY( LALCDestroyVector( status->statusPtr, &dataParamPtr->wtildeVec), 
+        status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), 
+        status ); 
+    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), 
+        status ); 
+    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
+        status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
+        status );
 
     LALFree( dataParamPtr );
     *output = NULL;
@@ -195,11 +209,16 @@ LALFindChirpSPDataInit (
       params->numPoints/2 + 1 );
   BEGINFAIL( status )
   {
-    TRY( LALCDestroyVector( status->statusPtr, &dataParamPtr->wtildeVec), status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), status );
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), status ); 
-    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), status );
-    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), status );    
+    TRY( LALCDestroyVector( status->statusPtr, &dataParamPtr->wtildeVec), 
+        status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), 
+        status );
+    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), 
+        status ); 
+    TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
+        status );
+    TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
+        status );    
     LALFree( dataParamPtr );
     *output = NULL;
   }

@@ -247,9 +247,12 @@ LALFindChirpSPTemplate (
   
 
   /* check that the output structures exist */
-  ASSERT( fcTmplt, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( fcTmplt->data, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( fcTmplt->data->data, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( fcTmplt, status, 
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( fcTmplt->data, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( fcTmplt->data->data, status, 
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the parameter structure exists */
   ASSERT( params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
@@ -422,9 +425,12 @@ LALFindChirpBCVTemplate (
   
 
   /* check that the output structures exist */
-  ASSERT( fcTmplt, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( fcTmplt->data, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
-  ASSERT( fcTmplt->data->data, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( fcTmplt, status, 
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( fcTmplt->data, status, 
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( fcTmplt->data->data, status,
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
   /* check that the parameter structure exists */         
   ASSERT( params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
@@ -458,18 +464,19 @@ LALFindChirpBCVTemplate (
   psi10 = 0.0; /*tmplt->psi2;*/ /* -> use if statements to define these? */
   psi15 = tmplt->psi3;        /* & which name convention to use?       */
   psi20 = 0.0; /*tmplt->psi4;*/
-/* work needed here... */
+  /* XXX work needed here... */
 
   /* parameters */
-  deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); /* not defined in tmplt */
+  deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); 
+  /* XXX not defined in tmplt */
   m      = - psi15 / ( 16 * LAL_PI * LAL_PI * psi00 );
   eta    = 3 / ( 128 * psi00 * pow( LAL_PI * m, 5.0/3.0 ) );       
   mu     = eta * m;
-/* work needed here... check definitions are correct */
+  /* XXX work needed here... check definitions are correct */
 
   /* defining chirp mass (to the power of 5/3 => rename) */
   chirpMass = pow( 1.0 / LAL_PI, 5.0/3.0) * ( 3 / (128 * psi00));
-/* work needed here... required? */
+  /* XXX work needed here... required? */
 
   /* template dependent normalisation */
   distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1.0e6 * LAL_PC_SI);
@@ -487,10 +494,9 @@ LALFindChirpBCVTemplate (
   
   /* x1 */   /* does this explanation suffice? */
   x1 = pow( deltaF, -1.0/3.0 );
-/* work needed here ... check x1 */
+  /* XXX work needed here ... check x1 */
 
   /* frequency cutoffs */
-  /* replace fendBCV by fFinal (Thomas jan 2003)*/
   fHi  = tmplt->fFinal;
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
   kmax = fHi / deltaF < numPoints/2 ? fHi / deltaF : numPoints/2;
@@ -498,10 +504,11 @@ LALFindChirpBCVTemplate (
   /* compute psi0: used in range reduction */
   {
     REAL4 x    = x1 * xfac[kmin];
-    REAL4 psi  = psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
-          psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
+    REAL4 psi  = 
+      psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
+    psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
   }
-/* work needed here... check psi */
+  /* XXX work needed here... check psi */
 
 
   /*
@@ -514,10 +521,11 @@ LALFindChirpBCVTemplate (
   for ( k = kmin; k < kmax ; ++k )
     {
       REAL4 x    = x1 * xfac[k];
-      REAL4 psi  = psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
+      REAL4 psi  = 
+        psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
       REAL4 psi1 = psi + psi0;
       REAL4 psi2;  /* defining psi2 every time through the loop necessary? */
-/* work needed here... check psi */  
+      /* XXX work needed here... check psi */  
 
       /* range reduction of psi1 */
       while ( psi1 < -LAL_PI )
@@ -534,12 +542,10 @@ LALFindChirpBCVTemplate (
       /* compute approximate sine and cosine of psi1 */
       expPsi[k].im = - sin(psi1);
       expPsi[k].re =   cos(psi1);
-/* work needed here... expensive computation method */
+      /* XXX work needed here... expensive computation method */
     }
 
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
-
-

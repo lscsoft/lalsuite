@@ -152,7 +152,8 @@ LALFindChirpCreateInspiralBank (
           status );
       ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
     }
-    memcpy( &(fineBankIn->coarseIn), coarseBankIn, sizeof(InspiralCoarseBankIn) );
+    memcpy( &(fineBankIn->coarseIn), 
+        coarseBankIn, sizeof(InspiralCoarseBankIn) );
 
     /* start with the first template */
     tmpltPtr = *bankHead;
@@ -220,7 +221,8 @@ LALFindChirpCreateInspiralBank (
           fineTmpltPtr = fineTmpltPtr->next;
 
           /* and copy the template data into it */
-          memcpy( fineTmpltPtr, &(fineList[i].params), sizeof(InspiralTemplate) );
+          memcpy( fineTmpltPtr, 
+              &(fineList[i].params), sizeof(InspiralTemplate) );
           fineTmpltPtr->number = tmpltCounter++;
           fineTmpltPtr->level = 1;
           fineTmpltPtr->next = NULL;

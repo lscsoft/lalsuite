@@ -368,8 +368,10 @@ LALFindChirpChisqVeto (
 
 
   /* check that the output pointer is non-null and has room to store data */ 
-  ASSERT( chisqVec, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
-  ASSERT( chisqVec->data, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( chisqVec, status, 
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( chisqVec->data, status, 
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
 
   /* check that the parameter structure exists */
   ASSERT( params, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
@@ -383,7 +385,8 @@ LALFindChirpChisqVeto (
       FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
 
   /* check that the fft plan exists */
-  ASSERT( params->plan, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
+  ASSERT( params->plan, status, 
+      FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
 
   /* check that the input exists */
   ASSERT( input, status, FINDCHIRPCHISQH_ENULL, FINDCHIRPCHISQH_MSGENULL );
