@@ -1058,7 +1058,8 @@ if { $cjid > $NCondorJobs } {
     }
 
 
-    file rename -force tmp3 tmp3.$SegTime
+#    file rename -force tmp3 tmp3.$SegTime
+    file delete tmp.condor
 
     set cjid 0
     set CondorFiles ""
