@@ -5,11 +5,11 @@ Instructions to get, compile, and install LALApps from the CVS repository:
 
   1.  Get LALApps and bootstrap it
 
-        cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lscsoft login
+        cvs -d :pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft login
 
       (the password is lal)
 
-        cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lscsoft checkout lalapps
+        cvs -d :pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft checkout lalapps
         cd lalapps
         ./00boot
 
