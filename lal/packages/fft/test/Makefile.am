@@ -12,7 +12,7 @@ AverageSpectrumTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.l
 AvgSpecTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = ComplexFFTTest RealFFTTest TimeFreqFFTTest AverageSpectrumTest AvgSpecTest
-MOSTLYCLEANFILES = .dvi-dep *.out
+MOSTLYCLEANFILES = .dvi-dep *.out out*.dat
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 @DVIMKFILE@
