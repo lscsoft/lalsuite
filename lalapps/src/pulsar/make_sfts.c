@@ -78,8 +78,11 @@ COMPLEX8Vector *fvec = NULL;
 RealFFTPlan *pfwd = NULL;
 
 /* Need prototype: this is POSIX not ANSI, sigh */
+#include <config.h>
 #include <unistd.h>
-/* int gethostname(char *name, size_t len); */
+#ifndef HAVE_GETHOSTNAME_PROTOTYPE
+int gethostname(char *name, size_t len);
+#endif
 
 /* This is an error handler that prints a bit of extra info */
 void pout(char *fmt, ...)  
