@@ -18,12 +18,12 @@ http://www.lsc-group.phys.uwm.edu/lal
 The current working version of LAL can be obtained from the LAL CVS server by
 issuing the commands:
 
-  cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal login
+  cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lscsoft login
 
 (the password is lal)
 
-  cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal checkout lal
-  cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lal logout
+  cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lscsoft checkout lal
+  cvs -d :pserver:anonymous@gravity.phys.uwm.edu:/usr/local/cvs/lscsoft logout
   cd lal
   ./00boot
 
