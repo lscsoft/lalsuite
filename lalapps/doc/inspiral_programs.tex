@@ -59,6 +59,15 @@ as described above.
 
 All results are written in xml files.
 
+\texttt{lalapps\_thinca}: This code is intended as a generalization of inca.  It
+is not fully implemented at the present time.  For now, it can take in triggers
+from any number of instruments and return triggers which are coincident in two
+of the instruments.  The coincidence test is performed over time and mass
+parameters.  Furthermore, the events are labelled with a unique id in order to
+facilitate post processing.  
+
+All results are written in xml files.
+
 
 \subsection{Trigger Summary and Injection Analysis}
 
@@ -113,6 +122,9 @@ that bank into smaller banks.
 
 \clearpage
 \input{inca}
+
+\clearpage
+\input{thinca}
 
 \clearpage
 \input{sire}
