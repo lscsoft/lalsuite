@@ -137,6 +137,8 @@ main (int argc, char *argv[])
    *
    */
 
+#define PATRICK 0 
+#ifdef PATRICK
   {
     RealDFTParams                   *dftparams1=NULL;
     
@@ -165,6 +167,7 @@ main (int argc, char *argv[])
         
 
   }
+#endif
 
 
   /*
