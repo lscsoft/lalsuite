@@ -127,7 +127,7 @@ struct DemodPar
 
 \begin{description}
 
-\item[\textttINT4 spinDwnOrder{}] Maximum order of spdwn parameter
+\item[\texttt{INT4 spinDwnOrder}] Maximum order of spdwn parameter
 \item[\texttt{REAL8 *skyConst}] The array of sky constants.
 \item[\texttt{REAL8 *spinDwn}] The set of template spindown parameters.
 \item[\texttt{AMCoeffs *amcoe}] The values of the function $a$ and $b$, plus their scalar products.
