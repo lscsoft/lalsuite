@@ -559,16 +559,6 @@ cmdline_parser (int argc, char * const *argv, struct gengetopt_args_info *args_i
       fprintf (stderr, "%s: '--start-time-sec' ('-s') option required\n", CMDLINE_PARSER_PACKAGE);
       missing_required_options = 1;
     }
-  if (! args_info->n_ra_given)
-    {
-      fprintf (stderr, "%s: '--n-ra' option required\n", CMDLINE_PARSER_PACKAGE);
-      missing_required_options = 1;
-    }
-  if (! args_info->n_dec_given)
-    {
-      fprintf (stderr, "%s: '--n-dec' option required\n", CMDLINE_PARSER_PACKAGE);
-      missing_required_options = 1;
-    }
   if ( missing_required_options )
     exit (EXIT_FAILURE);
 

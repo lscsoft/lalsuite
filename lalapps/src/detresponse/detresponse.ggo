@@ -37,8 +37,8 @@ option "nsample"               u   "number of samples" int no
 option "sampling-interval"     i   "sampling time interval, in seconds" double no
 
 # options to specify the grid parameters
-option "n-ra"	-	"Number of grid points in RA" int default="256" yes
-option "n-dec"	-	"Number of grid points in Dec" int default="64" yes
+option "n-ra"	-	"Number of grid points in RA" int default="256" no
+option "n-dec"	-	"Number of grid points in Dec" int default="64" no
 option "start-ra" - "Starting RA index (>= 0)" int default="0" no
 option "count-ra" - "Number of sub-grid points in RA" int no
 option "start-dec" - "Starting Dec index (>= 0)" int default="0" no
