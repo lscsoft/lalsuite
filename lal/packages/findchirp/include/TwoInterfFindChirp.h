@@ -48,6 +48,7 @@ a pair of interferometers for binary inspiral chirps.
 #include <lal/DetectorSite.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/SkyCoordinates.h>
+#include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -602,6 +603,14 @@ void
 LALTwoInterfFindChirpFilterSegment (
     LALStatus                            *status,
     TwoInterfInspiralEvent              **eventList,
+    TwoInterfFindChirpFilterInputVector  *input,
+    TwoInterfFindChirpFilterParams       *params
+    );
+
+void
+LALCoherentFindChirpFilterSegment (
+    LALStatus                            *status,
+    MultiInspiralTable                  **eventList,
     TwoInterfFindChirpFilterInputVector  *input,
     TwoInterfFindChirpFilterParams       *params
     );
