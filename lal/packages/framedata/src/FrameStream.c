@@ -286,6 +286,7 @@ LALFrClose(
   tmp = (*stream)->filelist;
   while ( *tmp )
     LALFree( *tmp++ );
+  LALFree( (*stream)->filelist );
   LALFree( *stream );
   *stream = NULL;
   DETATCHSTATUSPTR( status );
