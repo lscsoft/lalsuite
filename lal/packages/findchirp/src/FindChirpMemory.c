@@ -467,6 +467,11 @@ LALCreateFindChirpSegmentVector (
   ASSERT( params->numPoints > 0, 
       status, FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
 
+  if ( params->approximant != TaylorF2 || params->approximant != BCV )
+  {
+    ABORT( status, FINDCHIRPH_EUAPX, FINDCHIRPH_MSGEUAPX );
+  }
+
 
   /*
    *
@@ -513,45 +518,50 @@ LALCreateFindChirpSegmentVector (
         &segPtr[i].data->data, params->numPoints/2 + 1);
     CHECKSTATUSPTR (status);
 
-    /* begin: EM */
-    /* and for BCV */
-    segPtr[i].dataBCV = (COMPLEX8FrequencySeries *)
-      LALCalloc( 1, sizeof(COMPLEX8FrequencySeries));
-    if ( ! segPtr[i].dataBCV )
+    if ( params->approximant == BCV )
     {
-       ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      segPtr[i].dataBCV = (COMPLEX8FrequencySeries *)
+        LALCalloc( 1, sizeof(COMPLEX8FrequencySeries));
+      if ( ! segPtr[i].dataBCV )
+      {
+        ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+      }
+
+      LALCCreateVector (status->statusPtr,
+          &segPtr[i].dataBCV->data, params->numPoints/2 + 1);
+      CHECKSTATUSPTR (status);
     }
-
-    LALCCreateVector (status->statusPtr,
-        &segPtr[i].dataBCV->data, params->numPoints/2 + 1);
-    CHECKSTATUSPTR (status);
-    /* end: EM */
-
     
     /* chi squared frequency bins */
     if ( params->numChisqBins )
     {
       segPtr[i].chisqBinVec = NULL;
-      segPtr[i].chisqBinVecBCV = NULL; /* EM */
-
       LALU4CreateVector (status->statusPtr, 
           &segPtr[i].chisqBinVec, params->numChisqBins + 1);
       CHECKSTATUSPTR (status);
-      LALU4CreateVector (status->statusPtr, 
-          &segPtr[i].chisqBinVecBCV, params->numChisqBins + 1);
-      CHECKSTATUSPTR (status);
+
+      if ( params->approximant == BCV )
+      {
+        segPtr[i].chisqBinVecBCV = NULL;
+        LALU4CreateVector (status->statusPtr, 
+            &segPtr[i].chisqBinVecBCV, params->numChisqBins + 1);
+        CHECKSTATUSPTR (status);
+      }
     }
     else
     {
       segPtr[i].chisqBinVec = (UINT4Vector *) 
         LALCalloc( 1, sizeof(UINT4Vector) );
-      segPtr[i].chisqBinVecBCV = (UINT4Vector *)  /* EM */
-	LALCalloc( 1, sizeof(UINT4Vector) );      /* EM */
+      if ( params->approximant == BCV )
+      {
+        segPtr[i].chisqBinVecBCV = (UINT4Vector *)
+          LALCalloc( 1, sizeof(UINT4Vector) );
+      }
     }
 
     /* segment dependent part of normalisation */
     segPtr[i].segNorm = 0.0;
-    segPtr[i].a1 = 0.00;
+    segPtr[i].a1 = 0.0;
     segPtr[i].b1 = 0.0;
     segPtr[i].b2 = 0.0;
 
@@ -601,8 +611,11 @@ LALDestroyFindChirpSegmentVector (
     /* template independent part of stationary phase filter */
     LALCDestroyVector (status->statusPtr, &segPtr[i].data->data);
     CHECKSTATUSPTR (status);
-    LALCDestroyVector (status->statusPtr, &segPtr[i].dataBCV->data); /* EM */
-    CHECKSTATUSPTR (status);                                         /* EM */
+    if ( segPtr[i].dataBCV->data )
+    {
+      LALCDestroyVector (status->statusPtr, &segPtr[i].dataBCV->data);
+      CHECKSTATUSPTR (status);
+    }
 
     /* chi squared frequency bins */
     if ( segPtr[i].chisqBinVec->length )
@@ -615,22 +628,25 @@ LALDestroyFindChirpSegmentVector (
       LALFree( segPtr[i].chisqBinVec );
     }
 
-    /* and for BCV */
-    /* begin: EM */
-    if ( segPtr[i].chisqBinVecBCV->length )
+    if ( segPtr[i].chisqBinVecBCV )
     {
-      LALU4DestroyVector (status->statusPtr, &segPtr[i].chisqBinVecBCV);
-      CHECKSTATUSPTR (status);
+      if ( segPtr[i].chisqBinVecBCV->length )
+      {
+        LALU4DestroyVector (status->statusPtr, &segPtr[i].chisqBinVecBCV);
+        CHECKSTATUSPTR (status);
+      }
+      else
+      {
+        LALFree( segPtr[i].chisqBinVecBCV );
+      }
     }
-    else
-    {
-      LALFree( segPtr[i].chisqBinVecBCV );
-    }
-    /* end: EM */
 
     /* frequency series pointer */
     LALFree (segPtr[i].data);
-    LALFree (segPtr[i].dataBCV); /* EM */
+    if ( segPtr[i].dataBCV )
+    {
+      LALFree( segPtr[i].dataBCV );
+    }
   }
 
   /* free the array */
