@@ -34,6 +34,14 @@
 #include "clusters.h"
 #include "DopplerScan.h"
 
+/* this is defined in C99 and *should* be in math.h.  Long term
+   protect this with a HAVE_FINITE */
+#ifdef _MSC_VER
+#define finite _finite
+#else
+int finite(double);
+#endif
+
 RCSID( "$Id$");
 
 /*----------------------------------------------------------------------*/
@@ -3649,9 +3657,11 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
         xTemp= f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];       /* >= 0 !! */
         
         /* this will now be assumed positive, but we double-check this to be sure */
-        if ( xTemp < 0 )
+        if ((xTemp < 0) || (!finite(xTemp)))
           {
             fprintf (stderr, "The assumption xTemp >= 0 failed ... that should not be possible!!\n");
+	    if (!finite(xTemp)) 
+	      fprintf (stderr, "xTemp has been calculated as infinite.\n");
             fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
                      i, xTemp, f, alpha, tempInt1[alpha]);
             fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
