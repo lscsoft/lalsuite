@@ -207,6 +207,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALWindowParams winparPSD;
   AverageSpectrumParams specparPSD;
   REAL4FrequencySeries psdTemp1,psdTemp2,psd1,psd2;
+  REAL4Vector *calPsd1, *calPsd2;
   LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};
 
   /* calibrated inverse noise data structures */
@@ -248,7 +249,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* structures for optimal filter */
   REAL4FrequencySeries optFilter;
-  REAL4Vector *optFilterAvg;
   StochasticOptimalFilterCalInput optFilterIn;
 
    /* spectrum structures */
@@ -522,6 +522,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL( LALCreateVector(&status, &psd2.data, filterLength), &status );
   memset (psd1.data->data, 0, psd1.data->length * sizeof(*psd1.data->data));
   memset( psd2.data->data, 0, psd2.data->length * sizeof(*psd2.data->data));
+
+   /* allocate memory for calibrated PSDs */
+  calPsd1 = calPsd2 = NULL;
+  LAL_CALL( LALCreateVector(&status, &calPsd1, filterLength), &status );
+  LAL_CALL( LALCreateVector(&status, &calPsd2, filterLength), &status );
+  memset (calPsd1->data, 0, calPsd1->length * sizeof(*calPsd1->data));
+  memset (calPsd2->data, 0, calPsd2->length * sizeof(*calPsd2->data));
 
   
   /* set parameters for response functions */
@@ -915,12 +922,6 @@ INT4 main(INT4 argc, CHAR *argv[])
              &status );
    memset( optFilter.data->data, 0, 
            optFilter.data->length * sizeof(*optFilter.data->data));
-
-   optFilterAvg  = NULL;
-   LAL_CALL( LALCreateVector(&status, &(optFilterAvg), filterLength),
-             &status );
-   memset( optFilterAvg->data, 0,
-           optFilterAvg->length * sizeof(*optFilterAvg->data));
    
    /* set optimal filter inputs */
    optFilterIn.overlapReductionFunction = &overlap;
@@ -1104,7 +1105,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	 /* initialize average optimal filter and variance */
          for (i = 0; i < filterLength; i++)
              {
-	      optFilterAvg->data[i] = 0.;
+	      calPsd1->data[i] = 0.;calPsd2->data[i] = 0.;
              }
 
          varTheoAvg = 0.;
@@ -1247,8 +1248,26 @@ INT4 main(INT4 argc, CHAR *argv[])
 	    LAL_CALL( LALStochasticInverseNoiseCal(&status, &inverseNoiseOut2, 
                       &inverseNoiseIn2), &status );
 
-            if (verbose_flag)
-             { fprintf(stdout, "Normalising optimal filter...\n");}
+
+	    /* sum over calibrated PSDs for average */
+             for (i = 0; i < filterLength; i++)
+	     {
+	      calPsd1->data[i] = calPsd1->data[i] + 1. / calInvPSD1.data->data[i] ;
+              calPsd2->data[i] = calPsd2->data[i] + 1. / calInvPSD2.data->data[i] ;
+	     }
+	  }
+                  
+           
+          /* average calibrated PSDs and take inverse */
+
+          for (i = 0; i < filterLength; i++)
+	   {
+	    calInvPSD1.data->data[i] = (1. / calPsd1->data[i] ) / (REAL4)numSegments;
+            calInvPSD2.data->data[i] = (1. / calPsd2->data[i] ) / (REAL4)numSegments;
+           } 
+       
+          if (verbose_flag)
+           { fprintf(stdout, "Normalising optimal filter...\n");}
 
             /* compute variance and normalisation for optimal filter */
             LAL_CALL( LALStochasticOptimalFilterNormalization(&status, 
@@ -1258,7 +1277,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	    varTheo = (REAL8)(segmentDuration * normSigma.value * 
                               pow(10.,normSigma.units.powerOfTen));
 
-            varTheoAvg = varTheoAvg + varTheo;
 	    
             if (verbose_flag)
 	     {fprintf(stdout, "Generating optimal filter...\n");}
@@ -1268,30 +1286,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	    LAL_CALL( LALStochasticOptimalFilterCal(&status, &optFilter, 
                       &optFilterIn, &normLambda), &status );
              
-            /* print */
-            if ((test_flag)&&(bigLoop==testBig)&&(segLoop==testSmall)&&(MCLoop==testTrial))
-             {  LALPrintFrequencySeries(&optFilter, "optFilter.dat");}
-
- 	    for (i = 0; i < filterLength; i++)
-	      {
-	       optFilterAvg->data[i] =  optFilterAvg->data[i] + optFilter.data->data[i];
-	      }
-          	    
-	  }
-
-	  /* compute average optimal filter and theoretical variance  */
-          
-          for (i = 0; i < filterLength; i++)
-	     {
-	      optFilter.data->data[i] = optFilterAvg->data[i] / (REAL4)numSegments;
-	      }
-	  
           /* print */
           if ((test_flag)&&(bigLoop==testBig)&&(MCLoop==testTrial))
-           { LALPrintFrequencySeries(&optFilter, "optFilterAvg.dat");}
+           {  LALPrintFrequencySeries(&optFilter, "optFilter.dat");}
 
-
-	  varTheoAvg = 	varTheoAvg / numSegments;
 
 	  /* save */
 	  if (verbose_flag)
@@ -1388,6 +1386,8 @@ INT4 main(INT4 argc, CHAR *argv[])
    LAL_CALL( LALDestroyVector(&status, &(psdTemp2.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(psd1.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(psd2.data)), &status );
+   LAL_CALL( LALDestroyVector(&status, &(calPsd1)), &status );
+   LAL_CALL( LALDestroyVector(&status, &(calPsd2)), &status );
    LAL_CALL( LALCDestroyVector(&status, &(responseTemp1.data)), &status );
    LAL_CALL( LALCDestroyVector(&status, &(responseTemp2.data)), &status );
    LAL_CALL( LALCDestroyVector(&status, &(response1.data)), &status );
@@ -1400,7 +1400,6 @@ INT4 main(INT4 argc, CHAR *argv[])
       LAL_CALL( LALDestroyVector(&status, &(seg2[i])), &status );
     }
    LAL_CALL( LALDestroyVector(&status, &(optFilter.data)), &status );
-   LAL_CALL( LALDestroyVector(&status, &(optFilterAvg)), &status );
    LAL_CALL( LALDestroyVector(&status, &(calInvPSD1.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(calInvPSD2.data)), &status );
    LAL_CALL( LALDestroyVector(&status, &(overlap.data)), &status );
