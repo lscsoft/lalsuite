@@ -41,6 +41,12 @@ typedef enum {
 }
 TFPlaneType;
 
+typedef enum {
+  useSingleTFPlane, /* tiles are created in a single TF plane */
+  useMultipleTFPlane /*tiles are created in multiple TF planes */ 
+}
+TFPlaneMethod;
+
 
 typedef struct tagTFPlaneParams
 {
@@ -86,6 +92,7 @@ typedef struct tagVerticalTFTransformIn
 {
   RealDFTParams                *dftParams;
   INT4                         startT;
+  UINT4                        windowShift;
 }
 VerticalTFTransformIn;
 
@@ -94,6 +101,7 @@ typedef struct tagHorizontalTFTransformIn
 {
   ComplexDFTParams             *dftParams;
   INT4                         startT;
+  UINT4                        windowShift;
 }
 HorizontalTFTransformIn;
 
