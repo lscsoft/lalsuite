@@ -47,6 +47,6 @@ EOF
 else
 cp ${DATADIR}/online.ini .
 echo 0 ${GPS_START} ${GPS_END} $((${GPS_END} - ${GPS_START})) > segment.txt
-lalapps_inspiral_online_pipe --config-file online.ini --log-path /usr1/dbrown/E12/L1
+lalapps_inspiral_online_pipe --config-file online.ini --log-path /usr1/dbrown/E12/L1 || exit 1
 ln -sf online.dag ${DAGFILE}
 fi

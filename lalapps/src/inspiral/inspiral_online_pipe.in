@@ -172,8 +172,9 @@ mkcalfac.add_pre_script_arg('-s -o SenseMonitor.txt %s'
   % cp.get('mkcal','sensemon'))
 mkcalfac.set_ifo(ifo)
 mkcalfac.add_var_arg('SenseMonitor.txt')
-mkcalfac.set_post_script('/bin/ln -sf') 
-mkcalfac.add_post_script_arg(cp.get('mkcal','reference')) 
+#mkcalfac.set_post_script('/bin/ln -sf') 
+#mkcalfac.add_post_script_arg(cp.get('mkcal','reference')) 
+mkcalfac.set_post_script('/bin/ln -sf ' + cp.get('mkcal','reference') + '; mkcatalog.sh > calibration.cache') 
 dag.add_node(mkcalfac)
 
 for seg in data:
