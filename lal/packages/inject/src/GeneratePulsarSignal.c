@@ -555,7 +555,7 @@ LALSignalToSFTs (LALStatus *stat,
       thisSFT->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
 
       /* ok, issue at least a warning if we have "nudged" an SFT-timestamp */
-      if (lalDebugLevel >= 3)
+      if (lalDebugLevel > 0)
 	{
 	  REAL8 diff;
 	  TRY ( LALDeltaFloatGPS (stat->statusPtr, &diff, &(timestamps->data[iSFT]), &tmpTime), stat);
@@ -1414,10 +1414,14 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
       fn1 = f0 + thisSFT->data->length * deltaFn;
       
       if (deltaFn != deltaF) {
+	if (lalDebugLevel) 
+	  LALPrintError ("\n\nNoise-SFTs have delta_f=%f inconsistent with signal-SFTs delta_f=%f\n", deltaFn, deltaF);
 	ABORT (stat,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
       }
 
       if ( (f0 < fn0) || (f1 > fn1) ) {
+	if (lalDebugLevel) 
+	  LALPrintError ("\n\nSignal frequency-band [%f,%f] is not contained in noise SFTs [%f,%f]\n", f0, f1, fn0, fn1);
 	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBAND, GENERATEPULSARSIGNALH_MSGENOISEBAND);
       }
       
@@ -1425,6 +1429,8 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
       /* frequency bins have to coincide! ==> check that shift is integer!  */
       nshift = (UINT4)(shift+0.5);
       if ( fabs( nshift - shift) > eps ) {
+	if (lalDebugLevel) 
+	  LALPrintError ("\n\nNoise frequency-bins don't coincide with signal-bins. Shift=%f (has to be integer)\n", shift);
 	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBINS, GENERATEPULSARSIGNALH_MSGENOISEBINS);
       }
 
