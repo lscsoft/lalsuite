@@ -1001,6 +1001,34 @@ void GenerateInjectParams(LALStatus   *status,
   /* getting random number for the frequency (and mismatch)*/
   TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
   f0 = params->fmin + (params->fSearchBand) * randval;
+  
+  /* veto the 0.25 harmonics and corresponding doppler band for S2*/
+  {
+    INT4 veto25;
+    REAL8 fmax, fmin, f25, f50, f75, dopp;
+    
+    veto25=1;
+    while(veto25){
+      fmax=ceil(f0);
+      fmin= fmax -1.0;
+      f25= fmin+0.25;
+      f50= fmin+0.5;
+      f75= fmin+0.75;
+      dopp= fmax*VTOT;
+      
+      if( ( (fmin+dopp< f0) && (f0<f25-dopp) ) 
+        || ( (f25+dopp< f0) && (f0<f50-dopp) ) 
+	|| ( (f50+dopp< f0) && (f0<f75-dopp) ) 
+	|| ( (f75+dopp< f0) && (f0<fmax-dopp)) ){ /* it is fine*/
+        veto25=0;
+      } else{ /* should be vetoed, generating a new f0 and test it again */
+        TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
+        f0 = params->fmin + (params->fSearchBand) * randval;
+      }
+      
+    }
+  }
+   
   injectPulsar->f0 = f0;
   deltaF = params->deltaF;
   f0bin  = floor(f0/deltaF +0.5);
