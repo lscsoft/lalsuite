@@ -200,6 +200,21 @@ LALXMGRTimeTitle (
     CHAR               *comment
     );
 
+void
+LALXMGRCreateGraph (
+    LALStatus          *status,
+    XMGRGraphVector    *graphVec
+    );
+
+void
+LALXMGRGPSTimeToTitle(
+    LALStatus          *status,
+    CHARVector         *title,
+    LIGOTimeGPS        *startGPS,
+    LIGOTimeGPS        *stopGPS,
+    CHAR               *comment
+    );
+
 #if 0
 <lalLaTeX>
 \newpage\input{LALXMGRInterfaceC}
