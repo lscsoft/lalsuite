@@ -416,10 +416,10 @@ showHelp( LALStatus *status,
   fprintf(stderr,"\t (Freqnecy where maximum of F occurs) (Maximum of F)\n");
   fprintf(stderr,"\t (f0: Leftmost frequency in cluster) (df: Frequency resolution)\n");
   fprintf(stderr,"\t (JKS A) (JKS B) (JKS C)\n");
-  fprintf(stderr,"\t f0          Re[Fa(f0)]         Im[Fa] Re[Fb] Im[Fb]\n");
-  fprintf(stderr,"\t f0+df       Re[Fa(f0+df)]      Im[Fa] Re[Fb] Im[Fb]\n");
-  fprintf(stderr,"\t ...         ...                ...    ...    ...\n");
-  fprintf(stderr,"\t f0+(N-1)df  Re[Fa(f0+(N-1)df)] Im[Fa] Re[Fb] Im[Fb]\n");
+  fprintf(stderr,"\t f0          Re[Fa(f0)]         Im[Fa] Re[Fb] Im[Fb] F\n");
+  fprintf(stderr,"\t f0+df       Re[Fa(f0+df)]      Im[Fa] Re[Fb] Im[Fb] F\n");
+  fprintf(stderr,"\t ...         ...                ...    ...    ...    ...\n");
+  fprintf(stderr,"\t f0+(N-1)df  Re[Fa(f0+(N-1)df)] Im[Fa] Re[Fb] Im[Fb] F\n");
   exit(0);
   /* should not be here */
   RETURN( status );
@@ -437,7 +437,7 @@ ReadClusterInfo( LALStatus *status,
 		 FSTClustInfoPair *clustInfoPair, /*!< output */
 		 FSTUserInput *cla /*!< input */)
 { 
-  const INT4 maxDataPoints = 16384; /* = 2^14 */
+  const INT8 maxDataPoints = 67108864; /* = 2^26 */
 
   INT4  nObsv,nTest; 
   REAL8 startFreqO,deltaFreqO; 
