@@ -102,6 +102,7 @@ ResampleTSParams;
  * 
  * \vfill{\footnotesize\input{ResampleTimeSeriesHV}}
  * \newpage\input{ResampleTimeSeriesC}
+ * \newpage\input{ResampleTimeSeriesTestC}
  *
  **** </lalLaTeX> */
 
