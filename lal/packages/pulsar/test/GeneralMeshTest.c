@@ -65,9 +65,6 @@ automatically overrides whatever is specified by the \texttt{-r} option.
 The \texttt{-m} option sets the maximum mismatch of the mesh to the option
 argument. (Default is 0.02.)
 
-The \texttt{-n} option sets the maximum number of nodes in the mesh to the
-option argument. (Default is $10^6$.)
-
 The texttt{-p} option causes the coordinates of the nodes to be written to 
 a file \texttt{mesh.dat}, for the benifit of users who don't have 
 \texttt{xmgrace} installed.  The format is one node per line, (RA, DEC), 
@@ -143,11 +140,11 @@ points very close to the equator.
 
 NRCSID( GENERALMESHTESTC, "$Id$" );
 
-/* BEN: These aren't used right now, but should be. */
 #define MIN_DURATION (86400./LAL_TWOPI) /* one radian of rotation */
 #define MAX_DURATION (3.16e7)           /* one year; arbitrary */
 #define MIN_FREQ     1e2                /* more or less arbitrary */
 #define MAX_FREQ     1e4                /* more or less arbitrary */
+#define MAX_NODES    1e6                /* keep idiot users safe */
 
 /* IAN: Clumsy way of specifying rectangular search region if */
 /* the r=0 option is invoked.                                 */
@@ -187,7 +184,6 @@ int main( int argc, char **argv )
   static TwoDMeshParamStruc mesh; /* mesh parameters */
   static PtoleMetricIn search;    /* more mesh parameters */
   REAL4                mismatch;  /* mismatch threshold of mesh */
-  UINT4                maxNodes;  /* maximum nodes in mesh */
   int                  begin;     /* start time of integration (seconds) */
   REAL4                duration;  /* duration of integration (seconds) */
   REAL4                fMax;      /* maximum frequency of search */
@@ -212,7 +208,6 @@ int main( int argc, char **argv )
   duration = 1e5;
   fMax = 1e3;
   mismatch = .02;
-  maxNodes = 1e6;
   /* This is (roughly) the center of globular cluster 47 Tuc. */
   center.system = COORDINATESYSTEM_EQUATORIAL;
   center.longitude = (24.1/60)*LAL_PI_180;
@@ -226,7 +221,7 @@ int main( int argc, char **argv )
   rectangular = 0;
 
   /* Parse and sanity-check the command-line options. */
-  while( (opt = getopt( argc, argv, "a:b:c:d:ef:l:m:n:pr:t:x" )) != -1 )
+  while( (opt = getopt( argc, argv, "a:b:c:d:ef:l:m:pr:t:x" )) != -1 )
   {
     switch( opt )
     {
@@ -273,9 +268,6 @@ int main( int argc, char **argv )
     case 'm':
       mismatch = atof( optarg );
       break;
-    case 'n':
-      maxNodes = atoi( optarg );
-      break;
     case 'p':
       nonGrace = 1;
       break;
@@ -306,7 +298,7 @@ int main( int argc, char **argv )
 
   /* Set the mesh input parameters. */
   mesh.mThresh = mismatch;
-  mesh.nIn = maxNodes;
+  mesh.nIn = MAX_NODES;
   mesh.getRange = getRange;
   mesh.getMetric = getMetric;
   if(metric_code==1)
@@ -410,6 +402,8 @@ int main( int argc, char **argv )
   if( stat.statusCode )
     return stat.statusCode;
   printf( "created %d nodes\n", mesh.nOut );
+  if( mesh.nOut == MAX_NODES )
+    printf( "This overflowed your limit. Try a smaller search.\n" );
 
 
   /* Create xmgrace plot, if required */
