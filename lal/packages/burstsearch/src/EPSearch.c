@@ -434,10 +434,10 @@ void EPConditionData(
 	 * High-pass filter the time series.
 	 */
 
-	highpassParam.nMax = 4;
+	highpassParam.nMax = 8;
 	highpassParam.f2 = (flow - 10.0) > 150.0 ? 150.0 : (flow - 10.0);
 	highpassParam.f1 = -1.0;
-	highpassParam.a2 = 0.1;
+	highpassParam.a2 = 0.9;
 	highpassParam.a1 = -1.0;
 	LALButterworthREAL4TimeSeries(status->statusPtr, series, &highpassParam);
 	CHECKSTATUSPTR (status);
