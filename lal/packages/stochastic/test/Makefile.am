@@ -71,7 +71,7 @@ TESTS =	  StochasticCrossCorrelationStatisticTest \
 #           DFalseAlarmTest       SFDismissalVsFAlarmTest \
 #           DFalseDismissalTest   DFDismissalVsFAlarmTest
 
-EXTRA_DIST = pipeline spectrum1.in spectrum2.in response1.in response2.in
+EXTRA_DIST = pipeline spectrum1.in spectrum2.in response1.in response2.in CheckStatus.c CheckStatus.h
 
 MOSTLYCLEANFILES = .dvi-dep *.dat* PrintVector.0*
 DISTCLEANFILES = *.tex
