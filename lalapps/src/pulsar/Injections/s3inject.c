@@ -35,7 +35,6 @@ float data[BLOCKSIZE];
 float total[BLOCKSIZE];
 float testval=1234.5;
 char *directory;
-char *gpsflag;
 char *channel=NULL; 
 int  gpstime=0;
 char *programname;
@@ -44,6 +43,8 @@ int do_axis=0;
 int do_text=0;
 long long count=0;
 long blocks=0;
+const char *ifo_name = NULL;
+const char *actuation = NULL;
 
 /* capacity, occupancy, and pointers to input buffers. Cleared to zero
    on starup because they are initialized data.  Units of buffer size
@@ -157,8 +158,6 @@ void usage(FILE *filep){
 	  "-e CHANNEL    Inject excitation into CHANNEL\n"
 	  "-D            Turn on Debug output for routines in signal injection library\n"
 	  "-G INTGPS     GPS time (integer seconds) that will be passed on command line\n"
-	  "-c STRING     '-STRING' preceeds GPS time in seconds on command line\n"
-	  "              Default: G\n"
 	  "-T            Print human readable text rather than binary to stdout\n"
 	  "-X            Include X-axis in human-readable text output\n"
 	  "-s            Print commands that would be fork(2)ed, then exit(0)\n"
@@ -168,6 +167,8 @@ void usage(FILE *filep){
 	  "-H DOUBLE     | amplitude. If NOT given, the amplitude defaults to 0.0    |\n"
 	  "              ------------------------------------------------------------\n"
 	  "-p            Print the calibration line frequencies in Hz then exit(0)\n"
+	  "-I STRING     Detector: LHO, LLO, GEO, VIRGO, TAMA, CIT, ROME [REQUIRED]\n"
+	  "-A STRING     File containing detector actuation-function     [OPTIONAL]\n"
 	  , MAXPULSARS
 	  );
   return;
@@ -177,12 +178,11 @@ void usage(FILE *filep){
 int parseinput(int argc, char **argv){
   
   int c;
-  const char *optionlist="hL:M:H:n:d:e:DG:c:TXsp";
+  const char *optionlist="hL:M:H:n:d:e:DG:c:TXspI:A:";
   opterr=0;
   
   /* set some defaults */
   directory = strdup(".");
-  gpsflag = strdup("G");
 
   programname=argv[0];
 
@@ -260,14 +260,6 @@ int parseinput(int argc, char **argv){
       /* GPS time to pass as argument */
       gpstime=atoi(optarg);
       break;
-    case 'c':
-      /* flag to use for GPS time */
-      if (gpsflag) free(gpsflag);
-      if (!(gpsflag=strdup(optarg))){
-	syserror(1, "Out of memory to duplicate -c STRING %s\n", optarg);
-	exit(1);
-      }
-      break;
     case 'T':
       /* enable text output */
       do_text=1;
@@ -279,6 +271,12 @@ int parseinput(int argc, char **argv){
     case 's':
       /* show commands rather than executing them */
       show=1;
+      break;
+    case 'I':
+      ifo_name = optarg;
+      break;
+    case 'A':
+      actuation = optarg;
       break;
     default:
       /* error case -- option not recognized */
@@ -303,6 +301,11 @@ int parseinput(int argc, char **argv){
     syserror(0, "Excitation channel %s not of form CC:CCC...\n", channel );
     exit(1);
   }
+  if ( ifo_name == NULL ) {
+    syserror(0, "You must specify the IFO name (-I)\n");
+    exit(1);
+  }
+
   
 #ifndef ONLINE
   if (channel) {
@@ -389,13 +392,30 @@ int main(int argc, char *argv[]){
 	*newlineloc='\0';
 
     /* append additional arguments to command line */
+    /* GPS starttime */
     length=strlen(command);
-    if (snprintf(command+length, MAXLINE-length, " -%s %d", gpsflag, gpstime)>MAXLINE-length-1){
+    if (snprintf(command+length, MAXLINE-length, " -G %d", gpstime)>MAXLINE-length-1){
       command[length]='\0';
-      syserror(0, "%s: command line %s -%s %d has >= MAXLINE=%d characters\n",
-	      programname, command, gpsflag, gpstime, MAXLINE);
+      syserror(0, "%s: command line has >= MAXLINE=%d characters\n", programname, MAXLINE);
       exit(1);
     }
+    /* IFO */
+    length=strlen(command);
+    if ( snprintf(command+length, MAXLINE-length, " -I %s", ifo_name) > MAXLINE-length-1 ) {
+      command[length]='\0';
+      syserror(0, "%s: command line has >= MAXLINE=%d characters\n", programname, MAXLINE);
+      exit(1);
+    }
+    /* Actuation-function if given */
+    if (actuation)
+      {
+	length=strlen(command);
+	if ( snprintf(command+length, MAXLINE-length, " --actuation=%s", actuation) > MAXLINE-length-1 ) {
+	  command[length]='\0';
+	  syserror(0, "%s: command line has >= MAXLINE=%d characters\n", programname, MAXLINE);
+	  exit(1);
+	}
+      }
 
     /* now either show the command or execute it */
     if (show)
