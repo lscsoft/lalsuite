@@ -83,6 +83,7 @@ LALInspiralWaveNormalise
 	*norm += (pow(in->data[i], 2.) + pow(in->data[k], 2.))/psdvalue;
      }
   }
+  *norm += pow(in->data[0],2.) + pow(in->data[nby2],2.);
   *norm = sqrt(*norm);
   
   for (i=0; i<n; i++)

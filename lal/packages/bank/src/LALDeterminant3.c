@@ -13,6 +13,10 @@ Module to calculate the determinant of a 3-dimensional matrix $g_{ij}$.
 \vspace{0.1in}
 \input{LALDeterminant3CP}
 \idx{LALDeterminant() 3D determinant}
+\begin{itemize}
+   \item \texttt{determinant,} Output, determinant of the matrix.
+   \item \texttt{matrix,} Input, the input $(3\times 3)$ matrix whose determinant is required.
+\end{itemize}
 
 \subsubsection*{Description}
 

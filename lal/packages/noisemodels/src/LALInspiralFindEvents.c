@@ -44,11 +44,30 @@ LALInspiralFindEvents
    InspiralFindEventsIn *findeventsin
    )
 {  /*  </lalVerbatim>  */
-   REAL4Vector filter1, filter2, output1, output2, buffer;
+
+   /* 
+    * We shall assume that the number of events to be found in 
+    * each template is no more than 100000.
+   */
+   INT4 nEventsMax = 100000;
+   INT4 i;
+   INT4 nBegin;
+   INT4 nEnd;
+
+
+   REAL8 dt;
+   REAL8 norm;
+   REAL8 x;
+   REAL8 y;
+   REAL8 z;
+
+   REAL4Vector filter1;
+   REAL4Vector filter2;
+   REAL4Vector output1;
+   REAL4Vector output2;
+   REAL4Vector buffer;
+
    InspiralWaveCorrelateIn corrin;
-   REAL8 dt, norm, x, y, z, phase;
-   INT4 i, nBegin, nEnd;
-   StatsREAL4VectorOut statsout1, statsout2;
 
    INITSTATUS (status, "LALInspiralFindEvents", LALINSPIRALFINDEVENTSC);
    ATTATCHSTATUSPTR(status);
@@ -67,11 +86,9 @@ LALInspiralFindEvents
 
    dt = 1./findeventsin->param.tSampling;
    nBegin = findeventsin->nBegin;
-   nEnd = output1.length - findeventsin->nEnd;
+   nEnd = findeventsin->signal.length - findeventsin->nEnd;
 
-   buffer.length = findeventsin->signal.length - \
-                   (findeventsin->nEnd + findeventsin->nBegin);
-
+   buffer.length = nEnd - nBegin;
    if (!(output1.data = (REAL4*) LALMalloc(sizeof(REAL4)*output1.length))) {
       ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
    }
@@ -139,37 +156,41 @@ LALInspiralFindEvents
    corrin.signal2 = filter2;
    LALInspiralWaveCorrelate(status->statusPtr, &output2, corrin);
    CHECKSTATUSPTR(status);
-   for (i=nBegin;i<nEnd;i++) 
-       buffer.data[i-nBegin] = output1.data[i];
-   LALStatsREAL4Vector(status->statusPtr, &statsout1, &buffer);
-   CHECKSTATUSPTR(status);
+
    if (findeventsin->displayCorrelationStats)
    {
-      fprintf(stderr, "mean=%e std=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.max);   
-   }
-   for (i=nBegin;i<nEnd;i++) 
-       buffer.data[i-nBegin] = output2.data[i];
-   LALStatsREAL4Vector(status->statusPtr, &statsout2, &buffer);
-   CHECKSTATUSPTR(status);
-   if (findeventsin->displayCorrelationStats)
-   {
-      fprintf(stderr, "mean=%e std=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.max);   
+   
+	   StatsREAL4VectorOut statsout1;
+	   StatsREAL4VectorOut statsout2;
+
+	   for (i=nBegin;i<nEnd;i++) 
+		   buffer.data[i-nBegin] = output1.data[i];
+	   LALStatsREAL4Vector(status->statusPtr, &statsout1, &buffer);
+	   CHECKSTATUSPTR(status);
+	   fprintf(stderr, "mean=%e std=%e max=%e\n", statsout1.mean, statsout1.stddev, statsout1.max);   
+   
+	   for (i=nBegin;i<nEnd;i++) 
+		   buffer.data[i-nBegin] = output2.data[i];
+	   LALStatsREAL4Vector(status->statusPtr, &statsout2, &buffer);
+	   CHECKSTATUSPTR(status);
+	   fprintf(stderr, "mean=%e std=%e max=%e\n", statsout2.mean, statsout2.stddev, statsout2.max);   
    }
    if (findeventsin->displayCorrelation)
    {
       for (i=nBegin;i<nEnd;i++) 
-         printf("%e %e\n",i*dt, output1.data[i]/statsout1.stddev); printf("&\n");   
-      for (i=nBegin;i<nEnd;i++) 
-         printf("%e %e\n",i*dt, output2.data[i]/statsout2.stddev); printf("&\n");   
+         {
+            x = pow ( pow( output1.data[i], 2.) + pow( output2.data[i], 2.), 0.5); 
+            printf("%e %e\n",i*dt, x);
+         }
+         printf("&\n");   
    }
 
    *nEvents = 0;
    
    for (i=nBegin; i<nEnd; i++) {
-       x = output1.data[i] /statsout1.stddev; 
-       y = output2.data[i] /statsout2.stddev; 
+       x = output1.data[i];
+       y = output2.data[i];
        z = sqrt(x*x + y*y);
-       phase = atan2(y,x);
        if (z>findeventsin->Threshold) {
           if (!(*eventlist = (InspiralEventsList*)
              LALRealloc(*eventlist, sizeof(InspiralEventsList)*(*nEvents+1))))
@@ -178,8 +199,16 @@ LALInspiralFindEvents
           }
           (*eventlist)[*nEvents].max = z;
           (*eventlist)[*nEvents].bin = i;
+          (*eventlist)[*nEvents].eventTime = (double) i * dt;
+	  // The following line needs to be amended appropriately after
+	  // confirming what eventTime_ns stands for
+          (*eventlist)[*nEvents].eventTime_ns = (double) i * dt * 2.;
           (*eventlist)[*nEvents].phase = atan2(y,x);
           (*nEvents)++;
+          if (*nEvents > nEventsMax)
+          {
+             ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
+          }
        }
    }
 

@@ -8,6 +8,7 @@ LALGEOPsd.c\
 LALLIGOIPsd.c\
 LALNoiseSpectralDensity.c\
 LALInspiralFindEvents.c\
+LALInspiralFindLoudestEvent.c\
 LALInspiralWaveNormalise.c\
 LALInspiralWaveOverlap.c\
 LALRandomInspiralSignal.c\

@@ -12,6 +12,12 @@ A routine to transform a second rank tensor under a given transformation.
 \vspace{0.1in}
 \input{LALMatrixTransformCP}
 \idx{LALMatrixTransform()}
+\begin{itemize}
+   \item \texttt{n,} Input, dimension of the matrix (currently, and possibly always, only 3)
+   \item \texttt{data1,} Input, transformation matrix
+   \item \texttt{data2,} Input, matrix whose transformation is required
+   \item \texttt{data3,} Output, transformed matrix
+\end{itemize}
 
 \subsubsection*{Description}
 Given the matrix of transformation in \texttt{data1} and a second rank tensor

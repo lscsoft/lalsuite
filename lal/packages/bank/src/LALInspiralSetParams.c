@@ -14,6 +14,10 @@ based on the values in the \texttt{InspiralCoarseBankIn} structure.
 \vspace{0.1in}
 \input{LALInspiralSetParamsCP}
 \idx{LALInspiralSetParams()}
+\begin{itemize}
+   \item \texttt{tempPars,} Output
+   \item \texttt{coarseIn,} Input
+\end{itemize}
 
 \subsubsection*{Description}
 

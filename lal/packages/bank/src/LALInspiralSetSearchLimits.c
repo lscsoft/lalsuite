@@ -7,17 +7,21 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralSetSearchLimits.c}}
 
-Function which calculates the minimum and maximum values of $\tau_{0}$ and $\tau_{3}$,
-as determined by the total mass of the binary $m$ and the symmetric 
-mass ratio $\eta$.  The function also calulates the coordinates of the
-first template in the bank. These coordinates are $\tau_{0}=\tau_{0min}$,
-$\tau_{3}=\tau_{3min}$. 
-
-
+Function which calculates the minimum and maximum values of $\tau_{0}$ and $\tau_{3}$.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralSetSearchLimitsCP}
 \idx{LALInspiralSetSearchLimits()}
+\begin{itemize}
+   \item \texttt{bankParams,} Output containing the boundary of search, current lattice point, etc.
+   \item \texttt{coarseIn,} Input, specifies the parameters of the search space.
+\end{itemize}
+
+This Function calculates the minimum and maximum values of $\tau_{0}$ and $\tau_{3}$
+as determined by the total mass of the binary $m$ and the symmetric 
+mass ratio $\eta$.  The function also calulates the coordinates of the
+first template in the bank. These coordinates are $\tau_{0}=\tau_{0min}$,
+$\tau_{3}=\tau_{3min}$. 
 
 \subsubsection*{Description}
 

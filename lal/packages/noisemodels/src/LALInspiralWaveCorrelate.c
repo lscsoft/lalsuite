@@ -50,7 +50,7 @@ NRCSID (LALINSPIRALWAVECORRELATEC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveCorrelateCP"> */
 void
-LALInspiralWaveCorrelate 
+LALInspiralWaveCorrelate
    (
    LALStatus                *status,
    REAL4Vector              *output,
@@ -58,7 +58,7 @@ LALInspiralWaveCorrelate
    )
 {  /*  </lalVerbatim>  */
   INT4 n, nby2, i, k;
-  REAL8 psd;
+  REAL8 psd, r1, r2, i1, i2;
   REAL4Vector buff;
 
 
@@ -86,41 +86,58 @@ LALInspiralWaveCorrelate
   {
      k=n-i;
      psd = corrin.psd.data[i];
-     if (psd) {
 
+     if (psd) {
 /* 
      the following line computes output = signal1 . signal2* 
 */
-     output->data[i] = (corrin.signal1.data[i]*corrin.signal2.data[i] 
-		     +  corrin.signal1.data[k]*corrin.signal2.data[k]) / psd;
-     output->data[k] = (corrin.signal1.data[k]*corrin.signal2.data[i] 
-		     -  corrin.signal1.data[i]*corrin.signal2.data[k]) / psd;
+        r1 = corrin.signal1.data[i];
+        r2 = corrin.signal2.data[i];
+        i1 = corrin.signal1.data[k];
+        i2 = corrin.signal2.data[k];
+
+        output->data[i] = (r1*r2 + i1*i2) / psd;
+        output->data[k] = (i1*r2 - r1*i2) / psd;
+
      } else {
-       output->data[i] = output->data[k] = 0;
+
+        output->data[i] = 0;
+        output->data[k] = 0;
      }
   }
   psd = corrin.psd.data[0];
   if (psd) 
-     output->data[0] = corrin.signal1.data[0]*corrin.signal2.data[0] / psd;
+  {
+     r1 = corrin.signal1.data[0];
+     r2 = corrin.signal2.data[0];
+     output->data[0] = r1*r2 / psd;
+  }
   else
+  {
      output->data[0] = 0;
+  }
 
   psd = corrin.psd.data[nby2];
   if (psd) 
-     output->data[nby2] = corrin.signal1.data[nby2]*corrin.signal2.data[nby2] / psd;
+  {
+     r1 = corrin.signal1.data[nby2];
+     r2 = corrin.signal2.data[nby2];
+     output->data[nby2] = r1*r2 / psd;
+  }
   else
+  {
      output->data[nby2] = 0;
+  }
 
   LALREAL4VectorFFT(status->statusPtr,&buff,output,corrin.revp);
   CHECKSTATUSPTR(status);
 
   for (i=0; i< n; i++) 
   {
-	  output->data[i] = buff.data[i]/2.;
+	  output->data[i] = buff.data[i];
   }
 
   LALFree(buff.data);
-  buff.data = NULL;
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }

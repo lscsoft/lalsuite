@@ -14,15 +14,20 @@ half side-lengths and orientation angle.
 \vspace{0.1in}
 \input{LALRectangleVerticesCP}
 \index{\verb&LALRectangleVertices()&}
+\begin{itemize}
+   \item \texttt{out,} Output. 
+   \item \texttt{in,} Input. 
+\end{itemize}
 
 \subsubsection*{Description}
 
 This code computes the vertices of a rectangle for plotting
-a grid of templates with xmgr.
+a grid of templates with xmgr, useful when looking at the
+minimal-match-rectangles around mesh points in a template bank.
 
 \subsubsection*{Algorithm}
 Given the centre $(x_0,y_0)$ and half-sides $(dx,dy),$ 
-the vertices of a rectangle in a {\it diangle} coordinate 
+the vertices of a rectangle in a {\it diagonal} coordinate 
 system are given by
 \begin{eqnarray}
 x_1 & = & x_0 - dx, \ \ y_1 = y_0 - dy, \nonumber \\
@@ -36,6 +41,9 @@ found by using the formulas
 x' = x \cos(\theta) - y \sin(\theta),\nonumber \\
 y' = y \cos(\theta) + x \sin(\theta).\nonumber 
 \end{eqnarray}
+The function returns five coordinate points (1,2,3,4,1), 
+and not just the four verticies, to help
+a plotting programme to complete the rectangle. 
 
 \subsubsection*{Uses}
 None.
@@ -47,25 +55,6 @@ None.
 </lalLaTeX>  */
 
 #include <lal/LALInspiralBank.h>
-
-/*
-typedef struct
-tagRectangleIn 
-   {REAL8 x0, y0, dx, dy, theta;}
-RectangleIn;
-
-typedef struct
-tagRectangleOut 
-   {REAL8 x1, y1, x2, y2, x3, y3, x4, y4, x5, y5;}
-RectangleOut;
-
-void 
-LALRectangleVertices(
-   LALStatus *status, 
-   RectangleOut *out,
-   RectangleIn *in
-);
-*/
 
 NRCSID(LALRECTANGLEVERTICESC, "$Id$");
 

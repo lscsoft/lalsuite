@@ -135,10 +135,7 @@ LALInspiralWaveOverlap
    if (filter2.data!=NULL) LALFree(filter2.data);
    if (output1.data!=NULL) LALFree(output1.data);
    if (output2.data!=NULL) LALFree(output2.data);
-      output1.data = NULL;
-      output2.data = NULL;
-      filter1.data = NULL;
-      filter2.data = NULL;
+
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }

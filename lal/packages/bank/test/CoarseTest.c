@@ -7,9 +7,82 @@ $Id$
 \subsection{Program \texttt{CoarseTest.c}}
 \label{ss:CoarseTest.c}
 
-Test code for the inspiral modules.
+Test code for the inspiral modules. A template bank can be created either using
+a full range for component masses of the binary $m_1$ and $m_2$, that is
+\texttt{(mMin,mMax),} OR minimum value of the component masses \texttt{mMin} and 
+maximum value of the total mass \texttt{MMax.} In the first case chirptimes 
+satisfying the constraint \texttt{mMin}~$\le m_1, m_2 \le$~\texttt{mMax} are accepted
+as valid systems. In the second case chirptimes satisfying the
+constraint \texttt{mMin}~$\le m_1, m_2,$ and \texttt{MMax}$\le m=m_1+m_2,$
+are treated as valid.  Users are expected to provide both \texttt{mMax} and \texttt{MMax}.
+
+For \texttt{LALLIGOIPsd} the choice \texttt{mMin}$=1M_\odot$ \texttt{mMax}$=20 M_\odot$
+gives 2292 templates, while the same \texttt{mMin} but choosing \texttt{MMax}$=40 M_\odot$
+instead gives 2512 templates -- about 10\% incrase. However, the extra templates are ALL
+short-lived templates and therefore potentially trigger a large number of false alarms,
+as noted by Brown in E7 analysis.
 
 \subsubsection*{Usage}
+Input the following values of the InspiralCoarseBankIn structure to
+create a template bank:
+
+\begin{itemize}
+   \item Minimum component mass in solar masses.
+   \texttt{mMin = 1.0;}
+
+   \item Maximum component mass in solar masses.
+   \texttt{mMax = 20.0;}
+
+   \item Maximum total mass. {\bf This should be specified independently of
+   whether or not mMax is specified.} It is used in setting up a 
+   rectangular area in the space of chirptimes where the templates will
+   be laid.
+   \texttt{MMax = 40.0;  }
+
+   \item The type of search space. 
+   \texttt{massRange = MinComponentMassMaxTotalMass;} OR
+   \texttt{massRange = MinMaxComponentMasses;}
+
+   \item Coarse bank minimal match
+   \texttt{coarseIn->mmCoarse = 0.80;}
+
+   \item Fine bank minimal match
+   \texttt{mmFine = 0.97;}
+
+   \item Lower frequency cutoff
+   \texttt{fLower = 40.;}
+
+   \item Upper frequency cutoff
+   \texttt{fUpper = 1024L;}
+
+   \item Whether or not lso should be used as an upper frequency cutoff
+   (Currently not used; so please specify \texttt{fUpper}.
+   \texttt{coarseIn->iflso = 0;}
+
+   \item Sampling rate
+   \texttt{tSampling = 4000L;}
+
+   \item Space in which templates should be created: whether $(\tau_0,\tau_2)$
+   or $(\tau_0, \tau_3).$
+   \texttt{coarseIn->space = Tau0Tau2;} OR
+   \texttt{coarseIn->space = Tau0Tau3;} OR
+
+   \item Order and type of the approximant to be used in template generation.
+   These members will NOT be used in creating a template bank but in 
+   filling up the \texttt{InspiralTemplate} structure created by the bank. 
+   
+   \texttt{order = twoPN;}
+   \texttt{coarseIn->approximant = TaylorT1;}
+
+   \item minimum value of eta 
+   \texttt{etamin = mMin * ( MMax - mMin)/pow(MMax,2.);}
+
+   \item Finally, fill the psd structure (see test code for an example).
+   This involves allocating memory to vector \texttt{shf.data} and filling it with 
+   noise PSD as also choosing the starting frequency and the frequency resolution. 
+   
+\end{itemize}
+
 \begin{verbatim}
 CoarseTest
 \end{verbatim}
@@ -44,9 +117,9 @@ LALCheckMemoryLeaks
 #include <lal/LALNoiseModels.h>
 #include <lal/AVFactories.h>
 
-INT4 lalDebugLevel=0;
+INT4 lalDebugLevel=1;
 
-/* Nlist = expected number of coarse grid templates; if not sufficient increase */
+// Nlist = expected number of coarse grid templates; if not sufficient increase 
      
 int 
 main ( void )
@@ -56,28 +129,34 @@ main ( void )
    LALStatus* status = LALCalloc(1, sizeof(*status));
    InspiralCoarseBankIn *coarseIn=NULL;
    InspiralFineBankIn   *fineIn=NULL;
-   INT4 i, j, clist, flist;
+   INT4 i, j, clist=0, flist=0;
    UINT4 numPSDpts = 1048576;
    void *noisemodel = LALLIGOIPsd;
 
    coarseIn = (InspiralCoarseBankIn *)LALMalloc(sizeof(InspiralCoarseBankIn));
    fineIn = (InspiralFineBankIn *)LALMalloc(sizeof(InspiralFineBankIn));
 
-   coarseIn->mMin = 1.0;
-   coarseIn->MMax = 40.0;
-   coarseIn->mmCoarse = 0.80;
+   coarseIn->mMin = 5.0;
+   coarseIn->mMax = 20.0;
+   coarseIn->MMax = coarseIn->mMax * 2.0;
+   coarseIn->massRange = MinComponentMassMaxTotalMass;
+   // coarseIn->massRange = MinMaxComponentMass;
+
+   coarseIn->mmCoarse = 0.97;
    coarseIn->mmFine = 0.97;
    coarseIn->fLower = 40.;
-   coarseIn->fUpper = 1024L;
+   coarseIn->fUpper = 400;
    coarseIn->iflso = 0;
-   coarseIn->tSampling = 4000L;
-   coarseIn->order = twoPN;
+   coarseIn->tSampling = 2000L;
+   coarseIn->order = 3;
    coarseIn->approximant = TaylorT1;
    coarseIn->space = Tau0Tau3;
-/* minimum value of eta */
+
+   // minimum value of eta 
    coarseIn->etamin = coarseIn->mMin * ( coarseIn->MMax - coarseIn->mMin) /
       pow(coarseIn->MMax,2.);
-   /* fill the psd */
+
+   // fill the psd
    memset( &(coarseIn->shf), 0, sizeof(REAL8FrequencySeries) );
    coarseIn->shf.f0 = 0;
    LALDCreateVector( status, &(coarseIn->shf.data), numPSDpts );

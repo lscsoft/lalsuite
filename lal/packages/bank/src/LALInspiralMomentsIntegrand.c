@@ -11,6 +11,12 @@ $Id$
 \vspace{0.1in}
 \input{LALInspiralMomentsIntegrandCP}
 \idx{LALInspiralMomentsIntegrand()}
+\begin{itemize}
+   \item \texttt{integrand,} Output, the value of the integrand
+   \item \texttt{x,} Input, the point where the integrand is required
+   \item \texttt{params,} Input, of type \texttt{InspiralMomentsIn} containing the details
+   required in moments calculation
+\end{itemize}
 
 \subsubsection*{Description}
 

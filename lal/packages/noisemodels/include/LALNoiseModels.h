@@ -194,6 +194,8 @@ tagInspiralFindEventsIn
    InspiralTemplate param;
    RealFFTPlan      *fwdp;
    RealFFTPlan      *revp;
+   UINT2            displayData;
+   UINT2            displayPSD;
    UINT2            displayTemplates;
    UINT2            displayCorrelation;
    UINT2            displayCorrelationStats;
@@ -212,6 +214,7 @@ tagInspiralEventsList
    REAL8            max;
    REAL8            phase;
    REAL8            eventTime;
+   REAL8            eventTime_ns;
 
    UINT4            bin;
 

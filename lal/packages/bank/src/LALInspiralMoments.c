@@ -14,19 +14,23 @@ Module to calculate the moment of the noise power spectral density.
 \vspace{0.1in}
 \input{LALInspiralMomentsCP}
 \idx{LALInspiralMoments()}
+\begin{itemize}
+   \item \texttt{moment,} Output, the value of the moment
+   \item \texttt{pars,} Input 
+\end{itemize}
 
 \subsubsection*{Description}
 
 The moments of the noise curve are defined as
 \begin{equation}
 I(q)  \equiv S_{h}(f_{0}) \int^{f_{c}/f_{0}}_{f_{s}/f_{0}}
-\frac{x^{-q/3}}{s_{h}(x f_{0})} \, dx \,.  
+\frac{x^{-q/3}}{S_{h}(x f_{0})} \, dx \,.  
 \end{equation}
 Because in practice we will always divide one of these moments by another, we
 do not need to include the $S_{h}(f_{0})$ term, which always cancels.
 This function calculates the integral
 \begin{equation}
-I = \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q/3}}{s_{h}(x f_{0})} \, dx \,.
+I = \int^{f_{c}/f_{0}}_{f_{s}/f_{0}} \frac{x^{-q/3}}{S_{h}(x f_{0})} \, dx \,.
 \end{equation} 
 It then divides this quantity by a normalisation constant which has been
 passed to the function. In the case of calculating the components of the
@@ -39,7 +43,7 @@ J(q) \equiv \frac{I(q)}{I(7)} \,.
 \subsubsection*{Algorithm}
 Given the exponent \texttt{pars.ndx} and limits of integration
 \texttt{pars.xmin} and \texttt{pars.xmax} this function returns the moment of
-the power spectral density specified by by the frequency series
+the power spectral density specified by the frequency series
 \texttt{pars.shf} according to
 \begin{equation}
 \mathtt{moment} = \int_{\mathtt{xmin}}^{\mathtt{xmax}} 

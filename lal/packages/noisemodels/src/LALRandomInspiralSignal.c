@@ -164,43 +164,46 @@ LALRandomInspiralSignal
    }
    srandom(randIn->useed);
    randIn->useed = random();
-   valid = 0;
-   while (!valid) 
+   if (randIn->type==0 || randIn->type==2)
    {
-      e1 = random()/(float)RAND_MAX;
-      e2 = random()/(float)RAND_MAX;
-      switch (randIn->param.massChoice) 
-      {
-         case m1Andm2: 
-            randIn->param.mass1 = randIn->mMin 
-               + (randIn->MMax - 2.*randIn->mMin) * e1;
-            randIn->param.mass2 = randIn->mMin 
-               + (randIn->MMax - randIn->param.mass1 - randIn->mMin) * e2;
-            break;
-         case t02: 
-            randIn->param.t0 = randIn->t0Min+(randIn->t0Max-randIn->t0Min)*e1;
-            randIn->param.t2 = randIn->tnMin+(randIn->tnMax-randIn->tnMin)*e2;
-            break;
-         case t03: 
-            randIn->param.t0 = randIn->t0Min+(randIn->t0Max-randIn->t0Min)*e1;
-            randIn->param.t3 = randIn->tnMin+(randIn->tnMax-randIn->tnMin)*e2;
-            break;
-         default:
-            ABORT (status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
-            break;
-      }
-      LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+	   valid = 0;
+	   while (!valid) 
+	   {
+		   e1 = random()/(float)RAND_MAX;
+		   e2 = random()/(float)RAND_MAX;
+		   switch (randIn->param.massChoice) 
+		   {
+			   case m1Andm2: 
+				   randIn->param.mass1 = randIn->mMin 
+					   + (randIn->MMax - 2.*randIn->mMin) * e1;
+				   randIn->param.mass2 = randIn->mMin 
+					   + (randIn->MMax - randIn->param.mass1 - randIn->mMin) * e2;
+				   break;
+			   case t02: 
+				   randIn->param.t0 = randIn->t0Min+(randIn->t0Max-randIn->t0Min)*e1;
+				   randIn->param.t2 = randIn->tnMin+(randIn->tnMax-randIn->tnMin)*e2;
+				   break;
+			   case t03: 
+				   randIn->param.t0 = randIn->t0Min+(randIn->t0Max-randIn->t0Min)*e1;
+				   randIn->param.t3 = randIn->tnMin+(randIn->tnMax-randIn->tnMin)*e2;
+				   break;
+			   default:
+				   ABORT (status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
+				   break;
+		   }
+		   LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
 
-      if (randIn->param.mass1 > randIn->mMin &&
-          randIn->param.mass2 > randIn->mMin &&
-          randIn->param.totalMass < randIn->MMax &&
-          randIn->param.eta <= 0.25 &&
-          randIn->param.eta > randIn->etaMin)
-      {
-           valid = 1;
-      }
-
+		   if (randIn->param.mass1 > randIn->mMin &&
+				   randIn->param.mass2 > randIn->mMin &&
+				   randIn->param.totalMass < randIn->MMax &&
+				   randIn->param.eta <= 0.25 &&
+				   randIn->param.eta > randIn->etaMin)
+		   {
+			   valid = 1;
+		   }
+	   }
    }
+
    switch (randIn->type) 
    {
       case 0:

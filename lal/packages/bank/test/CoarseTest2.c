@@ -58,17 +58,24 @@ main ( void )
    UINT4 numPSDpts = 1048476;
    void *noisemodel = LALLIGOIPsd;
 
-   coarseIn.mMin = 1.0;
-   coarseIn.MMax = 40.0;
-   coarseIn.mmCoarse = 0.80;
-   coarseIn.mmFine = 0.95;
+   coarseIn.mmCoarse = 0.97;
+   coarseIn.mmFine = 0.97;
    coarseIn.fLower = 40.;
    coarseIn.fUpper = 2000;
    coarseIn.iflso = 0;
    coarseIn.tSampling = 4096.;
-   coarseIn.order = twoPN;
+   coarseIn.order = 3;
    coarseIn.space = Tau0Tau3;
    coarseIn.approximant = TaylorT1;
+
+   coarseIn.mMin = 5.0;
+   coarseIn.mMax = 20.0;
+   coarseIn.MMax = coarseIn.mMax * 2.;
+
+   // coarseIn.massRange = MinComponentMassMaxTotalMass;
+   //
+   coarseIn.massRange = MinComponentMassMaxTotalMass;
+
 /* minimum value of eta */
    coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) /
       pow(coarseIn.MMax,2.);

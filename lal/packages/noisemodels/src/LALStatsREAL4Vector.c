@@ -49,6 +49,7 @@ LALStatsREAL4Vector
    ASSERT (out,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
 
    out->mean = 0.;
+   out->var = 0.;
    n = vector->length;
    out->max = vector->data[0];
    out->min = vector->data[0];

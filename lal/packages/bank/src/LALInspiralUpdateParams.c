@@ -12,6 +12,11 @@ Module to update the parameters used in creating a coarse bank.
 \vspace{0.1in}
 \input{LALInspiralUpdateParamsCP}
 \idx{LALInspiralUpdateParams()}
+\begin{itemize}
+   \item \texttt{bankParams} Output, refreshed to get the next location
+   \item \texttt{metric} Input, metric at the current location
+   \item \texttt{minimalmatch} Input, the minimal match
+\end{itemize}
 
 \subsubsection*{Description}
 While scanning the $\tau_0$-direction after reaching the 

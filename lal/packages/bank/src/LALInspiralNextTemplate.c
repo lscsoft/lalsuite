@@ -14,6 +14,12 @@ current template, but in the positive $\tau_{2(3)}$ axis.
 \vspace{0.1in}
 \input{LALInspiralNextTemplateCP}
 \idx{LALInspiralNextTemplate()}
+\begin{itemize}
+   \item \texttt{bankPars,} Output, the parameters of the bank at the next grid point; the
+   point may, indeed, lay outside the parameter space.
+   \item \texttt{matrix} Input, the value of the metric which would allow computation of the
+   next lattice point (in the $\tau_{2(3)}$ direction).
+\end{itemize}
 
 \subsubsection*{Description}
 

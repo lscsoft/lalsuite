@@ -13,6 +13,11 @@ Function to create a fine grid of templates.
 \vspace{0.1in}
 \input{LALInspiralCreateFineBankCP}
 \idx{LALInspiralCreateFineBank()}
+\begin{itemize}
+   \item \texttt{outlist,} Output, containing an array of template bank parameters 
+   \item \texttt{nlist,} Output, the number of fine bank templates around a given coarse-mesh point
+   \item \texttt{fineIn,} Input, the parameters required to find the fine bank
+\end{itemize}
 
 \subsubsection*{Description}
 
@@ -41,8 +46,8 @@ equal to $x$.
 \end{figure}
 The algorithm takes as input a structure of type 
 \texttt{InspiralFineBankIn} and returns a \texttt{pointer-to-a-pointer} 
-of type \texttt{**InspiralTemplateList} as well as the number of fine grid
-templates \texttt {*int} around the lattice point in question.
+of type \texttt{InspiralTemplateList} as well as the number of fine grid
+templates \texttt {int} around the lattice point in question.
 
 The spacing between fine grid templates is chosen
 to be a constant determined by the metric at the coarse grid point; for

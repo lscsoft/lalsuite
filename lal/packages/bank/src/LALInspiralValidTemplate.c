@@ -1,5 +1,5 @@
 /* <lalVerbatim file="LALInspiralValidTemplateCV">
-Author: Churches, D. K.
+Author: Churches, D. K. and Sathyaprakash, B.S.
 $Id$
 </lalVerbatim>  */
 
@@ -8,122 +8,33 @@ $Id$
 
 \subsection{Module \texttt{LALInspiralValidTemplate.c}}
 
-Module which checks whether or not a pair of parameter 
-values $\tau_{0}$ and $\tau_{2(3)}$ correspond to
-physical values for the masses of a binary and 
-their symmetric mass ratio $\eta$.
+Module which checks whether or not a given template should
+be kept in the template list.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{LALInspiralValidTemplateCP}
 \index{\verb&LALInspiralValidTemplate()&}
+\begin{itemize}
+   \item \texttt{valid,} Output, 0 means invalid template, 1 means valid
+   \item \texttt{bankParams,} Input
+   \item \texttt{coarseIn,} Input
+\end{itemize}
 
 \subsubsection*{Description}
+Given the parameter values $\tau_{0}$ and $\tau_{2(3)}$ this code 
+checks to see if they correspond to physical values of the masses of 
+a binary and their symmetric mass ratio $\eta.$ The parameter values
+will be accepted as valid parameters {\em eventhough} they
+may not lie within the search space but their
+span does. At the moment the code allows extra templates only
+in the positive-$\tau_{2(3)}$ direction only. We have found
+that placing templates in other directions is redundant.
 
-We start with the definition of the chirp times $\tau_{0}$ and $\tau_{3}$,
-\begin{equation}
-\tau_{0} = \frac{5}{256 (\pi f_{a} )^{8/3} m^{5/3} \eta}
-\end{equation}
-
-and
-
-\begin{equation}
-\tau_{3} = \frac{1}{8 (\pi^{2} f_{a}^{3} )^{1/3} m^{2/3} \eta}
-\end{equation}
- These equations may be inverted to yield
-\begin{equation}
-m = \frac{5}{32 \pi^{2} f_{a}} \frac{\tau_{3}}{\tau_{0}}
-\end{equation}
-
-and
-
-\begin{equation}
-\eta = \left( \frac{2 \pi^{2}}{25 f_{a}^{3}} \frac{\tau_{0}^{2}}{\tau_{3}^{5}}
-\right)^{5}\end{equation}
-
-The individual masses may be calculated as follows.
-
-We have
-
-\begin{equation}
-m = m_{1} + m_{2}
-\label{mass}
-\end{equation}
-
-and
-
-\begin{equation}
-\eta = \frac{m_{1} m_{2}}{(m_{1} + m_{2})^{2}}
-\label{eta}
-\end{equation}
-
-
-From Eq.(\ref{mass}) we may eliminate either $m_{1}$ or $m_{2}$,
-
-\begin{equation}
-m_{1} = m - m_{2}
-\end{equation}
- 
-This may be substituted into Eq.(\ref{eta}) to give
- 
-\begin{equation}
-\eta = \frac{(m - m_{2}) m_{2}}{\left[ (m - m{2}) + m_{2} \right]^{2}}
-\end{equation}
- 
-which may be re--arranged to give
- 
-\begin{equation}
-m_{2}^{2} - m m_{2} + \eta m^{2} = 0
-\end{equation}
- 
-i.e.\
- 
-\begin{equation}
-m_{2} = \frac{ m \pm \sqrt{m^{2}(1 - 4 \eta) }}{2}
-\end{equation}
- 
-Therefore, since we know that $\eta \leq 1/4$, real roots are guaranteed.
-If we had eliminated $m_{2}$ rather than $m_{1}$ then we would have arrived at an identical
-expression for
-$m_{1}$, and so of one object has mass
- 
-\begin{equation}
-m_{1} = \frac{m + \sqrt{m^{2}(1-4 \eta)}}{2}
-\end{equation}
- 
-then the other object must have mass
- 
-\begin{equation}
-m_{2} = \frac{m - \sqrt{m^{2}(1-4 \eta)}}{2}
-\end{equation}
-
-This function is also given \texttt{mMin} and \texttt{MMax} as inputs, which it may use to calculate the
-minimum value of $\eta$ which is possible with those inputs,
-\begin{equation}
-\eta_{min} = \mathtt{ \frac{mMin(MMax - mMin)}{MMax^{2}} }
-\end{equation}
-
-To recap, the function calculates $m$, $\eta$, $\eta_{min}$ and $m_{1,2}$.
-It then checks that
-
-\begin{equation}
-\eta_{min} \leq \eta \leq 1/4
-\end{equation}
-
-and that
-
-\begin{equation}
-m_{1} \geq \mathtt{mMin}
-\end{equation}
-
-and
-
-\begin{equation}
-m_{2} \geq \mathtt{mMin}
-\end{equation}
 
 \subsubsection*{Algorithm}
-
+Compute the coordinates at the corners of the ambiguity rectangle.
+Accept if at least one of those points corresponds to the search space.
 \subsubsection*{Uses}
 
 \subsubsection*{Notes}
@@ -151,11 +62,14 @@ LALInspiralValidTemplate(
 
   INITSTATUS (status, "LALInspiralValidTemplate", LALINSPIRALVALIDTEMPLATEC);
   ATTATCHSTATUSPTR(status);
-  ASSERT (bankParams.x0 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-  ASSERT (bankParams.x1 > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
   ASSERT (coarseIn.fLower > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
   *valid = 0;
+  if (bankParams.x0 <=0 || bankParams.x1 <=0)
+  {
+	  DETATCHSTATUSPTR(status);
+	  RETURN(status);
+  }
 /* 
   We have a valid template either if the template itself, or one
   of the vertices of the 'ambiguity rectangle', is in the region of

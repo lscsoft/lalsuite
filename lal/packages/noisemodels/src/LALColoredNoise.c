@@ -60,16 +60,21 @@ LALColoredNoise
 
    n = length = noisy->length;
    nby2 = n/2;
-   noisy->data[0] = 0.;
-   noisy->data[nby2] = 0.;
 
    for (i=1; i<nby2; i++) 
    {
       j = n-i;
-      x = sqrt(2. * psd.data[i] / length);
+      // Since fftw requires n and NOT n/2, I presume we
+      // don't need the factor 2 in the normalisation
+      // x = sqrt(2. * psd.data[i] / length);
+      x = sqrt(psd.data[i] / length);
       noisy->data[i] *= x;
       noisy->data[j] *= x;
    }
+   x = sqrt(psd.data[0] / length);
+   noisy->data[0] *= x;
+   x = sqrt(psd.data[nby2] / length);
+   noisy->data[nby2] *= x;
 
    DETATCHSTATUSPTR(status);
    RETURN (status);

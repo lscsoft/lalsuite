@@ -15,6 +15,10 @@ Uses $g^{ij} = 1/(2g) e^{ikl} e^{jab} g_{ka} g_{lb}$ to compute the inverse.
 \input{LALInverse3CP}
 \idx{LALInverse3()}
 
+\begin{itemize}
+   \item \texttt{inverse,} Output, inverse of the $(3\times 3)$ input matrix
+   \item \texttt{*matrix,} Input, matrix whose inverse is required
+\end{itemize}
 \subsubsection*{Description}
 
 

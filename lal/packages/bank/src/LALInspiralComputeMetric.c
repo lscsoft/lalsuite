@@ -15,6 +15,12 @@ to describe distances on the signal manifold.
 \vspace{0.1in}
 \input{LALInspiralComputeMetricCP}
 \idx{LALInspiralComputeMetric()}
+\begin{itemize}
+   \item \texttt{metric,} Output, the metric at the lattice point defined by \texttt{params}
+   \item \texttt{params,} Input, the parameters where metric must be computed
+   \item \texttt{moments,} Input, moments $J(1), \ldots, J(17),$ of the PSD and other constants needed
+   in the computation of the metric.
+\end{itemize}
 
 \subsubsection*{Description}
 
@@ -215,8 +221,81 @@ element
 \right)
 \end{equation}
 
+Finally, what is needed in laying a lattice in the space of dynamical parameters
+(also referred to as intrinsic parameters) is the metric with the kinematical
+parameter (also called extrinsic parameter) projected out: In other words one defines
+the 2-dimensional metric $g_{mn}$ by
+\begin{equation}
+g_{mn} = \gamma_{mn} - \frac{\gamma_{0m} \gamma_{0n}}{\gamma_{00}}.
+\end{equation}
 
+\subsubsection*{Metric computation in the $\tau_0-\tau_3$ space}
 
+The metric cannot be directly computed in the $(\tau_0,\tau_2)$ space.
+Therefore, in the previous Section we first computed the metric
+in the $(m,\eta)$ space and then transformed to $(\tau_0,\tau_2)$ space.
+The same method was also be used to find the metric in the $(\tau_0,\tau_3)$ space.
+However, in $(\tau_0,\tau_3)$ space one can directly compute the
+metric without recourse to $(m,\eta)$ coordinates. It is of interest to see
+whether this yields the same results as the previous method.
+
+The starting point of our derivation is Eq.~(3.7) of Owen and Sathyaprakash
+(Phys. Rev. D 62, 022002, 1999) for the Fourier domain phase which we shall
+write as:
+
+\begin{eqnarray}
+\psi(f; \theta_1, \theta_2) & = & a_{01}\theta_1 v^{-5}  
++ \left [a_{21} \frac {\theta_1}{\theta_2} + a_{22} \left ( \theta_1 \theta_2^2 \right )^{1/3} \right ] v^{-3}
++ a_{31} \theta_2 v^{-2} \nonumber \\
+& + & \left [a_{41} \frac {\theta_1}{\theta_2^2} + a_{42} \left ( \frac {\theta_1}{\theta_2} \right )^{1/3} 
++ a_{43} \left ( \frac{\theta_2^4}{\theta_1} \right )^{1/3} \right ] v^{-1}.
+\end{eqnarray}
+to two-PN order.  Here $v=(f/f_0)^{1/3},$ $\theta_1$ and $\theta_2$ are 
+identical to the  $\theta^1$ and $\theta^2$ parameters
+of Owen and Sathyaprakash defined in Eq.~(3.3) there and the $a$ coefficients are given by:
+\begin{eqnarray}
+a_{01} = \frac{3}{5}, \ \ a_{21} = \frac{11\pi}{12}, \ \ 
+a_{22} = \frac{743}{2016} \left ( \frac {25}{2\pi^2} \right )^{1/3}, \ \ a_{31} = -\frac{3}{2}, \nonumber \\
+a_{41} = \frac {617}{384} \pi^2, \ \ a_{42} = \frac{5429}{5376} \left ( \frac{25 \pi}{2} \right )^{1/3},\ \ 
+a_{43} = \frac {15293365}{10838016} \left ( \frac{5}{4\pi^4} \right )^{1/3}.
+\end{eqnarray}
+Differentials of the phase with respect to the coordinates $\theta_1$ and $\theta_2$ appear in the
+metric which we write as:
+\begin{equation}
+\psi_m = \frac{\partial \psi}{\partial \theta_m} = \sum_0^N \Psi_{mk} v^{k-5}.
+\end{equation}
+where $N$ is the post-Newtonian order up to which the phase is known, or the post-Newtonian
+order at which the metric is desired.
+Expansion coefficients $\Psi_{mn}$ can be considered be $(2\times N)$ matrix which to
+second post-Newtonian order is given by: 
+\begin{equation}
+\Psi = 
+\left [ \matrix { 
+	  a_{01} 
+	& 0 
+	& {a_{21}}/{\theta_2} + ({a_{22}}/{3}) \left ( {\theta_2}/{\theta_1} \right )^{2/3} 
+	& 0 
+	& {a_{41}}/{\theta_2^2} + {a_{42}}/\left ({3 \left ( \theta_1^2\theta_2 \right )^{1/3} } \right ) 
+	- ({a_{43}}/{3}) \left ( {\theta_2}/{\theta_1} \right )^{4/3} \cr 
+	  0
+	& 0 
+	& - {a_{21}\theta_1}/{\theta_2^2} + (2 {a_{22}}/{3}) \left ( {\theta_1}/{\theta_2} \right )^{1/3} 
+	& a_{31} 
+	& - {2a_{41} \theta_1}/{\theta_2^3} - ({a_{42}}/{3}) \left ( {\theta_1}/{\theta_2^4} \right )^{1/3}  
+	+ ({4a_{43}}/{3}) \left ( {\theta_2}/{\theta_1} \right )^{1/3} }
+\right ].
+\end{equation}
+
+Using the definition of the
+metric introduced earlier and projecting out the $t_c$ coordinate, one finds that
+\begin{eqnarray}
+g_{mn}  & = & \frac{1}{2}\sum_{k,l=0}^N \Psi_{mk} \Psi_{nl} 
+\biggl  [ J(17-k-l) - J(12-k) J(12-l) \biggr . \nonumber \\
+	& - & 	\biggl . \frac { \left ( J(9-k) - J(4)J(12-k) \right )
+		\left ( J(9-l) - J(4)J(12-l) \right )} {\left (J(1) - J(12-l)^2 \right)}
+\biggr ]
+\end{eqnarray}
+where $J$'s are the moments introduced earlier. 
 
 
 \subsubsection*{Algorithm}
@@ -237,279 +316,188 @@ LALFree
  
 </lalLaTeX>  */
 
-
-
+//
+//	Created: 7.9.96.
+//	Author: B.S.Sathyaprakash, Caltech, Cardiff University.
+//	Purpose: To compute the metric and the template bank
+//              parameters, corresponding to 2PN chirps.
+//	Revision History: Updates 15.7.97; 31.8.97.; 18.3.99; 25.05.02
+//       First C version October 2000.
+//       Major revision in May 2002: Direct computation in (tau0, tau3)
+//       space avoid (m, eta) space. This means the code won't create
+//       template parameters in (tau0, tau2) space. An interface to the
+//       old code will have to be provided, if that is necessary.
+//
+//	Dependencies: moments.f, inverse.f transform.f (not needed in the version of 02/05)
+//	Outputs:
+//	    det: Determinant of the metric. (not in versions after 02/05)
+//	    g00: 
+//	    g11: 
+//	  theta: Angle which the t0-axis makes with semi-major (dx0) axis.
+//         srate: The minimal sampling rate required (computed but not outputted.
+//	Notes: Owen and Sathyaprakash (Caltech collaboration notes).
+//              Also Sathyaprakash, note from October 2000, May 24/25, 2002.
+//
 
 #include <stdlib.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALNoiseModels.h>
 
-/*
-*	Created: 7.9.96.
-*	Author: B.S.Sathyaprakash, Caltech, Cardiff University.
-*	Revision History: Updates 15.7.97; 31.8.97.; 18.3.99
-*       First C version October 2000.
-*	Purpose: To compute the metric and the template bank
-*              parameters, corresponding to 2PN chirps.
-*	Dependencies: moments.f, inverse.f transform.f
-*	Outputs:
-*	    det: Determinant of the metric.
-*	    g00: 
-*	    g11: 
-*	  theta: Angle which the t0-axis makes with semi-major (dx0) axis.
-*         srate: The minimal sampling rate required (computed but not outputted.
-*	Notes: Owen and Sathyaprakash (Caltech collaboration notes).
-*              Also Sathyaprakash, note from October 2000.
-*/
+#define Dim 2
+#define Order 5
+
+static void 
+InspiralComputeMetricGetPsiCoefficients(
+		REAL8              Psi[2][5], 
+		InspiralTemplate   *params, 
+		InspiralMomentsEtc *moments);
 
 NRCSID(LALINSPIRALCOMPUTEMETRICC, "$Id$");
 
 /* <lalVerbatim file="LALInspiralComputeMetricCP">  */
 
-void LALInspiralComputeMetric(LALStatus        *status,
-                              InspiralMetric   *metric,
-                              InspiralTemplate params,
-                              INT4             pass)
+void 
+LALInspiralComputeMetric
+(
+		LALStatus          *status,
+                InspiralMetric     *metric,
+                InspiralTemplate   *params,
+                InspiralMomentsEtc *moments
+)
 { /* </lalVerbatim> */
 
-   INT4 i, Dim=3;
-   REAL8 **trans=NULL, **mm3=NULL, **tm3=NULL, *dummy;
-   REAL8 t_0, t_2, t_3, t_4, s0, s2, s3, s4, tm11, tm12, tm22, m2;
-   REAL8 t_02,t22,t32,t42,s02,s22,s32,s42,eta2,k0sq,k1sq,k2sq;
-   REAL8 k0, k1, k2, k00, k01, k02, k11, k12, k22, flso;
-   static REAL8 i7,j1,j4,j5,j6,j7,j8,j9,j10,j11,j12,j13,j14,j15,j17;
-   static REAL8 a1, a2, a3, f1, f2, c4, c0, c2, c3, fr;
-   REAL8 bsq, rtbsqm4ac, totmass, eta, det;
-   InspiralMomentsIn in;
+   // const UINT4 Dim = 2;
+   // const UINT4 Order = 5;
+
+   static REAL8 Psi[Dim][Order];
+   static REAL8 g[Dim][Dim];
+
+   REAL8 a, b, c, q, det;
+   UINT4 PNorder, m, n;
 
    INITSTATUS (status, "LALInspiralComputeMetric", LALINSPIRALCOMPUTEMETRICC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT (metric,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   ASSERT (metric->shf,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
-   ASSERT (params.totalMass > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT (params.eta > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT (params.eta <= 0.25, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT (params.fCutoff > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT (params.t0 > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT (params.t2 > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (metric,   status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (params,   status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (moments,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 
-   totmass = params.totalMass * LAL_MTSUN_SI;
-   eta = params.eta;
-   flso = 1/(LAL_PI * totmass * pow(6.,1.5));
-/* Allocating space for three, (Dim x Dim) matrices and then point the
-   mm3, tm3 and trans arrays to dummy */
-/* Arrays for the metric (mm3 -> m and eta, tm3->chirp times) and 
-transformation   matrix */
+   ASSERT (params->t0 > 0.L, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
+   ASSERT (params->t3 > 0.L, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
 
-   if (!(dummy = LALMalloc(sizeof(REAL8) * Dim * Dim * 3))) {
-      ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-   }
-   if (!(trans = (REAL8 **) LALMalloc(sizeof(REAL8*) * Dim * 3))) {
-      LALFree(dummy);
-      ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+   // use the order of the waveform to compute the metric
+   // summation below will be carried out up to PNorder
+   //
+   PNorder = params->order;
+   if (PNorder < 2 || PNorder >4)
+   {
+     ABORT( status, 999, "Inappropriate PN order in InspiralComputeMetric" );
    }
 
-   mm3 = trans+Dim;
-   tm3 = trans+2*Dim;
-  
-   for (i=0; i<Dim; i++) {
-      trans[i] = &dummy[Dim*i]; 
-      mm3[i] = &dummy[Dim*Dim + Dim*i]; 
-      tm3[i] = &dummy[2*Dim*Dim + Dim*i]; 
-   } 
-   
-/* If first time set all static variables and compute moments else go
-   straight to the metric calculation */
-   if (pass==1) {
-/* The factor that converts chirp times from fLower to f0 and vice versa */
-   fr = params.fLower;
+   // 
+   // Setting up \Psi_{mn} coefficients 
+   //
+   InspiralComputeMetricGetPsiCoefficients(Psi, params, moments);
 
-   c0 = pow(fr,-8./3.);
-   c2 = pow(fr,-6./3.);
-   c3 = pow(fr,-5./3.);
-   f1 = 2.*LAL_PI;
-   f2 = f1*f1;
-   c4 = 3.0586730/1.0160640;
-   a1 = 924.0/743.0;
-   a2 = 5.4290/(1.0080 * c4);
-   a3 = 6.170/(1.440 * c4);
+   for (m=0; m<Dim; m++)
+   {
+   for (n=m; n<Dim; n++)
+   {
+	   UINT4 k, l;
+	   g[m][n] = 0.L;
 
-   in.shf= metric->shf;
-   in.xmin = params.fLower;
-   in.xmax = params.fCutoff;
-   in.norm = 1.;
-
-/* Normalised moments of the noise PSD from 1/3 to 17/3. */
-   in.ndx = 7.00/3.0; LALInspiralMoments(status->statusPtr,&i7,in); CHECKSTATUSPTR(status);
-   in.norm = i7;
-   j7 = 1.0;
-   in.ndx = 1.00/3.0; LALInspiralMoments(status->statusPtr,&j1,in);  CHECKSTATUSPTR(status);
-   in.ndx = 4.00/3.0; LALInspiralMoments(status->statusPtr,&j4,in);  CHECKSTATUSPTR(status);
-   in.ndx = 5.00/3.0; LALInspiralMoments(status->statusPtr,&j5,in);  CHECKSTATUSPTR(status);
-   in.ndx = 6.00/3.0; LALInspiralMoments(status->statusPtr,&j6,in);  CHECKSTATUSPTR(status);
-   in.ndx = 8.00/3.0; LALInspiralMoments(status->statusPtr,&j8,in);  CHECKSTATUSPTR(status);
-   in.ndx = 9.00/3.0; LALInspiralMoments(status->statusPtr,&j9,in);  CHECKSTATUSPTR(status);
-   in.ndx = 10.0/3.0; LALInspiralMoments(status->statusPtr,&j10,in); CHECKSTATUSPTR(status);
-   in.ndx = 11.0/3.0; LALInspiralMoments(status->statusPtr,&j11,in); CHECKSTATUSPTR(status);
-   in.ndx = 12.0/3.0; LALInspiralMoments(status->statusPtr,&j12,in); CHECKSTATUSPTR(status);
-   in.ndx = 13.0/3.0; LALInspiralMoments(status->statusPtr,&j13,in); CHECKSTATUSPTR(status);
-   in.ndx = 14.0/3.0; LALInspiralMoments(status->statusPtr,&j14,in); CHECKSTATUSPTR(status);
-   in.ndx = 15.0/3.0; LALInspiralMoments(status->statusPtr,&j15,in); CHECKSTATUSPTR(status);
-   in.ndx = 17.0/3.0; LALInspiralMoments(status->statusPtr,&j17,in); CHECKSTATUSPTR(status);
+	   for (k=0; k<PNorder; k++)
+	   {
+	   for (l=0; l<PNorder; l++)
+	   { 
+		   g[m][n] += Psi[m][k] * Psi[n][l] * 
+			   (    moments->j[17-k-l] - moments->j[12-k] * moments->j[12-l]
+			    - ( moments->j[9-k] - moments->j[4] * moments->j[12-k] )
+			    * ( moments->j[9-l] - moments->j[4] * moments->j[12-l] )
+			    / ( moments->j[1]   - moments->j[4] * moments->j[4]    )   );
+	   }
+	   }
+	   g[m][n] /= 2.;
+	   g[n][m] = g[m][n];
    }
-   
-/* Rescale the chirp times to begin from f0=1Hz */
-   t_0 = params.t0 * pow(fr,8./3.);
-   t_2 = params.t2 * pow(fr,6./3.);
-   t_3 = params.t3 * pow(fr,5./3.);
-   t_4 = params.t4 * pow(fr,4./3.);
-   
-/* Compute the various terms and factors involved in the definition of the metric */
-   s0 = 0.6*t_0;
-   s2 = t_2/(1.0+ a1*eta);
-   s3 = 1.50*t_3;
-   s4 = 3.0*t_4*(1.0- a3*eta*eta)/(1.0 + a2*eta + a3*eta*eta);
-
-   k0 = f1*j4;
-   k1 = -(f1/totmass)*(t_0*j12 + t_2*j10 - t_3*j9 + t_4*j8);
-   k2 = -(f1/eta)*(s0*j12 + s2*j10 - s3*j9 + s4*j8);
-
-   m2 = totmass*totmass;
-   t_02 = t_0*t_0;
-   t22 = t_2*t_2;
-   t32 = t_3*t_3;
-   t42 = t_4*t_4;
-   s02 = s0*s0;
-   s22 = s2*s2;
-   s32 = s3*s3;
-   s42 = s4*s4;
-   eta2 = eta*eta;
-
-   k00 = f2*j1;
-   k01 = - (f2/totmass)*(t_0*j9 + t_2*j7 - t_3*j6 + t_4*j5);
-   k02 = - (f2/eta)*(s0*j9 + s2*j7 - s3*j6 + s4*j5);
-   k11 = (f2/m2)*(t_02*j17 + t22*j13 + t32*j11 + t42*j9 +
-       2.*t_0*t_2*j15 - 2.*t_0*t_3*j14 + 2.*t_0*t_4*j13 -
-       2.*t_2*t_3*j12 + 2.*t_2*t_4*j11 - 2.*t_3*t_4*j10);
-   k22 = (f2/eta2)*(s02*j17 + s22*j13 + s32*j11 + s42*j9 +
-      2.*s0*s2*j15 - 2.*s0*s3*j14 + 2.*s0*s4*j13 -
-      2.*s2*s3*j12 + 2.*s2*s4*j11 - 2.*s3*s4*j10);
-   k12 = (f2/eta/totmass)*(t_0*s0*j17 + t_2*s2*j13 + t_3*s3*j11 + t_4*s4*j9 +
-       (t_0*s2 + s0*t_2)*j15 - (t_0*s3 + s0*t_3)*j14 + 
-       (t_0*s4 + s0*t_4)*j13 - (t_2*s3 + s2*t_3)*j12 + 
-       (t_2*s4 + s2*t_4)*j11 - (t_3*s4 + s3*t_4)*j10);
-   
-/*   if (lalDebugLevel==1) {
-      fprintf(stderr, "%e %e %e %e\n", t_0, t_2, t_3, t_4);
-      fprintf(stderr, "%e %e %e\n", k0, k1, k2);
-      fprintf(stderr, "%e %e %e\n", k00, k01, k02);
-      fprintf(stderr, "%e %e %e\n", k11, k22, k12);
-   }
-*/
-
-   k0sq = k0*k0;
-   k1sq = k1*k1;
-   k2sq = k2*k2;
-   mm3[0][0] = 0.50*(k00 - k0sq) ;
-   mm3[0][1] = 0.50*(k01 - k0*k1);
-   mm3[0][2] = 0.50*(k02 - k0*k2);
-   mm3[1][0] = mm3 [0][1];
-   mm3[1][1] = 0.50*(k11 - k1sq);
-   mm3[1][2] = 0.50*(k12 - k1*k2);
-   mm3[2][0] = mm3 [0][2];
-   mm3[2][1] = mm3 [1][2];
-   mm3[2][2] = 0.50*(k22 - k2sq);
-
-/*   if (lalDebugLevel==1) {
-      fprintf(stderr, "%e %e %e\n", mm3[0][0], mm3[0][1], mm3[0][2]);
-      fprintf(stderr, "%e %e %e\n", mm3[1][0], mm3[1][1], mm3[1][2]);
-      fprintf(stderr, "%e %e %e\n", mm3[2][0], mm3[2][1], mm3[2][2]);
-   }
-*/
-
-   LALInverse3 (status->statusPtr, tm3, mm3);
-   CHECKSTATUSPTR(status);
-
-/*   if (lalDebugLevel==1) {
-      fprintf(stderr, "%e %e %e\n", tm3[0][0], tm3[0][1], tm3[0][2]);
-      fprintf(stderr, "%e %e %e\n", tm3[1][0], tm3[1][1], tm3[1][2]);
-      fprintf(stderr, "%e %e %e\n", tm3[2][0], tm3[2][1], tm3[2][2]);
-   }
-*/
-
-   trans[0][0] = 1.0;
-   trans[0][1] = 0.0;
-   trans[0][2] = 0.0;
-   trans[1][0] = 0.0;
-   trans[2][0] = 0.0;
-   trans[1][1] = -5.0*t_0*c0/(3.0*totmass);
-   trans[1][2] = -t_0*c0/eta;
-   ASSERT ((INT4)metric->space>=0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-   ASSERT ((INT4)metric->space<=1, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-
-   switch (metric->space) {
-      case Tau0Tau2:
-         trans[2][1] = -t_2*c2/(totmass);
-         trans[2][2] = -t_2*c2/(eta*(1.0+a1*eta));
-         break;
-      case Tau0Tau3:
-         trans[2][1] = -2.0*t_3*c3/(3.0*totmass);
-         trans[2][2] = -t_3*c3/eta;
-         break;
    }
 
+   //
+   // The minimum sampling rate for given MM is
+   // srate = 2 * LAL_PI * f0 sqrt( (moments.j[1] - moments.j[4]*moments.j[4]) / (2.0*(1.-MM)));
+   //
 
-/*   if (lalDebugLevel==1) {
-      fprintf(stderr, "%e %e %e\n", trans[0][0], trans[0][1], trans[0][2]);
-      fprintf(stderr, "%e %e %e\n", trans[1][0], trans[1][1], trans[1][2]);
-      fprintf(stderr, "%e %e %e\n", trans[2][0], trans[2][1], trans[2][2]);
-   }
-*/
+   // The calculation above gives the metric in coordinates 
+   // (t0=2\pi f_0 \tau0, t3=2\pi f_0 \tau3).  Re-scale metric 
+   // coefficients to get metric in (tau0, tau3) coordinates
+   //
+   a = g[0][0] * pow(2.*LAL_PI*params->fLower,2.); 
+   b = g[0][1] * pow(2.*LAL_PI*params->fLower,2.); 
+   c = g[1][1] * pow(2.*LAL_PI*params->fLower,2.); 
 
-   LALMatrixTransform (status->statusPtr, Dim, trans, tm3, mm3);
-   CHECKSTATUSPTR(status);
-   LALInverse3 (status->statusPtr, tm3, mm3);
-   CHECKSTATUSPTR(status);
 
-/*   if (lalDebugLevel==1) {
-      fprintf(stderr, "%e %e %e\n", tm3[0][0], tm3[0][1], tm3[0][2]);
-      fprintf(stderr, "%e %e %e\n", tm3[1][0], tm3[1][1], tm3[1][2]);
-      fprintf(stderr, "%e %e %e\n", tm3[2][0], tm3[2][1], tm3[2][2]);
-   }
-*/
-
-/*
-   The minimum sampling rate for an MM=0.970 is
-   srate = sqrt(tm3[0][0]/(2.0*(1.0-0.970)));
-*/
      
-   tm11 = tm3[1][1] - tm3[0][1] * tm3[0][1] / tm3[0][0];
-   tm12 = tm3[1][2] - tm3[0][1] * tm3[0][2] / tm3[0][0];
-   tm22 = tm3[2][2] - tm3[0][2] * tm3[0][2] / tm3[0][0];
-
-/*   if (lalDebugLevel==1) {
-      fprintf(stderr, "%e %e\n", tm11, tm12 );
-      fprintf(stderr, "%e %e\n", tm12, tm22);
-   }
-*/
+   // if (lalDebugLevel==1) 
+   // { 
+	   // printf("%e %e\n", params->t0, params->t3 ); 
+	   // printf("%e %e\n", a, b ); 
+	   // printf("%e %e\n", b, c); 
+   // }
    
-   det = tm11 * tm22 - tm12 * tm12;
    
-   bsq = (tm11-tm22) * (tm11-tm22);
-   rtbsqm4ac = sqrt(bsq + 4.0 * tm12 * tm12);
-   metric->g00 = 0.50*(tm11+tm22 - rtbsqm4ac);
-   metric->g11 = 0.50*(tm11+tm22 + rtbsqm4ac);
-   metric->theta = 0.50 * atan(2.0*tm12/(tm11-tm22));
+   det = a * c - b * b;
+   q = sqrt( (a-c)*(a-c) + 4. * b*b );
+   
+   metric->g00 = 0.5 * (a + c - q);
+   metric->g11 = 0.5 * (a + c + q);
 
-
-/*   if (lalDebugLevel==1) {
-      fprintf(stderr, "det=%e g00=%e g11=%e theta=%e\n", det, metric->g00, metric->g11, metric->theta);
+   if (a==c)
+   {
+   
+	   metric->theta = LAL_PI/2.;
    }
-*/
-   LALFree(dummy); 
-   LALFree(trans);
+   else
+   {
+	   metric->theta = 0.5 * atan(2.*b/(a-c));
+   }
+
+
+   // if (lalDebugLevel==1) 
+   // {
+      // fprintf(stderr, "%e %e %e %e\n", det, metric->g00, metric->g11, metric->theta);
+   // }
 
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
+
+static void 
+InspiralComputeMetricGetPsiCoefficients(
+		REAL8              Psi[2][5], 
+		InspiralTemplate   *params, 
+		InspiralMomentsEtc *moments)
+{
+
+	REAL8 t1, t2;
+
+	t1 = 2.L * LAL_PI * params->fLower * params->t0; 
+	t2 = 2.L * LAL_PI * params->fLower * params->t3; 
+
+	Psi[0][0] = moments->a01;
+	Psi[0][1] = 0.L;
+	Psi[0][2] = moments->a21/t2 + moments->a22/3.L * pow(t2/t1,2.L/3.L);
+	Psi[0][3] = 0.L;
+	Psi[0][4] = moments->a41/(t2*t2) + moments->a42/(3.L* pow(t1*t1*t2,1.L/3.L)) 
+		  - moments->a43/3.L * pow(t2/t1,4.L/3.L);
+
+	Psi[1][0] = 0.L;
+	Psi[1][1] = 0.L;
+	Psi[1][2] = -moments->a21*t1/pow(t2,2.L) + 2.L*moments->a22/3.L * pow(t1/t2,1.L/3.L);
+	Psi[1][3] =  moments->a31;
+	Psi[1][4] = - 2.L * moments->a41*t1 / pow(t2,3.L) - moments->a42/3.L* pow(t1/pow(t2,4.L),1.L/3.L) 
+		    + 4.L * moments->a43/3.L * pow(t2/t1,1.L/3.L);
+
+}
+
+#undef Dim
+#undef Order

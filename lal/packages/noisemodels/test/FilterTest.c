@@ -107,16 +107,18 @@ main ( void )
 /* User can choose allowed values of the various parameters below this line  */
 /*---------------------------------------------------------------------------*/
    coarseIn.mMin = 2.0;
+   coarseIn.mMax = 20.0;
    coarseIn.MMax = 40.0;
+   coarseIn.massRange = MinMaxComponentMass;
    coarseIn.mmCoarse = 0.80;
    coarseIn.mmFine = 0.95;
    coarseIn.fLower = 40.;
    coarseIn.fUpper = 1000;
    coarseIn.iflso = 0;
    coarseIn.tSampling = 2048.;
-   coarseIn.order = twoPN;
+   coarseIn.order = 3;
    coarseIn.approximant = TaylorT1;
-   coarseIn.space = Tau0Tau2;
+   coarseIn.space = Tau0Tau3;
 /* minimum value of eta */
    coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) /
       pow(coarseIn.MMax,2.);
@@ -127,7 +129,7 @@ main ( void )
    coarseIn.shf.deltaF = coarseIn.tSampling / (REAL8) coarseIn.shf.data->length;
    LALNoiseSpectralDensity (&status, coarseIn.shf.data, noisemodel, coarseIn.shf.deltaF );
 
-   fprintf(FilterTest, "#mMin mMax mmCoarse mmFine fLower fUpper tSampling method order approximant domain space\n");
+   fprintf(FilterTest, "#mMin mMax mmCoarse mmFine fLower fUpper tSampling order approximant space\n");
    fprintf(FilterTest, "#%e %e %e %e %e %e %e %d %d %d\n", 
       coarseIn.mMin,
       coarseIn.MMax,
@@ -140,6 +142,7 @@ main ( void )
       coarseIn.approximant,
       coarseIn.space
    );
+   fflush(stdout);
    randIn.type = 0;
    randIn.SignalAmp = 8.0;
    randIn.NoiseAmp = 1.0;
@@ -239,6 +242,7 @@ main ( void )
    fprintf(stderr, "   t0             t2        Overlap/SNR\n");
    fprintf(stderr,"----------------------------------------------\n");
    fprintf(FilterTest, "   t0            t2        Overlap/SNR\n");
+   fflush(stdout);
    while (ntrials--) {
       LALRandomInspiralSignal(&status, &signal, &randIn);
 /*
@@ -282,7 +286,9 @@ main ( void )
             }
          }
      }
-     printf("%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t2, randIn.param.t3, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax);
+     printf("%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t2, randIn.param.t3, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax/2.);
+     fprintf(FilterTest,"%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t2, randIn.param.t3, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax/2.);
+   fflush(stdout);
    }
    fclose(FilterTest);
 
