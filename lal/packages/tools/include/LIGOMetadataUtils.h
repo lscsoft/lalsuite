@@ -326,6 +326,11 @@ LALTimeSortSummValue (
  */
 
 /* sngl inspiral */
+void
+LALFreeSnglInspiral (
+    LALStatus          *status,
+    SnglInspiralTable **eventHead
+    );
 
 void
 LALSortSnglInspiral (

@@ -59,6 +59,11 @@ Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
 
 \subsubsection*{Description}
 
+The function \texttt{LALFreeSnglInspiral()} frees the memory associated to a 
+linked list of single inspiral tables.  The single inspiral table may point to
+a linked list of EventIDColumns.  Thus, for each entry in the single inspiral
+it is necessary to free all associated event ids.
+
 The function \texttt{LALSortSnglInspiral()} sorts a list of single inspiral
 tables.  The function simply calls qsort with the appropriate comparison
 function, \texttt{comparfunc}.  It then ensures that the head of the sorted
@@ -144,6 +149,36 @@ triggers from two interferometers, but with a slightly different coincidence tes
 
 </lalLaTeX>
 #endif
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALFreeSnglInspiral (
+    LALStatus          *status,
+    SnglInspiralTable **eventHead
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *thisTrigger = NULL;
+  EventIDColumn        *eventId;
+
+  INITSTATUS( status, "LALFreeSnglInspiral", SNGLINSPIRALUTILSC );
+  
+  while ( *eventHead )
+  {
+    thisTrigger = *eventHead;
+    *eventHead = (*eventHead)->next;
+    while ( thisTrigger->event_id )
+    {
+      /* free any associated event_id's */
+      eventId = thisTrigger->event_id;
+      thisTrigger->event_id = thisTrigger->event_id->next;
+      LALFree( eventId );
+    }
+    LALFree( thisTrigger );
+  }
+  RETURN( status );
+}
+
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
