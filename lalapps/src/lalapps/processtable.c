@@ -104,6 +104,10 @@ populate_process_table (
   
   /* process id, username and host */
   ptable->unix_procid = getpid();
+  if ( ! ptable->unix_procid )
+  {
+    ptable->unix_procid = getppid();
+  }
   if ( gethostname( ptable->node, LIGOMETA_NODE_MAX ) < 0 )
   {
     perror( "could not determine host name" );
