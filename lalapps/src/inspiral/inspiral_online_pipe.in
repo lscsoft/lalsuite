@@ -227,6 +227,7 @@ for insp in insp_nodes:
 dag.add_node(inca)
 
 # write the dag
+dag.write_sub_files()
 dag.write_dag()
 
 # write out a log file for this script
