@@ -409,7 +409,7 @@ LALFindChirpChisqVeto (
   for ( j = 0; j < numPoints; ++j ) 
   {
     rhosq = params->norm * (q[j].re * q[j].re + q[j].im * q[j].im);
-    chisq[j] /= 1.0 + rhosq * mismatch / (REAL4) numChisqBins;
+    chisq[j] /= 1.0 + rhosq * mismatch * mismatch / (REAL4) numChisqBins;
   }
 
   /* normal exit */
