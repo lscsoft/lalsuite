@@ -131,7 +131,7 @@ None.
 #include <lal/LALInspiral.h>
 #include <lal/LALStdlib.h>
 
-static void LALPadeCoeffs7(int n, double *padecoeffs, double *taylorcoeffs);
+/* static void LALPadeCoeffs7(int n, double *padecoeffs, double *taylorcoeffs); */
 
 NRCSID (LALINSPIRALSETUPC, "$Id$");
 

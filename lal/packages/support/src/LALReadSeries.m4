@@ -33,16 +33,16 @@ dnl
 void
 SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
 { /* </lalVerbatim> */
-  BufferList *head;  /* pointer to head of linked list of buffers */
-  BufferList *here;  /* pointer to current position in list */
+  BufferList *head = NULL;  /* pointer to head of linked list of buffers */
+  BufferList *here = NULL;  /* pointer to current position in list */
   CHARVector *line = NULL; /* current line being read */
   CHAR *start, *end; /* start and end of a token on a line */
   UINT4 length = 0;  /* number of sequence elements to be read */
   UINT4 n;           /* countdown index over elements read */
-  DATA *data;        /* pointer to data in buffers */
-  TYPE *sData;       /* pointer to data in output sequence */
+  DATA *data = NULL;        /* pointer to data in buffers */
+  TYPE *sData = NULL;       /* pointer to data in output sequence */
   STYPE sCopy; /* internal copy of series */
-  int numRead; /* number of values read by parsing subroutine */
+  int numRead = 0; /* number of values read by parsing subroutine */
 
   INITSTATUS( stat, "SFUNC", STREAMSERIESINPUTC );
   ATTATCHSTATUSPTR( stat );

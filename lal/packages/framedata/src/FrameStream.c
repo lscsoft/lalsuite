@@ -193,7 +193,6 @@ LALCreateFrFileList(
     {
       struct FrFile *frfile;
       struct FrameH *frame;
-      double startTime;
       double endTime;
       frfile = URLFrFileINew( list + i );
       if ( ! frfile )
@@ -249,7 +248,6 @@ LALFrCacheOpen(
     )
 { /* </lalVerbatim> */
   FrStream *stream;
-  UINT4 i;
 
   INITSTATUS( status, "LALFrCacheOpen", FRAMESTREAMC );  
   ATTATCHSTATUSPTR( status );

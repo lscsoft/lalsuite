@@ -30,7 +30,6 @@ FUNC (
   TYPE 		*dest;
   INT8		 tnow;
   INT8		 tbeg;
-  REAL8          toff;
   REAL8          rate;
 
   INITSTATUS( status, "FUNC", FRAMESERIESC );  

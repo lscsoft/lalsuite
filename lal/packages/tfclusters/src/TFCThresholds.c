@@ -25,7 +25,7 @@ NRCSID (TFCLUSTERSC, "$Id$");
 /* local util functions */
 static REAL8 RiceThreshold(REAL8 bpp, REAL8 Q, REAL8 P0, REAL4 eGoal);
 
-static REAL4 NewtonRoot(void (*funcd)(REAL4, REAL4 *, REAL4 *, REAL8, REAL8, REAL8), REAL4, REAL4, REAL4, REAL8, REAL8, REAL8);
+/* static REAL4 NewtonRoot(void (*funcd)(REAL4, REAL4 *, REAL4 *, REAL8, REAL8, REAL8), REAL4, REAL4, REAL4, REAL8, REAL8, REAL8); */
 
 static void RiceWrapper(REAL4, REAL4 *, REAL4 *, REAL8, REAL8, REAL8);
 

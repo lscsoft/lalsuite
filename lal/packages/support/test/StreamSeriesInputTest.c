@@ -142,7 +142,6 @@ main(int argc, char **argv)
 {
   static LALStatus stat;       /* top-level status structure */
   INT4 arg;                    /* index over command-line options */
-  UINT4 i, j;                  /* indecies */
   CHAR *outfile = NULL;        /* name of output file */
   const CHAR *infile = INFILE; /* name of input file */
   const CHAR *dtype = "s";     /* data type tag */

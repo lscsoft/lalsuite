@@ -344,7 +344,7 @@ LALFindChirpSlave (
     {
       DataSegment    *currentDataSeg = dataSegVec->data;
 
-      REAL4   dynRange   = params->dataParams->dynRange;
+      /* REAL4   dynRange   = params->dataParams->dynRange; */
 
       REAL8   deltaT = currentDataSeg->chan->deltaT;
       REAL8   deltaF = currentDataSeg->spec->deltaF;
@@ -380,7 +380,7 @@ LALFindChirpSlave (
           PPNParamStruc ppnParams;
           REAL4         mass1, mass2;
           REAL4        *data = currentDataSeg->chan->data->data;
-          REAL4        *spec = currentDataSeg->spec->data->data;
+          /* REAL4        *spec = currentDataSeg->spec->data->data; */
           COMPLEX8     *resp = currentDataSeg->resp->data->data;
 
           /* set the next pointers in the array so ExchInspiralEvent    */
@@ -460,7 +460,7 @@ LALFindChirpSlave (
             REAL8 dx = 1.0;
             REAL8 xMax = waveform.a->data->length - 1;
             REAL8 *phiData = waveform.phi->data->data;
-            REAL4 *fData = waveform.f->data->data;
+            /* REAL4 *fData = waveform.f->data->data; */
             REAL4 *aData = waveform.a->data->data;
             for ( x = 0.0, t = 0.0 ; x < xMax; x += dx, t += ppnParams.deltaT ) 
             {

@@ -322,7 +322,7 @@ LALExchangeInspiralEventList (
 
       /* increment counter */
       ++i;
-    } while ( eventCurrent->next != NULL && i<numEvents);
+    } while ( eventCurrent->next != NULL && i< (INT4)numEvents);
 
     /* Terminate the linked list */
     eventCurrent->next = NULL;

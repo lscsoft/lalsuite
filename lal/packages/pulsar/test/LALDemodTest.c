@@ -225,10 +225,14 @@ else (void)(0)
 
 #include <lal/LALDemod.h>
 #include <lal/LALInitBarycenter.h>
+#include <lal/LALStdio.h>
+#include <lal/AVFactories.h>
 
 static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 
 static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
+
+static void times(REAL8 tSFT, INT4 howMany, LIGOTimeGPS *ts, INT4 sw);
 
 
 NRCSID(LALDEMODTESTC, "$Id$");
@@ -240,10 +244,12 @@ int main(int argc, char **argv)
   static LALStatus status;
 	
   /***** VARIABLE DECLARATION *****/
+  char earthEphemeris[] = "earth98.dat";
+  char sunEphemeris[] = "sun98.dat";
 
   ParameterSet *signalParams;
   ParameterSet *templateParams;
-  const char *basicInputsFile;
+  char *basicInputsFile;
   FILE *bif;
   REAL8 tObs, tCoh, tSFT;
   REAL8 oneOverSqrtTSFT;
@@ -275,7 +281,7 @@ int main(int argc, char **argv)
 	
   DeFTPeriodogram **xHat;
 	
-  FILE *PeaksFile, *TimeSFile, *SftFile, *XhatFile;
+  FILE /* *PeaksFile, *TimeSFile, *SftFile, */ *XhatFile;
 
   const CHAR *noi=NULL;
   INT4 deletions=1;
@@ -536,8 +542,8 @@ int main(int argc, char **argv)
 
   /* Quantities computed for barycentering */
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = "earth98.dat";
-  (*edat).ephiles.sunEphemeris = "sun98.dat";
+  (*edat).ephiles.earthEphemeris = earthEphemeris;
+  (*edat).ephiles.sunEphemeris = sunEphemeris;
 
   /* Read in ephemerides */  
   LALInitBarycenter(&status, edat);

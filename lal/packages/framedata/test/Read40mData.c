@@ -24,6 +24,7 @@
  *
  **** </lalLaTeX> */
 
+#include <math.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <lal/LALStdlib.h>

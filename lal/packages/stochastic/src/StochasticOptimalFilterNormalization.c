@@ -280,7 +280,7 @@ LALStochasticOptimalFilterNormalization(
   /* windowing */
   REAL4      w2, meanW2, meanW4;
   REAL4      *sPtrW1, *sPtrW2, *sStopPtr;
-  UINT4      winLength;
+  UINT4      winLength = 0;
 
   UINT4       length;
 

@@ -188,6 +188,13 @@ FrOutPar;
  **** </lalLaTeX> */
 
 void
+LALFrCacheOpen(
+    LALStatus  *status,
+    FrStream  **output,
+    FrCache    *cache
+    );
+
+void
 LALFrOpen(
     LALStatus    *status,
     FrStream    **stream,
@@ -249,9 +256,33 @@ LALFrSetPos(
     );
 
 void
+LALFrGetTimeSeriesType(
+    LALStatus   *status,
+    LALTYPECODE *output,
+    FrChanIn    *chanin,
+    FrStream    *stream
+    );
+
+void
 LALFrGetINT2TimeSeries(
     LALStatus      *status,
     INT2TimeSeries *series,
+    FrChanIn       *chanin,
+    FrStream       *stream
+    );
+
+void
+LALFrGetINT4TimeSeries(
+    LALStatus      *status,
+    INT4TimeSeries *series,
+    FrChanIn       *chanin,
+    FrStream       *stream
+    );
+
+void
+LALFrGetINT8TimeSeries(
+    LALStatus      *status,
+    INT8TimeSeries *series,
     FrChanIn       *chanin,
     FrStream       *stream
     );
@@ -265,9 +296,45 @@ LALFrGetREAL4TimeSeries(
     );
 
 void
+LALFrGetREAL8TimeSeries(
+    LALStatus       *status,
+    REAL8TimeSeries *series,
+    FrChanIn        *chanin,
+    FrStream        *stream
+    );
+
+void
+LALFrWriteINT2TimeSeries(
+    LALStatus       *status,
+    INT2TimeSeries  *series,
+    FrOutPar        *params
+    );
+
+void
+LALFrWriteINT4TimeSeries(
+    LALStatus       *status,
+    INT4TimeSeries  *series,
+    FrOutPar        *params
+    );
+
+void
+LALFrWriteINT8TimeSeries(
+    LALStatus       *status,
+    INT8TimeSeries  *series,
+    FrOutPar        *params
+    );
+
+void
 LALFrWriteREAL4TimeSeries(
     LALStatus       *status,
     REAL4TimeSeries *series,
+    FrOutPar        *params
+    );
+
+void
+LALFrWriteREAL8TimeSeries(
+    LALStatus       *status,
+    REAL8TimeSeries *series,
     FrOutPar        *params
     );
 

@@ -132,9 +132,9 @@ LALInspiralFindLoudestEvent
    CHECKSTATUSPTR(status);
    if (findeventsin->displayTemplates)
    {
-      for (i=0;i<output1.length;i++) 
+      for (i=0;i<(INT4)output1.length;i++) 
          printf("%e %e\n", i*dt, output1.data[i]);printf("&\n");
-      for (i=0;i<output1.length;i++) 
+      for (i=0;i<(INT4)output1.length;i++) 
          printf("%e %e\n", i*dt, output2.data[i]);printf("&\n");
    }
    LALREAL4VectorFFT(status->statusPtr, &filter1, &output1, findeventsin->fwdp);
