@@ -295,7 +295,7 @@ PrintResults(
 	    InspiralTemplate       injected,
 	    InspiralWaveOverlapOut overlapout);
 
-extern int lalDebugLevel=0;
+extern int lalDebugLevel=1;
 
 int
 main (int argc, char **argv ) 
@@ -345,6 +345,8 @@ main (int argc, char **argv )
    /* --- Some others variables to initialize --- */
    randIn.param.massChoice = m1Andm2;  				/* Only to compute the length of "signal"*/ 
    signal.length 	= 0.;
+   randIn.param.OmegaS  = 0.;
+   randIn.param.Theta   = 0.;
    randIn.param.approximant = EOB;				/* Only to compute the length of "signal"*/
    LALInspiralWaveLength (&status, &signal.length, randIn.param);
 
