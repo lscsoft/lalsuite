@@ -17,7 +17,7 @@ else
 EXTRA_TEXSOURCES = $(LALMETAIOSOURCES)
 endif
 
-libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c \
+libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c LALGSL.c \
   StringToken.c StringConvert.c Grid.c
 
 liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \

@@ -1,6 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-## $Id$
-pkginclude_HEADERS = LALStdio.h LALVersion.h LALMalloc.h LALError.h \
+pkginclude_HEADERS = LALStdio.h LALVersion.h LALMalloc.h LALError.h LALGSL.h \
                      FileIO.h PrintVector.h PrintFTSeries.h ReadFTSeries.h \
                      Grid.h StringInput.h StreamInput.h StreamOutput.h \
                      LALInitBarycenter.h LALXMGRInterface.h \
