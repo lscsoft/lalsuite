@@ -66,13 +66,8 @@ NRCSID (DRIVEHOUGHCOLORC, "$Id$");
  [-w running median window size ] \n\
         To estimate the psd \n\
  	Default: 25\n\
- [-p alpha delta (in radians)] \n\
-        Center of the sky patch (in radians) to be analysed.\n\
-        Default: alpha = 0.0, delta = - pi/2    \n\
- [-s patchSizeDelta patchSizeAlpha (in radians)]\n\
-        Sky patch size (in radians).to be analysed with Hough \n\
-        Maximun values allowed are pi, pi (corresponding to half the sky). \n\
-        Recommended values 0.5, 0.5\n\
+ [-P Skypatchfile] \n\
+        file containing list of skypatches \n\
 \n"
 
 
@@ -87,27 +82,25 @@ INT4 lalDebugLevel=1;
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-#define SFTDIRECTORY "./data1"
-#define FILEOUT "./outHM1/HM"      /* prefix file output */
+#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs"
+#define DIROUT "./outHM1/"      /* prefix file output */
+#define BASENAMEOUT "HM1"
 #define FILEVELOCITY "./velocity.data"  /* name: file with time-velocity info */
 #define FILETIME "./Ts" /* name: file with timestamps */
 
-#define IFO 1         /*  detector, 1:GEO, 2:LLO, 3:LHO */
+#define IFO 2         /*  detector, 1:GEO, 2:LLO, 3:LHO */
 /* #define THRESHOLD 1.5  thresold for peak selection, with respect to the
                               the averaged power in the search band */
 #define THRESHOLD 1.6 /* thresold for peak selection, with respect to the
                               the averaged power in the search band */
 #define FALSEALARM 0.00000001 /* Hough false alarm for candidate selection */
-			      
+#define SKYFILE "./skypatchfile"      
 #define F0 250.0          /*  frequency to build the LUT and start search */
-#define FBAND 2.0          /* search frequency band  (in Hz) */
-#define ALPHA 0.0		/* center of the sky patch (in radians) */
-#define DELTA  (-LAL_PI_2)
-#define PATCHSIZEX (LAL_PI*0.99) /* patch size */
-#define PATCHSIZEY (LAL_PI*0.99)
+#define FBAND 0.2          /* search frequency band  (in Hz) */
+
 #define NFSIZE  21 /* n-freq. span of the cylinder, to account for spin-down
                           search */
-#define BLOCKSRNGMED 25 /* Running median window size */
+#define BLOCKSRNGMED 101 /* Running median window size */
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
@@ -137,19 +130,26 @@ int main(int argc, char *argv[]){
   HoughStats      stats;
 
   /* ------------------------------------------------------- */
-  CHAR  *earthEphemeris = NULL; 
-  CHAR  *sunEphemeris = NULL;
+  CHAR   *earthEphemeris = NULL; 
+  CHAR   *sunEphemeris = NULL;
 
   INT4   ifo;
   CHAR   filelist[MAXFILES][MAXFILENAMELENGTH];
   CHAR   *directory = NULL; /* the directory where the SFT  could be */
   CHAR   *fnameOut = NULL;               /* The output prefix filename */
+  CHAR   *fbasenameOut = NULL;
   CHAR   *fnameVelocity = NULL;
   CHAR   *fnameTime = NULL;
 
+  CHAR   *skyfile=NULL;
+  REAL8  *skyAlpha, *skyDelta, *skySizeAlpha, *skySizeDelta; /* skypatch info */
+  INT4   nSkyPatches, skyCounter; 
+
+
   REAL8  houghFalseAlarm;
   INT4   houghThreshold;
-  INT4   mObsCoh, nfSizeCylinder,iHmap;
+  UINT4  mObsCoh;
+  INT4   nfSizeCylinder,iHmap;
   INT8   f0Bin, fLastBin;           /* freq. bin to perform search */
   INT8   fBin;
   REAL8  f0, fSearchBand, alpha, delta, timeBase, deltaF;
@@ -161,6 +161,8 @@ int main(int argc, char *argv[]){
   REAL8  f1jump;
   
   FILE   *fp1 = NULL;
+
+  CHAR   filehisto[256];
   CHAR   filestats[256];
 #ifdef PRINTEVENTS
   FILE   *fpEvents = NULL;
@@ -181,7 +183,6 @@ int main(int argc, char *argv[]){
   /*    Set up the default parameters.      */
   /* ****************************************************************/
 
-  detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF]; /* default */
   ifo = IFO;
   
   if (ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
@@ -192,19 +193,16 @@ int main(int argc, char *argv[]){
   fSearchBand = FBAND;
   peakThreshold = THRESHOLD;
   nfSizeCylinder = NFSIZE;
-  patchSizeX = PATCHSIZEX;
-  patchSizeY = PATCHSIZEY;
-  
-  alpha = ALPHA;
-  delta = DELTA;
 
   houghFalseAlarm = FALSEALARM;
-  
+  skyfile = SKYFILE; 
   earthEphemeris = EARTHEPHEMERIS;
   sunEphemeris = SUNEPHEMERIS;
   
   directory = SFTDIRECTORY;
-  fnameOut = FILEOUT;
+  fnameOut = DIROUT;
+  fbasenameOut = BASENAMEOUT; 
+
   fnameVelocity=FILEVELOCITY;
   fnameTime = FILETIME; 
   blocksRngMed = BLOCKSRNGMED;
@@ -278,9 +276,10 @@ int main(int argc, char *argv[]){
       }
       /* Parse output file prefix option. */
       else if ( !strcmp( argv[arg], "-o" ) ) {
-	if ( argc > arg + 1 ) {
+	if ( argc > arg + 2 ) {
 	  arg++;
 	  fnameOut = argv[arg++];
+          fbasenameOut = argv[arg++]; 
 	} else {
 	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
 	  LALPrintError( USAGE, *argv );
@@ -354,29 +353,16 @@ int main(int argc, char *argv[]){
 	  return DRIVEHOUGHCOLOR_EARG;
 	}
       }
-      /* Parse sky position options. */
-      else if ( !strcmp( argv[arg], "-p" ) ) {
-	if ( argc > arg + 2 ) {
-	  arg++;
-	  alpha = atof(argv[arg++]);
-	  delta = atof(argv[arg++]);
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
-      }
-      /* Parse patch size option. */
-      else if ( !strcmp( argv[arg], "-s" ) ) {
-	if ( argc > arg + 2 ) {
-	  arg++;
-	  patchSizeX = atof(argv[arg++]);
-	  patchSizeY = atof(argv[arg++]);
-	} else {
-	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
-	  LALPrintError( USAGE, *argv );
-	  return DRIVEHOUGHCOLOR_EARG;
-	}
+      /* Parse filename of Velocity.Data file corresponding to the SFTs. */
+      else if ( !strcmp( argv[arg], "-P" ) ) {
+        if ( argc > arg + 1 ) {
+          arg++;
+          skyfile = argv[arg++];
+        } else {
+          ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
+          LALPrintError( USAGE, *argv );
+          return DRIVEHOUGHCOLOR_EARG;
+        }
       }
       /* Unrecognized option. */
       else {
@@ -395,29 +381,48 @@ int main(int argc, char *argv[]){
   }
   /******************************************************************/
  
- /******************************************************************/  
-  /* opening the output statitstic and event files */
-  /******************************************************************/  
-  
-   strcpy(  filestats, fnameOut);
-   strcat(  filestats, "stats");
-   fp1=fopen(filestats,"w");
-   if ( !fp1 ){
-     fprintf(stderr,"Unable to find file %s\n", filestats);
-     return DRIVEHOUGHCOLOR_EFILE;
-   }
-   setlinebuf(fp1); /*line buffered on */  
 
-#ifdef PRINTEVENTS
-   strcpy(  fileEvents, fnameOut);
-   strcat(  fileEvents, "events");
-   fpEvents=fopen(fileEvents,"w");
-   if ( !fpEvents ){
-     fprintf(stderr,"Unable to find file %s\n", fileEvents);
-     return DRIVEHOUGHCOLOR_EFILE;
+
+   /*****************************************************************/
+   /* read skypatch info */
+   /*****************************************************************/
+   {
+     FILE   *fpsky = NULL; 
+     INT4   r;
+     REAL8  temp1, temp2, temp3, temp4;
+
+     fpsky = fopen(skyfile, "r");
+     if ( !fpsky )
+       {
+	 fprintf(stderr, "Unable to fine file %s\n", skyfile);
+	 return DRIVEHOUGHCOLOR_EFILE;
+       }
+
+
+     nSkyPatches = 0;
+     do 
+       {
+	 r=fscanf(fpsky,"%lf%lf%lf%lf\n", &temp1, &temp2, &temp3, &temp4);
+	 /* make sure the line has the right number of entries or is EOF */
+	 if (r==4) nSkyPatches++;
+       } while ( r != EOF);
+     rewind(fpsky);
+
+     skyAlpha = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));
+     skyDelta = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));     
+     skySizeAlpha = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));
+     skySizeDelta = (REAL8 *)LALMalloc(nSkyPatches*sizeof(REAL8));     
+
+
+     for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
+       {
+	 r=fscanf(fpsky,"%lf%lf%lf%lf\n", skyAlpha + skyCounter, skyDelta + skyCounter, 
+		  skySizeAlpha + skyCounter,  skySizeDelta + skyCounter);
+       }
+     
+     fclose(fpsky); 
+     
    }
-   setlinebuf(fpEvents); /*line buffered on */  
-#endif
 
   /******************************************************************/
   /* Looking into the SFT data files */
@@ -709,307 +714,373 @@ int main(int argc, char *argv[]){
     fclose(fp);
   }
 
-  /* ****************************************************************/
-  /*  general parameter settings and 1st memory allocation */
-  /* ****************************************************************/
-    
-  lutV.length    = mObsCoh;
-  lutV.lut = NULL;
-  lutV.lut = (HOUGHptfLUT *)LALMalloc(mObsCoh*sizeof(HOUGHptfLUT));
+  /* loop over sky patches */
+  for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
+    {
+      /* set sky positions and skypatch sizes */
+      alpha = skyAlpha[skyCounter];
+      delta = skyDelta[skyCounter];
+      patchSizeX = skySizeDelta[skyCounter];
+      patchSizeY = skySizeAlpha[skyCounter];
 
-  phmdVS.length  = mObsCoh;
-  phmdVS.nfSize  = nfSizeCylinder;
-  phmdVS.deltaF  = deltaF;
-  phmdVS.phmd = NULL;
-  phmdVS.phmd=(HOUGHphmd *)LALMalloc(mObsCoh*nfSizeCylinder*sizeof(HOUGHphmd));
 
-  freqInd.deltaF = deltaF;
-  freqInd.length = mObsCoh;
-  freqInd.data = NULL;
-  freqInd.data =  ( UINT8 *)LALMalloc(mObsCoh*sizeof(UINT8));
-
-  /* ****************************************************************/
-  /* Case: no spins-demodulaton  or Non demodulation (SFT input)*/
-  parDem.deltaF = deltaF;
-  parDem.skyPatch.alpha = alpha;
-  parDem.skyPatch.delta = delta;
-  parDem.timeDiff = 0.0;
-  parDem.spin.length = 0;
-  parDem.spin.data = NULL;
-  parDem.positC.x = 0.0;
-  parDem.positC.y = 0.0;
-  parDem.positC.z = 0.0;
-
-  /*****************************************************************/
-  parRes.deltaF = deltaF;
-  parRes.patchSkySizeX  = patchSizeX;
-  parRes.patchSkySizeY  = patchSizeY;
-  parRes.pixelFactor = PIXELFACTOR;
-  parRes.pixErr = PIXERR;
-  parRes.linErr = LINERR;
-  parRes.vTotC = VTOT;
-  /******************************************************************/  
-  /* ************* histogram of the number-counts in the Hough maps */
-  hist.length = mObsCoh+1;
-  histTotal.length = mObsCoh+1;
-  hist.data = NULL;
-  histTotal.data = NULL;
-  hist.data = (UINT4 *)LALMalloc((mObsCoh+1)*sizeof(UINT4));
-  histTotal.data = (UINT4 *)LALMalloc((mObsCoh+1)*sizeof(UINT4));
-  { 
-    UINT4   j;
-    for(j=0; j< histTotal.length; ++j){ histTotal.data[j]=0; }
-  }
- 
-  /******************************************************************/  
-  /******************************************************************/  
-
-  fBin= f0Bin;
-  iHmap = 0;
-
-  /* ***** for spin-down case ****/
-  nSpin1Max = floor(nfSizeCylinder/2.0);
-  f1jump = 1./timeDiffV.data[mObsCoh- 1];
-
-  /******************************************************************/
-  /******************************************************************/
-  /* starting the search f0-fLastBin.
-      Note one set LUT might not cover all the interval.
-      This is taken into account.
-      Memory allocation changes */
-  /******************************************************************/
-  /******************************************************************/
-  
-  while( fBin <= fLastBin){
-    INT8 fBinSearch, fBinSearchMax;
-    UINT4 i,j; 
-    REAL8UnitPolarCoor sourceLocation;
-    
-    
-    parRes.f0Bin =  fBin;      
-    SUB( LALHOUGHComputeNDSizePar( &status, &parSize, &parRes ),  &status );
-    xSide = parSize.xSide;
-    ySide = parSize.ySide;
-    maxNBins = parSize.maxNBins;
-    maxNBorders = parSize.maxNBorders;
-  
-    /* *******************create patch grid at fBin ****************  */
-    patch.xSide = xSide;
-    patch.ySide = ySide;
-    patch.xCoor = NULL;
-    patch.yCoor = NULL;
-    patch.xCoor = (REAL8 *)LALMalloc(xSide*sizeof(REAL8));
-    patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
-    SUB( LALHOUGHFillPatchGrid( &status, &patch, &parSize ), &status );
- 
-    /*************** other memory allocation and settings************ */
-    for(j=0; j<lutV.length; ++j){
-      lutV.lut[j].maxNBins = maxNBins;
-      lutV.lut[j].maxNBorders = maxNBorders;
-      lutV.lut[j].border =
-	(HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
-      lutV.lut[j].bin =
-	(HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));
-      for (i=0; i<maxNBorders; ++i){
-	lutV.lut[j].border[i].ySide = ySide;
-	lutV.lut[j].border[i].xPixel =
-	  (COORType *)LALMalloc(ySide*sizeof(COORType));
-      }
-    }
-    for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
-      phmdVS.phmd[j].maxNBorders = maxNBorders;
-      phmdVS.phmd[j].leftBorderP =
-	(HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
-      phmdVS.phmd[j].rightBorderP =
-	(HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
-      phmdVS.phmd[j].ySide = ySide;
-      phmdVS.phmd[j].firstColumn = NULL;
-      phmdVS.phmd[j].firstColumn = (UCHAR *)LALMalloc(ySide*sizeof(UCHAR));
-    }
-          
-    /* ************* create all the LUTs at fBin ********************  */  
-    for (j=0;j< mObsCoh;++j){  /* create all the LUTs */
-      parDem.veloC.x = velV.data[j].x;
-      parDem.veloC.y = velV.data[j].y;
-      parDem.veloC.z = velV.data[j].z;      
-      /* calculate parameters needed for buiding the LUT */
-      SUB( LALNDHOUGHParamPLUT( &status, &parLut, &parSize, &parDem),&status );
-      /* build the LUT */
-      SUB( LALHOUGHConstructPLUT( &status, &(lutV.lut[j]), &patch, &parLut ),
-	   &status );
-    }
-        
-    /************* build the set of  PHMD centered around fBin***********/     
-    phmdVS.fBinMin = fBin-floor(nfSizeCylinder/2.);
-    SUB( LALHOUGHConstructSpacePHMD(&status, &phmdVS, &pgV, &lutV), &status );
-    
-    /* ************ initializing the Total Hough map space *********** */   
-    ht.xSide = xSide;
-    ht.ySide = ySide;
-    ht.mObsCoh = mObsCoh;
-    ht.deltaF = deltaF;
-    ht.map   = NULL;
-    ht.map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
-    SUB( LALHOUGHInitializeHT( &status, &ht, &patch), &status); /*not needed */
-
-    /******************************************************************/
-    /*  Search frequency interval possible using the same LUTs */
-    fBinSearch = fBin;
-    fBinSearchMax= fBin + parSize.nFreqValid -1-floor( (nfSizeCylinder-1)/2.);
-
-    /** >>>>>>>>>>>>>>>>>>>>>>>>>>>>> * <<<<<<<<<<<<<<<<<<<<<<<<<<<< **/
-    /* Study all possible frequencies with one set of LUT */
-    /** >>>>>>>>>>>>>>>>>>>>>>>>>>>>> * <<<<<<<<<<<<<<<<<<<<<<<<<<<< **/
-
-    while ( (fBinSearch <= fLastBin) && (fBinSearch < fBinSearchMax) )  { 
-  
-      /**********************************************/
-      /* Case: No spin-down.  Study the fBinSearch */
-      /**********************************************/
-      ht.f0Bin = fBinSearch;
-      ht.spinRes.length =0;
-      ht.spinRes.data = NULL;
-      for (j=0;j< mObsCoh;++j){	freqInd.data[j]= fBinSearch; } 
-      SUB( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );
- 
-      /* ********************* perfom stat. analysis on the maps ****************** */
-      SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
-      SUB( Stereo2SkyLocation (&status, &sourceLocation, 
-           stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
-      SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
-      for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
-            
-      /* ********************* print results *********************** */
-
-#ifdef PRINTMAPS
-      if( PrintHmap2m_file( &ht, fnameOut, iHmap ) ) return 5;
-#endif 
-
-      fprintf(fp1, "%d %f %f %d %d %f %f %f 0.0 \n",
-         iHmap, sourceLocation.alpha, sourceLocation.delta,
-	 stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
-	 (fBinSearch*deltaF) );
-#ifdef PRINTEVENTS
-      SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
-                      &patch, &parDem), &status );
-#endif      
-      ++iHmap;
+      /******************************************************************/  
+      /* opening the output statistic, and event files */
+      /******************************************************************/  
       
-
-      /********************************************/
-      /* Case: 1 spin-down. at  fBinSearch */
-      /********************************************/
+      strcpy(  filestats, fnameOut);
+      strcat( filestats, "skypatch_");
       {
-	INT4   n;
-	REAL8  f1dis;
+	CHAR tempstr[16];
+	sprintf(tempstr, "%d", skyCounter);
+	strcat( filestats, tempstr);
+      }
+      strcat( filestats, "/");
+      strcat( filestats, fbasenameOut);
+      /*mkdir(filestats);*/
 
-	ht.spinRes.length = 1;
-	ht.spinRes.data = NULL;
- 	ht.spinRes.data = (REAL8 *)LALMalloc(ht.spinRes.length*sizeof(REAL8));
+      strcpy(filehisto, filestats);
+#ifdef PRINTEVENTS
+      strcpy( fileEvents, filestats);
+#endif
 
-	for( n=1; n<= nSpin1Max; ++n){ /*loop over all values of f1 */
-	  f1dis = - n*f1jump;
-	  ht.spinRes.data[0] =  f1dis*deltaF;
+      strcat(  filestats, "stats");
+      fp1=fopen(filestats,"w");
+      if ( !fp1 ){
+	fprintf(stderr,"Unable to find file %s\n", filestats);
+	return DRIVEHOUGHCOLOR_EFILE;
+      }
+      setlinebuf(fp1); /*line buffered on */  
+      
+#ifdef PRINTEVENTS
+      strcat(  fileEvents, "events");
+      fpEvents=fopen(fileEvents,"w");
+      if ( !fpEvents ){
+	fprintf(stderr,"Unable to find file %s\n", fileEvents);
+	return DRIVEHOUGHCOLOR_EFILE;
+      }
+      setlinebuf(fpEvents); /*line buffered on */  
+#endif
 
-	  for (j=0;j< mObsCoh;++j){
-	    freqInd.data[j] = fBinSearch +floor(timeDiffV.data[j]*f1dis+0.5);
+
+      /* ****************************************************************/
+      /*  general parameter settings and 1st memory allocation */
+      /* ****************************************************************/
+      
+      lutV.length    = mObsCoh;
+      lutV.lut = NULL;
+      lutV.lut = (HOUGHptfLUT *)LALMalloc(mObsCoh*sizeof(HOUGHptfLUT));
+      
+      phmdVS.length  = mObsCoh;
+      phmdVS.nfSize  = nfSizeCylinder;
+      phmdVS.deltaF  = deltaF;
+      phmdVS.phmd = NULL;
+      phmdVS.phmd=(HOUGHphmd *)LALMalloc(mObsCoh*nfSizeCylinder*sizeof(HOUGHphmd));
+      
+      freqInd.deltaF = deltaF;
+      freqInd.length = mObsCoh;
+      freqInd.data = NULL;
+      freqInd.data =  ( UINT8 *)LALMalloc(mObsCoh*sizeof(UINT8));
+      
+      /* ****************************************************************/
+      /* Case: no spins-demodulaton  or Non demodulation (SFT input)*/
+      parDem.deltaF = deltaF;
+      parDem.skyPatch.alpha = alpha;
+      parDem.skyPatch.delta = delta;
+      parDem.timeDiff = 0.0;
+      parDem.spin.length = 0;
+      parDem.spin.data = NULL;
+      parDem.positC.x = 0.0;
+      parDem.positC.y = 0.0;
+      parDem.positC.z = 0.0;
+      
+      /*****************************************************************/
+      parRes.deltaF = deltaF;
+      parRes.patchSkySizeX  = patchSizeX;
+      parRes.patchSkySizeY  = patchSizeY;
+      parRes.pixelFactor = PIXELFACTOR;
+      parRes.pixErr = PIXERR;
+      parRes.linErr = LINERR;
+      parRes.vTotC = VTOT;
+      /******************************************************************/  
+      /* ************* histogram of the number-counts in the Hough maps */
+      hist.length = mObsCoh+1;
+      histTotal.length = mObsCoh+1;
+      hist.data = NULL;
+      histTotal.data = NULL;
+      hist.data = (UINT4 *)LALMalloc((mObsCoh+1)*sizeof(UINT4));
+      histTotal.data = (UINT4 *)LALMalloc((mObsCoh+1)*sizeof(UINT4));
+      { 
+	UINT4   j;
+	for(j=0; j< histTotal.length; ++j){ histTotal.data[j]=0; }
+      }
+      
+      /******************************************************************/  
+      /******************************************************************/  
+      
+      fBin= f0Bin;
+      iHmap = 0;
+      
+      /* ***** for spin-down case ****/
+      nSpin1Max = floor(nfSizeCylinder/2.0);
+      f1jump = 1./timeDiffV.data[mObsCoh- 1];
+      
+      /******************************************************************/
+      /******************************************************************/
+      /* starting the search f0-fLastBin.
+	 Note one set LUT might not cover all the interval.
+	 This is taken into account.
+	 Memory allocation changes */
+      /******************************************************************/
+      /******************************************************************/
+      
+      while( fBin <= fLastBin){
+	INT8 fBinSearch, fBinSearchMax;
+	UINT4 i,j; 
+	REAL8UnitPolarCoor sourceLocation;
+	
+	
+	parRes.f0Bin =  fBin;      
+	SUB( LALHOUGHComputeNDSizePar( &status, &parSize, &parRes ),  &status );
+	xSide = parSize.xSide;
+	ySide = parSize.ySide;
+	maxNBins = parSize.maxNBins;
+	maxNBorders = parSize.maxNBorders;
+	
+	/* *******************create patch grid at fBin ****************  */
+	patch.xSide = xSide;
+	patch.ySide = ySide;
+	patch.xCoor = NULL;
+	patch.yCoor = NULL;
+	patch.xCoor = (REAL8 *)LALMalloc(xSide*sizeof(REAL8));
+	patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
+	SUB( LALHOUGHFillPatchGrid( &status, &patch, &parSize ), &status );
+	
+	/*************** other memory allocation and settings************ */
+	for(j=0; j<lutV.length; ++j){
+	  lutV.lut[j].maxNBins = maxNBins;
+	  lutV.lut[j].maxNBorders = maxNBorders;
+	  lutV.lut[j].border =
+	    (HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
+	  lutV.lut[j].bin =
+	    (HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));
+	  for (i=0; i<maxNBorders; ++i){
+	    lutV.lut[j].border[i].ySide = ySide;
+	    lutV.lut[j].border[i].xPixel =
+	      (COORType *)LALMalloc(ySide*sizeof(COORType));
 	  }
-
-	  SUB( LALHOUGHConstructHMT(&status,&ht, &freqInd, &phmdVS),&status );
-
-          /* ********************* perfom stat. analysis on the maps ****************** */
-          SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
-          SUB( Stereo2SkyLocation (&status, &sourceLocation, 
-              stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
-          SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
+	}
+	for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
+	  phmdVS.phmd[j].maxNBorders = maxNBorders;
+	  phmdVS.phmd[j].leftBorderP =
+	    (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+	  phmdVS.phmd[j].rightBorderP =
+	    (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+	  phmdVS.phmd[j].ySide = ySide;
+	  phmdVS.phmd[j].firstColumn = NULL;
+	  phmdVS.phmd[j].firstColumn = (UCHAR *)LALMalloc(ySide*sizeof(UCHAR));
+	}
+	
+	/* ************* create all the LUTs at fBin ********************  */  
+	for (j=0;j< mObsCoh;++j){  /* create all the LUTs */
+	  parDem.veloC.x = velV.data[j].x;
+	  parDem.veloC.y = velV.data[j].y;
+	  parDem.veloC.z = velV.data[j].z;      
+	  /* calculate parameters needed for buiding the LUT */
+	  SUB( LALNDHOUGHParamPLUT( &status, &parLut, &parSize, &parDem),&status );
+	  /* build the LUT */
+	  SUB( LALHOUGHConstructPLUT( &status, &(lutV.lut[j]), &patch, &parLut ),
+	       &status );
+	}
+        
+	/************* build the set of  PHMD centered around fBin***********/     
+	phmdVS.fBinMin = fBin-floor(nfSizeCylinder/2.);
+	SUB( LALHOUGHConstructSpacePHMD(&status, &phmdVS, &pgV, &lutV), &status );
+	
+	/* ************ initializing the Total Hough map space *********** */   
+	ht.xSide = xSide;
+	ht.ySide = ySide;
+	ht.mObsCoh = mObsCoh;
+	ht.deltaF = deltaF;
+	ht.map   = NULL;
+	ht.map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
+	SUB( LALHOUGHInitializeHT( &status, &ht, &patch), &status); /*not needed */
+	
+	/******************************************************************/
+	/*  Search frequency interval possible using the same LUTs */
+	fBinSearch = fBin;
+	fBinSearchMax= fBin + parSize.nFreqValid -1-floor( (nfSizeCylinder-1)/2.);
+	
+	/** >>>>>>>>>>>>>>>>>>>>>>>>>>>>> * <<<<<<<<<<<<<<<<<<<<<<<<<<<< **/
+	/* Study all possible frequencies with one set of LUT */
+	/** >>>>>>>>>>>>>>>>>>>>>>>>>>>>> * <<<<<<<<<<<<<<<<<<<<<<<<<<<< **/
+	
+	while ( (fBinSearch <= fLastBin) && (fBinSearch < fBinSearchMax) )  { 
+	  
+	  /**********************************************/
+	  /* Case: No spin-down.  Study the fBinSearch */
+	  /**********************************************/
+	  ht.f0Bin = fBinSearch;
+	  ht.spinRes.length =0;
+	  ht.spinRes.data = NULL;
+	  for (j=0;j< mObsCoh;++j){	freqInd.data[j]= fBinSearch; } 
+	  SUB( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );
+	  
+	  /* ********************* perfom stat. analysis on the maps ****************** */
+	  SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
+	  SUB( Stereo2SkyLocation (&status, &sourceLocation, 
+				   stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
+	  SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
 	  for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
 	  
-	  /* ***** print results *********************** */
-
+	  /* ********************* print results *********************** */
+	  
 #ifdef PRINTMAPS
 	  if( PrintHmap2m_file( &ht, fnameOut, iHmap ) ) return 5;
-#endif
-
-	  fprintf(fp1, "%d %f %f %d %d %f %f %f %g\n",
-                iHmap, sourceLocation.alpha, sourceLocation.delta,
-	        stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
-		(fBinSearch*deltaF), ht.spinRes.data[0]);
+#endif 
+	  
+	  fprintf(fp1, "%d %f %f %d %d %f %f %f 0.0 \n",
+		  iHmap, sourceLocation.alpha, sourceLocation.delta,
+		  stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
+		  (fBinSearch*deltaF) );
 #ifdef PRINTEVENTS
-           SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
-                      &patch, &parDem), &status );
-#endif    
+	  SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
+				 &patch, &parDem), &status );
+#endif      
 	  ++iHmap;
 	  
-	  /* what else with output, equal to non-spin case */
-	}
-	LALFree(ht.spinRes.data);
-      }
-
-      /********************************************/
-      /* *** shift the search freq. & PHMD structure 1 freq.bin ****** */
-      ++fBinSearch;
-      SUB( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
- 
-     }   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
-    
-    fBin = fBinSearch;
-    
-    /* ********************  Free partial memory ******************* */
-    LALFree(patch.xCoor);
-    LALFree(patch.yCoor);
-    LALFree(ht.map);
-  
-    for (j=0; j<lutV.length ; ++j){
-      for (i=0; i<maxNBorders; ++i){
-	LALFree( lutV.lut[j].border[i].xPixel);
-      }
-      LALFree( lutV.lut[j].border);
-      LALFree( lutV.lut[j].bin);
-    }
-    for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
-      LALFree( phmdVS.phmd[j].leftBorderP);
-      LALFree( phmdVS.phmd[j].rightBorderP);
-      LALFree( phmdVS.phmd[j].firstColumn);
-    }
-
-  } /* closing while */
- 
-  /******************************************************************/
-  /* printing total histogram */
-  /******************************************************************/
-  if( PrintHistogram( &histTotal, fnameOut) ) return 7;
-
-  /******************************************************************/
-  /* closing files with statistics results and events */
-  /******************************************************************/  
-  fclose(fp1);
-#ifdef PRINTEVENTS
-  fclose(fpEvents);
+	  
+	  /********************************************/
+	  /* Case: 1 spin-down. at  fBinSearch */
+	  /********************************************/
+	  {
+	    INT4   n;
+	    REAL8  f1dis;
+	    
+	    ht.spinRes.length = 1;
+	    ht.spinRes.data = NULL;
+	    ht.spinRes.data = (REAL8 *)LALMalloc(ht.spinRes.length*sizeof(REAL8));
+	    
+	    for( n=1; n<= nSpin1Max; ++n){ /*loop over all values of f1 */
+	      f1dis = - n*f1jump;
+	      ht.spinRes.data[0] =  f1dis*deltaF;
+	      
+	      for (j=0;j< mObsCoh;++j){
+		freqInd.data[j] = fBinSearch +floor(timeDiffV.data[j]*f1dis+0.5);
+	      }
+	      
+	      SUB( LALHOUGHConstructHMT(&status,&ht, &freqInd, &phmdVS),&status );
+	      
+	      /* ********************* perfom stat. analysis on the maps ****************** */
+	      SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
+	      SUB( Stereo2SkyLocation (&status, &sourceLocation, 
+				       stats.maxIndex[0], stats.maxIndex[1], &patch, &parDem), &status);
+	      SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
+	      for(j=0; j< histTotal.length; ++j){ histTotal.data[j]+=hist.data[j]; }
+	      
+	      /* ***** print results *********************** */
+	      
+#ifdef PRINTMAPS
+	      if( PrintHmap2m_file( &ht, fnameOut, iHmap ) ) return 5;
 #endif
-  /******************************************************************/
-  /* Free memory and exit */
-  /******************************************************************/
+	      
+	      fprintf(fp1, "%d %f %f %d %d %f %f %f %g\n",
+		      iHmap, sourceLocation.alpha, sourceLocation.delta,
+		      stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
+		      (fBinSearch*deltaF), ht.spinRes.data[0]);
+#ifdef PRINTEVENTS
+	      SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
+				     &patch, &parDem), &status );
+#endif    
+	      ++iHmap;
+	      
+	      /* what else with output, equal to non-spin case */
+	    }
+	    LALFree(ht.spinRes.data);
+	  }
+	  
+	  /********************************************/
+	  /* *** shift the search freq. & PHMD structure 1 freq.bin ****** */
+	  ++fBinSearch;
+	  SUB( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
+	  
+	}   /* ********>>>>>>  closing second while  <<<<<<<<**********<  */
+	
+	fBin = fBinSearch;
+	
+	/* ********************  Free partial memory ******************* */
+	LALFree(patch.xCoor);
+	LALFree(patch.yCoor);
+	LALFree(ht.map);
+	
+	for (j=0; j<lutV.length ; ++j){
+	  for (i=0; i<maxNBorders; ++i){
+	    LALFree( lutV.lut[j].border[i].xPixel);
+	  }
+	  LALFree( lutV.lut[j].border);
+	  LALFree( lutV.lut[j].bin);
+	}
+	for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
+	  LALFree( phmdVS.phmd[j].leftBorderP);
+	  LALFree( phmdVS.phmd[j].rightBorderP);
+	  LALFree( phmdVS.phmd[j].firstColumn);
+	}
+	
+      } /* closing while */
+      
+      /******************************************************************/
+      /* printing total histogram */
+      /******************************************************************/
+      if( PrintHistogram( &histTotal, filehisto) ) return 7;
+      
+      /******************************************************************/
+      /* closing files with statistics results and events */
+      /******************************************************************/  
+      fclose(fp1);
+#ifdef PRINTEVENTS
+      fclose(fpEvents);
+#endif
+     
+      
+      /******************************************************************/
+      /* Free memory allocated inside skypatches loop */
+      /******************************************************************/
+      
+      LALFree(lutV.lut);  
+
+      
+      LALFree(phmdVS.phmd);
+      LALFree(freqInd.data);
+      LALFree(hist.data);
+      LALFree(histTotal.data);
+    
+      
+#ifdef TIMING
+      stop = realcc();
+      printf(" All: %llu\n", stop-start);
+#endif
+  
+    } /* finish loop over skypatches */
+
+
+  /* free memory allocated outside skypatches loop */ 
   {
     UINT4 j;
-  LALFree(timeV.time);
-  LALFree(timeDiffV.data);
-  LALFree(velV.data);
-  LALFree(lutV.lut);  
-  for (j=0;j< mObsCoh;++j){LALFree( pgV.pg[j].peak); }
+    for (j=0;j< mObsCoh;++j) LALFree( pgV.pg[j].peak); 
+  }
   LALFree(pgV.pg);
-  LALFree(phmdVS.phmd);
-  LALFree(freqInd.data);
-  LALFree(hist.data);
-  LALFree(histTotal.data);
-  
+
+  LALFree(timeDiffV.data);
+  LALFree(timeV.time);
+  LALFree(velV.data);
+
+  LALFree(skyAlpha);
+  LALFree(skyDelta);
+  LALFree(skySizeAlpha);
+  LALFree(skySizeDelta);
+	
   LALCheckMemoryLeaks();
-  } 
-
-#ifdef TIMING
-  stop = realcc();
-  printf(" All: %llu\n", stop-start);
-#endif
-
+  
   INFO( DRIVEHOUGHCOLOR_MSGENORM );
   return DRIVEHOUGHCOLOR_ENORM;
 }
@@ -1018,25 +1089,26 @@ int main(int argc, char *argv[]){
 /* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-
+  
 /******************************************************************/
 /* printing the Histogram of all maps into a file                    */
 /******************************************************************/
-
+  
 int PrintHistogram(UINT4Vector *hist, CHAR *fnameOut){
 
   FILE  *fp=NULL;   /* Output file */
   char filename[256];
-  INT4  i ;
+  UINT4  i ;
  
   strcpy(  filename, fnameOut);
   strcat(  filename, "histo");
   fp=fopen(filename,"w");
 
-  if ( !fp ){  
-    fprintf(stderr,"Unable to find file %s\n",filename);
-    return DRIVEHOUGHCOLOR_EFILE; 
-  }
+  if ( !fp )
+    {  
+      fprintf(stderr,"Unable to find file %s\n",filename);
+      return DRIVEHOUGHCOLOR_EFILE; 
+    }
 
   for (i=0; i < hist->length; i++){
     fprintf(fp,"%d  %d\n", i, hist->data[i]);
