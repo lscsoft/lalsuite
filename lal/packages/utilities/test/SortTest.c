@@ -70,7 +70,7 @@ INT4 debuglevel=0;
 
 int main(int argc, char **argv)
 {
-  Status       stat={};
+  Status       stat={0};
   INT4         i;
   INT4         seed=0;
   INT4Vector   *index=NULL;

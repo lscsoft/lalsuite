@@ -59,7 +59,7 @@ main( int argc, char *argv[] )
   const UINT4 n       = 17;
   const REAL4 epsilon = 1e-6;
 
-  Status          stat = {};
+  Status          stat = {0};
   ComplexFFTPlan *pfwd = NULL;
   ComplexFFTPlan *pinv = NULL;
   COMPLEX8Vector *avec = NULL;
@@ -156,7 +156,7 @@ CheckErrorCodes()
 {
   enum { Size = 19 };
   const UINT4 size = Size;
-  Status          stat = {};
+  Status          stat = {0};
   ComplexFFTPlan *plan;
   ComplexFFTPlan  aplan;
   COMPLEX8Vector  avec;

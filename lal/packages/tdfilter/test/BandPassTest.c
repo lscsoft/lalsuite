@@ -78,7 +78,7 @@ INT4 debuglevel=0;
 
 INT4 main(INT4 argc, CHAR **argv)
 {
-  Status stat = {};          /* Status pointer for subroutines. */
+  Status stat = {0};         /* Status pointer for subroutines. */
   CHAR *fname=NULL;          /* The output filename. */
   INT4 i;                    /* Index counter. */
   REAL4TimeSeries series;    /* Time series. */

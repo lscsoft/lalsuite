@@ -48,7 +48,7 @@ int
 main()
 {
    
-   Status               status  = {};
+   Status               status  = {0};
    REAL4Vector*         poutput = NULL; 
    REAL4Vector          dummy;
    DirichletParameters  parameters;

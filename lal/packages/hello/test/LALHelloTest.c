@@ -49,7 +49,7 @@ ClearStatus (Status *status);
 int
 main (int argc, char *argv[])
 {
-  Status status = {};
+  Status status = {0};
   Status keep;
 
   ParseOptions (argc, argv);
