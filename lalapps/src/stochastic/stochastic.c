@@ -818,6 +818,74 @@ static COMPLEX8FrequencySeries *generate_response(LALStatus *status,
   return(response);
 }
 
+/* helper function to return the frequency mask */
+static REAL4FrequencySeries *frequency_mask(LALStatus *status,
+    REAL8 f0,
+    REAL8 deltaF,
+    INT4 length,
+    INT4 bins)
+{
+  /* counters */
+  INT4 i, j;
+
+  /* variables */
+  REAL4FrequencySeries *mask;
+  LIGOTimeGPS epoch;
+  INT4 nBins;
+  INT4 numFMin;
+
+  /* initialise time */
+  epoch.gpsSeconds = 0;
+  epoch.gpsNanoSeconds = 0;
+
+  /* allocate memory for frequency mask */
+  LAL_CALL(LALCreateREAL4FrequencySeries(status, &mask, \
+        "mask", epoch, 0, deltaF, lalDimensionlessUnit, \
+        length + (INT4)(f0/deltaF)), status);
+
+  /* extra bins */
+  nBins = (bins - 1) / 2;
+  numFMin = (INT4)(f0 / deltaF);
+
+  /* set all values to 1 */
+  for (i = 0; i < length; i++)
+    mask->data->data[i] = 1;
+
+  /* remove multiples of 16 Hz */
+  for (i = 0; i < length; i += (INT4)(16 / deltaF))
+  {
+    mask->data->data[i]= 0;
+
+    for (j = 0; j < nBins; j++)
+    {
+      if ((i + 1 + j) < length)
+        mask->data->data[i + 1 + j]= 0;
+      if ((i - 1 - j) > 0 )
+        mask->data->data[i - 1 - j]= 0;
+    }
+  }
+
+  /* remove multiples of 60 Hz */
+  for (i = 0; i < length; i += (INT4)(60 / deltaF))
+  {
+    mask->data->data[i] = 0;
+
+    for (j = 0; j < nBins; j++)
+    {
+      if ((i + 1 + j) < length)
+        mask->data->data[i + 1 + j]= 0;
+      if ((i - 1 - j) > 0 )
+        mask->data->data[i - 1 - j]= 0;
+    }
+  }
+
+  /* get appropriate band */
+  LAL_CALL(LALShrinkREAL4FrequencySeries(status, mask, numFMin, \
+        length), status);
+
+  return(mask);
+}
+
 /* display usage information */
 static void display_usage()
 {
@@ -1758,7 +1826,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   MetadataTable outputTable;
 
   /* counters */
-  INT4 i, j, segLoop, interLoop;
+  INT4 i, segLoop, interLoop;
 
   /* results parameters */
   REAL8 y;
@@ -1839,7 +1907,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* frequency mask structures */
   REAL4FrequencySeries *mask;
-  INT4 Nbin;
 
   /* structures for optimal filter normalisation */
   StochasticOptimalFilterNormalizationInput normInput;
@@ -2115,67 +2182,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* frequency mask */
   if (apply_mask_flag)
   {
-    /* extra bins */
-    Nbin = (maskBin - 1) / 2;
-
-    if (vrbflg)
-      fprintf(stdout, "Allocating memory for frequency mask...\n");
-
-    /* allocate memory for frequency mask */
-    LAL_CALL(LALCreateREAL4FrequencySeries(&status, &mask, \
-          "mask", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
-          respLength), &status);
-
-    if (vrbflg)
-      fprintf(stdout, "Generating frequency mask...\n");
-
-    /* set all values to 1 */
-    for (i = 0; i < respLength; i++)
-      mask->data->data[i] = 1;
-
-    if (vrbflg)
-      fprintf(stdout, "Masking multiples of 16 Hz...\n");
-
-    /* remove multiples of 16 Hz */
-    for (i = 0; i < respLength; i += (UINT4)(16 / deltaF))
-    {
-      mask->data->data[i]= 0;
-
-      for (j = 0; j < Nbin; j++)
-      {
-        if ((i + 1 + j) < respLength)
-          mask->data->data[i + 1 + j]= 0;
-        if ((i - 1 - j) > 0 )
-          mask->data->data[i - 1 - j]= 0;
-      }
-    }
-
-    if (vrbflg)
-      fprintf(stdout, "Masking multiples of 60 Hz...\n");
-
-    /* remove multiples of 60 Hz */
-    for (i = 0; i < respLength; i += (UINT4)(60 / deltaF))
-    {
-      mask->data->data[i] = 0;
-
-      for (j = 0; j < Nbin; j++)
-      {
-        if ((i + 1 + j) < respLength)
-          mask->data->data[i + 1 + j]= 0;
-        if ((i - 1 - j) > 0 )
-          mask->data->data[i - 1 - j]= 0;
-      }
-    }
-
-    if (vrbflg)
-      fprintf(stdout, "Getting appropriate frequency band for mask...\n");
-
-    /* get appropriate band */
-    LAL_CALL(LALShrinkREAL4FrequencySeries(&status, mask, numFMin, \
-          filterLength), &status);
-
     if (vrbflg)
       fprintf(stdout, "Applying frequency mask to spectrum..\n");
+
+    /* generate frequency mask */
+    mask = frequency_mask(&status, fMin, deltaF, filterLength, maskBin);
 
     /* apply mask to omegaGW */
     for (i = 0; i < filterLength; i++)
