@@ -422,7 +422,7 @@ LALCompareSnglInspiral(
 
         if ( dm1 < params->dm && dm2 < params->dm ){
 
-            sigmaRatio = (bPtr->sigmasq / aPtr->sigmasq);
+            sigmaRatio = sqrt(bPtr->sigmasq / aPtr->sigmasq);
 
             if ( sigmaRatio * aPtr->snr -  bPtr->snr < params->dRhoPlus &&
                     bPtr->snr - sigmaRatio * aPtr->snr < params->dRhoMinus ){
