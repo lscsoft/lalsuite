@@ -480,6 +480,14 @@ int main(int argc, char **argv)
 
 
     /*****************************************************************
+     * sort the triggers
+     *****************************************************************/
+    LAL_CALL( LALSortSnglBurst(&stat, &(outEventList), 
+			       LALCompareSnglBurstByTime ), &stat);
+
+
+
+    /*****************************************************************
      * open output xml file
      *****************************************************************/
     LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
