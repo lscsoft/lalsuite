@@ -38,7 +38,7 @@ Usage: lalapps_power_pipe [options]
   -L, --ifo_l              run on L1
 
   -c, --makeinjfiles       create the xml files with inj parameters
-  -j, --injections         add simulated bursts
+  -j, --injections TYPE    add simulated injections of type specified(burst/inspiral/burstandinspiral)
   -m, --mdcinjections      add mdc injections 
 
   -b, --coincidence        do coincidence analysis
@@ -51,9 +51,9 @@ Usage: lalapps_power_pipe [options]
   -l, --log-path PATH      directory to write condor log file
 """
   print >> sys.stderr, msg
-
+ 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdrHKLcjmbtp:u:P:f:l:"
+shortop = "hvdrHKLcmbtp:j:u:P:f:l:"
 longop = [
   "help",
   "version",
@@ -63,7 +63,7 @@ longop = [
   "ifo_h2",
   "ifo_l1",
   "makeinjfiles",
-  "injections",
+  "injections=",
   "mdcinjections",
   "coincidence",
   "triplecoincidence",
@@ -89,7 +89,9 @@ do_L1 = None
 do_makeinjfiles = None
 do_coincidence = None
 do_triplecoincidence = None
-do_inj = None
+inj_type = None
+do_burstinj = None
+do_inspinj = None
 do_mdcinj = None
 usertag = None
 playground_only = 0
@@ -117,7 +119,7 @@ for o, a in opts:
   elif o in ("-c", "--makeinjfiles"):
     do_makeinjfiles = 1
   elif o in ("-j", "--injections"):
-    do_inj = 1
+    inj_type = a
   elif o in ("-m", "--mdcinjections"):
     do_mdcinj = 1
   elif o in ("-b", "--coincidence"):
@@ -149,6 +151,25 @@ if not log_path:
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
 
+if do_makeinjfiles and not inj_type:
+  print >> sys.stderr, "If u want to make them u have to inject them :))"
+  print >> sys.stderr, "Use --injection TYPE to specify the type u want to inject."
+  sys.exit(1)
+
+# if injection type specified
+
+if inj_type:
+  if inj_type == "burst":
+    do_burstinj = 1
+  elif inj_type == "inspiral":
+    do_inspinj = 1
+  elif inj_type == "burstandinspiral":
+    do_burstinj = 1
+    do_inspinj = 1
+  else:
+    print >> sys.stderr, "Injection type not recognised. Valid types are burst/inspiral/burstandinspiral"
+    sys.exit(1)
+     
 # try and make a directory to store the cache files and job logs
 try: os.mkdir('cache')
 except: pass
@@ -198,7 +219,8 @@ else:
 
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
-inj_job = power.InjJob(cp)
+burstinj_job = power.BurstInjJob(cp)
+inspinj_job = power.InspInjJob(cp)
 mdcinj_job = power.MdcDataFindJob(cp)
 pow_job = power.PowerJob(cp)
 burca_job = power.BurcaJob(cp)
@@ -209,7 +231,8 @@ if usertag:
 else:
   subsuffix = '.sub'
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
-inj_job.set_sub_file( basename + '.inj' + subsuffix )
+burstinj_job.set_sub_file( basename + '.burstinj' + subsuffix )
+inspinj_job.set_sub_file( basename + '.inspinj' + subsuffix )
 mdcinj_job.set_sub_file( basename + '.mdcinj' + subsuffix )
 pow_job.set_sub_file( basename + '.power' + subsuffix )
 burca_job.set_sub_file( basename + '.burca' + subsuffix )
@@ -297,7 +320,7 @@ for seg in data:
 
     prev_df2 = df2
 
-  ####### find all the mdc data #########
+  ####### find all the mdc data ###########
   if do_H1 or do_H2:
     mdcdf1 = power.MdcDataFindNode(mdcinj_job)
     mdcdf1.set_start(seg.start() - pad)
@@ -324,20 +347,35 @@ for seg in data:
       dag.add_node(mdcdf2)
 
 
-  ####### set the injecton jobs #########
-  inj1 = power.InjNode(inj_job)
-  inj1.set_start(seg.start())
-  inj1.set_end(seg.end())
+  ####### set the burst injecton jobs #########
+  if do_burstinj:
+    binj = power.BurstInjNode(burstinj_job)
+    binj.set_start(seg.start())
+    binj.set_end(seg.end())
 
  
-  if do_datafind: 
-    if do_H1 or do_H2:
-      inj1.add_parent(df1)
-    if do_L1:
-      inj1.add_parent(df2)
-  if do_makeinjfiles:
-    dag.add_node(inj1)
+    if do_datafind: 
+      if do_H1 or do_H2:
+        binj.add_parent(df1)
+      if do_L1:
+        binj.add_parent(df2)
+    if do_makeinjfiles:
+      dag.add_node(binj)
 
+  ####### set the inspiral injecton jobs #########
+  if do_inspinj:
+    iinj = power.InspInjNode(inspinj_job)
+    iinj.set_start(seg.start())
+    iinj.set_end(seg.end())
+
+ 
+    if do_datafind: 
+      if do_H1 or do_H2:
+        iinj.add_parent(df1)
+      if do_L1:
+        iinj.add_parent(df2)
+    if do_makeinjfiles:
+      dag.add_node(iinj)
 
   ####### set the power jobs ########
   if do_H1:
@@ -348,8 +386,11 @@ for seg in data:
     pow1.set_cache(df1.get_output())
     if do_mdcinj:
       pow1.set_mdccache(mdcdf1.get_output())
-    if do_inj: 
-      pow1.set_burstinj(inj1.get_output())
+    if do_burstinj or do_inspinj:
+      if do_burstinj: 
+        pow1.set_burstinj(binj.get_output())
+      if do_inspinj:
+        pow1.set_inspinj(iinj.get_output())
       pow1.add_var_opt('calibration-cache',ifo1_calibration)
     pow1.add_var_opt('threshold',ifo1_snr)
 
@@ -357,8 +398,10 @@ for seg in data:
       pow1.add_parent(df1)
     if do_mdcinj: 
       pow1.add_parent(mdcdf1)
-    if do_makeinjfiles:
-      pow1.add_parent(inj1)	
+    if do_makeinjfiles and do_burstinj:
+      pow1.add_parent(binj)
+    if do_makeinjfiles and do_inspinj:
+      pow1.add_parent(iinj)	
     if do_power: 
       dag.add_node(pow1)
 
@@ -370,8 +413,11 @@ for seg in data:
     pow2.set_cache(df1.get_output())
     if do_mdcinj:
       pow2.set_mdccache(mdcdf1.get_output())
-    if do_inj: 
-      pow2.set_burstinj(inj1.get_output()) 
+    if do_burstinj or do_inspinj:
+      if do_burstinj: 
+        pow2.set_burstinj(binj.get_output())
+      if do_inspinj:
+        pow2.set_inspinj(iinj.get_output())         
       pow2.add_var_opt('calibration-cache',ifo2_calibration)     
     pow2.add_var_opt('threshold',ifo2_snr)
 
@@ -379,8 +425,10 @@ for seg in data:
       pow2.add_parent(df1)
     if do_mdcinj: 
       pow2.add_parent(mdcdf1)
-    if do_makeinjfiles:
-      pow2.add_parent(inj1)	
+    if do_makeinjfiles and do_burstinj:
+      pow2.add_parent(binj)
+    if do_makeinjfiles and do_inspinj:
+      pow2.add_parent(iinj)	
     if do_power: 
       dag.add_node(pow2)
 
@@ -392,8 +440,11 @@ for seg in data:
     pow3.set_cache(df2.get_output())
     if do_mdcinj:
       pow3.set_mdccache(mdcdf2.get_output())
-    if do_inj: 
-      pow3.set_burstinj(inj1.get_output())
+    if do_burstinj or do_inspinj:
+      if do_burstinj: 
+        pow3.set_burstinj(binj.get_output())
+      if do_inspinj:
+        pow3.set_inspinj(iinj.get_output()) 
       pow3.add_var_opt('calibration-cache',ifo3_calibration)
     pow3.add_var_opt('threshold',ifo3_snr)
 
@@ -401,8 +452,10 @@ for seg in data:
       pow3.add_parent(df2)
     if do_mdcinj: 
       pow3.add_parent(mdcdf2)
-    if do_makeinjfiles:
-      pow3.add_parent(inj1)	
+    if do_makeinjfiles and do_burstinj:
+      pow3.add_parent(binj)
+    if do_makeinjfiles and do_inspinj:
+      pow3.add_parent(iinj)	
     if do_power: 
       dag.add_node(pow3)
 
