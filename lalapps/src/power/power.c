@@ -789,8 +789,9 @@ static REAL4TimeSeries *get_geo_data(
 	LALStatus *stat,
 	FrStream *stream,
 	const char *chname,
-	LIGOTimeGPS epoch,
-	size_t length,
+	LIGOTimeGPS start,
+	LIGOTimeGPS end,
+	size_t lengthlimit,
 	REAL4 flow
 )
 {
@@ -800,11 +801,11 @@ static REAL4TimeSeries *get_geo_data(
 	size_t i;
 
 	/* create and initialize the time series vector */
-	LAL_CALL(LALCreateREAL8TimeSeries(stat, &geoSeries, chname, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, length), stat);
+	LAL_CALL(LALCreateREAL8TimeSeries(stat, &geoSeries, chname, start, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, lengthlimit), stat);
 
 	/* get the data */
 	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geoSeries, &channelIn, stream), stat);
-	geoSeries->epoch = epoch;
+	geoSeries->epoch = start;
 	LAL_CALL(LALFrSeek(stat, &geoSeries->epoch, stream), stat);
 	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geoSeries, &channelIn, stream), stat);
 
@@ -829,18 +830,19 @@ static REAL4TimeSeries *get_ligo_data(
 	LALStatus *stat,
 	FrStream *stream,
 	const char *chname,
-	LIGOTimeGPS epoch,
-	size_t length
+	LIGOTimeGPS start,
+	LIGOTimeGPS end,
+	size_t lengthlimit
 )
 {
 	REAL4TimeSeries *series;
 
 	/* create and initialize the time series vector */
-	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, chname, epoch, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, length), stat);
+	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, chname, start, 0.0, (REAL8) 1.0 / frameSampleRate, lalADCCountUnit, lengthlimit), stat);
 
 	/* get the data */
 	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
-	series->epoch = epoch;
+	series->epoch = start;
 	LAL_CALL(LALFrSeek(stat, &series->epoch, stream), stat);
 	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
 
@@ -851,9 +853,10 @@ static REAL4TimeSeries *get_time_series(
 	LALStatus *stat,
 	const char *dirname,
 	const char *cachefile,
-	LIGOTimeGPS epoch,
-	EPSearchParams *params,
-	size_t length
+	LIGOTimeGPS start,
+	LIGOTimeGPS end,
+	size_t lengthlimit,
+	EPSearchParams *params
 )
 {
 	REAL4TimeSeries *series;
@@ -872,9 +875,9 @@ static REAL4TimeSeries *get_time_series(
 
 	/* Get the data */
 	if(geodata)
-		series = get_geo_data(stat, stream, params->channelName, epoch, length, params->tfTilingInput.flow - 10.0);
+		series = get_geo_data(stat, stream, params->channelName, start, end, lengthlimit, params->tfTilingInput.flow - 10.0);
 	else
-		series = get_ligo_data(stat, stream, params->channelName, epoch, length);
+		series = get_ligo_data(stat, stream, params->channelName, start, end, lengthlimit);
 
 	/* Clean up */
 	LAL_CALL(LALFrClose(stat, &stream), stat);
@@ -931,6 +934,7 @@ static COMPLEX8FrequencySeries *generate_response(
 	COMPLEX8FrequencySeries *response;
 	size_t i;
 	const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+	COMPLEX8 one = {1.0, 0.0};
 	CalibrationUpdateParams calfacts;
 
 	memset(&calfacts, 0, sizeof(calfacts));
@@ -943,10 +947,8 @@ static COMPLEX8FrequencySeries *generate_response(
 
 	/* getting the response is handled differently for geo */
 	if(geodata)
-		for(i = 0; i < response->data->length; i++) {
-			response->data->data[i].re = 1.0;
-			response->data->data[i].im = 0.0;
-		}
+		for(i = 0; i < response->data->length; i++)
+			response->data->data[i] = one;
 	else
 		LAL_CALL(LALExtractFrameResponse(stat, response, calcachefile, &calfacts), stat);
 
@@ -963,14 +965,14 @@ static COMPLEX8FrequencySeries *generate_response(
 static void add_burst_injections(
 	LALStatus *stat,
 	REAL4TimeSeries *series,
-	COMPLEX8FrequencySeries *resp
+	COMPLEX8FrequencySeries *response
 )
 {
 	INT4 startTime = series->epoch.gpsSeconds;
 	INT4 stopTime = startTime + series->data->length * series->deltaT;
 	SimBurstTable *injections = NULL;
 
-	if(!resp) {
+	if(!response) {
 		fprintf(stderr, "Must supply calibration information for injections\n");
 		exit(1);
 	}
@@ -983,7 +985,7 @@ static void add_burst_injections(
 	if(options.verbose)
 		fprintf(stderr, "Injecting signals into time series\n");
 
-	LAL_CALL(LALBurstInjectSignals(stat, series, injections, resp), stat); 
+	LAL_CALL(LALBurstInjectSignals(stat, series, injections, response), stat); 
 
 	if(options.verbose)
 		fprintf(stderr, "Finished making the injections\n");
@@ -1172,7 +1174,7 @@ int main( int argc, char *argv[])
 	LALLeapSecAccuracy        accuracy = LALLEAPSEC_LOOSE;
 	EPSearchParams            params;
 	LIGOTimeGPS               epoch;
-	LALTimeInterval           corruptionInterval;
+	LALTimeInterval           overlapInterval;
 	int                       usedNumPoints;
 	INT4                      numPoints;
 	CHAR                      outfilename[256];
@@ -1215,6 +1217,13 @@ int main( int argc, char *argv[])
 	searchsumm.searchSummaryTable->in_start_time = options.startEpoch;
 	searchsumm.searchSummaryTable->in_end_time = options.stopEpoch;
 
+	/* determine the time by which input time series overlap */
+	/* LAL spec makes us pass a pointer... sigh */
+	{
+	REAL8 overlap = (REAL8) options.FilterCorruption / targetSampleRate;
+	LAL_CALL(LALFloatToInterval(&stat, &overlapInterval, &overlap), &stat);
+	}
+
 
 	/*
 	 * ====================================================================
@@ -1240,7 +1249,7 @@ int main( int argc, char *argv[])
 		 * Get the data
 		 */
 
-		series = get_time_series(&stat, dirname, cachefile, epoch, &params, numPoints);
+		series = get_time_series(&stat, dirname, cachefile, epoch, options.stopEpoch, numPoints, &params);
 
 		/*
 		 * Add white noise to the time series if requested
@@ -1303,12 +1312,6 @@ int main( int argc, char *argv[])
 			fprintf(stderr, "Got %i points to analyse after conditioning\n", series->data->length);
 
 		/*
-		 * Determine the time that was lost due to filter corruption.
-		 */
-
-		LAL_CALL(LALDeltaGPS(&stat, &corruptionInterval, &series->epoch, &epoch), &stat);
-
-		/*
 		 * Store the start and end times of the data that actually
 		 * gets analyzed.
 		 */
@@ -1328,9 +1331,8 @@ int main( int argc, char *argv[])
 		 * Reset for next run
 		 */
 
-		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, numPoints), &stat);
-		LAL_CALL(LALDecrementGPS(&stat, &epoch, &epoch, &corruptionInterval), &stat);
-		LAL_CALL(LALDecrementGPS(&stat, &epoch, &epoch, &corruptionInterval), &stat);
+		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, series->data->length * series->deltaT), &stat);
+		LAL_CALL(LALDecrementGPS(&stat, &epoch, &epoch, &overlapInterval), &stat);
 		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
 	}
 
