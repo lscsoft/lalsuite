@@ -347,7 +347,7 @@ main (int argc, char **argv )
   
   REAL8
     df,
-    fendBCV,
+    fendBCV=0,
     fMax;
   
   REAL4Vector 
@@ -1012,47 +1012,47 @@ ParseParameters(int *argc,
     {
       if      ( strcmp(argv[i],"--LowGM")   == 0 ){	  coarseIn->LowGM      = atof(argv[++i]);  }
       else if ( strcmp(argv[i],"--HighGM")  == 0 ){        coarseIn->HighGM     = atof(argv[++i]);  }     
-      else if ( strcmp(argv[i],"-fl")       == 0 ){       
+      else if ( strcmp(argv[i],"--fl")       == 0 ){       
 	coarseIn->fLower     = atof(argv[++i]);  
 	randIn->param.fLower = coarseIn->fLower;
       }	
-      else if ( strcmp(argv[i],"-sampling") ==0) {	  
+      else if ( strcmp(argv[i],"--sampling") ==0) {	  
 	coarseIn->tSampling  = atof(argv[++i]);  
 	randIn->param.fCutoff = coarseIn->tSampling/2-1;
       }      
-      else if ( strcmp(argv[i],"-mMin") == 0 )
+      else if ( strcmp(argv[i],"--mMin") == 0 )
 	{
 	  coarseIn->mMin = atof(argv[++i]); 
 	  randIn->mMin = coarseIn->mMin;
 	  randIn->param.mass1 = randIn->mMin;
 	  randIn->param.mass2 = randIn->mMin;
 	}
-      else if ( strcmp(argv[i], "-m1") == 0 )  {	  otherIn->m1 = atof(argv[++i]);}	
-      else if ( strcmp(argv[i], "-m2") == 0 )  {	  otherIn->m2 = atof(argv[++i]); }       
-      else if ( strcmp(argv[i], "-psi0") == 0 ){	  otherIn->psi0 = atof(argv[++i]); }       
-      else if ( strcmp(argv[i], "-psi3") == 0 ){          otherIn->psi3 = atof(argv[++i]); }	
-      else if ( strcmp(argv[i],"-mMax") == 0 ) {
+      else if ( strcmp(argv[i], "--m1") == 0 )  {	  otherIn->m1 = atof(argv[++i]);}	
+      else if ( strcmp(argv[i], "--m2") == 0 )  {	  otherIn->m2 = atof(argv[++i]); }       
+      else if ( strcmp(argv[i], "--psi0") == 0 ){	  otherIn->psi0 = atof(argv[++i]); }       
+      else if ( strcmp(argv[i], "--psi3") == 0 ){          otherIn->psi3 = atof(argv[++i]); }	
+      else if ( strcmp(argv[i],"--mMax") == 0 ) {
 	  coarseIn->mMax = atoi(argv[++i]);
 	  coarseIn->MMax = 2. * coarseIn->mMax;
 	  randIn->mMax   = coarseIn->mMax;
 	  randIn->MMax   = 2.*randIn->mMax;	 
 	}
-      else if (strcmp(argv[i],"-psi0Max")==0)
+      else if (strcmp(argv[i],"--psi0Max")==0)
 	{
 	  coarseIn->psi0Max =atof(argv[++i]);
 	  randIn->psi0Max = coarseIn->psi0Max;
 	}
-      else if (strcmp(argv[i],"-psi3Min")==0)
+      else if (strcmp(argv[i],"--psi3Min")==0)
 	{
 	  coarseIn->psi3Min =atof(argv[++i]);
 	  randIn->psi3Min = coarseIn->psi3Min;
 	}
-      else if (strcmp(argv[i],"-psi0Min")==0)
+      else if (strcmp(argv[i],"--psi0Min")==0)
 	{
 	  coarseIn->psi0Min =atof(argv[++i]);
 	  randIn->psi0Min = coarseIn->psi0Min;
 	}
-      else if (strcmp(argv[i],"-psi3Max")==0)
+      else if (strcmp(argv[i],"--psi3Max")==0)
 	{
 	  coarseIn->psi3Max =atof(argv[++i]);
 	  randIn->psi3Max = coarseIn->psi3Max;
@@ -1320,25 +1320,25 @@ void Help(InspiralCoarseBankIn   coarseIn,
   fprintf(stderr,"\nUSAGE:  [options]\n");
   fprintf(stderr,"The options are (with default values in brackets)\n");
   fprintf(stderr,"All options should be followed by a number except -quiet\n");
-  fprintf(stderr,"      -quiet : if this flag is present, the output is restricted to the minimum\n");
-  fprintf(stderr,"        --ntrial : number of trials                   (%d)\n",       BANKEFFICIENCY_NTRIALS);
-  fprintf(stderr,"         --seed  : seed for random generation         (%d)\n",           BANKEFFICIENCY_SEED);
-  fprintf(stderr,"       -simType  : type of simulation, 0, 1 or 2      (%d)\n\n",     BANKEFFICIENCY_TYPE);
-  fprintf(stderr,"           --fl  : lower frequency cutoff             (%7.2f) Hz\n", BANKEFFICIENCY_FLOWER);
-  fprintf(stderr,"          -mMin  : minimal mass of component stars    (%7.2f) Mo\n", BANKEFFICIENCY_MMIN);
-  fprintf(stderr,"          -mMax  : maximal mass of component stars    (%7.2f) Mo\n", BANKEFFICIENCY_MMAX);
-  fprintf(stderr,"       -psi0Max  : Max value of psi0 (%7.2f)\n",                     BANKEFFICIENCY_PSI0MAX);
-  fprintf(stderr,"       -psi3Min  : Min value of psi3 (%7.2f)\n",                     BANKEFFICIENCY_PSI3MIN);
-  fprintf(stderr,"         -alpha  : BCV amplitude correction parameter (%7.2f)\n",    BANKEFFICIENCY_ALPHA);
-  fprintf(stderr,"      --numFcut  : number of layers in Fcut dimension (%7.2d)\n",    BANKEFFICIENCY_NFCUT);
-  fprintf(stderr,"           --mm  : minimal match for template bank    (%7.3f)\n",    BANKEFFICIENCY_MMCOARSE);
-  fprintf(stderr,"     --Template  : PN model for template bank, e.g. BCV (%d)\n\n",   BANKEFFICIENCY_TEMPLATE);
-  fprintf(stderr,"       --Signal  : model to inject in Monte-Carlo, e.g. EOB            (%d)\n",       BANKEFFICIENCY_SIGNAL);
-  fprintf(stderr,"  --SignalOrder  : order of PN model                                   (%7.2d)\n",    BANKEFFICIENCY_ORDER_SIGNAL);
-  fprintf(stderr,"--TemplateOrder  : order of signal to injec                            (%7.2d)\n",    BANKEFFICIENCY_ORDER_TEMPLATE);
-  fprintf(stderr,"        -sigAmp  : amplitude of the signal                             (%7.2f)\n",    BANKEFFICIENCY_SIGNALAMP);
-  fprintf(stderr,"       --HighGM  : Higher distance at which the coalescnce is stopped  (%7.2d)\n",    BANKEFFICIENCY_HIGHGM);
-  fprintf(stderr,"        --LowGM  : Lower distance at which the coalescence is stopped  (%7.2d)\n",    BANKEFFICIENCY_LOWGM);
+  fprintf(stderr,"         --quiet   : if this flag is present, the output is restricted to the minimum\n");
+  fprintf(stderr,"        --ntrial   : number of trials                   (%d)\n",       BANKEFFICIENCY_NTRIALS);
+  fprintf(stderr,"          --seed   : seed for random generation         (%d)\n",           BANKEFFICIENCY_SEED);
+  fprintf(stderr,"        -simType   : type of simulation, 0, 1 or 2      (%d)\n\n",     BANKEFFICIENCY_TYPE);
+  fprintf(stderr,"            --fl   : lower frequency cutoff             (%7.2f) Hz\n", BANKEFFICIENCY_FLOWER);
+  fprintf(stderr,"          --mMin   : minimal mass of component stars    (%7.2f) Mo\n", BANKEFFICIENCY_MMIN);
+  fprintf(stderr,"          --mMax   : maximal mass of component stars    (%7.2f) Mo\n", BANKEFFICIENCY_MMAX);
+  fprintf(stderr,"       --psi0Max   : Max value of psi0 (%7.2f)\n",                     BANKEFFICIENCY_PSI0MAX);
+  fprintf(stderr,"       --psi3Min   : Min value of psi3 (%7.2f)\n",                     BANKEFFICIENCY_PSI3MIN);
+  fprintf(stderr,"         --alpha   : BCV amplitude correction parameter (%7.2f)\n",    BANKEFFICIENCY_ALPHA);
+  fprintf(stderr,"       --numFcut   : number of layers in Fcut dimension (%7.2d)\n",    BANKEFFICIENCY_NFCUT);
+  fprintf(stderr,"            --mm   : minimal match for template bank    (%7.3f)\n",    BANKEFFICIENCY_MMCOARSE);
+  fprintf(stderr,"      --Template   : PN model for template bank, e.g. BCV (%d)\n\n",   BANKEFFICIENCY_TEMPLATE);
+  fprintf(stderr,"        --Signal   : model to inject in Monte-Carlo, e.g. EOB            (%d)\n",       BANKEFFICIENCY_SIGNAL);
+  fprintf(stderr,"   --SignalOrder   : order of PN model                                   (%7.2d)\n",    BANKEFFICIENCY_ORDER_SIGNAL);
+  fprintf(stderr," --TemplateOrder   : order of signal to injec                            (%7.2d)\n",    BANKEFFICIENCY_ORDER_TEMPLATE);
+  fprintf(stderr,"         -sigAmp   : amplitude of the signal                             (%7.2f)\n",    BANKEFFICIENCY_SIGNALAMP);
+  fprintf(stderr,"        --HighGM   : Higher distance at which the coalescnce is stopped  (%7.2d)\n",    BANKEFFICIENCY_HIGHGM);
+  fprintf(stderr,"         --LowGM   : Lower distance at which the coalescence is stopped  (%7.2d)\n",    BANKEFFICIENCY_LOWGM);
 
 
 
