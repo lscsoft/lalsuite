@@ -95,6 +95,7 @@ following combination of {\it masses:}
 \item \texttt{t02:} chirptimes $\tau_0$ and $\tau_2$
 \item \texttt{t03:} chirptimes $\tau_0$ and $\tau_3$, and 
 \item \texttt{t04:} chirptimes $\tau_0$ and $\tau_4$
+\item \texttt{psi0Andpsi3:} BCV parameters $\psi_0$ and $\psi_3$
 \end{itemize}
 
 \item \texttt{Order:}
@@ -344,7 +345,7 @@ typedef enum {
    t02,
    t03,
    t04,
-   psi0psi3
+   psi0Andpsi3
  } InputMasses;
 /* </lalVerbatim>  */
 
