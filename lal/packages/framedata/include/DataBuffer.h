@@ -69,17 +69,30 @@ NRCSID (DATABUFFERH, "$Id$");
 typedef struct
 tagDataSegment
 {
-  INT2TimeSeries          *data;
+  REAL4TimeSeries         *chan;
   REAL4FrequencySeries    *spec;
   COMPLEX8FrequencySeries *resp;
-  INT4                     endOfData;
-  INT4                     newLock;
-  INT4                     newCal;
   INT4                     number;
   INT4                     level;
 }
 DataSegment;
 \end{verbatim}
+
+%\begin{verbatim}
+%typedef struct
+%tagDataSegment
+%{
+%  INT2TimeSeries          *data;
+%  REAL4FrequencySeries    *spec;
+%  COMPLEX8FrequencySeries *resp;
+%  INT4                     endOfData;
+%  INT4                     newLock;
+%  INT4                     newCal;
+%  INT4                     number;
+%  INT4                     level;
+%}
+%DataSegment;
+%\end{verbatim}
 
 The data structure returned by the data aquisition routine.  The fields are:
 \begin{description}
@@ -201,6 +214,19 @@ DataBufferPar;
 typedef struct
 tagDataSegment
 {
+  REAL4TimeSeries         *chan;
+  REAL4FrequencySeries    *spec;
+  COMPLEX8FrequencySeries *resp;
+  INT4                     number;
+  INT4                     level;
+}
+DataSegment;
+
+#if 0
+/* this is the old data segment structure */
+typedef struct
+tagDataSegment
+{
   INT2TimeSeries          *data;
   REAL4TimeSeries         *real4Data;
   REAL4FrequencySeries    *spec;
@@ -212,6 +238,7 @@ tagDataSegment
   INT4                     level;
 }
 DataSegment;
+#endif
 
 #if 0 /* autodoc block */
 
