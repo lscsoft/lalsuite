@@ -42,7 +42,7 @@ class DataFindJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.add_condor_cmd('environment',
       """LD_LIBRARY_PATH=$ENV(LD_LIBRARY_PATH)""" )
 
-    self.set_stderr_file('logs/datafind-$(macroinstrument)-$(macrostart)-$(macroend).err')
+    self.set_stderr_file('logs/datafind-$(macroinstrument)-$(macrostart)-$(macroend)-$(cluster)-$(process).err')
     self.set_stdout_file('cache/$(macroinstrument)-$(macrostart)-$(macroend).cache')
     self.set_sub_file('datafind.sub')
 
@@ -67,8 +67,8 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['data','tmpltbank']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime).out')
-    self.set_stderr_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime).err')
+    self.set_stdout_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/tmpltbank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('tmpltbank.sub')
     
 
@@ -92,10 +92,8 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['data','inspiral']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file(
-      'logs/inspiral-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime).out')
-    self.set_stderr_file(
-      'logs/inspiral-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime).err')
+    self.set_stdout_file('logs/inspiral-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/inspiral-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('inspiral.sub')
     
 
@@ -119,8 +117,8 @@ class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['trigtotmplt']:
       self.add_ini_opts(cp,sec)
     
-    self.set_stdout_file('logs/trigtotmplt-$(macrooutput).out')
-    self.set_stderr_file('logs/trigtotmplt-$(macrooutput).err')
+    self.set_stdout_file('logs/trigtotmplt-$(macrooutput)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/trigtotmplt-$(macrooutput)-$(cluster)-$(process).err')
     self.set_sub_file('trigtotmplt.sub')
 
 
@@ -144,8 +142,8 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['inca']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime).out')
-    self.set_stderr_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime).err')
+    self.set_stdout_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('inca.sub')
 
 
