@@ -190,7 +190,7 @@ notification = never
 queue
 """ % (self.basename)
 
-  def builddag(self,cache,bank,inspiral):
+  def builddag(self,cache,bank):
     chan = self.config['input']['channel-name']
     site = chan[0]
     ifo  = chan[0:2]
@@ -200,7 +200,7 @@ queue
     for seg in self.segments:
       jobname = 'frcache_%s_%d_%d' % (site,seg.startpad,seg.endpad)
       print >> dag_fh, 'JOB %s %s.frcache.sub' % (jobname,self.basename),
-      if cache: print >> dag_fh, 'done',
+      if cache: print >> dag_fh, 'DONE',
       print >> dag_fh, '\nVARS %s site="%s" frstart="%s" frend="%s"' % (
       jobname, site, seg.startpad, seg.endpad )
     for i in range(1,len(self.segments)):
@@ -214,7 +214,7 @@ queue
       for chunk in seg.chunks:
         jobname = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.tmpltbank.sub' % (jobname,self.basename),
-        if bank: print >> dag_fh, 'done',
+        if bank: print >> dag_fh, 'DONE',
         print >> dag_fh, """
 VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
 """ % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,chan,
@@ -227,7 +227,6 @@ self.config['input'][string.lower(ifo) + '-cal'])
         parent = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         jobname = 'inspiral_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.inspiral.sub' % (jobname,self.basename),
-        if inspiral: print >> dag_fh, 'done',
         print >> dag_fh, """
 VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen="%d" channel="%s" calcache="%s"\
 """ % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,
@@ -239,26 +238,50 @@ def usage():
   msg = """\
 Usage: inspiral_pipeline.py [OPTIONS]
 
-   -f, --config-file FILE       use configuration file FILE
-   -v, --version                print version information and exit
-   -h, --help                   print help information
-   -c, --cache                  flag the LALdataFind query as done
-   -b, --bank                   flag the template bank generation as done
-   -i, --inspiral               flag the inspiral code as done
-   -p, --play                   only create chunks that overlap with playground
+   -f, --config-file FILE   use configuration file FILE
+   -p, --play               only create chunks that overlap with playground
+   -v, --version            print version information and exit
+   -h, --help               print help information
+   -c, --cache              flag the frame cache query as done
+   -b, --bank               flag the bank generation and cache query as done
 
-This program generates a DAG to run the inspiral code. The configuration
-file should specify the parameters needed to run the jobs and must be
-specified with the --config-file (or -f) option.
+This program generates a DAG to run the inspiral code. The configuration file 
+should specify the parameters needed to run the jobs and must be specified 
+with the --config-file (or -f) option. See the LALapps documentation for more
+information on the syntax of the configuation file.
 
-Unless the --cache (or -c) option is specified the DAG will generate frame
-cache files by querying LDR, otherwise these will be expected to exist.
+A file containing science segments to be analyzed should be specified in the 
+[input] section of the configuration file with a line such as
 
-The DAG will template bank generation job marked as done unless the
---bank (or -b) option is given. Similarly the DAG will have the inspiral jobs
-marked as done unless the --inspiral (or -i) option is given. If the bank
-generation is not specified and the inspiral is specifed, the DAG will 
-expect the banks to have been previously generated with the correct names.
+segments = S2TripleCoincidetScienceSegments.txt
+
+This should contain four whitespace separated coulumns:
+
+  segment_id    gps_start_time  gps_end_time    duration
+
+that define the science segments to be used. Lines starting with # are ignored.
+
+The length of the number of inspiral segments, their overlap and length is 
+determined from the config file and the length of an inspiral chunk is
+computed (typically this is 1024 seconds for S2).
+
+The chunks start and stop times are computed from the science segment times
+and used to build the DAG.
+
+If the --play (or -p) flag is specified, then only chunks that overlap the S2
+playground defined by:
+
+  ((t - 729273613) % 6370) < 600
+
+are included in the DAG.
+
+If the --cache (or -c) option is specifed, the generation of the frame cache 
+files is marked as done in the DAG. The cache files are expected to exist by
+the bank generation and inspiral codes.
+
+If the --bank (or -b) option is specified, both the frame cache query and
+generation of the template bank are marked as done. The cache files and
+template banks are expected to exist by the inspiral code.
 \
 """
   print msg
@@ -281,9 +304,8 @@ except getopt.GetoptError:
   sys.exit(1)
 
 config_file = None
-do_cache = None
-do_bank = None
-do_inspiral = None
+no_cache = None
+no_bank = None
 play_only = None
 
 for o, a in opts:
@@ -296,11 +318,10 @@ for o, a in opts:
   if o in ("-f", "--config-file"):
     config_file = a
   if o in ("-c", "--cache"):
-    do_cache = 1
+    no_cache = 1
   if o in ("-b", "--bank"):
-    do_bank = 1
-  if o in ("-i", "--inspiral"):
-    do_inspiral = 1
+    no_cache = 1
+    no_bank = 1
   if o in ("-p", "--play"):
     play_only = 1
 
@@ -325,4 +346,4 @@ pipeline.status(play_only)
 pipeline.frcachesub()
 pipeline.banksub()
 pipeline.inspiralsub()
-pipeline.builddag(do_cache,do_bank,do_inspiral)
+pipeline.builddag(no_cache,no_bank)
