@@ -1,16 +1,14 @@
 /* Author: M. A. Papa - AEI August 2003 */
 /* Revision: Y. Itoh - AEI December 2003  */
 /*           Commented out "if Nclust==0. NclustPoints[Nclust]=k"  */
-/* Bernd Machenschalk: uses LALRunningMedian June 2004 */
 
+/* $Id$ */
 
 /* #include <stdlib.h> */
 #include <lal/LALStdlib.h>
-#include <lal/SeqFactories.h>
-#include <lal/LALRunningMedian.h>
 #include <math.h>
 #include "clusters.h"
-/* #include "rngmed.h" */
+#include "rngmed.h"
 
 int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output){
   /* input : vector (N points) over which the running median code is ran with a  */
@@ -25,26 +23,19 @@ int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output){
   UINT4 nbins=input->length;
   REAL4 halfWindow;
 
+  REAL8 *dmp;
+
   INT4 M;
 
-  LALStatus stat;
-  LALRunningMedianPar rngmedpar;
-  REAL8Sequence *dmp = NULL;
-
-  /* init status pointer */
-  memset(&stat, 0, sizeof(LALStatus));
 
   M = nbins-windowSize+1;
-  LALDCreateVector( &stat, &dmp, M );
-  if( stat.statusCode){
-    printf("ERROR: LALDCreateVector returned status %d\n",stat.statusCode);
+  if(!(dmp= (double *) LALCalloc(M,sizeof(double)))){ 
+    printf("dmp Memory allocation failure");
     return 0;
   }
-
+  
   /* Call rngmed */
-  rngmedpar.blocksize = windowSize;
-  LALDRunningMedian(&stat, input, medians, rngmedpar);
-  /* rngmed(input->data, nbins, windowSize, dmp); */
+  rngmed(input->data, nbins, windowSize, dmp);
   
   /* start is the index of outdata at which the actual rmgmed begins*/
   halfWindow=windowSize/2.0;
@@ -53,16 +44,16 @@ int EstimateFloor(REAL8Vector *input, INT2 windowSize, REAL8Vector *output){
   
   /*Fill-in RngMdnSp */
   for (lpc=0;lpc<start;lpc++){
-    output->data[lpc]=dmp->data[0];
+    output->data[lpc]=dmp[0];
   }
   for (lpc=start;lpc<start2;lpc++){
-    output->data[lpc]=dmp->data[lpc-start];
+    output->data[lpc]=dmp[lpc-start];
   }
   for (lpc=start2;lpc<nbins;lpc++){
-    output->data[lpc]=dmp->data[nbins-windowSize];
+    output->data[lpc]=dmp[nbins-windowSize];
   }
   
-  LALDDestroyVector(&stat,&dmp);
+  LALFree(dmp);
 
   return 0;
 }
@@ -78,20 +69,12 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
 
   UINT4 *Iclust, *NclustPoints; /* first index of cluster, how many points */
 
-  LALStatus stat;
-  LALRunningMedianPar rngmedpar;
-  REAL8Sequence *RDMP1 = NULL, *RDMP2 = NULL;
-  /* REAL8 *RDMP1, *RDMP2; */
+  REAL8 *RDMP1, *RDMP2;
 
   INT4 rwing,lwing;
   REAL8 RngMdn,max1,max2;
 
   int k,i,i0,lpc,j,imax1,imax2,shift;
-
-
-
-  /* init status pointer */
-  memset(&stat, 0, sizeof(LALStatus));
 
   wings      = clParams->wings;
   smallBlock = clParams->smallBlock;
@@ -228,15 +211,12 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
     /*  this profile) of the input data. */
     /*  RDMP1 will have the profile */
 
-    LALDCreateVector( &stat, &RDMP2, k );
-    if( stat.statusCode){
-      printf("ERROR: LALDCreateVector returned status %d\n",stat.statusCode);
+    if (!(RDMP2 = (REAL8 *) LALCalloc(k,sizeof(REAL8)))){
+      printf("RDMP2 memory allocation failure");
       return 0;
     }
-
-    LALDCreateVector( &stat, &RDMP1, output->NclustPoints[lpc] );
-    if( stat.statusCode){
-      printf("ERROR: LALDCreateVector returned status %d\n",stat.statusCode);
+    if (!(RDMP1 = (REAL8 *) LALCalloc(output->NclustPoints[lpc],sizeof(REAL8)))){
+      printf("RDMP1 memory allocation failure");
       return 0;
     }
 
@@ -247,25 +227,20 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
       for (i=0;i<k;i++){
 	/*       j=Iclust[lpc]-rwing-lwing+i; */
 	j=Iclust[lpc]-lwing+i;
-	RDMP2->data[i]=input->outliersInput->data->data[j];
+	RDMP2[i]=input->outliersInput->data->data[j];
 	if (input->outliersInput->data->data[j] > max2){
 	  max2 = input->outliersInput->data->data[j];
 	  imax2 = i;
 	}
       }
       
-      rngmedpar.blocksize = smallBlock;
-      LALDRunningMedian(&stat, RDMP1, RDMP2, rngmedpar);
-      /*
       rngmed(RDMP2, k, smallBlock, RDMP1);
-      rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians)
-      */
-
+      
       /*  compute max of output data */
       max1=0;
       for (i=0;i<k-smallBlock+1;i++){
-	if (RDMP1->data[i] > max1){
-	  max1 = RDMP1->data[i];
+	if (RDMP1[i] > max1){
+	  max1 = RDMP1[i];
 	  imax1 = i;
 	  if (imax1 == output->NclustPoints[lpc]-1)
 	    imax1=imax1-1;
@@ -273,13 +248,13 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
       }
       
       /*  put maximum of input vector in place of max of running median */
-      /* RDMP1->data[imax1+1]=RDMP2->data[imax2]; */
+      /* RDMP1[imax1+1]=RDMP2[imax2]; */
       shift=(UINT4)((smallBlock+0.5)/2.0);
       if (shift > imax2)
 	shift=imax2;
       if ((imax2-shift) > output->NclustPoints[lpc]-1)
 	shift=imax2-output->NclustPoints[lpc]+1;
-      RDMP1->data[imax2-shift]=RDMP2->data[imax2];
+      RDMP1[imax2-shift]=RDMP2[imax2];
       
       
       /* write output */
@@ -287,7 +262,7 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
 	j=Iclust[lpc]+smallBlock/2+i-lwing;
 	output->Iclust[Ntot]=j;
 	RngMdn=input->outliersInput->data->data[j]/input->outliers->ratio[j];
-	output->clusters[Ntot]=RDMP1->data[i]/RngMdn;
+	output->clusters[Ntot]=RDMP1[i]/RngMdn;
 	Ntot++;
       }
     }
@@ -303,8 +278,8 @@ int DetectClusters(ClustersInput *input, ClustersParams *clParams, Clusters *out
       }
     }
     
-  LALDDestroyVector(&stat,&RDMP2);
-  LALDDestroyVector(&stat,&RDMP1);
+    LALFree(RDMP2);
+    LALFree(RDMP1);
     
 
   }/* loop over clusters*/
