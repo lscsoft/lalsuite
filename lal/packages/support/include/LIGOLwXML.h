@@ -108,26 +108,26 @@ LALOpenLIGOLwXMLFile (
 void
 LALCloseLIGOLwXMLFile (
     LALStatus           *status,
-    LIGOLwXMLStream     *xmlfp
+    LIGOLwXMLStream     *xml
     );
 
 void
 LALBeginLIGOLwXMLTable (
     LALStatus           *status,
-    LIGOLwXMLStream     *xmlfp,
+    LIGOLwXMLStream     *xml,
     MetadataTableType    table
     );
 
 void
 LALEndLIGOLwXMLTable (
     LALStatus           *status,
-    LIGOLwXMLStream     *xmlfp
+    LIGOLwXMLStream     *xml
     );
 
 void
 LALWriteLIGOLwXMLTable (
     LALStatus           *status,
-    LIGOLwXMLStream     *xmlfp,
+    LIGOLwXMLStream     *xml,
     MetadataTable        tablePtr,
     MetadataTableType    table
     );

@@ -83,8 +83,9 @@ LALOpenLIGOLwXMLFile (
 /* </lalVerbatim> */
 {
   /*  open the file and print the xml header */
+  INITSTATUS( status, "LALOpenLIGOLwXMLFile", LIGOLWXMLC );
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
-  ASSERT( xml->fp, status, LIGOLWXMLH_ENNUL, LIGOLWXMLH_MSGENNUL );
+  ASSERT( ! xml->fp, status, LIGOLWXMLH_ENNUL, LIGOLWXMLH_MSGENNUL );
   if ( ! (xml->fp = fopen( path, "w" )) )
   {
     ABORT( status, LIGOLWXMLH_EOPEN, LIGOLWXMLH_MSGEOPEN );
@@ -103,6 +104,7 @@ LALCloseLIGOLwXMLFile (
 /* </lalVerbatim> */
 {
   /* print the xml footer and close the file handle */
+  INITSTATUS( status, "LALCloseLIGOLwXMLFile", LIGOLWXMLC );
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   if ( xml->table != no_table )
@@ -125,6 +127,7 @@ LALBeginLIGOLwXMLTable (
 /* </lalVerbatim> */
 {
   /* print the header for the xml table */
+  INITSTATUS( status, "LALBeginLIGOLwXMLTable", LIGOLWXMLC );
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   if ( xml->table != no_table )
@@ -175,6 +178,7 @@ LALEndLIGOLwXMLTable (
 /* </lalVerbatim> */
 {
   /* print the header for the xml table */
+  INITSTATUS( status, "LALEndLIGOLwXMLTable", LIGOLWXMLC );
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   if ( xml->table == no_table )
@@ -196,8 +200,8 @@ LALWriteLIGOLwXMLTable (
     )
 /* </lalVerbatim> */
 {
-
   /* print contents of the database struct into the xml table */
+  INITSTATUS( status, "LALWriteLIGOLwXMLTable", LIGOLWXMLC );
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   if ( xml->table == no_table )
@@ -232,11 +236,11 @@ LALWriteLIGOLwXMLTable (
             tablePtr.processTable->is_online,
             tablePtr.processTable->node,
             tablePtr.processTable->username,
+            tablePtr.processTable->unix_procid,
             tablePtr.processTable->start_time.gpsSeconds,
             tablePtr.processTable->end_time.gpsSeconds,
             tablePtr.processTable->jobid,
             tablePtr.processTable->domain,
-            tablePtr.processTable->unix_procid,
             tablePtr.processTable->ifos
             );
         tablePtr.processTable = tablePtr.processTable->next;

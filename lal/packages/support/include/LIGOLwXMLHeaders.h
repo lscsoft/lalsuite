@@ -141,11 +141,11 @@ extern "C" {
 "      <Column Name=\"processgroup:process:end_time\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"processgroup:process:jobid\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"processgroup:process:domain\" Type=\"lstring\"/>\n" \
-"      <Column Name=\"processgroup:process:process_id\" Type=\"ilwd:char\"/>\n" \
+"      <Column Name=\"processgroup:process:ifos\" Type=\"ilwd:char\"/>\n" \
 "      <Stream Name=\"processgroup:process:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 #define PROCESS_ROW \
-"         \"%s\",\"%s\",\"%s\",%d,\"%s\",%d,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",\"process:process_id:0\""
+"         \"%s\",\"%s\",\"%s\",%d,\"%s\",%d,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",\"%s\",\"process:process_id:0\""
 
 #define LIGOLW_XML_PROCESS_PARAMS \
 "   <Table Name=\"process_paramsgroup:process_params:table\">\n" \
