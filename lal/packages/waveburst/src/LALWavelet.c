@@ -649,7 +649,7 @@ LALCoincidenceWavelet(LALStatus *status,
 
 	  for(i=0;i<n;i++)
 	    {
-	      if(one2D[k][i]==0.0) continue;
+	      if(one2D[k][i]==0.0 && two2D[k][i]==0.0) continue;
 	      swt=i-1;
 	      swf=k-1;
 	      if(swt<0) swt=0;
@@ -674,8 +674,8 @@ LALCoincidenceWavelet(LALStatus *status,
 
 	      if(!neighbors)
 		{
-		  if(fabs(one2D[k][i]) < input->minAmp4SinglePixels && 
-		     fabs(two2D[k][i]) < input->minAmp4SinglePixels)
+		  if((fabs(one2D[k][i]) < input->minAmp4SinglePixels || one2D[k][i]>=2*length-1) && 
+		     (fabs(two2D[k][i]) < input->minAmp4SinglePixels || two2D[k][i]>=2*length-1))
 		    {
 		      one->data->data[i]=0.0;
 		      two->data->data[i]=0.0;

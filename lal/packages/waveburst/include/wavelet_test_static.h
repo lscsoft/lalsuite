@@ -48,6 +48,16 @@ static void readWavelet_TS(Wavelet **wavelet, FILE *in)
   (*wavelet)->data=(REAL4TimeSeries*)LALMalloc(sizeof(REAL4TimeSeries));
   (*wavelet)->data->data=(REAL4Sequence*)LALMalloc(sizeof(REAL4Sequence));
 
+
+  (*wavelet)->PForward=NULL;
+  (*wavelet)->PInverse=NULL;
+  (*wavelet)->UForward=NULL;
+  (*wavelet)->UInverse=NULL;
+  (*wavelet)->pLForward=NULL;
+  (*wavelet)->pLInverse=NULL;
+  (*wavelet)->pHForward=NULL;
+  (*wavelet)->pHInverse=NULL;
+  
   fscanf(in,"%d",&(*wavelet)->type);
   fscanf(in,"%d",&(*wavelet)->border);
   fscanf(in,"%d",&(*wavelet)->treeType);
