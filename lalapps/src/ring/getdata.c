@@ -15,6 +15,7 @@
 
 RCSID( "$Id$" );
 
+/* create simulated data */
 REAL4TimeSeries * get_simulated_data(
     const char  *channelName,
     LIGOTimeGPS *epoch,
@@ -39,6 +40,7 @@ REAL4TimeSeries * get_simulated_data(
 
   npoints = duration * sampleRate;
 
+  /* populate data with gaussian random numbers */
   series->data = XLALCreateREAL4Vector( npoints );
   ranpar = XLALCreateRandomParams( simSeed );
   XLALNormalDeviates( series->data, ranpar );
@@ -60,6 +62,8 @@ REAL4TimeSeries * get_simulated_data(
   return series;
 }
 
+
+/* read frame data */
 REAL4TimeSeries * get_frame_data(
     const char  *cacheName,
     const char  *channelName,
@@ -96,6 +100,8 @@ REAL4TimeSeries * get_frame_data(
   return series;
 }
 
+
+/* read double-precision frame data and convert to single-precision data */
 REAL4TimeSeries * get_frame_data_dbl_convert(
     const char  *cacheName,
     const char  *channelName,
@@ -155,6 +161,7 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
 }
 
 
+/* low-level routine to read single-precision frame data */
 REAL4TimeSeries * fr_get_REAL4TimeSeries( const char *channelName,
     LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream )
 {
@@ -196,6 +203,7 @@ REAL4TimeSeries * fr_get_REAL4TimeSeries( const char *channelName,
 }
 
 
+/* low-level routine to read double-precision frame data */
 REAL8TimeSeries * fr_get_REAL8TimeSeries( const char *channelName,
     LIGOTimeGPS *epoch, REAL8 duration, FrStream *stream )
 {
@@ -237,6 +245,7 @@ REAL8TimeSeries * fr_get_REAL8TimeSeries( const char *channelName,
 }
 
 
+/* resample time series */
 int resample_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 sampleRate )
 {
   LALStatus status = blank_status;
@@ -257,6 +266,7 @@ int resample_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 sampleRate )
 }
 
 
+/* highpass filter time series */
 int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency )
 {
   LALStatus status = blank_status;
@@ -277,6 +287,8 @@ int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency )
   return 0;
 }
 
+
+/* highpass filter double-precision time series */
 int highpass_REAL8TimeSeries( REAL8TimeSeries *series, REAL8 frequency )
 {
   LALStatus status = blank_status;

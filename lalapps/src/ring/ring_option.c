@@ -17,6 +17,8 @@ extern int vrbflg;
 static int ring_usage( const char *program );
 static int ring_default_params( struct ring_params *params );
 
+
+/* parse command line arguments using getopt_long to get ring params */
 int ring_parse_options( struct ring_params *params, int argc, char **argv )
 {
   struct option long_options[] =
@@ -215,6 +217,8 @@ int ring_parse_options( struct ring_params *params, int argc, char **argv )
   return 0;
 }
 
+
+/* sets default values for parameters */
 static int ring_default_params( struct ring_params *params )
 {
   /* overall, default values are zero */
@@ -243,8 +247,12 @@ static int ring_default_params( struct ring_params *params )
   return 0;
 }
 
+
+/* macro for testing validity of a condition that prints an error if invalid */
 #define sanity_check( condition ) \
   ( condition ? 0 : ( fputs( #condition " not satisfied\n", stderr ), error( "sanity check failed\n" ) ) ) 
+
+/* check sanity of parameters and sets appropriate values of unset parameters */
 int ring_params_sanity_check( struct ring_params *params )
 {
   UINT4 recordLength = 0;
@@ -275,6 +283,7 @@ int ring_params_sanity_check( struct ring_params *params )
   if ( params->doFilter ) /* need data, bank, and spectrum */
     sanity_check( params->getData && params->getBank && params->getSpectrum );
 
+  /* parameters required to get data */
   if ( params->getData )
   {
     /* checks on data duration */
@@ -301,7 +310,7 @@ int ring_params_sanity_check( struct ring_params *params )
     /* will need response to do injections unless strain data */
     sanity_check( params->injectFile == NULL || params->strainData || params->getResponse );
 
-    if ( params->geoData )
+    if ( params->geoData ) /* geo data parameters */
     {
       sanity_check( params->geoScale > 0.0 );
       if ( params->geoHighpassFrequency < 0.0 )
@@ -315,6 +324,7 @@ int ring_params_sanity_check( struct ring_params *params )
     }
   }
 
+  /* parameters required to get spectrum */
   if ( params->getSpectrum )
   {
     /* checks on size of data segments and stride */
@@ -337,11 +347,13 @@ int ring_params_sanity_check( struct ring_params *params )
     sanity_check( params->dynRangeFac > 0.0 );
   }
 
+  /* parameters required to get response */
   if ( params->getResponse )
   {
     sanity_check( params->calibCache );
   }
 
+  /* parameters required to do filtering */
   if ( params->doFilter )
   {
     /* checks on low-cutoff and highpass frequencies */
@@ -362,6 +374,7 @@ int ring_params_sanity_check( struct ring_params *params )
           params->outputFormat == output_ligolw ? "xml" : "asc" );
   }
 
+  /* parameters required to make bank */
   if ( params->getBank )
   {
     /* checks on bank parameters */
@@ -377,10 +390,84 @@ int ring_params_sanity_check( struct ring_params *params )
   return 0;
 }
 
+
+/* prints a help message */
 static int ring_usage( const char *program )
 {
   fprintf( stderr, "usage: %s options\n", program );
-  fprintf( stderr, "options:\n" );
+  fprintf( stderr, "\ngeneral options:\n" );
+  fprintf( stderr, "--help                     print this message\n" );
+  fprintf( stderr, "--version                  print the version of the code\n" );
+  fprintf( stderr, "--verbose                  print verbose messages while running\n" );
+  fprintf( stderr, "--debug-level=dbglvl       set the LAL debug level\n" );
+
+  fprintf( stderr, "\ndata reading options:\n" );
+  fprintf( stderr, "--data-cache=datacache     name of the frame cache file\n" );
+  fprintf( stderr, "--channel-name             data channel to analyze\n" );
+  fprintf( stderr, "--gps-start-time=tstart    GPS start time of data to analyze (sec)\n" );
+  fprintf( stderr, "--gps-start-time-ns=tstartns  nanosecond residual of start time\n" );
+  fprintf( stderr, "--gps-end-time=tstop       GPS stop time of data to analyze (sec)\n" );
+  fprintf( stderr, "--gps-end-time-ns=tstopns  nanosecond residual of stop time\n" );
+
+  fprintf( stderr, "\nGEO data reading options:\n" );
+  fprintf( stderr, "--geo-data                 GEO data is double precision\n" );
+  fprintf( stderr, "--geo-highpass-frequency=fgeo  highpass GEO data at freq fgeo (Hz)\n" );
+  fprintf( stderr, "--geo-data-scale=geoscale  scale GEO data by factor geoscale\n" );
+
+  fprintf( stderr, "\nsimulated data options:\n" );
+  fprintf( stderr, "--simulated-data           create simulated white Gaussian noise\n" );
+  fprintf( stderr, "--random-seed=seed         random number seed for simulated data\n" );
+  fprintf( stderr, "--sample-rate=srate        sampling rate of simulated data (Hz)\n" );
+
+  fprintf( stderr, "\ndata conditioning options:\n" );
+  fprintf( stderr, "--highpass-frequency=fhi   high-pass filter data at frequency fhi (Hz)\n" );
+  fprintf( stderr, "--sample-rate=srate        decimate data to be at sample rate srate (Hz)\n" );
+
+  fprintf( stderr, "\nsimulated injection options:\n" );
+  fprintf( stderr, "--inject-file=injfile      XML file with injection parameters\n" );
+  fprintf( stderr, "--inject-mdc-frame=mdcframe  frame file with MDC-frame injections\n" );
+
+  fprintf( stderr, "\ncalibration options:\n" );
+  fprintf( stderr, "--strain-data              data is strain (already calibrated)\n" );
+  fprintf( stderr, "--calibration-cache=calcache  cache file for calibration frames\n" );
+  fprintf( stderr, "--dynamic-range-factor=dynfac  scale calibration by factor dynfac\n" );
+
+  fprintf( stderr, "\ndata segmentation options:\n" );
+  fprintf( stderr, "--segment-duration=duration  duration of a data segment (sec)\n" );
+
+  fprintf( stderr, "\npower spectrum options:\n" );
+  fprintf( stderr, "--white-spectrum           use uniform white power spectrum\n" );
+  fprintf( stderr, "--cutoff-frequency=fcut    low frequency spectral cutoff (Hz)\n" );
+  fprintf( stderr, "???invspectrunc???\n" );
+
+  fprintf( stderr, "\nbank generation options:\n" );
+  fprintf( stderr, "--bank-template-phase=phi  phase of ringdown waveforms (rad, 0=cosine)\n" );
+  fprintf( stderr, "--bank-min-quality=qmin    minimum Q of bank\n" );
+  fprintf( stderr, "--bank-max-quality=qmax    maximum Q of bank\n" );
+  fprintf( stderr, "--bank-min-frequency=fmin  minimum central frequency of bank (Hz)\n" );
+  fprintf( stderr, "--bank-max-frequency=fmax  maximum central frequency of bank (Hz)\n" );
+  fprintf( stderr, "--bank-max-mismatch=maxmm  maximum template mismatch in bank\n" );
+  fprintf( stderr, "--bank-only                generate bank only -- do not read data or filter\n" );
+
+  fprintf( stderr, "\nfiltering options:\n" );
+  fprintf( stderr, "--threshold                SNR threshold to identify triggers\n" );
+  fprintf( stderr, "--maximize-duration=maxdur  maximize triggers over duration maxdur (sec)\n" );
+  fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
+  fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
+
+  fprintf( stderr, "\ntrigger output options:\n" );
+  fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
+  fprintf( stderr, "--output-format=outfmt     output file format (\"XML\" or \"ASCII\")\n" );
+
+  fprintf( stderr, "\nintermediate data output options:\n" );
+  fprintf( stderr, "--write-raw-data           write raw data before injection or conditioning\n" );
+  fprintf( stderr, "--write-data               write data after injection and conditioning\n" );
+  fprintf( stderr, "--write-response           write response function used\n" );
+  fprintf( stderr, "--write-spectrum           write computed data power spectrum\n" );
+  fprintf( stderr, "--write-inv-spectrum       write inverse power spectrum\n" );
+  fprintf( stderr, "--write-bank               write template bank\n" );
+  fprintf( stderr, "--write-segment            write overwhitened data segments\n" );
+  fprintf( stderr, "--write-filter-output      write filtered data segments\n" );
 
   return 0;
 }

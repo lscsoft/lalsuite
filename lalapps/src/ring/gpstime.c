@@ -14,6 +14,8 @@ RCSID( "$Id$" );
 /* one nano seconds in seconds as a REAL8 */
 #define D_NS_SEC (1e-9)
 
+
+/* express LIGOTimeGPS as INT8 nanoseconds */
 INT8 epoch_to_ns( LIGOTimeGPS *epoch )
 {
   INT8 ns;
@@ -22,6 +24,8 @@ INT8 epoch_to_ns( LIGOTimeGPS *epoch )
   return ns;
 }
 
+
+/* convert INT8 nanoseconds to LIGOTimeGPS epoch */
 LIGOTimeGPS * ns_to_epoch( LIGOTimeGPS *epoch, INT8 ns )
 {
   epoch->gpsSeconds     = (INT4)( ns / I8_SEC_NS );
@@ -29,6 +33,8 @@ LIGOTimeGPS * ns_to_epoch( LIGOTimeGPS *epoch, INT8 ns )
   return epoch;
 }
 
+
+/* convert REAL8 seconds to INT8 nanoseconds */
 INT8 sec_to_ns( REAL8 sec )
 {
   INT8 ns;
@@ -36,6 +42,8 @@ INT8 sec_to_ns( REAL8 sec )
   return ns;
 }
 
+
+/* convert INT8 nanoseconds to REAL8 seconds */
 REAL8 ns_to_sec( INT8 ns )
 {
   REAL8 sec;

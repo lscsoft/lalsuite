@@ -15,6 +15,7 @@ int abrtflg;
 
 extern int vrbflg;
 
+/* print an error message and either exit or abort */
 int error( const char *fmt, ... )
 {
   va_list ap;
@@ -28,6 +29,7 @@ int error( const char *fmt, ... )
   return 1;
 }
 
+/* print an verbose message if verbose messaging is turned on */
 int verbose( const char *fmt, ... )
 {
   if ( vrbflg )
@@ -40,6 +42,7 @@ int verbose( const char *fmt, ... )
   return 0;
 }
 
+/* XLAL error handler to abort on error */
 void XLALAbortErrorHandler( const char *func, const char *file, int line,
     int errnum )
 {
@@ -47,6 +50,7 @@ void XLALAbortErrorHandler( const char *func, const char *file, int line,
   abort();
 }
 
+/* XLAL error handler to exit on error */
 void XLALExitErrorHandler( const char *func, const char *file, int line,
     int errnum )
 {
@@ -54,6 +58,7 @@ void XLALExitErrorHandler( const char *func, const char *file, int line,
   exit(1);
 }
 
+/* set handlers to abort on error */
 void set_abrt_on_error( void )
 {
   XLALSetErrorHandler( XLALAbortErrorHandler );
@@ -62,6 +67,7 @@ void set_abrt_on_error( void )
   return;
 }
 
+/* set handlers to exit on error */
 void set_exit_on_error( void )
 {
   XLALSetErrorHandler( XLALExitErrorHandler );

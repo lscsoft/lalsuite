@@ -26,6 +26,8 @@ RCSID( "$Id$" );
 #define CVS_SOURCE   "$Source$"
 #define CVS_DATE     "$Date$"
 
+/* a bunch of routines that are ring search specific */
+/* such routines are prefixed with "ring_" */
 static struct ring_params *ring_get_params( int argc, char **argv );
 static REAL4FFTPlan *ring_get_fft_fwdplan( struct ring_params *params );
 static REAL4FFTPlan *ring_get_fft_revplan( struct ring_params *params );
@@ -137,6 +139,7 @@ static struct ring_params *ring_get_params( int argc, char **argv )
 }
 
 
+/* gets the forward fft plan */
 static REAL4FFTPlan *ring_get_fft_fwdplan( struct ring_params *params )
 {
   REAL4FFTPlan *plan = NULL;
@@ -150,6 +153,7 @@ static REAL4FFTPlan *ring_get_fft_fwdplan( struct ring_params *params )
 }
 
 
+/* gets the reverse fft plan */
 static REAL4FFTPlan *ring_get_fft_revplan( struct ring_params *params )
 {
   REAL4FFTPlan *plan = NULL;
@@ -163,6 +167,7 @@ static REAL4FFTPlan *ring_get_fft_revplan( struct ring_params *params )
 }
 
 
+/* gets the data, performs any injections, and conditions the data */
 static REAL4TimeSeries *ring_get_data( struct ring_params *params )
 {
   REAL4TimeSeries *channel = NULL;
@@ -200,6 +205,7 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
 }
 
 
+/* gets the up-to-date response function */
 static COMPLEX8FrequencySeries *ring_get_response( struct ring_params *params )
 {
   COMPLEX8FrequencySeries *response = NULL;
@@ -215,6 +221,7 @@ static COMPLEX8FrequencySeries *ring_get_response( struct ring_params *params )
 }
 
 
+/* computes the inverse power spectrum */
 static REAL4FrequencySeries *ring_get_invspec(
     REAL4TimeSeries         *channel,
     COMPLEX8FrequencySeries *response,
@@ -249,6 +256,7 @@ static REAL4FrequencySeries *ring_get_invspec(
 }
 
 
+/* creates the bank of requested ringdown templates (those in the list to do) */
 static RingTemplateBank *ring_get_bank( struct ring_params *params )
 {
   RingTemplateBank *bank = NULL;
@@ -293,6 +301,7 @@ static RingTemplateBank *ring_get_bank( struct ring_params *params )
 }
 
 
+/* creates the requested data segments (those in the list of segments to do) */
 static RingDataSegments *ring_get_segments(
     REAL4TimeSeries         *channel,
     COMPLEX8FrequencySeries *response,
@@ -347,6 +356,7 @@ static RingDataSegments *ring_get_segments(
 }
 
 
+/* frees all memory that these routines have created */
 static void ring_cleanup(
     ProcessParamsTable      *procpar,
     REAL4FFTPlan            *fwdplan,
@@ -408,6 +418,8 @@ static void ring_cleanup(
 }
 
 
+/* routine to see if integer i is in a list of integers to do */
+/* e.g., 2, 7, and 222 are in the list "1-3,5,7-" but 4 is not */
 #define BUFFER_SIZE 256
 static int is_in_list( int i, const char *list )
 {

@@ -18,26 +18,45 @@
 
 RCSID( "$Id$" );
 
+
+/*
+ *
+ * Routines to output event triggers.
+ *
+ */
+
+
+/* macro is_option() (and friends): determine if string is an option */
+/* i.e., does it start with "-[a-zA-Z]" or "--[a-zA-Z]" */
 #define is_long_option(s) \
   ( strlen(s) > 2 && (s)[0] == '-' && (s)[1] == '-' && isalpha( s[2] ) )
 #define is_short_option(s) \
   ( strlen(s) > 1 && (s)[0] == '-' && isalpha( s[1] ) )
 #define is_option(s) ( is_long_option(s) || is_short_option(s) )
 
+/* routine to output events as ascii */
 static int ring_output_events_asc( 
     SnglBurstTable     *events,
     struct ring_params *params
     );
+
+/* routine to output events as LIGOLw XML */
 static int ring_output_events_xml( 
     SnglBurstTable     *events,
     ProcessParamsTable *processParamsTable,
     struct ring_params *params
     );
+
+
+/* creates a process table */
 static ProcessTable * ring_create_process_table( struct ring_params *params );
+
+
+/* creates a search-summary table */
 static SearchSummaryTable *ring_create_search_summary( struct ring_params *params );
 
-/* memory allocation must be done without LALMalloc because this */
-/* routine is called before lalDebugLevel is set */
+
+/* creates a process params table from command line arguments */
 ProcessParamsTable * create_process_params( int argc, char **argv,
     const char *program )
 {
@@ -88,6 +107,7 @@ ProcessParamsTable * create_process_params( int argc, char **argv,
 }
 
 
+/* routine to output events */
 int ring_output_events( 
     SnglBurstTable     *events,
     ProcessParamsTable *processParamsTable,
@@ -103,6 +123,8 @@ int ring_output_events(
   return 0;
 }
 
+
+/* routine to output events as an ascii file */
 static int ring_output_events_asc( 
     SnglBurstTable     *events,
     struct ring_params *params
@@ -129,6 +151,8 @@ static int ring_output_events_asc(
   return 0;
 }
 
+
+/* routine to output events as LIGOLw XML file */
 static int ring_output_events_xml( 
     SnglBurstTable     *events,
     ProcessParamsTable *processParamsTable,
@@ -150,6 +174,7 @@ static int ring_output_events_xml(
   memset( &ringEvents, 0, sizeof( ringEvents ) );
   memset( &results, 0, sizeof( results ) );
 
+  /* create process table and search summary tables */
   process.processTable = ring_create_process_table( params );
   processParams.processParamsTable = processParamsTable;
   searchSummary.searchSummaryTable = ring_create_search_summary( params );
@@ -192,6 +217,7 @@ static int ring_output_events_xml(
 }
 
 
+/* routine to create process table */
 ProcessTable *ring_create_process_table( struct ring_params *params )
 {
   LALStatus status = blank_status;
@@ -200,6 +226,7 @@ ProcessTable *ring_create_process_table( struct ring_params *params )
 
   processTable = LALCalloc( 1, sizeof( *processTable ) );
 
+  /* call lalapps routine to populate the process table */
   LAL_CALL( populate_process_table( &status, processTable, params->programName,
         params->cvsRevision, params->cvsSource, params->cvsDate ), &status );
   strncpy( processTable->comment, " ", LIGOMETA_COMMENT_MAX );
@@ -210,6 +237,8 @@ ProcessTable *ring_create_process_table( struct ring_params *params )
 }
 
 
+/* routine to create search summary table */
+/* FIXME: need to handle trigstarttime and trigendtime */
 static SearchSummaryTable *ring_create_search_summary( struct ring_params *params )
 {
   SearchSummaryTable *searchSummary = NULL;
@@ -249,10 +278,13 @@ static SearchSummaryTable *ring_create_search_summary( struct ring_params *param
  */
 
 
+/* routine to construct an appropriately-formatted filename from series name */
 static int generate_file_name( char *fname, size_t size,
     const char *sname, int t, int dt );
 #define FILENAME_SIZE 256
 
+
+/* routine to write a time series */
 int write_REAL4TimeSeries( REAL4TimeSeries *series )
 {
   char fname[FILENAME_SIZE];
@@ -265,6 +297,8 @@ int write_REAL4TimeSeries( REAL4TimeSeries *series )
   return 0;
 }
 
+
+/* routine to write a real frequency series */
 int write_REAL4FrequencySeries( REAL4FrequencySeries *series )
 {
   char fname[FILENAME_SIZE];
@@ -277,6 +311,8 @@ int write_REAL4FrequencySeries( REAL4FrequencySeries *series )
   return 0;
 }
 
+
+/* routine to write a complex frequency series */
 int write_COMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series )
 {
   char fname[FILENAME_SIZE];
@@ -289,6 +325,8 @@ int write_COMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series )
   return 0;
 }
 
+
+/* routine to write a ringdown template bank */
 int write_bank( RingTemplateBank *bank )
 {
   const char *fname = "RING_BANK.dat";
@@ -306,6 +344,8 @@ int write_bank( RingTemplateBank *bank )
   return 0;
 }
 
+
+/* routine to construct an appropriately-formatted filename from series name */
 static int generate_file_name( char *fname, size_t size,
     const char *sname, int t, int dt )
 {
@@ -334,5 +374,3 @@ static int generate_file_name( char *fname, size_t size,
 
   return 0;
 }
-
-

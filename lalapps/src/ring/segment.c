@@ -15,6 +15,7 @@
 
 RCSID( "$Id$" );
 
+/* routine to compute a single overwhitened data segment */
 int compute_data_segment(
     COMPLEX8FrequencySeries  *segment,
     UINT4                     segmentNumber,
@@ -44,11 +45,11 @@ int compute_data_segment(
   /* allocate memory for the data */
   segment->data = XLALCreateCOMPLEX8Vector( segmentLength/2 + 1 );
 
+  /* create a time series that contains only the relevant data */
   seg        = *series;
   vec.length = segmentLength;
   vec.data   = seg.data->data + segmentNumber * segmentStride;
   seg.data   = &vec;
-
   ns  = epoch_to_ns( &seg.epoch );
   ns += sec_to_ns( segmentNumber * strideDuration );
   ns_to_epoch( &seg.epoch, ns );

@@ -14,8 +14,10 @@
 
 RCSID( "$Id$" );
 
+/* maximum length of filename */
 #define FILENAME_LENGTH 255
 
+/* routine to inject a signal with parameters read from a LIGOLw-format file */
 int inject_signal( REAL4TimeSeries *series, int injectSignalType, 
     const char *injectFile, const char *calCacheFile, REAL4 responseScale )
 {
@@ -47,6 +49,8 @@ int inject_signal( REAL4TimeSeries *series, int injectSignalType,
   stopSec  = startSec + ceil( 1e-9 * series->epoch.gpsNanoSeconds
       + series->deltaT * series->data->length );
 
+  /* call the approprate LAL injection routine */
+  /* FIXME: only bursts done at the moment */
   switch ( injectSignalType )
   {
     case burst_inject:

@@ -14,28 +14,9 @@
 
 RCSID( "$Id$" );
 
-/*
- * prototypes since these seem to be missing
- */
 
-int XLALREAL4AverageSpectrumMedianMean(
-    REAL4FrequencySeries        *spectrum,
-    REAL4TimeSeries             *tseries,
-    UINT4                        seglen,
-    UINT4                        stride,
-    REAL4Window                 *window,
-    REAL4FFTPlan                *plan
-    );
-
-int XLALREAL4SpectrumInvertTruncate(
-    REAL4FrequencySeries        *spectrum,
-    REAL4                        lowfreq,
-    UINT4                        seglen,
-    UINT4                        trunclen,
-    REAL4FFTPlan                *fwdplan,
-    REAL4FFTPlan                *revplan
-    );
-
+/* routine to compute an average spectrum from time series data */
+/* FIXME: only uses median-mean method */
 REAL4FrequencySeries *compute_average_spectrum(
     REAL4TimeSeries         *series,
     REAL8                    segmentDuration,
@@ -58,7 +39,7 @@ REAL4FrequencySeries *compute_average_spectrum(
 
   window = XLALCreateWelchREAL4Window( segmentLength );
 
-  if ( whiteSpectrum )
+  if ( whiteSpectrum ) /* just return a constant spectrum */
   {
     UINT4 k;
     REAL4 spec;
@@ -72,7 +53,7 @@ REAL4FrequencySeries *compute_average_spectrum(
     spectrum->epoch  = series->epoch;
     spectrum->deltaF = 1.0/segmentDuration;
   }
-  else
+  else /* compute average spectrum using median-mean method */
   {
     verbose( "estimating average spectrum using median-mean method\n" );
     XLALREAL4AverageSpectrumMedianMean( spectrum, series, segmentLength,
@@ -88,6 +69,7 @@ REAL4FrequencySeries *compute_average_spectrum(
 }
 
 
+/* routine to invert and truncate (to have compact time support) a spectrum */
 int invert_spectrum(
     REAL4FrequencySeries *spectrum,
     REAL8                 dataSampleRate,
@@ -124,6 +106,7 @@ int invert_spectrum(
 }
 
 
+/* routine to scale a spectrum by the magnitude of the response function */
 int calibrate_spectrum(
     REAL4FrequencySeries    *spectrum,
     COMPLEX8FrequencySeries *response,
