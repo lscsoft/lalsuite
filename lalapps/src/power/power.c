@@ -1,5 +1,6 @@
 #include "power.h"
 #include <lal/TimeSeries.h>
+#include <lal/EPSearch.h>
 
 /* declare the parsing function which is at the end of the file */
 int snprintf(char *str, size_t size, const  char  *format, ...);
@@ -612,7 +613,7 @@ int main( int argc, char *argv[])
         }
 
         /* This is the main engine of the excess power method */ 
-        LAL_CALL( EPSearch (&stat, &interval, params, &tmpEvent, tmpDutyCycle), &stat);
+        LAL_CALL( EPSearch (&stat, interval, params, &tmpEvent, tmpDutyCycle), &stat);
 
         if ( tmpEvent != NULL ){
 
