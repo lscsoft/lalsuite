@@ -21,6 +21,7 @@
 #include <lal/LALInspiralBank.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXMLHeaders.h>
+#include <lal/LIGOLwXMLRead.h>
 
 int
 SnglInspiralTableFromLIGOLw (

@@ -9,14 +9,17 @@
  *-----------------------------------------------------------------------
  */
 
+
 #include "ligolwbank.h"
 
+#if 0
 struct MetaTableDirectory
 {
   char *name;
   int   pos;
   int   idx;
 };
+#endif
 
 #define CLOBBER_EVENTS \
     while ( *eventHead ); \
@@ -40,7 +43,7 @@ SnglInspiralTableFromLIGOLw (
   SnglInspiralTable                    *thisEvent = NULL;
   struct MetaioParseEnvironment         parseEnv;
   const  MetaioParseEnv                 env = &parseEnv;
-  struct MetaTableDirectory tableDir[] =
+  MetaTableDirectory tableDir[] =
   {
     {"ifo",                     -1, 0},
     {"search",                  -1, 1},
@@ -304,7 +307,7 @@ InspiralTmpltBankFromLIGOLw (
   int   pParParam;
   int   pParValue;
   REAL4 minMatch = 0;
-  struct MetaTableDirectory tableDir[] =
+  MetaTableDirectory tableDir[] =
   {
     {"mass1",   -1, 0},
     {"mass2",   -1, 1},
@@ -522,7 +525,7 @@ SimInspiralTableFromLIGOLw (
   SimInspiralTable                     *thisSim = NULL;
   struct MetaioParseEnvironment         parseEnv;
   const  MetaioParseEnv                 env = &parseEnv;
-  struct MetaTableDirectory tableDir[] =
+  MetaTableDirectory tableDir[] =
   {
     {"geocent_end_time",    -1, 0},
     {"geocent_end_time_ns", -1, 1},
@@ -665,3 +668,4 @@ SimInspiralTableFromLIGOLw (
 }
 
 #undef CLOBBER_SIM
+
