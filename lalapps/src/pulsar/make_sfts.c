@@ -155,7 +155,11 @@ int deltatime(const char *instrument, int gpstime, int *valid){
   int (*data)[4];
   int i;
   
-  /* corrections for Livingston L1 during S1 */
+  /* corrections for Livingston L1 during S1.  It would probably make
+     sense to discard the first few hours for which there IS no timing
+     data, but since the first SFT that we make starts at time
+     L1.714179401 there is no need. And the first calibrated SFT is at
+     time 714299280 */
   int l1time[][4]={
     {714177080, 714855840, -121, 678760},
     {714855841, 715618813, -120, 762972},
@@ -163,14 +167,21 @@ int deltatime(const char *instrument, int gpstime, int *valid){
     {0,         INT_MAX,           -121,  0},
   };
   
-  /* corrections for Hanford H1 during S1 */
+  /* corrections for Hanford H1 during S1.  Again, it would probably
+     make sense to discard the early times for which we have no timing
+     data (about the first fifty hours of the run). In fact the first
+     SFT is at time 714151661 which is BEFORE the first time listed
+     below.  But in fact we don't have calibration information until
+     time 714357188.  So this table is OK. */
   int h1time[][4]={
     {714335520, 715618813,   -95, 1283293},
     /* value to use if time range not found */
     {0,         INT_MAX,     -95,  0},
   };
   
-  /* corrections for Hanford H2 during S1 */
+  /* corrections for Hanford H2 during S1.  Here the pattern of timing
+     is SO irregular that we discard any segments for which we have no
+     data. */
   int h2time[][4]={
     {714256920, 714407160,  5463, 150240},
     {714407640, 714507180, -164, 99540},
