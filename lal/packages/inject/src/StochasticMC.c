@@ -851,6 +851,7 @@ void LALStochasticMC (LALStatus *status,
   RETURN(status);
 }
 
+#if 0
 void LALStochasticMCStand (LALStatus *status,
 		SSSimStochBGOutput *MCoutput,
 		StochasticMCSInput  *MCinput,
@@ -1195,6 +1196,7 @@ void LALStochasticMCStand (LALStatus *status,
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
+#endif
 
 
 void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData, REAL4Vector *output,
