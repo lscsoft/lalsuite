@@ -2934,18 +2934,18 @@ int main(int argc, char *argv[]){
 
   int skipsighandler=0;
   
-  globargc=argc;
-  globargv=argv;
-  
 #if defined(__GNUC__)
   /* see if user has created a DEBUG_CFS file at the top level... */
-  if (fopen("../../DEBUG_CFS", "r") || fopen("./DEBUG_CFS", "r")) {
+  FILE *fp_debug=NULL;
+  
+  if ((fp_debug=fopen("../../DEBUG_CFS", "r")) || (fp_debug=fopen("./DEBUG_CFS", "r"))) {
     
     char commandstring[256];
     char resolved_name[256];
     char *ptr;
     pid_t process_id=getpid();
     
+    fclose(fp_debug);
     fprintf(stderr, "Found ../../DEBUG_CFS file, so trying real-time debugging\n");
     
     /* see if the path is absolute or has slashes.  If it has
@@ -2967,7 +2967,10 @@ int main(int argc, char *argv[]){
     }
   }
 #endif
-  
+
+  globargc=argc;
+  globargv=argv;
+    
   /* install signal handler (for ALL threads) for catching
      Segmentation violations, floating point exceptions, Bus
      violations and Illegal instructions */
