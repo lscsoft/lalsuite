@@ -27,7 +27,8 @@ NRCSID( RESPONSEC, "$Id$" );
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-z nz z_1 ... z_nz] [-p np p_1 .... p_np] 
-                         [-g gain] [-f npoints fmin fmax] \n"
+                         [-g gain] [-f npoints fmin fmax] [-o outfile]
+                         [-i ilwdfile] \n"
 
 /* Macros for printing errors and testing subroutines. */
 #define ERROR( code, msg, statement )                                \
@@ -102,7 +103,12 @@ int main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-z" ) ) {
       arg++;
       nz = atoi( argv[arg] );
-      if ( argc > arg + nz ) {
+      if ( nz == 0 ){
+        calrec.zeros = (REAL8Vector *) LALMalloc( sizeof(REAL8Vector) );
+        calrec.zeros->length=nz;
+        arg++;
+      }
+      else if ( argc > arg + nz ) {
         calrec.zeros=NULL;
         LALDCreateVector(&stat, &calrec.zeros, nz);
         for (i=0 ; i<nz ; i++)
@@ -120,7 +126,12 @@ int main(int argc, char **argv)
     else if ( !strcmp( argv[arg], "-p" ) ) {
       arg++;
       np = atoi( argv[arg] );
-      if ( argc > arg + np ) {
+      if ( np == 0 ){
+        calrec.poles = (REAL8Vector *) LALMalloc( sizeof(REAL8Vector) );
+        calrec.poles->length=np;
+        arg++;
+      }
+      else if ( argc > arg + np ) {
         calrec.poles=NULL;
         LALDCreateVector(&stat, &calrec.poles, np);
         for (i=0 ; i<np ; i++)
@@ -161,7 +172,6 @@ int main(int argc, char **argv)
       return RESPONSEC_EARG;
     }
   } /* End of argument parsing loop. */
-
   /* Compute the transfer function */
   LALComputeTransfer(&stat, &calrec);
  
