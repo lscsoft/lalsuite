@@ -14,7 +14,7 @@ TIME_CHUNK_MAX_SIZE=1024
 TIME_CHUNK_MIN_SIZE=4
 
 # the path to the lalapps_power executable
-EXECUTABLE=/home/saikat/bin/lalapps_power
+EXECUTABLE=/home/saikat/src/lalapps/src/power/lalapps_power
 
 # Make sure intstrument is consistent for 
 INSTRUMENT=H
@@ -128,7 +128,7 @@ WINDOW=2
 COMMENT="Testing new parameters"
 
 # NEED TO ADD COMMENT EXPLANING DEBUG LEVELS
-DBGLEVEL=65
+DBGLEVEL=3
 
 #NEED DESCRIPTION FOR T
 T=1

@@ -293,10 +293,9 @@ sub f_writeJobToCondorSubmitFile {
 	my $nseg = 2*($stopSec - $startSec) - 1;
 	my $olap = $npts/2;
 	my $numpts = $npts + ($npts - $olap)*( $nseg-1)+ 2*$olap;
-	my $comment = "${$params}{'COMMENT'}-$startSec-$stopSec";
+
 	#replace spaces in comment w/ underscores
-	$comment =~ s/ /_/g;
-	print "comment=$comment\n";
+	${$params}{'COMMENT'} =~ s/ /_/g;
 
 	# BUILD THE ARGS
 	my $args = << "POWER_ARGS";
@@ -323,7 +322,7 @@ sub f_writeJobToCondorSubmitFile {
 		--start_time $startSec
       --start_time_ns 0 
 		--numpts $numpts
-		--comment $comment
+		--comment ${$params}{'COMMENT'}
 		--dbglevel ${$params}{'DBGLEVEL'}
 		--verbose
 POWER_ARGS
@@ -359,7 +358,8 @@ sub f_submitJobs {
 	my $jobsSubmitScript = shift;
 	
 	#change directory to outpath before submitting
-	chdir ${$params}{'OUTPUT_PATH'};
+	chdir ${$params}{'OUTPUT_PATH'} . "/$RUN_ID/xml/" 
+		or die "Couldn't change to dir ${$params}{'OUTPUT_PATH'}/$RUN_NUM/xml/ in f_submitJobs.\n" ;
 	
 	#submit the jobs
 	system("condor_submit $jobsSubmitScript");
