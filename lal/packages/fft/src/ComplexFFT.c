@@ -27,6 +27,8 @@
  *-----------------------------------------------------------------------
  */
 
+#include "LALConfig.h"
+
 #ifdef FFTW_PREFIX
 #include "sfftw.h"
 #else /* not defined FFTW_PREFIX */

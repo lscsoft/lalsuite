@@ -3,9 +3,6 @@ SUBDIRS = include packages doc lib
 CLEANFILES = $(srcdir)/include/*.h
 EXTRA_DIST = lalspec.pdf mklibmake
 
-#disable autoheader
-AUTOHEADER=echo
-
 # cvs-clean: more than maintainer-clean, this cleans
 # everything not in the cvs archive.
 cvs-clean: maintainer-clean

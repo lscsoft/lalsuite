@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(include/LALConfig.h.in)
+AC_INIT(include/LALConfigure.h.in)
 AM_INIT_AUTOMAKE(lal, 0.5-beta)
-AM_CONFIG_HEADER(include/LALConfig.h)
+AM_CONFIG_HEADER(include/LALConfigure.h)
 
 dnl Arguments.
 AC_ARG_ENABLE(frame,

@@ -132,7 +132,7 @@ AC_TRY_RUN([
 int main() { return sizeof(fftw_real)-4; }
 ],
 AC_MSG_RESULT(yes)
-AC_DEFINE(FFTW_PREFIX),
+AC_DEFINE(FFTW_PREFIX, 1, FFTW prefix),
 AC_TRY_RUN([
 #include <stdio.h>
 #include <fftw.h>

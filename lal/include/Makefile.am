@@ -1,8 +1,4 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = LALConfig.h
-EXTRA_DIST = LALConfig.h.in
-MAINTAINERCLEANFILES = LALConfig.h
-
-#disable autoheader
-AUTOHEADER=echo
-
+pkginclude_HEADERS = LALConfigure.h
+EXTRA_DIST = LALConfigure.h.in
+MAINTAINERCLEANFILES = LALConfigure.h
