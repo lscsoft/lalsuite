@@ -80,7 +80,7 @@ LALFindChirpSPDataInit (
 
   /* check that we are making a waveform that we know about */
   if ( params->approximant != TaylorF2 && params->approximant != BCV 
-       && params->approximant != BCVSpin)
+      && params->approximant != BCVSpin)
   {
     ABORT( status, FINDCHIRPSPH_EUAPX, FINDCHIRPSPH_MSGEUAPX );
   }
@@ -113,7 +113,7 @@ LALFindChirpSPDataInit (
 
 
   LALCreateVector( status->statusPtr, &dataParamPtr->ampVec, 
-        (params->numPoints)/2 + 1 );
+      (params->numPoints)/2 + 1 );
   BEGINFAIL( status )
   {
     LALFree( dataParamPtr );
@@ -125,16 +125,17 @@ LALFindChirpSPDataInit (
   amp[0] = 0.0;
 
   for ( k = 1; k < dataParamPtr->ampVec->length; ++k )
-    {
+  {
     amp[k] = pow( ((REAL4) k / (REAL4)params->numPoints), exponent );
-    }
-  
+  }
+
+
   /*
    *
    * for the BCV templates, allocate and fill vector for f^(-1/2)
    *
    */
-  
+
 
   /* only do this if a BCV waveform is requested */
   if ( params->approximant == BCV )
@@ -154,16 +155,17 @@ LALFindChirpSPDataInit (
     ampBCV[0] = 0.0;
 
     for ( k = 1; k < dataParamPtr->ampVecBCV->length; ++k )
-      {
+    {
       ampBCV[k] = pow( ((REAL4) k / (REAL4)params->numPoints), exponentBCV );
-      }
+    }
   }
+
   /*
    *
    * for the BCVSpin templates, allocate and fill vector for f^(-5/3) 
    *
    */
-  
+
 
   /* only do this if a BCVSpin waveform is requested */
   if ( params->approximant == BCVSpin )
@@ -173,7 +175,7 @@ LALFindChirpSPDataInit (
     BEGINFAIL( status )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin1),
-	   status );
+          status );
       LALFree( dataParamPtr );
       *output = NULL;
     }
@@ -183,19 +185,19 @@ LALFindChirpSPDataInit (
     ampBCVSpin1[0] = 0.0;
 
     for ( k = 1; k < dataParamPtr->ampVecBCVSpin1->length; ++k )
-      {
+    {
       ampBCVSpin1[k] = pow( ((REAL4) k / (REAL4)params->numPoints), 
-                       exponentBCVSpin1 );
-      }
+          exponentBCVSpin1 );
+    }
   }
-  
- 
+
+
   /*
    *
    * for the BCVSpin templates, allocate and fill vector for f^(-2/3) 
    *
    */
-  
+
 
   /* only do this if a BCVSpin waveform is requested */
   if ( params->approximant == BCVSpin )
@@ -205,7 +207,7 @@ LALFindChirpSPDataInit (
     BEGINFAIL( status )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin2),
-	   status );
+          status );
       LALFree( dataParamPtr );
       *output = NULL;
     }
@@ -215,13 +217,13 @@ LALFindChirpSPDataInit (
     ampBCVSpin2[0] = 0.0;
 
     for ( k = 1; k < dataParamPtr->ampVecBCVSpin2->length; ++k )
-      {
+    {
       ampBCVSpin2[k] = pow( ((REAL4) k / (REAL4)params->numPoints), 
-		       exponentBCVSpin2 );
-      }
+          exponentBCVSpin2 );
+    }
   }
-  
- 
+
+
   /*
    *
    * create fft plans and workspace vectors
@@ -231,7 +233,7 @@ LALFindChirpSPDataInit (
 
   /* foward fft plan */
   LALCreateForwardRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan, 
-        params->numPoints, 0 );
+      params->numPoints, 0 );
   BEGINFAIL( status )
   {
     TRY(LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
@@ -244,12 +246,12 @@ LALFindChirpSPDataInit (
     if ( dataParamPtr->ampVecBCVSpin1 )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin1),
-	   status);
+          status);
     }
     if ( dataParamPtr->ampVecBCVSpin2 )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin2),
-	   status);
+          status);
     }
     LALFree( dataParamPtr );
     *output = NULL;
@@ -258,11 +260,11 @@ LALFindChirpSPDataInit (
 
   /* inverse fft plan */
   LALCreateReverseRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan, 
-        params->numPoints, 0 );
+      params->numPoints, 0 );
   BEGINFAIL( status )
   {
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
-	status );
+        status );
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
         status );
     if ( dataParamPtr->ampVecBCV )
@@ -273,12 +275,12 @@ LALFindChirpSPDataInit (
     if ( dataParamPtr->ampVecBCVSpin1 )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin1),
-	   status);
+          status);
     }
     if ( dataParamPtr->ampVecBCVSpin2 )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin2),
-	   status);
+          status);
     }
     LALFree( dataParamPtr );
     *output = NULL;
@@ -291,9 +293,9 @@ LALFindChirpSPDataInit (
   BEGINFAIL( status )
   {
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), 
-	status ); 
+        status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
-	status );
+        status );
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
         status );
     if ( dataParamPtr->ampVecBCV )
@@ -304,12 +306,12 @@ LALFindChirpSPDataInit (
     if ( dataParamPtr->ampVecBCVSpin1 )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin1),
-	   status);
+          status);
     }
     if ( dataParamPtr->ampVecBCVSpin2 )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin2),
-	   status);
+          status);
     }
     LALFree( dataParamPtr );
     *output = NULL;
@@ -324,9 +326,9 @@ LALFindChirpSPDataInit (
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), 
         status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), 
-	status ); 
+        status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
-	status );
+        status );
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
         status );
     if ( dataParamPtr->ampVecBCV )
@@ -337,32 +339,32 @@ LALFindChirpSPDataInit (
     if ( dataParamPtr->ampVecBCVSpin1 )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin1),
-	   status);
+          status);
     }
     if ( dataParamPtr->ampVecBCVSpin2 )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin2),
-	   status);
+          status);
     }
     LALFree( dataParamPtr );
     *output = NULL;
   }
   ENDFAIL( status );
   CHECKSTATUSPTR (status);
-  
+
   /* template power vector */
   LALCreateVector( status->statusPtr, &dataParamPtr->tmpltPowerVec, 
       params->numPoints/2 + 1 );
   BEGINFAIL( status )
   {
     TRY( LALCDestroyVector( status->statusPtr, &dataParamPtr->wtildeVec), 
-	status );
+        status );
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->wVec ), 
         status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->invPlan ), 
-	status ); 
+        status ); 
     TRY( LALDestroyRealFFTPlan( status->statusPtr, &dataParamPtr->fwdPlan ), 
-	status );
+        status );
     TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVec ), 
         status );
     if ( dataParamPtr->ampVecBCV )
@@ -373,12 +375,12 @@ LALFindChirpSPDataInit (
     if ( dataParamPtr->ampVecBCVSpin1 )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin1),
-	   status);
+          status);
     }
     if ( dataParamPtr->ampVecBCVSpin2 )
     {
       TRY( LALDestroyVector( status->statusPtr, &dataParamPtr->ampVecBCVSpin2),
-	   status);
+          status);
     }
     LALFree( dataParamPtr );
     *output = NULL;
@@ -412,12 +414,12 @@ LALFindChirpSPDataInit (
       if ( dataParamPtr->ampVecBCVSpin1 )
       {
         TRY( LALDestroyVector( status->statusPtr, 
-			       &dataParamPtr->ampVecBCVSpin1), status);
+              &dataParamPtr->ampVecBCVSpin1), status);
       }
       if ( dataParamPtr->ampVecBCVSpin2 )
       {
         TRY( LALDestroyVector( status->statusPtr, 
-			       &dataParamPtr->ampVecBCVSpin2), status);
+              &dataParamPtr->ampVecBCVSpin2), status);
       }
       LALFree( dataParamPtr );
       *output = NULL;
@@ -452,13 +454,13 @@ LALFindChirpSPDataFinalize (
    * check that the arguments are reasonable
    *
    */
-  
+
 
   /* make sure handle is non-null and points to a non-null pointer */
   ASSERT( output, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
   ASSERT( *output, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
-  
+
   /*
    *
    * destroy fft plans and workspace vectors
@@ -468,7 +470,7 @@ LALFindChirpSPDataFinalize (
 
   /* local pointer to structure */
   dataParamPtr = *output;
-  
+
   LALDestroyRealFFTPlan (status->statusPtr, &dataParamPtr->fwdPlan);
   CHECKSTATUSPTR (status);
 
@@ -507,13 +509,13 @@ LALFindChirpSPDataFinalize (
     CHECKSTATUSPTR (status);
   }
 
-   if ( dataParamPtr->ampVecBCVSpin1 )
+  if ( dataParamPtr->ampVecBCVSpin1 )
   {
     LALDestroyVector (status->statusPtr, &dataParamPtr->ampVecBCVSpin1);
     CHECKSTATUSPTR (status);
   }
 
-   if ( dataParamPtr->ampVecBCVSpin2 )
+  if ( dataParamPtr->ampVecBCVSpin2 )
   {
     LALDestroyVector (status->statusPtr, &dataParamPtr->ampVecBCVSpin2);
     CHECKSTATUSPTR (status);
