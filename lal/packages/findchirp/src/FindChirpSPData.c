@@ -441,7 +441,7 @@ LALFindChirpSPData (
     chisqBin     = fcSeg->chisqBinVec->data;
     numChisqBins = fcSeg->chisqBinVec->length - 1;
 
-    ASSERT( params->wtildeVec->length = fcSeg->data->data->length, status,
+    ASSERT( params->wtildeVec->length == fcSeg->data->data->length, status,
         FINDCHIRPSP_EMISM, FINDCHIRPSP_MSGEMISM );
 
 
