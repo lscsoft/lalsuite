@@ -127,7 +127,7 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
   {
     /* scan sim data channels */
     type = LAL_SIM_CHAN;
-    ts = stream->file->toc->proc;
+    ts = stream->file->toc->sim;
     while ( ts && strcmp( channel, ts->name ) )
       ts = ts->next;
   }
@@ -135,7 +135,7 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
   {
     /* scan proc data channels */
     type = LAL_PROC_CHAN;
-    ts = stream->file->toc->sim;
+    ts = stream->file->toc->proc;
     while ( ts && strcmp( channel, ts->name ) )
       ts = ts->next;
   }
