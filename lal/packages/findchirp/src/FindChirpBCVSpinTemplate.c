@@ -69,10 +69,6 @@ LALFindChirpBCVSpinTemplate (
 {
   UINT4        numPoints  = 0;
   REAL4        deltaF     = 0.0;
-  REAL4        m          = 0.0;  
-  REAL4        chirpMass  = 0.0;
-  REAL4        eta        = 0.0; 
-  REAL4        mu         = 0.0;  /* now only used in normalisation */
   COMPLEX8    *expPsi     = NULL;
   REAL4       *xfac       = NULL;
   REAL4        x1         = 0.0;  
@@ -84,23 +80,21 @@ LALFindChirpBCVSpinTemplate (
   REAL4        psi20      = 0.0;        
   REAL4        fHi        = 0.0;  
   INT4         k          = 0;
-  INT4         i;
-  INT4         j;
-  REAL4        factor;
+  /*REAL4        factor;*/
   INT4         kmin       = 0;     
   INT4         kmax       = 0;    
-  REAL4        distNorm;
-  const REAL4  cannonDist = 1.0; /* Mpc */
  
   FILE        *fpTmpltIm      = NULL;
   FILE        *fpTmpltRe      = NULL;
-  FILE        *fpTemplate     = NULL;
+  /* FILE        *fpTemplate     = NULL; */
 
-  RealFFTPlan *prev           = NULL;
+  /*RealFFTPlan *prev           = NULL;
   REAL4Vector *hVec           = NULL;
   REAL4Vector *HVec           = NULL;
-  REAL4        invNumPoints;
- 
+  REAL4        invNumPoints;*/
+
+  int		doTest;
+  
   INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSBCVTEMPLATEC );
   ATTATCHSTATUSPTR( status );
 
@@ -135,10 +129,18 @@ LALFindChirpBCVSpinTemplate (
   /* check that the input exists */
   ASSERT( tmplt, status, FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 
+  /*
+   * Choose level of output
+   */
+  
+  doTest = 0; /* Set to 1 for lots of output, useful for testing */
+  
+  if (doTest ==1)
+  {	  
   fpTmpltIm  =  fopen("tmpltIm.dat","w");
   fpTmpltRe  =  fopen("tmpltRe.dat","w");
-  fpTemplate =  fopen("Template.dat","w");
-
+  /* fpTemplate =  fopen("Template.dat","w"); */
+  }
 
   /*
    *
@@ -151,11 +153,7 @@ LALFindChirpBCVSpinTemplate (
   expPsi    = fcTmplt->data->data;
   xfac      = params->xfacVec->data;
   numPoints = fcTmplt->data->length;
-
-  /*fprintf (stdout, "expPsi    = %e \n", expPsi);
-  fprintf (stdout, "xfac      = %e \n", xfac);
-  fprintf (stdout, "numPoints = %d \n", numPoints);*/
-
+  
   /* store the waveform approximant */
   fcTmplt->approximant = BCVSpin;
 
@@ -170,61 +168,25 @@ LALFindChirpBCVSpinTemplate (
   psi20 = 0.0; /*tmplt->psi4;*/
   /* XXX work needed here... */
 
-  fprintf (stdout, "psi00 = %e \n", psi00);
-  fprintf (stdout, "psi15 = %e \n", psi15);
-
   /* parameters */
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); 
-  /* XXX not defined in tmplt */
-  /* m      = - psi15 / ( 16 * LAL_PI * LAL_PI * psi00 ); */      /* total mass */
-  /* eta    = 3 / ( 128 * psi00 * pow( LAL_PI * m, 5.0/3.0 ) );*/ /* symmetric mass ratio */      
-  /*mu      = eta * m; */
-  /* defns checked against Bank documentation */
 
-  /*fprintf (stdout, "m     = %e \n", m);
-  fprintf (stdout, "eta   = %e \n", eta);
-  fprintf (stdout, "mu    = %e \n", mu);*/
-
-  /* defining chirp mass (to the power of 5/3 => rename) */
-  /* chirpMass = pow( 1.0 / LAL_PI, 5.0/3.0) * ( 3 / (128 * psi00));*/
-  /*  chirpMass = m * pow(eta,3/5); */
-
-  /*
-   *
-   * template dependent normalisation
-   * for BCV
-   *
-   */
-
-  /* template dependent normalisation */
-  /*distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1.0e6 * LAL_PC_SI);
-  distNorm *= params->dynRange;
-
-  fcTmplt->tmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
-    pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
-    pow( LAL_MTSUN_SI / (REAL4) params->deltaT, -1.0/6.0 );
-  
-  fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;*/
-  
-  /*fcTmplt->tmpltNorm *= distNorm * distNorm;*/
-  
-  /* x1 */   /* does this explanation suffice? */
   x1 = pow( deltaF, -1.0/3.0 );
-  /* XXX work needed here ... check x1 */
-
-  /*fprintf (stdout, "x1 = %e \n", x1);*/
-
-  /* frequency cutoffs */
   fHi  = tmplt->fFinal;
+  
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
   kmax = fHi / deltaF < numPoints/2 ? fHi / deltaF : numPoints/2;
- 
-  /*fprintf (stdout, "fHi     = %e \n", fHi);
-  fprintf (stdout, "fLow    = %e \n", params->fLow);
-  fprintf (stdout, "deltaF  = %e \n", deltaF);
-  fprintf (stdout, "kmin    = %d \n", kmin);
-  fprintf (stdout, "kmax    = %d \n", kmax);*/
 
+  if (doTest ==1)
+  {	  
+  	fprintf (stdout, "psi0    = %e \n", psi00);
+  	fprintf (stdout, "psi3    = %e \n", psi15);
+  	fprintf (stdout, "fHi     = %e \n", fHi);
+  	fprintf (stdout, "fLow    = %e \n", params->fLow);
+  	fprintf (stdout, "deltaF  = %e \n", deltaF);
+  	fprintf (stdout, "kmin    = %d \n", kmin);
+  	fprintf (stdout, "kmax    = %d \n", kmax);
+  }
  
   /* compute psi0: used in range reduction */
   {
@@ -233,10 +195,13 @@ LALFindChirpBCVSpinTemplate (
     psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
     psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
 
-    /*fprintf (stdout, "xfac[kmin] = %e \n", xfac[kmin]);
-    fprintf (stdout, "x = %e \n", x);
-    fprintf (stdout, "psi = %e \n", psi);
-    fprintf (stdout, "psi0 = %e \n", psi0);*/
+    if (doTest ==1)
+    {	    
+    	fprintf (stdout, "xfac[kmin] = %e \n", xfac[kmin]);
+    	fprintf (stdout, "x = %e \n", x);
+    	fprintf (stdout, "psi = %e \n", psi);
+    	fprintf (stdout, "psi0 = %e \n", psi0);
+    }		
   }
   /* XXX work needed here... check psi */
 
@@ -254,8 +219,6 @@ LALFindChirpBCVSpinTemplate (
       REAL4 psi  = 
       psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
       REAL4 psi1 = psi + psi0;
-      REAL4 psi2;  /* defining psi2 every time through the loop necessary? */
-                   /* where is psi2 used? */
 
       /* XXX work needed here... check psi */
       /* leaving psi calc here, needs to be inside template loop 
@@ -281,17 +244,19 @@ LALFindChirpBCVSpinTemplate (
       expPsi[k].im =   sin(psi1);
       expPsi[k].re =   cos(psi1);
         
-       /* Uncomment next 2 lines to write template to file */
-       /*fprintf (fpTmpltIm, "%d\t%e\n",k, expPsi[k].im);
-       fprintf (fpTmpltRe, "%d\t%e\n",k, expPsi[k].re);*/
-
-      /* XXX work needed here... expensive computation method */
+      if (doTest ==1)
+      {	      
+     		fprintf (fpTmpltIm, "%d\t%e\n",k, expPsi[k].im);
+      	 	fprintf (fpTmpltRe, "%d\t%e\n",k, expPsi[k].re);
+      }
 
     }
 
-fclose (fpTmpltIm);
-fclose (fpTmpltRe);
-
+if (doTest ==1)
+{	
+	fclose (fpTmpltIm);
+	fclose (fpTmpltRe);
+}
         /* Uncomment following code to output template in time domain  */
         /*
         LALCreateReverseRealFFTPlan(status->statusPtr, &prev, numPoints,0);
