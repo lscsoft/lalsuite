@@ -996,48 +996,29 @@ int main(int argc, char **argv)
       xHat[i]->fB->data->data=(COMPLEX16 *)LALMalloc((UINT4)((if0Max-if0Min+1)*mCohSFT)*sizeof(COMPLEX16));      
       xHat[i]->fB->data->length=(UINT4)((if0Max-if0Min+1)*mCohSFT);
     }
-  {
-    FILE *ff;
-    printf("Got here.\n");
-    ff=fopen("/scratch/steveb/new/deftPeaks.data","a");
-
-    for(k=0; k<mObsCoh; k++)
-      {
-	demParams->iCoh=k;
-	
-	/**************************/
-	/*       DEMODULATE       */
-	/**************************/
-	
-	LALDemod(&status, *(xHat+k), SFTData, demParams);
-	if(output!=NULL){
-	  sprintf(filename,"/scratch/steveb/new/xhat_%d.data",k);
-	  XhatFile=LALFopen(filename,"w");
-	  printf("Dumping demodulated data to disk: xhat_%d.data  \n",k);
-	  
-	  for(i=0;i<(if0Max-if0Min)*mCohSFT+1;i++) {
-	    fprintf(XhatFile,"%24.16f\t%24.16f\n",f0Min+(REAL8)i/tCoh, 	
-		    xHat[k]->fft->data->data[i]);
-	  }
-	  LALFclose(XhatFile);
-	}
-      }
+  
+  for(k=0; k<mObsCoh; k++)
     {
-      INT4 ipwMax=0, ipw=0;
-      REAL8 pw=0.0, pwMax=0.0;
-      INT4 count=0;
+      demParams->iCoh=k;
       
-      while(count< (if0Max-if0Min)*mCohSFT-1)
-	{
-	  REAL8 *temp=xHat[0]->fft->data->data;
-	  pw = temp[count]+temp[count-1]+temp[count+1]+temp[count-2]+temp[count+2];
-	  if(pw>pwMax) {pwMax=pw;ipwMax=count;}
-	  count++;
+      /**************************/
+      /*       DEMODULATE       */
+      /**************************/
+      
+      LALDemod(&status, *(xHat+k), SFTData, demParams);
+      if(output!=NULL){
+	sprintf(filename,"/scratch/steveb/new/xhat_%d.data",k);
+	XhatFile=LALFopen(filename,"w");
+	printf("Dumping demodulated data to disk: xhat_%d.data  \n",k);
+	
+	for(i=0;i<(if0Max-if0Min)*mCohSFT+1;i++) {
+	  fprintf(XhatFile,"%24.16f\t%24.16f\n",f0Min+(REAL8)i/tCoh, 	
+		  xHat[k]->fft->data->data[i]);
 	}
-    fprintf(ff,"%d %10.10lf %10.10lf\n", ipwMax,tCoh, pwMax);
+	LALFclose(XhatFile);
+      }
     }
-    fclose(ff);
-  }	
+  
 /***** END DEMODULATION *****/
 			
 		
@@ -1150,8 +1131,7 @@ static void times2(REAL8 tSFT, INT4 mObsCoh, LIGOTimeGPS **ts, INT4 **sftPerCoh,
   int i=0, j=0, k=0, m=0;
   int temp2=0;
   double temp1=0;
-  FILE *tS2;
-
+ 
   LIGOTimeGPS *tempTS;
   INT4 *tempPC;
   
@@ -1163,10 +1143,7 @@ static void times2(REAL8 tSFT, INT4 mObsCoh, LIGOTimeGPS **ts, INT4 **sftPerCoh,
   if(sw!=0){
     int seed;
     INT4 r;
-    FILE *tS, *dO;
-    
-    tS=fopen("gaps.ts","w");
-    dO=fopen("drop.ts","w");
+        
     seed=getpid();
     srand(seed);
   
@@ -1183,7 +1160,6 @@ static void times2(REAL8 tSFT, INT4 mObsCoh, LIGOTimeGPS **ts, INT4 **sftPerCoh,
 		/* This is Jan 1 1998 + 30 days, roughly */
 		tempTS[j].gpsSeconds=temp1+567648000+86400*30;
 		tempTS[j].gpsNanoSeconds=temp2;
-		fprintf(tS,"T.S. %d is %d.%d.\n", j, tempTS[j].gpsSeconds, tempTS[j].gpsNanoSeconds);
 		j++;m++;
 	      }
 	    k++;
@@ -1194,11 +1170,8 @@ static void times2(REAL8 tSFT, INT4 mObsCoh, LIGOTimeGPS **ts, INT4 **sftPerCoh,
 	    tempPC[i+1] = m;
 	    i++;
 	  }
-	  fprintf(dO, "DO %d is %d.\n", i-1, tempPC[i]);
       }
-    fclose(tS);
-    fclose(dO);
-
+    
     /* Now write to output arrays */
     *ts=(LIGOTimeGPS *)LALCalloc(j, sizeof(LIGOTimeGPS));
     *sftPerCoh=(INT4 *)LALCalloc(mObsCoh+1, sizeof(INT4));
@@ -1219,7 +1192,6 @@ static void times2(REAL8 tSFT, INT4 mObsCoh, LIGOTimeGPS **ts, INT4 **sftPerCoh,
 
   else
     {
-      tS2=fopen("nogaps.ts", "w");
       *ts=(LIGOTimeGPS *)LALCalloc(mObsCoh*mCohSFT, sizeof(LIGOTimeGPS));      
       *sftPerCoh=(INT4 *)LALCalloc(mObsCoh+1, sizeof(INT4));
       (*sftPerCoh)[0]=0;
@@ -1235,12 +1207,10 @@ static void times2(REAL8 tSFT, INT4 mObsCoh, LIGOTimeGPS **ts, INT4 **sftPerCoh,
 	      /* This is Jan 1 1998 + 30 days, roughly */
 	      (*ts)[x].gpsSeconds = temp1+567648000+86400*30;
 	      (*ts)[x].gpsNanoSeconds = temp2;
-	      fprintf(tS2,"T.S. %d is %d.%d\n", x, (*ts)[x].gpsSeconds, (*ts)[x].gpsNanoSeconds); 
 	      j++;
 	    }
 	  i++;
 	}
-      fclose(tS2);
     }
 
     /* Free up local memory */
