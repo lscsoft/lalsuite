@@ -186,9 +186,11 @@ LALCoherentEstimation ( LALStatus          *stat,
 				       &dtS ), stat );
 
 
+    /* JC: isnan is not allowed 
     if(isnan(tDelays[i])) {
       ABORT ( stat, COHERENTESTIMATIONH_ENUM, COHERENTESTIMATIONH_MSGENUM );
     }
+    */
 
     gpsAndAcc.gps = *pGPS.p_gps;
     gpsAndAcc.accuracy = LALLEAPSEC_LOOSE; /* FIXME ??? */
@@ -197,9 +199,11 @@ LALCoherentEstimation ( LALStatus          *stat,
 				    &dAs,
 				    &gpsAndAcc ), stat );
 
+    /* JC: isnan is not allowed
     if(isnan(F[i].cross) || isnan(F[i].plus)) {
       ABORT ( stat, COHERENTESTIMATIONH_ENUM, COHERENTESTIMATIONH_MSGENUM );
     }
+    */
   }
 
   /***********************************************************************/

@@ -1068,11 +1068,13 @@ LALRiceLikelihood(
     *llik = exp(-params->P/params->P0) * (params->P-params->P0) / pow(params->P0,3.0);
   }
 
+  /* JC: isnan is not allowed. 
   if(isnan(*llik)) {
     CHAR ebuf[2048];
     sprintf(ebuf,"Q=%g P=%g P0=%g x=%g *llik=%g io=%g i1=%g\n",Q,params->P,params->P0,x,*llik,LALi0e(x),LALi1e(x));
     ABORT(status,100,ebuf);
   }
+  */
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
