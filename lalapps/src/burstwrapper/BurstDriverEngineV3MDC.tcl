@@ -175,6 +175,13 @@ switch -exact -- $dataType {
 	    
 	    incr NSL 1
 	}
+
+
+        ## Cut to play ground
+        if { [ info exists PlaygroundOnly ] } {
+            set SegmentList [ SegPlaygroundMask $SegmentList ]
+        }
+
     }
 }
 
