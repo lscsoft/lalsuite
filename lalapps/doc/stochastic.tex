@@ -11,13 +11,13 @@ backgrounds.
 \input{olapredfcn}
 
 \clearpage
-\subsection{Program \texttt{lalapps\_stochastic\_pipe}}
+\subsection{Program \prog{lalapps\_stochastic\_pipe}}
 \label{program:stochastic-pipeline}
 \idx[Program]{stochastic\_pipeline.py}
 
 \begin{entry}
 \item[Name]
-\verb$lalapps_stochastic_pipe$ --- python script to generate Condor DAGs
+\prog{lalapps\_stochastic\_pipe} --- python script to generate Condor DAGs
 to run the stochastic pipeline.
 
 \item[Synopsis]
@@ -34,7 +34,7 @@ to run the stochastic pipeline.
   -l, --log-path PATH      directory to write condor log file
 \end{verbatim}
 
-\item[Description] \verb$lalapps_stochastic_pipe$ generates a Condor DAG
+\item[Description] \prog{lalapps\_stochastic\_pipe} generates a Condor DAG
 to run the stochastic search pipeline. The configuration should specify
 the parameters needed to run the jobs and must be specified with the
 \verb$--config-file$ option. A file containing science segments to
@@ -66,48 +66,64 @@ Adam Mercer
 \end{entry}
 
 \clearpage
-\subsection{Program \texttt{lalapps\_stochastic}}
-\label{program:lalapps-stochastic-dev}
-\idx[Program]{lalapps\_stochastic\_dev}
+\subsection{Program \prog{lalapps\_stochastic}}
+\label{program:lalapps-stochastic}
+\idx[Program]{lalapps\_stochastic}
+
+% this documentation is correct as of CVS Revision 1.117
 
 \begin{entry}
 \item[Name]
-\verb$lalapps_stochastic_dev$ --- standalone stochastic analysis code.
+\prog{lalapps\_stochastic} --- standalone stochastic analysis code.
 
 \item[Synopsis]
-\begin{verbatim}
- --help                        print this message
- --version                     display version
- --verbose                     verbose mode
- --debug                       save out intermediate products
- --debug-level N               set lalDebugLevel
- --gps-start-time N            GPS start time
- --gps-end-time N              GPS end time
- --segment-duration N          segment duration
- --sample-rate N               sample rate
- --resample-rate N             resample rate
- --f-min N                     minimal frequency
- --f-max N                     maximal frequency
- --ifo-one IFO                 ifo for first stream
- --ifo-two IFO                 ifo for second stream
- --frame-cache-one FILE        cache file for first stream
- --frame-cache-two FILE        cache file for second stream
- --calibration-cache-one FILE  first stream calibration cache
- --calibration-cache-two FILE  second stream calibration cache
- --apply-mask                  apply frequency masking
- --mask-bin N                  number of bins to mask
- --overlap-hann                overlaping hann windows
- --hann-duration N             hann duration
- --high-pass-filter            apply high pass filtering
- --hpf-frequency N             high pass filter knee frequency
- --hpf-attenuation N           high pass filter attenuation
- --hpf-order N                 high pass filter order
- --filter-omega-alpha N        omega_gw exponent
- --filter-omega-fref N         omega_gw reference frequency
- --filter-omega0 N             omega_0
-\end{verbatim}
+\prog{lalapps\_stochastic} \newline \hspace*{0.5in}
+\option{--help} \newline \hspace*{0.5in}
+\option{--version} \newline \hspace*{0.5in}
+\option{--verbose} \newline \hspace*{0.5in}
+\option{--debug-level} \parm{N} \newline \hspace*{0.5in}
+\option{--gps-start-time} \parm{N} \newline \hspace*{0.5in}
+\option{--gps-end-time} \parm{N} \newline \hspace*{0.5in}
+\option{--interval-duration} \parm{N} \newline \hspace*{0.5in}
+\option{--segment-duration} \parm{N} \newline \hspace*{0.5in}
+\option{--sample-rate} \parm{N} \newline \hspace*{0.5in}
+\option{--resample-rate} \parm{N} \newline \hspace*{0.5in}
+\option{--f-min} \parm{N} \newline \hspace*{0.5in}
+\option{--f-max} \parm{N} \newline \hspace*{0.5in}
+\option{--ifo-one} \parm{IFO} \newline \hspace*{0.5in}
+\option{--ifo-two} \parm{IFO} \newline \hspace*{0.5in}
+\option{--channel-one} \parm{CHANNEL} \newline \hspace*{0.5in}
+\option{--channel-two} \parm{CHANNEL} \newline \hspace*{0.5in}
+\option{--frame-cache-one} \parm{FILE} \newline \hspace*{0.5in}
+\option{--frame-cache-two} \parm{FILE} \newline \hspace*{0.5in}
+\option{--calibration-cache-one} \parm{FILE} \newline \hspace*{0.5in}
+\option{--calibration-cache-two} \parm{FILE} \newline \hspace*{0.5in}
+\option{--calibration-offset} \parm{N} \newline \hspace*{0.5in}
+\option{--apply-mask} \parm{N} \newline \hspace*{0.5in}
+\option{--mask-bin} \parm{N} \newline \hspace*{0.5in}
+\option{--overlap-hann} \newline \hspace*{0.5in}
+\option{--hann-duration} \parm{N} \newline \hspace*{0.5in}
+\option{--high-pass-filter} \newline \hspace*{0.5in}
+\option{--hpf-frequency} \parm{N} \newline \hspace*{0.5in}
+\option{--hpf-attenuation} \parm{N} \newline \hspace*{0.5in}
+\option{--hpf-order} \parm{N} \newline \hspace*{0.5in}
+\option{--recenter} \newline \hspace*{0.5in}
+\option{--post-analysis} \newline \hspace*{0.5in}
+\option{--middle-segment} \newline \hspace*{0.5in}
+\option{--inject} \newline \hspace*{0.5in}
+\option{--scale-factor} \parm{N} \newline \hspace*{0.5in}
+\option{--seed} \parm{N} \newline \hspace*{0.5in}
+\option{--trials} \parm{N} \newline \hspace*{0.5in}
+\option{--output-dir} \parm{DIR} \newline \hspace*{0.5in}
+\option{--test} \newline \hspace*{0.5in}
+\option{--test-interval} \parm{N} \newline \hspace*{0.5in}
+\option{--test-segment} \parm{N} \newline \hspace*{0.5in}
+\option{--test-trial} \parm{N} \newline \hspace*{0.5in}
+\option{--geo-hpf-frequency} \parm{N} \newline \hspace*{0.5in}
+\option{--geo-hpf-attenuation} \parm{N} \newline \hspace*{0.5in}
+\option{--geo-hpf-order} \parm{N}
 
-\item[Description] \verb$lalapps_stochastic$ runs the standalone
+\item[Description] \prog{lalapps\_stochastic} runs the standalone
 stochastic analysis code.
 
 \item[Author] 
