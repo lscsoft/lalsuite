@@ -50,6 +50,7 @@ the LALapps program \texttt{findchirp}.
 #include <lal/FindChirpSP.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/SimulateCoherentGW.h>
+#include <lal/Units.h>
 #include <lal/Inject.h>
 #ifdef LAL_MPI_ENABLED
 #include <lal/Comm.h>
@@ -195,6 +196,9 @@ tagFindChirpSimulationParams
 {
   FindChirpSimulationType       simType;        /* type of simulation        */
   UINT4                         simCount;       /* number of simulations     */
+  UINT4                         injectStartIdx; /* index of the first inj    */
+  UINT4                         numInject;      /* number of injections      */
+  InspiralEvent                *injectEvent;    /* events to inject          */
   InspiralEvent                *loudestEvent;   /* array of loudest events   */
   REAL4                        *signalNorm;     /* (s|s) for each dataSeg    */
   REAL4                         mMin;           /* minimum mass for binary   */
@@ -203,6 +207,22 @@ tagFindChirpSimulationParams
   RandomParams                 *randomParams;   /* random seed container     */
 }
 FindChirpSimulationParams;
+
+typedef struct
+tagInspiralInjection
+{
+  INT8                          coaTime;
+  REAL4                         totalMass;
+  REAL4                         eta;
+  REAL4                         dist;
+  REAL4                         inclination;
+  REAL4                         coaPhase;
+  REAL4                         longitude;
+  REAL4                         latitude;
+  REAL4                         polarization;
+  struct tagInspiralInjection  *next;
+}
+InspiralInjection;
 
 typedef struct
 tagFindChirpSlaveParams
