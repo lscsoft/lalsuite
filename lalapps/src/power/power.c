@@ -165,7 +165,6 @@ int main( int argc, char *argv[])
     static LALStatus      stat;
     LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
-    EPSearchParams       *searchParams  = NULL;
     EPSearchParams       *params        = NULL;
     FrStream             *stream        = NULL;
     FrCache              *frameCache    = NULL;
@@ -221,9 +220,8 @@ int main( int argc, char *argv[])
       LALCalloc( 1, sizeof(ProcessParamsTable) );
 
     /* parse arguments and fill procparams table */
-    initializeEPSearch( argc, argv, &searchParams, &procparams);
+    initializeEPSearch( argc, argv, &params, &procparams);
 
-    params = (EPSearchParams *) searchParams;
     params->printSpectrum = printSpectrum;
     params->cluster = cluster;
 
@@ -562,7 +560,7 @@ int main( int argc, char *argv[])
       }
 
       /* Finally call condition data */
-      LAL_CALL( EPConditionData( &stat, &series, minFreq, 1.0/sampleRate, resampFiltType, searchParams), &stat);
+      LAL_CALL( EPConditionData( &stat, &series, minFreq, 1.0/sampleRate, resampFiltType, params), &stat);
 
       /* add information about times to summary table */
       {
@@ -744,7 +742,7 @@ int main( int argc, char *argv[])
     /*******************************************************************
     * FINALIZE EVERYTHING                                            *
     *******************************************************************/
-    LAL_CALL( EPFinalizeSearch( &stat, &searchParams), &stat);
+    LAL_CALL( EPFinalizeSearch( &stat, &params), &stat);
     LALCheckMemoryLeaks();
     return 0;
 }
@@ -842,7 +840,7 @@ int initializeEPSearch(
     *params = LALMalloc (sizeof( EPSearchParams )); 
     if ( !*params )
     {
-        fprintf(stderr, "Memory allocation failed for searchParams\n");
+        fprintf(stderr, "Memory allocation failed for EPSearchParams\n");
         exit(1);
     }
 
@@ -1499,7 +1497,7 @@ int initializeEPSearch(
 	        mdcparams = LALMalloc (sizeof( EPSearchParams ));
 	        if ( !mdcparams )
 		  {
-		    fprintf(stderr, "Memory allocation failed for searchParams\n");
+		    fprintf(stderr, "Memory allocation failed for EPSearchParams\n");
 		    exit(1);
 		  }
                 /* mdc channel to be used in the analysis */
