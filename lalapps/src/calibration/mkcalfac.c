@@ -52,9 +52,15 @@ int read_time_series( struct series *aser, struct series *abser,
 
   /* scan to end to get final time */
   while ( get_next_line( line, sizeof( line ), fp ) )
-    ;
+  {
+    int tmp_t1;
+    sscanf( line, "%d", &tmp_t1 );
+    if ( ( (tmp_t1 - t0) % dt ) == 0 )
+    {
+      t1 = tmp_t1;
+    }
+  }
   rewind( fp );
-  sscanf( line, "%d", &t1 );
   aser->tend.gpsSeconds  = t1 - dt;
   aser->tend.gpsNanoSeconds  = 0;
   abser->tend.gpsSeconds = t1 - dt;
@@ -76,12 +82,19 @@ int read_time_series( struct series *aser, struct series *abser,
     int t;
     /* sensemon format is: Time Range Line Alpha Beta */
     sscanf( line, "%d %*f %*f %f %f", &t, &a, &b );
-    if ( ! isnan( a ) && ! isnan( b ) )
+    if ( (t - t0) % dt )
     {
-      int i;
-      i = ( t - t0 ) / dt;
-      aser->data[2*i]  = a;
-      abser->data[2*i] = a * b;
+      fprintf( stderr, "warning: skipping line\n\t%s\n", line );
+    }
+    else
+    {
+      if ( ! isnan( a ) && ! isnan( b ) )
+      {
+        int i;
+        i = ( t - t0 ) / dt;
+        aser->data[2*i]  = a;
+        abser->data[2*i] = a * b;
+      }
     }
   }
 
