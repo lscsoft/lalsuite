@@ -74,7 +74,7 @@ main(int argc, char *argv[])
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
   REAL8 relErr;
   UINT4 nlines1, nlines2;
-
+  
   lalDebugLevel = 0;
 
   /* set LAL error-handler */
@@ -97,19 +97,20 @@ main(int argc, char *argv[])
   nlines1 = Fstats1->lines->nTokens;
   nlines2 = Fstats2->lines->nTokens;
 
-  /* last line now HAS to contain 'DONE'-marker */
+  /* last line now HAS to contain 'DONE'-marker (which is now 7 zeroes..) */
   line1 = Fstats1->lines->tokens[nlines1-1];
   line2 = Fstats2->lines->tokens[nlines2-1];
 
-  if ( strstr(line1, "DONE") == NULL )  /* allowing for future variations like '%DONE' etc */
+#define DONE_MARKER "0000000"
+  if ( strcmp(line1, DONE_MARKER ) ) 
     {
-      LALPrintError ("\nERROR: File '%s' is not properly terminated by '*DONE*' marker!\n\n", uvar_Fname1);
+      LALPrintError ("\nERROR: File '%s' is not properly terminated by '%s' marker!\n\n", uvar_Fname1, DONE_MARKER);
       exit(1);
     }
 
-  if ( strstr(line2, "DONE") == NULL )  
+  if ( strcmp(line2, DONE_MARKER ) )  
     {
-      LALPrintError ("\nERROR: File '%s' is not properly terminated by '*DONE*' marker!\n\n", uvar_Fname2);
+      LALPrintError ("\nERROR: File '%s' is not properly terminated by '%s' marker!\n\n", uvar_Fname2, DONE_MARKER);
       exit(1);
     }
   
