@@ -1,5 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 pkginclude_HEADERS = StochasticCrossCorrelation.h \
+	 	     CoarseGrainFrequencySeries.h \
 	 	     Dirichlet.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

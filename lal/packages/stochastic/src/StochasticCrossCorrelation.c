@@ -364,3 +364,108 @@ LALStochasticCrossCorrelationStatistic(LALStatus                              *s
 
 } /* LALStochasticCrossCorrelationStatistic() */
 
+
+
+/* <lalVerbatim file="StochasticCrossCorrelationCP"> */
+void
+LALStochasticCrossCorrelationSpectrum(LALStatus                              *status,
+                                       COMPLEX8FrequencySeries                *output,
+                                       const StochasticCrossCorrelationInput  *input)
+/* </lalVerbatim> */
+{
+
+  UINT4         lengthCoarse, lengthFine;
+  REAL8         f0Coarse, f0Fine;
+  REAL8         deltaFCoarse, deltaFFine;
+  REAL4         offset, resRatio;
+  LALUnitPair   unitPair1, unitPair2;
+
+  UINT4         k, l;
+  UINT4         lMin, lMax;
+  REAL4         ellMin, ellMax;
+  REAL4         yRe, yIm;
+
+  /* initialize status structure */
+  INITSTATUS( status, "LALStochasticCrossCorrelationSpectrum",
+              STOCHASTICCROSSCORRELATIONC );
+  ATTATCHSTATUSPTR(status);
+
+  /* checks for null pointers: */
+
+  /*    output structure */
+  ASSERT(output != NULL, status,
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  /*    data member for output structure */
+  ASSERT(output->data != NULL, status,
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  /*    input structure */
+  ASSERT(input != NULL, status,
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  /*       optimal filter */
+  ASSERT(input->optimalFilter != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  /*       first data stream */
+  ASSERT(input->hBarTildeOne != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  /*       second data stream */
+  ASSERT(input->hBarTildeTwo != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  /*          data member for optimal filter */
+  ASSERT(input->optimalFilter->data != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  /*          data member for first data stream */
+  ASSERT(input->hBarTildeOne->data != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  /*          data member for second data stream */
+  ASSERT(input->hBarTildeTwo->data != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  /*             data-data member for first data stream */
+  ASSERT(input->optimalFilter->data->data != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  /*             data-data member for first data stream */
+  ASSERT(input->hBarTildeOne->data->data != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  /*             data-data member for second data stream */
+  ASSERT(input->hBarTildeTwo->data->data != NULL, status, 
+         STOCHASTICCROSSCORRELATIONH_ENULLP,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+
+  
+  /* Set output units */  
+  unitPair1.unitOne = input->hBarTildeOne->sampleUnits;
+  unitPair1.unitTwo = input->hBarTildeTwo->sampleUnits;
+  TRY( LALUnitMultiply(status->statusPtr, &(unitPair2.unitOne), &unitPair1),
+       status );
+  unitPair1.unitOne = input->optimalFilter->sampleUnits;
+  unitPair1.unitTwo = lalHertzUnit;
+  TRY( LALUnitMultiply(status->statusPtr, &(unitPair2.unitTwo), &unitPair1),
+       status );
+  TRY( LALUnitMultiply(status->statusPtr, &(output->sampleUnits), &unitPair2),
+       status );
+  
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+} /* LALStochasticCrossCorrelationSpectrum() */

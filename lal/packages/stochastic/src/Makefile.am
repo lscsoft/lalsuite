@@ -2,7 +2,8 @@
 noinst_LTLIBRARIES = libstochastic.la
 libstochastic_la_SOURCES = StochasticCrossCorrelation.c \
   ZeroPadAndFFT.c StochasticOptimalFilter.c OverlapReductionFunction.c \
-  StochasticOmegaGW.c StochasticInverseNoise.c Dirichlet.c
+  StochasticOmegaGW.c StochasticInverseNoise.c CoarseGrainFrequencySeries.c \
+  Dirichlet.c
 
 #  FalseAlarm.c FalseDismissal.c FDismissalVsFAlarm.c
 

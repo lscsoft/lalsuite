@@ -272,6 +272,11 @@ LALStochasticCrossCorrelationStatistic(LALStatus             *status,
              REAL4WithUnits        *output,
              const StochasticCrossCorrelationInput  *input);
 
+void 
+LALStochasticCrossCorrelationSpectrum(LALStatus             *status, 
+             COMPLEX8FrequencySeries                *output,
+             const StochasticCrossCorrelationInput  *input);
+
 
   /*************************************************************
    *                                                           *
