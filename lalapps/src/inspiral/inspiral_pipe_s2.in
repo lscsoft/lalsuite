@@ -338,7 +338,7 @@ else:
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
 insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
-l_insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
+l_insp_job.set_sub_file( basename + '.l1_inspiral' + subsuffix )
 trig_job.set_sub_file( basename + '.trigtotmplt' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
 
