@@ -94,20 +94,14 @@ cp.read(config_file)
 dagfilesuffix = '.dag'
 basename = re.sub(r'\.ini',r'',config_file)
 tempfile.tempdir = log_path
-if usertag:
-  tempfile.template = basename + '.' + usertag + dagfilesuffix + '.log.'
-else:
-  tempfile.template = basename + dagfilesuffix + '.log.'
+tempfile.template = basename + dagfilesuffix + '.log.'
 logfile = tempfile.mktemp()
 fh = open( logfile, "w" )
 fh.close()
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
-if usertag:
-  dag.set_dag_file(basename + '.' + usertag + dagfilesuffix)
-else:
-  dag.set_dag_file(basename + dagfilesuffix)
+dag.set_dag_file(basename + dagfilesuffix)
 
 # create the Condor jobs that will be used in the DAG
 mkcalfac_job = mkcal.MkCalFacJob(cp)
@@ -119,10 +113,7 @@ sinca_job = inspiral.IncaJob(cp)
 inca_job = inspiral.IncaJob(cp)
 
 # set better submit file names than the default
-if usertag:
-  subsuffix = '.' + usertag + '.sub'
-else:
-  subsuffix = '.sub'
+subsuffix = '.sub'
 mkcalfac_job.set_sub_file( basename + '.mkcalfac'+ subsuffix )
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
@@ -263,10 +254,7 @@ dag.write_sub_files()
 dag.write_dag()
 
 # write out a log file for this script
-if usertag:
-  log_fh = open(basename + '.pipeline.' + usertag + '.log', 'w')
-else:
-  log_fh = open(basename + '.pipeline.log', 'w')
+log_fh = open(basename + '.pipeline.log', 'w')
   
 log_fh.write( "$Id$" + "\n\n" )
 log_fh.write( "Invoked with arguments:\n" )
