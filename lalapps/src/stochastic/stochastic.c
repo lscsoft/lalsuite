@@ -441,26 +441,6 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
   return(series);
 }
 
-/* helper function to increment the seconds component of a gps time with
- * an integer */
-static LIGOTimeGPS increment_gps(LALStatus *status,
-    LIGOTimeGPS epoch,
-    INT4 increment)
-{
-  /* variables */
-  LIGOTimeGPS result;
-  LALTimeInterval interval;
-
-  /* set interval */
-  interval.seconds = increment;
-  interval.nanoSeconds = 0;
-
-  /* increment GPS time */
-  LAL_CALL(LALIncrementGPS(status, &result, &epoch, &interval), status);
-
-  return(result);
-}
-
 /* function to cut a time series between given start and end times */
 static REAL4TimeSeries *cut_time_series(LALStatus *status,
     REAL4TimeSeries *input,
@@ -2218,10 +2198,11 @@ INT4 main(INT4 argc, CHAR *argv[])
       for (segLoop = 0; segLoop < segsInInt; segLoop++)
       {
         /* get segment start/end time */
-        gpsSegStartTime = increment_gps(&status, gpsStartTime, \
-            (interLoop * segmentShift) + (segLoop * segmentDuration));
-        gpsSegEndTime = increment_gps(&status, gpsSegStartTime, \
-            segmentDuration);
+        LAL_CALL(LALAddFloatToGPS(&status, &gpsSegStartTime, &gpsStartTime, \
+              (REAL8)((interLoop * segmentShift) + \
+                      (segLoop * segmentDuration))), &status);
+        LAL_CALL(LALAddFloatToGPS(&status, &gpsSegEndTime, &gpsSegStartTime, \
+              (REAL8)segmentDuration), &status);
         segmentOne->epoch = gpsSegStartTime;
         segmentTwo->epoch = gpsSegStartTime;
 
