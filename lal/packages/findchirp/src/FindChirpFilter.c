@@ -1114,6 +1114,7 @@ LALFindChirpBCVFilterSegment (
   REAL4                 deltaT;
   REAL4                 norm;
   REAL4                 modqsqThresh;
+  REAL4                 rhosqThresh;
   REAL4                 mismatch;
   REAL4                 chisqThreshFac;
   REAL4                 modChisqThresh;
@@ -1410,12 +1411,11 @@ LALFindChirpBCVFilterSegment (
   /* which is the square of the normalization factor that multiplies the   */
   /* template                                                              */
 
-  params->norm = norm =
-     (deltaT / (REAL4) numPoints) * (deltaT / (REAL4)numPoints) * templateNorm;
+  params->norm = norm = deltaT / ((REAL4) numPoints) ;
 
 
-  /* normalised snr threhold */
-  modqsqThresh = params->rhosqThresh / norm ;
+  /* normalized snr threhold */
+  modqsqThresh = rhosqThresh / norm ;
 
   /* we threshold on the "modified" chisq threshold computed from       */
   /*   chisqThreshFac = delta^2 * norm / p                              */
@@ -1434,6 +1434,7 @@ LALFindChirpBCVFilterSegment (
   /*                                                                    */
   /* The raw chisq is stored in the database. this quantity is chisq    */
   /* distributed with 2p-2 degrees of freedom.                          */
+
   mismatch = 1.0 - input->tmplt->minMatch;
   chisqThreshFac = norm * mismatch * mismatch / (REAL4) numChisqBins;
 
