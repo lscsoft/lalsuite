@@ -409,7 +409,7 @@ int main( int argc, char *argv[] )
       injResp.deltaF = 1.0 / ( numRespPoints * inj.deltaT );
       strcpy( injResp.name, inj.name );
 
-      if ( calCache )
+      if ( calCacheName )
       {
 	/* generate the response function for the current time */
 	if ( vrbflg ) fprintf( stdout, 
@@ -520,7 +520,6 @@ int main( int argc, char *argv[] )
 	else if ( injChanName )
 	{
 	  /* write out injections, preserving input frame name */
-	  strcpy( output.name, chan.name );
 	  outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
 	      NULL );
 	}
