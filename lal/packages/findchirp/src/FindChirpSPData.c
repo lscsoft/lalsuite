@@ -342,6 +342,7 @@ LALFindChirpSPData (
       tmpltPower[k] = amp[k] * amp[k] * wtilde[k].re;
       segNormSum += tmpltPower[k];
       fcSeg->segNorm->data[k] = segNormSum;
+      fcSeg->tmpltPowerVec = params->tmpltPowerVec; 
     }
 
     for ( k = cut; k < fcSeg->data->data->length; ++k )
