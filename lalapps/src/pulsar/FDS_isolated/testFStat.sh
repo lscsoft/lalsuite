@@ -18,11 +18,11 @@ fi
 if [ x$1 = x ]; then
     prog="./lalapps_ComputeFStatistic";
 else
-    prog=$1;
+    prog="$1";
 fi
 
 echo "Running ComputeFStatistic-code '$prog' on test-data '$sftdir/$sftbase*'"
-if lalapps_ComputeFStatistic $CFSparams -v0; then
+if "$prog" $CFSparams -v0; then
     echo "done";
 else
     echo "failed... exiting.";
