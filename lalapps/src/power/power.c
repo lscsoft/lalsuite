@@ -153,6 +153,7 @@ int main( int argc, char *argv[])
     BOOLEAN               epochSet      = FALSE;
     PassBandParamStruc    highpassParam;
     REAL4                 fsafety=0;
+    LIGOTimeGPS		  duration = { 0, 0};
 
     /* data storage */
     REAL4TimeSeries            series;
@@ -352,8 +353,8 @@ int main( int argc, char *argv[])
       if ( verbose ) 
         fprintf( stdout, "generating response at time %d sec %d ns\n",
           resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
-      LAL_CALL( LALExtractFrameResponse( &stat, &resp, calCacheFile, ifo ),
-          &stat );
+      LAL_CALL( LALExtractFrameResponse( &stat, &resp, calCacheFile, ifo, 
+	    &duration ), &stat );
     } 
 
     /*****************************************************************

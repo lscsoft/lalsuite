@@ -72,6 +72,7 @@ extern int vrbflg;                      /* verbocity of lal function    */
 /* parameters used to generate calibrated power spectrum */
 LIGOTimeGPS gpsStartTime = { 0, 0 };    /* input data GPS start time    */
 LIGOTimeGPS gpsEndTime = { 0, 0};       /* input data GPS end time      */
+LIGOTimeGPS duration = { 0, 0};		/* duration used for calibration*/
 INT4  padData = 0;                      /* saftety margin on input data */
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
 CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
@@ -406,8 +407,9 @@ int main ( int argc, char *argv[] )
       "response parameters f0 = %e, deltaF = %e, length = %d\n",
       resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
       resp.f0, resp.deltaF, resp.data->length );
-  LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo ),
-      &status );
+  duration.gpsSeconds = gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds;
+  LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo, 
+	&duration ), &status );
 
   /* write the calibration data to a file */
   if ( writeResponse )

@@ -97,6 +97,8 @@ REAL4 minimalMatch = -1;                /* override bank minimal match  */
 
 /* data conditioning parameters */
 LIGOTimeGPS slideData   = {0,0};        /* slide data for time shifting */
+LIGOTimeGPS duration	= {0,0};	/* length of calibration chunk  */
+INT8   durationNS	= 0;		/* length of cal chunk (NS)	*/
 INT4   resampFiltType   = -1;           /* low pass filter used for res */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
 INT4   highPass         = -1;           /* enable high pass on raw data */
@@ -484,7 +486,8 @@ int main( int argc, char *argv[] )
       &status );
 
   /* set the parameters of the response to match the data */
-  resp.epoch = chan.epoch;
+  resp.epoch.gpsSeconds = chan.epoch.gpsSeconds + padData;
+  resp.epoch.gpsNanoSeconds = chan.epoch.gpsNanoSeconds;
   resp.deltaF = (REAL8) sampleRate / (REAL8) numPoints;
   resp.sampleUnits = strainPerCount;
   strcpy( resp.name, chan.name );
@@ -492,8 +495,12 @@ int main( int argc, char *argv[] )
   /* generate the response function for the current time */
   if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n",
       resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
-  LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo ),
-      &status );
+  /* determine length of chunk */
+  durationNS = gpsEndTimeNS - gpsStartTimeNS;
+  LAL_CALL( LALINT8toGPS( &status, &duration, 
+	&durationNS ), &status );
+  LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo, 
+	&duration ), &status );
 
   if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
       outFrame, &resp, "strain/ct", "RESPONSE" );
@@ -557,7 +564,8 @@ int main( int argc, char *argv[] )
           "length = %d points, deltaF = %e Hz\n",
           resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
           injResp.data->length, injResp.deltaF );
-      LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, ifo ),
+      LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, ifo, 
+	    &duration ),
           &status );
 
       injRespPtr = &injResp;
@@ -1120,9 +1128,18 @@ int main( int argc, char *argv[] )
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
       writeRhosq || writeChisq )
   {
-    LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.gwf",
-        ifo, gpsStartTime.gpsSeconds,
-        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    if ( userTag )
+    {
+      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL_%s-%d-%d.gwf",
+	  ifo, userTag, gpsStartTime.gpsSeconds,
+	  gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    }
+    else
+    {
+      LALSnprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.gwf",
+	  ifo, gpsStartTime.gpsSeconds,
+	  gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+    }
     frOutFile = FrFileONew( fname, 0 );
     FrameWrite( outFrame, frOutFile );
     FrFileOEnd( frOutFile );

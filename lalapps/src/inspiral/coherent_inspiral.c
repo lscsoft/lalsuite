@@ -91,6 +91,7 @@ UINT8  gpsStartTimeNS   = 0;            /* input data GPS start time ns */
 LIGOTimeGPS gpsStartTime;               /* input data GPS start time    */
 UINT8  gpsEndTimeNS     = 0;            /* input data GPS end time ns   */
 LIGOTimeGPS gpsEndTime;                 /* input data GPS end time      */
+LIGOTimeGPS duration = { 0, 0};
 INT4  padData           = 0;            /* saftety margin on input data */
 CHAR  *fqChanName[2]    = {NULL,NULL};  /* name of data channel         */
 CHAR  *frInCacheName[2] = {NULL,NULL};  /* cache file containing frames */
@@ -511,7 +512,7 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n",
         resp[n].epoch.gpsSeconds, resp[n].epoch.gpsNanoSeconds );
     LAL_CALL( LALExtractFrameResponse( &status, &resp[n], calCacheName[n], 
-          ifo[n] ), &status );
+          ifo[n], &duration ), &status );
   }
 
   if ( writeResponse )
