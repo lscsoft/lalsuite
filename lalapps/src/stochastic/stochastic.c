@@ -1681,7 +1681,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* write out xml */
   if (vrbflg)
-    fprintf(stdout, "Writing output XML files...\n");
+    fprintf(stdout, "Writing output XML file...\n");
 
   /* opening xml file stream */
   memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
