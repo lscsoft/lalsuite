@@ -757,7 +757,7 @@ LALFindChirpFilterSegment (
           thisEvent->snr = modqsq;
         }
         else if ( params->maximiseOverChirp &&
-            j < thisEvent->end_time.gpsSeconds + deltaEventIndex &&
+            j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
             modqsq > thisEvent->snr )
         {
           /* if this is the same event, update the maximum */
