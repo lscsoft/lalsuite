@@ -283,12 +283,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   streamDuration = endTime - startTime;
   if (overlap_hann_flag)
   {
-    numIntervals = (2 * (streamDuration / intervalDuration)) - 1;
+    numIntervals = (2 * ((streamDuration / segmentDuration)) - 2) - 1;
     segmentShift = segmentDuration / 2;
   }
   else
   {
-    numIntervals = streamDuration / intervalDuration;
+    numIntervals = (streamDuration / segmentDuration) - 2;
     segmentShift = segmentDuration;
   }
 
