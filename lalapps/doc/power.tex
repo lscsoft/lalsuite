@@ -1420,10 +1420,12 @@ single xml file.
 \begin{entry}
 \item[\option{--help}] Print a help message.
 
-\item[\option{--input} \parm{filename}]
-The infile should be a txt file, say file.txt which will contain the list
-of xml files. \prog{lalapps\_bread} reads in triggers from those xml files
-which are listed in file.txt
+\item[\option{--input} \parm{cache file}]
+Obtain the locations of input \texttt{.xml} trigger files from the LAL
+cache file \parm{cache file}.  LAL cache files are explained in the
+``framedata'' package in LAL and can be constructed by making calls to
+\prog{LSCDataFind} on some systems.  
+
 
 \item[\option{--output} \parm{filename}]
 \prog{lalapps\_bread} writes all the triggers out in one single xml file,
