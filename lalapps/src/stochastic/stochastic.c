@@ -12,7 +12,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <math.h>
-#include <errno.h>
 #include <getopt.h>
 
 #include <FrameL.h>
@@ -1122,7 +1121,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         outputPath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         memcpy(outputPath, optarg, optarg_len);
-        if ((stat(outputPath, &fileStatus) == -1) && (errno = ENOENT))
+        if (stat(outputPath, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "Directory does not exist: (%s specified)\n", \
@@ -1326,7 +1325,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         frameCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         memcpy(frameCacheOne, optarg, optarg_len);
-        if ((stat(frameCacheOne, &fileStatus) == -1) && (errno = ENOENT))
+        if (stat(frameCacheOne, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
@@ -1341,7 +1340,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         frameCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         memcpy(frameCacheTwo, optarg, optarg_len);
-        if ((stat(frameCacheTwo, &fileStatus) == -1) && (errno = ENOENT))
+        if (stat(frameCacheTwo, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
@@ -1356,7 +1355,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         calCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         memcpy(calCacheOne, optarg, optarg_len);
-        if ((stat(calCacheOne, &fileStatus) == -1) && (errno = ENOENT))
+        if (stat(calCacheOne, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
@@ -1371,7 +1370,7 @@ static void parse_options(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         calCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         memcpy(calCacheTwo, optarg, optarg_len);
-        if ((stat(calCacheTwo, &fileStatus) == -1) && (errno = ENOENT))
+        if (stat(calCacheTwo, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
