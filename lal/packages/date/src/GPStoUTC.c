@@ -21,7 +21,7 @@ Converts between GPS time (in seconds and nanoseconds) and UTC in a
 
 \texttt{LALGPStoUTC()} and \texttt{LALUTCtoGPS} convert time in GPS seconds
 and nanoseconds (\texttt{LIGOTimeGPS}) and time in UTC (\texttt{LALDate}),
-taking into account leap seconds until 2002-Mar-31 23:59 UTC.
+taking into account leap seconds until 2005-Jun-30 23:59 UTC. % UPDATEME %
 
 \texttt{LALLeapSecs()} returns the number of leap seconds introduced since
 the GPS epoch 1980-Jan-06, abbreviated GPS-UTC.
@@ -34,17 +34,17 @@ GRASP~\cite{grasp:194}.  It does the conversion by counting TAI seconds
 starting from the Unix epoch origin, 1970-Jan-01 00:00:00 UTC.  A static
 table of leap seconds is compiled in: this \emph{must} be updated whenever
 a new leap second is introduced.  The latest leap second included is
-1999-Jan-01.
+1999-Jan-01. % UPDATEME %
 
 The conversion from UTC to GPS is done by counting the amount of elapsed 
 time since the GPS epoch origin, 1980-Jan-06 00:00:00 UTC.  Again, leap
 seconds are accounted for by a static table (different from the one used in
 GPS to UTC) which \emph{must} be updated whenever a new leap seconds is
-introduced.  The latest leap second included is 1999-Jan-01.
+introduced.  The latest leap second included is 1999-Jan-01. % UPDATEME %
 
 The computation of GPS-UTC is from a static table published by the USNO
 at \url{ftp://maia.usno.navy.mil/ser7/tai-utc.dat}.  The latest leap second
-included is 1999-Jan-01.
+included is 1999-Jan-01. % UPDATEME %
 
 \subsubsection*{Uses}
 
@@ -52,8 +52,8 @@ included is 1999-Jan-01.
 
 These routines will not work for times before 1980-01-06 00:00:00 UTC (GPS
 0).  The latest leap second that can be accounted for is the one added at
-the end 1999-Dec.  These routines have accurate leap second information
-until 2002-Mar-31.
+the end 1999-Dec. % UPDATEME %  These routines have accurate leap second
+information until 2005-Jun-30. % UPDATEME %
 
 \textbf{Example:} To convert a GPS time to UTC, and then back to GPS:
 
@@ -113,10 +113,10 @@ char *asctime_r( const struct tm *, char * );
 
 
 /* UPDATEME */
-/* latest time for which this routine will work: 2004-12-31 23:59:59 UTC */
+/* latest time for which this routine will work: 2005-6-30 23:59:59 UTC */
 /* GPS for maxtestedGPS computed using tconvert (part of ligotools) by
    P. Shawhan */
-static const INT4 maxtestedGPS = 788572812;
+static const INT4 maxtestedGPS = 804211212;
 
 /*
  * Convert GPS seconds to UTC date-time contained in LALDate structure
@@ -477,11 +477,11 @@ LALUTCtoGPS (LALStatus                *status,
              p_utcDate->unixDate.tm_mday >= 6))), status,
           DATEH_EGPSDATETOOEARLY, DATEH_MSGEGPSDATETOOEARLY);
 
-  /* UPDATEME -- to update, fix the first if() statement */
+  /* UPDATEME -- to update, fix the comment and the first if() statement */
   /*
    * Check that time asked for is not after last known leap sec
-   * Use by: 2004-Dec-31 23:59:59 UTC
-   * Check bulletins such as the following to see if additiona ones are needed:
+   * Use by: 2005-Jun-30 23:59:59 UTC
+   * Check bulletins such as the following to see if additional ones are needed:
    * http://hpiers.obspm.fr/eoppc/bul/bulc/bulletinc.dat
    * if date is later
    *    check accuracy param
