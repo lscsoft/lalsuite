@@ -1645,9 +1645,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     snprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--enable-output" );
     snprintf( procparams.processParamsTable->type, 
-        LIGOMETA_TYPE_MAX, "int" );
+        LIGOMETA_TYPE_MAX, "string" );
     snprintf( procparams.processParamsTable->value, 
-        LIGOMETA_TYPE_MAX, "1" );
+        LIGOMETA_TYPE_MAX, " " );
   }
   else if ( enableOutput == 0 )
   {
@@ -1656,9 +1656,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     snprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--disable-output" );
     snprintf( procparams.processParamsTable->type, 
-        LIGOMETA_TYPE_MAX, "int" );
+        LIGOMETA_TYPE_MAX, "string" );
     snprintf( procparams.processParamsTable->value, 
-        LIGOMETA_TYPE_MAX, "1" );
+        LIGOMETA_TYPE_MAX, " " );
   }
   else
   {
@@ -1677,8 +1677,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         "%s", PROGRAM_NAME );
     snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--enable-event-cluster" );
-    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
-    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "1" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
   else if ( eventCluster == 0 )
   {
@@ -1686,8 +1686,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         "%s", PROGRAM_NAME );
     snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--disable-event-cluster" );
-    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "int" );
-    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, "1" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
   else
   {
