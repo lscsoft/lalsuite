@@ -206,6 +206,7 @@ LALCompareSnglBurst(
   REAL4 fa1, fa2, fb1, fb2;
   REAL4 dm1, dm2;
   REAL4 sigmaRatio;
+  
 
   INITSTATUS (status, "LALCompareSnglBurst", SNGLBURSTUTILSC);
   ATTATCHSTATUSPTR (status);
@@ -222,12 +223,12 @@ LALCompareSnglBurst(
   fb1 = (bPtr->central_freq) - 0.5*(bPtr->bandwidth);
   fb2 = (bPtr->central_freq) + 0.5*(bPtr->bandwidth);
   
-
-   if((tb1 >= ta1 && tb1 <= ta2) || (tb2 >= ta1 && tb2 <= ta2))
+ 
+  if(((tb1 >= ta1 && tb1 <= ta2) || (tb2 >= ta1 && tb2 <= ta2)) || ((ta1 >= tb1 && ta1 <= tb2) || (ta2 >= tb1 && ta2 <= tb2)))
      {
-       if((fb1 >= fa1 && fb1 <= fa2) || (fb2 >= fa1 && fb2 <= fa2))
+       if((fb1 >= fa1 && fb1 <= fa2) || (fb2 >= fa1 && fb2 <= fa2) || (fa1 >= fb1 && fa1 <= fb2) || (fa2 >= fb1 && fa2 <= fb2))
 	 {
-       params->match = 1;
+	   params->match = 1;
 	 }
      }
 
