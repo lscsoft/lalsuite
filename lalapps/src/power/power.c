@@ -291,6 +291,8 @@ int main( int argc, char *argv[])
      *****************************************************************/
     if( injFlag )
     {
+      INT4  startTime = series.epoch.gpsSeconds;
+      INT4  stopTime = startTime + (INT4)( series.data->length * series.deltaT );
       SimBurstTable *injections = NULL;
 
       if ( !calFlag )
@@ -299,12 +301,16 @@ int main( int argc, char *argv[])
         exit(1);
       }
 
+      /* read in list from file and make the injections */
+      if ( verbose )
+        fprintf(stdout, "Reading in SimBurst Table\n");
+
+      LAL_CALL( LALSimBurstTableFromLIGOLw ( &stat, &injections, injectionFile,
+            startTime, stopTime), &stat );
+      
       if ( verbose )
         fprintf(stdout, "Injecting signals into time series\n");
 
-      /* read in list from file and make the injections */
-      LAL_CALL( LALSimBurstTableFromLIGOLw ( &stat, &injections, injectionFile ),
-          &stat );
       LAL_CALL( LALBurstInjectSignals( &stat, &series, injections, &resp ), 
           &stat ); 
 
