@@ -966,8 +966,6 @@ int main( int argc, char *argv[] )
     double gmst;
     double deffH;
     double deffL;
-    double todH;
-    double todL;
 
     /* get gmst (radians) */
     gmst =  greenwich_mean_sidereal_time( tsec, tnan, 32 );
@@ -1003,10 +1001,10 @@ int main( int argc, char *argv[] )
     this_sim_insp->eff_dist_h = deffH = eff_dist( nxH, nyH, injPar, gmst )/MPC;
     this_sim_insp->eff_dist_l = deffL = eff_dist( nxL, nyL, injPar, gmst )/MPC;
 
-    place_and_gps->p_gps = &(this_sim_event->geocent_end_time);
+    place_and_gps->p_gps = &(this_sim_insp->geocent_end_time);
     det_time_and_source->p_det_and_time = place_and_gps;
-    sky_pos->longitude = currentSimEvent->longitude;
-    sky_pos->latitude = currentSimEvent->latitude;
+    sky_pos->longitude = this_sim_insp->longitude;
+    sky_pos->latitude = this_sim_insp->latitude;
     det_time_and_source->p_source = sky_pos;
 
     /* compute site arrival time for lho */
@@ -1014,9 +1012,9 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
           det_time_and_source), &status );
     LAL_CALL( LALGPStoFloat( &status, &site_time, 
-          &(this_sim_event->geocent_end_time) ), &status );
+          &(this_sim_insp->geocent_end_time) ), &status );
     site_time += time_diff;
-    LAL_CALL( LALFloatToGPS( &status, &(this_sim_event->h_end_time) 
+    LAL_CALL( LALFloatToGPS( &status, &(this_sim_insp->h_end_time),
           &site_time ), &status );
     
     /* compute site arrival time for llo */
@@ -1024,9 +1022,9 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALTimeDelayFromEarthCenter( &status, &time_diff, 
           det_time_and_source), &status );
     LAL_CALL( LALGPStoFloat( &status, &site_time, 
-          &(this_sim_event->geocent_end_time) ), &status );
+          &(this_sim_insp->geocent_end_time) ), &status );
     site_time += time_diff;
-    LAL_CALL( LALFloatToGPS( &status, &(this_sim_event->l_end_time) 
+    LAL_CALL( LALFloatToGPS( &status, &(this_sim_insp->l_end_time),
           &site_time ), &status );
     
     if ( inj < ninj - 1 )
