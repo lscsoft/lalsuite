@@ -13,7 +13,7 @@ FINDCHIRPSOURCES = FindChirpMemory.c FindChirpLinkedList.c \
   FindChirpBCVFilter.c FindChirpBCVChisq.c \
   FindChirpBCVSpinData.c FindChirpBCVSpinTemplate.c \
   FindChirpBCVSpinFilter.c FindChirpBCVSpinChisq.c \
-  FindChirpSimulation.c
+  FindChirpSimulation.c FindChirpFilterOutputVeto.c
 
 TWOINTERFFINDCHIRPSOURCES = TwoInterfFindChirpFilter.c \
   TwoInterfFindChirpMemory.c TwoInterfFindChirpSPData.c \

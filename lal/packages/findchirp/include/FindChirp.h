@@ -132,6 +132,7 @@ D_\mathrm{eff}^2 = \mathtt{tmpltNorm}\cdot \mathtt{segNorm}^2\cdot |q_j|^{-2}
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/FindChirpDatatypes.h>
 #include <lal/FindChirpChisq.h>
+#include <lal/FindChirpFilterOutputVeto.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -411,6 +412,7 @@ tagFindChirpFilterParams
   FindChirpChisqParams         *chisqParams;
   FindChirpChisqInput          *chisqInput;
   FindChirpChisqInput          *chisqInputBCV;
+  FindChirpFilterOutputVetoParams      *filterOutputVetoParams;
 }
 FindChirpFilterParams;
 /* </lalVerbatim> */

@@ -29,6 +29,8 @@ $Id$
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
+#include <lal/FindChirpChisq.h>
+#include <lal/FindChirpFilterOutputVeto.h>
 
 double rint(double x);
 
@@ -587,6 +589,21 @@ LALFindChirpFilterSegment (
     thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
     thisEvent->event_duration *= (REAL8) deltaT;
   }    
+
+
+  /*
+   *
+   * check the events pass the filter output veto
+   *
+   */
+
+  
+  if ( params->filterOutputVetoParams )
+  {
+    LALFindChirpFilterOutputVeto( status->statusPtr, eventList, params->qVec, 
+        norm, params->filterOutputVetoParams );
+    CHECKSTATUSPTR( status );
+  }
 
 
   /* normal exit */
