@@ -623,7 +623,7 @@ int parse_options( int argc, char **argv )
     { "geo-high-pass-freq",      required_argument, 0, 'G' },
     { "geo-high-pass-order",     required_argument, 0, 'H' },
     { "geo-high-pass-atten",     required_argument, 0, 'P' },
-    { "geo-dyn_range",           required_argument, 0, 'e' },
+    { "geo-dyn-range",           required_argument, 0, 'e' },
     /* these options are for writing output */
     { "write-format", required_argument, 0, 'w' },
     { "write-raw-data",         no_argument, &write_raw_data,         1 },
@@ -1347,8 +1347,8 @@ const char *usgfmt =
 "  --filter-scale scale\n\t\tscale response function by a factor of scale [1]\n\n"
 "  --geo-high-pass-freq scale\n\t\tknee frequency for geo high pass filter[1]\n\n"
 "  --geo-high-pass-order scale\n\t\torder of geo high pass filter[1]\n\n"
-"  --geo-high-pass-atten scale\n\t\tattenuation of geo high pass filter[1]\n\n";
-
+"  --geo-high-pass-atten scale\n\t\tattenuation of geo high pass filter[1]\n\n"
+"  --geo-dyn-range \n\t\t dynamic range factor for geo data [1]\n\n";
 
 int usage( const char *program )
 {
