@@ -224,10 +224,7 @@ main(int argc, char *argv[])
   if ( uvar_hardwareTDD )
     {
       Tchunk = (UINT4)(uvar_Tsft+0.5);
-      numchunks = (UINT4)( (1.0*GV.duration) / (1.0*Tchunk) + 0.5 );
-      /* send magic number to stdout (signalling start of data?) */
-      REAL4 magic = 1234.5;
-      fwrite ( &magic, sizeof(magic), 1, stdout );
+      numchunks = ceil( (1.0*GV.duration) / (1.0*Tchunk) );
     }
   else
     {
@@ -245,6 +242,23 @@ main(int argc, char *argv[])
        * generate the (heterodyned) time-series 
        *----------------------------------------*/
       LAL_CALL (LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
+
+
+      /* HARDWARE-INJECTION: 
+       * before the first chunk we send magic number and chunk-length to stdout 
+       */
+      if ( uvar_hardwareTDD && (i_chunk == 0) )
+	{
+	  REAL4 magic = 1234.5;
+	  UINT4 length = Tseries->data->length;
+	  if ( (1 != fwrite ( &magic, sizeof(magic), 1, stdout ))
+	       || (1 != fwrite(&length, sizeof(INT4), 1, stdout)) )
+	    {
+	      perror ("Failed to write to stdout");
+	      exit (MAKEFAKEDATAC_EFILE);
+	    }
+	} /* if hardware-injection and doing first chunk */
+
 
       /* add Gaussian noise if requested */
       if ( (REAL4)uvar_noiseSigma > 0) {
@@ -417,6 +431,13 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
 	    LALPrintError ("\nHardware injection mode is incompatible with producing SFTs\n");
 	    ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
+	if ( uvar_duration < uvar_Tsft )
+	  {
+	    LALPrintError ("\nERROR: requested duration of %d sec is less than minimal chunk-size of Tsft =%.0f sec.\n\n",
+			   uvar_duration, uvar_Tsft);
+	    ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  }
+
       } /* ----- if hardware-injection ----- */
     
     if ( ! ( haveStart || haveTimestamps ) )
@@ -944,7 +965,7 @@ WriteMFDlog (LALStatus *stat, char *argv[])
     /* write out a log describing the complete user-input (in cfg-file format) */
     TRY (LALUserVarGetLog(stat->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), stat);
 
-    fprintf (fplog, "## LOG-FILE of lalapps_Makefakedata run\n\n");
+    fprintf (fplog, "## LOG-FILE of Makefakedata run\n\n");
     fprintf (fplog, "# User-input:\n");
     fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
 
