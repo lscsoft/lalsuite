@@ -1449,6 +1449,7 @@ AC_CACHE_VAL(lt_cv_prog_cc_pic,
           lt_cv_prog_cc_wl='-Wl,'
           lt_cv_prog_cc_pic='-KPIC'
           lt_cv_prog_cc_static='-static'
+          lt_cv_archive_cmds_need_lc=no
           ;;
         ccc)
           lt_cv_prog_cc_wl='-Wl,'
