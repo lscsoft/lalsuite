@@ -14,6 +14,7 @@ $Id$
 #include <lal/Thresholds.h>
 #include <lal/ExcessPower.h>
 #include <lal/BurstSearch.h>
+#include <lal/LIGOMetadataTables.h>
 #include <lal/EPData.h>
 #include <lal/Random.h>
 #include <lal/BandPassTimeSeries.h>
@@ -100,7 +101,7 @@ void
 EPSearch (
         LALStatus               *status,
         EPSearchParams          *params,
-        BurstEvent             **burstEvent,
+        SnglBurstTable             **burstEvent,
         UINT4                    tmpDutyCycle
         )
 /******** </lalVerbatim> ********/
@@ -108,8 +109,8 @@ EPSearch (
     INT4                      i,j;
     REAL4                     redummy, imdummy;
     EPDataSegment            *dummySegment     = NULL;
-    BurstEvent               *currentEvent     = NULL;
-    BurstEvent               *prevEvent        = NULL;
+    SnglBurstTable               *currentEvent     = NULL;
+    SnglBurstTable               *prevEvent        = NULL;
     COMPLEX8FrequencySeries  *fseries;
     RealDFTParams            *dftparams        = NULL;
     LALWindowParams           winParams;
@@ -375,23 +376,23 @@ EPSearch (
           /* allocate memory for the burst event */
           if ( (*burstEvent) == NULL )
           {
-            currentEvent=(*burstEvent)=(BurstEvent *) LALMalloc( sizeof(BurstEvent) );
+            currentEvent=(*burstEvent)=(SnglBurstTable *) LALMalloc( sizeof(SnglBurstTable) );
           }
           else 
           {
-            currentEvent = (BurstEvent *) LALMalloc( sizeof(BurstEvent) );
+            currentEvent = (SnglBurstTable *) LALMalloc( sizeof(SnglBurstTable) );
           }
           
           /* build a burst event from TFTile */
           LALTFTileToBurstEvent(status->statusPtr, currentEvent, thisTile,
-              tstartNS, params->tfTilingInput->flow); 
+              tstartNS, params); 
           CHECKSTATUSPTR (status);
 
           /* point to the next event */
-          currentEvent->nextEvent = NULL;
-          if (prevEvent != NULL) prevEvent->nextEvent = currentEvent;
+          currentEvent->next = NULL;
+          if (prevEvent != NULL) prevEvent->next = currentEvent;
           prevEvent = currentEvent;
-          currentEvent = currentEvent->nextEvent;
+          currentEvent = currentEvent->next;
           thisTile = thisTile->nextTile;
         }
       }

@@ -23,7 +23,8 @@ NRCSID (COUNTEPEVENTSC, "$Id$");
 #include <lal/ExcessPower.h>
 #include <lal/Random.h>
 #include <lal/BurstSearch.h>
-
+#include <lal/EPSearch.h>
+#include <lal/LIGOMetadataTables.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -88,14 +89,15 @@ LALCountEPEvents (
 void
 LALTFTileToBurstEvent (
                LALStatus                            *status,
-               BurstEvent                           *burstEvent,
+               SnglBurstTable                       *burstEvent,
                TFTile                               *event,
                INT8                                  tstart,
-               REAL4                                 flow
+               EPSearchParams                       *params  
                )
 /******** </lalVerbatim> ********/
 {
   INT8 dummyNS;
+  REAL4 flow;
 
   INITSTATUS (status, "LALCountEPEvents", COUNTEPEVENTSC);
   ATTATCHSTATUSPTR(status);
@@ -104,17 +106,24 @@ LALTFTileToBurstEvent (
   ASSERT (event, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
   ASSERT (burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
 
+  flow=(REAL4)params->tfTilingInput->flow;
   dummyNS = tstart + (INT8) (1e9 * event->tstart * event->deltaT);
-  burstEvent->startTime        = (INT4) (dummyNS/1000000000L);
-  burstEvent->startTimeNS      = (INT4) (dummyNS%1000000000L);
+  burstEvent->start_time.gpsSeconds     = (INT4) (dummyNS/1000000000L);
+  burstEvent->start_time.gpsNanoSeconds = (INT4) (dummyNS%1000000000L);
   burstEvent->duration         = (REAL4) (event->tend - event->tstart + 1) * 
     event->deltaT;
-  burstEvent->centralFrequency = flow + 
+  burstEvent->central_freq = flow + 
     (REAL4) (event->fstart + event->fend + 1) / (2.0 * event->deltaT);
   burstEvent->bandwidth        = (REAL4) (event->fend - event->fstart + 1) / 
     (event->deltaT);
   burstEvent->amplitude        = event->excessPower;
-  burstEvent->excessPower      = event->excessPower;
+  burstEvent->snr              = event->excessPower;
+
+  /* THIS NEEDS TO FIXED */
+  sprintf( burstEvent->ifo ,"XX");
+  strncpy( burstEvent->ifo,  params->channelName, 2);
+  sprintf( burstEvent->search, "power");
+  sprintf( burstEvent->channel, params->channelName);
 
   /* report log(confidence) to avoid problems with REAL4's */
   /* changement by Stefan Ballmer and Erik Katsavounidis, 9/16/2002 */
