@@ -273,7 +273,7 @@ int AddInjections(struct CommandLineArgsTag CLA)
   int i;
 
   COMPLEX8 one = {1.0, 0.0};
-  COMPLEX8FrequencySeries *response;
+  COMPLEX8FrequencySeries *response = NULL;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
   LALCreateCOMPLEX8FrequencySeries(&status, &response, CLA.ChannelName, GV.ht_proc.epoch, 
@@ -293,6 +293,8 @@ int AddInjections(struct CommandLineArgsTag CLA)
     injections = injections->next;
     LALFree(thisEvent);
   }
+
+  LALDestroyCOMPLEX8FrequencySeries(&stat, response);
 
   return 0;
 }
