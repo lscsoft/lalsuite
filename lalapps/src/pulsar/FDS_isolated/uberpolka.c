@@ -116,12 +116,27 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
 int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA);
 void ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname);
 int compareCIStructs(const void *ip, const void *jp);
+int compareCCfa(const void *ip, const void *jp);
+int compareCPfa(const void *ip, const void *jp);
+int FineCoincidenceTest(CandINDICES c1, CandINDICES c2, struct PolkaCommandLineArgsTag CLA);
+int OutputCoincidences(struct PolkaCommandLineArgsTag CLA);
 
 extern INT4 lalDebugLevel;
 
 CandidateList CList1, CList2; /* treat up to 4 candidate files */
-
 CandINDICES *SortedC1,*SortedC2;
+CoincidentCandidate *CC;
+CoincidentPairs *CP;
+
+INT4 numCoincidences=0;
+REAL8 MaxAngularDistance;
+
+#ifndef FALSE
+#define FALSE (1==0)
+#endif
+#ifndef TRUE
+#define TRUE  (1==1)
+#endif
 
 /* main() mapped to polka() if using boinc */
 #if USE_BOINC
@@ -138,6 +153,8 @@ int main(int argc,char *argv[])
 
   /* Reads command line arguments */
   if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) return 1;
+
+  MaxAngularDistance=sqrt(pow(PolkaCommandLineArgs.DeltaAlpha,2)+pow(PolkaCommandLineArgs.DeltaDelta,2))+1e-8;
 
   /* Reads in candidare files */
   if (ReadCandidateFiles(PolkaCommandLineArgs)) return 2;
@@ -218,12 +235,34 @@ int main(int argc,char *argv[])
 			}
 		    }
 		  /* Now p points to first coincident event in the second list */
-		  /* TO DO: Now loop over candidates found in the second list and do the fine coincidence test */
-		  
+
+		  /* Now loop over candidates found in the second list and do the fine coincidence test */
+		  {
+		    INT4 keepgoing = 1;
+		    while (keepgoing)
+		      {
+			if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
+			if ( p->iCandSorted ==  (int)CList2.length - 1)
+			  {
+			    keepgoing=0;
+			    continue;
+			  }
+			if( (p->iFreq == (p+1)->iFreq) && ( p->iDelta == (p+1)->iDelta) && ( p->iAlpha == (p+1)->iAlpha)) 
+			  {
+			    p++;
+			  }else{
+			    keepgoing=0;
+			  }
+		      }
+		  }
 
 		} /* check that besearch was non-null */
 	    } /* check that frequency lies between two input bounds */
 	} /* loop over 1st candidate list */
+
+
+      /* Ouput candidates */
+      if (OutputCoincidences( PolkaCommandLineArgs )) return 4;
 
       LALFree(SortedC1);
       LALFree(SortedC2);
@@ -240,6 +279,177 @@ int main(int argc,char *argv[])
   return 0;
 
 }
+
+/*******************************************************************************/
+
+int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
+{
+  INT4 *indicesCCfa=NULL;
+  INT4 i;
+  FILE *fpOut;
+
+  /* allocate space */
+  if (numCoincidences != 0){ 
+    if (!(indicesCCfa=(INT4 *)LALMalloc(sizeof(INT4) * numCoincidences))){
+      fprintf(stderr,"Unable to allocate index array in main\n");
+      return 1;
+    }
+  }
+
+  for (i=0; i < numCoincidences; i++) 
+    indicesCCfa[i]=i;
+
+  /* open and write the file */
+#if USE_BOINC
+  if (boinc_resolve_filename(CLA.OutputFile, resolved_filename, sizeof(resolved_filename))) {
+    fprintf(stderr,
+	    "Can't resolve file \"%s\"\n"
+	    "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
+	    CLA.OutputFile);
+    boinc_finish(2);
+  }
+  fpOut=fopen(resolved_filename,"w");
+#else
+  fpOut=fopen(CLA.OutputFile,"w"); 	 
+#endif
+  if (!CLA.EAH)
+    {
+      /* sort in increasing probability of joint false alarm */
+      qsort((void *)indicesCCfa, (size_t)numCoincidences, sizeof(int), compareCCfa);
+      for (i=0; i < numCoincidences; i++) 
+	{
+	  UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
+	  fprintf(fpOut,"%1.15le %le %le %le %le %1.15le %le %le %le %le %le\n",
+		  CC[k].f1, CC[k].Alpha1, CC[k].Delta1,
+		  CC[k].F1, CC[k].fa1,
+		  CC[k].f2, CC[k].Alpha2, CC[k].Delta2,
+		  CC[k].F2, CC[k].fa2, CC[k].fa);
+	}
+    }else{
+      fprintf(fpOut,"%%1\n");
+      {
+	int k=-1;    
+	for (i=0; i < (int)CList1.length; i++)
+	  {
+	    if (CList1.Ctag[i]) 
+	      {
+		k++;
+		fprintf(fpOut,"%16.12f %10.8f %10.8f %20.17f\n",
+			CList1.f[i],CList1.Alpha[i],CList1.Delta[i],CList1.F[i]);
+		CList1.CtagCounter[i]=k;
+	      }
+	  }
+      }
+      fprintf(fpOut,"%%2\n");
+      {
+	int k=-1;
+	for (i=0; i < (int)CList2.length; i++)
+	  {
+	    if (CList2.Ctag[i]) 
+	      {
+		k++;
+		fprintf(fpOut,"%16.12f %10.8f %10.8f %20.17f\n",
+			CList2.f[i],CList2.Alpha[i],CList2.Delta[i],CList2.F[i]);  
+		CList2.CtagCounter[i]=k;
+	      }    
+	  }
+      }
+      fprintf(fpOut,"%%coincidences\n");
+      /* sort in increasing probability of joint false alarm */
+      qsort((void *)indicesCCfa, (size_t)numCoincidences, sizeof(int), compareCPfa);
+      
+      for (i=0; i < numCoincidences; i++) 
+	{
+	  UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
+	  fprintf(fpOut,"%d %d %le\n",
+		  CList1.CtagCounter[CP[k].c1],CList2.CtagCounter[CP[k].c2],CP[k].fa);
+	}
+    }
+  fprintf(fpOut,"%%DONE\n");	
+#if USE_BOINC
+  /* write end marker */
+  Outputfilename=resolved_filename;
+#endif
+  fclose(fpOut);
+
+  return 0;
+}
+
+/*******************************************************************************/
+
+int FineCoincidenceTest(CandINDICES c1, CandINDICES c2, struct PolkaCommandLineArgsTag CLA)
+{
+  
+  REAL8 f1=c1.f,f2=c2.f, F1=c1.F, F2=c2.F;
+  REAL8 Alpha1=c1.Alpha,Delta1=c1.Delta;
+  REAL8 Alpha2=c2.Alpha,Delta2=c2.Delta;
+  REAL8 n1[3],n2[3],AngularDistance;
+  REAL8 cosAngularDistance, difff;
+
+  n1[0]=cos(Alpha1)*cos(Delta1);
+  n1[1]=sin(Alpha1)*cos(Delta1);
+  n1[2]=sin(Delta1);
+  
+  n2[0]=cos(Alpha2)*cos(Delta2);
+  n2[1]=sin(Alpha2)*cos(Delta2);
+  n2[2]=sin(Delta2);
+ 
+  cosAngularDistance=n1[0]*n2[0]+n1[1]*n2[1]+n1[2]*n2[2];
+  if (cosAngularDistance  >  1.0) cosAngularDistance =  1.0;
+  if (cosAngularDistance  < -1.0) cosAngularDistance = -1.0;
+	
+  AngularDistance=acos(cosAngularDistance);
+  
+  difff=fabs(f1 - f2);
+	      
+  /* check difference in frequencies because we're not guaranteed 
+     sufficient closeness at the edges of array */
+  if ( difff <= CLA.Deltaf) 
+    {
+      if ( AngularDistance <= MaxAngularDistance )
+	{	
+	  CoincidentCandidate *thisCC;
+	  CoincidentPairs *thisCP;
+
+	  /* tag the candidates that have been found in coincidence */
+	  CList1.Ctag[c1.iCand]=1;
+	  CList2.Ctag[c2.iCand]=1;
+		  
+	  /* seems we found a coincident candidate: let's make space for it to be stored */
+	  numCoincidences ++;
+	  if ( (CC = LALRealloc ( CC, numCoincidences * sizeof(CoincidentCandidate) )) == NULL) {
+	    fprintf (stderr, "Error: ran out of memory ... goodbye.\n");
+	    return 1;	/* got lazy here.. */
+	  }
+	  if ( (CP = LALRealloc ( CP, numCoincidences * sizeof(CoincidentPairs) )) == NULL) {
+	    fprintf (stderr, "Error: ran out of memory ... goodbye.\n");
+	    return 1;	/* got lazy here.. */
+	  }
+	  
+	  thisCC = &(CC[ numCoincidences - 1]);	/* point to current new coincidences */
+	  thisCP = &(CP[ numCoincidences - 1]);	/* point to current new coincidences */
+	  
+	  thisCC->f1 = f1;
+	  thisCC->Alpha1 = Alpha1;
+	  thisCC->Delta1 =Delta1;
+	  thisCC->F1 = F1;
+	  thisCC->fa1=(1+F1/2)*exp(-F1/2);	  
+
+	  thisCC->f2=f2;
+	  thisCC->Alpha2=Alpha2;
+	  thisCC->Delta2=Delta2;
+	  thisCC->F2=F2;
+	  thisCC->fa2=(1+F2/2)*exp(-F2/2);
+
+	  thisCC->fa = thisCC->fa1 * thisCC->fa2;
+	  
+	  thisCP->c1=c1.iCand;
+	  thisCP->c2=c2.iCand;
+	  thisCP->fa=thisCC->fa;
+	}
+    }
+  return 0;
+} 
 
 /*******************************************************************************/
 
@@ -286,6 +496,45 @@ int compareCIStructs(const void *a, const void *b)
 	    return 0;
 	}
     }
+
+  return 1;
+}
+
+/*******************************************************************************/
+
+/* Sorting function to sort second candidate list into increasing order of fa */
+int compareCCfa(const void *ip, const void *jp)
+{
+  REAL8 di, dj;
+
+  di=CC[*(const int *)ip].fa;
+  dj=CC[*(const int *)jp].fa;
+
+  if (di<dj)
+    return -1;
+  
+  if (di==dj)
+    return (ip > jp);
+
+  return 1;
+}
+
+
+/*******************************************************************************/
+
+/* Sorting function to sort pair list into increasing order of fa */
+int compareCPfa(const void *ip, const void *jp)
+{
+  REAL8 di, dj;
+
+  di=CP[*(const int *)ip].fa;
+  dj=CP[*(const int *)jp].fa;
+
+  if (di<dj)
+    return -1;
+  
+  if (di==dj)
+    return (ip > jp);
 
   return 1;
 }
