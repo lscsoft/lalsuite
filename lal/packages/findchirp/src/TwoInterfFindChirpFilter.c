@@ -1106,7 +1106,9 @@ LALTwoInterfFindChirpFilterSegment (
 		  params->paramsVec->filterParams[0].chisqParams->norm  
 		    = norm1;
 		  /* XXX this should be passed in from the bank XXX */;
+#if 0
 		  params->paramsVec->filterParams[0].chisqParams->bankMatch=0.97;
+#endif
 	  
 		  /* compute the chisq threshold for detector 1 */
 
@@ -1137,7 +1139,9 @@ LALTwoInterfFindChirpFilterSegment (
 		      params->paramsVec->filterParams[1].chisqParams->norm   
 			= norm2;
 		      /* XXX this should be passed in from the bank XXX */;
+#if 0
 		      params->paramsVec->filterParams[1].chisqParams->bankMatch=0.97;
+#endif
 	   
 		      /* compute the chisq threshold for detector 2 */
 

@@ -110,7 +110,9 @@ typedef struct
 tagFindChirpChisqParams
 {
   REAL4                         norm;
+#if 0
   REAL4                         bankMatch;
+#endif
   UINT4Vector                  *chisqBinVec;
   ComplexFFTPlan               *plan;
   COMPLEX8Vector               *qtildeBinVec;

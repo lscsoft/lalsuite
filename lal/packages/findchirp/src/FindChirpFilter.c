@@ -478,6 +478,9 @@ LALFindChirpFilterSegment (
   REAL4                 deltaT;
   REAL4                 norm;
   REAL4                 modqsqThresh;
+  REAL4                 mismatch;
+  REAL4                 chisqThreshFac;
+  REAL4                 modChisqThresh;
   UINT4                 eventStartIdx = 0;
   REAL4                 chirpTime     = 0;
   BOOLEAN               haveChisq     = 0;
@@ -682,8 +685,21 @@ LALFindChirpFilterSegment (
   params->norm = norm = 
     4.0 * (deltaT / (REAL4)numPoints) / input->segment->segNorm;
 
-  /* normalised threhold */
+  /* normalised snr threhold */
   modqsqThresh = params->rhosqThresh / norm;
+
+  /* we threshold on the "modified" chisq threshold computed from       */
+  /*   chisqThreshFac = delta^2 * norm / p                              */
+  /*   rho^2 = norm * modqsq                                            */
+  /* so we threshold on                                                 */
+  /*    chisq < chisqThresh * ( 1 + modqsq * chisqThreshFac )           */
+  /* which is the same as thresholding on                               */
+  /*    chisq < chisqThresh * ( 1 + rho^2 * delta^2 / p )               */
+  /* the raw chisq is stored in the database. this quantity is chisq    */
+  /* distributed with 2p-2 degrees of freedom.                          */
+  mismatch = 1.0 - input->tmplt->minMatch;
+  chisqThreshFac = norm * mismatch * mismatch / 
+    (REAL4) ( input->segment->chisqBinVec->length - 1 );
 
   /* if full snrsq vector is required, store the snrsq */
   if ( params->rhosqVec ) 
@@ -722,7 +738,9 @@ LALFindChirpFilterSegment (
         /* pointer to the chisq bin vector in the segment */
         params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
         params->chisqParams->norm        = norm;
+#if 0
         params->chisqParams->bankMatch   = input->tmplt->minMatch;
+#endif
 
         /* compute the chisq threshold: this is slow! */
         LALFindChirpChisqVeto( status->statusPtr, params->chisqVec, 
@@ -732,10 +750,11 @@ LALFindChirpFilterSegment (
         haveChisq = 1;
       }
 
-      /* if we have don't have a chisq or the chisq drops below threshold */
-      /* start processing events                                          */
+      /* if we have don't have a chisq or the chisq drops below the       */
+      /* modified chisq threshold, start processing events                */
       if ( ! input->segment->chisqBinVec->length ||
-          params->chisqVec->data[j] < params->chisqThresh )
+          params->chisqVec->data[j] < 
+          (params->chisqThresh * ( 1.0 + modqsq * chisqThreshFac )) )
       {
         if ( ! *eventList )
         {
