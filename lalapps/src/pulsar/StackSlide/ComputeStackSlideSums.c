@@ -45,7 +45,9 @@
 /* 06/01/04 gam; Make sure CHECKSTATUSPTR called after every LAL function call */
 /* 06/01/04 gam; pPulsarSignalParams->startTimeGPS and duration should be based on gpsStartTime and duration, not actualStartTime */
 /* 06/01/04 gam; For now fix DeltaRA, DeltaDec,and DeltaFDeriv1 to default values when finding mismatch during Monte Carlo */
-
+/* 07/14/04 gam; add option to use function LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs; see LAL inject packge GeneratePulsarSignal.c and .h */
+/* 07/19/04 gam; if (params->testFlag & 4) > 0 use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs for Monte Carlo simulations */
+  
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -59,6 +61,9 @@
 /* #define PRINT_MONTECARLOSFT_DATA */
 /* #define PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA */
 /* #define DEBUG_RANDOMTRIALPARAMETERS */
+/* #define DEBUG_LALFASTGENERATEPULSARSFTS */
+/* #define DEBUG_SETFIXED_RANDVAL */
+/* #define PRINT_ONEMONTECARLO_OUTPUTSFT */
 /*********************************************/
 /*                                           */
 /* END SECTION: define preprocessor flags    */
@@ -133,7 +138,7 @@ int main(int argc,char *argv[])
   StackSlideConditionData(&status,params);  
   INTERNAL_CHECKSTATUS_FROMMAIN(status)  
 
-  if ( (params->testFlag & 2) > 0) {    
+  if ( (params->testFlag & 2) > 0 ) {
     /* 05/11/04 gam; Add code to software inject signals into the SFTs for Monte Carlo simulations */    
     RunStackSlideMonteCarloSimulation(&status,params);
     INTERNAL_CHECKSTATUS_FROMMAIN(status);    
@@ -584,6 +589,10 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
   SFTParams *pSFTParams = NULL;
   LIGOTimeGPSVector timestamps;
   SFTVector *outputSFTs = NULL;
+  /* 07/14/04 gam; next two are needed by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
+  SkyConstAndZeroPsiAMResponse *pSkyConstAndZeroPsiAMResponse;
+  SFTandSignalParams *pSFTandSignalParams;
+  INT4 iLastSkyPos; /* 07/14/04 gam; keep track of index to the last sky position */
   REAL4 renorm;               /* Need to renormalize SFTs to account for different sample rates */  
   FFT **savBLKData = NULL;    /* 05/21/04 gam; save the input noise SFTs */
   REAL8 **savSkyPosData;      /* 05/26/04 gam; save Sky Position Data */
@@ -691,7 +700,7 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
   } else {
      numFreqDerivIncludingNoSpinDown = 1;  /* Even if numSpinDown = 0 still need to count case of zero spindown. */
   }
-  
+   
   /* Allocate memory for PulsarSignalParams and initialize */
   pPulsarSignalParams = (PulsarSignalParams *)LALMalloc(sizeof(PulsarSignalParams));
   pPulsarSignalParams->pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
@@ -766,11 +775,42 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
   LALCreateRandomParams(status->statusPtr, &randPar, seed);
   CHECKSTATUSPTR (status);
   
+  /* 07/14/04 gam; allocate memory for structs needed by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
+  if ( (params->testFlag & 4) > 0 ) {
+     #ifdef DEBUG_LALFASTGENERATEPULSARSFTS
+          fprintf(stdout,"allocate memory for structs needed by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs \n");
+          fflush(stdout);
+     #endif
+     pSkyConstAndZeroPsiAMResponse = (SkyConstAndZeroPsiAMResponse *)LALMalloc(sizeof(SkyConstAndZeroPsiAMResponse));
+     pSkyConstAndZeroPsiAMResponse->skyConst = (REAL8 *)LALMalloc((2*params->numSpinDown*(params->numBLKs+1)+2*params->numBLKs+3)*sizeof(REAL8));
+     pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi = (REAL4 *)LALMalloc(params->numBLKs*sizeof(REAL4));
+     pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi = (REAL4 *)LALMalloc(params->numBLKs*sizeof(REAL4));
+     pSFTandSignalParams = (SFTandSignalParams *)LALMalloc(sizeof(SFTandSignalParams));
+     /* create lookup table (LUT) values for doing trig */
+     pSFTandSignalParams->resTrig = 64; /* length sinVal and cosVal; resolution of trig functions = 2pi/resTrig */
+     pSFTandSignalParams->trigArg = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+     pSFTandSignalParams->sinVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+     pSFTandSignalParams->cosVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+     for (k=0; k<=pSFTandSignalParams->resTrig; k++) {
+       pSFTandSignalParams->trigArg[k]= ((REAL8)LAL_TWOPI) * ((REAL8)k) / ((REAL8)pSFTandSignalParams->resTrig);
+       pSFTandSignalParams->sinVal[k]=sin( pSFTandSignalParams->trigArg[k] );
+       pSFTandSignalParams->cosVal[k]=cos( pSFTandSignalParams->trigArg[k] );
+     }
+     pSFTandSignalParams->pSigParams = pPulsarSignalParams;
+     pSFTandSignalParams->pSFTParams = pSFTParams;
+     pSFTandSignalParams->nSamples = GV.nsamples;
+     pPulsarSignalParams->samplingRate = 2.0*params->bandBLK; /* can set samplingRate to exactly 2.0*bandBLK when using LALFastGeneratePulsarSFTs */
+  } else { 
+     pSkyConstAndZeroPsiAMResponse = NULL;
+     pSFTandSignalParams = NULL;
+  }
+
   /*********************************************************/
   /*                                                       */
   /* START SECTION: MONTE CARLO LOOP OVER PARAMETER SPACE  */
   /*                                                       */
   /*********************************************************/
+  iLastSkyPos = -1; /* 07/14/04 gam initialize */
   for(kSUM=0;kSUM<numSUMsTotal;kSUM++) {
   
     params->whichMCSUM = kSUM; /* keep track in StackSlideApplySearch of which SUM we are injecting into. */  
@@ -781,6 +821,9 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
     params->skyPosData[0][0] = savSkyPosData[i][0];
     params->skyPosData[0][1] = savSkyPosData[i][1];        
     LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+    #ifdef DEBUG_SETFIXED_RANDVAL
+       randval = params->threshold5; /* Temporarily use threshold5 for this; need to add testParameters to commandline. */
+    #endif    
     pPulsarSignalParams->pulsar.position.latitude = params->skyPosData[0][1] + (((REAL8)randval) - 0.5)*DeltaDec;
     cosTmpDEC = cos(savSkyPosData[i][1]);
     if (cosTmpDEC != 0.0) {
@@ -789,6 +832,9 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
           tmpDeltaRA = 0.0; /* We are at a celestial pole */
     }
     LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+    #ifdef DEBUG_SETFIXED_RANDVAL
+       randval = params->threshold5; /* Temporarily use threshold5 for this; need to add testParameters to commandline. */
+    #endif    
     pPulsarSignalParams->pulsar.position.longitude = params->skyPosData[0][0] + (((REAL8)randval) - 0.5)*tmpDeltaRA;
     /* pPulsarSignalParams->pulsar.position.longitude = params->skyPosData[0][0];
     pPulsarSignalParams->pulsar.position.latitude = params->skyPosData[0][1]; */
@@ -802,6 +848,9 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
       for(k=0;k<params->numSpinDown;k++) {
         params->freqDerivData[0][k] = savFreqDerivData[j][k];
         LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+        #ifdef DEBUG_SETFIXED_RANDVAL
+           randval = params->threshold5; /* Temporarily use threshold5 for this; need to add testParameters to commandline. */
+        #endif
         if (k == 0) {
           pPulsarSignalParams->pulsar.spindown->data[k] = params->freqDerivData[0][k] + (((REAL8)randval) - 0.5)*DeltaFDeriv1;
         } else if (k == 1) {
@@ -820,9 +869,23 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
         #endif
       }
     }
-        
-    LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.tRef), GPSin, pPulsarSignalParams);
-    CHECKSTATUSPTR (status);
+    
+    /* 07/14/04 gam; one per sky position update the reference time for this sky position */
+    if ( iLastSkyPos != i ) {
+      LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.tRef), GPSin, pPulsarSignalParams);
+      CHECKSTATUSPTR (status);
+      
+      /* 07/14/04 gam; one per sky position fill in SkyConstAndZeroPsiAMResponse for use with LALFastGeneratePulsarSFTs */
+      if ( (params->testFlag & 4) > 0 ) {
+        #ifdef DEBUG_LALFASTGENERATEPULSARSFTS
+            fprintf(stdout,"about to call LALComputeSkyAndZeroPsiAMResponse \n");
+            fflush(stdout);
+        #endif
+        LALComputeSkyAndZeroPsiAMResponse (status->statusPtr, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
+        CHECKSTATUSPTR (status);
+      }      
+    }    
+    iLastSkyPos = i; /* Update the index to the last Sky Position */
     
     /****************************************************/
     /*                                                  */
@@ -841,11 +904,17 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
 
       /* get random value for psi */
       LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+      #ifdef DEBUG_SETFIXED_RANDVAL
+         randval = params->threshold5; /* Temporarily use threshold5 for this; need to add testParameters to commandline. */
+      #endif
       pPulsarSignalParams->pulsar.psi = (randval - 0.5) * ((REAL4)LAL_PI_2);
       /* pPulsarSignalParams->pulsar.psi = 0.0; */
     
       /* get random value for cosIota */
       LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+      #ifdef DEBUG_SETFIXED_RANDVAL
+         randval = params->threshold5; /* Temporarily use threshold5 for this; need to add testParameters to commandline. */
+      #endif
       cosIota = 2.0*((REAL8)randval) - 1.0;
       /* cosIota = 1.0; */
 
@@ -855,6 +924,9 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
 
       /* get random value for phi0 */
       LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+      #ifdef DEBUG_SETFIXED_RANDVAL
+         randval = params->threshold5; /* Temporarily use threshold5 for this; need to add testParameters to commandline. */
+      #endif
       pPulsarSignalParams->pulsar.phi0 = ((REAL8)randval) * ((REAL8)LAL_TWOPI);
       /* pPulsarSignalParams->pulsar.phi0 = 0.0; */
 
@@ -867,6 +939,9 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
       }
       /* Now add mismatch to pPulsarSignalParams->pulsar.f0 */
       LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status); /* 05/28/04 gam */
+      #ifdef DEBUG_SETFIXED_RANDVAL
+         randval = params->threshold5; /* Temporarily use threshold5 for this; need to add testParameters to commandline. */
+      #endif      
       pPulsarSignalParams->pulsar.f0 = pPulsarSignalParams->pulsar.f0 + (((REAL8)randval) - 0.5)*params->dfSUM;
       
       #ifdef DEBUG_RANDOMTRIALPARAMETERS
@@ -882,28 +957,136 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
         fprintf(stdout,"nBinsPerSUM = %i, params->nBinsPerSUM = %i\n",nBinsPerSUM,params->nBinsPerSUM);
         fflush(stdout);	
       #endif
-
-      signal = NULL; /* Call LALGeneratePulsarSignal to generate signal */
-      LALGeneratePulsarSignal(status->statusPtr, &signal, pPulsarSignalParams);
-      CHECKSTATUSPTR (status);
-
-      #ifdef DEBUG_MONTECARLOTIMEDOMAIN_DATA
-        fprintf(stdout,"signal->deltaT = %23.10e \n",signal->deltaT);
-        fprintf(stdout,"signal->epoch.gpsSeconds = %i \n",signal->epoch.gpsSeconds);
-        fprintf(stdout,"signal->epoch.gpsNanoSeconds = %i \n",signal->epoch.gpsNanoSeconds);
-        fprintf(stdout,"pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate, signal->data->length = %g %i\n",pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate,signal->data->length);
-        fflush(stdout);
-      #endif
-      #ifdef PRINT_MONTECARLOTIMEDOMAIN_DATA
-        for(i=0;i<signal->data->length;i++)  {
-          fprintf(stdout,"signal->data->data[%i] = %g\n",i,signal->data->data[i]);
+      
+      /* 07/14/04 gam; check if using LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
+      if ( (params->testFlag & 4) > 0 ) {
+        #ifdef DEBUG_LALFASTGENERATEPULSARSFTS
+          fprintf(stdout,"About to call LALFastGeneratePulsarSFTs \n");
           fflush(stdout);
-        }
-      #endif
+        #endif
+        /* 07/14/04 gam; use SkyConstAndZeroPsiAMResponse from LALComputeSkyAndZeroPsiAMResponse and SFTandSignalParams to generate SFTs fast. */
+        LALFastGeneratePulsarSFTs (status->statusPtr, &outputSFTs, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
+        CHECKSTATUSPTR (status);
+        
+        #ifdef PRINT_ONEMONTECARLO_OUTPUTSFT
+          if (params->whichMCSUM == 0 && iFreq == 0) {
+            REAL4  fPlus;
+            REAL4  fCross;
+            i=0; /* index of which outputSFT to output */
+            fPlus = pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi[i]*cos(pPulsarSignalParams->pulsar.psi) + pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi[i]*sin(pPulsarSignalParams->pulsar.psi);
+            fCross = pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi[i]*cos(pPulsarSignalParams->pulsar.psi) - pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi[i]*sin(pPulsarSignalParams->pulsar.psi);
+            fprintf(stdout,"iFreq = %i, inject h_0 = %23.10e \n",iFreq,h_0);
+            fprintf(stdout,"iFreq = %i, inject cosIota = %23.10e, A_+ = %23.10e, A_x = %23.10e \n",iFreq,cosIota,pPulsarSignalParams->pulsar.aPlus,pPulsarSignalParams->pulsar.aCross);
+            fprintf(stdout,"iFreq = %i, inject psi = %23.10e \n",iFreq,pPulsarSignalParams->pulsar.psi);
+            fprintf(stdout,"iFreq = %i, fPlus, fCross = %23.10e,  %23.10e \n",iFreq,fPlus,fCross);
+            fprintf(stdout,"iFreq = %i, inject phi0 = %23.10e \n",iFreq,pPulsarSignalParams->pulsar.phi0);
+            fprintf(stdout,"iFreq = %i, search f0 = %23.10e, inject f0 = %23.10e \n",iFreq,f0SUM + iFreq*params->dfSUM,pPulsarSignalParams->pulsar.f0);
+            fprintf(stdout,"outputSFTs->data[%i].data->length = %i \n",i,outputSFTs->data[i].data->length);
+            fflush(stdout);
+            for(j=0;j<params->nBinsPerBLK;j++) {
+               /* fprintf(stdout,"%i %g %g \n",j,outputSFTs->data[i].data->data[j].re,outputSFTs->data[i].data->data[j].im); */
+               fprintf(stdout,"%i %g \n",j,outputSFTs->data[i].data->data[j].re*outputSFTs->data[i].data->data[j].re + outputSFTs->data[i].data->data[j].im*outputSFTs->data[i].data->data[j].im);
+               fflush(stdout);
+            }
+          }
+        #endif
 
-      outputSFTs = NULL; /* Call LALSignalToSFTs to generate outputSFTs with injection data */
-      LALSignalToSFTs(status->statusPtr, &outputSFTs, signal, pSFTParams);
-      CHECKSTATUSPTR (status);
+        /* Add outputSFTs with injected signal to input noise SFTs; no renorm should be needed */
+        for(i=0;i<params->numBLKs;i++) {
+          for(j=0;j<params->nBinsPerBLK;j++) {
+             #ifdef PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA
+               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].re,outputSFTs->data[i].data->data[j].re);
+               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].im,outputSFTs->data[i].data->data[j].im);
+               fflush(stdout);
+             #endif
+             params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[j].re + outputSFTs->data[i].data->data[j].re;
+             params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[j].im + outputSFTs->data[i].data->data[j].im;
+          }
+        }
+        /* next is else for if ( (params->testFlag & 4) > 0 ) else... */
+      } else {
+        #ifdef PRINT_ONEMONTECARLO_OUTPUTSFT
+          if (params->whichMCSUM == 0 && iFreq == 0) {
+            /* To compare with LALFastGeneratePulsarSFTs, which uses ComputeSky, use first time stamp as reference time */
+            GPSin.gpsSeconds = params->timeStamps[0].gpsSeconds;
+            GPSin.gpsNanoSeconds = params->timeStamps[0].gpsNanoSeconds;
+            LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.tRef), GPSin, pPulsarSignalParams); CHECKSTATUSPTR (status);
+          }
+        #endif
+
+        signal = NULL; /* Call LALGeneratePulsarSignal to generate signal */
+        LALGeneratePulsarSignal(status->statusPtr, &signal, pPulsarSignalParams);
+        CHECKSTATUSPTR (status);
+
+        #ifdef DEBUG_MONTECARLOTIMEDOMAIN_DATA
+          fprintf(stdout,"signal->deltaT = %23.10e \n",signal->deltaT);
+          fprintf(stdout,"signal->epoch.gpsSeconds = %i \n",signal->epoch.gpsSeconds);
+          fprintf(stdout,"signal->epoch.gpsNanoSeconds = %i \n",signal->epoch.gpsNanoSeconds);
+          fprintf(stdout,"pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate, signal->data->length = %g %i\n",pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate,signal->data->length);
+          fflush(stdout);
+        #endif
+        #ifdef PRINT_MONTECARLOTIMEDOMAIN_DATA
+          for(i=0;i<signal->data->length;i++)  {
+            fprintf(stdout,"signal->data->data[%i] = %g\n",i,signal->data->data[i]);
+            fflush(stdout);
+          }
+        #endif
+
+        outputSFTs = NULL; /* Call LALSignalToSFTs to generate outputSFTs with injection data */
+        LALSignalToSFTs(status->statusPtr, &outputSFTs, signal, pSFTParams);
+        CHECKSTATUSPTR (status);
+
+        #ifdef PRINT_ONEMONTECARLO_OUTPUTSFT
+           if (params->whichMCSUM == 0 && iFreq == 0) {
+              REAL4 realHetPhaseCorr;
+              REAL4 imagHetPhaseCorr;
+              REAL8 deltaTHeterodyne;
+              i=0; /* index of which outputSFT to output */
+              fprintf(stdout,"iFreq = %i, inject h_0 = %23.10e \n",iFreq,h_0);
+              fprintf(stdout,"iFreq = %i, inject cosIota = %23.10e, A_+ = %23.10e, A_x = %23.10e \n",iFreq,cosIota,pPulsarSignalParams->pulsar.aPlus,pPulsarSignalParams->pulsar.aCross);
+              fprintf(stdout,"iFreq = %i, inject psi = %23.10e \n",iFreq,pPulsarSignalParams->pulsar.psi);
+              fprintf(stdout,"iFreq = %i, inject phi0 = %23.10e \n",iFreq,pPulsarSignalParams->pulsar.phi0);
+              fprintf(stdout,"iFreq = %i, search f0 = %23.10e, inject f0 = %23.10e \n",iFreq,f0SUM + iFreq*params->dfSUM,pPulsarSignalParams->pulsar.f0);
+              fprintf(stdout,"outputSFTs->data[%i].data->length = %i \n",i,outputSFTs->data[i].data->length);
+              /* deltaTHeterodyne = the time from the refererence time to the start of an SFT */
+              GPSin.gpsSeconds = params->timeStamps[i].gpsSeconds;
+              GPSin.gpsNanoSeconds = params->timeStamps[i].gpsNanoSeconds;
+              TRY (LALDeltaFloatGPS (status->statusPtr, &deltaTHeterodyne, &GPSin, &(pPulsarSignalParams->pulsar.tRef)), status);
+              /* deltaTHeterodyne = 0.0; */ /* UNCOMMENT TO TURN OFF CORRECTION OF PHASE */
+              fprintf(stdout,"t_h = %23.10e\n",deltaTHeterodyne);
+              fflush(stdout);
+              realHetPhaseCorr = cos(LAL_TWOPI*pPulsarSignalParams->fHeterodyne*deltaTHeterodyne);
+              imagHetPhaseCorr = sin(LAL_TWOPI*pPulsarSignalParams->fHeterodyne*deltaTHeterodyne);
+              renorm = ((REAL4)GV.nsamples)/((REAL4)(outputSFTs->data[i].data->length - 1));
+              for(j=0;j<params->nBinsPerBLK;j++) {
+                /* fprintf(stdout,"%i %g %g \n",j,renorm*outputSFTs->data[i].data->data[j].re*realHetPhaseCorr - renorm*outputSFTs->data[i].data->data[j].im*imagHetPhaseCorr,renorm*outputSFTs->data[i].data->data[j].re*imagHetPhaseCorr + renorm*outputSFTs->data[i].data->data[j].im*realHetPhaseCorr); */
+                fprintf(stdout,"%i %g \n",j,renorm*renorm*outputSFTs->data[i].data->data[j].re*outputSFTs->data[i].data->data[j].re + renorm*renorm*outputSFTs->data[i].data->data[j].im*outputSFTs->data[i].data->data[j].im);
+                fflush(stdout);
+              }
+           }
+        #endif
+        
+        /* Add outputSFTs with injected signal to input noise SFTs; renorm is needed. */
+        /* 05/21/04 gam; Normalize the SFTs from LALSignalToSFTs as per the normalization in makefakedata_v2.c and lalapps/src/pulsar/make_sfts.c. */
+        renorm = ((REAL4)GV.nsamples)/((REAL4)(outputSFTs->data[0].data->length - 1)); /* 05/21/04 gam; should be the same for all outputSFTs; note minus 1 is needed */
+        for(i=0;i<params->numBLKs;i++) {
+          /* renorm = ((REAL4)GV.nsamples)/((REAL4)outputSFTs->data[i].data->length); */ /* 05/21/04 gam; do once correctly above */ /* Should be the same for all SFTs, but just in case recompute. */
+          #ifdef DEBUG_MONTECARLOSFT_DATA  
+            fprintf(stdout,"Mutiplying outputSFTs->data[%i] with renorm = %g \n",i,renorm);
+            fflush(stdout);
+          #endif  
+          for(j=0;j<params->nBinsPerBLK;j++) {
+             #ifdef PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA
+               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].re,renorm*outputSFTs->data[i].data->data[j].re);
+               fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].im,renorm*outputSFTs->data[i].data->data[j].im);
+               fflush(stdout);
+             #endif
+             /* 05/21/04 gam; changed next two lines so that params->BLKData is sum of saved noise SFTs and SFTs with injection data. */
+             params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[j].re + renorm*outputSFTs->data[i].data->data[j].re;
+             params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[j].im + renorm*outputSFTs->data[i].data->data[j].im;
+          }
+        }
+      } /* END if ( (params->testFlag & 4) > 0 ) else */
 
       #ifdef DEBUG_MONTECARLOSFT_DATA  
         fprintf(stdout,"params->numBLKs, outputSFTs->length = %i, %i \n",params->numBLKs,outputSFTs->length);
@@ -925,35 +1108,54 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
           }
         }
       #endif
-    
-      /* Add Injections to input data */
-      /* 05/21/04 gam; Normalize the SFTs from LALSignalToSFTs as per the normalization in makefakedata_v2.c and lalapps/src/pulsar/make_sfts.c. */
-      renorm = ((REAL4)GV.nsamples)/((REAL4)(outputSFTs->data[0].data->length - 1)); /* 05/21/04 gam; should be the same for all outputSFTs; note minus 1 is needed */
-      for(i=0;i<params->numBLKs;i++) {
-        /* renorm = ((REAL4)GV.nsamples)/((REAL4)outputSFTs->data[i].data->length); */ /* 05/21/04 gam; do once correctly above */ /* Should be the same for all SFTs, but just in case recompute. */
-        #ifdef DEBUG_MONTECARLOSFT_DATA  
-          fprintf(stdout,"Mutiplying outputSFTs->data[%i] with renorm = %g \n",i,renorm);
-          fflush(stdout);
-        #endif  
-        for(j=0;j<params->nBinsPerBLK;j++) {
-           #ifdef PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA
-             fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].re,renorm*outputSFTs->data[i].data->data[j].re);
-             fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].im,renorm*outputSFTs->data[i].data->data[j].im);
-             fflush(stdout);
-           #endif
-           /* 05/21/04 gam; changed next two lines so that params->BLKData is sum of saved noise SFTs and SFTs with injection data. */
-           params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[j].re + renorm*outputSFTs->data[i].data->data[j].re;
-           params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[j].im + renorm*outputSFTs->data[i].data->data[j].im;
-        }
-      }
-    
-      LALDestroySFTVector(status->statusPtr, &outputSFTs);
-      CHECKSTATUSPTR (status); /* 06/01/04 gam */
       
-      LALFree(signal->data->data);
-      LALFree(signal->data);
-      LALFree(signal);
-                        
+      /* 07/14/04 gam; check if using LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
+      if ( !((params->testFlag & 4) > 0) ) {
+        LALDestroySFTVector(status->statusPtr, &outputSFTs);
+        CHECKSTATUSPTR (status); /* 06/01/04 gam */
+      
+        LALFree(signal->data->data);
+        LALFree(signal->data);
+        LALFree(signal);
+      }
+      
+      /* 07/14/04 gam; Example code */  /*
+      SkyConstAndZeroPsiAMResponse *pSkyConstAndZeroPsiAMResponse;
+      SFTandSignalParams *pSFTandSignalParams;
+
+      pSkyConstAndZeroPsiAMResponse = (SkyConstAndZeroPsiAMResponse *)LALMalloc(sizeof(SkyConstAndZeroPsiAMResponse));
+      pSkyConstAndZeroPsiAMResponse->skyConst = (REAL8 *)LALMalloc((2*params->numSpinDown*(params->numBLKs+1)+2*params->numBLKs+3)*sizeof(REAL8));
+      pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi = (REAL4 *)LALMalloc(params->numBLKs*sizeof(REAL4));
+      pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi = (REAL4 *)LALMalloc(params->numBLKs*sizeof(REAL4));
+      pSFTandSignalParams = (SFTandSignalParams *)LALMalloc(sizeof(SFTandSignalParams));
+      pSFTandSignalParams->resTrig = 64;
+      pSFTandSignalParams->trigArg = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+      pSFTandSignalParams->sinVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+      pSFTandSignalParams->cosVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
+      for (k=0; k<=pSFTandSignalParams->resTrig; k++) {
+       pSFTandSignalParams->trigArg[k]= ((REAL8)LAL_TWOPI) * ((REAL8)k) / ((REAL8)pSFTandSignalParams->resTrig);
+       pSFTandSignalParams->sinVal[k]=sin( pSFTandSignalParams->trigArg[k] );
+       pSFTandSignalParams->cosVal[k]=cos( pSFTandSignalParams->trigArg[k] );
+      }
+      pSFTandSignalParams->pSigParams = pPulsarSignalParams;
+      pSFTandSignalParams->pSFTParams = pSFTParams;
+      pSFTandSignalParams->nSamples = GV.nsamples;
+           
+      LALComputeSkyAndZeroPsiAMResponse (status->statusPtr, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
+      CHECKSTATUSPTR (status);
+      LALFastGeneratePulsarSFTs (status->statusPtr, &outputSFTs, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
+      CHECKSTATUSPTR (status);
+      
+      LALFree(pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi);
+      LALFree(pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi);
+      LALFree(pSkyConstAndZeroPsiAMResponse->skyConst);
+      LALFree(pSkyConstAndZeroPsiAMResponse);
+      LALFree(pSFTandSignalParams->trigArg);
+      LALFree(pSFTandSignalParams->sinVal);
+      LALFree(pSFTandSignalParams->cosVal);
+      LALFree(pSFTandSignalParams);
+      */
+
       StackSlideApplySearch(status->statusPtr,params);
       CHECKSTATUSPTR (status);
         
@@ -980,7 +1182,25 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
     CHECKSTATUSPTR (status);
   }
   LALFree(pPulsarSignalParams);
-        
+
+  /* 07/14/04 gam; deallocate memory for structs needed by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
+  if ( (params->testFlag & 4) > 0 ) {
+    #ifdef DEBUG_LALFASTGENERATEPULSARSFTS
+      fprintf(stdout,"deallocate memory for structs needed by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs \n");
+      fflush(stdout);
+    #endif
+    LALDestroySFTVector(status->statusPtr, &outputSFTs);
+    CHECKSTATUSPTR (status);
+    LALFree(pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi);
+    LALFree(pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi);
+    LALFree(pSkyConstAndZeroPsiAMResponse->skyConst);
+    LALFree(pSkyConstAndZeroPsiAMResponse);
+    LALFree(pSFTandSignalParams->trigArg);
+    LALFree(pSFTandSignalParams->sinVal);
+    LALFree(pSFTandSignalParams->cosVal);
+    LALFree(pSFTandSignalParams);
+  }
+          
   /* 05/21/04 gam; free memory of saved data */
   for (i=0;i<params->numBLKs;i++) {
       LALFree(savBLKData[i]->fft->data->data);
