@@ -13,8 +13,8 @@ pulse emission time, in TDB.
 
 \subsubsection*{Prototypes}
 \input{LALBarycenterCP}
-\idx{LALBarycenter()}
-\idx{LALBarycenter()}
+\idx{\texttt{LALBarycenter()}}
+\idx{\texttt{LALBarycenter()}}
 
 \subsubsection*{Description}
 
@@ -48,11 +48,9 @@ by removing the Roemer delay,
 (including effects of Moon, planets, and the 
 Earth's time-varying spin axis and spin rate),
 Einstein delay, and Shapiro delay. Accuracy is
-better than 5 $\mu$s. Full details will be in monograph
+better than 3 $\mu$s. Full details will be in monograph
 by Cutler in Los Alamos preprint archive.
 
-
-\subsubsection*{Uses}
 
 \subsubsection*{Notes}
 \vfill{\footnotesize\input{LALBarycenterCV}}
@@ -62,7 +60,7 @@ by Cutler in Los Alamos preprint archive.
 #include <lal/LALBarycenter.h>
 		 
 NRCSID(LALBARYCENTERC,"$Id$");
-
+		 
 /* <lalVerbatim file="LALBarycenterCP"> */
 void 
 LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS, 
@@ -77,7 +75,6 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
                                in look-up table */
 /*REAL8 t0,t0hr; */
 
-  REAL8 dtEtable;  /*time between consecutive entries in Earth ephem. table */
   REAL8 t0e;        /*time since first entry in Earth ephem. table */  
   INT4 ientryE;      /*entry in look-up table closest to current time, tGPS */
 
@@ -86,7 +83,6 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
                              in Earth ephem look-up table */
   REAL8 tdiff2E;          /*tdiff2=tdiffE*tdiffE */
   /*next entries are same as above, but for Sun table */
-  REAL8 dtStable;
   REAL8 t0s;      
   INT4 ientryS;   
   REAL8 tinitS;  
@@ -96,55 +92,63 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
   INT4 j; /*dummy index */
 
   INITSTATUS(stat,"LALBarycenter",LALBARYCENTERC); 
+  ATTATCHSTATUSPTR(stat);
 
     tgps[0] = (REAL8)tGPS->gpsSeconds; /*convert from INT4 to REAL8 */
     tgps[1] = (REAL8)tGPS->gpsNanoSeconds;
 
-    tinitE = edat->gpsE[0];
-    tinitS = edat->gpsS[0];
-    
-    dtEtable = edat->gpsE[1] - tinitE;
-    dtStable = edat->gpsS[1] - tinitS;
- 
+    tinitE = edat->earth[0].gps;
+    tinitS = edat->sun[0].gps;
+
     t0e=tgps[0]-tinitE;
-    ientryE = floor((t0e/dtEtable) +0.5e0);  /*finding Earth table entry 
+    ientryE = floor((t0e/edat->dtEtable) +0.5e0);  /*finding Earth table entry 
                                                 closest to arrival time*/
-    /*Curt: make sure dtEtable and dtStable aren't zero */
     t0s=tgps[0]-tinitS;
-    ientryS = floor((t0s/dtStable) +0.5e0);  /*finding Sun table entry 
+    ientryS = floor((t0s/edat->dtStable) +0.5e0);  /*finding Sun table entry 
                                                 closest to arrival time*/
 
-    tdiffE = t0e -dtEtable*ientryE + tgps[1]*1.e-9; /*tdiff is arrival 
-            time minus closest Earth table entry; tdiff can be pos. or neg. */
+    /*Making sure tgps is within earth and sun ephemeris arrays*/
+
+    if ( ( ientryE < 0 ) || ( ientryE >=  edat->nentriesE )) {
+      ABORT(stat, LALBARYCENTERH_EOUTOFRANGEE, 
+                  LALBARYCENTERH_MSGEOUTOFRANGEE);
+    }
+    if ( ( ientryS < 0 ) || ( ientryS >=  edat->nentriesS ) ){
+      ABORT(stat, LALBARYCENTERH_EOUTOFRANGES, 
+	    LALBARYCENTERH_MSGEOUTOFRANGES);
+    }
+
+    tdiffE = t0e -edat->dtEtable*ientryE + tgps[1]*1.e-9; /*tdiff is arrival 
+	      time minus closest Earth table entry; tdiff can be pos. or neg. */
     tdiff2E = tdiffE*tdiffE;
 
-    tdiffS=t0s -dtStable*ientryS + tgps[1]*1.e-9; /*same for Sun*/
+    tdiffS=t0s -edat->dtStable*ientryS + tgps[1]*1.e-9; /*same for Sun*/
     tdiff2S=tdiffS*tdiffS;
-
-
+    
+    
     /********************************************************************
      *Calucate position and vel. of center of Earth.
      *We extrapolate from a table produced using JPL DE405 ephemeris.
      *---------------------------------------------------------------------
      */
-  {  
-
-    REAL8* pos=edat->position[ientryE]; /*Cartesian coords of center of Earth
-                                      from DE405 ephem, in sec. 0=x,1=y,2=z */
-    REAL8* vel=edat->velocity[ientryE];
-    REAL8* acc=edat->acceleration[ientryE]; 
-
-        for (j=0;j<3;j++){
-       earth->posNow[j]=pos[j] + vel[j]*tdiffE + 0.5*acc[j]*tdiff2E;
-       earth->velNow[j]=vel[j] + acc[j]*tdiffE;
-        }
-  }
+    {  
+      
+      REAL8* pos=edat->earth[ientryE].pos; /*Cartesian coords of center of Earth
+					     from DE405 ephem, in sec. 0=x,1=y,2=z */
+      REAL8* vel=edat->earth[ientryE].vel;
+      REAL8* acc=edat->earth[ientryE].acc; 
+    
+      for (j=0;j<3;j++){
+	earth->posNow[j]=pos[j] + vel[j]*tdiffE + 0.5*acc[j]*tdiff2E;
+	earth->velNow[j]=vel[j] + acc[j]*tdiffE;
+      }
+    }
        
-       /********************************************************************
-	* Now calculating Earth's rotational state.
-	*---------------------------------------------------------------------
-	*/
-    {
+  /********************************************************************
+   * Now calculating Earth's rotational state.
+   *---------------------------------------------------------------------
+   */
+  {
    INT2 leapsSince2000; /*number of leap secs added to UTC calendar since
                             Jan 1, 2000 00:00:00 UTC; leap is a NEGATIVE number
                             for dates before Jan 1, 2000. */
@@ -173,6 +177,7 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
    leapsSince2000 = edat->leap - 13;   
    tuInt=tGPS->gpsSeconds -630720013; /*first subtract off value 
                                  of gps clock at Jan 1, 2000 00:00:00 UTC */
+
    ut1secSince1Jan2000 = tuInt-leapsSince2000;  /*next subtract 
       off # leap secs added to UTC calendar since Jan 1, 2000 00:00:00 UTC */     
    tuJC = (ut1secSince1Jan2000 + tgps[1]*1.e-9 - 43200)/(8.64e4*36525);
@@ -222,14 +227,19 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
    gmstRad=gmst*LAL_PI/43200;
    
    /*------------------------------------------------------------------------
-    *Now adding calculating M and N, describing  lunisolar precession;  
-    *see Eq. 3.213-1 in Exlpanatory Supp 
+    *Now calculating 3 terms, describing  lunisolar precession;  
+    *see Eqs. 3.212 on pp. 104-5 in Explanatory Supp. 
     *-------------------------------------------------------------------------
     */
    
-   
-   earth->M=(1.2812323e0*LAL_PI/1.8e2)*daysSinceJ2000/36525;
-   earth->N=(0.5567530e0*LAL_PI/1.8e2)*daysSinceJ2000/36525;
+   earth->tzeA = tuJC*(2306.2181e0 + (0.30188e0 + 0.017998e0*tuJC)*tuJC )
+             *LAL_PI/6.48e5;  
+
+   earth->zA = tuJC*(2306.2181e0 + (1.09468e0 + 0.018203e0*tuJC)*tuJC )
+             *LAL_PI/6.48e5;  
+
+   earth->thetaA = tuJC*(2004.3109e0 - (0.42665e0 + 0.041833*tuJC)*tuJC )
+             *LAL_PI/6.48e5;
    
    /*--------------------------------------------------------------------------
     * Now adding approx nutation (= short-period,forced motion, by definition).
@@ -242,10 +252,6 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
     * in Explanatory Supp) is not included here. However its amplitude is
     * order of (and a somewhat less than) 1 arcsec; see plot on p. 270 of
     * Explanatory Supplement to Ast. Alm. 
-    *
-    * Note obliquity epsilon also changes with nutation, as 
-    * given in 3.222-1, p.114 of Explan. Supp. 
-    * So far, this has been ignored.
     *--------------------------------------------------------------------------
     */
    /* define variables for storing sin/cos of deltaE, eps0 etc */
@@ -261,11 +267,13 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
      + (2.e-4*LAL_PI/180.e0)*
      cos( (200.9e0 + 1.97129e0*daysSinceJ2000)*LAL_PI/180.e0 );
    
-     earth->gastRad = gmstRad + earth->delpsi*cos(eps0); 
+   earth->gastRad = gmstRad + earth->delpsi*cos(eps0); 
                              /* ``equation of the equinoxes''*/
+
 }
     /**********************************************************************
-     *Now calculating Einstein delay. This is just difference between TDB and TDT.
+     *Now calculating Einstein delay. This is just difference between 
+     *TDB and TDT.
      *We steal from TEMPO the approx 20 biggest terms in an expansion.
      *----------------------------------------------------------------------- 
      * jedtdt is Julian date (TDT) MINUS 2451545.0 (TDT);
@@ -300,6 +308,31 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
        0.468597e0 * sin(6244.942814354e0 *jt + 5.866398759e0 )   +
        0.375510e0 * sin(5507.553238667e0 *jt + 4.103476804e0 )
        );
+
+/* now adding NEXT biggest (2nd-tier) terms from Tempo */
+    earth->einstein = earth->einstein + 1.e-6*( 
+      0.243085 * sin(-775.522611324 *jt + 3.651837925 )   +
+      0.173435 * sin(18849.227549974 *jt + 6.153743485 )   +
+      0.230685 * sin(5856.477659115 *jt + 4.773852582 )   +
+      0.203747 * sin(12036.460734888 *jt + 4.333987818 )   +
+      0.143935 * sin(-796.298006816 *jt + 5.957517795 )   +
+      0.159080 * sin(10977.078804699 *jt + 1.890075226 )   +
+      0.119979 * sin(38.133035638 *jt + 4.551585768 )   +
+      0.118971 * sin(5486.777843175 *jt + 1.914547226 )   +
+      0.116120 * sin(1059.381930189 *jt + 0.873504123 )   +
+      0.137927 * sin(11790.629088659 *jt + 1.135934669 )   +
+      0.098358 * sin(2544.314419883 *jt + 0.092793886 )   +
+      0.101868 * sin(-5573.142801634 *jt + 5.984503847 )   +
+      0.080164 * sin(206.185548437 *jt + 2.095377709 )   +
+      0.079645 * sin(4694.002954708 *jt + 2.949233637 )   +
+      0.062617 * sin(20.775395492 *jt + 2.654394814 )   +
+      0.075019 * sin(2942.463423292 *jt + 4.980931759 )   +
+      0.064397 * sin(5746.271337896 *jt + 1.280308748 )   +
+      0.063814 * sin(5760.498431898 *jt + 4.167901731 )   +
+      0.048042 * sin(2146.165416475 *jt + 1.495846011 )   +
+      0.048373 * sin(155.420399434 *jt + 2.251573730 )   
+      );
+
 
 /* below, I've just taken derivative of above expression for einstein,
    then commented out terms that contribute less than around 10^{-12}
@@ -372,38 +405,39 @@ LALBarycenterEarth(LALStatus *stat, EarthState *earth, LIGOTimeGPS *tGPS,
 */
 
        )/(8.64e4*3.6525e5);
+
+/*Note I don't bother adding 2nd-tier terms to deinstein_tempo either */
     }
     /********************************************************************
      *Now calculating Earth-Sun separation vector, as needed
      *for Shapiro delay calculation. 
      *--------------------------------------------------------------------
      */
-    {
-      REAL8 rse2;
-/* Curt: lately trying to re-write this with loop, to make more compact */
-       REAL8* sunPos=edat->sunPos[ientryS];
-       REAL8* sunVel=edat->sunVel[ientryS];
-       REAL8* sunAcc=edat->sunAccel[ientryS];
-       REAL8 sunPosNow[3], sunVelNow[3];
-/*       REAL8 se[3],dse[3];  vector pointing from Sun to Earth (in sec),
-                              and its time deriv (sec/sec)  */
-       
-       rse2=earth->drse=0.0;
-       for (j=0;j<3;j++){
-       sunPosNow[j]=sunPos[j] + sunVel[j]*tdiffS + 0.5*sunAcc[j]*tdiff2S;
-       sunVelNow[j]=sunVel[j] + sunAcc[j]*tdiffS; 
+  {
+    REAL8 rse2;
+    REAL8* sunPos=edat->sun[ientryS].pos;
+    REAL8* sunVel=edat->sun[ientryS].vel;
+    REAL8* sunAcc=edat->sun[ientryS].acc;
+    REAL8 sunPosNow[3], sunVelNow[3];
+    
+    rse2=earth->drse=0.0;
+    for (j=0;j<3;j++){
+      sunPosNow[j]=sunPos[j] + sunVel[j]*tdiffS + 0.5*sunAcc[j]*tdiff2S;
+      sunVelNow[j]=sunVel[j] + sunAcc[j]*tdiffS; 
       
-       earth->se[j]=earth->posNow[j]-sunPosNow[j];
-       earth->dse[j]=earth->velNow[j]-sunVelNow[j];
-       rse2 += earth->se[j]*earth->se[j];
-       earth->drse += earth->se[j]*earth->dse[j];
-       }
-       earth->rse=sqrt(rse2);
-       earth->drse = earth->drse/earth->rse;
-       /* Curt: make sure rse, b, (rse +seDotN) aren't zero */
-     }
- RETURN(stat);
+      earth->se[j]=earth->posNow[j]-sunPosNow[j];
+      earth->dse[j]=earth->velNow[j]-sunVelNow[j];
+      rse2 += earth->se[j]*earth->se[j];
+      earth->drse += earth->se[j]*earth->dse[j];
+    }
+    earth->rse=sqrt(rse2);
+    earth->drse = earth->drse/earth->rse;
+    /* Curt: make sure rse, b, (rse +seDotN) aren't zero */
   }
+    /*Curt: do I have to detach status ptr below?*/
+    DETATCHSTATUSPTR(stat);
+    RETURN(stat);
+}
 
 
 /* <lalVerbatim file="LALBarycenterCP"> */
@@ -415,6 +449,8 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
   REAL8 longitude,latitude,rd;  /*geocentric (not geodetic!!) longitude
                                   and latitude of detector vertex, and
                                   dist. rd from center of Earth (sec). */
+  REAL8 OMEGA = 7.29211510e-5;  /*ang. vel. of Earth (rad/sec)*/
+
   REAL8 alpha,delta;  /* RA and DEC (radians) in 
                            ICRS realization of J2000 coords.*/
 
@@ -427,18 +463,17 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
   REAL8 roemer,droemer;  /*Roemer delay and its time derivative*/
   REAL8 erot,derot;      /*delay from center-of-Earth to detector (sec),
 			   and its time deriv */
-
-/*  REAL8 einstein;  /TDB-TDT; largest terms in TEMPO expansion
-  REAL8 deinstein;   d(TDB-TDT)/d(TDT) */
  
   REAL8 shapiro, dshapiro; /*Shapiro delay due to Sun, and its time deriv. */
+  REAL8 finiteDistCorr, dfiniteDistCorr; /*correction to Roemer delay due
+		                           to finite dist D to source; 
+                                           important for D < 100pc */
   REAL8 s[3]; /*unit vector pointing at source, in J2000 Cartesian coords */
   INT4 j; /*dummy index */
 
   INITSTATUS(stat,"LALBarycenter",LALBARYCENTERC); 
 
   ASSERT (baryinput!=NULL, stat, LALBARYCENTERH_ENULL, LALBARYCENTERH_MSGENULL);
-
   ASSERT (emit!= NULL, stat, LALBARYCENTERH_ENULL, LALBARYCENTERH_MSGENULL);
 
   tgps[0] = (REAL8)baryinput->tgps.gpsSeconds; /*convert from INT4 to REAL8 */
@@ -446,6 +481,13 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
     
     alpha = baryinput->alpha;
     delta = baryinput->delta;
+
+/* check that alpha and delta are in reasonable range */
+    if ( (fabs(alpha) > 2.e0*LAL_PI) || ( fabs(delta) > 0.5e0*LAL_PI ) ){
+      ABORT(stat, LALBARYCENTERH_EBADSOURCEPOS, 
+      LALBARYCENTERH_MSGEBADSOURCEPOS);
+    }
+
     sinTheta=sin(LAL_PI/2.0-delta);
     s[2]=cos(LAL_PI/2.0-delta);   /* s is vector that points towards source */
     s[1]=sinTheta*sin(alpha);  /* in Cartesian coords based on J2000 */
@@ -456,7 +498,6 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
               +baryinput->site.location[2]*baryinput->site.location[2]);
     latitude = LAL_PI/2.e0 - acos(baryinput->site.location[2]/rd);
     longitude= atan2(baryinput->site.location[1],baryinput->site.location[0]);
-    rd /= LAL_C_SI;
 
     /********************************************************************
      *Calucate Roemer delay for detector at center of Earth.
@@ -476,7 +517,6 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
 	*---------------------------------------------------------------------
 	*/
   {
-    REAL8 OMEGA = 7.29211510e-5;  /*ang. vel. of Earth (rad/sec)*/
     
     REAL8 eps0= 0.40909280422232891e0;/*obliquity of ecliptic at JD 245145.0, 
 					in radians. NOT! to be confused with 
@@ -486,14 +526,42 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
     /*  REAL8 eps0= (23.e0 + 26.e0/60 + 21.448e0/3.6e3)*LAL_PI/180;  */
     
    REAL8 NdotD;
-   REAL8 alphaE,deltaE;
-   
-   alphaE = alpha + earth->M + earth->N*sin(alpha)*tan(delta) ;
-   deltaE = delta + earth->N*cos((alphaE+ alpha)/2.e0);
+   REAL8 cosDeltaSinAlphaMinusZA, cosDeltaCosAlphaMinusZA, sinDelta; 
+            /* above used in calculating effect of luni-solar precession*/
+
+   REAL8 delXNut,delYNut,delZNut,NdotDNut; /* used in calculating effect 
+            of forced nutation */
+
+   cosDeltaSinAlphaMinusZA = sin(alpha + earth->tzeA)*cos(delta);
+
+   cosDeltaCosAlphaMinusZA = cos(alpha + earth->tzeA)*cos(earth->thetaA)
+        *cos(delta) - sin(earth->thetaA)*sin(delta);
+
+   sinDelta = cos(alpha + earth->tzeA)*sin(earth->thetaA)*cos(delta) 
+             + cos(earth->thetaA)*sin(delta);     
+
+/*now taking NdotD, including lunisolar precession, using
+  Eqs. 3.212-2 of Explan. Supp. 
+  Basic idea for incorporating luni-solar precession 
+  is to change the (alpha,delta) of source to compensate for 
+  Earth's time-changing spin axis.
+*/
+
+   NdotD = sin(latitude)*sinDelta +cos(latitude)*(
+            cos(earth->gastRad+longitude-earth->zA)*cosDeltaCosAlphaMinusZA 
+           +sin(earth->gastRad+longitude-earth->zA)*cosDeltaSinAlphaMinusZA  );
+
+   erot = rd*NdotD;
+
+   derot = OMEGA*rd*cos(latitude)*(
+     - sin(earth->gastRad+longitude-earth->zA)*cosDeltaCosAlphaMinusZA 
+     + cos(earth->gastRad+longitude-earth->zA)*cosDeltaSinAlphaMinusZA  );
+
+
    /*--------------------------------------------------------------------------
     * Now adding approx nutation (= short-period,forced motion, by definition).
     * These two dominant terms, with periods 18.6 yrs (big term) and 
-    * 0.500 yrs (small term),respp., give nutation to around 1 arc sec; see
+    * 0.500 yrs (small term),resp., give nutation to around 1 arc sec; see
     * p. 120 of Explan. Supp. The forced nutation amplitude 
     *  is around 17 arcsec.
     *
@@ -502,27 +570,36 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
     * order of (and a somewhat less than) 1 arcsec; see plot on p. 270 of
     * Explanatory Supplement to Ast. Alm. 
     *
-    * Note obliquity epsilon also changes with nutation, as 
-    * given in 3.222-1, p.114 of Explan. Supp. 
-    * So far, this has been ignored.
+    *Below correction for nutation from Eq.3.225-2 of Explan. Supp. 
+    *Basic idea is to change the (alpha,delta) of source to 
+    *compensate for Earth's time-changing spin axis.
     *--------------------------------------------------------------------------
     */
+
+   delXNut = -(earth->delpsi)*(cos(delta)*sin(alpha)*cos(eps0) 
+                      +sin(delta)*sin(eps0));
+
+   delYNut = cos(delta)*cos(alpha)*cos(eps0)*(earth->delpsi) 
+               -sin(delta)*(earth->deleps);
+
+   delZNut = cos(delta)*cos(alpha)*sin(eps0)*(earth->delpsi)
+               +cos(delta)*sin(alpha)*(earth->deleps);
+
  
-   alphaE = alphaE + earth->delpsi*(cos(eps0) 
-			       + sin(eps0)*sin(alphaE)*tan(deltaE))
-     -earth->deleps*cos(alphaE)*tan(deltaE);
-   
-   deltaE = deltaE + earth->delpsi*sin(eps0)*cos(alphaE)
-     + earth->deleps*sin(alphaE);
- 
-/*-----------------------------------------------------------------------
- * now taking dot product of detector location on earth and N 
- *-----------------------------------------------------------------------
- */
-   NdotD = sin(latitude)*sin(deltaE)
-                + cos(latitude)*cos(deltaE)*cos(earth->gastRad+longitude-alphaE);
-   erot= rd*NdotD;
-   derot= -OMEGA*rd*cos(latitude)*cos(deltaE)*sin(earth->gastRad+longitude-alphaE);
+   NdotDNut= sin(latitude)*delZNut 
+               + cos(latitude)*cos(earth->gastRad+longitude)*delXNut
+               + cos(latitude)*sin(earth->gastRad+longitude)*delYNut;
+
+   erot = erot + rd*NdotDNut; 
+
+   derot = derot +OMEGA*rd*(
+               -cos(latitude)*sin(earth->gastRad+longitude)*delXNut
+               +cos(latitude)*cos(earth->gastRad+longitude)*delYNut );
+
+/* Note erot has a periodic piece (P=one day) AND a constant piece,
+   since z-component (parallel to North pole) of vector from
+   Earth-center to detector is constant */ 
+
 }
 
     /********************************************************************
@@ -537,7 +614,7 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
      */
     {
       REAL8 seDotN,dseDotN,b,db;
-       /* Curt: make sure rse, b, (rse +seDotN) aren't zero */
+      REAL8 rsun = 2.322e0; /*radius of sun in sec */ 
        seDotN = earth->se[2]*sin(delta)+ (earth->se[0]*cos(alpha) 
 				     + earth->se[1]*sin(alpha))*cos(delta);
        dseDotN=earth->dse[2]*sin(delta)+(earth->dse[0]*cos(alpha)
@@ -546,22 +623,56 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
        b=sqrt(earth->rse*earth->rse-seDotN*seDotN);
        db=(earth->rse*earth->drse-seDotN*dseDotN)/b;
 
-       shapiro  = 9.852e-6*log( (LAL_AU_SI/LAL_C_SI)/(earth->rse +seDotN));
-       dshapiro = -9.852e-6*(earth->drse+ dseDotN)/(earth->rse +seDotN);
+
+       if ((b < rsun) && (seDotN < 0.e0))/*if gw travels thru interior of Sun*/       { 
+        shapiro  = 9.852e-6*log( (LAL_AU_SI/LAL_C_SI)/
+	                  (seDotN + sqrt(rsun*rsun + seDotN*seDotN)))
+                    +19.704e-6*(1.e0 - b/rsun); 
+	dshapiro = - 19.704e-6*db/rsun;
+       }
+       else /*else the usual expression*/
+       { 
+        shapiro  = 9.852e-6*log( (LAL_AU_SI/LAL_C_SI)/(earth->rse +seDotN));
+        dshapiro = -9.852e-6*(earth->drse+ dseDotN)/(earth->rse +seDotN);
+       }
+    }
+    /********************************************************************
+     *Now correcting Roemer delay for finite distance to source.
+     *Timing corrections are order 10 microsec
+     *for sources closer than about 100 pc = 10^10 sec.
+     *--------------------------------------------------------------------
+     */
+    {
+      REAL8 r2 = 0.e0; /*squared dist from SSB to center of earth, in sec^2 */       
+      REAL8 dr2 = 0.e0; /*time deriv of r2 */
+       if (baryinput->dInv > 1.0e-11){ /*implement if corr.  > 1 microsec*/ 
+       for (j=0;j<3;j++){
+       r2 += earth->posNow[j]*earth->posNow[j];
+       dr2 += 2.e0*earth->posNow[j]*earth->velNow[j]; 
+       }
+       finiteDistCorr = -0.5e0*(r2 - roemer*roemer)*baryinput->dInv;
+       dfiniteDistCorr = -(0.5e0*dr2 - roemer*droemer)*baryinput->dInv; 
+       }
+       else{
+	 finiteDistCorr = 0.e0;
+         dfiniteDistCorr =0.e0;
+       }
     }
     /*-----------------------------------------------------------------------
      *Now adding it all up. 
-     *tBary (what we want to know) is pulse emission time in TDB coords.
-     *The lab measures GPS time, but we set tGPS =0 at first instant of 1998
+     *emit.te is pulse emission time in TDB coords 
+     *(up to a constant roughly equal to ligh travel time from source to SSB). 
+     *emit->deltaT = emit.te - tgps. 
      *-----------------------------------------------------------------------
      */
     {  
 
   INT4 deltaTint; /* floor of deltaT */  
 
-  emit->deltaT = roemer + erot + earth->einstein - shapiro;
+  emit->deltaT = roemer + erot + earth->einstein - shapiro + finiteDistCorr;
 
-  emit->tDot = 1.e0 + droemer + derot + earth->deinstein - dshapiro;
+  emit->tDot = 1.e0 + droemer + derot + earth->deinstein 
+             - dshapiro + dfiniteDistCorr;
   
   deltaTint = (INT4)floor(emit->deltaT);
 
@@ -581,9 +692,22 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
        emit->rDetector[j] = earth->posNow[j];
        emit->vDetector[j] = earth->velNow[j]; 
        }
-  }
-       /*Curt: rem to add Cartesian components of Earth rotation to above--
-	 see your old notes*/
+       /*Now adding Earth's rotation to rDetector and 
+         vDetector, but NOT yet including effects of  
+         lunisolar prec. or nutation (though DO use gast instead of gmst)
+         For next 10 years, will give rDetector to 10 microsec and 
+         v/c to 10^-9 */
+       emit->rDetector[0] += rd*cos(latitude)*cos(longitude+earth->gastRad);
+       emit->vDetector[0] += -OMEGA*rd*cos(latitude)*
+                               sin(longitude+earth->gastRad);
+       emit->rDetector[1] += rd*cos(latitude)*sin(longitude+earth->gastRad);
+       emit->vDetector[1] += OMEGA*rd*cos(latitude)*
+                               cos(longitude+earth->gastRad);
+       emit->rDetector[2] += rd*sin(latitude);
+       /*no change to emit->vDetector[2] = component along spin axis, 
+         if ignore prec. and nutation */
+   }
+
     }              
 RETURN(stat);
   }
