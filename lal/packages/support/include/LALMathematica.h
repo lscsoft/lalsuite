@@ -172,6 +172,8 @@
 #define LALMATHEMATICAH_MSGENULL "NULL pointer to a LALMathematica.h input structure"
 #define LALMATHEMATICAH_EFILE 2 
 #define LALMATHEMATICAH_MSGEFILE "Could not open file to write a Mathematica Notebook"
+#define LALMATHEMATICAH_EVAL 3
+#define LALMATHEMATICAH_MSGEVAL "Invalid parameter value"
 /* </lalErrTable> */
 
 
@@ -211,4 +213,4 @@ void
 LALMath3DPlot( LALStatus *stat, 
                Math3DPointList *first, 
                INT4 *ntiles, 
-               REAL4 PointSize);
+               REAL4 *PointSize);

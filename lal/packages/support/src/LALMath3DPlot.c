@@ -30,10 +30,12 @@ $Id$
      \idx{LALMath3DPlot()}
      \noindent\texttt{*stat} LALStatus structure pointer\\
      \\\texttt{*first} Math3DPointList stucture pointer\\ 
-     \\\texttt{*ntiles} INT4 pointer to the number of templates in the plot.\\
+     \\\texttt{*ntiles} INT4 pointer to the number of templates in the plot.  This may 
+     * be called as NULL. \\
      \\\texttt{PointSize} REAL4 $\epsilon[0,1]$ which specifies the relative size of each 
-     * point to the final display area.  (e.g. 1 would fill the enire plot.)  Eventually
-     * this setting should be automatically and cleverly determined.
+     * point to the final display area.  (e.g. 1 would fill the enire plot.)  This may be
+     * called as NULL.  However, if ntiles!=NULL but a PointSize is not explicitly given
+     * this routine will generate a good PointSize based on the value of ntiles.
      </lalLaTeX>
      END SUBSUBSECTION - PROTOTYPES "LALMath3DPlot()" -------------------------------- */
 
@@ -102,13 +104,14 @@ void
 LALMath3DPlot( LALStatus *stat, 
                Math3DPointList *first, 
                INT4 *ntiles,
-               REAL4 PointSize) 
+               REAL4 *PointSize) 
 /* </lalVerbatim>*/
 {
   FILE *nb; 				/* pointer to the notebook file */
   INT4 jflag = 0;			/* flag to justify the output data */
   Math3DPointList *list;		/* loop counter */
   INT4 loop = 0;
+  REAL4 PtSize = 0.02;
   
   INITSTATUS( stat, "LALMath3DPlot", LALMATH3DPLOTC ); 
 
@@ -117,8 +120,22 @@ LALMath3DPlot( LALStatus *stat,
 
   if ((nb = fopen("Math3DNotebook.nb", "w")) == NULL)
     ABORT(stat, LALMATHEMATICAH_EFILE, LALMATHEMATICAH_MSGEFILE);
-  
-
+ 
+  if (!PointSize){
+    if (!ntiles) PtSize = 0.02;
+    else {
+      if (*ntiles <=0) 
+        ABORT(stat, LALMATHEMATICAH_EVAL, LALMATHEMATICAH_MSGEVAL);
+      else PtSize = 0.5*(1.0/(pow((*ntiles),0.333333)));
+      }
+  }
+  else{
+    if ((*PointSize <= 0.0) || (*PointSize >= 1.0)) {
+      printf("\nIllegal value of PointSize; it must be between 0 and 1.\n");
+      printf("The default value of 0.02 will be used");
+      PtSize = 0.02;
+    }
+  }
   /* The code that generates the notebook */  
   BEG_NOTEBOOK;
     BEG_TITLECELL;
@@ -152,6 +169,9 @@ LALMath3DPlot( LALStatus *stat,
         fprintf(nb, "StillSize\t= {600,600};");
       END_INPUTCELL;
       BEG_INPUTCELL;
+        fprintf(nb, "PtSize\t= %f;", PtSize);
+      END_INPUTCELL;
+      BEG_INPUTCELL;
         fprintf(nb, "AnimationName\t:= \"AnimationTilePlot.gif\"");
       END_INPUTCELL;
       BEG_INPUTCELL;
@@ -178,6 +198,8 @@ LALMath3DPlot( LALStatus *stat,
       BEG_TEXTCELL;
         fprintf(nb, "AnimationSize:\tThe size of the final animation in PIXELS x PIXELS\n");
         fprintf(nb, "StillSize:\t\tThe size of the final still image in PIXELS x PIXELS\n");
+        fprintf(nb, "PtSize:\t\tThe relative size of the template points to the final display width.\n");
+        fprintf(nb, "\t\t\tIt is given as a decimal part of one. (e.g. PtSize=0.02 is 1/20 of the display width)\n");
         fprintf(nb, "AnimationName:\tWhat to name the final animation - must use .gif extension\n");
         fprintf(nb, "StillName:\t\tWhat to name the final still image - extension determined by StillType\n");
         fprintf(nb, "StillType:\t\tThe file type and extension for the still image\n");
@@ -199,17 +221,17 @@ LALMath3DPlot( LALStatus *stat,
         END_SECTIONCELL;
         BEG_INPUTCELL;
           fprintf(nb, "TILES  = \n"); 
-          fprintf(nb, "Graphics3D[{PointSize[%f],",PointSize); 
+          fprintf(nb, "Graphics3D[{PointSize[PtSize]"); 
           list = first;
           while(list->next) 
           {
-            fprintf(nb, "{GrayLevel[%f], Point[{%f,%f,%f}]},",
+            fprintf(nb, ",{GrayLevel[%f], Point[{%f,%f,%f}]}",
                     list->GrayLevel, list->x, list->y, list->z);
             if (jflag%2) fprintf(nb,"\n");
             ++jflag;
             list = list->next;
           }
-          fprintf(nb, "{GrayLevel[%f], Point[{%f, %f, %f}]}}]", list->GrayLevel, list->x, list->y, list->z);
+          fprintf(nb, "}]");
         END_INPUTCELL_;
       END_GROUPCELLC;
       BEG_GROUPCELL;

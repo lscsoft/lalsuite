@@ -98,6 +98,7 @@ int main(){
   INT4 ntiles = 0;
   Math3DPointList *list = NULL; 	/* Pointer to structure for mathematica plot */
   Math3DPointList *first = NULL; 	
+  REAL4 pointsize = 0.04;
  
   if ((list = (Math3DPointList *) LALCalloc(1, sizeof(Math3DPointList))) == NULL){
     LALError(&stat, LALMATH3DPLOTTESTC_MSGEMEM);
@@ -164,7 +165,7 @@ int main(){
 
   list->next = NULL;
   printf("\nCalling LALMath3DPlot()......\n");
-  LALMath3DPlot(&stat, first, &ntiles,0.04);
+  LALMath3DPlot(&stat, first, &ntiles, NULL);
   REPORTSTATUS(&stat);
   if (stat.statusCode){
     LALError(&stat, LALMATH3DPLOTTESTC_MSGESUB);
