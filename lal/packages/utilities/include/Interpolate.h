@@ -10,12 +10,11 @@
 #ifndef _INTERPOLATE_H
 #define _INTERPOLATE_H
 
-#ifndef _LALDATATYPES_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
 
 NRCSID (INTERPOLATEH, "$Id: Interpolate.h");
 
@@ -28,28 +27,58 @@ NRCSID (INTERPOLATEH, "$Id: Interpolate.h");
 #define INTERPOLATE_MSGEZERO "Zero divide"
 
 typedef struct
-tagInterpolateOut
+tagSInterpolateOut
 {
   REAL4  y;
   REAL4 dy;
 }
-InterpolateOut;
+SInterpolateOut;
 
 typedef struct
-tagInterpolatePar
+tagDInterpolateOut
 {
-  INT4   n;
+  REAL8  y;
+  REAL8 dy;
+}
+DInterpolateOut;
+
+typedef struct
+tagSInterpolatePar
+{
+  UINT4  n;
   REAL4 *x;
   REAL4 *y;
 }
-InterpolatePar;
+SInterpolatePar;
+
+typedef struct
+tagDInterpolatePar
+{
+  UINT4  n;
+  REAL8 *x;
+  REAL8 *y;
+}
+DInterpolatePar;
 
 void
-PolynomialInterpolation (
-    Status         *status,
-    InterpolateOut *output,
-    REAL4           target,
-    InterpolatePar *params
+SPolynomialInterpolation (
+    Status          *status,
+    SInterpolateOut *output,
+    REAL4            target,
+    SInterpolatePar *params
     );
+
+void
+DPolynomialInterpolation (
+    Status          *status,
+    DInterpolateOut *output,
+    REAL8            target,
+    DInterpolatePar *params
+    );
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _INTERPOLATE_H */

@@ -7,72 +7,23 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _STDIO_H
 #include <stdio.h>
-#ifndef _STDIO_H
-#define _STDIO_H
-#endif
-#endif
-
-#ifndef _STRING_H
 #include <string.h>
-#ifndef _STRING_H
-#define _STRING_H
-#endif
-#endif
-
-#ifndef _STDLIB_H
 #include <stdlib.h>
-#ifndef _STDLIB_H
-#define _STDLIB_H
-#endif
-#endif
-
-#ifndef _MATH_H
 #include <math.h>
-#ifndef _MATH_H
-#define _MATH_H
-#endif
-#endif
 
-#ifndef _LALCONFIG_H
 #include "LALConfig.h"
-#ifndef _LALCONFIG_H
-#define _LALCONFIG_H
-#endif
-#endif
 
 #ifdef HAVE_UNISTD_H
-#ifndef _UNISTD_H
 #include <unistd.h>
-#ifndef _UNISTD_H
-#define _UNISTD_H
-#endif
-#endif
 #endif
 
 #ifdef HAVE_GETOPT_H
-#ifndef _GETOPT_H
 #include <getopt.h>
-#ifndef _GETOPT_H
-#define _GETOPT_H
-#endif
-#endif
 #endif
 
-#ifndef _LALSTDLIB_H
 #include "LALStdlib.h"
-#ifndef _LALSTDLIB_H
-#define _LALSTDLIB_H
-#endif
-#endif
-
-#ifndef _FINDROOT_H
 #include "FindRoot.h"
-#ifndef _FINDROOT_H
-#define _FINDROOT_H
-#endif
-#endif
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
@@ -114,14 +65,29 @@ F (Status *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
+static void
+FF (Status *s, REAL8 *y, REAL8 x, void *p)
+{
+  REAL8 y0;
+  INITSTATUS (s, "Test function");
+  ASSERT (y, s, 1, "Null pointer");
+  ASSERT (p, s, 1, "Null pointer");
+  y0 = *(REAL8 *)p;
+  *y = y0 + x*x;
+  RETURN (s);
+}
+
 
 int
 main (int argc, char *argv[])
 {
   static Status  status;
-  FindRootIn     input;
+  SFindRootIn    sinput;
+  DFindRootIn    dinput;
   REAL4          y0;
-  REAL4          root;
+  REAL4          sroot;
+  REAL8          yy0;
+  REAL8          droot;
 
 
   /*
@@ -141,11 +107,16 @@ main (int argc, char *argv[])
    */
 
 
-  y0             = -1;
-  input.function = F;
-  input.xmin     = 1e-3;
-  input.xmax     = 2e-3;
-  input.xacc     = 1e-6;
+  y0              = -1;
+  sinput.function = F;
+  sinput.xmin     = 1e-3;
+  sinput.xmax     = 2e-3;
+  sinput.xacc     = 1e-6;
+  yy0             = -1;
+  dinput.function = FF;
+  dinput.xmin     = 1e-3;
+  dinput.xmax     = 2e-3;
+  dinput.xacc     = 1e-15;
 
 
   /*
@@ -162,32 +133,62 @@ main (int argc, char *argv[])
 
   if (verbose)
   {
-    printf ("Initial domain: [%e,%e]\n", input.xmin, input.xmax);
+    printf ("Initial domain: [%e,%e]\n", dinput.xmin, dinput.xmax);
   }
 
-  BracketRoot (&status, &input, &y0);
+  SBracketRoot (&status, &sinput, &y0);
   TestStatus (&status, CODES(0), 1);
 
   if (verbose)
   {
-    printf ("Bracket domain: [%e,%e]\n", input.xmin, input.xmax);
+    printf ("Bracket domain: [%e,%e]\n", sinput.xmin, sinput.xmax);
   }
 
-  if (input.xmin > 1 || input.xmax < 1)
+  if (sinput.xmin > 1 || sinput.xmax < 1)
   {
     fprintf (stderr, "Root not bracketed correctly\n");
     return 1;
   }
 
-  BisectionFindRoot (&status, &root, &input, &y0);
+  DBracketRoot (&status, &dinput, &yy0);
   TestStatus (&status, CODES(0), 1);
 
   if (verbose)
   {
-    printf ("Root = %e (acc = %e)\n", root, input.xacc);
+    printf ("Bracket domain: [%e,%e]\n", dinput.xmin, dinput.xmax);
   }
 
-  if (fabs(root - 1) > input.xacc)
+  if (dinput.xmin > 1 || dinput.xmax < 1)
+  {
+    fprintf (stderr, "Root not bracketed correctly\n");
+    return 1;
+  }
+
+
+  SBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  TestStatus (&status, CODES(0), 1);
+
+  if (verbose)
+  {
+    printf ("Root = %e (acc = %e)\n", sroot, sinput.xacc);
+  }
+
+  if (fabs(sroot - 1) > sinput.xacc)
+  {
+    fprintf (stderr, "Root not found to correct accuracy\n");
+    return 1;
+  }
+
+
+  DBisectionFindRoot (&status, &droot, &dinput, &yy0);
+  TestStatus (&status, CODES(0), 1);
+
+  if (verbose)
+  {
+    printf ("Root = %.15e (acc = %e)\n", droot, dinput.xacc);
+  }
+
+  if (fabs(droot - 1) > dinput.xacc)
   {
     fprintf (stderr, "Root not found to correct accuracy\n");
     return 1;
@@ -210,10 +211,13 @@ main (int argc, char *argv[])
 
   if (verbose)
   {
-    printf ("\n----- Recursive Error: Code -1\n");
+    printf ("\n----- Recursive Error: Code -1 (2 times)\n");
   }
 
-  BracketRoot (&status, &input, NULL);
+  SBracketRoot (&status, &sinput, NULL);
+  TestStatus  (&status, CODES(-1), 1);
+  ClearStatus (&status);
+  DBracketRoot (&status, &dinput, NULL);
   TestStatus  (&status, CODES(-1), 1);
   ClearStatus (&status);
 
@@ -221,74 +225,106 @@ main (int argc, char *argv[])
 
   if (verbose)
   {
-    printf ("\n----- Null Pointer Error: Code 1 (5 times)\n");
+    printf ("\n----- Null Pointer Error: Code 1 (10 times)\n");
   }
 
-  BracketRoot (&status, NULL, &y0);
+  SBracketRoot (&status, NULL, &y0);
+  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  DBracketRoot (&status, NULL, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
-  BisectionFindRoot (&status, NULL, &input, &y0);
+  SBisectionFindRoot (&status, NULL, &sinput, &y0);
+  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  DBisectionFindRoot (&status, NULL, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
-  BisectionFindRoot (&status, &root, NULL, &y0);
+  SBisectionFindRoot (&status, &sroot, NULL, &y0);
+  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  DBisectionFindRoot (&status, &droot, NULL, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
-  input.function = NULL;
+  sinput.function = NULL;
+  dinput.function = NULL;
 
-  BracketRoot (&status, &input, &y0);
+  SBracketRoot (&status, &sinput, &y0);
+  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  DBracketRoot (&status, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
-  BisectionFindRoot (&status, &root, &input, &y0);
+  SBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  TestStatus (&status, CODES(FINDROOT_ENULL), 1);
+  DBisectionFindRoot (&status, &droot, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_ENULL), 1);
 
   /* invalid initial domain error for BracketRoot() */
 
   if (verbose)
   {
-    printf ("\n----- Invalid Initial Domain: Code 2\n");
+    printf ("\n----- Invalid Initial Domain: Code 2 (2 times)\n");
   }
 
-  input.function = F;
-  input.xmin     = 5;
-  input.xmax     = 5;
+  sinput.function = F;
+  sinput.xmin     = 5;
+  sinput.xmax     = 5;
+  dinput.function = FF;
+  dinput.xmin     = 5;
+  dinput.xmax     = 5;
 
-  BracketRoot (&status, &input, &y0);
+  SBracketRoot (&status, &sinput, &y0);
+  TestStatus (&status, CODES(FINDROOT_EIDOM), 1);
+  DBracketRoot (&status, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EIDOM), 1);
 
   /* maximum iterations exceeded error */
 
   if (verbose)
   {
-    printf ("\n----- Maximum Iteration Exceeded: Code 4 (2 times)\n");
+    printf ("\n----- Maximum Iteration Exceeded: Code 4 (4 times)\n");
   }
   
-  y0             = 1; /* there is no root when y0 > 0 */
-  input.xmin     = -1e-18;
-  input.xmax     = 1e-18;
+  y0              = 1; /* there is no root when y0 > 0 */
+  sinput.xmin     = -1e-18;
+  sinput.xmax     = 1e-18;
+  yy0             = 1; /* there is no root when y0 > 0 */
+  dinput.xmin     = -1e-18;
+  dinput.xmax     = 1e-18;
 
-  BracketRoot (&status, &input, &y0);
+  SBracketRoot (&status, &sinput, &y0);
+  TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
+  DBracketRoot (&status, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
 
-  y0             = -1;
-  input.xmin     = 0;
-  input.xmax     = 1e19;
-  input.xacc     = 2e-38;
+  y0              = -1;
+  sinput.xmin     = 0;
+  sinput.xmax     = 1e19;
+  sinput.xacc     = 2e-38;
+  yy0             = -1;
+  dinput.xmin     = 0;
+  dinput.xmax     = 1e19;
+  dinput.xacc     = 2e-38;
 
-  BisectionFindRoot (&status, &root, &input, &y0);
+  SBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
+  DBisectionFindRoot (&status, &droot, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EMXIT), 1);
 
   /* root not bracketed error in BisectionFindRoot() */
 
   if (verbose)
   {
-    printf ("\n----- Root Not Bracketed: Code 8\n");
+    printf ("\n----- Root Not Bracketed: Code 8 (2 times)\n");
   }
 
-  input.xmin     = -5;
-  input.xmax     = -3;
-  input.xacc     = 1e-6;
+  sinput.xmin     = -5;
+  sinput.xmax     = -3;
+  sinput.xacc     = 1e-6;
+  dinput.xmin     = -5;
+  dinput.xmax     = -3;
+  dinput.xacc     = 1e-6;
 
-  BisectionFindRoot (&status, &root, &input, &y0);
+  SBisectionFindRoot (&status, &sroot, &sinput, &y0);
+  TestStatus (&status, CODES(FINDROOT_EBRKT), 1);
+  DBisectionFindRoot (&status, &droot, &dinput, &yy0);
   TestStatus (&status, CODES(FINDROOT_EBRKT), 1);
 
   return 0;

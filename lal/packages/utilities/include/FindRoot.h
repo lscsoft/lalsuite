@@ -10,12 +10,11 @@
 #ifndef _FINDROOT_H
 #define _FINDROOT_H
 
-#ifndef _LALDATATYPES_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
 
 NRCSID (FINDROOTH, "$Id$");
 
@@ -30,30 +29,61 @@ NRCSID (FINDROOTH, "$Id$");
 #define FINDROOT_MSGEBRKT "Root not bracketed"
 
 typedef void (REAL4LALFunction) (Status *s, REAL4 *y, REAL4 x, void *p);
+typedef void (REAL8LALFunction) (Status *s, REAL8 *y, REAL8 x, void *p);
 
 typedef struct
-tagFindRootIn
+tagSFindRootIn
 {
   REAL4LALFunction *function;
   REAL4             xmax;
   REAL4             xmin;
   REAL4             xacc;
 }
-FindRootIn;
+SFindRootIn;
+
+typedef struct
+tagDFindRootIn
+{
+  REAL8LALFunction *function;
+  REAL8             xmax;
+  REAL8             xmin;
+  REAL8             xacc;
+}
+DFindRootIn;
 
 void
-BracketRoot (
-    Status     *status,
-    FindRootIn *inout,
-    void       *params
+SBracketRoot (
+    Status      *status,
+    SFindRootIn *inout,
+    void        *params
     );
 
 void
-BisectionFindRoot (
-    Status     *status,
-    REAL4      *root,
-    FindRootIn *input,
-    void       *params
+DBracketRoot (
+    Status      *status,
+    DFindRootIn *inout,
+    void        *params
     );
 
+void
+SBisectionFindRoot (
+    Status      *status,
+    REAL4       *root,
+    SFindRootIn *input,
+    void        *params
+    );
+
+void
+DBisectionFindRoot (
+    Status      *status,
+    REAL8       *root,
+    DFindRootIn *input,
+    void        *params
+    );
+
+
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+#endif /* _FINDROOT_H */

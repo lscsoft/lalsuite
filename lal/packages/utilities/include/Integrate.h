@@ -10,12 +10,11 @@
 #ifndef _INTEGRATE_H
 #define _INTEGRATE_H
 
-#ifndef _LALDATATYPES_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "LALDatatypes.h"
-#ifndef _LALDATATYPES_H
-#define _LALDATATYPES_H
-#endif
-#endif
 
 NRCSID (INTEGRATEH, "$Id$");
 
@@ -31,6 +30,7 @@ NRCSID (INTEGRATEH, "$Id$");
 #define INTEGRATE_MSGEMXIT "Maximum iterations exceeded"
 
 typedef void (REAL4LALFunction) (Status *s, REAL4 *y, REAL4 x, void *p);
+typedef void (REAL8LALFunction) (Status *s, REAL8 *y, REAL8 x, void *p);
 
 
 typedef enum
@@ -46,22 +46,47 @@ IntegralType;
 
 
 typedef struct
-tagIntegrateIn
+tagSIntegrateIn
 {
   REAL4LALFunction *function;
   REAL4             xmax;
   REAL4             xmin;
   IntegralType      type;
 }
-IntegrateIn;
+SIntegrateIn;
+
+
+typedef struct
+tagDIntegrateIn
+{
+  REAL8LALFunction *function;
+  REAL8             xmax;
+  REAL8             xmin;
+  IntegralType      type;
+}
+DIntegrateIn;
 
 
 void
-RombergIntegrate (
-    Status      *status,
-    REAL4       *result,
-    IntegrateIn *input,
-    void        *params
+SRombergIntegrate (
+    Status       *status,
+    REAL4        *result,
+    SIntegrateIn *input,
+    void         *params
     );
+
+
+void
+DRombergIntegrate (
+    Status       *status,
+    REAL8        *result,
+    DIntegrateIn *input,
+    void         *params
+    );
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _INTEGRATE_H */

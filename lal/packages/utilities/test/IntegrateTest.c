@@ -11,13 +11,17 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+
 #include "LALConfig.h"
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
+
 #include "LALStdlib.h"
 #include "Integrate.h"
 
@@ -46,7 +50,29 @@ void f1 (Status *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
+void ff1 (Status *s, REAL8 *y, REAL8 x, void *p)
+{
+  REAL8  x2 = x*x;
+  REAL8  x4 = x2*x2;
+  INT4  *n;
+  INITSTATUS (s, MAIN);
+  ASSERT (p, s, 1, "Null pointer");
+  ++(*(n = (INT4 *)p));  
+  *y = x4*log(x + sqrt(x2 + 1));
+  RETURN (s);
+}
+
 void f2 (Status *s, REAL4 *y, REAL4 x, void *p)
+{
+  INT4 *n;
+  INITSTATUS (s, MAIN);
+  ASSERT (p, s, 1, "Null pointer");
+  ++(*(n = (INT4 *)p));
+  *y = 1/(x*x*x);
+  RETURN (s);
+}
+
+void ff2 (Status *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, MAIN);
@@ -66,7 +92,27 @@ void f3 (Status *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
+void ff3 (Status *s, REAL8 *y, REAL8 x, void *p)
+{
+  INT4 *n;
+  INITSTATUS (s, MAIN);
+  ASSERT (p, s, 1, "Null pointer");
+  ++(*(n = (INT4 *)p));
+  *y = exp(-x*x/2);
+  RETURN (s);
+}
+
 void f4 (Status *s, REAL4 *y, REAL4 x, void *p)
+{
+  INT4 *n;
+  INITSTATUS (s, MAIN);
+  ASSERT (p, s, 1, "Null pointer");
+  ++(*(n = (INT4 *)p));
+  *y = 1/sqrt(x);
+  RETURN (s);
+}
+
+void ff4 (Status *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
   INITSTATUS (s, MAIN);
@@ -86,6 +132,16 @@ void f5 (Status *s, REAL4 *y, REAL4 x, void *p)
   RETURN (s);
 }
 
+void ff5 (Status *s, REAL8 *y, REAL8 x, void *p)
+{
+  INT4 *n;
+  INITSTATUS (s, MAIN);
+  ASSERT (p, s, 1, "Null pointer");
+  ++(*(n = (INT4 *)p));
+  *y = x + 1/sqrt(5 - x);
+  RETURN (s);
+}
+
 void g (Status *s, REAL4 *z, REAL4 x, void *p)
 {
   REAL4 y;
@@ -96,9 +152,19 @@ void g (Status *s, REAL4 *z, REAL4 x, void *p)
   RETURN (s);
 }
 
+void gg (Status *s, REAL8 *z, REAL8 x, void *p)
+{
+  REAL8 y;
+  INITSTATUS (s, MAIN);
+  ASSERT (p, s, 1, "Null pointer");
+  y  = *((REAL8 *)p);
+  *z = exp(-(x*x + y*y)/2);
+  RETURN (s);
+}
+
 void h (Status *s, REAL4 *z, REAL4 y, void *p)
 {
-  IntegrateIn intinp;
+  SIntegrateIn intinp;
   INITSTATUS (s, MAIN);
   ATTATCHSTATUSPTR (s);
   ASSERT (!p, s, 2, "Non-null pointer");
@@ -106,7 +172,23 @@ void h (Status *s, REAL4 *z, REAL4 y, void *p)
   intinp.xmin     = 0;
   intinp.xmax     = sqrt(y);
   intinp.type     = ClosedInterval;
-  RombergIntegrate (s->statusPtr, z, &intinp, &y);
+  SRombergIntegrate (s->statusPtr, z, &intinp, &y);
+  CHECKSTATUSPTR (s);
+  DETATCHSTATUSPTR (s);
+  RETURN (s);
+}
+
+void hh (Status *s, REAL8 *z, REAL8 y, void *p)
+{
+  DIntegrateIn intinp;
+  INITSTATUS (s, MAIN);
+  ATTATCHSTATUSPTR (s);
+  ASSERT (!p, s, 2, "Non-null pointer");
+  intinp.function = gg;
+  intinp.xmin     = 0;
+  intinp.xmax     = sqrt(y);
+  intinp.type     = ClosedInterval;
+  DRombergIntegrate (s->statusPtr, z, &intinp, &y);
   CHECKSTATUSPTR (s);
   DETATCHSTATUSPTR (s);
   RETURN (s);
@@ -123,6 +205,11 @@ void bad (Status *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n = (INT4 *)p;
   *y = *n = 1664525L*(*n) + 1013904223L;
+}
+
+void bbad (Status *s, REAL8 *y, REAL8 x, void *p)
+{
+  *y = (REAL8)(++(*(INT4 *)p));
 }
 
 
@@ -144,10 +231,13 @@ static void ClearStatus (Status *status);
 
 int main (int argc, char *argv[])
 {
-  const REAL4   epsilon = 1e-6;
+  const REAL4   sepsilon = 1e-6;
+  const REAL8   depsilon = 1e-13; /* not as good as expected (1e-15) */
   static Status status;
-  IntegrateIn   intinp;
-  REAL4         result;
+  SIntegrateIn  sintinp;
+  DIntegrateIn  dintinp;
+  REAL4         sresult;
+  REAL8         dresult;
   long double   expect;
   INT4          count;
 
@@ -164,19 +254,34 @@ int main (int argc, char *argv[])
   printf ("Test 1:"
           " Integrate a regular function over a closed interval.\n");
 
-  intinp.function = f1;
-  intinp.xmin     = 0;
-  intinp.xmax     = 2;
-  intinp.type     = ClosedInterval;
+  sintinp.function = f1;
+  sintinp.xmin     = 0;
+  sintinp.xmax     = 2;
+  sintinp.type     = ClosedInterval;
+  dintinp.function = ff1;
+  dintinp.xmin     = 0;
+  dintinp.xmax     = 2;
+  dintinp.type     = ClosedInterval;
 
   count  = 0;
-  expect = 8.153364119811650205;
-  RombergIntegrate (&status, &result, &intinp, &count);
+  expect = 8.153364119811650205L;
+  SRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", result);
+  printf ("result: %.15f\n", sresult);
   printf ("expect: %.15Lf\n", expect);
-  if (fabs(result - expect) > epsilon*fabs(expect))
+  if (fabs(sresult - expect) > sepsilon*fabs(expect))
+  {
+    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    return 1;
+  }
+  count = 0;
+  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  TestStatus (&status, CODES(0), 1);
+  printf ("number of function calls: %d\n", count);
+  printf ("result: %.15f\n", dresult);
+  printf ("expect: %.15Lf\n", expect);
+  if (fabs(dresult - expect) > depsilon*fabs(expect))
   {
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
@@ -192,19 +297,35 @@ int main (int argc, char *argv[])
 
   printf ("\nTest 2:"
           " Integrate to infinity a function with power-law fall-off.\n");
-  intinp.function = f2;
-  intinp.xmin     = 10;
-  intinp.xmax     = 1e30;
-  intinp.type     = InfiniteDomainPow;
+  sintinp.function = f2;
+  sintinp.xmin     = 10;
+  sintinp.xmax     = 1e30;
+  sintinp.type     = InfiniteDomainPow;
+  dintinp.function = ff2;
+  dintinp.xmin     = 10;
+  dintinp.xmax     = 1e300;
+  dintinp.type     = InfiniteDomainPow;
 
   count  = 0;
-  expect = 1.0/200.0;
-  RombergIntegrate (&status, &result, &intinp, &count);
+  expect = 1.0L/200.0L;
+  SRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", result);
+  printf ("result: %.15f\n", sresult);
   printf ("expect: %.15Lf\n", expect);
-  if (fabs(result - expect) > epsilon*fabs(expect))
+  if (fabs(sresult - expect) > sepsilon*fabs(expect))
+  {
+    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    return 1;
+  }
+
+  count = 0;
+  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  TestStatus (&status, CODES(0), 1);
+  printf ("number of function calls: %d\n", count);
+  printf ("result: %.15f\n", dresult);
+  printf ("expect: %.15Lf\n", expect);
+  if (fabs(dresult - expect) > depsilon*fabs(expect))
   {
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
@@ -220,24 +341,40 @@ int main (int argc, char *argv[])
 
   printf ("\nTest 3:"
           " Integrate to infinity a function that falls off exponentially.");
-  intinp.function = f3;
-  intinp.xmin     = 2;
-  intinp.xmax     = 1e30;
-  intinp.type     = InfiniteDomainExp;
+  sintinp.function = f3;
+  sintinp.xmin     = 2;
+  sintinp.xmax     = 1e30;
+  sintinp.type     = InfiniteDomainExp;
+  dintinp.function = ff3;
+  dintinp.xmin     = 2;
+  dintinp.xmax     = 1e300;
+  dintinp.type     = InfiniteDomainExp;
 
   count  = 0;
-  expect = 0.0570261239928920483;
-  RombergIntegrate (&status, &result, &intinp, &count);
+  expect = 0.0570261239928920483L;
+  SRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", result);
+  printf ("result: %.15f\n", sresult);
   printf ("expect: %.15Lf\n", expect);
-  if (fabs(result - expect) > epsilon*fabs(expect))
+  if (fabs(sresult - expect) > sepsilon*fabs(expect))
   {
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
 
+  count = 0;
+  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  TestStatus (&status, CODES(0), 1);
+  printf ("number of function calls: %d\n", count);
+  printf ("result: %.15f\n", dresult);
+  printf ("expect: %.15Lf\n", expect);
+  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  {
+    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    return 1;
+  }
+  
 
   /*
    *
@@ -248,19 +385,35 @@ int main (int argc, char *argv[])
 
   printf ("\nTest 4:"
           " Integrate an integrable singularity at the lower limit.\n");
-  intinp.function = f4;
-  intinp.xmin     = 0;
-  intinp.xmax     = 1;
-  intinp.type     = SingularLowerLimit;
+  sintinp.function = f4;
+  sintinp.xmin     = 0;
+  sintinp.xmax     = 1;
+  sintinp.type     = SingularLowerLimit;
+  dintinp.function = ff4;
+  dintinp.xmin     = 0;
+  dintinp.xmax     = 1;
+  dintinp.type     = SingularLowerLimit;
 
   count  = 0;
-  expect = 2;
-  RombergIntegrate (&status, &result, &intinp, &count);
+  expect = 2.0L;
+  SRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", result);
+  printf ("result: %.15f\n", sresult);
   printf ("expect: %.15Lf\n", expect);
-  if (fabs(result - expect) > epsilon*fabs(expect))
+  if (fabs(sresult - expect) > sepsilon*fabs(expect))
+  {
+    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    return 1;
+  }
+
+  count  = 0;
+  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  TestStatus (&status, CODES(0), 1);
+  printf ("number of function calls: %d\n", count);
+  printf ("result: %.15f\n", dresult);
+  printf ("expect: %.15Lf\n", expect);
+  if (fabs(dresult - expect) > depsilon*fabs(expect))
   {
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
@@ -276,20 +429,37 @@ int main (int argc, char *argv[])
 
   printf ("\nTest 5:"
           " Integrate an integrable singularity at the upper limit.\n");
-  intinp.function = f5;
-  intinp.xmin     = 4;
-  intinp.xmax     = 5;
-  intinp.type     = SingularUpperLimit;
+  sintinp.function = f5;
+  sintinp.xmin     = 4;
+  sintinp.xmax     = 5;
+  sintinp.type     = SingularUpperLimit;
+  dintinp.function = ff5;
+  dintinp.xmin     = 4;
+  dintinp.xmax     = 5;
+  dintinp.type     = SingularUpperLimit;
 
   count  = 0;
-  expect = 6.5;
-  RombergIntegrate (&status, &result, &intinp, &count);
+  expect = 6.5L;
+  SRombergIntegrate (&status, &sresult, &sintinp, &count);
   TestStatus (&status, CODES(0), 1);
   printf ("number of function calls: %d\n", count);
-  printf ("result: %.15f\n", result);
+  printf ("result: %.15f\n", sresult);
   printf ("expect: %.15Lf\n", expect);
   /* this doesn't work so well: multiply tolerance by factor of three */
-  if (fabs(result - expect) > 3*epsilon*fabs(expect))
+  if (fabs(sresult - expect) > 3*sepsilon*fabs(expect))
+  {
+    fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    return 1;
+  }
+
+  count  = 0;
+  DRombergIntegrate (&status, &dresult, &dintinp, &count);
+  TestStatus (&status, CODES(0), 1);
+  printf ("number of function calls: %d\n", count);
+  printf ("result: %.15f\n", dresult);
+  printf ("expect: %.15Lf\n", expect);
+  /* this doesn't work so well: multiply tolerance by factor of three */
+  if (fabs(dresult - expect) > 3*depsilon*fabs(expect))
   {
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
@@ -304,18 +474,32 @@ int main (int argc, char *argv[])
 
 
   printf ("\nTest 6: Two-dimensional integral.\n");
-  intinp.function = h;
-  intinp.xmin     = 0;
-  intinp.xmax     = 10;
-  intinp.type     = OpenInterval;
+  sintinp.function = h;
+  sintinp.xmin     = 0;
+  sintinp.xmax     = 10;
+  sintinp.type     = OpenInterval;
+  dintinp.function = hh;
+  dintinp.xmin     = 0;
+  dintinp.xmax     = 10;
+  dintinp.type     = OpenInterval;
 
-  expect = 0.88274109326014810823;
-  RombergIntegrate (&status, &result, &intinp, NULL);
+  expect = 0.88274109326014810823L;
+  SRombergIntegrate (&status, &sresult, &sintinp, NULL);
   TestStatus (&status, CODES(0), 1);
-  printf ("result: %.15f\n", result);
+  printf ("result: %.15f\n", sresult);
   printf ("expect: %.15Lf\n", expect);
   /* integral isn't very accurate because we needed to use an open interval */
-  printf ("error:  %.2f%%\n", 100*fabs(result - expect)/fabs(expect));
+  printf ("error:  %.2f%%\n", 100*fabs(sresult - expect)/fabs(expect));
+  /*
+   * don't do 2d double-precision: it takes too long!
+   *
+   * DRombergIntegrate (&status, &dresult, &dintinp, NULL);
+   * TestStatus (&status, CODES(0), 1);
+   * printf ("result: %.15f\n", dresult);
+   * printf ("expect: %.15Lf\n", expect);
+   * printf ("error:  %.2f%%\n", 100*fabs(dresult - expect)/fabs(expect));
+   *
+   */
 
 
   LALCheckMemoryLeaks ();
@@ -331,58 +515,94 @@ int main (int argc, char *argv[])
   printf ("\nChecking error conditions:\n");
 
   printf ("\nNull pointer:\r");
-  RombergIntegrate (&status, NULL, &intinp, &count);
+  SRombergIntegrate (&status, NULL, &sintinp, &count);
+  TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
+  DRombergIntegrate (&status, NULL, &dintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   printf ("\nNull pointer:\r");
-  RombergIntegrate (&status, &result, NULL, &count);
+  SRombergIntegrate (&status, &sresult, NULL, &count);
+  TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
+  DRombergIntegrate (&status, &dresult, NULL, &count);
   TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   printf ("\nNull pointer:\r");
-  intinp.function = NULL;
-  intinp.xmin     = 0;
-  intinp.xmax     = 2;
-  intinp.type     = ClosedInterval;
-  RombergIntegrate (&status, &result, &intinp, &count);
+  sintinp.function = NULL;
+  sintinp.xmin     = 0;
+  sintinp.xmax     = 2;
+  sintinp.type     = ClosedInterval;
+  dintinp.function = NULL;
+  dintinp.xmin     = 0;
+  dintinp.xmax     = 2;
+  dintinp.type     = ClosedInterval;
+  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
+  DRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_ENULL), 1);
   printf ("Null pointer check passed.\n");
 
   printf ("\nInvalid domain:\r");
-  intinp.function = f1;
-  intinp.xmin     = 0;
-  intinp.xmax     = 0;
-  intinp.type     = ClosedInterval;
-  RombergIntegrate (&status, &result, &intinp, &count);
+  sintinp.function = f1;
+  sintinp.xmin     = 0;
+  sintinp.xmax     = 0;
+  sintinp.type     = ClosedInterval;
+  dintinp.function = ff1;
+  dintinp.xmin     = 0;
+  dintinp.xmax     = 0;
+  dintinp.type     = ClosedInterval;
+  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  TestStatus (&status, CODES(INTEGRATE_EIDOM), 1);
+  DRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_EIDOM), 1);
   printf ("Invalid domain check passed.\n");
 
   printf ("\nUnknown integral type:\r");
-  intinp.function = f1;
-  intinp.xmin     = 0;
-  intinp.xmax     = 2;
-  intinp.type     = 999;
-  RombergIntegrate (&status, &result, &intinp, &count);
+  sintinp.function = f1;
+  sintinp.xmin     = 0;
+  sintinp.xmax     = 2;
+  sintinp.type     = 999;
+  dintinp.function = ff1;
+  dintinp.xmin     = 0;
+  dintinp.xmax     = 2;
+  dintinp.type     = 999;
+  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  TestStatus (&status, CODES(INTEGRATE_ETYPE), 1);
+  DRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_ETYPE), 1);
   printf ("Unknown integral type check passed.\n");
 
   printf ("\nMaximum iterations exceeded:\r");
-  intinp.function = bad;  /* bad is a quick random number generator */
-  intinp.xmin     = 0;
-  intinp.xmax     = 2;
-  intinp.type     = ClosedInterval;
-  count           = 13;   /* count is now used as a random number seed */
-  RombergIntegrate (&status, &result, &intinp, &count);
+  sintinp.function = bad;  /* bad is a quick random number generator */
+  sintinp.xmin     = 0;
+  sintinp.xmax     = 2;
+  sintinp.type     = ClosedInterval;
+  dintinp.function = bbad;  /* bbad is a quick random number generator */
+  dintinp.xmin     = 0;
+  dintinp.xmax     = 2;
+  dintinp.type     = ClosedInterval;
+  count            = 13;   /* count is now used as a random number seed */
+  SRombergIntegrate (&status, &sresult, &sintinp, &count);
+  TestStatus (&status, CODES(INTEGRATE_EMXIT), 1);
+  count = 1;
+  DRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(INTEGRATE_EMXIT), 1);
   printf ("Maximum iterations exceeded check passed.\n");
 
   printf ("\nRecursive error:\r");
-  intinp.function = f1;
-  intinp.xmin     = 0;
-  intinp.xmax     = 2;
-  intinp.type     = ClosedInterval;
-  RombergIntegrate (&status, &result, &intinp, NULL);
+  sintinp.function = f1;
+  sintinp.xmin     = 0;
+  sintinp.xmax     = 2;
+  sintinp.type     = ClosedInterval;
+  dintinp.function = ff1;
+  dintinp.xmin     = 0;
+  dintinp.xmax     = 2;
+  dintinp.type     = ClosedInterval;
+  SRombergIntegrate (&status, &sresult, &sintinp, NULL);
+  TestStatus (&status, CODES(-1), 1);
+  ClearStatus (&status);
+  DRombergIntegrate (&status, &dresult, &dintinp, NULL);
   TestStatus (&status, CODES(-1), 1);
   printf ("Recursive error check passed.\n");
   ClearStatus (&status);
