@@ -150,31 +150,31 @@ main(int argc, char **argv)
   /* Prepare to print result. */
   {
     UINT4 j, numFcutTemplates=4;
-    static InspiralTemplate *tempParams;
+    static InspiralTemplateList *tempParams;
     /* Print out the template parameters */
 	    
-    tempParams = (InspiralTemplate *) LALMalloc (sizeof (InspiralTemplate) * nlist);
+    tempParams = (InspiralTemplateList *) LALMalloc (sizeof (InspiralTemplateList) * nlist);
     for (j=0; j<nlist; j++)
     {
 	/*
 	Retain only those templates that have meaningful chirptimes:
 	*/
-	    tempParams[j].psi0 = (REAL8) list->data[2*j];
-	    tempParams[j].psi3 = (REAL8) list->data[2*j+1];
-	    tempParams[j].fLower = params.fLower;
-	    tempParams[j].nStartPad = params.nStartPad;
-	    tempParams[j].nEndPad = params.nEndPad;
-	    tempParams[j].tSampling= params.tSampling;
-	    tempParams[j].distance =  params.distance;
-	    tempParams[j].signalAmplitude= params.signalAmplitude;
-	    printf("%e %e\n", tempParams[j].psi0, tempParams[j].psi3);
+	    tempParams[j].params.psi0 = (REAL8) list->data[2*j];
+	    tempParams[j].params.psi3 = (REAL8) list->data[2*j+1];
+	    tempParams[j].params.fLower = params.fLower;
+	    tempParams[j].params.nStartPad = params.nStartPad;
+	    tempParams[j].params.nEndPad = params.nEndPad;
+	    tempParams[j].params.tSampling= params.tSampling;
+	    tempParams[j].params.distance =  params.distance;
+	    tempParams[j].params.signalAmplitude= params.signalAmplitude;
+	    printf("%e %e\n", tempParams[j].params.psi0, tempParams[j].params.psi3);
     }
 
     printf("#nlist before=%d\n&\n", nlist);
-    LALInspiralBCVFcutBank( &status, tempParams, &nlist, numFcutTemplates) ;
+    LALInspiralBCVFcutBank( &status, &tempParams, &nlist, numFcutTemplates) ;
     printf("#nlist after=%d\n", nlist);
     for (j=0; j<nlist; j++)
-    printf("%e %e %e %e\n", tempParams[j].psi0, tempParams[j].psi3, tempParams[j].totalMass, tempParams[j].fendBCV);
+    printf("%e %e %e %e\n", tempParams[j].params.psi0, tempParams[j].params.psi3, tempParams[j].params.totalMass, tempParams[j].params.fendBCV);
   }
 
   exit(0);

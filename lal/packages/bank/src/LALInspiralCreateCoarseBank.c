@@ -614,6 +614,7 @@ GetInspiralMoments (
    ASSERT (moments, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (psd, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 
+   /* Constants needed in computing the moments */
    moments->a01 = 3.L/5.L;
    moments->a21 = 11.L * LAL_PI/12.L;
    moments->a22 = 743.L/2016.L * pow(25.L/(2.L*LAL_PI*LAL_PI), 1.L/3.L);
@@ -625,12 +626,15 @@ GetInspiralMoments (
    /* setup the input structure needed in the computation of the moments */
 
    in.shf = psd;
+
+   /* Divide all frequencies by fLower, a scaling that is used in solving the
+    * moments integral */
    in.shf->f0 /= params->fLower;
    in.shf->deltaF /= params->fLower;
    in.xmin = params->fLower/params->fLower;
    in.xmax = params->fCutoff/params->fLower;
 	   
-   /* First compute the norm */
+   /* First compute the norm and print if requested */
 
    in.norm = 1.L;
    in.ndx = 7.L/3.L; 
@@ -647,7 +651,7 @@ GetInspiralMoments (
 	   fprintf(stderr, "j7=%e\n", moments->j[7]);
    }
 
-   /* Normalised moments of the noise PSD from 1/3 to 17/3. */
+   /* Then compute the normalised moments of the noise PSD from 1/3 to 17/3. */
 
    for (k=1; k<=17; k++)
    {
@@ -656,6 +660,8 @@ GetInspiralMoments (
 	   CHECKSTATUSPTR(status);
 	   if (lalDebugLevel==1) fprintf(stderr, "j%1i=%e\n", k,moments->j[k]);
    }
+   /* Moments are done: Rescale deltaF and f0 back to their original values */
+
    in.shf->deltaF *= params->fLower;
    in.shf->f0 *= params->fLower;
   
@@ -691,6 +697,7 @@ LALInspiralCreateFlatBank(
 
   INITSTATUS (status, "LALInspiralCreateFlatBank", LALINSPIRALCREATECOARSEBANKC);
   ATTATCHSTATUSPTR(status);
+
   /* From the knowledge of the metric and the minimal match find the constant
    * increments bankParams->dx0 and bankParmams->dx1
    */
@@ -736,7 +743,7 @@ LALInspiralCreateFlatBank(
 void 
 LALInspiralBCVFcutBank(
 		LALStatus            *status, 
-		InspiralTemplate     *list, 
+		InspiralTemplateList **list, 
 		UINT4                *NList, 
 		UINT4                numFcutTemplates) 
 {  /*  </lalVerbatim>  */
@@ -753,13 +760,13 @@ LALInspiralBCVFcutBank(
 	for (j=0; j<nlist; j++)
 	{
 		UINT4 valid=0;
-		PSItoMasses (&list[j], &valid);
+		PSItoMasses (&((*list)[j].params), &valid);
 		if (valid)
 		{
 			UINT4 i;
 			REAL8 fMin, fMax, df; 
 
-			fMax = list[j].fendBCV;
+			fMax = (*list)[j].params.fendBCV;
 			df = fMax * frac;
 			fMin = fMax * ( 1.L - (nf-1.L)*df);
 
@@ -767,31 +774,35 @@ LALInspiralBCVFcutBank(
 			{
 				fendBCV = fMax * (1.L - i * frac);
 					
-				if (fendBCV > list[j].fLower)
+				if (fendBCV > (*list)[j].params.fLower)
 				{
 					ndx++;
-					list = (InspiralTemplate *)LALRealloc( list, ndx*sizeof(InspiralTemplate) );
-					if (!list)
+	
+					if (!(*list = (InspiralTemplateList*) LALRealloc(*list, ndx*sizeof(InspiralTemplateList)))) 
+        
 					{
+		
 						ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+	
 					}
-					list[ndx-1] = list[j];
-					list[ndx-1].fendBCV = fendBCV;
+					(*list)[ndx-1] = (*list)[j];
+					(*list)[ndx-1].params.fendBCV = fendBCV;
+					(*list)[ndx-1].params.fCutoff = fendBCV;
 				}
 			}
 		}
 	}
 	for (j=nlist; j<ndx; j++)
 	{
-		list[j-nlist] = list[j];
+		(*list)[j-nlist] = (*list)[j];
 	}
 					
-	list = (InspiralTemplate *)LALRealloc( list, (ndx-nlist)*sizeof(InspiralTemplate) );
-	if (!list)
-	{
+	*NList = ndx - nlist;
+
+	if (!(*list = (InspiralTemplateList*) LALRealloc(*list, *NList * sizeof(InspiralTemplateList) ))) 
+        {
 		ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
 	}
-	*NList = ndx - nlist;
   
 	DETATCHSTATUSPTR(status);
 	RETURN (status);

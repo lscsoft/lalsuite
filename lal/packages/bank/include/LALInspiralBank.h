@@ -70,15 +70,16 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 \begin{enumerate} 
 \item \texttt{CoordinateSpace:}
 \input{LALCoordinateSpaceH}
+Choose templates either in the $(\tau_0,\tau_2)$ or $(\tau_0,\tau_3)$ 
+space.  This is one of the members of the InspiralCoarseBankIn structure.
+
 This enum allows users to choose template bank either in the $(\tau_0, \tau_2)$ 
 space of chirptimes (the choice made by \texttt{Tau0Tau2}) or in the 
 $(\tau_0, \tau_3)$ space of chirptimes (the choice made by \texttt{Tau0Tau3}).
-This was implemented in releases before May 25. On May 25 we migrated to a
+This was implemented in releases before May 25, 2002. On May 25 we migrated to a
 new, slightly faster, computation of the metric in which, at present, only the
-choice \texttt{Tau0Tau3} can be made.
-
-Choose templates either in the $(\tau_0,\tau_2)$ or $(\tau_0,\tau_3)$ 
-space.  This is one of the members of the InspiralCoarseBankIn structure.
+choice \texttt{Tau0Tau3} can be made. Since October 2003 a new choice {\tt Psi0Psi3}
+was added to handle BCV templates.
 
 \item\texttt{InspiralBankMassRange:}
 
@@ -257,7 +258,7 @@ Input and ouput structures to function LALRectangleVertices.
 /*  <lalVerbatim file="LALCoordinateSpaceH"> */
 typedef enum
 {
-	Tau0Tau2, Tau0Tau3 
+	Tau0Tau2, Tau0Tau3, Psi0Psi3
 }
 CoordinateSpace;
 
@@ -591,7 +592,7 @@ void
 LALInspiralBCVFcutBank
 (
    LALStatus            *status, 
-   InspiralTemplate     *list, 
+   InspiralTemplateList **list, 
    UINT4                *NList, 
    UINT4                numFcutTemplates
 );
