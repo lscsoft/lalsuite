@@ -222,6 +222,7 @@ int main(int argc, char *argv[]){
     if ( (mkdir_result == -1) && (errno != EEXIST) )
       {
 	fprintf(stderr, "unable to create logfiles directory %d\n", skyCounter);
+        LALFree(fnameLog);
 	return 1;  /* stop the program */
       }
   }
@@ -244,7 +245,17 @@ int main(int argc, char *argv[]){
   fprintf( fpLog, logstr);
   LALFree(logstr);
 
+  /* copy contents of skypatch file into logfile */
+  fprintf(fpLog, "\n\n# Contents of skypatch file:\n");
+  fclose(fpLog);
+  {
+    CHAR command[1024] = "";
+    sprintf(command, "cat %s >> %s", uvar_skyfile, fnameLog);
+    system(command);
+  }
+
   /* append an ident-string defining the exact CVS-version of the code used */
+  fpLog = fopen(fnameLog, "a");
   {
     CHAR command[1024] = "";
     fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
@@ -255,7 +266,8 @@ int main(int argc, char *argv[]){
     system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */
-    LALFree(fnameLog);
+
+    LALFree(fnameLog); 
   }
 
 
