@@ -640,11 +640,11 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
       }
 
       /* check that we read 7 quantities with exactly the right format */
-      if ( read != 7 )
+      if ( read != 8 )
         {
           LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
 			 "Line in question is\n%s",
-			 read, 7, i+1, fname, line1);		    
+			 read, 8, i+1, fname, line1);		    
           LALFree ((*CList));
 	  fclose(fp);
 	  return 1;
