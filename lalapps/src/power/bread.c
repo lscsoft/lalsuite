@@ -181,6 +181,8 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 	int c;
 	int option_index;
 
+	*infile = *outfile = NULL;
+
 	while(1) {
 		c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index);
 
@@ -369,75 +371,165 @@ static INT4 read_search_summary(char *filename, FILE *fpout)
 }
 
 
-/****************************************************************************
- * 
- * FUNCTION TESTS IF THE FILE CONTAINS ANY PLAYGROUND DATA
- * Remember to check if doing S2 or S3
- ***************************************************************************/
+/*
+ * Function tests if the file contains any playground data
+ * FIXME: check if doing S2 or S3
+ */
+
 static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 {
-    INT4 runStart=729273613;
-    INT4 playInterval=6370;
-    INT4 playLength=600;
-    INT4 segStart,segEnd,segMiddle;
+	INT4 runStart = 729273613;
+	INT4 playInterval = 6370;
+	INT4 playLength = 600;
+	INT4 segStart, segEnd, segMiddle;
 
-    segStart = (gpsStart - runStart)%playInterval;
-    segEnd   = (gpsEnd - runStart)%playInterval;
-    segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
-    segMiddle = (segMiddle - runStart)%playInterval;
-    
-    return(segStart < playLength || segEnd < playLength || segMiddle < playLength);
+	segStart = (gpsStart - runStart)%playInterval;
+	segEnd = (gpsEnd - runStart)%playInterval;
+	segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
+	segMiddle = (segMiddle - runStart)%playInterval;
+
+	return(segStart < playLength || segEnd < playLength || segMiddle < playLength);
 }
 
 
-/****************************************************************************
- *
- * The main program
- *
- *****************************************************************************/
+/*
+ * Trim unwanted events from the event list.  This is really sloppy.  We
+ * just re-link the list, and don't bother freeing anything since we just
+ * output the resulting table and exit anyway.
+ */
+
+static BOOLEAN keep_this_event(SnglBurstTable *event, struct options_t options)
+{
+	/* check if in after specified time window */
+	if( options.trigStartTimeFlag && !(event->start_time.gpsSeconds > options.trigStartTime) )
+		return(FALSE);
+
+	/* check if in before specified end time */
+	if( options.trigStopTimeFlag && !(event->start_time.gpsSeconds < options.trigStopTime) )
+		return(FALSE);
+
+	/* check the confidence */
+	if( options.maxConfidenceFlag && !(event->confidence < options.maxConfidence) )
+		return(FALSE);
+
+	/* check min duration */
+	if( options.minDurationFlag && !(event->duration > options.minDuration) )
+		return(FALSE);
+
+	/* check max duration */
+	if( options.maxDurationFlag && !(event->duration < options.maxDuration) )
+		return(FALSE);
+
+	/* check min centralfreq */
+	if( options.minCentralfreqFlag && !(event->central_freq > options.minCentralfreq) )
+		return(FALSE);
+
+	/* check max centralfreq */
+	if( options.maxCentralfreqFlag && !(event->central_freq < options.maxCentralfreq) )
+		return(FALSE);
+
+	/* check max bandwidth */
+	if( options.maxBandwidthFlag && !(event->bandwidth < options.maxBandwidth) )
+		return(FALSE);
+
+	/* check min amplitude */
+	if( options.minAmplitudeFlag && !(event->amplitude > options.minAmplitude) )
+		return(FALSE);
+
+	/* check max amplitude */
+	if( options.maxAmplitudeFlag && !(event->amplitude < options.maxAmplitude) )
+		return(FALSE);
+
+	/* check min snr */
+	if( options.minSnrFlag && !(event->snr > options.minSnr) )
+		return(FALSE);
+
+	/* check max snr */
+	if( options.maxSnrFlag && !(event->snr < options.maxSnr) )
+		return(FALSE);
+
+	/* check if trigger starts in playground */
+	if ( options.playground && !(isPlayground(event->peak_time.gpsSeconds, event->peak_time.gpsSeconds)) )
+		return(FALSE);
+
+	if ( options.noplayground && (isPlayground(event->peak_time.gpsSeconds, event->peak_time.gpsSeconds))  )
+		return(FALSE);
+	
+	return(TRUE);
+}
+
+
+static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t options)
+{
+	SnglBurstTable *head, *tmp;
+
+	while(event && !keep_this_event(event, options))
+		event = event->next;
+	head = event;
+
+	for(tmp = event; event; event = event->next) {
+		if(keep_this_event(event, options))
+			tmp = event;
+		else
+			tmp->next = event->next;
+	}
+
+	return(head);
+}
+
+
+/*
+ * Count the number of events in a burst event list.
+ */
+
+static long int count_events(SnglBurstTable *event)
+{
+	long int count;
+
+	for(count = 0; event; count++)
+		event = event->next;
+	
+	return(count);
+}
+
+
+/*
+ * Entry Point
+ */
 
 int main(int argc, char **argv)
 {
 	static LALStatus  stat;
-	FILE              *fpin=NULL;
+	FILE              *fpin;
 	FILE              *fpout;
-
-	/*number of events*/
-	INT8              numEvents;
-
-	/*searchsummary info */
 	INT4              timeAnalyzed;
-
 	CHAR              line[MAXSTR];
-
-	CHAR              *infile=NULL,*outfile=NULL;
-	SnglBurstTable    *tmpEvent=NULL,*currentEvent,*prevEvent=NULL;
-	SnglBurstTable    burstEvent,*burstEventList,*outEventList=NULL;
+	CHAR              *infile, *outfile;
+	SnglBurstTable    *burstEventList;
 	SnglBurstTable    **addpoint;
 	MetadataTable     myTable;
 	LIGOLwXMLStream   xmlStream;
 	struct options_t  options;
 
 
-	/*******************************************************************
-	* initialize things
-	*******************************************************************/
+	/*
+	 * Initialize things
+	 */
 
 	set_option_defaults(&options);
 	parse_command_line(argc, argv, &options, &infile, &outfile);
 
 	lal_errhandler = LAL_ERR_EXIT;
-	set_debug_level( "1" );
-	memset( &burstEvent, 0, sizeof(SnglBurstTable) );
-	memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
+	set_debug_level("1");
+	memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
 	xmlStream.fp = NULL;
-	numEvents = 0;
 
-	/*****************************************************************
-	 * loop over the xml input files
-	 *****************************************************************/
 
-	if ( !(fpin = fopen(infile,"r")) )
+	/*
+	 * Loop over the xml input files
+	 */
+
+	if(!(fpin = fopen(infile,"r")))
 		LALPrintError("Could not open list of input files\n");
 
 	if(options.verbose) {
@@ -474,116 +566,44 @@ int main(int argc, char **argv)
 			addpoint = &(*addpoint)->next;
 	}
 
-	/* print out the total time analysed */
+
+	/*
+	 * print out the total time analysed
+	 */
+
 	if(options.verbose) {
 		fprintf(fpout, "# Total time analysed = %d\n", timeAnalyzed);
 		fclose(fpout);
 	}
 
-	/****************************************************************
-	* do any requested cuts
-	***************************************************************/
-	tmpEvent = burstEventList;
-	while(tmpEvent) {
-		BOOLEAN pass = TRUE;
 
-		/* check if in after specified time window */
-		if( options.trigStartTimeFlag && !(tmpEvent->start_time.gpsSeconds > options.trigStartTime) )
-			pass = FALSE;
+	/*
+	 * Do any requested cuts
+	 */
 
-		/* check if in before specified end time */
-		if( options.trigStopTimeFlag && !(tmpEvent->start_time.gpsSeconds < options.trigStopTime) )
-			pass = FALSE;
-
-		/* check the confidence */
-		if( options.maxConfidenceFlag && !(tmpEvent->confidence < options.maxConfidence) )
-			pass = FALSE;
-
-		/* check min duration */
-		if( options.minDurationFlag && !(tmpEvent->duration > options.minDuration) )
-			pass = FALSE;
-
-		/* check max duration */
-		if( options.maxDurationFlag && !(tmpEvent->duration < options.maxDuration) )
-			pass = FALSE;
-
-		/* check min centralfreq */
-		if( options.minCentralfreqFlag && !(tmpEvent->central_freq > options.minCentralfreq) )
-			pass = FALSE;
-
-		/* check max centralfreq */
-		if( options.maxCentralfreqFlag && !(tmpEvent->central_freq < options.maxCentralfreq) )
-			pass = FALSE;
-
-		/* check max bandwidth */
-		if( options.maxBandwidthFlag && !(tmpEvent->bandwidth < options.maxBandwidth) )
-			pass = FALSE;
-
-		/* check min amplitude */
-		if( options.minAmplitudeFlag && !(tmpEvent->amplitude > options.minAmplitude) )
-			pass = FALSE;
-
-		/* check max amplitude */
-		if( options.maxAmplitudeFlag && !(tmpEvent->amplitude < options.maxAmplitude) )
-			pass = FALSE;
-
-		/* check min snr */
-		if( options.minSnrFlag && !(tmpEvent->snr > options.minSnr) )
-			pass = FALSE;
-
-		/* check max snr */
-		if( options.maxSnrFlag && !(tmpEvent->snr < options.maxSnr) )
-			pass = FALSE;
-
-		/* check if trigger starts in playground */
-		if ( options.playground && !(isPlayground(tmpEvent->peak_time.gpsSeconds, tmpEvent->peak_time.gpsSeconds)) )
-			pass = FALSE;
-
-		if ( options.noplayground && (isPlayground(tmpEvent->peak_time.gpsSeconds, tmpEvent->peak_time.gpsSeconds))  )
-			pass = FALSE;
-	
-		/* set it for output if it passes */  
-		if ( pass ) {
-			if (outEventList == NULL) {
-				outEventList = currentEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable) );
-				prevEvent = currentEvent;
-			} else {
-				currentEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable) );
-				prevEvent->next = currentEvent;
-			}
-			memcpy(currentEvent, tmpEvent, sizeof(SnglBurstTable));
-			prevEvent = currentEvent;
-			currentEvent = currentEvent->next = NULL;
-		}
-		tmpEvent = tmpEvent->next;
-	}
-  
-	tmpEvent = outEventList;
-	while( tmpEvent ) {
-		tmpEvent = tmpEvent->next;
-		numEvents++;
-	}
+	burstEventList = trim_event_list(burstEventList, options);
 
 	if(options.verbose)
-		fprintf(stderr, "Total no. of triggers %ld\n", numEvents);
+		fprintf(stderr, "Total no. of triggers %ld\n", count_events(burstEventList));
 
 
-    /*****************************************************************
-     * sort the triggers
-     *****************************************************************/
-    LAL_CALL(LALSortSnglBurst(&stat, &(outEventList), LALCompareSnglBurstByTime), &stat);
+	/*
+	 * Sort the triggers
+	 */
+
+	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, LALCompareSnglBurstByTime), &stat);
 
 
+	/*
+	 * Write output xml file
+	 */
 
-    /*****************************************************************
-     * open output xml file
-     *****************************************************************/
-    LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfile), &stat);
-    LAL_CALL(LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
-    myTable.snglBurstTable = outEventList;
-    LAL_CALL(LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, sngl_burst_table), &stat);
-    LAL_CALL(LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
-    LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfile), &stat);
+	LAL_CALL(LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
+	myTable.snglBurstTable = burstEventList;
+	LAL_CALL(LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, sngl_burst_table), &stat);
+	LAL_CALL(LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
+	LAL_CALL(LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
 	exit(0);
 }
