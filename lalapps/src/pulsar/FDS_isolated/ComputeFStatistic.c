@@ -749,14 +749,16 @@ initUserVars (LALStatus *stat)
 
   uvar_searchNeighbors = FALSE;
 
-  /* under BOINC, we do checkpointing by default, otherwise it's off by default */
+/* some BOINC-defaults differ: checkpointing is ON, and we use experimental LALDemod() */
 #if USE_BOINC
   uvar_doCheckpointing = TRUE;
+  uvar_expLALDemod = TRUE;
 #else
   uvar_doCheckpointing = FALSE;
+  uvar_expLALDemod = FALSE;
 #endif
 
-  uvar_expLALDemod = FALSE;
+
 
   /* register all our user-variables */
   LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message"); 
