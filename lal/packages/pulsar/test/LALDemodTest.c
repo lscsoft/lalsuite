@@ -477,10 +477,11 @@ int main(int argc, char **argv)
     
     f0Band = tempf0Band;
   }
+  /* the hard-wired 64 is for the necessary NTERMS_COH_DIV_TWO*/
   /* index of the left side of the band, WITH WINGS */
-  ifMin=floor(f0/dfSFT)-nDeltaF/2;
+  ifMin=floor(f0/dfSFT)-nDeltaF/2-64;
   /* indexof the right side of the band, WITH WINGS */
-  ifMax=ifMin+nDeltaF;
+  ifMax=ifMin+nDeltaF+64;
   /* frequency of the left side of the band, WITH WINGS */
   fMin=dfSFT*ifMin;  
   nDeltaF=(INT4)(ceil(f0Band/dfSFT));
