@@ -197,8 +197,8 @@ int main (int argc, char *argv[])
   TestStatus (&status, CODES(INTERPOLATE_ESIZE), 1);
   printf ("Invalid size check passed.\n");
 
-  x->data[1]  = x->data[0];
-  xx->data[1] = xx->data[0];
+  x->data[1]  = x->data[0]  = 2;
+  xx->data[1] = xx->data[0] = 2;
   sintpar.n = 3;
   dintpar.n = 3;
   printf ("\nZero divide:\r");
