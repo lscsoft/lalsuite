@@ -1340,6 +1340,24 @@ class ScienceData:
         x = ScienceSegment(tuple([id,st,en,du]))
         self.__sci_segs.append(x)
 
+  def tama_read(self,file):
+    """
+    Parse the science segments from a tama list of locked segments contained in
+	 	file.
+    @param file: input text file containing a list of tama segments.
+    """
+    self.__file = file
+    for line in open(file):
+      columns = line.split()
+      id = int(columns[0])
+      start = int(math.ceil(float(columns[3])))
+      end = int(math.floor(float(columns[4])))
+      dur = end - start	
+    
+      x = ScienceSegment(tuple([id, start, end, dur]))
+      self.__sci_segs.append(x)
+
+
   def make_chunks(self,length,overlap=0,play=0,sl=0,excl_play=0):
     """
     Divide each ScienceSegment contained in this object into AnalysisChunks.
@@ -1640,6 +1658,7 @@ class ScienceData:
     self.__sci_segs = outlist
     return len(self)
 
+  
   def play(self):
     """
     Keep only times in ScienceSegments which are in the playground
@@ -1688,6 +1707,18 @@ class ScienceData:
     return len(self)
 
 
+  def intersect_3(self, second, third):
+    """
+    Intersection routine for three inputs.  Built out of the intersect, 
+    coalesce and play routines
+    """
+    self.intersection(second)
+    self.intersection(third)
+    self.coalesce()
+    return len(self)
+
+
+  
 class LSCDataFindJob(CondorDAGJob, AnalysisJob):
   """
   An LSCdataFind job used to locate data. The static options are
