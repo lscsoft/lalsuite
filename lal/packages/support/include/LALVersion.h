@@ -93,4 +93,4 @@ LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose );
 }
 #endif
 
-#endif _LALVERSION_H
+#endif /* _LALVERSION_H */
