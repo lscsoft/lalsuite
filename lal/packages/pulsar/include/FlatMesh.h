@@ -125,10 +125,9 @@ NRCSID(FLATMESHH,"$Id$");
 #define FLATMESHH_MSGELEN "Too few points specified"
 /******************************************** </lalErrTable><lalLaTeX>
 
-\subsection*{Structures}
-\begin{verbatim}
-FlatMeshParamStruc
-\end{verbatim}
+\subsection*{Types}
+
+\subsubsection*{Structure \texttt{FlatMeshParamStruc}}
 \idx[Type]{FlatMeshParamStruc}
 
 \noindent This structure stores and passes parameters for computing a

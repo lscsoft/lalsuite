@@ -57,6 +57,10 @@ NRCSID( TWODMESHPLOTH, "$Id$" );
 
 \subsection*{Constants}
 
+\idx[Constant]{TWODMESHPLOTH\_XSIZE}
+\idx[Constant]{TWODMESHPLOTH\_YSIZE}
+\idx[Constant]{TWODMESHPLOTH\_XMARG}
+\idx[Constant]{TWODMESHPLOTH\_YMARG}
 \begin{center}\begin{tabular}{|ccp{4.5in}|}\hline
 \texttt{<}\textit{name}\texttt{>} & value & description \\
 \hline

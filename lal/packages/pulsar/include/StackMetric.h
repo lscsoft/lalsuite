@@ -119,10 +119,9 @@ NRCSID(STACKMETRICH,"$Id$");
 #define STACKMETRICH_MSGEBAD "Bad parameter values"
 /******************************************** </lalErrTable><lalLaTeX>
 
-\subsection*{Structures}
-\begin{verbatim}
-MetricParamStruc
-\end{verbatim}
+\subsection*{Types}
+
+\subsubsection*{Structure \texttt{MetricParamStruc}}
 \idx[Type]{MetricParamStruc}
 
 \noindent This structure stores and passes parameters for computing a

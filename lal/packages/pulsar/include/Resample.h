@@ -114,10 +114,9 @@ NRCSID(RESAMPLEH,"$Id$");
 /*************************************************** </lalErrTable> */
 
 /********************************************************** <lalLaTeX>
-\subsection*{Structures}
-\begin{verbatim}
-struct ResampleRules
-\end{verbatim}
+\subsection*{Types}
+
+\subsubsection*{Structure \texttt{ResampleRules}}
 \idx[Type]{ResampleRules}
 
 \noindent This structure stores the rules for taking a time series
@@ -170,10 +169,7 @@ typedef struct tagResampleRules{
 
 
 /********************************************************** <lalLaTeX>
-\vspace{0.2in}
-\begin{verbatim}
-struct PolycoStruc
-\end{verbatim}
+\subsubsection*{Structure \texttt{PolycoStruc}}
 \idx[Type]{PolycoStruc}
 
 \noindent This structure stores the parameters of the piecewise
@@ -228,11 +224,8 @@ typedef struct tagPolycoStruc{
 } PolycoStruc;
 
 
-/* <lalLaTeX>
-\vspace{0.2in}
-\begin{verbatim}
-struct ResampleParamStruc
-\end{verbatim}
+/********************************************************** <lalLaTeX>
+\subsubsection*{Structure \texttt{ResampleParamStruc}}
 \idx[Type]{ResampleParamStruc}
 
 \noindent This structure stores extra parameters required to construct

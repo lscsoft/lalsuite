@@ -139,10 +139,9 @@ NRCSID(PULSARTIMESH,"$Id$");
 #define PULSARTIMESH_MSGEBAD "Bad parameter values"
 /******************************************** </lalErrTable><lalLaTeX>
 
-\subsection*{Structures}
-\begin{verbatim}
-PulsarTimesParamStruc
-\end{verbatim}
+\subsection*{Types}
+
+\subsubsection*{Structure \texttt{PulsarTimesParamStruc}}
 \idx[Type]{PulsarTimesParamStruc}
 
 \noindent This structure stores a superset of all constant parameters
