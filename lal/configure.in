@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(include/config.h.in)
-AM_INIT_AUTOMAKE(lal, 0.5)
+AM_INIT_AUTOMAKE(lal, 0.6)
 AM_CONFIG_HEADER(include/config.h include/lal/LALConfig.h)
 
 lal_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -35,7 +35,6 @@ AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AM_DISABLE_SHARED
 AM_PROG_LIBTOOL
 AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
 AC_CHECK_PROGS(MKIND, makeindex, echo)
