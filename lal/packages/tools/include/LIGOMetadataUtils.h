@@ -228,7 +228,7 @@ with the largest value of snr squared divided by the chi squared.
 typedef struct
 tagSnglBurstAccuracy
 {
-  INT4  match;
+  INT4  difference;
   REAL4 dRhoPlus;
   REAL4 dRhoMinus;
   INT8  dtime;
