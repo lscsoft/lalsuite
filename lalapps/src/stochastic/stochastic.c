@@ -13,7 +13,6 @@
 #include <sys/time.h>
 #include <math.h>
 
-#include <unistd.h>
 #include <getopt.h>
 
 #include <FrameL.h>
@@ -65,6 +64,8 @@ int optind;
 /* flags for getopt_long */
 static int inject_flag;
 static int apply_mask_flag;
+static int high_pass_flag;
+static int overlap_hann_flag;
 static int verbose_flag;
 
 /* parameters for the stochastic search */
@@ -93,8 +94,13 @@ INT4 siteOne;
 INT4 siteTwo;
 
 /* frequency band */
-INT4 fMin = 40;
+INT4 fMin = 50;
 INT4 fMax = 300;
+
+/* high pass filtering parameters */
+REAL4 highPassFreq = 40;
+REAL4 highPassAt = 0.707;
+INT4 highPassOrder = 6;
 
 /* omegaGW parameters */
 REAL4 alpha = 0.0;
@@ -107,7 +113,7 @@ REAL4 scaleFactor = 1;
 INT4 seed;
 
 /* misc parameters */
-INT4 hannDuration = 1;
+INT4 hannDuration = 60;
 INT4 padData = 1;
 
 
@@ -123,7 +129,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	CHAR outputFilename[LALNameLength];
 
 	/* counters */
-	INT4 i, j;
+	INT4 i, segLoop;
 
 	/* results parameters */
 	REAL8 y;
@@ -149,6 +155,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* data structures for segments */
 	INT4 segmentLength;
+	INT4 segmentShift;
 	REAL4TimeSeries segmentOne;
 	REAL4TimeSeries segmentTwo;
 
@@ -194,6 +201,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 	INT4 hannLength;
 	LALWindowParams hannParams;
 	REAL4Vector *hannWindow;
+
+	/* high pass filtering */
+	PassBandParamStruc highPassParam;
 
 	/* zeropad and fft structures */
 	SZeroPadAndFFTParameters zeroPadParams;
@@ -266,6 +276,12 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* get number of segments */
 	streamDuration = stopTime - startTime;
 	numSegments = streamDuration / segmentDuration;
+	segmentShift = segmentDuration;
+	if (overlap_hann_flag)
+	{
+		numSegments = (2 * numSegments) - 1;
+		segmentShift = segmentDuration / 2;
+	}
 
 	/* get stream duration and length */
 	streamLength = streamDuration * resampleRate;
@@ -384,14 +400,20 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	if (verbose_flag)
 	{
-		fprintf(stdout, "Setting up structures for data segments...\n");
+		fprintf(stdout, "Allocating memory for data segments...\n");
 	}
 
-	/* setup data segment structures */
-	segmentOne.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-	segmentTwo.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-	segmentOne.data->length = segmentDuration * resampleRate;
-	segmentTwo.data->length = segmentDuration * resampleRate;
+	/* allocate memory for data segments */
+	segmentOne.data = NULL;
+	segmentTwo.data = NULL;
+	LAL_CALL( LALSCreateVector(&status, &(segmentOne.data), segmentLength), \
+			&status );
+	LAL_CALL( LALSCreateVector(&status, &(segmentTwo.data), segmentLength), \
+			&status );
+	memset(segmentOne.data->data, 0, \
+			segmentOne.data->length * sizeof(*segmentOne.data->data));
+	memset(segmentTwo.data->data, 0, \
+			segmentTwo.data->length * sizeof(*segmentTwo.data->data));
 
 	/* set PSD window length */
 	windowPSDLength = (UINT4)(resampleRate / deltaF);
@@ -671,6 +693,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 		LALSPrintTimeSeries(&dataWindow, "dataWindow.dat");
 	}
 
+	/* structure for high pass filtering */
+	if (high_pass_flag)
+	{
+		highPassParam.nMax = highPassOrder;
+		highPassParam.f2 = highPassFreq;
+		highPassParam.a2 = highPassAt;
+	}
+
 	/* zeropad lengths */
 	zeroPadLength = 2 * segmentLength;
 	fftDataLength = (zeroPadLength / 2) + 1;
@@ -946,6 +976,14 @@ INT4 main(INT4 argc, CHAR *argv[])
 		LALSPrintTimeSeries(&streamTwo, "stream2.dat");
 	}
 
+	/* high pass filter */
+	if (high_pass_flag)
+	{
+		LAL_CALL( LALButterworthREAL4TimeSeries( &status, &streamOne, \
+					&highPassParam ), &status );
+		LAL_CALL( LALButterworthREAL4TimeSeries( &status, &streamTwo, \
+					&highPassParam ), &status );
+	}
 
 	/*
 	 ** loop over segments **
@@ -956,31 +994,27 @@ INT4 main(INT4 argc, CHAR *argv[])
 		fprintf(stdout, "Looping over %d segments...\n", numSegments);
 	}
 
-	for (i = 0; i < numSegments; i++)
+	for (segLoop = 0; segLoop < numSegments; segLoop++)
 	{
 		/* define segment epoch */
-		gpsStartTime.gpsSeconds = startTime + (i * segmentDuration);
+		gpsStartTime.gpsSeconds = startTime + (segLoop * segmentDuration);
 		gpsCalTime.gpsSeconds = gpsStartTime.gpsSeconds;
-		segmentOne.data->data = streamOne.data->data + (i * \
-				streamDuration * resampleRate);
-		segmentTwo.data->data = streamTwo.data->data + (i * \
-				streamDuration * resampleRate);
 		segmentOne.epoch = gpsStartTime;
 		segmentTwo.epoch = gpsStartTime;
 
 		if (verbose_flag)
 		{
 			fprintf(stdout, "Performing search on segment %d of %d...\n", \
-					i + 1, numSegments);
+					segLoop + 1, numSegments);
 		}
 
 		/* build small segment */
-		for (j = 0; j < segmentLength; j++)
+		for (i = 0; i < segmentLength ; i++)
 		{
-			segmentOne.data->data[j] = streamOne.data->data[j + \
-				(i * segmentLength)];
-			segmentTwo.data->data[j] = streamTwo.data->data[j + \
-				(i * segmentLength)];
+			segmentOne.data->data[i] = streamOne.data->data[i + \
+				(segLoop * segmentLength)];
+			segmentTwo.data->data[i] = streamTwo.data->data[i + \
+				(segLoop * segmentLength)];
 		}
 
 		/* simulate signal */
@@ -1000,14 +1034,15 @@ INT4 main(INT4 argc, CHAR *argv[])
 			}
 
 			/* multiply by scale factor and inject into real data */
-			for (j = 0; j < segmentLength ; j++)
+			for (i = 0; i < segmentLength ; i++)
 			{
-				segmentOne.data->data[j] = segmentOne.data->data[j] + \
-					(scaleFactor * SimStochBGOne.data->data[j]);
-				segmentTwo.data->data[j] = segmentTwo.data->data[j] + \
-					(scaleFactor * SimStochBGTwo.data->data[j]);
+				segmentOne.data->data[i] = segmentOne.data->data[i] + \
+					(scaleFactor * SimStochBGOne.data->data[i]);
+				segmentTwo.data->data[i] = segmentTwo.data->data[i] + \
+					(scaleFactor * SimStochBGTwo.data->data[i]);
 			}
 		}
+
 
 		/* output the results */
 		if (verbose_flag)
@@ -1051,10 +1086,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* reduce to the optimal filter frequency range */
-		for (j = 0; j < filterLength; j++)
+		for (i = 0; i < filterLength; i++)
 		{
-			psdOne.data->data[j] = psdTempOne.data->data[j + numPointInf];
-			psdTwo.data->data[j] = psdTempTwo.data->data[j + numPointInf];
+			psdOne.data->data[i] = psdTempOne.data->data[i + numPointInf];
+			psdTwo.data->data[i] = psdTempTwo.data->data[i + numPointInf];
 		}
 
 		/* output the results */
@@ -1086,10 +1121,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 		/* reduce to the optimal filter frequency range */
 		responseOne.epoch = gpsCalTime;
 		responseTwo.epoch = gpsCalTime;
-		for (j = 0; j < filterLength; j++)
+		for (i = 0; i < filterLength; i++)
 		{
-			responseOne.data->data[j] = responseTempOne.data->data[j + numPointInf];
-			responseTwo.data->data[j] = responseTempTwo.data->data[j + numPointInf];
+			responseOne.data->data[i] = responseTempOne.data->data[i + numPointInf];
+			responseTwo.data->data[i] = responseTempTwo.data->data[i + numPointInf];
 		}
 
 		/* output the results */
@@ -1198,8 +1233,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 	LAL_CALL( LALDestroyRealFFTPlan(&status, &fftDataPlan), &status );
 	LAL_CALL( LALDestroyVector(&status, &(streamOne.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(streamTwo.data)), &status );
-	LALFree(segmentOne.data);
-	LALFree(segmentTwo.data);
+	LAL_CALL( LALDestroyVector(&status, &(segmentOne.data)), &status );
+	LAL_CALL( LALDestroyVector(&status, &(segmentTwo.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(psdTempOne.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(psdTempTwo.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(psdOne.data)), &status );
@@ -1247,6 +1282,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			/* options that set a flag */
 			{"inject", no_argument, &inject_flag, 1},
 			{"apply-mask", no_argument, &apply_mask_flag, 1},
+			{"high-pass-filter", no_argument, &high_pass_flag, 1},
+			{"overlap-hann", no_argument, &overlap_hann_flag, 1},
 			{"verbose", no_argument, &verbose_flag, 1},
 			/* options that don't set a flag */
 			{"help", no_argument, 0, 'h'},
@@ -1482,9 +1519,13 @@ void displayUsage(INT4 exitcode)
 	fprintf(stderr, " --apply-mask                  apply frequency masking\n");
 	fprintf(stderr, " --inject                      inject a signal into " \
 			"the data\n");
-	fprintf(stderr, " --scale-factor N              scale factor for "\
+	fprintf(stderr, " --scale-factor N              scale factor for " \
 			"injection\n");
 	fprintf(stderr, " --seed N                      seed\n");
+	fprintf(stderr, " --overlap-hann                overlaping hann windows " \
+			"for data windowing\n");
+	fprintf(stderr, " --high-pass-filter            perform high pass " \
+			"filtering\n");
 
 	exit(exitcode);
 }
