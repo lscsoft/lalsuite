@@ -103,7 +103,7 @@ INT4 highPassOrder = -1;
 /* omegaGW parameters */
 REAL4 alpha = 0;
 REAL4 fRef = 100;
-REAL4 omegaRef = 1;
+REAL4 omega0 = 1;
 
 /* windowing parameters */
 INT4 hannDuration = -1;
@@ -715,7 +715,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set omegaGW parameters */
   omegaGWParams.alpha = alpha;
   omegaGWParams.fRef = fRef;
-  omegaGWParams.omegaRef = omegaRef;
+  omegaGWParams.omegaRef = omega0;
   omegaGWParams.length = filterLength;
   omegaGWParams.f0 = fMin;
   omegaGWParams.deltaF = deltaF;
@@ -1220,7 +1220,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --high-pass-filter            apply high pass filtering\n"\
   " --hpf-frequency N             high pass filter knee frequency\n"\
   " --hpf-attenuation N           high pass filter attenuation\n"\
-  " --hpf-order N                 high pass filter order\n"
+  " --hpf-order N                 high pass filter order\n"\
+  " --filter-omega-alpha N        omega_gw exponent\n"\
+  " --filter-omega-fref N         omega_gw reference frequency\n"\
+  " --filter-omega0 N             omega_0\n"
 
 /* parse command line options */
 void parseOptions(INT4 argc, CHAR *argv[])
@@ -1257,6 +1260,9 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"hpf-frequency", required_argument, 0, 'k'},
       {"hpf-attenuation", required_argument, 0, 'p'},
       {"hpf-order", required_argument, 0, 'P'},
+      {"filter-omega-alpha", required_argument, 0, 'e'},
+      {"filter-omega-fref", required_argument, 0, 'E'},
+      {"filter-omega0", required_argument, 0, 'O'},
       {"version", no_argument, 0, 'V'},
       {0, 0, 0, 0}
     };
@@ -1599,6 +1605,41 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
+      case 'e':
+        /* filter omega_gw exponent */
+        alpha = atof(optarg);
+        break;
+
+      case 'E':
+        /* filter omega_gw reference frequency */
+        fRef = atof(optarg);
+
+        /* check */
+        if (fRef < 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Reference frequency is less than 0 Hz: (%f specified)\n", \
+              long_options[option_index].name, fRef);
+          exit(1);
+        }
+
+        break;
+
+      case 'O':
+        /* filter omega_0 */
+        omega0 = atof(optarg);
+
+        /* check */
+        if (omega0 <= 0)
+        {
+          fprintf(stderr, "Invalid argument to --%s:\n" \
+              "Omega_0 is less than or equal to 0: (%f specified)\n", \
+              long_options[option_index].name, omega0);
+          exit(1);
+        }
+
+        break;
+
       case 'V':
         /* display version info and exit */
         fprintf(stdout, "Standalone SGWB Search Engine\n" CVS_ID "\n");
@@ -1791,6 +1832,22 @@ void parseOptions(INT4 argc, CHAR *argv[])
   {
     fprintf(stderr, "Invalid frequency band; maximum frequency (%d Hz) is " \
         "before minimum\nfrequency (%d Hz)\n", fMax, fMin);
+    exit(1);
+  }
+
+  /* filter reference frequency less than min */
+  if (fRef < fMin)
+  {
+    fprintf(stderr, "Reference frequency (%f Hz) is less than minimum " \
+        "frequency (%d Hz)\n", fRef, fMin);
+    exit(1);
+  }
+
+  /* filter reference frequency greater than max */
+  if (fRef > fMax)
+  {
+    fprintf(stderr, "Reference frequency (%f Hz) is less than maximum " \
+        "frequency (%d Hz)\n", fRef, fMax);
     exit(1);
   }
 
