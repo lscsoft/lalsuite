@@ -26,7 +26,7 @@
 * that generate \MATHEMATICA notebooks. Currently, the only modules using this header file 
 * are \texttt{LALMath3DPlot()}, which generates 3D animated plots of template banks having
 * three parameters and \texttt{LALMathNDPlot()} which plots the 3-dimensional projections 
-* of a bank which is N-dimensional.  
+* of a bank that is N-dimensional.  
   </lalLaTeX> */
  
   /*SUBSECTION - SYNOPSIS ---------------------------------------------------- <lalLaTeX>
@@ -82,10 +82,10 @@
     \noindent
   * See the source file \texttt{Math3DPlot.c} for an example of how to use these macros
   * to generate a \MATHEMATICA notebook in your own program.  
-    \begin{itemize}
+    \begin{description}
   * \item{NOTEBOOK} Denotes the beginning and ending of the notebook file.  A 
   * BEG\_NOTEBOOK tag must start the file and an END\_NOTEBOOK tag must end it.
-  * \item{TITLE} Placing an fprint(nb, "Your Title") inbetween these BEG and END tags 
+  * \item{TITLE} Placing an fprint(nb, ``Your Title") between BEG and END tags 
   * will place a \emph{title font} cell in the notebook.
   * \item{GROUP} Cells placed in between these tags will be grouped together
   * \item{SECTION} Same as title except the text printed will be in \emph{section font}.
@@ -93,14 +93,14 @@
   * with that section until a new BEG\_SECTIONCELL tag is encountered.
   * \item{INPUT} provides cells to input \MATHEMATICA  commands.
   * \item{TEXT} provides cells to input plain text.
-    \end{itemize}
+    \end{description}
   * Notice that the file 
   * pointer must be named ``nb" in order to use the macros defined in this header.  
   * When grouping several cell objects together the last object in the list should have 
-  * an underscored tag instead of an END tag without an underscore.  
+  * an underscored END tag instead of an END tag without an underscore.  
   * Although the notebook will compile (usually) if you use the tags without an ending 
-  * underscore, the dangling comma is taken as a null member of the list of grouped cells  
-  * and when you view the notebook in \MATHEMATICA  you may see the word 
+  * underscore, the dangling comma is taken as a null member of the list of grouped cells.  
+  * Therefore, when you view the notebook in \MATHEMATICA  you may see the word 
   * ``NULL" printed on a line.  That is an indication that you should use the underscore 
   * version of the tag which preceeded the ``NULL" statement.   
     </lalLaTeX> 
@@ -118,12 +118,12 @@
     \idx[Type]{MathNDPointList}
     \noindent
   * The Math3DPointList type is used by \texttt{Math3DPlot.c} as an input structure to 
-  * plot 3-dimensional template banks.  It is a linked list and has parameters for each 
-  * coordinate x,y,z and the next pointer.  It also has a parameter called GrayLevel 
+  * plot 3-dimensional template banks.  It is a linked list with parameters for each 
+  * coordinate x,y,z and a next pointer.  It also has a parameter called GrayLevel 
   * which must be $\epsilon [0,1]$.  It specifies the shading of the point in the final 
   * plot with 0 representing black and 1 representing white.  By creatively assigning 
   * its value the grayscale shade of the points may convey additional information. 
-  * \\
+  * \\\\
   * \noindent The MathNDPointList type is similar except the coordinates are stored as
   * data in the REAL4Vector \texttt{coordinates}.  
     </lalLaTeX> 

@@ -159,6 +159,11 @@ int main(){
           if(((loopx==9)||(loopx==12)) && ((loopy>9)&&(loopy<13))) continue;
           if(((loopx==8)||(loopx==13)) && ((loopy>12)&&(loopy<16))) continue;
           LALSCreateVector(&stat, &list->coordinates, dim);
+          if (stat.statusCode){
+            LALError(&stat, LALMATHNDPLOTTESTC_MSGESUB);
+            printf(LALMATHNDPLOTTESTC_MSGESUB);
+            return LALMATHNDPLOTTESTC_ESUB;
+            }
           list->coordinates->data[0] = loopx;
           list->coordinates->data[1] = loopy;
           list->coordinates->data[2] = loopz;
@@ -191,16 +196,25 @@ int main(){
   list = first;
   while(list->next){
     first = list->next;
-    LALSDestroyVector(&stat, &list->coordinates);
+    if (list->coordinates) 
+      LALSDestroyVector(&stat, &list->coordinates);
+    if (stat.statusCode){
+      LALError(&stat, LALMATHNDPLOTTESTC_MSGESUB);
+      printf(LALMATHNDPLOTTESTC_MSGESUB);
+      return LALMATHNDPLOTTESTC_ESUB;
+      }
     LALFree(list);
+    if (stat.statusCode){
+      LALError(&stat, LALMATHNDPLOTTESTC_MSGEMEM);
+      printf(LALMATHNDPLOTTESTC_MSGEMEM);
+      return LALMATHNDPLOTTESTC_EMEM;
+      }
     list = first;
   }
                                                                                                                                                 
                                                                                                                                                 
   /* free the last (first?) memory allocated for Math3DPlot. */
-  LALSDestroyVector(&stat, &list->coordinates);
-  LALFree(list);
-
+  if(list) LALFree(list);
 
   if (stat.statusCode)
     return LALMATHNDPLOTTESTC_ESUB;
