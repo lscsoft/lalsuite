@@ -883,13 +883,13 @@ sys.stdout.flush()
 
 if do_one_ifo:
   # a clustered and unclustered sire for each of the single IFO configurations
-  if do_h1:
+  if do_h1 and len(h1_single_data):
     sire_segs(h1_single_inca_nodes,'output_a','H1-SIRE_SINGLE_IFO',sire_job,
       sire_clust_job,dag,usertag)
-  if do_h2:
+  if do_h2 and len(h2_single_data):
     sire_segs(h2_single_inca_nodes,'output_a','H2-SIRE_SINGLE_IFO',sire_job,
       sire_clust_job,dag,usertag)
-  if do_l1:
+  if do_l1 and len(l1_single_data):
     sire_segs(l1_single_inca_nodes,'output_a','L1-SIRE_SINGLE_IFO',sire_job,
       sire_clust_job,dag,usertag)
    
@@ -897,20 +897,20 @@ if do_one_ifo:
  
 if do_two_ifo:  
   # a clustered and unclustered sire for each of the double IFO configurations
-  if do_h1 and do_h2:
+  if do_h1 and do_h2 and len(h1_h2_double_data):
     sire_segs(h1_h2_double_inca_nodes,'output_a','H1-SIRE_H1H2',sire_job,
       sire_clust_job,dag,usertag)
     sire_segs(h1_h2_double_inca_nodes,'output_b','H2-SIRE_H1H2',sire_job,
       sire_clust_job,dag,usertag)
 
-  if do_h1 and do_l1:
+  if do_h1 and do_l1 and len(h1_l1_double_data):
     sire_segs(h1_l1_double_inca_nodes,'output_a','H1-SIRE_H1L1',sire_job,
       sire_clust_job,dag,usertag)
     sire_segs(h1_l1_double_inca_nodes,'output_b','L1-SIRE_H1L1',sire_job,
       sire_clust_job,dag,usertag)
 
       
-  if do_h2 and do_l1:
+  if do_h2 and do_l1 and len(h2_l1_double_data):
     sire_segs(h2_l1_double_inca_nodes,'output_a','H2-SIRE_H2L1',sire_job,
       sire_clust_job,dag,usertag)
     sire_segs(h2_l1_double_inca_nodes,'output_b','L1-SIRE_H2L1',sire_job,
