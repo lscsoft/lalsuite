@@ -1,8 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 check_PROGRAMS = LALVersionTest LALMallocTest PrintVectorTest\
 	         PrintFTSeriesTest ReadFTSeriesTest StreamInputTest\
-                 StreamSeriesInputTest
-noinst_DATA = StreamInput.data StreamSeriesInput.data
+                 StreamSeriesInputTest SFTfileIOTest
+noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0
 EXTRA_DIST = $(DATA)
 LALVersionTest_SOURCES = LALVersionTest.c
 LALVersionTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
@@ -24,11 +24,14 @@ StreamInputTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(
 StreamSeriesInputTest_SOURCES = StreamSeriesInputTest.c
 StreamSeriesInputTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
+SFTfileIOTest_SOURCES = SFTfileIOTest.c
+SFTfileIOTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = LALVersionTest LALMallocTest PrintVectorTest \
         ReadFTSeriesTest PrintFTSeriesTest StreamInputTest \
-        StreamSeriesInputTest
+        StreamSeriesInputTest SFTfileIOTest
 TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
-MOSTLYCLEANFILES = .dvi-dep *.dat *PrintVector.00* *.out
+MOSTLYCLEANFILES = .dvi-dep *.dat *PrintVector.00* *.out  outputsft.0
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
