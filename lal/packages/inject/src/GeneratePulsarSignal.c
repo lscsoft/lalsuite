@@ -111,6 +111,7 @@ substantial speedups for many FFTs, which seems the most likely situation.
 
 ******************************************************* </lalLaTeX> */
 #include <math.h>
+#include <fftw.h>
 
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
@@ -264,7 +265,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
   output->epoch = params->startTimeGPS;
 
   
-  TRY ( LALSimulateCoherentGW (stat->statusPtr, output, &sourceSignal, &detector ), stat );
+  TRY ( LALSimulateCoherentGW_exp (stat->statusPtr, output, &sourceSignal, &detector ), stat );
 
 			       
   /*----------------------------------------------------------------------*/
@@ -299,7 +300,6 @@ LALSignalToSFTs (LALStatus *stat,
   UINT4 numSamples;			/* number of time-samples in each Tsft */
   UINT4 iSFT;
   REAL8 Band, samplesb2, f0, deltaF;
-  RealFFTPlan *pfwd = NULL;
   LIGOTimeGPSVector *timestamps = NULL;
   REAL4Vector timeStretch = {0,0};
   LIGOTimeGPS tStart;			/* start time of input time-series */
@@ -313,7 +313,7 @@ LALSignalToSFTs (LALStatus *stat,
   REAL4 renorm;				/* renormalization-factor of taking only part of an SFT */
   SFTVector *sftvect = NULL;		/* return value. For better readability */
   UINT4 j;
-
+  RealFFTPlan *pfwd = NULL;		/* FFTW plan */
 
   INITSTATUS( stat, "LALSignalToSFTs", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
@@ -343,8 +343,7 @@ LALSignalToSFTs (LALStatus *stat,
 	   GENERATEPULSARSIGNALH_EINCONSBAND, GENERATEPULSARSIGNALH_MSGEINCONSBAND);
   
   /* Prepare FFT: compute plan for FFTW */
-  /* FIXME: put some buffering + measure best plan */
-  TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, numSamples, 0), stat); 	
+  TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, numSamples, FFTW_ESTIMATE), stat); 	
 
   /* get some info about time-series */
   tStart = signal->epoch;					/* start-time of time-series */
@@ -441,7 +440,7 @@ LALSignalToSFTs (LALStatus *stat,
 
     } /* for iSFT < numSFTs */ 
 
-  /* clean up */ /* FIXME: buffering */
+  /* free stuff */
   LALDestroyRealFFTPlan(stat->statusPtr, &pfwd);
 
   /* did we get timestamps or did we make them? */
@@ -701,7 +700,7 @@ LALDestroySFTtype (LALStatus *stat,
   DETATCHSTATUSPTR( stat );
   RETURN (stat);
 
-} /* LALDestroySFTVector() */
+} /* LALDestroySFTtype() */
 
 
 /*----------------------------------------------------------------------
