@@ -16,12 +16,18 @@ Module to calculate the noise power spectral density for the TAMA detector.
 
 \subsubsection*{Description}
 
-The module takes as an input a frequency $f$ in units of 400Hz, and it calculates the noise spectral density (per Hz) $S_{h}(f)$ for that frequency $f$.
-
+The module takes as an input a frequency $f$ in Hz, and it 
+calculates the noise spectral density (per Hz) $S_{h}(f)$ 
+for that frequency. The noise PSD is based on data provided by
+M.-K Fujimoto (see T. Damour, B.R. Iyer and B.S. Sathyaprakash,
+Phys. Rev. D 63, 044023 (2001)) and is approximated by
+the following:
 \begin{equation}
    S_h(f) = \left ( \frac{f}{f_0} \right )^{-5} + 13 \frac{f_0}{f} +
    9 \left [1 + \left( \frac{f}{f_0} \right)^2 \right ].
 \end{equation}
+The returned value is scaled up by $s_0 = 10^{46}/75.$ In otherwords, 
+the expected noise PSD is $75 \times 10^{-46}$ times the returned value.
 \subsubsection*{Algorithm}
 
 

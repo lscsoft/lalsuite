@@ -18,6 +18,10 @@ where the maximum occured and the phase at the maximum.
 \subsubsection*{Description}
 \subsubsection*{Algorithm}
 \subsubsection*{Uses}
+LALInspiralWave();
+LALREAL4VectorFFT();
+LALInspiralWaveNormalise();
+LALInspiralWaveCorrelate();
 \begin{verbatim}
 \end{verbatim}
 
@@ -27,22 +31,22 @@ where the maximum occured and the phase at the maximum.
 </lalLaTeX>  */
 #include <lal/LALNoiseModels.h>
 
-NRCSID (LALOVERLAPC, "$Id$");
+NRCSID (LALOVERLAPWAVEOVERLAPC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveOverlapCP"> */
 void
 LALInspiralWaveOverlap (
    LALStatus   *status,
    REAL4Vector *output,
-   OverlapOut  *overlapout,
-   OverlapIn   *overlapin)
+   InspiralWaveOverlapOut  *overlapout,
+   InspiralWaveOverlapIn   *overlapin)
 {  /*  </lalVerbatim>  */
    REAL4Vector filter1, filter2, output1, output2;
-   CorrelateIn corrin;
+   InspiralWaveCorrelateIn corrin;
    REAL8 norm, x, y, z, phase;
-   INT4 i;
+   INT4 i, nBegin, nEnd;
 
-   INITSTATUS (status, "LALOverlap", LALOVERLAPC);
+   INITSTATUS (status, "LALInspiralWaveOverlap", LALINSPIRALWAVEOVERLAPC);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (output->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
@@ -88,26 +92,28 @@ LALInspiralWaveOverlap (
    CHECKSTATUSPTR(status);
    LALREAL4VectorFFT(status->statusPtr, &filter2, &output2, overlapin->fwdp);
    CHECKSTATUSPTR(status);
-   LALNormalise(status->statusPtr, &filter1, &norm, overlapin->psd);
+   LALInspiralWaveNormalise(status->statusPtr, &filter1, &norm, overlapin->psd);
    CHECKSTATUSPTR(status);
-   LALNormalise(status->statusPtr, &filter2, &norm, overlapin->psd);
+   LALInspiralWaveNormalise(status->statusPtr, &filter2, &norm, overlapin->psd);
    CHECKSTATUSPTR(status);
    corrin.psd = overlapin->psd;
    corrin.signal1 = overlapin->signal;
    corrin.signal2 = filter1;
    corrin.revp = overlapin->revp;
-   LALCorrelate(status->statusPtr, &output1, corrin);
+   LALInspiralWaveCorrelate(status->statusPtr, &output1, corrin);
    CHECKSTATUSPTR(status);
    corrin.signal2 = filter2;
-   LALCorrelate(status->statusPtr, &output2, corrin);
+   LALInspiralWaveCorrelate(status->statusPtr, &output2, corrin);
    CHECKSTATUSPTR(status);
 
-   x = output1.data[0];
-   y = output2.data[0];
+   nBegin = overlapin->nBegin;
+   nEnd = output1.length - overlapin->nEnd;
+   x = output1.data[nBegin];
+   y = output2.data[nBegin];
    overlapout->max = x*x + y*y;
-   overlapout->bin = 0;
+   overlapout->bin = nBegin;
    overlapout->phase = atan2(y,x);
-   for (i=1; i<(int)output1.length; i++) {
+   for (i=nBegin; i<nEnd; i++) {
        x = output1.data[i];
        y = output2.data[i];
        z = x*x + y*y;
@@ -123,10 +129,14 @@ LALInspiralWaveOverlap (
       output->data[i] = cos(phase) * output1.data[i] 
                       + sin(phase) * output2.data[i];
    overlapout->max = sqrt(overlapout->max);
-   LALFree(filter1.data);
-   LALFree(filter2.data);
-   LALFree(output1.data);
-   LALFree(output2.data);
+   if (filter1.data!=NULL) LALFree(filter1.data);
+   if (filter2.data!=NULL) LALFree(filter2.data);
+   if (output1.data!=NULL) LALFree(output1.data);
+   if (output2.data!=NULL) LALFree(output2.data);
+      output1.data = NULL;
+      output2.data = NULL;
+      filter1.data = NULL;
+      filter2.data = NULL;
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }

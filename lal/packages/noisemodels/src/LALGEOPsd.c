@@ -7,7 +7,8 @@ $Id$
 
 \subsection{Module \texttt{LALGEOPsd.c}}
 
-Module to calculate the noise power spectral density for the GEO600 detector.
+Module to calculate the expected
+noise power spectral density for the GEO600 detector.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -16,13 +17,19 @@ Module to calculate the noise power spectral density for the GEO600 detector.
 
 \subsubsection*{Description}
 
-The module takes as an input a frequency $f$ in units of 150Hz, and it calculates the noise spectral density (per Hz) $S_{h}(f)$ for that frequency $f$.
-
+The module takes as an input a frequency $f$ in Hz, and it 
+calculates the noise spectral density (per Hz) $S_{h}(f)$ 
+for that frequency. The noise PSD is based on data provided by
+J. Hough and G. Cagnoli (see T. Damour, B.R. Iyer and B.S. Sathyaprakash,
+Phys. Rev. D 63, 044023 (2001)) and is approximated by
+the following:
 \begin{equation}
    S_h(f) = 10^{-16} \left ( \frac{f}{f_0} \right)^{-30} + 
             34 \frac{f_0 }{ f } +
    \frac{20 \left [1 - (f/f_0)^2 + 0.5 (f/f_0)^4 \right ] }{ 1 + 0.5 (f/f_0)^2}
 \end{equation}
+The returned value is scaled up by $s_0 = 10^{46}.$ In otherwords, 
+the expected noise PSD is a factor $10^{46}$ lower.
 \subsubsection*{Algorithm}
 
 
@@ -34,7 +41,6 @@ None.
 \vfill{\footnotesize\input{LALGEOPsdCV}}
 
 </lalLaTeX>  */
-
 
 
 #include <lal/LALNoiseModels.h>

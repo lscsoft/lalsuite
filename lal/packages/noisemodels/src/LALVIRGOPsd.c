@@ -16,16 +16,22 @@ Module to calculate the noise power spectral density for the VIRGO detector.
 
 \subsubsection*{Description}
 
-The module takes as an input a frequency $f$ in units of 500Hz, and it calculates the noise spectral density (per Hz) $S_{h}(f)$ for that frequency $f$.
-
+The module takes as an input a frequency $f$ in Hz, and it 
+calculates the noise spectral density (per Hz) $S_{h}(f)$ 
+for that frequency. The noise PSD is based on data provided by
+J-Y. Vinet (see T. Damour, B.R. Iyer and B.S. Sathyaprakash,
+Phys. Rev. D 63, 044023 (2001)) and is approximated by
+the following:
 \begin{equation}
    S_h(f) = 
    s_1 \left ( \frac {10f}{f_0} \right )^{-5} + s_2 \frac{f_0}{f}
    + s_3 \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
 \end{equation}
 where $s_1=34.6,$ $s_2=6.6,$ and $s_3=3.24.$
-\subsubsection*{Algorithm}
+The returned value is scaled up by $s_0 = 10^{46}/3.24.$ In otherwords, 
+the expected noise PSD is $3.24 \times 10^{-46}$ times the returned value.
 
+\subsubsection*{Algorithm}
 
 \subsubsection*{Uses}
 None.
@@ -54,5 +60,5 @@ void LALVIRGOPsd (LALStatus *status, REAL8 *psd, REAL8 f)
 /*
    *psd = s1*pow(10.*x,-5.) + s2/x + s3 * (1. + x*x);
 */
-   *psd = pow(6.23*x,-5.) + 2./x + 1. + x*x;
+   *psd = pow(6.23*x,-5.) + 2.04/x + 1. + x*x;
 }
