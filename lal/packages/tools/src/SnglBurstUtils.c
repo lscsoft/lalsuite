@@ -331,7 +331,12 @@ XLALCompareSnglBurst(
 )
 /* </lalVerbatim> */
 {
-	return(!XLALCompareSnglBurstByTime(a, b) && !XLALCompareSnglBurstByFreq(a, b));
+	int result;
+
+	result = XLALCompareSnglBurstByTime(a, b);
+	if(!result)
+		result = XLALCompareSnglBurstByFreq(a, b);
+	return(result);
 }
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
@@ -340,12 +345,12 @@ LALCompareSnglBurst(
 	LALStatus *status,
 	const SnglBurstTable *a,
 	const SnglBurstTable *b,
-	int *match
+	int *difference
 )
 /* </lalVerbatim> */
 {
 	INITSTATUS (status, "LALCompareSnglBurst", SNGLBURSTUTILSC);
-	*match = XLALCompareSnglBurst(&a, &b);
+	*difference = XLALCompareSnglBurst(&a, &b);
 	RETURN(status);
 }
 
