@@ -2,7 +2,7 @@
  * 
  * File Name: binj.c
  *
- * Author: Brady, P. R., Brown, D. A. and Crieghton, J. D. E.
+ * Author: Brady, P. R., Brown, D. A., Crieghton, J. D. E. and Ray Majumder S
  * 
  * Revision: $Id$
  * 
@@ -666,9 +666,12 @@ int main( int argc, char *argv[] ){
       /* compute amplitude information */
       if(useRandomStrain)
       {
-	/* LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
-	   hpeak = pow(10, logAmpRange * deviate + log_hpeakMin);*/
-	if (iamp == 1.0 ){
+	LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
+	hpeak = pow(10, logAmpRange * deviate + log_hpeakMin);
+	/*Uncomment the lines below and comment the above two line
+	 *if want to inject uniformly spaced amplitude waveforms
+	 */
+	/*if (iamp == 1.0 ){
 	hpeak = pow(10,-19);
 	iamp++;
 	}
@@ -687,7 +690,7 @@ int main( int argc, char *argv[] ){
 	else if (iamp == 5.0 ){
 	  hpeak = (REAL4)5.3*pow(10,-17);
 	  iamp = 1.0;
-	}
+	  }*/
       }
 
       /* deal with the intrinsic signal parameters */
