@@ -88,6 +88,9 @@ int main(int argc, char **argv)
     INT4                     sort=FALSE;
     INT4                     pass=TRUE;
 
+    /*number of events*/
+    INT8                     numEvents;
+
     /* confidence threshold */
     INT4                     maxConfidenceFlag=0;
     REAL4                    maxConfidence=0.0;
@@ -346,7 +349,7 @@ int main(int argc, char **argv)
     memset( &burstEvent, 0, sizeof(SnglBurstTable) );
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
     xmlStream.fp = NULL;
-
+    numEvents = 0;
     
     /*****************************************************************
      * OPEN FILE WITH LIST OF XML FILES (one file per line)
@@ -462,6 +465,19 @@ int main(int argc, char **argv)
       tmpEvent = tmpEvent->next;
       pass = TRUE;
     }
+
+    tmpEvent = outEventList;
+    while( tmpEvent )
+      {
+	tmpEvent = tmpEvent->next;
+	numEvents++;
+      }
+
+    if (verbose_flag)
+      {
+        fprintf(stderr,"Total no. of triggers %ld\n", numEvents);
+      }
+
 
     /*****************************************************************
      * open output xml file
