@@ -8,7 +8,7 @@
 [condor]
 universe = standard
 datafind  = /opt/ldg/ldg-server/bin/LSCdataFind
-ring  = lalapps_ring
+ring  = @RINGEXECPATH@/lalapps_ring
 
 [pipeline]
 version = $Id$
@@ -28,11 +28,13 @@ H1 = H1-CAL-V03-729273600-734367600.cache
 [datafind]
 type = RDS_R_L1
 lal-cache = 
+server = dataserver.phys.uwm.edu
 
 [segmentation]
 number-of-segments = 8
 
 [ring]
+verbose =
 debug-level = 1
 sample-rate = 1024
 filter-segsz = 8192
