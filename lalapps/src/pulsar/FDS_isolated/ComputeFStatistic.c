@@ -82,6 +82,10 @@ BOOLEAN FILE_FSTATS = 1;
 
 #if USE_BOINC
 
+#ifndef BOINC_APP_GRAPHICS_LIB
+#define BOINC_APP_GRAPHICS_LIB "cfsBOINC.so"
+#endif
+
 /* Boinc diag constants */
 #define BOINC_DIAG_DUMPCALLSTACKENABLED     0x00000001L
 #define BOINC_DIAG_HEAPCHECKENABLED         0x00000002L
@@ -2929,6 +2933,16 @@ int main(int argc, char *argv[]){
   
   /* boinc_init() or boinc_init_graphics() needs to be run before any
      boinc_api functions are used */
+#if BOINC_APP_GRAPHICS == 2
+  {
+	  void *handle = dlopen(BOINC_APP_GRAPHICS_LIB);
+	  if(handle != NULL) {
+        set_search_pos_hook      = dlsym(handle,"set_search_pos");
+        fraction_done_hook       = dlsym(handle,"fraction_done);
+        boinc_init_graphics_hook = dlsym(handle,"boinc_init_graphics");
+      }
+  }
+#endif
 #if BOINC_APP_GRAPHICS
   if (boinc_init_graphics_hook != NULL) { 
     /* only returns if trouble creating worker thread */
