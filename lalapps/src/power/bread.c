@@ -183,22 +183,10 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 
 	*infile = *outfile = NULL;
 
-	while(1) {
-		c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index);
-
-		/* detect the end of the options */
-		if(c == -1)
-			break;
-
-		switch(c) {
+	do {
+		switch(c = getopt_long(argc, argv, "a:c:d:e:f:g:h:i:", long_options, &option_index)) {
+			case -1:
 			case 0:
-			/* if this option set a flag, do nothing else now */
-			if ( long_options[option_index].flag != NULL )
-				break;
-			else {
-				fprintf(stderr, "error parsing option %s with argument %s\n", long_options[option_index].name, optarg);
-				exit( 1 );
-			}
 			break;
 
 			case 'a':
@@ -319,8 +307,8 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 
 			default:
 			exit(SNGLBURSTREADER_EARG);
-		}   
-	}
+		}
+	} while(c != -1);
 
 	if(optind < argc) {
 		fprintf(stderr, "extraneous command line arguments:\n");
