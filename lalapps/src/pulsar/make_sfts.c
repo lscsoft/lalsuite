@@ -523,6 +523,7 @@ int main(int argc,char *argv[]){
     printf("[ENTRY]      Memory usage at iteration %d is:\n", count);
     printmemuse();
 #endif
+
   while (!(frfile = FrFileINew(framelist))){
     pout( "Couldnt open frame file list %s\n", framelist);
     if (opencount++<10)
@@ -543,37 +544,6 @@ int main(int argc,char *argv[]){
 
 #if TRACKMEMUSE
     printf("[After SVEC] Memory usage at iteration %d is:\n", count);
-    printmemuse();
-#endif
-
-#if TDDOUBLE
-  /* create structure to store channel data */
-  chand.data = NULL;
-  LALDCreateVector(&status, &chand.data, npts);
-  TESTSTATUS(&status);
-
-#if TRACKMEMUSE
-    printf("[After DVEC] Memory usage at iteration %d is:\n", count);
-    printmemuse();
-#endif
-
-#endif
-
-  /* Create vector to hold signal frequency series */
-  LALCCreateVector(&status, &fvec, (UINT4)len2);
-  TESTSTATUS(&status);
-  
-#if TRACKMEMUSE
-    printf("[After FVEC] Memory usage at iteration %d is:\n", count);
-    printmemuse();
-#endif
-
-  /* Compute measured plan for FFTW */
-  LALCreateForwardRealFFTPlan(&status, &pfwd, (UINT4)npts, 0);
-  TESTSTATUS(&status);
-
-#if TRACKMEMUSE
-    printf("[After PLAN] Memory usage at iteration %d is:\n", count);
     printmemuse();
 #endif
 
@@ -627,12 +597,10 @@ int main(int argc,char *argv[]){
     errno=0;
     frvect = FrFileIGetVAdc(frfile, chname, epoch.gpsSeconds, tbase, 0);
  
-
 #if TRACKMEMUSE
     printf("[After Fr]   Memory usage at iteration %d is:\n", count);
     printmemuse();
 #endif
-
    
     /* This block will detect permission denied and other access errors */
     if (errno || frvect==NULL || frvect->next){
@@ -694,13 +662,6 @@ int main(int argc,char *argv[]){
       chan.epoch = epoch;
       chan.data->length = npts;
 
-#if TDDOUBLE
-      strcpy(chand.name, chname);
-      chand.deltaT = 1.0/SRATE;
-      chand.epoch = epoch;
-      chand.data->length = npts;
-#endif
-
 #if PRINT50
       print50(frvect->dataF, "FRAMEDATA");
 #endif
@@ -747,6 +708,20 @@ int main(int argc,char *argv[]){
 #endif 
 
 #if TDDOUBLE
+      /* create structure to store channel data */
+      strcpy(chand.name, chname);
+      chand.deltaT = 1.0/SRATE;
+      chand.epoch = epoch;
+      chand.data->length = npts;
+      chand.data = NULL;
+      LALDCreateVector(&status, &chand.data, npts);
+      TESTSTATUS(&status);
+
+#if TRACKMEMUSE
+      printf("[After DVEC] Memory usage at iteration %d is:\n", count);
+      printmemuse();
+#endif
+
       /* put into doubles */
       for (i=0; i<npts; i++)
 	chand.data->data[i]=chan.data->data[i];
@@ -758,12 +733,16 @@ int main(int argc,char *argv[]){
       /* and copy back */
       for (i=0; i<npts; i++)
 	chan.data->data[i]=chand.data->data[i];
+
+      /* to save memory, get rid of vector */
+      LALDDestroyVector( &status, &chand.data );
+      TESTSTATUS( &status );
+      chand.data=NULL;
 #else
       /* apply high-pass Butterworth filter */
       LALButterworthREAL4TimeSeries(&status, &chan, &filterpar);
       TESTSTATUS(&status);
 #endif
-
 
 #if TRACKMEMUSE
     printf("[After FILT] Memory usage at iteration %d is:\n", count);
@@ -847,14 +826,33 @@ int main(int argc,char *argv[]){
       print50(chan.data->data, "SHIFTED");
 #endif
 
+      /* Create vector to hold signal frequency series.  To save memory,
+	 do this only when needed */
+      LALCCreateVector(&status, &fvec, (UINT4)len2);
+      TESTSTATUS(&status);
+
+#if TRACKMEMUSE
+    printf("[After FVEC] Memory usage at iteration %d is:\n", count);
+    printmemuse();
+#endif
+ 
+      /* Compute measured plan for FFTW.  To save memory, do only when needed */
+      LALCreateForwardRealFFTPlan(&status, &pfwd, (UINT4)npts, 0);
+      TESTSTATUS(&status);
+
+#if TRACKMEMUSE
+    printf("[After PLAN] Memory usage at iteration %d is:\n", count);
+    printmemuse();
+#endif
+
       /* take forward FFT */
       LALForwardRealFFT(&status, fvec, chan.data, pfwd);
       TESTSTATUS(&status);
       
-#if TRACKMEMUSE
-    printf("[After FFT]  Memory usage at iteration %d is:\n", count);
-    printmemuse();
-#endif
+      /* to save memory, destroy plan */
+      LALDestroyRealFFTPlan(&status, &pfwd);
+      TESTSTATUS( &status );
+      pfwd=NULL;
 
 #if PRINT50
       print50(chan.data->data, "FFT");
@@ -883,7 +881,12 @@ int main(int argc,char *argv[]){
 	  errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
 	  errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
 	}
-	
+
+	/* to save memory, get rid of vector when not needed any more */
+	LALCDestroyVector(&status, &fvec);
+	TESTSTATUS( &status );
+	fvec=NULL;
+  
 	/* Check that there were no errors while writing SFTS */
  	if (errorcode1-1 || errorcode2-1){
 	  pout("Error in writing data into SFT file %s!\n",sftname);
@@ -899,17 +902,6 @@ int main(int argc,char *argv[]){
   FrFileIEnd(frfile);
   
   LALSDestroyVector( &status, &chan.data );
-  TESTSTATUS( &status );
-
-#if TDDOUBLE
-  LALDDestroyVector( &status, &chand.data );
-  TESTSTATUS( &status );
-#endif
-
-  LALCDestroyVector(&status, &fvec);
-  TESTSTATUS( &status );
-  
-  LALDestroyRealFFTPlan(&status, &pfwd);
   TESTSTATUS( &status );
   
   LALCheckMemoryLeaks();
