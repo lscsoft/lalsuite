@@ -168,7 +168,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     return out
 
 
-class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisNode):
+class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_stopp job used by the stochastic pipeline. The static
   options are read from the section [stopp] in the ini file. The stdout
