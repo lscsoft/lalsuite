@@ -171,7 +171,7 @@ int main( int argc, char *argv[] )
   DataSegmentVector            *dataVecPtr[2] = {NULL, NULL};
   
   /* structures for preconditioning */
-  COMPLEX8FrequencySeries       injResp;        
+  /* COMPLEX8FrequencySeries       injResp; */
   COMPLEX8FrequencySeries      *injRespPtr;     
 
   ResampleTSParams              resampleParams; 
@@ -181,8 +181,8 @@ int main( int argc, char *argv[] )
   /* findchirp data structures */
   FindChirpInitParams          *fcInitParams[2]   = {NULL,NULL};
   FindChirpSegmentVector       *fcSegVec = NULL;
-  FindChirpSPDataParams        *fcDataParams   = NULL;
-  FindChirpSPTmpltParams       *fcTmpltParams[2]  = {NULL,NULL};
+  FindChirpDataParams          *fcDataParams   = NULL;
+  FindChirpTmpltParams         *fcTmpltParams[2]  = {NULL,NULL};
   FindChirpFilterParams        *fcFilterParams = NULL;
   FindChirpFilterInput         *fcFilterInput  = NULL;
   FindChirpStandardCandle       candle; 
@@ -890,7 +890,7 @@ int main( int argc, char *argv[] )
   
   /* initialize the template functions */
   for ( n = 0 ; n < numDetectors ; ++n) {
-    LAL_CALL( LALFindChirpSPTemplateInit( &status, &fcTmpltParams[n], 
+    LAL_CALL( LALFindChirpTemplateInit( &status, &fcTmpltParams[n], 
 					  fcInitParams[n] ), &status );
     
     fcDataParams[n].dynRange = fcTmpltParams[n]->dynRange = 
@@ -1152,7 +1152,7 @@ int main( int argc, char *argv[] )
         &status);
     LALFree( fcInitParams[n] );
 
-    LAL_CALL( LALFindChirpSPTemplateFinalize(&status, &fcTmpltParams[n]), 
+    LAL_CALL( LALFindChirpTemplateFinalize(&status, &fcTmpltParams[n]), 
 	      &status );
   }
   LAL_CALL( LALDestroyTwoInterfFindChirpInputVector (&status, 
@@ -2129,29 +2129,35 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'y':
-        site0 = (UINT4) atoi( optarg );
-        if ( site0 < 0 )
         {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "the lalCachedDetector site identifier must be positive: "
-              "(%d specified)\n", 
-              long_options[option_index].name, site0  );
-          exit( 1 );
+          int site0_int = atoi( optarg );
+          if ( site0_int < 0 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "the lalCachedDetector site identifier must be positive: "
+                "(%d specified)\n", 
+                long_options[option_index].name, site0_int );
+            exit( 1 );
+          }
+          site0 = (UINT4) site0_int;
         }
-        ADD_PROCESS_PARAM( "int", "%d", optarg );
+        ADD_PROCESS_PARAM( "int", "%d", site0 );
         break;
 
       case 'Y':
-        site1 = (UINT4) atoi( optarg );
-        if ( site1 < 0 )
         {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "the lalCachedDetector site identifier must be positive: "
-              "(%d specified)\n", 
-              long_options[option_index].name, site1  );
-          exit( 1 );
+          int site1_int = atoi( optarg );
+          if ( site1_int < 0 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "the lalCachedDetector site identifier must be positive: "
+                "(%d specified)\n", 
+                long_options[option_index].name, site1_int );
+            exit( 1 );
+          }
+          site1 = (UINT4) site1_int;
         }
-        ADD_PROCESS_PARAM( "int", "%d", optarg );
+        ADD_PROCESS_PARAM( "int", "%d", site1 );
         break;
 
       case 'z':

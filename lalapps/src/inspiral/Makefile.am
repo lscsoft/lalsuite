@@ -11,12 +11,13 @@ if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_inca lalapps_sire \
-               lalapps_inspinj lalapps_splitbank
+               lalapps_inspinj lalapps_splitbank \
+               lalapps_coherent_inspiral
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_inca_SOURCES = $(INCASRC)
 lalapps_sire_SOURCES = $(SIRESRC)
-#lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
+lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
 lalapps_inspinj_SOURCES = $(INSPINJSRC)
 lalapps_splitbank_SOURCES = $(SPLITBANKSRC)
 else
