@@ -276,6 +276,12 @@ Alpha running Linux with ccc --- making shared libraries:
   * Note: use the same trick to make shared libraries for fftw!
 
 
+HP-UX 10.20 may need
+
+   --with-extra-cppflags="-D_HPUX_SOURCE"
+
+
+
 -------------------------------------------------------------------------------
 
 
