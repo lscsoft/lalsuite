@@ -1,4 +1,5 @@
 ## Process this file with automake to produce Makefile.in
+## $Id$
 noinst_LTLIBRARIES = libsupport.la
 lib_LTLIBRARIES = liblalsupport.la
 
@@ -9,7 +10,8 @@ liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c \
   StreamVectorInput.c StreamVectorSequenceInput.c StreamSequenceInput.c \
   StreamSeriesInput.c StreamSeriesOutput.c \
-  LALInitBarycenter.c LALXMGRInterface.c
+  LALInitBarycenter.c LALXMGRInterface.c \
+  LIGOLwXML.c
 
 MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
   ReadFrequencySeries.c ReadTimeSeries.c \
