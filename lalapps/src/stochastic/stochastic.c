@@ -147,22 +147,6 @@ CHAR *outputFilePath = NULL;
 
 /* helper functions */
 
-/* return the difference between two GPS times as REAL8 */
-static REAL8 delta_gps_to_float(LALStatus *status,
-    LIGOTimeGPS end,
-    LIGOTimeGPS start)
-{
-  /* varaibles */
-  LALTimeInterval i;
-  REAL8 d;
-
-  /* get the time difference as a REAL8 */
-  LAL_CALL(LALDeltaGPS(status, &i, &end, &start), status);
-  LAL_CALL(LALIntervalToFloat(status, &d, &i), status);
-
-  return(d);
-}
-
 /* read a LIGO time series */
 static REAL4TimeSeries *get_ligo_data(LALStatus *status,
     FrStream *stream,
@@ -197,7 +181,7 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
     fprintf(stderr, "Resizing \"%s\" series...\n", channel);
 
   /* resize series to the correct number of samples */
-  length = delta_gps_to_float(status, end, start) / series->deltaT;
+  length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
   LAL_CALL(LALResizeREAL4TimeSeries(status, series, 0, length), status);
 
   if (vrbflg)
@@ -248,7 +232,7 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
     fprintf(stderr, "Resizing \"%s\" series...\n", channel);
 
   /* resize series to the correct number of samples */
-  length = delta_gps_to_float(status, end, start) / series->deltaT;
+  length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
   LAL_CALL(LALResizeREAL8TimeSeries(status, geo, 0, length), status);
 
   if (vrbflg)
@@ -299,12 +283,8 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   FrStream *stream = NULL;
   FrCache *frame_cache = NULL;
   ResampleTSParams resample_params;
-  size_t difference;
   size_t length;
   PassBandParamStruc high_pass_params;
-
-  /* calculate time difference */
-  difference = delta_gps_to_float(status, end, start);
 
   /* apply resample buffer if required */
   if (buffer)
@@ -381,8 +361,12 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   /* remove resample buffer */
   if (buffer)
   {
+    /* recover original start and end times */
+    start.gpsSeconds += buffer;
+    end.gpsSeconds -= buffer;
+
     /* calculate required length */
-    length = difference / series->deltaT;
+    length = floor((XLALDeltaFloatGPS(&end, &start) / series->deltaT) + 0.5);
 
     /* remove resample buffer */
     LAL_CALL(LALShrinkREAL4TimeSeries(status, series, \
@@ -490,7 +474,7 @@ static REAL4TimeSeries *cut_time_series(LALStatus *status,
   INT4 first;
 
   /* calculate length of segment to cut */
-  length = (INT4)delta_gps_to_float(status, end, start) / input->deltaT;
+  length = floor((XLALDeltaFloatGPS(&end, &start) / input->deltaT) + 0.5);
 
   /* get first bin */
   first = (INT4)((start.gpsSeconds - input->epoch.gpsSeconds) / input->deltaT);
