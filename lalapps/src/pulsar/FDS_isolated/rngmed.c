@@ -4,6 +4,9 @@ Implementation file for running median.
 \date May 2001
 $Id$
 $Log$
+Revision 1.3  2004/07/26 15:08:20  reinhard
+fixed illegal C++ comment // -> /* */
+
 Revision 1.2  2004/07/26 14:36:14  bema
 New version by Soumya Mohanty to fix the "same values" bug
 
@@ -271,7 +274,7 @@ the new value.
           else {
                   if(nextsample<checks[0]->data){  
                       chkcount=0;
-                      //dummy_node=checks[0];
+                      /* dummy_node=checks[0]; */
                       rightnode=checks[0];
                       leftnode=NULL;  
                   }
