@@ -23,6 +23,7 @@ $Id$
 #endif
 
 #include <math.h>
+#include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -609,13 +610,17 @@ LALFindChirpFilterSegment (
     /* ignore corrupted data at start and end */
     ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
 
-#if 0
-    fprintf( stdout, "m1 = %e m2 = %e => %e seconds => %d points\n"
-        "invSpecTrunc = %d => ignoreIndex = %d\n", 
-        m1, m2, chirpTime, deltaEventIndex, 
-        input->segment->invSpecTrunc, ignoreIndex );
-    fflush( stdout );
-#endif
+    if ( lalDebugLevel | LALINFO )
+    {
+      CHAR infomsg[256];
+
+      LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
+          "m1 = %e m2 = %e => %e seconds => %d points\n"
+          "invSpecTrunc = %d => ignoreIndex = %d\n", 
+          m1, m2, chirpTime, deltaEventIndex, 
+          input->segment->invSpecTrunc, ignoreIndex );
+      LALInfo( status, infomsg );
+    }
 
     /* XXX check that we are not filtering corrupted data XXX */
     /* XXX this is hardwired to 1/4 segment length        XXX */
@@ -627,11 +632,15 @@ LALFindChirpFilterSegment (
     ignoreIndex = numPoints / 4;
   }
 
-#if 0
-    fprintf( stdout, "filtering from %d to %d\n",
+  if ( lalDebugLevel | LALINFO )
+  {
+    CHAR infomsg[256];
+    
+    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg), 
+        "filtering from %d to %d\n",
         ignoreIndex, numPoints - ignoreIndex );
-    fflush( stdout );
-#endif
+    LALInfo( status, infomsg );
+  }
 
   /*
    *
