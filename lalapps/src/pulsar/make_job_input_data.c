@@ -31,7 +31,7 @@ int nseg[N],tseg[N],tbase[N];
 /* First argument is file containing # segs and start times */
 /* Second argument is ordered file names */
 int main(int argc, char* argv[]) {
-  FILE *fp,*fp1=NULL,*fp2=NULL;
+  FILE *fp=NULL,*fp1=NULL,*fp2=NULL;
   int *nstart,*tstart,*bstart,code,totalsegs=0;
   int locksegs=0,i,j=0,k,firstframe,lastframe,nframes;
   int jobno=0,segno=0,filepointer1=0,filepointer2=0,fileno=0,thistime;
@@ -117,44 +117,40 @@ int main(int argc, char* argv[]) {
 
   /* start writing job description files loop over all locked segments
      spread the pain equally over the different nodes. */
+  fp=fp1=fp2=NULL;
   for (i=0;i<locksegs;i++){
     for (k=0;k<nseg[i];k++){
       int startat;
       
-      if (jobno)
-	startat=(totalsegs*jobno)/(NODES-1);
-      else
-	startat=0;
+      /* Segment that the job should start with */
+      startat=(totalsegs*jobno)/(NODES-1);
       
       if (
 #if (SEGSPERJOB)
+	  /* predetermined fixed number of segments per file */
 	  (segno%SEGSPERJOB)==0
 #else
+	  /* spread segments evenly between nodes */
 	  segno==startat
 #endif
 	  ){
-	/* clear any lists of printed files first... */
 	int j0,j1;
 	char fname[256];
-	
+
+	/* clear any lists of printed files first... */	
 	j0=j-2;
-	if (j0<0)
-	  j0=0;
+	if (j0<0) j0=0;
 	j1=j+2;
-	if (j1>fileno)
-	  j1=fileno;
+	if (j1>fileno) j1=fileno;
 	for (j=j0;j<j1;j++)
 	  printed[j]=0;
-
+	
 	/* Need to close old files and open new files */
-	if (jobno) {
-	  fclose(fp);
-	  fclose(fp1);
-	  if (fp2) {
-	    fclose(fp2);
-	    fp2=NULL;
-	  }
-	}
+	if (fp)  fclose(fp);
+	if (fp1) fclose(fp1);
+	if (fp2) fclose(fp2);
+	fp=fp1=fp2=NULL;
+
 	/* open new files */
 	sprintf(fname,"%s/jobtimes.%05d",argv[3],jobno);
 	if (!(fp=fopen(fname,"w"))){
@@ -162,12 +158,13 @@ int main(int argc, char* argv[]) {
 	  fprintf(stderr,"Unable to open file %s for writing.\n",fname);
 	  return 1;
 	};
-	sprintf(fname,"%s/jobdata.%05d.ffl",argv[3],jobno++);
+	sprintf(fname,"%s/jobdata.%05d.ffl",argv[3],jobno);
 	if (!(fp1=fopen(fname,"w"))){
 	  perror("Could not write file");
 	  fprintf(stderr,"Unable to open file %s for writing.\n",fname);
 	  return 1;
 	};
+	jobno++;
       }
       
       /* time at which next output segment starts */
@@ -211,7 +208,7 @@ int main(int argc, char* argv[]) {
 	/* missing data */
 	if (fp2==NULL){
 	  char fname[256];
-	  sprintf(fname,"%s/joberror.%05d",argv[3],jobno);
+	  sprintf(fname,"%s/joberror.%05d",argv[3],jobno-1);
 	  if (!(fp2=fopen(fname,"w"))){
 	    perror("Could not write file");
 	    fprintf(stderr,"Unable to open file %s for writing.\n",fname);

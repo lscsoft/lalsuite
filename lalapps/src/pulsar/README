@@ -21,7 +21,7 @@ GENERATE LIST OF ALL LIGO DATA ON THE CLUSTER
 
 To start, generate a (sorted) list of all the data on the cluster.
 This can be done by running the script:
-   ./make_cluster_data_list S1
+   ./make_cluster_data_list S2
 which takes a single argument, which is the name of the run.
 
 Note that you may get some "permission denied" errors if you don't
@@ -32,17 +32,17 @@ This script does two things.
 
 First, it loops over all the nodes on the cluster, looking under
 /netdata/sXXX for any files of type *.gwf.  These file names are
-combined into a single text file called alldata, where S1 will be
+combined into a single text file called alldata, where S2 will be
 replaced by the run name.  [Note: You can monitor the initial action
 of this script by using tail alldata.]
 
-Second, it makes four lists of data (S1.LLO.full.sorted,
-S1.LLO.RDS.sorted, S1.LHO.full.sorted, S1.LHO.RDS.sorted) which are
-sorted by GPS time.  S1 is replaced by the run name.
+Second, it makes four lists of data (S2.LLO.full.sorted,
+S2.LLO.RDS.sorted, S2.LHO.full.sorted, S2.LHO.RDS.sorted) which are
+sorted by GPS time.  S2 is replaced by the run name.
 
 INPUTS:  listing of "*.gwf" files under /netdat[ac]/s001 - /netdat[ac]/s296
-OUTPUTS: alldata, S1.LLO.full.sorted,  S1.LHO.full.sorted, S1.LLO.RDS.sorted,
-         S1.LHO.RDS.sorted
+OUTPUTS: alldata, S2.LLO.full.sorted,  S2.LHO.full.sorted, S2.LLO.RDS.sorted,
+         S2.LHO.RDS.sorted
 
 ================================================================================
 
@@ -51,12 +51,12 @@ GENERATE A LIST OF ALL THE LOCKED SEGMENTS TO MAKE SFTS
 
 You will need a listing of all the locked time stretches for
 which you will want to make SFTs. The files:
-  S1-H1segments.txt
-  S1-H2segments.txt
-  S1-L1segments.txt
-contain this data for the S1 run.  The files were obtained from
+  S2-H1segments.txt
+  S2-H2segments.txt
+  S2-L1segments.txt
+contain this data for the S2 run.  The files were obtained from
 Gabriella Gonzalez's web page:
-http://www.phys.lsu.edu/faculty/gonzalez/S1LockStats/
+http://www.phys.lsu.edu/faculty/gonzalez/S2LockStats/
 http://www.phys.lsu.edu/faculty/gonzalez/S2LockStats/
 and contain two lines of text, that
 will be ignored by the SFT code, followed by three columns of
@@ -66,7 +66,7 @@ The first two columns are the start and end GPS times of the locked
 stretch, and the third column is the STOP-START difference.
 
 You can use the script
-./make_locked_data_list S1 60
+./make_locked_data_list S2 60
 or
 ./make_locked_data_list S2 1234
 to generate lists of SFTs to make.  The first argument is the run
@@ -88,8 +88,8 @@ For example:
 7 714379371 1200
 denotes 7 segments of length 1200 seconds.
 
-INPUTS:  S1-H1segments.txt, S1-H2segments.txt, S1-L1segments.txt
-OUTPUTS: S1-H1.60,S1-H2.60, S1-L1.60
+INPUTS:  S2-H1segments.txt, S2-H2segments.txt, S2-L1segments.txt
+OUTPUTS: S2-H1.60,S2-H2.60, S2-L1.60
 
 ================================================================================
 
@@ -99,7 +99,7 @@ The next step is to make a listing (in "just the right format") of
 where the SFT-making code can find the data that it needs.  Do do
 this, first create an directory to contain the output (lists of files
 and times)
-mkdir S1-H1.60-lists S1-H2.60-lists S1-L1.60-lists 
+mkdir S2-H1.60-lists S2-H2.60-lists S2-L1.60-lists 
 mkdir S2-H1.60-lists S2-H2.60-lists S2-L1.60-lists 
 
 Then run the executable
@@ -111,13 +111,20 @@ and DIRNAME is a directory number to place output job files.
 For example:
 mkdir /scratch/ballen/S2-L1.60-lists
 
-./lalapps_make_job_input_data S1-H1.60 S1.LHO.full.sorted /scratch/ballen/S1-H1.60-lists/
-./lalapps_make_job_input_data S1-H2.60 S1.LHO.full.sorted /scratch/ballen/S1-H2.60-lists/
-./lalapps_make_job_input_data S1-L1.60 S1.LLO.full.sorted /scratch/ballen/S1-L1.60-lists/
+./lalapps_make_job_input_data S2-H1.60 S2.LHO.full.sorted /scratch/ballen/S2-H1.60-lists/
+./lalapps_make_job_input_data S2-H2.60 S2.LHO.full.sorted /scratch/ballen/S2-H2.60-lists/
+./lalapps_make_job_input_data S2-L1.60 S2.LLO.full.sorted /scratch/ballen/S2-L1.60-lists/
+
+to use RDS data, use:
+
+./lalapps_make_job_input_data S2-H1.60 S2.LHO.RDS.sorted /scratch/ballen/S2-H1.60-lists/
+./lalapps_make_job_input_data S2-H2.60 S2.LHO.RDS.sorted /scratch/ballen/S2-H2.60-lists/
+./lalapps_make_job_input_data S2-L1.60 S2.LLO.RDS.sorted /scratch/ballen/S2-L1.60-lists/
+
 
 The output of this is a set of files containing paths to the data that
 is needed to build the SFTs, and the start times of the SFTs.  For
-example in the directory S1-H1.60-lists/ you will find:
+example in the directory S2-H1.60-lists/ you will find:
 jobdata.00000.ffl  jobtimes.00000
 jobdata.00001.ffl  jobtimes.00001
 and so on.
@@ -132,8 +139,8 @@ produced unless there is missing data.  So
 ls joberror* 
 will immediately reveal if any data files are missing.
 
-INPUTS: S1-H1.60 (list of segment start times/lengths)
-        S1.LHO.*.sorted (list of Frame files/locations on system)
+INPUTS: S2-H1.60 (list of segment start times/lengths)
+        S2.LHO.*.sorted (list of Frame files/locations on system)
 OUTPUTS: jobtimes.*, jobdata.*.ffl, joberror.* files
 
 ================================================================================
