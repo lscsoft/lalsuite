@@ -50,7 +50,7 @@ LALFindChirpBCVSpinFilterSegment (
   )
 
 {
-  UINT4                 j, k;
+  UINT4                 i, j, k;
   UINT4                 numPoints;
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
@@ -104,6 +104,8 @@ LALFindChirpBCVSpinFilterSegment (
   FindChirpChisqInput  *chisqInput;
   FindChirpChisqInput  *chisqInputBCV;
 
+  REAL4			rhosq;
+
   INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
   ATTATCHSTATUSPTR( status );
 
@@ -114,6 +116,8 @@ LALFindChirpBCVSpinFilterSegment (
    * may need to remove asserts regarding chisq
    *          
    */
+
+ fprintf (stdout, "before asserts in FindChirpBCVSpinFilter \n");
 
   /* make sure the output handle exists, but points to a null pointer */
   ASSERT( eventList, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
@@ -138,16 +142,16 @@ LALFindChirpBCVSpinFilterSegment (
   ASSERT(params->qVec->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qtildeVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qtildeVec->data,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
-  ASSERT(params->qVecBCV, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+ /* ASSERT(params->qVecBCV, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qVecBCV->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qtildeVecBCV, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qtildeVecBCV->data,status, FINDCHIRPH_ENULL, 
-	  FINDCHIRPH_MSGENULL);
+	  FINDCHIRPH_MSGENULL);*/
   
   /* check that the chisq parameter and input structures exist */
   ASSERT( params->chisqParams, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( params->chisqInput,   status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( params->chisqInputBCV,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  /*ASSERT( params->chisqInputBCV,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );*/
 
   /* if a rhosqVec vector has been created, check we can store data in it */
   if ( params->rhosqVec )
@@ -173,12 +177,24 @@ LALFindChirpBCVSpinFilterSegment (
   ASSERT( input->fcTmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( input->segment, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
-  /* make sure that the template and the segment are both BCV */
+  /* make sure that the template and the segment are both BCVSpin */
   ASSERT( input->fcTmplt->approximant == BCVSpin, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
   ASSERT( input->segment->approximant == BCVSpin, status,
       FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
 
+fprintf (stdout, "after asserts in FindChirpBCVSpinFilter \n");
+
+/*
+*
+*check sense of this later
+*
+*/
+
+for (i = 0; i < dataSegVec->length; ++i)
+{
+fcSeg = & (fcSegVec->data[i]);
+}
 /*
    *
    * point local pointers to input and output pointers
@@ -196,10 +212,11 @@ LALFindChirpBCVSpinFilterSegment (
   qtildeBCVSpin1 = params->qtildeVecBCVSpin1->data;
   qtildeBCVSpin2 = params->qtildeVecBCVSpin2->data; 
   
-  
+  numPoints = params->qVec->length; 
+ 
   /* template and data */
   inputData     = input->segment->data->data->data;
-  inputDataBCV  = input->segment->dataBCV->data->data;
+ /* inputDataBCV  = input->segment->dataBCV->data->data;*/
   tmpltSignal   = input->fcTmplt->data->data;
   templateNorm  = input->fcTmplt->tmpltNorm;   /* this is expPsi */
   deltaT        = params->deltaT;
@@ -215,12 +232,22 @@ LALFindChirpBCVSpinFilterSegment (
 
 
   amp         = fcDataParams->ampVec->data;
-  ampBCV      = fcDataParams->ampVecBCV->data;
+ /* ampBCV      = fcDataParams->ampVecBCV->data;*/
   ampBCVSpin1 = fcDataParams->ampVecBCVSpin1->data;
   ampBCVSpin2 = fcDataParams->ampVecBCVSpin2->data;
 
+fprintf (stdout, "before moments calc. in FindChirpBCVSpinFilter \n");
+
   
   wtilde     = fcDataParams->wtildeVec->data;
+
+fprintf (stdout, "before moments calc. in FindChirpBCVSpinFilter1 \n");
+
+fprintf (stdout, "fcSeg->data->data->length: %d \n", fcSeg->data->data->length);
+
+Beta = 0.1;
+
+fprintf (stdout, "Beta: %e \n", Beta);
 
   for ( k = 1; k < fcSeg->data->data->length; ++k )
   {
@@ -243,6 +270,15 @@ LALFindChirpBCVSpinFilterSegment (
   L *= 2;
   M *= 2;
 
+fprintf (stdout, "I = %e \n", I); 
+fprintf (stdout, "J = %e \n", J);
+fprintf (stdout, "K = %e \n", K);
+fprintf (stdout, "L = %e \n", L);
+fprintf (stdout, "M = %e \n", M);
+
+fprintf (stdout, "after moments calc. in FindChirpBCVSpinFilter \n");
+
+
   /* Expensive or well used quantities calc before loop */
 
  rootI           = sqrt(I);
@@ -253,6 +289,11 @@ LALFindChirpBCVSpinFilterSegment (
 	- 0.5 *(pow(J,2) + pow(K,2)) 
 	- I * (pow(L,2) + pow(M,2)) 
 	+ 2*J*K*L );
+
+fprintf (stdout, "rootI           = %e \n", rootI);
+fprintf (stdout, "denominator     = %e \n", denominator);
+fprintf (stdout, "rootDenominator = %e \n", rootDenominator);
+fprintf (stdout, "denominator1    = %e \n", denominator1);
 
 
  
@@ -279,9 +320,15 @@ LALFindChirpBCVSpinFilterSegment (
    */
 
 
+fprintf (stdout, "before qtilde calc. in FindChirpBCVSpinFilter \n");
+
+
   memset( qtilde,         0, numPoints * sizeof(COMPLEX8) );
   memset( qtildeBCVSpin1, 0, numPoints * sizeof(COMPLEX8) );
   memset( qtildeBCVSpin2, 0, numPoints * sizeof(COMPLEX8) );
+
+fprintf (stdout, "numPoints = %d \n", numPoints);
+
 
   /* qtilde positive frequency, not DC or nyquist */
   for ( k = 1; k < numPoints/2; ++k )
@@ -295,8 +342,15 @@ LALFindChirpBCVSpinFilterSegment (
  
     qtilde[k].re        = r * x - s * y ;
     qtilde[k].im        = r * y + s * x ;
-     
+
+fprintf (stdout, "loop         = %d \n", k);
+fprintf (stdout, "x            = %e \n", x);
+fprintf (stdout, "y            = %e \n", y);
+
+fprintf (stdout, "qtilde[k].re = %e \n", qtilde[k].re);
+fprintf (stdout, "qtilde[k].im = %e \n", qtilde[k].im);
     
+
     qtildeBCVSpin1[k] = qtilde[k];
     qtildeBCVSpin2[k] = qtilde[k]; 
 
@@ -311,6 +365,12 @@ LALFindChirpBCVSpinFilterSegment (
 	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
 	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );           /* A3 */
 
+fprintf (stdout, "qtilde[k].re         = %e \n", qtilde[k].re);
+fprintf (stdout, "qtildeBCVSpin1[k].re = %e \n", qtildeBCVSpin1[k].re);
+fprintf (stdout, "qtildeBCVSpin2[k].re = %e \n", qtildeBCVSpin2[k].re);
+
+
+
 
     /* imaginary parts */
     qtilde[k].im         *= amp[k]/ rootI ;                        /* A1 */
@@ -322,7 +382,15 @@ LALFindChirpBCVSpinFilterSegment (
     qtildeBCVSpin2[k].im *= (sin(Beta * ampBCVSpin2[k])
 	    - ( (I*L - J*K) * cos(Beta * ampBCVSpin2[k]) / denominator)
 	    + ( (J*L - K*M + 0.5*I*K) / denominator ) );           /* A3 */
+
+fprintf (stdout, "qtilde[k].im         = %e \n", qtilde[k].im);
+fprintf (stdout, "qtildeBCVSpin1[k].im = %e \n", qtildeBCVSpin1[k].im);
+fprintf (stdout, "qtildeBCVSpin2[k].im = %e \n", qtildeBCVSpin2[k].im);
+
+
   }
+
+fprintf (stdout, "just after +ve  freq loop \n");
 
   /* qtilde negative frequency only: not DC or nyquist */
   if ( params->computeNegFreq )
@@ -370,6 +438,9 @@ LALFindChirpBCVSpinFilterSegment (
     }
    }
  
+fprintf (stdout, "after qtilde calc. in FindChirpBCVSpinFilter \n");
+
+
    /* 
     *
     * inverse fft to get q, qBCVSpin1 and qBCVSpin2
@@ -388,6 +459,31 @@ LALFindChirpBCVSpinFilterSegment (
 		   params->qtildeVecBCVSpin2, params->invPlan );
 		   CHECKSTATUSPTR( status );
 
+fprintf (stdout, "after FFT calc. in FindChirpBCVSpinFilter \n");
+
+fprintf (stdout, "length of q            = %d \n", params->qVec->length);
+fprintf (stdout, "length of qVecBCVSpin1 = %d \n", params->qVecBCVSpin1->length);
+fprintf (stdout, "length of qVecBCVSpin2 = %d \n", params->qVecBCVSpin2->length);
+
+ for ( j = 0; j < numPoints; ++j)
+       {
+fprintf (stdout, "q[j]            = %e \n", q[j]);
+fprintf (stdout, "qBCVSpin1[j]    = %e \n", qBCVSpin1[j]);
+fprintf (stdout, "qBCVSpin2[j]    = %e \n", qBCVSpin2[j]);
+
+fprintf (stdout, "q[j].re            = %e \n", q[j].re);
+fprintf (stdout, "qBCVSpin1[j].re    = %e \n", qBCVSpin1[j].re);
+fprintf (stdout, "qBCVSpin2[j].re    = %e \n", qBCVSpin2[j].re);
+
+fprintf (stdout, "q[j].im            = %e \n", q[j].im);
+fprintf (stdout, "qBCVSpin1[j].im    = %e \n", qBCVSpin1[j].im);
+fprintf (stdout, "qBCVSpin2[j].im    = %e \n", qBCVSpin2[j].im);
+
+
+
+
+}
+
    /* 
     *
     * calculate signal to noise squared 
@@ -398,12 +494,21 @@ LALFindChirpBCVSpinFilterSegment (
 
    /* limits ?, normalisation */
 
-   /*  for ( j = 0; j < numPoints; ++j)
-       { 
-   rhosq[j]   = q[j].re * q[j].re + q[j].im * q[j].im; 
-   rhosq[j]  += qBCVSpin1[j].re * qBCVSpin1[j].re + qBCVSpin1[j].im * qBCVSpin1[j].im; 
-   rhosq[j]  += qBCVSpin2[j].re * qBCVSpin2[j].re + qBCVSpin2[j].im * qBCVSpin2[j].im; 
-   } */
+memset (params->rhosqVec->data->data, 0, numPoints * sizeof (REAL4) );
+
+   for ( j = 0; j < numPoints; ++j)
+       {
+   rhosq   = q[j].re * q[j].re + q[j].im * q[j].im; 
+   rhosq  += qBCVSpin1[j].re * qBCVSpin1[j].re + qBCVSpin1[j].im * qBCVSpin1[j].im; 
+   rhosq  += qBCVSpin2[j].re * qBCVSpin2[j].re + qBCVSpin2[j].im * qBCVSpin2[j].im; 
+fprintf (stdout, "rhosq            = %e \n", rhosq);
+
+
+   params->rhosqVec->data->data[j] = rhosq;  /*copied from Eirini's code */
+
+fprintf (stdout, "rhosqVec            = %e \n",  params->rhosqVec->data->data[j] );
+
+   } 
 
 /*code*/
 
