@@ -181,7 +181,7 @@ BlackHoleRingInput;
 typedef struct
 tagRingTemplateBank
 {
-  REAL4              numTmplt;
+  UINT4              numTmplt;
   RingTemplateInput *tmplt;
 }
 RingTemplateBank;
