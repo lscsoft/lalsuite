@@ -302,7 +302,7 @@ main (int argc, char **argv )
 {
 
    /* --- Variables ---*/
-  INT4 nn, nby2, l, lmax, nbank=0;;
+  INT4 nn, nby2, l, lmax, nbank=0;
   INT4	i, j=0,n, k;
   INT4 jmax, nlist, kMin;
   REAL8 df,  frac, fendBCV, fMax;
