@@ -166,6 +166,8 @@ int RunSearch(BurstSearchParams *params,
   /* loop over job Id called si */
   for(si=silo; si<sihi; ++si) {
 
+    UINT4 sii = si;
+
     /* variables used to construct job parameters */
     UINT4 wid, waid, aid, did, pid, Nid;
     UINT4 *Pid;
@@ -1222,7 +1224,12 @@ int RunSearch(BurstSearchParams *params,
       bparamsptr = bptr;
     }
 
-  }
+    /* back to old value */
+    si = sii;
+
+    printf("%ui\n",si);
+
+  } /* end of for loop over si */
 
   if(!got_wid && !(params->noLALBurstOutput)) {
     LAL_CALL(LALBurstOutput(&status, NULL, NULL, NULL), &status);
