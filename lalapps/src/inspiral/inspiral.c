@@ -89,6 +89,7 @@ this_summ_value->value = (REAL4) val; \
 this_summ_value->intvalue = (INT4) intval; \
 LALSnprintf( this_summ_value->name, LIGOMETA_SUMMVALUE_NAME_MAX, "%s", \
     sv_name ); \
+LALSnprintf( this_summ_value->ifo, LIGOMETA_IFO_MAX, "%s", ifo ); \
 LALSnprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
     "%s", sv_comment ); \
 
