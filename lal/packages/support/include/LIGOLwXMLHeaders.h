@@ -143,7 +143,8 @@ extern "C" {
 "      <Column Name=\"processgroup:process:end_time\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"processgroup:process:jobid\" Type=\"int_4s\"/>\n" \
 "      <Column Name=\"processgroup:process:domain\" Type=\"lstring\"/>\n" \
-"      <Column Name=\"processgroup:process:ifos\" Type=\"ilwd:char\"/>\n" \
+"      <Column Name=\"processgroup:process:ifos\" Type=\"lstring\"/>\n" \
+"      <Column Name=\"processgroup:process:process_id\" Type=\"ilwd:char\"/>\n" \
 "      <Stream Name=\"processgroup:process:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 #define PROCESS_ROW \
