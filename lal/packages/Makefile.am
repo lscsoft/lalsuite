@@ -5,7 +5,7 @@ SUBDIRS = @PKGLIST@
 EXTRA_DIST = \
         $(srcdir)/templates/Makefile.am.example \
         $(srcdir)/templates/doc/Makefile.am.example \
-        $(srcdir)/templates/doc/Example.tex \
+        $(srcdir)/templates/doc/example.tex \
         $(srcdir)/templates/include/Makefile.am.example \
         $(srcdir)/templates/include/Example.h \
         $(srcdir)/templates/src/Makefile.am.example \

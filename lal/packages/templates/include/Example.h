@@ -1,86 +1,80 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: Example.h
- *
- * Author: Hacker, J. R.
- *
- * Revision: $Id$
- *
- *-----------------------------------------------------------------------
- *
- * NAME
- * Example.h
- *
- * SYNOPSIS
- * #include <lal/Example.h>
- *
- * DESCRIPTION
- * Example header file prolog.
- *
- * DIAGNOSTICS
- *
- *-----------------------------------------------------------------------
- */
+/**** <lalVerbatim file="ExampleHV">
+ * Author: Al A. Lal
+ * $Id$
+ **** </lalVerbatim> */
 
-/* 
- * Header contents go here, in order specified:
+/**** <lalLaTeX>
  * 
- * 1. Prolog (Comment field with file name, author, revision, etc., as 
- *    specified above)
- * 2. include-loop protection (see below). Note the naming convention!
- */
+ * \section{Header \texttt{Example.h}}
+ *
+ * %% One sentence briefly defining scope of the header
+ *
+ * \subsection*{Synopsis}
+ * \begin{verbatim}
+ * #include <lal/Example.h>
+ * \end{verbatim}
+ * 
+ * %% Generic documentation on the header; this is the main place to
+ * %% document any stuff not specific to the module
+ * 
+ * \subsection*{Error conditions}
+ * \input{ExampleHE}
+ * 
+ * \subsection*{Structures}
+ * 
+ * %% Document here any structures defined in the header.  
+ * %% Also include any of them in the index; e.g.:
+ * %% \index{\texttt{ExampleOutput}}
+ * %% \index{\texttt{ExampleInput}}
+ * %% \index{\texttt{ExampleParams}}
+ * 
+ * \vfill{\footnotesize\input{ExampleHV}}
+ * \newpage\input{ExampleC}
+ * \newpage\input{ExampleTestC}
+ * 
+ **** </lalLaTeX> */
 
 #ifndef _EXAMPLE_H
 #define _EXAMPLE_H
 
-/*
- * 3. Includes. This header may include others; if so, they go immediately 
- *    after include-loop protection. Includes should appear in the following 
- *    order: 
- *    a. Standard library includes
- *    b. LDAS includes
- *    c. LAL includes
- */
-
-#include <stdlib.h>
-#include <lal/LDAS_CONSTANTS.h>
-#include <lal/LALRCSID.h>
+/** INCLUDE LAL HEADERS NEEDED FOR HEADER (NOT MODULE) **/
+#include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
 extern "C" {
+#pragma } /** to match the previous brace **/
 #endif
 
-/*
- * 4. Header file version string (from CVS; see below). Note the string name. 
- */
+/** DEFINE RCS ID STRING **/  
+NRCSID( EXAMPLEH, "$Id$" );
 
-NRCSID (EXAMPLEH, "$Id$");
+/** DEFINE ERROR CODES AND MESSAGES **/
+/**** <lalErrTable file="ExampleHE"> */
+#define EXAMPLEH_ENULLP 1
+#define EXAMPLEH_EALLOC 2
+#define EXAMPLEH_EOTHER 4
+#define EXAMPLEH_MSGENULLP "Null pointer"
+#define EXAMPLEH_MSGEALLOC "Memory allocation error"
+#define EXAMPLEH_MSGEOTHER "Some other error"
+/**** </lalErrTable> */
 
-/*
- * 5. Macros. But, note that macros are deprecated. 
- */
+/** DEFINE NEW STRUCTURES AND TYPES **/
+typedef struct tagExampleOutput { /** contents **/ } ExampleOutput; 
+typedef struct tagExampleInput  { /** contents **/ } ExampleInput; 
+typedef struct tagExampleParams { /** contents **/ } ExampleParams; 
 
-/* 
- * 6. Extern Constant Declarations. These should not be present unless a
- *    specific waiver has been granted. 
- */
-
-/* 
- * 7. Extern Global Variables. These should also not be present unless a 
- *    specific waiver has been granted. 
- */ 
-
-/*
- * 8. Structure, enum, union, etc., typdefs.
- */
-
-/*
- * 9. Functions Declarations (i.e., prototypes).
- */
-
+/** FUNCTION PROTOTYPES **/
+void
+LALExample(
+    LALStatus     *status,
+    ExampleOutput *output,
+    ExampleInput  *input,
+    ExampleParams *params
+    );
 
 #ifdef  __cplusplus
+#pragma { /** to match the next brace **/
 }
 #endif
 
-#endif
+#endif /* _EXAMPLE_H */

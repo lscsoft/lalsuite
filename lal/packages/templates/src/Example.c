@@ -1,83 +1,199 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: Example.c 
- * 
- * Author: J. Random Hacker
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- * Example
- * 
- * SYNOPSIS 
- * (void) Example()
- * 
- * DESCRIPTION 
- * Example source file prolog. 
- * 
- * DIAGNOSTICS 
- * (Abnormal termination conditions, error and warning codes summarized 
- * here. More complete descriptions are found in documentation.)
+/**** <lalVerbatim file="ExampleCV">
+ * Author: Al A. Lal
+ * $Id$  
+ **** </lalVerbatim> */
+
+/**** <lalLaTeX>
  *
- * CALLS
- * (list of LLAL, LDAS, other non-system functions/procedures called. 
+ * \subsection{Module \texttt{Example.c}}
+ *
+ * %% A one-line description of the function(s) defined in this module.
+ *
+ * \subsubsection*{Prototypes}
+ * \input{ExampleCP}
+ * %% \index{\texttt{LALExample()}}
  * 
- * NOTES
- * (Other notes)
+ * \subsubsection*{Description}
  * 
- *-----------------------------------------------------------------------
- */
+ * %% A description of the data analysis task performed by this function; 
+ * %% this is the main place to document the module.
+ * 
+ * \subsubsection*{Algorithm}
+ * 
+ * %% A description of the method used to perform the calculation.
+ * 
+ * \subsubsection*{Uses}
+ * 
+ * %% List of any external functions called by this function.
+ * \begin{verbatim}
+ * \end{verbatim}
+ * 
+ * \subsubsection*{Notes}
+ * 
+ * %% Any relevant notes.
+ * 
+ * \vfill{\footnotesize\input{ExampleCV}}
+ * 
+ **** </lalLaTeX> */ 
 
-/* 1. Prolog: an extended comment field containing summary information
- *    about the source code module (see above);
- * 2. Source file version string (from CVS). Note the string name.
- */
+/**
+ ** INCLUDE STANDARD LIBRARY HEADERS
+ ** note LALStdLib.h already includes stdio.h and stdarg.h
+ **
+ ** for example:
+ **
+ **   #include <string.h>
+ **/
 
-#include <lal/LALRCSID.h>
-
-NRCSID (EXAMPLEC, "$Id$");
-
-/*
- * 3. Include directives. These should be guarded and appear in the
- *    following order:
- *    a. Standard library includes;
- *    b. LDAS includes;
- *    c. LAL includes.
- */
-
-#include <stdlib.h>
-#include <math.h>
-#include <lal/LDASDCAPI.h>
+/** INCLUDE ANY LAL HEADERS **/
+#include <lal/LALStdlib.h>
 #include <lal/Example.h>
 
-/* 
- * 4. Constants, enumerated types, structures, etc., used only internally;
- */
+/** DEFINE RCS ID STRING **/
+NRCSID( EXAMPLEC, "$Id$" );
 
-/*
- * 5. Type declarations ({\em i.e.,} {\tt typedefs\/}) used only
- *    internally; 
- */
+/**
+ ** DEFINE LOCAL MACROS AND VARIABLES
+ ** (these should be used sparingly)
+ **
+ ** macros:
+ **
+ **   #define STRSZ 64
+ **
+ **
+ ** local variables must be both static and constant, for example:
+ **
+ **   static const INT4 strsz = STRSZ;
+ **
+ **
+ ** enums are also allowed:
+ **
+ **   enum { StrSz = STRSZ };
+ **
+ **/
 
-/*
- * 6. Function macros for which a waiver has been granted;
- */
+/**
+ ** DECLARE LOCAL FUNCTIONS
+ ** (they may be defined here or later)
+ **
+ ** these functions must all be static so that they do not have
+ ** external linkage, for example:
+ **
+ **   static void
+ **   LALSubroutine(
+ **       LALStatus  *status,
+ **       CHAR       *string,
+ **       const CHAR *message,
+ **       UINT4       strlen
+ **       )
+ **   {
+ **     INITSTATUS( status, "LALSubroutine", EXAMPLEC );
+ **     ASSERT( message, status, EXAMPLEH_ENULLP, EXAMPLEH_MSGENULLP );
+ **     ASSERT( string, status, EXAMPLEH_ENULLP, EXAMPLEH_MSGENULLP );
+ **     memcpy( string, message, strlen );
+ **     string[strlen] = 0;
+ **     RETURN( status );
+ **   }
+ **
+ ** local functions need not satisfy all of the LAL convensions for
+ ** functions
+ **     
+ **/
 
-/*
- * 7. Extern global variable declarations for which a waiver has been
- *    granted;
- */
+/** DEFINE GLOBAL FUNCTIONS **/
 
-/*
- * 8. Static global variables for which a waiver has been granted; 
- */
+/* <lalVerbatim file="ExampleCP"> */
+void
+LALExample(
+    LALStatus     *status,
+    ExampleOutput *output,
+    ExampleInput  *input,
+    ExampleParams *params
+    )
+/* </lalVerbatim> */
+{
+  /**
+   ** variable declaration
+   **
+   ** variables should normally be declared one-per-line, for example:
+   **
+   **   CHAR *str;
+   **   INT4  strlen;
+   **
+   ** no function (not even a local one) should use static variables:
+   **
+   **   static REAL4 x;  !!! BAD !!!
+   **   
+   **/
 
-/*
- * 9. Static function declarations for which a waiver has been granted; 
- */
+  /** initialize status **/
+  INITSTATUS( status, "LALExample", EXAMPLEC );
+  ATTATCHSTATUSPTR( status ); /** only if subroutines are called **/
 
-/*
- * 10. Function prototypes
- */
+  /**
+   ** check validity of arguments, for example:
+   **
+   **   ASSERT( output, status, EXAMPLEH_ENULLP, EXAMPLEH_MSGENULLP );
+   **
+   ** all assert statements are removed when debugging is disabled, so
+   ** you should never do anything like:
+   **
+   **   ASSERT( strlen = strsize - 1 > 0, status, EXAMPLEH_EOTHER,
+   **       EXAMPLEH_MSGEOTHER );  !!! BAD !!!
+   **
+   ** instead do:
+   **
+   **   strlen = strsize - 1;
+   **   ASSERT( strlen > 0, status, EXAMPLEH_EOTHER, EXAMPLEH_MSGEOTHER );
+   **
+   **/
+
+  /**
+   ** bulk of code
+   **
+   ** here is how to call a subroutine:
+   **
+   **   LALSubroutine( status->statusPtr, str, "hello", strlen );
+   **   CHECKSTATUSPTR( status );
+   **
+   ** (note: you must have attatched [sic] the status pointer)
+   **
+   **
+   ** always check return status of memory allocation, for example:
+   **
+   **   str = LALMalloc( strsz );
+   **   if ( ! str )
+   **   {
+   **     ABORT( status, EXAMPLEH_EALLOC, EXAMPLEH_MSGEALLOC );
+   **   }
+   **
+   ** (note: always use ABORT rather than ASSERT to do this)
+   **
+   **
+   ** if a subroutine might fail, but there is memory that needs to be
+   ** deallocated before returning, use BEGINFAIL/ENDFAIL rather than
+   ** CHECKSTATUSPTR as follows:
+   **
+   **   LALSubroutine( status->statusPtr, str, "world", strlen );
+   **   BEGINFAIL( status )
+   **   {
+   **     LALFree( str );
+   **   }
+   **   ENDFAIL( status );
+   **   
+   **
+   ** never use I/O:
+   **
+   **   puts( str ); !!! BAD !!!
+   **
+   **
+   ** make sure that all memory allocated in the function is deallocated
+   ** before exiting the function (unless the function is specifically
+   ** designed to create an object):
+   **
+   **   LALFree( str );
+   **/
+
+  DETATCHSTATUSPTR( status ); /** only if status pointer was attatched [sic] **/
+  RETURN(status);
+}

@@ -1,7 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 pkginclude_HEADERS = Example.h
-
-all-local: $(top_builddir)/include/Example.h
-
-$(top_builddir)/include/Example.h: Example.h
-	cp -f $(srcdir)/Example.h $(top_builddir)/include
+MOSTLYCLEANFILES = .dvi-dep
+DISTCLEANFILES = *.tex
+all-local: include-link
+dvi-local: .dvi-dep
