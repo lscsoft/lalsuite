@@ -163,13 +163,14 @@ int main(int argc, char **argv)
 
   
   /* --- Let's fix some variables we have to be in agreement with the xml file data --- */
-  ts.epoch.gpsSeconds 	= 729273610;		       /* gps time of the time series		*/
-  startTime 		= 729273610;		       /* start time and end time of ..	*/	
-  endTime   		= startTime + 200;	       /* ..injection; should be in agreement..*/
-  						       /* ..with the xml file			*/ 
-  ts.sampleUnits 	= lalADCCountUnit;	       /*  UNITY ?? 				*/
-  ts.deltaT 		= 1./sampling;		       /* sampling				*/
- ts.name[0]='L'; 
+  ts.epoch.gpsSeconds 	= 729273610;		       	/* gps time of the time series		*/
+  startTime 		= 729273610;		       	/* start time and end time of ..	*/	
+  endTime   		= startTime + 200;	       	/* ..injection; should be in agreement..*/
+  						       	/* ..with the xml file			*/ 
+  ts.sampleUnits 	= lalADCCountUnit;	       	/*  UNITY ?? 				*/
+  ts.deltaT 		= 1./sampling;		       	/* sampling				*/
+  ts.name[0]='Lu'; 					/* L, H, G, V or T for the detector 
+							   otherwise it is optimally oriented	*/ 
 
   fs.deltaF 		= sampling / numPoints;	       /* idem for fs				*/
   fs.sampleUnits 	= lalADCCountUnit;

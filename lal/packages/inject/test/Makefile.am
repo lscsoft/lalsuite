@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 if METAIO
-NEED_METAIO = InterfaceTest
+NEED_METAIO = InjectionInterfaceTest
 else
 NEED_METAIO = 
 endif
@@ -27,8 +27,8 @@ GeneratePulsarSignalTest_SOURCES = GeneratePulsarSignalTest.c
 GeneratePulsarSignalTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 if METAIO
-InterfaceTest_SOURCES = InterfaceTest.c
-InterfaceTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la \
+InjectionInterfaceTest_SOURCES = InjectionInterfaceTest.c
+InjectionInterfaceTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la \
 			$(top_builddir)/packages/support/src/liblalmetaio.la
 endif
 
