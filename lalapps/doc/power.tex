@@ -3,98 +3,7 @@
 \chapter{Burst Search Programs}
 \label{chapter:powertools}
 
-This section of \textsc{LALApps} contains programs that can be used to
-perform burst searches using the excess power algorithm.   
-The Excess Power search method is motivated by the classical theory of
-signal detection in Gaussian noise.  The method is the optimal search
-strategy~\cite{Anderson:2000yy} having only knowledge of the time duration
-and frequency band of the expected signal,  but having no other
-information about the power distribution in advance of detection. 
-
-The method is most easily explained by a concrete example.
-The data is first high-pass filtered using a Butterworth high pass filter.
-Then suppose Excess Power processed data at 16384 Hz in 1 second segments 
-which overlap each other by 0.5 seconds. Each of these segments is then 
-windowed (using a Welch window) and transformed into the frequency domain 
-\begin{equation}
-\tilde{H}_k =  \sum_{j=0}^{N-1}\frac{\Delta}{\sigma_w}w_jh_j e^{-2 \pi i j k /N}
-\end{equation}
-where $N=16\, 384$, $h_j$ is the filtered gravitational 
-wave channel, $\Delta$ is the sampling time interval, $w_j$ is the window
-function and $\sigma_w$ is  
-\begin{equation}
-{\sigma_w}^2 = \frac{1}{N}\sum_{j=0}^{N-1}{w_j}^2
-\end{equation}
-
-Now the input to the Excess Power search code is the whitened 
-frequency domain signal,
-\begin{equation}
-\tilde{s}_k = \sqrt{2\Delta f}\sqrt{\frac{2}{P_k}}\tilde{H}_k
-\end{equation}
-where $\Delta f = \frac{1}{N\Delta}$ is the sampling frequency interval and 
-$P_k = 2 \Delta f\langle|\tilde{H}_k^2| \rangle$ is the 
-power spectral estimate.  This spectrum is estimated by the median
-power at each frequency for a number of overlapping 1 second segments.
-The use of the median avoids bias in the spectrum caused by the
-presence of a gravitational wave or other large non-astrophysical
-transients present in any of the segments.   
-
-The Excess Power search then identifies triggers which may be
-gravitational wave bursts using the following algorithm.  For each
-segment $\tilde{w}_k$,  construct multiple time-frequency planes
-${\cal{P}}^a$ such that the frequency resolution of each plane is
-$2^a \times 1 \textrm{ Hz}$ and the time resolution $2^{-a} \times 1
-\textrm{ s}$ where $a=0,\ldots ,6$.  This approach allows
-multi-resolution analysis of the time-frequency structure of the input
-time series $s_j$ while insuring that all pixels have unit
-time-frequency volume (the product of time resolution by frequency
-resolution).   The power in a given pixel of time-frequency plane
-${\cal{P}}^b$ is given by
-\begin{equation}
-{\cal E}^b(t,f) = {\cal E}^b( 2^{-b} J, 2^b \Sigma ) = 4 | H^b_{J\Sigma} |^2
-\end{equation}
-where 
-\begin{equation}
-H^b_{J\Sigma} = \sum_{\gamma=0}^{N_T} e^{ 2 \pi i J \gamma / N_T }
-\tilde{w}_{N_T \Sigma + \gamma}
-\end{equation}
-and $N_T = 2^b$.
-
-The method owes its name to the fact that it searches for excess
-signal power in all the rectangular regions, called tiles, of each
-time-frequency plane.  The list of tiles is designed to explore all
-possible start times, frequency bands and durations subject to the
-following constraints.  Tiles have a minimum time duration either
-equal to the minimum time resolution of the particular time-frequency
-plane or equal to $2/64 \textrm{ s}$,  whichever is greater.  The
-maximum frequency band of any tile is $64 \textrm{ Hz}$.  The tiles
-have a maximum time duration of $0.5 \textrm{ s}$ and corresponding
-minimum frequency band of $2 \textrm{ Hz}$;  tiles always have integer
-numbers of pixels on each side and hence have time-frequency volume
-greater than or equal to unity.  For each allowed tile duration and
-bandwidth,  the associated time-frequency plane is tiled and each tile
-searched for excess power
-\begin{equation}
-{\cal{E}} = \sum_{J=J_1}^{J2-1} \sum_{\Sigma=\Sigma_1}^{\Sigma_2-1}
-{\cal E}^b( 2^{-b} J , 2^b \Sigma ) \;.
-\end{equation}
-
-In Gaussian noise,  the power in a given tile is $\chi^2$-distributed
-with $2 V$ degrees of freedom where $V$ is the time-frequency volume
-of the tile.    A burst trigger is identified if the probability of
-obtaining the excess power in a tile from Gaussian noise is smaller
-than some threshold $\alpha$.   For large bursts in the data stream,
-many tiles can be identified as triggers with different sizes and
-aspect ratios.   When the search over a particular segment is
-complete,   triggers are clustered by circumscribing a large
-rectangular tile around triggers which overlap in the time-frequency
-plane. In the process of clustering,  information about the tile
-with the largest excess power within the cluster is used to identify
-the peak time of the burst trThe igger as the center time of that tile.
-This method is crude and might account for the bad timing accuracy
-currently observed for short duration bursts.  We will address these
-issues in future versions of the algorithm.
-  
+ 
 \clearpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % RUNNING A PIPELINE
@@ -569,6 +478,161 @@ samples per second for the GPS times 754008323.0 s through 754008363.0 s.
 Patrick Brady,  Kipp Cannon and Saikat Ray Majumder 
 \end{entry}
 \clearpage
+
+\subsection{Algorithmic Implementation}
+
+This section of \textsc{LALApps} contains programs that can be used to
+perform burst searches using the excess power algorithm.   
+The Excess Power search method is motivated by the classical theory of
+signal detection in Gaussian noise.  The method is the optimal search
+strategy~\cite{Anderson:2000yy} having only knowledge of the time duration
+and frequency band of the expected signal,  but having no other
+information about the power distribution in advance of detection. 
+
+The method is most easily explained by a concrete example.
+The data is first high-pass filtered using a Butterworth high pass filter.
+Then suppose Excess Power processed data at 16384 Hz in 1 second segments 
+which overlap each other by 0.5 seconds. Each of these segments is then 
+windowed (using a Welch window) and transformed into the frequency domain 
+\begin{equation}
+\tilde{H}_k =  \sum_{j=0}^{N-1}\frac{\Delta}{\sigma_w}w_jh_j e^{-2 \pi i j k /N}
+\end{equation}
+where $N=16\, 384$, $h_j$ is the filtered gravitational 
+wave channel, $\Delta$ is the sampling time interval, $w_j$ is the window
+function and $\sigma_w$ is  
+\begin{equation}
+{\sigma_w}^2 = \frac{1}{N}\sum_{j=0}^{N-1}{w_j}^2
+\end{equation}
+
+Now the input to the Excess Power search code is the whitened 
+frequency domain signal,
+\begin{equation}
+\tilde{s}_k = \sqrt{2\Delta f}\sqrt{\frac{2}{P_k}}\tilde{H}_k
+\end{equation}
+where $\Delta f = \frac{1}{N\Delta}$ is the sampling frequency interval and 
+$P_k = 2 \Delta f\langle|\tilde{H}_k^2| \rangle$ is the 
+power spectral estimate.  This spectrum is estimated by the median
+power at each frequency for a number of overlapping 1 second segments.
+The use of the median avoids bias in the spectrum caused by the
+presence of a gravitational wave or other large non-astrophysical
+transients present in any of the segments.   
+
+\subsubsection{The filter}
+
+The excess-power method relies on having a time-frequency
+decomposition of the the incoming data.   Consider construction of the
+the time-frequency plane in a pass-band $f_0 < f < f_0+b$.  A naive
+construction would set all Fourier components outside of this band to
+zero and inverse transform.  A major problem with this approach is
+that the band-pass filter,  when viewed in the time-domain, has
+infinite extent and can lead to data corruption of the band-passed
+data stream when contructed as described above.   We can,  however,
+start from this and construct a filter which preferentially
+passes the appropriate frequencies \emph{and} has finite duration in
+the time domain.
+
+Consider the rectangular band-pass in the frequency domain
+\begin{eqnarray}
+G(t) &=& \int_{-f_0 - b}^{-f_0} e^{2 \pi i f t} df  +
+\int_{f_0}^{f_0+b}  e^{2 \pi i f t} df 
+= 2 \int_{f_0}^{f_0+b} \cos ( 2 \pi f t ) df \\
+&=& \frac{\sin[2\pi(f_0+b)t] - \sin[2 \pi f_0 t]}{\pi t} \; .
+\end{eqnarray}
+This is just the sum of a sine and cosine at
+frequency $f_0$ modulated at frequency $b$.
+Consequently,  the amplitude modulation has its first zero at
+$t = 1/ (2 b)$ and we can use a truncated time-domain filter
+\begin{equation}
+\Theta(t - t_0; f_0 , b) = \left\{
+\begin{array}{lrl}
+\displaystyle{
+\frac{\sin[2\pi(f_0+b)(t-t_0)] - \sin[2 \pi f_0 (t-t_0)]}{\pi (t-t_0)} 
+} & \mbox{\ \ } & |t-t_0| < 1/(2b)  \\
+0 & & \textrm{Otherwise}
+\end{array} \right. 
+\end{equation}
+which covers a time frequency volume $V = b (1/b) = 1$ and has its
+peak at time $t_0$.   Notice that
+\begin{equation}
+\lim_{t\rightarrow t_0} \Theta(t - t_0; f_0 , b) = 2 b\; .
+\end{equation}
+
+\subsubsection{The signal-to-noise}
+
+The signal to noise for a filter determined by $f_0$ and $b$ can be
+written as a function of the peak time $t_0$ as
+\begin{equation}
+\rho(t_0) = \frac{z(t_0)}{\sigma}
+\end{equation}
+where
+\begin{equation}
+z(t_0) = \int_{-\infty}^\infty \hat{s}(t) \Theta(t-t_0; f_0, b) 
+dt
+\end{equation} and $\sigma^2 = \langle |z(t_0)|^2 \rangle$.  The time
+series $z(t_0)$ is most conveniently computed using Fourier
+transforms,  therefore
+\begin{equation}
+z(t_0) = \int_{-\infty}^{\infty} \hat{s}(f) \tilde{\Theta}^\ast (f) 
+e^{2 \pi i ft_0} df
+\end{equation}
+
+The Excess Power search then identifies triggers which may be
+gravitational wave bursts using the following algorithm.  For each
+segment $\tilde{w}_k$,  construct multiple time-frequency planes
+${\cal{P}}^a$ such that the frequency resolution of each plane is
+$2^a \times 1 \textrm{ Hz}$ and the time resolution $2^{-a} \times 1
+\textrm{ s}$ where $a=0,\ldots ,6$.  This approach allows
+multi-resolution analysis of the time-frequency structure of the input
+time series $s_j$ while insuring that all pixels have unit
+time-frequency volume (the product of time resolution by frequency
+resolution).   The power in a given pixel of time-frequency plane
+${\cal{P}}^b$ is given by
+\begin{equation}
+{\cal E}^b(t,f) = {\cal E}^b( 2^{-b} J, 2^b \Sigma ) = 4 | H^b_{J\Sigma} |^2
+\end{equation}
+where 
+\begin{equation}
+H^b_{J\Sigma} = \sum_{\gamma=0}^{N_T} e^{ 2 \pi i J \gamma / N_T }
+\tilde{w}_{N_T \Sigma + \gamma}
+\end{equation}
+and $N_T = 2^b$.
+
+The method owes its name to the fact that it searches for excess
+signal power in all the rectangular regions, called tiles, of each
+time-frequency plane.  The list of tiles is designed to explore all
+possible start times, frequency bands and durations subject to the
+following constraints.  Tiles have a minimum time duration either
+equal to the minimum time resolution of the particular time-frequency
+plane or equal to $2/64 \textrm{ s}$,  whichever is greater.  The
+maximum frequency band of any tile is $64 \textrm{ Hz}$.  The tiles
+have a maximum time duration of $0.5 \textrm{ s}$ and corresponding
+minimum frequency band of $2 \textrm{ Hz}$;  tiles always have integer
+numbers of pixels on each side and hence have time-frequency volume
+greater than or equal to unity.  For each allowed tile duration and
+bandwidth,  the associated time-frequency plane is tiled and each tile
+searched for excess power
+\begin{equation}
+{\cal{E}} = \sum_{J=J_1}^{J2-1} \sum_{\Sigma=\Sigma_1}^{\Sigma_2-1}
+{\cal E}^b( 2^{-b} J , 2^b \Sigma ) \;.
+\end{equation}
+
+In Gaussian noise,  the power in a given tile is $\chi^2$-distributed
+with $2 V$ degrees of freedom where $V$ is the time-frequency volume
+of the tile.    A burst trigger is identified if the probability of
+obtaining the excess power in a tile from Gaussian noise is smaller
+than some threshold $\alpha$.   For large bursts in the data stream,
+many tiles can be identified as triggers with different sizes and
+aspect ratios.   When the search over a particular segment is
+complete,   triggers are clustered by circumscribing a large
+rectangular tile around triggers which overlap in the time-frequency
+plane. In the process of clustering,  information about the tile
+with the largest excess power within the cluster is used to identify
+the peak time of the burst trThe igger as the center time of that tile.
+This method is crude and might account for the bad timing accuracy
+currently observed for short duration bursts.  We will address these
+issues in future versions of the algorithm.
+
+
 
 \subsection{Time Domain Segmentation}
 The excess power analysis code does not process the input data as a
