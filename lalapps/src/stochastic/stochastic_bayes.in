@@ -165,18 +165,18 @@ type1 = cp.get('datafind','type-one')
 type2 = cp.get('datafind','type-two')
 
 # get the min/max frequency
-f_min = int(cp.get('frequency','f-min'))
-f_max = int(cp.get('frequency','f-max'))
+f_min = float(cp.get('frequency','f-min'))
+f_max = float(cp.get('frequency','f-max'))
 
 # get the band over which to loop
-f_band = int(cp.get('frequency','f-band'))
+f_band = float(cp.get('frequency','f-band'))
 
 # check that f_band is an integer multiple of f_max - f_min
-if (float(f_max - f_min)/float(f_band) - (f_max - f_min)/f_band) != 0:
+if ((f_max - f_min)/f_band - int(f_max - f_min)/int(f_band)) != 0:
   sys.exit("f-band must be a mutliple of f_max - f_max")
 
 # get range of minimum frequencies over which to search
-min_range = range(f_min, f_max, f_band)
+min_range = range(0, int((f_max - f_min)/f_band), 1)
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
@@ -218,8 +218,8 @@ for seg in data:
     # loop over band
     for i in min_range:
       # get band for analysis
-      min = float(i)
-      max = float(i + f_band)
+      min = f_min + (i * f_band)
+      max = min + f_band
       # set up job
       stoch = stochastic.StochasticNode(stoch_job)
       stoch.set_start(chunk.start())
