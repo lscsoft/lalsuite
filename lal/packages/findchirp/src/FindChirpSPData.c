@@ -402,6 +402,8 @@ LALFindChirpSPData (
       FINDCHIRPSPH_EFLOW, FINDCHIRPSPH_MSGEFLOW );
   ASSERT( params->dynRange > 0, status,
       FINDCHIRPSPH_EDYNR, FINDCHIRPSPH_MSGEDYNR );
+  ASSERT( params->invSpecTrunc >= 0, status,
+      FINDCHIRPSPH_EISTN, FINDCHIRPSPH_MSGEISTN );
   
   /* check that the input exists */
   ASSERT( dataSegVec, status,
@@ -526,6 +528,61 @@ LALFindChirpSPData (
     {
       wtilde[k].re = 1.0 / wtilde[k].re;
     }
+
+
+    /*
+     *
+     * truncate inverse power spectrum in time domain if required
+     *
+     */
+
+
+    if ( params->invSpecTrunc )
+    {
+      fprintf( stdout, "tuncating invSpec... ");
+      fflush( stdout );
+
+      /* compute square root of inverse power spectrum */
+      for ( k = cut; k < params->wtildeVec->length; ++k )
+      {
+        wtilde[k].re = sqrt( wtilde[k].re );
+      }
+
+      /* set nyquist and dc to zero */
+      wtilde[params->wtildeVec->length - 1].re = 0.0;
+      wtilde[0].re                             = 0.0;
+
+      /* transform to time domain */
+      LALReverseRealFFT( status->statusPtr, params->wVec, params->wtildeVec, 
+          params->invPlan );
+      CHECKSTATUSPTR (status);
+
+      /* truncate in time domain */
+      memset( w + params->invSpecTrunc/2, 0, 
+          (params->wVec->length - params->invSpecTrunc) * sizeof(REAL4) );
+
+      /* transform to frequency domain */
+      LALForwardRealFFT( status->statusPtr, params->wtildeVec, params->wVec, 
+          params->invPlan );
+      CHECKSTATUSPTR (status);
+
+      /* normalise fourier transform and square */
+      {
+        REAL4 norm = 1.0 / (REAL4) params->wVec->length;
+        for ( k = cut; k < params->wtildeVec->length; ++k )
+        {
+          wtilde[k].re *= norm;
+          wtilde[k].re *= wtilde[k].re;
+          wtilde[k].im = 0.0;
+        }
+      }
+      fprintf( stdout, "done\n");
+      fflush( stdout );
+    }
+
+
+
+
 
 
     /*

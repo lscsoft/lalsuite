@@ -80,6 +80,7 @@ extern "C" {
 #define FINDCHIRPSPH_EDELT 7
 #define FINDCHIRPSPH_EFLOW 8
 #define FINDCHIRPSPH_EDYNR 9
+#define FINDCHIRPSPH_EISTN 10
 #define FINDCHIRPSPH_MSGENULL "Null pointer"
 #define FINDCHIRPSPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPSPH_MSGEALOC "Memory allocation error"
@@ -89,6 +90,7 @@ extern "C" {
 #define FINDCHIRPSPH_MSGEDELT "deltaT is zero or negative"
 #define FINDCHIRPSPH_MSGEFLOW "Low frequency cutoff is negative"
 #define FINDCHIRPSPH_MSGEDYNR "Dynamic range scaling is zero or negative"
+#define FINDCHIRPSPH_MSGEISTN "Truncation of inverse power spectrum is negative"
 /* </lalErrTable> */
 
 
