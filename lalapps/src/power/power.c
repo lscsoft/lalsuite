@@ -591,7 +591,7 @@ int main( int argc, char *argv[])
        * DO THE SEARCH                                                    *
        *******************************************************************/
       start_sample = 0;
-      while( start_sample < series.data->length )
+      while( start_sample < (int) series.data->length )
       {
         UINT4                tmpDutyCycle=0;
         UINT4                dumCurrentSeg=params->currentSegment;
@@ -1079,7 +1079,6 @@ int initializeEPSearch(
                         exit( 1 );
                     }
                     params->initParams->numPoints = tmpm;
-                    params->ntotT = params->initParams->numPoints;      
                     ADD_PROCESS_PARAM( "int", "%d", tmpm );                    
                 }
                 break;

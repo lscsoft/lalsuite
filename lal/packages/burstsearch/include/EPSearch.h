@@ -144,7 +144,6 @@ tagEPSearchParams
   UINT4                        *numSlaves;          
   UINT4                         simType;
   UINT4                         currentSegment;
-  INT4                          ntotT;
   INT4                          numEvents;
   UINT4                         ovrlap;
   REAL8                         lambda;

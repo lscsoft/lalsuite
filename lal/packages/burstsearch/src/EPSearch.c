@@ -121,7 +121,7 @@ static void ComputeAverageSpectrum(
 	ATTATCHSTATUSPTR(status);
 
 	winParams.type = params->winParams.type;
-	winParams.length = 2 * params->ntotT;
+	winParams.length = 2 * params->initParams->numPoints;
 	LALCreateREAL4Window(status->statusPtr, &spec_params.window, &winParams);
 	CHECKSTATUSPTR(status);
 	LALCreateForwardRealFFTPlan(status->statusPtr, &spec_params.plan, spec_params.window->data->length, 0);
@@ -201,7 +201,7 @@ EPSearch (
 
     /* create the dft params */
     winParams.type=params->winParams.type;
-    winParams.length=2 * params->ntotT;
+    winParams.length=2 * params->initParams->numPoints;
     LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
     CHECKSTATUSPTR (status);
 
@@ -513,9 +513,6 @@ void EPInitSearch(
     (*params)->ovrlap                       = atoi( argv[3] );  
     /* Identify events with alpha less that this value */
     (*params)->alphaThreshold               = atof( argv[13] ); 
-    /* Number of data points in a segment */
-    (*params)->ntotT                        = (*params)->initParams->numPoints;
-
     /* Amount of overlap between neighboring TF tiles */
     (*params)->tfTilingInput->overlapFactor = atoi( argv[4] );  
     /* Smallest extent in freq of TF tiles to search */
