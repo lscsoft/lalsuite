@@ -444,6 +444,7 @@ LALrOfOmega3PN(
   REAL8  omega1,omega2,eta ;
   pr3In *pr3in;
        
+  status = NULL;
   pr3in = (pr3In *) params;
   eta = pr3in->eta;
 
@@ -466,6 +467,7 @@ LALlightRingRadius3PN(
   REAL8 eta, u, u2, u3, a4, a4p4eta,a4peta2, NA, DA, A, dA;
   rOfOmegaIn *rofomegain;
   REAL8 omegaS=0;
+  status = NULL;
   rofomegain = (rOfOmegaIn *) params;
   eta = rofomegain->eta;
 

@@ -99,7 +99,7 @@ LALInspiralStationaryPhaseApprox2 (
    INT4 n, nby2, i, f0, fn;
    expnCoeffs ak;
    expnFunc func;
-   void (*LALInspiralTaylorF2Phasing)(REAL8 v, REAL8 *phase, expnCoeffs *ak);
+   void (*LALInspiralTaylorF2Phasing)(REAL8, REAL8 *, expnCoeffs *) = NULL;
 
    INITSTATUS (status, "LALInspiralStationaryPhaseApprox2", LALINSPIRALSTATIONARYPHASEAPPROX2C);
    ATTATCHSTATUSPTR(status);

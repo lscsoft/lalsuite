@@ -728,6 +728,8 @@ LALInspiralChooseModel(
  case BCVSpin:
    ak->tn = 100.;
    break;
+ default:
+   ABORT( status, 9999, "Unknown case in switch." );
 }
    DETATCHSTATUSPTR(status);
    RETURN (status); 

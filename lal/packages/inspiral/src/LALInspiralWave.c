@@ -131,7 +131,7 @@ LALInspiralWave(
 
    ASSERT((INT4)params->approximant >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT((INT4)params->approximant <= 12, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->order >= 0, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
+   ASSERT((int)params->order >= 0, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
    ASSERT(params->order <= 7, status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
 
    switch (params->approximant) 
@@ -178,6 +178,8 @@ LALInspiralWave(
 	   break;
       case SpinTaylor: /* implemented only for inject package for the time being*/
            break;
+      default:
+           ABORT( status, 9999, "Unknown case in switch." );
    }
 
    DETATCHSTATUSPTR(status);

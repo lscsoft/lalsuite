@@ -1014,7 +1014,7 @@ void LALInspiralSpinModulatedWave(
      InspiralTemplate *in);
 
 
-void LALInspiralSpinModulateWaveForInjection(
+void LALInspiralSpinModulatedWaveForInjection(
      LALStatus *status,
      CoherentGW *waveform,
      InspiralTemplate *params,

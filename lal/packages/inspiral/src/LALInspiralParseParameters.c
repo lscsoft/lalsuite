@@ -321,6 +321,9 @@ void LALInspiralITStructureCheck(LALStatus *status,
     case SpinTaylorT3:
     case SpinTaylor:
       break;
+ default:
+   ABORT( status, 9999, "Unknown case in switch." );
+
   }
 
   DETATCHSTATUSPTR(status);
