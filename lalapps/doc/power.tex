@@ -568,7 +568,7 @@ cycles required to analyze a given quantity of input data.  \emph{Note:}
 All other parameters are given with respect to \emph{this} sample rate.
 For example, the number of samples used to estimate the average PSD as
 given by \option{--psd-average-points} refers to the time series following
-date rate down-conversion.
+data rate down-conversion.
 
 \item[\option{--tile-overlap-factor} \parm{factor}]
 This parameter influences the amount of overlap between neighboring
@@ -576,14 +576,14 @@ time-frequency tiles.  It must be an integer.  A reasonable value for this
 parameter is 3.  See the LAL ``burstsearch'' package for more information.
 
 \item[\option{--threshold} \parm{threshold}]
-Set the threshold in alpha for which above which identified events should
-be discarded.  See the LAL ``burstsearch'' package for details.
+Set the threshold in alpha above which identified events should be
+discarded.  See the LAL ``burstsearch'' package for details.
 
 \item[\option{--user-tag} \parm{comment}]
 Set the user tag to the string \parm{comment}.  This string must not
-contain spaces or dashes (``-'').  underscores.  This string will appear in
-the name of the file to which output information is written, and is
-recorded in the various XML tables within the file.
+contain spaces or dashes (``-'').  This string will appear in the name of
+the file to which output information is written, and is recorded in the
+various XML tables within the file.
 
 \item[\option{--verbose}]
 Enable the output of informational messages.
@@ -668,18 +668,18 @@ noise PSD, it whitens each analysis window and then searches them for burst
 events.  Only the analysis windows within the data used to estimate the
 noise PSD are whitened using that estimate.  Once those windows have been
 searched for burst events, \function{EPSearch()} returns to the calling
-procedure which then extracts a new time series and the process repeats.
-The parameter provided via the command line option
+procedure which then extracts a new time series from the input data and the
+process repeats.  The parameter provided via the command line option
 \option{--psd-average-points} sets the length of the time series that is
 passed to \function{EPSearch()}.
 
-As each successive time series is passed to \function{EPSearch()}, in order
-for the analysis windows in the two time series to overlap each other
-correctly --- i.e.\ to ensure the same overlap between analysis windows in
-neighbouring time series as exists between neighbouring windows within a
-series --- it is necessary for the second time series to begin
+As successive time series are passed to \function{EPSearch()}, in order for
+the first analysis window to correctly overlap the last window from the
+previous time series --- i.e.\ to ensure the same overlap between analysis
+windows in neighbouring time series as exists between neighbouring windows
+within a series --- it is necessary for the latter time series to begin
 $(\mbox{\parm{window length}} - \mbox{\parm{window shift}})$ samples before
-the end of the first series.  The arrangement is shown in the following
+the end of the former series.  The arrangement is shown in the following
 figure.
 \begin{center}
 \input{figures/power/psds.fig}
@@ -713,7 +713,7 @@ beyond the end of the time series, it is moved to an earlier time so that
 its end is aligned with the end of the available data.
 
 If more data needs to be analyzed than will fit in RAM at one time, we must
-read it into memory and analyze it pieces.  In doing this, we again want
+read it into memory and analyze it in pieces.  In doing this, we again want
 the analysis windows in neighbouring read cycles to overlap one another in
 the same manner that neighbouring analysis windows within a single noise
 PSD interval overlap one another.  This will be assured if, in the diagram
@@ -722,7 +722,7 @@ the first noise PSD interval to be analyzed within it starts at the correct
 location relative to the last PSD interval analyzed from the previous read
 cycle.  Consideration of the diagram above reveals that in order to meet
 this condition, the next data to be read into memory should start $(2
-\mbox{\parm{filter corruption}} + \mbox{\parm{window length}} -
+\times \mbox{\parm{filter corruption}} + \mbox{\parm{window length}} -
 \mbox{\parm{window shift}})$ samples prior to the end of the previous data
 to have been read.
 
