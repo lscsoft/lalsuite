@@ -48,7 +48,7 @@ RCSID("");
 #define BANKNUMBEROFTEMPLATES_ORDER_TEMPLATE   	        twoPN
 #define BANKNUMBEROFTEMPLATES_MMCOARSE     		0.8
 #define BANKNUMBEROFTEMPLATES_MMFINE       		0.9
-#define BANKNUMBEROFTEMPLATES_MMIN            		5.
+#define BANKNUMBEROFTEMPLATES_MMIN            		10.
 #define BANKNUMBEROFTEMPLATES_MMAX           		20.
 #define BANKNUMBEROFTEMPLATES_ALPHASIGNAL    		0.
 #define BANKNUMBEROFTEMPLATES_DALPHA    		0.01
@@ -95,7 +95,7 @@ RCSID("");
 
 typedef enum{
     LIGOI,
-    LIGOII,
+    LIGOA,
     GEO,
     TAMA,
     VIRGO, 
@@ -212,6 +212,9 @@ main (int argc, char **argv )
     {
     case LIGOI:
       LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, &LALLIGOIPsd, df), &status);
+      break;
+    case LIGOA:
+      LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, &LALAdvLIGOPsd, df), &status);
       break;
     case VIRGO: 
       LAL_CALL(LALNoiseSpectralDensity (&status, coarseIn.shf.data, &LALVIRGOPsd, df), &status);
@@ -350,8 +353,7 @@ void InitInspiralCoarseBankIn(InspiralCoarseBankIn *coarseIn)
   coarseIn->mMax      	= BANKNUMBEROFTEMPLATES_MMAX;
   coarseIn->MMax      	= BANKNUMBEROFTEMPLATES_MMAX * 2;
   coarseIn->massRange   = MinMaxComponentMass; 
-  coarseIn->etamin 	= coarseIn->mMin * 
-	  		( coarseIn->MMax - coarseIn->mMin) 
+  coarseIn->etamin 	= coarseIn->mMin * coarseIn->mMax  
 			/ pow(coarseIn->MMax, 2.);
   coarseIn->psi0Min   	= BANKNUMBEROFTEMPLATES_PSI0MIN;
   coarseIn->psi0Max   	= BANKNUMBEROFTEMPLATES_PSI0MAX;
@@ -385,7 +387,7 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
   randIn->mMin          = BANKNUMBEROFTEMPLATES_MMIN;					/* min mass to inject			*/
   randIn->mMax          = BANKNUMBEROFTEMPLATES_MMAX;					/* max mass to inject 			*/
   randIn->MMax          = BANKNUMBEROFTEMPLATES_MMAX * 2;				/* total mass max 			*/
-  randIn->etaMin        = (BANKNUMBEROFTEMPLATES_MMAX - BANKNUMBEROFTEMPLATES_MMIN) 
+  randIn->etaMin        = (BANKNUMBEROFTEMPLATES_MMIN * BANKNUMBEROFTEMPLATES_MMAX) 
 	  		/BANKNUMBEROFTEMPLATES_MMAX/ BANKNUMBEROFTEMPLATES_MMAX;
   randIn->psi0Min  	= BANKNUMBEROFTEMPLATES_PSI0MIN;				/* psi0 range 				*/
   randIn->psi0Max  	= BANKNUMBEROFTEMPLATES_PSI0MAX;	
@@ -441,12 +443,18 @@ ParseParameters(	int 			*argc,
 		randIn->param.fCutoff 	= coarseIn->tSampling/2. - 1.;
 	}      
        else if ( strcmp(argv[i],	"--mass-range")	== 0 ) 	{	
-			coarseIn->mMin = randIn->mMin = atof(argv[++i]); 
-		randIn->param.mass1 = randIn->param.mass2 = randIn->mMin;
+		
+		randIn->param.mass1 = randIn->param.mass2 = randIn->mMin = coarseIn->mMin = atof(argv[++i]);
+		
 		coarseIn->mMax = randIn->mMax = atof(argv[++i]); 
+		
 		coarseIn->MMax = randIn->MMax = coarseIn->mMax * 2.; 
-  		randIn->etaMin = coarseIn->mMin * (coarseIn->MMax - coarseIn->mMin) 
-	  			/coarseIn->MMax/ coarseIn->MMax;
+  		randIn->etaMin = randIn->mMin * (randIn->mMax) 
+	  			/randIn->MMax/ randIn->MMax;
+		coarseIn->etamin = coarseIn->mMin * coarseIn->MMax 
+				/ pow(coarseIn->MMax, 2.);
+		
+		
 	}
       else if (strcmp(argv[i],	"--psi0-range")	==0) {
 		coarseIn->psi0Min = randIn->psi0Min = atof(argv[++i]);
@@ -489,7 +497,7 @@ ParseParameters(	int 			*argc,
 	  i++;
 
 	  if (strcmp(argv[i], "LIGOI")		== 0)	otherIn->NoiseModel = LIGOI;
-	  else if (strcmp(argv[i], "LIGOII") 	== 0) 	otherIn->NoiseModel = LIGOII;
+	  else if (strcmp(argv[i], "LIGOA") 	== 0) 	otherIn->NoiseModel = LIGOA;
 	  else if (strcmp(argv[i], "VIRGO") 	== 0)  	otherIn->NoiseModel = VIRGO;
 	  else if (strcmp(argv[i], "TAMA") 	== 0)   otherIn->NoiseModel = TAMA;
 	  else if (strcmp(argv[i], "GEO") 	== 0)   otherIn->NoiseModel = GEO;
