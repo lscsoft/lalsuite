@@ -1337,11 +1337,11 @@ static void _clusterProperties(ClusterWavelet *w)
 	{
 	  if(w->pMask[w->cList[i][j]]->core) 
 	    {
-	      w->blobs[i].pBlob[(w->pMask[w->cList[i][j]]->frequency - w->blobs[i].stop_freq_indx) * 
+	      w->blobs[i].pBlob[(w->pMask[w->cList[i][j]]->frequency - w->blobs[i].start_freq_indx) * 
 			       w->blobs[i].time_width + (w->pMask[w->cList[i][j]]->time - 
 							 w->blobs[i].start_time_indx )] = 
 		w->pMask[w->cList[i][j]]->amplitude;
-	      w->blobs[i].oBlob[(w->pMask[w->cList[i][j]]->frequency - w->blobs[i].stop_freq_indx) * 
+	      w->blobs[i].oBlob[(w->pMask[w->cList[i][j]]->frequency - w->blobs[i].start_freq_indx) * 
 			       w->blobs[i].time_width + (w->pMask[w->cList[i][j]]->time - 
 							 w->blobs[i].start_time_indx )] = 
 		w->pMask[w->cList[i][j]]->amplitudeOriginal;
