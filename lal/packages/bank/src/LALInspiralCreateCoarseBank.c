@@ -864,29 +864,21 @@ LALInspiralBCVFcutBank (
   nf = numFcutTemplates;
   ndx = nlist = *NList;
 
-  /* Before the allocation was inside the loop and allocate the exact   */
-  /* number of structure related to the valid point in the bank.        */
-  /* However if nlist is large (>5000) it is too long to compute.       */
-  /* Thus I put this ReAlloc outside the loop                           */
-  fprintf( stderr, "*list = %p, *nlist = %d, numFcutTemplates = %d\n",
-      *list, nlist, numFcutTemplates );
-  *list = (InspiralTemplateList*) LALRealloc( 
-      *list, nlist * numFcutTemplates * sizeof(InspiralTemplateList) );
-  fprintf( stderr, "*list = %p\n", *list );
-  if ( ! *list )
+  if ( nf == 1 )
   {
-    ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+    frac = 1;
   }
-  memset( *list + nlist, 0, numFcutTemplates * sizeof(InspiralTemplateList) );
-
-  frac = (1.L - 1.L/pow(2.L, 1.5L)) / (nf-1.L);
-  
-  for ( j = 0; j < nlist; j++ )
+  else
   {
-    UINT4 valid=0;
+    frac = (1.L - 1.L/pow(2.L, 1.5L)) / (nf-1.L);
+  }
 
-    /* Reaplce the following function by something more efficient ? */
+  for ( j = 0; j < nlist; ++j )
+  {
+    UINT4 valid = 0;
+    
     PSItoMasses( &((*list)[j].params), &valid );
+    
     if ( valid )
     {
       UINT4 i;
@@ -894,23 +886,34 @@ LALInspiralBCVFcutBank (
 
       fMax = (*list)[j].params.fendBCV;
       df = fMax * frac;
-      fMin = fMax * ( 1.L - (nf-1.L)*df);
+      /* not used for the moment */
+      fMin = fMax * ( 1.L - ((REAL8) nf - 1.L) * df );
 
       for ( i = 0; i < nf; ++i )
       {
-        fendBCV = fMax * (1.L - i * frac);
+        fendBCV = fMax * (1.L - (REAL8) i * frac);
 
-        if ( (*list)[j].params.tSampling <=0 )
+        if ( (*list)[j].params.tSampling <= 0 )
         {
           ABORT( status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
         }
 
         if ( fendBCV > (*list)[j].params.fLower && 
-            fendBCV < (*list)[j].params.tSampling/2. )
+            fendBCV < (*list)[j].params.tSampling / 2.0 )
         {
-          ndx++;
+          ++ndx;
+
+          *list = (InspiralTemplateList *) 
+            LALRealloc( *list, ndx * sizeof(InspiralTemplateList) );
+          if ( ! *list )
+          {
+            ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+          }
+
+          memset( *list + ndx - 1, 0, sizeof(InspiralTemplate) );
           (*list)[ndx-1] = (*list)[j];
           (*list)[ndx-1].params.fendBCV = fendBCV;
+          (*list)[ndx-1].params.fFinal = fendBCV;
           (*list)[ndx-1].metric = (*list)[0].metric;
         }
       }
