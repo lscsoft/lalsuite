@@ -100,6 +100,54 @@ searched precisely once for the given \texttt{ifo}.
 </lalLaTeX>
 #endif
 
+/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+int 
+XLALIFONumber( 
+    const char *ifo 
+    )
+/* </lalVerbatim> */
+{
+  switch( ifo[0] )
+  {
+    case 'G':
+      return LAL_IFO_G1;
+      break;
+
+    case 'H':
+      if ( !strcmp( ifo, "H1" ) )
+      {
+        return LAL_IFO_H1;
+      }
+      else if (!strcmp( ifo, "H2" ) )
+      {
+        return LAL_IFO_H2;
+      }
+      else
+      {
+        /* Invalid Hanford Detector */
+        return LAL_UNKNOWN_IFO ;
+      } 
+      break;
+
+    case 'L':
+      return LAL_IFO_L1;
+      break;
+
+    case 'T':
+      return LAL_IFO_T1;
+      break;
+
+    case 'V':
+      return LAL_IFO_V1;
+      break;
+
+    default:
+      /* Invalid Detector Site */
+      return LAL_UNKNOWN_IFO ;
+  }
+}
+
+
 static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
 {
   const INT8 play_length = LAL_INT8_C(600000000000);

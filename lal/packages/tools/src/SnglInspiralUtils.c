@@ -456,6 +456,136 @@ LALCompareSnglInspiral (
   RETURN (status);
 }
 
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALCompareInspirals (
+    LALStatus                *status,
+    SnglInspiralTable        *aPtr,
+    SnglInspiralTable        *bPtr,
+    InspiralAccuracyList     *params
+    )
+/* </lalVerbatim> */
+{
+  INT8    ta,  tb;
+  REAL4   dmass1, dmass2;
+  REAL4   dmchirp, deta;
+  REAL4   dpsi0, dpsi3;
+  InterferometerNumber ifoa,  ifob;
+  SnglInspiralAccuracy aAcc, bAcc;
+
+  INITSTATUS( status, "LALCompareInspirals", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+
+  params->match = 1;
+
+  /* check that triggers come from different IFOs */
+  if( strcmp(aPtr->ifo, bPtr->ifo) )
+  {
+    LALInfo( status, "Triggers from different IFOs");
+    params->match = 1;
+  }
+  else
+  {
+    LALInfo( status, "Triggers from same IFO");
+    params->match = 0;
+    goto exit;
+  }
+
+  ifoa = XLALIFONumber( aPtr->ifo );
+  ifob = XLALIFONumber( bPtr->ifo );
+  
+  LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
+  LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
+
+  /* compare on trigger time coincidence */
+  aAcc = params->ifoAccuracy[ifoa];
+  bAcc = params->ifoAccuracy[ifob];
+
+  
+
+  if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt) )
+  {
+    LALInfo( status, "Triggers pass time coincidence test");
+    params->match = 1;
+  }
+  else 
+  {
+    LALInfo( status, "Triggers fail time coincidence test" );
+    params->match = 0;
+    goto exit;
+  }
+
+  /* compare psi0 and psi3 parameters */
+  if ( params->test == psi0_and_psi3 )
+  {
+    dpsi0 = fabs( aPtr->psi0 - bPtr->psi0 );
+    dpsi3 = fabs( aPtr->psi3 - bPtr->psi3 );
+    
+    if ( ( dpsi0 <= (aAcc.dpsi0 + bAcc.dpsi0) )
+        && ( dpsi3 <= (aAcc.dpsi3 + bAcc.dpsi3) ))
+    {
+      LALInfo( status, "Triggers are coincident in psi0 and psi3" );
+      params->match = 1;
+    }
+    else
+    {
+      LALInfo( status, "Triggers are not coincident in psi0 and psi3" );
+      params->match = 0;
+      goto exit;
+    }
+  }
+  else if ( params->test == m1_and_m2 )
+  {  
+    dmass1 = fabs( aPtr->mass1 - bPtr->mass1 );
+    dmass2 = fabs( aPtr->mass2 - bPtr->mass2 );
+
+    /* compare mass1 and mass2 parameters */
+    if ( (dmass1 <= (aAcc.dm + bAcc.dm) )
+      && (dmass2 <= (aAcc.dm + bAcc.dm) ))
+    {
+      LALInfo( status, "Triggers are coincident in mass1 and mass2" );
+      params->match = 1;
+    }
+    else
+    {
+      LALInfo( status, "Triggers are not coincident in mass1 and mass2" );
+      params->match = 0;
+      goto exit;
+    }
+  }
+  else if ( params->test == mchirp_and_eta )
+  {  
+    dmchirp = fabs( aPtr->mchirp - bPtr->mchirp );
+    deta = fabs( aPtr->eta - bPtr->eta );
+
+    /* compare mchirp and eta parameters */
+    if ( (dmchirp <= (aAcc.dmchirp + bAcc.dmchirp))
+          && (deta <= (aAcc.deta + bAcc.deta)) )
+    {
+      LALInfo( status, "Triggers are coincident in mchirp and eta" );
+      params->match = 1;
+    }
+    else
+    {
+      LALInfo( status, "Triggers fail mchirp, eta coincidence test" );
+      params->match = 0;
+      goto exit;
+    }
+  }
+  else
+  {
+    LALInfo( status, "error: unknown test\n" );
+    params->match = 0;
+    goto exit;
+  }
+
+exit:
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+/* </lalVerbatim> */
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -711,13 +841,11 @@ LALIfoCountSingleInspiral(
     LALStatus                  *status,
     UINT4                      *numTrigs,
     SnglInspiralTable          *input,
-    InterferometerLabel         ifoLabel 
+    InterferometerNumber        ifoNumber 
     )
 /* </lalVerbatim> */
 {
   SnglInspiralTable    *thisEvent = NULL;
-  CHAR                  ifoList[7][LIGOMETA_IFO_MAX] = 
-                            {"??","G1", "H1", "H2", "L1", "T1", "V1"};
 
   INITSTATUS( status, "LALIfoCountSingleInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -732,7 +860,7 @@ LALIfoCountSingleInspiral(
      pointer to the head of a linked list of tables for a specific IFO */
   for( thisEvent = input; thisEvent; thisEvent = thisEvent->next )
   {
-    if ( !strcmp(thisEvent->ifo, ifoList[ifoLabel]) ) 
+    if ( ifoNumber == XLALIFONumber(thisEvent->ifo) )
     {
       /* IFOs match so count this trigger */
       ++(*numTrigs);

@@ -52,10 +52,10 @@ NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 
 \texttt{LALCreateTwoIFOCoincList()} takes in a linked list of single inspiral
 tables and returns a list of two instrument coincidences.  The coincidence
-requirements are given by the \texttt{errorParams}.  When single inspirals from
-two different instruments are found to be coincident, the code creates a new
-\texttt{coincInspiralTable} and uses \texttt{LALAddSnglInspiralToCoinc()} to
-add the single inspirals to the coinc.  The function returns
+requirements are given by the \texttt{accuracyParams}.  When single inspirals
+from two different instruments are found to be coincident, the code creates a
+new \texttt{coincInspiralTable} and uses \texttt{LALAddSnglInspiralToCoinc()}
+to add the single inspirals to the coinc.  The function returns
 \texttt{coincOutput} which is a pointer to the head of a linked list of
 \texttt{CoincInspiralTable}s.
 
@@ -78,7 +78,7 @@ table.
 inspiral and a coinc inspiral.  It works by testing for coincidence between
 each non-null entry in the coinc inspiral and the single.  This is done using
 \texttt{LALCompareSnglInspiral()}.  If all members of the coinc are found to be
-coincident with the single, the \texttt{errorParams.match} is set to 1,
+coincident with the single, the \texttt{accuracyParams.match} is set to 1,
 otherwise to 0.
 
 \texttt{LALExtractCoincSngls()} extracts the information from a linked list of
@@ -115,7 +115,7 @@ LALCreateTwoIFOCoincList(
     LALStatus                  *status,
     CoincInspiralTable        **coincOutput,
     SnglInspiralTable          *snglInput,
-    SnglInspiralAccuracy       *errorParams
+    InspiralAccuracyList       *accuracyParams
     )
 /* </lalVerbatim> */
 {
@@ -124,6 +124,7 @@ LALCreateTwoIFOCoincList(
   CoincInspiralTable           *coincHead = NULL;
   CoincInspiralTable           *thisCoinc = NULL;
   INT4                          numEvents = 0;
+  INT8                          maxTimeDiff = 0;
 
   INITSTATUS( status, "LALCreateTwoIFOCoincList", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
@@ -136,6 +137,11 @@ LALCreateTwoIFOCoincList(
   memset( currentTriggerNS, 0, 2 * sizeof(INT8) );
   memset( currentTrigger, 0, 2 * sizeof(SnglInspiralTable *) );
 
+  
+  /* calculate the maximum time delay */
+  /* XXX hardwire to 50 ms for now XXX */
+  maxTimeDiff = 50000000;
+  
   
   for ( currentTrigger[0] = snglInput; currentTrigger[0]->next;
       currentTrigger[0] = currentTrigger[0]->next)
@@ -150,14 +156,14 @@ LALCreateTwoIFOCoincList(
     LALGPStoINT8( status->statusPtr, &currentTriggerNS[1], 
           &(currentTrigger[1]->end_time) );
 
-    while ( (currentTriggerNS[1] - currentTriggerNS[0]) < errorParams->dt )
+    while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTimeDiff )
     {
       /* check that triggers pass coincidence test */
-      LALCompareSnglInspiral( status->statusPtr, currentTrigger[0], 
-          currentTrigger[1], errorParams );
+      LALCompareInspirals( status->statusPtr, currentTrigger[0], 
+          currentTrigger[1], accuracyParams );
 
       /* test whether we have coincidence */
-      if ( errorParams->match )
+      if ( accuracyParams->match )
       {
         LALInfo( status, "Found double coincident trigger,");
         /* create a 2 IFO coinc and store */
@@ -307,7 +313,7 @@ LALSnglInspiralLookup(
     LALStatus            *status,
     SnglInspiralTable   **snglInspiralPtr,
     CoincInspiralTable   *coincInspiral,
-    InterferometerLabel   ifoLabel 
+    InterferometerNumber  ifoNumber 
     )
 /* </lalVerbatim> */
 {
@@ -315,29 +321,29 @@ LALSnglInspiralLookup(
 
   INITSTATUS( status, "LALSnglInspiralLookup", COINCINSPIRALUTILSC );
 
-  switch ( ifoLabel ) 
+  switch ( ifoNumber ) 
   {
-    case g1:
+    case LAL_IFO_G1:
       snglInspiralEntry = coincInspiral->G1Inspiral;
       break;
 
-    case h1:
+    case LAL_IFO_H1:
       snglInspiralEntry = coincInspiral->H1Inspiral;
       break;
 
-    case h2:
+    case LAL_IFO_H2:
       snglInspiralEntry = coincInspiral->H2Inspiral;
       break;
 
-    case l1:
+    case LAL_IFO_L1:
       snglInspiralEntry = coincInspiral->L1Inspiral;
       break;
 
-    case t1:
+    case LAL_IFO_T1:
       snglInspiralEntry = coincInspiral->T1Inspiral;
       break;
 
-    case v1:
+    case LAL_IFO_V1:
       snglInspiralEntry = coincInspiral->V1Inspiral;
       break;
 
@@ -357,46 +363,48 @@ LALSnglInspiralCoincTest(
     LALStatus                  *status,
     CoincInspiralTable         *coincInspiral,
     SnglInspiralTable          *snglInspiral,
-    SnglInspiralAccuracy       *errorParams
+    InspiralAccuracyList       *accuracyParams
     )
 /* </lalVerbatim> */
 {
   SnglInspiralTable    *thisCoincEntry;
   INT4                  match = 1;
-  INT4                  j = 0;
+  INT4                  ifoNumber = 0;
   
   INITSTATUS( status, "LALSnglInspiralCoincTest", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
 
   /* Loop over sngl_inspirals contained in coinc_inspiral */
-  for ( j = 1; j < 7; j++)
+  for ( ifoNumber = 1; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     LALSnglInspiralLookup( status->statusPtr, &thisCoincEntry, coincInspiral, 
-        j );
+        ifoNumber );
 
     if ( thisCoincEntry )
     {
       /* snglInspiral entry exists for this IFO, perform coincidence test */
-      if ( !strcmp( snglInspiral->ifo, thisCoincEntry->ifo ) )
+      if ( ifoNumber == XLALIFONumber(snglInspiral->ifo) )
       {
         LALInfo( status, "We already have a coinc from this IFO" );
-        errorParams->match = 0;
+        accuracyParams->match = 0;
       }
 
       else
       {
-        LALCompareSnglInspiral ( status->statusPtr, snglInspiral, 
-            thisCoincEntry, errorParams );
+        LALCompareInspirals ( status->statusPtr, snglInspiral, 
+            thisCoincEntry, accuracyParams );
       }
       /* set match to zero if no match.  Keep same if match */
-      match *= errorParams->match;
+      match *= accuracyParams->match;
     }
   }
   /* returm errorParams->match to be 1 if we match, zero otherwise */
-  errorParams->match = match;
-  if ( errorParams->match == 0 ) LALInfo( status, "Coincidence test failed" );
-  if ( errorParams->match == 1 ) LALInfo( status, "Coincidence test passed" );
+  accuracyParams->match = match;
+  if ( accuracyParams->match == 0 ) 
+    LALInfo( status, "Coincidence test failed" );
+  if ( accuracyParams->match == 1 ) 
+    LALInfo( status, "Coincidence test passed" );
 
 
   DETATCHSTATUSPTR (status);

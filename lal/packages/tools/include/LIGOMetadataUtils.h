@@ -117,19 +117,20 @@ and \texttt{all\_data}.
 /* <lalVerbatim> */
 typedef enum 
 {
-  unknown_ifo,
-  g1,
-  h1,
-  h2,
-  l1,
-  t1,
-  v1
+  LAL_IFO_G1,
+  LAL_IFO_H1,
+  LAL_IFO_H2,
+  LAL_IFO_L1,
+  LAL_IFO_T1,
+  LAL_IFO_V1,
+  LAL_NUM_IFO,
+  LAL_UNKNOWN_IFO = -1
 }  
-InterferometerLabel;
+InterferometerNumber;
 /*</lalVerbatim> */
 #if 0
 <lalLaTeX>
-The \texttt{InterferometerLabel} contains an enum type for describing the 
+The \texttt{InterferometerNumber} contains an enum type for describing the 
 interferometer.
 </lalLaTeX>
 #endif
@@ -193,6 +194,28 @@ effective distance.
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
+typedef struct
+tagInspiralAccuracyList
+{
+  INT4                      match;
+  SnglInspiralParameterTest test;
+  SnglInspiralAccuracy      ifoAccuracy[LAL_NUM_IFO];
+}
+InspiralAccuracyList;
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{InspiralAccuracyList} structure contains parameter accuracies for
+each of the six global interferometers.  These are stored in the
+\texttt{SnglInspiralAccuracy} structure.  The accuracies stored should be the
+accuracy with which each instrument can determine the given parameter.  It also
+contains a \texttt{match} which is set to 1 to signify that coincidence
+criteria are satisfied and 0 otherwise.  Finally, the
+\texttt{SnglInspiralParameterTest} must be specified.
+\subsubsection*{Type \texttt{SnglInspiralClusterChoice}}
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
 typedef enum 
 { 
   none,
@@ -244,6 +267,10 @@ SnglBurstAccuracy;
  *
  */
 
+int 
+XLALIFONumber( 
+    const char *ifo 
+    );
 
 void
 LALPlaygroundInSearchSummary (
@@ -366,6 +393,14 @@ LALCompareSnglInspiral (
     );
 
 void
+LALCompareInspirals (
+    LALStatus                *status,
+    SnglInspiralTable        *aPtr,
+    SnglInspiralTable        *bPtr,
+    InspiralAccuracyList     *params
+    );
+
+void
 LALClusterSnglInspiralTable (
     LALStatus                  *status,
     SnglInspiralTable          *inspiralEvent,
@@ -401,7 +436,7 @@ LALIfoCountSingleInspiral(
     LALStatus                  *status,
     UINT4                      *numTrigs,
     SnglInspiralTable          *input,
-    InterferometerLabel         ifoLabel
+    InterferometerNumber        ifoNumber
     );
 
 void
@@ -447,7 +482,7 @@ LALCreateTwoIFOCoincList(
     LALStatus                  *status,
     CoincInspiralTable        **coincOutput,
     SnglInspiralTable          *snglInput,
-    SnglInspiralAccuracy       *errorParams
+    InspiralAccuracyList       *accuracyParams
     );
 
 void
@@ -462,7 +497,7 @@ LALSnglInspiralLookup(
     LALStatus            *status,
     SnglInspiralTable   **snglInspiralPtr,
     CoincInspiralTable   *coincInspiral,
-    InterferometerLabel   ifoLabel 
+    InterferometerNumber  ifoNumber 
     );
 
 
@@ -471,7 +506,7 @@ LALSnglInspiralCoincTest(
     LALStatus                  *status,
     CoincInspiralTable         *coincInspiral,
     SnglInspiralTable          *snglInspiral,
-    SnglInspiralAccuracy       *errorParams
+    InspiralAccuracyList       *accuracyParams
     );
 
 
