@@ -88,6 +88,7 @@ RCSID("$Id$");
 "\n"\
 "  --no-playground           do not select triggers from playground\n"\
 "  --playground-only         only use triggers that are in playground\n"\
+"  --all-data                use all triggers\n"\
 "  --write-uniq-triggers     make sure triggers from IFO A are unique\n" \
 "\n"\
 "[LIGOLW XML input files] list of the input trigger files.\n"\
@@ -111,6 +112,8 @@ int main( int argc, char *argv[] )
   extern int vrbflg;
   static INT4  writeUniqTrigs = 0;
   static INT4  usePlayground = 1;
+  static INT4  allData = 0;
+
   INT4  havePlgOpt = 0;
   INT4  startCoincidence = -1;
   INT4  endCoincidence = -1;
@@ -175,6 +178,7 @@ int main( int argc, char *argv[] )
     {"single-ifo",              no_argument,       &singleIfo,        1 },
     {"no-playground",           no_argument,       0,                'Q'},
     {"playground-only",         no_argument,       0,                'R'},
+    {"all-data",                no_argument,       0,                'D'},
     {"ifo-a",                   required_argument, 0,                'a'},
     {"ifo-b",                   required_argument, 0,                'b'},
     {"epsilon",                 required_argument, 0,                'e'},
@@ -251,7 +255,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-	"a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:c:n:QR", long_options, 
+	"a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:c:n:QRD", long_options, 
 	&option_index );
 
     /* detect the end of the options */
@@ -467,6 +471,11 @@ int main( int argc, char *argv[] )
 	havePlgOpt = 1;
 	break;
 
+      case 'D':
+        allData = 1;
+	usePlayground = 0;
+	break;
+	
       case 'h':
 	/* help message */
 	fprintf( stderr, USAGE , argv[0]);
@@ -671,11 +680,16 @@ int main( int argc, char *argv[] )
       LALSnprintf( processParamsTable.processParamsTable->param, 
 	  LIGOMETA_PARAM_MAX, "--playground-only" );
     }
-    else
+    else if ( !usePlayground && !allData )
     {
       LALSnprintf( processParamsTable.processParamsTable->param, 
 	  LIGOMETA_PARAM_MAX, "--no-playground" );
     }
+    else
+    {
+      LALSnprintf( processParamsTable.processParamsTable->param, 
+	  LIGOMETA_PARAM_MAX, "--all-data" );
+    }	    
   }
 
 
@@ -1257,7 +1271,8 @@ int main( int argc, char *argv[] )
 
     if( singleIfo )
     {
-      if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) )
+      if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) 
+	|| (allData) )
       {
 	/* record the triggers */
 	for ( j = 0; j < numIFO; ++j )
@@ -1303,7 +1318,7 @@ int main( int argc, char *argv[] )
       /* we are not using playground and the trigger is not in the        */
       /* playground or we have a non-zero time-slide...                   */
       if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) ||
-	  (slideDataNS) )
+	  (allData) || (slideDataNS) )
       {
 
 	/* determine whether we should expect to see a trigger in ifo b  */
