@@ -72,7 +72,7 @@ LALFindChirpBCVTemplate (
   UINT4        numPoints  = 0;
   REAL4        deltaF     = 0.0;
   REAL4        m          = 0.0;  
-  REAL4        chirpMass  = 0.0;
+  /* REAL4        chirpMass  = 0.0; */
   REAL4        eta        = 0.0; 
   REAL4        mu         = 0.0;  /* now only used in normalisation */
   COMPLEX8    *expPsi     = NULL;
@@ -144,25 +144,23 @@ LALFindChirpBCVTemplate (
   /* zero output */
   memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );
 
-  /* psi coefficients */
-  psi00 = tmplt->psi0;        /* BCV only uses psi0, psi15:            */
-  psi05 = 0.0; /*tmplt->psi1;*/ /* -> psi1,2,4 don't exist in tmplt      */
-  psi10 = 0.0; /*tmplt->psi2;*/ /* -> use if statements to define these? */
-  psi15 = tmplt->psi3;        /* & which name convention to use?       */
+  /* psi coefficients; BCV only uses psi0, psi15: */
+  psi00 = tmplt->psi0;  
+  psi05 = 0.0; /*tmplt->psi1;*/
+  psi10 = 0.0; /*tmplt->psi2;*/ 
+  psi15 = tmplt->psi3;      
   psi20 = 0.0; /*tmplt->psi4;*/
-  /* XXX work needed here... */
 
   /* parameters */
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); 
-  /* XXX not defined in tmplt */
+  /* m and mu MUST BE in units of Msun for the calculation of tmpltNorm */
+  /* XXX SHOULD m and eta be divided by LAL_MTSUN_SI? XXX */
   m      = - psi15 / ( 16 * LAL_PI * LAL_PI * psi00 );
   eta    = 3 / ( 128 * psi00 * pow( LAL_PI * m, 5.0/3.0 ) );       
   mu     = eta * m;
-  /* XXX work needed here... check definitions are correct */
 
-  /* defining chirp mass (to the power of 5/3 => rename) */
-  chirpMass = pow( 1.0 / LAL_PI, 5.0/3.0) * ( 3 / (128 * psi00));
-  /* XXX work needed here... required? */
+  /* defining chirp mass; not necessary */
+  /* chirpMass = pow( 1.0 / LAL_PI, 5.0/3.0) * ( 3 / (128 * psi00)); */
 
   /* template dependent normalisation */
   distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1.0e6 * LAL_PC_SI);
@@ -176,11 +174,7 @@ LALFindChirpBCVTemplate (
   
   fcTmplt->tmpltNorm *= distNorm * distNorm;
 
-  
-  
-  /* x1 */   /* does this explanation suffice? */
   x1 = pow( deltaF, -1.0/3.0 );
-  /* XXX work needed here ... check x1 */
 
   /* frequency cutoffs */
   fHi  = tmplt->fFinal;
@@ -194,7 +188,7 @@ LALFindChirpBCVTemplate (
       psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
     psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
   }
-  /* XXX work needed here... check psi */
+  /* XXX check psi XXX */
 
 
   /*
@@ -210,8 +204,7 @@ LALFindChirpBCVTemplate (
       REAL4 psi  = 
         psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
       REAL4 psi1 = psi + psi0;
-      REAL4 psi2;  /* defining psi2 every time through the loop necessary? */
-      /* XXX work needed here... check psi */  
+      REAL4 psi2;  
 
       /* range reduction of psi1 */
       while ( psi1 < -LAL_PI )
@@ -225,10 +218,7 @@ LALFindChirpBCVTemplate (
 	  psi0 -= 2 * LAL_PI;
 	}
 
-      /* compute approximate sine and cosine of psi1 */
-      /* XXX The sign of this is different than the SP filtering
-       * because the data is conjugated instead of the template in the
-       * BCV code */
+      /* compute sine and cosine of psi1 */
       expPsi[k].im =   sin(psi1);
       expPsi[k].re =   cos(psi1);
       /* XXX work needed here... expensive computation method */
