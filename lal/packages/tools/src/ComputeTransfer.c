@@ -297,7 +297,6 @@ LALUpdateCalibration(
   REAL4 dt;
   UINT4 n;
   UINT4 i;
-  UINT4	last;
   UINT4 length;
   
   INITSTATUS( status, "LALUpdateCalibration", COMPUTETRANSFERC );
@@ -391,24 +390,23 @@ LALUpdateCalibration(
   }
   /* XXX first point AT or AFTER requested time XXX */
   i = ceil( dt / params->sensingFactor->deltaT );
-  
-  /* determine how many values of alpha we need to average */
-  length = (UINT4) ceil((epoch + duration - first_cal) / 
-      (params->sensingFactor->deltaT));
-  length = (length > 0) ? length : 1;
-  last = i + length;
-   
-  if ( last > params->sensingFactor->data->length )
-  {
-    ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
-  }
-  
+ 
+  length = 0;  
+
   /* compute the sum of the calibration factors */
   a.re = a.im = ab.re = ab.im = 0;
-  for ( /* i is already initialized */; i < last; ++i )
+  do
   {
-    COMPLEX8 this_a = params->sensingFactor->data->data[i];
-    COMPLEX8 this_ab = params->openLoopFactor->data->data[i];
+    COMPLEX8 this_a;
+    COMPLEX8 this_ab;
+    
+    if ( i > params->sensingFactor->data->length )
+    {
+      ABORT( status, CALIBRATIONH_ETIME, CALIBRATIONH_MSGETIME );
+    }
+
+    this_a = params->sensingFactor->data->data[i];
+    this_ab = params->openLoopFactor->data->data[i];
 
     if ( fabs( this_a.re ) < tiny && fabs( this_a.im ) < tiny ||
         fabs( this_ab.re ) < tiny && fabs( this_ab.im ) < tiny )
@@ -420,7 +418,11 @@ LALUpdateCalibration(
     a.im += this_a.im;
     ab.re += this_ab.re;
     ab.im += this_ab.im;
+    length++;
+    i++;
   }
+  while ( (first_cal + i * params->sensingFactor->deltaT) < 
+      (epoch + duration) );
   
   /* compute the mean of the calibration factors from the sum */
   a.re /= length;
