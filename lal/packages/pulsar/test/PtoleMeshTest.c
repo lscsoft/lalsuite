@@ -19,7 +19,7 @@ PtoleMeshTest
 \subsubsection*{Description}
 
 The \texttt{-b} option sets the beginning time of integration to the option
-argument. (Default is $7\times10^8$ seconds.)
+argument. (Default is $0$ seconds)
 
 The \texttt{-c} option determins the center of the patch. (Default is the
 center of the globular cluster 47 Tuc.) This option is hardcoded to use
@@ -43,7 +43,7 @@ option argument. (Default is $10^6$.)
 The texttt{-p} option causes the coordinates of the nodes to be written to 
 a file \texttt{mesh.dat}, for the benifit of users who don't have 
 \texttt{xmgrace} installed.  The format is one node per line, (RA, DEC), 
-with the angles in radians.
+with the angles in degrees.
 
 The \texttt{-r} option sets the radius (in arcminutes) of the circular
 sky patch. (The default value is set for the globular cluster 47 Tuc.)
@@ -109,10 +109,12 @@ NRCSID( PTOLEMESHTESTC, "$Id$" );
 
 /* IAN: Clumsy way of specifying rectangular search region if */
 /* the r=0 option is invoked.                                 */
+
 #define RA_min       0.0
-#define RA_max       0.999999*LAL_TWOPI
-#define dec_min     -LAL_PI_2
+#define RA_max       LAL_PI_2/2.0
+#define dec_min      LAL_PI_2/2.0
 #define dec_max      LAL_PI_2
+
 
 
 
@@ -150,7 +152,7 @@ int main( int argc, char **argv )
   errors = 0; /* BEN: this is unused right now */
   grace = 0;
   nonGrace = 0;
-  begin = 7e8;
+  begin = 0.0;
   duration = 1e5;
   fMax = 1e3;
   site = lalCachedDetectors[LALDetectorIndexGEO600DIFF].frDetector;
@@ -274,10 +276,9 @@ int main( int argc, char **argv )
       return PTOLEMESHTESTC_EFIO;
 
     for( node = firstNode; node; node = node->next )
-      fprintf( fp, "%e %e\n", node->y, node->x );
+      fprintf( fp, "%e %e\n", node->y, node->x);
     fclose( fp );
   }
-
 
   /* Clean up and leave. */
   LALDestroyTwoDMesh( &stat, &firstNode, &mesh.nOut );
