@@ -88,7 +88,7 @@ static INT4 CheckStatus( LALStatus *status);
     </lalLaTeX> <lalVerbatim> */
 extern char *optarg;
 extern int optind, opterr, optopt;
-int index;
+int indx;
 int c; 
 /* </lalVerbatim> */
 
@@ -205,8 +205,8 @@ int main( int argc, char **argv ) {
         exit(1);
     }
   }
-  for (index = optind; index < argc; index++) {
-    printf ("Non-option argument %s\n", argv[index]);
+  for (indx = optind; indx < argc; indx++) {
+    printf ("Non-option argument %s\n", argv[indx]);
   }
   
   printf("Done reading commandline options.\n\n");
@@ -326,9 +326,9 @@ int main( int argc, char **argv ) {
 							 numOfRowsPerIndex
 							 number of rows each time. */
   /* loop through the chunks */
-  for (index = 1; index <= (int)numOfIndices; index++) {
+  for (indx = 1; indx <= (int)numOfIndices; indx++) {
         
-    if (index == (int)numOfIndices) {
+    if (indx == (int)numOfIndices) {
       fctGenRowIndexParams.goToEndOfRows = 1; /* If it's the last one then
 						 ignore the numOfRows and
 						 just go to the end of the
@@ -338,14 +338,14 @@ int main( int argc, char **argv ) {
     }
     
     /* Skip the rows that we've already calculated. */
-    fctGenRowIndexParams.skipRows = numOfRowsPerIndex * (index - 1);
+    fctGenRowIndexParams.skipRows = numOfRowsPerIndex * (indx - 1);
    
     /* Run LALfctCalc on the chunk */
     LALfctCalc(&status, &fctCalcOutput, inputDataVector, &fctCalcParams);
     TestStatus( &status, CODES( 0 ), 1 );
 
     /* Store the output somewhere */
-    if (index == 1) {
+    if (indx == 1) {
       OUTPUT = fopen (outputFileName, "w");
     } else {
       OUTPUT = fopen (outputFileName, "a");
@@ -356,7 +356,7 @@ int main( int argc, char **argv ) {
     fclose(OUTPUT);
     
     /* Store the index to the output somewhere. */
-    if (index == 1) {
+    if (indx == 1) {
       OUTPUT = fopen (outputIndexFileName, "w");
     } else {
       OUTPUT = fopen (outputIndexFileName, "a");
@@ -367,7 +367,7 @@ int main( int argc, char **argv ) {
     fclose(OUTPUT);
 
     
-    printf("  Calculated chunk %d of %d.\n", index, numOfIndices);
+    printf("  Calculated chunk %d of %d.\n", indx, numOfIndices);
  
     /* Destroy the output Data Array */
     LALFCTCOMPDestroyArray(&status, &(fctCalcOutput.outputData));
