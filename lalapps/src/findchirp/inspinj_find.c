@@ -710,9 +710,18 @@ int main(int argc, char **argv)
     while ( currentInspiralEvent != NULL && currentSimEvent != NULL )
     {
 
-      /* compute the time in nanosec for the injection */
-      LALGPStoINT8(&stat, &simTime, 
-          &(currentSimEvent->geocent_end_time));
+      /* compute the end time in nanosec for the injection at the 
+       * relevant detector */
+      if( ! strcmp( "L1", currentInspiralEvent->ifo) )
+	{
+	   LALGPStoINT8(&stat, &simTime, &(currentSimEvent->l_end_time));
+
+	}
+	else if( ! strcmp( "H1", currentInspiralEvent->ifo) || 
+	    ! strcmp( "H2", currentInspiralEvent->ifo) )
+	{
+	  LALGPStoINT8(&stat, &simTime, &(currentSimEvent->h_end_time));
+	}
 
       /* compute the time in nanosec for the inspiral */
       LALGPStoINT8(&stat, &inspiralTime, 
