@@ -2,7 +2,7 @@
  * 
  * File Name: chirplen.c
  *
- * Author: Brown, D. A.
+ * Author: Brown, D. A. and Brady, P. R.
  * 
  * Revision: $Id$
  * 
@@ -12,42 +12,280 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
+#include <getopt.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <lal/LALError.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALStatusMacros.h>
 #include <lal/LALConstants.h>
+#include <lal/SeqFactories.h>
+#include <lal/Units.h>
+#include <lal/Date.h>
+#include <lal/Inject.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/GeneratePPNInspiral.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOMetadataUtils.h>
+#include <lalapps.h>
+
+RCSID("$Id$");
+
+#define CVS_ID_STRING "$Id$"
+#define CVS_NAME_STRING "$Name$"
+#define CVS_REVISION "$Revision$"
+#define CVS_SOURCE "$Source$"
+#define CVS_DATE "$Date$"
+#define PROGRAM_NAME "chirplen"
+
+/* Usage format string. */
+#define USAGE \
+"Usage: %s [options] [LIGOLW XML input files]\n\n"\
+"  --help                    display this message\n"\
+"  --version                 print version information and exit\n"\
+"  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
+"  --m1 m1                   mass of 1st binary element in Msun\n"\
+"  --m2 m2                   mass of 2nd binary element in Msun\n"\
+"  --flow fstart             low frequency cutoff\n"\
+"\n"
+
+#define FSTART 100.0
+#define DELTAT (1.0/4096.0)
+
+int verbose = 0;
+int machine = 0;
 
 int main ( int argc, char *argv[] )
 {
-  float m1,m2,M,eta,fmin,c0,c2,c3,c4,x,x2,x3,x4,x8,chirpTime,fmax;
+  static LALStatus      stat;
+  INT4 i;
+  REAL4 m1 = 0.0;
+  REAL4 m2 = 0.0;
+  float mtot,eta,c0,c2,c3,c4,x,x2,x3,x4,x8,chirpTime,fmax;
+  REAL4 inc=0.0;
+  REAL4 longit=0.0;
+  REAL4 latit=0.0;
 
-  if ( argc != 4 )
+  /* for PN signals */
+  REAL4                     fstart=FSTART;
+  REAL4                     fstop=2000.0;
+  PPNParamStruc             ppnParams;     /* wave generation parameters */
+  REAL4Vector              *phiPPN=NULL;
+  CoherentGW                waveform;      /* amplitude and phase structure */
+  INT4                      phiOrder=0;
+
+  /* getopt arguments */
+  struct option long_options[] =
   {
-    fprintf( stderr, "usage: %s m1 m2 flow\n", argv[0] );
-    exit( 1 );
+    {"verbose",                 no_argument,       &verbose,          1 },
+    {"machine",                 no_argument,       &machine,          1 },
+    {"m1",			required_argument, 0,		     'm'},
+    {"m2",			required_argument, 0,		     'n'},
+    {"flow",			required_argument, 0,		     'f'},
+    {"help",                    no_argument,       0,                'h'}, 
+    {"debug-level",             required_argument, 0,                'z'},
+    {"version",                 no_argument,       0,                'V'},
+    {0, 0, 0, 0}
+  };
+  int c;
+
+
+  /*
+   * 
+   * initialize things
+   *
+   */
+
+  lal_errhandler = LAL_ERR_EXIT;
+  set_debug_level( "1" );
+  setvbuf( stdout, NULL, _IONBF, 0 );
+
+  /* parse the arguments */
+  while ( 1 )
+  {
+    /* getopt_long stores long option here */
+    int option_index = 0;
+
+    c = getopt_long_only( argc, argv, 
+        "m:n:f:hz:V", long_options, 
+	&option_index );
+
+    /* detect the end of the options */
+    if ( c == -1 )
+    {
+      break;
+    }
+    
+    switch ( c )
+    {
+      case 0:
+        /* if this option set a flag, do nothing else now */
+        if ( long_options[option_index].flag != 0 )
+        {
+          break;
+        }
+        else
+        {
+          fprintf( stderr, "Error parsing option %s with argument %s\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
+
+      case 'm':
+        /* mass1 */
+        m1=atof(optarg);
+        break;
+
+      case 'n':
+        /* mass2 */
+        m2=atof(optarg);
+        break;
+
+      case 'f':
+        /* flow */
+        fstart=atof(optarg);
+        break;
+
+      case 'h':
+        /* help message */
+        fprintf( stderr, USAGE , argv[0]);
+        exit( 1 );
+        break;
+
+      case 'z':
+        set_debug_level( optarg );
+        break;
+
+      case 'V':
+        /* print version information and exit */
+        fprintf( stdout, "Inspiral Coincidence and Triggered Bank Generator\n" 
+            "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
+            "CVS Version: " CVS_ID_STRING "\n"
+            "CVS Tag: " CVS_NAME_STRING "\n" );
+        exit( 0 );
+        break;
+
+      case '?':
+        fprintf( stderr, USAGE , argv[0]);
+        exit( 1 );
+        break;
+
+      default:
+        fprintf( stderr, "Error: Unknown error while parsing options\n" );
+        fprintf( stderr, USAGE, argv[0] );
+        exit( 1 );
+    }
+  }
+  
+  /* maul input and print out some information */
+  if ( m1 <= 0.0 || m2 <= 0.0 ){
+    fprintf(stderr, "Mass parameters m1 and m2 must be positive\n");
+    exit(1);
   }
 
-  m1 = atof( argv[1] );
-  m2 = atof( argv[2] );
-  fmin = atof( argv[3] );
-  fprintf( stdout, "m1 = %e\tm2 = %e\tfLow = %e\n", m1, m2, fmin );
+  mtot = m1 + m2;
+  eta = ( m1 * m2 ) / ( mtot * mtot );
+  fstop = fmax = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * mtot * LAL_MTSUN_SI);
 
-  M = m1 + m2;
-  eta = ( m1 * m2 ) / ( M * M );
-  fprintf( stdout, "eta = %e\tm = %e\n", eta, M );
+  if (verbose){
+    fprintf( stdout, "m1 = %e\tm2 = %e\tfLow = %e\n", m1, m2, fstart );
+    fprintf( stdout, "eta = %e\tm = %e\n", eta, mtot );
+    fprintf( stdout, "isco freq = %e Hz\n", fmax );
+  }
 
-  fmax = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * M * LAL_MTSUN_SI);
-  fprintf( stdout, "isco freq = %e Hz", fmax );
-
-  c0 = 5*M*LAL_MTSUN_SI/(256*eta);
+  
+  /***************************************************************************
+   * this is independent code to compute the duration of the chirp 
+   **************************************************************************/
+  c0 = 5*mtot*LAL_MTSUN_SI/(256*eta);
   c2 = 743.0/252.0 + eta*11.0/3.0;
   c3 = -32*LAL_PI/3;
   c4 = 3058673.0/508032.0 + eta*(5429.0/504.0 + eta*617.0/72.0);
-  x  = pow(LAL_PI*M*LAL_MTSUN_SI*fmin, 1.0/3.0);
+  x  = pow(LAL_PI*mtot*LAL_MTSUN_SI*fstart, 1.0/3.0);
   x2 = x*x;
   x3 = x*x2;
   x4 = x2*x2;
   x8 = x4*x4;
   chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
 
-  fprintf( stdout, "length = %e seconds\n", chirpTime );
+  if (verbose){
+    fprintf( stdout, "length = %e seconds\n", chirpTime );
+  }
+
+  /***************************************************************************
+   * Generate a PN waveform using codes in LAL to determine further
+   * information about the waveforms themselves
+   **************************************************************************/
+  ppnParams.mTot = mtot;
+  ppnParams.eta = eta;
+  ppnParams.d = 1.0e6 * LAL_PC_SI ;
+  ppnParams.phi = 0.0;
+  ppnParams.inc = inc;
+
+  /* Set up other parameter structures. */
+  ppnParams.epoch.gpsSeconds = ppnParams.epoch.gpsNanoSeconds = 0;
+  ppnParams.position.latitude = longit;
+  ppnParams.position.longitude = latit;
+  ppnParams.position.system = COORDINATESYSTEM_EQUATORIAL;
+  ppnParams.psi = 0.0;
+  ppnParams.fStartIn = fstart;
+  ppnParams.fStopIn = -fstop;
+  ppnParams.lengthIn = 0;
+  ppnParams.ppn = NULL;
+  ppnParams.deltaT = DELTAT;
+  memset( &waveform, 0, sizeof(CoherentGW) );
+
+  /*******************************************************************
+   * Generate the waveform
+   *******************************************************************/
+  if (phiOrder){
+    ppnParams.ppn = phiPPN;
+  }
+  LAL_CALL( LALGeneratePPNInspiral( &stat, &waveform, &ppnParams ), &stat );
+  LALPrintError( "%d: %s\n", ppnParams.termCode, ppnParams.termDescription );
+  if ( ppnParams.dfdt > 2.0 ) {
+    LALPrintError( "Waveform sampling interval is too large:\n"
+        "\tmaximum df*dt = %f", ppnParams.dfdt );
+  }
+
+  /*******************************************************************
+   * Print out the information that's wanted for the inspiral group
+   *******************************************************************/
+  if (machine) {
+    fprintf( stdout, "%e %e %e %e %e %e\n", m1, m2,
+        ppnParams.fStart, ppnParams.fStop, ppnParams.tc, 
+        (float)(0.5/LAL_PI) * (waveform.phi->data->data[waveform.phi->data->length-1] 
+                               - waveform.phi->data->data[0]) );
+  } else {
+
+    fprintf( stdout, "fStart according to Tev = %e Hz\n", ppnParams.fStart );
+    fprintf( stdout, "fStop  according to Tev = %e Hz\n", ppnParams.fStop );
+    fprintf( stdout, "length according to Tev = %e seconds\n", ppnParams.tc );
+    fprintf( stdout, "Ncycle according to Tev = %f \n", 
+        (float)(0.5/LAL_PI) * (waveform.phi->data->data[waveform.phi->data->length-1] 
+                               - waveform.phi->data->data[0]));
+  }
+
+  /**********************************************************************
+   *
+   * Print out the waveform information
+   *
+   **********************************************************************
+  for(i = 0; i<waveform.phi->data->length ; i++)
+  {
+    float tmper =  0.5/LAL_PI;
+    fprintf(stdout,"%e %e\n", i*ppnParams.deltaT, tmper * waveform.phi->data->data[i] );
+  }
+    */
+
+  
+    
+
 
   return 0;
 }
