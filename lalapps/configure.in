@@ -71,6 +71,7 @@ AC_CHECK_LIB(lalframe, LALFrOpen, , lalframe=false)
 AC_CHECK_LIB(lalmetaio, LALSnglInspiralTableFromLIGOLw, , lalmetaio=false)
 AC_CHECK_LIB(gsl, gsl_version)
 AC_CHECK_LIB(mysqlclient, mysql_init)
+AC_CHECK_LIB(datacondCaller, DatacondCaller)
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -79,6 +80,7 @@ AC_CHECK_HEADERS([gsl/gsl_fft_real.h])
 AC_CHECK_HEADERS(mysql.h)
 AC_CHECK_HEADERS(mpi.h)
 AC_CHECK_HEADERS([lal/LALStdlib.h])
+AC_CHECK_HEADERS([datacondAPI/DatacondCaller.h])
 if test "${frame}" = "true"; then
   AC_CHECK_HEADERS(FrameL.h, , LALAPPS_DISABLE_FRAME)
 fi
