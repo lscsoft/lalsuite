@@ -199,7 +199,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* inverse noise data structures */
   REAL4FrequencySeries *calInvPSDOne;
   REAL4FrequencySeries *calInvPSDTwo;
-  LALUnit calPSDUnit = {36,{0,0,-1,0,0,-2,0},{0,0,0,0,0,0,0}};
 
   /* window for segment data streams */
   REAL4TimeSeries *dataWindow;
@@ -304,10 +303,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   LAL_CALL(LALCreateREAL4TimeSeries(&status, &streamOne, "streamOne", \
-        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalDimensionlessUnit, \
         origStreamLength), &status);
   LAL_CALL(LALCreateREAL4TimeSeries(&status, &streamTwo, "streamTwo", \
-        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalDimensionlessUnit, \
         origStreamLength), &status);
 
   /* set stream input parameters */
@@ -334,22 +333,22 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentOneA, "segmentOneA", \
-        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalDimensionlessUnit, \
         segmentLength), &status);
   LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentOneB, "segmentOneB", \
-        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalDimensionlessUnit, \
         segmentLength), &status);
   LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentOneC, "segmentOneC", \
-        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalDimensionlessUnit, \
         segmentLength), &status);
   LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentTwoA, "segmentTwoA", \
-        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalDimensionlessUnit, \
         segmentLength), &status);
   LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentTwoB, "segmentTwoB", \
-        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalDimensionlessUnit, \
         segmentLength), &status);
   LAL_CALL(LALCreateREAL4TimeSeries(&status, &segmentTwoC, "segmentTwoC", \
-        gpsStartTime, 0, 1./(REAL8)resampleRate, lalADCCountUnit, \
+        gpsStartTime, 0, 1./(REAL8)resampleRate, lalDimensionlessUnit, \
         segmentLength), &status);
 
   /* set PSD window length */
@@ -444,10 +443,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
 	LAL_CALL(LALCreateREAL4FrequencySeries(&status, &calInvPSDOne, \
-				"calInvPSDOne", gpsStartTime, fMin, deltaF, calPSDUnit, \
+				"calInvPSDOne", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
 				filterLength), &status);
 	LAL_CALL(LALCreateREAL4FrequencySeries(&status, &calInvPSDTwo, \
-				"calInvPSDTwo", gpsStartTime, fMin, deltaF, calPSDUnit, \
+				"calInvPSDTwo", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
 				filterLength), &status);
 
   if (vrbflg)
@@ -2053,7 +2052,10 @@ static void psdEstimator(LALStatus *status,
   REAL4FrequencySeries *psdC;
 
   /* units */
-  LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};
+  LALUnit unitOne;
+  LALUnit unitTwo;
+  LALUnitPair unitPair;
+  RAT4 raise;
 
   /* initialise status pointer */
   INITSTATUS(status, "psdEstimator", STOCHASTICDEVC);
@@ -2061,10 +2063,12 @@ static void psdEstimator(LALStatus *status,
 
   /* allocate memory for psd data structures */
   LALCreateREAL4FrequencySeries(status->statusPtr, &psdA, "psdA", \
-      params.gpsStartTime, 0, deltaF, psdUnits, params.psdTempLength);
+      params.gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
+      params.psdTempLength);
   CHECKSTATUSPTR(status);
   LALCreateREAL4FrequencySeries(status->statusPtr, &psdC, "psdC", \
-      params.gpsStartTime, 0, deltaF, psdUnits, params.psdTempLength);
+      params.gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
+      params.psdTempLength);
   CHECKSTATUSPTR(status);
 
   /* compute uncalibrated PSDs */
@@ -2094,6 +2098,21 @@ static void psdEstimator(LALStatus *status,
     /* average calibrated psds */
     output->data->data[i] = (psdA->data->data[i] + psdC->data->data[i]) / 2.0;
   }
+
+  /* calculate correct units */
+  raise.numerator = 2;
+  raise.denominatorMinusOne = 0;
+  LALUnitRaise(status->statusPtr, &unitOne, &input.responseA->sampleUnits, \
+      &raise);
+  CHECKSTATUSPTR(status);
+  raise.numerator = -1;
+  raise.denominatorMinusOne = 0;
+  LALUnitRaise(status->statusPtr, &unitTwo, &psdA->sampleUnits, &raise);
+  CHECKSTATUSPTR(status);
+  unitPair.unitOne = &unitOne;
+  unitPair.unitTwo = &unitTwo;
+  LALUnitMultiply(status->statusPtr, &output->sampleUnits, &unitPair);
+  CHECKSTATUSPTR(status);
 
   /* clean up */
   LALDestroyREAL4FrequencySeries(status->statusPtr, psdA);
