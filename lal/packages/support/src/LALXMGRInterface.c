@@ -324,6 +324,7 @@ void LALXMGRPlotMesh( LALStatus          *status,
   INT4          i;
   INT4          set = 0;
   TwoDMeshNode *node;
+  REAL4 xlast, ylast;
 
   INITSTATUS( status, "LALXMGRPlotMesh", LALXMGRINTERFACEC );
   ATTATCHSTATUSPTR( status );
@@ -333,7 +334,7 @@ void LALXMGRPlotMesh( LALStatus          *status,
           LALXMGRINTERFACEH_MSGENULL );
 
   /* Plot mesh points. */
-  fprintf( fp, "@s%d symbol 8\n@s%d symbol size 0.33\n", set, set );
+  fprintf( fp, "@s%d symbol 9\n@s%d symbol size 0.33\n", set, set );
   fprintf( fp, "@s%d line type 0\n", set );
   fprintf( fp, "@target s%d\n@type xy\n", set );
   for( node = head; node; node = node->next )
@@ -351,6 +352,10 @@ void LALXMGRPlotMesh( LALStatus          *status,
     REAL4 y[2];
     mesh->getRange( status->statusPtr, y, x, mesh->rangeParams );
     fprintf( fp, "%e %e\n", x, y[1] );
+    if (i == 0 ) { 
+      xlast = x; 
+      ylast = y[1];
+    }
   }
   for( i = 1000; i >= 0; i-- )
   {
@@ -359,6 +364,7 @@ void LALXMGRPlotMesh( LALStatus          *status,
     mesh->getRange( status->statusPtr, y, x, mesh->rangeParams );
     fprintf( fp, "%e %e\n", x, y[0] );
   }
+  fprintf (fp, "%e %e\n", xlast, ylast );
   set++;
 #endif
 
