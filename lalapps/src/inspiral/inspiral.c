@@ -276,10 +276,10 @@ int main( int argc, char *argv[] )
   REAL8 tsLength;
   INT8  durationNS	= 0;
   CalibrationUpdateParams calfacts, inj_calfacts;
-  REAL4 alpha;
-  REAL4 alphabeta;
-  REAL4 inj_alpha;
-  REAL4 inj_alphabeta;
+  REAL4 alpha = 0;
+  REAL4 alphabeta = 0;
+  REAL4 inj_alpha = 0;
+  REAL4 inj_alphabeta = 0;
   CHAR tmpChName[LALNameLength];
   REAL8 inputDeltaT;
   REAL8 dynRange = 1.0;
