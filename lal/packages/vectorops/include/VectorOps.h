@@ -2,7 +2,7 @@
  *
  * File Name: VectorOps.h
  *
- * Author: Creighton, J. D. E.
+ * Authors: Creighton, J. D. E., Creighton, T. D.
  *
  * Revision: $Id$
  *
@@ -43,8 +43,8 @@ NRCSID (VECTOROPSH, "$Id$");
 
 void
 CCVectorMultiply (
-    Status *,
-    COMPLEX8Vector *, 
+    Status               *,
+    COMPLEX8Vector       *, 
     const COMPLEX8Vector *,
     const COMPLEX8Vector *
     );
@@ -66,6 +66,44 @@ CCVectorDivide (
     );
 
 void
+CVectorAbs (
+    Status               *,
+    REAL4Vector          *,
+    const COMPLEX8Vector *
+    );
+
+void
+ZZVectorMultiply (
+    Status                *,
+    COMPLEX16Vector       *, 
+    const COMPLEX16Vector *,
+    const COMPLEX16Vector *
+    );
+
+void
+ZZVectorMultiplyConjugate (
+    Status                *,
+    COMPLEX16Vector       *, 
+    const COMPLEX16Vector *,
+    const COMPLEX16Vector *
+    );
+
+void
+ZZVectorDivide (
+    Status                *,
+    COMPLEX16Vector       *, 
+    const COMPLEX16Vector *,
+    const COMPLEX16Vector *
+    );
+
+void
+ZVectorAbs (
+    Status                *,
+    REAL8Vector           *,
+    const COMPLEX16Vector *
+    );
+
+void
 SCVectorMultiply(
     Status               *,
     COMPLEX8Vector       *,
@@ -79,6 +117,22 @@ SSVectorMultiply(
     REAL4Vector          *,
     const REAL4Vector    *,
     const REAL4Vector    *
+    );
+
+void
+DZVectorMultiply(
+    Status                *,
+    COMPLEX16Vector       *,
+    const REAL8Vector     *,
+    const COMPLEX16Vector *
+    );
+
+void
+DDVectorMultiply(
+    Status               *,
+    REAL8Vector          *,
+    const REAL8Vector    *,
+    const REAL8Vector    *
     );
 
 #endif
