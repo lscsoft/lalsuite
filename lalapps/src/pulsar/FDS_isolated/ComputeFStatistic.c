@@ -2087,59 +2087,59 @@ ReadCmdlineInput (int argc, char *argv[], UserInput *input)
   const char *optstring = "a:b:c:D:d:E:e:F:f:g:hI:i:l:M:m:o:pr:Ss:t:v:X:xy:z:";
   struct option long_options[] =
     {
-      {"Freq", 			required_argument, 0, 	'f'},
-      {"FreqBand", 		required_argument, 0, 	'b'},
-      {"dFreq", 		required_argument,0, 	'r'},
-      {"Delta", 		required_argument, 0, 	'd'},
-      {"dDelta", 		required_argument, 0, 	'g'},
-      {"DeltaBand", 		required_argument, 0, 	'c'},
-      {"Alpha", 		required_argument, 0, 	'a'},
-      {"dAlpha", 		required_argument, 0, 	'l'},
-      {"AlphaBand", 		required_argument, 0, 	'z'},
-      {"Dterms", 		required_argument, 0, 	't'},
-      {"EphemYear", 		required_argument, 0, 	'y'},
-      {"EphemDir", 		required_argument, 0, 	'E'}, 
-      {"DataDir", 		required_argument, 0, 	'D'},
-      {"IFO", 			required_argument, 0, 	'I'},
-      {"SignalOnly", 		no_argument, 0, 	'S'},
-      {"Spin", 			required_argument, 0, 	's'},
-      {"dSpin", 		required_argument, 0, 	'e'},
-      {"SpinBand", 		required_argument, 0, 	'm'},
-      {"EstimSigParam", 	no_argument, 0, 	'p'},
-      {"BaseName",		required_argument,0, 	'i'},
-      {"Fthreshold", 		required_argument, 0, 	'F'},
-      {"useMetric", 		required_argument, 0, 	'M'},
-      {"outputString", 		required_argument, 0, 	'o'},
-      {"metricMismatch",	required_argument, 0, 	'X'},
+      {"freq", 			required_argument, 0, 	'f'},
+      {"freq-band", 		required_argument, 0, 	'b'},
+      {"dfreq", 		required_argument,0, 	'r'},
+      {"delta", 		required_argument, 0, 	'd'},
+      {"ddelta", 		required_argument, 0, 	'g'},
+      {"delta-band", 		required_argument, 0, 	'c'},
+      {"alpha", 		required_argument, 0, 	'a'},
+      {"dalpha", 		required_argument, 0, 	'l'},
+      {"alpha-band", 		required_argument, 0, 	'z'},
+      {"dterms", 		required_argument, 0, 	't'},
+      {"ephem-year", 		required_argument, 0, 	'y'},
+      {"ephem-dir", 		required_argument, 0, 	'E'}, 
+      {"data-dir", 		required_argument, 0, 	'D'},
+      {"ifo", 			required_argument, 0, 	'I'},
+      {"signal-only", 		no_argument, 0, 	'S'},
+      {"spin", 			required_argument, 0, 	's'},
+      {"dspin", 		required_argument, 0, 	'e'},
+      {"spin-band", 		required_argument, 0, 	'm'},
+      {"estimate-signal-params", 	no_argument, 0, 	'p'},
+      {"basename",		required_argument,0, 	'i'},
+      {"fthreshold", 		required_argument, 0, 	'F'},
+      {"use-metric", 		required_argument, 0, 	'M'},
+      {"output-string", 		required_argument, 0, 	'o'},
+      {"metric-mismatch",	required_argument, 0, 	'X'},
       {"help", 			no_argument, 0, 	'h'},
       {0, 0, 0, 0}
     };
 
   const char *helpmsg = "Arguments are (short alternative arguments in brackets):\n"
-    "\t --Freq(-f)\t\tFLOAT\tStarting search frequency in Hz (not set by default)\n"
-    "\t --FreqBand(-b)\t\tFLOAT\tDemodulation frequency band in Hz (set=0.0 by default)\n"
-    "\t --dFreq(-r)\t\tFLOAT\tDemodulation frequency resolution in Hz (set to 1/(8*Tsft*Nsft) by default)\n"
-    "\t --Dterms(-t)\t\tINTEGER\tNumber of terms to keep in Dirichlet kernel sum (default 16)\n"
-    "\t --Alpha(-a)\t\tFLOAT\tSky position alpha (equatorial coordinates) in radians (default 0.0)\n"
-    "\t --AlphaBand(-z)\tFLOAT\tBand in alpha (equatorial coordinates) in radians (default 0.0)\n"
-    "\t --dAlpha(-l)\t\tFLOAT\tResolution in alpha (equatorial coordinates) in radians (default 0.001)\n"
-    "\t --Delta(-d)\t\tFLOAT\tSky position delta (equatorial coordinates) in radians (default 0.0)\n"
-    "\t --DeltaBand(-c)\tFLOAT\tBand in delta (equatorial coordinates) in radians (default 0.0)\n"
-    "\t --dDelta(-g)\t\tFLOAT\tResolution in delta (equatorial coordinates) in radians (default 0.001)\n"
-    "\t --DataDir(-D)\t\tSTRING\tDirectory where SFT's are located (not set by default) \n"
-    "\t --EphemDir(-E)\t\tSTRING\tDirectory where Ephemeris files are located (not set by default) \n"
-    "\t --EphemYear(-y)\tSTRING\tYear of ephemeris files to be used (not set by default) \n"
-    "\t --IFO(-I)\t\tSTRING\tDetector; must be set to 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar (not set by default) \n"
-    "\t --SignalOnly(-S)\t\tSignal only flag; (Default is signal+noise)\n"
-    "\t --Spin(-s)\t\tFLOAT\tStarting spindown parameter (default 0.0) \n"
-    "\t --SpinBand(-m)\t\tFLOAT\tSpindown band (default 0.0)\n"
-    "\t --dSpin(-e)\t\tFLOAT\tSpindown resolution (default 1/(2*Tobs*Tsft*Nsft)\n"
-    "\t --EstimSigParam(-p)\t\tdo Signal Parameter Estimation (Default: no signal parameter estimation)\n"
-    "\t --Fthreshold(-F)\tFLOAT\tSignal Set the threshold for selection of 2F (default 10.0\n"
-    "\t --BaseName(-i)\t\tSTRING\tThe base name of the input  file you want to read.(Default is *SFT* )\n"
-    "\t --useMetric(-M)\tINT2\tUse a metric template grid, with metric type 1 = PtoleMetric, 2 = CoherentMetric\n"
-    "\t --metricMismatch(-X)\tFLOAT\tMaximal mismatch for metric tiling (Default: 0.02)\n"
-    "\t --outputString(-o)\tSTRING\tString that will be appended to names of output files Fstats, FaFb, ParamMLE.txt and Fmax\n"
+    "\t --freq(-f)\t\tFLOAT\tStarting search frequency in Hz (not set by default)\n"
+    "\t --freq-band(-b)\t\tFLOAT\tDemodulation frequency band in Hz (set=0.0 by default)\n"
+    "\t --dfreq(-r)\t\tFLOAT\tDemodulation frequency resolution in Hz (set to 1/(8*Tsft*Nsft) by default)\n"
+    "\t --dterms(-t)\t\tINTEGER\tNumber of terms to keep in Dirichlet kernel sum (default 16)\n"
+    "\t --alpha(-a)\t\tFLOAT\tSky position alpha (equatorial coordinates) in radians (default 0.0)\n"
+    "\t --alpha-band(-z)\tFLOAT\tBand in alpha (equatorial coordinates) in radians (default 0.0)\n"
+    "\t --dalpha(-l)\t\tFLOAT\tResolution in alpha (equatorial coordinates) in radians (default 0.001)\n"
+    "\t --delta(-d)\t\tFLOAT\tSky position delta (equatorial coordinates) in radians (default 0.0)\n"
+    "\t --delta-band(-c)\tFLOAT\tBand in delta (equatorial coordinates) in radians (default 0.0)\n"
+    "\t --ddelta(-g)\t\tFLOAT\tResolution in delta (equatorial coordinates) in radians (default 0.001)\n"
+    "\t --data-dir(-D)\t\tSTRING\tDirectory where SFT's are located (not set by default) \n"
+    "\t --ephem-dir(-E)\t\tSTRING\tDirectory where Ephemeris files are located (not set by default) \n"
+    "\t --ephem-year(-y)\tSTRING\tYear of ephemeris files to be used (not set by default) \n"
+    "\t --ifo(-I)\t\tSTRING\tDetector; must be set to 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar (not set by default) \n"
+    "\t --signal-only(-S)\t\tSignal only flag; (Default is signal+noise)\n"
+    "\t --spin(-s)\t\tFLOAT\tStarting spindown parameter (default 0.0) \n"
+    "\t --spin-band(-m)\t\tFLOAT\tSpindown band (default 0.0)\n"
+    "\t --dspin(-e)\t\tFLOAT\tSpindown resolution (default 1/(2*Tobs*Tsft*Nsft)\n"
+    "\t --estimate-signal-params(-p)\t\tdo Signal Parameter Estimation (Default: no signal parameter estimation)\n"
+    "\t --fthreshold(-F)\tFLOAT\tSignal Set the threshold for selection of 2F (default 10.0\n"
+    "\t --basename(-i)\t\tSTRING\tThe base name of the input  file you want to read.(Default is *SFT* )\n"
+    "\t --use-metric(-M)\tINT2\tUse a metric template grid, with metric type 1 = PtoleMetric, 2 = CoherentMetric\n"
+    "\t --metric-mismatch(-X)\tFLOAT\tMaximal mismatch for metric tiling (Default: 0.02)\n"
+    "\t --output-string(-o)\tSTRING\tString that will be appended to names of output files Fstats, FaFb, ParamMLE.txt and Fmax\n"
     "\t -v\t\t\tINT2\tSet lalDebugLevel (Default=0)\n"
     "\t -C\t\t\tSTRING\tThe name of a config-file to read\n"
     "\n\t --help(-h)\t\t\tPrint this message.\n\n"
