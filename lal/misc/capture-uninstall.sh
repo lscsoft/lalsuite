@@ -1,5 +1,21 @@
 #!/bin/sh
 
+# I don't know why which doesn't work on Solaris...
+which()
+{
+  keep_IFS=${IFS}
+  IFS=:
+  for dir in ${PATH} ; do
+    if test -x $dir/$1 ; then
+      echo "$dir/$1"
+      IFS=${keep_IFS}
+      exit 0
+    fi
+  done
+  IFS=${keep_IFS}
+  exit 1
+}
+
 d=`pwd`
 top_builddir=${top_builddir:-"$d"}
 export top_builddir
