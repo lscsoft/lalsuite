@@ -88,7 +88,6 @@ SnglInspiralTableFromLIGOLw (
   if ( mioStatus )
   {
     fprintf( stdout, "no sngl_inspiral table in file %s\n", fileName );
-    MetaioClose( env );
     return 0;
   }
 
@@ -339,7 +338,6 @@ InspiralTmpltBankFromLIGOLw (
   {
     fprintf( stderr, "error opening process_params table from file %s\n", 
         fileName );
-    MetaioClose( env );
     return -1;
   }
 
@@ -375,7 +373,6 @@ InspiralTmpltBankFromLIGOLw (
   if ( mioStatus )
   {
     fprintf( stdout, "no sngl_inspiral table in file %s\n", fileName );
-    MetaioClose( env );
     return 0;
   }
 
@@ -558,7 +555,6 @@ SimInspiralTableFromLIGOLw (
   {
     fprintf( stderr, "error opening sim_inspiral table from file %s\n", 
         fileName );
-    MetaioClose( env );
     return -1;
   }
 
