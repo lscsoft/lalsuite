@@ -252,7 +252,7 @@ tagFindChirpSegment
   COMPLEX8FrequencySeries      *data;
   COMPLEX8FrequencySeries      *dataBCV;
   UINT4Vector                  *chisqBinVec;
-  UINT4Vector 		       *chisqBinVecBCV;
+  UINT4Vector                  *chisqBinVecBCV;
   REAL8                         deltaT;
   REAL4                         segNorm;
   REAL4                         a1;     
