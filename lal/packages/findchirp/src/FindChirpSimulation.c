@@ -33,6 +33,7 @@ various simulation packages for injecting chirps into data.
 in the linked list of \texttt{SimInspiralTable} structures \texttt{events}
 into the data \texttt{chan}. The response function \texttt{resp} should
 contain the response function to use when injecting the signals into the data.
+\end{description}
 
 \subsubsection*{Algorithm}
 
