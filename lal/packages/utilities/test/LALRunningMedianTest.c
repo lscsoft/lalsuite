@@ -48,6 +48,7 @@ LALCheckMemoryLeaks()
 \vfill{\footnotesize \input{LALRunningMedianTestCV}}
 ******************************************************* </lalLaTeX> */
 
+#include <math.h>
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
