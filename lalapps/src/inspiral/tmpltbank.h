@@ -9,6 +9,9 @@
  *-----------------------------------------------------------------------
  */
 
+#ifndef TMPLTBANK_H_
+#define TMPLTBANK_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,3 +34,7 @@
 #define USAGE \
 "go fish"
 
+int snprintf(char *str, size_t size, const  char  *format, ...);
+int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
+
+#endif
