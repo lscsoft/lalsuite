@@ -1193,9 +1193,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		  }
 
 		/* output to file */
-                out = fopen(outputFilename, "a");
 	       	fprintf(out, "%e %e\n", varTheo, y);
-                fclose(out);
 	}
 
         lal_errhandler = LAL_ERR_EXIT;
