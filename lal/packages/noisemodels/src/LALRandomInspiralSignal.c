@@ -186,6 +186,17 @@ LALRandomInspiralSignal
 	   epsilon2 = (float) random()/(float)RAND_MAX;
 	   switch (randIn->param.massChoice) 
 	     {
+	       
+	     case bhns:
+	       randIn->param.mass1 = randIn->mMin + 
+		 (3 - randIn->mMin) * epsilon1;
+	       randIn->param.mass2 = 3  + 
+		 (randIn->mMax - 3) * epsilon2;
+	       randIn->param.massChoice=m1Andm2;
+	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+	       randIn->param.massChoice=bhns;
+	       break;
+
 	     case m1Andm2: 
 	       /* 
 		* restriction is on the minimum and maximum individual 
@@ -273,6 +284,9 @@ LALRandomInspiralSignal
 	   */
 	   switch (randIn->param.massChoice) 
 	     {
+	     case bhns:
+	       valid=1;
+	       break;
 	     case m1Andm2: 
 	     case t03: 
 	     case t02:
