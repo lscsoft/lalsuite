@@ -15,23 +15,8 @@
 #include <pthread.h>
 #include <bits/local_lim.h>
 
-/* lal debugging symbol to determine how verbose we are */
+/* lal debug flag for verbosity level */
 extern int lalDebugLevel;
-
-/* lalDebugLevel bit field values from LALError.h */
-enum
-{
-  LALNDEBUG  = 0,
-  LALERROR   = 1,
-  LALWARNING = 2,
-  LALINFO    = 4,
-  LALTRACE   = 8,
-  LALMEMINFO = 16,
-  LALNMEMDBG = 32,
-  LALNMEMPAD = 64,
-  LALNMEMTRK = 128,
-  LALMEMDBG  = 16384 /* convenience: don't combine with other bits */
-};
 
 /* dummy symbol to ensure that we link this to the fft routines */
 int dummy_have_qthread;
@@ -50,9 +35,9 @@ enum { NEVER = 0, IN_PROGRESS = 1, DONE = 2 };
 int pthread_once(pthread_once_t * once_control, void (*init_routine)(void))
 {
   /* call the function init_routine() if once_control is not set to done */
-  if ( lalDebugLevel | LALINFO )
-    fprintf( stdout, "%s at line %s calling pthread_once(%p,%p)\n", 
-        __FILE__, __LINE__, once_control, init_routine );
+  if ( lalDebugLevel | 4 )
+    fprintf( stdout, "calling pthread_once(%p,%p)\n", 
+        once_control, init_routine );
 
   if ( *once_control == DONE ) return 0;
   init_routine();
@@ -81,9 +66,8 @@ int pthread_key_create (pthread_key_t * key, destr_function destr)
 {
   int i;
 
-  if ( lalDebugLevel | LALINFO )
-    fprintf( stdout, "%s at line %s calling pthread_key_create(%p,%p)\n", 
-        __FILE__, __LINE__, key, destr );
+  if ( lalDebugLevel | 4 )
+    fprintf( stdout, "calling pthread_key_create(%p,%p)\n", key, destr );
 
   for ( i = 0; i < PTHREAD_KEYS_MAX; i++ ) 
   {
@@ -106,9 +90,8 @@ int pthread_key_create (pthread_key_t * key, destr_function destr)
 /* delete a key */
 int pthread_key_delete(pthread_key_t key)
 {
-  if ( lalDebugLevel | LALINFO )
-    fprintf( stdout, "%s at line %s calling pthread_key_delete(%d)\n", 
-        __FILE__, __LINE__, key );
+  if ( lalDebugLevel | 4 )
+    fprintf( stdout, "calling pthread_key_delete(%d)\n", key );
 
   if ( key >= PTHREAD_KEYS_MAX || ! pthread_keys[key].in_use ) 
   {
@@ -127,9 +110,8 @@ int pthread_key_delete(pthread_key_t key)
 /* set key value */
 int pthread_setspecific(pthread_key_t key, const void * pointer)
 {
-  if ( lalDebugLevel | LALINFO )
-    fprintf( stdout, "%s at line %s calling pthread_setspecific(%d,%p)\n", 
-        __FILE__, __LINE__, key, pointer );
+  if ( lalDebugLevel | 4 )
+    fprintf( stdout, "calling pthread_setspecific(%d,%p)\n", key, pointer );
 
   if ( key >= PTHREAD_KEYS_MAX || ! pthread_keys[key].in_use )
   {
@@ -143,9 +125,8 @@ int pthread_setspecific(pthread_key_t key, const void * pointer)
 /* get key value */
 void * pthread_getspecific(pthread_key_t key)
 {
-  if ( lalDebugLevel | LALINFO )
-    fprintf( stdout, "%s at line %s calling pthread_getspecific(%d)\n", 
-        __FILE__, __LINE__, key );
+  if ( lalDebugLevel | 4 )
+    fprintf( stdout, "calling pthread_getspecific(%d)\n", key );
 
   if ( key >= PTHREAD_KEYS_MAX || ! pthread_keys[key].in_use ) 
   {
@@ -164,8 +145,7 @@ void * pthread_getspecific(pthread_key_t key)
 
 int pthread_cancel(pthread_t thread)
 {
-  fprintf( stderr, "%s at line %s attempt to call pthread_cancel(%ld)\n", 
-      __FILE__, __LINE__, thread );
+  fprintf( stderr, "attempt to call pthread_cancel(%ld)\n", thread );
   abort();
   return 0;
 }
@@ -173,25 +153,24 @@ int pthread_cancel(pthread_t thread)
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
     void * (*start_routine)(void *), void *arg)
 {
-  fprintf( stderr, 
-      "%s at line %s attempt to call pthread_create(%p,%p,%p,%p)\n",
-      __FILE__, __LINE__, thread, attr, start_routine, arg );
+  fprintf( stderr, "attempt to call pthread_create(%p,%p,%p,%p)\n",
+      thread, attr, start_routine, arg );
   abort();
   return 0;
 }
 
 int pthread_join(pthread_t thread_id, void ** thread_return)
 {
-  fprintf( stderr, "%s at line %s attempt to call pthread_join(%ld,%p)\n", 
-      __FILE__, __LINE__, thread_id, thread_return );
+  fprintf( stderr, "attempt to call pthread_join(%ld,%p)\n", 
+      thread_id, thread_return );
   abort();
   return 0;
 }
 
 int pthread_sigmask(int how, const sigset_t * newmask, sigset_t * oldmask)
 {
-  fprintf( stderr, "%s at line %s attempt to call pthread_sigmask(%d,%p,%p)\n",
-      __FILE__, __LINE__, how, newmask, oldmask );
+  fprintf( stderr, "attempt to call pthread_sigmask(%d,%p,%p)\n",
+      how, newmask, oldmask );
   abort();
   return 0;
 }
