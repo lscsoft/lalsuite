@@ -1268,7 +1268,7 @@ int main( int argc, char *argv[] )
 	  if (tb > ta + errorParams.dt )
 	  {
 	    /* we are outside the time coincidence so move to the next event */
-            if ( vrbflg ) fprintf(stdout, " outside the time coincidence window"
+            if (vrbflg) fprintf(stdout, "outside the time coincidence window\n"
 		);
 	    break;
 	  }
