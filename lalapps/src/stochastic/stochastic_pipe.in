@@ -266,28 +266,42 @@ dag.write_sub_files()
 dag.write_dag()
 
 # write a message telling the user that the DAG has been written
-print "\nCreated a DAG file which can be submitted by executing"
-print "\n   condor_submit_dag", dag.get_dag_file()
-print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
-If you are running LSCdataFind jobs, do not forget to initialize your grid 
-proxy certificate on the condor submit machine by running the commands
+print "Created DAG file", dag.get_dag_file()
+if do_datafind:
+  print """\nAs you are running LSCdataFind jobs, do not forget to initialise your
+grid proxy certificate on the condor submit machine by running the
+commands
 
-  unset X509_USER_PROXY
-  grid-proxy-init -hours 72
+  $ unset X509_USER_PROXY
+  $ grid-proxy-init -hours 72
+  $ export X509_USER_CERT=`grid-proxy-info -path`
+  $ export X509_USER_KEY=`grid-proxy-info -path`
 
-Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
-If you expect the LSCdataFind jobs to take longer to complete, increase the
-time specified in the -hours option to grid-proxy-init. You can check that 
-the grid proxy has been sucessfully created by executing the command:
+Enter your pass phrase when promted. The proxy will be valid for 72 hours.
+If you expect the LSCdataFind jobs to take longer to complete, increase
+the time specified in the -hours option to grid-proxy-init. You can check
+that the grid proxy has been sucessfully created by executing the command:
 
-  grid-cert-info -all -file /tmp/x509up_u`id -u`
+  $ grid-cert-info -all -file /tmp/x509up_u`id -u`
 
 This will also give the expiry time of the proxy.
 
 You also need to set the LSC_DATAFIND_SERVER environment variable eg.
 
-  export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
-"""
+  $ export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
+
+to point to a valid LSC DataFind Server that can be queried for the
+location of the data on the cluster."""
+print """\nThe DAG can now be summitted by executing the following command
+on a condor submit machine
+
+  $ condor_submit_dag""", dag.get_dag_file()
+print """\nIt is currently recommended that you pass condor_submit_dag the option
+-maxjobs 6, to limit the maximum of jobs. This is due to condor being
+designed to run jobs that take several hours to complete, whereas the
+stochastic jobs are complete within a few minutes. Running the stochastic
+pipeline on a cluster without the -maxjobs option will essentially bring
+the cluster to a standstill."""
 
 # write out a logfile
 if usertag:
