@@ -446,8 +446,7 @@ extern "C" {
 "      <Stream Name=\"stochasticgroup:stochastic:table\" Type=\"Local\" Delimiter=\",\">\n"
 
 #define STOCHASTIC_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%22.16e,%22.16e"\
-"sim_inst:simulation_id:0\",\"%s\",\"%s\",%22.16e"
+"         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%22.16e,%22.16e"
 
 #define LIGOLW_XML_EXT_TRIGGERS \
 " <Table Name=\"external_trigger:table\">\n" \
