@@ -460,6 +460,32 @@ void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
   FrFileOEnd(frfile);
 }
 
+/* function to return a rectangular window */
+REAL4TimeSeries *rectangular_window(LALStatus *status,
+    REAL8 deltaT,
+    REAL8 f0,
+    INT4 length)
+{
+  /* variables */
+  REAL4TimeSeries *series;
+  LIGOTimeGPS time;
+  INT4 i;
+
+  /* set time */
+  time.gpsSeconds = 0;
+  time.gpsNanoSeconds = 0;
+
+  /* allocate memory */
+  LAL_CALL(LALCreateREAL4TimeSeries(status, &series, "window", time, f0, \
+        deltaT, lalDimensionlessUnit, length), status);
+
+  /* generate window */
+  for (i = 0; i < length; i++)
+    series->data->data[i] = 1;
+
+  return(series);
+}
+
 /*
  * vim: et
  */
