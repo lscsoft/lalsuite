@@ -256,7 +256,8 @@ int main(int argc,char *argv[])
   scanInit.obsDuration = duration + GV.tsft;
   scanInit.fmax  = uvar_Freq;
   if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
-  scanInit.Detector = GV.Detector;
+  scanInit.Detector = &GV.Detector;
+  scanInit.ephemeris = GV.edat;	/* used by Ephemeris-based metric */
   scanInit.skyRegion = LALMalloc (strlen (uvar_skyRegion) + 1);
   strcpy (scanInit.skyRegion, uvar_skyRegion);
 
@@ -301,13 +302,11 @@ int main(int argc,char *argv[])
 	  if (uvar_outputFstat && fpOut)
 	    {
 	      INT4 i;
-	      REAL4 freqmax = 0;
 	      for(i=0;i < GV.FreqImax ;i++)
 		{
-		  if ( Fstat.F[i] > freqmax )
-		    freqmax = Fstat.F[i];
+		  fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17f\n", 
+			   uvar_Freq + i*GV.dFreq, Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
 		}
-	      fprintf(fpOut, "%20.17f %20.17f %20.17f\n", Alpha, Delta, 2.0*medianbias*freqmax );
 
 	    } /* if outputFstat */
 	  
@@ -1226,29 +1225,10 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   strcat(cfg->EphemSun, uvar_EphemYear);
   strcat(cfg->EphemSun,".dat");
 
-  /* *** Make sure the e-files are really there *** */
-
 #if USE_BOINC
   use_boinc_filename0(cfg->EphemEarth);
-#endif
-  fp=fopen(cfg->EphemEarth,"r");
-  if (fp==NULL) 
-    {
-      LALPrintError ("\nCould not open ephemeris-file %s\n\n", cfg->EphemEarth);
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-    }
-  fclose(fp);
-#if USE_BOINC
   use_boinc_filename0(cfg->EphemSun);
 #endif
-  fp=fopen(cfg->EphemSun,"r");
-  if (fp==NULL) 
-    {
-      LALPrintError("\nCould not open ephemeris-file %s\n\n", cfg->EphemSun);
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-    }
-  fclose(fp);
-  /* ********************************************** */
 
   if (uvar_mergedSFTFile) {
     long k=0;
