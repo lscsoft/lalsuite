@@ -223,8 +223,8 @@ InspiralTmpltBankFromLIGOLw (
       /* set the match determined from the bank generation process params */
       thisTmplt->minMatch = minMatch;
 
-      /* increase the count of rows parsed */
-      ++nrows;
+      /* count the number of template parsed */
+      thisTmplt->number = nrows++;
     }
   }
 

@@ -716,8 +716,9 @@ int main( int argc, char *argv[] )
       if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level )
       {
         if ( vrbflg ) fprintf( stdout, 
-            "filtering segment %d againt template %e,%e\n", 
-            fcSegVec->data[i].number, 
+            "filtering segment %d/%d againt template %d/%d (%e,%e)\n", 
+            fcSegVec->data[i].number,  fcSegVec->length,
+            tmpltCurrent->tmpltPtr->number, numTmplts,
             fcFilterInput->tmplt->mass1, fcFilterInput->tmplt->mass2 );
 
         fcFilterInput->segment = fcSegVec->data + i;
