@@ -130,9 +130,11 @@ int main(int argc, char **argv)
   REAL4TimeSeries               ts ; /* A time series to store the injection */
   COMPLEX8FrequencySeries       fs ; /* A freq series to store the psd 	*/
   FILE		*output;             /* output result*/
-  
+  CHAR *filename;
+  UINT4 lenfile;  
+
    /* --- for debugging --- */
-  lalDebugLevel = 0;
+  lalDebugLevel = 33;
   program       = *argv;
 
   /* --- Start Main part here --- */
@@ -161,13 +163,13 @@ int main(int argc, char **argv)
 
   
   /* --- Let's fix some variables we have to be in agreement with the xml file data --- */
-  ts.epoch.gpsSeconds 	= 729273610;		       	/* gps time of the time series		*/
-  startTime 		= 729273610;		       	/* start time and end time of ..	*/	
+  ts.epoch.gpsSeconds 	= 729273600;		       	/* gps time of the time series		*/
+  startTime 		= 729273600;		       	/* start time and end time of ..	*/	
   endTime   		= startTime + 200;	       	/* ..injection; should be in agreement..*/
   						       	/* ..with the xml file			*/ 
   ts.sampleUnits 	= lalADCCountUnit;	       	/*  UNITY ?? 				*/
   ts.deltaT 		= 1./sampling;		       	/* sampling				*/
-  ts.name[0]='X'; 					/* L, H, G, V or T for the detector 
+  ts.name[0]='H'; 					/* L, H, G, V or T for the detector 
 							   otherwise it is optimally oriented	*/ 
 
 
@@ -183,20 +185,27 @@ int main(int argc, char **argv)
   for( k = 0 ; k< numPoints; k++){
     ts.data->data[k] = 0.;
   }
+
+  fprintf(stderr, "before reading xml file \n");
+
+  lenfile = strlen(INJECTIONINTERFACETEST_INJECTIONXMLFILE) + 1;
+  filename = (CHAR *) calloc (lenfile, sizeof(CHAR *));
+  memcpy( filename, INJECTIONINTERFACETEST_INJECTIONXMLFILE, lenfile);
+  
    
   /* --- read injection  here --- */
   SUB(numInjections = SimInspiralTableFromLIGOLw( &injections, 
-						  INJECTIONINTERFACETEST_INJECTIONXMLFILE,
+						  filename,
 						  startTime,
 						  endTime), &status);
-
+  
   /* any injection to do ? */
   if ( numInjections <= 0 )
     {
       ERROR(INJECTIONINTERFACETESTC_EINJECT, INJECTIONINTERFACETESTC_MSGEINJECT, 0);
       exit( 1 );
     }
-
+  fprintf(stderr, "%lf %lf \n", injections->mass1, injections->mass2);
   /* --- inject here --- */
   SUB( LALFindChirpInjectSignals( &status,
 				  &ts, 
