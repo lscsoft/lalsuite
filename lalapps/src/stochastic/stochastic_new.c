@@ -997,8 +997,8 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* print */
       if ((test_flag)&&(interLoop == testInter))
        {
-         LALSPrintTimeSeries(&interval1, "segmentBig1.dat");
-         LALSPrintTimeSeries(&interval2, "segmentBig2.dat");
+         LALSPrintTimeSeries(&interval1, "interval1.dat");
+         LALSPrintTimeSeries(&interval2, "interval2.dat");
        }
          
       /* compute response functions */
