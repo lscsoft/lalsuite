@@ -79,10 +79,10 @@ LALInspiralSpinModulatedWave(
 { /* </lalVerbatim> */
 
 
-	UINT4 nDEDim=9, Dim=3;
+	UINT4 nDEDim=9/*, Dim=3*/;
         UINT4 j, count;
 	/* polarisation and antenna pattern */
-	REAL8 psi, psiOld, Fplus, Fcross, Fp0, Fp1, Fc0, Fc1, magL, amp, amp0, phi, phiOld, Amplitude, Phi, dPhi;
+	REAL8 psi, psiOld, Fplus, Fcross, Fp0, Fp1, Fc0, Fc1, magL, amp, amp0, phi, phiOld, /*Amplitude,*/ Phi/*, dPhi*/;
 	REAL8 v, t, tMax, dt, f, fOld, fn, phase, phi0, MCube, Theta, etaBy5M, NCapDotL, NCapDotLByL;
 	/* source direction angles */
 	InspiralACSTParams acstPars;
@@ -169,7 +169,7 @@ LALInspiralSpinModulatedWave(
 
 	/* Pad the first nStartPad elements of the signal array with zero */
 	count = 0;
-	while (count < in->nStartPad)
+	while ((INT4)count < in->nStartPad)
 	{
 		signal->data[count] = 0.L;
 		count++;
@@ -216,7 +216,7 @@ LALInspiralSpinModulatedWave(
 	fOld = f - 0.1;
 	while (f < fn && t < tMax && f>fOld)
 	{
-		ASSERT(count < (INT4)signal->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+		ASSERT((INT4)count < (INT4)signal->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 		/* Subtract the constant initial phase (chosen to have a phase of in->startPhase) */
 		signal->data[count] = amp*cos(phase+phi0);
 
@@ -380,7 +380,7 @@ LALACSTDerivatives
 	enum { Dim=3 };
 	UINT4 i, j, k, p, q;             
 	/* magnitudes of S1, S2, L etc. */
-	REAL8 Theta, v, M, magS1, magS2, magL, S1DotL, S2DotL;
+	REAL8 /*Theta,*/ v, M, magS1, magS2, magL, S1DotL, S2DotL;
         REAL8 fourM1Plus, fourM2Plus, oneBy2Mcube, Lsq, dL0, c2, v6;
         REAL8 L[Dim], S1[Dim], S2[Dim], S1CrossL[Dim], S2CrossL[Dim], S1CrossS2[Dim];   
 	InspiralACSTParams *ACSTIn;

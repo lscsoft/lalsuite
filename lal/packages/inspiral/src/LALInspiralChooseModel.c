@@ -214,6 +214,7 @@ static REAL8 Ft7(REAL8 v, expnCoeffs *ak)
 }
 
 
+#if 0 /* NOT USED */
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 static REAL8 ep0(REAL8 v, expnCoeffs *ak) 
 { /* </lalVerbatim>  */
@@ -223,6 +224,7 @@ static REAL8 ep0(REAL8 v, expnCoeffs *ak)
    energy = -x;
    return (energy);
 }
+#endif
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 static REAL8 ep2(REAL8 v, expnCoeffs *ak) 
@@ -251,6 +253,7 @@ static REAL8 ep6(REAL8 v, expnCoeffs *ak)
    return (energy);
 }
 
+#if 0 /* NOT USED */
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 static REAL8 dEp0(REAL8 v, expnCoeffs *ak) 
 { /* </lalVerbatim>  */
@@ -262,6 +265,7 @@ static REAL8 dEp0(REAL8 v, expnCoeffs *ak)
    dEnergy = v * ak->eta * denergy /((1.+Energy) * y);
    return(dEnergy);
 }
+#endif
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 static REAL8 dEp2(REAL8 v, expnCoeffs *ak) 
@@ -309,6 +313,7 @@ static REAL8 dEp6(REAL8 v, expnCoeffs *ak)
 
 
 
+#if 0 /* NOT USED */
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 static REAL8 Fp0(REAL8 v, expnCoeffs *ak) 
 { /* </lalVerbatim>  */
@@ -320,7 +325,9 @@ static REAL8 Fp0(REAL8 v, expnCoeffs *ak)
    flux = ak->fPaN * v10;
    return (flux);
 }
+#endif
 
+#if 0 /* NOT USED */
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 static REAL8 Fp1(REAL8 v, expnCoeffs *ak) 
 { /* </lalVerbatim>  */
@@ -332,7 +339,9 @@ static REAL8 Fp1(REAL8 v, expnCoeffs *ak)
    flux = ak->fPaN * v10/ ((1.+ak->fPa1*v) * (1.-v/ak->vpoleP4));
    return (flux);
 }
+#endif
 
+#if 0 /* NOT USED */
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 static REAL8 Fp2(REAL8 v, expnCoeffs *ak) 
 { /* </lalVerbatim>  */
@@ -344,6 +353,7 @@ static REAL8 Fp2(REAL8 v, expnCoeffs *ak)
    flux = ak->fPaN * v10/ ((1.+ak->fPa1*v / (1.+ak->fPa2*v)) * (1.-v/ak->vpoleP4));
    return (flux);
 }
+#endif
 
 /*  <lalVerbatim file="LALInspiralChooseModelCP"> */
 static REAL8 Fp3(REAL8 v, expnCoeffs *ak) 
@@ -585,6 +595,9 @@ LALInspiralChooseModel(
          case PadeF1:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
             break;
+         default:
+            /* FIXME: TODO: DO SOMETHING HERE!!!! */
+            break;
       }
       break;
       case threePN:
@@ -616,6 +629,9 @@ LALInspiralChooseModel(
             break;
          case PadeF1:
             ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+            break;
+         default:
+            /* FIXME: TODO: DO SOMETHING HERE!!!! */
             break;
       }
       break;
