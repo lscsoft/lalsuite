@@ -56,6 +56,8 @@ RCSID("$Id$");
   LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype); \
   LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue);
 
+#define PSD_WINDOW_LENGTH 4096
+
 /* system error checking */
 extern int errno;
 
@@ -85,7 +87,6 @@ ProcessParamsTable *this_proc_param;
 
 /* sampling parameters */
 INT4 resampleRate;
-REAL8 deltaF = 0.25;
 
 /* data parameters */
 INT4 startTime = 0;
@@ -215,11 +216,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   FrCache *calibCache = NULL;
 
   /* data structures for PSDs */
+  REAL8 deltaF;
   INT4 overlapPSDLength;
   INT4 psdTempLength;
-  INT4 windowPSDLength;
   INT4 filterLength;
-  INT4 numFMin, numFMax;
+  INT4 numFMin;
+  INT4 numFMax;
   LALWindowParams winparPSD;
   AverageSpectrumParams specparPSD;
   REAL4FrequencySeries *psdTempOne;
@@ -346,6 +348,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       resampleRate = (INT4)(1./seriesOne->deltaT);
   }
 
+  /* get deltaF for optimal filter */
+  deltaF = (REAL8)resampleRate / (REAL8)PSD_WINDOW_LENGTH;
+
   /* initialize calibration gps time structure */
   gpsCalibTime.gpsSeconds = startTime + calibOffset;
   gpsCalibTime.gpsNanoSeconds = 0;
@@ -419,13 +424,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* get bins for min and max frequencies */
-  numFMin = (UINT4)(fMin / deltaF);
-  numFMax = (UINT4)(fMax / deltaF);
+  numFMin = (INT4)(fMin / deltaF);
+  numFMax = (INT4)(fMax / deltaF);
 
   /* get lengths */
-  windowPSDLength = (UINT4)(resampleRate / deltaF);
-  overlapPSDLength = windowPSDLength / 2;
-  psdTempLength = (windowPSDLength / 2) + 1;
+  overlapPSDLength = PSD_WINDOW_LENGTH / 2;
+  psdTempLength = (PSD_WINDOW_LENGTH / 2) + 1;
   filterLength = numFMax - numFMin + 1;
 
   /* set parameters for PSD estimation */
@@ -503,13 +507,13 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* create fft plan */
   LAL_CALL(LALCreateForwardRealFFTPlan(&status, &specparPSD.plan, \
-        windowPSDLength, 0), &status);
+        PSD_WINDOW_LENGTH, 0), &status);
 
   if (vrbflg)
     fprintf(stdout, "Creating window for PSD estimation...\n");
 
   /* set window parameters for PSD estimation */
-  winparPSD.length = windowPSDLength;
+  winparPSD.length = PSD_WINDOW_LENGTH;
   winparPSD.type = Hann;
 
   /* create window for PSD estimation */
