@@ -18,11 +18,11 @@ where the maximum occured and the phase at the maximum.
 \subsubsection*{Description}
 \subsubsection*{Algorithm}
 \subsubsection*{Uses}
-LALInspiralWave();
-LALREAL4VectorFFT();
-LALInspiralWaveNormalise();
-LALInspiralWaveCorrelate();
 \begin{verbatim}
+LALInspiralWave
+LALREAL4VectorFFT
+LALInspiralWaveNormalise
+LALInspiralWaveCorrelate
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -35,11 +35,13 @@ NRCSID (LALINSPIRALWAVEOVERLAPC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWaveOverlapCP"> */
 void
-LALInspiralWaveOverlap (
-   LALStatus   *status,
-   REAL4Vector *output,
+LALInspiralWaveOverlap 
+   (
+   LALStatus               *status,
+   REAL4Vector             *output,
    InspiralWaveOverlapOut  *overlapout,
-   InspiralWaveOverlapIn   *overlapin)
+   InspiralWaveOverlapIn   *overlapin
+   )
 {  /*  </lalVerbatim>  */
    REAL4Vector filter1, filter2, output1, output2;
    InspiralWaveCorrelateIn corrin;

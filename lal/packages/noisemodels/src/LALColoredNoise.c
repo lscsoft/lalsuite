@@ -14,9 +14,18 @@ of power spectral density \texttt{psd}.
 \index{\verb&LALColoredNoise()&}
 
 \subsubsection*{Description}
+Given the Fourier transform $N(f)$ of  white noise, the
+Fourier transform of noise of power spectral density $S(f)$ is
+given by ${\cal N}(f) = N(f) \times \sqrt{S(f)}.$
+In the discrete version there is an additional normalisation:
+$${\cal N}_k = N_k \times \sqrt{\frac{2 S_k}{n}},\ \ 
+  {\cal N}_{n-k} = N_{n-k} \times \sqrt{\frac{2 S_k}{n}},\ \ 
+  k=1, \ldots, \frac{n}{2}.$$
+
 \subsubsection*{Algorithm}
 \subsubsection*{Uses}
 \begin{verbatim}
+none
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -29,10 +38,12 @@ NRCSID (LALCOLOREDNOISEC, "$Id$");
 
 /*  <lalVerbatim file="LALColoredNoiseCP"> */
 void 
-LALColoredNoise (
+LALColoredNoise 
+   (
    LALStatus   *status,
    REAL4Vector *noisy, 
-   REAL8Vector  psd) 
+   REAL8Vector  psd
+   ) 
 {  /*  </lalVerbatim>  */
 
    INT4 i, j, n, nby2;
@@ -52,9 +63,10 @@ LALColoredNoise (
    noisy->data[0] = 0.;
    noisy->data[nby2] = 0.;
 
-   for (i=1; i<nby2; i++) {
+   for (i=1; i<nby2; i++) 
+   {
       j = n-i;
-      x = sqrt(2. * psd.data[i+1] / length);
+      x = sqrt(2. * psd.data[i] / length);
       noisy->data[i] *= x;
       noisy->data[j] *= x;
    }

@@ -15,8 +15,8 @@ of a \texttt{REAL4Vector}.
 \subsubsection*{Description}
 \subsubsection*{Algorithm}
 \subsubsection*{Uses}
-None
 \begin{verbatim}
+none
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -29,14 +29,16 @@ NRCSID (LALSTATSREAL4VECTORC, "$Id$");
 
 /*  <lalVerbatim file="LALStatsREAL4VectorCP"> */ 
 void
-LALStatsREAL4Vector(
-   LALStatus *status,
+LALStatsREAL4Vector
+   (
+   LALStatus           *status,
    StatsREAL4VectorOut *out,
-   REAL4Vector *vector)
+   REAL4Vector         *vector
+   )
 
 {  /*  </lalVerbatim>  */
 
-   INT4 n;
+   INT4 i, n;
    REAL8 x;
 
    INITSTATUS (status, "LALStatsREAL4Vector", LALSTATSREAL4VECTORC);
@@ -48,21 +50,26 @@ LALStatsREAL4Vector(
 
    out->mean = 0.;
    n = vector->length;
-   while (--n)
+   out->max = vector->data[0];
+   out->min = vector->data[0];
+
+   for (i=0; i<n; i++)
    {
-      out->mean+=vector->data[n];
+      x = vector->data[i];
+      if (out->max < x) out->max = x;
+      if (out->min > x) out->min = x;
+      out->mean+=vector->data[i];
    }
-   out->mean/=(REAL8) vector->length;
-   ASSERT (out->mean > 0,  status, LALNOISEMODELSH_ECHOICE, LALNOISEMODELSH_MSGECHOICE);
+   out->mean/=(REAL8) n;
    
-   n = vector->length;
-   while (--n)
+   for (i=0; i<n; i++)
    {
-      x = vector->data[n]-out->mean;
+      x = vector->data[i]-out->mean;
       out->var+=x*x;
    }
-   out->var /=(REAL8) vector->length;
-   out->stddev =sqrt(out->var);
+   out->var /=(REAL8) n;
+   out->stddev = sqrt(out->var);
+
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }

@@ -52,15 +52,17 @@ NRCSID (LALNOISESPECTRALDENSITYC, "$Id$");
 
 /*  <lalVerbatim file="LALNoiseSpectralDensityCP"> */
 void 
-LALNoiseSpectralDensity (
-   LALStatus   *status, 
-   REAL8Vector *psd, 
-   void        (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f),
-   REAL8       df) 
+LALNoiseSpectralDensity 
+   (
+   LALStatus    *status, 
+   REAL8Vector  *psd, 
+   void         (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f),
+   REAL8        df
+   ) 
 {  /*  </lalVerbatim>  */
 
-    REAL8 shf, fs, xs, s0, dx, x;
-    int i;
+    REAL8 f, shf, fs, s0;
+    INT4 i, n;
 
    INITSTATUS(status, "LALNoiseSpectralDensity", LALNOISESPECTRALDENSITYC);
    ATTATCHSTATUSPTR(status);
@@ -68,36 +70,73 @@ LALNoiseSpectralDensity (
    ASSERT (psd->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
    ASSERT (NoisePsd, status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
    ASSERT (df > 0., status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
-   ASSERT (psd->length > 0, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+   ASSERT (psd->length > 1, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
 
+   /*
+   switch (NoisePsd)
+   {
+	case LALGEOPsd:
+           s0 = 1.e-46;
+           fs = 10.;
+	   break;
+        case LALLIGOIPsd:
+           s0 = 9.0e-46;
+           fs = 10.;
+	   break;
+        case LALVIRGOPsd:
+           s0 = 3.24e-46;
+           fs = 10.;
+	   break;
+        case LALTAMAPsd:
+           s0 = 75.e-46;
+           fs = 75.;
+	   break;
+	default:
+           s0 = 1.;
+           fs = 0.;
+	   break;
+   }
+   */
    if (NoisePsd == LALGEOPsd) {
            s0 = 1.e-46;
-           fs = 10;
+           fs = 10.;
    } else if(NoisePsd == LALLIGOIPsd) {
            s0 = 9.0e-46;
-           fs = 10;
+           fs = 10.;
    } else if(NoisePsd == LALTAMAPsd) {
            s0 = 75.e-46;
-           fs = 75;
+           fs = 75.;
    } else if(NoisePsd == LALVIRGOPsd) {
            s0 = 3.24e-46;
-           fs = 10;
+           fs = 10.;
    } else {
            s0 = 1.;
-           fs = 1.;
+           fs = 0.;
    }
-   dx = df;
-   xs = fs;
-   psd->data[0] = psd->data[1] = 0.;
-   for (i=2; i<(int)psd->length; i++) {
-      x = (i-1)*dx;
-      if (x>xs ) {
-        (*NoisePsd)(status->statusPtr, &shf, x);
-        psd->data[i] = s0 * shf;
-      } else
-        psd->data[i] = 0.;
+
+   n = (INT4) psd->length-1;
+
+   /* 
+    * Set DC and Nyquist components to zero
+    */
+
+   psd->data[0] = psd->data[n] = 0.;
+
+   for (i=1; i<n; i++) 
+   {
+      f = i*df;
+
+      if (f>fs) 
+      {
+         (*NoisePsd)(status->statusPtr, &shf, f);
+         psd->data[i] = s0 * shf;
+
+      } else {
+
+         psd->data[i] = 0.;
+      } 
    }
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
 }
 

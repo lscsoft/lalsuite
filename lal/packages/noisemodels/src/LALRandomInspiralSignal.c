@@ -4,8 +4,12 @@ $Id$
 </lalVerbatim>  */
 /* <lalLaTeX>
 \subsection{Module \texttt{LALRandomInspiralSignal.c}}
-Module to generate signals with random masses in the parameter space
-and to add a noisy component expected in a given detector. 
+Module to generate (a) inspiral signals with random masses or chirp times 
+that have values within the parameter space specified by an input struct,
+or (b) simulated Gaussian noise of PSD expected in a given interferometer 
+or (c) inspiral signal as in (a) but of a specified amplitude added 
+to simulated Gaussian noise as in (b). In all cases the returned
+vector is the Fourier transform of the relevant signal. 
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -13,16 +17,111 @@ and to add a noisy component expected in a given detector.
 \idx{LALRandomInspiralSignal()}
 
 \subsubsection*{Description}
-Depending on the value of the parameter \texttt{RandomIn.type=0,1 or 2} this
-code returns a pure signal, a pure noise or signal+noise.
+The function receives input struct of type RandomInspiralSignalIn 
+whose members are
+\begin{verbatim}
+typedef struct 
+tagRandomInspiralSignalIn
+{
+   INT4 useed;
+   INT4 type;
+
+   REAL8 mMin;
+   REAL8 MMax;
+   REAL8 SignalAmp;
+   REAL8 NoiseAmp;
+   REAL8 etaMin;
+   REAL8 t0Min;
+   REAL8 t0Max;
+   REAL8 tnMin;
+   REAL8 tnMax;
+
+   InspiralTemplate param;
+   REAL8Vector psd;                 
+   RealFFTPlan *fwdp;
+} RandomInspiralSignalIn;
+\end{verbatim}
+
+Depending on the value of the parameter (\texttt{randIn.type}) this
+code returns the Fourier transform of (a) a pure inspiral signal of a given type
+(\texttt{randIn.type=0}), (b) simulated noise expected
+in a chosen interferometer \texttt{randIn.type=1} or (c) 
+$\mathtt{SignalAmp}\times s+\mathtt{NoiseAmp}\times n$ (\texttt{randIn.type=2}), 
+where $s$ is normalised signal and $n$ random Gaussian noise whose PSD is
+that expected in a given interferometer with zero mean and unit rms.
+User must specify the following quantities in the input structure
+\begin{table}
+\begin{tabular}{lcl}
+\hline
+\hline
+     Parameter         &   i/o  &   Comment \\
+\hline
+\texttt {INT4 useed}        &  input &   Seed for the random number generator    \\
+\texttt {INT4 type}         &  input &   Type of signal required to be generated    \\\\
+\texttt {InspiralTemplate p}  &  i/o   &   user must input certain params; others will be output\\
+\texttt {p.startTime}         &        &   usually 0.\\
+\texttt {p.startPhase}        &        &   $[0,\pi/2]$\\
+\texttt {p.nStartPad}         &        &   number of zeros in the vector before the signal begins\\
+\texttt {p.nEndPad}           &        &   number of zeros in the vector after the signal ends\\
+\texttt {p.signalAmplitude}   &        &   usually 1\\
+\texttt {p.ieta}              &        &   1 for comparable mass systems 0 for test mass model\\
+\texttt {p.fLower}            &        &   lower frequency cutoff in Hz\\
+\texttt {p.fCutoff}           &        &   upper frequency cutoff in Hz\\
+\texttt {p.tSampling}         &        &   sampling rate in Hz\\
+\texttt {p.order}             &        &   order of the PN approximant of the signal \\
+\texttt {p.approximant}       &        &   PN approximation to be used for inspiral signal generation\\
+\texttt {p.massChoice}        &        &   space in which parameters are chosen; \texttt{m1Andm2, t02, t03}\\\\
+\texttt {REAL8Vector psd}   &  input &   pre-computed power spectral density used for coloring the noise \\
+\texttt {RealFFTPlan *fwdp} &  input &   pre-computed fftw plan to compute forward Fourier transform   \\\\
+\texttt {REAL8 mMin}        &  input &   smallest component mass allowed   \\
+\texttt {REAL8 MMax}        &  input &   largest total mass allowed   \\
+\texttt {REAL8 SignalAmp}   &  input &   amplitude of the signal (relevant only when \texttt{type=2})   \\
+\texttt {REAL8 NoiseAmp}    &  input &   amplitude of noise (relevant only when \texttt{type=2})   \\
+\texttt {REAL8 etaMin}      &  input &   smallest value of the symmetric mass ratio    \\
+\hline
+\multicolumn{3}{c}{Following chirp times are needed 
+only if \texttt{param.massChoice {\rm is} t02 {\rm or} t03}} \\
+\hline
+\texttt {REAL8 t0Min}       &  input &   smallest Newtonian chirp time   \\
+\texttt {REAL8 t0Max}       &  input &   largest Newtonian chirp time   \\
+\texttt {REAL8 tnMin}       &  input &   smallest 1 chirp time if \texttt{param.massChoice=t02}\\
+                            &        &   smallest 1.5 chirp time if \texttt{param.massChoice=t03}\\
+\texttt {REAL8 tnMax}       &  input &   largest 1 chirp time  if \texttt{param.massChoice=t02}\\
+                            &        &   largest 1.5 chirp time  if \texttt{param.massChoice=t03}\\
+\hline
+\end{tabular}
+\caption{Input structure needed for the function \texttt{LALRandomInspiralSignal}}.
+\end{table}
+When repeatedly called, the parameters of the signal will be 
+uniformly distributed in the space of (a) component masses if  
+\texttt{param.massChoice=m1Andm2},
+(b) Newtonian and first post-Newtonian chirp times if 
+\texttt{param.massChoice=t02} and
+(c) Newtonian and 1.5 post-Newtonian chirp times if 
+\texttt{param.massChoice=t03}.
+
 \subsubsection*{Algorithm}
+No special algorithm, only a series of calls to pre-existing functions.
 \subsubsection*{Uses}
 \begin{verbatim}
+random
+LALInspiralParameterCalc
+LALInspiralWave
+LALREAL4VectorFFT
+LALInspiralWaveNormalise
+LALCreateRandomParams
+LALNormalDeviates
+LALDestroyRandomParams
+LALREAL4VectorFFT
+LALColoredNoise
+LALAddVectors
 \end{verbatim}
 
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{LALRandomInspiralSignalCV}}
+%Laldoc Closed at: Wed Jan 16 08:39:35 2002
+
 </lalLaTeX>  */
 #include <stdlib.h>
 #include <lal/LALNoiseModels.h>
@@ -35,10 +134,12 @@ NRCSID (LALRANDOMINSPIRALSIGNALC, "$Id$");
 /*  <lalVerbatim file="LALRandomInspiralSignalCP"> */
 
 void
-LALRandomInspiralSignal(
-   LALStatus *status, 
-   REAL4Vector *signal,
-   RandomInspiralSignalIn *randIn)
+LALRandomInspiralSignal
+   (
+   LALStatus              *status, 
+   REAL4Vector            *signal,
+   RandomInspiralSignalIn *randIn
+   )
 {  /*  </lalVerbatim>  */
 
    REAL8 e1, e2, norm;

@@ -1,8 +1,8 @@
 # a demo script
-make RandomSignal
-./RandomSignal
-xmgr -par RandomSignal.par RandomSignal.out
-\rm RandomSignal.out
+make RandomInspiralSignalTest
+./RandomInspiralSignalTest
+xmgr -par RandomInspiralSignalTest.par RandomInspiralSignalTest.out
+\rm RandomInspiralSignalTest.out
 
 make NoisePSDTest
 NoisePSDTest

@@ -3,8 +3,13 @@ Author: Sathyaprakash, B. S.
 $Id$
 </lalVerbatim>  */
 /* <lalLaTeX>
-\subsection{Module \texttt{NoisePSDTest.c}}
-Module to create NoiseSpectralDensity.
+\subsection{Program \texttt{NoisePSDTest.c}}
+\label{ss:NoisePSDTest.c}
+
+This program can be used generate expected noise
+NoiseSpectralDensity in various interferometers.
+See the beginning of the NoiseModels module to see details on how
+this test program works.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -15,6 +20,14 @@ Module to create NoiseSpectralDensity.
 \subsubsection*{Algorithm}
 \subsubsection*{Uses}
 \begin{verbatim}
+LALDCreateVector
+LALNoiseSpectralDensity
+LALGEOPsd
+LALLIGOIPsd
+LALTAMAPsd
+LALVIRGOPsd
+LALDDestroyVector
+LALCheckMemoryLeaks
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -29,9 +42,9 @@ int main ( void )
 {  /*  </lalVerbatim>  */
 
    static LALStatus status;
-   REAL8Vector psd;
+   REAL8Vector *psd=NULL;
    REAL8       df;
-   INT4 i;
+   INT4 i, length;
    FILE *NoisePsdFile;
 
    fprintf(stderr, "This test code computes the amplitude spectrum \n");
@@ -45,32 +58,33 @@ int main ( void )
       exit(0);
    }
    df = 1.0;
-   psd.length = 8193;
+   length = 8193;
 
-   psd.data = LALMalloc(sizeof(REAL8) * psd.length);
+   LALDCreateVector(&status, &psd, length);
+   fprintf(stderr, "Length of vector=%d\n", psd->length);
 
-   LALNoiseSpectralDensity(&status, &psd, &LALGEOPsd, df); 
+   LALNoiseSpectralDensity(&status, psd, &LALGEOPsd, df); 
 
-   for (i=2; i<(INT4)psd.length; i++) {
-        if (psd.data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd.data[i]));
+   for (i=2; i<length; i++) {
+        if (psd->data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd->data[i]));
    }
    fprintf(NoisePsdFile, "&\n");
-   LALNoiseSpectralDensity(&status, &psd, &LALLIGOIPsd, df); 
-   for (i=2; i<(INT4)psd.length; i++) {
-        if (psd.data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd.data[i]));
+   LALNoiseSpectralDensity(&status, psd, &LALLIGOIPsd, df); 
+   for (i=2; i<length; i++) {
+        if (psd->data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd->data[i]));
    }
    fprintf(NoisePsdFile, "&\n");
-   LALNoiseSpectralDensity(&status, &psd, &LALVIRGOPsd, df); 
-   for (i=2; i<(INT4)psd.length; i++) {
-        if (psd.data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd.data[i]));
+   LALNoiseSpectralDensity(&status, psd, &LALVIRGOPsd, df); 
+   for (i=2; i<length; i++) {
+        if (psd->data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd->data[i]));
    }
    fprintf(NoisePsdFile, "&\n");
-   LALNoiseSpectralDensity(&status, &psd, &LALTAMAPsd, df); 
-   for (i=2; i<(INT4)psd.length; i++) {
-        if (psd.data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd.data[i]));
+   LALNoiseSpectralDensity(&status, psd, &LALTAMAPsd, df); 
+   for (i=2; i<length; i++) {
+        if (psd->data[i]) fprintf (NoisePsdFile, "%d %e\n", i, sqrt(psd->data[i]));
    }
-   LALFree(psd.data);
+   LALDDestroyVector(&status, &psd);
    LALCheckMemoryLeaks();
-  return 0;
+   return 0;
 }
 

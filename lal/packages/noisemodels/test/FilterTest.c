@@ -1,4 +1,4 @@
-/******************************** <lalVerbatim file="FilterTest">
+/******************************** <lalVerbatim file="FilterTestCV">
 Author: Sathyaprakash, B. S.
 < $Id$
 ********************************* </lalVerbatim> */
@@ -103,9 +103,9 @@ main ( void )
 /*---------------------------------------------------------------------------*/
 /* User can choose allowed values of the various parameters below this line  */
 /*---------------------------------------------------------------------------*/
-   coarseIn.mMin = 4.0;
+   coarseIn.mMin = 2.0;
    coarseIn.MMax = 40.0;
-   coarseIn.mmCoarse = 0.9;
+   coarseIn.mmCoarse = 0.80;
    coarseIn.mmFine = 0.95;
    coarseIn.fLower = 40.;
    coarseIn.fUpper = 1000;
@@ -132,8 +132,7 @@ main ( void )
       coarseIn.approximant,
       coarseIn.space
    );
-
-   randIn.type = 2;
+   randIn.type = 0;
    randIn.SignalAmp = 8.0;
    randIn.NoiseAmp = 1.0;
    randIn.useed = 218092;
@@ -150,6 +149,7 @@ main ( void )
       randIn.param.startPhase,
       randIn.param.nStartPad
    );
+
 /*---------------------------------------------------------------------------*/
 /*CHANGE NOTHING BELOW THIS LINE IF YOU ARE UNSURE OF WHAT YOU ARE DOING     */
 /*---------------------------------------------------------------------------*/
@@ -274,7 +274,7 @@ main ( void )
             }
          }
      }
-     printf("%e %e %e \n", randIn.param.t0, randIn.param.t2, omax);
+     printf("%e %e %e %e %e %e %e %e\n", randIn.param.t0, randIn.param.t2, randIn.param.t3, randIn.param.mass1, randIn.param.mass2, randIn.param.totalMass, randIn.param.eta, omax);
    }
    fclose(FilterTest);
 
