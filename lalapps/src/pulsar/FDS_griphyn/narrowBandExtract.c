@@ -33,19 +33,22 @@ int fileURL_to_localPath(char *url, char *path);
 int read_sft( struct sftheader *header, float **dataF, const char *fname, float fmin, float deltaf );
 void byte_swap( void *ptr, size_t size, size_t nobj );
 int add_frame_to_frame_file(struct sftheader *header, float *dataF, int frnum, FrFile *outputFrameFile); 
+int add_sft_to_mergedSFT_file(struct sftheader *header, float *dataF, FILE *outputSFTFile); 
 
 /* global variables */
 char inputFilePath[256] = "";   /* path to input file containing list of paths to wide-band SFT files */
 char outputFilePath[256] = "";  /* path to output file, a many-frame frame file */
 float startFrequency = 0.0;     /* desired starting frequency for the narrow band */
 float bandwidth = 0.0;          /* width of the frequency band in the narrow band */
+int mergedSFT = 0;              /* flag for generating merged SFT instead of frame */
 
 int main ( int argc, char *argv[] )
 {
         char sftFilePath[256];          /* path to a wide-band SFT file */
         char url[256];                  /* a file:// URL */
-        FILE *inputFilePathFILE;        /* file object for the SFT file */
-        FrFile *outputFrameFile;        /* file object for the output frame file */
+        FILE *inputFilePathFILE = NULL; /* file object for the SFT file */
+        FrFile *outputFrameFile = NULL; /* file object for the output frame file */
+        FILE *outputSFTFile = NULL;     /* file object for the output merged SFT file */
         int dbglvl = 0;                 /* debug level for the Fr library */
         struct sftheader header;        /* header of the SFT under consideration */
         float *dataF = NULL;            /* pointer to frequency series data */
@@ -56,7 +59,11 @@ int main ( int argc, char *argv[] )
         parse_command_line(argc, argv);
 
         /* initialize the Fr library */
-        FrLibIni(NULL, stderr, dbglvl); 
+        if (!mergedSFT)
+        {
+                FrLibIni(NULL, stderr, dbglvl); 
+        }
+        
 
         /* open the input file containing paths to wide-band SFT files */
         inputFilePathFILE = fopen(inputFilePath, "r");
@@ -67,11 +74,23 @@ int main ( int argc, char *argv[] )
         }
 
         /* open a new frame file for the frequency series stored in frames */
-        outputFrameFile = FrFileONew(outputFilePath, 0);
-        if (outputFrameFile == NULL)
+        if (!mergedSFT)
         {
-                fprintf(stderr, "Error opening file %s\n", outputFilePath);
-                exit(1);
+                outputFrameFile = FrFileONew(outputFilePath, 0);
+                if (outputFrameFile == NULL)
+                {
+                        fprintf(stderr, "Error opening file %s\n", outputFilePath);
+                        exit(1);
+                }
+        }
+        else
+        {
+                outputSFTFile = fopen(outputFilePath, "wb");
+                if (outputSFTFile == NULL)
+                {
+                        fprintf(stderr, "Error opening file %s\n", outputFilePath);
+                        exit(1);
+                }
         }
 
         /* loop over wide-band SFT files, opening each, extracting the frequency
@@ -98,8 +117,14 @@ int main ( int argc, char *argv[] )
                         exit(1);
                 }
 
-                                
-                ret = add_frame_to_frame_file(&header, dataF, frnum++, outputFrameFile); 
+                if (!mergedSFT)
+                {                
+                        ret = add_frame_to_frame_file(&header, dataF, frnum++, outputFrameFile); 
+                }
+                else
+                {
+                        ret = add_sft_to_mergedSFT_file(&header, dataF, outputSFTFile); 
+                }
                 if ( ret != 0)
                 {
                         fprintf(stderr, "Error writing frequency series to file %s\n", outputFilePath);
@@ -113,8 +138,15 @@ int main ( int argc, char *argv[] )
                 }
         } /* while */
 
-        /* close the output frame file and exit */
-        FrFileOEnd(outputFrameFile);
+        /* close the output file and exit */
+        if (!mergedSFT)
+        {
+                FrFileOEnd(outputFrameFile);
+        }
+        else
+        {
+                fclose(outputSFTFile);
+        }
 
         return 0;
 
@@ -127,6 +159,7 @@ int main ( int argc, char *argv[] )
 "SYNOPSIS                                                                   \n"\
 "       lalapps_narrowBandExtract --input=PATH --output=PATH                \n"\
 "               --start-frequency=FREQUENCY --bandwidth=BANDWIDTH           \n"\
+"               --mergedSFT                                                 \n"\
 "                                                                           \n"\
 "       lalapps_narrowBandExtract --help                                    \n"\
 "                                                                           \n"\
@@ -147,6 +180,10 @@ int main ( int argc, char *argv[] )
 "                                                                           \n"\
 "       -b, --bandwidth                                                     \n"\
 "               the bandwith of the narrow band to extract                  \n"\
+"                                                                           \n"\
+"       -m, --mergedSFT                                                     \n"\
+"               generate a merged SFT file instead of a frame               \n"\
+"               file                                                        \n"\
 "                                                                           \n"\
 "       -h, --help                                                          \n"\
 "               print this usage message                                    \n"\
@@ -170,11 +207,12 @@ int parse_command_line(int argc, char *argv[])
                 {"output",              required_argument, 0,   'o'},
                 {"start-frequency",     required_argument, 0,   'f'},
                 {"bandwidth",           required_argument, 0,   'b'},
+                {"mergedSFT",           no_argument,       0,   'm'},
                 {"help",                no_argument,       0,   'h'},
                 {0, 0, 0, 0}
         };
 
-        char *short_options = "i:o:f:b:h";
+        char *short_options = "i:o:f:b:hm";
         int c;
 
         while ( 1 )
@@ -212,6 +250,12 @@ int parse_command_line(int argc, char *argv[])
                         case 'b':
                                 {
                                         bandwidth = atof(optarg);
+                                        break;
+                                }
+        
+                        case 'm':
+                                {
+                                        mergedSFT = 1;
                                         break;
                                 }
 
@@ -563,3 +607,30 @@ int add_frame_to_frame_file(struct sftheader *header, float *dataF, int frnum, F
 
         return 0;
 }  
+
+int add_sft_to_mergedSFT_file(struct sftheader *header, float *dataF, FILE *outputSFTFile) 
+{
+        int ret;
+
+        /* write header to the file */
+        ret = fwrite((const void *) header, sizeof(header), 1, outputSFTFile);
+
+        if (ret != 1)
+        {
+                fprintf(stderr, "Error writing header to merged SFT file\n");
+                exit(1);
+        }
+
+
+        /* write data to the file */
+        ret = fwrite((const void *) dataF, 2 * sizeof(float), header -> nsamples, outputSFTFile);
+
+        if (ret != header -> nsamples)
+        {
+                fprintf(stderr, "Error writing data to merged SFT file\n");
+                exit(1);
+        }
+
+        return 0;
+
+}
