@@ -116,7 +116,7 @@ void PROG (Status       *status,
 
   for (dim = 0; dim < numDims; ++dim)
   {
-    arrayDataSize += dimLength->data[dim];
+    arrayDataSize *= dimLength->data[dim];
   }
 
   if (!arrayDataSize)
