@@ -80,7 +80,6 @@ extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 /*----------------------------------------------------------------------*/
 static const PulsarSignalParams empty_params;
 static const SFTParams empty_sftParams;
-static const LALStatus empty_status;
 static const EphemerisData empty_edat;
 static const ConfigVars_t empty_GV;
 /*----------------------------------------------------------------------*/
@@ -127,7 +126,7 @@ REAL8 uvar_orbitAngSpeed;
 int
 main(int argc, char *argv[]) 
 {
-  LALStatus status = empty_status;	/* initialize status */
+  LALStatus status = blank_status;	/* initialize status */
   ConfigVars_t GV = empty_GV;
   PulsarSignalParams params = empty_params;
   SFTParams sftParams = empty_sftParams;
@@ -220,7 +219,7 @@ main(int argc, char *argv[])
       for (i=0; i < SFTs->length; i++)
 	{
 	  sprintf (fname, "%s.%05d", uvar_outSFTbname, i);
-	  LAL_CALL (LALWriteSFTtoFile (&status, &(SFTs->data[i]), fname), &status);
+	  LAL_CALL (LALWriteSFTfile (&status, &(SFTs->data[i]), fname), &status);
 	} /* for i < nSFTs */
       LALFree (fname);
     } /* if SFTbname */
