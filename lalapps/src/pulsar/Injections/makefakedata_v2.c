@@ -780,8 +780,8 @@ int correct_phase(LALStatus* status) {
   REAL8 cosx,sinx,x;
   COMPLEX8 fvec1;
 
-  x = timeSeries->epoch.gpsSeconds-cwDetector.heterodyneEpoch.gpsSeconds;
-  x += 0.000000001 * ( timeSeries->epoch.gpsNanoSeconds-cwDetector.heterodyneEpoch.gpsNanoSeconds );
+  x = (REAL8)(timeSeries->epoch.gpsSeconds-cwDetector.heterodyneEpoch.gpsSeconds);
+  x += 0.000000001 * (REAL8)( timeSeries->epoch.gpsNanoSeconds-cwDetector.heterodyneEpoch.gpsNanoSeconds );
 
   x *= LAL_TWOPI*timeSeries->f0; 
 
