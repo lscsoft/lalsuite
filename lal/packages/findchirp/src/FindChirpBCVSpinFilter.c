@@ -411,8 +411,19 @@ LALFindChirpBCVSpinFilterSegment (
   /* will need to set up ignoreIndex and deltaEventIndex */
   /* for time being... */
   /* temporarily set chirpTime equal to 0.5 seconds */
-  chirpTime = 0.5;
-  deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
+ /* chirpTime = 0.5;
+  deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );*/
+
+  /* Calculate deltaEventIndex : the only acceptable clustering */
+  /* is "window" method, for BCV                                */
+  if ( params->clusterMethod == window )
+  {
+	 deltaEventIndex=(UINT4) rint((params->clusterWindow/params->deltaT)+1.0);
+  }
+  else if ( params->clusterMethod == tmplt )
+  {
+        ABORT( status, FINDCHIRPBCVSPINH_ECLUW, FINDCHIRPBCVSPINH_MSGECLUW );
+  }
   
   /* ignore corrupted data at start and end */
   ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
@@ -528,9 +539,10 @@ LALFindChirpBCVSpinFilterSegment (
                 /* check to see if snr>threshold 
 		within interval defined by
                 deltaEventIndex */
-		else if ( params->maximiseOverChirp &&
-            	j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
-            	rho > thisEvent->snr )
+		
+		else if ( ! params->clusterMethod == noClustering &&
+	        j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
+		rho > thisEvent->snr )
         	{
           		/* this is the same event so update maximum */
           		thisEvent->end_time.gpsSeconds = j;
@@ -557,10 +569,8 @@ LALFindChirpBCVSpinFilterSegment (
 			
                 }
 
-
-		else if (j > thisEvent->end_time.gpsSeconds 
-		+ deltaEventIndex ||
-              	! params->maximiseOverChirp)
+                else if (j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
+		         params->clusterMethod == noClustering )
         	{
           		/* clean up this event */
           		SnglInspiralTable *lastEvent;
