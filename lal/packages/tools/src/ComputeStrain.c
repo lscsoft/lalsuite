@@ -33,7 +33,6 @@ None
 
 #include <lal/filters-H1-S3.h>
 
-#define UpSamplingFactor 16
 #define MAXALPHAS 10000
 
 NRCSID( COMPUTESTRAINC, "$Id$" );
@@ -46,225 +45,152 @@ void LALComputeStrain(
 {
 /* Inverse sensing, servo, analog actuation, digital x 
 actuation  digital y actuation */
-static REAL8IIRFilter Cinv,G[NGfilt],AA,AX[NAXfilt],AY[NAYfilt];    
-static REAL8TimeSeries h,hR,uphR,hC,hCX,hCY;
+static REAL8TimeSeries hR,uphR,hC,hCX,hCY;
 int p;
-PassBandParamStruc highpassfilterpar,lowpassfilterpar;
 
  INITSTATUS( status, "LALComputeStrain", COMPUTESTRAINC );
  ATTATCHSTATUSPTR( status );
 
-  /* high pass filter parameters */ 
-  highpassfilterpar.nMax  = 10;
-  highpassfilterpar.f2    = 40.0;
-  highpassfilterpar.a2    = 0.5;
-  highpassfilterpar.f1    = -1.0;
-  highpassfilterpar.a1    = -1.0;
-  /* low pass filter parameters */
-  lowpassfilterpar.nMax  = 12;
-  lowpassfilterpar.f2    = -1.0;
-  lowpassfilterpar.a2    = -1.0;
-  lowpassfilterpar.f1    = 6000.0;
-  lowpassfilterpar.a1    = 0.5;
-
-  XLALMakeFilters(status,&Cinv,G,&AA,AX,AY); 
-  CHECKSTATUSPTR( status );
-
-  XLALGetFactors(status, output, input);
-  CHECKSTATUSPTR( status );
+ XLALGetFactors(status, output, input);
+ CHECKSTATUSPTR( status );
   
-  /* Create vectors that will hold the residual, control and net strain signals */
-  LALDCreateVector(status->statusPtr,&h.data,input->AS_Q.data->length);
-  CHECKSTATUSPTR( status );
-  LALDCreateVector(status->statusPtr,&hR.data,input->AS_Q.data->length);
-  CHECKSTATUSPTR( status );
-  LALDCreateVector(status->statusPtr,&hC.data,input->AS_Q.data->length);
-  CHECKSTATUSPTR( status );
-  LALDCreateVector(status->statusPtr,&hCX.data,input->AS_Q.data->length);
-  CHECKSTATUSPTR( status );
-  LALDCreateVector(status->statusPtr,&hCY.data,input->AS_Q.data->length);
-  CHECKSTATUSPTR( status );
-  LALDCreateVector(status->statusPtr,&uphR.data,UpSamplingFactor*input->AS_Q.data->length);
-  CHECKSTATUSPTR( status );
+ /* Create vectors that will hold the residual, control and net strain signals */
+ LALDCreateVector(status->statusPtr,&hR.data,input->AS_Q.data->length);
+ CHECKSTATUSPTR( status );
+ LALDCreateVector(status->statusPtr,&hC.data,input->AS_Q.data->length);
+ CHECKSTATUSPTR( status );
+ LALDCreateVector(status->statusPtr,&hCX.data,input->AS_Q.data->length);
+ CHECKSTATUSPTR( status );
+ LALDCreateVector(status->statusPtr,&hCY.data,input->AS_Q.data->length);
+ CHECKSTATUSPTR( status );
+ LALDCreateVector(status->statusPtr,&uphR.data,input->CinvUSF*input->AS_Q.data->length);
+ CHECKSTATUSPTR( status );
 
-  h.deltaT=input->AS_Q.deltaT;
-  hR.deltaT=input->AS_Q.deltaT;
-  hC.deltaT=input->AS_Q.deltaT;
-  uphR.deltaT=input->AS_Q.deltaT/UpSamplingFactor;
+ hR.deltaT=input->AS_Q.deltaT;
+ hC.deltaT=input->AS_Q.deltaT;
+ uphR.deltaT=input->AS_Q.deltaT/input->CinvUSF;
 
-  /* copy AS_Q input into residual strain as double */  
-  for (p=0; p<(int)hR.data->length; p++) {
-    hR.data->data[p]=input->AS_Q.data->data[p];
-  }
-  /* copy AS_Q input into control strain as double */  
-  for (p=0; p<(int)hC.data->length; p++) {
-    hC.data->data[p]=input->AS_Q.data->data[p];
-  }
+ /* copy AS_Q input into residual strain as double */  
+ for (p=0; p<(int)hR.data->length; p++) 
+   {
+     hR.data->data[p]=input->AS_Q.data->data[p];
+   }
+ /* copy AS_Q input into control strain as double */  
+ for (p=0; p<(int)hC.data->length; p++) 
+   {
+     hC.data->data[p]=input->AS_Q.data->data[p];
+   }
 
-  /* high pass filter both time series */
-  LALButterworthREAL8TimeSeries(status->statusPtr,&hR,&highpassfilterpar);
-  CHECKSTATUSPTR( status );
-  LALButterworthREAL8TimeSeries(status->statusPtr,&hC,&highpassfilterpar);
-  CHECKSTATUSPTR( status );
-  
-  /* ---------- Compute Residual Strain -------------*/
-  /* to get the residual strain we must first divide AS_Q by alpha */
-  if(XLALhROverAlpha(&hR, output)) 
-    {
-      ABORT(status,116,"Broke at hR/alpha") ;
-    }
-  /* then we upsample (and smooth it with a low pass filter) */
-  if(XLALUpsamplehR(&uphR, &hR, UpSamplingFactor)) 
-    { 
-      ABORT(status,117,"Broke upsampling hR");
-    }
-  LALButterworthREAL8TimeSeries(status->statusPtr,&uphR,&lowpassfilterpar);
-  CHECKSTATUSPTR( status );
-
-  /* then we filter through the inverse of the sensing function */
-  LALIIRFilterREAL8Vector(status->statusPtr,uphR.data,&Cinv);
-  CHECKSTATUSPTR( status );
-
-  /* Low pass again before downsampling */
-  LALButterworthREAL8TimeSeries(status->statusPtr,&uphR,&lowpassfilterpar);
-  CHECKSTATUSPTR( status );
+ /* ---------- Compute Residual Strain -------------*/
+ /* to get the residual strain we must first divide AS_Q by alpha */
+ if(XLALhROverAlpha(&hR, output)) 
+   {
+     ABORT(status,116,"Broke at hR/alpha");
+   }
  
-  /* then we downsample and voila' */
-  for (p=0; p<(int)hR.data->length; p++) {
-    hR.data->data[p]=uphR.data->data[p*UpSamplingFactor];
-  }
+ /* then we upsample (and smooth it with a low pass filter) */
+ if (input->CinvUSF > 1){
+   if(XLALUpsamplehR(&uphR, &hR, input->CinvUSF)) 
+     { 
+       ABORT(status,117,"Broke upsampling hR");
+     }
+   /* FIXME: Low pass filter to smooth time series */
+ }
+
+ /* then we filter through the inverse of the sensing function */
+ for(p = 0; p < input->NCinv; p++){
+   LALIIRFilterREAL8Vector(status->statusPtr,uphR.data,&(input->Cinv[p]));
+   CHECKSTATUSPTR( status );
+ }
   
-  /* ---------- Compute Control Strain -------------*/
-  /* to get the control strain we first multiply AS_Q by beta */
-  if( XLALhCTimesBeta(&hC, output))
-    { 
-      ABORT(status,120,"Broke in hC x beta");
-    }
+ /* If there's a delay (or advance), apply it */ 
+ if (input->CinvDelay != 0){
+   /* Now implement the time advance filter */
+   for (p=0; p<(int)uphR.data->length+input->CinvDelay; p++){
+     uphR.data->data[p]=uphR.data->data[p-input->CinvDelay];
+   }
+ }
+ 
+ /* FIXME: Low pass again before downsampling */
+ 
+ /* then we downsample and voila' */
+ for (p=0; p<(int)hR.data->length; p++) {
+   output->h.data->data[p]=uphR.data->data[p*input->CinvUSF];
+ }
 
-  /* Now we filter through the servo */
-  for(p=NGfilt-1;p>=0;p--){
-    LALIIRFilterREAL8Vector(status->statusPtr,hC.data,&G[p]);
-    CHECKSTATUSPTR( status );
-  }
-  /* and adjust to account for servo gain to get darm_ctrl */ 
-  for (p=0; p<(int)hC.data->length;p++) {
-    hC.data->data[p] *= ServoGain;
-  }
+ /* Clean up stuff associated with residual strain */
+ LALDDestroyVector(status->statusPtr,&uphR.data);
+ CHECKSTATUSPTR( status );
+ LALDDestroyVector(status->statusPtr,&hR.data);
+ CHECKSTATUSPTR( status );
 
-  /* Copy data into x and y time series for parallel filtering */
-  for (p=0; p < (int)hCX.data->length; p++) {
-    hCX.data->data[p]=hC.data->data[p];
-  }
-  for (p=0; p < (int)hCY.data->length; p++) {
-    hCY.data->data[p]=hC.data->data[p];
-  }
-  
-  /* Filter x-arm */
-  for(p = NAXfilt-1; p >= 0; p--){
-    LALIIRFilterREAL8Vector(status->statusPtr,hCX.data,&AX[p]);
-    CHECKSTATUSPTR( status );
-  }
-  /* Adjust to account for digital gain on x-arm*/ 
-  for (p=0; p< (int)hC.data->length;p++) {
-    hCX.data->data[p] *= AXGain;
-  }
-  
-  /* Filter y-arm */
-  for(p = NAYfilt-1; p >= 0; p--){
-    LALIIRFilterREAL8Vector(status->statusPtr,hCY.data,&AY[p]);
-    CHECKSTATUSPTR( status );
-  }
-  /* Adjust to account for digital gain on y-arm*/ 
-  for (p = 0; p < (int)hC.data->length; p++) {
-    hCY.data->data[p] *= AYGain;
-  }
+ /* ---------- Compute Control Strain -------------*/
+ /* to get the control strain we first multiply AS_Q by beta */
+ if( XLALhCTimesBeta(&hC, output))
+   { 
+     ABORT(status,120,"Broke in hC x beta");
+   }
+ 
+ /* Now we filter through the servo, */
+ for(p = 0; p < input->NG; p++){
+   LALIIRFilterREAL8Vector(status->statusPtr,hC.data,&(input->G[p]));
+   CHECKSTATUSPTR( status );
+ }
 
-  /* add x-arm and y-arm together */
-  for (p=0; p< (int)hC.data->length; p++) {
-    hC.data->data[p]=(hCX.data->data[p]+hCY.data->data[p])/2;
-  }
+ /* Now we filter through the analog part of actuation */
+ for(p = 0; p < input->NAA; p++){
+   LALIIRFilterREAL8Vector(status->statusPtr,hC.data,&(input->AA[p]));
+   CHECKSTATUSPTR( status );
+ }
 
-  /* filter through analog part of actuation and voila' */ 
-  LALIIRFilterREAL8Vector(status->statusPtr,hC.data,&AA);
-  CHECKSTATUSPTR( status );
+ /* and apply the delay  if any */
+ if (input->AADelay != 0){
+   /* Now implement the time advance filter */
+   for (p=0; p<(int)uphR.data->length+input->AADelay; p++){
+     hC.data->data[p]=hC.data->data[p-input->AADelay];
+   }
+ }
 
-  /* ---------- Compute Net Strain -------------*/
+ /* Copy data into x and y time series for parallel filtering */
+ for (p=0; p < (int)hC.data->length; p++){
+   hCX.data->data[p]= hCY.data->data[p]=hC.data->data[p];
+ }
 
-  /* for good measure we high pass filter both residual and control signals again
-     before adding them together */
-  LALButterworthREAL8TimeSeries(status->statusPtr,&hR,&highpassfilterpar);
-  CHECKSTATUSPTR( status );
-  LALButterworthREAL8TimeSeries(status->statusPtr,&hC,&highpassfilterpar);
-  CHECKSTATUSPTR( status );
+ /* Destroy vector holding control signal */
+ LALDDestroyVector(status->statusPtr,&hC.data);
+ CHECKSTATUSPTR( status );
 
-  /* now add control and residual signals together and we're done */
-  for (p=0; p < (int)h.data->length; p++) {
-    h.data->data[p]= hR.data->data[p]+ hC.data->data[p];
-    output->h.data->data[p]=h.data->data[p];
-  }
+ /* Filter x-arm */
+ for(p = 0; p < input->NAX; p++){
+   LALIIRFilterREAL8Vector(status->statusPtr,hCX.data,&(input->AX[p]));
+   CHECKSTATUSPTR( status );
+ }
 
-  /* destroy vectors that hold the data */
-  LALDDestroyVector(status->statusPtr,&h.data);
-  CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&hR.data);
-  CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&uphR.data);
-  CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&hC.data);
-  CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&hCX.data);
-  CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&hCY.data);
-  CHECKSTATUSPTR( status );
+ /* Filter y-arm */
+ for(p = 0; p < input->NAY; p++){
+   LALIIRFilterREAL8Vector(status->statusPtr,hCY.data,&(input->AY[p]));
+   CHECKSTATUSPTR( status );
+ }
 
-  /* Destroy vectors that hold filter coefficients */
-  LALDDestroyVector(status->statusPtr,&Cinv.directCoef);
-  CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&Cinv.recursCoef);
-  CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&Cinv.history);
-  CHECKSTATUSPTR( status );
+ /* ---------- Compute Net Strain -------------*/
 
-  for(p=0;p<NGfilt;p++){
-    LALDDestroyVector(status->statusPtr,&G[p].directCoef);
-    CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&G[p].recursCoef);
-    CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&G[p].history);   
-    CHECKSTATUSPTR( status );
-  }
+ /* add x-arm and y-arm (adjusting gains) and voila' */
+ for (p=0; p< (int)output->h.data->length; p++){
+   output->h.data->data[p] += (hCX.data->data[p]+hCY.data->data[p])/2;
+ }
+ 
+ /* destroy vectors that hold the data */
+ LALDDestroyVector(status->statusPtr,&hCX.data);
+ CHECKSTATUSPTR( status );
+ LALDDestroyVector(status->statusPtr,&hCY.data);
+ CHECKSTATUSPTR( status );
 
-  LALDDestroyVector(status->statusPtr,&AA.directCoef);
-  CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&AA.recursCoef);
-  CHECKSTATUSPTR( status );
-  LALDDestroyVector(status->statusPtr,&AA.history);
-  CHECKSTATUSPTR( status );
+ DETATCHSTATUSPTR( status );
+ RETURN( status );
 
-  for(p=0;p<NAXfilt;p++){
-    LALDDestroyVector(status->statusPtr,&AX[p].directCoef);
-    CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&AX[p].recursCoef);
-    CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&AX[p].history);
-    CHECKSTATUSPTR( status );
-  }
-
-  for(p=0;p<NAYfilt;p++){
-    LALDDestroyVector(status->statusPtr,&AY[p].directCoef);
-    CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&AY[p].recursCoef);
-    CHECKSTATUSPTR( status );
-    LALDDestroyVector(status->statusPtr,&AY[p].history);
-    CHECKSTATUSPTR( status );
-  }
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
 }
 
 /*******************************************************************************/
-
 
 int XLALhCTimesBeta(REAL8TimeSeries *hC, StrainOut *output)
 {
@@ -301,9 +227,7 @@ int XLALhCTimesBeta(REAL8TimeSeries *hC, StrainOut *output)
   return 0;
 }
 
-
 /*******************************************************************************/
-
 
 int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
 {
@@ -323,7 +247,6 @@ int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
 }
 
 /*******************************************************************************/
-
 
 int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output)
 {
@@ -359,71 +282,6 @@ int XLALhROverAlpha(REAL8TimeSeries *hR, StrainOut *output)
 
   return 0;
 }
-
-/*******************************************************************************/
-
-
-
-void XLALMakeFilters(LALStatus *status, REAL8IIRFilter *Cinv, REAL8IIRFilter *G,REAL8IIRFilter 
-  *AA,REAL8IIRFilter *AX,REAL8IIRFilter *AY)
-{
-  int l,n;
-  
-  LALDCreateVector(status->statusPtr,&Cinv->directCoef,CinvDirectOrder);
-  LALDCreateVector(status->statusPtr,&Cinv->recursCoef,CinvRecursOrder);
-  LALDCreateVector(status->statusPtr,&Cinv->history,CinvDirectOrder-1);
-
-  for(l=0;l<CinvDirectOrder;l++) Cinv->directCoef->data[l]=CinvDirectCoefs[l];
-  for(l=0;l<CinvDirectOrder;l++) Cinv->recursCoef->data[l]=-CinvRecursCoefs[l];
-  for(l=0;l<CinvDirectOrder-1;l++) Cinv->history->data[l]=0.0;
-
-  for(n=0;n<NGfilt;n++){
-
-    LALDCreateVector(status->statusPtr,&G[n].directCoef,G_Dord);
-    LALDCreateVector(status->statusPtr,&G[n].recursCoef,G_Dord);
-    LALDCreateVector(status->statusPtr,&G[n].history,G_Dord-1);
-   
-    /* Fill coefficient vectors with coefficients from filters.h */
-    for(l=0;l<G_Dord;l++) G[n].directCoef->data[l]=G_D[n][l];
-    for(l=0;l<G_Dord;l++) G[n].recursCoef->data[l]=-G_R[n][l];
-    for(l=0;l<G_Dord-1;l++) G[n].history->data[l]=0.0;
-
-  }
-
-  LALDCreateVector(status->statusPtr,&AA->directCoef, A_0_Rord);
-  LALDCreateVector(status->statusPtr,&AA->recursCoef, A_0_Rord);
-  LALDCreateVector(status->statusPtr,&AA->history, A_0_Rord-1);
-
-  /* Fill coefficient vectors with coefficients from filters.h */
-  for(l=0;l< A_0_Rord;l++) AA->directCoef->data[l]=A_0_D[l];
-  for(l=0;l< A_0_Rord;l++) AA->recursCoef->data[l]=-A_0_R[l];
-  for(l=0;l< A_0_Rord-1;l++) AA->history->data[l]=0.0;
-
-  for(n=0;n<NAXfilt;n++){
-   
-    LALDCreateVector(status->statusPtr,&AX[n].directCoef, A_digital_Rord);
-    LALDCreateVector(status->statusPtr,&AX[n].recursCoef, A_digital_Rord);
-    LALDCreateVector(status->statusPtr,&AX[n].history, A_digital_Rord-1);
-
-    for(l=0;l< A_digital_Rord;l++) AX[n].directCoef->data[l]=AX_D[n][l];
-    for(l=0;l< A_digital_Rord;l++) AX[n].recursCoef->data[l]=-AX_R[n][l];
-    for(l=0;l< A_digital_Rord-1;l++) AX[n].history->data[l]=0.0;
-    
-  }
-
-  for(n=0;n<NAYfilt;n++){
-    LALDCreateVector(status->statusPtr,&AY[n].directCoef, A_digital_Rord);
-    LALDCreateVector(status->statusPtr,&AY[n].recursCoef, A_digital_Rord);
-    LALDCreateVector(status->statusPtr,&AY[n].history, A_digital_Rord-1);
-
-    for(l=0;l< A_digital_Rord;l++) AY[n].directCoef->data[l]=AY_D[n][l];
-    for(l=0;l< A_digital_Rord;l++) AY[n].recursCoef->data[l]=-AY_R[n][l];
-    for(l=0;l< A_digital_Rord-1;l++) AY[n].history->data[l]=0.0;
-  }
-
-  RETURN (status);
-}
-
 
 /*******************************************************************************/
 
@@ -510,7 +368,6 @@ INT4 length = input->AS_Q.data->length;
 	  fprintf(stderr,"Too many values of the factors, maximum allowed is %d\n",MAXALPHAS);
 	  RETURN(status);
 	}
-
     }
 
   /* Clean up */
