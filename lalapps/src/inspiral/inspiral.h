@@ -29,12 +29,3 @@
 "   --gps-start-time            GPS start of data to be filtered\n" \
 "   --gps-stop-time             GPS stop time of data to be filtered\n"
 
-typedef enum
-{
-  tmplt_none,
-  tmplt_stationary_phase,
-  tmplt_time_domain
-}
-InspiralTmpltType;
-
-
