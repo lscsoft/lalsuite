@@ -41,28 +41,39 @@ class ScienceSegment:
     self.end = end
     self.duration = duration
     self.used = 0
+    self.mindur = 0
     self.chunks = []
     self.segpad = segpad
     self.startpad = self.start - self.segpad
     self.endpad = self.end + self.segpad
 
-  def createchunks(self,length,overlap,play_only):
+  def createchunks(self,length,overlap,mindur,play_only):
     dur = self.duration
     start = self.start
     seg_incr = length - overlap
-    while dur >= 0:
+    self.mindur = mindur
+    fixedur = dur
+    subdur = 0
+    used = 0
+    while dur >= mindur:
       if dur >= length:
         middle = start + length/2
         end = start + length
+        used += length
       else:
           middle = start + dur/2
           end = start + dur
+          used += dur
       if (not play_only) or ( play_only 
         and ( isplay(start) or isplay(middle) or isplay(end) ) ):
         self.chunks.append(BurstChunk(start,end))
       start += seg_incr
       dur -= seg_incr
-    self.used = self.duration - dur
+      if (dur < mindur and dur > 0 ):
+        subdur = dur
+    if (not play_only) or ( play_only 
+        and ( isplay(start) or isplay(middle) or isplay(end) ) ):    
+      self.used = used
 
 
 class BurstPipeline:
@@ -103,8 +114,9 @@ class BurstPipeline:
     # compute the chunk and overlap length in seconds
     chunk_length = int(self.config['datacond']['chunk-length'])
     overlap = int(self.config['datacond']['overlap'])
+    mindur = int(self.config['datacond']['mindur'])    
     for seg in self.segments:
-      seg.createchunks(chunk_length,overlap,play_only)
+      seg.createchunks(chunk_length,overlap,mindur,play_only)
 
   def status(self,play_only):
     log_fh = open( self.basename + '.pipeline.log', 'w' )
@@ -117,10 +129,12 @@ class BurstPipeline:
       total_science_used += sciseg.used
       num_chunks += len(sciseg.chunks)
     print >> log_fh, """\
-read %d science segments
-got %d seconds of science data of which %d seconds is usable
-created %d burst chunks for analysis\
-""" % ( len(self.segments), total_science, total_science_used, num_chunks )
+Read %d science segments
+Got %d seconds of science data
+Have imposed a min. duration of %d seconds
+If we consider the overlap of 1 sec. in each chunk then the amount of data is %d seconds
+Created %d burst chunks for analysis\
+""" % ( len(self.segments), total_science, sciseg.mindur, total_science_used, num_chunks )
     if play_only:
       print >> log_fh, "filtering only segments that overlap with playground"
     print >> log_fh, "condor log file is", self.logfile
@@ -288,6 +302,7 @@ queue
     print alphathL
     
     dag_fh = open( self.basename + ".dag", "w" )
+    seg_fh = open( self.basename + ".txt", "w" )
     
     # jobs to generate the frame cache files
     for seg in self.segments:
@@ -339,6 +354,7 @@ VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" chunklen=
 """ % ( jobname,siteH1,ifoH1,seg.startpad,seg.endpad,chunk.start,chunk.end,
 chunk.length,chanH1,(2*chunk.length-1),(t*srate),(((t*srate)-olap)*(2*chunk.length-1)+(3*olap)),seg.endpad-seg.startpad, usertag, alphathH)
         print >> dag_fh, 'PARENT %s %s CHILD %s' % (parentA, parentB, jobname)
+        print >> seg_fh, '%d  %d  %d' % (chunk.start, chunk.end, chunk.length)
     for seg in self.segments:
       for chunk in seg.chunks:
         parentA = 'frcache_%s_%s_%s' % (siteL1,seg.startpad,seg.endpad)
