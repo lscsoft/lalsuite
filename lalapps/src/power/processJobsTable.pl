@@ -130,7 +130,7 @@ sub f_processJobsTable {
 		}
 		
 		#read columns into variables
-		my ($statusCode, $startSec, $stopSec, $framecache, $outfile)  = ($fields[0],$fields[2],$fields[3],$fields[4],$fields[5]);
+		my ($statusCode, $startSec, $stopSec, $framecache, $outfile,$description)  = ($fields[0],$fields[2],$fields[3],$fields[4],$fields[5],$fields[6]);
 
 		if($statusCode eq "C" or $statusCode eq "E" or $statusCode eq "BC"){
 			#nothing to do now; may add code later
@@ -142,10 +142,10 @@ sub f_processJobsTable {
 			$statusCode = f_checkForProgramCompletion($outfile);
 		} elsif ($statusCode eq "NF"){ #If there's no output, try re-running it
 		
-			print "StatusCode=NF\n";
-			#re-build the cache file, with more data. The extra data will
+			#rebuild the cache file with more data. The extra data 
 			# should get rid of the "ABORT: End of Frame Data" errors
 			if(-f $framecache){unlink($framecache);}
+			#if the rebuild failes mark it bad cache - Can't create the cachefile
 			unless(f_buildCacheFile($startSec,  $stopSec + 5000,$framecache, ${$params}{'INSTRUMENT'})){
 				$statusCode = "BC";
 				next;
@@ -287,17 +287,20 @@ sub f_writeJobToCondorSubmitFile {
 
 	my ($startSec, $stopSec, $framecache, $outfile) = @_;
 	my $duration = $stopSec - $startSec;
-	
+	my $npts = ${$params}{'SRATE'} * ${$params}{'T'};
+	my $epoch = $startSec;	
 	#number of segments = (2*number of seconds) - 1
-	my $epoch = $startSec;
 	my $nseg = 2*($stopSec - $startSec) - 1;
-	my $olap = ${$params}{'NPTS'}/2;
-	my $numpts = ${$params}{'NPTS'} + (${$params}{'NPTS'} - $olap)*( $nseg-1)+ 2*$olap;
-	my $condorCmd;
+	my $olap = $npts/2;
+	my $numpts = $npts + ($npts - $olap)*( $nseg-1)+ 2*$olap;
+	my $comment = "${$params}{'COMMENT'}-$startSec-$stopSec";
+	#replace spaces in comment w/ underscores
+	$comment =~ s/ /_/g;
+	print "comment=$comment\n";
 
 	# BUILD THE ARGS
 	my $args = << "POWER_ARGS";
-		--npts ${$params}{'NPTS'}
+		--npts $npts
 		--nseg $nseg
 		--olap $olap
 		--olapfctr ${$params}{'OLAPFCTR'}
@@ -314,19 +317,23 @@ sub f_writeJobToCondorSubmitFile {
 		--channel ${$params}{'CHANNEL'}
 		--framecache $framecache		
 		--simtype ${$params}{'SIMTYPE'}
+		--srate ${$params}{'SRATE'}
 		--spectype ${$params}{'SPECTYPE'}
 		--window ${$params}{'WINDOW'}
-		--epoch $epoch 0
+		--start_time $startSec
+      --start_time_ns 0 
 		--numpts $numpts
-		--outfile  $outfile
+		--comment $comment
+		--dbglevel ${$params}{'DBGLEVEL'}
+		--verbose
 POWER_ARGS
 
 	#clean the args string so that it is only one line
 	$args =~ s/(\n|\t)/ /g;
 
 	#create the condor command
-	$condorCmd =<< "ARGUMENTS";
-		Arguments      = $args
+	my $condorCmd =<< "ARGUMENTS";
+		Arguments  = $args
 		Output     = $runPath/out/$epoch-$duration.out
 		Error      = $runPath/err/$epoch-$duration.err
 		Log        = $runPath/log/$epoch-$duration.log

@@ -119,7 +119,7 @@ if(${$params}{'USE_PLAYGROUND'}){
 	foreach (keys %{$playgroundSeconds}){
 		$countPlaygroundSecs++;
 	}
-	print "The Playground is $countPlaygroundSecs seconds.\n\n";
+	#print "The Playground is $countPlaygroundSecs seconds.\n\n";
 }
 
 # now create the submit script using quality data file and the 

@@ -225,7 +225,7 @@ HTML_PAGE
 #-----------------------------------------------------------------------------------
 sub f_getRunNumber {
 	my ($path, $date) = @_;
-	opendir PATH, $path	;
+	opendir PATH, $path or die "Couldn't open $path.";
 	
 	#get a bottom to top list of the files that end with DATE-XXX
 	my $searchString = $date . '-\d{3}';

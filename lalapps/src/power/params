@@ -14,14 +14,14 @@ TIME_CHUNK_MAX_SIZE=1024
 TIME_CHUNK_MIN_SIZE=4
 
 # the path to the lalapps_power executable
-EXECUTABLE=/home/dsmackin/bin/lalapps_power
+EXECUTABLE=/home/saikat/bin/lalapps_power
 
 # Make sure intstrument is consistent for 
 INSTRUMENT=H
 
 #To limit the ananalysis of data to the playground, set USE_PLAYGROUND = 1
 # To use all data, set USE_PLAYGROUND=1
-USE_PLAYGROUND=0
+USE_PLAYGROUND=1
 
 # value should be 6 unless the table structure changes
 JOBS_TABLE_FIELDS=6
@@ -40,6 +40,7 @@ DATA_QUALITY_FILE=/scratch/power/input/S2H1v02_segs.txt
 
 # path to playground file
 PLAYGROUND_FILE =/scratch/power/input/s2-playground.txt
+PLAYGROUND_FILE =/scratch/power/input/s2-playground-TEST.txt
 
 
 #-----------------------------------------------------------------------------------
@@ -72,9 +73,10 @@ CACHE_PATH=/scratch/power/cache
 #-----------------------------------------------------------------------------------
 # lalapps_power  COMMAND LINE ARGUMENTS
 #-----------------------------------------------------------------------------------
-# number of points to analyze per second
-# set NPTS to 16384 for data analysis, 2048 for simulated noise
-NPTS=16384
+
+#do not change this value
+#NPTS=16384
+SRATE=16384
 
 # leave these 3 values as they are
 OLAPFCTR=3
@@ -104,7 +106,7 @@ SEGDCLE=64
 # is less than the threshold, then an event is considered an Event
 # trigger generator (ETG). This number should be between 1.0e-15 and
 # 1.0e-05
-THRESHOLD="10.0e-30"
+THRESHOLD=10.0e-10
 
 # Controls how many events get written out per segment
 ETOMSTR=10
@@ -116,7 +118,17 @@ CHANNEL="H1:LSC-AS_Q"
 SIMTYPE=0
 
 # can be useMedian or useMean
-SPECTYPE="useMedian"
+SPECTYPE=useMedian
 
 # Must be an integer. 2 works well.
 WINDOW=2
+
+#comment is used as identifier in output file name
+
+COMMENT="Testing new parameters"
+
+# NEED TO ADD COMMENT EXPLANING DEBUG LEVELS
+DBGLEVEL=65
+
+#NEED DESCRIPTION FOR T
+T=1
