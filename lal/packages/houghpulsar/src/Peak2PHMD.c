@@ -81,9 +81,9 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 
   INT2    i,j;
   UCHAR   *column1P;
-  INT4    fBinDif,shiftPeak,minPeakBin,maxPeakBin;
+  INT4    fBinDif,shiftPeak,minPeakBin,maxPeakBin,thisPeak;
   INT2    relatIndex;
-  UINT4   lengthLeft,lengthRight,n, searchIndex, thisPeak;
+  UINT4   lengthLeft,lengthRight,n, searchIndex;
   UINT8   firstBin,lastBin,pgI,pgF;
   /* --------------------------------------------- */
 
