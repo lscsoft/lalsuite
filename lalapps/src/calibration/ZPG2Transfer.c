@@ -164,7 +164,7 @@ int main(int argc, char **argv)
 	LALCCreateVector(&stat, &(calrec.transfer->data), npoints);
         fmin = atof( argv[arg++] );
         fmax = atof( argv[arg++] );
-        calrec.transfer->deltaF = fmax / ( (REAL4)(npoints-1) );
+        calrec.transfer->deltaF = (fmax-fmin) / ( (REAL4)(npoints-1) );
         calrec.transfer->f0 = fmin;
       }else{
         LALPrintError( USAGE, *argv );
@@ -190,7 +190,7 @@ int main(int argc, char **argv)
       REAL4 re, im;
       re = calrec.transfer->data->data[i].re;
       im = calrec.transfer->data->data[i].im;
-      fprintf(fp,"%e %e %e\n",calrec.transfer->deltaF * i, re, im);
+      fprintf(fp,"%e %e %e\n",fmin+calrec.transfer->deltaF * i, re, im);
     }
     fclose( fp );
   }
