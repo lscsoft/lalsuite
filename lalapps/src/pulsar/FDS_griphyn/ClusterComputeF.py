@@ -8,6 +8,8 @@ on a set of sky patches, using a GRID-enabled system.
 versionN = 1.0
 sftList = "sftList.txt"
 sftPath = "sftPath.txt"
+ephemerisList = "ephemerisList.txt"
+ephemerisPath = "ephemerisPath.txt"
 dagname = "ClusterComputeF.dag"
 
 import sys
@@ -115,6 +117,11 @@ DESCRIPTION
        -V, --version
               print version number of this script to stderr and exit
 
+       -z, --mergedSFT
+              generate a pipeline that uses a mergedSFT file rather
+              then a frame file to hold the multiple frequency
+              series data
+
 
        Any input SFT data not present on the cluster will be placed in
        the cluster shared directory, which will be determined
@@ -140,12 +147,12 @@ DESCRIPTION
   print msg
 
 # Options and their defaults
-shortopts = "hs:e:i:f:b:d:p:m:x:t:l:n:r:c:q:v:V"
+shortopts = "hs:e:i:f:b:d:p:m:x:t:l:n:r:c:q:v:Vz"
 longopts = [ "help", "start=", "end=", "instrument=", "frequency=",
              "bandwidth=", "spindown=", "spinband=", "metric=",
              "mismatch=", "threshold=", "liststart=", "num=",
              "rls-server=", "calibration=", "calibration-version=",
-             "version", "data-quality=" ]
+             "version", "data-quality=", "mergedSFT" ]
 start = 0
 end = 86400
 instrument = "H1"
@@ -162,6 +169,7 @@ rls_server = "rls://hydra.phys.uwm.edu"
 calibration = "Funky"
 calibration_version = 3
 data_quality=5
+mergedSFT = None
 
 # Parse command line
 try:
@@ -207,6 +215,8 @@ for opt, value in options:
      rls_server = value
   elif opt in ( "-v", "--calibration-version" ):
     calibration_version = int( value )
+  elif opt in ( "-z", "--mergedSFT" ):
+    mergedSFT = True
   elif opt in ( "-V", "--version" ):
     print >>sys.stderr, versionN
     sys.exit( 0 )
@@ -236,8 +246,14 @@ else:
 ### Get name of cluster shared directory and output directory.
 sharedDir = "."
 outputDir = sharedDir + "/ClusterComputeF_%010i/" % int( time.time() )
-nbsftname = outputDir + instrument + "-SFT_%08.3f_%08.3f-%010i-%08i.gwf" % \
+
+if not mergedSFT:
+    nbsftname = outputDir + instrument + "-SFT_%08.3f_%08.3f-%010i-%08i.gwf" % \
             ( frequency, bandwidth, start, end - start )
+else:
+    nbsftname = outputDir + instrument + "-SFT_%08.3f_%08.3f-%010i-%08i.sft" % \
+            ( frequency, bandwidth, start, end - start )
+        
 os.mkdir( outputDir )
 fp = open( outputDir + "command", "w" )
 fp.write( " ".join( sys.argv ) + "\n" )
@@ -247,12 +263,14 @@ fp.write( str( versionN ) + "\n" )
 fp.close()
 
 ### Get name of directory where ephemerides are stored, and year of ephemeris
-ephemDir = "."
-year = getyearstr( ephemDir, start, end )
-if year == "":
-  print >>sys.stderr, sys.argv[0] + " - no ephemerides for GPS " \
-        "times %i-%i" % ( start, end )
-  sys.exit(1)
+#ephemDir = "."
+#year = getyearstr( ephemDir, start, end )
+#if year == "":
+#  print >>sys.stderr, sys.argv[0] + " - no ephemerides for GPS " \
+#        "times %i-%i" % ( start, end )
+#  sys.exit(1)
+year = gps2yearRange(start, end)
+
 
 # Get list of sky patches from input file
 patches = skyPatches()
@@ -268,7 +286,13 @@ except Warning, inst:
   print >>sys.stderr, str( inst )
 num = len( patches.list )
 
-# Create SFT search job.
+# determine current X509_USER_PROXY if available
+try:
+        X509_USER_PROXY = os.environ["X509_USER_PROXY"]
+except Exception, e:
+        X509_USER_PROXY = None 
+
+# create job to search metadata catalog for wide-band SFTs
 searchJob = CondorDAGJob( "scheduler", "lalapps_QueryMetadataLFN" )
 searchJob.set_sub_file(                "QueryMetadataLFN.sub" )
 searchJob.set_stdout_file( outputDir + "QueryMetadataLFN.out" )
@@ -281,8 +305,20 @@ searchJob.add_opt( "gps-start-time", "%i" % start )
 searchJob.add_opt( "gps-end-time",   "%i" % end )
 searchJob.add_opt( "output", outputDir + sftList )
 searchJob.add_condor_cmd( "getenv", "True" )
+if X509_USER_PROXY: searchJob.add_condor_cmd( "environment", "X509_USER_PROXY=%s" % X509_USER_PROXY)
 
-# Create SFT collection job.
+# create job to search metadata catalog for emphemeris files
+searchJobEphemeris = CondorDAGJob( "scheduler", "lalapps_QueryMetadataEphemeris" )
+searchJobEphemeris.set_sub_file(                "QueryMetadataEphemeris.sub" )
+searchJobEphemeris.set_stdout_file( outputDir + "QueryMetadataEphemeris.out" )
+searchJobEphemeris.set_stderr_file( outputDir + "QueryMetadataEphemeris.err" )
+searchJobEphemeris.add_opt( "gps-start-time", "%i" % start )
+searchJobEphemeris.add_opt( "gps-end-time",   "%i" % end )
+searchJobEphemeris.add_opt( "output", outputDir + ephemerisList )
+searchJobEphemeris.add_condor_cmd( "getenv", "True" )
+if X509_USER_PROXY: searchJobEphemeris.add_condor_cmd( "environment", "X509_USER_PROXY=%s" % X509_USER_PROXY)
+
+# create job to find and move/register if necessary wide-band SFT files
 collectJob = CondorDAGJob( "scheduler", "lalapps_GatherLFN" )
 collectJob.set_sub_file(                "GatherLFN.sub" )
 collectJob.set_stdout_file( outputDir + "GatherLFN.out" )
@@ -290,23 +326,43 @@ collectJob.set_stderr_file( outputDir + "GatherLFN.err" )
 collectJob.add_opt( "input",  outputDir + sftList )
 collectJob.add_opt( "output", outputDir + sftPath )
 collectJob.add_opt( "server", rls_server )
-collectJob.add_opt( "bucket", sharedDir )
+collectJob.add_opt( "bucket", outputDir )
 collectJob.add_condor_cmd( "getenv", "True" )
+if X509_USER_PROXY: collectJob.add_condor_cmd( "environment", "X509_USER_PROXY=%s" % X509_USER_PROXY)
 
-# Create SFT extraction job
+# create job to find and move/register if necessary ephemeris files
+collectJobEphemeris = CondorDAGJob( "scheduler", "lalapps_GatherLFN" )
+collectJobEphemeris.set_sub_file(                "GatherLFNephemeris.sub" )
+collectJobEphemeris.set_stdout_file( outputDir + "GatherLFNephemeris.out" )
+collectJobEphemeris.set_stderr_file( outputDir + "GatherLFNephemeris.err" )
+collectJobEphemeris.add_opt( "input",  outputDir + ephemerisList )
+collectJobEphemeris.add_opt( "output", outputDir + ephemerisPath )
+collectJobEphemeris.add_opt( "server", rls_server )
+collectJobEphemeris.add_opt( "bucket", outputDir )
+collectJobEphemeris.add_opt( "symlink", "" )
+collectJobEphemeris.add_condor_cmd( "getenv", "True" )
+if X509_USER_PROXY: collectJobEphemeris.add_condor_cmd( "environment", "X509_USER_PROXY=%s" % X509_USER_PROXY)
+
+# create job to extract narrow band series and save as multi-frame file
 extractJob = CondorDAGJob( "scheduler",  "lalapps_narrowBandExtract" )
 extractJob.set_sub_file(                "narrowBandExtract.sub" )
 extractJob.set_stdout_file( outputDir + "narrowBandExtract.out" )
 extractJob.set_stderr_file( outputDir + "narrowBandExtract.err" )
-extractJob.add_opt( "start-frequency", "%f" % frequency )
-extractJob.add_opt( "bandwidth", "%f" % bandwidth )
+
+# fudge factors since ComputeFStatistic doesn't really use the range input for f and bandwidth
+extractJob.add_opt( "start-frequency", "%f" % (frequency - 1.0) )
+extractJob.add_opt( "bandwidth", "%f" % (bandwidth + 2.0))
+
 extractJob.add_opt( "input",  outputDir + sftPath )
 extractJob.add_opt( "output", nbsftname )
 extractJob.add_condor_cmd( "getenv", "True" )
 
-# Create FrComputeFStatistic job
-computeJob = CondorDAGJob( "standard",   "FrComputeFStatistic" )
-computeJob.set_sub_file(                 "FrComputeFStatistic.sub" )
+if mergedSFT:
+        extractJob.add_opt( "mergedSFT", "")
+
+# create FrComputeFStatistic jobs
+computeJob = CondorDAGJob( "standard",   "lalapps_ComputeFStatistic" )
+computeJob.set_sub_file(                 "ComputeFStatistic.sub" )
 computeJob.set_stdout_file( outputDir + "$(node).out" )
 computeJob.set_stderr_file( outputDir + "$(node).err" )
 computeJob.add_short_opt( "I", "%i" % ifocode )
@@ -317,30 +373,47 @@ computeJob.add_short_opt( "m", "%f" % spinband )
 computeJob.add_short_opt( "M", "%i" % metric )
 computeJob.add_short_opt( "X", "%f" % mismatch )
 computeJob.add_short_opt( "F", "%f" % threshold )
-computeJob.add_short_opt( "i", nbsftname )
-computeJob.add_short_opt( "E", ephemDir )
+computeJob.add_short_opt( "E", "." )
 computeJob.add_short_opt( "y", year )
-computeJob.add_short_opt( "o", outputDir + "$(node)_" )
+computeJob.add_short_opt( "w", outputDir )
+computeJob.add_short_opt( "o", "$(node)_" )
+
+if mergedSFT:
+        computeJob.add_short_opt( "B", os.path.basename(nbsftname))
+else:
+        computeJob.add_short_opt( "i", os.path.basename(nbsftname))
 
 # Create ClusterComputeF DAG
 dag = CondorDAG( "ClusterComputeF.log" )
 dag.set_dag_file( dagname )
+
 searchNode = CondorDAGNode( searchJob )
 searchNode.set_pre_script( "/bin/cp" )
 searchNode.add_pre_script_arg( args[0] )
 searchNode.add_pre_script_arg( outputDir )
 dag.add_node( searchNode )
+
+searchEphemerisNode = CondorDAGNode ( searchJobEphemeris )
+dag.add_node ( searchEphemerisNode )
+
 collectNode = CondorDAGNode( collectJob )
 collectNode.add_parent( searchNode )
 dag.add_node( collectNode )
+
+collectEphemerisNode = CondorDAGNode ( collectJobEphemeris )
+collectNode.add_parent( searchEphemerisNode )
+dag.add_node( collectEphemerisNode )
+
 extractNode = CondorDAGNode( extractJob )
 extractNode.add_parent( collectNode )
 dag.add_node( extractNode )
+
 for i in range( 0, num ):
   computeNode =  CondorDAGNode( computeJob )
   computeNode.add_macro( "node", "%06i" % ( i + liststart ) )
   computeNode.add_var_arg( patches.list[i] )
   computeNode.add_parent( extractNode )
+  computeNode.add_parent( collectEphemerisNode )
   # finalizeNode.add_parent( computeNode )
   dag.add_node( computeNode )
 

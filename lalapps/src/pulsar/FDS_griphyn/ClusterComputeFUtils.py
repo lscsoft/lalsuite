@@ -69,7 +69,24 @@ def gps2year( gps ):
   t1 = ( t % 1461 ) / 365 # complete years since last leap year
   return 1980 + 4*t4 + t1 # year number of GPS start time
 
+def gps2yearRange( gpsStart, gpsEnd):
+  """
+  Given a GPS time range return a string of the form "YY" or "YY-YY" where
+  YY is the last two digits of a year or range of years covering the requested
+  interval.
+  """
 
+  ti = gps2year( gpsStart )
+  tf = gps2year( gpsEnd )
+
+  if ti == tf:
+    range = str(ti)[-2:]
+  else:
+    r1 = str(ti)[-2:]
+    r2 = str(tf)[-2:]
+    range = "%s-%s" % (r1,r2)
+  return range
+    
 def getyearstr( dirname, start, end ):
   """
   Determines the correct year or year range string to use to get the
