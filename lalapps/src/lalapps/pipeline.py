@@ -207,7 +207,7 @@ class CondorDAGJob(CondorJob):
     executable = the executable to run in the DAG.
     """
     CondorJob.__init__(self, universe, executable, 1)
-    self.__notifcation = 'never'
+    self.set_notification('never')
     self.__var_args = []
     self.__bad_macro_chars = re.compile(r'[-_]')
 
