@@ -1319,16 +1319,16 @@ void parseOptions(INT4 argc, CHAR *argv[])
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "GPS start time is prior to 1 January 1994 00:00:00 UTC " \
-              "(%d specified)\n", long_options[option_index].name, \
-              (INT4)startTime);
+              "(%lld specified)\n", long_options[option_index].name, \
+              startTime);
           exit(1);
         }
         if (startTime > 999999999)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "GPS start time is after 14 September 2011 01:46:26 UTC " \
-              "(%d specified)\n", long_options[option_index].name, \
-              (INT4)startTime);
+              "(%lld specified)\n", long_options[option_index].name, \
+              startTime);
           exit(1);
         }
 
@@ -1343,16 +1343,16 @@ void parseOptions(INT4 argc, CHAR *argv[])
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "GPS end time is prior to 1 January 1994 00:00:00 UTC " \
-              "(%d specified)\n", long_options[option_index].name, \
-              (INT4)endTime);
+              "(%lld specified)\n", long_options[option_index].name, \
+              endTime);
           exit(1);
         }
         if (endTime > 999999999)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "GPS end time is after 14 September 2011 01:46:26 UTC " \
-              "(%d specified)\n", long_options[option_index].name, \
-              (INT4)endTime);
+              "(%lld specified)\n", long_options[option_index].name, \
+              endTime);
           exit(1);
         }
 
