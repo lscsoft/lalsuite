@@ -65,8 +65,8 @@ RCSID("$Id$");
 "  --silde-time SEC          slide all triggers of IFOB by SEC\n"\
 "  --slide-time-ns NS        slide all triggers of IFOB by NS\n"\
 "\n"\
-"  --ifo-a ifo_name          name of first ifo (e.g. L1, H1 or H2)\n"\
-"  --ifo-b ifo_name          name of second ifo (e.g. L1, H1 or H2)\n"\
+"  --ifo-a IFOA              name of first ifo (e.g. L1, H1 or H2)\n"\
+"  --ifo-b IFOB              name of second ifo (e.g. L1, H1 or H2)\n"\
 "\n"\
 "  --triggered-bank FILE     write a triggered bank insted of doing inca\n"\
 "  --minimal-match M         set minimal match of triggered bank to M\n"\
@@ -75,12 +75,15 @@ RCSID("$Id$");
 "  --kappa ERROR             set effective distance test kappa (default 0.01)\n"\
 "  --ifo-b-snr-threshold SNR set minimum snr in IFO B (default 6)\n"\
 "  --ifo-b-range-cut         test range of IFO B to see if sensitive to trigger\n"\
-"  --approximant APPROX      set approximant of the waveform to APPROX\n"\
-"                                 (TaylorF2|BCV)\n"\
-"  --dm mass                 mass coincidence window (default 0)\n"\
+"  --parameter-test TEST    set the desired parameters to test coincidence\n"\
+"                            for inca: (m1_and_m2|psi0_and_psi3|mchirp_and_eta)\n"\
+"                            for triggered bank (m1_and_m2|psi0_and_psi3)\n"\
+"  --dm Dm                   mass coincidence window (default 0)\n"\
 "  --dpsi0 Dpsi0             psi0 coincidence window\n"\
 "  --dpsi3 Dpsi3             psi3 coincidence window\n"\
-"  --dt time                 time coincidence window (milliseconds)\n"\
+"  --dmchirp Dmchirp         mchirp coincidence window\n"\
+"  --deta  Deta              eta coincidence window\n"\
+"  --dt Dt                   time coincidence window (milliseconds)\n"\
 "\n"\
 "  --no-playground           do not select triggers from playground\n"\
 "  --playground-only         only use triggers that are in playground\n"\
@@ -98,69 +101,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
           long_options[option_index].name ); \
           LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
           LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
-
-/*
- *
- * compare function used by qsort
- *
- */
-
-
-int compareTmpltsByMass ( const void *a, const void *b )
-{
-  SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
-  SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
-
-  if ( aPtr->mass1 > bPtr->mass1 )
-  {
-    return 1;
-  }
-  else if ( aPtr->mass1 < bPtr->mass1 )
-  {
-    return -1;
-  }
-  else if ( aPtr->mass2 > bPtr->mass2 )
-  {
-    return 1;
-  }
-  else if ( aPtr->mass2 < bPtr->mass2 )
-  {
-    return -1;
-  }
-  else
-  {
-    return 0;
-  }
-}
-
-
-int compareTmpltsByPsi ( const void *a, const void *b )
-{
-  SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
-  SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
-
-  if ( aPtr->psi0 > bPtr->psi0 )
-  {
-    return 1;
-  }
-  else if ( aPtr->psi0 < bPtr->psi0 )
-  {
-    return -1;
-  }
-  else if ( aPtr->psi3 > bPtr->psi3 )
-  {
-    return 1;
-  }
-  else if ( aPtr->psi3 < bPtr->psi3 )
-  {
-    return -1;
-  }
-  else
-  {
-    return 0;
-  }
-}
-
 
 int main( int argc, char *argv[] )
 {
@@ -236,12 +176,14 @@ int main( int argc, char *argv[] )
     {"epsilon",                 required_argument, 0,                'e'},
     {"triggered-bank",          required_argument, 0,                'T'},
     {"minimal-match",           required_argument, 0,                'M'},
-    {"approximant",             required_argument, 0,                'A'},
     {"kappa",                   required_argument, 0,                'k'},
     {"ifo-b-snr-threshold",     required_argument, 0,                'S'},
     {"dm",                      required_argument, 0,                'm'},
+    {"parameter-test",          required_argument, 0,                'A'},
     {"dpsi0",                   required_argument, 0,                'p'},
     {"dpsi3",                   required_argument, 0,                'P'},
+    {"dmchirp",			required_argument, 0,                'c'},
+    {"deta",                    required_argument, 0,                'n'},
     {"dt",                      required_argument, 0,                't'},
     {"gps-start-time",          required_argument, 0,                'q'},
     {"gps-end-time",            required_argument, 0,                'r'},
@@ -257,7 +199,7 @@ int main( int argc, char *argv[] )
     {0, 0, 0, 0}
   };
   int c;
-  INT4 haveApprox = 0;
+  INT4 haveTest = 0;
 
 
   /*
@@ -305,7 +247,8 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:", long_options, &option_index );
+        "a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:c:n:", long_options, 
+	&option_index );
 
     /* detect the end of the options */
     if ( c == -1 )
@@ -370,23 +313,27 @@ int main( int argc, char *argv[] )
         break;
 
       case 'A':
-        if ( ! strcmp( "TaylorF2", optarg ) )
+        if ( ! strcmp( "m1_and_m2", optarg ) )
         {
-          errorParams.approximant = TaylorF2;
+          errorParams.test = m1_and_m2;
         }
-        else if ( ! strcmp( "BCV", optarg ) )
+        else if ( ! strcmp( "psi0_and_psi3", optarg ) )
         {
-          errorParams.approximant = BCV;
+          errorParams.test = psi0_and_psi3;
+        }
+	else if ( ! strcmp( "mchirp_and_eta", optarg ) )
+        {
+          errorParams.test = mchirp_and_eta;
         }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "unknown order specified: "
-              "%s (must be either TaylorF2 or BCV)\n",
+              "unknown test specified: "
+              "%s (must be m1_and_m2, psi0_and_psi3 or mchirp_and_eta)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
-        haveApprox = 1;
+        haveTest = 1;
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -423,6 +370,19 @@ int main( int argc, char *argv[] )
         errorParams.dpsi3 = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
+
+      case 'c':
+        /* mass errors allowed */
+        errorParams.dmchirp = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'n':
+        /* mass errors allowed */
+        errorParams.deta = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
 
       case 't':
         /* time coincidence window, argument is in milliseconds */
@@ -593,9 +553,9 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if ( ! haveApprox )
+  if ( ! haveTest )
   {
-    fprintf( stderr, "--approximant must be specified\n" );
+    fprintf( stderr, "--parameter-test must be specified\n" );
     exit( 1 );
   }
 
@@ -1068,24 +1028,24 @@ int main( int argc, char *argv[] )
       eventHandle[i] = thisEvent;
     }
     
-    if ( errorParams.approximant == TaylorF2 )
+    if ( errorParams.test == m1_and_m2 )
     {	    
       if ( vrbflg ) fprintf( stdout, "sorting events by mass... " );
       qsort( eventHandle, numEvents, sizeof(eventHandle[0]), 
-          compareTmpltsByMass );
+          LALCompareSnglInspiralByMass );
       if ( vrbflg ) fprintf( stdout, "done\n" );
     }
-    else if ( errorParams.approximant == BCV )
+    else if ( errorParams.test == psi0_and_psi3 )
     { 
       if ( vrbflg ) fprintf( stdout, "sorting events by psi... " );
       qsort( eventHandle, numEvents, sizeof(eventHandle[0]),
-          compareTmpltsByPsi );
+          LALCompareSnglInspiralByPsi );
       if ( vrbflg ) fprintf( stdout, "done\n" );
     }
     else
     {
       fprintf( stderr, 
-          "error: unknown waveform approximant for sorting events \n" );
+          "error: unknown test for sorting events \n" );
       exit( 1 );
     }
 
@@ -1099,7 +1059,7 @@ int main( int argc, char *argv[] )
     
     for ( i = 1; i < numEvents; ++i )
     {
-      if ( errorParams.approximant == TaylorF2 )
+      if ( errorParams.test == m1_and_m2 )
       {
         if ( (prevEvent->mass1 == eventHandle[i]->mass1)  &&
             (prevEvent->mass2 == eventHandle[i]->mass2) ) 
@@ -1116,7 +1076,7 @@ int main( int argc, char *argv[] )
           if ( vrbflg ) fprintf( stdout, "+" );
         }
       }
-      else if ( errorParams.approximant == BCV )
+      else if ( errorParams.test == psi0_and_psi3 )
       {
         if ( (prevEvent->psi0 == eventHandle[i]->psi0)  &&
             (prevEvent->psi3 == eventHandle[i]->psi3) )
@@ -1135,7 +1095,7 @@ int main( int argc, char *argv[] )
       }
       else
       {
-	fprintf( stderr, "error: unknown waveform approximant\n" );
+	fprintf( stderr, "error: unknown parameter test\n" );
 	exit( 1 );
       }
     }
