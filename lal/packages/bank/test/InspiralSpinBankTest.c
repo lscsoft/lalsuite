@@ -122,7 +122,7 @@ int main(int argc, char *argv[]){
   Math3DPointList *list = NULL; 	/* Pointer to structure for mathematica plot */
   Math3DPointList *first = NULL; 	
   InspiralTemplateList *Tiles = NULL;	
-  InspiralCoarseBankIn CoarseIn;	/* this input stucture is superfluous */
+  InspiralCoarseBankIn coarseIn;	/* this input stucture is superfluous */
   INT4 ntiles = 0;			/* number of tiles */
   INT2 Math3DPlot = 0;			/* option flag for Mathematica plot */
   INT4 opt = 0;				/* returning value of getopt() */
@@ -148,9 +148,9 @@ int main(int argc, char *argv[]){
   first = list;
  
   /* Stuff for calculating the PSD and Noise Moments */
-  CoarseIn.fLower = 30;
-  CoarseIn.fUpper = 3300;
-  CoarseIn.iflso = 0;
+  coarseIn.fLower = 30;
+  coarseIn.fUpper = 2000;
+  coarseIn.iflso = 0;
   inspiralTemplate.fLower = 30;
   inspiralTemplate.fCutoff = 2000;
                                                                                                                                                 
@@ -159,13 +159,13 @@ int main(int argc, char *argv[]){
     optflag++;  
     switch (opt) {
       case 'n':
-        CoarseIn.mMin = atof( optarg );
+        coarseIn.mMin = atof( optarg );
         break;
       case 'm':
-        CoarseIn.mmCoarse = atof( optarg );       
+        coarseIn.mmCoarse = atof( optarg );       
         break;
       case 'x':
-        CoarseIn.MMax = atof( optarg );
+        coarseIn.MMax = atof( optarg );
         break;
       case 'p':
          Math3DPlot = 1;
@@ -174,27 +174,27 @@ int main(int argc, char *argv[]){
          printMoments = 1;
          break;
       default:
-         CoarseIn.mmCoarse = 0.1;
-         CoarseIn.mMin = 1.0;
-         CoarseIn.MMax = 3.0;
+         coarseIn.mmCoarse = 0.1;
+         coarseIn.mMin = 1.0;
+         coarseIn.MMax = 3.0;
          Math3DPlot = 0;
          printMoments = 0;
          break;
       }
     } while ((opt = getopt( argc, argv, "n:m:x:ps" )) != -1);
   
-  CoarseIn.shf.data = NULL;
-  memset( &(CoarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
-  CoarseIn.shf.f0 = 0;
-  LALDCreateVector(&stat, &psd, 3300); 
+  coarseIn.shf.data = NULL;
+  memset( &(coarseIn.shf), 0, sizeof(REAL8FrequencySeries) );
+  coarseIn.shf.f0 = 0;
+  LALDCreateVector( &stat, &psd, coarseIn.fUpper ); 
   df = 1.0;
   LALNoiseSpectralDensity(&stat, psd, &LALLIGOIPsd, df);
-  CoarseIn.shf.data = psd;
-  CoarseIn.shf.deltaF = df;
+  coarseIn.shf.data = psd;
+  coarseIn.shf.deltaF = df;
   
   for(loop = 0; loop < psd->length; loop++){
     if ((psd->data[loop]) && (psd->data[loop] <= minfreq)){ 
-      F0 = (REAL4) CoarseIn.shf.deltaF * loop;
+      F0 = (REAL4) coarseIn.shf.deltaF * loop;
       minfreq = psd->data[loop];
       }
     }
@@ -216,11 +216,11 @@ int main(int argc, char *argv[]){
     printf("\nThe default parameters are:\n");
     } 
   printf("\nMismatch = %f\nMathematica Plot = %i\nMass two min = %f\nMass two max = %f\nPrint Moments = %i\n", 
-    CoarseIn.mmCoarse, Math3DPlot, CoarseIn.mMin, CoarseIn.MMax, printMoments);
+    coarseIn.mmCoarse, Math3DPlot, coarseIn.mMin, coarseIn.MMax, printMoments);
   printf("______________________________________________________________________\n");
     
   if (printMoments){
-    LALGetInspiralMoments(&stat, &moments, &CoarseIn.shf, &inspiralTemplate);
+    LALGetInspiralMoments(&stat, &moments, &coarseIn.shf, &inspiralTemplate);
     printf("\nThe noise moments are:\n");
     for(loop = 1; loop <=17; loop++){
       moments.j[loop] *= pow((inspiralTemplate.fLower/F0), ((7.0-(REAL4) loop)/3.0));
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]){
     }
    
   printf("\n\nCalling LALInspiralSpinBank()......\n"); 
-  LALInspiralSpinBank(&stat, &Tiles, &ntiles, CoarseIn);  
+  LALInspiralSpinBank(&stat, &Tiles, &ntiles, coarseIn);  
   REPORTSTATUS(&stat);
   if (stat.statusCode){
     LALError(&stat, INSPIRALSPINBANKTESTC_MSGESUB);
@@ -285,4 +285,3 @@ int main(int argc, char *argv[]){
     return INSPIRALSPINBANKTESTC_ENORM;
 
 }
-
