@@ -3,6 +3,7 @@ sftdir=".."
 sftbase="SFT.0000"
 IFO="LHO"
 FCOMPARE="./compareFstats"
+CFS_DEFAULT="./lalapps_ComputeFStatistic"
 
 CFSparams1="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 \
 --FreqBand=0.2 --Alpha=2.2 --AlphaBand=0.003 --Delta=0.8 --DeltaBand=0.003 --gridType=0"
@@ -14,6 +15,16 @@ CFSparams3="--IFO=$IFO --DataDir=$sftdir --BaseName=$sftbase --Freq=300.1 \
 --FreqBand=0.2 --Alpha=2.2 --AlphaBand=1.0 --Delta=0.8 --DeltaBand=1.0 \
 --gridType=2 --metricType=1 --metricMismatch=0.02"
 
+#give help string if requested
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    echo
+    echo "Usage: $0 [yourCFScode]"
+    echo
+    echo "The default-code used is '$CFS_DEFAULT'"
+    echo
+    exit
+fi
+
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ x$LAL_DATA_PATH = x ]; then
     echo
@@ -21,7 +32,7 @@ if [ x$LAL_DATA_PATH = x ]; then
     echo
     exit 1
 fi
-
+# check if compareFstats code is found
 if [ ! -x "$FCOMPARE" ] ; then
     echo 
     echo "F-stat Comparison code not found: $FCOMPARE"
@@ -33,9 +44,9 @@ fi
 
 
 if [ x$1 = x ]; then
-    prog="./lalapps_ComputeFStatistic";
+    prog=$CFSDEFAULT;
 else
-    prog="$1";
+    prog=$1;
 fi
 
 ## Tests start here 
