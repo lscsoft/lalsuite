@@ -5,7 +5,7 @@ $Id$
 stochastic_pipe.in - standalone stochastic pipeline driver script
 
 This script produced the necessary condor submit and dag files to run
-the standalone stochastic code on LIGO data
+the standalone stochastic code on LIGO/GEO data
 
 based on inspiral_pipe.in by Duncan Brown
 """
@@ -40,6 +40,7 @@ Usage: lalapps_stochastic_pipe [options]
 
   -d, --datafind           run LSCdataFind to create frame cache files
   -s, --stochastic         run lalapps_stochastic
+  -t, --stopp              run lalapps_stopp
 
   -P, --priority PRIO      run jobs with condor priority PRIO
 
@@ -49,12 +50,13 @@ Usage: lalapps_stochastic_pipe [options]
   print >> sys.stderr, msg
 
 # parse the command line options to figure out what we should do
-shortop = "hvdsP:f:l:"
+shortop = "hvdstP:f:l:"
 longop = [
 "help",
 "version",
 "datafind",
 "stochastic",
+"stopp",
 "priority=",
 "config-file=",
 "log-path="
@@ -70,6 +72,7 @@ except getopt.GetoptError:
 config_file = None
 do_datafind = None
 do_stochastic = None
+do_stopp = None
 condor_prio = None
 config_file = None
 log_path = None
@@ -86,6 +89,8 @@ for o, a in opts:
     do_datafind = 1
   elif o in ("-s", "--stochastic"):
     do_stochastic = 1
+  elif o in ("-t", "--stopp"):
+    do_stopp = 1
   elif o in ("-P", "--priority"):
     condor_prio = a
   elif o in ("-f", "--config-file"):
@@ -132,16 +137,19 @@ dag.set_dag_file(basename + '.dag')
 # create the Condor jobs that will be used in the DAG
 df_job = stochastic.LSCDataFindJob('cache','logs',cp)
 stoch_job = stochastic.StochasticJob(cp)
+stopp_job = stochastic.StoppJob(cp)
 
 # set file names
 subsuffix = '.sub'
-df_job.set_sub_file( basename + '.datafind'+ subsuffix )
-stoch_job.set_sub_file( basename + '.stochastic' + subsuffix )
+df_job.set_sub_file(basename + '.datafind'+ subsuffix)
+stoch_job.set_sub_file(basename + '.stochastic' + subsuffix)
+stopp_job.set_sub_file(basename + '.stopp' + subsuffix)
 
 # set the condor job priority
 if condor_prio:
   df_job.add_condor_cmd('priority',condor_prio)
   stoch_job.add_condor_cmd('priority',condor_prio)
+  stopp_job.add_condor_cmd('priority',condor_prio)
 
 # get the pad and chunk lengths from the values in the ini file
 min_length = int(cp.get('input','min_length'))
@@ -162,6 +170,13 @@ ifo2 = cp.get('detectors','detector-two')
 # get the frame types
 type1 = cp.get('datafind','type-one')
 type2 = cp.get('datafind','type-two')
+
+# get stopp output file
+stopp_output = cp.get('stopp','output')
+
+# set up stopp job
+stopp = stochastic.StoppNode(stopp_job)
+stopp.set_output_file(stopp_output)
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
@@ -210,6 +225,13 @@ for seg in data:
     stoch.set_calibration_one(ifo1,chunk.start())
     stoch.set_calibration_two(ifo2,chunk.start())
 
+    # add stochastic output file to stopp jobs
+    stopp.add_var_arg(stoch.get_output())
+    
+    # add dependancy for stopp jobs on stochastic jobs
+    if do_stochastic:
+      stopp.add_parent(stoch)
+
     # add dependancy on LSCdataFind jobs, if required
     if do_datafind:
       stoch.add_parent(df1)
@@ -219,6 +241,10 @@ for seg in data:
     # add stochastic node
     if do_stochastic:
       dag.add_node(stoch)
+
+# add stopp node
+if do_stopp:
+  dag.add_node(stopp)
 
 # write out the DAG
 dag.write_sub_files()

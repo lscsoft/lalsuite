@@ -10,6 +10,7 @@
 universe = standard
 datafind = /usr1/lcldsk/ldg-3.0/ldg-server/bin/LSCdataFind
 stochastic = @EXECPATH@/lalapps_stochastic
+stopp = @EXECPATH@/lalapps_stopp
 
 [input]
 segments = S3_H1L1v03_nonplay_segs.txt
@@ -49,3 +50,6 @@ hpf-frequency = 40
 hpf-attenuation = 0.25
 hpf-order = 6
 recentre =
+
+[stopp]
+output = S3_H1L1_stochastic.xml
