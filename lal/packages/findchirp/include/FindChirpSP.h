@@ -9,8 +9,25 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _FINDCHIRPSP_H
-#define _FINDCHIRPSP_H
+
+#if 0
+<lalVerbatim file="FindChirpSPHV">
+Author: Brown, D. A.
+$Id$
+</lalVerbatim> 
+
+<lalLaTeX>
+
+\section{Header \texttt{FindChirpSP.h}}
+\label{s:FindChirp.h}
+
+Provides routines to creates stationary phase binary inspiral chirps.
+
+</lalLaTeX>
+#endif
+
+#ifndef _FINDCHIRPSPH_H
+#define _FINDCHIRPSPH_H
 
 #include <lal/LALDatatypes.h>
 #include <lal/RealFFT.h>
@@ -22,27 +39,31 @@
 extern "C" {
 #endif
 
-#define FINDCHIRPSP_ENULL 1
-#define FINDCHIRPSP_ENNUL 2
-#define FINDCHIRPSP_EALOC 3
-#define FINDCHIRPSP_ENUMZ 4
-#define FINDCHIRPSP_ESEGZ 5
-#define FINDCHIRPSP_EMISM 6
-#define FINDCHIRPSP_EDELT 7
-#define FINDCHIRPSP_EFLOW 8
-#define FINDCHIRPSP_EDYNR 9
-  
-#define FINDCHIRPSP_MSGENULL "Null pointer"
-#define FINDCHIRPSP_MSGENNUL "Non-null pointer"
-#define FINDCHIRPSP_MSGEALOC "Memory allocation error"
-#define FINDCHIRPSP_MSGENUMZ "Invalid number of segments"
-#define FINDCHIRPSP_MSGESEGZ "Invalid number of points in segments"
-#define FINDCHIRPSP_MSGEMISM "Mismatch between number of points in segments"
-#define FINDCHIRPSP_MSGEDELT "deltaT is zero or negative"
-#define FINDCHIRPSP_MSGEFLOW "Low frequency cutoff is negative"
-#define FINDCHIRPSP_MSGEDYNR "Dynamic range scaling is zero or negative"
-
-
+#if 0
+<lalLaTeX> 
+\subsection*{Error codes} 
+</lalLaTeX>
+#endif
+/* <lalErrTable> */
+#define FINDCHIRPSPH_ENULL 1
+#define FINDCHIRPSPH_ENNUL 2
+#define FINDCHIRPSPH_EALOC 3
+#define FINDCHIRPSPH_ENUMZ 4
+#define FINDCHIRPSPH_ESEGZ 5
+#define FINDCHIRPSPH_EMISM 6
+#define FINDCHIRPSPH_EDELT 7
+#define FINDCHIRPSPH_EFLOW 8
+#define FINDCHIRPSPH_EDYNR 9
+#define FINDCHIRPSPH_MSGENULL "Null pointer"
+#define FINDCHIRPSPH_MSGENNUL "Non-null pointer"
+#define FINDCHIRPSPH_MSGEALOC "Memory allocation error"
+#define FINDCHIRPSPH_MSGENUMZ "Invalid number of segments"
+#define FINDCHIRPSPH_MSGESEGZ "Invalid number of points in segments"
+#define FINDCHIRPSPH_MSGEMISM "Mismatch between number of points in segments"
+#define FINDCHIRPSPH_MSGEDELT "deltaT is zero or negative"
+#define FINDCHIRPSPH_MSGEFLOW "Low frequency cutoff is negative"
+#define FINDCHIRPSPH_MSGEDYNR "Dynamic range scaling is zero or negative"
+/* </lalErrTable> */
 
 typedef struct
 tagFindChirpSPDataParams
@@ -120,4 +141,4 @@ LALFindChirpSPTemplateFinalize (
 }
 #endif
 
-#endif /* _FINDCHIRPSP_H */
+#endif /* _FINDCHIRPSPH_H */

@@ -9,8 +9,24 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _FINDCHIRPCHISQ_H
-#define _FINDCHIRPCHISQ_H
+#if 0
+<lalVerbatim file="FindChirpChisqHV">
+Author: Allen, B., Brown, D. A. and Creighton, J. D. E.
+$Id$
+</lalVerbatim> 
+
+<lalLaTeX>
+
+\section{Header \texttt{FindChirpChisq.h}}
+\label{s:FindChirp.h}
+
+Provides routines to perform chisq veton on binary inspiral chirps.
+
+</lalLaTeX>
+#endif
+
+#ifndef _FINDCHIRPCHISQH_H
+#define _FINDCHIRPCHISQH_H
 
 #include <lal/LALDatatypes.h>
 
@@ -21,17 +37,23 @@ extern "C" {
 
 NRCSID (SPFINDCHIRPCHISQH, "$Id$");
 
-#define FINDCHIRPCHISQ_ENULL 1
-#define FINDCHIRPCHISQ_ENNUL 2
-#define FINDCHIRPCHISQ_ENUMZ 3
-#define FINDCHIRPCHISQ_ECHIZ 4
-#define FINDCHIRPCHISQ_EALOC 5
-
-#define FINDCHIRPCHISQ_MSGENULL "Null pointer"
-#define FINDCHIRPCHISQ_MSGENNUL "Non-null pointer"
-#define FINDCHIRPCHISQ_MSGENUMZ "Number of points is zero or negative"
-#define FINDCHIRPCHISQ_MSGECHIZ "Number of chisq bins is zero or negative"
-#define FINDCHIRPCHISQ_MSGEALOC "Memory allocation error"
+#if 0
+<lalLaTeX> 
+\subsection*{Error codes} 
+</lalLaTeX>
+#endif
+/* <lalErrTable> */
+#define FINDCHIRPCHISQH_ENULL 1
+#define FINDCHIRPCHISQH_ENNUL 2
+#define FINDCHIRPCHISQH_ENUMZ 3
+#define FINDCHIRPCHISQH_ECHIZ 4
+#define FINDCHIRPCHISQH_EALOC 5
+#define FINDCHIRPCHISQH_MSGENULL "Null pointer"
+#define FINDCHIRPCHISQH_MSGENNUL "Non-null pointer"
+#define FINDCHIRPCHISQH_MSGENUMZ "Number of points is zero or negative"
+#define FINDCHIRPCHISQH_MSGECHIZ "Number of chisq bins is zero or negative"
+#define FINDCHIRPCHISQH_MSGEALOC "Memory allocation error"
+/* </lalErrTable> */
 
 
 typedef struct
@@ -81,4 +103,4 @@ LALFindChirpChisqVeto (
 }
 #endif
 
-#endif _FINDCHIRPCHISQ_H
+#endif _FINDCHIRPCHISQH_H

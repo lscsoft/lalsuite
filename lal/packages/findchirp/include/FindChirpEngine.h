@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------- 
  * 
- * File Name: ApplySearch.h
+ * File Name: FindChirpEngine.h
  *
  * Author: Brown, D. A.
  * 
@@ -9,6 +9,21 @@
  *-----------------------------------------------------------------------
  */
 
+#if 0
+<lalVerbatim file="FindChirpEngineHV">
+Author: Brown, D. A.
+$Id$
+</lalVerbatim> 
+
+<lalLaTeX>
+
+\section{Header \texttt{FindChirpEngine.h}}
+\label{s:FindChirp.h}
+
+Provides routines to filter IFO data for binary inspiral chirps.
+
+</lalLaTeX>
+#endif
 
 #ifndef _FINDCHIRPENGINEH_H
 #define _FINDCHIRPENGINEH_H
@@ -33,6 +48,12 @@ extern "C" {
 
 NRCSID (FINDCHIRPENGINEHH, "$Id$");
 
+#if 0
+<lalLaTeX> 
+\subsection*{Error codes} 
+</lalLaTeX>
+#endif
+/* <lalErrTable> */
 #define FINDCHIRPENGINEH_ENULL 1
 #define FINDCHIRPENGINEH_ENNUL 2
 #define FINDCHIRPENGINEH_ENUMZ 3
@@ -44,8 +65,6 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_ERANK 9
 #define FINDCHIRPENGINEH_EUEXT 10
 #define FINDCHIRPENGINEH_ELVEL 11
-
-
 #define FINDCHIRPENGINEH_MSGENULL "Null pointer"
 #define FINDCHIRPENGINEH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPENGINEH_MSGENUMZ "Data segment length is zero"
@@ -57,6 +76,8 @@ NRCSID (FINDCHIRPENGINEHH, "$Id$");
 #define FINDCHIRPENGINEH_MSGERANK "Search node has incorrect rank"
 #define FINDCHIRPENGINEH_MSGEUEXT "Unrecognised exchange type"
 #define FINDCHIRPENGINEH_MSGELVEL "Invalid heriarchical template bank level"
+/* </lalErrTable> */
+
 
 
 enum ExchObjectType

@@ -9,8 +9,24 @@
  *-----------------------------------------------------------------------
  */
 
-#ifndef _FINDCHIRPEXCH_H
-#define _FINDCHIRPEXCH_H
+#if 0
+<lalVerbatim file="FindChirpEngineHV">
+Author: Allen, B., Brown, D. A. and Creighton, J. D. E.
+$Id$
+</lalVerbatim> 
+
+<lalLaTeX>
+
+\section{Header \texttt{FindChirpExch.h}}
+\label{s:FindChirp.h}
+
+Provides routines to filter IFO data for binary inspiral chirps.
+
+</lalLaTeX>
+#endif
+
+#ifndef _FINDCHIRPEXCHH_H
+#define _FINDCHIRPEXCHH_H
 
 #include <lal/LALDatatypes.h>
 #include <lal/Comm.h>
@@ -25,15 +41,21 @@ extern "C" {
 
 NRCSID (FINDCHIRPEXCHH, "$Id$");
 
-#define FINDCHIRPEXCH_ENULL 1
-#define FINDCHIRPEXCH_ENNUL 2
-#define FINDCHIRPEXCH_ENOBJ 4
-#define FINDCHIRPEXCH_EHAND 8
-
-#define FINDCHIRPEXCH_MSGENULL "Null pointer"
-#define FINDCHIRPEXCH_MSGENNUL "Non-null pointer"
-#define FINDCHIRPEXCH_MSGENOBJ "Invalid number of objects"
-#define FINDCHIRPEXCH_MSGEHAND "Wrong handshake"
+#if 0
+<lalLaTeX> 
+\subsection*{Error codes} 
+</lalLaTeX>
+#endif
+/* <lalErrTable> */
+#define FINDCHIRPEXCHH_ENULL 1
+#define FINDCHIRPEXCHH_ENNUL 2
+#define FINDCHIRPEXCHH_ENOBJ 4
+#define FINDCHIRPEXCHH_EHAND 8
+#define FINDCHIRPEXCHH_MSGENULL "Null pointer"
+#define FINDCHIRPEXCHH_MSGENNUL "Non-null pointer"
+#define FINDCHIRPEXCHH_MSGENOBJ "Invalid number of objects"
+#define FINDCHIRPEXCHH_MSGEHAND "Wrong handshake"
+/* </lalErrTable> */
 
 
 void
@@ -76,4 +98,4 @@ LALExchangeTemplateBank (
 }
 #endif
 
-#endif /* _FINDCHIRPEXCH_H */
+#endif /* _FINDCHIRPEXCHH_H */

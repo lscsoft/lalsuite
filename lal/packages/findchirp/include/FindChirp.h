@@ -25,8 +25,8 @@ Provides routines to filter IFO data for binary inspiral chirps.
 </lalLaTeX>
 #endif
 
-#ifndef _FINDCHIRP_H
-#define _FINDCHIRP_H
+#ifndef _FINDCHIRPH_H
+#define _FINDCHIRPH_H
 
 #include <lal/LALDatatypes.h>
 #include <lal/ComplexFFT.h>
@@ -48,30 +48,30 @@ NRCSID (FINDCHIRPH, "$Id$");
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
-#define FINDCHIRP_ENULL 1
-#define FINDCHIRP_ENNUL 2
-#define FINDCHIRP_EALOC 3
-#define FINDCHIRP_ENUMZ 5
-#define FINDCHIRP_ESEGZ 6
-#define FINDCHIRP_ECHIZ 7
-#define FINDCHIRP_EDTZO 8
-#define FINDCHIRP_ETRNC 10
-#define FINDCHIRP_EFLOW 11
-#define FINDCHIRP_EFREE 12
-#define FINDCHIRP_ERHOT 15
-#define FINDCHIRP_ECHIT 16
-#define FINDCHIRP_MSGENULL "Null pointer"
-#define FINDCHIRP_MSGENNUL "Non-null pointer"
-#define FINDCHIRP_MSGEALOC "Memory allocation error"
-#define FINDCHIRP_MSGENUMZ "Invalid number of points in segment"
-#define FINDCHIRP_MSGESEGZ "Invalid number of segments"
-#define FINDCHIRP_MSGECHIZ "Invalid number of chi squared bins"
-#define FINDCHIRP_MSGEDTZO "deltaT is zero or negative"
-#define FINDCHIRP_MSGETRNC "Duration of inverse spectrum in time domain is negative"
-#define FINDCHIRP_MSGEFLOW "Inverse spectrum low frequency cutoff is negative"
-#define FINDCHIRP_MSGEFREE "Memory free error"
-#define FINDCHIRP_MSGERHOT "Rhosq threshold is zero or negative"
-#define FINDCHIRP_MSGECHIT "Chisq threshold is zero or negative"
+#define FINDCHIRPH_ENULL 1
+#define FINDCHIRPH_ENNUL 2
+#define FINDCHIRPH_EALOC 3
+#define FINDCHIRPH_ENUMZ 5
+#define FINDCHIRPH_ESEGZ 6
+#define FINDCHIRPH_ECHIZ 7
+#define FINDCHIRPH_EDTZO 8
+#define FINDCHIRPH_ETRNC 10
+#define FINDCHIRPH_EFLOW 11
+#define FINDCHIRPH_EFREE 12
+#define FINDCHIRPH_ERHOT 15
+#define FINDCHIRPH_ECHIT 16
+#define FINDCHIRPH_MSGENULL "Null pointer"
+#define FINDCHIRPH_MSGENNUL "Non-null pointer"
+#define FINDCHIRPH_MSGEALOC "Memory allocation error"
+#define FINDCHIRPH_MSGENUMZ "Invalid number of points in segment"
+#define FINDCHIRPH_MSGESEGZ "Invalid number of segments"
+#define FINDCHIRPH_MSGECHIZ "Invalid number of chi squared bins"
+#define FINDCHIRPH_MSGEDTZO "deltaT is zero or negative"
+#define FINDCHIRPH_MSGETRNC "Duration of inverse spectrum in time domain is negative"
+#define FINDCHIRPH_MSGEFLOW "Inverse spectrum low frequency cutoff is negative"
+#define FINDCHIRPH_MSGEFREE "Memory free error"
+#define FINDCHIRPH_MSGERHOT "Rhosq threshold is zero or negative"
+#define FINDCHIRPH_MSGECHIT "Chisq threshold is zero or negative"
 /* </lalErrTable> */
 
 
@@ -287,4 +287,4 @@ LALFindChirpFilterSegment (
 }
 #endif
 
-#endif /* _FINDCHIRP_H */
+#endif /* _FINDCHIRPH_H */
