@@ -153,7 +153,7 @@ int Nevents=0;
 /* Reads the command line */
 int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 
-/* Reads raw data */
+/* Reads raw data (or puts in fake gaussian noise with a sigma=10^-20) */
 int ReadData(struct CommandLineArgsTag CLA);
 
 /* High pass filters and casts data to REAL4 */
@@ -165,26 +165,26 @@ int AddInjections(struct CommandLineArgsTag CLA);
 /* High pass filters data again if an injection has been made */
 int ProcessData2(struct CommandLineArgsTag CLA);
 
-/* DownSamples data */
+/* DownSamples data and then rescales by 10^20 to avoid single precision problems */
 int DownSample();
 
 /* Computes the average spectrum  */
 int AvgSpectrum(struct CommandLineArgsTag CLA);
 
-/* Computes the average spectrum  */
+/* Creates the frequency domain string cusp or kink filter  */
 int CreateStringFilter(struct CommandLineArgsTag CLA);
 
-/* Computes the average spectrum  */
+/* Creates the template bank based on the spectrum  */
 int CreateTemplateBank(struct CommandLineArgsTag CLA);
 
-/* Computes the average spectrum  */
+/* Filters the data through the template banks  */
 int FindStringBurst(struct CommandLineArgsTag CLA);
 
-/* Computes the average spectrum  */
+/* Finds events above SNR threshold specified  */
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, 
 	       INT4 i, INT4 m, SnglBurstTable **thisEvent);
 
-/* Computes the average spectrum  */
+/* Writes out the xml file with the events it found  */
 int OutputEvents();
 
 /* Frees the memory */
@@ -697,7 +697,13 @@ int DownSample()
 
   LALResampleREAL4TimeSeries( &status, &GV.ht_proc, &resamplepar );
   TESTSTATUS( &status );
- 
+
+  /* Scale data to avoid single float precision problems */
+  for (p=0; p<(int)GV.ht_proc.data->length; p++)
+    {
+      GV.ht_proc.data->data[p] *= SCALE;
+    }
+
   return 0;
 }
 
@@ -817,12 +823,6 @@ int ReadData(struct CommandLineArgsTag CLA)
 
       LALSDestroyVector (&status, &v1);
       TESTSTATUS( &status );   
-    }
-
-  /* Scale data to avoid single float precision problems */
-  for (p=0; p<(int)GV.ht.data->length; p++)
-    {
-      GV.ht.data->data[p] *= SCALE;
     }
 
   LALFrClose(&status,&framestream);
