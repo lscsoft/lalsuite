@@ -121,10 +121,6 @@ insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
 sinca_job.set_sub_file( basename + '.sinca' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
 
-# set the key and cert paths for datafind
-df_job.add_condor_cmd('environment',
-  'X509_USER_CERT=$ENV(X509_USER_CERT);X509_USER_KEY=$ENV(X509_USER_KEY)')
-
 # set up incas for single ifo mode
 sinca_job.add_opt('single-summ-value',' ')
 sinca_job.add_opt('single-ifo',' ')
