@@ -23,6 +23,9 @@ int XLALPrintError( const char *fmt, ... );
 /* prints a warning message if warning printing is enabled by lalDebugLevel */
 int XLALPrintWarning( const char *fmt, ... );
 
+/* prints an info message if info printing is enabled by lalDebugLevel */
+int XLALPrintInfo( const char *fmt, ... );
+
 
 /* silence gcc warnings about certain (possibly) unused symbols */
 #ifdef __GNUC__
@@ -124,7 +127,31 @@ enum {
 
   /* these are common errors for XLAL functions */
   XLAL_EFAILED = 128, /* Generic failure */
-  XLAL_EBADLEN = 129, /* Inconsistent or invalid vector length */
+  XLAL_EBADLEN = 129, /* Inconsistent or invalid length */
+  XLAL_ESIZE   = 130, /* Wrong size */
+  XLAL_EDIMS   = 131, /* Wrong dimensions */
+  XLAL_ETYPE   = 132, /* Wrong or unknown type */
+  XLAL_ETIME   = 133, /* Invalid time */
+  XLAL_EFREQ   = 134, /* Invalid freqency */
+  XLAL_EUNIT   = 135, /* Invalid units */
+  XLAL_ENAME   = 136, /* Wrong name */
+  XLAL_EDATA   = 137, /* Invalid data */
+
+  /* user-defined errors */
+  XLAL_EUSR0   = 200, /* User-defined error 0 */
+  XLAL_EUSR1   = 201, /* User-defined error 1 */
+  XLAL_EUSR2   = 202, /* User-defined error 2 */
+  XLAL_EUSR3   = 203, /* User-defined error 3 */
+  XLAL_EUSR4   = 204, /* User-defined error 4 */
+  XLAL_EUSR5   = 205, /* User-defined error 5 */
+  XLAL_EUSR6   = 206, /* User-defined error 6 */
+  XLAL_EUSR7   = 207, /* User-defined error 7 */
+  XLAL_EUSR8   = 208, /* User-defined error 8 */
+  XLAL_EUSR9   = 209, /* User-defined error 9 */
+
+  /* external or internal errors */
+  XLAL_ESYS    = 254, /* System error */
+  XLAL_EERR    = 255, /* Internal error */
 
   /* specific mathematical and numerical errors start at 256 */
 
@@ -193,6 +220,9 @@ XLALErrorHandlerType * XLALSetDefaultErrorHandler( void );
 
 /* sets the XLAL error number to errnum */
 void XLALSetErrno( int errnum );
+
+/* gets the XLAL base error number ignoring the internal-function-failed flag */
+int XLALGetBaseErrno( void );
 
 /* clears the XLAL error number */
 void XLALClearErrno( void );

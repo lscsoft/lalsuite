@@ -40,6 +40,20 @@ int XLALPrintWarning( const char *fmt, ... )
   return n;
 }
 
+/* prints a warning message if warning printing is enabled by lalDebugLevel */
+int XLALPrintInfo( const char *fmt, ... )
+{
+  int n = 0;
+  if ( lalDebugLevel & LALINFO )
+  {
+    va_list ap;
+    va_start( ap, fmt );
+    n = vfprintf( stderr, fmt, ap );
+    va_end( ap );
+  }
+  return n;
+}
+
 
 /*
  *
@@ -194,6 +208,13 @@ void XLALSetErrno( int errnum )
 }
 
 
+/* gets the basic error number ignoring the internal-function-failed flag */
+int XLALGetBaseErrno( void )
+{
+  return xlalErrno & ~XLAL_EFUNC;
+}
+
+
 /* clears the XLAL error number */
 void XLALClearErrno( void )
 {
@@ -275,6 +296,50 @@ const char * XLALErrorString( int code )
       return XLAL_ERROR_STRING( "Generic failure" );
     case XLAL_EBADLEN:
       return XLAL_ERROR_STRING( "Inconsistent or invalid vector length" );
+    case XLAL_ESIZE:
+      return XLAL_ERROR_STRING( "Wrong size" );
+    case XLAL_EDIMS:
+      return XLAL_ERROR_STRING( "Wrong dimensions" );
+    case XLAL_ETYPE:
+      return XLAL_ERROR_STRING( "Wrong or unknown type" );
+    case XLAL_ETIME:
+      return XLAL_ERROR_STRING( "Invalid time" );
+    case XLAL_EFREQ:
+      return XLAL_ERROR_STRING( "Invalid freqency" );
+    case XLAL_EUNIT:
+      return XLAL_ERROR_STRING( "Invalid units" );
+    case XLAL_ENAME:
+      return XLAL_ERROR_STRING( "Wrong name" );
+    case XLAL_EDATA:
+      return XLAL_ERROR_STRING( "Invalid data" );
+
+    /* user-defined errors */
+    case XLAL_EUSR0:
+      return XLAL_ERROR_STRING( "User-defined error 0" );
+    case XLAL_EUSR1:
+      return XLAL_ERROR_STRING( "User-defined error 1" );
+    case XLAL_EUSR2:
+      return XLAL_ERROR_STRING( "User-defined error 2" );
+    case XLAL_EUSR3:
+      return XLAL_ERROR_STRING( "User-defined error 3" );
+    case XLAL_EUSR4:
+      return XLAL_ERROR_STRING( "User-defined error 4" );
+    case XLAL_EUSR5:
+      return XLAL_ERROR_STRING( "User-defined error 5" );
+    case XLAL_EUSR6:
+      return XLAL_ERROR_STRING( "User-defined error 6" );
+    case XLAL_EUSR7:
+      return XLAL_ERROR_STRING( "User-defined error 7" );
+    case XLAL_EUSR8:
+      return XLAL_ERROR_STRING( "User-defined error 8" );
+    case XLAL_EUSR9:
+      return XLAL_ERROR_STRING( "User-defined error 9" );
+
+  /* external or internal errors */
+    case XLAL_ESYS:
+      return XLAL_ERROR_STRING( "System error" );
+    case XLAL_EERR:
+      return XLAL_ERROR_STRING( "Internal error" );
 
     /* specific mathematical and numerical errors start at 256 */
 
