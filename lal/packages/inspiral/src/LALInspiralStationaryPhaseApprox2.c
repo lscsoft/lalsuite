@@ -191,7 +191,6 @@ LALInspiralStationaryPhaseApprox2 (
 	      signal->data[n-i] = (REAL4) (-amp * sin(psi));
 
       }
-
       /*
 	 printf ("%e %e \n", v, psif);
 	 printf ("%e %e %e %e %e\n", f, pow(h1,2.)+pow(h2,2.), h2, psi, psif);
@@ -199,6 +198,7 @@ LALInspiralStationaryPhaseApprox2 (
        */
    
    }
+   params->fFinal = fn;
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
