@@ -40,6 +40,7 @@ if test "x$condor" = "xtrue"; then
   case "$host" in
     *-*-linux* | *-*-osf* | *-*-hpux* ) CFLAGS="$CFLAGS -static" AC_DISABLE_SHARED;;
   esac
+  AC_DEFINE(LALAPPS_CONDOR, 1, [LALApps is condor compiled])
 fi
 if test "$GCC" = yes; then
   CPPFLAGS="$CPPFLAGS -ansi"
