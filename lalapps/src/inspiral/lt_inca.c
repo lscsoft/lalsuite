@@ -120,7 +120,7 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS slideData = {0,0};
   INT8  slideDataNS = 0;
   INT4  numIFO;
-  INT4  numTriggers[MAXIFO];
+  INT4  numEvents = 0;
 
   SnglInspiralTable    *inspiralEventList[MAXIFO];
   SnglInspiralTable    *currentTrigger[MAXIFO];
@@ -207,7 +207,6 @@ int main( int argc, char *argv[] )
   memset( inspiralEventList, 0, MAXIFO * sizeof(SnglInspiralTable *) );
   memset( currentTrigger, 0, MAXIFO * sizeof(SnglInspiralTable *) );
   memset( coincidentEvents, 0, MAXIFO * sizeof(SnglInspiralTable *) );
-  memset( numTriggers, 0, MAXIFO * sizeof(INT4) );
 
 
   /* parse the arguments */
@@ -791,6 +790,10 @@ int main( int argc, char *argv[] )
         &errorParams, clusterchoice );
   }
 
+  /* count number of coincident events */
+  for( currentEvent = coincidentEvents[0], numEvents = 0; currentEvent;
+      currentEvent = currentEvent->next, ++numEvents);
+  
 cleanexit:
 
   /* search summary entries: nevents is from primary ifo */
@@ -798,6 +801,8 @@ cleanexit:
   searchsumm.searchSummaryTable->in_end_time = endCoinc;
   searchsumm.searchSummaryTable->out_start_time = startCoinc;
   searchsumm.searchSummaryTable->out_end_time = endCoinc;
+  searchsumm.searchSummaryTable->nevents = numEvents;
+  searchsumm.searchSummaryTable->nnodes = 1;
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
@@ -829,8 +834,6 @@ cleanexit:
     }
 
     xmlFileName = fileName;
-
-    searchsumm.searchSummaryTable->nevents = numTriggers[j];
 
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, xmlFileName), 
