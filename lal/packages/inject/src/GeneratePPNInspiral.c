@@ -512,10 +512,6 @@ LALGeneratePPNInspiral( LALStatus     *stat,
   }
   xStart = pow( yStart/c[j], 1.0/( j + 3.0 ) );
   xMax = LAL_SQRT1_2;
-  if ( params->fStopIn < 0.0 ) {
-    xMax *= -1.0;
-    tStop = 0.0;
-  }
 
   /* The above is exact if the leading-order term is the only one in
      the expansion.  Check to see if there are any other terms. */
@@ -538,6 +534,13 @@ LALGeneratePPNInspiral( LALStatus     *stat,
       }
     if ( xStart < 0.39*xMax )
       xStart = 0.39*xMax;
+
+    /* If we are ignoring PN breakdown, adjust xMax (so that it won't
+       interfere with the start time search) and tStop. */
+    if ( params->fStopIn < 0.0 ) {
+      xMax = LAL_REAL4_MAX;
+      tStop = 0.0;
+    }
 
     /* If our frequency is too high, step backwards and/or forwards
        until we have bracketed the correct frequency. */
@@ -581,6 +584,13 @@ LALGeneratePPNInspiral( LALStatus     *stat,
       TRY( LALSBisectionFindRoot( stat->statusPtr, &xStart, &in,
 				  (void *)( &par ) ), stat );
     }
+  }
+
+  /* If we are ignoring PN breakdown, adjust xMax and tStop, if they
+     haven't been adjusted already. */
+  else if ( params->fStopIn < 0.0 ) {
+    xMax = LAL_REAL4_MAX;
+    tStop = 0.0;
   }
 
   /* Compute initial dimensionless time, record actual initial
