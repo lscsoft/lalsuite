@@ -2037,7 +2037,8 @@ INT4 NormaliseSFTDataRngMdn(void)
   */
 
   if (GV.noise != 1)
-    MedianBias(&windowSize,&medianbias);
+    /*    MedianBias(&windowSize,&medianbias); */
+    RngMedBias (&status, &medianbias, windowSize);
 
   LALDCreateVector(&status, &Sp, (UINT4)nbins);
   LALDCreateVector(&status, &RngMdnSp, (UINT4)nbins);
