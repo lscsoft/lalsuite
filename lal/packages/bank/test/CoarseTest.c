@@ -142,12 +142,12 @@ main ( void )
    coarseIn->massRange = MinComponentMassMaxTotalMass;
    /* coarseIn->massRange = MinMaxComponentMass; */
 
-   coarseIn->mmCoarse = 0.97;
+   coarseIn->mmCoarse = 0.90;
    coarseIn->mmFine = 0.97;
    coarseIn->fLower = 40.;
-   coarseIn->fUpper = 400;
+   coarseIn->fUpper = 4000;
    coarseIn->iflso = 0;
-   coarseIn->tSampling = 2048.L;
+   coarseIn->tSampling = 8192.L;
    coarseIn->order = twoPN;
    coarseIn->approximant = TaylorT1;
    coarseIn->space = Tau0Tau3;

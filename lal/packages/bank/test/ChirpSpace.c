@@ -49,10 +49,12 @@ int main ( void ) {
     type=1 creates a region defined by mMin and MMax
     i.e. total mass of the body given by MMax
    */
-   type = 1;
-   mmin = 1.0;
+   type = 0;
+   mmin = 1.5;
    mmax = 20.;
    Mmax = mmax*2.;
+   p.ieta=1; 
+   p.fLower=40.0; 
    /*
     Don't change anything below: 
    */
@@ -60,8 +62,6 @@ int main ( void ) {
    mmax = log10(mmax);
    Mmax = log10(Mmax);
 
-   p.ieta=1; 
-   p.fLower=40.0; 
    p.order = twoPN;
 
    totalMmax = pow(10.,Mmax);
