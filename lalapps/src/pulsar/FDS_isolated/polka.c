@@ -360,7 +360,27 @@ j: 0     1     2     3     4     5     6     7
 
 locate will return if2max=1 and if2min=5
 
+In this example:
+ 
+1) at the beginning jl=0 and ju=8
+
+2) since ju-jl > 1:
+   jm=(0+8)/2=4
+   since f2 > xx[4]: then ju=4
+
+3) since ju-jl > 1:
+   jm=(0+4)/2=2
+   since f2 < xx[2]: then jl=2
+
+4) since ju-jl > 1:
+   jm=(2+4)/2=3
+   since f2 < xx[3]: then jl=3
+
+5) since ju-jl=1   
+   return j=jl=3
+
 */
+
 void locate(double xx[], int n, double x, int *j, int *indices) 
      /* locates x in array of xx */
 { 
