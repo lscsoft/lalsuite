@@ -159,64 +159,6 @@ interferometer name (e.g. L1, H2, etc.)
 \subsection*{Types}
 </lalLaTeX>
 #endif
-/* structure for describing a binary insipral event */
-/* <lalVerbatim file="CoherentInspiralHCoherentInspiralEvent"> */
-/*typedef struct
-tagInspiralEventVector
-{
-  UINT4                                  numDetectors;
-  InspiralEvent                         *event; 
-}*/
-/*InspiralEventVector;*/
-
-
-typedef struct
-tagCoherentInspiralEvent
-{
-  CHAR                                   ifos[FILENAME_MAX];
-  UINT4                                  eventId;
-  UINT4                                  timeIndex;
-  REAL4                                  mass1;
-  REAL4                                  mass2;
-  REAL4                                  cohSNR;
-  REAL4                                  theta;
-  REAL4                                  phi;
-  LIGOTimeGPS                            time;
-  LIGOTimeGPS                            end_time;
-  struct tagCoherentInspiralEvent       *next;
-}
-CoherentInspiralEvent;
-/* </lalVerbatim> */
-#if 0
-<lalLaTeX>
-\subsubsection*{Structure \texttt{CoherentInspiralEvent}}
-\idx[Type]{CoherentInspiralEvent}
-
-%\input{CoherentInspiralHCoherentInspiralEvent}
-
-\noindent This structure describes inspiral events in the data of a pair 
-of detectors found by \texttt{CoherentInspiralEventFilter}.
-The fields are:
-
-\begin{description}
-\item[\texttt{UINT4 eventId}] A unique number assigned by the filter 
-routine to each network event it finds.
-
-\item[\texttt{UINT4 timeIndex}] The index in the fiducial detector at 
-which the event occured in the array containing the filter output.
-
-\item[\texttt{REAL4 cohSNR}] The value of network $\rho^2$ for the event.
-
-\item[\texttt{InspiralEvent *inspEventVec}] A pointer to a structure of type 
-\texttt{InspiralEvent} to allow the construction of a linked list of events
-in participating detectors.
-
-\item[\texttt{struct tagCoherentInspiralEvent *next}] A pointer to a 
-structure of type \texttt{CoherentInspiralEvent} to allow the construction of 
-a linked list of network events.
-\end{description}
-</lalLaTeX>
-#endif
 
 /* --- parameter structure for the coherent inspiral filtering function ---- */
 /* <lalVerbatim file="CoherentInspiralHCoherentInspiralFilterParams"> */
@@ -227,7 +169,7 @@ tagCoherentInspiralInitParams
   UINT4                         numSegments;
   UINT4                         numPoints;
   UINT4                         numBeamPoints;
-  BOOLEAN                       cohSNROut;
+  UINT4                         cohSNROut;
 }
 CoherentInspiralInitParams;
 /* </lalVerbatim> */
@@ -272,7 +214,7 @@ tagCoherentInspiralFilterParams
   REAL4                         fLow;
   REAL4                         deltaT;
   REAL4                         cohSNRThresh;
-  BOOLEAN                       cohSNROut;
+  UINT4                         cohSNROut;
   UINT2Vector                  *detIDVec; /* Note: H1, H2 are from same site, but are different detectors */
   DetectorVector               *detectorVec; /*stores detectors' site info */
   REAL4TimeSeries              *cohSNRVec;
@@ -438,7 +380,7 @@ LALCoherentInspiralFilterParamsFinalize (
 void
 LALCoherentInspiralFilterSegment (
     LALStatus                             *status,
-    CoherentInspiralEvent                **eventList,
+    MultiInspiralTable                    **eventList,
     CoherentInspiralFilterInput           *input,
     CoherentInspiralFilterParams          *params
     );

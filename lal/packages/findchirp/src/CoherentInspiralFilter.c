@@ -46,13 +46,13 @@ LALCoherentInspiralFilterInputInit (
     CoherentInspiralInitParams      *params
     )
 {
-  UINT4                            i,l;
-  UINT4                            length=4; /*length of each thetaPhiVs vector*/
-  CoherentInspiralFilterInput     *inputPtr;
-  CoherentInspiralBeamVector      *beamVecPtr;
-  DetectorBeamArray               *detBeamArray;
-  CoherentInspiralCVector         *cVecPtr;
-  COMPLEX8TimeSeries              *cData;
+  UINT4                            i, l;
+  UINT4                            length = 4; /*length of thetaPhiVs vectors*/
+  CoherentInspiralFilterInput     *inputPtr = NULL;
+  CoherentInspiralBeamVector      *beamVecPtr = NULL;
+  DetectorBeamArray               *detBeamArray = NULL;
+  CoherentInspiralCVector         *cVecPtr = NULL;
+  /*COMPLEX8TimeSeries              *cData;*/
   
   INITSTATUS( status, "LALCoherentInspiralFilterInputInit",
 	      COHERENTINSPIRALFILTERC );
@@ -83,10 +83,6 @@ LALCoherentInspiralFilterInputInit (
   ASSERT( params->numPoints > 0, status, 
       COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
 
-  /* check that the number of theta-phi "template" points 
-     in the beam-pattern functions file is positive or zero */
-  ASSERT( params->numBeamPoints >= 0, status, 
-      COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
 
   inputPtr= *input = (CoherentInspiralFilterInput *)
     LALCalloc(1, sizeof(CoherentInspiralFilterInput) );
@@ -150,7 +146,7 @@ LALCoherentInspiralFilterInputInit (
 	ENDFAIL( status );
       }
   
-      /* set the number of fields in the thetaPhiVs to 4: theta,phi,v+, and v- */
+      /* set the number of fields in the thetaPhiVs to 4: theta,phi,v+,and v-*/
       for ( l = 0 ; l < beamVecPtr->numDetectors ; l++) {  
 	for ( i = 0 ; i < detBeamArray[l].numBeamPoints ; i++ ) {
 	  LALCreateVector(status->statusPtr, &(detBeamArray[l].thetaPhiVs[i].data), length);
@@ -427,12 +423,6 @@ LALCoherentInspiralFilterParamsInit (
   /* check that the number of points is positive */
   ASSERT( params->numPoints > 0, status, 
       COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
-
-  /* check that the number of theta-phi "template" points 
-     in the beam-pattern functions file is positive */
-  ASSERT( params->numBeamPoints >= 0, status, 
-      COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
-
  
 
   /*
@@ -521,7 +511,7 @@ LALCoherentInspiralFilterParamsInit (
   }
 
   outputPtr->detectorVec->detector = (LALDetector *) 
-    LALCalloc( 1, outputPtr->detectorVec->numDetectors*sizeof(LALDetector));
+    LALCalloc( 1, outputPtr->numDetectors*sizeof(LALDetector));
   
   if ( !(outputPtr->detectorVec->detector ) ) {
     ABORT( status, COHERENTINSPIRALH_EALOC, COHERENTINSPIRALH_MSGEALOC);
@@ -614,45 +604,39 @@ LALCoherentInspiralFilterParamsFinalize (
 void
 LALCoherentInspiralFilterSegment (
     LALStatus                             *status,
-    CoherentInspiralEvent                **eventList,
+    MultiInspiralTable                    **eventList,
     CoherentInspiralFilterInput           *input,
     CoherentInspiralFilterParams          *params
     )
 {
-  INT4                                siteID[6] = {0,1,2,3,4,0}; /*H1 L1 G V T H2*/
   INT4                                caseID[6] = {0,0,0,0,0,0};
-  INT4                                i,j,k,l,p,q,w,m;
-  INT4                                dsites[4] = {0,0,0,0};
-  CHAR                                idtag[6][3] = {"H1","L","G","V","T","H2"};
+  INT4                                i,q,w,m,j;
+  UINT4                               l,k;
+  CHAR                                idtag[6][3] = {"H1","L","V","G","T","H2"};
+  INT4                                indexarray[4] = {0,0,0,0};
   CHAR                                caseStr[FILENAME_MAX];
-  INT8                                chirpTimeNS;
-  UINT4                               eventId = 0; 
-  UINT4                               numDetectors;
-  UINT4                               numSegments;
-  UINT4                               numPoints;
-  UINT4                               numBeamPoints;
-  UINT4                               deltaEventIndex;
+  INT8                                chirpTimeNS = 0; 
+  UINT4                               numDetectors = 0;
+  UINT4                               numSegments = 0;
+  UINT4                               numPoints = 0;
+  UINT4                               numBeamPoints = 0;
+  UINT4                               deltaEventIndex = 0;
   UINT4                               eventStartIdx = 0;
   INT4                                slidePoints[3] = {0,0,0};
-  REAL4                               buffer = 0; /* account for timing errors */
+  REAL4                               buffer = 0; /*account for timing errors*/
   REAL4                               timingError = 0.00025; /* allowed timing error of 2 ms */
-  REAL4                               n;
-  REAL4                               s[4][3];/* up to 4 distances; in 3D space */
+  REAL4                               s[4][3];/*up to 4 distances;in 3D space*/
   REAL4                               deltaT = 0.0;
   REAL4                               nHatVect[3] = {0,0,0};
   REAL4                               distance[4] = {0,0,0,0};
   REAL4                               timeDelay[4] = {0,0,0,0};
   REAL4                               chirpTime = 0;
   REAL4                               cohSNRThresh = 0;
-  BOOLEAN                             cohSNROut;
+  UINT4                               cohSNROut;
   REAL4                               cohSNRLocal = 0;
-  /*REAL4                               cohSNR = 0;*/
-  BOOLEAN                             unresolvedEvent = 0;
-  LALMSTUnitsAndAcc                   gmstUnits;
   LALDetector                        *detector = NULL;
   COMPLEX8TimeSeries                 *cData = NULL;
-  CoherentInspiralEvent              *thisEvent = NULL;
-  /*MultiInspiralTable                 *cohEvent  = NULL; */
+  MultiInspiralTable                 *thisEvent = NULL; 
   CoherentInspiralBeamVector         *beamVec = NULL;
   
   
@@ -679,7 +663,7 @@ LALCoherentInspiralFilterSegment (
 	  COHERENTINSPIRALH_ERHOT, COHERENTINSPIRALH_MSGERHOT );
 
   /* if a cohSNRVec vector has been created, check we can store data in it  */
-  if ( params->cohSNRVec ) {
+  if ( params->cohSNROut ) {
     ASSERT( params->cohSNRVec->data->data, status, 
 	    COHERENTINSPIRALH_ENULL, COHERENTINSPIRALH_MSGENULL );
     ASSERT( params->cohSNRVec->data, status, 
@@ -703,7 +687,7 @@ LALCoherentInspiralFilterSegment (
   
 
   /* if the full coherent snr vector is required, set it to zero */
-  if ( params->cohSNRVec ) {
+  if ( cohSNROut ) {
     memset( params->cohSNRVec->data->data, 0, numPoints * sizeof( REAL4 ));
   }
 
@@ -722,19 +706,19 @@ LALCoherentInspiralFilterSegment (
     {
       ABORT( status, COHERENTINSPIRALH_ENDET, COHERENTINSPIRALH_MSGENDET );
     }
-  /* Now generate the network string for CoherentInspiralEvents */
+  /* Now generate the network string for MultiInspiralTables */
 
-  INT4 index[numDetectors];
+  /* INT4 indexarray[4];
   for (j=0; j<numDetectors; j++)
     {
-      index[j] = 0;
-    }
+      indexarray[j] = 0;
+      }*/
   i = 0;  
   for (l=0 ;l<6 ;l++)
     {
       if( caseID[l] )
 	{
-	  index[i] = l;
+	  indexarray[i] = l;
 	  i++;
 	}
     }
@@ -745,23 +729,23 @@ LALCoherentInspiralFilterSegment (
   switch ( numDetectors )
     {
     case 2:
-      i = index[0];
-      j = index[1];
+      i = indexarray[0];
+      j = indexarray[1];
       LALSnprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s-%s",idtag[i],idtag[j]);
       break;
 
     case 3:
-      i=index[0];
-      j=index[1];
-      k=index[2];
+      i=indexarray[0];
+      j=indexarray[1];
+      k=indexarray[2];
       LALSnprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s-%s-%s",idtag[i],idtag[j],idtag[k]);
       break;
 
     case 4:
-      i=index[0];
-      j=index[1];
-      k=index[2];
-      l=index[3];
+      i=indexarray[0];
+      j=indexarray[1];
+      k=indexarray[2];
+      l=indexarray[3];
       LALSnprintf( caseStr, FILENAME_MAX * sizeof(CHAR), "%s-%s-%s-%s",idtag[i],idtag[j],idtag[k],idtag[l]);
       break;
     }
@@ -772,15 +756,12 @@ LALCoherentInspiralFilterSegment (
 	{ 
 	  beamVec = input->beamVec;
 	}
-  /*beamVec = input->beamVec;*/
-  
   
   /*** get detector c outputs ***/
   
   /* read in the c-data for multiple detectors */
   cData = input->multiCData->cData;
 
-  
   /*** get detector-site locations */
   detector = params->detectorVec->detector;
   
@@ -804,16 +785,17 @@ LALCoherentInspiralFilterSegment (
     REAL4 m1 = input->tmplt->mass1;
     REAL4 m2 = input->tmplt->mass2;
     REAL4 fmin = params->fLow;
-    REAL4 m = m1 + m2;
-    REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);
+    REAL4 mtotal = m1 + m2;
+    REAL4 c0 = 5*mtotal*LAL_MTSUN_SI/(256*eta);
     REAL4 c2 = 743.0/252.0 + eta*11.0/3.0;
     REAL4 c3 = -32*LAL_PI/3;
     REAL4 c4 = 3058673.0/508032.0 + eta*(5429.0/504.0 + eta*617.0/72.0);
-    REAL4 x  = pow(LAL_PI*m*LAL_MTSUN_SI*fmin, 1.0/3.0);
+    REAL4 x  = pow(LAL_PI*mtotal*LAL_MTSUN_SI*fmin, 1.0/3.0);
     REAL4 x2 = x*x;
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
+  
     chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
 
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
@@ -821,7 +803,7 @@ LALCoherentInspiralFilterSegment (
   }
 
   
-  buffer = ceilf( timingError/deltaT );
+  buffer = rint( (timingError/deltaT) + 1.0 );
 
   /* Now construct the appropriate coherent SNR */ 
   switch (numDetectors)  {
@@ -838,7 +820,7 @@ LALCoherentInspiralFilterSegment (
 
 	    for (m=k-buffer; m<k+buffer; m++)
 	      {
-		if(m >=0 && m<numPoints)
+		if(m >=0 && m < (INT4) numPoints)
 		  {
 		    cohSNRLocal = sqrt( (cData[0].data->data[k].re + cData[1].data->data[m].re)*(cData[0].data->data[k].re + cData[1].data->data[m].re) + (cData[0].data->data[k].im + cData[1].data->data[m].im)*(cData[0].data->data[k].im + cData[1].data->data[m].im));
 
@@ -855,8 +837,8 @@ LALCoherentInspiralFilterSegment (
 		    eventStartIdx = k;
 		
 		    /* if this is the first event, start the list */
-		    thisEvent = *eventList = (CoherentInspiralEvent *) 
-		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		    thisEvent = *eventList = (MultiInspiralTable *) 
+		      LALCalloc( 1, sizeof(MultiInspiralTable) );
 		
 		    if ( !thisEvent )
 		      {
@@ -865,32 +847,27 @@ LALCoherentInspiralFilterSegment (
 		
 		    /* record the data that we need for the clustering algorithm */          
 		    thisEvent->end_time.gpsSeconds = k;
-		    thisEvent->cohSNR = cohSNR;
+		    thisEvent->snr = cohSNR;
 		    fflush( stdout ); 
 
 		  } /* done creating a new event */
-		  else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+		  else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->snr ) {
 		    /* if this is the same event, update the maximum */
 		    thisEvent->end_time.gpsSeconds = k;
-		    thisEvent->cohSNR = cohSNR;
+		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos, caseStr);
-		    thisEvent->eventId = eventId;
-		    thisEvent->timeIndex = k;
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
 
-		    /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
 		    fflush( stdout ); 
 
 		  }
 		  else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
 		    /* clean up this event */
-		    CoherentInspiralEvent  *lastEvent;
+		    MultiInspiralTable      *lastEvent = NULL;
 		    INT8                    timeNS1;
 		    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
 		    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-		    thisEvent->eventId = eventId++;
-		    thisEvent->timeIndex = timeIndex;
 		    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 		    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 		
@@ -900,8 +877,8 @@ LALCoherentInspiralFilterSegment (
 		    /* allocate memory for the newEvent */
 		    lastEvent = thisEvent;
 		
-		    lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
-		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		    lastEvent->next = thisEvent = (MultiInspiralTable *) 
+		      LALCalloc( 1, sizeof(MultiInspiralTable) );
 		    if ( !(lastEvent->next) )
 		      {
 			ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
@@ -909,7 +886,7 @@ LALCoherentInspiralFilterSegment (
 		
 		    /* stick minimal data into the event */
 		    thisEvent->end_time.gpsSeconds = k;
-		    thisEvent->cohSNR = cohSNR;
+		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos,caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
@@ -932,14 +909,11 @@ LALCoherentInspiralFilterSegment (
 	    INT8                    timeNS1;
 	    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
 	    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-	    thisEvent->eventId = eventId++;
-	    thisEvent->timeIndex = timeIndex;
 	    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 	    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 	    thisEvent->mass1 = input->tmplt->mass1;
 	    thisEvent->mass2 = input->tmplt->mass2;
 	    
-	    /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
 	    fflush( stdout ); 
 	  }
       }
@@ -947,19 +921,10 @@ LALCoherentInspiralFilterSegment (
       { /* Network: 2 detectors excluding either H1, H2, or both H1 and H2 */
 	/*Here, the time delay looping must start */
 	
-	p=0;
-	for (l=0;l<6;l++)
-	  {
-	    if(caseID[l])
-	      {
-		dsites[p++] = siteID[l];
-	      }
-	  }
-	
 	/* Now calculate the distance (in meters) */
 	distance[1] = sqrt( cartesianInnerProduct(s[1],s[1]) ); 
 	timeDelay[1] = distance[1]/LAL_C_SI;
-	slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
+	slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
 	
 	k = 0;
 	q = 0;
@@ -970,7 +935,7 @@ LALCoherentInspiralFilterSegment (
 	    
 	    for (q = k-slidePoints[1]-buffer; q < k+slidePoints[1]+buffer; q++)
 	      {
-		if(q >= 0 && q < numPoints)
+		if(q >= 0 && q < (INT4) numPoints)
 		  {
 		    cohSNRLocal = sqrt(cData[0].data->data[k].re*cData[0].data->data[k].re + cData[1].data->data[q].re*cData[1].data->data[q].re + cData[0].data->data[k].im*cData[0].data->data[k].im + cData[1].data->data[q].im*cData[1].data->data[q].im);
 		    if(cohSNRLocal > cohSNR)
@@ -987,8 +952,8 @@ LALCoherentInspiralFilterSegment (
 		    eventStartIdx = k;
 		
 		    /* if this is the first event, start the list */
-		    thisEvent = *eventList = (CoherentInspiralEvent *) 
-		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		    thisEvent = *eventList = (MultiInspiralTable *) 
+		      LALCalloc( 1, sizeof(MultiInspiralTable) );
 		
 		    if ( !thisEvent )
 		      {
@@ -997,32 +962,27 @@ LALCoherentInspiralFilterSegment (
 		
 		    /* record the data that we need for the clustering algorithm */          
 		    thisEvent->end_time.gpsSeconds = k;
-		    thisEvent->cohSNR = cohSNR;
+		    thisEvent->snr = cohSNR;
 		    fflush( stdout ); 
 
 		  } /* done creating a new event */
-		  else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+		  else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->snr ) {
 		    /* if this is the same event, update the maximum */
 		    thisEvent->end_time.gpsSeconds = k;
-		    thisEvent->cohSNR = cohSNR;
+		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos, caseStr);
-		    thisEvent->eventId = eventId;
-		    thisEvent->timeIndex = k;
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
 
-		    /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
 		    fflush( stdout ); 
 
 		  }
 		  else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
 		    /* clean up this event */
-		    CoherentInspiralEvent  *lastEvent;
+		    MultiInspiralTable  *lastEvent = NULL;
 		    INT8                    timeNS1;
 		    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
 		    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-		    thisEvent->eventId = eventId++;
-		    thisEvent->timeIndex = timeIndex;
 		    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 		    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 		
@@ -1030,10 +990,9 @@ LALCoherentInspiralFilterSegment (
 		    eventStartIdx = k;
 		
 		    /* allocate memory for the newEvent */
-		    lastEvent = thisEvent;
-		
-		    lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
-		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		    lastEvent = thisEvent;		
+		    lastEvent->next = thisEvent = (MultiInspiralTable *) 
+		      LALCalloc( 1, sizeof(MultiInspiralTable) );
 		    if ( !(lastEvent->next) )
 		      {
 			ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
@@ -1041,7 +1000,7 @@ LALCoherentInspiralFilterSegment (
 		
 		    /* stick minimal data into the event */
 		    thisEvent->end_time.gpsSeconds = k;
-		    thisEvent->cohSNR = cohSNR;
+		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos,caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
@@ -1057,35 +1016,23 @@ LALCoherentInspiralFilterSegment (
 	  {
 	    INT8                    timeNS1;
 	    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-	    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-	    thisEvent->eventId = eventId++;
-	    thisEvent->timeIndex = timeIndex;
+	    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);	    
 	    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 	    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 	    thisEvent->mass1 = input->tmplt->mass1;
 	    thisEvent->mass2 = input->tmplt->mass2;
 	    
-	    /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
 	    fflush( stdout ); 
 	  }
       }
     break;
   case 3: /* Network: 3 detectors including both H1 and H2 */
     if(caseID[0] && caseID[5])
-      {
-	p=0;
-	for (l=0;l<6;l++)
-	  {
-	    if(caseID[l])
-	      {
-		dsites[p++] = siteID[l];
-	      }
-	  }
-       
+      {    
 	/* Now calculate the distance (in meters) */
 	distance[1] = sqrt( cartesianInnerProduct( s[1],s[1]) );
 	timeDelay[1] = distance[1]/LAL_C_SI;
-	slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
+	slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
 
 	k = 0;
 	q = 0;
@@ -1096,11 +1043,11 @@ LALCoherentInspiralFilterSegment (
 	    REAL4 cohSNR = 0.0;
 	    for(m=k-buffer;m<k+buffer;m++)
 	      {
-		if(m >=0 && m<numPoints)
+		if(m >=0 && m < (INT4) numPoints)
 		  {
 		    for (q = m-slidePoints[1]-buffer;q < m+slidePoints[1]+buffer;q++)
 		      {
-			if(q >= 0 && q < numPoints)
+			if(q >= 0 && q < (INT4) numPoints)
 			  {
 			    cohSNRLocal = sqrt( ((cData[0].data->data[k].re + cData[2].data->data[m].re)*(cData[0].data->data[k].re + cData[2].data->data[m].re) + (cData[0].data->data[k].im + cData[2].data->data[m].im)*(cData[0].data->data[k].im + cData[2].data->data[m].im)) + cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im);
 		    		    		  
@@ -1119,8 +1066,8 @@ LALCoherentInspiralFilterSegment (
 		    eventStartIdx = k;
 		
 		    /* if this is the first event, start the list */
-		    thisEvent = *eventList = (CoherentInspiralEvent *) 
-		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		    thisEvent = *eventList = (MultiInspiralTable *) 
+		      LALCalloc( 1, sizeof(MultiInspiralTable) );
 		
 		    if ( !thisEvent )
 		      {
@@ -1129,32 +1076,27 @@ LALCoherentInspiralFilterSegment (
 		
 		    /* record the data that we need for the clustering algorithm */          
 		    thisEvent->end_time.gpsSeconds = k;
-		    thisEvent->cohSNR = cohSNR;
+		    thisEvent->snr = cohSNR;
 		    fflush( stdout ); 
 
 		  } /* done creating a new event */
-		  else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+		  else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->snr ) {
 		    /* if this is the same event, update the maximum */
 		    thisEvent->end_time.gpsSeconds = k;
-		    thisEvent->cohSNR = cohSNR;
+		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos, caseStr);
-		    thisEvent->eventId = eventId;
-		    thisEvent->timeIndex = k;
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
 
-		    /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
 		    fflush( stdout ); 
 
 		  }
 		  else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
 		    /* clean up this event */
-		    CoherentInspiralEvent  *lastEvent;
+		    MultiInspiralTable  *lastEvent = NULL;
 		    INT8                    timeNS1;
 		    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
 		    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-		    thisEvent->eventId = eventId++;
-		    thisEvent->timeIndex = timeIndex;
 		    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 		    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 		
@@ -1164,8 +1106,8 @@ LALCoherentInspiralFilterSegment (
 		    /* allocate memory for the newEvent */
 		    lastEvent = thisEvent;
 		
-		    lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
-		      LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		    lastEvent->next = thisEvent = (MultiInspiralTable *) 
+		      LALCalloc( 1, sizeof(MultiInspiralTable) );
 		    if ( !(lastEvent->next) )
 		      {
 			ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
@@ -1173,7 +1115,7 @@ LALCoherentInspiralFilterSegment (
 		
 		    /* stick minimal data into the event */
 		    thisEvent->end_time.gpsSeconds = k;
-		    thisEvent->cohSNR = cohSNR;
+		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos,caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
@@ -1188,28 +1130,17 @@ LALCoherentInspiralFilterSegment (
 	    INT8                    timeNS1;
 	    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
 	    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-	    thisEvent->eventId = eventId++;
-	    thisEvent->timeIndex = timeIndex;
 	    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 	    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 	    thisEvent->mass1 = input->tmplt->mass1;
 	    thisEvent->mass2 = input->tmplt->mass2;
 	    
-	    /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
 	    fflush( stdout ); 
 	  }
       }
     else
       { /* Network: 3 detectors excluding either H1, H2, or both (H1 && H2)*/
-	/* Now the last 3 cases will involve the looping over the coefficients */
-	p=0;
-	for (l=0;l<6;l++)
-	  {
-	    if(caseID[l])
-	      {
-		dsites[p++] = siteID[l];
-	      }
-	  }
+	/*Now the last 3 cases will involve the looping over the coefficients*/
 
 	l = 0;
 	k = 0;
@@ -1228,19 +1159,19 @@ LALCoherentInspiralFilterSegment (
 	    distance[2] = cartesianInnerProduct(s[2],nHatVect);
 	    timeDelay[1] = distance[1]/LAL_C_SI;
 	    timeDelay[2] = distance[2]/LAL_C_SI;
-	    slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
-	    slidePoints[2] = ceilf( fabsf(timeDelay[2])/deltaT );	    
+	    slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
+	    slidePoints[2] = rint( (fabs(timeDelay[2])/deltaT) + 1.0 );	    
 	    
 	    for(k=0;k<numPoints;k++)
 	      {
 		REAL4 cohSNR = 0.0;
 		for (q = k-slidePoints[1]-buffer;q < k+slidePoints[1]+buffer;q++)
 		  {
-		    if(q >= 0 && q < numPoints)
+		    if(q >= 0 && q < (INT4) numPoints)
 		      {			
 			for (w = q-slidePoints[2]-buffer; w < q+slidePoints[2]+buffer;w++)
 			  {
-			    if (w >= 0 && w < numPoints)
+			    if (w >= 0 && w < (INT4) numPoints)
 			      {
 				cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( cData[0].data->data[k].re*cData[0].data->data[k].re + cData[0].data->data[k].im*cData[0].data->data[k].im ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( cData[2].data->data[w].re*cData[2].data->data[w].re + cData[2].data->data[w].im*cData[2].data->data[w].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re * cData[1].data->data[q].re + cData[0].data->data[k].im * cData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[2].data->data[w].re + cData[0].data->data[k].im * cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re * cData[2].data->data[w].re + cData[1].data->data[q].im *cData[2].data->data[w].im));
 			      
@@ -1261,8 +1192,8 @@ LALCoherentInspiralFilterSegment (
 			eventStartIdx = k;
 		
 		        /* if this is the first event, start the list */
-		        thisEvent = *eventList = (CoherentInspiralEvent *) 
-		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		        thisEvent = *eventList = (MultiInspiralTable *) 
+		          LALCalloc( 1, sizeof(MultiInspiralTable) );
 		
 			if ( !thisEvent )
 			  {
@@ -1271,34 +1202,29 @@ LALCoherentInspiralFilterSegment (
 		
 			/* record the data that we need for the clustering algorithm */         
 			thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->cohSNR = cohSNR;
+		        thisEvent->snr = cohSNR;
 		        fflush( stdout ); 
 
 		      } /* done creating a new event */
-		      else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+		      else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->snr ) {
 			/* if this is the same event, update the maximum */
 			thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->cohSNR = cohSNR;
+		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos, caseStr);
-		        thisEvent->eventId = eventId;
-		        thisEvent->timeIndex = k;
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 
-		        /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
 		        fflush( stdout ); 
 
 		      }
 		      else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
 		        /* clean up this event */
-		        CoherentInspiralEvent  *lastEvent;
+		        MultiInspiralTable  *lastEvent = NULL;
 		        INT8                    timeNS1;
 		        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
 		        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-		        thisEvent->eventId = eventId++;
-		        thisEvent->timeIndex = timeIndex;
 		        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 		
@@ -1308,8 +1234,8 @@ LALCoherentInspiralFilterSegment (
 	    	        /* allocate memory for the newEvent */
 		        lastEvent = thisEvent;
 		
-		        lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
-		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		        lastEvent->next = thisEvent = (MultiInspiralTable *) 
+		          LALCalloc( 1, sizeof(MultiInspiralTable) );
 		        if ( !(lastEvent->next) )
 		          {
 			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
@@ -1317,12 +1243,12 @@ LALCoherentInspiralFilterSegment (
 		
 		        /* stick minimal data into the event */
 		        thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->cohSNR = cohSNR;
+		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 		   
 		      }
 		    } /* matches if (cohSNR > cohSNRThresh) */		    
@@ -1334,16 +1260,13 @@ LALCoherentInspiralFilterSegment (
 		INT8                    timeNS1;
 	        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
 	        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-	        thisEvent->eventId = eventId++;
-	        thisEvent->timeIndex = timeIndex;
 	        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 	        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 	        thisEvent->mass1 = input->tmplt->mass1;
 	        thisEvent->mass2 = input->tmplt->mass2;
-	        thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-	        thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+	        thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+	        thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 	    
-	        /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
 	        fflush( stdout ); 
 	      }
 	    
@@ -1355,15 +1278,6 @@ LALCoherentInspiralFilterSegment (
   case 4: /* Network: 4 detectors including both H1 and H2 */
     if(caseID[0] && caseID[5])
       {
-	p=0;
-	for (l=0;l<6;l++)
-	  {
-	    if(caseID[l])
-	      {
-		dsites[p++] = siteID[l];
-	      }
-	  }
-	
 	/*start search looping */
 	
 	for (l=0;l < numBeamPoints; l++) 
@@ -1378,27 +1292,28 @@ LALCoherentInspiralFilterSegment (
 	    distance[2] = cartesianInnerProduct(s[2],nHatVect);
 	    timeDelay[1] = distance[1]/LAL_C_SI;
 	    timeDelay[2] = distance[2]/LAL_C_SI;
-	    slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
-	    slidePoints[2] = ceilf( fabsf(timeDelay[2])/deltaT );
+	    slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
+	    slidePoints[2] = rint( (fabs(timeDelay[2])/deltaT) + 1.0 );
 	    	    
 	    k = 0;
 	    q = 0;
 	    w = 0;
 	    m = 0;
+
 	    for(k=0;k<numPoints;k++)
 	      {
 		REAL4 cohSNR = 0.0;
 		for(m=k-buffer;m<k+buffer;m++)
 		  {
-		    if(m >= 0 && m < numPoints)
+		    if(m >= 0 && m < (INT4) numPoints)
 		      {
 			for (q = m-slidePoints[1]-buffer;q < m+slidePoints[1]+buffer;q++)
 			  {
-			    if(q >= 0 && q < numPoints)
+			    if(q >= 0 && q < (INT4) numPoints)
 			      {			
 				for (w = q-slidePoints[2]-buffer; w < q+slidePoints[2]+buffer;w++)
 				  {
-				    if (w >= 0 && w < numPoints)
+				    if (w >= 0 && w < (INT4) numPoints)
 				      {
 					cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( (cData[0].data->data[k].re + cData[3].data->data[m].re)*(cData[0].data->data[k].re + cData[3].data->data[m].re) + (cData[0].data->data[k].im + cData[3].data->data[m].im)*(cData[0].data->data[k].im + cData[3].data->data[m].im) ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]  + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( cData[2].data->data[w].re*cData[2].data->data[w].re + cData[2].data->data[w].im*cData[2].data->data[w].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[1].data->data[q].re + cData[0].data->data[k].im*cData[1].data->data[q].im + cData[3].data->data[m].re*cData[1].data->data[q].re + cData[3].data->data[m].im*cData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[2].data->data[w].re + cData[0].data->data[k].im*cData[2].data->data[w].im + cData[3].data->data[m].re*cData[2].data->data[w].re + cData[3].data->data[m].im*cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re*cData[2].data->data[w].re + cData[1].data->data[q].im*cData[2].data->data[w].im));
 			      
@@ -1421,8 +1336,8 @@ LALCoherentInspiralFilterSegment (
 			eventStartIdx = k;
 		
 		        /* if this is the first event, start the list */
-		        thisEvent = *eventList = (CoherentInspiralEvent *) 
-		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		        thisEvent = *eventList = (MultiInspiralTable *) 
+		          LALCalloc( 1, sizeof(MultiInspiralTable) );
 		
 			if ( !thisEvent )
 			  {
@@ -1431,34 +1346,29 @@ LALCoherentInspiralFilterSegment (
 		
 			/* record the data that we need for the clustering algorithm */         
 			thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->cohSNR = cohSNR;
+		        thisEvent->snr = cohSNR;
 		        fflush( stdout ); 
 
 		      } /* done creating a new event */
-		      else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+		      else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->snr ) {
 			/* if this is the same event, update the maximum */
 			thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->cohSNR = cohSNR;
+		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos, caseStr);
-		        thisEvent->eventId = eventId;
-		        thisEvent->timeIndex = k;
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 
-		        /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
 		        fflush( stdout ); 
 
 		      }
 		      else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
 		        /* clean up this event */
-		        CoherentInspiralEvent  *lastEvent;
+		        MultiInspiralTable  *lastEvent = NULL;
 		        INT8                    timeNS1;
 		        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
 		        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-		        thisEvent->eventId = eventId++;
-		        thisEvent->timeIndex = timeIndex;
 		        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 		
@@ -1468,8 +1378,8 @@ LALCoherentInspiralFilterSegment (
 	    	        /* allocate memory for the newEvent */
 		        lastEvent = thisEvent;
 		
-		        lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
-		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		        lastEvent->next = thisEvent = (MultiInspiralTable *) 
+		          LALCalloc( 1, sizeof(MultiInspiralTable) );
 		        if ( !(lastEvent->next) )
 		          {
 			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
@@ -1477,12 +1387,12 @@ LALCoherentInspiralFilterSegment (
 		
 		        /* stick minimal data into the event */
 		        thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->cohSNR = cohSNR;
+		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 		   
 		      }
 		    } /* matches if (cohSNR > cohSNRThresh) */		    
@@ -1493,16 +1403,13 @@ LALCoherentInspiralFilterSegment (
 	        INT8                    timeNS1;
 	        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
 	        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-	        thisEvent->eventId = eventId++;
-	        thisEvent->timeIndex = timeIndex;
 	        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 	        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 	        thisEvent->mass1 = input->tmplt->mass1;
 	        thisEvent->mass2 = input->tmplt->mass2;
-	        thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-	        thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+	        thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+	        thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 	    
-	        /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
 	        fflush( stdout ); 
 	      }		    
 	    
@@ -1514,15 +1421,6 @@ LALCoherentInspiralFilterSegment (
       { /* Network: 4 detectors excluding either H1, H2, or both H1 and H2 */
 	/* there will be one extra loop over the last case since there are 3 nonzero time delays*/
 	
-	p=0;
-	for (l=0;l<6;l++)
-	  {
-	    if(caseID[l])
-	      {
-		dsites[p++] = siteID[l];
-	      }
-	  }
-
 	/*start search looping */
 	
 	for (l=0;l < numBeamPoints; l++)
@@ -1539,9 +1437,9 @@ LALCoherentInspiralFilterSegment (
 	    timeDelay[1] = distance[1]/LAL_C_SI;
 	    timeDelay[2] = distance[2]/LAL_C_SI;
 	    timeDelay[3] = distance[3]/LAL_C_SI;
-	    slidePoints[1] = ceilf( fabsf(timeDelay[1])/deltaT );
-	    slidePoints[2] = ceilf( fabsf(timeDelay[2])/deltaT );
-	    slidePoints[3] = ceilf( fabsf(timeDelay[3])/deltaT );	    
+	    slidePoints[1] = rint( (fabs(timeDelay[1])/deltaT) + 1.0 );
+	    slidePoints[2] = rint( (fabs(timeDelay[2])/deltaT) + 1.0 );
+	    slidePoints[3] = rint( (fabs(timeDelay[3])/deltaT) + 1.0 );	    
 	    
 	    k = 0;
 	    q = 0;
@@ -1553,15 +1451,15 @@ LALCoherentInspiralFilterSegment (
 		REAL4 cohSNR = 0.0;
 		for (q = k-slidePoints[1]-buffer;q < k+slidePoints[1]+buffer;q++)
 		  {
-		    if(q >= 0 && q < numPoints)
+		    if(q >= 0 && q < (INT4) numPoints)
 		      {
 			for (w = q-slidePoints[2]-buffer; w < q+slidePoints[2]+buffer;w++)
 			  {
-			    if (w >= 0 && w < numPoints)
+			    if (w >= 0 && w < (INT4) numPoints)
 			      {
 				for(j = w-slidePoints[3]-buffer; j < w+slidePoints[3]+buffer; j++)
 				  {
-				    if(j >=0 && j < numPoints)
+				    if(j >=0 && j < (INT4) numPoints)
 				      {
 					cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( cData[0].data->data[k].re*cData[0].data->data[k].re + cData[0].data->data[k].im*cData[0].data->data[k].im ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( cData[2].data->data[w].re*cData[2].data->data[w].re + cData[2].data->data[w].im*cData[2].data->data[w].im ) + ( beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3] )*( cData[3].data->data[j].re*cData[3].data->data[j].re + cData[3].data->data[j].im*cData[3].data->data[j].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re * cData[1].data->data[q].re + cData[0].data->data[k].im * cData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[2].data->data[w].re + cData[0].data->data[k].im * cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[3].data->data[j].re + cData[0].data->data[k].im*cData[3].data->data[j].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re * cData[2].data->data[w].re + cData[1].data->data[q].im*cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re*cData[3].data->data[j].re + cData[1].data->data[q].im*cData[3].data->data[j].im) + 2*(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(cData[2].data->data[w].re*cData[3].data->data[j].re + cData[2].data->data[w].im * cData[3].data->data[j].im));
 				      
@@ -1582,8 +1480,8 @@ LALCoherentInspiralFilterSegment (
 			eventStartIdx = k;
 		
 		        /* if this is the first event, start the list */
-		        thisEvent = *eventList = (CoherentInspiralEvent *) 
-		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		        thisEvent = *eventList = (MultiInspiralTable *) 
+		          LALCalloc( 1, sizeof(MultiInspiralTable) );
 		
 			if ( !thisEvent )
 			  {
@@ -1592,34 +1490,29 @@ LALCoherentInspiralFilterSegment (
 		
 			/* record the data that we need for the clustering algorithm */         
 			thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->cohSNR = cohSNR;
+		        thisEvent->snr = cohSNR;
 		        fflush( stdout ); 
 
 		      } /* done creating a new event */
-		      else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->cohSNR ) {
+		      else if (params->maximizeOverChirp && k <= thisEvent->end_time.gpsSeconds +deltaEventIndex && cohSNR > thisEvent->snr ) {
 			/* if this is the same event, update the maximum */
 			thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->cohSNR = cohSNR;
+		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos, caseStr);
-		        thisEvent->eventId = eventId;
-		        thisEvent->timeIndex = k;
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 
-		        /*fprintf(stdout,"k value SECOND = %d\t %f \n", k,cohSNR  );*/
 		        fflush( stdout ); 
 
 		      }
 		      else if ( k > thisEvent->end_time.gpsSeconds + deltaEventIndex || !(params->maximizeOverChirp) ) {
 		        /* clean up this event */
-		        CoherentInspiralEvent  *lastEvent;
+		        MultiInspiralTable  *lastEvent = NULL;
 		        INT8                    timeNS1;
 		        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-		        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-		        thisEvent->eventId = eventId++;
-		        thisEvent->timeIndex = timeIndex;
+		        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);        
 		        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 		        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 		
@@ -1629,8 +1522,8 @@ LALCoherentInspiralFilterSegment (
 	    	        /* allocate memory for the newEvent */
 		        lastEvent = thisEvent;
 		
-		        lastEvent->next = thisEvent = (CoherentInspiralEvent *) 
-		          LALCalloc( 1, sizeof(CoherentInspiralEvent) );
+		        lastEvent->next = thisEvent = (MultiInspiralTable *) 
+		          LALCalloc( 1, sizeof(MultiInspiralTable) );
 		        if ( !(lastEvent->next) )
 		          {
 			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
@@ -1638,12 +1531,12 @@ LALCoherentInspiralFilterSegment (
 		
 		        /* stick minimal data into the event */
 		        thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->cohSNR = cohSNR;
+		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 		   
 		      }
 		    } /* matches if (cohSNR > cohSNRThresh) */
@@ -1655,16 +1548,13 @@ LALCoherentInspiralFilterSegment (
 	        INT8                    timeNS1;
 	        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
 	        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-	        thisEvent->eventId = eventId++;
-	        thisEvent->timeIndex = timeIndex;
 	        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
 	        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
 	        thisEvent->mass1 = input->tmplt->mass1;
 	        thisEvent->mass2 = input->tmplt->mass2;
-	        thisEvent->theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-	        thisEvent->phi = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+	        thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
+	        thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 	    
-	        /*fprintf(stdout,"k value FOURTH = %d\t %f \n", k,thisEvent->cohSNR  );*/
 	        fflush( stdout ); 
 	      }
 
