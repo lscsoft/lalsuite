@@ -407,7 +407,7 @@ int main(int argc,char *argv[])
 #if USE_BOINC
   /* handle config file request with boinc_resolve_filename */
   /* NOTE: @configfile must be at the beginning of the command line! */
-  if (argv[1][0] == '@') 
+  if ( argv[1] && argv[1][0] == '@') 
     {
       resfname[0] = '@';
       if (boinc_resolve_filename(argv[1]+1,resfname+1,sizeof(resfname)))
