@@ -1189,18 +1189,15 @@ INT4 main(INT4 argc, CHAR *argv[])
       }
       */
 
-      /* reduce to the optimal filter frequency range */
       if (vrbflg)
       {
         fprintf(stdout, "reduce to optimal filter range\n");
       }
 
+      /* reduce to the optimal filter frequency range */
       response1.epoch = response2.epoch = gpsCalibTime;
-      for (i = 0; i < filterLength; i++)
-      {
-        response1.data->data[i] = responseTemp1.data->data[i + numFMin];
-        response2.data->data[i] = responseTemp2.data->data[i + numFMin];
-      }
+      response1.data->data = responseTemp1.data->data + numFMin;
+      response2.data->data = responseTemp2.data->data + numFMax;
 
       /* print */
       if ((test_flag) && (segLoop == testSeg))
