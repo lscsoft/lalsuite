@@ -971,6 +971,20 @@ class ScienceData:
           seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
         seg.set_unused(0)
 
+  def make_short_chunks_from_unused(
+    self,min_length,overlap,play,sl=0):
+    """
+    Create a chunk that uses up the unused data in the science segment
+    """
+    for seg in self.__sci_segs:
+      if seg.unused() > min_length:
+        start = seg.end() - seg.unused() - overlap
+        end = seg.end()
+        length = start - end
+        if (not play) or (play and (((end-sl-729273613)%6370) < (600+length))):
+          seg.add_chunk(start, end, start)
+        seg.set_unused(0)
+
   def intersection(self, other):
     """
     Replaces the ScienceSegments contained in this instance of ScienceData
