@@ -182,7 +182,7 @@ for seg in data:
     stoch.set_start(chunk.start())
     stoch.set_end(chunk.end())
     stoch.set_ifo_one(ifo1)
-    stoch.set_ifo_two(ifo1)
+    stoch.set_ifo_two(ifo2)
     stoch.set_cache_one(df.get_output())
     stoch.set_cache_two(df.get_output())
     stoch.set_calibration_one(ifo1,chunk.start())
