@@ -589,6 +589,10 @@ int main(int argc,char *argv[])
   if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
 
   fclose(fpmax);
+
+  /* properly terminate Fstats-file by '.*DONE.*' marker: 
+   * we use "%DONE" for matlab/octave compatibility */
+  fprintf(fpstat, "%%DONE");
   fclose(fpstat);
 
   /* Free DopplerScan-stuff (grid) */
