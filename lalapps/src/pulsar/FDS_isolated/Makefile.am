@@ -6,12 +6,16 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 AM_LDFLAGS = -all-static
 
-bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF
+bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
+	ComputeFStatistic_v2
 
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c ComputeFStatistic.h	\
 	rngmed.c rngmed.h clusters.c clusters.h  			\
 	DopplerScan.c DopplerScan.h
 
+ComputeFStatistic_v2_SOURCES =  ComputeFStatistic_v2.c ComputeFStatistic.h	\
+		rngmed.c rngmed.h clusters.c clusters.h  			\
+		DopplerScan.c DopplerScan.h
 
 lalapps_SemiAnalyticF_SOURCES =	SemiAnalyticF.c SemiAnalyticF.h
 
