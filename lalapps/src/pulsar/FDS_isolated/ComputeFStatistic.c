@@ -14,7 +14,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#ifndef NOGLOB
+#ifdef HAVE_GLOB_H
 #include <glob.h>
 #endif
 
@@ -117,6 +117,18 @@ BOOLEAN FILE_FSTATS = 1;
 #include "boinc_zip.h"
 #endif
 
+/* Fixme: include header for this */
+#ifdef _MSC_VER
+#ifndef __BOOL_DEFINED 
+#if _MSC_VER >= 1200
+#define bool char
+#else
+#define bool int
+#endif
+#endif
+extern bool boinc_time_to_checkpoint();
+#endif
+
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
@@ -133,7 +145,7 @@ void worker();
 
 /* hooks for communication with the graphics thread */
 void (*set_search_pos_hook)(float,float) = NULL;
-int (*boinc_init_graphics_hook)() = NULL;
+int (*boinc_init_graphics_hook)(void (*worker)()) = NULL;
 double *fraction_done_hook = NULL;
 
 void use_boinc_filename1(char** orig_name);
@@ -1572,7 +1584,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   FILE *fp;
   size_t errorcode;
   INT4 fileno=0;   
-#ifndef NOGLOB
+#ifdef HAVE_GLOB_H
   glob_t globbuf;
 #endif
   LIGOTimeGPS starttime;
@@ -1791,7 +1803,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     strcat(command, uvar_BaseName);
     strcat(command,"*");
     
-#ifndef NOGLOB
+#ifdef HAVE_GLOB_H
     globbuf.gl_offs = 1;
     glob(command, GLOB_ERR, NULL, &globbuf);
     
