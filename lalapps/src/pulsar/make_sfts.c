@@ -360,6 +360,20 @@ void sighandler(int sig){
   exit(128+sig);
 }
 
+
+/* routine to track memory usage in different categories */
+#if TRACKMEMUSE
+void printmemuse() {
+   pid_t mypid=getpid();
+   char commandline[256];
+   fflush(NULL);
+   sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 -u", (int)mypid);
+   system(commandline);
+   fflush(NULL);
+ }
+#endif
+
+
 int main(int argc,char *argv[]){
   static LALStatus status;
   UINT4 npts;
@@ -504,6 +518,11 @@ int main(int argc,char *argv[]){
   /* Initialize frame library with correct file list */
   sprintf(framelist,"%s/jobdata.%05d.ffl",argv[2],jobnum);
   opencount=0;
+
+#if TRACKMEMUSE
+    printf("[ENTRY]      Memory usage at iteration %d is:\n", count);
+    printmemuse();
+#endif
   while (!(frfile = FrFileINew(framelist))){
     pout( "Couldnt open frame file list %s\n", framelist);
     if (opencount++<10)
@@ -512,25 +531,51 @@ int main(int argc,char *argv[]){
       return(3);
   }
   
+#if TRACKMEMUSE
+    printf("[After FFL]  Memory usage at iteration %d is:\n", count);
+    printmemuse();
+#endif
+
   /* create structure to store channel data  */
   chan.data = NULL;
   LALSCreateVector(&status, &chan.data, npts);
   TESTSTATUS(&status);
+
+#if TRACKMEMUSE
+    printf("[After SVEC] Memory usage at iteration %d is:\n", count);
+    printmemuse();
+#endif
 
 #if TDDOUBLE
   /* create structure to store channel data */
   chand.data = NULL;
   LALDCreateVector(&status, &chand.data, npts);
   TESTSTATUS(&status);
+
+#if TRACKMEMUSE
+    printf("[After DVEC] Memory usage at iteration %d is:\n", count);
+    printmemuse();
+#endif
+
 #endif
 
   /* Create vector to hold signal frequency series */
   LALCCreateVector(&status, &fvec, (UINT4)len2);
   TESTSTATUS(&status);
   
+#if TRACKMEMUSE
+    printf("[After FVEC] Memory usage at iteration %d is:\n", count);
+    printmemuse();
+#endif
+
   /* Compute measured plan for FFTW */
   LALCreateForwardRealFFTPlan(&status, &pfwd, (UINT4)npts, 0);
   TESTSTATUS(&status);
+
+#if TRACKMEMUSE
+    printf("[After PLAN] Memory usage at iteration %d is:\n", count);
+    printmemuse();
+#endif
 
   /* Main loop to write SFTs */
   for (count=0;count<nstarts;count++) {
@@ -540,15 +585,8 @@ int main(int argc,char *argv[]){
     int lsffl=0,verifyframes=0;
 
 #if TRACKMEMUSE
- {
-   pid_t mypid=getpid();
-   char commandline[256];
-   printf("Memory usage at iteration %d is:\n", count);
-   fflush(stdout);
-   sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 -u", (int)mypid);
-   system(commandline);
-   fflush(stdout);
- }
+    printf("[TOP]        Memory usage at iteration %d is:\n", count);
+    printmemuse();
 #endif
 
 #if TIMESHIFT
@@ -588,7 +626,14 @@ int main(int argc,char *argv[]){
     /* read in correct data */
     errno=0;
     frvect = FrFileIGetVAdc(frfile, chname, epoch.gpsSeconds, tbase, 0);
-    
+ 
+
+#if TRACKMEMUSE
+    printf("[After Fr]   Memory usage at iteration %d is:\n", count);
+    printmemuse();
+#endif
+
+   
     /* This block will detect permission denied and other access errors */
     if (errno || frvect==NULL || frvect->next){
       int saveerrno=errno;
@@ -718,7 +763,13 @@ int main(int argc,char *argv[]){
       LALButterworthREAL4TimeSeries(&status, &chan, &filterpar);
       TESTSTATUS(&status);
 #endif
-      
+
+
+#if TRACKMEMUSE
+    printf("[After FILT] Memory usage at iteration %d is:\n", count);
+    printmemuse();
+#endif
+
 #if PRINT50
       print50(chan.data->data, "LAL_FILTERED");
 #endif
@@ -800,6 +851,11 @@ int main(int argc,char *argv[]){
       LALForwardRealFFT(&status, fvec, chan.data, pfwd);
       TESTSTATUS(&status);
       
+#if TRACKMEMUSE
+    printf("[After FFT]  Memory usage at iteration %d is:\n", count);
+    printmemuse();
+#endif
+
 #if PRINT50
       print50(chan.data->data, "FFT");
       exit(0);
