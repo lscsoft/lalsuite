@@ -61,7 +61,7 @@ void fct_free(void* p)
 static
 const char** setup_errstr(void)
 {
-  static const char* errstr[FCT_EUNKNOWN];
+  static const char* errstr[FCT_EUNKNOWN + 1];
 
   errstr[FCT_ENONE]      = "Not an error";
   errstr[FCT_ENULL_PLAN] = "The fct_plan pointer is null";
