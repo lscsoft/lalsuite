@@ -70,11 +70,18 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
   const INT8 mod_play = 6370000000000LL;
   INT8 end_mod_play;
 
-  /* handle the unhandled case */
+  /* handle a segment that contains two or more playground */
+  /* segments by recursively bisecting it                  */
   if ( seg_length >= mod_play )
   {
-    LALPrintError( "Segment length is longer than mod_play: FIXME" );
-    return -1LL;
+    INT8 low_len, high_len, low_play, high_play;
+    low_len = high_len = seg_length / 2LL;
+    if ( seg_length % 2LL ) ++low_len;
+    
+    low_play = PlaygroundOverlap( seg_end - high_len, low_len );
+    high_play = PlaygroundOverlap( seg_end, high_len );
+
+    return low_play + high_play;
   }
   
   end_mod_play = ((seg_end - S2_start) % mod_play );
@@ -122,7 +129,7 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
     }
     else
     {
-      LALPrintError( "Error determining playground overlap" );
+      LALPrintError( "Error determining playground overlap\n" );
       return -1LL;
     }
   }
