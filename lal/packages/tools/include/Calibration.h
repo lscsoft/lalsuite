@@ -197,6 +197,36 @@ CalibrationUpdateParams;
  *
  **** </lalLaTeX> */
 
+typedef
+struct StrainOutTag {
+  REAL8TimeSeries ht;   /* pointer to the timeseries containing h(t) */
+  COMPLEX16TimeSeries alpha; /* pointer to the alpha time series */
+  COMPLEX16TimeSeries beta;  /* pointer to the beta time series */
+} StrainOut;
+                                                                                                                               
+typedef
+struct StrainInTag {
+  REAL4TimeSeries AS_Q ;   /* pointer to the timeseries containing ASQ */
+  REAL4TimeSeries DARM ;   /* pointer to the timeseries containing DARM_CTRL */
+  REAL4TimeSeries EXC ;    /* pointer to the timeseries containing the excitation */
+  COMPLEX16 Do;  /* digital filter at cal line frequency */
+  COMPLEX16 Go;  /* OLG at cal line frequency */
+  REAL8 f;      /* calibration line frequency */
+  REAL4 To;     /* factors integration time */
+} StrainIn;
+
+typedef
+struct MyIIRFilter {
+  INT4 yOrder;
+  INT4 xOrder;
+  REAL8 a[20];
+  REAL8 b[20];
+  REAL8 yhist[20];
+  REAL8 xhist[20];
+} MyIIRFilter;
+
+
+
 void LALComputeTransfer( LALStatus *status, CalibrationRecord *calrec );
 
 
@@ -221,6 +251,17 @@ void LALComputeCalibrationFactors(
     UpdateFactorsParams    *input
     );
 
+void LALComputeStrain(
+    LALStatus              *status,
+    StrainOut              *output,    
+    StrainIn               *input
+    );
+
+int XLALGetFactors(
+    LALStatus              *status,
+    StrainOut              *output,    
+    StrainIn               *input
+    );
 
 #ifdef  __cplusplus
 #pragma { /** to match the next brace **/
