@@ -108,7 +108,8 @@ REAL4 omegaRef = 1.;
 
 /* misc parameters */
 INT4 hannDuration = 60;
-INT4 padData = 1;
+INT4 padData;
+INT4 maskBin = 0;
 
 INT4 main(INT4 argc, CHAR *argv[])
 {
@@ -122,7 +123,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	CHAR outputFilename[LALNameLength];
 
 	/* counters */
-	INT4 i, j;
+	INT4 i, j, k;
 
 	/* results parameters */
 	REAL8 y;
@@ -208,6 +209,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* frequency mask structures */
 	REAL4FrequencySeries mask;
 	REAL4Vector *maskTemp;
+	INT4 nBin;
 
 	/* spectrum structures */
 	StochasticOmegaGWParameters omegaGWParams;
@@ -245,6 +247,16 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* parse command line options */
 	parseOptions(argc, argv);
 
+	/* should a resample buffer be applied */
+	if (sampleRate == resampleRate)
+	{
+		padData = 0;
+	}
+	else
+	{
+		padData = 1;
+	}
+
 	/* set start time */
 	gpsStartTime.gpsSeconds = startTime;
 	gpsStartTime.gpsNanoSeconds = 0;
@@ -265,12 +277,15 @@ INT4 main(INT4 argc, CHAR *argv[])
 
 	/* get number of segments */
 	streamDuration = endTime - startTime;
-	numSegments = streamDuration / segmentDuration;
-	segmentShift = segmentDuration;
 	if (overlap_hann_flag)
 	{
 		numSegments = (2 * numSegments) - 1;
 		segmentShift = segmentDuration / 2;
+	}
+	else
+	{
+		numSegments = streamDuration / segmentDuration;
+		segmentShift = segmentDuration;
 	}
 
 	/* get stream duration and length */
@@ -730,6 +745,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* frequency mask */
 	if (apply_mask_flag)
 	{
+		/* extra bins */
+		nBin = (maskBin - 1) / 2;
+
 		/* set metadata fields for frequency mask */
 		strncpy(mask.name, "mask", LALNameLength);
 		mask.deltaF = deltaF;
@@ -771,6 +789,18 @@ INT4 main(INT4 argc, CHAR *argv[])
 		for (i = 0; i < respLength; i += (UINT4)(16 / deltaF))
 		{
 			maskTemp->data[i] = 0.;
+
+			for (k = 0; k < nBin; k++)
+			{
+				if ((i + 1 + k) < respLength)
+				{
+					maskTemp->data[i + 1 + k] = 0.;
+				}
+				if ((i - 1 - k) > 0)
+				{
+					maskTemp->data[i - 1 - k] = 0.;
+				}
+			}
 		}
 
 		if (vrbflg)
@@ -782,6 +812,18 @@ INT4 main(INT4 argc, CHAR *argv[])
 		for (i = 0; i < respLength; i += (UINT4)(60 / deltaF))
 		{
 			maskTemp->data[i] = 0.;
+
+			for (k = 0; k < nBin; k++)
+			{
+				if ((i + 1 + k) < respLength)
+				{
+					maskTemp->data[i + 1 + k] = 0.;
+				}
+				if ((i - 1 - k) > 0)
+				{
+					maskTemp->data[i - 1 - k] = 0.;
+				}
+			}
 		}
 
 		if (vrbflg)
@@ -1160,6 +1202,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			{"overlap-hann", no_argument, &overlap_hann_flag, 1},
 			{"verbose", no_argument, &vrbflg, 1},
 			/* options that don't set a flag */
+			{"mask-bin", required_argument, 0, 'b'},
 			{"help", no_argument, 0, 'h'},
 			{"gps-start-time", required_argument, 0, 't'},
 			{"gps-end-time", required_argument, 0, 'T'},
@@ -1208,6 +1251,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 			case 'h':
 				/* HELP!!! */
 				displayUsage(0);
+				break;
+
+			case 'b':
+				/* number of bins to mask */
+				maskBin = atoi(optarg);
 				break;
 
 			case 't':
@@ -1424,6 +1472,7 @@ void displayUsage(INT4 exitcode)
 	fprintf(stderr, " --calibration-cache-two FILE  " \
 			"second stream calibration cache\n");
 	fprintf(stderr, " --apply-mask                  apply frequency masking\n");
+	fprintf(stderr, " --mask-bin                    number of bins to mask\n");
 	fprintf(stderr, " --overlap-hann                overlaping hann windows " \
 			"for data windowing\n");
 	fprintf(stderr, " --high-pass-filter            perform high pass " \
