@@ -772,7 +772,7 @@ LALClustersPowerThreshold (
 \idx{LALClustersPowerThreshold()}
 
 \subsubsection*{Description}
-This function loops over all clusters in \texttt{*in}; for each cluster it computes its total power by summing over the pixels of the cluster, and computes the probability for Gaussian noise to produce a cluster with this total power at this stage of the analysis. This probability is compared to \texttt{dir->alpha}; if smaller, the cluster from \texttt{*in} is appended to \texttt{*out}. Therefore, \texttt{dir->alpha} is the fraction of clusters that had survive the first cuts that will pass this one, assuming Gaussian noise as input of the algorithm.
+This function loops over all clusters in \texttt{*in}; for each cluster it computes its total power by summing over the pixels of the cluster, and computes the probability for Gaussian noise to produce a cluster with this total power at this stage of the analysis. This probability is compared to \texttt{dir->alpha}; if smaller, the cluster from \texttt{*in} is appended to \texttt{*out}. Therefore, \texttt{dir->alpha} is the fraction of clusters that had survive the first cuts that will pass this one, assuming Gaussian noise as input of the algorithm. When \texttt{dir->alpha} < 0, only clusters which have at least one pixel with power larger or equal to -\texttt{dir->alpha} times the first power threshold will survive.
 
 \subsubsection*{Notes}
 \begin{itemize}
@@ -791,6 +791,7 @@ LALClustersPowerThreshold (
 			   CListDir *dir
 			   )
 {
+  BOOLEAN winner;
   UINT4 i,j;
   REAL4 po, P0;
   REAL4 prob /* , norm */ ;
@@ -830,7 +831,7 @@ LALClustersPowerThreshold (
     ASSERT ( dir->s2, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
     ASSERT ( dir->d, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   }
-  ASSERT ( dir->alpha >= 0 && dir->alpha <= 1, status, TFCLUSTERSH_E01, TFCLUSTERSH_MSGE01 );
+  ASSERT ( dir->alpha <= 1, status, TFCLUSTERSH_E01, TFCLUSTERSH_MSGE01 );
 
   ASSERT ( out->params, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   ASSERT ( out->params->timeBins == in->params->timeBins &&
@@ -851,21 +852,37 @@ LALClustersPowerThreshold (
   ASSERT ( in->P, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
   ASSERT ( in->params, status, TFCLUSTERSH_ENULLP, TFCLUSTERSH_MSGENULLP );
 
-
-  /* run the power threshold test */
   for(i=0; i<in->nclusters; i++) { /* loop over input clusters */
-    
-    for(po = 0.0, P0=0.0, j = 0; j<in->sizes[i]; j++) {
-      po += in->P[i][j];
-      P0 += dir->rho[in->f[i][j]];
-    }
+  
+    winner = 0;
+
+    if(dir->alpha > 0) {
+      /* run the power threshold test */
+      for(po = 0.0, P0=0.0, j = 0; j<in->sizes[i]; j++) {
+	po += in->P[i][j];
+	P0 += dir->rho[in->f[i][j]];
+      }
      
-    po -= P0;
+      po -= P0;
 
-    incgam(status->statusPtr, (float)in->sizes[i], po, &prob);
-    CHECKSTATUSPTR (status);
+      incgam(status->statusPtr, (float)in->sizes[i], po, &prob);
+      CHECKSTATUSPTR (status);
 
-    if(prob < dir->alpha) { /* we have a winner */
+      if(prob < dir->alpha) { 
+	winner = 1;
+      }
+    } else {
+      /* run the maximum pixel power test */
+      for(j = 0; j<in->sizes[i]; j++) {
+	po = -dir->alpha * dir->rho[in->f[i][j]];
+	if(in->P[i][j] > po) {
+	  winner = 1;
+	  break;
+	}
+      }
+    }
+
+    if(winner) { /* we have a winner */
 
       (out->nclusters)++;
 
@@ -879,7 +896,7 @@ LALClustersPowerThreshold (
       out->t = (UINT4**)LALRealloc(out->t, out->nclusters * sizeof(UINT4*));
       if(!(out->t))
 	{ABORT ( status,TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC);}
-
+      
       out->f = (UINT4**)LALRealloc(out->f, out->nclusters * sizeof(UINT4*));
       if(!(out->f)) {
 	ABORT ( status,TFCLUSTERSH_EMALLOC, TFCLUSTERSH_MSGEMALLOC);
@@ -912,6 +929,7 @@ LALClustersPowerThreshold (
       }
     }
   }
+  
 
   /* Normal exit */
   DETATCHSTATUSPTR (status);
