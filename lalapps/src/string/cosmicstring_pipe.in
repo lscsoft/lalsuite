@@ -219,7 +219,7 @@ for seg in data:
     string1.set_end(chunk.end())
     string1.set_ifo(ifo1)
     string1.set_cache(df1.get_output())
-    string1.add_var_opt('filter-thresh',ifo1_snr)
+    string1.add_var_opt('--threshold',ifo1_snr)
     # TODO: trig-start-time
     if do_datafind: 
       string1.add_parent(df1)
