@@ -18,6 +18,15 @@ $Id$
 #define LAL_RANGE_ERR	4
 #define LAL_RANGE_MSG	"parameter out of range"
 
+void XLALDestroyCOMPLEX8FrequencySeries(
+	COMPLEX8FrequencySeries *series
+);
+
+void LALDestroyCOMPLEX8FrequencySeries(
+	LALStatus *status,
+	COMPLEX8FrequencySeries *series
+);
+
 void XLALDestroyREAL4FrequencySeries(
 	REAL4FrequencySeries *series
 );
@@ -25,6 +34,26 @@ void XLALDestroyREAL4FrequencySeries(
 void LALDestroyREAL4FrequencySeries(
 	LALStatus *status,
 	REAL4FrequencySeries *series
+);
+
+COMPLEX8FrequencySeries *XLALCreateCOMPLEX8FrequencySeries(
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaF,
+	LALUnit sampleUnits,
+	size_t length
+);
+
+void LALCreateCOMPLEX8FrequencySeries(
+	LALStatus *status,
+	COMPLEX8FrequencySeries **output,
+	CHAR *name,
+	LIGOTimeGPS epoch,
+	REAL8 f0,
+	REAL8 deltaF,
+	LALUnit sampleUnits,
+	size_t length
 );
 
 REAL4FrequencySeries *XLALCreateREAL4FrequencySeries(
