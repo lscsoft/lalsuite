@@ -67,6 +67,45 @@ LALSortSnglInspiral(
     )
 /* </lalVerbatim> */
 {
+  INT4                  i;
+  INT4                  numEvents = 0;
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable   **eventHandle = NULL;
+
+  INITSTATUS( status, "LALSortSnglInspiral", SNGLINSPIRALUTILSC );
+
+  /* count the number of events in the linked list */
+  for ( thisEvent = *eventHead; thisEvent; thisEvent = thisEvent->next )
+  {
+    ++numEvents;
+  }
+  if ( ! numEvents )
+  {
+    LALWarn( status, "No events in list to sort" );
+    RETURN( status );
+  }
+
+  /* allocate memory for an array of pts to sort and populate array */
+  eventHandle = (SnglInspiralTable **) 
+    LALCalloc( numEvents, sizeof(SnglInspiralTable *) );
+  for ( i = 0, thisEvent = *eventHead; i < numEvents; 
+      ++i, thisEvent = thisEvent->next )
+  {
+    eventHandle[i] = thisEvent;
+  }
+
+  /* qsort the array using the specified function */
+  qsort( eventHandle, numEvents, sizeof(eventHandle[0]), comparfunc );
+  
+  /* re-link the linked list in the right order */
+  thisEvent = *eventHead = eventHandle[0];
+  for ( i = 1; i < numEvents; ++i )
+  {
+    thisEvent = thisEvent->next = eventHandle[i];
+  }
+  thisEvent->next = NULL;
+
+  RETURN( status );
 }
 
 
@@ -78,6 +117,29 @@ LALCompareSnglInspiralByMass(
     )
 /* </lalVerbatim> */
 {
+  SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
+  SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
+
+  if ( aPtr->mass1 > bPtr->mass1 )
+  {
+    return 1;
+  }
+  else if ( aPtr->mass1 < bPtr->mass1 )
+  {
+    return -1;
+  }
+  else if ( aPtr->mass2 > bPtr->mass2 )
+  {
+    return 1;
+  }
+  else if ( aPtr->mass2 < bPtr->mass2 )
+  {
+    return -1;
+  }
+  else
+  {
+    return 0;
+  }
 }
 
 
@@ -89,4 +151,25 @@ LALCompareSnglInspiralByTime(
     )
 /* </lalVerbatim> */
 {
+  LALStatus     status;
+  SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
+  SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
+  INT8 ta, tb;
+
+  memset( &status, 0, sizeof(LALStatus) );
+  LALGPStoINT8( &status, &ta, &(aPtr->end_time) );
+  LALGPStoINT8( &status, &tb, &(bPtr->end_time) );
+
+  if ( ta > tb )
+  {
+    return 1;
+  }
+  else if ( ta < tb )
+  {
+    return -1;
+  }
+  else
+  {
+    return 0;
+  }
 }
