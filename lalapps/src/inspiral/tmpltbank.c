@@ -356,15 +356,19 @@ int main ( int argc, char *argv[] )
   {
     case 0:
       avgSpecParams.method = useMean;
+      if ( vrbflg ) fprintf( stdout, "computing mean psd" );
       break;
     case 1:
       avgSpecParams.method = useMedian;
+      if ( vrbflg ) fprintf( stdout, "computing median psd" );
       break;
   }
    
   wpars.type = Hann;
   wpars.length = numPoints;
   avgSpecParams.overlap = numPoints / 2;
+  if ( vrbflg ) 
+    fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
 
   LAL_CALL( LALCreateREAL4Window( &status, &(avgSpecParams.window),
         &wpars ), &status );
@@ -388,6 +392,10 @@ int main ( int argc, char *argv[] )
   resp.sampleUnits = strainPerCount;
 
   /* generate the response function for the current time */
+  if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n"
+      "response parameters f0 = %e, deltaF = %e, length = %d\n",
+      resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
+      resp.f0, resp.deltaF, resp.data->length );
   LAL_CALL( LALExtractFrameResponse( &status, &resp, calCacheName, ifo ),
       &status );
 
