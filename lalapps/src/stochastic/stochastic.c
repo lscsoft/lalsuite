@@ -92,7 +92,6 @@ static int inject_flag;
 static int apply_mask_flag;
 static int high_pass_flag;
 static int overlap_hann_flag;
-static int test_flag;
 static int recentre_flag;
 extern int vrbflg;
 
@@ -162,11 +161,6 @@ REAL4 geoHighPassAtten = -1; /* 0.9; */
 
 /* number of bins for frequency masking */
 INT4 maskBin = -1;
-
-/* arguments associated with test flag */
-INT4 testInter = -1;
-INT4 testSeg = -1;
-INT4 testTrial = -1;
 
 /* output file */
 CHAR *outputFilePath = NULL;
@@ -738,10 +732,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
   }
 
-  /* print window */
-  if (test_flag)
-    LALSPrintTimeSeries(&dataWindow, "dataWindow.dat");
-
   /* structure for high pass filtering */
   if (high_pass_flag)
   {
@@ -818,10 +808,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* generate overlap reduction function */
   LAL_CALL(LALOverlapReductionFunction(&status, &overlap, &detectors, \
         &ORFparams), &status);
-
-  /* print */
-  if (test_flag)
-    LALSPrintFrequencySeries(&overlap, "overlap.dat");
 
   /* set metadata fields for spectrum */
   strncpy(omegaGW.name, "omegaGW", LALNameLength);
@@ -921,9 +907,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     for (i = 0; i < filterLength; i++)
       mask.data->data[i] = maskTemp->data[i + numFMin];
 
-    if (test_flag)
-      LALSPrintFrequencySeries(&mask, "mask.dat");
-    
     if (vrbflg)
       fprintf(stdout, "Applying frequency mask to spectrum..\n");
 
@@ -931,10 +914,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     for (i = 0; i < filterLength; i++)
       omegaGW.data->data[i] *= mask.data->data[i];
   }
-
-  /* print */
-  if (test_flag)
-    LALSPrintFrequencySeries(&omegaGW, "omegaGW.dat");
 
   /* set normalisation parameters */
   normParams.fRef = fRef;
@@ -1409,14 +1388,6 @@ INT4 main(INT4 argc, CHAR *argv[])
             responseTwo.data->data[i] = respTwo[segLoop]->data[i];
           }
 
-          /* print */
-          if ((test_flag) && (interLoop == testInter) && \
-              (segLoop == testSeg) && (MCLoop == testTrial))
-          {
-            LALCPrintFrequencySeries(&responseOne, "response1.dat");
-            LALCPrintFrequencySeries(&responseTwo, "response2.dat");
-          }
-
           /* simulate signal */
           if (inject_flag)
           {
@@ -1443,14 +1414,6 @@ INT4 main(INT4 argc, CHAR *argv[])
             LAL_CALL(LALSSSimStochBGTimeSeries(&status, &SBOutput, \
                   &SBInput, &SBParams), &status);
 
-            /* print */
-            if ((test_flag) && (interLoop == testInter) && \
-                (segLoop == testSeg) && (MCLoop == testTrial))
-            {
-              LALSPrintTimeSeries(&SimStochBGOne, "simStochBG1.dat");
-              LALSPrintTimeSeries(&SimStochBGTwo, "simStochBG2.dat");
-            }
-
             /* multiply by scale factor and inject into real data */
             for (i = 0; i < segmentPadLength ; i++)
             {
@@ -1458,14 +1421,6 @@ INT4 main(INT4 argc, CHAR *argv[])
                 (scaleFactor * SimStochBGOne.data->data[i]);
               segmentPadTwo.data->data[i] = segPadTwo[segLoop]->data[i] + \
                 (scaleFactor * SimStochBGTwo.data->data[i]);
-            }
-
-            /* print */
-            if ((test_flag) && (interLoop == testInter) && \
-                (segLoop == testSeg) && (MCLoop == testTrial))
-            {
-              LALSPrintTimeSeries(&segmentPadOne, "segmentPadMC1.dat");
-              LALSPrintTimeSeries(&segmentPadTwo, "segmentPadMC2.dat");
             }
 
             /* increase seed */
@@ -1478,14 +1433,6 @@ INT4 main(INT4 argc, CHAR *argv[])
               segmentPadOne.data->data[i] = segPadOne[segLoop]->data[i];
               segmentPadTwo.data->data[i] = segPadTwo[segLoop]->data[i];
             }
-          }
-
-          /* print */
-          if ((test_flag) && (interLoop == testInter) && \
-              (segLoop == testSeg) && (MCLoop == testTrial))
-          {
-            LALSPrintTimeSeries(&segmentPadOne, "segmentPad1.dat");
-            LALSPrintTimeSeries(&segmentPadTwo, "segmentPad2.dat");
           }
 
           /* high pass fitering */
@@ -1506,16 +1453,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                                      resampleRate];
           }
 
-          /* print */
-          if ((test_flag) && (interLoop == testInter) && \
-              (segLoop == testSeg) && (MCLoop == testTrial))
-          {
-            LALSPrintTimeSeries(&segmentOne, "segment1.dat");
-            LALSPrintTimeSeries(&segmentTwo, "segment2.dat");
-          }
-
           /* store in memory */
-
           for (i = 0; i < segmentLength; i++)
           {
             segOne[segLoop]->data[i] = segmentOne.data->data[i];
@@ -1551,14 +1489,6 @@ INT4 main(INT4 argc, CHAR *argv[])
               psdTwo.data->data[i] =  psdTempTwo.data->data[i + numFMin];
             }
 
-            /* print */
-            if ((test_flag) && (interLoop == testInter) && \
-                (segLoop == testSeg) && (MCLoop == testTrial))
-            {
-              LALSPrintFrequencySeries(&psdOne, "psd1.dat");
-              LALSPrintFrequencySeries(&psdTwo, "psd2.dat");
-            }
-
             if (vrbflg)
               fprintf(stdout, "Generating inverse noise...\n");
 
@@ -1567,14 +1497,6 @@ INT4 main(INT4 argc, CHAR *argv[])
                   &inverseNoiseOutOne, &inverseNoiseInOne), &status);
             LAL_CALL(LALStochasticInverseNoiseCal(&status, \
                   &inverseNoiseOutTwo, &inverseNoiseInTwo), &status);
-
-            /* print */
-            if ((test_flag) && (interLoop == testInter) && \
-                (segLoop == testSeg) && (MCLoop == testTrial))
-            {
-              LALSPrintFrequencySeries(&calInvPsdOne, "calInvPsd1.dat");
-              LALSPrintFrequencySeries(&calInvPsdTwo, "calInvPsd2.dat");
-            }
 
             /* sum over calibrated PSDs for average */
             for (i = 0; i < filterLength; i++)
@@ -1604,13 +1526,6 @@ INT4 main(INT4 argc, CHAR *argv[])
           calInvPsdTwo.data->data[i] = 1. / calPsdTwo->data[i];
         }
 
-        /* print */
-        if ((test_flag) && (interLoop == testInter) && (MCLoop == testTrial))
-        {
-          LALSPrintFrequencySeries(&calInvPsdOne, "calInvPsdAvg1.dat");
-          LALSPrintFrequencySeries(&calInvPsdTwo, "calInvPsdAvg2.dat");
-        }
-
         if (vrbflg)
           fprintf(stdout, "Normalising optimal filter...\n");
 
@@ -1630,10 +1545,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         LAL_CALL(LALStochasticOptimalFilterCal(&status, &optFilter, \
               &optFilterIn, &normLambda), &status);
 
-        /* print */
-        if ((test_flag) && (interLoop == testInter) && (MCLoop == testTrial))
-          LALPrintFrequencySeries(&optFilter, "optFilter.dat");
-
         /* analyse middle segment */
         gpsStartTime.gpsSeconds = startTime + (interLoop + segMiddle) * \
                                   segmentDuration;
@@ -1651,25 +1562,11 @@ INT4 main(INT4 argc, CHAR *argv[])
           segmentTwo.data->data[i] = segTwo[segMiddle]->data[i];
         }
 
-        /* print */
-        if ((test_flag) && (interLoop == testInter) && (MCLoop == testTrial))
-        {
-          LALSPrintTimeSeries(&segmentOne, "segmentMiddle1.dat");
-          LALSPrintTimeSeries(&segmentTwo, "segmentMiddle2.dat");
-        }
-
         /* zero pad and fft */
         LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeOne, &segmentOne, \
               &zeroPadParams), &status);
         LAL_CALL(LALSZeroPadAndFFT(&status, &hBarTildeTwo, &segmentTwo, \
               &zeroPadParams), &status);
-
-        /* print */
-        if ((test_flag) && (interLoop == testInter) && (MCLoop == testTrial))
-        {
-          LALCPrintFrequencySeries(&hBarTildeOne, "hBarTilde1.dat");
-          LALCPrintFrequencySeries(&hBarTildeTwo, "hBarTilde2.dat");
-        }
 
         if (vrbflg)
           fprintf(stdout, "Generating cross correlation spectrum...\n");
@@ -1691,11 +1588,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         /* cc statistic */
         LAL_CALL(LALStochasticCrossCorrelationStatisticCal(&status, &ccStat, \
               &ccIn,epochsMatch), &status);
-
-        /* print */
-        if ((test_flag) && (interLoop == testInter) && (MCLoop == testTrial))
-          LALCPrintFrequencySeries(&ccSpectrum, "ccSpectrum.dat");
-
         y = (REAL8)(ccStat.value * pow(10., ccStat.units.powerOfTen));
 
         /* save */
@@ -1857,10 +1749,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --seed N                      random seed\n"\
   " --trials N                    number of trials for Monte Carlo\n"\
   " --output-dir DIR              directory for output files\n"\
-  " --test                        output intermediate results\n"\
-  " --test-interval N             interval to test\n"\
-  " --test-segment N              segment to test\n"\
-  " --test-trial N                trial to test\n"\
   " --geo-hpf-frequency N         GEO high pass filter knee frequency\n"\
   " --geo-hpf-attenuation N       GEO high pass filter attenuation\n"\
   " --geo-hpf-order N             GEO high pass filter order\n"\
@@ -1890,7 +1778,6 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       {"high-pass-filter", no_argument, &high_pass_flag, 1},
       {"overlap-hann", no_argument, &overlap_hann_flag, 1},
       {"verbose", no_argument, &vrbflg, 1},
-      {"test", no_argument, &test_flag, 1},
       {"recentre", no_argument, &recentre_flag,1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
@@ -1923,9 +1810,6 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       {"seed", required_argument, 0, 'B'},
       {"trials", required_argument, 0, 'C'},
       {"output-dir", required_argument, 0, 'D'},
-      {"test-interval", required_argument, 0, 'E'},
-      {"test-segment", required_argument, 0, 'F'},
-      {"test-trial", required_argument, 0, 'G'},
       {"debug-level", required_argument, 0, 'H'},
       {"version", no_argument, 0, 'I'},
       {"alpha", required_argument, 0, 'J'},
@@ -1941,7 +1825,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
     c = getopt_long(argc, argv, \
         "ab:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:" \
-        "A:B:C:D:E:F:G:H:IJ:K:L:M:", long_options, &option_index);
+        "A:B:C:D:H:IJ:K:L:M:", long_options, &option_index);
 
     if (c == -1)
     {
@@ -2479,57 +2363,6 @@ static void parseOptions(INT4 argc, CHAR *argv[])
 
         break;
 
-      case 'E':
-        /* interval number for test */
-        testInter = atoi(optarg);
-
-        /* check */
-        if (testInter < 0)
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Test interval must be positive: (%d specified)\n", \
-              long_options[option_index].name, testInter);
-          exit(1);
-        }
-
-        ADD_PROCESS_PARAM("int", "%d", testInter);
-
-        break;
-
-      case 'F':
-        /* segment number for test */
-        testSeg = atoi(optarg);
-
-        /* check */
-        if (testSeg < 0)
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Test segment must be positive: (%d specified)\n", \
-              long_options[option_index].name, testSeg);
-          exit(1);
-        }
-
-        ADD_PROCESS_PARAM("int", "%d", testSeg);
-
-        break;
-
-      case 'G':
-        /* trial  number for test */
-        testTrial = atoi(optarg);
-
-        /* check */
-        if (testTrial < 0)
-        {
-          fprintf(stderr, "Invalid argument to --%s:\n" \
-              "Test trial must be positive: (%d specified)\n", \
-              long_options[option_index].name, testTrial);
-          exit(1);
-        }
-
-        ADD_PROCESS_PARAM("int", "%d", testTrial);
-
-        break;
-
       case 'H':
         /* set debug level */
         set_debug_level( optarg );
@@ -2793,26 +2626,6 @@ static void parseOptions(INT4 argc, CHAR *argv[])
     if (seed == -1)
     {
       fprintf(stderr, "--seed must be specified\n");
-      exit(1);
-    }
-  }
-
-  /* tests */
-  if (test_flag)
-  {
-    if (testInter == -1)
-    {
-      fprintf(stderr, "--test-interval must be specified\n");
-      exit(1);
-    }
-    if (testSeg == -1)
-    {
-      fprintf(stderr, "--test-segment must be specified\n");
-      exit(1);
-    }
-    if (testTrial == -1)
-    {
-      fprintf(stderr, "--test-trial must be specified\n");
       exit(1);
     }
   }
