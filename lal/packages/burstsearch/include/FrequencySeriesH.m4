@@ -21,7 +21,7 @@ void `LALDestroy'SERIESTYPE (
 \idx{`XLALCreate'SERIESTYPE ()}
 </lalLaTeX> <lalVerbatim file="FrequencySeriesCreateP"> */
 SERIESTYPE *`XLALCreate'SERIESTYPE (
-	CHAR *name,
+	const CHAR *name,
 	LIGOTimeGPS epoch,
 	REAL8 f0,
 	REAL8 deltaF,
@@ -36,7 +36,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 void `LALCreate'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
-	CHAR *name,
+	const CHAR *name,
 	LIGOTimeGPS epoch,
 	REAL8 f0,
 	REAL8 deltaF,
