@@ -66,7 +66,6 @@ static void ComputeAverageSpectrum(
 	EPSearchParams *params
 )
 {
-	int i;
 	LALWindowParams winParams;
 	AverageSpectrumParams spec_params = {};
 
