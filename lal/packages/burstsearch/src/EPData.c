@@ -22,7 +22,7 @@ LALCreateEPDataSegmentVector (
 {
   INITSTATUS (status, "LALCreateEPDataSegmentVector", EPDATAC);
 
-  ASSERT (vector, status, EPDATA_ENUL, EPDATA_MSGENUL);
+  ASSERT (vector, status, EPDATA_ENULL, EPDATA_MSGENULL);
 
   *vector = NULL;
 
