@@ -236,6 +236,52 @@ LALReadConfigSTRINGVariable (LALStatus *stat, CHAR **varp, LALConfigData_t *cfgd
 }
 
 /*----------------------------------------------------------------------
+ * READING OF FIXED LENGTH STRINGS:
+ * another variant of string-reading:similar to ReadConfigSTRING, but
+ * here a fixed-size CHAR-array is used as input, no memory is allocated
+ * NOTE: you have to provide the length of your string-array as input!
+ *      in varp->length
+ *
+ * (this is basically a wrapper for ReadConfigSTRINGVariable())
+ *
+ * NOTE2: the behaviour is similar to strncpy, i.e. we silently clip the
+ *       string to the right length, BUT we also 0-terminate it properly.
+ *       No error or warning is generated when clipping occurs!
+ *
+ * NOTE3: at return, the value varp->length is set to the length of the
+ *        string copied
+ *
+ *----------------------------------------------------------------------*/
+void
+LALReadConfigSTRINGNVariable (LALStatus *stat, CHARVector *varp, LALConfigData_t *cfgdata, CHAR *varName)
+{
+  CHAR *tmp = NULL;
+
+  INITSTATUS( stat, "LALReadConfigVariable", CONFIGFILEC );
+  ATTATCHSTATUSPTR (stat);
+  
+  /* This traps coding errors in the calling routine. */
+  ASSERT( varp != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT( varp->data != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT( varp->length != 0, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+
+  TRY (LALReadConfigSTRINGVariable (stat->statusPtr, &tmp, cfgdata, varName), stat);
+
+  if (tmp != NULL)
+    {
+      strncpy (varp->data, tmp, varp->length - 1);
+      varp->data[varp->length-1] = '\0';
+      LALFree (tmp);
+      varp->length = strlen (varp->data);
+    }
+    
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);  
+}
+
+
+
+/*----------------------------------------------------------------------
  *  parser for config-file: can read config-variables of the form
  *	VARIABLE [=:] VALUE
  * input is a TokenList containing the 'logical' lines of the cleaned config-file
