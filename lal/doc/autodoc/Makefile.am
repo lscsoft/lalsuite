@@ -4,6 +4,7 @@ CLEANFILES = *.aux *.bbl *.dvi *.glo *.idx *.ind *.lof *.lot *.tex *.toc \
              *.eps *.pdf *.ps
 
 dvi-local:
+	rm -f *.aux
 	cp $(srcdir)/../ligodcc.cls .
 	cp $(srcdir)/../lalspec.* .
 	@LATEX@ lalspec.tex
