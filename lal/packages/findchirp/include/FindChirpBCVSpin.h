@@ -141,9 +141,7 @@ LALFindChirpBCVSpinFilterSegment (
     SnglInspiralTable         **eventList,
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params,             
-    FindChirpDataParams        *fcDataParams,
-    FindChirpSegmentVector     *fcSegVec,
-    DataSegmentVector          *dataSegVec
+    FindChirpDataParams        *fcDataParams
   );
 
 #ifdef  __cplusplus
