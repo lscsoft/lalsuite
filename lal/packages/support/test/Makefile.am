@@ -2,7 +2,7 @@
 check_PROGRAMS = LALVersionTest LALMallocTest PrintVectorTest\
 	         PrintFTSeriesTest ReadFTSeriesTest StreamInputTest\
                  StreamSeriesInputTest
-noinst_DATA = StreamInput.data
+noinst_DATA = StreamInput.data StreamSeriesInput.data
 EXTRA_DIST = $(DATA)
 LALVersionTest_SOURCES = LALVersionTest.c
 LALVersionTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la

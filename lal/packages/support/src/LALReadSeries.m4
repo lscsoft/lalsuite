@@ -99,18 +99,11 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
 
       /* Parse name field. */
       if ( !strcmp( start, "name" ) ) {
-	endValue = startValue + 1;
-	while ( *endValue != '"' && *endValue != '\0' )
-	  endValue++;
-	if ( *startValue != '"' || *endValue != '"' ||
-	     endValue - ++startValue >= LALNameLength )
+	if ( *startValue != '"' )
 	  LALWarning( stat, LALREADSERIESC_HEADER "name" );
-	else {
-	  if ( endValue - startValue > 0 )
-	    memcpy( sCopy.name, startValue,
-		    ( endValue - startValue )*sizeof(CHAR) );
-	  sCopy.name[endValue-startValue] = '\0';
-	}
+	else
+	  LALLiteralToString( stat->statusPtr, sCopy.name, startValue,
+			      LALNameLength );
       }
 
       /* Parse epoch field. */
@@ -212,6 +205,7 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
 #ifndef NDEBUG
       else if ( !strcmp( start, "datatype" ) ) {
 	if ( lalDebugLevel & LALWARNING ) {
+	  endValue = startValue;
 	  while ( !isspace( *endValue ) && *endValue != '\0' )
 	    endValue++;
 	  *endValue = '\0';
@@ -500,18 +494,11 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
 
       /* Parse name field. */
       if ( !strcmp( start, "name" ) ) {
-	endValue = startValue + 1;
-	while ( *endValue != '"' && *endValue != '\0' )
-	  endValue++;
-	if ( *startValue != '"' || *endValue != '"' ||
-	     endValue - ++startValue >= LALNameLength )
+	if ( *startValue != '"' )
 	  LALWarning( stat, LALREADSERIESC_HEADER "name" );
-	else {
-	  if ( endValue - startValue > 0 )
-	    memcpy( sCopy.name, startValue,
-		    ( endValue - startValue )*sizeof(CHAR) );
-	  sCopy.name[endValue-startValue] = '\0';
-	}
+	else
+	  LALLiteralToString( stat->statusPtr, sCopy.name, startValue,
+			      LALNameLength );
       }
 
       /* Parse epoch field. */
@@ -627,6 +614,7 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
 #ifndef NDEBUG
       else if ( !strcmp( start, "datatype" ) ) {
 	if ( lalDebugLevel & LALWARNING ) {
+	  endValue = startValue;
 	  while ( !isspace( *endValue ) && *endValue != '\0' )
 	    endValue++;
 	  *endValue = '\0';
@@ -985,18 +973,11 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 
       /* Parse name field. */
       if ( !strcmp( start, "name" ) ) {
-	endValue = startValue + 1;
-	while ( *endValue != '"' && *endValue != '\0' )
-	  endValue++;
-	if ( *startValue != '"' || *endValue != '"' ||
-	     endValue - ++startValue >= LALNameLength )
+	if ( *startValue != '"' )
 	  LALWarning( stat, LALREADSERIESC_HEADER "name" );
-	else {
-	  if ( endValue - startValue > 0 )
-	    memcpy( sCopy.name, startValue,
-		    ( endValue - startValue )*sizeof(CHAR) );
-	  sCopy.name[endValue-startValue] = '\0';
-	}
+	else
+	  LALLiteralToString( stat->statusPtr, sCopy.name, startValue,
+			      LALNameLength );
       }
 
       /* Parse epoch field. */
@@ -1217,6 +1198,7 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 #ifndef NDEBUG
       else if ( !strcmp( start, "datatype" ) ) {
 	if ( lalDebugLevel & LALWARNING ) {
+	  endValue = startValue;
 	  while ( !isspace( *endValue ) && *endValue != '\0' )
 	    endValue++;
 	  *endValue = '\0';
@@ -1540,18 +1522,11 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
 
       /* Parse name field. */
       if ( !strcmp( start, "name" ) ) {
-	endValue = startValue + 1;
-	while ( *endValue != '"' && *endValue != '\0' )
-	  endValue++;
-	if ( *startValue != '"' || *endValue != '"' ||
-	     endValue - ++startValue >= LALNameLength )
+	if ( *startValue != '"' )
 	  LALWarning( stat, LALREADSERIESC_HEADER "name" );
-	else {
-	  if ( endValue - startValue > 0 )
-	    memcpy( sCopy.name, startValue,
-		    ( endValue - startValue )*sizeof(CHAR) );
-	  sCopy.name[endValue-startValue] = '\0';
-	}
+	else
+	  LALLiteralToString( stat->statusPtr, sCopy.name, startValue,
+			      LALNameLength );
       }
 
       /* Parse epoch field. */
@@ -1653,6 +1628,7 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
 #ifndef NDEBUG
       else if ( !strcmp( start, "datatype" ) ) {
 	if ( lalDebugLevel & LALWARNING ) {
+	  endValue = startValue;
 	  while ( !isspace( *endValue ) && *endValue != '\0' )
 	    endValue++;
 	  *endValue = '\0';

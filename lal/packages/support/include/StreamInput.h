@@ -281,7 +281,8 @@ void
 LALZReadFSeries( LALStatus *stat, COMPLEX16FrequencySeries *series, FILE *stream );
 
 /* <lalLaTeX>
-%\newpage\input{StreamInputTestC}
+\newpage\input{StreamInputTestC}
+\newpage\input{StreamSeriesInputTestC}
 </lalLaTeX> */
 
 #ifdef __cplusplus

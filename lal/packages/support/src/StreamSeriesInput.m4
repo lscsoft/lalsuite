@@ -229,9 +229,17 @@ element is discarded.)
 \medskip\noindent\textit{Optional fields:}
 \begin{description}
 \item[\texttt{name}:] \textit{value} is a string surrounded by quotes
-\verb@"@, of length less than \verb@LALNameLength@.  The contents and
-a terminating \verb@'\0'@ character are stored in \verb@series->name@.
-At present, nested quotes \verb@"@ and newlines are not permitted.
+\verb@"@, which is parsed in the manner of a string literal in C: it
+may contain ordinary printable characters (except \verb@"@ and
+\verb@\@), escape sequences (such as \verb@\t@ for tab, \verb@\n@ for
+newline, or \verb@\\@ and \verb@\"@ for literal backslash and quote
+characters), and octal or hexadecimal codes (\verb@\@$ooo$ or
+\verb@\x@$hh$ respectively) for arbitrary bytes.  Unlike in C,
+literals cannot be split between lines, adjacent literals are not
+concatenated, and converted strings longer than
+\verb@LALNameLength@$-1$ will be truncated.  The resulting string is
+stored in \verb@series->name@, and will always contain a \verb@\0@
+terminator, beyond which the contents are unspecified.
 
 \item[\texttt{epoch}:] \textit{value} is a single \verb@INT8@ number
 of GPS nanoseconds, or a pair of \verb@INT4@s representing GPS seconds
@@ -304,12 +312,14 @@ size is allocated and the data copied into it.
 
 \subsubsection*{Uses}
 \begin{verbatim}
+lalDebugLevel
+LALPrintError()                         LALWarning()
 LALMalloc()                             LALFree()
 LALCHARReadVector()                     LALCHARDestroyVector()
 LAL<typecode>CreateVector()             LAL<typecode>DestroyVector()
 LAL<typecode>CreateVectorSequence()     LAL<typecode>DestroyVectorSequence()
 LAL<typecode>CreateArraySequence()      LAL<typecode>DestroyArraySequence()
-LALStringTo<typecode>()                 LALWarning()
+LALStringTo<typecode>()                 LALParseUnitString()
 \end{verbatim}
 where \verb@<typecode>@ is any of \verb@I2@, \verb@I4@, \verb@I8@,
 \verb@U2@, \verb@U4@, \verb@U8@, \verb@S@, \verb@D@, \verb@C@, or
@@ -339,7 +349,7 @@ NRCSID( STREAMSERIESINPUTC, "$Id$" );
 #define LALREADSERIESC_HEADER "Skipping badly-formatted line for metadata field "
 
 /* Define linked-list of buffers for storing an arbitrary number of
-arbitrary datatypes. */
+   arbitrary datatypes.  BUFFSIZE should be a multiple of 16. */
 #define BUFFSIZE 24
 typedef union tagBuffer {
   INT2 I2[BUFFSIZE/2];
@@ -366,6 +376,144 @@ if ( headPtr ) {                                                     \
     herePtr = nextPtr;                                               \
   }                                                                  \
 } else (void)(0)
+
+/* Define a function for parsing a string literal. */
+static void
+LALLiteralToString( LALStatus  *stat,
+		    CHAR       *string,
+		    const CHAR *literal,
+		    UINT4      length )
+{
+  CHAR c;       /* Current character being considered. */
+  UINT4 n = 0;  /* Counter of number of characters written. */
+
+  INITSTATUS( stat, "LALLiteralToString", STREAMSERIESINPUTC );
+
+  /* Find open quote. */
+  while ( ( c = *literal ) != '"' && c != '\n' && c != '\0' )
+    literal++;
+  if ( *literal != '"' ) {
+    LALWarning( stat, "No open quote found" );
+    RETURN( stat );
+  }
+  literal++;
+
+  /* Start parsing. */
+  while ( n < length - 1 ) {
+
+    /* End of literal, either implicit or explicit. */
+    if ( ( c = *(literal++) ) == '\0' || c == '\n' ) {
+      LALWarning( stat, "No close quote found" );
+      string[n] = '\0';
+      RETURN( stat );
+    } else if ( c == '"' ) {
+      string[n] = '\0';
+      RETURN( stat );
+    }
+
+    /* Escape sequence. */
+    else if ( c == '\\' ) {
+
+      /* Do not allow actual end-of-line or end-of-string to be
+         escaped. */
+      if ( ( c = *(literal++) ) == '\0' || c == '\n' ) {
+	LALWarning( stat, "No close quote found" );
+	string[n] = '\0';
+	RETURN( stat );
+      }
+
+      /* Other special escape characters. */
+      else if ( c == 'a' || c == 'A' )
+	string[n++] = '\a';
+      else if ( c == 'b' || c == 'B' )
+	string[n++] = '\b';
+      else if ( c == 'f' || c == 'F' )
+	string[n++] = '\f';
+      else if ( c == 'n' || c == 'N' )
+	string[n++] = '\n';
+      else if ( c == 'r' || c == 'R' )
+	string[n++] = '\r';
+      else if ( c == 't' || c == 'T' )
+	string[n++] = '\t';
+      else if ( c == 'v' || c == 'V' )
+	string[n++] = '\v';
+
+      /* Hexadecimal character code. */
+      else if ( c == 'x' || c == 'X' ) {
+	c = *(literal++);   /* first digit */
+	if ( isxdigit( c ) ) {
+	  UINT2 value;
+	  if ( isdigit( c ) )
+	    value = c - '0';
+	  else
+	    value = 10 + tolower( c ) - 'a';
+	  c = *(literal++); /* second digit */
+	  if ( isxdigit( c ) ) {
+	    value *= 16;
+	    if ( isdigit( c ) )
+	      value += c - '0';
+	    else
+	      value += 10 + tolower( c ) - 'a';
+	  } else            /* no second digit */
+	    literal--;
+	  string[n++] = (CHAR)( value );
+	  if ( value == 0 ) {
+	    LALWarning( stat, "Found explicit end-of-string \\0" );
+	    RETURN( stat );
+	  }
+	} else {            /* no first digit */
+	  LALWarning( stat, "Treating empty hex cde as explicit"
+		      " end-of-string \\0" );
+	  string[n] = '\0';
+	  RETURN( stat );
+	}
+      }
+
+      /* Octal character code. */
+      else if ( c >= '0' && c < '8' ) {
+	UINT2 value = c - '0';
+	c = *(literal++);   /* second digit */
+	if ( c >= '0' && c < '8' ) {
+	  value *= 8;
+	  value += c - '0';
+	  c = *(literal++); /* third digit */
+	  if ( c >= '0' && c < '8' ) {
+	    value *= 8;
+	    value += c - '0';
+	  } else            /* no third digit */
+	    literal--;
+	} else              /* no second digit */
+	  literal--;
+	if ( value > 255 )
+	  LALWarning( stat, "Ignoring octal character code >= '\\400'" );
+	else
+	  string[n++] = (CHAR)( value );
+	if ( value == 0 ) {
+	  LALWarning( stat, "Found explicit end-of-string \\0" );
+	  RETURN( stat );
+	}
+      }
+
+      /* Other escaped character. */
+      else {
+	if ( c != '\\' && c != '?' && c != '\'' && c != '"' )
+	  LALWarning( stat, "Dropping \\ from unrecognized escape"
+		      " sequence" );
+	string[n++] = c;
+      }
+    }
+
+    /* Other character. */
+    else
+      string[n++] = c;
+  }
+
+  if ( *literal != '"' )
+    LALWarning( stat, "Reached maximum length before reading close"
+		" quote" );
+  string[n] = '\0';
+  RETURN( stat );
+}
 
 define(`TYPECODE',`I2')dnl
 include(`LALReadSeries.m4')dnl

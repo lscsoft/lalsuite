@@ -26,8 +26,8 @@ LAL<typecode>WriteTVectorSeries( LALStatus                  *stat,
 
 void
 LAL<typecode>WriteTArraySeries( LALStatus                 *stat,
-                                   FILE                      *stream,
-                                   <datatype>TimeArraySeries *series )
+                                FILE                      *stream,
+                                <datatype>TimeArraySeries *series )
 
 void
 LAL<typecode>WriteFSeries( LALStatus                 *stat,
@@ -162,9 +162,14 @@ surrounded by quotes) corresponding to the type of \verb@*series@;
 e.g.\ \verb@COMPLEX8FrequencySeries@.
 
 \item[\texttt{name}:] \textit{value} is a string surrounded by quotes
-\verb@"@ representing \verb@series->name@.  At present,
-\verb@series->name@ will be truncated before any occurence of
-\verb@'"'@, \verb@'\n'@, or \verb@'\0'@ characters.
+\verb@"@ representing \verb@series->name@.  Standard C-language string
+literal notation is used: printable characters are written directly
+except for \verb@"@ and \verb@\@ (rendered as \verb@\"@ and \verb@\\@,
+respectively), characters with special C escape sequences are written
+as those sequences (e.g.\ \verb@\t@ for tab and \verb@\n@ for
+newline), and all other character bytes are written as three-digit
+octal codes \verb@\@$ooo$.  Writing stops at the first null byte
+\verb@\0@.
 
 \item[\texttt{epoch}:] \textit{value} is a single \verb@INT8@ number
 representing \verb@series->epoch@ in GPS nanoseconds.
@@ -207,18 +212,19 @@ product of the components of \verb@dimLength@, above.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALCHARReadVector()                     LALCHARDestroyVector()
+lalDebugLevel                           LALPrintError()
+LALCHARCreateVector()                   LALCHARDestroyVector()
+LALUnitAsString()
 \end{verbatim}
 
 \subsubsection*{Notes}
 
 \vfill{\footnotesize\input{StreamSeriesOutputCV}}
 
-% This quote will fix the C syntax highlighting: "
-
 ******************************************************* </lalLaTeX> */
 
 #include <stdio.h>
+#include <ctype.h>
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
@@ -226,6 +232,54 @@ LALCHARReadVector()                     LALCHARDestroyVector()
 #include <lal/StreamOutput.h>
 
 NRCSID( STREAMSERIESOUTPUTC, "$Id$" );
+
+/* Define a function for printing a string as a literal. */
+static int
+LALWriteLiteral( FILE *stream, const CHAR *string )
+{
+  CHAR c; /* Current character being considered. */
+
+  /* Open literal and start parsing string. */
+  if ( putc( '"', stream ) == EOF ) return 1;
+  while ( ( c = *(string++) ) != '\0' ) {
+
+    /* Characters with named escape sequences. */
+    if ( c == '\a' ) {
+      if ( fputs( "\\a", stream ) == EOF ) return 1;
+    } else if ( c == '\b' ) {
+      if ( fputs( "\\b", stream ) == EOF ) return 1;
+    } else if ( c == '\f' ) {
+      if ( fputs( "\\f", stream ) == EOF ) return 1;
+    } else if ( c == '\n' ) {
+      if ( fputs( "\\n", stream ) == EOF ) return 1;
+    } else if ( c == '\r' ) {
+      if ( fputs( "\\r", stream ) == EOF ) return 1;
+    } else if ( c == '\t' ) {
+      if ( fputs( "\\t", stream ) == EOF ) return 1;
+    } else if ( c == '\v' ) {
+      if ( fputs( "\\v", stream ) == EOF ) return 1;
+    } else if ( c == '"' ) {
+      if ( fputs( "\\\"", stream ) == EOF ) return 1;
+    } else if ( c == '\\' ) {
+      if ( fputs( "\\\\", stream ) == EOF ) return 1;
+    }
+
+    /* Printable characters. */
+    else if ( isprint( c ) ) {
+      if ( putc( c, stream ) == EOF ) return 1;
+    }
+
+    /* Other characters are given 3-digit octal escape sequences. */
+    else {
+      if ( fprintf( stream, "\\%03o", (UCHAR)( c ) ) < 0 )
+	return 1;
+    }
+  }
+
+  /* Close literal and exit. */
+  if ( putc( '"', stream ) == EOF ) return 1;
+  return 0;
+}
 
 define(`TYPECODE',`I2')dnl
 include(`LALWriteSeries.m4')dnl

@@ -1,8 +1,8 @@
 dnl $Id$
-ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')define(`FMT',`"% .17e"')')dnl
-ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')define(`FMT',`"% .9e"')')dnl
-ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')define(`FMT',`"% .17e"')')dnl
-ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')define(`FMT',`"% .9e"')')dnl
+ifelse(TYPECODE,`Z',`define(`TYPE',`COMPLEX16')define(`FMT',`"% .16e"')')dnl
+ifelse(TYPECODE,`C',`define(`TYPE',`COMPLEX8')define(`FMT',`"% .8e"')')dnl
+ifelse(TYPECODE,`D',`define(`TYPE',`REAL8')define(`FMT',`"% .16e"')')dnl
+ifelse(TYPECODE,`S',`define(`TYPE',`REAL4')define(`FMT',`"% .8e"')')dnl
 ifelse(TYPECODE,`I2',`define(`TYPE',`INT2')define(`FMT',`"% " LAL_INT2_FORMAT')')dnl
 ifelse(TYPECODE,`I4',`define(`TYPE',`INT4')define(`FMT',`"% " LAL_INT4_FORMAT')')dnl
 ifelse(TYPECODE,`I8',`define(`TYPE',`INT8')define(`FMT',`"% " LAL_INT8_FORMAT')')dnl
@@ -48,28 +48,18 @@ SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
   }
 
   /* Print the name. */
-  {
-    CHAR *cData = series->name; /* pointer to name data */
-    CHAR c;                     /* value of *cData */
-    int code = 0;               /* return code from putc() */
-    length = LALNameLength;
-    if ( fprintf( stream, "# name = \"" ) < 0 ) {
-      ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
-    }
-    while ( code != EOF && ( c = *(cData++) ) != '"' && c != '\n'
-	    && c != '\0' && length-- )
-      code = putc( (int)c, stream );
-    if ( code == EOF || fprintf( stream, "\"\n" ) < 0 ) {
-      ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
-    }
+  if ( fprintf( stream, "# name = " ) < 0 ||
+       LALWriteLiteral( stream, series->name ) ||
+       fprintf( stream, "\n" ) < 0 ) {
+    ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
   }
 
   /* Print the epoch, deltaT, and f0. */
   if ( fprintf( stream, "# epoch = %" LAL_INT8_FORMAT "\n",
 		(INT8)( series->epoch.gpsSeconds )*1000000000LL +
 		(INT8)( series->epoch.gpsNanoSeconds ) ) < 0 ||
-       fprintf( stream, "# deltaT = %.15e\n", series->deltaT ) < 0 ||
-       fprintf( stream, "# f0 = %.15e\n", series->f0 ) < 0 ) {
+       fprintf( stream, "# deltaT = %.16e\n", series->deltaT ) < 0 ||
+       fprintf( stream, "# f0 = %.16e\n", series->f0 ) < 0 ) {
     ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
   }
 
@@ -177,28 +167,18 @@ VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
   }
 
   /* Print the name. */
-  {
-    CHAR *cData = series->name; /* pointer to name data */
-    CHAR c;                     /* value of *cData */
-    int code = 0;               /* return code from putc() */
-    length = LALNameLength;
-    if ( fprintf( stream, "# name = \"" ) < 0 ) {
-      ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
-    }
-    while ( code != EOF && ( c = *(cData++) ) != '"' && c != '\n'
-	    && c != '\0' && length-- )
-      code = putc( (int)c, stream );
-    if ( code == EOF || fprintf( stream, "\"\n" ) < 0 ) {
-      ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
-    }
+  if ( fprintf( stream, "# name = " ) < 0 ||
+       LALWriteLiteral( stream, series->name ) ||
+       fprintf( stream, "\n" ) < 0 ) {
+    ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
   }
 
   /* Print the epoch, deltaT, and f0. */
   if ( fprintf( stream, "# epoch = %" LAL_INT8_FORMAT "\n",
 		(INT8)( series->epoch.gpsSeconds )*1000000000LL +
 		(INT8)( series->epoch.gpsNanoSeconds ) ) < 0 ||
-       fprintf( stream, "# deltaT = %.15e\n", series->deltaT ) < 0 ||
-       fprintf( stream, "# f0 = %.15e\n", series->f0 ) < 0 ) {
+       fprintf( stream, "# deltaT = %.16e\n", series->deltaT ) < 0 ||
+       fprintf( stream, "# f0 = %.16e\n", series->f0 ) < 0 ) {
     ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
   }
 
@@ -328,28 +308,18 @@ AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
   }
 
   /* Print the name. */
-  {
-    CHAR *cData = series->name; /* pointer to name data */
-    CHAR c;                     /* value of *cData */
-    int code = 0;               /* return code from putc() */
-    length = LALNameLength;
-    if ( fprintf( stream, "# name = \"" ) < 0 ) {
-      ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
-    }
-    while ( code != EOF && ( c = *(cData++) ) != '"' && c != '\n'
-	    && c != '\0' && length-- )
-      code = putc( (int)c, stream );
-    if ( code == EOF || fprintf( stream, "\"\n" ) < 0 ) {
-      ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
-    }
+  if ( fprintf( stream, "# name = " ) < 0 ||
+       LALWriteLiteral( stream, series->name ) ||
+       fprintf( stream, "\n" ) < 0 ) {
+    ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
   }
 
   /* Print the epoch, deltaT, and f0. */
   if ( fprintf( stream, "# epoch = %" LAL_INT8_FORMAT "\n",
 		(INT8)( series->epoch.gpsSeconds )*1000000000LL +
 		(INT8)( series->epoch.gpsNanoSeconds ) ) < 0 ||
-       fprintf( stream, "# deltaT = %.15e\n", series->deltaT ) < 0 ||
-       fprintf( stream, "# f0 = %.15e\n", series->f0 ) < 0 ) {
+       fprintf( stream, "# deltaT = %.16e\n", series->deltaT ) < 0 ||
+       fprintf( stream, "# f0 = %.16e\n", series->f0 ) < 0 ) {
     ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
   }
 
@@ -485,28 +455,18 @@ FFUNC ( LALStatus *stat, FILE *stream, FTYPE *series )
   }
 
   /* Print the name. */
-  {
-    CHAR *cData = series->name; /* pointer to name data */
-    CHAR c;                     /* value of *cData */
-    int code = 0;               /* return code from putc() */
-    length = LALNameLength;
-    if ( fprintf( stream, "# name = \"" ) < 0 ) {
-      ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
-    }
-    while ( code != EOF && ( c = *(cData++) ) != '"' && c != '\n'
-	    && c != '\0' && length-- )
-      code = putc( (int)c, stream );
-    if ( code == EOF || fprintf( stream, "\"\n" ) < 0 ) {
-      ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
-    }
+  if ( fprintf( stream, "# name = " ) < 0 ||
+       LALWriteLiteral( stream, series->name ) ||
+       fprintf( stream, "\n" ) < 0 ) {
+    ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
   }
 
   /* Print the epoch, deltaF, and f0. */
   if ( fprintf( stream, "# epoch = %" LAL_INT8_FORMAT "\n",
 		(INT8)( series->epoch.gpsSeconds )*1000000000LL +
 		(INT8)( series->epoch.gpsNanoSeconds ) ) < 0 ||
-       fprintf( stream, "# f0 = %.15e\n", series->f0 ) < 0 ||
-       fprintf( stream, "# deltaF = %.15e\n", series->deltaF ) < 0 ) {
+       fprintf( stream, "# f0 = %.16e\n", series->f0 ) < 0 ||
+       fprintf( stream, "# deltaF = %.16e\n", series->deltaF ) < 0 ) {
     ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
   }
 

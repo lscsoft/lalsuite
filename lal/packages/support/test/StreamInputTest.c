@@ -8,7 +8,7 @@ $Id$
 \subsection{Program \texttt{StreamInputTest.c}}
 \label{ss:StreamInputTest.c}
 
-Reads a \verb@REAL4VectorSequence@ from a file.
+Reads a sequence or vector sequence from a file.
 
 \subsubsection*{Usage}
 \begin{verbatim}
