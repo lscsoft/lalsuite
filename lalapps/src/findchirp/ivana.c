@@ -18,14 +18,6 @@ ivana ../data/H2_ASQ_triple_c5.xml \
 #include <string.h>
 #include "metaio.h"
 
-/* CLUSWINDOW determines how candidate events are grouped into clusters.  It
-   is the maximum time between consecutive candidate events. */
-#define CLUSWINDOW 1.0
-/* MINLIVEINTERVAL is the time associated with Patrick's "veto clustering"
-   criterion.  It is the minimum length of a time interval between veto
-   events which can be considered live. */
-#define MINLIVEINTERVAL 4.0
-
 #define RINGBUFSIZE 16384
 #define MAXTIMERANGES 4096
 #define MAXVETOFILES 8
@@ -97,6 +89,18 @@ int main( int argc, char **argv )
   VetoFile *vFile;
   int nvetofiles = 0;
   int ivfile, jvfile;
+
+  /*-- Params that can be overridden with command-line arguments --*/
+  /* clusWindow determines how candidate events are grouped into clusters.
+     It is the maximum time between consecutive candidate events. */
+  double clusWindow = 1.0;
+  /* minLiveInterval is the time associated with Patrick's "veto clustering"
+     criterion.  It is the minimum length of a time interval between veto
+     events which can be considered live. */
+  double minLiveInterval = 0.0;
+  /* Width and precision for printing out percentages */
+  int pctwidth = 4;
+  int pctprec = 1;
 
   double tCand, tCandLast=-999.0, tDeadNeg=-2.0e9, tDeadPos=-2.0e9;
   float snrCand, chisqCand;
@@ -375,6 +379,38 @@ int main( int argc, char **argv )
 	chisqcut = (float) tempval;
 	opt = '\0';
       }
+      break;
+
+    case 'M':        /*-- minimum live interval --*/
+      if ( val ) {
+	status = sscanf( val, "%f", &tempval );
+	if ( status == 0 ) {
+	  printf( "Error: unable to parse min_live_interval value as a float: %s\n",
+		  val );
+	  PrintUsage(); return 1;
+	}
+	minLiveInterval = (float) tempval;
+	opt = '\0';
+      }
+      break;
+
+    case 'C':        /*-- clustering window --*/
+      if ( val ) {
+	status = sscanf( val, "%f", &tempval );
+	if ( status == 0 ) {
+	  printf( "Error: unable to parse clustering_window value as a float: %s\n",
+		  val );
+	  PrintUsage(); return 1;
+	}
+	clusWindow = (float) tempval;
+	opt = '\0';
+      }
+      break;
+
+    case 'l':
+      pctwidth = 6;
+      pctprec = 3;
+      opt = '\0';
       break;
 
     default:
@@ -969,7 +1005,7 @@ int main( int argc, char **argv )
 	if ( vFile->tLastNeg < tUseNeg ) {
 	  tUseNeg = vFile->tLastNeg;
 	  /*-- Account for Patrick's "veto clustering" criterion --*/
-	  if ( tUseNeg > tUsePos && tUseNeg-tUsePos < MINLIVEINTERVAL ) {
+	  if ( tUseNeg > tUsePos && tUseNeg-tUsePos < minLiveInterval ) {
 	    /*-- Extend the vetoed interval backward --*/
 	    tUseNeg = tUsePos;
 	  }
@@ -1064,7 +1100,7 @@ int main( int argc, char **argv )
     if ( candeof ) break;
 
     /*-- See if this is part of the same "cluster" as the last candidate --*/
-    if ( tCand-tCandLast < CLUSWINDOW ) {
+    if ( tCand-tCandLast < clusWindow ) {
       /*-- Part of same candidate cluster --*/
     } else {
       /*-- New candidate cluster --*/
@@ -1214,9 +1250,10 @@ int main( int argc, char **argv )
   /*------ Report results ------*/
 
   printf( "$Id$\n" );
-  printf( "Candidate clustering window = %.2f seconds\n", CLUSWINDOW );
+  printf( "Candidate clustering window = %.2f seconds\n", clusWindow );
   printf( "Minimum live interval between vetoes = %.2f seconds\n",
-	  MINLIVEINTERVAL );
+	  minLiveInterval );
+  printf( "Candidate file: %s\n", candFile );
   for ( ivfile=0; ivfile<nvetofiles; ivfile++ )
     printf( "Veto: %s (%.3f,%.3f,%.3f)\n", vetoFile[ivfile].filename,
 	    vetoFile[ivfile].winNeg, vetoFile[ivfile].winPos,
@@ -1226,8 +1263,13 @@ int main( int argc, char **argv )
 ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
  123456789 12345 123456 123456 12.3% 123456 123456 12.3% 12345 12345 12.3% 12.3%
 */
-  printf( "___Start__ _Dur_ __Veto__used__used%% __Cand___cut___cut%%"
-	  " _Clus___cut__cut%% dead%%\n" );
+  if ( pctwidth == 6 ) {
+    printf( "___Start__ _Dur_ __Veto__used___used%%_ __Cand___cut____cut%%_"
+	    " _Clus___cut___cut%%_ _dead%%_\n" );
+  } else {
+    printf( "___Start__ _Dur_ __Veto__used__used%% __Cand___cut___cut%%"
+	    " _Clus___cut__cut%% dead%%\n" );
+  }
 
   /*-- Loop over all ranges, PLUS the range structure used to hold totals --*/
   for ( jRange=0; jRange<=nRange; jRange++ ) {
@@ -1243,12 +1285,16 @@ ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
     if ( cRange->nVetoUsed < cRange->nVeto ) {
       pct = 100.0 * (double) cRange->nVetoUsed / (double) cRange->nVeto;
       if ( pct < 99.95 ) {
-	printf( " %4.1f%%", pct );
+	printf( " %*.*f%%", pctwidth, pctprec, pct );
+      } else if ( pctwidth == 6 ) {
+	printf( "  100.0%%" );
       } else {
 	printf( "  100%%" );
       }
     } else if ( cRange->nVeto == 0 ) {
-      printf( "    0 " );
+      printf( " %*d ", pctwidth, 0 );
+    } else if ( pctwidth == 6 ) {
+      printf( "  100.0%%" );
     } else {
       printf( "  100%%" );
     }
@@ -1257,12 +1303,16 @@ ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
     if ( cRange->nCandFail < cRange->nCand ) {
       pct = 100.0 * (double) cRange->nCandFail / (double) cRange->nCand;
       if ( pct < 99.95 ) {
-	printf( " %4.1f%%", pct );
+	printf( " %*.*f%%", pctwidth, pctprec, pct );
+      } else if ( pctwidth == 6 ) {
+	printf( "  100.0%%" );
       } else {
 	printf( "  100%%" );
       }
     } else if ( cRange->nCand == 0 ) {
-      printf( "    0 " );
+      printf( " %*d ", pctwidth, 0 );
+    } else if ( pctwidth == 6 ) {
+      printf( "  100.0%%" );
     } else {
       printf( "  100%%" );
     }
@@ -1271,19 +1321,25 @@ ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
     if ( cRange->nClusFail < cRange->nClus ) {
       pct = 100.0 * (double) cRange->nClusFail / (double) cRange->nClus;
       if ( pct < 99.95 ) {
-	printf( " %4.1f%%", pct );
+	printf( " %*.*f%%", pctwidth, pctprec, pct );
+      } else if ( pctwidth == 6 ) {
+	printf( "  100.0%%" );
       } else {
 	printf( "  100%%" );
       }
     } else if ( cRange->nClus == 0 ) {
-      printf( "    0 " );
+      printf( " %*d ", pctwidth, 0 );
+    } else if ( pctwidth == 6 ) {
+      printf( "  100.0%%" );
     } else {
       printf( "  100%%" );
     }
 
     pct = 100.0 * cRange->dead / cRange->secs;
     if ( pct < 99.95 ) {
-      printf( " %4.1f%%", pct );
+      printf( " %*.*f%%", pctwidth, pctprec, pct );
+    } else if ( pctwidth == 6 ) {
+      printf( "  100.0%%" );
     } else {
       printf( "  100%%" );
     }
@@ -1298,7 +1354,11 @@ ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
 /*===========================================================================*/
 void PrintUsage()
 {
-  printf( "\nNew syntax:   ivana <candidate_file> <veto_spec> [-r <range_spec>]\n                       [-o <output_file>] [-v <veto_range_file>]\n                       [-s <snr_cut>] [-c <chisq_cut>]\n  Options introduced by hyphenated flags can appear in any order\n" );
+  printf( "\nNew syntax:   ivana <candidate_file> <veto_spec> [-r <range_spec>]\n"
+          "                       [-o <output_file>] [-v <veto_range_file>]\n"
+          "                       [-l] [-s <snr_cut>] [-c <chisq_cut>]\n"
+          "                       [-M <min_live_interval>] [-C <clustering_window>]\n"
+          "  Options introduced by hyphenated flags can appear in any order\n" );
 
   printf( "\nAlt. syntax:  ivana <candidate_file> <veto_spec> [<range_spec>]"
 	  " [<output_file>]\n\n" );
@@ -1324,10 +1384,20 @@ void PrintUsage()
 	  "    LIGO_LW format.\n" );
   printf( "<veto_range_file> is the name of the output file to generate with veto time\n"
 	  "    ranges in ASCII format (each line containing a start time and a stop time).\n" );
+  printf( "The '-l' flag causes statistics to be printed with more significant figures.\n" );
   printf( "<snr_cut> is an optional cut to ignore candidate events with SNR below the\n"
 	  "    specified value.\n" );
   printf( "<chisq_cut> is an optional cut to ignore candidate events with CHISQ above the\n"
 	  "    specified value.\n" );
+  printf( "<min_live_interval> is the minimum length of a time interval which can be\n"
+          "    considered live.  If two veto events (padded with the specified veto window)\n"
+          "    are close together, such that the un-vetoed interval in between would be\n"
+          "    shorter than <min_live_interval>, then that interval is considered vetoed.\n"
+          "    If not specified, it takes a default value of 0.\n" );
+  printf( "<clustering_window> determines how candidate events are grouped into clusters\n"
+          "    for the purpose of accumulating statistics.  It is the maximum time between\n"
+          "    consecutive candidate events for which they are considered part of the same\n"
+          "    cluster.  If not specified, it takes a default value of 1 second.\n" );
 
   return;
 }
