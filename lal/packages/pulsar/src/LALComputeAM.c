@@ -43,7 +43,7 @@ LALComputeDetAMResponse()
 #define LALCOMPUTEAM_C
 #endif
 
-#include "LALComputeAM.h"
+#include <lal/LALComputeAM.h>
 
 #define SQ(x) (x) * (x)
 
