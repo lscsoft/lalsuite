@@ -37,7 +37,7 @@ void
 LALTFClustersETG(
 		 LALStatus *status, 
 		 EventIDColumn *output, 
-		 REAL4TimeSeries *input, 
+		 REAL4TimeVectorSeries *input, 
 		 BurstParameter *params
 	       ) {
 /* </lalVerbatim> */
@@ -148,20 +148,37 @@ parameter index & type & description \\ \hline
 
   /***********TFCLUSTERS code************/
   /* construct spectrogram */
-  if(win) {
-    LALPlainSpectrogramWin(status->statusPtr, &tspec, input, T);
-    CHECKSTATUSPTR (status);
-    trez = T / 2.0;
-  } else {
-    LALPlainSpectrogram(status->statusPtr, &tspec, input, T);
-    CHECKSTATUSPTR (status);
-    trez = T;
-  }
+  {
+    REAL4TimeSeries tmp;
+    REAL4Vector tv;
+    tmp.epoch = input->epoch;
+    tmp.deltaT = input->deltaT;
+    tmp.f0 = input->f0;
+    tmp.data = &tv;
+    tv.length = input->data->vectorLength;
+    tv.data = input->data->data;
+    
+    if(win) {
+      LALPlainSpectrogramWin(status->statusPtr, &tspec, &tmp, T);
+      CHECKSTATUSPTR (status);
+      trez = T / 2.0;
+    } else {
+      LALPlainSpectrogram(status->statusPtr, &tspec, &tmp, T);
+      CHECKSTATUSPTR (status);
+      trez = T;
+    }
 
-  spower.power = NULL;
-  spower.params = NULL;
-  LALComputeSpectrogram(status->statusPtr, &spower, &tspec, input);
-  CHECKSTATUSPTR (status);
+    spower.power = NULL;
+    spower.params = NULL;
+
+    if(input->data->length == 1) {
+      LALComputeSpectrogram(status->statusPtr, &spower, &tspec, &tmp);
+      CHECKSTATUSPTR (status);
+    } else {
+      LALComputeXSpectrogram(status->statusPtr, &spower, &tspec, input);
+      CHECKSTATUSPTR (status);
+    }
+  }
 
   /* Estimate thresholds */
   switch(thr_method) {

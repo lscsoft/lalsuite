@@ -13,7 +13,7 @@ NRCSID (MAIN, "$Id$");
 
 #define SetStringParameter(par_, str_) par_->next = (BurstParameter *)LALCalloc(1, sizeof(BurstParameter)); \
   par_ = par_->next; \
-  par_->char_ = (CHAR *)LALCalloc(1+strlen(channel), sizeof(CHAR)); \
+  par_->char_ = (CHAR *)LALCalloc(1+strlen(str_), sizeof(CHAR)); \
   strcpy(par_->char_, str_)
 
 #define SetINT4Parameter(par_, str_) par_->next = (BurstParameter *)LALCalloc(1, sizeof(BurstParameter)); \
@@ -41,7 +41,8 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   static LALStatus status;
   BurstParameter params, *par;
   EventIDColumn output, *optr;
-  REAL4TimeSeries input;
+  REAL4TimeVectorSeries input;
+  REAL4VectorSequence vseq;
   REAL4Vector *data = NULL;
   RandomParams *rpar = NULL;
 
@@ -79,7 +80,11 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   input.deltaT = 1.0/16384.0;
   input.epoch.gpsSeconds = 700000000;
   input.epoch.gpsNanoSeconds = 0;
-  input.data = data;
+  input.data = &vseq;
+
+  vseq.length = 1;
+  vseq.vectorLength = N;
+  vseq.data = data->data;
 
   LALNormalDeviates(&status, data, rpar);
   CHKST

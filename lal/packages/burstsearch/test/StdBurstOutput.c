@@ -41,25 +41,26 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   BurstParameter params, *par;
   BurstOutputParameters oparams;
   EventIDColumn output, stdOutput, *optr, *ooptr;
-  REAL4TimeSeries input;
+  REAL4TimeVectorSeries input;
   REAL4Vector *data = NULL;
   RandomParams *rpar = NULL;
-  EPDataSegment Mdata;
+  BurstOutputDataSegment Mdata;
   COMPLEX8FrequencySeries resp;
+  REAL4VectorSequence vseq;
 
   CHAR channel[10] = "H1:test";
   UINT4 N = 10*16384; /* length of data */
   UINT4 i;
 
   bzero(&output,sizeof(EventIDColumn));
-  bzero(&input,sizeof(EventIDColumn));
+  bzero(&stdOutput,sizeof(EventIDColumn));
 
   /* set parameters */
   par = &params;
   
   SetStringParameter(par,channel); /* channel name */
   SetREAL4Parameter(par, 0.08);    /* black pixel probability */
-  SetINT4Parameter(par, 0);        /* windowing? */
+  SetINT4Parameter(par, 1);        /* windowing? */
   SetINT4Parameter(par, 0);        /* threshold method */
   SetINT4Parameter(par, 0);        /* set to 1 to report tf information */
   SetREAL4Parameter(par, 0.125);   /* time resolution */
@@ -88,7 +89,11 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   input.deltaT = 1.0/16384.0;
   input.epoch.gpsSeconds = 700000000;
   input.epoch.gpsNanoSeconds = 0;
-  input.data = data;
+  input.data = &vseq;
+
+  vseq.length = 1;
+  vseq.vectorLength = N;
+  vseq.data = data->data;
 
   LALNormalDeviates(&status, data, rpar);
   CHKST
@@ -134,6 +139,7 @@ INT4 main(INT4 argc, CHAR *argv[]) {
       printf("%s %s\t%i\t%i\t%g\t%g\t%s\t%i\t%g\t%g\t%s\t%s\t%s\t%i\n", optr->snglTransdataTable->ifo, optr->snglTransdataTable->name, optr->snglTransdataTable->dimensions, optr->snglTransdataTable->x_bins, optr->snglTransdataTable->x_start, optr->snglTransdataTable->x_end, optr->snglTransdataTable->x_units, optr->snglTransdataTable->y_bins, optr->snglTransdataTable->y_start, optr->snglTransdataTable->y_end, optr->snglTransdataTable->y_units, optr->snglTransdataTable->data_type, optr->snglTransdataTable->data_units, optr->snglTransdataTable->transdata_length);
 
       memcpy(&nclusters, optr->snglTransdataTable->trans_data, sizeof(UINT4));
+
 #ifndef WORDS_BIGENDIAN
       endian_swap((char *)(&nclusters), sizeof(UINT4), 1);
 #endif
@@ -253,3 +259,4 @@ static void endian_swap(char * pdata, int dsize, int nelements)
 
 }
 #endif
+

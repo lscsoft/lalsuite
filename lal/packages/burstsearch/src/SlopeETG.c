@@ -37,7 +37,7 @@ void
 LALSlopeETG(
 	    LALStatus *status, 
 	    EventIDColumn *output, 
-	    REAL4TimeSeries *input, 
+	    REAL4TimeVectorSeries *input, 
 	    BurstParameter *params
 	    ) {
 /* </lalVerbatim> */
@@ -68,7 +68,7 @@ parameter index & type & description \\ \hline
   REAL8 sum2;
 
   REAL4Vector buffer;
-  REAL4Vector *data = input->data;
+  REAL4Vector data1, *data = &data1;
 
   CHAR ifo[LIGOMETA_IFO_MAX];
   CHAR channel[LIGOMETA_CHANNEL_MAX];
@@ -82,6 +82,11 @@ parameter index & type & description \\ \hline
   ASSERT ( output, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
   ASSERT ( input, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
   ASSERT ( params, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
+
+  ASSERT ( input->data->length == 1, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
+
+  data->length = input->data->vectorLength;
+  data->data = input->data->data;
 
   /* parse parameters */
 #define SetParameter(par,type) if(!params) {ABORT ( status, STDBURSTSEARCHH_ENULLPI, STDBURSTSEARCHH_MSGENULLPI);} \
@@ -156,7 +161,8 @@ parameter index & type & description \\ \hline
     for(i=0, sum2=0.0; i<buffer.length; i++) {
       sum2 += pow(buffer.data[i],2.0);
     }
-    sum2 /= (REAL8)buffer.length; /* RMS */
+    sum2 /= (REAL8)buffer.length; 
+    sum2 = sqrt(sum2); /* RMS */
     thr *= -sum2;
   }
 

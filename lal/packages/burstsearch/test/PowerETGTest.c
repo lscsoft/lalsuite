@@ -17,21 +17,11 @@ NRCSID (MAIN, "$Id$");
   par_->char_ = (CHAR *)LALCalloc(1+strlen(str_), sizeof(CHAR)); \
   strcpy(par_->char_, str_)
 
-#define SetINT4Parameter(par_, str_) par_->next = (BurstParameter *)LALCalloc(1, sizeof(BurstParameter)); \
-  par_ = par_->next; \
-  par_->int4_ = (INT4 *)LALCalloc(1, sizeof(INT4)); \
-  *(par_->int4_) = str_
-
-#define SetREAL4Parameter(par_, str_) par_->next = (BurstParameter *)LALCalloc(1, sizeof(BurstParameter)); \
-  par_ = par_->next; \
-  par_->real4_ = (REAL4 *)LALCalloc(1, sizeof(REAL4)); \
-  *(par_->real4_) = str_
-
 #ifndef WORDS_BIGENDIAN
   static void endian_swap(char * pdata, int dsize, int nelements);
 #endif
 
-INT4 lalDebugLevel = 0; /* set to 2 for full debug, painfully slow with tfclusters */   
+INT4 lalDebugLevel = 2; /* set to 2 for full debug */
 
 
 INT4 main(INT4 argc, CHAR *argv[]) {
@@ -51,32 +41,31 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   /* set parameters */
   par = &params;
   
-  SetStringParameter(par,channel); /* channel name */
-  SetREAL4Parameter(par, 0.08);    /* black pixel probability */
-  SetINT4Parameter(par, 1);        /* windowing? */
-  SetINT4Parameter(par, 0);        /* threshold method (1=-log(p), 0=rank) */
-  SetINT4Parameter(par, 1);        /* set to 1 to report tf information */
-  SetREAL4Parameter(par, 0.125);   /* time resolution */
-  SetREAL4Parameter(par, 8);        /* min frequency */
-  SetREAL4Parameter(par, 8184);     /* max frequency */
-  SetREAL4Parameter(par, 0.5);     /* alpha */
-  SetINT4Parameter(par, 5);        /* sigma */
-  SetINT4Parameter(par, 0);        /* delta(1,1) */
-  SetINT4Parameter(par, 0);        /* delta(2,1) */
-  SetINT4Parameter(par, 0);        /* delta(3,1) */
-  SetINT4Parameter(par, 0);        /* delta(4,1) */
-  SetINT4Parameter(par, 0);        /* delta(2,2) */
-  SetINT4Parameter(par, 0);        /* delta(3,2) */
-  SetINT4Parameter(par, 2);        /* delta(4,2) */
-  SetINT4Parameter(par, 3);        /* delta(3,3) */
-  SetINT4Parameter(par, 4);        /* delta(4,3) */
-  SetINT4Parameter(par, 4);       /* delta(4,4) */
+  SetStringParameter(par,"-filterparams");
+  SetStringParameter(par,"163840");    /* number of points per segment */
+  SetStringParameter(par,"1");         /* number of segments */
+  SetStringParameter(par,"0");         /* overlap of each segment */
+  SetStringParameter(par,"3");         /* ? */
+  SetStringParameter(par,"2");         /* ? */
+  SetStringParameter(par,"2");         /* ? */
+  SetStringParameter(par,"100.0");     /* low frequency bound of search */
+  SetStringParameter(par,"1.0");       /* frequency steps */
+  SetStringParameter(par,"1024.0");    /* bandwidth above low freq */
+  SetStringParameter(par,"2.0");       /* ? */
+  SetStringParameter(par,"0.5");       /* ? */
+  SetStringParameter(par,"1");         /* segment analyzed at one time */
+  SetStringParameter(par,"1.0e-36");   /* dso threshold */
+  SetStringParameter(par,"10");        /* events to communicate to master */
+  SetStringParameter(par,channel);     /* channel name */
+  SetStringParameter(par,"0");         /* ? */
+  SetStringParameter(par,"useMedian"); /* ? */
+  SetStringParameter(par,"2");          /* ? */
 
   /* create input */
   LALCreateRandomParams(&status, &rpar, 0);
   CHKST
 
-  LALCreateVector(&status, &data, 2*N);
+  LALCreateVector(&status, &data, N);
   CHKST
 
   input.deltaT = 1.0/16384.0;
@@ -84,7 +73,7 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   input.epoch.gpsNanoSeconds = 0;
   input.data = &vseq;
 
-  vseq.length = 2;
+  vseq.length = 1;
   vseq.vectorLength = N;
   vseq.data = data->data;
 
@@ -95,7 +84,7 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   CHKST
 
   /* run ETG */
-  LALTFClustersETG(&status, &output, &input, &params);
+  LALPowerETG(&status, &output, &input, &params);
   CHKST
 
   /* report output */

@@ -21,6 +21,7 @@ $Id$
 #include "lal/LALRCSID.h"
 #include <lal/LPC.h>
 #include <lal/AVFactories.h>
+#include <lal/BandPassTimeSeries.h>
 #include <math.h>
 #include <strings.h>
 
@@ -28,8 +29,10 @@ NRCSID (STDBURSTSEARCHC, "$Id$");
 
 #define HALF_LOG_2PI 0.918938533204673
 
-static REAL8 i0(REAL8 x);
-static REAL8 i1(REAL8 x);
+static REAL8 LALi0(REAL8 x);
+static REAL8 LALi1(REAL8 x);
+static REAL8 LALi0e(REAL8 x);
+static REAL8 LALi1e(REAL8 x);
 
 /******** <lalLaTeX file="StdBurstSearchC"> ********
 \noindent
@@ -68,7 +71,7 @@ Description of the function...
   static UINT4 Hlen = 0, 
     Dlen = 0;
 
-  EPDataSegment *data;
+  BurstOutputDataSegment *data;
 
   INITSTATUS (status, "LALBurstOutput", STDBURSTSEARCHC);
   ATTATCHSTATUSPTR (status);
@@ -131,23 +134,30 @@ Description of the function...
     RETURN (status);
   } 
 
-  data = params->data;
-
   /* trivial input check */
   ASSERT ( output, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
   ASSERT ( Input, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
   ASSERT ( params, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
   ASSERT ( params->data, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
+  ASSERT ( params->data->data, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
+  ASSERT ( params->data->data->data, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
+
+  ASSERT( params->data->data->data->length == 1, status, STDBURSTSEARCHH_ENULLP, STDBURSTSEARCHH_MSGENULLP);
+
+  
+  data = params->data;
+
+
 
   if(!Dvec) {
-    Dlen = data->data->data->length;
-    LALCreateVector(status->statusPtr, &Dvec, data->data->data->length);
+    Dlen = data->data->data->vectorLength;
+    LALCreateVector(status->statusPtr, &Dvec, data->data->data->vectorLength);
     CHECKSTATUSPTR (status);
   }
 
   if(!Hvec) {
-    Hlen = data->data->data->length/2 + 1;
-    LALCCreateVector( status->statusPtr, &Hvec, data->data->data->length/2 + 1);
+    Hlen = data->data->data->vectorLength/2 + 1;
+    LALCCreateVector( status->statusPtr, &Hvec, data->data->data->vectorLength/2 + 1);
     CHECKSTATUSPTR (status);	  
   }
 
@@ -195,7 +205,6 @@ Description of the function...
 	REAL4 *r4ptr;
 	UINT4 i, k, l, nTime;
 	INT4 didel;
-	REAL4 snr_denom;
 	UINT4 filter_delay;
 
 	/*****************************************************************/
@@ -204,6 +213,10 @@ Description of the function...
 	UINT4 wforder = 16; /* order of FIR whitening filter */
 	UINT4 eolap = (UINT4)(0.5/data->data->deltaT); /* e1 goes from 0 to N/2; e2 goes from N/2-eolap to N-1 */
 	REAL8 duration_increase = 2.0; /* factor increasing duration of a burst in psd calculations, to account for windowing */
+
+	REAL4 bandSafe = 1000.0 * data->data->deltaT; /* extra data for bandpass, in seconds */
+	REAL4 bandDf = 6e-3*0.5/data->data->deltaT;  /* with of transition band */
+	REAL4 bandAttenuation = 0.01;
 
 	/*****************************************************************/
 	/**                          frequency                          **/
@@ -282,7 +295,7 @@ Description of the function...
 	  Dvec->length = bptr->nTime;
 	  Hvec->length = bptr->nTime / 2 + 1;
 
-	  for(k=0;k<data->data->data->length / bptr->nTime; k++) {
+	  for(k=0;k<data->data->data->vectorLength / bptr->nTime; k++) {
 
 	    memcpy(Dvec->data, data->data->data->data + k*bptr->nTime, Dvec->length * sizeof(REAL4));
 
@@ -351,9 +364,9 @@ Description of the function...
 
 	/* get max likelihood */
 	mfi = 0;
-	mlik = 0.0;
+	mlik = -1.0;
 	llikf = 0.0;
-	snr = snr_denom = 0.0;
+	snr = 0.0;
 
 	llo = (INT4)floor((input->central_freq - 0.5 * input->bandwidth) * data->data->deltaT * (REAL8)bptr->nTime);
 	if(llo < 0) {
@@ -400,8 +413,11 @@ Description of the function...
 	    mfi = l;
 	  }
 
-	  snr += Pmax;
-	  snr_denom += rp.P0 + rp.Q;
+	  /*
+	  fprintf(stderr,"%g\t%g\t%g\t%g\t%g\t%g\n",(REAL4)l / (data->data->deltaT * (REAL4)bptr->nTime),q0,rp.P0,rp.Q,rp.P,Pmax);
+	  */
+
+	  snr += Pmax / rp.P0 + rp.Q;
 
 	  {
 	    REAL8 ar = 2.0*sqrt(rp.P*rp.Q)/rp.P0;
@@ -409,7 +425,7 @@ Description of the function...
 	    if(ar > 30.0) {
 	      llikf += -log(rp.P0) - (rp.P + rp.Q)/rp.P0 + 27.3847;
 	    } else {
-	      llikf += -log(rp.P0) - (rp.P + rp.Q)/rp.P0 + log(i0(ar)); 
+	      llikf += -log(rp.P0) - (rp.P + rp.Q)/rp.P0 + log(LALi0(ar)); 
 	    }
 
 	  }
@@ -417,13 +433,13 @@ Description of the function...
 	}
 
 	/* get linear snr */
-	snr = sqrt(snr / snr_denom);
+	snr = sqrt(snr);
 
 	/* set "central_freq" to maximum of power */
-	central_freq = (0.5 + (REAL4)mfi) / (data->data->deltaT * (REAL4)bptr->nTime);	
+	central_freq = (REAL4)mfi / (data->data->deltaT * (REAL4)bptr->nTime);	
 
 	/* set amplitude to sqrt(maximum of power); get strain per rtHz */
-	amplitude = sqrt(mlik);
+	amplitude = sqrt(mlik * 2.0 * data->data->deltaT);
 
 	/*****************************************************************/
 	/**                           bandwidth                         **/
@@ -460,7 +476,7 @@ Description of the function...
 	  r40 = 0.0;
 
 	  /* first half */
-	  e1_end = e1v.length = data->data->data->length / 2;
+	  e1_end = e1v.length = data->data->data->vectorLength / 2;
 	  e1 = e1v.data = (REAL4 *)LALCalloc(e1v.length, sizeof(REAL4));
 	  if(!e1) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);}
 	  memcpy(e1, data->data->data->data, e1v.length * sizeof(REAL4));
@@ -524,7 +540,7 @@ Description of the function...
 	  /* second half */
 	  e2_start = e1v.length - eolap;
 
-	  e2v.length = data->data->data->length - e1v.length + eolap;
+	  e2v.length = data->data->data->vectorLength - e1v.length + eolap;
 	  e2 = e2v.data = (REAL4 *)LALCalloc(e2v.length, sizeof(REAL4));
 	  if(!e2) {ABORT(status, STDBURSTSEARCHH_EMEM, STDBURSTSEARCHH_MSGEMEM);}
 	  memcpy(e2, data->data->data->data + e2_start, e2v.length * sizeof(REAL4));
@@ -606,8 +622,8 @@ Description of the function...
 	  filter_delay = e2_filter_delay;
 	  r4ptr = e2;
 
-	  if(lhi > data->data->data->length) {
-	    lhi = data->data->data->length;
+	  if(lhi > data->data->data->vectorLength) {
+	    lhi = data->data->data->vectorLength;
 	  }
 	} else {
 	  r4ptr = e1;
@@ -618,28 +634,90 @@ Description of the function...
 	  }
 	}
 
-	mfi = llo;
-	mlik = r4ptr[llo];
+	{
+	  REAL4TimeSeries banddata;
+	  REAL4Vector *bdat = NULL;
+	  INT4 fi,li;
+	  PassBandParamStruc hipas, lopas;
+	  REAL4 norm = input->bandwidth * 2.0 * data->data->deltaT;
 
-	if(fabs(r4ptr[llo]) < 1E15) {
-	  llikt = -HALF_LOG_2PI -0.5*pow(r4ptr[llo],2.0);
-	} else {
-	  llikt = -HALF_LOG_2PI -0.5e30;
-	}
-
-	for(l=llo+1; l<lhi; l++) {
-
-	  if(fabs(r4ptr[l]) > mlik) {
-	    mlik = fabs(r4ptr[l]);
-	    mfi = l;
+	  banddata.deltaT = data->data->deltaT;
+	  fi = llo - (INT4)ceil(bandSafe / banddata.deltaT);
+	  if(llo >= e2_start && fi < e2_start) {
+	    fi = e2_start;
+	  }
+	  if(fi < 0) {
+	    fi = 0;
 	  }
 
-	  if(fabs(r4ptr[l]) < 1E15) {
-	    llikt += -HALF_LOG_2PI -0.5*pow(r4ptr[l],2.0);
+	  li = lhi + (INT4)ceil(bandSafe / banddata.deltaT);
+	  if(llo < e2_start && li > e1_end) {
+	    li = e1_end;
+	  }
+	  if(li > data->data->data->vectorLength) {
+	    li = data->data->data->vectorLength;
+	  }
+
+	  LALCreateVector(status->statusPtr,&bdat,li-fi+1);
+	  CHECKSTATUSPTR (status);
+
+	  memcpy(bdat->data, r4ptr + fi, (li-fi+1)*sizeof(REAL4));
+	  banddata.data = bdat;
+
+	  /* bandpass filter */
+	  hipas.nMax = 0;
+	  hipas.f2 = input->central_freq - 0.5 * input->bandwidth;
+	  hipas.a2 = 0.95;
+	  hipas.f1 = hipas.f2 - bandDf;
+	  hipas.a1 = bandAttenuation;
+
+	  if(hipas.f1 > 0.0) {
+	    LALDButterworthREAL4TimeSeries(status->statusPtr,&banddata,&hipas);
+	    CHECKSTATUSPTR (status);
+	  }
+
+	  lopas.nMax = 0;
+	  lopas.f1 = input->central_freq + 0.5 * input->bandwidth;
+	  lopas.a1 = 0.95;
+	  lopas.f2 = lopas.f1 + bandDf;
+	  lopas.a2 = bandAttenuation;
+	  if(lopas.f2 < 0.5/banddata.deltaT) {
+	    LALDButterworthREAL4TimeSeries(status->statusPtr,&banddata,&lopas);
+	    CHECKSTATUSPTR (status);
+	  }
+
+	  r4ptr = bdat->data - fi;
+
+	  for(l=llo+1; l<lhi; l++) {
+	    r4ptr[l] /= norm;
+	  }
+
+	  mfi = llo;
+	  mlik = r4ptr[llo];
+
+	  if(fabs(r4ptr[llo]) < 1E15) {
+	    llikt = -HALF_LOG_2PI -0.5*pow(r4ptr[llo],2.0);
 	  } else {
-	    llikt += -HALF_LOG_2PI -0.5e30;
+	    llikt = -HALF_LOG_2PI -0.5e30;
 	  }
 
+	  for(l=llo+1; l<lhi; l++) {
+
+	    if(fabs(r4ptr[l]) > mlik) {
+	      mlik = fabs(r4ptr[l]);
+	      mfi = l;
+	    }
+
+	    if(fabs(r4ptr[l]) < 1E15) {
+	      llikt += -HALF_LOG_2PI -0.5*pow(r4ptr[l],2.0);
+	    } else {
+	      llikt += -HALF_LOG_2PI -0.5e30;
+	    }
+
+	  }
+
+	  LALDestroyVector(status->statusPtr,&bdat);
+	  CHECKSTATUSPTR (status);
 	}
 
 	/* correct estimated time for filter delay */
@@ -725,6 +803,7 @@ LALRiceLikelihood(
 		  void *Params
 		  ) {
   REAL8 x, Q;
+
   RiceLikelihoodParams *params = (RiceLikelihoodParams *)Params;
 
   INITSTATUS (status, "LALRiceLikelihood", STDBURSTSEARCHC);
@@ -735,9 +814,18 @@ LALRiceLikelihood(
   x = 2.0*sqrt(params->P*Q)/params->P0;
   
   if(Q>0.0) {
-    *llik = exp(-(params->P+Q)/params->P0) * (-i0(x) + params->P*i1(x)/sqrt(params->P*Q)) / (params->P0 * params->P0);
+    /*
+    *llik = exp(-(params->P+Q)/params->P0) * (-LALi0(x) + params->P*LALi1(x)/sqrt(params->P*Q)) / (params->P0 * params->P0);
+    */
+    *llik = exp(-pow(sqrt(params->P)-sqrt(Q),2.0)/params->P0)*(-LALi0e(x) + sqrt(params->P/Q)*LALi1e(x)) / (params->P0 * params->P0);
   } else {
-    *llik = - exp(-params->P/params->P0) / (params->P0 * params->P0); 
+    *llik = exp(-params->P/params->P0) * (params->P-params->P0) / pow(params->P0,3.0);
+  }
+
+  if(isnan(*llik)) {
+    CHAR ebuf[2048];
+    sprintf(ebuf,"Q=%g P=%g P0=%g x=%g *llik=%g io=%g i1=%g\n",Q,params->P,params->P0,x,*llik,LALi0e(x),LALi1e(x));
+    ABORT(status,100,ebuf);
   }
 
   DETATCHSTATUSPTR (status);
@@ -745,10 +833,10 @@ LALRiceLikelihood(
 }
 
 
-/* Chebyshev coefficients for exp(-x) I0(x)
+/* Chebyshev coefficients for exp(-x) LALI0(x)
  * in the interval [0,8].
  *
- * lim(x->0){ exp(-x) I0(x) } = 1.
+ * lim(x->0){ exp(-x) LALI0(x) } = 1.
  */
 
 static REAL8 A[] =
@@ -786,10 +874,10 @@ static REAL8 A[] =
 };
 
 
-/* Chebyshev coefficients for exp(-x) sqrt(x) I0(x)
+/* Chebyshev coefficients for exp(-x) sqrt(x) LALI0(x)
  * in the inverted interval [8,infinity].
  *
- * lim(x->inf){ exp(-x) sqrt(x) I0(x) } = 1/sqrt(2pi).
+ * lim(x->inf){ exp(-x) sqrt(x) LALI0(x) } = 1/sqrt(2pi).
  */
 
 
@@ -824,7 +912,7 @@ static REAL8 B[] =
 
 static REAL8 chbevl(REAL8 x, REAL8 array[], INT4 n);
 
-static REAL8 i0(REAL8 x)
+static REAL8 LALi0(REAL8 x)
 {
 REAL8 y;
 
@@ -843,7 +931,7 @@ return(  exp(x) * chbevl( 32.0/x - 2.0, B, 25 ) / sqrt(x) );
 
 
 
-static REAL8 i0e(REAL8 x)
+static REAL8 LALi0e(REAL8 x)
 {
 REAL8 y;
 
@@ -944,7 +1032,7 @@ static REAL8 BB[] =
  7.78576235018280120474E-1
 };
 
-static REAL8 i1(REAL8 x)
+static REAL8 LALi1(REAL8 x)
 { 
 REAL8 y, z;
 
@@ -963,7 +1051,7 @@ if( x < 0.0 )
 return( z );
 }
 
-static REAL8 i1e( REAL8 x )
+static REAL8 LALi1e( REAL8 x )
 { 
 REAL8 y, z;
 

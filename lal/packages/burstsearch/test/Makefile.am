@@ -1,5 +1,8 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = SlopeETGTest TFClustersETGTest StdBurstOutput ThresholdsTest TFTransformTest ExcessPowerTest
+check_PROGRAMS = PowerETGTest SlopeETGTest TFClustersETGTest StdBurstOutput ThresholdsTest TFTransformTest ExcessPowerTest
+
+PowerETGTest_SOURCES = PowerETGTest.c
+PowerETGTest_LDADD = $(top_builddir)/lib/liblal.la
 
 SlopeETGTest_SOURCES = SlopeETGTest.c
 SlopeETGTest_LDADD = $(top_builddir)/lib/liblal.la 
@@ -21,7 +24,7 @@ ExcessPowerTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(
 
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = SlopeETGTest StdBurstOutput TFClustersETGTest ThresholdsTest TFTransformTest ExcessPowerTest
+TESTS = PowerETGTest SlopeETGTest StdBurstOutput TFClustersETGTest ThresholdsTest TFTransformTest ExcessPowerTest
 MOSTLYCLEANFILES = .dvi-dep PrintVector.*
 DISTCLEANFILES = *.tex
 EXTRA_DIST = ExcessPowerTest.c

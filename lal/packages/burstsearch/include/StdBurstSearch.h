@@ -81,7 +81,7 @@ void
 LALTFClustersETG(
 		 LALStatus *stat, 
 		 EventIDColumn *output, 
-		 REAL4TimeSeries *input, 
+		 REAL4TimeVectorSeries *input, 
 		 BurstParameter *params);
 /* </lalVerbatim> */
 
@@ -90,15 +90,37 @@ void
 LALSlopeETG(
 		 LALStatus *status, 
 		 EventIDColumn *output, 
-		 REAL4TimeSeries *input, 
+		 REAL4TimeVectorSeries *input, 
 		 BurstParameter *params
 		 );
 /* </lalVerbatim> */
 
 /* <lalVerbatim file="StdBurstSearchH"> */
+void
+LALPowerETG(
+	    LALStatus *status, 
+	    EventIDColumn *output, 
+	    REAL4TimeVectorSeries *input, 
+	    BurstParameter *params
+	    );
+/* </lalVerbatim> */
+
+/* <lalVerbatim file="StdBurstSearchH"> */
+typedef struct
+tagBurstOutputDataSegment
+{
+  REAL4TimeVectorSeries              *data;
+  REAL4FrequencySeries         *spec;
+  COMPLEX8FrequencySeries      *resp;
+  REAL4IIRFilter               *preprocessing_filter;
+}
+BurstOutputDataSegment;
+/* </lalVerbatim> */
+
+/* <lalVerbatim file="StdBurstSearchH"> */
 typedef struct tagBurstOutputParameters {
 
-  EPDataSegment *data;    /* input data and metadata */
+  BurstOutputDataSegment *data;    /* input data and metadata */
 
   INT4 method; /* 0 for plain copy; 1 for standard */
 
