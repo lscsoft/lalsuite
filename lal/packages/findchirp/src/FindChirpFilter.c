@@ -1519,7 +1519,7 @@ LALFindChirpBCVFilterSegment (
 
     REAL4 fmin = input->segment->fLow;
     /* total mass, in seconds */
-    REAL4 m =  abs(psi3) / (16.0 * LAL_PI * LAL_PI * psi0) ;
+    REAL4 m =  fabs(psi3) / (16.0 * LAL_PI * LAL_PI * psi0) ;
     REAL4 eta = 3.0 / (128.0 * psi0 * pow( (m*LAL_PI), (5.0/3.0)) );
     /*REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);*/
     REAL4 c0 = 5*m/(256*eta);
@@ -1531,7 +1531,7 @@ LALFindChirpBCVFilterSegment (
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
-    REAL4 chirpTime = abs(c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8);
+    REAL4 chirpTime = fabs(c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8);
 
     /* k that corresponds to fFinal, currently not used      */
     /* UINT4 kFinal = floor( numPoints * deltaT * fFinal ); */  
