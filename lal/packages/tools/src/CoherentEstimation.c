@@ -28,15 +28,10 @@ LALCoherentEstimation ( LALStatus          *stat,
   */
 
   static INT4
-    SolveHomogeneous(
-		     REAL8 **Hmat,
-		     REAL8 *tmpAlpha,
-		     UINT4 N
-		     );
-
+    jacobi(float **a, int n, float d[], float **v, int *nrot);
 
   INT4 Sret,
-    i, j, /* counters */
+    i, j, k, /* counters */
     iPad, ePad, /* used for padding */
     del;  /* integer time delay */
   REAL4 y; /* dummy */
@@ -51,11 +46,13 @@ LALCoherentEstimation ( LALStatus          *stat,
   LALSource source; /* for responses */
   LIGOTimeGPS t0; /* start time of data */
 
-  REAL8 *alpha, *tmpAlpha; /* scale factor */
-  UINT4 Nlambda;
-  REAL8 a0, a1, a2, A0, A1, A2, A3, an, bn, cn, ab, ac, bc, p, q, C, maxLambda, tmpLambda;
-  REAL8 *lambda;
-  REAL8 **Hmat, **Cmat;
+  REAL8 *alpha; /* scale factor */
+  INT4 nrot;
+  REAL8 maxLambda, tmpLambda;
+  REAL4 *lambda;
+  REAL4 **Hmat;
+  REAL4 **v;
+  REAL8 **Cmat;
 
   /*
     {REAL8 tmp = Cosh(ACosh((double)3.02993)/3.0);
@@ -156,7 +153,6 @@ LALCoherentEstimation ( LALStatus          *stat,
   if(!(tDelays = (REAL8 *)LALMalloc(params->Ndetectors * sizeof(REAL8)))) {
     ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
   }
-
   dtS.p_source = params->position;
 
   /* delays are computed wrt to center of data stretch */
@@ -227,105 +223,68 @@ LALCoherentEstimation ( LALStatus          *stat,
     ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
   }
 
-  tmpAlpha = (REAL8 *)LALMalloc(params->Ndetectors * sizeof(REAL8));
-  if(!tmpAlpha) {
-    ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
-  }
-
-  lambda = (REAL8 *)LALMalloc(params->Ndetectors * sizeof(REAL8));
+  lambda = (REAL4 *)LALMalloc(params->Ndetectors * sizeof(REAL4));
   if(!lambda) {
     ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
   }
 
-  Hmat = (REAL8 **)LALMalloc(params->Ndetectors * sizeof(REAL8 *));
+  Hmat = (REAL4 **)LALMalloc(params->Ndetectors * sizeof(REAL4 *));
   if(!Hmat) {
     ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
   }
   for(i=0; i<params->Ndetectors; i++) {
-    Hmat[i] = (REAL8 *)LALMalloc(params->Ndetectors * sizeof(REAL8));
+    Hmat[i] = (REAL4 *)LALMalloc(params->Ndetectors * sizeof(REAL4));
     if(!(Hmat[i])) {
+      ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
+    }
+  }
+
+  v = (REAL4 **)LALMalloc(params->Ndetectors * sizeof(REAL4 *));
+  if(!v) {
+    ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
+  }
+  for(i=0; i<params->Ndetectors; i++) {
+    v[i] = (REAL4 *)LALMalloc(params->Ndetectors * sizeof(REAL4));
+    if(!(v[i])) {
       ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
     }
   }
 
   Cmat = params->CMat;
 
-  an = F[0].plus*F[0].plus*params->plus2cross + F[0].cross*F[0].cross/params->plus2cross + 2.0*F[0].plus*F[0].cross*params->plusDotcross;
-  bn = F[1].plus*F[1].plus*params->plus2cross + F[1].cross*F[1].cross/params->plus2cross + 2.0*F[1].plus*F[1].cross*params->plusDotcross;
-  cn = F[2].plus*F[2].plus*params->plus2cross + F[2].cross*F[2].cross/params->plus2cross + 2.0*F[2].plus*F[2].cross*params->plusDotcross;
+  for(i=0; i<params->Ndetectors; i++) {
+    for(j=0; j<params->Ndetectors; j++) {
 
-  ab = F[0].plus*F[1].plus*params->plus2cross + (F[0].plus*F[1].cross + F[0].cross*F[1].plus)*params->plusDotcross + F[0].cross*F[1].cross/params->plus2cross;
-  ac = F[0].plus*F[2].plus*params->plus2cross + (F[0].plus*F[2].cross + F[0].cross*F[2].plus)*params->plusDotcross + F[0].cross*F[2].cross/params->plus2cross;
-  bc = F[1].plus*F[2].plus*params->plus2cross + (F[1].plus*F[2].cross + F[1].cross*F[2].plus)*params->plusDotcross + F[1].cross*F[2].cross/params->plus2cross;
+	Hmat[i][j] = (F[i].plus*F[j].plus*params->plus2cross + (F[i].plus*F[j].cross + F[j].plus*F[i].cross)*params->plusDotcross + F[i].cross*F[j].cross/params->plus2cross) / Cmat[i][i];
 
-  A0 = -ac*ac*bn-bc*bc*an-ab*ab*cn+2.0*ab*ac*bc+an*bn*cn;
-  A1 = -bc*bc*Cmat[0][0]+bn*cn*Cmat[0][0]+2.0*ac*bc*Cmat[0][1]-2.0*ab*cn*Cmat[0][1]-2.0*ac*bn*Cmat[0][2]+2.0*ab*bc*Cmat[0][2]-ac*ac*Cmat[1][1]+an*cn*Cmat[1][1]+2.0*ab*ac*Cmat[1][2]-2.0*an*bc*Cmat[1][2]-ab*ab*Cmat[2][2]+an*bn*Cmat[2][2];
-  A2 = -cn*Cmat[0][1]*Cmat[0][1]+2.0*bc*Cmat[0][1]*Cmat[0][2]-bn*Cmat[0][2]*Cmat[0][2]+cn*Cmat[0][0]*Cmat[1][1]-2.0*ac*Cmat[0][2]*Cmat[1][1]-2.0*bc*Cmat[0][0]*Cmat[1][2]+2.0*ac*Cmat[0][1]*Cmat[1][2]+2.0*ab*Cmat[0][2]*Cmat[1][2]-an*Cmat[1][2]*Cmat[1][2]+bn*Cmat[0][0]*Cmat[2][2]-2.0*ab*Cmat[0][1]*Cmat[2][2]+an*Cmat[1][1]*Cmat[2][2];
-  A3 = -Cmat[0][2]*Cmat[0][2]*Cmat[1][1]+2.0*Cmat[0][1]*Cmat[0][2]*Cmat[1][2]-Cmat[0][0]*Cmat[1][2]*Cmat[1][2]-Cmat[0][1]*Cmat[0][1]*Cmat[2][2]+Cmat[0][0]*Cmat[1][1]*Cmat[2][2];
-
-  a0 = A0/A3;
-  a1 = A1/A3;
-  a2 = A2/A3;
-
-  p = (3.0*a1-a2*a2)/3.0;
-  q = (9.0*a1*a2-27.0*a0-2.0*a2*a2*a2)/27.0;
-  C = 0.5*q*pow(3.0/fabs(p),1.5);
-
-  if(C>=1.0) {
-    Nlambda = 1;
-    lambda[0] = 2.0*sqrt(fabs(p)/3.0)*Cosh(ACosh(C)/3.0)-a2/3.0;
-  }
-  if(C<=-1.0) {
-    Nlambda = 1;
-    lambda[0] = -2.0*sqrt(fabs(p)/3.0)*Cosh(ACosh(fabs(C))/3.0)-a2/3.0;
-
-    /*
-    {REAL8 tmp = Cosh(ACosh(3.02993)/3.0);
-    printf("%g\n",tmp);}
-    */
-
-    /*
-    printf("%g\t%g\t%g\t%g\t%g\n",p,C,a2,lambda[0],-2.0*sqrt(fabs(p)/3.0)*Cosh(ACosh(fabs(C))/3.0)-a2/3.0);
-    */
-
-  }
-  if(fabs(C)<1.0) {
-    Nlambda = 3;
-    lambda[0] = 2.0*sqrt(fabs(p)/3.0)*cos(acos(C)/3.0)-a2/3.0;
-    lambda[1] = 2.0*sqrt(fabs(p)/3.0)*cos((acos(C)+2.0*LAL_PI)/3.0)-a2/3.0;
-    lambda[2] = 2.0*sqrt(fabs(p)/3.0)*cos((acos(C)+4.0*LAL_PI)/3.0)-a2/3.0;
+    }
   }
 
+  if(jacobi(Hmat, params->Ndetectors, lambda, v, &nrot)) {
+    ABORT ( stat, COHERENTESTIMATIONH_ENUM, COHERENTESTIMATIONH_MSGENUM );
+  }
+  /*
+ printf("%g\t%g\t%g\n",lambda[0],lambda[1],lambda[2]);
+ */
   maxLambda = -1e30;
-  for(i=0;i<Nlambda;i++) {
-    Hmat[0][0] = an + lambda[i]*Cmat[0][0];
-    Hmat[0][1] = Hmat[1][0] = ab + lambda[i]*Cmat[0][1];
-    Hmat[0][2] = Hmat[2][0] = ac + lambda[i]*Cmat[0][2];
+  for(k=0;k<params->Ndetectors;k++) {
 
-    Hmat[1][1] = bn + lambda[i]*Cmat[1][1];
-    Hmat[1][2] = Hmat[2][1] = bc + lambda[i]*Cmat[1][2];
+    tmpLambda = 0.0;
 
-    Hmat[2][2] = cn + lambda[i]*Cmat[2][2];
-
-    /* note: following instruction modifies Hmat */
-    if((Sret = SolveHomogeneous(Hmat,tmpAlpha,params->Ndetectors))) {
-      if(Sret == 1) {
-	ABORT ( stat, COHERENTESTIMATIONH_EMEM, COHERENTESTIMATIONH_MSGEMEM );
-      } else {
-	bzero(alpha,params->Ndetectors * sizeof(REAL8));
-	break;
+    for(i=0; i<params->Ndetectors; i++) {
+      for(j=0; j<params->Ndetectors; j++) {
+	tmpLambda += v[i][k]*v[j][k]*(F[i].plus*F[j].plus*params->plus2cross + (F[i].plus*F[j].cross + F[j].plus*F[i].cross)*params->plusDotcross + F[i].cross*F[j].cross/params->plus2cross);
       }
     }
 
-    tmpLambda = (tmpAlpha[0]*tmpAlpha[0]*an+tmpAlpha[1]*tmpAlpha[1]*bn+tmpAlpha[2]*tmpAlpha[2]*cn+2.0*tmpAlpha[0]*tmpAlpha[1]*ab+2.0*tmpAlpha[0]*tmpAlpha[2]*ac+2.0*tmpAlpha[1]*tmpAlpha[2]*bc)/(tmpAlpha[0]*tmpAlpha[0]*Cmat[0][0]+tmpAlpha[1]*tmpAlpha[1]*Cmat[1][1]+tmpAlpha[2]*tmpAlpha[2]*Cmat[2][2]+2.0*tmpAlpha[0]*tmpAlpha[1]*Cmat[0][1]+2.0*tmpAlpha[0]*tmpAlpha[2]*Cmat[0][2]+2.0*tmpAlpha[1]*tmpAlpha[2]*Cmat[1][2]);
-
     if(tmpLambda > maxLambda) {
-      memcpy(alpha,tmpAlpha,params->Ndetectors * sizeof(REAL8));
+      for(i=0; i<params->Ndetectors; i++) {
+	alpha[i] = v[i][k];
+      }
       maxLambda = tmpLambda;
     }
-
-    /*
-    printf("%u\t%g\t%g\t%g\t%g\n",i,lambda[i],alpha[0],alpha[1],alpha[2]);
+/*
+    printf("%u\t%g\t%g\t%g\t%g\n",k,lambda[k],alpha[0],alpha[1],alpha[2]);
     */
   }
 
@@ -387,13 +346,14 @@ LALCoherentEstimation ( LALStatus          *stat,
   LALFree(F);
 
   LALFree(alpha);
-  LALFree(tmpAlpha);
   LALFree(lambda);
 
   for(i=0; i<params->Ndetectors; i++) {
     LALFree(Hmat[i]);
+    LALFree(v[i]);
   }
   LALFree(Hmat);
+  LALFree(v);
 
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
@@ -465,293 +425,115 @@ LALClearCoherentInfo (
 }
 
 
-static REAL4 sqrarg;
-#define SQR(a) ((sqrarg=(a)) == 0.0 ? 0.0 : sqrarg*sqrarg)
+#define ROTATE(a,i,j,k,l) g=a[i][j];h=a[k][l];a[i][j]=g-s*(h+g*tau);\
+	a[k][l]=h+s*(g-h*tau);
 
-static REAL4 maxarg1,maxarg2;
-#define FMAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ?\
-        (maxarg1) : (maxarg2))
-
-static INT4 iminarg1,iminarg2;
-#define IMIN(a,b) (iminarg1=(a),iminarg2=(b),(iminarg1) < (iminarg2) ?\
-        (iminarg1) : (iminarg2))
-
-#define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
-
-static INT4 SolveHomogeneous(
-		 REAL8 **ar,
-		 REAL8 *Alpha,
-		 UINT4 m
-		 ) {
-  UINT4 n = m;
-  REAL4 *w;
-  REAL4 **v;
-  REAL4 **a;
-
-  static REAL4 pythag(REAL4 a, REAL4 b);
-  INT4 flag,i,its,j,jj,k,l,nm;
-  REAL4 anorm,c,f,g,h,s,scale,x,y,z,*rv1, wmin;
-
-  /*
-  printf("det = %g\n",a[0][0]*(a[1][1]*a[2][2]-a[2][1]*a[1][2])-a[0][1]*(a[1][0]*a[2][2]-a[1][2]*a[2][0])+a[0][2]*(a[1][0]*a[2][1]-a[1][1]*a[2][0]));
-  */
-
-  a = (REAL4 **)LALMalloc(n * sizeof(REAL4 *));
-  if(!a) {
-    return 1;
-  }
-  for(i=0;i<n;i++) {
-    a[i] = (REAL4 *)LALMalloc(n * sizeof(REAL4));
-    if(!(a[i])) {
-      return 1;
-    }
-    for(j=0;j<n;j++) {
-      a[i][j] = (REAL4)ar[i][j];
-    }
-    a[i] -= 1;
-  }
-
-  a -= 1;
-
-  w = (REAL4 *)LALMalloc(n * sizeof(REAL4));
-  if(!w) {
-    return 1;
-  }
-  w -= 1;
-
-  v = (REAL4 **)LALMalloc(n * sizeof(REAL4 *));
-  if(!v) {
-    return 1;
-  }
-  for(i=0;i<n;i++) {
-    v[i] = (REAL4 *)LALMalloc(n * sizeof(REAL4));
-    if(!(v[i])) {
-      return 1;
-    }
-    v[i] -= 1;
-  }
-  v -= 1;
-
-  rv1 = (REAL4 *)LALMalloc(n * sizeof(REAL4));
-  if(!rv1) {
-    return 1;
-  }
-  rv1 -= 1;
-
-  g=scale=anorm=0.0;
-  for (i=1;i<=n;i++) {
-    l=i+1;
-    rv1[i]=scale*g;
-    g=s=scale=0.0;
-    if (i <= m) {
-      for (k=i;k<=m;k++) scale += fabs(a[k][i]);
-      if (scale) {
-	for (k=i;k<=m;k++) {
-	  a[k][i] /= scale;
-	  s += a[k][i]*a[k][i];
-	}
-	f=a[i][i];
-	g = -SIGN(sqrt(s),f);
-	h=f*g-s;
-	a[i][i]=f-g;
-	for (j=l;j<=n;j++) {
-	  for (s=0.0,k=i;k<=m;k++) s += a[k][i]*a[k][j];
-	  f=s/h;
-	  for (k=i;k<=m;k++) a[k][j] += f*a[k][i];
-	}
-	for (k=i;k<=m;k++) a[k][i] *= scale;
-      }
-    }
-    w[i]=scale *g;
-    g=s=scale=0.0;
-    if (i <= m && i != n) {
-      for (k=l;k<=n;k++) scale += fabs(a[i][k]);
-      if (scale) {
-	for (k=l;k<=n;k++) {
-	  a[i][k] /= scale;
-	  s += a[i][k]*a[i][k];
-	}
-	f=a[i][l];
-	g = -SIGN(sqrt(s),f);
-	h=f*g-s;
-	a[i][l]=f-g;
-	for (k=l;k<=n;k++) rv1[k]=a[i][k]/h;
-	for (j=l;j<=m;j++) {
-	  for (s=0.0,k=l;k<=n;k++) s += a[j][k]*a[i][k];
-	  for (k=l;k<=n;k++) a[j][k] += s*rv1[k];
-	}
-	for (k=l;k<=n;k++) a[i][k] *= scale;
-      }
-    }
-    anorm=FMAX(anorm,(fabs(w[i])+fabs(rv1[i])));
-  }
-  for (i=n;i>=1;i--) {
-    if (i < n) {
-      if (g) {
-	for (j=l;j<=n;j++)
-	  v[j][i]=(a[i][j]/a[i][l])/g;
-	for (j=l;j<=n;j++) {
-	  for (s=0.0,k=l;k<=n;k++) s += a[i][k]*v[k][j];
-	  for (k=l;k<=n;k++) v[k][j] += s*v[k][i];
-	}
-      }
-      for (j=l;j<=n;j++) v[i][j]=v[j][i]=0.0;
-    }
-    v[i][i]=1.0;
-    g=rv1[i];
-    l=i;
-  }
-  for (i=IMIN(m,n);i>=1;i--) {
-    l=i+1;
-    g=w[i];
-    for (j=l;j<=n;j++) a[i][j]=0.0;
-    if (g) {
-      g=1.0/g;
-      for (j=l;j<=n;j++) {
-	for (s=0.0,k=l;k<=m;k++) s += a[k][i]*a[k][j];
-	f=(s/a[i][i])*g;
-	for (k=i;k<=m;k++) a[k][j] += f*a[k][i];
-      }
-      for (j=i;j<=m;j++) a[j][i] *= g;
-    } else for (j=i;j<=m;j++) a[j][i]=0.0;
-    ++a[i][i];
-  }
-  for (k=n;k>=1;k--) {
-    for (its=1;its<=30;its++) {
-      flag=1;
-      for (l=k;l>=1;l--) {
-	nm=l-1;
-	if ((float)(fabs(rv1[l])+anorm) == anorm) {
-	  flag=0;
-	  break;
-	}
-	if ((float)(fabs(w[nm])+anorm) == anorm) break;
-      }
-      if (flag) {
-	c=0.0;
-	s=1.0;
-	for (i=l;i<=k;i++) {
-	  f=s*rv1[i];
-	  rv1[i]=c*rv1[i];
-	  if ((float)(fabs(f)+anorm) == anorm) break;
-	  g=w[i];
-	  h=pythag(f,g);
-	  w[i]=h;
-	  h=1.0/h;
-	  c=g*h;
-	  s = -f*h;
-	  for (j=1;j<=m;j++) {
-	    y=a[j][nm];
-	    z=a[j][i];
-	    a[j][nm]=y*c+z*s;
-	    a[j][i]=z*c-y*s;
-	  }
-	}
-      }
-      z=w[k];
-      if (l == k) {
-	if (z < 0.0) {
-	  w[k] = -z;
-	  for (j=1;j<=n;j++) v[j][k] = -v[j][k];
-	}
-	break;
-      }
-      if (its == 30) {
-	fprintf(stderr,"no convergence in 30 svdcmp iterations. Setting all weights to zero.");
-	return 2;
-      }
-      x=w[l];
-      nm=k-1;
-      y=w[nm];
-      g=rv1[nm];
-      h=rv1[k];
-      f=((y-z)*(y+z)+(g-h)*(g+h))/(2.0*h*y);
-      g=pythag(f,1.0);
-      f=((x-z)*(x+z)+h*((y/(f+SIGN(g,f)))-h))/x;
-      c=s=1.0;
-      for (j=l;j<=nm;j++) {
-	i=j+1;
-	g=rv1[i];
-	y=w[i];
-	h=s*g;
-	g=c*g;
-	z=pythag(f,h);
-	rv1[j]=z;
-	c=f/z;
-	s=h/z;
-	f=x*c+g*s;
-	g = g*c-x*s;
-	h=y*s;
-	y *= c;
-	for (jj=1;jj<=n;jj++) {
-	  x=v[jj][j];
-	  z=v[jj][i];
-	  v[jj][j]=x*c+z*s;
-	  v[jj][i]=z*c-x*s;
-	}
-	z=pythag(f,h);
-	w[j]=z;
-	if (z) {
-	  z=1.0/z;
-	  c=f*z;
-	  s=h*z;
-	}
-	f=c*g+s*y;
-	x=c*y-s*g;
-	for (jj=1;jj<=m;jj++) {
-	  y=a[jj][j];
-	  z=a[jj][i];
-	  a[jj][j]=y*c+z*s;
-	  a[jj][i]=z*c-y*s;
-	}
-      }
-      rv1[l]=0.0;
-      rv1[k]=f;
-      w[k]=x;
-    }
-  }
-  
-
-  /******************************************/
-            
-  i = 1;
-  wmin = fabs(w[i]);
-
-  for(j=2;j<=n;j++) {
-    if(fabs(w[j]) < wmin) {
-      i = j;
-      wmin = fabs(w[j]);
-    }
-  }
-
-  for(j=0;j<n;j++) {
-    Alpha[j] = (REAL8)(v[j+1][i]);
-  }
-
-  LALFree(rv1 + 1);
-  LALFree(w + 1);
-  for(i=1;i<=n;i++) {
-    LALFree(v[i] + 1);
-    LALFree(a[i] + 1);
-  }
-  LALFree(v + 1);
-  LALFree(a + 1);
-
-  return 0;
-}
-
-
-float pythag(float a, float b)
+int jacobi(float **a, int n, float d[], float **v, int *nrot)
 {
-        float absa,absb;
-        absa=fabs(a);
-        absb=fabs(b);
-        if (absa > absb) return absa*sqrt(1.0+SQR(absb/absa));
-        else return (absb == 0.0 ? 0.0 : absb*sqrt(1.0+SQR(absa/absb)));
+	int j,iq,ip,i,k;
+	float tresh,theta,tau,t,sm,s,h,g,c,*b,*z;
+
+	b = (REAL4 *)LALMalloc(n * sizeof(REAL4));
+	if(!b) {
+	  return 1;
+	}
+	b -= 1;
+
+	z = (REAL4 *)LALMalloc(n * sizeof(REAL4));
+	if(!z) {
+	  return 1;
+	}
+	z -= 1;
+
+	d -= 1;
+
+	for(i=0;i<n;i++) {
+	  v[i] -= 1;
+	  a[i] -= 1;
+	}
+	v -= 1;
+	a -= 1;
+
+	for (ip=1;ip<=n;ip++) {
+		for (iq=1;iq<=n;iq++) v[ip][iq]=0.0;
+		v[ip][ip]=1.0;
+	}
+	for (ip=1;ip<=n;ip++) {
+		b[ip]=d[ip]=a[ip][ip];
+		z[ip]=0.0;
+	}
+	*nrot=0;
+	for (i=1;i<=50;i++) {
+		sm=0.0;
+		for (ip=1;ip<=n-1;ip++) {
+			for (iq=ip+1;iq<=n;iq++)
+				sm += fabs(a[ip][iq]);
+		}
+		if (sm == 0.0) {
+		  LALFree(z + 1);
+		  LALFree(b + 1);
+		  d += 1;
+		  a += 1;
+		  v += 1;
+		  for(i=0;i<n;i++) {
+		    v[i] += 1;
+		    a[i] += 1;
+		  }
+		  return 0;
+		}
+		if (i < 4)
+			tresh=0.2*sm/(n*n);
+		else
+			tresh=0.0;
+		for (ip=1;ip<=n-1;ip++) {
+			for (iq=ip+1;iq<=n;iq++) {
+				g=100.0*fabs(a[ip][iq]);
+				if (i > 4 && (float)(fabs(d[ip])+g) == (float)fabs(d[ip])
+					&& (float)(fabs(d[iq])+g) == (float)fabs(d[iq]))
+					a[ip][iq]=0.0;
+				else if (fabs(a[ip][iq]) > tresh) {
+					h=d[iq]-d[ip];
+					if ((float)(fabs(h)+g) == (float)fabs(h))
+						t=(a[ip][iq])/h;
+					else {
+						theta=0.5*h/(a[ip][iq]);
+						t=1.0/(fabs(theta)+sqrt(1.0+theta*theta));
+						if (theta < 0.0) t = -t;
+					}
+					c=1.0/sqrt(1+t*t);
+					s=t*c;
+					tau=s/(1.0+c);
+					h=t*a[ip][iq];
+					z[ip] -= h;
+					z[iq] += h;
+					d[ip] -= h;
+					d[iq] += h;
+					a[ip][iq]=0.0;
+					for (j=1;j<=ip-1;j++) {
+						ROTATE(a,j,ip,j,iq)
+					}
+					for (j=ip+1;j<=iq-1;j++) {
+						ROTATE(a,ip,j,j,iq)
+					}
+					for (j=iq+1;j<=n;j++) {
+						ROTATE(a,ip,j,iq,j)
+					}
+					for (j=1;j<=n;j++) {
+						ROTATE(v,j,ip,j,iq)
+					}
+					++(*nrot);
+				}
+			}
+		}
+		for (ip=1;ip<=n;ip++) {
+			b[ip] += z[ip];
+			d[ip]=b[ip];
+			z[ip]=0.0;
+		}
+	}
+
+	fprintf(stderr,"Too many iterations in routine jacobi");
+	return 1;
 }
+#undef ROTATE
 
-
-#undef SIGN
-#undef FMAX
-#undef IMIN
-#undef SQR
