@@ -108,6 +108,7 @@ int compare3F(const void *ip, const void *jp);
 int compare4F(const void *ip, const void *jp);
 int compare2f(const void *ip, const void *jp);
 int compareCCfa(const void *ip, const void *jp);
+int compareCPfa(const void *ip, const void *jp);
 void locate(double xx[], int n, double x, int *j, int *indices);
 void ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname);
 
@@ -386,9 +387,17 @@ int main(int argc,char *argv[])
       }
   }
   fprintf(stdout,"%%coincidences\n");
+  
+  /* I'm re-cycling this array here */
+  for (i=0; i < numCoincidences; i++) 
+    indicesCCfa[i]=i;
+  /* sort in increasing probability of joint false alarm */
+  qsort((void *)indicesCCfa, (size_t)numCoincidences, sizeof(int), compareCPfa);
+
   for (i=0; i < numCoincidences; i++) 
     {
-      fprintf(stdout,"%d %d %le\n", CList1.CtagCounter[CP[i].c1],CList2.CtagCounter[CP[i].c2],CP[i].fa);
+      UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
+      fprintf(stdout,"%d %d %le\n", CList1.CtagCounter[CP[k].c1],CList2.CtagCounter[CP[k].c2],CP[k].fa);
     }
 
 
@@ -597,6 +606,26 @@ int compareCCfa(const void *ip, const void *jp)
 
   di=CC[*(const int *)ip].fa;
   dj=CC[*(const int *)jp].fa;
+
+  if (di<dj)
+    return -1;
+  
+  if (di==dj)
+    return (ip > jp);
+
+  return 1;
+}
+
+
+/*******************************************************************************/
+
+/* Sorting function to sort pair list into increasing order of fa */
+int compareCPfa(const void *ip, const void *jp)
+{
+  REAL8 di, dj;
+
+  di=CP[*(const int *)ip].fa;
+  dj=CP[*(const int *)jp].fa;
 
   if (di<dj)
     return -1;
