@@ -33,5 +33,6 @@ tbase=$2
 make_segment_list $1 H1 $tbase
 make_segment_list $1 H2 $tbase
 make_segment_list $1 L1 $tbase
+echo "-------------------------"
 echo $total Segments in all
 
