@@ -1,3 +1,9 @@
+#include <config.h>
+#if defined HAVE_LIBFFTW3F && defined HAVE_FFTW3_H
+/* fftw3 not yet supported */
+int main( void ) { return 77; }
+#else /* fftw2 implementation */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -870,3 +876,4 @@ main()
 
     return 0;
 }
+#endif /* fftw2 implementation */

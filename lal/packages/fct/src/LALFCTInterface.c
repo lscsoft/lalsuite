@@ -1,3 +1,8 @@
+#include <config.h>
+#if defined HAVE_LIBFFTW3F && defined HAVE_FFTW3_H
+/* fftw3 not yet supported */
+#else /* fftw2 implementation */
+
 #include <lal/LALStdlib.h>
 #include <lal/LALFCTInterface.h>
 #include <lal/LALMalloc.h>
@@ -298,3 +303,4 @@ void LALFCTCalculate(LALStatus* const status,
     ASSERT(plan->status->fct_errno == 0, status,
            LALFCTINTERFACEH_EINTERNAL, fct_strerror(plan->status->fct_errno));
 }
+#endif /* fftw2 implementation */

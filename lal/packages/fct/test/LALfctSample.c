@@ -39,7 +39,15 @@
    \subsubsection*{Required Headers}
    The following headers are probably the minimum required to use LALfct.
    But your needs may vary. 
-   </lalLaTeX> <lalVerbatim> */
+   </lalLaTeX> */
+
+#include <config.h>
+#if defined HAVE_LIBFFTW3F && defined HAVE_FFTW3_H
+/* fftw3 not yet supported */
+int main( void ) { return 77; }
+#else /* fftw3 implementation */
+
+/*<lalVerbatim> */
 #include <lal/LALfct.h>  /* Include any required headers */
 #include <stdio.h>
 #include <lal/AVFactories.h>
@@ -480,3 +488,4 @@ static INT4 CheckStatus( LALStatus *status) {
   return(0);
 }
 /*</lalVerbatim>*/
+#endif /* fftw2 implementation */

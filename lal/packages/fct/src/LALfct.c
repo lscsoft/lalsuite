@@ -18,6 +18,9 @@
    </lalLaTeX> */
 
 #include <config.h>
+#if defined HAVE_LIBFFTW3F && defined HAVE_FFTW3_H
+/* fftw3 not yet supported */
+#else /* fftw2 implementation */
 
 #ifdef HAVE_SFFTW_H
 #include <sfftw.h>
@@ -941,3 +944,5 @@ static INT4 CheckStatus( LALStatus *status) {
   } 
   return(0);
 }
+
+#endif /* fftw2 implementation */

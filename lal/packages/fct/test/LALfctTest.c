@@ -22,6 +22,12 @@
  * 
  */
 
+#include <config.h>
+#if defined HAVE_LIBFFTW3F && defined HAVE_FFTW3_H
+/* fftw3 not yet supported */
+int main( void ) { return 77; }
+#else /* fftw2 implementation */
+
 #include <lal/LALfct.h>  /* Include any required headers */
 #include <stdio.h>
 #include <math.h>
@@ -580,3 +586,5 @@ static void TestStatus( LALStatus *status, const char *ignored, int exitcode ) {
   fprintf( stderr, "\nExiting to system with code %d\n", exitcode );
   exit( exitcode );
 }
+
+#endif /* fftw2 implementation */
