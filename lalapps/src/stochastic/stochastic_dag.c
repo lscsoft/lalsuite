@@ -59,7 +59,7 @@ RCSID ("$Id$");
 #define CVS_ID "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
-#define PROGRAM_NAME "lalapps_stochastic"
+#define PROGRAM_NAME "lalapps_stochastic_dag"
 
 /* variables for getopt options parsing */
 char *optarg;
@@ -90,10 +90,10 @@ INT4 intervalDuration = 180;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
 INT4 calibOffset = 30;
-CHAR frameCache1[200] = "H-729332040.cache";
-CHAR frameCache2[200] = "H-729332040.cache";
-CHAR calCache1[200] = "calibration/H1-CAL-V03-729273600-734367600_smooth.cache";
-CHAR calCache2[200] = "calibration/L1-CAL-V03-729273600-734367600.cache";
+CHAR *frameCache1;
+CHAR *frameCache2;
+CHAR *calCache1;
+CHAR *calCache2;
 CHAR channel1[LALNameLength]= "H1:LSC-AS_Q";
 CHAR channel2[LALNameLength]= "L1:LSC-AS_Q";
 CHAR ifo1[LALNameLength] = "H1";
@@ -1872,6 +1872,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
     /* getopt_long stores the option here */
     int option_index = 0;
+    size_t optarg_len;
 
     c = getopt_long(argc, argv, 
         "ht:T:L:l:A:a:f:F:w:k:p:P:i:I:d:D:r:R:c:b:o:g:N:S:U:V:W:z:v",
@@ -2016,22 +2017,30 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'd':
         /* data cache one */
-        strncpy(frameCache1, optarg, 200);
+        optarg_len = strlen(optarg) + 1;
+        frameCache1 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(frameCache1, optarg, optarg_len);
         break;
 
       case 'D':
         /* data cache two */
-        strncpy(frameCache2, optarg, 200);
+        optarg_len = strlen(optarg) + 1;
+        frameCache2 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(frameCache2, optarg, optarg_len);
         break;
 
       case 'r':
         /* calibration cache one */
-        strncpy(calCache1, optarg, 200);
+        optarg_len = strlen(optarg) + 1;
+        calCache1 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(calCache1, optarg, optarg_len);
         break;
 
       case 'R':
         /* calibration cache two */
-        strncpy(calCache2, optarg, 200);
+        optarg_len = strlen(optarg) + 1;
+        calCache2 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(calCache2, optarg, optarg_len);
         break;
 
       case 'c':
