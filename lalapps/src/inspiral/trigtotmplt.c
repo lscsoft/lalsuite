@@ -41,7 +41,7 @@ RCSID( "$Id$" );
  */
 
 
-int compareTmplts ( const void *a, const void *b )
+int compareTmpltsByMass ( const void *a, const void *b )
 {
   SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
   SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
@@ -50,15 +50,15 @@ int compareTmplts ( const void *a, const void *b )
   {
     return 1;
   }
-  else if ( aPtr->mass1 < bPtr->mass2 )
+  else if ( aPtr->mass1 < bPtr->mass1 )
   {
     return -1;
   }
-  else if ( (aPtr->mass2 > bPtr->mass2) && (aPtr->mass1 == bPtr->mass1) )
+  else if ( aPtr->mass2 > bPtr->mass2 )
   {
     return 1;
   }
-  else if ( (aPtr->mass2 < bPtr->mass2) && (aPtr->mass1 == bPtr->mass1) )
+  else if ( aPtr->mass2 < bPtr->mass2 )
   {
     return -1;
   }
@@ -315,7 +315,7 @@ int main ( int argc, char *argv[] )
   }
 
   if ( vrbflg ) fprintf( stdout, "sorting events... " );
-  qsort( eventHandle, numEvents, sizeof(eventHandle[0]), compareTmplts );
+  qsort( eventHandle, numEvents, sizeof(eventHandle[0]), compareTmpltsByMass );
   if ( vrbflg ) fprintf( stdout, "done\n" );
 
   /* create a linked list of sorted templates */
