@@ -205,9 +205,9 @@ DDDTDiffMax( void );
 /* Returns the triple derivative of tau-t as a function of t,
    maximized over all t. */
 
-static const REAL4TimeSeries emptyREAL4TimeSeries;
-static const CreateVectorSequenceIn emptyCreateVectorSequenceIn;
-static const ResampleParamStruc emptyResampleParamStruct;
+static /* const */ REAL4TimeSeries emptyREAL4TimeSeries;
+static /* const */ CreateVectorSequenceIn emptyCreateVectorSequenceIn;
+static /* const */ ResampleParamStruc emptyResampleParamStruct;
 
 int
 main( int argc, char **argv )
