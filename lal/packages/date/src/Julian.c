@@ -261,8 +261,7 @@ LALModJulianDate (LALStatus     *status,
                   REAL8         *modJDate,
                   const LALDate *date)
 { /* </lalVerbatim> */
-  INT4  hr, min, sec;
-  REAL8 jdate;
+  REAL8 mjd;
 
   INITSTATUS(status, "LALModJulianDate", JULIANC);
 
@@ -279,19 +278,12 @@ LALModJulianDate (LALStatus     *status,
           DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
   /*
-   * Extract Hour, Minute, and Second
-   */
-  hr  = (date->unixDate).tm_hour;
-  min = (date->unixDate).tm_min;
-  sec = (date->unixDate).tm_sec;
-
-  /*
    * Get Julian Date, and modify it
    */
-  LALJulianDate(status, &jdate, date);
-  jdate -= MJDREF;
+  LALJulianDate(status, &mjd, date);
+  mjd -= MJDREF;
     
-  *modJDate = jdate;
+  *modJDate = mjd;
 
   RETURN (status);
 } /* END LALModJulianDate() */

@@ -153,7 +153,8 @@ epoch (1970-Jan-01 00:00:00). The fields are:
 
 /*
  * This time object is exactly like LIGOTimeGPS, except for the name.
- * This measures the amount of time elapsed since the Unix time epoch
+ * This measures the amount of time elapsed since the Unix time reference,
+ * i.e. 1970-Jan-01 00:00:00 UTC
  */
 typedef struct
 tagLIGOTimeUnix
@@ -201,8 +202,8 @@ This structure is used for storing information about time zones.  The
 fields are:
 
 \begin{description}
-\item[\texttt{INT4 secondsWest}] Seconds West of UTC (Greenwich)
-\item[\texttt{INT4 dst}] Daylight Savings Time correction to apply
+\item[\texttt{INT4 secondsWest}] Seconds West of UTC (Greenwich); default 0
+\item[\texttt{INT4 dst}] Daylight Savings Time correction to apply; default 0
 \end{description}
 
 </lalLaTeX> */
@@ -213,8 +214,9 @@ fields are:
 typedef struct
 tagLALTimezone
 {
-    INT4 secondsWest; /* seconds West of UTC */
-    INT4 dst;         /* Daylight Savings Time correction to apply */
+    INT4 secondsWest; /* seconds West of UTC; default 0 */
+    INT4 dst;         /* Daylight Savings Time correction to apply; default
+                       * 0 */
 }
 LALTimezone;
 

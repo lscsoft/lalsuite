@@ -30,7 +30,6 @@ Here is a simple example (adapted from GRASP) to form a timestamp string:
 \begin{verbatim}
 void printone(Status *status, const LIGOTimeUnix *time1)
 {
-    LIGOTimeGPS  gpstime;
     LALDate      laldate;
     LIGOTimeUnix tmp;
     LALUnixDate  utimestruct;
@@ -39,8 +38,6 @@ void printone(Status *status, const LIGOTimeUnix *time1)
     INITSTATUS (status, "printone", TESTUTOGPSC);
 
     LALCHARCreateVector(status, &utc, (UINT4)64);
-
-    UtoGPS(status, &gpstime, time1);
 
     Utime(status, &laldate, time1);
     DateString(status, utc, &laldate);
@@ -226,6 +223,9 @@ LALUtime ( LALStatus           *status,
         
       utc->residualNanoSeconds = unixtime->unixNanoSeconds;
 
+      utc->timezone.secondsWest = 0;
+      utc->timezone.dst         = 0;
+      
       RETURN (status);
     }
 
@@ -267,10 +267,14 @@ LALUtime ( LALStatus           *status,
       utc->unixDate.tm_wday  = gmt->tm_wday;
       utc->unixDate.tm_yday  = gmt->tm_yday;
       utc->unixDate.tm_isdst = gmt->tm_isdst;
+
     }
 
   /* set residual nanoseconds */
   utc->residualNanoSeconds = unixtime->unixNanoSeconds;
+
+  utc->timezone.secondsWest = 0;
+  utc->timezone.dst         = 0;
 
   RETURN (status);
 } /* END LALUtime() */
