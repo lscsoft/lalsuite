@@ -37,7 +37,7 @@ class StochasticJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   def __init__(self,cp):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','stochastic')
     self.__universe = cp.get('condor','universe')
@@ -58,7 +58,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   """
   def __init__(self,job):
     """
-    job = A CondorDAGJob that can run an instance of lalapps_stochastic.
+    @param job: A CondorDAGJob that can run an instance of lalapps_stochastic.
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
@@ -229,7 +229,7 @@ class StoppJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   def __init__(self,cp):
     """
-    cp = ConfigParser object from which options are read.
+    @param cp: ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','stopp')
     self.__universe = cp.get('condor','universe')
@@ -251,7 +251,7 @@ class StoppNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   def __init__(self,job):
     """
-    job = A CondorDagNode that can run an instance of lalapps_stopp.
+    @param job: A CondorDagNode that can run an instance of lalapps_stopp.
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
