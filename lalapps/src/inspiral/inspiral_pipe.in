@@ -36,6 +36,7 @@ Usage: lalapps_inspiral_pipe [OPTIONS]
   -C, --coincidence        run lalapps_inca on the triggers from both IFOs
   -j, --injections         add simulated inspirals from injection file
   -p, --playground-only    only create chunks that overlap with playground
+  -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
   -P, --priority PRIO      run jobs with condor priority PRIO
   -f, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
@@ -43,7 +44,7 @@ Usage: lalapps_inspiral_pipe [OPTIONS]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdtiTICpjP:f:l:"
+shortop = "hvdtiTICpju:P:f:l:"
 longop = [
   "help",
   "version",
@@ -55,6 +56,7 @@ longop = [
   "coincidence",
   "injections",
   "playground-only",
+  "user-tag=",
   "priority=",
   "config-file=",
   "log-path="
@@ -74,6 +76,7 @@ do_trigbank = None
 do_triginsp = None
 do_coinc = None
 do_inj = None
+usertag = None
 playground_only = 0
 condor_prio = None
 config_file = None
@@ -100,6 +103,8 @@ for o, a in opts:
     do_coinc = 1
   elif o in ("-j", "--injections"):
     do_inj = 1
+  elif o in ("-u", "--user-tag"):
+    usertag = a
   elif o in ("-p", "--playground-only"):
     playground_only = 1
   elif o in ("-P", "--priority"):
@@ -133,17 +138,27 @@ except: pass
 cp = ConfigParser.ConfigParser()
 cp.read(config_file)
 
+# if a usertag has been specified, override the config file
+if usertag:
+  cp.set('pipeline','user-tag',usertag)
+
 # create a log file that the Condor jobs will write to
 basename = re.sub(r'\.ini',r'',config_file)
 tempfile.tempdir = log_path
-tempfile.template = basename + '.dag.log.'
+if usertag:
+  tempfile.template = basename + '.' + usertag + '.dag.log.'
+else:
+  tempfile.template = basename + '.dag.log.'
 logfile = tempfile.mktemp()
 fh = open( logfile, "w" )
 fh.close()
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
-dag.set_dag_file(basename + '.dag')
+if usertag:
+  dag.set_dag_file(basename + '.' + usertag + '.dag')
+else:
+  dag.set_dag_file(basename + '.dag')
 
 # create the Condor jobs that will be used in the DAG
 df_job = inspiral.DataFindJob(cp)
@@ -153,17 +168,15 @@ trig_job = inspiral.TrigToTmpltJob(cp)
 inca_job = inspiral.IncaJob(cp)
 
 # set better submit file names than the default
-df_job.set_sub_file( basename + '.datafind.sub' )
-tmplt_job.set_sub_file( basename + '.tmpltbank.sub' )
-insp_job.set_sub_file( basename + '.inspiral.sub' )
-trig_job.set_sub_file( basename + '.trigtotmplt.sub' )
-inca_job.set_sub_file( basename + '.inca.sub' )
-
-# get the usertag from the config file
-try:
-  usertag = cp.get('pipeline','user-tag')
-except:
-  usertag = None
+if usertag:
+  subsuffix = '.' + usertag + '.sub'
+else:
+  subsuffix = '.sub'
+df_job.set_sub_file( basename + '.datafind'+ subsuffix )
+tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
+insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
+trig_job.set_sub_file( basename + '.trigtotmplt' + subsuffix )
+inca_job.set_sub_file( basename + '.inca' + subsuffix )
 
 # set the usertag in the jobs
 if usertag:
@@ -175,7 +188,7 @@ if usertag:
 
 # add the injections
 if do_inj:
-  insp_job.add_opt('injection-file',cp.get('input','injections-file'))
+  insp_job.add_opt('injection-file',cp.get('input','injection-file'))
 
 # set the condor job priority
 if condor_prio:
@@ -358,7 +371,11 @@ dag.write_sub_files()
 dag.write_dag()
 
 # write out a log file for this script
-log_fh = open(basename + '.pipeline.log', 'w')
+if usertag:
+  log_fh = open(basename + '.pipeline.' + usertag + '.log', 'w')
+else:
+  log_fh = open(basename + '.pipeline.log', 'w')
+  
 log_fh.write( "$Id$" + "\n\n" )
 log_fh.write( "Invoked with arguments:\n" )
 for o, a in opts:

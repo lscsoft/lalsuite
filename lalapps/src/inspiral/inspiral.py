@@ -219,6 +219,7 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
 
   def get_output(self):
     """
@@ -227,7 +228,11 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise InspiralError, "Start time, end time or ifo has not been set"
-    bank = self.get_ifo() + '-TMPLTBANK-' + str(self.get_start())
+    if self.__usertag:
+      bank = self.get_ifo() + '-TMPLTBANK_' + self.__usertag + '-' 
+      bank = bank + str(self.get_start())
+    else:
+      bank = self.get_ifo() + '-TMPLTBANK-' + str(self.get_start())
     bank = bank + '-' + str(self.get_end() - self.get_start()) + '.xml'
     return bank
 
@@ -242,7 +247,7 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
-    self.__output = None
+    self.__usertag = job.get_config('pipeline','user-tag')
 
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
@@ -254,7 +259,11 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo():
       raise InspiralError, "Start time, end time or ifo has not been set"
-    out = self.get_ifo() + '-INSPIRAL-' + str(self.get_start()) + '-'
+    if self.__usertag:
+      out = self.get_ifo() + '-INSPIRAL_' + self.__usertag + '-'
+      out = out + str(self.get_start()) + '-'
+    else:
+      out = self.get_ifo() + '-INSPIRAL-' + str(self.get_start()) + '-'
     return out + str(self.get_end() - self.get_start()) + '.xml'
 
 
@@ -284,6 +293,7 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__ifo_a = None
     self.__ifo_b = None
+    self.__usertag = job.get_config('pipeline','user-tag')
     
   def set_ifo_a(self, ifo):
     """
@@ -320,5 +330,9 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     if not self.get_start() or not self.get_end() or not self.get_ifo_a():
       raise InspiralError, "Start time, end time or ifo a has not been set"
-    out = self.get_ifo_a() + '-INCA-' + str(self.get_start()) + '-'
+    if self.__usertag:
+      out = self.get_ifo_a() + '-INCA_' + self.__usertag + '-' 
+      out = out + str(self.get_start()) + '-'
+    else:
+      out = self.get_ifo_a() + '-INCA-' + str(self.get_start()) + '-'
     return out + str(self.get_end() - self.get_start()) + '.xml'
