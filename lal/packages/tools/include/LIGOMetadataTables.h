@@ -73,6 +73,7 @@ NRCSID( LIGOMETADATATABLESH, "$Id$" );
 #define LIGOMETA_TRANSDATA_DATA_MAX 17
 #define LIGOMETA_SOURCE_MAX 17
 #define LIGOMETA_WAVEFORM_MAX 25
+#define LIGOMETA_COORDINATES_MAX 16
 
 #if 0
 <lalLaTeX>
@@ -417,7 +418,7 @@ typedef struct
 tagSimBurstTable
 {
   struct tagSimBurstTable *next;
-  CHAR             waveform[LIGOMETA_SOURCE_MAX];
+  CHAR             waveform[LIGOMETA_WAVEFORM_MAX];
   LIGOTimeGPS      geocent_peak_time;
   LIGOTimeGPS      h_peak_time;
   LIGOTimeGPS      l_peak_time;
@@ -426,12 +427,13 @@ tagSimBurstTable
   REAL4            dtplus;
   REAL4            longitude;
   REAL4            latitude;
+  CHAR             coordinates[LIGOMETA_COORDINATES_MAX];
   REAL4            polarization;
   REAL4            hrss;
   REAL4            hpeak;
   REAL4            freq;
   REAL4            tau;
-  INT4             zmNumber;
+  INT4             zm_number;
   EventIDColumn   *event_id;
 }
 SimBurstTable;

@@ -171,8 +171,8 @@ LALGenerateBurst(
   /* Allocate amplitude array. */
   {
     CreateVectorSequenceIn in; /* input to create output->a */
-    in.length = 2;
-    in.vectorLength = n;
+    in.length = n;
+    in.vectorLength = 2;
     LALSCreateVectorSequence( stat->statusPtr, &(output->a->data), &in );
     BEGINFAIL( stat ) {
       TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
@@ -290,7 +290,8 @@ LALBurstInjectSignals(
 /* </lalVerbatim> */
 {
   UINT4              k;
-  INT8               chanStartTime;
+  INT4               injStartTime;
+  INT4               injStopTime;
   DetectorResponse   detector;
   COMPLEX8Vector    *unity = NULL;
   CoherentGW         waveform;
@@ -301,9 +302,10 @@ LALBurstInjectSignals(
   INITSTATUS( stat, "LALBurstInjectSignals", GENERATEBURSTC );
   ATTATCHSTATUSPTR( stat );
 
-  /*  set up parameters */
-  LALGPStoINT8( stat->statusPtr, &chanStartTime, &(series->epoch) );
-  CHECKSTATUSPTR( stat );
+  /* set up start and end of injection zone TODO: fix this hardwired 10 */
+  injStartTime = series->epoch.gpsSeconds - 10;
+  injStopTime = series->epoch.gpsSeconds + 10 + (INT4)(series->data->length
+      * series->deltaT);
 
   /* 
    *compute the transfer function 
@@ -385,6 +387,7 @@ LALBurstInjectSignals(
   }
   signal.sampleUnits = lalADCCountUnit;
 
+  signal.data=NULL;
   LALSCreateVector( stat->statusPtr, &(signal.data), 
       series->data->length );
   CHECKSTATUSPTR( stat );
@@ -393,28 +396,64 @@ LALBurstInjectSignals(
   simBurst = injections;
   while ( simBurst )
   {
-    /* generate the burst waveform information */
+    /* only do the work if the burst is in injection zone */
+    if( (injStartTime - simBurst->geocent_peak_time.gpsSeconds) *
+        (injStopTime - simBurst->geocent_peak_time.gpsSeconds) > 0 )
+    {
+      simBurst = simBurst->next;
+      continue;
+    }
+
+    /* set the burt params */
     burstParam.deltaT = series->deltaT;
+    if( !( strcmp( simBurst->coordinates, "HORIZON" ) ) )
+    {
+      burstParam.system = COORDINATESYSTEM_HORIZON;
+    }
+    else if ( !( strcmp( simBurst->coordinates, "GEOGRAPHIC" ) ) )
+    {
+      burstParam.system = COORDINATESYSTEM_GEOGRAPHIC;
+    }
+    else if ( !( strcmp( simBurst->coordinates, "EQUATORIAL" ) ) )
+    {
+      burstParam.system = COORDINATESYSTEM_EQUATORIAL;
+    }
+    else if ( !( strcmp( simBurst->coordinates, "ECLIPTIC" ) ) )
+    {
+      burstParam.system = COORDINATESYSTEM_ECLIPTIC;
+    }
+    else if ( !( strcmp( simBurst->coordinates, "GALACTIC" ) ) )
+    {
+      burstParam.system = COORDINATESYSTEM_GALACTIC;
+    }
+    else
+      burstParam.system = COORDINATESYSTEM_EQUATORIAL;
+
+    /* generate the burst */
     memset( &waveform, 0, sizeof(CoherentGW) );
-    LALGenerateBurst( stat->statusPtr, &waveform, injections, &burstParam );
+    LALGenerateBurst( stat->statusPtr, &waveform, simBurst, &burstParam );
     CHECKSTATUSPTR( stat );
 
+    /* must set the epoch of signal since it's used by coherent GW */
+    signal.epoch = waveform.a->epoch;
+    memset( signal.data->data, 0, signal.data->length * sizeof(REAL4) );
+    
     /* convert this into an ADC signal */
     LALSimulateCoherentGW( stat->statusPtr, 
         &signal, &waveform, &detector );
     CHECKSTATUSPTR( stat );
-
+    
     /* inject the signal into the data channel */
     LALSSInjectTimeSeries( stat->statusPtr, series, &signal );
     CHECKSTATUSPTR( stat );
 
     /* free memory in coherent GW structure.  TODO:  fix this */
-    TRY( LALSDestroyVectorSequence( stat->statusPtr, &( waveform.a->data ) ),
-        stat );
-    TRY( LALSDestroyVector( stat->statusPtr, &( waveform.f->data ) ),
-        stat );
-    TRY( LALDDestroyVector( stat->statusPtr, &( waveform.phi->data ) ),
-        stat );
+    LALSDestroyVectorSequence( stat->statusPtr, &( waveform.a->data ) );
+    CHECKSTATUSPTR( stat );
+    LALSDestroyVector( stat->statusPtr, &( waveform.f->data ) );
+    CHECKSTATUSPTR( stat );
+    LALDDestroyVector( stat->statusPtr, &( waveform.phi->data ) );
+    CHECKSTATUSPTR( stat );
     LALFree( waveform.a );   waveform.a = NULL;
     LALFree( waveform.f );   waveform.f = NULL;
     LALFree( waveform.phi );  waveform.phi = NULL;

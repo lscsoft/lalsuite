@@ -109,6 +109,13 @@ LALSnglBurstTableFromLIGOLw (
     CHAR               *fileName
     );
 
+void
+LALSimBurstTableFromLIGOLw (
+    LALStatus          *status,
+    SimBurstTable    **eventHead,
+    CHAR               *fileName
+    );
+
 int
 LALSnglInspiralTableFromLIGOLw (
     SnglInspiralTable **eventHead,

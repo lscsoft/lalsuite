@@ -441,14 +441,17 @@ LALWriteLIGOLwXMLTable (
             tablePtr.simBurstTable->l_peak_time.gpsSeconds,
             tablePtr.simBurstTable->l_peak_time.gpsNanoSeconds,
             tablePtr.simBurstTable->peak_time_gmst,
+            tablePtr.simBurstTable->dtminus,
+            tablePtr.simBurstTable->dtplus,
             tablePtr.simBurstTable->longitude,
             tablePtr.simBurstTable->latitude,
+            tablePtr.simBurstTable->coordinates,
             tablePtr.simBurstTable->polarization,
             tablePtr.simBurstTable->hrss,
             tablePtr.simBurstTable->hpeak,
             tablePtr.simBurstTable->freq,
             tablePtr.simBurstTable->tau,
-            tablePtr.simBurstTable->zmNumber
+            tablePtr.simBurstTable->zm_number
             );
         tablePtr.simBurstTable = tablePtr.simBurstTable->next;
       }
