@@ -78,7 +78,7 @@ BOOLEAN FILE_FSTATS = 1;
 #endif
 
 #define fopen boinc_fopen
-
+char *fstatbuff=NULL;
 int boincmain(int argc, char *argv[]);
 void worker();
 
@@ -459,6 +459,17 @@ int main(int argc,char *argv[])
   } /* if loopcounter > 0 */
     
 
+#if USE_BOINC
+  {
+    int bsize=2*1024*1024;
+    /* set a buffer large enough that no output is written to disk
+       unless we fflush().  Policy is fully buffered. */
+    if ((fstatbuff=(char *)LALCalloc(1, bsize))) {
+      setvbuf(fpstat, fstatbuff, _IOFBF, bsize); 
+    }
+  }
+#endif
+  
   while (1)
     {
       /* flush fstats-file and write checkpoint-file */
@@ -2033,6 +2044,12 @@ void Freemem(LALStatus *status)
   LALFree(GV.edat->ephemS);
   LALFree(GV.edat);
 
+#if USE_BOINC
+  /* free buffer used for fstat.  Its safe to do this because we already did fclose(fpstat) earlier */
+  if (fstatbuff)
+    LALFree(fstatbuff);
+#endif
+  
   DETATCHSTATUSPTR (status);
 
   /* did we forget anything ? */
