@@ -695,7 +695,7 @@ switch (params->order)
        rootIn.function = LALprInit3PN;
        rootIn.xmax = 5;
        rootIn.xmin = -10;
-       //first we compute vr (we need coeef->Fp6)
+       /* first we compute vr (we need coeef->Fp6) */
        pr3in.in3copy = in3; 
        pr3in.eta = eta;
        pr3in.omegaS = params->OmegaS;
@@ -703,7 +703,7 @@ switch (params->order)
        pr3in.q = q; 
        pr3in.omega = omega;
        LALvr3PN(&pr3in.vr,(void *) &pr3in);
-       // then we compute the initial value of p
+       /* then we compute the initial value of p */
        LALDBisectionFindRoot(status->statusPtr, &p, &rootIn,(void *) &pr3in );
        CHECKSTATUSPTR(status);
        in4.function = LALHCapDerivatives3PN;
@@ -973,7 +973,7 @@ Userful for debugging: Make sure a solution for r exists.
        rootIn.function = LALprInit3PN;
        rootIn.xmax = 5;
        rootIn.xmin = -10;
-       //first we compute vr (we need coeef->Fp6)
+       /* first we compute vr (we need coeef->Fp6) */
        pr3in.in3copy = in3; 
        pr3in.eta = eta;
        pr3in.omegaS = params->OmegaS;
@@ -981,7 +981,7 @@ Userful for debugging: Make sure a solution for r exists.
        pr3in.q = q; 
        pr3in.omega = omega;
        LALvr3PN(&pr3in.vr,(void *) &pr3in);
-       // then we compute the initial value of p
+       /* then we compute the initial value of p */
        LALDBisectionFindRoot(status->statusPtr, &p, &rootIn,(void *) &pr3in );
        CHECKSTATUSPTR(status);
        in4.function = LALHCapDerivatives3PN;
