@@ -291,8 +291,7 @@ the geoid.
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALGPStoU()
-LALUtime()
+LALGPStoUTC()
 LALGMST1()
 LALDHeapSort()
 \end{verbatim}
@@ -306,8 +305,7 @@ LALDHeapSort()
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-/*#include <lal/Date.h>*/
-#include "Date.h"
+#include <lal/Date.h>
 #include <lal/Sort.h>
 #include <lal/SkyCoordinates.h>
 
@@ -324,9 +322,10 @@ LALEquatorialToGeographic( LALStatus   *stat,
 			   SkyPosition *input,
 			   LIGOTimeGPS *gpsTime )
 { /* </lalVerbatim> */
-  LIGOTimeUnix unixTime; /* Unix time */
   LALDate date;          /* LALDate time */
   REAL8 gmst;            /* siderial time (radians) */
+  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
+  /* a few seconds probably aren't significant for the sky position */
 
   INITSTATUS( stat, "LALEquatorialToGeographic", TERRESTRIALCOORDINATESC );
   ATTATCHSTATUSPTR( stat );
@@ -342,8 +341,8 @@ LALEquatorialToGeographic( LALStatus   *stat,
   }
 
   /* Compute the Greenwich mean sidereal time. */
-  TRY( LALGPStoU( stat->statusPtr, &unixTime, gpsTime ), stat );
-  TRY( LALUtime( stat->statusPtr, &date, &unixTime ), stat );
+  TRY( LALGPStoUTC( stat->statusPtr, &date, gpsTime, &accuracy ),
+       stat );
   TRY( LALGMST1( stat->statusPtr, &gmst, &date, MST_RAD ), stat );
 
   /* Add to longitude, and exit. */
@@ -361,9 +360,10 @@ LALGeographicToEquatorial( LALStatus   *stat,
 			   SkyPosition *input,
 			   LIGOTimeGPS *gpsTime )
 { /* </lalVerbatim> */
-  LIGOTimeUnix unixTime; /* Unix time */
   LALDate date;          /* LALDate time */
   REAL8 gmst;            /* siderial time (radians) */
+  LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
+  /* a few seconds probably aren't significant for the sky position */
 
   INITSTATUS( stat, "LALEquatorialToGeographic", TERRESTRIALCOORDINATESC );
   ATTATCHSTATUSPTR( stat );
@@ -379,8 +379,8 @@ LALGeographicToEquatorial( LALStatus   *stat,
   }
 
   /* Compute the Greenwich mean sidereal time. */
-  TRY( LALGPStoU( stat->statusPtr, &unixTime, gpsTime ), stat );
-  TRY( LALUtime( stat->statusPtr, &date, &unixTime ), stat );
+  TRY( LALGPStoUTC( stat->statusPtr, &date, gpsTime, &accuracy ),
+       stat );
   TRY( LALGMST1( stat->statusPtr, &gmst, &date, MST_RAD ), stat );
 
   /* Subtract from longitude, and exit. */

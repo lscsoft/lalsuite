@@ -111,13 +111,10 @@ $$
 
 \subsubsection*{Uses}
 \begin{verbatim}
-LALSCreateVector()      LALSCreateVectorSequence()
-LALSDestroyVector()     LALSDestroyVectorSequence()
-LALGPStoU()
-LALUTime()
-LALLMST()
-LALCVectorAbs()
-LALCVectorAngle()
+LALSCreateVector()              LALSCreateVectorSequence()
+LALSDestroyVector()             LALSDestroyVectorSequence()
+LALConvertSkyCoordinates()      LALGeodeticToGeocentric()
+LALCVectorAbs()                 LALCVectorAngle()
 LALUnwrapREAL4Angle()
 LALWarning()
 \end{verbatim}
