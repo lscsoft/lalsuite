@@ -196,7 +196,7 @@ main ( void )
         fineList[i].params.totalMass,
         fineList[i].params.eta, 
         fineList[i].params.mass1, 
-        fineList[i].params.mass1); 
+        fineList[i].params.mass2); 
      }
      if (fineList!=NULL) LALFree(fineList);
      fineList = NULL;
