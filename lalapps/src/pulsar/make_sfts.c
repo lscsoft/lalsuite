@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <math.h>
+#include <stdarg.h>
+#include <sys/types.h>
 
 /* INT_MAX */
 #include <limits.h>
@@ -34,9 +36,7 @@
 /* IFO sample rate in Hz */
 #define SRATE 16384
 
-/* If DOUBLEDATA not defined, use REAL4 in SFT files */
-/* #define DOUBLEDATA */
-
+/* debug level for LAL */
 INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO;
 
 /* Header that defines the GEO SFT Data Format */
@@ -61,6 +61,38 @@ struct headertag {
 COMPLEX8Vector *fvec = NULL;
 RealFFTPlan *pfwd = NULL;
 
+/* Need prototype: this is POSIX not ANSI, sigh */
+int gethostname(char *name, size_t len);
+
+/* This is an error handler that prints a bit of extra info */
+void pout(char *fmt, ...)  
+     __attribute__ ((format (printf, 1, 2)));
+
+void pout(char *fmt, ...){
+  va_list ap;
+  char hostsname[256];
+  pid_t processid;
+
+  processid=getpid();
+
+  /* not guaranteed null terminated! */
+  gethostname(hostsname, 255);
+  hostsname[255]='\0';
+
+  /* printout process id and hostname into error message */
+  fprintf(stderr,"[%d] %s ", processid, hostsname);
+
+  /* initialize variable argument list */
+  va_start(ap,fmt);
+
+  /* print out, and flush */
+  vfprintf(stderr, fmt,ap);
+  va_end(ap);
+  fflush(stderr);
+  return;
+}
+
+
 /* This repeatedly tries to re-open a file.  This is useful on a
    cluster because automount may fail or time out.  This allows a
    number of tries with a bit of rest in between.
@@ -70,8 +102,7 @@ FILE* tryopen(char *name, char *mode){
   FILE *fp;
   
   while (!(fp=fopen(name, mode))){
-    fprintf(stderr,"Unable to open file %s in mode %s.  Will retry...\n", name, mode);
-    fflush(stderr);
+    pout("Unable to open file %s in mode %s.  Will retry...\n", name, mode);
     if (count++<10)
       sleep(10);
     else
@@ -125,16 +156,14 @@ int main(int argc,char *argv[]){
   /* check command syntax */
   if (argc !=5 || (jobnum=atoi(argv[1]))<0 || jobnum>99999){
     int a;
-    fprintf(stderr,"Syntax:\n\t%s N DIR1 DIR2 DETECTOR\nwhere 0<=N<=99999.\n",argv[0]);
-    fprintf(stderr,"Files used are jobdata.N, jobtimes.N, where N has five digits\n");
-    fprintf(stderr,"Input files are taken from DIR1\n");
-    fprintf(stderr,"Output files are put into DIR2\n");
-    fprintf(stderr,"DETECTOR is either H1, H2, or L1\n\n");
-    fprintf(stderr,"There were argc=%d arguments:\n",argc);
-    fflush(stderr);
+    pout("Syntax:\n\t%s N DIR1 DIR2 DETECTOR\nwhere 0<=N<=99999.\n",argv[0]);
+    pout("Files used are jobdata.N, jobtimes.N, where N has five digits\n");
+    pout("Input files are taken from DIR1\n");
+    pout("Output files are put into DIR2\n");
+    pout("DETECTOR is either H1, H2, or L1\n\n");
+    pout("There were argc=%d arguments:\n",argc);
     for (a=0;a<argc;a++)
-      fprintf(stderr,"arg=%d: %s\n",a,argv[a]);
-    fflush(stderr);
+      pout("arg=%d: %s\n",a,argv[a]);
     return 2;
   }
   
@@ -155,8 +184,7 @@ int main(int argc,char *argv[]){
       if (nstarts==0)
 	tbase=tbasei;
       else if (tbasei!=tbase){
-	fprintf(stderr,"File %s contains inconsistent SFT time baselines %d != %d\n",timelist,tbasei,tbase);
-	fflush(stderr);
+	pout("File %s contains inconsistent SFT time baselines %d != %d\n",timelist,tbasei,tbase);
 	return 3;
       }
       
@@ -165,17 +193,15 @@ int main(int argc,char *argv[]){
       
       /* and make sure that we are not yet maxed out */
       if (nstarts>=MAXSTART){
-	fprintf(stderr,"More than MAXSTART=%d lines in file: %s.  Increase MAXSTART and recompile\n",
+	pout("More than MAXSTART=%d lines in file: %s.  Increase MAXSTART and recompile\n",
 		MAXSTART,timelist);
-	fflush(stderr);
 	return 3;
       }
     }
     
     /* check that file contained at least some valid data */
     if (!nstarts){
-      fprintf(stderr,"File %s didn't contain any valid lines!\n",timelist);
-      fflush(stderr);
+      pout("File %s didn't contain any valid lines!\n",timelist);
       return 3;
     }
     fclose(stfp);
@@ -204,8 +230,7 @@ int main(int argc,char *argv[]){
   sprintf(framelist,"%s/jobdata.%05d.ffl",argv[2],jobnum);
   opencount=0;
   while (!(frfile = FrFileINew(framelist))){
-    fprintf(stderr, "Couldnt open frame file %s\n", framelist);
-    fflush(stderr);
+    pout( "Couldnt open frame file %s\n", framelist);
     if (opencount++<10)
       sleep(10);
     else
@@ -253,22 +278,19 @@ int main(int argc,char *argv[]){
     /* read in correct data */
     frvect = FrFileIGetVAdc(frfile, chname, epoch.gpsSeconds, tbase, 0);
     if (frvect == NULL) {
-      fprintf(stderr, "Data missing between times %d and %d\n",epoch.gpsSeconds,epoch.gpsSeconds+tbase);
-      fflush(stderr);
+      pout( "Data missing between times %d and %d\n",epoch.gpsSeconds,epoch.gpsSeconds+tbase);
       continue;
     }
     
     /* Check that data type is correct */
     if ( frvect->type != FR_VECT_4R ){
-      fprintf(stderr, "Wrong data type (notFR_VECT_4R) found in frame!\n" );
-      fflush(stderr);
+      pout( "Wrong data type (notFR_VECT_4R) found in frame!\n" );
       return(5);
     }
     
     /* check for gaps */
     if (frvect->next){
-      fprintf(stderr, "Data between times %d and %d had a gap\n",epoch.gpsSeconds,epoch.gpsSeconds+tbase);
-      fflush(stderr);
+      pout( "Data between times %d and %d had a gap\n",epoch.gpsSeconds,epoch.gpsSeconds+tbase);
       /* free space allocated by frame library */
       FrVectFree(frvect);
       frvect=NULL;
@@ -325,8 +347,7 @@ int main(int argc,char *argv[]){
       header.firstfreqindex=firstbin;
       header.nsamples=(INT4)(DF*tbase);
       if (1!=fwrite((void*)&header,sizeof(header),1,fpsft)){
-	fprintf(stderr,"Error in writing header into file %s!\n",sftname);
-	fflush(stderr);
+	pout("Error in writing header into file %s!\n",sftname);
 	return 7;
       }
       
@@ -359,8 +380,7 @@ int main(int argc,char *argv[]){
 	
 	/* Check that there were no errors while writing SFTS */
  	if (errorcode1-1 || errorcode2-1){
-	  fprintf(stderr,"Error in writing data into SFT file %s!\n",sftname);
-	  fflush(stderr);
+	  pout("Error in writing data into SFT file %s!\n",sftname);
 	  return 8;
 	}
       }
