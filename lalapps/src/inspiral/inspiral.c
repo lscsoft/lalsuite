@@ -24,6 +24,7 @@
 
 #include <lalapps.h>
 #include <processtable.h>
+
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -284,8 +285,6 @@ int main( int argc, char *argv[] )
    */
   
 
-  /* sleepy bye-byes */
-  sleep( 2 );
 
 
   /*
