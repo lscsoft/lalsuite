@@ -174,7 +174,7 @@ int main(int argc, char *argv[]){
          printMoments = 1;
          break;
       default:
-         CoarseIn.mmCoarse = 1.0;
+         CoarseIn.mmCoarse = 0.1;
          CoarseIn.mMin = 1.0;
          CoarseIn.MMax = 3.0;
          Math3DPlot = 0;
