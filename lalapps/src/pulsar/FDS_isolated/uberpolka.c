@@ -234,7 +234,7 @@ int main(int argc,char *argv[])
                               
                           /* Now loop over candidates found in the second list and do the fine coincidence test */
                           if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
-                          while ( p->iCandSorted <  (int)CList2.length &&  !compareCIStructs(p, p+1) )
+                          while ( p->iCandSorted <  (int)CList2.length-1 &&  !compareCIStructs(p, p+1) )
                             { 
                               p++;
                               if(FineCoincidenceTest(SortedC1[i],*p, PolkaCommandLineArgs)) return 3;
