@@ -7,6 +7,7 @@ exec_prefix_set=no
 my_lal_libs=-llal
 lal_mpi_enabled=@LAL_MPI_ENABLED@
 lal_frame_enabled=@LAL_FRAME_ENABLED@
+lal_metaio_enabled=@LAL_METAIO_ENABLED@
 
 usage()
 {
@@ -24,6 +25,7 @@ Libraries:
         lal
         lalsupport
         lalframe
+        lalmetaio
 EOF
     exit $1
 }
@@ -71,6 +73,9 @@ while test $# -gt 0; do
     --frame-enabled)
         echo $lal_frame_enabled
         ;;
+    --metaio-enabled)
+        echo $lal_metaio_enabled
+        ;;
     lal)
         lib_lal=yes
         ;;
@@ -82,6 +87,14 @@ while test $# -gt 0; do
           lib_lalframe=yes
         else
           echo "LAL was not compiled with frame support!" 1>&2
+          exit 1
+        fi
+        ;;
+    lalmetaio)
+        if test "$lal_metaio_enabled" = "yes" ; then
+          lib_lalmetaio=yes
+        else
+          echo "LAL was not compiled with metaio support!" 1>&2
           exit 1
         fi
         ;;
@@ -114,6 +127,10 @@ fi
 
 if test "$lib_lalframe" = "yes"; then
   my_lal_libs="-llalframe $my_lal_libs"
+fi
+
+if test "$lib_lalmetaio" = "yes"; then
+  my_lal_libs="-llalmetaio $my_lal_libs"
 fi
 
 if test "$echo_libs" = "yes"; then

@@ -286,6 +286,12 @@ if test "${mpi}" = "true"; then
 else
   LAL_MPI_ENABLED="no"
 fi
+if test "${dataflow}" = "true"; then
+  AC_DEFINE(LAL_METAIO_ENABLED,1,Define if using MetaIo library)
+  LAL_METAIO_ENABLED="yes"
+else
+  LAL_METAIO_ENABLED="no"
+fi
 if test "${lal_pthread_lock}" = "true"; then
   AC_CHECK_HEADERS(pthread.h, break)
 fi
@@ -300,6 +306,7 @@ AC_SUBST(LAL_LIBS)
 AC_SUBST(LAL_CFLAGS)
 AC_SUBST(LAL_MPI_ENABLED)
 AC_SUBST(LAL_FRAME_ENABLED)
+AC_SUBST(LAL_METAIO_ENABLED)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
