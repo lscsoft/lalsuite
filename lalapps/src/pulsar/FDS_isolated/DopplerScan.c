@@ -275,7 +275,8 @@ InitDopplerScan( LALStatus *stat,
       metricpar.epoch = init.obsBegin;
       metricpar.duration = init.obsDuration;
       metricpar.maxFreq = init.fmax;
-      metricpar.site = init.Detector.frDetector;
+      metricpar.site = init.Detector;
+      metricpar.ephemeris = init.ephemeris;	/* required for ephemeris-based metric */
 
       scan->grid = NULL;      
       /* finally: create the mesh! (ONLY 2D for now!) */
@@ -549,7 +550,8 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
   g[2] = metric->data[INDEX_AD]; /* gxy = g21: 1 + 2*(2+1)/2 = 4; */
 
   if (lalDebugLevel >= 3)
-    printf ("gxx = %f, gyy = %f, gxy = %f\n", g[0], g[1], g[2]);
+    printf ("DEBUG: (ra,dec)=(%f,%f): gxx = %f, gyy = %f, gxy = %f\n", 
+	    metricpar->position.longitude, metricpar->position.latitude,  g[0], g[1], g[2]);
 
  
   /* Clean up and leave. */
@@ -737,6 +739,9 @@ LALMetricWrapper (LALStatus *stat,
 
   ASSERT ( input, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
   ASSERT ( input->spindown, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+  if (metricType == LAL_METRIC_COHERENT_EXACT) {
+    ASSERT ( input->ephemeris != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  }
 
   switch (metricType)
     {
@@ -751,44 +756,48 @@ LALMetricWrapper (LALStatus *stat,
       /* Set up constant parameters for barycentre transformation. */
       baryParams.epoch = input->epoch;
       baryParams.t0 = 0;
-      baryParams.latitude = input->site.vertexLatitudeRadians;
-      baryParams.longitude = input->site.vertexLongitudeRadians;
+      baryParams.latitude = input->site->frDetector.vertexLatitudeRadians;	/* FIXME: should be redundant now, with Detector passed */
+      baryParams.longitude = input->site->frDetector.vertexLongitudeRadians;
+      baryParams.site = *(input->site);
       TRY( LALGetEarthTimes( stat->statusPtr, &baryParams ), stat );
-
-      /* Set up constant parameters for spindown transformation. */
-      spinParams.epoch = input->epoch;
-      spinParams.t0 = 0;
-      
-      /* Set up constant parameters for composed transformation. */
-      compParams.epoch = input->epoch;
 
       /* set timing-function for earth-motion: either ptolemaic or ephemeris */
       if (metricType == LAL_METRIC_COHERENT_PTOLE)
 	{
-	  compParams.t1 = LALTBaryPtolemaic;
-	  compParams.dt1 = LALDTBaryPtolemaic;
+	  baryParams.t1 = LALTBaryPtolemaic;
+	  baryParams.dt1 = LALDTBaryPtolemaic;
 	}
       else	/* use precise ephemeris-timing */
 	{
-	  LALPrintError ("Sorry, not implemented yet!\n");
-	  ABORT (stat, DOPPLERSCANH_EMETRIC, DOPPLERSCANH_MSGEMETRIC);
+	  baryParams.t1 = NULL;		/* FIXME: no LALTEphemeris() exists currently (not needed here?) */
+	  baryParams.dt1 = LALDTEphemeris;
+	  baryParams.ephemeris = *(input->ephemeris);
 	}
 
-      compParams.t2 = LALTSpin;
-      compParams.dt2 = LALDTSpin;
-      compParams.constants1 = &baryParams;
-      compParams.constants2 = &spinParams;
-      compParams.nArgs = 2;
 
       /* Set up input structure for CoherentMetric()  */
       if (nSpin)
 	{
+	  /* Set up constant parameters for spindown transformation. */
+	  spinParams.epoch = input->epoch;
+	  spinParams.t0 = 0;
+	  
+	  /* Set up constant parameters for composed transformation. */
+	  compParams.epoch = input->epoch;
+	  compParams.t1 = baryParams.t1;
+	  compParams.dt1 = baryParams.dt1;
+	  compParams.t2 = LALTSpin;
+	  compParams.dt2 = LALDTSpin;
+	  compParams.constants1 = &baryParams;
+	  compParams.constants2 = &spinParams;
+	  compParams.nArgs = 2;
+
 	  params.dtCanon = LALDTComp;
 	  params.constants = &compParams;
 	}
-      else
+      else	/* simple case: just account for earth motion */
 	{
-	  params.dtCanon = LALDTBaryPtolemaic;
+	  params.dtCanon = baryParams.dt1;
 	  params.constants = &baryParams;
 	}
 

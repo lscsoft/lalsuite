@@ -27,6 +27,7 @@ standards for LAL headers.
 #include <lal/SkyCoordinates.h>
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
+#include <lal/LALBarycenter.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -84,8 +85,8 @@ typedef struct {
   LIGOTimeGPS obsBegin; /* start-time of time-series */
   REAL8 obsDuration;	/* length of time-series in seconds */
   REAL8 fmax; 		/* max frequency of search */
-  LALDetector Detector; /* Our detector*/
-
+  LALDetector *Detector; /* Our detector*/
+  EphemerisData *ephemeris;	/* used by Ephemeris-based metric */
   CHAR *skyRegion;	/* string containing a list of sky-positions (ra,dec) which describe a sky-region */
 } DopplerScanInit;
 
