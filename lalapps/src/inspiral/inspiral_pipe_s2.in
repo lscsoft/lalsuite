@@ -644,6 +644,11 @@ for seg in l1_h1_h2_data:
   # XXX need to add argument that makes inca check the H2 range XXX
   inca2.add_parent(inca1)
   inca2.add_var_arg(inca1.get_output())
+  # add all H2 master segments that overlap with segment to input
+  for h2_done in h2_chunks_analyzed:
+    if chunk_in_segment(h2_done.get_chunk(),seg):
+      inca2.add_var_arg(h2_done.get_dag_node().get_output())
+      if do_h1_inspiral: inca2.add_parent(h2_done.get_dag_node())
   # do the third inca to clobber and L1 triggers that we can
   inca3 = inspiral.IncaNode(inca_job)
   inca3.set_start(seg.start())
@@ -653,7 +658,9 @@ for seg in l1_h1_h2_data:
   inca3.add_var_opt('dt',cp.get('pipeline','lh-dt'))
   inca3.add_var_opt('kappa',cp.get('pipeline','lh-kappa'))
   inca3.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
+  inca3.add_parent(inca1)
   inca3.add_parent(inca2)
+  inca3.add_var_arg(inca1.get_output())
   inca3.add_var_arg(inca2.get_output())
   # add the nodes to the dag
   if do_l1h1h2_coinc:
