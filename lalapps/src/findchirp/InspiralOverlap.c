@@ -79,10 +79,11 @@ main (  int argc, char **argv )
 {
    static LALStatus status;
    static INT4 i, approx, tmplt;
-   static UINT4 psdLength, quietFlag = 0;
+   static UINT4 psdLength, quietFlag = 0, optFlag=0;
    static REAL8 df, norm;
    static REAL4Vector signal, correlation;
    void   *noisemodel = LALLIGOIPsd;
+/*   void   *noisemodel = LALVIRGOPsd;*/
    static InspiralWaveOverlapIn overlapin;
    static InspiralWaveOverlapOut overlapout;
    static REAL8FrequencySeries shf;
@@ -106,7 +107,7 @@ main (  int argc, char **argv )
    param.startPhase=0.88189; 
    param.nStartPad=1000;
    param.fCutoff = 1000.;
-   param.tSampling = 4096.;
+   param.tSampling = 2048.;
    param.signalAmplitude = 1.0;
    param.nEndPad = 0;
    param.alpha = 0.L;
@@ -128,21 +129,21 @@ main (  int argc, char **argv )
    i=1;
    while(i < argc)
    {
-	   if (strcmp(argv[i],"-fl")==0)
-	   {
-		   param.fLower = atof(argv[++i]);
-		   tmpltParam.fLower = param.fLower;
-	   }
+	   if (strcmp(argv[i],"-fl1")==0)
+		   param.fLower      = atof(argv[++i]);
+	   else if (strcmp(argv[i],"-fl2")==0)
+		   tmpltParam.fLower = atof(argv[++i]);
 	   else if (strcmp(argv[i],"-order1")==0)
-	   {
 		   param.order = atoi(argv[++i]); 
-	   }
 	   else if (strcmp(argv[i],"-order2")==0)
-	   {	
 		   tmpltParam.order = atoi(argv[++i]);
-	   }
 	   else if (strcmp(argv[i],"-zeta2")==0)
-		   param.Zeta2 = atof(argv[++i]); 
+	     param.Zeta2 = atof(argv[++i]);
+	   else if  (strcmp(argv[i],"-sampling")==0)
+	     {
+	       param.tSampling = atof(argv[++i]);
+	       tmpltParam.tSampling = param.tSampling;
+	     }
 	   else if (strcmp(argv[i],"-m1")==0)
 		   param.mass1 = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"-m2")==0)
@@ -153,6 +154,8 @@ main (  int argc, char **argv )
 		   tmpltParam.mass2 = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"-quiet")==0)
 		   quietFlag = 1;
+	   else if (strcmp(argv[i],"-opt")==0)
+		   optFlag = 1;
 	   else if (strcmp(argv[i],"-alpha")==0)
 		   tmpltParam.alpha = atof(argv[++i]); 
 	   else if (strcmp(argv[i],"-psi0")==0)
@@ -218,13 +221,15 @@ main (  int argc, char **argv )
 		   fprintf(stderr,"-approximant : Post-Newtonian model of signal (PadeT1)\n");
 		   fprintf(stderr,"     -signal : same as -approximant\n");
 		   fprintf(stderr,"   -template : Post-Newtonian model of template (BCV)\n");
-		   fprintf(stderr,"         -fl : lower frequency cutoff (%7.2f) Hz\n", param.fLower);
+		   fprintf(stderr,"        -fl1 : lower frequency cutoff (%7.2f) Hz of signal\n", param.fLower);
+		   fprintf(stderr,"        -fl2 : lower frequency cutoff (%7.2f) Hz of template\n", param.fLower);
 		   fprintf(stderr,"      -Zeta2 : zeta2 for EOB 3pn (%7.2f)\n", param.Zeta2);
 		   fprintf(stderr,"         -m1 : mass of primary (%7.2f) SolarMass\n", param.mass1);
 		   fprintf(stderr,"         -m2 : mass of companion (%7.2f) SolarMass\n", param.mass2);
 		   fprintf(stderr,"         -m3 : mass of primary (%7.2f) in template\n", tmpltParam.mass1);
 		   fprintf(stderr,"         -m4 : mass of companion (%7.2f) in template\n", tmpltParam.mass2);
-		   fprintf(stderr,"      -order : order of PN model (%7.2d)\n", param.order);
+		   fprintf(stderr,"      -order : order of PN model (%7.2d) of signal\n", param.order);
+		   fprintf(stderr,"      -order : order of PN model (%7.2d) of template\n", param.order);
 		   fprintf(stderr,"       -psi0 : Max value of psi0 (%7.2f)\n", param.psi0);
 		   fprintf(stderr,"       -psi3 : Min value of psi3 (%7.2f)\n", param.psi3);
 		   fprintf(stderr,"       -fcut : Cutoff frequency for BCV (%7.2f)\n\n", param.fendBCV);
@@ -261,7 +266,8 @@ main (  int argc, char **argv )
    LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0);
    LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0);
 /* REPORTSTATUS(&status); */
-
+   
+   
    param.approximant = approx;
    if (param.approximant == BCV)
 	   param.massChoice = psi0Andpsi3;
@@ -280,10 +286,15 @@ main (  int argc, char **argv )
    }
 
    normin.psd = shf.data;
-   normin.df = param.tSampling / (REAL8) signal.length;
+   normin.df = param.tSampling / (REAL8)signal.length;
    normin.fCutoff = param.fFinal;
+  /* normin.fLower = 0;*/
+/*      normin.fCutoff = param.tSampling / 2. -1;*/
    normin.samplingRate = param.tSampling;
+
+
    LALInspiralWaveNormaliseLSO(&status, &signal, &norm, &normin);
+   
 
    tmpltParam.approximant = tmplt;
    if (tmpltParam.approximant == BCV)
@@ -302,7 +313,9 @@ main (  int argc, char **argv )
    overlapin.fwdp = fwdp;
    overlapin.revp = revp;
    for (i=0; (UINT4) i<correlation.length; i++) correlation.data[i] = 0.;
-   LALInspiralWaveOverlap (&status,&correlation,&overlapout,&overlapin);
+   LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
+
+
    if (!quietFlag) for (i=0; (UINT4) i<correlation.length; i++) printf("%e\n", correlation.data[i]);
    if (tmplt == BCV)
 	   fprintf (stdout, "%d %d %e %e %e %e %e %e %e %e %e\n", 
@@ -340,7 +353,8 @@ main (  int argc, char **argv )
       LALDestroyRealFFTPlan(&status,&fwdp);   
       LALDestroyRealFFTPlan(&status,&revp);
       LALCheckMemoryLeaks();
-   PrintParams(param, tmpltParam);
+      if (!quietFlag) 
+      	PrintParams(param, tmpltParam);
    return(0);
 
 }
