@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-noinst_PROGRAMS = \
+check_PROGRAMS = \
   VectorFactoriesTest \
   VectorSequenceFactoriesTest \
   ArrayFactoriesTest
@@ -7,14 +7,17 @@ noinst_PROGRAMS = \
 VectorFactoriesTest_SOURCES = VectorFactoriesTest.c
 VectorSequenceFactoriesTest_SOURCES = VectorSequenceFactoriesTest.c
 
-VectorFactoriesTest_LDADD = $(top_srcdir)/lib/liblal.a
-VectorSequenceFactoriesTest_LDADD = $(top_srcdir)/lib/liblal.a
+VectorFactoriesTest_LDADD = $(top_srcdir)/lib/liblal.la
+VectorSequenceFactoriesTest_LDADD = $(top_srcdir)/lib/liblal.la
 
 ArrayFactoriesTest_SOURCES = ArrayFactoriesTest.c
-ArrayFactoriesTest_LDADD = $(top_srcdir)/lib/liblal.a
+ArrayFactoriesTest_LDADD = $(top_srcdir)/lib/liblal.la
 
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
-TESTS = $(PROGRAMS)
+TESTS = VectorFactoriesTest \
+        VectorSequenceFactoriesTest \
+        ArrayFactoriesTest
+
 EXTRA_DIST = \
         VectorFactoriesTest.m4 VectorFactoriesTestFunction.m4 \
         VectorSequenceFactoriesTest.m4 VectorSequenceFactoriesTestFunction.m4 \

@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
-noinst_PROGRAMS = WindowTest
+check_PROGRAMS = WindowTest
 WindowTest_SOURCES = WindowTest.c
-WindowTest_LDADD = $(top_srcdir)/lib/liblal.a -lm
+WindowTest_LDADD = $(top_srcdir)/lib/liblal.la -lm
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
-TESTS = $(PROGRAMS)
+TESTS = WindowTest
 MOSTLYCLEANFILES = PrintVector.*

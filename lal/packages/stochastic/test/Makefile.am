@@ -1,11 +1,11 @@
 ## Process this file with automake to produce Makefile.in
-noinst_PROGRAMS = OverlapTest DirichletTest CrossCorrTest
+check_PROGRAMS = OverlapTest DirichletTest CrossCorrTest
 OverlapTest_SOURCES = OverlapTest.c
-OverlapTest_LDADD = $(top_srcdir)/lib/liblal.a
+OverlapTest_LDADD = $(top_srcdir)/lib/liblal.la
 DirichletTest_SOURCES = DirichletTest.c
-DirichletTest_LDADD = $(top_srcdir)/lib/liblal.a
+DirichletTest_LDADD = $(top_srcdir)/lib/liblal.la
 CrossCorrTest_SOURCES = CrossCorrTest.c
-CrossCorrTest_LDADD = $(top_srcdir)/lib/liblal.a
+CrossCorrTest_LDADD = $(top_srcdir)/lib/liblal.la
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
-TESTS = $(PROGRAMS)
+TESTS = OverlapTest DirichletTest CrossCorrTest
 MOSTLYCLEANFILES = PrintVector.*

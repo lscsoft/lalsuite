@@ -1,9 +1,9 @@
 ## Process this file with automake to produce Makefile.in
-noinst_PROGRAMS = BandPassTest IIRFilterTest
+check_PROGRAMS = BandPassTest IIRFilterTest
 BandPassTest_SOURCES = BandPassTest.c
-BandPassTest_LDADD = $(top_srcdir)/lib/liblal.a
+BandPassTest_LDADD = $(top_srcdir)/lib/liblal.la
 IIRFilterTest_SOURCES = IIRFilterTest.c
-IIRFilterTest_LDADD = $(top_srcdir)/lib/liblal.a
+IIRFilterTest_LDADD = $(top_srcdir)/lib/liblal.la
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
-TESTS = $(PROGRAMS)
+TESTS = BandPassTest IIRFilterTest
 MOSTLYCLEANFILES = out.dat

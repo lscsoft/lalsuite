@@ -1,14 +1,9 @@
 ## Process this file with automake to produce Makefile.in
-if FRAME
-if MPI
-noinst_PROGRAMS = FindChirpMain
+if FRAMEANDMPI
+check_PROGRAMS  = FindChirpMain
 TESTS           = FindChirp
 else
-noinst_PROGRAMS =
-TESTS           = NoTest
-endif
-else
-noinst_PROGRAMS =
+check_PROGRAMS =
 TESTS           = NoTest
 endif
 
@@ -17,7 +12,7 @@ EXTRA_DIST      = NoTest FindChirp FindChirpMain.c FindChirpMaster.c FindChirpSl
 CC=@MPICC@
 
 FindChirpMain_SOURCES = FindChirpMain.c FindChirpMaster.c FindChirpSlave.c
-FindChirpMain_LDADD = $(top_srcdir)/lib/liblal.a @MPILIBS@
+FindChirpMain_LDADD = $(top_srcdir)/lib/liblal.la @MPILIBS@
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = PI* Slave*.out Slave*.err machines killscript
 CLEANFILES = FindChirpMain

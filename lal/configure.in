@@ -22,6 +22,8 @@ AC_ARG_ENABLE(mpi,
   esac], [mpi=false])
 AM_CONDITIONAL(MPI, test x$mpi = xtrue)
 
+AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
+
 dnl Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
@@ -30,7 +32,8 @@ if test "$GCC" = yes; then
 fi
 AC_PROG_INSTALL
 AC_PROG_LN_S
-AC_PROG_RANLIB
+AM_DISABLE_SHARED
+AM_PROG_LIBTOOL
 AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
 AC_CHECK_PROGS(MKIND, makeindex, echo)
 AC_CHECK_PROGS(DVIPS, dvips, echo)
@@ -103,6 +106,7 @@ AC_OUTPUT( Makefile                               \
            doc/laldoc/Makefile                    \
            doc/autodoc/Makefile                   \
            include/Makefile                       \
+           lib/Makefile                           \
            packages/Makefile                      \
            packages/std/Makefile                  \
            packages/std/doc/Makefile              \
@@ -114,6 +118,11 @@ AC_OUTPUT( Makefile                               \
            packages/support/include/Makefile      \
            packages/support/src/Makefile          \
            packages/support/test/Makefile         \
+           packages/sample/Makefile               \
+           packages/sample/doc/Makefile           \
+           packages/sample/include/Makefile       \
+           packages/sample/src/Makefile           \
+           packages/sample/test/Makefile          \
            packages/hello/Makefile                \
            packages/hello/doc/Makefile            \
            packages/hello/include/Makefile        \
