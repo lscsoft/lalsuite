@@ -58,9 +58,9 @@ NRCSID( GENERATECWSIGNALC, "$Id$" );
 
 static void
 LALComputeResponseFunc(LALStatus *status, LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet,
-		       REAL8 phiStart, REAL8Vector *time, REAL8Vector *fPlus, REAL8Vector *fCross);
+		       REAL8 phiStart, REAL8Vector *timevec, REAL8Vector *fPlus, REAL8Vector *fCross);
 static void
-LALComputePolarFuncs(LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *time,
+LALComputePolarFuncs(LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec,
 		     REAL8Vector *freqParams, REAL8Vector *hPlus, REAL8Vector *hCross);
 static void
 PrintLALDetector(LALDetector *detector);
@@ -75,6 +75,8 @@ REAL8 plusSignalAmplitude;
 REAL8 crossSignalAmplitude;
 
 
+INT4 lalDebugLevel = 0;
+
 int main( int argc, char *argv[] )
 {
   /* Parsing Command Line, and General Use */
@@ -82,7 +84,6 @@ int main( int argc, char *argv[] )
   static LALStatus status;
   INT4 opt;
   UINT4 i;
-  INT4 lalDebugLevel = 0;
 
   /* For reading Config File */
   UINT4 lineSize = 80, valueSize  = 25;
@@ -115,7 +116,7 @@ int main( int argc, char *argv[] )
   REAL4Vector *weightVector = NULL;
 
   /* Other Stuff */
-  REAL8Vector *time = NULL;
+  REAL8Vector *timevec = NULL;
   REAL8Vector *frequencyParams = NULL;
   REAL8 sampleRate = 0, duration = 0;
   UINT4 numFreqParams = 6;
@@ -476,7 +477,7 @@ int main( int argc, char *argv[] )
   LALCreateVector (&status, &normalDeviates, lgthDataSet);
   if(lalDebugLevel > 2)
     REPORTSTATUS (&status);
-  LALDCreateVector(&status, &time, lgthDataSet);
+  LALDCreateVector(&status, &timevec, lgthDataSet);
   if(lalDebugLevel > 2)
     REPORTSTATUS (&status);
   LALCreateVector(&status, &weightVector, lgthDataSet);
@@ -501,7 +502,7 @@ int main( int argc, char *argv[] )
   /* make time array */
   for(i = 0;i<lgthDataSet;i++)
     {
-      time->data[i] = i*(1.0/sampleRate);
+      timevec->data[i] = i*(1.0/sampleRate);
     }
   /* Create Random Number Distribution */
   if(lalDebugLevel > 0)
@@ -515,12 +516,12 @@ int main( int argc, char *argv[] )
   if(lalDebugLevel > 0)
     fprintf( stderr, "Computing Response Functions.\n" );
 
-  LALComputeResponseFunc( &status, &pulsar, &detector, lgthDataSet, phiStart, time, fPlus, fCross );
+  LALComputeResponseFunc( &status, &pulsar, &detector, lgthDataSet, phiStart, timevec, fPlus, fCross );
 
   if(lalDebugLevel > 0)
     fprintf( stderr, "Computing Polarization Functions.\n" );
 
-  LALComputePolarFuncs( &pulsar, &detector,  lgthDataSet, phiStart, time, frequencyParams, hPlus, hCross );
+  LALComputePolarFuncs( &pulsar, &detector,  lgthDataSet, phiStart, timevec, frequencyParams, hPlus, hCross );
   
   /*
    * Combine Signals with Noise
@@ -596,7 +597,7 @@ int main( int argc, char *argv[] )
 }
 
 void LALComputeResponseFunc(LALStatus *status, LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, 
-			    REAL8 phiStart, REAL8Vector *time,  REAL8Vector *fPlus, REAL8Vector *fCross)
+			    REAL8 phiStart, REAL8Vector *timevec,  REAL8Vector *fPlus, REAL8Vector *fCross)
 {
   REAL8Vector *aCoeff = NULL, *bCoeff = NULL;
   /* REAL8 gammaAngle = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
@@ -615,24 +616,24 @@ void LALComputeResponseFunc(LALStatus *status, LALSource *pulsar, LALDetector *d
   for(i = 0;i<lgthDataSet; i++)
     {
       aCoeff->data[i] = sin(2.0*gammaAngle)*(3.0 - cos(2.0*detLatitude))*(3.0 - cos(2.0*pulsar->equatorialCoords.latitude))
-	*cos(2.0*(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*time->data[i]))/16.0; 
+	*cos(2.0*(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]))/16.0; 
       aCoeff->data[i] -= 0.25*cos(2.0*gammaAngle)*sin(detLatitude)*(3 - cos(2.0*pulsar->equatorialCoords.latitude))
-	*sin(2.0*(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*time->data[i]));
+	*sin(2.0*(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]));
       aCoeff->data[i] += 0.25*sin(2.0*gammaAngle)*sin(2.0*detLatitude)*sin(2.0*pulsar->equatorialCoords.latitude)
-	*cos(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*time->data[i]); 
+	*cos(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]); 
       aCoeff->data[i] -= 0.5*cos(2.0*gammaAngle)*cos(detLatitude)*sin(2.0*pulsar->equatorialCoords.latitude)
-	*sin(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*time->data[i]);
+	*sin(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]);
       aCoeff->data[i] += 0.75*sin(2.0*gammaAngle)*cos(detLatitude)*cos(detLatitude)
 	*cos(pulsar->equatorialCoords.latitude)*cos(pulsar->equatorialCoords.latitude);
       
       bCoeff->data[i] = cos(2*gammaAngle)*sin(detLatitude)*sin(pulsar->equatorialCoords.latitude)
-	*cos(2.0*(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*time->data[i]));
+	*cos(2.0*(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*timevec->data[i]));
       bCoeff->data[i] += 0.25*sin(2.0*gammaAngle)*(3.0-cos(2.0*detLatitude))*sin(pulsar->equatorialCoords.latitude)
-	*sin(2.0*(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*time->data[i]));
+	*sin(2.0*(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*timevec->data[i]));
       bCoeff->data[i] += cos(2*gammaAngle)*cos(detLatitude)*cos(pulsar->equatorialCoords.latitude)
-	*cos(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*time->data[i]);
+	*cos(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*timevec->data[i]);
       bCoeff->data[i] += 0.5*sin(2.0*gammaAngle)*sin(2.0*detLatitude)*cos(pulsar->equatorialCoords.latitude)
-	*sin(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*time->data[i]);
+	*sin(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*timevec->data[i]);
       
     }
 
@@ -659,7 +660,7 @@ void LALComputeResponseFunc(LALStatus *status, LALSource *pulsar, LALDetector *d
  *  magnitudes by JKS (21) & (22)
  */
 
-void LALComputePolarFuncs( LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *time, 
+void LALComputePolarFuncs( LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec, 
 			   REAL8Vector *freqParams, REAL8Vector *hPlus, REAL8Vector *hCross)
 {
   REAL8 wavePhase = 0.0;
@@ -671,26 +672,26 @@ void LALComputePolarFuncs( LALSource *pulsar, LALDetector *detector, INT4 lgthDa
   for(i = 0; i<lgthDataSet; i++)
     {
       wavePhase = LAL_AU_SI*(cos(pulsar->equatorialCoords.longitude)*cos(pulsar->equatorialCoords.latitude)
-			     *cos(phiSun + omegaEarthSun*time->data[i]) + (cos(epsilon)*sin(pulsar->equatorialCoords.longitude)
+			     *cos(phiSun + omegaEarthSun*timevec->data[i]) + (cos(epsilon)*sin(pulsar->equatorialCoords.longitude)
 									 *cos(pulsar->equatorialCoords.latitude) 
 									 + sin(epsilon)*sin(pulsar->equatorialCoords.latitude))
-			     *sin(phiSun + omegaEarthSun*time->data[i]));
+			     *sin(phiSun + omegaEarthSun*timevec->data[i]));
       
       wavePhase += LAL_REARTH_SI*(sin(detLatitude)*sin(pulsar->equatorialCoords.latitude)
 				  + cos(detLatitude)*cos(pulsar->equatorialCoords.latitude)
-				  *cos(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*time->data[i]));
+				  *cos(pulsar->equatorialCoords.longitude - phiStart - omegaEarth*timevec->data[i]));
 
-      wavePhase *= (LAL_TWOPI/LAL_C_SI)*(freqParams->data[0] + freqParams->data[1]*time->data[i] 
-					 + freqParams->data[2]*time->data[i]*time->data[i]/2.0 
-					 + freqParams->data[3]*time->data[i]*time->data[i]*time->data[i]/6.0
-					 + freqParams->data[4]*pow(time->data[i], 4)/24.0
-					 + freqParams->data[5]*pow(time->data[i], 5)/120.0);
+      wavePhase *= (LAL_TWOPI/LAL_C_SI)*(freqParams->data[0] + freqParams->data[1]*timevec->data[i] 
+					 + freqParams->data[2]*timevec->data[i]*timevec->data[i]/2.0 
+					 + freqParams->data[3]*timevec->data[i]*timevec->data[i]*timevec->data[i]/6.0
+					 + freqParams->data[4]*pow(timevec->data[i], 4)/24.0
+					 + freqParams->data[5]*pow(timevec->data[i], 5)/120.0);
 
-      wavePhase += LAL_TWOPI*(freqParams->data[0]*time->data[i] + (freqParams->data[1]*time->data[i]*time->data[i]/2.0) 
-			      + (freqParams->data[2]*time->data[i]*time->data[i]*time->data[i]/6.0)
-			      + (freqParams->data[3]*pow(time->data[i], 4)/24.0)
-			      + (freqParams->data[4]*pow(time->data[i], 5)/120.0)
-			      + (freqParams->data[5]*pow(time->data[i], 6)/720.0) );		     
+      wavePhase += LAL_TWOPI*(freqParams->data[0]*timevec->data[i] + (freqParams->data[1]*timevec->data[i]*timevec->data[i]/2.0) 
+			      + (freqParams->data[2]*timevec->data[i]*timevec->data[i]*timevec->data[i]/6.0)
+			      + (freqParams->data[3]*pow(timevec->data[i], 4)/24.0)
+			      + (freqParams->data[4]*pow(timevec->data[i], 5)/120.0)
+			      + (freqParams->data[5]*pow(timevec->data[i], 6)/720.0) );		     
 
       hPlus->data[i] = plusSignalAmplitude*cos(wavePhase); 
       hCross->data[i] = crossSignalAmplitude*sin(wavePhase); 
