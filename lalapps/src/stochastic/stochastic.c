@@ -936,6 +936,9 @@ static COMPLEX8FrequencySeries *zero_pad_and_fft(LALStatus *status,
   LAL_CALL(LALSZeroPadAndFFT(status, zero_pad, series, &zero_pad_params), \
       status);
 
+  /* destroy fft plan */
+  XLALDestroyREAL4FFTPlan(plan);
+
   return(zero_pad);
 }
 
@@ -2577,6 +2580,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   XLALDestroyREAL4FrequencySeries(overlap);
   XLALDestroyREAL4FrequencySeries(omegaGW);
   XLALDestroyREAL4Window(dataWindow);
+  XLALDestroyREAL4TimeSeries(seriesOne);
+  XLALDestroyREAL4TimeSeries(seriesTwo);
 
   /* free memory used in the stochastic xml table */
   while(stochHead)
