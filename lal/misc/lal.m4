@@ -170,7 +170,7 @@ AC_DEFUN([LAL_ENABLE_NIGHTLY],
         [nightly],
         [  --enable-nightly        nightly build [default=no] ],
         [ case "${enableval}" in
-            yes) NIGHTLY_VERSION=`date +"%Y.%m.%d"`
+            yes) NIGHTLY_VERSION=`date +"%Y%m%d"`
                  VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
             no)  NIGHTLY_VERSION="";;
             *)   NIGHTLY_VERSION="${enableval}"
