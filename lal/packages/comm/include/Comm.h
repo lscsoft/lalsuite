@@ -24,6 +24,9 @@
 #ifndef _COMM_H
 #define _COMM_H
 
+#include <lal/LALConfig.h>
+#ifdef LAL_MPI_ENABLED
+
 #include <mpi.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
@@ -1274,5 +1277,7 @@ LALExchangeCOMPLEX16FrequencySeries(
 #ifdef  __cplusplus
 }
 #endif
+
+#endif /* LAL_MPI_ENABLED */
 
 #endif /* _COMM_H */
