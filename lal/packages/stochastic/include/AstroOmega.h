@@ -41,8 +41,9 @@ typedef void (REAL8LALSDensity) (REAL8 *output, REAL8 input);
 \end{verbatim}
 These are input structures corresponding to the model parameters (the cosmological model parameters and the source model parameters)
 
-\begin{verbatim}
 cosmological model parameters:
+
+\begin{verbatim}
 typedef struct
 tagAstroOmegaCosmoParams
  {
@@ -54,7 +55,9 @@ tagAstroOmegaCosmoParams
 AstroOmegaCosmoParams;
 \end{verbatim}
 
-source parameters 
+source parameters
+
+\begin{verbatim}
 typedef struct
 tagAstroOmegaSourceParams
  { 
@@ -63,9 +66,11 @@ tagAstroOmegaSourceParams
    REAL8              lambda; mass fraction of source progenitors expressed in inverse solar masses.
  }
 AstroOmegaSourceParams;
-
+\end{verbatim}
 
 model parameters (cosmological + source)
+
+\begin{verbatim}
 typedef struct
 tagAstroOmegaParams
  {
@@ -75,7 +80,6 @@ tagAstroOmegaParams
  }
 AstroOmegaParams;
 \end{verbatim}
-
 
 \vfill{\footnotesize\input{AstroOmegaHV}}
 \newpage\input{AstroOmegaC}
