@@ -13,7 +13,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include <glob.h>
 #include <getopt.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
@@ -22,7 +21,7 @@
 #define MAXCANDIDATES   3750000     /* Maximum # of allowed candidates */
 #define MAXCOINC   3750000         /* Maximum # of allowed coincident candidates */
 
-struct CommandLineArgsTag 
+struct PolkaCommandLineArgsTag 
 {
   char *FstatsFile1; /* Names of Fstat files to be read in */
   char *FstatsFile2;
@@ -34,7 +33,7 @@ struct CommandLineArgsTag
   REAL8 DeltaDelta;  /* Size of coincidence window in radians */
   REAL8 fmin;        /* Minimum frequency of candidate in first IFO */
   REAL8 fmax;        /* Maximum frequency of candidate in first IFO */
-} CommandLineArgs;
+} PolkaCommandLineArgs;
 
 typedef struct CandidateTag 
 {
@@ -54,8 +53,8 @@ typedef struct CoincidentCandidateTag
   REAL8 fa[MAXCOINC],fa1[MAXCOINC],fa2[MAXCOINC];       /* false alarm probability for that candidate */
 } CoincidentCandidate;
 
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
-int ReadCandidateFiles(struct CommandLineArgsTag CLA);
+int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
+int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA);
 int compare1F(const void *ip, const void *jp);
 int compare2F(const void *ip, const void *jp);
 int compare3F(const void *ip, const void *jp);
@@ -69,18 +68,22 @@ INT4 lalDebugLevel=0;
 Candidate C1,C2,C3,C4; /* Candidate structures */
 CoincidentCandidate CC;
 
+#if USE_BOINC
+int polka(int argc,char *argv[])
+#else
 int main(int argc,char *argv[]) 
+#endif
 {
   INT4 *indices1F=NULL,*indices2f=NULL,*indices2F=NULL,*indicesCCfa=NULL,*indices3F=NULL,*indices4F=NULL;
   REAL8 MaxAngularDistance;
   int i,k;
   FILE *fpOut;
- 
+
   /* Reads command line arguments */
-  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
+  if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) return 1;
 
   /* Reads in candidare files */
-  if (ReadCandidateFiles(CommandLineArgs)) return 2;
+  if (ReadCandidateFiles(PolkaCommandLineArgs)) return 2;
 
   /* create arrays of indices */
   if (!(indices1F=(INT4 *)LALMalloc(sizeof(INT4)*NCands1))){
@@ -106,7 +109,7 @@ int main(int argc,char *argv[])
   qsort((void *)indices2F, (size_t)NCands2, sizeof(int), compare2F);
   qsort((void *)indices2f, (size_t)NCands2, sizeof(int), compare2f);
 
-  if(CommandLineArgs.FstatsFile3 != NULL)
+  if(PolkaCommandLineArgs.FstatsFile3 != NULL)
     {
       if (!(indices3F=(INT4 *)LALMalloc(sizeof(INT4)*NCands3))){
 	fprintf(stderr,"Unable to allocate index array in main\n");
@@ -115,7 +118,7 @@ int main(int argc,char *argv[])
       for (i=0;i<NCands3;i++) indices3F[i]=i;
       qsort((void *)indices3F, (size_t)NCands3, sizeof(int), compare3F);
     }      
-  if(CommandLineArgs.FstatsFile4 != NULL)
+  if(PolkaCommandLineArgs.FstatsFile4 != NULL)
     {
       if (!(indices4F=(INT4 *)LALMalloc(sizeof(INT4)*NCands4))){
 	fprintf(stderr,"Unable to allocate index array in main\n");
@@ -126,7 +129,7 @@ int main(int argc,char *argv[])
     }      
 
   k=0; /* kounts koinzident events */
-  MaxAngularDistance=sqrt(pow(CommandLineArgs.DeltaAlpha,2)+pow(CommandLineArgs.DeltaDelta,2))+1e-8;
+  MaxAngularDistance=sqrt(pow(PolkaCommandLineArgs.DeltaAlpha,2)+pow(PolkaCommandLineArgs.DeltaDelta,2))+1e-8;
 
   /* go through list */
   for (i=0; i < NCands1; i++)
@@ -138,10 +141,10 @@ int main(int argc,char *argv[])
       /* Minimum and maximum frequencies acceptable for coincidence */
       f1=C1.f[indices1F[i]];
       /* if candidate frequency does not lie within bounds specified by user go to next in list */
-      if(f1 < CommandLineArgs.fmin || f1 > CommandLineArgs.fmax) continue;
+      if(f1 < PolkaCommandLineArgs.fmin || f1 > PolkaCommandLineArgs.fmax) continue;
 
-      f1min=f1-CommandLineArgs.Deltaf;
-      f1max=f1+CommandLineArgs.Deltaf;
+      f1min=f1-PolkaCommandLineArgs.Deltaf;
+      f1max=f1+PolkaCommandLineArgs.Deltaf;
 
       /* Find nearest index to f1min and f1max; function explained below */
       locate(C2.f,NCands2,f1min,&if2min,indices2f);
@@ -172,7 +175,7 @@ int main(int argc,char *argv[])
 
 	  /* check difference in frequencies because we're not guaranteed 
 	     sufficient closeness at the edges of array */
-	  if ( difff <= CommandLineArgs.Deltaf) 
+	  if ( difff <= PolkaCommandLineArgs.Deltaf) 
 	    {
 	      if ( AngularDistance <= MaxAngularDistance )
 		{	
@@ -183,7 +186,7 @@ int main(int argc,char *argv[])
 		  CC.Delta1[k]=Delta1;
 		  CC.F1[k]=F1;
 
-		  if(CommandLineArgs.FstatsFile3 != NULL)
+		  if(PolkaCommandLineArgs.FstatsFile3 != NULL)
 		    {
 		      locate(C3.F,NCands3,CC.F1[k],&j,indices3F);
 		      CC.fa1[k]=(REAL8)(j+1)/(REAL8)NCands3;
@@ -195,7 +198,7 @@ int main(int argc,char *argv[])
 		  CC.Delta2[k]=C2.Delta[indices2f[f]];
 		  CC.F2[k]=C2.F[indices2f[f]];
 
-		  if(CommandLineArgs.FstatsFile4 != NULL)
+		  if(PolkaCommandLineArgs.FstatsFile4 != NULL)
 		    {
 		      locate(C4.F,NCands4,CC.F2[k],&j,indices4F);
 		      CC.fa2[k]=(REAL8)(j+1)/(REAL8)NCands4;
@@ -230,7 +233,7 @@ int main(int argc,char *argv[])
   qsort((void *)indicesCCfa, (size_t)NCCands, sizeof(int), compareCCfa);
 
   /* open and write the file */
-  fpOut=fopen(CommandLineArgs.OutputFile,"w"); 	 
+  fpOut=fopen(PolkaCommandLineArgs.OutputFile,"w"); 	 
   for (i=0;i<NCCands;i++) 
     {
       k=indicesCCfa[i];
@@ -401,7 +404,7 @@ int compareCCfa(const void *ip, const void *jp)
 
 /*******************************************************************************/
 
-int ReadCandidateFiles(struct CommandLineArgsTag CLA)
+int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 {
   INT4 i;
   FILE *fp;
@@ -522,7 +525,7 @@ int ReadCandidateFiles(struct CommandLineArgsTag CLA)
 /*******************************************************************************/
 
 
-int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
+int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA) 
 {
   INT2 errflg = 0;
   INT4 c; 
@@ -607,7 +610,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 	/* print usage/help message */
 	fprintf(stderr,"Arguments are (defaults):\n");
 	fprintf(stderr,"\t--fstatsfile1 (-1)\tSTRING\tFirst candidates Fstats file\n");
-	fprintf(stderr,"\t--fstatsfile1 (-1)\tSTRING\tFirst candidates Fstats file\n");
+	fprintf(stderr,"\t--fstatsfile1 (-2)\tSTRING\tSecond candidates Fstats file\n");
 	fprintf(stderr,"\t--fstatsfile3 (-3)\tSTRING\tFstats used to compute false alarm for -1\n");
 	fprintf(stderr,"\t--fstatsfile4 (-4)\tSTRING\tFstats used to compute false alarm for -2\n");
 	fprintf(stderr,"\t--outputfile  (-o)\tSTRING\tName of ouput candidates file\n");
