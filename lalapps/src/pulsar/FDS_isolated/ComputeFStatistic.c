@@ -15,7 +15,6 @@
 #include "DopplerScan.h"
 
 
-
 NRCSID( COMPUTEFSTATISTIC, "$Id$");
 
 /*
@@ -61,13 +60,13 @@ REAL8 uvar_dSpin 	= 0.0;
 REAL8 uvar_SpinBand;
 REAL8 uvar_Fthreshold 	= 10.0;
 CHAR *uvar_EphemYear	= NULL;
-INT4 uvar_Metric 	=  LAL_METRIC_NONE;	
+INT4  uvar_metricType 	=  LAL_METRIC_NONE;	
 REAL8 uvar_metricMismatch = 0.02;
 CHAR *uvar_skyRegion	= NULL;
 CHAR *uvar_DataDir	= NULL;
 CHAR *uvar_EphemDir	= NULL;
 CHAR *uvar_BaseName	= NULL;
-BOOLEAN uvar_debug;		/* NOTE: don't use this, it's a dummy!! lalDebugLevel is set independently */
+INT4 uvar_debug;		/* NOTE: don't use this, it's a dummy!! lalDebugLevel is set independently */
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel 	= NULL;
 
@@ -146,7 +145,7 @@ initUserVars (LALStatus *stat)
   regUserVar (EstimSigParam,UVAR_BOOL,'p',"Do Signal Parameter Estimation");
   regUserVar (Fthreshold,UVAR_REAL8, 'F', "Signal Set the threshold for selection of 2F");
   regUserVar (BaseName, UVAR_STRING, 'i', "The base name of the input  file you want to read");
-  regUserVar (Metric,	UVAR_INT4,   'M', "Metric for template grid: 0=none, 1 = PtoleMetric, 2 = CoherentMetric");
+  regUserVar (metricType,UVAR_INT4,  'M', "Metric for template grid: 0=none, 1 = PtoleMetric, 2 = CoherentMetric");
   regUserVar (metricMismatch,UVAR_REAL8,'X',"Maximal mismatch for metric tiling");
   regUserVar (debug, 	UVAR_INT4,   'v', "Set lalDebugLevel");
   regUserVar (help, 	UVAR_BOOL,   'h', "Print this message");
@@ -163,6 +162,7 @@ int main(int argc,char *argv[])
 {
   INT4 *maxIndex=NULL; /*  array that contains indexes of maximum of each cluster */
   DopplerPosition dopplerpos;
+  SkyPosition thisPoint;
   DopplerScanInit scanInit;
   CHAR Fstatsfilename[256];         /* Fstats file name*/
   CHAR Fmaxfilename[256];           /* Fmax file name*/
@@ -237,7 +237,7 @@ int main(int argc,char *argv[])
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
-  scanInit.metricType = uvar_Metric;
+  scanInit.metricType = uvar_metricType;
   scanInit.metricMismatch = uvar_metricMismatch;
   scanInit.obsBegin = SFTData[0]->fft->epoch;
   scanInit.obsDuration = SFTData[GV.SFTno-1]->fft->epoch.gpsSeconds - scanInit.obsBegin.gpsSeconds + GV.tsft;
@@ -271,9 +271,10 @@ int main(int argc,char *argv[])
       if (dopplerpos.finished)  
 	break;
 
+      LALNormalizeSkyPosition (&status, &thisPoint, &(dopplerpos.skypos) );
 
-      Alpha = dopplerpos.skypos.longitude;
-      Delta = dopplerpos.skypos.latitude; 
+      Alpha = thisPoint.longitude;
+      Delta = thisPoint.latitude;
       
       
       if (CreateDemodParams()) return 6;

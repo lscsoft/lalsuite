@@ -17,6 +17,8 @@ TODO (ComputeFStatistic-related)
   any arbitrary epoch and not just to the epoch of the first sample of the
   analyzed data set (as is now).
 
+* allow Coherent-metric to use either Ptolemaic-timing or precise timing-routines
+  (introduce new metric-type?)
 
 done
 ----

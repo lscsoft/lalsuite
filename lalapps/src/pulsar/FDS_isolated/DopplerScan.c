@@ -54,6 +54,13 @@ enum {
 
 static int meshOrder = ORDER_DELTA_ALPHA;
 
+/* internal structure to be passed to getMetric() 
+ * containing all the parameters used there: */
+typedef struct {
+  PtoleMetricIn *metricParams;	/* the actual parameters for the metric-functions */
+  INT4 useMetric;		/* which metric to use: NONE, PTOLE, COHERENT, ... */
+} getMetricParams_t;
+
 /* the SkyScanner can be in one of the following states */
 enum {
   STATE_IDLE,   	/* not initialized yet */
@@ -70,12 +77,15 @@ enum {
 
 extern INT4 lalDebugLevel;
 
-static INT2 useMetric;		/* we make this global as it's used in a few places here */
+/* some empty structs for initializations */
+static TwoDMeshParamStruc empty_meshpar;
+static PtoleMetricIn empty_metricpar;
 
+/* internal prototypes */
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
 void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params );
 
-void printGrid (LALStatus *stat, DopplerScanGrid *grid, SkyRegion *region, TwoDMeshParamStruc *meshpar);
+void printGrid (LALStatus *stat, DopplerScanGrid *grid, SkyRegion *region, TwoDMeshParamStruc *meshpar, INT4 useMetric);
 void ConvertTwoDMesh2Grid ( LALStatus *stat, DopplerScanGrid **grid, TwoDMeshNode *mesh2d, SkyRegion *region );
 
 BOOLEAN pointInPolygon ( SkyPosition *point, SkyRegion *polygon );
@@ -89,11 +99,12 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
 { /* </lalVerbatim> */
   TwoDMeshNode *mesh2d = NULL;
   DopplerScanGrid *node, *last;
-  static TwoDMeshParamStruc meshpar;
-  static PtoleMetricIn metricpar;
+  TwoDMeshParamStruc meshpar = empty_meshpar;
+  PtoleMetricIn metricpar = empty_metricpar;
   SkyPosition point;
   BOOLEAN finished;
-  
+  INT4 useMetric;
+  getMetricParams_t getMetricParams;
 
   INITSTATUS( stat, "DopplerScanInit", DOPPLERSCANC );
 
@@ -211,7 +222,12 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
       
       /* helper-function: range and metric */
       meshpar.getMetric = getMetric;
-      
+      /* and its parameters: metric-parms & which metric */
+      getMetricParams.metricParams = &(metricpar);
+      getMetricParams.useMetric = useMetric;
+      meshpar.metricParams = (void *) &(getMetricParams);
+
+      /* set up the metric parameters proper (using PtoleMetricIn as container-type) */
       metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
       /* currently, CreateVector's are broken as they don't allow length=0 */
       /*      TRY( LALSCreateVector( stat->statusPtr, &(scan->MetricPar.spindown), 0 ), stat ); 	*/
@@ -227,13 +243,11 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
 
       scan->grid = NULL;      
 
-      meshpar.metricParams = (void *) &(metricpar);
 
       /* finally: create the mesh! (ONLY 2D for now!) */
       TRY( LALCreateTwoDMesh( stat->statusPtr, &mesh2d, &meshpar ), stat);
 
       /* convert this 2D-mesh into our grid-structure, including clipping to the skyRegion */
-
       TRY (ConvertTwoDMesh2Grid ( stat->statusPtr, &(scan->grid), mesh2d, &(scan->skyRegion) ), stat);
       scan->numGridPoints = 0;
       node = scan->grid;
@@ -259,7 +273,7 @@ InitDopplerScan( LALStatus *stat, DopplerScanState *scan, DopplerScanInit init)
   if (lalDebugLevel)
     {
       LALPrintError ("\nFinal Scan-grid has %d nodes\n", scan->numGridPoints);
-      TRY( printGrid (stat->statusPtr, scan->grid, &(scan->skyRegion), &meshpar ), stat);
+      TRY( printGrid (stat->statusPtr, scan->grid, &(scan->skyRegion), &meshpar, useMetric ), stat);
     }
 
   if (metricpar.spindown) {
@@ -324,7 +338,7 @@ void
 NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
 { /* </lalVerbatim> */
 
-  INITSTATUS( stat, "NextSkyPos", DOPPLERSCANC);
+  INITSTATUS( stat, "NextDopplerPos", DOPPLERSCANC);
 
   /* This traps coding errors in the calling routine. */
   ASSERT( pos != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
@@ -423,7 +437,9 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 {
   INT2 dim;  	/* dimension of (full) parameter space (incl. freq) */
   REAL8Vector   *metric = NULL;  /* for output of metric */
-  PtoleMetricIn *metricpar = (PtoleMetricIn*) params;
+  getMetricParams_t *ourParams = (getMetricParams_t*) params;
+  PtoleMetricIn *metricpar = ourParams->metricParams;
+  INT4 useMetric = ourParams->useMetric;
 
   /* Set up shop. */
   INITSTATUS( stat, "getMetric", DOPPLERSCANC );
@@ -492,7 +508,11 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 #define NUM_SPINDOWN 0       /* Number of spindown parameters */
 
 void 
-printGrid (LALStatus *stat, DopplerScanGrid *grid, SkyRegion *region, TwoDMeshParamStruc *meshpar)
+printGrid (LALStatus *stat, 
+	   DopplerScanGrid *grid, 
+	   SkyRegion *region, 
+	   TwoDMeshParamStruc *meshpar, 
+	   INT4 useMetric)
 {
   FILE *fp = NULL;
   DopplerScanGrid *node;

@@ -16,7 +16,7 @@ echo "run 1 complete"
 echo `diff --brief Fstats Fstats.ref`
 
 echo "Starting run 2 ..."
-$prog @testrun.cfg
+$prog @testFStat.cfg
 echo "run 2 complete"
 echo `diff --brief Fstats Fstats.ref`
 
