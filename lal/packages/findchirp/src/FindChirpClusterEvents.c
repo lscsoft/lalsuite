@@ -148,4 +148,18 @@ LALFindChirpClusterEvents (
       }
     }
   }
+
+  /* 
+   *
+   * clean up last event
+   *
+   */
+
+  if ( thisEvent )
+  {
+    LALFindChirpStoreEvent(status->statusPtr, input, params,
+         thisEvent, q, kmax, norm, eventStartIdx, numChisqBins, 
+         searchName );
+  }
+
 }
