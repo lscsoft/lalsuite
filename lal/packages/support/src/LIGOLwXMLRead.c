@@ -1013,20 +1013,29 @@ SimInspiralTableFromLIGOLw (
   const  MetaioParseEnv                 env = &parseEnv;
   MetaTableDirectory tableDir[] =
   {
-    {"geocent_end_time",    -1, 0},
-    {"geocent_end_time_ns", -1, 1},
-    {"mtotal",              -1, 2},
-    {"eta",                 -1, 3},
-    {"distance",            -1, 4},
-    {"longitude",           -1, 5},
-    {"latitude",            -1, 6},
-    {"inclination",         -1, 7},
-    {"coa_phase",           -1, 8},
-    {"polarization",        -1, 9},
+    {"waveform",	    -1, 0},
+    {"geocent_end_time",    -1, 1},
+    {"geocent_end_time_ns", -1, 2},
+    {"h_end_time",	    -1, 3},
+    {"h_end_time_ns",	    -1, 4},
+    {"l_end_time",	    -1, 5},
+    {"l_end_time_ns",	    -1, 6},
+    {"end_time_gmst",	    -1,	7},
+    {"source",		    -1, 8},
+    {"mtotal",              -1, 9},
+    {"eta",                 -1, 10},
+    {"distance",            -1, 11},
+    {"longitude",           -1, 12},
+    {"latitude",            -1, 13},
+    {"inclination",         -1, 14},
+    {"coa_phase",           -1, 15},
+    {"polarization",        -1, 16},
+    {"eff_dist_h",	    -1, 17},
+    {"eff_dist_l",	    -1, 18},
     {NULL,                   0, 0}
   };
 
-  /* check that the bank handle and pointer are vaid */
+  /* check that the bank handle and pointer are valid */
   if ( ! simHead )
   {
     fprintf( stderr, "null pointer passed as handle to simulation list" );
@@ -1038,7 +1047,7 @@ SimInspiralTableFromLIGOLw (
     return -1;
   }
   
-  /* open the sngl_inspiral table template bank file */
+  /* open the sngl_inspiral table file */
   mioStatus = MetaioOpenTable( env, fileName, "sim_inspiral" );
   if ( mioStatus )
   {
@@ -1090,42 +1099,89 @@ SimInspiralTableFromLIGOLw (
         thisSim->geocent_end_time.gpsNanoSeconds = 
           env->ligo_lw.table.elt[tableDir[1].pos].data.int_4s;
 
-        /* parse the rest of the row into the SimInspiralTable structure */
-        for ( j = 2; tableDir[j].name; ++j )
-        {
-          REAL4 realData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
-
-          if ( tableDir[j].idx == 2 )
+        /* parse the row into the SimInspiralTable structure */
+	for ( j = 0; tableDir[j].name; ++j )
+	{
+	  REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+	  REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
+	  INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+	  if ( tableDir[j].idx == 0 )
+	  {
+	    LALSnprintf(thisSim->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
+	      "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+	  }    
+	  else if ( tableDir[j].idx == 1 ) 	  
+	  {
+	    thisSim->geocent_end_time.gpsSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 2 )
+	  {
+	    thisSim->geocent_end_time.gpsNanoSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 3 ) 	  
+	  {
+	    thisSim->h_end_time.gpsSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 4 )
+	  {
+	    thisSim->h_end_time.gpsNanoSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 5 ) 	  
+	  {
+	    thisSim->l_end_time.gpsSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 6 )
+	  {
+	    thisSim->l_end_time.gpsNanoSeconds = i4colData;
+	  }
+	  else if ( tableDir[j].idx == 7 )
           {
-            thisSim->mtotal = realData;
+	    thisSim->end_time_gmst = r8colData;
+	  }
+	  else if ( tableDir[j].idx == 8 )
+	  {
+	    LALSnprintf(thisSim->source, LIGOMETA_SOURCE_MAX * sizeof(CHAR),
+	      "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data);
+	  }
+	  else if ( tableDir[j].idx == 9 )
+	  {
+	    thisSim->mtotal = r4colData;
           }
-          else if ( tableDir[j].idx == 3 )
+          else if ( tableDir[j].idx == 10 )
           {
-            thisSim->eta = realData;
+            thisSim->eta = r4colData;
           }
-          else if ( tableDir[j].idx == 4 )
+          else if ( tableDir[j].idx == 11 )
           {
-            thisSim->distance = realData * 1.0e6 * LAL_PC_SI;
+	    thisSim->distance = r4colData;
           }
-          else if ( tableDir[j].idx == 5 )
+          else if ( tableDir[j].idx == 12 )
           {
-            thisSim->longitude = realData;
+            thisSim->longitude = r4colData;
           }
-          else if ( tableDir[j].idx == 6 )
+          else if ( tableDir[j].idx == 13 )
           {
-            thisSim->latitude = realData;
+            thisSim->latitude = r4colData;
           }
-          else if ( tableDir[j].idx == 7 )
+          else if ( tableDir[j].idx == 14 )
           {
-            thisSim->inclination = realData;
+            thisSim->inclination = r4colData;
           }
-          else if ( tableDir[j].idx == 8 )
+          else if ( tableDir[j].idx == 15 )
           {
-            thisSim->coa_phase = realData;
+            thisSim->coa_phase = r4colData;
           }
-          else if ( tableDir[j].idx == 9 )
+          else if ( tableDir[j].idx == 16 )
           {
-            thisSim->polarization = realData;
+            thisSim->polarization = r4colData;
+          }
+	  else if ( tableDir[j].idx == 17 )
+          {
+            thisSim->eff_dist_h = r4colData;
+          }
+	  else if ( tableDir[j].idx == 18 )
+          {
+            thisSim->eff_dist_l = r4colData;
           }
           else
           {
