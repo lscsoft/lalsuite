@@ -1377,7 +1377,7 @@ LALInspiralITStructureHelp(void);
 </lalLaTeX>  */
 
 /*  <lalLaTeX>
-\newpage\input{LALInspiralTestOneC}
+\newpage\input{GenerateInspiralWaveformC}
 </lalLaTeX>  */
 
 /*  <lalLaTeX>
