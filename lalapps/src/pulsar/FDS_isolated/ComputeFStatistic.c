@@ -66,6 +66,7 @@ typedef int bool;
 extern int boinc_init(bool standalone);
 extern int boinc_finish(int);
 extern int boinc_resolve_filename(const char*, char*, int len);
+extern int boinc_fraction_done(double fraction_complete);
 void use_boinc_filename1(char** orig_name);
 void use_boinc_filename0(char* orig_name);
 
@@ -212,7 +213,6 @@ int main(int argc,char *argv[])
 
   INT4 *maxIndex=NULL; 			/*  array that contains indexes of maximum of each cluster */
   CHAR Fstatsfilename[256]; 		/* Fstats file name*/
-  CHAR Fmaxfilename[256]; 		/* Fmax file name*/
   INT4 spdwn;				/* counter over spindown-params */
   DopplerScanInit scanInit;		/* init-structure for DopperScanner */
   DopplerScanState thisScan = emptyScan; /* current state of the Doppler-scan */
@@ -279,17 +279,21 @@ int main(int argc,char *argv[])
   /* normalize SFTs by running median */
   LAL_CALL (NormaliseSFTDataRngMdn(&status), &status);
 
-#ifdef FILE_FMAX  
-  /*   open file */
-  strcpy(Fmaxfilename,"Fmax");
-  if (uvar_outputLabel)
-    strcat(Fmaxfilename,uvar_outputLabel);
+#ifdef FILE_FMAX
+  {
+    CHAR Fmaxfilename[256]; 		/* Fmax file name*/
+
+    /*   open file */
+    strcpy(Fmaxfilename,"Fmax");
+    if (uvar_outputLabel)
+      strcat(Fmaxfilename,uvar_outputLabel);
 #if USE_BOINC
-  use_boinc_filename0(Fmaxfilename);
+    use_boinc_filename0(Fmaxfilename);
 #endif /* USE_BOINC */
-  if (!(fpmax=fopen(Fmaxfilename,"w"))){
-    fprintf(stderr,"in Main: unable to open Fmax file %s\n", Fmaxfilename);
-    return 2;
+    if (!(fpmax=fopen(Fmaxfilename,"w"))){
+      fprintf(stderr,"in Main: unable to open Fmax file %s\n", Fmaxfilename);
+      return 2;
+    }
   }
 #endif
 #ifdef FILE_FSTATS  
@@ -461,6 +465,9 @@ int main(int argc,char *argv[])
 	} /* For GV.spinImax */
 
       loopcounter ++;
+#if USE_BOINC
+      boinc_fraction_done(((double)loopcounter)/((double)thisScan.numGridPoints));
+#endif
       if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
 					(100.0* loopcounter / thisScan.numGridPoints));
     } /*  while SkyPos */
@@ -1945,12 +1952,10 @@ int compare(const void *ip, const void *jp)
 INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 {
 
-  INT4 *indexes,i,j,iF,ntop,err,N;
+  INT4 *indexes,i,j,iF,N;
   REAL8 mean=0.0, std=0.0 ,log2 /*=log(2.0)*/;
 
   log2=medianbias;
-
-
 
   for (i=0;i<highFLines->Nclusters;i++){
     N=highFLines->NclustPoints[i];
@@ -1959,9 +1964,6 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
       Fstat.F[iF]=0.0;
     }/*  end j loop over points of i-th cluster  */
   }/*  end i loop over different clusters */
-
-
-
 
 /*    check that ReturnMaxN is sensible */
   if (ReturnMaxN>GV.FreqImax){
@@ -1987,24 +1989,27 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 /*    Normalize */
   TwoFthr*=0.5/log2;
 
-#ifdef FILE_FMAX  
-/*    print out the top ones */
-  for (ntop=0; ntop<ReturnMaxN; ntop++)
-    if (Fstat.F[indexes[ntop]]>TwoFthr){
-      err=fprintf(fpmax, "%20.10f %10.8f %10.8f %20.15f\n",
-		  uvar_Freq+indexes[ntop]*GV.dFreq,
-		  Alpha, Delta, 2.0*log2*Fstat.F[indexes[ntop]]);
-      if (err<=0) {
-	fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
-	LALFree(indexes);
-	return 3;
+#ifdef FILE_FMAX
+  {
+    INT4 ntop,err;
+    /*    print out the top ones */
+    for (ntop=0; ntop<ReturnMaxN; ntop++)
+      if (Fstat.F[indexes[ntop]]>TwoFthr){
+	err=fprintf(fpmax, "%20.10f %10.8f %10.8f %20.15f\n",
+		    uvar_Freq+indexes[ntop]*GV.dFreq,
+		    Alpha, Delta, 2.0*log2*Fstat.F[indexes[ntop]]);
+	if (err<=0) {
+	  fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
+	  LALFree(indexes);
+	  return 3;
+	}
       }
-    }
-    else
-/*        Since array sorted, as soon as value too small we can break */
-      break;
+      else
+	/*        Since array sorted, as soon as value too small we can break */
+	break;
+  }
 #endif
-
+  
   /*  find out how many points have been set to zero (N) */
   N=0;
   if (highFLines) {
