@@ -1,5 +1,7 @@
 This is version 0.7 of the LAL library.
 
+
+
 Read the file INSTALL for installation instructions.
 
 The INSTALL file also includes instructions for compiling the documentation.
@@ -9,8 +11,12 @@ doc/lsd.pdf
 This code requires the FFTW (Fastest Fourier Transform in the West) package.
 This package can be obtained from http://www.fftw.org
 
+
+
 The latest releases of LAL are available from the LAL web-site:
 http://www.lsc-group.phys.uwm.edu/lal
+
+
 
 The current working version of LAL can be obtained from the LAL CVS server by
 issuing the commands:
@@ -26,6 +32,24 @@ issuing the commands:
 
 (you will need m4, aclocal, autoheader, automake, and autoconf).
 
+
+
+There are two LAL mail lists/archives.  These are:
+
+  LAL-Announce: general LAL announcements including release announcements.
+  http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-announce
+
+  LAL-Discuss: general LAL discussion forum (but *not* for filing bug reports)
+  http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-discuss
+
+
+
+The file README.bugs gives instructions for filing bug reports for LAL.
+
+
+
 The file README.contrib gives instructions for including a package in LAL.
+
+
 
 See the document lalspec.pdf for LAL specification and style guide.
