@@ -72,6 +72,7 @@ static int high_pass_flag = 0;
 static int overlap_hann_flag = 0;
 static int verbose_flag = 0;
 static int test_flag = 0;
+static int post_analysis_flag = 0;
 static int condor_flag = 0;
 
 
@@ -144,15 +145,15 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALStatus status;
 
   /* output file */
-  FILE *out;
-  CHAR outputFilename[LALNameLength];
+  FILE *out1, *out2;
+  CHAR outputFilename1[200], outputFilename2[200];
 
   /* counters */
   INT4 i,j, segLoop, interLoop;
   /* results parameters */
-  REAL8 y;
-  REAL8 varTheo;
-
+  REAL8 y, yOpt;
+  REAL8 varTheo, inVarTheoSum ;
+  REAL8 ptEst, error;
   /* input data segment */
   INT4 numSegments, numIntervals;
   INT4 segmentLength, intervalLength;
@@ -955,7 +956,9 @@ INT4 main(INT4 argc, CHAR *argv[])
    
 
    /*** DONE HERE WITH ALLOCATION ***/
-
+   
+   /* initialize parameters for post analysis */
+   yOpt = 0.; inVarTheoSum = 0.;
 
    /** loop over big segments **/
    
@@ -1112,10 +1115,15 @@ INT4 main(INT4 argc, CHAR *argv[])
       for (MCLoop = 0; MCLoop < NLoop; MCLoop ++)
        {	
        	 /* open output file */
-	 LALSnprintf( outputFilename, LALNameLength, 
-                      "%s/stoch-%s%s-%d-%d-%d.dat",
+	 LALSnprintf( outputFilename1, LALNameLength, 
+                      "%s/stat-%s%s-%d-%d-%d.dat",
                        outputFilePath, ifo1, ifo2, 
                        (INT4)startTime, (INT4)stopTime, MCLoop);
+	 /* open output file */
+         LALSnprintf( outputFilename2, LALNameLength,
+                      "%s/post-%s%s-%d-%d-%d.dat",
+		      outputFilePath, ifo1, ifo2,
+		      (INT4)startTime, (INT4)stopTime, MCLoop);
 
 	 /* initialize average optimal filter and variance */
          for (i = 0; i < filterLength; i++)
@@ -1343,8 +1351,9 @@ INT4 main(INT4 argc, CHAR *argv[])
       
           for (segLoop = 0; segLoop < numSegments; segLoop++)
            {
-            gpsStartTime.gpsSeconds = gpsStartTime.gpsSeconds +
-	      (segLoop * segmentShift);
+            gpsStartTime.gpsSeconds = startTime 
+                                      + (interLoop * intervalDuration)
+                                      + (segLoop * segmentShift);
 
 	    for (i = 0; i < segmentLength; i ++)
                {
@@ -1405,18 +1414,34 @@ INT4 main(INT4 argc, CHAR *argv[])
 	   if (verbose_flag)
 	    { fprintf(stdout, "segment %d: y = %e\n", segLoop, y);}
 
-	   
+	   if (post_analysis_flag)
+	     {
+	       yOpt = yOpt + (y/varTheo);
+	       inVarTheoSum = inVarTheoSum + 1. / varTheo;
+             }    
 	  
           /* output to file */
                 
-           out = fopen(outputFilename, "a");
-	   fprintf(out,"%d %e %e\n", gpsStartTime.gpsSeconds, y, varTheo);
-           fclose(out);
+           out1 = fopen(outputFilename1, "a");
+	   fprintf(out1,"%d %e %e\n", gpsStartTime.gpsSeconds, y, varTheo);
+           fclose(out1);
 	   }
        }
     }
        
    lal_errhandler = LAL_ERR_EXIT;
+   if (post_analysis_flag)
+     {
+       ptEst = (yOpt / inVarTheoSum) /(REAL8)segmentDuration;
+       error = sqrt (1./inVarTheoSum ) /(REAL8)segmentDuration;
+       out2 = fopen(outputFilename2, "a");
+       fprintf(out2,"%d %d %e %e\n", (INT4)startTime,(INT4)stopTime, ptEst, error);
+       fclose(out2);
+       if (verbose_flag)
+	{
+	  fprintf(stdout,"ptEst = %e error = %e\n", ptEst, error);
+	}
+     }
 
    /* cleanup */
 
@@ -1493,9 +1518,10 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"apply-mask", no_argument, &apply_mask_flag, 1},
       {"high-pass-filter", no_argument, &high_pass_flag, 1},
       {"overlap-hann", no_argument, &overlap_hann_flag, 1},
-      {"condor", no_argument, &condor_flag,1},
+      {"post-analysis", no_argument, &post_analysis_flag,1},
       {"verbose", no_argument, &verbose_flag, 1},
       {"test", no_argument, &test_flag, 1},
+      {"condor", no_argument, &condor_flag,1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
       {"gps-start-time", required_argument, 0, 't'},
@@ -1772,6 +1798,7 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -h                    print this message\n");
   fprintf(stderr, " -V                    display version\n");
   fprintf(stderr, " --verbose             verbose mode\n");
+  fprintf(stderr, " --post-analysis       post analysis\n");
   fprintf(stderr, " -z                    set lalDebugLevel\n");
   fprintf(stderr, " -t                    GPS start time\n");
   fprintf(stderr, " -T                    GPS stop time\n");
