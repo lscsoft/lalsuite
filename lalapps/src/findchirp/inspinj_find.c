@@ -131,8 +131,8 @@ int main(int argc, char **argv)
  
   SearchSummaryIndex    searchSummaryIndex;
   SearchSummaryTable    searchSummaryTable;
-  LIGOTimeGPS		inPlay,outPlay,playtimeGPS;
-  INT8			outPlayInt =0, playtime = 0;
+  LIGOTimeGPS		inPlay,outPlay,totalTimeGPS,searchTimeGPS;
+  INT8			outPlayInt =0, searchTime = 0, totalTime = 0;
   SnglInspiralTable    *inspiralEventList=NULL;
   SnglInspiralTable    *currentInspiralEvent=NULL,*prevInspiralEvent=NULL;
   SnglInspiralTable   **inspiralHandle=NULL;
@@ -535,59 +535,74 @@ int main(int argc, char **argv)
 	}
 	else 
 	{
-	  playtime = playtime + outPlayInt;
-	  /* if there are injections, keep only those which occur
-	   * during the times searched in the input files */
-	  if( numPlayInjects != 0)
-	  {
-	    while ( currentSimEvent &&
-              currentSimEvent->geocent_end_time.gpsSeconds < 
-              searchSummaryTable.out_end_time.gpsSeconds)
-	    {
-	      /*  check if injection is before file start time */
-	      if (currentSimEvent->geocent_end_time.gpsSeconds < 
+	  searchTime =  outPlayInt;
+	}
+      }
+      else
+      {
+	searchTimeGPS.gpsSeconds = searchSummaryTable.out_end_time.gpsSeconds - 
+	  searchSummaryTable.out_start_time.gpsSeconds;
+	searchTimeGPS.gpsNanoSeconds = 
+	  searchSummaryTable.out_end_time.gpsNanoSeconds - 
+	    searchSummaryTable.out_start_time.gpsNanoSeconds;
+	LALGPStoINT8(&stat, &searchTime, &searchTimeGPS);
+      }
+
+      /* update the total search time */
+      totalTime += searchTime;
+
+      /* if there are injections, keep only those which occur
+       * during the times searched in the input files */
+      if( numPlayInjects != 0)
+      {
+	while ( currentSimEvent && 
+	  currentSimEvent->geocent_end_time.gpsSeconds < 
+            searchSummaryTable.out_end_time.gpsSeconds)
+	{
+	  /*  check if injection is before file start time */
+	  if (currentSimEvent->geocent_end_time.gpsSeconds < 
                 searchSummaryTable.out_start_time.gpsSeconds)
-	      {
-		/* discard the current injection */    
-		if (prevSimEvent != NULL)
-		{
-		  prevSimEvent->next = currentSimEvent->next;
-		  LALFree(currentSimEvent);
-		  currentSimEvent = prevSimEvent->next;
-		}
-		else
-		{
-		  simEventList = simEventList->next;
-		  LALFree(currentSimEvent);
-		  currentSimEvent = simEventList;
-		}
-	      }
-	      else 
-	      {
-		/* keep the current injection */    
-		numKeptInjects++;
-		prevSimEvent = currentSimEvent;
-		currentSimEvent = currentSimEvent->next;
-	      }
-	    }		
-	  }    
-	  /* check to see whether there are any events in the file */
-	  if ( searchSummaryTable.nevents == 0 )
 	  {
-	    fprintf(stdout,"File %i %s: no events, continuing\n",
-              fileCounter,line);
-	    continue;
+	    /* discard the current injection */    
+	    if (prevSimEvent != NULL)
+	    {
+	      prevSimEvent->next = currentSimEvent->next;
+	      LALFree(currentSimEvent);
+	      currentSimEvent = prevSimEvent->next;
+	    }
+	    else
+	    {
+	      simEventList = simEventList->next;
+	      LALFree(currentSimEvent);
+	      currentSimEvent = simEventList;
+	    }
 	  }
 	  else 
 	  {
-	    fprintf(stdout,"File %i %s: processing\n", 
-              fileCounter,line);
+	    /* keep the current injection */    
+	    numKeptInjects++;
+	    prevSimEvent = currentSimEvent;
+	    currentSimEvent = currentSimEvent->next;
 	  }
-	}
+	}		
+      }    
+	  
+      /* check to see whether there are any events in the file */
+      if ( searchSummaryTable.nevents == 0 )
+      {
+	fprintf(stdout,"File %i %s: no events, continuing\n",
+	    fileCounter,line);
+	continue;
       }
-      /* close the stream */
-      MetaioAbort( triggerEnv );
+      else 
+      {
+	fprintf(stdout,"File %i %s: processing\n", fileCounter,line);
+      }
     }
+    
+    /* close the stream */
+    MetaioAbort( triggerEnv );
+    
 
     /**************************************************************
      *  open xml file at inspiral table 
@@ -990,20 +1005,29 @@ int main(int argc, char **argv)
   if ( summaryName )
   {
     fp = fopen( summaryName, "w" );
+    fprintf( fp, "number of files analysed %d \n", fileCounter );
     fprintf( fp, "number of triggers %d \n", numEvents);
-    fprintf( fp, "number of triggers in playground with good snr %d \n",
-	numKeptEvents);
-    LALINT8toGPS(&stat, &playtimeGPS, 
-          &playtime);
-    fprintf( fp, "amount of playground time analysed %d sec \n", 
-	playtimeGPS.gpsSeconds);
+    if ( playground )
+    {
+      fprintf( fp, "number of triggers in playground with good snr %d \n",
+	  numKeptEvents);
+    }
+    else
+    {
+      fprintf( fp, "number of triggers with good snr %d \n", numKeptEvents);
+    }
+    LALINT8toGPS(&stat, &totalTimeGPS, &totalTime);
+    fprintf( fp, "amount of time analysed %d sec \n", 
+	totalTimeGPS.gpsSeconds);
     if( injectfile )
     {
-      fprintf( fp, "number of files analysed %d \n", fileCounter );
       fprintf( fp, "number of injections %d \n", numInjects);
-      fprintf( fp, "number of injections in playground %d \n", 
+      if ( playground)
+      {
+	fprintf( fp, "number of injections in playground %d \n", 
 	  numPlayInjects);	
-      fprintf( fp, "number of injections in analysed playground %d \n", 
+      }
+      fprintf( fp, "number of injections in analysed data %d \n", 
 	  numKeptInjects);
       fprintf( fp, "number of coincidences found within %d msec is %d\n", 
 	  dt, numFound);
