@@ -156,7 +156,7 @@ static void Rcfunc (REAL4 *result, REAL4 z)
 }
 /*probability density of z */
 /*(dR/dz)/(Int[dR/dz,{z,0,5}]) where dR/dz = Rc*dV/(1+z) */
-/*the normalisation factor 12.25 correspond to a cosmological model with omega_matter=0.3 and omega_vacuum=0.7*/
+/*the normalisation factor 23 correspond to a cosmological model with omega_matter=0.3 and omega_vacuum=0.7*/
 static void  pzfunc (LALStatus *s, REAL4 *result, REAL4 z)
 {
   REAL4 dV, Rc;
@@ -225,6 +225,7 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   COMPLEX8 resp0;
   COMPLEX8 resp1;
   COMPLEX8Vector *Hvec[2] = {NULL,NULL};
+  REAL4Vector *omegavec[2] = {NULL,NULL};
 
   /* source parameters*/  
   REAL4LALWform  *wformfunc;
@@ -277,6 +278,19 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
   ASSERT(output->SimPopcorn1->data->data !=NULL, status, 
+        SIMULATEPOPCORNH_ENULLP,
+        SIMULATEPOPCORNH_MSGENULLP);
+ 
+  ASSERT(output->omega0->data !=NULL, status, 
+        SIMULATEPOPCORNH_ENULLP,
+        SIMULATEPOPCORNH_MSGENULLP);
+  ASSERT(output->omega1->data !=NULL, status, 
+        SIMULATEPOPCORNH_ENULLP,
+        SIMULATEPOPCORNH_MSGENULLP);
+  ASSERT(output->omega0->data->data !=NULL, status, 
+        SIMULATEPOPCORNH_ENULLP,
+        SIMULATEPOPCORNH_MSGENULLP);
+  ASSERT(output->omega1->data->data !=NULL, status, 
         SIMULATEPOPCORNH_ENULLP,
         SIMULATEPOPCORNH_MSGENULLP);
 
@@ -401,7 +415,8 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
   
   for (detect=0;detect<2;detect++) {
   LALSCreateVector( status->statusPtr, &hvec[detect], N );
-  LALCCreateVector( status->statusPtr, &Hvec[detect], Nfreq );}
+  LALCCreateVector( status->statusPtr, &Hvec[detect], Nfreq );
+  LALSCreateVector( status->statusPtr, &omegavec[detect], Nfreq ); }
   
   LALSCreateVector( status->statusPtr, &z, UE );
   LALSCreateVector( status->statusPtr, &tevent, UE );
@@ -473,83 +488,85 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
 
    if (fref==-1.) {norm=1.;}
     else {
-
-    if (fref < 0.) 
-     {
-      ABORT(status,
-           SIMULATEPOPCORNH_EBV,
-           SIMULATEPOPCORNH_MSGEBV);
-     }
+     if (fref < 0.) 
+      {
+        ABORT(status,
+              SIMULATEPOPCORNH_EBV,
+              SIMULATEPOPCORNH_MSGEBV);
+       }
      
-     jref=fref*length;
-     if (Ndataset==2) {
-      Href=0.5*(sqrt(Hvec[0]->data[jref].re*Hvec[0]->data[jref].re
-                  +Hvec[0]->data[jref].im*Hvec[0]->data[jref].im)
-             +sqrt(Hvec[1]->data[jref].re*Hvec[1]->data[jref].re
-                  +Hvec[1]->data[jref].im*Hvec[1]->data[jref].im));}
-     else { 
+      jref=fref*length;
+     
       Href=sqrt(Hvec[0]->data[jref].re*Hvec[0]->data[jref].re
-             +Hvec[0]->data[jref].im*Hvec[0]->data[jref].im);} 
-   
-     norm=2.E-19*sqrt(length)*sqrt(fref*fref*fref)/Href;
-     }
- 
-    for (detect=0;detect<2;detect++)
-      for (j=0;j<Nfreq;j++) {
+               +Hvec[0]->data[jref].im*Hvec[0]->data[jref].im);
+      norm=(4.E-19*ho*sqrt(length)/sqrt(fref*fref*fref))/Href;
+      }
+     
+     for (detect=0;detect<2;detect++)
+       for (j=0;j<Nfreq;j++) {
         Hvec[detect]->data[j].re= Hvec[detect]->data[j].re*norm;
         Hvec[detect]->data[j].im= Hvec[detect]->data[j].im*norm;}
+
+     /*model the relative orientation of the detectors*/
+  
+    if (Ndataset==2)
+     {
+       overlap.data = NULL;
+       LALSCreateVector(status->statusPtr, &(overlap.data),Nfreq);
+       ORFparameters.length = Nfreq;
+       ORFparameters.f0 = f0;
+       ORFparameters.deltaF = deltaf;
+       detectors.detectorOne  = lalCachedDetectors[site0];
+       detectors.detectorTwo  = lalCachedDetectors[site1];
       
-   
-   if (Ndataset==2)
-    {
-      overlap.data = NULL;
-      LALSCreateVector(status->statusPtr, &(overlap.data),Nfreq);
-      ORFparameters.length = Nfreq;
-      ORFparameters.f0 = f0;
-      ORFparameters.deltaF = deltaf;
-      detectors.detectorOne  = lalCachedDetectors[site0];
-      detectors.detectorTwo  = lalCachedDetectors[site1];
-      
-      LALOverlapReductionFunction(status->statusPtr,&overlap,
+       LALOverlapReductionFunction(status->statusPtr,&overlap,
                                   &detectors,&ORFparameters);
 
-      for (j=0;j<Nfreq;j++)
-       {
-        resp0 = input->wfilter0->data->data[j];
-        resp1 = input->wfilter1->data->data[j];
-        gamma=overlap.data->data[j]; 
-        Hvec[1]->data[j].re=(Hvec[0]->data[j].re*gamma 
-                     +sqrt(1-gamma*gamma)*Hvec[1]->data[j].re)*resp1.re;
+       for (j=0;j<Nfreq;j++)
+        {
+         gamma=overlap.data->data[j]; 
+         Hvec[1]->data[j].re=(Hvec[0]->data[j].re*gamma 
+                     +sqrt(1-gamma*gamma)*Hvec[1]->data[j].re);
         
-        Hvec[1]->data[j].im=(Hvec[1]->data[j].im*gamma
-                     +sqrt(1-gamma*gamma)*Hvec[1]->data[j].im)*resp1.im;
-        Hvec[0]->data[j].re=Hvec[0]->data[j].re*resp0.re;
-        Hvec[0]->data[j].im=Hvec[0]->data[j].im*resp0.im;
-        }
-       LALSDestroyVector(status->statusPtr, &(overlap.data));   
-    }
-   else {
+         Hvec[1]->data[j].im=(Hvec[1]->data[j].im*gamma
+                     +sqrt(1-gamma*gamma)*Hvec[1]->data[j].im);
+         }
+        LALSDestroyVector(status->statusPtr, &(overlap.data));   
+      }
+    else {
      for (j=0;j<Nfreq;j++)
       {
-       resp0 = input->wfilter0->data->data[j];
-       resp1 = input->wfilter1->data->data[j];
-       Hvec[0]->data[j].re=Hvec[0]->data[j].re*resp0.re;
-       Hvec[0]->data[j].im=Hvec[0]->data[j].im*resp0.im;
-       Hvec[1]->data[j].re=Hvec[0]->data[j].re*resp1.re;
-       Hvec[1]->data[j].im=Hvec[1]->data[j].im*resp1.im;
+       Hvec[1]->data[j].re=Hvec[0]->data[j].re;
+       Hvec[1]->data[j].im=Hvec[0]->data[j].im;
       }}
-    
+
+   /*compute the spectrum of omega*/
+   for (detect=0;detect<2;detect++){
+    for (j=0;j<Nfreq;j++) {
+      omegavec[detect]->data[j]=6.26E36*(Hvec[detect]->data[j].re*Hvec[detect]->data[j].re+Hvec[detect]->data[j].im*Hvec[detect]->data[j].im)*(j*deltaf)*(j*deltaf)*(j*deltaf)/(ho*ho*length);}}   
+
+
+    /*whithening*/
+   for (j=0;j<Nfreq;j++)
+    {
+      resp0 = input->wfilter0->data->data[j];
+      resp1 = input->wfilter1->data->data[j];
+      Hvec[0]->data[j].re=Hvec[0]->data[j].re*resp0.re;
+      Hvec[0]->data[j].im=Hvec[0]->data[j].im*resp0.im;
+      Hvec[1]->data[j].re=Hvec[1]->data[j].re*resp1.re;
+      Hvec[1]->data[j].im=Hvec[1]->data[j].im*resp1.im;
+    }
+     
    
     /* Inverse Fourier transform */
    for (detect=0;detect<2;detect++)
      LALReverseRealFFT( status->statusPtr, hvec[detect], Hvec[detect], prev );
    
-   
    LALDestroyRealFFTPlan( status->statusPtr, &pfwd );
    LALDestroyRealFFTPlan( status->statusPtr, &prev );
 
   /* assign parameters and data to output */
-  
+
    for (j=0;j<N;j++) {
      output->SimPopcorn0->data->data[j] = (hvec[0]->data[j])/N;
      output->SimPopcorn1->data->data[j] = (hvec[1]->data[j])/N;}
@@ -559,24 +576,38 @@ LALSimPopcornTimeSeries (  LALStatus                *status,
    output->SimPopcorn0->epoch.gpsSeconds = starttime;
    output->SimPopcorn0->epoch.gpsNanoSeconds = 0;
    output->SimPopcorn0->sampleUnits = lalADCCountUnit;
-   /*strncpy(output->SimPopcorn0->name,"Popcorn0", LALNameLength); */
+  
    
    output->SimPopcorn1->f0 = f0;
    output->SimPopcorn1->deltaT = deltat;
    output->SimPopcorn1->epoch.gpsSeconds = starttime;
    output->SimPopcorn1->epoch.gpsNanoSeconds = 0;
    output->SimPopcorn1->sampleUnits = lalADCCountUnit;
-   /*strncpy(output->SimPopcorn1->name,"Popcorn1", LALNameLength); */
 
+   
+   for (j=0;j<Nfreq;j++) {
+     output->omega0->data->data[j] = (omegavec[0]->data[j]);
+     output->omega1->data->data[j] = (omegavec[1]->data[j]);}
+  
+
+   output->omega0->f0 = f0;
+   output->omega0->deltaF = deltaf;
+   output->omega0->epoch.gpsSeconds = starttime;
+   output->omega0->epoch.gpsNanoSeconds = 0;
+   
+   output->omega1->f0 = f0;
+   output->omega1->deltaF = deltaf;
+   output->omega1->epoch.gpsSeconds = starttime;
+   output->omega1->epoch.gpsNanoSeconds = 0;
+   
 
   for (detect=0;detect<2;detect++) {
   LALSDestroyVector(status->statusPtr,&hvec[detect]);
-  LALCDestroyVector(status->statusPtr,&Hvec[detect]);}
+  LALCDestroyVector(status->statusPtr,&Hvec[detect]);
+  LALSDestroyVector(status->statusPtr,&omegavec[detect]);}
  
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);
   RETURN (status);
- 
-  
+   
 }
-
