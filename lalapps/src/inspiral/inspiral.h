@@ -9,6 +9,15 @@
  *-----------------------------------------------------------------------
  */
 
+#include <lalapps.h>
+#include <lal/LALConfig.h>
+#include <lal/LALStdlib.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/Date.h>
+
+#define PROGRAM_NAME "lalapps_inspiral"
+
 #define USAGE \
 "lalapps_inspiral is a stand alone code for performing matched filtering\n" \
 "of LIGO data for graviational wave signals and Monte Carlo analysis.\n\n" \
@@ -20,4 +29,12 @@
 "   --gps-start-time            GPS start of data to be filtered\n" \
 "   --gps-stop-time             GPS stop time of data to be filtered\n"
 
-#define PROCESS_COMMENT_LEN 240
+typedef enum
+{
+  tmplt_none,
+  tmplt_stationary_phase,
+  tmplt_time_domain
+}
+InspiralTmpltType;
+
+
