@@ -56,3 +56,10 @@ FrameH *fr_add_proc_COMPLEX8FrequencySeries (
     const char              *unit,
     const char              *suffix
     );
+FrameH *fr_add_proc_COMPLEX8TimeSeries (
+    FrameH                        *frame,
+    COMPLEX8TimeSeries            *chan,
+    const char                    *unit,
+    const char                    *suffix
+    );
+
