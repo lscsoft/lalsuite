@@ -102,6 +102,8 @@ LALCheckMemoryLeaks()
 #include <lal/Random.h>
 #include <lal/SimulateSB.h>
 #include "CheckStatus.h"
+#include <lal/DetectorSite.h>
+/**/
 
 NRCSID(SIMULATESBTESTC, "$Id$");
 
@@ -117,6 +119,19 @@ NRCSID(SIMULATESBTESTC, "$Id$");
 #define SIMULATESBTESTC_DETECTORTWO lalCachedDetectors[site1]
 #define SIMULATESBTESTC_TRUE     1
 #define SIMULATESBTESTC_FALSE    0
+#define SIMULATESBTESTC_BAR      0
+
+/* These values do not necessarily represent any physical bar*/
+REAL8     SIMULATESBTESTC_BARLONGRAD  =  4.691815; /*in radians*/
+REAL8     SIMULATESBTESTC_BARLATRAD   =  0.426079; /*in radians*/
+REAL4     SIMULATESBTESTC_BARALT      = -6.574;    /*in meters*/
+REAL4     SIMULATESBTESTC_BARXALTRAD  =  0.0;
+REAL4     SIMULATESBTESTC_BARXAZIRAD  =  0.0;
+REAL4     SIMULATESBTESTC_BARYALTRAD  =  0.0; 
+REAL4     SIMULATESBTESTC_BARYAZIRAD  =  0.0; 
+REAL8     SIMULATESBTESTC_BARLOCX     = -113258.848;
+REAL8     SIMULATESBTESTC_BARLOCY     =  5504077.706;
+REAL8     SIMULATESBTESTC_BARLOCZ     =  3209892.343;
 
 extern char *optarg;
 extern int   optind;
@@ -203,7 +218,6 @@ static float s_of_f(float freq) {
   return y;
 }
 
-
 int main( int argc, char *argv[] ){
   static LALStatus status;
   
@@ -243,12 +257,16 @@ int main( int argc, char *argv[] ){
   REAL4                              deltaF;
   INT4                               code;
 
+  LALFrDetector                      barFrame;
+  
+  
   /*
    *
    * Define valid parameters
    *
    */
-
+    
+    
   /* Create vectors */
   omegaGW.data = NULL;
   LALSCreateVector(&status, &(omegaGW.data), freqlen);
@@ -263,15 +281,32 @@ int main( int argc, char *argv[] ){
       LALCCreateVector(&status, &response[i],freqlen);
     }
   
+  if (SIMULATESBTESTC_BAR) {
+    barFrame.vertexLongitudeRadians = SIMULATESBTESTC_BARLONGRAD;
+    barFrame.vertexLatitudeRadians = SIMULATESBTESTC_BARLATRAD;
+    barFrame.vertexElevation = SIMULATESBTESTC_BARALT;
+    barFrame.xArmAltitudeRadians = SIMULATESBTESTC_BARXALTRAD;
+    barFrame.xArmAzimuthRadians  = SIMULATESBTESTC_BARXAZIRAD;
+    barFrame.yArmAltitudeRadians  = SIMULATESBTESTC_BARYALTRAD;
+    barFrame.yArmAzimuthRadians = SIMULATESBTESTC_BARYAZIRAD;
+  }
+
   /* define SimulateSBParams */
-  SBParams.length         = SIMULATESBTESTC_LENGTH; 
+  SBParams.length         = length; 
   SBParams.deltaT         = 1/SIMULATESBTESTC_RATE;
   SBParams.seed           = SIMULATESBTESTC_SEED;
-  SBParams.detectorOne    = SIMULATESBTESTC_DETECTORONE;
-  SBParams.detectorTwo    = SIMULATESBTESTC_DETECTORTWO; 
   SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
   SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
 
+  if (SIMULATESBTESTC_BAR) {
+    LALCreateDetector(&status, &(SBParams.detectorOne), &barFrame, LALDETECTORTYPE_CYLBAR);
+  }
+  else {
+    SBParams.detectorOne    = SIMULATESBTESTC_DETECTORONE;
+  }
+  SBParams.detectorTwo    = SIMULATESBTESTC_DETECTORTWO;
+  
+  
   deltaF = 1/(SBParams.deltaT*SBParams.length);
   
   /* find omegaGW, and print it */
@@ -312,8 +347,6 @@ int main( int argc, char *argv[] ){
   SBInput.omegaGW                  = &omegaGW;
   SBInput.whiteningFilter1         = &wFilter1;
   SBInput.whiteningFilter2         = &wFilter2;
-  
-  ParseOptions( argc, argv );
   
   /*
    *
@@ -377,15 +410,17 @@ int main( int argc, char *argv[] ){
   totnorm2/=length;
   printf("Mean square of whitened output is: %e\n",totnorm2);
   
-  /* check normalizations */
-  totnorm=0.0;
-  for (i=1;(UINT4)i<freqlen;i++){
-    REAL8 freq=i*SIMULATESBTESTC_RATE/SIMULATESBTESTC_LENGTH;
-    REAL8 resp=SIMULATESBTESTC_RMS/(sqrt(fnyquist)*s_of_f(freq));
-    totnorm+=resp*resp*(omegaGW.data->data[i])/(freq*freq*freq);
+  if (!SIMULATESBTESTC_BAR){
+    /* check normalizations */
+    totnorm=0.0;
+    for (i=1;(UINT4)i<freqlen;i++){
+      REAL8 freq=i*SIMULATESBTESTC_RATE/SIMULATESBTESTC_LENGTH;
+      REAL8 resp=SIMULATESBTESTC_RMS/(sqrt(fnyquist)*s_of_f(freq));
+      totnorm+=resp*resp*(omegaGW.data->data[i])/(freq*freq*freq);
+    }
+    totnorm*=0.3*LAL_H0FAC_SI*LAL_H0FAC_SI*SIMULATESBTESTC_RATE/(LAL_PI*LAL_PI*SIMULATESBTESTC_LENGTH);
+    printf("Mean square of whitened output should be: %e.  Ratio is %e\n",totnorm,totnorm/totnorm2);
   }
-  totnorm*=0.3*LAL_H0FAC_SI*LAL_H0FAC_SI*SIMULATESBTESTC_RATE/(LAL_PI*LAL_PI*SIMULATESBTESTC_LENGTH);
-  printf("Mean square of whitened output should be: %e.  Ratio is %e\n",totnorm,totnorm/totnorm2);
   
   LALSPrintTimeSeries(&whitenedSSimStochBG1,"WHITENED-SB1");
   LALSPrintTimeSeries(&whitenedSSimStochBG2,"WHITENED-SB2");

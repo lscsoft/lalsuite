@@ -27,24 +27,25 @@ the stochastic background in two detectors are random variables that have
 zero mean and that obey  \cite{inject:Allen:1999}:
   \begin{equation}
     \langle\widetilde{h}_1^*(f_i)\widetilde{h}_1(f_j)\rangle
-    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}
-    \Omega_{\scriptstyle{\rm GW}}(|f|)
+    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{11}(f_i)
+    \Omega_{\scriptstyle{\rm GW}}(|f_i|)
   \end{equation}
   and
    \begin{equation}
     \langle\widetilde{h}_2^*(f_i)\widetilde{h}_2(f_j)\rangle
-    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}
-    \Omega_{\scriptstyle{\rm GW}}(|f|)
+    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{22}(f_i)
+    \Omega_{\scriptstyle{\rm GW}}(|f_i|)
   \end{equation}
   and
   \begin{equation}
     \langle\widetilde{h}_1^*(f_i)\widetilde{h}_2(f_j)\rangle
-    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma(f_i)
-    \Omega_{\scriptstyle{\rm GW}}(|f|) \ ,
+    = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}\gamma_{12}(f_i)
+    \Omega_{\scriptstyle{\rm GW}}(|f_i|) \ ,
   \end{equation}
 where $\langle\rangle$ denotes ensemble average, $T$ is the time of
-observation, and $\gamma$ is the overlap reduction function
-\cite{inject:Flanagan:1993}. Above, $\widetilde{h}_1(f_i)$ and 
+observation, and $\gamma_{AB}$ is the overlap reduction function
+\cite{inject:Flanagan:1993} of the detector pair comprising detectors $A$ 
+and $B$. Above, $\widetilde{h}_1(f_i)$ and 
 $\widetilde{h}_2(f_j)$ are the Fourier components of the gravitational strains
 $h_1(t)$ and $h_2(t)$ at the two detectors. 
 
@@ -52,15 +53,18 @@ The Fourier components that
 obey the above relations are
   \begin{equation}
     \widetilde{h}_1(f_i) = \sqrt{3H_0^2T \over 40\pi^2}f_i^{-3/2}
-    \Omega^{1/2}_{\scriptstyle{\rm GW}}(|f|) (x_{1i} + i y_{1i})
+    \Omega^{1/2}_{\scriptstyle{\rm GW}}(|f_i|) \sqrt{\gamma_{11}(f_i)}
+(x_{1i} + i y_{1i})
     \,
   \end{equation}
   and
   \begin{equation}
-    \widetilde{h}_2(f_i) = \widetilde{h}_1(f_i)\gamma(f_i) +
+    \widetilde{h}_2(f_i) = \widetilde{h}_1(f_i)\frac{\gamma_{12}(f_i)}
+{\gamma_{11}(f_i)} +
     \sqrt{3H_0^2T \over 40\pi^2}f_i^{-3/2}
-    \Omega^{1/2}_{\scriptstyle{\rm GW}}(|f|) 
-    \sqrt{1-\gamma^2(f_i)} (x_{2i} + i y_{2i})
+    \Omega^{1/2}_{\scriptstyle{\rm GW}}(|f_i|) 
+    \sqrt{\gamma_{22}(f_i)-\frac{\gamma^2_{12}(f_i)}{\gamma_{11}(f_i)}} 
+(x_{2i} + i y_{2i})
     \,
   \end{equation}
 where $x_{1i}$, $y_{1i}$, $x_{2i}$, and $y_{2i}$ are statistically 
@@ -159,6 +163,7 @@ LALNormalDeviates()
 #include <lal/PrintVector.h>
 #include <lal/Random.h>
 #include <lal/SimulateSB.h>
+#include <lal/DetectorSite.h>
 
 NRCSID (SIMULATESBC, "$Id$");
 
@@ -193,7 +198,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
   /* LAL structure needed as input/output for computing overlap 
      reduction function */
   LALDetectorPair                    detectors;
-  REAL4FrequencySeries               overlap;
+  REAL4FrequencySeries               overlap11,overlap12,overlap22;
   OverlapReductionFunctionParameters ORFparameters;
   
   
@@ -516,10 +521,59 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
     }  
   ENDFAIL( status );
 
-  overlap.data = NULL;
-  LALSCreateVector(status->statusPtr, &(overlap.data),freqlen);
+  overlap11.data = NULL;
+  LALSCreateVector(status->statusPtr, &(overlap11.data),freqlen);
   BEGINFAIL( status )
     {
+      TRY( LALCDestroyVector(status->statusPtr, &ccountsTmp[1]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccountsTmp[0]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccounts[1]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccounts[0]), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }  
+  ENDFAIL( status );
+    
+  overlap12.data = NULL;
+  LALSCreateVector(status->statusPtr, &(overlap12.data),freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector(status->statusPtr, &(overlap11.data)), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccountsTmp[1]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccountsTmp[0]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccounts[1]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccounts[0]), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }  
+  ENDFAIL( status );
+    
+  overlap22.data = NULL;
+  LALSCreateVector(status->statusPtr, &(overlap22.data),freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector(status->statusPtr, &(overlap12.data)), status);
+      TRY( LALSDestroyVector(status->statusPtr, &(overlap11.data)), status);
       TRY( LALCDestroyVector(status->statusPtr, &ccountsTmp[1]), status);
       TRY( LALCDestroyVector(status->statusPtr, &ccountsTmp[0]), status);
       TRY( LALCDestroyVector(status->statusPtr, &ccounts[1]), status);
@@ -574,18 +628,33 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
   ORFparameters.f0       = f0;
   ORFparameters.deltaF   = deltaF;
   detectors.detectorOne  = params->detectorOne;
-  detectors.detectorTwo  = params->detectorTwo;
-  LALOverlapReductionFunction( status->statusPtr, &overlap, 
+  detectors.detectorTwo  = params->detectorOne;
+
+  LALOverlapReductionFunction( status->statusPtr, &overlap11, 
 			       &detectors, &ORFparameters);
   CHECKSTATUSPTR( status);
 
-  if (f0 == 0)
+  detectors.detectorOne  = params->detectorOne;
+  detectors.detectorTwo  = params->detectorTwo;
+
+  LALOverlapReductionFunction( status->statusPtr, &overlap12, 
+			       &detectors, &ORFparameters);
+  CHECKSTATUSPTR( status);
+
+  detectors.detectorOne  = params->detectorTwo;
+  detectors.detectorTwo  = params->detectorTwo;
+
+  LALOverlapReductionFunction( status->statusPtr, &overlap22, 
+			       &detectors, &ORFparameters);
+  CHECKSTATUSPTR( status);
+  
+  if (f0 == 0) 
     {
-      REAL4    gamma;
+      REAL4    gamma11,gamma12,gamma22;
       REAL4    omega;
       REAL8    freq;
       REAL8    factor;
-      REAL8    factor2;
+      REAL8    factor2,factor3;
       COMPLEX8 wFilter1;
       COMPLEX8 wFilter2;
        
@@ -594,22 +663,25 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 	{
 	  freq  = i*deltaF;	  
 
-	  gamma = overlap.data->data[i];
+	  gamma11 = overlap11.data->data[i];
+	  gamma12 = overlap12.data->data[i];
+	  gamma22 = overlap22.data->data[i];
 
 	  omega = input->omegaGW->data->data[i];
 	  
 	  factor = deltaF * sqrt(3.0L * length * deltaT * omega / 
 				 (40.0L *freq*freq*freq)
 				 )* LAL_H0FAC_SI / LAL_PI;
-	  factor2 = sqrt(1-gamma*gamma)*factor;
-	  
+	  factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
+	  factor3 = sqrt(gamma11)*factor;
+
 	  wFilter1 = input->whiteningFilter1->data->data[i];
 	  wFilter2 = input->whiteningFilter2->data->data[i];
 	  
-	  ccountsTmp[0]->data[i].re=factor*gaussdevsX1->data[i];
-	  ccountsTmp[0]->data[i].im=factor*gaussdevsY1->data[i];
-	  ccountsTmp[1]->data[i].re=ccountsTmp[0]->data[i].re*gamma+factor2*gaussdevsX2->data[i];
-	  ccountsTmp[1]->data[i].im=ccountsTmp[0]->data[i].im*gamma+factor2*gaussdevsY2->data[i];
+	  ccountsTmp[0]->data[i].re=factor3*gaussdevsX1->data[i];
+	  ccountsTmp[0]->data[i].im=factor3*gaussdevsY1->data[i];
+	  ccountsTmp[1]->data[i].re=ccountsTmp[0]->data[i].re*gamma12/gamma11+factor2*gaussdevsX2->data[i];
+	  ccountsTmp[1]->data[i].im=ccountsTmp[0]->data[i].im*gamma12/gamma11+factor2*gaussdevsY2->data[i];
 	  
 	  ccounts[0]->data[i].re = wFilter1.re * ccountsTmp[0]->data[i].re -
 	    wFilter1.im * ccountsTmp[0]->data[i].im;
@@ -630,7 +702,10 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 	}
       
       /* Compute the whitened Nyquist (real) component */
-      gamma = overlap.data->data[length/2];
+      gamma11 = overlap11.data->data[length/2];
+      gamma12 = overlap12.data->data[length/2];
+      gamma22 = overlap22.data->data[length/2];
+      
       omega = input->omegaGW->data->data[length/2];
       freq = deltaF*length/2;
       
@@ -654,12 +729,13 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
       factor = deltaF * sqrt(3.0L * length * deltaT * omega / 
 			     (40.0L *freq*freq*freq)
 			     )* LAL_H0FAC_SI / LAL_PI;
-      factor2 = sqrt(1-gamma*gamma)*factor;
+      factor2 = sqrt(gamma22-gamma12*gamma12/gamma11)*factor;
+      factor3 = sqrt(gamma11)*factor;
       
-      ccountsTmp[0]->data[length/2].re=factor*gaussdevsX1->data[length/2];
+      ccountsTmp[0]->data[length/2].re=factor3*gaussdevsX1->data[length/2];
       
       ccountsTmp[1]->data[length/2].re=
-	(ccountsTmp[0]->data[length/2].re*gamma + 
+	(ccountsTmp[0]->data[length/2].re*gamma12/gamma11 + 
 	 factor2*gaussdevsX2->data[length/2]);
       
       ccounts[0]->data[length/2].re = 
@@ -673,7 +749,9 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 	 wFilter2.im * ccountsTmp[1]->data[length/2].im);
       ccounts[1]->data[length/2].im = 0;
       
-      LALSDestroyVector(status->statusPtr, &(overlap.data));
+      LALSDestroyVector(status->statusPtr, &(overlap11.data));
+      LALSDestroyVector(status->statusPtr, &(overlap12.data));      
+      LALSDestroyVector(status->statusPtr, &(overlap22.data));
       
       LALSDestroyVector(status->statusPtr, &gaussdevsX1);
       LALSDestroyVector(status->statusPtr, &gaussdevsY1);
@@ -733,8 +811,6 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
   
   /* clean up and exit */
 
-  /* LALCheckMemoryLeaks();*/
-  
   DETATCHSTATUSPTR(status);
   RETURN(status);
   
