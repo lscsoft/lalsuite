@@ -128,7 +128,6 @@ tagInspiralEvent
   UINT4                         numChisqBins;
   CHAR                          ifoName[2];
   CHAR                          channel[LALNameLength];
-  WaveformGenerator             wavGen;
   struct tagInspiralEvent      *next;
 }
 InspiralEvent;
@@ -170,8 +169,6 @@ for the event.
 event.
 
 \item[\texttt{REAL4 coaPhase}] The coalescence phase of the chirp.
-
-\item[\texttt{WaveformGenerator wavGen}] The particular waveform generator that was used in the matched filter for this chirp.
 
 \item[\texttt{CHAR ifoName[2]}] Array for storing the two character
 interferometer name (e.g. L1, H2, etc.)

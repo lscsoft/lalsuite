@@ -182,38 +182,6 @@ NRCSID (FINDCHIRPH, "$Id$");
 </lalLaTeX>
 #endif
 
-/* --- enumeraion type for simulations ----------------------------------- */
-/* <lalVerbatim file="FindChirpHWaveformGenerator"> */
-typedef enum
-{
-  findchirpSP,
-  injectGenPPN
-}
-WaveformGenerator;
-/* </lalVerbatim> */
-#if 0
-<lalLaTeX>
-\subsubsection*{Enumeration Type \texttt{WaveformGenerator}}
-\idx[Type]{WaveformGenerator}
-
-\input{FindChirpHWaveformGenerator}
-
-\noindent This enumaration type lists the possible methods of generating
-inspiral waveforms. The types in the enum should be of the form 
-\texttt{packagenameGenType}, where \texttt{packagename} is the name of the
-LAL package that the particular waveform generator resides and \texttt{GenType}
-is a unique identifier for that waveform generator.  The choices are:
-
-\begin{description} 
-\item[\texttt{findchirpSP}] The \texttt{findchirp} built in stationary phase
-waveform generator.
-
-\item[\texttt{injectGenPPN}] The \texttt{LALGeneratePPNInspiral()} function
-from the \texttt{inject} package.
-\end{description}
-</lalLaTeX>
-#endif
-  
 
 /*
  *
@@ -287,6 +255,7 @@ tagFindChirpSegment
   UINT4                         invSpecTrunc;
   UINT4                         number;
   INT4                          level;
+  Approximant                   approximant;
 }
 FindChirpSegment;
 /* </lalVerbatim> */
@@ -379,6 +348,7 @@ tagFindChirpTemplate
 {
   COMPLEX8Vector               *data;
   REAL4                         tmpltNorm;
+  Approximant                   approximant;
 }
 FindChirpTemplate;
 /* </lalVerbatim> */
@@ -427,6 +397,7 @@ tagFindChirpInitParams
   UINT4                         numChisqBins;
   UINT4                         ovrlap;
   BOOLEAN                       createRhosqVec;
+  Approximant                   approximant;
 }
 FindChirpInitParams;
 /* </lalVerbatim> */
