@@ -559,10 +559,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   if (vrbflg)
     fprintf(stdout, "Generating data segment window...\n");
-
   dataWindow = rectangular_window(&status, seriesOne->deltaT, 0, segmentLength);
-
-  LALSPrintTimeSeries(dataWindow, "window.dat");
 
   if (overlap_hann_flag)
     hannDuration = segmentDuration;
