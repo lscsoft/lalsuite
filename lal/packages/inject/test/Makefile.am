@@ -1,15 +1,13 @@
 ## Process this file with automake to produce Makefile.in
 
 if METAIO
-NEED_METAIO = InterfaceTest.c
-EXTRA_TEXSOURCES = 
+NEED_METAIO = InterfaceTest
 else
 NEED_METAIO = 
-EXTRA_TEXSOURCES =
 endif
 
 check_PROGRAMS = 	BasicInjectTest InjectTest GeneratePPNInspiralTest SimulateTaylorCWTest \
-			SimulateSBTest SkyCoordinatesTest SimulatePopcornTest InterfaceTest
+			SimulateSBTest SkyCoordinatesTest SimulatePopcornTest $(NEED_METAIO)
 
 InjectTest_SOURCES      = InjectTest.c
 InjectTest_LDADD        = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
@@ -34,11 +32,8 @@ endif
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include 
 
-if METAIO
 TESTS = BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest  $(NEED_MEATIO)
-else
-TESTS = BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest  
-endif
+
 
 EXTRA_DIST = CheckStatus.c CheckStatus.h L1.dat H2.dat injection.xml
 MOSTLYCLEANFILES = .dvi-dep WHITENED-SB*
