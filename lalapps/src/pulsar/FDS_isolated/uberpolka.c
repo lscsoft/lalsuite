@@ -198,8 +198,8 @@ int compareC1IStructs(const void *ip, const void *jp)
 {
   INT4 ifreq1,ifreq2;
 
-  ifreq1=CList1.CI.iFreq[*(const int *)ip];
-  ifreq2=CList1.CI.iFreq[*(const int *)jp];
+  ifreq1=CList1.CI[*(const int *)ip].iFreq;
+  ifreq2=CList1.CI[*(const int *)jp].iFreq;
 
   if (ifreq1 < ifreq2)
     return 1;
@@ -211,8 +211,8 @@ int compareC1IStructs(const void *ip, const void *jp)
     {
       INT4 iDelta1, iDelta2;
 
-      iDelta1=CList1.CI.iDelta[*(const int *)ip];
-      iDelta2=CList1.CI.iDelta[*(const int *)jp];
+      iDelta1=CList1.CI[*(const int *)ip].iDelta;
+      iDelta2=CList1.CI[*(const int *)jp].iDelta;
       
       if (iDelta1 < iDelta2)
 	return 1;
@@ -224,8 +224,8 @@ int compareC1IStructs(const void *ip, const void *jp)
 	{
 	  INT4 iAlpha1, iAlpha2;
 
-	  iAlpha1=CList1.CI.iAlpha[*(const int *)ip];
-	  iAlpha2=CList1.CI.iAlpha[*(const int *)jp];
+	  iAlpha1=CList1.CI[*(const int *)ip].iAlpha;
+	  iAlpha2=CList1.CI[*(const int *)jp].iAlpha;
       
 	  if (iAlpha1 < iAlpha2)
 	    return 1;
@@ -237,8 +237,9 @@ int compareC1IStructs(const void *ip, const void *jp)
 	    return (ip < jp);
 	}
     }
+  
+  return (ip < jp);
 
-  return -1;
 }
 
 /*******************************************************************************/
@@ -248,8 +249,8 @@ int compareC2IStructs(const void *ip, const void *jp)
 {
   INT4 ifreq1,ifreq2;
 
-  ifreq1=CList2.f[*(const int *)ip];
-  ifreq2=CList2.f[*(const int *)jp];
+  ifreq1=CList2.CI[*(const int *)ip].iFreq;
+  ifreq2=CList2.CI[*(const int *)jp].iFreq;
 
   if (ifreq1 < ifreq2)
     return 1;
@@ -261,8 +262,8 @@ int compareC2IStructs(const void *ip, const void *jp)
     {
       INT4 iDelta1, iDelta2;
 
-      iDelta1=CList2.Delta[*(const int *)ip];
-      iDelta2=CList2.Delta[*(const int *)jp];
+      iDelta1=CList2.CI[*(const int *)ip].iDelta;
+      iDelta2=CList2.CI[*(const int *)jp].iDelta;
       
       if (iDelta1 < iDelta2)
 	return 1;
@@ -274,8 +275,8 @@ int compareC2IStructs(const void *ip, const void *jp)
 	{
 	  INT4 iAlpha1, iAlpha2;
 
-	  iAlpha1=CList2.Alpha[*(const int *)ip];
-	  iAlpha2=CList2.Alpha[*(const int *)jp];
+	  iAlpha1=CList2.CI[*(const int *)ip].iAlpha;
+	  iAlpha2=CList2.CI[*(const int *)jp].iAlpha;
       
 	  if (iAlpha1 < iAlpha2)
 	    return 1;
@@ -288,7 +289,7 @@ int compareC2IStructs(const void *ip, const void *jp)
 	}
     }
 
-  return -1;
+  return (ip < jp);
 }
 
 /*******************************************************************************/
