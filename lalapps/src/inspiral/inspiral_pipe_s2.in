@@ -32,6 +32,133 @@ sys.path.append('@PYTHONLIBDIR@')
 import pipeline, inspiral
 
 ##############################################################################
+# some functions to make life easier later
+class AnalyzedIFOData:
+  """
+  Contains the information for the data that needs to be filtered.
+  """
+  def __init__(self,chunk,node):
+    self.__analysis_chunk = chunk
+    self.__dag_node = node
+
+  def set_chunk(self,chunk):
+    self.__analysis_chunk = chunk
+
+  def get_chunk(self):
+    return self.__analysis_chunk
+
+  def set_dag_node(self,node):
+    self.__dag_node = node
+
+  def get_dag_node(self):
+    return self.__dag_node
+
+def chunk_in_segment(chunk,seg,max_slide=0):
+  if ( 
+    chunk.start() >= seg.start() - max_slide
+    and chunk.start() <= seg.end() + max_slide
+    ) or (
+    chunk.end() >= seg.start() - max_slide 
+    and chunk.end() <= seg.end() + max_slide
+    ) or (
+    seg.start() - max_slide >= chunk.start() 
+    and seg.end() + max_slide <= chunk.end() ):
+    return 1
+  else:
+    return 0
+
+def chunks_overlap(chunk1,max_slide,chunk2):
+  if ( 
+    chunk1.start() - max_slide >= chunk2.start() 
+    and chunk1.start() - max_slide <= chunk2.end()
+    ) or (
+    chunk1.end() + max_slide >= chunk2.start() 
+    and chunk1.end() - max_slide <= chunk2.end()
+    ) or (
+    chunk1.start() + max_slide >= chunk2.start() 
+    and chunk1.end() - max_slide <= chunk2.end() ):
+    return 1
+  else:
+    return 0
+
+def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
+  insp_job,trig_job,df_job,snr,chisq,pad,max_slide,prev_df,
+  do_datafind,do_trigbank,do_inspiral,dag,usertag=None):
+  """
+  Analyze the data from a Hanford instrument. Since the way we treat H1 and
+  H2 is symmetric, this function is the same for both instruments. Returns the
+  last LALdataFind job that was executed and the chunks analyzed.
+  l1_lho_data = the overlap of L1 data with the Hanford IFOs
+  l1_chunks_analyzed = the L1 master chunks that have been analyzed
+  lho_data = the master science segments the Hanford IFO
+  ifo_name = the name of the Hanford IFO
+  insp_job = the condor job that we should use to analyze Hanford data
+  trig_job = the trigtomplt job used for the LHO inspiral search
+  df_job = the condor job to find the data
+  snr = the signal-to-noise threshold for this IFO
+  chisq = the chi squared threshold for this IFO
+  pad = data start/end padding
+  max_slide = the maximum length of a time slide
+  prev_df = the previous LALdataFind job that was executed
+  do_datafind = should we do the datafind?
+  do_trigbank = should we do the triggered bank?
+  do_inspiral = should we do the inspiral?
+  dag = the DAG to attach the nodes to
+  """
+  chunks_analyzed = []
+  # loop over the master science segments
+  for seg in ifo_data:
+    # make sure that we do not do a data find more than once per science segment
+    done_df_for_seg = None
+    # loop over the master analysis chunks in the science segment
+    for chunk in seg:
+      done_this_chunk = 0
+      # now loop over all the L1 data that we need to filter
+      for seg_to_do in l1_lho_data:
+        # if the current chunk is in one of the segments we need to filter
+        if chunk_in_segment(chunk,seg_to_do,max_slide) and not done_this_chunk:
+          # make sure we only filter the master chunk once
+          done_this_chunk = 1
+          # make sure we have done one and only one datafind for the segment
+          if not done_df_for_seg:
+            df = inspiral.DataFindNode(df_job)
+            df.set_ifo(ifo_name)
+            df.set_start(seg.start() - pad)
+            df.set_end(seg.end() + pad)
+            if prev_df: df.add_parent(prev_df)
+            if do_datafind: dag.add_node(df)
+            prev_df = df
+            done_df_for_seg = 1
+          # make a trigbank for the master LHO chunk: to do this, we need
+          # the master L1 chunks that overlap with this LHO chunk as input
+          trigbank = inspiral.TrigToTmpltNode(trig_job)
+          trigbank.make_trigbank(chunk,max_slide,'L1',ifo_name,usertag)
+          for l1_done in l1_chunks_analyzed:
+            if chunks_overlap(chunk,max_slide,l1_done.get_chunk()):
+              trigbank.add_var_arg(l1_done.get_dag_node().get_output())
+              if do_inspiral: trigbank.add_parent(l1_done.get_dag_node())
+          if do_trigbank: dag.add_node(trigbank)
+          # analyze the LHO master chunk with this triggered template bank
+          insp = inspiral.InspiralNode(insp_job)
+          insp.set_start(chunk.start())
+          insp.set_end(chunk.end())
+          insp.set_ifo(ifo_name)
+          insp.set_ifo_tag('L1')
+          insp.add_var_opt('snr-threshold',snr)
+          insp.add_var_opt('chisq-threshold',chisq)
+          insp.add_var_opt('trig-start-time',chunk.trig_start())
+          insp.add_var_opt('trig-end-time',chunk.trig_end())
+          insp.set_cache(df.get_output())
+          insp.set_bank(trigbank.get_output())
+          if do_datafind: insp.add_parent(df)
+          if do_trigbank: insp.add_parent(trigbank)
+          if do_inspiral: dag.add_node(insp)
+          # store this chunk in the list of filtered L1 data
+          chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
+  
+  return tuple([prev_df,chunks_analyzed])
+
+##############################################################################
 # help message
 def usage():
   msg = """\
@@ -58,6 +185,8 @@ Usage: lalapps_inspiral_pipe [options]
 
   -j, --injections FILE    add simulated inspirals from sim_inspiral in FILE
 
+  -s, --max-slide-time SEC set the largest time side for background to SEC
+
   -p, --playground-only    only create chunks that overlap with playground
   -P, --priority PRIO      run jobs with condor priority PRIO
 
@@ -68,7 +197,7 @@ Usage: lalapps_inspiral_pipe [options]
 
 ##############################################################################
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:driTUIJCDEj:pP:l:f:"
+shortop = "hvu:driTUIJCDEj:pP:s:l:f:"
 longop = [
   "help",
   "version",
@@ -84,6 +213,7 @@ longop = [
   "l1h2-coincidence",
   "l1h1h2-coincidence",
   "injections=",
+  "max-slide-time=",
   "playground-only",
   "priority=",
   "log-path=",
@@ -108,6 +238,7 @@ do_l1h1_coinc = None
 do_l1h2_coinc = None
 do_l1h1h2_coinc = None
 inj_file = None
+max_slide = 0
 playground_only = 0
 condor_prio = None
 log_path = None
@@ -144,6 +275,8 @@ for o, a in opts:
     do_l1h1h2_coinc = 1
   elif o in ("-j", "--injections"):
     inj_file = a
+  elif o in ("-s", "--max-slide-time"):
+    max_slide = int(a)
   elif o in ("-p", "--playground-only"):
     playground_only = 1
   elif o in ("-P", "--priority"):
@@ -360,7 +493,7 @@ for seg in l1_data:
     done_this_chunk = 0
     for seg_to_do in l1_lho_data:
       #if the current chunk is in one of the segments we need to filter
-      if inspiral.chunk_in_segment(chunk,seg_to_do) and not done_this_chunk:
+      if chunk_in_segment(chunk,seg_to_do,max_slide) and not done_this_chunk:
         # make sure we only filter the master chunk once
         done_this_chunk = 1
         # make sure we have done one and only one datafind for the segment
@@ -396,7 +529,7 @@ for seg in l1_data:
         if not do_tmpltbank and do_datafind:insp.add_parent(df)
         if do_inspiral: dag.add_node(insp)
         # store this chunk in the list of filtered L1 data
-        l1_chunks_analyzed.append(inspiral.AnalyzedIFOData(chunk,insp))
+        l1_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 print "done"
 
 ##############################################################################
@@ -405,9 +538,9 @@ h1_chunks_analyzed = []
 
 print "setting up jobs to filter H1 data...",
 sys.stdout.flush()
-(prev_df,h1_chunks_analyzed) = inspiral.analyze_lho_ifo(
+(prev_df,h1_chunks_analyzed) = analyze_lho_ifo(
   l1_lho_data,l1_chunks_analyzed,h1_data,
-  'H1',insp_job,trig_job,df_job,h1_snr,h1_chisq,pad,prev_df,
+  'H1',insp_job,trig_job,df_job,h1_snr,h1_chisq,pad,max_slide,prev_df,
   do_datafind,do_h1_trigbank,do_h1_inspiral,dag,usertag)
 print "done"
 
@@ -417,9 +550,9 @@ l1_h2_chunks_analyzed = []
 
 print "setting up jobs to filter H2 double coincident data...",
 sys.stdout.flush()
-(prev_df,l1_h2_chunks_analyzed) = inspiral.analyze_lho_ifo(
+(prev_df,l1_h2_chunks_analyzed) = analyze_lho_ifo(
   l1_h2_data,l1_chunks_analyzed,h2_data,
-  'H2',insp_job,trig_job,df_job,h2_snr,h2_chisq,pad,prev_df,
+  'H2',insp_job,trig_job,df_job,h2_snr,h2_chisq,pad,max_slide,prev_df,
   do_datafind,do_h2_trigbank,do_h2_inspiral,dag,usertag)
 print "done"
 
@@ -439,12 +572,12 @@ for seg in l1_h1_data:
   inca.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
   # add all L1 master segments that overlap with segment to input
   for l1_done in l1_chunks_analyzed:
-    if inspiral.chunk_in_segment(l1_done.get_chunk(),seg):
+    if chunk_in_segment(l1_done.get_chunk(),seg):
       inca.add_var_arg(l1_done.get_dag_node().get_output())
       if do_inspiral: inca.add_parent(l1_done.get_dag_node())
   # add all H1 master segments that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
-    if inspiral.chunk_in_segment(h1_done.get_chunk(),seg):
+    if chunk_in_segment(h1_done.get_chunk(),seg):
       inca.add_var_arg(h1_done.get_dag_node().get_output())
       if do_h1_inspiral: inca.add_parent(h1_done.get_dag_node())
   if do_l1h1_coinc: dag.add_node(inca)
@@ -464,12 +597,12 @@ for seg in l1_h2_data:
   inca.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
   # add all L1 master segments that overlap with segment to input
   for l1_done in l1_chunks_analyzed:
-    if inspiral.chunk_in_segment(l1_done.get_chunk(),seg):
+    if chunk_in_segment(l1_done.get_chunk(),seg):
       inca.add_var_arg(l1_done.get_dag_node().get_output())
       if do_inspiral: inca.add_parent(l1_done.get_dag_node())
   # add all H2 master segments that overlap with segment to input
   for h2_done in l1_h2_chunks_analyzed:
-    if inspiral.chunk_in_segment(h2_done.get_chunk(),seg):
+    if chunk_in_segment(h2_done.get_chunk(),seg):
       inca.add_var_arg(h2_done.get_dag_node().get_output())
       if do_h1_inspiral: inca.add_parent(h2_done.get_dag_node())
   if do_l1h2_coinc: dag.add_node(inca)
@@ -495,18 +628,18 @@ for seg in l1_h1_h2_data:
   inca1.add_var_opt('epsilon',cp.get('pipeline','lh-epsilon'))
   # add all L1 master segments that overlap with segment to input
   for l1_done in l1_chunks_analyzed:
-    if inspiral.chunk_in_segment(l1_done.get_chunk(),seg):
+    if chunk_in_segment(l1_done.get_chunk(),seg):
       inca1.add_var_arg(l1_done.get_dag_node().get_output())
       if do_inspiral: inca1.add_parent(l1_done.get_dag_node())
   # add all H1 master segments that overlap with segment to input
   for h1_done in h1_chunks_analyzed:
-    if inspiral.chunk_in_segment(h1_done.get_chunk(),seg):
+    if chunk_in_segment(h1_done.get_chunk(),seg):
       inca1.add_var_arg(h1_done.get_dag_node().get_output())
       if do_h1_inspiral: inca1.add_parent(h1_done.get_dag_node())
   # add the nodes to the dag
   if do_l1h1h2_coinc:
     dag.add_node(inca1)
-  l1_h1_inca_nodes.append(inspiral.AnalyzedIFOData(seg,inca1))
+  l1_h1_inca_nodes.append(AnalyzedIFOData(seg,inca1))
 print "done"
 
 ##############################################################################
@@ -525,7 +658,7 @@ for seg in h2_data:
     # now loop over all the triple coincident data that we need to filter
     for seg_to_do in l1_h1_h2_data:
       # if the current chunk is in one of the segments we need to filter
-      if inspiral.chunk_in_segment(chunk,seg_to_do) and not done_this_chunk:
+      if chunk_in_segment(chunk,seg_to_do) and not done_this_chunk:
         # make sure we only filter the master chunk once
         done_this_chunk = 1
         # make sure we have done one and only one datafind for the segment
@@ -541,9 +674,9 @@ for seg in h2_data:
         # make a trigbank for the master H2 chunk: to do this, we need
         # the inca job from L1/H1 that overlaps with this H2 chunk as input
         trigbank = inspiral.TrigToTmpltNode(trig_job)
-        trigbank.make_trigbank(chunk,'H1','H2',usertag,'L1H1')
+        trigbank.make_trigbank(chunk,0,'H1','H2',usertag,'L1H1')
         for l1_h1_done in l1_h1_inca_nodes:
-          if inspiral.chunk_in_segment(chunk,l1_h1_done.get_chunk()):
+          if chunk_in_segment(chunk,l1_h1_done.get_chunk()):
             trigbank.add_var_arg(l1_h1_done.get_dag_node().get_output_b())
             trigbank.add_parent(l1_h1_done.get_dag_node())
         # analyze the H2 master chunk with this triggered template bank
@@ -564,7 +697,7 @@ for seg in h2_data:
           insp.add_parent(trigbank)
           dag.add_node(insp)
         # store this chunk in the list of filtered L1 data
-        l1_h1_h2_chunks_analyzed.append(inspiral.AnalyzedIFOData(chunk,insp))
+        l1_h1_h2_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 print "done"
 
 ##############################################################################
@@ -607,7 +740,7 @@ for seg in l1_h1_h2_data:
       inca3.add_var_arg(l1_h1_done.get_dag_node().get_output_a())
   # add all H2 master segments that overlap with segment to input
   for h2_done in l1_h1_h2_chunks_analyzed:
-    if inspiral.chunk_in_segment(h2_done.get_chunk(),seg):
+    if chunk_in_segment(h2_done.get_chunk(),seg):
       inca2.add_var_arg(h2_done.get_dag_node().get_output())
       inca2.add_parent(h2_done.get_dag_node())
   inca3.add_parent(inca2)

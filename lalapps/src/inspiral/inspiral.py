@@ -284,10 +284,12 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__output = None
 
-  def make_trigbank(self,chunk,source_ifo,dest_ifo,usertag=None,ifo_tag=None):
+  def make_trigbank(self,chunk,max_slide,source_ifo,dest_ifo,
+    usertag=None,ifo_tag=None):
     """
     Sets the name of triggered template bank file.
     chunk = the analysis chunk that is being 
+    max_slide = the maximum length of a time slide for background estimation
     source_ifo = the name of the ifo that the triggers come from
     dest_ifo = the name of the ifo that the templates will be used for
     usertag = usertag to tag the output filename with
@@ -295,13 +297,13 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     for naming files
     """
     if chunk.trig_start():
-      self.set_start(chunk.trig_start())
+      self.set_start(chunk.trig_start() - max_slide)
     else:
-      self.set_start(chunk.start())
+      self.set_start(chunk.start() - max_slide)
     if chunk.trig_end():
-      self.set_end(chunk.trig_end())
+      self.set_end(chunk.trig_end() + max_slide)
     else:
-      self.set_end(chunk.end())
+      self.set_end(chunk.end() + max_slide)
 
     self.add_var_opt('ifo-a',source_ifo)
 
@@ -403,123 +405,3 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     return basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
 
-
-##############################################################################
-# some functions to make life easier later
-class AnalyzedIFOData:
-  """
-  Contains the information for the data that needs to be filtered.
-  """
-  def __init__(self,chunk,node):
-    self.__analysis_chunk = chunk
-    self.__dag_node = node
-
-  def set_chunk(self,chunk):
-    self.__analysis_chunk = chunk
-
-  def get_chunk(self):
-    return self.__analysis_chunk
-
-  def set_dag_node(self,node):
-    self.__dag_node = node
-
-  def get_dag_node(self):
-    return self.__dag_node
-
-def chunk_in_segment(chunk,seg):
-  if ( 
-    chunk.start() >= seg.start() and chunk.start() <= seg.end() 
-    ) or (
-    chunk.end() >= seg.start() and chunk.end() <= seg.end()
-    ) or (
-    seg.start() >= chunk.start() and seg.end() <= chunk.end() ):
-    return 1
-  else:
-    return 0
-
-def chunks_overlap(chunk1,chunk2):
-  if ( 
-    chunk1.start() >= chunk2.start() and chunk1.start() <= chunk2.end()
-    ) or (
-    chunk1.end() >= chunk2.start() and chunk1.end() <= chunk2.end()
-    ) or (
-    chunk1.start() >= chunk2.start() and chunk1.end() <= chunk2.end() ):
-    return 1
-  else:
-    return 0
-
-def analyze_lho_ifo(l1_lho_data,l1_chunks_analyzed,ifo_data,ifo_name,
-  insp_job,trig_job,df_job,snr,chisq,pad,prev_df,
-  do_datafind,do_trigbank,do_inspiral,dag,usertag=None):
-  """
-  Analyze the data from a Hanford instrument. Since the way we treat H1 and
-  H2 is symmetric, this function is the same for both instruments. Returns the
-  last LALdataFind job that was executed and the chunks analyzed.
-  l1_lho_data = the overlap of L1 data with the Hanford IFOs
-  l1_chunks_analyzed = the L1 master chunks that have been analyzed
-  lho_data = the master science segments the Hanford IFO
-  ifo_name = the name of the Hanford IFO
-  insp_job = the condor job that we should use to analyze Hanford data
-  trig_job = the trigtomplt job used for the LHO inspiral search
-  df_job = the condor job to find the data
-  snr = the signal-to-noise threshold for this IFO
-  chisq = the chi squared threshold for this IFO
-  pad = data start/end padding
-  prev_df = the previous LALdataFind job that was executed
-  do_datafind = should we do the datafind?
-  do_trigbank = should we do the triggered bank?
-  do_inspiral = should we do the inspiral?
-  dag = the DAG to attach the nodes to
-  """
-  chunks_analyzed = []
-  # loop over the master science segments
-  for seg in ifo_data:
-    # make sure that we do not do a data find more than once per science segment
-    done_df_for_seg = None
-    # loop over the master analysis chunks in the science segment
-    for chunk in seg:
-      done_this_chunk = 0
-      # now loop over all the L1 data that we need to filter
-      for seg_to_do in l1_lho_data:
-        # if the current chunk is in one of the segments we need to filter
-        if chunk_in_segment(chunk,seg_to_do) and not done_this_chunk:
-          # make sure we only filter the master chunk once
-          done_this_chunk = 1
-          # make sure we have done one and only one datafind for the segment
-          if not done_df_for_seg:
-            df = DataFindNode(df_job)
-            df.set_ifo(ifo_name)
-            df.set_start(seg.start() - pad)
-            df.set_end(seg.end() + pad)
-            if prev_df: df.add_parent(prev_df)
-            if do_datafind: dag.add_node(df)
-            prev_df = df
-            done_df_for_seg = 1
-          # make a trigbank for the master LHO chunk: to do this, we need
-          # the master L1 chunks that overlap with this LHO chunk as input
-          trigbank = TrigToTmpltNode(trig_job)
-          trigbank.make_trigbank(chunk,'L1',ifo_name,usertag)
-          for l1_done in l1_chunks_analyzed:
-            if chunks_overlap(chunk,l1_done.get_chunk()):
-              trigbank.add_var_arg(l1_done.get_dag_node().get_output())
-              if do_inspiral: trigbank.add_parent(l1_done.get_dag_node())
-          if do_trigbank: dag.add_node(trigbank)
-          # analyze the LHO master chunk with this triggered template bank
-          insp = InspiralNode(insp_job)
-          insp.set_start(chunk.start())
-          insp.set_end(chunk.end())
-          insp.set_ifo(ifo_name)
-          insp.set_ifo_tag('L1')
-          insp.add_var_opt('snr-threshold',snr)
-          insp.add_var_opt('chisq-threshold',chisq)
-          insp.add_var_opt('trig-start-time',chunk.trig_start())
-          insp.add_var_opt('trig-end-time',chunk.trig_end())
-          insp.set_cache(df.get_output())
-          insp.set_bank(trigbank.get_output())
-          if do_datafind: insp.add_parent(df)
-          if do_trigbank: insp.add_parent(trigbank)
-          if do_inspiral: dag.add_node(insp)
-          # store this chunk in the list of filtered L1 data
-          chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
-  
-  return tuple([prev_df,chunks_analyzed])
