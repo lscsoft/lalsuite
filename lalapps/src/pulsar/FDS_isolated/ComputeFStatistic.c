@@ -142,6 +142,8 @@ FILE *fpmax;			/**< output-file: maximum of F-statistic over frequency-range */
 FILE *fpstat;			/**< output-file: F-statistic candidates and cluster-information */
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
+int reverse_endian=-1;          /**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
+
 
 /*----------------------------------------------------------------------*/
 /* local prototypes */
@@ -165,6 +167,10 @@ INT4 writeFaFb(INT4 *maxIndex);
 void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
 INT4 EstimatePSDLines(LALStatus *status);
 void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
+static void swap2(char *location);
+static void swap4(char *location);
+static void swap8(char *location);
+void swapheader(struct headertag *thisheader);
 /*----------------------------------------------------------------------*/
 /* some local defines */
 
@@ -1146,7 +1152,7 @@ int NormaliseSFTData(void)
 int ReadSFTData(void)
 {
   INT4 fileno=0,offset;
-  FILE *fp;
+  FILE *fp=NULL;
   size_t errorcode;
   UINT4 ndeltaf;
   INT4 k=0;
@@ -1182,12 +1188,13 @@ int ReadSFTData(void)
 	  return 1;
 	}
 
-      /* Check that data is correct endian order */
+      if (reverse_endian)
+	swapheader(&header);
+      
       if (header.endian!=1.0)
 	{
 	  fprintf(stderr,"First object in file %s is not (double)1.0!\n",GV.filelist[fileno]);
-	  fprintf(stderr,"It could be a file format error (big/little\n");
-	  fprintf(stderr,"endian) or the file might be corrupted\n\n");
+	  fprintf(stderr,"The file might be corrupted\n\n");
 	  return 2;
 	}
     
@@ -1233,9 +1240,16 @@ int ReadSFTData(void)
       errorcode=fread((void*)(SFTData[fileno]->fft->data->data), sizeof(COMPLEX8), ndeltaf, fp);
       if (errorcode!=ndeltaf){
 	perror(GV.filelist[fileno]);
-	fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", errorcode, ndeltaf);
+	fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", (int)errorcode, ndeltaf);
 	return 6;
       }
+      /* reverse byte order if needed */
+      if (reverse_endian) {
+	unsigned int cnt;
+	for (cnt=0; cnt<2*ndeltaf; cnt++)
+	  swap4((char *)&(SFTData[fileno]->fft->data->data[cnt]));
+      }
+      
       SFTData[fileno]->fft->epoch=timestamps[fileno];
       SFTData[fileno]->fft->f0 = GV.ifmin / GV.tsft;
       SFTData[fileno]->fft->deltaF = 1.0 / GV.tsft;
@@ -1359,6 +1373,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     
     while (fread((void*)&header,sizeof(header),1,fp) == 1) {
       char tmp[256];
+
       /* check that we've still got space for more data */
       if (fileno >= MAXFILES) {
 	fprintf(stderr,"Too many SFT's in merged file! Exiting... \n");
@@ -1369,11 +1384,20 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       sprintf(tmp, "%s (block %d)", uvar_mergedSFTFile, fileno+1);
       strcpy(cfg->filelist[fileno],tmp);
       
-      /* check that data is correct endian order */
+      /* check that data is correct endian order and swap if needed */
+      if (-1 == reverse_endian) {
+	if (header.endian==1.0)
+	  reverse_endian=0;
+	else
+	  reverse_endian=1;
+      }
+      
+      if (reverse_endian)
+	swapheader(&header);
+
       if (header.endian!=1.0) {
 	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno]);
-	fprintf(stderr,"It could be a file format error (big/little\n");
-	fprintf(stderr,"endian) or the file might be corrupted\n\n");
+	fprintf(stderr,"The file might be corrupted\n\n");
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
       
@@ -1418,7 +1442,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     
-    while ((UINT4)fileno < globbuf.gl_pathc) 
+    while ((UINT4)fileno < (UINT4)globbuf.gl_pathc) 
       {
 	strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
 	fileno++;
@@ -1444,12 +1468,14 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     
+    if (reverse_endian)
+      swapheader(&header);
+    
     /* check that data is correct endian order */
     if (header.endian!=1.0)
       {
 	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
-	fprintf(stderr,"It could be a file format error (big/little\n");
-	fprintf(stderr,"endian) or the file might be corrupted\n\n");
+	fprintf(stderr,"The file might be corrupted\n\n");
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     fclose(fp);
@@ -1468,12 +1494,14 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	fprintf(stderr,"No header in data file %s\n",cfg->filelist[fileno-1]);
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
+    if (reverse_endian)
+      swapheader(&header);
+
     /* check that data is correct endian order */
     if (header.endian!=1.0)
       {
 	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
-	fprintf(stderr,"It could be a file format error (big/little\n");
-	fprintf(stderr,"endian) or the file might be corrupted\n\n");
+	fprintf(stderr,"The file might be corrupted\n\n");
 	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
       }
     fclose(fp);
@@ -1558,6 +1586,15 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     useGridFile   = (uvar_gridType == GRID_FILE);
     haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
     useMetric     = (uvar_gridType == GRID_METRIC);
+
+#if USE_BOINC
+    if (haveGridFile)
+      use_boinc_filename1(&(uvar_skyGridFile));
+    /*
+      if storage is allocated dynamically, use this instead!
+          use_boinc_filename0(uvar_skyGridFile);
+    */
+#endif
 
     /* some consistency checks on input to help catch errors */
     if ( !useGridFile && !(haveSkyRegion || haveAlphaDelta) )
@@ -2554,6 +2591,44 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 
 } /* NormaliseSFTDataRngMed() */
 
+
+/* swap 2, 4 or 8 bytes.  Point to low address */
+static void swap2(char *location){
+  char tmp=*location;
+  *location=*(location+1);
+  *(location+1)=tmp;
+  return;
+}
+  
+static void swap4(char *location){
+  char tmp=*location;
+  *location=*(location+3);
+  *(location+3)=tmp;
+  swap2(location+1);
+  return;
+}
+  
+static void swap8(char *location){
+  char tmp=*location;
+  *location=*(location+7);
+  *(location+7)=tmp;
+  tmp=*(location+1);
+  *(location+1)=*(location+6);
+  *(location+6)=tmp;
+  swap4(location+2);
+  return;
+}
+
+void swapheader(struct headertag *thisheader) {
+  swap8((char *)&(thisheader->endian));
+  swap8((char *)&(thisheader->tbase));
+  swap4((char *)&(thisheader->gps_sec));
+  swap4((char *)&(thisheader->gps_nsec));
+  swap4((char *)&(thisheader->firstfreqindex));
+  swap4((char *)&(thisheader->nsamples));
+  return;
+}
+
 /*******************************************************************************/
 /* BOINC-specific functions follow here */
 #if USE_BOINC
@@ -2577,5 +2652,4 @@ void use_boinc_filename1(char **orig_name ) {
   strcpy(*orig_name, resolved_name);
   return;
 }
-
 #endif /*USE_BOINC*/
