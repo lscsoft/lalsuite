@@ -97,8 +97,8 @@ main (  int argc, char **argv )
    static InspiralMetric metric;
    RealFFTPlan *fwdp=NULL,*revp=NULL;
    FILE *FilterTest;
-   FilterTest = fopen("FilterTest.out", "w");
    static InspiralTemplateList *tmpltList=NULL;
+   FilterTest = fopen("FilterTest.out", "w");
 
 
    randIn.useed = 128092;
