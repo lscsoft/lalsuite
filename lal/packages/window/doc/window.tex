@@ -1,0 +1,53 @@
+\chapter{Package \texttt{window}}
+
+This package contains a function to create a vector
+containing a window (also called
+a taper, lag window, or apodization function).  The choices
+currently available are:
+\begin{itemize}
+\item Rectangular
+\item Hann
+\item Welch
+\item Bartlett
+\item Parzen
+\item Papoulis
+\item Hamming.
+\end{itemize}
+Using window functions is well documented in many places.  Their
+principal purpose is to reduce the {\it bias} in power spectrum
+estimation.  For example, if a sinusoidal signal is present, it will
+give rise to a spike in a power spectrum.  If such a  signal is present
+exactly at the frequency of a particular bin, the spike will have some
+height.  If a signal at the same amplitude but slighly different
+frequency is present, and the frequency is not exactly the same
+as one of the bins, then
+the spike will be broader and lower. Without widowing, this effect introduces
+bias into spectral estimates.
+
+If the signal is first multiplied by the window function, the
+relative difference between the two resulting power spectra will be
+less evident.  The signal which would have given a single-bin spike
+will now be spread over several bins.  The signal that would have
+been spread over several bins will now be somewhat more peaked.
+In short, the two power spectra will appear more similar (apart from
+the difference in frequency of the two signals).  Hence the spectra
+is less biased.
+
+Definitions of most of the window functions above may be found in {\it Numerical Recipes} \cite{numrec} equations 13.4.13-13.4.15.  Definitions
+of the remaining windows can be found in {\it Spectral analysis for physical applications} \cite{pw} Section 6.11.
+
+
+\newpage\input{WindowH}
+\newpage\begin{thebibliography}{0}
+\bibitem{numrec}
+W. H. Press, S. A. Teukolsky, W. T. Vetterling, and B. P. Flannery,
+  \textit{Numerical Recipes in C: The Art of Scientific Computing}, 2nd ed.
+  (Cambridge University Press, Cambridge, England, 1992).
+\bibitem{pw}
+D.B. Percival and A.T. Walden, {\it Spectral analysis for physical applications}, first edition, Cambridge University Press, (1993).
+\bibitem{pm}
+J.G. Proakis and D.G. Manolakis, {\it Digital
+Signal Processing: principles, algorithms and applications},
+3rd Edition, 1995.
+Prentice Hall
+\end{thebibliography}

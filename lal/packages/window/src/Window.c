@@ -1,31 +1,57 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: Window.c
- * 
- * Author: Allen, B.
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- * Window
- * 
- * SYNOPSIS 
- * void Window (LALStatus *, REAL4Vector *vector, WindowParams parameters);
- * 
- * DESCRIPTION 
- * Create a Window function of specified type in vector. 
- * 
- * DIAGNOSTICS 
- * Illegal length, vector == NULL, *vector != NULL, malloc failure
- *
- * CALLS
- * 
- * NOTES
- * 
- *-----------------------------------------------------------------------
- */
+/****************************************************** <lalVerbatim file=WindowCV>
+Author: Bruce Allen
+$Id$
+****************************************************** </lalVerbatim>*/
+/****************************************************** <lalLaTeX>
+
+\subsection{Module \texttt{Window.c}}
+\label{ss:Window.c}
+
+Creates vector structure containing a window (also called
+a taper, lag window, or apodization function).  The choices
+currently available are:
+\begin{itemize}
+\item Rectangular
+\item Hann
+\item Welch
+\item Bartlett
+\item Parzen
+\item Papoulis
+\item Hamming
+\end{itemize}
+It should be straighforward to add additional window functions if
+they are desired.
+\subsubsection*{Prototypes}
+\input{WindowCP}
+\index{\texttt{LALWindow()}}
+Note that the \texttt{paramters} argument handles both input and output.
+
+\subsubsection*{Description}
+This function creates a time-domain window function in a vector of
+specified length.  Note that this function was not written to be
+particularly efficient.  If you need a window lots of times, calculate
+it once then save it, please.
+
+The window functions are defined for $j=0,\cdots,N-1$ by the following
+formulae.  Note that $N$ is the vector.  In these formulae, let
+$x=2 \pi j/N$, and $y=|2j/N-1|$,
+\begin{eqnarray*}
+{\rm Rectangular:\ } w_j &=& 1 \\
+{\rm Hann:\ } w_j &=& {1 \over 2} ( 1 - \cos  x  ) \\
+{\rm Welch:\ } w_j &=& 1 -  y^2 \\
+{\rm Bartlett:\ } w_j &=& 1 -  y \\
+{\rm Parzen:\ } w_j &=&  1 - 6 y^2 + 6 y^3  {\rm\ if\ } y\le 1/2\\
+                    &=&  2 (1-y)^3 {\rm\ if\ } y>1/2\\
+{\rm Papoulis:\ } w_j &=& {1 \over \pi} \sin (\pi  y  ) + ( 1 -  y  ) \cos (\pi  y  )\\
+{\rm Hamming:\ } w_j &=& 1-0.46 (1 + \cos x ) \\
+\end{eqnarray*}
+These window functions are shown in Fig.~\ref{f:window} for $N=1024$.
+\begin{figure}
+\noindent\includegraphics[angle=-90,width=.9\linewidth]{windowFig}
+\caption{\label{f:window} Examples of the window functions for length 1024}
+\end{figure}
+
+****************************************************** </lalLaTeX> */
 
 #include <math.h>
 #include <lal/LALConstants.h>
@@ -36,7 +62,12 @@ NRCSID (WINDOW, "$Id$");
 
 static const char *WindowTypeNames[] = WINDOWNAMELIST;
 
-void LALWindow(LALStatus *status, REAL4Vector *vector, LALWindowParams *parameters) 
+/* <lalVerbatim file="WindowCP"> */
+void 
+LALWindow( LALStatus       *status, 
+           REAL4Vector     *vector, 
+           LALWindowParams *parameters ) 
+     /* </lalVerbatim> */
 {
   UINT4 i;
   UINT4 length;
@@ -49,24 +80,24 @@ void LALWindow(LALStatus *status, REAL4Vector *vector, LALWindowParams *paramete
   INITSTATUS(status,"LALWindow Function",WINDOW);
 
   /* Check that parameter block is there. */ 
-  ASSERT(parameters!=NULL,status,WINDOW_NULLPARAM,WINDOW_MSGNULLPARAM);
+  ASSERT(parameters!=NULL,status,WINDOWH_ENULLPARAM,WINDOWH_MSGENULLPARAM);
 
   /* check that the vector is not null */
-  ASSERT(vector!=NULL,status,WINDOW_NULLHANDLE,WINDOW_MSGNULLHANDLE);
+  ASSERT(vector!=NULL,status,WINDOWH_ENULLHANDLE,WINDOWH_MSGENULLHANDLE);
 
   /* Check that window length is reasonable. */ 
   length=parameters->length;
-  ASSERT(length>0,status,WINDOW_ELENGTH,WINDOW_MSGELENGTH);
+  ASSERT(length>0,status,WINDOWH_EELENGTH,WINDOWH_MSGEELENGTH);
 
   /* Make sure that window is of a known type */
   windowtype=parameters->type;
   ASSERT(windowtype>=Rectangular && windowtype<NumberWindowTypes,status,
-         WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN);
+         WINDOWH_ETYPEUNKNOWN,WINDOWH_MSGETYPEUNKNOWN);
 
   /* vector is apparently already allocated.  Check length, data area */
   ASSERT(vector->length==length,status,
-         WINDOW_WRONGLENGTH,WINDOW_MSGWRONGLENGTH);
-  ASSERT(vector->data!=NULL,status,WINDOW_NULLDATA,WINDOW_MSGNULLDATA);
+         WINDOWH_EWRONGLENGTH,WINDOWH_MSGEWRONGLENGTH);
+  ASSERT(vector->data!=NULL,status,WINDOWH_ENULLDATA,WINDOWH_MSGENULLDATA);
 
   wss=0.0;
   for (i=0;i<length;i++)
@@ -116,7 +147,7 @@ void LALWindow(LALStatus *status, REAL4Vector *vector, LALWindowParams *paramete
 
     /* Default case -- this will NEVER happen -- it is trapped above! */
     default:
-      ABORT(status,WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN);
+      ABORT(status,WINDOWH_ETYPEUNKNOWN,WINDOWH_MSGETYPEUNKNOWN);
       break;
     }
     wss+=win*win;

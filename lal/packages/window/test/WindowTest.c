@@ -1,32 +1,45 @@
-/*----------------------------------------------------------------------- 
- * 
- * File Name: WindowTest.c
- * 
- * Author: Allen, Bruce ballen@dirac.phys.uwm.edu 
- * 
- * Revision: $Id$
- * 
- *----------------------------------------------------------------------- 
- * 
- * NAME 
- *   main()
- *
- * SYNOPSIS 
- * 
- * DESCRIPTION 
- *   Test suite for Window generator
- * 
- * DIAGNOSTICS
- *   Writes PASS, FAIL to stdout as tests are passed or failed. 
- *   Returns 0 if all tests passed and -1 if any test failed. 
- * 
- * CALLS
- *   Window
- * 
- * NOTES
- * 
- *-----------------------------------------------------------------------
- */
+/******************************** <lalVerbatim file="WindowTestCV">
+Author:Bruce Allen
+Revision: $Id$
+**************************************************** </lalVerbatim> */
+/********************************************************** <lalLaTeX>
+\subsection{Program \texttt{WindowTest.c}}
+\label{s:WindowTest.c}
+
+
+Tests the routines in \verb@Window.h@.
+
+
+\subsubsection*{Usage}
+\begin{verbatim}
+WindowTest
+\end{verbatim}
+
+\subsubsection*{Description}
+This program outputs 7 text files, with names
+\texttt{PrintVector.000} to \texttt{PrintVector.006}.
+Each of these contain one of the window functions show in
+Fig.~\ref{f:window} for $N=1024$.   These files
+may be viewed for example by using the public domain graphing
+program xmgr, and typing:
+\begin{verbatim}
+xmgr PrintVector.*
+\end{verbatim}
+
+The program also tests all error conditions, and checks that the sum of
+ these windows squared
+add to the correct values.  If there is an error in execution,
+the corresponding error message is printed.
+
+Upon successful completion, the program prints:
+\texttt{PASS Window()}. 
+
+
+\vfill{\footnotesize\input{WindowTestCV}}
+
+********************************************************** </lalLaTeX> */
+
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -84,25 +97,25 @@ int main( void )
     {
       /* Test behavior for null parameter block */
       LALWindow(&status,vector,NULL );
-      if (check(&status,WINDOW_NULLPARAM,WINDOW_MSGNULLPARAM)) return 1;
+      if (check(&status,WINDOWH_ENULLPARAM,WINDOWH_MSGENULLPARAM)) return 1;
 
       /* Test behavior for null vector block */
       LALWindow(&status,NULL,&params );
-      if (check(&status,WINDOW_NULLHANDLE,WINDOW_MSGNULLHANDLE)) return 1;
+      if (check(&status,WINDOWH_ENULLHANDLE,WINDOWH_MSGENULLHANDLE)) return 1;
 
       /* Test behavior for non-positive length  */
       params.length=0;
       LALWindow(&status,vector,&params);
-      if (check(&status,WINDOW_ELENGTH,WINDOW_MSGELENGTH)) return 1;
+      if (check(&status,WINDOWH_EELENGTH,WINDOWH_MSGEELENGTH)) return 1;
 
       /* Test failures for undefined window type on lower and upper bounds */
       params.length=1024;
       params.type=-1;
       LALWindow( &status, vector, &params );
-      if (check(&status,WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN)) return 1;
+      if (check(&status,WINDOWH_ETYPEUNKNOWN,WINDOWH_MSGETYPEUNKNOWN)) return 1;
       params.type=NumberWindowTypes;
       LALWindow( &status, vector, &params );
-      if (check(&status,WINDOW_TYPEUNKNOWN,WINDOW_MSGTYPEUNKNOWN)) return 1;
+      if (check(&status,WINDOWH_ETYPEUNKNOWN,WINDOWH_MSGETYPEUNKNOWN)) return 1;
 
       params.type=Rectangular;
 
@@ -110,12 +123,12 @@ int main( void )
       dummy.length=1234;
       dummy.data=NULL;
       LALWindow( &status, &dummy, &params );
-      if (check(&status,WINDOW_WRONGLENGTH,WINDOW_MSGWRONGLENGTH)) return 1;
+      if (check(&status,WINDOWH_EWRONGLENGTH,WINDOWH_MSGEWRONGLENGTH)) return 1;
 
       /* test that we get an error if the vector data area null */
       dummy.length=params.length;
       LALWindow( &status, &dummy, &params );
-      if (check(&status,WINDOW_NULLDATA,WINDOW_MSGNULLDATA)) return 1;
+      if (check(&status,WINDOWH_ENULLDATA,WINDOWH_MSGENULLDATA)) return 1;
     }
 #endif
 
@@ -142,3 +155,4 @@ int main( void )
 
     return 0;
 }
+
