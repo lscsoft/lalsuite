@@ -11,3 +11,6 @@ cvs-clean: maintainer-clean
 	rm -f src/config.h.in
 	rm -f configure
 	rm -f aclocal.m4
+	rm -f config.cache
+	rm -f config.status
+	rm -f config.log
