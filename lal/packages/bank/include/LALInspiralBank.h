@@ -39,7 +39,7 @@ Header file for the template placement codes.
 extern "C" {
 #endif
 
-NRCSID( LALINSPIRALBANKH, "$Id$" );
+NRCSID(LALINSPIRALBANKH, "$Id$" );
 
 /* <lalLaTeX>
 
@@ -561,6 +561,26 @@ LALInspiralCreateCoarseBank(
 );
 
 
+
+
+
+
+
+
+
+
+
+
+/* <lalLaTeX>
+\newpage\input{LALInspiralLongestTemplateInBankC}
+</lalLaTeX>  */
+void
+LALInspiralLongestTemplateInBank
+   (
+   LALStatus            *status, 
+   UINT4                *templateLength,
+   InspiralCoarseBankIn *coarseIn
+   );
 
 
 
