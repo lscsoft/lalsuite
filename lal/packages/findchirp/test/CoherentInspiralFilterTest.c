@@ -82,7 +82,7 @@ char GEOBeam[256];
 char VIRGOBeam[256];
 char TAMABeam[256];
 
-UINT4 siteID[6] = {0,1,3,2,4,0}; /*H1 L V G T H2*/
+UINT4 siteID[6] = {0,1,2,3,4,0}; /*H1 L V G T H2*/
 UINT2 caseID[6] = {0,0,0,0,0,0};
 
 static BOOLEAN          cohSNROut            = 1;
@@ -134,9 +134,6 @@ main (int argc, char *argv[])
   
   ParseOptions (argc, argv);
 
-  /*
-   * read in information for calculating chirp time
-   */
   
   /* override numSegments if outputting coherent SNR */
   if ( cohSNROut )
@@ -192,6 +189,11 @@ main (int argc, char *argv[])
   ClearStatus (&status);
   
   
+
+  /*
+   * information for calculating chirp time
+   */
+
   /* inspiral template structure */
   tmplt = cohInspFilterInput->tmplt = (InspiralTemplate *) 
     LALMalloc (sizeof(InspiralTemplate));
@@ -291,8 +293,6 @@ main (int argc, char *argv[])
 
 
 
-  /* read in the coefficients for each specified detector.  This should be moved to the case statements below where the coherent snr is computed.  It should be put in each of the last three cases: 3b,4a,4b.  This saves some unnecessary reading in of data since the coefficients are only used in the last 3 cases. Note that for networks with H1 and H2, there is some redundancy because they have the same coefficients.  currently it reads in a separate file for each of them. */
-
   /* create and fill the CoherentInspiralBeamVector structure of beam-patterns*/
   cohInspBeamVec = cohInspFilterInput->beamVec;
   
@@ -321,8 +321,9 @@ main (int argc, char *argv[])
 
   
   /*
-   * CREATE the multi-z data structure and
-   * READ in the z=x+iy data from multiple detectors 
+   * CREATE the multi-z data structure;
+   * the z=x+iy data from multiple detectors was read above along with 
+   * the beam-pattern functions
    */
   cohInspZVec = cohInspFilterInput->multiZData;
   
