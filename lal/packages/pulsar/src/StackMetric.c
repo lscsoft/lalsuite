@@ -99,8 +99,8 @@ LALStackMetric( LALStatus        *stat,
   ASSERT(metric->data,stat,STACKMETRICH_ENUL,STACKMETRICH_MSGENUL);
 
   /* Make sure that metric length is positive. */
-  ASSERT(n=metric->length,stat,STACKMETRICH_EBAD,
-	 STACKMETRICH_MSGEBAD);
+  n=metric->length;
+  ASSERT(n>0,stat,STACKMETRICH_EBAD,STACKMETRICH_MSGEBAD);
 
   /* Set up parameters for coherent metric computation. */
   memset(metric->data,0,n*sizeof(REAL8));

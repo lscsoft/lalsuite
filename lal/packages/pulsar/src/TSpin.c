@@ -123,7 +123,7 @@ LALTSpin( LALStatus             *stat,
 
   /* We'll compute ts and all its derivatives at once, so as to avoid
      repeated calculation of the powers of t. */
-  i=variables->length;
+  i=variables->length-1;
   k=1;
   while(--i)
     ts+=*(data++)*(tk*=t)/(++k);

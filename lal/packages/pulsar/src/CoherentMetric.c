@@ -189,8 +189,8 @@ LALCoherentMetric( LALStatus        *stat,
   ASSERT(params->dtCanon,stat,STACKMETRICH_ENUL,STACKMETRICH_MSGENUL);
 
   /* Make sure parameters are valid. */
-  ASSERT(s=lambda->length,stat,STACKMETRICH_EBAD,STACKMETRICH_MSGEBAD);
-  /* (yes, that is an assignment, not a comparison) */
+  s=lambda->length;
+  ASSERT(s,stat,STACKMETRICH_EBAD,STACKMETRICH_MSGEBAD);
   if(params->errors)
   {
     ASSERT(metric->length==s*(s+1),stat,STACKMETRICH_EBAD,
@@ -246,8 +246,7 @@ LALCoherentMetric( LALStatus        *stat,
 
   /* Compute canonical time and its derivatives. */
   while(l--){
-    TRY((params->dtCanon)(stat->statusPtr,&d,variables,constants),
-	stat);
+    (params->dtCanon)(stat->statusPtr,&d,variables,constants);
     BEGINFAIL(stat) {
       TRY(LALDDestroyVector(stat->statusPtr,&a),stat);
       TRY(LALDDestroyVector(stat->statusPtr,&b),stat);
