@@ -2027,7 +2027,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   StochasticTable *thisStoch = NULL;
 
   /* counters */
-  INT4 i, segLoop, interLoop;
+  INT4 i, j, k;
 
   /* results */
   REAL8 y;
@@ -2249,7 +2249,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stdout, "Starting analysis loop...\n");
 
   /* loop over intervals */
-  for (interLoop = 0; interLoop < numIntervals; interLoop++)
+  for (j = 0; j < numIntervals; j++)
   {	
     /* initialize average PSDs */
     for (i = 0; i < filterLength; i++)
@@ -2259,19 +2259,18 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* loop over segments in the interval */
-    for (segLoop = 0; segLoop < segsInInt; segLoop++)
+    for (k = 0; k < segsInInt; k++)
     {
       /* set segment start time */
       LAL_CALL(LALAddFloatToGPS(&status, &gpsSegStartTime, &gpsStartTime, \
-            (REAL8)((interLoop * segmentShift) + \
-                    (segLoop * segmentDuration))), &status);
+            (REAL8)((j * segmentShift) + (k * segmentDuration))), &status);
 
       /* get calibration epoch */
       LAL_CALL(LALAddFloatToGPS(&status, &gpsCalibTime, &gpsSegStartTime, \
             (REAL8)calibOffset), &status);
 
       /* is this the analysis segment? */
-      if (segLoop == segMiddle)
+      if (k == segMiddle)
         gpsAnalysisTime = gpsSegStartTime;
 
       if (vrbflg)
@@ -2294,7 +2293,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       /* check if on middle segment and if we want to include this in
        * the analysis */
-      if ((segLoop == segMiddle) && (!middle_segment_flag))
+      if ((k == segMiddle) && (!middle_segment_flag))
       {
         if (vrbflg)
           fprintf(stdout, "Ignoring middle segment..\n");
@@ -2403,7 +2402,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* display results */
     if (vrbflg)
     {
-      fprintf(stdout, "Interval %d\n", interLoop + 1);
+      fprintf(stdout, "Interval %d\n", j + 1);
       fprintf(stdout, "  GPS time  = %d\n", gpsAnalysisTime.gpsSeconds);
       fprintf(stdout, "  y         = %e\n", y);
       fprintf(stdout, "  sigmaTheo = %e\n", sigmaTheo);
