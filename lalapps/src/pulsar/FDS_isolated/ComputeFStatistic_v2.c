@@ -1,35 +1,28 @@
 /*********************************************************************************/
-/*                    F-statistic generation code for known pulsars              */
-/*                                                                               */
-/*			      Y. Ioth, M.A. Papa, X. Siemens, R.Prix             */
-/*                                                                               */
-/*                 Albert Einstein Institute/UWM - started September 2002        */
-/*********************************************************************************/
+/** \file ComputeFStatistic.c
+ * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
+ * Implements the so-called "F-statistic" as introduced in JKS98.
+ *                                                                          
+ * \author Y. Ioth, C. Messenger, M.A. Papa, R.Prix, X. Siemens 
+ *                                                                          
+ *                 Albert Einstein Institute/UWM - started September 2002   
+ *********************************************************************************/
 #include <lal/UserInput.h>
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>
+#include <lal/LALBarycenter.h>
+#include <lal/LALInitBarycenter.h>
 #include <lalapps.h>
+#include <lal/ComputeSkyBinary.h>
+#ifndef NOGLOB
+#include <glob.h>
+#endif
 
 #include "rngmed.h"
 #include "clusters.h"
 #include "DopplerScan.h"
-#include <unistd.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-#include <glob.h>
-#include <time.h>
-#include <errno.h>
-#include <lal/AVFactories.h>
-#include <lal/ComputeSky.h>
-#include <lal/LALDatatypes.h>
-#include <lal/LALDemod.h>
-#include <lal/LALBarycenter.h>
-#include <lal/LALInitBarycenter.h>
-#include <lal/Date.h>
+
+RCSID( "$Id$");
 
 #define BUFFERSIZE 1024                                                                   
 
@@ -48,30 +41,26 @@ will be used are computed as exact integers, which correspond as closely as
 possible to the users request, but are not the same.  Don't use these variables! */
 
 
-/* 
- *this structure holds all configuration-settings for the code, including the 
- * user-input variables, but also derived ones 
+/** Configuration settings required for and defining a coherent pulsar search.
+ * These are 'pre-processed' settings, which have been derived from the user-input.
  */
 typedef struct {
-  CHAR EphemEarth[MAXFILENAMELENGTH];
-  CHAR EphemSun[MAXFILENAMELENGTH];
-  INT4 FreqImax;  /* number of computed F values: F[0]....F[FreqImax-1] */
-
-  INT4 SpinImax;
-  INT4 ifmax;
-  INT4 ifmin;
-
-  REAL8 df;
-  REAL8 tsft;
-  INT4 SFTno;
-
-  INT4 nsamples;
-  INT4 Ti;        /* GPS seconds of first SFT */
-  INT4 Tf;        /* GPS seconds of last SFT */
-  CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
-
-  LALDetector Detector;              /* Our detector*/
-
+  CHAR EphemEarth[MAXFILENAMELENGTH];	/**< filename of earth-ephemeris data */
+  CHAR EphemSun[MAXFILENAMELENGTH];	/**< filename of sun-ephemeris data */
+  INT4 FreqImax;  		/**< number of frequency-bins to compute F-stat for */
+  INT4 SpinImax;		/**< number of spindown-bins to compute F for */
+  INT4 ifmax;			/**< highest frequency-bin needed in calculation */
+  INT4 ifmin;			/**< lowest frequency-bin needed */
+  REAL8 dFreq;			/**< frequency resolution */
+  REAL8 tsft;			/**< length of an SFT in seconds */
+  INT4 SFTno;			/**< number of SFTs in input */
+  INT4 nsamples;		/**< number of frequency-bins in an SFT */
+  INT4 Ti;	        	/**< GPS seconds of start of observation */
+  INT4 Tf;      	  	/**< GPS-time (seconds) of end of observation */
+  CHAR filelist[MAXFILES][MAXFILENAMELENGTH]; /**< array of filenames to load SFTs from */
+  LALDetector Detector;         /**< Our detector*/
+  EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
+  CHAR *skyRegion;		/**< sky-region to search (polygon defined by list of points) */
 } ConfigVariables;
   
 struct headertag {
@@ -82,15 +71,43 @@ struct headertag {
     INT4  firstfreqindex;
     INT4  nsamples;
 } header;
-  
 
+/* BINARY-MOD - structure to store a single binary signal template */  
+typedef struct BinaryTemplatetag {             
+    REAL8       ProjSMaxis;
+    REAL8       Period;
+    LIGOTimeGPS TperiSSB;
+    REAL8       Eccentricity;
+    REAL8       ArgPeri;
+} BinaryTemplate;
 
-RCSID( "$Id$");
+typedef struct BinaryTemplateBanktag {
+    REAL8          BTBfmax;
+    REAL8          BTBTspan;
+    LIGOTimeGPS    BTBTobsStart;
+    INT4           BTBNFilters;
+    REAL8          BTBMismatch;
+    REAL8          BTBProjSMaxisMIN;
+    REAL8          BTBProjSMaxisMAX;
+    LIGOTimeGPS    BTBTperiSSBMIN;
+    LIGOTimeGPS    BTBTperiSSBMAX;
+    REAL8          BTBEccMIN;
+    REAL8          BTBEccMAX;
+    REAL8          BTBArgPeriMIN;
+    REAL8          BTBArgPeriMAX;
+    REAL8          BTBPeriodMIN;
+    REAL8          BTBPeriodMAX;
+    CHAR           BTBversion[256];
+    BinaryTemplate *BTB;       
+} BinaryTemplateBank;
+
+/*----------------------------------------------------------------------*/
+/* conditional compilation-switches */
 
 /*
+#define NEARESTGRIDPOINTS_ON
 #define DEBG_FAFB                
 #define DEBG_ESTSIGPAR
-#define DEBG_MAIN 
 #define DEBG_SGV 
 */
 
@@ -106,26 +123,52 @@ RCSID( "$Id$");
 #define FILE_SPRNG 
 */
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-***************************************************** <lalErrTable> */
+/*----------------------------------------------------------------------*/
+/* USE_BOINC should be set to 1 to be run under BOINC */
+
+#ifndef USE_BOINC
+#define USE_BOINC 0
+#endif
+#if USE_BOINC
+#define USE_BOINC_DEBUG 0
+/* for getpid() */
+#include <sys/types.h>
+#include <unistd.h>
+
+typedef int bool;
+extern int boinc_init(bool standalone);
+extern int boinc_finish(int);
+extern int boinc_resolve_filename(const char*, char*, int len);
+extern int boinc_init_graphics();
+extern int boinc_finish_graphics();
+void use_boinc_filename1(char** orig_name);
+void use_boinc_filename0(char* orig_name);
+#endif /* USE_BOINC */
+
+
+/*----------------------------------------------------------------------*/
+/* Error-codes */
+
 #define COMPUTEFSTATC_ENULL 		1
 #define COMPUTEFSTATC_ESYS     		2
 #define COMPUTEFSTATC_EINPUT   		3
+#define COMPUTEFSTATC_EMEM   		4
 
 #define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATC_MSGESYS		"System call failed (probably file IO)"
 #define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
-/*************************************************** </lalErrTable> */
-
-
+#define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
 /*----------------------------------------------------------------------
- * User-variables: provided either by default, config-file or command-line */
+ * User-variables: can be set from config-file or command-line */
+
 INT4 uvar_Dterms;
-INT4 uvar_IFO;
+CHAR* uvar_IFO;
 BOOLEAN uvar_SignalOnly;
 BOOLEAN uvar_EstimSigParam;
+BOOLEAN uvar_binary;  /* BINARY-MOD - added a flag to indicate binary search */
+REAL8 uvar_dopplermax;  /* BINARY-MOD - added this because different binary systems will require different wings */
+CHAR *uvar_binarytemplatefile;  /* BINARY-MOD - added for binary template file */
+INT4 uvar_windowsize;          /* BINARY-MOD - added because of shorter SFT's */
 REAL8 uvar_Freq;
 REAL8 uvar_dFreq;
 REAL8 uvar_FreqBand;
@@ -141,58 +184,79 @@ REAL8 uvar_f1dotBand;
 REAL8 uvar_Fthreshold;
 CHAR *uvar_EphemDir;
 CHAR *uvar_EphemYear;
+INT4  uvar_gridType;
 INT4  uvar_metricType;
 REAL8 uvar_metricMismatch;
 CHAR *uvar_skyRegion;
 CHAR *uvar_DataDir;
+CHAR *uvar_mergedSFTFile;
 CHAR *uvar_BaseName;
-INT4 uvar_debug;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
+CHAR *uvar_outputFstat;
+CHAR *uvar_skyGridFile;
+CHAR *uvar_outputSkyGrid;
+CHAR *uvar_workingDir;
+BOOLEAN uvar_searchNeighbors;
+BOOLEAN uvar_openDX;
+
 /*----------------------------------------------------------------------*/
+/* some other global variables */
 
-FFT **SFTData=NULL;                 /* SFT Data for LALDemod */
-DemodPar *DemodParams  = NULL;      /* Demodulation parameters for LALDemod */
-LIGOTimeGPS *timestamps=NULL;       /* Time stamps from SFT data */
-LALFstat Fstat;
-AMCoeffs amc;
-REAL8 MeanOneOverSh=0.0;
-REAL8 Alpha,Delta;
+FFT **SFTData=NULL; 		/**< SFT Data for LALDemod */
+DemodPar *DemodParams  = NULL;	/**< Demodulation parameters for LALDemod */
+LIGOTimeGPS *timestamps=NULL;	/**< Time stamps from SFT data */
+LALFstat Fstat;			/**< output from LALDemod(): F-statistic and amplitudes Fa and Fb */
+AMCoeffs amc;			/**< amplitude-modulation coefficients (and derived quantities) */
+REAL8 Alpha,Delta;		/**< sky-position currently searched (equatorial coords, radians) */
+Clusters HFLines;		/**< stores information about outliers/clusters in F-statistic */
+Clusters HPLines;		/**< stores information about outliers/clusters in SFT-power spectrum */
+
+BinaryTemplateBank *BinaryBank=NULL;    /* BINARY-MOD - pointer to structure to store binary template bank */
+BinaryTemplate thisBinaryTemplate; /* BINARY-MOD - structure to store current binary template */
+REAL8 bin_SMaxis;                 /* BINARY-MOD - Orbital semi-major axis of source system */
+REAL8 bin_Period;                 /* BINARY-MOD - Orbital period of source system */
+REAL8 bin_Eccentricity;           /* BINARY-MOD - Orbital eccentricity of source system */
+REAL8 bin_ArgPeri;                /* BINARY-MOD - Argument of periapse of source system */
+LIGOTimeGPS bin_TperiSSB;         /* BINARY-MOD - Time of periapse passage as defined in the SSB */
 Clusters HFLines, HPLines;
+
 Clusters *highSpLines=&HPLines, *highFLines=&HFLines;
-/* #ifdef FILE_FMAX     */
-FILE *fpmax;
-/* #endif */
-/* #ifdef FILE_STATS */
-FILE *fpstat;
-/* #endif     */
-REAL8 medianbias=1.0;
 
-DopplerScanState thisScan;
-ConfigVariables GV;
+REAL8 medianbias=1.0;		/**< bias in running-median depending on window-size (set in NormaliseSFTDataRngMdn()) */
 
+FILE *fp_mergedSFT;		/**< input-file containing merged SFTs */
+FILE *fpmax;			/**< output-file: maximum of F-statistic over frequency-range */
+FILE *fpstat;			/**< output-file: F-statistic candidates and cluster-information */
+
+ConfigVariables GV;		/**< global container for various derived configuration settings */
+
+/*----------------------------------------------------------------------*/
 /* local prototypes */
-void CreateDemodParams (LALStatus *status);
-void AllocateMem (LALStatus *status);
-void SetGlobalVariables (LALStatus *status, ConfigVariables *cfg);
-void CreateDetector (LALStatus *status, LALDetector *Detector);
-void Freemem (LALStatus *status);
 
-INT4 EstimatePSDLines(LALStatus *status);
+int main(int argc,char *argv[]);
+void initUserVars (LALStatus *stat);
+INT4 ReadSFTData (void);
+void InitFStat (LALStatus *status, ConfigVariables *cfg);
+INT4 NormaliseSFTData(void);
+void CreateDemodParams (LALStatus *status);
+void CreateBinaryDemodParams (LALStatus *status);
+void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
+void Freemem (LALStatus *status);
 INT4 EstimateFLines(LALStatus *status);
 INT4 NormaliseSFTDataRngMdn (LALStatus *status);
-
-INT4 NormaliseSFTData(void);
-INT4 ReadSFTData (void);
 INT4 EstimateSignalParameters(INT4 * maxIndex);
 INT4 writeFLines(INT4 *maxIndex);
 INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
 INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
-INT4 NormaliseSFTData(void);
-
-void initUserVars (LALStatus *stat);
+void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
+INT4 EstimatePSDLines(LALStatus *status);
+void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
+int ReadBinaryTemplateBank(LALStatus *status);
+/*----------------------------------------------------------------------*/
+/* some local defines */
 
 #define EPHEM_YEARS  "00-04"
 #define SFT_BNAME  "SFT"
@@ -200,51 +264,90 @@ void initUserVars (LALStatus *stat);
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-/*----------------------------------------------------------------------
- * MAIN
- *----------------------------------------------------------------------*/
+extern int vrbflg;
+
+/*----------------------------------------------------------------------*/
+/* empty structs for initialziations */
+
+DopplerScanState emptyScan;
+
+
+/*----------------------------------------------------------------------*/
+/* CODE starts here */
+/*----------------------------------------------------------------------*/
+
+/** 
+ * MAIN function of ComputeFStatistic code.
+ * Calculate the F-statistic over a given portion of the parameter-space
+ * and write a list of 'candidates' into a file(default: 'Fstats').
+ */
 int main(int argc,char *argv[]) 
 {
-  INT4 *maxIndex=NULL; /*  array that contains indexes of maximum of each cluster */
-  DopplerPosition dopplerpos;
-  SkyPosition thisPoint;
-  CHAR Fstatsfilename[256];         /* Fstats file name*/
-  CHAR Fmaxfilename[256];           /* Fmax file name*/
-  INT4 s;
-  DopplerScanInit scanInit;
-  LIGOTimeGPS t0, t1;
-  REAL8 duration;
   LALStatus status = blank_status;	/* initialize status */
 
+  INT4 *maxIndex=NULL; 			/*  array that contains indexes of maximum of each cluster */
+  CHAR Fstatsfilename[256]; 		/* Fstats file name*/
+  CHAR Fmaxfilename[256]; 		/* Fmax file name*/
+  INT4 spdwn;				/* counter over spindown-params */
+  DopplerScanInit scanInit;		/* init-structure for DopperScanner */
+  DopplerScanState thisScan = emptyScan; /* current state of the Doppler-scan */
+  DopplerPosition dopplerpos;		/* current search-parameters */
+  SkyPosition thisPoint;
+  LIGOTimeGPS t0, t1;
+  REAL8 duration;
+  FILE *fpOut=NULL;
+  UINT4 loopcounter;
+
+
+  lalDebugLevel = 0;  
+  vrbflg = 1;	/* verbose error-messages */
+
+#if USE_BOINC
+  /* boinc_init() needs to be run before any boinc_api functions are used */
+  boinc_init(FALSE);
+  boinc_init_graphics();
+#if USE_BOINC_DEBUG
+  {
+    char commandstring[256];
+    /* char *cmd_name = argv[0]; */
+    pid_t process_id=getpid();
+    sprintf(commandstring,"ddd %s %d &","../../projects/ein*/einstein*" ,process_id);
+    system(commandstring);
+    sleep(20);
+  }
+#endif /*USE_BOINC_DEBUG*/
+#endif /*USE_BOINC*/
+
   /* set LAL error-handler */
-  lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
+  lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (initUserVars (&status), &status); 	
-
-  uvar_debug = lalDebugLevel;
+  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
+  LAL_CALL (initUserVars(&status), &status); 	
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);	
+  LAL_CALL (LALUserVarReadAllInput(&status, argc,argv), &status);	
 
-  if (uvar_help)
+  if (uvar_help)	/* if help was requested, we're done here */
     exit (0);
 
-  lalDebugLevel = uvar_debug;	/* can only be done here! */
+  /* keep a log-file recording all relevant parameters of this search-run */
+  LAL_CALL (WriteFStatLog (&status, argv), &status);
 
-  LAL_CALL ( SetGlobalVariables (&status, &GV), &status);
+  /* main initialization of the code: */
+  LAL_CALL ( InitFStat(&status, &GV), &status);
 
-  LAL_CALL ( AllocateMem(&status), &status);
-
+  /* read in SFT-data */
   if (ReadSFTData()) return 4;
 
-  /*  This fills-in highSpLines that are then used by NormaliseSFTRngMdn */
 #if 0
+  /*  This fills-in highSpLines that are then used by NormaliseSFTRngMdn */
   if (GV.SignalOnly!=1){
     if (EstimatePSDLines()) return 6;
   }
 #endif
 
+  /* normalize SFTs by running median */
   LAL_CALL (NormaliseSFTDataRngMdn(&status), &status);
 
 #ifdef FILE_FMAX  
@@ -252,117 +355,262 @@ int main(int argc,char *argv[])
   strcpy(Fmaxfilename,"Fmax");
   if (uvar_outputLabel)
     strcat(Fmaxfilename,uvar_outputLabel);
+#if USE_BOINC
+  use_boinc_filename0(Fmaxfilename);
+#endif /* USE_BOINC */
   if (!(fpmax=fopen(Fmaxfilename,"w"))){
-    fprintf(stderr,"in Main: unable to open Fmax file\n");
+    fprintf(stderr,"in Main: unable to open Fmax file %s\n", Fmaxfilename);
     return 2;
   }
 #endif
 #ifdef FILE_FSTATS  
   /*      open file */
   strcpy(Fstatsfilename,"Fstats");
-  if (uvar_outputLabel)
+  if ( LALUserVarWasSet(&uvar_outputLabel) )
     strcat(Fstatsfilename,uvar_outputLabel);
+#if USE_BOINC
+  use_boinc_filename0(Fstatsfilename);
+#endif /* USE_BOINC */
   if (!(fpstat=fopen(Fstatsfilename,"w"))){
     fprintf(stderr,"in Main: unable to open Fstats file\n");
     return 2;
   }
 #endif
   
-  /* prepare initialization of DopplerScanner to step through paramter space */
-  scanInit.dAlpha = uvar_dAlpha;
-  scanInit.dDelta = uvar_dDelta;
-  scanInit.metricType = uvar_metricType;
-  scanInit.metricMismatch = uvar_metricMismatch;
-  t0 = SFTData[0]->fft->epoch;
-  t1 = SFTData[GV.SFTno-1]->fft->epoch;
-  scanInit.obsBegin = t0;
-  LAL_CALL ( LALDeltaFloatGPS ( &status, &duration, &t1, &t0), &status);
-  scanInit.obsDuration = duration + GV.tsft;
-  scanInit.fmax  = uvar_Freq;
-  if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
-  scanInit.Detector = GV.Detector;
-  scanInit.skyRegion = LALMalloc (strlen (uvar_skyRegion) + 1);
-  strcpy (scanInit.skyRegion, uvar_skyRegion);
 
-  LAL_CALL ( InitDopplerScan ( &status, &thisScan, scanInit), &status);
+
+  if (!uvar_binary) {
+    if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
+    /* prepare initialization of DopplerScanner to step through paramter space */
+    scanInit.dAlpha = uvar_dAlpha;
+    scanInit.dDelta = uvar_dDelta;
+    scanInit.gridType = uvar_gridType;
+    scanInit.metricType = uvar_metricType;
+    scanInit.metricMismatch = uvar_metricMismatch;
+    t0 = SFTData[0]->fft->epoch;
+    t1 = SFTData[GV.SFTno-1]->fft->epoch;
+    scanInit.obsBegin = t0;
+    LAL_CALL ( LALDeltaFloatGPS ( &status, &duration, &t1, &t0), &status);
+    scanInit.obsDuration = duration + GV.tsft;
+    scanInit.fmax  = uvar_Freq;
+    if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
+    scanInit.Detector = &GV.Detector;
+    scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
+    scanInit.skyRegion = GV.skyRegion;
+    scanInit.skyGridFile = uvar_skyGridFile;
   
-  LALFree (scanInit.skyRegion);
   
+
+
+    if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
+    /*----------------------------------------------------------------------
+     * Helper function (Yousuke): 
+     * Refine the skyRegion to search only at neighboring grid points of the 
+     * center of the original skyRegion. 
+     *----------------------------------------------------------------------*/
+    if ( uvar_searchNeighbors ) {
+      LAL_CALL ( InitDopplerScanOnRefinedGrid ( &status, &thisScan, &scanInit ), &status );
+    } else {
+      LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
+    }
+    /*----------------------------------------------------------------------*/
+    if (lalDebugLevel) LALPrintError ("done.\n");
+    if ( uvar_outputSkyGrid ) {
+      LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+      LAL_CALL (writeSkyGridFile( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
+      LALPrintError (" done.\n\n");
+    }
+
+  /* if a complete output of the F-statistic file was requested,
+   * we open and prepare the output-file here */
+  if (uvar_outputFstat) 
+    {
+      if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
+	{
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	  exit(-1);
+	}
+      if ( uvar_openDX )	/* prepend openDX header */
+	{
+	  UINT4 nFreq, nAlpha, nDelta;
+	  nFreq = GV.FreqImax;
+	  nAlpha = (UINT4)(uvar_AlphaBand / uvar_dAlpha) + 1;
+	  nDelta = (UINT4)(uvar_DeltaBand / uvar_dDelta) + 1;
+
+	  /* regular grid or not? */
+	  if ( uvar_gridType == GRID_FLAT )
+	    fprintf (fpOut, "grid = %d x %d x %d \n", nFreq, nAlpha, nDelta);
+	  else
+	    fprintf (fpOut, "points = %d \n", nFreq * thisScan.numGridPoints);
+
+	  fprintf (fpOut, 
+		   "format = ascii\n"
+		   "field = locations, Fstat\n"
+		   "structure = 3-vector, scalar\n"
+		   "dependency = positions, positions\n"
+		   "interleaving = field\n"
+		   "end\n" );
+	}
+    } /* if outputFstat */
+
+  } /* if (!uvar_binary) */
+
+  /* BINARY-MOD - Call function to read in Binary template bank */
+  if (uvar_binary) {
+    LAL_CALL (ReadBinaryTemplateBank(&status), &status);  
+    Alpha=uvar_Alpha;   /* BINARY-MOD - Also set sky location */
+    Delta=uvar_Delta;
+  }
+
+  if (uvar_outputFstat)   
+    {
+      if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
+	{
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	  exit(-1);
+	}      
+    } 
+
+  if (lalDebugLevel) LALPrintError ("\nStarting main search-loop.. \n");
+
+  /*----------------------------------------------------------------------
+   * main loop: demodulate data for each point in the sky-position grid
+   * and for each value of the frequency-spindown
+   */
+  loopcounter = 0;
   while (1)
     {
-      LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
-
-      /* Have we scanned all DopplerPositions yet? */
-      if (dopplerpos.finished)  
-	break;
-
-      LALNormalizeSkyPosition (&status, &thisPoint, &(dopplerpos.skypos) );
-
-      Alpha = thisPoint.longitude;
-      Delta = thisPoint.latitude;
-      
-      
-      LAL_CALL (CreateDemodParams(&status), &status);
-      /* loop over spin params */
-      for(s=0;s<GV.SpinImax;s++)
+      /* BINARY-MOD - option to select next skyposition */
+      if (!uvar_binary) 
 	{
-	  DemodParams->spinDwn[0]=uvar_f1dot + s*uvar_df1dot;
-	  LAL_CALL (LALDemod (&status, &Fstat, SFTData, DemodParams), &status);
+	  LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
+	  /* Have we scanned all DopplerPositions yet? */
+	  if (thisScan.state == STATE_FINISHED)
+	    break;
+	  LALNormalizeSkyPosition (&status, &thisPoint, &(dopplerpos.skypos) );
 	  
-	  /*  This fills-in highFLines that are then used by discardFLines */
+	  Alpha = thisPoint.longitude;
+	  Delta = thisPoint.latitude;
+	  
+	  LAL_CALL (CreateDemodParams(&status), &status);
+	  
+	} /* if (!uvar_binary) */
+
+      /* BINARY-MOD - option to select next Binary template */
+      if (uvar_binary) 
+	{
+	  
+	  /* Have we scanned all DopplerPositions yet? */
+	  if (((INT4)loopcounter) >= BinaryBank->BTBNFilters)
+	    break;
+
+	  printf("about to fill current template\n");
+	  thisBinaryTemplate=(BinaryBank->BTB[loopcounter]); 
+	  /*thisBinaryTemplate.ProjSMaxis=2.0;*/
+	  /* thisBinaryTemplate.ProjSMaxis=(BinaryBank->BTB[counter]).ProjSMaxis; */
+	  /*LAL_CALL (NextBinaryTemplate(&status, &BinaryBank ,&thisBinaryTemplate, &BTNumber ) , &status); */
+	  /*printf("filled current template\n");
+	  printf("the bank has smaxis as %le\n",BinaryBank->BTB[counter].ProjSMaxis);
+	  printf("current smaxis is %le\n",thisBinaryTemplate.ProjSMaxis);
+	  exit(0); */
+	  printf("Current template is\n[%le,%le,%d,%d,%le,%le]\n",thisBinaryTemplate.ProjSMaxis, \
+		 thisBinaryTemplate.Period,thisBinaryTemplate.TperiSSB.gpsSeconds, \
+		 thisBinaryTemplate.TperiSSB.gpsNanoSeconds,thisBinaryTemplate.Eccentricity,  \
+		 thisBinaryTemplate.ArgPeri);
+
+	  /* printf("counter is %d Nfilters is %d\n",counter,BinaryBank->BTBNFilters); */
+	  
+	  printf("doing createbinarydemodparams\n");
+	  LAL_CALL (CreateBinaryDemodParams(&status), &status);
+	  printf("doing createbinarydemodparams\n");
+
+	}  /* if (uvar_binary) */
+
+      /* loop over spin params */
+      for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
+	{
+	  /* BINARY-MOD - only deal with spin down for isolated at this stage */
+	  if (!uvar_binary) DemodParams->spinDwn[0]=uvar_f1dot + spdwn*uvar_df1dot;
+	  LAL_CALL (LALDemod (&status, &Fstat, SFTData, DemodParams), &status);
+
+	  LAL_CALL ( LALDemod(&status, &Fstat, SFTData, DemodParams), &status);
+
+	  /*  This fills-in highFLines */
 	  if (GV.FreqImax > 5) {
 	    LAL_CALL (EstimateFLines(&status), &status);
 	  }
 	  
-
-#ifdef DEBG_MAIN
-	  for(i=0;i < GV.FreqImax ;i++)
+	  /* now, if user requested it, we output ALL F-statistic results */
+	  if ((fpOut)&&(!uvar_binary)) 
 	    {
-	      /* medianbias is 1 if GV.SignalOnly=1 */ 
-	      fprintf(stdout,"%20.10f %e %20.17f %20.17f %20.17f\n",
-		      uvar_Freq+i*uvar_dFreq,  DemodParams->spinDwn[0],
-		      Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
-	    }
-#endif
+	      INT4 i;
+	      printf("outputting isolated Fstat\n");
+	      for(i=0;i < GV.FreqImax ;i++)
+		{
+		  fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17f\n", 
+			   uvar_Freq + i*GV.dFreq, Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
+		}
+
+	    } /* if outputFstat and not binary */
+
+	  /* BINARY-MOD - output binary search F-stat with binary params */
+	  if ((fpOut)&&(uvar_binary)) 
+	    {
+	      INT4 i;
+	      printf("printing binary output\n");
+	      for(i=0;i < GV.FreqImax ;i++)
+		{
+		  fprintf (fpOut, "%6.12f %6.12f %12.12f %d %d %6.12f %6.12f %12.12f\n", 
+			   uvar_Freq + i*GV.dFreq, thisBinaryTemplate.ProjSMaxis, \
+			   thisBinaryTemplate.Period, thisBinaryTemplate.TperiSSB.gpsSeconds, \
+			   thisBinaryTemplate.TperiSSB.gpsNanoSeconds, \
+			   thisBinaryTemplate.Eccentricity, thisBinaryTemplate.ArgPeri, \
+			   2.0*medianbias*Fstat.F[i]);
+		}
+
+	    } /* if outputFstat and binary */
+
 	  
 	  /*  This fills-in highFLines  */
-	  if (highFLines != NULL && highFLines->Nclusters > 0){
+	  if (highFLines != NULL && highFLines->Nclusters > 0)
+	    {
+	      maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
 	    
-	    maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
-	    
-	    /*  for every cluster writes the information about it in file Fstats */
+	      /*  for every cluster writes the information about it in file Fstats */
+	      if (writeFLines(maxIndex)){
+		fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
+		return 6;
+	      }
+	   	  
+	      if (uvar_EstimSigParam)
+		{
+		  if(writeFaFb(maxIndex)) return 255;
+		  if (EstimateSignalParameters(maxIndex)) return 7;
+		} /* if signal-estimation */
+	  
+	  
+	      LALFree(maxIndex);
+	    } /* if highFLines found */
 
-	    if (writeFLines(maxIndex)){
-	      fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
-	      return 6;
-	    }
-	  }
-	  
-	  if( uvar_EstimSigParam &&(highFLines !=NULL) && (highFLines->Nclusters >0))
-	    if(writeFaFb(maxIndex)) return 255;
-	  
-	  
-	  if( uvar_EstimSigParam &&(highFLines !=NULL) &&(highFLines->Nclusters >0)) {
-	    if (EstimateSignalParameters(maxIndex)) return 7;
-	  }
-	  
 	  if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1))
-	    fprintf(stderr, "%s: trouble making files Fmax"
-		    "and/or Fstats\n", argv[0]);	  
-	  fflush(stderr);
-	  
-	  if (highFLines != NULL && highFLines->Nclusters > 0){
-	    LALFree(maxIndex);
-	  }
+	    LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
 
+	  
 	  /* Set the number of the clusters detected to 0 at each iteration 
 	     of the sky-direction and the spin down */
 	  highFLines->Nclusters=0;
 
 	} /* For GV.spinImax */
-      
+
+      loopcounter ++;
+      if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
+					(100.0* loopcounter / thisScan.numGridPoints));
     } /*  while SkyPos */
 
+  if (uvar_outputFstat && fpOut)
+    fclose (fpOut);
+
+  if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
 
 #ifdef FILE_FMAX  
   fclose(fpmax);
@@ -370,14 +618,33 @@ int main(int argc,char *argv[])
 #ifdef FILE_FSTATS  
   fclose(fpstat);
 #endif
-  LAL_CALL (Freemem(&status), &status);
+
+  /* Free DopplerScan-stuff (grid) */
+  if (!uvar_binary) 
+    {
+      LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
+
+      if (GV.skyRegion)
+	LALFree ( GV.skyRegion );
+    }
+
+
+  LAL_CALL ( Freemem(&status), &status);
+
+#if USE_BOINC
+  boinc_finish_graphics();
+  boinc_finish(0);
+#endif
 
   return 0;
 
 } /* main() */
 
 
-/* register all our "user-variables", which can be read from cmd-line and config-file */
+/** 
+ * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
+ * Here we set defaults for some user-variables and register them with the UserInput module.
+ */
 void
 initUserVars (LALStatus *stat)
 {
@@ -389,6 +656,8 @@ initUserVars (LALStatus *stat)
   uvar_FreqBand = 0.0;
   uvar_dFreq = 0;
 
+  uvar_binary=FALSE;       /* BINARY-MOD - Set binary flag to FALSE for safety */
+
   uvar_Alpha 	= 0.0;
   uvar_Delta 	= 0.0;
   uvar_AlphaBand = 0;
@@ -397,11 +666,18 @@ initUserVars (LALStatus *stat)
   uvar_dDelta 	= 0.001;
   uvar_skyRegion = NULL;
 
+  uvar_dopplermax=1e-4;       /* BINARY-MOD - Need to have this as an option (important for binary) */
+  uvar_windowsize=50;      /* BINARY-MOD - Need to have this as an option (important for shorter SFT's ?) */
+
   uvar_EphemYear = LALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar_EphemYear, EPHEM_YEARS);
 
   uvar_BaseName	= LALCalloc (1, strlen(SFT_BNAME)+1);
   strcpy (uvar_BaseName, SFT_BNAME);
+
+#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
+  uvar_EphemDir = LALCalloc (1, strlen(DEFAULT_EPHEMDIR)+1);
+  strcpy (uvar_EphemDir, DEFAULT_EPHEMDIR);
 
   uvar_SignalOnly = FALSE;
   uvar_EstimSigParam = FALSE;
@@ -411,45 +687,68 @@ initUserVars (LALStatus *stat)
   uvar_f1dotBand = 0.0;
   
   uvar_Fthreshold = 10.0;
+  uvar_metricType =  LAL_PMETRIC_NONE;
+  uvar_gridType = GRID_FLAT;
 
-  uvar_metricType =  LAL_METRIC_NONE;	
   uvar_metricMismatch = 0.02;
-
-  uvar_debug = lalDebugLevel;
 
   uvar_help = FALSE;
   uvar_outputLabel = NULL;
 
+  uvar_outputFstat = NULL;
+  uvar_openDX = FALSE;
+
+  uvar_skyGridFile = NULL;
+
+  uvar_workingDir = LALMalloc(512);
+  strcpy(uvar_workingDir, ".");
+
+  uvar_searchNeighbors = FALSE;
+
+
+
   /* register all our user-variables */
- 
+  LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message"); 
   LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
   LALregREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
   LALregREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
-  LALregREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(8*Tsft*Nsft)");
+  LALregREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
   LALregREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_REQUIRED, "Directory where SFT's are located");
+  LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_OPTIONAL, "Directory where SFT's are located");
+  LALregSTRINGUserVar(stat,	mergedSFTFile, 	'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
   LALregSTRINGUserVar(stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  LALregSTRINGUserVar(stat,	EphemDir, 	'E', UVAR_REQUIRED, "Directory where Ephemeris files are located");
+  LALregSTRINGUserVar(stat,	EphemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(stat,	EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  LALregINTUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector number: 0=GEO, 1=LLO, 2=LHO or 3=Roman Bar");
+  LALregSTRINGUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
   LALregBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+  LALregBOOLUserVar(stat, 	binary, 	'u', UVAR_OPTIONAL, "Binary search flag");
+  LALregREALUserVar(stat, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
   LALregREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
   LALregREALUserVar(stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
   LALregREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
   LALregBOOLUserVar(stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
   LALregREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-  LALregINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Template metric: 0=none, 1 = Ptole-analytic, 2 = Ptole-numeric");
+  LALregINTUserVar(stat, 	windowsize,	'k', UVAR_OPTIONAL, "Running-Median window size");
+  LALregINTUserVar(stat, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
+  LALregINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
-  LALregINTUserVar(stat, 	debug, 		'v', UVAR_OPTIONAL, "Set lalDebugLevel");
-  LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
   LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
   LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
-  
+  LALregSTRINGUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
+  LALregSTRINGUserVar(stat,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
+  LALregSTRINGUserVar(stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
+  LALregSTRINGUserVar(stat,	binarytemplatefile,	 0,  UVAR_OPTIONAL, "Read binary templates from this file.");
+
+  LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
+  LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
+  LALregBOOLUserVar(stat,	searchNeighbors, 0,  UVAR_OPTIONAL, "Refine the skyregion to search only at neighboring grid points of the center of the original sky region.");
+
+
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 } /* initUserVars() */
@@ -591,7 +890,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A1-A1test)>fabs(A1)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A1\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A1=%f,A1test=%f\n",
-		irec,uvar_Freq+irec*uvar_dFreq,A1,A1test);
+		irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
 	fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%lf\n",
 		fabs(A1-A1test)/fabs(A1));
 	exit(1);
@@ -599,7 +898,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A2-A2test)>fabs(A2)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A2\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A2=%f,A2test=%f\n",
-		irec,uvar_Freq+irec*uvar_dFreq,A2,A2test);
+		irec,uvar_Freq+irec*GV.dFreq,A2,A2test);
 	fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%lf\n",
 		fabs(A2-A2test)/fabs(A2));
 	exit(1);
@@ -607,7 +906,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A3-A3test)>fabs(A3)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A3\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A3=%f,A3test=%f\n",
-		irec,uvar_Freq+irec*uvar_dFreq,A3,A3test);
+		irec,uvar_Freq+irec*GV.dFreq,A3,A3test);
 	fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%lf\n",
 		fabs(A3-A3test)/fabs(A3));
 	exit(1);
@@ -615,7 +914,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A4-A4test)>fabs(A4)/(10e5)){ 
 	fprintf(stderr,"Something is wrong with Estimate A4\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),A4=%f,A4test=%f\n",
-		irec,uvar_Freq+irec*uvar_dFreq,A1,A1test);
+		irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
 	fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%lf\n",
 		fabs(A4-A4test)/fabs(A4));
 	exit(1);
@@ -630,7 +929,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(Fstat.F[irec] - Ftest)> fabs(Ftest)/10e5){ 
 	fprintf(stderr,"Something is wrong with Estimate in F\n");
 	fprintf(stderr,"Frequency index %d, %lf (Hz),F=%f,Ftest=%f\n",
-		irec,uvar_Freq+irec*uvar_dFreq,Fstat.F[irec],Ftest);
+		irec,uvar_Freq+irec*GV.dFreq,Fstat.F[irec],Ftest);
 	fprintf(stderr,"relative error Abs((F-Ftest)/Ftest)=%lf\n",
 		fabs(Fstat.F[irec]-Ftest)/fabs(Ftest));
 	exit(1);
@@ -659,7 +958,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 			    +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle)
 				    -C*sin(4.0*psi_mle)));
       fprintf(stderr,"A=%f,B=%f,C=%f,f=%f,h0=%f,F=%f\n",
-	      A,B,C,uvar_Freq+irec*uvar_dFreq,h0mle,Fstat.F[irec]*medianbias);
+	      A,B,C,uvar_Freq+irec*GV.dFreq,h0mle,Fstat.F[irec]*medianbias);
       }
 #endif
 
@@ -668,7 +967,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       /* and Phi0_PULGROUPDOC is the one used in In.data. */
  
       /* medianbias is 1 if GV.SignalOnly==1 */
-      fprintf(fpMLEParam,"%16.8lf %22E", uvar_Freq + irec*uvar_dFreq, 2.0*medianbias*Fstat.F[irec]);
+      fprintf(fpMLEParam,"%16.8lf %22E", uvar_Freq + irec*GV.dFreq, 2.0*medianbias*Fstat.F[irec]);
 
 
       fprintf(fpMLEParam,"  %10.6f",(1.0+mu_mle*mu_mle)*h0mle/2.0);
@@ -697,7 +996,7 @@ int writeFaFb(INT4 *maxIndex)
   CHAR noiseswitch[16];
   CHAR clusterno[16];
   INT4 N;
-  FILE * fp;
+  FILE * fp=NULL;
   REAL8 bias=1.0;
   CHAR FaFbfilename[256];
   
@@ -731,9 +1030,9 @@ int writeFaFb(INT4 *maxIndex)
 
     fprintf(fp,"%10d\n",N);
     fprintf(fp,"%22.12f %22.12f\n",
-	    uvar_Freq+maxIndex[irec]*uvar_dFreq,
+	    uvar_Freq+maxIndex[irec]*GV.dFreq,
 	    Fstat.F[maxIndex[irec]]*bias*bias);
-    fprintf(fp,"%22.12f %22.12f\n",uvar_Freq + index * uvar_dFreq, uvar_dFreq);
+    fprintf(fp,"%22.12f %22.12f\n",uvar_Freq + index * GV.dFreq, GV.dFreq);
     fprintf(fp,"%22.12f %22.12f %22.12f\n",amc.A,amc.B,amc.C);
 
 
@@ -765,6 +1064,8 @@ int writeFaFb(INT4 *maxIndex)
        code. 
      */ 
 
+    /* BINARY-MOD - need to check with FstatShapeTest to get input format */
+
     for(jrec=0;jrec<N;jrec++) {
       index=highFLines->Iclust[krec];
       krec++;
@@ -773,7 +1074,7 @@ int writeFaFb(INT4 *maxIndex)
       fprintf(fp,"%22.16f %22.16f "
                  "%E %20.17f %20.17f "
                  "%22.16f %22.16f %22.16f %22.16f %22.16f %22.16f %22.16f\n",
-	      uvar_Freq+index*uvar_dFreq,Fstat.F[index]*bias*bias,
+	      uvar_Freq+index*GV.dFreq,Fstat.F[index]*bias*bias,
 	      DemodParams->spinDwn[0], Alpha, Delta,
 	      Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
 	      Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
@@ -783,7 +1084,7 @@ int writeFaFb(INT4 *maxIndex)
 #else
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
-	      uvar_Freq+index*uvar_dFreq,
+	      uvar_Freq+index*GV.dFreq,
 	      Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
 	      Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
 	      Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
@@ -806,29 +1107,16 @@ int writeFaFb(INT4 *maxIndex)
 void CreateDemodParams (LALStatus *status)
 {
   CSParams *csParams  = NULL;        /* ComputeSky parameters */
-  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
-  EphemerisData *edat=NULL;          /* Stores earth/sun ephemeris data for barycentering */
+  AMCoeffsParams *amParams;
   EarthState earth;
   EmissionTime emit;
-  AMCoeffsParams *amParams;
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
-  LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  INT4 leap;
+  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
   INT4 k;
 
   INITSTATUS (status, "CreateDemodParams", rcsid);
   ATTATCHSTATUSPTR (status);
   
-  edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = GV.EphemEarth;     
-  (*edat).ephiles.sunEphemeris = GV.EphemSun;         
-
-  TRY (LALLeapSecs(status->statusPtr,&leap,&timestamps[0],&formatAndAcc), status);
-  (*edat).leap=leap;
-
-  /* Reads in ephemeris files */
-  TRY (LALInitBarycenter(status->statusPtr, edat), status);               
- 
   /* Detector location: MAKE INTO INPUT!!!!! */
   baryinput.site.location[0]=GV.Detector.location[0]/LAL_C_SI;
   baryinput.site.location[1]=GV.Detector.location[1]/LAL_C_SI;
@@ -847,17 +1135,17 @@ void CreateDemodParams (LALStatus *status)
 /* Fill up AMCoeffsParams structure */
   amParams->baryinput = &baryinput;
   amParams->earth = &earth; 
-  amParams->edat = edat;
+  amParams->edat = GV.edat;
   amParams->das->pDetector = &GV.Detector; 
   amParams->das->pSource->equatorialCoords.latitude = Delta;
   amParams->das->pSource->equatorialCoords.longitude = Alpha;
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
-  amParams->leapAcc=formatAndAcc.accuracy;
+  amParams->leapAcc = LALLEAPSEC_STRICT;
 
  /* Mid point of each SFT */
-   midTS = (LIGOTimeGPS *)LALCalloc(GV.SFTno,sizeof(LIGOTimeGPS));
+   midTS = (LIGOTimeGPS *)LALCalloc(GV.SFTno, sizeof(LIGOTimeGPS));
    for(k=0; k<GV.SFTno; k++)
      { 
        REAL8 teemp=0.0;
@@ -874,7 +1162,7 @@ void CreateDemodParams (LALStatus *status)
   csParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
   csParams->mObsSFT=GV.SFTno;     /* Changed this from GV.mobssft !!!!!! */
   csParams->tSFT=GV.tsft;
-  csParams->edat=edat;
+  csParams->edat = GV.edat;
   csParams->baryinput=&baryinput;
   csParams->spinDwnOrder=1;
   csParams->skyPos[0]=Alpha;
@@ -889,7 +1177,7 @@ void CreateDemodParams (LALStatus *status)
 
   DemodParams->f0=uvar_Freq;
   DemodParams->imax=GV.FreqImax;
-  DemodParams->df=uvar_dFreq;
+  DemodParams->df=GV.dFreq;
 
   DemodParams->Dterms=uvar_Dterms;
   DemodParams->ifmin=GV.ifmin;
@@ -907,44 +1195,117 @@ void CreateDemodParams (LALStatus *status)
   LALFree(amParams->das);
   LALFree(amParams);
 
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
-
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /* CreateDemodParams() */
 
 /*******************************************************************************/
-void AllocateMem(LALStatus *status)
+
+/* BINARY-MOD - I decided to add this function rather than change the existing one */
+void CreateBinaryDemodParams (LALStatus *status)  
 {
+  CSBParams *csbParams  = NULL;        /* ComputeSkyBinary parameters */
+  AMCoeffsParams *amParams;
+  EarthState earth;
+  EmissionTime emit;
+  LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
+  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
   INT4 k;
 
-  INITSTATUS (status, "AllocateMem", rcsid);
+  INITSTATUS (status, "CreateBinaryDemodParams", rcsid);
   ATTATCHSTATUSPTR (status);
-
-  /* Allocate space for AMCoeffs */
-  amc.a = NULL;
-  amc.b = NULL;
-  TRY (LALSCreateVector(status->statusPtr, &(amc.a), (UINT4) GV.SFTno), status);
-  TRY (LALSCreateVector(status->statusPtr, &(amc.b), (UINT4) GV.SFTno), status);
-
-  /* Allocate DemodParams structure */
-  DemodParams=(DemodPar *)LALCalloc(1, sizeof(DemodPar));
   
-  /* space for sky constants */
-  /* Based on maximum index for array of as and bs sky constants as from ComputeSky.c */
-  k=4*(GV.SFTno-1)+4; 
-  DemodParams->skyConst = (REAL8 *)LALMalloc(k*sizeof(REAL8));
+  printf("alpha is %le delta is %le\n",Alpha,Delta);
 
-  /* space for spin down params */
-  DemodParams->spinDwn = (REAL8 *)LALMalloc(sizeof(REAL8));
-  
+  /* Detector location: MAKE INTO INPUT!!!!! */
+  baryinput.site.location[0]=GV.Detector.location[0]/LAL_C_SI;
+  baryinput.site.location[1]=GV.Detector.location[1]/LAL_C_SI;
+  baryinput.site.location[2]=GV.Detector.location[2]/LAL_C_SI;
+  baryinput.alpha=Alpha;
+  baryinput.delta=Delta;
+  baryinput.dInv=0.e0;
+
+/* amParams structure to compute a(t) and b(t) */
+
+/* Allocate space for amParams stucture */
+/* Here, amParams->das is the Detector and Source info */
+  amParams = (AMCoeffsParams *)LALMalloc(sizeof(AMCoeffsParams));
+  amParams->das = (LALDetAndSource *)LALMalloc(sizeof(LALDetAndSource));
+  amParams->das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
+/* Fill up AMCoeffsParams structure */
+  amParams->baryinput = &baryinput;
+  amParams->earth = &earth; 
+  amParams->edat = GV.edat;
+  amParams->das->pDetector = &GV.Detector; 
+  amParams->das->pSource->equatorialCoords.latitude = Delta;
+  amParams->das->pSource->equatorialCoords.longitude = Alpha;
+  amParams->das->pSource->orientation = 0.0;
+  amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
+  amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
+  amParams->leapAcc = LALLEAPSEC_STRICT;
+
+ /* Mid point of each SFT */
+   midTS = (LIGOTimeGPS *)LALCalloc(GV.SFTno, sizeof(LIGOTimeGPS));
+   for(k=0; k<GV.SFTno; k++)
+     { 
+       REAL8 teemp=0.0;
+       TRY (LALGPStoFloat(status->statusPtr, &teemp, &(timestamps[k])), status);
+       teemp += 0.5*GV.tsft;
+       TRY (LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
+     }
+   
+   TRY (LALComputeAM(status->statusPtr, &amc, midTS, amParams), status); 
+
+/* ComputeSkyBinary stuff*/
+  csbParams=(CSBParams *)LALMalloc(sizeof(CSBParams));
+  csbParams->tGPS=timestamps;  
+  csbParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
+  csbParams->mObsSFT=GV.SFTno;     /* Changed this from GV.mobssft !!!!!! */
+  csbParams->tSFT=GV.tsft;
+  csbParams->edat = GV.edat;
+  csbParams->baryinput=&baryinput;
+  csbParams->spinDwnOrder=0;    /* need to set up an input variable for this */
+  csbParams->skyPos[0]=Alpha;
+  csbParams->skyPos[1]=Delta;
+  csbParams->earth = &earth;
+  csbParams->emit = &emit;
+  csbParams->SemiMajorAxis=thisBinaryTemplate.ProjSMaxis;     /* Added the orbital parameter inputs */
+  csbParams->OrbitalPeriod=thisBinaryTemplate.Period;
+  csbParams->TperiapseSSB.gpsSeconds=thisBinaryTemplate.TperiSSB.gpsSeconds;
+  csbParams->TperiapseSSB.gpsNanoSeconds=thisBinaryTemplate.TperiSSB.gpsNanoSeconds;
+  csbParams->ArgPeriapse=thisBinaryTemplate.ArgPeri;
+  csbParams->OrbitalEccentricity=thisBinaryTemplate.Eccentricity;
+
+/* Finally, DemodParams */
+  DemodParams->amcoe=&amc;
+  DemodParams->spinDwnOrder=0;
+  DemodParams->SFTno=GV.SFTno;
+
+  DemodParams->f0=uvar_Freq;
+  DemodParams->imax=GV.FreqImax;
+  DemodParams->df=GV.dFreq;
+
+  DemodParams->Dterms=uvar_Dterms;
+  DemodParams->ifmin=GV.ifmin;
+
+  DemodParams->returnFaFb = uvar_EstimSigParam;
+
+  /* compute the "sky-constants" A and B */
+  TRY ( ComputeSkyBinary (status->statusPtr, DemodParams->skyConst, 0, csbParams), status);  
+  LALFree(midTS);
+
+  LALFree(csbParams->skyPos);
+  LALFree(csbParams);
+
+  LALFree(amParams->das->pSource);
+  LALFree(amParams->das);
+  LALFree(amParams);
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
-} /* AllocateMem() */
+} /* CreateBinaryDemodParams() */
 
 /*******************************************************************************/
 
@@ -993,12 +1354,22 @@ int writeFLines(INT4 *maxIndex){
     }/*  end j loop over points of i-th cluster  */
     var=var/N;
     std=sqrt(var);
-    fr=uvar_Freq + imax*uvar_dFreq;
+    fr=uvar_Freq + imax*GV.dFreq;
 #ifdef FILE_FSTATS  
 /*    print the output */
-  err=fprintf(fpstat,"%16.12f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",fr,
-	      Alpha, Delta, N, mean, std, max);
-
+    if (!uvar_binary)
+      {
+	err=fprintf(fpstat,"%16.12f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",fr,
+		    Alpha, Delta, N, mean, std, max);
+      }
+    if (uvar_binary)  /* BINARY-MOD - changed to also output biniary search parameters */
+      {
+	err=fprintf(fpstat,"%16.12f %10.8f %10.8f %10.8f %10.8f %d %d %10.8f %10.8f %d %10.5f %10.5f %10.5f\n",
+		    fr, Alpha, Delta, thisBinaryTemplate.ProjSMaxis, thisBinaryTemplate.Period, 
+		    thisBinaryTemplate.TperiSSB.gpsSeconds, thisBinaryTemplate.TperiSSB.gpsNanoSeconds,
+		    thisBinaryTemplate.Eccentricity, thisBinaryTemplate.ArgPeri, 
+		    N, mean, std, max);
+      }
   if (err<=0) {
     fprintf(stderr,"writeFLines couldn't print to Fstas!\n");
     return 4;
@@ -1010,16 +1381,18 @@ int writeFLines(INT4 *maxIndex){
   return 0;
 }
 
-/*******************************************************************************/
-
+/** [OBSOLETE] Normalize SFTs using the mean.
+ * This function is obsolete, as we use the running-median now. 
+ * This function has been  replaced by NormaliseSFTDataRngMdn().
+ */
 int NormaliseSFTData(void)
 {
-  INT4 k,j;                         /* loop indices */
-  INT4 nbins=GV.ifmax-GV.ifmin+1;   /* Number of points in SFT's */
-  REAL8 SFTsqav;                  /* Average of Square of SFT */
-  REAL8 B;                        /* SFT Bandwidth */
+  INT4 k,j;                         	/* loop indices */
+  INT4 nbins=GV.ifmax-GV.ifmin+1;   	/* Number of points in SFT's */
+  REAL8 SFTsqav;           		/* Average of Square of SFT */
+  REAL8 B;                        	/* SFT Bandwidth */
   REAL8 deltaT,N;
-
+  REAL8 MeanOneOverSh=0.0;
 
   /* loop over each SFTs */
   for (k=0;k<GV.SFTno;k++)         
@@ -1058,28 +1431,46 @@ int NormaliseSFTData(void)
   return 0;
 }
 
-/*******************************************************************************/
-
+/** Reads in data from SFT-files.
+ *
+ * This function reads in the SFTs from the list of files in \em ConfigVariables GV.filelist 
+ * or from merged SFTs in uvar_mergedSFTFile.
+ * The read SFT-data is stored in the global array \em SFTData and the timestamps 
+ * of the SFTs are stored in the global array \em timestamps (both are allocated here).
+ *
+ * NOTE: this function is obsolete and should be replaced by the use of the SFT-IO lib in LAL.
+ */
 int ReadSFTData(void)
 {
   INT4 fileno=0,offset;
   FILE *fp;
   size_t errorcode;
   UINT4 ndeltaf;
+  INT4 k=0;
 
   SFTData=(FFT **)LALMalloc(GV.SFTno*sizeof(FFT *));
   timestamps=(LIGOTimeGPS *)LALMalloc(GV.SFTno*sizeof(LIGOTimeGPS));
+  
+  /* if using a merged SFT file, it's already open */
+  if (uvar_mergedSFTFile)
+    fp=fp_mergedSFT;
 
   for (fileno=0;fileno<GV.SFTno;fileno++)
     {
-      /* open FIRST file and get info from it*/
-
-      fp=fopen(GV.filelist[fileno],"r");
-      if (fp==NULL) 
-	{
+      /* seek to fileno'th SFT k bytes in */
+      if (uvar_mergedSFTFile){
+	if (fseek(fp,k,SEEK_SET)) {
+	  fprintf(stderr,"Unable to seek to the start of %s !\n",GV.filelist[fileno]);
+	  return 1;
+	}
+      }
+      else {
+	if (!(fp=fopen(GV.filelist[fileno],"rb"))) {
 	  fprintf(stderr,"Weird... %s doesn't exist!\n",GV.filelist[fileno]);
 	  return 1;
 	}
+      }
+
       /* Read in the header from the file */
       errorcode=fread((void*)&header,sizeof(header),1,fp);
       if (errorcode!=1) 
@@ -1115,8 +1506,8 @@ int ReadSFTData(void)
 	  return 4;
 	}
       /* Put time stamps from file into array */
-      timestamps[fileno].gpsSeconds=header.gps_sec;
-      timestamps[fileno].gpsNanoSeconds=header.gps_nsec;
+      timestamps[fileno].gpsSeconds = header.gps_sec;
+      timestamps[fileno].gpsNanoSeconds = header.gps_nsec;
 
       /* Move forward in file */
       offset=(GV.ifmin-header.firstfreqindex)*2*sizeof(REAL4);
@@ -1143,215 +1534,320 @@ int ReadSFTData(void)
 	return 6;
       }
       SFTData[fileno]->fft->epoch=timestamps[fileno];
-      SFTData[fileno]->fft->f0=GV.ifmin*GV.df;
-      SFTData[fileno]->fft->deltaF=GV.df;
-      SFTData[fileno]->fft->data->length=ndeltaf;
+      SFTData[fileno]->fft->f0 = GV.ifmin / GV.tsft;
+      SFTData[fileno]->fft->deltaF = 1.0 / GV.tsft;
+      SFTData[fileno]->fft->data->length = ndeltaf;
 
-      fclose(fp);     /* close file */
+         if (uvar_mergedSFTFile)
+	   k+=sizeof(header)+header.nsamples*8;
+	 else
+	   fclose(fp);     /* close file */
     
     }
   return 0;  
-}
 
-/*******************************************************************************/
+} /* ReadSFTData() */
 
+/** Do some basic initializations of the F-statistic code before starting the main-loop.
+ * Things we do in this function: 
+ * \li check consistency of user-input
+ * \li prepare ephemeris-data and determine SFT input-files to be loaded
+ * \li set some defaults + allocate memory 
+ * \li Return 'derived' configuration settings in the struct \em ConfigVariables
+ * 
+ */
 void
-SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
+InitFStat (LALStatus *status, ConfigVariables *cfg)
 {
 
   CHAR command[512];
   FILE *fp;
   size_t errorcode;
-  REAL8 df;                         /* freq resolution */
   INT4 fileno=0;   
+#ifndef NOGLOB
   glob_t globbuf;
+#endif
+  LIGOTimeGPS starttime;
 
-  INITSTATUS (status, "SetGlobalVariables", rcsid);
+  INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  /* do some sanity checks on the user-input before we proceed */
-  if(uvar_IFO == -1)
+  /* ----------------------------------------------------------------------
+   * do some sanity checks on the user-input before we proceed 
+   */
+  if(!uvar_DataDir && !uvar_mergedSFTFile)
     {
-      fprintf(stderr,"No IFO specified; input with -I option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      exit(-1);
-    }      
-  if(uvar_DataDir == NULL)
+      LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
+		      "No SFT directory specified; input directory with -D option.\n"
+		      "No merged SFT file specified; input file with -B option.\n"
+		      "Try ./ComputeFStatistic -h \n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+    }
+
+  if(uvar_DataDir && uvar_mergedSFTFile)
     {
-      fprintf(stderr,"No SFT directory specified; input directory with -D option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      exit(-1);
+      LALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
+		      "Try ./ComputeFStatistic -h \n\n" );
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
-  if(uvar_EphemDir == NULL)
+
+  if (uvar_EphemYear == NULL)
     {
-      fprintf(stderr,"No ephemeris data (earth??.dat, sun??.dat) directory specified; input directory with -E option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      exit(-1);
+      LALPrintError ("\nNo ephemeris year specified (option 'EphemYear')\n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
-  if(uvar_EphemYear == NULL)
+  /* don't allow negative frequency-band for safety */
+  if ( uvar_FreqBand < 0)
     {
-      fprintf(stderr,"No ephemeris year (earth??.dat, sun??.dat) directory specified; input year with -y option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      exit(-1);
-    }      
-  if(uvar_Freq == 0.0)
-    {
-      fprintf(stderr,"No search frequency specified; set with -f option.\n");
-      fprintf(stderr,"Try ./ComputeFStatistic -h \n");
-      exit(-1);
-    }      
-  if(uvar_dDelta == 0.0)
-    {
-      fprintf(stderr,"Value of Delta resolution ( = 0.0) not allowed.\n");
-      exit(-1);
-    }      
-  if(uvar_dAlpha == 0.0)
-    {
-      fprintf(stderr,"Value of Alpha resolution ( = 0.0) not allowed.\n");
-      exit(-1);
-    }      
+      LALPrintError ("\nNegative value of frequency-band not allowed !\n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
 
   /* don't allow negative bands (for safty in griding-routines) */
   if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
     {
-      fprintf (stderr, "\nNegative value of sky-bands not allowed (alpha or delta)!\n");
-      exit(-1);
+      LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
-  strcpy(cfg->EphemEarth,uvar_EphemDir);
-  strcat(cfg->EphemEarth,"/earth");
-  strcat(cfg->EphemEarth, uvar_EphemYear);
-  strcat(cfg->EphemEarth,".dat");
-
-  strcpy(cfg->EphemSun,uvar_EphemDir);
-  strcat(cfg->EphemSun,"/sun");
-  strcat(cfg->EphemSun, uvar_EphemYear);
-  strcat(cfg->EphemSun,".dat");
-
-  /* *** Make sure the e-files are really there *** */
-      fp=fopen(cfg->EphemEarth,"r");
-      if (fp==NULL) 
-	{
-	  fprintf(stderr,"Could not find %s\n",cfg->EphemEarth);
-	  ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-	}
-      fclose(fp);
-      fp=fopen(cfg->EphemSun,"r");
-      if (fp==NULL) 
-	{
-	  fprintf(stderr,"Could not find %s\n",cfg->EphemSun);
-	  ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-	}
-      fclose(fp);
-  /* ********************************************** */
-
-  strcpy(command,uvar_DataDir);
-  strcat(command,"/*");
-  /* this default-value needs to be set-up here */
-  if (uvar_BaseName == NULL) {
-    uvar_BaseName = LALMalloc (10);
-    strcpy (uvar_BaseName, "SFT");
-  }
-  strcat(command,uvar_BaseName);
-  strcat(command,"*");
-  
-  globbuf.gl_offs = 1;
-  glob(command, GLOB_ERR, NULL, &globbuf);
-
-  /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
-
-  if(globbuf.gl_pathc==0)
+  /* set the current working directory */
+#ifndef _MSC_VER
+  if(chdir(uvar_workingDir) != 0)
+#else
+  if(_chdir(uvar_workingDir) != 0)
+#endif
     {
-      fprintf(stderr,"No SFTs in directory %s ... Exiting.\n",uvar_DataDir);
+      fprintf(stderr, "in Main: unable to change directory to %s\n", uvar_workingDir);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+
+
+  /*----------------------------------------------------------------------
+   * set up and check ephemeris-file locations, and SFT input data
+   */
+
+#if USE_BOINC
+  strcat(cfg->EphemEarth,"earth");
+  strcat(cfg->EphemSun,"sun");
+  use_boinc_filename0(cfg->EphemEarth);
+  use_boinc_filename0(cfg->EphemSun);
+#else 
+  if (LALUserVarWasSet (&uvar_EphemDir) )
+    {
+      sprintf(cfg->EphemEarth, "%s/earth%s.dat", uvar_EphemDir, uvar_EphemYear);
+      sprintf(cfg->EphemSun, "%s/sun%s.dat", uvar_EphemDir, uvar_EphemYear);
+    }
+  else
+    {
+      sprintf(cfg->EphemEarth, "earth%s.dat", uvar_EphemYear);
+      sprintf(cfg->EphemSun, "sun%s.dat",  uvar_EphemYear);
+    }
+#endif /* !USE_BOINC */
+
+  if (uvar_mergedSFTFile) {
+    long k=0;
+#if USE_BOINC
+    use_boinc_filename1(&(uvar_mergedSFTFile));
+#endif
+    if (!(fp=fp_mergedSFT=fopen(uvar_mergedSFTFile,"rb"))){
+      fprintf(stderr,"Unable to open SFT file %s\n", uvar_mergedSFTFile);
       ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
-
-  while ((UINT4)fileno < globbuf.gl_pathc) 
-    {
-      strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
+    
+    while (fread((void*)&header,sizeof(header),1,fp) == 1) {
+      char tmp[256];
+      /* check that we've still got space for more data */
+      if (fileno >= MAXFILES) {
+	fprintf(stderr,"Too many SFT's in merged file! Exiting... \n");
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+      
+      /* store a "file name" composed of merged name + block number */
+      sprintf(tmp, "%s (block %d)", uvar_mergedSFTFile, fileno+1);
+      strcpy(cfg->filelist[fileno],tmp);
+      
+      /* check that data is correct endian order */
+      if (header.endian!=1.0) {
+	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno]);
+	fprintf(stderr,"It could be a file format error (big/little\n");
+	fprintf(stderr,"endian) or the file might be corrupted\n\n");
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+      
+      /* if this is the first SFT, save initial time */
+      if (fileno==0) {
+	cfg->Ti=header.gps_sec;
+	starttime.gpsSeconds = header.gps_sec;
+	starttime.gpsNanoSeconds = header.gps_nsec;
+      }
+      /* increment file no and pointer to the start of the next header */
       fileno++;
-      if (fileno > MAXFILES)
-	{
-	  fprintf(stderr,"Too many files in directory! Exiting... \n");
-	  ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-	}
+      k=header.nsamples*8;
+      fseek(fp,k,SEEK_CUR);
     }
-  globfree(&globbuf);
+    /* save final time and time baseline */
+    cfg->Tf = header.gps_sec + header.tbase;  /* FINAL TIME */
+    cfg->tsft=header.tbase;  /* Time baseline of SFTs */
+    
+    /* NOTE: we do NOT close fp here.  If we are using merged SFT file
+       for data, we keep it open because we'll need it again in
+       ReadSFTData().
+    */
+    
+  }  /* if mergedSFTFile */
+  else {
 
+    strcpy(command, uvar_DataDir);
+    strcat(command,"/*");
+    
+    strcat(command, uvar_BaseName);
+    strcat(command,"*");
+    
+#ifndef NOGLOB
+    globbuf.gl_offs = 1;
+    glob(command, GLOB_ERR, NULL, &globbuf);
+    
+    /* read file names -- MUST NOT FORGET TO PUT ERROR CHECKING IN HERE !!!! */
+    
+    if(globbuf.gl_pathc==0)
+      {
+	LALPrintError ("\nNo SFTs in directory %s ... Exiting.\n\n", uvar_DataDir);
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+    
+    while ((UINT4)fileno < globbuf.gl_pathc) 
+      {
+	strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
+	fileno++;
+	if (fileno > MAXFILES)
+	  {
+	    LALPrintError ("\nToo many files in directory! Exiting... \n\n");
+	    ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+	  }
+      }
+    globfree(&globbuf);
+#endif
+  }
   cfg->SFTno=fileno; /* remember this is 1 more than the index value */
 
-  /* initialize detector */
-  if(uvar_IFO == 0) cfg->Detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if(uvar_IFO == 1) cfg->Detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if(uvar_IFO == 2) cfg->Detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
-  if(uvar_IFO == 3) {
-    TRY (CreateDetector(status->statusPtr, &(cfg->Detector)), status);
+  if (!uvar_mergedSFTFile) {
+    /* open FIRST file and get info from it*/
+    fp=fopen(cfg->filelist[0],"rb");
+    /* read in the header from the file */
+    errorcode=fread((void*)&header,sizeof(header),1,fp);
+    if (errorcode!=1) 
+      {
+	LALPrintError ("\nNo header in data file %s\n\n", cfg->filelist[0]);
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+    
+    /* check that data is correct endian order */
+    if (header.endian!=1.0)
+      {
+	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
+	fprintf(stderr,"It could be a file format error (big/little\n");
+	fprintf(stderr,"endian) or the file might be corrupted\n\n");
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+    fclose(fp);
+    
+    /* INITIAL TIME */
+    starttime.gpsSeconds = header.gps_sec;
+    starttime.gpsNanoSeconds = header.gps_nsec;
+    cfg->Ti = header.gps_sec; 
+    
+    /* open LAST file and get info from it*/
+    fp=fopen(cfg->filelist[fileno-1],"rb");
+    /* read in the header from the file */
+    errorcode=fread((void*)&header,sizeof(header),1,fp);
+    if (errorcode!=1) 
+      {
+	fprintf(stderr,"No header in data file %s\n",cfg->filelist[fileno-1]);
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+    /* check that data is correct endian order */
+    if (header.endian!=1.0)
+      {
+	fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
+	fprintf(stderr,"It could be a file format error (big/little\n");
+	fprintf(stderr,"endian) or the file might be corrupted\n\n");
+	ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      }
+    fclose(fp);
+
+    /* FINAL TIME */
+    cfg->Tf=header.gps_sec+header.tbase;  
+    /* Time baseline of SFTs */
+    cfg->tsft=header.tbase;  
   }
 
-  /* open FIRST file and get info from it*/
-  fp=fopen(cfg->filelist[0],"r");
-  /* read in the header from the file */
-  errorcode=fread((void*)&header,sizeof(header),1,fp);
-  if (errorcode!=1) 
+  /*----------------------------------------------------------------------
+   * initialize detector 
+   */
+  if ( !strcmp (uvar_IFO, "GEO") || !strcmp (uvar_IFO, "0") ) 
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  else if ( !strcmp (uvar_IFO, "LLO") || ! strcmp (uvar_IFO, "1") ) 
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  else if ( !strcmp (uvar_IFO, "LHO") || !strcmp (uvar_IFO, "2") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  else if ( !strcmp (uvar_IFO, "NAUTILUS") || !strcmp (uvar_IFO, "3"))
     {
-      fprintf(stderr,"No header in data file %s\n",cfg->filelist[0]);
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      TRY (CreateNautilusDetector (status->statusPtr, &(cfg->Detector)), status);
+    }
+  else if ( !strcmp (uvar_IFO, "VIRGO") || !strcmp (uvar_IFO, "4") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  else if ( !strcmp (uvar_IFO, "TAMA") || !strcmp (uvar_IFO, "5") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+  else if ( !strcmp (uvar_IFO, "CIT") || !strcmp (uvar_IFO, "6") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+  else
+    {
+      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
-  /* check that data is correct endian order */
-  if (header.endian!=1.0)
-    {
-      fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
-      fprintf(stderr,"It could be a file format error (big/little\n");
-      fprintf(stderr,"endian) or the file might be corrupted\n\n");
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-    }
-  fclose(fp);
+  /*----------------------------------------------------------------------
+   * set some defaults
+   */
+ if (!uvar_binary)
+   {
+     /* if user has not input demodulation frequency resolution; set to 1/2*Tobs */
+     if( !LALUserVarWasSet (&uvar_dFreq) ) 
+       cfg->dFreq=1.0/(2.0*header.tbase*cfg->SFTno);
+     else
+       cfg->dFreq = uvar_dFreq;
+     
+     cfg->FreqImax=(INT4)(uvar_FreqBand/cfg->dFreq+.5)+1;  /*Number of frequency values to calculate F for */
+     
+     /* if user has not input spin down increment then set it to some value */
+     if( !LALUserVarWasSet (&uvar_df1dot) ) 
+       uvar_df1dot=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf - cfg->Ti));
+   }
+ if (uvar_binary)  /* BINARY-MOD - Just a safety thing, setting default df=1/5T and df1dot=0.0 */
+   {
+     /* if user has not input demodulation frequency resolution; set to 1/5*Tobs */
+     if( !LALUserVarWasSet (&uvar_dFreq) ) 
+       cfg->dFreq=1.0/(5.0*header.tbase*cfg->SFTno);
+     else
+       cfg->dFreq = uvar_dFreq;
+     
+     cfg->FreqImax=(INT4)(uvar_FreqBand/cfg->dFreq+.5)+1;  /*Number of frequency values to calculate F for */
+      
+     /* if user has not input spin down increment then set it to zero (default safety value ) */
+     if( !LALUserVarWasSet (&uvar_df1dot) ) 
+	uvar_df1dot=0.0;
 
-  cfg->Ti=header.gps_sec;  /* INITIAL TIME */
+   }
 
-  /* open LAST file and get info from it*/
-  fp=fopen(cfg->filelist[fileno-1],"r");
-  /* read in the header from the file */
-  errorcode=fread((void*)&header,sizeof(header),1,fp);
-  if (errorcode!=1) 
-    {
-      fprintf(stderr,"No header in data file %s\n",cfg->filelist[fileno-1]);
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-    }
-  /* check that data is correct endian order */
-  if (header.endian!=1.0)
-    {
-      fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
-      fprintf(stderr,"It could be a file format error (big/little\n");
-      fprintf(stderr,"endian) or the file might be corrupted\n\n");
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-    }
-  fclose(fp);
-
-  cfg->Tf=header.gps_sec+header.tbase;  /* FINAL TIME */
-
-  cfg->tsft=header.tbase;  /* Time baseline of SFTs */
-    
-  /* if user has not input demodulation frequency resolution; set to 1/Tobs */
-  if( uvar_dFreq == 0.0 ) 
-    uvar_dFreq=1.0/(2.0*header.tbase*cfg->SFTno);
-
-  cfg->FreqImax=(INT4)(uvar_FreqBand/uvar_dFreq+.5)+1;  /*Number of frequency values to calculate F for */
-    
-  /* if user has not input demodulation frequency resolution; set to 1/Tobs */
-  if( uvar_df1dot == 0.0 ) uvar_df1dot=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf-cfg->Ti));
-
-  cfg->SpinImax=(int)(uvar_f1dotBand/uvar_df1dot+.5)+1;  /*Number of frequency values to calculate F for */
+ if (LALUserVarWasSet (&uvar_f1dotBand) && (uvar_f1dotBand != 0) )
+    cfg->SpinImax=(int)(uvar_f1dotBand/uvar_df1dot+.5)+1;  /*Number of spindown values to calculate F for */
+  else
+    cfg->SpinImax = 0;
 
   cfg->nsamples=header.nsamples;    /* # of freq. bins */
 
-  /* frequency resolution: used only for printing! */
-  df=(1.0)/(1.0*header.tbase);
-  cfg->df=df;
-
-  cfg->ifmax=ceil((1.0+DOPPLERMAX)*(uvar_Freq+uvar_FreqBand)*cfg->tsft)+uvar_Dterms;
-  cfg->ifmin=floor((1.0-DOPPLERMAX)*uvar_Freq*cfg->tsft)-uvar_Dterms;
+  cfg->ifmax=ceil((1.0+uvar_dopplermax)*(uvar_Freq+uvar_FreqBand)*cfg->tsft)+uvar_Dterms;
+  cfg->ifmin=floor((1.0-uvar_dopplermax)*uvar_Freq*cfg->tsft)-uvar_Dterms;
 
   /* allocate F-statistic arrays */
   Fstat.F =(REAL8*)LALMalloc(cfg->FreqImax*sizeof(REAL8));
@@ -1364,31 +1860,127 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       Fstat.Fb = NULL;
     }
 
-  /* ----------------------------------------------------------------------*/
-  /* prepare sky-region string if user provided the old alpha, dalpha, etc. 
-   * this is a bit of a cheat, as user did not really specify uvar_skyRegion 
-   * but we can live with that for now... */
-  if (uvar_skyRegion == NULL)
-    {
-      REAL8 a, d, Da, Dd;
-      a = uvar_Alpha;
-      d = uvar_Delta;
-      Da = uvar_AlphaBand;
-      Dd = uvar_DeltaBand;
-      /* consistency check either one point given or a 2D region! */
-      ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  /*----------------------------------------------------------------------
+   * initialize+check  template-grid related parameters 
+   */
+  if (!uvar_binary)
+  {
+    BOOLEAN haveSkyRegion, haveAlphaDelta, haveGridFile, useGridFile, haveMetric, useMetric;
+
+    haveSkyRegion  = (uvar_skyRegion != NULL);
+    haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
+    haveGridFile   = (uvar_skyGridFile != NULL);
+    useGridFile   = (uvar_gridType == GRID_FILE);
+    haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
+    useMetric     = (uvar_gridType == GRID_METRIC);
+
+    /* some consistency checks on input to help catch errors */
+    if ( !useGridFile && !(haveSkyRegion || haveAlphaDelta) )
+      {
+	LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+    if ( haveSkyRegion && haveAlphaDelta )
+      {
+	LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+    if ( useGridFile && !haveGridFile )
+      {
+	LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);	
+      }
+    if ( !useGridFile && haveGridFile )
+      {
+	LALWarning (status, "\nWARNING: skyGridFile was specified but not needed ... will be ignored\n");
+      }
+    if ( useGridFile && (haveSkyRegion || haveAlphaDelta) )
+      {
+	LALWarning (status, "\nWARNING: We are using skyGridFile, but sky-region was also specified ... will be ignored!\n");
+      }
+    if ( !useMetric && haveMetric) 
+      {
+	LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
+      }
+    if ( useMetric && !haveMetric) 
+      {
+	LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+      }
+
+    /* pre-process template-related input */
+    if (haveSkyRegion)
+      {
+	cfg->skyRegion = LALCalloc(1, strlen(uvar_skyRegion)+1);
+	strcpy (cfg->skyRegion, uvar_skyRegion);
+      }
+    else if (haveAlphaDelta)	/* parse this into a sky-region */
+      {
+	REAL8 eps = 1.0e-9;
+	REAL8 a, d, Da, Dd;
+	a = uvar_Alpha;
+	d = uvar_Delta;
+	Da = uvar_AlphaBand + eps;	/* slightly push outwards to make sure boundary-points are included */
+	Dd = uvar_DeltaBand + eps;
+	/* consistency check either one point given or a 2D region! */
+	ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       
-      uvar_skyRegion = LALMalloc (512); /* should be enough for max 4 points... */
-      if ( (Da == 0) || (Dd == 0) ) 	/* only one point */
-	sprintf (uvar_skyRegion, "(%.16f, %.16f)", a, d);
-      else				/* or a rectangle */
-	sprintf (uvar_skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
-		 a, d, 
-		 a + Da, d, 
-		 a + Da, d + Dd,
-		 a, d + Dd );
-    } /* if !uvar_skyRegion */
+	cfg->skyRegion = LALMalloc (512); /* should be enough for max 4 points... */
+	if ( (Da == 0) || (Dd == 0) ) 	/* only one point */
+	  sprintf (cfg->skyRegion, "(%.16f, %.16f)", a, d);
+	else				/* or a rectangle */
+	  sprintf (cfg->skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
+		   a, d, 
+		   a + Da, d, 
+		   a + Da, d + Dd,
+		   a, d + Dd );
+      }
+    
+
+  } /* end: template-grid stuff */
+
   /* ----------------------------------------------------------------------*/
+  /*
+   * initialize Ephemeris-data 
+   */
+  {
+    LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
+    INT4 leap;
+
+    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
+    cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
+    cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
+
+    TRY (LALLeapSecs (status->statusPtr, &leap, &starttime, &formatAndAcc), status);
+    cfg->edat->leap = leap;
+
+    TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
+
+  } /* end: init ephemeris data */
+
+  /* ----------------------------------------------------------------------
+   * initialize + allocate space for AM-coefficients and Demod-params
+   */
+  {
+    INT4 k;
+
+    /* Allocate space for AMCoeffs */
+    amc.a = NULL;
+    amc.b = NULL;
+    TRY (LALSCreateVector(status->statusPtr, &(amc.a), (UINT4) cfg->SFTno), status);
+    TRY (LALSCreateVector(status->statusPtr, &(amc.b), (UINT4) cfg->SFTno), status);
+
+    /* Allocate DemodParams structure */
+    DemodParams = (DemodPar *)LALCalloc(1, sizeof(DemodPar));
+  
+    /* space for sky constants */
+    /* Based on maximum index for array of as and bs sky constants as from ComputeSky.c */
+    k = 4*(cfg->SFTno-1) + 4; 
+    DemodParams->skyConst = (REAL8 *)LALMalloc(k*sizeof(REAL8));
+    /* space for spin down params */
+    DemodParams->spinDwn = (REAL8 *)LALMalloc(sizeof(REAL8));
+  
+  }/* end: init AM- and demod-params */
 
   /* Tell the user what we have arrived at */
 #ifdef DEBG_SGV
@@ -1405,28 +1997,90 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     DETATCHSTATUSPTR (status);
     RETURN (status);
 
-} /* SetGlobalVariables() */
+} /* InitFStat() */
 
-/*******************************************************************************/
-
-
-
-/*******************************************************************************/
-
-void CreateDetector(LALStatus *status, LALDetector *Detector)
+/***********************************************************************/
+/** Log the all relevant parameters of the present search-run to a log-file.
+ * The name of the log-file is "Fstats{uvar_outputLabel}.log".
+ * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
+ */
+void
+WriteFStatLog (LALStatus *stat, char *argv[])
 {
-/*   LALDetector Detector;  */
+    CHAR *logstr = NULL;
+    const CHAR *head = "Fstats";
+    CHAR command[512] = "";
+    UINT4 len;
+    CHAR *fname = NULL;
+    FILE *fplog;
+
+    INITSTATUS (stat, "WriteFStatLog", rcsid);
+    ATTATCHSTATUSPTR (stat);
+
+    /* prepare log-file for writing */
+    len = strlen(head) + strlen(".log") +10;
+    if (uvar_outputLabel)
+      len += strlen(uvar_outputLabel);
+
+    if ( (fname=LALCalloc(len,1)) == NULL) {
+      ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    }
+    strcpy (fname, head);
+    if (uvar_outputLabel)
+      strcat (fname, uvar_outputLabel);
+    strcat (fname, ".log");
+
+    if ( (fplog = fopen(fname, "w" )) == NULL) {
+      LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", fname);
+      LALFree (fname);
+      ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+    }
+
+    /* write out a log describing the complete user-input (in cfg-file format) */
+    TRY (LALUserVarGetLog (stat->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), stat);
+
+    fprintf (fplog, "## LOG-FILE of ComputeFStatistic run\n\n");
+    fprintf (fplog, "# User-input:\n");
+    fprintf (fplog, "# ----------------------------------------------------------------------\n\n");
+
+    fprintf (fplog, logstr);
+    LALFree (logstr);
+
+    /* append an ident-string defining the exact CVS-version of the code used */
+    fprintf (fplog, "\n\n# CVS-versions of executable:\n");
+    fprintf (fplog, "# ----------------------------------------------------------------------\n");
+    fclose (fplog);
+    
+    sprintf (command, "ident %s | sort -u >> %s", argv[0], fname);
+    system (command);	/* we don't check this. If it fails, we assume that */
+    			/* one of the system-commands was not available, and */
+    			/* therefore the CVS-versions will not be logged */
+
+    LALFree (fname);
+
+    DETATCHSTATUSPTR (stat);
+    RETURN(stat);
+
+} /* WriteFStatLog() */
+
+
+/*******************************************************************************/
+/** Set up the \em LALDetector struct representing the NAUTILUS detector */
+void
+CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
+{
+  /*   LALDetector Detector;  */
   LALFrDetector detector_params;
   LALDetectorType bar;
   LALDetector Detector1;
 
-  INITSTATUS (status, "CreateDetector", rcsid);
+  INITSTATUS (status, "CreateNautilusDetector", rcsid);
   ATTATCHSTATUSPTR (status);
 
 /*   detector_params=(LALFrDetector )LALMalloc(sizeof(LALFrDetector)); */
  
   bar=LALDETECTORTYPE_CYLBAR;
-  strcpy(detector_params.name,"NAUTILUS");
+  strcpy(detector_params.name, "NAUTILUS");
   detector_params.vertexLongitudeRadians=12.67*LAL_PI/180.0;
   detector_params.vertexLatitudeRadians=41.82*LAL_PI/180.0;
   detector_params.vertexElevation=300.0;
@@ -1434,16 +2088,16 @@ void CreateDetector(LALStatus *status, LALDetector *Detector)
   detector_params.xArmAzimuthRadians=44.0*LAL_PI/180.0;
 
   TRY (LALCreateDetector(status->statusPtr, &Detector1, &detector_params, bar), status);
-
+  
   *Detector=Detector1;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
-
-} /* CreateDetector() */
+  
+} /* CreateNautilusDetector() */
 
 /*******************************************************************************/
-
+/** Free all globally allocated memory. */
 void Freemem(LALStatus *status) 
 {
 
@@ -1486,17 +2140,27 @@ void Freemem(LALStatus *status)
     }
      
 
+  if (uvar_binary) {
+    LALFree(BinaryBank->BTB);
+    LALFree(BinaryBank);
+  }
+
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
 
-  /* Free DopplerScan-stuff (grid) */
-  TRY (FreeDopplerScan (status->statusPtr, &thisScan), status);
+  if (GV.skyRegion)
+    LALFree ( GV.skyRegion );
 
   /* this comes from clusters.c */
   if (highFLines->clusters) LALFree(highFLines->clusters);
   if (highFLines->Iclust) LALFree(highFLines->Iclust);
   if (highFLines->NclustPoints) LALFree(highFLines->NclustPoints);
 
+
+  /* Free ephemeris data */
+  LALFree(GV.edat->ephemE);
+  LALFree(GV.edat->ephemS);
+  LALFree(GV.edat);
 
   DETATCHSTATUSPTR (status);
 
@@ -1508,8 +2172,7 @@ void Freemem(LALStatus *status)
 } /* Freemem() */
 
 /*******************************************************************************/
-
-/* Sorting function to sort into DECREASING order */
+/** Sorting function to sort into DECREASING order. Used in PrintTopValues(). */
 int compare(const void *ip, const void *jp)
 {
   REAL8 di, dj;
@@ -1528,17 +2191,16 @@ int compare(const void *ip, const void *jp)
 
 /*******************************************************************************/
 
-/* This routine prints the values of (f,FF) above a certain threshold */
-/* in 2F, called 2Fthr.  If there are more than ReturnMaxN of these, */
-/* then it simply returns the top ReturnMaxN of them. If there are */
-/* none, then it returns none.  It also returns some basic statisical */
-/* information about the distribution of 2F: the mean and standard */
-/* deviation. */
-/* Returns zero if all is well, else nonzero if a problem was encountered. */
-/*    Basic strategy: sort the array by values of F, then look at the */
-/*    top ones. Then search for the points above threshold. */
-
-
+/** Print the values of (f,FF) above a certain threshold 
+ * in 2F, called 2Fthr.  If there are more than ReturnMaxN of these, 
+ * then it simply returns the top ReturnMaxN of them. If there are 
+ * none, then it returns none.  It also returns some basic statisical
+ * information about the distribution of 2F: the mean and standard 
+ * deviation.
+ * Returns zero if all is well, else nonzero if a problem was encountered. 
+ * Basic strategy: sort the array by values of F, then look at the 
+ * top ones. Then search for the points above threshold. 
+ */
 INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 {
 
@@ -1585,12 +2247,13 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
   TwoFthr*=0.5/log2;
 
 #ifdef FILE_FMAX  
-#if 1
-/*    print out the top ones */
-  for (ntop=0; ntop<ReturnMaxN; ntop++)
+  if (!uvar_binary) 
+    {
+      /*    print out the top ones */
+      for (ntop=0; ntop<ReturnMaxN; ntop++)
     if (Fstat.F[indexes[ntop]]>TwoFthr){
       err=fprintf(fpmax, "%20.10f %10.8f %10.8f %20.15f\n",
-		  uvar_Freq+indexes[ntop]*uvar_dFreq,
+		  uvar_Freq+indexes[ntop]*GV.dFreq,
 		  Alpha, Delta, 2.0*log2*Fstat.F[indexes[ntop]]);
       if (err<=0) {
 	fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
@@ -1601,7 +2264,31 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
     else
 /*        Since array sorted, as soon as value too small we can break */
       break;
-#endif
+    }
+  if (uvar_binary) 
+    {
+      /*    print out the top ones */
+      for (ntop=0; ntop<ReturnMaxN; ntop++)
+	if (Fstat.F[indexes[ntop]]>TwoFthr){
+	  err=fprintf(fpmax, "%20.10f %10.8f %10.8f %10.8f %10.8f %d %d %10.8f %10.8f %20.15f\n",
+		      uvar_Freq+indexes[ntop]*GV.dFreq,
+		      Alpha, Delta,thisBinaryTemplate.ProjSMaxis,thisBinaryTemplate.Period,
+		      thisBinaryTemplate.TperiSSB.gpsSeconds,thisBinaryTemplate.TperiSSB.gpsNanoSeconds,
+		      thisBinaryTemplate.Eccentricity,thisBinaryTemplate.ArgPeri,2.0*log2*Fstat.F[indexes[ntop]]);
+	  if (err<=0) {
+	    fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
+	    LALFree(indexes);
+	    return 3;
+	  }
+	}
+	else
+	  /*        Since array sorted, as soon as value too small we can break */
+	  break;
+    }
+
+
+
+
 #endif
 
   /*  find out how many points have been set to zero (N) */
@@ -1636,8 +2323,17 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 
 #ifdef FILE_FMAX_DEBG    
 /*    print the output */
+  if (!uvar_binary) { 
   err=fprintf(fpmax,"%10.5f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",uvar_Freq,
 	      Alpha, Delta, GV.FreqImax-N, mean, std, 2.0*log2*Fstat.F[indexes[0]]);
+  }
+  if (uvar_binary) {
+    err=fprintf(fpmax,"%10.5f %10.8f %10.8f %10.8f %10.8f %d %d %10.8f %10.8f %d %10.5f %10.5f %10.5f\n",
+		uvar_Freq,Alpha, Delta,thisBinaryTemplate.SMaxis,thisBinaryTemplate.Period,
+		thisBinaryTemplate.TperiSSB.gpsSeconds,thisBinaryTemplate.TperiSSB.gpsNanoSeconds,
+		thisBinaryTemplate.Eccentricity,thisBinaryTemplate.ArgPeri, 
+		GV.FreqImax-N, mean, std, 2.0*log2*Fstat.F[indexes[0]]);
+  }
 #endif
   LALFree(indexes);
 #ifdef FILE_FMAX_DEBG    
@@ -1651,7 +2347,9 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 }
 
 /*******************************************************************************/
-
+/** Find outliers/clusters in the PSD [OBSOLETE?].
+ * Does not seem to be used currently.
+ */
 INT4 EstimatePSDLines(LALStatus *status)
 {
 #ifdef FILE_PSD
@@ -1664,7 +2362,7 @@ INT4 EstimatePSDLines(LALStatus *status)
   INT4 nbins=GV.ifmax-GV.ifmin+1;   /* Number of points in SFT's */
   REAL8Vector *Sp=NULL; 
   REAL8Vector *FloorSp=NULL;                        /* Square of SFT */
-  INT2 windowSize=100;                  /* Running Median Window Size*/
+  INT2 windowSize=uvar_windowsize;                  /* Running Median Window Size*/
   REAL4 THR=10000.0;
   
   REAL4 xre,xim;
@@ -1725,8 +2423,13 @@ INT4 EstimatePSDLines(LALStatus *status)
   Sp->length=nbins;
   FloorSp->length=nbins;
 
+  printf("got to here\n");
+  printf("windowsize is %d\n",windowSize);
+
   j=EstimateFloor(Sp, windowSize, FloorSp);
  
+  printf("after estimatefllor\n");
+
   if (!(outliers=(Outliers *)LALMalloc(sizeof(Outliers)))){
     fprintf(stderr,"Memory allocation failure for SpOutliers\n");
     return 1;
@@ -1782,8 +2485,6 @@ INT4 EstimatePSDLines(LALStatus *status)
 
    }
   
-
-
    if (!(SpClParams=(ClustersParams *)LALMalloc(sizeof(ClustersParams)))){ 
      printf("Memory allocation failure for SpClusterParams");
      return 1;
@@ -1857,10 +2558,12 @@ INT4 EstimatePSDLines(LALStatus *status)
    LALFree(clustersInput);
 
    return 0;
-}
+
+} /* EstimatePSDLines() */
 
 /*******************************************************************************/
-
+/** Find outliers/clusters in the F-statistic array over frequency.
+ */
 INT4 EstimateFLines(LALStatus *status)
 {
 #ifdef FILE_FTXT  
@@ -1873,7 +2576,7 @@ INT4 EstimateFLines(LALStatus *status)
   INT4 nbins=GV.FreqImax;                /* Number of points in F */
   REAL8Vector *F1=NULL; 
   REAL8Vector *FloorF1=NULL;                        /* Square of SFT */
-  /* INT2 windowSize=(0.01/uvar_dFreq);               0.1 is 1E-4*1000 */
+  /* INT2 windowSize=(0.01/GV.dFreq);               0.1 is 1E-4*1000 */
   INT2 windowSize=100;
   REAL4 THR=10.0;
   
@@ -1900,7 +2603,7 @@ INT4 EstimateFLines(LALStatus *status)
   /*  with ~ 10 h observation time */
   /*  0.0001 = 0.0002/2 */
   /*  let me put 0.005 */
-  dmp=0.5+0.0002/uvar_dFreq;
+  dmp=0.5+0.0002/GV.dFreq;
   wings=dmp;
 
 
@@ -1957,7 +2660,7 @@ INT4 EstimateFLines(LALStatus *status)
   outliersParams->Thr=THR/(2.0*medianbias);
   outliersParams->Floor = FloorF1;
   outliersParams->wings=wings; /*these must be the same as ClustersParams->wings */
-  outliersInput->ifmin=((uvar_Freq/uvar_dFreq)+0.5);
+  outliersInput->ifmin=((uvar_Freq/GV.dFreq)+0.5);
   outliersInput->data = F1;
 
   ComputeOutliers(outliersInput, outliersParams, outliers);
@@ -1965,14 +2668,33 @@ INT4 EstimateFLines(LALStatus *status)
    if (outliers->Noutliers == 0){
 
 #ifdef FILE_FTXT
-     /*  F.txt file contains freq, F, noise floor of F   */
-     for (i=0;i<nbins;i++){ 
-       REAL4 freq;
-       REAL8 r0,r1;
-       freq=uvar_Freq + i*uvar_dFreq;
-       r0=F1->data[i];
-       r1=FloorF1->data[i];
-       fprintf(outfile,"%f %E %E\n",freq,r0,r1);
+     if (!uvar_binary) {
+       /*  F.txt file contains freq, F, noise floor of F   */
+       for (i=0;i<nbins;i++){ 
+	 REAL4 freq;
+	 REAL8 r0,r1;
+	 freq=uvar_Freq + i*GV.dFreq;
+	 r0=F1->data[i];
+	 r1=FloorF1->data[i];
+	 fprintf(outfile,"%12.17f %E %E\n",freq,r0,r1);
+       }
+     }
+     if (uvar_binary) {
+       /*  F.txt file contains freq, F, noise floor of F   */
+       for (i=0;i<nbins;i++){ 
+	 REAL4 freq;
+	 REAL8 r0,r1;
+	 freq=uvar_Freq + i*GV.dFreq;
+	 r0=F1->data[i];
+	 r1=FloorF1->data[i];
+	 fprintf(outfile1,"%20.17f %12.12f %12.12f %d %d %6.12f %6.12f %E %E\n",freq, \
+		 thisBinaryTemplate.ProjSMaxis, \
+		 thisBinaryTemplate.Period, \
+		 thisBinaryTemplate.TperiSSB.gpsSeconds, \
+		 thisBinaryTemplate.TperiSSB.gpsNanoSeconds, \
+		 thisBinaryTemplate.Eccentricity, \
+		 thisBinaryTemplate.ArgPeri,r0,r1);
+       }
      }
 #endif     
 
@@ -2032,29 +2754,73 @@ INT4 EstimateFLines(LALStatus *status)
    
 
 
-#ifdef FILE_FLINES  
-   /*  FLines file contains: F, noise floor and lines. */
-   for (i=0;i<Ntot;i++){ 
-     REAL4 freq;
-     REAL8 r0,r1,r2;
-     j=SpLines->Iclust[i];
-     freq=(uvar_Freq+SpLines->Iclust[i]*uvar_dFreq);
-     r0=F1->data[j];
-     r1=FloorF1->data[j];
-     r2=SpLines->clusters[i]*FloorF1->data[j];
-     fprintf(outfile1,"%f %E %E %E\n",freq,r0,r1,r2);
-   }
+#ifdef FILE_FLINES
+   if (!uvar_binary)   /* BINARY-MOD - Need to select isolated or binary output */
+     {
+       /*  FLines file contains: F, noise floor and lines. */
+       for (i=0;i<Ntot;i++){ 
+	 REAL4 freq;
+	 REAL8 r0,r1,r2;
+	 j=SpLines->Iclust[i];
+	 freq=(uvar_Freq+SpLines->Iclust[i]*GV.dFreq);
+	 r0=F1->data[j];
+	 r1=FloorF1->data[j];
+	 r2=SpLines->clusters[i]*FloorF1->data[j];
+	 fprintf(outfile1,"%f %12.12f %12.12f %E %E %E\n",freq,Alpha,Delta,r0,r1,r2);
+       }
+     }
+   if (uvar_binary)
+     {
+       /*  FLines file contains: F, noise floor and lines. */
+       for (i=0;i<Ntot;i++){ 
+	 REAL4 freq;
+	 REAL8 r0,r1,r2;
+	 j=SpLines->Iclust[i];
+	 freq=(uvar_Freq+SpLines->Iclust[i]*GV.dFreq);
+	 r0=F1->data[j];
+	 r1=FloorF1->data[j];
+	 r2=SpLines->clusters[i]*FloorF1->data[j];
+	 fprintf(outfile1,"%20.17f %12.12f %12.12f %d %d %6.12f %6.12f %E %E %E\n",freq, \
+		 thisBinaryTemplate.ProjSMaxis, \
+		 thisBinaryTemplate.Period, \
+		 thisBinaryTemplate.TperiSSB.gpsSeconds, \
+		 thisBinaryTemplate.TperiSSB.gpsNanoSeconds, \
+		 thisBinaryTemplate.Eccentricity, \
+		 thisBinaryTemplate.ArgPeri,r0,r1,r2);
+       }
+     }
 #endif
 #ifdef FILE_FTXT   
-   /*  PSD.txt file contains freq, PSD, noise floor   */
-   for (i=0;i<nbins;i++){ 
-     REAL4 freq;
-     REAL8 r0,r1;
-     freq=uvar_Freq + i*uvar_dFreq;
-     r0=F1->data[i];
-     r1=FloorF1->data[i];
-     fprintf(outfile,"%f %E %E\n",freq,r0,r1);
-   }
+   if (!uvar_binary) /* BINARY-MOD - Need to select isolated or binary output */
+     {
+       /*  PSD.txt file contains freq, PSD, noise floor   */
+       for (i=0;i<nbins;i++){ 
+	 REAL8 freq;
+	 REAL8 r0,r1;
+	 freq=uvar_Freq + (REAL8)i*GV.dFreq;
+	 r0=F1->data[i];
+	 r1=FloorF1->data[i];
+	 fprintf(outfile,"%20.17f %E %E\n",freq,r0,r1);
+       }
+     }
+   if (uvar_binary) 
+     {
+       /*  PSD.txt file contains freq, PSD, noise floor   */
+       for (i=0;i<nbins;i++){ 
+	 REAL8 freq;
+	 REAL8 r0,r1;
+	 freq=uvar_Freq + (REAL8)i*GV.dFreq;
+	 r0=F1->data[i];
+	 r1=FloorF1->data[i];
+	 fprintf(outfile,"%20.17f %12.12f %12.12f %d %d %6.12f %6.12f %E %E\n",freq, \
+		 thisBinaryTemplate.ProjSMaxis, \
+		 thisBinaryTemplate.Period, \
+		 thisBinaryTemplate.TperiSSB.gpsSeconds, \
+		 thisBinaryTemplate.TperiSSB.gpsNanoSeconds, \
+		 thisBinaryTemplate.Eccentricity, \
+		 thisBinaryTemplate.ArgPeri,r0,r1);
+       }
+     }
 #endif   
 
 #ifdef FILE_FTXT
@@ -2076,12 +2842,11 @@ INT4 EstimateFLines(LALStatus *status)
 
    return 0;
 
+} /* EstimateFLines() */
 
-}
-
-/*******************************************************************************/
-/*******************************************************************************/
-
+/***********************************************************************/
+/** Normalise the SFT-array \em SFTData by the running median.
+ */
 INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 {
 #ifdef FILE_SPRNG  
@@ -2092,7 +2857,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
   REAL8 B;                          /* SFT Bandwidth */
   REAL8 deltaT,norm,*N, *Sp1;
-  INT2 windowSize=50;                  /* Running Median Window Size*/
+  INT2 windowSize=uvar_windowsize;                  /* Running Median Window Size*/
   REAL4 xre,xim,xreNorm,ximNorm;
 
 
@@ -2111,15 +2876,21 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   nbins=(INT2)nbins;
 
   if(!(N= (REAL8 *) LALCalloc(nbins,sizeof(REAL8)))){ 
-    printf("Memory allocation failure");
+    printf("Memory allocation failure of N");
     return 0;
   }
    if(!(Sp1= (REAL8 *) LALCalloc(nbins,sizeof(REAL8)))){ 
-    printf("Memory allocation failure");
+    printf("Memory allocation failure of Sp1");
     return 0;
   }
-   
-  
+
+   /*
+   if( nbins < windowSize ) {
+     fprintf( stderr, "The frequency band has too small bins compared to the now hard-coded window size (= %d) used in EstimateFloor().\n", windowSize );
+     exit(1);
+   }
+   */
+
   /* loop over each SFTs */
   for (i=0;i<GV.SFTno;i++)         
     {
@@ -2138,7 +2909,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
       
       /* Compute running median */
       EstimateFloor(Sp, windowSize, RngMdnSp);
-      
+
       /* compute how many cluster points in all */
       /* substitute the line profiles value in RngMdnSp */
       Ntot=0;
@@ -2152,7 +2923,6 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 	}
       }
 
-     
       /*Compute Normalization factor*/
       /* for signal only case as well */  
       for (lpc=0;lpc<nbins;lpc++){
@@ -2205,5 +2975,241 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   LALDDestroyVector(status, &Sp);
   
   return 0;
+
+} /* NormaliseSFTDataRngMed() */
+
+/*******************************************************************************/
+/* BOINC-specific functions follow here */
+#if USE_BOINC
+void use_boinc_filename0(char *orig_name ) {
+  char resolved_name[512];
+  if (boinc_resolve_filename(orig_name, resolved_name, sizeof(resolved_name))) {
+    fprintf(stderr, "Can't resolve file %s\n", orig_name);
+    boinc_finish(2);
+  }
+  strcpy(orig_name, resolved_name);
+  return;
 }
+
+void use_boinc_filename1(char **orig_name ) {
+  char resolved_name[512];
+  if (boinc_resolve_filename(*orig_name, resolved_name, sizeof(resolved_name))) {
+    fprintf(stderr, "Can't resolve file %s\n", *orig_name);
+    boinc_finish(2);
+  }
+  *orig_name = calloc(strlen(resolved_name)+1,1);
+  strcpy(*orig_name, resolved_name);
+  return;
+}
+
+#endif /*USE_BOINC*/
+
+/**************************************************************************************/
+
+int ReadBinaryTemplateBank(LALStatus *status)
+{
+
+  FILE *BTBfp;
+  char dmp[256];
+  char filename[256];
+  INT4 i;
+  REAL8 temp1,temp2;
+
+  
+  strcpy(filename,uvar_binarytemplatefile);
+  /*  something that reads the binary input file to memory */
+  if(!(BTBfp=fopen(filename,"r"))){ 
+    printf("Cannot open BinaryTemplate file %s\n",filename); 
+    return 1;
+  } 
+
+  /* allocate memory for header info */
+  BinaryBank=(BinaryTemplateBank *)LALMalloc(1*sizeof(BinaryTemplateBank));
+
+  /*printf("opened binary file %s\n",filename);
+  fscanf(BTBfp,"%s %le\n",dmp,&(BinaryBank->BTBfmax));
+  printf("temp1 read as %le\n",BinaryBank->BTBfmax);
+  exit(0);*/
+  /* read header information and fill in TemplateBank fields */
+  fscanf(BTBfp,"%s%le\n %s%le\n %s%d\n %s%d\n %s%d\n %s%lf\n %s%le\n %s%le\n" \
+	 "%s%d\n %s%d\n %s%d\n %s%d\n %s%le\n %s%le\n %s%le\n %s%le\n %s%le\n %s%le\n %s%s\n\n", \
+	 dmp,&(BinaryBank->BTBfmax), \
+	 dmp,&(BinaryBank->BTBTspan), \
+	 dmp,&(BinaryBank->BTBTobsStart).gpsSeconds, \
+	 dmp,&(BinaryBank->BTBTobsStart).gpsNanoSeconds, \
+	 dmp,&(BinaryBank->BTBNFilters), \
+	 dmp,&(BinaryBank->BTBMismatch), \
+	 dmp,&(BinaryBank->BTBProjSMaxisMIN), \
+	 dmp,&(BinaryBank->BTBProjSMaxisMAX), \
+	 dmp,&(BinaryBank->BTBTperiSSBMIN).gpsSeconds, \
+	 dmp,&(BinaryBank->BTBTperiSSBMIN).gpsNanoSeconds, \
+	 dmp,&(BinaryBank->BTBTperiSSBMAX).gpsSeconds, \
+	 dmp,&(BinaryBank->BTBTperiSSBMAX).gpsNanoSeconds, \
+	 dmp,&(BinaryBank->BTBEccMIN), \
+	 dmp,&(BinaryBank->BTBEccMAX), \
+	 dmp,&(BinaryBank->BTBArgPeriMIN), \
+	 dmp,&(BinaryBank->BTBArgPeriMAX), \
+	 dmp,&(BinaryBank->BTBPeriodMIN), \
+	 dmp,&(BinaryBank->BTBPeriodMAX), \
+	 dmp,(BinaryBank->BTBversion));
+
+  printf("read header info\n");
+  /* Do initial validation of header information */
+  if (BinaryBank->BTBfmax<0.0) {
+    printf("In BinaryTemplate file %s : header value of fmax < 0.0\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBTspan<0.0) {
+    printf("In BinaryTemplate file %s : header value of Tspan < 0.0\n",filename);
+    return 1;
+  }
+    if ((BinaryBank->BTBTobsStart.gpsSeconds!=GV.Ti)||(BinaryBank->BTBTobsStart.gpsNanoSeconds!=0)) {
+      printf("In BinaryTemplate file %s : header value of Tstart != Tstart of data\n",filename);
+      return 1;
+    }
+  if (BinaryBank->BTBNFilters<1) {
+    printf("In BinaryTemplate file %s : header value of NFilters < 1\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBMismatch<0.0) {
+    printf("In BinaryTemplate file %s : header value of Mismatch < 0.0\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBProjSMaxisMIN<0.0) {
+    printf("In BinaryTemplate file %s : header value of Minimum Projected semi-major axis < 0.0\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBProjSMaxisMAX<0.0) {
+    printf("In BinaryTemplate file %s : header value of Maximum Projected semi-major axis < 0.0\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBProjSMaxisMAX<BinaryBank->BTBProjSMaxisMIN) {
+    printf("In BinaryTemplate file %s : header value of Maximum Projected semi-major axis < Minimum\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBTperiSSBMIN.gpsSeconds<0) {
+    printf("In BinaryTemplate file %s : header value of Minimum SSB time of periapse passage < 0\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBTperiSSBMAX.gpsSeconds<0) {
+    printf("In BinaryTemplate file %s : header value of Maximum SSB time of periapse passage < 0\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBTperiSSBMIN.gpsNanoSeconds<0) {
+    printf("In BinaryTemplate file %s : header value of Minimum SSB time of periapse passage (nanoseconds) < 0\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBTperiSSBMAX.gpsNanoSeconds<0) {
+    printf("In BinaryTemplate file %s : header value of Maximum SSB time of periapse passage (nanoseconds) < 0\n",filename);
+    return 1;
+  }
+  temp1=BinaryBank->BTBTperiSSBMIN.gpsSeconds+1e-9*BinaryBank->BTBTperiSSBMIN.gpsNanoSeconds;
+  temp2=BinaryBank->BTBTperiSSBMAX.gpsSeconds+1e-9*BinaryBank->BTBTperiSSBMAX.gpsNanoSeconds;
+  if (temp2<temp1) {
+    printf("In BinaryTemplate file %s : header value of Maximum Projected semi-major axis < Minimum\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBEccMIN<0.0) {
+    printf("In BinaryTemplate file %s : header value of Minimum eccentricity < 0.0\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBEccMAX<0.0) {
+    printf("In BinaryTemplate file %s : header value of Maximum eccentricity < 0.0\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBEccMAX<BinaryBank->BTBEccMIN) {
+    printf("In BinaryTemplate file %s : header value of Maximum eccentricity < Minimum\n",filename);
+    return 1;
+  }
+  if ((BinaryBank->BTBArgPeriMIN<0.0)||(BinaryBank->BTBArgPeriMIN>LAL_TWOPI)) {
+    printf("In BinaryTemplate file %s : header value of Minimum argument of periapse not in range (0 - 2*PI)\n",filename);
+    return 1;
+  }
+  if ((BinaryBank->BTBArgPeriMAX<0.0)||(BinaryBank->BTBArgPeriMAX>LAL_TWOPI)) {
+    printf("In BinaryTemplate file %s : header value of Maximum argument of periapse not in range (0 - 2*PI)\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBArgPeriMAX<BinaryBank->BTBArgPeriMIN) {
+    printf("In BinaryTemplate file %s : header value of Maximum argument of periapse < Minimum\n",filename);
+    return 1;
+  }
+  if ((BinaryBank->BTBArgPeriMIN<0.0)||(BinaryBank->BTBArgPeriMIN>LAL_TWOPI)) {
+    printf("In BinaryTemplate file %s : header value of Minimum argument of periapse not in range (0 - 2*PI)\n",filename);
+    return 1;
+  }
+  if ((BinaryBank->BTBArgPeriMAX<0.0)||(BinaryBank->BTBArgPeriMAX>LAL_TWOPI)) {
+    printf("In BinaryTemplate file %s : header value of Maximum argument of periapse not in range (0 - 2*PI)\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBArgPeriMAX<BinaryBank->BTBArgPeriMIN) {
+    printf("In BinaryTemplate file %s : header value of Maximum argument of periapse < Minimum\n",filename);
+    return 1;
+  }  
+  if (BinaryBank->BTBPeriodMIN<0.0) {
+    printf("In BinaryTemplate file %s : header value of Minimum period < 0.0\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBPeriodMAX<0.0) {
+    printf("In BinaryTemplate file %s : header value of Maximum period < 0.0\n",filename);
+    return 1;
+  }
+  if (BinaryBank->BTBPeriodMAX<BinaryBank->BTBPeriodMIN) {
+    printf("In BinaryTemplate file %s : header value of Maximum period < Minimum\n",filename);
+    return 1;
+  }  
+  
+  /* allocate memory for templates */
+  (BinaryBank->BTB)=(BinaryTemplate *)LALMalloc(BinaryBank->BTBNFilters*sizeof(BinaryTemplate));
+  
+  /* Now read in all templates into memory */
+  i=0;
+  while (i<BinaryBank->BTBNFilters) {
+    fscanf(BTBfp,"%le%le%d%d%le%le\n",
+		 &(BinaryBank->BTB[i]).ProjSMaxis,
+		 &(BinaryBank->BTB[i]).Period,
+		 &(BinaryBank->BTB[i]).TperiSSB.gpsSeconds,
+		 &(BinaryBank->BTB[i]).TperiSSB.gpsNanoSeconds,
+		 &(BinaryBank->BTB[i]).Eccentricity,
+		 &(BinaryBank->BTB[i]).ArgPeri); 
+  
+    /* printf("ProjSMaxis = %le Period = %le TperiSSB.sec = %d TperiSSB.nano = %d Eccentricity = %le ArgPeri = %le\n", \
+	   BinaryBank->BTB[i].ProjSMaxis,BinaryBank->BTB[i].Period,BinaryBank->BTB[i].TperiSSB.gpsSeconds, \
+	   BinaryBank->BTB[i].TperiSSB.gpsNanoSeconds,BinaryBank->BTB[i].Eccentricity,BinaryBank->BTB[i].ArgPeri); */
+    
+    /* check each template before being used in the search */
+    /* may also add a check that the templates are within the specified boundaries */
+    if ((BinaryBank->BTB[i]).ProjSMaxis<0.0) {
+      printf("In BinaryTemplate file %s : template #[%d] has negative projected semi-major axis\n",filename,i);
+      return 1;
+    }
+    if ((BinaryBank->BTB[i]).Period<0.0) {
+      printf("In BinaryTemplate file %s : template #[%d] has negative orbital period\n",filename,i);
+      return 1;
+    }  
+    if ((BinaryBank->BTB[i]).TperiSSB.gpsSeconds<0) {
+      printf("In BinaryTemplate file %s : template #[%d] has negative time of periapse passage (sec)\n",filename,i);
+      return 1;
+    }  
+    if ((BinaryBank->BTB[i]).TperiSSB.gpsNanoSeconds<0) {
+      printf("In BinaryTemplate file %s : template #[%d] has negative time of periapse passage (nanosec)\n",filename,i);
+      return 1;
+    }  
+    if ((BinaryBank->BTB[i]).Eccentricity<0.0) {
+      printf("In BinaryTemplate file %s : template #[%d] has negative eccentricity\n",filename,i);
+      return 1;
+    }
+    if (((BinaryBank->BTB[i]).ArgPeri<0.0)||((BinaryBank->BTB[i]).ArgPeri>LAL_TWOPI)) {
+      printf("In BinaryTemplate file %s : template #[%d] has argument of periapse out of range (0 - 2*PI)\n",filename,i);
+      return 1;
+    }  
+    i++;
+  }
+
+  
+
+  return 1;
+  
+}
+
+/**************************************************************************************/
 
