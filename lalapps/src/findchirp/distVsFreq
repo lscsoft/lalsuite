@@ -1,0 +1,21 @@
+#Get distance as a function of cutoff frequency for a given source
+inspiralDistance 0.4 0.4 8. 0. < L1response_psd.dat > distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 10. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 20. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 30. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 40. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 50. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 60. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 70. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 80. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 90. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 100. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 110. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 120. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 140. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 150. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 160. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 170. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 180. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 190. < L1response_psd.dat >> distVsFreq0.4-0.4.out
+inspiralDistance 0.4 0.4 8. 200. < L1response_psd.dat >> distVsFreq0.4-0.4.out
