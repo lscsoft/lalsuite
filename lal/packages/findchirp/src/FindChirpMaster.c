@@ -59,8 +59,8 @@ LALFindChirpMaster (
 
 
   /* keep looping waiting for exchange requests from the slaves         */
-  /* we break out of this loop only if we recieve events of finished    */
-  /* messages from the slaves                                           */
+  /* we break out of this loop only if we recieve events or a finished  */
+  /* message from the slaves                                            */
 
   while ( *(params->numSlaves) )
   {
@@ -125,9 +125,6 @@ LALFindChirpMaster (
                 &(params->tmpltBankHead), thisExch );
             CHECKSTATUSPTR( status );
 
-            /* update the progress info                         */
-            params->numTmpltsToFilter += params->numTmpltsTotal;
-            
             /* ...and remember that we have sent it             */
             ++params->bankSentVec->data[thisExch->partnerProcNum];
           }
@@ -228,6 +225,11 @@ LALFindChirpMaster (
         LALExchangeInspiralEventList( status->statusPtr, eventList, thisExch );
         CHECKSTATUSPTR( status );
 
+        /* update progress for a bank simulation */
+        if ( *(params->inspiralDebugFlagPtr) == fcBankMinimalMatch )
+        {
+          ++(params->numTmpltsFiltered);
+        }
 
 #if 0
         /*
@@ -311,7 +313,14 @@ LALFindChirpMaster (
               thisExch );
           CHECKSTATUSPTR( status );
 
-          params->numTmpltsFiltered += numTmpltsReturned;
+          if ( *(params->inspiralDebugFlagPtr) == fcBankMinimalMatch )
+          {
+            ++(params->numTmpltsFiltered);
+          }
+          else
+          {
+            params->numTmpltsFiltered += numTmpltsReturned;
+          }
         }
 
         break;
