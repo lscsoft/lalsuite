@@ -277,11 +277,11 @@ int main( int argc, char *argv[] )
   /* create the table entry with calloc() since it will be freed with free() */
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) ); 
-  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
       PROGRAM_NAME ); \
-    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--minimal-match" );
-  snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" ); 
-  snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%e", 
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--minimal-match" );
+  LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "float" ); 
+  LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%e", 
       bankHead->minMatch );
 
   /* create the linked list of template nodes for coarse templates */
@@ -1029,7 +1029,7 @@ cleanexit:
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
   /* write the process table */
-  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
+  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
@@ -1082,15 +1082,15 @@ cleanexit:
   /* write the summvalue table */
   if ( numTmplts )
   {
-    snprintf( summvalue.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
+    LALSnprintf( summvalue.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
     summvalue.summValueTable->version = 0;
     summvalue.summValueTable->start_time = gpsStartTime;
     summvalue.summValueTable->end_time = gpsEndTime;
-    snprintf( summvalue.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
-    snprintf( summvalue.summValueTable->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
+    LALSnprintf( summvalue.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
+    LALSnprintf( summvalue.summValueTable->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
         "%s", "inspiral_effective_distance" );
-    snprintf( summvalue.summValueTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX, 
+    LALSnprintf( summvalue.summValueTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX, 
         "%s", "1.4_1.4_8" );
     summvalue.summValueTable->value = candle.effDistance;
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
@@ -1143,12 +1143,12 @@ cleanexit:
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   calloc( 1, sizeof(ProcessParamsTable) ); \
-  snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
       PROGRAM_NAME ); \
-      snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
           long_options[option_index].name ); \
-          snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-          snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+          LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+          LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
@@ -1221,6 +1221,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     /* getopt_long stores long option here */
     int option_index = 0;
+    size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
         "a:A:b:B:c:d:e:f:g:h:i:j:k:l:m:M:n:o:p:q:r:R:s:t:u:v:w:x:z:Z:", 
@@ -1231,6 +1232,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {
       break;
     }
+
+    /* store the length of the option string (plus the trailing null) */
+    optarg_len = strlen( optarg ) + 1;
 
     switch ( c )
     {
@@ -1351,9 +1355,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the channel name and copy it */
           char *channamptr = NULL;
-          size_t chanlen = strlen( optarg ) + 1;
-          fqChanName = (CHAR *) calloc( chanlen, sizeof(CHAR) );
-          memcpy( fqChanName, optarg, chanlen );
+          fqChanName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( fqChanName, optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
 
           /* check that we have a proper channel name */
@@ -1365,9 +1368,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, optarg );
             exit( 1 );
           }
-          chanlen = strlen( ++channamptr ) + 1;
-          channelName = (CHAR *) calloc( chanlen, sizeof(CHAR) );
-          memcpy( channelName, channamptr, chanlen );
+          optarg_len = strlen( ++channamptr ) + 1;
+          channelName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( channelName, channamptr, optarg_len );
 
           /* copy the first two characters to the ifo name */
           memset( ifo, 0, sizeof(ifo) );
@@ -1542,13 +1545,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'p':
-        {
-          /* create storage for the calibration frame cache name */
-          size_t ccnamelen = strlen(optarg) + 1;
-          calCacheName = (CHAR *) calloc( ccnamelen, sizeof(CHAR));
-          memcpy( calCacheName, optarg, ccnamelen );
-          ADD_PROCESS_PARAM( "string", "%s", optarg );
-        }
+        /* create storage for the calibration frame cache name */
+        calCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( calCacheName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'q':
@@ -1608,7 +1608,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         else
         {
-          snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
         break;
 
@@ -1627,33 +1627,24 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'u':
-        {
-          /* create storage for the input frame cache name */
-          size_t frcnamelen = strlen(optarg) + 1;
-          frInCacheName = (CHAR *) calloc( frcnamelen, sizeof(CHAR) );
-          memcpy( frInCacheName, optarg, frcnamelen );
-          ADD_PROCESS_PARAM( "string", "%s", optarg );
-        }
+        /* create storage for the input frame cache name */
+        frInCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( frInCacheName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'v':
-        {
-          /* create storage for the calibration frame cache name */
-          size_t bfnamelen = strlen(optarg) + 1;
-          bankFileName = (CHAR *) calloc( bfnamelen, sizeof(CHAR));
-          memcpy( bankFileName, optarg, bfnamelen );
-          ADD_PROCESS_PARAM( "string", "%s", optarg );
-        }
+        /* create storage for the calibration frame cache name */
+        bankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( bankFileName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'w':
-        {
-          /* create storage for the injection file name */
-          size_t ifnamelen = strlen(optarg) + 1;
-          injectionFile = (CHAR *) calloc( ifnamelen, sizeof(CHAR));
-          memcpy( injectionFile, optarg, ifnamelen );
-          ADD_PROCESS_PARAM( "string", "%s", optarg );
-        }
+        /* create storage for the injection file name */
+        injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( injectionFile, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'x':
@@ -1676,19 +1667,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'Z':
         /* create storage for the usertag */
-        {
-          size_t usertaglen = strlen(optarg) + 1;
-          userTag = (CHAR *) calloc( usertaglen, sizeof(CHAR) );
-          memcpy( userTag, optarg, usertaglen );
-        }
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
-        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
             PROGRAM_NAME );
-        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
         break;
 
@@ -1715,24 +1703,24 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   /* enable output is stored in the first process param row */
   if ( enableOutput == 1 )
   {
-    snprintf( procparams.processParamsTable->program, 
+    LALSnprintf( procparams.processParamsTable->program, 
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    snprintf( procparams.processParamsTable->param,
+    LALSnprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--enable-output" );
-    snprintf( procparams.processParamsTable->type, 
+    LALSnprintf( procparams.processParamsTable->type, 
         LIGOMETA_TYPE_MAX, "string" );
-    snprintf( procparams.processParamsTable->value, 
+    LALSnprintf( procparams.processParamsTable->value, 
         LIGOMETA_TYPE_MAX, " " );
   }
   else if ( enableOutput == 0 )
   {
-    snprintf( procparams.processParamsTable->program, 
+    LALSnprintf( procparams.processParamsTable->program, 
         LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-    snprintf( procparams.processParamsTable->param,
+    LALSnprintf( procparams.processParamsTable->param,
         LIGOMETA_PARAM_MAX, "--disable-output" );
-    snprintf( procparams.processParamsTable->type, 
+    LALSnprintf( procparams.processParamsTable->type, 
         LIGOMETA_TYPE_MAX, "string" );
-    snprintf( procparams.processParamsTable->value, 
+    LALSnprintf( procparams.processParamsTable->value, 
         LIGOMETA_TYPE_MAX, " " );
   }
   else
@@ -1748,21 +1736,21 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     calloc( 1, sizeof(ProcessParamsTable) );
   if ( eventCluster == 1 )
   {
-    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--enable-event-cluster" );
-    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
   else if ( eventCluster == 0 )
   {
-    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--disable-event-cluster" );
-    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
   else
   {
@@ -1835,12 +1823,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
   else if ( ! highPass )
   {
-    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
-    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
         "--disable-high-pass" );
-    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
   /* check validity of input data length */
