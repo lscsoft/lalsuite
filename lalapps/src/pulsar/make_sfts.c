@@ -59,7 +59,7 @@
 #define QUANTIZATION_TEST 1
 
 /* debug level for LAL */
-INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO;
+INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO | LALNMEMDBG;
 
 /* Header that defines the GEO SFT Data Format */
 struct headertag {
