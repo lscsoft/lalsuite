@@ -45,6 +45,32 @@
  * \texttt{LALFrCacheGenerate()} and \texttt{LALFrCacheOpen()} to create the
  * stream.]
  *
+ * The routine \texttt{LALFrSetMode()} is used to change the operating mode
+ * of a frame stream, which determines how the routines try to accomodate
+ * gaps in data and requests for times when there is no data (e.g., before
+ * the beginning of the data, after the end of the data, or in some missing
+ * data).  The default mode, which is given the value
+ * \verb+LAL_FR_DEFAULT_MODE+, prints warnings if a time requested
+ * corresponds to a time when there is no data (but then skips to the first
+ * avaliable data) and prints an info message when a gap in the data occurs
+ * (but then skips beyond the gap).  This default mode is equal to the
+ * combination
+ * \verb+LAL_FR_VERBOSE_MODE | LAL_FR_IGNOREGAP_MODE | LAL_FR_IGNORETIME_MODE+
+ * where \verb+LAL_FR_VERBOSE_MODE+ is equal to the combination
+ * \verb+LAL_FR_TIMEWARN_MODE | LAL_FR_GAPINFO_MODE+.  Use
+ * \verb+LAL_FR_VERBOSE_MODE+ to print out warnings when requesting times
+ * with no data and print out an info message when a gap in the data is
+ * encountered.  Unless the mode is supplemented with
+ * \verb+LAL_FR_IGNOREGAP_MODE+, gaps encountered in the data will cause
+ * a routine to exit with a non-zero status code; similarly,
+ * \verb+LAL_FR_IGNORETIME_MODE+ prevents routines from failing if a time
+ * when there is not data is requested.  Set the mode to
+ * \verb+LAL_FR_SILENT_MODE+ to suppress the warning and info messages but
+ * still cause routines to fail when data is not available.
+ * Note: the default value \verb+LAL_FR_DEFAULT_MODE+ is assumed initially,
+ * but this is not necessarily the recommended mode --- it is adopted for
+ * compatibility reasons.
+ *
  * The routine \texttt{LALFrEnd()} determines if the end-of-frame-data flag for
  * the data stream has been set.
  *
@@ -738,6 +764,7 @@ LALCreateFrFileList(
     else
     {
       struct FrFile *frfile;
+      double t1;
       frfile = URLFrFileINew( list + i );
       if ( ! frfile )
       {
@@ -755,9 +782,10 @@ LALCreateFrFileList(
       }
       /* TODO: loop over frames */
       list[i].t0 = floor( frfile->toc->GTimeS[0] );
-      list[i].dt = ceil( (double)frfile->toc->GTimeS[0]
-          + 1e-9 * (double)frfile->toc->GTimeN[0]
-          + frfile->toc->dt[0] ) - list[i].t0;
+      t1  = (double)frfile->toc->GTimeS[frfile->toc->nFrame - 1];
+      t1 += (double)frfile->toc->GTimeN[frfile->toc->nFrame - 1] * 1e-9;
+      t1 += (double)frfile->toc->dt[frfile->toc->nFrame - 1];
+      list[i].dt = ceil( t1 ) - list[i].t0;
       FrFileIEnd( frfile );
     }
   }
@@ -802,6 +830,7 @@ LALFrCacheOpen(
   {
     ABORT( status, FRAMESTREAMH_EALOC, FRAMESTREAMH_MSGEALOC );
   }
+  stream->mode = LAL_FR_DEFAULT_MODE;
 
   stream->nfile = cache->numFrameFiles;
   LALCreateFrFileList( status->statusPtr, &stream->flist, cache );
@@ -894,6 +923,20 @@ LALFrClose(
   RETURN( status );
 }
 
+/* <lalVerbatim file="FrameStreamCP"> */
+void
+LALFrSetMode(
+    LALStatus *status,
+    INT4       mode,
+    FrStream  *stream
+    )
+{ /* </lalVerbatim> */
+  INITSTATUS( status, "LALFrSetMode", FRAMESTREAMC );  
+  ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
+  stream->mode = mode;
+  RETURN( status );
+}
+
 
 /* <lalVerbatim file="FrameStreamCP"> */
 void
@@ -969,7 +1012,14 @@ LALFrNext(
 
   if ( stream->state & LAL_FR_GAP )
   {
-    LALInfo( status, "Gap in frame data." );
+    if ( stream->mode & LAL_FR_GAPINFO_MODE )
+    {
+      LALInfo( status, "Gap in frame data." );
+    }
+    if ( ! ( stream->mode & LAL_FR_IGNOREGAP_MODE ) )
+    {
+      ABORT( status, FRAMESTREAMH_EDGAP, FRAMESTREAMH_MSGEDGAP );
+    }
   }
 
   RETURN( status );
@@ -1008,12 +1058,26 @@ LALFrSeek(
     {
       if ( stream->state & LAL_FR_GAP ) /* too early */
       {
-        LALWarning( status, "Requested time before first frame." );
+        if ( stream->mode & LAL_FR_TIMEWARN_MODE )
+        {
+          LALWarning( status, "Requested time before first frame." );
+        }
+        if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
+        {
+          ABORT( status, FRAMESTREAMH_ETREQ, FRAMESTREAMH_MSGETREQ );
+        }
         RETURN( status );
       }
       if ( stream->state & LAL_FR_END ) /* too late */
       {
-        LALWarning( status, "Requested time after last frame." );
+        if ( stream->mode & LAL_FR_TIMEWARN_MODE )
+        {
+          LALWarning( status, "Requested time after last frame." );
+        }
+        if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
+        {
+          ABORT( status, FRAMESTREAMH_ETREQ, FRAMESTREAMH_MSGETREQ );
+        }
         RETURN( status );
       }
     }
@@ -1021,7 +1085,14 @@ LALFrSeek(
   
   if ( stream->state & LAL_FR_GAP )
   {
-    LALWarning( status, "Requested time in gap in frame data." );
+    if ( stream->mode & LAL_FR_TIMEWARN_MODE )
+    {
+      LALWarning( status, "Requested time in gap in frame data." );
+    }
+    if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
+    {
+      ABORT( status, FRAMESTREAMH_ETREQ, FRAMESTREAMH_MSGETREQ );
+    }
   }
   RETURN( status );
 }

@@ -586,6 +586,8 @@ LALFrCacheGenerate(
     int c;
     if ( ! base )
       base = path;
+    else
+      ++base; /* one past the final '/' */
     if ( *path == '/' ) /* absolute path */
     {
       size_t urlsz = strlen( path ) + sizeof( "file://localhost" );

@@ -276,10 +276,14 @@ FUNC (
   {
     ABORT( status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR );
   }
+
+  /* remove this: the error will be reported on the *next* call! */
+  /*
   if ( stream->state & LAL_FR_END )
   {
     ABORT( status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE );
   }
+  */
 
   DETATCHSTATUSPTR( status );
   RETURN( status );

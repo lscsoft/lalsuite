@@ -54,6 +54,8 @@ NRCSID( FRAMESTREAMH, "$Id$" );
 #define FRAMESTREAMH_ETYPE 01000
 #define FRAMESTREAMH_ERROR 02000
 #define FRAMESTREAMH_EDONE 04000
+#define FRAMESTREAMH_ETREQ 010000
+#define FRAMESTREAMH_EDGAP 020000
 
 #define FRAMESTREAMH_MSGENULL "Null pointer"
 #define FRAMESTREAMH_MSGENNUL "Non-null pointer"
@@ -67,6 +69,8 @@ NRCSID( FRAMESTREAMH, "$Id$" );
 #define FRAMESTREAMH_MSGETYPE "Invalid ADC type"
 #define FRAMESTREAMH_MSGERROR "Frame stream error"
 #define FRAMESTREAMH_MSGEDONE "End of frame data"
+#define FRAMESTREAMH_MSGETREQ "No data at time requested"
+#define FRAMESTREAMH_MSGEDGAP "Gap in the data"
 /**** </lalErrTable> */
 
 /**** <lalLaTeX>
@@ -92,6 +96,17 @@ typedef enum
   LAL_FR_TOC = 16  /* error reading frame TOC */
 }
 FrState;
+typedef enum
+{
+  LAL_FR_SILENT_MODE     = 0,
+  LAL_FR_TIMEWARN_MODE   = 1,  /* display warning for invalid time requests */
+  LAL_FR_GAPINFO_MODE    = 2,  /* display info for gaps in data */
+  LAL_FR_VERBOSE_MODE    = 3,  /* display warnings and info */
+  LAL_FR_IGNOREGAP_MODE  = 4,  /* ignore gaps in data */
+  LAL_FR_IGNORETIME_MODE = 8,  /* ignore invalid times requested */
+  LAL_FR_DEFAULT_MODE    = 15  /* ignore time/gaps but report warnings & info */
+}
+FrMode;
 struct FrFile;
 typedef struct tagFrFileInfo
 {
@@ -104,6 +119,7 @@ FrFileInfo;
 typedef struct tagFrStream
 {
   FrState        state;
+  INT4           mode;
   LIGOTimeGPS    epoch;
   UINT4          nfile;
   FrFileInfo    *flist;
@@ -239,6 +255,13 @@ void
 LALFrClose(
     LALStatus  *status,
     FrStream  **stream
+    );
+
+void
+LALFrSetMode(
+    LALStatus *status,
+    INT4       mode,
+    FrStream  *stream
     );
 
 void

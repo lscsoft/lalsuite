@@ -33,7 +33,10 @@
 #include <lal/FrameStream.h>
 
 #define TESTSTATUS( pstat ) \
-  if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
+  if ( (pstat)->statusCode ) { \
+    fprintf( stderr, "Failure on line %d\n", __LINE__ ); \
+    REPORTSTATUS(pstat); return 1; \
+  } else ((void)0)
 
 #ifndef CHANNEL
 #define CHANNEL "H1:LSC-AS_Q"
@@ -65,6 +68,9 @@ int main( void )
   LALFrOpen( &status, &stream, dirname, "F-TEST-*.gwf" );
   TESTSTATUS( &status );
 
+  LALFrSetMode( &status, LAL_FR_VERBOSE_MODE, stream );
+  TESTSTATUS( &status );
+
   /* seek to some initial time */
   epoch.gpsSeconds     = 600000071;
   epoch.gpsNanoSeconds = 123456789;
@@ -80,6 +86,10 @@ int main( void )
     LALTYPECODE typecode;
     CHAR fname[256];
     LALFrGetTimeSeriesType( &status, &typecode, &chanin, stream );
+    if ( status.statusCode == FRAMESTREAMH_EDONE )
+    {
+      break;
+    }
     TESTSTATUS( &status );
     if ( typecode != LAL_I4_TYPE_CODE )
     {
