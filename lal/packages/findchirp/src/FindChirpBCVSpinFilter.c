@@ -209,7 +209,7 @@ LALFindChirpBCVSpinFilterSegment (
    * Choose level of output
    */
 
-  doTest = 0; /* 1 writes out many files, useful for testing */
+  doTest = 1; /* 1 writes out many files, useful for testing */
      
   if (doTest ==1)
   {	  
@@ -732,7 +732,7 @@ LALFindChirpBCVSpinFilterSegment (
           		/* record the data that we need 
 			for the clustering algorithm */
           		thisEvent->end_time.gpsSeconds = j;
-          		thisEvent->snr = rhoSq;
+          		thisEvent->snr = rho;
 		} 
 
                 /* check to see if snr>threshold 
@@ -740,11 +740,11 @@ LALFindChirpBCVSpinFilterSegment (
                 deltaEventIndex */
 		else if ( params->maximiseOverChirp &&
             	j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
-            	rhoSq > thisEvent->snr )
+            	rho > thisEvent->snr )
         	{
           		/* this is the same event so update maximum */
           		thisEvent->end_time.gpsSeconds = j;
-          		thisEvent->snr = rhoSq;
+          		thisEvent->snr = rho;
                 }
 
 
@@ -884,7 +884,7 @@ LALFindChirpBCVSpinFilterSegment (
                                                                                                                              
           		/* stick minimal data into the event */
           		thisEvent->end_time.gpsSeconds = j;
-          		thisEvent->snr = rhoSq;
+          		thisEvent->snr = rho;
                 } 
   	}
   } 
