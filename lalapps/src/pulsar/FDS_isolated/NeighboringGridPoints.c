@@ -3,7 +3,7 @@
    $Id$
    @note 
    @brief A helper function for wide-sky-area search codes validation.
- 
+
   [1] 
   A helper function for metric validations.
   At the same time, this is a wrapper for the Reinhard's InitDopplerScan().
@@ -23,7 +23,17 @@
   The input/output are same as InitDopplerScan to cope with it and NOT 
   to introduce additional command line arguments to ComputeFStatistic. 
 
-  
+
+ $Revision$
+
+ @todo 
+<ul>
+   <li> Make this code take a set of parameters: 
+        targetNumGridPoints, tolerance, maxTrial.
+   <li> Currently the refining algorithm assumes flat geometry.
+   Make it appropriate to the celestial sphere
+</ul>  
+
 */
 
 #include "DopplerScan.h"
