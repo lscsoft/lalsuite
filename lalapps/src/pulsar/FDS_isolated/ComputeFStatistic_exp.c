@@ -86,8 +86,6 @@ int main(int argc,char *argv[])
   DopplerPosition dopplerpos;
   DopplerScanInit scanInit;
 
-  /*  testConfigFile(); */
-
   SetInputDefaults ( &(GV.userInput) ); 	/* provide all default-settings for input variables */
 
   if (ReadUserInput (argc,argv, &(GV.userInput))) return 1;
@@ -142,7 +140,7 @@ int main(int argc,char *argv[])
   if (GV.userInput.FreqBand > 0) scanInit.fmax += GV.userInput.FreqBand;
   scanInit.Detector = GV.Detector;
 
-
+  scanInit.skyRegion = GV.userInput.skyRegion;
 
   InitDopplerScan ( &status, &thisScan, scanInit);
   if (status.statusCode != 0)
@@ -161,13 +159,14 @@ int main(int argc,char *argv[])
 	  REPORTSTATUS( &status );
 	  return (-1);
 	}
+      /* Have we scanned all DopplerPositions yet? */
+      if (dopplerpos.finished)  
+	break;
+
 
       Alpha = dopplerpos.skypos.longitude;
       Delta = dopplerpos.skypos.latitude; 
       
-      /* Have we scanned all DopplerPositions yet? */
-      if (dopplerpos.finished)  
-	break;
       
       if (CreateDemodParams()) return 6;
       /* loop over spin params */
@@ -1137,8 +1136,7 @@ int Freemem(void)
 
   INT4 k;
 
-  /*Free SFTData*/
-
+  /* Free SFTData */
   for (k=0;k<GV.SFTno;k++)
     {
       LALFree(SFTData[k]->fft->data->data);
@@ -1148,7 +1146,7 @@ int Freemem(void)
     }
   LALFree(SFTData);
 
-  /*Free timestamps*/
+  /* Free timestamps */
   LALFree(timestamps);
 
   LALFree(Fstat.F);
@@ -1158,7 +1156,7 @@ int Freemem(void)
       LALFree(Fstat.Fb);
     }
 
-  /*Free DemodParams*/
+  /* Free DemodParams */
   LALSDestroyVector(&status, &(DemodParams->amcoe->a));
   LALSDestroyVector(&status, &(DemodParams->amcoe->b));
 
@@ -1166,21 +1164,18 @@ int Freemem(void)
   LALFree(DemodParams->spinDwn);
   LALFree(DemodParams);
 
+  /* Free config-Variables and userInput stuff */
+  if (GV.userInput.skyRegion) LALFree (GV.userInput.skyRegion);
+
   /* Free DopplerScan-stuff (grid) */
   FreeDopplerScan (&status, &thisScan);
 
+  /* this comes from clusters.c */
   if (highFLines->clusters) LALFree(highFLines->clusters);
   if (highFLines->Iclust) LALFree(highFLines->Iclust);
   if (highFLines->NclustPoints) LALFree(highFLines->NclustPoints);
 
-  /*
-  if (highFLines != NULL){
-    free(highFLines->NclustPoints);
-    free(highFLines->Iclust);
-    free(highFLines->clusters);
-    free(highFLines);
-  }
-  */ /* Did not allocate memory for highFLines using malloc/calloc */ 
+  /* did we forget anything ? */
   LALCheckMemoryLeaks();
   
   return 0;
@@ -1907,7 +1902,7 @@ SetInputDefaults ( UserInput *input )
   strcpy (input->BaseName, "SFT");
 
   /* defaults on metric tiling */
-  input->useMetric = DOPPLER_MANUAL;
+  input->useMetric = LAL_METRIC_NONE;
   input->metricMismatch = 0.02;
   input->flipTiling = 0;
 
@@ -2312,6 +2307,9 @@ ReadCfgfileInput (UserInput *input, CHAR *cfgfile)
   string.data = input->BaseName;
   LALReadConfigSTRINGNVariable (&status, &string,	 	cfg, "BaseName");
 
+  
+  LALReadConfigSTRINGVariable (&status, &(input->skyRegion), 	cfg, "skyRegion");
+  
 
   /* ok, that should be it: check if there were more definitions we did not read */
   LALCheckConfigReadComplete (&status, cfg, CONFIGFILE_ERROR);	/* let's be strict about this */

@@ -70,6 +70,8 @@ typedef struct {
   INT2 useMetric;	/* use metric grid or "manual" stepping : 0 = manual, 1 = PtoleMetric, 2 = CoherentMetric */
   REAL8 metricMismatch;	/* maximum allowed mismatch for metric grid */
   BOOLEAN flipTiling;	/* use non-standard internal grid order? ORDER_DELTA_ALPHA */
+  
+  CHAR *skyRegion;
 
 } UserInput;
 
