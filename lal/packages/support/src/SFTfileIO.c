@@ -705,8 +705,8 @@ find_files (const CHAR *globdir)
   DIR *dir;
   struct dirent *entry;
 #else
-intptr_t dir;
-struct _finddata_t *entry;
+  intptr_t dir;
+  struct _finddata_t *entry;
 #endif
   CHAR *dname, *ptr1, *ptr2;
   CHAR fpattern[512];
@@ -717,8 +717,12 @@ struct _finddata_t *entry;
   UINT4 j;
   UINT4 namelen;
 
+#ifndef _MSC_VER
   ptr1 = strrchr (globdir, '/');
-  
+#else
+  ptr1 = strrchr (globdir, '\\');
+#endif
+
   if (ptr1) 
     dirlen = (size_t)(ptr1 - globdir) + 1;
   else
@@ -746,7 +750,7 @@ struct _finddata_t *entry;
   if ((ptr1 = (CHAR*)LALMalloc(strlen(dname)+strlen(fpattern)+2)) == NULL)
       return(NULL);
   sprintf(ptr1,"%s\\*%s",dname,fpattern);  
-  if ( (dir = _findfirst(ptr,entry)) == -1)
+  if ( (dir = _findfirst(ptr1,entry)) == -1)
 #endif
     {
       LALPrintError ("Can't open data-directory `%s`\n", dname);
