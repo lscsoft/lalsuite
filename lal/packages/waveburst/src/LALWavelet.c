@@ -217,6 +217,10 @@ LALPixelMixerWavelet(LALStatus *status,
   M = _getMaxLayer(input->in->wavelet)+1;
   nS=input->in->wavelet->data->data->length/M;
 
+/*   nz=_countNonZeroes(input->in->wavelet->data); */
+/*   printf("PixelMixer before: %d\n",nz);fflush(stdout); */
+/*   printf("M=%d nS=%d\n",M,nS); */
+
   for(i=0; i<M; i++){
     _getLayer(&a,i,input->in->wavelet);
     _assignREAL4TimeSeries(&b,a);
@@ -246,6 +250,9 @@ LALPixelMixerWavelet(LALStatus *status,
     _putLayer(b, i, (*output)->out->wavelet);
     _putLayer(bo,i, (*output)->out->original);
   }
+
+/*   nz=_countNonZeroes((*output)->out->wavelet->data); */
+/*   printf("PixelMixer after: %d\n",nz);fflush(stdout); */
 
   (*output)->out->pixelMixerApplied=TRUE;
   (*output)->out->clusterType=MIXED_CL;

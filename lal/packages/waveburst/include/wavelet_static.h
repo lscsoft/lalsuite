@@ -50,9 +50,7 @@ static void _freeOutCoincidence(OutputCoincidenceWavelet **co);
 static void _freeOutCluster(OutputClusterWavelet **cl);
 
 static void _setAmplitudes(ClusterWavelet *w);
-
-
-
+static int _countNonZeroes(REAL4TimeSeries *t);
 
 
 static int _f2l(int level, int indx)
@@ -1414,7 +1412,7 @@ static void _clusterProperties(ClusterWavelet *w)
       _doubleToSecNan(x, &w->absoluteStopTime[i].gpsSeconds, 
 		      &w->absoluteStopTime[i].gpsNanoSeconds);
 
-      w->duration[i]=w->relativeStopTime[i] - w->relativeStartTime[i];
+      w->duration[i]=w->relativeStopTime[i] - w->relativeStartTime[i] + delta_t;
       w->bandwidth[i]=w->stopFrequency[i] - w->startFrequency[i] + delta_f;
     }
 }
@@ -1427,7 +1425,8 @@ void _doubleToSecNan(double t, UINT4 *sec, UINT4 *nan)
 
 double _secNanToDouble(UINT4 sec, UINT4 nan)
 {
-  return ((double)sec + (double)nan/pow(10,9));
+  double t= ((double)sec + (double)nan/pow(10,9));
+  return t;
 }
 
 static void _createClusterWavelet(ClusterWavelet **w)
@@ -1636,6 +1635,16 @@ static void _setAmplitudes(ClusterWavelet *w)
       k=s.start+s.step*t;
       w->wavelet->data->data->data[k]=w->pMask[i]->amplitude;
     }
+}
+
+static int _countNonZeroes(REAL4TimeSeries *t)
+{
+  int sum=0,i;
+  for(i=0;i<t->data->length;i++)
+    {
+      if(t->data->data[i]!=0.0) sum++;
+    }
+  return sum;
 }
 
 
