@@ -228,7 +228,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   INT4 psdTempLength;
   INT4 windowPSDLength;
   INT4 filterLength;
-  INT4 numPointInf, numPointSup;
+  INT4 numFMin, numFMax;
   LALWindowParams winparPSD;
   AverageSpectrumParams specparPSD;
   REAL4FrequencySeries psdTemp1;
@@ -415,7 +415,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         &status );
     LAL_CALL( LALCreateVector(&status, &(segPad2[i]), segmentPadLength), \
         &status );
-
     memset(segPad1[i]->data, 0, \
         segPad1[i]->length * sizeof(*segPad1[i]->data));
     memset(segPad2[i]->data, 0, \
@@ -429,7 +428,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         &status );
     LAL_CALL( LALCreateVector(&status, &(seg2[i]), segmentLength), \
         &status );
-
     memset(seg1[i]->data, 0, \
         seg1[i]->length * sizeof(*seg1[i]->data));
     memset(seg2[i]->data, 0, \
@@ -544,9 +542,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   windowPSDLength = (UINT4)(resampleRate / deltaF);
   overlapPSDLength = windowPSDLength / 2;
   psdTempLength = (windowPSDLength / 2) + 1;
-  numPointInf = (UINT4)(fMin / deltaF);
-  numPointSup = (UINT4)(fMax / deltaF);
-  filterLength = numPointSup - numPointInf + 1;
+  numFMin = (UINT4)(fMin / deltaF);
+  numFMax = (UINT4)(fMax / deltaF);
+  filterLength = numFMax - numFMin + 1;
 
   specparPSD.method = useMean;
   specparPSD.overlap = overlapPSDLength;
@@ -594,11 +592,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* allocate memory for reduced frequency band PSDs */
-  psd1.data = psd2.data = NULL;
-  LAL_CALL( LALCreateVector(&status, &psd1.data, filterLength), &status );
-  LAL_CALL( LALCreateVector(&status, &psd2.data, filterLength), &status );
-  memset(psd1.data->data, 0, psd1.data->length * sizeof(*psd1.data->data));
-  memset(psd2.data->data, 0, psd2.data->length * sizeof(*psd2.data->data));
+  psd1.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+  psd2.data = (REAL4Sequence*)LALCalloc(2, sizeof(REAL4Sequence));
+  psd1.data->length = filterLength;
+  psd2.data->length = filterLength;
 
   /* allocate memory for calibrated PSDs */
   calPsd1 = calPsd2 = NULL;
@@ -996,7 +993,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* get appropriate band */
     for (i = 0; i < filterLength; i++)
     {
-      mask.data->data[i] = maskTemp->data[i + numPointInf];
+      mask.data->data[i] = maskTemp->data[i + numFMin];
     }
 
     if (test_flag)
@@ -1201,8 +1198,8 @@ INT4 main(INT4 argc, CHAR *argv[])
       response1.epoch = response2.epoch = gpsCalibTime;
       for (i = 0; i < filterLength; i++)
       {
-        response1.data->data[i] = responseTemp1.data->data[i + numPointInf];
-        response2.data->data[i] = responseTemp2.data->data[i + numPointInf];
+        response1.data->data[i] = responseTemp1.data->data[i + numFMin];
+        response2.data->data[i] = responseTemp2.data->data[i + numFMin];
       }
 
       /* print */
@@ -1363,8 +1360,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           response1.epoch = response2.epoch = gpsCalibTime;
           for (i = 0; i < filterLength; i++)
           {
-            response1.data->data[i] = responseTemp1.data->data[i + numPointInf];
-            response2.data->data[i] = responseTemp2.data->data[i + numPointInf];
+            response1.data->data[i] = responseTemp1.data->data[i + numFMin];
+            response2.data->data[i] = responseTemp2.data->data[i + numFMin];
           }
 
           /* print */
@@ -1538,11 +1535,8 @@ INT4 main(INT4 argc, CHAR *argv[])
             }
 
             /* reduce to the optimal filter frequency range */
-            for (i = 0; i < filterLength; i++)
-            {
-              psd1.data->data[i] = psdTemp1.data->data[i + numPointInf];
-              psd2.data->data[i] = psdTemp2.data->data[i + numPointInf];
-            }
+            psd1.data->data = psdTemp1.data->data + numFMin;
+            psd2.data->data = psdTemp2.data->data + numFMin;
 
             /* print */
             if ((test_flag) && (jobLoop == testInter) && \
@@ -1723,8 +1717,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     lal_errhandler = LAL_ERR_EXIT;
     if (post_analysis_flag)
     {
-      ptEst = (yOpt / inVarTheoSum) /(REAL8)segmentDuration;
-      error = sqrt(1./inVarTheoSum) /(REAL8)segmentDuration;
+      ptEst = (yOpt / inVarTheoSum) / (REAL8)segmentDuration;
+      error = sqrt(1./inVarTheoSum) / (REAL8)segmentDuration;
       out2 = fopen(outputFilename2, "a");
       fprintf(out2,"%lld %lld %e %e\n", startTime, stopTime, ptEst, error);
       fclose(out2);
@@ -1746,8 +1740,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL( LALDestroyVector(&status, &(segment2.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(psdTemp1.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(psdTemp2.data)), &status );
-  LAL_CALL( LALDestroyVector(&status, &(psd1.data)), &status );
-  LAL_CALL( LALDestroyVector(&status, &(psd2.data)), &status );
+  LALFree(psd1.data);
+  LALFree(psd2.data);
   LAL_CALL( LALDestroyVector(&status, &(calPsd1)), &status );
   LAL_CALL( LALDestroyVector(&status, &(calPsd2)), &status );
   LAL_CALL( LALCDestroyVector(&status, &(responseTemp1.data)), &status );
