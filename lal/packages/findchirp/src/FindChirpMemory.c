@@ -513,23 +513,47 @@ LALCreateFindChirpSegmentVector (
         &segPtr[i].data->data, params->numPoints/2 + 1);
     CHECKSTATUSPTR (status);
 
+    /* begin: EM */
+    /* and for BCV */
+    segPtr[i].dataBCV = (COMPLEX8FrequencySeries *)
+      LALCalloc( 1, sizeof(COMPLEX8FrequencySeries));
+    if ( ! segPtr[i].dataBCV )
+    {
+       ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+    }
+
+    LALCCreateVector (status->statusPtr,
+        &segPtr[i].dataBCV->data, params->numPoints/2 + 1);
+    CHECKSTATUSPTR (status);
+    /* end: EM */
+
+    
     /* chi squared frequency bins */
     if ( params->numChisqBins )
     {
       segPtr[i].chisqBinVec = NULL;
+      segPtr[i].chisqBinVecBCV = NULL; /* EM */
 
       LALU4CreateVector (status->statusPtr, 
           &segPtr[i].chisqBinVec, params->numChisqBins + 1);
+      CHECKSTATUSPTR (status);
+      LALU4CreateVector (status->statusPtr, 
+          &segPtr[i].chisqBinVecBCV, params->numChisqBins + 1);
       CHECKSTATUSPTR (status);
     }
     else
     {
       segPtr[i].chisqBinVec = (UINT4Vector *) 
         LALCalloc( 1, sizeof(UINT4Vector) );
+      segPtr[i].chisqBinVecBCV = (UINT4Vector *)  /* EM */
+	LALCalloc( 1, sizeof(UINT4Vector) );      /* EM */
     }
 
     /* segment dependent part of normalisation */
     segPtr[i].segNorm = 0.0;
+    segPtr[i].a1 = 0.00;
+    segPtr[i].b1 = 0.0;
+    segPtr[i].b2 = 0.0;
 
     /* segment id number (invalid) */
     segPtr[i].number = -1;
@@ -577,6 +601,8 @@ LALDestroyFindChirpSegmentVector (
     /* template independent part of stationary phase filter */
     LALCDestroyVector (status->statusPtr, &segPtr[i].data->data);
     CHECKSTATUSPTR (status);
+    LALCDestroyVector (status->statusPtr, &segPtr[i].dataBCV->data); /* EM */
+    CHECKSTATUSPTR (status);                                         /* EM */
 
     /* chi squared frequency bins */
     if ( segPtr[i].chisqBinVec->length )
@@ -589,8 +615,22 @@ LALDestroyFindChirpSegmentVector (
       LALFree( segPtr[i].chisqBinVec );
     }
 
+    /* and for BCV */
+    /* begin: EM */
+    if ( segPtr[i].chisqBinVecBCV->length )
+    {
+      LALU4DestroyVector (status->statusPtr, &segPtr[i].chisqBinVecBCV);
+      CHECKSTATUSPTR (status);
+    }
+    else
+    {
+      LALFree( segPtr[i].chisqBinVecBCV );
+    }
+    /* end: EM */
+
     /* frequency series pointer */
     LALFree (segPtr[i].data);
+    LALFree (segPtr[i].dataBCV); /* EM */
   }
 
   /* free the array */
