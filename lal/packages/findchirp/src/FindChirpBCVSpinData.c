@@ -207,7 +207,7 @@ LALFindChirpBCVSpinData (
    * Set output level
    */ 
 
-  doTest = 1; /* set to 1 for lots of output, useful for testing */
+  doTest = 0; /* set to 1 for lots of output, useful for testing */
   
   if (doTest ==1)
   {	  
