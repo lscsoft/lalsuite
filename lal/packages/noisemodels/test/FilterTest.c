@@ -185,7 +185,7 @@ main ( void )
    fprintf(FilterTest, "&\n");
    LALInspiralSetSearchLimits(&status, &bankPars, coarseIn);
    randIn.mMin = coarseIn.mMin;
-   randIn.mMax = coarseIn.mMax;
+   /* randIn.mMax = coarseIn.mMax; */
    randIn.MMax = coarseIn.MMax;
    randIn.t0Min = bankPars.x0Min;
    randIn.t0Max = bankPars.x0Max;
