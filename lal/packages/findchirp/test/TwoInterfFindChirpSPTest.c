@@ -2,7 +2,7 @@
  * 
  * File Name: TwoInterfFindChirpSPTest.c
  *
- * Author: Bose, S.
+ * Author: Bose, S., Noel, J. S.
  * 
  * Revision: $Id$
  * 
@@ -33,6 +33,13 @@
 #include <lal/DetectorSite.h>
 #include <lal/TwoInterfFindChirp.h>
 
+// #define CALCULATE_PSD
+
+static REAL4 cartesianInnerProduct(REAL4 x[3], REAL4 y[3])
+{
+  return x[0] * y[0] + x[1] * y[1] + x[2] * y[2];
+}
+
 NRCSID(MAIN,"$Id$");
 
 static void
@@ -47,6 +54,8 @@ Usage (const char *program, int exitflag);
 static void 
 ParseOptions (int argc, char *argv[]);
 
+void ReadResponse(LALStatus *status, COMPLEX8FrequencySeries *resp, char* respFile, BOOLEAN invert);
+
 typedef enum{
   impulse, gaussian, file
     }
@@ -57,26 +66,33 @@ extern int      optind;
 
 int lalDebugLevel = 1;
 
-static InputDataType    inputDataType        = gaussian;
+static InputDataType    inputDataType        = gaussian; /* other options: impulse, file*/
 static BOOLEAN          twoInterfRhosqout    = 0;
 static BOOLEAN          rhosqout             = 0;
 static BOOLEAN          verbose              = 0; 
+
+static BOOLEAN          invertResponse       = 0;
+
 static INT4             numPoints            = 32768;
 static INT4             numSegments          = 1;
 static INT4             numTmplts            = 1;
-static INT4             numChisqBins         = 8;
+static INT4             numChisqBins         = 1;
 static INT4             srate                = 8192;
 static REAL4            sigmasq              = 64.0;
+static REAL4            sigmasq1             = 64.0;
+static REAL4            sigmasq2             = 64.0;
 static INT4             invSpecTrunc         = 0;
-static REAL4            fLow                 = 150.0;
-static REAL4            rhosqThresh          = 50.0;
-static REAL4            chisqThresh          = 0.001;
+static REAL4            fLow                 = 40.0;
+static REAL4            rhosqThresh[2]       = {0.0, 0.0};
+static REAL4            chisqThresh[2]       = {0.010, 0.010};
 static REAL4            twoInterfRhosqThresh = 50.0;
 static REAL4            mass                 = 1.4;
-static REAL4            dynRange1            = 1.0;
-static REAL4            dynRange2            = 1.0;
+static REAL4            dynRange1            = 1.0; /*other options: 69.0; 1.0*/
+static REAL4            dynRange2            = 1.0; /*other options: 69.0; 1.0*/
 static UINT4            site0                = 0;
 static UINT4            site1                = 1;
+static UINT4            startSeconds         = 10000;
+
 
 int
 main (int argc, char *argv[])
@@ -94,14 +110,11 @@ main (int argc, char *argv[])
   INT4                          flag = 0;
 
   FILE                         *fpData[2];
-  FILE                         *fpSpec[2];
-  FILE                         *fpResp[2];
-
   FILE                         *fpRhosq[2];
   FILE                         *fpTwoInterfRhosq;
   
   REAL4                         sigma;
-  REAL4                         Sfk;
+  REAL4                         Sfk, Sfk1, Sfk2;
   REAL4                         respRe; 
   REAL4                         respIm;
   REAL4                         deltaT;
@@ -128,6 +141,11 @@ main (int argc, char *argv[])
   TwoInterfFindChirpSegmentVector       *twoInterfFcSegVec = NULL;
   TwoInterfFindChirpFilterInputVector   *twoInterfFilterInputVec = NULL;
 
+  RealFFTPlan                  *powerFFTPlan = NULL;
+
+  REAL4                         s[3];
+  REAL4                         distance;
+ 
   /*
    *
    * parse options, allocate memory, init params and set values
@@ -146,7 +164,7 @@ main (int argc, char *argv[])
   if ( rhosqout )
     {
       numSegments = 1; 
-      numTmplts = 1; 
+      numTmplts = 1;
       fpRhosq[0] = fopen ("rhosq1.dat", "w");
       fpRhosq[1] = fopen ("rhosq2.dat", "w");
     }
@@ -167,25 +185,26 @@ main (int argc, char *argv[])
   twoInterfInitParams->numChisqBins            = numChisqBins;
   twoInterfInitParams->createRhosqVec          = rhosqout;
   twoInterfInitParams->createTwoInterfRhosqVec = twoInterfRhosqout;
-  
-  for ( n = 0; n < 2; ++n )
-    {
-      LALCreateVector (&status, &noiseVec[n], numPoints);
-      TestStatus (&status, "0", 1);
-      ClearStatus (&status);
-      
-      
-      LALCreateRandomParams (&status, &randParams[n], seed[n]);
-      TestStatus (&status, "0", 1);
-      ClearStatus (&status);
-    }
-  
+
+
+  if (inputDataType == gaussian) {
+    for ( n = 0; n < 2; ++n )
+      {
+	LALCreateVector (&status, &noiseVec[n], numPoints);
+	TestStatus (&status, "0", 1);
+	ClearStatus (&status);
+	
+	LALCreateRandomParams (&status, &randParams[n], seed[n]);
+	TestStatus (&status, "0", 1);
+	ClearStatus (&status);
+      }
+  }  
+
   /*
    *
    * allocate memory for segments for DETECTOR 1
    *
    */
-  
   
   LALCreateTwoInterfDataSegmentVector (&status, &twoInterfDataSegVec, 
 				       twoInterfInitParams);
@@ -228,6 +247,10 @@ main (int argc, char *argv[])
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
   
+  if (inputDataType == file)
+    /* create fft plan for generating power spectra */
+    LALCreateForwardRealFFTPlan(&status, &powerFFTPlan, numPoints, 0);
+
   for ( n = 0 ; n < 2 ; ++n)
     {
       initParams[n] = (FindChirpInitParams *) 
@@ -240,8 +263,16 @@ main (int argc, char *argv[])
       LALFindChirpSPTemplateInit (&status, &tmpltParams[n], initParams[n]);
       TestStatus (&status, "0", 1);
       ClearStatus (&status);
+
+      /* moved from 'abort' section */
+      LALFree (initParams[n]);
+      initParams[n] = NULL;
     }
-  
+
+  /* moved from 'abort' section */
+  LALFree (twoInterfInitParams);
+  twoInterfInitParams = NULL;
+
   /*
    *
    * fill segments with data, spectrum and response
@@ -254,6 +285,8 @@ main (int argc, char *argv[])
   deltaT = 1.0 / (float) srate;
   deltaF = 1.0 / (numPoints * deltaT);
   Sfk    = 2.0 * sigmasq * deltaT;
+  Sfk1    = 2.0 * sigmasq1* deltaT;
+  Sfk2    = 2.0 * sigmasq2* deltaT;
   respRe = 1.0;
   respIm = 0.0;
 
@@ -263,12 +296,17 @@ main (int argc, char *argv[])
   fprintf( stdout, "        numSegments = %d\n\n", numSegments );
   fprintf( stdout, "            sigma^2 = %5.2f\n", sigmasq );
   fprintf( stdout, "                Sfk = %10.8f\n", Sfk );
+  fprintf( stdout, "                Sfk1 = %10.8f\n", Sfk1 );
+  fprintf( stdout, "                Sfk2 = %10.8f\n", Sfk2 );
   fprintf( stdout, "             deltaT = %e\n             deltaF = %e\n\n", 
 	   deltaT, deltaF);
   fprintf( stdout, "       invSpecTrunc = %d\n", invSpecTrunc );
   fprintf( stdout, "               fLow = %5.3f\n\n", fLow );
-  fprintf( stdout, "     rhosqThreshold = %5.3f\n     chisqThreshold = %5.3f\n\n", 
-	   rhosqThresh, chisqThresh);
+  fprintf( stdout, "     rhosqThreshold = %5.3f\n\n", rhosqThresh[0]);
+  fprintf( stdout, "     rhosqThreshold = %5.3f\n\n", rhosqThresh[1]);
+  fprintf( stdout, "    chisqThreshold1 = %5.3f\n\n", chisqThresh[0]);
+  fprintf( stdout, "    chisqThreshold2 = %5.3f\n\n", chisqThresh[1]);
+
   fprintf( stdout, "     twoInterfRhosqThresh = %5.3f\n", twoInterfRhosqThresh);
   fprintf( stdout, "               mass = %5.2f\n\n", mass );
 
@@ -286,11 +324,13 @@ main (int argc, char *argv[])
       dataSegVec[0].data[i].chan->deltaT = (REAL8) deltaT;
       dataSegVec[0].data[i].spec->deltaF = (REAL8) deltaF;
       
-      time = numPoints * deltaT * (REAL4) i;
+      time = numPoints * deltaT * (REAL4) i + startSeconds;
       dataSegVec[0].data[i].chan->epoch.gpsSeconds     = (INT4) floor( time );
       time = (time - floor( time )) * 1.0E9;
       dataSegVec[0].data[i].chan->epoch.gpsNanoSeconds = (INT4) floor( time );
       
+      dataSegVec[0].data[i].resp->epoch = dataSegVec[0].data[i].chan->epoch;
+
       /* impulse */
       if ( inputDataType == impulse )
 	{
@@ -340,29 +380,27 @@ main (int argc, char *argv[])
 	      dataSegVec[0].data[i].resp->data->data[k].re = 1.0;
 	      dataSegVec[0].data[i].resp->data->data[k].im = 0.0;
 	    }
+
+	  /* moved from 'abort' section */
+	  LALDestroyRandomParams (&status, &randParams[0]);
+	  TestStatus (&status, "0", 1);
+	  ClearStatus (&status);
+	  
+	  LALDestroyVector (&status, &noiseVec[0]);
+	  TestStatus (&status, "0", 1);
+	  ClearStatus (&status);
+	  
 	}
       else  if ( inputDataType == file )
+
+
+	/* this should eventually read in start epoch */
 	{
 	  /* open the input files */
 	  if ( !(fpData[0] = fopen( "data1.dat", "r" )) )
 	    {
 	      fprintf( stdout, "unable to open the data file from detector 1 for reading\n" );
 	      fflush( stdout );
-	      goto abort;
-	    }
-	  if ( !(fpSpec[0] = fopen( "spectrum1.dat", "r" )) )
-	    {
-	      fprintf( stdout, "unable to open the spectrum file from detector 1 for reading\n" );
-	      fflush( stdout );
-	      fclose( fpData[0] );
-	      goto abort;
-	    }
-	  if ( !(fpResp[0] = fopen( "response1.dat", "r" )) )
-	    {
-	      fprintf( stdout, "unable to open the response file from detector 1 for reading\n" );
-	      fflush( stdout );
-	      fclose( fpData[0] );
-	      fclose( fpSpec[0] );
 	      goto abort;
 	    }
 	  
@@ -376,47 +414,34 @@ main (int argc, char *argv[])
 		  fprintf( stdout, "error reading input data\n" );
 		  fflush( stdout );
 		  fclose( fpData[0] );
-		  fclose( fpSpec[0] );
-		  fclose( fpResp[0] );
 		  goto abort;
 		}
 	    }
 	  
-	  /* read in spec and resp */
-	  for ( k = 0; k < numPoints/2 + 1; ++k )
-	    {
-	      if (( (flag = fscanf( fpSpec[0], "%f\n", 
-				    &(dataSegVec[0].data[i].spec->data->data[k]) )) != 1 || flag == EOF )
-		  && k < numPoints/2 + 1 )
-		{
-		  fprintf( stdout, "error reading input spectrum\n" );
-		  fflush( stdout );
-		  fclose( fpData[0] );
-		  fclose( fpSpec[0] );
-		  fclose( fpResp[0] );
-		  goto abort;
-		}
-	      
-	      if (( (flag = fscanf( fpResp[0], "%f %f\n", 
-				    &(dataSegVec[0].data[i].resp->data->data[k].re), 
-				    &(dataSegVec[0].data[i].resp->data->data[k].im) )) != 2 || flag == EOF )
-		  && k < numPoints/2 + 1 )
-		{
-		  fprintf( stdout, "error reading input response\n" );
-		  fflush( stdout );
-		  fclose( fpData[0] );
-		  fclose( fpSpec[0] );
-		  fclose( fpResp[0] );
-		  goto abort;
-		}
-	      
-	    }
-	  
-	  /* close the files */
+	  ReadResponse(&status, dataSegVec[0].data[i].resp, "response1.dat", invertResponse);
+
+	  /* close the file */
 	  fclose( fpData[0] );
-	  fclose( fpSpec[0] );
-	  fclose( fpResp[0] );
+	
+	  LALRealPowerSpectrum(&status, dataSegVec[0].data[i].spec->data,
+			       dataSegVec[0].data[i].chan->data, powerFFTPlan);
+	
+	  /* scale the power spectrum to the findchirp definition */
+	  {
+	    UINT4 j;
+	    for(j=0; j<dataSegVec[1].data[i].spec->data->length; j++)
+
+#ifdef CALCULATE_PSD
+	      dataSegVec[0].data[i].spec->data->data[j] *= 4.0 * deltaT / numPoints;
+#endif
+
+#ifndef CALCULATE_PSD
+	    dataSegVec[0].data[i].spec->data->data[j] = Sfk1;
+#endif
+	  }
+
 	}
+      
     }
   
   
@@ -433,11 +458,13 @@ main (int argc, char *argv[])
       dataSegVec[1].data[i].chan->deltaT = (REAL8) deltaT;
       dataSegVec[1].data[i].spec->deltaF = (REAL8) deltaF;
       
-      time = numPoints * deltaT * (REAL4) i;
+      time = numPoints * deltaT * (REAL4) i + startSeconds;
       dataSegVec[1].data[i].chan->epoch.gpsSeconds     = (INT4) floor( time );
       time = (time - floor( time )) * 1.0E9;
       dataSegVec[1].data[i].chan->epoch.gpsNanoSeconds = (INT4) floor( time );
       
+      dataSegVec[1].data[i].resp->epoch = dataSegVec[1].data[i].chan->epoch;
+
       /* impulse */
       if ( inputDataType == impulse )
 	{
@@ -487,8 +514,20 @@ main (int argc, char *argv[])
 	      dataSegVec[1].data[i].resp->data->data[k].re = 1.0;
 	      dataSegVec[1].data[i].resp->data->data[k].im = 0.0;
 	    }
+
+	  /* moved from 'abort' section */
+	  LALDestroyRandomParams (&status, &randParams[1]);
+	  TestStatus (&status, "0", 1);
+	  ClearStatus (&status);
+	  
+	  LALDestroyVector (&status, &noiseVec[1]);
+	  TestStatus (&status, "0", 1);
+	  ClearStatus (&status);
+	
 	}
       else if ( inputDataType == file )
+
+	/* this should eventually read in start epoch somehow */
 	{
 	  /* open the input files */
 	  if ( !(fpData[1] = fopen( "data2.dat", "r" )) )
@@ -497,22 +536,7 @@ main (int argc, char *argv[])
 	      fflush( stdout );
 	      goto abort;
 	    }
-	  if ( !(fpSpec[1] = fopen( "spectrum2.dat", "r" )) )
-	    {
-	      fprintf( stdout, "unable to open the spectrum file from detector 1 for reading\n" );
-	      fflush( stdout );
-	      fclose( fpData[1] );
-	      goto abort;
-	    }
-	  if ( !(fpResp[1] = fopen( "response2.dat", "r" )) )
-	    {
-	      fprintf( stdout, "unable to open the response file from detector 1 for reading\n" );
-	      fflush( stdout );
-	      fclose( fpData[1] );
-	      fclose( fpSpec[1] );
-	      goto abort;
-	    }
-	  
+
 	  /* read in ifodmro data */ 
 	  for ( j = 0; j < numPoints; ++j )
 	    {
@@ -523,48 +547,37 @@ main (int argc, char *argv[])
 		  fprintf( stdout, "error reading input data\n" );
 		  fflush( stdout );
 		  fclose( fpData[1] );
-		  fclose( fpSpec[1] );
-		  fclose( fpResp[1] );
 		  goto abort;
 		}
 	    }
-	  
-	  /* read in spec and resp */
-	  for ( k = 0; k < numPoints/2 + 1; ++k )
-	    {
-	      if (( (flag = fscanf( fpSpec[1], "%f\n", 
-				    &(dataSegVec[1].data[i].spec->data->data[k]) )) != 1 || flag == EOF )
-		  && k < numPoints/2 + 1 )
-		{
-		  fprintf( stdout, "error reading input spectrum\n" );
-		  fflush( stdout );
-		  fclose( fpData[1] );
-		  fclose( fpSpec[1] );
-		  fclose( fpResp[1] );
-		  goto abort;
-		}
-	      
-	      if (( (flag = fscanf( fpResp[1], "%f %f\n", 
-				    &(dataSegVec[1].data[i].resp->data->data[k].re), 
-				    &(dataSegVec[1].data[i].resp->data->data[k].im) )) != 2 || flag == EOF )
-		  && k < numPoints/2 + 1 )
-		{
-		  fprintf( stdout, "error reading input response\n" );
-		  fflush( stdout );
-		  fclose( fpData[1] );
-		  fclose( fpSpec[1] );
-		  fclose( fpResp[1] );
-		  goto abort;
-		}
-	      
-	    }
+
+	  ReadResponse(&status, dataSegVec[1].data[i].resp, "response2.dat", invertResponse);
 	  
 	  /* close the files */
 	  fclose( fpData[1] );
-	  fclose( fpSpec[1] );
-	  fclose( fpResp[1] );
+
+	  LALRealPowerSpectrum(&status, dataSegVec[1].data[i].spec->data,
+			       dataSegVec[1].data[i].chan->data, powerFFTPlan);
+
+	  /* scale the power spectrum to corresponds with the findchirp package definition */
+	 
+	  {
+	    UINT4 j;
+	    for(j=0; j<dataSegVec[1].data[i].spec->data->length; j++)
+#ifdef CALCULATE_PSD
+	      dataSegVec[1].data[i].spec->data->data[j] *= 4.0 * deltaT / numPoints;
+#endif
+
+#ifndef CALCULATE_PSD
+	    dataSegVec[1].data[i].spec->data->data[j] = Sfk2;
+#endif 
+	  }
+	 
 	}
     }
+
+  if (inputDataType == file)
+    LALDestroyRealFFTPlan(&status, &powerFFTPlan);
   
   /*
    *
@@ -589,7 +602,12 @@ main (int argc, char *argv[])
   LALTwoInterfFindChirpSPData (&status, twoInterfFcSegVec, twoInterfDataSegVec, twoInterfDataParamsVec);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
-  
+
+  /* moved from 'abort' section */
+  LALTwoInterfFindChirpSPDataFinalize (&status, &twoInterfDataParamsVec);
+  TestStatus (&status, "0", 1);
+  ClearStatus (&status);
+
   LALDestroyTwoInterfDataSegmentVector (&status, &twoInterfDataSegVec);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
@@ -609,25 +627,37 @@ main (int argc, char *argv[])
   detectors.detectorOne = lalCachedDetectors[site0];
   detectors.detectorTwo = lalCachedDetectors[site1];
 
+  /* calculate separation vector between sites */
+  for ( j=0; j<3; j++) {
+    s[j] = (REAL4) ( detectors.detectorOne.location[j] -
+		     detectors.detectorTwo.location[j]);
+  }
+  /* calculate distance between sites (in meters) */
+  distance = sqrt( cartesianInnerProduct(s,s) );
+
   twoInterfFilterParams->twoInterfRhosqThresh = twoInterfRhosqThresh;
   twoInterfFilterParams->detectors            = &detectors;
 
   filterParams = twoInterfFilterParams->paramsVec->filterParams;
   
+  /*  PrintAllocs(0, "before Chisq veto init" ); */
+
   for ( n = 0; n < 2; ++n )
     {
       /* filter parameters for each detector */
       filterParams[n].deltaT               = deltaT;
-      filterParams[n].rhosqThresh          = rhosqThresh;
-      filterParams[n].chisqThresh          = chisqThresh;
+      filterParams[n].rhosqThresh          = rhosqThresh[n];
+      filterParams[n].chisqThresh          = chisqThresh[n];
       filterParams[n].computeNegFreq       = 0;
       filterParams[n].maximiseOverChirp    = 1; 
 
-      LALFindChirpChisqVetoInit (&status, filterParams[n].chisqParams, 
+      LALTwoInterfFindChirpChisqVetoInit (&status, filterParams[n].chisqParams, 
 				 numChisqBins, numPoints);
-      TestStatus (&status, "0", 1);
+      TestStatus (&status, "0", 1); 
       ClearStatus (&status);
     }/* ends loop over detectors */
+
+  /* PrintAllocs(0, "after Chisq veto init" ); */
 
   /*
    *
@@ -637,7 +667,7 @@ main (int argc, char *argv[])
 
   filterInput = twoInterfFilterInputVec->filterInput;
 
-  for ( l = 0; l < numTmplts; ++l, mass +=0.01 )
+  for ( l = 0; l < numTmplts; ++l, mass +=0.001 )
     {
       /* loop over detectors */
       for ( n = 0; n < 2; ++n )
@@ -662,6 +692,10 @@ main (int argc, char *argv[])
 	  TestStatus (&status, "0", 1);
 	  ClearStatus (&status);
 	  
+	  LALFindChirpSPTemplateFinalize (&status, &tmpltParams[n]);
+	  TestStatus (&status, "0", 1);
+	  ClearStatus (&status);
+
 	  /*
 	   *
 	   * loop over segments
@@ -673,38 +707,71 @@ main (int argc, char *argv[])
 	      twoInterfFilterInputVec->filterInput[n].segment = twoInterfFcSegVec->data[n].data + i;
 	      
 	    }/* end loop over number of segments */
-	  
+	
 	}/* end loop over detectors */
       
       twoInterfInspiralEvent = NULL;
-      
+
       LALTwoInterfFindChirpFilterSegment (&status, &twoInterfInspiralEvent, twoInterfFilterInputVec, twoInterfFilterParams); 
       TestStatus (&status, "0", 1);
       
       if ( twoInterfInspiralEvent )
 	{
-	  fprintf( stdout, "Events found in segment!\n" );
+	  fprintf( stdout, "\nEvents found in segment!\n\n" );
 	  while (twoInterfInspiralEvent  )
 	    {
 	      TwoInterfInspiralEvent *thisEvent = twoInterfInspiralEvent;
+	      INT4  delayPts = (INT4) thisEvent->timeIndex2 - (INT4)thisEvent->timeIndex;
+	      REAL4 delay = delayPts * deltaT;
+
 	      twoInterfInspiralEvent = thisEvent->next;
 	      
-	      fprintf( stdout, "event id       = %d\n", thisEvent->twoInterfId+1 );
-	      fprintf( stdout, "snrsq          = %f\n", thisEvent->snrsq );
-	      fprintf( stdout, "event GPS time in DETECTOR 1 = %d.%d\n", 
+	      fprintf( stdout, "event id                              = %d\n\n", thisEvent->twoInterfId+1 );
+	      
+	      fprintf( stdout, "delay from d1 to d2                   = %.2f ms\n\n", delay * 1000);
+
+	      if (site0 != site1) {
+		fprintf( stdout, "Half cone angle                       = %.2f\n", thisEvent->twoInterfAngle );
+		fprintf( stdout, "Half cone central axis                = %f radians RA\n", thisEvent->twoInterfAxisRa);
+		fprintf( stdout, "                                        %f radians dec\n\n", thisEvent->twoInterfAxisDec);
+              } 
+	      else
+		fprintf( stdout, "Cannot determined half cone angle, because detectors 1 and 2 are coincident\n\n");
+
+
+	      fprintf( stdout, "network snrsq                         = %.2f\n", thisEvent->snrsq );
+
+	      fprintf( stdout, "detector 1 snrsq                      = %.2f\n", thisEvent->eventIn1->snrsq );
+	      fprintf( stdout, "detector 2 snrsq                      = %.2f\n\n", thisEvent->eventIn2->snrsq );
+	      
+	      fprintf( stdout, "source distance estimated from det. 1 = %.4f\n", thisEvent->eventIn1->effDist * 1000); 
+	      fprintf( stdout, "source distance estimated from det. 2 = %.4f\n\n", thisEvent->eventIn2->effDist * 1000); 
+	      
+	      fprintf( stdout, "chisq in detector 1                   = %.4f\n", thisEvent->chisq1);
+	      fprintf( stdout, "chisq in detector 2                   = %.4f\n\n", thisEvent->chisq2);
+		
+	      fprintf( stdout, "event GPS time in DETECTOR 1          = %d.%d\n", 
 		       thisEvent->time.gpsSeconds, thisEvent->time.gpsNanoSeconds );
-	      fprintf( stdout, "'network' timeIndex      = %d\n", thisEvent->timeIndex );
-	      fprintf( stdout, "m1             = %f\n", thisEvent->tmplt.mass1 );
-	      fprintf( stdout, "m2             = %f\n", thisEvent->tmplt.mass2 );
+	      fprintf( stdout, "'network' timeIndex                   = %d\n", thisEvent->timeIndex );
+	      
+	      fprintf( stdout, "DETECTOR 2 timeIndex                  = %d\n\n", thisEvent->eventIn2->timeIndex );
+	      
+	      fprintf( stdout, "distance between detectors (in meters)= %e\n\n", distance );
+	      
+	      fprintf( stdout, "m1                                    = %f\n", thisEvent->tmplt.mass1 );
+	      fprintf( stdout, "m2                                    = %f\n\n", thisEvent->tmplt.mass2 );
+
 	      fflush( stdout );
 	      
+	      LALFree( thisEvent->eventIn1 );
+	      LALFree( thisEvent->eventIn2 );
 	      LALFree( thisEvent );
 	    }
 	  
 	}
       else
 	{
-	  fprintf( stdout, "No events found in segment!\n" );
+	  fprintf( stdout, "\nNo events found in segment for mass = %.4f solar mass template!\n", mass );
 	}
     }/* end loop over templates */
   
@@ -741,23 +808,10 @@ main (int argc, char *argv[])
   
  abort:
   
-  
   for (n= 0; n<2; ++n)
     {
-      LALDestroyRandomParams (&status, &randParams[n]);
-      TestStatus (&status, "0", 1);
-      ClearStatus (&status);
-      
-      LALDestroyVector (&status, &noiseVec[n]);
-      TestStatus (&status, "0", 1);
-      ClearStatus (&status);
-
-      LALFindChirpChisqVetoFinalize (&status, filterParams[n].chisqParams,
-				     numChisqBins);
-      TestStatus (&status, "0", 1);
-      ClearStatus (&status);
-  
-      LALFindChirpSPTemplateFinalize (&status, &tmpltParams[n]);
+      LALTwoInterfFindChirpChisqVetoFinalize (&status, filterParams[n].chisqParams,
+					      numChisqBins);
       TestStatus (&status, "0", 1);
       ClearStatus (&status);
     }
@@ -765,18 +819,11 @@ main (int argc, char *argv[])
   LALTwoInterfFindChirpFilterFinalize (&status, &twoInterfFilterParams);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
-  
-  LALTwoInterfFindChirpSPDataFinalize (&status, &twoInterfDataParamsVec);
-  TestStatus (&status, "0", 1);
-  ClearStatus (&status);
 
   LALDestroyTwoInterfFindChirpSegmentVector (&status, &twoInterfFcSegVec);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
   
-  LALFree (twoInterfInitParams);
-  twoInterfInitParams = NULL;
-        
   LALDestroyTwoInterfFindChirpInputVector (&status, &twoInterfFilterInputVec);
   TestStatus (&status, "0", 1);
   ClearStatus (&status);
@@ -785,13 +832,10 @@ main (int argc, char *argv[])
     {
       LALFree (tmplt[n]);
       tmplt[n] = NULL;
-      
-      LALFree (initParams[n]);
-      initParams[n] = NULL;
     }
   
   LALCheckMemoryLeaks ();
-	
+  
   return 0;
 }
 
@@ -883,10 +927,13 @@ Usage (
   fprintf (stderr, "    -u                write network rhosq (maximized over time delay) output files\n");
   fprintf (stderr, "  Data Creation:\n");
   fprintf (stderr, "    -I(i|g|f)         input data is (i)mpulse, (g)aussian, (f)file [g]\n");
+  fprintf (stderr, "    -C                response files given in counts / strain\n");
   fprintf (stderr, "    -n numPoints      number of points in a segment [1048576]\n");
   fprintf (stderr, "    -s numSegments    number of data segments [1]\n");
   fprintf (stderr, "    -r srate          sampling rate of the data [8192]\n");
-  fprintf (stderr, "    -v sigmasq        variance of the gaussian noise [64.0]\n");
+  fprintf (stderr, "    -v sigmasq        rms of the gaussian noise [8.0]\n");
+  fprintf (stderr, "    -k sigmasq1       rms of the gaussian noise in detector 1[8.0]\n");
+  fprintf (stderr, "    -K sigmasq2       rms of the gaussian noise in detector 2[8.0]\n");
   fprintf (stderr, "    -m mass           mass of each binary component in solar masses [1.4]\n");
   fprintf (stderr, "  Data Conditioning:\n");
   fprintf (stderr, "    -i invSpecTrunc   number of points to truncate S^{-1}(f) [0]\n");
@@ -898,7 +945,8 @@ Usage (
   fprintf (stderr, "    -b numChisqBins   number of bins for chi squared test [8]\n");
   fprintf (stderr, "    -t rhosqThresh    signal to noise squared threshold [50.0]\n");
   fprintf (stderr, "    -T twoInterfRhosqThresh    signal to noise squared threshold for network [50.0]\n");
-  fprintf (stderr, "    -c chisqThresh    chi squared threshold [0.01]\n");
+  fprintf (stderr, "    -x chisqThresh1   chi squared threshold for detector 1 [0.01]\n");
+  fprintf (stderr, "    -X chisqThresh2   chi squared threshold for detector 2 [0.01]\n");
   fprintf (stderr, "    -p site0          first detector's site number [0]\n");
   fprintf (stderr, "    -q site1          second detector's site number [1]\n");
   exit (exitcode);
@@ -915,7 +963,7 @@ ParseOptions (
   {
     int c = -1;
 
-    c = getopt (argc, argv, "Vhd:""n:""s:""y:""z:""r:""v:""i:""f:""R:""t:""T:""b:""m:""N:""c:""oI:""uI:""p:""q:");
+    c = getopt (argc, argv, "Vhd:""n:""s:""y:""z:""r:""v:""k:""K:""i:""f:""R:""t:""T:""b:""m:""N:""x:""X:""oI:""uI:""p:""q:""C:");
     if (c == -1)
     {
       break;
@@ -966,16 +1014,25 @@ ParseOptions (
         mass = (REAL4) atof (optarg);
         break;
       case 't': /* set rhosq threshold */
-        rhosqThresh = (REAL4) atof (optarg);
+        rhosqThresh[0] = rhosqThresh[1] = (REAL4) atof (optarg);
         break;
       case 'T': /* set twoInterfRhosq threshold */
         twoInterfRhosqThresh = (REAL4) atof (optarg);
         break;
-      case 'c': /* set chisq threshold */
-        chisqThresh = (REAL4) atof (optarg);
+      case 'x': /* set chisq threshold */
+        chisqThresh[0] = (REAL4) atof (optarg);
+        break;
+      case 'X': /* set chisq threshold */
+        chisqThresh[1] = (REAL4) atof (optarg);
         break;
       case 'v': /* set variance */
-        sigmasq = (float) atof (optarg);
+        sigmasq = (float) atof (optarg) * (float) atof(optarg);
+        break;
+      case 'k': /* set noise variance in detector 2*/
+        sigmasq1 = (float) atof (optarg) * (float) atof(optarg);
+        break;
+      case 'K': /* set noise variance in detector 2*/
+        sigmasq2 = (float) atof (optarg) * (float) atof(optarg);
         break;
       case 'I': /* input data */
         switch (*optarg)
@@ -993,17 +1050,26 @@ ParseOptions (
             inputDataType = gaussian;
 	  }
         break;
+
+      case 'C': /* invert response function? 
+                   uses opposite convention as injection code 
+                   (hence the inversion after input here)     */
+	invertResponse = atoi(optarg);
+	break;
+
       case 'h':
         Usage (argv[0], 0);
         break;
-      default:
-        Usage (argv[0], 1);
+      
       case 'p':  /*site value of detector 1 */
 	site0 = (UINT4) atof (optarg);
 	break;
       case 'q':  /*site value of detector 2 */
 	site1 = (UINT4) atof (optarg);
 	break;
+
+      default:
+        Usage (argv[0], 1);
       }
   }
   
@@ -1124,4 +1190,79 @@ graphINT4 (
   /* system( "xmgr temp.graph 1>/dev/null 2>&1 &" ); */
 
   return;
+}
+
+
+/* read a response file of format 'frequency  real response  imaginary response' */
+/* considers any line that it can't convert to floating point numbers to be a comment */
+
+/* sets f0 to the first frequency point, deltaF to the difference of the first
+ * and second frequency, and reads the COMPLEX8 values of the response from the file */
+
+/* The 'invert' flag will invert the response if set. This is to make up for the
+ * inconsistent definition of the response/transfer function */
+
+/* does not initialize the name, units, nor epoch of the response */ 
+
+void ReadResponse(LALStatus *status, COMPLEX8FrequencySeries *resp, char* respFile, BOOLEAN invert) {
+  UINT4 fLength, i, nScanned;
+  REAL4 frequency;
+  FILE  *respPtr;
+  CHAR  garbage;
+
+  fLength = resp->data->length;
+  respPtr = fopen(respFile, "r");
+
+  if ( ! respPtr ) {
+    fprintf(stderr, "Error reading response function from %s\n", respFile);
+    exit(0);
+  }
+  
+  for(i=0; i<fLength; i++) {
+    /* read data into frequency series */
+    nScanned = fscanf(respPtr, "%g %g %g\n", &frequency, &resp->data->data[i].re, 
+	   &resp->data->data[i].im);
+
+    /* read start frequency */
+    if (i==0) 
+      resp->f0 = frequency;
+
+    /* determine frequency sampling */
+    else if (i==1)
+      resp->deltaF = frequency - resp->f0;
+
+    /* if conversion failed, this is a comment line, so skip it */
+    if (nScanned == 0) {
+      i--;
+      garbage = 'a';
+      while( garbage != EOF && garbage != '\n')
+	fscanf(respPtr, "%c", &garbage);
+    }
+
+    /* if EOF or other error, exit */
+    else if ( nScanned != 3 ) {
+      fprintf(stderr, "Error reading %s\n", respFile);
+      exit(0);
+    }
+  }
+
+  /* if response file was specified incorrectly, invert it */
+  if ( invert ) {
+    REAL4 modsq;
+
+    for(i=0; i<fLength; i++) { 
+      if ( resp->data->data[i].re == 0.0 && resp->data->data[i].im == 0.0 ) {
+	fprintf(stderr, "Error: response function is zero at index %d\n", i);
+	exit(0);
+      }
+
+      modsq = resp->data->data[i].re * resp->data->data[i].re +
+	resp->data->data[i].im * resp->data->data[i].im;
+
+      resp->data->data[i].re /= modsq; 
+      resp->data->data[i].im /= 0.0 - modsq; 
+    }
+  }
+
+  fclose(respPtr);
 }
