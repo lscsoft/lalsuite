@@ -1255,8 +1255,8 @@ SimInspiralTableFromLIGOLw (
     {"spin2z",              -1, 39},
     {"theta0",              -1, 40},
     {"phi0",                -1, 41},
-    {"f_lower",              -1, 42},
-    {"f_final",              -1, 43},
+    {"f_lower",             -1, 42},
+    {"f_final",             -1, 43},
     {"mchirp",              -1, 44},
     {"eff_dist_h",          -1, 45},
     {"eff_dist_l",          -1, 46},
@@ -1428,113 +1428,113 @@ SimInspiralTableFromLIGOLw (
           thisSim->coa_phase = r4colData;
         } 
 	else if ( tableDir[j].idx == 23 )
-	  {
-	    thisSim->polarization = r4colData;
-	  }
-	else if ( tableDir[j].idx == 24 )
-	  {
-	    thisSim->psi0 = r4colData;
-	  }
-	else if ( tableDir[j].idx == 25 )
-	  {
-	    thisSim->psi3 = r4colData;
-	  }
-	else if ( tableDir[j].idx == 26 )
-	  {
-	    thisSim->alpha = r4colData;
-	  }
-	else if ( tableDir[j].idx == 27 )
-	  {
-	    thisSim->alpha1 = r4colData;
-	  }
-	else if ( tableDir[j].idx == 28 )
-	  {
-	    thisSim->alpha2 = r4colData;
-	  }	
-	else if ( tableDir[j].idx == 29 )
-	  {
-	    thisSim->alpha3 = r4colData;
-	  }	
-	else if ( tableDir[j].idx == 30 )
-	  {
-	    thisSim->alpha4 = r4colData;
-	  }
-	else if ( tableDir[j].idx == 31 )
-	  {
-	    thisSim->alpha5 = r4colData;
-	  }
-	else if ( tableDir[j].idx == 32 )
-	  {
-	    thisSim->alpha6 = r4colData;
-	  }
-	else if ( tableDir[j].idx == 33 )
-	  {
-	    thisSim->beta = r4colData;
-	  }    
-	else if ( tableDir[j].idx == 34 )
-	  {
-	    thisSim->spin1x = r4colData;
-	  }
-	else if ( tableDir[j].idx == 35 )
-	  {
-	    thisSim->spin1y = r4colData;
-	  }
-	else if ( tableDir[j].idx == 36 )
-	  {
-	    thisSim->spin1z = r4colData;
-	  }
-	else if ( tableDir[j].idx == 37 )
-	  {
-	    thisSim->spin2x = r4colData;
-	  }
-	else if ( tableDir[j].idx == 38 )
-	  {
-	    thisSim->spin2y = r4colData;
-	  }
-	else if ( tableDir[j].idx == 39 )
-	  {
-	    thisSim->spin2z = r4colData;
-	  }
-	else if ( tableDir[j].idx == 40 )
-	  {
-	    thisSim->theta0 = r4colData;
-	  }
-	else if ( tableDir[j].idx == 41 )
-	  {
-	    thisSim->phi0 = r4colData;
-	  }
-	else if ( tableDir[j].idx == 42 )
-	  {
-	    thisSim->f_lower = r4colData;
-	  }
-	else if ( tableDir[j].idx == 43 )
-	  {
-	    thisSim->f_final = r4colData;
-	  }
-	else if ( tableDir[j].idx == 44 )
-	  {
-	    thisSim->mchirp = r4colData;
-	  }
+        {
+          thisSim->polarization = r4colData;
+        }
+        else if ( tableDir[j].idx == 24 )
+        {
+          thisSim->psi0 = r4colData;
+        }
+        else if ( tableDir[j].idx == 25 )
+        {
+          thisSim->psi3 = r4colData;
+        }
+        else if ( tableDir[j].idx == 26 )
+        {
+          thisSim->alpha = r4colData;
+        }
+        else if ( tableDir[j].idx == 27 )
+        {
+          thisSim->alpha1 = r4colData;
+        }
+        else if ( tableDir[j].idx == 28 )
+        {
+          thisSim->alpha2 = r4colData;
+        }	
+        else if ( tableDir[j].idx == 29 )
+        {
+          thisSim->alpha3 = r4colData;
+        }	
+        else if ( tableDir[j].idx == 30 )
+        {
+          thisSim->alpha4 = r4colData;
+        }
+        else if ( tableDir[j].idx == 31 )
+        {
+          thisSim->alpha5 = r4colData;
+        }
+        else if ( tableDir[j].idx == 32 )
+        {
+          thisSim->alpha6 = r4colData;
+        }
+        else if ( tableDir[j].idx == 33 )
+        {
+          thisSim->beta = r4colData;
+        }    
+        else if ( tableDir[j].idx == 34 )
+        {
+          thisSim->spin1x = r4colData;
+        }
+        else if ( tableDir[j].idx == 35 )
+        {
+          thisSim->spin1y = r4colData;
+        }
+        else if ( tableDir[j].idx == 36 )
+        {
+          thisSim->spin1z = r4colData;
+        }
+        else if ( tableDir[j].idx == 37 )
+        {
+          thisSim->spin2x = r4colData;
+        }
+        else if ( tableDir[j].idx == 38 )
+        {
+          thisSim->spin2y = r4colData;
+        }
+        else if ( tableDir[j].idx == 39 )
+        {
+          thisSim->spin2z = r4colData;
+        }
+        else if ( tableDir[j].idx == 40 )
+        {
+          thisSim->theta0 = r4colData;
+        }
+        else if ( tableDir[j].idx == 41 )
+        {
+          thisSim->phi0 = r4colData;
+        }
+        else if ( tableDir[j].idx == 42 )
+        {
+          thisSim->f_lower = r4colData;
+        }
+        else if ( tableDir[j].idx == 43 )
+        {
+          thisSim->f_final = r4colData;
+        }
+        else if ( tableDir[j].idx == 44 )
+        {
+          thisSim->mchirp = r4colData;
+        }
         else if ( tableDir[j].idx == 45 )
-	  {
-	    thisSim->eff_dist_h = r4colData;
-	  }
+        {
+          thisSim->eff_dist_h = r4colData;
+        }
         else if ( tableDir[j].idx == 46 )
-	  {
-	    thisSim->eff_dist_l = r4colData;
-	  }
+        {
+          thisSim->eff_dist_l = r4colData;
+        }
         else if ( tableDir[j].idx == 47 )
-	  {
-	    thisSim->eff_dist_g = r4colData;
-	  }
+        {
+          thisSim->eff_dist_g = r4colData;
+        }
         else if ( tableDir[j].idx == 48 )
-	  {
-	    thisSim->eff_dist_t = r4colData;
-	  }
+        {
+          thisSim->eff_dist_t = r4colData;
+        }
         else if ( tableDir[j].idx == 49 )
-	  {
-	    thisSim->eff_dist_v = r4colData;
-	  }
+        {
+          thisSim->eff_dist_v = r4colData;
+        }
         else
         {
           CLOBBER_SIM;
