@@ -153,7 +153,7 @@ LALInitializeDataSegmentVector (
     }
   }
 
-  /* store the start of the input channel and it's gps start time */
+  /* store the start of the input channel and its gps start time */
   dataPtr = chan->data->data;
   LALGPStoINT8( status->statusPtr, &chanStartTime, &(chan->epoch) );
   CHECKSTATUSPTR( status );
@@ -534,32 +534,27 @@ LALCreateFindChirpSegmentVector (
       CHECKSTATUSPTR (status);
     }
 
+    /* segment dependent part of the normalization, for the BCV templates */
     if ( params->approximant == BCV )
     {
-      segPtr[i].a1 = NULL;
       LALCreateVector (status->statusPtr,
-          &segPtr[i].a1, vectorPtr->data->data->data->length + 1);
+          &(segPtr[i].a1), params->numPoints/2 + 1);
       CHECKSTATUSPTR (status);
 
-
-      segPtr[i].b1 = NULL;
       LALCreateVector (status->statusPtr,
-          &segPtr[i].b1, vectorPtr->data->data->data->length + 1);
+          &(segPtr[i].b1), params->numPoints/2 + 1);
       CHECKSTATUSPTR (status);
 
-      segPtr[i].b2 = NULL;
       LALCreateVector (status->statusPtr,
-         &segPtr[i].b2, vectorPtr->data->data->data->length + 1);
+         &(segPtr[i].b2), params->numPoints/2 + 1);
       CHECKSTATUSPTR (status);
 
-      segPtr[i].tmpltPowerVec = NULL;
       LALCreateVector (status->statusPtr,
-       &segPtr[i].tmpltPowerVec, vectorPtr->data->data->data->length + 1);
+       &(segPtr[i].tmpltPowerVec), params->numPoints/2 + 1);
       CHECKSTATUSPTR (status);
 
-      segPtr[i].tmpltPowerVecBCV = NULL;
       LALCreateVector (status->statusPtr,
-       &segPtr[i].tmpltPowerVecBCV,vectorPtr->data->data->data->length+1); 
+       &(segPtr[i].tmpltPowerVecBCV),params->numPoints/2 + 1);  
       CHECKSTATUSPTR (status);
     }
 
@@ -571,43 +566,36 @@ LALCreateFindChirpSegmentVector (
       LALU4CreateVector (status->statusPtr, 
           &segPtr[i].chisqBinVec, params->numChisqBins + 1);
       CHECKSTATUSPTR (status);
-
-      if ( params->approximant == BCV )
-      {
-        segPtr[i].chisqBinVecBCV = NULL;
-        LALU4CreateVector (status->statusPtr, 
-            &segPtr[i].chisqBinVecBCV, params->numChisqBins + 1);
-        CHECKSTATUSPTR (status);
-      }
     }
     else
     {
       segPtr[i].chisqBinVec = (UINT4Vector *) 
         LALCalloc( 1, sizeof(UINT4Vector) );
-      if ( params->approximant == BCV )
-      {
-        segPtr[i].chisqBinVecBCV = (UINT4Vector *)
-          LALCalloc( 1, sizeof(UINT4Vector) );
-      }
     }
 
-    /* segment dependent part of normalisation */
-    LALCreateVector( status->statusPtr, &(segPtr[i].segNorm), 
-        params->numPoints/2 + 1 );
-    CHECKSTATUSPTR( status );
-
+    /* additional chisq frequency bins for the BCV templates */
     if ( params->approximant == BCV )
-    {
-      for ( k = 0; k < vectorPtr->data->data->data->length-1; ++k )
-      {
-        segPtr[i].a1->data[k] = 0.0;
-        segPtr[i].b1->data[k] = 0.0;
-        segPtr[i].b2->data[k] = 0.0;
-        segPtr[i].tmpltPowerVec->data[k] = 0.0;
-        segPtr[i].tmpltPowerVecBCV->data[k] = 0.0;
-      }
-    }
-      
+    { 
+       if ( params->numChisqBins )
+       {
+         segPtr[i].chisqBinVecBCV = NULL;
+         LALU4CreateVector (status->statusPtr, 
+             &segPtr[i].chisqBinVecBCV, params->numChisqBins + 1);
+         CHECKSTATUSPTR (status);
+       }
+       else
+       {
+         segPtr[i].chisqBinVecBCV = (UINT4Vector *) 
+           LALCalloc( 1, sizeof(UINT4Vector) );
+       }
+     }
+ 
+
+    /* segment dependent part of normalisation, for the SP templates */
+      LALCreateVector( status->statusPtr, &(segPtr[i].segNorm), 
+          params->numPoints/2 + 1 );
+      CHECKSTATUSPTR( status );
+
     /* segment id number (invalid) */
     segPtr[i].number = -1;
   }
@@ -696,7 +684,33 @@ LALDestroyFindChirpSegmentVector (
       LALDestroyVector( status->statusPtr, &(segPtr[i].segNorm) );
       CHECKSTATUSPTR( status );
     }
-  }
+
+    if ( segPtr[i].a1 )
+    {
+      LALDestroyVector( status->statusPtr, &(segPtr[i].a1) );
+      CHECKSTATUSPTR( status );
+    }
+    if ( segPtr[i].b1 )
+    {
+      LALDestroyVector( status->statusPtr, &(segPtr[i].b1) );
+      CHECKSTATUSPTR( status );
+    }
+    if ( segPtr[i].b2 )
+    {
+      LALDestroyVector( status->statusPtr, &(segPtr[i].b2) );
+      CHECKSTATUSPTR( status );
+    }
+    if ( segPtr[i].tmpltPowerVec )
+    {
+      LALDestroyVector( status->statusPtr, &(segPtr[i].tmpltPowerVec) );
+      CHECKSTATUSPTR( status );
+    }
+    if ( segPtr[i].tmpltPowerVecBCV )
+    {
+      LALDestroyVector( status->statusPtr, &(segPtr[i].tmpltPowerVecBCV) );
+      CHECKSTATUSPTR( status );
+    }
+  } /* end "for (i = 0; i < (*vector)->length; ++i)" */
 
   /* free the array */
   LALFree( segPtr );
