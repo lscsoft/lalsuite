@@ -7,3 +7,5 @@ lalapps_GEO600InspiralSearchSnglProc_SOURCES = GEO600InspiralSearchSnglProc.c GE
 #lalapps_BankEfficiency_SOURCES = InspiralBankEfficiency.c InspiralBankEfficiencyMaster.c InspiralBankEfficiencySlave.c GEO600InspiralSearchFuncs.c GEO600FrameChannels.c
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+
+EXTRA_DIST = GEO600FrameChannels.h

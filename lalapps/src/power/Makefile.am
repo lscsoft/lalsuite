@@ -38,7 +38,8 @@ lalapps_power_pipe: power_pipe.in python_config.sed
 
 pkgdata_DATA = power_pipe.ini
 
-EXTRA_DIST = $(POWERSRCS) power_pipe.in power_pipe.ini
+EXTRA_DIST = $(POWERSRCS) power_pipe.in power_pipe.ini \
+	     power.py
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la

@@ -42,5 +42,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_bindir}/lalapps_version
-%{_bindir}/lalapps_*
+%{_bindir}/*
+%{_libdir}/python/*
+%{_mandir}/man1/*
+%{_datadir}/lalapps/*

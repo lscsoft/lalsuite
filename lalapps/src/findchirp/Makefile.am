@@ -31,7 +31,7 @@ INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 EXTRA_DIST = 	exc_resp.c ivana.c inspmultiawg.c chirplen.c \
-		BE_create_script.py BEAscii2xml.c BE_process_xml.py
+		BE_create_script.py BE_process_xml.py
 
 CLEANFILES = 	lalapps_BankEfficiency  \
 		lalapps_BankNumberOfTemplates  lalapps_InspiralOverlap

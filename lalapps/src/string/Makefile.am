@@ -50,7 +50,8 @@ EXTRA_DIST = ring.c StringSearch.c\
              response.asc filterpar.in ring_test.sh \
 	     ring_test_inj.sh ring_test_sim.sh ring_test_pipe.sh \
              $(SCRIPTS) $(DATA) \
-	     ring_pipe.in S2_H1_dag.in S2H1v03_test.txt S3_H1_StringDag.ini
+	     ring_pipe.in S2_H1_dag.in S2H1v03_test.txt S3_H1_StringDag.ini \
+	     cosmicstring_pipe.in
 
 EXTRA_PROGRAMS = lalapps_StringSearch
 

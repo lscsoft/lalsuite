@@ -17,6 +17,8 @@ bin_PROGRAMS = lalapps_ComputeFStatisticBinary lalapps_GenerateBinaryMesh \
 	lalapps_MakeSubMesh lalapps_GenerateRandomBinaryInput \
 	lalapps_GenerateBinaryInput lalapps_GenerateSearchInput	
 
+EXTRA_DIST = clusters.h
+
 lalapps_ComputeFStatisticBinary_SOURCES = ComputeFStatisticBinary_v2.c ReadWriteBinaryHeader_v1.c \
 	ComputeFStatisticBinary_v2.h GenerateBinaryMesh_v1.h $(isolated_src) \
 	clusters.c 

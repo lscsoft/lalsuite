@@ -82,7 +82,9 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
              $(COHERESRC) inspiral_pipe_s2.in inspiral_pipe.ini \
              $(INSPINJSRC) BNSMasses.dat inspsrcs.dat \
-             $(SPLITBANKSRC)                                                                                 
+             $(SPLITBANKSRC) inspiral.py inspiral_pipe_tama.in \
+	     inspiral_pipe_geo.in inspiral_online_pipe.in \
+	     inspiral_hipe.in s2_tama.ini inspiral_hipe.ini online.ini
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
