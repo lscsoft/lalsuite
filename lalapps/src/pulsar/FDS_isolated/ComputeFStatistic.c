@@ -101,8 +101,6 @@ REAL8 medianbias=1.0;
 DopplerScanState thisScan;
 ConfigVariables GV;
 
-static const LALStatus empty_status;
-
 /* local prototypes */
 void CreateDemodParams (LALStatus *status);
 void AllocateMem (LALStatus *status);
@@ -146,7 +144,7 @@ int main(int argc,char *argv[])
   DopplerScanInit scanInit;
   LIGOTimeGPS t0, t1;
   REAL8 duration;
-  LALStatus status = empty_status;	/* initialize status */
+  LALStatus status = blank_status;	/* initialize status */
 
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
