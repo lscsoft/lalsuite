@@ -72,13 +72,7 @@
 #include <lal/MatrixUtils.h>
 #include <lal/SeqFactories.h>
 
-#define INSPIRALSPINBANKC_ENONPOSITIVEMM 1
-#define INSPIRALSPINBANKC_MSGENONPOSITIVEMM "Minimum match value is not positive."
-#define INSPIRALSPINBANKC_EMASS_SPIN 2 
-#define INSPIRALSPINBANKC_MSGEMASS_SPIN "The mass or spin range specified is invalid"
-#define INSPIRALSPINBANKC_EMEM 3 
-#define INSPIRALSPINBANKC_MSGEMEM "Memory allocation error - not all memory was freed"
-#define INSPIRALSPINBANKC_ENOTILES 4 
+#define INSPIRALSPINBANKC_ENOTILES 5 
 #define INSPIRALSPINBANKC_MSGENOTILES "No templates were generated"
 
 
@@ -88,11 +82,17 @@ NRCSID(INSPIRALSPINBANKC, "$Id$");
 
 
 static void tmpmetric( REAL4Array *metric );
+static void cleanup(LALStatus *s,
+    REAL4Array *m, 
+    UINT4Vector *md, 
+    REAL4Vector *e, 
+    SnglInspiralTable *f, 
+    SnglInspiralTable *t,
+    INT4 *nt);
 
 
 /* <lalVerbatim file="InspiralSpinBankCP"> */
-void
-LALInspiralSpinBank(
+void LALInspiralSpinBank(
     LALStatus         	 *status,
     InspiralTemplateList **tiles,
     INT4      		 *ntiles,
@@ -100,29 +100,29 @@ LALInspiralSpinBank(
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable *tmplt;  /* loop counter */
-  SnglInspiralTable *output; /* head of output linked list */
-  REAL4Array *metric;        /* parameter-space metric */
-  UINT4Vector *metricDimensions;
-  REAL4Vector *eigenval;     /* eigenvalues of metric */
-  REAL4 x, y, z;             /* psi0, psi3, beta coordinates */
-  REAL4 x0, y0, z0;          /* minimum values of x, y, z */
-  REAL4 x1, y1, z1;          /* maximum values of x, y, z */
-  REAL4 xp, yp, zp;          /* metric eigenvector coordinates */
-  REAL4 xp0, yp0, zp0;       /* minimum values of xp, yp, zp */
-  REAL4 xp1, yp1, zp1;       /* maximum values of xp, yp, zp */
-  REAL4 dxp, dyp, dzp;       /* step sizes in xp, yp, zp */
-  REAL4 theta;               /* angle of rotation for xp and yp */
-  REAL4 m1;                  /* greater binary component mass */
-  REAL4 m1Min, m1Max;        /* range of m1 to search */
-  REAL4 m2;                  /* lesser binary component mass */
-  REAL4 m2Min, m2Max;        /* range of m2 to search */
-  REAL4 mass;                /* total mass of binary */
-  REAL4 eta;                 /* symmetric mass ratio of binary */
-  REAL4 betaMax;             /* maximum spin parameter of binary */
-  REAL4 f0;                  /* frequency of minimum of noise curve */
-  INT2 bccFlag = 0;          /* determines offset for bcc tiling */
-  INT4 cnt = 0;		     /* loop counter set to value of ntiles */
+  SnglInspiralTable *tmplt = NULL;  	/* loop counter */
+  SnglInspiralTable *output = NULL; 	/* head of output linked list */
+  REAL4Array *metric = NULL;        	/* parameter-space metric */
+  UINT4Vector *metricDimensions = NULL;
+  REAL4Vector *eigenval =  NULL;     	/* eigenvalues of metric */
+  REAL4 x, y, z;             		/* psi0, psi3, beta coordinates */
+  REAL4 x0, y0, z0;          		/* minimum values of x, y, z */
+  REAL4 x1, y1, z1;          		/* maximum values of x, y, z */
+  REAL4 xp, yp, zp;          		/* metric eigenvector coordinates */
+  REAL4 xp0, yp0, zp0;       		/* minimum values of xp, yp, zp */
+  REAL4 xp1, yp1, zp1;       		/* maximum values of xp, yp, zp */
+  REAL4 dxp, dyp, dzp;       		/* step sizes in xp, yp, zp */
+  REAL4 theta;               		/* angle of rotation for xp and yp */
+  REAL4 m1;                  		/* greater binary component mass */
+  REAL4 m1Min, m1Max;       		/* range of m1 to search */
+  REAL4 m2;                  		/* lesser binary component mass */
+  REAL4 m2Min, m2Max;        		/* range of m2 to search */
+  REAL4 mass;                		/* total mass of binary */
+  REAL4 eta;                 		/* symmetric mass ratio of binary */
+  REAL4 betaMax;             		/* maximum spin parameter of binary */
+  REAL4 f0;                  		/* frequency of minimum of noise curve */
+  INT2 bccFlag = 0;          		/* determines offset for bcc tiling */
+  INT4 cnt = 0;		     		/* loop counter set to value of ntiles */
 
   /* Set up status pointer. */
   INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
@@ -130,13 +130,16 @@ LALInspiralSpinBank(
 
   /* Check to make sure that all the parameters are okay */
   if (coarseIn.mmCoarse <= 0) 
-    ABORT(status, INSPIRALSPINBANKC_ENONPOSITIVEMM, INSPIRALSPINBANKC_MSGENONPOSITIVEMM);
+    ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
+  
   /* These parameters have not been added to InspiralCoarseBankIn yet, but when they are the will need to be checked */
-/*  if ((coarseIn.m1Min <= 0) || (coarseIn.m2Min <= 0) || (coarseIn.m1Max <= 0) || (coarseIn.m2Max <= 0))
-      ABORT(status, INSPIRALSPINBANKC_EMASS_SPIN, INSPIRALSPINBANKC_EMSGMASS_SPIN);
+  /*  if ((coarseIn.m1Min <= 0) || (coarseIn.m2Min <= 0) || (coarseIn.m1Max <= 0) || (coarseIn.m2Max <= 0))
+      ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
+
     if (coarseIn.betaMax < 0) 
-      ABORT(status, INSPIRALSPINBANKC_EMASS_SPIN, INSPIRALSPINBANKC_EMSGMASS_SPIN);
-*/
+      ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
+
+  */
     
   /* Get noise power moments and trig moments. */
   /* Hardcode this for the moment. */
@@ -149,7 +152,7 @@ LALInspiralSpinBank(
 
   LALU4CreateVector( status->statusPtr, &metricDimensions, 2 );
   BEGINFAIL(status)
-    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
+    cleanup(status->statusPtr, metric, metricDimensions, eigenval, output, tmplt, ntiles);
   ENDFAIL(status);
   
   metricDimensions->data[0] = 3;
@@ -158,10 +161,7 @@ LALInspiralSpinBank(
 
   LALSCreateArray( status->statusPtr, &metric, metricDimensions );
   BEGINFAIL(status)
-  {
-    TRY(LALSDestroyArray(status->statusPtr, &metric),status);
-    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
-  }
+    cleanup(status->statusPtr,metric,metricDimensions,eigenval,output,tmplt, ntiles);
   ENDFAIL(status);
 
   tmpmetric( metric );
@@ -171,20 +171,12 @@ LALInspiralSpinBank(
 
   LALSCreateVector( status->statusPtr, &eigenval, 3 );
   BEGINFAIL(status)
-  {
-    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
-    TRY(LALSDestroyVector(status->statusPtr,&eigenval),status);
-    TRY(LALSDestroyArray(status->statusPtr, &metric),status);  
-  }
+    cleanup(status->statusPtr,metric, metricDimensions,eigenval,output,tmplt, ntiles);
   ENDFAIL(status);
 
   LALSSymmetricEigenVectors( status->statusPtr, eigenval, metric );
   BEGINFAIL(status)
-  {
-    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
-    TRY(LALSDestroyVector(status->statusPtr,&eigenval),status);
-    TRY(LALSDestroyArray(status->statusPtr, &metric),status);  
-  }
+    cleanup(status->statusPtr,metric, metricDimensions,eigenval,output,tmplt, ntiles);
   ENDFAIL(status);
 
   /* Set stepsizes and xp-yp rotation angle from metric. */
@@ -217,7 +209,13 @@ LALInspiralSpinBank(
     
   /* Allocate first template, which will remain blank. */
   output = tmplt = (SnglInspiralTable *) LALCalloc( 1, sizeof(SnglInspiralTable) );
-  /* BEN: error check here */
+  if (!output) 
+  {
+    cleanup(status->statusPtr,metric,metricDimensions,eigenval,output,tmplt,ntiles);
+    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+  }
+
+
 
   /* This loop generates the template bank. */
   *ntiles = 0;
@@ -243,6 +241,12 @@ LALInspiralSpinBank(
         if (z > betaMax)
           continue;
         tmplt = tmplt->next = (SnglInspiralTable *) LALCalloc( 1, sizeof(SnglInspiralTable) );
+        /* check to see if calloc worked */
+        if (!tmplt) 
+        {
+          cleanup(status->statusPtr,metric,metricDimensions,eigenval,output,tmplt,ntiles);
+          ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+        }
         tmplt->mass1 = m1;
         tmplt->mass2 = m2;
         tmplt->eta = eta;
@@ -264,9 +268,7 @@ LALInspiralSpinBank(
   /* What if no templates were allocated? ABORT */
   if (!output) 
   {  
-    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
-    TRY(LALSDestroyVector(status->statusPtr,&eigenval),status);
-    TRY(LALSDestroyArray(status->statusPtr, &metric),status);  
+    cleanup(status->statusPtr,metric,metricDimensions,eigenval,output,tmplt,ntiles);
     ABORT(status, INSPIRALSPINBANKC_ENOTILES, INSPIRALSPINBANKC_MSGENOTILES);
   }
   
@@ -282,34 +284,13 @@ LALInspiralSpinBank(
 /*    (*tiles)->params.beta = tmplt->beta;*/
   } /* for(tmplt...) */
   
-  /* Free the memory allocated for the linked list. */
+  /* prepare the link list to be freed by copying the number of tiles to cnt */
   tmplt = output;
   cnt = *ntiles;
-  while ((tmplt->next) && (cnt >= 0))
-  {
-    output = tmplt;
-    tmplt = tmplt->next;
-    LALFree(output);
-    --cnt;
-  }/* while(tmptl) */
   
-  /* Check that all of the deallocation worked  */
-  if ((tmplt->next) || (cnt != 1))
-  {
-    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
-    TRY(LALSDestroyVector(status->statusPtr,&eigenval),status);
-    TRY(LALSDestroyArray(status->statusPtr, &metric),status);  
-    ABORT(status, INSPIRALSPINBANKC_EMEM, INSPIRALSPINBANKC_MSGEMEM);
-  }
-  
-  LALFree(tmplt); /* Free the final node */
-
-  /* Free the memory for the vectors and arrays allocated */
-  TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
-  TRY(LALSDestroyVector(status->statusPtr,&eigenval),status);
-  TRY(LALSDestroyArray(status->statusPtr, &metric),status);  
-  
-  /* Clean up and leave. */
+  /* free memory allocated for the linked list, vectors and arrays */
+  cleanup(status->statusPtr,metric,metricDimensions,eigenval,output,tmplt,&cnt);
+ 
   DETATCHSTATUSPTR( status );
   RETURN( status );
 } /* LALInspiralSpinBank() */
@@ -349,3 +330,40 @@ static void tmpmetric( REAL4Array *metric )
   metric->data[7] = (REAL4) 0.0;
   metric->data[8] = (REAL4) J11-J9*J9-(J6-J4*J9)*(J6-J4*J9)/(J1-J4*J4);
 } /* tmpmetric() */
+
+static void cleanup(
+    LALStatus *s, 
+    REAL4Array *m, 
+    UINT4Vector *md, 
+    REAL4Vector *e, 
+    SnglInspiralTable *f,
+    SnglInspiralTable *t,
+    INT4 *nt)
+{
+  INITSTATUS( s, "LALInspiralSpinBank-cleanup", INSPIRALSPINBANKC );
+  ATTATCHSTATUSPTR( s );
+
+  if (m)
+    TRY(LALU4DestroyVector(s->statusPtr,&md),s);
+  if (md)
+    TRY(LALSDestroyVector(s->statusPtr, &e),s);
+  if (e)
+    TRY(LALSDestroyArray(s->statusPtr, &m),s);
+  if (t && f)
+  {
+    t = f;
+    while ((t->next) && (*nt > 0))
+    {
+      f = t;
+      t = t->next;
+      LALFree(f);
+      --(*nt);
+    }/* while(tmplt) */
+  LALFree(t);
+  --(*nt);
+  }
+  DETATCHSTATUSPTR( s );
+  RETURN( s );
+}
+
+
