@@ -886,11 +886,6 @@ int main(int argc,char *argv[]){
 	  errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
 	}
 
-	/* to save memory, get rid of vector when not needed any more */
-	LALCDestroyVector(&status, &fvec);
-	TESTSTATUS( &status );
-	fvec=NULL;
-  
 	/* Check that there were no errors while writing SFTS */
  	if (errorcode1-1 || errorcode2-1){
 	  pout("Error in writing data into SFT file %s!\n",sftname);
@@ -898,6 +893,11 @@ int main(int argc,char *argv[]){
 	}
       }
       fclose(fpsft);
+
+      /* to save memory, get rid of vector when not needed any more */
+      LALCDestroyVector(&status, &fvec);
+      TESTSTATUS( &status );
+      fvec=NULL;
     }
   }
   
