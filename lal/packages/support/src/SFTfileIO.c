@@ -2,18 +2,20 @@
  *
  * File Name: SFTfileIO.c
  *
- * Authors: Sintes, A.M.,  Krishnan, B. & inspired from Siemens, X.
+ * Authors: Sintes, A.M.,  Krishnan, B. Machenschalk, B.
+ *          inspired from Siemens, X.
  *
  * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
  *            Modified by Krishnan on Feb 22, 2004
+ *            Modified by Machenschalk on Jun 16 2004
  *
  *-----------------------------------------------------------------------
  */
 
 /************************************ <lalVerbatim file="SFTfileIOCV">
-Author: Sintes, A.M., Krishnan, B., Prix, R.
+Author: Sintes, A.M., Krishnan, B., Prix, R., Machenschalk, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -29,7 +31,7 @@ Routines for reading SFT binary files
 \idx{LALReadSFTdata()}
 \idx{LALReadSFTfile()}
 \idx{LALReadSFTfiles()}
-\idx{LALWriteSFTtoFile()}
+\idx{LALWriteSFTfile()}
 \vspace{0.1in}
 \input{SFTfileIOD}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -117,80 +119,88 @@ void LALReadSFTheader (LALStatus  *status,
   
   /* read version-number */
   if  (fread (&version, sizeof(version), 1, fp) != 1) {
+    fclose (fp);
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
   /* check endian-ness */
-  if (version > 1000000) {
-    endian_swap ((CHAR*)&version, sizeof(version), 1);
+  if ((version < 1.0) || (version - (UINT4)(version) != 0) || (version > 1000)) {
+    endian_swap ((CHAR*)&version, sizeof(version),1);
     swapEndian = 1;
+  }
+
+  /* fail if still not conformant to spec */
+  if ((version < 1.0) || (version - (UINT4)(version) != 0) || (version > 1000)) {
+    fclose (fp);
+    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
   /* check compatibility of version with this function */
   if (version != 1) {
+    fclose (fp);
     ABORT (status, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
   }
 
-  /* big-endian not yet supported */
-  if (swapEndian) {
-    ABORT (status, SFTFILEIOH_EENDIAN, SFTFILEIOH_MSGEENDIAN);
-  }
-
-  /* read the header */
+  /* read the whole header */
   rawheader = LALCalloc (1, header_len_v1);
   if (rawheader == NULL) {
+    fclose (fp);
     ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
   }
   
   rewind (fp);	/* go back to start */
   if (fread( rawheader, header_len_v1, 1, fp) != 1) {
+    fclose (fp);
     LALFree (rawheader);
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
+
   fclose(fp);
 
   /* now fill-in the header-struct with the appropriate fields */
   /* NOTE: we have to do it this way, because the struct can have 
    * padding in memory, so the fields are not guaranteed to lie 'close'
+   * Endian-swapping ist done here if necessary
    */
   ptr = rawheader;
+  if (swapEndian) endian_swap((CHAR*)ptr,sizeof(REAL8),1);
   header1.version	= *(REAL8*) ptr;
   ptr += sizeof(REAL8);
+  if (swapEndian) endian_swap((CHAR*)ptr,sizeof(INT4),1);
   header1.gpsSeconds 	= *(INT4*) ptr;
   ptr += sizeof(INT4);
+  if (swapEndian) endian_swap((CHAR*)ptr,sizeof(INT4),1);
   header1.gpsNanoSeconds= *(INT4*) ptr;
   ptr += sizeof(INT4);
+  if (swapEndian) endian_swap((CHAR*)ptr,sizeof(REAL8),1);
   header1.timeBase      = *(REAL8*) ptr;
   ptr += sizeof(REAL8);
+  if (swapEndian) endian_swap((CHAR*)ptr,sizeof(INT4),1);
   header1.fminBinIndex  = *(INT4*) ptr;
   ptr += sizeof(INT4);
+  if (swapEndian) endian_swap((CHAR*)ptr,sizeof(INT4),1);
   header1.length     	= *(INT4*) ptr;
 
   LALFree (rawheader);
 
   /* ----- do some consistency-checks on the header-fields: ----- */
 
-  /* 1. version has to be an integer! */
-  if ( header1.version - (UINT4)(header1.version) != 0) {
-    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
-  }
-
-  /* 2. gps_sec and gps_nsec >= 0 */
+  /* gps_sec and gps_nsec >= 0 */
   if ( (header1.gpsSeconds < 0) || (header1.gpsNanoSeconds <0) ) {
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
-  /* 3. tbase > 0 */
+  /* tbase > 0 */
   if ( header1.timeBase <= 0 ) {
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
-  /* 4. fminindex >= 0 */
+  /* fminindex >= 0 */
   if (header1.fminBinIndex < 0) {
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
   
-  /* 5. nsamples >= 0 */
+  /* nsamples >= 0 */
   if (header1.length < 0) {
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
@@ -382,7 +392,7 @@ LALReadSFTfiles (LALStatus *stat,
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="SFTfileIOD"> */
 void
-LALWriteSFTtoFile (LALStatus  *status,
+LALWriteSFTfile (LALStatus  *status,
 		   const SFTtype *sft,
 		   const CHAR *outfname)
 { /* </lalVerbatim> */
@@ -395,7 +405,7 @@ LALWriteSFTtoFile (LALStatus  *status,
   CHAR *rawheader, *ptr;
   SFTHeader header;
 
-  INITSTATUS (status, "LALWriteSFTtoFile", SFTFILEIOC);
+  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
   ATTATCHSTATUSPTR (status);   
  
   /*   Make sure the arguments are not NULL and perform basic checks*/ 
@@ -494,7 +504,7 @@ LALWriteSFTtoFile (LALStatus  *status,
 /* <lalVerbatim file="SFTfileIOD"> */
 void
 LALReadSFTdata(LALStatus *status,
-	       SFTtype    *sft,    /* asumed  memory is allocated  */
+	       SFTtype    *sft,    /* assuming  memory is allocated  */
 	       const CHAR *fname,
 	       INT4 fminBinIndex)
 { /* </lalVerbatim> */
@@ -532,34 +542,41 @@ LALReadSFTdata(LALStatus *status,
   if ( (fp = LALOpenDataFile( fname )) == NULL) {
     ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
   }
-  /* read version-number and check endianness */
+
+  /* read version */
   if (fread (&version, sizeof(version), 1, fp) != 1) {
     fclose (fp);
     ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
   }
-  if (version > 1000000) {
+
+  /* check endian-ness */
+  if ((version < 1.0) || (version - (UINT4)(version) != 0) || (version > 1000)) {
     endian_swap ((CHAR*)&version, sizeof(version), 1);
     swapEndian = 1;
   }
-  /* only SFT-spec v1.0 currently supported! */
-  if (version != 1) {	
+
+  /* fail if still not conformant to spec */
+  if ((version < 1.0) || (version - (UINT4)(version) != 0) || (version > 1000)) {
+    fclose (fp);
+    ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
+  }
+
+  /* check compatibility of version with this function */
+  if (version != 1) {
     fclose (fp);
     ABORT (status, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
-  }
-  /* big-endian currently not supported */
-  if (swapEndian) {
-    fclose (fp);
-    ABORT (status, SFTFILEIOH_EENDIAN, SFTFILEIOH_MSGEENDIAN);
   }
 
   /* skip SFT-header in file */
   rewind (fp);
   if (fseek(fp, header_len_v1, SEEK_SET) != 0) {
+    fclose (fp);
     ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
   }
 
   /* skip offset data points to the correct frequency-bin */
   if (fseek(fp, offset * 2 * sizeof(REAL4), SEEK_CUR) != 0) {
+    fclose (fp);
     ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
   }
 
@@ -581,6 +598,8 @@ LALReadSFTdata(LALStatus *status,
   /* now fill data into output-vector */
   for (i=0; i < readlen; i++)
     {
+      if (swapEndian)
+	endian_swap((CHAR*)&rawdata[2*i], sizeof(REAL4), 2);
       sft->data->data[i].re = rawdata[2 * i];
       sft->data->data[i].im = rawdata[2 * i + 1];
     }    
@@ -662,6 +681,26 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
 	}
       
       pdata = pdata + dsize;
+    }
+  
+  return;
+
+} /* endian swap */
+
+endian_swap_1(CHAR * pdata, size_t dsize)
+{
+  UINT4 i, j, indx;
+  CHAR tempbyte;
+
+  if (dsize <= 1) return;
+
+  indx = dsize;
+  for (j=0; j<dsize/2; j++)
+    {
+      tempbyte = pdata[j];
+      indx = indx - 1;
+      pdata[j] = pdata[indx];
+      pdata[indx] = tempbyte;
     }
   
   return;

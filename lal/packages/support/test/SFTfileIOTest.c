@@ -1,7 +1,7 @@
 /*-----------------------------------------------------------------------
  *
  * File Name: SFTfileIOTest.c
- * Authors: Sintes, A.M., 
+ * Authors: Sintes, A.M., Machenschalk, B.
  *
  * Revision: $Id$
  *
@@ -45,9 +45,6 @@ This program has ugly code for testing the SFT file reading and writing.
 
 
 #include <config.h>
-#ifdef WORDS_BIGENDIAN 
-int main( void ) { return 77; }
-#else
 #include <lal/SFTfileIO.h>
 
 NRCSID (SFTFILEIOTESTC, "$Id$");
@@ -79,7 +76,6 @@ INT4 lalDebugLevel=3;
 #define MAXFILENAMELENGTH 64
 #define NFSIZE 5
 #define THRESHOLD 2.0
-#define SFTBASEFILENAME "./data1/SFT."
 #define OUTFILE1 "./TestOutputSFT.0"
 #define OUTFILE2 "./TestOutputSFT.1"
 #define INFILE "inputsft.0"
@@ -134,15 +130,16 @@ int main(int argc, char *argv[]){
   SFTVector *sftvect = NULL;
   REAL8 fmin, fmax;
     
-  const CHAR *fname;               /* The input filename */
+  const CHAR *fname;              /* The input filename */
   const CHAR *outfname;           /* output sft file name */
-  INT4 arg;                         /* Argument counter */
+  INT4 arg;                       /* Argument counter */
  
   fname = INFILE;
   outfname = OUTFILE1;
-  /********************************************************/  
-  /* Parse argument list.  i stores the current position. */
-  /********************************************************/
+
+  /**********************************************************/  
+  /* Parse argument list.  arg stores the current position. */
+  /**********************************************************/
   arg = 1;
   while ( arg < argc ) {
     /* Parse debuglevel option. */
@@ -175,19 +172,23 @@ int main(int argc, char *argv[]){
     }
   } /* End of argument parsing loop. */
   /******************************************************************/
+
   fmin = 1008.5;
   fmax = 1009.1;
 
-  printf ("Testing LALWriteSFTtoFile() and LALReadSFTfile()\n");
-  /* read SFT from disk */
+  printf ("Testing LALWriteSFTfile() and LALReadSFTfile()\n");
+  /* read SFT from disk into sft1 */
   /* try to do the same thing with ReadSFTfile() */
-  SUB ( LALReadSFTfile (&status, &sft1, fmin, fmax, fname), &status);
+  SUB (LALReadSFTfile (&status, &sft1, fmin, fmax, fname), &status);
+
   /* write SFT to disk */
-  SUB (LALWriteSFTtoFile (&status, sft1, OUTFILE1), &status);
+  SUB (LALWriteSFTfile (&status, sft1, OUTFILE1), &status);
 
-  SUB ( LALReadSFTfile (&status, &sft2, fmin, fmax, OUTFILE1), &status);
+  /* read the written SFT into sft2 */
+  SUB (LALReadSFTfile (&status, &sft2, fmin, fmax, OUTFILE1), &status);
 
-  SUB (LALWriteSFTtoFile (&status, sft2, OUTFILE2), &status);
+  /* write it out again */
+  SUB (LALWriteSFTfile (&status, sft2, OUTFILE2), &status);
 
   /* compare sft1 and sft2 */
   if ( (sft1->epoch.gpsSeconds != sft2->epoch.gpsSeconds)
@@ -250,6 +251,3 @@ int main(int argc, char *argv[]){
   INFO( SFTFILEIOTESTC_MSGENORM );
   return SFTFILEIOTESTC_ENORM;
 }
-#endif
-
-

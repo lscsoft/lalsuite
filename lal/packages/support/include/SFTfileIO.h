@@ -2,18 +2,19 @@
  *
  * File Name: SFTfileIO.h
  *
- * Authors: Sintes, A.M.,  Krishnan, B.,   Prix, R.  &inspired from Siemens, X.
+ * Authors: Sintes, A.M., Krishnan, B., Prix, R., Makchenschalk, B.,
+ *          inspired from Siemens, X.
  *
  * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
- *            Modified...
+ *            Modified by Machenschalk Jun 16, 2004
  *
  *-----------------------------------------------------------------------
  */
  
 /* *********************************** <lalVerbatim file="SFTfileIOHV">
-Author: Sintes, A.M., Prix. R
+Author: Sintes, A.M., Prix. R, Machenschalk, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -199,7 +200,7 @@ typedef struct tagSFTHeader {
 
 void LALReadSFTheader (LALStatus  *status, SFTHeader *header, const CHAR *fname); 
 void LALReadSFTdata (LALStatus  *status, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
-void LALWriteSFTtoFile (LALStatus  *status, const SFTtype *sft, const CHAR *outfname);
+void LALWriteSFTfile (LALStatus  *status, const SFTtype *sft, const CHAR *outfname);
 void LALReadSFTfile (LALStatus *status, SFTtype **sft, REAL8 fmin, REAL8 fmax, const CHAR *fname);
 void LALReadSFTfiles (LALStatus *status,SFTVector **sftvect, REAL8 fmin, REAL8 fmax, const CHAR *glob);
 
