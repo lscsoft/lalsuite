@@ -1583,10 +1583,6 @@ int main( int argc, char *argv[] )
           }
           else if ( approximant == BCV )
           {
-            fcFilterInput->segment->tmpltPowerVec =
-              fcDataParams->tmpltPowerVec;
-            fcFilterInput->segment->tmpltPowerVecBCV =
-              fcDataParams->tmpltPowerVecBCV;
             LAL_CALL( LALFindChirpBCVFilterSegment( &status,
                   &eventList, fcFilterInput, fcFilterParams ), &status );
           }
@@ -1826,6 +1822,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALDestroyFindChirpSegmentVector( &status, &fcSegVec ),
       &status );
   LALFree( fcInitParams );
+  
 
   /* free the template bank */
   while ( bankHead )
