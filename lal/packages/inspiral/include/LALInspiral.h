@@ -83,25 +83,6 @@ NRCSID( LALINSPIRALH, "$Id$" );
 
 \begin{enumerate} 
 
-\item \texttt{InputMasses:}
-This structure is one of the members of the \texttt{InspiralTemplate} 
-structure. 
-
-\input{LALInputMassesH}
-
-A user can specify the parameters of a binary using any of the
-following combination of {\it masses:}
-\begin{itemize}
-\item \texttt{m1Andm2:} component masses
-\item \texttt{totalMassAndEta:} total mass and symmetric mass ratio
-\item \texttt{totalMassAndMu:} total mass and reduced mass
-\item \texttt{t01:} unused; shouldn't be used.
-\item \texttt{t02:} chirptimes $\tau_0$ and $\tau_2$
-\item \texttt{t03:} chirptimes $\tau_0$ and $\tau_3$, and 
-\item \texttt{t04:} chirptimes $\tau_0$ and $\tau_4$
-\item \texttt{psi0Andpsi3:} BCV parameters $\psi_0$ and $\psi_3$
-\end{itemize}
-
 \item \texttt{Order:}
 Enum that tells which post-Newtonian order is being used.
 \input{LALInspiralOrderH}
@@ -342,22 +323,6 @@ tagEtaTau04In
 </lalLaTeX>  */
 
 
-/* <lalVerbatim file="LALInputMassesH">  */
-typedef enum {
-   m1Andm2,
-   totalMassAndEta,
-   totalMassAndMu,
-   t01,
-   t02,
-   t03,
-   t04,
-   psi0Andpsi3
- } InputMasses;
-/* </lalVerbatim>  */
-
-/* <lalLaTeX>
-\idx[Type]{InputMasses}
-</lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralOrderH">  */
 typedef enum {
@@ -399,61 +364,84 @@ typedef enum {
 typedef struct
 tagInspiralTemplate
 {
-  REAL8 alpha;
-  REAL8 alpha1;
-  REAL8 alpha2;
+/*  Parameters needed to generate Taylor/Pade waveforms */
   Approximant approximant;
-  REAL8 beta;
-  REAL8 chirpMass; 
-  REAL8 distance; 
-  REAL8 eccentricity;
-  REAL8 eta;
-  REAL8 fCutoff;
-  REAL8 fendBCV;
-  REAL8 fFinal;
-  REAL8 fLower;
-  INT4  ieta;
-  REAL8 inclination;
-  INT4  level;
-  REAL4 minMatch;
+  Order order;
   REAL8 mass1; 
   REAL8 mass2;
-  InputMasses massChoice;
-  REAL8 mu; 
-  INT4  number;
-  INT4  nStartPad;
-  INT4  nEndPad;
-  REAL8 OmegaS;
-  REAL8 orbitTheta0;
-  REAL8 orbitPhi0;
-  Order order;
+  REAL8 fCutoff;
+  REAL8 fLower;
+  REAL8 tSampling;
+  REAL8 distance; 
+  REAL8 signalAmplitude;
+  REAL8 startPhase;
+  REAL8 startTime;
+ 
+/* Additional parameters for EOB waveforms */
+
+  REAL8 Theta;
+  REAL8 Zeta2;
+
+/* Parameters for BCV1 template */
+
+  REAL8 alpha;
   REAL8 psi0;
   REAL8 psi3;
-  REAL8 rFinal;
-  REAL8 rInitial;
-  REAL8 rLightRing;
-  REAL8 signalAmplitude;
-  INT4Vector *segmentIdVec;
+
+/* Additional parameters for BCV2 template */
+
+  REAL8 beta;
+  REAL8 alpha1;
+  REAL8 alpha2;
+
+/* Parameters for spinning BH waveform */
+
+  REAL8 inclination;
+  REAL8 orbitTheta0;
+  REAL8 orbitPhi0;
   REAL8 spin1[3];
   REAL8 spin2[3];
   REAL8 sourceTheta;
   REAL8 sourcePhi;
-  REAL8 startPhase;
-  REAL8 startTime;
+
+/* Parameters which are currently might be used */
+
+  REAL8 fendBCV;
+  REAL8 eccentricity;
+
+/* Paramters which are computed using LALInspiralParameterCalc */
+
+  REAL8 chirpMass; 
+  REAL8 eta;
+  REAL8 totalMass; 
+  REAL8 fFinal;
   REAL8 t0; 
   REAL8 t2; 
   REAL8 t3; 
   REAL8 t4; 
   REAL8 t5; 
   REAL8 tC; 
-  REAL8 Theta;
-  REAL8 totalMass; 
-  REAL8 tSampling;
-  REAL8 vFinal;
+ 
+/* Note that tc and fFinal are computed during waveform generation!!! */
+ 
+/*  useless parameters */
+  REAL4 minMatch;
+  REAL8 mu; 
+  INT4  level;
+  INT4  number;
+  INT4  ieta;
+  INT4  nStartPad;
+  INT4  nEndPad;
+  REAL8 OmegaS;
+/*  REAL8 vFinal;
   REAL8 vInitial;
-  REAL8 Zeta2;
+  REAL8 rFinal;
+  REAL8 rInitial;
+  REAL8 rLightRing;
+  InputMasses massChoice;*/
+  INT4Vector *segmentIdVec; 
   struct tagInspiralTemplate *next;
-  struct tagInspiralTemplate *fine;
+  struct tagInspiralTemplate *fine; 
 } InspiralTemplate;
 /* </lalVerbatim>  */
 
