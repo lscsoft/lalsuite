@@ -39,7 +39,8 @@ by the longitude of the observing post.
 
 
 All the routines will output GMST1 or LMST1 in the units specified by
-the \texttt{outunits} argument.
+the \texttt{outunits} argument.  The sidereal time produced is within
+$\tilde 1$ sidereal second of values published in the Almanac.
 
 \subsubsection*{Algorithms}
 
@@ -115,11 +116,11 @@ main(int argc, char *argv[])
     date.unixDate.tm_year = 94;
 
     longitude = 0.; 
-    GMST1(&status, &gmsthours, &date, MST_HRS);
-    LMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+    LALGMST1(&status, &gmsthours, &date, MST_HRS);
+    LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
 
-    GMST1(&status, &gmstsecs, &date, MST_SEC);
-    SecsToLALDate(&status, &mstdate, gmstsecs);
+    LALGMST1(&status, &gmstsecs, &date, MST_SEC);
+    LALSecsToLALDate(&status, &mstdate, gmstsecs);
     strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
     sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
     strcat(timestamp, tmpstr+1);
