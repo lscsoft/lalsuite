@@ -35,6 +35,7 @@ typedef struct tagReadDataPairParams {
 	INT4 buffer;
 	INT4 sampleRate;
 	INT4 resampleRate;
+  INT4 length;
 } ReadDataPairParams;
 
 typedef struct tagPSDEstimatorInput {
