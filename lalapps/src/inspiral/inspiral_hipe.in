@@ -196,9 +196,6 @@ def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
     thinca.set_end(seg.end())
     for ifo in [ifo_a_name, ifo_b_name]:
       thinca.set_ifo(ifo)
-    thinca.add_var_opt('dt',dt)
-    thinca.add_var_opt('parameter-test',cp.get('coincidence-parameters',
-      'parameter-test'))
 
     # add all IFO A master chunks that overlap with segment to input
     for done in ifo_a_analyzed:
@@ -244,9 +241,6 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
     thinca.set_end(seg.end())
     for ifo in [ifo_a_name, ifo_b_name, ifo_c_name]:
       thinca.set_ifo(ifo)
-    thinca.add_var_opt('dt',dt)
-    thinca.add_var_opt('parameter-test',cp.get('coincidence-parameters',
-      'parameter-test'))
 
     # add all IFO A master chunks that overlap with segment to input
     for done in ifo_a_analyzed:
@@ -636,11 +630,6 @@ h2_snr = cp.get('inspiral-thresholds','h2-snr-threshold')
 l1_chisq = cp.get('inspiral-thresholds','l1-chisq-threshold')
 h1_chisq = cp.get('inspiral-thresholds','h1-chisq-threshold')
 h2_chisq = cp.get('inspiral-thresholds','h2-chisq-threshold')
-
-##############################################################################
-# get the time coincidence parameters from the values in the ini file
-hh_dt = cp.get('coincidence-parameters','hh-dt')
-hl_dt = cp.get('coincidence-parameters','hl-dt')
 
 ##############################################################################
 # add the sire parameters to the sire jobs
