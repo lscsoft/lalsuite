@@ -54,7 +54,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 
 #if 0
 <lalLaTeX> 
-\subsection*{Error codes} 
+\newpage\subsection*{Error codes} 
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
@@ -87,18 +87,25 @@ NRCSID (FINDCHIRPH, "$Id$");
 /* </lalErrTable> */
 
 
-/*
- *
- * typedefs of structures used by the findchip functions
- *
- */
-
 #if 0
 <lalLaTeX>
 \subsection*{Types}
 </lalLaTeX>
 #endif
 
+
+/*
+ *
+ * typedefs of structures used by the findchirp functions
+ *
+ */
+
+#if 0
+<lalLaTeX>
+\subsubsection*{Input and output data structures}
+</lalLaTeX>
+#endif
+  
 /* --- structure for describing a binary insipral event ------------------ */
 typedef struct
 tagInspiralEvent
@@ -149,6 +156,9 @@ for the event.
 
 \item[\texttt{REAL4 effDist}] The effective distance in megaparsecs to the
 event.
+
+\item[\texttt{CHAR ifoName[2]}] Array for storing the two character
+interferometer name (e.g. L1, H2, etc.)
 
 \item[\texttt{struct tagInspiralEvent *next}] A pointer to a structure of type 
 \texttt{InspiralEvent} to allow the construction of a linked list of events.
@@ -287,7 +297,14 @@ normalisation constant $\sigma$.
  */
 
 
-/* parameter structure for all init funtions */
+#if 0
+<lalLaTeX>
+\subsubsection*{Initalisation and parameter structures}
+</lalLaTeX>
+#endif
+  
+
+/* --- parameter structure for all init funtions ------------------------- */
 typedef struct
 tagFindChirpInitParams
 {
@@ -297,8 +314,35 @@ tagFindChirpInitParams
   BOOLEAN                       createRhosqVec;
 }
 FindChirpInitParams;
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{FindChirpInitParams}}
+\idx[Type]{FindChirpInitParams}
 
-/* parameter structure for the filtering function */
+\noindent This structure provides the essential information for the
+filter initialisation and memory allocation functions used in the
+\texttt{FindChirp} package.
+
+\begin{description}
+\item[\texttt{UINT4 numSegments}] The number of data segments to allocate
+storage for.
+
+\item[\texttt{UINT4 numPoints}] The number of discrete data points in each
+data segment. 
+
+\item[\texttt{UINT4 numChisqBins}] The number of bins used to contruct the
+$\chi^2$ veto.
+
+\item[\texttt{BOOLEAN createRhosqVec}] Debugging flag that controls whether
+or not the function \texttt{FindChirpFilterSegment()} should store the output
+of the filter, $\rho^2(t)$, as well as the events. Memory is only allocated
+for this vector if the flag is set to 1.
+\end{description}
+</lalLaTeX>
+#endif
+
+
+/* --- parameter structure for the filtering function -------------------- */
 typedef struct
 tagFindChirpFilterParams
 {
@@ -316,6 +360,66 @@ tagFindChirpFilterParams
   FindChirpChisqInput          *chisqInput;
 }
 FindChirpFilterParams;
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{FindChirpInitParams}}
+\idx[Type]{FindChirpInitParams}
+
+\noindent This structure provides the parameters used by the
+\texttt{FindChirpFilterSegment()} function.
+
+\begin{description}
+\item[\texttt{REAL4 deltaT}] The timestep for the sampled data. Must be
+set on entry.  {FIXME: This should be a \texttt{REAL8}}
+
+\item[\texttt{REAL4 rhosqThresh}] The value to threshold signal to noise
+ratio square, $\rho^2$, on. If the signal to noise exceeds this value, then a
+candidate event is generated. A $\chi^2$ veto is performed, if requested,
+otherwise an \texttt{InspiralEvent} is generated. Must be $\ge 0$ on entry.
+
+\item[\texttt{REAL4 chisqThresh}] The value to threshold the $\chi^2$ veto on.
+If the $chi^2$ veto is below this threshold the candidate event an
+\texttt{InspiralEvent} is generated. Must be $\ge 0$ on entry.
+
+\item[\texttt{REAL4 norm}] On exit this contains the normalisation constant
+that relates the quantity $q_j$ with the signal to noise squared, 
+$\rho^2(t_j)$ by 
+\begin{equation}
+\rho^2(t_j) = \textrm{norm} \times \left|q_j\right|^2.
+\end{equation}
+
+\item[\texttt{BOOLEAN computeNegFreq}] Currently unused. Must be set to
+$0$ on entry.
+
+\item[\texttt{COMPLEX8Vector *qVec}] Pointer to vector allocated by 
+\texttt{FindChirpFilterInit()} to store the quantity $q_j$. Set to the
+value of $q_j$ on exit. Must not be NULL.
+
+\item[\texttt{COMPLEX8Vector *qtildeVec}] Pointer to vector allocated by 
+\texttt{FindChirpFilterInit()} to store the quantity $\tilde{q}_k$. Set to the
+value of $\tilde{q}_k$ on exit. Must not be NULL
+
+\item[\texttt{ComplexFFTPlan *invPlan}] Pointer to FFTW plan created by 
+\texttt{FindChirpFilterInit()} to transform the quantity $\tilde{q}_k$ to
+${q}_j$ usimg the inverse DFT. Must not be NULL.
+
+\item[\texttt{REAL4Vector *rhosqVec}] Pointer to a vector that is set to
+$\rho^2(t_j)$ on exit. If NULL $\rho^2(t_j)$ is not stored.
+
+\item[\texttt{REAL4Vector *chisqVec}] Workspace vector used to compute and
+store $\chi^2(t_j)$. Must not be NULL if \texttt{numChisqBins} is greater than
+zero. Contains $\chi^2(t_j)$ on exit.
+
+\item[\texttt{FindChirpChisqParams *chisqParams}] Pointer to parameter
+structure for \texttt{FindChirpChisqVeto()} function. Must not be NULL if
+\texttt{numChisqBins} is greater than zero.
+
+\item[\texttt{FindChirpChisqInput *chisqInput}] Pointer to input data
+structure for \texttt{FindChirpChisqVeto()} function. Must not be NULL if
+\texttt{numChisqBins} is greater than zero.
+\end{description}
+</lalLaTeX>
+#endif
 
 
 /*
@@ -325,7 +429,14 @@ FindChirpFilterParams;
  */
 
 
-/* input to the filtering functions */
+#if 0
+<lalLaTeX>
+\subsubsection*{Filter function input structures}
+</lalLaTeX>
+#endif
+
+
+/* --- input to the filtering functions --------------------------------- */
 typedef struct
 tagFindChirpFilterInput
 {
@@ -334,7 +445,32 @@ tagFindChirpFilterInput
   FindChirpSegment             *segment;
 }
 FindChirpFilterInput;
+#if 0
+<lalLaTeX>
+\subsubsection*{Structure \texttt{FindChirpFilterInput}}
+\idx[Type]{FindChirpSegmentVector}
 
+\noindent This structure groups the input data required for the 
+\texttt{FindChirpFilterSegment()} function into a single structure.
+
+\begin{description}
+\item[\texttt{InspiralTemplate *tmplt}] Pointer the structure that contains
+the parameters of the template chirp.
+
+\item[\texttt{FindChirpTemplate *fcTmplt}] Pointer to the input template
+in a form that can be used by \texttt{FindChirpFilterSegment()}
+
+\item[\texttt{FindChirpSegment *segment}] Pointer to the input data segment
+in a form that can be used by \texttt{FindChirpFilterSegment()}
+\end{description}
+</lalLaTeX>
+#endif
+
+#if 0
+<lalLaTeX>
+\vfill{\footnotesize\input{FindChirpHV}}
+</lalLaTeX> 
+#endif
 
 /*
  *
@@ -342,6 +478,12 @@ FindChirpFilterInput;
  *
  */
 
+
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpMemoryC}
+</lalLaTeX>
+#endif
 
 void
 LALCreateDataSegmentVector (
@@ -372,10 +514,16 @@ LALDestroyFindChirpSegmentVector (
 
 /*
  *
- * function prototypes for initialization and finalization functions
+ * function prototypes for initialization, finalization and filter functions
  *
  */
 
+
+#if 0
+<lalLaTeX>
+\newpage\input{FindChirpFilterC}
+</lalLaTeX>
+#endif
 
 void
 LALFindChirpFilterInit (
@@ -403,14 +551,6 @@ LALDestroyFindChirpInput (
     FindChirpFilterInput      **output
     );
 
-
-/*
- *
- * function prototype for the filtering function
- *
- */
-
-
 void
 LALFindChirpFilterSegment (
     LALStatus                  *status,
@@ -420,11 +560,6 @@ LALFindChirpFilterSegment (
     );
 
 
-#if 0
-<lalLaTeX>
-\vfill{\footnotesize\input{FindChirpHV}}
-</lalLaTeX> 
-#endif
 
 #ifdef  __cplusplus
 #pragma {
