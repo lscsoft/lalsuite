@@ -55,13 +55,14 @@ calculate the expected variance per unit integration time of the
 cross-correlation statistic, since
 \begin{equation}
 \label{stochastic:e:variance}
-  \frac{\sigma^2}{T} = T^{-1}\int_{-\infty}^{\infty} df\, P_1(f)\, P_2(f)\,
+  \frac{\sigma^2}{T} 
+  = \frac{1}{4}\int_{-\infty}^{\infty} df\, P_1(f)\, P_2(f)\,
   \left(
     \widetilde{Q}(f)
   \right)^2
-  = \frac{\lambda}{T} \int_{-\infty}^{\infty} \frac{df}{|f|^3}\,\gamma(f)\,
+  = \frac{\lambda}{4} \int_{-\infty}^{\infty} \frac{df}{|f|^3}\,\gamma(f)\,
   \Omega_{\scriptstyle{\rm GW}}(f)\,\widetilde{Q}(f)
-  = \frac{20\pi^2}{3 {H_0}^2}\,\Omega_{\scriptstyle{\rm R}} \,\lambda
+  = \frac{5\pi^2}{3 {H_0}^2}\,\Omega_{\scriptstyle{\rm R}} \,\lambda
 \end{equation}
 where we have used (\ref{stochastic:e:Q}) to replace one of the two
 factors of $\widetilde{Q}(f)$ and (\ref{stochastic:e:mu}) to replace
@@ -606,7 +607,7 @@ LALStochasticOptimalFilterNormalization(
     }
     omegaRef = omega1*(pow((omega2/omega1),exponent));
   }
-  
+
   /* calculate inverse lambda value */
   lambdaInv = 0.0; 
 
@@ -621,12 +622,11 @@ LALStochasticOptimalFilterNormalization(
       * input->overlapReductionFunction->data->data[i];
     p1Inv = input->inverseNoisePSD1->data->data[i];
     p2Inv = input->inverseNoisePSD2->data->data[i];
-    
     lambdaInv += omegaTimesGamma * omegaTimesGamma * p1Inv * p2Inv 
       / f6;
   }
 
-  lambdaInv /= omegaRef
+  lambdaInv /= ( omegaRef / deltaF )
     * ( (20.0L * LAL_PI * LAL_PI) 
 	/ ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) )
 	);
@@ -638,7 +638,7 @@ LALStochasticOptimalFilterNormalization(
   if (output->variance != NULL) 
   {
     output->variance->value 
-      = ( (20.0L * LAL_PI * LAL_PI) 
+      = ( (5.0L * LAL_PI * LAL_PI) 
 	  / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) ) )
       * omegaRef / lambdaInv;
   }

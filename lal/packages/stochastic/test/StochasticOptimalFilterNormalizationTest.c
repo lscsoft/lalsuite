@@ -82,12 +82,12 @@ $f_0=0$, $f_{\scriptstyle{\rm R}}=1$, $\delta f=1$ and $N=8$):
 \item $\gamma(f) = h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f) = P_1(f) 
   =P_2(f)=P^{\scriptstyle{\rm HW}}_1(f)=P^{\scriptstyle{\rm HW}}_2(f)=1$;   
   The expected results in this case are $\lambda=3.079042427975$,
-  $\sigma^2\,T^{-1}=19.28969007282$
+  $\sigma^2\,T^{-1}=4.822422518205$
 \item $\gamma(f) = P_1(f) = P_2(f) = P^{\scriptstyle{\rm HW}}_1(f)
   = P^{\scriptstyle{\rm HW}}_2(f)=1$;
   $h_{100}^2\Omega_{\scriptstyle{\rm GW}}(f)=f^3$.
   The expected results in this case are $\lambda=.4474881517327$,
-  $\sigma^2\,T^{-1}=2.803439043176$
+  $\sigma^2\,T^{-1}=.700859760794$
 \end{enumerate}
 
 \subsubsection*{Exit codes}
@@ -167,9 +167,9 @@ NRCSID(STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC,
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_TOL      1e-6
 
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LAMBDA1     3.079042427975
-#define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT1    19.28969007282
+#define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT1    4.822422518205
 #define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_LAMBDA2     .4474881517327
-#define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT2    2.803439043176
+#define STOCHASTICOPTIMALFILTERNORMALIZATIONTESTC_VARPERT2    .700859760794
 
 extern char *optarg;
 extern int   optind;

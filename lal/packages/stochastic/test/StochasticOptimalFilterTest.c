@@ -1541,7 +1541,7 @@ static REAL8 mu(const REAL4FrequencySeries* omegaGW,
   deltaF = omegaGW->deltaF;
   length = omegaGW->data->length;
 
-  constant = 3.0L * ( (LAL_H0FAC_SI*1.0e+18) * (LAL_H0FAC_SI*1.0e+18) )
+  constant = deltaF * 3.0L * ( (LAL_H0FAC_SI*1.0e+18) * (LAL_H0FAC_SI*1.0e+18) )
              / ( 20.0L * (LAL_PI*LAL_PI) );
 
   /* calculate mu */
