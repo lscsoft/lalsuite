@@ -47,6 +47,7 @@ LALCheckMemoryLeaks()
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/DetectorSite.h>
+#include <lal/Date.h>
 
 NRCSID(LALBARYCENTERTESTC,"$Id$");
 
@@ -88,6 +89,11 @@ main( void )
   
   INT4 i,k; /*dummy indices*/
   EphemerisData *edat = NULL;
+  LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
+  INT4 tmpLeap; /* need this because Date pkg defines leap seconds as
+                   INT4, while EphemerisData defines it to be INT2. This won't
+                   cause problems before, oh, I don't know, the Earth has been 
+                   destroyed in nuclear holocaust. -- dwchin 2004-02-29 */
 
   char eEphFileBad[] = "earth47.dat";
   char eEphFile[] = "earth98.dat";
@@ -161,7 +167,7 @@ main( void )
    not changing at end of 2001.
 */ 
 
-  (*edat).leap = 12; 
+  (*edat).leap = 12;
   
   LALInitBarycenter(&stat, edat);
   printf("stat.statusCode = %d\n",stat.statusCode); 
@@ -247,6 +253,10 @@ sensible in degrees, but radians)*/
     tGPS.gpsSeconds = t1998;
     tGPS.gpsSeconds +=i*3600*50;  
     tGPS.gpsNanoSeconds = 0;
+
+    /* addition by dwchin - 2004-02-29 */
+    LALLeapSecs(&stat, &tmpLeap, &tGPS, &lsfas);
+    edat->leap = (INT2)tmpLeap;
 
     LALBarycenterEarth(&stat, &earth, &tGPS, edat);
     REPORTSTATUS(&stat);
