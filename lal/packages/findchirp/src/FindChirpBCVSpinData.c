@@ -182,7 +182,7 @@ LALFindChirpBCVSpinData (
   /*
    *
    * set up local segment independent pointers
-   * will I need the last two
+   * will I need the last two? maybe for chisq
    *
    */
 
@@ -266,6 +266,100 @@ LALFindChirpBCVSpinData (
     outputData[k].re =  p*x - q*y;
     outputData[k].im =  p*y + q*x;
   }
+
+
+    /*
+     *
+     * compute inverse power spectrum
+     *
+     */
+
+
+    /* set low frequency cutoff inverse power spectrum */
+    cut = params->fLow / dataSeg->spec->deltaF > 1 ?
+      params->fLow / dataSeg->spec->deltaF : 1;
+
+    /* set inverse power spectrum to zero */
+    memset( wtilde, 0, params->wtildeVec->length * sizeof(COMPLEX8) );
+
+    /* compute inverse of S_v */
+    for ( k = cut; k < params->wtildeVec->length; ++k )
+    {
+      if ( spec[k] == 0 )
+      {
+        ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
+      }
+      wtilde[k].re = 1.0 / spec[k];
+    }
+
+    /*
+     *
+     * truncate inverse power spectrum in time domain if required
+     *
+     */
+
+
+    if ( params->invSpecTrunc )
+    {
+      /* compute square root of inverse power spectrum */
+      for ( k = cut; k < params->wtildeVec->length; ++k )
+      {
+        wtilde[k].re = sqrt( wtilde[k].re );
+      }
+
+      /* set nyquist and dc to zero */
+      wtilde[params->wtildeVec->length - 1].re = 0.0;
+      wtilde[0].re                             = 0.0;
+
+      /* transform to time domain */
+      LALReverseRealFFT( status->statusPtr, params->wVec, params->wtildeVec,
+          params->invPlan );
+      CHECKSTATUSPTR (status);
+
+      /* truncate in time domain */
+      memset( w + params->invSpecTrunc/2, 0,
+          (params->wVec->length - params->invSpecTrunc) * sizeof(REAL4) );
+
+      /* transform to frequency domain */
+      LALForwardRealFFT( status->statusPtr, params->wtildeVec, params->wVec,
+          params->fwdPlan );
+      CHECKSTATUSPTR (status);
+
+      /* normalise fourier transform and square */
+      {
+        REAL4 norm = 1.0 / (REAL4) params->wVec->length;
+        for ( k = cut; k < params->wtildeVec->length; ++k )
+        {
+          wtilde[k].re *= norm;
+          wtilde[k].re *= wtilde[k].re;
+          wtilde[k].im = 0.0;
+        }
+      }
+
+      /* set nyquist and dc to zero */
+      wtilde[params->wtildeVec->length - 1].re = 0.0;
+      wtilde[0].re                             = 0.0;
+    }
+
+    /* set inverse power spectrum below cut to zero */
+    memset( wtilde, 0, cut * sizeof(COMPLEX8) );
+
+    /* convert from S_v to S_h */
+    for ( k = cut; k < params->wtildeVec->length; ++k )
+    {
+      REAL4 respRe = resp[k].re * params->dynRange;
+      REAL4 respIm = resp[k].im * params->dynRange;
+      REAL4 modsqResp = (respRe * respRe + respIm * respIm);
+      REAL4 invmodsqResp;
+      if ( modsqResp == 0 )
+      {
+        ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
+      }
+      invmodsqResp = 1.0 / modsqResp;
+      wtilde[k].re *= invmodsqResp;
+    }
+
+
 
   /* code */
 
