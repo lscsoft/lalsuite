@@ -27,6 +27,7 @@
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
+#include <lalappsfrutils.h>
 
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
@@ -54,7 +55,6 @@
 #include <lal/FindChirpEngine.h>
 
 #include "inspiral.h"
-#include "inspiralfrutils.h"
 
 RCSID( "$Id$" );
 

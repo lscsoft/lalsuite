@@ -1,13 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
-INSPIRALSRC = inspiral.h inspiral.c \
-              inspiralfrutils.c inspiralfrutils.h
-TMPLTBANKSRC = tmpltbank.c tmpltbank.h \
-               inspiralfrutils.c inspiralfrutils.h
+INSPIRALSRC = inspiral.h inspiral.c
+TMPLTBANKSRC = tmpltbank.c tmpltbank.h
 TRIGTOTMPLTSRC = trigtotmplt.c
 PRINTINSPIRALSRC = print_inspiral.c
-COHERESRC = coherent_inspiral.c inspiral.h \
-            inspiralfrutils.c inspiralfrutils.h
+COHERESRC = coherent_inspiral.c inspiral.h
 INCASRC = inca.c
 if LALFRAME
 if LALMETAIO

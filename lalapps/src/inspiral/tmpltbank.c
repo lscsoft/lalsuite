@@ -25,6 +25,7 @@
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
+#include <lalappsfrutils.h>
 
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
@@ -50,7 +51,6 @@
 #include <lal/LALInspiralBank.h>
 
 #include "tmpltbank.h"
-#include "inspiralfrutils.h"
 
 RCSID( "$Id$" );
 #define CVS_REVISION "$Revision$"
