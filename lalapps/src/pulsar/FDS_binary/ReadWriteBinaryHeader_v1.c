@@ -18,7 +18,7 @@ int WriteMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader)
   /* this function simply outputs the mesh header to file */
 
   /* output the header information */
-  fprintf(fp,"Search_maximum_search_frequency_Hz                      %6.12f\n",BMFheader->fmax);
+  fprintf(fp,"Search_maximum_search_frequency_Hz                      %6.12f\n",BMFheader->f_max);
   fprintf(fp,"Search_T_span_sec                                       %lf\n",BMFheader->tspan);
   fprintf(fp,"Search_Tobs_start_GPS_sec                               %d\n",BMFheader->tstart.gpsSeconds);
   fprintf(fp,"Search_Tobs_start_GPS_nano                              %d\n",BMFheader->tstart.gpsNanoSeconds);
@@ -61,7 +61,7 @@ int ReadMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader)
 
   char dmp[256];
 
-  fscanf(fp,"%s%lf",dmp,&BMFheader->fmax);
+  fscanf(fp,"%s%lf",dmp,&BMFheader->f_max);
   fscanf(fp,"%s%lf",dmp,&BMFheader->tspan);
   fscanf(fp,"%s%d",dmp,&BMFheader->tstart.gpsSeconds);
   fscanf(fp,"%s%d",dmp,&BMFheader->tstart.gpsNanoSeconds);
