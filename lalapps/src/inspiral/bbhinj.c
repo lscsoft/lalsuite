@@ -727,6 +727,13 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALAddFloatToGPS( &status,  &(this_inj->l_end_time),
           &(this_inj->l_end_time), time_diff_ns ), &status);
 
+    /* temporarily, populate the fields for the */
+    /* GEO, TAMA and VIRGO effective distances  */
+
+    this_inj->g_end_time = this_inj->geocent_end_time;
+    this_inj->v_end_time = this_inj->geocent_end_time;
+    this_inj->t_end_time = this_inj->geocent_end_time;
+
      /*
      * compute the effective distance of the inspiral
      * (copied from SnglInspiralUtils.c)
@@ -755,6 +762,13 @@ int main( int argc, char *argv[] )
      /* compute the effective distance for LLO */
      this_inj->eff_dist_l /= sqrt( splus*splus*resp.plus*resp.plus 
                  + scross*scross*resp.cross*resp.cross );
+
+     /* temporarily, populate the fields for the */
+     /* GEO, TAMA and VIRGO effective distances  */
+
+     this_inj->eff_dist_g = 2.0 * this_inj->distance;
+     this_inj->eff_dist_v = 2.0 * this_inj->distance;
+     this_inj->eff_dist_t = 2.0 * this_inj->distance;
 
     /* increment the injection time */
     LAL_CALL( LALAddFloatToGPS( &status, &gpsStartTime, &gpsStartTime, 
