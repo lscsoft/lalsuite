@@ -28,17 +28,16 @@ typedef enum {
 
 /**/
 void
-LALInjectInspiral(
+LALGenerateInspiral(
 		    LALStatus        *status,
 		    CoherentGW       *waveform,
 		    SimInspiralTable  *params, 
-		    REAL4 *buf1, 
-		    REAL8 *buf2,
-		    UINT4 *buf3
+		    PPNParamStruc         *ppnParamsInputOutput
 		    );
 
 
-/**/
+/**/void ComputeSpin(InspiralTemplate *params);
+
 void
 LALGetApproximantAndOrder(
 			  LALStatus *status,
