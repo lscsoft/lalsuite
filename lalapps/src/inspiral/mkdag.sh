@@ -34,20 +34,9 @@ while getopts "a:b:e:f:s:t:" OPT ; do
 	esac
 done
 
-if [ $((${GPS_END} - ${GPS_START})) -lt 2048 ] ; then
-cat > ${DAGFILE} << EOF
-job a true.sub
-EOF
-cat > true.sub << EOF
-universe = vanilla
-executable = /bin/true
-log = true.log
-queue
-EOF
-else
-ln -s ../mkcatalog.sh
 cp ${DATADIR}/online.ini .
-echo 0 ${GPS_START} ${GPS_END} $((${GPS_END} - ${GPS_START})) > segment.txt
-lalapps_inspiral_online_pipe --config-file online.ini --log-path /usr1/dbrown/E12/L1 || exit 1
+GPS_START_PAD=$((${GPS_START} + 8))
+GPS_END_PAD=$((${GPS_END} - 8))
+echo 0 ${GPS_START_PAD} ${GPS_END_PAD} $((${GPS_END_PAD} - ${GPS_START_PAD})) > segment.txt
+lalapps_inspiral_online_pipe --config-file online.ini --log-path /usr1/dbrown/S4 || exit 1
 ln -sf online.dag ${DAGFILE}
-fi
