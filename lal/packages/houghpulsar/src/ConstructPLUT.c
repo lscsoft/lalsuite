@@ -1121,6 +1121,7 @@ static void CheckLineCase(REAL8 epsilon, REAL8 ang1, REAL8 ang2,
 /*                y = cotg(alpha) [xA - x ] +yA                 */
 /****************************************************************/
 
+#if 0 /* NOT USED */
 static void FindExactLine(REAL8 alpha, REAL8 delta, 
 		   REAL8 *xA, REAL8 *yA){
 
@@ -1133,6 +1134,7 @@ static void FindExactLine(REAL8 alpha, REAL8 delta,
 
 return;
 }
+#endif
 
 /***************************************************************/
 /* Subroutine to find the parameters of 'approximated' lines   */

@@ -433,7 +433,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
   /* Parse pulsar name. */
   i = indx[PULSARCATINDEX_NAME];
-  if ( i >= 0 && i < list->nTokens ) {
+  if ( i >= 0 && i < (INT4)list->nTokens ) {
     if ( list->tokens[i][0] == 'B' ) {
       memcpy( node->bname, list->tokens[i], 9*sizeof(CHAR) );
       node->bname[9] = '\0';
@@ -448,7 +448,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
   /* Parse right ascension. */
   i = indx[PULSARCATINDEX_RAJ];
-  if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+  if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
     REAL8 seconds; /* seconds of right ascension */
     INT4 codes[3]; /* return codes from LALParseREAL8HMS() */
 
@@ -465,7 +465,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
     /* Compute uncertainty. */
     i = indx[PULSARCATINDEX_RAJERR];
-    if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+    if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
       UINT2 err;      /* uncertainty */
       TRY( LALStringToU2( stat->statusPtr, &err, list->tokens[i],
 			  &endptr ), stat );
@@ -481,7 +481,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
   /* Parse declination. */
   i = indx[PULSARCATINDEX_DECJ];
-  if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+  if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
     REAL8 seconds; /* arcseconds of declination */
     INT4 codes[3]; /* return codes from LALParseREAL8HMS() */
 
@@ -498,7 +498,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
     /* Compute uncertainty. */
     i = indx[PULSARCATINDEX_DECJERR];
-    if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+    if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
       UINT2 err;      /* uncertainty */
       TRY( LALStringToU2( stat->statusPtr, &err, list->tokens[i],
 			  &endptr ), stat );
@@ -514,7 +514,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
   /* Parse right ascension proper motion. */
   i = indx[PULSARCATINDEX_PMRA];
-  if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+  if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
     REAL8 pmra;    /* proper motion in milliarcseconds per year */
     INT4 codes[3]; /* return codes from LALParseREAL8() */
 
@@ -531,7 +531,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
     /* Compute uncertainty. */
     i = indx[PULSARCATINDEX_PMRAERR];
-    if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+    if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
       UINT2 err;      /* uncertainty */
       TRY( LALStringToU2( stat->statusPtr, &err, list->tokens[i], &endptr ),
 	   stat );
@@ -547,7 +547,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
   /* Parse declination proper motion. */
   i = indx[PULSARCATINDEX_PMDEC];
-  if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+  if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
     REAL8 pmdec;   /* proper motion in milliarcseconds per year */
     INT4 codes[3]; /* return codes from LALParseREAL8() */
 
@@ -564,7 +564,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
     /* Compute uncertainty. */
     i = indx[PULSARCATINDEX_PMDECERR];
-    if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+    if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
       UINT2 err;      /* uncertainty */
       TRY( LALStringToU2( stat->statusPtr, &err, list->tokens[i], &endptr ),
 	   stat );
@@ -580,7 +580,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
   /* Parse position epoch. */
   i = indx[PULSARCATINDEX_POSEPOCH];
-  if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+  if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
     REAL8 jday;        /* Julian day */
     INT4 codes[3];     /* return codes from LALParseREAL8() */
     INT8 gpsNan;       /* GPS nanoseconds */
@@ -615,7 +615,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
   /* Parse frequency and its derivatives. */
   i = indx[PULSARCATINDEX_F];
-  if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+  if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
     UINT4 length = 1;  /* number of frequency terms */
     REAL8 f[3], df[3]; /* frequency terms and uncertainties */
     INT4 codes[3];     /* return codes from LALParseREAL8() */
@@ -624,10 +624,10 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
     /* First read higher derivatives. */
     i = indx[PULSARCATINDEX_F1];
-    if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+    if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
       length = 2;
       i = indx[PULSARCATINDEX_F2];
-      if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+      if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
 	length = 3;
 
 	/* Parse F2. */
@@ -639,7 +639,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
 	/* Compute uncertainty. */
 	i = indx[PULSARCATINDEX_F2ERR];
-	if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+	if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
 	  UINT2 err;      /* uncertainty */
 	  TRY( LALStringToU2( stat->statusPtr, &err, list->tokens[i],
 			      &endptr ), stat );
@@ -660,7 +660,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
       /* Compute uncertainty. */
       i = indx[PULSARCATINDEX_F1ERR];
-      if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+      if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
 	UINT2 err;      /* uncertainty */
 	TRY( LALStringToU2( stat->statusPtr, &err, list->tokens[i],
 			    &endptr ), stat );
@@ -681,7 +681,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
     /* Compute uncertainty. */
     i = indx[PULSARCATINDEX_FERR];
-    if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+    if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
       UINT2 err;      /* uncertainty */
       TRY( LALStringToU2( stat->statusPtr, &err, list->tokens[i],
 			  &endptr ), stat );
@@ -709,7 +709,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
   /* Parse frequency epoch. */
   i = indx[PULSARCATINDEX_PEPOCH];
-  if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+  if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
     REAL8 jday;        /* Julian day */
     INT4 codes[3];     /* return codes from LALParseREAL8() */
     INT8 gpsNan;       /* GPS nanoseconds */
@@ -744,7 +744,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
 
   /* Parse distance. */
   i = indx[PULSARCATINDEX_Dist];
-  if ( i >= 0 && i < list->nTokens && list->tokens[i][0] != '*' ) {
+  if ( i >= 0 && i < (INT4)list->nTokens && list->tokens[i][0] != '*' ) {
     REAL8 dist;    /* distance in kpc */
     INT4 codes[3]; /* return codes from LALParseREAL8() */
 

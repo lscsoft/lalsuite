@@ -58,8 +58,9 @@ None
 #endif
 
 #include <lal/LALDemod.h>
+NRCSID( LALDEMODC, "$Id$" );
 
-void LALDemod(LALStatus *stat, 
+void LALDemod(LALStatus *status, 
 	double *F, 
 	FFT **input, 
 	DemodPar *params) 
@@ -94,6 +95,8 @@ void LALDemod(LALStatus *stat,
 
   REAL8 A=params->amcoe->A,B=params->amcoe->B,C=params->amcoe->C,D=params->amcoe->D;
   INT4 M=params->SFTno;
+
+  INITSTATUS( status, "LALDemod", LALDEMODC );
 
   /* variable redefinitions for code readability */
   spOrder=params->spinDwnOrder;
@@ -224,5 +227,6 @@ void LALDemod(LALStatus *stat,
   LALFree(sinVal);
   LALFree(cosVal);
 
+  RETURN( status );
 }
 

@@ -82,7 +82,7 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
 
 	UINT4 			n,i;		/* integer indices */
 	REAL8 			psi;
-	REAL8 			h0,h;
+	REAL8 			h0/*,h*/;
 	REAL8 			cosIota;
 	REAL8			phase;
 	REAL8   		chiSquare;
@@ -167,7 +167,10 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
    /* create vectors containing amplitude response of detector for specified times */ 
    for (i=0;i<n;i++)
    {     
-     LALComputeDetAMResponse(status->statusPtr, &computedResponse,&detAndSource, &input->t[i]);
+     LALGPSandAcc gpsAndAcc;
+     gpsAndAcc.gps = input->t[i];
+     gpsAndAcc.accuracy = LALLEAPSEC_STRICT; /* FIXME: check */
+     LALComputeDetAMResponse(status->statusPtr, &computedResponse,&detAndSource, &gpsAndAcc);
      Fp->data[i] = (REAL8)computedResponse.plus;
      Fc->data[i] = (REAL8)computedResponse.cross;
    }
