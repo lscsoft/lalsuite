@@ -218,7 +218,7 @@ LALFindChirpBCVSpinData (
    * Set output level
    */ 
 
-  doTest = 0; /* set to 1 for lots of output, useful for testing */
+  doTest = 1; /* set to 1 for lots of output, useful for testing */
   
   if (doTest ==1)
   {	  
@@ -274,7 +274,6 @@ LALFindChirpBCVSpinData (
     	resp         = dataSeg->resp->data->data;
 
     	outputData   = fcSeg->data->data->data;
-    	wtilde       = fcSeg->dataBCV->data->data;
 
 
     	if ( fcSeg->chisqBinVec->length )
@@ -353,7 +352,7 @@ LALFindChirpBCVSpinData (
 
     	/* set inverse power spectrum to zero */
     	memset( wtilde, 0, params->wtildeVec->length * sizeof(COMPLEX8) );
-
+	
     	/* compute inverse of S_v */
    	for ( k = cut; k < params->wtildeVec->length; ++k )
     	{
@@ -380,8 +379,8 @@ LALFindChirpBCVSpinData (
  	if ( params->invSpecTrunc )
  	{
       		/* compute square root of inverse power spectrum */
-      		fprintf(stdout, "truncating wtilde!");
-     
+      		fprintf(stdout, "truncating wtilde! \n");
+	       	
       		for ( k = cut; k < params->wtildeVec->length; ++k )
       		{
         	wtilde[k].re = sqrt( wtilde[k].re );
@@ -390,11 +389,12 @@ LALFindChirpBCVSpinData (
       		/* set nyquist and dc to zero */
       		wtilde[params->wtildeVec->length - 1].re = 0.0;
       		wtilde[0].re                             = 0.0;
-
+	
       		/* transform to time domain */
-      		LALReverseRealFFT( status->statusPtr, params->wVec, 
+      		LALReverseRealFFT( status->statusPtr, 
+			params->wVec, 
 			params->wtildeVec,
-          		params->invPlan );
+			params->invPlan );
       		CHECKSTATUSPTR (status);
 
       		/* truncate in time domain */
@@ -452,9 +452,10 @@ LALFindChirpBCVSpinData (
  		fprintf (stdout, "resp[cut].im %e\n", resp[cut].im);
  		fprintf (stdout, "wtilde[cut].re %e\n", wtilde[cut].re);
 		
-		for (k = 0; k < fcSeg->dataBCV->data->length; ++k)
+		for (k = 1; k < fcSeg->dataBCV->data->length; ++k)
     		{
-  		fprintf (fpwtildeData, "%e\t%e\n", wtilde[k].re, wtilde[k].im);
+  		fprintf (fpwtildeData, "%d\t%e\t%e\n", 
+				k,wtilde[k].re, wtilde[k].im);
     		}
 	}
 		
@@ -482,6 +483,10 @@ LALFindChirpBCVSpinData (
     	fcSeg->fLow         = params->fLow;
     	fcSeg->invSpecTrunc = params->invSpecTrunc;
 
+	/* write wtilde to fcSeg so that it may be reader by BCVSpinFilterSegment() */
+	fcSeg->dataBCV->data->data = wtilde;
+
+	
   } /* end of loop over data segments */
 
   if (doTest ==1)
