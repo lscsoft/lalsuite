@@ -262,10 +262,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* should a resample buffer be applied */
   if ((sampleRate == resampleRate) || (high_pass_flag == 0))
   {
+    /* no resample buffer */
     padData = 0;
   }
   else
   {
+    /* resample buffer of 1s */
     padData = 1;
   }
 
@@ -308,24 +310,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALCreateREAL4TimeSeries(&status, &streamTwo, "streamTwo", \
         gpsStartTime, 0, 1./(REAL8)resampleRate, lalDimensionlessUnit, \
         origStreamLength), &status);
-
-  /* set stream input parameters */
-  streamParams.duration = streamDuration;
-  streamParams.frameCacheOne = frameCacheOne;
-  streamParams.frameCacheTwo = frameCacheTwo;
-  streamParams.ifoOne = ifoOne;
-  streamParams.ifoTwo = ifoTwo;
-  streamParams.channelOne = channelOne;
-  streamParams.channelTwo = channelTwo;
-  streamParams.startTime = startTime;
-  streamParams.buffer = padData;
-  streamParams.sampleRate = sampleRate;
-  streamParams.resampleRate = resampleRate;
-  streamParams.length = streamLength;
-
-  /* set stream data structures */
-  streamPair.streamOne = streamOne;
-  streamPair.streamTwo = streamTwo;
 
   if (vrbflg)
   {
@@ -533,11 +517,6 @@ INT4 main(INT4 argc, CHAR *argv[])
         "hBarTildeTwo", gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
         fftDataLength), &status);
 
-  /* set zeropad parameters */
-  zeroPadParams.fftPlan = fftDataPlan;
-  zeroPadParams.window = dataWindow->data;
-  zeroPadParams.length = zeroPadLength;
-
   /* quantities needed to build the optimal filter */
 
   if (vrbflg)
@@ -551,6 +530,11 @@ INT4 main(INT4 argc, CHAR *argv[])
         "overlap", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
         filterLength), &status);
 
+  if (vrbflg)
+  {
+    fprintf(stdout, "Generating the overlap reduction function...\n");
+  }
+
   /* set parameters for overlap reduction function */
   ORFparams.length = filterLength;
   ORFparams.f0 = fMin;
@@ -559,11 +543,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* set overlap reduction function detector pair */
   detectors.detectorOne = lalCachedDetectors[siteOne];
   detectors.detectorTwo = lalCachedDetectors[siteTwo];
-
-  if (vrbflg)
-  {
-    fprintf(stdout, "Generating the overlap reduction function...\n");
-  }
 
   /* generate overlap reduction function */
   LAL_CALL(LALOverlapReductionFunction(&status, overlap, &detectors, \
@@ -751,6 +730,24 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stdout, "Reading data...\n");
   }
 
+  /* set stream input parameters */
+  streamParams.duration = streamDuration;
+  streamParams.frameCacheOne = frameCacheOne;
+  streamParams.frameCacheTwo = frameCacheTwo;
+  streamParams.ifoOne = ifoOne;
+  streamParams.ifoTwo = ifoTwo;
+  streamParams.channelOne = channelOne;
+  streamParams.channelTwo = channelTwo;
+  streamParams.startTime = startTime;
+  streamParams.buffer = padData;
+  streamParams.sampleRate = sampleRate;
+  streamParams.resampleRate = resampleRate;
+  streamParams.length = streamLength;
+
+  /* set stream data structures */
+  streamPair.streamOne = streamOne;
+  streamPair.streamTwo = streamTwo;
+
   /* read data */
   readDataPair(&status, &streamPair, &streamParams);
 
@@ -863,6 +860,11 @@ INT4 main(INT4 argc, CHAR *argv[])
     {
       fprintf(stdout, "Zero padding data...\n");
     }
+
+    /* set zeropad parameters */
+    zeroPadParams.fftPlan = fftDataPlan;
+    zeroPadParams.window = dataWindow->data;
+    zeroPadParams.length = zeroPadLength;
 
     /* zero pad and fft */
     LAL_CALL(LALSZeroPadAndFFT(&status, hBarTildeOne, segmentOneB, \
