@@ -80,7 +80,19 @@ FILE* tryopen(char *name, char *mode){
   return fp;
 }
 
+int getenvval(const char *valuename){
+  int retval;
+  
+  char *value=getenv(valuename);
+  if (value)
+    retval=atoi(value);
+  else
+    retval=0;
 
+  printf("Environment variable %s = %d\n", valuename, retval);
+
+  return retval;
+}
 
 int main(int argc,char *argv[]){
   static LALStatus status;
@@ -96,7 +108,12 @@ int main(int argc,char *argv[]){
   REAL8 window[WINLEN];
   char framelist[256];
   int opencount=0;
-  
+
+  /* Control variable for run-time options */
+  int doubledata=getenvval("DOUBLEDATA");
+  int windowdata=getenvval("WINDOWDATA");
+  int printfreqseries=getenvval("PRINTFREQSERIES");
+
   /* FrameL frame file */
   FrFile *frfile;
   /* vector holding the frame data */
@@ -218,13 +235,12 @@ int main(int argc,char *argv[]){
     epoch.gpsSeconds=starts[count];
     epoch.gpsNanoSeconds=0;
     
-    /* to check that an existing file has the correct size.... */
-#ifdef DOUBLEDATA
-    filesize *= 2*sizeof(double);
-#else
-    filesize *= 2*sizeof(float);
-#endif
-    filesize+=sizeof(header);  
+    /* to check that an existing file has the correct size */
+    if (doubledata)
+      filesize *= 2*sizeof(double);
+    else
+      filesize *= 2*sizeof(float);
+    filesize+=sizeof(header);
     
     /* construct SFT name.  If file exists, and has correct size, just continue */
     sprintf(sftname,"%s/SFT_%s.%d",argv[3],argv[4],epoch.gpsSeconds);
@@ -284,19 +300,19 @@ int main(int argc,char *argv[]){
       TESTSTATUS(&status);
       
       /* Turn on windowing */
-#ifdef WINDOWDATA
-      /* window data.  Off portion */
-      for (i=0; i<WINSTART; i++) {
-	chan.data->data[i] = 0.0;
-	chan.data->data[chan.data->length - 1 - i] = 0.0;
+      if (windowdata){
+	/* window data.  Off portion */
+	for (i=0; i<WINSTART; i++) {
+	  chan.data->data[i] = 0.0;
+	  chan.data->data[chan.data->length - 1 - i] = 0.0;
+	}
+	/* window data, smooth turn-on portion */
+	for (i=WINSTART; i<WINEND; i++) {
+	  double win=window[i - WINSTART];
+	  chan.data->data[i] *= win;
+	  chan.data->data[chan.data->length - 1 - i]  *= win;
+	}
       }
-      /* window data, smooth turn-on portion */
-      for (i=WINSTART; i<WINEND; i++) {
-	double win=window[i - WINSTART];
-	chan.data->data[i] *= win;
-	chan.data->data[chan.data->length - 1 - i]  *= win;
-      }
-#endif
       
       /* open SFT file for writing */
       fpsft=tryopen(sftname,"w");
@@ -318,25 +334,30 @@ int main(int argc,char *argv[]){
       LALForwardRealFFT(&status, fvec, chan.data, pfwd);
       TESTSTATUS(&status);
       
-#ifdef PRINTFREQSERIES
-      /* for debugging -- print freq series */
-      LALCPrintVector(fvec);
-      exit(0);
-#endif    
+      if (printfreqseries){
+	/* for debugging -- print freq series */
+	LALCPrintVector(fvec);
+	exit(0);
+      }   
       
       /* Write SFT */
       for (k=0; k<header.nsamples; k++){
-#ifdef DOUBLEDATA
-	REAL8 rpw=fvec->data[k+firstbin].re;
-	REAL8 ipw=fvec->data[k+firstbin].im;
-	INT4 errorcode1=fwrite((void*)&rpw, sizeof(REAL8),1,fpsft);
-	INT4 errorcode2=fwrite((void*)&ipw, sizeof(REAL8),1,fpsft);  
-#else 
-	REAL4 rpw=fvec->data[k+firstbin].re;
-	REAL4 ipw=fvec->data[k+firstbin].im;
-	INT4 errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
-  	INT4 errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
-#endif
+	int errorcode1,errorcode2;
+
+	if (doubledata){
+	  REAL8 rpw=fvec->data[k+firstbin].re;
+	  REAL8 ipw=fvec->data[k+firstbin].im;
+	  errorcode1=fwrite((void*)&rpw, sizeof(REAL8),1,fpsft);
+	  errorcode2=fwrite((void*)&ipw, sizeof(REAL8),1,fpsft);  
+	}
+	else {
+	  REAL4 rpw=fvec->data[k+firstbin].re;
+	  REAL4 ipw=fvec->data[k+firstbin].im;
+	  errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
+	  errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
+	}
+	
+	/* Check that there were no errors while writing SFTS */
  	if (errorcode1-1 || errorcode2-1){
 	  fprintf(stderr,"Error in writing data into SFT file %s!\n",sftname);
 	  fflush(stderr);
