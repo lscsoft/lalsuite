@@ -347,7 +347,7 @@ void compute_skygrid(LALStatus * status, char * format_arg)
       for (j = 0; j < NUM_RA; ++j)
         {
           source.equatorialCoords.longitude =
-            (REAL8)j/(REAL8)NUM_RA * ((REAL8)LAL_TWOPI);
+            (REAL8)j/24. * ((REAL8)LAL_TWOPI);
       
           for (i = -dec_lim; i <= dec_lim; ++i)
             {
@@ -361,11 +361,6 @@ void compute_skygrid(LALStatus * status, char * format_arg)
               grid_plus_sq[cnt] = response.plus  * response.plus;
               grid_sum_sq[cnt]  = (grid_cros_sq[cnt] + grid_plus_sq[cnt]);
               
-              /*
-              grid_relfreq[cnt] += relval(source.equatorialCoords.latitude,
-                                          source.equatorialCoords.longitude,
-                                          k, (int)time_info.nSample);
-              */
               grid_relfreq[cnt] = doppler(status, &(gps_and_acc.gps), 
                                           &detectorvel_inputs, 
                                           &(source.equatorialCoords));
