@@ -32,14 +32,14 @@ LALDestroyRealDFTParams (
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not null */
-  ASSERT (dftParams, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (*dftParams, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
+  ASSERT (dftParams, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (*dftParams, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
 
   /* make sure that data pointed to is non-null */
-  ASSERT ((*dftParams)->plan, status, TFTRANSFORM_ENULLP, 
-          TFTRANSFORM_MSGENULLP); 
-  ASSERT ((*dftParams)->window, status, TFTRANSFORM_ENULLP, 
-          TFTRANSFORM_MSGENULLP); 
+  ASSERT ((*dftParams)->plan, status, TFTRANSFORMH_ENULLP, 
+          TFTRANSFORMH_MSGENULLP); 
+  ASSERT ((*dftParams)->window, status, TFTRANSFORMH_ENULLP, 
+          TFTRANSFORMH_MSGENULLP); 
 
   /* Ok, now let's free allocated storage */
   LALSDestroyVector (status->statusPtr, &((*dftParams)->window));

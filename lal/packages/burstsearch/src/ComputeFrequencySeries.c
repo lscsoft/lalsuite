@@ -38,15 +38,15 @@ LALComputeFrequencySeries (
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */
-  ASSERT (freqSeries, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (freqSeries->data, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (timeSeries, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (timeSeries->data, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (dftParams, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (dftParams->plan, status, TFTRANSFORM_ENULLP, 
-          TFTRANSFORM_MSGENULLP);
-  ASSERT (dftParams->window, status, TFTRANSFORM_ENULLP, 
-          TFTRANSFORM_MSGENULLP);
+  ASSERT (freqSeries, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (freqSeries->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (timeSeries, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (timeSeries->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (dftParams, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (dftParams->plan, status, TFTRANSFORMH_ENULLP, 
+          TFTRANSFORMH_MSGENULLP);
+  ASSERT (dftParams->window, status, TFTRANSFORMH_ENULLP, 
+          TFTRANSFORMH_MSGENULLP);
 
 
   /* make sure sizes are reasonable and agree */
@@ -54,22 +54,22 @@ LALComputeFrequencySeries (
    * n = dftParams->plan->size;
    */
   n = timeSeries->data->length;
-  ASSERT (n > 0, status, TFTRANSFORM_EPOSARG, TFTRANSFORM_MSGEPOSARG);
+  ASSERT (n > 0, status, TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
   /*
   ASSERT ((INT4)timeSeries->data->length == n, status,
-          TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+          TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
   */
   ASSERT ((INT4)freqSeries->data->length == n/2 + 1, status,
-          TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+          TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
   ASSERT ((INT4)dftParams->window->length == n, status,
-          TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+          TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
 
 
   /* copy over data into frequency series structure */
   freqSeries->epoch = timeSeries->epoch;
   freqSeries->f0    = timeSeries->f0;
-  ASSERT(timeSeries->deltaT > 0.0, status, TFTRANSFORM_EPOSARG, 
-         TFTRANSFORM_MSGEPOSARG);
+  ASSERT(timeSeries->deltaT > 0.0, status, TFTRANSFORMH_EPOSARG, 
+         TFTRANSFORMH_MSGEPOSARG);
   freqSeries->deltaF = 1/((REAL8)(timeSeries->data->length)*timeSeries->deltaT); 
   /* 
    * OMITTED
@@ -80,8 +80,8 @@ LALComputeFrequencySeries (
 
 
   /* compute normalization factor */
-  ASSERT(dftParams->sumofsquares > 0.0, status, TFTRANSFORM_EPOSARG, 
-         TFTRANSFORM_MSGEPOSARG);
+  ASSERT(dftParams->sumofsquares > 0.0, status, TFTRANSFORMH_EPOSARG, 
+         TFTRANSFORMH_MSGEPOSARG);
   fac = 1 / sqrt( dftParams->sumofsquares);
 
 

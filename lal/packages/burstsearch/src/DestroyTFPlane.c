@@ -32,14 +32,14 @@ LALDestroyTFPlane (
   INITSTATUS (status, "LALDestroyTFPlane", DESTROYTFPLANEC);
 
   /* make sure that arguments are not null */
-  ASSERT (tfp, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (*tfp, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
+  ASSERT (tfp, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (*tfp, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
 
   /* make sure that data pointed to is non-null */
-  ASSERT ((*tfp)->data, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
+  ASSERT ((*tfp)->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
 
   /* make sure that pointer to parameter structure is non-null */
-  ASSERT ((*tfp)->params, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP); 
+  ASSERT ((*tfp)->params, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP); 
 
   /* Ok, now let's free allocated storage */
   LALFree ( (*tfp)->params );      /* free parameter structure         */

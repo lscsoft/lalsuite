@@ -48,30 +48,30 @@ LALFreqSeriesToTFPlane (
   
 
   /* make sure that arguments are not NULL */
-  ASSERT (freqSeries, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (freqSeries->data, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (freqSeries->data->data, status, TFTRANSFORM_ENULLP,
-          TFTRANSFORM_MSGENULLP);
+  ASSERT (freqSeries, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (freqSeries->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (freqSeries->data->data, status, TFTRANSFORMH_ENULLP,
+          TFTRANSFORMH_MSGENULLP);
 
-  ASSERT (input, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (input->dftParams, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (input->dftParams->plan, status, TFTRANSFORM_ENULLP, 
-          TFTRANSFORM_MSGENULLP);
+  ASSERT (input, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (input->dftParams, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (input->dftParams->plan, status, TFTRANSFORMH_ENULLP, 
+          TFTRANSFORMH_MSGENULLP);
   /* OMITTED -- JC
-   * ASSERT (input->dftParams->plan->plan, status, TFTRANSFORM_ENULLP, 
-   *       TFTRANSFORM_MSGENULLP);
+   * ASSERT (input->dftParams->plan->plan, status, TFTRANSFORMH_ENULLP, 
+   *       TFTRANSFORMH_MSGENULLP);
    */
-  ASSERT (input->dftParams->window, status, TFTRANSFORM_ENULLP, 
-          TFTRANSFORM_MSGENULLP);
-  ASSERT (input->dftParams->window->data, status, TFTRANSFORM_ENULLP, 
-          TFTRANSFORM_MSGENULLP);
+  ASSERT (input->dftParams->window, status, TFTRANSFORMH_ENULLP, 
+          TFTRANSFORMH_MSGENULLP);
+  ASSERT (input->dftParams->window->data, status, TFTRANSFORMH_ENULLP, 
+          TFTRANSFORMH_MSGENULLP);
 
 
 
   /* make sure that output structure is not NULL */
-  ASSERT (tfp, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (tfp->params, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (tfp->data, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
+  ASSERT (tfp, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (tfp->params, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (tfp->data, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
 
 
 
@@ -88,49 +88,49 @@ LALFreqSeriesToTFPlane (
 
 
   nt = tfp->params->timeBins;   /* Number of time bins */
-  ASSERT (nt > 0, status, TFTRANSFORM_EPOSARG, TFTRANSFORM_MSGEPOSARG);
+  ASSERT (nt > 0, status, TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
 
   nf = tfp->params->freqBins;   /* Number of frequency bins */
-  ASSERT (nf > 0, status, TFTRANSFORM_EPOSARG, TFTRANSFORM_MSGEPOSARG);
+  ASSERT (nf > 0, status, TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
 
   /* 
    * Next compute fseglength = size of segments in freq domain
    * Round off to nearest integer rather than rounding down.
    */
 
-  ASSERT( freqSeries->deltaF>0.0, status, TFTRANSFORM_EPOSARG, 
-         TFTRANSFORM_MSGEPOSARG);  
-  ASSERT( tfp->params->deltaT>0.0, status, TFTRANSFORM_EPOSARG, 
-         TFTRANSFORM_MSGEPOSARG);  
+  ASSERT( freqSeries->deltaF>0.0, status, TFTRANSFORMH_EPOSARG, 
+         TFTRANSFORMH_MSGEPOSARG);  
+  ASSERT( tfp->params->deltaT>0.0, status, TFTRANSFORMH_EPOSARG, 
+         TFTRANSFORMH_MSGEPOSARG);  
   fseglength = (INT4)( 0.5+ 1.0/(tfp->params->deltaT * freqSeries->deltaF));  
 
   /*
    * Length of segments in freq domain must exceed number of time bins
    * in final TF plane
    */
-  ASSERT( fseglength >= nt, status, TFTRANSFORM_EINCOMP, 
-          TFTRANSFORM_MSGEINCOMP);
+  ASSERT( fseglength >= nt, status, TFTRANSFORMH_EINCOMP, 
+          TFTRANSFORMH_MSGEINCOMP);
 
   /* OMITTED -- JC
    * ASSERT( fseglength == (INT4)input->dftParams->plan->size, status, 
-   *        TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+   *        TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
    */
   ASSERT( fseglength == (INT4)input->dftParams->window->length, status, 
-          TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+          TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
 
   /* Supplied FFT plan must be in inverse direction */
   /* OMITTED -- JC
    * ASSERT( input->dftParams->plan->sign==-1, status, 
-   *       TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+   *       TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
    */
 
   /* Input lowest frequency must be non-negative */
-  ASSERT(freqSeries->f0 >= 0.0, status, TFTRANSFORM_EPOSARG,
-         TFTRANSFORM_MSGEPOSARG);
+  ASSERT(freqSeries->f0 >= 0.0, status, TFTRANSFORMH_EPOSARG,
+         TFTRANSFORMH_MSGEPOSARG);
 
   /* Lowest freq of time freq plane >= lowest freq of freq series */
   ASSERT(tfp->params->flow >= freqSeries->f0, status, 
-         TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+         TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
 
   /* low frequency cutoff */
   flow1 = (INT4)( (tfp->params->flow - freqSeries->f0)/ freqSeries->deltaF);
@@ -140,11 +140,11 @@ LALFreqSeriesToTFPlane (
 
   /* make sure have enough data points in freq series */
   ASSERT(ntotal + flow1<= (INT4)freqSeries->data->length, status, 
-         TFTRANSFORM_EINCOMP, TFTRANSFORM_MSGEINCOMP);
+         TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
 
   /* sumofsquares parameter must be positive */
-  ASSERT( input->dftParams->sumofsquares>0.0, status, TFTRANSFORM_EPOSARG, 
-          TFTRANSFORM_MSGEPOSARG);
+  ASSERT( input->dftParams->sumofsquares>0.0, status, TFTRANSFORMH_EPOSARG, 
+          TFTRANSFORMH_MSGEPOSARG);
 
 
   /* 

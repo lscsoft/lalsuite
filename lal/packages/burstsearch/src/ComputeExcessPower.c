@@ -5,7 +5,6 @@ $Id$
 
 #include <lal/LALRCSID.h>
 
-
 NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 
 

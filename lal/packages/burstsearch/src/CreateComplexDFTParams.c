@@ -39,22 +39,22 @@ LALCreateComplexDFTParams (
    * which should not yet point to anything.
    *
    */
-  ASSERT (dftParams, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP); 
-  ASSERT (*dftParams == NULL, status, TFTRANSFORM_EALLOCP, 
-          TFTRANSFORM_MSGEALLOCP);
+  ASSERT (dftParams, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP); 
+  ASSERT (*dftParams == NULL, status, TFTRANSFORMH_EALLOCP, 
+          TFTRANSFORMH_MSGEALLOCP);
 
-  ASSERT (params, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);  
+  ASSERT (params, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);  
 
-  ASSERT (params->length > 0, status, TFTRANSFORM_EPOSARG, 
-          TFTRANSFORM_MSGEPOSARG);
+  ASSERT (params->length > 0, status, TFTRANSFORMH_EPOSARG, 
+          TFTRANSFORMH_MSGEPOSARG);
 
-  ASSERT( (sign==1) || (sign==-1), status, TFTRANSFORM_EINCOMP,
-          TFTRANSFORM_MSGEINCOMP);
+  ASSERT( (sign==1) || (sign==-1), status, TFTRANSFORMH_EINCOMP,
+          TFTRANSFORMH_MSGEINCOMP);
 
 
   /*  Assign memory for *dftParams   */
   if ( !( *dftParams = (ComplexDFTParams *) LALMalloc(sizeof(ComplexDFTParams)) ) ){
-    ABORT (status, TFTRANSFORM_EMALLOC, TFTRANSFORM_MSGEMALLOC);
+    ABORT (status, TFTRANSFORMH_EMALLOC, TFTRANSFORMH_MSGEMALLOC);
   }
 
   /* fill in some values */

@@ -32,15 +32,15 @@ LALCreateTFPlane (
   INITSTATUS (status, "LALCreateTFPlane", CREATETFPLANEC);
 
   /* Check input structure: report if NULL */
-  ASSERT (input, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
+  ASSERT (input, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
       
   /* Make sure that input parameters are reasonable */
   ASSERT (input->timeBins > 0, status, 
-          TFTRANSFORM_EPOSARG, TFTRANSFORM_MSGEPOSARG);
+          TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
   ASSERT (input->freqBins > 0, status,
-          TFTRANSFORM_EPOSARG, TFTRANSFORM_MSGEPOSARG);
+          TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
   ASSERT (input->deltaT > 0.0, status,
-          TFTRANSFORM_EPOSARG, TFTRANSFORM_MSGEPOSARG);
+          TFTRANSFORMH_EPOSARG, TFTRANSFORMH_MSGEPOSARG);
 
   /* 
    * Check return structure: tfp should point to a valid pointer
@@ -48,8 +48,8 @@ LALCreateTFPlane (
    *
    */
 
-  ASSERT (tfp != NULL, status, TFTRANSFORM_ENULLP, TFTRANSFORM_MSGENULLP);
-  ASSERT (*tfp == NULL, status, TFTRANSFORM_EALLOCP, TFTRANSFORM_MSGEALLOCP);
+  ASSERT (tfp != NULL, status, TFTRANSFORMH_ENULLP, TFTRANSFORMH_MSGENULLP);
+  ASSERT (*tfp == NULL, status, TFTRANSFORMH_EALLOCP, TFTRANSFORMH_MSGEALLOCP);
 
 
   /*  Assign memory for *tfp   */
@@ -57,7 +57,7 @@ LALCreateTFPlane (
   
   /*  Make sure that the allocation was succesful */
   if ( !(*tfp) ){
-     ABORT (status, TFTRANSFORM_EMALLOC, TFTRANSFORM_MSGEMALLOC);
+     ABORT (status, TFTRANSFORMH_EMALLOC, TFTRANSFORMH_MSGEMALLOC);
   }
 
   /* assign memory for params field */
@@ -67,7 +67,7 @@ LALCreateTFPlane (
   /*  Make sure that the allocation was succesful */
   if ( !((*tfp)->params) ){
     LALFree ( *tfp );
-    ABORT (status, TFTRANSFORM_EMALLOC, TFTRANSFORM_MSGEMALLOC);
+    ABORT (status, TFTRANSFORMH_EMALLOC, TFTRANSFORMH_MSGEMALLOC);
   }
 
 
@@ -94,7 +94,7 @@ LALCreateTFPlane (
     /* Must free storage pointed to by *tfp */
     LALFree ( (*tfp)->params );
     LALFree ( *tfp );
-    ABORT (status, TFTRANSFORM_EMALLOC, TFTRANSFORM_MSGEMALLOC);
+    ABORT (status, TFTRANSFORMH_EMALLOC, TFTRANSFORMH_MSGEMALLOC);
   }
  
 

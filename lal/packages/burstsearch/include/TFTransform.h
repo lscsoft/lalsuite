@@ -23,17 +23,17 @@ NRCSID (TFTRANSFORMH, "$Id$");
 
 
 /******** <lalErrTable file="TFTransformHErrTab"> ********/
-#define TFTRANSFORM_ENULLP       1
-#define TFTRANSFORM_EPOSARG      2
-#define TFTRANSFORM_EALLOCP      4
-#define TFTRANSFORM_EMALLOC      8
-#define TFTRANSFORM_EINCOMP      16
+#define TFTRANSFORMH_ENULLP       1
+#define TFTRANSFORMH_EPOSARG      2
+#define TFTRANSFORMH_EALLOCP      4
+#define TFTRANSFORMH_EMALLOC      8
+#define TFTRANSFORMH_EINCOMP      16
 
-#define TFTRANSFORM_MSGENULLP      "Null pointer"
-#define TFTRANSFORM_MSGEPOSARG     "Argument must be positive"
-#define TFTRANSFORM_MSGEALLOCP     "Pointer has already been allocated, should be null"
-#define TFTRANSFORM_MSGEMALLOC     "Malloc failure"
-#define TFTRANSFORM_MSGEINCOMP     "Incompatible arguments"
+#define TFTRANSFORMH_MSGENULLP      "Null pointer"
+#define TFTRANSFORMH_MSGEPOSARG     "Argument must be positive"
+#define TFTRANSFORMH_MSGEALLOCP     "Pointer has already been allocated, should be null"
+#define TFTRANSFORMH_MSGEMALLOC     "Malloc failure"
+#define TFTRANSFORMH_MSGEINCOMP     "Incompatible arguments"
 /******** </lalErrTable> ********/
 
 
