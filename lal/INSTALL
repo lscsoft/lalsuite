@@ -257,16 +257,13 @@ System-specific installation instructions:
 
 SGI running IRIX 6.5.3 with gcc:
 
-  * Include the flag -n32 the list of compiler flags in the environment CFLAGS.
-
-  * Make sure that the compiler used is gcc by setting the environment CC to
-    gcc.
+  * Configure with the option --with-cc="gcc -n32".
 
 
 Alpha running Linux with ccc --- making shared libraries:
 
   * Problem: libtool doesn't know that ccc makes position-independent code
-    by default (at least I hope it does).
+    by default (I hope ccc makes PIC by default...).
 
   * Solution: trick the configure script into thinking that you are using
     OSF/1 by using the --host option:
