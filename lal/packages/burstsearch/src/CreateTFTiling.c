@@ -102,9 +102,9 @@ LALCreateTFTiling (
    */
 
 
-  /* lowest and highest frequency to be used */
+  /* lowest and highest frequency to be used. */
   flow = input->flow;
-  fhigh = input->flow + input->deltaF*(REAL8)(input->length);
+  fhigh = input->flow + (REAL8)(input->length);
 
   /* number of frequency bins to be used in computation */
   nf = input->length;
@@ -251,7 +251,8 @@ LALCreateTFTiling (
 	  while (tstart <= timeBins - deltat)
 	    {
 	      deltaf=input->minFreqBins;
-	      while (deltaf <= freqBins && deltaf/(*thisPlane)->params->deltaT < input->maxTileBand)
+	      while (deltaf <= freqBins && 
+                  deltaf/(*thisPlane)->params->deltaT < input->maxTileBand)
 		{
 		  incrementF = 1+deltaf/input->overlapFactor;
 		  fstart=0;

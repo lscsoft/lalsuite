@@ -29,7 +29,8 @@ NRCSID (EPSEARCHC, "$Id$");
 
 extern INT4 lalDebugLevel;
 
-static void EPMedian(REAL4 *ans, REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *status);
+static void EPMedian(REAL4 *ans, REAL4 *p, INT4 j, INT4 flength, 
+    INT4 numSegs, LALStatus *status);
 static void EPClean(INT4 freqcl,  COMPLEX8FrequencySeries *freqSeries);
 
 /****************************************************************
@@ -105,7 +106,7 @@ void
 EPSearch (
         LALStatus               *status,
         EPSearchParams          *params,
-        SnglBurstTable             **burstEvent,
+        SnglBurstTable         **burstEvent,
         UINT4                    tmpDutyCycle
         )
 /******** </lalVerbatim> ********/
@@ -113,8 +114,8 @@ EPSearch (
     INT4                      i,j,freqcl;
     REAL4                     redummy, imdummy;
     EPDataSegment            *dummySegment     = NULL;
-    SnglBurstTable               *currentEvent     = NULL;
-    SnglBurstTable               *prevEvent        = NULL;
+    SnglBurstTable           *currentEvent     = NULL;
+    SnglBurstTable           *prevEvent        = NULL;
     COMPLEX8FrequencySeries  *fseries;
     RealDFTParams            *dftparams        = NULL;
     LALWindowParams           winParams;
@@ -130,14 +131,14 @@ EPSearch (
 
     /* Set up the window parameters */
     winParams.type=params->winParams.type;
-    winParams.length=params->ntotT;
+    winParams.length=2 * params->ntotT;
 
     /* assign temporary memory for the frequency data */
     fseries = (COMPLEX8FrequencySeries *) LALMalloc (sizeof(COMPLEX8FrequencySeries));
     strncpy( fseries->name, "anonymous", LALNameLength * sizeof(CHAR) );
     fseries->data = NULL;
     LALCCreateVector (status->statusPtr, &fseries->data, 
-        params->initParams->numPoints/2 + 1);
+        params->initParams->numPoints + 1);
     CHECKSTATUSPTR (status);
 
     /* create the dft params */
@@ -257,33 +258,12 @@ EPSearch (
     for ( i=0 ; i<(INT4)tmpDutyCycle ; i++)
     {
 
-      /*
-       * 
-       * determine the type of run we're doing:  
-       *                                         0. Analyze data;
-       *                                         1. Gaussian Sim;  
-       *                                         2. Injection;
-       *                                         
-       *
-       */
-      
-      if ( params->simType == 1 ) 
-      {
-        /* point dummySegment to the segment to analyze */
-        dummySegment = params->epSegVec->data;
-      }
-      else
-      {
-        /* point dummySegment to the segment to analyze */
-        dummySegment = params->epSegVec->data + params->currentSegment + i;
-
-        /* if we're doing simulated injections */
-        if ( params->simType == 2 ) {
-
-        }
-      }
+      /* point dummySegment to the segment to analyze */
+      dummySegment = params->epSegVec->data + params->currentSegment + i;
 
       /* compute the DFT of input time series */
+      LALInfo(status->statusPtr, "Computing the frequency series");
+      CHECKSTATUSPTR (status);
       LALComputeFrequencySeries (status->statusPtr, fseries, 
           dummySegment->data, dftparams);
       CHECKSTATUSPTR (status);
@@ -322,17 +302,24 @@ EPSearch (
 
       /* create time-frequency tiling of plane.  */
       if ( params->tfTiling == NULL ){
-        params->tfTilingInput->deltaF=fseries->deltaF;
-        LALCreateTFTiling (status->statusPtr, &(params->tfTiling), params->tfTilingInput);
+        /* the factor of 2 here is to account for the overlapping */
+        params->tfTilingInput->deltaF=2.0*fseries->deltaF;
+        LALCreateTFTiling (status->statusPtr, &(params->tfTiling), 
+            params->tfTilingInput);
         CHECKSTATUSPTR (status);
       }
 
       /* compute the TFplanes for the data segment */
+      LALInfo(status->statusPtr, "Computing the TFPlanes");
+      CHECKSTATUSPTR (status);
       LALComputeTFPlanes (status->statusPtr, params->tfTiling, fseries);
       CHECKSTATUSPTR (status);
 
       /* search these planes */
-      LALComputeExcessPower (status->statusPtr, params->tfTiling, params->compEPInput);
+      LALInfo(status->statusPtr, "Computing the excess power");
+      CHECKSTATUSPTR (status);
+      LALComputeExcessPower (status->statusPtr, params->tfTiling, 
+          params->compEPInput);
       CHECKSTATUSPTR (status);
 
       /* compute the likelihood for slightly better detection method */
@@ -342,22 +329,18 @@ EPSearch (
        */
 
       /* sort the results. */
+      LALInfo(status->statusPtr, "Sorting TFTiling");
+      CHECKSTATUSPTR (status);
       LALSortTFTiling (status->statusPtr, params->tfTiling);
       CHECKSTATUSPTR (status);
-
-
-      /* count the number of events  */
-      /* change alphaThreshold to match with confidence */
-      /*
-       * LALCountEPEvents(status->statusPtr, &(params->numEvents), 
-       * params->tfTiling, params->alphaThreshold); 
-       * CHECKSTATUSPTR (status);
-       */
 
       /* determine the weighting for each tile */
       LALWeighTFTileList ( status->statusPtr, params->tfTiling, 10000);
       CHECKSTATUSPTR (status);
 
+      /* convert the TFTiles into sngl_burst events for output */
+      LALInfo(status->statusPtr, "Converting times into sngl_burst events");
+      CHECKSTATUSPTR (status);
       {
         TFTile *thisTile = params->tfTiling->firstTile;
         INT4 tileCount   = 0;
@@ -380,13 +363,15 @@ EPSearch (
           /* allocate memory for the burst event */
           if ( (*burstEvent) == NULL )
           {
-            currentEvent=(*burstEvent)=(SnglBurstTable *) LALMalloc( sizeof(SnglBurstTable) );
+            currentEvent=(*burstEvent)=(SnglBurstTable *) 
+              LALMalloc( sizeof(SnglBurstTable) );
           }
           else 
           {
-            currentEvent = (SnglBurstTable *) LALMalloc( sizeof(SnglBurstTable) );
+            currentEvent = (SnglBurstTable *) 
+              LALMalloc( sizeof(SnglBurstTable) );
           }
-          
+
           /* build a burst event from TFTile */
           LALTFTileToBurstEvent(status->statusPtr, currentEvent, thisTile,
               tstartNS, params); 
@@ -405,7 +390,6 @@ EPSearch (
       params->tfTiling->planesComputed=FALSE;
       params->tfTiling->excessPowerComputed=FALSE;
       params->tfTiling->tilesSorted=FALSE;
-
     }
   
     nevents = 0;
@@ -417,9 +401,11 @@ EPSearch (
 	while ( (dumevents != nevents) && j < 500) 
 	{
 	  dumevents = nevents;
-	  LALSortSnglBurst(status->statusPtr, burstEvent, LALCompareSnglBurstByTimeAndFreq);
+	  LALSortSnglBurst(status->statusPtr, burstEvent, 
+              LALCompareSnglBurstByTimeAndFreq);
 	  CHECKSTATUSPTR (status);
-	  LALClusterSnglBurstTable(status->statusPtr, *burstEvent, &nevents);
+	  LALClusterSnglBurstTable(status->statusPtr, *burstEvent, 
+              &nevents);
 	  CHECKSTATUSPTR (status);
 	  j++;
 	}
@@ -452,7 +438,8 @@ EPSearch (
 /* assumes inputs are positive, sorts in descending order    */
 /*************************************************************/
 
-static void EPMedian(REAL4 *ans, REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *status)
+static void EPMedian(REAL4 *ans, REAL4 *p, INT4 j, INT4 flength, 
+    INT4 numSegs, LALStatus *status)
 {
     /* p points to array of power spectra data over time slices */
     /* j is desired frequency offset into power spectra array   */
@@ -732,7 +719,7 @@ void EPInitSearch(
     params->currentSegment  = 0;
     params->numEvents       = 0;
     params->searchMaster    = 0;
-    params->tfTilingInput->maxTileBand = 64.0;
+    params->tfTilingInput->maxTileBand = 128.0;
 
 
     DETATCHSTATUSPTR (status);
@@ -785,6 +772,8 @@ void EPConditionData(
      * end because of the Butterworth filter corruption.  As a result,
      * we should have 2 * ovrlap more points than one expects
      *
+     * This changes with new time-frequency plane construction
+     *
      ****************************************************************/
 
     if ( series->data->length < 
@@ -815,10 +804,14 @@ void EPConditionData(
             
     /* Point dummyData ovrlap into series to avoid corruption */
     dummyData = series->data->data;
-    dummyData += (params->ovrlap);
+    /* no need for the next line with segments twice as long 
+     * dummyData += (params->ovrlap);
+     */
     dataTimeNS  = 1000000000L * (INT8) series->epoch.gpsSeconds;
     dataTimeNS += (INT8) series->epoch.gpsNanoSeconds;
-    dataTimeNS += (INT8) (1e9 * params->ovrlap * series->deltaT);
+    /* no need for the next line with segments twice as long 
+     * dataTimeNS += (INT8) (1e9 * params->ovrlap * series->deltaT);
+     */
 
     /****************************************************************
      *
@@ -834,6 +827,7 @@ void EPConditionData(
     {
         /* point to current segment */
         EPDataSegment *dummySegment = dataSegVec->data + i;
+        INT4 ptsPerSeg = 2 * params->initParams->numPoints;
 
         /* 
          * Would only have relevance in a standalone code.  For wrapperAPI,  
@@ -844,11 +838,11 @@ void EPConditionData(
         dummySegment->number = i;
 
         /* copy the ifodmro */
-        for ( j = 0; j < params->initParams->numPoints ; ++j)
+        for ( j = 0; j < ptsPerSeg ; ++j)
         {
             dummySegment->data->data->data[j] = (REAL4) dummyData[j];
         }
-        dummySegment->data->data->length = params->initParams->numPoints;
+        dummySegment->data->data->length = ptsPerSeg;
         dummyData += (params->initParams->numPoints - params->ovrlap);
 
 
@@ -873,11 +867,11 @@ void EPConditionData(
         dummySegment->data->f0 = 0.0;
 
       /* copy the spectrum:  this does nothing at the moment */
-      dummySegment->spec->data->length = (params->initParams->numPoints/2 + 1);
+      dummySegment->spec->data->length = (ptsPerSeg/2 + 1);
       strncpy( dummySegment->spec->name, INPUTNAME_SPECTRUM,
           LALNameLength * sizeof(CHAR) );
       dummySegment->spec->deltaF = 1.0 / 
-          ( series->deltaT * (REAL4) params->initParams->numPoints );
+          ( series->deltaT * (REAL4) ptsPerSeg );
 
       dummySegment->spec->epoch.gpsSeconds =
           dummySegment->data->epoch.gpsSeconds;

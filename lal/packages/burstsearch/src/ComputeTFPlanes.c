@@ -77,7 +77,9 @@ LALComputeTFPlanes (
       transformparams.dftParams=*thisDftParams;
 
       /* Compute TF transform */
-      LALFreqSeriesToTFPlane( status->statusPtr, *thisPlane, freqSeries, 
+      LALInfo(status->statusPtr, "Converting Frequency series to TFPlane");
+      CHECKSTATUSPTR (status);
+      LALModFreqSeriesToTFPlane( status->statusPtr, *thisPlane, freqSeries, 
                            &transformparams); 
       CHECKSTATUSPTR (status);
     }

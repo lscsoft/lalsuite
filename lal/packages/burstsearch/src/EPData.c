@@ -65,15 +65,15 @@ LALCreateEPDataSegmentVector (
     segPtr[i].resp->data        = NULL;
 
     LALCreateVector (status->statusPtr, 
-        &segPtr[i].data->data, params->numPoints);
+        &segPtr[i].data->data, 2 * params->numPoints);
     CHECKSTATUSPTR (status);
 
     LALCreateVector (status->statusPtr, 
-        &segPtr[i].spec->data, params->numPoints/2 + 1);
+        &segPtr[i].spec->data, params->numPoints + 1);
     CHECKSTATUSPTR (status);
 
     LALCCreateVector (status->statusPtr, 
-        &segPtr[i].resp->data, params->numPoints/2 + 1);
+        &segPtr[i].resp->data, params->numPoints + 1);
     CHECKSTATUSPTR (status);
     
   }
