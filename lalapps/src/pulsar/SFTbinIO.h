@@ -113,7 +113,7 @@ extern "C" {
  * 6. Assignment of Id string using NRCSID()  
  */
   
-NRCSID (SFTBINH, "$Id$");
+NRCSID (SFTBINIOH, "$Id$");
   
 /*
  * 7. Error codes and messages. This must be auto-extracted for 
