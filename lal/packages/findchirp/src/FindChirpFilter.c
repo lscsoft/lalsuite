@@ -752,9 +752,12 @@ LALFindChirpFilterSegment (
           {
             thisEvent->chisq   = 0;
           }
-          thisEvent->sigma   = norm;
-          thisEvent->effDist = (input->fcTmplt->tmpltNorm * 
-              input->segment->segNorm * input->segment->segNorm) / thisEvent->snrsq;
+          /* XXX fixed bug found by Nelson: double check this with notes */
+          thisEvent->sigma   = sqrt( norm * input->segment->segNorm * 
+              input->segment->segNorm * input->fcTmplt->tmpltNorm );
+          thisEvent->effDist = 
+            (input->fcTmplt->tmpltNorm * input->segment->segNorm * 
+             input->segment->segNorm) / thisEvent->snrsq;
           thisEvent->effDist = sqrt( thisEvent->effDist );
 
           thisEvent->snrsq  *= norm;
@@ -810,9 +813,12 @@ LALFindChirpFilterSegment (
     {
       thisEvent->chisq = 0;
     }
-    thisEvent->sigma   = norm;
-    thisEvent->effDist = (input->fcTmplt->tmpltNorm * 
-          input->segment->segNorm * input->segment->segNorm) / thisEvent->snrsq;
+    /* XXX fixed bug found by Nelson: double check this with notes */
+    thisEvent->sigma   = sqrt( norm * input->segment->segNorm * 
+        input->segment->segNorm * input->fcTmplt->tmpltNorm );
+    thisEvent->effDist = 
+      (input->fcTmplt->tmpltNorm * input->segment->segNorm * 
+       input->segment->segNorm) / thisEvent->snrsq;
       thisEvent->effDist = sqrt( thisEvent->effDist );
     thisEvent->snrsq  *= norm;
   }    
