@@ -1451,7 +1451,7 @@ int write_timeseries(int iSFT){
     if (!doxaxis) {
       for (i=0;i<header.nsamples;i++) {    
 	pw=timeSeries->data->data[i];
-	fprintf(fp,"%f\n",pw);
+	fprintf(fp,"%16.9f\n",pw);
       }
     }
     else {
