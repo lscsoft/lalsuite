@@ -236,9 +236,13 @@ else:
                 outf = open(outputPath, "w")
         except:
                 print >>sys.stderr, "Error opening %s for writing" % outputPath
+                sys.exit(1)
 
 for s in outputList:
         print >>outf, s.strip()
+
+if outf != sys.stdout:
+        outf.close()
 
 # try to cleanup nicely
 try:
