@@ -773,6 +773,7 @@ main (INT4 argc, CHAR **argv )
 	else
 	{
           randIn.param.massChoice = m1Andm2;
+	   randIn.param.massChoice = totalMassAndEta;
 	}
 	 /* Let's compute the random parameters of the waveform to inject*/
 	 for (i=0; i<signal.length; i++) signal.data[i] = 0.;       
@@ -1422,9 +1423,11 @@ void Help(	InspiralCoarseBankIn   coarseIn,
   fprintf(stderr,"     --PrintFilter	: Print filters giving the best overlap template 	(%d)\n", BANKEFFICIENCY_PRINTFILTER);
   fprintf(stderr,"     --print-ambiguity-function : print ambiguity function (bank overlap)	(%d)\n", BANKEFFICIENCY_AMBIGUITYFUNCTION);*/
 
-  fprintf(stderr,"     --print-bank	: Print the bank in ascii and xml format (%s)		(%d)\n", 
-		  BANKEFFICIENCY_PRINTBANK_FILEASCII,
-		  BANKEFFICIENCY_PRINTBANK);
+  fprintf(stderr,"     --print-bank	: Print the bank in ascii format (%s)		\n",  BANKEFFICIENCY_PRINTBANK_FILEASCII);
+  fprintf(stderr,"     --print-bank-xml	: Print the bank in xml format (%s)		\n",  BANKEFFICIENCY_PRINTBANK_FILEXML);
+  fprintf(stderr,"    --print-result-xml  : Print result in xml format (%s)		\n",  BANKEFFICIENCY_PRINTRESULT_FILEXML);
+
+
   fprintf(stderr,"     --print-overlap	: Print the overlap given by the best template	(%s)	(%d)\n", 
 		  BANKEFFICIENCY_PRINTOVERLAP_FILE, 
 		  BANKEFFICIENCY_PRINTOVERLAP);
