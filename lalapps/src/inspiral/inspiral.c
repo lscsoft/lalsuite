@@ -188,8 +188,7 @@ int main( int argc, char *argv[] )
   /* create the search summary and zero out the summvars table */
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
-  memset( &(searchsummvars.searchSummvarsTable), 0, 
-      sizeof(SearchSummvarsTable) );
+  searchsummvars.searchSummvarsTable = NULL;
 
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
