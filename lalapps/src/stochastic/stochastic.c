@@ -86,7 +86,7 @@ INT4 calibDuration = 60;
 INT4 calibOffset = 0;
 CHAR frameCache1[100] = "cachefiles/H-730793097.cache";
 CHAR frameCache2[100] = "cachefiles/L-730793097.cache";
-CHAR calCache1[100] = "calibration/H1-CAL-V03-729273600-734367600.cache";
+CHAR calCache1[100] = "calibration/H1-CAL-V03-729273600-734367600_smooth.cache";
 CHAR calCache2[100] = "calibration/L1-CAL-V03-729273600-734367600.cache";
 CHAR channel1[LALNameLength]= "H1:LSC-AS_Q";
 CHAR channel2[LALNameLength]= "L1:LSC-AS_Q";
@@ -122,7 +122,8 @@ INT4  highPassOrder = 6;
 /* number of bins for frequency masking */ 
 INT4 maskBin = 0;
 
-
+/* output file */
+CHAR outputFilePath[200] = "/usr1/tregimba/";
 
 INT4 main(INT4 argc, CHAR *argv[])
  {
@@ -1038,8 +1039,8 @@ INT4 main(INT4 argc, CHAR *argv[])
        {	
        	/* open output file */
 	LALSnprintf( outputFilename, LALNameLength, 
-                     "output/stoch-%s%s-%d-%d-%d.dat",
-                      ifo1, ifo2, (INT4)startTime, (INT4)stopTime, MCLoop);
+                     "%s/stoch-%s%s-%d-%d-%d.dat",
+                      outputFilePath, ifo1, ifo2, (INT4)startTime, (INT4)stopTime, MCLoop);
 
         /* simulate signal */
 	if (inject_flag)
@@ -1314,6 +1315,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
       {"scale-factor", required_argument, 0, 'o'},
       {"seed", required_argument, 0, 'g'},
       {"number-of-injection", required_argument, 0, 'N'},
+      {"directory for output files", required_argument, 0, 'S'},
       {"debug-level", required_argument, 0, 'z'},
       {"version", no_argument, 0, 'V'},
       {0, 0, 0, 0}
@@ -1324,7 +1326,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     c = getopt_long(argc, argv, 
-                    "ht:T:l:A:a:f:F:w:k:p:P:i:I:d:D:r:R:c:b:o:g:N:z:V",
+                    "ht:T:l:A:a:f:F:w:k:p:P:i:I:d:D:r:R:c:b:o:g:N:S:z:V",
  		    long_options, &option_index);
 
     if (c == -1)
@@ -1504,6 +1506,11 @@ void parseOptions(INT4 argc, CHAR *argv[])
 		NLoop = atoi(optarg);
 		break;
 
+        case 'S':
+                 /* directory for output files */
+                 strncpy(outputFilePath, optarg, LALNameLength);
+                 break;
+
         case 'z':
 		/* set debug level */
 		set_debug_level( optarg );
@@ -1563,7 +1570,7 @@ void displayUsage(INT4 exitcode)
   fprintf(stderr, " -o                    scale factor for injection\n");
   fprintf(stderr, " -g                    seed\n");
   fprintf(stderr, " -N                    number of trial for MC\n");
-        
+  fprintf(stderr, " -S                    directory for output files\n");        
   exit(exitcode);
 }
 
