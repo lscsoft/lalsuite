@@ -134,7 +134,7 @@ FUNC (
 #else
   tbeg = SECNAN_TO_I8TIME( vect->GTimeS, vect->GTimeN );
 #endif
-  if ( tnow < tbeg )
+  if ( tnow + 1000 < tbeg )  /* added 1000 ns to account for double precision */
   {
     ABORT( status, FRAMESTREAMH_ETIME, FRAMESTREAMH_MSGETIME );
   }
