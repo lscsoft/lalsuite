@@ -102,26 +102,6 @@ AC_DEFUN(LALAPPS_DISABLE_FRAME,
  frame=false
 ])
 
-
-AC_DEFUN(LALAPPS_CHECK_LAL,
-[AC_MSG_CHECKING([for -llal])
-AC_CACHE_VAL(ac_cv_lib_lal,
-[ac_save_LIBS="$LIBS"
-LIBS="-llal $LIBS"
-AC_TRY_LINK([int lalDebugLevel = 0; char LALVersion();], LALVersion();,
-eval "ac_cv_lib_lal=yes", eval "ac_cv_lib_lal=no")
-LIBS="$ac_save_LIBS"
-])dnl
-if eval "test \"`echo '$ac_cv_lib_lal'`\" = yes"; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAVE_LIBLAL, 1, [Define if you have the lal library (-llal).])
-  LIBS="-llal $LIBS"
-else
-  AC_MSG_RESULT(no)
-  AC_MSG_ERROR(could not find the LAL library)
-fi
-])
-
 ## libtool.m4 - Configure libtool for the host system. -*-Shell-script-*-
 ## Copyright 1996, 1997, 1998, 1999, 2000, 2001
 ## Free Software Foundation, Inc.
