@@ -63,7 +63,7 @@ int main( ){
   static LALStatus status;
   SSSimStochBGOutput MCoutput;
   StochasticMCParams MCparams;
-  StochasticMCInput MCinput;
+  StochasticMCSInput MCinput;
 
   //output structure
   REAL4TimeSeries SimStochBG1;
@@ -327,7 +327,7 @@ int main( ){
   static LALStatus status;
   SSSimStochBGOutput MCoutput;
   StochasticMCParams MCparams;
-  StochasticMCSInput MCinput;
+  StochasticMCInput MCinput;
   //output structure
   REAL4TimeSeries SimStochBG1;
   REAL4TimeSeries SimStochBG2;
@@ -446,7 +446,7 @@ LALResponseConvert()
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
-#include <FrameL.h>
+/* #include <FrameL.h> */
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -464,7 +464,7 @@ LALResponseConvert()
 #include <lal/PrintVector.h>
 #include <lal/Random.h>
 #include <lal/SimulateSB.h>
-#include "StochasticMC.h"
+#include <lal/StochasticMC.h>
 
 
 NRCSID(STOCHASTICMCC, "$Id$");
