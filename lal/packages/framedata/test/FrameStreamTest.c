@@ -44,8 +44,7 @@ INT4 lalDebugLevel = LALWARNING | LALINFO;
 int main( void )
 {
   static LALStatus status;
-  /* const UINT4 npts = 1048576; */
-  const UINT4 npts = 30 * 16384;
+  const UINT4 npts = 1048576;
   FrChanIn  chanin = { CHANNEL, ADCDataChannel };
   FrStream *stream = NULL;
   FrPos     frpos;
@@ -67,12 +66,8 @@ int main( void )
   TESTSTATUS( &status );
 
   /* seek to some initial time */
-  /*
   epoch.gpsSeconds     = 600000051;
   epoch.gpsNanoSeconds = 123456789;
-  */
-  epoch.gpsSeconds     = 600000000;
-  epoch.gpsNanoSeconds = 0;
   LALFrSeek( &status, &epoch, stream );
   TESTSTATUS( &status );
 
