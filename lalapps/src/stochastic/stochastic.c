@@ -107,7 +107,7 @@ REAL4 omegaRef = 1.;
 /* monte carlo parameters */
 /* at the moment the code cannot do monte carlo with overlapped Hann window */
 REAL4 scaleFactor = 1.;
-INT4 seed = 173;
+INT4 seed = 1;
 INT4 NLoop = 1;
 
 /* window parameters */
@@ -262,9 +262,11 @@ INT4 main(INT4 argc, CHAR *argv[])
      fscanf(stdin,"%d\n",&startTime, &startTime);
      fscanf(stdin,"%d\n",&stopTime, &stopTime);
      fscanf(stdin,"%s\n%s\n",&frameCache1,&frameCache2);
-     fscanf(stdin,"%s\n%s\n",&calCache1,&calCache2);
- 
+     fscanf(stdin,"%s\n%s\n",&calCache1,&calCache2); 
+     if (inject_flag)
+       { seed = 2 * N * seed;}
    }
+
        
   if (verbose_flag)
    {fprintf(stdout, "Calculating number of segments...\n");}
@@ -900,8 +902,7 @@ INT4 main(INT4 argc, CHAR *argv[])
    ccIn.hBarTildeOne = &hBarTilde1;
    ccIn.hBarTildeTwo = &hBarTilde2;
    ccIn.optimalFilter = &optFilter;
- 
-	
+ 	
    
    /** loop over segments **/
    
@@ -977,7 +978,7 @@ INT4 main(INT4 argc, CHAR *argv[])
        LALCPrintFrequencySeries(&response2, "response2.dat");
       }
 
-     /* compute response function for MC*/
+     /* compute response function for MC */
       if (inject_flag)
        {
         if (verbose_flag)
@@ -1045,7 +1046,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	 {
 	  /* set parameters for monte carlo */
 	  SimStochBG1.epoch = SimStochBG2.epoch = gpsStartTime;
-      	  /* seed = (INT4)(time(NULL)); */
           SBParams.seed = seed ;
           /* define input structure for SimulateSB */
 	  SBInput.omegaGW = &MComegaGW;
