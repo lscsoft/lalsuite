@@ -2172,7 +2172,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
-        ADD_PROCESS_PARAM("float", "%e", highPassOrder);
+        ADD_PROCESS_PARAM("int", "%d", highPassOrder);
 
         break;
 
@@ -2226,7 +2226,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
-        ADD_PROCESS_PARAM("float", "%e", geoHighPassOrder);
+        ADD_PROCESS_PARAM("int", "%d", geoHighPassOrder);
 
         break;
 
@@ -2881,17 +2881,23 @@ static void readDataPair(LALStatus *status,
     fprintf(stdout, "Allocating memory for raw data streams...\n");
 
   /* allocate memory */
-  dataStreamOne = XLALCreateREAL4TimeSeries("Data Stream One", \
-      &bufferStartTime, 0, 1./sampleRate, &lalDimensionlessUnit, \
+  LALCreateREAL4TimeSeries(status->statusPtr, &dataStreamOne, \
+      "Data Stream One", bufferStartTime, 0, 1./sampleRate, \
+      lalDimensionlessUnit, \
       sampleRate * (params->duration + (2 * params->buffer)));
-  dataStreamTwo = XLALCreateREAL4TimeSeries("Data Stream Two", \
-      &bufferStartTime, 0, 1./sampleRate, &lalDimensionlessUnit, \
+  CHECKSTATUSPTR(status);
+  LALCreateREAL4TimeSeries(status->statusPtr, &dataStreamTwo, \
+      "Data Stream Two", bufferStartTime, 0, 1./sampleRate, \
+      lalDimensionlessUnit, \
       sampleRate * (params->duration + (2 * params->buffer)));
+  CHECKSTATUSPTR(status);
 
   /* allocate memory for geo double precision h(t) */
-  dataStreamGEO = XLALCreateREAL8TimeSeries("GEO Data Stream", \
-      &bufferStartTime, 0, 1./sampleRate, &lalDimensionlessUnit, \
+  LALCreateREAL8TimeSeries(status->statusPtr, &dataStreamGEO, \
+      "GEO Data Stream", bufferStartTime, 0, 1./sampleRate, \
+      lalDimensionlessUnit, \
       sampleRate * (params->duration + (2 * params->buffer)));
+  CHECKSTATUSPTR(status);
 
   if (vrbflg)
     fprintf(stdout, "Opening first frame cache...\n");
@@ -3079,9 +3085,12 @@ static void readDataPair(LALStatus *status,
   }
 
   /* clean up */
-  XLALDestroyREAL4TimeSeries(dataStreamOne);
-  XLALDestroyREAL4TimeSeries(dataStreamTwo);
-  XLALDestroyREAL8TimeSeries(dataStreamGEO);
+  LALDestroyREAL4TimeSeries(status->statusPtr, dataStreamOne);
+  CHECKSTATUSPTR(status);
+  LALDestroyREAL4TimeSeries(status->statusPtr, dataStreamTwo);
+  CHECKSTATUSPTR(status);
+  LALDestroyREAL8TimeSeries(status->statusPtr, dataStreamGEO);
+  CHECKSTATUSPTR(status);
 
   /* return status */
   DETATCHSTATUSPTR(status);
