@@ -65,12 +65,20 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 
 /*************************************************** </lalErrTable> */
 
+typedef enum
+{
+  LAL_METRIC_NONE = 0,
+  LAL_METRIC_PTOLE,		/* analytic ptolemaic approx for the metric */
+  LAL_METRIC_COHERENT_PTOLE,	/* numerical 'exact' metric using ptole-timing */
+  LAL_METRIC_COHERENT_EPHEM	/* numerical exact metric using ephemeris-timing */
+} LALMetricType;
+
 /* this structure is handed over to InitDopplerScan() */  
 typedef struct {
   REAL8 dAlpha;		/* step-sizes for manual stepping */
   REAL8 dDelta;
   
-  INT4 metricType;   	/* 0 = manual, 1 = PtoleMetric, 2 = CoherentMetric */
+  LALMetricType metricType;   	/* 0 = manual, 1 = PtoleMetric, 2 = CohMetric_ptole, .. */
   REAL8 metricMismatch;
   LIGOTimeGPS obsBegin; /* start-time of time-series */
   REAL8 obsDuration;	/* length of time-series in seconds */
@@ -117,15 +125,6 @@ typedef struct {
   DopplerScanGrid *grid; 	/* head of linked list of nodes */  
   DopplerScanGrid *gridNode;	/* pointer to current grid-node in grid */
 } DopplerScanState;
-
-
-typedef enum
-{
-  LAL_METRIC_NONE = 0,
-  LAL_METRIC_PTOLE,
-  LAL_METRIC_COHERENT,
-  LAL_METRIC_LAST
-} LALMetricType;
   
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{DopplerScanHV}}
@@ -140,7 +139,7 @@ void FreeDopplerScan (LALStatus *stat, DopplerScanState *scan);
 
 void ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input);
 
-void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *input, LALMetricType type);
+void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *input, LALMetricType metricType);
 
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}

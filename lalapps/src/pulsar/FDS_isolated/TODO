@@ -1,12 +1,10 @@
 TODO (ComputeFStatistic-related)
 -----
-* get rid of "coordinate-cut" limitations... (->LALNormalizeSkyPosition)
-
 * get rid of year-specification on command-line if possible (use ranges 00-04..)
 
 * quick-fix for mesh-covering problem at the equator?
 
-* clarify priorities between specifying Alpha+AlphaBand.. and a skyRegion
+* clarify priorities between specifying Alpha+AlphaBand.. and a skyRegion!!
 
 * metric-stuff
 	- debug, compare
@@ -32,3 +30,4 @@ done
 * adapt config-file more to python config-syntax
 * specify sky-regions by polygon 
 * implement new user-variable handling
+* get rid of "coordinate-cut" limitations... (seems to work so far)
