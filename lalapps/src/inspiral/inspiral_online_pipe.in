@@ -123,7 +123,7 @@ sinca_job.set_sub_file( basename + '.sinca' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
 
 # set the name of the run in the calibration file
-mkcalfac_job.add_opt(cp.get('pipeline','run'))
+mkcalfac_job.add_opt(cp.get('pipeline','run'),' ')
 
 # set up incas for single ifo mode
 sinca_job.add_opt('single-summ-value',' ')
