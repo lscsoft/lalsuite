@@ -1,10 +1,14 @@
 /*********************************************************************************/
-/*                    F-statistic generation code for known pulsars              */
-/*                                                                               */
-/*			      Y. Ioth, M.A. Papa, X. Siemens, R.Prix             */
-/*                                                                               */
-/*                 Albert Einstein Institute/UWM - started September 2002        */
-/*********************************************************************************/
+/** \file ComputeFStatistic.c
+ * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
+ * Implements the so-called "F-statistic" as introduced in JKS98.
+ *                                                                          
+ * \author		      Y. Ioth, M.A. Papa, X. Siemens, R.Prix        
+ *                                                                          
+ *                 Albert Einstein Institute/UWM - started September 2002   
+ *********************************************************************************/
+
+
 #include <lal/UserInput.h>
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>
@@ -18,7 +22,31 @@
 
 RCSID( "$Id$");
 
-/* BOINC should be set to 1 to be run under BOINC */
+/*----------------------------------------------------------------------*/
+/* conditional compilation-switches */
+
+/*
+#define NEARESTGRIDPOINTS_ON
+#define DEBG_FAFB                
+#define DEBG_ESTSIGPAR
+#define DEBG_SGV 
+*/
+
+/* If FILE_FILENAME is defined, then print the corresponding file  */
+#define FILE_FSTATS
+#define FILE_FMAX
+
+/*
+#define FILE_FLINES
+#define FILE_FTXT 
+#define FILE_PSD 
+#define FILE_PSDLINES 
+#define FILE_SPRNG 
+*/
+
+/*----------------------------------------------------------------------*/
+/* USE_BOINC should be set to 1 to be run under BOINC */
+
 #ifndef USE_BOINC
 #define USE_BOINC 0
 #endif
@@ -39,31 +67,9 @@ void use_boinc_filename0(char* orig_name);
 #endif /* USE_BOINC */
 
 
-/*
-#define NEARESTGRIDPOINTS_ON
+/*----------------------------------------------------------------------*/
+/* Error-codes */
 
-
-#define DEBG_FAFB                
-#define DEBG_ESTSIGPAR
-#define DEBG_SGV 
-*/
-
-/* If FILE_FILENAME is defined, then print the corresponding file  */
-#define FILE_FSTATS
-#define FILE_FMAX
-
-/*
-#define FILE_FLINES
-#define FILE_FTXT 
-#define FILE_PSD 
-#define FILE_PSDLINES 
-#define FILE_SPRNG 
-*/
-
-/********************************************************** <lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-***************************************************** <lalErrTable> */
 #define COMPUTEFSTATC_ENULL 		1
 #define COMPUTEFSTATC_ESYS     		2
 #define COMPUTEFSTATC_EINPUT   		3
@@ -71,11 +77,10 @@ void use_boinc_filename0(char* orig_name);
 #define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATC_MSGESYS		"System call failed (probably file IO)"
 #define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
-/*************************************************** </lalErrTable> */
-
 
 /*----------------------------------------------------------------------
- * User-variables: provided either by default, config-file or command-line */
+ * User-variables: can be set from config-file or command-line */
+
 INT4 uvar_Dterms;
 CHAR* uvar_IFO;
 BOOLEAN uvar_SignalOnly;
@@ -109,38 +114,34 @@ CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
 BOOLEAN uvar_searchNeighbors;
-
-/* try this */
 BOOLEAN uvar_openDX;
+
 /*----------------------------------------------------------------------*/
+/* some other global variables */
 
-FFT **SFTData=NULL;                 /* SFT Data for LALDemod */
-DemodPar *DemodParams  = NULL;      /* Demodulation parameters for LALDemod */
-LIGOTimeGPS *timestamps=NULL;       /* Time stamps from SFT data */
-LALFstat Fstat;
-AMCoeffs amc;
-REAL8 MeanOneOverSh=0.0;
-REAL8 Alpha,Delta;
-Clusters HFLines, HPLines;
+FFT **SFTData=NULL; 		/**< SFT Data for LALDemod */
+DemodPar *DemodParams  = NULL;	/**< Demodulation parameters for LALDemod */
+LIGOTimeGPS *timestamps=NULL;	/**< Time stamps from SFT data */
+LALFstat Fstat;			/**< output from LALDemod(): F-statistic and amplitudes Fa and Fb */
+AMCoeffs amc;			/**< amplitude-modulation coefficients (and derived quantities) */
+REAL8 Alpha,Delta;		/**< sky-position currently searched (equatorial coords, radians) */
+Clusters HFLines;		/**< stores information about outliers/clusters in F-statistic */
+Clusters HPLines;		/**< stores information about outliers/clusters in SFT-power spectrum */
 Clusters *highSpLines=&HPLines, *highFLines=&HFLines;
-/* #ifdef FILE_FMAX     */
-FILE *fpmax;
-/* #endif */
-/* #ifdef FILE_STATS */
-FILE *fpstat;
-/* #endif     */
-REAL8 medianbias=1.0;
 
-/* we use this to avoid closing then re-opening the same file */
-FILE *fp_mergedSFT=NULL;
+REAL8 medianbias=1.0;		/**< bias in running-median depending on window-size (set in NormaliseSFTDataRngMdn()) */
 
-DopplerScanState thisScan;
-ConfigVariables GV;
+FILE *fp_mergedSFT;		/**< input-file containing merged SFTs */
+FILE *fpmax;			/**< output-file: maximum of F-statistic over frequency-range */
+FILE *fpstat;			/**< output-file: F-statistic candidates and cluster-information */
 
+ConfigVariables GV;		/**< global container for various derived configuration settings */
+
+/*----------------------------------------------------------------------*/
 /* local prototypes */
+
 void CreateDemodParams (LALStatus *status);
-void AllocateMem (LALStatus *status);
-void SetGlobalVariables (LALStatus *status, ConfigVariables *cfg);
+void InitFStat (LALStatus *status, ConfigVariables *cfg);
 void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
 void Freemem (LALStatus *status);
 
@@ -156,16 +157,11 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
 INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
-INT4 NormaliseSFTData(void);
-
 void initUserVars (LALStatus *stat);
-
-/*----------------------------------------------------------------------
- * Helper function (Yousuke): 
- * Refine the skyRegion to search only at neighboring grid points of the 
- * center of the original skyRegion. 
- *----------------------------------------------------------------------*/
 void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
+
+/*----------------------------------------------------------------------*/
+/* some local defines */
 
 #define EPHEM_YEARS  "00-04"
 #define SFT_BNAME  "SFT"
@@ -175,24 +171,38 @@ void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan
 
 extern int vrbflg;
 
+/*----------------------------------------------------------------------*/
+/* empty structs for initialziations */
 
-/*----------------------------------------------------------------------
- * MAIN
- *----------------------------------------------------------------------*/
+DopplerScanState emptyScan;
+
+
+/*----------------------------------------------------------------------*/
+/* CODE starts here */
+/*----------------------------------------------------------------------*/
+
+/** 
+ * MAIN function of ComputeFStatistic code.
+ * Calculate the F-statistic over a given portion of the parameter-space
+ * and write a list of 'candidates' into a file(default: 'Fstats').
+ */
 int main(int argc,char *argv[]) 
 {
-  INT4 *maxIndex=NULL; /*  array that contains indexes of maximum of each cluster */
-  DopplerPosition dopplerpos;
+  LALStatus status = blank_status;	/* initialize status */
+
+  INT4 *maxIndex=NULL; 			/*  array that contains indexes of maximum of each cluster */
+  CHAR Fstatsfilename[256]; 		/* Fstats file name*/
+  CHAR Fmaxfilename[256]; 		/* Fmax file name*/
+  INT4 spdwn;				/* counter over spindown-params */
+  DopplerScanInit scanInit;		/* init-structure for DopperScanner */
+  DopplerScanState thisScan = emptyScan; /* current state of the Doppler-scan */
+  DopplerPosition dopplerpos;		/* current search-parameters */
   SkyPosition thisPoint;
-  CHAR Fstatsfilename[256];         /* Fstats file name*/
-  CHAR Fmaxfilename[256];           /* Fmax file name*/
-  INT4 s;
-  DopplerScanInit scanInit;
   LIGOTimeGPS t0, t1;
   REAL8 duration;
   FILE *fpOut=NULL;
-  UINT4 counter;
-  LALStatus status = blank_status;	/* initialize status */
+  UINT4 loopcounter;
+
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -217,28 +227,29 @@ int main(int argc,char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register all user-variable */
-  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
-  LAL_CALL (initUserVars (&status), &status); 	
+  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
+  LAL_CALL (initUserVars(&status), &status); 	
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);	
+  LAL_CALL (LALUserVarReadAllInput(&status, argc,argv), &status);	
 
-  if (uvar_help)
+  if (uvar_help)	/* if help was requested, we're done here */
     exit (0);
 
-  LAL_CALL ( SetGlobalVariables (&status, &GV), &status);
+  /* main initialization of the code: */
+  LAL_CALL ( InitFStat(&status, &GV), &status);
 
-  LAL_CALL ( AllocateMem(&status), &status);
-
+  /* read in SFT-data */
   if (ReadSFTData()) return 4;
 
-  /*  This fills-in highSpLines that are then used by NormaliseSFTRngMdn */
 #if 0
+  /*  This fills-in highSpLines that are then used by NormaliseSFTRngMdn */
   if (GV.SignalOnly!=1){
     if (EstimatePSDLines()) return 6;
   }
 #endif
 
+  /* normalize SFTs by running median */
   LAL_CALL (NormaliseSFTDataRngMdn(&status), &status);
 
 #ifdef FILE_FMAX  
@@ -268,7 +279,11 @@ int main(int argc,char *argv[])
   }
 #endif
   
-  /* prepare initialization of DopplerScanner to step through paramter space */
+  /*----------------------------------------------------------------------
+   * prepare initialization of the DopplerScanner to step through paramter space 
+   * In input-structure for this initialization is DopplerScanInit 
+   */
+  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
   scanInit.gridType = uvar_gridType;
@@ -277,38 +292,32 @@ int main(int argc,char *argv[])
   t0 = SFTData[0]->fft->epoch;
   t1 = SFTData[GV.SFTno-1]->fft->epoch;
   scanInit.obsBegin = t0;
-  LAL_CALL ( LALDeltaFloatGPS ( &status, &duration, &t1, &t0), &status);
+  LAL_CALL ( LALDeltaFloatGPS( &status, &duration, &t1, &t0), &status);
   scanInit.obsDuration = duration + GV.tsft;
   scanInit.fmax  = uvar_Freq;
-  if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
+  scanInit.fmax += uvar_FreqBand;
   scanInit.Detector = &GV.Detector;
   scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
   scanInit.skyRegion = GV.skyRegion;
-  scanInit.skyGridFile = uvar_skyGridFile;
+  scanInit.skyGridFile = uvar_skyGridFile;	/* if applicable */
 
-
-
-  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
-/*----------------------------------------------------------------------
- * Helper function (Yousuke): 
- * Refine the skyRegion to search only at neighboring grid points of the 
- * center of the original skyRegion. 
- *----------------------------------------------------------------------*/
   if ( uvar_searchNeighbors ) {
-    LAL_CALL ( InitDopplerScanOnRefinedGrid ( &status, &thisScan, &scanInit ), &status );
+    LAL_CALL ( InitDopplerScanOnRefinedGrid( &status, &thisScan, &scanInit ), &status );
   } else {
-    LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
+    LAL_CALL ( InitDopplerScan( &status, &thisScan, &scanInit), &status); 
   }
-  /*----------------------------------------------------------------------*/
   if (lalDebugLevel) LALPrintError ("done.\n");
-  if ( uvar_outputSkyGrid ) {
-    LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-    LAL_CALL (writeSkyGridFile ( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
-    LALPrintError (" done.\n\n");
-  }
 
+  /* should we write the sky-grid to disk? */
+  if ( uvar_outputSkyGrid ) 
+    {
+      LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+      LAL_CALL (writeSkyGridFile( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
+      LALPrintError (" done.\n\n");
+    }
 
-  
+  /* if a complete output of the F-statistic file was requested,
+   * we open and prepare the output-file here */
   if (uvar_outputFstat) 
     {
       if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
@@ -337,13 +346,16 @@ int main(int argc,char *argv[])
 		   "interleaving = field\n"
 		   "end\n" );
 	}
-      
     } /* if outputFstat */
 
 
   if (lalDebugLevel) LALPrintError ("\nStarting main search-loop.. \n");
 
-  counter = 0;
+  /*----------------------------------------------------------------------
+   * main loop: demodulate data for each point in the sky-position grid
+   * and for each value of the frequency-spindown
+   */
+  loopcounter = 0;
   while (1)
     {
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
@@ -352,24 +364,25 @@ int main(int argc,char *argv[])
       if (thisScan.state == STATE_FINISHED)
 	break;
 
-      LALNormalizeSkyPosition (&status, &thisPoint, &(dopplerpos.skypos) );
+      LALNormalizeSkyPosition(&status, &thisPoint, &(dopplerpos.skypos) );
 
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
       
       LAL_CALL (CreateDemodParams(&status), &status);
       /* loop over spin params */
-      for(s=0;s<=GV.SpinImax;s++)
+      for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
 	{
-	  DemodParams->spinDwn[0]=uvar_f1dot + s*uvar_df1dot;
-	  LAL_CALL (LALDemod (&status, &Fstat, SFTData, DemodParams), &status);
+	  DemodParams->spinDwn[0] = uvar_f1dot + spdwn * uvar_df1dot;
+
+	  LAL_CALL ( LALDemod(&status, &Fstat, SFTData, DemodParams), &status);
 
 	  /*  This fills-in highFLines that are then used by discardFLines */
 	  if (GV.FreqImax > 5) {
 	    LAL_CALL (EstimateFLines(&status), &status);
 	  }
 	  
-	  /* now, if user requested it, we output ALL F-statistic results */
+	  /* if user requested it, we output ALL F-statistic results */
 	  if (fpOut) 
 	    {
 	      INT4 i;
@@ -381,47 +394,40 @@ int main(int argc,char *argv[])
 
 	    } /* if outputFstat */
 
-
-
 	  
 	  /*  This fills-in highFLines  */
-	  if (highFLines != NULL && highFLines->Nclusters > 0){
+	  if (highFLines != NULL && highFLines->Nclusters > 0)
+	    {
+	      maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
 	    
-	    maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
-	    
-	    /*  for every cluster writes the information about it in file Fstats */
+	      /*  for every cluster writes the information about it in file Fstats */
+	      if (writeFLines(maxIndex)){
+		fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
+		return 6;
+	      }
+	   	  
+	      if (uvar_EstimSigParam)
+		{
+		  if(writeFaFb(maxIndex)) return 255;
+		  if (EstimateSignalParameters(maxIndex)) return 7;
+		} /* if signal-estimation */
+	  
+	      if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1))
+		LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
+	  
+	      LALFree(maxIndex);
+	    } /* if highFLines found */
 
-	    if (writeFLines(maxIndex)){
-	      fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
-	      return 6;
-	    }
-	  }
 	  
-	  if( uvar_EstimSigParam &&(highFLines !=NULL) && (highFLines->Nclusters >0))
-	    if(writeFaFb(maxIndex)) return 255;
-	  
-	  
-	  if( uvar_EstimSigParam &&(highFLines !=NULL) &&(highFLines->Nclusters >0)) {
-	    if (EstimateSignalParameters(maxIndex)) return 7;
-	  }
-	  
-	  if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1))
-	    LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
-	  
-	  if (highFLines != NULL && highFLines->Nclusters > 0){
-	    LALFree(maxIndex);
-	  }
-
 	  /* Set the number of the clusters detected to 0 at each iteration 
 	     of the sky-direction and the spin down */
 	  highFLines->Nclusters=0;
 
 	} /* For GV.spinImax */
 
-      counter ++;
+      loopcounter ++;
       if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
-					(100.0* counter / thisScan.numGridPoints));
-      
+					(100.0* loopcounter / thisScan.numGridPoints));
     } /*  while SkyPos */
 
   if (uvar_outputFstat && fpOut)
@@ -435,7 +441,11 @@ int main(int argc,char *argv[])
 #ifdef FILE_FSTATS  
   fclose(fpstat);
 #endif
-  LAL_CALL (Freemem(&status), &status);
+
+  /* Free DopplerScan-stuff (grid) */
+  LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
+
+  LAL_CALL ( Freemem(&status), &status);
 
 #if USE_BOINC
   boinc_finish_graphics();
@@ -447,7 +457,10 @@ int main(int argc,char *argv[])
 } /* main() */
 
 
-/* register all our "user-variables", which can be read from cmd-line and config-file */
+/** 
+ * Register all our "user-variables" that can be specified from cmd-line and/or config-file.
+ * Here we set defaults for some user-variables and register them with the UserInput module.
+ */
 void
 initUserVars (LALStatus *stat)
 {
@@ -485,7 +498,7 @@ initUserVars (LALStatus *stat)
   uvar_f1dotBand = 0.0;
   
   uvar_Fthreshold = 10.0;
-  uvar_metricType =  LAL_PMETRIC_COH_PTOLE_ANALYTIC;
+  uvar_metricType =  LAL_PMETRIC_NONE;
   uvar_gridType = GRID_FLAT;
 
   uvar_metricMismatch = 0.02;
@@ -494,7 +507,7 @@ initUserVars (LALStatus *stat)
   uvar_outputLabel = NULL;
 
   uvar_outputFstat = NULL;
-  uvar_openDX = FALSE;	/* write openDX-compatible output-file */
+  uvar_openDX = FALSE;
 
   uvar_skyGridFile = NULL;
 
@@ -506,7 +519,7 @@ initUserVars (LALStatus *stat)
 
 
   /* register all our user-variables */
- 
+  LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message"); 
   LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
   LALregREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
   LALregREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
@@ -532,18 +545,14 @@ initUserVars (LALStatus *stat)
   LALregINTUserVar(stat, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
   LALregINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
-  LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
   LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
   LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
   LALregSTRINGUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
   LALregSTRINGUserVar(stat,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
   LALregSTRINGUserVar(stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
-
   LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
-
-  LALregBOOLUserVar(stat,	searchNeighbors,	 	 0,  UVAR_OPTIONAL, "Refine the skyregion to search only at neighboring grid points of the center of the original sky region.");
-
+  LALregBOOLUserVar(stat,	searchNeighbors, 0,  UVAR_OPTIONAL, "Refine the skyregion to search only at neighboring grid points of the center of the original sky region.");
 
 
   DETATCHSTATUSPTR (stat);
@@ -996,36 +1005,6 @@ void CreateDemodParams (LALStatus *status)
 } /* CreateDemodParams() */
 
 /*******************************************************************************/
-void AllocateMem(LALStatus *status)
-{
-  INT4 k;
-
-  INITSTATUS (status, "AllocateMem", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  /* Allocate space for AMCoeffs */
-  amc.a = NULL;
-  amc.b = NULL;
-  TRY (LALSCreateVector(status->statusPtr, &(amc.a), (UINT4) GV.SFTno), status);
-  TRY (LALSCreateVector(status->statusPtr, &(amc.b), (UINT4) GV.SFTno), status);
-
-  /* Allocate DemodParams structure */
-  DemodParams=(DemodPar *)LALCalloc(1, sizeof(DemodPar));
-  
-  /* space for sky constants */
-  /* Based on maximum index for array of as and bs sky constants as from ComputeSky.c */
-  k=4*(GV.SFTno-1)+4; 
-  DemodParams->skyConst = (REAL8 *)LALMalloc(k*sizeof(REAL8));
-
-  /* space for spin down params */
-  DemodParams->spinDwn = (REAL8 *)LALMalloc(sizeof(REAL8));
-  
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* AllocateMem() */
-
-/*******************************************************************************/
 
 /*  for every cluster writes the information about it in file Fstats */
 /*  precisely it writes: */
@@ -1089,16 +1068,18 @@ int writeFLines(INT4 *maxIndex){
   return 0;
 }
 
-/*******************************************************************************/
-
+/** [OBSOLETE] Normalize SFTs using the mean.
+ * This function is obsolete, as we use the running-median now. 
+ * This function has been  replaced by NormaliseSFTDataRngMdn().
+ */
 int NormaliseSFTData(void)
 {
-  INT4 k,j;                         /* loop indices */
-  INT4 nbins=GV.ifmax-GV.ifmin+1;   /* Number of points in SFT's */
-  REAL8 SFTsqav;                  /* Average of Square of SFT */
-  REAL8 B;                        /* SFT Bandwidth */
+  INT4 k,j;                         	/* loop indices */
+  INT4 nbins=GV.ifmax-GV.ifmin+1;   	/* Number of points in SFT's */
+  REAL8 SFTsqav;           		/* Average of Square of SFT */
+  REAL8 B;                        	/* SFT Bandwidth */
   REAL8 deltaT,N;
-
+  REAL8 MeanOneOverSh=0.0;
 
   /* loop over each SFTs */
   for (k=0;k<GV.SFTno;k++)         
@@ -1137,8 +1118,15 @@ int NormaliseSFTData(void)
   return 0;
 }
 
-/*******************************************************************************/
-
+/** Reads in data from SFT-files.
+ *
+ * This function reads in the SFTs from the list of files in \em ConfigVariables GV.filelist 
+ * or from merged SFTs in uvar_mergedSFTFile.
+ * The read SFT-data is stored in the global array \em SFTData and the timestamps 
+ * of the SFTs are stored in the global array \em timestamps (both are allocated here).
+ *
+ * NOTE: this function is obsolete and should be replaced by the use of the SFT-IO lib in LAL.
+ */
 int ReadSFTData(void)
 {
   INT4 fileno=0,offset;
@@ -1244,12 +1232,19 @@ int ReadSFTData(void)
     
     }
   return 0;  
-}
 
-/*******************************************************************************/
+} /* ReadSFTData() */
 
+/** Do some basic initializations of the F-statistic code before starting the main-loop.
+ * Things we do in this function: 
+ * \li check consistency of user-input
+ * \li prepare ephemeris-data and determine SFT input-files to be loaded
+ * \li set some defaults + allocate memory 
+ * \li Return 'derived' configuration settings in the struct \em ConfigVariables
+ * 
+ */
 void
-SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
+InitFStat (LALStatus *status, ConfigVariables *cfg)
 {
 
   CHAR command[512];
@@ -1261,10 +1256,12 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 #endif
   LIGOTimeGPS starttime;
 
-  INITSTATUS (status, "SetGlobalVariables", rcsid);
+  INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  /* do some sanity checks on the user-input before we proceed */
+  /* ----------------------------------------------------------------------
+   * do some sanity checks on the user-input before we proceed 
+   */
   if(!uvar_DataDir && !uvar_mergedSFTFile)
     {
       LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
@@ -1286,6 +1283,12 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       LALPrintError ("\nNo ephemeris year specified (option 'EphemYear')\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
+  /* don't allow negative frequency-band for safety */
+  if ( uvar_FreqBand < 0)
+    {
+      LALPrintError ("\nNegative value of frequency-band not allowed !\n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
 
   /* don't allow negative bands (for safty in griding-routines) */
   if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
@@ -1304,6 +1307,11 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       fprintf(stderr, "in Main: unable to change directory to %s\n", uvar_workingDir);
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
+
+
+  /*----------------------------------------------------------------------
+   * set up and check ephemeris-file locations, and SFT input data
+   */
 
 #if USE_BOINC
   strcat(cfg->EphemEarth,"earth");
@@ -1365,7 +1373,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       fseek(fp,k,SEEK_CUR);
     }
     /* save final time and time baseline */
-    cfg->Tf=header.gps_sec+header.tbase;  /* FINAL TIME */
+    cfg->Tf = header.gps_sec + header.tbase;  /* FINAL TIME */
     cfg->tsft=header.tbase;  /* Time baseline of SFTs */
     
     /* NOTE: we do NOT close fp here.  If we are using merged SFT file
@@ -1373,7 +1381,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
        ReadSFTData().
     */
     
-  } 
+  }  /* if mergedSFTFile */
   else {
 
     strcpy(command, uvar_DataDir);
@@ -1408,29 +1416,6 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 #endif
   }
   cfg->SFTno=fileno; /* remember this is 1 more than the index value */
-
-  /* initialize detector */
-  if ( !strcmp (uvar_IFO, "GEO") || !strcmp (uvar_IFO, "0") ) 
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  else if ( !strcmp (uvar_IFO, "LLO") || ! strcmp (uvar_IFO, "1") ) 
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  else if ( !strcmp (uvar_IFO, "LHO") || !strcmp (uvar_IFO, "2") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  else if ( !strcmp (uvar_IFO, "NAUTILUS") || !strcmp (uvar_IFO, "3"))
-    {
-      TRY (CreateNautilusDetector (status->statusPtr, &(cfg->Detector)), status);
-    }
-  else if ( !strcmp (uvar_IFO, "VIRGO") || !strcmp (uvar_IFO, "4") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  else if ( !strcmp (uvar_IFO, "TAMA") || !strcmp (uvar_IFO, "5") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  else if ( !strcmp (uvar_IFO, "CIT") || !strcmp (uvar_IFO, "6") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
-  else
-    {
-      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
 
   if (!uvar_mergedSFTFile) {
     /* open FIRST file and get info from it*/
@@ -1477,11 +1462,41 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       }
     fclose(fp);
 
-    cfg->Tf=header.gps_sec+header.tbase;  /* FINAL TIME */
-
-    cfg->tsft=header.tbase;  /* Time baseline of SFTs */
+    /* FINAL TIME */
+    cfg->Tf=header.gps_sec+header.tbase;  
+    /* Time baseline of SFTs */
+    cfg->tsft=header.tbase;  
   }
-    
+
+  /*----------------------------------------------------------------------
+   * initialize detector 
+   */
+  if ( !strcmp (uvar_IFO, "GEO") || !strcmp (uvar_IFO, "0") ) 
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  else if ( !strcmp (uvar_IFO, "LLO") || ! strcmp (uvar_IFO, "1") ) 
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  else if ( !strcmp (uvar_IFO, "LHO") || !strcmp (uvar_IFO, "2") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  else if ( !strcmp (uvar_IFO, "NAUTILUS") || !strcmp (uvar_IFO, "3"))
+    {
+      TRY (CreateNautilusDetector (status->statusPtr, &(cfg->Detector)), status);
+    }
+  else if ( !strcmp (uvar_IFO, "VIRGO") || !strcmp (uvar_IFO, "4") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  else if ( !strcmp (uvar_IFO, "TAMA") || !strcmp (uvar_IFO, "5") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+  else if ( !strcmp (uvar_IFO, "CIT") || !strcmp (uvar_IFO, "6") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+  else
+    {
+      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+
+  /*----------------------------------------------------------------------
+   * set some defaults
+   */
+
   /* if user has not input demodulation frequency resolution; set to 1/2*Tobs */
   if( !LALUserVarWasSet (&uvar_dFreq) ) 
     cfg->dFreq=1.0/(2.0*header.tbase*cfg->SFTno);
@@ -1519,45 +1534,44 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
    * initialize+check  template-grid related parameters 
    */
   {
-    UINT2 haveSkyRegion, haveAlphaDelta, haveGridFile, needGridFile, haveMetric, needMetric, setMetric;
+    BOOLEAN haveSkyRegion, haveAlphaDelta, haveGridFile, useGridFile, haveMetric, useMetric;
 
     haveSkyRegion  = (uvar_skyRegion != NULL);
     haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
     haveGridFile   = (uvar_skyGridFile != NULL);
-    needGridFile   = (uvar_gridType == GRID_FILE);
+    useGridFile   = (uvar_gridType == GRID_FILE);
     haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
-    needMetric     = (uvar_gridType == GRID_METRIC);
-    setMetric      = LALUserVarWasSet (&uvar_metricType);
+    useMetric     = (uvar_gridType == GRID_METRIC);
 
     /* some consistency checks on input to help catch errors */
-    if ( !needGridFile && !(haveSkyRegion || haveAlphaDelta) )
+    if ( !useGridFile && !(haveSkyRegion || haveAlphaDelta) )
       {
 	LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
 	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
-    if ( !needGridFile && haveSkyRegion && haveAlphaDelta )
+    if ( haveSkyRegion && haveAlphaDelta )
       {
 	LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
 	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
-    if ( needGridFile && !haveGridFile )
+    if ( useGridFile && !haveGridFile )
       {
 	LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
 	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);	
       }
-    if ( !needGridFile && haveGridFile )
+    if ( !useGridFile && haveGridFile )
       {
 	LALWarning (status, "\nWARNING: skyGridFile was specified but not needed ... will be ignored\n");
       }
-    if ( needGridFile && (haveSkyRegion || haveAlphaDelta) )
+    if ( useGridFile && (haveSkyRegion || haveAlphaDelta) )
       {
 	LALWarning (status, "\nWARNING: We are using skyGridFile, but sky-region was also specified ... will be ignored!\n");
       }
-    if ( setMetric && haveMetric && !needMetric) 
+    if ( !useMetric && haveMetric) 
       {
 	LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
       }
-    if (needMetric && !haveMetric) 
+    if ( useMetric && !haveMetric) 
       {
 	LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
 	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
@@ -1610,8 +1624,32 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     cfg->edat->leap = leap;
 
     TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
-  }
-  /*------------------------------------------------------------*/
+
+  } /* end: init ephemeris data */
+
+  /* ----------------------------------------------------------------------
+   * initialize + allocate space for AM-coefficients and Demod-params
+   */
+  {
+    INT4 k;
+
+    /* Allocate space for AMCoeffs */
+    amc.a = NULL;
+    amc.b = NULL;
+    TRY (LALSCreateVector(status->statusPtr, &(amc.a), (UINT4) cfg->SFTno), status);
+    TRY (LALSCreateVector(status->statusPtr, &(amc.b), (UINT4) cfg->SFTno), status);
+
+    /* Allocate DemodParams structure */
+    DemodParams = (DemodPar *)LALCalloc(1, sizeof(DemodPar));
+  
+    /* space for sky constants */
+    /* Based on maximum index for array of as and bs sky constants as from ComputeSky.c */
+    k = 4*(cfg->SFTno-1) + 4; 
+    DemodParams->skyConst = (REAL8 *)LALMalloc(k*sizeof(REAL8));
+    /* space for spin down params */
+    DemodParams->spinDwn = (REAL8 *)LALMalloc(sizeof(REAL8));
+  
+  }/* end: init AM- and demod-params */
 
   /* Tell the user what we have arrived at */
 #ifdef DEBG_SGV
@@ -1628,14 +1666,11 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     DETATCHSTATUSPTR (status);
     RETURN (status);
 
-} /* SetGlobalVariables() */
-
-/*******************************************************************************/
-
+} /* InitFStat() */
 
 
 /*******************************************************************************/
-
+/** Set up the \em LALDetector struct representing the NAUTILUS detector */
 void
 CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
 {
@@ -1667,7 +1702,7 @@ CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
 } /* CreateNautilusDetector() */
 
 /*******************************************************************************/
-
+/** Free all globally allocated memory. */
 void Freemem(LALStatus *status) 
 {
 
@@ -1713,8 +1748,6 @@ void Freemem(LALStatus *status)
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
 
-  /* Free DopplerScan-stuff (grid) */
-  TRY (FreeDopplerScan (status->statusPtr, &thisScan), status);
   if (GV.skyRegion)
     LALFree ( GV.skyRegion );
 
@@ -1739,8 +1772,7 @@ void Freemem(LALStatus *status)
 } /* Freemem() */
 
 /*******************************************************************************/
-
-/* Sorting function to sort into DECREASING order */
+/** Sorting function to sort into DECREASING order. Used in PrintTopValues(). */
 int compare(const void *ip, const void *jp)
 {
   REAL8 di, dj;
@@ -1759,17 +1791,16 @@ int compare(const void *ip, const void *jp)
 
 /*******************************************************************************/
 
-/* This routine prints the values of (f,FF) above a certain threshold */
-/* in 2F, called 2Fthr.  If there are more than ReturnMaxN of these, */
-/* then it simply returns the top ReturnMaxN of them. If there are */
-/* none, then it returns none.  It also returns some basic statisical */
-/* information about the distribution of 2F: the mean and standard */
-/* deviation. */
-/* Returns zero if all is well, else nonzero if a problem was encountered. */
-/*    Basic strategy: sort the array by values of F, then look at the */
-/*    top ones. Then search for the points above threshold. */
-
-
+/** Print the values of (f,FF) above a certain threshold 
+ * in 2F, called 2Fthr.  If there are more than ReturnMaxN of these, 
+ * then it simply returns the top ReturnMaxN of them. If there are 
+ * none, then it returns none.  It also returns some basic statisical
+ * information about the distribution of 2F: the mean and standard 
+ * deviation.
+ * Returns zero if all is well, else nonzero if a problem was encountered. 
+ * Basic strategy: sort the array by values of F, then look at the 
+ * top ones. Then search for the points above threshold. 
+ */
 INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 {
 
@@ -1816,7 +1847,6 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
   TwoFthr*=0.5/log2;
 
 #ifdef FILE_FMAX  
-#if 1
 /*    print out the top ones */
   for (ntop=0; ntop<ReturnMaxN; ntop++)
     if (Fstat.F[indexes[ntop]]>TwoFthr){
@@ -1832,7 +1862,6 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
     else
 /*        Since array sorted, as soon as value too small we can break */
       break;
-#endif
 #endif
 
   /*  find out how many points have been set to zero (N) */
@@ -1882,7 +1911,9 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 }
 
 /*******************************************************************************/
-
+/** Find outliers/clusters in the PSD [OBSOLETE?].
+ * Does not seem to be used currently.
+ */
 INT4 EstimatePSDLines(LALStatus *status)
 {
 #ifdef FILE_PSD
@@ -2013,8 +2044,6 @@ INT4 EstimatePSDLines(LALStatus *status)
 
    }
   
-
-
    if (!(SpClParams=(ClustersParams *)LALMalloc(sizeof(ClustersParams)))){ 
      printf("Memory allocation failure for SpClusterParams");
      return 1;
@@ -2088,10 +2117,12 @@ INT4 EstimatePSDLines(LALStatus *status)
    LALFree(clustersInput);
 
    return 0;
-}
+
+} /* EstimatePSDLines() */
 
 /*******************************************************************************/
-
+/** Find outliers/clusters in the F-statistic array over frequency.
+ */
 INT4 EstimateFLines(LALStatus *status)
 {
 #ifdef FILE_FTXT  
@@ -2307,12 +2338,11 @@ INT4 EstimateFLines(LALStatus *status)
 
    return 0;
 
+} /* EstimateFLines() */
 
-}
-
-/*******************************************************************************/
-/*******************************************************************************/
-
+/***********************************************************************/
+/** Normalise the SFT-array \em SFTData by the running median.
+ */
 INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 {
 #ifdef FILE_SPRNG  
@@ -2389,7 +2419,6 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 	}
       }
 
-     
       /*Compute Normalization factor*/
       /* for signal only case as well */  
       for (lpc=0;lpc<nbins;lpc++){
@@ -2442,10 +2471,11 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   LALDDestroyVector(status, &Sp);
   
   return 0;
-}
+
+} /* NormaliseSFTDataRngMed() */
 
 /*******************************************************************************/
-
+/* BOINC-specific functions follow here */
 #if USE_BOINC
 void use_boinc_filename0(char *orig_name ) {
   char resolved_name[512];
