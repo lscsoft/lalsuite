@@ -158,3 +158,59 @@ LALWindow( LALStatus       *status,
 
   RETURN(status);
 }
+
+void LALCreateREAL4Window (
+    LALStatus    *status,
+    REAL4Window **output,
+    UINT4         length,
+    WindowType    type
+    )
+{
+  LALWindowParams       wpars;
+
+  INITSTATUS( status, "LALCreateREAL4Window", WINDOW );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
+  ASSERT( ! *output, status, WINDOWH_ENNUL, WINDOWH_MSGENNUL );
+
+  /* allocate the storage for the window vector */
+  *output = (REAL4Window *) LALCalloc( 1, sizeof(REAL4Window) );
+  LALCreateVector( status->statusPtr, &((*output)->data), length );
+  CHECKSTATUSPTR( status );
+
+  /* compute the window */
+  (*output)->type = wpars.type = type;
+  wpars.length = (INT4) length;
+  LALWindow( status->statusPtr, (*output)->data, &wpars );
+  CHECKSTATUSPTR( status );
+
+  /* copy the output params to the structure */
+  (*output)->sumofsquares = wpars.sumofsquares;
+  strncpy( (*output)->windowname, wpars.windowname, 
+      LALNameLength * sizeof(CHAR) );
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+void LALDestroyREAL4Window (
+    LALStatus     *status,
+    REAL4Window  **output
+    )
+{
+  INITSTATUS( status, "LALCreateREAL4Window", WINDOW );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
+  ASSERT( *output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
+
+  /* destroy the window */
+  LALDestroyVector( status->statusPtr, (*output)->data );
+  CHECKSTATUSPTR( status );
+  LALFree( *output );
+  *output = NULL;
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
