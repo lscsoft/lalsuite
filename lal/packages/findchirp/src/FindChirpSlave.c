@@ -681,7 +681,7 @@ LALFindChirpSlave (
         memset( &segmentFFT, 0, sizeof(COMPLEX8FrequencySeries) );
         memset( &winParams, 0, sizeof(LALWindowParams) );
 
-        winParams.type   = Rectangular;
+        winParams.type   = Hann;
         winParams.length = tdLength;
 
         LALCCreateVector( status->statusPtr, &(segmentFFT.data), fdLength );
@@ -737,7 +737,7 @@ LALFindChirpSlave (
 
         avgParams.segsize = tdLength;
         avgParams.fwdplan = fftPlan;
-        avgParams.wintype = Rectangular;
+        avgParams.wintype = Hann;
 
         LALMedianSpectrum( status->statusPtr, specPtr, &dataChanF, &avgParams );
         CHECKSTATUSPTR( status );
