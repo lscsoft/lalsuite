@@ -67,6 +67,11 @@ BOOLEAN FILE_FSTATS = 1;
 
 #if USE_BOINC
 
+/* this includes patches for chdir() and sleep() */
+#ifdef _WIN32
+#include "win_lib.h"
+#endif
+
 #ifdef NO_BOINC_GRAPHICS
 #define BOINC_GRAPHICS 0
 #endif
@@ -1650,11 +1655,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /*----------------------------------------------------------------------*/
 
   /* set the current working directory */
-#ifndef _MSC_VER
   if(chdir(uvar_workingDir) != 0)
-#else
-  if(_chdir(uvar_workingDir) != 0)
-#endif
     {
       fprintf(stderr, "in Main: unable to change directory to %s\n", uvar_workingDir);
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
