@@ -153,8 +153,10 @@ void LALPtoleMetric( LALStatus *status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
 
   /* Check for valid duration. */
+#if 0
   ASSERT( input->duration > MIN_DURATION, status, PTOLEMETRICH_EPARM,
           PTOLEMETRICH_MSGEPARM );
+#endif
 
   /* Check for valid maximum frequency. */
   ASSERT( input->maxFreq > MIN_MAXFREQ, status, PTOLEMETRICH_EPARM,
@@ -178,6 +180,7 @@ void LALPtoleMetric( LALStatus *status,
           PTOLEMETRICH_MSGEDIM );
 
   /* A bigger metric that includes phase for internal use only:  */
+  /* Apart from normalization, this is just the information matrix. */
   big_metric = NULL;
   LALDCreateVector( status, &big_metric, (dim+2)*(dim+3)/2);
  
@@ -469,10 +472,10 @@ void LALPtoleMetric( LALStatus *status,
       pow(LAL_PI*T,2)*f/2;
 
     /* g_a1 = */
-    big_metric->data[12] = 2*pow(LAL_PI*f/T,2)*(-cos_d*sin_a*(R_o*I[1] + R_s*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));   
+    big_metric->data[12] = 2*pow(LAL_PI*f/T,2)*(-cos_d*sin_a*(R_o*I[1] + R_s*cos_l*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));   
     
     /* g_d1 = */
-    big_metric->data[13] = 2*pow(LAL_PI*f/T,2)*(-sin_d*cos_a*(R_o*I[1] + R_s*I[2])- sin_d*sin_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]) + cos_d*(R_o*sin_i*I[3] + R_s*sin_l*pow(T,3)/3));
+    big_metric->data[13] = 2*pow(LAL_PI*f/T,2)*(-sin_d*cos_a*(R_o*I[1] + R_s*cos_l*I[2])- sin_d*sin_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]) + cos_d*(R_o*sin_i*I[3] + R_s*sin_l/3));
     
     /* g_11 = */
     big_metric->data[14] = pow(LAL_PI*f*T,2)/5;
