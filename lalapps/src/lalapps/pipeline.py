@@ -800,21 +800,15 @@ class CondorDAG:
 
         template = """\
 <job id="%s" namespace="ligo" name="%s" version="1.0" level="1" dv-name="%s">
-"""
-        xml = template % (id_tag, executable, node_name)
-
-        # write the group if this node has one
-        if node.get_vds_group():
-          template = """\
-     <profile namespace="vds" key="group">%s</profile>
-"""
-          xml = xml + template % (node.get_vds_group())
-
-        template = """\
      <argument>%s
      </argument>\
 """
-        xml = xml + template % (cmd_line)
+        xml = template % (id_tag, executable, node_name, cmd_line)
+
+        # write the group if this node has one
+        if node.get_vds_group():
+          template = """<profile namespace="vds" key="group">%s</profile>"""
+          xml = xml + template % (node.get_vds_group())
 
         print >>dagfile, xml
 
