@@ -123,6 +123,8 @@ routines that place different parameters in \verb@*variables@ and
 
 #include <lal/LALStdlib.h>
 
+#include <lal/LALBarycenter.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -173,6 +175,13 @@ following \verb@epoch@.
 
 \item[\texttt{REAL8 longitude}] Detector east longitude (i.e.\
 counterclockwise about the north pole), in radians.
+
+\item[\texttt{EphemerisData ephemeris}] Ephemeris data containing positions, 
+velocities, etc... of Earth and Sun for the year under consideration.
+
+\item[\texttt{LALDetector site}] The particular detector under consideration.
+
+
 \end{description}
 The following fields are used by the module \verb@TComp.c@, which
 composes two transformations $t_1(t)$ and $t_2(t)$ into an overall
@@ -220,6 +229,9 @@ typedef struct tagPulsarTimesParamStruc {
   REAL8 latitude; /* Detector north latitude, in radians. */
   REAL8 longitude; /* Detector east longitude (i.e. counterclockwise
 		      about the north pole), in radians. */
+  EphemerisData ephemeris; /* Ephemeris data containing positions, */
+                           /* velocities, etc... of Earth and Sun */
+  LALDetector site;        /* The particular detector under consideration */
 
   void (*t1)( LALStatus *, REAL8 *, REAL8Vector *,
 	      struct tagPulsarTimesParamStruc * );
@@ -293,6 +305,16 @@ LALDTComp( LALStatus             *,
 	   REAL8Vector           *dtComp,
 	   REAL8Vector           *variables,
 	   PulsarTimesParamStruc *constants );
+
+/* <lalLaTeX>
+\newpage\input{DTEphemerisC}
+</lalLaTeX> */
+void
+LALDTEphemeris( LALStatus             *,
+	        REAL8Vector           *tBary,
+	        REAL8Vector           *variables,
+	        PulsarTimesParamStruc *constants );
+
 
 #ifdef __cplusplus
 }

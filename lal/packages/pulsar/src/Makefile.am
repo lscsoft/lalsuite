@@ -1,7 +1,8 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libpulsar.la
 libpulsar_la_SOURCES = \
-  GetEarthTimes.c TBaryPtolemaic.c TSpin.c TComp.c CoherentMetric.c      \
+  GetEarthTimes.c TBaryPtolemaic.c DTEphemeris.c TSpin.c TComp.c         \
+  CoherentMetric.c                                                       \
   StackMetric.c ProjectMetric.c FlatMesh.c CreateResampleRules.c         \
   DestroyResampleRules.c ApplyResampleRules.c PolycoToTimingDifference.c \
   RulesToTimingDifference.c LALComputeAM.c LALDemod.c ComputeSky.c       \
