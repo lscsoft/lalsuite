@@ -1660,7 +1660,7 @@ int main(int argc, char *argv[])
   LALCheckMemoryLeaks();
   return 0;
 
-};
+}
 
 /*----------------------------------------------------------------------*/
 static REAL8 mu(const REAL4FrequencySeries* omegaGW, 
