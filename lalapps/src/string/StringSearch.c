@@ -211,7 +211,7 @@ int main(int argc,char *argv[])
      /* high pass filter data again with added injection */ 
      if (ProcessData2(CommandLineArgs)) return 3;
    }
-
+ 
  if (DownSample(CommandLineArgs)) return 5;
 
  if (AvgSpectrum(CommandLineArgs)) return 6;
@@ -350,6 +350,32 @@ int OutputEvents()
 
   LALCloseLIGOLwXMLFile(&status, &xml);
   
+
+  /* print events to text */
+/*   { */
+/*     SnglBurstTable *thisEvent = events; */
+/*     FILE *fp; */
+/*     fp = fopen( "events.txt", "w" ); */
+/*     if ( ! fp ) */
+/*       { */
+/* 	perror( "output file" ); */
+/* 	exit( 1 ); */
+/*       } */
+/*     fprintf( fp,"# gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\n" ); */
+/*     while ( thisEvent ) */
+/*       { */
+/* 	fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n", */
+/* 		 (int) thisEvent->start_time.gpsSeconds, */
+/* 		 (int) thisEvent->start_time.gpsNanoSeconds, */
+/* 		 thisEvent->snr, */
+/* 		 thisEvent->amplitude, */
+/* 		 thisEvent->central_freq, */
+/* 		 thisEvent->bandwidth,thisEvent->duration ); */
+/* 	thisEvent = thisEvent->next; */
+/*       } */
+/*     fclose( fp ); */
+/*   } */
+
   /* free event list, process table, search summary and process params */
   while ( events )
   {
@@ -371,7 +397,6 @@ int OutputEvents()
   return 0;
 }
 
-
 /*******************************************************************************/
 
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurstTable **thisEvent)
@@ -383,6 +408,10 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
     {
       REAL4 maximum = 0.0;
       INT4 pmax=p;
+      INT8 timeNS  = (INT8)( 1000000000 ) * (INT8)(CLA.GPSStart+GV.seg_length*i/2*GV.ht_proc.deltaT);
+      timeNS += (INT8)( 1e9 * GV.ht_proc.deltaT * p );
+
+/*       fprintf(stdout,"%9.9lf %f\n",(double)timeNS*1e-9,vector->data[p]); */
 
       if (fabs(vector->data[p]) > CLA.threshold)
 	{
@@ -485,7 +514,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
       /* loop over templates  */
       for (m = 0; m < NTemplates; m++)
 	{
-	  int f_high_index= strtemplate[m].f/ GV.StringFilter.deltaF;
+	  int f_high_index = strtemplate[m].f/ GV.StringFilter.deltaF;
 	  
 	  /* set to zero all values greater than the high frequency cutoff of the template */
 	  memset( vtilde->data+f_high_index, 0, (vtilde->length-f_high_index) * sizeof( *vtilde->data ) );
@@ -838,6 +867,7 @@ int ReadData(struct CommandLineArgsTag CLA)
 	  GV.ht.data->data[p] = v1->data[p];
 	}
 
+      /* GV.ht.data->data[0]=1e7;  */
       LALSDestroyVector (&status, &v1);
       TESTSTATUS( &status );   
     }
