@@ -58,18 +58,19 @@ calculate the expected variance per unit integration time of the
 cross-correlation statistic, since
 \begin{eqnarray}
   \frac{\sigma^2}{T} 
-  &=& \frac{\overline{(w_1w_2)^2}}{4}\int_{-\infty}^{\infty} df
+  &=& \frac{\overline{(w_1w_2)^2}}{4T}\int_{-\infty}^{\infty} df
   \, P^{\scriptstyle{\rm C}}_1(f)\, P^{\scriptstyle{\rm C}}_2(f)\,
   \left(
     \widetilde{Q}{}^{\scriptstyle{\rm C}}(f)
   \right)^2
-  = \frac{\lambda}{4} \overline{(w_1w_2)^2} 
+  = \frac{\lambda}{4T} \overline{(w_1w_2)^2} 
 \int_{-\infty}^{\infty} \frac{df}{|f|^3}\,\gamma(f)\,
   \Omega_{\scriptstyle{\rm GW}}(f)\,\widetilde{Q}{}^{\scriptstyle{\rm C}}(f) 
   \nonumber
   \\
 \label{stochastic:e:variance}
-  &=& \frac{5\pi^2}{3 {H_0}^2}\,\overline{(w_1w_2)^2}
+  &=& \frac{5\pi^2}{3 {H_0}^2}
+  \,\frac{\overline{(w_1w_2)^2}}{\overline{w_1w_2}}
 \,\Omega_{\scriptstyle{\rm R}} \,\lambda
 \end{eqnarray}
 where we have used (\ref{stochastic:e:Q}) to replace one of the two
@@ -728,7 +729,7 @@ LALStochasticOptimalFilterNormalization(
   if (output->variance != NULL) 
   {
     output->variance->value 
-      = meanW4 * ( (5.0L * LAL_PI * LAL_PI) 
+      = (meanW4/meanW2) * ( (5.0L * LAL_PI * LAL_PI) 
           / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) ) )
       * omegaRef / lambdaInv;
   }
