@@ -36,6 +36,8 @@ static BOOLEAN _allocateWavelet(Wavelet **wavelet);
 static double _percentile(Wavelet *wavelet, double nonZeroFraction, 
 			  BOOLEAN keepAmplitudes, REAL4 **median, REAL4 **norm50); 
 static int _compare(const void *a, const void *b);
+static int _compareAbs(const void *a, const void *b);
+
 static void _clusterProperties(ClusterWavelet *w);
 
 void _doubleToSecNan(double t, UINT4 *sec, UINT4 *nan);
@@ -1168,13 +1170,13 @@ static double _percentile(Wavelet *wavelet, double nonZeroFraction,
 			  BOOLEAN keepAmplitudes, REAL4 **median, REAL4 **norm50)
 {
 
-  INT4 i, j, M, nS, boundary1, boundary2;
+  INT4 i, j, M, nS, boundary;
   REAL4TimeSeries *a;
   REAL4 **aPtr;
 
   M = _getMaxLayer(wavelet)+1;
   nS=wavelet->data->data->length/M;
-  aPtr=(REAL4**)LALMalloc((sizeof(REAL4*)*nS));
+  aPtr=(REAL4**)LALCalloc(nS,sizeof(REAL4*));
 
   *median=(REAL4*)LALCalloc(M,sizeof(REAL4));
   *norm50=(REAL4*)LALCalloc(M,sizeof(REAL4));
@@ -1193,37 +1195,30 @@ static double _percentile(Wavelet *wavelet, double nonZeroFraction,
       ((*aPtr[(3*nS)/4]) + (*aPtr[(3*nS)/4-1]))/2;
     (*norm50)[i]/=2;
 
-/*     printf("In percentile: i=%d norm=%f\n",i,(*norm50)[i]);fflush(stdout); */
-
     if(nS%2==0){
       (*median)[i]=(*aPtr[nS/2-1] + *aPtr[nS/2])/2;
-      boundary1=nonZeroFraction*nS/2;
-      for(j=0;j<boundary1;j++){
-	if(!keepAmplitudes) *aPtr[j]=-((REAL4)nS)/2.0/(j+1.0);
-      }
-      boundary2=nS-boundary1;
-      for(j=boundary1;j<boundary2;j++){
-	*aPtr[j]=0.0;
-      }
-      for(j=boundary2;j<nS;j++){
-	if(!keepAmplitudes) *aPtr[j]=((REAL4)nS)/2.0/(nS-j);
-      }
     }
     else{
       (*median)[i]=*aPtr[nS/2];
-      /* so far no difference below */
-      boundary1=(int)(nonZeroFraction*nS/2);
-      for(j=0;j<boundary1;j++){
-	if(!keepAmplitudes) *aPtr[j]=-((REAL4)nS)/2.0/(j+1);
+    }
+
+    for(j=0;j<nS;j++)
+      {
+	*aPtr[j]-=(*median)[i];
       }
-      boundary2=nS/2+boundary1;
-      for(j=boundary1;j<=boundary2;j++){
+    qsort(aPtr,nS,sizeof(REAL4*),_compareAbs);
+
+    boundary=(1-nonZeroFraction)*nS;
+    
+    for(j=0;j<boundary;j++)
+      {
 	*aPtr[j]=0.0;
       }
-      for(j=boundary2+1;j<nS;j++){
-	if(!keepAmplitudes) *aPtr[j]=((REAL4)nS)/2.0/(nS-j);
+    for(j=nS-1;j>=boundary;j--)
+      {
+	if(!keepAmplitudes) *aPtr[j]= *aPtr[j]>0 ? ((REAL4)nS)/((REAL4)nS-j) : -((REAL4)nS)/((REAL4)nS-j);
       }
-    }
+
     _putLayer(a, i, wavelet);
     _freeREAL4TimeSeries(&a);
   }
@@ -1244,6 +1239,17 @@ static int _compare(const void *a, const void *b)
   if(**A == **B) return 0;
   if(**A > **B) return 1;
   return -2;
+}
+
+static int _compareAbs(const void *a, const void *b)
+{
+  REAL4 **A=(REAL4 **)a;
+  REAL4 **B=(REAL4 **)b;
+  if(fabs(**A) < fabs(**B)) return -1;
+  if((**A) == (**B)) return 0;
+  if((**A) > (**B)) return 1;
+  return -2;
+  
 }
 
 static void _clusterProperties(ClusterWavelet *w)
