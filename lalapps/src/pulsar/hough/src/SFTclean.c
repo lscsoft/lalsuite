@@ -114,7 +114,7 @@ int main(int argc, char *argv[]){
   CHAR *inputSFTDir;    /* directory for unclean sfts */
   CHAR *outputSFTDir;   /* directory for cleaned sfts */
   INT4 j, window, arg; 
-  INT4 nLines, count1, nHarmonicSets;
+  INT4 nLines=0, count1, nHarmonicSets;
   INT4 mObsCoh;  
   REAL8 fStart, fBand;
   CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
