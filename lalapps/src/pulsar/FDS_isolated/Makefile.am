@@ -5,8 +5,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 AM_LDFLAGS = $(top_builddir)/src/lalapps/liblalapps.la
 
 if FRAME
-##FRAMEPROGRAMS = lalapps_FrComputeFStatistic
-FRAMEPROGRAMS = 
+FRAMEPROGRAMS = lalapps_FrComputeFStatistic
 else
 FRAMEPROGRAMS = 
 endif
@@ -14,7 +13,9 @@ endif
 bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnalyticF \
 	lalapps_polka lalapps_FstatShapeTestLAL compareFstats ComputeFStatistic_v2 \
 	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh  \
-	$(FRAMEPROGRAMS) 
+
+EXTRA_PROGRAMS = cfsBOINC cfsBOINCnographics $(FRAMEPROGRAMS) 
+
 
 CFSsources = 	ComputeFStatistic.h	\
 		clusters.c clusters.h  	\
@@ -47,7 +48,6 @@ ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c clusters.c clusters.h  \
 
 ##----------------------------------------------------------------------
 ## some optional BOINC-related stuff follows here:
-EXTRA_PROGRAMS = cfsBOINC cfsBOINCnographics
 HOME_X11 = /usr/X11R6/lib
 cfsBOINC_SOURCES = cfsBOINC.cc $(CFSsources) \
 	screensaver/src/starlist.C screensaver/src/starsphere.C \
