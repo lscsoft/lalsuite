@@ -365,7 +365,8 @@ t_data = pipeline.ScienceData()
 l1_data.read(cp.get('input','l1-segments'),length)
 h1_data.read(cp.get('input','h1-segments'),length)
 h2_data.read(cp.get('input','h2-segments'),length)
-t_data.read('tama_segs.txt',0)
+if tama_overlap:
+  t_data.read(cp.get('input','tama-segments'),0)
 print "done"
 
 ##############################################################################
@@ -416,6 +417,8 @@ l1_single_data.intersection(not_h1_data_out)
 l1_single_data.intersection(not_h2_data_out)
 if tama_overlap:
   l1_single_data.intersection(t_data)
+if playground_only:
+  l1_single_data.play()
 l1_single_data.coalesce()
 print "done"
 
@@ -429,6 +432,8 @@ h1_h2_data.intersection(h2_data_out)
 h1_h2_data.intersection(not_l1_data_out)
 if tama_overlap:
   h1_h2_data.intersection(t_data)
+if playground_only:
+  h1_h2_data.play()
 h1_h2_data.coalesce()
 print "done"
 
@@ -441,6 +446,9 @@ h1_data_to_do = copy.deepcopy(h1_data_out)
 h1_data_to_do.intersection(not_l1_data_out)
 if tama_overlap:
   h1_data_to_do.intersection(t_data)
+if playground_only:
+  h1_data_to_do.play()
+
 h1_data_to_do.coalesce()
 
 h1_single_data = copy.deepcopy(h1_data_out)
@@ -448,6 +456,8 @@ h1_single_data.intersection(not_l1_data_out)
 h1_single_data.intersection(not_h2_data_out)
 if tama_overlap:
   h1_single_data.intersection(t_data)
+if playground_only:
+  h1_single_data.play()
 h1_single_data.coalesce()
 
 h2_single_data = copy.deepcopy(h2_data_out)
@@ -455,6 +465,8 @@ h2_single_data.intersection(not_l1_data_out)
 h2_single_data.intersection(not_h1_data_out)
 if tama_overlap:
   h2_single_data.intersection(t_data)
+if playground_only:
+  h2_single_data.play()
 h2_single_data.coalesce()
 print "done"
 
@@ -581,6 +593,7 @@ for seg in h1_h2_data:
       inca.add_parent(h2_done.get_dag_node())
   dag.add_node(inca)
 print "done"
+
 ##############################################################################
 # Write out the DAG, help message and log file
 dag.write_sub_files()
@@ -602,7 +615,16 @@ the grid proxy has been sucessfully created by executing the command:
 
   grid-cert-info -all -file /tmp/x509up_u`id -u`
 
-This will also give the expiry time of the proxy.
+This will also give the expiry time of the proxy. You should also make sure
+that the environment variable LSC_DATAFIND_SERVER is set the hostname and
+optional port of server to query. For example on the UWM medusa cluster this
+you should use
+
+  export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
+
+Contact the administrator of your cluster to find the hostname and port of the
+LSCdataFind server.
+
 """
 
 # write out a log file for this script
