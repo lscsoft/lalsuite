@@ -70,6 +70,9 @@ LALFindChirpTDTemplate (
 {
   UINT4         j;
   UINT4         waveLength;
+  UINT4         numPoints;
+  REAL8         deltaF;
+  REAL8         sampleRate;
   const REAL4   cannonDist = 1.0; /* Mpc */
 
   INITSTATUS( status, "LALFindChirpTDTemplate", FINDCHIRPTDTEMPLATEC );
@@ -131,12 +134,15 @@ LALFindChirpTDTemplate (
 
   
   /* set up additional template parameters */
+  numPoints = 2 * (fcTmplt->data->length + 1);
+  deltaF = 1.0 / ((REAL8) numPoints * params->deltaT);
+  sampleRate = 1.0 / params->deltaT;
   tmplt->approximant     = params->approximant;
   tmplt->order           = twoPN;
   tmplt->massChoice      = m1Andm2;
-  tmplt->tSampling       = 1.0 / params->deltaT;
+  tmplt->tSampling       = sampleRate;
   tmplt->fLower          = params->fLow;
-  tmplt->fCutoff         = 1.0 / ( 2.0 * params->deltaT );
+  tmplt->fCutoff         = sampleRate / 2.0 - deltaF;
   tmplt->signalAmplitude = 1.0;
   
   /* compute the tau parameters from the input template */
