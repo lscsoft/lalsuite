@@ -80,7 +80,8 @@ INT4 lalDebugLevel=3;
 #define NFSIZE 5
 #define THRESHOLD 2.0
 #define SFTBASEFILENAME "./data1/SFT."
-#define OUTFILE "./outsft.0"
+#define OUTFILE1 "./TestOutputSFT.0"
+#define OUTFILE2 "./TestOutputSFT.1"
 #define INFILE "./inputsft.0"
 
 /* Usage format string. */
@@ -130,6 +131,7 @@ int main(int argc, char *argv[]){
   static LALStatus       status;  /* LALStatus pointer */ 
   SFTtype *sft1 = NULL;
   SFTtype *sft2 = NULL;
+  SFTVector *sftvect = NULL;
   REAL8 fmin, fmax;
     
   const CHAR *fname;               /* The input filename */
@@ -137,7 +139,7 @@ int main(int argc, char *argv[]){
   INT4 arg;                         /* Argument counter */
  
   fname = INFILE;
-  outfname = OUTFILE;
+  outfname = OUTFILE1;
   /********************************************************/  
   /* Parse argument list.  i stores the current position. */
   /********************************************************/
@@ -181,9 +183,11 @@ int main(int argc, char *argv[]){
   /* try to do the same thing with ReadSFTfile() */
   SUB ( LALReadSFTfile (&status, &sft1, fmin, fmax, fname), &status);
   /* write SFT to disk */
-  SUB (LALWriteSFTtoFile (&status, sft1, OUTFILE), &status);
+  SUB (LALWriteSFTtoFile (&status, sft1, OUTFILE1), &status);
 
-  SUB ( LALReadSFTfile (&status, &sft2, fmin, fmax, OUTFILE), &status);
+  SUB ( LALReadSFTfile (&status, &sft2, fmin, fmax, OUTFILE1), &status);
+
+  SUB (LALWriteSFTtoFile (&status, sft2, OUTFILE2), &status);
 
   /* compare sft1 and sft2 */
   if ( (sft1->epoch.gpsSeconds != sft2->epoch.gpsSeconds)
@@ -204,9 +208,42 @@ int main(int argc, char *argv[]){
     ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
     return SFTFILEIOTESTC_ESFTDIFF;
   }
-
   LALDestroySFTtype (&status, &sft1);
   LALDestroySFTtype (&status, &sft2);
+
+  /*----------------------------------------------------------------------*/
+  printf ("Testing LALReadSFTfiles()\n");
+
+  /* now re-read OUTFILE1 and OUTFILE2 using a pattern */
+  SUB (LALReadSFTfiles (&status, &sftvect, fmin, fmax, "./OutputSFT"), &status);
+  
+  if(sftvect->length != 2)
+    {
+      LALPrintError ("Exactly TWO SFTs were expected with pattern './SFT', but got %d\n", sftvect->length);
+      return SFTFILEIOTESTC_ESUB;
+    }
+
+  /* compare sft1 and sft2 */
+  if ( (sftvect->data[0].epoch.gpsSeconds != sftvect->data[1].epoch.gpsSeconds)
+       || (sftvect->data[0].epoch.gpsNanoSeconds != sftvect->data[1].epoch.gpsNanoSeconds)  )
+    {
+      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+      return SFTFILEIOTESTC_ESFTDIFF;
+    }
+  if ( (sftvect->data[0].f0 != sftvect->data[1].f0) || (sftvect->data[0].deltaF != sftvect->data[1].deltaF) ) {
+    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+    return SFTFILEIOTESTC_ESFTDIFF;
+  }
+  if ( sftvect->data[0].data->length != sftvect->data[1].data->length) {
+    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+    return SFTFILEIOTESTC_ESFTDIFF;
+  }
+  if ( memcmp (sftvect->data[0].data->data, sftvect->data[1].data->data, sftvect->data[0].data->length) ) {
+    ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+    return SFTFILEIOTESTC_ESFTDIFF;
+  }
+
+  LALDestroySFTVector (&status, &sftvect);
 
   LALCheckMemoryLeaks(); 
 

@@ -345,6 +345,8 @@ LALReadSFTfiles (LALStatus *stat,
 
   DestroyStringVector (fnames);
 
+  *sftvect = out;
+
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 
@@ -660,6 +662,7 @@ find_files (const CHAR *globdir)
       LALFree (dname);
       return (NULL);
     }
+  LALFree (dname);
 
   while ( (entry = readdir (dir)) != NULL )
     {

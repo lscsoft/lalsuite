@@ -163,6 +163,7 @@ LALLoadConfigFile (LALStatus *stat,
 
 
   if ( (fp = fopen(fname, "r")) == NULL) {
+    LALPrintError ("Could not open config-file: `%s`\n", fname);
     ABORT (stat, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
   }
 
