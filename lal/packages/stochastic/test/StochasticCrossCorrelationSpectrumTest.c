@@ -297,40 +297,40 @@ int main( int argc, char *argv[] )
   {
     /* test behavior for null pointer to output series */
     LALStochasticCrossCorrelationSpectrum(&status, NULL, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK)) 
       {
         return code;
       }
     printf("  PASS: null pointer to output series results in error:\n       \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* test behavior for null pointer to input structure */
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, NULL, STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK)) 
     {
       return code;
     }
     printf("  PASS: null pointer to input structure results in error:\n       \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* test behavior for null pointer to first data stream */
     input.hBarTildeOne = NULL;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK)) 
     {
       return code;
     }
     printf("  PASS: null pointer to first data stream results in error:\n       \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* assign valid pointer to second data stream */
     input.hBarTildeOne = &goodData1;
@@ -338,15 +338,15 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to second data stream */
     input.hBarTildeTwo = NULL;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK)) 
     {
       return code;
     }
     printf("  PASS: null pointer to second data stream results in error:\n       \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* assign valid pointer to second data stream */
     input.hBarTildeTwo = &goodData2;
@@ -354,15 +354,15 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to optimal filter */
     input.optimalFilter = NULL;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK)) 
     {
       return code;
     }
     printf("  PASS: null pointer to optimal filter results in error:\n       \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* assign valid pointer to optimal filter */
     input.optimalFilter = &goodFilter;
@@ -370,15 +370,15 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of first data stream */
     input.hBarTildeOne = &badData1;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK)) 
     {
       return code;
     }
     printf("  PASS: null pointer to data member of first data stream results in error:\n       \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* assign valid pointer to data member of first data stream */
     input.hBarTildeOne = &goodData1;
@@ -386,15 +386,15 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of second data stream */
     input.hBarTildeTwo = &badData2;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK)) 
     {
       return code;
     }
     printf("  PASS: null pointer to data member of second data stream results in error:\n       \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* assign valid pointer to data member of second data stream */
     input.hBarTildeTwo = &goodData2;
@@ -402,15 +402,15 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of optimal filter */
     input.optimalFilter = &badFilter;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK)) 
     {
       return code;
     }
     printf("  PASS: null pointer to data member of optimal filter results in error:\n       \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* assign valid pointer to data member of optimal filter */
     input.optimalFilter = &goodFilter;
@@ -431,15 +431,15 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of data member of first data stream */
     input.hBarTildeOne = &badData1;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK)) 
     {
       return code;
     }
     printf("  PASS: null pointer to data member of data member of first data stream results in error:\n       \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* assign valid pointer to data member of data member of first data stream */
     input.hBarTildeOne = &goodData1;
@@ -447,15 +447,15 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of data member of second data stream */
     input.hBarTildeTwo = &badData2;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK)) 
     {
       return code;
     }
     printf("  PASS: null pointer to data member of data member of second data stream results in error:\n       \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
     /* assign valid pointer to data member of data member of second data stream */
     input.hBarTildeTwo = &goodData2;
@@ -463,15 +463,15 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of data member of optimal filter */
     input.optimalFilter = &badFilter;
     LALStochasticCrossCorrelationSpectrum(&status, &goodOutput, &input,  STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_TRUE);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK,
                             STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK)) 
     {
       return code;
     }
     printf("  PASS: null pointer to data member of data member of optimal filter results in error:\n       \"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* assign valid pointer to data member of data member of optimal filter */
     input.optimalFilter = &goodFilter;

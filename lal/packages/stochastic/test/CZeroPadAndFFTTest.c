@@ -275,58 +275,58 @@ main( int argc, char *argv[] )
    {
      /* test behavior for null pointer to output series */
      LALCZeroPadAndFFT(&status, NULL, &goodInput, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                              CZEROPADANDFFTTESTC_ECHK,
                              CZEROPADANDFFTTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to output series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+     printf("  PASS: null pointer to output series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
      /* test behavior for null pointer to input series */
      LALCZeroPadAndFFT(&status, &goodOutput, NULL, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                              CZEROPADANDFFTTESTC_ECHK,
                              CZEROPADANDFFTTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to input series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+     printf("  PASS: null pointer to input series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
    
      /* test behavior for null pointer to plan parameter */
      LALCZeroPadAndFFT(&status, &goodOutput, &goodInput, NULL);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                              CZEROPADANDFFTTESTC_ECHK,
                              CZEROPADANDFFTTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to plan parameter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+     printf("  PASS: null pointer to plan parameter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
    
      /* test behavior for null pointer to data member of output series */
      LALCZeroPadAndFFT(&status, &badOutput, &goodInput, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                              CZEROPADANDFFTTESTC_ECHK,
                              CZEROPADANDFFTTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to data member of output series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+     printf("  PASS: null pointer to data member of output series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
      /* test behavior for null pointer to data member of input series */
      LALCZeroPadAndFFT(&status, &goodOutput, &badInput, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                              CZEROPADANDFFTTESTC_ECHK,
                              CZEROPADANDFFTTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to data member of input series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+     printf("  PASS: null pointer to data member of input series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
      /* test behavior for null pointer to data member of data member of output series */
      LALCCreateVector(&status, &(badOutput.data), 
@@ -340,14 +340,14 @@ main( int argc, char *argv[] )
      cPtr = badOutput.data->data;
      badOutput.data->data = NULL;
      LALCZeroPadAndFFT(&status, &badOutput, &goodInput, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                              CZEROPADANDFFTTESTC_ECHK,
                              CZEROPADANDFFTTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to data member of data member of output series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+     printf("  PASS: null pointer to data member of data member of output series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
      badOutput.data->data = cPtr;
      LALCDestroyVector(&status, &(badOutput.data));
      if ( code = CheckStatus(&status, 0 , "",
@@ -368,14 +368,14 @@ main( int argc, char *argv[] )
      cPtr = badInput.data->data;
      badInput.data->data = NULL;
      LALCZeroPadAndFFT(&status, &goodOutput, &badInput, plan);
-     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                             STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+     if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                             STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
                              CZEROPADANDFFTTESTC_ECHK,
                              CZEROPADANDFFTTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to data member of data member of input series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+     printf("  PASS: null pointer to data member of data member of input series results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
      badInput.data->data = cPtr;
      LALCDestroyVector(&status, &(badInput.data));
      if ( code = CheckStatus(&status, 0 , "",

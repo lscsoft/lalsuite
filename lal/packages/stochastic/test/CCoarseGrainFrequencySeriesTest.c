@@ -255,58 +255,58 @@ main( int argc, char *argv[] )
    {
      /* test behavior for null pointer to output series */
      LALCCoarseGrainFrequencySeries(&status, NULL, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLP, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLP,
+     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+     printf("  PASS: null pointer to output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
      /* test behavior for null pointer to input series */
      LALCCoarseGrainFrequencySeries(&status, &goodOutput, NULL, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLP, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLP,
+     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to input series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+     printf("  PASS: null pointer to input series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
    
      /* test behavior for null pointer to plan parameter */
      LALCCoarseGrainFrequencySeries(&status, &goodOutput, &goodInput, NULL);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLP, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLP,
+     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to plan parameter results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+     printf("  PASS: null pointer to plan parameter results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
    
      /* test behavior for null pointer to data member of output series */
      LALCCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLP, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLP,
+     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to data member of output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+     printf("  PASS: null pointer to data member of output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
      /* test behavior for null pointer to data member of input series */
      LALCCoarseGrainFrequencySeries(&status, &goodOutput, &badInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLP, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLP,
+     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to data member of input series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+     printf("  PASS: null pointer to data member of input series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
 
      /* test behavior for null pointer to data member of data member of output series */
      LALCCreateVector(&status, &(badOutput.data), CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1);
@@ -319,14 +319,14 @@ main( int argc, char *argv[] )
      cPtr = badOutput.data->data;
      badOutput.data->data = NULL;
      LALCCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLP, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLP,
+     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to data member of data member of output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+     printf("  PASS: null pointer to data member of data member of output series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
      badOutput.data->data = cPtr;
      LALCDestroyVector(&status, &(badOutput.data));
      if ( code = CheckStatus(&status, 0 , "",
@@ -347,14 +347,14 @@ main( int argc, char *argv[] )
      cPtr = badInput.data->data;
      badInput.data->data = NULL;
      LALCCoarseGrainFrequencySeries(&status, &goodOutput, &badInput, &params);
-     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLP, 
-                             COARSEGRAINFREQUENCYSERIESH_MSGENULLP,
+     if ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR, 
+                             COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_ECHK,
                              CCOARSEGRAINFREQUENCYSERIESTESTC_MSGECHK )) 
      {
        return code;
      }
-     printf("  PASS: null pointer to data member of data member of input series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLP);
+     printf("  PASS: null pointer to data member of data member of input series results in error:\n       \"%s\"\n", COARSEGRAINFREQUENCYSERIESH_MSGENULLPTR);
      badInput.data->data = cPtr;
      LALCDestroyVector(&status, &(badInput.data));
      if ( code = CheckStatus(&status, 0 , "",

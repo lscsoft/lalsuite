@@ -11,8 +11,8 @@ Calculates the values of the overlap reduction function for a pair
 of gravitational wave detectors.
 
 \subsubsection*{Prototypes}
-\input{OverlapReductionFunctionCP}
 \idx{LALOverlapReductionFunction()}
+\input{OverlapReductionFunctionCP}
 
 \subsubsection*{Description}
 
@@ -281,7 +281,7 @@ LALOverlapReductionFunction(
   ATTATCHSTATUSPTR(status);
 
   /* check that pointer to parameters is not null */
-  ASSERT(parameters!=NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLP, STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+  ASSERT(parameters!=NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that specified length of output vector is > 0 */ 
   length = parameters->length;
@@ -302,12 +302,12 @@ LALOverlapReductionFunction(
 
   /* check that pointer to output frequency series is not null */
   ASSERT(output!=NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP, STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to data member of output frequency series is 
      not null */
   ASSERT(output->data!=NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP, STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length of the data member of output frequency series 
      agrees with length specified in input parameters */
@@ -317,10 +317,10 @@ LALOverlapReductionFunction(
   
   /* check that pointer to data-data member of output vector is not null */
   ASSERT(output->data->data!=NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP, STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to input structure is not null */
-  ASSERT(detectors!=NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLP, STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+  ASSERT(detectors!=NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* everything okay here -------------------------------------------- */
 

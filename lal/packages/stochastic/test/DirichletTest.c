@@ -111,11 +111,11 @@ main( void )
     /* test behavior for null pointer to input parameters */
     LALDirichlet( &status, &dummy, NULL );
     
-    if ( check( &status, DIRICHLETH_ENULLPIN, DIRICHLETH_MSGENULLPIN ) ) 
+    if ( check( &status, DIRICHLETH_ENULLPTRIN, DIRICHLETH_MSGENULLPTRIN ) ) 
     {
       return 1;
     }
-    printf("PASS: %s\n", DIRICHLETH_MSGENULLPIN); 
+    printf("PASS: %s\n", DIRICHLETH_MSGENULLPTRIN); 
     
     /* test behavior for LALDirichlet parameter N <= 0  */
     
@@ -178,11 +178,11 @@ main( void )
   {
     /* test behavior for null pointer to output vector */
     LALDirichlet( &status, NULL, &parameters );
-    if ( check( &status, DIRICHLETH_ENULLPOUT, DIRICHLETH_MSGENULLPOUT))
+    if ( check( &status, DIRICHLETH_ENULLPTROUT, DIRICHLETH_MSGENULLPTROUT))
     {
       return 1;
     }
-    printf("PASS: %s\n", DIRICHLETH_MSGENULLPOUT);
+    printf("PASS: %s\n", DIRICHLETH_MSGENULLPTROUT);
       
     /* test behavior for length of output vector not equal to length  */
     /* specified in input parameters */
@@ -205,11 +205,11 @@ main( void )
     /* test behavior for null pointer to data member of output vector */
     dummy.data = NULL;
     LALDirichlet( &status, &dummy, &parameters );
-    if ( check( &status, DIRICHLETH_ENULLPDOUT, DIRICHLETH_MSGENULLPDOUT)) 
+    if ( check( &status, DIRICHLETH_ENULLPTRDOUT, DIRICHLETH_MSGENULLPTRDOUT)) 
     {
       return 1;
     }
-    printf("PASS: %s\n", DIRICHLETH_MSGENULLPDOUT);
+    printf("PASS: %s\n", DIRICHLETH_MSGENULLPTRDOUT);
   }
 # endif  /* LAL_NDEBUG */
   

@@ -289,130 +289,130 @@ int main(int argc, char *argv[])
   {
     /* test behavior for null pointer to input structure */
     LALStochasticInverseNoise(&status, &output, NULL);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to input structure results in error:\n \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to input structure results in error:\n \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* test behavior for null pointer to output structure */
     LALStochasticInverseNoise(&status, NULL, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to output structure results in error:\n \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to output structure results in error:\n \"%s\"\n",STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     
     /* test behavior for null pointer to wNoise member of input structure */ 
     input.whitenedNoisePSD = NULL;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
     printf("  PASS: null pointer to whitened noise results in error:\n       \"%s\"\n",
-	   STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+	   STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.whitenedNoisePSD = &wNoise;
     /* test behavior for null pointer to wFitler member of input structure */
     input.whiteningFilter = NULL;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to whitening filter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to whitening filter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.whiteningFilter = &wFilter;
     
     /* test behavior for null pointer to invNoise member of output structure */
     output.unWhitenedInverseNoisePSD = NULL;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to unwhitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to unwhitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.unWhitenedInverseNoisePSD = &invNoise;
     
     /* test behavior for null pointer to half-whitened inverse noise member */
     /* of output structure */
     output.halfWhitenedInverseNoisePSD = NULL;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to half-whitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to half-whitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.halfWhitenedInverseNoisePSD = &hwInvNoise;
     
     /* test behavior for null pointer to data member of wnoise */
     input.whitenedNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to data member of whitened noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to data member of whitened noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.whitenedNoisePSD = &wNoise;
     
     /* test behavior for null pointer to data member of wFilter */
     input.whiteningFilter = &complexBadData;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to data member of whitening filter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to data member of whitening filter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.whiteningFilter = &wFilter;
     
     /* test behavior for null pointer to data member of invNoise  */
     output.unWhitenedInverseNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to data member of unwhitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to data member of unwhitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.unWhitenedInverseNoisePSD = &invNoise;
     
     /* test behavior for null pointer to data member of half-whitened */
     /* inverse noise */
     output.halfWhitenedInverseNoisePSD = &complexBadData;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to data member of half-whitened noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to data member of half-whitened noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.halfWhitenedInverseNoisePSD = &hwInvNoise;
     
     /* Create a vector for testing REAL4 null data-data pointers */
@@ -427,27 +427,27 @@ int main(int argc, char *argv[])
     /* test behavior for null pointer to data-data member of wNoise */
     input.whitenedNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to data-data member of whitened noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to data-data member of whitened noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.whitenedNoisePSD = &wNoise;
     
     /* test behavior for null pointer to data-data member of invNoise */
     output.unWhitenedInverseNoisePSD = &realBadData;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to data-data member of unwhitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to data-data member of unwhitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.unWhitenedInverseNoisePSD = &invNoise;
     
     /* Create a vector for testing COMPLEX8 null data-data pointers */ 
@@ -462,27 +462,27 @@ int main(int argc, char *argv[])
     /* test behavior for null pointer to data-data member of wFilter */
     input.whiteningFilter = &complexBadData;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to data-data member of whitening filter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to data-data member of whitening filter results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     input.whiteningFilter = &wFilter;
     
     /* test behavior for null pointer to data-data member of hwInvNoise */
     output.halfWhitenedInverseNoisePSD = &complexBadData;
     LALStochasticInverseNoise(&status, &output, &input);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-			    STOCHASTICCROSSCORRELATIONH_MSGENULLP,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+			    STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,
 			    STOCHASTICINVERSENOISETESTC_ECHK,
 			    STOCHASTICINVERSENOISETESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to data-data member of half-whitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to data-data member of half-whitened inverse noise results in error:\n       \"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
     output.halfWhitenedInverseNoisePSD = &hwInvNoise;
     
     /** clean up **/

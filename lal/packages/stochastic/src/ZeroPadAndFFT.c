@@ -13,9 +13,9 @@ and modified, so the documentation is not yet complete and/or correct.}
 Routines for zero-padding and Fourier transforming a time series.
 
 \subsubsection*{Prototypes}
-\input{ZeroPadAndFFTCP}
 \idx{LALSZeroPadAndFFT()}
 \idx{LALCZeroPadAndFFT()}
+\input{ZeroPadAndFFTCP}
 
 \subsubsection*{Description}
 
@@ -163,14 +163,14 @@ LALSZeroPadAndFFT(LALStatus                *status,
 
   /* check that pointer to real timer series for input is non-null */
   ASSERT(input != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to data member of real time series for input is 
      non-null */
   ASSERT(input->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length of data member of real time series for input is 
      not equal to zero */
@@ -182,13 +182,13 @@ LALSZeroPadAndFFT(LALStatus                *status,
   /* check that pointer to data-data member of real time series for input 
      is non-null */
   ASSERT(input->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to FFT plan variable is non-null */
   ASSERT(fftPlan != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length of FFT plan is correct */
   fullLength = 2 * length - 1;
@@ -202,14 +202,14 @@ LALSZeroPadAndFFT(LALStatus                *status,
 
   /* check that pointer to complex frequency series for output is non-null */
   ASSERT(output != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to data member of complex frequency series for 
      output is non-null */
   ASSERT(output->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that lengths of data member of real time series for input 
      and data member of complex frequency series for output are equal */
@@ -223,8 +223,8 @@ LALSZeroPadAndFFT(LALStatus                *status,
   /* check that pointer to data-data member of complex frequency series 
      for output is non-null */
   ASSERT(output->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
   
   /* check that heterodyning frequency of real frequency series for
      the input is equal to zero */
@@ -299,14 +299,14 @@ LALCZeroPadAndFFT(LALStatus                *status,
 
   /* check that pointer to real timer series for input is non-null */
   ASSERT(input != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to data member of real time series for input is 
      non-null */
   ASSERT(input->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length of data member of real time series for input is 
      not equal to zero */
@@ -318,13 +318,13 @@ LALCZeroPadAndFFT(LALStatus                *status,
   /* check that pointer to data-data member of real time series for input 
      is non-null */
   ASSERT(input->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to FFT plan variable is non-null */
   ASSERT(fftPlan != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length of FFT plan is correct */
   fullLength = 2 * length - 1;
@@ -338,14 +338,14 @@ LALCZeroPadAndFFT(LALStatus                *status,
 
   /* check that pointer to complex frequency series for output is non-null */
   ASSERT(output != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to data member of complex frequency series for 
      output is non-null */
   ASSERT(output->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that lengths of data member of zero-padded time series
      and data member of complex frequency series for output are equal */
@@ -359,8 +359,8 @@ LALCZeroPadAndFFT(LALStatus                *status,
   /* check that pointer to data-data member of complex frequency series 
      for output is non-null */
   ASSERT(output->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that frequency spacing is positive */
   deltaT = input->deltaT;

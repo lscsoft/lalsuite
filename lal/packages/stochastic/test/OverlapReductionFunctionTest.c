@@ -364,47 +364,47 @@ int main( int argc, char *argv[] )
   {
     /* test behavior for null pointer to real frequency series for output */
     LALOverlapReductionFunction(&status, NULL, &detectors, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
                             OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) 
     {
       return code;
     }
-    printf("  PASS: null pointer to output series results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to output series results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
     /* test behavior for null pointer to input structure */
     LALOverlapReductionFunction(&status, &overlap, NULL, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
                             OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) 
     {
       return code;
     }
-    printf("  PASS: null pointer to input structure results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to input structure results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
 
     /* test behavior for null pointer to parameter structure */
     LALOverlapReductionFunction(&status, &overlap, &detectors, NULL);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
                             OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to parameter structure results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to parameter structure results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
 
     /* test behavior for null pointer to data member of real frequency
        series for output */
     LALOverlapReductionFunction(&status, &dummyOutput, &detectors, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
                             OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) 
     {
       return code;
     }
     printf("  PASS: null pointer to data member of output series results in error:       \n\"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
 
     /* Create a vector for testing null data-data pointer */
@@ -420,14 +420,14 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of data member of
        real frequency series for output */
     LALOverlapReductionFunction(&status, &dummyOutput, &detectors, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,OVERLAPREDUCTIONFUNCTIONTESTC_ECHK,
                             OVERLAPREDUCTIONFUNCTIONTESTC_MSGECHK) ) 
     {
       return code;
     }
     printf("  PASS: null pointer to data member of data member of output series results in error:       \n\"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
     /* clean up */
     

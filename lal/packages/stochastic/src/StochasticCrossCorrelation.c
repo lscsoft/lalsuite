@@ -189,58 +189,58 @@ LALStochasticCrossCorrelationStatistic(
 
   /*    output structure */
   ASSERT(output != NULL, status,
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*    input structure */
   ASSERT(input != NULL, status,
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*       optimal filter */
   ASSERT(input->optimalFilter != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*       first data stream */
   ASSERT(input->hBarTildeOne != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*       second data stream */
   ASSERT(input->hBarTildeTwo != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*          data member for optimal filter */
   ASSERT(input->optimalFilter->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*          data member for first data stream */
   ASSERT(input->hBarTildeOne->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*          data member for second data stream */
   ASSERT(input->hBarTildeTwo->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*             data-data member for optimal filter */
   ASSERT(input->optimalFilter->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*             data-data member for first data stream */
   ASSERT(input->hBarTildeOne->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*             data-data member for second data stream */
   ASSERT(input->hBarTildeTwo->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* extract parameters */
   freqParams.length = input->optimalFilter->data->length;
@@ -450,58 +450,58 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
 
   /*    output structure */
   ASSERT(output != NULL, status,
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*    input structure */
   ASSERT(input != NULL, status,
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*       optimal filter */
   ASSERT(input->optimalFilter != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*       first data stream */
   ASSERT(input->hBarTildeOne != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*       second data stream */
   ASSERT(input->hBarTildeTwo != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*          data member for optimal filter */
   ASSERT(input->optimalFilter->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*          data member for first data stream */
   ASSERT(input->hBarTildeOne->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*          data member for second data stream */
   ASSERT(input->hBarTildeTwo->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*             data-data member for optimal filter */
   ASSERT(input->optimalFilter->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*             data-data member for first data stream */
   ASSERT(input->hBarTildeOne->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*             data-data member for second data stream */
   ASSERT(input->hBarTildeTwo->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* extract parameters */
   freqParams.length = input->optimalFilter->data->length;
@@ -694,68 +694,115 @@ LALStochasticCrossCorrelationSpectrum(
 
   /*    output series */
   ASSERT(output != NULL, status,
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*    data member for output series */
   ASSERT(output->data != NULL, status,
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*    data-data member for output series */
   ASSERT(output->data->data != NULL, status,
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*    input structure */
   ASSERT(input != NULL, status,
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*       optimal filter */
   ASSERT(input->optimalFilter != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*       first data stream */
   ASSERT(input->hBarTildeOne != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*       second data stream */
   ASSERT(input->hBarTildeTwo != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*          data member for optimal filter */
   ASSERT(input->optimalFilter->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*          data member for first data stream */
   ASSERT(input->hBarTildeOne->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*          data member for second data stream */
   ASSERT(input->hBarTildeTwo->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*             data-data member for optimal filter */
   ASSERT(input->optimalFilter->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*             data-data member for first data stream */
   ASSERT(input->hBarTildeOne->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*             data-data member for second data stream */
   ASSERT(input->hBarTildeTwo->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
+
+  /* Check for duplicate pointers */
+
+  /*    output series = optimal filter */
+  ASSERT(output != input->optimalFilter, status,
+         STOCHASTICCROSSCORRELATIONH_ESAMEPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGESAMEPTR);
+
+  /*    output series = first data stream */
+  ASSERT(output != input->hBarTildeOne, status,
+         STOCHASTICCROSSCORRELATIONH_ESAMEPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGESAMEPTR);
+
+  /*    output series = second data stream */
+  ASSERT(output != input->hBarTildeTwo, status,
+         STOCHASTICCROSSCORRELATIONH_ESAMEPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGESAMEPTR);
+
+  /*    output series = optimal filter */
+  ASSERT(output->data != input->optimalFilter->data, status,
+         STOCHASTICCROSSCORRELATIONH_ESAMEPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGESAMEPTR);
+
+  /*    output series = first data stream */
+  ASSERT(output->data != input->hBarTildeOne->data, status,
+         STOCHASTICCROSSCORRELATIONH_ESAMEPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGESAMEPTR);
+
+  /*    output series = second data stream */
+  ASSERT(output->data != input->hBarTildeTwo->data, status,
+         STOCHASTICCROSSCORRELATIONH_ESAMEPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGESAMEPTR);
+
+  /*    output series = optimal filter */
+  ASSERT(output->data->data != input->optimalFilter->data->data, status,
+         STOCHASTICCROSSCORRELATIONH_ESAMEPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGESAMEPTR);
+
+  /*    output series = first data stream */
+  ASSERT(output->data->data != input->hBarTildeOne->data->data, status,
+         STOCHASTICCROSSCORRELATIONH_ESAMEPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGESAMEPTR);
+
+  /*    output series = second data stream */
+  ASSERT(output->data->data != input->hBarTildeTwo->data->data, status,
+         STOCHASTICCROSSCORRELATIONH_ESAMEPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGESAMEPTR);
 
   /* extract parameters */
   freqParams.length = input->optimalFilter->data->length;

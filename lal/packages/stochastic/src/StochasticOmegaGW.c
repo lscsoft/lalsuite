@@ -10,8 +10,8 @@ $Id$
 Generates a frequency series containing a simple power law spectrum.
 
 \subsubsection*{Prototypes}
-\input{StochasticOmegaGWCP}
 \idx{LALStochasticOmegaGW()}
+\input{StochasticOmegaGWCP}
 
 \subsubsection*{Description}
 The strength of a stochastic gravitational wave background is
@@ -125,7 +125,7 @@ LALStochasticOmegaGW( LALStatus                         *status,
 
   /* check that pointer to input parameters is non-null */
   ASSERT(parameters != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP, STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that frequency spacing is greater than zero */
   deltaF     = parameters->deltaF;
@@ -149,12 +149,12 @@ LALStochasticOmegaGW( LALStatus                         *status,
 
   /* check that pointer to real frequency series for output is non-null */
   ASSERT(output != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP, STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that pointer to data member of real frequency series for 
      output is non-null */
   ASSERT(output->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP, STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that length of data member of real frequency series for output
      equals length specified in input parameters */
@@ -166,7 +166,7 @@ LALStochasticOmegaGW( LALStatus                         *status,
   /* check that pointer to data-data member of real frequency series for 
      output is non-null */
   ASSERT(output->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP, STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   fRef       = parameters->fRef;
   /* check that the fRef value is positive */

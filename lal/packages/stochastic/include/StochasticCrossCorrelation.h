@@ -169,24 +169,26 @@ NRCSID( STOCHASTICCROSSCORRELATIONH,
 
 /****************** <lalErrTable file="StochasticCrossCorrelationHE"> */
 
-#define STOCHASTICCROSSCORRELATIONH_ENULLP          1
-#define STOCHASTICCROSSCORRELATIONH_EZEROLEN        2
-#define STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF   3
-#define STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT   4
-#define STOCHASTICCROSSCORRELATIONH_ENEGFMIN        5
-#define STOCHASTICCROSSCORRELATIONH_EMMTIME         6
-#define STOCHASTICCROSSCORRELATIONH_EMMHETERO       7
-#define STOCHASTICCROSSCORRELATIONH_EMMFMIN         8
-#define STOCHASTICCROSSCORRELATIONH_EMMDELTAF       9
-#define STOCHASTICCROSSCORRELATIONH_EMMLEN         10
-#define STOCHASTICCROSSCORRELATIONH_EOORFREF       11
-#define STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA   12
-#define STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ     13
-#define STOCHASTICCROSSCORRELATIONH_ENONZEROHETERO 14
-#define STOCHASTICCROSSCORRELATIONH_EWRONGUNITS    15
+#define STOCHASTICCROSSCORRELATIONH_ENULLPTR        1
+#define STOCHASTICCROSSCORRELATIONH_ESAMEPTR        2
+#define STOCHASTICCROSSCORRELATIONH_EZEROLEN        3
+#define STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAF   4
+#define STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT   5
+#define STOCHASTICCROSSCORRELATIONH_ENEGFMIN        6
+#define STOCHASTICCROSSCORRELATIONH_EMMTIME         7
+#define STOCHASTICCROSSCORRELATIONH_EMMHETERO       8
+#define STOCHASTICCROSSCORRELATIONH_EMMFMIN         9
+#define STOCHASTICCROSSCORRELATIONH_EMMDELTAF      10
+#define STOCHASTICCROSSCORRELATIONH_EMMLEN         11
+#define STOCHASTICCROSSCORRELATIONH_EOORFREF       12
+#define STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA   13
+#define STOCHASTICCROSSCORRELATIONH_ENONSYMDIJ     14
+#define STOCHASTICCROSSCORRELATIONH_ENONZEROHETERO 15
+#define STOCHASTICCROSSCORRELATIONH_EWRONGUNITS    16
 #define STOCHASTICCROSSCORRELATIONH_ENOTYETHETERO 255
 
-#define STOCHASTICCROSSCORRELATIONH_MSGENULLP      "Null pointer"
+#define STOCHASTICCROSSCORRELATIONH_MSGENULLPTR    "Null pointer"
+#define STOCHASTICCROSSCORRELATIONH_MSGESAMEPTR    "Input and Output pointers the same"
 #define STOCHASTICCROSSCORRELATIONH_MSGEZEROLEN    "Zero length for data member of series" 
 #define STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAF "Negative or zero frequency spacing" 
 #define STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT "Negative or zero time spacing" 
@@ -220,6 +222,9 @@ NRCSID( STOCHASTICCROSSCORRELATIONH,
 
 \subsubsection*{Prototypes}
 
+\idx{LALStochasticCrossCorrelationStatistic()}
+\idx{LALHeterodynedStochasticCrossCorrelationStatistic()}
+\idx{LALStochasticCrossCorrelationSpectrum()}
 \input{StochasticCrossCorrelationHPCC}
 
 \subsubsection*{\texttt{struct REAL4WithUnits}}
@@ -337,6 +342,8 @@ LALStochasticCrossCorrelationSpectrum(
   \texttt{ZeroPadAndFFT.c}
   (Sec.~\ref{stochastic:ss:ZeroPadAndFFT.c})}
 
+\idx{LALSZeroPadAndFFT()}
+\idx{LALCZeroPadAndFFT()}
 \input{StochasticCrossCorrelationHPZP}
 
 ********** </lalLaTeX> *********/
@@ -364,7 +371,6 @@ LALCZeroPadAndFFT(LALStatus                *status,
    *                                                           *
    *************************************************************/
 
-
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{Structures and protoypes associated with 
@@ -373,6 +379,7 @@ LALCZeroPadAndFFT(LALStatus                *status,
 
 \subsubsection*{Prototypes}
 
+\idx{LALStochasticOptimalFilter()}
 \input{StochasticCrossCorrelationHPOF}
 
 \subsubsection*{\texttt{struct StochasticOptimalFilterInput}}
@@ -422,14 +429,37 @@ typedef struct tagStochasticOptimalFilterInput {
   REAL4FrequencySeries     *unWhitenedInverseNoisePSD2;
 } StochasticOptimalFilterInput;
 
+/********************************************************** <lalLaTeX>
+
+\subsubsection*{\texttt{struct StochasticOptimalFilterParameters}}
+\idx{StochasticOptimalFilterParameters}}
+
+\noindent 
+Contains the parameters of \texttt{LALStochasticOptimalFilter()}.
+The fields are:
+ 
+\begin{description}
+\item[\texttt{REAL8 fRef}]
+The reference frequency used in defining the normalization.
+\item[\texttt{BOOLEAN heterodyned}]
+Indicates whether the filter is to be used on heterodyned data or not.
+\end{description}
+
+*********************************************************** </lalLaTeX> */
+
+typedef struct tagStochasticOptimalFilterParameters {
+  REAL8               fRef;
+  BOOLEAN             heterodyned;
+} StochasticOptimalFilterParameters;
+
 /********** <lalVerbatim file="StochasticCrossCorrelationHPOF"> *********/
 
 void
 LALStochasticOptimalFilter(
-            LALStatus                           *status,
-            COMPLEX8FrequencySeries             *optimalFilter,
-            const StochasticOptimalFilterInput  *input,
-            const REAL8                          fRef);
+            LALStatus                                *status,
+            COMPLEX8FrequencySeries                  *optimalFilter,
+            const StochasticOptimalFilterInput       *input,
+            const StochasticOptimalFilterParameters  *parameters);
 
 /********** </lalVerbatim> *********/
 
@@ -447,6 +477,7 @@ LALStochasticOptimalFilter(
 
 \subsubsection*{Prototypes}
 
+\idx{LALStochasticInverseNoise()}
 \input{StochasticCrossCorrelationHPIN}
 
 \subsubsection*{\texttt{struct StochasticInverseNoiseOutput}}
@@ -523,6 +554,7 @@ LALStochasticInverseNoise(
 
 \subsubsection*{Prototypes}
 
+\idx{LALStochasticOmegaGW()}
 \input{StochasticCrossCorrelationHPOG}
 
 \subsubsection*{\texttt{struct StochasticOmegaGWParameters}}
@@ -592,6 +624,7 @@ LALStochasticOmegaGW (
 
 \subsubsection*{Prototypes}
 
+\idx{LALOverlapReductionFunction()}
 \input{StochasticCrossCorrelationHPOR}
 
 \subsubsection*{\texttt{struct OverlapReductionFunctionParameters}}

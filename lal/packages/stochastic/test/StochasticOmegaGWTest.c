@@ -238,37 +238,37 @@ int main( int argc, char *argv[] )
   {
     /* test behavior for null pointer to real frequency series for output */
     LALStochasticOmegaGW(&status, NULL, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,STOCHASTICOMEGAGWTESTC_ECHK,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,STOCHASTICOMEGAGWTESTC_ECHK,
                             STOCHASTICOMEGAGWTESTC_MSGECHK) ) 
     {
       return code;
     }
-    printf("  PASS: null pointer to output series results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to output series results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
 
     /* test behavior for null pointer to parameter structure */
     LALStochasticOmegaGW(&status, &omegaGW, NULL);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP,
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,STOCHASTICOMEGAGWTESTC_ECHK,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,STOCHASTICOMEGAGWTESTC_ECHK,
                             STOCHASTICOMEGAGWTESTC_MSGECHK)) 
     {
       return code;
     }
-    printf("  PASS: null pointer to parameter structure results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+    printf("  PASS: null pointer to parameter structure results in error:       \n\"%s\"\n", STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
 
     /* test behavior for null pointer to data member of real frequency
        series for output */
     LALStochasticOmegaGW(&status, &dummyOutput, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,STOCHASTICOMEGAGWTESTC_ECHK,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,STOCHASTICOMEGAGWTESTC_ECHK,
                             STOCHASTICOMEGAGWTESTC_MSGECHK) ) 
     {
       return code;
     }
     printf("  PASS: null pointer to data member of output series results in error:       \n\"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
 
     /* Create a vector for testing null data-data pointer */
@@ -284,14 +284,14 @@ int main( int argc, char *argv[] )
     /* test behavior for null pointer to data member of data member of
        real frequency series for output */
     LALStochasticOmegaGW(&status, &dummyOutput, &parameters);
-    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLP, 
-                            STOCHASTICCROSSCORRELATIONH_MSGENULLP,STOCHASTICOMEGAGWTESTC_ECHK,
+    if ( code = CheckStatus(&status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, 
+                            STOCHASTICCROSSCORRELATIONH_MSGENULLPTR,STOCHASTICOMEGAGWTESTC_ECHK,
                             STOCHASTICOMEGAGWTESTC_MSGECHK) ) 
     {
       return code;
     }
     printf("  PASS: null pointer to data member of data member of output series results in error:       \n\"%s\"\n",
-           STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+           STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
     /* clean up */
     
