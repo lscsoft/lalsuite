@@ -18,7 +18,17 @@ RandomInspiralSignalTest
 
 This test code gives an example of how one might generate an inspiral
 waveform and compute its overlap with simulated detector noise
-(with or witnout the signal present). The parameter
+(with or witnout the signal present).  Recently, the code
+was modified so that users can output either the time-domain signal,
+noise, or signal+noise and not the correlated output. This is
+done via the variable \texttt{TimeDomain} which controls the type of output
+If \texttt{TimeDomain=0} then the code fitlers the random signal
+with a template of the same parameters and outputs the
+results of the correlation.
+If \texttt{TimeDomain=1} then the code outputs the time-domain
+signal/noise/signal+noise 
+
+The parameter
 {\texttt randIn.type=0} generates only signal
 {\texttt randIn.type=1} generates only noise
 {\texttt randIn.type=2} generates {\texttt randIn.SignalAmp * signal(t)
@@ -70,6 +80,16 @@ INT4 lalDebugLevel=0;
 int 
 main ( void ) 
 {
+   UINT4 TimeDomain=0;
+/*
+ * The int TimeDomain is used to control the type of output
+ * If TimeDomain=0 then the code fitlers the random signal
+ * with a template of the same parameters and outputs the
+ * results of the correlation.
+ * If TimeDomain=1 then the code outputs the time-domain
+ * signal/noise/signal+noise
+ */
+
    static LALStatus status;
    INT4 i;
    REAL8 dt;
@@ -120,7 +140,7 @@ main ( void )
    randIn.param.OmegaS = 0.0;
    randIn.param.Theta = 0.0;
    randIn.param.order = twoPN;
-   randIn.param.approximant = TaylorT2;
+   randIn.param.approximant = EOB;
    randIn.param.massChoice = m1Andm2;
    randIn.etaMin = randIn.mMin * ( randIn.MMax - randIn.mMin) /
       pow(randIn.MMax,2.);
@@ -150,44 +170,62 @@ main ( void )
    while (i--) {
       randIn.type = 0;
       LALRandomInspiralSignal(&status, &signal, &randIn);
-/*
       fprintf(stderr, "%d %e %e\n", i, randIn.param.mass1, randIn.param.mass2);
-      LALREAL4VectorFFT(&status, &correlation, &signal, revp);
-      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
-*/
-      LALInspiralParameterCalc(&status, &randIn.param);
-      overlapin.signal = signal;
-      overlapin.param = randIn.param;
-      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
-      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
+      if (TimeDomain)
+      {
+	      LALREAL4VectorFFT(&status, &correlation, &signal, revp);
+	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
+      }
+      else
+      {
+   
+	      randIn.param.approximant = PadeT1;
+	      LALInspiralParameterCalc(&status, &randIn.param);
+	      overlapin.signal = signal;
+	      overlapin.param = randIn.param;
+	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
+	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
+      }
 
       randIn.type = 1;
       LALRandomInspiralSignal(&status, &signal, &randIn);
-      LALInspiralParameterCalc(&status, &randIn.param);
-      overlapin.signal = signal;
-      overlapin.param = randIn.param;
-      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
-      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
+      if (TimeDomain)
+      {
+	      LALREAL4VectorFFT(&status, &correlation, &signal, revp);
+	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
+      }
+      else
+      {
+	      LALInspiralParameterCalc(&status, &randIn.param);
+	      overlapin.signal = signal;
+	      overlapin.param = randIn.param;
+	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
+	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
+      }
 
       randIn.type = 2;
       LALRandomInspiralSignal(&status, &signal, &randIn);
-      LALInspiralParameterCalc(&status, &randIn.param);
-      overlapin.signal = signal;
-      overlapin.param = randIn.param;
-      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
-      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
+      fprintf(stderr, "Parameters of the signal \n\n");
+      fprintf(stderr, "m1=%e m2=%e t0=%e t2=%e \n",  
+		      randIn.param.mass1, randIn.param.mass2, randIn.param.t0, randIn.param.t2);
+      if (TimeDomain)
+      {
+	      LALREAL4VectorFFT(&status, &correlation, &signal, revp);
+	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
+      }
+      else
+      {
+	      randIn.param.approximant = PadeT1;
+	      LALInspiralParameterCalc(&status, &randIn.param);
+	      overlapin.signal = signal;
+	      overlapin.param = randIn.param;
+	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
+	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
+	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  
+			      overlapout.phase, overlapout.bin, overlapout.max*signal.length);
+      }
    }
 
-   fprintf(stderr, "Parameters of the signal and max correlation obtained in case (c)\n\n");
-   fprintf(stderr, "m1=%e m2=%e t0=%e t2=%e \n phase_max=%e bin_max=%d overlap_max=%e\n",  
-      randIn.param.mass1, 
-      randIn.param.mass2, 
-      randIn.param.t0, 
-      randIn.param.t2, 
-      overlapout.phase,
-      overlapout.bin,
-      overlapout.max
-   );
 
 /* destroy the plans, correlation and signal */
 
