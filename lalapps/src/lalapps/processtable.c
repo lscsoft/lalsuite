@@ -97,7 +97,7 @@ populate_process_table (
 
   /* online flag and domain */
   ptable->is_online = 0;
-  LALSnprintf( ptable->domain, LIGOMETA_DOMAIN_MAX , "standalone" );
+  LALSnprintf( ptable->domain, LIGOMETA_DOMAIN_MAX , "lalapps" );
   
   /* process id, username and host */
   ptable->unix_procid = getpid();
