@@ -691,9 +691,40 @@ the first diagram above to see where the greyed-out fifth analysis window
 was to be placed.  That is where the first analysis window in the second
 time series here will be placed.
 
+Prior to looping over the data one noise PSD estimation length at a time,
+the data is passed through a conditioning filter.  To account for edge
+effects in the filter, an amount of data set by the command line option
+\option{--filter-corruption} is dropped from the analysis at both the
+begining and end of the time series.  The arrangement is shown in the
+following diagram.
 \begin{center}
 \input{figures/power/conditioning.fig}
 \end{center}
+The bottom-most line in this diagram represents the time series as read
+into memory from disk.  In this example we have read 106496 samples into
+memory, and after passing it through the conditioning filter 8192 samples
+are dropped from the beginning and end of the series.  The remaining data
+is then passed to \function{EPSearch()} 57344 samples at a time --- just as
+was done in the earlier examples --- with appropriate overlaps.  In this
+example, it happens that an integer number of overlaping noise PSD
+intervals fits into the data that survives the conditioning.  In general
+this will not be the case.  If the last noise PSD interval would extend
+beyond the end of the time series, it is moved to an earlier time so that
+its end is aligned with the end of the available data.
+
+If more data needs to be analyzed than will fit in RAM at one time, we must
+read it into memory and analyze it pieces.  In doing this, we again want
+the analysis windows in neighbouring read cycles to overlap one another in
+the same manner that neighbouring analysis windows within a single noise
+PSD interval overlap one another.  This will be assured if, in the diagram
+above, the start of the next data to be read from disk is arranged so that
+the first noise PSD interval to be analyzed within it starts at the correct
+location relative to the last PSD interval analyzed from the previous read
+cycle.  Consideration of the diagram above reveals that in order to meet
+this condition, the next data to be read into memory should start $(2
+\mbox{\parm{filter corruption}} + \mbox{\parm{window length}} -
+\mbox{\parm{window shift}})$ samples prior to the end of the previous data
+to have been read.
 
 
 \item[Example]
