@@ -36,15 +36,26 @@ class ScienceSegment:
     self.segpad = segpad
     self.startpad = self.start - self.segpad
     self.endpad = self.end + self.segpad
-  def createchunks(self,length,overlap):
+
+  def createchunks(self,length,overlap,play_only):
     dur = self.duration
     start = self.start
     seg_incr = length - overlap
     while dur >= length:
-      self.chunks.append(InspiralChunk(start,start+length))
+      middle = start + length / 2
+      end = start + length
+      if (not play_only) or ( play_only 
+        and ( isplay(start) or isplay(middle) or isplay(end) ) ):
+        self.chunks.append(InspiralChunk(start,end))
       start += seg_incr
       dur -= seg_incr
     self.used = self.duration - dur
+
+  def isplay(self,t):
+    if ((t - 729273613) % 6370) < 600:
+      return 1
+    else:
+      return 0
 
 class InspiralPipeline:
   """
@@ -78,7 +89,7 @@ class InspiralPipeline:
         self.segments.append( 
           ScienceSegment(segpars[0],segpars[1],segpars[2],segpars[3],segpad) )
   
-  def createchunks(self):
+  def createchunks(self,play_only):
     # compute the chunk and overlap length in seconds
     numpoints = int(self.config['datacond']['segment-length'])
     numseg = int(self.config['datacond']['number-of-segments'])
@@ -87,7 +98,7 @@ class InspiralPipeline:
     chunk_length = (numpoints * numseg - ( numseg - 1 ) * overlap ) / srate
     chunk_overlap = overlap / srate
     for seg in self.segments:
-      seg.createchunks(chunk_length,chunk_overlap)
+      seg.createchunks(chunk_length,chunk_overlap,play_only)
 
   def status(self):
     log_fh = open( self.basename + '.pipeline.log', 'w' )
@@ -230,12 +241,11 @@ Usage: inspiral_pipeline.py [OPTIONS]
    -c, --cache                  flag the LALdataFind query as done
    -b, --bank                   flag the template bank generation as done
    -i, --inspiral               flag the inspiral code as done
+   -p, --play                   only create chunks that overlap with playground
 
 This program generates a DAG to run the inspiral code. The configuration
 file should specify the parameters needed to run the jobs and must be
 specified with the --config-file (or -f) option.
-
-TODO: fix this documentation
 
 Unless the --cache (or -c) option is specified the DAG will generate frame
 cache files by querying LDR, otherwise these will be expected to exist.
@@ -249,14 +259,15 @@ expect the banks to have been previously generated with the correct names.
 """
   print msg
 
-shortop = "f:vhcbi"
+shortop = "f:vhcbip"
 longop = [
   "config-file=",
   "version",
   "help",
   "cache",
   "bank",
-  "inspiral"
+  "inspiral",
+  "play"
   ]
 
 try:
@@ -269,6 +280,7 @@ config_file = None
 do_cache = None
 do_bank = None
 do_inspiral = None
+play_only = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -285,6 +297,8 @@ for o, a in opts:
     do_bank = 1
   if o in ("-i", "--inspiral"):
     do_inspiral = 1
+  if o in ("-p", "--play"):
+    play_only = 1
 
 if not config_file:
   print >> sys.stderr, "No configuration file specified."
@@ -302,7 +316,7 @@ except: pass
 
 pipeline = InspiralPipeline(config_file)
 pipeline.parsesegs()
-pipeline.createchunks()
+pipeline.createchunks(play_only)
 pipeline.status()
 pipeline.frcachesub()
 pipeline.banksub()
