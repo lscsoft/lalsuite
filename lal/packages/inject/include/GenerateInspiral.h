@@ -20,7 +20,8 @@
  * 	within the inspiral package (TaylorT1, T2, T3, PadeT1, EOB, and spinning 
  * 	waveform) and the inject package (so-called PPN waveform).
  *
- * 	There is also a test code as well which allows to check the output of the code.
+ * 	There is also a test code as well which allows to check the output of 
+ *      the code. It is called InjectionInterfaceTest.c
  * 	
  * 	\subsection*{Synopsis}
  * 	\begin{verbatim}
@@ -34,9 +35,14 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 #include <lal/GeneratePPNInspiral.h>
+ 
 #include <lal/GenerateSpinOrbitCW.h>
 #include <lal/GenerateTaylorCW.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/SeqFactories.h>
+
+#include <lal/Units.h>
+
 
 #ifdef  __cplusplus
 extern "C" {
@@ -52,9 +58,13 @@ NRCSID( GENERATEINSPIRALH, "$Id$" );
 /* <lalErrTable> */
 #define GENERATEINSPIRALH_ENORM 	0
 #define GENERATEINSPIRALH_ENULL  	1
+#define GENERATEINSPIRALH_EDFDT 	1
+
 
 #define GENERATEINSPIRALH_MSGENORM 	"Normal exit"
 #define GENERATEINSPIRALH_MSGENULL  	"Null pointer"
+#define GENERATEINSPIRALH_MSGEDFDT  	"Waveform sampling interval is too large"
+
 /* </lalErrTable> */
 
 
@@ -88,22 +98,15 @@ void LALGenerateInspiral(LALStatus        *status,
 			 SimInspiralTable *params, 
 			 PPNParamStruc    *ppnParamsInputOutput );
 
-void ComputeSpin(InspiralTemplate *params);
-
 
 /* three function to read the order and approximant from a string */
-void LALGenerateInspiralGetOrderFromString(LALStatus *status,
-					   CHAR *message,
-					   UINT4 *result);
+void LALGetOrderFromString(LALStatus *status,
+			   CHAR *message,
+			   UINT4 *result);
      
-void LALGenerateInspiralGetApproxFromString(LALStatus *status,
-					   CHAR *message,
-					   UINT4 *result);
-
-void LALGenerateInspiralGetModelFromString(LALStatus *status,
-					   CHAR *message,
-					   UINT4 *order,
-					   UINT4 *model);
+void LALGetApproximantFromString(LALStatus *status,
+			    CHAR *message,
+			    UINT4 *result);
 
 /*  three function to populate the needed structures */
 void  LALGenerateInspiralPopulatePPN(LALStatus             *status,
@@ -115,8 +118,6 @@ void LALGenerateInspiralPopulateInspiral(LALStatus             *status,
 					 SimInspiralTable      *thisEvent,
 					 PPNParamStruc         *ppnParams);
 
-void LALGenerateInspiralPopulateInspiralSpin(LALStatus             *status,
-					     InspiralTemplate      *inspiralParams);
 
 
 #ifdef  __cplusplus
