@@ -4,10 +4,27 @@ This package contains the general purpose LAL tools.
 
 \newpage\input{UnitsH}
 \newpage\input{DetectorSiteH}
+\newpage\input{DetResponseH}
 
 \newpage\begin{thebibliography}{0}
+\expandafter\ifx\csname bibnamefont\endcsname\relax
+  \def\bibnamefont#1{#1}\fi
+\expandafter\ifx\csname bibfnamefont\endcsname\relax
+  \def\bibfnamefont#1{#1}\fi
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\providecommand{\bibinfo}[2]{#2}
+\providecommand{\eprint}[2][]{\url{#2}}
+
 \input{UnitDefsCB}
 \input{UnitNormalizeCB}
 \input{DetectorSiteHB}
 \input{CreateDetectorCB}
+\bibitem{ABCF:2000} W.~G. Anderson, P.~R Brady, J.~D.~E. Creighton,
+  and \'E.~\'E. Flanagan, \emph{Beam Pattern Response Functions and
+  Times of Arrival for Earthbound Interferometers} (2000), unpublished
+  Maple worksheet,
+  \url{http://dirac.utb.edu/~warren/unprot/beamUNDERSCOREpatternsUNDERSCORE260401.tar.gz}.
+
 \end{thebibliography}

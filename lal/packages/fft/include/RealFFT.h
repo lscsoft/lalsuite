@@ -135,6 +135,10 @@ LALREAL4VectorFFT(
     );
 
 /** OLD ROUTINES **/
+#ifdef KEEP_OLD_FFT
+#define KEEP_OLD_REAL_FFT
+#endif
+
 #ifdef KEEP_OLD_REAL_FFT
 
 void

@@ -104,6 +104,10 @@ LALCOMPLEX8VectorFFT (
     ComplexFFTPlan *plan
     );
 
+#ifdef KEEP_OLD_FFT
+#define KEEP_OLD_COMPLEX_FFT
+#endif
+
 #ifdef KEEP_OLD_COMPLEX_FFT
 
 void
