@@ -1,7 +1,7 @@
 \section{Program \texttt{lalapps\_tmpltbank}}
 \label{program:lalapps-tmpltbank}
 \idx[Program]{lalapps\_tmpltbank}
-
+\begin{entry}
 \item[Synopsis]
 \noindent \verb$lalapps_tmpltbank$ --- program to generate inspiral template banks.
 \begin{verbatim}
@@ -36,7 +36,6 @@
 \item[Options]
 \noindent The following command line arguments are available when running tmpltbank.c
 \\
-\begin{entry}
 \item[\texttt{--help}] display the help message which gives brief explanations
 of the command arguments.  
 \item[\option{--verbose}] print progress information as the code executes.
@@ -115,10 +114,8 @@ and friendly these parameters are used instead of masses.
 \item[\option{--write-response}] write the computed response function to a frame
 \item[\option{--write-spectrum}] write the uncalibrated psd to a frame
 \item[\option{--write-strain-spectrum}] write the calibrated strain psd to a text file
-\end{entry}
 
 \item[Description]
-\begin{entry} 
 \noindent \verb$lalapps_tmpltbank$ is a stand alone code for generating inspiral
 template banks for LIGO or GEO data with the LAL bank package.  The code 
 generates a calibrated power spectrum at the specified time for the 
@@ -137,7 +134,6 @@ calibrated and unclibrated power spectra to frame files.
 See the LAL bank package
 documentation for detailed information on the algorithms used to generate the
 template banks.
-\end{entry}
 
 \item[Example]
 
@@ -159,4 +155,4 @@ lalapps_tmpltbank \
 
 \item[Author]
 \noindent Duncan Brown
-
+\end{entry}
