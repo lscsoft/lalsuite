@@ -1,9 +1,53 @@
+/**** <lalVerbatim file="LALBCVWaveformCV">
+ * Author: B.S. Sathyaprakash
+ * $Id$  
+ **** </lalVerbatim> */
+
+/**** <lalLaTeX>
+ *
+ * \subsection{Module \texttt{LALBCVWaveform.c}}
+ *
+ * This module contains a single function {\it LALBCVWaveform.}
+ * \subsubsection*{Prototypesc}
+ * \input{LALBCVWaveformCP}
+ * \idx{LALLALBCVWaveform()}
+ * 
+ * \subsubsection*{Description}
+ * 
+ * This module can be used to generate {\it detection template family}
+ * of Buonanno, Chen and Vallisneri (Phys. Rev. D Phys.Rev. D67 (2003) 024016). 
+ * The only function needed is {\it LALBCVWaveform.}
+ * 
+ * \subsubsection*{Algorithm}
+ * 
+ * %% A description of the method used to perform the calculation.
+ * 
+ * \subsubsection*{Uses}
+ *  None.
+ * %% List of any external functions called by this function.
+ * \begin{verbatim}
+ * \end{verbatim}
+ * 
+ * \subsubsection*{Notes}
+ * 
+ * %% Any relevant notes.
+ * 
+ * \vfill{\footnotesize\input{LALBCVWaveformCV}}
+ * 
+ **** </lalLaTeX> */ 
+
 #include <lal/LALInspiral.h>
 
+/** DEFINE RCS ID STRING **/
 NRCSID (LALBCVWAVEFORMC, "$Id$");
 
-void LALBCVWaveform(LALStatus *status, REAL4Vector *signal, InspiralTemplate *params)
-{
+
+/*  <lalVerbatim file="LALBCVWaveformCP"> */
+void LALBCVWaveform(
+		LALStatus *status, 
+		REAL4Vector *signal, 
+		InspiralTemplate *params)
+ { /* </lalVerbatim>  */
 
   REAL8 f, df;
   REAL8 shift, phi, psi, amp0, amp;
@@ -12,6 +56,13 @@ void LALBCVWaveform(LALStatus *status, REAL4Vector *signal, InspiralTemplate *pa
 
   INITSTATUS(status, "LALBCVWaveform", LALBCVWAVEFORMC);
   ATTATCHSTATUSPTR(status);
+
+  ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT (params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT (params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT (params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   n = signal->length;
   Twoby3 = 2./3.;
