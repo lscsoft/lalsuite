@@ -56,7 +56,7 @@ void TestOnePoint(LALStatus              *status,
 
 static REAL8 deg_to_rad(REAL8 deg);
 
-int lalDebugLevel = LALALLDBG;
+int lalDebugLevel = 0;
 int verbose_p       = 1;
               
 

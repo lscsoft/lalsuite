@@ -44,7 +44,7 @@ LALComputeDetAMResponse()
 
 NRCSID( LALTESTDETRESPONSE0C, "$Id$" );
 
-int lalDebugLevel = LALALLDBG;
+int lalDebugLevel = 0;
 
 int main(int argc, char *argv[])
 {
@@ -207,26 +207,29 @@ int main(int argc, char *argv[])
              am_response_series.pScalar->length);
     }
 
-  printf("plus: (");
-  for (i = 0; i < time_info.nSample; ++i)
+  if (lalDebugLevel >= 8)
     {
-      printf("%1.6e, ", am_response_series.pPlus->data[i]);
-    }
-  printf(")\n");
+      printf("plus: (");
+      for (i = 0; i < time_info.nSample; ++i)
+        {
+          printf("%1.6e, ", am_response_series.pPlus->data[i]);
+        }
+      printf(")\n");
 
-  printf("cross: (");
-  for (i = 0; i < time_info.nSample; ++i)
-    {
-      printf("%1.6e, ", am_response_series.pCross->data[i]);
-    }
-  printf(")\n");
+      printf("cross: (");
+      for (i = 0; i < time_info.nSample; ++i)
+        {
+          printf("%1.6e, ", am_response_series.pCross->data[i]);
+        }
+      printf(")\n");
 
-  printf("scalar: (");
-  for (i = 0; i < time_info.nSample; ++i)
-    {
-      printf("%1.6e, ", am_response_series.pScalar->data[i]);
+      printf("scalar: (");
+      for (i = 0; i < time_info.nSample; ++i)
+        {
+          printf("%1.6e, ", am_response_series.pScalar->data[i]);
+        }
+      printf(")\n");
     }
-  printf(")\n");
 
   LALSDestroyVector(&status, &(am_response_series.pPlus));
   LALSDestroyVector(&status, &(am_response_series.pCross));
