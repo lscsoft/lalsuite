@@ -62,10 +62,11 @@ alpha=1.7
 delta=0.9
 noiseDir="../"
 noiseSFTs="$noiseDir/SFT.0000[0-9]"
+f1dot="-1.e-8"
 
 dataTMP=In.data-test
 oldCL="-i $dataTMP  -I $IFO -E $ephemdir -S $refTime -n ${testDIR}/SFTtest_v2" ## -D $noiseDir"
-newCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --outSFTbname=${testDIR}/SFTtest_v4 --timestampsFile=$timestamps --refTime=$refTime" ## -D$noiseSFTs -v1"
+newCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --outSFTbname=${testDIR}/SFTtest_v4 --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot" ## -D$noiseSFTs -v1"
 
 ## produce In.data file for makefakedata_v2
 echo "$Tsft	%Tsft_in_sec
@@ -80,7 +81,8 @@ $phi0	%phi0
 $f0	%f0
 $delta	%latitude_in_radians
 $alpha	%longitude_in_radians
-0	%max_spin-down_param_order
+1	%max_spin-down_param_order
+$f1dot  %value of first spindown 
 $timestamps 	%name_of_time-stamps_file
 " > In.data-test
 
