@@ -31,6 +31,7 @@ extern "C" {
  **** </lalLaTeX> */
 /**** <lalErrTable> */
 #define CALIBRATIONH_ENULL 001
+
 #define CALIBRATIONH_MSGENULL "Null pointer"
 /**** </lalErrTable> */
 
@@ -82,8 +83,7 @@ CalibrationRecord;
  * Document \verb+CalibrationRecord+
  *
  * \vfill{\footnotesize\input{CalibrationHV}}
- * \newpage\input{CalibrationC}
- * \newpage\input{CalibrationTestC}
+ * \newpage\input{ComputeTransferC}
  *
  **** </lalLaTeX> */
 
