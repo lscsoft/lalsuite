@@ -130,7 +130,7 @@ sub f_processJobsTable {
 		}
 		
 		#read columns into variables
-		my ($statusCode, $startSec, $stopSec, $framecache, $outfile,$description)  = ($fields[0],$fields[2],$fields[3],$fields[4],$fields[5],$fields[6]);
+		my ($statusCode, $startSec, $stopSec, $framecache, $outfile)  = ($fields[0],$fields[2],$fields[3],$fields[4],$fields[5]);
 
 		if($statusCode eq "C" or $statusCode eq "E" or $statusCode eq "BC"){
 			#nothing to do now; may add code later

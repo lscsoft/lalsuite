@@ -222,13 +222,16 @@ sub lf_createJobsForGoodData {
 sub  f_processChunk {
 	my ($runPath,$startSec, $stopSec) = @_;
 	
-	my $duration = $stopSec - $startSec;
+	my $duration = $stopSec - $startSec + 1;
 	#print "Processing chunk $runPath, $startSec, $stopSec.\n";
 	#make sure chunk is larger than minimum size
 	if($stopSec - $startSec > ${$params}{'TIME_CHUNK_MIN_SIZE'}){
 	
 		#build output file string
-		my $outfile = "$runPath/xml/$startSec-$duration.xml";
+		#my $outfile = "$runPath/xml/$startSec-$duration.xml";
+		${$params}{'COMMENT'} =~ s/ /_/g;
+		my $outfile = "${$params}{'OUTPUT_PATH'}/$runID/xml/${$params}{'INSTRUMENT'}-${$params}{'COMMENT'}-POWER-$startSec-$duration.xml";
+		
 		my $framecache = ${$params}{'CACHE_PATH'} . "/" . ${$params}{'INSTRUMENT'} . "-$startSec-$duration";
 		
 		my $statusCode = "P"; 
