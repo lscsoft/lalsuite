@@ -432,7 +432,7 @@ typedef struct tagStochasticOptimalFilterInput {
 /********************************************************** <lalLaTeX>
 
 \subsubsection*{\texttt{struct StochasticOptimalFilterParameters}}
-\idx{StochasticOptimalFilterParameters}}
+\idx[Type]{StochasticOptimalFilterParameters}
 
 \noindent 
 Contains the parameters of \texttt{LALStochasticOptimalFilter()}.
