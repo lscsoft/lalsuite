@@ -544,8 +544,9 @@ LALUserVarHelpString (LALStatus *stat,
   /* special treatment of debug-option in the head (if present) */
   if ( ptr->help && ptr->optchar )
     {
-      sprintf (strbuf, "                   -%c     %-8s  %s    [%d] \n", 
-	       ptr->optchar, typestr[ptr->type], ptr->help, *(INT4*)(ptr->varp) );
+
+      sprintf (strbuf, "  -%c    %-15s %-6s   %s [%d] \n",
+	       ptr->optchar, " ", typestr[ptr->type], ptr->help, *(INT4*)(ptr->varp) );
       newlen += strlen (strbuf);
       helpstr = LALRealloc (helpstr, newlen);
       if ( helpstr == NULL) {
@@ -572,13 +573,13 @@ LALUserVarHelpString (LALStatus *stat,
 	}
       
       if (ptr->optchar != 0)
-	sprintf (optstr, "(-%c)", ptr->optchar);
+	sprintf (optstr, "-%c,", ptr->optchar);
       else
-	strcpy (optstr, "");
+	strcpy (optstr, "   ");
 
-      LALSnprintf (strbuf, UVAR_MAXHELPLINE,  " --%-14s %-5s   %-8s  %s   [%s] \n", 
-		   ptr->name ? ptr->name : "-NONE-", 
+      LALSnprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n", 
 		   optstr,
+		   ptr->name ? ptr->name : "-NONE-", 
 		   typestr[ptr->type], 
 		   ptr->help ? ptr->help : "-NONE-",
 		   defaultstr);
