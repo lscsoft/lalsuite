@@ -17,8 +17,11 @@ RCSID("$Id$");
 
 /* Usage format string. */
 #define USAGE "Usage: %s --input infile --outfile filename \
-    [--snrstar snrstar] [--noplayground] [--sort] [--cluster msec] \
-    [--clusterchoice choicenumber] [--help]\n"
+    [--max-confidence maximum conf] [--noplayground] [--sort] [--min-duration min dur] \
+    [--max-duration max dur] [--min-centralfreq min central_freq] \
+    [--max-centralfreq max central_freq] [--max-bandwidth max bw] \
+    [--min-bandwidth min bw] [--min-amplitude min amp] [--max-amplitude max amp] \
+    [--min-snr min snr] [--max-snr max snr] [--help]\n"
 
 #define SNGLBURSTREADER_EARG   1
 #define SNGLBURSTREADER_EROW   2
