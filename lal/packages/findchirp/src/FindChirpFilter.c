@@ -1065,13 +1065,12 @@ LALFindChirpBCVFilterSegment (
   ASSERT( params->invPlan, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
   /* check that the workspace vectors exist */
-#if 0
   ASSERT(params->qVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qVec->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qtildeVec, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT(params->qtildeVec->data,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
-#endif
-  ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+  
+ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( qVec1->data, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( qtildeVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( qtildeVec1->data,status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL);
@@ -1167,7 +1166,8 @@ LALFindChirpBCVFilterSegment (
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
-    REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
+    /* REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8; */
+    REAL4 chirpTime = 1.0;
 
     /* template parameters */
     REAL4 psi0 = input->tmplt->psi0;                        
@@ -1175,8 +1175,8 @@ LALFindChirpBCVFilterSegment (
     REAL4 fendBCV = input->tmplt->fendBCV;                  
     /* k that corresponds to fendBCV  */
     UINT4 kendBCV = floor( numPoints * deltaT * fendBCV );  
-    /* REAL4 b1 = input->tmplt->b1;  */
-    /* REAL4 a2 = input->tmplt->a2;  */
+    /* REAL4 b1 = input->segment->b1;  */
+    /* REAL4 a2 = input->segment->a2;  */
     REAL4 b1 = 7.0 / 3.0 ;    /* temporarily */
     REAL4 a2 = 1.0 ;          /* temporarily */
 
