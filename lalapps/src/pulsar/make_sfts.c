@@ -513,6 +513,8 @@ int main(int argc,char *argv[]){
     struct stat buff;
     char sftname[256];
     int filesize=(INT4)(DF*tbase);
+    int lsffl=0,verifyframes=0;
+
 #if TIMESHIFT
     int microsec, valid=0;
 #endif
@@ -552,18 +554,35 @@ int main(int argc,char *argv[]){
     frvect = FrFileIGetVAdc(frfile, chname, epoch.gpsSeconds, tbase, 0);
     
     /* This block will detect permission denied and other access errors */
-    if (errno){
-      char command[256];
-      pout("System error when reading Frame data: %s\n", strerror(errno));
-      pout("Following is output of ls -l on Frame file list:\n");
-      sprintf(command, "cat %s | xargs ls -l 1>&2", framelist);
-      system(command);
-      return 3;
+    if (errno || frvect==NULL || frvect->next){
+      int saveerrno=errno;
+
+      /* if we haven't printed ls of the files, do so now (but just once!)*/
+      if (!lsffl){
+	char command[256];
+	if (saveerrno)
+	  pout("System error when reading Frame data: %s\n", strerror(saveerrno));
+	pout("Following is output of ls -l on Frame file list:\n");
+	sprintf(command, "cat %s | xargs ls -l 1>&2", framelist);
+	system(command);
+	lsffl=1;
+      }
+
+      if (saveerrno)
+	return 3;
     }
     
     /* This block detects the case where the frame file list did not contain all data */
     if (frvect==NULL) {
-      pout( "Data missing between times %d and %d\n",epoch.gpsSeconds,epoch.gpsSeconds+tbase);
+      pout( "%s data missing between times %d and %d\n",argv[4], epoch.gpsSeconds,epoch.gpsSeconds+tbase);
+
+      if (!verifyframes){
+	char command[256];
+	pout("Using FrCheck to validate frame data:\n");
+	sprintf(command, "cat %s | xargs --maxlines=1 /home/ballen/projects/LIGO/src/v6r06/Linux-i686/FrCheck -d 1 -i 1>&2", framelist);
+	system(command);
+	verifyframes=1;
+      }
       continue;
     }
     
@@ -575,7 +594,7 @@ int main(int argc,char *argv[]){
     
     /* check for gaps */
     if (frvect->next){
-      pout( "Data between times %d and %d had a gap\n",epoch.gpsSeconds,epoch.gpsSeconds+tbase);
+      pout( "%s data between times %d and %d had a gap\n",argv[4], epoch.gpsSeconds,epoch.gpsSeconds+tbase);
       /* free space allocated by frame library */
       FrVectFree(frvect);
       frvect=NULL;
