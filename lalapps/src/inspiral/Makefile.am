@@ -81,7 +81,8 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 CLEANFILES = lalapps_inspiral_pipe lalapps_inspiral_pipe_s2 \
              lalapps_inspiral_pipe_tama lalapps_inspiral_pipe_geo \
-             lalapps_inspiral_hipe python_config.sed
+             lalapps_inspiral_hipe lalapps_inspiral_online_pipe \
+             python_config.sed
 
 MOSTLYCLEANFILES = *INSPIRAL*.xml *INSPIRAL*.gwf \
                    *TMPLTBANK*.gwf *TMPLTBANK*.xml
