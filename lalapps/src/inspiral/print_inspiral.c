@@ -36,7 +36,8 @@ RCSID( "$Id$" );
 
 #define USAGE \
 "lalapps_print_inspiral is a utility to read and write LIGO lightweight XML\n" \
-"files containing sngl_inspiral tables and perform processing on them.\n" \
+"files containing sngl_inspiral tables. It sorts the sngl_inspiral triggers\n"\
+"by time and perform additional cuts on them.\n" \
 "\n" \
 "Usage: lalapps_print_inspiral [OPTIONS]\n" \
 "\n" \
