@@ -56,8 +56,10 @@ gridding_geom_t;
  * grid cell center
  */
 typedef 
-struct gridding_tag 
+struct tag_gridding_t
 {
+  LIGOTimeGPS        gps;
+  LALLeapSecAccuracy leapsec_accuracy;
   gridding_geom_t ra_geom;
   gridding_geom_t dec_geom;
   REAL8Vector *ra;
@@ -72,7 +74,8 @@ void init_gridding(gridding_t *p_gridding);
 void make_gridding(LALStatus *status, gridding_t *p_gridding, 
                    UINT4 num_ra, gridding_geom_t ra_geom, 
                    UINT4 num_dec, gridding_geom_t dec_geom,
-                   EphemerisData *p_ephem, LIGOTimeGPS *p_gps);
+                   EphemerisData *p_ephem, LIGOTimeGPS *p_gps,
+                   LALLeapSecAccuracy accuracy);
 
 void cleanup_gridding(LALStatus *status, gridding_t *p_gridding);
 

@@ -40,7 +40,7 @@ main(int argc, char **argv)
   num_ra = 24;
   num_dec = 11;
   make_gridding(&s, &g, num_ra, DETRESP_REGGRID, 
-                num_dec, DETRESP_REGGRID, &ephem, &gps);
+                num_dec, DETRESP_REGGRID, &ephem, &gps, acc);
   
   print_gridding(&g, "reg_dec_reg_ra.dat");
   
@@ -55,7 +55,7 @@ main(int argc, char **argv)
   num_ra = 100;
   num_dec = 51;
   make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, 
-                num_dec, DETRESP_REGGRID, &ephem, &gps);
+                num_dec, DETRESP_REGGRID, &ephem, &gps, acc);
   
   print_gridding(&g, "autumn2003.dat");
 
@@ -70,7 +70,7 @@ main(int argc, char **argv)
   num_ra = 100;
   num_dec = 51;
   make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, 
-                num_dec, DETRESP_REGGRID, &ephem, &gps);
+                num_dec, DETRESP_REGGRID, &ephem, &gps, acc);
   
   print_gridding(&g, "winter2003.dat");
 
@@ -85,7 +85,7 @@ main(int argc, char **argv)
   num_ra = 100;
   num_dec = 51;
   make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, 
-                num_dec, DETRESP_REGGRID, &ephem, &gps);
+                num_dec, DETRESP_REGGRID, &ephem, &gps, acc);
   
   print_gridding(&g, "spring2004.dat");
 
@@ -100,7 +100,7 @@ main(int argc, char **argv)
   num_ra = 24;
   num_dec = 11;
   make_gridding(&s, &g, num_ra, DETRESP_VARGRID, 
-                num_dec, DETRESP_REGGRID, &ephem, &gps);
+                num_dec, DETRESP_REGGRID, &ephem, &gps, acc);
   
   print_gridding(&g, "reg_dec_var_ra.dat");
   
@@ -115,7 +115,7 @@ main(int argc, char **argv)
   num_ra = 24;
   num_dec = 11;
   make_gridding(&s, &g, num_ra, DETRESP_VARGRID, 
-                num_dec, DETRESP_IRRGRID, &ephem, &gps);
+                num_dec, DETRESP_IRRGRID, &ephem, &gps, acc);
   
   print_gridding(&g, "irr_dec_var_ra.dat");
   

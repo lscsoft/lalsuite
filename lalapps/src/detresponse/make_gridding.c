@@ -28,6 +28,8 @@ static void fprintf_laldvector_ver(FILE *f, REAL8Vector *v, REAL8 scale);
 void 
 init_gridding(gridding_t *g)
 {
+  g->gps.gpsSeconds = 0;
+  g->gps.gpsNanoSeconds = 0;
   g->ra = NULL;
   g->ra_irr = NULL;
   g->dec = NULL;
@@ -38,13 +40,14 @@ make_gridding(LALStatus *s, gridding_t *g,
               UINT4 num_ra, gridding_geom_t ra_geom, 
               UINT4 num_dec, gridding_geom_t dec_geom,
               EphemerisData *e,
-              LIGOTimeGPS   *gps)
+              LIGOTimeGPS   *gps,
+              LALLeapSecAccuracy acc)
 {
   UINT4 i, j;
   REAL8 pi_num_ra = (REAL8)LAL_PI/(REAL8)num_ra;
   REAL8 earth_phi; /* azi. position of Earth in solar system barycenter */
   LALLeapSecFormatAndAcc leapsec_param = 
-    {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
+    {LALLEAPSEC_GPSUTC, acc};
   INT4  tmp_leapsecs;
   
   if (dec_geom == DETRESP_VARGRID)
@@ -57,6 +60,8 @@ make_gridding(LALStatus *s, gridding_t *g,
   LALLeapSecs(s, &tmp_leapsecs, gps, &leapsec_param);
   e->leap = (INT2)tmp_leapsecs;
   
+  g->gps.gpsSeconds = gps->gpsSeconds;
+  g->gps.gpsNanoSeconds = gps->gpsNanoSeconds;
   g->ra_geom = ra_geom;
   g->dec_geom = dec_geom;
   
@@ -181,6 +186,8 @@ print_gridding(gridding_t *g, char *fn)
   else
     outfile = stdout;
     
+  fprintf(outfile, "GPS = %d:%d\n", g->gps.gpsSeconds,
+          g->gps.gpsNanoSeconds);
   switch (g->ra_geom)
   {
     case DETRESP_REGGRID:
