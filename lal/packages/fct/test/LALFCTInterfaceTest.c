@@ -787,7 +787,11 @@ setupParamList(LALStatus* const status)
     coarseIn.fLower = fcutoff;
     coarseIn.fUpper = Nyq;
     coarseIn.tSampling = srate;
-    coarseIn.detector = ligo;
+    /* the detector structure member has been removed */
+    /* and replaced with the NoisePsd member          */
+    /*                          - duncan              */
+    /* coarseIn.detector = ligo;                      */
+    coarseIn.NoisePsd = LALLIGOIPsd;
     coarseIn.method = one;
     coarseIn.order = twoPN;
     coarseIn.approximant = taylor;
@@ -799,7 +803,11 @@ setupParamList(LALStatus* const status)
 	pow(coarseIn.MMax,2.0);
     coarseIn.iflso = 0;
 
-    LALInspiralCreateCoarseBank(status, templateList,
+    /* LALInspiralCreateCoarseBank() now expects its second argument to */
+    /* be a handle (pointer to a pointer) to a variable of type         */
+    /* InspiralTemplateList. The pointer should be NULL on entry        */
+    /*                                  - duncan                        */
+    LALInspiralCreateCoarseBank(status, &templateList,
 				&NtemplateList, coarseIn);
 
     testprintf("Generated %d sets of parameters\n", NtemplateList);
@@ -911,7 +919,10 @@ setupGlobals(LALStatus* const status, int argc, char **argv)
     phi1Scale = onePNPhiScale;
 
     /* Set up list of templates */
-    templateList = LALCalloc(Nlist, sizeof(InspiralTemplateList));
+    /* this memory allocation is now done with a realloc() in         */
+    /* LALCreateCoarseInspiralBank()                                  */
+    /*                                          - duncan              */
+    /* templateList = LALCalloc(Nlist, sizeof(InspiralTemplateList)); */
     setupParamList(status);
 
     /* Create the various arrays we use for storage */
