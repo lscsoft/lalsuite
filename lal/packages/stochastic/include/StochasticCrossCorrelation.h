@@ -336,6 +336,15 @@ typedef struct tagStochasticCrossCorrelationInput {
   COMPLEX8FrequencySeries  *optimalFilter;
 } StochasticCrossCorrelationInput;
 
+typedef struct tagStochasticCrossCorrelationCalInput {
+  COMPLEX8FrequencySeries  *hBarTildeOne;
+  COMPLEX8FrequencySeries  *hBarTildeTwo;
+  REAL4FrequencySeries     *optimalFilter;
+  COMPLEX8FrequencySeries  *responseFunctionOne;
+  COMPLEX8FrequencySeries  *responseFunctionTwo;
+} StochasticCrossCorrelationCalInput;
+
+
 /********** <lalVerbatim file="StochasticCrossCorrelationHPCC"> *********/
 
 void 
@@ -358,6 +367,27 @@ LALStochasticCrossCorrelationSpectrum(
             COMPLEX8FrequencySeries                *output,
             const StochasticCrossCorrelationInput  *input,
             BOOLEAN                                 epochsMatch);
+
+void 
+LALStochasticCrossCorrelationStatisticCal(
+            LALStatus                                 *status,
+            REAL4WithUnits                            *output,
+            const StochasticCrossCorrelationCalInput  *input,
+            BOOLEAN                                    epochsMatch);
+
+void 
+LALStochasticHeterodynedCrossCorrelationStatisticCal(
+            LALStatus                                 *status,
+            COMPLEX8WithUnits                         *output,
+            const StochasticCrossCorrelationCalInput     *input,
+            BOOLEAN                                    epochsMatch);
+
+void 
+LALStochasticCrossCorrelationSpectrumCal(
+            LALStatus                                 *status,
+            COMPLEX8FrequencySeries                   *output,
+            const StochasticCrossCorrelationCalInput  *input,
+            BOOLEAN                                   epochsMatch);
 
 /********** </lalVerbatim> *********/
 
@@ -498,6 +528,13 @@ typedef struct tagStochasticOptimalFilterInput {
   COMPLEX8FrequencySeries  *halfCalibratedInverseNoisePSD2;
 } StochasticOptimalFilterInput;
 
+typedef struct tagStochasticOptimalFilterCalInput {
+  REAL4FrequencySeries     *overlapReductionFunction;
+  REAL4FrequencySeries     *omegaGW;
+  REAL4FrequencySeries     *calibratedInverseNoisePSD1;
+  REAL4FrequencySeries     *calibratedInverseNoisePSD2;
+} StochasticOptimalFilterCalInput;
+
 /********** <lalVerbatim file="StochasticCrossCorrelationHPOF"> *********/
 
 void
@@ -505,6 +542,13 @@ LALStochasticOptimalFilter(
             LALStatus                                *status,
             COMPLEX8FrequencySeries                  *optimalFilter,
             const StochasticOptimalFilterInput       *input,
+            const REAL4WithUnits                     *lambda);
+
+void
+LALStochasticOptimalFilterCal(
+            LALStatus                                *status,
+            REAL4FrequencySeries                     *optimalFilter,
+            const StochasticOptimalFilterCalInput    *input,
             const REAL4WithUnits                     *lambda);
 
 /********** </lalVerbatim> *********/
@@ -666,6 +710,10 @@ typedef struct tagStochasticInverseNoiseOutput {
   COMPLEX8FrequencySeries  *halfCalibratedInverseNoisePSD;
 } StochasticInverseNoiseOutput;
 
+typedef struct tagStochasticInverseNoiseCalOutput {
+  REAL4FrequencySeries     *calibratedInverseNoisePSD;
+} StochasticInverseNoiseCalOutput;
+
 /********************************************************** <lalLaTeX>
 \subsubsection*{\texttt{struct StochasticInverseNoiseInput}}
 \idx[Type]{StochasticInverseNoiseInput}
@@ -696,6 +744,12 @@ void
 LALStochasticInverseNoise(
             LALStatus                             *status,
             StochasticInverseNoiseOutput          *output,
+            const StochasticInverseNoiseInput     *input);
+
+void
+LALStochasticInverseNoiseCal(
+            LALStatus                             *status,
+            StochasticInverseNoiseCalOutput       *output,
             const StochasticInverseNoiseInput     *input);
 
 /********** </lalVerbatim> *********/
