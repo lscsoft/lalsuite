@@ -354,7 +354,7 @@ int main(int argc, char **argv)
                 timeVetoed/ifo[i].time_analyzed);
 
         /******************************************************************** 
-         * Print out the information that was supplied in the cadidate files
+         * Print out the information that was supplied in the trigger files
          ********************************************************************/
         fprintf(fpout,"Trigger filename = %s\n",ifo[i].candidates.triggerfile);
         fprintf(fpout,"Injection filename = %s\n",ifo[i].candidates.injectfile);
@@ -501,7 +501,7 @@ int main(int argc, char **argv)
 
 
     /**********************************************************
-     * Compute the upper limit
+     * Determine coincident times and times analyzed
      *********************************************************/
     {
         int   numPts= 10 * (int)(dummyEnd-dummyStart), prev_value;
@@ -529,11 +529,14 @@ int main(int argc, char **argv)
     fflush(fpout);
 
 
+    /**********************************************************
+     * Compute the upper limit
+     *********************************************************/
     {
         FILE  *ulout;
         float *snrbin, snrdiv, minsnr=8.0,maxsnr=minsnr+10.0,*efficiency,*numevents;
         double mu;
-        int    numbins=100,k;
+        int    numbins=800,k;
         Chi2ThresholdIn  thresholdIn;
         static LALStatus        status;
 

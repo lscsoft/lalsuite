@@ -74,6 +74,7 @@ tagcandEvent{
     float  mchirp;
     int significance;
     int candidate;
+    int coincident;
     struct tagcandEvent *next_event;
 }
 candEvent;

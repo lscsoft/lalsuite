@@ -18,6 +18,9 @@
 #include <string.h>
 #include <time.h>
 #include <config.h>
+#include <lal/LALStdlib.h>
+
+INT4 lalDebugLevel = LALMSGLVL3;
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846  /* pi */
@@ -324,7 +327,6 @@ int inj_params( double *injPar )
 
 #define UNITS "msun,none,m,rad,rad,rad,rad,rad"
 struct time_list { long long tinj; struct time_list *next; };
-int lalDebugLevel = 0;
 
 int main( int argc, char *argv[] )
 {

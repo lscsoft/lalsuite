@@ -17,6 +17,9 @@
  *      int build2DHistogram(candEvent *eventhead, const char *outputfile,
  *                       int **histogram, int numbins, float minsnr, 
  *                       float maxchisq)
+ *
+ * TODO:   All functions should be brough up to date with LAL data
+ * types.
  *      
  *
  *
@@ -93,7 +96,7 @@ int buildVetoTimes( vetoParams *thisentry)
                 first = 0;
             }
             /* If this event is within last veto window,  update veto times */
-            else if ( tVtemp <= ((*thiswindow).end_time + (*thisentry).minusdtime) ){
+            else if ( tVtemp <= ((*thiswindow).end_time + (*thisentry).minusdtime + 4.0) ){
                 (*thiswindow).end_time = tVtemp + (*thisentry).plusdtime;
             }
             /* Otherwise allocate next node and update veto window */
@@ -287,6 +290,7 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                     (*thisCEvent).mchirp = mchirpVtemp;
                     (*thisCEvent).significance = 0;
                     (*thisCEvent).candidate = 0;
+                    (*thisCEvent).coincident = 0;
                     first = 0;
                 }
                 /* If this event is within last veto window,  update veto times */
@@ -301,6 +305,7 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                         (*thisCEvent).mchirp = mchirpVtemp;
                         (*thisCEvent).significance = 0;
                     (*thisCEvent).candidate = 0;
+                    (*thisCEvent).coincident = 0;
                     }
                 }
                 /* Otherwise allocate next node and update veto window */
@@ -315,6 +320,7 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                     (*thisCEvent).mchirp = mchirpVtemp;
                     (*thisCEvent).significance = 0;
                     (*thisCEvent).candidate = 0;
+                    (*thisCEvent).coincident = 0;
                     (*thisCEvent).next_event = NULL;
                 }
                 lastVtemp = tVtemp; 
@@ -331,6 +337,9 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
 /*******************************************************************
  * Build an array giving data quality information for use in
  * coincidence studies
+ *
+ * TODO:  This should take a time series,  that way the sampling rate
+ * would be carried around properly with it. 
  *******************************************************************/
 int buildDataQaulity(int **coincident_times, snglIFO *ifo, int numIFO,
         double *dummyStart, double *dummyEnd)
@@ -401,7 +410,7 @@ int cpySnglToMultiInspiral(multiInspiral *thisMEvent, candEvent *myevent, int if
 int buildMultiInspiralEvents(multiInspiral **multInspEv, int *coincident_times,
         snglIFO *ifo, int numIFO, int injectflag, double dummyStart)
 {
-    float coincidence_window = 0.025;
+    float coincidence_window = 0.015;
     float delm = 0.010;
     float distance = 0.030;
     int i, numEvents=0, first=1,dummyMask;
@@ -430,6 +439,7 @@ int buildMultiInspiralEvents(multiInspiral **multInspEv, int *coincident_times,
                             cpySnglToMultiInspiral(thisMEvent,thisCEvent,i);
                             thisMEvent=thisMEvent->next_event;
                             (*thisCEvent).significance = (*myevent).significance = 3;
+                            (*thisCEvent).coincident = (*myevent).coincident = 1;
                         }
                     }    
                     thisCEvent = (*thisCEvent).next_event;
@@ -480,16 +490,18 @@ int printInspiralEvents(FILE *fpout, snglIFO *ifo, int significance, int injectf
     tmpTime = (*dumEvent).time;
     myevent = (*myevent).next_event;
     i=1;
+    fprintf(fpout,"# Time  SNR  CHISQ  EFF_DIST  MCHIRP  COINC\n");
     while ( myevent != NULL ){
         if ( (*myevent).significance == significance ){
-            if ( (*myevent).time <= (tmpTime + time_interval) ){
+            if ( (*myevent).time <= ((*dumEvent).time + time_interval) ){
                 if ( (*myevent).snr > (*dumEvent).snr ){
                     dumEvent = myevent;
                 }
             } else {
-                fprintf(fpout,"%i %f %f %f %f %f\n",i, (*dumEvent).time,
+                fprintf(fpout,"%i %f %f %f %f %f %i %i\n",i, (*dumEvent).time,
                         (*dumEvent).snr,(*dumEvent).chisq,
-                        (*dumEvent).eff_distance,(*dumEvent).mchirp);
+                        (*dumEvent).eff_distance,(*dumEvent).mchirp,
+                        (*dumEvent).coincident, (*dumEvent).significance);
                 (*dumEvent).candidate = 1;
                 dumEvent = myevent;
                 i++;
@@ -498,9 +510,10 @@ int printInspiralEvents(FILE *fpout, snglIFO *ifo, int significance, int injectf
         }
         myevent = (*myevent).next_event;
     }
-    fprintf(fpout,"%i %f %f %f %f %f\n",i, (*dumEvent).time,
+    fprintf(fpout,"%i %f %f %f %f %f %i %i\n",i, (*dumEvent).time,
             (*dumEvent).snr,(*dumEvent).chisq,
-            (*dumEvent).eff_distance,(*dumEvent).mchirp);
+            (*dumEvent).eff_distance,(*dumEvent).mchirp,
+            (*dumEvent).coincident, (*dumEvent).significance);
     (*dumEvent).candidate = 1;
 
     return 0;
@@ -639,5 +652,27 @@ int computeUL(const char *outputfile, int **triggerHistogram,
     free(snrbin);
     free(chisqbin);
     return 0;
+}
+
+
+/***********************************************************************
+ * 
+ * Function returns the appropriate data quality bit for interferometer
+ * 
+ ***********************************************************************/
+void LALDQBit(char *ifo, int *dqbit){
+
+    if ( ! strcmp(ifo,"L1") ){
+        *dqbit = 10;
+        return;
+    }
+    else if ( ! strcmp(ifo,"H1") ){
+        *dqbit = 8;
+        return;
+    }
+    else {
+        dqbit = -1;
+        return;
+    }
 }
 
