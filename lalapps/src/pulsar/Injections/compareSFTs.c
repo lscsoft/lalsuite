@@ -209,7 +209,7 @@ compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
 
   printf ("POWER: max = %e @ %6.2fHz  mean = %e, PHASE: max = %e @ %6.2fHz, mean = %e \n", 
 	  errpow/sftmax, sft1->f0 + ind_pow * sft1->deltaF, meanerr/mean, 
-	  (REAL4)(errph / LAL_PI), sft2->f0 + ind_phase * sft1->deltaF, (REAL4)(meanph / LAL_PI));
+	  (REAL4)(errph), sft2->f0 + ind_phase * sft1->deltaF, (REAL4)(meanph));
 
   return;
 
