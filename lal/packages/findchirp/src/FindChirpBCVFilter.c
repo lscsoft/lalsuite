@@ -301,7 +301,8 @@ LALFindChirpBCVFilterSegment (
 
   /* k that corresponds to fFinal */
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
-  kFinal = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2; 
+  kFinal = fFinal / deltaF < numPoints/2 ? floor(fFinal / deltaF) 
+    : floor(numPoints/2); 
   fmin = input->segment->fLow;
 
   /* assign the values to a1, b1 and b2 */
@@ -706,7 +707,7 @@ LALFindChirpBCVFilterSegment (
           omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
           thisEvent->alpha = - b2 * tan(omega) 
             / ( a1 + b1 * tan(omega) );
-          thisEvent->alpha *= pow(deltaT, 2/3); 
+          thisEvent->alpha *= pow(deltaT, 2/3);   
 
           /* copy the template into the event */
           thisEvent->psi0   = (REAL4) input->tmplt->psi0; 
@@ -823,7 +824,7 @@ LALFindChirpBCVFilterSegment (
     omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
     thisEvent->alpha = - b2 * tan(omega) 
       / ( a1 + b1 * tan(omega) );
-    thisEvent->alpha *= pow(deltaT, 2/3);
+    thisEvent->alpha *= pow(deltaT, 2/3); 
 
 
     /* copy the template into the event */
@@ -870,6 +871,7 @@ LALFindChirpBCVFilterSegment (
     /* compute the time since the snr crossing */
     thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
     thisEvent->event_duration *= (REAL8) deltaT;
+
   }
 
 
