@@ -8,6 +8,7 @@
 /* some local prototypes */
 FILE *openfile(const char* name);
 void printerror(int err);
+void dosystem(const char *command);
 
 
 /* function definitions */

@@ -295,16 +295,16 @@ int WriteSFT(FILE *fp,            /* stream to write to */
     return SFTEWRITE;
   
   /* write the comment to file */
-  if (comment_length != fwrite((const void *)comment, 1, comment_length, fp))
+  if (comment_length != (int)fwrite((const void *)comment, 1, comment_length, fp))
     return SFTEWRITE;
 
   /* write comment padding to file */
-  if (inc != fwrite((const void *)pad, 1, inc, fp))
+  if (inc != (int)fwrite((const void *)pad, 1, inc, fp))
     return SFTEWRITE;
 
   /* write the data to the file.  Data must be packed
      REAL,IMAG,REAL,IMAG,... */
-  if (nsamples != fwrite((const void *)data, 2*sizeof(float), nsamples, fp))
+  if (nsamples != (int)fwrite((const void *)data, 2*sizeof(float), nsamples, fp))
     return SFTEWRITE;
   
   return SFTNOERROR;
@@ -414,8 +414,8 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     /* read data in lengths of BLOCKSIZE, computing CRC */
     while (total_length > 0) {
       /* read either BLOCKSIZE or amount remaining */
-      size_t toread = (BLOCKSIZE < total_length) ? BLOCKSIZE : total_length;
-      if (toread != fread(block, 1, toread, fp)) {
+      int toread = (BLOCKSIZE < total_length) ? BLOCKSIZE : total_length;
+      if (toread != (int)fread(block, 1, toread, fp)) {
 	retval=SFTEREAD;
 	goto error;
       }      
@@ -498,7 +498,7 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     }
     
     /* now read the comment into memory */
-    if (header.comment_length != fread(mycomment, 1, header.comment_length, fp)) {
+    if (header.comment_length != (int)fread(mycomment, 1, header.comment_length, fp)) {
       free(mycomment);
       mycomment = NULL;
       retval=SFTEREAD;
@@ -600,7 +600,7 @@ int ReadSFTData(FILE *fp,                /* data file.  Position left unchanged 
   }
 
   /* read in the data */
-  if (nsamples != fread((void *)data, 2*sizeof(float), nsamples, fp)) {
+  if (nsamples != (int)fread((void *)data, 2*sizeof(float), nsamples, fp)) {
     retval=SFTEREAD;
     goto error2;
   }
