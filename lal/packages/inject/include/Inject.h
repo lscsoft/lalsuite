@@ -110,7 +110,7 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
 			RandomParams    *params );
 
 /* <lalLaTeX>
-\newpage\input{InjectTestC}
+\newpage\input{BasicInjectTestC}
 </lalLaTeX> */
 
 #ifdef  __cplusplus

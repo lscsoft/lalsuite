@@ -172,7 +172,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   INT4 i, n;         /* index over output->data, and its final value */
   INT4 nMax;         /* used to store limits on index ranges */
   REAL4 *outData;    /* pointer to output data */
-  REAL4 radius;      /* radius of the Earth in lightseconds */
+  REAL8 radius;      /* radius of the Earth in lightseconds */
   CreateVectorSequenceIn in; /* structure for creating vectors and
                                 vector sequences */
   BOOLEAN fFlag = 0; /* 1 if frequency left detector->transfer range */
@@ -185,10 +185,11 @@ LALSimulateCoherentGW( LALStatus        *stat,
      point in xData is given by ( xOff + t*xDt ), where xOff is an
      offset and xDt is a relative sampling rate. */
   REAL4VectorSequence *polResponse = NULL;
-  REAL4Vector *delay = NULL;
-  REAL4 *aData, *phiData, *polData, *delayData;
-  REAL4 aOff, phiOff, polOff, delayOff;
-  REAL4 aDt, phiDt, polDt, delayDt;
+  REAL8Vector *delay = NULL;
+  REAL4 *aData, *phiData, *polData;
+  REAL8 *delayData;
+  REAL8 aOff, phiOff, polOff, delayOff;
+  REAL8 aDt, phiDt, polDt, delayDt;
 
   /* Frequencies in the detector transfer function are interpolated
      similarly, except everything is normalized with respect to
@@ -197,8 +198,8 @@ LALSimulateCoherentGW( LALStatus        *stat,
   REAL4Vector *phiTransfer = NULL;
   REAL4Vector *phiTemp = NULL;
   REAL4 *aTransData, *phiTransData;
-  REAL4 fOff;
-  REAL4 df;
+  REAL8 fOff;
+  REAL8 df;
 
   /* Variables required by the TCENTRE() macro, above. */
   REAL4 realIndex;
@@ -282,12 +283,12 @@ LALSimulateCoherentGW( LALStatus        *stat,
   /* Generate the table of propagation delays. */
   delayDt = output->deltaT/DELAYDT;
   in.length = (INT4)( output->data->length*output->deltaT/DELAYDT ) + 3;
-  TRY( LALSCreateVector( stat->statusPtr, &delay, in.length ), stat );
+  TRY( LALDCreateVector( stat->statusPtr, &delay, in.length ), stat );
   delayData = delay->data;
 
   /* At present this part is disabled! */
+  radius = 0.0;
   if ( 0 ) {
-    radius = 0.0;
     /*    radius = ( LAL_REARTH_SI/LAL_C_SI )*cos( detector->latitude ) /
 	  output->deltaT;*/
     gpsTime.gpsSeconds = output->epoch.gpsSeconds - DELAYDT/2;
@@ -298,11 +299,11 @@ LALSimulateCoherentGW( LALStatus        *stat,
       REAL8 lmst;            /* siderial time at current point (radians) */
       LALGPStoU( stat->statusPtr, &unixTime, &gpsTime );
       BEGINFAIL( stat )
-	TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+	TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
       ENDFAIL( stat );
       LALUtime( stat->statusPtr, &date, &unixTime );
       BEGINFAIL( stat )
-	TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+	TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
       ENDFAIL( stat );
       /*
 	LALLMST1( stat->statusPtr, &lmst, &date, detector->longitude,
@@ -310,7 +311,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
       */
       lmst = 0;
       BEGINFAIL( stat )
-	TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+	TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
       ENDFAIL( stat );
       delayData[i] = radius*cos( lmst - signal->ra );
       gpsTime.gpsSeconds += DELAYDT;
@@ -319,7 +320,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
 
   /* This is the temporary kludge. */
   else {
-    for ( i = 0; i < 2*(INT4)( in.length ); i+=2 )
+    for ( i = 0; i < (INT4)( in.length ); i++ )
       delayData[i] = 0.0;
   }
 
@@ -329,7 +330,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   in.vectorLength = 2;
   LALSCreateVectorSequence( stat->statusPtr, &polResponse, &in );
   BEGINFAIL( stat )
-    TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
   ENDFAIL( stat );
   polData = polResponse->data;
   for ( i = 0; i < 2*(INT4)( in.length ); i+=2 ) {
@@ -343,28 +344,28 @@ LALSimulateCoherentGW( LALStatus        *stat,
   in.length = detector->transfer->data->length;
   LALSCreateVector( stat->statusPtr, &phiTemp, in.length );
   BEGINFAIL( stat ) {
-    TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
 	 stat );
   } ENDFAIL( stat );
   LALCVectorAngle( stat->statusPtr, phiTemp,
 		   detector->transfer->data );
   BEGINFAIL( stat ) {
-    TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
     TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
 	 stat );
   } ENDFAIL( stat );
   LALSCreateVector( stat->statusPtr, &phiTransfer, in.length );
   BEGINFAIL( stat ) {
-    TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
     TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
 	 stat );
   } ENDFAIL( stat );
   LALUnwrapREAL4Angle( stat->statusPtr, phiTransfer, phiTemp );
   BEGINFAIL( stat ) {
-    TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
     TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
@@ -373,7 +374,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   TRY( LALSDestroyVector( stat->statusPtr, &phiTemp ), stat );
   LALSCreateVector( stat->statusPtr, &aTransfer, in.length );
   BEGINFAIL( stat ) {
-    TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
     TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
 	 stat );
@@ -381,7 +382,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   LALCVectorAbs( stat->statusPtr, aTransfer,
 		 detector->transfer->data );
   BEGINFAIL( stat ) {
-    TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+    TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
     TRY( LALSDestroyVector( stat->statusPtr, &aTransfer ), stat );
     TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
@@ -551,7 +552,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
 		" treated as zero outside its specified domain)" );
 
   /* Cleanup and exit. */
-  TRY( LALSDestroyVector( stat->statusPtr, &delay ), stat );
+  TRY( LALDDestroyVector( stat->statusPtr, &delay ), stat );
   TRY( LALSDestroyVector( stat->statusPtr, &phiTransfer ), stat );
   TRY( LALSDestroyVector( stat->statusPtr, &aTransfer ), stat );
   TRY( LALSDestroyVectorSequence( stat->statusPtr, &polResponse ),
