@@ -718,7 +718,7 @@ LALFindChirpBCVFilterSegment (
           omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
           thisEvent->alpha = - b2 * tan(omega) 
             / ( a1 + b1 * tan(omega) );
-          thisEvent->alpha *= pow(params->deltaT, 2/3);   
+          thisEvent->alpha *= pow(params->deltaT, 2.0/3.0);   
 
           /* copy the template into the event */
           thisEvent->psi0   = (REAL4) input->tmplt->psi0; 
@@ -836,7 +836,7 @@ LALFindChirpBCVFilterSegment (
     omega = 0.5 * InvTan1 + 0.5 * InvTan2 ;
     thisEvent->alpha = - b2 * tan(omega) 
       / ( a1 + b1 * tan(omega) );
-    thisEvent->alpha *= pow(params->deltaT, 2/3); 
+    thisEvent->alpha *= pow(params->deltaT, 2.0/3.0); 
 
 
     /* copy the template into the event */
