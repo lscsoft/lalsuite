@@ -456,6 +456,7 @@ LALBarycenter(LALStatus *stat, EmissionTime *emit, BarycenterInput *baryinput,
               +baryinput->site.location[2]*baryinput->site.location[2]);
     latitude = LAL_PI/2.e0 - acos(baryinput->site.location[2]/rd);
     longitude= atan2(baryinput->site.location[1],baryinput->site.location[0]);
+    rd /= LAL_C_SI;
 
     /********************************************************************
      *Calucate Roemer delay for detector at center of Earth.
