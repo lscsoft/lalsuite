@@ -452,8 +452,8 @@ LALFindChirpBCVSpinFilterSegment (
   
   if (input->fcTmplt->tmplt.beta == 0.0)
   {
-          rhosqThresh = 81;
-	  modqsqThresh = 81;
+          rhosqThresh = 125;
+	  modqsqThresh = 125;
   	/*  fprintf (stdout, "beta = 0 so changing rhosq thresh = %e\n ", rhosqThresh);*/
   }
   
