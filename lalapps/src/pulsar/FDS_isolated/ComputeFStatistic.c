@@ -2934,15 +2934,25 @@ void worker() {
   /* compress the file if it exists */
   if (uvar_useCompression && !retval) {
     int boinczipret;
-    remove("temp.zip");
-    boinczipret=boinc_zip(ZIP_IT, "temp.zip" , Outputfilename);
+    char* zipname="temp.zip";
+
+    boinczipret=boinc_delete_file(zipname);
     if (boinczipret) {
-      fprintf(stderr, "Error in zipping file %s to temp.zip.  Return value %d\n", Outputfilename, boinczipret);
-      boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP);
-    }
-    if ((boinczipret=boinc_rename("temp.zip", Outputfilename))) {
-      fprintf(stderr, "Error in renaming file temp.zip to %s.  rename() returned %d\n", Outputfilename, boinczipret);
-      boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME);
+      fprintf(stderr,"can't remove old zip file %s. not zipping output.\n",zipname);
+    } else {
+      boinczipret=boinc_zip(ZIP_IT, zipname , Outputfilename);
+      if (boinczipret) {
+	fprintf(stderr, "Error in zipping file %s to temp.zip. Return value %d. not zipping output.\n",
+		Outputfilename, boinczipret);
+	/* boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP); */
+      } else {
+	boinczipret=boinc_rename(zipname, Outputfilename);
+	if (boinczipret) {
+	  fprintf(stderr, "Error in renaming file %s to %s. rename() returned %d. not zipping output.\n",
+		  zipname Outputfilename, boinczipret);
+	  /* boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME); */
+        }
+      }
     }
   } /* if useCompression && ok */
 #endif
