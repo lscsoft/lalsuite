@@ -83,25 +83,23 @@ LALFindChirpBCVSpinTemplate (
   REAL4        psi15      = 0.0;
   REAL4        psi20      = 0.0;        
   REAL4        fHi        = 0.0;  
-  INT4         k          = 0;    
+  INT4         k          = 0;
+  INT4         i;
+  INT4         j;
+  REAL4        factor;
   INT4         kmin       = 0;     
   INT4         kmax       = 0;    
   REAL4        distNorm;
   const REAL4  cannonDist = 1.0; /* Mpc */
-
-  INT4         i;
-  INT4         j;
-  REAL4                 factor;
-
  
-FILE        *fpTmpltIm      =  NULL;
-FILE        *fpTmpltRe      =  NULL;
-FILE        *fpTemplate     =  NULL;
+  FILE        *fpTmpltIm      = NULL;
+  FILE        *fpTmpltRe      = NULL;
+  FILE        *fpTemplate     = NULL;
 
-  RealFFTPlan           *prev = NULL;
-  REAL4Vector           *hVec = NULL;
-  REAL4Vector           *HVec = NULL;
-  REAL4                  invNumPoints;
+  RealFFTPlan *prev           = NULL;
+  REAL4Vector *hVec           = NULL;
+  REAL4Vector *HVec           = NULL;
+  REAL4        invNumPoints;
  
   INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSBCVTEMPLATEC );
   ATTATCHSTATUSPTR( status );
@@ -137,7 +135,12 @@ FILE        *fpTemplate     =  NULL;
   /* check that the input exists */
   ASSERT( tmplt, status, FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 
- /*
+  fpTmpltIm  =  fopen("tmpltIm.dat","w");
+  fpTmpltRe  =  fopen("tmpltRe.dat","w");
+  fpTemplate =  fopen("Template.dat","w");
+
+
+  /*
    *
    * compute the BCVSpin template
    *
@@ -149,10 +152,9 @@ FILE        *fpTemplate     =  NULL;
   xfac      = params->xfacVec->data;
   numPoints = fcTmplt->data->length;
 
-/*fprintf (stdout, "expPsi    = %e \n", expPsi);
-fprintf (stdout, "xfac      = %e \n", xfac);*/
-fprintf (stdout, "numPoints = %d \n", numPoints);
-
+  /*fprintf (stdout, "expPsi    = %e \n", expPsi);
+  fprintf (stdout, "xfac      = %e \n", xfac);
+  fprintf (stdout, "numPoints = %d \n", numPoints);*/
 
   /* store the waveform approximant */
   fcTmplt->approximant = BCVSpin;
@@ -168,88 +170,75 @@ fprintf (stdout, "numPoints = %d \n", numPoints);
   psi20 = 0.0; /*tmplt->psi4;*/
   /* XXX work needed here... */
 
-fprintf (stdout, "psi00 = %e \n", psi00);
-fprintf (stdout, "psi15 = %e \n", psi15);
+  fprintf (stdout, "psi00 = %e \n", psi00);
+  fprintf (stdout, "psi15 = %e \n", psi15);
 
-
-
- /* parameters */
+  /* parameters */
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); 
   /* XXX not defined in tmplt */
-  m      = - psi15 / ( 16 * LAL_PI * LAL_PI * psi00 );       /* total mass */
-  eta    = 3 / ( 128 * psi00 * pow( LAL_PI * m, 5.0/3.0 ) ); /* symmetric mass ratio */      
-  mu     = eta * m;                                          /* ? */
+  /* m      = - psi15 / ( 16 * LAL_PI * LAL_PI * psi00 ); */      /* total mass */
+  /* eta    = 3 / ( 128 * psi00 * pow( LAL_PI * m, 5.0/3.0 ) );*/ /* symmetric mass ratio */      
+  /*mu      = eta * m; */
   /* defns checked against Bank documentation */
 
-fprintf (stdout, "m     = %e \n", m);
-/*fprintf (stdout, "eta   = %e \n", eta);
-fprintf (stdout, "mu    = %e \n", mu);*/
-
+  /*fprintf (stdout, "m     = %e \n", m);
+  fprintf (stdout, "eta   = %e \n", eta);
+  fprintf (stdout, "mu    = %e \n", mu);*/
 
   /* defining chirp mass (to the power of 5/3 => rename) */
-  chirpMass = pow( 1.0 / LAL_PI, 5.0/3.0) * ( 3 / (128 * psi00));
+  /* chirpMass = pow( 1.0 / LAL_PI, 5.0/3.0) * ( 3 / (128 * psi00));*/
   /*  chirpMass = m * pow(eta,3/5); */
 
   /*
    *
    * template dependent normalisation
-   * i need to check this & make necessary changes
+   * for BCV
    *
    */
 
-
   /* template dependent normalisation */
-  distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1.0e6 * LAL_PC_SI);
+  /*distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1.0e6 * LAL_PC_SI);
   distNorm *= params->dynRange;
 
   fcTmplt->tmpltNorm = sqrt( (5.0*mu) / 96.0 ) *
     pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
     pow( LAL_MTSUN_SI / (REAL4) params->deltaT, -1.0/6.0 );
   
-  fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;
+  fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;*/
   
-  fcTmplt->tmpltNorm *= distNorm * distNorm;
-  /* is this the same for BCVSpin? */
-  
+  /*fcTmplt->tmpltNorm *= distNorm * distNorm;*/
   
   /* x1 */   /* does this explanation suffice? */
   x1 = pow( deltaF, -1.0/3.0 );
   /* XXX work needed here ... check x1 */
 
-fprintf (stdout, "x1 = %e \n", x1);
-
+  /*fprintf (stdout, "x1 = %e \n", x1);*/
 
   /* frequency cutoffs */
   fHi  = tmplt->fFinal;
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
   kmax = fHi / deltaF < numPoints/2 ? fHi / deltaF : numPoints/2;
  
-fprintf (stdout, "fHi     = %e \n", fHi);
-fprintf (stdout, "fLow    = %e \n", params->fLow);
-fprintf (stdout, "deltaF  = %e \n", deltaF);
-
-fprintf (stdout, "kmin    = %d \n", kmin);
-fprintf (stdout, "kmax    = %d \n", kmax);
+  /*fprintf (stdout, "fHi     = %e \n", fHi);
+  fprintf (stdout, "fLow    = %e \n", params->fLow);
+  fprintf (stdout, "deltaF  = %e \n", deltaF);
+  fprintf (stdout, "kmin    = %d \n", kmin);
+  fprintf (stdout, "kmax    = %d \n", kmax);*/
 
  
   /* compute psi0: used in range reduction */
   {
     REAL4 x    = x1 * xfac[kmin];
     REAL4 psi  = 
-      psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
+    psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
     psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
 
-fprintf (stdout, "xfac[kmin] = %e \n", xfac[kmin]);
-
-fprintf (stdout, "x = %e \n", x);
-
-fprintf (stdout, "psi = %e \n", psi);
-fprintf (stdout, "psi0 = %e \n", psi0);
- 
- }
+    /*fprintf (stdout, "xfac[kmin] = %e \n", xfac[kmin]);
+    fprintf (stdout, "x = %e \n", x);
+    fprintf (stdout, "psi = %e \n", psi);
+    fprintf (stdout, "psi0 = %e \n", psi0);*/
+  }
   /* XXX work needed here... check psi */
-
-
 
   /*
    *
@@ -257,18 +246,13 @@ fprintf (stdout, "psi0 = %e \n", psi0);
    *
    */
 
-/*fprintf (stdout, "just before loop in template code \n");*/
+   /*fprintf (stdout, "just before loop in template code \n");*/
 
-fpTmpltIm  =  fopen("tmpltIm.dat","w");
-fpTmpltRe  =  fopen("tmpltRe.dat","w");
-
-fpTemplate =  fopen("Template.dat","w");
-
-  for ( k = kmin; k < kmax ; ++k )
+    for ( k = kmin; k < kmax ; ++k )
     {
       REAL4 x    = x1 * xfac[k];
       REAL4 psi  = 
-        psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
+      psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
       REAL4 psi1 = psi + psi0;
       REAL4 psi2;  /* defining psi2 every time through the loop necessary? */
                    /* where is psi2 used? */
@@ -294,25 +278,22 @@ fpTemplate =  fopen("Template.dat","w");
       /* XXX The sign of this is different than the SP filtering
        * because the data is conjugated instead of the template in the
        * BCV code */
-      expPsi[k].im =  - sin(psi1);
+      expPsi[k].im =   sin(psi1);
       expPsi[k].re =   cos(psi1);
-
-	fprintf (fpTmpltIm, "%d\t%e\n",k, expPsi[k].im);
-        fprintf (fpTmpltRe, "%d\t%e\n",k, expPsi[k].re);
-
+        
+       /* Uncomment next 2 lines to write template to file */
+       /*fprintf (fpTmpltIm, "%d\t%e\n",k, expPsi[k].im);
+       fprintf (fpTmpltRe, "%d\t%e\n",k, expPsi[k].re);*/
 
       /* XXX work needed here... expensive computation method */
-
-/*fprintf (stdout, "expPsi[k].im = %e \n", expPsi[k].im);
-fprintf (stdout, "expPsi[k].re = %e \n", expPsi[k].re);*/
-
-
 
     }
 
 fclose (fpTmpltIm);
 fclose (fpTmpltRe);
 
+        /* Uncomment following code to output template in time domain  */
+        /*
         LALCreateReverseRealFFTPlan(status->statusPtr, &prev, numPoints,0);
         LALSCreateVector(status->statusPtr, &hVec, numPoints);
         LALSCreateVector(status->statusPtr, &HVec, numPoints);
@@ -322,27 +303,26 @@ fclose (fpTmpltRe);
            HVec->data[i] = 0.0;
         }
 
-  factor = LAL_TWOPI * 0.5;
+      factor = LAL_TWOPI * 0.5;
 
 
        for (i=kmin; i<kmax; i++)
         {
                 HVec->data[i]           =  expPsi[i].re *  cos((REAL4)i*factor) - expPsi[i].im *  sin((REAL4)i*factor);
-                HVec->data[numPoints-i] = expPsi[i].im *  cos((REAL4)i*factor) - expPsi[i].re *  sin((REAL4)i*factor);
-/* - to correct time reversal */
-        }
+                HVec->data[numPoints-i] = expPsi[i].im *  cos((REAL4)i*factor) - expPsi[i].re *  sin((REAL4)i*factor);*/
+        /* - to correct time reversal */
+        /*}
                 HVec->data[0] = 0.;
-                HVec->data[numPoints/2] = 0.;
+                HVec->data[numPoints/2] = 0.;*/
 
-/*for ( i = 0; i < numPoints; ++i)
-                                                                                                                             
+        /*for ( i = 0; i < numPoints; ++i)
         {
            fprintf (fpTemplate, "%d\t%e\n", i, HVec->data[i]);
         }*/
 
 
-fprintf (stdout, "before FFT \n");
-                                                                                                                             
+/*fprintf (stdout, "before FFT \n");*/
+/*                                                                                                                           
 LALREAL4VectorFFT( status->statusPtr, hVec, HVec, prev );
 CHECKSTATUSPTR( status );
                                                                                                                              
@@ -363,7 +343,7 @@ fclose (fpTemplate);
 LALDestroyRealFFTPlan ( status->statusPtr, &prev);
 LALSDestroyVector ( status->statusPtr, &hVec);
 LALSDestroyVector ( status->statusPtr, &HVec);
-  
+*/  
 
   DETATCHSTATUSPTR( status );
   RETURN( status );

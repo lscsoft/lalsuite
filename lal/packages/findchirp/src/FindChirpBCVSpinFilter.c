@@ -137,6 +137,8 @@ LALFindChirpBCVSpinFilterSegment (
   REAL4			maxRho;
   UINT4			maxRhoCount;
 
+  REAL4                 normFac;
+
   REAL4   		alpha1;
   REAL4                 alpha2;
   REAL4                 alpha3;
@@ -181,6 +183,7 @@ LALFindChirpBCVSpinFilterSegment (
   FILE                  *fpStrain1Re = NULL;
   FILE                  *fpStrain1Im = NULL;
 
+  FILE                  *fpDataNorm;
 
   RealFFTPlan           *prev = NULL;
   REAL4Vector           *hVec = NULL;
@@ -195,6 +198,10 @@ LALFindChirpBCVSpinFilterSegment (
   REAL4Vector           *qtildeNewVecBCVSpin2 = NULL;
   */
 
+  RealFFTPlan           *prev1 = NULL;
+  REAL4Vector           *dVec = NULL;
+  REAL4Vector           *DVec = NULL;
+
 
   REAL8Vector           *A1Vec = NULL;
   REAL8Vector           *A2Vec = NULL;
@@ -207,6 +214,14 @@ LALFindChirpBCVSpinFilterSegment (
   REAL4                 invRootNormData;
 
   REAL4                 invNumPoints;
+
+  REAL4                 A1A1;
+  REAL4                 A2A2;
+  REAL4                 A3A3;
+  REAL4                 A1A2;
+  REAL4                 A1A3;
+  REAL4                 A2A3;
+
 
   INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
   ATTATCHSTATUSPTR( status );
@@ -321,6 +336,8 @@ fpqBCVSpin2 = fopen ("qBCVSpin2.dat","w");
 fpStrain1Re = fopen("Strain1Re.dat","w");
 fpStrain1Im = fopen("Strain1Im.dat","w");
 
+fpDataNorm = fopen("DataNorm.dat","w");
+
 
 for (i = 0; i < dataSegVec->length; ++i)
 {
@@ -353,6 +370,8 @@ fprintf (stdout, "Filter  code, numPoints = %d\n", numPoints);
   templateNorm  = input->fcTmplt->tmpltNorm;   
   deltaT        = params->deltaT;
 
+  normFac       = 4./numPoints;
+
 
 /*
  *
@@ -377,7 +396,7 @@ fprintf (stdout, "before moments calc. in FindChirpBCVSpinFilter1 \n");
 
 fprintf (stdout, "fcSeg->data->data->length: %d \n", fcSeg->data->data->length);
 
-Beta = 0.0;
+Beta = 100.0;
 
 fprintf (stdout, "Beta: %e \n", Beta);
 fprintf (stdout, "deltaT: %e \n", deltaT);
@@ -389,13 +408,16 @@ fprintf (stdout, "deltaT: %e \n", deltaT);
 
 fprintf( stdout, "dt 7/6 %e\n",  pow(deltaT, Sevenby6  )); 
 
-deltaTto7by6 = pow(deltaT, Sevenby6);
+/* deltaTto7by6 = pow(deltaT, Sevenby6);*/
 deltaTto2by3 = pow(deltaT, Twoby3);
+
+/* we now calc. true value for f^(-2/3) from the ampBCVSpin2 vector, we need to
+calc. the true value since f^(-2/3) is used inside sin and cos fns. */
 
  for ( k = 1; k < fcSeg->data->data->length; ++k )
   {
-    ampBCVSpin1[k] *= deltaTto7by6;
-    ampBCVSpin2[k] *= deltaTto2by3; 
+ /*   ampBCVSpin1[k] *= deltaTto7by6; */  /* converting amp to f */  
+    ampBCVSpin2[k] *= deltaTto2by3;       
   }
 
  for ( k = 1; k < fcSeg->data->data->length; ++k )
@@ -436,6 +458,9 @@ fprintf(stdout, "deltaF %e\n", deltaF);
   K *= 4*deltaF;
   L *= 2*deltaF;
   M *= 2*deltaF;
+
+/* !!! To find absolute values of these moments multiply by (deltaT)^(-7/3) !!! */ 
+
 
 fprintf (stdout, "I = %e \n", I); 
 fprintf (stdout, "J = %e \n", J);
@@ -511,6 +536,39 @@ else
   	 }
 }  
 
+/* checking orthonormalisation of A vectors */
+
+A1A1 = 0.;
+A2A2 = 0.;
+A3A3 = 0.;
+A1A2 = 0.;
+A1A3 = 0.;
+A2A3 = 0.;
+
+for (k=0; k < (numPoints/2) + 1; ++k)
+	{ 
+         A1A1 += A1Vec->data[k] * A1Vec->data[k] * wtilde[k].re;
+	 A2A2 += A2Vec->data[k] * A2Vec->data[k] * wtilde[k].re;
+         A3A3 += A3Vec->data[k] * A3Vec->data[k] * wtilde[k].re;
+         A1A2 += A1Vec->data[k] * A2Vec->data[k] * wtilde[k].re;  
+         A1A3 += A1Vec->data[k] * A3Vec->data[k] * wtilde[k].re;       
+         A2A3 += A2Vec->data[k] * A3Vec->data[k] * wtilde[k].re;  
+       }
+
+A1A1 *= 4 * deltaF;
+A2A2 *= 4 * deltaF;
+A3A3 *= 4 * deltaF;
+A1A2 *= 4 * deltaF;
+A1A3 *= 4 * deltaF;
+A2A3 *= 4 * deltaF;
+
+fprintf (stdout, "A1 cross A1 %e\n", A1A1);  
+fprintf (stdout, "A2 cross A2 %e\n", A2A2);
+fprintf (stdout, "A3 cross A3 %e\n", A3A3);
+fprintf (stdout, "A1 cross A2 %e\n", A1A2);
+fprintf (stdout, "A1 cross A3 %e\n", A1A3);
+fprintf (stdout, "A2 cross A3 %e\n", A2A3);
+
 
   /*
    * initialising outputData vectors to
@@ -549,17 +607,43 @@ normData += ((inputData1[k].re * inputData1[k].re) + (inputData1[k].im * inputDa
              * wtilde[k].re;
 }
 
-normData *= 4 * deltaF;
+ normData *= deltaT * normFac;   
+/* normData *= 2.0/numPoints; MAYBE CHANGE BACK TO THIS!!!*/
 
-fprintf (stdout, "normData = %e\n", normData);
+fprintf (stdout, "input data normData = %e\n", normData);
 
 invRootNormData = pow(normData,-0.5);
-
+/*
 for (k = 0; k < (numPoints/2)+1; ++k )
 {
 inputData1[k].re *= invRootNormData;
-inputData1[k].im *= invRootNormData;
+inputData1[k].im *= invRootNormData;  
 }
+/*  /*  UNCOMMENT LOOP TO NORMALISE INPUT  */
+
+        LALCreateReverseRealFFTPlan(status->statusPtr, &prev1, numPoints,0);
+        LALSCreateVector(status->statusPtr, &dVec, numPoints);
+        LALSCreateVector(status->statusPtr, &DVec, numPoints);
+                                                                                                                             
+        for (i=1; i<(numPoints/2); i++)
+                                                                                                                             
+        {
+		DVec->data[i] = inputData1[i].re;
+                DVec->data[numPoints-i] = inputData1[i].im;
+        }
+                DVec->data[0] = 0.;
+                DVec->data[numPoints/2] = 0.;
+                                                                                                                                                                                                                                                         
+fprintf (stdout, "before FFT \n");
+                                                                                                                             
+LALREAL4VectorFFT( status->statusPtr, dVec, DVec, prev1 );
+CHECKSTATUSPTR( status );
+
+for (i=0; i < numPoints; i++)
+	{       
+                dVec->data[i] *= 1./numPoints; 
+		fprintf (fpDataNorm,  "%e\n", dVec->data[i]);
+	}
 
 normData = 0.;
                                                                                                                              
@@ -569,9 +653,73 @@ normData += ((inputData1[k].re * inputData1[k].re) + (inputData1[k].im * inputDa
              * wtilde[k].re;
 }
                                                                                                                              
+normData *= deltaT * normFac;
+                                                                                                                             
+fprintf (stdout, "input data normData = %e\n", normData);
+
+/*
+
+A1norm = 0.;
+                                                                                                                             
+for (k = 0; k < (numPoints/2)+1; ++k )
+{
+A1norm += ((tmpltSignal[k].re * tmpltSignal[k].re) + (tmpltSignal[k].im * tmpltSignal[k].im))
+             * wtilde[k].re * A1Vec->data[k] * A1Vec->data[k] ;
+}
+                                                                                                                             
+A1norm *= 2./numPoints;
+                                                                                                                             
+fprintf (stdout, "A1norm = %e\n", A1norm);
+
+
+invRootNormData = pow(normData,-0.5);
+                                                                                                                             
+for (k = 0; k < (numPoints/2)+1; ++k )
+{
+tmpltSignal[k].re *= invRootNormData;
+tmpltSignal[k].im *= invRootNormData;
+}
+                                                                                                                             
+normData = 0.;
+                                                                                                                             
+for (k = 0; k < (numPoints/2)+1; ++k )
+{
+normData += ((tmpltSignal[k].re * tmpltSignal[k].re) + (tmpltSignal[k].im * tmpltSignal[k].im))
+             * wtilde[k].re;
+}
+                                                                                                                             
 normData *= 4 * deltaF;
                                                                                                                              
-fprintf (stdout, "normData = %e\n", normData);
+fprintf (stdout, "template normData = %e\n", normData);
+
+
+*/
+
+
+normData = 0.;
+                                                                                                                             
+for (k = 0; k < (numPoints/2)+1; ++k )
+{
+normData += wtilde[k].re * ( pow(tmpltSignal[k].re,2) + pow(tmpltSignal[k].im,2) ) ;
+}
+                                                                                                                             
+normData *= 4 * deltaF;
+                                                                                                                             
+fprintf (stdout, " 4 int df over snf   = %e\n", normData);
+
+
+/*
+invRootNormData = pow(normData,-0.5);
+                                                                                                                             
+for (k = 0; k < (numPoints/2)+1; ++k )
+{
+tmpltSignal[k].re *= invRootNormData;
+tmpltSignal[k].im *= invRootNormData;
+}
+*/                                                                                                                             
+                                                                                                                             
+
+
 
 
 
@@ -582,12 +730,6 @@ fprintf (stdout, "normData = %e\n", normData);
 /* LALCOMPLEX8VectorFFT( status->statusPtr, input,
                    , params->invPlan );
    CHECKSTATUSPTR( status );*/
-
-
-
-
-
-
 
 fprintf (stdout, "before qtilde calc. in FindChirpBCVSpinFilter \n");
 
@@ -602,20 +744,27 @@ fprintf (stdout, "numPoints = %d \n", numPoints);
   /* qtilde positive frequency, not DC or nyquist */
   for ( k = 1; k < numPoints/2; ++k )
   {
-    REAL4 r        = inputData1[k].re;
-    REAL4 s        = inputData1[k].im;       /* note complex conjugate */
+    REAL4 r        =   inputData1[k].re; 
+    REAL4 s        =   inputData1[k].im;      
    
-    REAL4 x = tmpltSignal[k].re;
-    REAL4 y = - tmpltSignal[k].im;     
+    REAL4 x =  tmpltSignal[k].re;
+    REAL4 y =  0. - tmpltSignal[k].im;     
  
- 
-    qtilde[k].re        = r * x - s * y ;
-    qtilde[k].im        = r * y + s * x ;
+    qtilde[k].re        = r * x + s * y ;
+    qtilde[k].im        = s * x - r * y ;
+   
+
+
+   /* qtilde[k].re        = r * x - s * y ;
+    qtilde[k].im        = r * y + s * x ;*/
+
+/* fprintf(stdout, "%e \t %e  \n ", qtilde[k].re, qtilde[k].im);*/
+
 
 /* is  this correct? */
                                                                                                                              
       qtilde[k].re *= wtilde[k].re;
-      qtilde[k].im *= wtilde[k].re;
+      qtilde[k].im *= wtilde[k].re; 
 
 /*fprintf (stdout, "loop         = %d \n", k);
 fprintf (stdout, "x            = %e \n", x);
@@ -625,14 +774,14 @@ fprintf (stdout, "qtilde[k].re = %e \n", qtilde[k].re);
 fprintf (stdout, "qtilde[k].im = %e \n", qtilde[k].im);*/
     
 
-    qtildeBCVSpin1[k] = qtilde[k];
-    qtildeBCVSpin2[k] = qtilde[k]; 
+    qtildeBCVSpin1[k] =  qtilde[k]; 
+    qtildeBCVSpin2[k] =  qtilde[k];   
 
     /* real parts */
 
      qtilde[k].re         *= A1Vec->data[k];
      qtildeBCVSpin1[k].re *= A2Vec->data[k];
-     qtildeBCVSpin2[k].re *= A3Vec->data[k];
+     qtildeBCVSpin2[k].re *= A3Vec->data[k];   /*   UNCOMMENT THIS!!!! */
 
 
  /*  qtilde[k].re         *= amp[k]/ rootI ;                        /* A1 */
@@ -778,6 +927,8 @@ fprintf (fpWvtIm, "%d\t%e\n", k, qtilde[k].re);
 		   params->qtildeVecBCVSpin2, params->invPlan );
 		   CHECKSTATUSPTR( status ); 
 
+fprintf (stdout, "overlap  %e\t%e\n", q[0].re,q[0].im);
+
 /*
         LALCreateReverseRealFFTPlan(status->statusPtr, &prev1, numPoints,0);
         LALSCreateVector(status->statusPtr, &qNewVec, numPoints);
@@ -861,19 +1012,22 @@ memset (params->rhosqVec->data->data, 0, numPoints * sizeof (REAL4) );
 maxRho = 0;
 maxRhoCount = 0;
 
-invNumPoints = 1./((REAL4) numPoints);
+/*invNumPoints = deltaF;*/   /*1./((REAL4) numPoints);*/
+
+
+
 
  /* accounting for factors of 2 q, qBCVSpin1,  qBCVSpin2. make this more efficient later */ 
  /* dividing by numPoints since not done in IFFT */
                                                                                                                            
  for ( j = 0; j < numPoints; ++j)
        {
-           q[j].re *= 2 * invNumPoints;  
-           q[j].im *= -2 * invNumPoints;
-           qBCVSpin1[j].re *= 2 * invNumPoints;
-           qBCVSpin1[j].im *= -2 * invNumPoints;
-           qBCVSpin2[j].re *= 2 * invNumPoints;
-           qBCVSpin2[j].im *= -2 * invNumPoints;
+           q[j].re *= normFac;  /*4 * invNumPoints; */    /*  2 * invNumPoints;*/  
+           q[j].im *= normFac; /*- 4 * invNumPoints; */    /* -2 * invNumPoints;*/
+           qBCVSpin1[j].re *= normFac;/*  4 * invNumPoints; */  /*   2 * invNumPoints;*/
+           qBCVSpin1[j].im *= normFac;/* -4 * invNumPoints; */ /*  -2 * invNumPoints;*/
+           qBCVSpin2[j].re *= normFac;  /*  4 * invNumPoints;*/  /*   2 * invNumPoints;*/
+           qBCVSpin2[j].im *= normFac;/* -4 * invNumPoints;*/  /*  -2 * invNumPoints;*/
        }
 
 
@@ -902,7 +1056,7 @@ invNumPoints = 1./((REAL4) numPoints);
 /*fprintf (stdout, "rhosqVec            = %e \n",  params->rhosqVec->data->data[j] );*/
    rho    = pow(rhosq, 0.5);
 
-   rho    *= 2/(deltaT);      /*  Normalises rho, but messes up alphas */
+ /*  rho    *= 2/(deltaT); */     /*  Normalises rho, but messes up alphas */
      
 fprintf (fpRho, "%d\t%e\n", j, rho);
 
@@ -918,12 +1072,22 @@ fprintf (stdout, "maxRhoCount  = %d \n", maxRhoCount);*/
 
    invRho = 1/rho;
 
-   alpha1 = q[j].re * invRho;
+/*   alpha1 = q[j].re * invRho;
    alpha2 = q[j].im * invRho;
    alpha3 = qBCVSpin1[j].re * invRho;
    alpha4 = qBCVSpin1[j].im * invRho;
    alpha5 = qBCVSpin2[j].re * invRho;
+   alpha6 = qBCVSpin2[j].im * invRho;*/
+
+   alpha1 = q[j].re * invRho;
+   alpha4 = q[j].im * invRho;
+   alpha2 = qBCVSpin1[j].re * invRho;
+   alpha5 = qBCVSpin1[j].im * invRho;
+   alpha3 = qBCVSpin2[j].re * invRho;
    alpha6 = qBCVSpin2[j].im * invRho;
+
+
+
 
  alphaSumSq  =  pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2)
                 + pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
@@ -941,12 +1105,21 @@ fprintf (stdout, "maxRhoCount  = %d \n", maxRhoCount);
                                                                      
 /* calc alpha values in time domain */
                                                                                                                              
-   alpha1 = q[maxRhoCount].re * invMaxRho;
+/*   alpha1 = q[maxRhoCount].re * invMaxRho;
    alpha2 = q[maxRhoCount].im * invMaxRho;
    alpha3 = qBCVSpin1[maxRhoCount].re * invMaxRho;
    alpha4 = qBCVSpin1[maxRhoCount].im * invMaxRho;
    alpha5 = qBCVSpin2[maxRhoCount].re * invMaxRho;
+   alpha6 = qBCVSpin2[maxRhoCount].im * invMaxRho;*/
+
+   alpha1 = q[maxRhoCount].re * invMaxRho;
+   alpha4 = q[maxRhoCount].im * invMaxRho;
+   alpha2 = qBCVSpin1[maxRhoCount].re * invMaxRho;
+   alpha5 = qBCVSpin1[maxRhoCount].im * invMaxRho;
+   alpha3 = qBCVSpin2[maxRhoCount].re * invMaxRho;
    alpha6 = qBCVSpin2[maxRhoCount].im * invMaxRho;
+
+
 
 fprintf (stdout, "alpha1       = %e \n", alpha1);
 fprintf (stdout, "alpha2       = %e \n", alpha2);
@@ -980,14 +1153,25 @@ fprintf (stdout, "alphaSumSq       = %e \n", alphaSumSq);
     REAL4 y = - tmpltSignal[k].im;
                                                                                                                              
 /* check here */                                                                                                                             
-    qtilde[k].re         = (alpha1 * x - alpha2 * y) * A1Vec->data[k] ;
+/*    qtilde[k].re         = (alpha1 * x - alpha2 * y) * A1Vec->data[k] ;
     qtilde[k].re        += (alpha3 * x - alpha4 * y) * A2Vec->data[k] ;
     qtilde[k].re        += (alpha5 * x - alpha6 * y) * A3Vec->data[k] ;     
 
     qtilde[k].im         = (alpha1 * y + alpha2 * x) * A1Vec->data[k] ;
     qtilde[k].im        += (alpha3 * y + alpha4 * x) * A2Vec->data[k] ;
-    qtilde[k].im        += (alpha5 * y + alpha6 * x) * A3Vec->data[k] ;
+    qtilde[k].im        += (alpha5 * y + alpha6 * x) * A3Vec->data[k] ;*/
    
+
+    qtilde[k].re         = (alpha1 * x - alpha4 * y) * A1Vec->data[k] ;
+    qtilde[k].re        += (alpha2 * x - alpha5 * y) * A2Vec->data[k] ;
+    qtilde[k].re        += (alpha3 * x - alpha6 * y) * A3Vec->data[k] ;
+                                                                                                                             
+    qtilde[k].im         = (alpha1 * y + alpha4 * x) * A1Vec->data[k] ;
+    qtilde[k].im        += (alpha2 * y + alpha5 * x) * A2Vec->data[k] ;
+    qtilde[k].im        += (alpha3 * y + alpha6 * x) * A3Vec->data[k] ;
+
+
+
    }
   
 normData =  0.;
@@ -1035,14 +1219,6 @@ COMPLEX8Vector *HVec = NULL;
 	 fprintf (fpWvfIm, "%d %e %e\n", i, HVec->data[i], HVec->data[numPoints-i]);
 	}
 
-
-
-/*
-LALReverseRealFFT( status->statusPtr, hVec,
-                   HVec, prev );
-   CHECKSTATUSPTR( status );
-*/
-
 fprintf (stdout, "before FFT \n");
 
 LALREAL4VectorFFT( status->statusPtr, hVec, HVec, prev );
@@ -1065,7 +1241,13 @@ for ( j = 0; j < numPoints; ++j)
 
 /*	fprintf (fpWvtIm, "%d\t%e\n", j, q[j].im);*/
 /*        fprintf (fpWvtRe, "%d\t%e\n", j, q[j].re);*/
- fprintf (fpRecon, "%d\t%e\n", j, hVec->data[j]);
+ 
+
+hVec->data[j] *= deltaF;         /* trying to normalise  reconstructed wvf */
+
+hVec->data[j] *= maxRho;         /* sets Recon wvf equal in ampl. to input wave */
+
+fprintf (fpRecon, "%d\t%e\n", j, hVec->data[j]);
 
 
        }
@@ -1101,6 +1283,7 @@ fclose (fpqBCVSpin2);
 fclose (fpStrain1Re);
 fclose (fpStrain1Im);
 
+fclose (fpDataNorm);
 
 
 fprintf (stdout, "after closing output files \n");
@@ -1133,6 +1316,24 @@ fprintf (stdout, "after closing Hvec \n");
 
 
 LALDestroyRealFFTPlan ( status->statusPtr, &prev);
+
+LALSDestroyVector ( status->statusPtr, &dVec);
+                                                                                                                             
+fprintf (stdout, "after closing hVec \n");
+                                                                                                                             
+                                                                                                                             
+LALSDestroyVector ( status->statusPtr, &DVec);
+                                                                                                                             
+fprintf (stdout, "after closing Hvec \n");
+                                                                                                                             
+                                                                                                                             
+LALDestroyRealFFTPlan ( status->statusPtr, &prev1);
+
+
+
+
+
+                                                                                                                             
 
 fprintf (stdout, "just before end  of FindChirpBCVSpinFilter \n");
 

@@ -111,7 +111,6 @@ LALFindChirpBCVSpinData (
   FILE                 *fpOutRe = NULL;
   FILE                 *fpOutIm = NULL;
 
-
   /*declaration*/
   INITSTATUS( status, "LALFindChirpBCVSpinData", FINDCHIRPBCVSPINDATAC );
   ATTATCHSTATUSPTR( status );
@@ -233,9 +232,6 @@ ASSERT( params->ampVecBCVSpin2, status,
   fpOutRe = fopen("OutRe.dat","w");
   fpOutIm = fopen("OutIm.dat","w");
  
-
-
-
  /*fprintf ( stdout, "just after assert statements of LALFindChirpBCVSpinData \n");*/
 
   /*
@@ -340,6 +336,8 @@ fprintf (stdout, "dataSegVec->length %d\n", dataSegVec->length);
 
 fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
 
+  fprintf (stdout, "dynRange = %e\n", params->dynRange); 
+  fprintf (stdout, "response[0] = %e\t%e\n", resp[0].re,resp[0].im);
 
   /* compute strain */
   for ( k = 0; k < fcSeg->data->data->length; ++k )
@@ -348,26 +346,25 @@ fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
     REAL4 q = outputData[k].im;
     REAL4 x = resp[k].re * params->dynRange;
     REAL4 y = resp[k].im * params->dynRange;
+ 
+/* Uncomment next 2 lines to write uncalibrated input data to file */
+/*  fprintf (fpOutRe,  "%d\t%e\n",k,outputData[k].re);  
+    fprintf (fpOutIm,  "%d\t%e\n",k,outputData[k].im); */  
 
-    fprintf (fpOutRe,  "%d\t%e\n",k,outputData[k].re);  
-    fprintf (fpOutIm,  "%d\t%e\n",k,outputData[k].im);
-
-
-    fprintf (fprespRe, "%d\t%e\n",k,resp[k].re);
-    fprintf (fprespIm, "%d\t%e\n",k,resp[k].im);
-
+/* Uncomment next 2 lines to write response function to file */
+/*    fprintf (fprespRe, "%d\t%e\n",k,resp[k].re);
+    fprintf (fprespIm, "%d\t%e\n",k,resp[k].im); */
 
     outputData[k].re =  (p*x) - (q*y);
     outputData[k].im =  (p*y) + (q*x);
-  
-    fprintf (fpStrainRe, "%d\t%e\n",k,outputData[k].re);
-    fprintf (fpStrainIm, "%d\t%e\n",k,outputData[k].im);
 
+/* Uncomment next 2 lines to write calibrated input data to file */
+/*  fprintf (fpStrainRe, "%d\t%e\n",k,outputData[k].re);
+    fprintf (fpStrainIm, "%d\t%e\n",k,outputData[k].im); */
 
   }
 
- /*fprintf ( stdout, "just after htilde etc. calc. of LALFindChirpBCVSpinData \n");*/
-
+/*fprintf ( stdout, "just after htilde etc. calc. of LALFindChirpBCVSpinData \n");*/
 
     /*
      *
@@ -390,8 +387,7 @@ fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
     for ( k = cut; k < params->wtildeVec->length; ++k )
     {
     
-	 fprintf (fpspec, "%d\t%e\n",k,spec[k]);
-
+      /* fprintf (fpspec, "%d\t%e\n",k,spec[k]); */
 
       if ( spec[k] == 0 )
       {
@@ -475,65 +471,23 @@ fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
 
 /*fprintf ( stdout, "just after wtilde etc. calc. of LALFindChirpBCVSpinData \n");*/
 
-  /*
-     *
-     * compute BCV normalisation parameters a1, b1 and b2, 
-     * segment normalization, outputData, point fcSeg at data segment
-     *
-     */
+   
 
-/*
-    fcSeg->a1 = 0.0;
-    fcSeg->b1 = 0.0;
-    fcSeg->b2 = 0.0;
-    fcSeg->segNorm = 0.0;
-
-    for ( k = 0; k < cut; ++k )
-    {
-      outputData[k].re = 0.0;
-      outputData[k].im = 0.0;
-      outputDataBCV[k].re = 0.0;
-      outputDataBCV[k].im = 0.0;
-    }
-
-    memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
-    memset( tmpltPowerBCV,0, params->tmpltPowerVecBCV->length * sizeof(REAL4) );
-*/
-    /* 
-     * moments necessary for the calculation of
-     * the BCVSpin normalization parameters
-     */
-    
-#if 0
-    for ( k = 1; k < fcSeg->data->data->length; ++k )
-    {
-      fcSeg->segNorm += amp[k] * amp[k] * wtilde[k].re ; /* for std-candle */
-    }
-#endif
-
-    /*
-     *
-     * tmplt power calcs require moments etc, not calc yet
-     *
-     */
-
-  
-
-    /* set output frequency series parameters */
-    strncpy( fcSeg->data->name, dataSeg->chan->name, LALNameLength );
+   /* set output frequency series parameters */
+   strncpy( fcSeg->data->name, dataSeg->chan->name, LALNameLength );
    /* strncpy( fcSeg->dataBCV->name, dataSeg->chan->name, LALNameLength );*/
 
     fcSeg->data->epoch.gpsSeconds      = dataSeg->chan->epoch.gpsSeconds;
     fcSeg->data->epoch.gpsNanoSeconds  = dataSeg->chan->epoch.gpsNanoSeconds;
- /*   fcSeg->dataBCV->epoch.gpsSeconds     = dataSeg->chan->epoch.gpsSeconds;
+    /* fcSeg->dataBCV->epoch.gpsSeconds     = dataSeg->chan->epoch.gpsSeconds;
     fcSeg->dataBCV->epoch.gpsNanoSeconds = dataSeg->chan->epoch.gpsNanoSeconds;*/
 
     fcSeg->data->f0     = dataSeg->chan->f0;
     fcSeg->data->deltaF = 1.0 /
-      ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
-  /*  fcSeg->dataBCV->f0     = dataSeg->chan->f0;
+    ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
+    /*fcSeg->dataBCV->f0     = dataSeg->chan->f0;*/
     fcSeg->dataBCV->deltaF = 1.0 /
-      ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;*/
+    ( (REAL8) dataSeg->chan->data->length * dataSeg->chan->deltaT ) ;
 
     fcSeg->deltaT       = dataSeg->chan->deltaT;
     fcSeg->number       = dataSeg->number;
@@ -543,7 +497,7 @@ fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
     fcSeg->invSpecTrunc = params->invSpecTrunc;
 
 
-  /* code */
+ 
 
   } /* end of loop over data segments */
  
