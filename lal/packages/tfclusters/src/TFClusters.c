@@ -39,7 +39,7 @@ NRCSID (TFCLUSTERSC, "$Id$");
 
 
 #include <lal/TFClusters.h>
-
+#include <math.h>
 
 /***********************MAIN FUNCTIONS*********************************/
 
@@ -1773,17 +1773,20 @@ static UINT4 max(UINT4 a, UINT4 b)
 
 #define ITMAX 1000
 
+/* the following returns
+1 - int_0^x exp(-t) t^(a-1) dt / Gamma(a)
+*/
 static void incgam(LALStatus *status, REAL4 a, REAL4 x, REAL4 *retu)
 {
-  UINT4 n;
+  INT4 n;
   REAL4 sum,del,elln,an,a1,a2,a3;
   REAL8 tmp,ser;
-  static REAL8 cof[6]={190.9551718930764,
-		       -216.836681843728,
-		       60.19441764023333,
-		       -3.0875132392854585,
-		       3.029638705253259e-3,
-		       -1.352385959072596e-5};
+  static REAL8 cof[6]={76.18009172947146,
+		       -86.50532032941677,
+		       24.01409824083091,
+		       -1.231739572450155,
+		       0.1208650973866179e-2,
+		       -0.5395239384953e-5};
 
   *retu = 0;
 
@@ -1791,10 +1794,10 @@ static void incgam(LALStatus *status, REAL4 a, REAL4 x, REAL4 *retu)
     ABORT ( status, TFCLUSTERSH_EIARG, TFCLUSTERSH_MSGEIARG);
   }
 
-  tmp = x + 5.5 - (x + 0.5) * log(x + 5.5);
-  ser=2.5066282751072975;
-  for (n=1;n<=6;n++) ser += cof[n-1]/(x + n);
-  elln = -tmp+log(ser/x);
+  tmp = a + 5.5 - (a + 0.5) * log(a + 5.5);
+  ser=1.000000000190015;
+  for (n=1;n<=6;n++) ser += cof[n-1]/(a + n);
+  elln = -tmp+log(2.5066282746310005*ser/a);
 
   elln = exp(-x+a*log(x)-elln);
 
@@ -1818,12 +1821,13 @@ static void incgam(LALStatus *status, REAL4 a, REAL4 x, REAL4 *retu)
   } 
   else {
     a1=x+1.0-a;
-    a2=1e30;
+    a2=1.0/1e-30;
     sum=a3=1.0/a1;
 
-    for (n=1;n<=ITMAX;n++, a1+=2.0) {
+    for (n=1;n<=ITMAX;n++) {
       an = -n*(n-a);
-      
+      a1+=2.0;
+
       a3=an*a3+a1;
       if (fabs(a3) < 1e-30) a3=1e-30;
       
@@ -1847,7 +1851,7 @@ static void incgam(LALStatus *status, REAL4 a, REAL4 x, REAL4 *retu)
   }
 }
 
-
+#undef ITMAX
 
 
 /******** <lalLaTeX file="TFClustersC"> ********
