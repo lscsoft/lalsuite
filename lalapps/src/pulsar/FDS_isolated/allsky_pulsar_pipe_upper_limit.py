@@ -360,7 +360,7 @@ while ipolka < Npolka:
  fa1=float(sfa)
  if fa1 < fa:
    fa=fa1
-   freqFA=freq
+   freqFA=freq_dmp
  ipolka=ipolka+1
 print  ' *  *  * '
 print 'Loudest event was from band ',freqFA
