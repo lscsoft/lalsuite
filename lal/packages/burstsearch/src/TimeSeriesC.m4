@@ -147,7 +147,7 @@ void `LALShrink'SERIESTYPE (
 	size_t length
 )
 {
-	INITSTATUS(status, "`LALCut'SERIESTYPE", TIMESERIESC);
+	INITSTATUS(status, "`LALShrink'SERIESTYPE", TIMESERIESC);
 
 	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
