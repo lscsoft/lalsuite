@@ -129,6 +129,7 @@ UINT4 site0             = -1;           /* 1st ifo: lalCachedDetector site ident
 UINT4 site1             = -1;           /* 2nd ifo: lalCachedDetector site identifier*/
 
 /* output parameters */
+CHAR  *userTag          = NULL;         /* string the user can tag with */
 int    enableOutput     = -1;           /* write out inspiral events    */
 int    writeRawData     = 0;            /* write the raw data to a file */
 int    writeFilterData  = 0;            /* write post injection data    */
@@ -164,7 +165,8 @@ int main( int argc, char *argv[] )
   REAL4FrequencySeries          spec[2];
   COMPLEX8FrequencySeries       resp[2];
   DataSegmentVector            *dataSegVec = NULL;
-
+  DataSegmentVector            *dataVecPtr[2] = {NULL, NULL};
+  
   /* structures for preconditioning */
 #if 0
   COMPLEX8FrequencySeries       injResp;        
@@ -173,7 +175,7 @@ int main( int argc, char *argv[] )
   ResampleTSParams              resampleParams; 
   LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams[2];
-
+  
   /* findchirp data structures */
   FindChirpInitParams          *fcInitParams[2]   = {NULL,NULL};
   FindChirpSPDataParams        *fcDataParams   = NULL;
@@ -181,7 +183,7 @@ int main( int argc, char *argv[] )
   FindChirpFilterParams        *fcFilterParams = NULL;
   FindChirpFilterInput         *fcFilterInput  = NULL;
   FindChirpStandardCandle       candle; 
-
+  
   /* twointerffindchirp data structures */
   TwoInterfFindChirpInitParams          *twoInterfInitParams = NULL;
   TwoInterfFindChirpSegmentVector       *twoInterfFcSegVec = NULL;
@@ -201,14 +203,14 @@ int main( int argc, char *argv[] )
   InspiralTemplate             *bankCurrent  = NULL;
   InspiralTemplateNode         *tmpltHead    = NULL;
   InspiralTemplateNode         *tmpltCurrent = NULL;
-
+  
   /* inspiral events */
   INT4                          numEvents   = 0;
-
+  
   TwoInterfInspiralEvent       *event       = NULL;
   TwoInterfInspiralEvent       *eventList   = NULL;
   MetadataTable                 savedEvents;
-
+  
   /* output data */
   MetadataTable         proctable;
   MetadataTable         procparams;
@@ -219,7 +221,7 @@ int main( int argc, char *argv[] )
   SummValueTable        candleTable;         
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
-
+  
   /* counters and other variables */
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   UINT4 i, n;
@@ -230,7 +232,7 @@ int main( int argc, char *argv[] )
   const REAL8 epsilon = 1.0e-8;
   UINT4 resampleChan = 0;
   REAL8 tsLength;
-
+  
 
   /*
    *
@@ -344,7 +346,7 @@ int main( int argc, char *argv[] )
 
   /* save the minimal match of the bank in the process params */
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) 
-    LALCalloc( 1, sizeof(ProcessParamsTable) ); 
+    calloc( 1, sizeof(ProcessParamsTable) ); 
   LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
       PROGRAM_NAME );
   LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--minimal-match" );
@@ -400,7 +402,7 @@ int main( int argc, char *argv[] )
 
     /* store the input sample rate */
     this_search_summvar = searchsummvars.searchSummvarsTable = 
-      (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+      (SearchSummvarsTable *) calloc( 1, sizeof(SearchSummvarsTable) );
     LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
         "raw data sample rate" );
     this_search_summvar->value = chan[n].deltaT;
@@ -556,7 +558,7 @@ int main( int argc, char *argv[] )
 
   /* store the filter data sample rate */
   this_search_summvar = this_search_summvar->next = 
-    (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+    (SearchSummvarsTable *) calloc( 1, sizeof(SearchSummvarsTable) );
   LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
       "filter data sample rate" );
   this_search_summvar->value = chan[0].deltaT;
@@ -615,7 +617,7 @@ int main( int argc, char *argv[] )
   {
     outFrame[0] = fr_add_proc_REAL4TimeSeries( outFrame[0], &chan[0],
         "ct", "FILTER1" );
-    outFrame[1] = fr_add_proc_REAL4TimeSeries( outFrame[1], &chan[0],
+    outFrame[1] = fr_add_proc_REAL4TimeSeries( outFrame[1], &chan[1],
         "ct", "FILTER2" );
   }
 
@@ -657,15 +659,15 @@ int main( int argc, char *argv[] )
    * create and populate twointerffindchirp initialization structure 
    *
    */
-
-
+  
+  
   if ( ! (twoInterfInitParams = (TwoInterfFindChirpInitParams *) 
-        LALCalloc (1, sizeof(TwoInterfFindChirpInitParams))))
-  {
-    fprintf( stderr, 
-        "could not allocate memory for twointerffindchirp init params\n" );
-    exit( 1 );
-  }
+	  LALCalloc (1, sizeof(TwoInterfFindChirpInitParams))))
+    {
+      fprintf( stderr, 
+	       "could not allocate memory for twointerffindchirp init params\n" );
+      exit( 1 );
+    }
   twoInterfInitParams->numDetectors            = numDetectors;
   twoInterfInitParams->numSegments             = numSegments;
   twoInterfInitParams->numPoints               = numPoints;
@@ -674,20 +676,53 @@ int main( int argc, char *argv[] )
   twoInterfInitParams->createTwoInterfRhosqVec = writeCoherentRhosq;
   twoInterfInitParams->ovrlap                  = ovrlap;
 
-  
-  LAL_CALL( LALCreateTwoInterfDataSegmentVector(&status, &twoInterfDataSegVec, 
-						twoInterfInitParams), &status );
-  
-  LAL_CALL( LALCreateTwoInterfFindChirpSegmentVector(&status, 
-						     &twoInterfFcSegVec, twoInterfInitParams), &status );
+   /* initialize data conditioning routines */
   LAL_CALL( LALTwoInterfFindChirpSPDataInit(&status, &twoInterfDataParamsVec, 
-					    twoInterfInitParams), &status );
-
+	twoInterfInitParams), &status );
+  
   fcDataParams = twoInterfDataParamsVec->data;  
-  dataSegVec   = twoInterfDataSegVec->data;
+
+  /* create the twointerf-findchirp data storage */
+  LAL_CALL( LALCreateTwoInterfFindChirpSegmentVector(&status, 
+        &twoInterfFcSegVec, twoInterfInitParams), &status );
+
+  if ( ! (twoInterfDataSegVec = (TwoInterfDataSegmentVector *) 
+	  LALCalloc( 1, sizeof(TwoInterfDataSegmentVector) ) ))
+    {    
+      fprintf( stderr, 
+	       "could not allocate memory for twoInterfDataSegVec\n" );
+      exit( 1 );
+
+    }
+
+  /* create the data segment vector */
+  twoInterfDataSegVec->length = numDetectors;
+  if ( ! (dataSegVec = twoInterfDataSegVec->data = (DataSegmentVector *) 
+	  LALCalloc( 1, twoInterfDataSegVec->length * 
+		     sizeof(TwoInterfDataSegmentVector) ) ))
+    {    
+      fprintf( stderr, 
+	       "could not allocate memory for twoInterfDataSegVec->data\n" );
+      exit( 1 );
+    }  
   
   for ( n = 0 ; n < numDetectors ; ++n) {
-    DataSegmentVector *dataVecPtr=NULL;
+    if ( ! ( dataSegVec[n].data = (DataSegment *) 
+	     LALCalloc( 1, numSegments * sizeof(DataSegment) ) ) )
+      {
+	fprintf( stderr, 
+		 "could not allocate memory for data segments\n" );
+	exit( 1 );
+      }
+  }
+  
+  /*
+   *
+   * power spectrum estimation and data conditioning
+   *
+   */
+
+  for ( n = 0 ; n < numDetectors ; ++n) {
     if ( ! ( fcInitParams[n] = (FindChirpInitParams *) 
 	     LALCalloc( 1, sizeof(FindChirpInitParams) ) ) )
       {
@@ -701,32 +736,25 @@ int main( int argc, char *argv[] )
     fcInitParams[n]->createRhosqVec = writeRhosq;
     fcInitParams[n]->ovrlap         = ovrlap;
     
-      /* create the data segment vector */
+    /* create the data segment vector */
     memset( &spec[n], 0, sizeof(REAL4FrequencySeries) );
     LAL_CALL( LALSCreateVector( &status, &(spec[n].data), numPoints / 2 + 1 ), 
 	      &status );
-    
-    LAL_CALL( LALInitializeDataSegmentVector( &status, &dataVecPtr,
+
+    LAL_CALL( LALInitializeDataSegmentVector( &status, &dataVecPtr[n],
 					      &chan[n], &spec[n], 
 					      &resp[n], fcInitParams[n] ), 
 	      &status );
-
-    dataSegVec[n].length = dataVecPtr->length;
-    dataSegVec[n].data = dataVecPtr->data;
-
+    
+    
+    /*
+     *
+     * power spectrum estimation and data conditioning
+     *
+     */
+    
     fcDataParams[n].invSpecTrunc = (invSpecTrunc[n] * sampleRate);
     fcDataParams[n].fLow         = fLow[n];
-    
-    LAL_CALL( LALFindChirpSPTemplateInit( &status, &fcTmpltParams[n], 
-					  fcInitParams[n] ), &status );
-  }    
-
-  for ( n = 0 ; n < numDetectors ; ++n) {
-    fcDataParams[n].dynRange = fcTmpltParams[n]->dynRange = 
-      pow( 2.0, dynRangeExponent );
-    fcDataParams[n].deltaT = 
-      fcTmpltParams[n]->deltaT = 1.0 / (REAL4) sampleRate;
-    fcTmpltParams[n]->fLow = fLow[n];
     
     /* compute the windowed power spectrum for the data channel */
     avgSpecParams[n].window = NULL;
@@ -773,27 +801,44 @@ int main( int argc, char *argv[] )
     outFrame[0] = fr_add_proc_REAL4FrequencySeries(outFrame[0], &spec[0],
         "ct/sqrtHz", "PSD1");
     outFrame[1] = fr_add_proc_REAL4FrequencySeries(outFrame[1], &spec[1],
-        "ct/sqrtHz", "PSD2");
+	"ct/sqrtHz", "PSD2");
   }  
-
+  
+  for ( n = 0 ; n < numDetectors ; ++n) {
+    dataSegVec[n].length = dataVecPtr[n]->length;
+    for ( i = 0 ; i < dataSegVec[n].length ; i++ ) {
+      dataSegVec[n].data[i].chan = dataVecPtr[n]->data[i].chan;
+      dataSegVec[n].data[i].spec = dataVecPtr[n]->data[i].spec;
+      dataSegVec[n].data[i].resp = dataVecPtr[n]->data[i].resp;
+      
+    }
+  }
+    
 
   /*
    *
    * create the data structures needed for twointerffindchirp
    *
    */
-
-
+  
+  
   if ( vrbflg ) fprintf( stdout, "initializing twointerffindchirp\n" );
-
-  LAL_CALL( LALCreateTwoInterfFindChirpInputVector (&status, 
-        &twoInterfFilterInputVec, twoInterfInitParams),
-      &status );
-
+  
   /* initialize the template functions */
+  for ( n = 0 ; n < numDetectors ; ++n) {
+    LAL_CALL( LALFindChirpSPTemplateInit( &status, &fcTmpltParams[n], 
+					  fcInitParams[n] ), &status );
+    
+    fcDataParams[n].dynRange = fcTmpltParams[n]->dynRange = 
+      pow( 2.0, dynRangeExponent );
+    fcDataParams[n].deltaT = 
+      fcTmpltParams[n]->deltaT = 1.0 / (REAL4) sampleRate;
+    fcTmpltParams[n]->fLow = fLow[n];
+  }
+  
   /* initialize findchirp filter functions */
   LAL_CALL( LALTwoInterfFindChirpFilterInit ( &status, 
-					      &twoInterfFilterParams, twoInterfInitParams), &status );
+        &twoInterfFilterParams, twoInterfInitParams), &status );
 
   detectors.detectorOne = lalCachedDetectors[site0];
   detectors.detectorTwo = lalCachedDetectors[site1];
@@ -801,10 +846,14 @@ int main( int argc, char *argv[] )
   twoInterfFilterParams->twoInterfRhosqThresh = coherentSnrThresh;
   twoInterfFilterParams->detectors            = &detectors;
   
+  LAL_CALL( LALCreateTwoInterfFindChirpInputVector (&status, 
+       &twoInterfFilterInputVec, twoInterfInitParams), &status );
+  
+  
   fcFilterParams = twoInterfFilterParams->paramsVec->filterParams;
   
   for ( n = 0 ; n < numDetectors ; ++n)
-  {
+    {
     fcFilterParams[n].deltaT = 1.0 / (REAL4) sampleRate;
     fcFilterParams[n].computeNegFreq = 0;
     LAL_CALL( LALTwoInterfFindChirpChisqVetoInit (&status, 
@@ -830,9 +879,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALTwoInterfFindChirpSPData (&status, twoInterfFcSegVec, 
 					 twoInterfDataSegVec, twoInterfDataParamsVec),
 	    &status );
-  LAL_CALL( LALTwoInterfFindChirpSPDataFinalize (&status, 
-        &twoInterfDataParamsVec), &status );
-  
+
   /* compute the standard candle */
   {
     REAL4 cannonDist = 1.0; /* Mpc */
@@ -1038,20 +1085,25 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALTwoInterfFindChirpChisqVetoFinalize (&status, 
           fcFilterParams[n].chisqParams, fcInitParams[n]->numChisqBins),
         &status);
-    LALFree( fcInitParams );
+    LALFree( fcInitParams[n] );
+
+    LAL_CALL( LALFindChirpSPTemplateFinalize(&status, &fcTmpltParams[n]), 
+	      &status );
   }
-
-  LAL_CALL( LALFindChirpSPTemplateFinalize(&status, &fcTmpltParams[n]), 
-      &status );
   LAL_CALL( LALDestroyTwoInterfFindChirpInputVector (&status, 
-        &twoInterfFilterInputVec), &status );
+	&twoInterfFilterInputVec), &status );
   LAL_CALL( LALTwoInterfFindChirpFilterFinalize (&status, 
-        &twoInterfFilterParams), &status );
+						 &twoInterfFilterParams), &status );
+  LAL_CALL( LALTwoInterfFindChirpSPDataFinalize (&status, 
+						 &twoInterfDataParamsVec), &status );
+  LAL_CALL( LALDestroyTwoInterfFindChirpSegmentVector( &status, 
+						       &twoInterfFcSegVec ),
+	    &status );
   LALFree( twoInterfInitParams );
-
+  
   /* free the template bank */
   while ( bankHead )
-  {
+    {
     bankCurrent = bankHead;
     bankHead = bankHead->next;
     LALFree( bankCurrent );
@@ -1063,20 +1115,20 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALFindChirpDestroyTmpltNode( &status, &tmpltHead ), &status );
   }
 
-  /* free the data storage */
+  /* free the data storage */ 
   for (n = 0; n < numDetectors; ++n) 
-  {
-    DataSegmentVector *dataVecPtr;
-    LAL_CALL( LALFinalizeDataSegmentVector( &status, &dataVecPtr ),
-	      &status );
-    LAL_CALL( LALSDestroyVector( &status, &(chan[n].data) ), &status );
-    LAL_CALL( LALSDestroyVector( &status, &(spec[n].data) ), &status );
-    LAL_CALL( LALCDestroyVector( &status, &(resp[n].data) ), &status );
-  }
-  LAL_CALL( LALDestroyTwoInterfDataSegmentVector (&status, 
-						  &twoInterfDataSegVec), &status );
-  
+    {
+      LAL_CALL( LALFinalizeDataSegmentVector( &status, &dataVecPtr[n] ),&status );
+      LAL_CALL( LALSDestroyVector( &status, &(chan[n].data) ), &status );
+      LAL_CALL( LALSDestroyVector( &status, &(spec[n].data) ), &status );
+      LAL_CALL( LALCDestroyVector( &status, &(resp[n].data) ), &status );
+      LALFree( dataSegVec[n].data );
+    }
+  LALFree( dataSegVec );
+  LALFree( twoInterfDataSegVec);
+  twoInterfDataSegVec= NULL;
 
+  
   /*
    *
    * write the results to disk
@@ -1161,7 +1213,7 @@ cleanexit:
   {
     this_search_summvar = searchsummvars.searchSummvarsTable;
     searchsummvars.searchSummvarsTable = this_search_summvar->next;
-    LALFree( this_search_summvar );
+    free( this_search_summvar );
   }
 
   /* write the summvalue table */
@@ -1191,7 +1243,7 @@ cleanexit:
   /* free the rest of the memory, check for memory leaks and exit */
   if ( bankFileName ) free( bankFileName );
 
-  for ( n = 0; n < 2; ++n )
+  for ( n = 0; n < numDetectors; ++n )
   {
     if ( calCacheName[n] ) free( calCacheName[n] );
     if ( frInCacheName[n] ) free( frInCacheName[n] );
@@ -1366,6 +1418,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     /* getopt_long stores long option here */
     int option_index = 0;
+    size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
         "a:A:b:B:c:C:d:e:f:g:h:i:j:k:K:l:m:M:n:o:p:P:q:Q:r:S:R:s:t:T:u:U:v:w:x:X:y:Y:z:Z:", 
@@ -1496,9 +1549,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the channel name and copy it */
           char *channamptr = NULL;
-          size_t chanlen = strlen( optarg ) + 1;
-          fqChanName[0] = (CHAR *) calloc( chanlen, sizeof(CHAR) );
-          memcpy( fqChanName[0], optarg, chanlen );
+          optarg_len = strlen( optarg ) + 1;
+          fqChanName[0] = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( fqChanName[0], optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
 
           /* check that we have a proper channel name */
@@ -1510,9 +1563,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, optarg );
             exit( 1 );
           }
-          chanlen = strlen( ++channamptr ) + 1;
-          channelName[0] = (CHAR *) calloc( chanlen, sizeof(CHAR) );
-          memcpy( channelName[0], channamptr, chanlen );
+          optarg_len = strlen( ++channamptr ) + 1;
+          channelName[0] = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( channelName[0], channamptr, optarg_len );
 
           /* copy the first two characters to the ifo name */
           memset( ifo[0], 0, sizeof(ifo[0]) );
@@ -1524,9 +1577,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           /* create storage for the channel name and copy it */
           char *channamptr = NULL;
-          size_t chanlen = strlen( optarg ) + 1;
-          fqChanName[1] = (CHAR *) calloc( chanlen, sizeof(CHAR) );
-          memcpy( fqChanName[1], optarg, chanlen );
+          size_t optarg_len = strlen( optarg ) + 1;
+          fqChanName[1] = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( fqChanName[1], optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
 
           /* check that we have a proper channel name */
@@ -1538,9 +1591,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                 long_options[option_index].name, optarg );
             exit( 1 );
           }
-          chanlen = strlen( ++channamptr ) + 1;
-          channelName[1] = (CHAR *) calloc( chanlen, sizeof(CHAR) );
-          memcpy( channelName[1], channamptr, chanlen );
+          optarg_len = strlen( ++channamptr ) + 1;
+          channelName[1] = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( channelName[1], channamptr, optarg_len );
 
           /* copy the first two characters to the ifo name */
           memset( ifo[1], 0, sizeof(ifo[1]) );
@@ -1743,9 +1796,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'p':
         {
           /* create storage for detector 1's calibration frame cache name */
-          size_t ccnamelen = strlen(optarg) + 1;
-          calCacheName[0] = (CHAR *) calloc( ccnamelen, sizeof(CHAR));
-          memcpy( calCacheName[0], optarg, ccnamelen );
+          optarg_len = strlen(optarg) + 1;
+          calCacheName[0] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+          memcpy( calCacheName[0], optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
@@ -1753,9 +1806,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'P':
         {
           /* create storage for detector 2's calibration frame cache name */
-          size_t ccnamelen = strlen(optarg) + 1;
-          calCacheName[1] = (CHAR *) calloc( ccnamelen, sizeof(CHAR));
-          memcpy( calCacheName[1], optarg, ccnamelen );
+          optarg_len = strlen(optarg) + 1;
+          calCacheName[1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+          memcpy( calCacheName[1], optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
@@ -1878,9 +1931,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'u':
         {
           /* create storage for the input frame cache name */
-          size_t frcnamelen = strlen(optarg) + 1;
-          frInCacheName[0] = (CHAR *) calloc( frcnamelen, sizeof(CHAR) );
-          memcpy( frInCacheName[0], optarg, frcnamelen );
+          optarg_len = strlen(optarg) + 1;
+          frInCacheName[0] = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( frInCacheName[0], optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
@@ -1888,9 +1941,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'U':
         {
           /* create storage for the input frame cache name */
-          size_t frcnamelen = strlen(optarg) + 1;
-          frInCacheName[1] = (CHAR *) calloc( frcnamelen, sizeof(CHAR) );
-          memcpy( frInCacheName[1], optarg, frcnamelen );
+          optarg_len = strlen(optarg) + 1;
+          frInCacheName[1] = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( frInCacheName[1], optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
@@ -1898,9 +1951,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'v':
         {
           /* create storage for the calibration frame cache name */
-          size_t bfnamelen = strlen(optarg) + 1;
-          bankFileName = (CHAR *) calloc( bfnamelen, sizeof(CHAR));
-          memcpy( bankFileName, optarg, bfnamelen );
+          optarg_len = strlen(optarg) + 1;
+          bankFileName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+          memcpy( bankFileName, optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
@@ -1908,9 +1961,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case 'w':
         {
           /* create storage for the injection file name */
-          size_t ifnamelen = strlen(optarg) + 1;
-          injectionFile = (CHAR *) calloc( ifnamelen, sizeof(CHAR));
-          memcpy( injectionFile, optarg, ifnamelen );
+          optarg_len = strlen(optarg) + 1;
+          injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+          memcpy( injectionFile, optarg, optarg_len );
           ADD_PROCESS_PARAM( "string", "%s", optarg );
         }
         break;
@@ -1973,6 +2026,11 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'Z':
+	/* create storage for the usertag */
+        optarg_len = strlen( optarg ) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
+
         this_proc_param = this_proc_param->next = (ProcessParamsTable *)
           calloc( 1, sizeof(ProcessParamsTable) );
         LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
