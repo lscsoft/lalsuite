@@ -62,6 +62,8 @@ main(int argc, char **argv)
 
   fpr = fopen("BCVTemplates.out", "w");
   nlist = 0;
+  coarseIn.HighGM =6.; 
+  coarseIn.LowGM = 3.;
   coarseIn.fLower = 40.L;
   coarseIn.fUpper = 2000.L;
   coarseIn.tSampling = 4096.L;

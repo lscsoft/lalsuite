@@ -306,7 +306,8 @@ tagInspiralTemplateList
 {
   INT4              ID;
   InspiralTemplate  params;              
-  InspiralMetric    metric;              
+  InspiralMetric    metric;             
+  UINT4             nLayer;	  
   struct tagInspiralTemplateList *next;  
 }
 InspiralTemplateList;
@@ -363,7 +364,9 @@ tagInspiralCoarseBankIn
 
   INT4                          iflso;          
   UINT4                         numFcutTemplates;
-
+  REAL4				HighGM;
+  REAL4				LowGM;
+  
   Order                         order;        
   Approximant                   approximant;  
 }
@@ -498,8 +501,7 @@ LALInspiralBCVFcutBank (
     LALStatus            *status, 
     InspiralTemplateList **list, 
     UINT4                *NList, 
-    UINT4                numFcutTemplates
-    );
+    InspiralCoarseBankIn coarseIn);
 
 void 
 LALInspiralCreateFlatBank (

@@ -373,7 +373,8 @@ LALRalloc()
 static void 
 PSItoMasses (
     InspiralTemplate *params, 
-    UINT4 *valid
+    UINT4 *valid,
+    REAL4 highGM
 );
 
 NRCSID(LALINSPIRALCREATECOARSEBANKC, "$Id$");
@@ -716,6 +717,8 @@ LALInspiralCreateBCVBank (
       LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
   ASSERT( coarseIn.psi3Max > coarseIn.psi3Min, status,
       LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
+  ASSERT( coarseIn.LowGM < coarseIn.HighGM, status, 
+      LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
 
   params.fLower = coarseIn.fLower;
   params.fCutoff = coarseIn.fUpper;
@@ -779,7 +782,7 @@ LALInspiralCreateBCVBank (
 
   nlistOld = *nlist;
   LALInspiralBCVFcutBank( status->statusPtr, 
-      list, nlist, coarseIn.numFcutTemplates );
+      list, nlist, coarseIn);
   CHECKSTATUSPTR( status );
 
   if ( lalDebugLevel & LALINFO ) 
@@ -852,7 +855,7 @@ LALInspiralBCVFcutBank (
     LALStatus            *status, 
     InspiralTemplateList **list, 
     UINT4                *NList, 
-    UINT4                numFcutTemplates
+    InspiralCoarseBankIn coarseIn
     ) 
 /*  </lalVerbatim>  */
 {  
@@ -861,43 +864,50 @@ LALInspiralBCVFcutBank (
 
   INITSTATUS( status, "LALInspiralBCVFcutBank", LALINSPIRALCREATECOARSEBANKC );
 
-  nf = numFcutTemplates;
+  nf = coarseIn.numFcutTemplates;
   ndx = nlist = *NList;
 
+  REAL4 LowGM = coarseIn.LowGM;
+  REAL4 HighGM = coarseIn.HighGM;
+
+  /* if we have only one layer, we don't need HighGM. 
+   * And default value for LowGM is  3GM*/
   if ( nf == 1 )
   {
     frac = 1;
   }
   else
   {
-    frac = (1.L - 1.L/pow(2.L, 1.5L)) / (nf-1.L);
+    frac = (1.L - 1.L/pow(HighGM/3., 1.5L)) / (nf-1.L);
   }
-
+  
   for ( j = 0; j < nlist; ++j )
   {
     UINT4 valid = 0;
     
-    PSItoMasses( &((*list)[j].params), &valid );
+    PSItoMasses( &((*list)[j].params), &valid , LowGM);
     
     if ( valid )
     {
       UINT4 i;
-      REAL8 fMin, fMax, df; 
+      REAL8 fMax; 
 
       fMax = (*list)[j].params.fFinal;
-      df = fMax * frac;
-      /* not used for the moment */
-      fMin = fMax * ( 1.L - ((REAL8) nf - 1.L) * df );
 
       for ( i = 0; i < nf; ++i )
       {
-        fendBCV = fMax * (1.L - (REAL8) i * frac);
+/* I've commented the two following lines that I would like to submit in a close futur.
+ * 	if ( fMax > ((*list)[j].params.tSampling / 2.0) ) 
+ * 			fMax = (*list)[j].params.tSampling /2. -1;
+ *     if (fMax < (*list)[j].params.fLower) 
+ *     			fMax = (*list)[j].params.fLower * 3 ;
+*/	
+	fendBCV = fMax * (1.L - (REAL8) i * frac);
 
         if ( (*list)[j].params.tSampling <= 0 )
         {
           ABORT( status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
         }
-
         if ( fendBCV > (*list)[j].params.fLower && 
             fendBCV < (*list)[j].params.tSampling / 2.0 )
         {
@@ -913,11 +923,12 @@ LALInspiralBCVFcutBank (
           (*list)[ndx-1] = (*list)[j];
           (*list)[ndx-1].params.fFinal = fendBCV;
           (*list)[ndx-1].metric = (*list)[0].metric;
+          (*list)[ndx-1].nLayer = i;
+
         }
       }
     }
   }
-  
   for ( j = nlist; j < ndx; ++j )
   {
     (*list)[j-nlist] = (*list)[j];
@@ -936,8 +947,9 @@ LALInspiralBCVFcutBank (
 
 static void
 PSItoMasses (
-    InspiralTemplate *params, 
-    UINT4            *valid
+    InspiralTemplate *params,
+    UINT4            *valid,
+    REAL4             HighGM
     )
 {
   if ( params->psi0 <= 0.L || params->psi3 >= 0.L )
@@ -956,7 +968,7 @@ PSItoMasses (
     eta = params->eta = 
       3.L/(128.L * params->psi0 * pow(LAL_PI*params->totalMass, fiveBy3));
     totalMass = params->totalMass;
-    params->fFinal = 1.L/( LAL_PI * pow(3.L,1.5L) * params->totalMass );
+    params->fFinal = 1.L/( LAL_PI * pow(HighGM, 1.5L) * params->totalMass );
     params->totalMass /= LAL_MTSUN_SI;
     *valid = 1;
 
