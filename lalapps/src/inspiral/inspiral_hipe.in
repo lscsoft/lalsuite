@@ -719,12 +719,15 @@ if playground_only:
   l1_data_out.play()
   
 not_h1_data_out = copy.deepcopy(h1_data_out)
+not_h1_data_out.coalesce()
 not_h1_data_out.invert()
 
 not_h2_data_out = copy.deepcopy(h2_data_out)
+not_h2_data_out.coalesce()
 not_h2_data_out.invert()
 
 not_l1_data_out = copy.deepcopy(l1_data_out)
+not_l1_data_out.coalesce()
 not_l1_data_out.invert()
   
 # determine the triple data, if it is to be analyzed
