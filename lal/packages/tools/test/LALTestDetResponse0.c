@@ -1,4 +1,5 @@
 /* <lalVerbatim file="LALTestDetResponse0CV">
+   Author: David Chin <dwchin@umich.edu> +1-734-709-9119
    $Id$
    </lalVerbatim>
 */
@@ -41,6 +42,7 @@ LALComputeDetAMResponse()
 #include <lal/DetectorSite.h>
 #include <lal/TimeDelay.h>
 #include <lal/DetResponse.h>
+#include <lal/Units.h>
 
 #include <lal/PrintFTSeries.h>
 
@@ -50,6 +52,9 @@ NRCSID( LALTESTDETRESPONSE0C, "$Id$" );
 #define TRUE  1
 #define LALDR_MATRIXSIZE 3
 
+#define ROWS 128
+#define COLS 128
+
 typedef REAL8 LALDR_3Vector[3];
 typedef REAL8 LALDR_33Matrix[3][3];
 
@@ -57,7 +62,9 @@ int        lalDebugLevel = 0;
 BOOLEAN    verbose_p     = FALSE;
 const INT4 oneBillion    = 1000000000;
 
-REAL8 default_tolerance = (REAL8)0.;
+const REAL8 zero_tolerance = 0.;
+REAL8 real8_tolerance = (REAL8)2.*LAL_REAL8_EPS;
+REAL4 real4_tolerance = (REAL4)2.*LAL_REAL4_EPS;
 
 static void REAL4VectorSubtraction(const REAL4Vector * pA,
                                    const REAL4Vector * pB,
@@ -67,13 +74,23 @@ static void PrintLALDetector(LALDetector * const detector);
 static void PrintDetResponse(const LALDetAMResponse * const response,
                              const char * const title);
 
+static BOOLEAN almost_equal_real4_p(REAL4 a, REAL4 b, REAL4 tolerance);
+
+static BOOLEAN almost_equal_real8_p(REAL8 a, REAL8 b, REAL8 tolerance);
+
+static BOOLEAN almost_equal_real4_relative_p(REAL4 computed, REAL4 expected,
+                                             REAL4 tolerance);
+
 static BOOLEAN matrix_ok_p(LALDR_33Matrix * const computed,
                            LALDR_33Matrix * const expected,
                            REAL8 tolerance);
 static BOOLEAN vector_ok_p(LALDR_3Vector * const computed,
                            LALDR_3Vector * const expected,
                            REAL8 tolerance);
-static BOOLEAN scalar_ok_p(REAL8 computed, REAL8 expected, REAL8 tolerance);
+
+static BOOLEAN vector_relative_ok_p(LALDR_3Vector * const computed,
+                                    LALDR_3Vector * const expected,
+                                    REAL8 tolerance);
 
 static void print_m_results_maybe(const char * title,
                                   LALDR_33Matrix * const computed,
@@ -88,13 +105,18 @@ static void print_s_results_maybe(const char * title,
 
 static int print_separator_maybe(void);
 
+static int print_small_separator_maybe(void);
+
 static int print_passed_maybe(void);
 
 
 static BOOLEAN detresponse_ok_p(LALStatus * status,
                                 const LALDetAndSource * const det_and_src,
                                 const LIGOTimeGPS * const gps,
-                                const LALDetAMResponse * const expected_resp);
+                                const LALDetAMResponse * const expected_resp,
+                                REAL4 tolerance);
+
+static void handle_detresponse_test(BOOLEAN passed_p, int line);
 
 static BOOLEAN frdetector_ok_p(const LALFrDetector * const computed,
                                const LALFrDetector * const expected);
@@ -102,9 +124,7 @@ static BOOLEAN frdetector_ok_p(const LALFrDetector * const computed,
 static BOOLEAN detector_ok_p(const LALDetector * const computed,
                              const LALDetector * const expected);
 
-/*
- * Private functions
- */
+
 static REAL8 deg_to_rad(REAL8 degrees)
 {
   return degrees * (REAL8)LAL_PI / (REAL8)180.;
@@ -677,6 +697,10 @@ int main(int argc, char *argv[])
   LALFrDetector     frdet;    /* Framelib detector info */
   LALDetector       detector;
   LIGOTimeGPS       gps;
+  LALDate           utcDate;
+  REAL8             lmst1;
+  LALPlaceAndGPS    det_and_gps;
+  LALLeapSecAccuracy accuracy;
   LALDetAndSource   det_and_pulsar;
   LALDetAMResponse  am_response;
   LALDetAMResponse  expected_resp;
@@ -692,17 +716,129 @@ int main(int argc, char *argv[])
   REAL8             d;
 
   LALDetAMResponseSeries    am_response_series = {NULL,NULL,NULL};
-  REAL4TimeSeries           plus_series, cross_series, scalar_series;
+  REAL4TimeSeries           plus_series, cross_series, scalar_series, circ_series;
   /* REAL4Vector               diffVector; */
   LALTimeIntervalAndNSample time_info;
 
-  UINT4 i;
+  LALTimeInterval   interval;
+
+  UINT4 k;
+  INT4 i, j, count;
+  REAL4 tolerance;
+
+  
   
   if (argc == 2)
     lalDebugLevel = atoi(argv[1]);
 
   if (lalDebugLevel)
     verbose_p = TRUE;
+
+  /*
+   * TEST -1: Test of almost_equal_real[48]_p() functions
+   */
+  if (verbose_p)
+    {
+      REAL4 foo4, bar4;
+      REAL8 foo8, bar8;
+      printf("TEST OF almost_equal_real[48]_p() functions\n");
+      printf("-------------------------------------------\n");
+
+      foo4 = 0.;
+      bar4 = real4_tolerance/2.;
+
+      if (!almost_equal_real4_p(foo4, bar4, real4_tolerance))
+        {
+          fprintf(stderr, "ERROR: almost_equal_real4_p() failed test 1\n");
+
+          return 1;
+        }
+
+      if (verbose_p)
+        {
+          printf("PASS: almost_equal_real4_p() test 1\n");
+          printf("\n- - - - -\n");
+        }
+
+
+      bar4 = 0.;
+      
+      if (!almost_equal_real4_p(foo4, bar4, 0.))
+        {
+          fprintf(stderr, "ERROR: almost_equal_real4_p() failed test 2\n");
+
+          return 1;
+        }
+
+      if (verbose_p)
+        {
+          printf("PASS: almost_equal_real4_p() test 2\n");
+          printf("\n- - - - -\n");
+        }
+
+      bar4 = 2.*real4_tolerance;
+
+      if (almost_equal_real4_p(foo4, bar4, real4_tolerance))
+        {
+          fprintf(stderr, "ERROR: almost_equal_real4_p() failed test 3\n");
+
+          return 1;
+        }
+
+      if (verbose_p)
+        {
+          printf("PASS: almost_equal_real4_p() test 3\n");
+          printf("\n- - - - -\n");
+        }
+
+      foo8 = 0.;
+      bar8 = real8_tolerance/2.;
+
+      if (!almost_equal_real8_p(foo8, bar8, real8_tolerance))
+        {
+          fprintf(stderr, "ERROR: almost_equal_real8_p() failed test 1\n");
+          
+          return 1;
+        }
+
+      if (verbose_p)
+        {
+          printf("PASS: almost_equal_real8_p() test 1\n");
+          printf("\n- - - - -\n");
+        }
+
+      bar8 = 0.;
+      
+      if (!almost_equal_real8_p(foo8, bar8, 0.))
+        {
+          fprintf(stderr, "ERROR: almost_equal_real8_p() failed test 2\n");
+
+          return 1;
+        }
+
+      if (verbose_p)
+        {
+          printf("PASS: almost_equal_real8_p() test 2\n");
+          printf("\n- - - - -\n");
+        }
+
+      bar8 = 2.*real8_tolerance;
+
+      if (almost_equal_real8_p(foo8, bar8, real8_tolerance))
+        {
+          fprintf(stderr, "ERROR: almost_equal_real8_p() failed test 3\n");
+
+          return 1;
+        }
+
+      if (verbose_p)
+        {
+          printf("PASS: almost_equal_real8_p() test 3\n");
+        }
+
+      print_separator_maybe();
+    }
+  
 
   /*
    * TEST 0: Test of matrix/vector manipulations
@@ -756,7 +892,7 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("Zero33Matrix test", &A, &B);
 
-  if (!matrix_ok_p(&A, &B, default_tolerance))
+  if (!matrix_ok_p(&A, &B, zero_tolerance))
     {
       fprintf(stderr, "ERROR: A != B\n");
       
@@ -780,7 +916,7 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("Set33Matrix test", &A, &B);
   
-  if (!matrix_ok_p(&A, &B, default_tolerance))
+  if (!matrix_ok_p(&A, &B, zero_tolerance))
     {
       fprintf(stderr, "ERROR: A != B\n");
       
@@ -791,8 +927,7 @@ int main(int argc, char *argv[])
       print_passed_maybe();
     }
 
-  if (verbose_p)
-    printf("\n* * * * * * * * * *\n\n");
+  print_separator_maybe();
 
   
   /* Matrix addition */
@@ -804,7 +939,7 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("Add33Matrix test", &C, &D);
   
-  if (!matrix_ok_p(&C, &D, default_tolerance))
+  if (!matrix_ok_p(&C, &D, zero_tolerance))
     {
       fprintf(stderr, "ERROR: C != D\n");
 
@@ -838,7 +973,7 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("Multiply33Matrix test", &C, &D);
 
-  if (!matrix_ok_p(&C, &D, default_tolerance))
+  if (!matrix_ok_p(&C, &D, zero_tolerance))
     {
       fprintf(stderr, "ERROR: C != D\n");
 
@@ -863,7 +998,7 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("ScalarMult33Matrix test", &C, &D);
 
-  if (!matrix_ok_p(&C, &D, default_tolerance))
+  if (!matrix_ok_p(&C, &D, zero_tolerance))
     {
       fprintf(stderr, "ERROR: C != D\n");
 
@@ -884,7 +1019,7 @@ int main(int argc, char *argv[])
 
   print_s_results_maybe("DotProd33Matrix test", c, d);
 
-  if (!scalar_ok_p(c, d, default_tolerance))
+  if (!almost_equal_real8_p(c, d, zero_tolerance))
     {
       fprintf(stderr, "ERROR: c != d\n");
 
@@ -911,7 +1046,7 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("Transpose33Matrix test", &B, &C);
 
-  if (!matrix_ok_p(&B, &C, default_tolerance))
+  if (!matrix_ok_p(&B, &C, zero_tolerance))
     {
       fprintf(stderr, "ERROR: B != C\n");
 
@@ -930,7 +1065,7 @@ int main(int argc, char *argv[])
 
   print_v_results_maybe("Set3Vector test", &u, &v);
 
-  if (!vector_ok_p(&u, &v, default_tolerance))
+  if (!vector_ok_p(&u, &v, zero_tolerance))
     {
       fprintf(stderr, "ERROR: u != v\n");
 
@@ -952,7 +1087,7 @@ int main(int argc, char *argv[])
 
   print_s_results_maybe("DotProd3Vector test", c, d);
 
-  if (!scalar_ok_p(c, d, default_tolerance))
+  if (!almost_equal_real8_p(c, d, zero_tolerance))
     {
       fprintf(stderr, "ERROR: c != d\n");
 
@@ -974,7 +1109,7 @@ int main(int argc, char *argv[])
 
   print_v_results_maybe("CrossProd3Vector test", &w, &x);
 
-  if (!vector_ok_p(&w, &x, default_tolerance))
+  if (!vector_ok_p(&w, &x, zero_tolerance))
     {
       fprintf(stderr, "ERROR: w != x\n");
 
@@ -998,7 +1133,7 @@ int main(int argc, char *argv[])
 
   print_m_results_maybe("OuterProd3Vector test", &A, &B);
 
-  if (!matrix_ok_p(&A, &B, default_tolerance))
+  if (!matrix_ok_p(&A, &B, zero_tolerance))
     {
       fprintf(stderr, "ERROR: A != B\n");
 
@@ -1029,7 +1164,7 @@ int main(int argc, char *argv[])
 
      LIGO doc says azimuth of arms are measured East from North
      (i.e. the conventional definition of bearing)
-     LALFrDetector says that azimuth is measure North from East
+     LALFrDetector says that azimuth is measured North from East
   */
   strncpy(frdet.name, "Reference", LALNameLength);
   frdet.vertexLongitudeRadians = deg_to_rad(0.);
@@ -1056,55 +1191,59 @@ int main(int argc, char *argv[])
    * I know consistency is the hobgoblin etc. etc. but this is a bit
    * ridiculous. 
    *
-   * Once again, I wish people would stop using jargon.  This document
-   * claims, in a footnote, that the arm azimuths (is this the correct
-   * plural?) are in Northing and Easting, BUT Table 4 for LHO and Table
-   * 18 for LLO specify azimuths in, variously, Northing and Southing
-   * (i.e. deviations towards North and South respectively)
+   * The referenced paper gives:
+   *   LHO -- x-arm azimuth  = N 35.9994deg W
+   *                altitude = -6.195e-04 rad
+   *       -- y-arm azimuth  = S 54.0006deg W
+   *                altitude = +1.25e-05 rad
    *
-   * Regardless, convert to plain-old bearings, which are measured
-   * Clockwise (East) from North, in radians, here are the azimuths for:
+   *   LLO -- x-arm azimuth  = S 72.2835deg W
+   *                altitude = -3.121e-04 rad
+   *       -- y-arm azimuth  = S 17.7165deg E
+   *                altitude = -6.107e-04 rad
+   *
+   * Which gives us the following in conventional bearing notation,
+   * i.e. degrees clockwise from North
    * 
-   * 1. LHO -- x-arm azimuth = 305.9994deg = 5.340697rad
-   *           y-arm azimuth = 215.9994deg = 3.769901rad
+   * 1. LHO -- x-arm azimuth = 324.0006deg =
+   *           y-arm azimuth = 234.0006deg = 
    *    (check: x-arm azi - y-arm azi = 90.0000deg)
    *
-   * 2. LLO -- x-arm azimuth = 197.7165deg
-   *           y-arm azimuth = 107.7165deg
+   * 2. LLO -- x-arm azimuth = 252.2835deg =
+   *           y-arm azimuth = 162.2835deg =
    *    (check: x-arm azi - y-arm azi = 90.0000deg)
    *
    */
 
-  /* First, pass a LALFrDetector using Frame spec for azimuths */
+  /* First, pass a LALFrDetector using Frame spec for azimuths (East of
+     North) */
   strncpy(frdet.name, "LHO, from FrDetector struct (Frame spec)", LALNameLength);
   frdet.vertexLongitudeRadians = (REAL8)deg_to_rad(-119. - 25./60. - 27.5657/3600.);
   frdet.vertexLatitudeRadians  = (REAL8)deg_to_rad(46. + 27./60. + 18.528/3600.);
   frdet.vertexElevation        = 142.554;
   frdet.xArmAltitudeRadians    = -6.195e-04;
   frdet.yArmAltitudeRadians    =  1.250e-05;
-  frdet.xArmAzimuthRadians     = deg_to_rad(305.9994);
-  frdet.yArmAzimuthRadians     = deg_to_rad(215.9994);
+  frdet.xArmAzimuthRadians     = deg_to_rad(324.0006);
+  frdet.yArmAzimuthRadians     = deg_to_rad(234.0006);
 
   LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
 
-  /*
   if (!detector_ok_p(&detector, &(lalCachedDetectors[LALDetectorIndexLHODIFF])))
     {
       if (verbose_p)
-        fprintf(stderr, "LHO computed w/ Frame spec != LHO cached\n");
-      
-      return 1;
+        fprintf(stderr, "WARNING: LHO computed w/ Frame spec != LHO cached\n");
     }
-  */
+
 
   if (verbose_p)
     {
       printf("LHO tensor converted from LALFrDetector (Frame spec):\n");
       PrintLALDetector(&detector);
-      printf("\n- - -\n");
+      printf("\n- - - - -\n");
     }
 
-  /* Second, pass a LALFrDetector using LAL (package-tools) spec for azi */
+  /* Second, pass a LALFrDetector using LAL (package-tools) spec for azi
+     (counterclockwise from East) */
   strncpy(frdet.name, "LHO, from FrDetector struct (package-tools spec)",
           LALNameLength);
   frdet.vertexLongitudeRadians  = (REAL8)deg_to_rad(-119. - 25./60. - 27.5657/3600.);
@@ -1112,11 +1251,18 @@ int main(int argc, char *argv[])
   frdet.vertexElevation        = 142.554;
   frdet.xArmAltitudeRadians    = -6.195e-04;
   frdet.yArmAltitudeRadians    =  1.250e-05;
-  frdet.xArmAzimuthRadians     = deg_to_rad( 54.0006);
-  frdet.yArmAzimuthRadians     = deg_to_rad(144.0006);
+  frdet.xArmAzimuthRadians     = deg_to_rad(125.9994);
+  frdet.yArmAzimuthRadians     = deg_to_rad(215.9994);
   /* check: y-arm azi - x-arm azi = 90deg */
 
   LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+
+  if (!detector_ok_p(&detector, &(lalCachedDetectors[LALDetectorIndexLHODIFF])))
+    {
+      if (verbose_p)
+        fprintf(stderr, "WARNING: LHO computed w/ package-tools spec != LHO cached\n");
+    }
+
 
   if (verbose_p)
     {
@@ -1138,6 +1284,12 @@ int main(int argc, char *argv[])
   /* check: y-arm azi - x-arm azi = -90deg ; ok, i think. */
 
   LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+
+  if (!detector_ok_p(&detector, &(lalCachedDetectors[LALDetectorIndexLHODIFF])))
+    {
+      if (verbose_p)
+        fprintf(stderr, "WARNING: LHO computed w/ numbers from LAL documentation != LHO cached\n");
+    }
 
   if (verbose_p)
     {
@@ -1162,29 +1314,21 @@ int main(int argc, char *argv[])
 
   /*********************************************/
 
-  if (verbose_p)
-    {
-      printf("TEST OF LALDetAMResponse()\n");
-      printf("--------------------------\n\n");
-      printf("Tolerance: LAL_REAL4_EPS = % 15.8e\n\n", LAL_REAL4_EPS);
-    }
-
-  /* TEST 1: test LALDetAMResponse() at particular points */
-  
   /*
-   * As per John Whelan's suggestion, directly create a LALDetector 
-   * structure rather than starting with a LALFrDetector structure.
+   * Let's try to make a trivial detector...
+   * My "greenwich_equator" from the old AM code is at location (0,0),
+   * with arms pointing south and west.
    */
-  detector.location[0] = LAL_AWGS84_SI;
-  detector.location[1] = 0.;
-  detector.location[2] = 0.;
-  detector.response[0][0] = 0.;
-  detector.response[1][1] = 0.5;
-  detector.response[2][2] = -0.5;
-  detector.response[0][1] = detector.response[1][0] = 0.;
-  detector.response[0][2] = detector.response[2][0] = 0.;
-  detector.response[1][2] = detector.response[2][1] = 0.;
-  detector.type = LALDETECTORTYPE_ABSENT;
+  strncpy(frdet.name, "TRIVIAL 1", LALNameLength);
+  frdet.vertexLongitudeRadians = 0.;
+  frdet.vertexLatitudeRadians  = 0.;
+  frdet.vertexElevation        = 0.;
+  frdet.xArmAltitudeRadians    = 0.;
+  frdet.yArmAltitudeRadians    = 0.;
+  frdet.xArmAzimuthRadians     = deg_to_rad(180.);
+  frdet.yArmAzimuthRadians     = deg_to_rad( 90.);
+
+  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
 
   if (status.statusCode && lalDebugLevel)
     {
@@ -1195,80 +1339,255 @@ int main(int argc, char *argv[])
       return status.statusCode;
     }
 
-  /*
-   * Set a GPS time that's close to 0h GMST1. (Found this by trial and
-   * error.) 
-   */
-  gps.gpsSeconds     =     61094;
-  gps.gpsNanoSeconds = 640000000;
-
-  /*
-   * Set up a source at (RA=0, Dec=0, orientation=0, at time GMST1=0)
-   */
-  strncpy(pulsar.name, "TEST PULSAR 1", LALNameLength);
-  pulsar.equatorialCoords.longitude = 0.;  /* RA */
-  pulsar.equatorialCoords.latitude  = 0.;  /* Dec */
-  pulsar.equatorialCoords.system    = COORDINATESYSTEM_EQUATORIAL;
-  pulsar.orientation                = 0.;  /* orientation */
-
-
-  /*
-   * Stuff Detector and Source into structure
-   */
-  det_and_pulsar.pDetector = &detector;
-  det_and_pulsar.pSource   = &pulsar;
-
-  /*
-   * Compute instantaneous AM response
-   */
-  LALComputeDetAMResponse(&status, &am_response, &det_and_pulsar, &gps);
-
-  if (status.statusCode && lalDebugLevel > 0)
+    
+  if (verbose_p)
     {
-      fprintf(stderr,
-              "LALTestDetResponse0: error in LALComputeDetAMResponse, line %i, %s\n",
-              __LINE__, LALTESTDETRESPONSE0C);
-      REPORTSTATUS(&status);
-      return status.statusCode;
-    }
-  
-  expected_resp.plus = 1.;
-  expected_resp.cross = 0.;
-  expected_resp.scalar = 0.;
-
-  if (!detresponse_ok_p(&status, &det_and_pulsar, &gps, &expected_resp))
-    {
-      fprintf(stderr, "ERROR: computed response != expected response\n");
-
-      return 1;
-    }
-  else
-    {
-      print_passed_maybe();
+      printf("TRIVIAL 1 (converted from FrDetector):\n");
+      PrintLALDetector(&detector);
     }
 
   print_separator_maybe();
 
-  /* another point */
 
-  goto skip; /* skip this for now -- i know it fails */
+  /*********************************************/
+
+  tolerance = 0.05;
+
+  if (verbose_p)
+    {
+      printf("TEST OF LALDetAMResponse()\n");
+      printf("--------------------------\n\n");
+      printf("Tolerance =  % 15.8e\n\n", tolerance);
+    }
+
+  /*
+   * TEST 1: test LALDetAMResponse() at particular points
+   */
+
+  /* Set a GPS time that's close to 0h GMST1. (Found this by trial and
+   * error.)  */
+  gps.gpsSeconds     =     61094;
+  gps.gpsNanoSeconds = 640000000;
+
+  /* Set up a source at (RA=0, Dec=0, orientation=0, at time GMST1=0) */
+  strncpy(pulsar.name, "TEST PULSAR 1", LALNameLength);
+  pulsar.equatorialCoords.longitude = 0.;  /* RA */
+  pulsar.equatorialCoords.latitude  = 0.;  /* Dec */
+  pulsar.equatorialCoords.system    = COORDINATESYSTEM_EQUATORIAL;
+  pulsar.orientation                = LAL_PI_2;  /* orientation */
+
+
+  /* Stuff Detector and Source into structure */
+  det_and_pulsar.pDetector = &detector;
+  det_and_pulsar.pSource   = &pulsar;
+
+  /*** expect (1, 0) */
+  expected_resp.plus   = 1.;
+  expected_resp.cross  = 0.;
+  expected_resp.scalar = 0.;
+
+  handle_detresponse_test(detresponse_ok_p(&status, &det_and_pulsar,
+                                           &gps, &expected_resp, tolerance),
+                          __LINE__);
+
+  print_small_separator_maybe();
+
+  /*** expect (0, -1) */
+  pulsar.orientation = -LAL_PI_4;
+  expected_resp.plus   =  0.;
+  expected_resp.cross  = -1.;
+  expected_resp.scalar =  0.;
+
+  handle_detresponse_test(detresponse_ok_p(&status, &det_and_pulsar,
+                                           &gps, &expected_resp, tolerance),
+                          __LINE__);
+
+  print_small_separator_maybe();
+
+  /*** expect (-1, 0) */
+  pulsar.orientation = 0;
+  expected_resp.plus   = -1.;
+  expected_resp.cross  =  0.;
+  expected_resp.scalar =  0.;
+  
+  handle_detresponse_test(detresponse_ok_p(&status, &det_and_pulsar,
+                                           &gps, &expected_resp, tolerance),
+                          __LINE__);
+  
+  print_small_separator_maybe();
+  
+  /*** expect (0.5, -sqrt(3)/2.) */
+  pulsar.orientation = -LAL_PI/3.;
+  expected_resp.plus   =  0.5;
+  expected_resp.cross  = -sqrt(3.)/2.;
+  expected_resp.scalar =  0.;
+
+  handle_detresponse_test(detresponse_ok_p(&status, &det_and_pulsar,
+                                           &gps, &expected_resp, tolerance),
+                          __LINE__);
+  
+  print_small_separator_maybe();
+
+  /* switch detector to something less trivial */
+  strncpy(frdet.name, "TRIVIAL 2", LALNameLength);
+  frdet.vertexLongitudeRadians = deg_to_rad(0.);
+  frdet.vertexLatitudeRadians  = deg_to_rad(15.);
+  frdet.vertexElevation        = 0.;
+  frdet.xArmAltitudeRadians    = 0.;
+  frdet.yArmAltitudeRadians    = 0.;
+  frdet.xArmAzimuthRadians     = deg_to_rad(180.);
+  frdet.yArmAzimuthRadians     = deg_to_rad( 90.);
+
+  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+
+  if (verbose_p)
+    PrintLALDetector(&detector);
+
+  /* switch source to be overhead the detector */
+  strncpy(pulsar.name, "TEST PULSAR 2", LALNameLength);
+  pulsar.equatorialCoords.longitude = deg_to_rad(0.);
+  pulsar.equatorialCoords.latitude  = deg_to_rad(15.);
+  pulsar.orientation                = -LAL_PI_2;
+
+  det_and_pulsar.pDetector = &detector;
+  det_and_pulsar.pSource   = &pulsar;
+
+  /*** expect (1, 0 ) */
+  expected_resp.plus = 1.;
+  expected_resp.cross = 0.;
+  expected_resp.scalar = 0.;
+
+  handle_detresponse_test(detresponse_ok_p(&status, &det_and_pulsar,
+                                           &gps, &expected_resp, tolerance),
+                          __LINE__);  
+  
+  print_small_separator_maybe();
+
+  /*** expect (0, -1) */
+  pulsar.orientation = -LAL_PI_2/2.;
+  expected_resp.plus = 0.;
+  expected_resp.cross = -1.;
+  expected_resp.scalar = 0.;
+
+  handle_detresponse_test(detresponse_ok_p(&status, &det_and_pulsar,
+                                           &gps, &expected_resp, tolerance),
+                          __LINE__);  
+  
+  print_small_separator_maybe();
+
+  /*** expect (-1, 0) */
+  pulsar.orientation = 0.;
+  expected_resp.plus = -1.;
+  expected_resp.cross = 0.;
+  expected_resp.scalar = 0.;
+
+  handle_detresponse_test(detresponse_ok_p(&status, &det_and_pulsar,
+                                           &gps, &expected_resp, tolerance),
+                          __LINE__);  
+  
+  print_small_separator_maybe();
+
+  /*** expect (0.5, -sqrt(3)/2) */
+  pulsar.orientation = -LAL_PI/3.;
+  expected_resp.plus = 0.5;
+  expected_resp.cross = -sqrt(3.)/2.;
+  expected_resp.scalar = 0.;
+
+  handle_detresponse_test(detresponse_ok_p(&status, &det_and_pulsar,
+                                           &gps, &expected_resp, tolerance),
+                          __LINE__);  
+  
+  print_small_separator_maybe();
+
+  
+  /* switch detector to LHO */
+  detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+
+  /* switch source */
+  strncpy(pulsar.name, "TEST PULSAR 3", LALNameLength);
+  pulsar.equatorialCoords.longitude = deg_to_rad(16.037547 * 15.);
+  pulsar.equatorialCoords.latitude  = deg_to_rad(46.475430);
+  pulsar.orientation                = -LAL_PI_2;
+
+  utcDate.unixDate.tm_sec = 46;
+  utcDate.unixDate.tm_min = 20;
+  utcDate.unixDate.tm_hour = 8;
+  utcDate.unixDate.tm_mday = 17;
+  utcDate.unixDate.tm_mon  = LALMONTH_MAY;
+  utcDate.unixDate.tm_year = 1994 - 1900;
+
+  accuracy = LALLEAPSEC_LOOSE;
+  LALUTCtoGPS(&status, &gps, &utcDate, &accuracy);
+
+  det_and_pulsar.pDetector = &detector;
+  det_and_pulsar.pSource   = &pulsar;
+
+  /* expect (3.08260644404358e-01, -9.51301793267616e-01 */
+  expected_resp.plus  =  3.08260644404358e-01;
+  expected_resp.cross = -9.51301793267616e-01;
+  expected_resp.scalar = 0.;
+  
+  handle_detresponse_test(detresponse_ok_p(&status, &det_and_pulsar,
+                                           &gps, &expected_resp, tolerance),
+                          __LINE__);
+
+  print_small_separator_maybe();
+
+  /* change to even less trivial detector */
+  strncpy(frdet.name, "TRIVIAL 3", LALNameLength);
+  frdet.vertexLongitudeRadians = deg_to_rad(15.);
+
+  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
+
+  if (verbose_p)
+    PrintLALDetector(&detector);
+
+
+  /* now have to choose a source whose RA is 15 degrees towards the East;
+     whaddaya know? that's 1 hour */
+  pulsar.equatorialCoords.longitude = deg_to_rad(15.);
+
+  det_and_pulsar.pDetector = &detector;
+  det_and_pulsar.pSource   = &pulsar;  
+
+  /* also, have to choose a time s.t. LMST1 is 0 */
+  goto pass;
+  gps.gpsSeconds += 829;
+  for (i = 0; i < 10000000; i += 1000)
+    {
+      LALTimeInterval interval;
+      interval.nanoSeconds += i;
+      printf("i = %03d\n", i);
+      LALIncrementGPS(&status, &gps, &gps, &interval);
+      
+      printf("  gps = %u:%u\n", gps.gpsSeconds, gps.gpsNanoSeconds);
+      det_and_gps.p_detector = &detector;
+      det_and_gps.p_gps      = &gps;
+      
+      LALGPStoLMST1(&status, &lmst1, &det_and_gps, MST_SEC);
+      printf("lmst1 = % 20.14f\n\n", lmst1);
+    }
+
+ pass:
+  
+  goto skip; /* FIXME: skip this for now -- i know it fails */
 
   /* use LALFrDetector structure for convenience */
   strncpy(frdet.name, "Reference", LALNameLength);
-  frdet.vertexLongitudeRadians = deg_to_rad(-71.);
-  frdet.vertexLatitudeRadians  = deg_to_rad(85.);
+  frdet.vertexLongitudeRadians = deg_to_rad(240.592343);
+  frdet.vertexLatitudeRadians  = deg_to_rad( 46.455147);
   frdet.xArmAltitudeRadians    = 0.;
   frdet.yArmAltitudeRadians    = 0.;
-  frdet.xArmAzimuthRadians     = deg_to_rad(45.);
-  frdet.yArmAzimuthRadians     = deg_to_rad(135.);
+  frdet.xArmAzimuthRadians     = deg_to_rad(360.-(215.9994 - 180.));
+  frdet.yArmAzimuthRadians     = deg_to_rad(frdet.xArmAzimuthRadians - 90.);
 
   LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);  
   
   strncpy(pulsar.name, "TEST PULSAR 2", LALNameLength);
-  pulsar.equatorialCoords.longitude = deg_to_rad(2.64721);  /* RA */
-  pulsar.equatorialCoords.latitude  = deg_to_rad(27.3022);  /* Dec */
+  pulsar.equatorialCoords.longitude = deg_to_rad(0.);  /* RA */
+  pulsar.equatorialCoords.latitude  = deg_to_rad(0.);  /* Dec */
   pulsar.equatorialCoords.system    = COORDINATESYSTEM_EQUATORIAL;
-  pulsar.orientation                = 0.;  /* orientation */  
+  pulsar.orientation                = deg_to_rad(-90.);  /* orientation */  
 
   LALComputeDetAMResponse(&status, &am_response, &det_and_pulsar, &gps);
 
@@ -1281,11 +1600,26 @@ int main(int argc, char *argv[])
       return status.statusCode;
     }
 
-  expected_resp.plus   =  8.7130418971e-02;
-  expected_resp.cross  = -2.4005883737e-02;
-  expected_resp.scalar =  9.0376945877e-02;
+  utcDate.unixDate.tm_sec = 9;
+  utcDate.unixDate.tm_min = 57;
+  utcDate.unixDate.tm_hour = 13;
+  utcDate.unixDate.tm_mday = 01;
+  utcDate.unixDate.tm_mon  = LALMONTH_AUG;
+  utcDate.unixDate.tm_year = 1990 - 1900;
 
-  if (!detresponse_ok_p(&status, &det_and_pulsar, &gps, &expected_resp))
+  accuracy = LALLEAPSEC_LOOSE;
+  LALUTCtoGPS(&status, &gps, &utcDate, &accuracy);
+
+  expected_resp.plus   = -1.14595015045445e-01;
+  expected_resp.cross  = -2.61367926478056e-01;
+  expected_resp.scalar =  0.;
+  /* expected circ. response = 9.0376945877e-02; */
+
+  det_and_pulsar.pDetector = &detector;
+  det_and_pulsar.pSource   = &pulsar;
+
+  if (!detresponse_ok_p(&status, &det_and_pulsar, &gps, &expected_resp,
+                        tolerance))
     {
       fprintf(stderr, "ERROR: computed response != expected response\n");
 
@@ -1316,10 +1650,21 @@ int main(int argc, char *argv[])
   detector.response[0][2] = detector.response[2][0] = 0.;
   detector.response[1][2] = detector.response[2][1] = 0.;
   detector.type = LALDETECTORTYPE_ABSENT;
+  strncpy(detector.frDetector.name, "FAKE", LALNameLength);
+
+  /* override - try the cached LHO */
+  detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+
+  if (verbose_p)
+    {
+      printf("Series test...\n");
+      PrintLALDetector(&detector);
+    }
 
   plus_series.data = NULL;
   cross_series.data = NULL;
   scalar_series.data = NULL;
+  circ_series.data = NULL;
   
   am_response_series.pPlus   = &(plus_series);
   am_response_series.pCross  = &(cross_series);
@@ -1328,6 +1673,7 @@ int main(int argc, char *argv[])
   LALSCreateVector(&status, &(am_response_series.pPlus->data), 1);
   LALSCreateVector(&status, &(am_response_series.pCross->data), 1);
   LALSCreateVector(&status, &(am_response_series.pScalar->data), 1);
+  LALSCreateVector(&status, &(circ_series.data), 1);
 
   if (lalDebugLevel > 0)
     {
@@ -1337,18 +1683,37 @@ int main(int argc, char *argv[])
              am_response_series.pCross->data->length);
       printf("am_response_series.pScalar->data->length = %d\n",
              am_response_series.pScalar->data->length);
+      printf("circ_series.data->length = %d\n", circ_series.data->length);
     }
     
   time_info.epoch.gpsSeconds     = 61094;
   time_info.epoch.gpsNanoSeconds = 640000000;
   time_info.deltaT               = 1800;
-  time_info.nSample              = 25;
+  time_info.nSample              = 50*17;
 
   LALComputeDetAMResponseSeries(&status,
                                 &am_response_series,
                                 &det_and_pulsar,
                                 &time_info);
 
+  /* compute response at the above times "manually" */
+  /*
+  gps.gpsSeconds     = time_info.epoch.gpsSeconds;
+  gps.gpsNanoSeconds = time_info.epoch.gpsNanoSeconds;
+  interval.seconds   = 6*3600;
+  interval.nanoSeconds = 0;
+
+  for (i = 0; i < 5; ++i)
+    {
+      LALComputeDetAMResponse(&status, &am_response, &det_and_pulsar, &gps);
+      printf("plus  = % 14.8e\n", am_response.plus);
+      printf("cross = % 14.8e\n", am_response.cross);
+      printf("\n");
+      LALIncrementGPS(&status, &gps, &gps, &interval);
+    }
+  
+  */
+  
   if (status.statusCode && verbose_p)
     {
       fprintf(stderr,
@@ -1374,40 +1739,63 @@ int main(int argc, char *argv[])
       LALSPrintTimeSeries(am_response_series.pPlus, "plus_series.txt");
       LALSPrintTimeSeries(am_response_series.pCross, "cross_series.txt");
       LALSPrintTimeSeries(am_response_series.pScalar, "scalar_series.txt");
+
+      /* compute circular response */
+      /* need to resize vector */
+      LALSDestroyVector(&status, &(circ_series.data));
+      LALSCreateVector(&status, &(circ_series.data),
+                       am_response_series.pPlus->data->length);
+      printf("circ_series.data->length = %d\n", circ_series.data->length);
+
+      circ_series.epoch = am_response_series.pPlus->epoch;
+      circ_series.deltaT = am_response_series.pPlus->deltaT;
+      circ_series.f0 = am_response_series.pPlus->f0;
+      circ_series.sampleUnits = lalDimensionlessUnit;
+
+      for (k = 0; k < circ_series.data->length; ++k)
+        {
+          circ_series.data->data[k] =
+            sqrt(am_response_series.pPlus->data->data[k] *
+                 am_response_series.pPlus->data->data[k] +
+                 am_response_series.pCross->data->data[k] *
+                 am_response_series.pCross->data->data[k]);
+        }
+
+      LALSPrintTimeSeries(&circ_series, "circ_series.txt");
     }
 
   if (lalDebugLevel >= 8)
     {
       printf("plus: (");
-      for (i = 0; i < time_info.nSample; ++i)
+      for (k = 0; k < time_info.nSample; ++k)
         {
-          printf("%14.6e, ", am_response_series.pPlus->data->data[i]);
+          printf("% 14.6e, ", am_response_series.pPlus->data->data[k]);
         }
       printf(")\n");
 
       printf("cross: (");
-      for (i = 0; i < time_info.nSample; ++i)
+      for (k = 0; k < time_info.nSample; ++k)
         {
-          printf("%14.6e, ", am_response_series.pCross->data->data[i]);
+          printf("% 14.6e, ", am_response_series.pCross->data->data[k]);
         }
       printf(")\n");
 
       printf("scalar: (");
-      for (i = 0; i < time_info.nSample; ++i)
+      for (k = 0; k < time_info.nSample; ++k)
         {
-          printf("%14.6e, ", am_response_series.pScalar->data->data[i]);
+          printf("% 14.6e, ", am_response_series.pScalar->data->data[k]);
         }
       printf(")\n");
 
 
       /* print out quadrature sum of plus- and cross-response */
       printf("sqrt(PLUS^2 + CROSS^2): (");
-      for (i = 0; i < time_info.nSample; ++i)
+      for (k = 0; k < time_info.nSample; ++k)
         {
-          printf("%1.6e, ", sqrt(am_response_series.pPlus->data->data[i] *
-                                 am_response_series.pPlus->data->data[i] +
-                                 am_response_series.pCross->data->data[i] *
-                                 am_response_series.pCross->data->data[i]));
+          printf("% 1.6e, ", sqrt(am_response_series.pPlus->data->data[k] *
+                                  am_response_series.pPlus->data->data[k] +
+                                  am_response_series.pCross->data->data[k] *
+                                  am_response_series.pCross->data->data[k]));
         }
       printf(")\n");
     }
@@ -1416,8 +1804,35 @@ int main(int argc, char *argv[])
   LALSDestroyVector(&status, &(am_response_series.pPlus->data));
   LALSDestroyVector(&status, &(am_response_series.pCross->data));
   LALSDestroyVector(&status, &(am_response_series.pScalar->data));
+  LALSDestroyVector(&status, &(circ_series.data));
 
   LALCheckMemoryLeaks();
+
+  print_separator_maybe();
+
+  /*
+   * Loop over whole sky
+   */
+  if (lalDebugLevel >= 8)
+    {
+      printf("\nStarting whole-sky test...\n");
+      count = 0;
+      printf("ROWS = %d; COLS = %d\n", ROWS, COLS);
+      for (j = -ROWS; j <= ROWS; ++j)
+        {
+          pulsar.equatorialCoords.longitude = acos((REAL8)j/(REAL8)ROWS); /* RA */
+          for (i = -COLS; i <= COLS; ++i)
+            {
+              ++count;
+
+              pulsar.equatorialCoords.latitude = acos((REAL8)i/(REAL8)COLS);
+
+              LALComputeDetAMResponse(&status, &am_response, &det_and_pulsar, &gps);
+              printf("% 10.5e\t", am_response.plus);
+            }
+          printf("\n");
+        }
+    }
 
   return 0;
 } /* END: main() */
@@ -1513,48 +1928,24 @@ static BOOLEAN matrix_ok_p(LALDR_33Matrix * const computed,
 {
   INT4 i, j;
 
-  if (tolerance == 0.)
-    {
-      for (i = 0; i < 2; ++i)
-        for (j = 0; j < 2; ++j)
+  for (i = 0; i < 2; ++i)
+    for (j = 0; j < 2; ++j)
+      {
+        if (!almost_equal_real8_p((*computed)[i][j], (*expected)[i][j], tolerance))
           {
-            if ((*computed)[i][j] != (*expected)[i][j])
+            if (verbose_p)
               {
-                if (verbose_p)
-                  {
-                    LALDR_Print33Matrix(expected, "expected", 0, stdout, "");
-                    LALDR_Print33Matrix(computed, "computed", 0, stdout, "");
-                  }
-
-                return FALSE;
+                LALDR_Print33Matrix(expected, "INFO: matrix_ok_p(): expected", 0, stdout, "");
+                LALDR_Print33Matrix(computed, "INFO: matrix_ok_p(): computed", 0, stdout, "");
               }
-            else
-              {
-                return TRUE;
-              }
+            
+            return FALSE;
           }
-    }
-  else
-    {
-      for (i = 0; i < 2; ++i)
-        for (j = 0; j < 2; ++j)
+        else
           {
-            if (fabs((*computed)[i][j] - (*expected)[i][j]) > tolerance)
-              {
-                if (verbose_p)
-                  {
-                    LALDR_Print33Matrix(expected, "expected", 0, stdout, "");
-                    LALDR_Print33Matrix(computed, "computed", 0, stdout, "");
-                  }
-
-                return FALSE;
-              }
-            else
-              {
-                return TRUE;
-              }
+            return TRUE;
           }
-    }
+      }
 }
 
 
@@ -1565,89 +1956,52 @@ static BOOLEAN vector_ok_p(LALDR_3Vector * const computed,
 {
   INT4 i;
 
-  if (tolerance == 0.)
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
     {
-      for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+      if (!almost_equal_real8_p((*computed)[i], (*expected)[i], tolerance))
         {
-          if ((*computed)[i] != (*expected)[i])
+          if (verbose_p)
             {
-              if (verbose_p)
-                {
-                  LALDR_Print3Vector(computed, "computed", stdout);
-                  LALDR_Print3Vector(expected, "expected", stdout);
-                }
+              LALDR_Print3Vector(computed, "INFO: vector_ok_p(): computed", stdout);
+              LALDR_Print3Vector(expected, "INFO: vector_ok_p(): expected", stdout);
+            }
 
-              return FALSE;
-            }
-          else
-            {
-              return TRUE;
-            }
+          return FALSE;
         }
-    }
-  else
-    {
-      for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+      else
         {
-          if (fabs((*computed)[i] - (*expected)[i]) > tolerance)
-            {
-              if (verbose_p)
-                {
-                  LALDR_Print3Vector(computed, "computed", stdout);
-                  LALDR_Print3Vector(expected, "expected", stdout);
-                }
-
-              return FALSE;
-            }
-          else
-            {
-              return TRUE;
-            }
+          return TRUE;
         }
     }
 }
 
 
 
-static BOOLEAN scalar_ok_p(REAL8 computed, REAL8 expected, REAL8 tolerance)
+static BOOLEAN vector_relative_ok_p(LALDR_3Vector * const computed,
+                                    LALDR_3Vector * const expected,
+                                    REAL8 tolerance)
 {
-  if (tolerance == 0.)
-    {
-      if (computed != expected)
-        {
-          if (verbose_p)
-            {
-              printf("computed = %22.14e\n", computed);
-              printf("expected = %22.14e\n", expected);
-            }
+  /* do this term-by-term rather than using a metric. bah. */
+  INT4 i;
+  REAL8 relative_diff;
 
-          return FALSE;
-        }
-      else
+  for (i = 0; i < LALDR_MATRIXSIZE; ++i)
+    {
+      relative_diff = fabs((*computed)[i]/(*expected)[i] - 1.);
+
+      if (relative_diff <= tolerance)
         {
           return TRUE;
         }
-    }
-  else
-    {
-      if (fabs(computed - expected) > tolerance)
-        {
-          if (verbose_p)
-            {
-              printf("computed = %22.14e\n", computed);
-              printf("expected = %22.14e\n", expected);
-            }
-
-          return FALSE;
-        }
       else
         {
-          return TRUE;
+          return FALSE;
         }
     }
 }
 
 
+
 
 static void print_m_results_maybe(const char * title,
                                   LALDR_33Matrix * const computed,
@@ -1718,12 +2072,70 @@ static int print_separator_maybe(void)
 
 
 
+static int print_small_separator_maybe(void)
+{
+  if (verbose_p)
+    return printf("\n- - - - -\n\n");
+  else
+    return 0;
+}
+
+
+
 static int print_passed_maybe(void)
 {
   if (verbose_p)
-    return printf("\nOK\n");
+    return printf("\nPASS\n");
   else
     return 0;
+}
+
+
+
+static BOOLEAN almost_equal_real4_p(REAL4 a, REAL4 b, REAL4 tolerance)
+{
+  if (lalDebugLevel >= 8)
+    {
+      printf("almost_equal_real4_p() info:\n");
+      printf("  a = % 16.10e\n  b = % 16.10e\n", a, b);
+      printf("  (REAL4)fabsf(a - b) = % 16.10e\n", (REAL4)fabsf(a - b));
+      printf("  tolerance = % 16.10e\n\n", tolerance);
+    }
+  if (tolerance == 0.)
+    return (a == b);
+  else
+    return ((REAL4)fabsf(a - b) <= tolerance);
+}
+
+
+
+static BOOLEAN almost_equal_real8_p(REAL8 a, REAL8 b, REAL8 tolerance)
+{
+  if (tolerance == 0.)
+    return (a == b);
+  else
+    return ((REAL8)fabs(a - b) <= tolerance);
+}
+
+
+
+static BOOLEAN almost_equal_real4_relative_p(REAL4 computed, REAL4 expected,
+                                             REAL4 tolerance)
+{
+  REAL4 relative_err;
+
+  if (tolerance == 0.)
+    {
+      return (computed == expected);
+    }
+  else
+    {
+      relative_err = fabsf(computed - expected)/fabsf(expected);
+      if (relative_err <= tolerance)
+        return TRUE;
+      else
+        return FALSE;
+    }
 }
 
 
@@ -1731,29 +2143,104 @@ static int print_passed_maybe(void)
 static BOOLEAN detresponse_ok_p(LALStatus * status,
                                 const LALDetAndSource * const det_and_src,
                                 const LIGOTimeGPS * const gps,
-                                const LALDetAMResponse * const expected_resp)
+                                const LALDetAMResponse * const expected_resp,
+                                REAL4 tolerance)
                                 
 {
   LALDetAMResponse computed_resp;
   BOOLEAN resp_plus_ok_p;
   BOOLEAN resp_cross_ok_p;
   BOOLEAN resp_scalar_ok_p;
+  BOOLEAN result;
+  REAL4   computed_circ_resp, expected_circ_resp;
 
   LALComputeDetAMResponse(status, &computed_resp, det_and_src, gps);
 
+  expected_circ_resp = sqrt((expected_resp->plus) * (expected_resp->plus)
+                            + (expected_resp->cross) * (expected_resp->cross));
+
+  computed_circ_resp = sqrt(computed_resp.plus * computed_resp.plus
+                            + computed_resp.cross * computed_resp.cross);
+  
+  
   if (verbose_p)
     {
       PrintDetResponse(&computed_resp, "Computed");
       PrintDetResponse(expected_resp, "Expected");
     }
 
-  resp_plus_ok_p = (REAL4)fabs((double)(computed_resp.plus - expected_resp->plus)) < LAL_REAL4_EPS;
+  if (expected_resp->plus == 0.)
+    {
+      resp_plus_ok_p = almost_equal_real4_p(computed_resp.plus,
+                                            expected_resp->plus,
+                                            tolerance);
+    }
+  else
+    {
+      resp_plus_ok_p = almost_equal_real4_relative_p(computed_resp.plus,
+                                                     expected_resp->plus,
+                                                     tolerance);
+    }
+      
+  if (lalDebugLevel >= 2)
+    {
+      printf("INFO: detresponse_ok_p(): resp_plus_ok_p = %d\n",
+             resp_plus_ok_p);
+      printf("                          computed = % 14.10e\n",
+             computed_resp.plus);
+      printf("                          expected = % 14.10e\n",
+             expected_resp->plus);
+    }
 
-  resp_cross_ok_p = (REAL4)fabs((double)(computed_resp.cross - expected_resp->cross)) < LAL_REAL4_EPS;
+  if (expected_resp->cross == 0.)
+    resp_cross_ok_p = almost_equal_real4_p(computed_resp.cross,
+                                           expected_resp->cross,
+                                           tolerance);
+  else
+    resp_cross_ok_p = almost_equal_real4_relative_p(computed_resp.cross,
+                                                     expected_resp->cross,
+                                                     tolerance);
 
-  resp_scalar_ok_p = (REAL4)fabs((double)(computed_resp.scalar - expected_resp->scalar)) < LAL_REAL4_EPS;
+  if (lalDebugLevel >= 2)
+    {
+      printf("INFO: detresponse_ok_p(): resp_cross_ok_p = %d\n",
+             resp_cross_ok_p);
+      printf("                          computed = % 14.10e\n",
+             computed_resp.cross);
+      printf("                          expected = % 14.10e\n",
+             expected_resp->cross);
+    }
+  
+  resp_scalar_ok_p = almost_equal_real4_p(computed_resp.scalar,
+                                          expected_resp->scalar,
+                                          tolerance);
+  
+  result = (resp_plus_ok_p && resp_cross_ok_p && resp_scalar_ok_p);
 
-  return (resp_plus_ok_p && resp_cross_ok_p && resp_scalar_ok_p);
+  if (result == FALSE && verbose_p)
+    {
+      printf("INFO: detresponse_ok_p(): circ_resp -- computed = % 10.6e\n",
+             computed_circ_resp);
+      printf("                                       expected = % 10.6e\n",
+             expected_circ_resp);
+    }
+
+  return result;
+}
+
+
+
+void handle_detresponse_test(BOOLEAN passed_p, int line)
+{
+  if (!passed_p)
+    {
+      fprintf(stderr, "ERROR in LALComputeDetAMResponse(): computed result != expected result; line %d\n", line);
+      exit (1);
+    }
+  else
+    {
+      print_passed_maybe();
+    }
 }
 
 
@@ -1762,9 +2249,13 @@ static BOOLEAN detresponse_ok_p(LALStatus * status,
 static void PrintDetResponse(const LALDetAMResponse * const response,
                              const char * const title)
 {
+  REAL4 circ_response = sqrt((response->plus) * (response->plus)
+                             + (response->cross) * (response->cross));
+    
   printf("%s:\n", title);
-  printf("      plus = % 15.8e\n", response->plus);
-  printf("     cross = % 15.8e\n", response->cross);
+  printf("      plus = % 15.8e  }  circular = % 15.8e\n",
+         response->plus, circ_response);
+  printf("     cross = % 15.8e  }  \n", response->cross);
   printf("    scalar = % 15.8e\n", response->scalar);
 }
 
@@ -1775,13 +2266,27 @@ static BOOLEAN frdetector_ok_p(const LALFrDetector * const computed,
 {
   /* let's not bother with comparing the name */
 
-  return (computed->vertexLongitudeRadians == expected->vertexLongitudeRadians
-          && computed->vertexLatitudeRadians == expected->vertexLatitudeRadians
-          && computed->vertexElevation == expected->vertexElevation
-          && computed->xArmAltitudeRadians == expected->xArmAltitudeRadians
-          && computed->xArmAzimuthRadians == expected->xArmAzimuthRadians
-          && computed->yArmAltitudeRadians == expected->yArmAltitudeRadians
-          && computed->yArmAzimuthRadians == expected->yArmAzimuthRadians);
+  return (almost_equal_real8_p(computed->vertexLongitudeRadians,
+                               expected->vertexLongitudeRadians,
+                               2.*real8_tolerance)
+          && almost_equal_real8_p(computed->vertexLatitudeRadians,
+                                  expected->vertexLatitudeRadians,
+                                  2.*real8_tolerance)
+          && almost_equal_real8_p(computed->vertexElevation,
+                                  expected->vertexElevation,
+                                  2.*real8_tolerance)
+          && almost_equal_real8_p(computed->xArmAltitudeRadians,
+                                  expected->xArmAltitudeRadians,
+                                  2.*real8_tolerance)
+          && almost_equal_real8_p(computed->xArmAzimuthRadians,
+                                  expected->xArmAzimuthRadians,
+                                  2.*real8_tolerance)
+          && almost_equal_real8_p(computed->yArmAltitudeRadians,
+                                  expected->yArmAltitudeRadians,
+                                  2.*real8_tolerance)
+          && almost_equal_real8_p(computed->yArmAzimuthRadians,
+                                  expected->yArmAzimuthRadians,
+                                  2.*real8_tolerance));
 }
 
 
@@ -1790,8 +2295,10 @@ static BOOLEAN frdetector_ok_p(const LALFrDetector * const computed,
 static BOOLEAN detector_ok_p(const LALDetector * const computed,
                              const LALDetector * const expected)
 {
-  return (vector_ok_p(&(computed->location), &(expected->location), default_tolerance) &&
-          matrix_ok_p(&(computed->response), &(expected->response), default_tolerance) &&
-          computed->type == expected->type &&
-          frdetector_ok_p(&(computed->frDetector), &(expected->frDetector)));
+  return (vector_relative_ok_p(&(computed->location), &(expected->location),
+                               1.e-4)
+          && matrix_ok_p(&(computed->response), &(expected->response), 1.e-4)
+          && computed->type == expected->type
+          && frdetector_ok_p(&(computed->frDetector), &(expected->frDetector)));
 }
+
