@@ -33,7 +33,7 @@ static void readDataPair(LALStatus *status, StreamPair *streamPair,
 		ReadDataPairParams *params);
 static void adam_readDataPair(LALStatus *status, StreamPair *streamPair,
 		ReadDataPairParams *params, REAL4TimeSeries *seriesOne,
-		REAL4TimeSeries *seriesTwo);
+		REAL4TimeSeries *seriesTwo, LIGOTimeGPS start);
 
 /* helper functions */
 static REAL4TimeSeries *get_time_series(LALStatus *status, CHAR *ifo,

@@ -831,7 +831,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
           streamParams.start = gpsSegStartTime.gpsSeconds;
           adam_readDataPair(&status, &streamPair, &streamParams, \
-                seriesOne, seriesTwo);
+                seriesOne, seriesTwo, gpsSegStartTime);
 
           /* skip segment if data not found or corrupted with 0 values */
           if (status.statusCode != 0)
@@ -1028,7 +1028,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         }
 
         adam_readDataPair(&status, &streamPair, &streamParams, \
-              seriesOne, seriesTwo);
+              seriesOne, seriesTwo, gpsSegStartTime);
 
         /* skip segment if data not found or corrupted with 0 values */
         if (status.statusCode != 0)
@@ -2824,208 +2824,51 @@ static void readDataPair(LALStatus *status,
 
  ********************************************************************/
 
-
 /* function to read data in frames */
 static void adam_readDataPair(LALStatus *status,
     StreamPair *streamPair,
     ReadDataPairParams *params,
     REAL4TimeSeries *seriesOne,
-    REAL4TimeSeries *seriesTwo)
+    REAL4TimeSeries *seriesTwo,
+    LIGOTimeGPS start)
 {
-  /* counters */
-  INT4 i;
-  UINT4 j;
-
   /* variables */
-  FrCache *frCacheOne = NULL;
-  FrStream *frStreamOne = NULL;
-  FrCache *frCacheTwo = NULL;
-  FrStream *frStreamTwo = NULL;
-  FrChanIn frChanInOne, frChanInTwo;
-  REAL8TimeSeries *dataStreamGEO;
+  INT4 i;
   REAL4TimeSeries *dataStreamOne;
   REAL4TimeSeries *dataStreamTwo;
-  ResampleTSParams resampleParams;
-  LIGOTimeGPS bufferStartTime;
-  PassBandParamStruc geoHighpassParam;
+  INT4 first;
+  INT4 length;
+  INT4 streamStart;
 
-  /* buffer start time */
-  bufferStartTime.gpsSeconds = params->start - params->buffer;
-  bufferStartTime.gpsNanoSeconds = 0;
+  /* get start of stream */
+  streamStart = start.gpsSeconds;
 
-  /* set channels */
-  frChanInOne.name = channelOne;
-  frChanInTwo.name = channelTwo;
-  frChanInOne.type = ADCDataChannel;
-  frChanInTwo.type = ADCDataChannel;
+  /* get first bin required */
+  first = (params->start - streamStart) * resampleRate;
+  length = segmentDuration * resampleRate;
 
   if (vrbflg)
     fprintf(stdout, "Allocating memory for raw data streams...\n");
 
   /* allocate memory */
   LAL_CALL(LALCreateREAL4TimeSeries(status, &dataStreamOne, "DataStreamOne", \
-        bufferStartTime, 0, 1./sampleRate, lalDimensionlessUnit, \
-        sampleRate * (params->duration + (2 * params->buffer))), status);
+        start, 0, 1./resampleRate, lalDimensionlessUnit, length), status);
   LAL_CALL(LALCreateREAL4TimeSeries(status, &dataStreamTwo, "DataStreamTwo", \
-        bufferStartTime, 0, 1./sampleRate, lalDimensionlessUnit, \
-        sampleRate * (params->duration + (2 * params->buffer))), status);
-
-  /* allocate memory for geo double precision h(t) */
-  LAL_CALL(LALCreateREAL8TimeSeries(status, &dataStreamGEO, "GEODataStream", \
-        bufferStartTime, 0, 1./sampleRate, lalDimensionlessUnit, \
-        sampleRate * (params->duration + (2 * params->buffer))), status);
+        start, 0, 1./resampleRate, lalDimensionlessUnit, length), status);
 
   if (vrbflg)
-    fprintf(stdout, "Opening first frame cache...\n");
+    fprintf(stdout, "Cutting data from stream...\n");
 
-  /* open first frame cache */
-  LAL_CALL(LALFrCacheImport(status, &frCacheOne, frameCacheOne), status);
-  LAL_CALL(LALFrCacheOpen(status, &frStreamOne, frCacheOne), status);
-
-  if (vrbflg)
-    fprintf(stdout, "Reading in channel \"%s\"...\n", frChanInOne.name);
-
-  /* read first channel */
-  LAL_CALL(LALFrSeek(status, &(bufferStartTime), frStreamOne), status);
-
-  if (strncmp(ifoOne, "G1", 2) == 0)
-  {
-    LAL_CALL(LALFrGetREAL8TimeSeries(status, dataStreamGEO, &frChanInOne, \
-          frStreamOne), status);
-
-    /* high pass the GEO data */
-    geoHighpassParam.nMax = geoHighPassOrder;
-    geoHighpassParam.f1 = -1;
-    geoHighpassParam.f2 = (REAL8)geoHighPassFreq;
-    geoHighpassParam.a1 = -1;
-    geoHighpassParam.a2 = geoHighPassAtten;
-    LAL_CALL(LALButterworthREAL8TimeSeries(status, dataStreamGEO, \
-          &geoHighpassParam), status);
-
-    /* cast the GEO data to REAL4 in the channel time series */
-    /* which already has the correct amount of memory allocated */
-    for (j = 0; j < dataStreamOne->data->length; j++)
-    {
-      dataStreamOne->data->data[j] = geoScaleFactor * \
-                                     (REAL4)(dataStreamGEO->data->data[j]);
-    }
-
-    /* re-copy the data paramaters from the GEO channel */
-    /* to input data channel */
-    LALSnprintf(dataStreamOne->name, LALNameLength * sizeof(CHAR), "%s", \
-        dataStreamGEO->name);
-    dataStreamOne->epoch = dataStreamGEO->epoch;
-    dataStreamOne->deltaT = dataStreamGEO->deltaT;
-    dataStreamOne->f0 = dataStreamGEO->f0;
-    dataStreamOne->sampleUnits = dataStreamGEO->sampleUnits;
-  }
-  else
-  {
-    LAL_CALL(LALFrGetREAL4TimeSeries(status, dataStreamOne, &frChanInOne, \
-          frStreamOne), status);
-  }
-
-  /* if site ids are the same then both ifo channels will be in same
-   * file */
-  if (siteOne == siteTwo)
-  {
-    if (vrbflg)
-    {
-      fprintf(stdout, "Reading in channel \"%s\" from same cache...\n", \
-          frChanInTwo.name);
-    }
-
-    /* read in second channel */
-    LAL_CALL(LALFrSeek(status, &(bufferStartTime), frStreamOne), status);
-    LAL_CALL(LALFrGetREAL4TimeSeries(status, dataStreamTwo, &frChanInTwo, \
-          frStreamOne), status);
-
-    if (vrbflg)
-      fprintf(stdout, "Closing frame cache...\n");
-
-    /* close frame cache */
-    LAL_CALL(LALFrClose(status, &frStreamOne), status);
-  }
-  else
-  {
-    if (vrbflg)
-      fprintf(stdout, "Closing first frame cache...\n");
-
-    /* close first frame cache */
-    LAL_CALL(LALFrClose(status, &frStreamOne), status);
-
-    if (vrbflg)
-      fprintf(stdout, "Opening second frame cache...\n");
-
-    /* open second frame cache and read in second channel */
-    LAL_CALL(LALFrCacheImport(status, &frCacheTwo, frameCacheTwo), status);
-    LAL_CALL(LALFrCacheOpen(status, &frStreamTwo, frCacheTwo), status);
-
-    if (vrbflg)
-      fprintf(stdout, "Reading in channel \"%s\"...\n", frChanInTwo.name);
-
-    /* read in second channel */
-    LAL_CALL(LALFrSeek(status, &(bufferStartTime), frStreamTwo), status);
-
-    if (strncmp(ifoTwo, "G1", 2) == 0)
-    {
-      LAL_CALL(LALFrGetREAL8TimeSeries(status, dataStreamGEO, &frChanInTwo, \
-            frStreamTwo), status);
-
-      /* high pass the GEO data */
-      geoHighpassParam.nMax = geoHighPassOrder;
-      geoHighpassParam.f1 = -1;
-      geoHighpassParam.f2 = (REAL8) geoHighPassFreq;
-      geoHighpassParam.a1 = -1;
-      geoHighpassParam.a2 = geoHighPassAtten;
-      LAL_CALL(LALButterworthREAL8TimeSeries(status, dataStreamGEO, \
-            &geoHighpassParam), status);
-
-      /* cast the GEO data to REAL4 in the channel time series */
-      /* which already has the correct amount of memory allocated */
-      for (j = 0; j < dataStreamTwo->data->length; j++)
-      {
-        dataStreamTwo->data->data[j] = geoScaleFactor * \
-                                       (REAL4)(dataStreamGEO->data->data[j]);
-      }
-    }
-    else
-    {
-      LAL_CALL(LALFrGetREAL4TimeSeries(status, dataStreamTwo, &frChanInTwo, \
-            frStreamTwo), status);
-    }
-
-    if (vrbflg)
-      fprintf(stdout, "Closing second frame cache...\n");
-
-    /* close second frame stream */
-    LAL_CALL(LALFrClose(status, &frStreamTwo), status);
-  }
-
-  /* resample */
-  if (resampleRate != sampleRate)
-  {
-    if (vrbflg)
-      fprintf(stdout, "Resampling to %d Hz...\n", resampleRate);
-
-    /* set resample parameters */
-    resampleParams.deltaT = 1.0 / resampleRate;
-    resampleParams.filterType = defaultButterworth;
-
-    /* resample */
-    LAL_CALL(LALResampleREAL4TimeSeries(status, dataStreamOne, \
-          &resampleParams), status);
-    LAL_CALL(LALResampleREAL4TimeSeries(status, dataStreamTwo, \
-          &resampleParams), status);
-  }
+  LAL_CALL(LALCutREAL4TimeSeries(status, &dataStreamOne, seriesOne, first, \
+        length), status);
+  LAL_CALL(LALCutREAL4TimeSeries(status, &dataStreamTwo, seriesTwo, first, \
+        length), status);
 
   /* build output */
   strncpy(streamPair->streamOne->name, dataStreamOne->name, LALNameLength);
   strncpy(streamPair->streamTwo->name, dataStreamTwo->name, LALNameLength);
-  streamPair->streamOne->epoch.gpsSeconds = params->start;
-  streamPair->streamTwo->epoch.gpsSeconds = params->start;
-  streamPair->streamOne->epoch.gpsNanoSeconds = 0;
-  streamPair->streamTwo->epoch.gpsNanoSeconds = 0;
+  streamPair->streamOne->epoch = start;
+  streamPair->streamTwo->epoch = start;
   streamPair->streamOne->deltaT = 1./(REAL8)resampleRate;
   streamPair->streamTwo->deltaT = 1./(REAL8)resampleRate;
   streamPair->streamOne->f0 = streamPair->streamTwo->f0 = 0;
@@ -3033,21 +2876,16 @@ static void adam_readDataPair(LALStatus *status,
   streamPair->streamTwo->sampleUnits = dataStreamTwo->sampleUnits;
 
   /* remove buffer, and hence corruption due to resampling */
-  for (i = 0; i < params->duration * resampleRate; i++)
+  for (i = 0; i < length; i++)
   {
-    streamPair->streamOne->data->data[i] = \
-                                           dataStreamOne->data->data[i + (resampleRate * params->buffer)];
-    streamPair->streamTwo->data->data[i] = \
-                                           dataStreamTwo->data->data[i + (resampleRate * params->buffer)];
+    streamPair->streamOne->data->data[i] = dataStreamOne->data->data[i];
+    streamPair->streamTwo->data->data[i] = dataStreamTwo->data->data[i];
   }
 
   /* clean up */
   LAL_CALL(LALDestroyREAL4TimeSeries(status, dataStreamOne), status);
   LAL_CALL(LALDestroyREAL4TimeSeries(status, dataStreamTwo), status);
-  LAL_CALL(LALDestroyREAL8TimeSeries(status, dataStreamGEO), status);
 }
-
-
 
 /********************************************************************
 
