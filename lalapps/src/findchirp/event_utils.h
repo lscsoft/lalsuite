@@ -76,6 +76,8 @@ tagcandEvent{
     float  chisq;
     float  eff_distance;
     float  mchirp;
+    float  mass1;
+    float  mass2;
     int significance;
     int candidate;
     int coincident;

@@ -284,9 +284,11 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
         int injectflag, int maxflag)
 {
     int status,iVetoS,iVetoNS,iVetoSNR,iCandCHISQ,iCandEDIST,iCandMCHIRP;
+    int iCandMASS1,iCandMASS2;
     int pass,first=1,timeBase=0, crossingflag=0;
     timeWindow *thiswindow=NULL;
     double tVtemp,snrVtemp,chiVtemp,edistVtemp,lastVtemp,mchirpVtemp;
+    double mass1Vtemp,mass2Vtemp;
     struct MetaioParseEnvironment candParseEnv;
     const MetaioParseEnv candEnv = &candParseEnv;
     vetoParams *thisentry=NULL;
@@ -324,6 +326,8 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
     iCandCHISQ = MetaioFindColumn( candEnv, "CHISQ");
     iCandEDIST = MetaioFindColumn( candEnv, "EFF_DISTANCE");
     iCandMCHIRP = MetaioFindColumn( candEnv, "MCHIRP");
+    iCandMASS1 = MetaioFindColumn( candEnv, "MASS1");
+    iCandMASS2 = MetaioFindColumn( candEnv, "MASS2");
 
     /* Read in the veto data and construct a list of veto times */
     first = 1;
@@ -345,6 +349,8 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
         chiVtemp = candEnv->ligo_lw.table.elt[iCandCHISQ].data.real_4;  
         edistVtemp = candEnv->ligo_lw.table.elt[iCandEDIST].data.real_4;  
         mchirpVtemp = candEnv->ligo_lw.table.elt[iCandMCHIRP].data.real_4;  
+        mass1Vtemp = candEnv->ligo_lw.table.elt[iCandMASS1].data.real_4;  
+        mass2Vtemp = candEnv->ligo_lw.table.elt[iCandMASS2].data.real_4;  
         /* Store the time of the candidate event */
         tVtemp = (double) ( candEnv->ligo_lw.table.elt[iVetoS].data.int_4s - timeBase )
             + 1.0e-9 * (double) candEnv->ligo_lw.table.elt[iVetoNS].data.int_4s;
@@ -375,6 +381,8 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                     (*thisCEvent).chisq = chiVtemp;
                     (*thisCEvent).eff_distance = edistVtemp;
                     (*thisCEvent).mchirp = mchirpVtemp;
+                    (*thisCEvent).mass1 = mass1Vtemp;
+                    (*thisCEvent).mass2 = mass2Vtemp;
                     (*thisCEvent).significance = 0;
                     (*thisCEvent).candidate = 0;
                     (*thisCEvent).coincident = 0;
@@ -390,6 +398,8 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                         (*thisCEvent).chisq = chiVtemp;
                         (*thisCEvent).eff_distance = edistVtemp;
                         (*thisCEvent).mchirp = mchirpVtemp;
+                        (*thisCEvent).mass1 = mass1Vtemp;
+                        (*thisCEvent).mass2 = mass2Vtemp;
                         (*thisCEvent).significance = 0;
                         (*thisCEvent).candidate = 0;
                         (*thisCEvent).coincident = 0;
@@ -405,6 +415,8 @@ int buildEventList( candEvent **eventhead, timeWindow *vwindows, candParams cand
                     (*thisCEvent).chisq = chiVtemp;
                     (*thisCEvent).eff_distance = edistVtemp;
                     (*thisCEvent).mchirp = mchirpVtemp;
+                    (*thisCEvent).mass1 = mass1Vtemp;
+                    (*thisCEvent).mass2 = mass2Vtemp;
                     (*thisCEvent).significance = 0;
                     (*thisCEvent).candidate = 0;
                     (*thisCEvent).coincident = 0;
@@ -605,10 +617,11 @@ int printInspiralEvents(FILE *fpout, snglIFO *ifo, int significance, int injectf
                     dumEvent = myevent;
                 }
             } else {
-                fprintf(fpout,"%i %f %f %f %f %f %i %i\n",i, (*dumEvent).time,
+                fprintf(fpout,"%i %f %f %f %f %f %i %i %f %f\n",i, (*dumEvent).time,
                         (*dumEvent).snr,(*dumEvent).chisq,
                         (*dumEvent).eff_distance,(*dumEvent).mchirp,
-                        (*dumEvent).coincident, (*dumEvent).significance);
+                        (*dumEvent).coincident, (*dumEvent).significance,
+                        (*dumEvent).mass1, (*dumEvent).mass2);
                 (*dumEvent).candidate = 1;
                 dumEvent = myevent;
                 i++;
@@ -617,10 +630,11 @@ int printInspiralEvents(FILE *fpout, snglIFO *ifo, int significance, int injectf
         }
         myevent = (*myevent).next_event;
     }
-    fprintf(fpout,"%i %f %f %f %f %f %i %i\n",i, (*dumEvent).time,
+    fprintf(fpout,"%i %f %f %f %f %f %i %i %f %f\n",i, (*dumEvent).time,
             (*dumEvent).snr,(*dumEvent).chisq,
             (*dumEvent).eff_distance,(*dumEvent).mchirp,
-            (*dumEvent).coincident, (*dumEvent).significance);
+            (*dumEvent).coincident, (*dumEvent).significance,
+                        (*dumEvent).mass1, (*dumEvent).mass2);
     (*dumEvent).candidate = 1;
 
     return 0;
