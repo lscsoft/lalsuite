@@ -94,7 +94,7 @@ int main( int argc, char *argv[] )
   Math3DPointList *first = NULL;
   SnglInspiralTable *tiles = NULL;
   SnglInspiralTable *tmplt = NULL;
-  InspiralCoarseBankIn coarseIn;   /* this input stucture is superfluous */
+  InspiralCoarseBankIn coarseIn;
   INT4 ntiles = 0;                 /* number of tiles */
   INT2 Math3DPlot = 0;             /* option flag for Mathematica plot */
   INT4 opt = 0;                    /* returning value of getopt() */
@@ -107,8 +107,6 @@ int main( int argc, char *argv[] )
   InspiralMomentsEtc moments;
   REAL4 F0 = 0;
   REAL4 noiseMin = 1;
-  FILE *plot;
-  plot = fopen("plot.dat", "w");  
  
   if( (list = (Math3DPointList *) LALCalloc( 1, sizeof( Math3DPointList )))
       == NULL )
@@ -182,12 +180,6 @@ int main( int argc, char *argv[] )
     LALError( &stat, INSPIRALSPINBANKTESTC_MSGESUB );
     printf( INSPIRALSPINBANKTESTC_MSGESUB );
     return INSPIRALSPINBANKTESTC_ESUB;
-  }
-
-  for( tmplt = tiles; tmplt != NULL; tmplt = tmplt->next )
-  {
-    fprintf( plot, "%f\t%f\n", tmplt->mass1/LAL_MTSUN_SI,
-             tmplt->mass2/LAL_MTSUN_SI );
   }
 
   /* Mathematica Plot Stuff */

@@ -30,7 +30,7 @@ InspiralSpinBankTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV PNTemplates BCVTemplates BCVTemplatesFlatMesh InspiralSpinBankTest
 EXTRA_DIST = CoarseTest.par demo 
-MOSTLYCLEANFILES = .dvi-dep *.out plot.dat
+MOSTLYCLEANFILES = .dvi-dep *.out
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 @DVIMKFILE@
