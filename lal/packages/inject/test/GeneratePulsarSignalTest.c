@@ -283,8 +283,11 @@ void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv)
   
   /* Initialize ephemeris data */
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData)); 
-  edat->ephiles.sunEphemeris = "../../pulsar/test/sun00-04.dat";
-  edat->ephiles.earthEphemeris = "../../pulsar/test/earth00-04.dat";   
+  /* edat->ephiles.sunEphemeris = "../../pulsar/test/sun00-04.dat";
+  edat->ephiles.earthEphemeris = "../../pulsar/test/earth00-04.dat"; */
+  /* 07/30/04 gam; added this line to Makefile.am: TESTS_ENVIRONMENT = LAL_DATA_PATH=$(top_srcdir)/packages/pulsar/test */
+  edat->ephiles.sunEphemeris = "sun00-04.dat";
+  edat->ephiles.earthEphemeris = "earth00-04.dat";
   LALLeapSecs(status->statusPtr,&leap,&(timeStamps->data[0]),&formatAndAcc);
   CHECKSTATUSPTR (status);
   edat->leap = (INT2)leap;
