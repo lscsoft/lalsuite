@@ -4,7 +4,8 @@
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-AM_LDFLAGS = -all-static
+## not useable before automake-1.6
+#AM_LDFLAGS = -all-static
 
 bin_PROGRAMS = makefakedata_v2 lalapps_Makefakedata compareSFTs dumpSFT makefakedatabinary makefakedata_test
 

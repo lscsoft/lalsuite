@@ -5,7 +5,8 @@
 #INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 #LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-AM_LDFLAGS = -all-static
+## not usable before automake-1.6:
+## AM_LDFLAGS = -all-static
 
 bin_PROGRAMS = NstarClean SFTclean MCInjectS2 DriveHough_v3 HoughValidate 
 

@@ -2,7 +2,11 @@
 # $Id$
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
-AM_LDFLAGS = $(top_builddir)/src/lalapps/liblalapps.la -all-static
+LDADD = $(top_builddir)/src/lalapps/liblalapps.la 
+
+## not useable before automake-1.6
+#AM_LDFLAGS = -all-static
+
 
 if FRAME
 FRAMEPROGRAMS = lalapps_FrComputeFStatistic
