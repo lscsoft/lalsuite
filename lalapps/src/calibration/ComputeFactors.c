@@ -112,10 +112,6 @@ SegmentList SL[MAXLINESEGS];        /* Structure containing science segement inf
 INT4 numsegs;                       /* number of science segments */
 LIGOTimeGPS gpsepoch;               /* Global variables epoch and duration used to calculate the calibration factors */
 INT4 duration;                      /* they are set every science segment to GPS start time and duration of segment */
-MyIIRFilter Cinv,G[NGfilt],AA,AX[NAXfilt],AY[NAYfilt];    /* Inverse sensing, servo, analog actuation, digital x actuation  digital y actuation */
-REAL8TimeSeries AS_Q,hR,hC,uphR,hCx,hCy,h;                /* AS_Q, Residual, control and total strains; up... time series are upsampled */
-REAL8TimeSeries hipasssludge,lopasssludge;                /* Sludge for high and low pass filtering of data */
-REAL8TimeSeries hipasssludgeR,hipasssludgeC;              /* Sludge for high filtering of contral and residual signals */
 } GlobalVariables;
 
 /***************************************************************************/
@@ -330,14 +326,7 @@ FILE *fpAlpha=NULL;
       LALComputeCalibrationFactors(&status,&factors,&params);
       TESTSTATUS( &status );
 
-      GV.alpha[m]= factors.alpha.re;
-      
-      be.re=be.im=0;
-
       cdiv(&be,&factors.alphabeta,&factors.alpha);
-
-      GV.beta[m] = be.re;
-      GV.ta_interp[m]=m*To;
 
       fprintf(fpAlpha,"%d %d %f %f %f %f\n",m,localgpsepoch.gpsSeconds,factors.alpha.re,factors.alpha.im,be.re,be.im);
 	
