@@ -403,6 +403,11 @@ LALFindChirpSlave (
     /* according to the rules below                                     */
     if ( params->simParams )
     {
+#if 0
+      fprintf( stdout, "warning: simulation mode\n" );
+      fflush( stdout );
+#endif
+
       if ( params->simParams->simType == bankMinimalMatch )
       {
         DataSegment    *currentDataSeg = dataSegVec->data;
@@ -417,9 +422,7 @@ LALFindChirpSlave (
         UINT4   tdLength = currentDataSeg->real4Data->data->length;
         UINT4   fdLength = currentDataSeg->spec->data->length;
 
-
         /* create storeage for loudest event and (s|s) for each segment */
-#if 1
         loudestEvent = params->simParams->loudestEvent = (InspiralEvent *)
           LALCalloc( dataSegVec->length, sizeof(InspiralEvent) );
         params->simParams->signalNorm = (REAL4 *)
@@ -429,7 +432,6 @@ LALFindChirpSlave (
         {
           ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
         }
-#endif
 
         for ( i = 0; i < dataSegVec->length; ++i )
         {
