@@ -1,12 +1,12 @@
-/********************************* <lalVerbatim file="BCVTemplatesCV">
+/********************************* <lalVerbatim file="MetricTestCV">
 Author: B.S. Sathyaprakash
 $Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
 
-\subsection{Program \texttt{BCVTemplates.c}}
-\label{ss:BCVTemplates.c}
+\subsection{Program \texttt{MetricTest.c}}
+\label{ss:MetricTest.c}
 
 Creates a template mesh for BCV (or, alternatively, for SPA but
 assuing a constant metric) using the mismatch metric.
@@ -16,8 +16,6 @@ assuing a constant metric) using the mismatch metric.
 \subsubsection*{Description}
 
 \subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-/******************************************** </lalErrTable><lalLaTeX>
 
 \subsubsection*{Algorithm}
 
@@ -28,7 +26,7 @@ lalDebugLevel
 
 \subsubsection*{Notes}
 
-\vfill{\footnotesize\input{BCVTemplatesCV}}
+\vfill{\footnotesize\input{MetricTestCV}}
 
 ******************************************************* </lalLaTeX> */
 
@@ -36,13 +34,11 @@ lalDebugLevel
 #include <stdlib.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/LALStdio.h>
-#include <lal/FileIO.h>
-#include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
 
-NRCSID(FLATMESHTESTC,"$Id$");
+NRCSID(METRICTESTC,"$Id$");
 
-/* Default parameter settings. */
 int lalDebugLevel = 0;
 
 static void
@@ -52,29 +48,34 @@ GetInspiralMoments (
 		REAL8FrequencySeries *psd,
 		InspiralTemplate     *params );
 
+void 
+LALInspiralComputeBCVMetric(
+   LALStatus            *status,
+   InspiralMetric       *metric,
+   REAL8FrequencySeries *shf,
+   InspiralTemplate     *params
+);
+
 int
-main(int argc, char **argv)
+main()
 {
-  INT4 arg;
+  UINT4 dim;                 /* dimension of parameter space */
   static LALStatus status;     /* top-level status structure */
-  REAL4 mismatch = 0.05; /* maximum mismatch level */
-  REAL8 minimalmatch = 1.-mismatch; /* minimatch */
-  REAL4Vector *mesh = NULL;      /* mesh of parameter values */
 
   static InspiralMetric metric;
   static InspiralTemplate params;
-  UINT4   nlist, numPSDpts=262144;
+  UINT4  nlist, numPSDpts=65536;
   REAL8FrequencySeries shf;
   REAL8 samplingRate;
   void *noisemodel = LALLIGOIPsd;
   InspiralMomentsEtc moments;
-  InspiralBankParams   bankParams; 
-  InspiralCoarseBankIn coarseIn;
-  InspiralTemplateList *list=NULL;
-  REAL4 x0, x1, x0Min, x0Max, x1Min, x1Max;
+  REAL8 mismatch;
+
+  mismatch = 0.10L;
 
 /* Number of templates is nlist */
 
+  dim = 2;
   nlist = 0;
 
   params.OmegaS = 0.;
@@ -95,30 +96,10 @@ main(int argc, char **argv)
   params.massChoice=m1Andm2;
   params.distance = 1.e8 * LAL_PC_SI/LAL_C_SI;
   LALInspiralParameterCalc(&status, &params);
-    
-  coarseIn.fLower = params.fLower;
-  coarseIn.fUpper = params.fCutoff;
-  coarseIn.tSampling = params.tSampling;
-  coarseIn.order = params.order;
-  coarseIn.space = Tau0Tau3;
-  coarseIn.approximant = params.approximant;
-  coarseIn.mmCoarse = 0.90;
-  coarseIn.mmFine = 0.97;
-  coarseIn.iflso = 0.0L;
-  coarseIn.mMin = 1.0;
-  coarseIn.mMax = 20.0;
-  coarseIn.MMax = coarseIn.mMax * 2.;
-  coarseIn.massRange = MinMaxComponentMass; 
-  /* coarseIn.massRange = MinComponentMassMaxTotalMass;*/
-  /* minimum value of eta */
-  coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) / pow(coarseIn.MMax,2.);
 
   params.psi0 = 132250.;
   params.psi3 = -1314.2;
-  /*
   params.alpha = 0.528;
-  */
-  params.alpha = 0.L;
   params.fendBCV = 868.7;
   metric.space = Tau0Tau3;
 
@@ -131,105 +112,36 @@ main(int argc, char **argv)
 
   /* compute the metric at this point, update bankPars and add the params to the list */
 	  
-  /*
   GetInspiralMoments (&status, &moments, &shf, &params);
   LALInspiralComputeMetric(&status, &metric, &params, &moments);
-  */
-  LALInspiralComputeMetricBCV(&status, &metric, &shf, &params);
-
   fprintf(stderr, "%e %e %e\n", metric.G00, metric.G01, metric.G11);
   fprintf(stderr, "%e %e %e\n", metric.g00, metric.g11, metric.theta);
-  fprintf(stderr, "dp0=%e dp1=%e\n", sqrt (mismatch/metric.G00), sqrt (mismatch/metric.G11));
-  fprintf(stderr, "dP0=%e dP1=%e\n", sqrt (mismatch/metric.g00), sqrt (mismatch/metric.g11));
-
-  minimalmatch = 1. - mismatch;
-  LALInspiralUpdateParams(&status, &bankParams, metric, minimalmatch);
-
-  /*
-  x0Min = 1.00;
-  x1Min = 0.10;
-  x0Max = 3.00; 
-  x1Max = 0.30;
-  */
-
-  x0Min = 1.e5;
-  x1Min = -1.e3;
-  x0Max = 2.0e5;
-  x1Max = 1.e3;
-
-  for (x0 = x0Min; x0 <= x0Max; x0 += bankParams.dx0)
+  fprintf(stderr, "dP0=%e dP1=%e\n", sqrt (mismatch/metric.G00), sqrt (mismatch/metric.G11));
+  fprintf(stderr, "dp0=%e dp1=%e\n", sqrt (mismatch/metric.g00), sqrt (mismatch/metric.g11));
   {
-	  for (x1 = x1Min; x1 <= x1Max; x1 += bankParams.dx1)
-	  {
-		  if (!(list = (InspiralTemplateList*) LALRealloc(list, sizeof(InspiralTemplateList)*(nlist+1)))) 
-		  {
-			  exit(1);
-		  }
-	  
-  
-		  list[nlist].ID = nlist; 
-		  list[nlist].params.t0 = x0;
-		  list[nlist].params.t3 = x1;
-		  list[nlist].metric = metric; 
-		  ++(nlist); 
-        
-		  fprintf(stdout, "%10.3e %10.3e\n", x0, x1);
-	  }
-  }
-
-		  
-  fprintf(stdout, "&\n");
-
-  /* Prepare to print result. */
-  {
-    UINT4 i;
-    UINT4 valid,k=0;
-
-    params.massChoice=t03;
-    /* Print out the template parameters */
-    i = nlist;
-    while ( i--) 
+  double MM;
+  double dp0, dp1;
+  long n=100;
+  double dp0min=-0.1;
+  double dp0max=0.1;
+  double dp1min=-0.1;
+  double dp1max=0.1;
+  double d0=(dp0max-dp0min)/(double)n;
+  double d1=(dp1max-dp1min)/(double)n;
+  for ( dp0= dp0min; dp0<=dp0max+d0 ; dp0+=d0)
     {
-	/*
-	Retain only those templates that have meaningful masses:
-	*/
-	bankParams.x0 = (REAL8) list[k].params.t0;
-	bankParams.x1 = (REAL8) list[k].params.t3;
-	++k;
-	LALInspiralValidParams(&status, &valid, bankParams, coarseIn);
-        if (valid) fprintf(stdout, "%10.3e %10.3e\n", bankParams.x0, bankParams.x1);
+      for ( dp1= dp1min; dp1<=dp1max+d1 ; dp1+=d1)
+	{  
+	  
+	  MM = 1. - (metric.G00 * dp0 * dp0
+		  +  metric.G01 * dp0 * dp1
+		  +  metric.G01 * dp1 * dp0
+		  +  metric.G11 * dp1 * dp1);
+	  printf("%f %f %f\n", dp0, dp1, MM);	  
+	}
+              printf("\n");
     }
   }
-
-  {
-
-  int j;
-  static RectangleIn RectIn;
-  static RectangleOut RectOut;
-     
-  RectIn.dx = sqrt( (1. - coarseIn.mmCoarse)/metric.g00 );
-  RectIn.dy = sqrt( (1. - coarseIn.mmCoarse)/metric.g11 );
-  RectIn.theta = metric.theta;
-
-  for (j=0; j<nlist; j++) 
-  {
-     RectIn.x0 = list[j].params.t0;
-     RectIn.y0 = list[j].params.t3;
-     LALRectangleVertices(&status, &RectOut, &RectIn);
-     printf("%e %e\n%e %e\n%e %e\n%e %e\n%e %e\n", 
-        RectOut.x1, RectOut.y1, 
-        RectOut.x2, RectOut.y2, 
-        RectOut.x3, RectOut.y3, 
-        RectOut.x4, RectOut.y4, 
-        RectOut.x5, RectOut.y5);
-     printf("&\n");
-     /*
-     */
-  }
-  /* Free the mesh, and exit. */
-  }
-  LALFree(list);
-  LALCheckMemoryLeaks();
 }
 
 
@@ -244,7 +156,7 @@ GetInspiralMoments (
    UINT4 k;
    InspiralMomentsIn in;
 
-   INITSTATUS (status, "GetInspiralMoments", FLATMESHTESTC);
+   INITSTATUS (status, "GetInspiralMoments", METRICTESTC);
    ATTATCHSTATUSPTR(status);
   
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
@@ -300,3 +212,4 @@ GetInspiralMoments (
    DETATCHSTATUSPTR(status);
    RETURN (status);
 }
+  
