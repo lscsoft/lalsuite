@@ -22,6 +22,7 @@
 #include <config.h>
 #include <lalapps.h>
 #include <processtable.h>
+#include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
@@ -29,7 +30,7 @@
 
 #define USAGE \
 "lalapps_inspinj --gps-start-time gpsStartTime --gps-end-time gpsEndTime \n"\
-"    --time-step timeStep --seed seed [--datafile inspsrcs.dat]\n"
+"    --time-step timeStep --seed seed [--datafile inspsrcs.dat] [--waveform string]\n"
 
 int snprintf(char *str, size_t size, const  char  *format, ...);
 
@@ -514,6 +515,9 @@ int main( int argc, char *argv[] )
   FILE *fp;
   int rand_seed = 1;
 
+  /* waveform */
+  CHAR waveform[LIGOMETA_WAVEFORM_MAX];
+
   /* xml output data */
   CHAR                  fname[256];
   LALStatus             status = blank_status;
@@ -533,6 +537,7 @@ int main( int argc, char *argv[] )
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
     {"seed",                    required_argument, 0,                's'},
+    {"waveform",                required_argument, 0,                'w'},
     {0, 0, 0, 0}
   };
   int c;
@@ -553,6 +558,9 @@ int main( int argc, char *argv[] )
   this_sim_insp = injections.simInspiralTable = (SimInspiralTable *)
     LALCalloc( 1, sizeof(SimInspiralTable) );
 
+  /* clear the waveform field */
+  memset( waveform, 0, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR) );
+
   /* parse the arguments */
   while ( 1 )
   {
@@ -560,7 +568,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
 
     c = getopt_long_only( argc, argv, 
-        "ha:b:f:s:t:", long_options, &option_index );
+        "ha:b:f:s:t:w:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -670,6 +678,10 @@ int main( int argc, char *argv[] )
         }
         break;
 
+      case 'w':
+        LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
+            optarg );
+
       case 'h':
         fprintf( stderr, USAGE );
         exit( 0 );
@@ -692,6 +704,12 @@ int main( int argc, char *argv[] )
   tlisthead.tinj = tinj;
   tlisthead.next = NULL;
 
+  if ( ! *waveform )
+  {
+    /* default to Tev's GeneratePPNInspiral as used in */
+    LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), 
+        "GeneratePPNtwoPN" );
+  }
 
   /* open logfile for injection parameters */
   fplog = fopen( "injlog.txt", "w" );
@@ -799,6 +817,8 @@ int main( int argc, char *argv[] )
         fprintf( fplog, "\t%e", injPar[elem] );
     }
 
+    memcpy( this_sim_insp->waveform, waveform, 
+        sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
     this_sim_insp->mtotal = injPar[mTotElem];
     this_sim_insp->eta = injPar[etaElem];
     this_sim_insp->distance = injPar[distElem] / MPC;
