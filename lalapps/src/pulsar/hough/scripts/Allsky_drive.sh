@@ -41,11 +41,11 @@ echo job $1 running as process $process owned by $iam on `hostname`
 # choose detector
 # L is L1 and H is H1
 #det=L1
-#det=H1
-det=H2
+det=H1
+#det=H2
 
 mkdir -p $workdir/$det
-sftdir=/sft/S2-LIGO/S2_${det}_Funky-v3Cal30MinSFTs
+sftdir=/sft/S2-LIGO/S2_${det}_Funky-v3Calv5DQ30MinSFTs
 # the detector option in the hough driver is a number
 # 2 is L1 and 3 is H1 or H2
 if [ $det = L1 ]; then
@@ -71,8 +71,8 @@ cd /scratch/tmp/$iam/$1.run
 
 cp -f $workdir/sun00-04.dat .
 cp -f $workdir/earth00-04.dat .
-cp -f $workdir/DriveHoughColor_velo .
-cp -f $workdir/skypatches.run .
+cp -f $workdir/DriveHough_v3 .
+cp -f $workdir/skypatchfile .
 echo finished copying stuff
 
 # choose start of freq band to be analyzed
@@ -82,25 +82,7 @@ startfreq=200.0
 freq=`add $1 $startfreq` 
 echo frequency analysed is 1Hz band starting from $freq
 
+./DriveHough_v3 -d 0 -i ${detnum} -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -o $workdir/$det -B freq_$1_ -P ./skypatchfile -f $freq -b 1.0
 
-# loop over the skypatches
-j=1
-while [ $j -lt 24 ] ; do
+echo finished running driver
 
-    # set skypatch parameters    
-    skypatchinfo=`./skypatches.run $j`
-    alpha=`echo $skypatchinfo | awk '{print $1}'`
-    delta=`echo $skypatchinfo | awk '{print $2}'`
-    sizealpha=`echo $skypatchinfo | awk '{print $3}'`
-    sizedelta=`echo $skypatchinfo | awk '{print $4}'`
-
-    # make the output directory to store results
-    outdir=$workdir/$det/skypatch_$j
-    mkdir -p $outdir
-
-    # now run the driver
-    ./DriveHoughColor_velo -d 0 -i ${detnum} -w 25 -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -o $outdir/freq_$1_ -p $alpha $delta -s $sizedelta $sizealpha -f $freq -b 1.0
-    echo finished running driver for skypatch $j
-    
-    let j+=1
-done 

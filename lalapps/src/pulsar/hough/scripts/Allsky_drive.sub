@@ -9,5 +9,5 @@ initialdir = /home/badkri/Driver_allsky
 notification = Never
 arguments  =  $(Process)
 on_exit_remove = (ExitBySignal == False) || ((ExitBySignal == True) && (ExitSignal != 11))
-requirements = ( ( machine != "merlin.geo600.aei.mpg.de" ) && ( machine  != "morgane.geo600.aei.mpg.de" ) && (virtualmachineid == 1) )
+requirements = ( ( machine != "merlin.geo600.aei.mpg.de" ) && ( machine  != "morgane.geo600.aei.mpg.de" ) )
 queue 200
