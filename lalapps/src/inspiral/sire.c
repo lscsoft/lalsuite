@@ -1381,11 +1381,20 @@ int main( int argc, char *argv[] )
       if ( tamaFileName )
       {
 	REAL8 trigtime;
+	REAL4 mtotal;
 	LAL_CALL( LALGPStoFloat( &stat, &trigtime, &(thisEvent->end_time) ),
 	   &stat );
+	if (thisEvent->eta <= 0.25)
+	{
+	  mtotal = (thisEvent->mass1 + thisEvent->mass2);
+	}
+	else
+	{
+	  mtotal = ( thisEvent->mchirp ) / pow( thisEvent->eta, 0.6 );
+	}
 	fprintf( fq, "%20.9f %12.6e %12.6e %12.6e %12.6e %12.6e\n", trigtime, 
-	    (thisEvent->mass1 + thisEvent->mass2), thisEvent->eta,
-	    thisEvent->snr, thisEvent->chisq, thisEvent->eff_distance );
+	    mtotal, thisEvent->eta, thisEvent->snr, thisEvent->chisq, 
+	    thisEvent->eff_distance );
       }
       LALFree( thisEvent );
     }
