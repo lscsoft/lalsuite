@@ -135,10 +135,6 @@ void ComputeSkyBinary	(LALStatus	*status,
  /* Check to make sure pointer to output is not NULL */
  ASSERT(skyConst!=NULL, status, COMPUTESKYBINARYH_ENNUL, COMPUTESKYBINARYH_MSGENNUL);
  
- /* prepare params input time structure with first timestamp */
- params->baryinput->tgps.gpsSeconds=params->tGPS[0].gpsSeconds;
- params->baryinput->tgps.gpsNanoSeconds=params->tGPS[0].gpsNanoSeconds;
- 
  /* prepare params input sky position structure */
  params->baryinput->alpha=params->skyPos[iSkyCoh];
  params->baryinput->delta=params->skyPos[iSkyCoh+1];
