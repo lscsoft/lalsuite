@@ -554,6 +554,7 @@ main (INT4 argc, CHAR **argv )
   randIn.param.approximant 	= EOB;						/* Only to compute the length of "signal"*/
   LAL_CALL(LALInspiralWaveLength(&status, 
 			  	 &signal.length, randIn.param), &status);
+  signal.length*=4;
   randIn.param.approximant = otherIn.signal;					/* Retrieve the actual approximant of the 
 										   waveform to inject. otherwise it will
 										   be EOB all the time. */
@@ -775,24 +776,23 @@ main (INT4 argc, CHAR **argv )
 				   &Filter2,
 				   matrix,
 				   otherIn), &status);
+    printf("#");
+    PrintResults(list[1].params, randIn.param,overlapout,  list[1].params.fFinal, overlapout.bin);
 	/* given overlapout, j, l, fendBCV then we fill overlapoutmax, 
 	 * jmax, lmax, fMax.
 	 * in that case (checking), j and l are not importamt though. */	
-	KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax,  &jmax, &lmax, &fMax);
 	break;
       case InQuadrature:
 	{ 
-	  overlapin.param.fCutoff = 1023;
 	  for (i=0; i<signal.length; i++) 
 		correlation.data[i] = 0.;	   	   	  	 
 	  
 	  LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin), &status);
-	  KeepHighestValues(overlapout, j, l, fendBCV, &overlapoutmax,  &jmax, &lmax, &fMax);
+    printf("#");
+    PrintResults(list[1].params, randIn.param,overlapout,  overlapin.param.fFinal, 1);
 	}
       }
     
-    printf("#");
-    PrintResults(list[1].params, randIn.param,overlapoutmax,  list[1].params.fFinal, 1);
 
     /* --- if requested we print the correlation in a file--- */
     if (otherIn.PrintOverlap){
