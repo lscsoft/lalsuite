@@ -765,9 +765,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL ( LALOverlapReductionFunction( &status, &overlap, &detectors,
              &ORFparams), &status );
 
-  /* save */
-  if (verbose_flag)
-   { LALSPrintFrequencySeries(&overlap, "overlap.dat");}
 
   /* set metadata fields for spectrum */
   strncpy(omegaGW.name, "omegaGW", LALNameLength);
@@ -1041,7 +1038,7 @@ INT4 main(INT4 argc, CHAR *argv[])
          for (i = 0; i < MCfreqLength ; i++)
 	  {
 	   MCresp1[segLoop]->data[i] = MCresponse1.data->data[i];
-           MCresp2[segLoop]->data[i] = MCresponse1.data->data[i];
+           MCresp2[segLoop]->data[i] = MCresponse2.data->data[i];
           }             
         }
       }
