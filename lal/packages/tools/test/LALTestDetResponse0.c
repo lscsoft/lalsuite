@@ -1621,7 +1621,9 @@ int main(int argc, char *argv[])
 
       for (k = 0; k < (int)time_info.nSample; ++k)
         {
-          LALMSTUnitsAndAcc uandacc = { MST_RAD, gps_and_acc.accuracy};
+          LALMSTUnitsAndAcc uandacc;
+          uandacc.units    = MST_RAD;
+          uandacc.accuracy = gps_and_acc.accuracy;
           LALGPStoGMST1(&status, &gmst1, &(gps_and_acc.gps), &uandacc);
 
           if (verbose_level & 16)
@@ -2070,13 +2072,13 @@ static BOOLEAN almost_equal_real4_p(REAL4 a, REAL4 b, REAL4 tolerance)
     {
       printf("almost_equal_real4_p() info:\n");
       printf("  a = % 16.10e\n  b = % 16.10e\n", a, b);
-      printf("  (REAL4)fabsf(a - b) = % 16.10e\n", (REAL4)fabsf(a - b));
+      printf("  (REAL4)fabs(a - b) = % 16.10e\n", (REAL4)fabs(a - b));
       printf("  tolerance = % 16.10e\n\n", tolerance);
     }
   if (tolerance == 0.)
     return (a == b);
   else
-    return ((REAL4)fabsf(a - b) <= tolerance);
+    return ((REAL4)fabs(a - b) <= tolerance);
 }
 
 
@@ -2102,7 +2104,7 @@ static BOOLEAN almost_equal_real4_relative_p(REAL4 computed, REAL4 expected,
     }
   else
     {
-      relative_err = fabsf(computed - expected)/fabsf(expected);
+      relative_err = fabs(computed - expected)/fabs(expected);
       if (relative_err <= tolerance)
         return TRUE;
       else
@@ -2433,8 +2435,10 @@ static void make_me_an_Sarray_sequence(LALStatus *status,
 {
   CreateArraySequenceIn params;
   UINT4Vector           dimLength;
-  UINT4                 data[] = {2, rows, cols};
-
+  UINT4                 data[3];
+  data[0] = 2;
+  data[1] = rows;
+  data[2] = cols;
   dimLength.length = 3;
   dimLength.data   = data;
   params.length    = length;
