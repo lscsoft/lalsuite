@@ -302,7 +302,7 @@ SpinOrbitCWParamStruc sourceParams = emptyCWParams;
   sourceParams.aCross = params->pulsar.aCross;
   sourceParams.phi0 = params->pulsar.phi0;
   sourceParams.f0 = params->pulsar.f0;
-  /* set source position: make sure it's "normalized", i.e. [0<=alpha<2pi]x[-pi<=delta<=pi] */
+  /* set source position: make sure it's "normalized", i.e. [0<=alpha<2pi]x[-pi/2<=delta<=pi/2] */
   TRY( LALNormalizeSkyPosition (stat->statusPtr, &(sourceParams.position), &(params->pulsar.position)), stat);
 
   /* if pulsar is in binary-orbit, set binary parameters */
