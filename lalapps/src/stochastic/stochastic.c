@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <math.h>
 #include <getopt.h>
 
@@ -22,9 +21,7 @@
 #include <lal/FrameCalibration.h>
 #include <lal/FrameStream.h>
 #include <lal/LALStdio.h>
-#include <lal/PrintFTSeries.h>
 #include <lal/ResampleTimeSeries.h>
-#include <lal/SimulateSB.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
@@ -1426,107 +1423,6 @@ static StochasticTable *stochastic_search(LALStatus *status,
   XLALDestroyCOMPLEX8FrequencySeries(cc_spectra);
 
   return(stochHead);
-}
-
-/* function to inject a simulated stochastic signal into the data */
-static void monte_carlo(LALStatus *status,
-    REAL4TimeSeries *series_one,
-    REAL4TimeSeries *series_two,
-    REAL4TimeSeries *mc_one,
-    REAL4TimeSeries *mc_two,
-    REAL8 omega_ref,
-    REAL8 f_ref,
-    REAL8 exponent)
-{
-  /* counter */
-  UINT4 i;
-
-  /* variables */
-  INT4 length;
-  struct timeval tv;
-  INT4 duration;
-  REAL8 delta_f;
-
-  /* structures for generating fake data */
-  SSSimStochBGInput input;
-  SSSimStochBGParams params;
-  SSSimStochBGOutput output;
-  REAL4FrequencySeries *omega;
-  COMPLEX8FrequencySeries *response_one;
-  COMPLEX8FrequencySeries *response_two;
-  LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
-
-  /* get current time, used for seed */
-  gettimeofday(&tv, NULL);
-
-  /* get frequency length */
-  length = (series_one->data->length / 2) + 1;
-
-  /* get duration */
-  duration = endTime - startTime;
-
-  /* get delta_f */
-  delta_f = 1./(series_one->deltaT * series_one->data->length);
-
-  /* generate spectrum */
-  omega = omega_gw(status, exponent, f_ref, omega_ref, length, \
-      series_one->f0, delta_f);
-
-  /* generate response functions */
-  response_one = generate_response(status, ifoOne, calCacheOne, \
-      series_one->epoch, series_one->f0, delta_f, countPerStrain, \
-      length, calibOffset, duration);
-  response_two = generate_response(status, ifoTwo, calCacheTwo, \
-      series_two->epoch, series_two->f0, delta_f, countPerStrain, \
-      length, calibOffset, duration);
-
-  /* set dc to zero */
-  response_one->data->data[0].re = 0;
-  response_one->data->data[0].im = 0;
-  response_two->data->data[0].re = 0;
-  response_two->data->data[0].im = 0;
-
-  /* set nyquist to be real */
-  response_one->data->data[length - 1].im = 0;
-  response_two->data->data[length - 1].im = 0;
-
-  /* set up input structure */
-  input.omegaGW = omega;
-  input.whiteningFilter1 = response_one;
-  input.whiteningFilter2 = response_two;
-
-  /* set up output structure */
-  output.SSimStochBG1 = mc_one;
-  output.SSimStochBG2 = mc_two;
-
-  /* set up parameter structure */
-  params.length = series_one->data->length;
-  params.deltaT = series_one->deltaT;
-  params.seed = tv.tv_usec;
-  params.detectorOne = lalCachedDetectors[siteOne];
-  params.detectorTwo = lalCachedDetectors[siteTwo];
-  params.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
-  params.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
-
-  /* generate fake signal */
-  LAL_CALL(LALSSSimStochBGTimeSeries(status, &output, &input, \
-        &params), status);
-
-  /* inject into data */
-  for (i = 0; i < mc_one->data->length ; i++)
-  {
-    mc_one->data->data[i] += series_one->data->data[i];
-    mc_two->data->data[i] += series_two->data->data[i];
-  }
-
-  /* correctly set epoch */
-  mc_one->epoch = series_one->epoch;
-  mc_two->epoch = series_two->epoch;
-
-  /* cleanup */
-  XLALDestroyREAL4FrequencySeries(omega);
-  XLALDestroyCOMPLEX8FrequencySeries(response_one);
-  XLALDestroyCOMPLEX8FrequencySeries(response_two);
 }
 
 /* display usage information */
