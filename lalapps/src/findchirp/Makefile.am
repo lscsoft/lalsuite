@@ -2,7 +2,7 @@
 # $Id$
 if DATAFLOW
 DATAFLOWPROGRAMS = lalapps_exc_resp lalapps_trump lalapps_ivana \
-                lalapps_icoin lalapps_donald lalapps_snglInspiralReader \
+                lalapps_donald lalapps_snglInspiralReader \
                 lalapps_inspinj lalapps_inspinj_s1 lalapps_inca
 else
 DATAFLOWPROGRAMS = 
@@ -21,7 +21,6 @@ lalapps_inspinj_s1_SOURCES = inspinj_s1.c
 lalapps_exc_resp_SOURCES = exc_resp.c
 lalapps_trump_SOURCES = trump.c trump.h event_utils.c event_utils.h
 lalapps_donald_SOURCES = donald.c donald.h event_utils.c event_utils.h
-lalapps_icoin_SOURCES = icoin.c trump.h event_utils.c
 lalapps_ivana_SOURCES = ivana.c
 lalapps_snglInspiralReader_SOURCES = snglInspiralReader.c event_utils.c event_utils.h
 endif
