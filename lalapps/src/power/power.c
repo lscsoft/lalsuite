@@ -255,8 +255,8 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 	return(&(*proc_param)->next);
 }
 
-#define ADD_PROCESS_PARAM(type, format, value) \
-	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, format, value); } while(0)
+#define ADD_PROCESS_PARAM(addpoint, type, format, value) \
+	do { addpoint = add_process_param(addpoint, type, long_options[option_index].name, format, value); } while(0)
 
 static int check_for_missing_parameters(LALStatus *stat, char *prog, struct option *long_options, EPSearchParams *params)
 {
@@ -382,8 +382,8 @@ void parse_command_line_debug(
 
 	/*
 	 * Find and parse only the debug level command line options.  Must jump
-	 * through this hoop, because we cannot call set_debug_level() after
-	 * any calls to LALMalloc() and friends.
+	 * through this hoop because we cannot call set_debug_level() after any
+	 * calls to LALMalloc() and friends.
 	 */
 
 	opterr = 0;	/* silence error messages */
@@ -518,12 +518,12 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.length);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", params->tfTilingInput.length);
 		break;
 
 		case 'B':
 		options.calCacheFile = optarg;
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM(paramaddpoint, "string", "%s", optarg);
 		break;
 
 		case 'C':
@@ -531,12 +531,12 @@ void parse_command_line(
 		channelIn.name = optarg;
 		channelIn.type = ADCDataChannel;
 		memcpy(ifo, optarg, sizeof(ifo) - 1);
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM(paramaddpoint, "string", "%s", optarg);
 		break;
 
 		case 'D':
 		/* only add --debug-level to params table in this pass */
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM(paramaddpoint, "string", "%s", optarg);
 		break;
 
 		case 'E':
@@ -546,7 +546,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float", "%e", params->compEPInput.alphaDefault);
+		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e", params->compEPInput.alphaDefault);
 		break;
 
 		case 'F':
@@ -556,17 +556,17 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", params->eventLimit);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", params->eventLimit);
 		break;
 
 		case 'G':
 		cachefile = optarg;
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM(paramaddpoint, "string", "%s", optarg);
 		break;
 
 		case 'H':
 		dirname =  optarg;
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM(paramaddpoint, "string", "%s", optarg);
 		break;
 
 		case 'I':
@@ -576,7 +576,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", frameSampleRate);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", frameSampleRate);
 		break;
 
 		case 'J':
@@ -586,7 +586,7 @@ void parse_command_line(
 			args_are_bad = TRUE;
 		}
 		geodata = TRUE;
-		ADD_PROCESS_PARAM("double", "%e", options.fcorner);
+		ADD_PROCESS_PARAM(paramaddpoint, "double", "%e", options.fcorner);
 		break;
 
 		case 'K':
@@ -597,7 +597,7 @@ void parse_command_line(
 			args_are_bad = TRUE;
 		}
 		gpsStopTimeNS += gpstmp * 1000000000LL;
-		ADD_PROCESS_PARAM("int", "%lld", gpstmp);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%lld", gpstmp);
 		break;
 
 		case 'L':
@@ -608,7 +608,7 @@ void parse_command_line(
 			args_are_bad = TRUE;
 		}
 		gpsStopTimeNS += gpstmp;
-		ADD_PROCESS_PARAM("int", "%lld", gpstmp);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%lld", gpstmp);
 		break;
 
 		case 'M':
@@ -619,7 +619,7 @@ void parse_command_line(
 			args_are_bad = TRUE;
 		}
 		gpsStartTimeNS += gpstmp * 1000000000LL;
-		ADD_PROCESS_PARAM("int", "%lld", gpstmp);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%lld", gpstmp);
 		break;
 
 		case 'N':
@@ -630,7 +630,7 @@ void parse_command_line(
 			args_are_bad = TRUE;
 		}
 		gpsStartTimeNS += gpstmp;
-		ADD_PROCESS_PARAM("int", "%lld", gpstmp);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%lld", gpstmp);
 		break;
 
 		case 'O':
@@ -640,7 +640,7 @@ void parse_command_line(
 
 		case 'P':
 		injectionFile = optarg;
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM(paramaddpoint, "string", "%s", optarg);
 		break;
 
 		case 'Q':
@@ -650,12 +650,12 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float", "%e", params->tfTilingInput.flow);
+		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e", params->tfTilingInput.flow);
 		break;
 
 		case 'R':
 		mdcCacheFile = optarg;
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM(paramaddpoint, "string", "%s", optarg);
 		break;
 
 		case 'S':
@@ -667,7 +667,7 @@ void parse_command_line(
 			mdcparams->channelName = optarg;
 			mdcchannelIn.name = optarg;
 			mdcchannelIn.type = ADCDataChannel;
-			ADD_PROCESS_PARAM("string", "%s", optarg);
+			ADD_PROCESS_PARAM(paramaddpoint, "string", "%s", optarg);
 		}
 		break;
 
@@ -678,7 +678,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.minFreqBins);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", params->tfTilingInput.minFreqBins);
 		break;
 
 		case 'U':
@@ -688,7 +688,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.minTimeBins);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", params->tfTilingInput.minTimeBins);
 		break;
 
 		case 'V':
@@ -698,7 +698,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float", "%e", options.noiseAmpl);
+		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e", options.noiseAmpl);
 		break;
 
 		case 'W':
@@ -708,7 +708,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", params->windowLength);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", params->windowLength);
 		break;
 
 		case 'X':
@@ -718,7 +718,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float", "%e", params->compEPInput.numSigmaMin);
+		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e", params->compEPInput.numSigmaMin);
 		break;
 
 		case 'Y':
@@ -733,12 +733,12 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM(paramaddpoint, "string", "%s", optarg);
 		break;
 
 		case 'Z':
 		options.PSDAverageLength = atoi(optarg);
-		ADD_PROCESS_PARAM("int", "%d", options.PSDAverageLength);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", options.PSDAverageLength);
 		break;
 
 		case 'a':
@@ -748,7 +748,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", ram);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", ram);
 		break;
 
 		case 'b':
@@ -761,7 +761,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM(paramaddpoint, "string", "%s", optarg);
 		break;
 
 		case 'c':
@@ -771,12 +771,12 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", options.seed);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", options.seed);
 		break;
 
 		case 'd':
 		params->windowShift = atoi(optarg);
-		ADD_PROCESS_PARAM("int", "%d", params->windowShift);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", params->windowShift);
 		break;
 
 		case 'e':
@@ -786,7 +786,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", targetSampleRate);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", targetSampleRate);
 		break;
 
 		case 'f':
@@ -796,7 +796,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", params->tfTilingInput.overlapFactor);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", params->tfTilingInput.overlapFactor);
 		break;
 
 		case 'g':
@@ -806,12 +806,12 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("float", "%e", params->alphaThreshold);
+		ADD_PROCESS_PARAM(paramaddpoint, "float", "%e", params->alphaThreshold);
 		break;
 
 		case 'h':
 		options.comment = optarg;
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		ADD_PROCESS_PARAM(paramaddpoint, "string", "%s", optarg);
 		break;
 
 		case 'i':
@@ -821,7 +821,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", params->windowType);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", params->windowType);
 		break;
 
 		case 'j':
@@ -831,7 +831,7 @@ void parse_command_line(
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		ADD_PROCESS_PARAM("int", "%d", options.FilterCorruption);
+		ADD_PROCESS_PARAM(paramaddpoint, "int", "%d", options.FilterCorruption);
 		break;
 
 		/* option sets a flag */
@@ -1327,7 +1327,7 @@ int main( int argc, char *argv[])
 	procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
 	LAL_CALL(LALGPSTimeNow(&stat, &(procTable.processTable->start_time), &accuracy), &stat);
 	LAL_CALL(populate_process_table(&stat, procTable.processTable, PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &stat);
-	procparams.processParamsTable = LALCalloc(1, sizeof(ProcessParamsTable));
+	procparams.processParamsTable = NULL;
 
 	/* parse arguments and fill procparams table */
 	parse_command_line(argc, argv, &params, &procparams);
