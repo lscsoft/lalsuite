@@ -17,8 +17,9 @@
 
 \makeindex
 
-\def\rcs#1{\def\next##1#1{\mbox{##1}}\next}
 \newfont{\lsdfont}{cmbx10 at 72pt}
+\def\rcs#1{\def\next##1#1{\mbox{##1}}\next}
+
 
 \begin{document}
 
@@ -40,6 +41,7 @@
 \author{\bf Members of the LSC}
 \date{RCS \rcs$Revision$\rcs$Date$UTC --- Compiled:
 \number\year/\ifnum\month<10 0\fi\number\month/\ifnum\day<10 0\fi\number\day}
+
 \maketitle
 
 
@@ -48,19 +50,19 @@
 \tableofcontents
 
 \chapter*{Preface}
-This is the LIGO/LSC Algorithm Library (LAL) Software Documentation.
-The formal document governing LAL-code and documentation is the {\bf
-LIGO Data Analysis System Numerical Algorithms Library Specification
-and Style Guide}
+The formal document governing the LAL-code and documentation is the
+{\bf LIGO Data Analysis System Numerical Algorithms Library
+Specification and Style Guide}
 \verb@http://www.ligo.caltech.edu/docs/T/T990030-07.pdf@ (called the
 LAL-Spec through out).  Like a constitution describing a government,
 the guidelines given in the LAL-Spec are quite general. What is given
-here is a more like the criminal code: the nut-n-bolts explanation of
-how to put the LAL-Spec into practice.  Like a constitution, {\bf if
-there are any inconsistencies,  the LAL-Spec takes precedence over any
-statements in this document.} Also like the constitution, if there is
-something that really needs to be changed in the LAL-Spec, it can be
-changed.
+in this document  is a more like the criminal code: the nut-n-bolts
+explanation of how to put the LAL-Spec into practice.  Like a
+constitution, {\bf if there are any inconsistencies,  the LAL-Spec
+takes precedence over any statements in this document.} Also like a
+constitution, the LAL-Spec is to be taken very seriously, but it is
+not suicide pact: if there are real problems with the Spec, there is a
+formal process to change it.
 
 The first part of this document gives a brief introduction to the LAL
 and some coding and documentation instructions.  The second part is
@@ -68,7 +70,7 @@ the documentation of the LAL code itself.
 
 \part{Coding and Documentation Instructions}
 
-\chapter{Finding your way through the LAL}
+\chapter{An Introduction to the LIGO/LSC Algorithm Library (LAL)}
 
 \section{The LAL webpage}
 
@@ -79,14 +81,20 @@ An up to date release  of the LAL -- and a wealth of other information
 \begin{itemize}
    \vspace*{-0.1in}
     \item[$\bullet$ ]  {\bf Current distribution"} You can can click
-                       to down load the tar ball.
+                       to down load the tar ball with all the code.
     \vspace*{-0.051in}
     \item[$\bullet$ ] {\bf LAL software librarian:}  You can click to
                       email the librarian.
     \vspace*{-0.051in}
-    \item[$\bullet$ ] {\bf The CVS tree:}  You can use this to insure 
-                      that you are working on the latest version
-                      any file in within the LAL.
+    \item[$\bullet$ ] {\bf LSC software coordinator:} Click
+                      to email your gripes to the software coordinator.
+    \vspace*{-0.051in}
+    \item[$\bullet$ ] {\bf The LAL-Spec:} 
+                      www.ligo.caltech.edu/docs/T/T990030-07.pdf
+    \vspace*{-0.051in}
+    \item[$\bullet$ ] {\bf The CVS tree:}  You can click to download
+                      the latest -- librarian approved -- version of 
+                      any file in the LAL.
     \vspace*{-0.051in}
     \item[$\bullet$]  {\bf Previous releases of LAL:} If you want an older 
                       version for sentimental reasons, you can find it here.
@@ -95,45 +103,50 @@ An up to date release  of the LAL -- and a wealth of other information
                       data.  There is a short snippet of 40-m data called 
                       {\tt lal.small} for testing.  This snippet of data 
                       is not subject to the access restrictions that some 
-                      of the others are.
+                      of the other segments are.
     \vspace*{-0.051in}
     \item[$\bullet$ ] {\bf Links to other useful software:} In order to
                       fully use the LAL, you will need to install the
                       these packages:
     \begin{itemize} 
           \vspace*{-0.051in}
-          \item {\texttt {FFTW}}:  Fastest Fourier Transform in the West
+          \item {\texttt {FFTW}}:  Fastest Fourier Transform in the West.
+          This {\it must} be installed in order to install the LAL.
           \vspace*{-0.051in}
-          \item {\texttt {MPI}}:  The parallel code implementation
+          \item {\texttt {MPI}}:  For parallel coding. This is
+          optional.
           \vspace*{-0.051in}
-          \item {\texttt {frames}}: Package for reading frame format data
+          \item {\texttt {frames}}: Package for reading frame format data.
+          This is optional.
+          In order to test these routines you will need some frame
+          data. [See Data above.]
     \end{itemize} 
 \end{itemize}
 
 \section{Version control}
 
-As required by the LAL-Spec, the LAL is kept in a CVS repository;
-however, at present, the software Librarian has the only key.
-Individual users can only ``check in'' code by sending it to him.
-Although we will likely change this policy in the future, we have
-sound reasons for doing it this way now. 
+As required by the LAL-Spec, the LAL is kept in a CVS repository, but,
+at present, the Software Librarian has the only key.  Individual users
+can only ``check in'' code by sending it to him; however they do have
+easy access to the latest ``Librarian-approved'' code from the CVS
+tree on the web page. (See above.)
 
-It is important that the code in the repository reflect the software
+We are aware that with this policy their is a danger of having people
+working on the same code at the same time, and, therefore, we may change 
+the policy in the future. To date, this hasn't been a problem, and we
+have sound reasons for handling the CVS repository this way.  It is
+important that the code in the repository reflect the software
 standard as closely as possible.  Since the standard is new, changing,
 and sometimes unclear, we feel it is a good policy to have the
-Librarian look over the code submissions before they become publically
-available and possibly immitated.
+Librarian look over the code submissions before they become publicly
+available and possibly imitated.
 
 Another reason for limiting user access to the CVS is portability of
 the code.  Thus far, the LAL librarian has been fastidious in making
-sure that all the code in  LAL compiles and runs on almost anything.
-For now, we would like to keep it that way, and this is easier to do
-incrementally from the start, rather than trying to fix a big mess
-later.
-
-Although users do have to go through the librarian to check code in,
-they have easy access to the latest ``Librarian-approved'' code on the
-from the CVS tree on the web page. (See above.)
+sure that all the code in  the LAL compiles and runs on almost any
+architecture.  For now, we would like to maintain this portability,
+and this is easier to do incrementally from the start, rather than
+trying to fix a big mess later.
 
 \section{Installing LAL on your machine}
 
@@ -144,9 +157,9 @@ instructions in the file {\tt /lal/INSTALL}.
 \label{c:CodingNotes}
 
 As mentioned above,  the marching orders for code development laid out
-in the LAL-Spec are too general and often vague.  The purpose of this
-chapter is try to record the collective interpretation of the LAL-Spec
-so  that we can consistantly apply it.
+in the LAL-Spec are often quite general.  The purpose of this chapter
+is try to record the collective interpretation of the LAL-Spec so that
+we can consistently apply it.
 
 \bigskip
 
@@ -167,8 +180,8 @@ Please contact the Librarian.
 \bigskip
 
 {\noindent \bf Defining the RCS ID string:}  The LAL-Spec says this
-must be done in all header, module and test files. To do this you must
-use:
+must be done in all header, module and test files. To do this, you
+must use the macro:
 \begin{verbatim}
           NRCSID(LALTEMPLATEH,"$Id$");
 \end{verbatim}
@@ -178,10 +191,11 @@ example of one macros for ``common use'' described above.
 
 \bigskip
 
-{\noindent \bf Error Codes and Messages:} The LAL-Spec discusses
-statuscode and statusDesription. Here we solidify the name space
-convention. These should be hash-defined in the header file,
-eg in {\tt MyHeader.h} we would have
+{\noindent \bf Error Codes and Messages:} The LAL-Spec discusses the
+statuscode and statusDesription, i.e. the error codes and  messages
+returned by a LAL function. Here we solidify the name space
+convention. These should be hash-defined in the header file, e.g. in
+{\tt MyHeader.h} we would have
 \begin{verbatim}
 /* <lalErrTable file="MyHeaderHErrorTable"> */
 
@@ -195,22 +209,25 @@ eg in {\tt MyHeader.h} we would have
 
 /* </lalErrTable> */
 \end{verbatim}
-\noindent The names should begin with the file name and extention ({\tt h})
+\noindent The names should begin with the file name and extension ({\tt h})
 all converted to upper case. The error codes are followed by
 {\tt \_E}$<$name$>$. The error messages are followed by
 {\tt \_MSGE}$<$name$>$.
 
-The key-words shown before and after the codes are the key-words for
-extracting this information for automatically including it in the
-documentation. You must automate the inclusion of these in the
-documentation.
+The $<>$ed key-words shown before and after the codes are the
+key-words for automatic documentation system.  You must use these to
+automate the inclusion of the error codes in the documentation.  More
+on this later.
 
 \chapter{The directory structure of the LAL}
 \label{c:DirectoryStructure}
 
 \newpage
 \section{Schematic Diagram of Directory Structure}
-This is the  directory structure is laid out in the LAL Spec.
+This is a diagram showing the   directory structure of the LAL.
+This comes straight from the LAL-Spec. In particular, this shows
+and example package tdfilter  (time domain filters).
+
 \noindent\includegraphics[width=0.9\linewidth,angle=0]{lsdFigDirStructure}
 
 \chapter{Documenting your code}
@@ -220,46 +237,53 @@ Along with any code submission to the LAL library, you will need to
 supply documentation. Keep in mind, the documentation, like the code,
 is a {\it deliverable} and it must be written to the standard outlined
 in the LAL-Spec.  This chapter gives specific instructions  on how 
-to meet standard.
+to meet the standard.
 
 Also keep in mind that, unlike most code projects that physicists work
 on, this code may still need to be maintained long after the author
 has been denied tenure and starts working for a dot-com company.  This
-puts a heavy burden on the documentation: not only should it help you
-maintain your code, but it should require minimum effort for {\it
-anyone} to figure out how the code works and how to fix it. If you
-find yourself saying ``The easiest way for me to maintain my code is
-...'', you have missed the point.
+puts a heavy burden on the documentation: not only should it help {\it
+you} maintain {\it your} code, but it should require minimum effort
+for {\it anyone} to figure out how the code works and how to fix it.
+If you find yourself saying ``The easiest way for {\it me} to maintain
+{\it my} code is ...'', you have missed the point.
 
 
-In this chapter we discuss a few prelinaries, and give a general
+In this chapter we discuss a few preliminaries, and give a general
 outline of the documentation for a package.  Chapter
 \ref{c:SamplePackage} is an example of how a the documentation for a
 LAL package should be laid out. In Chapter \ref{c:laldoc} we explain
 how to use the auto-documentation system ({\tt laldoc}).
 
-\section{Use \LaTeX}
+\section{Use {\LaTeX}}
 
-The documentation should be written in \LaTeX. This decission was made
+The documentation should be written in {\LaTeX}. This decision was made
 by the LSC software committee.  The primary reason for this choice was
-the need for the equation-writing capablility of \LaTeX.
+the need for the equation-writing capability of {\LaTeX}.
 
-The danger in using \LaTeX  is that not everyone will have the same
-version of \LaTeX installed on their machine. [Actually, this problem
-might be as bad, or worse, with some other documenting tool.] To try
-to minimize this problem, stick with the vanilla \LaTeX as best you
-can.
+The danger in using {\LaTeX}  is that not everyone will have the same
+version of {\LaTeX} installed on their machine. [Actually, this problem
+might be as bad, or worse, with some other documenting tool.] Try to
+help us minimize this problem by using vanilla {\LaTeX}.
 
-Within the LAL distribution we supply a class file ({\tt
+Along with the LAL distribution, we supply a class file ({\tt
 lal/doc/lal.sty}).  Although this is helpful and it makes thing look
 nicer, it is not essential. You can remove it from the
-\verb@\usepackage[]@ command and the \LaTeX should work without it.
+\verb@\usepackage[]@ command in the various files and they should
+still successfully {\LaTeX} without it.
 
 \newpage
 \section{The lay out of the documentation}
 
-The hierarchical lay out of the documentation exactly follows the
-hierarchy of the code.
+Most of the LDAS software is written in c++,  and therefore the
+documentation is  naturally built around ``classes''.  However, the
+LAL is written in c, and thus we cannot directly adopt the LDAS style
+of documentation. None the less,  we try to mimic the style as close
+as possible by building the LAL documentation around header files and
+the modules and functions that include them.  This choice is also
+natural because the hierarchical lay out of the documentation exactly
+follows the hierarchy of the code.  [This is also the way books on
+programming in c document the c-libraries.] 
 
 \begin{itemize}
     \vspace*{-0.1in}
@@ -267,37 +291,37 @@ hierarchy of the code.
     \vspace*{-0.051in}
     \begin{itemize} 
         \vspace*{-0.051in}
-        \item Documentatin of header1.h in the package forms section
+        \item Documentation of header1.h in the package forms section
              {\large \bf N.1}.
              \begin{itemize} 
                  \vspace*{-0.051in}
-                 \item Documentation of Module1.1 that 
+                 \item Documentation of Module1.1.c that 
                        ``{\texttt {\#include}}'s'' header1.h
                        is in subsection {\large \bf N.1.1}.
                  \vspace*{-0.051in}
-                 \item Documentation of Module1.2 that 
+                 \item Documentation of Module1.2.c that 
                        ``{\texttt {\#include}}'s'' header1.h
                        is in subsection {\large \bf N.1.2}.
                  \vspace*{-0.051in}
                  \item ... additional modules.
              \end{itemize} 
         \vspace*{-0.051in}
-        \item Documentatin of header2.h in the package forms section.
+        \item Documentation of header2.h in the package forms section.
              {\large \bf N.2}.
              \begin{itemize} 
                  \vspace*{-0.051in}
-                 \item Documentation of Module2.1 that 
-                       ``{\texttt {\#include}}'s'' header1.h
+                 \item Documentation of Module2.1.c that 
+                       ``{\texttt {\#include}}'s'' header2.h
                        is in subsection {\large \bf N.2.1}.
                  \vspace*{-0.051in}
-                 \item Documentation of Module2.2 that 
-                       ``{\texttt {\#include}}'s'' header1.h
+                 \item Documentation of Module2.2.c that 
+                       ``{\texttt {\#include}}'s'' header2.h
                        is in subsection {\large \bf N.2.2}.
                  \vspace*{-0.051in}
                  \item ... additional modules
              \end{itemize} 
         \vspace*{-0.051in}
-        \item Documentatin of header3.h in the package forms section.
+        \item Documentation of header3.h in the package forms section.
              {\large \bf N.3}.
              \begin{itemize} 
                  \vspace*{-0.051in}
@@ -311,6 +335,74 @@ hierarchy of the code.
     \item ... additional packages
 \end{itemize}
 
+Note: Although the LAL-Spec is not rigid on the subject, it suggests
+that the number of modules and functions encompassed by a header file
+should be small:  only ``small sets of related functions'' should
+share the same header file. This means for a given header-file
+section, there shouldn't be too many module subsections.
+
+
+\section{Documentation for a single package versus a comprehensive LAL manual}
+
+The LAL-Spec mentions two distinct forms the documentation must take:
+stand-alone documentation for a single package and  a comprehensive
+manual (with an exhaustive index and table of contents) for the entire
+LAL.  In this section we describe how we implement these two competing
+documentation specifications using the same {\LaTeX} source to build
+both type of documents.
+
+The requirement of both forms of the documentation in the LAL-Spec is
+not capricious: both forms of the documentation are useful. When you
+are working on a single package, having a short, single-package
+document is handy.  This way you won't have to wait while {\LaTeX} runs
+on the complete manual for the entire LAL every time you want to see
+if your equations line up. On the other hand, as the LAL code becomes
+more mature and some of it starts to perform highly integrated tasks,
+it will be necessary for coders to have quick access to the entire
+body of documentation.
+
+{\bf Documentation for a single package:} In the documentation
+directory within each package there will be a file called {\tt
+main.tex}. The contents of which are essentially identical in each
+package. For example, in a package called {\tt samplepackage} the
+following file ({\tt main.tex}) must be in the directory {\tt
+/lal/packages/samplepackage/doc/}
+\begin{verbatim}
+     \documentclass[oneside]{book}
+     \usepackage{../lal,hyperref,color,chapterbib,fancyhdr,makeidx}
+
+     ... the rest of the preamble
+
+     \makeindex
+     \begin{document}
+     \tableofcontents
+     
+     % This is the only line that will change from package to package.
+     \include{samplepackage}
+     
+     \printindex
+     \end{document}
+\end{verbatim}
+
+The guts of the documentation for this package should reside in the
+file that is \verb@\include{}@ed  into  this file (e.g. {\tt
+/lal/packages/samplepackage/doc/samplepackage.tex}).  This file may
+itself have many \verb@\input{}@ commands in it to include files that
+were auto extracted from the source-code files by {\tt laldoc}.
+
+One problem you can have when you build the documentation of a single
+package is that if their are references (\verb@\ref{}@'s)  to objects
+outside the package, these will be left unresolved by {\LaTeX}.  Try to
+minimize these by referring to the objects by name rather than section
+number.  Remember, when the comprehensive document is built, it will
+have a complete index and table of contents, so the reader should be
+able to easily find the documentation for the objects by name.
+
+{\bf Comprehensive manual for the entire LAL:} In the comprehensive
+documentation directory ({\tt /lal/doc}) their is a file {\tt lsd.tex}
+({\tt lsd} = LAL Software Documentation). This plays essentially the
+same role as {\tt main.tex} described above; however this file has an
+\verb@/include{}@ statement for every package in the LAL.
 
 \section{What about figures?}
 
@@ -318,7 +410,7 @@ Figures are fine. When you submit a package of code and documentation
 the figures should be in the {\tt /lal/packages/mypackage/doc} directory.
 Please submit two versions of the figure: an {\tt .eps} and a {\tt .pdf}.
 We need both so we can build the documentation either with 
-\LaTeX or {\tt pdflatex}.
+{\LaTeX} or {\tt pdflatex}.
 
 The syntax to use for putting in the figure should be something like this
 \begin{verbatim}
@@ -339,22 +431,23 @@ name-space collision.
 \section{Autodocumentation and Indexing }
 
 \subsection{Autodocumentation requirements}
-There is an automatic documentation tool supplied with the LAL.
-To what extent the coders wish to use the autodocmentation system,
-is largely left up to their judgement and patience. However, there
-are a few things that must be autodocumented.
+There is an automatic documentation tool supplied with the LAL.  To
+what extent the coders wish to use the autodocmentation system, is
+largely left up to their judgment and patience. However, there are a
+few things that must be auto-documented.
 
 \begin{itemize}
-  \item[$\bullet$] {\bf Function Protoypes} 
+  \item[$\bullet$] {\bf Function Prototypes} 
   \item[$\bullet$] {\bf Error code tables }
   \item[$\bullet$] {\bf The author and version-control information.}  This
                         should appear as footnote at the bottom of all
                         header sections, and module and test subsections.
-                        This can be done with the \LaTeX command 
+                        This can be done with the {\LaTeX} command 
                         \verb@\vfill{\footnotesize\input{MyFileHAuthVer}}@,
                         where {\tt MYFILEHAuthVer.tex} is the file where
                         the Author-Version information from {\tt MyFile.H}
-                        was extracted to.
+                        was extracted to.  You can find examples of
+                        this to mimic.
 \end{itemize}
 
 \subsection{Indexing requirements}
@@ -367,23 +460,24 @@ code items that you must place in the index.
    after the prototypes themselves are entered.  This insures the page
    number that appear in the index will be the page where the
    prototype is explained in the document.
-   Use the \LaTeX command
+   Use the {\LaTeX} command
   \begin{verbatim}
-  \index{{\texttt MyFunction()} You can put a short explantory string here.}
+  \index{{\texttt MyFunction()} You can put a short explanatory string here.}
   \end{verbatim}
   \vspace*{-0.041in}
   \item[$\bullet$] {\bf Non LAL Data Structures}  must appear in the index.
-  The \verb@\index{}@ command should be right after in the section
-  where they are explained in the documentation.
-  Use the \LaTeX command
+  The LAL-Spec strongly encourages the using  LAL datatypes as the
+  arguments for a function, but this isn't always possible. If you do
+  use non-LAL datatypes, you must document them, and they must be
+  included the index, so someone looking at your code can easily find
+  the documentation.  The \verb@\index{}@ command should be right after
+  in the section where they are explained in the documentation.  
+  Here is an example of the  {\LaTeX} command you would use to get the
+  name of your structure into the index.
   \begin{verbatim}
-  \index{{\textt MyStruct} You can put a short explantory string here.}
+  \index{{\textt MyStruct} You may put a short explanatory string here.}
   \end{verbatim}
 \end{itemize}
-
-
-
-
 
 
 \chapter{Package {\texttt {samplepackage}}}
@@ -400,29 +494,30 @@ reasonable. Note the naming conventions for packages: all lower case.
 Put a one sentence description of the header right after the section
 heading.
 
-\subsection*{Synopsis}
+\subsection*{Synopsis and description}
 
 \begin{verbatim}
 #include "SampleHeader1.h"
 \end{verbatim}
 Since it is possible that a few modules will use the same header file
-you can put a general discription of what is to come here.
+you can put a general description of what is to come here, and save
+more specific comments for the module and function documentation.
 
 \subsection*{Error conditions}
 To insure that these are current with the code, a table of {\bf these
 must be automatically extracted from the source code with the {\tt
-laldoc} autodocumentor.}
-
-Additional explanation (if necessary) of the error conditions can
-follow the table.
+laldoc} auto-documenter.} Additional explanation (if necessary) of the
+error conditions can follow the table.
 
 \subsection*{Structures}
 
-If there are any non LAL structures declared in the header, they must
-be documented here.  They must also be included in the index with a
-\verb@\index{sampleStruct}@ \LaTeX command.
+The LAL-Spec encourages the use of LAL datatypes whenever possible,
+but, if you must use  non-LAL structures, they must be documented
+here.  They must also be included in the index with a
+\verb@\index{sampleStruct}@ {\LaTeX} command.
 
-\vfill{\footnotesize{
+\vfill{
+\footnotesize{
 \vspace{-1ex}
 \mbox{}\marginpar{\tiny\texttt{l.1}\\\texttt{SampleHeader1.h}}
 \vspace{-3ex}
@@ -430,23 +525,31 @@ be documented here.  They must also be included in the index with a
 Author: Hacker, A. Good
 $Id$
 \end{verbatim}
-}}
+}
+}
 
 \newpage
 
 \subsection{Module {\texttt {SampleModule1.c}}}
-Put a one sentence discription explaining what this module will do. 
+Put a one sentence description explaining what this module will do. 
 [Also, start a new page for documenting each module.]
 
 \subsection*{Prototypes}
-{\bf Function prototypes must be extrated verbatim from
-the source code and "{\verb@\input{}@}" here.}
+{\bf Function prototypes must be extracted verbatim from
+the source code and ``{\verb@\input{}@}" here.}
 
+\noindent
 {\bf Every function must be placed into the index with
-a \verb@\index{SampleFunction()}@ \LaTeX command.}
+a \verb@\index{SampleFunction()}@ {\LaTeX} command.}
+
+The LAL-Spec encourages modularization: ``{\it Small} sets of {\it
+related} functions may grouped together into a single file.''
+[Emphasis added.] Therefore, if the list of prototypes gets too long
+and some aren't closely related to others, perhaps it is time to break
+it up into a separate modules.
 
 \subsection*{Description and operating instructions}
-Describe the arguments of the function, and how to use the function.
+Describe the arguments of the function, and explain how to use the function.
 Remember to document any non LAL {\tt structs} in the header
 file documentation.
 
@@ -473,13 +576,13 @@ information, put it here.
 Author: Hacker, A. Good
 $Id$
 \end{verbatim}
-
-
+}}
 
 \newpage
 
 \subsection*{Program {\texttt {SampleTest.c}}}
-Breif description, e.g. "Performs tests on all routines in SampleHeader.h."
+Brief description, e.g. ``Performs tests on all routines associated with
+SampleHeader.h."
 
 \subsection*{Usage}
 Show and explain the command line syntax used to run the program.
@@ -487,15 +590,13 @@ Show and explain the command line syntax used to run the program.
 \subsection*{Description and operating instructions}
 Explanation of the algorithm.
 
-
-
 \subsection*{Exit Codes}
 
 A table containing all the exit codes for the program.  We strongly
 suggest that the exit codes be coded in exactly the same way as the
 error codes in the header file.  If you do this you can use the {\tt
 laldoc} Error Table tool to build a table to insert here. (See below.)
-If you don't use {\tt laldoc} to make the table, please LaTeX it by
+If you don't use {\tt laldoc} to make the table, please {\LaTeX} it by
 hand.
 
 The table may followed with additional explanation.
@@ -515,55 +616,78 @@ A list of all the other routines that this module uses.
 Author: Hacker, A. Good
 $Id$
 \end{verbatim}
+}}
 
 
 \chapter*{References}
 
-A bibliography all the references used in the Package {\tt samplepackage}.
+This should be a stand-alone bibliography for the references used in
+this package only.  We recognize there may be entries that are
+repeated in other packages and there are more clever ways to do this,
+but this seems to be the simplest.
 
 \chapter*{Index}
-The index for the Package {\tt samplepackage} comes here.
+The index for the Package {\tt samplepackage} should start on a new
+page.  The \verb@\printindex@ command should be in the {\tt main.tex}
+file, because we only want this index to appear in the stand-alone
+documentation for this package.  When we the comprehensive
+documentation is built, only the all-encompassing index will appear
+at the end of the entire document.
 
-The \verb@\printindex@ command should be in the {\tt main.tex} file.
-This should start on a new page.
-
-
-\chapter{The automatic documentation system {\texttt {laldoc}}, and how to use it.}
+\chapter{The automatic documentation system}
 \label{c:laldoc}
 
-\section{A four step introduction to {\texttt {laldoc}} }
+We will first describe the code parser that sifts through the source
+code and extracts the parts that are to be incorporated into the
+documentation. Then we describe how the documentation is automatically
+built when the LAL is installed.
+
+\section{A four step introduction to the code parser {\texttt {laldoc}}}
+
+\noindent
+These four-step instructions are also outlined in the file 
+{\tt /lal/doc/laldoc/README}.
 
 \begin{itemize}
 \item[(1)] Copy the executable ({\tt /lal/doc/laldoc/laldoc}) 
 and the  sample input file ({\tt /lal/doc/laldoc/LalDocDemo.h}) to an
-empty  {\tt /junk} directory.
-\item[(2)] In {\tt /junk} run the command ``\verb@./laldoc Input.h Errors.out@'' 
-\item[(3)] \LaTeX the file {\texttt {LalDocDemo\_LaTeX\_This\_File.tex}}
-and look at it.
-\item[(4)] Examine the input file and the various debris files created.
-You will see exactly what  {\texttt {laldoc}} does.
+empty  {\tt /junk} directory. 
+\item[(2)] In {\tt /junk} run the command ``\verb@./laldoc LalDocDemo.h Errors.out@'' 
+\item[(3)] {\LaTeX} the file {\texttt {LalDocDemo\_LaTeX\_This\_File.tex}}.
+\item[(4)] Read the  document created in step 3
+({\texttt {LalDocDemo\_LaTeX\_This\_File.dvi}}) . It will explain how
+the various debris files were created from the original source file
+and how they were input to make the document.  If you follow your
+nose,  you will see exactly what  {\texttt {laldoc}} does and how it
+works.  Also, make sure you look at the file {\tt Errors.out}.
 \end{itemize}
 
-\section{Brief Discription of {\texttt {laldoc}} }
+\section{Brief Description of the parser {\texttt {laldoc}} }
 
-The auto-documentor is designed to let LAL programmers extract
-fragments of code or comments from the source files and include them
-in their documentation.  This is done in such a way that if the
-fragment in the source code is modified, then the change is
-automatically incorporated into the documentation the next time the
-document is built.  
+The purpose of the auto-documentation procedure we are using with the
+LAL is to adhere the common wisdom: ``keep the documentation close to
+the code''.  The system is built around a a code
+parser {\tt laldoc} that allows LAL programmers automatically extract fragments of
+code or comments from the source files and include them in their
+documentation.  This is done in such a way that if the fragment in the
+source code is modified, then the change is automatically incorporated
+into the documentation the next time the document is built.
 
 This extraction is  accomplished by having the programmer surround the
-fragments of code he or she wishes to incorporate in the document with
-key-words.  Currently, we only have three pairs of key-words, so the
-learning curve is flat and short! The source code (the .c and .h
-files) is then parsed and the fragments written to storage files.
-(The key-word also includes a user-specified file name for this
-storage file.)  When you write your \LaTeX document simply use the
-\LaTeX command \verb@\input{}@ to put the contents of the storage file
-in the document where you need it.  [If you have installed the LAL
-software package, you can see all the extracted storage files in the
-directory {\tt lal/doc/autodoc}.]
+fragments of code or comments he or she wishes to incorporate in the
+document with key-words.  Currently, we only have three pairs of
+key-words, so the learning curve is flat and short! The source code
+(the .c and .h files) is then parsed and the fragments written to
+storage files.  (The key-word also includes a space for user-specified file name
+where the fragment will be stored.)  When you write your documentation simply
+use the {\LaTeX} command \verb@\input{}@ to put the contents of the
+storage file in the document where you need it.  
+
+When you install the LAL on your machine, the parser is automatically
+run on all {\tt .c} and {\tt .h} files. The extracted files are
+stuffed into the directory {\tt lal/doc/autodoc/}.  If you have
+installed the LAL software package, take a look at the contents of
+{\tt lal/doc/autodoc/}. Their are dozens of extracted files their.
 
 \subsection{ The {\texttt {laldoc}} command line }
 The full functionality of the command line is:
@@ -571,46 +695,56 @@ The full functionality of the command line is:
      laldoc inputFile.c errorFile /home/alice/errorDir/ /home/alice/inputDir/
 \end{verbatim}
 \noindent
+The zeroth command line argument is the executable itself.
 The first argument is the input file name, the second is an error reporting
-file, the third argument is the directory where the errorfile will be
+file, the third argument is the directory where the error file will be
 written, and the fourth is the directory where {\tt laldoc} will look
 for the input file.  The third and the fourth arguments are optional.
 
 
 \subsection{ The three {\texttt {laldoc}} environments }
+
+One general comment about the  {\texttt {laldoc}} environments:
+None of the text on the line with the opening key-word or on the
+line with the closing key-word will be extracted.
+
 \begin{description}
 \item[$\bullet$ ]
-{\tt <lalVerbatim file="myVerbatimJunk">}  and {\tt </lalVerbatim> }
-This wraps the  material between the two key-words in a \LaTeX {\tt
-verbatim} environment for later inclusion.  This is useful for
-including such things as a function protypes or data structures: the
-documentation will include them ``verbatim''.  When the information is
-included with {\tt <lalVerbatim>} a small {\tt marginpar} gives the
+The verbatim environment is opened key-word 
+{\verb@<lalVerbatim file="myVerbatimJunk">@}  and closed with the key-word
+{\verb@</lalVerbatim>@}. The material between the two key-words will
+be wrapped in a {\LaTeX} {\tt verbatim} environment for later
+inclusion.  This is useful for including such things as a function
+prototypes or data structures: they will appear ``verbatim'' in the
+documentation.  When the information is included with {\tt
+<lalVerbatim>} {\tt laldoc} supplies a small {\tt marginpar} gives the
 source-file name and line number where the snippet came from.
 \vspace*{-0.05in}
 \item[$\bullet$ ] 
-{\tt  <lalLaTeX file="myLatexJunk">}   and {\tt </lalLaTeX > } This is
-used to write \LaTeX in the source-code. The material between the two
+The {\LaTeX} environment is opened and closed with the key-words
+{\verb@<lalLaTeX file="myLatexJunk">@}  and {\verb@</lalLaTeX>@}. This is
+used to write {\LaTeX} in the source-code. The material between the two
 key-words is stored in a file {\tt myLatexJunk.tex}.  This allows (not
-recommended) a programmer to put large sections of \LaTeX pros in the
+recommended) a programmer to put large sections of {\LaTeX} prose in the
 source code.  
 \vspace*{-0.05in}
 \item[$\bullet$ ] 
-{\tt <lalErrTable file="myErrTabJunk">} and {\tt </lalErrTable> } This
-does extensive parsing of the code to assemble a \LaTeX table from the
-source code where the error conditions are defined.  This insures that
-if an error code is added in the source, it will automatically be
-added to the documentation.
+The error-table environment.  There is a special environment for
+translating the source code that assign the error codes and messages
+directly into a {\LaTeX} table. All you need to do is wrap the code
+between the key-words {\verb@<lalErrTable file="myErrTabJunk">@} and
+{\verb@</lalErrTable>@}.  This insures that if an error code is added
+in the source, it will automatically be added to the documentation.
 \vspace*{-0.051in}
 \end{description}
 
 \subsection{ How {\texttt {laldoc}} handles the output files}
 
-{\bf Default file names:} In any of the {\texttt {laldoc}} enviroments,
+{\bf Default file names:} In any of the {\texttt {laldoc}} environments,
 if you do not specify an output file in the opening key-word line,
 {\texttt {laldoc}} will assign one automatically. The file name will
 be constructed from the input file name, e.g. if the input
-is  {\tt MyHeader.h}, the output will be  {\tt MyHeaderH.tex}.
+is  {\tt MyHeader.h}, the default output will be {\tt MyHeaderH.tex}.
 
 {\bf Appending to files:}
 If the output file doesn't already exist, {\texttt {laldoc}} will
@@ -619,14 +753,16 @@ append to it.  When the environment-closing key-word is encountered,
 the output file is closed.
 
 Although this is a fairly obvious feature, it is quite useful.  For
-example, the function prototypes in a module don't appear to together,
-but they should appear together in the documentation.  With {\texttt
-{laldoc}} this is easy to accomplish. In your source code when you
-encounter each prototype that must be captured for inclusion, use the
-same file name for the extraction. Each protype will be appended after
-the other, and seperate margin pars will tell exactly where each came
-from, i.e surround each prototype with the pair
-{\tt <lalVerbatim file="MyModuleCPrototypes">} {\tt </lalVerbatim>}.
+example, the function prototypes in a module don't appear together in
+the source, but they should appear together in the documentation.
+With {\texttt {laldoc}} this is easy to accomplish. In your source
+code when you encounter each prototype that must be captured for
+inclusion, use the same file name for the extraction, i.e surround
+each prototype with
+the pair {\verb@<lalVerbatim file="MyModuleCPrototypes">@}  and
+{\verb@</lalVerbatim>@}.  Each prototype will be appended to the file
+{\tt MyModuleCPrototypes.tex}, and separate margin pars will tell 
+exactly where each came from.
 
 
 
@@ -635,7 +771,7 @@ from, i.e surround each prototype with the pair
 \section{Examples of how to use the three environments in {\texttt {laldoc}} }
 
 As with most things computer, the best way to learn how use the auto
-documentor is to snoop around the source tree and find some examples,
+documenter is to snoop around the source tree and find some examples,
 and then try a few things.  The source code and the executable for the
 parser ({\tt laldoc}), are in the directory {\tt lal/doc/laldoc}.  The
 directory also has a README file that give some nuts-n-bolts
@@ -643,18 +779,18 @@ instructions on how to use the parser.  This sections gives the basics
 of what you can do.
 
 
-\subsection{The {\texttt {<lalVerbatim>} }  evironment }
+\subsection{The {\texttt {<lalVerbatim>} }  environment }
 
 As an example, look at the code fragment in the source file 
 \texttt{lal/packages/tdfilter/src/CreateZPGFilter.c}.
 
 \begin{verbatim}
-/* <lalVerbatim file="CreateZPGFilterCP"> */
-void CreateCOMPLEX8ZPGFilter(Status            *stat,
-			     COMPLEX8ZPGFilter **output,
-			     INT4              numZeros,
-			     INT4              numPoles)
-/* </lalVerbatim> */
+    /* <lalVerbatim file="CreateZPGFilterCP"> */
+    void CreateCOMPLEX8ZPGFilter(Status            *stat,
+                                 COMPLEX8ZPGFilter **output,
+                                 INT4              numZeros,
+                                 INT4              numPoles)
+    /* </lalVerbatim> */
 \end{verbatim}
 When {\tt laldoc} parses the source file, it produces the following
 output in the file {\tt CreateZPGFilterCP.tex}
@@ -672,8 +808,9 @@ void CreateCOMPLEX8ZPGFilter(Status            *stat,
 (backslash)end{verbatim}
 \end{verbatim}
 
-This is then included in the \LaTeX documentation with an
-\verb@\input{CreateZPGFilterCP}@ command.
+This is then included in the {\LaTeX} documentation with an
+\verb@\input{CreateZPGFilterCP}@ command, yielding the following
+output:
 
 \vspace{-1ex}
 \mbox{}\marginpar{\tiny\texttt{l.51}\\\texttt{CreateZPGFilter.c}}
@@ -686,7 +823,7 @@ void CreateCOMPLEX8ZPGFilter(Status            *stat,
 \end{verbatim}
 
 The {\tt marginpar} on the far right tells the line number and file
-name from which this fragment was extracted.
+name where the fragment came from.
 
 {\bf Note the naming convention used for the file where the extracted
 code was stored: the base name comes from the file where it was
@@ -696,22 +833,20 @@ Naming Convention!}} This will avoid most name-space collisions.}  In
 this case,  the the ``P'' is for function {\it prototype}.
 
 
-\subsection{The {\texttt {<lalLaTeX>} } evironment }
+\subsection{The {\texttt {<lalLaTeX>} } environment }
 
 The {\texttt {<lalLaTeX>} } environment works much the same
-was as the {\texttt {<lalVerbatim>} } environment. The the distinction
-being that the extracted material should be valid \LaTeX ready
-for insertion into a \LaTeX file. Unlike the 
-{\texttt {<lalVerbatim>} } environment, no wrapping is supplied
-by the parser.
+was as the {\texttt {<lalVerbatim>} } environment. The distinction
+being that the extracted material should be valid {\LaTeX} ready
+for insertion into a {\LaTeX} file. 
 
-Leading ``*'''s on a line will be stripped out by {\tt laldoc} in the
-{\texttt {<lalLaTeX>}} environment. This is to accomodate the common
+In the {\texttt {<lalLaTeX>}} environment, leading ``*'''s on a line 
+will be stripped out by {\tt laldoc}. This is to accommodate the common
 practice in c of putting leading ``*'''s on comment lines.  The way
 this is done is {\tt laldoc} checks to see if the first non blank
 character on the line is a ``*''. If it is, then it is replaced by
-blank when the \LaTeX is written to the output file. The leading
-blanks are then ignored by \LaTeX.
+blank when the line is written to the output file. The leading
+blanks are ignored when the file is {\LaTeX}ed.
 
 
 \subsection{The {\texttt {<lalErrTable>} } environment, for printing
@@ -720,6 +855,39 @@ a table of the error codes and warnings.}
 See the example in Chapter \ref{c:CodingNotes}.
 
 
+\section{How the documentation is automatically built}
+
+Some of the documentation (perhaps most of it)  for a package is in
+the source files awaiting extraction.  The rest of the documentation
+for the package is in the {\tt lal/packages/mypackage/doc/} directory.
+How does it all get pulled together to make a coherent document?  The
+short version of the explanation is that all the necessary files
+either exist in, or are copied to, or are linked to the directory {\tt
+lal/doc/autodoc/}, then {\LaTeX} is run in the {\tt autodoc/} directory
+and important results are moved back.  You can see the specifics of
+how this happens (and how to modify it for your own use) if you examine
+the contents of the {\tt Makefile.am}'s in the various {\tt doc/}
+directories.
+
+When  you type {\tt make dvi} during the installation, a chain of
+events takes place. First, the {\tt laldoc} parser is run in each
+source directory ({\tt src}, {\tt include} and {\tt test}) in all the
+packages.  The documentation snippets are culled out of the source
+files and stuffed into files in {\tt /lal/doc/autodoc} directory. When
+this is complete, the stand-alone documentation is built one directory
+at time.  First, links from the {\tt .tex}, {\tt .eps} and {\tt .pdf}
+files to the {\tt autodoc} directory are established.  Then the {\tt
+main.tex} file is copied from the package's  {\tt /doc} directory to
+the {\tt autodoc} directory. Then {\tt main.tex} is {\LaTeX}ed
+(actually, we run {\tt pdflatex}). When this is complete, {\tt
+main.pdf}  and {\tt main.tex} are moved back the package's {\tt doc}
+directories.  This is repeated for each package.
+
+After the documentation for the individual packages is built, then the
+comprehensive documentation is built in essentially the same way.  The
+file {\tt /lal/doc/lsd.tex} is copied to the {\tt autodoc} directory
+and {\LaTeX}  ({\tt pdflatex}) is run on it. Then  {\tt lsd.tex} and
+{\tt lsd.pdf} are moved back to the {\tt doc} directory.
 
 
 
