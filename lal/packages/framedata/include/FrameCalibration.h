@@ -37,11 +37,19 @@ NRCSID( FRAMECALIBRATIONH, "$Id$" );
  *
  **** </lalLaTeX> */
 /**** <lalErrTable> */
-#define FRAMECALIBRATIONH_ENULL 00001
-#define FRAMECALIBRATIONH_ENNUL 00002
+#define FRAMECALIBRATIONH_ENULL 1
+#define FRAMECALIBRATIONH_ENNUL 2
+#define FRAMECALIBRATIONH_EMCHE 3
+#define FRAMECALIBRATIONH_ECREF 4
+#define FRAMECALIBRATIONH_ECFAC 5
+#define FRAMECALIBRATIONH_EGAIN 6
 
 #define FRAMECALIBRATIONH_MSGENULL "Null pointer"
 #define FRAMECALIBRATIONH_MSGENNUL "Non-null pointer"
+#define FRAMECALIBRATIONH_MSGEMCHE "Unable to open calibration cache file"
+#define FRAMECALIBRATIONH_MSGECREF "No reference calibration in cache"
+#define FRAMECALIBRATIONH_MSGECFAC "No calibration update factors in cache"
+#define FRAMECALIBRATIONH_MSGEGAIN "Cannot read open loop gain from frame data"
 /**** </lalErrTable> */
 
 /**** <lalLaTeX>
@@ -54,6 +62,7 @@ NRCSID( FRAMECALIBRATIONH, "$Id$" );
  * 
  * \vfill{\footnotesize\input{FrameCalibrationHV}}
  * \newpage\input{FrameCalibrationC}
+ * \newpage\input{FrameCalibrationTestC}
  *
  **** </lalLaTeX> */
 
