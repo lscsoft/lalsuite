@@ -12,9 +12,6 @@
 /* number of SFTs for each job file to produce */
 #define SFTPERJOB 50
 
-/* number of seconds in a frame */
-#define FRAMELEN 16
-
 /* Maximum length of the path to a frame file */
 #define FILENAMEMAX 128
 
@@ -32,7 +29,7 @@ int nseg[N],tseg[N],tbase[N];
 /* Second argument is ordered file names */
 int main(int argc, char* argv[]) {
   FILE *fp=NULL,*fp1=NULL,*fp2=NULL;
-  int *nstart,*tstart,*bstart,code,totalsegs=0;
+  int *nstart,*tstart,*bstart,code,totalsegs=0,framesec=-1;
   int locksegs=0,i,j=0,k,firstframe,lastframe,nframes;
   int jobno=0,segno=0,filepointer1=0,filepointer2=0,fileno=0,thistime;
   char bigbuff[1024];
@@ -107,11 +104,17 @@ int main(int argc, char* argv[]) {
     /* get start time and duration of file from name */
     starttimes[fileno]=atoi(filenames[fileno]+i-9);
     deltat=atoi(filenames[fileno]+i+1);
+    if (deltat<0)
+      deltat=0;
+
+    /* record framelength the first time through */
+    if (framesec<0)
+      framesec=deltat;
 
     /* check that duration is what's expected */
-    if (deltat!=FRAMELEN){
-            fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\n has length %d (!= FRAMELEN=%d)\n", 
-	      filenames[fileno], fileno+1, argv[2], deltat, FRAMELEN);
+    if (deltat!=framesec){
+            fprintf(stderr,"Filename:\n%s\nat line: %d of file: %s\n has length %d (framesec=%d)\n", 
+	      filenames[fileno], fileno+1, argv[2], deltat, framesec);
       exit(1); 
     }
 
@@ -196,9 +199,9 @@ int main(int argc, char* argv[]) {
       /* fprintf(fp,"%d\n",thistime); */
       
       /* How many frame files do we need? */
-      firstframe=thistime-thistime%FRAMELEN;
-      lastframe =(thistime+tbase[i]-1)-(thistime+tbase[i]-1)%FRAMELEN;
-      nframes=1+(lastframe-firstframe)/FRAMELEN;
+      firstframe=thistime-thistime%framesec;
+      lastframe =(thistime+tbase[i]-1)-(thistime+tbase[i]-1)%framesec;
+      nframes=1+(lastframe-firstframe)/framesec;
       
       /* find correct data files */
       while (filepointer1<fileno && starttimes[filepointer1]<firstframe)
