@@ -185,11 +185,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   SSSimStochBGInput SBInput;
   SSSimStochBGOutput SBOutput;
   REAL4TimeSeries SimStochBGOne, SimStochBGTwo;
-
   REAL4FrequencySeries MComegaGW;
   COMPLEX8FrequencySeries MCresponseOne, MCresponseTwo;
   COMPLEX8Vector *MCrespOne[100], *MCrespTwo[100];
-
   INT4 MCLoop;
   INT4 MCfreqLength = 0;
   REAL8 MCdeltaF, MCdeltaT;
