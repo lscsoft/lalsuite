@@ -1408,16 +1408,17 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     }
 
   /*----------------------------------------------------------------------
-   * initialize template-grid related parameters 
+   * initialize+check  template-grid related parameters 
    */
   {
-    UINT2 haveSkyRegion, haveAlphaDelta, haveGridFile, haveMetric, needMetric;
+    UINT2 haveSkyRegion, haveAlphaDelta, haveGridFile, haveMetric, needMetric, setMetric;
 
     haveSkyRegion  = (uvar_skyRegion != NULL);
     haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
     haveGridFile   = (uvar_skyGridFile != NULL);
     haveMetric     = (uvar_metricType > LAL_METRIC_NONE);
     needMetric     = (uvar_gridType == GRID_METRIC);
+    setMetric      = LALUserVarWasSet (&uvar_metricType);
 
     if ( haveSkyRegion + haveAlphaDelta + haveGridFile != 1) 
       {
@@ -1453,7 +1454,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       }
     
 
-    if (haveMetric && !needMetric) {
+    if ( setMetric && haveMetric && !needMetric) {
 	LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
     }
 
