@@ -71,11 +71,7 @@ NRCSID (STACKSLIDEH, "$Id$");
 #define COMPUTESKYBINARYH_MSGENEGA "Bad Negative Value"
 /* </lalErrTable>  */
 
-  
 #define ACC 1e-9
-
-
-
 
 /* <lalLaTeX>
 \subsection*{Structures}
@@ -89,33 +85,8 @@ struct StackSlideParams
 \end{description}
 </lalLaTeX> */
 
-/*typedef struct
-tagStackSlideParams
-{
-	REAL8 **skyPosData;  
-	REAL8 **freqDerivData;  
-	INT4 numSkyPosTotal;
-	INT4 numFreqDerivTotal;
-	REAL8 f0STK;
-	REAL8 f0SUM;
-	REAL8 tSTK;
-	REAL8 tSUM;
-	INT4  nBinsPerSUM;
-	INT4  numSTKs;
-	REAL8 dfSUM;
-	UINT4 gpsStartTimeSec;
-	UINT4 gpsStartTimeNan;
-	LIGOTimeGPS *timeStamps;
-	INT4 numSpinDown;
-	EphemerisData *edat;
-	BarycenterInput *baryinput;
-	BOOLEAN divideSUMsByNumSTKs;
-}
-StackSlideParams;*/
-
-
 typedef struct
-tagStackSlideParams /* substituted tagStackSlideBinaryParams*/
+tagStackSlideParams
 {
 	REAL8 **skyPosData;  
 	REAL8 **freqDerivData;  
@@ -154,7 +125,6 @@ tagStackSlideParams /* substituted tagStackSlideBinaryParams*/
 }
 StackSlideParams; 
 
-
 typedef struct
 tagStackSlideSkyParams
 {
@@ -179,10 +149,6 @@ tagStackSlideSkyParams
        }
 StackSlideSkyParams;
 
-
-
-
-
 typedef struct
 tagTdotsAndDeltaTs
 {
@@ -191,28 +157,20 @@ tagTdotsAndDeltaTs
 }
 TdotsAndDeltaTs;
 
-void StackSlideOld(	LALStatus *status, 
-			REAL4FrequencySeries **SUMData, 
-			REAL4FrequencySeries **STKData, 
-			StackSlideParams *params);
-
-void StackSlide(	LALStatus *status, 
-			REAL4FrequencySeries **SUMData, 
+void StackSlide(	LALStatus *status,
+			REAL4FrequencySeries **SUMData,
 			REAL4FrequencySeries **STKData,
 			TdotsAndDeltaTs *pTdotsAndDeltaTs,
 			StackSlideParams *params);
 
-void StackSlideComputeSky (LALStatus 	*status, 
+void StackSlideComputeSky (LALStatus 	*status,
 			TdotsAndDeltaTs 	*pTdotsAndDeltaTs,
 			StackSlideSkyParams 	*params);
 
-
-	
-void StackSlideComputeSkyBinary (LALStatus 	*status, 
-			TdotsAndDeltaTs 	*pTdotsAndDeltaTs, 
-			INT8 		iSkyCoh, 
+void StackSlideComputeSkyBinary (LALStatus 	*status,
+			TdotsAndDeltaTs 	*pTdotsAndDeltaTs,
+			INT8 		iSkyCoh,
 			StackSlideSkyParams 	*params);
-
 
 #ifdef __cplusplus
 }

@@ -68,7 +68,8 @@
 /*               3. break into smaller functions                                                     */
 /*               4. move loops for isolated case (params->binaryFlag == 0) into StackSlideIsolated.c */
 /*               5. use new StackSlide function for isolated case.                                   */
-  
+/* 02/28/05 gam; add extra parameters needed by loop code to StackSlideSearchParams struct */
+
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
 
@@ -93,10 +94,7 @@
 #include <lal/RngMedBias.h>
 /* 02/09/04 gam; next is needed for tables defined in LAL */
 #include <lal/LIGOMetadataTables.h>
-#include "StackSlideBinary.h"
 #include "StackSlide.h"
-
-
 /* #include <lal/LALStackSlide.h> Will need to switch to this version when StackSlide is in LAL. */
 /*********************************************/
 /*                                           */
@@ -647,6 +645,14 @@ typedef struct tagStackSlideSearchParams {
   SnglStackSlidePeriodicTable  *peaks; /* 02/04/04 gam; Use this structure to hold link list of data for peaks found in SUMs */
   
   LIGOLwXMLStream *xmlStream;  /* 02/09/04 gam; for xml output */
+
+  /* 02/28/05 gam; add extra parameters needed by loop code to StackSlideSearchParams struct */
+  BOOLEAN outputLoudestFromPeaks;
+  BOOLEAN outputLoudestFromSUMs;
+  BOOLEAN weightSTKsIncludingBeamPattern;
+  INT2    plusOrCross;  
+  INT4    numFreqDerivIncludingNoSpinDown;
+  INT4    nBinsPerOutputEvent;
   
   /******************************************/
   /*                                        */
@@ -728,10 +734,6 @@ void printOneStackSlideSUM( const REAL4FrequencySeries *oneSUM,
                   INT4                       numSUMsTotal
 );
 void FindBinaryLoudest(REAL4FrequencySeries **SUMData, StackSlideParams *stksldParams);
-/*void StackSlideIsolated(	LALStatus *status, 
-			REAL4FrequencySeries **SUMData, 
-			REAL4FrequencySeries **STKData, 
-			StackSlideParams *params);*/
 
 /******************************************/
 /*                                        */

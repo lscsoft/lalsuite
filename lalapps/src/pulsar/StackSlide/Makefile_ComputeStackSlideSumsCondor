@@ -33,7 +33,7 @@ LDFLAGS =  -L$(LAL_LIB) -L$(USR_LIB)
 LIBS =  -l$(LALS) -l$(LLAL) -l$(LFFTW3F) -l$(LFFTW3) -lm
 
 # the object files
-OBJS = ComputeStackSlideSums.o DriveStackSlide.o StackSlide.o
+OBJS = ComputeStackSlideSums.o DriveStackSlide.o StackSlideIsolated.o StackSlideBinary.o StackSlide.o
 
 # ------------------------------------------------------------------
 
@@ -43,9 +43,8 @@ all: ComputeStackSlideSums
 
 # compile code
 ComputeStackSlideSums.o: ComputeStackSlideSums.c
-	$(CC) $(CFLAGS) -c ComputeStackSlideSums.c DriveStackSlide.c StackSlide.c
-
-
+	$(CC) $(CFLAGS) -c ComputeStackSlideSums.c DriveStackSlide.c StackSlideIsolated.c StackSlideBinary.c StackSlide.c
+        
 # link code
 
 ComputeStackSlideSums: $(OBJS)

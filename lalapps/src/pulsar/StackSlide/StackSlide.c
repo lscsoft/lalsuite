@@ -20,10 +20,10 @@ $Id$
 /* START SECTION: define preprocessor flags  */
 /*                                           */
 /*********************************************/
-#define DEBUG_STACKSLIDE_FNC
-#define DEBUG_STACKSLIDE_FNC_KLOOP
-#define PRINT_STACKSLIDE_BINOFFSETS
-#define DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC
+/* #define DEBUG_STACKSLIDE_FNC */
+/* #define DEBUG_STACKSLIDE_FNC_KLOOP */
+/* #define PRINT_STACKSLIDE_BINOFFSETS */
+/* #define DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC */
 /* #define DEBUG_STACKSLIDECOMPUTESKY_FNC */
 /*********************************************/
 /*                                           */
@@ -60,176 +60,11 @@ Sum them.
 
 NRCSID( STACKSLIDEC,  "$Id$");
 
-/* <lalVerbatim file="StackSlideCP"> */
-void StackSlideOld(	LALStatus *status, 
-			REAL4FrequencySeries **SUMData, 
-			REAL4FrequencySeries **STKData, 
-			StackSlideParams *params)
-{  /* </lalVerbatim> */                        
-    
-    /* Declare and variables needed for making SUMs */
-    INT4 iSky = 0;       /* index gives which Sky Position */
-    INT4 iFreqDeriv = 0; /* index give which Freq Derivs  */
-    INT4 kSUM = 0;       /* index gives which SUM */
-    INT4 iSUM = 0;       /* index gives which SUM bin */
-    
-    INT4 numLoopOnSpindown; /* 1 if numSpindown is 0, else = params->numFreqDerivTotal */
-    
-    INT4 i,k,m;
-    INT4 binoffset = 0;
-
-    StackSlideSkyParams *csParams;  /* Container for StackSlideComputeSky */
-    
-    TdotsAndDeltaTs *pTdotsAndDeltaTs;
-    EarthState earth;
-    EmissionTime emit;
-
-    REAL8 f_t;
-
-    REAL4 invNumSTKs = 1.0/((REAL4)params->numSTKs);  /* 12/03/04 gam */
-    
-    INT4 iMinSTK = floor((params->f0SUM-params->f0STK)*params->tSTK + 0.5); /* Index of mimimum frequency to include when making SUMs from STKs */
-    INT4 iMaxSTK = iMinSTK + params->nBinsPerSUM - 1;                       /* Index of maximum frequency to include when making SUMs from STKs */
-    
-    REAL8 refFreq = params->f0SUM + ((REAL8)(params->nBinsPerSUM/2))*params->dfSUM; /* 12/06/04 gam */
-    
-    INITSTATUS (status, "StackSlide", STACKSLIDEC); 
-    ATTATCHSTATUSPTR(status);
-
-    /* Allocate space and set quantities for call to StackSlideComputeSky() */
-    csParams=(StackSlideSkyParams *)LALMalloc(sizeof(StackSlideSkyParams));
-    csParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
-    pTdotsAndDeltaTs=(TdotsAndDeltaTs *)LALMalloc(sizeof(TdotsAndDeltaTs));
-    pTdotsAndDeltaTs->vecTDots  = (REAL8 *)LALMalloc(sizeof(REAL8)*params->numSTKs);
-
-    if (params->numSpinDown>0) {
-       pTdotsAndDeltaTs->vecDeltaTs  = (REAL8 **)LALMalloc(sizeof(REAL8 *)*params->numSTKs);          
-       for(i=0;i<params->numSTKs;i++) {
-           pTdotsAndDeltaTs->vecDeltaTs[i]  = (REAL8 *)LALMalloc(sizeof(REAL8)*params->numSpinDown);          
-       }
-    }
-
-    /* if no_spindowns > 0, only pTdotsAndDeltaTs->vecDeltaTs= (REAL8 *)LALMalloc(sizeof(REAL8)*params->numSTKs); 
-       i.e. if no spindowns then you don't need to allocate the second of the two lines above */
-    /* 02/02/04 gam; moved next 5 lines from inside loops: */
-    if (params->numFreqDerivTotal==0) {
-        numLoopOnSpindown = 1;  /* Even if no spindown, need to execute iFreqDeriv loop once to handle case of zero spindown */
-    } else {
-        numLoopOnSpindown = params->numFreqDerivTotal;
-    }
-
-    for(iSky=0;iSky<params->numSkyPosTotal;iSky++) {
-        /* call ComputeSky for every sky position */
-
-        csParams->skyPos[0]=params->skyPosData[iSky][0];
-        csParams->skyPos[1]=params->skyPosData[iSky][1];
-
-        params->baryinput->alpha=params->skyPosData[iSky][0];
-        params->baryinput->delta=params->skyPosData[iSky][1];
-
-        csParams->tGPS=params->timeStamps;
-        csParams->gpsStartTimeSec = params->gpsStartTimeSec; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
-        csParams->gpsStartTimeNan = params->gpsStartTimeNan; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
-        csParams->spinDwnOrder=params->numSpinDown;
-        csParams->mObsSFT=params->numSTKs;
-        csParams->tSFT=params->tSTK;
-        csParams->edat=params->edat;
-        csParams->emit=&emit;
-        csParams->earth=&earth;
-        csParams->baryinput=params->baryinput;
-
-        for(i=0;i<params->numSTKs;i++) {
-          pTdotsAndDeltaTs->vecTDots[i] = 0.0; /* Initialize */
-          for(m=0;m<params->numSpinDown;m++) {
-              pTdotsAndDeltaTs->vecDeltaTs[i][m] = 0.0; /* Initialize */
-          }
-        }
-
-        /* get Tdot and DeltaT's for this sky position */
-        StackSlideComputeSky(status->statusPtr, pTdotsAndDeltaTs, csParams);
-        CHECKSTATUSPTR (status);
-
-        /* for all spindowns, loop */
-        for(iFreqDeriv=0;iFreqDeriv<numLoopOnSpindown;iFreqDeriv++) {
-            /* call computesky for all stacks at once */
-            /* compute offset  for each stack */
-
-			
-		kSUM = iSky*numLoopOnSpindown + iFreqDeriv; /* 01/28/04 gam; need to find index to which to SUM */
-
-            /* loop over STKs */ 
-            for(k=0;k<params->numSTKs;k++) {
-               /* compute frequency */
-               /* f_t = params->f0STK * params->tSTK; */
-               /* f_t = params->f0STK; */ /* 12/06/04 gam */
-               f_t = refFreq;
-               for (m=0; m<params->numSpinDown; m++) {
-                   /* f_t += ( params->freqDerivData[iFreqDeriv][m] * pTdotsAndDeltaTs[2*k*(params->numSpinDown)+2*(INT4)m+1]); */
-                   f_t += params->freqDerivData[iFreqDeriv][m] * pTdotsAndDeltaTs->vecDeltaTs[k][m];
-               }
-               f_t = f_t * pTdotsAndDeltaTs->vecTDots[k];
-               /* binoffset = floor(( (f_t - params->f0STK) * params->tSTK) + 0.5 ); */ /* 12/06/04 gam */
-               binoffset = floor(( (f_t - refFreq) * params->tSTK) + 0.5 );
-
-               #ifdef PRINT_STACKSLIDE_BINOFFSETS
-                  fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
-                  fflush(stdout);   
-               #endif
-
-               /* Add the power from this STK into the SUM with the appropriate binoffset */
-               for(i=iMinSTK;i<=iMaxSTK; i++) {
-                iSUM = i - iMinSTK;
-                if (k==0) {
-                   /* Starting a new SUM: initialize */
-                   SUMData[kSUM]->data->data[iSUM] = STKData[k]->data->data[i+binoffset];
-                   SUMData[kSUM]->epoch.gpsSeconds = params->gpsStartTimeSec;
-                   SUMData[kSUM]->epoch.gpsNanoSeconds = params->gpsStartTimeNan;
-                   SUMData[kSUM]->f0=params->f0SUM;
-                   SUMData[kSUM]->deltaF=params->dfSUM;
-                   SUMData[kSUM]->data->length=params->nBinsPerSUM;
-                } else {
-                   SUMData[kSUM]->data->data[iSUM] += STKData[k]->data->data[i+binoffset];
-                }
-              } /* END for(i=iMinSTK;i<=iMaxSTK; i++) */
-            } /* END for(k=0;k<params->numSTKs;k++) */
-
-            /* 12/03/04 gam; added params->divideSUMsByNumSTKs */
-            if (params->divideSUMsByNumSTKs) {
-               /* Normalize the SUMs with params->numSTKs*/
-               for(i=0;i<params->nBinsPerSUM; i++) {
-                  /* SUMData[kSUM]->data->data[i] =  SUMData[kSUM]->data->data[i]/((REAL4)params->numSTKs); */
-                  SUMData[kSUM]->data->data[i] =  SUMData[kSUM]->data->data[i]*invNumSTKs;  /* 12/03/04 gam; multiply by 1.0/numSTKs */
-               }
-            }
-            
-        }  /* for iFreqDeriv = 0 to numFreqDerivTotal */      
-    } /* for iSky = `0 to numSkyPosTotal */
-
-    /* Deallocate space for ComputeSky parameters */
-    LALFree(csParams->skyPos);
-    LALFree(csParams);
-
-    /* Deallocate memory */
-
-    if (params->numSpinDown>0) {
-        for(i=0;i<params->numSTKs;i++) {
-           LALFree(pTdotsAndDeltaTs->vecDeltaTs[i]);          
-        }
-        LALFree(pTdotsAndDeltaTs->vecDeltaTs);
-    }
-    LALFree(pTdotsAndDeltaTs->vecTDots);
-    LALFree(pTdotsAndDeltaTs);
-  
-    CHECKSTATUSPTR (status);
-    DETATCHSTATUSPTR (status);
-} /* END StackSlideOld() */
-
-
 /*********************************************************************************/
 /*              START function: StackSlide                                       */
 /*********************************************************************************/
-void StackSlide(	LALStatus *status, 
-			REAL4FrequencySeries **SUMData, 
+void StackSlide(	LALStatus *status,
+			REAL4FrequencySeries **SUMData,
 			REAL4FrequencySeries **STKData,
                         TdotsAndDeltaTs *pTdotsAndDeltaTs,
 			StackSlideParams *params)
@@ -347,7 +182,6 @@ void StackSlide(	LALStatus *status,
 /*********************************************************************************/
 /*              END function: StackSlide                                         */
 /*********************************************************************************/
-
 
 /*********************************************************************************/
 /*              START function: StackSlideComputeSky                             */

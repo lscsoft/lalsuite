@@ -128,6 +128,11 @@ if { $argc < 13 || $argc > 15} {
     Print "$argv0 H1 731210229 18000 300.2 .05 1800 10 \"../*SFT.*\" testPulsar.params runStackSlideSearch.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt condor";
     Print " ";
     Print "Use the condor option with \">> condorsubmitfile.sub\" to append this job to a condor submit file.";
+    Print " ";
+    Print "Example 5 (test binary case):";
+    Print " ";    
+    Print "$argv0 H1 731210229 18000 300.2 .05 1800 10 \"../*SFT.*\" testBinaryPulsar.params runStackSlideBinarySearch.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myoutbinary.txt run";
+    Print " ";
     if { $argc > 0} {
        if {$firstArg != "-h"}  {
          # Print "\nError! Some required arguments were missing. See syntax given above.\n"; # 02/27/04 gam
