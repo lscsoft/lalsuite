@@ -190,16 +190,16 @@ int main(int argc,char *argv[])
 	  if  (SortedC1[i].f >= PolkaCommandLineArgs.fmin && SortedC1[i].f <= PolkaCommandLineArgs.fmax)
 	    {
 	      CandINDICES *p;
+
+	      /* TO DO: Here I need to put in a loop to run bsearch etc. on all surrounding boxes, for now I just have the 
+	       central box */
+
 	      p=bsearch(&SortedC1[i],SortedC2,(size_t)CList2.length, sizeof(CandINDICES),compareCIStructs);
 
 	      if (p != NULL)
 		{
 		  /* Now we've found at least one candidate */
-
-
-/* 		  fprintf(stdout,"%e %e\n",SortedC1[i].f-p->f,SortedC1[i].Delta-p->Delta); */
-
-		  /* we need to move to the right edge; first look up until second (I don't think this will cause seg faults) */ 
+		  /* we need to move to the right edge (without segfaulting!) */
 		  if ( p->iCandSorted > 0)
 		    {
 		      INT4 keepgoing = 1;
@@ -218,16 +218,12 @@ int main(int argc,char *argv[])
 			}
 		    }
 		  /* Now p points to first coincident event in the second list */
-		  
-		  /* Now loop over candidates found in the second list and do the fine coincidence test */
-
-
-		  fprintf(stdout,"%e %e %e %e %e %e\n",SortedC1[i].f,p->f,SortedC1[i].Delta,p->Delta,SortedC1[i].Alpha,p->Alpha);
+		  /* TO DO: Now loop over candidates found in the second list and do the fine coincidence test */
 		  
 
 		} /* check that besearch was non-null */
 	    } /* check that frequency lies between two input bounds */
-	} /* loop over 1st list */
+	} /* loop over 1st candidate list */
 
       LALFree(SortedC1);
       LALFree(SortedC2);
