@@ -62,6 +62,7 @@ int main(int argc, char **argv)
     else return(1);
     
     fp=fopen(psrinput,"r");
+    cp=0.0;
     while (cp<0.95)
     { 
       h2 = h;
