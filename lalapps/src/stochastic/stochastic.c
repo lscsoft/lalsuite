@@ -2374,6 +2374,12 @@ INT4 main(INT4 argc, CHAR *argv[])
     if (vrbflg)
       fprintf(stdout, "Calculating cross correlation spectrum...\n");
 
+    /* get response functions for analysis segments */
+    responseOne = generate_response(&status, ifoOne, calCacheOne, \
+        gpsAnalysisTime, fMin, deltaF, countPerAttoStrain, filterLength);
+    responseTwo = generate_response(&status, ifoTwo, calCacheTwo, \
+        gpsAnalysisTime, fMin, deltaF, countPerAttoStrain, filterLength);
+
     /* calculate cc spectrum */
     ccSpectrum = cc_spectrum(&status, zeroPadOne, zeroPadTwo, \
         responseOne, responseTwo, optFilter);
