@@ -685,8 +685,12 @@ LALFindChirpSlave (
                 {
                   memcpy( &(loudestEvent[i].time), &(thisEvent->time),
                       sizeof(LIGOTimeGPS) );
+                  memcpy( &(loudestEvent[i].impulseTime), 
+                      &(thisEvent->impulseTime), sizeof(LIGOTimeGPS) );
                   memcpy( loudestEvent[i].ifoName, thisEvent->ifoName,
                       2 * sizeof(CHAR) );
+                  memcpy( loudestEvent[i].channel, thisEvent->channel,
+                      LALNameLength * sizeof(CHAR) );
                   loudestEvent[i].snrsq   = thisEvent->snrsq;
                   loudestEvent[i].chisq   = thisEvent->chisq;
                   loudestEvent[i].sigma   = thisEvent->sigma;

@@ -500,10 +500,10 @@ LALFindChirpFilterSegment (
   UINT4                 deltaEventIndex;
   UINT4                 ignoreIndex;
   UINT4                 eventId = 0;
+  INT8                  chirpTimeNS;
   REAL4                 deltaT;
   REAL4                 norm;
   REAL4                 modqsqThresh;
-  REAL4                 chirpTime;
   BOOLEAN               haveChisq   = 0;
   COMPLEX8             *qtilde      = NULL;
   COMPLEX8             *q           = NULL;
@@ -616,8 +616,10 @@ LALFindChirpFilterSegment (
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
-    chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
+    REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
+
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
+    chirpTimeNS = (INT8) (1e9 * chirpTime);
 
     /* ignore corrupted data at start and end */
     ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
@@ -792,6 +794,11 @@ LALFindChirpFilterSegment (
           thisEvent->time.gpsSeconds = (INT4) (timeNS/1000000000L);
           thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
 
+          /* set the impuse time for the event */
+          timeNS -= chirpTimeNS;
+          thisEvent->impulseTime.gpsSeconds = (INT4) (timeNS/1000000000L);
+          thisEvent->impulseTime.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+          
           /* record the ifo and channel name for the event */
           strncpy( thisEvent->ifoName, input->segment->data->name, 
               2 * sizeof(CHAR) );
@@ -861,6 +868,11 @@ LALFindChirpFilterSegment (
     timeNS += (INT8) (1e9 * (thisEvent->timeIndex) * deltaT);
     thisEvent->time.gpsSeconds = (INT4) (timeNS/1000000000L);
     thisEvent->time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+
+    /* set the impuse time for the event */
+    timeNS -= chirpTimeNS;
+    thisEvent->impulseTime.gpsSeconds = (INT4) (timeNS/1000000000L);
+    thisEvent->impulseTime.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
 
     /* record the ifo name for the event */
     strncpy( thisEvent->ifoName, input->segment->data->name, 
