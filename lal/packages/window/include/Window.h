@@ -211,7 +211,7 @@ void LALWindow (LALStatus *,
 		LALWindowParams *);
 
 /**************************************************************************** <lalLaTeX>
-\vfill{\footnotesize\input{WindowHV}
+\vfill{\footnotesize\input{WindowHV}}
 \newpage
 \input{WindowC}
 \newpage
