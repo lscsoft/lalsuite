@@ -277,8 +277,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* read parameters into input parameter file */
   if (condor_flag)
    { 
-     fscanf(stdin,"%d\n",&startTime, &startTime);
-     fscanf(stdin,"%d\n",&stopTime, &stopTime);
+     fscanf(stdin,"%lld\n", &startTime);
+     fscanf(stdin,"%lld\n", &stopTime);
      fscanf(stdin,"%s\n%s\n",&frameCache1,&frameCache2);
      fscanf(stdin,"%s\n%s\n",&calCache1,&calCache2); 
      if (inject_flag)
@@ -1752,7 +1752,6 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
     /* getopt_long stores the option here */
     int option_index = 0;
-    size_t optarg_len;
 
     c = getopt_long(argc, argv, 
                   "ht:T:L:l:A:a:f:F:w:k:p:P:i:I:d:D:r:R:c:b:o:g:N:S:U:V:W:z:v",
