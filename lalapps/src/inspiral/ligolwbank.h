@@ -9,6 +9,9 @@
  *-----------------------------------------------------------------------
  */
 
+#ifndef LIGOLW_TMPLTBANK_H_
+#define LIGOLW_TMPLTBANK_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <metaio.h>
@@ -32,3 +35,4 @@ InspiralTmpltBankToLIGOLw (
     INT4                stopTmplt
     );
 
+#endif
