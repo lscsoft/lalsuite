@@ -331,6 +331,10 @@ m4 SendRecv.m4 > SendRecv.c
 m4 Exchange.m4 > Exchange.c
 cd ../../..
 
+cd packages/ring/src
+m4 LALRingDown.m4 > LALRingDown.c
+cd ../../..
+
 cd packages/pulsar/test
 /bin/sh ephemtoilwd.sh earth99.dat > earth99.ilwd
 /bin/sh ephemtoilwd.sh sun99.dat > sun99.ilwd
