@@ -758,7 +758,7 @@ LALMetricWrapper (LALStatus *stat,
       baryParams.t0 = 0;
       baryParams.latitude = input->site->frDetector.vertexLatitudeRadians;	/* FIXME: should be redundant now, with Detector passed */
       baryParams.longitude = input->site->frDetector.vertexLongitudeRadians;
-      baryParams.site = *(input->site);
+      baryParams.site = input->site;
       TRY( LALGetEarthTimes( stat->statusPtr, &baryParams ), stat );
 
       /* set timing-function for earth-motion: either ptolemaic or ephemeris */
@@ -771,7 +771,7 @@ LALMetricWrapper (LALStatus *stat,
 	{
 	  baryParams.t1 = NULL;		/* FIXME: no LALTEphemeris() exists currently (not needed here?) */
 	  baryParams.dt1 = LALDTEphemeris;
-	  baryParams.ephemeris = *(input->ephemeris);
+	  baryParams.ephemeris = input->ephemeris;
 	}
 
 
