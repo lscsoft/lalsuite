@@ -226,6 +226,7 @@ else (void)(0)
 #include <lal/LALDemod.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/SeqFactories.h>
+#include <lal/FileIO.h>
 #include <unistd.h>
 #include <sys/types.h>
 
@@ -339,7 +340,7 @@ int main(int argc, char **argv)
       {
 	strcpy(basicInputsFile, argv[++arg]);
 	arg++;
-	if(LALFopen(basicInputsFile,"r")==NULL)
+	if(LALOpenDataFile(basicInputsFile)==NULL)
 	  {
 	    ERROR(LALDEMODH_ENOFILE, LALDEMODH_MSGENOFILE, 0);
 	    LALPrintError(USAGE, *argv);
@@ -377,7 +378,7 @@ int main(int argc, char **argv)
     /* default: no input file specified */
     else if(basicInputsFile==NULL)
       {
-	bif=LALFopen("in.data","r");
+	bif=LALOpenDataFile("in.data");
       }
 		
     /* erroneous command line argument */
@@ -412,7 +413,7 @@ int main(int argc, char **argv)
 	
   /***** GET INPUTS FROM FILES *****/
 
-  bif=LALFopen(basicInputsFile,"r");
+  bif=LALOpenDataFile(basicInputsFile);
 	
   fscanf(bif, "%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n"
 	 " %lf\n%d\n%le\n%le\n%le\n%le\n%le\n%lf\n%lf\n",
