@@ -96,7 +96,7 @@ UINT4 inputDataLength = 0;              /* number of points in input    */
 REAL4 minimalMatch = -1;                /* override bank minimal match  */
 
 /* data conditioning parameters */
-INT4   slideData        = 0;            /* slide data for time shifting */
+LIGOTimeGPS slideData   = {0,0};        /* slide data for time shifting */
 INT4   resampFiltType   = -1;           /* low pass filter used for res */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
 INT4   highPass         = -1;           /* enable high pass on raw data */
@@ -361,7 +361,9 @@ int main( int argc, char *argv[] )
   memset( &chan, 0, sizeof(REAL4TimeSeries) );
   chan.epoch = gpsStartTime;
   chan.epoch.gpsSeconds -= padData;   /* subtract pad seconds from start */
-  chan.epoch.gpsSeconds -= slideData; /* subtract slide seconds from start */
+  /* subtract slide from start */
+  chan.epoch.gpsSeconds -= slideData.gpsSeconds; 
+  chan.epoch.gpsNanoSeconds -= slideData.gpsNanoSeconds;
 
   /* open a frame cache or files, seek to required epoch and set chan name */
   if ( frInCacheName )
@@ -477,7 +479,8 @@ int main( int argc, char *argv[] )
 
 
   /* slide the channel back to the fake time for background studies */
-  chan.epoch.gpsSeconds += slideData;
+  chan.epoch.gpsSeconds += slideData.gpsSeconds;
+  chan.epoch.gpsNanoSeconds += slideData.gpsNanoSeconds;
   
 
   /*
@@ -1291,7 +1294,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --gps-end-time SEC           GPS second of data end time\n"\
 "  --gps-end-time-ns NS         GPS nanosecond of data end time\n"\
 "  --pad-data T                 pad the data start and end time by T seconds\n"\
-"  --slide-data T               slide data start epoch by T seconds\n"\
+"  --slide-time T               slide data start epoch by T seconds\n"\
+"  --slide-time-ns T            slide data start epoch by T nanoseconds\n"\
 "\n"\
 "  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
 "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
@@ -1381,7 +1385,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"bank-file",               required_argument, 0,                'v'},
     {"injection-file",          required_argument, 0,                'w'},
     {"pad-data",                required_argument, 0,                'x'},
-    {"slide-data",              required_argument, 0,                'X'},
+    {"slide-time",              required_argument, 0,                'X'},
+    {"slide-time-ns",           required_argument, 0,                'Y'},
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
@@ -1914,8 +1919,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'X':
-        slideData = (INT4) atoi( optarg );
-        ADD_PROCESS_PARAM( "int", "%d", slideData );
+        slideData.gpsSeconds = (INT4) atoi( optarg );
+        ADD_PROCESS_PARAM( "int", "%d", slideData.gpsSeconds );
+        break;
+
+      case 'Y':
+        slideData.gpsNanoSeconds = (INT4) atoi( optarg );
+        ADD_PROCESS_PARAM( "int", "%d", slideData.gpsNanoSeconds );
         break;
 
       case 'z':
