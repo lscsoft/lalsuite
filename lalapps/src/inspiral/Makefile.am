@@ -2,7 +2,6 @@
 # $Id$
 INSPIRALSRC = inspiral.h inspiral.c
 TMPLTBANKSRC = tmpltbank.c tmpltbank.h
-TRIGTOTMPLTSRC = trigtotmplt.c
 COHERESRC = coherent_inspiral.c inspiral.h
 INCASRC = inca.c
 SIRESRC = sire.c
@@ -10,12 +9,11 @@ INSPINJSRC = inspinj.c
 SPLITBANKSRC = splitbank.c
 if LALFRAME
 if LALMETAIO
-bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank lalapps_trigtotmplt \
+bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_inca lalapps_coherent_inspiral lalapps_sire \
                lalapps_inspinj lalapps_splitbank
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
-lalapps_trigtotmplt_SOURCES = $(TRIGTOTMPLTSRC)
 lalapps_inca_SOURCES = $(INCASRC)
 lalapps_sire_SOURCES = $(SIRESRC)
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
