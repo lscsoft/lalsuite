@@ -130,7 +130,9 @@ int main(int argc,char *argv[])
   FILE *fpOut;
   BOOLEAN haveFile3 = FALSE;
   BOOLEAN haveFile4 = FALSE;
-
+#if USE_BOINC
+  static char resolved_filename[256];
+#endif
   lalDebugLevel = 1;
 
   /* Reads command line arguments */
@@ -305,17 +307,14 @@ int main(int argc,char *argv[])
 
   /* open and write the file */
 #if USE_BOINC
-  {
-    char resolved_name[512];
-    if (boinc_resolve_filename(PolkaCommandLineArgs.OutputFile, resolved_name, sizeof(resolved_name))) {
+  if (boinc_resolve_filename(PolkaCommandLineArgs.OutputFile, resolved_name, sizeof(resolved_name))) {
       fprintf(stderr,
               "Can't resolve file \"%s\"\n"
               "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
               PolkaCommandLineArgs.OutputFile);
       boinc_finish(2);
-    }
-    fpOut=fopen(resolved_name,"w"); 	 
   }
+  fpOut=fopen(resolved_name,"w");
 #else
   fpOut=fopen(PolkaCommandLineArgs.OutputFile,"w"); 	 
 #endif
@@ -331,7 +330,7 @@ int main(int argc,char *argv[])
 #if USE_BOINC
   /* write end marker */
   fprintf(fpOut,"%%DONE\n");	
-  Outputfilename=PolkaCommandLineArgs.OutputFile;
+  Outputfilename=resolved_name;
 #endif
   fclose(fpOut);
 
