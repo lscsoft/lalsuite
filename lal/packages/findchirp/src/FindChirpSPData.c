@@ -352,16 +352,21 @@ LALFindChirpSPData (
 
   /* check that the output exists */
   ASSERT( fcSegVec, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      ": fcSegVec" );
   ASSERT( fcSegVec->data, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      ": fcSegVec->data" );
   ASSERT( fcSegVec->data->data, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      ": fcSegVec->data->dat" );
   ASSERT( fcSegVec->data->data->data, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      ": fcSegVec->data->data->data" );
 
   /* check that the parameter structure exists */
-  ASSERT( params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( params, status, FINDCHIRPSPH_ENULL, 
+      FINDCHIRPSPH_MSGENULL ": params" );
   
   /* check that the workspace vectors exist */
   ASSERT( params->ampVec, status, 
@@ -407,13 +412,17 @@ LALFindChirpSPData (
   
   /* check that the input exists */
   ASSERT( dataSegVec, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      ": dataSegVec" );
   ASSERT( dataSegVec->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      ": dataSegVec->data" );
   ASSERT( dataSegVec->data->real4Data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      ": dataSegVec->data->real4Data" );
   ASSERT( dataSegVec->data->real4Data->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+      ": dataSegVec->data->real4Data->data" );
 
 
   /*
@@ -473,7 +482,7 @@ LALFindChirpSPData (
 
     /*
      *
-     * compute htilde and store in wtilde
+     * compute htilde and store in fcSeg
      *
      */
 
@@ -527,8 +536,6 @@ LALFindChirpSPData (
       fclose( fp );
     }
 #endif
-            
-
 
 
     /*
@@ -639,9 +646,8 @@ LALFindChirpSPData (
 
     for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
-      wtilde[k].re      *= amp[k];
-      outputData[k].re  *= wtilde[k].re;
-      outputData[k].im  *= wtilde[k].re;
+      outputData[k].re  *= wtilde[k].re * amp[k];
+      outputData[k].im  *= wtilde[k].re * amp[k];
     }
 
     /* set output frequency series parameters */
