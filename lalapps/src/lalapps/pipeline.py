@@ -691,13 +691,18 @@ class AnalysisChunk:
     triggers (in seconds).
     """
     if self.__trig_start and self.__trig_end:
-      return self.__trig_end - self.__trig_start
+      x = self.__trig_end - self.__trig_start
     elif self.__trig_start and not self.__trig_end:
-      return self.__end - self.__trig_start
+      x = self.__end - self.__trig_start
     elif not self.__trig_start and self.__trig_end:
-      return self.__trig_end - self.__start
+      x = self.__trig_end - self.__start
     else:
-      return self.__end - self.__start
+      x = self.__end - self.__start
+
+    if x < 0:
+      raise SegmentError, self + 'has negative length'
+    else:
+      return x
     
   def start(self):
     """
