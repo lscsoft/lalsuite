@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LIBRARIES = liblal.a
-liblal_a_SOURCES = Overlap.c Dirichlet.c
+liblal_a_SOURCES = Overlap.c Dirichlet.c CrossCorr.c
 LIBLAL = $(top_srcdir)/lib/liblal.a
 INCLUDES = -I$(top_srcdir)/include -I$(srcdir)/../include
 
