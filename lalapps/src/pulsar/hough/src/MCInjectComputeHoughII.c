@@ -1022,30 +1022,40 @@ void GenerateInjectTemplateParams(LALStatus   *status,
     TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
     latitude = params->delta + (params->patchSizeDelta) *(randval-0.5);    
   }
+  
   injectPulsar->longitude = longitude;
   injectPulsar->latitude  = latitude;   
+  
   {
-    REAL8 dX1, dX2, norm; 
-    REAL8UnitPolarCoor mismatch, template, par; 
+    REAL8UnitPolarCoor    template, par; 
+    REAL8UnitPolarCoor    templRotated;
+    REAL8Cart2Coor        templProjected;
+    
     par.alpha = injectPulsar->longitude;
     par.delta = injectPulsar->latitude; 
 
     /* mismatch with the template in stereographic plane */
     TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
-    dX1 = deltaX*(randval-0.5);
+    templProjected.x = deltaX*(randval-0.5);
     TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);
-    dX2 = deltaX*(randval-0.5);
-    norm = sqrt(dX1*dX1 + dX2*dX2); 
+    templProjected.y = deltaX*(randval-0.5);
+    
+   /*
+ *  norm = sqrt(dX1*dX1 + dX2*dX2); 
+ *     /* calculate the mismatch in around the south pole
+ *     mismatch.delta = - LAL_PI_2 - norm;
+ *     mismatch.alpha = acos(dX1/norm);
+ *     acos gives angle in (0,pi) so need to correct if dX2 < 0 to get range in (0,2*pi) 
+ *     if (dX2 < 0) 
+ *       mismatch.alpha += LAL_PI; 
+ */
 
-    /* calculate the mismatch in around the south pole*/ 
-    mismatch.delta = - LAL_PI_2 - norm;
-    mismatch.alpha = acos(dX1/norm);
-    /* acos gives angle in (0,pi) so need to correct if dX2 < 0 to get range in (0,2*pi) */
-    if (dX2 < 0) 
-      mismatch.alpha += LAL_PI; 
+    /* invert the stereographic projection for a point on the projected plane */
+    TRY( LALStereoInvProjectCart( status->statusPtr,
+                                &templRotated, &templProjected ), status );
 
     /* inverse rotate the mismatch from the south pole to desired location */
-    TRY( LALInvRotatePolarU( status->statusPtr, &template, &mismatch, &par), status);
+    TRY( LALInvRotatePolarU( status->statusPtr, &template, &templRotated, &par), status);
 
     templatePulsar->longitude = template.alpha; 
     templatePulsar->latitude = template.delta; 
