@@ -132,6 +132,9 @@ int getenvval(const char *valuename){
    (LSC timestamp) to get the correct GPS time.  Thus a positive value
    indicates that the first datum in a frame file was actually
    recorded at a time later than the timestamp of the frame file.
+
+   Data tables taken from:
+   http://www.ligo.caltech.edu/~smarka/drafts/LIGO-T030070-00-D.pdf
 */
 int deltatime(const char *instrument, int gpstime){
   int (*data)[4];
