@@ -49,6 +49,9 @@
 /* should we use the new 2*DF/SRATE normalization convention? */
 #define NEWNORM 1
 
+/* provide data to Teviet for working on LAL filtering */
+#define PRINTTEV 0
+
 /* debug level for LAL */
 INT4 lalDebugLevel = LALERROR | LALWARNING | LALINFO;
 
@@ -591,6 +594,12 @@ int main(int argc,char *argv[]){
       /* free framevec -- no longer needed */
       FrVectFree(frvect); 
       frvect=NULL;
+
+#if PRINTTEV
+      for (i=0; i<npts; i++)
+	fprintf(stderr, "%f\n", chan.data->data[i]);
+      exit(0);
+#endif 
 
 #if TDDOUBLE
       /* put into doubles */
