@@ -542,13 +542,13 @@ LALFindChirpFilterSegment (
 
   /*
    *
-   * calculate the minimum distance between distinct events
+   * compute viable search regions in the snrsq vector
    *
    */
 
 
-  /* calculate the length of the chirp */
   {
+    /* calculate the length of the chirp */
     REAL4 eta = input->tmplt->eta;
     REAL4 m1 = input->tmplt->mass1;
     REAL4 m2 = input->tmplt->mass2;
@@ -565,8 +565,25 @@ LALFindChirpFilterSegment (
     REAL4 x8 = x4*x4;
     REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
+
+    /* ignore corrupted data at start and end */
+    ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
+
+    fprintf( stdout, "m1 = %e m2 = %e => %e seconds => %d points\n"
+        "ignoreIndex = %d\n", 
+        m1, m2, chirpTime, deltaEventIndex, ignoreIndex );
+    fflush( stdout );
+
+    /* XXX check that we are not filtering corrupted data XXX */
+    /* XXX this is hardwired to 1/4 segment length        XXX */
+    if ( ignoreIndex > numPoints / 4 )
+    {
+      ABORT( status, FINDCHIRPH_ECRUP, FINDCHIRPH_MSGECRUP );
+    }
+    /* XXX reset ignoreIndex to one quarter of a segment XXX */
+    ignoreIndex = numPoints / 4;
   }
-    
+
 
   /*
    *
@@ -638,18 +655,6 @@ LALFindChirpFilterSegment (
     }
   }
 
-  /* ignore corrupted data at start and end */
-  ignoreIndex = (input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
-
-  /* XXX check that we are not filtering corrupted data XXX */
-  /* XXX this is hardwired to 1/4 segment length        XXX */
-  if ( ignoreIndex > numPoints / 4 )
-  {
-    ABORT( status, FINDCHIRPH_MSGECRUP, FINDCHIRPH_MSGECRUP );
-  }
-  /* XXX reset ignoreIndex to one quarter of a segment XXX */
-  ignoreIndex = numPoints / 4;
-  
   /* look for an events in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
