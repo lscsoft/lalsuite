@@ -160,8 +160,8 @@ LALFindChirpChisqVeto (
    */
 
 
+#if 0
   /* this is for debugging */
-  if (0)
   {
     memset( chisq, 0, numPoints * sizeof(REAL4) );
 
@@ -178,6 +178,7 @@ LALFindChirpChisqVeto (
       chisq[j] = sumXl * sumXl + sumYl * sumYl;
     }
   }
+#endif
 
   memset( chisq, 0, numPoints * sizeof(REAL4) );
 
