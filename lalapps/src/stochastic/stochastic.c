@@ -393,14 +393,6 @@ INT4 main(INT4 argc, CHAR *argv[])
           "Whitened-SimulatedSB2", gpsStartTime, 0, 1./resampleRate, \
           lalDimensionlessUnit, segmentLength), &status);
 
-    /* define parameters for SimulateSB */
-    SBParams.length = segmentLength;
-    SBParams.deltaT = 1. / resampleRate;
-    SBParams.detectorOne = lalCachedDetectors[siteOne];
-    SBParams.detectorTwo = lalCachedDetectors[siteTwo];
-    SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
-    SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
-
     /* generate omegaGW */
     MComegaGW = omega_gw(&status, alpha, fRef, omegaRef, MCfreqLength, 0, \
         MCdeltaF, gpsStartTime);
@@ -428,22 +420,21 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
   }
 
-  /* set parameters for PSD estimation */
+  /* get bins for min and max frequencies */
+  numFMin = (UINT4)(fMin / deltaF);
+  numFMax = (UINT4)(fMax / deltaF);
+
+  /* get lengths */
   windowPSDLength = (UINT4)(resampleRate / deltaF);
   overlapPSDLength = windowPSDLength / 2;
   psdTempLength = (windowPSDLength / 2) + 1;
-  numFMin = (UINT4)(fMin / deltaF);
-  numFMax = (UINT4)(fMax / deltaF);
   filterLength = numFMax - numFMin + 1;
 
+  /* set parameters for PSD estimation */
   specparPSD.method = useMean;
   specparPSD.overlap = overlapPSDLength;
   specparPSD.plan = NULL;
   specparPSD.window = NULL;
-
-  /* set window parameters for PSD estimation */
-  winparPSD.length = windowPSDLength;
-  winparPSD.type = Hann;
 
   if (vrbflg)
     fprintf(stdout, "Allocating memory for PSDs...\n");
@@ -519,6 +510,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (vrbflg)
     fprintf(stdout, "Creating window for PSD estimation...\n");
 
+  /* set window parameters for PSD estimation */
+  winparPSD.length = windowPSDLength;
+  winparPSD.type = Hann;
+
   /* create window for PSD estimation */
   LAL_CALL(LALCreateREAL4Window(&status, &specparPSD.window, &winparPSD), \
       &status);
@@ -560,11 +555,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &hBarTildeTwo, \
         "hBarTildeTwo", gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
         fftDataLength), &status);
-
-  /* set zeropad parameters */
-  zeroPadParams.fftPlan = fftDataPlan;
-  zeroPadParams.window = dataWindow->data;
-  zeroPadParams.length = zeroPadLength;
 
   /* quantities needed to build the optimal filter */
 
@@ -848,8 +838,12 @@ INT4 main(INT4 argc, CHAR *argv[])
           }
 
           /* set parameters for monte carlo */
-          SimStochBGOne->epoch = gpsSegStartTime;
-          SimStochBGTwo->epoch = gpsSegStartTime;
+          SBParams.length = segmentLength;
+          SBParams.deltaT = 1. / resampleRate;
+          SBParams.detectorOne = lalCachedDetectors[siteOne];
+          SBParams.detectorTwo = lalCachedDetectors[siteTwo];
+          SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
+          SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
           SBParams.seed = seed;
 
           /* define input structure for SimulateSB */
@@ -860,6 +854,10 @@ INT4 main(INT4 argc, CHAR *argv[])
           /* define output structure for SimulateSB */
           SBOutput.SSimStochBG1 = SimStochBGOne;
           SBOutput.SSimStochBG2 = SimStochBGTwo;
+
+          /* set epochs for monte carlo outputs */
+          SimStochBGOne->epoch = gpsSegStartTime;
+          SimStochBGTwo->epoch = gpsSegStartTime;
 
           /* perform monte carlo */
           LAL_CALL(LALSSSimStochBGTimeSeries(&status, &SBOutput, \
@@ -1012,6 +1010,11 @@ INT4 main(INT4 argc, CHAR *argv[])
         segmentOne->data->data[i] = segOne[segMiddle]->data[i];
         segmentTwo->data->data[i] = segTwo[segMiddle]->data[i];
       }
+
+      /* set zeropad parameters */
+      zeroPadParams.fftPlan = fftDataPlan;
+      zeroPadParams.window = dataWindow->data;
+      zeroPadParams.length = zeroPadLength;
 
       /* zero pad and fft */
       LAL_CALL(LALSZeroPadAndFFT(&status, hBarTildeOne, segmentOne, \
