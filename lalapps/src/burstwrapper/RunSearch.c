@@ -2,7 +2,6 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
-#include <lal/Comm.h>
 #include <lal/Inject.h>
 #include <lal/Random.h>
 #include <lal/SimulateCoherentGW.h>
@@ -48,8 +47,7 @@ void BuildOutputFileBinary(LALStatus *status,
 			   EventIDColumn     *burstEventList,
 			   CHAR               *tag,
 			   UINT4 t0Sec,
-			   UINT4 t0NanoSec,
-			   InitExchParams *initExchParams
+			   UINT4 t0NanoSec
 			   );
 
 #ifndef WORDS_BIGENDIAN
@@ -1105,7 +1103,7 @@ int RunSearch(BurstSearchParams *params,
       */
 	case 2:
 	  LAL_CALL(
-		   BuildOutputFileBinary(&status, fid, &stdOutput, comment, params->data.data->epoch.gpsSeconds, params->data.data->epoch.gpsNanoSeconds,NULL),
+		   BuildOutputFileBinary(&status, fid, &stdOutput, comment, params->data.data->epoch.gpsSeconds, params->data.data->epoch.gpsNanoSeconds),
 		   &status);
 	  break;
 
@@ -1196,8 +1194,7 @@ void BuildOutputFileBinary(LALStatus *status,
 			   EventIDColumn     *burstEventList,
 			   CHAR               *tag,
 			   UINT4 t0Sec,
-			   UINT4 t0NanoSec,
-			   InitExchParams *initExchParams
+			   UINT4 t0NanoSec
 			   )
 {
 
@@ -1212,9 +1209,6 @@ void BuildOutputFileBinary(LALStatus *status,
   /*
   struct flock lock;
   */
-
-  ExchParams             *thisExch = NULL;
-  ExchParams exchFileLock;
 
   SnglBurstTable *sbtptr;
   EventIDColumn *sbtptrG;
