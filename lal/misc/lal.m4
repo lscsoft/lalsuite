@@ -201,9 +201,9 @@ AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK],
 AC_DEFUN([LAL_INTEL_MKL_QTHREAD_WARNING],
 [echo "**************************************************************"
  echo "* LAL will be linked against the fake POSIX thread library!  *"
- echo "*                                            .               *"
+ echo "*                                                            *"
  echo "* This build of LAL will not be thread safe and cannot be    *"
- echo "* linked agaubst the system pthread library.                 *"
+ echo "* linked against the system pthread library.                 *"
  echo "*                                                            *"
  echo "* The environment variables                                  *"
  echo "*                                                            *"
