@@ -709,8 +709,8 @@ int main( int argc, char *argv[] )
     return STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS;
   }
 
-  unitPair.unitOne = goodData1.sampleUnits;
-  unitPair.unitTwo = output.units;
+  unitPair.unitOne = &(goodData1.sampleUnits);
+  unitPair.unitTwo = &(output.units);
   LALUnitCompare(&status, &result, &unitPair);
   if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
@@ -729,7 +729,7 @@ int main( int argc, char *argv[] )
       return code;
     }
     
-    LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
+    LALUnitAsString( &status, unitString, unitPair.unitTwo );
     if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
 			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
@@ -738,7 +738,7 @@ int main( int argc, char *argv[] )
     }
     printf( "Units are \"%s\", ", unitString->data );
     
-    LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
+    LALUnitAsString( &status, unitString, unitPair.unitOne );
     if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
 			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
@@ -829,9 +829,8 @@ int main( int argc, char *argv[] )
     return STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS;
   }
 
-  unitPair.unitOne = lalDimensionlessUnit;
-  unitPair.unitOne.unitNumerator[LALUnitIndexSecond] = 1;
-  unitPair.unitTwo = output.units;
+  unitPair.unitOne = &lalSecondUnit;
+  unitPair.unitTwo = &(output.units);
   LALUnitCompare(&status, &result, &unitPair);
   if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
@@ -850,7 +849,7 @@ int main( int argc, char *argv[] )
       return code;
     }
     
-    LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
+    LALUnitAsString( &status, unitString, unitPair.unitTwo );
     if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
 			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )
@@ -859,7 +858,7 @@ int main( int argc, char *argv[] )
     }
     printf( "Units are \"%s\", ", unitString->data );
     
-    LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
+    LALUnitAsString( &status, unitString, unitPair.unitOne );
     if ( ( code = CheckStatus(&status, 0 , "",
 			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_EFLS,
 			      STOCHASTICCROSSCORRELATIONSTATISTICTESTC_MSGEFLS) ) )

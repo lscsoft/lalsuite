@@ -91,6 +91,11 @@ strncpy()
 #include <lal/Units.h>
 #include <string.h>
 
+#define invNoise output->unWhitenedInverseNoisePSD
+#define hwInvNoise output->halfWhitenedInverseNoisePSD
+#define wNoise input->whitenedNoisePSD
+#define wFilter input->whiteningFilter
+
 NRCSID(STOCHASTICINVERSENOISEC, "$Id$");
 
 /* <lalVerbatim file="StochasticInverseNoiseCP"> */
@@ -104,16 +109,12 @@ LALStochasticInverseNoise( LALStatus                          *status,
   REAL8          f0;
   UINT4          length;
 
-  REAL4FrequencySeries          *invNoise;
-  COMPLEX8FrequencySeries       *hwInvNoise;
-  REAL4FrequencySeries          *wNoise;
-  COMPLEX8FrequencySeries       *wFilter;
-
   REAL4          *sPtrPW, *sPtrIP, *sStopPtr;
   COMPLEX8       *cPtrR, *cPtrIPHW;
 
   RAT4        power;
   LALUnitPair unitPair;
+  LALUnit     wInvNoiseUnits;
 
   /* initialize status structure */
   INITSTATUS( status, "LALStochasticInverseNoise", STOCHASTICINVERSENOISEC );
@@ -134,15 +135,11 @@ LALStochasticInverseNoise( LALStatus                          *status,
   ASSERT( output != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
  
   /* check that pointers to members of input structure are not null */
-  wNoise      = input->whitenedNoisePSD;
   ASSERT( wNoise != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  wFilter     = input->whiteningFilter;
   ASSERT( wFilter != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
 
   /* check that pointers to members of output structure are not null */
-  invNoise    = output->unWhitenedInverseNoisePSD;
   ASSERT( invNoise != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
-  hwInvNoise  = output->halfWhitenedInverseNoisePSD;
   ASSERT( hwInvNoise != NULL, status, STOCHASTICCROSSCORRELATIONH_ENULLPTR, STOCHASTICCROSSCORRELATIONH_MSGENULLPTR );
   
   /* check that pointers to data members of series are not null */
@@ -218,21 +215,26 @@ LALStochasticInverseNoise( LALStatus                          *status,
   strncpy(hwInvNoise->name,"Half-whitened invserse noise PSD",LALNameLength);
 
   /* unit structure manipulation */
-  power.numerator = 2;
-  power.denominatorMinusOne = 0;
-  TRY(LALUnitRaise(status->statusPtr, &(unitPair.unitOne),
-                   &(wFilter->sampleUnits),
-                   &power),status);
+
+  /* Find units of whitened inverse power spectrum */
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  TRY(LALUnitRaise(status->statusPtr, &(unitPair.unitTwo),
-                   &(wNoise->sampleUnits), 
-                   &power),status);
-  TRY(LALUnitMultiply(status->statusPtr,&(invNoise->sampleUnits),
-                      &unitPair),status);
-  unitPair.unitOne = wFilter->sampleUnits;
-  TRY(LALUnitMultiply(status->statusPtr, &(hwInvNoise->sampleUnits), 
-                      &unitPair),status);
+  TRY(LALUnitRaise(status->statusPtr, &wInvNoiseUnits, 
+		   &(wNoise->sampleUnits), &power)
+      , status);
+
+  /* multiply by whitening filter units to get half-whitened inv noise units */
+  unitPair.unitOne = &(wFilter->sampleUnits);
+  unitPair.unitTwo = &wInvNoiseUnits;
+  TRY(LALUnitMultiply(status->statusPtr, &(hwInvNoise->sampleUnits),
+                      &unitPair)
+      , status);
+
+  /* multiply by whitening filter units to get unwhitened inv noise units */
+  unitPair.unitTwo = &(hwInvNoise->sampleUnits);
+  TRY(LALUnitMultiply(status->statusPtr, &(invNoise->sampleUnits),
+                      &unitPair)
+      , status);
 
   sStopPtr = wNoise->data->data + length;
 

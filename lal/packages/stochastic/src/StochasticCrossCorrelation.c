@@ -458,8 +458,8 @@ LALStochasticCrossCorrelationStatistic(
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   
   /* Set output units */  
-  unitPair.unitOne = ccSpec.sampleUnits;
-  unitPair.unitTwo =  lalHertzUnit;
+  unitPair.unitOne = &ccSpec.sampleUnits;
+  unitPair.unitTwo =  &lalHertzUnit;
   TRY( LALUnitMultiply(status->statusPtr, &(output->units), &unitPair),
        status );
   
@@ -655,8 +655,8 @@ LALStochasticHeterodynedCrossCorrelationStatistic(
   TRY(LALCDestroyVector(status->statusPtr, &(ccSpec.data)), status);
   
   /* Set output units */  
-  unitPair.unitOne = ccSpec.sampleUnits;
-  unitPair.unitTwo =  lalHertzUnit;
+  unitPair.unitOne = &ccSpec.sampleUnits;
+  unitPair.unitTwo =  &lalHertzUnit;
   TRY( LALUnitMultiply(status->statusPtr, &(output->units), &unitPair),
        status );
   
@@ -676,7 +676,8 @@ LALStochasticCrossCorrelationSpectrum(
 /* </lalVerbatim> */
 {
 
-  LALUnitPair   unitPair1, unitPair2;
+  LALUnitPair   unitPair;
+  LALUnit       h1H2Units;
 
   COMPLEX8FrequencySeries   h1StarH2, h1StarH2Coarse;
 
@@ -953,12 +954,13 @@ LALStochasticCrossCorrelationSpectrum(
            LALNameLength );
   
   /* Set output units */  
-  unitPair1.unitOne = input->hBarTildeOne->sampleUnits;
-  unitPair1.unitTwo = input->hBarTildeTwo->sampleUnits;
-  TRY( LALUnitMultiply(status->statusPtr, &(unitPair2.unitOne), &unitPair1),
+  unitPair.unitOne = &(input->hBarTildeOne->sampleUnits);
+  unitPair.unitTwo = &(input->hBarTildeTwo->sampleUnits);
+  TRY( LALUnitMultiply(status->statusPtr, &h1H2Units, &unitPair),
        status );
-  unitPair2.unitTwo = input->optimalFilter->sampleUnits;
-  TRY( LALUnitMultiply(status->statusPtr, &(output->sampleUnits), &unitPair2),
+  unitPair.unitOne = &h1H2Units;
+  unitPair.unitTwo = &(input->optimalFilter->sampleUnits);
+  TRY( LALUnitMultiply(status->statusPtr, &(output->sampleUnits), &unitPair),
        status );
 
   DETATCHSTATUSPTR(status);

@@ -146,8 +146,8 @@ LALTimeFreqRealFFT(
       TIMEFREQFFTH_ESIZE, TIMEFREQFFTH_MSGESIZE );
   ASSERT( time->deltaT > 0, status, TIMEFREQFFTH_ERATE, TIMEFREQFFTH_MSGERATE );
 
-  unitPair.unitOne = time->sampleUnits;
-  unitPair.unitTwo = lalSecondUnit;
+  unitPair.unitOne = &(time->sampleUnits);
+  unitPair.unitTwo = &(lalSecondUnit);
 
   /*
    *
@@ -200,8 +200,8 @@ LALFreqTimeRealFFT(
       TIMEFREQFFTH_ESIZE, TIMEFREQFFTH_MSGESIZE );
   ASSERT( freq->deltaF > 0, status, TIMEFREQFFTH_ERATE, TIMEFREQFFTH_MSGERATE );
 
-  unitPair.unitOne = freq->sampleUnits;
-  unitPair.unitTwo = lalHertzUnit;
+  unitPair.unitOne = &(freq->sampleUnits);
+  unitPair.unitTwo = &(lalHertzUnit);
 
   /*
    *
@@ -271,8 +271,8 @@ LALTimeFreqComplexFFT(
   ASSERT( time->deltaT > 0, status, TIMEFREQFFTH_ERATE, TIMEFREQFFTH_MSGERATE );
   ASSERT( plan->sign == -1, status, TIMEFREQFFTH_ESIGN, TIMEFREQFFTH_MSGESIGN );
 
-  unitPair.unitOne = time->sampleUnits;
-  unitPair.unitTwo = lalSecondUnit;
+  unitPair.unitOne = &(time->sampleUnits);
+  unitPair.unitTwo = &(lalSecondUnit);
   TRY( LALUnitMultiply( status->statusPtr, &freq->sampleUnits, &unitPair ),
       status );
 
@@ -342,8 +342,8 @@ LALFreqTimeComplexFFT(
   ASSERT( freq->deltaF > 0, status, TIMEFREQFFTH_ERATE, TIMEFREQFFTH_MSGERATE );
   ASSERT( plan->sign == 1, status, TIMEFREQFFTH_ESIGN, TIMEFREQFFTH_MSGESIGN );
 
-  unitPair.unitOne = freq->sampleUnits;
-  unitPair.unitTwo = lalHertzUnit;
+  unitPair.unitOne = &(freq->sampleUnits);
+  unitPair.unitTwo = &(lalHertzUnit);
   TRY( LALUnitMultiply( status->statusPtr, &time->sampleUnits, &unitPair ),
       status );
 

@@ -44,8 +44,8 @@ Consists of a pair of unit structures; used as an input structure for
 the \texttt{LALUnitCompare()} and \texttt{LALUnitMultiply()} functions.
 The fields are:
 \begin{description}
-\item[\texttt{LALUnit unitOne}] The first unit.
-\item[\texttt{LALUnit unitTwo}] The second unit.
+\item[\texttt{LALUnit *unitOne}] The first unit.
+\item[\texttt{LALUnit *unitTwo}] The second unit.
 \end{description}
 
 \subsubsection*{RAT4}
@@ -122,8 +122,8 @@ void LALUnitNormalize (LALStatus *status, LALUnit *output,
 typedef struct
 tagLALUnitPair
 {
-  LALUnit   unitOne;
-  LALUnit   unitTwo;
+  const LALUnit   *unitOne;
+  const LALUnit   *unitTwo;
 }
 LALUnitPair;
 

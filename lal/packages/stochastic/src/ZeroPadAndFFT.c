@@ -64,13 +64,10 @@ transform from the \texttt{fft} package.
 LALSCreateVector()
 LALSDestroyVector()
 LALTimeFreqRealFFT()
-LALUnitMultiply()
 memcpy()
 memset()
 strncpy()
 \end{verbatim}
-% LALUnitPair
-% lalSecondUnit
 
 {\tt LALSZeroPadAndFFT()\/} calls:
 
@@ -78,7 +75,6 @@ strncpy()
 LALCCreateVector()
 LALCDestroyVector()
 LALTimeFreqComplexFFT()
-LALUnitMultiply()
 memcpy()
 memset()
 strncpy()

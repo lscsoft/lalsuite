@@ -98,7 +98,7 @@ NRCSID( UNITSTESTC, "$Id$" );
 int main( int argc, char *argv[] )
 {
   static LALStatus   status;
-  static LALUnit     unit;
+  LALUnit            unit1, unit2;
   LALUnitPair        unitPair;
   RAT4               power;
   CHARVector         dummy;
@@ -117,13 +117,13 @@ int main( int argc, char *argv[] )
 
   if ( ! lalNoDebug )
   {
-    LALUnitAsString( &status, NULL, &unit );
+    LALUnitAsString( &status, NULL, &unit1 );
     TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
 
     dummy.data = NULL;
 
-    LALUnitAsString( &status, &dummy, &unit );
+    LALUnitAsString( &status, &dummy, &unit1 );
     TestStatus(&status, CODES(UNITSH_ENULLPD), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPD);
 
@@ -133,9 +133,7 @@ int main( int argc, char *argv[] )
   }
 #endif /* LAL_NDEBUG */
 
-  unit = lalVoltUnit;
-
-  LALUnitAsString( &status, string, &unit );
+  LALUnitAsString( &status, string, &lalVoltUnit );
   TestStatus(&status, CODES(UNITSH_ESTRINGSIZE), UNITSTESTC_ECHK);
   printf("  PASS: %s\n", UNITSH_MSGESTRINGSIZE);
 
@@ -147,7 +145,7 @@ int main( int argc, char *argv[] )
   LALCHARCreateVector(&status, &string, sizeof("m^2 kg s^-3 A^-1"));
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
-  LALUnitAsString(&status, string, &unit);
+  LALUnitAsString(&status, string, &lalVoltUnit);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if (strcmp(string->data, "m^2 kg s^-3 A^-1"))
   {
@@ -162,8 +160,7 @@ int main( int argc, char *argv[] )
   LALCHARCreateVector(&status, &string, sizeof("10^-12 m^-2 kg^-1 s^2 A^2"));
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
  
-  unit = lalPicoFaradUnit;
-  LALUnitAsString(&status, string, &unit);
+  LALUnitAsString(&status, string, &lalPicoFaradUnit);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if (strcmp(string->data, "10^-12 m^-2 kg^-1 s^2 A^2"))
   {
@@ -173,8 +170,7 @@ int main( int argc, char *argv[] )
   printf("  PASS: string representation of PicoFarad is '%s'\n",
 	 string->data);
  
-  unit = lalMeterUnit;
-  LALUnitAsString(&status, string, &unit);
+  LALUnitAsString(&status, string, &lalMeterUnit);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if (strcmp(string->data, "m"))
   {
@@ -183,8 +179,7 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: string representation of Meter is '%s'\n", string->data);
  
-  unit = lalCoulombUnit;
-  LALUnitAsString(&status, string, &unit);
+  LALUnitAsString(&status, string, &lalCoulombUnit);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if (strcmp(string->data, "s A"))
   {
@@ -193,8 +188,7 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: string representation of Coulomb is '%s'\n", string->data);
  
-  unit = lalMegaUnit;
-  LALUnitAsString(&status, string, &unit);
+  LALUnitAsString(&status, string, &lalMegaUnit);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if (strcmp(string->data, "10^6"))
   {
@@ -203,8 +197,7 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: string representation of Mega is '%s'\n", string->data);
  
-  unit = lalAttoStrainUnit;
-  LALUnitAsString(&status, string, &unit);
+  LALUnitAsString(&status, string, &lalAttoStrainUnit);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if (strcmp(string->data, "10^-18 strain"))
   {
@@ -214,8 +207,7 @@ int main( int argc, char *argv[] )
   printf("  PASS: string representation of AttoStrain is '%s'\n",
 	 string->data);
  
-  unit = lalDimensionlessUnit;
-  LALUnitAsString(&status, string, &unit);
+  LALUnitAsString(&status, string, &lalDimensionlessUnit);
 
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if (strcmp(string->data, ""))
@@ -238,13 +230,13 @@ int main( int argc, char *argv[] )
 
   if ( ! lalNoDebug )
   {
-    LALParseUnitString( &status,  &unit, NULL );
+    LALParseUnitString( &status,  &unit1, NULL );
     TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
 
     dummy.data = NULL;
 
-    LALParseUnitString( &status, &unit, &dummy );
+    LALParseUnitString( &status, &unit1, &dummy );
     TestStatus(&status, CODES(UNITSH_ENULLPD), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPD);
 
@@ -256,30 +248,31 @@ int main( int argc, char *argv[] )
 
   strncpy( string->data, "10^", string->length );
 
-  LALParseUnitString( &status, &unit, string );
+  LALParseUnitString( &status, &unit1, string );
   TestStatus(&status, CODES(UNITSH_EPARSE), UNITSTESTC_ECHK);
   printf("  PASS: %s\n", UNITSH_MSGEPARSE);
 
   strncpy( string->data, "s^3 s^2", string->length );
 
-  LALParseUnitString( &status, &unit, string );
+  LALParseUnitString( &status, &unit1, string );
   TestStatus(&status, CODES(UNITSH_EPARSE), UNITSTESTC_ECHK);
   printf("  PASS: %s\n", UNITSH_MSGEPARSE);
 
   strncpy( string->data, "V", string->length );
 
-  LALParseUnitString( &status, &unit, string );
+  LALParseUnitString( &status, &unit1, string );
   TestStatus(&status, CODES(UNITSH_EPARSE), UNITSTESTC_ECHK);
   printf("  PASS: %s\n", UNITSH_MSGEPARSE);
 
   printf("Testing response of LALParseUnitString to valid data:\n");
 
-  unitPair.unitTwo = lalVoltUnit;
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &lalVoltUnit;
 
-  LALUnitAsString(&status, string, &(unitPair.unitTwo));
+  LALUnitAsString(&status, string, &lalVoltUnit);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
-  LALParseUnitString(&status, &(unitPair.unitOne), string);
+  LALParseUnitString(&status, &unit1, string);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
   LALUnitCompare( &status, &answer, &unitPair );
@@ -291,12 +284,12 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: Volt <-> string\n");  
 
-  unitPair.unitTwo = lalPicoFaradUnit;
+  unitPair.unitTwo = &lalPicoFaradUnit;
 
-  LALUnitAsString(&status, string, &(unitPair.unitTwo));
+  LALUnitAsString(&status, string, unitPair.unitTwo);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
-  LALParseUnitString(&status, &(unitPair.unitOne), string);
+  LALParseUnitString(&status, &unit1, string);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
   LALUnitCompare( &status, &answer, &unitPair );
@@ -308,12 +301,12 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: PicoFarad <-> string\n");  
 
-  unitPair.unitTwo = lalMeterUnit;
+  unitPair.unitTwo = &lalMeterUnit;
 
-  LALUnitAsString(&status, string, &(unitPair.unitTwo));
+  LALUnitAsString(&status, string, unitPair.unitTwo);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
-  LALParseUnitString(&status, &(unitPair.unitOne), string);
+  LALParseUnitString(&status, &unit1, string);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
   LALUnitCompare( &status, &answer, &unitPair );
@@ -325,12 +318,12 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: Meter <-> string\n");  
 
-  unitPair.unitTwo = lalAttoStrainUnit;
+  unitPair.unitTwo = &lalAttoStrainUnit;
 
-  LALUnitAsString(&status, string, &(unitPair.unitTwo));
+  LALUnitAsString(&status, string, unitPair.unitTwo);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
-  LALParseUnitString(&status, &(unitPair.unitOne), string);
+  LALParseUnitString(&status, &unit1, string);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
   LALUnitCompare( &status, &answer, &unitPair );
@@ -342,12 +335,12 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: AttoStrain <-> string\n");  
 
-  unitPair.unitTwo = lalCoulombUnit;
+  unitPair.unitTwo = &lalCoulombUnit;
 
-  LALUnitAsString(&status, string, &(unitPair.unitTwo));
+  LALUnitAsString(&status, string, unitPair.unitTwo);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
-  LALParseUnitString(&status, &(unitPair.unitOne), string);
+  LALParseUnitString(&status, &unit1, string);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
   LALUnitCompare( &status, &answer, &unitPair );
@@ -359,12 +352,12 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: Coulomb <-> string\n");  
 
-  unitPair.unitTwo = lalMegaUnit;
+  unitPair.unitTwo = &lalMegaUnit;
 
-  LALUnitAsString(&status, string, &(unitPair.unitTwo));
+  LALUnitAsString(&status, string, unitPair.unitTwo);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
-  LALParseUnitString(&status, &(unitPair.unitOne), string);
+  LALParseUnitString(&status, &unit1, string);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
   LALUnitCompare( &status, &answer, &unitPair );
@@ -376,12 +369,12 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: Mega <-> string\n");  
 
-  unitPair.unitTwo = lalDimensionlessUnit;
+  unitPair.unitTwo = &lalDimensionlessUnit;
 
-  LALUnitAsString(&status, string, &(unitPair.unitTwo));
+  LALUnitAsString(&status, string, unitPair.unitTwo);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
-  LALParseUnitString(&status, &(unitPair.unitOne), string);
+  LALParseUnitString(&status, &unit1, string);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
   LALUnitCompare( &status, &answer, &unitPair );
@@ -401,69 +394,73 @@ int main( int argc, char *argv[] )
 #ifndef LAL_NDEBUG
   if ( ! lalNoDebug )
   {
+    unit1 = unit2 = lalDimensionlessUnit;
+
+    unitPair.unitTwo = &unit2;
+
     printf("Checking Input Validation of LALUnitMultiply:\n");
 
     LALUnitMultiply( &status, NULL, &unitPair );
     TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
 
-    LALUnitMultiply( &status, &unit, NULL );
+    LALUnitMultiply( &status, &unit1, NULL );
     TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
 
-    unitPair.unitOne.powerOfTen = 20000;
-    unitPair.unitTwo.powerOfTen = 30000;
+    unit1.powerOfTen = 20000;
+    unit2.powerOfTen = 30000;
 
-    LALUnitMultiply( &status, &unit, &unitPair );
+    LALUnitMultiply( &status, &unit1, &unitPair );
     TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
 
-    unitPair.unitOne.powerOfTen = 0;
-    unitPair.unitTwo.powerOfTen = 0;
-    unitPair.unitOne.unitNumerator[2] = 12345;
-    unitPair.unitOne.unitDenominatorMinusOne[2] = 23456;
-    unitPair.unitTwo.unitNumerator[2] = 23456;
-    unitPair.unitTwo.unitDenominatorMinusOne[2] = 12345;
+    unit1.powerOfTen = 0;
+    unit2.powerOfTen = 0;
+    unit1.unitNumerator[2] = 12345;
+    unit1.unitDenominatorMinusOne[2] = 23456;
+    unit2.unitNumerator[2] = 23456;
+    unit2.unitDenominatorMinusOne[2] = 12345;
 
-    LALUnitMultiply( &status, &unit, &unitPair );
+    LALUnitMultiply( &status, &unit1, &unitPair );
     TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
 
     printf("Checking Input Validation of LALUnitRaise:\n");
 
-    LALUnitRaise( &status, NULL, &unit, &power );
+    LALUnitRaise( &status, NULL, &unit1, &power );
     TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
 
-    LALUnitRaise( &status, &unit, NULL, &power );
+    LALUnitRaise( &status, &unit1, NULL, &power );
     TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
 
-    LALUnitRaise( &status, &(unitPair.unitOne), &unit, NULL );
+    LALUnitRaise( &status, &unit1, &unit1, NULL );
     TestStatus(&status, CODES(UNITSH_ENULLPPARAM), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPPARAM);
 
-    unit = lalKiloUnit;
+    unit1 = lalKiloUnit;
     power.numerator = 1;
     power.denominatorMinusOne = 1;
-    LALUnitRaise( &status, &(unitPair.unitOne), &unit, &power );
+    LALUnitRaise( &status, &unit1, &unit1, &power );
     TestStatus(&status, CODES(UNITSH_ENONINT), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENONINT);
 
-    unit.unitNumerator[2] = 40000;
+    unit1.unitNumerator[2] = 40000;
     power.numerator = 2;
     power.denominatorMinusOne = 0;
-    LALUnitRaise( &status, &(unitPair.unitOne), &unit, &power );
+    LALUnitRaise( &status, &unit1, &unit1, &power );
     TestStatus(&status, CODES(UNITSH_EOVERFLOW), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGEOVERFLOW);
 
     printf("Checking Input Validation of LALNormalize:\n");
 
-    LALUnitRaise( &status, NULL, &unit, &power );
+    LALUnitRaise( &status, NULL, &unit1, &power );
     TestStatus(&status, CODES(UNITSH_ENULLPOUT), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPOUT);
 
-    LALUnitRaise( &status, &unit, NULL, &power );
+    LALUnitRaise( &status, &unit1, NULL, &power );
     TestStatus(&status, CODES(UNITSH_ENULLPIN), UNITSTESTC_ECHK);
     printf("  PASS: %s\n", UNITSH_MSGENULLPIN);
   }  
@@ -471,15 +468,20 @@ int main( int argc, char *argv[] )
 
   printf("Testing response of LALUnitNormalize to valid data:\n");
 
-  unit = lalDimensionlessUnit;
-  unit.unitNumerator[0] = 2;
-  unit.unitDenominatorMinusOne[0] = 5;
-  unitPair.unitTwo = lalDimensionlessUnit;
-  unitPair.unitTwo.unitNumerator[0] = 1;
-  unitPair.unitTwo.unitDenominatorMinusOne[0] = 2;
+  unit2 = lalDimensionlessUnit;
+  unit2.unitNumerator[0] = 2;
+  unit2.unitDenominatorMinusOne[0] = 5;
 
-  LALUnitNormalize( &status, &(unitPair.unitOne), &unit );
+  LALUnitNormalize( &status, &unit1, &unit2 );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
+
+  unit2 = lalDimensionlessUnit;
+  unit2.unitNumerator[0] = 1;
+  unit2.unitDenominatorMinusOne[0] = 2;
+
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &unit2;
+
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if (!answer)
@@ -507,8 +509,8 @@ int main( int argc, char *argv[] )
 
   printf("Testing response of LALUnitCompare to valid data:\n");
 
-  unitPair.unitOne = lalMeterUnit;
-  unitPair.unitTwo = lalMeterUnit;
+  unitPair.unitOne = &lalMeterUnit;
+  unitPair.unitTwo = &lalMeterUnit;
   
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
@@ -519,7 +521,7 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: m = m\n");
 
-  unitPair.unitTwo = lalKiloGramUnit;
+  unitPair.unitTwo = &lalKiloGramUnit;
   
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
@@ -530,7 +532,7 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: m != kg\n");
 
-  unitPair.unitOne = lalGramUnit;
+  unitPair.unitOne = &lalGramUnit;
 
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
@@ -543,84 +545,86 @@ int main( int argc, char *argv[] )
 
   printf("Testing definitions of basic units:\n");
 
-  unitPair.unitOne = lalDimensionlessUnit;
-  unitPair.unitOne.unitNumerator[LALUnitIndexMeter] = 1;
-  unitPair.unitTwo = lalMeterUnit;
+  unitPair.unitOne = &unit1;
+
+  unit1 = lalDimensionlessUnit;
+  unit1.unitNumerator[LALUnitIndexMeter] = 1;
+  unitPair.unitTwo = &lalMeterUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo.unitNumerator[LALUnitIndexMeter] != 1 ) 
+  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexMeter] != 1 ) 
   {
     fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
     return UNITSTESTC_EFLS;
   }
   printf("  PASS: meter\n");
 
-  unitPair.unitOne = lalDimensionlessUnit;
-  unitPair.unitOne.unitNumerator[LALUnitIndexKiloGram] = 1;
-  unitPair.unitTwo = lalKiloGramUnit;
+  unit1 = lalDimensionlessUnit;
+  unit1.unitNumerator[LALUnitIndexKiloGram] = 1;
+  unitPair.unitTwo = &lalKiloGramUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo.unitNumerator[LALUnitIndexKiloGram] != 1 ) 
+  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexKiloGram] != 1 ) 
   {
     fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
     return UNITSTESTC_EFLS;
   }
   printf("  PASS: kilogram\n");
 
-  unitPair.unitOne = lalDimensionlessUnit;
-  unitPair.unitOne.unitNumerator[LALUnitIndexSecond] = 1;
-  unitPair.unitTwo = lalSecondUnit;
+  unit1 = lalDimensionlessUnit;
+  unit1.unitNumerator[LALUnitIndexSecond] = 1;
+  unitPair.unitTwo = &lalSecondUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo.unitNumerator[LALUnitIndexSecond] != 1 ) 
+  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexSecond] != 1 ) 
   {
     fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
     return UNITSTESTC_EFLS;
   }
   printf("  PASS: second\n");
 
-  unitPair.unitOne = lalDimensionlessUnit;
-  unitPair.unitOne.unitNumerator[LALUnitIndexAmpere] = 1;
-  unitPair.unitTwo = lalAmpereUnit;
+  unit1 = lalDimensionlessUnit;
+  unit1.unitNumerator[LALUnitIndexAmpere] = 1;
+  unitPair.unitTwo = &lalAmpereUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo.unitNumerator[LALUnitIndexAmpere] != 1 ) 
+  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexAmpere] != 1 ) 
   {
     fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
     return UNITSTESTC_EFLS;
   }
   printf("  PASS: Ampere\n");
 
-  unitPair.unitOne = lalDimensionlessUnit;
-  unitPair.unitOne.unitNumerator[LALUnitIndexKelvin] = 1;
-  unitPair.unitTwo = lalKelvinUnit;
+  unit1 = lalDimensionlessUnit;
+  unit1.unitNumerator[LALUnitIndexKelvin] = 1;
+  unitPair.unitTwo = &lalKelvinUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo.unitNumerator[LALUnitIndexKelvin] != 1 ) 
+  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexKelvin] != 1 ) 
   {
     fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
     return UNITSTESTC_EFLS;
   }
   printf("  PASS: Kelvin\n");
 
-  unitPair.unitOne = lalDimensionlessUnit;
-  unitPair.unitOne.unitNumerator[LALUnitIndexStrain] = 1;
-  unitPair.unitTwo = lalStrainUnit;
+  unit1 = lalDimensionlessUnit;
+  unit1.unitNumerator[LALUnitIndexStrain] = 1;
+  unitPair.unitTwo = &lalStrainUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo.unitNumerator[LALUnitIndexStrain] != 1 ) 
+  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexStrain] != 1 ) 
   {
     fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
     return UNITSTESTC_EFLS;
   }
   printf("  PASS: strain\n");
 
-  unitPair.unitOne = lalDimensionlessUnit;
-  unitPair.unitOne.unitNumerator[LALUnitIndexADCCount] = 1;
-  unitPair.unitTwo = lalADCCountUnit;
+  unit1 = lalDimensionlessUnit;
+  unit1.unitNumerator[LALUnitIndexADCCount] = 1;
+  unitPair.unitTwo = &lalADCCountUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer || unitPair.unitTwo.unitNumerator[LALUnitIndexADCCount] != 1 ) 
+  if ( !answer || unitPair.unitTwo->unitNumerator[LALUnitIndexADCCount] != 1 ) 
   {
     fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
     return UNITSTESTC_EFLS;
@@ -631,10 +635,9 @@ int main( int argc, char *argv[] )
   
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  unit = lalSecondUnit;
-  LALUnitRaise( &status, &(unitPair.unitOne), &unit, &power );
+  LALUnitRaise( &status, &unit1, &lalSecondUnit, &power );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitTwo = lalHertzUnit;
+  unitPair.unitTwo = &lalHertzUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if ( !answer ) 
@@ -646,18 +649,18 @@ int main( int argc, char *argv[] )
   
   power.numerator = -2;
   power.denominatorMinusOne = 0;
-  unit = lalSecondUnit;
-  LALUnitRaise( &status, &unitPair.unitTwo, &unit, &power);
+  LALUnitRaise( &status, &unit2, &lalSecondUnit, &power);
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalMeterUnit;
-  LALUnitMultiply( &status, &unit, &unitPair); /* unit is now m/s^2 */
+  unitPair.unitOne = &lalMeterUnit;
+  unitPair.unitTwo = &unit2;
+  LALUnitMultiply( &status, &unit1, &unitPair); /* unit is now m/s^2 */
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalKiloGramUnit;
-  unitPair.unitTwo = unit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
+  unitPair.unitOne = &lalKiloGramUnit;
+  unitPair.unitTwo = &unit1;
+  LALUnitMultiply( &status, &unit2, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalNewtonUnit;
+  unitPair.unitOne = &unit2;
+  unitPair.unitTwo = &lalNewtonUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if ( !answer ) 
@@ -669,13 +672,14 @@ int main( int argc, char *argv[] )
 
   power.numerator = -2;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &(unitPair.unitTwo), &lalMeterUnit, &power );
+  LALUnitRaise( &status, &unit2, &lalMeterUnit, &power );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalNewtonUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
+  unitPair.unitOne = &lalNewtonUnit;
+  unitPair.unitTwo = &unit2;
+  LALUnitMultiply( &status, &unit1, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalPascalUnit;
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &lalPascalUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if ( !answer ) 
@@ -685,12 +689,12 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: Pa is N m^-2\n");
 
-  unitPair.unitOne = lalNewtonUnit;
-  unitPair.unitTwo = lalMeterUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
+  unitPair.unitOne = &lalNewtonUnit;
+  unitPair.unitTwo = &lalMeterUnit;
+  LALUnitMultiply( &status, &unit1, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalJouleUnit;
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &lalJouleUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if ( !answer ) 
@@ -702,13 +706,14 @@ int main( int argc, char *argv[] )
 
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &(unitPair.unitTwo), &lalSecondUnit, &power );
+  LALUnitRaise( &status, &unit2, &lalSecondUnit, &power );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalJouleUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
+  unitPair.unitOne = &lalJouleUnit;
+  unitPair.unitTwo = &unit2;
+  LALUnitMultiply( &status, &unit1, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalWattUnit;
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &lalWattUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if ( !answer ) 
@@ -718,12 +723,12 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: W is J/s\n");
 
-  unitPair.unitOne = lalAmpereUnit;
-  unitPair.unitTwo = lalSecondUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
+  unitPair.unitOne = &lalAmpereUnit;
+  unitPair.unitTwo = &lalSecondUnit;
+  LALUnitMultiply( &status, &unit1, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalCoulombUnit;
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &lalCoulombUnit;
 
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
@@ -736,13 +741,14 @@ int main( int argc, char *argv[] )
 
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &(unitPair.unitTwo), &lalAmpereUnit, &power );
+  LALUnitRaise( &status, &unit2, &lalAmpereUnit, &power );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalWattUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
+  unitPair.unitOne = &lalWattUnit;
+  unitPair.unitTwo = &unit2;
+  LALUnitMultiply( &status, &unit1, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalVoltUnit;
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &lalVoltUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if ( !answer ) 
@@ -752,32 +758,16 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: V is W/A\n");
 
-  /*
-  unitPair.unitOne = lalCoulombUnit;
-  unitPair.unitTwo = lalVoltUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalJouleUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer ) 
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: J is C V\n");
-  */
-
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &(unitPair.unitTwo), &lalAmpereUnit, &power );
+  LALUnitRaise( &status, &unit2, &lalAmpereUnit, &power );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalVoltUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
+  unitPair.unitOne = &lalVoltUnit;
+  unitPair.unitTwo = &unit2;
+  LALUnitMultiply( &status, &unit1, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalOhmUnit;
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &lalOhmUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if ( !answer ) 
@@ -787,49 +777,16 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: Ohm is V/A\n");
 
-  /*
-  unitPair.unitOne = lalAmpereUnit;
-  unitPair.unitTwo = lalOhmUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalVoltUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer ) 
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: V is A Ohm\n");
-  */
-
-  /*
-  unitPair.unitOne = lalFaradUnit;
-  unitPair.unitTwo = lalVoltUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalCoulombUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer ) 
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: C is F V\n");
-  */
-
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &(unitPair.unitTwo), &lalVoltUnit, &power );
+  LALUnitRaise( &status, &unit2, &lalVoltUnit, &power );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalCoulombUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
+  unitPair.unitOne = &lalCoulombUnit;
+  unitPair.unitTwo = &unit2;
+  LALUnitMultiply( &status, &unit1, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalFaradUnit;
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &lalFaradUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if ( !answer ) 
@@ -839,32 +796,12 @@ int main( int argc, char *argv[] )
   }
   printf("  PASS: F is C/V\n");
 
-  /*
-  power.numerator = 2;
-  power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &(unitPair.unitOne), &lalOhmUnit, &power );
+  unitPair.unitOne = &lalVoltUnit;
+  unitPair.unitTwo = &lalSecondUnit;
+  LALUnitMultiply( &status, &unit1, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalAmpereUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalWattUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer ) 
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: W is A^2 Ohm\n");
-  */
-
-  unitPair.unitOne = lalVoltUnit;
-  unitPair.unitTwo = lalSecondUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalWeberUnit;
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &lalWeberUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if ( !answer ) 
@@ -876,17 +813,18 @@ int main( int argc, char *argv[] )
 
   power.numerator = -1;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &(unitPair.unitTwo), &lalAmpereUnit, &power );
+  LALUnitRaise( &status, &unit2, &lalAmpereUnit, &power );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalSecondUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
+  unitPair.unitOne = &lalSecondUnit;
+  unitPair.unitTwo = &unit2;
+  LALUnitMultiply( &status, &unit1, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalVoltUnit;
-  unitPair.unitTwo = unit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
+  unitPair.unitOne = &lalVoltUnit;
+  unitPair.unitTwo = &unit1;
+  LALUnitMultiply( &status, &unit1, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalHenryUnit;
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &lalHenryUnit;
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
   if ( !answer ) 
@@ -895,41 +833,18 @@ int main( int argc, char *argv[] )
     return UNITSTESTC_EFLS;
   }
   printf("  PASS: H is V s/A\n");
-  
-  /*
-  power.numerator = -1;
-  power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &(unitPair.unitTwo), &lalSecondUnit, &power );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalAmpereUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalHenryUnit;
-  unitPair.unitTwo = unit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalVoltUnit;
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer ) 
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: V is H A/s\n");
-  */
 
   power.numerator = -2;
   power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &(unitPair.unitTwo), &lalMeterUnit, &power );
+  LALUnitRaise( &status, &unit2, &lalMeterUnit, &power );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
 
-  unitPair.unitOne = lalWeberUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
+  unitPair.unitOne = &lalWeberUnit;
+  unitPair.unitTwo = &unit2;
+  LALUnitMultiply( &status, &unit1, &unitPair);  
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalTeslaUnit;
+  unitPair.unitOne = &unit1;
+  unitPair.unitTwo = &lalTeslaUnit;
 
   LALUnitCompare( &status, &answer, &unitPair );
   TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
@@ -939,31 +854,6 @@ int main( int argc, char *argv[] )
     return UNITSTESTC_EFLS;
   }
   printf("  PASS: T is Wb m^-2\n");
-
-  /*
-  unitPair.unitOne = lalAmpereUnit;
-  unitPair.unitTwo = lalMeterUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  power.numerator = -1;
-  power.denominatorMinusOne = 0;
-  LALUnitRaise( &status, &(unitPair.unitTwo), &unit, &power );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = lalNewtonUnit;
-  LALUnitMultiply( &status, &unit, &unitPair);  
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  unitPair.unitOne = unit;
-  unitPair.unitTwo = lalTeslaUnit;
-
-  LALUnitCompare( &status, &answer, &unitPair );
-  TestStatus(&status, CODES(0), UNITSTESTC_EFLS);
-  if ( !answer ) 
-  {
-    fprintf (stderr, "\nExiting to system with code %d\n", UNITSTESTC_EFLS);
-    return UNITSTESTC_EFLS;
-  }
-  printf("  PASS: T is N/(A m)\n");
-  */
 
   LALCheckMemoryLeaks();
 

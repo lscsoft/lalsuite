@@ -346,8 +346,10 @@ LALStochasticOptimalFilter(
   UINT4       length;
   
   RAT4        power;
-  LALUnitPair unitPair1, unitPair2, unitPair3;
-  LALUnit     unit;
+  LALUnitPair unitPair;
+  LALUnit     tmpUnit1, tmpUnit2, checkUnit;
+
+  REAL4WithUnits lambda;
 
   /* initialize status pointer */
   INITSTATUS(status, "LALStochasticOptimalFilter", STOCHASTICOPTIMALFILTERC);
@@ -616,76 +618,143 @@ LALStochasticOptimalFilter(
   strncpy( optimalFilter->name, "Optimal filter for stochastic search",
            LALNameLength );
 
+  /* All the powers we use are integers, so we can do this once here */
+  power.denominatorMinusOne = 0;
+
   /* check that units of gamma, Omega, P1 and P2 are consistent */
   /* we must have (gamma*Omega)^2 with the same units as f^2*P1*P2 */
   /* up to a power of ten */
-  unitPair1.unitOne = input->overlapReductionFunction->sampleUnits;
-  unitPair1.unitTwo = input->omegaGW->sampleUnits;
-  TRY( LALUnitMultiply(status->statusPtr, &unit, &unitPair1)
+  /* We check this by constructing checkUnit = f^2*P1*P2*(gamma*Omega)^-2 */
+
+  unitPair.unitOne = &(input->unWhitenedInverseNoisePSD1->sampleUnits);
+  unitPair.unitTwo = &(input->unWhitenedInverseNoisePSD2->sampleUnits);
+  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair)
       , status );
+  /* tmpUnit1 holds units of 1/(P1*P2) */
+
+  power.numerator = -1;
+  TRY( LALUnitRaise(status->statusPtr, &tmpUnit2, &tmpUnit1, &power)
+       , status );
+  /* tmpUnit2 holds units of P1*P2 */
+
+  unitPair.unitOne = &(input->overlapReductionFunction->sampleUnits);
+  unitPair.unitTwo = &(input->omegaGW->sampleUnits);
+  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair)
+      , status );
+  /* tmpUnit1 holds units of Omega*Gamma */
+
+  unitPair.unitOne = &tmpUnit1;
+  unitPair.unitTwo = &lalSecondUnit;
+  TRY( LALUnitMultiply(status->statusPtr, &checkUnit, &unitPair)
+      , status );
+  /* checkUnit holds units of f^-1*Omega*Gamma */
+
   power.numerator = -2;
-  power.denominatorMinusOne = 0;
-  TRY( LALUnitRaise(status->statusPtr, &(unitPair3.unitOne), &unit,
-                    &power)
+  TRY( LALUnitRaise(status->statusPtr, &tmpUnit1, &checkUnit, &power)
        , status );
-  power.numerator = 2;
-  TRY( LALUnitRaise(status->statusPtr, &(unitPair2.unitOne), &lalHertzUnit,
-                    &power)
+  /* tmpUnit1 holds units of f^2*(Omega*Gamma)^-2 */
+
+  /** unitPair.unitOne = &tmpUnit1; **/
+  /** Commented out because it's redundant with the last assignment **/
+  unitPair.unitTwo = &tmpUnit2;
+
+  TRY( LALUnitMultiply(status->statusPtr, &checkUnit, &unitPair)
        , status );
-  /* unitPair2.unitOne holds Hz^2 */
-  unitPair1.unitOne = input->unWhitenedInverseNoisePSD1->sampleUnits;
-  unitPair1.unitTwo = input->unWhitenedInverseNoisePSD2->sampleUnits;
-  TRY( LALUnitMultiply(status->statusPtr, &unit, &unitPair1)
-      , status );
-  power.numerator   = -1;
-  TRY( LALUnitRaise(status->statusPtr, &(unitPair2.unitTwo), &unit,
-                    &power)
-       , status );
-  TRY( LALUnitMultiply(status->statusPtr, &(unitPair3.unitTwo), &unitPair2)
-      , status );
-  TRY( LALUnitMultiply(status->statusPtr, &unit, &unitPair3), status );
+  /* checkUnit holds units of f^2*P1*P2(Omega*Gamma)^-2 */
+
+  /*** Check that checkUnit is dimensionless up to a power of ten ***/
 
   for (i=0; i<LALNumUnits; ++i)
   {
-    if ( unit.unitNumerator[i] || unit.unitDenominatorMinusOne[i] )
+    if ( checkUnit.unitNumerator[i] || checkUnit.unitDenominatorMinusOne[i] )
       {
+	printf("%d %d %d", i, checkUnit.unitNumerator[i], 
+	       checkUnit.unitDenominatorMinusOne[i]);
         ABORT(status,
               STOCHASTICCROSSCORRELATIONH_EWRONGUNITS,
               STOCHASTICCROSSCORRELATIONH_MSGEWRONGUNITS);    
       }
   }
 
-  /* assign correct units to normalized optimal filter */
-  power.numerator = -1;
-  power.denominatorMinusOne = 0;
+  /******* Set tmpUnit1 to dims of Omega/H0^2 ******/
 
-  unitPair1.unitOne = input->unWhitenedInverseNoisePSD1->sampleUnits;
-  TRY( LALUnitRaise(status->statusPtr, &(unitPair1.unitTwo),
-                    &(input->halfWhitenedInverseNoisePSD1->sampleUnits),
-                    &power)
-       , status );
-  TRY( LALUnitMultiply(status->statusPtr, &(unitPair2.unitOne), &unitPair1)
-      , status );
-  /* unitPair2.unitOne now holds the units of whitening filter #1 */
-  unitPair1.unitOne = input->unWhitenedInverseNoisePSD1->sampleUnits;
-  TRY( LALUnitRaise(status->statusPtr, &(unitPair1.unitTwo),
-                    &(input->halfWhitenedInverseNoisePSD1->sampleUnits),
-                    &power)
-       , status );
-  TRY( LALUnitMultiply(status->statusPtr, &(unitPair2.unitTwo), &unitPair1)
-      , status );
-  /* unitPair2.unitTwo now holds the units of whitening filter #2 */
-  unitPair3.unitOne = input->overlapReductionFunction->sampleUnits;
-  TRY( LALUnitMultiply(status->statusPtr, &(unitPair3.unitTwo), &unitPair2)
-      , status );
-  TRY( LALUnitMultiply(status->statusPtr, &unit, &unitPair3), status );
-  TRY( LALUnitRaise(status->statusPtr, &(optimalFilter->sampleUnits),
-                    &unit, &power)
+  /* First, set it to dims of H0 */
+
+  tmpUnit1 = lalHertzUnit;
+
+  /* Account for scaled units of Hubble constant */
+  tmpUnit1.powerOfTen -= 18;
+
+  /* Now set tmpUnit2 to dims of H0^-2 */
+  power.numerator    = -2;
+  TRY( LALUnitRaise(status->statusPtr, &tmpUnit2, &tmpUnit1, &power)
        , status );
 
-  /* Now change power of ten to account for scaled Hubble constant */
+  unitPair.unitOne = &(input->omegaGW->sampleUnits);
+  unitPair.unitTwo = &tmpUnit2;
+  
+  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status );
+  /* Now tmpUnit1 has units of Omega/H0^2 */
 
-  optimalFilter->sampleUnits.powerOfTen += 36;
+  /******* assign correct units to normalization constant ********/
+  /* These are Omega/H0^2*f^5*P1*P2*(gamma*Omega)^-2 */
+  /* which is the same as tmpUnit1*f^3*checkUnit */
+
+
+  unitPair.unitOne = &tmpUnit1;
+  unitPair.unitTwo = &checkUnit;
+  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit2, &unitPair)
+       , status );
+  /* tmpUnit2 has units of Omega/H0^2*f^2*P1*P2*(gamma*Omega)^-2 */
+
+  /* Now that we've used checkUnit, we don't need it any more and */
+  /* can use it for temp storage (of f^3) */
+  power.numerator = 3;
+  TRY( LALUnitRaise(status->statusPtr, &checkUnit, &lalHertzUnit, &power)
+       , status );
+
+  unitPair.unitOne = &tmpUnit2;
+  /* unitPair.unitTwo = &checkUnit; */
+  /** Commented out because it's redundant with the last assignment **/
+  TRY( LALUnitMultiply(status->statusPtr, &(lambda.units), &unitPair)
+       , status );
+
+  /* Now we need to set the Optimal Filter Units equal to the units of */
+  /* lambda*gamma*Omega*f^-3*P1HW^-1*P2HW^-1) */
+
+  unitPair.unitOne = &(input->halfWhitenedInverseNoisePSD1->sampleUnits);
+  unitPair.unitTwo = &(input->halfWhitenedInverseNoisePSD2->sampleUnits);
+  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair)
+       , status );
+  /* tmpUnit1 now holds the units of P1HW^-1*P2HW^-1 */
+
+  power.numerator = -3;
+  TRY( LALUnitRaise(status->statusPtr, &tmpUnit2, &lalHertzUnit, &power)
+       , status );
+  /* tmpUnit2 now holds the units of f^-3 */
+
+  unitPair.unitOne = &tmpUnit1;
+  unitPair.unitTwo = &tmpUnit2;
+  TRY( LALUnitMultiply(status->statusPtr, &checkUnit, &unitPair), status );
+  /* checkUnit now holds the units of f^-3*P1HW^-1*P2HW^-1) */
+
+  unitPair.unitOne = &checkUnit;
+  unitPair.unitTwo = &(input->omegaGW->sampleUnits);
+  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit1, &unitPair), status );
+  /* tmpUnit1 now holds units of Omega*f^-3*P1HW^-1*P2HW^-1) */
+
+  unitPair.unitOne = &tmpUnit1;
+  unitPair.unitTwo = &(input->overlapReductionFunction->sampleUnits);
+  TRY( LALUnitMultiply(status->statusPtr, &tmpUnit2, &unitPair), status );
+  /* tmpUnit2 now holds units of gamma*Omega*f^-3*P1HW^-1*P2HW^-1) */
+
+  unitPair.unitOne = &(lambda.units);
+  unitPair.unitTwo = &tmpUnit2;
+  TRY( LALUnitMultiply(status->statusPtr, &(optimalFilter->sampleUnits),
+		       &unitPair)
+       , status );
+
+  /* Done with unit manipulation */
 
   /* calculate lambda */
   /* find omegaRef */

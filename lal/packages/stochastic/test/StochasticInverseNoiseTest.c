@@ -208,6 +208,7 @@ int main(int argc, char *argv[])
   REAL4      expectedImag;
 
   LALUnitPair              unitPair;
+  LALUnit                  expectedUnit;
   BOOLEAN                  result;
 
   CHARVector               *unitString = NULL;
@@ -732,11 +733,12 @@ int main(int argc, char *argv[])
 
    /* check output units */
 
-   unitPair.unitOne = lalDimensionlessUnit;
-   unitPair.unitOne.unitNumerator[LALUnitIndexADCCount] = -1;
-   unitPair.unitOne.unitNumerator[LALUnitIndexStrain] = -1;
-   unitPair.unitOne.unitNumerator[LALUnitIndexSecond] = -1;
-   unitPair.unitTwo = hwInvNoise.sampleUnits;
+   expectedUnit = lalDimensionlessUnit;
+   expectedUnit.unitNumerator[LALUnitIndexADCCount] = -1;
+   expectedUnit.unitNumerator[LALUnitIndexStrain] = -1;
+   expectedUnit.unitNumerator[LALUnitIndexSecond] = -1;
+   unitPair.unitOne = &expectedUnit;
+   unitPair.unitTwo = &(hwInvNoise.sampleUnits);
    LALUnitCompare(&status, &result, &unitPair);
    if ( ( code = CheckStatus(&status, 0 , "",
 			     STOCHASTICINVERSENOISETESTC_EFLS,
@@ -755,7 +757,7 @@ int main(int argc, char *argv[])
        return code;
      }
      
-     LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
+     LALUnitAsString( &status, unitString, unitPair.unitTwo );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       STOCHASTICINVERSENOISETESTC_EFLS,
 			       STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
@@ -764,7 +766,7 @@ int main(int argc, char *argv[])
      }
      printf( "Units of 1/PHW(f) are \"%s\", ", unitString->data );
      
-     LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
+     LALUnitAsString( &status, unitString, unitPair.unitOne );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       STOCHASTICINVERSENOISETESTC_EFLS,
 			       STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
@@ -876,10 +878,11 @@ int main(int argc, char *argv[])
    }
 
    /* check output units */
-  unitPair.unitOne = lalDimensionlessUnit;
-  unitPair.unitOne.unitNumerator[LALUnitIndexStrain] = -2;
-  unitPair.unitOne.unitNumerator[LALUnitIndexSecond] = -1;
-  unitPair.unitTwo = invNoise.sampleUnits;
+  expectedUnit = lalDimensionlessUnit;
+  expectedUnit.unitNumerator[LALUnitIndexStrain] = -2;
+  expectedUnit.unitNumerator[LALUnitIndexSecond] = -1;
+  unitPair.unitOne = &expectedUnit;
+  unitPair.unitTwo = &(invNoise.sampleUnits);
   LALUnitCompare(&status, &result, &unitPair);
   if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICINVERSENOISETESTC_EFLS,
@@ -898,7 +901,7 @@ int main(int argc, char *argv[])
       return code;
     }
     
-    LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
+    LALUnitAsString( &status, unitString, unitPair.unitTwo );
   if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICINVERSENOISETESTC_EFLS,
 			    STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )
@@ -907,7 +910,7 @@ int main(int argc, char *argv[])
     }
     printf( "Units of 1/P(f) are \"%s\", ", unitString->data );
     
-    LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
+    LALUnitAsString( &status, unitString, unitPair.unitOne );
   if ( ( code = CheckStatus(&status, 0 , "",
 			    STOCHASTICINVERSENOISETESTC_EFLS,
 			    STOCHASTICINVERSENOISETESTC_MSGEFLS) ) )

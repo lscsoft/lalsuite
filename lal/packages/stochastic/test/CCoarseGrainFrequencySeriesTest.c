@@ -633,8 +633,8 @@ main( int argc, char *argv[] )
    }
 
    /* check output units */
-   unitPair.unitOne = goodInput.sampleUnits;
-   unitPair.unitTwo = goodOutput.sampleUnits;
+   unitPair.unitOne = &(goodInput.sampleUnits);
+   unitPair.unitTwo = &(goodOutput.sampleUnits);
    LALUnitCompare(&status, &result, &unitPair);
    if ( ( code = CheckStatus(&status, 0 , "",
 			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -654,7 +654,7 @@ main( int argc, char *argv[] )
        return code;
      }
     
-     LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
+     LALUnitAsString( &status, unitString, unitPair.unitTwo );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
@@ -663,7 +663,7 @@ main( int argc, char *argv[] )
      }
      printf( "Units are \"%s\", ", unitString->data );
      
-     LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
+     LALUnitAsString( &status, unitString, unitPair.unitOne );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
@@ -830,8 +830,8 @@ main( int argc, char *argv[] )
    }
 
    /* check output units */
-   unitPair.unitOne = goodInput.sampleUnits;
-   unitPair.unitTwo = goodOutput.sampleUnits;
+   unitPair.unitOne = &(goodInput.sampleUnits);
+   unitPair.unitTwo = &(goodOutput.sampleUnits);
    LALUnitCompare(&status, &result, &unitPair);
    if ( ( code = CheckStatus(&status, 0 , "",
 			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -851,7 +851,7 @@ main( int argc, char *argv[] )
        return code;
      }
     
-     LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
+     LALUnitAsString( &status, unitString, unitPair.unitTwo );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
@@ -860,7 +860,7 @@ main( int argc, char *argv[] )
      }
      printf( "Units are \"%s\", ", unitString->data );
      
-     LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
+     LALUnitAsString( &status, unitString, unitPair.unitOne );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
@@ -1056,8 +1056,8 @@ main( int argc, char *argv[] )
    }
 
    /* check output units */
-   unitPair.unitOne = goodInput.sampleUnits;
-   unitPair.unitTwo = goodOutput.sampleUnits;
+   unitPair.unitOne = &(goodInput.sampleUnits);
+   unitPair.unitTwo = &(goodOutput.sampleUnits);
    LALUnitCompare(&status, &result, &unitPair);
    if ( ( code = CheckStatus(&status, 0 , "",
 			     CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
@@ -1077,7 +1077,7 @@ main( int argc, char *argv[] )
        return code;
      }
     
-     LALUnitAsString( &status, unitString, &(unitPair.unitTwo) );
+     LALUnitAsString( &status, unitString, unitPair.unitTwo );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )
@@ -1086,7 +1086,7 @@ main( int argc, char *argv[] )
      }
      printf( "Units are \"%s\", ", unitString->data );
      
-     LALUnitAsString( &status, unitString, &(unitPair.unitOne) );
+     LALUnitAsString( &status, unitString, unitPair.unitOne );
      if ( ( code = CheckStatus(&status, 0 , "",
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_EFLS,
 			       CCOARSEGRAINFREQUENCYSERIESTESTC_MSGEFLS) ) )

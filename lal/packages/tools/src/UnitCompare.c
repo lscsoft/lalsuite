@@ -17,7 +17,7 @@ equivalent, false otherwise.
 \subsubsection*{Description}
 
 This function determines whether the units represented by
-\texttt{input->unitOne} and \texttt{input->unitTwo} are the same (both
+\texttt{*(input->unitOne)} and \texttt{*(input->unitTwo)} are the same (both
 dimensionally and in the power-of-ten prefactor).  In this way,
 programs and programmers can verify that quantities have the expected
 units.
@@ -63,8 +63,8 @@ LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
 
   ASSERT( output != NULL, status, UNITSH_ENULLPOUT, UNITSH_MSGENULLPOUT );
 
-  LALUnitNormalize(status->statusPtr, &unitOne, &(input->unitOne));
-  LALUnitNormalize(status->statusPtr, &unitTwo, &(input->unitTwo));
+  LALUnitNormalize(status->statusPtr, &unitOne, input->unitOne);
+  LALUnitNormalize(status->statusPtr, &unitTwo, input->unitTwo);
 
   if (unitOne.powerOfTen != unitTwo.powerOfTen)
   {

@@ -265,8 +265,8 @@ int main( void )
 	    READFTSERIESTESTC_MSGEFLS);
     return READFTSERIESTESTC_EFLS;
   }
-  inputUnits.unitOne = cFrequencySeries.sampleUnits;
-  inputUnits.unitTwo = cFrequencySeries2.sampleUnits;  
+  inputUnits.unitOne = &cFrequencySeries.sampleUnits;
+  inputUnits.unitTwo = &cFrequencySeries2.sampleUnits;  
   LALUnitCompare(&status,&unitComp,&inputUnits);
   if (status.statusCode != 0) 
   {
@@ -399,8 +399,8 @@ int main( void )
 	    READFTSERIESTESTC_MSGEFLS);
     return READFTSERIESTESTC_EFLS;
   }
-  inputUnits.unitOne = zFrequencySeries.sampleUnits;
-  inputUnits.unitTwo = zFrequencySeries2.sampleUnits;  
+  inputUnits.unitOne = &zFrequencySeries.sampleUnits;
+  inputUnits.unitTwo = &zFrequencySeries2.sampleUnits;  
   LALUnitCompare(&status,&unitComp,&inputUnits);
   if (status.statusCode != 0) 
   {
@@ -482,8 +482,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = strainToMinus2;
-  unitPair.unitTwo = adcToMinus2;
+  unitPair.unitOne = &strainToMinus2;
+  unitPair.unitTwo = &adcToMinus2;
   LALUnitMultiply(&status, &(adcStrain), &unitPair);
   if (status.statusCode != 0) 
   {
@@ -492,8 +492,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = adcStrain;
-  unitPair.unitTwo = lalHertzUnit;
+  unitPair.unitOne = &adcStrain;
+  unitPair.unitTwo = &lalHertzUnit;
   LALUnitMultiply(&status, &dFrequencySeries.sampleUnits, &unitPair);
   if (status.statusCode != 0) 
   {
@@ -572,8 +572,8 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = dFrequencySeries.sampleUnits;
-  inputUnits.unitTwo = dFrequencySeries2.sampleUnits;  
+  inputUnits.unitOne = &dFrequencySeries.sampleUnits;
+  inputUnits.unitTwo = &dFrequencySeries2.sampleUnits;  
   LALUnitCompare(&status,&unitComp,&inputUnits);
   if (status.statusCode != 0) 
   {
@@ -650,8 +650,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = strainToMinus2;
-  unitPair.unitTwo = adcToMinus2;
+  unitPair.unitOne = &strainToMinus2;
+  unitPair.unitTwo = &adcToMinus2;
   LALUnitMultiply(&status, &(adcStrain), &unitPair);
   if (status.statusCode != 0) 
   {
@@ -660,8 +660,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = adcStrain;
-  unitPair.unitTwo = lalHertzUnit;
+  unitPair.unitOne = &adcStrain;
+  unitPair.unitTwo = &lalHertzUnit;
   LALUnitMultiply(&status, &sFrequencySeries.sampleUnits, &unitPair);
   if (status.statusCode != 0) 
   {
@@ -741,8 +741,8 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = sFrequencySeries.sampleUnits;
-  inputUnits.unitTwo = sFrequencySeries2.sampleUnits;  
+  inputUnits.unitOne = &sFrequencySeries.sampleUnits;
+  inputUnits.unitTwo = &sFrequencySeries2.sampleUnits;  
   LALUnitCompare(&status,&unitComp,&inputUnits);
   if (status.statusCode != 0) 
   {
@@ -862,8 +862,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = strainToMinus2;
-  unitPair.unitTwo = adcToMinus2;
+  unitPair.unitOne = &strainToMinus2;
+  unitPair.unitTwo = &adcToMinus2;
   LALUnitMultiply(&status, &(adcStrain), &unitPair);
   if (status.statusCode != 0) 
   {
@@ -872,8 +872,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = adcStrain;
-  unitPair.unitTwo = lalHertzUnit;
+  unitPair.unitOne = &adcStrain;
+  unitPair.unitTwo = &lalHertzUnit;
   LALUnitMultiply(&status, &sTimeSeries.sampleUnits, &unitPair);
   if (status.statusCode != 0) 
   {
@@ -970,8 +970,8 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = sTimeSeries.sampleUnits;
-  inputUnits.unitTwo = sTimeSeries2.sampleUnits;  
+  inputUnits.unitOne = &sTimeSeries.sampleUnits;
+  inputUnits.unitTwo = &sTimeSeries2.sampleUnits;  
   LALUnitCompare(&status,&unitComp,&inputUnits);
   if (status.statusCode != 0) 
   {
@@ -1024,8 +1024,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = strainToMinus2;
-  unitPair.unitTwo = adcToMinus2;
+  unitPair.unitOne = &strainToMinus2;
+  unitPair.unitTwo = &adcToMinus2;
   LALUnitMultiply(&status, &(adcStrain), &unitPair);
   if (status.statusCode != 0) 
   {
@@ -1034,8 +1034,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = adcStrain;
-  unitPair.unitTwo = lalHertzUnit;
+  unitPair.unitOne = &adcStrain;
+  unitPair.unitTwo = &lalHertzUnit;
   LALUnitMultiply(&status, &zTimeSeries.sampleUnits, &unitPair);
   if (status.statusCode != 0) 
   {
@@ -1134,8 +1134,8 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = zTimeSeries.sampleUnits;
-  inputUnits.unitTwo = zTimeSeries2.sampleUnits;  
+  inputUnits.unitOne = &zTimeSeries.sampleUnits;
+  inputUnits.unitTwo = &zTimeSeries2.sampleUnits;  
   LALUnitCompare(&status,&unitComp,&inputUnits);
   if (status.statusCode != 0) 
   {
@@ -1198,8 +1198,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = strainToMinus2;
-  unitPair.unitTwo = adcToMinus2;
+  unitPair.unitOne = &strainToMinus2;
+  unitPair.unitTwo = &adcToMinus2;
   LALUnitMultiply(&status, &(adcStrain), &unitPair);
   if (status.statusCode != 0) 
   {
@@ -1208,8 +1208,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = adcStrain;
-  unitPair.unitTwo = lalHertzUnit;
+  unitPair.unitOne = &adcStrain;
+  unitPair.unitTwo = &lalHertzUnit;
   LALUnitMultiply(&status, &sTimeSeries.sampleUnits, &unitPair);
   if (status.statusCode != 0) 
   {
@@ -1307,8 +1307,8 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = dTimeSeries.sampleUnits;
-  inputUnits.unitTwo = dTimeSeries2.sampleUnits;  
+  inputUnits.unitOne = &dTimeSeries.sampleUnits;
+  inputUnits.unitTwo = &dTimeSeries2.sampleUnits;  
   LALUnitCompare(&status,&unitComp,&inputUnits);
   if (status.statusCode != 0) 
   {
@@ -1362,8 +1362,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = strainToMinus2;
-  unitPair.unitTwo = adcToMinus2;
+  unitPair.unitOne = &strainToMinus2;
+  unitPair.unitTwo = &adcToMinus2;
   LALUnitMultiply(&status, &(adcStrain), &unitPair);
   if (status.statusCode != 0) 
   {
@@ -1372,8 +1372,8 @@ int main( void )
     return READFTSERIESTESTC_EFUN;
   }
 
-  unitPair.unitOne = adcStrain;
-  unitPair.unitTwo = lalHertzUnit;
+  unitPair.unitOne = &adcStrain;
+  unitPair.unitTwo = &lalHertzUnit;
   LALUnitMultiply(&status, &cTimeSeries.sampleUnits, &unitPair);
   if (status.statusCode != 0) 
   {
@@ -1466,8 +1466,8 @@ int main( void )
     return READFTSERIESTESTC_EFLS;
   }
 
-  inputUnits.unitOne = cTimeSeries.sampleUnits;
-  inputUnits.unitTwo = cTimeSeries2.sampleUnits;  
+  inputUnits.unitOne = &cTimeSeries.sampleUnits;
+  inputUnits.unitTwo = &cTimeSeries2.sampleUnits;  
   LALUnitCompare(&status,&unitComp,&inputUnits);
   if (status.statusCode != 0) 
   {
