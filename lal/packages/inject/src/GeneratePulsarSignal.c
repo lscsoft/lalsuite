@@ -140,15 +140,6 @@ static LALStatus emptyStatus;
 static SpinOrbitCWParamStruc emptyCWParams;
 static CoherentGW emptySignal;
 
-#define LTT 1000
-/* FIXME!!!!!: 
-   -> we use this time-constant to make the signal start earlier and last longer than
-   really required
-
-   This is done according to makefakedata_v2, but it really points
-   to a bug in SimulateCoherentGW(), which should be traced at some point!!
-*/
-
 /***********************************************************************
  * generate a time-series at the detector for a given pulsar
  ***********************************************************************/
@@ -203,15 +194,15 @@ LALGeneratePulsarSignal (LALStatus *stat,
   sourceParams.spinEpoch = params->pulsar.tRef;
 
   /* sampling-timestep and length for source-parameters */
-  sourceParams.deltaT = 60;	/* in seconds; hardcoded default from makefakedata_v2 */
+  sourceParams.deltaT = 60;	/* in seconds; hardcoded default from makefakedata_v2 
+				 * this should be largely enough, at it only concerns
+				 * the amplitudes, and _phase_ of the signal, not h(t),
+				 * which will then be used for interpolation */
 
   /* start-time in SSB time */
   TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, params->startTimeGPS, params), stat);
   sourceParams.epoch = tmpTime;
-  /* ----------
-     FIXME: argh, circumvent some mysterious bug in SimulateCoherentGW()... */
-  sourceParams.epoch.gpsSeconds -= 0.75*LTT;
-  /*----------*/
+  sourceParams.epoch.gpsSeconds -= (UINT4)sourceParams.deltaT; /* start one time-step earlier to be safe */
 
   tmpTime = params->startTimeGPS;
   TRY ( LALAddFloatToGPS (stat->statusPtr, &tmpTime, &tmpTime, params->duration), stat);
@@ -219,11 +210,8 @@ LALGeneratePulsarSignal (LALStatus *stat,
   TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, tmpTime, params), stat);	 /* convert time to SSB */
 
   TRY (LALDeltaFloatGPS (stat->statusPtr, &SSBduration, &tmpTime, &(sourceParams.spinEpoch)), stat);
-  sourceParams.length = (UINT4)( SSBduration / sourceParams.deltaT );
-  /* ----------
-     FIXME: argh, circumvent some mysterious bug in SimulateCoherentGW()... */
-  sourceParams.length   += (UINT4)(1.5*LTT/ sourceParams.deltaT);
-  /*----------*/
+  sourceParams.length = (UINT4) ceil( SSBduration / sourceParams.deltaT );
+  sourceParams.length += 2 * sourceParams.deltaT; /* add two time-steps to be safe */
 
   /* we use frequency-spindowns, but GenerateSpinOrbitCW wants it f0-normalized,
      so we have to do that here: */
