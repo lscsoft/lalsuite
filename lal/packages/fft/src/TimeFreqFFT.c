@@ -56,7 +56,7 @@
  * \begin{verbatim}
  * const UINT4 n  = 65536;
  * const REAL4 dt = 1.0 / 16384.0;
- * static LALStatus status;
+ * static LALStatus status; compute average power spectrum
  * static REAL4TimeSeries         x;
  * static COMPLEX8FrequencySeries X;
  * static COMPLEX8TimeSeries      z;
@@ -123,75 +123,6 @@
 
 NRCSID( TIMEFREQFFTC, "$Id$" );
 
-
-/*************************************************************/
-/* calculation of median for power spectrum data 7/17/02 MSW */
-/* implements an insert sort using temporary array           */
-/* assumes inputs are positive, sorts in descending order    */
-/*************************************************************/
-
-static REAL4 EPMedian(REAL4 *p, INT4 j, INT4 flength, INT4 numSegs, LALStatus *status)
-{
-    /* p points to array of power spectra data over time slices */
-    /* j is desired frequency offset into power spectra array   */
-    /* flength is size of frequency series obtained from DFT    */
-    /* numSegs is the number of time slices to be evaluated     */
-    /* status points to LAL status struct passed into main      */
-    /* returns the median value, over time slice at given freq. */
-
-    /* TODO should check for valid or reasonable inputs */
-    INT4  outer  = 0;       /* local loop counter */
-    INT4  middle = 0;       /* local loop counter */
-    INT4  inner  = 0;       /* local loop counter */
-    REAL4 returnVal = 0.0;  /* holder for return value */
-
-    /* allocate memory array for insert sort, test for success */
-    REAL4 *s = (REAL4 *)LALMalloc(numSegs * sizeof(REAL4));
-    ASSERT(s, status, TIMEFREQFFTH_EMALLOC, TIMEFREQFFTH_MSGEMALLOC);
-
-    /* zero out the sort array */
-    for (outer = 0; outer < numSegs; outer++)
-    {
-      s[outer] = 0.0;
-    }
-
-    /* scan time slices for a given frequency */
-    for (outer = 0; outer < numSegs; outer++)
-    {
-      /* insert power value into sort array */
-      REAL4 tmp = p[outer * flength + j]; /* obtain value to insert */
-      for (middle = 0; middle < numSegs; middle++)
-      {
-        if (tmp > s[middle])
-        {
-          /* insert taking place of s[middle] */
-          for (inner = numSegs - 1; inner > middle; inner--)
-          {
-            s[inner] = s [inner - 1];  /* move old values */
-          }
-          s[middle] = tmp;   /* insert new value */
-          break;  /* terminate loop */
-        }
-      }
-    }  /* done inserting into sort array */
-
-    /* check for odd or even number of segments */
-    if (numSegs % 2)
-    {
-      /* if odd number of segments, return median */
-      returnVal = s[numSegs / 2];
-    }
-    else
-    {
-      /* if even number of segments, return average of two medians */
-      returnVal = 0.5 * (s[numSegs/2] + s[(numSegs/2) - 1]);
-    }
-
-    /* free memory used for sort array */
-    LALFree(s);
-
-    return returnVal;
-}
 
 /******** <lalVerbatim file="CreateRealDFTParamsCP"> ********/
 void
@@ -407,161 +338,280 @@ LALFreqTimeRealFFT(
 
 /*
  *
- * THIS IS THE AVERAGE SPECTRUM ROUTINE
+ * median spectrum estimator based on mark's version
  *
  */
 
-void
-LALRealAverageSpectrum(
-    LALStatus            *status,
-    REAL4FrequencySeries *fSeries,
-    REAL4TimeSeries      *tSeries,
-    RealDFTParams        *params,
-    AvgSpecMethod         method
+
+static REAL4 
+MedianSpec(
+    REAL4      *p, 
+    REAL4      *s,
+    UINT4       j, 
+    UINT4       flength, 
+    UINT4       numSegs
     )
 {
-    INT4   numSegs=0;                        /* number of overlapping segments */
-    INT4   flength = fSeries->data->length;  /* length of output freq. series  */
-    REAL4Vector     *dummyVec=NULL;
-    COMPLEX8Vector  *dummyCVec=NULL;
-    REAL4TimeSeries *dummyTimeSeries=NULL;
-    INT4 n,j,i;
-    REAL4 fac;
+  /* p points to array of power spectra data over time slices */
+  /* s is a scratch array used to sort the values             */
+  /* j is desired frequency offset into power spectra array   */
+  /* flength is size of frequency series obtained from DFT    */
+  /* numSegs is the number of time slices to be evaluated     */
+  /* returns the median value, over time slice at given freq. */
 
-    INITSTATUS (status, "LALRealAverageSpectrum", TIMEFREQFFTC);
-    ATTATCHSTATUSPTR (status);
+  UINT4  outer  = 0;       /* local loop counter */
+  UINT4  middle = 0;       /* local loop counter */
+  UINT4  inner  = 0;       /* local loop counter */
+  REAL4 returnVal = 0.0;  /* holder for return value */
 
-    /* new convenience variables */
-    numSegs = floor( tSeries->data->length / ( flength-1 )  - 1);
-    n = params->window->length;
-    fac = 1 / sqrt( params->sumofsquares);
+  /* zero out the sort array */
+  memset( s, 0, numSegs * sizeof(REAL4) );
 
-    /* copy over data into frequency series structure */
-    fSeries->epoch = tSeries->epoch;
-    fSeries->f0    = tSeries->f0;
-    fSeries->deltaF = 1/((REAL8)(n)*tSeries->deltaT); 
-
-    /* create temporary vector */
-    LALCreateVector (status->statusPtr, &dummyVec, n);
-    CHECKSTATUSPTR (status);
-    LALCCreateVector (status->statusPtr, &dummyCVec, flength);
-    CHECKSTATUSPTR (status);
-
-    
-    if (method == useMedian)
-    { 
-        /* allocate array to hold power at each freq in each time slice */
-        REAL4 *ptr = (REAL4 *)LALMalloc(flength * numSegs * sizeof(REAL4));
-        ASSERT(ptr, status, TIMEFREQFFTH_EMALLOC, TIMEFREQFFTH_MSGEMALLOC);
-
-        for (j = 0; j < flength; j++){
-            for (i = 0; i < numSegs; i++){
-                ptr[i * flength + j] = 0.0;
-            }
-        }
-
-        /* obtain power spectrum in each overlapping time slice */
-        for (i = 0; i < numSegs; i++)
-        {
-            INT4 offset=i*(flength-1);  /* This overlap = 0.5*n */
-
-            /* compute windowed version of time series data */
-            for (j = 0; j < n; j++)
-            {
-                dummyVec->data[j] = fac * tSeries->data->data[j+offset]
-                    * params->window->data[j];
-            };
-
-            /* compute the DFT */
-            LALForwardRealFFT (status->statusPtr, dummyCVec, dummyVec, params->plan);
-            CHECKSTATUSPTR (status);
-
-            /* copy modulus of DFT output into two dimensional array */
-            for (j=0 ; j < flength ; j++)
-            {
-                REAL4 redummy = dummyCVec->data[j].re ;
-                REAL4 imdummy = dummyCVec->data[j].im ;
-                ptr[i * flength + j] = redummy*redummy + imdummy*imdummy;
-            }
-        }  /* done computing spectrum */
-
-        /* find median value over time slices for each frequency */
-        for (j = 0; j < flength; j++)
-        {
-            fSeries->data->data[j] = EPMedian(ptr, j, flength, numSegs, status);
-            /* factors needed to give PSD of conventions doc T010095
-             * and to rescale Gaussian white noise to mean estimator */
-            fSeries->data->data[j] *= (2.0 * tSeries->deltaT / LAL_LN2); 
-        }
-
-        LALFree(ptr);     
-    }  /* end of new code using median */
-
-    else if (method == useMean)
-    {  
-        /* allocate array to hold power at each freq in each time slice */
-        REAL4 *ptr = (REAL4 *)LALMalloc(flength * sizeof(REAL4));
-        ASSERT(ptr, status, TIMEFREQFFTH_EMALLOC, TIMEFREQFFTH_MSGEMALLOC);
-
-        /* zero out memory array */
-        for (j = 0; j < flength; j++){
-            ptr[j] = 0.0;
-        }
-
-        /* obtain power spectrum in each time slice */
-        for (i = 0; i < numSegs; i++)
-        {
-            INT4 offset=i*(flength-1);
-
-            /* compute windowed version of time series data */
-            for (j = 0; j < n; j++)
-            {
-                dummyVec->data[j] = fac * tSeries->data->data[j+offset]
-                    * params->window->data[j];
-            };
-
-            /* compute the DFT */
-            LALForwardRealFFT (status->statusPtr, dummyCVec, dummyVec, params->plan);
-            CHECKSTATUSPTR (status);
-
-            /* copy modulus of DFT output into two dimensional array */
-            for (j=0 ; j < flength ; j++)
-            {
-                REAL4 redummy = dummyCVec->data[j].re ;
-                REAL4 imdummy = dummyCVec->data[j].im ;
-                ptr[j] += redummy*redummy + imdummy*imdummy;
-            }
-        }  /* done computing spectrum */
-
-        /* find median value over time slices for each frequency */
-        for (j = 0; j < flength; j++)
-        {
-            /* compute normalized power spectrum consistent with PSD 
-             * of conventions doc T010095 */
-            fSeries->data->data[j] = ptr[j] * (2.0 * tSeries->deltaT) /
-                (REAL4)(numSegs);
-        }
-
-        LALFree(ptr);     
-
-    }  /* end of original code using mean */
-
-    /* default case for unknown method */
-    else
+  /* scan time slices for a given frequency */
+  for ( outer = 0; outer < numSegs; ++outer )
+  {
+    /* insert power value into sort array */
+    REAL4 tmp = p[outer * flength + j]; /* obtain value to insert */
+    for ( middle = 0; middle < numSegs; ++middle )
     {
-        ABORT (status, TIMEFREQFFTH_EINCOMP, TIMEFREQFFTH_MSGEINCOMP );
+      if ( tmp > s[middle] )
+      {
+        /* insert taking place of s[middle] */
+        for ( inner = numSegs - 1; inner > middle; --inner )
+        {
+          s[inner] = s [inner - 1];  /* move old values */
+        }
+        s[middle] = tmp;   /* insert new value */
+        break;  /* terminate loop */
+      }
+    }
+  }  /* done inserting into sort array */
+
+  /* check for odd or even number of segments */
+  if ( numSegs % 2 )
+  {
+    /* if odd number of segments, return median */
+    returnVal = s[numSegs / 2];
+  }
+  else
+  {
+    /* if even number of segments, return average of two medians */
+    returnVal = 0.5 * (s[numSegs/2] + s[(numSegs/2) - 1]);
+  }
+
+  return returnVal;
+}
+
+
+/*
+ *
+ * compute average power spectrum
+ *
+ */
+
+
+void
+LALREAL4AverageSpectrum (
+    LALStatus                   *status,
+    REAL4FrequencySeries        *fSeries,
+    REAL4TimeSeries             *tSeries,
+    AverageSpectrumParams       *params
+    )
+{
+  INITSTATUS (status, "LALREAL4AverageSpectrum", TIMEFREQFFTC);
+  ATTATCHSTATUSPTR (status);
+
+  UINT4                 i, j, k;          /* seg, ts and freq counters       */
+  UINT4                 numSeg;           /* number of segments in average   */
+  UINT4                 fLength;          /* length of requested power spec  */
+  UINT4                 tLength;          /* length of time series segments  */
+  REAL4Vector          *tSegment = NULL;  /* dummy time series segment       */
+  COMPLEX8Vector       *fSegment = NULL;  /* dummy freq series segment       */
+  REAL4                *tSeriesPtr;       /* pointer to the segment data     */
+  REAL4                 psdNorm = 0;      /* factor to multiply windows data */
+  REAL4                 fftRe, fftIm;     /* real and imag parts of fft      */
+  REAL4                *s;                /* work space for computing mean   */
+  REAL4                *psdSeg;           /* storage for individual specta   */
+  LALUnit               unit;
+  LALUnitPair           pair;
+  RAT4                  negRootTwo = { -1, 1 };
+
+  /* check the input and output data pointers are non-null */
+  ASSERT( fSeries, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( fSeries->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( fSeries->data->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( tSeries, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( tSeries->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( tSeries->data->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+
+  /* check the contents of the parameter structure */
+  ASSERT( params, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( params->window, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( params->window->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( params->plan, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  if ( !  ( params->method == useUnity || params->method == useMean || 
+        params->method == useMedian ) )
+  {
+    ABORT( status, TIMEFREQFFTH_EUAVG, TIMEFREQFFTH_MSGEUAVG );
+  }
+
+  /* check that the window length and fft storage lengths agree */
+  fLength = fSeries->data->length;
+  tLength = params->window->data->length;
+  if ( fLength != tLength / 2 + 1 )
+  {
+    ABORT( status, TIMEFREQFFTH_EMISM, TIMEFREQFFTH_MSGEMISM );
+  }
+
+  /* compute the number of segs, check that the length and overlap are valid */
+  numSeg = tSeries->data->length - params->overlap / tLength - params->overlap;
+  if ( (tSeries->data->length - params->overlap) % (tLength - params->overlap) )
+  {
+    ABORT( status, TIMEFREQFFTH_EMISM, TIMEFREQFFTH_MSGEMISM );
+  }
+
+  /* clear the output spectrum and the workspace frequency series */
+  memset( fSeries->data->data, 0, fLength * sizeof(REAL4) );
+
+  /* compute the parameters of the output frequency series data */
+  fSeries->epoch = tSeries->epoch;
+  fSeries->f0 = tSeries->f0;
+  fSeries->deltaF = 1.0 / ( (REAL8) tLength * tSeries->deltaT );
+  pair.unitOne = &(tSeries->sampleUnits);
+  pair.unitTwo = &lalHertzUnit;
+  LALUnitRaise( status->statusPtr, &unit, pair.unitTwo, &negRootTwo );
+  CHECKSTATUSPTR( status );
+  pair.unitTwo = &unit;
+  LALUnitMultiply( status->statusPtr, &(fSeries->sampleUnits), &pair );
+  CHECKSTATUSPTR( status );
+
+  /* if this is a unit spectrum, just set the conents to unity and return */
+  if ( params->method == useUnity )
+  {
+    for ( k = 0; k < fLength; ++k )
+    {
+      fSeries->data->data[k] = 1.0;
+    }
+    DETATCHSTATUSPTR( status );
+    RETURN( status );
+  }
+
+  /* create temporary storage for the dummy time domain segment */
+  LALCreateVector( status->statusPtr, &tSegment, tLength );
+  CHECKSTATUSPTR( status );
+
+  /* create temporary storage for the individual ffts */
+  LALCCreateVector( status->statusPtr, &fSegment, fLength );
+  CHECKSTATUSPTR( status );
+
+  if ( params->method == useMedian )
+  {
+    /* create enough storage for the indivdiual power spectra */
+    psdSeg = (REAL4 *) LALCalloc( numSeg, fLength * sizeof(REAL4) );
+  }
+
+  /* compute each of the power spectra used in the average */
+  for ( i = 0, tSeriesPtr = tSeries->data->data; i < (UINT4) numSeg; ++i )
+  {
+    /* copy the time series data to the dummy segment */
+    memcpy( tSegment->data, tSeriesPtr, tLength * sizeof(REAL4) );
+
+    /* window the time series segment */
+    for ( j = 0; j < tLength; ++j )
+    {
+      tSegment->data[j] *= params->window->data->data[j];
     }
 
-    LALDestroyVector (status->statusPtr, &dummyVec);
-    CHECKSTATUSPTR (status);
-    LALCDestroyVector (status->statusPtr, &dummyCVec);
+    /* compute the fft of the data segment */
+    LALForwardRealFFT( status->statusPtr, fSegment, tSegment, params->plan );
     CHECKSTATUSPTR (status);
 
+    /* advance the segment data pointer to the start of the next segment */
+    tSeriesPtr += tLength - params->overlap;
 
-    /* normal exit */
-    DETATCHSTATUSPTR (status);
-    RETURN (status);
+    /* compute the psd components */
+    if ( params->method == useMean )
+    {
+      /* we can get away with less storage */
+      for ( k = 0; k < fLength; ++k )
+      {
+        fftRe = fSegment->data[k].re;
+        fftIm = fSegment->data[k].im;
+        fSeries->data->data[k] += fftRe * fftRe + fftIm * fftIm;
+      }
+    }
+    else if ( params->method == useMedian )
+    {
+      /* we must store all the spectra */
+      for ( k = 0; k < fLength; ++k )
+      {
+        fftRe = fSegment->data[k].re;
+        fftIm = fSegment->data[k].im;
+        psdSeg[i * fLength + k] = fftRe * fftRe + fftIm * fftIm;
+      }
+    }
+  }
+
+  /* destroy the dummy time series segment and the fft scratch space */
+  LALDestroyVector( status->statusPtr, &tSegment );
+  CHECKSTATUSPTR( status );
+  LALCDestroyVector( status->statusPtr, &fSegment );
+  CHECKSTATUSPTR( status );
+
+  /* compute the desired average of the spectra */
+  if ( params->method == useMean )
+  {
+    /* normalization constant for the arithmentic mean */
+    psdNorm = ( 2.0 * tSeries->deltaT ) / 
+      ( (REAL4) numSeg * params->window->sumofsquares );
+
+    /* normalize the psd to it matches the conventions document */
+    for ( k = 0; k < fLength; ++k )
+    {
+      fSeries->data->data[k] *= psdNorm;
+    }
+  }
+  else if ( params->method == useMedian )
+  {
+    /* normalization constant for the median */
+    psdNorm = ( 2.0 * tSeries->deltaT ) / 
+      ( LAL_LN2 * params->window->sumofsquares );
+
+    /* allocate memory array for insert sort */
+    s = LALMalloc( numSeg * sizeof(REAL4) );
+    if ( ! s )
+    {
+      ABORT( status, TIMEFREQFFTH_EMALLOC, TIMEFREQFFTH_MSGEMALLOC );
+    }
+
+    /* compute the median spectra and normalize to the conventions doc */
+    for ( k = 0; k < fLength; ++k )
+    {
+      fSeries->data->data[k] = psdNorm * 
+        MedianSpec( psdSeg, s, k, fLength, numSeg );
+    }
+
+    /* free memory used for sort array */
+    LALFree( s );
+
+    /* destroy the storage for the individual spectra */
+    LALFree( psdSeg );
+  }
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
 }
+
 
 /*
  *
