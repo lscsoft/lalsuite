@@ -3,6 +3,9 @@ Author: Prix, Reinhard
 $Id$
 ************************************* </lalVerbatim> */
 
+/* NOTES: */
+/* 07/14/04 gam; add functions LALFastGeneratePulsarSFTs and LALComputeSkyAndZeroPsiAMResponse */
+
 /********************************************************** <lalLaTeX>
 \section{Header \texttt{GeneratePulsarSignal.h}}
 \label{s:GeneratePulsarSignal.h}
@@ -23,11 +26,14 @@ routines in GeneratePulsarSignal.c.
 #define _GENERATEPULSARSIGNAL_H
 
 #include <lal/LALDatatypes.h>
+#include <lal/DetResponse.h>
 #include <lal/DetectorSite.h>
 #include <lal/GenerateSpinOrbitCW.h>
 #include <lal/Date.h>
 #include <lal/LALBarycenter.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/ComputeSky.h>
+#include <lal/ComputeSkyBinary.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -52,7 +58,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_ENOISEDELTAF	10
 #define GENERATEPULSARSIGNALH_ENOISEBAND	11
 #define GENERATEPULSARSIGNALH_ENOISEBINS	12
-
+#define GENERATEPULSARSIGNALH_EBADCOORDS	13
 
 #define GENERATEPULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define GENERATEPULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
@@ -66,7 +72,7 @@ NRCSID( GENERATEPULSARSIGNALH, "$Id$");
 #define GENERATEPULSARSIGNALH_MSGENOISEDELTAF	"Frequency resolution of noise-SFTs inconsistent with signal"
 #define GENERATEPULSARSIGNALH_MSGENOISEBAND	"Frequency band of noise-SFTs inconsistent with signal"
 #define GENERATEPULSARSIGNALH_MSGENOISEBINS	"Frequency bins of noise-SFTs inconsistent with signal"
-
+#define GENERATEPULSARSIGNALH_MSGEBADCOORDS	"Current code requires sky position in equatorial coordinates"
 /*************************************************** </lalErrTable> */
 
 /*************************************************** 
@@ -116,6 +122,40 @@ typedef struct {
 } SFTParams;
 /* </lalVerbatim> */
 
+/*<lalLaTeX>
+\subsubsection*{Structure \texttt{SFTandSignalParams}}
+
+Parameters defining the pulsar signal and SFTs used by \verb+LALFastGeneratePulsarSFTs()+.  Lookup tables (LUTs) are
+used for trig functions if \verb+resTrig+ $> 0$; the user must then initialize \verb+trigArg+, \verb+sinVal+, and
+\verb+cosVal+.  See \verb+GeneratePulsarSignalTest.c+ for an example.
+
+</lalLaTeX> */
+/* <lalVerbatim> */
+typedef struct {
+   PulsarSignalParams *pSigParams; 
+   SFTParams *pSFTParams;
+   INT4  nSamples;  /* nsample from noise SFT header; 2x this equals effective number of time samples  */
+   INT4  resTrig;   /* length sinVal and cosVal; resolution of trig functions = 2pi/resTrig */
+   REAL8 *trigArg;  /* array of arguments to hold lookup table (LUT) values for doing trig calls */
+   REAL8 *sinVal;   /* sinVal holds lookup table (LUT) values for doing trig sin calls */
+   REAL8 *cosVal;   /* cosVal holds lookup table (LUT) values for doing trig cos calls */
+} SFTandSignalParams;
+/* </lalVerbatim> */
+
+/*<lalLaTeX>
+\subsubsection*{Structure \texttt{SkyConstAndZeroPsiAMResponse}}
+
+Sky Constants and beam pattern response functions used by \verb+LALFastGeneratePulsarSFTs()+.
+These are output from \verb+SkyConstAndZeroPsiAMResponse()+.
+
+</lalLaTeX> */
+/* <lalVerbatim> */
+typedef struct {
+      REAL8  *skyConst;      /* vector of A and B sky constants */
+      REAL4  *fPlusZeroPsi;  /* vector of Fplus values for psi = 0 at midpoint of each SFT */
+      REAL4  *fCrossZeroPsi; /* vector of Fcross values for psi = 0 at midpoint of each SFT */
+} SkyConstAndZeroPsiAMResponse;
+/* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{GeneratePulsarSignalHV}}
@@ -126,6 +166,9 @@ typedef struct {
 /* Function prototypes */
 void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const PulsarSignalParams *params);
 void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
+
+void LALComputeSkyAndZeroPsiAMResponse (LALStatus *stat, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);                      /* 07/14/04 gam */
+void LALFastGeneratePulsarSFTs (LALStatus *stat, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params); /* 07/14/04 gam */
 
 void LALConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void LALConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);

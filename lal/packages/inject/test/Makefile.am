@@ -7,7 +7,7 @@ NEED_METAIO =
 endif
 
 check_PROGRAMS = 	BasicInjectTest InjectTest GeneratePPNInspiralTest SimulateTaylorCWTest \
-			SimulateSBTest SkyCoordinatesTest SimulatePopcornTest $(NEED_METAIO)
+			SimulateSBTest SkyCoordinatesTest SimulatePopcornTest GeneratePulsarSignalTest $(NEED_METAIO)
 
 InjectTest_SOURCES      = InjectTest.c
 InjectTest_LDADD        = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
@@ -23,6 +23,8 @@ SkyCoordinatesTest_SOURCES = SkyCoordinatesTest.c
 SkyCoordinatesTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 SimulatePopcornTest_SOURCES = SimulatePopcornTest.c
 SimulatePopcornTest_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+GeneratePulsarSignalTest_SOURCES = GeneratePulsarSignalTest.c
+GeneratePulsarSignalTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 if METAIO
 InterfaceTest_SOURCES = InterfaceTest.c
@@ -32,7 +34,7 @@ endif
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include 
 
-TESTS = BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest  $(NEED_MEATIO)
+TESTS = BasicInjectTest GeneratePPNInspiralTest SimulateTaylorCWTest SimulateSBTest SkyCoordinatesTest GeneratePulsarSignalTest $(NEED_MEATIO)
 
 
 EXTRA_DIST = CheckStatus.c CheckStatus.h L1.dat H2.dat injection.xml
