@@ -1,143 +1,27 @@
-/*************************** <lalVerbatim file="TwoInterfFindChirpFilterCV">
-Author: Bose, Sukanta, and Brown, D. A.
-$Id$
-************************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{TwoInterfFindChirpFilter.c}}
-\label{twointerffindchirp:ss:TwoInterfFindChirpFilter.c}
-
-Computes the search statistic for an inspiral waveform in the outputs of a 
-pair of interferometers.
-
-\subsubsection*{Prototypes}
-%\input{TwoInterfFindChirpFilterCP}
-\idx{LALTwoInterfFindChirpFilter()}
-
-\subsubsection*{Description}
-
-This package computes the coherent statistic 
-\cite{twointerffindchirp:BPD:2000} as a function of time, given a 
-post-Newtonian template and coincident data from two interferometers.
-\vfill{\footnotesize\input{TwoInterfFindChirpFilterCV}}
-
-For a network of $M$ detectors, the data consist of $M$ data trains, 
-$\{x^I(t)|\>I=1,2,...,M$ and $t \in [0,T]\}$. The network matched-template can 
-be obtained naturally by the maximum-likelihood method, where the 
-decision whether
-the signal is present or not is made by evaluating the likelihood ratio (LR)
-for the network \cite{twointerffindchirp:Hels:1968}. 
-For independent detector noises, it is straightforward to show that the 
-network LR, denoted by $\lambda$, is just a product of the individual 
-detector LRs. (For non-independent detector noises, see Ref. 
-\cite{twointerffindchirp:Finn:2001}.)
-In addition, for Gaussian noise, the logarithmic likelihood 
-ratio (LLR) for the network is just the sum of the LLRs of the individual 
-detectors \cite{twointerffindchirp:BDP:1999},
-\begin{equation}
-\ln\lambda = \sum_{I=1}^M \ln\lambda_{(I)} \ \ ,
-\end{equation}
-where 
-\begin{equation}
-\ln\lambda_{(I)} = \langle s^I, x^I \rangle_{(I)} -
-{1 \over 2} \langle s^I, s^I \rangle_{(I)} \,.
-\end{equation}
-Above, we have denoted the cross-correlation between two vectors by the
-inner-product:
-\begin{equation}
-\label{twointerffindchirp:e:innerProduct}
-\langle a ,\>b \rangle_{(I)} = 2 \Re \int_{0}^{\infty} \! df\>
-{\tilde{a}^* (f) \tilde{b}(f) \over s_{h(I)}(f)} \ \ , 
-\end{equation}
-where $\tilde{a}(f)$ and $\tilde{b}(f)$ are the Fourier
-transforms of $a(t)$ and $b(t)$, respectively, and $s_{h(I)}(f)$ is the
-two-sided noise power spectral density of the $I$-th detector.
-
-The network LLR takes a compact form in terms of the network inner-product,
-\begin{equation}
-\langle {\sf s},{\sf x}\rangle_{NW} = \sum_{I=1}^M \langle s^{I}(t), x^{I}
-(t)\rangle_{(I)} \ \ ,
-\end{equation}
-where 
-\begin{equation}
-\label{twointerffindchirp:e:netSignal}
-{\sf s} (t) =\left(s^{1}(t), s^{2}(t),\cdots , s^{M} (t) \right)
-\end{equation}
-is the network template-vector, which comprises of individual 
-detector-templates as its components, and
-\begin{equation}
-\label{twointerffindchirp:e:netData}
-{\sf x} (t) =\left(x^{1} (t), x^{2}(t),\cdots , x^{M} (t) \right)
-\end{equation}
-is the network data-vector. 
-
-It can be shown by using the Schwarz inequality 
-that the network template, ${\sf s}$, defined 
-above yields the maximum signal-to-noise (SNR) amongst all linear templates 
-and, hence, is the matched template. As shown in Ref. 
-\cite{twointerffindchirp:BDP:1999}, in terms of 
-the above definitions, the network LLR takes the following simple form:
-\begin{equation}\label{twointerffindchirp:e:netMLR}
-\ln\lambda = \langle {\sf s},{\sf x}\rangle_{NW} -
-{1 \over 2} \langle {\sf s}, {\sf s}\rangle_{NW} \ \ ,
-\end{equation}
-which is a function of the source parameters that determine ${\sf s}$. Given 
-${\sf s}$, different selections of source-parameter values and, therefore,
-different values of ${\sf s}$ result in varying magnitudes of the LLR. The
-selection that gives the maximum value stands the best chance for beating the
-pre-set threshold on the LLR. Since scanning the complete source-parameter 
-manifold for the maximum of LLR is computationally very expensive
-\cite{twointerffindchirp:PDB:2001}, it is wiser
-to perform its maximization analytically over as many parameters as possible.
-Such a maximization can be done over four parameters, namely, the 
-luminosity distance to the source, the waveform phase at the time of 
-final coalescence, the inclination angle of the binary's orbit, and the
-polarization-ellipse angle. This package computes for a pair of 
-interferometers the value of the reduced statistic 
-that is derived from the above statistic by such a maximization
-\cite{twointerffindchirp:BPD:2000}.
-
-\subsubsection*{Uses}
-
-\begin{verbatim}
-LALFindChirpChisqVeto()
-LALCOMPLEX8VectorFFT()
-\end{verbatim}
-
-\vfill{\footnotesize\input{TwoInterfFindChirpFilterCV}}
-
-******************************************************* </lalLaTeX> */ 
-
-/**************************** <lalLaTeX file="TwoInterfFindChirpFilterCB">
-\bibitem{twointerffindchirp:BPD:2000}
- S.~Bose, A.~Pai, and S.~V.~Dhurandhar, \/ Int.\ J.\ Mod.\ Phys. \ D\
- {\bf 9}, 325 (2000).   
- \href{http://www.arXiv.org/abs/gr-qc/0002010}{gr-qc/0002010}
-\bibitem{twointerffindchirp:Hels:1968} 
- C.~W.~Helstrom, \textit{Statistical Theory of Signal Detection}, 
- Pergamon Press, London (1968).
-\bibitem{twointerffindchirp:Finn:2001} 
- L.~S.~Finn, Phys.\ Rev.\ D\ {\bf 63}, 102001 (2001).
- \href{http://www.arXiv.org/abs/gr-qc/0010033}{gr-qc/0010033}
-\bibitem{twointerffindchirp:BDP:1999}
- S.~Bose, S.~V.~Dhurandhar, and A.~Pai, \/ Pramana\ {\bf 53}, 1125 (1999). 
- \href{http://www.arXiv.org/abs/gr-qc/9906064}{gr-qc/9906064}
-\bibitem{twointerffindchirp:PDB:2001}
- A.~Pai, S.~V.~Dhurandhar, and S.~Bose, \/ Phys.\ Rev.\ D{\bf 64}, 042004
- (2001).
- \href{http://www.arXiv.org/abs/gr-qc/0009078}{gr-qc/0009078}
-
-******************************************************* </lalLaTeX> */
+/*----------------------------------------------------------------------- 
+ * 
+ * File Name: TwoInterfFindChirpFilter.c
+ *
+ * Author: Bose, S.
+ * 
+ * Revision: $Id$
+ * 
+ *-----------------------------------------------------------------------
+ */
 
 #include <math.h>
 #include <string.h>
+
+#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 #include <lal/DetectorSite.h> 
-#include <lal/TwoInterfFindChirp.h> 
+#include <lal/TwoInterfFindChirp.h>
+#include <lal/PrintVector.h>
+#include <lal/PrintFTSeries.h>
 
 double rint(double x);
 
@@ -148,18 +32,19 @@ static REAL4 cartesianInnerProduct(REAL4 x[3], REAL4 y[3])
   return x[0] * y[0] + x[1] * y[1] + x[2] * y[2];
 }
 void
-LALCreateTwoInterfFindChirpFilterInput (
-					LALStatus                      *status,
-					TwoInterfFindChirpFilterInput **output,
-					TwoInterfFindChirpInitParams   *params
-					)
+LALCreateTwoInterfFindChirpInputVector (
+    LALStatus                             *status,
+    TwoInterfFindChirpFilterInputVector  **vector,
+    TwoInterfFindChirpInitParams          *params
+    )
 {
-  TwoInterfFindChirpFilterInput         *outputPtr;
-  
-  INITSTATUS( status, "LALCreateTwoInterfFindChirpFilterInput", 
+  UINT4                                    i;
+  TwoInterfFindChirpFilterInputVector     *vectorPtr;
+  FindChirpFilterInput                    *filterInputPtr;
+
+  INITSTATUS( status, "LALCreateTwoInterfFindChirpFilterInputVector", 
 	      TWOINTERFFINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
-
 
   /*
    *
@@ -169,34 +54,46 @@ LALCreateTwoInterfFindChirpFilterInput (
   
 
   /* check that the output handle exists, but points to a null pointer */
-  ASSERT( output, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );  
-  ASSERT( !*output, status, TWOINTERFFINDCHIRPH_ENNUL, TWOINTERFFINDCHIRPH_MSGENNUL );
+  ASSERT( vector, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );  
+  ASSERT( !*vector, status, TWOINTERFFINDCHIRPH_ENNUL, TWOINTERFFINDCHIRPH_MSGENNUL );
 
   /* check that the parameter structure exists */
   ASSERT( params, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
 
-  /* check that the parameter sub-structures exists */
-  ASSERT( params->initParams1, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-
-  /* check that the parameter structure exists */
-  ASSERT( params->initParams2, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
+  /* check that the number of detectors is positive */
+  ASSERT( params->numDetectors > 0, status, 
+      TWOINTERFFINDCHIRPH_ENUMZ, TWOINTERFFINDCHIRPH_MSGENUMZ );
 
   /* check that the number of points is positive */
-  ASSERT( params->initParams1->numPoints > 0, status, 
+  ASSERT( params->numPoints > 0, status, 
       TWOINTERFFINDCHIRPH_ENUMZ, TWOINTERFFINDCHIRPH_MSGENUMZ );
 
-  ASSERT( params->initParams2->numPoints > 0, status, 
-      TWOINTERFFINDCHIRPH_ENUMZ, TWOINTERFFINDCHIRPH_MSGENUMZ );
-
-  /** check for mismatches **/
-
-  if ( params->initParams1->numPoints !=  params->initParams2->numPoints ) 
-    {
-      ABORT(status,
-	    TWOINTERFFINDCHIRPH_ENUMF,
-	    TWOINTERFFINDCHIRPH_MSGENUMF);
-    }
   
+  /*
+   *
+   * create a vector of FindChirpFilterInputs
+   *
+   */
+
+  vectorPtr= *vector = (TwoInterfFindChirpFilterInputVector *)
+    LALCalloc(1, sizeof(TwoInterfFindChirpFilterInputVector) );
+  if (! vectorPtr )
+    {
+      ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC);
+    }
+
+  /* set the number of detectors in the vector */
+  vectorPtr->length = params->numDetectors;
+  
+  /* allocate memory for an array  */  
+  filterInputPtr = vectorPtr->filterInput = (FindChirpFilterInput *)
+    LALCalloc (1, vectorPtr->length*sizeof(FindChirpFilterInput));
+  if ( !filterInputPtr )
+    {
+      LALFree( vectorPtr );
+      vectorPtr = NULL;
+      ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC);
+    }
 
   /*
    *
@@ -204,37 +101,30 @@ LALCreateTwoInterfFindChirpFilterInput (
    *
    */
 
-
-  /* create the output structure */
-  outputPtr = *output = (TwoInterfFindChirpFilterInput *)
-    LALCalloc( 1, sizeof(TwoInterfFindChirpFilterInput) );
-  if ( ! outputPtr )
+  for ( i = 0 ; i < vectorPtr->length ; ++i )
     {
-      ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
+      /* create memory for the chirp template structure */
+      filterInputPtr[i].fcTmplt = (FindChirpTemplate *)
+	LALCalloc( 1, sizeof(FindChirpTemplate) );
+      if ( !filterInputPtr[i].fcTmplt )
+	{
+	  LALFree( *vector );
+	  *vector = NULL;
+	  ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
+	}
+      
+      /* create memory for the chirp template data */
+      LALCCreateVector (status->statusPtr, &(filterInputPtr[i].fcTmplt->data), 
+			params->numPoints);
+      BEGINFAIL( status )
+	{
+	  LALFree( filterInputPtr[i].fcTmplt );
+	  filterInputPtr[i].fcTmplt = NULL;
+	  LALFree( *vector );
+	  *vector = NULL;
+	}
+      ENDFAIL( status );
     }
-  
-  /* create memory for the chirp template structure */
-  outputPtr->fcTmplt = (FindChirpTemplate *)
-    LALCalloc( 1, sizeof(FindChirpTemplate) );
-  if ( !outputPtr->fcTmplt )
-    {
-      LALFree( *output );
-      *output = NULL;
-      ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
-    }
-  
-  /* create memory for the chirp template data */
-  LALCCreateVector (status->statusPtr, &(outputPtr->fcTmplt->data), 
-		    params->numPoints);
-  BEGINFAIL( status )
-    {
-      LALFree( outputPtr->fcTmplt );
-      outputPtr->fcTmplt = NULL;
-      LALFree( *output );
-      *output = NULL;
-    }
-  ENDFAIL( status );
-  
   
   /* normal exit */
   DETATCHSTATUSPTR( status );
@@ -242,66 +132,85 @@ LALCreateTwoInterfFindChirpFilterInput (
 }
 
 void
-LALDestroyTwoInterfFindChirpInput (
-				   LALStatus                          *status,
-				   TwoInterfFindChirpFilterInput     **output
-				   )
+LALDestroyTwoInterfFindChirpInputVector (
+    LALStatus                            *status,
+    TwoInterfFindChirpFilterInputVector **vector
+    )
 {
-  TwoInterfFindChirpFilterInput         *outputPtr;
-
-  INITSTATUS( status, "LALDestroyTwoInterfFindChirpFilterInput", TWOINTERFFINDCHIRPFILTERC );
+  UINT4                                    i;
+  TwoInterfFindChirpFilterInputVector     *vectorPtr;
+  FindChirpFilterInput                    *filterInput;
+  
+  INITSTATUS( status, "LALDestroyTwoInterfFindChirpFilterInputVector", TWOINTERFFINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
   
   
-  /*
-   *
-   * ensure that the arguments are reasonable
-   *
-   */
-
-
-  /* check that handle is non-null and points to a non-null pointer */
-  ASSERT( output, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( *output, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  
-  
-  /*
-   *
-   * destroy the twointerffindchirp input structure
+  /* 
+   * check that the arguments are reasonable
    *
    */
   
+  ASSERT( vector, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
+  ASSERT( *vector, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
+  
+  vectorPtr= *vector;
+  
+  filterInput = (*vector)->filterInput;
 
-  /* local pointer to output */
-  outputPtr = *output;
+  /*
+   *
+   * destroy the contents of the array
+   *
+   */
   
-  /* destroy the chirp template data storage */
-  LALCDestroyVector( status->statusPtr, &(outputPtr->fcTmplt->data) );
-  CHECKSTATUSPTR( status );
-  
-  /* destroy the chirp template structure */
-  LALFree( outputPtr->fcTmplt );
+  for ( i = 0 ; i < (*vector)->length ; ++i )
+    {
+      
+      /*
+       *
+       * destroy the findchirp input structure
+       *
+       */
+      
+      if ( filterInput[i].fcTmplt->data != NULL )
+	{
+	  /* destroy the chirp template data storage */
+	  LALCDestroyVector( status->statusPtr, &(filterInput[i].fcTmplt->data) );
+	  CHECKSTATUSPTR( status );
+	}
+      if ( filterInput[i].fcTmplt != NULL )
+	{
+	  /* destroy the chirp template structure */
+	  LALFree(filterInput[i].fcTmplt );
+	  filterInput[i].fcTmplt = NULL;
+	}
+    }
   
   /* destroy the filter input structure */
-  LALFree( outputPtr );
-  *output = NULL;
+  LALFree( filterInput );
+  filterInput = NULL;
   
-
+  /* free the vector structure */
+  LALFree( vectorPtr );
+  *vector = NULL;
+  
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
 
-
 void
 LALTwoInterfFindChirpFilterInit (
-				 LALStatus                           *status,
-				 TwoInterfFindChirpFilterParams     **output,
-				 TwoInterfFindChirpInitParams        *params
-				 )
+    LALStatus                                      *status,
+    TwoInterfFindChirpFilterParams                **output,
+    TwoInterfFindChirpInitParams                   *params
+    )
 {
-  TwoInterfFindChirpFilterParams        *outputPtr;
-  
+  UINT4                                    i;
+  TwoInterfFindChirpFilterParams          *outputPtr;
+  TwoInterfFindChirpFilterParamsVector    *vectorPtr;
+  FindChirpFilterParams                   *filterParamsPtr;
+
   INITSTATUS( status, "LALTwoInterfFindChirpFilterInit", TWOINTERFFINDCHIRPFILTERC );
   ATTATCHSTATUSPTR( status );
 
@@ -319,46 +228,10 @@ LALTwoInterfFindChirpFilterInit (
   
   /* check that the parameter structure exists */
   ASSERT( params, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  
-  /* check that the parameter sub-structure exists */
-  ASSERT( params->initParams1, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  
-  ASSERT( params->initParams2, status, TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  
+
   /* check that the number of points is positive */
   ASSERT( params->numPoints > 0,  status, 
 	  TWOINTERFFINDCHIRPH_ENUMZ, TWOINTERFFINDCHIRPH_MSGENUMZ );
-  
-  ASSERT( params->initParams1->numPoints > 0,  status, 
-	  TWOINTERFFINDCHIRPH_ENUMZ, TWOINTERFFINDCHIRPH_MSGENUMZ );
-  
-  ASSERT( params->initParams2->numPoints > 0,  status, 
-	  TWOINTERFFINDCHIRPH_ENUMZ, TWOINTERFFINDCHIRPH_MSGENUMZ );
-  
-  /** check for mismatches **/
-  
-  if ( params->initParams1->numPoints !=  params->initParams2->numPoints ) 
-    {
-      ABORT(status,
-	    TWOINTERFFINDCHIRPH_ENUMF,
-	    TWOINTERFFINDCHIRPH_MSGENUMF);
-    }
-  
-  
-  if ( params->numPoints !=  params->initParams1->numPoints ) 
-    {
-      ABORT(status,
-	    TWOINTERFFINDCHIRPH_ENUMF,
-	    TWOINTERFFINDCHIRPH_MSGENUMF);
-    }
-  
-  
-  /*
-   *
-   * allocate memory for the TwoInterfFindChirpFilterParams
-   *
-   */
-  
   
   /* create the output structure */
   outputPtr = *output = (TwoInterfFindChirpFilterParams *)
@@ -368,482 +241,213 @@ LALTwoInterfFindChirpFilterInit (
       ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
     }
   
-  /* create memory for twointerffindchirp filter parameters */
-  outputPtr->filterParams1 = (FindChirpFilterParams *)
-    LALCalloc( 1, sizeof(FindChirpFilterParams) );
-  if ( !outputPtr->filterParams1 )
+  vectorPtr= (*output)->paramsVec = (TwoInterfFindChirpFilterParamsVector *)
+    LALCalloc(1, sizeof(TwoInterfFindChirpFilterParamsVector) );
+  if (! vectorPtr )
     {
-      LALFree( outputPtr );
-      *output = NULL;
-      ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
-    }
-  
-  outputPtr->filterParams2 = (FindChirpFilterParams *)
-    LALCalloc( 1, sizeof(FindChirpFilterParams) );
-  if ( !outputPtr->filterParams2 )
-    {
-      LALFree( outputPtr );
-      *output = NULL;
-      ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
+      ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC);
     }
 
-  /* create memory for the chisq parameters */
-  outputPtr->filterParams1->chisqParams = (FindChirpChisqParams *)
-    LALCalloc( 1, sizeof(FindChirpChisqParams) );
-  if ( !outputPtr->filterParams1->chisqParams )
+  /* set the number of detectors in the vector */
+  vectorPtr->length = params->numDetectors;
+  /* allocate memory for an array  */  
+  filterParamsPtr = vectorPtr->filterParams = (FindChirpFilterParams *)
+    LALCalloc (1, vectorPtr->length*sizeof(FindChirpFilterParams));
+  if ( !filterParamsPtr )
     {
-      LALFree( outputPtr->filterParams1 );
+      LALFree( vectorPtr );
       LALFree( outputPtr );
       *output = NULL;
-      ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
+      ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC);
     }
 
-  outputPtr->filterParams2->chisqParams = (FindChirpChisqParams *)
-    LALCalloc( 1, sizeof(FindChirpChisqParams) );
-  if ( !outputPtr->filterParams2->chisqParams )
-    {
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr );
-      *output = NULL;
-      ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
-    }
-  
-  /* create memory for the chisq input */
-  outputPtr->filterParams1->chisqInput = (FindChirpChisqInput *)
-    LALCalloc( 1, sizeof(FindChirpChisqInput) );
-  if ( !outputPtr->filterParams1->chisqInput )
-  {
-    LALFree( outputPtr->filterParams1->chisqParams );
-    LALFree( outputPtr->filterParams1 );
-    LALFree( outputPtr );
-    *output = NULL;
-    ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
-  }
-
-  outputPtr->filterParams2->chisqInput = (FindChirpChisqInput *)
-    LALCalloc( 1, sizeof(FindChirpChisqInput) );
-  if ( !outputPtr->filterParams2->chisqInput )
-    {
-      LALFree( outputPtr->filterParams2->chisqParams );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr );
-      *output = NULL;
-      ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
-    }
-  
-  
   /*
    *
-   * create fft plans and workspace vectors
+   * create the twointerffindchirp filter input structure
    *
    */
-  
-  
-  /* create plans for optimal filter */
-  LALCreateReverseComplexFFTPlan( status->statusPtr, 
-				  &(outputPtr->filterParams1->invPlan), 
-				  params->initParams1->numPoints, 0); 
-  
-  BEGINFAIL( status )
-    {
-      LALFree( outputPtr->filterParams1->chisqInput );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqInput );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr->filterParams1->chisqParams );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqParams );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr );
-      *output = NULL;
-    }
-  ENDFAIL( status );
-  
-  LALCreateReverseComplexFFTPlan( status->statusPtr, 
-				  &(outputPtr->filterParams2->invPlan), 
-				  params->initParams2->numPoints, 0); 
-  
-  BEGINFAIL( status )
-    {
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams1->invPlan) ), 
-	   status );
-      
-      LALFree( outputPtr->filterParams1->chisqInput );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqInput );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr->filterParams1->chisqParams );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqParams );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr );
-      *output = NULL;
-    }
-  ENDFAIL( status );
-  
-  /* create workspace vectors for optimal filter: time domain */
-  LALCCreateVector( status->statusPtr, &(outputPtr->filterParams1->qVec), 
-		    params->initParams1->numPoints );
-  BEGINFAIL( status )
-    {
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams1->invPlan) ), 
-	   status );
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams2->invPlan) ), 
-	   status );
-      
-      LALFree( outputPtr->filterParams1->chisqInput );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqInput );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr->filterParams1->chisqParams );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqParams );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr );
-      *output = NULL;
-    }
-  ENDFAIL( status );
-  
-  LALCCreateVector( status->statusPtr, &(outputPtr->filterParams2->qVec), 
-		    params->initParams2->numPoints );
-  BEGINFAIL( status )
-    {
-      TRY( LALCDestroyVector( status->statusPtr, 
-			      &(outputPtr->filterParams1->qVec) ), 
-	   status );
-      
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams1->invPlan) ), 
-	   status );
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams2->invPlan) ), 
-	   status );
-      
-      LALFree( outputPtr->filterParams1->chisqInput );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqInput );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr->filterParams1->chisqParams );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqParams );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr );
-      *output = NULL;
-    }
-  ENDFAIL( status );
 
-  /* create workspace vectors for optimal filter: freq domain */
-  LALCCreateVector( status->statusPtr, &(outputPtr->filterParams1->qtildeVec), 
-		    params->initParams1->numPoints );
-  BEGINFAIL( status )
-  {
-    TRY( LALCDestroyVector( status->statusPtr, 
-			    &(outputPtr->filterParams2->qVec) ), 
-	 status );
-      TRY( LALCDestroyVector( status->statusPtr, 
-			      &(outputPtr->filterParams1->qVec) ), 
-	   status );
+  for ( i = 0 ; i < vectorPtr->length ; ++i )
+    {  
       
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams1->invPlan) ), 
-	   status );
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams2->invPlan) ), 
-	   status );
+      /* create memory for the chisq parameters */
+      filterParamsPtr[i].chisqParams = (FindChirpChisqParams *)
+	LALCalloc( 1, sizeof(FindChirpChisqParams) );
+      if ( !filterParamsPtr[i].chisqParams )
+	{
+	  LALFree( outputPtr->twoInterfRhosqVec );
+	  LALFree( vectorPtr );
+	  LALFree( outputPtr );
+	  *output = NULL;
+	  ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
+	}
       
-      LALFree( outputPtr->filterParams1->chisqInput );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqInput );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr->filterParams1->chisqParams );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqParams );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr );
-      *output = NULL;    
-
-  }
-  ENDFAIL( status );
-
-  LALCCreateVector( status->statusPtr, &(outputPtr->filterParams2->qtildeVec), 
-		    params->initParams2->numPoints );
-  BEGINFAIL( status )
-  {
-    TRY( LALCDestroyVector( status->statusPtr, 
-			    &(outputPtr->filterParams1->qtildeVec) ), 
-	 status );
-    TRY( LALCDestroyVector( status->statusPtr, 
-			    &(outputPtr->filterParams2->qVec) ), 
-	 status );
-      TRY( LALCDestroyVector( status->statusPtr, 
-			      &(outputPtr->filterParams1->qVec) ), 
-	   status );
+      /* create memory for the chisq input */
+      filterParamsPtr[i].chisqInput = (FindChirpChisqInput *)
+	LALCalloc( 1, sizeof(FindChirpChisqInput) );
+      if ( !filterParamsPtr[i].chisqInput )
+	{
+	  LALFree( outputPtr->twoInterfRhosqVec );
+	  LALFree( filterParamsPtr[i].chisqParams );
+	  LALFree( vectorPtr );
+	  LALFree( outputPtr );
+	  *output = NULL;
+	  ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
+	}
       
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams1->invPlan) ), 
-	   status );
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams2->invPlan) ), 
-	   status );
       
-      LALFree( outputPtr->filterParams1->chisqInput );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqInput );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr->filterParams1->chisqParams );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqParams );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr );
-      *output = NULL;    
-  }
-  ENDFAIL( status );
-  
-  /* create workspace vector for chisq filter */
-  LALCreateVector (status->statusPtr, &(outputPtr->filterParams1->chisqVec), 
-      params->initParams1->numPoints);
-  BEGINFAIL( status )
-  {
-    TRY( LALCDestroyVector( status->statusPtr, 
-			    &(outputPtr->filterParams2->qtildeVec) ), 
-	 status );
-    TRY( LALCDestroyVector( status->statusPtr, 
-			    &(outputPtr->filterParams1->qtildeVec) ), 
-	 status );
-    TRY( LALCDestroyVector( status->statusPtr, 
-			    &(outputPtr->filterParams2->qVec) ), 
-	 status );
-      TRY( LALCDestroyVector( status->statusPtr, 
-			      &(outputPtr->filterParams1->qVec) ), 
-	   status );
+      /*
+       *
+       * create fft plans and workspace vectors
+       *
+       */
       
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams1->invPlan) ), 
-	   status );
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams2->invPlan) ), 
-	   status );
       
-      LALFree( outputPtr->filterParams1->chisqInput );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqInput );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr->filterParams1->chisqParams );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqParams );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr );
-      *output = NULL;    
-  }
-  ENDFAIL( status );
-
-  LALCreateVector (status->statusPtr, &(outputPtr->filterParams2->chisqVec), 
-		   params->initParams2->numPoints);
-  BEGINFAIL( status )
-    {
-      TRY( LALDestroyVector( status->statusPtr, 
-			     &(outputPtr->filterParams1->chisqVec) ), 
-	   status );
-      TRY( LALCDestroyVector( status->statusPtr, 
-			      &(outputPtr->filterParams2->qtildeVec) ), 
-	   status );
-      TRY( LALCDestroyVector( status->statusPtr, 
-			      &(outputPtr->filterParams1->qtildeVec) ), 
-	   status );
-      TRY( LALCDestroyVector( status->statusPtr, 
-			      &(outputPtr->filterParams2->qVec) ), 
-	   status );
-      TRY( LALCDestroyVector( status->statusPtr, 
-			      &(outputPtr->filterParams1->qVec) ), 
-	   status );
+      /* create plan for optimal filter */
       
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams1->invPlan) ), 
-	   status );
-      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-				     &(outputPtr->filterParams2->invPlan) ), 
-	   status );
-      
-      LALFree( outputPtr->filterParams1->chisqInput );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqInput );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr->filterParams1->chisqParams );
-      LALFree( outputPtr->filterParams1 );
-      LALFree( outputPtr->filterParams2->chisqParams );
-      LALFree( outputPtr->filterParams2 );
-      LALFree( outputPtr );
-      *output = NULL;    
-    }
-  ENDFAIL( status );
-  
-  
-  /*
-   *
-   * create vectors to store snrsq, if required
-   *
-   */
-  
-  
-  if ( params->initParams1->createRhosqVec )
-    {
-      outputPtr->filterParams1->rhosqVec = (REAL4TimeSeries *) 
-        LALCalloc( 1, sizeof(REAL4TimeSeries) );
-      LALCreateVector (status->statusPtr, 
-		       &(outputPtr->filterParams1->rhosqVec->data), 
-		       params->initParams1->numPoints);
+      LALCreateReverseComplexFFTPlan( status->statusPtr,
+				      &(filterParamsPtr[i].invPlan), params->numPoints, 0 );
       BEGINFAIL( status )
 	{
-	  TRY( LALDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams2->chisqVec) ), 
-	       status );
-	  TRY( LALDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams1->chisqVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams2->qtildeVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams1->qtildeVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams2->qVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams1->qVec) ), 
-	       status );
-	  TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-					 &(outputPtr->filterParams1->invPlan)),
-	       status );
-	  TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-					 &(outputPtr->filterParams2->invPlan)),
-	       status );
-	  
-	  LALFree( outputPtr->filterParams1->chisqInput );
-	  LALFree( outputPtr->filterParams1 );
-	  LALFree( outputPtr->filterParams2->chisqInput );
-	  LALFree( outputPtr->filterParams2 );
-	  LALFree( outputPtr->filterParams1->chisqParams );
-	  LALFree( outputPtr->filterParams1 );
-	  LALFree( outputPtr->filterParams2->chisqParams );
-	  LALFree( outputPtr->filterParams2 );
+	  LALFree( outputPtr->twoInterfRhosqVec );
+	  LALFree( filterParamsPtr[i].chisqInput );
+	  LALFree( filterParamsPtr[i].chisqParams );
+	  LALFree( vectorPtr );
 	  LALFree( outputPtr );
-	  *output = NULL;    
+	  *output = NULL;
 	}
       ENDFAIL( status );
-    }    
-  
-  if ( params->initParams2->createRhosqVec )
-    {
-      outputPtr->filterParams2->rhosqVec = (REAL4TimeSeries *) 
-        LALCalloc( 1, sizeof(REAL4TimeSeries) );
-      LALCreateVector (status->statusPtr, 
-		       &(outputPtr->filterParams2->rhosqVec->data), 
-		       params->initParams2->numPoints);
+      
+      /* create workspace vector for optimal filter: time domain */
+      LALCCreateVector( status->statusPtr, &(filterParamsPtr[i].qVec), 
+			params->numPoints );
       BEGINFAIL( status )
 	{
-	  TRY( LALDestroyVector( status->statusPtr, 
-				 &(outputPtr->filterParams1->rhosqVec->data) ), 
-	       status );
-          LALFree( outputPtr->filterParams1->rhosqVec );
-	  TRY( LALDestroyVector( status->statusPtr, 
-				 &(outputPtr->filterParams2->chisqVec) ), 
-	       status );
-	  TRY( LALDestroyVector( status->statusPtr, 
-				 &(outputPtr->filterParams2->chisqVec) ), 
-	       status );
-	  TRY( LALDestroyVector( status->statusPtr, 
-				 &(outputPtr->filterParams1->chisqVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams2->qtildeVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams1->qtildeVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams2->qVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams1->qVec) ), 
-	       status );
-	  
 	  TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-					 &(outputPtr->filterParams1->invPlan)),
-	       status );
-	  TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-					 &(outputPtr->filterParams2->invPlan)),
-	       status );
+					 &(filterParamsPtr[i].invPlan) ), status );
 	  
-	  LALFree( outputPtr->filterParams1->chisqInput );
-	  LALFree( outputPtr->filterParams1 );
-	  LALFree( outputPtr->filterParams2->chisqInput );
-	  LALFree( outputPtr->filterParams2 );
-	  LALFree( outputPtr->filterParams1->chisqParams );
-	  LALFree( outputPtr->filterParams1 );
-	  LALFree( outputPtr->filterParams2->chisqParams );
-	  LALFree( outputPtr->filterParams2 );
+	  LALFree( outputPtr->twoInterfRhosqVec );
+	  LALFree( filterParamsPtr[i].chisqInput );
+	  LALFree( filterParamsPtr[i].chisqParams );
+	  LALFree( vectorPtr );
 	  LALFree( outputPtr );
-	  *output = NULL;    
+	  *output = NULL;
 	}
       ENDFAIL( status );
-    }    
-  
-  if ( params->createTwoInterfRhosqVec )
-    {
-      LALCreateVector (status->statusPtr, 
-		       &(outputPtr->twoInterfRhosqVec), 
+      
+      /* create workspace vector for optimal filter: freq domain */
+      LALCCreateVector( status->statusPtr, &(filterParamsPtr[i].qtildeVec), 
+			params->numPoints );
+      BEGINFAIL( status )
+	{
+	  TRY( LALCDestroyVector( status->statusPtr, &(filterParamsPtr[i].qVec) ), 
+	       status );
+	  
+	  TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+					 &(filterParamsPtr[i].invPlan) ), status );
+	  LALFree( outputPtr->twoInterfRhosqVec );
+	  LALFree( filterParamsPtr[i].chisqInput );
+	  LALFree( filterParamsPtr[i].chisqParams );
+	  LALFree( vectorPtr );
+	  LALFree( outputPtr );
+	  *output = NULL;
+	}
+      ENDFAIL( status );
+      
+      /* create workspace vector for chisq filter */
+      LALCreateVector (status->statusPtr, &(filterParamsPtr[i].chisqVec), 
 		       params->numPoints);
       BEGINFAIL( status )
 	{
-	  TRY( LALDestroyVector( status->statusPtr, 
-				 &(outputPtr->filterParams2->rhosqVec->data) ), 
+	  TRY( LALCDestroyVector( status->statusPtr, &(filterParamsPtr[i].qtildeVec) ), 
 	       status );
-          LALFree( outputPtr->filterParams2->rhosqVec );
-	  TRY( LALDestroyVector( status->statusPtr, 
-				 &(outputPtr->filterParams1->rhosqVec->data) ), 
-	       status );
-          LALFree( outputPtr->filterParams1->rhosqVec );
-	  TRY( LALDestroyVector( status->statusPtr, 
-				 &(outputPtr->filterParams2->chisqVec) ), 
-	       status );
-	  TRY( LALDestroyVector( status->statusPtr, 
-				 &(outputPtr->filterParams1->chisqVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams2->qtildeVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams1->qtildeVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams2->qVec) ), 
-	       status );
-	  TRY( LALCDestroyVector( status->statusPtr, 
-				  &(outputPtr->filterParams1->qVec) ), 
+	  TRY( LALCDestroyVector( status->statusPtr, &(filterParamsPtr[i].qVec) ), 
 	       status );
 	  
 	  TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-					 &(outputPtr->filterParams1->invPlan)),
-	       status );
-	  TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
-					 &(outputPtr->filterParams2->invPlan)),
-	       status );
-	  
-	  LALFree( outputPtr->filterParams1->chisqInput );
-	  LALFree( outputPtr->filterParams1 );
-	  LALFree( outputPtr->filterParams2->chisqInput );
-	  LALFree( outputPtr->filterParams2 );
-	  LALFree( outputPtr->filterParams1->chisqParams );
-	  LALFree( outputPtr->filterParams1 );
-	  LALFree( outputPtr->filterParams2->chisqParams );
-	  LALFree( outputPtr->filterParams2 );
+					 &(filterParamsPtr[i].invPlan) ), status );
+	  LALFree( outputPtr->twoInterfRhosqVec );
+	  LALFree( filterParamsPtr[i].chisqInput );
+	  LALFree( filterParamsPtr[i].chisqParams );
+	  LALFree( vectorPtr );
 	  LALFree( outputPtr );
-	  *output = NULL;    
+	  *output = NULL;
 	}
+      ENDFAIL( status );
+  
+      /*
+       *
+       * create vector to store snrsq, if required
+       *
+       */
+      
+      if ( params->createRhosqVec )
+	{
+	  filterParamsPtr[i].rhosqVec = (REAL4TimeSeries *) 
+	    LALCalloc( 1, sizeof(REAL4TimeSeries) );
+	  LALCreateVector (status->statusPtr, &(filterParamsPtr[i].rhosqVec->data), 
+			   params->numPoints);
+	  BEGINFAIL( status )
+	    {
+	      TRY( LALDestroyVector (status->statusPtr, &(filterParamsPtr[i].chisqVec) ), 
+		   status ); 
+	      TRY( LALCDestroyVector( status->statusPtr, &(filterParamsPtr[i].qtildeVec) ), 
+		   status );
+	      TRY( LALCDestroyVector( status->statusPtr, &(filterParamsPtr[i].qVec) ), 
+		   status );
+	      
+	      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+					     &(filterParamsPtr[i].invPlan) ), status );
+	      
+	      LALFree( outputPtr->twoInterfRhosqVec );
+	      LALFree( filterParamsPtr[i].chisqInput );
+	      LALFree( filterParamsPtr[i].chisqParams );
+	      LALFree( vectorPtr );
+	      LALFree( outputPtr );
+	      *output = NULL;
+	    }
+	  ENDFAIL( status );
+	}
+    }/* end loop over detectors */
+  
+  
+  /*
+   * create vector to store network snrsq, if required
+   *
+   */
+  
+  
+  if ( params->createTwoInterfRhosqVec )
+    {
+      outputPtr->twoInterfRhosqVec = (REAL4TimeSeries *) 
+	LALCalloc( 1, sizeof(REAL4TimeSeries) );
+      LALCreateVector (status->statusPtr, &(outputPtr->twoInterfRhosqVec->data), 
+		       params->numPoints);
+      BEGINFAIL( status )
+	{
+	  for ( i = 0 ; i < vectorPtr->length ; ++i )
+	    {  
+	      
+	      TRY( LALDestroyVector( status->statusPtr, 
+				     &(filterParamsPtr[i].rhosqVec->data)), status ); 
+	      TRY( LALDestroyVector (status->statusPtr, &(filterParamsPtr[i].chisqVec) ), 
+		   status ); 
+	      TRY( LALCDestroyVector( status->statusPtr, &(filterParamsPtr[i].qtildeVec) ), 
+		   status );
+	      TRY( LALCDestroyVector( status->statusPtr, &(filterParamsPtr[i].qVec) ), 
+		   status );
+	      
+	      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+					     &(filterParamsPtr[i].invPlan) ), status );
+	      LALFree( filterParamsPtr[i].chisqInput );
+	      LALFree( filterParamsPtr[i].chisqParams );
+	      
+	      LALFree( vectorPtr );
+	      LALFree( outputPtr );
+	      *output = NULL;
+	    }
+	}/* end loop over detectors */
+      
       ENDFAIL( status );
     }    
   
@@ -855,11 +459,13 @@ LALTwoInterfFindChirpFilterInit (
 
 void
 LALTwoInterfFindChirpFilterFinalize (
-				     LALStatus                        *status,
-				     TwoInterfFindChirpFilterParams  **output
-				     )
+    LALStatus                                   *status,
+    TwoInterfFindChirpFilterParams             **output
+    )
 {
-  TwoInterfFindChirpFilterParams        *outputPtr;
+  UINT4                                    i;
+  TwoInterfFindChirpFilterParams          *outputPtr;
+  FindChirpFilterParams                   *paramsPtr;
   
   INITSTATUS( status, "LALTwoInterfFindChirpFilterFinalize", 
 	      TWOINTERFFINDCHIRPFILTERC );
@@ -873,142 +479,103 @@ LALTwoInterfFindChirpFilterFinalize (
    */
 
   
-  /* check that handle is non-null and points to a non-null pointer */
   ASSERT( output, status, TWOINTERFFINDCHIRPH_ENULL, 
 	  TWOINTERFFINDCHIRPH_MSGENULL );
   ASSERT( *output, status, TWOINTERFFINDCHIRPH_ENULL, 
 	  TWOINTERFFINDCHIRPH_MSGENULL );
-  
-
-  /*
-   *
-   * destroy the filter parameter structure
-   *
-   */
-  
-  
-  /* local pointer to output structure */
+   
+  /*local pointer to output structure */
   outputPtr = *output;
   
-  
-  /*
-   *
-   * destroy fft plans and workspace vectors
-   *
-   */
-  
-  
-  /* destroy plans for optimal filter */
-  LALDestroyComplexFFTPlan( status->statusPtr, 
-			    &(outputPtr->filterParams1->invPlan) );
-  CHECKSTATUSPTR( status );
-  
-  LALDestroyComplexFFTPlan( status->statusPtr, 
-			    &(outputPtr->filterParams2->invPlan) );
-  CHECKSTATUSPTR( status );
-  
-  /* destroy workspace vectors for optimal filter: freq domain */
-  LALCDestroyVector( status->statusPtr, 
-		     &(outputPtr->filterParams1->qVec) );
-  CHECKSTATUSPTR( status );
-  
-  LALCDestroyVector( status->statusPtr, &(outputPtr->filterParams2->qVec) );
-  CHECKSTATUSPTR( status );
-  
-  /* destroy workspace vectors for optimal filter: freq domain */
-  LALCDestroyVector( status->statusPtr, 
-		     &(outputPtr->filterParams1->qtildeVec) );
-  CHECKSTATUSPTR( status );
-  
-  LALCDestroyVector( status->statusPtr, 
-		     &(outputPtr->filterParams2->qtildeVec) );
-  CHECKSTATUSPTR( status );
-  
-  /* destroy workspace vectors for chisq filter */
-  LALDestroyVector( status->statusPtr, &(outputPtr->filterParams1->chisqVec) );
-  CHECKSTATUSPTR( status );
-  
-  LALDestroyVector( status->statusPtr, &(outputPtr->filterParams2->chisqVec) );
-  CHECKSTATUSPTR( status );
-  
-  /*
-   *
-   * free the chisq structures
-   *
-   */
-  
-  
-  /* parameter structure */
-  LALFree( outputPtr->filterParams1->chisqParams );
-  LALFree( outputPtr->filterParams1 );
-  LALFree( outputPtr->filterParams2->chisqParams );
-  LALFree( outputPtr->filterParams2 );
-  
-  /* input structure */  
-  LALFree( outputPtr->filterParams1->chisqInput );
-  LALFree( outputPtr->filterParams1 );
-  LALFree( outputPtr->filterParams2->chisqInput );
-  LALFree( outputPtr->filterParams2 );
-  
-  
-  /*
-   *
-   * destroy vectors to store snrsq, if they exist
-   *
-   */
-  
-  
+  /* destroy vector to store network snrsq, if it exists */
   if ( outputPtr->twoInterfRhosqVec )
     {
-      LALDestroyVector( status->statusPtr, &(outputPtr->twoInterfRhosqVec) );
+      LALDestroyVector (status->statusPtr, 
+			&(outputPtr->twoInterfRhosqVec->data)); 
       CHECKSTATUSPTR( status );
-    }    
-  
-  if ( outputPtr->filterParams1->rhosqVec )
-    {
-      LALDestroyVector( status->statusPtr, 
-			&(outputPtr->filterParams1->rhosqVec->data) );
-      CHECKSTATUSPTR( status );
-      LALFree( outputPtr->filterParams1->rhosqVec );
-    }    
-  
-  if ( outputPtr->filterParams2->rhosqVec )
-    {
-      LALDestroyVector( status->statusPtr, 
-			&(outputPtr->filterParams2->rhosqVec->data) );
-      CHECKSTATUSPTR( status );
-      LALFree( outputPtr->filterParams2->rhosqVec );
-    }    
-  
+      
+      LALFree(outputPtr->twoInterfRhosqVec);
+    }  
   
   /*
    *
-   * free memory for the TwoInterfFindChirpFilterParams
+   * destroy the network FilterParams Vector
    *
    */
   
+  paramsPtr= (*output)->paramsVec->filterParams;
   
+  for ( i = 0 ; i < (*output)->paramsVec->length ; ++i )
+    {
+      /*
+       * free chisq structures 
+       */      
+
+      /* parameter structure */
+      LALFree( paramsPtr[i].chisqParams );
+
+      /* input structure */
+      LALFree( paramsPtr[i].chisqInput );
+      
+      /* 
+       * destroy fft plans and workspace vectors
+       */
+
+      LALDestroyComplexFFTPlan( status->statusPtr, &(paramsPtr[i].invPlan));
+      CHECKSTATUSPTR( status );
+      
+      /* create workspace vector for optimal filter: time domain */
+      LALCDestroyVector( status->statusPtr, &(paramsPtr[i].qVec));
+      CHECKSTATUSPTR( status );
+      
+      /* create workspace vector for optimal filter: freq domain */
+      LALCDestroyVector( status->statusPtr, &(paramsPtr[i].qtildeVec));
+      CHECKSTATUSPTR( status );
+      
+      /* create workspace vector for chisq filter */
+      LALDestroyVector (status->statusPtr, &(paramsPtr[i].chisqVec));
+      CHECKSTATUSPTR( status );
+      
+      /*
+       *
+       * create vector to store snrsq, if required
+       *
+       */
+
+      if ( paramsPtr[i].rhosqVec )
+	{
+	  LALDestroyVector (status->statusPtr, &(paramsPtr[i].rhosqVec->data)); 
+	  CHECKSTATUSPTR( status );
+
+	  LALFree(paramsPtr[i].rhosqVec);
+	}    
+    }
+  
+  /* free the vector structure */
+  LALFree( paramsPtr );
+  LALFree( outputPtr->paramsVec );
   LALFree( outputPtr );
   *output = NULL;
-  
-  
+
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
 
-
 void
 LALTwoInterfFindChirpFilterSegment (
-				    LALStatus                       *status,
-				    TwoInterfInspiralEvent         **eventList,
-				    TwoInterfFindChirpFilterInput   *input,
-				    TwoInterfFindChirpFilterParams  *params
-				    )
+    LALStatus                             *status,
+    TwoInterfInspiralEvent               **eventList,
+    TwoInterfFindChirpFilterInputVector   *input,
+    TwoInterfFindChirpFilterParams        *params
+    )
 {
-  UINT4                          j, k, m;
+  UINT4                          j, m, n;
+  UINT4                          k=0;
   UINT4                          deltaEventIndex;
   UINT4                          twoInterfEventId = 0; 
+  UINT4                          ignoreIndex[2];
+  INT8                           chirpTimeNS;
   REAL4                          deltaT; 
   REAL4                          maxLag; /*lightTravel time between dets 1,2*/
   REAL4                          s[3];
@@ -1019,7 +586,8 @@ LALTwoInterfFindChirpFilterSegment (
   REAL4                          modqsq2;
   REAL4                          rhosq = 0;
   REAL4                          twoInterfRhosqThresh = 0;
-  BOOLEAN                        haveChisq    = 0;
+  BOOLEAN                        haveChisq1    = 0;
+  BOOLEAN                        haveChisq2    = 0;
   UINT4                          numPoints; 
   COMPLEX8                      *q1tilde      = NULL;
   COMPLEX8                      *q1           = NULL;
@@ -1027,10 +595,11 @@ LALTwoInterfFindChirpFilterSegment (
   COMPLEX8                      *q2tilde      = NULL;
   COMPLEX8                      *q2           = NULL;
   COMPLEX8                      *inputData2   = NULL;
-  COMPLEX8                      *tmpltSignal  = NULL;
+  COMPLEX8                      *tmpltSignal1  = NULL;
+  COMPLEX8                      *tmpltSignal2  = NULL;
   TwoInterfInspiralEvent        *thisEvent    = NULL; 
-  LALDetectorPair               *detectors = NULL;
-  
+  InspiralEvent                 *eventIn1 = NULL;
+  InspiralEvent                 *eventIn2 = NULL;
   
   INITSTATUS( status, "LALTwoInterFindChirpFilter", 
 	      TWOINTERFFINDCHIRPFILTERC );
@@ -1055,107 +624,123 @@ LALTwoInterfFindChirpFilterSegment (
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
   
   /* check that the parameter sub-structures exist */
-  ASSERT( params->filterParams1, status, 
-	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( params->filterParams2, status, 
+
+  ASSERT( params->paramsVec, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
   
   /* check that the filter parameters are reasonable */
-  ASSERT( params->maxLag > 0, status,
-	  TWOINTERFFINDCHIRPH_EMLZO, TWOINTERFFINDCHIRPH_MSGEMLZO );
+  ASSERT( params->twoInterfRhosqThresh > 0, status, 
+	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
+
+  ASSERT( params->paramsVec->length > 0, status, 
+	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
+
   ASSERT( params->twoInterfRhosqThresh > 0, status,
 	  TWOINTERFFINDCHIRPH_ERHOT, TWOINTERFFINDCHIRPH_MSGERHOT );
-  ASSERT( params->filterParams1->deltaT > 0, status,
+
+  ASSERT( params->detectors != NULL, status, 
+	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
+
+
+  ASSERT( params->paramsVec->filterParams[0].deltaT > 0, status,
 	  TWOINTERFFINDCHIRPH_EDTZO, TWOINTERFFINDCHIRPH_MSGEDTZO );
-  ASSERT( params->filterParams2->deltaT > 0, status,
+  ASSERT( params->paramsVec->filterParams[1].deltaT > 0, status,
 	  TWOINTERFFINDCHIRPH_EDTZO, TWOINTERFFINDCHIRPH_MSGEDTZO );
-  ASSERT( params->filterParams1->chisqThresh > 0, status,
+  ASSERT( params->paramsVec->filterParams[0].chisqThresh > 0, status,
 	  TWOINTERFFINDCHIRPH_ECHIT, TWOINTERFFINDCHIRPH_MSGECHIT ); 
-  ASSERT( params->filterParams2->chisqThresh > 0, status,
+  ASSERT( params->paramsVec->filterParams[1].chisqThresh > 0, status,
 	  TWOINTERFFINDCHIRPH_ECHIT, TWOINTERFFINDCHIRPH_MSGECHIT ); 
   
   
 
   /* check that the fft plan exists */
-  ASSERT( params->filterParams1->invPlan, status, 
+  ASSERT( params->paramsVec->filterParams[0].invPlan, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( params->filterParams2->invPlan, status, 
+  ASSERT( params->paramsVec->filterParams[1].invPlan, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
   
   /* check that the workspace vectors exist for detector 1 */
-  ASSERT( params->filterParams1->qVec, status, 
+  ASSERT( params->paramsVec->filterParams[0].qVec, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( params->filterParams1->qVec->data, status, 
+  ASSERT( params->paramsVec->filterParams[0].qVec->data, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( params->filterParams1->qtildeVec, status, 
+  ASSERT( params->paramsVec->filterParams[0].qtildeVec, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( params->filterParams1->qtildeVec->data, status, 
+  ASSERT( params->paramsVec->filterParams[0].qtildeVec->data, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
   
   /* check that the workspace vectors exist for detector 2 */
-  ASSERT( params->filterParams2->qVec, status, 
+  ASSERT( params->paramsVec->filterParams[1].qVec, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( params->filterParams2->qVec->data, status, 
+  ASSERT( params->paramsVec->filterParams[1].qVec->data, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( params->filterParams2->qtildeVec, status, 
+  ASSERT( params->paramsVec->filterParams[1].qtildeVec, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( params->filterParams2->qtildeVec->data, status, 
+  ASSERT( params->paramsVec->filterParams[1].qtildeVec->data, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
   
   /* check that the chisq parameter and input structures exist */
-  ASSERT( params->filterParams1->chisqParams, status, 
+  ASSERT( params->paramsVec->filterParams[0].chisqParams, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( params->filterParams1->chisqInput, status, 
+  ASSERT( params->paramsVec->filterParams[0].chisqInput, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( params->filterParams2->chisqParams, status, 
+  ASSERT( params->paramsVec->filterParams[1].chisqParams, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( params->filterParams2->chisqInput, status, 
+  ASSERT( params->paramsVec->filterParams[1].chisqInput, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
   
   /* if a rhosqVec vector has been created, check we can store data in it */
-  if ( params->twoInterfRhosqVec ) 
+  if ( params->paramsVec->filterParams[0].rhosqVec ) 
     {
-      ASSERT( params->twoInterfRhosqVec->data, status, 
+      ASSERT( params->paramsVec->filterParams[0].rhosqVec->data->data, status, 
+	      TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
+      ASSERT( params->paramsVec->filterParams[0].rhosqVec->data, status, 
 	      TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
     }
-  if ( params->filterParams1->rhosqVec ) 
+  if ( params->paramsVec->filterParams[1].rhosqVec ) 
     {
-      ASSERT( params->filterParams1->rhosqVec->data, status, 
+      ASSERT( params->paramsVec->filterParams[1].rhosqVec->data->data, status, 
 	      TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-    }
-  if ( params->filterParams2->rhosqVec ) 
-    {
-      ASSERT( params->filterParams2->rhosqVec->data, status, 
+      ASSERT( params->paramsVec->filterParams[1].rhosqVec->data, status, 
 	      TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
     }
  
 
   /* if a chisqVec vector has been created, check we can store data in it */
-  if ( params->filterParams1->chisqVec ) 
+  if ( params->paramsVec->filterParams[0].chisqVec ) 
     {
-      ASSERT( params->filterParams1->chisqVec->data, status,
+      ASSERT( params->paramsVec->filterParams[0].chisqVec->data, status,
 	      TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
     }
-  if ( params->filterParams2->chisqVec ) 
+  if ( params->paramsVec->filterParams[1].chisqVec ) 
     {
-      ASSERT( params->filterParams2->chisqVec->data, status,
+      ASSERT( params->paramsVec->filterParams[1].chisqVec->data, status,
 	      TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
     }
   
   /* check that the input structure exists */
   ASSERT( input, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
+  ASSERT( input->length > 0, status, 
+	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
   
   /* check that the input structure contains some input */
-  ASSERT( input->tmplt, status, 
+  ASSERT( input->filterInput[0].tmplt, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( input->fcTmplt, status, 
+  ASSERT( input->filterInput[0].fcTmplt, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( input->detectors, status, 
+  ASSERT( input->filterInput[0].segment, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( input->segment1, status, 
+  ASSERT( input->filterInput[0].segment, status, 
+	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL ); /* introduced this line */
+  
+  ASSERT( input->filterInput[1].tmplt, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
-  ASSERT( input->segment2, status, 
+  ASSERT( input->filterInput[1].fcTmplt, status, 
+	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
+  ASSERT( input->filterInput[1].segment, status, 
+	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL );
+  ASSERT( input->filterInput[1].segment, status, 
 	  TWOINTERFFINDCHIRPH_ENULL, TWOINTERFFINDCHIRPH_MSGENULL ); /* introduced this line */
   
   /*
@@ -1166,46 +751,135 @@ LALTwoInterfFindChirpFilterSegment (
 
   
   /* workspace vectors for detector 1 */
-  q1 = params->filterParams1->qVec->data;
-  q1tilde = params->filterParams1->qtildeVec->data;
+  q1 = params->paramsVec->filterParams[0].qVec->data;
+  q1tilde = params->paramsVec->filterParams[0].qtildeVec->data;
   
   /* workspace vectors for detector 2 */
-  q2 = params->filterParams2->qVec->data;
-  q2tilde = params->filterParams2->qtildeVec->data;
+  q2 = params->paramsVec->filterParams[1].qVec->data;
+  q2tilde = params->paramsVec->filterParams[1].qtildeVec->data;
   
   /* template and data */
-  inputData1 = input->segment1->data->data->data; 
-  inputData2 = input->segment2->data->data->data;
-  tmpltSignal = input->fcTmplt->data->data;
-  deltaT = params->filterParams1->deltaT; 
+  inputData1 = input->filterInput[0].segment->data->data->data; 
+  inputData2 = input->filterInput[1].segment->data->data->data;
+  tmpltSignal1 = input->filterInput[0].fcTmplt->data->data;
+  tmpltSignal2 = input->filterInput[1].fcTmplt->data->data;
+
+  /*CHECK: only detector 1 specific; to be generalized later*/
+  deltaT = params->paramsVec->filterParams[0].deltaT; 
  
   /* calculate separation vector between sites */
   for ( j=0; j<3; j++) {
-    s[j] = (REAL4) (detectors->detectorOne.location[j] -
-		    detectors->detectorTwo.location[j]);
+    s[j] = (REAL4) ( params->detectors->detectorOne.location[j] -
+		     params->detectors->detectorTwo.location[j]);
   }
   /* calculate distance between sites (in meters) */
   distance = sqrt( cartesianInnerProduct(s,s) );
   
   /* light-travel time between sites (in seconds) */
   maxLag = distance / LAL_C_SI;
+  m = ( maxLag / deltaT ) ;
   
   /* number of points in a segment from either detector 1 or detector 2 */
-  numPoints = params->filterParams1->qVec->length;
+  numPoints = params->paramsVec->filterParams[0].qVec->length;
   
-
   /*
    *
-   * calculate the minimum distance between distinct events
+   * compute viable search regions in the snrsq vector
    *
    */
-  
 
-  /* This should be the length of a chirp, as in the FindChirp package, */
-  /* As in FindChirpFilter.c, it is hard wired to sixty seconds at the moment*/
-  deltaEventIndex = (UINT4) rint( (60.0 / deltaT) + 1.0 );
+
+  {
+    /* calculate the length of the chirp */
+    REAL4 eta = input->filterInput[0].tmplt->eta;
+    REAL4 m1 = input->filterInput[0].tmplt->mass1;
+    REAL4 m2 = input->filterInput[0].tmplt->mass2;
+    REAL4 fmin = input->filterInput[0].segment->fLow;
+    REAL4 m = 2 * ( m1 > m2 ? m2 : m1 );
+    REAL4 c0 = 5*m*LAL_MTSUN_SI/(256*eta);
+    REAL4 c2 = 743.0/252.0 + eta*11.0/3.0;
+    REAL4 c3 = -32*LAL_PI/3;
+    REAL4 c4 = 3058673.0/508032.0 + eta*(5429.0/504.0 + eta*617.0/72.0);
+    REAL4 x  = pow(LAL_PI*m*LAL_MTSUN_SI*fmin, 1.0/3.0);
+    REAL4 x2 = x*x;
+    REAL4 x3 = x*x2;
+    REAL4 x4 = x2*x2;
+    REAL4 x8 = x4*x4;
+    REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8;
+
+    deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
+    chirpTimeNS = (INT8) (1e9 * chirpTime);
+
+    /* ignore corrupted data at start and end */
+    for ( n = 0 ; n < 2 ; ++n )
+      {
+	ignoreIndex[n] = ( input->filterInput[n].segment->invSpecTrunc / 2 ) + deltaEventIndex;
+      }
+    
+#if 0
+    fprintf( stdout, "m1 = %e m2 = %e => %e seconds => %d points\n"
+	     "invSpecTrunc = %d => ignoreIndex in detector 1 = %d\n" 
+	     "ignoreIndex in detector 2 = %d\n", 
+	     m1, m2, chirpTime, deltaEventIndex, 
+	     input->filterInput[0].segment->invSpecTrunc, ignoreIndex[0]
+	     input->filterInput[1].segment->invSpecTrunc, ignoreIndex[1] );
+    fflush( stdout );
+#endif
+    
+    /* XXX check that we are not filtering corrupted data XXX */
+    /* XXX this is hardwired to 1/4 segment length        XXX */
+    for ( n = 0 ; n < 2 ; ++n )
+      {
+	if ( ignoreIndex[n] > numPoints / 4 )
+	  {
+	    ABORT( status, TWOINTERFFINDCHIRPH_ECRUP, TWOINTERFFINDCHIRPH_MSGECRUP );
+	  }
+	/* XXX reset ignoreIndex to one quarter of a segment XXX */
+	ignoreIndex[n] = numPoints / 4;
+      }
+  }
   
-  
+  /*timeIndex ranges of data being filtered*/
+  /* #if 0 */
+  if ( ignoreIndex[1] > ignoreIndex[0] )
+    {
+      if (ignoreIndex[1] > ignoreIndex[0] +m -1 )
+	{
+	  fprintf( stdout, "filtering detector 1 data from timeIndex %d to %d\n",
+		   ignoreIndex[0] - m, numPoints - ignoreIndex[0] + m -1);
+	  fprintf( stdout, "filtering detector 2 data from timeIndex %d to %d\n",
+		   ignoreIndex[1] , numPoints - ignoreIndex[1] -1);
+	  fflush( stdout );
+	}      
+      else 
+	{
+	  fprintf( stdout, "filtering detector 1 data from timeIndex %d to %d\n",
+		   ignoreIndex[0] , numPoints - ignoreIndex[0] -1 );
+	  fprintf( stdout, "filtering detector 2 data from timeIndex %d to %d\n",
+		   ignoreIndex[1] , numPoints - ignoreIndex[1] -1);
+	  fflush( stdout );
+	}
+    }
+  else
+    {
+      if (ignoreIndex[0] > ignoreIndex[1] + m - 1 )
+	{
+	  fprintf( stdout, "filtering detector 1 data from timeIndex %d to %d\n",
+		   ignoreIndex[0], numPoints - ignoreIndex[0] -1 );
+	  fprintf( stdout, "filtering detector 2 data from timeIndex %d to %d\n",
+		   ignoreIndex[0] - m , numPoints - ignoreIndex[0] + m -1);
+	  fflush( stdout );
+	}      
+      else 
+	{
+	  fprintf( stdout, "filtering detector 1 data from timeIndex %d to %d\n",
+		   ignoreIndex[0], numPoints - ignoreIndex[0] - 1);
+	  fprintf( stdout, "filtering detector 2 data from timeIndex %d to %d\n",
+		   ignoreIndex[1], numPoints - ignoreIndex[1] - 1);
+	  fflush( stdout );
+	}
+    }
+  /* #endif */
   
   /*
    *
@@ -1221,42 +895,41 @@ LALTwoInterfFindChirpFilterSegment (
     {
       REAL4 r1 = inputData1[k].re;
       REAL4 s1 = inputData1[k].im;
-      REAL4 x = tmpltSignal[k].re;
-      REAL4 y = 0 - tmpltSignal[k].im;       /* note complex conjugate */
+      REAL4 x = tmpltSignal1[k].re;
+      REAL4 y = 0 - tmpltSignal1[k].im;       /* note complex conjugate */
       
       q1tilde[k].re = r1*x - s1*y;
       q1tilde[k].im = r1*y + s1*x;
     }
   
   /* q1tilde negative frequency only: not DC or nyquist */
-  if ( params->filterParams1->computeNegFreq )
+  if ( params->paramsVec->filterParams[0].computeNegFreq )
     {
       for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
 	{
 	  REAL4 r1 = inputData1[k].re;
 	  REAL4 s1 = inputData1[k].im;
-	  REAL4 x = tmpltSignal[k].re;
-	  REAL4 y = 0 - tmpltSignal[k].im;     /* note complex conjugate */
+	  REAL4 x = tmpltSignal1[k].re;
+	  REAL4 y = 0 - tmpltSignal1[k].im;     /* note complex conjugate */
 	  
 	  q1tilde[k].re = r1*x - s1*y;
 	  q1tilde[k].im = r1*y + s1*x;
 	}
     }
+  LALCOMPLEX8VectorFFT( status->statusPtr, params->paramsVec->filterParams[0].qVec, 
+			params->paramsVec->filterParams[0].qtildeVec, 
+			params->paramsVec->filterParams[0].invPlan );
+  CHECKSTATUSPTR( status );
   
   /* inverse fft to get q1 */
-  LALCOMPLEX8VectorFFT( status->statusPtr, params->filterParams1->qVec, 
-			params->filterParams1->qtildeVec, 
-			params->filterParams1->invPlan );
-  CHECKSTATUSPTR( status );
-
-
+  
   /*
    *
    * compute q2tilde and q2
    *
    */
   
-
+  
   memset( q2tilde, 0, numPoints * sizeof(COMPLEX8) );
   
   /* q2tilde positive frequency, not DC or nyquist */
@@ -1264,22 +937,22 @@ LALTwoInterfFindChirpFilterSegment (
     {
       REAL4 r2 = inputData2[k].re;
       REAL4 s2 = inputData2[k].im;
-      REAL4 x = tmpltSignal[k].re;
-      REAL4 y = 0 - tmpltSignal[k].im;       /* note complex conjugate */
+      REAL4 x = tmpltSignal2[k].re;
+      REAL4 y = 0 - tmpltSignal2[k].im;       /* note complex conjugate */
       
       q2tilde[k].re = r2*x - s2*y;
       q2tilde[k].im = r2*y + s2*x;
     }
   
   /* q2tilde negative frequency only: not DC or nyquist */
-  if ( params->filterParams1->computeNegFreq )
+  if ( params->paramsVec->filterParams[1].computeNegFreq )
     {
       for ( k = numPoints/2 + 2; k < numPoints - 1; ++k )
 	{
 	  REAL4 r2 = inputData2[k].re;
 	  REAL4 s2 = inputData2[k].im;
-	  REAL4 x = tmpltSignal[k].re;
-	  REAL4 y = 0 - tmpltSignal[k].im;     /* note complex conjugate */
+	  REAL4 x = tmpltSignal2[k].re;
+	  REAL4 y = 0 - tmpltSignal2[k].im;     /* note complex conjugate */
 	  
 	  q2tilde[k].re = r2*x - s2*y;
 	  q2tilde[k].im = r2*y + s2*x;
@@ -1287,11 +960,10 @@ LALTwoInterfFindChirpFilterSegment (
     }
   
   /* inverse fft to get q2 */
-  LALCOMPLEX8VectorFFT( status->statusPtr, params->filterParams2->qVec, 
-			params->filterParams2->qtildeVec, 
-			params->filterParams2->invPlan );
+  LALCOMPLEX8VectorFFT( status->statusPtr, params->paramsVec->filterParams[1].qVec, 
+			params->paramsVec->filterParams[1].qtildeVec, 
+			params->paramsVec->filterParams[1].invPlan );
   CHECKSTATUSPTR( status );
-
   
   /* 
    *
@@ -1299,95 +971,194 @@ LALTwoInterfFindChirpFilterSegment (
    *
    */
   
-  
   /* if full snrsq vector for the network is required, set it to zero */
   if ( params->twoInterfRhosqVec )
-    memset( params->twoInterfRhosqVec->data, 0, numPoints * sizeof( REAL4 ) );
+    { 
+      memset( params->twoInterfRhosqVec->data->data, 0, 
+	      numPoints * sizeof( REAL4 ) );
+    }
   
-  /* if full snrsq vector for detector 1 is required, set it to zero */
-  if ( params->filterParams1->rhosqVec )
-    memset( params->filterParams1->rhosqVec->data->data, 0, 
-	    numPoints * sizeof( REAL4 ) );
+  /* if full snrsq vector for each detector is required, set it to zero */
+  for ( n = 0 ; n < 2 ; ++n )
+    {
+      if ( params->paramsVec->filterParams[n].rhosqVec )
+	memset( params->paramsVec->filterParams[n].rhosqVec->data->data, 0, 
+		numPoints * sizeof( REAL4 ) );
+    }/*end loop over detectors*/
   
   /* normalization */
-  norm1 = 4.0 * (deltaT / (REAL4)numPoints) / input->segment1->segNorm;
-  norm2 = 4.0 * (deltaT / (REAL4)numPoints) / input->segment2->segNorm;
+  norm1 = 4.0 * (deltaT / (REAL4)numPoints) / input->filterInput[0].segment->segNorm;
+  norm2 = 4.0 * (deltaT / (REAL4)numPoints) / input->filterInput[1].segment->segNorm;
   
-  m = ( maxLag / deltaT ); 
-  
-  for ( j = 0; j < numPoints; ++j ) 
+ 
+  /* if full snrsq vector is required, store the snrsq */
+  if ( params->paramsVec->filterParams[0].rhosqVec ) 
     {
+      snprintf( params->paramsVec->filterParams[0].rhosqVec->name, LALNameLength * sizeof(CHAR),
+		"%s:rhosq:output", input->filterInput[0].segment->data->name );
+      memcpy( &(params->paramsVec->filterParams[0].rhosqVec->epoch), &(input->filterInput[0].segment->data->epoch), 
+	      sizeof(LIGOTimeGPS) );
+      params->paramsVec->filterParams[0].rhosqVec->deltaT = input->filterInput[0].segment->deltaT;
       
-      for ( k = ( j < m ) ? 0 : ( j - m + 1) ; k <= j + m - 1 ; ++k )
+      for ( j = 0; j < numPoints; ++j )
 	{
+	  REAL4 modqsq = q1[j].re * q1[j].re + q1[j].im * q1[j].im;
+	  params->paramsVec->filterParams[0].rhosqVec->data->data[j] = norm1 * modqsq;
+	}
+    }
+  
+  if ( params->paramsVec->filterParams[1].rhosqVec ) 
+    {
+      snprintf( params->paramsVec->filterParams[1].rhosqVec->name, LALNameLength * sizeof(CHAR),
+		"%s:rhosq:output", input->filterInput[1].segment->data->name );
+      memcpy( &(params->paramsVec->filterParams[1].rhosqVec->epoch), &(input->filterInput[1].segment->data->epoch), 
+	      sizeof(LIGOTimeGPS) );
+      params->paramsVec->filterParams[1].rhosqVec->deltaT = input->filterInput[1].segment->deltaT;
+      
+      for ( j = 0; j < numPoints; ++j )
+	{
+	  REAL4 modqsq = q2[j].re * q2[j].re + q2[j].im * q2[j].im;
+	  params->paramsVec->filterParams[1].rhosqVec->data->data[j] = norm1 * modqsq;
+	}
+    }
+  
+  twoInterfRhosqThresh = params->twoInterfRhosqThresh;
+
+  if ( ignoreIndex[0] < ignoreIndex[1] )
+    {
+      UINT4          temp;
+      
+      temp = ignoreIndex[0];
+      ignoreIndex[0] = ignoreIndex[1];
+      ignoreIndex[1] = temp;
+    }
+
+  /* look for an events in the filter output */
+  for ( j = ignoreIndex[0] ; j < numPoints - ignoreIndex[0] ; ++j ) 
+    {
+      for ( k = (( j < m+1 ) ? 0 : ( j - m )) ; k < (( (j + m ) < numPoints) ? (j + m+1) : numPoints) ; ++k )
+	{
+	  REAL4                  rhosq1;
+	  REAL4                  rhosq2;
+	  
+	  if ( ignoreIndex[0] < ignoreIndex[1] )
+	    {
+	      UINT4          temp;
+	      
+	      temp = k;
+	      k = j;
+	      j = temp;
+	    }
+	  
 	  modqsq1 = ( q1[j].re * q1[j].re + q1[j].im * q1[j].im );
 	  modqsq2 = ( q2[k].re * q2[k].re + q2[k].im * q2[k].im );
 	  
-	  rhosq = norm1 * modqsq1 + norm2 * modqsq2; 
+	  rhosq1  = norm1 * modqsq1;
+	  rhosq2  = norm2 * modqsq2;
 	  
+	  rhosq = 0.5 * ( rhosq1 + rhosq2 );
+
 	  /* if full snrsq vector is required, store the snrsq */
+	  
 	  if ( params->twoInterfRhosqVec ) 
-	    params->twoInterfRhosqVec->data[j] = rhosq;
+	    {
+	      snprintf( params->twoInterfRhosqVec->name, 
+			LALNameLength * sizeof(CHAR),
+			"%s:twoInterfRhosq:output", 
+			input->filterInput[0].segment->data->name );
+	      if ( ignoreIndex[0] > ignoreIndex[1] )
+		{
+		  memcpy( &(params->twoInterfRhosqVec->epoch), 
+			  &(input->filterInput[0].segment->data->epoch), 
+			  sizeof(LIGOTimeGPS) );
+		}
+	      else
+		{
+		   memcpy( &(params->twoInterfRhosqVec->epoch), 
+			   &(input->filterInput[1].segment->data->epoch), 
+			   sizeof(LIGOTimeGPS) );
+		}
+	      params->twoInterfRhosqVec->deltaT 
+		= input->filterInput[0].segment->deltaT;
+	      if ( rhosq > params->twoInterfRhosqVec->data->data[j] )
+		params->twoInterfRhosqVec->data->data[j] = rhosq;
+	    }
 	  
 	  /* if snrsq exceeds threshold at any point */
 	  if ( rhosq > twoInterfRhosqThresh )
 	    {
 	      /* compute chisq vector for detector 1 if it does not exist */
-	      if ( ! haveChisq )
+	      if ( ! haveChisq1   && input->filterInput[0].segment->chisqBinVec->length )
 		{
-		  memset( params->filterParams1->chisqVec->data, 0, 
-			  params->filterParams1->chisqVec->length 
+		  memset( params->paramsVec->filterParams[0].chisqVec->data, 0, 
+			  params->paramsVec->filterParams[0].chisqVec->length 
 			  * sizeof(REAL4) );
 
 		  /* pointers to chisq input for detector 1 */
-		  params->filterParams1->chisqInput->qtildeVec 
-		    = params->filterParams1->qtildeVec;
-		  params->filterParams1->chisqInput->qVec      
-		    = params->filterParams1->qVec;
+		  params->paramsVec->filterParams[0].chisqInput->qtildeVec 
+		    = params->paramsVec->filterParams[0].qtildeVec;
+		  params->paramsVec->filterParams[0].chisqInput->qVec      
+		    = params->paramsVec->filterParams[0].qVec;
 		  
 		  /* pointer to the chisq bin vector in segment of detector1 */
-		  params->filterParams1->chisqParams->chisqBinVec 
-		    = input->segment1->chisqBinVec;
-		  params->filterParams1->chisqParams->norm = norm1;
-		  
+		  params->paramsVec->filterParams[0].chisqParams->chisqBinVec 
+		    = input->filterInput[0].segment->chisqBinVec;
+		  params->paramsVec->filterParams[0].chisqParams->norm  
+		    = norm1;
+		  /* XXX this should be passed in from the bank XXX */;
+		  params->paramsVec->filterParams[0].chisqParams->bankMatch=0.97;
+	  
 		  /* compute the chisq threshold for detector 1 */
-		  LALFindChirpChisqVeto( status->statusPtr, 
-					 params->filterParams1->chisqVec, 
-					 params->filterParams1->chisqInput, 
-					 params->filterParams1->chisqParams );
+
+		  LALFindChirpChisqVeto ( status->statusPtr, 
+					  params->paramsVec->filterParams[0].chisqVec, 
+					  params->paramsVec->filterParams[0].chisqInput, 
+					  params->paramsVec->filterParams[0].chisqParams );
 		  CHECKSTATUSPTR (status); 
 		  
-		  /* compute chisqVector for detector 2 if it does not exist */
+		  haveChisq1 =1;
 		  
-		  memset( params->filterParams2->chisqVec->data, 0, 
-			  params->filterParams2->chisqVec->length 
-			  * sizeof(REAL4) );
-		  
-		  /* pointers to chisq input for detector 2 */
-		  params->filterParams2->chisqInput->qtildeVec 
-		    = params->filterParams2->qtildeVec;
-		  params->filterParams2->chisqInput->qVec      
-		    = params->filterParams2->qVec;
-		  
-		  /* pointer to the chisq bin vector in segment of detector2 */
-		  params->filterParams2->chisqParams->chisqBinVec 
-		    = input->segment2->chisqBinVec;
-		  params->filterParams2->chisqParams->norm = norm2;
-		  
-		  /* compute the chisq threshold for detector 2 */
-		  LALFindChirpChisqVeto( status->statusPtr, 
-					 params->filterParams2->chisqVec, 
-					 params->filterParams2->chisqInput, 
-					 params->filterParams2->chisqParams );
-		  CHECKSTATUSPTR (status); 
+		  /* compute chisq vector for detector 2 if it does not exist*/
+		  if ( ! haveChisq2   && input->filterInput[1].segment->chisqBinVec->length )
+		    {
+		      memset( params->paramsVec->filterParams[1].chisqVec->data, 0, 
+			      params->paramsVec->filterParams[1].chisqVec->length 
+			      * sizeof(REAL4) );
+		      
+		      /* pointers to chisq input for detector 2 */
+		      params->paramsVec->filterParams[1].chisqInput->qtildeVec 
+			= params->paramsVec->filterParams[1].qtildeVec;
+		      params->paramsVec->filterParams[1].chisqInput->qVec      
+			= params->paramsVec->filterParams[1].qVec;
+		      
+		      /* pointer to the chisq bin vector in segment of detector2 */
+		      params->paramsVec->filterParams[1].chisqParams->chisqBinVec 
+			= input->filterInput[1].segment->chisqBinVec;
+		      params->paramsVec->filterParams[1].chisqParams->norm   
+			= norm2;
+		      /* XXX this should be passed in from the bank XXX */;
+		      params->paramsVec->filterParams[1].chisqParams->bankMatch=0.97;
+	   
+		      /* compute the chisq threshold for detector 2 */
+
+		      LALFindChirpChisqVeto ( status->statusPtr, 
+						    params->paramsVec->filterParams[1].chisqVec, 
+						    params->paramsVec->filterParams[1].chisqInput, 
+						    params->paramsVec->filterParams[1].chisqParams );
+		      CHECKSTATUSPTR (status); 
+		      
+		      haveChisq2 =1;
+		    }
 		}
 	      
-	      /* if chisq for either detector drops below threshold,
-		 then start processing events */
-	      if ( ( params->filterParams1->chisqVec->data[j] 
-		     < params->filterParams1->chisqThresh ) 
-		   || ( params->filterParams2->chisqVec->data[j] 
-			< params->filterParams2->chisqThresh ) )
+	      /* if we don't have a chisq or the chisq drops below 
+		 threshold, then start processing events */
+	      if ( (! input->filterInput[0].segment->chisqBinVec->length ||
+		    params->paramsVec->filterParams[0].chisqVec->data[j] 
+		    < params->paramsVec->filterParams[0].chisqThresh ) 
+		   && (! input->filterInput[1].segment->chisqBinVec->length ||
+		       params->paramsVec->filterParams[1].chisqVec->data[k] 
+		       < params->paramsVec->filterParams[1].chisqThresh ) )
 		{
 		  if ( ! *eventList )
 		    {
@@ -1400,25 +1171,51 @@ LALTwoInterfFindChirpFilterSegment (
 				 TWOINTERFFINDCHIRPH_MSGEALOC );
 			}
 		      thisEvent->twoInterfId = twoInterfEventId++;
+		      		      
+		      /*allocate memory to each detector event struct*/
+		      eventIn1 = thisEvent->eventIn1=(InspiralEvent *) 
+			LALCalloc( 1, sizeof(InspiralEvent) );
+		      eventIn2 = thisEvent->eventIn1=(InspiralEvent *) 
+			LALCalloc( 1, sizeof(InspiralEvent) );
 		      
+		      /* record the segment id that the event was found in */
+		      eventIn1->segmentNumber 
+			= input->filterInput[0].segment->number;
+		      eventIn2->segmentNumber 
+			= input->filterInput[1].segment->number;
+
+		      thisEvent->segmentNumber
+			= input->filterInput[0].segment->number;
+
 		      /* stick minimal data into the event */
-		      thisEvent->eventIn1->timeIndex = j;
-		      thisEvent->eventIn2->timeIndex = k;
+		      eventIn1->timeIndex = j;
+		      eventIn1->snrsq     = rhosq1;
+		      eventIn2->timeIndex = k;
+		      eventIn2->snrsq     = rhosq2;
+
+		      thisEvent->timeIndex = j;
 		      thisEvent->snrsq = rhosq;
 		    }
-		  else if ((j < thisEvent->eventIn1->timeIndex+deltaEventIndex 
-			    || 
-			    k <thisEvent->eventIn2->timeIndex+deltaEventIndex) 
-			   && rhosq > thisEvent->snrsq )
+		  else if(params->paramsVec->filterParams[0].maximiseOverChirp 
+			  && j < eventIn1->timeIndex + deltaEventIndex 
+			  && rhosq > thisEvent->snrsq 
+			  && params->paramsVec->filterParams[1].maximiseOverChirp
+			  && k < eventIn2->timeIndex+deltaEventIndex
+			  )
 		    {
 		      /* if this is the same event, update the maximum */
-		      thisEvent->eventIn1->timeIndex = j;
-		      thisEvent->eventIn2->timeIndex = k;
+		      eventIn1->timeIndex = j;
+		      eventIn1->snrsq     = rhosq1;
+		      eventIn2->timeIndex = k;
+		      eventIn2->snrsq     = rhosq2;
+		    
+		      thisEvent->timeIndex = j;		      
 		      thisEvent->snrsq = rhosq;
 		    }
-		  else if ( j > thisEvent->eventIn1->timeIndex+deltaEventIndex
-			    || 
-			    k >thisEvent->eventIn2->timeIndex+ deltaEventIndex)
+		  else if ( j > eventIn1->timeIndex +deltaEventIndex ||
+			    ! params->paramsVec->filterParams[0].maximiseOverChirp 
+			    || k > eventIn2->timeIndex + deltaEventIndex ||
+			    ! params->paramsVec->filterParams[1].maximiseOverChirp  )
 		    {
 		      /* clean up this event */
 		      TwoInterfInspiralEvent *lastEvent;
@@ -1428,65 +1225,131 @@ LALTwoInterfFindChirpFilterSegment (
 		      /* set the event LIGO GPS time of the event 
 			 for detector 1 */
 		      timeNS1 = 1000000000L * 
-			(INT8) (input->segment1->data->epoch.gpsSeconds);
+			(INT8) (input->filterInput[0].segment->data->epoch.gpsSeconds);
 		      timeNS1 += 
-			(INT8) (input->segment1->data->epoch.gpsNanoSeconds);
+			(INT8) (input->filterInput[0].segment->data->epoch.gpsNanoSeconds);
 		      timeNS1 += 
-			(INT8) (1e9 * (thisEvent->eventIn1->timeIndex)*deltaT);
-		      thisEvent->eventIn1->time.gpsSeconds = 
+			(INT8) (1e9 * (eventIn1->timeIndex)*deltaT);
+		      eventIn1->time.gpsSeconds = 
 			(INT4) (timeNS1/1000000000L);
-		      thisEvent->eventIn1->time.gpsNanoSeconds = 
+		      eventIn1->time.gpsNanoSeconds = 
 			(INT4) (timeNS1%1000000000L);
- 
+		      
+		      thisEvent->time.gpsSeconds 
+			= (INT4) (timeNS1/1000000000L);
+		      thisEvent->time.gpsNanoSeconds 
+			= (INT4) (timeNS1%1000000000L);		      
+		      
 		      /* set the event LIGO GPS time of the event 
 			 for detector 2 */
 		      timeNS2 = 1000000000L * 
-			(INT8) (input->segment2->data->epoch.gpsSeconds);
+			(INT8) (input->filterInput[1].segment->data->epoch.gpsSeconds);
 		      timeNS2 += 
-			(INT8) (input->segment2->data->epoch.gpsNanoSeconds);
+			(INT8) (input->filterInput[1].segment->data->epoch.gpsNanoSeconds);
 		      timeNS2 += 
-			(INT8) (1e9 * (thisEvent->eventIn2->timeIndex)*deltaT);
-		      thisEvent->eventIn2->time.gpsSeconds = 
+			(INT8) (1e9 * (eventIn2->timeIndex)*deltaT);
+		      eventIn2->time.gpsSeconds = 
 			(INT4) (timeNS2/1000000000L);
-		      thisEvent->eventIn2->time.gpsNanoSeconds = 
+		      eventIn2->time.gpsNanoSeconds = 
 			(INT4) (timeNS2%1000000000L);
 		      
+		      /* set the impuse time for the event */
+		      timeNS1 -= chirpTimeNS;
+		      eventIn1->impulseTime.gpsSeconds = (INT4) (timeNS1/1000000000L);
+		      eventIn1->impulseTime.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		      
+		      thisEvent->impulseTime.gpsSeconds = (INT4) (timeNS1/1000000000L);
+		      thisEvent->impulseTime.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		      timeNS2 -= chirpTimeNS;
+		      eventIn1->impulseTime.gpsSeconds = (INT4) (timeNS2/1000000000L);
+		      eventIn1->impulseTime.gpsNanoSeconds = (INT4) (timeNS2%1000000000L);
+		      
+		      /* record the ifo and channel name for the event */
+		      strncpy( eventIn1->ifoName, input->filterInput[0].segment->data->name, 
+			       2 * sizeof(CHAR) );
+		      strncpy( eventIn1->channel, input->filterInput[0].segment->data->name + 3,
+			       (LALNameLength - 3) * sizeof(CHAR) );
+
+		      strncpy( eventIn2->ifoName, input->filterInput[1].segment->data->name, 
+			       2 * sizeof(CHAR) );
+		      strncpy( eventIn2->channel, input->filterInput[1].segment->data->name + 3,
+			       (LALNameLength - 3) * sizeof(CHAR) );
+		      
 		      /* copy the template into the event */
-		      memcpy( &(thisEvent->tmplt), input->tmplt, 
+		      memcpy( &(thisEvent->tmplt), input->filterInput[0].tmplt, 
 			      sizeof(InspiralTemplate) );
 		      thisEvent->tmplt.next = NULL;
 		      thisEvent->tmplt.fine = NULL;
 		      
 		      /* set snrsq, chisq, sigma and effDist for this event */
-		      thisEvent->eventIn1->chisq =  
-			params->filterParams1->chisqVec->data[thisEvent->eventIn1->timeIndex];
-		      thisEvent->eventIn2->chisq = 
-			params->filterParams2->chisqVec->data[thisEvent->eventIn2->timeIndex];          
-		      thisEvent->eventIn1->sigma   = norm1;
-		      thisEvent->eventIn2->sigma   = norm2;
-		      thisEvent->snrsq  = rhosq;
+		      if ( input->filterInput[0].segment->chisqBinVec->length )
+			{
+			  eventIn1->chisq =  
+			    params->paramsVec->filterParams[0].chisqVec->data[eventIn1->timeIndex];
+			  eventIn1->numChisqBins =  
+			    input->filterInput[0].segment->chisqBinVec->length - 1;
+			}
+		      else
+			{
+			  eventIn1->chisq = 0;
+			  eventIn1->numChisqBins = 0;
+			}
+		      if ( input->filterInput[1].segment->chisqBinVec->length)
+			
+			{
+			  eventIn2->chisq = 
+			    params->paramsVec->filterParams[1].chisqVec->data[eventIn2->timeIndex];  
+			  eventIn2->numChisqBins = 
+			    input->filterInput[1].segment->chisqBinVec->length - 1;
+			}
+		      else
+			{
+			  eventIn2->chisq = 0;
+			  eventIn2->numChisqBins = 0;
+			}
+		      eventIn1->sigma= sqrt(norm1* 
+					    input->filterInput[0].segment->segNorm*
+					    input->filterInput[0].segment->segNorm*
+					    input->filterInput[0].fcTmplt->tmpltNorm );
+		      eventIn2->sigma= sqrt(norm2* 
+					    input->filterInput[1].segment->segNorm*
+					    input->filterInput[1].segment->segNorm*
+					    input->filterInput[1].fcTmplt->tmpltNorm );
+		      eventIn1->effDist = 
+			(input->filterInput[0].fcTmplt->tmpltNorm * input->filterInput[0].segment->segNorm * 
+			 input->filterInput[0].segment->segNorm)*norm1 / eventIn1->snrsq;
+		      eventIn1->effDist = sqrt( eventIn1->effDist );
+		      
+		      eventIn2->effDist = 
+			(input->filterInput[1].fcTmplt->tmpltNorm * input->filterInput[1].segment->segNorm * 
+			 input->filterInput[1].segment->segNorm)*norm2 / eventIn2->snrsq;
+		      eventIn2->effDist = sqrt( eventIn2->effDist );
 		      
 		      /* allocate memory for the newEvent */
 		      lastEvent = thisEvent;
 		      
-		      lastEvent->next = thisEvent =(TwoInterfInspiralEvent *) 
+		      lastEvent->next = thisEvent = (TwoInterfInspiralEvent *) 
 			LALCalloc( 1, sizeof(TwoInterfInspiralEvent) );
 		      if ( ! lastEvent->next )
 			{
-			  ABORT( status, FINDCHIRPH_EALOC, 
-				 FINDCHIRPH_MSGEALOC );
+			  ABORT( status, TWOINTERFFINDCHIRPH_EALOC, TWOINTERFFINDCHIRPH_MSGEALOC );
 			}
 		      thisEvent->twoInterfId = twoInterfEventId++;
 		      
 		      /* stick minimal data into the event */
-		      thisEvent->eventIn1->timeIndex = j;
-		      thisEvent->eventIn2->timeIndex = k;
-		      thisEvent->snrsq = rhosq; 
+		      eventIn1->timeIndex = j;
+		      eventIn1->snrsq     = rhosq1;
+		      eventIn2->timeIndex = j;
+		      eventIn2->snrsq     = rhosq2;
+
+		      thisEvent->timeIndex = j;
+		      thisEvent->snrsq = rhosq;
 		    }
 		}
 	    }
 	}
-    }    
+    }
+  
   /* 
    *
    * clean up the last event if there is one
@@ -1501,35 +1364,95 @@ LALTwoInterfFindChirpFilterSegment (
       
       /* set the event LIGO GPS time of the event in detector 1 */
       timeNS1 = 1000000000L * 
-	(INT8) (input->segment1->data->epoch.gpsSeconds);
-      timeNS1 += (INT8) (input->segment1->data->epoch.gpsNanoSeconds);
-      timeNS1 += (INT8) (1e9 * (thisEvent->eventIn1->timeIndex) * deltaT);
-      thisEvent->eventIn1->time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-      thisEvent->eventIn1->time.gpsNanoSeconds 
+	(INT8) (input->filterInput[0].segment->data->epoch.gpsSeconds);
+      timeNS1 += (INT8) (input->filterInput[0].segment->data->epoch.gpsNanoSeconds);
+      timeNS1 += (INT8) (1e9 * (eventIn1->timeIndex) * deltaT);
+      eventIn1->time.gpsSeconds = (INT4) (timeNS1/1000000000L);
+      eventIn1->time.gpsNanoSeconds 
 	= (INT4) (timeNS1%1000000000L);
       
       /* set the event LIGO GPS time of the event in detector 2 */
       timeNS2 = 1000000000L * 
-	(INT8) (input->segment2->data->epoch.gpsSeconds);
-      timeNS2 += (INT8) (input->segment2->data->epoch.gpsNanoSeconds);
-      timeNS2 += (INT8) (1e9 * (thisEvent->eventIn2->timeIndex) * deltaT);
-      thisEvent->eventIn2->time.gpsSeconds = (INT4) (timeNS2/1000000000L);
-      thisEvent->eventIn2->time.gpsNanoSeconds 
+	(INT8) (input->filterInput[1].segment->data->epoch.gpsSeconds);
+      timeNS2 += (INT8) (input->filterInput[1].segment->data->epoch.gpsNanoSeconds);
+      timeNS2 += (INT8) (1e9 * (eventIn2->timeIndex) * deltaT);
+      eventIn2->time.gpsSeconds = (INT4) (timeNS2/1000000000L);
+      eventIn2->time.gpsNanoSeconds 
 	= (INT4) (timeNS2%1000000000L);
+   
+      /* set the impuse time for the event in detector 1 */
+      timeNS1 -= chirpTimeNS;
+      eventIn1->impulseTime.gpsSeconds = (INT4) (timeNS1/1000000000L);
+      eventIn1->impulseTime.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+      	    
+      thisEvent->time.gpsSeconds 
+	= (INT4) (timeNS1/1000000000L);/*CHECK:hardwired to
+					 detector 1*/
+      thisEvent->time.gpsNanoSeconds 
+	= (INT4) (timeNS1%1000000000L);/*CHECK:hardwired to
+							 detector 1*/
+		      
+      /* set the impuse time for the event in detector 2 */
+      timeNS2 -= chirpTimeNS;
+      eventIn2->impulseTime.gpsSeconds = (INT4) (timeNS2/1000000000L);
+      eventIn2->impulseTime.gpsNanoSeconds = (INT4) (timeNS2%1000000000L);
       
-      /* copy the template into the event */
-      memcpy( &(thisEvent->tmplt), input->tmplt, sizeof(InspiralTemplate));
+      /* record the ifo name for the event detector 1*/
+      strncpy( eventIn1->ifoName, input->filterInput[0].segment->data->name, 
+	       2 * sizeof(CHAR) );
+      strncpy( eventIn1->channel, input->filterInput[0].segment->data->name + 3,
+	       (LALNameLength - 3) * sizeof(CHAR) );
+      
+      /* record the ifo name for the event detector 2*/
+      strncpy( eventIn2->ifoName, input->filterInput[1].segment->data->name, 
+	       2 * sizeof(CHAR) );
+      strncpy( eventIn2->channel, input->filterInput[1].segment->data->name + 3,
+	       (LALNameLength - 3) * sizeof(CHAR) );
+      memcpy( &(thisEvent->tmplt), input->filterInput[0].tmplt, 
+	      sizeof(InspiralTemplate) );
       
       /* set snrsq, chisq, sigma and effDist for this event */
-      thisEvent->eventIn1->chisq =  
-	params->filterParams1->chisqVec->data[thisEvent->eventIn1->timeIndex];
-      thisEvent->eventIn2->chisq = 
-	params->filterParams2->chisqVec->data[thisEvent->eventIn2->timeIndex];          
-      thisEvent->eventIn1->sigma   = norm1;
-      thisEvent->eventIn2->sigma   = norm2;
-      thisEvent->snrsq  = rhosq;
-    }    
-  
+      if ( input->filterInput[0].segment->chisqBinVec->length ||
+	   input->filterInput[1].segment->chisqBinVec->length)
+	{
+	  eventIn1->chisq =  
+	    params->paramsVec->filterParams[0].chisqVec->data[eventIn1->timeIndex];
+	  eventIn2->chisq = 
+	    params->paramsVec->filterParams[1].chisqVec->data[eventIn2->timeIndex];          
+	}
+      else
+	{
+	  eventIn1->chisq        = 0;
+	  eventIn1->numChisqBins = 0;
+
+	  eventIn2->chisq        = 0;
+	  eventIn2->numChisqBins = 0;
+	}
+
+      eventIn1->sigma   = sqrt( norm1 * input->filterInput[0].segment->segNorm * 
+				 input->filterInput[0].segment->segNorm * 
+				input->filterInput[0].fcTmplt->tmpltNorm );
+      eventIn1->effDist = 
+	(input->filterInput[0].fcTmplt->tmpltNorm * input->filterInput[0].segment->segNorm * 
+	 input->filterInput[0].segment->segNorm)*norm1 / eventIn1->snrsq;
+      eventIn1->effDist = sqrt( eventIn1->effDist );
+      eventIn1->numChisqBins = input->filterInput[0].segment->chisqBinVec->length - 1;
+      
+      eventIn2->sigma   = sqrt( norm1 * input->filterInput[0].segment->segNorm * 
+				 input->filterInput[0].segment->segNorm * 
+				input->filterInput[0].fcTmplt->tmpltNorm );
+      eventIn2->effDist = 
+	(input->filterInput[0].fcTmplt->tmpltNorm * input->filterInput[0].segment->segNorm * 
+	 input->filterInput[0].segment->segNorm)*norm2 / eventIn2->snrsq;
+      eventIn2->effDist = sqrt( eventIn2->effDist );
+      eventIn2->numChisqBins = input->filterInput[0].segment->chisqBinVec->length - 1;
+      
+      thisEvent->snrsq = 0.5* ( eventIn1->snrsq + eventIn2->snrsq );
+
+      LALFree( eventIn1 );
+      LALFree( eventIn2 );
+
+    }
   
   /* normal exit */
   DETATCHSTATUSPTR( status );
