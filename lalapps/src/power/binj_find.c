@@ -4,6 +4,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
@@ -14,6 +15,9 @@
 RCSID("$Id$");
 
 #define MAXSTR 2048
+#define PLAYGROUND_START_TIME 729273613
+#define PLAYGROUND_INTERVAL 6370
+#define PLAYGROUND_LENGTH 600
 
 /* Usage format string. */
 #define USAGE "Usage: %s --input infile --outfile filename \
@@ -86,6 +90,8 @@ int main(int argc, char **argv)
     INT4                     pass=TRUE;
     size_t                   len=0;
     INT4                     ndetected=0;
+    const long S2StartTime   = 729273613;  /* Feb 14 2003 16:00:00 UTC */
+    const long S2StopTime    = 734367613;  /* Apr 14 2003 15:00:00 UTC */
 
     /* filenames */
     CHAR                    *inputFile=NULL;
@@ -93,8 +99,8 @@ int main(int argc, char **argv)
     CHAR                    *outputFile=NULL;
 
     /* times of comparison */
-    INT4                     gpsStartTime=0;
-    INT4                     gpsEndTime=0;
+    INT4                     gpsStartTime=S2StartTime;
+    INT4                     gpsEndTime=S2StopTime;
     INT8                     injPeakTime=0;
     INT8                     burstStartTime=0;
 
@@ -132,22 +138,26 @@ int main(int argc, char **argv)
 
     CHAR                     line[MAXSTR];
 
+    /* search summary */
+    SearchSummaryTable      *searchSummary=NULL;
+    INT4                    timeAnalyzed=0;
+    
     /* triggers */
-    SnglBurstTable        *tmpEvent=NULL,*currentEvent=NULL,*prevEvent=NULL;
-    SnglBurstTable         burstEvent,*burstEventList=NULL,*outEventList=NULL;
+    SnglBurstTable          *tmpEvent=NULL,*currentEvent=NULL,*prevEvent=NULL;
+    SnglBurstTable           burstEvent,*burstEventList=NULL,*outEventList=NULL;
 
     /* injections */
-    SimBurstTable            *simBurstList=NULL;
-    SimBurstTable            *currentSimBurst=NULL;
+    SimBurstTable           *simBurstList=NULL;
+    SimBurstTable           *currentSimBurst=NULL;
 
     /* comparison parameters */
-    SnglBurstAccuracy         accParams;
+    SnglBurstAccuracy        accParams;
     
     /* Table outputs */
-    MetadataTable             myTable;
-    LIGOLwXMLStream           xmlStream;
+    MetadataTable            myTable;
+    LIGOLwXMLStream          xmlStream;
 
-    static int		      verbose_flag = 0;
+    static int		     verbose_flag = 0;
 
     /*******************************************************************
      * BEGIN PARSE ARGUMENTS (inarg stores the current position)        *
@@ -326,12 +336,50 @@ int main(int argc, char **argv)
      *****************************************************************/
     currentEvent = tmpEvent = burstEventList = NULL;
     while ( getline(line, MAXSTR, fpin) ){
+      INT4 tmpStartTime=0,tmpEndTime=0;
+      INT4 remainder;
+
       fileCounter++;
       if (verbose_flag)
       {
         fprintf(stderr,"Working on file %s\n", line);
       }
 
+      /**************************************************************
+       * read in search summary information and determine how much
+       * data is analyzed: only works for playground right now.
+       **************************************************************/
+      SearchSummaryTableFromLIGOLw( &searchSummary, line);
+      tmpStartTime=searchSummary->out_start_time.gpsSeconds;
+      tmpEndTime=searchSummary->out_end_time.gpsSeconds;
+
+      while (tmpStartTime < tmpEndTime)
+      {
+        remainder = (tmpStartTime - PLAYGROUND_START_TIME)%PLAYGROUND_INTERVAL;
+        if (remainder < 600)
+        {
+          if ( tmpEndTime-tmpStartTime < 600 )
+          {
+            timeAnalyzed += (tmpEndTime-tmpStartTime);
+          }
+          else
+          {
+            timeAnalyzed += (600 - remainder);
+          }
+        }
+        tmpStartTime += (PLAYGROUND_INTERVAL - remainder);
+      }
+      
+      while (searchSummary)
+      {
+        SearchSummaryTable *thisEvent;
+        thisEvent = searchSummary;
+        searchSummary = searchSummary->next;
+        LALFree( thisEvent );
+      }
+      searchSummary = NULL;
+
+      /* Now the events themselves */
       LAL_CALL( LALSnglBurstTableFromLIGOLw (&stat, &tmpEvent, 
             line), &stat);
 
@@ -471,7 +519,11 @@ int main(int argc, char **argv)
     }
 
     fprintf(stdout,"Detected %i injections\n",ndetected);
-
+    fprintf(stdout,"%d seconds analyzed\n",timeAnalyzed);
+    fprintf(stdout,"%d hours analyzed\n",timeAnalyzed/3600);
+    fprintf(stdout,"%i injections made\n",(INT4)(LAL_PI*timeAnalyzed/400.0));
+    fprintf(stdout,"Efficiency is %f \n", (REAL4)(400.0*
+        (REAL4)(ndetected) / (REAL4)( timeAnalyzed ) / LAL_PI ) );
 
     /*****************************************************************
      * open output xml file
