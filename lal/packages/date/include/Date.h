@@ -101,6 +101,12 @@ NRCSID (DATEH, "$Id$");
     
 #define GMST1_ENULLINPUT  1
 #define GMST1_ENULLOUTPUT 2
+
+#define GPSTOLMST1_ENULLINPUT 1
+#define GPSTOLMST1_ENULLOUTPUT 2
+
+#define GPSTOLMST1_MSGENULLINPUT "Input is NULL"
+#define GPSTOLMST1_MSGENULLOUTPUT "Output is NULL"
     
 #define LMST1_MSGENULLINPUT "Input is NULL"
 #define LMST1_MSGENULLOUTPUT "Output is NULL"
@@ -108,10 +114,17 @@ NRCSID (DATEH, "$Id$");
 #define GMST1_MSGENULLINPUT "Input is NULL"
 #define GMST1_MSGENULLOUTPUT "Output is NULL"
 
-#define MST_SEC 0
-#define MST_HRS 1
-#define MST_DEG 2
-#define MST_RAD 3
+/*
+ * Enumerated type to specify units for the return value
+ * of MST routines
+ */
+typedef enum
+{
+  MST_SEC,       /* arc seconds */
+  MST_HRS,       /* arc hours (i.e. units of Right Ascension) */
+  MST_DEG,       /* degrees */
+  MST_RAD,       /* radians */
+} LALMSTUnits;
 
     
 /*
@@ -235,12 +248,22 @@ void LALDateString(LALStatus*,
 void LALGMST1(LALStatus*,
               REAL8*,
               const LALDate*,
-              INT4);
+              LALMSTUnits);
+
+void LALGPStoGMST1( LALStatus*,
+                    REAL8*,
+                    const LIGOTimeGPS*,
+                    LALMSTUnits);
 
 void LALLMST1(LALStatus*,
               REAL8*,
               const LALPlaceAndDate*,
-              INT4);
+              LALMSTUnits);
+
+void LALGPStoLMST1( LALStatus*,
+                    REAL8*,
+                    const LALPlaceAndGPS*,
+                    LALMSTUnits);
 
 void LALSecsToLALDate(LALStatus*,
                       LALDate*,

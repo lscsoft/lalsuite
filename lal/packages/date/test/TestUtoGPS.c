@@ -5,7 +5,7 @@
 /* $Id$ */
 
 extern char *tzname[2];
-struct tm *gmtime_r( const time_t *, struct tm * );
+/* struct tm *gmtime_r( const time_t *, struct tm * ); */
 
 INT4 lalDebugLevel = 2;
 

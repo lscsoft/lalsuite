@@ -15,20 +15,23 @@ main(int argc, char *argv[])
     REAL8   gmsthours, lmsthours;
     REAL8   gmstsecs;
     REAL8   longitude;
+    LALDetector detector;
+    LALPlaceAndDate place_and_date;
+    LALPlaceAndGPS  place_and_gps;
     /* time_t  timer; */
-    CHAR    timestamp[64], tmpstr[64];
+    CHAR        timestamp[64], tmpstr[64];
     CHARVector *tmpstamp = NULL;
     INT4        testid;
     INT4        dayofmonth, monthofyear;
+    LIGOTimeGPS gpstime;
     static LALStatus  status;
-
     
     if (argc != 3)
     {
         /*
          * Print help message and exit
          */
-        printf("Usage: TestUTCtoGPS testid debug_level\n");
+        printf("Usage: TestLMST testid debug_level\n");
         printf("              testid      = [1,2]\n");
         printf("              debug_level = [0,1,2]\n");
         return 0;
@@ -56,9 +59,15 @@ main(int argc, char *argv[])
         date.unixDate.tm_mon  = 10;
         date.unixDate.tm_year = 94;
 
-        longitude = 0.; /* Greenwich */
+        /* The corresponding GPS time is */
+        gpstime.gpsSeconds = 468979210;
+        gpstime.gpsNanoSeconds = 0;
+
+        detector.frDetector.vertexLongitudeDegrees = 0.;  /* Greenwich */
+        place_and_date.detector = &detector;
+        place_and_date.date     = &date;
         LALGMST1(&status, &gmsthours, &date, MST_HRS);
-        LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+        LALLMST1(&status, &lmsthours, &place_and_date, MST_HRS);
 
         LALGMST1(&status, &gmstsecs, &date, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
@@ -70,6 +79,24 @@ main(int argc, char *argv[])
         printf("     Time = %s\n", tmpstamp->data);
         printf("gmsthours = %f = %s\n", gmsthours, timestamp);
         printf("    expect: 3.655728 = 03h 39m 20.6222s \n");
+        printf("lmsthours = %f\n", lmsthours);
+
+        printf("\nUsing the GPStoGMST1() and GPStoLMST1() routines instead:\n");
+        LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
+        LALSecsToLALDate(&status, &mstdate, gmstsecs);
+        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
+        strcat(timestamp, tmpstr+1); /* remove leading 0 */
+        LALDateString(&status, tmpstamp, &date);
+
+        place_and_gps.detector = &detector;
+        place_and_gps.gps      = &gpstime;
+        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, MST_HRS);
+        printf("     Time = %s\n", tmpstamp->data);
+        printf("gmsthours = %f = %s\n", gmsthours, timestamp);
+        printf("    expect: 3.655728 = 03h 39m 20.6222s \n");
+        printf("lmsthours = %f\n", lmsthours);
+
         /* printf("lmsthours = %f\n", lmsthours); */
 
         /*
@@ -85,9 +112,14 @@ main(int argc, char *argv[])
         date.unixDate.tm_mon  = 7;
         date.unixDate.tm_year = 94;
 
-        longitude = 0.; /* Greenwich */
+        gpstime.gpsSeconds = 461125153;
+        gpstime.gpsNanoSeconds = date.residualNanoSeconds;
+
+        detector.frDetector.vertexLongitudeDegrees = 0.;  /* Greenwich */
+        place_and_date.detector = &detector;
+        place_and_date.date     = &date;
         LALGMST1(&status, &gmsthours, &date, MST_HRS);
-        LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+        LALLMST1(&status, &lmsthours, &place_and_date, MST_HRS);
 
         LALGMST1(&status, &gmstsecs, &date, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
@@ -99,6 +131,22 @@ main(int argc, char *argv[])
         printf("     Time = %s\n", tmpstamp->data);
         printf("gmsthours = %f = %s\n", gmsthours, timestamp);
         printf("    expect:        0h = 00h 00m 00s \n");
+
+        printf("\nUsing the GPStoGMST1() and GPStoLMST1() routines instead:\n");
+        LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
+        LALSecsToLALDate(&status, &mstdate, gmstsecs);
+        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
+        strcat(timestamp, tmpstr+1); /* remove leading 0 */
+        LALDateString(&status, tmpstamp, &date);
+
+        place_and_gps.detector = &detector;
+        place_and_gps.gps      = &gpstime;
+        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, MST_HRS);
+        printf("     Time = %s\n", tmpstamp->data);
+        printf("gmsthours = %f = %s\n", gmsthours, timestamp);
+        printf("    expect: 3.655728 = 03h 39m 20.6222s \n");
+        printf("lmsthours = %f\n", lmsthours);
 
 
         /*
@@ -114,9 +162,15 @@ main(int argc, char *argv[])
         date.unixDate.tm_mon  = 4;
         date.unixDate.tm_year = 94;
 
-        longitude = 0.; /* Greenwich */
+        gpstime.gpsSeconds = 453168010;
+        gpstime.gpsNanoSeconds = 0;
+
+        detector.frDetector.vertexLongitudeDegrees = 0.;  /* Greenwich */
+        place_and_date.detector = &detector;
+        place_and_date.date     = &date;
+
         LALGMST1(&status, &gmsthours, &date, MST_HRS);
-        LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+        LALLMST1(&status, &lmsthours, &place_and_date, MST_HRS);
 
         LALGMST1(&status, &gmstsecs, &date, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
@@ -129,6 +183,23 @@ main(int argc, char *argv[])
         printf("gmsthours = %f   = %s\n", gmsthours, timestamp);
         printf("    expect: 15.63105328 = 15h 37m 51.7918s\n");
 
+        printf("\nUsing the GPStoGMST1() and GPStoLMST1() routines instead:\n");
+        LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
+        LALSecsToLALDate(&status, &mstdate, gmstsecs);
+        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
+        strcat(timestamp, tmpstr+1); /* remove leading 0 */
+        LALDateString(&status, tmpstamp, &date);
+
+        place_and_gps.detector = &detector;
+        place_and_gps.gps      = &gpstime;
+        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, MST_HRS);
+        printf("     Time = %s\n", tmpstamp->data);
+        printf("gmsthours = %f = %s\n", gmsthours, timestamp);
+        printf("    expect: 3.655728 = 03h 39m 20.6222s \n");
+        printf("lmsthours = %f\n", lmsthours);
+        
+
         /* And increment the date by 1 hour to see
          * if it makes GMST change */
         printf("\n");
@@ -140,9 +211,14 @@ main(int argc, char *argv[])
         date.unixDate.tm_mon  = 4;
         date.unixDate.tm_year = 94;
 
-        longitude = 0.; /* Greenwich */
+        gpstime.gpsSeconds += 3600;
+
+        detector.frDetector.vertexLongitudeDegrees = 0.;  /* Greenwich */
+        place_and_date.detector = &detector;
+        place_and_date.date     = &date;
+
         LALGMST1(&status, &gmsthours, &date, MST_HRS);
-        LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+        LALLMST1(&status, &lmsthours, &place_and_date, MST_HRS);
 
         LALGMST1(&status, &gmstsecs, &date, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
@@ -154,6 +230,24 @@ main(int argc, char *argv[])
         printf("     Time = %s\n", tmpstamp->data);
         printf("gmsthours = %f   = %s\n", gmsthours, timestamp);
         printf("    expect: 16.63105328 = 16h 37m 51.7918s\n");
+
+        printf("\nUsing the GPStoGMST1() and GPStoLMST1() routines instead:\n");
+        LALGPStoGMST1(&status, &gmstsecs, &gpstime, MST_SEC);
+        LALSecsToLALDate(&status, &mstdate, gmstsecs);
+        strftime(timestamp, 64, "%Hh %Mm %S", &(mstdate.unixDate));
+        sprintf(tmpstr, "%fs", mstdate.residualNanoSeconds * 1.e-9);
+        strcat(timestamp, tmpstr+1); /* remove leading 0 */
+        LALDateString(&status, tmpstamp, &date);
+
+        place_and_gps.detector = &detector;
+        place_and_gps.gps      = &gpstime;
+        LALGPStoLMST1(&status, &lmsthours, &place_and_gps, MST_HRS);
+        printf("     Time = %s\n", tmpstamp->data);
+        printf("gmsthours = %f = %s\n", gmsthours, timestamp);
+        printf("    expect: 3.655728 = 03h 39m 20.6222s \n");
+        printf("lmsthours = %f\n", lmsthours);
+        
+
 
 
         /*
@@ -169,9 +263,15 @@ main(int argc, char *argv[])
         date.unixDate.tm_mon  = 4;
         date.unixDate.tm_year = 94;
 
-        longitude = 0.; /* Greenwich */
+        gpstime.gpsSeconds = 453168010;
+        gpstime.gpsNanoSeconds = date.residualNanoSeconds;
+
+        detector.frDetector.vertexLongitudeDegrees = 0.;  /* Greenwich */
+        place_and_date.detector = &detector;
+        place_and_date.date     = &date;
+
         LALGMST1(&status, &gmsthours, &date, MST_HRS);
-        LALLMST1(&status, &lmsthours, &date, longitude, MST_HRS);
+        LALLMST1(&status, &lmsthours, &place_and_date, MST_HRS);
 
         LALGMST1(&status, &gmstsecs, &date, MST_SEC);
         LALSecsToLALDate(&status, &mstdate, gmstsecs);
