@@ -4,20 +4,22 @@
 #
 noinst_LTLIBRARIES = libfindchirp.la
 
-FINDCHIRPSOURCES = FindChirpExch.c FindChirpMemory.c FindChirpFilter.c \
-  FindChirpChisq.c FindChirpSPData.c FindChirpSPTemplate.c FindChirpMaster.c \
-  FindChirpSlave.c FindChirpTmplt.c FindChirpLinkedList.c
+FINDCHIRPSOURCES = FindChirpMemory.c FindChirpFilter.c \
+  FindChirpChisq.c FindChirpSPData.c FindChirpSPTemplate.c \
+  FindChirpTmplt.c FindChirpLinkedList.c
+FINDCHIRPMPISOURCES = FindChirpExch.c FindChirpMaster.c FindChirpSlave.c
 TWOINTERFFINDCHIRPSOURCES = TwoInterfFindChirpFilter.c
 
 if MPI
-libfindchirp_la_SOURCES = $(FINDCHIRPSOURCES) $(TWOINTERFFINDCHIRPSOURCES)
+libfindchirp_la_SOURCES = $(FINDCHIRPSOURCES) $(FINDCHIRPMPISOURCES) \
+                          $(TWOINTERFFINDCHIRPSOURCES)
 EXTRA_TEXSOURCES = 
 else
-libfindchirp_la_SOURCES =
-EXTRA_TEXSOURCES = $(FINDCHIRPSOURCES) $(TWOINTERFFINDCHIRPSOURCES)
+libfindchirp_la_SOURCES = $(FINDCHIRPSOURCES) $(TWOINTERFFINDCHIRPSOURCES)
+EXTRA_TEXSOURCES = $(FINDCHIRPMPISOURCES)
 endif
 
-EXTRA_DIST = $(FINDCHIRPSOURCES) $(TWOINTERFFINDCHIRPSOURCES)
+EXTRA_DIST = $(FINDCHIRPMPISOURCES)
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
