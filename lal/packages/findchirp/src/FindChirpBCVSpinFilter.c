@@ -101,13 +101,19 @@ LALFindChirpBCVSpinFilterSegment (
   UINT4			maxRhoCount;
   REAL4                 normFac;
   REAL4                 normFacSq;
-  REAL4   		alpha1;
+  REAL4   		alpha1hat;
+  REAL4                 alpha2hat;
+  REAL4                 alpha3hat;
+  REAL4                 alpha4hat;
+  REAL4                 alpha5hat;
+  REAL4                 alpha6hat;
+  REAL4                 alphaSumSq;
+  REAL4                 alpha1;
   REAL4                 alpha2;
   REAL4                 alpha3;
   REAL4                 alpha4;
   REAL4                 alpha5;
   REAL4                 alpha6;
-  REAL4                 alphaSumSq;
   RealFFTPlan          *prev             = NULL;
   REAL4Vector          *hVec 	         = NULL;
   REAL4Vector          *HVec             = NULL;
@@ -117,6 +123,17 @@ LALFindChirpBCVSpinFilterSegment (
   REAL4                 factor;
   REAL4                 normData;
   REAL4                 invRootNormData;
+ 
+  REAL8                 I;
+  REAL8                 J;
+  REAL8                 K;
+  
+  REAL8			rootI; 
+  REAL8                 denominator;
+  REAL8                 rootDenominator;
+  REAL8                 numerator1;
+  REAL8                 denominator1;
+  
   int                   doTest;
   
   FILE     	       *fpRho            = NULL;
@@ -242,7 +259,24 @@ LALFindChirpBCVSpinFilterSegment (
   A1Vec = input->fcTmplt->A1BCVSpin->data;
   A2Vec = input->fcTmplt->A2BCVSpin->data;
   A3Vec = input->fcTmplt->A3BCVSpin->data;
-    
+  
+  I           = input->fcTmplt->momentI;
+  J           = input->fcTmplt->momentJ;
+  K           = input->fcTmplt->momentK;
+  
+  rootI           = input->fcTmplt->rootMomentI;
+  denominator     = input->fcTmplt->numFactor;
+  rootDenominator = input->fcTmplt->numFactor1;
+  numerator1      = input->fcTmplt->numFactor2;
+  denominator1    = input->fcTmplt->numFactor3;
+
+  
+ /* fprintf (stdout, "rootI = %e\n", rootI); 
+  fprintf (stdout, "denominator = %e\n", denominator); 
+  fprintf (stdout, "rootDenominator = %e\n", rootDenominator); 
+  fprintf (stdout, "numerator = %e\n", numerator1); 
+  fprintf (stdout, "denominator1 = %e\n", denominator1); */
+  
   /* workspace vectors */
   q              = params->qVec->data;
   qBCVSpin1      = params->qVecBCVSpin1->data;
@@ -294,14 +328,14 @@ LALFindChirpBCVSpinFilterSegment (
  
 	
         /*UNCOMMENT LOOP BELOW TO NORMALISE INPUT  */
-    	/*fprintf (stdout, 
+    	fprintf (stdout, 
 		"Normalising input data (should not generally be used) \n"); 
    
   	for (k = 0; k < (numPoints/2)+1; ++k )
   	{
   		inputData1[k].re *= invRootNormData;
 		inputData1[k].im *= invRootNormData;  
-  	}*/
+  	}
   	/*  UNCOMMENT LOOP ABOVE TO NORMALISE INPUT  */
 	
   	normData = 0.;
@@ -526,22 +560,22 @@ LALFindChirpBCVSpinFilterSegment (
    			invRho   = 1/rho; 
         		alphaFac = normFac / rho; 
            
-   			alpha1 = q[j].re * alphaFac; 
-   			alpha4 = q[j].im * alphaFac; 
-  			alpha2 = qBCVSpin1[j].re * alphaFac; 
-   			alpha5 = qBCVSpin1[j].im * alphaFac; 
-   			alpha3 = qBCVSpin2[j].re * alphaFac;
-   			alpha6 = qBCVSpin2[j].im * alphaFac;
+   			alpha1hat = q[j].re * alphaFac; 
+   			alpha4hat = q[j].im * alphaFac; 
+  			alpha2hat = qBCVSpin1[j].re * alphaFac; 
+   			alpha5hat = qBCVSpin1[j].im * alphaFac; 
+   			alpha3hat = qBCVSpin2[j].re * alphaFac;
+   			alpha6hat = qBCVSpin2[j].im * alphaFac;
 
         		/* alphaSumSq calc for checking purposes, should = 1 */
         		alphaSumSq = 
-				pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2)
-                    		+ pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
+				pow(alpha1hat,2) + pow(alpha2hat,2) + pow(alpha3hat,2)
+                    		+ pow(alpha4hat,2) + pow(alpha5hat,2) + pow(alpha6hat,2);
 
 			fprintf (fpalphaSumSq,
 				"%d\t%e\t%e\t%e\t%e\t%e\t%e\t%e\n", 
 				j, alphaSumSq,
-                                alpha1, alpha2, alpha3, alpha4, alpha5, alpha6);
+                                alpha1hat, alpha2hat, alpha3hat, alpha4hat, alpha5hat, alpha6hat);
 
        		} 
 
@@ -561,25 +595,63 @@ LALFindChirpBCVSpinFilterSegment (
                                                                      
 		/* calc alpha values in time domain */
                                       
-		alpha1 = q[maxRhoCount].re * alphaFac1;
-		alpha4 = q[maxRhoCount].im * alphaFac1;
-		alpha2 = qBCVSpin1[maxRhoCount].re * alphaFac1;
-		alpha5 = qBCVSpin1[maxRhoCount].im * alphaFac1;
-		alpha3 = qBCVSpin2[maxRhoCount].re * alphaFac1;
-		alpha6 = qBCVSpin2[maxRhoCount].im * alphaFac1;
+		alpha1hat = q[maxRhoCount].re * alphaFac1;
+		alpha4hat = q[maxRhoCount].im * alphaFac1;
+		alpha2hat = qBCVSpin1[maxRhoCount].re * alphaFac1;
+		alpha5hat = qBCVSpin1[maxRhoCount].im * alphaFac1;
+		alpha3hat = qBCVSpin2[maxRhoCount].re * alphaFac1;
+		alpha6hat = qBCVSpin2[maxRhoCount].im * alphaFac1;
 
-		fprintf (stdout, "alpha1       = %e \n", alpha1);
-		fprintf (stdout, "alpha2       = %e \n", alpha2);
-		fprintf (stdout, "alpha3       = %e \n", alpha3);
-		fprintf (stdout, "alpha4       = %e \n", alpha4);
-		fprintf (stdout, "alpha5       = %e \n", alpha5);
-		fprintf (stdout, "alpha6       = %e \n", alpha6);
+		fprintf (stdout, "alpha1hat       = %e \n", alpha1hat);
+		fprintf (stdout, "alpha2hat       = %e \n", alpha2hat);
+		fprintf (stdout, "alpha3hat       = %e \n", alpha3hat);
+		fprintf (stdout, "alpha4hat       = %e \n", alpha4hat);
+		fprintf (stdout, "alpha5hat       = %e \n", alpha5hat);
+		fprintf (stdout, "alpha6hat       = %e \n", alpha6hat);
 
-		alphaSumSq = pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2) 
-            		   + pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
+		alphaSumSq = pow(alpha1hat,2) + pow(alpha2hat,2) + pow(alpha3hat,2) 
+            		   + pow(alpha4hat,2) + pow(alpha5hat,2) + pow(alpha6hat,2);
 
 		fprintf (stdout, "alphaSumSq   = %e \n", alphaSumSq);
 
+                alpha1 = (1/rootI) * (
+			       	   	alpha1hat 
+					- ( (alpha2hat * J) / rootDenominator ) 
+					+ ( (alpha3hat / denominator1) 
+					*   ( (- K / I) + (  numerator1 * J / denominator ) ) )  
+				     );
+
+		alpha2 = alpha2hat * (rootI / rootDenominator )
+                        - alpha3hat * rootI * (numerator1 / denominator) / denominator1;
+
+	        alpha3 = alpha3hat * rootI / denominator1;
+
+		
+		alpha4 = (1/rootI) * (
+    					alpha4hat
+                        		- ( (alpha5hat * J) / rootDenominator ) 
+                        		+ ( ( alpha6hat /denominator1)
+					* ( (- K / I) + ( numerator1 * J / denominator ) ) )
+				      );
+			                                                                                                                     alpha5 = alpha5hat * (rootI / rootDenominator )
+	                 - alpha6hat * rootI * (numerator1 / denominator) / denominator1;
+												
+		alpha6 = alpha6hat * rootI / denominator1;
+
+                fprintf (stdout, "alpha1       = %e \n", alpha1);
+                fprintf (stdout, "alpha2       = %e \n", alpha2);
+                fprintf (stdout, "alpha3       = %e \n", alpha3);
+                fprintf (stdout, "alpha4       = %e \n", alpha4);
+                fprintf (stdout, "alpha5       = %e \n", alpha5);
+                fprintf (stdout, "alpha6       = %e \n", alpha6);
+														
+	        alphaSumSq = pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2)
+                           + pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
+                                                                                                                             
+                fprintf (stdout, "alphaSumSq   = %e \n", alphaSumSq);
+		
+
+		
 		/*calc freq domain waveform, store in qtilde[k]  */
 
 		/* setting DC frequencies to 0 */
@@ -599,18 +671,18 @@ LALFindChirpBCVSpinFilterSegment (
 			REAL4 x = tmpltSignal[k].re; 
         		REAL4 y = - tmpltSignal[k].im;
  	
-		        qtilde[k].re = (alpha1 * x - alpha4 * y) 
+		        qtilde[k].re = (alpha1hat * x - alpha4hat * y) 
 				 	* A1Vec[k];
-    			qtilde[k].re += (alpha2 * x - alpha5 * y) 
+    			qtilde[k].re += (alpha2hat * x - alpha5hat * y) 
 					* A2Vec[k];
-        		qtilde[k].re += (alpha3 * x - alpha6 * y) 
+        		qtilde[k].re += (alpha3hat * x - alpha6hat * y) 
 					* A3Vec[k];
                                                                                                                              
-        		qtilde[k].im = (alpha1 * y + alpha4 * x) 
+        		qtilde[k].im = (alpha1hat * y + alpha4hat * x) 
 					* A1Vec[k];
-			qtilde[k].im += (alpha2 * y + alpha5 * x) 
+			qtilde[k].im += (alpha2hat * y + alpha5hat * x) 
 					* A2Vec[k];
-			qtilde[k].im += (alpha3 * y + alpha6 * x) 
+			qtilde[k].im += (alpha3hat * y + alpha6hat * x) 
 					* A3Vec[k];
 		
 		}
@@ -798,19 +870,19 @@ LALFindChirpBCVSpinFilterSegment (
                                                                                                              	
                 	/*calculate and record the alpha values */
 
-			alpha1 = q[j].re * invRho;
-        		alpha4 = q[j].im * invRho;
-        		alpha2 = qBCVSpin1[j].re * invRho;
-        		alpha5 = qBCVSpin1[j].im * invRho;
-        		alpha3 = qBCVSpin2[j].re * invRho;
-        		alpha6 = qBCVSpin2[j].im * invRho;
+			alpha1hat = q[j].re * invRho;
+        		alpha4hat = q[j].im * invRho;
+        		alpha2hat = qBCVSpin1[j].re * invRho;
+        		alpha5hat = qBCVSpin1[j].im * invRho;
+        		alpha3hat = qBCVSpin2[j].re * invRho;
+        		alpha6hat = qBCVSpin2[j].im * invRho;
 
-                	thisEvent->alpha1 = alpha1; 
-                	thisEvent->alpha2 = alpha2;
-                	thisEvent->alpha3 = alpha3;
-  			thisEvent->alpha4 = alpha4;
-  			thisEvent->alpha5 = alpha5;
-  			thisEvent->alpha6 = alpha6;
+                	thisEvent->alpha1 = alpha1hat; 
+                	thisEvent->alpha2 = alpha2hat;
+                	thisEvent->alpha3 = alpha3hat;
+  			thisEvent->alpha4 = alpha4hat;
+  			thisEvent->alpha5 = alpha5hat;
+  			thisEvent->alpha6 = alpha6hat;
  
                 	/* record the beta value */
                		/* eventually beta will be provided FROM 
@@ -832,12 +904,12 @@ LALFindChirpBCVSpinFilterSegment (
 		{
                 	fprintf (stdout, "rhoSq  %e\n", rhoSq); 
 			fprintf (stdout, "rho    %e\n", rho);
-			fprintf (stdout, "alpha1 %e\n", alpha1);
-			fprintf (stdout, "alpha2 %e\n", alpha2);
-			fprintf (stdout, "alpha3 %e\n", alpha3);
-			fprintf (stdout, "alpha4 %e\n", alpha4);
-			fprintf (stdout, "alpha5 %e\n", alpha5);
-			fprintf (stdout, "alpha6 %e\n", alpha6);
+			fprintf (stdout, "alpha1hat %e\n", alpha1hat);
+			fprintf (stdout, "alpha2hat %e\n", alpha2hat);
+			fprintf (stdout, "alpha3hat %e\n", alpha3hat);
+			fprintf (stdout, "alpha4hat %e\n", alpha4hat);
+			fprintf (stdout, "alpha5hat %e\n", alpha5hat);
+			fprintf (stdout, "alpha6hat %e\n", alpha6hat);
 			fprintf (stdout, "fFinal %e\n", input->tmplt->fFinal);
 			/*UNCOMMENT NEXT LINE WHEN CODE IS READY TO READ beta */
 			/*fprintf (stdout, "beta   %e\n", input->tmplt->beta);*/
