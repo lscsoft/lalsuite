@@ -94,6 +94,7 @@ executable = %s
 arguments = --lal-cache \\
   --instrument $(site) --type %s \\
   --start $(frstart) --end $(frend)
+getenv = true
 log = %s.log
 error = frcache-$(site)-$(frstart)-$(frend).err
 output = frcache-$(site)-$(frstart)-$(frend).out
@@ -166,9 +167,8 @@ queue
       jobname = 'frcache_%s_%d_%d' % (site,seg.startpad,seg.endpad)
       print >> dag_fh, 'JOB %s %s.frcache.condor' % (jobname,self.basename),
       if not cache: print >> dag_fh, 'done',
-      print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
-      print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.startpad)
-      print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.endpad)
+      print >> dag_fh, '\nVARS %s site="%s" frstart="%s" frend="%s"' % (
+      jobname, site, seg.startpad, seg.endpad )
     for i in range(1,len(self.segments)):
       print >> dag_fh, 'PARENT frcache_%s_%s_%s CHILD frcache_%s_%s_%s' % (
         site,self.segments[i-1].startpad,self.segments[i-1].endpad,
@@ -181,15 +181,11 @@ queue
         jobname = 'tmpltbank_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.tmpltbank.condor' % (jobname,self.basename),
         if not cache: print >> dag_fh, 'done',
-        print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
-        print >> dag_fh, 'VARS %s ifo="%s"' % (jobname,ifo)
-        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.startpad)
-        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.endpad)
-        print >> dag_fh, 'VARS %s start="%d"' % (jobname,chunk.start)
-        print >> dag_fh, 'VARS %s end="%d"' % (jobname,chunk.end)
-        print >> dag_fh, 'VARS %s channel="%s"' % (jobname,chan)
-        print >> dag_fh, 'VARS %s calcache="%s"' % (jobname,
-          self.config['input'][string.lower(ifo) + '-cal'])
+        print >> dag_fh, """
+VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
+""" % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,chan,
+self.config['input'][string.lower(ifo) + '-cal'])
+        
         print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
 
     # jobs to run the inspiral code
@@ -199,15 +195,10 @@ queue
         jobname = 'inspiral_%s_%s_%s' % (ifo,chunk.start,chunk.end)
         print >> dag_fh, 'JOB %s %s.inspiral.condor' % (jobname,self.basename),
         if not cache: print >> dag_fh, 'done',
-        print >> dag_fh, '\nVARS %s site="%s"' % (jobname,site)
-        print >> dag_fh, 'VARS %s ifo="%s"' % (jobname,ifo)
-        print >> dag_fh, 'VARS %s frstart="%s"' % (jobname,seg.startpad)
-        print >> dag_fh, 'VARS %s frend="%s"' % (jobname,seg.endpad)
-        print >> dag_fh, 'VARS %s start="%d"' % (jobname,chunk.start)
-        print >> dag_fh, 'VARS %s end="%d"' % (jobname,chunk.end)
-        print >> dag_fh, 'VARS %s channel="%s"' % (jobname,chan)
-        print >> dag_fh, 'VARS %s calcache="%s"' % (jobname,
-          self.config['input'][string.lower(ifo) + '-cal'])
+        print >> dag_fh, """
+VARS %s site="%s" ifo="%s" frstart="%s" frend="%s" start="%d" end="%d" channel="%s" calcache="%s"\
+""" % ( jobname,site,ifo,seg.startpad,seg.endpad,chunk.start,chunk.end,chan,
+self.config['input'][string.lower(ifo) + '-cal'])
         print >> dag_fh, 'PARENT %s CHILD %s' % (parent, jobname)
     dag_fh.close()
 
