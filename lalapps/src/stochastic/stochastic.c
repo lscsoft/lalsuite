@@ -209,7 +209,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   SSSimStochBGOutput SBOutput;
   REAL4TimeSeries *SimStochBGOne;
   REAL4TimeSeries *SimStochBGTwo;
-  REAL4FrequencySeries MComegaGW;
+  REAL4FrequencySeries *MComegaGW;
   COMPLEX8FrequencySeries MCresponseOne, MCresponseTwo;
   COMPLEX8Vector *MCrespOne[100], *MCrespTwo[100];
   INT4 MCLoop;
@@ -439,14 +439,12 @@ INT4 main(INT4 argc, CHAR *argv[])
     parametersOmega.omegaRef = omegaRef;
 
     /* allocate memory */
-    MComegaGW.data = NULL;
-    LAL_CALL(LALSCreateVector(&status, &(MComegaGW.data), MCfreqLength), \
-        &status);
-    memset(MComegaGW.data->data, 0, \
-        MComegaGW.data->length * sizeof(*MComegaGW.data->data));
+    LAL_CALL(LALCreateREAL4FrequencySeries(&status, &MComegaGW, "MComegaGW", \
+          gpsStartTime, 0, 1./resampleRate, lalDimensionlessUnit, \
+          MCfreqLength), &status);
 
     /* generate omegaGW */
-    LAL_CALL(LALStochasticOmegaGW(&status, &MComegaGW, &parametersOmega), \
+    LAL_CALL(LALStochasticOmegaGW(&status, MComegaGW, &parametersOmega), \
         &status);
 
     /* response functions */
@@ -1381,7 +1379,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             SBParams.seed = seed;
 
             /* define input structure for SimulateSB */
-            SBInput.omegaGW = &MComegaGW;
+            SBInput.omegaGW = MComegaGW;
             SBInput.whiteningFilter1 = &MCresponseOne;
             SBInput.whiteningFilter2 = &MCresponseTwo;
 
@@ -1755,7 +1753,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     LAL_CALL(LALDestroyREAL4TimeSeries(&status, SimStochBGTwo), &status);
     LAL_CALL(LALCDestroyVector(&status, &(MCresponseOne.data)), &status);
     LAL_CALL(LALCDestroyVector(&status, &(MCresponseTwo.data)), &status);
-    LAL_CALL(LALDestroyVector(&status, &(MComegaGW.data)), &status);
+    LAL_CALL(LALDestroyREAL4FrequencySeries(&status, MComegaGW), &status);
   }
   /*
   for (i = 0; i <numSegments; i++)
