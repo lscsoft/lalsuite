@@ -243,6 +243,7 @@ InitMakefakedata (LALStatus *stat,
   EphemerisData edat = empty_edat;
   REAL8 duration;
   LIGOTimeGPSVector *timestamps = NULL;
+  UINT4 imin;
   
   INITSTATUS( stat, "InitMakefakedata", rcsid );
   ATTATCHSTATUSPTR (stat);
@@ -360,7 +361,8 @@ InitMakefakedata (LALStatus *stat,
    * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
    * to a frequency-index of the non-heterodyned signal
    */
-  GV->fmin_eff = (REAL8)((INT4)(uvar_fmin * uvar_Tsft)) / uvar_Tsft;
+  imin = (UINT4) floor( uvar_fmin * uvar_Tsft);
+  GV->fmin_eff = (REAL8)imin / uvar_Tsft;
 
   /* read noise-sft's if given */
   if (uvar_noiseDir)
