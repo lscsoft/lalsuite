@@ -920,8 +920,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"asq-channel",         required_argument, NULL,           'A'},
     {"darm-channel",        required_argument, NULL,           'D'},
     {"darmerr-channel",     required_argument, NULL,           'R'},
-    {"gps-end-time",        required_argument, NULL,           's'},
-    {"gps-start-time",      required_argument, NULL,           'e'},
+    {"gps-start-time",        required_argument, NULL,           's'},
+    {"gps-end-time",      required_argument, NULL,           'e'},
     {"olg-re",              required_argument, NULL,           'i'},
     {"olg-im",              required_argument, NULL,           'j'},
     {"servo-re",            required_argument, NULL,           'k'},
@@ -1044,25 +1044,25 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
-      fprintf(stdout,"\t-f\tFLOAT\t Calibration line frequency in Hz.\n");
-      fprintf(stdout,"\t-t\tFLOAT\t Factors integration time in seconds.\n");
-      fprintf(stdout,"\t-i\tFLOAT\t Real part of the open loop gain at the calibration line frequency.\n");
-      fprintf(stdout,"\t-j\tFLOAT\t Imaginary part of the open loop gain at the calibration line frequency.\n");
-      fprintf(stdout,"\t-k\tFLOAT\t Real part of the digital filter at the calibration line frequency.\n");
-      fprintf(stdout,"\t-l\tFLOAT\t Imaginary part of digital filter at the calibration line frequency.\n");
-      fprintf(stdout,"\t-s\tINT\t GPS start time.\n");
-      fprintf(stdout,"\t-e\tINT\t GPS end time.\n");
-      fprintf(stdout,"\t-F\tSTRING\t Name of file containing filters and histories.\n");
-      fprintf(stdout,"\t-C\tSTRING\t Name of frame cache file.\n");
-      fprintf(stdout,"\t-A\tSTRING\t AS_Q channel name (eg, L1:LSC-AS_Q).\n");
-      fprintf(stdout,"\t-E\tSTRING\t Excitation channel name (eg, L1:LSC-ETMX_EXC_DAQ)\n");
-      fprintf(stdout,"\t-D\tSTRING\t Darm channel name (eg, L1:LSC-DARM_CTRL)\n");
-      fprintf(stdout,"\t-R\tSTRING\t Darm ERR channel name (eg, L1:LSC-DARM_ERR)\n");
-      fprintf(stdout,"\t-o\tINTEGER\t Size of wings in seconds.\n");
-      fprintf(stdout,"\t-r\tFLAG\t Output residual strain only.\n");
-      fprintf(stdout,"\t-c\tFLAG\t Output control strain only.\n");
-      fprintf(stdout,"\t-u\tFLAG\t Use unit impulse.\n");
-      fprintf(stdout,"\t-h\tFLAG\t This message\n");    
+      fprintf(stdout,"\tcal-line-freq (-f)\tFLOAT\t Calibration line frequency in Hz.\n");
+      fprintf(stdout,"\tfactors-time (-t)\tFLOAT\t Factors integration time in seconds.\n");
+      fprintf(stdout,"\tolg-re (-i)\tFLOAT\t Real part of the open loop gain at the calibration line frequency.\n");
+      fprintf(stdout,"\tolg-im (-j)\tFLOAT\t Imaginary part of the open loop gain at the calibration line frequency.\n");
+      fprintf(stdout,"\tservo-re (-k)\tFLOAT\t Real part of the digital filter at the calibration line frequency.\n");
+      fprintf(stdout,"\tservo-im (-l)\tFLOAT\t Imaginary part of digital filter at the calibration line frequency.\n");
+      fprintf(stdout,"\tgps-start-time (-s)\tINT\t GPS start time.\n");
+      fprintf(stdout,"\tgps-end-time (-e)\tINT\t GPS end time.\n");
+      fprintf(stdout,"\tfilters-file (-F)\tSTRING\t Name of file containing filters and histories.\n");
+      fprintf(stdout,"\tframe-cache (-C)\tSTRING\t Name of frame cache file.\n");
+      fprintf(stdout,"\tasq-channel (-A)\tSTRING\t AS_Q channel name (eg, L1:LSC-AS_Q).\n");
+      fprintf(stdout,"\texc-channel (-E)\tSTRING\t Excitation channel name (eg, L1:LSC-ETMX_EXC_DAQ)\n");
+      fprintf(stdout,"\tdarm-channel (-D)\tSTRING\t Darm channel name (eg, L1:LSC-DARM_CTRL)\n");
+      fprintf(stdout,"\tdarmerr-channel (-R)\tSTRING\t Darm ERR channel name (eg, L1:LSC-DARM_ERR)\n");
+      fprintf(stdout,"\twings (-o)\tINTEGER\t Size of wings in seconds.\n");
+      fprintf(stdout,"\ttest-sensing (-r)\tFLAG\t Output residual strain only.\n");
+      fprintf(stdout,"\ttest-actuation (-c)\tFLAG\t Output control strain only.\n");
+      fprintf(stdout,"\tdelta (-u)\tFLAG\t Use unit impulse.\n");
+      fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;
     default:

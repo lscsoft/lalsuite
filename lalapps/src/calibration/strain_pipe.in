@@ -170,7 +170,6 @@ data.read('strain_segment.txt',length)
 
 # create the chunks from the science segments
 data.make_chunks(length+2*overlap,2*overlap,0,0,0)
-data.make_chunks_from_unused(0,0,0,overlap,0,0)
 
 # get the ifo to filter
 ifo = cp.get('pipeline','ifo')
@@ -206,6 +205,8 @@ for seg in data:
     dag.add_node(strain1)
     prev_strain=strain1
 
+
+
 # write out the DAG
 dag.write_sub_files()
 dag.write_dag()
@@ -230,7 +231,10 @@ print >> log_fh, data
 for seg in data:
   print >> log_fh, seg
   for chunk in seg:
-    print >> log_fh, chunk
+    print >> log_fh, chunk, 'length', int(chunk.end())-int(chunk.start())
+    endgps=chunk.end()
+
+print >> sys.stdout, seg.start(),int(chunk.end())-2*overlap
 
 sys.exit(0)
 
