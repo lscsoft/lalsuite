@@ -67,6 +67,50 @@ typedef enum
 }
 CalibrationType;
 /**** </lalVerbatim> */
+
+/**** <lalLaTeX>
+ *
+ * Document \verb+CalibrationType+
+ *
+ * \subsubsection*{Type \texttt{CalFactors}}
+ *
+ **** </lalLaTeX> */  
+/**** <lalVerbatim> */
+typedef struct 
+tagCalFactors 
+{
+  COMPLEX16 alpha;    
+  COMPLEX16 alphabeta;
+  COMPLEX16 exc;    
+  COMPLEX16 asq;    
+  COMPLEX16 darm;   
+} 
+CalFactors;
+/**** </lalVerbatim> */
+
+/**** <lalLaTeX>
+ *
+ * Document \verb+CalibrationType+
+ *
+ * \subsubsection*{Type \texttt{UpdateFactorsParams}}
+ *
+ **** </lalLaTeX> */
+/**** <lalVerbatim> */
+typedef struct
+tagUpdateFactorsParams
+{
+   REAL8 lineFrequency;
+   REAL8 outputMatrix;
+   COMPLEX16 actuationFactor;
+   COMPLEX16 responseFactor;
+   COMPLEX16 sensingFactor;
+   REAL4TimeSeries *darmCtrl;
+   REAL4TimeSeries *asQ;
+   REAL4TimeSeries *exc;
+}
+UpdateFactorsParams;
+/**** </lalVerbatim> */
+
 /**** <lalLaTeX>
  *
  * Document \verb+CalibrationType+
@@ -149,7 +193,6 @@ CalibrationUpdateParams;
  *
  **** </lalLaTeX> */
 
-
 void LALComputeTransfer( LALStatus *status, CalibrationRecord *calrec );
 
 
@@ -168,7 +211,11 @@ LALResponseConvert(
     COMPLEX8FrequencySeries *input
     );
 
-
+void LALComputeCalibrationFactors(
+    LALStatus              *status,
+    CalFactors             *output,    
+    UpdateFactorsParams    *input
+    );
 
 
 #ifdef  __cplusplus
