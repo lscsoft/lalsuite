@@ -42,7 +42,8 @@ main(int argc, char **argv)
   make_gridding(&s, &g, num_ra, DETRESP_REGGRID, 
                 num_dec, DETRESP_REGGRID, &ephem, &gps, acc);
   
-  print_gridding(&g, "reg_dec_reg_ra.dat");
+  print_gridding(&g, "reg_dec_reg_ra.txt", DETRESP_HUMANREAD);
+  print_gridding(&g, "reg_dec_reg_ra.dat", DETRESP_XYPAIRS_ASCII);
   
   cleanup_gridding(&s, &g);
   
@@ -57,7 +58,8 @@ main(int argc, char **argv)
   make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, 
                 num_dec, DETRESP_REGGRID, &ephem, &gps, acc);
   
-  print_gridding(&g, "autumn2003.dat");
+  print_gridding(&g, "autumn2003.txt", DETRESP_HUMANREAD);
+  print_gridding(&g, "autumn2003.dat", DETRESP_XYPAIRS_ASCII);
 
   cleanup_gridding(&s, &g);
   
@@ -72,7 +74,8 @@ main(int argc, char **argv)
   make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, 
                 num_dec, DETRESP_REGGRID, &ephem, &gps, acc);
   
-  print_gridding(&g, "winter2003.dat");
+  print_gridding(&g, "winter2003.txt", DETRESP_HUMANREAD);
+  print_gridding(&g, "winter2003.dat", DETRESP_XYPAIRS_ASCII);
 
   cleanup_gridding(&s, &g);
   
@@ -87,7 +90,8 @@ main(int argc, char **argv)
   make_gridding(&s, &g, num_ra, DETRESP_IRRGRID, 
                 num_dec, DETRESP_REGGRID, &ephem, &gps, acc);
   
-  print_gridding(&g, "spring2004.dat");
+  print_gridding(&g, "spring2004.txt", DETRESP_HUMANREAD);
+  print_gridding(&g, "spring2004.dat", DETRESP_XYPAIRS_ASCII);
 
   cleanup_gridding(&s, &g);
   
@@ -97,12 +101,12 @@ main(int argc, char **argv)
   
   init_gridding(&g);
   
-  num_ra = 24;
-  num_dec = 11;
+  num_ra = 48;
+  num_dec = 22;
   make_gridding(&s, &g, num_ra, DETRESP_VARGRID, 
                 num_dec, DETRESP_REGGRID, &ephem, &gps, acc);
   
-  print_gridding(&g, "reg_dec_var_ra.dat");
+  print_gridding(&g, "reg_dec_var_ra.dat", DETRESP_XYPAIRS_ASCII);
   
   cleanup_gridding(&s, &g);
   
@@ -112,13 +116,14 @@ main(int argc, char **argv)
   
   init_gridding(&g);
   
-  num_ra = 24;
-  num_dec = 11;
+  num_ra = 48;
+  num_dec = 22;
   make_gridding(&s, &g, num_ra, DETRESP_VARGRID, 
                 num_dec, DETRESP_IRRGRID, &ephem, &gps, acc);
   
-  print_gridding(&g, "irr_dec_var_ra.dat");
-  
+  print_gridding(&g, "irr_dec_var_ra.txt", DETRESP_HUMANREAD);
+  print_gridding(&g, "irr_dec_var_ra.dat", DETRESP_XYPAIRS_ASCII);
+
   cleanup_gridding(&s, &g);
   
   /*

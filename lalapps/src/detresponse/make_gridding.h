@@ -40,6 +40,8 @@
  * Variable grid:  variable grid; number of grid points varies
  *                 as a function of the other coordinate;
  *                 we only support RA grid vary as cos(dec)
+ * Mollweide: Mollweide projection 
+ *            (see http://mathworld.wolfram.com/MollweideProjection.html
  *
  * NB: only the RA grid supports variable gridding
  */
@@ -48,8 +50,17 @@ typedef enum
   DETRESP_REGGRID, 
   DETRESP_IRRGRID, 
   DETRESP_VARGRID,
+  DETRESP_MOLLWEIDEGRID,
 } 
 gridding_geom_t;
+
+typedef enum
+{
+  DETRESP_HUMANREAD,
+  DETRESP_XYPAIRS_ASCII,
+  DETRESP_XYPAIRS_BIN,
+}
+gridding_printmode_t;
 
 /*
  * Struct that will contain the coordinates of every 
@@ -81,6 +92,7 @@ void cleanup_gridding(LALStatus *status, gridding_t *p_gridding);
 
 void zero_gridding(LALStatus *status, gridding_t *p_gridding);
 
-void print_gridding(gridding_t *p_gridding, char *filename);
+void print_gridding(gridding_t *p_gridding, char *filename,
+                    gridding_printmode_t mode);
 
 #endif

@@ -13,12 +13,17 @@
 
 extern int lalDebugLevel;
 
-/* private functions */
+/* 
+ * private functions 
+ */
+static double rad_to_deg(double rad);
+static double rad_to_hr(double rad);
 static UINT4 modulo_sum(UINT4 a, UINT4 b, UINT4 mod);
 static UINT4 irr_grid_ra(LALStatus *s, REAL8Vector *ra_grid, 
                          REAL8 earth_phi);
 static REAL8 earth_location(LALStatus *s, LIGOTimeGPS *p_gps, 
                             EphemerisData *p_eph);
+/* Mollweide gridding functions */ 
 static void fprintf_laldvector_hor(FILE *f, REAL8Vector *v, char *delim,
                                    REAL8 scale);
 static void fprintf_laldvector_ver(FILE *f, REAL8Vector *v, REAL8 scale);
@@ -176,7 +181,7 @@ zero_gridding(LALStatus *s, gridding_t *g)
 
 
 void 
-print_gridding(gridding_t *g, char *fn)
+print_gridding(gridding_t *g, char *fn, gridding_printmode_t mode)
 {
   UINT4 i, j;
   FILE *outfile = NULL;
@@ -185,60 +190,103 @@ print_gridding(gridding_t *g, char *fn)
     outfile = xfopen(fn, "wo");
   else
     outfile = stdout;
-    
-  fprintf(outfile, "GPS = %d:%d\n", g->gps.gpsSeconds,
-          g->gps.gpsNanoSeconds);
-  switch (g->ra_geom)
-  {
-    case DETRESP_REGGRID:
-      fprintf(outfile, "ra_geom =\tREGULAR\n");
-      break;
-    case DETRESP_IRRGRID:
-      fprintf(outfile, "ra_geom =\tIRREGULAR\n");
-      break;
-    case DETRESP_VARGRID:
-      fprintf(outfile, "ra_geom =\tVARIABLE\n");
-      break;
-    default:
-      fprintf(outfile, "ra_geom =\t???\n");
-  }
   
-  switch (g->dec_geom)
+  switch (mode)
   {
-    case DETRESP_REGGRID:
-      fprintf(outfile, "dec_geom =\tREGULAR\n");
-      break;
-    case DETRESP_IRRGRID:
-      fprintf(outfile, "dec_geom =\tIRREGULAR\n");
-      break;
-    case DETRESP_VARGRID:
-      fprintf(outfile, "dec_geom =\tVARIABLE\n");
-      break;
-    default:
-      fprintf(outfile, "dec_geom =\t???\n");
-  }
-  
-  fprintf(outfile, "Declination (deg):\n");
-  fprintf_laldvector_ver(outfile, g->dec, 180./(REAL8)LAL_PI);
-
-  fprintf(outfile, "\n");
+    case DETRESP_HUMANREAD:
+      fprintf(outfile, "GPS = %d:%d\n", g->gps.gpsSeconds,
+              g->gps.gpsNanoSeconds);
+      switch (g->ra_geom)
+      {
+        case DETRESP_REGGRID:
+          fprintf(outfile, "ra_geom =\tREGULAR\n");
+          break;
+        case DETRESP_IRRGRID:
+          fprintf(outfile, "ra_geom =\tIRREGULAR\n");
+          break;
+        case DETRESP_VARGRID:
+          fprintf(outfile, "ra_geom =\tVARIABLE\n");
+          break;
+        default:
+          fprintf(outfile, "ra_geom =\t???\n");
+      }
+      
+      switch (g->dec_geom)
+      {
+        case DETRESP_REGGRID:
+          fprintf(outfile, "dec_geom =\tREGULAR\n");
+          break;
+        case DETRESP_IRRGRID:
+          fprintf(outfile, "dec_geom =\tIRREGULAR\n");
+          break;
+        case DETRESP_VARGRID:
+          fprintf(outfile, "dec_geom =\tVARIABLE\n");
+          break;
+        default:
+          fprintf(outfile, "dec_geom =\t???\n");
+      }
+      
+      fprintf(outfile, "Declination (deg):\n");
+      fprintf_laldvector_ver(outfile, g->dec, 180./(REAL8)LAL_PI);
     
-  fprintf(outfile, "Right Ascenscion (h):\n");
-  if (g->ra_geom == DETRESP_REGGRID || g->ra_geom == DETRESP_IRRGRID)
-  {
-    fprintf_laldvector_ver(outfile, g->ra, 12./(REAL8)LAL_PI);
-  }
-  else
-  {
-    for (i = 0; i < g->dec->length; ++i)
-      fprintf_laldvector_hor(outfile, g->ra_irr[i], ", ", 
-                             12./(REAL8)LAL_PI);
+      fprintf(outfile, "\n");
+        
+      fprintf(outfile, "Right Ascenscion (h):\n");
+      if (g->ra_geom == DETRESP_REGGRID || g->ra_geom == DETRESP_IRRGRID)
+      {
+        fprintf_laldvector_ver(outfile, g->ra, 12./(REAL8)LAL_PI);
+      }
+      else
+      {
+        for (i = 0; i < g->dec->length; ++i)
+          fprintf_laldvector_hor(outfile, g->ra_irr[i], ", ", 
+                                 12./(REAL8)LAL_PI);
+      }
+      break; /* DETRESP_HUMANREAD */
+      
+    case DETRESP_XYPAIRS_ASCII:
+      if (g->ra_geom != DETRESP_VARGRID)
+      {
+        for (i = 0; i < g->dec->length; ++i)
+          for (j = 0; j < g->ra->length; ++j)
+            fprintf(outfile, "% 20.14e\t% 20.14e\n", 
+                    rad_to_hr(g->ra->data[j]), 
+                    rad_to_deg(g->dec->data[i]));
+      }
+      else
+      {
+        for (i = 0; i < g->dec->length; ++i)
+          for (j = 0; j < (g->ra_irr[i])->length; ++j)
+            fprintf(outfile, "% 20.14e\t% 20.14e\n",
+                    rad_to_hr((g->ra_irr[i])->data[j]), 
+                    rad_to_deg(g->dec->data[i]));
+      }
+      break; /* DETRESP_XYPAIRS_ASCII */
+      
+    case DETRESP_XYPAIRS_BIN:
+      /* FIXME */
+      break; /* DETRESP_XYPAIRS_BIN */
   }
   
   if (outfile != stdout)
     fclose(outfile);  
 } /* END: print_gridding() */
 
+
+static 
+double 
+rad_to_deg(double rad)
+{
+  return (rad * 180. / (double)LAL_PI);
+} 
+
+
+static 
+double
+rad_to_hr(double rad)
+{
+  return (fmod(rad * 12. / (double)LAL_PI, 24.));
+}
 
 static
 UINT4
@@ -275,8 +323,7 @@ irr_grid_ra(LALStatus *s, REAL8Vector *ra_grid, REAL8 earth_phi)
     b = 2. * a;
 
     for (i = 0; i < num_grid_2; ++i)
-      ra_grid->data[i] = asin(-1. + a + b*(REAL8)i) + earth_phi
-                         + (REAL8)LAL_PI_2 * 3.;
+      ra_grid->data[i] = asin(-1. + a + b*(REAL8)i) + earth_phi;
       
     for (i = 0; i < num_grid_2; ++i)
       ra_grid->data[num_grid_2 + i] = ra_grid->data[i] + (REAL8)LAL_PI;
