@@ -13,15 +13,17 @@ Routine used by the stochastic DSO to do software injection.
 \subsubsection*{Prototypes}
 \input{StochasticMCCP}
 \idx{LALStochasticMC()}
-
 \subsubsection*{Description}
-This routine simulates whitened time-domain signal in a pair 
-of detectors using Sukanta Bose's code SimulateSB.c.
-Long time-series are constructed by concatenating short segments of simulated data whitened with the adequate response function. Segments are sinusoidally spliced into consecutive segments using Jeff Noel's function SinusoidalSplice, in order to avoid discontinuities in the final time serie.     
+This routine simulates time-domain signal in a pair 
+of detectors using Sukanta Bose's code SimulateSB.c, whitened with the adequate response function.  
 \idx{LALStochasticMCStand()}
 \subsubsection*{Description}
 This is a standalone version of the routine described above.
+\idx{LALStochasticMCSplice()}
+\subsubsection*{Description}
+In this version, long time-series are constructed by concatenating short segments of simulated data whitened with the adequate response function. Segments are sinusoidally spliced into consecutive segments using Jeff Noel's function SinusoidalSplice, in order to avoid discontinuities in the final time serie.  
 \subsubsection*{Algorithm}
+
 The following program shows how to use the routine StochasticMC.c.
 
 \begin verbatim
@@ -79,7 +81,7 @@ int main( ){
   
   //parameters  
   UINT4 timeref, starttime, caltime;
-  UINT4 freqlen,length,lengthseg,spliceoffset;
+  UINT4 freqlen,length,lengthseg,caloffset;
   REAL8 sRate,deltaT, deltaF;
 
   INT4 i, j;
@@ -107,10 +109,10 @@ int main( ){
   length = MCparams.numseg * lengthseg;
   deltaT = 1./sRate;
   freqlen = lengthseg / 2 + 1;
-  spliceoffset =  lengthseg / (2 * sRate);
+  caloffset =  lengthseg / (2 * sRate);
   deltaF = 1.0/(deltaT*lengthseg);
   timeref = 0; 
-  caltime = starttime + spliceoffset;
+  caltime = starttime + caloffset;
   for (i=0;i<2;i++)
   {
     LALCCreateVector(&status,&response[i],freqlen);
@@ -305,7 +307,7 @@ The following program shows how to use the standalone version StochasticMCStand.
 #include <lal/PrintVector.h>
 #include <lal/Random.h>
 #include <lal/SimulateSB.h>
-#include "StochasticMC.h"
+#include <lal/StochasticMC.h>
 
 NRCSID(STOCHASTICMCSTANDTESTC, "$Id$");
 
@@ -374,10 +376,10 @@ int main( ){
   length = MCparams.numseg * lengthseg;
   deltaT = 1./sRate;
   freqlen = lengthseg / 2 + 1;
-  spliceoffset =  lengthseg / (2 * sRate);
+  caloffset =  lengthseg / (2 * sRate);
   deltaF = 1.0/(deltaT*lengthseg);
   timeref = 0; 
-  caltime = starttime + spliceoffset; 
+  caltime = starttime + caloffset; 
  
   SimStochBG1.data = NULL;
   LALSCreateVector(&status, &(SimStochBG1.data), length);
@@ -421,6 +423,7 @@ int main( ){
     }
   }
 }
+
 \end{verbatim}
 
 \subsubsection*{Uses}
@@ -666,8 +669,8 @@ void LALStochasticMCStand (LALStatus *status,
      wFilter1.epoch.gpsSeconds = caltime;
      wFilter2.epoch.gpsSeconds = caltime;
 
-     LALExtractFrameResponse( status->statusPtr, &wFilter1,catalog1 ,ifo1 );
-     LALExtractFrameResponse( status->statusPtr, &wFilter2,catalog2 ,ifo2 );
+     LALExtractFrameResponse( status->statusPtr, &wFilter1,catalog1 ,ifo1,freqlen );
+     LALExtractFrameResponse( status->statusPtr, &wFilter2,catalog2 ,ifo2,freqlen  );
 
  
      /* force DC to be 0 and nyquist to be real */
@@ -986,8 +989,8 @@ void LALStochasticMCSplice (LALStatus *status,
      wFilter1.epoch.gpsSeconds = caltime;
      wFilter2.epoch.gpsSeconds = caltime;
 
-     LALExtractFrameResponse( status->statusPtr, &wFilter1,catalog1 ,ifo1 );
-     LALExtractFrameResponse( status->statusPtr, &wFilter2,catalog2 ,ifo2 );
+     LALExtractFrameResponse( status->statusPtr, &wFilter1,catalog1 ,ifo1,freqlen  );
+     LALExtractFrameResponse( status->statusPtr, &wFilter2,catalog2 ,ifo2, freqlen );
 
     
 
