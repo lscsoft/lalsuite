@@ -132,7 +132,7 @@ sub f_processJobsTable {
 		my ($statusCode, $startSec, $stopSec, $framecache, $outfile)  = ($fields[0],$fields[2],$fields[3],$fields[4],$fields[5]);
 
 		if($statusCode eq "C" or $statusCode eq "E" or $statusCode eq "NF"){
-			next; #nothing to do
+			#nothing to do now; may add code later
 		}elsif ($statusCode eq "P" ){
 			f_writeJobToCondorSubmitFile($startSec,  $stopSec, $framecache, $outfile);
 			$submitCondor = 1;
@@ -142,7 +142,7 @@ sub f_processJobsTable {
 		} else {
 			die "Unknown status code: $statusCode\n";
 		}
-		 my $record = "$statusCode\t$STATUS{$statusCode}\t$startSec\t$stopSec\t$framecache\t$outfile\n";
+		my $record = "$statusCode\t$STATUS{$statusCode}\t$startSec\t$stopSec\t$framecache\t$outfile\n";
 		print TMP_TABLE $record;
 	}
 	close TMP_TABLE;
@@ -170,6 +170,20 @@ Universe = Vanilla
 Executable = ${$params}{'EXECUTABLE'}
 STATEMENTS
 
+	my $bak = $CONDOR_SUBMIT_FILE;
+	my $i = 1;
+	#make a backup of existing submit file
+	if(-f $CONDOR_SUBMIT_FILE){
+		#backups of submit are numbered, find next number
+		my $bak = $CONDOR_SUBMIT_FILE . ".bak$i";
+		while(-f $bak){
+			$i++;
+			$bak = $CONDOR_SUBMIT_FILE . ".bak$i";
+		}
+		#move exisiting submit file to backup
+		rename $CONDOR_SUBMIT_FILE, $bak;
+	}
+	
 	open ("CONDOR_SUB", ">$CONDOR_SUBMIT_FILE") or die "Couldn't open $CONDOR_SUBMIT_FILE.";
 	print CONDOR_SUB $stmts;
 	
@@ -231,7 +245,7 @@ sub f_checkForProgramCompletion{
 			return "C";
 		}
 	}
-	# No output. Return E for errror
+	# No output. Return NF for File not found
 	return "NF";
 }
 
@@ -312,6 +326,9 @@ ARGUMENTS
 #-----------------------------------------------------------------------------------
 sub f_submitJobs {
 	my $jobsSubmitScript = shift;
+	
+	#change directory to outpath before submitting
+	chdir ${$params}{'OUTPUT_PATH'};
 	
 	#submit the jobs
 	system("condor_submit $jobsSubmitScript");

@@ -7,18 +7,19 @@ TYPE=RDS_R_L1
 #INSTRUMENT, DATA_SET_NAME, and DATA_QUALITY_FILE need to be matched 
 # lalapps_power parameter CHANNEL
 INSTRUMENT=H
-DATA_SET_NAME=S2H1v02
-DATA_QUALITY_FILE=/scratch/power/input/S2H1v02_segs.txt
+DATA_SET_NAME=S2H2v02
+DATA_QUALITY_FILE=/scratch/power/input/S2H2v02_segs.txt
 
 #To allow data outside of playground, set USE_PLAYGROUND to 0
-USE_PLAYGROUND=1
+USE_PLAYGROUND=0
 PLAYGROUND_FILE =/scratch/power/input/s2-playground.txt
 
 
 #-----------------------------------------------------------------------------------
 #  GLOBAL VARIABLES
 #-----------------------------------------------------------------------------------
-TIME_CHUNK_MAX_SIZE=1024
+#TIME_CHUNK_MAX_SIZE=1024
+TIME_CHUNK_MAX_SIZE=1400
 TIME_CHUNK_MIN_SIZE=4
 
 # value should be 6 unless the table structure changes
@@ -94,7 +95,7 @@ THRESHOLD="10.0e-10"
 ETOMSTR=10
 
 # data channel
-CHANNEL="H1:LSC-AS_Q"
+CHANNEL="H2:LSC-AS_Q"
 
 # does not currently do anything but keep it set to 0
 SIMTYPE=0
