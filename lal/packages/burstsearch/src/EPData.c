@@ -52,22 +52,13 @@ LALCreateEPDataSegmentVector (
   {
     segPtr[i].data = (REAL4TimeSeries *) 
       LALMalloc (sizeof(REAL4TimeSeries));
-    segPtr[i].resp = (COMPLEX8FrequencySeries *) 
-      LALMalloc (sizeof(COMPLEX8FrequencySeries));
 
     strncpy( segPtr[i].data->name, "anonymous", LALNameLength * sizeof(CHAR) );
     segPtr[i].data->data        = NULL;
-    strncpy( segPtr[i].resp->name, "anonymous", LALNameLength * sizeof(CHAR) );
-    segPtr[i].resp->data        = NULL;
 
     LALCreateVector (status->statusPtr, 
         &segPtr[i].data->data, 2 * params->numPoints);
     CHECKSTATUSPTR (status);
-
-    LALCCreateVector (status->statusPtr, 
-        &segPtr[i].resp->data, params->numPoints + 1);
-    CHECKSTATUSPTR (status);
-    
   }
 
   DETATCHSTATUSPTR (status);
@@ -96,13 +87,9 @@ LALDestroyEPDataSegmentVector (
   
  for (i = 0; i < (INT4)(*vector)->length; ++i)
   {
-    LALCDestroyVector (status->statusPtr, &segPtr[i].resp->data);
-    CHECKSTATUSPTR (status);
-
     LALDestroyVector (status->statusPtr, &segPtr[i].data->data);
     CHECKSTATUSPTR (status);
 
-    LALFree (segPtr[i].resp);
     LALFree (segPtr[i].data);
   }
 
