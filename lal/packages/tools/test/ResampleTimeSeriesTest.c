@@ -6,9 +6,7 @@
 /**** <lalLaTeX>
  * \subsection{Program \texttt{ResampleTimeSeriesTest.c}}
  * 
- * Tests the resampling functions by injecting a time wave of a given
- * frequency into a time series and downsampling it. The raw and output
- * data are returned as frame files for plotting in matlab.
+ * Tests the routines in \verb|ResampleTimeSeries.h|
  *
  * \subsubsection*{Usage}
  * \begin{verbatim}
@@ -26,6 +24,58 @@
  * \end{verbatim}
  *
  * \subsubsection*{Description}
+ *
+ * Tests the resampling functions by injecting a sine wave of a given
+ * frequency into a time series and downsampling it. The raw and output
+ * data are returned as frame files for plotting in matlab.
+ *
+ * \subsubsection*{Sample Results}
+ *
+ * Figures \ref{f:resamp1}--\ref{f:resamp3} show the results of various
+ * tests using this program.
+ *
+ * \begin{figure}[htb]
+ * \begin{center}
+ * \includegraphics[width=0.4\linewidth,angle=0]{resamp_10x4} %
+ * \quad %
+ * \includegraphics[width=0.4\linewidth,angle=0]{resamp_100x4}
+ * \end{center}
+ * \caption{\label{f:resamp1}
+ * The left figure shows a 10 Hz sine wave generated at 16384 Hz resampled to
+ * 4096 Hz. The right figure shows a 100Hz sine wave generated at 16384 Hz
+ * resampled to 4096 Hz. Note that there is no attenuation, time delay or
+ * phase shift of the output. FIXME the legend in the right figure is wrong.
+ * It should say 100 Hz, not 10 Hz the output.
+ * }
+ * \end{figure}
+ * \begin{figure}[htb]
+ * \begin{center}
+ * \includegraphics[width=0.4\linewidth,angle=0]{resamp_100x2_start} %
+ * \quad %
+ * \includegraphics[width=0.4\linewidth,angle=0]{resamp_100x2_end}
+ * \end{center}
+ * \caption{\label{f:resamp2}
+ * A 100Hz sine wave generated at 16384 Hz resampled to 8192 Hz. The left
+ * plot shows the start of the time series and the right plot the end. Note
+ * the corruption of points due to the time domain filtering.
+ * }
+ * \end{figure}
+ * \begin{figure}[htb]
+ * \begin{center}
+ * \includegraphics[width=0.4\linewidth,angle=0]{resamp_1000x4} %
+ * \quad %
+ * \includegraphics[width=0.4\linewidth,angle=0]{resamp_1000x8}
+ * \end{center}
+ * \caption{\label{f:resamp3}
+ * The left figure shows a 1000 Hz sine wave generated at 16384 Hz resampled
+ * to 4096 Hz. The right figure shows a 1000Hz sine wave generated at 16384 Hz
+ * resampled to 2048 Hz. Note that there is no attenuation, time delay or
+ * phase shift of the output at 4096 Hz, however there is attenuation and
+ * phase shift of the output at 2048 Hz. This is due to the fact that the
+ * signal is very close to the output Nyquist frequency. Care should be taken
+ * to downsample to a suitable rate to avoid this type of attenuation.  
+ * }
+ * \end{figure}
  *
  **** </lalLaTeX> */
 
