@@ -51,6 +51,7 @@ $Id$
 #include <lal/LALDatatypes.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDemod.h>
+#include <lal/AVFactories.h>
 
 #include <lalapps.h>
 #include "getopt.h"
@@ -155,8 +156,27 @@ void ComputeVetoStatistic( LALStatus *,
 			   FSTFstatPair *FaFbPair,         /*!< input Fa Fb of observed data and veto signal. */
 			   FSTClustInfoPair *clustInfoPair /*!< input cluster information of observed data and veto signal. */);
 
+void showHelp( LALStatus *status, FSTUserInput *cla );
 /*! Compute chi-square P probability density */ 
 void LALChi2CDFP( LALStatus *, REAL8 *chi2cdfp, const REAL8 *data, const REAL8 *dof );
+
+/*! Helper function: find local maxima of cluster */
+void SummitFinder( LALStatus *, REAL8Vector *output, FSTFstatPair *FaFbPair, REAL8 *threshold );
+/*! Core routine: compute veto statistic */
+void ComputeVetoStatisticCore( LALStatus *, REAL8 *vetoStat, FSTFstatPair *FaFbPair, FSTControlParameters * );
+/*! Helper function: find offset between some local maxima of observed data and some local maxima of veto (test) signal */
+void ShiftData( LALStatus *, FSTClustInfo *test,  REAL8 *shift );
+/*! Helper function: Reform observed and veto (test) signal to compare them */
+void RearrangeData( LALStatus *, FSTControlParameters *, FSTClustInfoPair * );
+
+/*! C99 round replacement */
+REAL8 myRound(REAL8);
+/*! Compute incomplete gamma function */
+void LALGammaInc( LALStatus *status, REAL8 *output, const REAL8 *input, const REAL8 *param );
+
+/*! Compute natural logarithm of gamma function */
+void LALGammaLn( LALStatus *status, REAL8 *out, const REAL8 *in );
+
 
 
 /*! defined in lalapps.h */
@@ -316,10 +336,6 @@ HandleComArg( LALStatus *status,
 {
   INT4 option;
   
-
-  void showHelp( LALStatus *status, FSTUserInput *cla );
-
-
   INITSTATUS( status, "HandleComArg", rcsid );
 
   /* First initialization of all the cla variables. */
@@ -598,7 +614,7 @@ ReadClusterInfo( LALStatus *status,
 void 
 ComputeVetoStatistic( LALStatus *status, 
 		      FSTFVetoStat *vetoStatistic, /*!< output */
-		      FSTFstatPair *FaFbPair /*!< input */,
+		      FSTFstatPair *FaFbPair, /*!< input */
 		      FSTClustInfoPair *clustInfoPair /*!< input */)
 { 
   UINT4 iiter; /*!counter */
@@ -614,18 +630,6 @@ ComputeVetoStatistic( LALStatus *status,
 
   FSTControlParameters CP; 
 
-
-  /*! Helper function: find local maxima of cluster */
-  void SummitFinder( LALStatus *, REAL8Vector *output, FSTFstatPair *FaFbPair, REAL8 *threshold );
-  /*! Core routine: compute veto statistic */
-  void ComputeVetoStatisticCore( LALStatus *, REAL8 *vetoStat, FSTFstatPair *FaFbPair, FSTControlParameters * );
-  /*! Helper function: find offset between some local maxima of observed data and some local maxima of veto (test) signal */
-  void ShiftData( LALStatus *, FSTClustInfo *test,  REAL8 *shift );
-  /*! Helper function: Reform observed and veto (test) signal to compare them */
-  void RearrangeData( LALStatus *, FSTControlParameters *, FSTClustInfoPair * );
-
-
- 
   INITSTATUS( status, "ComputeVetoStatistic", rcsid );
   ATTATCHSTATUSPTR( status );
   ASSERT ( clustInfoPair, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
@@ -822,10 +826,6 @@ RearrangeData( LALStatus *status,
   INT4 indexOffset=0;
   INT4 indexStepO=1,indexStepT=1;
   REAL8 errorTol = LAL_REAL4_EPS;
-
-  /*! C99 round replacement */
-  REAL8 myRound(REAL8);
-
 
   INITSTATUS( status, "RearrangeData", rcsid );
   ASSERT ( clustInfoPair, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
@@ -1165,9 +1165,6 @@ LALChi2CDFP( LALStatus *status,
 	     const REAL8 *dof /*!< input Degrees of freedom  */)
 {
   REAL8 x, a;
-  /*! Compute incomplete gamma function */
-  void LALGammaInc( LALStatus *status, REAL8 *output, const REAL8 *input, const REAL8 *param );
-
 
   INITSTATUS( status, "LALChi2CDFP", rcsid );
 
@@ -1225,10 +1222,6 @@ LALGammaInc( LALStatus *status,
   REAL8 errormax = LAL_REAL8_EPS;
   REAL8 a0, a1, b0, b1, del, sum, gmln;
   REAL8 fac, n, g, gold, ana, anf;
-
-
-  /*! Compute natural logarithm of gamma function */
-  void LALGammaLn( LALStatus *status, REAL8 *out, const REAL8 *in );
 
   INITSTATUS( status, "LALGammaInc", rcsid );
 
