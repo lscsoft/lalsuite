@@ -187,7 +187,7 @@ int main(int argc, char **argv)
       {"min-centralfreq", required_argument,  0,  'g'},
       {"max-centralfreq", required_argument,  0,  'h'},
       {"injfoundfile",    required_argument,  0,  'j'},
-      {"noplayground",	  required_argument,  0,  'n'},
+      {"noplayground",	  no_argument,        0,  'n'},
       {"help",		  no_argument,	      0,  'o'}, 
       {"sort",		  no_argument,	      0,  'p'},
       {"outsnglfile",     required_argument,  0,  'q'},
@@ -431,7 +431,7 @@ int main(int argc, char **argv)
      * read in search summary information and determine how much
      * data is analyzed: only works for playground right now.
      **************************************************************/
-    SearchSummaryTableFromLIGOLw( &searchSummary, line);
+    /* SearchSummaryTableFromLIGOLw( &searchSummary, line);
     tmpStartTime=searchSummary->out_start_time.gpsSeconds;
     tmpEndTime=searchSummary->out_end_time.gpsSeconds;
 
@@ -459,11 +459,11 @@ int main(int argc, char **argv)
       searchSummary = searchSummary->next;
       LALFree( thisEvent );
     }
-    searchSummary = NULL; 
+    searchSummary = NULL; */
 
     /* Now the events themselves */
     LAL_CALL( LALSnglBurstTableFromLIGOLw (&stat, &tmpEvent, 
-          line), &stat);
+      line), &stat);
 
     /* connect results to linked list */
     if (currentEvent == NULL)
@@ -665,8 +665,8 @@ int main(int argc, char **argv)
 
 
 
-  /*  fprintf(stdout,"%d sec = %d hours analyzed\n",timeAnalyzed,
-      timeAnalyzed/3600);*/
+  fprintf(stdout,"%d sec = %d hours analyzed\n",timeAnalyzed,
+      timeAnalyzed/3600);
   fprintf(stdout,"Detected %i injections out of %i made\t %i \n",ndetected,ninjected,ncheck);
   fprintf(stdout,"Efficiency is %f \n", ((REAL4)ndetected/(REAL4)ninjected) );
 
