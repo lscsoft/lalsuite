@@ -1,7 +1,7 @@
 /*
  * File Name: IncrementGPS.c
  *
- * Author: David Chin <dwchin@umich.edu> +1-734-730-1274
+ * Author: David Chin <dwchin@umich.edu> +1-734-709-9119
  *
  * Revision: $Id$
  *

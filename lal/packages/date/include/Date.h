@@ -1,6 +1,6 @@
 /* <lalVerbatim file="DateHV">
 
-Author: David Chin <dwchin@umich.edu> +1-734-730-1274
+Author: David Chin <dwchin@umich.edu> +1-734-709-9119
 $Id$
 
 </lalVerbatim> */
@@ -141,6 +141,49 @@ typedef enum
   MST_DEG,       /* degrees */
   MST_RAD        /* radians */
 } LALMSTUnits;
+
+/* <lalLaTeX>
+\subsubsection*{Enumeration \texttt{LALMonth}}
+\idx[Type]{LALMonth}
+
+This enumerated type is used to define mnemonic symbols for the
+\texttt{LALUnixDate} month field (\texttt{tm\_mon}). The allowed values are:
+
+\medskip\noindent
+\begin{tabular}{ll}
+  \verb+LALMONTH_JAN+ & January \\
+  \verb+LALMONTH_FEB+ & February \\
+  \verb+LALMONTH_MAR+ & March \\
+  \verb+LALMONTH_APR+ & April \\
+  \verb+LALMONTH_MAY+ & May \\
+  \verb+LALMONTH_JUN+ & June \\
+  \verb+LALMONTH_JUL+ & July \\
+  \verb+LALMONTH_AUG+ & August \\
+  \verb+LALMONTH_SEP+ & September \\
+  \verb+LALMONTH_OCT+ & October \\
+  \verb+LALMONTH_NOV+ & November \\
+  \verb+LALMONTH_DEC+ & December
+\end{tabular}
+\bigskip
+
+</lalLaTeX> */
+  
+typedef enum
+{
+  LALMONTH_JAN =  0,
+  LALMONTH_FEB =  1,
+  LALMONTH_MAR =  2,
+  LALMONTH_APR =  3,
+  LALMONTH_MAY =  4,
+  LALMONTH_JUN =  5,
+  LALMONTH_JUL =  6,
+  LALMONTH_AUG =  7,
+  LALMONTH_SEP =  8,
+  LALMONTH_OCT =  9,
+  LALMONTH_NOV = 10,
+  LALMONTH_DEC = 11,
+} LALMonth;
+
 
 /* <lalLaTeX>
 \subsubsection*{Enumeration \texttt{LALLeapSecAccuracy}}

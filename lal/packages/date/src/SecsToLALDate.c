@@ -1,5 +1,5 @@
 /* <lalVerbatim file="SecsToLALDateCV">
-Author: David Chin <dwchin@umich.edu> +1-734-730-1274
+Author: David Chin <dwchin@umich.edu> +1-734-709-9119
 $Id$
 </lalVerbatim> */
 
@@ -56,7 +56,7 @@ main(int argc, char *argv[])
     date.unixDate.tm_min  = 0;
     date.unixDate.tm_hour = 0;
     date.unixDate.tm_mday = 16;
-    date.unixDate.tm_mon  = 10;
+    date.unixDate.tm_mon  = LALMONTH_NOV;
     date.unixDate.tm_year = 94;
 
     GMST1(&status, &gmstsecs, &date, MST_SEC);
@@ -150,7 +150,7 @@ LALSecsToLALDate(LALStatus  *status,
      * Set the non-required fields to zero
      */
     date->unixDate.tm_mday = 0;
-    date->unixDate.tm_mon  = 0;
+    date->unixDate.tm_mon  = LALMONTH_JAN;
     date->unixDate.tm_year = 0;
     date->unixDate.tm_wday = 0;
     date->unixDate.tm_yday = 0;

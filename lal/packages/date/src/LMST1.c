@@ -1,5 +1,5 @@
 /* <lalVerbatim file="LMST1CV">
-Author: David Chin <dwchin@umich.edu> +1-734-730-1274
+Author: David Chin <dwchin@umich.edu> +1-734-709-9119
 $Id$
 </lalVerbatim> */
 
@@ -112,7 +112,7 @@ main(int argc, char *argv[])
     date.unixDate.tm_min  = 0;
     date.unixDate.tm_hour = 0;
     date.unixDate.tm_mday = 16;
-    date.unixDate.tm_mon  = 10;
+    date.unixDate.tm_mon  = LALMONTH_NOV;
     date.unixDate.tm_year = 94;
 
     longitude = 0.; 

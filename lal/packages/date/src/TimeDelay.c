@@ -1,6 +1,6 @@
 /* <lalVerbatim file="TimeDelayCV">
 
-Author: Chin, David <dwchin@umich.edu> +1-734-730-1274
+Author: Chin, David <dwchin@umich.edu> +1-734-709-9119
 $Id$
 
 </lalVerbatim> */

@@ -1,5 +1,5 @@
 /* <lalVerbatim file="DateStringCV">
-Author: David Chin <dwchin@umich.edu> +1-734-730-1274
+Author: David Chin <dwchin@umich.edu> +1-734-709-9119
 $Id$
 </lalVerbatim> */
 
@@ -117,7 +117,7 @@ LALDateString (LALStatus     *status,
    * AVOID STRFTIME() since it causes seg faults on Solaris.  We give
    * the locale-specific day name.
    */
-  if (date->unixDate.tm_mon >= 9) {
+  if (date->unixDate.tm_mon >= LALMONTH_OCT) {
     sprintf(tmpmon, "%2d", date->unixDate.tm_mon + 1);
   } else {
     sprintf(tmpmon, "0%1d", date->unixDate.tm_mon + 1);

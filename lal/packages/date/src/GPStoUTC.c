@@ -1,5 +1,5 @@
 /* <lalVerbatim file="GPStoUTCCV">
-Author: David Chin <dwchin@umich.edu> +1-734-730-1274
+Author: David Chin <dwchin@umich.edu> +1-734-709-9119
 $Id$
 </lalVerbatim> */
 
@@ -340,19 +340,19 @@ static int days_in_month(const LALDate *p_utcDate)
   int month = p_utcDate->unixDate.tm_mon;
 
   switch (month) {
-  case 0:
-  case 2:
-  case 4:
-  case 6:
-  case 7:
-  case 9:
-  case 11:
+  case LALMONTH_JAN:
+  case LALMONTH_MAR:
+  case LALMONTH_MAY:
+  case LALMONTH_JUL:
+  case LALMONTH_AUG:
+  case LALMONTH_OCT:
+  case LALMONTH_DEC:
     return 31;
 
-  case 3:
-  case 5:
-  case 8:
-  case 10:
+  case LALMONTH_APR:
+  case LALMONTH_JUN:
+  case LALMONTH_SEP:
+  case LALMONTH_NOV:
     return 30;
 
   case 1:
@@ -430,7 +430,7 @@ LALUTCtoGPS (LALStatus                *status,
   gpsref.unixDate.tm_min  = 0;
   gpsref.unixDate.tm_hour = 0;
   gpsref.unixDate.tm_mday = 6;
-  gpsref.unixDate.tm_mon  = 0;
+  gpsref.unixDate.tm_mon  = LALMONTH_JAN;
   gpsref.unixDate.tm_year = 80;
   gpsref.unixDate.tm_wday = 0;
   gpsref.unixDate.tm_yday = 0;
@@ -464,8 +464,8 @@ LALUTCtoGPS (LALStatus                *status,
   /* Can't convert dates before 1980-Jan-06 */
   ASSERT (p_utcDate->unixDate.tm_year > 80 ||
           (p_utcDate->unixDate.tm_year == 80 &&
-           (p_utcDate->unixDate.tm_mon > 0 ||
-            (p_utcDate->unixDate.tm_mon == 0 &&
+           (p_utcDate->unixDate.tm_mon > LALMONTH_JAN ||
+            (p_utcDate->unixDate.tm_mon == LALMONTH_JAN &&
              p_utcDate->unixDate.tm_mday >= 6))), status,
           DATEH_EGPSDATETOOEARLY, DATEH_MSGEGPSDATETOOEARLY);
 
@@ -488,8 +488,8 @@ LALUTCtoGPS (LALStatus                *status,
    */
   if (p_utcDate->unixDate.tm_year > 103 ||
       (p_utcDate->unixDate.tm_year == 103 &&
-       (p_utcDate->unixDate.tm_mon > 2 ||
-        (p_utcDate->unixDate.tm_mon == 2 &&
+       (p_utcDate->unixDate.tm_mon > LALMONTH_MAR ||
+        (p_utcDate->unixDate.tm_mon == LALMONTH_MAR &&
          p_utcDate->unixDate.tm_mday == 30 &&
          p_utcDate->unixDate.tm_hour == 23 &&
          p_utcDate->unixDate.tm_min  == 59 &&
@@ -513,7 +513,7 @@ LALUTCtoGPS (LALStatus                *status,
   
   /* start counting from the origin */
   tmpdate.unixDate.tm_year = 80;
-  tmpdate.unixDate.tm_mon  =  0;
+  tmpdate.unixDate.tm_mon  = LALMONTH_JAN;
   tmpdate.unixDate.tm_mday =  6;
   tmpdate.unixDate.tm_hour =  0;
   tmpdate.unixDate.tm_min  =  0;
