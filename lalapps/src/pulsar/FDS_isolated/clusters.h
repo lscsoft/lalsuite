@@ -1,27 +1,12 @@
 #ifndef _CLUSTERS_H  /* Double-include protection. */
 #define _CLUSTERS_H
 
+#include <lal/LALDatatypes.h>
+
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-#include <lal/LALDatatypes.h>
-#include <lal/SkyCoordinates.h>
-#include <lal/PtoleMetric.h>
-#include <lal/StackMetric.h>
-#include <lal/LALBarycenter.h>
-
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-#include <lal/LALDatatypes.h>
-
-
-/* #define BUFFERSIZE 1024 */
-
 
 typedef struct Clusterstag {
   INT2  Nclusters;     /* how many clusters */

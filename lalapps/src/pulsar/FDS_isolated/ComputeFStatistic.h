@@ -1,22 +1,17 @@
-#include <unistd.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
-#include <errno.h>
-#include <lal/AVFactories.h>
-#include <lal/ComputeSky.h>
+#ifndef _COMPUTEFSTATISTIC_H
+#define _COMPUTEFSTATISTIC_H
+
+
 #include <lal/LALDatatypes.h>
-#include <lal/LALDemod.h>
+#include <lal/DetectorSite.h>
 #include <lal/LALBarycenter.h>
-#include <lal/LALInitBarycenter.h>
-#include <lal/Date.h>
-#ifndef NOGLOB
-#include <glob.h>
+
+
+/* C++ protection. */
+#ifdef  __cplusplus
+extern "C" {
 #endif
+
 #define BUFFERSIZE 1024                                                                   
 
 /* Maximum fractional doppler shift */
@@ -66,3 +61,10 @@ struct headertag {
     INT4  nsamples;
 } header;
   
+
+#ifdef  __cplusplus
+}
+#endif  
+/* C++ protection. */
+
+#endif  /* Double-include protection. */

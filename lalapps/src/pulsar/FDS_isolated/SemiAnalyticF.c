@@ -7,6 +7,7 @@
 /*********************************************************************************/
 
 #include <errno.h>
+#include <lal/AVFactories.h>
 #include "SemiAnalyticF.h"
 
 LIGOTimeGPS *timestamps=NULL;       /* Time stamps from SFT data */

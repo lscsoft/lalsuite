@@ -7,26 +7,31 @@
  *                                                                          
  *                 Albert Einstein Institute/UWM - started September 2002   
  *********************************************************************************/
-#include <lalapps.h>
+#include "config.h"
 
-#include <lal/UserInput.h>
+/* System includes */
+#include <stdio.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
+/* LAL-includes */
+#include <lal/AVFactories.h>
+#include <lal/RngMedBias.h>
 #include <lal/LALComputeAM.h>
 #include <lal/ComputeSky.h>
-
-#include <lal/RngMedBias.h>
-#include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
-
+#include <lal/UserInput.h>
 #include <lal/ComputeSkyBinary.h>
-
 #include <lal/PulsarDataTypes.h>
-
 #include <lal/SFTfileIO.h>
 
-#include "rngmed.h"
+#include <lalapps.h>
+
+/* local includes */
 #include "clusters.h"
 #include "DopplerScan.h"
+
 
 RCSID( "$Id$");
 
