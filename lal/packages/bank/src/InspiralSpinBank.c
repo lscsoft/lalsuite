@@ -72,6 +72,10 @@
 #include <lal/MatrixUtils.h>
 #include <lal/SeqFactories.h>
 
+#define INSPIRALSPINBANKC_ENONPOSITIVEMM 1
+#define INSPIRALSPINBANKC_MSGENONPOSITIVEMM "Minimum match value is not positive."
+
+
 
 NRCSID(INSPIRALSPINBANKC, "$Id$");
 
@@ -116,7 +120,7 @@ LALInspiralSpinBank(
   INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
   ATTATCHSTATUSPTR( status );
 
-  /* Put some ASSERTs here. */
+  if (coarseIn.mmCoarse <= 0) ABORT(status, INSPIRALSPINBANKC_ENONPOSITIVEMM, INSPIRALSPINBANKC_MSGENONPOSITIVEMM);
 
   /* Get noise power moments and trig moments. */
   /* Hardcode this for the moment. */
@@ -126,18 +130,47 @@ LALInspiralSpinBank(
   /* BEN: mess creating all these structures & adding TRYs etc */
   /* BEN: do it by hand, since it's so simple? */
   metricDimensions = NULL;
-  TRY( LALU4CreateVector( status->statusPtr, &metricDimensions, 2 ), status );
+
+  LALU4CreateVector( status->statusPtr, &metricDimensions, 2 );
+  BEGINFAIL(status)
+    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
+  ENDFAIL(status);
+  
   metricDimensions->data[0] = 3;
   metricDimensions->data[1] = 3;
   metric = NULL;
-  TRY( LALSCreateArray( status->statusPtr, &metric, metricDimensions ), status );
+
+  LALSCreateArray( status->statusPtr, &metric, metricDimensions );
+  BEGINFAIL(status)
+  {
+    TRY(LALSDestroyArray(status->statusPtr, &metric),status);
+    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
+  }
+  ENDFAIL(status);
+
   tmpmetric( metric );
 
   /* Find eigenvalues and eigenvectors of metric. */
   eigenval = NULL;
-  TRY( LALSCreateVector( status->statusPtr, &eigenval, 3 ), status);
-  TRY( LALSSymmetricEigenVectors( status->statusPtr, eigenval, metric ), status );
- 
+
+  LALSCreateVector( status->statusPtr, &eigenval, 3 );
+  BEGINFAIL(status)
+  {
+    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
+    TRY(LALSDestroyVector(status->statusPtr,&eigenval),status);
+    TRY(LALSDestroyArray(status->statusPtr, &metric),status);  
+  }
+  ENDFAIL(status);
+
+  LALSSymmetricEigenVectors( status->statusPtr, eigenval, metric );
+  BEGINFAIL(status)
+  {
+    TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
+    TRY(LALSDestroyVector(status->statusPtr,&eigenval),status);
+    TRY(LALSDestroyArray(status->statusPtr, &metric),status);  
+  }
+  ENDFAIL(status);
+
   /* Set stepsizes and xp-yp rotation angle from metric. */
   dxp = 1.333333*sqrt(2*coarseIn.mmCoarse/eigenval->data[0]);
   dyp = 1.333333*sqrt(2*coarseIn.mmCoarse/eigenval->data[1]);
@@ -214,7 +247,8 @@ LALInspiralSpinBank(
 
   /* What if no templates were allocated? ABORT or what? */
   if (!output) { }
-
+  
+  
   /* Convert output to communicate with LALInspiralCreateCoarseBank(). */
   *tiles = (InspiralTemplateList *) LALCalloc( *ntiles, sizeof(InspiralTemplateList) );
   for (tmplt = output; tmplt; tmplt = tmplt->next)
@@ -225,7 +259,24 @@ LALInspiralSpinBank(
     (*tiles)->params.psi3 = tmplt->psi3;
 /*    (*tiles)->params.beta = tmplt->beta;*/
   } /* for(tmplt...) */
+  
+  /* Free the memory allocated for the linked list. */
+  tmplt = output;
+  while (tmplt->next)
+  {
+    output = tmplt;
+    tmplt = tmplt->next;
+    LALFree(output);
+  }/* while(tmptl) */
+  
+/*  ASSERT(!tmplt->next) to make sure the deallocation worked
+    LALFree(tmplt)       free the final node */
 
+  /* Free the memory for the vectors and arrays allocated */
+  TRY(LALU4DestroyVector(status->statusPtr,&metricDimensions),status);
+  TRY(LALSDestroyVector(status->statusPtr,&eigenval),status);
+  TRY(LALSDestroyArray(status->statusPtr, &metric),status);  
+  
   /* Clean up and leave. */
   DETATCHSTATUSPTR( status );
   RETURN( status );
