@@ -20,7 +20,7 @@ __version__ = '$Revision$'[11:-2]
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
-import sys, os, copy
+import sys, os, copy, math
 import getopt, re, string
 import tempfile
 import ConfigParser
@@ -77,10 +77,10 @@ def compare_start( node_1, node_2):
 def analyze_ifo(ifo_data,ifo_to_do,ifo_name,tmplt_job,insp_job,df_job,snr,
   chisq,pad,prev_df,dag,usertag=None):
   """
-  Analyze the data from L1, H1 (single and double with H2) and H2 single. 
-  Since the way we treat all this data is the same, this function is the same 
-  for all three cases. Returns the last LSCdataFind job that was executed and 
-  the chunks analyzed.
+  Analyze the data from L1 single, H1 (single and double with H2) and H2
+  single. Since the way we treat all this data is the same, this function is
+  the same for all three cases. Returns the last LSCdataFind job that was
+  executed and the chunks analyzed.
   ifo_data = the master science segs for the IFO
   ifo_to_do = the science segments we need to analyze
   ifo_name = the name of the IFO
@@ -356,7 +356,7 @@ for o, a in opts:
   elif o in ("-j", "--injections"):
     inj_file = a
   elif o in ("-p", "--playground-only"):
-    playground_only = 1
+    playground_only = 2
   elif o in ("-P", "--priority"):
     condor_prio = a
   elif o in ("-l", "--log-path"):
@@ -514,13 +514,23 @@ sys.stdout.flush()
 l1_data = pipeline.ScienceData()
 h1_data = pipeline.ScienceData()
 h2_data = pipeline.ScienceData()
-t_data = pipeline.ScienceData()
+
 
 l1_data.read(cp.get('input','l1-segments'),length)
 h1_data.read(cp.get('input','h1-segments'),length)
 h2_data.read(cp.get('input','h2-segments'),length)
 if tama_overlap or tama_coincidence:
-  t_data.read(cp.get('input','tama-segments'),0)
+  # read in the tama file in the format provided and store as science data
+  t_data = []
+  file = open(cp.get('input','tama-segments'),"r")
+  for line in file:
+    columns = line.split()
+    id = int(columns[0])
+    start = int(math.ceil(float(columns[3])))
+    end = int(math.floor(float(columns[4])))
+    dur = end - start	
+    x = pipeline.ScienceSegment(tuple([id, start, end, dur]))
+    t_data.append(x)
 print "done"
 
 ##############################################################################
@@ -529,13 +539,13 @@ print "done"
 # analyze (since all the science segments are over length seconds.) 
 print "making master chunks...",
 sys.stdout.flush()
-l1_data.make_chunks(length,overlap,playground_only)
-h1_data.make_chunks(length,overlap,playground_only)
-h2_data.make_chunks(length,overlap,playground_only)
+l1_data.make_chunks(length,overlap,playground_only,0,overlap/2)
+h1_data.make_chunks(length,overlap,playground_only,0,overlap/2)
+h2_data.make_chunks(length,overlap,playground_only,0,overlap/2)
 
-l1_data.make_chunks_from_unused(length,overlap/2,playground_only,0)
-h1_data.make_chunks_from_unused(length,overlap/2,playground_only,0)
-h2_data.make_chunks_from_unused(length,overlap/2,playground_only,0)
+l1_data.make_chunks_from_unused(length,overlap/2,playground_only,0,0,overlap/2)
+h1_data.make_chunks_from_unused(length,overlap/2,playground_only,0,0,overlap/2)
+h2_data.make_chunks_from_unused(length,overlap/2,playground_only,0,0,overlap/2)
 print "done"
 
 ##############################################################################
@@ -591,6 +601,7 @@ if playground_only:
 h1_h2_data.coalesce()
 print "done"
 
+
 ##############################################################################
 # Step 6: Compute the Science Segments for the single ifo LHO data
 print "computing single ifo H1 and H2 data...",
@@ -625,7 +636,18 @@ h2_single_data.coalesce()
 print "done"
 
 ##############################################################################
-# Step 7: Determine which of the L1 master chunks needs to be filtered
+# Step 7:determine the one site LIGO times:
+print "computing all single site LIGO data...",
+sys.stdout.flush()
+ligo_data = copy.deepcopy(h2_single_data)
+ligo_data.union(h1_single_data)
+ligo_data.union(h1_h2_data)
+ligo_data.union(l1_single_data)
+ligo_data.coalesce()
+print "done"
+
+##############################################################################
+# Step 8: Determine which of the L1 master chunks needs to be filtered
 l1_chunks_analyzed = []
 prev_df = None
 
@@ -636,7 +658,7 @@ sys.stdout.flush()
 print "done"
 
 ##############################################################################
-# Step 8: Determine which of the H1 master chunks needs to be filtered
+# Step 9: Determine which of the H1 master chunks needs to be filtered
 h1_chunks_analyzed = []
 
 print "setting up jobs to filter H1 data...",
@@ -646,7 +668,7 @@ sys.stdout.flush()
 print "done"
 
 ##############################################################################
-# Step 9: Determine which of the H2 master chunks needs to be filtered
+# Step 10: Determine which of the H2 master chunks needs to be filtered
 h2_single_chunks_analyzed = []
 
 print "determining which H2 double coincident chunks need filtering...",
@@ -656,7 +678,7 @@ sys.stdout.flush()
 print "done"
 
 ##############################################################################
-# Step 10: Run inca in single ifo mode on the single ifo triggers.
+# Step 11: Run inca in single ifo mode on the single ifo triggers.
 
 print "setting up jobs to inca single IFO data...",
 
@@ -671,9 +693,10 @@ h1_single_inca_nodes = single_inca(h1_chunks_analyzed,h1_single_data,'H1',
 h2_single_inca_nodes = []
 h2_single_inca_nodes = single_inca(h2_single_chunks_analyzed,h2_single_data,
   'H2',s_inca_job,dag,usertag)
+print "done"
 
 ##############################################################################
-# Step 11: Determine which of the H2 master chunks needs to be triggered
+# Step 12: Determine which of the H2 master chunks needs to be triggered
 h1_h2_chunks_analyzed = []
 
 print "setting up jobs to filter H2 double coincident data...",
@@ -730,7 +753,7 @@ for seg in h2_data:
 print "done"
 
 ##############################################################################
-# Step 12: Run inca on each of the disjoint sets of double coincidence data
+# Step 13: Run inca on each of the disjoint sets of double coincidence data
 
 print "setting up jobs to get H1/H2 double coincident triggers...",
 sys.stdout.flush()
@@ -767,11 +790,16 @@ for seg in h1_h2_data:
 print "done"
 
 ##############################################################################
-# Step 13: Run tama2ligolw on the tama triggers
+# Step 14: Run tama2ligolw on the tama triggers
+
 
 if tama_coincidence:
+  print "Converting triggers to LIGO Lw xml format...",
+  sys.stdout.flush()
+  ligo_tama_data = copy.deepcopy(ligo_data)
+  ligo_tama_data.intersection(t_data)
   tama_segs_analyzed = []
-  for seg in t_data:
+  for seg in ligo_tama_data:
     tama2lw = inspiral.Tama2LigoLwNode(tama2lw_job)
     tama2lw.set_start(seg.start())
     tama2lw.set_end(seg.end())
@@ -786,9 +814,10 @@ if tama_coincidence:
     dag.add_node(tama2lw)
     tama_segs_analyzed.append(AnalyzedTAMAData(seg,tama2lw))
 
+  print "done"
 
 ##############################################################################
-# Step 14: Test for coincidence between the single IFO ligo and tama triggers
+# Step 15: Test for coincidence between the single IFO ligo and tama triggers
 
 if tama_coincidence:
   print "setting up jobs to get (single ifo LIGO)-TAMA coincident triggers...",
@@ -818,7 +847,7 @@ if tama_coincidence:
   print "done"
 
 ##############################################################################
-# Step 15: Test for coincidence between the H1-H2 and tama triggers
+# Step 16: Test for coincidence between the H1-H2 and tama triggers
 
 if tama_coincidence:
   print "setting up jobs to get (H1-H2 LIGO)-TAMA coincident triggers...",
@@ -858,7 +887,7 @@ if tama_coincidence:
       cp.get('pipeline','hh-param-test'))
 
     inca3.add_var_opt('ifo-b-snr-threshold',h2_snr)
-    # add the triggers and parent relation from the L1/H1 inca
+    # add the triggers and parent relation from the H1/H2 inca
     for h1_h2_done in h1_h2_inca_nodes:
       if ( h1_h2_done.get_chunk().start() == seg.start() and 
         h1_h2_done.get_chunk().end() == seg.end() ):
@@ -866,7 +895,7 @@ if tama_coincidence:
         lt_inca2.add_var_arg(h1_h2_done.get_dag_node().get_output_a())
         if ligo_analysis: inca3.add_parent(h1_h2_done.get_dag_node())
         inca3.add_var_arg(h1_h2_done.get_dag_node().get_output_b())
-    # add all H2 master segments that overlap with segment to input
+    # add all T1 master segments that overlap with segment to input
     for t_done in tama_segs_analyzed:
       if inspiral.overlap_test(t_done.get_seg(),seg):
         lt_inca2.add_var_arg(t_done.get_dag_node().get_output())
@@ -883,7 +912,7 @@ print "done"
 sys.stdout.flush()
 
 ##############################################################################
-# Step 16: Do any sires which are necessary
+# Step 17: Do any sires which are necessary
 
 print "setting up sire jobs ...",
 sys.stdout.flush()
@@ -1080,18 +1109,7 @@ for h2_done in h1_h2_chunks_analyzed:
   total_time += len(h2_done.get_chunk())
 print >> log_fh, "\n total time", total_time, "seconds"
 
-if tama_coincidence:
-  print >> log_fh, "\n===========================================\n"
-  log_fh.write( 
-    "Getting triggers from " + str(len(tama_segs_analyzed)) + \
-    " TAMA segments\n" )
-  total_time = 0
-  for t_done in tama_segs_analyzed:
-    print >> log_fh, t_done.get_seg()
-    seg = t_done.get_seg()
-    total_time += seg.end() - seg.start() 
-    print >> log_fh, t_done.get_dag_node()
-  print >> log_fh, "\n total time", total_time, "seconds"
+
 
 
 print >> log_fh, "\n===========================================\n"
@@ -1104,7 +1122,10 @@ for seg in l1_single_data:
 print >> log_fh, "\n total time", total_time, "seconds"
 
 if output_segs:
-  f = open('l1_segs_analyzed.txt', 'w')
+  if playground_only:
+    f = open('l1_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('l1_segs_analyzed.txt', 'w')
   for seg in l1_single_data:
     f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
       seg.dur()))
@@ -1120,7 +1141,10 @@ for seg in h1_single_data:
 print >> log_fh, "\n total time", total_time, "seconds"
 
 if output_segs:
-  f = open('h1_segs_analyzed.txt', 'w')
+  if playground_only:
+    f = open('h1_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('h1_segs_analyzed.txt', 'w')
   for seg in h1_single_data:
     f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
       seg.dur()))
@@ -1137,7 +1161,10 @@ for seg in h2_single_data:
 print >> log_fh, "\n total time", total_time, "seconds"
 
 if output_segs:
-  f = open('h2_segs_analyzed.txt', 'w')
+  if playground_only:
+    f = open('h2_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('h2_segs_analyzed.txt', 'w')
   for seg in h2_single_data:
     f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
       seg.dur()))
@@ -1153,38 +1180,83 @@ for seg in h1_h2_data:
 print >> log_fh, "\n total time", total_time, "seconds"
 
 if output_segs:
-  f = open('h1_h2_segs_analyzed.txt', 'w')
+  if playground_only:
+    f = open('h1_h2_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('h1_h2_segs_analyzed.txt', 'w')
   for seg in h1_h2_data:
     f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
       seg.dur()))
   f.close()
 
-  ligo_data = copy.deepcopy(l1_single_data)
-  ligo_data.union(h1_single_data)
-  ligo_data.union(h2_single_data)
-  ligo_data.union(h1_h2_data)
-  ligo_data.coalesce()
+print >> log_fh, "\n===========================================\n"
+log_fh.write( "Writing " + str(len(ligo_data)) + 
+  " LIGO single site segments\n" )
+total_time = 0
+for seg in ligo_data:
+  print >> log_fh, seg
+  total_time += seg.dur()
+print >> log_fh, "\n total time", total_time, "seconds"
 
-  f = open('ligo_segs_analyzed.txt', 'w')
+if output_segs:
+  if playground_only:
+    f = open('ligo_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('ligo_segs_analyzed.txt', 'w')
   for seg in ligo_data:
     f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
       seg.dur()))
   f.close()
 
-  lt_data = copy.deepcopy(ligo_data)
-  lt_data.intersection(t_data)
+if tama_overlap or tama_coincidence:
+  print >> log_fh, "\n===========================================\n"
+  print >> log_fh, "Tama Locked Segments:\n"
+  total_time = 0
+  for tama_seg in t_data:
+    print >> log_fh, tama_seg
+    total_time += tama_seg.end() - tama_seg.start()
+  print >> log_fh, "\n total time", total_time, "seconds"
 
-  f = open('ligo_tama_segs.txt', 'w')
-  for seg in lt_data:
-    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
-      seg.dur()))
-  f.close()
 
-  if playground_only:
-    lt_data.play()
-    f = open('ligo_tama_playground.txt', 'w')
-    for seg in lt_data:
+if tama_coincidence:
+  print >> log_fh, "\n===========================================\n"
+  log_fh.write( 
+    "Getting triggers from " + str(len(tama_segs_analyzed)) + \
+    " TAMA segments\n" )
+  total_time = 0
+  for t_done in tama_segs_analyzed:
+    print >> log_fh, t_done.get_seg()
+    seg = t_done.get_seg()
+    total_time += seg.dur() 
+  print >> log_fh, "\n total time", total_time, "seconds"
+  
+   
+if tama_overlap or tama_coincidence:
+  if output_segs:
+    f = open('tama_segs.txt', 'w')
+    for seg in t_data:
       f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
-	seg.dur()))
+        seg.dur()))
     f.close()
+
+if tama_coincidence:  
+  print >> log_fh, "\n===========================================\n"
+  log_fh.write( "Writing " + str(len(ligo_tama_data)) + 
+    " LIGO-TAMA coincident segments\n" )
+  total_time = 0
+  for seg in ligo_tama_data:
+    print >> log_fh, seg
+    total_time += seg.dur()
+  print >> log_fh, "\n total time", total_time, "seconds"
+
+  if output_segs:
+    if playground_only:
+      f = open('ligo_tama_play_segs.txt', 'w')
+    else:
+      f = open('ligo_tama_segs.txt', 'w')
+    for seg in ligo_tama_data:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+        seg.dur()))
+    f.close()
+
 sys.exit(0)
