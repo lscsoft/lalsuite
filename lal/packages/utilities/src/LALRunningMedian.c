@@ -3,11 +3,6 @@ Author: Somya D. Mohanty, B. Machenschalk
 $Id$
 ************************************* </lalVerbatim> */
 
-/* todo:
-   test error cases
-   check for memory leaks
-*/
-
 /* <lalLaTeX>
 
 \subsection{Module \texttt{LALRunningMedian.c}}
@@ -29,10 +24,9 @@ The routine \verb+LALDRunningMedian()+ calculates the running medians of a
 REAL8Sequence. The routine \verb+LALSRunningMedian()+ does the same for a REAL4Sequence.
 \verb+input+ ist a REAL4/REAL8Sequence containing the input array, \verb+blocksize+
 is the length of the block the medians are calculated of.
-After successful completion \verb+medians+ points to a REAL4/REAL8Sequence
-containing the median values. The memory used by medians ist allocated
-by the \verb+LALRunnungMedian+ fuction and must be freed
-by the calling function using LALDestroyVector().
+With n being the lenght of the input array and b being the blocksize,
+the medians array must be a REAL4/REAL8 sequence of length 
+(n-b+1).
 
 \subsubsection*{Algorithm}
 
@@ -44,10 +38,6 @@ Efficient Algorithm for computing a Running Median
 \begin{verbatim}
 LALCalloc()
 LALFree()
-LALSCreateVector()
-LALSDestroyVector()
-LALDCreateVector()
-LALDDestroyVector()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -126,7 +116,7 @@ static int rngmed_sortindex4(const void *elem1, const void *elem2){
 
 /* <lalVerbatim file="LALRunningMedianCP"> */
 void LALDRunningMedian( LALStatus *status,
-			REAL8Sequence **medians,
+			REAL8Sequence *medians,
 			REAL8Sequence *input,
 			LALRunningMedianPar param)
 /* </lalVerbatim> */
@@ -164,18 +154,18 @@ void LALDRunningMedian( LALStatus *status,
   REAL8 nextsample,deletesample,dummy;
   UINT4 shift,dummy_int;
 
-  INITSTATUS( status, "LALRunningMedian", LALRUNNINGMEDIANC );
+  INITSTATUS( status, "LALDRunningMedian", LALRUNNINGMEDIANC );
   
   /* check input parameters */
   /* input must not be NULL */
   ASSERT(input,status,LALRUNNINGMEDIANH_ENULL,LALRUNNINGMEDIANH_MSGENULL);
   /* param.blocksize must be >2 */
   ASSERT(param.blocksize>2,status,LALRUNNINGMEDIANH_EZERO,LALRUNNINGMEDIANH_MSGEZERO);
-  /* param.blocksize must not be larger than input size */
+  /* blocksize must not be larger than input size */
   ASSERT(param.blocksize <= input->length,status,LALRUNNINGMEDIANH_ELARGE,LALRUNNINGMEDIANH_MSGELARGE);
-  /* medians mut point to a NULL pointer */
-  ASSERT(medians != NULL,status,LALRUNNINGMEDIANH_EIMED,LALRUNNINGMEDIANH_MSGEIMED);
-  ASSERT(*medians == NULL,status,LALRUNNINGMEDIANH_EIMED,LALRUNNINGMEDIANH_MSGEIMED);
+  /* medians must point to a valid sequence of correct size */
+  ASSERT(medians,status,LALRUNNINGMEDIANH_EIMED,LALRUNNINGMEDIANH_MSGEIMED);
+  ASSERT(medians->length == (input->length - param.blocksize + 1),status,LALRUNNINGMEDIANH_EIMED,LALRUNNINGMEDIANH_MSGEIMED);
 
   ATTATCHSTATUSPTR( status );
 
@@ -304,22 +294,8 @@ void LALDRunningMedian( LALStatus *status,
   LALFree(sorted_indices);
 
   /*------------------------------
-    Allocate storage for output
-    and get the first output element
+    get the first output element
     -------------------------------*/
-  LALDCreateVector( status->statusPtr, medians,  input->length - param.blocksize + 1 );
-  if(status->statusPtr->statusCode != 0){
-    while(currentnode){
-      previousnode=currentnode;
-      currentnode=currentnode->next_sequence;
-      LALFree(previousnode);
-    }
-    LALFree(node_addresses);
-    LALFree(checks4shift);
-    LALFree(checks);
-    ABORT(status,LALRUNNINGMEDIANH_ECV,LALRUNNINGMEDIANH_MSGECV);
-  }
-
   currentnode=checks[nearestchk];
   for(k=1;k<=offset;k++){
     currentnode=currentnode->next_sorted;
@@ -329,7 +305,7 @@ void LALDRunningMedian( LALStatus *status,
     dummy+=currentnode->data;
     currentnode=currentnode->next_sorted;
   }
-  (*medians)->data[0]=dummy/numberoffsets;
+  medians->data[0]=dummy/numberoffsets;
 
   /*---------------------------------
     This is the main part
@@ -537,7 +513,7 @@ void LALDRunningMedian( LALStatus *status,
 	   dummy+=currentnode->data;
 	   currentnode=currentnode->next_sorted;
          }
-         (*medians)->data[samplecount-param.blocksize+1]=dummy/numberoffsets;
+         medians->data[samplecount-param.blocksize+1]=dummy/numberoffsets;
   }/*Outer For Loop*/
   
 
@@ -560,7 +536,7 @@ void LALDRunningMedian( LALStatus *status,
 
 /* <lalVerbatim file="LALRunningMedianCP"> */
 void LALSRunningMedian( LALStatus *status,
-			REAL4Sequence **medians,
+			REAL4Sequence *medians,
 			REAL4Sequence *input,
 			LALRunningMedianPar param)
 /* </lalVerbatim> */
@@ -598,7 +574,7 @@ void LALSRunningMedian( LALStatus *status,
   REAL4 nextsample,deletesample,dummy;
   UINT4 shift,dummy_int;
 
-  INITSTATUS( status, "LALRunningMedian", LALRUNNINGMEDIANC );
+  INITSTATUS( status, "LALSRunningMedian", LALRUNNINGMEDIANC );
   
   /* check input parameters */
   /* input must not be NULL */
@@ -607,9 +583,9 @@ void LALSRunningMedian( LALStatus *status,
   ASSERT(param.blocksize>2,status,LALRUNNINGMEDIANH_EZERO,LALRUNNINGMEDIANH_MSGEZERO);
   /* param.blocksize must not be larger than input size */
   ASSERT(param.blocksize <= input->length,status,LALRUNNINGMEDIANH_ELARGE,LALRUNNINGMEDIANH_MSGELARGE);
-  /* medians mut point to a NULL pointer */
-  ASSERT(medians != NULL  ,status,LALRUNNINGMEDIANH_EIMED,LALRUNNINGMEDIANH_MSGEIMED);
-  ASSERT(*medians == NULL ,status,LALRUNNINGMEDIANH_EIMED,LALRUNNINGMEDIANH_MSGEIMED);
+  /* medians must point to a valid sequence of correct size */
+  ASSERT(medians,status,LALRUNNINGMEDIANH_EIMED,LALRUNNINGMEDIANH_MSGEIMED);
+  ASSERT(medians->length == (input->length - param.blocksize + 1),status,LALRUNNINGMEDIANH_EIMED,LALRUNNINGMEDIANH_MSGEIMED);
 
   ATTATCHSTATUSPTR( status );
 
@@ -738,22 +714,8 @@ void LALSRunningMedian( LALStatus *status,
   LALFree(sorted_indices);
 
   /*------------------------------
-    Allocate storage for output
-    and get the first output element
+    get the first output element
     -------------------------------*/
-  LALSCreateVector( status->statusPtr, medians,  input->length - param.blocksize + 1 );
-  if(status->statusPtr->statusCode != 0){
-    while(currentnode){
-      previousnode=currentnode;
-      currentnode=currentnode->next_sequence;
-      LALFree(previousnode);
-    }
-    LALFree(node_addresses);
-    LALFree(checks4shift);
-    LALFree(checks);
-    ABORT(status,LALRUNNINGMEDIANH_ECV,LALRUNNINGMEDIANH_MSGECV);
-  }
-
   currentnode=checks[nearestchk];
   for(k=1;k<=offset;k++){
     currentnode=currentnode->next_sorted;
@@ -763,7 +725,7 @@ void LALSRunningMedian( LALStatus *status,
     dummy+=currentnode->data;
     currentnode=currentnode->next_sorted;
   }
-  (*medians)->data[0]=dummy/numberoffsets;
+  medians->data[0]=dummy/numberoffsets;
 
   /*---------------------------------
     This is the main part
@@ -971,7 +933,7 @@ void LALSRunningMedian( LALStatus *status,
 	   dummy+=currentnode->data;
 	   currentnode=currentnode->next_sorted;
          }
-         (*medians)->data[samplecount-param.blocksize+1]=dummy/numberoffsets;
+         medians->data[samplecount-param.blocksize+1]=dummy/numberoffsets;
   }/*Outer For Loop*/
   
 

@@ -65,7 +65,7 @@ NRCSID (LALRUNNINGMEDIANH, "$Id$");
 #define LALRUNNINGMEDIANH_MSGENULL   "Invalid input: NULL pointer."
 #define LALRUNNINGMEDIANH_MSGEZERO   "Invalid input: block length must be >2"
 #define LALRUNNINGMEDIANH_MSGELARGE  "Invalid input: block length larger than imput length"
-#define LALRUNNINGMEDIANH_MSGEIMED   "Invalid input: median not pointing to NULL"
+#define LALRUNNINGMEDIANH_MSGEIMED   "Invalid input: wrong size of median array"
 
 /*
 </lalErrTable>
@@ -79,7 +79,7 @@ NRCSID (LALRUNNINGMEDIANH, "$Id$");
 This is the parameter structure for the LALRunningMedian functions.
 Currently the only parameter supported is the blocksize, the number
 of elements a single median is calculated from. The current
-implementation requires the blocksize to be $>2$.
+implementation requires the blocksize to be $\lt 2$.
 \begin{verbatim}
 typedef struct tagLALRunningMedianPar
 {
@@ -100,13 +100,13 @@ LALRunningMedianPar;
 
 void
 LALDRunningMedian( LALStatus *status,
-		   REAL8Sequence **medians,
+		   REAL8Sequence *medians,
 		   REAL8Sequence *input,
 		   LALRunningMedianPar param);
 
 void
 LALSRunningMedian( LALStatus *status,
-		   REAL4Sequence **medians,
+		   REAL4Sequence *medians,
 		   REAL4Sequence *input,
 		   LALRunningMedianPar param);
 
