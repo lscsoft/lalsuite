@@ -260,9 +260,9 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
             CLA.OutputFile);
     boinc_finish(2);
   }
-  fpOut=fopen(resolved_filename,"w");
+  fpOut=fopen(resolved_filename,"wb");
 #else
-  fpOut=fopen(CLA.OutputFile,"w");       
+  fpOut=fopen(CLA.OutputFile,"wb");       
 #endif
   if (!CLA.EAH)
     {
@@ -531,7 +531,7 @@ int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-#define DONE_MARKER "%DONE"
+#define DONE_MARKER "%DONE\n"
 
 /* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
 int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
@@ -539,37 +539,44 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   UINT4 i;
   UINT4 numlines;
   REAL8 dmp;
-  char line1[256],line2[5];
+  char line1[256];
   FILE *fp;
   INT4 read;
 
   /* ------ Open and count candidates file ------ */
   i=0;
-  fp=fopen(fname,"r");
+  fp=fopen(fname,"rb");
   if (fp==NULL) 
     {
       fprintf(stderr,"File %s doesn't exist!\n",fname);
       return 1;
     }
-  while(fgets(line1,sizeof(line1),fp))
-    {
-      strncpy(line2,line1,5);
-      i++;
+  while(fgets(line1,sizeof(line1),fp)) {
+    /* check that each line ends with a newline char (no overflow of
+       line1 or null chars read) */
+    if (line1[strlen(line1)] != '\n') {
+      fprintf(stderr,
+	      "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
+	      i+1, fname, line1);
+      fclose(fp);
+      return 1;
     }
+    i++;
+  }
   numlines=i;
-  fclose(fp);     
   /* -- close candidate file -- */
+  fclose(fp);     
 
   if ( numlines == 0) 
     {
-      LALPrintError ("ERROR: File '%s' is empty and is not properly terminated by '%s' marker!\n\n", fname, DONE_MARKER);
+      LALPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
       return 1;
     }
 
   /* check validity of this Fstats-file */
-  if ( strcmp(line2, DONE_MARKER ) ) 
+  if ( strcmp(line1, DONE_MARKER ) ) 
     {
-      LALPrintError ("ERROR: File '%s' is not properly terminated by '%s' marker!\n\n", fname, DONE_MARKER);
+      LALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
       return 1;
     }
   else
@@ -590,35 +597,104 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 
   /* ------ Open and count candidates file ------ */
   i=0;
-  fp=fopen(fname,"r");
+  fp=fopen(fname,"rb");
   if (fp==NULL) 
     {
-      fprintf(stderr,"File %s doesn't exist!\n",fname);
+      fprintf(stderr,"fopen(%s) failed!\n", fname);
+      LALFree ((*CList));
       return 1;
     }
   while(fgets(line1,sizeof(line1),fp) && i < numlines )
     {
+      char newline='\0';
 
+      if (line1[strlen(line1)] != '\n') {
+	fprintf(stderr,
+		"Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
+		i+1, fname, line1);
+	LALFree ((*CList));
+	fclose(fp);
+	return 1;
+      }
+      
       (*CList)[i].Ctag=0;
       (*CList)[i].CtagCounter=-1;
 
       read = sscanf (line1, 
                      "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
-                     " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT, 
-                     &((*CList)[i].f), &((*CList)[i].Alpha), &((*CList)[i].Delta), &dmp, &dmp, &dmp, &((*CList)[i].F) );
+                     " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "%c", 
+                     &((*CList)[i].f), &((*CList)[i].Alpha), &((*CList)[i].Delta), &dmp, &dmp, &dmp, &((*CList)[i].F), &newline );
 
+      /* check that the FIRST character following the Fstat value is a
+	 newline.  Note deliberate LACK OF WHITE SPACE char before %c
+	 above */
+      if (newline != '\n') {
+	fprintf(stderr,
+		"Line %d of file %s had extra chars after F value and before newline.\n"
+		"First 255 chars are:\n"
+		"%s\n",
+		i+1, fname, line1);
+	LALFree ((*CList));
+	fclose(fp);
+	return 1;
+      }
+
+      /* check that we read 7 quantities with exactly the right format */
       if ( read != 7 )
         {
-          LALPrintError ("Failed to parse line %d in file '%s' \n", i+1, fname);
+          LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+			 "Line in question is\n%s",
+			 read, 7, i+1, fname, line1);		    
           LALFree ((*CList));
-          return 1;
+	  fclose(fp);
+	  return 1;
         }
 
       i++;
     }
+  /* check that we read ALL lines! */
+  if (i != numlines) {
+    fprintf(stderr,
+	    "Read of file %s terminated after %d line but numlines=%d\n",
+	    i, numlines);
+    LALFree ((*CList));
+    fclose(fp);
+    return 1;
+  }
+
+  /* read final line with %DONE\n marker */
+  if (!fgets(line1, sizeof(line1), fp)) {
+    fprintf(stderr,
+	    "Failed to find marker line of file %s\n",
+	    fname);
+    LALFree ((*CList));
+    fclose(fp);
+    return 1;
+  }
+
+  /* check for %DONE\n marker */
+  if (strcmp(line1, DONE_MARKER)) {
+    fprintf(stderr,
+	    "Failed to parse marker: 'final' line of file %s contained %s not %s",
+	    fname, line1, DONE_MARKER);
+    LALFree ((*CList));
+    fclose(fp);
+    return 1;
+  }
+
+  /* check that we are now at the end-of-file */
+  if (fgetc(fp) != EOF) {
+    fprintf(stderr,
+	    "File %s did not terminate after %s",
+	    fname, DONE_MARKER);
+    LALFree ((*CList));
+    fclose(fp);
+    return 1;
+  }
+
+  /* -- close candidate file -- */
   fclose(fp);     
-  /* -- close 1st candidate file -- */
-  
+
   return 0;
 
 } /* ReadOneCandidateFile() */
