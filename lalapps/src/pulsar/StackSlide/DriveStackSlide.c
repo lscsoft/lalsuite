@@ -83,7 +83,10 @@
 /* 05/11/04 gam; Free edata ephemeris data in StackSlideFinalizeSearch */
 /* 05/11/04 gam; If (params->testFlag & 1) > 0 output the Hough number count */
 /* 05/11/04 gam; If (params->testFlag & 2) > 0 inject fake signals and run Monte Carlo Simulation; use threshold4 for h_0*/
-   
+/* 05/26/04 gam; Move writing to stackslide search summary table to StackSlideConditionData */
+/* 05/26/04 gam; Change finishedSUMs to finishedSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
+/* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
+
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -603,7 +606,10 @@ void StackSlideInitSearch(
   /* parameters for keeping track of which BLKs, STKs, SUMs to work on; which are done. */
   params->finishedBLKs = 0;  /* Set equal to true when all BLKS for this job have been found in input data */
   params->finishedSTKs = 0;  /* Set equal to true when all STKs for this job have been created */
-  params->finishedSUMs = 0;  /* Set equal to true when all BLKS for this job have been created */
+  /* params->finishedSUMs = 0; */ /* 05/26/04 gam */ /* Set equal to true when all BLKS for this job have been created */
+  params->startSUMs = 1;       /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
+  params->finishSUMs = 1;      /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
+  params->whichMCSUM = -1;     /* 05/26/04 gam; which SUM the Monte Carlo Simulation is running on. Default is -1. */
 
   params->iMinBLK = 0;                         /* Index of minimum frequency in BLK band */
   params->iMaxBLK = params->nBinsPerBLK - 1;   /* Index of maximum frequency in BLK band */
@@ -1036,6 +1042,69 @@ void StackSlideConditionData(
 /* END SECTION: unpack ephemeris data         */
 /*                                            */
 /**********************************************/
+
+/* 05/26/04 gam; Move writing to stackslide search summary table to StackSlideConditionData */
+/***********************************************************/
+/*                                                         */
+/* START SECTION: write to stackslide search summary table */
+/*                                                         */
+/***********************************************************/
+
+    /* 02/11/04 gam; moved here so not in loop over SUMs */
+    /* 02/04/04 gam; note that if outputEventFlag < 1 then do not output xml. */ 
+    if (params->outputEventFlag > 0) {
+            StackSlideSFTsSearchSummaryTable *stksldSFTsSearchSummaryTable;
+	    
+	    /* write to the stackslide search summary table. */    
+	    stksldSFTsSearchSummaryTable = (StackSlideSFTsSearchSummaryTable *) LALCalloc( 1, sizeof(StackSlideSFTsSearchSummaryTable) );
+            
+	    /* 02/12/04 gam; Add num_sums = numSUMsTotal, freq_index =f0SUM*params->tEffSUM, and num_bins = nBinsPerSUM to StackSlideSFTsSearchSummaryTable */
+	    LALSnprintf( stksldSFTsSearchSummaryTable->ifo, LIGOMETA_IFOS_MAX, "%s", params->ifoNickName );
+	    LALSnprintf( stksldSFTsSearchSummaryTable->data_directory, LIGOMETA_STRING_MAX, "%s", params->sftDirectory );
+	    LALSnprintf( stksldSFTsSearchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", params->patchName );  /* Let patchName serve as the comment */
+            stksldSFTsSearchSummaryTable->start_time = params->gpsStartTimeSec;
+            stksldSFTsSearchSummaryTable->start_time_ns =params->gpsStartTimeNan;
+            stksldSFTsSearchSummaryTable->duration = params->duration;
+            stksldSFTsSearchSummaryTable->sft_baseline = params->tEffBLK;
+            stksldSFTsSearchSummaryTable->num_sfts = params->numBLKs;
+            stksldSFTsSearchSummaryTable->start_freq = params->f0SUM;
+            stksldSFTsSearchSummaryTable->band = params->bandSUM;
+            stksldSFTsSearchSummaryTable->sum_baseline = params->tEffSUM;
+            stksldSFTsSearchSummaryTable->freq_index = floor(params->f0SUM*params->tEffSUM + 0.5);
+            stksldSFTsSearchSummaryTable->num_bins = params->nBinsPerSUM;
+            stksldSFTsSearchSummaryTable->num_sums = params->numSUMsTotal;
+            stksldSFTsSearchSummaryTable->next = NULL;
+
+            fprintf( params->xmlStream->fp, LIGOLW_XML_LOCAL_SEARCHSUMMARY_STACKSLIDESFTS );
+            params->xmlStream->first = 0;
+            /* print out the row */
+            fprintf( params->xmlStream->fp, LOCAL_SEARCHSUMMARY_STACKSLIDESFTS_ROW,
+                stksldSFTsSearchSummaryTable->ifo,
+                stksldSFTsSearchSummaryTable->data_directory,
+                stksldSFTsSearchSummaryTable->comment,
+                stksldSFTsSearchSummaryTable->start_time,
+                stksldSFTsSearchSummaryTable->start_time_ns,
+                stksldSFTsSearchSummaryTable->duration,
+                stksldSFTsSearchSummaryTable->sft_baseline,
+                stksldSFTsSearchSummaryTable->num_sfts,
+                stksldSFTsSearchSummaryTable->start_freq,
+                stksldSFTsSearchSummaryTable->band,
+                stksldSFTsSearchSummaryTable->sum_baseline,
+                stksldSFTsSearchSummaryTable->freq_index,
+                stksldSFTsSearchSummaryTable->num_bins,
+                stksldSFTsSearchSummaryTable->num_sums
+           );
+           /* End the table. */
+           fprintf( params->xmlStream->fp, LIGOLW_XML_TABLE_FOOTER );
+           params->xmlStream->table = no_table;
+           LALFree(stksldSFTsSearchSummaryTable);
+    }
+
+/***********************************************************/
+/*                                                         */
+/* END SECTION: write to stackslide search summary table   */
+/*                                                         */
+/***********************************************************/
 
  }
  /* END if (params->searchMaster) */
@@ -1720,55 +1789,7 @@ void StackSlideApplySearch(
 /*                                                         */
 /***********************************************************/
 
-    /* 02/11/04 gam; moved here so not in loop over SUMs */
-    /* 02/04/04 gam; note that if outputEventFlag < 1 then do not output xml. */ 
-    if (params->outputEventFlag > 0) {
-            StackSlideSFTsSearchSummaryTable *stksldSFTsSearchSummaryTable;
-	    
-	    /* write to the stackslide search summary table. */    
-	    stksldSFTsSearchSummaryTable = (StackSlideSFTsSearchSummaryTable *) LALCalloc( 1, sizeof(StackSlideSFTsSearchSummaryTable) );
-            
-	    /* 02/12/04 gam; Add num_sums = numSUMsTotal, freq_index =f0SUM*params->tEffSUM, and num_bins = nBinsPerSUM to StackSlideSFTsSearchSummaryTable */
-	    LALSnprintf( stksldSFTsSearchSummaryTable->ifo, LIGOMETA_IFOS_MAX, "%s", params->ifoNickName );
-	    LALSnprintf( stksldSFTsSearchSummaryTable->data_directory, LIGOMETA_STRING_MAX, "%s", params->sftDirectory );
-	    LALSnprintf( stksldSFTsSearchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", params->patchName );  /* Let patchName serve as the comment */
-            stksldSFTsSearchSummaryTable->start_time = params->gpsStartTimeSec;
-            stksldSFTsSearchSummaryTable->start_time_ns =params->gpsStartTimeNan;
-            stksldSFTsSearchSummaryTable->duration = params->duration;
-            stksldSFTsSearchSummaryTable->sft_baseline = params->tEffBLK;
-            stksldSFTsSearchSummaryTable->num_sfts = params->numBLKs;
-            stksldSFTsSearchSummaryTable->start_freq = params->f0SUM;
-            stksldSFTsSearchSummaryTable->band = params->bandSUM;
-            stksldSFTsSearchSummaryTable->sum_baseline = params->tEffSUM;
-            stksldSFTsSearchSummaryTable->freq_index = floor(params->f0SUM*params->tEffSUM + 0.5);
-            stksldSFTsSearchSummaryTable->num_bins = params->nBinsPerSUM;
-            stksldSFTsSearchSummaryTable->num_sums = params->numSUMsTotal;
-            stksldSFTsSearchSummaryTable->next = NULL;
-
-            fprintf( params->xmlStream->fp, LIGOLW_XML_LOCAL_SEARCHSUMMARY_STACKSLIDESFTS );
-            params->xmlStream->first = 0;
-            /* print out the row */
-            fprintf( params->xmlStream->fp, LOCAL_SEARCHSUMMARY_STACKSLIDESFTS_ROW,
-                stksldSFTsSearchSummaryTable->ifo,
-                stksldSFTsSearchSummaryTable->data_directory,
-                stksldSFTsSearchSummaryTable->comment,
-                stksldSFTsSearchSummaryTable->start_time,
-                stksldSFTsSearchSummaryTable->start_time_ns,
-                stksldSFTsSearchSummaryTable->duration,
-                stksldSFTsSearchSummaryTable->sft_baseline,
-                stksldSFTsSearchSummaryTable->num_sfts,
-                stksldSFTsSearchSummaryTable->start_freq,
-                stksldSFTsSearchSummaryTable->band,
-                stksldSFTsSearchSummaryTable->sum_baseline,
-                stksldSFTsSearchSummaryTable->freq_index,
-                stksldSFTsSearchSummaryTable->num_bins,
-                stksldSFTsSearchSummaryTable->num_sums
-           );
-           /* End the table. */
-           fprintf( params->xmlStream->fp, LIGOLW_XML_TABLE_FOOTER );
-           params->xmlStream->table = no_table;
-           LALFree(stksldSFTsSearchSummaryTable);
-    }
+/* 05/26/04 gam; Move writing to stackslide search summary table to StackSlideConditionData */
 
 /***********************************************************/
 /*                                                         */
@@ -1847,7 +1868,8 @@ void StackSlideApplySearch(
        InitializePeaksArray(loudestPeaksArray,params->keepThisNumber,params->f0SUM,params->dfSUM,nBinsPerOutputEvent); /* 02/20/04 gam */
        #ifdef INCLUDE_PRINT_PEAKS_TABLE_CODE
         /* 04/15/04 gam */
-        if ((params->debugOptionFlag & 2) > 0 ) {
+        /* if ((params->debugOptionFlag & 2) > 0 ) */ /* 05/26/04 gam */
+        if ( ((params->debugOptionFlag & 2) > 0) && params->startSUMs ) {
           fprintf(stdout,"\nOnly kept one loudest event per %i bins for a total of %i events.\n",nBinsPerOutputEvent, params->keepThisNumber);
           fflush(stdout);
         }
@@ -1972,14 +1994,16 @@ void StackSlideApplySearch(
     
     /* 02/11/04 gam; Change code to process 1 SUM per job; start table for peaks above loop */
     /* if (params->thresholdFlag > 0 && params->outputEventFlag > 0) */ /* 02/20/04 gam */
-    if (params->outputEventFlag > 0)  {
+    /* if (params->outputEventFlag > 0) */ /* 05/26/04 gam */
+    if ((params->outputEventFlag > 0) && params->startSUMs) {
 	/* Begin the stackslide periodic table. */
 	fprintf( params->xmlStream->fp, LIGOLW_XML_SNGL_LOCAL_STACKSLIDEPERIODIC );
 	params->xmlStream->first = 1;
     }       
     #ifdef INCLUDE_PRINT_PEAKS_TABLE_CODE
      /* 04/15/04 gam */
-     if ((params->debugOptionFlag & 2) > 0 ) {
+     /* if ((params->debugOptionFlag & 2) > 0 ) */ /* 05/26/04 gam */
+     if ( ((params->debugOptionFlag & 2) > 0) && params->startSUMs ) {
        fprintf(stdout,"\n   Event_no   SUM_index         RA        DEC    freq_deriv1   frequency      power  pwr_snr   width_bins\n");
        fflush(stdout);
      }
@@ -2089,7 +2113,11 @@ void StackSlideApplySearch(
          params->peaks = (SnglStackSlidePeriodicTable *)LALMalloc(sizeof(SnglStackSlidePeriodicTable));      
          params->peaks->next = NULL;
          peakSav = params->peaks; /* Save pointer to first peak */
-         pLALFindStackSlidePeakParams->iSUM = kSUM; /* 02/04/04 gam added this and next 2 lines */
+         if (params->whichMCSUM > 0) {
+           pLALFindStackSlidePeakParams->iSUM = params->whichMCSUM; /* 05/26/04 gam; this is the number of the Monte Carlo SUM. */
+         } else {
+           pLALFindStackSlidePeakParams->iSUM = kSUM; /* 02/04/04 gam added this and next 2 lines */
+         }
          pLALFindStackSlidePeakParams->iSky = i;
          pLALFindStackSlidePeakParams->iDeriv = j;
          /* 01/14/04 gam; find peaks in SUMs */
@@ -2180,7 +2208,11 @@ void StackSlideApplySearch(
       /* 02/11/04 gam; next is end if (params->thresholdFlag > 0) */       
       } else if (outputLoudestFromSUMs) {
          /* 02/17/04 gam */
-         pLALUpdateLoudestStackSlideParams->iSUM = kSUM;  /* 02/17/04 gam; see top of for loop for kSUM, i, and j */
+         if (params->whichMCSUM > 0) {
+           pLALUpdateLoudestStackSlideParams->iSUM = params->whichMCSUM; /* 05/26/04 gam; this is the number of the Monte Carlo SUM. */
+         } else {
+           pLALUpdateLoudestStackSlideParams->iSUM = kSUM;  /* 02/17/04 gam; see top of for loop for kSUM, i, and j */
+         }
          pLALUpdateLoudestStackSlideParams->iSky = i;
          pLALUpdateLoudestStackSlideParams->iDeriv = j;              
          LALUpdateLoudestFromSUMs(loudestPeaksArray, params->SUMData[0], pLALUpdateLoudestStackSlideParams);
@@ -2227,8 +2259,9 @@ void StackSlideApplySearch(
        );
     } /* end for (k = 0; k < arraySize; k++) */
   } /* end if ( (outputLoudestFromPeaks || outputLoudestFromSUMs) && (params->outputEventFlag > 0) ) */
-                      
-       if (params->outputEventFlag > 0) {
+  
+       /* if (params->outputEventFlag > 0) */ /* 05/26/04 gam */
+       if ((params->outputEventFlag > 0) && params->finishSUMs) {
 	    MetadataTable         searchsumm;       
 	    MetadataTable         searchsummvars;
 	           
@@ -2290,11 +2323,11 @@ void StackSlideApplySearch(
        /* 02/11/04 gam */
        #ifdef INCLUDE_OUTPUTASCIISUMS_CODE
          if (params->outputSUMFlag > 0 && params->numSUMsTotal > 1) {
-               LALFree(baseOutputFile);	    
+               LALFree(baseOutputFile);
          }
       #endif
 }
- params->finishedSUMs = 1;  /* Set equal to true when all BLKS for this job have been created */
+/* params->finishedSUMs = 1; */ /* 05/26/04 gam */  /* Set equal to true when all BLKS for this job have been created */
 
 /******************************/
 /*                            */
@@ -2302,32 +2335,18 @@ void StackSlideApplySearch(
 /*                            */
 /******************************/
 
-/**********************************************/
-/*                                            */
-/* START SECTION: output results              */
-/*                                            */
-/**********************************************/
+/*****************************************/
+/*                                       */
+/* START SECTION: Deallocate some memory */
+/*                                       */
+/*****************************************/
 
-  #ifdef DEBUG_DRIVESTACKSLIDE
-      fprintf(stdout, "\nSTART SECTION: output results\n");
-      fflush(stdout);
-  #endif
-
-   if (params->finishedSUMs) {
-
-	/* Next are used when allocating memory in BuildOutput and are also needed in BuildSUMFrameOutput */
-	/* params->numDBOutput = 3; */ /* 02/11/04 gam */ /* FOR NOW HARD CODE for 1 row in 3 tables: search summary + search summary vars + dperiod tables */
+   /* if (params->finishedSUMs) */ /* 05/26/04 gam */
 
          /* 02/11/04 gam; Moved output SUMs code into loop over SUMs */
 
-        /**********************************************/
-        /*                                            */
-        /* START SUBSECTION: Deallocate most memory   */
-        /*                                            */
-        /**********************************************/
-
          #ifdef DEBUG_DRIVESTACKSLIDE
-             fprintf(stdout, "\nSTART SUBSECTION: Deallocate most memory\n");
+             fprintf(stdout, "\nSTART SECTION: Deallocate some memory\n");
              fflush(stdout);
          #endif
 	 
@@ -2407,27 +2426,19 @@ void StackSlideApplySearch(
          
          /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
          /* LALFree(params->stksldSkyPatchData); */
- 
-        /**********************************************/
-        /*                                            */
-        /* END SUBSECTION: Deallocate memory          */
-        /*                                            */
-        /**********************************************/
 
-	} else {
-	
-	} /* END if (params->finishedBLKs) else ... */
-
-
+      /* OLD else */ /* 05/26/04 gam */
+      /* OLD END if (params->finishedSUMs) else ... */ /* 05/26/04 gam */
+      
+/*****************************************/
+/*                                       */
+/* END SECTION: Deallocate some memory   */
+/*                                       */
+/*****************************************/
+      
   } else {
 
   } /* END if (params->searchMaster) else ... */
-
-/**********************************************/
-/*                                            */
-/* END SECTION: output results                */
-/*                                            */
-/**********************************************/
 
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);

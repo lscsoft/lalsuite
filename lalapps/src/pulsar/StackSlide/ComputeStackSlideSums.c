@@ -33,6 +33,11 @@
 /* 05/07/04 gam; add alternative to using glob */
 /* 05/07/04 gam; Do not check d_type when using readdir since it is often UNKOWN. */
 /* 05/11/04 gam; Add RunStackSlideMonteCarloSimulation to software inject signals into the SFTs for Monte Carlo simulations */
+/* 05/21/04 gam; Normalize the SFTs from LALSignalToSFTs as per the normalization in makefakedata_v2.c and lalapps/src/pulsar/make_sfts.c. */
+/* 05/21/04 gam; Save the input SFTs and Parameter space; run Monte Carlo simulation on the parameter space with random offsets */
+/* 05/26/04 gam; Continue work on Monto Carlo code. */
+/* 05/26/04 gam; Change finishedSUMs to finishedSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
+/* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
 
 /*********************************************/
 /*                                           */
@@ -558,17 +563,10 @@ int Freemem(StackSlideSearchParams *params)
 /*********************************************************/
 void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams *params)
 {
-
-  INT4    i = 0; /* all purpose index */
-  INT4    j = 0; /* all purpose index */    
-#ifdef NOTHING
-  INT4    k = 0; /* another all purpose index */
-  REAL8 **savSkyPosData;     /* Used to save Parameter Space Data */
-  REAL8 **savFreqDerivData;  /* Used to save Frequency Derivative Data */
-#endif
-
 #ifdef INCLUDE_RUNSTACKSLIDEMONTECARLO_CODE
-
+  INT4    i = 0; /* all purpose index */
+  INT4    j = 0; /* all purpose index */
+  INT4    k = 0; /* all purpose index */  
   PulsarSignalParams *pPulsarSignalParams = NULL;
   REAL4TimeSeries *signal = NULL;
   LIGOTimeGPS GPSin;            /* reference-time for pulsar parameters at the detector; will convert to SSB! */
@@ -578,55 +576,108 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
   SFTParams *pSFTParams = NULL;
   LIGOTimeGPSVector timestamps;
   SFTVector *outputSFTs = NULL;
-  REAL4 renorm;               /* Need to renormalize SFTs to account for different sample rates */
-
+  REAL4 renorm;               /* Need to renormalize SFTs to account for different sample rates */  
+  FFT **savBLKData = NULL;    /* 05/21/04 gam; save the input noise SFTs */
+  REAL8 **savSkyPosData;      /* 05/26/04 gam; save Sky Position Data */
+  REAL8 **savFreqDerivData;   /* 05/26/04 gam; save Frequency Derivative Data */
+  INT4 numSkyPosTotal = 0;    /* 05/26/04 gam; total number of Sky positions to cover */
+  INT4 numFreqDerivTotal = 0; /* 05/26/04 gam; total number of Frequency evolution models to cover */
+  INT4 numParamSpacePts = 0;  /* 05/26/04 gam; total number of points in the parameter space to cover */
+  INT4 numSUMsTotal = 0;      /* 05/26/04 gam; total Number of Sums output = numSUMsPerParamPt*numParamSpacePts */
+  INT4 numSUMsTotalm1 = -1;                 /* 05/26/04 gam */
+  INT4 numFreqDerivIncludingNoSpinDown = 0; /* 05/26/04 gam */
+  INT4 kSUM = 0;                            /* 05/26/04 gam */
+  INT4 iFreq = 0;                           /* 05/26/04 gam */  
+  REAL8 f0SUM = 0.0;                        /* 05/26/04 gam */
+  REAL8 bandSUM = 0.0;                      /* 05/26/04 gam */
+  INT4 nBinsPerSUM = 0;                     /* 05/26/04 gam */
+  INT4 nBinsPerSUMm1 = -1;                  /* 05/26/04 gam */
+                 
   INITSTATUS( status, "RunStackSlideMonteCarloSimulation", COMPUTESTACKSLIDESUMSC );
   ATTATCHSTATUSPTR(status);
-    
-  /* Function prototypes in GeneratePulsarSignal.h */ /* 
-  void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const PulsarSignalParams *params);
-  void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
-  void LALCreateSFTVector (LALStatus *stat, SFTVector **output, UINT4 numSFTs, UINT4 SFTlen);
-  void LALDestroySFTVector (LALStatus *stat, SFTVector **vect);
-  void LALConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
-  void LALConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
-  void LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect);
-  void LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition *posIn); */
-    
+  
+  /* 05/21/04 gam; save the input noise SFTs */
+  savBLKData=(FFT **)LALMalloc(params->numBLKs*sizeof(FFT *));
+  for (i=0;i<params->numBLKs;i++)
+  {
+        savBLKData[i]=(FFT *)LALMalloc(sizeof(FFT));
+        savBLKData[i]->fft=(COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries));
+        savBLKData[i]->fft->data=(COMPLEX8Vector *)LALMalloc(sizeof(COMPLEX8Vector));
+        savBLKData[i]->fft->data->data=(COMPLEX8 *)LALMalloc(params->nBinsPerBLK*sizeof(COMPLEX8));
+
+        savBLKData[i]->fft->epoch = params->BLKData[i]->fft->epoch;
+        savBLKData[i]->fft->f0 = params->BLKData[i]->fft->f0;
+        savBLKData[i]->fft->deltaF = params->BLKData[i]->fft->deltaF;
+        savBLKData[i]->fft->data->length = params->BLKData[i]->fft->data->length;
+        for(j=0;j<params->nBinsPerBLK;j++) {
+           savBLKData[i]->fft->data->data[j].re = params->BLKData[i]->fft->data->data[j].re;
+           savBLKData[i]->fft->data->data[j].im = params->BLKData[i]->fft->data->data[j].im;
+        }
+  }  
+ 
+  /* 05/21/04 gam; save the input skyPosData */
+  savSkyPosData=(REAL8 **)LALMalloc(params->numSkyPosTotal*sizeof(REAL8 *));
+  for(i=0;i<params->numSkyPosTotal;i++)
+  {
+        savSkyPosData[i] = (REAL8 *)LALMalloc(2*sizeof(REAL8));
+        savSkyPosData[i][0] = params->skyPosData[i][0];
+        savSkyPosData[i][1] = params->skyPosData[i][1];
+  }
+  /* reallocate memory for the skyPosData structure */
+  for(i=0;i<params->numSkyPosTotal;i++)
+  {
+      LALFree(params->skyPosData[i]);
+  }
+  LALFree(params->skyPosData);
+  numSkyPosTotal = params->numSkyPosTotal;  /* sav original number of sky positions */
+  params->numSkyPosTotal = 1;               /* Set up to run on one sky position at a time */
+  params->skyPosData=(REAL8 **)LALMalloc(params->numSkyPosTotal*sizeof(REAL8 *));
+  params->skyPosData[0] = (REAL8 *)LALMalloc(2*sizeof(REAL8));
+  
+  /* 05/21/04 gam; save the input freqDerivData */
+  if (params->numSpinDown > 0) {
+    savFreqDerivData=(REAL8 **)LALMalloc(params->numFreqDerivTotal*sizeof(REAL8 *));
+    for(i=0;i<params->numFreqDerivTotal;i++)
+    {
+        savFreqDerivData[i] = (REAL8 *)LALMalloc(params->numSpinDown*sizeof(REAL8));
+        for(j=0;j<params->numSpinDown;j++)
+        {
+          savFreqDerivData[i][j] = params->freqDerivData[i][j];
+        }
+    }
+    /* reallocate memory for the freqDerivData structure */
+    for(i=0;i<params->numFreqDerivTotal;i++)
+    {
+        LALFree(params->freqDerivData[i]);
+    }
+    LALFree(params->freqDerivData);
+    numFreqDerivTotal = params->numFreqDerivTotal;
+    params->numFreqDerivTotal = 1;
+    params->freqDerivData=(REAL8 **)LALMalloc(params->numFreqDerivTotal*sizeof(REAL8 *));
+    params->freqDerivData[0] = (REAL8 *)LALMalloc(params->numSpinDown*sizeof(REAL8));
+  }
+  numParamSpacePts = params->numParamSpacePts;
+  numSUMsTotal = params->numSUMsTotal;
+  params->numParamSpacePts = 1;
+  params->numSUMsTotal = 1;
+  if (numFreqDerivTotal != 0) {
+     numFreqDerivIncludingNoSpinDown = numFreqDerivTotal;
+  } else {
+     numFreqDerivIncludingNoSpinDown = 1;  /* Even if numSpinDown = 0 still need to count case of zero spindown. */
+  }
+  
+  /* Allocate memory for PulsarSignalParams and initialize */
   pPulsarSignalParams = (PulsarSignalParams *)LALMalloc(sizeof(PulsarSignalParams));
-    
-  /* pPulsarSignalParams->pulsar.tRef = ...;  Set this up last after pulsar.position, site, and ephemerides are set up. */
-        
-  pPulsarSignalParams->pulsar.position.longitude = params->skyPosData[0][0];
-  pPulsarSignalParams->pulsar.position.latitude = params->skyPosData[i][1];
   pPulsarSignalParams->pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
-  
-  pPulsarSignalParams->pulsar.psi = 0.0;
-  
-  cosIota = 1.0;
-  h_0 = params->threshold4;
-  pPulsarSignalParams->pulsar.aPlus = 0.5*h_0*(1.0 + cosIota*cosIota);
-  pPulsarSignalParams->pulsar.aCross = h_0*cosIota;
-  
-  pPulsarSignalParams->pulsar.phi0 = 0.0;
-  
-  pPulsarSignalParams->pulsar.f0 = params->f0SUM + params->bandSUM/4.0;
-    
   if (params->numSpinDown > 0) {
     LALDCreateVector(status->statusPtr, &(pPulsarSignalParams->pulsar.spindown),((UINT4)params->numSpinDown));
     CHECKSTATUSPTR (status);
-    for(i=0;i<params->numSpinDown;i++) {
-      pPulsarSignalParams->pulsar.spindown->data[i] = params->freqDerivData[0][i];
-    }
   } else {
     pPulsarSignalParams->pulsar.spindown = NULL;
-  }
-  
-  pPulsarSignalParams->orbit = NULL;
- 
-  pPulsarSignalParams->transfer = NULL;
-  
-  /* Set up pulsar.position, site, and ephemerides. */
+  }  
+  pPulsarSignalParams->orbit = NULL; 
+  pPulsarSignalParams->transfer = NULL;  
+  /* Set up pulsar site */
   if (strstr(params->IFO, "LHO")) {
        cachedDetector = lalCachedDetectors[LALDetectorIndexLHODIFF];
   } else if (strstr(params->IFO, "LLO")) {
@@ -642,107 +693,216 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
       /* ABORT( status, DRIVESTACKSLIDEH_EIFO, DRIVESTACKSLIDEH_MSGEIFO); */
   }    
   pPulsarSignalParams->site = &cachedDetector;     
-  pPulsarSignalParams->ephemerides = params->edat;  
-        
+  pPulsarSignalParams->ephemerides = params->edat;
   pPulsarSignalParams->startTimeGPS = params->actualStartTime;
   pPulsarSignalParams->duration = (UINT4)params->duration;
   pPulsarSignalParams->samplingRate = (REAL8)ceil(2.0*params->bandBLK); /* Make sampleRate an integer so that T*samplingRate = integer for integer T */
-  pPulsarSignalParams->fHeterodyne = params->f0BLK;
-  
+  pPulsarSignalParams->fHeterodyne = params->f0BLK;  
   /* Find the time at the SSB that corresponds to the arrive time at the detector of first data requested. */
   GPSin.gpsSeconds = (INT4)params->gpsStartTimeSec;     /* GPS start time of data requested seconds */
   GPSin.gpsNanoSeconds = (INT4)params->gpsStartTimeNan; /* GPS start time of data requested nanoseconds */
-  LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.tRef), GPSin, pPulsarSignalParams);
-  CHECKSTATUSPTR (status);
-  /* pPulsarSignalParams->pulsar.tRef = tRef; */
   
-  LALGeneratePulsarSignal(status->statusPtr, &signal, pPulsarSignalParams);
-  CHECKSTATUSPTR (status);
-  
-  #ifdef DEBUG_MONTECARLOTIMEDOMAIN_DATA
-    fprintf(stdout,"signal->deltaT = %23.10e \n",signal->deltaT);
-    fprintf(stdout,"signal->epoch.gpsSeconds = %i \n",signal->epoch.gpsSeconds);
-    fprintf(stdout,"signal->epoch.gpsNanoSeconds = %i \n",signal->epoch.gpsNanoSeconds);
-    fprintf(stdout,"pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate, signal->data->length = %g %i\n",pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate,signal->data->length);
-    fflush(stdout);
-  #endif    
-  #ifdef PRINT_MONTECARLOTIMEDOMAIN_DATA
-    for(i=0;i<signal->data->length;i++)  {
-      fprintf(stdout,"signal->data->data[%i] = %g\n",i,signal->data->data[i]);
-      fflush(stdout);
-    }
-  #endif
-      
+  /* Allocate memory for SFTParams and initialize */
   pSFTParams = (SFTParams *)LALMalloc(sizeof(SFTParams));
   pSFTParams->Tsft = params->tBLK;
   timestamps.length = params->numBLKs;
   timestamps.data = params->timeStamps; 
   pSFTParams->timestamps = &timestamps;
-  pSFTParams->noiseSFTs = NULL;
+  pSFTParams->noiseSFTs = NULL;  
   
-  LALSignalToSFTs(status->statusPtr, &outputSFTs, signal, pSFTParams);
-  CHECKSTATUSPTR (status);
-
-  #ifdef DEBUG_MONTECARLOSFT_DATA  
-    fprintf(stdout,"params->numBLKs, outputSFTs->length = %i, %i \n",params->numBLKs,outputSFTs->length);
-    fflush(stdout);
-    for(i=0;i<outputSFTs->length;i++) {
-      fprintf(stdout,"params->f0BLK, outputSFTs->data[%i].f0 = %g, %g\n",i,params->f0BLK,outputSFTs->data[i].f0);
-      fprintf(stdout,"params->tBLK, 1.0/outputSFTs->data[%i].deltaF = %g, %g\n",i,params->tBLK,1.0/outputSFTs->data[i].deltaF);
-      fprintf(stdout,"params->timeStamps[%i].gpsSeconds, outputSFTs->data[%i].epoch.gpsSeconds = %i, %i\n",i,i,params->timeStamps[i].gpsSeconds,outputSFTs->data[i].epoch.gpsSeconds);
-      fprintf(stdout,"params->timeStamps[%i].gpsNanoSeconds, outputSFTs->data[%i].epoch.gpsNanoSeconds = %i, %i\n",i,i,params->timeStamps[i].gpsNanoSeconds,outputSFTs->data[i].epoch.gpsNanoSeconds);
-      fprintf(stdout,"params->nBinsPerBLK, outputSFTs->data[%i].data->length = %i, %i\n",i,params->nBinsPerBLK,outputSFTs->data[i].data->length);
-      fflush(stdout);
-    }
-  #endif
-  #ifdef PRINT_MONTECARLOSFT_DATA
-    for(i=0;i<outputSFTs->length;i++) {
-      for(j=0;j<outputSFTs->data[i].data->length;j++) {
-        fprintf(stdout,"outputSFTs->data[%i].data->data[%i].re, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,outputSFTs->data[i].data->data[j].re,outputSFTs->data[i].data->data[j].im);
-        fflush(stdout);
+  /* 05/26/04 gam; initialize variables that keep track of which SUM we are working on */
+  params->startSUMs = 1;   /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
+  params->finishSUMs = 0;  /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
+  params->whichMCSUM = -1; /* 05/26/04 gam; which SUM the Monte Carlo Simulation is running on. Default is -1 */
+  numSUMsTotalm1 = numSUMsTotal - 1;  /* Index of last SUM */
+  
+  /* 05/26/04 gam; initialize variables that keep track of which frequency we are working on */  
+  f0SUM = params->f0SUM;
+  bandSUM = params->bandSUM;
+  nBinsPerSUM = params->nBinsPerSUM;  
+  nBinsPerSUMm1 = nBinsPerSUM - 1;
+  params->keepThisNumber = 1;      /* During MC only keep 1 event; this will be the injected event */
+  
+  /* check whether we are outputing just the loudest events */
+  if ( ((params->outputEventFlag & 2) > 0) && (params->thresholdFlag <= 0) ) {
+        params->bandSUM = params->dfSUM;
+        params->nBinsPerSUM = 1;
+  } else {
+     /* TO DO: MAYBE SHOULD ABORT ?? */
+  }
+    
+  /* 05/26/04 gam; MAIN MONTE CARLO LOOP OVER PARAMETER SPACE STARTS HERE */
+  for(kSUM=0;kSUM<numSUMsTotal;kSUM++) {
+  
+    params->whichMCSUM = kSUM; /* keep track in StackSlideApplySearch of which SUM we are injecting into. */  
+    
+    /* 05/26/04 gam; set up pointer to current sky position and spindown parameters */
+    i = kSUM/numFreqDerivIncludingNoSpinDown;   /* index to params->skyPosData for this SUM; */
+    j = kSUM % numFreqDerivIncludingNoSpinDown; /* index to params->freqDerivData for this SUM; */
+    params->skyPosData[0][0] = savSkyPosData[i][0];
+    params->skyPosData[0][1] = savSkyPosData[i][1];
+    pPulsarSignalParams->pulsar.position.longitude = params->skyPosData[0][0];
+    pPulsarSignalParams->pulsar.position.latitude = params->skyPosData[0][1];
+    if (params->numSpinDown > 0) {
+      for(k=0;k<params->numSpinDown;k++) {
+        params->freqDerivData[0][k] = savFreqDerivData[j][k];
+        pPulsarSignalParams->pulsar.spindown->data[k] = params->freqDerivData[0][k];
       }
     }
-  #endif
+    
+    pPulsarSignalParams->pulsar.psi = 0.0;
+      
+    cosIota = 1.0;
+    h_0 = params->threshold4;
+    pPulsarSignalParams->pulsar.aPlus = 0.5*h_0*(1.0 + cosIota*cosIota);
+    pPulsarSignalParams->pulsar.aCross = h_0*cosIota;
   
-  /* Add Injections to input data */
-  for(i=0;i<params->numBLKs;i++) {
-    renorm = ((REAL4)GV.nsamples)/((REAL4)outputSFTs->data[i].data->length); /* Should be the same for all SFTs, but just in case recompute. */
-    #ifdef DEBUG_MONTECARLOSFT_DATA  
-      fprintf(stdout,"Mutiplying outputSFTs->data[%i] with renorm = %g \n",i,renorm);
-      fflush(stdout);
-    #endif  
-    for(j=0;j<params->nBinsPerBLK;j++) {
-       #ifdef PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA
-         fprintf(stdout,"params->BLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,params->BLKData[i]->fft->data->data[j].re,renorm*outputSFTs->data[i].data->data[j].re);
-         fprintf(stdout,"params->BLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,params->BLKData[i]->fft->data->data[j].im,renorm*outputSFTs->data[i].data->data[j].im);
-         fflush(stdout);
-       #endif
-       params->BLKData[i]->fft->data->data[j].re += renorm*outputSFTs->data[i].data->data[j].re;
-       params->BLKData[i]->fft->data->data[j].re += renorm*outputSFTs->data[i].data->data[j].im;
-    }
-  }  
+    pPulsarSignalParams->pulsar.phi0 = 0.0;
+    
+    LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.tRef), GPSin, pPulsarSignalParams);
+    CHECKSTATUSPTR (status);
+    
+    /* 05/26/04 gam; MAIN MONTE CARLO LOOP OVER FREQUENCIES STARTS HERE */
+    for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) {
+    
+      if (iFreq > 0) {
+        params->startSUMs = 0;  /* Indicate that SUMs already started */
+      }
+    
+      if ((kSUM == numSUMsTotalm1) && (iFreq == nBinsPerSUMm1)) {
+          params->finishSUMs = 1;  /* This is the last injection */
+      }
+       
+      /* pPulsarSignalParams->pulsar.f0 = params->f0SUM + params->bandSUM/4.0; */
+      pPulsarSignalParams->pulsar.f0 = f0SUM + iFreq*params->dfSUM;
+      
+      /* check whether we are outputing just the loudest events */
+      if ( ((params->outputEventFlag & 2) > 0) && (params->thresholdFlag <= 0) ) {
+        params->f0SUM = pPulsarSignalParams->pulsar.f0;
+      } else {
+        /* TO DO: MAYBE SHOULD ABORT ABOVE AND ALWAY SET params->f0SUM as above ?? */
+      }
+      #ifdef DEBUG_MONTECARLOTIMEDOMAIN_DATA
+        fprintf(stdout,"iFreq = %i, params->f0SUM = %23.10e, pPulsarSignalParams->pulsar.f0 = %23.10e \n",iFreq,params->f0SUM,pPulsarSignalParams->pulsar.f0);
+        fprintf(stdout,"nBinsPerSUM = %i, params->nBinsPerSUM = %i\n",nBinsPerSUM,params->nBinsPerSUM);
+        fflush(stdout);	
+      #endif
+            
+      signal = NULL; /* Call LALGeneratePulsarSignal to generate signal */
+      LALGeneratePulsarSignal(status->statusPtr, &signal, pPulsarSignalParams);
+      CHECKSTATUSPTR (status);
   
-  LALDestroySFTVector(status->statusPtr, &outputSFTs);
-  LALFree(pPulsarSignalParams);
+      #ifdef DEBUG_MONTECARLOTIMEDOMAIN_DATA
+        fprintf(stdout,"signal->deltaT = %23.10e \n",signal->deltaT);
+        fprintf(stdout,"signal->epoch.gpsSeconds = %i \n",signal->epoch.gpsSeconds);
+        fprintf(stdout,"signal->epoch.gpsNanoSeconds = %i \n",signal->epoch.gpsNanoSeconds);
+        fprintf(stdout,"pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate, signal->data->length = %g %i\n",pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate,signal->data->length);
+        fflush(stdout);
+      #endif
+      #ifdef PRINT_MONTECARLOTIMEDOMAIN_DATA
+        for(i=0;i<signal->data->length;i++)  {
+          fprintf(stdout,"signal->data->data[%i] = %g\n",i,signal->data->data[i]);
+          fflush(stdout);
+        }
+      #endif
+    
+      outputSFTs = NULL; /* Call LALSignalToSFTs to generate outputSFTs with injection data */
+      LALSignalToSFTs(status->statusPtr, &outputSFTs, signal, pSFTParams);
+      CHECKSTATUSPTR (status);
 
-  LALFree(signal->data->data);
-  LALFree(signal->data);
-  LALFree(signal);
-  
-  LALFree(pSFTParams);  
+      #ifdef DEBUG_MONTECARLOSFT_DATA  
+        fprintf(stdout,"params->numBLKs, outputSFTs->length = %i, %i \n",params->numBLKs,outputSFTs->length);
+        fflush(stdout);
+        for(i=0;i<outputSFTs->length;i++) {
+          fprintf(stdout,"params->f0BLK, outputSFTs->data[%i].f0 = %g, %g\n",i,params->f0BLK,outputSFTs->data[i].f0);
+          fprintf(stdout,"params->tBLK, 1.0/outputSFTs->data[%i].deltaF = %g, %g\n",i,params->tBLK,1.0/outputSFTs->data[i].deltaF);
+          fprintf(stdout,"params->timeStamps[%i].gpsSeconds, outputSFTs->data[%i].epoch.gpsSeconds = %i, %i\n",i,i,params->timeStamps[i].gpsSeconds,outputSFTs->data[i].epoch.gpsSeconds);
+          fprintf(stdout,"params->timeStamps[%i].gpsNanoSeconds, outputSFTs->data[%i].epoch.gpsNanoSeconds = %i, %i\n",i,i,params->timeStamps[i].gpsNanoSeconds,outputSFTs->data[i].epoch.gpsNanoSeconds);
+          fprintf(stdout,"params->nBinsPerBLK, outputSFTs->data[%i].data->length = %i, %i\n",i,params->nBinsPerBLK,outputSFTs->data[i].data->length);
+          fflush(stdout);
+        }
+      #endif
+      #ifdef PRINT_MONTECARLOSFT_DATA
+        for(i=0;i<outputSFTs->length;i++) {
+          for(j=0;j<outputSFTs->data[i].data->length;j++) {
+            fprintf(stdout,"outputSFTs->data[%i].data->data[%i].re, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,outputSFTs->data[i].data->data[j].re,outputSFTs->data[i].data->data[j].im);
+            fflush(stdout);
+          }
+        }
+      #endif
+    
+      /* Add Injections to input data */
+      /* 05/21/04 gam; Normalize the SFTs from LALSignalToSFTs as per the normalization in makefakedata_v2.c and lalapps/src/pulsar/make_sfts.c. */
+      renorm = ((REAL4)GV.nsamples)/((REAL4)(outputSFTs->data[0].data->length - 1)); /* 05/21/04 gam; should be the same for all outputSFTs; note minus 1 is needed */
+      for(i=0;i<params->numBLKs;i++) {
+        /* renorm = ((REAL4)GV.nsamples)/((REAL4)outputSFTs->data[i].data->length); */ /* 05/21/04 gam; do once correctly above */ /* Should be the same for all SFTs, but just in case recompute. */
+        #ifdef DEBUG_MONTECARLOSFT_DATA  
+          fprintf(stdout,"Mutiplying outputSFTs->data[%i] with renorm = %g \n",i,renorm);
+          fflush(stdout);
+        #endif  
+        for(j=0;j<params->nBinsPerBLK;j++) {
+           #ifdef PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA
+             fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].re,renorm*outputSFTs->data[i].data->data[j].re);
+             fprintf(stdout,"savBLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,savBLKData[i]->fft->data->data[j].im,renorm*outputSFTs->data[i].data->data[j].im);
+             fflush(stdout);
+           #endif
+           /* 05/21/04 gam; changed next two lines so that params->BLKData is sum of saved noise SFTs and SFTs with injection data. */
+           params->BLKData[i]->fft->data->data[j].re = savBLKData[i]->fft->data->data[j].re + renorm*outputSFTs->data[i].data->data[j].re;
+           params->BLKData[i]->fft->data->data[j].im = savBLKData[i]->fft->data->data[j].im + renorm*outputSFTs->data[i].data->data[j].im;
+        }
+      }
+    
+      LALDestroySFTVector(status->statusPtr, &outputSFTs);
+
+      LALFree(signal->data->data);
+      LALFree(signal->data);
+      LALFree(signal);
+                        
+      StackSlideApplySearch(status->statusPtr,params);
+      CHECKSTATUSPTR (status);
         
+    } /* END for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) */
+    /* 05/26/04 gam; MAIN MONTE CARLO LOOP OVER FREQUENCIES STARTS HERE */
+
+  } /* END for(kSUM=0;kSUM<numSUMsTotal;kSUM++) */
+  /* 05/26/04 gam; MAIN MONTE CARLO LOOP OVER PARAMETER SPACE ENDS HERE */
+
+  LALFree(pSFTParams);
+      
   if (params->numSpinDown > 0) {
     LALDDestroyVector(status->statusPtr, &(pPulsarSignalParams->pulsar.spindown));
     CHECKSTATUSPTR (status);
   }
   LALFree(pPulsarSignalParams);
-#endif
-          
-  StackSlideApplySearch(status->statusPtr,params);
+        
+  /* 05/21/04 gam; free memory of saved data */
+  for (i=0;i<params->numBLKs;i++) {
+      LALFree(savBLKData[i]->fft->data->data);
+      LALFree(savBLKData[i]->fft->data);
+      LALFree(savBLKData[i]->fft);
+      LALFree(savBLKData[i]);
+  }
+  LALFree(savBLKData);
+  
+  /* deallocate memory for the savSkyPosData structure */
+  for(i=0;i<numSkyPosTotal;i++)
+  {
+      LALFree(savSkyPosData[i]);
+  }
+  LALFree(savSkyPosData);
+  
+  if (params->numSpinDown > 0) {
+    /* deallocate memory for the savFreqDerivData structure */
+    for(i=0;i<numFreqDerivTotal;i++)
+    {
+        LALFree(savFreqDerivData[i]);
+    }
+    LALFree(savFreqDerivData);
+  }
+  
   CHECKSTATUSPTR (status);
-    
-  CHECKSTATUSPTR (status);
-  DETATCHSTATUSPTR (status);          
+  DETATCHSTATUSPTR (status);
+#endif  
 }
 /*********************************************************/
 /*                                                       */

@@ -52,6 +52,8 @@
 /* 04/15/04 gam; Add debugOptionFlag to struct StackSlideSkyPatchParams */
 /* 04/26/04 gam; Change LALStackSlide to StackSlide and LALSTACKSLIDE to STACKSLIDE for initial entry to LALapps. */
 /* 05/05/04 gam; Change params->normalizationThreshold to params->normalizationParameter.  If normalizing with running median use this to correct bias in median to get mean. */
+/* 05/26/04 gam; Change finishedSUMs to finishedSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
+/* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
 
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -571,8 +573,12 @@ typedef struct tagStackSlideSearchParams {
   EphemerisData *edat; /* 07/10/02 gam Add EphemerisData *edat = pointer to ephemeris data to StackSlideSearchParams */
 
   BOOLEAN finishedBLKs;   /* Set equal to true when all BLKS for this job have been found in input data */
-  BOOLEAN finishedSTKs;   /* Set equal to true when all STKs for this job have been created */
-  BOOLEAN finishedSUMs;   /* Set equal to true when all BLKS for this job have been created */
+  BOOLEAN finishedSTKs;   /* Set equal to true when all STKS for this job have been created */
+  /* BOOLEAN finishedSUMs; */ /* 05/26/04 gam */
+  BOOLEAN startSUMs;    /* 05/26/04 gam; use to control I/O during Monte Carlo  */
+  BOOLEAN finishSUMs;   /* 05/26/04 gam; use to control I/O during Monte Carlo  */
+
+  INT4 whichMCSUM;      /* 05/26/04 gam; which SUM the Monte Carlo Simulation is running on. */
 
   INT4 whichSTK;          /* which STK does BLK go with  */
   INT4 lastWhichSTK;      /* Last value of whichSTK does BLK go with  */
