@@ -826,6 +826,38 @@ int main( int argc, char *argv[] )
 		      LIGOMETA_IFO_MAX ) )
 		  {
 		    knownIFO = 1;
+		    if ( slideDataNS && j == 1)
+		    {
+		      INT8 startNS = 0;
+		      INT8 endNS = 0;
+		      
+		      if ( vrbflg ) fprintf( stdout, 
+			  "Doing a time slide of %d sec %d nanosec on IFOB\n",
+			  slideData.gpsSeconds, slideData.gpsNanoSeconds );
+
+		      LAL_CALL( LALGPStoINT8( &status, &startNS, 
+			&(thisSummValue->start_time) ), &status );
+		      startNS += slideDataNS;
+		      LAL_CALL( LALINT8toGPS( &status, 
+			&(thisSummValue->start_time), &startNS ), &status );
+
+		      LAL_CALL( LALGPStoINT8( &status, &endNS, 
+			&(thisSummValue->end_time) ), &status );
+		      endNS += slideDataNS;
+		      LAL_CALL( LALINT8toGPS( &status, 
+			&(thisSummValue->end_time), &endNS ), &status );
+		      if ( vrbflg ) 
+		      {
+			fprintf( stdout, "inspiral effective distance of %f ", 
+			  thisSummValue->value );
+			fprintf( stdout, "now valid from %d sec %d nanosec\n",
+			  thisSummValue->start_time.gpsSeconds, 
+			  thisSummValue->start_time.gpsNanoSeconds);
+			fprintf( stdout, "to %d sec %d nanosec\n",
+			  thisSummValue->end_time.gpsSeconds, 
+			  thisSummValue->end_time.gpsNanoSeconds);
+		      }		
+		    }
 
 		    if ( ! inspEffRange[j] )
 		    {
