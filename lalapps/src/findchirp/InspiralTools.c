@@ -93,11 +93,11 @@ INT4 lalDebugLevel=1;
 
 
 typedef enum{
-  WAVEFORM  = 0, Waveform = 0, waveform = 0,
-    OVERLAP = 1, Overlap = 1, overlap = 1 ,
-    LENGTH  = 2, Length =2, 
-    CONVERSION = 3, Conversion = 3, conversion = 3,
-    LASTFREQ = 4
+	WAVEFORM  = 0, Waveform = 0, waveform = 0,
+	OVERLAP = 1, Overlap = 1, overlap = 1 ,
+	LENGTH  = 2, Length =2, 
+	CONVERSION = 3, Conversion = 3, conversion = 3,
+	LASTFREQ = 4
 } Tools; 
 
 
@@ -212,14 +212,7 @@ void Init2DummyInspiralTemplate(InspiralTemplate *params)
   params->Theta       = -1;
   params->totalMass   = -1;
   params->tSampling   = -1;
-    params->Zeta2       = -1;
-
-
-
-
-
-
-
+  params->Zeta2       = -1;
 }
 
 
@@ -599,11 +592,11 @@ void printf_timeseries (int n, float *signal, double delta, double t0)
   int i=0;
   FILE *outfile1;
 
-  outfile1=fopen("wave1.dat","a");
+  outfile1 = fopen("wave1.dat", "a");
 
   do 
      fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i));
-  while (n-++i); 
+  while (n > ++i); 
 
   fprintf(outfile1,"&\n");
   fclose(outfile1);
