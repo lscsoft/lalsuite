@@ -87,7 +87,7 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_MSGERANGEGPSABS "Input time out of range: only able to accurately convert times between 1980-Jan-06 00:00:00 UTC (GPS 0) and 2002-Mar-31 23:59:00 UTC (GPS 701654353)"
 #define DATEH_MSGEBUFFTOOSMALL "Output timestamp string too small: min. size = 26"
 #define DATEH_MSGEASCTIMEFAIL "asctimeUNDERSCOREr() failed"
-#define DATEH_MSGEGPSDATETOOEARLY "Date too early: GPS time only defined for times on or after 1980-Jan-06 00:00:00"
+#define DATEH_MSGEGPSDATETOOEARLY "Date too early: GPS time only defined for times on or after 1980-Jan-06 00:00:00 UTC"
     
 
 /* </lalErrTable>
