@@ -977,39 +977,6 @@ static REAL8 cc_statistic(COMPLEX8FrequencySeries *cc_spectra)
   return(cc_stat);
 }
 
-/* wrapper function to construct cross correlation spectrum from input
- * time series */
-static COMPLEX8FrequencySeries *construct_cc_spectrum(LALStatus *status,
-    REAL4TimeSeries *segment_one,
-    REAL4TimeSeries *segment_two,
-    COMPLEX8FrequencySeries *response_one,
-    COMPLEX8FrequencySeries *response_two,
-    REAL4FrequencySeries *opt_filter,
-    UINT4 length,
-    REAL4Window *window)
-{
-  /* variables */
-  COMPLEX8FrequencySeries *zero_pad_one = NULL;
-  COMPLEX8FrequencySeries *zero_pad_two = NULL;
-  COMPLEX8FrequencySeries *cc_spectra = NULL;
-
-  /* zero pad and fft */
-  zero_pad_one = zero_pad_and_fft(status, segment_one, \
-      opt_filter->deltaF, length, window);
-  zero_pad_two = zero_pad_and_fft(status, segment_two, \
-      opt_filter->deltaF, length, window);
-
-  /* calculate cc spectrum */
-  cc_spectra = cc_spectrum(status, zero_pad_one, zero_pad_two, \
-      response_one, response_two, opt_filter);
-
-  /* destory zero pad structures */
-  XLALDestroyCOMPLEX8FrequencySeries(zero_pad_one);
-  XLALDestroyCOMPLEX8FrequencySeries(zero_pad_two);
-
-  return(cc_spectra);
-}
-
 /* helper function to save out xml tables */
 static void save_xml_file(LALStatus *status,
     LALLeapSecAccuracy accuracy,
@@ -2121,6 +2088,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* gravitational wave spectrum */
   REAL4FrequencySeries *omegaGW;
 
+  /* zero pad and fft */
+  COMPLEX8FrequencySeries *zeroPadOne = NULL;
+  COMPLEX8FrequencySeries *zeroPadTwo = NULL;
+
   /* cross correlation spectrum */
   COMPLEX8FrequencySeries *ccSpectrum = NULL;
 
@@ -2391,12 +2362,20 @@ INT4 main(INT4 argc, CHAR *argv[])
         segmentDuration);
 
     if (vrbflg)
-      fprintf(stdout, "Constructing cross correlation spectrum...\n");
+      fprintf(stdout, "Performing zero pad and FFT...\n");
 
-    /* construct cc spectrum */
-    ccSpectrum = construct_cc_spectrum(&status, segmentOne, segmentTwo, \
-        responseOne, responseTwo, optFilter, segmentLength + 1, \
-        dataWindow);
+    /* zero pad and fft */
+    zeroPadOne = zero_pad_and_fft(&status, segmentOne, deltaF, \
+        segmentLength + 1, dataWindow);
+    zeroPadTwo = zero_pad_and_fft(&status, segmentTwo, deltaF, \
+        segmentLength + 1, dataWindow);
+
+    if (vrbflg)
+      fprintf(stdout, "Calculating cross correlation spectrum...\n");
+
+    /* calculate cc spectrum */
+    ccSpectrum = cc_spectrum(&status, zeroPadOne, zeroPadTwo, \
+        responseOne, responseTwo, optFilter);
 
     if (cc_spectra_flag)
     {
@@ -2464,6 +2443,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   XLALDestroyREAL4FrequencySeries(overlap);
   XLALDestroyREAL4FrequencySeries(omegaGW);
   XLALDestroyREAL4Window(dataWindow);
+  XLALDestroyCOMPLEX8FrequencySeries(zeroPadOne);
+  XLALDestroyCOMPLEX8FrequencySeries(zeroPadTwo);
+  XLALDestroyCOMPLEX8FrequencySeries(ccSpectrum);
 
   /* free memory used in the stochastic xml table */
   while (stochHead)
