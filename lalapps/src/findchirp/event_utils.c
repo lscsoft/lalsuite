@@ -19,6 +19,7 @@ NRCSID (EVENT_UTILSC, "$Id$");
 #include <stdlib.h>
 #include <string.h>
 #include <lal/Thresholds.h>
+#include <lal/Date.h>
 #include "metaio.h"
 #include "donald.h"
 #include "event_utils.h"
@@ -150,6 +151,83 @@ getSnglInspiralEvent(
       triggerEnv->ligo_lw.table.elt[params->chisq_dofIndex].data.real_4;  
   inspiralEvent->sigmasq = 
       triggerEnv->ligo_lw.table.elt[params->sigmasqIndex].data.real_8;  
+  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+void
+buildSimInspiralIndex(
+        LALStatus             *status,
+        const MetaioParseEnv   triggerEnv,
+        SimInspiralIndex        *params
+        )
+{
+
+  INITSTATUS (status, "buildSnglInspiralIndex", EVENT_UTILSC);
+  ATTATCHSTATUSPTR (status);
+
+  params->geocent_end_timeIndex = MetaioFindColumn( triggerEnv, "geocent_end_time");
+  params->geocent_end_time_nsIndex = MetaioFindColumn( triggerEnv, "geocent_end_time_ns");
+  params->end_time_gmstIndex = MetaioFindColumn( triggerEnv, "end_time_gmst");
+  params->sourceIndex = MetaioFindColumn( triggerEnv, "source");
+  params->mtotalIndex = MetaioFindColumn( triggerEnv, "mtotal");
+  params->etaIndex = MetaioFindColumn( triggerEnv, "eta");
+  params->distanceIndex = MetaioFindColumn( triggerEnv, "distance");
+  params->longitudeIndex = MetaioFindColumn( triggerEnv, "longitude");
+  params->latitudeIndex = MetaioFindColumn( triggerEnv, "latitude");
+  params->inclinationIndex = MetaioFindColumn( triggerEnv, "inclination");
+  params->coa_phaseIndex = MetaioFindColumn( triggerEnv, "coa_phase");
+  params->polarizationIndex = MetaioFindColumn( triggerEnv, "polarization");
+  params->eff_dist_hIndex = MetaioFindColumn( triggerEnv, "eff_dist_h");
+  params->eff_dist_lIndex = MetaioFindColumn( triggerEnv, "eff_dist_l");
+  params->simulation_idIndex = MetaioFindColumn( triggerEnv, "simulation_id");
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+void
+getSimInspiralVars(
+        LALStatus                *status,
+        const MetaioParseEnv      triggerEnv,
+        SimInspiralTable        *inspiralEvent,
+        SimInspiralIndex        *params
+        )
+{
+
+  INITSTATUS (status, "getSimInspiralVars", EVENT_UTILSC);
+  ATTATCHSTATUSPTR (status);
+  
+  inspiralEvent->geocent_end_time.gpsSeconds = 
+      triggerEnv->ligo_lw.table.elt[params->geocent_end_timeIndex].data.int_4s;  
+  inspiralEvent->geocent_end_time.gpsNanoSeconds = 
+      triggerEnv->ligo_lw.table.elt[params->geocent_end_time_nsIndex].data.int_4s;  
+  inspiralEvent->end_time_gmst = 
+      triggerEnv->ligo_lw.table.elt[params->end_time_gmstIndex].data.real_4;  
+  strcpy(inspiralEvent->source,
+          triggerEnv->ligo_lw.table.elt[params->sourceIndex].data.lstring.data);
+  inspiralEvent->mtotal = 
+      triggerEnv->ligo_lw.table.elt[params->mtotalIndex].data.real_4;  
+  inspiralEvent->eta = 
+      triggerEnv->ligo_lw.table.elt[params->etaIndex].data.real_4;  
+  inspiralEvent->distance = 
+      triggerEnv->ligo_lw.table.elt[params->distanceIndex].data.real_4;  
+  inspiralEvent->longitude = 
+      triggerEnv->ligo_lw.table.elt[params->longitudeIndex].data.real_4;  
+  inspiralEvent->latitude = 
+      triggerEnv->ligo_lw.table.elt[params->latitudeIndex].data.real_4;  
+  inspiralEvent->inclination = 
+      triggerEnv->ligo_lw.table.elt[params->inclinationIndex].data.real_4;  
+  inspiralEvent->coa_phase = 
+      triggerEnv->ligo_lw.table.elt[params->coa_phaseIndex].data.real_4;  
+  inspiralEvent->polarization = 
+      triggerEnv->ligo_lw.table.elt[params->polarizationIndex].data.real_4;  
+  inspiralEvent->eff_dist_h = 
+      triggerEnv->ligo_lw.table.elt[params->eff_dist_hIndex].data.real_4;  
+  inspiralEvent->eff_dist_l = 
+      triggerEnv->ligo_lw.table.elt[params->eff_dist_lIndex].data.real_4;  
   
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1047,6 +1125,7 @@ LALSortTriggers (
 
           /* allocate memory for array of pointers to tiles */
           events = NULL;
+          fprintf(stderr,"numEvents=%i\n",numEvents);
           events = (candEvent **) LALMalloc (numEvents * sizeof(candEvent *));
 
           /*  Make sure that the allocation was succesful */
@@ -1101,4 +1180,148 @@ LALSortTriggers (
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
+
+
+
+static int EventCompareTime( const void *t1, const void *t2 )
+{
+  static LALStatus   stat;
+  SnglInspiralTable * const *event1 = t1;
+  SnglInspiralTable * const *event2 = t2;
+  INT8 time1, time2;
+
+  
+  LALGPStoINT8(&stat, &time1, &((*event1)->end_time));
+  LALGPStoINT8(&stat, &time2, &((*event2)->end_time));
+  if ( time1 > time2 )
+    return 1;
+  if ( time1 < time2 )
+    return -1;
+  return 0;
+}
+
+/******** <lalVerbatim file="SortTFTilingCP"> ********/
+void
+LALSortSnglInspiralTable (
+	      LALStatus         *status,
+              SnglInspiralTable *inspiralEvent,
+              INT4               numEvents
+	      )
+/******** </lalVerbatim> ********************************/
+{
+  INT4                   eventCount;
+  INT4                   i,inject;
+  SnglInspiralTable     *thisEvent=NULL;
+  SnglInspiralTable    **events=NULL;
+
+  INITSTATUS (status, "LALSortSnglInspiralTable", EVENT_UTILSC);
+  ATTATCHSTATUSPTR (status);
+
+  /* make sure that arguments are not NULL */
+
+
+  /* 
+   *
+   *  Make an array of pointers to be used to sort the tiles.
+   *
+   */
+
+  /* allocate memory for array of pointers to tiles */
+  events = NULL;
+  events = (SnglInspiralTable **) 
+      LALMalloc (numEvents * sizeof(SnglInspiralTable *));
+
+  /*  Make sure that the allocation was succesful */
+  if ( !(events) ){
+      ABORT (status, EVENTUTILSH_ENULLP, EVENTUTILSH_MSGENULLP);
+  }
+
+  /* copy out pointers into array */
+  eventCount=0;
+  thisEvent = inspiralEvent;
+  while (thisEvent != NULL)
+  {
+      eventCount++;
+      *(events + eventCount-1) = thisEvent;
+      thisEvent = thisEvent->next;
+  }
+
+  qsort( events, numEvents, sizeof( SnglInspiralTable * ), EventCompareTime );
+
+  /* copy sorted array back into linked list */
+  { 
+      SnglInspiralTable **currentEvent = NULL;
+
+      thisEvent = inspiralEvent;
+      currentEvent = &(thisEvent);
+
+      eventCount=0;
+      while (eventCount < numEvents)
+      {
+          *currentEvent = *(events + eventCount);
+          eventCount++;
+          currentEvent = &((*currentEvent)->next);
+      }
+
+      /* correctly terminate the linked list */
+      *currentEvent = NULL;
+  }
+
+  LALFree (events);
+
+  /* normal exit */
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
+
+void
+LALClusterSnglInspiralTable (
+	      LALStatus         *status,
+              SnglInspiralTable *inspiralEvent,
+              INT4              dtime
+	      )
+{
+  SnglInspiralTable     *thisEvent=NULL,*prevEvent=NULL;
+
+  INITSTATUS (status, "LALClusterSnglInspiralTable", EVENT_UTILSC);
+  ATTATCHSTATUSPTR (status);
+
+  thisEvent = inspiralEvent->next;
+  prevEvent = inspiralEvent;
+  while (thisEvent != NULL)
+  {
+      INT8 currTime, prevTime;
+
+      /* compute the time in nanosec for each event trigger */
+      LALGPStoINT8(status->statusPtr, &currTime, &(thisEvent->end_time));
+      CHECKSTATUSPTR(status);
+      LALGPStoINT8(status->statusPtr, &prevTime, &(prevEvent->end_time));
+      CHECKSTATUSPTR(status);
+
+      /* find events within the cluster window */
+      if ( (currTime - prevTime) < 1000000LL * dtime){
+          /* displace previous event in cluster ...... */
+          if(thisEvent->snr > prevEvent->snr &&
+                  thisEvent->chisq < prevEvent->chisq){
+              memcpy( prevEvent, thisEvent, sizeof(SnglInspiralTable));
+          }
+          /* otherwise just dump this event from cluster */
+              prevEvent->next = thisEvent->next;
+              LALFree(thisEvent);
+              thisEvent = prevEvent->next;
+      }
+      else {
+          /* otherwise we keep this unique event trigger */
+          prevEvent = thisEvent;
+          thisEvent = thisEvent->next;
+      }
+  }
+
+  /* normal exit */
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
 

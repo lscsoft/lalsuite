@@ -41,6 +41,28 @@ tagSnglInspiralIndex
 }
 SnglInspiralIndex;
 
+typedef struct
+tagSimInspiralIndex
+{
+    INT4 geocent_end_timeIndex;
+    INT4 geocent_end_time_nsIndex;
+    INT4 end_time_gmstIndex;
+    INT4 sourceIndex;
+    INT4 mtotalIndex;
+    INT4 etaIndex;
+    INT4 distanceIndex;
+    INT4 longitudeIndex;
+    INT4 latitudeIndex;
+    INT4 inclinationIndex;
+    INT4 coa_phaseIndex;
+    INT4 polarizationIndex;
+    INT4 eff_dist_hIndex;
+    INT4 eff_dist_lIndex;
+    INT4 simulation_idIndex;
+}
+SimInspiralIndex;
+
+    
 
 typedef struct
 tagSearchSummaryIndex
@@ -178,4 +200,17 @@ getSnglInspiralEvent(
         );
 
 
+void
+LALSortSnglInspiralTable (
+	      LALStatus         *status,
+              SnglInspiralTable *inspiralEvent,
+              INT4               numEvents
+	      );
+
+void
+LALClusterSnglInspiralTable (
+	      LALStatus         *status,
+              SnglInspiralTable *inspiralEvent,
+              INT4              dtime
+	      );
 

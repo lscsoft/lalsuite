@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <lal/LALStdlib.h>
+#include <lal/Date.h>
 #include <lal/LIGOLwXML.h>
 #include <lalapps.h>
 #include "event_utils.h"
@@ -12,7 +13,7 @@ RCSID("$Id$");
 
 /* Usage format string. */
 #define USAGE "Usage: %s --input infile --table tablename --outfile filename \
-    [--snrstar snrstar] [--noplayground] [--help]\n"
+    [--snrstar snrstar] [--noplayground] [--sort] [--cluster msec] [--help]\n"
 
 #define SNGLINSPIRALREADER_EARG   1
 #define SNGLINSPIRALREADER_EROW   2
@@ -78,16 +79,20 @@ int main(int argc, char **argv)
     FILE                     *fpin=NULL;
     INT4                     fileCounter=0;
     BOOLEAN                  playground=TRUE;
+    INT4                     sort=FALSE;
+    INT4                     cluster=FALSE;
 
-    REAL4                    snrstar;
-    BOOLEAN                  checkMasses;
-    REAL4                    mass1,mass2,dm;
+    REAL4                    snrstar=0.0;
+    BOOLEAN                  checkMasses=FALSE;
+    REAL4                    mass1=0.0,mass2=0.0,dm=0.0;
+    INT4                     dtime=0;
 
     CHAR                     inputfile[MAXSTR],line[MAXSTR];
 
     CHAR                     *tablename=NULL;
     CHAR                     *outfileName=NULL;
     const CHAR               *searchSummaryName="search_summary";
+    const CHAR               *snglInspiralName="sngl_inspiral";
     SearchSummaryIndex        searchSummaryIndex;
     SearchSummaryTable        searchSummaryTable;
     SnglInspiralIndex         tableIndex;
@@ -96,6 +101,7 @@ int main(int argc, char **argv)
     MetadataTable             myTable;
     LIGOLwXMLStream           xmlStream;
     INT4                      i;
+    INT4                      numEvents;
 
     struct MetaioParseEnvironment triggerParseEnv;
     const MetaioParseEnv triggerEnv = &triggerParseEnv;
@@ -137,6 +143,17 @@ int main(int argc, char **argv)
         else if ( !strcmp( argv[inarg], "--snrstar" ) ) {
             inarg++;
             snrstar = atof(argv[inarg++]);
+        }
+        /* select events with SNR > snrstar */
+        else if ( !strcmp( argv[inarg], "--cluster" ) ) {
+            inarg++;
+            dtime = atoi(argv[inarg++]);
+            cluster = TRUE;
+        }
+        /* select events with SNR > snrstar */
+        else if ( !strcmp( argv[inarg], "--sort" ) ) {
+            inarg++;
+            sort = TRUE;
         }
         /* specify template masses & error */
         else if ( !strcmp( argv[inarg], "--template" ) ) {
@@ -186,7 +203,7 @@ int main(int argc, char **argv)
     * initialize things
     *******************************************************************/
     lal_errhandler = LAL_ERR_EXIT;
-    set_debug_level( "3" );
+    set_debug_level( "33" );
     memset( &inspiralEvent, 0, sizeof(inspiralEvent) );
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
 
@@ -216,10 +233,15 @@ int main(int argc, char **argv)
         if ( (retVal = MetaioOpenTable( triggerEnv, line, searchSummaryName)) !=0 ){
             fprintf(stderr, "Error opening injection file %s for %s\n", 
                     line, searchSummaryName );
+            if (fileCounter>1){
             MetaioAbort( triggerEnv ); 
             exit(SNGLINSPIRALREADER_EFILE);
+            } else {
+                fprintf(stderr,"Proceeding anyway\n");
+            }
         }
 
+        if ( !retVal ){
         /* get the search summary table */
         LAL_CALL( buildSearchSummaryIndex(&stat, triggerEnv, &searchSummaryIndex), 
                 &stat);
@@ -246,6 +268,7 @@ int main(int argc, char **argv)
 
         /* close the stream */
         MetaioAbort( triggerEnv );
+        }
         
         /* open xml file at inspiral table */
         if ( (retVal = MetaioOpenTable( triggerEnv, line, tablename)) !=0 ){
@@ -257,6 +280,7 @@ int main(int argc, char **argv)
         /* Locate the relevant columns in the inspiral table */
         buildSnglInspiralIndex(&stat, triggerEnv, &tableIndex);
 
+        numEvents=0;
         /* Loop over the triggers */
         while (1) {
 
@@ -284,6 +308,7 @@ int main(int argc, char **argv)
             if (inspiralEvent.snr < snrstar){
                 continue;
             }
+
             
             /* allocate memory for the inspiral event */
             if ( (inspiralEventList) == NULL )
@@ -293,7 +318,7 @@ int main(int argc, char **argv)
             }
             else 
             {
-                currentEvent = 
+                currentEvent =
                     (SnglInspiralTable *) LALMalloc( sizeof(SnglInspiralTable) );
             }
 
@@ -305,11 +330,25 @@ int main(int argc, char **argv)
             if (prevEvent != NULL) prevEvent->next = currentEvent;
             prevEvent = currentEvent;
             currentEvent = currentEvent->next;
+
+            numEvents++;
         }
 
         MetaioAbort(triggerEnv);
 
-        /* Write the results to the burst table */
+        /* sort the events */
+        if (sort){
+            LAL_CALL( LALSortSnglInspiralTable( &stat, inspiralEventList,
+                        numEvents), &stat);
+        }
+
+        /* cluster the events */
+        if ( cluster && inspiralEventList){
+            LAL_CALL( LALClusterSnglInspiralTable( &stat, inspiralEventList,
+                        dtime), &stat);
+        }
+
+        /* Write the results to the inspiral table */
         myTable.snglInspiralTable = inspiralEventList;
         LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable, 
                     sngl_inspiral_table), &stat);
