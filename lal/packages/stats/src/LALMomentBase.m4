@@ -31,7 +31,7 @@ void FUNC (
 	ASSERT ( result, status, LALMOMENTH_ENULL, LALMOMENTH_MSGENULL);
 
 	/*  whichMoment must be greater than 1  */
-	ASSERT ( whichMoment > 1, status, LALMOMENTH_ENULL, LALMOMENTH_MSGENULL);
+	ASSERT ( whichMoment >= 1, status, LALMOMENTH_ENULL, LALMOMENTH_MSGENULL);
 
 	/*  data must be defined  */
 	ASSERT ( data, status, LALMOMENTH_ENULL, LALMOMENTH_MSGENULL);
@@ -44,7 +44,7 @@ void FUNC (
 
 	for (iterator = 0; iterator < length; iterator++)
 	{
-		sum += data->data[iterator];
+		sum += ((STYPE*)(data))->data[iterator];
 	}
 
 	ave = ( sum / length );
