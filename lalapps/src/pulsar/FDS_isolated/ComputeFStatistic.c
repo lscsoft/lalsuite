@@ -236,7 +236,9 @@ FILE *fpstat=NULL;		/**< output-file: F-statistic candidates and cluster-informa
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 int reverse_endian=-1;          /**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
+CHAR Fstatsfilename[256]; 		/* Fstats file name*/
 CHAR ckp_fname[260];			/* filename of checkpoint-file, global for polka */
+CHAR *Outputfilename; 		/* Name of output file, either Fstats- or Polka file name*/
 
 
 /*----------------------------------------------------------------------*/
@@ -331,9 +333,6 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
  * Calculate the F-statistic over a given portion of the parameter-space
  * and write a list of 'candidates' into a file(default: 'Fstats').
  */
-
-CHAR Fstatsfilename[256]; 		/* Fstats file name*/
-
  
 #if USE_BOINC
 int boincmain(int argc, char *argv[])
@@ -2810,48 +2809,53 @@ char **globargv=NULL;
 void worker() {
 #ifndef RUN_POLKA
   int retval=boincmain(globargc,globargv);
-#if BOINC_COMPRESS
-  /* compress the file if it exists */
-  if (uvar_useCompression && !retval) {
-    int boinczipret;
-    boinczipret=boinc_zip(ZIP_IT, "temp.zip" , Fstatsfilename);
-    if (boinczipret) {
-      fprintf(stderr, "Error in zipping file %s to temp.zip.  Return value %d\n", Fstatsfilename, boinczipret);
-      boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP);
-    }
-    if ((boinczipret=boinc_rename("temp.zip", Fstatsfilename))) {
-      fprintf(stderr, "Error in renaming file temp.zip to %s.  rename() returned %d\n", Fstatsfilename, boinczipret);
-      boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME);
-    }
-  } /* if useCompression && ok */
-#endif
+  Outputfilename=Fstatsfilename;
 #else
   int a1,a2,retval;
-  CHAR ckptfile1[260];
+  CHAR ckptfname1[260];
+  CHAR Fstatsfilename1[260];
   /* find first // delimiter */ 
   for(a1=0;(a1<globargc)&&(strncmp(globargv[a1],"//",3));a1++);
-  /* if there was no //, argc==a1 and this is old-style command line */
   retval=boincmain(a1,globargv);
-  /* handle old-style command line for backward compatibility */
+  /* if there was no //, globargc==a1 and this is old-style command line */
   if(a1<globargc) {
-    strncpy(ckptfile1,ckp_fname,260);
+	/* remember first file names */
+    strncpy(Fstatsfilename1,Fstatsfilename,260);
+    strncpy(ckptfname1,ckp_fname,260);
     if (!retval){
       /* find second // delimiter */ 
       for(a2=a1+1;(a2<globargc)&&(strncmp(globargv[a2],"//",3));a2++);
       if(a2==globargc)
-	retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
+        retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
       else
-	retval=boincmain(a2-a1,&(globargv[a1]));
+        retval=boincmain(a2-a1,&(globargv[a1]));
       if (!retval)
-	retval=polka(globargc-a2, &(globargv[a2]));
+        retval=polka(globargc-a2, &(globargv[a2]));
     }
     /* remove checkpoint-files */
     remove (ckp_fname);
-    remove (ckptfile1);
-    /* TODO: remove FStat-files */
-  } else
+    remove (ckptfname1);
+	remove (Fstatsfilename);
+    remove (Fstatsfilename1);
+  } else {
+	Outputfilename=Fstatsfilename;
     remove (ckp_fname);
-  /* TODO: compression */
+  }
+#endif
+#if BOINC_COMPRESS
+  /* compress the file if it exists */
+  if (uvar_useCompression && !retval) {
+    int boinczipret;
+    boinczipret=boinc_zip(ZIP_IT, "temp.zip" , Outputfilename);
+    if (boinczipret) {
+      fprintf(stderr, "Error in zipping file %s to temp.zip.  Return value %d\n", Outputfilename, boinczipret);
+      boinc_finish(COMPUTEFSTAT_EXIT_CANTZIP);
+    }
+    if ((boinczipret=boinc_rename("temp.zip", Outputfilename))) {
+      fprintf(stderr, "Error in renaming file temp.zip to %s.  rename() returned %d\n", Outputfilename, boinczipret);
+      boinc_finish(COMPUTEFSTAT_EXIT_CANTRENAME);
+    }
+  } /* if useCompression && ok */
 #endif
   boinc_finish(retval);
   return;

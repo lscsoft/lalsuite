@@ -27,6 +27,7 @@
 
 #if USE_BOINC
 #define fopen boinc_fopen
+extern CHAR *Outputfilename;
 #endif
 
 struct PolkaCommandLineArgsTag 
@@ -254,6 +255,9 @@ int main(int argc,char *argv[])
 	      CC.F2[k],CC.fa2[k],CC.fa[k]);
     }
   fclose(fpOut);
+#if USE_BOINC
+  Outputfilename=PolkaCommandLineArgs.OutputFile;
+#endif
 
   LALFree(indices1F);
   LALFree(indices2F);
