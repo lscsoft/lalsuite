@@ -423,15 +423,24 @@ int main( int argc, char *argv[] )
     REAL4 mtot = 0;
     REAL4 eta = 0;
     REAL4 deff = 0;
+    REAL4 col_six = 0;
+    REAL4 col_seven = 0;
+    REAL4 col_eight = 0;
+    REAL4 col_nine = 0;
+    INT4 num_columns = 0;
+
     
     /* effective distance not required */
-    if( sscanf( line, "%lf %f %f %f %f %f\n", &trig_time,
-	  &snr, &chisq, &mtot, &eta, &deff ) >= 5)
+    num_columns =  sscanf( line, "%lf %f %f %f %f %f %f %f %f\n", &trig_time,
+	  &snr, &chisq, &mtot, &eta, 
+	  &col_six, &col_seven, &col_eight, &col_nine ); 
+    
+    
+    if( num_columns >= 5 )
     {
       if ( vrbflg )
       {
-	fprintf( stdout, "obtained trigger at time %f\n", 
-	    trig_time);
+	fprintf( stdout, "obtained trigger at time %f\n", trig_time);
       }
     }
     else
@@ -440,6 +449,16 @@ int main( int argc, char *argv[] )
       exit ( 1 );
     }
 
+    if( num_columns == 6 )
+    {
+      if ( vrbflg )
+      {
+	fprintf( stdout, "column six contains effective distance of %f", 
+	    col_six);
+      }
+      deff = col_six;
+    }
+    
     /* check that trigger is within our analyzed time */
     if( trig_time >= gpsStartTimeFloat && trig_time <= gpsEndTimeFloat )
     {
