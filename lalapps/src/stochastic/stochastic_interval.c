@@ -699,7 +699,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   for (i = 0; i < segmentLength; i++)
    { dataWindow.data->data[i] = 1.;}
   if (overlap_hann_flag)
-   { hannDuration = segmentLength;}
+   { hannDuration = segmentDuration;}
 
   if (hannDuration != 0)
    {
