@@ -559,8 +559,8 @@ LALFindChirpSlave (
         }
       }
 
-      if ( params->simParams->simType == fcGaussianNoiseInject ||
-          params->simParams->simType == fcRealDataInject )
+      /* if ConditionData() has created any events to inject, inject them */
+      if ( params->simParams->injectEvent )
       {
         /* inject signals into the input data stream */
         LALFindChirpInjectSignals( status->statusPtr, 
