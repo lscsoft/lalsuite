@@ -5,15 +5,14 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 MAINTAINERCLEANFILES = FrequencySeries.c Sequence.c TimeSeries.c
-EXTRA_DIST = FrequencySeriesC.m4 FrequencySeries.m4 SequenceC.m4 Sequence.m4 TimeSeriesC.m4 TimeSeries.m4
+EXTRA_DIST = FrequencySeries.m4 Sequence.m4 TimeSeries.m4
 dvi-local: .dvi-dep
-@DVIMKFILE@
 
-FrequencySeries.m4 : FrequencySeriesC.m4
-	cd $(srcdir) && touch $@
-Sequence.m4 : SequenceC.m4
-	cd $(srcdir) && touch $@
-TimeSeries.m4 : TimeSeriesC.m4
-	cd $(srcdir) && touch $@
-%.c : %.m4
-	cd $(srcdir) && m4 $< >$@
+FrequencySeries.c: FrequencySeries.m4
+	cd $(srcdir) && m4 FrequencySeries.m4 > FrequencySeries.c
+Sequence.c: Sequence.m4
+	cd $(srcdir) && m4 Sequence.m4 > Sequence.c
+TimeSeries.c: TimeSeries.m4
+	cd $(srcdir) && m4 TimeSeries.m4 > TimeSeries.c 
+
+@DVIMKFILE@
