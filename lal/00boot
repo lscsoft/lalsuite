@@ -14,7 +14,7 @@ version=3.0
 ## Add a new package here:
 
 # Base (non-conditionally-compiled) packages:
-lal_pkg_list_base="support tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar fct burstsearch tracksearch tfclusters slopefilters waveburst block"
+lal_pkg_list_base="std tools sample hello factories vectorops utilities stats inject date tdfilter window fft clremoval stochastic inspiral noisemodels bank ring findchirp pulsar houghpulsar fct burstsearch tracksearch tfclusters slopefilters waveburst block"
 
 # Packages compiled only with --enable-mpi
 lal_pkg_list_mpi="comm"
@@ -31,7 +31,7 @@ lal_pkg_list_omit="timefreq"
 ## <<<< !!!!  Do not edit below here !!!! >>>> ##
 
 # All packages
-lal_pkg_list="std $lal_pkg_list_base $lal_pkg_list_mpi $lal_pkg_list_frame $lal_pkg_list_frame_mpi $lal_pkg_list_omit"
+lal_pkg_list="$lal_pkg_list_base support $lal_pkg_list_mpi $lal_pkg_list_frame $lal_pkg_list_frame_mpi $lal_pkg_list_omit"
 
 # Help message
 helpmsg="Usage $0 [options]
@@ -521,8 +521,11 @@ esac
 
 ## Now run m4 to generate sources
 
-cd packages/support/src
+cd packages/std/src
 m4 Grid.m4 > Grid.c
+cd ../../..
+
+cd packages/support/src
 m4 PrintVector.m4 > PrintVector.c
 m4 PrintTimeSeries.m4 > PrintTimeSeries.c
 m4 PrintFrequencySeries.m4 > PrintFrequencySeries.c

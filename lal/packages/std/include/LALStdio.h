@@ -9,7 +9,7 @@ $Id$
 \section{Header \texttt{LALStdio.h}}
 \label{s:LALStdio.h}
 
-Provides standard LAL IO functions.
+Provides LAL functions similar to the non-file functions in \verb+<stdio.h>+.
 
 \subsection*{Synopsis}
 \begin{verbatim}
@@ -17,14 +17,10 @@ Provides standard LAL IO functions.
 #include <lal/FileIO.h>
 \end{verbatim}
 
-\noindent These headers cover the quasi-LAL IO functions and the LALsnprintf
-functions.  Only use \texttt{FileIO.h} in test code that links to
-the \texttt{lalsupport} library.
+\noindent This header provides the LALsnprintf function.
 
 \vfill{\footnotesize\input{LALStdioHV}}
 \newpage\input{LALStdC}
-\newpage\input{FileIOC}
-
 </lalLaTeX>
 #endif /* autodoc block */
 

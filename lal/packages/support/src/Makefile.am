@@ -1,6 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 ## $Id$
-noinst_LTLIBRARIES = libsupport.la
 LALMETAIOSOURCES = LIGOLwXMLRead.c
 
 if METAIO
@@ -17,9 +16,6 @@ else
 EXTRA_TEXSOURCES = $(LALMETAIOSOURCES)
 endif
 
-libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c LALGSL.c \
-  StringToken.c StringConvert.c Grid.c
-
 liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
   PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c \
   ReadNoiseSpectrum.c \
@@ -32,7 +28,7 @@ liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
 
 
 MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
-  ReadFrequencySeries.c ReadTimeSeries.c Grid.c \
+  ReadFrequencySeries.c ReadTimeSeries.c \
   StreamVectorInput.c StreamVectorSequenceInput.c StreamSequenceInput.c \
   StreamSeriesInput.c StreamSeriesOutput.c \
   StreamGridInput.c StreamGridOutput.c
@@ -43,7 +39,6 @@ EXTRA_DIST = $(LALMETAIOSOURCES) \
 	     PrintFrequencySeries.m4 LALPrintFrequencySeries.m4\
 	     ReadFrequencySeries.m4 LALReadFrequencySeries.m4\
              snprintf_LICENSE.txt snprintf_README \
-             Grid.m4 LALCreateDestroyGrid.m4 \
              ReadTimeSeries.m4 LALReadTimeSeries.m4 \
              StreamVectorInput.m4 LALReadVector.m4 \
              StreamVectorSequenceInput.m4 LALReadVectorSequence.m4 \
@@ -57,9 +52,6 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
-
-Grid.c: Grid.m4 LALCreateDestroyGrid.m4
-	cd $(srcdir) && m4 Grid.m4 > Grid.c
 
 PrintVector.c: PrintVector.m4 LALPrintVector.m4
 	cd $(srcdir) && m4 PrintVector.m4 > PrintVector.c

@@ -1,17 +1,11 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = LALVersionTest LALMallocTest LALGSLTest PrintVectorTest\
+check_PROGRAMS = PrintVectorTest\
 	         PrintFTSeriesTest ReadFTSeriesTest StreamInputTest\
                  StreamSeriesInputTest SFTfileIOTest \
 		ConfigFileTest UserInputTest
 
 noinst_DATA = StreamInput.data StreamSeriesInput.data inputsft.0
 EXTRA_DIST = $(DATA)
-LALVersionTest_SOURCES = LALVersionTest.c
-LALVersionTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-LALMallocTest_SOURCES = LALMallocTest.c
-LALMallocTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
-LALGSLTest_SOURCES = LALGSLTest.c
-LALGSLTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 PrintVectorTest_SOURCES = PrintVectorTest.c
 PrintVectorTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
@@ -38,7 +32,7 @@ UserInputTest_SOURCES = UserInputTest.c
 UserInputTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = LALVersionTest LALMallocTest LALGSLTest PrintVectorTest \
+TESTS = PrintVectorTest \
         ReadFTSeriesTest PrintFTSeriesTest StreamInputTest \
         StreamSeriesInputTest ConfigFileTest UserInputTest SFTfileIOTest
 

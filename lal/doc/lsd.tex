@@ -80,6 +80,7 @@
 
 \maketitle
 
+\pdfbookmark{Contributors}{aut}
 \section*{Contributors}
 \begin{verse}
 \input{AUTHORS}
@@ -87,6 +88,9 @@
 
 
 % The table of contents.
+\newpage
+\pdfbookmark{Table of Contents}{toc}
+\nopagebreak
 \tableofcontents
 
 
@@ -138,7 +142,56 @@ is considerably shorter than its predessor.
 
 \mainmatter
 
-\part{Coding and Documentation Instructions}
+\book{User Guide}
+\part{LAL Standard Package}
+\include{std}
+\include{sample}
+\part{General Packages}
+\include{date}
+%\include{hello}
+\include{factories}
+\include{tools}
+\include{vectorops}
+\part{General Mathematical and Signal Analysis Packages}
+\include{clremoval}
+\include{fft}
+\include{stats}
+\include{tdfilter}
+%\include{timefreq}
+\include{utilities}
+\include{window}
+\part{Core Data Analysis Packages}
+\include{inject}
+\part{Burst Packages}
+\include{block}
+\include{burstsearch}
+\include{ring}
+\include{slopefilters}
+\include{tfclusters}
+%\include{tracksearch}
+\include{waveburst}
+\part{Inspiral Packages}
+\include{bank}
+\include{fct}
+\include{findchirp}
+\include{inspiral}
+\include{noisemodels}
+\part{Pulsar Packages}
+\include{houghpulsar}
+\include{pulsar}
+\part{Stochastic Packages}
+\include{stochastic}
+\part{LAL Support Interface}
+\include{support}
+\part{LAL Framedata Interface (optional)}
+\include{framedata}
+\part{LAL MPI Interface (optional)}
+\include{comm}
+
+
+\book{Coding and Documentation Instructions}
+
+\part{How to Develop Code for LAL}
 
 \chapter{An Introduction to the LIGO/LSC Algorithm Library (LAL)}
 
@@ -675,6 +728,8 @@ documentation for this package.  When we the comprehensive
 documentation is built, only the all-encompassing index will appear
 at the end of the entire document.
 
+\part{LALDoc: Automated Documentation}
+
 \chapter{The automatic documentation system}
 \label{c:laldoc}
 
@@ -933,45 +988,10 @@ and {\LaTeX}  ({\tt pdflatex}) is run on it. Then  {\tt lsd.tex} and
 
 
 
-\part{Documentation of the LAL packages}
-\include{std}
-\include{support}
-\include{tools}
-\include{sample}
-\include{hello}
-\include{factories}
-\include{vectorops}
-\include{utilities}
-\include{stats}
-\include{inject}
-\include{date}
-\include{tdfilter}
-\include{window}
-\include{fft}
-%\include{timefreq}
-\include{clremoval}
-\include{stochastic}
-\include{inspiral}
-\include{noisemodels}
-\include{bank}
-\include{ring}
-\include{pulsar}
-\include{houghpulsar}
-\include{fct}
-\include{framedata}
-\include{comm}
-\include{findchirp}
-\include{burstsearch}
-%\include{tracksearch}
-\include{tfclusters}
-\include{slopefilters}
-\include{waveburst}
-\include{block}
-
 \backmatter
-
 \pagebreak
-\addcontentsline{toc}{part}{Index}%
+\renewcommand{\bookname}{\relax}
+\addcontentsline{toc}{book}{Index}%
 \nopagebreak
 \printindex
 
