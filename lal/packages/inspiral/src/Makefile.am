@@ -8,6 +8,7 @@ LALEtaTau04.c\
 LALInspiralAmplitude.c\
 LALInspiralChooseModel.c\
 LALInspiralFrequency3.c\
+LALInspiralInit.c\
 LALInspiralParameterCalc.c\
 LALInspiralParseParameters.c\
 LALInspiralPhasing1.c\
@@ -24,6 +25,7 @@ LALInspiralTofVIntegrand.c\
 LALInspiralVelocity.c\
 LALInspiralWaveLength.c\
 LALInspiralWave.c\
+LALInspiralWaveForInjection.c\
 LALInspiralWave1.c\
 LALInspiralWave2.c\
 LALInspiralWave3.c\

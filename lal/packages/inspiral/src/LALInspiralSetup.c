@@ -74,7 +74,7 @@ LALInspiralSetup (
    ASSERT (params->mass2 > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (params->fCutoff > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (params->fCutoff > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   /*   ASSERT (params->fCutoff > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);*/
    ASSERT (params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (params->tSampling > 2*params->fCutoff, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
