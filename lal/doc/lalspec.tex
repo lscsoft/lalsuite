@@ -1484,11 +1484,11 @@ documentation.
 In each source code file ({\tt .h} and  {\tt .c}) the version control ``Id''
 string will appear  twice.  [See, e.g., the example header file in
 Appendix A.] In the author-version block at the top of the file, the
-string {\tt \$Id$} will be converted 
+string {\tt \$\relax Id\$} will be converted 
 by the CVS to something like:
 
 \noindent
-{\tt \$Id$}
+{\tt \$\relax Id: filename,v 1.1 2001/03/11 00:12:51 jolien Exp \$}
 
 \noindent
 Also in each file we assign the Id string to string constant. This is
@@ -1496,13 +1496,13 @@ done in all files with the macro
 {\tt NRCSID()}.  When you first write {\tt MyFile.c},  you must make the assignment  
 
 \noindent
-{\tt NRCSID(MYFILEC, "\$Id$");} 
+{\tt NRCSID(MYFILEC, "\$\relax Id\$");} 
 
 \noindent
 The CVS will convert this to something like
 
 \noindent
-{\tt NRCSID(MYFILEC, "\$Id$, v 1.7 2000/05/27 05:30:00 jolien");}
+{\tt NRCSID(MYFILEC, "\$\relax Id: MyFile.c,v 1.1 2001/03/11 00:12:51 jolien Exp \$");}
 
 \noindent
 Of course you should use {\tt MYFILEH} in the {\tt .h} files.
@@ -1512,7 +1512,7 @@ author, state identifier [release, alpha, etc.] and locker (if
 locked). Locker contains the loginID of the user (if any) who had
 locked the code for the purpose of making revisions at the time the
 present version was exported. [The only difference between requiring
-the CVS  ``Id" string and the CVS ``Header" string is that the Header
+the CVS  ``Id'' string and the CVS ``Header'' string is that the Header
 string also gives the absolute path to the file.]
 
 \section{LAL functions}
