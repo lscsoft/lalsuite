@@ -2845,7 +2845,8 @@ static REAL4 _noise(ClusterWavelet *w, INT4 number, INT4 time_steps_in_sublayer)
 	  noise+=w->norm50[gindex]*w->norm50[gindex];
 	}
     }
-  return sqrt(noise);
+
+  return sqrt(noise/w->coreSize[number]);
 }
 
 static void _doubleToSecNan(double t, INT4 *sec, INT4 *nan)

@@ -1486,6 +1486,72 @@ LALGetTimeIntervalWavelet(LALStatus *status,
   RETURN(status);
 }
 
+void LALAddTSToWavelet(LALStatus *status,
+                       LALAddTSToWaveletIO *inout)
+{
+
+  UINT4 M,i;
+  UINT4 offsetSteps, durationSteps;
+  REAL8 offset;
+  REAL8 start1, start2;
+  REAL8 waveletstep;
+
+  INITSTATUS( status, "LALAddTSToWavelet", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  /*  printf("AddTStoWavelet 1\n");fflush(stdout);*/
+
+  M=_getMaxLayer(inout->w)+1;
+
+  /*  printf("AddTStoWavelet 2\n");fflush(stdout);*/
+
+  if(inout->w->data->data->length%M!=0)
+    {
+      ABORT(status, LALWAVELETH_ENONZEROREMAINDER, LALWAVELETH_MSGENONZEROREMAINDER);
+    }
+
+  /*  printf("AddTStoWavelet 3\n");fflush(stdout);*/
+
+  LALGPStoFloat(status->statusPtr, &start1, &inout->w->data->epoch);
+  CHECKSTATUSPTR(status);
+
+  LALGPStoFloat(status->statusPtr, &start2, &inout->ts->epoch);
+  CHECKSTATUSPTR(status);
+
+  /*
+  printf("AddTStoWavelet 4 start1=%f sec1=%d nan1=%d start2=%f sec2=%d nan2=%d\n",
+	 start1, inout->w->data->epoch.gpsSeconds, inout->w->data->epoch.gpsNanoSeconds,
+	 start2, inout->ts->epoch.gpsSeconds, inout->ts->epoch.gpsNanoSeconds);fflush(stdout);
+  */
+  waveletstep=inout->ts->deltaT*M;
+  offset=(start2-start1);
+  
+  offsetSteps=(int)(offset/waveletstep)*M;
+  durationSteps=inout->ts->data->length;
+
+  /*
+  printf("AddTStoWavelet 5 offsetSteps=%d durationSteps=%d w->length=%d ts->length=%d\n",
+	 offsetSteps, durationSteps, inout->w->data->data->length, inout->ts->data->length);fflush(stdout);
+  */
+
+  if(offsetSteps+durationSteps>=inout->w->data->data->length)
+    {
+      fprintf(stderr, "AddTStoWavelet: beyond array bounds offsetSteps=%d durationSteps=%d length=%d\n",
+	      offsetSteps,durationSteps,inout->w->data->data->length);
+      exit(1);
+    }
+
+  for(i=0;i<durationSteps;i++)
+    {
+      inout->w->data->data->data[i+offsetSteps]+=inout->ts->data->data[i]*inout->strain;
+    }
+
+  /*  printf("AddTStoWavelet 6\n");fflush(stdout);*/
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
 void
 LALUnitCopy(LALStatus *status, LALUnit *source, LALUnit *destination)
 {

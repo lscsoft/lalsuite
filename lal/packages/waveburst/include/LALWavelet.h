@@ -99,7 +99,7 @@ typedef enum { NONE_CO=-1, CROSS_CO=0, BOX_CO=1, STRICT_CROSS_CO=2,
 	       STRICT_BOX_CO=3 } COINCIDENCE_LEVEL;
 typedef enum { NO_ERRORS=0, ZERO_ALPHA_ERROR, ZERO_C_ERROR} ERROR_CODE;
 
-
+typedef enum { LINEAR_SCALE=0, LOG10_SCALE } SCALE;
 
 /*************************************<lalLaTeX file="WaveburstStructs">
 \subsubsection*{struct \texttt{Slice}}
@@ -722,6 +722,15 @@ typedef struct tagOutputw2tWavelet
 }
 Outputw2tWavelet;
 
+
+typedef struct tagLALAddTSToWaveletIO
+{
+  Wavelet *w;
+  REAL4TimeSeries *ts;
+  REAL8 strain;
+}
+LALAddTSToWaveletIO;
+
 void
 LALGetLayerWavelet(LALStatus *status,
 		   OutputLayerWavelet **output,
@@ -867,4 +876,8 @@ void LALUnitCopy(LALStatus *status,
 		 LALUnit *source, 
 		 LALUnit *destination);
 
+void LALAddTSToWavelet(LALStatus *status,
+		       LALAddTSToWaveletIO *inout);
+
 #endif
+
