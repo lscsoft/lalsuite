@@ -156,7 +156,7 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
 #include <lal/LALStdlib.h>
 #include <lal/DetectorSite.h>
 #include <lal/Units.h>
-#include <lal/RealFFT.h>
+#include <lal/TimeFreqFFT.h>
 
 #ifdef  __cplusplus
 extern "C" {

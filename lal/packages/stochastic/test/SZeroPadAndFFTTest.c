@@ -79,8 +79,7 @@ LALSCreateVector()
 LALSDestroyVector()
 LALCHARCreateVector()
 LALCHARDestroyVector()
-LALEstimateFwdRealFFTPlan()
-LALMeasureFwdRealFFTPlan()
+LALCreateForwardRealFFTPlan()
 LALDestroyRealFFTPlan()
 LALUnitAsString()
 LALUnitCompare()
@@ -142,16 +141,16 @@ NRCSID(SZEROPADANDFFTTESTC, "$Id$");
 #define SZEROPADANDFFTTESTC_DELTAF 1.0/(SZEROPADANDFFTTESTC_FULLLENGTH * SZEROPADANDFFTTESTC_DELTAT)
 #define SZEROPADANDFFTTESTC_TOL           1e-6
 
-#define SZEROPADANDFFT_TRUE     1
-#define SZEROPADANDFFT_FALSE    0
+#define SZEROPADANDFFTTESTC_TRUE     1
+#define SZEROPADANDFFTTESTC_FALSE    0
 
 extern char *optarg;
 extern int   optind;
 
 /* int lalDebugLevel = LALMSGLVL3; */
 int lalDebugLevel  = LALNDEBUG;
-BOOLEAN optVerbose = SZEROPADANDFFT_FALSE;
-BOOLEAN optMeasurePlan = SZEROPADANDFFT_FALSE;
+BOOLEAN optVerbose = SZEROPADANDFFTTESTC_FALSE;
+BOOLEAN optMeasurePlan = SZEROPADANDFFTTESTC_FALSE;
 UINT4 optLength    = 0;
 
 
@@ -208,13 +207,13 @@ main( int argc, char *argv[] )
 
    COMPLEX8 expectedOutputDataData[SZEROPADANDFFTTESTC_LENGTH] 
                      = {{+3.600000000000000e+01, 0.0},
-                        {-1.094039137097177e+01, +2.279368601990178e+01},
-                        {+3.693524635113721e-01, -9.326003289238411e+00},
-                        {-8.090169943749448e-01, +7.918722831227928e+00},
-                        {+3.502214272222959e-01, -5.268737078678177e+00},
-                        {+5.329070518200751e-15, +5.196152422706625e+00},
-                        {+3.090169943749475e-01, -4.306254604896173e+00},
-                        {+2.208174802380956e-01, +4.325962305777781e+00}};
+                        {-1.094039137097177e+01, -2.279368601990178e+01},
+                        {+3.693524635113721e-01, +9.326003289238411e+00},
+                        {-8.090169943749448e-01, -7.918722831227928e+00},
+                        {+3.502214272222959e-01, +5.268737078678177e+00},
+                        {+5.329070518200751e-15, -5.196152422706625e+00},
+                        {+3.090169943749475e-01, +4.306254604896173e+00},
+                        {+2.208174802380956e-01, -4.325962305777781e+00}};
 
    RealFFTPlan                *plan = NULL;
    REAL4TimeSeries             goodInput, badInput;
@@ -247,8 +246,9 @@ main( int argc, char *argv[] )
    badOutput = goodOutput;
 
    /* construct plan */ 
-   LALEstimateFwdRealFFTPlan(&status, &plan, 
-                             SZEROPADANDFFTTESTC_FULLLENGTH);
+   LALCreateForwardRealFFTPlan(&status, &plan, 
+			       SZEROPADANDFFTTESTC_FULLLENGTH,
+			       SZEROPADANDFFTTESTC_FALSE);
    if ( code = CheckStatus( &status, 0 , "", SZEROPADANDFFTTESTC_EFLS,
                             SZEROPADANDFFTTESTC_MSGEFLS ) ) 
    {
@@ -701,13 +701,12 @@ main( int argc, char *argv[] )
 
    if (optInputFile[0] && optOutputFile[0]){ 
      /* construct plan*/ 
-     if (optMeasurePlan) 
+     LALCreateForwardRealFFTPlan(&status, &plan, 2*optLength - 1,
+				   optMeasurePlan);
+     if ( code = CheckStatus(&status, 0 , "", SZEROPADANDFFTTESTC_EFLS,
+			     SZEROPADANDFFTTESTC_MSGEFLS) ) 
      {
-       LALMeasureFwdRealFFTPlan(&status, &plan, 2*optLength - 1);
-     }
-     else 
-     {
-       LALEstimateFwdRealFFTPlan(&status, &plan, 2*optLength - 1);
+       return code;
      }
 
      goodInput.data  = NULL;
@@ -829,7 +828,7 @@ ParseOptions (int argc, char *argv[])
         break;
       
       case 'm': /* specify whether or not to measure plan */
-        optMeasurePlan = SZEROPADANDFFT_TRUE;
+        optMeasurePlan = SZEROPADANDFFTTESTC_TRUE;
         break;
 
       case 'd': /* set debug level */
@@ -837,7 +836,7 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'v': /* optVerbose */
-        optVerbose = SZEROPADANDFFT_TRUE;
+        optVerbose = SZEROPADANDFFTTESTC_TRUE;
         break;
 
       case 'q': /* quiet: run silently (ignore error messages) */

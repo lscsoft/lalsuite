@@ -107,7 +107,7 @@ other suitable number.
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/AVFactories.h>
-#include <lal/RealFFT.h>
+#include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <string.h>
 
@@ -127,13 +127,11 @@ LALSZeroPadAndFFT(LALStatus                *status,
 
   REAL8         deltaT, deltaF; /* deltaT * deltaF = 1/fullLength */
 
-  REAL4Vector  *hBarData = NULL;
-  
+  REAL4TimeSeries  hBar;
+
   REAL4        *sPtrHBar = NULL;
   REAL4        *sPtrH = NULL;
   REAL4        *sStopPtr = NULL;
-
-  LALUnitPair   unitPair;
 
   /* initialize status structure */
   INITSTATUS(status, "LALSZeroPadAndFFT", ZEROPADANDFFTC);
@@ -223,54 +221,38 @@ LALSZeroPadAndFFT(LALStatus                *status,
 
   /* EVERYTHING OKAY HERE! -------------------------------------------- */
 
-  /* unit manipulation */
-  unitPair.unitOne =lalSecondUnit;
-  unitPair.unitTwo = input->sampleUnits;
-  TRY(LALUnitMultiply(status->statusPtr,&(output->sampleUnits),
-                      &unitPair),status);
-
-  /* fill output parameters */
-  strncpy(output->name,"Fourier Transform of Zero-Padded Time Series",
-          LALNameLength);
-  
-  output->epoch = input->epoch;
-  output->f0 = input->f0;
-  output->deltaF = 1.0 / ( (REAL8) fullLength * input->deltaT );
+  /* replicate input for zero-padding */
+  hBar = *input;
+  hBar.data = NULL;
 
   /* allocate memory for zero-padded vector */
-  TRY(LALSCreateVector(status->statusPtr, &(hBarData), fullLength), status);
+  TRY(LALSCreateVector(status->statusPtr, &(hBar.data), fullLength), status);
 
-  /* initialize pointers for copying */
-  sStopPtr = input->data->data + length;
-
-  /* copy data and normalize by deltaT */
-  for (sPtrH = input->data->data, sPtrHBar = hBarData->data;
-       sPtrH < sStopPtr; 
-       ++sPtrH, ++sPtrHBar) 
-  {
-    *sPtrHBar = *sPtrH * deltaT;
-  }
+  /* copy data */
+  memcpy(hBar.data->data, input->data->data, length*sizeof(REAL4));
 
   /* initialize pointers for zero-padding */
-  sStopPtr = hBarData->data + fullLength;
+  sStopPtr = hBar.data->data + fullLength;
 
   /* zero pad */
-  for (sPtrHBar = hBarData->data + length; sPtrHBar < sStopPtr; ++sPtrHBar) 
+  for (sPtrHBar = hBar.data->data + length; sPtrHBar < sStopPtr; ++sPtrHBar) 
   {
     *sPtrHBar = 0.0;
   }
     
   /* take DFT */
-  LALFwdRealFFT(status->statusPtr, output->data, hBarData, fftPlan);
+  LALTimeFreqRealFFT(status->statusPtr, output, &hBar, fftPlan);
   /* Can't use TRY because we have memory allocated */
-  if (status->statusPtr->statusCode) 
-  {
-    TRY(LALSDestroyVector(status->statusPtr, &hBarData), status);
-    ABORT( status, -1, "Recursive error" );
-  }
+  BEGINFAIL( status ) 
+    TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
+  ENDFAIL( status ); 
+
+  /* fill output parameters */
+  strncpy(output->name,"Fourier Transform of Zero-Padded Time Series",
+          LALNameLength);
 
   /* clean up */
-  TRY(LALSDestroyVector(status->statusPtr, &hBarData), status);
+  TRY(LALSDestroyVector(status->statusPtr, &(hBar.data)), status);
 
   /* normal exit*/
   DETATCHSTATUSPTR(status);
