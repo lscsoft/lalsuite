@@ -309,13 +309,20 @@ int main(int argc,char *argv[])
   LALFree(indices2f);
   LALFree(indicesCCfa);
 
-  /* that's a bit tedious, so we use a macro */
+  /* freeing a CList is a bit tedious, so we use a macro */
 #define freeCList(x) do { LALFree((x).f); LALFree((x).Alpha); LALFree((x).Delta); LALFree((x).F); LALFree((x).fa); } while(0)
   
   freeCList(CList1);
   freeCList(CList2);
-  if (haveFile3 ) freeCList(CList3);
-  if (haveFile4 ) freeCList(CList4);
+  if (haveFile3 ) {
+    freeCList(CList3);
+    LALFree(indices3F);  
+  }
+  if (haveFile4 ) 
+    {
+      freeCList(CList4);
+      LALFree(indices4F);  
+    }
   
   LALFree ( CC );
   
