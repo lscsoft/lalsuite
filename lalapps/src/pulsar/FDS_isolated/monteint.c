@@ -21,6 +21,11 @@
 #include <lal/ComputeSky.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/LALGSL.h>
+#include <lal/LALError.h>
+#include <lal/LALStatusMacros.h>
+#include <lal/LALStdlib.h>
+#include <lal/StringInput.h>
+#include <lal/ConfigFile.h>
 
 
 /* LALApps-includes */
@@ -45,6 +50,11 @@ RCSID( "$Id$");
 #endif
 
 
+/* Pointer to function */
+typedef REAL8 (*FindRootFunction)(REAL8, void *);
+typedef REAL8 (*MonteCarloIntegrand)(REAL8 *, size_t, void *);
+
+
 /* Structures */
 typedef struct {
   REAL8 Fstat;
@@ -67,7 +77,7 @@ typedef struct {
 } MonteCarloIntParams;
 
 typedef struct {
-  void *integrand;
+  MonteCarloIntegrand integrand;
   size_t dimension;
   void *params;
   REAL8 *domain;
@@ -87,7 +97,7 @@ typedef struct {
 
 
 typedef struct {
-  void *function;
+  FindRootFunction function;
   void *params;
   REAL8 lower;
   REAL8 upper;
@@ -451,13 +461,18 @@ void MonteCarloIntegrate(MonteCarloIntOut *mciout, MonteCarloIntIn *mciin, Monte
   INT4 verboseflag = 0;
   INT4 maxVegasStages = 100;
 
-
   gsl_rng *r;
+  gsl_monte_function G;
+  gsl_monte_vegas_state *s;
+
   gsl_rng_env_setup ();
   T = gsl_rng_default;
   r = gsl_rng_alloc (T);
-  gsl_monte_function G = { mciin->integrand, mciin->dimension, mciin->params };
 
+
+  G.f = mciin->integrand;
+  G.dim = mciin->dimension;
+  G.params =  mciin->params;
 
   warmupcalls = mciparams->warmupcalls;
   calls = mciparams->maincalls;
@@ -481,13 +496,12 @@ void MonteCarloIntegrate(MonteCarloIntOut *mciout, MonteCarloIntIn *mciin, Monte
     }
   } 
 
-  gsl_monte_vegas_state *s = gsl_monte_vegas_alloc (mciin->dimension);
+  s = gsl_monte_vegas_alloc (mciin->dimension);
 
   gsl_monte_vegas_integrate (&G, xl, xu, mciin->dimension, warmupcalls, r, s,
 			     &res, &err);
   if(verboseflag >= 2) {
-    printf ("%% vegas warm-up: result = %g; sigma = %g\n ", res, err);
-    printf ("%% converging...\n");
+    printf ("%% vegas warm-up: result = %g; sigma = %g\n", res, err);
   }
 
   ic = 0;
@@ -510,7 +524,7 @@ void MonteCarloIntegrate(MonteCarloIntOut *mciout, MonteCarloIntIn *mciin, Monte
   }
 
   if(verboseflag >= 2) {
-    printf ("%% vegas final: result = %g; sigma = %g\n ", res, err);
+    printf ("%% vegas final: result = %22.12g; sigma = %22.12g\n", res, err);
   }
 
   gsl_monte_vegas_free (s);
@@ -861,12 +875,12 @@ InitConfigVariables(LALStatus *status, ConfigVariables *cfg)
    */
   
   if( !LALUserVarWasSet (&uvar_timestampsfile) ) {
-    LALPrintError("\ntimestamps file name should be specified.\n\n");
+    fprintf(stderr,"\ntimestamps file name should be specified.\n\n");
     ABORT (status, BAYESFSTATC_EINPUT, BAYESFSTATC_MSGEINPUT);
   }
    cfg->timestampsfile = (CHAR *) LALMalloc(strlen(uvar_timestampsfile)*sizeof(CHAR)+1);
   if( cfg->timestampsfile == NULL ) {
-    LALPrintError ("\nCannot allocate memory for timestampsfile. \n\n");
+    fprintf(stderr,"\nCannot allocate memory for timestampsfile. \n\n");
     ABORT (status, BAYESFSTATC_EMEM, BAYESFSTATC_MSGEMEM);
   }
   strcpy(cfg->timestampsfile, uvar_timestampsfile);
@@ -894,7 +908,7 @@ InitConfigVariables(LALStatus *status, ConfigVariables *cfg)
   if( !LALUserVarWasSet (&uvar_Tsft) ) {
     cfg->tsft = 1800.0;
     /*
-    LALPrintError("\n time length of SFT should be specified.\n\n");
+    fprintf(stderr,"\n time length of SFT should be specified.\n\n");
     LALFree(cfg->timestampsfile);
     ABORT (status, BAYESFSTATC_EINPUT, BAYESFSTATC_MSGEINPUT);
     */
@@ -929,7 +943,7 @@ InitConfigVariables(LALStatus *status, ConfigVariables *cfg)
    * initialize detector 
    */
   if( !LALUserVarWasSet (&uvar_IFO) ) {
-    LALPrintError("\n IFO should be specified.\n\n");
+    fprintf(stderr,"\n IFO should be specified.\n\n");
     LALFree(cfg->timestampsfile);
     ABORT (status, BAYESFSTATC_EINPUT, BAYESFSTATC_MSGEINPUT);
   }
@@ -942,7 +956,7 @@ InitConfigVariables(LALStatus *status, ConfigVariables *cfg)
     cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
   else
     {
-      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', '0'-'2'\n\n");
+      fprintf(stderr,"\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', '0'-'2'\n\n");
       LALFree(cfg->timestampsfile);
       ABORT (status, BAYESFSTATC_EINPUT, BAYESFSTATC_MSGEINPUT);
     }
@@ -957,7 +971,7 @@ InitConfigVariables(LALStatus *status, ConfigVariables *cfg)
 
   if (uvar_ephemYear == NULL)
     {
-      LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
+      fprintf(stderr,"\nNo ephemeris year specified (option 'ephemYear')\n\n");
       LALFree(cfg->timestampsfile);
       ABORT (status, BAYESFSTATC_EINPUT, BAYESFSTATC_MSGEINPUT);
     }     
@@ -976,7 +990,7 @@ InitConfigVariables(LALStatus *status, ConfigVariables *cfg)
   if( cfg->EphemEarth == NULL || 
       cfg->EphemSun == NULL ) {
     LALFree(cfg->timestampsfile);
-    LALPrintError ("\nCannot allocate memory for ephemeris files. \n\n");
+    fprintf(stderr,"\nCannot allocate memory for ephemeris files. \n\n");
     ABORT (status, BAYESFSTATC_EMEM, BAYESFSTATC_MSGEMEM);
   }
 
@@ -1051,7 +1065,7 @@ filelength(LALStatus *status, INT8 *length, CHAR *filename)
   FILE *fp = NULL;
   INT8 MaxFileLen = 65536;
   INT4 buffsize = 256;
-  CHAR line[buffsize];
+  CHAR line[256];
   CHAR *ptr;
 
   INITSTATUS (status, "filelength", rcsid);
