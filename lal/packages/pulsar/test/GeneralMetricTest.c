@@ -61,6 +61,9 @@ options are:
 
 The \texttt{-e} option sets the LAL debug level to 1.  (The default is 0).
 
+The \texttt{-f} option sets the maximum frequency (in Hz) to search. (The
+default is 1000.)
+
 The \texttt{-l} option determines the limits in right ascension and
 declination of the rectangular region over which the mismatch contours
 are computed.  The argument should be given in degrees as
