@@ -131,8 +131,8 @@ int main( int argc, char *argv[] )
   INT4  numEvents = 0;
   INT4  numIFO;
   INT4  have_ifo_a_trigger = 0;
-  INT4	keep_a_trig = 0;
-  INT4	dont_search_b = 0;
+  INT4  keep_a_trig = 0;
+  INT4  dont_search_b = 0;
   INT4  isPlay = 0;
   INT8  ta, tb;
   INT4  numTriggers[MAXIFO];
@@ -142,7 +142,7 @@ int main( int argc, char *argv[] )
   INT4  useRangeCut = 0;
   INT4  singleIfo = 0;
   REAL4 ifob_snrthresh = IFOB_SNRTHRESH;
-  REAL4	d_range[MAXIFO];
+  REAL4 d_range[MAXIFO];
 
   SnglInspiralTable    *inspiralEventList[MAXIFO];
   SnglInspiralTable    *currentTrigger[MAXIFO];
@@ -161,8 +161,8 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         processParamsTable;
   MetadataTable         searchsumm;
-  MetadataTable		searchSummvarsTable;
-  MetadataTable		summValueTable;
+  MetadataTable         searchSummvarsTable;
+  MetadataTable         summValueTable;
   MetadataTable         inspiralTable;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
@@ -174,7 +174,7 @@ int main( int argc, char *argv[] )
   {
     {"verbose",                 no_argument,       &vrbflg,           1 },
     {"write-uniq-triggers",     no_argument,       &writeUniqTrigs,   1 },
-    {"ifo-b-range-cut",		no_argument,       &useRangeCut,      1 },
+    {"ifo-b-range-cut",         no_argument,       &useRangeCut,      1 },
     {"single-ifo",              no_argument,       &singleIfo,        1 },
     {"no-playground",           no_argument,       0,                'Q'},
     {"playground-only",         no_argument,       0,                'R'},
@@ -190,7 +190,7 @@ int main( int argc, char *argv[] )
     {"parameter-test",          required_argument, 0,                'A'},
     {"dpsi0",                   required_argument, 0,                'p'},
     {"dpsi3",                   required_argument, 0,                'P'},
-    {"dmchirp",			required_argument, 0,                'c'},
+    {"dmchirp",                 required_argument, 0,                'c'},
     {"deta",                    required_argument, 0,                'n'},
     {"dt",                      required_argument, 0,                't'},
     {"gps-start-time",          required_argument, 0,                'q'},
@@ -200,7 +200,7 @@ int main( int argc, char *argv[] )
     {"slide-time-ns",           required_argument, 0,                'Y'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
-    {"ifo-tag",			required_argument, 0,		     'I'},
+    {"ifo-tag",                 required_argument, 0,                'I'},
     {"help",                    no_argument,       0,                'h'}, 
     {"debug-level",             required_argument, 0,                'z'},
     {"version",                 no_argument,       0,                'V'},
@@ -223,9 +223,9 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-	&accuracy ), &status );
+        &accuracy ), &status );
   LAL_CALL( populate_process_table( &status, proctable.processTable, 
-	PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   this_proc_param = processParamsTable.processParamsTable = 
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -255,8 +255,8 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-	"a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:c:n:QRD", long_options, 
-	&option_index );
+        "a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:c:n:QRD", long_options, 
+        &option_index );
 
     /* detect the end of the options */
     if ( c == -1 )
@@ -267,298 +267,298 @@ int main( int argc, char *argv[] )
     switch ( c )
     {
       case 0:
-	/* if this option set a flag, do nothing else now */
-	if ( long_options[option_index].flag != 0 )
-	{
-	  break;
-	}
-	else
-	{
-	  fprintf( stderr, "Error parsing option %s with argument %s\n",
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	break;
+        /* if this option set a flag, do nothing else now */
+        if ( long_options[option_index].flag != 0 )
+        {
+          break;
+        }
+        else
+        {
+          fprintf( stderr, "Error parsing option %s with argument %s\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
 
       case 'a':
-	/* name of interferometer a */
-	strncpy( ifoName[0], optarg, LIGOMETA_IFO_MAX * sizeof(CHAR) );
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        /* name of interferometer a */
+        strncpy( ifoName[0], optarg, LIGOMETA_IFO_MAX * sizeof(CHAR) );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case 'b':
-	/* name of interferometer b */
+        /* name of interferometer b */
         strncpy( ifoName[1], optarg, LIGOMETA_IFO_MAX * sizeof(CHAR) );
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case 'e':
-	/* epsilon */
-	errorParams.epsilon = atof(optarg);
-	if ( errorParams.epsilon < 0 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "epsilon must be non-negative: "
-	      "(%s given)\n", 
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* epsilon */
+        errorParams.epsilon = atof(optarg);
+        if ( errorParams.epsilon < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "epsilon must be non-negative: "
+              "(%s given)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'k':
-	/* kappa */
-	errorParams.kappa = atof(optarg);
-	if ( errorParams.kappa < 0 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "epsilon must be non-negative: "
-	      "(%s given)\n", 
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* kappa */
+        errorParams.kappa = atof(optarg);
+        if ( errorParams.kappa < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "epsilon must be non-negative: "
+              "(%s given)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'A':
-	if ( ! strcmp( "m1_and_m2", optarg ) )
-	{
-	  errorParams.test = m1_and_m2;
-	}
-	else if ( ! strcmp( "psi0_and_psi3", optarg ) )
-	{
-	  errorParams.test = psi0_and_psi3;
-	}
-	else if ( ! strcmp( "mchirp_and_eta", optarg ) )
-	{
-	  errorParams.test = mchirp_and_eta;
-	}
-	else
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "unknown test specified: "
-	      "%s (must be m1_and_m2, psi0_and_psi3 or mchirp_and_eta)\n",
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	haveTest = 1;
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        if ( ! strcmp( "m1_and_m2", optarg ) )
+        {
+          errorParams.test = m1_and_m2;
+        }
+        else if ( ! strcmp( "psi0_and_psi3", optarg ) )
+        {
+          errorParams.test = psi0_and_psi3;
+        }
+        else if ( ! strcmp( "mchirp_and_eta", optarg ) )
+        {
+          errorParams.test = mchirp_and_eta;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown test specified: "
+              "%s (must be m1_and_m2, psi0_and_psi3 or mchirp_and_eta)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        haveTest = 1;
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
 
       case 'S':
-	/* set the snr threshold in ifo b.  Used when deciding if ifo b
-	 * could have seen the triggers. */
-	ifob_snrthresh = atof(optarg);
-	if ( ifob_snrthresh < 0.0 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "IFO B snr threshold must be positive"
-	      "(%s given)\n", 
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* set the snr threshold in ifo b.  Used when deciding if ifo b
+         * could have seen the triggers. */
+        ifob_snrthresh = atof(optarg);
+        if ( ifob_snrthresh < 0.0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "IFO B snr threshold must be positive"
+              "(%s given)\n", 
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'm':
-	/* mass errors allowed */
-	errorParams.dm = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* mass errors allowed */
+        errorParams.dm = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'p':
-	/* psi0 errors allowed */
-	errorParams.dpsi0 = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* psi0 errors allowed */
+        errorParams.dpsi0 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'P':
-	/* psi3 errors allowed */
-	errorParams.dpsi3 = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* psi3 errors allowed */
+        errorParams.dpsi3 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'c':
-	/* mass errors allowed */
-	errorParams.dmchirp = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* mass errors allowed */
+        errorParams.dmchirp = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'n':
-	/* mass errors allowed */
-	errorParams.deta = atof(optarg);
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* mass errors allowed */
+        errorParams.deta = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 't':
-	/* time coincidence window, argument is in milliseconds */
-	errorParams.dt = atof(optarg) * 1000000LL;
-	ADD_PROCESS_PARAM( "float", "%s", optarg );
-	break;
+        /* time coincidence window, argument is in milliseconds */
+        errorParams.dt = atof(optarg) * 1000000LL;
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
 
       case 'q':
-	/* time coincidence window */
-	gpstime = atol( optarg );
-	if ( gpstime < 441417609 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is prior to " 
-	      "Jan 01, 1994  00:00:00 UTC:\n"
-	      "(%ld specified)\n",
-	      long_options[option_index].name, gpstime );
-	  exit( 1 );
-	}
-	if ( gpstime > 999999999 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is after " 
-	      "Sep 14, 2011  01:46:26 UTC:\n"
-	      "(%ld specified)\n", 
-	      long_options[option_index].name, gpstime );
-	  exit( 1 );
-	}
-	startCoincidence = (INT4) gpstime;
-	ADD_PROCESS_PARAM( "int", "%ld", startCoincidence );
-	break;
+        /* time coincidence window */
+        gpstime = atol( optarg );
+        if ( gpstime < 441417609 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is prior to " 
+              "Jan 01, 1994  00:00:00 UTC:\n"
+              "(%ld specified)\n",
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        if ( gpstime > 999999999 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is after " 
+              "Sep 14, 2011  01:46:26 UTC:\n"
+              "(%ld specified)\n", 
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        startCoincidence = (INT4) gpstime;
+        ADD_PROCESS_PARAM( "int", "%ld", startCoincidence );
+        break;
 
       case 'r':
-	/* time coincidence window */
-	gpstime = atol( optarg );
-	if ( gpstime < 441417609 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is prior to " 
-	      "Jan 01, 1994  00:00:00 UTC:\n"
-	      "(%ld specified)\n",
-	      long_options[option_index].name, gpstime );
-	  exit( 1 );
-	}
-	if ( gpstime > 999999999 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "GPS start time is after " 
-	      "Sep 14, 2011  01:46:26 UTC:\n"
-	      "(%ld specified)\n", 
-	      long_options[option_index].name, gpstime );
-	  exit( 1 );
-	}
-	endCoincidence = (INT4) gpstime;
-	ADD_PROCESS_PARAM( "int", "%ld", endCoincidence );
-	break;
+        /* time coincidence window */
+        gpstime = atol( optarg );
+        if ( gpstime < 441417609 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is prior to " 
+              "Jan 01, 1994  00:00:00 UTC:\n"
+              "(%ld specified)\n",
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        if ( gpstime > 999999999 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GPS start time is after " 
+              "Sep 14, 2011  01:46:26 UTC:\n"
+              "(%ld specified)\n", 
+              long_options[option_index].name, gpstime );
+          exit( 1 );
+        }
+        endCoincidence = (INT4) gpstime;
+        ADD_PROCESS_PARAM( "int", "%ld", endCoincidence );
+        break;
 
       case 's':
-	if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "comment must be less than %d characters\n",
-	      long_options[option_index].name, LIGOMETA_COMMENT_MAX );
-	  exit( 1 );
-	}
-	else
-	{
-	  LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
-	}
-	break;
+        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "comment must be less than %d characters\n",
+              long_options[option_index].name, LIGOMETA_COMMENT_MAX );
+          exit( 1 );
+        }
+        else
+        {
+          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+        }
+        break;
 
       case 'Q':
-	usePlayground = 0;
-	havePlgOpt = 1;
-	break;
+        usePlayground = 0;
+        havePlgOpt = 1;
+        break;
 
       case 'R':
-	usePlayground = 1;
-	havePlgOpt = 1;
-	break;
+        usePlayground = 1;
+        havePlgOpt = 1;
+        break;
 
       case 'D':
         allData = 1;
-	usePlayground = 0;
-	break;
-	
+        usePlayground = 0;
+        break;
+        
       case 'h':
-	/* help message */
-	fprintf( stderr, USAGE , argv[0]);
-	exit( 1 );
-	break;
+        /* help message */
+        fprintf( stderr, USAGE , argv[0]);
+        exit( 1 );
+        break;
 
       case 'z':
-	set_debug_level( optarg );
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        set_debug_level( optarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case 'Z':
-	/* create storage for the usertag */
-	optarg_len = strlen(optarg) + 1;
-	userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-	memcpy( userTag, optarg, optarg_len );
+        /* create storage for the usertag */
+        optarg_len = strlen(optarg) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
-	this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-	  calloc( 1, sizeof(ProcessParamsTable) );
-	LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-	    PROGRAM_NAME );
-	LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-	LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-	LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-	    optarg );
-	break;
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+            PROGRAM_NAME );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+            optarg );
+        break;
 
       case 'I':
-	/* create storage for the ifo-tag */
-	optarg_len = strlen(optarg) + 1;
-	ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-	memcpy( ifoTag, optarg, optarg_len );
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        /* create storage for the ifo-tag */
+        optarg_len = strlen(optarg) + 1;
+        ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( ifoTag, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case 'T':
-	optarg_len = strlen( optarg ) + 1;
-	trigBankFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-	memcpy( trigBankFile, optarg, optarg_len );
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        optarg_len = strlen( optarg ) + 1;
+        trigBankFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( trigBankFile, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case 'M':
-	minMatch = (REAL4) atof( optarg );
-	if ( minMatch <= 0 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "minimal match of bank must be > 0: "
-	      "(%f specified)\n",
-	      long_options[option_index].name, minMatch );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "float", "%e", minMatch );
-	break;
+        minMatch = (REAL4) atof( optarg );
+        if ( minMatch <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "minimal match of bank must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, minMatch );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", minMatch );
+        break;
 
       case 'X':
-	slideData.gpsSeconds = (INT4) atoi( optarg );
-	ADD_PROCESS_PARAM( "int", "%d", slideData.gpsSeconds );
-	break;
+        slideData.gpsSeconds = (INT4) atoi( optarg );
+        ADD_PROCESS_PARAM( "int", "%d", slideData.gpsSeconds );
+        break;
 
       case 'Y':
-	slideData.gpsNanoSeconds = (INT4) atoi( optarg );
-	ADD_PROCESS_PARAM( "int", "%d", slideData.gpsNanoSeconds );
-	break;
+        slideData.gpsNanoSeconds = (INT4) atoi( optarg );
+        ADD_PROCESS_PARAM( "int", "%d", slideData.gpsNanoSeconds );
+        break;
 
       case 'V':
-	/* print version information and exit */
-	fprintf( stdout, "Inspiral Coincidence and Triggered Bank Generator\n" 
-	    "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
-	    "CVS Version: " CVS_ID_STRING "\n"
-	    "CVS Tag: " CVS_NAME_STRING "\n" );
-	exit( 0 );
-	break;
+        /* print version information and exit */
+        fprintf( stdout, "Inspiral Coincidence and Triggered Bank Generator\n" 
+            "Patrick Brady, Duncan Brown and Steve Fairhurst\n"
+            "CVS Version: " CVS_ID_STRING "\n"
+            "CVS Tag: " CVS_NAME_STRING "\n" );
+        exit( 0 );
+        break;
 
       case '?':
-	fprintf( stderr, USAGE , argv[0]);
-	exit( 1 );
-	break;
+        fprintf( stderr, USAGE , argv[0]);
+        exit( 1 );
+        break;
 
       default:
-	fprintf( stderr, "Error: Unknown error while parsing options\n" );
-	fprintf( stderr, USAGE, argv[0] );
-	exit( 1 );
+        fprintf( stderr, "Error: Unknown error while parsing options\n" );
+        fprintf( stderr, USAGE, argv[0] );
+        exit( 1 );
     }
   }
 
@@ -584,7 +584,7 @@ int main( int argc, char *argv[] )
   if ( haveTest & singleIfo )
   {
     fprintf( stderr, 
-	"--parameter-test must not be specified in single IFO mode\n" );
+        "--parameter-test must not be specified in single IFO mode\n" );
     exit( 1 );
   }
 
@@ -600,7 +600,7 @@ int main( int argc, char *argv[] )
   if ( ( trigBankFile || slideDataNS ) && havePlgOpt )
   {
     fprintf( stderr, "--playground-only or --no-playground should not "
-	"be specified for a time slide\n" );
+        "be specified for a time slide\n" );
     exit( 1 );
   }
 
@@ -609,14 +609,14 @@ int main( int argc, char *argv[] )
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
     LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
-	" " );
+        " " );
   } 
   else 
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
-	"%s", comment );
+        "%s", comment );
     LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
-	"%s", comment );
+        "%s", comment );
   }
 
   /* store the write all trigs option */
@@ -625,9 +625,9 @@ int main( int argc, char *argv[] )
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-	"%s", PROGRAM_NAME );
+        "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-	"--write-uniq-triggers" );
+        "--write-uniq-triggers" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
@@ -638,9 +638,9 @@ int main( int argc, char *argv[] )
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-	"%s", PROGRAM_NAME );
+        "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-	"--ifo-b-range-cut" );
+        "--ifo-b-range-cut" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
@@ -651,9 +651,9 @@ int main( int argc, char *argv[] )
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-	"%s", PROGRAM_NAME );
+        "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-	"--single-ifo" );
+        "--single-ifo" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
@@ -670,26 +670,26 @@ int main( int argc, char *argv[] )
   {
     /* store the playground argument in the process_params */
     LALSnprintf( processParamsTable.processParamsTable->program, 
-	LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
+        LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
     LALSnprintf( processParamsTable.processParamsTable->type, 
-	LIGOMETA_TYPE_MAX, "string" );
+        LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( processParamsTable.processParamsTable->value, 
-	LIGOMETA_TYPE_MAX, " " );
+        LIGOMETA_TYPE_MAX, " " );
     if ( usePlayground )
     {
       LALSnprintf( processParamsTable.processParamsTable->param, 
-	  LIGOMETA_PARAM_MAX, "--playground-only" );
+          LIGOMETA_PARAM_MAX, "--playground-only" );
     }
     else if ( !usePlayground && !allData )
     {
       LALSnprintf( processParamsTable.processParamsTable->param, 
-	  LIGOMETA_PARAM_MAX, "--no-playground" );
+          LIGOMETA_PARAM_MAX, "--no-playground" );
     }
     else
     {
       LALSnprintf( processParamsTable.processParamsTable->param, 
-	  LIGOMETA_PARAM_MAX, "--all-data" );
-    }	    
+          LIGOMETA_PARAM_MAX, "--all-data" );
+    }       
   }
 
 
@@ -727,286 +727,286 @@ int main( int argc, char *argv[] )
       /* if the named input file does not exist, exit with an error */
       if ( stat( argv[i], &infileStatus ) == -1 )
       {
-	fprintf( stderr, "Error opening input file %s\n", argv[i] );
-	perror( "failed to stat() file" );
-	exit( 1 );
+        fprintf( stderr, "Error opening input file %s\n", argv[i] );
+        perror( "failed to stat() file" );
+        exit( 1 );
       }
 
       if ( vrbflg ) fprintf( stdout, 
-	  "storing input file name %s in search summvars table\n", argv[i] );
+          "storing input file name %s in search summvars table\n", argv[i] );
 
       if ( ! inputFiles )
       {
-	inputFiles = thisInputFile = (SearchSummvarsTable *)
-	  LALCalloc( 1, sizeof(SearchSummvarsTable) );
+        inputFiles = thisInputFile = (SearchSummvarsTable *)
+          LALCalloc( 1, sizeof(SearchSummvarsTable) );
       }
       else
       {
-	thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
-	  LALCalloc( 1, sizeof(SearchSummvarsTable) );
+        thisInputFile = thisInputFile->next = (SearchSummvarsTable *)
+          LALCalloc( 1, sizeof(SearchSummvarsTable) );
       }
       LALSnprintf( thisInputFile->name, LIGOMETA_NAME_MAX, 
-	  "input_file" );
+          "input_file" );
       LALSnprintf( thisInputFile->string, LIGOMETA_NAME_MAX, 
-	  "%s", argv[i] );      
+          "%s", argv[i] );      
 
 
       if ( vrbflg ) fprintf( stdout, 
-	  "reading search_summary table from file: %s\n", argv[i] );
+          "reading search_summary table from file: %s\n", argv[i] );
 
       haveSearchSum = SearchSummaryTableFromLIGOLw( &inputSummary, argv[i] );
 
       if ( haveSearchSum < 1 || ! inputSummary )
       {
-	if ( vrbflg ) 
-	  fprintf( stdout, "no valid search_summary table, continuing\n" );
+        if ( vrbflg ) 
+          fprintf( stdout, "no valid search_summary table, continuing\n" );
       }
       else
       {
-	if ( inStartTime < 0 || 
-	    inputSummary->out_start_time.gpsSeconds < inStartTime )
-	{
-	  inStartTime = inputSummary->out_start_time.gpsSeconds;
-	}
+        if ( inStartTime < 0 || 
+            inputSummary->out_start_time.gpsSeconds < inStartTime )
+        {
+          inStartTime = inputSummary->out_start_time.gpsSeconds;
+        }
 
-	if ( inEndTime < 0 ||
-	    inputSummary->out_end_time.gpsSeconds > inEndTime )
-	{
-	  inEndTime = inputSummary->out_end_time.gpsSeconds;
-	}
+        if ( inEndTime < 0 ||
+            inputSummary->out_end_time.gpsSeconds > inEndTime )
+        {
+          inEndTime = inputSummary->out_end_time.gpsSeconds;
+        }
 
-	LALFree( inputSummary );
-	inputSummary = NULL;
+        LALFree( inputSummary );
+        inputSummary = NULL;
       }
 
       if ( ! trigBankFile )
       {
-	INT4 haveSummValue = 0;
-	SummValueTable *thisSummValue = NULL;
+        INT4 haveSummValue = 0;
+        SummValueTable *thisSummValue = NULL;
 
-	if ( vrbflg ) fprintf( stdout, 
-	    "reading summ_value table from file: %s\n", argv[i] );
+        if ( vrbflg ) fprintf( stdout, 
+            "reading summ_value table from file: %s\n", argv[i] );
 
-	haveSummValue = SummValueTableFromLIGOLw( &thisSummValue, argv[i] );
+        haveSummValue = SummValueTableFromLIGOLw( &thisSummValue, argv[i] );
 
-	if ( haveSummValue < 1 || ! thisSummValue )
-	{
-	  if ( vrbflg ) fprintf( stdout, 
-	      "Unable to read summ_value table from %s\n", argv[i] );
-	}
-	else
-	{
-	  INT4 knownIFO = 0;
-	  SummValueTable *tempSummValue = NULL;
+        if ( haveSummValue < 1 || ! thisSummValue )
+        {
+          if ( vrbflg ) fprintf( stdout, 
+              "Unable to read summ_value table from %s\n", argv[i] );
+        }
+        else
+        {
+          INT4 knownIFO = 0;
+          SummValueTable *tempSummValue = NULL;
 
-	  if ( vrbflg ) fprintf( stdout, 
-	      "checking summ_value table for inspiral effective distance\n" );
+          if ( vrbflg ) fprintf( stdout, 
+              "checking summ_value table for inspiral effective distance\n" );
 
-	  while ( thisSummValue )
-	  {  
-	    if ( strncmp( thisSummValue->name, "inspiral_effective_distance",
-		  LIGOMETA_SUMMVALUE_NAME_MAX ) )
-	    {
-	      /* not an effective distance -- discard */
-	      tempSummValue = thisSummValue;
-	      thisSummValue = thisSummValue->next;
-	      LALFree( tempSummValue );
-	    }
-	    else
-	    {
+          while ( thisSummValue )
+          {  
+            if ( strncmp( thisSummValue->name, "inspiral_effective_distance",
+                  LIGOMETA_SUMMVALUE_NAME_MAX ) )
+            {
+              /* not an effective distance -- discard */
+              tempSummValue = thisSummValue;
+              thisSummValue = thisSummValue->next;
+              LALFree( tempSummValue );
+            }
+            else
+            {
 #if 0
-	      /* check that effective distance was calculated using 
-	       * 1.4_1.4 solar mass inspiral and snr = 8 */
-	      if ( strncmp( thisSummValue->comment, "1.4_1.4_8",
-		    LIGOMETA_SUMMVALUE_COMM_MAX ) )
-	      {
-		fprintf( stdout, "effective distance not calculated\n");
-		fprintf( stdout, "using 1.4-1.4 solar mass, snr = 8\n");
-		fprintf( stdout, "comment was %s\n", thisSummValue->comment );
-		tempSummValue = thisSummValue;
-		thisSummValue = thisSummValue->next;
-		LALFree( tempSummValue );
-	      }
-	      else
-	      {
+              /* check that effective distance was calculated using 
+               * 1.4_1.4 solar mass inspiral and snr = 8 */
+              if ( strncmp( thisSummValue->comment, "1.4_1.4_8",
+                    LIGOMETA_SUMMVALUE_COMM_MAX ) )
+              {
+                fprintf( stdout, "effective distance not calculated\n");
+                fprintf( stdout, "using 1.4-1.4 solar mass, snr = 8\n");
+                fprintf( stdout, "comment was %s\n", thisSummValue->comment );
+                tempSummValue = thisSummValue;
+                thisSummValue = thisSummValue->next;
+                LALFree( tempSummValue );
+              }
+              else
+              {
 #endif
-		if ( vrbflg )
-		{  
-		  fprintf( stdout, "got inspiral effective distance of %f ",
-		      thisSummValue->value );
-		  fprintf( stdout, "between %d and %d GPS secs for ifo %s\n",
-		      thisSummValue->start_time.gpsSeconds, 
-		      thisSummValue->end_time.gpsSeconds, thisSummValue->ifo );
-		}
-		/* locate the ifo associated to this summ_value and store it */
-		for ( j = 0; j < numIFO ; ++j )
-		{
-		  if ( ! strncmp( ifoName[j], thisSummValue->ifo,
-			LIGOMETA_IFO_MAX ) )
-		  {
-		    knownIFO = 1;
-		    if ( slideDataNS && j == 1)
-		    {
-		      INT8 startNS = 0;
-		      INT8 endNS = 0;
+                if ( vrbflg )
+                {  
+                  fprintf( stdout, "got inspiral effective distance of %f ",
+                      thisSummValue->value );
+                  fprintf( stdout, "between %d and %d GPS secs for ifo %s\n",
+                      thisSummValue->start_time.gpsSeconds, 
+                      thisSummValue->end_time.gpsSeconds, thisSummValue->ifo );
+                }
+                /* locate the ifo associated to this summ_value and store it */
+                for ( j = 0; j < numIFO ; ++j )
+                {
+                  if ( ! strncmp( ifoName[j], thisSummValue->ifo,
+                        LIGOMETA_IFO_MAX ) )
+                  {
+                    knownIFO = 1;
+                    if ( slideDataNS && j == 1)
+                    {
+                      INT8 startNS = 0;
+                      INT8 endNS = 0;
 
-		      if ( vrbflg ) fprintf( stdout, 
-			  "Doing a time slide of %d sec %d nanosec on IFOB\n",
-			  slideData.gpsSeconds, slideData.gpsNanoSeconds );
+                      if ( vrbflg ) fprintf( stdout, 
+                          "Doing a time slide of %d sec %d nanosec on IFOB\n",
+                          slideData.gpsSeconds, slideData.gpsNanoSeconds );
 
-		      LAL_CALL( LALGPStoINT8( &status, &startNS, 
-			    &(thisSummValue->start_time) ), &status );
-		      startNS += slideDataNS;
-		      LAL_CALL( LALINT8toGPS( &status, 
-			    &(thisSummValue->start_time), &startNS ), &status );
+                      LAL_CALL( LALGPStoINT8( &status, &startNS, 
+                            &(thisSummValue->start_time) ), &status );
+                      startNS += slideDataNS;
+                      LAL_CALL( LALINT8toGPS( &status, 
+                            &(thisSummValue->start_time), &startNS ), &status );
 
-		      LAL_CALL( LALGPStoINT8( &status, &endNS, 
-			    &(thisSummValue->end_time) ), &status );
-		      endNS += slideDataNS;
-		      LAL_CALL( LALINT8toGPS( &status, 
-			    &(thisSummValue->end_time), &endNS ), &status );
-		      if ( vrbflg ) 
-		      {
-			fprintf( stdout, "inspiral effective distance of %f ", 
-			    thisSummValue->value );
-			fprintf( stdout, "now valid from %d sec %d nanosec\n",
-			    thisSummValue->start_time.gpsSeconds, 
-			    thisSummValue->start_time.gpsNanoSeconds);
-			fprintf( stdout, "to %d sec %d nanosec\n",
-			    thisSummValue->end_time.gpsSeconds, 
-			    thisSummValue->end_time.gpsNanoSeconds);
-		      }		
-		    } /* close if ( slideDataNS && j == 1) */
+                      LAL_CALL( LALGPStoINT8( &status, &endNS, 
+                            &(thisSummValue->end_time) ), &status );
+                      endNS += slideDataNS;
+                      LAL_CALL( LALINT8toGPS( &status, 
+                            &(thisSummValue->end_time), &endNS ), &status );
+                      if ( vrbflg ) 
+                      {
+                        fprintf( stdout, "inspiral effective distance of %f ", 
+                            thisSummValue->value );
+                        fprintf( stdout, "now valid from %d sec %d nanosec\n",
+                            thisSummValue->start_time.gpsSeconds, 
+                            thisSummValue->start_time.gpsNanoSeconds);
+                        fprintf( stdout, "to %d sec %d nanosec\n",
+                            thisSummValue->end_time.gpsSeconds, 
+                            thisSummValue->end_time.gpsNanoSeconds);
+                      }         
+                    } /* close if ( slideDataNS && j == 1) */
 
-		    if ( ! inspEffRange[j] )
-		    {
-		      /* store the head of the linked list */
-		      inspEffRange[j] = currentEffRange[j] = thisSummValue;
-		    }
-		    else
-		    {
-		      /* append to the end of the linked list */
-		      currentEffRange[j] = currentEffRange[j]->next = 
-			thisSummValue;
-		    }
-		    thisSummValue = thisSummValue->next;
-		    currentEffRange[j]->next = NULL;
-		    break;
-		  } /* close if ( ! strncmp( ifoName[j], thisSummValue->ifo,
+                    if ( ! inspEffRange[j] )
+                    {
+                      /* store the head of the linked list */
+                      inspEffRange[j] = currentEffRange[j] = thisSummValue;
+                    }
+                    else
+                    {
+                      /* append to the end of the linked list */
+                      currentEffRange[j] = currentEffRange[j]->next = 
+                        thisSummValue;
+                    }
+                    thisSummValue = thisSummValue->next;
+                    currentEffRange[j]->next = NULL;
+                    break;
+                  } /* close if ( ! strncmp( ifoName[j], thisSummValue->ifo,
                                                LIGOMETA_IFO_MAX ) ) */
-		} /*close for ( j = 0; j < numIFO ; ++j ) */
-		if ( ! knownIFO )
-		{
-		  /* catch an unknown ifo name among the input files */
-		  if ( vrbflg ) fprintf( stdout, 
-		      "Unknown interferometer %s, discarding\n", 
-		      thisSummValue->ifo );
-		  tempSummValue = thisSummValue;
-		  thisSummValue = thisSummValue->next;
-		  LALFree( tempSummValue );
-		}
+                } /*close for ( j = 0; j < numIFO ; ++j ) */
+                if ( ! knownIFO )
+                {
+                  /* catch an unknown ifo name among the input files */
+                  if ( vrbflg ) fprintf( stdout, 
+                      "Unknown interferometer %s, discarding\n", 
+                      thisSummValue->ifo );
+                  tempSummValue = thisSummValue;
+                  thisSummValue = thisSummValue->next;
+                  LALFree( tempSummValue );
+                }
 #if 0
-	      } /* close for second else */
+              } /* close for second else */
 #endif
-	    } /* close for first else */
-	  } /* close while ( thisSummValue ) */
-	}
+            } /* close for first else */
+          } /* close while ( thisSummValue ) */
+        }
       } /* close if( ! trigBankFile ) */
 
       if ( vrbflg ) 
-	fprintf( stdout, "reading triggers from file: %s\n", argv[i] );
+        fprintf( stdout, "reading triggers from file: %s\n", argv[i] );
 
       numFileTriggers = 
-	LALSnglInspiralTableFromLIGOLw( &inputData, argv[i], 0, -1 );
+        LALSnglInspiralTableFromLIGOLw( &inputData, argv[i], 0, -1 );
 
       if ( numFileTriggers < 0 )
       {
-	fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
-	    argv[i] );
-	exit( 1 );
+        fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
+            argv[i] );
+        exit( 1 );
       }
       else if ( numFileTriggers > 0 )
       {
-	INT4 knownIFO = 0;
+        INT4 knownIFO = 0;
 
-	if ( vrbflg ) 
-	  fprintf( stdout, "got %d sngl_inspiral rows from %s for ifo %s\n", 
-	      numFileTriggers, argv[i], inputData->ifo );
+        if ( vrbflg ) 
+          fprintf( stdout, "got %d sngl_inspiral rows from %s for ifo %s\n", 
+              numFileTriggers, argv[i], inputData->ifo );
 
-	/* locate the ifo associated with these triggers and store them */
-	for ( j = 0; j < numIFO ; ++j )
-	{
-	  if ( ! strncmp( ifoName[j], inputData->ifo, LIGOMETA_IFO_MAX ) )
-	  {
-	    knownIFO = 1;
+        /* locate the ifo associated with these triggers and store them */
+        for ( j = 0; j < numIFO ; ++j )
+        {
+          if ( ! strncmp( ifoName[j], inputData->ifo, LIGOMETA_IFO_MAX ) )
+          {
+            knownIFO = 1;
 
-	    if ( ! inspiralEventList[j] )
-	    {
-	      /* store the head of the linked list */
-	      inspiralEventList[j] = currentTrigger[j] = inputData;
-	    }
-	    else
-	    {
-	      /* append to the end of the linked list and set current    */
-	      /* trigger to the first trigger of the list being appended */
-	      currentTrigger[j] = currentTrigger[j]->next = inputData;
-	    }
+            if ( ! inspiralEventList[j] )
+            {
+              /* store the head of the linked list */
+              inspiralEventList[j] = currentTrigger[j] = inputData;
+            }
+            else
+            {
+              /* append to the end of the linked list and set current    */
+              /* trigger to the first trigger of the list being appended */
+              currentTrigger[j] = currentTrigger[j]->next = inputData;
+            }
 
-	    if ( slideDataNS && j == 1 && vrbflg)  fprintf( stdout, 
-		"Doing a time slide of %d sec %d nanosec on IFOB triggers\n",
-		slideData.gpsSeconds, slideData.gpsNanoSeconds );	
+            if ( slideDataNS && j == 1 && vrbflg)  fprintf( stdout, 
+                "Doing a time slide of %d sec %d nanosec on IFOB triggers\n",
+                slideData.gpsSeconds, slideData.gpsNanoSeconds );       
 
-	    while ( currentTrigger[j]->next )
-	    {
-	      /* spin on to the end of the linked list */
-	      /* doing time slides if necessary */
-	      if ( slideDataNS && j == 1 )
-	      {
-		INT8 trigTimeNS = 0;
-		LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, 
-		      &(currentTrigger[j]->end_time) ), &status );
-		trigTimeNS += slideDataNS;
-		LAL_CALL( LALINT8toGPS( &status, 
-		      &(currentTrigger[j]->end_time), &trigTimeNS ), 
-		    &status );
-	      }     
-	      currentTrigger[j] = currentTrigger[j]->next;
-	    }
+            while ( currentTrigger[j]->next )
+            {
+              /* spin on to the end of the linked list */
+              /* doing time slides if necessary */
+              if ( slideDataNS && j == 1 )
+              {
+                INT8 trigTimeNS = 0;
+                LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, 
+                      &(currentTrigger[j]->end_time) ), &status );
+                trigTimeNS += slideDataNS;
+                LAL_CALL( LALINT8toGPS( &status, 
+                      &(currentTrigger[j]->end_time), &trigTimeNS ), 
+                    &status );
+              }     
+              currentTrigger[j] = currentTrigger[j]->next;
+            }
 
-	    /* slide the last trigger */
-	    if ( slideDataNS && j == 1)
-	    {
-	      INT8 trigTimeNS = 0;
-	      LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, 
-		    &(currentTrigger[j]->end_time) ), &status );
-	      trigTimeNS += slideDataNS;
-	      LAL_CALL( LALINT8toGPS( &status, &(currentTrigger[j]->end_time), 
-		    &trigTimeNS ), &status );
-	    }
+            /* slide the last trigger */
+            if ( slideDataNS && j == 1)
+            {
+              INT8 trigTimeNS = 0;
+              LAL_CALL( LALGPStoINT8( &status, &trigTimeNS, 
+                    &(currentTrigger[j]->end_time) ), &status );
+              trigTimeNS += slideDataNS;
+              LAL_CALL( LALINT8toGPS( &status, &(currentTrigger[j]->end_time), 
+                    &trigTimeNS ), &status );
+            }
 
-	    /* store number of triggers from ifo a for trigtotmplt algorithm */
-	    if ( j == 0 ) 
-	    {
-	      numEvents += numFileTriggers;
-	    }
+            /* store number of triggers from ifo a for trigtotmplt algorithm */
+            if ( j == 0 ) 
+            {
+              numEvents += numFileTriggers;
+            }
 
-	    if ( vrbflg ) fprintf( stdout, "added triggers to list\n" );
-	    break;
-	  }
-	}
+            if ( vrbflg ) fprintf( stdout, "added triggers to list\n" );
+            break;
+          }
+        }
 
-	if ( ! knownIFO )
-	{
-	  /* catch an unknown ifo name among the input files */
-	  fprintf( stderr, "Error: unknown interferometer %s\n", 
-	      inputData->ifo );
-	  exit( 1 );
-	}
+        if ( ! knownIFO )
+        {
+          /* catch an unknown ifo name among the input files */
+          fprintf( stderr, "Error: unknown interferometer %s\n", 
+              inputData->ifo );
+          exit( 1 );
+        }
       }
       else
       {
-	if ( vrbflg ) 
-	  fprintf( stdout, "%s contains no triggers, skipping\n", argv[i] );
+        if ( vrbflg ) 
+          fprintf( stdout, "%s contains no triggers, skipping\n", argv[i] );
       }
     }
   }
@@ -1026,13 +1026,13 @@ int main( int argc, char *argv[] )
 
       if ( j && useRangeCut )
       {
-	if (vrbflg)
-	  fprintf( stdout, "Still need to keep those triggers in ifo 0\n"
-	      "Which were too distant to be observable in ifo %d\n", j);
+        if (vrbflg)
+          fprintf( stdout, "Still need to keep those triggers in ifo 0\n"
+              "Which were too distant to be observable in ifo %d\n", j);
       }
       else
       {
-	goto cleanexit;
+        goto cleanexit;
       }
     }
   }
@@ -1058,39 +1058,39 @@ int main( int argc, char *argv[] )
     inspiralEventList[0] = NULL;
 
     if ( vrbflg ) fprintf( stdout, 
-	"discarding triggers outside start/end times: " );
+        "discarding triggers outside start/end times: " );
     while ( thisEvent )
     {
       SnglInspiralTable *tmpEvent = thisEvent;
       thisEvent = thisEvent->next;
 
       if ( tmpEvent->end_time.gpsSeconds >= startCoincidence &&
-	  tmpEvent->end_time.gpsSeconds < endCoincidence )
+          tmpEvent->end_time.gpsSeconds < endCoincidence )
       {
-	/* keep this template */
-	if ( ! inspiralEventList[0] )
-	{
-	  inspiralEventList[0] = tmpEvent;
-	}
-	else
-	{
-	  prevEvent->next = tmpEvent;
-	}
-	tmpEvent->next = NULL;
-	prevEvent = tmpEvent;
-	++numTriggers[0];
-	if ( vrbflg ) fprintf( stdout, "+" );
+        /* keep this template */
+        if ( ! inspiralEventList[0] )
+        {
+          inspiralEventList[0] = tmpEvent;
+        }
+        else
+        {
+          prevEvent->next = tmpEvent;
+        }
+        tmpEvent->next = NULL;
+        prevEvent = tmpEvent;
+        ++numTriggers[0];
+        if ( vrbflg ) fprintf( stdout, "+" );
       }
       else
       {
-	/* discard this template */
-	LALFree( tmpEvent );
-	if ( vrbflg ) fprintf( stdout, "-" );
+        /* discard this template */
+        LALFree( tmpEvent );
+        if ( vrbflg ) fprintf( stdout, "-" );
       }
     }
 
     if ( vrbflg ) fprintf( stdout, " done\nkept %d templates\n", 
-	numTriggers[0] );
+        numTriggers[0] );
 
     numEvents = numTriggers[0];
 
@@ -1098,35 +1098,35 @@ int main( int argc, char *argv[] )
       LALCalloc( numEvents, sizeof(SnglInspiralTable *) );
 
     for ( i = 0, thisEvent = inspiralEventList[0]; i < numEvents; 
-	++i, thisEvent = thisEvent->next )
+        ++i, thisEvent = thisEvent->next )
     {
       eventHandle[i] = thisEvent;
     }
 
     if ( errorParams.test == m1_and_m2 )
-    {	    
+    {       
       if ( vrbflg ) fprintf( stdout, "sorting events by mass... " );
       qsort( eventHandle, numEvents, sizeof(eventHandle[0]), 
-	  LALCompareSnglInspiralByMass );
+          LALCompareSnglInspiralByMass );
       if ( vrbflg ) fprintf( stdout, "done\n" );
     }
     else if ( errorParams.test == psi0_and_psi3 )
     { 
       if ( vrbflg ) fprintf( stdout, "sorting events by psi... " );
       qsort( eventHandle, numEvents, sizeof(eventHandle[0]),
-	  LALCompareSnglInspiralByPsi );
+          LALCompareSnglInspiralByPsi );
       if ( vrbflg ) fprintf( stdout, "done\n" );
     }
     else
     {
       fprintf( stderr, 
-	  "error: unknown test for sorting events \n" );
+          "error: unknown test for sorting events \n" );
       exit( 1 );
     }
 
     /* create a linked list of sorted templates */
     if ( vrbflg ) fprintf( stdout, 
-	"discarding template with duplicate masses: " );
+        "discarding template with duplicate masses: " );
 
     numTriggers[0] = 0;
     coincidentEvents[0] = prevEvent = eventHandle[0];
@@ -1136,42 +1136,42 @@ int main( int argc, char *argv[] )
     {
       if ( errorParams.test == m1_and_m2 )
       {
-	if ( (prevEvent->mass1 == eventHandle[i]->mass1)  &&
-	    (prevEvent->mass2 == eventHandle[i]->mass2) ) 
-	{
-	  /* discard the event as it is a duplicate */
-	  LALFree( eventHandle[i] );
-	  if ( vrbflg ) fprintf( stdout, "-" );
-	}
-	else
-	{
-	  /* add the event to the linked list */
-	  prevEvent = prevEvent->next = eventHandle[i];
-	  ++numTriggers[0];
-	  if ( vrbflg ) fprintf( stdout, "+" );
-	}
+        if ( (prevEvent->mass1 == eventHandle[i]->mass1)  &&
+            (prevEvent->mass2 == eventHandle[i]->mass2) ) 
+        {
+          /* discard the event as it is a duplicate */
+          LALFree( eventHandle[i] );
+          if ( vrbflg ) fprintf( stdout, "-" );
+        }
+        else
+        {
+          /* add the event to the linked list */
+          prevEvent = prevEvent->next = eventHandle[i];
+          ++numTriggers[0];
+          if ( vrbflg ) fprintf( stdout, "+" );
+        }
       }
       else if ( errorParams.test == psi0_and_psi3 )
       {
-	if ( (prevEvent->psi0 == eventHandle[i]->psi0)  &&
-	    (prevEvent->psi3 == eventHandle[i]->psi3) )
-	{
-	  /* discard the event as it is a duplicate */
-	  LALFree( eventHandle[i] );
-	  if ( vrbflg ) fprintf( stdout, "-" );
-	}
-	else
-	{
-	  /* add the event to the linked list */
-	  prevEvent = prevEvent->next = eventHandle[i];
-	  ++numTriggers[0];
-	  if ( vrbflg ) fprintf( stdout, "+" );
-	}
+        if ( (prevEvent->psi0 == eventHandle[i]->psi0)  &&
+            (prevEvent->psi3 == eventHandle[i]->psi3) )
+        {
+          /* discard the event as it is a duplicate */
+          LALFree( eventHandle[i] );
+          if ( vrbflg ) fprintf( stdout, "-" );
+        }
+        else
+        {
+          /* add the event to the linked list */
+          prevEvent = prevEvent->next = eventHandle[i];
+          ++numTriggers[0];
+          if ( vrbflg ) fprintf( stdout, "+" );
+        }
       }
       else
       {
-	fprintf( stderr, "error: unknown parameter test\n" );
-	exit( 1 );
+        fprintf( stderr, "error: unknown parameter test\n" );
+        exit( 1 );
       }
     }
 
@@ -1182,7 +1182,7 @@ int main( int argc, char *argv[] )
     {
       fprintf( stdout, " done\n" );
       fprintf( stdout, "found %d sngl_inspiral rows for bank %s\n", 
-	  numTriggers[0], trigBankFile );
+          numTriggers[0], trigBankFile );
     }
 
     LALFree( eventHandle );
@@ -1203,7 +1203,7 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout, "Sorting triggers from ifo %d\n", j );
     LAL_CALL( LALSortSnglInspiral( &status, &(inspiralEventList[j]),
-	  LALCompareSnglInspiralByTime ), &status );
+          LALCompareSnglInspiralByTime ), &status );
   }
 
 
@@ -1249,11 +1249,11 @@ int main( int argc, char *argv[] )
       (currentTrigger[0]->end_time.gpsSeconds < endCoincidence) )
   {
     if ( vrbflg ) fprintf( stdout, "  using IFO A trigger at %d + %10.10f\n",
-	currentTrigger[0]->end_time.gpsSeconds, 
-	((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) );
+        currentTrigger[0]->end_time.gpsSeconds, 
+        ((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) );
 
     LAL_CALL( LALGPStoINT8( &status, &ta, &(currentTrigger[0]->end_time) ), 
-	&status );
+        &status );
 
     LAL_CALL( LALINT8NanoSecIsPlayground( &status, &isPlay, &ta ), &status );
 
@@ -1261,39 +1261,39 @@ int main( int argc, char *argv[] )
     {
       if ( isPlay )
       {
-	fprintf( stdout, "  trigger is playground\n" );
+        fprintf( stdout, "  trigger is playground\n" );
       } 
       else
       {
-	fprintf( stdout, "  trigger is not playground\n" );
+        fprintf( stdout, "  trigger is not playground\n" );
       }
     }
 
     if( singleIfo )
     {
       if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) 
-	|| (allData) )
+        || (allData) )
       {
-	/* record the triggers */
-	for ( j = 0; j < numIFO; ++j )
-	{
-	  if ( ! coincidentEvents[j] )
-	  {
-	    coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
-	      LALMalloc( sizeof(SnglInspiralTable) );
-	  }
-	  else
-	  {
-	    outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
-	      LALMalloc( sizeof(SnglInspiralTable) );
-	  }
+        /* record the triggers */
+        for ( j = 0; j < numIFO; ++j )
+        {
+          if ( ! coincidentEvents[j] )
+          {
+            coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
+              LALMalloc( sizeof(SnglInspiralTable) );
+          }
+          else
+          {
+            outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
+              LALMalloc( sizeof(SnglInspiralTable) );
+          }
 
-	  memcpy( outEvent[j], currentTrigger[j], 
-	      sizeof(SnglInspiralTable) );
-	  outEvent[j]->next = NULL;
+          memcpy( outEvent[j], currentTrigger[j], 
+              sizeof(SnglInspiralTable) );
+          outEvent[j]->next = NULL;
 
-	  ++numTriggers[j];
-	}
+          ++numTriggers[j];
+        }
       }
     }
     else
@@ -1302,204 +1302,204 @@ int main( int argc, char *argv[] )
       /* window of the current ifo a trigger                            */
       while ( currentTrigger[1] )
       {
-	LAL_CALL( LALGPStoINT8( &status, &tb, &(currentTrigger[1]->end_time) ), 
-	    &status );
+        LAL_CALL( LALGPStoINT8( &status, &tb, &(currentTrigger[1]->end_time) ), 
+            &status );
 
-	if ( tb > ta - errorParams.dt )
-	{
-	  /* we have reached the time coinicidence window */
-	  break;
-	}
+        if ( tb > ta - errorParams.dt )
+        {
+          /* we have reached the time coinicidence window */
+          break;
+        }
 
-	currentTrigger[1] = currentTrigger[1]->next;
+        currentTrigger[1] = currentTrigger[1]->next;
       }
 
       /* if we are playground only and the trigger is in playground or    */
       /* we are not using playground and the trigger is not in the        */
       /* playground or we have a non-zero time-slide...                   */
       if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) ||
-	  (allData) || (slideDataNS) )
+          (allData) || (slideDataNS) )
       {
 
-	/* determine whether we should expect to see a trigger in ifo b  */
-	if ( useRangeCut )
-	{
-	  REAL4 lower_limit = 0;
-	  REAL4 upper_limit = 0;
-	  /* get the relevant values of inspiral_effective_distance from */
-	  /* the summ_value table */
-	  for ( j = 0; j < numIFO; ++j )
-	  {
-	    currentEffRange[j]=inspEffRange[j];
-	    d_range[j] = 0;
-	    while ( currentEffRange[j] )
-	    {
-	      INT8 ts, te;
-	      LAL_CALL( LALGPStoINT8( &status, &ts, 
-		    &(currentEffRange[j]->start_time) ), &status );
-	      LAL_CALL( LALGPStoINT8( &status, &te, 
-		    &(currentEffRange[j]->end_time) ), &status );
+        /* determine whether we should expect to see a trigger in ifo b  */
+        if ( useRangeCut )
+        {
+          REAL4 lower_limit = 0;
+          REAL4 upper_limit = 0;
+          /* get the relevant values of inspiral_effective_distance from */
+          /* the summ_value table */
+          for ( j = 0; j < numIFO; ++j )
+          {
+            currentEffRange[j]=inspEffRange[j];
+            d_range[j] = 0;
+            while ( currentEffRange[j] )
+            {
+              INT8 ts, te;
+              LAL_CALL( LALGPStoINT8( &status, &ts, 
+                    &(currentEffRange[j]->start_time) ), &status );
+              LAL_CALL( LALGPStoINT8( &status, &te, 
+                    &(currentEffRange[j]->end_time) ), &status );
 
-	      if ( (ts <= ta) && (ta < te) )
-	      {
-		/* use this value of inspiral_effective_distance */
-		d_range[j] = currentEffRange[j]->value;
-		if( vrbflg ) fprintf( stdout,
-		    "range for %s is %f Mpc\n",  ifoName[j], d_range[j]);
-		break;
-	      }
-	      currentEffRange[j] = currentEffRange[j]->next;
-	    }
-	    if ( d_range[j] <= 0 )
-	    {
-	      fprintf( stderr, "error: unable to find range for %s\n", 
-		  ifoName[j]);
-	      exit( 1 );
-	    }
-	  }
+              if ( (ts <= ta) && (ta < te) )
+              {
+                /* use this value of inspiral_effective_distance */
+                d_range[j] = currentEffRange[j]->value;
+                if( vrbflg ) fprintf( stdout,
+                    "range for %s is %f Mpc\n",  ifoName[j], d_range[j]);
+                break;
+              }
+              currentEffRange[j] = currentEffRange[j]->next;
+            }
+            if ( d_range[j] <= 0 )
+            {
+              fprintf( stderr, "error: unable to find range for %s\n", 
+                  ifoName[j]);
+              exit( 1 );
+            }
+          }
 
-	  /* test whether we expect to be able to see anything in IFO B */
-	  /* calculate lowest and highest allowed SNRs in IFO B */
-	  lower_limit = ( ( d_range[1] / d_range[0] ) * currentTrigger[0]->snr 
-	      - errorParams.epsilon) / ( 1 + errorParams.kappa);
-	  if ( errorParams.kappa < 1 )
-	  {
-	    upper_limit =( ( d_range[1] / d_range[0] ) * currentTrigger[0]->snr 
-		+ errorParams.epsilon) / ( 1 - errorParams.kappa);
-	  }
-	  else 
-	  {
-	    upper_limit = 0;
-	  }
+          /* test whether we expect to be able to see anything in IFO B */
+          /* calculate lowest and highest allowed SNRs in IFO B */
+          lower_limit = ( ( d_range[1] / d_range[0] ) * currentTrigger[0]->snr 
+              - errorParams.epsilon) / ( 1 + errorParams.kappa);
+          if ( errorParams.kappa < 1 )
+          {
+            upper_limit =( ( d_range[1] / d_range[0] ) * currentTrigger[0]->snr 
+                + errorParams.epsilon) / ( 1 - errorParams.kappa);
+          }
+          else 
+          {
+            upper_limit = 0;
+          }
 
-	  if ( vrbflg ) 
-	  {
-	    fprintf( stdout, 
-		"trigger in IFO B expected to have SNR between %f and %f\n",
-		lower_limit, upper_limit );
-	    fprintf( stdout, "SNR threshold in IFO B is %f\n", ifob_snrthresh);
-	  }
-	  if ( ifob_snrthresh <= lower_limit )
-	  {
-	    if ( vrbflg ) fprintf( stdout, 
-		"looking for a coincident trigger in IFO B\n" );
-	    keep_a_trig = 0;
-	    dont_search_b = 0;
-	  }
-	  else if ( upper_limit  && ( ifob_snrthresh > upper_limit ) )
-	  {
-	    if ( vrbflg ) fprintf( stdout, 
-		"don't expect a trigger in IFO B, keep IFO A trigger\n" );
-	    keep_a_trig = 1;
-	    dont_search_b = 1;
-	  }
-	  else
-	  {
-	    if ( vrbflg ) fprintf( stdout, 
-		"we may see a trigger in IFO B, keep IFO A regardless\n" );
-	    keep_a_trig = 1;
-	    dont_search_b = 0;
-	  }
-	} /* closes if ( useRangeCut ) */
+          if ( vrbflg ) 
+          {
+            fprintf( stdout, 
+                "trigger in IFO B expected to have SNR between %f and %f\n",
+                lower_limit, upper_limit );
+            fprintf( stdout, "SNR threshold in IFO B is %f\n", ifob_snrthresh);
+          }
+          if ( ifob_snrthresh <= lower_limit )
+          {
+            if ( vrbflg ) fprintf( stdout, 
+                "looking for a coincident trigger in IFO B\n" );
+            keep_a_trig = 0;
+            dont_search_b = 0;
+          }
+          else if ( upper_limit  && ( ifob_snrthresh > upper_limit ) )
+          {
+            if ( vrbflg ) fprintf( stdout, 
+                "don't expect a trigger in IFO B, keep IFO A trigger\n" );
+            keep_a_trig = 1;
+            dont_search_b = 1;
+          }
+          else
+          {
+            if ( vrbflg ) fprintf( stdout, 
+                "we may see a trigger in IFO B, keep IFO A regardless\n" );
+            keep_a_trig = 1;
+            dont_search_b = 0;
+          }
+        } /* closes if ( useRangeCut ) */
 
-	if ( ! dont_search_b )
-	{
-	  if ( vrbflg && currentTrigger[1] ) fprintf( stdout, 
-	      "  start loop over IFO B trigger at %d + %10.10f\n",
-	      currentTrigger[1]->end_time.gpsSeconds, 
-	      ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
+        if ( ! dont_search_b )
+        {
+          if ( vrbflg && currentTrigger[1] ) fprintf( stdout, 
+              "  start loop over IFO B trigger at %d + %10.10f\n",
+              currentTrigger[1]->end_time.gpsSeconds, 
+              ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
 
-	  /* look for coincident events in B within the time window */
-	  currentEvent = currentTrigger[1];
+          /* look for coincident events in B within the time window */
+          currentEvent = currentTrigger[1];
 
-	  while ( currentTrigger[1] )
-	  {
-	    LAL_CALL( LALGPStoINT8( &status, &tb, 
-		  &(currentTrigger[1]->end_time) ), &status );
+          while ( currentTrigger[1] )
+          {
+            LAL_CALL( LALGPStoINT8( &status, &tb, 
+                  &(currentTrigger[1]->end_time) ), &status );
 
-	    if (tb > ta + errorParams.dt )
-	    {
-	      /* we are outside the time coincidence so move to next event */
-	      if ( vrbflg ) 
-		fprintf( stdout, "outside the time coincidence window\n" );
-	      break;
-	    }
-	    else
-	    {
-	      /* call the LAL function which compares events parameters */
-	      if ( vrbflg ) fprintf( stdout, 
-		  "    comparing IFO B trigger at %d + %10.10f\n",
-		  currentTrigger[1]->end_time.gpsSeconds, 
-		  ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
+            if (tb > ta + errorParams.dt )
+            {
+              /* we are outside the time coincidence so move to next event */
+              if ( vrbflg ) 
+                fprintf( stdout, "outside the time coincidence window\n" );
+              break;
+            }
+            else
+            {
+              /* call the LAL function which compares events parameters */
+              if ( vrbflg ) fprintf( stdout, 
+                  "    comparing IFO B trigger at %d + %10.10f\n",
+                  currentTrigger[1]->end_time.gpsSeconds, 
+                  ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
 
-	      LAL_CALL( LALCompareSnglInspiral( &status, currentTrigger[0],
-		    currentTrigger[1], &errorParams ), &status );
-	    }
+              LAL_CALL( LALCompareSnglInspiral( &status, currentTrigger[0],
+                    currentTrigger[1], &errorParams ), &status );
+            }
 
-	    if ( errorParams.match )
-	    {
-	      /* store this event for output */
-	      if ( vrbflg )
-		fprintf( stdout, "    >>> found coincidence <<<\n" );
+            if ( errorParams.match )
+            {
+              /* store this event for output */
+              if ( vrbflg )
+                fprintf( stdout, "    >>> found coincidence <<<\n" );
 
-	      for ( j = 0; j < numIFO; ++j )
-	      {
-		/* only record the triggers from the primary ifo once */
-		if ( ! writeUniqTrigs || j || ( ! j && ! have_ifo_a_trigger ) )
-		{
-		  if ( ! coincidentEvents[j] )
-		  {
-		    coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
-		      LALMalloc( sizeof(SnglInspiralTable) );
-		  }
-		  else
-		  {
-		    outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
-		      LALMalloc( sizeof(SnglInspiralTable) );
-		  }
+              for ( j = 0; j < numIFO; ++j )
+              {
+                /* only record the triggers from the primary ifo once */
+                if ( ! writeUniqTrigs || j || ( ! j && ! have_ifo_a_trigger ) )
+                {
+                  if ( ! coincidentEvents[j] )
+                  {
+                    coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
+                      LALMalloc( sizeof(SnglInspiralTable) );
+                  }
+                  else
+                  {
+                    outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
+                      LALMalloc( sizeof(SnglInspiralTable) );
+                  }
 
-		  memcpy( outEvent[j], currentTrigger[j], 
-		      sizeof(SnglInspiralTable) );
-		  outEvent[j]->next = NULL;
+                  memcpy( outEvent[j], currentTrigger[j], 
+                      sizeof(SnglInspiralTable) );
+                  outEvent[j]->next = NULL;
 
-		  ++numTriggers[j];
-		  have_ifo_a_trigger = 1;
-		}
-	      }
-	    }
+                  ++numTriggers[j];
+                  have_ifo_a_trigger = 1;
+                }
+              }
+            }
 
-	    currentTrigger[1] = currentTrigger[1]->next;
+            currentTrigger[1] = currentTrigger[1]->next;
 
-	  } /* end loop over current events */
+          } /* end loop over current events */
 
-	  /* go back to saved current IFO B trigger */
-	  currentTrigger[1] = currentEvent;
+          /* go back to saved current IFO B trigger */
+          currentTrigger[1] = currentEvent;
 
-	} /* end loop over ! dont_search_b */
+        } /* end loop over ! dont_search_b */
 
 
-	if ( keep_a_trig && ! have_ifo_a_trigger )
-	{
-	  if ( vrbflg ) fprintf( stdout, 
-	      "kept IFO A trigger although no coincident trigger in IFO B\n");
-	  if ( ! coincidentEvents[0] )
-	  {
-	    coincidentEvents[0] = outEvent[0] = (SnglInspiralTable *) 
-	      LALMalloc( sizeof(SnglInspiralTable) );
-	  }
-	  else
-	  {
-	    outEvent[0] = outEvent[0]->next = (SnglInspiralTable *) 
-	      LALMalloc( sizeof(SnglInspiralTable) );         
-	  }
+        if ( keep_a_trig && ! have_ifo_a_trigger )
+        {
+          if ( vrbflg ) fprintf( stdout, 
+              "kept IFO A trigger although no coincident trigger in IFO B\n");
+          if ( ! coincidentEvents[0] )
+          {
+            coincidentEvents[0] = outEvent[0] = (SnglInspiralTable *) 
+              LALMalloc( sizeof(SnglInspiralTable) );
+          }
+          else
+          {
+            outEvent[0] = outEvent[0]->next = (SnglInspiralTable *) 
+              LALMalloc( sizeof(SnglInspiralTable) );         
+          }
 
-	  memcpy( outEvent[0], currentTrigger[0],  sizeof(SnglInspiralTable) );
-	  outEvent[0]->next = NULL;
+          memcpy( outEvent[0], currentTrigger[0],  sizeof(SnglInspiralTable) );
+          outEvent[0]->next = NULL;
 
-	  ++numTriggers[0];
-	}
+          ++numTriggers[0];
+        }
 
-	have_ifo_a_trigger = 0;
+        have_ifo_a_trigger = 0;
       }
 
     } 
@@ -1546,26 +1546,26 @@ cleanexit:
     {
       if ( userTag && ifoTag )
       {
-	LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml", 
-	    ifoName[j], ifoTag, userTag, startCoincidence, 
-	    endCoincidence - startCoincidence );
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s_%s-%d-%d.xml", 
+            ifoName[j], ifoTag, userTag, startCoincidence, 
+            endCoincidence - startCoincidence );
       }
       else if ( userTag && !ifoTag )
       {
-	LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
-	    ifoName[j], userTag, startCoincidence, 
-	    endCoincidence - startCoincidence );
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
+            ifoName[j], userTag, startCoincidence, 
+            endCoincidence - startCoincidence );
       }
       else if ( !userTag && ifoTag )
       {
-	LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
-	    ifoName[j], ifoTag, startCoincidence, 
-	    endCoincidence - startCoincidence );
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", 
+            ifoName[j], ifoTag, startCoincidence, 
+            endCoincidence - startCoincidence );
       }
       else
       {
-	LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[j],
-	    startCoincidence, endCoincidence - startCoincidence );
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[j],
+            startCoincidence, endCoincidence - startCoincidence );
       }
 
       xmlFileName = fileName;
@@ -1575,57 +1575,57 @@ cleanexit:
 
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, xmlFileName), 
-	&status );
+        &status );
 
     /* write process table */
     if ( trigBankFile )
     {
       LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", 
-	  ifoName[0] );
+          ifoName[0] );
     }
     else
     {
       LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
-	  ifoName[0], ifoName[1] );
+          ifoName[0], ifoName[1] );
     }
     LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-	  &accuracy ), &status );
+          &accuracy ), &status );
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
-	&status );
+        &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
-	  process_table ), &status );
+          process_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
     /* write process_params table */
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
-	  process_params_table ), &status );
+          process_params_table ), &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
-	  process_params_table ), &status );
+          process_params_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
     /* write search_summary table */
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
-	  search_summary_table ), &status );
+          search_summary_table ), &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchsumm, 
-	  search_summary_table ), &status );
+          search_summary_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
 
     /* write the search_summvars tabls */
     LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
-	  search_summvars_table), &status );
+          search_summvars_table), &status );
     searchSummvarsTable.searchSummvarsTable = inputFiles;
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, searchSummvarsTable,
-	  search_summvars_table), &status );
+          search_summvars_table), &status );
     LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
 
     /* write the summ_value table for ifoName[j] */
     if ( inspEffRange[j] )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
-	    summ_value_table), &status );
+            summ_value_table), &status );
       summValueTable.summValueTable = inspEffRange[j];
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, summValueTable,
-	    summ_value_table), &status );
+            summ_value_table), &status );
       LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
     }
 
@@ -1633,10 +1633,10 @@ cleanexit:
     if ( coincidentEvents[j] )
     {
       LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
-	    sngl_inspiral_table), &status );
+            sngl_inspiral_table), &status );
       inspiralTable.snglInspiralTable = coincidentEvents[j];
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, inspiralTable,
-	    sngl_inspiral_table), &status );
+            sngl_inspiral_table), &status );
       LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
     }
 
@@ -1692,9 +1692,9 @@ cleanexit:
     {
       while ( inspiralEventList[j] )
       {
-	currentEvent = inspiralEventList[j];
-	inspiralEventList[j] = inspiralEventList[j]->next;
-	LALFree( currentEvent );
+        currentEvent = inspiralEventList[j];
+        inspiralEventList[j] = inspiralEventList[j]->next;
+        LALFree( currentEvent );
       }
     }
   }
