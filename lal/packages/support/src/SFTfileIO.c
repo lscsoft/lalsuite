@@ -1026,7 +1026,7 @@ LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
   df = sft->deltaF;
   nsamples = sft->data->length;
   Tsft = 1.0 / sft->deltaF;
-  freqBand = nsamples * df;
+  freqBand = (nsamples-1.0) * df;
 
   fprintf (fp, xmgrHeader);
   fprintf (fp, "@subtitle \"epoch = (%d s, %d ns), Tsft = %f\"\n", 
@@ -1098,7 +1098,7 @@ void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
   df = sft->deltaF;
   nsamples = sft->data->length;
   Tsft = 1.0 / sft->deltaF;
-  freqBand = nsamples * df;
+  freqBand = (nsamples-1.0) * df;
 
   norm = (REAL4)( Tsft / nsamples);
 
@@ -1120,8 +1120,10 @@ void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
       fprintf (fp, "Name = %s\n", sft->name);
       fprintf (fp, "Timestamp = %d s, %d ns\n", sft->epoch.gpsSeconds, sft->epoch.gpsNanoSeconds);
       fprintf (fp, "Tsft = %f\n", Tsft);
-      fprintf (fp, "Start-frequency = %f Hz\n", sft->f0);
-      fprintf (fp, "Frequency-step = %f Hz\n", sft->deltaF);
+      fprintf (fp, "Start-frequency = %f Hz\n", f0);
+      fprintf (fp, "Frequency-step = %f Hz\n", df);
+      fprintf (fp, "Frequency-band = %f Hz\n", freqBand);
+      fprintf (fp, "Number of frequency-bins nsamples = %d\n", nsamples);
       
       /* write SFT-data */
       fprintf (fp, "\nSFT-data\n");
