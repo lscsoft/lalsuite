@@ -75,7 +75,6 @@ CHAR  *fqChanName       = NULL;         /* name of data channel         */
 CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
 INT4  numPoints         = -1;           /* points in a segment          */
 INT4  numSegments       = -1;           /* number of segments           */
-CHAR  site[2];                          /* single character site code   */
 CHAR  ifo[3];                           /* two character ifo code       */
 CHAR *channelName = NULL;               /* channel string               */
 INT4  inputDataLength = 0;              /* number of points in input    */
@@ -451,7 +450,7 @@ int main ( int argc, char *argv[] )
         &(bankIn.shf), "strain/sqrtHz", "STRAIN_PSD" );
 #endif
     LALSnprintf( fname, sizeof(fname), "%s-TMPLTBANK-%d-%d.strainspec.txt",
-        site, gpsStartTime.gpsSeconds,
+        ifo, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
     LALDPrintFrequencySeries( &(bankIn.shf), fname );
   }
@@ -555,7 +554,7 @@ int main ( int argc, char *argv[] )
   if ( writeRawData || writeResponse || writeSpectrum || writeStrainSpec )
   {
     snprintf( fname, sizeof(fname), "%s-TMPLTBANK-%d-%d.gwf",
-        site, gpsStartTime.gpsSeconds,
+        ifo, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
     frOutFile = FrFileONew( fname, 0 );
     FrameWrite( outFrame, frOutFile );
@@ -565,7 +564,7 @@ int main ( int argc, char *argv[] )
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   snprintf( fname, sizeof(fname), "%s-TMPLTBANK-%d-%d.xml",
-      site, gpsStartTime.gpsSeconds,
+      ifo, gpsStartTime.gpsSeconds,
       gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
@@ -804,10 +803,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           channelName = (CHAR *) calloc( chanlen, sizeof(CHAR) );
           memcpy( channelName, channamptr, chanlen );
 
-          /* copy the first character to site and the first two to ifo */
-          memset( site, 0, sizeof(site) );
+          /* copy the first two characters to ifo */
           memset( ifo, 0, sizeof(ifo) );
-          memcpy( site, optarg, sizeof(site) - 1 );
           memcpy( ifo, optarg, sizeof(ifo) - 1 );
         }
         break;
@@ -1273,7 +1270,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
-  /* check that a channel has been requested and fill the ifo and site */
+  /* check that a channel has been requested and fill the ifo */
   if ( ! fqChanName )
   {
     fprintf( stderr, "--channel-name must be specified\n" );
