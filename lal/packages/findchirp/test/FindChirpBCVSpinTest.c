@@ -125,18 +125,6 @@ main (int argc, char *argv[])
   InspiralTemplate             *tmplt = NULL;
   InspiralEvent                *event = NULL;
 
-                                                                                                                             
- REAL4            ab              = 0.0;
- REAL4            cd               = 0.0;
- REAL4            de;
-                                                                                                                             
-                                                                                                                             
-de = ab/cd;
-                                                                                                                             
-fprintf (stdout, "0.0  / 0.0 d %d  \n", de);
-fprintf (stdout, "0.0  / 0.0 e %e  \n", de);
-
-
 
 
   /*
@@ -256,7 +244,6 @@ fprintf (stdout, "numPoints (testfile) = %d \n", numPoints);
   fprintf( stdout, "     rhosqThreshold = %5.3f\n     chisqThreshold = %5.3f\n\n", 
       rhosqThresh, chisqThresh);
   fprintf( stdout, "               mass = %5.2f\n\n", mass );
-
  fprintf( stdout, "        numSegments = %d\n\n", numSegments );
  fprintf( stdout, "        dataSegVec->length = %d\n\n",dataSegVec->length );
 
