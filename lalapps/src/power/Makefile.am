@@ -2,7 +2,7 @@
 # $Id$
 POWERSRCS = power.c Power.h 
 if DATAFLOW
-DATAFLOWPROGRAMS = lalapps_snglBurstHistogram lalapps_burca
+DATAFLOWPROGRAMS = lalapps_snglBurstHistogram lalapps_burca lalapps_bread
 else
 DATAFLOWPROGRAMS = 
 endif
@@ -18,6 +18,7 @@ endif
 if DATAFLOW
 lalapps_snglBurstHistogram_SOURCES = snglBurstHistogram.c
 lalapps_burca_SOURCES = burca.c
+lalapps_bread_SOURCES = bread.c
 endif
 EXTRA_DIST = $(POWERSRCS) 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
