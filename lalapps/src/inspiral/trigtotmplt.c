@@ -105,7 +105,7 @@ int main ( int argc, char *argv[] )
     {"debug-level",             required_argument, 0,                'z'},
     {0, 0, 0, 0}
   };
-  int i, numEvents, numUniq;
+  int i, numEvents, numUniq = 0;
   REAL4 minMatch = -1;
   SnglInspiralTable    *eventHead = NULL;
   SnglInspiralTable    *thisEvent = NULL;
@@ -290,11 +290,7 @@ int main ( int argc, char *argv[] )
   }
   else if ( numEvents == 0 )
   {
-    fprintf( stdout, "no sngl_inspiral events found in file: %s\n"
-        "exiting cleanly\n" , inputFileName );
-    LALFree( inputFileName );
-    LALFree( outputFileName );
-    exit( 0 );
+    goto cleanexit;
   }
 
   if ( vrbflg ) fprintf( stdout, "parsed %d sngl_inspiral rows from %s\n", 
@@ -349,6 +345,7 @@ int main ( int argc, char *argv[] )
    *
    */
 
+cleanexit:
 
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   outputTable.snglInspiralTable = eventHead;
@@ -384,11 +381,23 @@ int main ( int argc, char *argv[] )
     LALFree( this_proc_param );
   }
   
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), 
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, outputTable, 
-        sngl_inspiral_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  if ( eventHead )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), 
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, outputTable, 
+          sngl_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+
+    LALFree( eventHandle );
+    while ( eventHead )
+    {
+      thisEvent = eventHead;
+      eventHead = eventHead->next;
+      LALFree( thisEvent );
+    }
+  }
+
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
 
   if ( vrbflg ) fprintf( stdout, "wrote %d sngl_inspiral rows to %s\n", 
@@ -402,16 +411,8 @@ int main ( int argc, char *argv[] )
    */
 
 
-  LALFree( eventHandle );
-  while ( eventHead )
-  {
-    thisEvent = eventHead;
-    eventHead = eventHead->next;
-    LALFree( thisEvent );
-  }
   LALFree( inputFileName );
   LALFree( outputFileName );
-
   LALCheckMemoryLeaks();
   
   return 0;
