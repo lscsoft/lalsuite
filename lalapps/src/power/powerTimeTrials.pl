@@ -18,12 +18,12 @@ open LOG, ">$LOG_FILE" or die "Couldn't open $LOG_FILE.";
 open DATA, ">$DATA_FILE" or die "Couldn't open $DATA_FILE.";
 
 #my @lengths = qw(10 100 1000 10000 100000 1000000);
-my @lengths = qw(600 700 800 900 1000 1024);
+my @lengths = qw(950 975 1000 1025 1050 1075 1100 1125 1150 1175 1200);
 
 my $cacheFileLength = 10000;
 
 my $startEpoch = 729283613;
-my $cacheFile = "/scratch/power/segment-" . $startEpoch . "-" . ($startEpoch + $cacheFileLength );
+my $cacheFile = "/scratch/power/segment-$startEpoch-$cacheFileLength";
 
 foreach(@lengths){
 	my $lt = localtime();
@@ -73,7 +73,7 @@ print PLOT_FILE << "PLOT_COMMANDS";
 	set xlabel "Number of Seconds of Data"
 	set ylabel "Time to Run lalapps_power"
 	set data style line
-	set size 1.5,1.5
+	set size 1,1
 	set logscale x
 	set logscale y
 	set timestamp

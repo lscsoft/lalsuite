@@ -1,41 +1,56 @@
 #-----------------------------------------------------------------------------------
-# INSTRUMENT AND QUALITY FILE SETUP
+#  this is the file of the parameters for createJobsTable.pl and processJobsTable.pl
+#
+# $Id$
 #-----------------------------------------------------------------------------------
-	
-TYPE=RDS_R_L1
-
-#INSTRUMENT, DATA_SET_NAME, and DATA_QUALITY_FILE need to be matched 
-# lalapps_power parameter CHANNEL
-INSTRUMENT=H
-DATA_SET_NAME=S2H2v02
-DATA_QUALITY_FILE=/scratch/power/input/S2H2v02_segs.txt
-
-#To allow data outside of playground, set USE_PLAYGROUND to 0
-USE_PLAYGROUND=0
-PLAYGROUND_FILE =/scratch/power/input/s2-playground.txt
-
-
 #-----------------------------------------------------------------------------------
 #  GLOBAL VARIABLES
 #-----------------------------------------------------------------------------------
-#TIME_CHUNK_MAX_SIZE=1024
-TIME_CHUNK_MAX_SIZE=1400
+# if lalapps_power is compiled with debugging on, use 1024 for max size
+# if lalapps_power has been compiled with --disable-debug, set the
+#  max to 1400. otherwise, debugging is on which used additional memory,
+#  set max to 1024
+TIME_CHUNK_MAX_SIZE=1024
 TIME_CHUNK_MIN_SIZE=4
+
+# the path to the lalapps_power executable
+EXECUTABLE=/home/dsmackin/bin/lalapps_power
+
+# Make sure intstrument is consistent for 
+INSTRUMENT=L
+
+#To limit the ananalysis of data to the playground, set USE_PLAYGROUND = 1
+# To use all data, set USE_PLAYGROUND=1
+USE_PLAYGROUND=0
 
 # value should be 6 unless the table structure changes
 JOBS_TABLE_FIELDS=6
 
-EXECUTABLE=/home/dsmackin/bin/lalapps_power
+#If lalapps_power was compiled with --enable-condor, set CONDOR_UNIVERSE=standard
+# Otherwise, set CONDOR_UNIVERSE=Vanilla
+CONDOR_UNIVERSE=Vanilla
+
+#-----------------------------------------------------------------------------------
+# INPUT FILES
+#-----------------------------------------------------------------------------------
+#INSTRUMENT, DATA_SET_NAME, and DATA_QUALITY_FILE need to be matched 
+# lalapps_power parameter CHANNEL
+#DATA_QUALITY_FILE=/scratch/power/input/S2H1v02_segs.txt
+DATA_QUALITY_FILE=/scratch/power/input/injections.txt
+
+# path to playground file
+PLAYGROUND_FILE =/scratch/power/input/s2-playground.txt
 
 
 #-----------------------------------------------------------------------------------
-#  OUTPUT
+#  OUTPUT FILES
 #-----------------------------------------------------------------------------------
 
 # all output files and folders, except for HTML, will go under this path
 OUTPUT_PATH=/scratch/power/tests
 
 JOBS_TABLE=power_jobs.tbl
+
 LOG=power_jobs.log
 
 #table contains runs id and description for all runs
@@ -50,15 +65,15 @@ HTML_PATH=/home/dsmackin/public_html/current_summary/
 #name of the file to contain the list of runs/description in HTML
 NOTEBOOK=power_notebook.html
 
-#path for CACHE_FILES
+#path for CACHE_FILES created from call to LALdataFind
 CACHE_PATH=/scratch/power/cache
 
 
 #-----------------------------------------------------------------------------------
-# lalapps_power  PARAMETERS
+# lalapps_power  COMMAND LINE ARGUMENTS
 #-----------------------------------------------------------------------------------
 # number of points to analyze per second
-# do not change this value
+# set NPTS to 16384 for data analysis, 2048 for simulated noise
 NPTS=16384
 
 # leave these 3 values as they are
@@ -89,13 +104,13 @@ SEGDCLE=64
 # is less than the threshold, then an event is considered an Event
 # trigger generator (ETG). This number should be between 1.0e-15 and
 # 1.0e-05
-THRESHOLD="10.0e-10"
+THRESHOLD="10.0e-30"
 
 # Controls how many events get written out per segment
 ETOMSTR=10
 
 # data channel
-CHANNEL="H2:LSC-AS_Q"
+CHANNEL="L1:LSC-AS_Q"
 
 # does not currently do anything but keep it set to 0
 SIMTYPE=0

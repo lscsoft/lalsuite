@@ -20,7 +20,8 @@ use Exporter;
 					f_updateNotebook
 					f_updateNotebookPage
 					f_getRunNumber
-					f_getDateYYMMDD); 
+					f_getDateYYMMDD
+					f_buildCacheFile); 
 				
 my %STATUS = (
 					P => "Pending",
@@ -28,6 +29,7 @@ my %STATUS = (
 					C => "Complete",
 					U => "User Review Required",
 					E => "Error",
+					BC => "Bad Cache File",
 					NF => "Output file not found");
 										
 #-----------------------------------------------------------------------------------
@@ -275,6 +277,39 @@ sub f_getDateYYMMDD{
 	 $timeparts[4] =~ s/^20//;
 
     return "$timeparts[4]$month{$timeparts[1]}$timeparts[2]";
+}
+
+#-----------------------------------------------------------------------------------
+#   f_buildCacheFile
+#-----------------------------------------------------------------------------------
+#  - Checks to see if the cache file $framechache exists and has data. If it 
+#	doesn't exist or doesn't have data, then function makes system call to 
+#   LALdataFind to build the cachefile. Sometimes LALdataFind creates empty cachefiles
+#   an additional check is made to make sure the new cachefile has data.
+# 
+#-----------------------------------------------------------------------------------
+#  Returns the size in bytes of the cachefile
+#-----------------------------------------------------------------------------------
+sub f_buildCacheFile {
+	my ($startSec, $stopSec, $framecache, $instrument) = @_;
+	
+	#only call LALdataFind if the cache file doesn't currently exist.
+	if (! -f $framecache or -s $framecache == 0){
+	
+		#error END OF FRAME data sometimes occurs for unknown reasons. Making the
+		# cache file 1 second longer fixes the problem
+		my $cmd =  "LALdataFind --lal-cache --instrument $instrument --type RDS_R_L1 " .
+		 		" --start $startSec --end " . ($stopSec + 1) . " > $framecache";
+		print "$cmd\n";
+		system $cmd;	
+		
+		if (-s $framecache == 0) {
+			print LOG "Error: Framecache file $framecache size 0\n";
+			print "Error: Framecache file $framecache size 0\n";
+			unlink ($framecache);
+			return 0;}
+	}
+	return (-s $framecache);
 }
 
 #return a true value to idicate the end of the module

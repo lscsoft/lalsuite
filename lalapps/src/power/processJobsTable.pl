@@ -33,6 +33,7 @@ my %STATUS = (
 					C => "Complete",
 					U => "User Review Required",
 					E => "Error",
+					BC => "Bad Cache File",
 					NF => "Output file not found");
 					
 # Check to make sure date of table is included as arg
@@ -131,7 +132,7 @@ sub f_processJobsTable {
 		#read columns into variables
 		my ($statusCode, $startSec, $stopSec, $framecache, $outfile)  = ($fields[0],$fields[2],$fields[3],$fields[4],$fields[5]);
 
-		if($statusCode eq "C" or $statusCode eq "E" or $statusCode eq "NF"){
+		if($statusCode eq "C" or $statusCode eq "E" or $statusCode eq "BC"){
 			#nothing to do now; may add code later
 		}elsif ($statusCode eq "P" ){
 			f_writeJobToCondorSubmitFile($startSec,  $stopSec, $framecache, $outfile);
@@ -139,8 +140,24 @@ sub f_processJobsTable {
 			$statusCode = "R";
 		} elsif ($statusCode eq "R") { #Check output file for completion
 			$statusCode = f_checkForProgramCompletion($outfile);
+		} elsif ($statusCode eq "NF"){ #If there's no output, try re-running it
+		
+			print "StatusCode=NF\n";
+			#re-build the cache file, with more data. The extra data will
+			# should get rid of the "ABORT: End of Frame Data" errors
+			if(-f $framecache){unlink($framecache);}
+			unless(f_buildCacheFile($startSec,  $stopSec + 5000,$framecache, ${$params}{'INSTRUMENT'})){
+				$statusCode = "BC";
+				next;
+			}
+			
+			#Now add it to the .sub so it will run again
+			f_writeJobToCondorSubmitFile($startSec,  $stopSec, $framecache, $outfile);
+			$submitCondor = 1;
+			$statusCode = "R";
 		} else {
-			die "Unknown status code: $statusCode\n";
+			print "Unknown status code: $statusCode\n";
+			print LOG "Unknown status code: $statusCode\n";
 		}
 		my $record = "$statusCode\t$STATUS{$statusCode}\t$startSec\t$stopSec\t$framecache\t$outfile\n";
 		print TMP_TABLE $record;
@@ -164,9 +181,16 @@ sub f_processJobsTable {
 #  Returns 
 #-----------------------------------------------------------------------------------
 sub f_writeCondorSubmitFileHeaders{
+
+	#check for parameter CONDOR for backwards compatibility
+	my $universe = "Vanilla";
+	if(${$params}{'CONDOR_UNIVERSE'}) { 
+		$universe = ${$params}{'CONDOR_UNIVERSE'};
+	}
+	
 	my $stmts = << "STATEMENTS";
 Getenv = True
-Universe = Vanilla
+Universe = $universe
 Executable = ${$params}{'EXECUTABLE'}
 STATEMENTS
 

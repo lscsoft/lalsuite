@@ -68,7 +68,14 @@ my $runPath = $outputPath  . "/$runID";
 #build the parameter dependent globals
 my $JOBS_TABLE = "$runPath/${$params}{'JOBS_TABLE'}";
 
-
+my %STATUS = (
+					P => "Pending",
+					R => "Running",
+					C => "Complete",
+					U => "User Review Required",
+					E => "Error",
+					BC => "Bad Cache File",
+					NF => "Output file not found");
 
 #-----------------------------------------------------------------------------------
 #  MAIN
@@ -158,6 +165,9 @@ sub lf_createJobsForGoodData {
 	
 	while(<DATA_QUALITY_FILE>){
 		chomp;
+		
+		#if first character is # is then it is a comment, skip line
+		if (/^\#/){next;}
 			
 		#read in fields by splitting line on spaces
 		my @fields = split " ";
@@ -221,36 +231,15 @@ sub  f_processChunk {
 		my $outfile = "$runPath/xml/$startSec-$duration.xml";
 		my $framecache = ${$params}{'CACHE_PATH'} . "/" . ${$params}{'INSTRUMENT'} . "-$startSec-$duration";
 		
-		f_buildCacheFile($startSec,  $stopSec,$framecache);
-		f_writeJobsTable($runPath,$startSec,  $stopSec, $framecache, $outfile, $JOBS_TABLE);
+		my $statusCode = "P";
+		
+		#build the cache file. if it is 0 length, then change status to BC - Bad Caceh File
+		if (f_buildCacheFile($startSec,  $stopSec,$framecache, ${$params}{'INSTRUMENT'}) == 0 ){$statusCode = "BC";}
+		f_writeJobsTable($runPath, $statusCode, $startSec,  $stopSec, $framecache, $outfile, $JOBS_TABLE);
 	}
 }
 
-#-----------------------------------------------------------------------------------
-#   f_buildCacheFile
-#-----------------------------------------------------------------------------------
-#  - Checks to see if the cache file $framechache exists and has data. If it 
-#	doesn't exist or doesn't have data, then function makes system call to 
-#   LALdataFind to build the cachefile. Sometimes LALdataFind creates empty cachefiles
-#   an additional check is made to make sure the new cachefile has data.
-# 
-#-----------------------------------------------------------------------------------
-#  Returns the size in bytes of the cachefile
-#-----------------------------------------------------------------------------------
-sub f_buildCacheFile {
-	my ($startSec, $stopSec, $framecache) = @_;
-	
-	#only call LALdataFind if the cache file doesn't currently exist.
-	if (! -f $framecache or -s $framecache == 0){
-		my $cmd =  "LALdataFind --lal-cache --instrument " . ${$params}{'INSTRUMENT'} . " --type RDS_R_L1 " .
-		 		" --start $startSec --end $stopSec > $framecache";
-		print "$cmd\n";
-		system $cmd;	
-		
-		if (-s $framecache == 0) {die "Framechache file = 0";}
-	}
-	return (-s $framecache);
-}
+
 
 #-----------------------------------------------------------------------------------
 #   f_writeJobsTable
@@ -267,11 +256,11 @@ sub f_buildCacheFile {
 #  Returns 
 #-----------------------------------------------------------------------------------
 sub  f_writeJobsTable {
-	my ($runPath,$startSec, $stopSec, $cachefile, $xmlFile, $tableFile) = @_;
+	my ($runPath,$statusCode, $startSec, $stopSec, $cachefile, $xmlFile, $tableFile) = @_;
 	
 	open TABLE, ">>$tableFile" or die "Couldn't open $tableFile.";
 	#print   "P\tpending\t$startSec\t$stopSec\t$cachefile\t$xmlFile\n";
-	print TABLE  "P\tpending\t$startSec\t$stopSec\t$cachefile\t$xmlFile\n";
+	print TABLE  "$statusCode\t$STATUS{$statusCode}\t$startSec\t$stopSec\t$cachefile\t$xmlFile\n";
 	close TABLE;
 }
 
