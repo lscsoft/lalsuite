@@ -83,6 +83,9 @@ RCSID("$Id$");
 "  --dm Dm                   mass coincidence window (default 0)\n"\
 "  --dpsi0 Dpsi0             psi0 coincidence window\n"\
 "  --dpsi3 Dpsi3             psi3 coincidence window\n"\
+"  --alphaf-cut AlphaFCut    ignore BCV trigs with alphaF > AlphaFCut for\n"\
+"                            the coincidence step, BUT:\n"\
+"                            NO CUT is performed if set to 0 \n"\
 "  --dmchirp Dmchirp         mchirp coincidence window\n"\
 "  --deta  Deta              eta coincidence window\n"\
 "  --dt Dt                   time coincidence window (milliseconds)\n"\
@@ -153,6 +156,7 @@ int main( int argc, char *argv[] )
   SnglInspiralTable    *outEvent[MAXIFO];
   SnglInspiralTable    *coincidentEvents[MAXIFO];
   SnglInspiralAccuracy  errorParams;
+  REAL4                 alphaFcut = -1.0;
 
   SummValueTable       *inspEffRange[MAXIFO];
   SummValueTable       *currentEffRange[MAXIFO];
@@ -193,6 +197,7 @@ int main( int argc, char *argv[] )
     {"parameter-test",          required_argument, 0,                'A'},
     {"dpsi0",                   required_argument, 0,                'p'},
     {"dpsi3",                   required_argument, 0,                'P'},
+    {"alphaf-cut",              required_argument, 0,                'F'},
     {"dmchirp",                 required_argument, 0,                'c'},
     {"deta",                    required_argument, 0,                'n'},
     {"dt",                      required_argument, 0,                't'},
@@ -258,7 +263,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:e:k:A:m:p:P:t:q:r:s:hz:I:Z:M:T:S:c:n:QRD", long_options, 
+        "a:b:e:k:A:m:p:P:F:t:q:r:s:hz:I:Z:M:T:S:c:n:QRD", long_options, 
         &option_index );
 
     /* detect the end of the options */
@@ -379,6 +384,12 @@ int main( int argc, char *argv[] )
       case 'P':
         /* psi3 errors allowed */
         errorParams.dpsi3 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case 'F':
+        /* alphaF cut for coincidence */
+        alphaFcut = atof(optarg);
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
@@ -588,6 +599,13 @@ int main( int argc, char *argv[] )
   {
     fprintf( stderr, 
         "--parameter-test must not be specified in single IFO mode\n" );
+    exit( 1 );
+  }
+
+  if ( (errorParams.test == psi0_and_psi3) && (alphaFcut < 0.0) )
+  {
+    fprintf( stderr, 
+        "alphaf-cut MUST be specified for BCV triggers!\n");
     exit( 1 );
   }
 
@@ -1197,6 +1215,26 @@ int main( int argc, char *argv[] )
 
   /*
    *
+   * for the case of BCV triggers, discard the triggers that
+   * have alphaF greater than the alphaFcut specified
+   *
+   */
+
+  if (errorParams.test == psi0_and_psi3) 
+  {
+    for ( j = 0; j < numIFO; ++j )
+    {
+      if ( vrbflg ) fprintf( stdout, 
+          "Discarding triggers with alphaF > %f from ifo %d\n", alphaFcut, j );
+      LAL_CALL( LALalphaFCutSingleInspiral( &status, &(inspiralEventList[j]),
+        alphaFcut), &status );
+    }  
+  }
+
+
+
+  /*
+   *
    * sort the input data by time
    *
    */
@@ -1210,6 +1248,7 @@ int main( int argc, char *argv[] )
   }
 
 
+  
   /*
    * 
    * find the first trigger after coincidence start time for ifo A
