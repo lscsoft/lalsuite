@@ -29,6 +29,7 @@ $Id$
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
+#include <lal/LALDatatypes.h>
 
 double rint(double x);
 
@@ -610,23 +611,21 @@ LALFindChirpFilterInit (
     *output = NULL;
   }
   ENDFAIL( status );
-
-
+  
   /*
    *
    * create vector to store snrsq, if required
    *
    */
-
-
+  
+  
   if ( params->createRhosqVec )
-  {
-    outputPtr->rhosqVec = (REAL4TimeSeries *) 
-      LALCalloc( 1, sizeof(REAL4TimeSeries) );
-    LALCreateVector (status->statusPtr, &(outputPtr->rhosqVec->data), 
-        params->numPoints);
-    BEGINFAIL( status )
     {
+      outputPtr->rhosqVec = (REAL4TimeSeries *) 
+	LALCalloc( 1, sizeof(REAL4TimeSeries) );
+      LALCreateVector (status->statusPtr, &(outputPtr->rhosqVec->data), 
+			params->numPoints);
+      BEGINFAIL( status )	{
       TRY( LALDestroyVector (status->statusPtr, &(outputPtr->chisqVec) ), 
           status ); 
       TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ),
@@ -634,7 +633,7 @@ LALFindChirpFilterInit (
       if ( outputPtr->qtildeVecBCV )
       {
         TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV)), 
-            status );
+	      status );
       }
       if ( outputPtr->qtildeVecBCVSpin1 )
       {
@@ -678,6 +677,78 @@ LALFindChirpFilterInit (
       *output = NULL;
     }
     ENDFAIL( status );
+  }    
+
+  
+  /*
+   *
+   * create vector to store z data, if required
+   *
+   */
+  
+  
+  if ( params->createZVec )
+    {
+      outputPtr->zVec = (COMPLEX8TimeSeries *) 
+	LALCalloc( 1, sizeof(COMPLEX8TimeSeries) );
+      LALCCreateVector (status->statusPtr, &(outputPtr->zVec->data), 
+			params->numPoints);
+      /*
+      BEGINFAIL( status )	{
+      TRY( LALDestroyVector (status->statusPtr, &(outputPtr->chisqVec) ), 
+          status ); 
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVec) ),
+          status );
+      if ( params->createRhosqVec ) {
+	LALDestroyVector (status->statusPtr, &(outputPtr->rhosqVec->data));
+      }
+      if ( outputPtr->qtildeVecBCV )
+      {
+        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qtildeVecBCV)), 
+	      status );
+      }
+      if ( outputPtr->qtildeVecBCVSpin1 )
+      {
+        TRY( LALCDestroyVector( status->statusPtr, 
+              &(outputPtr->qtildeVecBCVSpin1)), status );
+      }
+      if ( outputPtr->qtildeVecBCVSpin2 )
+      {
+        TRY( LALCDestroyVector( status->statusPtr, 
+              &(outputPtr->qtildeVecBCVSpin2)), status );
+      }
+      TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVec) ), 
+          status );
+      if ( outputPtr->qVecBCV)
+      {
+        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCV) ),
+            status );
+      }
+      if ( outputPtr->qVecBCVSpin1)
+      {
+        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin1) ),
+            status );
+      }
+      if ( outputPtr->qVecBCVSpin2)
+      {
+        TRY( LALCDestroyVector( status->statusPtr, &(outputPtr->qVecBCVSpin2) ),
+            status );
+      }
+
+
+      TRY( LALDestroyComplexFFTPlan( status->statusPtr, 
+            &(outputPtr->invPlan) ), status );
+
+      LALFree( outputPtr->chisqInput );
+      if ( outputPtr->chisqInputBCV )
+      {
+        LALFree( outputPtr->chisqInputBCV );
+      }
+      LALFree( outputPtr->chisqParams );
+      LALFree( outputPtr );
+      *output = NULL;
+    }
+    ENDFAIL( status );*/
   }    
 
 
@@ -816,6 +887,14 @@ LALFindChirpFilterFinalize (
     CHECKSTATUSPTR( status );
 
     LALFree( outputPtr->rhosqVec );
+  }    
+
+  if ( outputPtr->zVec )
+  {
+    LALCDestroyVector( status->statusPtr, &(outputPtr->zVec->data) );
+    CHECKSTATUSPTR( status );
+
+    LALFree( outputPtr->zVec );
   }    
 
 
