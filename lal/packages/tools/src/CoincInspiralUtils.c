@@ -43,14 +43,55 @@ NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 \vspace{0.1in}
 \input{CoincInspiralUtilsCP}
 \idx{LALCreateTwoIFOCoincList()}
-\idx{LALSnglInspiralLookup()}
 \idx{LALAddSnglInspiralToCoinc()}
-\idx{LALCreateNewCoinc()}
 \idx{LALSnglInspiralCoincTest()}
+\idx{LALSnglInspiralLookup()}
+
 
 \subsubsection*{Description}
 
-\noindent Blah.
+\texttt{LALCreateTwoIFOCoincList()} takes in a linked list of single inspiral
+tables and returns a list of two instrument coincidences.  The coincidence
+requirements are given by the \texttt{errorParams}.  When single inspirals from
+two different instruments are found to be coincident, the code creates a new
+\texttt{coincInspiralTable} and uses \texttt{LALAddSnglInspiralToCoinc()} to
+add the single inspirals to the coinc.  The function returns
+\texttt{coincOutput} which is a pointer to the head of a linked list of
+\texttt{CoincInspiralTable}s.
+
+\texttt{LALAddSnglInspiralToCoinc()} adds a pointer to a single inspiral table
+to a coinc inspiral table.  Upon entry, if \texttt{coincPtr} points to a
+\texttt{NULL} coinc inspiral table, the table is created before a pointer to
+the single inspiral table is added.  Additionally, an \texttt{eventId} table is
+created for the single inspiral table.  This points to both the single and
+coinc inspirals.  If an \texttt{eventId} already exists for the single
+inspiral, another eventId table is added to the linked list.  The linked list
+of \texttt{eventId}s associated to a single inspiral table allow us to easily
+determine which coincident events each single is a part of.
+
+The function \texttt{LALSnglInspiralLookup()} can be used to retrieve single
+inspiral entries from a coinc inspiral table.  Given an \texttt{ifo} and a
+\texttt{coincInspiral}, it returns a pointer to the relevant single inspiral
+table.
+
+\texttt{LALSnglInspiralCoincTest()} tests for coincidence between a single
+inspiral and a coinc inspiral.  It works by testing for coincidence between
+each non-null entry in the coinc inspiral and the single.  This is done using
+\texttt{LALCompareSnglInspiral()}.  If all members of the coinc are found to be
+coincident with the single, the \texttt{errorParams.match} is set to 1,
+otherwise to 0.
+
+\texttt{LALExtractCoincSngls()} extracts the information from a linked list of
+\texttt{coincInspiralTable}s and returns it as a linked list of
+\texttt{snglInspiralTable}s.  Thus, the output \texttt{snglPtr} is a pointer to
+a linked list of single inspiral tables.  That list contains only single
+inspirals which are found in coincidence.  In order to preserve the coincidence
+information, we assign to each coincident event an integer value.  This is
+stored in the \texttt{UINT4 id} field of the \texttt{eventIDColumn} of each
+single inspiral which forms part of the coincidence.  We do not assign multiple
+\texttt{id} values to a given single inspiral table, but instead make multiple
+copies of the table, each with a unique \texttt{id}.  
+
 
 \subsubsection*{Algorithm}
 
@@ -158,63 +199,6 @@ LALCreateTwoIFOCoincList(
 } 
 
 
-/* <lalVerbatim file="CoincInspiralUtilsCP"> */
-void
-LALSnglInspiralLookup(
-    LALStatus          *status,
-    SnglInspiralTable **snglInspiralPtr,
-    CoincInspiralTable *coincInspiral,
-    char               *ifo 
-    )
-/* </lalVerbatim> */
-{
-  SnglInspiralTable    *snglInspiralEntry;
-
-  INITSTATUS( status, "LALSnglInspiralLookup", COINCINSPIRALUTILSC );
-
-  switch ( ifo[0] ) 
-  {
-    case 'G':
-      snglInspiralEntry = coincInspiral->G1Inspiral;
-      break;
-
-    case 'H':
-      if ( !strcmp( ifo, "H1" ) )
-      {
-        snglInspiralEntry = coincInspiral->H1Inspiral;
-      }
-      else if (!strcmp( ifo, "H2" ) )
-      {
-        snglInspiralEntry = coincInspiral->H2Inspiral;
-      }
-      else
-      {
-        /* Invalid Hanford Detector */
-        snglInspiralEntry = NULL;
-      } 
-      break;
-
-    case 'L':
-      snglInspiralEntry = coincInspiral->L1Inspiral;
-      break;
-
-    case 'T':
-      snglInspiralEntry = coincInspiral->T1Inspiral;
-      break;
-
-    case 'V':
-      snglInspiralEntry = coincInspiral->V1Inspiral;
-      break;
-
-    default:
-      /* Invalid Detector Site */
-      snglInspiralEntry = NULL;
-  }
-  *snglInspiralPtr = snglInspiralEntry;
-
-  RETURN (status);
-}
-
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
@@ -310,42 +294,54 @@ LALAddSnglInspiralToCoinc(
 }
 
 
+
+
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
-LALCreateNewCoinc(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincPtr,
-    CoincInspiralTable         *coincInspiral,
-    SnglInspiralTable          *snglInspiral
+LALSnglInspiralLookup(
+    LALStatus            *status,
+    SnglInspiralTable   **snglInspiralPtr,
+    CoincInspiralTable   *coincInspiral,
+    InterferometerLabel   ifo 
     )
 /* </lalVerbatim> */
 {
-  CoincInspiralTable  *newCoincInspiral;
-  INITSTATUS( status, "LALAddSnglInspiralToCoinc", COINCINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
+  SnglInspiralTable    *snglInspiralEntry;
 
-  ASSERT( coincPtr, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( *coincPtr, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( snglInspiral, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  INITSTATUS( status, "LALSnglInspiralLookup", COINCINSPIRALUTILSC );
 
+  switch ( ifo ) 
+  {
+    case g1:
+      snglInspiralEntry = coincInspiral->G1Inspiral;
+      break;
 
-  /* allocate memory for the new IFO coinc table */
-  newCoincInspiral = (CoincInspiralTable *) 
-    LALCalloc( 1, sizeof(CoincInspiralTable) );
+    case h1:
+      snglInspiralEntry = coincInspiral->H1Inspiral;
+      break;
 
+    case h2:
+      snglInspiralEntry = coincInspiral->H2Inspiral;
+      break;
 
-  /* copy over the single IFO event */
-  memcpy( newCoincInspiral, coincInspiral, sizeof(CoincInspiralTable) );
+    case l1:
+      snglInspiralEntry = coincInspiral->L1Inspiral;
+      break;
 
+    case t1:
+      snglInspiralEntry = coincInspiral->T1Inspiral;
+      break;
 
-  /* add the additional sngl_inspiral to the new coinc */
-  LALAddSnglInspiralToCoinc( status->statusPtr, &newCoincInspiral, 
-      snglInspiral );
+    case v1:
+      snglInspiralEntry = coincInspiral->V1Inspiral;
+      break;
 
-  DETATCHSTATUSPTR (status);
+    default:
+      /* Invalid Detector Site */
+      snglInspiralEntry = NULL;
+  }
+  *snglInspiralPtr = snglInspiralEntry;
+
   RETURN (status);
 }
 
@@ -363,10 +359,7 @@ LALSnglInspiralCoincTest(
   SnglInspiralTable    *thisCoincEntry;
   INT4                  match = 1;
   INT4                  j = 0;
-  static char         *ifoList[] = {"Unknown IFO", "G1", "H1", "H2", 
-    "L1", "T1", "V1"};
-
-
+  
   INITSTATUS( status, "LALSnglInspiralCoincTest", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
@@ -375,7 +368,7 @@ LALSnglInspiralCoincTest(
   for ( j = 1; j < 7; j++)
   {
     LALSnglInspiralLookup( status->statusPtr, &thisCoincEntry, coincInspiral, 
-        ifoList[j] );
+        j );
 
     if ( thisCoincEntry )
     {
@@ -407,3 +400,78 @@ LALSnglInspiralCoincTest(
 
 
 
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+LALExtractCoincSngls(
+    LALStatus                  *status,
+    SnglInspiralTable         **snglPtr,
+    CoincInspiralTable         *coincInspiral,
+    LIGOTimeGPS                *gpsStartTime
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable  *snglHead = NULL;
+  SnglInspiralTable  *thisSngl = NULL;
+  SnglInspiralTable  *thisCoincEntry = NULL;
+  CoincInspiralTable *thisCoinc = NULL;
+  EventIDColumn      *eventId = NULL;
+  UINT4               eventNum = 1;
+  INT4                j;
+  
+  INITSTATUS( status, "LALExtractCoincSngls", COINCINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  ASSERT( snglPtr, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( ! (*snglPtr), status, 
+      LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
+  ASSERT( coincInspiral, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+
+
+  /* loop over the linked list of coinc inspirals */
+  for( thisCoinc = coincInspiral; thisCoinc; thisCoinc = thisCoinc->next,
+      ++eventNum)
+  {
+    /* loop over the interferometers */
+    for ( j = 1; j < 7; j++)
+    {
+      LALSnglInspiralLookup( status->statusPtr, &thisCoincEntry, thisCoinc, 
+        j );
+
+      if ( thisCoincEntry )
+      {
+        /* allocate memory for a new sngl inspiral */
+        if ( !snglHead )
+        {
+          thisSngl = snglHead = (SnglInspiralTable *) 
+            LALCalloc( 1, sizeof(SnglInspiralTable) );
+        }
+        else
+        {
+          thisSngl = thisSngl->next = (SnglInspiralTable *) 
+            LALCalloc( 1, sizeof(SnglInspiralTable) );
+        }
+
+        /* copy thisCoincEntry into our list */
+        memcpy( thisSngl, thisCoincEntry, sizeof(SnglInspiralTable) );
+        thisSngl->next = NULL;
+        
+        /* create an eventId and populate the id */
+        eventId = (EventIDColumn *) LALCalloc( 1, sizeof(EventIDColumn) );
+        /* XXX Commented until id is changed from UINT4 to UINT8 
+        eventId->id = LAL_INT8_C(1000000000) * (INT8) gpsStartTime->gpsSeconds 
+          + (INT8) eventNum; XXX */
+       
+        thisSngl->event_id = eventId;
+        eventId->snglInspiralTable = thisSngl;
+      }
+    }
+  }
+
+  *snglPtr = snglHead;
+        
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
