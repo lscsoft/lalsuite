@@ -763,10 +763,7 @@ void LALStochasticMC (LALStatus *status,
     LALResponseConvert(status->statusPtr,&wFilter1,calfuncs1.responseFunction);
     LALResponseConvert(status->statusPtr,&wFilter2,calfuncs2.responseFunction);
      
-    for (i=0; (UINT4)i < freqlen; i++) {
-       response[0]->data[i].im *= -1;
-       response[1]->data[i].im *= -1;
-     }
+    
 
     /* force DC to be 0 and nyquist to be real */
     response[0]->data[0].re = 0.0;
@@ -1083,10 +1080,7 @@ void LALStochasticMCStand (LALStatus *status,
      LALExtractFrameResponse( status->statusPtr, &wFilter1,catalog1 ,ifo1 );
      LALExtractFrameResponse( status->statusPtr, &wFilter2,catalog2 ,ifo2 );
 
-     for (i=0; (UINT4)i < freqlen; i++) {
-       response[0]->data[i].im *= -1;
-       response[1]->data[i].im *= -1;
-     }
+     
 
      /* force DC to be 0 and nyquist to be real */
      response[0]->data[0].re = 0.0;
