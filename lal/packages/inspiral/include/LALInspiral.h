@@ -373,7 +373,8 @@ typedef enum {
    EOB,
    BCV,
    BCVSpin,
-   SpinTaylorT3
+   SpinTaylorT3,
+   SpinTaylorPN,
  } Approximant;
 /* </lalVerbatim>  */
 
@@ -561,6 +562,9 @@ tagexpnCoeffs {
    REAL8 ftaN, fta2, fta3, fta4, fta5, fta6, fta7, ftl6; 
    /* Taylor expansion coefficents in psi(f) in the Fourier phase*/
    REAL8 pfaN, pfa2, pfa3, pfa4, pfa5, pfa6, pfa7, pfl5; 
+   /* Taylor expansion for the spinning case */
+   REAL8 ST[9], thetahat ;
+
 
    /* sampling rate and interval*/
    REAL8 samplingrate, samplinginterval;
@@ -910,6 +914,18 @@ void LALInspiralSpinModulateWaveForInjection(
      CoherentGW *waveform,
      InspiralTemplate *params);
 
+
+/*  <lalLaTeX>
+\newpage\input{LALSTPNWaveformC}
+</lalLaTeX>  */
+void 
+LALSTPNWaveformForInjection (
+			    LALStatus        *status,
+			    CoherentGW       *waveform,
+			    InspiralTemplate *params
+			    ) ;
+
+
 /*  <lalLaTeX>
 \newpage\input{LALInspiralChooseModelC}
 </lalLaTeX>  */
@@ -1228,6 +1244,17 @@ void LALRungeKutta4(
      REAL8Vector *,
      rk4In *,
      void *);
+
+
+/*ajout ParseParametesr*/
+
+void LALInspiralParseParametersInspiralTemplate(int argc, char **argv,
+						InspiralTemplate *params);
+void LALInspiralInitInspiralTemplateStructure2Dummy (InspiralTemplate *params);
+void LALInspiralCheckInspiralTemplateStructure      (InspiralTemplate  params);
+void LALInspiralSetDefaultInspiralTemplateStructure (InspiralTemplate *params);
+void LALInspiralPrintInspiralTemplateStructure      (InspiralTemplate  params);
+void HelpInspiralTemplate();
 
 /*  <lalLaTeX>
 \newpage\input{LALInspiralTestC}
