@@ -163,7 +163,7 @@ void LALBlockRho2 (
 	LALStatus		*status,
 	REAL8			*result,
 	REAL8			*rpeak,
-	INT4			*index,
+	INT4			*myindex,
 	REAL8Sequence		*data,
 	UINT4			*marginOfExclusion			
 )
@@ -388,7 +388,7 @@ const	INT4		two = 2;
 	  }
 
 	/*  [rpeak,ndx] = max(fom)  */
-	LALDMax( status->statusPtr, rpeak, fomWithoutMargins, index);
+	LALDMax( status->statusPtr, rpeak, fomWithoutMargins, myindex);
         CHECKSTATUSPTR( status );
 
 	for( k = 0; k < (INT4)(fomWithoutMargins->length); k++ )
@@ -403,7 +403,7 @@ const	INT4		two = 2;
 	(*result) = log((*result));
 
 	/*  ndx = ndx + 2  */
-	(*index) = (*index) + 2;
+	(*myindex) = (*myindex) + 2;
 
 	LALDDestroyVector( status->statusPtr, &indexVector);
 	LALDDestroyVector( status->statusPtr, &temp);
