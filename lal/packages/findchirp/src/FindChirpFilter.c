@@ -1279,9 +1279,9 @@ LALFindChirpBCVFilterSegment (
 
     /*
      * REAL4 eta = input->tmplt->eta;
-     * REAL4 m1 = input->tmplt->mass1;
-     * REAL4 m2 = input->tmplt->mass2;
-     */ 
+     */
+    REAL4 m1 = input->tmplt->mass1;
+    REAL4 m2 = input->tmplt->mass2;
 
     REAL4 fmin = input->segment->fLow;
     REAL4 m = - psi3 / (16.0 * LAL_PI * LAL_PI * psi0) ;
