@@ -545,8 +545,10 @@ int main(int argc, char **argv)
 	 * Loop over the xml input files
 	 */
 
-	if(!(fpin = fopen(infile,"r")))
+	if(!(fpin = fopen(infile,"r"))) {
 		LALPrintError("Could not open list of input files\n");
+		exit(SNGLBURSTREADER_EFILE);
+	}
 
 	if(options.verbose) {
 		fpout = fopen("./EPjobstartstop.dat","w");
@@ -597,7 +599,7 @@ int main(int argc, char **argv)
 	 */
 
 	if(options.cluster)
-		LAL_CALL(LALClusterSnglBurstTable(&stat, &burstEventList, NULL, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
+		LAL_CALL(LALClusterSnglBurstTable(&stat, &burstEventList, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
 
 
 	/*
