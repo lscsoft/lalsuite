@@ -47,6 +47,7 @@ tagTFTile
   INT4                             tstart;
   INT4                             tend;
   INT4                             whichPlane;
+  REAL8                            deltaT;      /* deltaF will always be 1/deltaT     */
   REAL8                            excessPower;
   REAL8                            alpha;
   REAL8                            weight;
