@@ -53,9 +53,9 @@ NRCSID (REALFFTH, "$Id$");
 typedef struct
 tagRealFFTPlan
 {
-  INT4  sign;
-  INT4  size;
-  void *plan;
+  INT4   sign;
+  UINT4  size;
+  void  *plan;
 }
 RealFFTPlan;
 
@@ -64,28 +64,28 @@ void
 EstimateFwdRealFFTPlan (
     Status       *stat,
     RealFFTPlan **plan,
-    INT4          size
+    UINT4         size
     );
 
 void
 EstimateInvRealFFTPlan (
     Status       *stat,
     RealFFTPlan **plan,
-    INT4          size
+    UINT4         size
     );
 
 void
 MeasureFwdRealFFTPlan (
     Status       *stat,
     RealFFTPlan **plan,
-    INT4          size
+    UINT4         size
     );
 
 void
 MeasureInvRealFFTPlan (
     Status       *stat,
     RealFFTPlan **plan,
-    INT4          size
+    UINT4         size
     );
 
 void
