@@ -1,11 +1,11 @@
 # Process this file with automake to produce Makefile.in
 check_PROGRAMS = setMaskTest clusterTest LALGetLayerWaveletTest 
 LALGetLayerWaveletTest_SOURCES = LALGetLayerWaveletTest.c 
-LALGetLayerWaveletTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+LALGetLayerWaveletTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 setMaskTest_SOURCES = setMaskTest.c 
-setMaskTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+setMaskTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 clusterTest_SOURCES = clusterTest.c 
-clusterTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+clusterTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 #TESTS =  setMaskTest clusterTest LALGetLayerWaveletTest
 TESTS =  clusterTest LALGetLayerWaveletTest
