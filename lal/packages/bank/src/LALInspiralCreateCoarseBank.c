@@ -196,7 +196,8 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
   INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
   ATTATCHSTATUSPTR(status);
   
-  ASSERT (coarseIn.NoisePsd, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+  ASSERT (coarseIn.shf.data, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+  ASSERT (coarseIn.shf.data->data, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
   ASSERT (coarseIn.mMin > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
   ASSERT (coarseIn.MMax > 2.*coarseIn.mMin, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
   ASSERT (coarseIn.mmCoarse > 0., status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
@@ -216,7 +217,7 @@ void LALInspiralCreateCoarseBank(LALStatus            *status,
    conformity with the coarseIn structure */
 
   tempPars = (InspiralTemplate *)LALMalloc(sizeof(InspiralTemplate));
-  metric.NoisePsd = coarseIn.NoisePsd;
+  metric.shf = &(coarseIn.shf);
   metric.space = coarseIn.space;
   metric.iflso = coarseIn.iflso;
   LALInspiralSetParams(status->statusPtr, tempPars, coarseIn);

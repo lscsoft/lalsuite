@@ -286,6 +286,7 @@ void LALInspiralComputeMetric(LALStatus        *status,
    ATTATCHSTATUSPTR(status);
 
    ASSERT (metric,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
+   ASSERT (metric->shf,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (params.totalMass > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
    ASSERT (params.eta > 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
    ASSERT (params.eta <= 0.25, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
@@ -334,7 +335,7 @@ transformation   matrix */
    a2 = 5.4290/(1.0080 * c4);
    a3 = 6.170/(1.440 * c4);
 
-   in.NoisePsd = metric->NoisePsd;
+   in.shf= metric->shf;
    in.xmin = params.fLower;
    in.xmax = params.fCutoff;
    in.norm = 1.;
