@@ -281,6 +281,11 @@ LALWriteLiteral( FILE *stream, const CHAR *string )
   return 0;
 }
 
+/* tell GNU C compiler to ignore warnings about the `ll' length modifier */
+#ifdef __GNUC__
+#define fprintf __extension__ fprintf
+#endif
+
 define(`TYPECODE',`I2')dnl
 include(`LALWriteSeries.m4')dnl
 

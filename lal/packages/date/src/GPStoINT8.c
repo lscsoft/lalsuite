@@ -57,12 +57,12 @@ LALINT8toGPS (
     )
 /* </lalVerbatim> */
 {
-  INT8 s = (*input) / 1000000000LL;
+  INT8 s = (*input) / LAL_INT8_C(1000000000);
 
   INITSTATUS( status, "LALINT8toGPS", GPSTOINT8C );
   
   output->gpsSeconds = (INT4)( s );
-  output->gpsNanoSeconds = (INT4)( (*input) - 1000000000LL*s );
+  output->gpsNanoSeconds = (INT4)( (*input) - LAL_INT8_C(1000000000)*s );
 
   RETURN( status );
 }
@@ -80,7 +80,7 @@ LALGPStoINT8 (
   INITSTATUS( status, "LALGPStoINT8", GPSTOINT8C );
   
   *output = (INT8) input->gpsNanoSeconds 
-    + 1000000000LL * (INT8) input->gpsSeconds;
+    + LAL_INT8_C(1000000000) * (INT8) input->gpsSeconds;
 
   RETURN( status );
 }

@@ -162,6 +162,19 @@ NRCSID( LALATOMICDATATYPESH, "$Id$" );
 
 /* Integer types */
 
+/* could do this... but want this file to be independent of stdint.h */
+/*
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+typedef int16_t  INT2;
+typedef int32_t  INT4;
+typedef int64_t  INT8;
+typedef uint16_t UINT2;
+typedef uint32_t UINT4;
+typedef uint64_t UINT8;
+#else
+*/
+
 #if LAL_SIZEOF_SHORT == 2
   typedef short INT2;
   typedef unsigned short UINT2;
@@ -186,8 +199,31 @@ NRCSID( LALATOMICDATATYPESH, "$Id$" );
   typedef long INT8;
   typedef unsigned long UINT8;
 #elif LAL_SIZEOF_LONG_LONG == 8
+#ifdef __GNUC__
+  __extension__ typedef long long INT8;
+  __extension__ typedef unsigned long long UINT8;
+#else
   typedef long long INT8;
   typedef unsigned long long UINT8;
+#endif /* __GNUC__ */
+#else
+# error "ERROR: NO 8 BYTE INTEGER FOUND"
+#endif
+
+/* #endif */ /* HAVE_STDINT_H  -- commented out above */
+
+/* Macros for integer constants */
+#if LAL_SIZEOF_LONG == 8
+#define LAL_INT8_C(v) (v ## L)
+#define LAL_UINT8_C(v) (v ## UL)
+#elif LAL_SIZEOF_LONG_LONG == 8
+#ifdef __GNUC__
+#define LAL_INT8_C(v) (__extension__ v ## LL)
+#define LAL_UINT8_C(v) (__extension__ v ## ULL)
+#else
+#define LAL_INT8_C(v) (v ## LL)
+#define LAL_UINT8_C(v) (v ## ULL)
+#endif
 #else
 # error "ERROR: NO 8 BYTE INTEGER FOUND"
 #endif

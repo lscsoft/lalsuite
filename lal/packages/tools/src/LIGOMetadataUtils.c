@@ -65,16 +65,16 @@ with playground data. The time between \texttt{in\_start\_time} and
 
 static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
 {
-  const INT8 play_length = 600000000000LL;
-  const INT8 S2_start = 729273613000000000LL;
-  const INT8 mod_play = 6370000000000LL;
+  const INT8 play_length = LAL_INT8_C(600000000000);
+  const INT8 S2_start = LAL_INT8_C(729273613000000000);
+  const INT8 mod_play = LAL_INT8_C(6370000000000);
   INT8 end_mod_play;
 
   /* if the end precedes the start of S2, then there is no playground, since
    * we only define playground from S2 onwards */
   if ( seg_end < S2_start )
   {
-    return 0LL;
+    return LAL_INT8_C(0);
   }
 
   /* handle a segment that contains two or more playground */
@@ -82,8 +82,8 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
   if ( seg_length >= mod_play )
   {
     INT8 low_len, high_len, low_play, high_play;
-    low_len = high_len = seg_length / 2LL;
-    if ( seg_length % 2LL ) ++low_len;
+    low_len = high_len = seg_length / LAL_INT8_C(2);
+    if ( seg_length % LAL_INT8_C(2) ) ++low_len;
     
     low_play = PlaygroundOverlap( seg_end - high_len, low_len );
     high_play = PlaygroundOverlap( seg_end, high_len );
@@ -96,7 +96,7 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
   /* if no overlap with playground, return zero */
   if ( end_mod_play >= play_length + seg_length )
   {
-    return 0LL;
+    return LAL_INT8_C(0);
   }
   else
   {
@@ -137,7 +137,7 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
     else
     {
       LALPrintError( "Error determining playground overlap\n" );
-      return -1LL;
+      return LAL_INT8_C(-1);
     }
   }
 }

@@ -66,9 +66,9 @@ LALINT8NanoSecIsPlayground (
     )
 /* </lalVerbatim> */
 {
-  const INT8 start = 729273613 * 1000000000LL;
-  const INT8 interval = 6370 * 1000000000LL;
-  const INT8 length = 600 * 1000000000LL;
+  const INT8 start = 729273613 * LAL_INT8_C(1000000000);
+  const INT8 interval = 6370 * LAL_INT8_C(1000000000);
+  const INT8 length = 600 * LAL_INT8_C(1000000000);
 
   INITSTATUS( status, "LALINT8NanoSecIsPlayground", PLAYGROUNDC );
 

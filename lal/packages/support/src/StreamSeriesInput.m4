@@ -515,6 +515,10 @@ LALLiteralToString( LALStatus  *stat,
   RETURN( stat );
 }
 
+/* tell the GNU compiler to ignore issues with the `ll' length modifier */
+#ifdef __GNUC__
+#define fscanf __extension__ fscanf
+#endif
 define(`TYPECODE',`I2')dnl
 include(`LALReadSeries.m4')dnl
 

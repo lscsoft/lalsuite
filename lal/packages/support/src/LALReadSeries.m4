@@ -298,8 +298,8 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
       n--;
     }
     while ( n-- ) {
-      if ( fscanf( stream, "%" FMT, &(sData->re) ) != 1 ||
-	   fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) {
+      if ( ( fscanf( stream, "%" FMT, &(sData->re) ) != 1 ||
+	   fscanf( stream, "%" FMT, &(sData->im) ) != 1 ) ) {
 	TRY( SDESTROY ( stat->statusPtr, &(sCopy.data) ), stat );
 	ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
       }

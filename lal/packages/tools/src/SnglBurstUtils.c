@@ -26,7 +26,7 @@ $Id$
 
 NRCSID( SNGLBURSTUTILSC, "$Id$" );
 
-#define NANOSEC  (1000000000LL)
+#define NANOSEC  LAL_INT8_C(1000000000)
 
 #if 0
 <lalLaTeX>

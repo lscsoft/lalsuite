@@ -131,15 +131,15 @@ and \verb@strtol()@ are not used as they are not guaranteed to have
 NRCSID( STRINGCONVERTC, "$Id$" );
 
 /* Extremal integer values, all expressed as unsigned long long. */
-#define LAL_UINT8_MAX   (18446744073709551615ULL)
-#define LAL_UINT4_MAX   (4294967295ULL)
-#define LAL_UINT2_MAX   (65535ULL)
-#define LAL_INT8_MAX    (9223372036854775807ULL)
-#define LAL_INT4_MAX    (2147483647ULL)
-#define LAL_INT2_MAX    (32767ULL)
-#define LAL_INT8_ABSMIN (9223372036854775808ULL)
-#define LAL_INT4_ABSMIN (2147483648ULL)
-#define LAL_INT2_ABSMIN (32768ULL)
+#define LAL_UINT8_MAX   LAL_UINT8_C(18446744073709551615)
+#define LAL_UINT4_MAX   LAL_UINT8_C(4294967295)
+#define LAL_UINT2_MAX   LAL_UINT8_C(65535)
+#define LAL_INT8_MAX    LAL_UINT8_C(9223372036854775807)
+#define LAL_INT4_MAX    LAL_UINT8_C(2147483647)
+#define LAL_INT2_MAX    LAL_UINT8_C(32767)
+#define LAL_INT8_ABSMIN LAL_UINT8_C(9223372036854775808)
+#define LAL_INT4_ABSMIN LAL_UINT8_C(2147483648)
+#define LAL_INT2_ABSMIN LAL_UINT8_C(32768)
 
 /* Maximum number of digits we ever need to parse for an integer. */
 #define LAL_UINT8_MAXDIGITS (20)
@@ -177,7 +177,7 @@ LALStringToU8AndSign( INT2 *sign, const CHAR *string, CHAR **endptr )
   /* Otherwise, start reading number.  Stop if we get close to
      overflowing. */
   while ( isdigit( (int)( c = *here ) ) && --n ) {
-    value *= 10LL;
+    value *= LAL_INT8_C(10);
     value += (UINT8)( c - '0' );
     here++;
   }
@@ -192,7 +192,7 @@ LALStringToU8AndSign( INT2 *sign, const CHAR *string, CHAR **endptr )
       do
 	here++;
       while ( isdigit( (int)( *here ) ) );
-    } else if ( value > LAL_UINT8_MAX/10LL ) {
+    } else if ( value > LAL_UINT8_MAX/LAL_INT8_C(10) ) {
       value = LAL_UINT8_MAX;
     } else {
       UINT8 increment = (UINT8)( c - '0' );
