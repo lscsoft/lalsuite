@@ -21,6 +21,7 @@
 /*SUBSECTION - PROGRAM - "InspiralSpinBankTest.c" ---------------------------- <lalLaTeX>
   \subsection{Program \texttt{InspiralSpinBankTest.c}}
   \label{s:InspiralSpinBankTest.c}
+  \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
 * Tests InpsiralSpinBank(). 
   </lalLaTeX>*/
   
@@ -34,7 +35,7 @@
   /*SUBSUBSECTION - DESCRIPTION - "InspiralSpinBankTest.c" ------------------- <lalLaTeX>
     \subsubsection{Description}
   * This program uses InspiralSpinBank() to generate a template bank from command line
-  * parameter input.  It also has the option to make a Mathematica notebook using 
+  * parameter input.  It also has the option to make a \MATHEMATICA notebook using 
   * LALMath3DPlot() which will plot the 3D template bank. 
     </lalLaTeX>
     END SUBSUBSECTION - DESCRIPTION - "InspiralSpinBankTest.c" ----------------------- */
@@ -50,7 +51,7 @@
   * Specifies the minimum mismatch threshold (typically 0.03) but for the sake of testing
   * it is best to pick a value $O[1]$ to save compiling time.
     \item[-p]
-  * Specifies that the program should generate a Mathematica notebook "Math3DNotebook.nb".
+  * Specifies that the program should generate a \MATHEMATICA notebook ``Math3DNotebook.nb".
     \end{description}
     </lalLaTeX>
     END SUBSUBSECTION - OPTIONS - "InspiralSpinBankTest.c" --------------------------- */
@@ -69,7 +70,7 @@
   * total mass $<15M\odot$ where the minimum larger mass is at least twice the maximum
   * smaller mass.  Choosing mass values that violate these conditions will cause an
   * error message.
-  * \item It is unlikely that you will be able to run a Mathematica notebook that 
+  * \item It is unlikely that you will be able to run a \MATHEMATICA notebook that 
   * contains more than 10,000 tiles.  Adjust your parameters accordingly if you plan to 
   * view a plot.
     \end{itemize}
