@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-NRCSID (STOCHASTICH, "$Id$" );
+NRCSID(STOCHASTICH, "$Id$");
 
 typedef struct tagStreamPair {
 	REAL4TimeSeries *streamOne;
