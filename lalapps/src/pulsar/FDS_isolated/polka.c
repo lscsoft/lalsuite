@@ -402,9 +402,9 @@ int main(int argc,char *argv[])
       /* cat polka_out-short | awk '{print $1" "$2" "$3" "$4" "$6" "$7" "$8" "$9" "$11}' > la3 */
 
     }
+  fprintf(fpOut,"%%DONE\n");	
 #if USE_BOINC
   /* write end marker */
-  fprintf(fpOut,"%%DONE\n");	
   Outputfilename=resolved_filename;
 #endif
   fclose(fpOut);
