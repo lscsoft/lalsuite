@@ -47,6 +47,7 @@ AC_CHECK_LIB(lal, LALVersion, ,
   AC_MSG_ERROR(could not find the LAL library), confjunk.o)
 AC_CHECK_LIB(lalsupport, LALOpenDataFile, ,
   AC_MSG_ERROR(could not find the LAL support library), confjunk.o)
+AC_CHECK_LIB(lalframe, LALFrOpen, , , confjunk.o)
 rm -f confjunk.c confjunk.o
 
 dnl Checks for header files.

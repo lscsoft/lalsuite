@@ -44,7 +44,7 @@ RCSID( "$Id$" );
 
 #define usage( program ) fprintf( stderr, usgfmt, program )
 
-#ifndef LAL_FRAME_ENABLED
+#ifndef HAVE_LIBLALFRAME
 int main( void )
 {
   lalDebugLevel = 0; /* do something with it so the linker picks it up */
