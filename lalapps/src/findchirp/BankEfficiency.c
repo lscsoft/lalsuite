@@ -950,7 +950,6 @@ main (INT4 argc, CHAR **argv )
 			 
 			 overlapin.param.fFinal  = fendBCV;		    
 			 overlapin.param.fCutoff = fendBCV;
-		overlapin.param = randIn.param;	 
 			 for (i=0; i<signal.length; i++) correlation.data[i] = 0.;	   	   	  
 			 LAL_CALL(LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin), &status);
 
