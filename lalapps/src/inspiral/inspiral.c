@@ -537,84 +537,90 @@ int main( int argc, char *argv[] )
     numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
         gpsStartTime.gpsSeconds - injSafety, 
         gpsEndTime.gpsSeconds + injSafety );
+
     if ( numInjections < 0 )
     {
       fprintf( stderr, "error: cannot read injection file" );
       exit( 1 );
     }
-
-    /* determine if we need a higher resolution response to do the injections */
-    if ( resampleChan )
+    else if ( numInjections )
     {
-      /* we need a different resolution of response function for injections */
-      UINT4 rateRatio = floor( resampleParams.deltaT / chan.deltaT + 0.5 );
-      UINT4 rawNumPoints = rateRatio * numPoints;
+      /* see if we need a higher resolution response to do the injections */
+      if ( resampleChan )
+      {
+        /* we need a different resolution of response function for injections */
+        UINT4 rateRatio = floor( resampleParams.deltaT / chan.deltaT + 0.5 );
+        UINT4 rawNumPoints = rateRatio * numPoints;
 
-      if ( vrbflg ) fprintf( stdout, "rateRatio = %d\nrawNumPoints = %d\n"
-          "chan.deltaT = %e\n", rateRatio, rawNumPoints, chan.deltaT );
+        if ( vrbflg ) fprintf( stdout, "rateRatio = %d\nrawNumPoints = %d\n"
+            "chan.deltaT = %e\n", rateRatio, rawNumPoints, chan.deltaT );
 
-      memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
-      LAL_CALL( LALCCreateVector( &status, &(injResp.data), 
-            rawNumPoints / 2 + 1 ), &status );
-      injResp.epoch = resp.epoch;
-      injResp.deltaF = 1.0 / ( rawNumPoints * chan.deltaT );
-      injResp.sampleUnits = strainPerCount;
-      strcpy( injResp.name, chan.name );
+        memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
+        LAL_CALL( LALCCreateVector( &status, &(injResp.data), 
+              rawNumPoints / 2 + 1 ), &status );
+        injResp.epoch = resp.epoch;
+        injResp.deltaF = 1.0 / ( rawNumPoints * chan.deltaT );
+        injResp.sampleUnits = strainPerCount;
+        strcpy( injResp.name, chan.name );
 
-      /* generate the response function for the current time */
-      if ( vrbflg ) fprintf( stdout, 
-          "generating high resolution response at time %d sec %d ns\n"
-          "length = %d points, deltaF = %e Hz\n",
-          resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
-          injResp.data->length, injResp.deltaF );
-      LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, ifo, 
-	    &duration ),
-          &status );
+        /* generate the response function for the current time */
+        if ( vrbflg ) fprintf( stdout, 
+            "generating high resolution response at time %d sec %d ns\n"
+            "length = %d points, deltaF = %e Hz\n",
+            resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
+            injResp.data->length, injResp.deltaF );
+        LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCacheName, 
+              ifo, &duration ), &status );
 
-      injRespPtr = &injResp;
+        injRespPtr = &injResp;
 
-      if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
-          outFrame, &injResp, "strain/ct", "RESPONSE_INJ" );
+        if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
+            outFrame, &injResp, "strain/ct", "RESPONSE_INJ" );
+      }
+      else
+      {
+        /* the data is already at the correct sample rate, just do injections */
+        injRespPtr = &resp;
+        memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
+      }
+
+      /* inject the signals, preserving the channel name (Tev mangles it) */
+      LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
+
+      /* if injectOverhead option, then set chan.name to "ZENITH".  
+       * This causes no detector site to be found in the injection code so
+       * that the injection is done directly overhead (i.e. with a response 
+       * function of F+ = 1; Fx = 0) */
+      if ( injectOverhead )
+      {
+        LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
+      }
+
+      LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections, 
+            injRespPtr ), &status );
+      LALSnprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
+
+      if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
+          numInjections, injectionFile, chan.name );
+
+      while ( injections )
+      {
+        thisInj = injections;
+        injections = injections->next;
+        LALFree( thisInj );
+      }
+
+      /* write the raw channel data plus injections to the output frame file */
+      if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
+          &chan, "ct", "RAW_INJ" );
+
+      if ( injResp.data )
+        LAL_CALL( LALCDestroyVector( &status, &(injResp.data) ), &status );
     }
     else
     {
-      /* the data is already at the correct sample rate, just do injections */
-      injRespPtr = &resp;
-      memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
+      if ( vrbflg ) fprintf( stdout, "no injections in this chunk\n" );
     }
-
-    /* inject the signals, preserving the channel name (Tev mangles it) */
-    LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
-
-    /* if injectOverhead option, then set chan.name to "ZENITH".  
-     * This causes no detector site to be found in the injection code so
-     * that the injection is done directly overhead (i.e. with a response 
-     * function of F+ = 1; Fx = 0) */
-    if ( injectOverhead )
-    {
-      LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
-    }
-    
-    LAL_CALL( LALFindChirpInjectSignals( &status, &chan, injections, 
-          injRespPtr ), &status );
-    LALSnprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
-
-    if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
-        numInjections, injectionFile, chan.name );
-
-    while ( injections )
-    {
-      thisInj = injections;
-      injections = injections->next;
-      LALFree( thisInj );
-    }
-
-    /* write the raw channel data plus injections to the output frame file */
-    if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
-        &chan, "ct", "RAW_INJ" );
-
-    if ( injResp.data )
-      LAL_CALL( LALCDestroyVector( &status, &(injResp.data) ), &status );
   }
 
   
