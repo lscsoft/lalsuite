@@ -15,7 +15,7 @@ EXTRA_DIST = ligodcc.cls lalspec.tex lsd.tex lal.sty \
 pkgdocdir=${prefix}/doc/@PACKAGE@-@VERSION@
 
 dvi-local:
-	@LATEX@ lalspec && @LATEX@ lalspec
+	@LATEX@ lalspec && @LATEX@ lalspec && @LATEX@ lalspec
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(pkgdocdir)
