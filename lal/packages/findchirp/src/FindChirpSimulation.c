@@ -346,7 +346,7 @@ LALFindChirpInjectSignals (
     signal.sampleUnits = lalADCCountUnit;
 
     /* simulate the detectors response to the inspiral */
-    LALSCreateVector( status->statusPtr, &(signal.data), chan->length );
+    LALSCreateVector( status->statusPtr, &(signal.data), chan->data->length );
     CHECKSTATUSPTR( status );
 
     LALSimulateCoherentGW( status->statusPtr, 
