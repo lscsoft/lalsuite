@@ -95,12 +95,6 @@ LALFindChirpMaster (
 
         if ( *(params->inspiralDebugFlagPtr) == fcBankMinimalMatch )
         {
-#if 0
-          fprintf( stdout, "master: slave %d requested bank simulation\n", 
-              thisExch->partnerProcNum );
-          fflush( stdout );
-#endif
-
           /* check that the bank simulation vector exists       */
           ASSERT( params->bankSentVec, status, 
               FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL ); 
@@ -114,12 +108,6 @@ LALFindChirpMaster (
                 thisExch );
             CHECKSTATUSPTR( status );
 
-#if 0
-            fprintf( stdout, "master: sending whole bank to slave %d\n", 
-                thisExch->partnerProcNum );
-            fflush( stdout );
-#endif
-
             /* exchange the whole template bank...              */
             LALExchangeTemplateBank( status->statusPtr, 
                 &(params->tmpltBankHead), thisExch );
@@ -131,11 +119,6 @@ LALFindChirpMaster (
           else
           {
             /* tell the slave that there are no templates       */
-#if 0
-            fprintf( stdout, "master: no more templates for slave %d\n", 
-                thisExch->partnerProcNum );
-            fflush( stdout );
-#endif
             numTmpltExch = 0;
             LALExchangeUINT4( status->statusPtr, &numTmpltExch, thisExch );
             CHECKSTATUSPTR( status );
@@ -230,67 +213,6 @@ LALFindChirpMaster (
         {
           ++(params->numTmpltsFiltered);
         }
-
-#if 0
-        /*
-         *
-         * this is the master part of the heirarchical search
-         *
-         */
-
-
-        /* we are guaranteed that a the linked list of events will      */
-        /* come from only _one_ template and _one_ data segment         */
-        /* so we can just look at the first event in the list for       */
-        /* the information that we need (template id and segment id)    */
-
-        /* template node to insert additional nodes after */
-        insertTmpltNode = params->currentTmpltNode;
-
-        /* loop over the template bank looking for a template that      */
-        /* with the same id the id of the template in the retuened      */
-        /* event: this is ineffienct for large template banks and       */
-        /* should be optimised                                          */
-        for ( thisTmpltNode = params->tmpltNodeHead; thisTmpltNode; 
-            thisTmpltNode = thisTmpltNode->next )
-        {
-          if ( (*eventList)->tmplt.number == thisTmpltNode->tmpltPtr->number )
-          {
-            /* insert the fine bank into the list to filter */
-            for ( fineTmplt = thisTmpltNode->tmpltPtr->fine; fineTmplt;
-                fineTmplt = fineTmplt->next )
-            {
-              INT4 *filterSegment = fineTmplt->segmentIdVec->data;
-
-              /* create a template node for this fine template */
-              LALFindChirpCreateTmpltNode( status->statusPtr, 
-                  fineTmplt, &insertTmpltNode );
-              CHECKSTATUSPTR( status );
-
-              /* set the id of the segment to filter against this template */
-              filterSegment[(*eventList)->segmentNumber] = 1;
-
-              /* increase the count of the total number of templates */
-              params->numTmpltsToFilter++;
-
-              /* clear the event list since this is not the lowest template */
-              while ( *eventList )
-              {
-                InspiralEvent *tmpEvent;
-                tmpEvent = *eventList;
-                *eventList = (*eventList)->next;
-                LALFree (tmpEvent);
-                tmpEvent = NULL;
-              }
-
-            }
-
-            /* break out of the for loop over the template bank */
-            break;
-          }
-        }
-#endif
-
 
         break;
 
