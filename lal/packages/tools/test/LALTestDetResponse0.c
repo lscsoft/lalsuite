@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
   LALDetAMResponse  am_response;
 
   LALDetAMResponseSeries    am_response_series = {NULL,NULL,NULL};
+  REAL4TimeSeries           plus_series, cross_series, scalar_series;
   LALTimeIntervalAndNSample time_info;
 
   UINT4 i;
@@ -163,18 +164,27 @@ int main(int argc, char *argv[])
     {
       printf("Starting vector test\n");
     }
-  LALSCreateVector(&status, &(am_response_series.pPlus), 1);
-  LALSCreateVector(&status, &(am_response_series.pCross), 1);
-  LALSCreateVector(&status, &(am_response_series.pScalar), 1);
+
+  plus_series.data = NULL;
+  cross_series.data = NULL;
+  scalar_series.data = NULL;
+  
+  am_response_series.pPlus   = &(plus_series);
+  am_response_series.pCross  = &(cross_series);
+  am_response_series.pScalar = &(scalar_series);
+
+  LALSCreateVector(&status, &(am_response_series.pPlus->data), 1);
+  LALSCreateVector(&status, &(am_response_series.pCross->data), 1);
+  LALSCreateVector(&status, &(am_response_series.pScalar->data), 1);
 
   if (lalDebugLevel > 0)
     {
-      printf("am_response_series.pPlus->length = %d\n",
-             am_response_series.pPlus->length);
-      printf("am_response_series.pCros->length = %d\n",
-             am_response_series.pCross->length);
-      printf("am_response_series.pScalar->length = %d\n",
-             am_response_series.pScalar->length);
+      printf("am_response_series.pPlus->data->length = %d\n",
+             am_response_series.pPlus->data->length);
+      printf("am_response_series.pCros->data->length = %d\n",
+             am_response_series.pCross->data->length);
+      printf("am_response_series.pScalar->data->length = %d\n",
+             am_response_series.pScalar->data->length);
     }
     
   time_info.epoch.gpsSeconds     = 61094;
@@ -199,12 +209,12 @@ int main(int argc, char *argv[])
     {
       printf("Done computing AM response vectors\n");
 
-      printf("am_response_series.pPlus->length = %d\n",
-             am_response_series.pPlus->length);
-      printf("am_response_series.pCros->length = %d\n",
-             am_response_series.pCross->length);
-      printf("am_response_series.pScalar->length = %d\n",
-             am_response_series.pScalar->length);
+      printf("am_response_series.pPlus->data->length = %d\n",
+             am_response_series.pPlus->data->length);
+      printf("am_response_series.pCross->data->length = %d\n",
+             am_response_series.pCross->data->length);
+      printf("am_response_series.pScalar->data->length = %d\n",
+             am_response_series.pScalar->data->length);
     }
 
   if (lalDebugLevel >= 8)
@@ -212,28 +222,28 @@ int main(int argc, char *argv[])
       printf("plus: (");
       for (i = 0; i < time_info.nSample; ++i)
         {
-          printf("%1.6e, ", am_response_series.pPlus->data[i]);
+          printf("%1.6e, ", am_response_series.pPlus->data->data[i]);
         }
       printf(")\n");
 
       printf("cross: (");
       for (i = 0; i < time_info.nSample; ++i)
         {
-          printf("%1.6e, ", am_response_series.pCross->data[i]);
+          printf("%1.6e, ", am_response_series.pCross->data->data[i]);
         }
       printf(")\n");
 
       printf("scalar: (");
       for (i = 0; i < time_info.nSample; ++i)
         {
-          printf("%1.6e, ", am_response_series.pScalar->data[i]);
+          printf("%1.6e, ", am_response_series.pScalar->data->data[i]);
         }
       printf(")\n");
     }
 
-  LALSDestroyVector(&status, &(am_response_series.pPlus));
-  LALSDestroyVector(&status, &(am_response_series.pCross));
-  LALSDestroyVector(&status, &(am_response_series.pScalar));
+  LALSDestroyVector(&status, &(am_response_series.pPlus->data));
+  LALSDestroyVector(&status, &(am_response_series.pCross->data));
+  LALSDestroyVector(&status, &(am_response_series.pScalar->data));
 
   LALCheckMemoryLeaks();
 

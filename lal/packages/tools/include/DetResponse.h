@@ -182,13 +182,13 @@ structure.  However, \texttt{REAL4Vector}s may be conveniently converted to
 \texttt{TimeSeries} format.
 
 \begin{description}
-\item[\texttt{REAL4Vector *pPlus}] Pointer to a \texttt{REAL4Vector}
+\item[\texttt{REAL4TimeSeries *pPlus}] Pointer to a \texttt{REAL4TimeSeries}
   containing detector response to $+$-polarized gravitational radiation
   over a span of time
-\item[\texttt{REAL4Vector *pCross}] Pointer to a \texttt{REAL4Vector}
+\item[\texttt{REAL4TimeSeries *pCross}] Pointer to a \texttt{REAL4TimeSeries}
   containing detector response to $\times$-polarized gravitational radiation
   over a span of time
-\item[\texttt{REAL4Vector *pScalar}] Pointer to a \texttt{REAL4Vector}
+\item[\texttt{REAL4TimeSeries *pScalar}] Pointer to a \texttt{REAL4TimeSeries}
   containing detector response to scalar gravitational radiation
   over a span of time. (NB: This is unused for the moment. Response to
   scalar gravitational radiation is not yet implemented.)
@@ -202,9 +202,9 @@ structure.  However, \texttt{REAL4Vector}s may be conveniently converted to
 typedef struct
 tagLALDetAMResponseSeries
 {
-  REAL4Vector *pPlus;
-  REAL4Vector *pCross;
-  REAL4Vector *pScalar;
+  REAL4TimeSeries *pPlus;
+  REAL4TimeSeries *pCross;
+  REAL4TimeSeries *pScalar;
 }
 LALDetAMResponseSeries;
 

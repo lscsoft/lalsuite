@@ -41,6 +41,525 @@ LALComputeDetAMResponse()
 
 NRCSID( LALTESTDETRESPONSEC, "$Id$" );
 
+
+/*
+ * Private functions
+ */
+static REAL8 deg_to_rad(REAL8 degrees)
+{
+  return degrees * (REAL8)LAL_PI / (REAL8)180.;
+}
+
+static REAL8 rad_to_deg(REAL8 radians)
+{
+  return radians * (REAL8)180. / (REAL8)LAL_PI;
+}
+
+
+/* axis for LALDR_EulerRotation() */
+typedef enum { xAxis = 1, yAxis = 2, zAxis = 3 } LALDR_Axis_t;
+
+/*
+ * Cross product of two 3-vectors:
+ *    result = a x b
+ */
+static void
+LALDR_CrossProd3Vector(REAL8 result[3], 
+                       const REAL8 a[3], const REAL8 b[3])
+{
+  result[0] =  a[1]*b[2] - a[2]*b[1];
+  result[1] = -a[0]*b[2] + a[2]*b[0];
+  result[2] =  a[0]*b[1] - a[1]*b[0];
+
+  return;
+} /* END: LALDR_CrossProd3Vector() */
+
+
+
+/*
+ * Dot product of two 3-vectors
+ */
+static REAL8
+LALDR_DotProd3Vector(REAL8 a[3], REAL8 b[3])
+{
+  INT4 i;
+  REAL8 result = 0.;
+
+  for (i = 0; i < 3; ++i)
+    result += a[i] * b[i];
+
+  return result;
+} /* END: LALDR_DotProd3Vector() */
+
+
+
+/*
+ * Scalar product of two 3x3 matrices
+ */
+static REAL8
+LALDR_DotProd33Matrix(REAL8 a[3][3], REAL8 b[3][3])
+{
+  INT4 i, j;
+  REAL8 result = 0.;
+
+  for (i = 0; i < 3; ++i)
+    for (j = 0; j < 3; ++j)
+      result += a[i][j] * b[i][j];
+
+  return result;
+} /* END: LALDR_DotProd33Matrix() */
+
+
+
+
+/*
+ * Sets all elements of a 3x3 matrix
+ */
+static void 
+LALDR_Set33Matrix(REAL8 matrix[3][3],
+                  REAL8 a11, REAL8 a12, REAL8 a13,
+                  REAL8 a21, REAL8 a22, REAL8 a23,
+                  REAL8 a31, REAL8 a32, REAL8 a33)
+{
+  matrix[0][0] = a11;  matrix[0][1] = a12;  matrix[0][2] = a13;
+
+  matrix[1][0] = a21;  matrix[1][1] = a22;  matrix[1][2] = a23;
+
+  matrix[2][0] = a31;  matrix[2][1] = a32;  matrix[2][2] = a33;
+
+  return;
+} /* END: LALDR_Set33Matrix() */
+
+
+
+/*
+ * Copy matrix source to matrix target
+ */
+static void
+LALDR_Copy33Matrix(REAL8 target[3][3], const REAL8 source[3][3])
+{
+  INT4 i, j;
+
+  for (i = 0; i < 3; ++i)
+    for (j = 0; j < 3; ++j)
+      target[i][j] = source[i][j];
+
+  return;
+} /* END: LALDR_Copy33Matrix() */
+
+
+
+/*
+ * Zero matrix
+ */
+static void
+LALDR_Zero33Matrix(REAL8 matrix[3][3])
+{
+  LALDR_Set33Matrix(matrix,
+                    0., 0., 0.,
+                    0., 0., 0.,
+                    0., 0., 0.);
+  return;
+}
+
+
+
+/*
+ * Matrix multiply
+ */
+static void
+LALDR_Multiply33Matrix(REAL8 product[3][3],
+                       REAL8 matrixL[3][3],
+                       REAL8 matrixR[3][3])
+{
+  /* loop counters */
+  INT4 i, j, k;
+    
+  /*
+   * Zero out output matrix
+   */
+  LALDR_Set33Matrix(product,
+                    0., 0., 0.,
+                    0., 0., 0.,
+                    0., 0., 0.);
+
+  /*
+   * Multiply the matrices: matrixL * matrixR
+   */
+  for (i = 0; i < 3; ++i)
+    for (k = 0; k < 3; ++k)
+      for (j = 0; j < 3; ++j)
+        product[i][k] += matrixL[i][j] * matrixR[j][k];
+
+  return;
+}
+
+
+
+/*
+ * Scalar multiply
+ */
+static void
+LALDR_ScalarMult33Matrix(REAL8 result[3][3],
+                         REAL8 coefficient,
+                         const REAL8 matrix[3][3])
+{
+  INT4 i, j;
+
+  for (i = 0; i < 3; ++i)
+    for (j = 0; j < 3; ++j)
+      result[i][j] = coefficient * matrix[i][j];
+
+  return;
+}
+
+
+
+/*
+ * Add matrix
+ */
+static void
+LALDR_Add33Matrix(REAL8 result[3][3],
+                  const REAL8 matrix1[3][3],
+                  const REAL8 matrix2[3][3])
+{
+  INT4 i, j;
+
+  for (i = 0; i < 3; ++i)
+    for (j = 0; j < 3; ++j)
+      result[i][j] = matrix1[i][j] + matrix2[i][j];
+
+  return;
+}
+
+
+
+/*
+ * Subtract matrices (M1 - M2)
+ */
+static void
+LALDR_Subtract33Matrix(REAL8 result[3][3],
+                  const REAL8 matrix1[3][3],
+                  const REAL8 matrix2[3][3])
+{
+  INT4 i, j;
+
+  for (i = 0; i < 3; ++i)
+    for (j = 0; j < 3; ++j)
+      result[i][j] = matrix1[i][j] - matrix2[i][j];
+
+  return;
+}
+
+
+
+/*
+ * Transpose matrix
+ */
+static void
+LALDR_Transpose33Matrix(REAL8 transpose[3][3],
+                        REAL8 matrix[3][3])
+{
+  INT4 i, j;
+
+  /*
+   * Zero out output matrix
+   */
+  LALDR_Set33Matrix(transpose,
+                    0., 0., 0.,
+                    0., 0., 0.,
+                    0., 0., 0.);
+
+  for (i = 0; i < 3; ++i)
+    for (j = 0; j < 3; ++j)
+      transpose[i][j] = matrix[j][i];
+
+  return;
+}
+
+
+
+/*
+ * The L2 norm of a matrix
+ */
+static REAL8
+LALDR_L2Norm33Matrix(const REAL8 matrix[3][3])
+{
+    INT4   i, j;
+    REAL8  l2norm = 0.;
+
+    for (i = 0; i < 3; ++i)
+        for (j = 0; j < 3; ++j)
+            l2norm += matrix[i][j] * matrix[i][j];
+
+    l2norm = sqrt((double)l2norm);
+
+    return l2norm;
+}
+    
+
+
+
+/*
+ * The RMS norm of a matrix: RMS sum of all elements.
+ */
+static REAL8
+LALDR_RMSNorm33Matrix(const REAL8 matrix[3][3])
+{
+    INT4   i, j;
+    REAL8  rmsnorm = 0.;
+
+    for (i = 0; i < 3; ++i)
+        for (j = 0; j < 3; ++j)
+            rmsnorm += matrix[i][j] * matrix[i][j];
+
+    rmsnorm = sqrt((double)rmsnorm / 9.);
+
+    return rmsnorm;
+}
+
+
+
+/*
+ * The "infinity" norm of a matrix: max over all elems
+ */
+static REAL8
+LALDR_InfNorm33Matrix(const REAL8 matrix[3][3])
+{
+    INT4 i, j;
+    REAL8 infnorm = 0.;
+
+    for (i = 0; i < 3; ++i)
+        for (j = 0; j < 3; ++j)
+            if (fabs((double)(matrix[i][j])) > infnorm)
+                infnorm = fabs(matrix[i][j]);
+    
+    return infnorm;
+}
+
+
+
+/*
+ * Print out matrix
+ */
+static void
+LALDR_Print33Matrix(const REAL8 matrix[3][3],
+                    const CHAR *varname,
+                    UINT4       format,
+                    FILE       *file,
+                    const CHAR *graph_title)
+{
+  /* counters */
+  INT4 i, j;
+
+  REAL8 max;
+
+    
+  /*
+   * Human-readable format
+   */
+  if (format == 0)
+    {
+      fprintf(file, "%s:\n", varname);
+      for (i = 0; i < 3; ++i)
+        {
+          for (j = 0; j < 3; ++j)
+            fprintf(file, "%20.14e\t", matrix[i][j]);
+
+          fprintf(file, "\n");
+        }
+    }
+
+
+  /*
+     * Maple V.3 format: makes a patchcontour plot
+     */
+  if (format == 1)
+    {
+      max = 0.;
+      for (i = 0; i < 3; ++i)
+        for (j = 0; j < 3; ++j)
+          if (fabs(matrix[i][j]) > max)
+            max = fabs(matrix[i][j]);
+
+
+      /* load linalg and plots packages for Maple; plot options */
+      fprintf(file, "with(linalg): with(plots):\n");
+      fprintf(file, "setoptions3d(shading=ZHUE,style=PATCHCONTOUR,");
+      fprintf(file, "projection=0.5,axes=BOXED,");
+      fprintf(file, "title=`%s (abs. max = %10.5e)`):\n",
+              graph_title, fabs(max));
+
+      /* input "varname" is name of variable */
+      fprintf(file, "%s := array(1 .. 3, 1 .. 3,[",
+              varname);
+
+      for (i = 0; i < 3; ++i)
+        for (j = 0; j < 3; ++j)
+          {
+            /* last entry doesn't have trailing comma */
+            if (i == 2 && j == 2)
+              fprintf(file, "(3, 3)=%20.14e)",
+                      fabs(matrix[i][j]));
+            else
+              fprintf(file, "(%d, %d)=%20.14e,",
+                      j, i, fabs(matrix[i][j]));
+          }
+
+      fprintf(file, "]):\n");
+      fprintf(file, "matrixplot(%s);\n", varname);
+    }
+
+  fflush(file);
+
+  return;
+}
+
+
+
+
+
+/*
+ * Returns a rotation matrix representing rotation by angle "theta" about
+ * axis "axis"
+ *
+ * theta in RADIANS
+ */
+static void
+LALDR_EulerRotation(REAL8        rotationMatrix[3][3],
+                    REAL8        theta,
+                    LALDR_Axis_t axis)
+{
+  REAL8 cosTheta, sinTheta;
+
+  cosTheta = cos((double)theta);
+  sinTheta = sin((double)theta);
+
+  switch (axis)
+    {
+    case zAxis:
+      LALDR_Set33Matrix(rotationMatrix,
+                        cosTheta,  sinTheta, 0.,
+                        -sinTheta, cosTheta, 0.,
+                        0.,        0.,       1.);
+      break;
+
+    case yAxis:
+      LALDR_Set33Matrix(rotationMatrix,
+                        cosTheta, 0., -sinTheta,
+                        0.,       1.,  0.,
+                        sinTheta, 0., cosTheta);
+      break;
+
+    case xAxis:
+      LALDR_Set33Matrix(rotationMatrix,
+                        1., 0.,        0.,
+                        0.,  cosTheta, sinTheta,
+                        0., -sinTheta, cosTheta);
+      break;
+    }
+
+  return;
+}
+
+
+
+
+/*
+ * This computes the effective longitude and latitude of a detector, given
+ * an LALDetector.  It stuffs its results in a SkyPosition structure in
+ * RADIANS.
+ */
+static void
+LALDR_GetEffectiveLoc(SkyPosition *eff_loc, const LALDetector *detector)
+{
+    REAL8 theta_x, phi_x;
+    REAL8 theta_y, phi_y;
+    REAL8 sinTheta;
+
+    REAL8 e_xarm[3];
+    REAL8 e_yarm[3];
+
+    REAL8 normal[3];
+
+    SkyPosition delta_loc;
+
+    
+    /*
+     * First, we need the unit vectors representing the arm directions
+     */
+    
+    /* polar angle, x-arm */
+    theta_x = LAL_PI_2 - detector->frDetector.xArmAltitudeRadians;
+
+    /* azimuthal angle. I want it measure anti-clockwise from S, the LAL
+     * convention measures anti-clockwise of E */
+    phi_x   = LAL_PI_2 + detector->frDetector.xArmAzimuthRadians;
+
+    /* and the unit vector is: */
+    sinTheta  = sin(theta_x);
+    e_xarm[0] = sinTheta * cos(phi_x);
+    e_xarm[1] = sinTheta * sin(phi_x);
+    e_xarm[2] = cos(theta_x);
+
+    /* polar angle, y-arm */
+    theta_y = LAL_PI_2 - detector->frDetector.yArmAltitudeRadians;
+
+    /* azimuthal angle. I want it measure anti-clockwise from S, the LAL
+     * convention measures anti-clockwise of E */
+    phi_y   = LAL_PI_2 + detector->frDetector.yArmAzimuthRadians;
+
+    /* and the unit vector is: */
+    sinTheta  = sin(theta_y);
+    e_yarm[0] = sinTheta * cos(phi_y);
+    e_yarm[1] = sinTheta * sin(phi_y);
+    e_yarm[2] = cos(theta_y);
+
+    /* so, the normal to the plane of the detector is */
+    LALDR_CrossProd3Vector(normal, e_xarm, e_yarm);
+
+    /* then, polar angles of this normal vector will tell me the residuals
+     * of the latitude and longitude, though not directly:
+     *
+     * say   a = decrease in longitude
+     *       b = decrease in latitude
+     *
+     * an active rotation formed by
+     *
+     *       R_x = [ 1    0        0
+     *               0  cos(a)  -sin(a)
+     *               0  sin(a)   cos(a) ]
+     *
+     *       R_y = [ cos(b)  0   sin(b)
+     *                 0     1     0
+     *              -sin(b)  0   cos(b) ]
+     *
+     * and acting on e_z = [0 0 1] should give me the normal vector as computed
+     * by doing the crossproduct of the arms above.  We then solve for the
+     * angles a and b:
+     *
+     *  normal = R_y * R_x * e_z
+     *         = [ sin(b)*cos(a)    -sin(a)    cos(b)*cos(a) ]
+     *
+     *  so,
+     *         a = arcsin(-normal[2])
+     *         b = arctan(normal[1] / normal[3])
+     */
+    delta_loc.longitude = asin(-normal[1]);
+    delta_loc.latitude  = atan2(normal[0], normal[2]);
+
+    /* And thus, the effective location is */
+    eff_loc->longitude = deg_to_rad(detector->frDetector.vertexLongitudeDegrees)
+        - delta_loc.longitude;
+    eff_loc->latitude  = deg_to_rad(detector->frDetector.vertexLatitudeDegrees)
+        - delta_loc.latitude;
+
+    return;
+    
+} /* END: GetEffectiveLoc() */
+
+
+
 /*
  * Make epsilon larger: GMST1 routine is only good to about 1.2e-5
  */
@@ -951,8 +1470,249 @@ void TestOnePoint(LALStatus              *status,
   RETURN(status);
 }
 
-
-static REAL8 deg_to_rad(REAL8 deg)
+/* Computes azimuth given dec, lat, alt (all in radians)
+ *   range [0, Pi] */
+REAL8 AM_hor2azimuth(REAL8 dec,REAL8 lat, REAL8 alt)
 {
-  return deg / (REAL8)180. * LAL_PI;
+    REAL8 tmp, tmp2;
+    REAL8 retval;
+
+    tmp = 0.;
+    tmp2 = 0.;
+    retval = 0.;
+
+
+    /*
+     * Floating point checks for equality are kosher using IEEE arithmetic
+     */
+    if (lat == (REAL8)LAL_PI_2)
+        return (REAL8)LAL_PI;  /* North Pole */
+    else if (lat == -(REAL8)LAL_PI_2)
+        return (REAL8)0.;    /* South Pole */
+    else
+    {
+        if (alt == (REAL8)LAL_PI_2)
+            return (REAL8)0.; /* Zenith or Nadir */
+        else
+        {
+            tmp = sin(dec) / (cos(alt) * cos(lat))
+                - tan(alt) * tan(lat);
+
+            if (fabs(tmp) > 1.)
+            {
+                if (tmp < 0.)
+                    tmp = -1.;
+
+                if (tmp > 0.)
+                    tmp = 1.;
+            }
+
+            if (lat == 0.)
+            {
+                tmp2 = alt + dec;
+
+                if (dec < 0. && tmp2 == -(REAL8)LAL_PI_2)
+                    tmp = (double)-1.;
+                
+                if (dec > 0. && tmp2 == (REAL8)LAL_PI_2)
+                    tmp = (double)1.;
+            }
+            
+            /* printf("Hor2Azi: azi = %19.15e\n", rad_to_deg(acos(tmp))); */
+            
+            return (REAL8)acos(tmp);
+        }
+    }
 }
+
+/* Computes altitude given dec (rad), lat (rad), ha (sid. sec) */
+REAL8 AM_hor2altitude(REAL8 dec, REAL8 lat, REAL8 ha)
+{
+    REAL8 ha_r;
+
+    ha_r = sidsec_to_rad(ha);
+
+    if (lat == 0.)
+    {
+        if (ha == 21600. || ha == 64800.)
+            return (REAL8)0.;
+        else if (ha == 0.)
+            return (REAL8)(LAL_PI_2 - fabs(dec));
+        else if (ha == 43200.)
+            return (REAL8)(fabs(dec) - LAL_PI_2);
+        else
+            return rad_to_deg(asin(cos(dec) * cos(ha)));
+    }
+    else if (dec == 0.)
+    {
+        if (ha == 21600. || ha == 64800.)
+            return (REAL8)0.;
+        else if (ha == 0.)
+            return (REAL8)((REAL8)LAL_PI_2 - fabs(lat));
+        else if (ha == 43200.)
+            return (REAL8)(fabs(lat) - (REAL8)LAL_PI_2);
+        else
+            return rad_to_deg(asin(cos(lat) * cos(ha)));
+    }
+    else
+        return rad_to_deg(asin(sin(dec) * sin(lat)
+                               + cos(dec) * cos(lat) * cos(ha)));
+}
+
+/*
+ * Converts src coords in Equatorial to Horizon coords.
+ * lst  -  Local Sidereal Time in seconds
+ */
+void AM_Eq2Hor(Status                 *status,
+               SkyPosition            *srcHorizon,
+               const SkyPosition      *srcEquatorial,
+               const EarthPosition    *observer,
+               REAL8                   lst)
+{
+    REAL8 ha; /* in seconds */
+    
+    INITSTATUS (status, "Eq2Hor", LALTESTDETRESPONSEC);
+
+    /* compute Hour Angle of source in seconds */
+    ha = lst - rad_to_deg(srcEquatorial->longitude) * (REAL8)3600.;
+
+    if (ha > 86400.)
+        ha -= 86400.;
+
+    srcHorizon->latitude = AM_hor2altitude(srcEquatorial->latitude,
+                                           observer->geodetic.latitude,
+                                           ha);
+    
+    srcHorizon->longitude = AM_hor2azimuth(srcEquatorial->latitude,
+                                           observer->geodetic.latitude,
+                                           srcHorizon->latitude);
+
+    /* take care of azi of source based on HA */
+    if (ha < 0. || ha > 43200.)
+        srcHorizon->longitude = (REAL8)LAL_2_PI - srcHorizon->longitude;
+
+    if (srcHorizon->longitude == (REAL8)LAL_2_PI)
+        srcHorizon->longitude = 0.;
+
+    RETURN (status);
+}
+
+/*
+ * Converts src orientation angle from Equatorial reference frame to
+ * orientation in Horizon (alt-azi) reference frame reltaive to IFO.
+ * See notes p.56-57, and file Maple/am_coords_5.ms
+ *
+ * Inputs:
+ *  date     -- pointer to date
+ *  lst_sec  -- LST in seconds.
+ *              If lst_sec < 0., use date to figure out LST,
+ *              else, use lst_sec as sidereal time.
+ */
+void AM_ConvertSrc(Status                *status,
+                   LALSource             *sourceHor,
+                   const LALSource       *source,
+                   const LALPlaceAndDate *p_detAndDate,
+                   REAL8                 lst_sec)
+{
+  double lat_r;
+  REAL8 tmp;
+  SkyPosition horCoords;
+  EarthPosition ifoPosition;
+    
+  INITSTATUS (status, "ConvertSrcOrien", LALTESTDETRESPONSEC);
+
+  /*
+   * Compute horizon coordinates for source
+   */
+  if (lst_sec < 0.)
+    LALLMST1(status, &lst_sec, p_detAndDate, MST_SEC);
+
+  ifoPosition.geodetic.latitude =
+    deg_to_rad(p_detAndDate->p_detector->frDetector.vertexLatitudeDegrees);
+  ifoPosition.geodetic.longitude =
+    deg_to_rad(p_detAndDate->p_detector->frDetector.vertexLongititudeDegrees);
+  
+    
+  AM_Eq2Hor(status, &horCoords, &(source->coords),
+            &(p_detAndDate->p_detector->frDetector.vertexLocation), lst_sec);
+    
+  lat_r = deg_to_rad(ifo->frDetector.vertexLatitudeDegrees);
+    
+  /*
+   * Convert angles to radians
+   */
+  alt_r = horCoords.latitude;
+  azi_r = horCoords.longitude;
+  dec_r = source->equatorialCoords.latitude;
+
+  /*
+   * Check for special angles
+   */
+  if (horCoords.latitude == (REAL8)LAL_PI_2 || dec_r == (REAL8)LAL_PI_2)
+    tmp = 0.;
+  else
+    {
+      /* From my notes using spherical trig, Xi = Omega - tmp
+       *             { (sin(lat) - sin(alt)*sin(dec)) }
+       * : tmp = acos{ ------------------------------ }
+       *             {         cos(alt)*cos(dec)      } */
+      tmp =
+        acos((sin((double)lat_r) - sin((double)alt_r) * sin((double)dec_r)) /
+             (cos((double)alt_r) * cos((double)dec_r)));
+    }
+
+  /* "azimuthal angle" of source is measured from the bisector of the
+   * arms */
+  sourceHor->equatorialCoords.longitude = horCoords.longitude - (REAL8)LAL_PI -
+    (REAL8)0.5 * (p_detAndDate->p_detector->frDetector.xArmAzimuthRadians +
+                  p_detAndDate->p_detector->frDetector.yArmAzimuthRadians);
+
+  if (sourceHor->equatorialCoords.longitude < 0.)
+    sourceHor->equatorialCoords.longitude += (REAL8)LAL_2_PI;
+
+  sourceHor->coords.alt = horCoords.alt;
+    
+  /* this orientation is w.r.t. vertical circle */
+  sourceHor->orientation = source->orientation - tmp;
+
+  RETURN (status);
+}
+
+
+/*
+ * st_response() -- response according to Schutz and Tinto
+ */
+void
+st_response(LALStatus             *status,
+            LALDetAMResponse      *pResponse,
+            const LALDetAndSource *pDetAndSrc,
+            const LIGOTimeGPS     *pGPS)
+{
+  char infostr[1024];
+
+  /* Euler rotations to transfrom from src to Earth-fixed */
+  REAL8 r1[3][3];
+  REAL8 r2[3][3];
+  REAL8 r3[3][3];
+  REAL8 tmpmat[3][3];
+  REAL8 rtot[3][3];
+  REAL8 rtot_T[3][3];
+
+  REAL8 xi, theta, phi, psi, open;
+  REAL8 sin2open;
+
+
+
+  INITSTATUS( status, "st_response", LALTESTDETRESPONSEC );
+
+  /*
+   * Convert source coords to alt-azi
+   */
+  
+
+  xi = deg_to_rad(pDetAndSrc->pSource->orientation) + LAL_PI_2;
+
+  
+  
+  
+  

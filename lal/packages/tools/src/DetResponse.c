@@ -57,6 +57,7 @@ directory.
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALError.h>
+#include <lal/Units.h>
 #include <lal/SeqFactories.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
@@ -806,7 +807,7 @@ LALComputeDetAMResponse( LALStatus             *status,
 
 
 /*
- * Computes REAL4Vectors containing time series of response amplitudes.
+ * Computes REAL4TimeSeries containing time series of response amplitudes.
  */
 /* <lalVerbatim file="DetResponseCP"> */
 void
@@ -828,8 +829,8 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
   if (lalDebugLevel >= 8)
     {
       sprintf(infostr,
-              "pResponseSeries->pPlus->length = %d\npTimeInfo->nSample = %d\n",
-              pResponseSeries->pPlus->length, pTimeInfo->nSample);
+              "pResponseSeries->pPlus->data->length = %d\npTimeInfo->nSample = %d\n",
+              pResponseSeries->pPlus->data->length, pTimeInfo->nSample);
       LALInfo(status, infostr);
     }
 
@@ -845,52 +846,69 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
   ASSERT(pTimeInfo != (LALTimeIntervalAndNSample *)NULL, status,
          DETRESPONSEH_ENULLINPUT, DETRESPONSEH_MSGENULLINPUT);
 
+  /*
+   * Set sampling parameters
+   */
+  pResponseSeries->pPlus->epoch       = pTimeInfo->epoch;
+  pResponseSeries->pPlus->deltaT      = pTimeInfo->deltaT;
+  pResponseSeries->pPlus->f0          = 0.;
+  pResponseSeries->pPlus->sampleUnits = lalDimensionlessUnit;
+
+  pResponseSeries->pCross->epoch       = pTimeInfo->epoch;
+  pResponseSeries->pCross->deltaT      = pTimeInfo->deltaT;
+  pResponseSeries->pCross->f0          = 0.;
+  pResponseSeries->pCross->sampleUnits = lalDimensionlessUnit;
+
+  pResponseSeries->pScalar->epoch       = pTimeInfo->epoch;
+  pResponseSeries->pScalar->deltaT      = pTimeInfo->deltaT;
+  pResponseSeries->pScalar->f0          = 0.;
+  pResponseSeries->pScalar->sampleUnits = lalDimensionlessUnit;
   
   /*
    * Ensure enough memory for requested vectors
    */
-  if (pResponseSeries->pPlus->length < pTimeInfo->nSample)
+  if (pResponseSeries->pPlus->data->length < pTimeInfo->nSample)
     {
       if (lalDebugLevel >= 8)
         LALInfo(status, "plus sequence too short -- reallocating");
 
       TRY( LALSDestroyVector(status->statusPtr,
-                             &(pResponseSeries->pPlus)), status );
+                             &(pResponseSeries->pPlus->data)), status );
 
       TRY( LALSCreateVector(status->statusPtr,
-                            &(pResponseSeries->pPlus),
+                            &(pResponseSeries->pPlus->data),
                             pTimeInfo->nSample), status );
 
       if (lalDebugLevel > 0)
-        printf("pResponseSeries->pPlus->length = %d\n",
-               pResponseSeries->pPlus->length);
+        printf("pResponseSeries->pPlus->data->length = %d\n",
+               pResponseSeries->pPlus->data->length);
       
     }
 
-  if (pResponseSeries->pCross->length < pTimeInfo->nSample)
+  if (pResponseSeries->pCross->data->length < pTimeInfo->nSample)
     {
       if (lalDebugLevel >= 8)      
         LALInfo(status, "cross sequence too short -- reallocating");
 
       TRY( LALSDestroyVector(status->statusPtr,
-                             &(pResponseSeries->pCross)), status );
+                             &(pResponseSeries->pCross->data)), status );
 
       TRY( LALSCreateVector(status->statusPtr,
-                            &(pResponseSeries->pCross),
+                            &(pResponseSeries->pCross->data),
                             pTimeInfo->nSample), status );
 
     }
 
-  if (pResponseSeries->pScalar->length < pTimeInfo->nSample)
+  if (pResponseSeries->pScalar->data->length < pTimeInfo->nSample)
     {
       if (lalDebugLevel >= 8)      
         LALInfo(status, "scalar sequence too short -- reallocating");
 
       TRY( LALSDestroyVector(status->statusPtr,
-                             &(pResponseSeries->pScalar)), status );
+                             &(pResponseSeries->pScalar->data)), status );
 
       TRY( LALSCreateVector(status->statusPtr,
-                            &(pResponseSeries->pScalar),
+                            &(pResponseSeries->pScalar->data),
                             pTimeInfo->nSample), status );
     }
   
@@ -914,9 +932,9 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
       TRY( LALComputeDetAMResponse(status->statusPtr, &instResponse,
                                    pDetAndSource, &gps), status );
 
-      pResponseSeries->pPlus->data[i]   = instResponse.plus;
-      pResponseSeries->pCross->data[i]  = instResponse.cross;
-      pResponseSeries->pScalar->data[i] = instResponse.scalar;
+      pResponseSeries->pPlus->data->data[i]   = instResponse.plus;
+      pResponseSeries->pCross->data->data[i]  = instResponse.cross;
+      pResponseSeries->pScalar->data->data[i] = instResponse.scalar;
       
       gps.gpsSeconds     += dt.seconds;
       gps.gpsNanoSeconds += dt.nanoSeconds;
