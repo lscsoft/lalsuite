@@ -396,7 +396,9 @@ int main(int argc,char *argv[])
   long fstat_bytecounter;
   UINT4 checksum=0;             /* Checksum of fstats file contents */
 
+#ifdef RUN_POLKA
   INT4 fstats_completed = FALSE; /* did we find a completed fstats file? */
+#endif
 
 #if USE_BOINC
   CHAR resfname[256];   /* buffer for boinc-resolving config-file name */
@@ -788,7 +790,7 @@ int main(int argc,char *argv[])
   }
 
 #ifdef RUN_POLKA
-  } /* if (!fstats_completed)
+  } /* if (!fstats_completed) */
 #endif  
 
   if (uvar_outputFstat && fpOut)
@@ -804,7 +806,6 @@ int main(int argc,char *argv[])
   /* remove checkpoint-file */
   remove (ckp_fname);
 #endif
-
   /* Free DopplerScan-stuff (grid) */
   LAL_CALL ( FreeDopplerScan(stat, &thisScan), stat);
   
