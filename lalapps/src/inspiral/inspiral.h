@@ -90,8 +90,11 @@
 "The raw data is read from IGWD frame files and the template bank is read from a\n" \
 "LIGO lightweight XML file containing the template parameters.\n" \
 "\n" \
-"   --gps-start-time             GPS start of data to be filtered\n" \
-"   --gps-stop-time              GPS stop time of data to be filtered\n" \
+"   --frame-cache lstring        name of the cache file containing input data\n" \
+"   --gps-start-time             GPS start (seconds) of data to be filtered\n" \
+"   --gps-start-time-ns          GPS start (nanoseconds) of data to be filtered\n" \
+"   --gps-stop-time              GPS stop time (seconds) of data to be filtered\n" \
+"   --gps-stop-time              GPS stop time (nanoseconds) of data to be filtered\n" \
 "   --channel-name lstring       name of the channel to filter (e.g. H1:LSC-AS_Q)\n" \
 "   --segment-length int_4u      length of each individual segment\n" \
 "   --number-of-segments int_4u  numer of segments to break the data into\n" \
@@ -123,7 +126,7 @@
 "   --dynamic-range-exponent real_4 to keep the data in range a dynamic range\n"\
 "                                      scale factor is applied to the data as\n" \
 "                                      described in the findchirp documentation.\n"\
-"   --calibration string            location of a frame cache file containing\n"\
+"   --calibration-cache lstring     location of a frame cache file containing\n"\
 "                                      calibration information.\n" \
 "\n" \
 "\n" \
@@ -155,7 +158,7 @@
 "   --write-filter-data         write the pre-conditioned data as a frame\n" \
 "   --write-response            write the response function used as a frame\n" \
 "   --write-spectrum            write the power spectrum used as a frame\n" \
-"   --write-rhosq               write the last vector of snr^2 data as a frame\n" \
+"   --write-snrsq               write the last vector of snr^2 data as a frame\n" \
 "   --write-chisq               write the last vector of chi^2 data as a frame\n" \
 "\n" \
 "\n" \

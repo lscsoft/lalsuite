@@ -289,6 +289,13 @@ int main( int argc, char *argv[] )
 
   /*
    *
+   * inject signals into data if required
+   *
+   */
+
+
+  /*
+   *
    * data conditioning initialization and pre-conditioning of data
    *
    */
@@ -415,6 +422,10 @@ int main( int argc, char *argv[] )
    */
 
 
+  if ( writeFilterData )
+  {
+    outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &chan, "ct", "FILTER" );
+  }
   LAL_CALL( LALFindChirpSPData (&status, fcSegVec, dataSegVec, fcDataParams),
       &status );
 
@@ -772,7 +783,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
     {"write-response",          no_argument,       &writeResponse,    1 },
     {"write-spectrum",          no_argument,       &writeSpectrum,    1 },
-    {"write-rhosq",             no_argument,       &writeRhosq,       1 },
+    {"write-snrsq",             no_argument,       &writeRhosq,       1 },
     {"write-chisq",             no_argument,       &writeChisq,       1 },
     {0, 0, 0, 0}
   };
