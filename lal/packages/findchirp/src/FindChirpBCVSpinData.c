@@ -427,7 +427,7 @@ LALFindChirpBCVSpinData (
 
   /* code */
 
-  }
+  } /* end of loop over data segments */
  
   DETATCHSTATUSPTR( status );
   RETURN( status );
