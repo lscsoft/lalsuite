@@ -130,8 +130,8 @@ ReadInspiralFindEventsIn
    eventsin->displayPSD = 0;
    eventsin->displayData = 0;
    eventsin->displayTemplates = 0;
-   eventsin->displayCorrelation = 0;
-   eventsin->displayCorrelationStats = 0;
+   eventsin->displayCorrelation = 1;
+   eventsin->displayCorrelationStats = 1;
 
    DETATCHSTATUSPTR(status);
    RETURN(status);
@@ -149,19 +149,22 @@ ReadInspiralTemplateBankParams
    INITSTATUS (status, "ReadInspiralTemplateBankParams", INSPIRALSEARCHC);
    ATTATCHSTATUSPTR(status);
    ASSERT (coarseIn,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
-   coarseIn->mMin =   4.0;
+   coarseIn->mMin =   5.0;
    coarseIn->mMax =   6.0;
    coarseIn->MMax =  coarseIn->mMax*2.;
    coarseIn->massRange =  MinComponentMassMaxTotalMass;
    coarseIn->massRange =  MinMaxComponentMass;
-   coarseIn->mmCoarse = 0.97;
+   coarseIn->mmCoarse = 0.90;
    coarseIn->mmFine = 0.99;
-   coarseIn->fLower = 55.;
-   coarseIn->fUpper = 1700.;
+   coarseIn->fLower = 40.;
+   coarseIn->fUpper = 2000.;
    coarseIn->iflso = 0;
-   coarseIn->tSampling = 16384.;
+   coarseIn->tSampling = 4096.;
    coarseIn->order = twoPN;
    coarseIn->approximant = TaylorT3;
+   /*
+   coarseIn->space = Psi0Psi3;
+   */
    coarseIn->space = Tau0Tau3;
    coarseIn->etamin = coarseIn->mMin * ( coarseIn->MMax - coarseIn->mMin) /
       pow(coarseIn->MMax,2.);
@@ -201,15 +204,15 @@ ReadInspiralSearchParams
    searchParams->numDataSetsForPSD = 8;         /* should be >=1 */
    searchParams->paddingFactor = 4;             /* should be >=4 */
 
-   searchParams->fLo =  55.;                    /* lower frequency cutoff (in Hz) for bandpass */
+   searchParams->fLo =  40.;                    /* lower frequency cutoff (in Hz) for bandpass */
    searchParams->fHi = 1700.;                   /* upper frequency cutoff (in Hz) for bandpass */
 
    /*
     * The parameters below are used only by Monte-Carlo codes
    */
-   searchParams->NumTrials = 10;
-   searchParams->PSDType = syntheticPSD;
+   searchParams->NumTrials = 1;
    searchParams->PSDType = realPSD;
+   searchParams->PSDType = syntheticPSD;
 
    /*
     * Set the base directory where data is situated 
@@ -296,6 +299,7 @@ ReadRandomInspiralSignalParams
    ASSERT (randIn,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
 
    LALInspiralSetSearchLimits(status->statusPtr, &bankPars, *coarseIn);
+
    randIn->type = 0;
    randIn->SignalAmp = 10.;
    randIn->NoiseAmp = 1.;
@@ -320,8 +324,14 @@ ReadRandomInspiralSignalParams
    randIn->param.tSampling = coarseIn->tSampling;
    randIn->param.order = coarseIn->order;
    randIn->param.approximant = EOB;
-   randIn->param.massChoice = m1Andm2;
    randIn->param.massChoice = t03;
+   randIn->param.massChoice = m1Andm2;
+
+   randIn->psi0Min = 0.0;
+   randIn->psi0Max = 2.5e4;
+   randIn->psi3Min = -2.2e3;
+   randIn->psi3Max = 0.0;
+
 
    randIn->param.sourceTheta = LAL_PI/6.L;
    randIn->param.sourcePhi = LAL_PI/6.L;
@@ -345,13 +355,23 @@ ReadRandomInspiralSignalParams
    randIn->param.spin2[0] =  mass2Sq * spin2Frac * sin(spin2Theta) * cos(spin2Phi);
    randIn->param.spin2[1] =  mass2Sq * spin2Frac * sin(spin2Theta) * sin(spin2Phi);
    randIn->param.spin2[2] =  mass2Sq * spin2Frac * cos(spin2Theta);
+
    if (randIn->param.massChoice != m1Andm2) 
    {
-      if (coarseIn->space==Tau0Tau2) 
-         randIn->param.massChoice = t02;
-      else
-         randIn->param.massChoice = t03;
+	   switch(coarseIn->space)
+	   {
+		   case Tau0Tau2:
+			   randIn->param.massChoice = t02;
+			   break;
+		   case Tau0Tau3:
+			   randIn->param.massChoice = t03;
+			   break;
+		   case Psi0Psi3:
+			   randIn->param.massChoice = psi0psi3;
+			   break;
+	   }
    }
+
    randIn->etaMin = randIn->mMin*(randIn->MMax - randIn->mMin)/pow(randIn->MMax,2.);
 
    DETATCHSTATUSPTR(status);
@@ -1043,8 +1063,10 @@ WriteInspiralTemplateList
 	
    for (i=0; i<nlist; i++)
    {
-	   fprintf(logfile, "%5d %e %e %e %e %e\n", i, list[i].params.mass1, list[i].params.mass2,
-			   list[i].params.t0, list[i].params.t2, list[i].params.t3);
+	   fprintf(logfile, "%5d %e %e %e %e %e %e %e\n", i, 
+			   list[i].params.mass1, list[i].params.mass2,
+			   list[i].params.t0, list[i].params.t2, list[i].params.t3, 
+			   list[i].params.psi0, list[i].params.psi3);
    }
    fprintf(logfile, "___________________________________________________________________\n"); 
    fflush(logfile);
@@ -1133,6 +1155,9 @@ WriteRandomInspiralSignalParams
 	   case t03:
 		   fprintf (logfile, "      param.massChoice = t03\n");
 		   break;
+	   case psi0psi3:
+		   fprintf (logfile, "      param.massChoice = psi0psi3\n");
+		   break;
 	   case t01:
 	   case t04:
 	   case totalMassAndMu:
@@ -1214,4 +1239,45 @@ WriteToLALProcessTable (LALProcessTable procTable, LALDBConnect *conn)
 	mysql_close(&mysql);
 	return;
 }
+
+void DisplayDataSet(LALStatus *status, RealFFTPlan *revp, REAL4Vector *dataset, REAL8 dt)
+{
+   
+	REAL4Vector *buffer1=NULL;          
+	REAL4Vector *buffer2=NULL;
+	UINT4 dataSetLength, k;
+   
+   
+	INITSTATUS (status, "DisplayDataSet", INSPIRALSEARCHC);
+	ATTATCHSTATUSPTR(status);
+   
+	dataSetLength = dataset->length;
+   
+	LALCreateVector(status->statusPtr, &buffer1, dataSetLength);
+	CHECKSTATUSPTR(status);
+	LALCreateVector(status->statusPtr, &buffer2, dataSetLength);
+	CHECKSTATUSPTR(status);
+		   
+	/*
+	   BandPassFilter(status->statusPtr, buffer1, dataset, &searchParams);
+	 */
+		   
+	for (k=0; k<dataSetLength; k++) 
+	{
+		buffer1->data[k] = dataset->data[k];
+	}
+	LALREAL4VectorFFT(status->statusPtr, buffer2, buffer1, revp);
+	CHECKSTATUSPTR(status);
+		   
+	for (k=0; k<buffer2->length; k++) 
+	{
+		printf("%e %e\n", dt*k, buffer2->data[k]);
+	}
+	printf("&\n");
+
+	LALDestroyVector(status->statusPtr, &buffer1);
+	LALDestroyVector(status->statusPtr, &buffer2);
+   
+}
+
 #endif

@@ -418,6 +418,8 @@ void WriteToLALProcessParamsTable(LALProcessParamsTable table, LALDBConnect conn
 
 void AppendLALProcessTable(LALDBConnect conn);
 
+void DisplayDataSet ( LALStatus *status, RealFFTPlan *revp, REAL4Vector *dataset, REAL8 dt);
+
 
 #ifdef  __cplusplus
 }
