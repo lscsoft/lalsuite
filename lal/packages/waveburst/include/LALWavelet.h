@@ -27,9 +27,6 @@ events that satisfy certain criteria.
 \input{WaveburstStructs}
 
 
-
-
-
 \vfill{\footnotesize\input{LALWaveletHV}}
 \newpage\input{LALWaveletC}
 %\newpage\input{clusterTestC.tex}
@@ -44,6 +41,7 @@ events that satisfy certain criteria.
 #include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Random.h>
+#include <lal/Date.h>
 
 /******* INCLUDE ANY OTHER LAL HEADERS needed for header (NOT module) ****/
 
@@ -59,10 +57,14 @@ NRCSID (LALWAVELETH, "$Id$");
 #define LALWAVELETH_ENULLP         1
 #define LALWAVELETH_ETYPEMISMATCH  2
 #define LALWAVELETH_EDIFF          3
+#define LALWAVELETH_ENONZEROREMAINDER 4
+#define LALWAVELETH_EOUTOFBOUNDS 5
 
 #define LALWAVELETH_MSGENULLP        "Null pointer"
 #define LALWAVELETH_MSGETYPEMISMATCH "Wavelet type mismatch"
 #define LALWAVELETH_MSGEDIFF         "Difference between computed and expected values exceeds the threshold"
+#define LALWAVELETH_MSGENONZEROREMAINDER "Non-zero remainder"
+#define LALWAVELETH_MSGEOUTOFBOUNDS "Array out of bounds"
 
 /************************************ </lalErrTable> */
 
@@ -93,7 +95,11 @@ enum TREETYPE {DIADIC, BINARY};
   /*enum COINCIDENCETYPE {GG,GV};*/
 
 typedef enum { ORIGINAL_CL, SWAPPED_CL, MIXED_CL, MIXED_CL1, MIXED_CL2 } CLUSTER_TYPE;
-typedef enum { NONE_CO=-1, CROSS_CO=0, RECTANGLE_CO=1 } COINCIDENCE_LEVEL;
+typedef enum { NONE_CO=-1, CROSS_CO=0, BOX_CO=1, STRICT_CROSS_CO=2,
+	       STRICT_BOX_CO=3 } COINCIDENCE_LEVEL;
+typedef enum { NO_ERRORS=0, ZERO_ALPHA_ERROR, ZERO_C_ERROR} ERROR_CODE;
+
+
 
 /*************************************<lalLaTeX file="WaveburstStructs">
 \subsubsection*{struct \texttt{Slice}}
@@ -268,11 +274,20 @@ tagClusterWavelet
   Wavelet *wavelet;
   Wavelet *original;
 
-  REAL4FrequencySeries *psd;
+  /*REAL4FrequencySeries *psd;*/
 
+  UINT4 nsubintervals;
   REAL4 *medians;
   REAL4 *norm50;
-  REAL4 *avgPSD;
+
+  REAL4 *norm10L;
+  REAL4 *norm10R;
+  /*  REAL4 *avgPSD;*/
+
+  REAL4 *Rij;
+  UINT4 nalpha;
+  UINT4 M;
+  ERROR_CODE error;
 
   REAL4 calibration_max_freq;
 
@@ -294,6 +309,7 @@ tagClusterWavelet
   REAL4 *correlation;
   REAL4 *likelihood;
   REAL4 *power;
+  REAL4 *confidence;
   REAL4 *maxAmplitude;
   REAL8 *relativeStartTime;
   REAL8 *relativeStopTime;
@@ -357,6 +373,34 @@ tagOutputLayerWavelet
   REAL4TimeSeries *layer;
 }
 OutputLayerWavelet;
+
+
+typedef enum { STEP_INTERVAL_WAVELET, TIME_INTERVAL_WAVELET } INTERVAL_TYPE_WAVELET;
+
+typedef struct  
+tagInputTimeIntervalWavelet
+{
+  INTERVAL_TYPE_WAVELET type;
+
+  UINT4 offsetSec;
+  UINT4 offsetNan;
+  UINT4 durationSec;
+  UINT4 durationNan;
+  
+  UINT4 offsetSteps;
+  UINT4 durationSteps;
+
+  Wavelet *w;
+}
+InputTimeIntervalWavelet;
+
+typedef struct
+tagOutputTimeIntervalWavelet
+{
+  Wavelet *w;
+}
+OutputTimeIntervalWavelet;
+
 
 /*************************************<lalLaTeX file="WaveburstStructs">
 \subsubsection*{struct \texttt{InputGetMaxLayerWavelet}}
@@ -426,7 +470,12 @@ typedef struct
 tagInputPercentileWavelet
 {
   Wavelet *in;
+  COMPLEX8FrequencySeries *R;
+  COMPLEX8FrequencySeries *C;
+  REAL8TimeSeries *alpha;
+  REAL8TimeSeries *gamma;
   REAL4 nonZeroFraction;
+  INT4 nsubintervals;
 }
 InputPercentileWavelet;
 
@@ -678,6 +727,10 @@ LALGetLayerWavelet(LALStatus *status,
 		   OutputLayerWavelet **output,
 		   InputLayerWavelet *input);
 
+void
+LALGetTimeIntervalWavelet(LALStatus *status,
+			  OutputTimeIntervalWavelet *output,
+			  InputTimeIntervalWavelet *input);
 
 void
 LALGetMaxLayerWavelet(LALStatus *status,
@@ -730,6 +783,23 @@ void
 LALAssignREAL4TimeSeries(LALStatus *status,
 			 REAL4TimeSeries **left,
 			 REAL4TimeSeries *right);
+void
+LALAssignREAL4FrequencySeries(LALStatus *status,
+                              REAL4FrequencySeries **left,
+                              REAL4FrequencySeries *right);
+void
+LALAssignCOMPLEX8FrequencySeries(LALStatus *status,
+				 COMPLEX8FrequencySeries **left,
+				 COMPLEX8FrequencySeries *right);
+void
+LALAssignWavelet(LALStatus *status,
+		 Wavelet **left,
+		 Wavelet *right);
+
+void
+LALAssignClusterWavelet(LALStatus *status,
+			ClusterWavelet **left,
+			ClusterWavelet *right);
 
 void
 LALAllocateWavelet(LALStatus *status,
@@ -741,6 +811,19 @@ LALFreeWavelet(LALStatus *status,
 void
 LALFreeREAL4TimeSeries(LALStatus *status,
 		       REAL4TimeSeries **t);
+
+void
+LALFreeREAL8TimeSeries(LALStatus *status,
+                       REAL8TimeSeries **t);
+
+void
+LALFreeREAL4FrequencySeries(LALStatus *status,
+			    REAL4FrequencySeries **f);
+
+void
+LALFreeCOMPLEX8FrequencySeries(LALStatus *status,
+			       COMPLEX8FrequencySeries **f);
+
 
 void
 LALFreeClusterWavelet(LALStatus *status,
@@ -758,6 +841,14 @@ void
 LALFreeOutCluster(LALStatus *status,
 		  OutputClusterWavelet **cl);
 
+void
+LALFreeOutPixelMixer(LALStatus *status,
+		     OutputPixelMixerWavelet **pm);
+
+void
+LALFreeOutPixelSwap(LALStatus *status,
+		    OutputPixelSwapWavelet **ps);
+
 void LALForwardWavelet(LALStatus *status,
 		       InputForwardWavelet *input);
 
@@ -771,5 +862,9 @@ void LALt2wWavelet(LALStatus *status,
 void LALw2tWavelet(LALStatus *status,
 		   Inputw2tWavelet *input,
 		   Outputw2tWavelet **output);
+
+void LALUnitCopy(LALStatus *status, 
+		 LALUnit *source, 
+		 LALUnit *destination);
 
 #endif

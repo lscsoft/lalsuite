@@ -88,7 +88,7 @@ LALGetLayerWavelet(LALStatus *status,
         ABORT( status, LALWAVELETH_ENULLP, LALWAVELETH_MSGENULLP );
   }
 
-  *output=(OutputLayerWavelet*)LALMalloc(sizeof(OutputLayerWavelet));
+  *output=(OutputLayerWavelet*)LALCalloc(1,sizeof(OutputLayerWavelet));
   (*output)->status=_getLayer(&((*output)->layer), input->index, input->wavelet);
 
   DETATCHSTATUSPTR(status);
@@ -105,10 +105,10 @@ LALGetMaxLayerWavelet(LALStatus *status,
   INITSTATUS( status, "LALGetMaxLayerWavelet", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
 
-  if(output==NULL || (*output)==NULL || input==NULL || input->wavelet==NULL){
+  if(input==NULL || input->wavelet==NULL){
         ABORT( status, LALWAVELETH_ENULLP, LALWAVELETH_MSGENULLP );
   }
-
+  *output=(OutputGetMaxLayerWavelet *)LALCalloc(1,sizeof(OutputGetMaxLayerWavelet));
 
   (*output)->maxLayer=_getMaxLayer(input->wavelet);
 
@@ -133,10 +133,20 @@ LALPercentileWavelet( LALStatus *status,
   }
 
   _createClusterWavelet(&(*output)->out);
+  (*output)->out->nsubintervals=input->nsubintervals;
+
+  _calibrate(input->in, input->R, input->C, input->alpha, input->gamma, (*output)->out);
+
+  _whiteAlone(input->in, &(*output)->out->medians, 
+	      &(*output)->out->norm50, (*output)->out->nsubintervals);
+
   _assignWavelet(&((*output)->out->wavelet),input->in);
+
+
   (*output)->out->nonZeroFractionAfterPercentile=
     _percentile((*output)->out->wavelet, input->nonZeroFraction, 
-		FALSE, &(*output)->out->medians, &(*output)->out->norm50);
+		FALSE, 
+		&(*output)->out->norm10L, &(*output)->out->norm10R);
 
 
   if(fabs((*output)->out->nonZeroFractionAfterPercentile - input->nonZeroFraction) > maxError1)
@@ -226,7 +236,6 @@ LALPixelMixerWavelet(LALStatus *status,
     _getLayer(&ao,i,input->in->original);
     _assignREAL4TimeSeries(&bo,ao);
 
-
     for(j=0;j<nS;j++)
       {
 	b->data->data[j]=bo->data->data[j]=0.0;
@@ -248,6 +257,11 @@ LALPixelMixerWavelet(LALStatus *status,
     }
     _putLayer(b, i, (*output)->out->wavelet);
     _putLayer(bo,i, (*output)->out->original);
+
+    _freeREAL4TimeSeries(&a);
+    _freeREAL4TimeSeries(&b);
+    _freeREAL4TimeSeries(&bo);
+    _freeREAL4TimeSeries(&ao);
   }
 
 /*   nz=_countNonZeroes((*output)->out->wavelet->data); */
@@ -443,6 +457,7 @@ LALFractionWavelet( LALStatus *status,
 }
 */
 
+
 /******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALCoincidenceWavelet(LALStatus *status,
@@ -450,10 +465,260 @@ LALCoincidenceWavelet(LALStatus *status,
 		      InputCoincidenceWavelet *input)
 /******** </lalVerbatim> ********/
 {
+  int i,j,k,l,m,n;
+  int status1, status2;
+  int swt,ewt,swf,ewf;
+  int length;
+  int events=0;
+  int tw = input->timeWindowPixels;
+  int fw = input->freqWindowPixels;
+  REAL4TimeSeries *one=NULL;
+  REAL4TimeSeries *two=NULL;
+  REAL4 **one2D=NULL;
+  REAL4 **two2D=NULL;
+  REAL4 aone, atwo, energy;
+  BOOLEAN CROSS = input->coincidenceLevel==CROSS_CO || input->coincidenceLevel==STRICT_CROSS_CO;
+  BOOLEAN STRICT= input->coincidenceLevel==STRICT_CROSS_CO || input->coincidenceLevel==STRICT_BOX_CO;
+
+  INITSTATUS( status, "LALCoincidenceWavelet", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  if(input->one->wavelet->type!=input->two->wavelet->type)
+    {
+      ABORT( status, LALWAVELETH_ETYPEMISMATCH, LALWAVELETH_MSGETYPEMISMATCH);
+    }
+
+  _assignClusterWavelet(&((*output)->one),input->one);
+  _assignClusterWavelet(&((*output)->two),input->two);
+  
+  length=input->one->wavelet->data->data->length;
+  
+  if(_getMaxLayer(input->one->wavelet) != _getMaxLayer(input->two->wavelet)) { /* dummy */ }
+  m = _getMaxLayer(input->one->wavelet);
+  n = (int)(length/(m+1.)+0.5)-1;
+
+  _getSpectrogram(input->one->wavelet, &one2D);
+  _getSpectrogram(input->two->wavelet, &two2D);
+  
+  /* cleanup single pixel clusters in both channels*/
+
+  
+  for(k=0; k<=m; k++) 
+    {
+
+      status1=_getLayer(&one, k, input->one->wavelet);
+      status2=_getLayer(&two, k, input->two->wavelet);
+    
+      if(status1!=status2 || status1==-1 || status2==-1) 
+	{
+	  fprintf(stderr,"LALCoincidence: bad getLayer status: status1=%d, status2=%d\n",status1, status2);
+	  fflush(stderr);
+	}
+    
+      if(one->data->length != n+1 || two->data->length != n+1 ) 
+	{
+	  fprintf(stderr,"LALCoincidence:n1!=n2, n1=%d, n2=%d\n", one->data->length, two->data->length);
+	  fflush(stderr);
+	}
+    
+      for(i=0; i<=n; i++) 
+	{
+	  aone = one2D[k][i];
+	  atwo = two2D[k][i];
+	  if(aone==0. && atwo==0.) continue;
+      
+	  swt = i>0 ? i-1 : 0;
+	  swf = k>0 ? k-1 : 0;
+	  ewt = i<n ? i+1 : n;
+	  ewf = k<m ? k+1 : m;
+	  
+	  /* clean up first channel*/
+	  events = 0;
+	  if(aone != 0 && fabs(aone)<input->minAmp4SinglePixels) 
+	    {
+	      for(j=swt; j<=ewt; j++)
+		for(l=swf; l<=ewf; l++)
+		  if(!(j==i && l==k) && one2D[l][j]!=0.) { events++; break; }
+	      if(!events) one->data->data[i] = 0.0;
+	    }      
+
+	  /* clean up second channel*/
+	  events = 0;
+	  if(atwo != 0 && fabs(atwo)<input->minAmp4SinglePixels)
+	    {
+	      for(j=swt; j<=ewt; j++)
+		for(l=swf; l<=ewf; l++)
+		  if(!(j==i && l==k) && two2D[l][j]!=0.) { events++; break; } 
+	      if(!events) two->data->data[i] = 0.0;
+	    }      
+      
+	}
+
+      _putLayer(one, k, (*output)->one->wavelet);
+      _putLayer(two, k, (*output)->two->wavelet);	
+    
+      _freeREAL4TimeSeries(&one);
+      _freeREAL4TimeSeries(&two);
+    }
+
+
+  _freeSpectrogram(input->one->wavelet, &one2D);
+  _freeSpectrogram(input->two->wavelet, &two2D);
+  
+
+  /* do coincidence*/
+
+  if(input->coincidenceLevel >= 0) 
+    {
+
+      /* prepare spectrograms*/
+      _getSpectrogram((*output)->one->wavelet, &one2D);
+      _getSpectrogram((*output)->two->wavelet, &two2D);
+    
+      for(k=0; k<=m; k++) 
+	{
+	  _getLayer(&one, k, (*output)->one->wavelet);
+	  _getLayer(&two, k, (*output)->two->wavelet);
+
+	  for(i=0; i<=n; i++) 
+	    {
+	
+	      aone = one2D[k][i];
+	      atwo = two2D[k][i];
+	      if(aone==0. && atwo==0.) continue;            /* nothing to do*/
+	      if(aone!=0. && atwo!=0. && STRICT) continue;  /* strict coincidence*/
+	
+	      swt = i-tw<0 ? 0 : i-tw;
+	      swf = k-fw<0 ? 0 : k-fw;
+	      ewt = i+tw>n ? n : i+tw;
+	      ewf = k+fw>m ? m : k+fw;
+	      
+	      energy = 0.;	
+	      if(one->data->data[i] != 0.) 
+		{
+		  for(j=swt; j<=ewt; j++) 
+		    for(l=swf; l<=ewf; l++) 
+		      {
+			if(CROSS && !(j==i || l==k)) continue;
+			energy += fabs(two2D[l][j]);
+		      }
+		  if(energy < input->minAmp4ClusterExtension) one->data->data[i] = 0.;
+		}
+	
+	      energy = 0.;	
+	      if(two->data->data[i] != 0.) 
+		{
+		  for(j=swt; j<=ewt; j++) 
+		    for(l=swf; l<=ewf; l++)
+		      { 
+			if(CROSS && !(j==i || l==k)) continue;
+			energy += fabs(one2D[l][j]);
+		      }
+		  if(energy < input->minAmp4ClusterExtension) two->data->data[i] = 0.;
+		}
+
+	    }
+
+	  _putLayer(one, k, (*output)->one->wavelet);
+	  _putLayer(two, k, (*output)->two->wavelet);	
+	  
+	  _freeREAL4TimeSeries(&one);
+	  _freeREAL4TimeSeries(&two);
+	}
+
+      _freeSpectrogram((*output)->one->wavelet, &one2D);
+      _freeSpectrogram((*output)->two->wavelet, &two2D);
+      
+    }
+
+  /* cleanup single pixel clusters and set the same pattern in both channels*/
+
+  _getSpectrogram((*output)->one->wavelet, &one2D);
+  _getSpectrogram((*output)->two->wavelet, &two2D);
+  
+  for(k=0; k<=m; k++) 
+    {
+
+      _getLayer(&one, k, (*output)->one->wavelet);
+      _getLayer(&two, k, (*output)->two->wavelet);
+    
+      for(i=0;i<=n;i++) 
+	{
+      
+	  aone = one2D[k][i];
+	  atwo = two2D[k][i];
+	  if(aone==0 && atwo==0) continue;
+	  
+	  swt = i>0 ? i-1 : 0;
+	  swf = k>0 ? k-1 : 0;
+	  ewt = i<n ? i+1 : n;
+	  ewf = k<m ? k+1 : m;
+	  
+	  /* clean up first channel*/
+	  events = 0;
+	  if(aone!=0 && fabs(aone)<input->minAmp4SinglePixels) 
+	    {
+	      for(j=swt;j<=ewt;j++)
+		for(l=swf;l<=ewf;l++)
+		  if(!(j==i && l==k) && one2D[l][j]!=0.) { events++; break; }
+	      if(!events) one->data->data[i] = 0.0;
+	    }
+      
+	  /* clean up second channel*/
+	  events = 0;
+	  if(atwo!=0 && fabs(atwo) < input->minAmp4SinglePixels) 
+	    {
+	      for(j=swt; j<=ewt; j++)
+		for(l=swf; l<=ewf; l++)
+		  if(!(j==i && l==k) && two2D[l][j]!=0.) { events++; break; }
+	      if(!events) two->data->data[i] = 0.0;
+	    }
+      
+	  /* set a partner pixel in second channel if zero */
+	  if(one->data->data[i]!=0 && two->data->data[i]==0) two->data->data[i] == 2*length;
+      
+	  /* set a partner pixel in first channel if zero*/
+	  if(two->data->data[i]!=0 && one->data->data[i]==0) one->data->data[i] == 2*length;
+	  
+	}
+      _putLayer(one, k, (*output)->one->wavelet);
+      _putLayer(two, k, (*output)->two->wavelet);	
+      
+      _freeREAL4TimeSeries(&one);
+      _freeREAL4TimeSeries(&two);
+    }
+  
+  _freeSpectrogram((*output)->one->wavelet,&one2D);
+  _freeSpectrogram((*output)->two->wavelet,&two2D);
+  
+  (*output)->one->nonZeroFractionAfterCoincidence=
+    ((REAL4)_countNonZeroes((*output)->one->wavelet->data))/(*output)->one->wavelet->data->data->length;
+  (*output)->two->nonZeroFractionAfterCoincidence=
+    ((REAL4)_countNonZeroes((*output)->two->wavelet->data))/(*output)->two->wavelet->data->data->length;
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+
+
+
+
+/*
+
+
+void
+LALCoincidenceWavelet(LALStatus *status,
+		      OutputCoincidenceWavelet **output,
+		      InputCoincidenceWavelet *input)
+
+{
   int maxLayer1,maxLayer2, maxLayer, k,i,j,l;
   REAL4TimeSeries *one=NULL;
   REAL4TimeSeries *two=NULL;
-  int status1, status2, n1,n2,n;
+  int status1, status2, n1,n2,n=0;
   int swt,ewt,swf,ewf;
   int events=0, eventsOne=0, eventsTwo=0;
   int length;
@@ -488,7 +753,6 @@ LALCoincidenceWavelet(LALStatus *status,
       _getSpectrogram(input->one->wavelet, &one2D);
       _getSpectrogram(input->two->wavelet, &two2D);
 
-/*       printf("one\n");fflush(stdout); */
 
       for(k=0;k<=maxLayer1;k++)
 	{
@@ -510,11 +774,9 @@ LALCoincidenceWavelet(LALStatus *status,
 	    }
 	  n=n1;
 
-/* 	  printf("two: k=%d\n",k);fflush(stdout); */
 
 	  for(i=0;i<n;i++)
 	    {
-/* 	      printf("three1: i=%d\n",i);fflush(stdout); */
 	      events=0;
 	      if(one2D[k][i]==0) continue;
 	      if(two2D[k][i]!=0)
@@ -570,7 +832,7 @@ LALCoincidenceWavelet(LALStatus *status,
 	  
 	  for(i=0;i<n;i++)
 	    {
-/* 	      printf("three2: i=%d\n",i);fflush(stdout); */
+
 	      events=0;
 	      if(two2D[k][i]==0) continue;
               if(one2D[k][i]!=0)
@@ -632,20 +894,16 @@ LALCoincidenceWavelet(LALStatus *status,
       _freeSpectrogram(input->one->wavelet, &one2D);
       _freeSpectrogram(input->two->wavelet, &two2D);
 
-      /*      printf("four\n");fflush(stdout); */
-
 
       _getSpectrogram((*output)->one->wavelet, &one2D);
       _getSpectrogram((*output)->two->wavelet, &two2D);
 
-      /*      printf("five\n");fflush(stdout);*/
 
       for(k=0;k<=maxLayer;k++)
 	{
 	  status1=_getLayer(&one,k,(*output)->one->wavelet);
 	  status2=_getLayer(&two,k,(*output)->two->wavelet);
 
-	  /*	  printf("five A\n");fflush(stdout);*/
 
 	  for(i=0;i<n;i++)
 	    {
@@ -660,7 +918,6 @@ LALCoincidenceWavelet(LALStatus *status,
 	      if(ewf>maxLayer) ewf=maxLayer;
 	      neighbors=0;
 
-	      /*	      printf("six\n");fflush(stdout);*/
 
 	      for(j=swt;j<=ewt;j++)
 		{
@@ -670,38 +927,40 @@ LALCoincidenceWavelet(LALStatus *status,
 		    }
 		}
 
-	      /*	      printf("seven\n");fflush(stdout);*/
 
 	      if(!neighbors)
 		{
-		  if((fabs(one2D[k][i]) < input->minAmp4SinglePixels || one2D[k][i]>=2*length-1) && 
-		     (fabs(two2D[k][i]) < input->minAmp4SinglePixels || two2D[k][i]>=2*length-1))
+		  if(fabs(one2D[k][i]) < input->minAmp4SinglePixels ||
+		     one2D[k][i]>=2*length-1 ||
+		     fabs(two2D[k][i]) < input->minAmp4SinglePixels ||
+		     two2D[k][i]>=2*length-1)
 		    {
 		      one->data->data[i]=0.0;
 		      two->data->data[i]=0.0;
 		    }
 		}
 
+
+
 	    }
           _putLayer(one, k, (*output)->one->wavelet);
           _putLayer(two, k, (*output)->two->wavelet);
 
 
-	  /*	  printf("eight\n");fflush(stdout);*/
 
 	  _freeREAL4TimeSeries(&one);
           _freeREAL4TimeSeries(&two);
 
-	  /*	  printf("nine\n");fflush(stdout);*/
+
 	}
 
-      /*      printf("ten\n");fflush(stdout);*/
+
 
       _freeSpectrogram((*output)->one->wavelet,&one2D);
       _freeSpectrogram((*output)->two->wavelet,&two2D);
 
 
-      /*      printf("eleven\n");fflush(stdout);*/
+
     }
 
 
@@ -714,6 +973,7 @@ LALCoincidenceWavelet(LALStatus *status,
   RETURN(status);
 }
 
+*/
 /******** <lalVerbatim file="LALWaveletCP"> ********/
 void
 LALClusterWavelet(LALStatus *status,
@@ -730,6 +990,7 @@ LALClusterWavelet(LALStatus *status,
   if(output==NULL || (*output)==NULL || input==NULL || input->w==NULL){
         ABORT( status, LALWAVELETH_ENULLP, LALWAVELETH_MSGENULLP );
   }
+
   _assignClusterWavelet(&((*output)->w),input->w);
 
   (*output)->w->nonZeroFractionAfterSetMask = 
@@ -836,6 +1097,54 @@ LALFreeREAL4TimeSeries(LALStatus *status,
 
 /******** <lalVerbatim file="LALWaveletCP"> ********/
 void
+LALFreeREAL8TimeSeries(LALStatus *status,
+                       REAL8TimeSeries **t)
+     /******** </lalVerbatim> ********/
+{
+
+  INITSTATUS( status, "LALFreeREAL8TimeSeries", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  _freeREAL8TimeSeries(t);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+void
+LALFreeREAL4FrequencySeries(LALStatus *status,
+                            REAL4FrequencySeries **f)
+{
+
+  INITSTATUS( status, "LALFreeREAL4FrequencySeries", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  _freeREAL4FrequencySeries(f);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+}
+
+void
+LALFreeCOMPLEX8FrequencySeries(LALStatus *status,
+			       COMPLEX8FrequencySeries **f)
+{
+
+  INITSTATUS( status, "LALFreeCOMPLEX8FrequencySeries", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  _freeCOMPLEX8FrequencySeries(f);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+}
+
+
+/******** <lalVerbatim file="LALWaveletCP"> ********/
+void
 LALFreeClusterWavelet(LALStatus *status,
 		      ClusterWavelet **w)
 /******** </lalVerbatim> ********/
@@ -864,6 +1173,21 @@ LALFreeOutPercentile(LALStatus *status,
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
+
+void
+LALFreeOutPixelSwap(LALStatus *status,
+                    OutputPixelSwapWavelet **ps)
+{
+  INITSTATUS( status, "LALFreeOutPixelSwap", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  _freeOutPixelSwap(ps);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+}
+
 
 /******** <lalVerbatim file="LALWaveletCP"> ********/
 void
@@ -919,7 +1243,7 @@ LALAssignREAL4TimeSeries(LALStatus *status,
 			 REAL4TimeSeries *right)
 /******** </lalVerbatim> ********/
 {
-  INITSTATUS( status, "LALSetAmplitudesWavelet", LALWAVELETC );
+  INITSTATUS( status, "LALAssignREAL4TimeSeries", LALWAVELETC );
   ATTATCHSTATUSPTR (status);
 
   _assignREAL4TimeSeries(left,right);
@@ -928,6 +1252,70 @@ LALAssignREAL4TimeSeries(LALStatus *status,
   RETURN(status);
 
 }
+
+void
+LALAssignREAL4FrequencySeries(LALStatus *status,
+			      REAL4FrequencySeries **left,
+			      REAL4FrequencySeries *right)
+{
+  INITSTATUS( status, "LALAssignREAL4FrequencySeries", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  _assignREAL4FrequencySeries(left,right);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+void
+LALAssignCOMPLEX8FrequencySeries(LALStatus *status,
+                              COMPLEX8FrequencySeries **left,
+                              COMPLEX8FrequencySeries *right)
+{
+  INITSTATUS( status, "LALAssignCOMPLEX8FrequencySeries", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  _assignCOMPLEX8FrequencySeries(left,right);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+
+
+
+
+void
+LALAssignWavelet(LALStatus *status,
+                 Wavelet **left,
+		 Wavelet*right)
+{
+  INITSTATUS( status, "LALSetAmplitudesWavelet", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  _assignWavelet(left,right);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+void
+LALAssignClusterWavelet(LALStatus *status,
+			ClusterWavelet**left,
+			ClusterWavelet*right)
+{
+  INITSTATUS( status, "LALSetAmplitudesWavelet", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  _assignClusterWavelet(left,right);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+}
+
+
 
 void LALForwardWavelet(LALStatus *status,
 		       InputForwardWavelet *input)
@@ -1030,4 +1418,96 @@ void LALw2tWavelet(LALStatus *status,
   RETURN(status);
 }
 
+
+void
+LALGetTimeIntervalWavelet(LALStatus *status,
+                          OutputTimeIntervalWavelet *output,
+                          InputTimeIntervalWavelet *input)
+{
+  UINT4 M,i,levels;
+  LALTimeInterval interval;
+
+  INITSTATUS( status, "LALGetTimeIntervalWavelet", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  M=_getMaxLayer(input->w);  
+  levels=input->w->data->data->length/(M+1);
+
+  if(input->w->data->data->length%(M+1)!=0)
+    {
+      ABORT(status, LALWAVELETH_ENONZEROREMAINDER, LALWAVELETH_MSGENONZEROREMAINDER);
+    }
+
+  if(input->type==TIME_INTERVAL_WAVELET)
+    {
+      input->offsetSteps=(int)((input->offsetSec+input->offsetNan*pow(10,-9))/input->w->data->deltaT + 0.5);
+      input->durationSteps=(int)((input->durationSec+input->durationNan*pow(10,-9))/input->w->data->deltaT + 0.5);
+    }
+  if(input->type==STEP_INTERVAL_WAVELET)
+    {
+      input->offsetSec=(int)(input->offsetSteps*input->w->data->deltaT + 0.5);
+      input->offsetNan=(int)((input->offsetSteps*input->w->data->deltaT-input->offsetSec)*pow(10,9) + 0.5);
+    }
+ 
+  if( (input->offsetSteps + input->durationSteps)  > input->w->data->data->length )
+    {
+
+      ABORT(status, LALWAVELETH_EOUTOFBOUNDS, LALWAVELETH_MSGEOUTOFBOUNDS);
+    }
+
+  interval.seconds=input->offsetSec;
+  interval.nanoSeconds=input->offsetNan;
+
+  _assignWavelet(&output->w,input->w);
+  if(output->w->data->data->data!=NULL) 
+    {
+      LALFree(output->w->data->data->data);
+      output->w->data->data->data=NULL;
+    }
+  output->w->data->data->length=input->durationSteps;
+  output->w->data->data->data=(REAL4*)LALCalloc(input->durationSteps,sizeof(REAL4));
+
+  for(i=0;i<input->durationSteps;i++)
+    {
+      output->w->data->data->data[i]=input->w->data->data->data[i+input->offsetSteps];
+    }
+
+  LALIncrementGPS(status->statusPtr, &output->w->data->epoch, &input->w->data->epoch, &interval);
+  CHECKSTATUSPTR(status);
+
+  /*
+  printf("GetTimeInterval: deltaT=%f offsetSec=%d offsetNan=%d offsetSteps=%d durationSec=%d durationNan=%d durationSteps=%d\n",
+	 input->w->data->deltaT, input->offsetSec, input->offsetNan, input->offsetSteps, input->durationSec, input->durationNan,
+	 input->durationSteps);
+  printf("GetTimeInterval: startTimeSec=%d startTimeNanSec=%d\n",output->w->data->epoch.gpsSeconds, output->w->data->epoch.gpsNanoSeconds);
+  fflush(stdout);
+  */
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+void
+LALUnitCopy(LALStatus *status, LALUnit *source, LALUnit *destination)
+{
+  INITSTATUS( status, "LALUnitCopy", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  _unitCopy(source,destination);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);  
+} 
+
+void
+LALFreeOutPixelMixer(LALStatus*status,
+                     OutputPixelMixerWavelet **pm)
+{
+  INITSTATUS( status, "LALFreeOutPixelMixer", LALWAVELETC );
+  ATTATCHSTATUSPTR (status);
+
+  _freeOutPixelMixer(pm);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
 

@@ -18,9 +18,24 @@ static void _putLayer(REAL4TimeSeries *layerData, int layer, Wavelet *wavelet);
 static void _assignREAL4TimeSeriesMetadata(REAL4TimeSeries **left, REAL4TimeSeries *right);
 static void _assignREAL4TimeSeries(REAL4TimeSeries **left, REAL4TimeSeries *right);
 static void _assignREAL4FrequencySeries(REAL4FrequencySeries **left,REAL4FrequencySeries *right);
+static void _assignCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **left, COMPLEX8FrequencySeries *right);
 static void _assignWavelet(Wavelet **left,Wavelet *right);
+static void _assignBlob(ClusterBlobWavelet *left, ClusterBlobWavelet * right);
 static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right);
+static void _unitCopy(LALUnit *source, LALUnit *destination);
+static void _calibrate(Wavelet *in, COMPLEX8FrequencySeries *R, COMPLEX8FrequencySeries *C,
+		       REAL8TimeSeries *alpha, REAL8TimeSeries *gamma, ClusterWavelet *w);
+static void _initCOMPLEX8(COMPLEX8 *n, REAL4 a, REAL4 b);
+static void _plusCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two, COMPLEX8 *result);
+static void _minusCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two,COMPLEX8 *result);
+static void _multiplyCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two,COMPLEX8 *result);
+static void _divideCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two,COMPLEX8 *result);
+static REAL4 _normCOMPLEX8(COMPLEX8 *one);
 
+static int _white(UINT4 k, REAL4TimeSeries *data, REAL4 *norm50, REAL4 *median);
+static void _whiteAlone(Wavelet *wavelet,
+                        REAL4 **median,
+                        REAL4 **norm50, UINT4 k);
 static void _createClusterWavelet(ClusterWavelet **w);
 static double _setMask(ClusterWavelet *wavelet, int nc, BOOLEAN aura);
 static void _pMaskPushBack(ClusterWavelet *wavelet, PixelWavelet *pix);
@@ -31,14 +46,14 @@ static void _destroy2DintArray(int ***a, int n1);
 /* static void _print2DintArray(int ***a, FILE *out, int n1, int n2); */
 static int _clusterMain(ClusterWavelet *wavelet);
 static int _clusterR(ClusterWavelet *wavelet, int k);
-static REAL4 _noise(ClusterWavelet *w, INT4 number);
+static REAL4 _noise(ClusterWavelet *w, INT4 number, INT4 steps_in_sublayer);
 
 static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseClusterWavelet *input);
 
 static BOOLEAN _allocateWavelet(Wavelet **wavelet);
 
 static double _percentile(Wavelet *wavelet, double nonZeroFraction, 
-			  BOOLEAN keepAmplitudes, REAL4 **median, REAL4 **norm50); 
+			  BOOLEAN keepAmplitudes, REAL4 **norm10L, REAL4 **norm10R); 
 static int _compare(const void *a, const void *b);
 static int _compareAbs(const void *a, const void *b);
 
@@ -49,12 +64,16 @@ static double _secNanToDouble(UINT4 sec, UINT4 nan);
 /* static int _nanoSeconds2steps(REAL4TimeSeries *ts, int nanoseconds); */
 
 static void _freeREAL4TimeSeries(REAL4TimeSeries **t);
+static void _freeREAL8TimeSeries(REAL8TimeSeries **t);
 static void _freeREAL4FrequencySeries(REAL4FrequencySeries **psd);
+static void _freeCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **psd);
 static void _freeWavelet(Wavelet **w);
 static void _freeClusterWavelet(ClusterWavelet **w);
 static void _freeOutPercentile(OutputPercentileWavelet **p);
 static void _freeOutCoincidence(OutputCoincidenceWavelet **co);
 static void _freeOutCluster(OutputClusterWavelet **cl);
+static void _freeOutPixelMixer(OutputPixelMixerWavelet **pm);
+static void _freeOutPixelSwap(OutputPixelSwapWavelet **ps);
 
 static void _setAmplitudes(ClusterWavelet *w);
 static int _countNonZeroes(REAL4TimeSeries *t);
@@ -789,14 +808,19 @@ static int _getLayer(REAL4TimeSeries **layerOut, int indx, Wavelet *wavelet)
     (*layerOut)->deltaT *= s.step;
     strcpy((*layerOut)->name,name);
     (*layerOut)->data->length=s.size;
-    (*layerOut)->data->data=(REAL4*)LALMalloc(s.size*sizeof(REAL4));
-    if(*layerOut==NULL)
+    (*layerOut)->data->data=(REAL4*)LALCalloc(s.size,sizeof(REAL4));
+    if((*layerOut)->data->data==NULL)
       {
 	fprintf(stderr,"Cannot allocate memory 13\n"); fflush(stderr);
 	exit(1);
       }
-    if((*layerOut)->data->data==NULL) return -1;
     for(i=0;i<s.size;i++){
+      if(s.start+s.step*i >= wavelet->data->data->length)
+	{
+	  fprintf(stderr,"Index out of bounds start=%d step=%d i=%d length=%d\n",
+		  s.start,s.step,i,wavelet->data->data->length);fflush(stderr);
+	  exit(1);
+	}
       (*layerOut)->data->data[i]=wavelet->data->data->data[s.start+s.step*i];
     }
     return indx;
@@ -852,8 +876,10 @@ static void _freeSpectrogram(Wavelet *w, REAL4 ***spectrogram)
   for(i=0;i<=mlayer;i++)
     {
       LALFree((*spectrogram)[i]);
+      (*spectrogram)[i]=NULL;
     }
   LALFree(*spectrogram);
+  *spectrogram=NULL;
 }
 
 /* Allocates memory for left and _assignes all the metadata from right. 
@@ -863,13 +889,13 @@ static void _freeSpectrogram(Wavelet *w, REAL4 ***spectrogram)
 
 static void _assignREAL4TimeSeriesMetadata(REAL4TimeSeries **left, REAL4TimeSeries *right)
 {
-  *left=(REAL4TimeSeries*)LALMalloc(sizeof(REAL4TimeSeries));
+  *left=(REAL4TimeSeries*)LALCalloc(1,sizeof(REAL4TimeSeries));
   if(*left==NULL)
     {
       fprintf(stderr,"Cannot allocate memory 12\n");
       exit(1);
     }
-  (*left)->data=(REAL4Sequence*)LALMalloc(sizeof(REAL4Sequence));
+  (*left)->data=(REAL4Sequence*)LALCalloc(1,sizeof(REAL4Sequence));
   if((*left)->data==NULL)
     {
       fprintf(stderr,"Cannot allocate memory 11\n");
@@ -878,10 +904,11 @@ static void _assignREAL4TimeSeriesMetadata(REAL4TimeSeries **left, REAL4TimeSeri
   (*left)->epoch=right->epoch;
   (*left)->deltaT=right->deltaT;
   (*left)->f0=right->f0;
-  (*left)->sampleUnits=right->sampleUnits;
+  _unitCopy(&(*left)->sampleUnits,&right->sampleUnits);
+  /*  (*left)->sampleUnits=right->sampleUnits; */
   (*left)->data->length=right->data->length;
   (*left)->data->data=NULL;
-  strcpy((*left)->name,"Assign a name manually");
+  strncpy((*left)->name,"Assign a name manually",LALNameLength);
 }
 
 /* REAL4TimeSeries copy constructor */
@@ -889,7 +916,7 @@ static void _assignREAL4TimeSeries(REAL4TimeSeries **left, REAL4TimeSeries *righ
 {
   UINT4 i;
   _assignREAL4TimeSeriesMetadata(left,right);
-  strcpy((*left)->name,right->name);
+  strncpy((*left)->name,right->name,LALNameLength);
   (*left)->data->data=(REAL4*)LALCalloc(right->data->length,sizeof(REAL4));
   if((*left)->data->data==NULL)
     {
@@ -909,11 +936,11 @@ static void _assignREAL4FrequencySeries(REAL4FrequencySeries **left,REAL4Frequen
   (*left)->data=(REAL4Sequence*)LALCalloc(1,sizeof(REAL4Sequence));
   (*left)->data->data=(REAL4*)LALCalloc(right->data->length,sizeof(REAL4));
 
-  strcpy((*left)->name,right->name);
+  strncpy((*left)->name,right->name,LALNameLength);
   (*left)->epoch=right->epoch;
   (*left)->f0=right->f0;
   (*left)->deltaF=right->deltaF;
-  (*left)->sampleUnits=right->sampleUnits;
+  _unitCopy(&(*left)->sampleUnits,&right->sampleUnits);
 
   (*left)->data->length=right->data->length;
   for(i=0;i<right->data->length;i++)
@@ -922,11 +949,33 @@ static void _assignREAL4FrequencySeries(REAL4FrequencySeries **left,REAL4Frequen
     }
 }
 
+static void _assignCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **left, COMPLEX8FrequencySeries *right)
+{
+  UINT4 i;
+
+  (*left)=(COMPLEX8FrequencySeries*)LALCalloc(1,sizeof(COMPLEX8FrequencySeries));
+  (*left)->data=(COMPLEX8Sequence*)LALCalloc(1,sizeof(COMPLEX8Sequence));
+  (*left)->data->data=(COMPLEX8*)LALCalloc(right->data->length,sizeof(COMPLEX8));
+
+  strncpy((*left)->name,right->name,LALNameLength);
+  (*left)->epoch=right->epoch;
+  (*left)->f0=right->f0;
+  (*left)->deltaF=right->deltaF;
+  _unitCopy(&(*left)->sampleUnits,&right->sampleUnits);
+
+  (*left)->data->length=right->data->length;
+  for(i=0;i<right->data->length;i++)
+    {
+      (*left)->data->data[i]=right->data->data[i];
+    }
+}
+
+
 /* wavelet copy constructor */
 static void _assignWavelet(Wavelet **left,Wavelet *right)
 {
 
-  *left=(Wavelet*)LALMalloc(sizeof(Wavelet));
+  *left=(Wavelet*)LALCalloc(1,sizeof(Wavelet));
   if(*left==NULL)
     {
       fprintf(stderr,"Cannot allocate memory 9\n");
@@ -952,17 +1001,25 @@ static void _assignWavelet(Wavelet **left,Wavelet *right)
 static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 {
   UINT4 i,j,M;
-  /*  int M;*/
+
+  
+  if(right==NULL) return;
+  if(*left!=NULL) _freeClusterWavelet(left);
+    
+
   M = _getMaxLayer(right->wavelet)+1;
   _createClusterWavelet(left);
   if(right->wavelet!=NULL) _assignWavelet(&(*left)->wavelet,right->wavelet);
   if(right->original!=NULL) _assignWavelet(&(*left)->original,right->original);
-  if(right->psd!=NULL) _assignREAL4FrequencySeries(&(*left)->psd,right->psd);
+  /*  if(right->psd!=NULL) _assignREAL4FrequencySeries(&(*left)->psd,right->psd);*/
 
   (*left)->pMaskCount=right->pMaskCount;
   (*left)->clusterCount=right->clusterCount;
+  (*left)->clusterCountFinal=right->clusterCountFinal;
   (*left)->clusterType=right->clusterType;
   (*left)->simulationType=right->simulationType;
+  (*left)->delta_f=right->delta_f;
+  (*left)->delta_t=right->delta_t;
   (*left)->nonZeroFractionAfterPercentile=right->nonZeroFractionAfterPercentile;
   (*left)->nonZeroFractionAfterCoincidence=right->nonZeroFractionAfterCoincidence;
   (*left)->nonZeroFractionAfterSetMask=right->nonZeroFractionAfterSetMask;
@@ -973,23 +1030,53 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
   (*left)->pixelMixerApplied=right->pixelMixerApplied;
   (*left)->noise_rms_flag=right->noise_rms_flag;
   (*left)->calibration_max_freq=right->calibration_max_freq;
+  (*left)->nsubintervals=right->nsubintervals;
+  (*left)->M=right->M;
+  (*left)->nalpha=right->nalpha;
+  (*left)->error=right->error;
 
   if(right->medians!=NULL)
     {
-      (*left)->medians=(REAL4*)LALCalloc(M,sizeof(REAL4));
-      for(i=0;i<M;i++)
+      (*left)->medians=(REAL4*)LALCalloc(M*right->nsubintervals,sizeof(REAL4));
+      for(i=0;i<M*right->nsubintervals;i++)
 	{
 	  (*left)->medians[i]=right->medians[i];
 	}
     }
+  if(right->Rij!=NULL)
+    {
+      (*left)->Rij=(REAL4*)LALCalloc(M*right->nalpha,sizeof(REAL4));
+      for(i=0;i<M*right->nalpha;i++)
+        {
+          (*left)->Rij[i]=right->Rij[i];
+        }
+    }
   if(right->norm50!=NULL)
     {
-      (*left)->norm50=(REAL4*)LALCalloc(M,sizeof(REAL4));
-      for(i=0;i<M;i++)
+      (*left)->norm50=(REAL4*)LALCalloc(M*right->nsubintervals,sizeof(REAL4));
+      for(i=0;i<M*right->nsubintervals;i++)
 	{
 	  (*left)->norm50[i]=right->norm50[i];
 	}
     }
+  
+  if(right->norm10L!=NULL)
+    {
+      (*left)->norm10L=(REAL4*)LALCalloc(M,sizeof(REAL4));
+      for(i=0;i<M;i++)
+        {
+          (*left)->norm10L[i]=right->norm10L[i];
+        }
+    }
+  if(right->norm10R!=NULL)
+    {
+      (*left)->norm10R=(REAL4*)LALCalloc(M,sizeof(REAL4));
+      for(i=0;i<M;i++)
+        {
+          (*left)->norm10R[i]=right->norm10R[i];
+        }
+    }
+  /*
   if(right->avgPSD!=NULL)
     {
       (*left)->avgPSD=(REAL4*)LALCalloc(M,sizeof(REAL4));
@@ -998,6 +1085,7 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 	  (*left)->avgPSD[i]=right->avgPSD[i];
 	}
     }
+  */
   if(right->pMask!=NULL)
     {
       (*left)->pMask=(PixelWavelet**)LALCalloc(right->pMaskCount,sizeof(PixelWavelet*));
@@ -1078,7 +1166,14 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 	  (*left)->power[i]=right->power[i];
 	}
     }
- 
+   if(right->confidence!=NULL)
+     {
+       (*left)->confidence=(REAL4*)LALCalloc(right->clusterCount,sizeof(REAL4));
+       for(i=0;i<right->clusterCount;i++)
+	 {
+	   (*left)->confidence[i]=right->confidence[i];
+	 }
+     }
    if(right->maxAmplitude!=NULL)
      {
       (*left)->maxAmplitude=(REAL4*)LALCalloc(right->clusterCount,sizeof(REAL4));
@@ -1173,7 +1268,33 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 	 }
      }
 
+   if(right->blobs!=NULL)
+     {
+       (*left)->blobs=(ClusterBlobWavelet*)LALCalloc(right->clusterCount,sizeof(ClusterBlobWavelet));
+       for(i=0;i<right->clusterCount;i++)
+	 {
+	   _assignBlob(&(*left)->blobs[i],&right->blobs[i]);
+	 }
+						     
+     }
 
+}
+
+static void _assignBlob(ClusterBlobWavelet *left, ClusterBlobWavelet * right)
+{
+  UINT4 i;
+  *left=*right;
+  left->pBlob=(REAL4*)LALCalloc(right->time_width*right->freq_width,sizeof(REAL4));
+  right->oBlob=(REAL4*)LALCalloc(right->time_width*right->freq_width,sizeof(REAL4));
+  /*
+  memcpy(left->pBlob, right->pBlob, right->time_width*right->freq_width*sizeof(REAL4));
+  memcpy(left->oBlob, right->oBlob, right->time_width*right->freq_width*sizeof(REAL4));
+  */
+  for(i=0;i< right->time_width*right->freq_width;i++)
+    {
+      left->pBlob[i]=right->pBlob[i];
+      left->oBlob[i]=right->oBlob[i];
+    }
 }
 
 #if 0 /* NOT USED */
@@ -1220,6 +1341,8 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
   n = ni-1;
   m = nj-1;
   nPixel = 0;
+
+  /*  printf("_setMask: before _create2DintArray(&FT,ni,nj)\n");fflush(stdout);*/
   
   status=_create2DintArray(&FT,ni,nj);
 
@@ -1247,7 +1370,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
   }
 
 
-  /* printf("setMask: 1\n");fflush(stdout); */
+  /*  printf("setMask: 1\n");fflush(stdout); */
 
   if(nc<0 || ni<3 || nPixel<2) 
     return (double)(nPixel)/((double)(w->wavelet->data->data->length));
@@ -1389,7 +1512,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
   maxPixels=w->wavelet->data->data->length;
 
 
-  /*   printf("setMask: 2\n");fflush(stdout); */
+  /*     printf("setMask: 2\n");fflush(stdout); */
 
 /*    printf("nonzerofraction after coincidence: %f\n",w->nonZeroFractionAfterCoincidence); fflush(stdout); */
 
@@ -1435,7 +1558,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 	_pMaskPushBack(w, &pix);    
 	p[j] = ++L;                 
 
-	/* 	printf("setMask: 2a\n");fflush(stdout); */
+	/*	printf("setMask: 2a\n");fflush(stdout); */
 
 	if(aura){                 
 	  pix.core = FALSE;       
@@ -1464,7 +1587,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 	    }
 	  }
 
-	  /* 	  printf("setMask: 2b\n");fflush(stdout); */
+	  /*	   	  printf("setMask: 2b\n");fflush(stdout); */
 
 	  if(j>0)        { 
 	    *t=j-1; *f=i;   
@@ -1495,7 +1618,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 	    }
 	  }
 
-	  /* 	  printf("setMask: 2c\n");fflush(stdout); */
+	  /*	   	  printf("setMask: 2c\n");fflush(stdout); */
 
 	  if(i<n && j<m) { 
 	    *t=j+1; *f=i+1; 
@@ -1505,7 +1628,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 	    }
 	  }
 
-	  /* 	  printf("setMask: 2d\n");fflush(stdout); */
+	  /*	   	  printf("setMask: 2d\n");fflush(stdout); */
 
 	}             
       }
@@ -1514,7 +1637,13 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 
   nM = w->pMaskCount;
 
-  /*   printf("setMask: 3\n");fflush(stdout); */
+  /*
+     printf("setMask: 3\n");fflush(stdout); 
+     printf("original=%p\n", original); fflush(stdout);
+     printf("original->data=%p",original->data); fflush(stdout);
+     printf("original->data->data=%p\n",original->data->data);fflush(stdout);
+     printf("original->data->data->data=%p\n",original->data->data->data); fflush(stdout);
+  */
 
   for(k=0; k<nM; k++){
 
@@ -1526,6 +1655,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
     w->pMask[k]->amplitudeOriginal=-1.0;
     w->pMask[k]->amplitude=w->wavelet->data->data->data[S.start+S.step*j];
     w->pMask[k]->amplitudeOriginal=original->data->data->data[S.start+S.step*j];
+
     if(w->pMask[k]->amplitude>=2*w->wavelet->data->data->length-1)
       {
 	w->pMask[k]->amplitude=0.0;
@@ -1615,7 +1745,7 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 
 static void _pMaskPushBack(ClusterWavelet *w, PixelWavelet *pix)
 {
-  PixelWavelet *newPix=(PixelWavelet*)LALMalloc(sizeof(PixelWavelet));
+  PixelWavelet *newPix=(PixelWavelet*)LALCalloc(1,sizeof(PixelWavelet));
   if(newPix==NULL)
     {
       fprintf(stderr,"Cannot allocate memory 2\n");
@@ -1642,7 +1772,11 @@ static void _copyPixel(PixelWavelet *to, PixelWavelet *from)
 
 static void _assignPixel(PixelWavelet **to, PixelWavelet *from)
 {
-  if(*to!=NULL) LALFree(*to);
+  if(*to!=NULL) 
+    {
+      LALFree(*to);
+      *to=NULL;
+    }
   *to=(PixelWavelet*)LALCalloc(1,sizeof(PixelWavelet));
   _copyPixel(*to,from);
 }
@@ -1652,7 +1786,7 @@ static BOOLEAN _create2DintArray(int ***a, int n1, int n2)
   int i;
   BOOLEAN result=TRUE;
 
-  *a=(int**)LALMalloc(n1*sizeof(int*));
+  *a=(int**)LALCalloc(n1,sizeof(int*));
 
 
   if(*a==NULL){ 
@@ -1661,7 +1795,7 @@ static BOOLEAN _create2DintArray(int ***a, int n1, int n2)
   }
 
   for(i=0;i<n1;i++){
-    (*a)[i]=(int*)LALMalloc(n2*sizeof(int));
+    (*a)[i]=(int*)LALCalloc(n2,sizeof(int));
     if((*a)[i]==NULL)
       {
 	fprintf(stderr,"Cannot allocate memory 4\n");
@@ -1801,35 +1935,133 @@ static int _clusterR(ClusterWavelet *w, int k)
 
 static void _freeREAL4TimeSeries(REAL4TimeSeries **t)
 {
-  LALFree((*t)->data->data);
-  LALFree((*t)->data);
-  LALFree((*t));
-  *t=NULL;
+  if(*t!=NULL)
+    {
+      if((*t)->data!=NULL)
+	{
+	  if((*t)->data->data!=NULL)
+	    {
+	      LALFree((*t)->data->data);
+	      (*t)->data->data=NULL;
+	    }
+	  LALFree((*t)->data);
+	  (*t)->data=NULL;
+	}
+      LALFree((*t));
+      *t=NULL;
+    }
 }
+
+
+static void _freeREAL8TimeSeries(REAL8TimeSeries **t)
+{
+  if(*t!=NULL)
+    {
+      if((*t)->data!=NULL)
+        {
+          if((*t)->data->data!=NULL)
+            {
+	      LALFree((*t)->data->data);
+	      (*t)->data->data=NULL;
+            }
+          LALFree((*t)->data);
+          (*t)->data=NULL;
+	}
+      LALFree((*t));
+      *t=NULL;
+    }
+}
+
 
 static void _freeREAL4FrequencySeries(REAL4FrequencySeries **psd)
 {
-  LALFree((*psd)->data->data);
-  LALFree((*psd)->data);
-  LALFree((*psd));
-  *psd=NULL;
+  if(*psd!=NULL)
+    {
+      if((*psd)->data!=NULL && (*psd)->data->data!=NULL)
+        {
+          LALFree((*psd)->data->data);
+          (*psd)->data->data=NULL;
+        }
+      if((*psd)->data!=NULL)
+        {
+          LALFree((*psd)->data);
+          (*psd)->data=NULL;
+        }
+      LALFree((*psd));
+      *psd=NULL;
+    }
 }
+
+
+
+static void _freeCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **psd)
+{
+  if(*psd!=NULL)
+    {
+      if((*psd)->data!=NULL && (*psd)->data->data!=NULL)
+	{
+	  LALFree((*psd)->data->data);
+	  (*psd)->data->data=NULL;
+	}
+      if((*psd)->data!=NULL)
+	{
+	  LALFree((*psd)->data);
+	  (*psd)->data=NULL;
+	}
+      LALFree((*psd));
+      *psd=NULL;
+    }
+}
+
 
 static void _freeWavelet(Wavelet **w)
 {
-  _freeREAL4TimeSeries(&(*w)->data);
-
-  if((*w)->PForward!=NULL) LALFree((*w)->PForward);
-  if((*w)->PInverse!=NULL) LALFree((*w)->PInverse);
-  if((*w)->UForward!=NULL) LALFree((*w)->UForward);
-  if((*w)->UInverse!=NULL) LALFree((*w)->UInverse);
-
-  if((*w)->pLForward!=NULL) LALFree((*w)->pLForward);
-  if((*w)->pLInverse!=NULL) LALFree((*w)->pLInverse);
-  if((*w)->pHForward!=NULL) LALFree((*w)->pHForward);
-  if((*w)->pHInverse!=NULL) LALFree((*w)->pHInverse);
-
-  LALFree((*w));
+  if(*w!=NULL)
+    {
+      _freeREAL4TimeSeries(&(*w)->data);
+      if((*w)->PForward!=NULL) 
+	{
+	  LALFree((*w)->PForward);
+	  (*w)->PForward=NULL;
+	}
+      if((*w)->PInverse!=NULL) 
+	{
+	  LALFree((*w)->PInverse);
+	  (*w)->PInverse=NULL;
+	}
+      if((*w)->UForward!=NULL) 
+	{
+	  LALFree((*w)->UForward);
+	  (*w)->UForward=NULL;
+	}
+      if((*w)->UInverse!=NULL) 
+	{
+	  LALFree((*w)->UInverse);
+	  (*w)->UInverse=NULL;
+	}
+      if((*w)->pLForward!=NULL) 
+	{
+	  LALFree((*w)->pLForward);
+	  (*w)->pLForward=NULL;
+	}
+      if((*w)->pLInverse!=NULL) 
+	{
+	  LALFree((*w)->pLInverse);
+	  (*w)->pLInverse=NULL;
+	}
+      if((*w)->pHForward!=NULL) 
+	{
+	  LALFree((*w)->pHForward);
+	  (*w)->pHForward=NULL;
+	}
+      if((*w)->pHInverse!=NULL) 
+	{
+	  LALFree((*w)->pHInverse);
+	  (*w)->pHInverse=NULL;
+	}
+      LALFree((*w));
+      *w=NULL;
+    }
 }
 
 
@@ -1860,11 +2092,11 @@ static void _freeWavelet(Wavelet **w)
 
 static BOOLEAN _allocateWavelet(Wavelet **wavelet)
 {
-  *wavelet=(Wavelet*)LALMalloc(sizeof(Wavelet));
+  *wavelet=(Wavelet*)LALCalloc(1,sizeof(Wavelet));
   if(*wavelet==NULL) return FALSE;
-  (*wavelet)->data=(REAL4TimeSeries*)LALMalloc(sizeof(REAL4TimeSeries));
+  (*wavelet)->data=(REAL4TimeSeries*)LALCalloc(1,sizeof(REAL4TimeSeries));
   if((*wavelet)->data==NULL) return FALSE;
-  (*wavelet)->data->data=(REAL4Sequence*)LALMalloc(sizeof(REAL4Sequence));
+  (*wavelet)->data->data=(REAL4Sequence*)LALCalloc(1,sizeof(REAL4Sequence));
   if((*wavelet)->data->data==NULL) return FALSE;
   (*wavelet)->PForward=NULL;
   (*wavelet)->PInverse=NULL;
@@ -1879,40 +2111,330 @@ static BOOLEAN _allocateWavelet(Wavelet **wavelet)
 
 static void _freeOutPercentile(OutputPercentileWavelet **p)
 {
-  _freeClusterWavelet(&(*p)->out);
-  LALFree(*p);
-  *p=NULL;
+  if(*p!=NULL)
+    {
+      _freeClusterWavelet(&(*p)->out);
+      LALFree(*p);
+      *p=NULL;
+    }
+}
+
+static void _freeOutPixelSwap(OutputPixelSwapWavelet **ps)
+{
+  if(*ps!=NULL)
+    {
+      _freeClusterWavelet(&(*ps)->out);
+      LALFree(*ps);
+      *ps=NULL;
+    }
 }
 
 static void _freeOutCoincidence(OutputCoincidenceWavelet **co)
 {
-  _freeClusterWavelet(&(*co)->one);
-  _freeClusterWavelet(&(*co)->two);
-  LALFree(*co);
-  *co=NULL;
+  if(*co!=NULL)
+    {
+      _freeClusterWavelet(&(*co)->one);
+      _freeClusterWavelet(&(*co)->two);
+      LALFree(*co);
+      *co=NULL;
+    }
+}
+
+static void _freeOutPixelMixer(OutputPixelMixerWavelet **pm)
+{
+  if(*pm!=NULL)
+    {
+      _freeClusterWavelet(&(*pm)->out);
+      LALFree(*pm);
+      *pm=NULL;
+    }
 }
 
 static void _freeOutCluster(OutputClusterWavelet **cl)
 {
-  _freeClusterWavelet(&(*cl)->w);
-  LALFree(*cl);
-  *cl=NULL;
+  /*  printf("_freeOutCluster: at the beginning\n");fflush(stdout);*/
+  if(*cl!=NULL)
+    {
+      _freeClusterWavelet(&(*cl)->w);
+      /*      printf("_freeOutCluster: after _freeClusterWavelet\n");fflush(stdout);*/
+      LALFree(*cl);
+      /*      printf("_freeOutCluster: after LALFree\n");fflush(stdout);*/
+      *cl=NULL;
+    }
 }
 
+
+static void _calibrate(Wavelet*in, COMPLEX8FrequencySeries *R,
+		       COMPLEX8FrequencySeries *C,
+		       REAL8TimeSeries *alpha, REAL8TimeSeries *gamma,
+		       ClusterWavelet *w)
+{
+  UINT4 i, j, k, M;
+  UINT4 j_start, m, m2;
+  REAL4TimeSeries *a;
+  COMPLEX8 one, tmp1, tmp2, tmp3;
+  COMPLEX8 R0, C0;
+  REAL4* pR;
+
+  /*
+  printf("_calibrate: R=%p C=%p alpha=%p gamma=%p w=%p in->data=%p\n", R, C, alpha, gamma, w, in->data);fflush(stdout);
+  printf("_calibrate: R->data=%p C->data=%p alpha->data=%p gamma->data=%p in->data->data=%p\n", 
+	 R->data, C->data,alpha->data, gamma->data,in->data->data);fflush(stdout);
+  printf("_calibrate: R->data->data=%p C->data->data=%p alpha->data->data=%p gamma->data->data=%p in->data->data->data=%p\n", 
+	 R->data->data, C->data->data, alpha->data->data, gamma->data->data,in->data->data->data);fflush(stdout);
+  printf("_calibrate: R->data->length=%d C->data->length=%d alpha->data->length=%d gamma->data->length=%d in->data->data->length=%d\n",
+         R->data->length, C->data->length, alpha->data->length, gamma->data->length, in->data->data->length);fflush(stdout);
+  */
+
+  _initCOMPLEX8(&one,1,0);
+
+  M = _getMaxLayer(in)+1;
+
+  w->M=M;
+  w->nalpha = in->data->deltaT*in->data->data->length/alpha->deltaT + 0.5;
+
+  /*
+  printf("_calibrate: M=%d w->nalpha=%d in->data->data->length=%d in->data->deltaT=%f alpha->deltaT=%f\n", 
+	 M, w->nalpha, in->data->data->length, in->data->deltaT, alpha->deltaT);fflush(stdout);
+  */
+
+  w->Rij=(REAL4*)LALCalloc(M*w->nalpha,sizeof(REAL4));
+
+  for(j=0;j<alpha->data->length;j++)
+    {
+      if(alpha->epoch.gpsSeconds+j*alpha->deltaT >
+	 in->data->epoch.gpsSeconds) break;
+    }
+  j_start = j;
+
+
+  for(i=0;i<M;i++)
+    {
+      pR = &w->Rij[i*w->nalpha];
+      for(j=0;j<w->nalpha;j++)
+	{
+          R0 = i>=R->data->length ? R->data->data[R->data->length-1] : R->data->data[i];
+          C0 = i>=C->data->length ? C->data->data[C->data->length-1] : C->data->data[i];
+	  
+          _multiplyCOMPLEX8(&R0, &C0, &tmp1);
+          _minusCOMPLEX8(&tmp1,&one,&tmp2);
+          _initCOMPLEX8(&tmp3,gamma->data->data[j+j_start],0);
+          _multiplyCOMPLEX8(&tmp3,&tmp2,&tmp1);
+          _plusCOMPLEX8(&tmp1,&one,&tmp2);
+	  
+	  
+	  if(j+j_start>=alpha->data->length)
+	    {
+	      printf("_calibrate: j+j_start=%d\n"); fflush(stdout);
+	      exit(5);
+	    }
+	  
+          if(alpha->data->data[j+j_start]==0.0)
+	    {
+	      w->error=ZERO_ALPHA_ERROR;
+	      alpha->data->data[j+j_start]=1.0;
+	    }
+          if(C0.re==0.0 && C0.im==0.0)
+	    {
+	      w->error=ZERO_C_ERROR;
+	      C0.re=1.0;
+	    }
+	  
+	  
+          _initCOMPLEX8(&tmp3,alpha->data->data[j+j_start],0);
+          _multiplyCOMPLEX8(&tmp3, &C0, &tmp1);
+          _divideCOMPLEX8(&tmp2,&tmp1,&tmp3);
+	  
+          pR[j] = _normCOMPLEX8(&tmp3)*pow(10,20);
+	  
+	}
+            
+      _getLayer(&a,i,in);
+      
+      m = a->data->length/w->nalpha;
+      m2 = m/2;
+
+
+      for(j=0;j<a->data->length;j++)
+	{
+	  k = (j+m2)/m; 
+	  
+	  if(k==0) a->data->data[j] *= pR[0];
+	  else if(k >= w->nalpha) a->data->data[j] *= pR[w->nalpha - 1];  
+	  else a->data->data[j] *= pR[k] - ((REAL4)(j)-(REAL4)(k*m+m2))*(pR[k-1]-pR[k])/m;
+	}
+
+      _putLayer(a, i, in);
+      _freeREAL4TimeSeries(&a);
+    }
+}
+
+
+static void _initCOMPLEX8(COMPLEX8 *n, REAL4 a, REAL4 b)
+{
+  n->re=a;
+  n->im=b;
+}
+
+static void _plusCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two, COMPLEX8 *result)
+{
+  result->re=one->re + two->re;
+  result->im=one->im + two->im;
+}
+
+static void _minusCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two,COMPLEX8 *result)
+{
+  result->re=one->re - two->re;
+  result->im=one->im - two->im;
+}
+
+static void _multiplyCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two,COMPLEX8 *result)
+{
+  result->re=one->re*two->re - one->im*two->im;
+  result->im=one->im*two->re + one->re*two->im;
+}
+
+static void _divideCOMPLEX8(COMPLEX8 *one, COMPLEX8 *two,COMPLEX8 *result)
+{
+  result->re=(one->re*two->re + one->im*two->im)/(two->re*two->re + two->im*two->im);
+  result->im=(one->im*two->re - one->re*two->im)/(two->re*two->re + two->im*two->im);
+}
+
+static REAL4 _normCOMPLEX8(COMPLEX8 *one)
+{
+  return sqrt(one->re*one->re + one->im*one->im);
+}
+
+
+static void _whiteAlone(Wavelet *wavelet, 
+			REAL4 **median,
+			REAL4 **norm50, UINT4 k)
+{
+  INT4 i, M;
+  REAL4TimeSeries *a;
+
+  M = _getMaxLayer(wavelet)+1;
+
+  *median=(REAL4*)LALCalloc(M*k,sizeof(REAL4));
+  *norm50=(REAL4*)LALCalloc(M*k,sizeof(REAL4));
+
+  for(i=0; i<M; i++)
+    {
+      _getLayer(&a,i,wavelet);
+      _white(k,a,*norm50+i*k,*median+i*k);
+      _putLayer(a, i, wavelet);
+      _freeREAL4TimeSeries(&a);
+    }
+}
+
+static int _white(UINT4 k, REAL4TimeSeries *data, REAL4 *norm50, REAL4 *median)
+{
+  UINT4 i,j;
+  UINT4 n=data->data->length;
+  UINT4 m=n/k;
+  UINT4 m2=m/2;
+  REAL4 **aptr;
+  REAL4 *p;
+  REAL4 a,b;
+  UINT4 mL, mR;
+
+  mL=0.1565*m+0.5;
+  mR=m-mL;
+
+  /*  printf("_white: n=%d m=%d m2=%d mL=%d mR=%d\n",n,m,m2,mL,mR);fflush(stdout);*/
+
+  if(m>0)
+    {
+      aptr=(REAL4**)calloc(m,sizeof(REAL4*));
+    }
+  else
+    {
+      
+      fprintf(stderr,"_white: m=%d\n",m);
+      exit(1);
+    }
+
+  for(j=0;j<k;j++)
+    {
+      for(i=0;i<m;i++)
+	{
+	  if(i + j*m >= data->data->length)
+	    {
+	      fprintf(stderr,"_white i+j*m=%d i=%d, j=%d, m=%d\n",i+j*m,i,j,m);
+	      exit(1);
+	    }
+	  aptr[i]=data->data->data + i + j*m;
+	}
+      qsort(aptr, m, sizeof(REAL4*),_compare);
+      median[j]=*aptr[m2];
+      norm50[j]=(*(aptr[mR]) - *(aptr[mL]))/2.;
+      if(norm50[j]==0)
+	{
+	  fprintf(stderr,"_white: norm50=0\n"); fflush(stderr);
+	  exit(1);
+	}
+    }
+
+  for(i=0;i<m2;i++)
+    {
+      data->data->data[i]= (data->data->data[i]-median[0])/norm50[0];
+    }
+
+  for(j=0;j<k-1;j++)
+    {
+      for(i=0;i<m;i++)
+	{
+	  a=(median[j+1]*i+median[j]*(m-i))/m;
+	  b=(norm50[j+1]*i+norm50[j]*(m-i))/m;
+	  p=data->data->data + i + m2 + j*m;
+
+	  if(i + j*m + m2 >= data->data->length)
+	    {
+	      fprintf(stderr,"_white i+j*m+m2=%d i=%d, j=%d, m=%d m2=%d\n",i+j*m,i,j,m,m2);
+	      exit(1);
+	    }
+
+	  *p=(*p-a)/b;
+	}
+    }
+
+  for(i=n-m2;i<n;i++)
+    {
+      data->data->data[i]=(data->data->data[i]-median[k-1])/norm50[k-1];
+    }
+
+  free(aptr);
+  return 0;
+}
+
+
 static double _percentile(Wavelet *wavelet, double nonZeroFraction, 
-			  BOOLEAN keepAmplitudes, REAL4 **median, REAL4 **norm50)
+			  BOOLEAN keepAmplitudes, 
+			  REAL4 **norm10L, REAL4 **norm10R)
 {
 
-  INT4 i, j, M, nS, boundary;
+  INT4 i, j, M, nS, mS, boundaryL, boundaryR;
   REAL4TimeSeries *a;
-  REAL4 **aPtr;
+  REAL4 **aPtr, **bPtr;
+  REAL4 x;
 
   M = _getMaxLayer(wavelet)+1;
   nS=wavelet->data->data->length/M;
-  aPtr=(REAL4**)LALCalloc(nS,sizeof(REAL4*));
+  boundaryL=nonZeroFraction*nS/2+0.5;
+  boundaryR=nS-boundaryL;
 
-  *median=(REAL4*)LALCalloc(M,sizeof(REAL4));
-  *norm50=(REAL4*)LALCalloc(M,sizeof(REAL4));
+  mS = 2*boundaryL;
+
+  /*
+  printf("_percentile: M=%d, length=%d, nS=%d boundaryL=%d boundaryR=%d mS=%d\n",
+	 M, wavelet->data->data->length, nS, boundaryL, boundaryR, mS);fflush(stdout);
+  */
+
+  aPtr=(REAL4**)LALCalloc(nS,sizeof(REAL4*));
+  bPtr=(REAL4**)LALCalloc(mS,sizeof(REAL4*));
+
+  *norm10L=(REAL4*)LALCalloc(M,sizeof(REAL4));
+  *norm10R=(REAL4*)LALCalloc(M,sizeof(REAL4));
 
   for(i=0; i<M; i++){
     _getLayer(&a,i,wavelet);
@@ -1923,33 +2445,40 @@ static double _percentile(Wavelet *wavelet, double nonZeroFraction,
 
     qsort(aPtr,nS,sizeof(REAL4*),_compare);
 
-    (*norm50)[i]=
-      -((*aPtr[nS/4]) + (*aPtr[nS/4+1]))/2+
-      ((*aPtr[(3*nS)/4]) + (*aPtr[(3*nS)/4-1]))/2;
-    (*norm50)[i]/=2;
-
-    if(nS%2==0){
-      (*median)[i]=(*aPtr[nS/2-1] + *aPtr[nS/2])/2;
-    }
-    else{
-      (*median)[i]=*aPtr[nS/2];
-    }
-
-    for(j=0;j<nS;j++)
-      {
-	*aPtr[j]-=(*median)[i];
-      }
-    qsort(aPtr,nS,sizeof(REAL4*),_compareAbs);
-
-    boundary=(1-nonZeroFraction)*nS;
+    (*norm10L)[i]=-*aPtr[boundaryL];
+    (*norm10R)[i]=*aPtr[boundaryR];
     
-    for(j=0;j<boundary;j++)
+    for(j=boundaryL;j<boundaryR;j++)
       {
 	*aPtr[j]=0.0;
       }
-    for(j=nS-1;j>=boundary;j--)
+    for(j=0;j<boundaryL;j++)
       {
-	if(!keepAmplitudes) *aPtr[j]= *aPtr[j]>0 ? ((REAL4)nS)/((REAL4)nS-j) : -((REAL4)nS)/((REAL4)nS-j);
+	*aPtr[j]+=(*norm10L)[i];
+	if(j>=mS || j<0)
+	  {
+	    fprintf(stderr,"_percentile 1: j=%d, mS=%d\n",j,mS);
+	    exit(1);
+	  }
+	bPtr[j] = aPtr[j];
+      }
+    for(j=boundaryR;j<nS;j++)
+      {
+	*aPtr[j]-=(*norm10R)[i];
+	if(j-boundaryR+boundaryL>=mS || j-boundaryR+boundaryL<0)
+	  {
+	    fprintf(stderr,"_percentile 1: j=%d, mS=%d\n",j,mS);
+	    exit(1);
+	  }
+	bPtr[j-boundaryR+boundaryL] = aPtr[j];
+      }
+
+    qsort(bPtr,mS,sizeof(REAL4*),_compareAbs);
+
+    for(j=0;j<mS;j++)
+      {
+	x=log(((REAL4)mS)/((REAL4)mS-j));
+	*bPtr[j] = *bPtr[j]>0 ? x : -x;
       }
 
     _putLayer(a, i, wavelet);
@@ -1959,8 +2488,11 @@ static double _percentile(Wavelet *wavelet, double nonZeroFraction,
   _getLayer(&a,0,wavelet);
   bzero(a->data->data, a->data->length*sizeof(REAL4));
   _putLayer(a,0,wavelet);
+  _freeREAL4TimeSeries(&a);
   LALFree(aPtr);
-
+  aPtr=NULL;
+  LALFree(bPtr);
+  bPtr=NULL;
   return nonZeroFraction;
 }
 
@@ -1997,6 +2529,7 @@ static void _clusterProperties(ClusterWavelet *w)
   double x;
   UINT4 N,M,min,max;
   Slice s;
+  UINT4 time_steps_in_layer, time_steps_in_sublayer;
 
   delta_t=w->wavelet->data->deltaT*(1<<w->wavelet->level);
   delta_f=1/w->wavelet->data->deltaT/(1<<w->wavelet->level)/2.;
@@ -2006,8 +2539,21 @@ static void _clusterProperties(ClusterWavelet *w)
 
   /* printf("delta_f=%g\n",delta_f);*/
 
-  M = _getMaxLayer(w->wavelet)+1;
 
+  M = _getMaxLayer(w->wavelet)+1;
+  time_steps_in_layer=w->wavelet->data->data->length/M;
+  time_steps_in_sublayer=time_steps_in_layer/w->nsubintervals;
+
+  /*
+  printf("norm50=\n");
+  for(i=0;i<M*w->nsubintervals;i++)
+    {
+      printf("%f ",w->norm50[i]);
+    }
+  printf("\n");fflush(stdout);
+  */
+  
+  /*
   if(w->noise_rms_flag)
     {
       w->avgPSD=(REAL4*)LALCalloc(M,sizeof(REAL4));
@@ -2033,22 +2579,83 @@ static void _clusterProperties(ClusterWavelet *w)
 	    }
 	}
     }
+  */
 
-
-  if(w->coreSize!=NULL) LALFree(w->coreSize);
-  if(w->correlation!=NULL) LALFree(w->correlation);
-  if(w->likelihood!=NULL) LALFree(w->likelihood);
-  if(w->power!=NULL) LALFree(w->power);
-  if(w->maxAmplitude!=NULL) LALFree(w->maxAmplitude);
-  if(w->relativeStartTime!=NULL) LALFree(w->relativeStartTime);
-  if(w->relativeStopTime!=NULL) LALFree(w->relativeStopTime);
-  if(w->duration!=NULL)  LALFree(w->duration);
-  if(w->absoluteStartTime!=NULL) LALFree(w->absoluteStartTime);
-  if(w->absoluteStopTime!=NULL) LALFree(w->absoluteStopTime);
-  if(w->startFrequency!=NULL) LALFree(w->startFrequency);
-  if(w->stopFrequency!=NULL) LALFree(w->stopFrequency);
-  if(w->bandwidth!=NULL) LALFree(w->bandwidth);
-  if(w->noise_rms!=NULL) LALFree(w->noise_rms);
+  if(w->coreSize!=NULL) 
+    {
+      LALFree(w->coreSize);
+      w->coreSize=NULL;
+    }
+  if(w->correlation!=NULL) 
+    {
+      LALFree(w->correlation);
+      w->correlation=NULL;
+    }
+  if(w->likelihood!=NULL) 
+    {
+      LALFree(w->likelihood);
+      w->likelihood=NULL;
+    }
+  if(w->power!=NULL) 
+    {
+      LALFree(w->power);
+      w->power=NULL;
+    }
+  if(w->confidence!=NULL) 
+    {
+      LALFree(w->confidence);
+      w->confidence=NULL;
+    }
+  if(w->maxAmplitude!=NULL) 
+    {
+      LALFree(w->maxAmplitude);
+      w->maxAmplitude=NULL;
+    }
+  if(w->relativeStartTime!=NULL) 
+    {
+      LALFree(w->relativeStartTime);
+      w->relativeStartTime=NULL;
+    }
+  if(w->relativeStopTime!=NULL) 
+    {
+      LALFree(w->relativeStopTime);
+      w->relativeStopTime=NULL;
+    }
+  if(w->duration!=NULL)  
+    {
+      LALFree(w->duration);
+      w->duration=NULL;
+    }
+  if(w->absoluteStartTime!=NULL) 
+    {
+      LALFree(w->absoluteStartTime);
+      w->absoluteStartTime=NULL;
+    }
+  if(w->absoluteStopTime!=NULL) 
+    {
+      LALFree(w->absoluteStopTime);
+      w->absoluteStopTime=NULL;
+    }
+  if(w->startFrequency!=NULL) 
+    {
+      LALFree(w->startFrequency);
+      w->startFrequency=NULL;
+    }
+  if(w->stopFrequency!=NULL) 
+    {
+      LALFree(w->stopFrequency);
+      w->stopFrequency=NULL;
+    }
+  if(w->bandwidth!=NULL) 
+    {
+      LALFree(w->bandwidth);
+      w->bandwidth=NULL;
+    }
+  if(w->noise_rms!=NULL) 
+    {
+      LALFree(w->noise_rms);
+      w->noise_rms=NULL;
+    }
   if(w->blobs!=NULL)
     {
       for(i=0;i<w->clusterCount;i++)
@@ -2072,6 +2679,7 @@ static void _clusterProperties(ClusterWavelet *w)
   w->correlation=(REAL4*)LALCalloc(w->clusterCount,sizeof(REAL4));
   w->likelihood=(REAL4*)LALCalloc(w->clusterCount,sizeof(REAL4));
   w->power=(REAL4*)LALCalloc(w->clusterCount,sizeof(REAL4));
+  w->confidence=(REAL4*)LALCalloc(w->clusterCount,sizeof(REAL4));
   w->maxAmplitude=(REAL4*)LALCalloc(w->clusterCount,sizeof(REAL4));
   w->relativeStartTime=(REAL8*)LALCalloc(w->clusterCount,sizeof(REAL8));
   w->relativeStopTime=(REAL8*)LALCalloc(w->clusterCount,sizeof(REAL8));
@@ -2086,12 +2694,13 @@ static void _clusterProperties(ClusterWavelet *w)
 
   for(i=0;i<w->clusterCount;i++)
     {
-      if(w->sCuts[i]) continue;
+      /*      if(w->sCuts[i]) continue;*/
 
       w->coreSize[i]=0;
       w->correlation[i]=0.0;
       w->likelihood[i]=0.0;
       w->power[i]=0.0;
+      w->confidence[i]=0.0;
       w->maxAmplitude[i]=0.0;
       w->relativeStartTime[i]=N*delta_t;
       w->relativeStopTime[i]=0.0;
@@ -2105,12 +2714,23 @@ static void _clusterProperties(ClusterWavelet *w)
 	      w->coreSize[i]++;
 	      a=w->pMask[w->cList[i][j]]->amplitude;
 	      b=w->pMask[w->cList[i][j]]->amplitudeOriginal;
-	      b-=w->medians[w->pMask[w->cList[i][j]]->frequency];
-	      b/=w->norm50[w->pMask[w->cList[i][j]]->frequency];
 	      if(a>0) w->correlation[i]++;
 	      if(a<0) w->correlation[i]--;
-	      w->likelihood[i]+=log(fabs(a)*w->nonZeroFractionAfterPercentile);
+	      w->likelihood[i]+=fabs(a);
 	      w->power[i]+=b*b;
+	      if(b<0)
+		{
+		  w->confidence[i]+=b*b - 
+		    w->norm10L[w->pMask[w->cList[i][j]]->frequency]*
+		    w->norm10L[w->pMask[w->cList[i][j]]->frequency];
+		}
+	      else
+		{
+		  w->confidence[i]+=b*b -
+		    w->norm10R[w->pMask[w->cList[i][j]]->frequency]*
+		    w->norm10R[w->pMask[w->cList[i][j]]->frequency];
+		}
+
 	      if(w->maxAmplitude[i]<fabs(a)) w->maxAmplitude[i]=fabs(a);
 
 	      f=w->pMask[w->cList[i][j]]->frequency;
@@ -2161,20 +2781,26 @@ static void _clusterProperties(ClusterWavelet *w)
 	{
 	  if(w->pMask[w->cList[i][j]]->core) 
 	    {
-	      w->blobs[i].pBlob[(w->pMask[w->cList[i][j]]->frequency - w->blobs[i].start_freq_indx) * 
-			       w->blobs[i].time_width + (w->pMask[w->cList[i][j]]->time - 
-							 w->blobs[i].start_time_indx )] = 
+	      INT4 bindex=(w->pMask[w->cList[i][j]]->frequency - w->blobs[i].start_freq_indx) *
+		w->blobs[i].time_width + (w->pMask[w->cList[i][j]]->time -w->blobs[i].start_time_indx );
+
+	      if(bindex<0 || ((UINT4)bindex) >=w->blobs[i].time_width*w->blobs[i].freq_width)
+		{
+		  fprintf(stderr,"Blob's index is out of range\n");fflush(stderr);
+		  exit(1);
+		}
+
+	      w->blobs[i].pBlob[bindex] = 
 		w->pMask[w->cList[i][j]]->amplitude;
-	      w->blobs[i].oBlob[(w->pMask[w->cList[i][j]]->frequency - w->blobs[i].start_freq_indx) * 
-			       w->blobs[i].time_width + (w->pMask[w->cList[i][j]]->time - 
-							 w->blobs[i].start_time_indx )] = 
+	      w->blobs[i].oBlob[bindex] = 
 		w->pMask[w->cList[i][j]]->amplitudeOriginal;
 	    }
 	}
 
       /*      w->likelihood[i]/=w->coreSize[i];*/
-      w->correlation[i]/=w->coreSize[i];
-      w->power[i]/=w->coreSize[i];
+      if(w->coreSize[i]) w->correlation[i]/=w->coreSize[i];
+      if(w->coreSize[i]) w->power[i]/=w->coreSize[i];
+      w->confidence[i]/=sqrt(3);
 
       x=_secNanToDouble(w->wavelet->data->epoch.gpsSeconds, 
 			w->wavelet->data->epoch.gpsNanoSeconds) + 
@@ -2191,22 +2817,32 @@ static void _clusterProperties(ClusterWavelet *w)
       w->duration[i]=w->relativeStopTime[i] - w->relativeStartTime[i] + delta_t;
       w->bandwidth[i]=w->stopFrequency[i] - w->startFrequency[i] + delta_f;
 
-      if(w->noise_rms_flag) w->noise_rms[i]=_noise(w,i);
+      if(w->noise_rms_flag) w->noise_rms[i]=_noise(w,i,time_steps_in_sublayer);
     }
 }
 
-static REAL4 _noise(ClusterWavelet *w, INT4 number)
+static REAL4 _noise(ClusterWavelet *w, INT4 number, INT4 time_steps_in_sublayer)
 {
   REAL4 noise=0.0;
   UINT4 i;
-  int freq;
+  UINT4 freq, gtime;
+  UINT4 gindex;
 
   for(i=0;i<w->volumes[number];i++)
     {
-      freq=w->pMask[w->cList[number][i]]->frequency;      
+      freq=w->pMask[w->cList[number][i]]->frequency;
+      gtime=w->pMask[w->cList[number][i]]->time;
+      gindex=freq*w->nsubintervals + gtime/time_steps_in_sublayer;
+
+      if(gindex>=w->pMaskCount)
+	{
+	  fprintf(stderr,"_noise: gindex=%d pMaskCount=%d\n",gindex,w->pMaskCount);
+	  exit(1);
+	}
+
       if(w->pMask[w->cList[number][i]]->core && freq!=0)
 	{
-	  noise+=w->norm50[freq]*w->norm50[freq]*w->avgPSD[freq];
+	  noise+=w->norm50[gindex]*w->norm50[gindex];
 	}
     }
   return sqrt(noise);
@@ -2226,13 +2862,16 @@ static double _secNanToDouble(UINT4 sec, UINT4 nan)
 
 static void _createClusterWavelet(ClusterWavelet **w)
 {
-  *w=(ClusterWavelet*)LALMalloc(sizeof(ClusterWavelet));
+  *w=(ClusterWavelet*)LALCalloc(1,sizeof(ClusterWavelet));
   (*w)->wavelet=NULL;
   (*w)->original=NULL;
-  (*w)->psd=NULL;
+  /*  (*w)->psd=NULL;*/
   (*w)->medians=NULL;
   (*w)->norm50=NULL;
-  (*w)->avgPSD=NULL;
+  (*w)->Rij=NULL;
+  (*w)->norm10L=NULL;
+  (*w)->norm10R=NULL;
+  /*  (*w)->avgPSD=NULL;*/
   (*w)->pMaskCount=0;
   (*w)->clusterCount=0;
   (*w)->clusterCountFinal=0;
@@ -2246,6 +2885,7 @@ static void _createClusterWavelet(ClusterWavelet **w)
   (*w)->correlation=NULL;
   (*w)->likelihood=NULL;
   (*w)->power=NULL;
+  (*w)->confidence=NULL;
   (*w)->maxAmplitude=NULL;
   (*w)->relativeStartTime=NULL;
   (*w)->relativeStopTime=NULL;
@@ -2268,170 +2908,262 @@ static void _createClusterWavelet(ClusterWavelet **w)
   (*w)->pixelMixerApplied=FALSE;
   (*w)->clusterType=0;
   (*w)->blobs=NULL;
-  (*w)->delta_t=-1.0;
-  (*w)->delta_f=-1.0;
+  (*w)->delta_t=1.0;
+  (*w)->delta_f=1.0;
+  (*w)->nsubintervals=1;
+  (*w)->M=0;
+  (*w)->nalpha;
+  (*w)->error=NO_ERRORS;
 }
 
 
 static void _freeClusterWavelet(ClusterWavelet **w)
 {
   UINT4 i;
-  if((*w)->wavelet!=NULL)
+  /*printf("_freeClusterWavelet 0\n");fflush(stdout);*/
+  if(*w!=NULL)
     {
-      _freeWavelet(&(*w)->wavelet);
-      (*w)->wavelet=NULL;
-    }
-  if((*w)->original!=NULL)
-    {
-      _freeWavelet(&(*w)->original);
-      (*w)->original=NULL;
-    }
-  if((*w)->psd!=NULL)
-    {
-      _freeREAL4FrequencySeries(&(*w)->psd);
-      (*w)->psd=NULL;
-    }
-  if((*w)->medians!=NULL)
-    {
-      LALFree((*w)->medians);
-      (*w)->medians=NULL;
-    }
-  if((*w)->norm50!=NULL)
-    {
-      LALFree((*w)->norm50);
-      (*w)->norm50=NULL;
-    }
-  if((*w)->avgPSD!=NULL)
-    {
-      LALFree((*w)->avgPSD);
-      (*w)->avgPSD=NULL;
-    }
-  if((*w)->pMask!=NULL)
-    {
-      for(i=0;i<(*w)->pMaskCount;i++)
+      if((*w)->wavelet!=NULL)
 	{
-	  if((*w)->pMask[i]!=NULL)
-	    {
-	      LALFree((*w)->pMask[i]);
-	      (*w)->pMask[i]=NULL;
-	    }
+	  /*printf("_freeClusterWavelet 1-1\n");fflush(stdout);*/
+	  _freeWavelet(&(*w)->wavelet);
+	  /*printf("_freeClusterWavelet 1\n");fflush(stdout);*/
+	  (*w)->wavelet=NULL;
 	}
-      LALFree((*w)->pMask);
-    }
-  if((*w)->sCuts!=NULL)
-    {
-      LALFree((*w)->sCuts);
-      (*w)->sCuts=NULL;
-    }
-  if((*w)->cList!=NULL)
-    {
-      for(i=0;i<(*w)->clusterCount;i++)
+      if((*w)->original!=NULL)
 	{
-	  if((*w)->cList[i]!=NULL)
-	    {
-	      LALFree((*w)->cList[i]);
-	      (*w)->cList[i]=NULL;
-	    }
+	  /*printf("_freeClusterWavelet 2-1\n");fflush(stdout);*/
+	  _freeWavelet(&(*w)->original);
+	  /*printf("_freeClusterWavelet 2\n");fflush(stdout);*/
+	  (*w)->original=NULL;
 	}
-      LALFree((*w)->cList);
-    }
-  if((*w)->volumes!=NULL)
-    {
-      LALFree((*w)->volumes);
-      (*w)->volumes=NULL;
-    }
-  if((*w)->coreSize!=NULL)
-    {
-      LALFree((*w)->coreSize);
-      (*w)->coreSize=NULL;
-    }
-  if((*w)->correlation!=NULL)
-    {
-      LALFree((*w)->correlation);
-      (*w)->correlation=NULL;
-    }
-  if((*w)->likelihood!=NULL)
-    {
-      LALFree((*w)->likelihood);
-      (*w)->likelihood=NULL;
-    }
-  if((*w)->power!=NULL)
-    {
-      LALFree((*w)->power);
-      (*w)->power=NULL;
-    }
-  if((*w)->maxAmplitude!=NULL)
-    {
-      LALFree((*w)->maxAmplitude);
-      (*w)->maxAmplitude=NULL;
-    }
-  if((*w)->relativeStartTime!=NULL)
-    {
-      LALFree((*w)->relativeStartTime);
-      (*w)->relativeStartTime=NULL;
-    }
-  if((*w)->relativeStopTime!=NULL)
-    {
-      LALFree((*w)->relativeStopTime);
-      (*w)->relativeStopTime=NULL;
-    }
-  if((*w)->duration!=NULL)
-    {
-      LALFree((*w)->duration);
-      (*w)->duration=NULL;
-    }
-  if((*w)->absoluteStartTime!=NULL)
-    {
-      LALFree((*w)->absoluteStartTime);
-      (*w)->absoluteStartTime=NULL;
-    }
-  if((*w)->absoluteStopTime!=NULL)
-    {
-      LALFree((*w)->absoluteStopTime);
-      (*w)->absoluteStopTime=NULL;
-    }
-  if((*w)->startFrequency!=NULL)
-    {
-      LALFree((*w)->startFrequency);
-      (*w)->startFrequency=NULL;
-    }
-  if((*w)->stopFrequency!=NULL)
-    {
-      LALFree((*w)->stopFrequency);
-      (*w)->stopFrequency=NULL;
-    }
-  if((*w)->bandwidth!=NULL)
-    {
-      LALFree((*w)->bandwidth);
-      (*w)->bandwidth=NULL;
-    }
-  if((*w)->noise_rms!=NULL)
-    {
-      LALFree((*w)->noise_rms);
-      (*w)->noise_rms=NULL;
-    }
+      /*
+      if((*w)->psd!=NULL)
+	{
+	  _freeREAL4FrequencySeries(&(*w)->psd);
+	  (*w)->psd=NULL;
+	}
+      */
+      if((*w)->medians!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 4-1\n");fflush(stdout);*/
+	  /*printf("medians=%p\n",(*w)->medians);fflush(stdout);*/
+	  LALFree((*w)->medians);
+	  /*printf("_freeClusterWavelet 4\n");fflush(stdout);*/
+	  (*w)->medians=NULL;
+	}
+      if((*w)->norm50!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 5-1\n");fflush(stdout);*/
+	  LALFree((*w)->norm50);
+	  /*printf("_freeClusterWavelet 5\n");fflush(stdout);*/
+	  (*w)->norm50=NULL;
+	}
+      if((*w)->Rij!=NULL)
+        {
+          LALFree((*w)->Rij);
+	  (*w)->Rij=NULL;
+        }
+      if((*w)->norm10L!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 6-1\n");fflush(stdout);*/
+	  LALFree((*w)->norm10L);
+	  /*printf("_freeClusterWavelet 6\n");fflush(stdout);*/
+	  (*w)->norm10L=NULL;
+	}
+      if((*w)->norm10R!=NULL)
+        {
+	  /*printf("_freeClusterWavelet 7-1\n");fflush(stdout);*/
+          LALFree((*w)->norm10R);
+	  /*printf("_freeClusterWavelet 7\n");fflush(stdout);*/
+          (*w)->norm10R=NULL;
+        }
+      /*
+      if((*w)->avgPSD!=NULL)
+	{
+	  LALFree((*w)->avgPSD);
+	  (*w)->avgPSD=NULL;
+	}
+      */
+      if((*w)->pMask!=NULL)
+	{
+	  /*	  printf("freeClusterWavelet 9-1\n");fflush(stdout);*/
+	  for(i=0;i<(*w)->pMaskCount;i++)
+	    {
+	      if((*w)->pMask[i]!=NULL)
+		{
+		  /* printf("pMaskCount=%d i=%d (*w)->pMask[i]=%p\n",(*w)->pMaskCount, i, (*w)->pMask[i]);fflush(stdout); */
+		  LALFree((*w)->pMask[i]);
+		  /* printf("after freeing (*w)->pMask[i]");fflush(stdout);*/
+		  (*w)->pMask[i]=NULL;
+		}
+	    }
+	  /*printf("_freeClusterWavelet 9\n");fflush(stdout);*/
+	  LALFree((*w)->pMask);
+	  (*w)->pMask=NULL;
+	}
+      if((*w)->sCuts!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 10-1\n");fflush(stdout);*/
+	  LALFree((*w)->sCuts);
+	  /*printf("_freeClusterWavelet 10\n");fflush(stdout);*/
+	  (*w)->sCuts=NULL;
+	}
+      if((*w)->cList!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 11-1\n");fflush(stdout);*/
+	  for(i=0;i<(*w)->clusterCount;i++)
+	    {
+	      if((*w)->cList[i]!=NULL)
+		{
+		  LALFree((*w)->cList[i]);
+		  (*w)->cList[i]=NULL;
+		}
+	    }
+	  /*printf("_freeClusterWavelet 11\n");fflush(stdout);*/
+	  LALFree((*w)->cList);
+	  (*w)->cList=NULL;
+	}
+      if((*w)->volumes!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 12-1\n");fflush(stdout);*/
+	  LALFree((*w)->volumes);
+	  /*printf("_freeClusterWavelet 12\n");fflush(stdout);*/
+	  (*w)->volumes=NULL;
+	}
+      if((*w)->coreSize!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 13-1\n");fflush(stdout);*/
+	  LALFree((*w)->coreSize);
+	  /*printf("_freeClusterWavelet 13\n");fflush(stdout);*/
+	  (*w)->coreSize=NULL;
+	}
+      if((*w)->correlation!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 14-1\n");fflush(stdout);*/
+	  LALFree((*w)->correlation);
+	  /*printf("_freeClusterWavelet 14\n");fflush(stdout);*/
+	  (*w)->correlation=NULL;
+	}
+      if((*w)->likelihood!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 15-1\n");fflush(stdout);*/
+	  LALFree((*w)->likelihood);
+	  /*printf("_freeClusterWavelet 15\n");fflush(stdout);*/
+	  (*w)->likelihood=NULL;
+	}
+      if((*w)->power!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 16-1\n");fflush(stdout);*/
+	  LALFree((*w)->power);
+	  /*printf("_freeClusterWavelet 16\n");fflush(stdout);*/
+	  (*w)->power=NULL;
+	}
+      if((*w)->confidence!=NULL)
+        {
+	  /*printf("_freeClusterWavelet 17-1\n");fflush(stdout);*/
+          LALFree((*w)->confidence);
+	  /*printf("_freeClusterWavelet 17\n");fflush(stdout);*/
+	  (*w)->confidence=NULL;
+        }
 
-  if((*w)->blobs!=NULL)
-    {
-      for(i=0;i<(*w)->clusterCount;i++)
+      if((*w)->maxAmplitude!=NULL)
 	{
-	  if((*w)->blobs[i].pBlob!=NULL) 
-	    {
-	      LALFree((*w)->blobs[i].pBlob);
-	      (*w)->blobs[i].pBlob=NULL;
-	    }
-	  if((*w)->blobs[i].oBlob!=NULL) 
-	    {
-	      LALFree((*w)->blobs[i].oBlob);
-	      (*w)->blobs[i].oBlob=NULL;
-	    }
+	  /*printf("_freeClusterWavelet 18-1\n");fflush(stdout);*/
+	  LALFree((*w)->maxAmplitude);
+	  /*printf("_freeClusterWavelet 18\n");fflush(stdout);*/
+	  (*w)->maxAmplitude=NULL;
 	}
-      LALFree((*w)->blobs);
-      (*w)->blobs=NULL;
+      if((*w)->relativeStartTime!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 19-1\n");fflush(stdout);*/
+	  LALFree((*w)->relativeStartTime);
+	  /*printf("_freeClusterWavelet 19\n");fflush(stdout);*/
+	  (*w)->relativeStartTime=NULL;
+	}
+      if((*w)->relativeStopTime!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 20-1\n");fflush(stdout);*/
+	  LALFree((*w)->relativeStopTime);
+	  /*printf("_freeClusterWavelet 20\n");fflush(stdout);*/
+	  (*w)->relativeStopTime=NULL;
+	}
+      if((*w)->duration!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 21-1\n");fflush(stdout);*/
+	  LALFree((*w)->duration);
+	  /*printf("_freeClusterWavelet 21\n");fflush(stdout);*/
+	  (*w)->duration=NULL;
+	}
+      if((*w)->absoluteStartTime!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 22-1\n");fflush(stdout);*/
+	  LALFree((*w)->absoluteStartTime);
+	  /*printf("_freeClusterWavelet 22\n");fflush(stdout);*/
+	  (*w)->absoluteStartTime=NULL;
+	}
+      if((*w)->absoluteStopTime!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 23-1\n");fflush(stdout);*/
+	  LALFree((*w)->absoluteStopTime);
+	  /*printf("_freeClusterWavelet 23\n");fflush(stdout);*/
+	  (*w)->absoluteStopTime=NULL;
+	}
+      if((*w)->startFrequency!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 24-1\n");fflush(stdout);*/
+	  LALFree((*w)->startFrequency);
+	  /*printf("_freeClusterWavelet 24\n");fflush(stdout);*/
+	  (*w)->startFrequency=NULL;
+	}
+      if((*w)->stopFrequency!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 25-1\n");fflush(stdout);*/
+	  LALFree((*w)->stopFrequency);
+	  /*printf("_freeClusterWavelet 25\n");fflush(stdout);*/
+	  (*w)->stopFrequency=NULL;
+	}
+      if((*w)->bandwidth!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 26-1\n");fflush(stdout);*/
+	  LALFree((*w)->bandwidth);
+	  /*printf("_freeClusterWavelet 26\n");fflush(stdout);*/
+	  (*w)->bandwidth=NULL;
+	}
+      if((*w)->noise_rms!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 27-1\n");fflush(stdout);*/
+	  LALFree((*w)->noise_rms);
+	  /*printf("_freeClusterWavelet 27\n");fflush(stdout);*/
+	  (*w)->noise_rms=NULL;
+	}
+      
+      if((*w)->blobs!=NULL)
+	{
+	  /*printf("_freeClusterWavelet 28-1\n");fflush(stdout);*/
+	  for(i=0;i<(*w)->clusterCount;i++)
+	    {
+	      if((*w)->blobs[i].pBlob!=NULL) 
+		{
+		  LALFree((*w)->blobs[i].pBlob);
+		  (*w)->blobs[i].pBlob=NULL;
+		}
+	      if((*w)->blobs[i].oBlob!=NULL) 
+		{
+		  LALFree((*w)->blobs[i].oBlob);
+		  (*w)->blobs[i].oBlob=NULL;
+		}
+	    }
+	  /*printf("_freeClusterWavelet 28\n");fflush(stdout);*/
+	  LALFree((*w)->blobs);
+	  (*w)->blobs=NULL;
+	}
+      (*w)->pMaskCount=0;
+      (*w)->clusterCount=0;
+      LALFree(*w);
+      *w=NULL;
     }
-  (*w)->pMaskCount=0;
-  (*w)->clusterCount=0;
-  LALFree(*w);
+  /*printf("_freeClusterWavelet end\n");fflush(stdout);*/
 }
 
 
@@ -2439,7 +3171,6 @@ static void _setAmplitudes(ClusterWavelet *w)
 {
   UINT4 i,k,f,t;
   Slice s;
-
 
   bzero(w->wavelet->data->data->data,w->wavelet->data->data->length*sizeof(REAL4));
 
@@ -2626,6 +3357,7 @@ static void _predict(Wavelet *w, int level, int layer, const double *p_H)
    }
 
   LALFree(pBorder);
+  pBorder=NULL;
 
 }
 
@@ -2788,6 +3520,7 @@ U0: *dataA += sum;
    }
 
   LALFree(pBorder);
+  pBorder=NULL;
 }
 
 static void _forward(Wavelet *w, int level, int layer)
@@ -3246,6 +3979,7 @@ static void _forwardFWT(Wavelet *w, int level, int layer, const double *pLPF, co
       pData[i<<level] = *(--temp);
 
    LALFree(temp);
+   temp=NULL;
 }
 
 static void _inverseFWT(Wavelet *w, int level, int layer, const double *pLPF, const double *pHPF)
@@ -3395,6 +4129,7 @@ static void _inverseFWT(Wavelet *w, int level, int layer, const double *pLPF, co
       pData[i<<level] = *(--temp);
 
    LALFree(temp);
+   temp=NULL;
 }
 
 
@@ -3416,6 +4151,7 @@ static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseCl
   output->w->correlation=NULL;
   output->w->likelihood=NULL;
   output->w->power=NULL;
+  output->w->confidence=NULL;
   output->w->maxAmplitude=NULL;
   output->w->relativeStartTime=NULL;
   output->w->relativeStopTime=NULL;
@@ -3432,7 +4168,7 @@ static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseCl
 
   for(i=0;i<output->w->pMaskCount;i++)
     {
-      output->w->pMask[i]=(PixelWavelet*)LALMalloc(sizeof(PixelWavelet));
+      output->w->pMask[i]=(PixelWavelet*)LALCalloc(1,sizeof(PixelWavelet));
       _copyPixel(output->w->pMask[i],input->another->pMask[i]);
       _getSliceF(output->w->pMask[i]->frequency,input->another->wavelet,&S);
       output->w->pMask[i]->amplitude=
@@ -3481,5 +4217,15 @@ static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseCl
   return output->w->nonZeroFractionAfterSetMask;
 }
 
+static void _unitCopy(LALUnit *source, LALUnit *destination)
+{
+  UINT4 i;
+  destination->powerOfTen=source->powerOfTen;
+  for(i=0;i<LALNumUnits;i++)
+    {
+      destination->unitNumerator[i]=source->unitNumerator[i];
+      destination->unitDenominatorMinusOne[i]=source->unitDenominatorMinusOne[i];
+    }
+}
 
 #endif
