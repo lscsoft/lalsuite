@@ -1966,7 +1966,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   StochasticCrossCorrelationCalInput ccIn;
   BOOLEAN epochsMatch = 1;
   REAL4WithUnits ccStat;
-  COMPLEX8FrequencySeries *ccSpectrum;
+  COMPLEX8FrequencySeries *ccSpectrum = NULL;
 
   /* error handler */
   status.statusPtr = NULL;
@@ -2208,14 +2208,6 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* destroy frequency mask */
     XLALDestroyREAL4FrequencySeries(mask);
   }
-
-  if (vrbflg)
-    fprintf(stdout, "Allocating memory for CC Spectrum...\n");
-
-  /* allocate memory for CC spectrum*/
-  LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&status, &ccSpectrum, \
-        "ccSpectrum", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
-        filterLength), &status);
 
   if (vrbflg)
     fprintf(stdout, "Done with memory allocation...\n");
@@ -2514,8 +2506,8 @@ INT4 main(INT4 argc, CHAR *argv[])
           fprintf(stdout, "Generating cross correlation spectrum...\n");
 
         /* calculate cc spectrum */
-        LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(&status, \
-              ccSpectrum, &ccIn, epochsMatch), &status);
+        ccSpectrum = cc_spectra(&status, hBarTildeOne, hBarTildeTwo, \
+            responseOne, responseTwo, optFilter, epochsMatch);
 
         /* save out cc spectra as frame */
         if (vrbflg)
