@@ -69,7 +69,10 @@ ______________________________________
 8 bytes  UNSIGNED INT8   crc64;
 ______________________________________
 
-4 bytes  INT4   padding;
+2 bytes  CHAR   detector[2];
+______________________________________
+
+2 bytes  CHAR   padding[2];
 ______________________________________
 
 4 bytes  INT4   comment_length;
@@ -97,7 +100,8 @@ struct SFTtag {
   INT4   first_frequency_index;
   INT4   nsamples;
   UINT8  crc64;
-  INT4   padding;
+  CHAR   detector[2];	
+  CHAR   padding[2];
   INT4   comment_length;
 } SFTheader;
 when the structure is packed, ie no zero padding between fields is
@@ -176,7 +180,15 @@ crc64: The 64-bit CRC checksum of the 48+8*n+8*N bytes that make up
        The primitive polynomial is x^64 + x^4 + x^3 + x + 1.
        The CRC will be initialized to all ones (~0ULL).
 
-padding:  These four bytes will be set to zero.  They are here so that all 8-byte
+detector: a two-character prefix of the from 'Xn' characterizing the detector, where 
+	X is a single capital letter describing the site 
+		(H=Hanford, L=Livingston, G=GEO, V=Virgo, T=TAMA,...)
+	n is the detector number,
+	e.g. L1 for LLO, H1 for LHO4km, H2 for LHO2km, etc.
+	(this follows the naming convention for the channel-name prefix
+	 in the Frame-format, cf. LIGO-T970130-F-E:)  
+
+padding:  These two bytes will be set to zero.  They are here so that all 8-byte
           quantities are byte aligned with respect to the header.  This may permit
           certain efficiencies and library usages on certain platforms/architectures.
 
