@@ -360,11 +360,11 @@ if condor_prio:
 
 # add the slide argument to inca if we are doing a background estimation
 if slide_time:
-  inca_job.add_opt('slide-time',slide_time)
-  lho_inca_job.add_opt('slide-time',slide_time)
+  inca_job.add_opt('slide-time',str(slide_time))
+  lho_inca_job.add_opt('slide-time',str(slide_time))
   if slide_time_ns:
-    inca_job.add_opt('slide-time-ns',slide_time_ns)
-    lho_inca_job.add_opt('slide-time-ns',slide_time_ns)
+    inca_job.add_opt('slide-time-ns',str(slide_time_ns))
+    lho_inca_job.add_opt('slide-time-ns',str(slide_time_ns))
 
 ##############################################################################
 # get the thresholds, pad and chunk lengths from the values in the ini file
@@ -428,13 +428,22 @@ print "done"
 # Step 4: Compute the ScienceSegments for the L1/H2 double coincident data
 print "computing L1/H2 double coincident data..."
 sys.stdout.flush()
-not_h1_data = copy.deepcopy(h1_data)
+
+l1_data_out = copy.deepcopy(l1_data)
+h1_data_out = copy.deepcopy(h1_data)
+h2_data_out = copy.deepcopy(h2_data)
+for sci_data in [l1_data_out,h1_data_out,h2_data_out]:
+  for seg in sci_data:
+    seg.set_start(seg.start()+overlap/2)
+    seg.set_end(seg.end()-overlap/2)
+
+not_h1_data = copy.deepcopy(h1_data_out)
 not_h1_data.invert()
-not_h2_data = copy.deepcopy(h2_data)
+not_h2_data = copy.deepcopy(h2_data_out)
 not_h2_data.invert()
 
-l1_h2_data = copy.deepcopy(l1_data)
-l1_h2_data.intersection(h2_data)
+l1_h2_data = copy.deepcopy(l1_data_out)
+l1_h2_data.intersection(h2_data_out)
 l1_h2_data.intersection(not_h1_data)
 l1_h2_data.coalesce()
 print "done"
@@ -527,14 +536,20 @@ print "done"
 if slide_time:
   print "re-computing L1/H2 double coincident data with slide...",
   sys.stdout.flush()
-  for seg in h1_data:
+  for seg in h1_data_out:
     seg.set_start(seg.start() + slide_time)
     seg.set_end(seg.end() + slide_time)
-  for seg in h2_data:
+  for seg in h2_data_out:
     seg.set_start(seg.start() + slide_time)
     seg.set_end(seg.end() + slide_time)
-  l1_h2_data = copy.deepcopy(l1_data)
-  l1_h2_data.intersection(h2_data)
+
+  not_h1_data = copy.deepcopy(h1_data_out)
+  not_h1_data.invert()
+  not_h2_data = copy.deepcopy(h2_data_out)
+  not_h2_data.invert()
+
+  l1_h2_data = copy.deepcopy(l1_data_out)
+  l1_h2_data.intersection(h2_data_out)
   l1_h2_data.intersection(not_h1_data)
   l1_h2_data.coalesce()
   print "done"
@@ -543,8 +558,8 @@ if slide_time:
 print "setting up jobs to get L1/H1 double coincident triggers...",
 sys.stdout.flush()
 
-l1_h1_data = copy.deepcopy(l1_data)
-l1_h1_data.intersection(h1_data)
+l1_h1_data = copy.deepcopy(l1_data_out)
+l1_h1_data.intersection(h1_data_out)
 l1_h1_data.intersection(not_h2_data)
 l1_h1_data.coalesce()
 
@@ -605,9 +620,9 @@ print "done"
 print "setting up jobs to get L1/H1 triple coincident triggers...",
 sys.stdout.flush()
 
-l1_h1_h2_data = copy.deepcopy(l1_data)
-l1_h1_h2_data.intersection(h1_data)
-l1_h1_h2_data.intersection(h2_data)
+l1_h1_h2_data = copy.deepcopy(l1_data_out)
+l1_h1_h2_data.intersection(h1_data_out)
+l1_h1_h2_data.intersection(h2_data_out)
 l1_h1_h2_data.coalesce()
 
 l1_h1_inca_nodes = []
