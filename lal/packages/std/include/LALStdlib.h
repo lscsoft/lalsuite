@@ -5,6 +5,79 @@ $Id$
 
 /* <lalLaTeX>
 
+\section{Header \texttt{LALConfig.h}}
+\label{s:LALConfig.h}
+
+Defines configuration macro constants.
+
+\subsection*{Synopsis}
+\begin{verbatim}
+#include <lal/LALConfig.h>
+\end{verbatim}
+
+\noindent This header (which is not technically in the \texttt{std} package;
+rather it is generated directly in the \texttt{include/lal} directory during
+configuration) is included in essentially every other header file.  It
+contains macro constants that are defined at configuration time.  They are:
+
+\idx[Constant]{LAL\_VERSION}
+\idx[Constant]{LAL\_VERSION\_MAJOR}
+\idx[Constant]{LAL\_VERSION\_MINOR}
+\idx[Constant]{LAL\_CONFIGURE\_ARGS}
+\idx[Constant]{LAL\_CONFIGURE\_DATE}
+\idx[Constant]{LAL\_CVS\_TAG}
+\idx[Constant]{LAL\_SIZEOF\_DOUBLE}
+\idx[Constant]{LAL\_SIZEOF\_FLOAT}
+\idx[Constant]{LAL\_SIZEOF\_INT}
+\idx[Constant]{LAL\_SIZEOF\_LONG}
+\idx[Constant]{LAL\_SIZEOF\_LONG\_LONG}
+\idx[Constant]{LAL\_SIZEOF\_SHORT}
+\idx[Constant]{LAL\_NDEBUG}
+\idx[Constant]{NOLALMACROS}
+\idx[Constant]{LAL\_PTHREAD\_LOCK}
+\idx[Constant]{LAL\_FRAME\_ENABLED}
+\idx[Constant]{LAL\_MPI\_ENABLED}
+\begin{description}
+\item[\texttt{LAL\_VERSION}] Constant string containing the version of LAL.
+\item[\texttt{LAL\_VERSION\_MAJOR}] Integer representing the major version
+  number of LAL.
+\item[\texttt{LAL\_VERSION\_MINOR}] Integer representing the minor version
+  number of LAL.
+\item[\texttt{LAL\_CONFIGURE\_ARGS}] Constant string containing the arguments
+  given to the configure script.
+\item[\texttt{LAL\_CONFIGURE\_DATE}] Constant string containing the date
+  when LAL was configured.
+\item[\texttt{LAL\_CVS\_TAG}] Constant string containing the CVS tag used to
+  checkout LAL (blank if none).
+\item[\texttt{LAL\_SIZEOF\_DOUBLE}] Integer representing the size of a
+  double precision floating point number.
+\item[\texttt{LAL\_SIZEOF\_FLOAT}] Integer representing the size of a
+  single precision floating point number.
+\item[\texttt{LAL\_SIZEOF\_INT}] Integer representing the size of a
+  integer.
+\item[\texttt{LAL\_SIZEOF\_LONG}] Integer representing the size of a
+  long integer.
+\item[\texttt{LAL\_SIZEOF\_LONG\_LONG}] Integer representing the size of a
+  long long integer.
+\item[\texttt{LAL\_SIZEOF\_SHORT}] Integer representing the size of a
+  short integer.
+\item[\texttt{LAL\_NDEBUG}] Defined if debugging is turned off (use the
+  configure argument \texttt{--disable-debug} to do this).
+\item[\texttt{NOLALMACROS}] Defined if status macros are replaced by functions
+  (where possible) (use the configure argument \texttt{--disable-macros} to do
+  this).
+\item[\texttt{LAL\_PTHREAD\_LOCK}] Defined if POSIX thread mutex locking is
+  to be used for threadsafety (use the configure argument
+  \texttt{--enable-pthread-lock} to do this).
+\item[\texttt{LAL\_FRAME\_ENABLED}] Defined if LAL frame-format data reading
+  routines will be compiled (use the configure argument
+  \texttt{--enable-frame} to do this).
+\item[\texttt{LAL\_MPI\_ENABLED}] Defined if LAL MPI routines will be compiled
+  (use the configure argument \texttt{--enable-mpi} to do this).
+\end{description}
+
+
+\newpage
 \section{Header \texttt{LALStdlib.h}}
 \label{s:LALStdlib.h}
 

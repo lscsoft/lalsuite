@@ -19,6 +19,9 @@
 /* LAL Configure Date */
 #undef LAL_CONFIGURE_DATE
 
+/* LAL CVS Tag */
+#undef LAL_CVS_TAG
+
 /* The number of bytes in a double.  */
 #undef LAL_SIZEOF_DOUBLE
 
