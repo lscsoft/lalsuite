@@ -1,5 +1,7 @@
 TODO (makefakedatata_v4)
 -------------------------
+* move fmin- and fBand nudging into GeneratePulsarSignal.c, so that
+ users of this function don't have to worry about this.
 
 * allow using Greg's optimized Signal-generator
 
