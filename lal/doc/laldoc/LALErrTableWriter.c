@@ -196,7 +196,7 @@ ParseErrLine( char *Ptr          , /* Ptr to string after #define)      */
                         }
     }
 
-    position = strstr(position," ");
+    position += strcspn(position, " \t");
     savePosition = position ;
     sscanf(position,"%s",errStr);
 
