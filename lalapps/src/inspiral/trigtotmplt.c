@@ -33,6 +33,34 @@ RCSID( "$Id$" );
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
 
+#define USAGE \
+"lalapps_print_inspiral is a utility to read and write LIGO lightweight XML\n" \
+"files containing sngl_inspiral tables. It sorts the sngl_inspiral triggers\n"\
+"by time and perform additional cuts on them.\n" \
+"\n" \
+"Usage: lalapps_print_inspiral [OPTIONS]\n" \
+"\n" \
+"\n" \
+"PROGRAM OPTIONS.\n" \
+"\n" \
+"   --help                display this message\n" \
+"   --debug-level LEVEL   set the LAL debug level to the specified\n" \
+"                           value. Useful values are: NDEBUG, ERROR,\n" \
+"                           WARNING, INFO, TRACE, MEMINFO and MEMDBG\n" \
+"                           Due to the LAL memory checks, the code will\n"\
+"                           run very slowly if MEMDBG is enabled.\n" \
+"   --verbose             verbose operation\n" \
+"\n" \
+"\n" \
+"INPUT AND OUTPUT OPTIONS.\n" \
+"\n" \
+"   --input FILE          use all files that match the pattern GLOB as\n"\
+"                           input. This should usualy be quoted to prevent\n"\
+"                           the shell from expanding the pattern.\n"\
+"   --output FILE         write all results to the LIGO lightweight FILE\n"\
+"   --comment STRING      add the comment STRING to the process_params table\n"\
+"\n"
+
 
 /*
  *
@@ -68,14 +96,6 @@ int compareTmpltsByMass ( const void *a, const void *b )
   }
 }
 
-
-/*
- *
- * variables that control program behaviour
- *
- */
-
-
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
 this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   LALCalloc( 1, sizeof(ProcessParamsTable) ); \
@@ -103,6 +123,7 @@ int main ( int argc, char *argv[] )
     {"output",                  required_argument, 0,                'o'},
     {"minimum-match",           required_argument, 0,                'm'},
     {"debug-level",             required_argument, 0,                'z'},
+    {"help",                    no_argument,       0,                'h'},
     {0, 0, 0, 0}
   };
   int i, numEvents, numUniq = 0;
@@ -218,7 +239,12 @@ int main ( int argc, char *argv[] )
         }
         ADD_PROCESS_PARAM( "float", "%e", minMatch );
         break;
-        
+
+      case 'h':
+        fprintf( stdout, USAGE );
+        exit( 0 );
+        break;
+
       case 'z':
         set_debug_level( optarg );
         break;
