@@ -173,10 +173,12 @@ LALExtractFrameResponse(
   COMPLEX8FrequencySeries       C0;
   COMPLEX8TimeSeries            ab;
   COMPLEX8TimeSeries            a;
+  /*
   COMPLEX8Vector                abVec;
   COMPLEX8Vector                aVec;
   COMPLEX8                      abData;
   COMPLEX8                      aData;
+  */
   CalibrationFunctions          calfuncs;
 
   LIGOTimeGPS                   seekEpoch;
@@ -326,7 +328,7 @@ LALExtractFrameResponse(
       /* sensemon stores fac times series as real_8 adc trend data */  
       REAL8TimeSeries     sensemonTS;
       REAL8               alphaDeltaT;
-      INT4		  i;
+      UINT4		  i;
 
       memset( &sensemonTS, 0, sizeof(REAL8TimeSeries) ); 
     
