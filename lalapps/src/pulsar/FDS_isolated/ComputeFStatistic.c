@@ -2936,14 +2936,34 @@ int main(int argc, char *argv[]){
   globargc=argc;
   globargv=argv;
 
-#if BOINC_DEBUGGING_ENABLED && defined(__GNUC__)
-  {
+#if defined(__GNUC__)
+  /* see if user has created a DEBUG_CFS file at the top level... */
+  if (fopen("../../DEBUG_CFS", "r") || fopen("./DEBUG_CFS", "r")) {
+    
     char commandstring[256];
-    /* char *cmd_name = argv[0]; */
+    char resolved_name[256];
+    char *ptr;
     pid_t process_id=getpid();
-    sprintf(commandstring,"ddd %s %d &","../../projects/albert*/einstein*" ,process_id);
-    system(commandstring);
-    sleep(20);
+    
+    fprintf(stderr, "Found ../../DEBUG_CFS file, so trying real-time debugging\n");
+    
+    /* see if the path is absolute or has slashes.  If it has
+       slashes, take tail name */
+    if ((ptr = strrchr(argv[0], '/'))) {
+      ptr++;
+    } else {
+      ptr = argv[0];
+    }
+    
+    /* if file name is an XML soft link, resolve it */
+    if (boinc_resolve_filename(ptr, resolved_name, 256))
+      fprintf(stderr, "Unable to boinc_resolve_filename(%s), so no debugging\n", ptr);
+    else {
+      /* char *cmd_name = argv[0]; */
+      sprintf(commandstring,"ddd %s %d &", resolved_name ,process_id);
+      system(commandstring);
+      sleep(20);
+    }
   }
 #endif
 
