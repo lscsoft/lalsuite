@@ -224,7 +224,7 @@ main ( void )
       */
       randIn.type = 2;
       randIn.param.approximant = BCV;
-      randIn.param.massChoice = psi0psi3;
+      randIn.param.massChoice = psi0Andpsi3;
       LALRandomInspiralSignal(&status, &signal, &randIn);
       if (TimeDomain)
       {
