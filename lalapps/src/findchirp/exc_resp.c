@@ -10,13 +10,13 @@ RCSID( "$Id$" );
 
 /* Calibration Constants for L1:LSC-ETMX        */
 /* Based on mail from Gaby Mon, 24 Jun 2002     */
-#define L1_DC_RESP 1.72         /* cts/nm */
+#define L1_DC_RESP 1.72         /* nm/count */
 #define L1_PEND_F0 0.76         /* Hz */
 #define L1_LENGTH  4000         /* m */
 
 /* Calibration constants for H2:LSC-ETMX        */
 /* Based on E7 calibration web page             */
-#define H2_DC_RESP 1.33         /* cts/nm */
+#define H2_DC_RESP 1.33         /* nm/count */
 #define H2_PEND_F0 0.74         /* Hz */
 #define H2_LENGTH  2000         /* m */
 
@@ -106,10 +106,10 @@ int main ( int argc, char *argv[] )
   for ( k = 0; k < numpts; ++k )
   {
     REAL4 f = f_min + (REAL4) k * df;
-    REAL4 l1_r = ( L1_PEND_F0 * L1_PEND_F0 ) / 
-      ( L1_DC_RESP * 1e9 * L1_LENGTH * f * f );
-    REAL4 h2_r = ( H2_PEND_F0 * H2_PEND_F0 ) / 
-      ( H2_DC_RESP * 1e9 * H2_LENGTH * f * f );
+    REAL4 l1_r = ( L1_PEND_F0 * L1_PEND_F0 * L1_DC_RESP * 1e-9 ) / 
+      ( L1_LENGTH * f * f );
+    REAL4 h2_r = ( H2_PEND_F0 * H2_PEND_F0 * H2_DC_RESP * 1e-9 ) / 
+      ( H2_LENGTH * f * f );
     fprintf( l1_fp, "%e %e\n", l1_r, 0.0 );
     fprintf( h2_fp, "%e %e\n", h2_r, 0.0 );
   }
