@@ -683,6 +683,14 @@ LALFindChirpFilterSegment (
     FindChirpFilterParams      *params
     );
 
+void
+LALFindChirpBCVFilterSegment (
+    LALStatus                  *status,
+    SnglInspiralTable         **eventList,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params
+    );
+
 #if 0
 <lalLaTeX>
 \newpage\input{FindChirpSimulationC}

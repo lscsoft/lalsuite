@@ -183,6 +183,16 @@ LALFindChirpChisqVeto (
     FindChirpChisqParams       *params
     );
 
+void
+LALFindChirpBCVChisqVeto (
+    LALStatus                  *status,
+    REAL4Vector                *chisqVec,
+    FindChirpChisqInput        *input1,
+    FindChirpChisqInput        *input2,
+    FindChirpChisqParams       *params
+    );
+
+
 #ifdef  __cplusplus
 #pragma {
 }
