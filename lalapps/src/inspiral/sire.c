@@ -101,7 +101,7 @@ char *get_next_line( char *line, size_t size, FILE *fp )
 }
 
 int sortTriggers = 0;
-DataType dataType;
+LALPlaygroundDataMask dataType;
 
 int main( int argc, char *argv[] )
 {
@@ -126,7 +126,6 @@ int main( int argc, char *argv[] )
   char *missedFileName = NULL;
   INT4 hardware = 0;
   int  enableTrigStartTime = 1;
-
   int j;
   FILE *fp = NULL;
   glob_t globbedFiles;
