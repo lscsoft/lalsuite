@@ -75,6 +75,7 @@
  **** </lalLaTeX> */
 #include <string.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
 #include <lal/Calibration.h>
 #include <lal/FrameStream.h>
@@ -142,7 +143,7 @@ LALExtractFrameResponse(
     const CHAR              *ifo
     )
 { /* </lalVerbatim> */
-  UINT4 k;
+  /* UINT4 k; */
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
   FrCache      *calCache  = NULL;
