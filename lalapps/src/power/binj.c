@@ -594,7 +594,7 @@ int main( int argc, char *argv[] ){
       this_sim_burst->longitude = 2.0 * LAL_PI * deviate;
 
       LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
-      this_sim_burst->latitude = LAL_PI - acos(2.0*deviate-1.0) ;
+      this_sim_burst->latitude = LAL_PI/2.0 - acos(2.0*deviate-1.0) ;
 
       LAL_CALL( LALUniformDeviate ( &status, &deviate, randParams ), &status);
       this_sim_burst->polarization = 2.0 * LAL_PI * deviate;
