@@ -537,16 +537,6 @@ int main(int argc,char *argv[]){
     printmemuse();
 #endif
 
-  /* create structure to store channel data  */
-  chan.data = NULL;
-  LALSCreateVector(&status, &chan.data, npts);
-  TESTSTATUS(&status);
-
-#if TRACKMEMUSE
-    printf("[After SVEC] Memory usage at iteration %d is:\n", count);
-    printmemuse();
-#endif
-
   /* Main loop to write SFTs */
   for (count=0;count<nstarts;count++) {
     struct stat buff;
@@ -654,17 +644,27 @@ int main(int argc,char *argv[]){
       /* We found all needed data -- output an SFT! */
       FILE *fpsft;
       unsigned int i;
-      int k;
+      int k;  
       
+#if PRINT50
+      print50(frvect->dataF, "FRAMEDATA");
+#endif
+      
+      /* create structure to store channel data  */
+      chan.data = NULL;
+      LALSCreateVector(&status, &chan.data, npts);
+      TESTSTATUS(&status);
+      
+#if TRACKMEMUSE
+      printf("[After SVEC] Memory usage at iteration %d is:\n", count);
+      printmemuse();
+#endif
       /* set up LAL time series object sample interval, time epoch */
       strcpy(chan.name, chname);
       chan.deltaT = 1.0/SRATE;
       chan.epoch = epoch;
       chan.data->length = npts;
-
-#if PRINT50
-      print50(frvect->dataF, "FRAMEDATA");
-#endif
+      
       /* copy data */
       for (i=0;i<npts;i++){
 	chan.data->data[i]=frvect->dataF[i];
@@ -709,13 +709,13 @@ int main(int argc,char *argv[]){
 
 #if TDDOUBLE
       /* create structure to store channel data */
+      chand.data = NULL;
+      LALDCreateVector(&status, &chand.data, npts);
+      TESTSTATUS(&status);
       strcpy(chand.name, chname);
       chand.deltaT = 1.0/SRATE;
       chand.epoch = epoch;
       chand.data->length = npts;
-      chand.data = NULL;
-      LALDCreateVector(&status, &chand.data, npts);
-      TESTSTATUS(&status);
 
 #if TRACKMEMUSE
       printf("[After DVEC] Memory usage at iteration %d is:\n", count);
@@ -859,6 +859,10 @@ int main(int argc,char *argv[]){
       exit(0);
 #endif
 
+      LALSDestroyVector( &status, &chan.data );
+      TESTSTATUS( &status );
+      chan.data=NULL;
+
       if (printfreqseries){
 	/* for debugging -- print freq series */
 	LALCPrintVector(fvec);
@@ -900,10 +904,7 @@ int main(int argc,char *argv[]){
 
   /* Clean up and exit */
   FrFileIEnd(frfile);
-  
-  LALSDestroyVector( &status, &chan.data );
-  TESTSTATUS( &status );
-  
+    
   LALCheckMemoryLeaks();
   
   printf("Normal exit\n");
