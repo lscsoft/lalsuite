@@ -45,6 +45,11 @@ static REAL4 *vector(long nl, long nh);
 
 static void free_vector(REAL4 *v, long nl);
 
+static REAL4 zbrent(REAL4 (*func)(REAL4, REAL4, REAL8, REAL8), 
+		    REAL4 x1, REAL4 x2, 
+		    REAL4 tol,
+		    REAL8 P0, REAL8 Q, REAL8 bpp);
+
 /******** <lalLaTeX file="TFCThresholdsC"> ********
 \noindent
 Computes thresholds on the power from a best fit to the Rice distribution.
@@ -88,10 +93,8 @@ LALTFCRiceThreshold ( LALStatus *status,
   ASSERT(rho, status, TFCTHRESHOLDSH_ENULLP, TFCTHRESHOLDSH_MSGENULLP);
   ASSERT(thr, status, TFCTHRESHOLDSH_ENULLP, TFCTHRESHOLDSH_MSGENULLP);
 
-  ASSERT(thr->meanRe, status, TFCTHRESHOLDSH_ENULLP, TFCTHRESHOLDSH_MSGENULLP);
-  ASSERT(thr->meanIm, status, TFCTHRESHOLDSH_ENULLP, TFCTHRESHOLDSH_MSGENULLP);
-  ASSERT(thr->varRe, status, TFCTHRESHOLDSH_ENULLP, TFCTHRESHOLDSH_MSGENULLP);
-  ASSERT(thr->varIm, status, TFCTHRESHOLDSH_ENULLP, TFCTHRESHOLDSH_MSGENULLP);
+  ASSERT(thr->Q, status, TFCTHRESHOLDSH_ENULLP, TFCTHRESHOLDSH_MSGENULLP);
+  ASSERT(thr->P0, status, TFCTHRESHOLDSH_ENULLP, TFCTHRESHOLDSH_MSGENULLP);
 
   ASSERT(thr->bpp >= 0.0 && thr->bpp <= 1.0, status, TFCTHRESHOLDSH_E01, TFCTHRESHOLDSH_MSGE01);
 
@@ -100,9 +103,8 @@ LALTFCRiceThreshold ( LALStatus *status,
   for(i=0; i<thr->nFreq; i++) {
 
     rho[i] = RiceThreshold(thr->bpp, 
-			   thr->meanRe[i]*thr->meanRe[i] + 
-			   thr->meanIm[i]*thr->meanIm[i], 
-			   thr->varRe[i] + thr->varIm[i],
+			   thr->Q[i],
+			   thr->P0[i],
 			   thr->eGoal);
 
     if(numError > 1) {ABORT(status,TFCTHRESHOLDSH_ENERR,TFCTHRESHOLDSH_MSGENERR);}
@@ -129,7 +131,11 @@ static REAL8 RiceThreshold(REAL8 bpp, REAL8 Q, REAL8 P0, REAL4 eGoal) {
 
   REAL8 P;
 
+  /*
   P = NewtonRoot(RiceWrapper, P0+Q, P0+Q-2.0*log(bpp)*sqrt(P0*(P0+2.0*Q)), eGoal, P0, Q, bpp);
+  */
+
+  P = zbrent(RiceInt, P0+Q, P0+Q-2.0*log(bpp)*sqrt(P0*(P0+2.0*Q)), eGoal, P0, Q, bpp);
 
   return P;
 
@@ -193,7 +199,7 @@ static REAL4 RombergInt(REAL4 (*func)(REAL4, REAL8, REAL8), REAL4 a, REAL4 b,
 #undef JMAX
 #undef JMAXP
 #undef K
-
+#undef EPS
 
 #define FUNC(x) ((*func)(x, P0, Q))
 
@@ -274,8 +280,83 @@ static void free_vector(REAL4 *v, long nl)
 }
 
 
+#define NRANSI
+#define ITMAX 1000
+#define EPS 3.0e-8
+#define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
 
+static REAL4 zbrent(REAL4 (*func)(REAL4, REAL4, REAL8, REAL8), 
+		    REAL4 x1, REAL4 x2, 
+		    REAL4 tol,
+		    REAL8 P0, REAL8 Q, REAL8 bpp)
+{
+  INT4 iter;
+  REAL4 a=x1,b=x2,c=x2,d,e,min1,min2;
+  REAL4 fa=(*func)(bpp,a,Q,P0),fb=(*func)(bpp,b,Q,P0),fc,p,q,r,s,tol1,xm;
 
+  if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0)) {
+    numError = 2;
+    return 0.0;
+  }
+  fc=fb;
+  for (iter=1;iter<=ITMAX;iter++) {
+    if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
+      c=a;
+      fc=fa;
+      e=d=b-a;
+    }
+    if (fabs(fc) < fabs(fb)) {
+      a=b;
+      b=c;
+      c=a;
+      fa=fb;
+      fb=fc;
+      fc=fa;
+    }
+    tol1=2.0*EPS*fabs(b)+0.5*tol;
+    xm=0.5*(c-b);
+    if (fabs(xm) <= tol1 || fb == 0.0) return b;
+    if (fabs(e) >= tol1 && fabs(fa) > fabs(fb)) {
+      s=fb/fa;
+      if (a == c) {
+	p=2.0*xm*s;
+	q=1.0-s;
+      } else {
+	q=fa/fc;
+	r=fb/fc;
+	p=s*(2.0*xm*q*(q-r)-(b-a)*(r-1.0));
+	q=(q-1.0)*(r-1.0)*(s-1.0);
+      }
+      if (p > 0.0) q = -q;
+      p=fabs(p);
+      min1=3.0*xm*q-fabs(tol1*q);
+      min2=fabs(e*q);
+      if (2.0*p < (min1 < min2 ? min1 : min2)) {
+	e=d;
+	d=p/q;
+      } else {
+	d=xm;
+	e=d;
+      }
+    } else {
+      d=xm;
+      e=d;
+    }
+    a=b;
+    fa=fb;
+    if (fabs(d) > tol1)
+      b += d;
+                else
+		  b += SIGN(tol1,xm);
+    fb=(*func)(bpp,b,Q,P0);
+  }
+  numError = 2;
+  return 0.0;
+}
+#undef ITMAX
+#undef EPS
+#undef NRANSI
+#undef SIGN
 
 #define MAXIT 20000
 
@@ -475,3 +556,5 @@ return( 0.5*(b0-b2) );
 }
 
 #undef EPS
+
+

@@ -58,13 +58,9 @@ typedef struct tagRiceThresholdParams {
 
   UINT4 nFreq;
 
-  REAL4* meanRe;
+  REAL8* P0;
 
-  REAL4* meanIm;
-
-  REAL4* varRe;
-  
-  REAL4* varIm;
+  REAL8* Q;
 
   REAL4 bpp;
 

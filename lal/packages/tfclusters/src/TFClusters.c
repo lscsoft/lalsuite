@@ -364,6 +364,7 @@ LALGetClusters (
   else
     jmin=0;
 
+  printf("%u\t\t%u\n",jmin,jmax);
 
   if(jmin>0 || jmax!=-1U)
     {
