@@ -533,18 +533,19 @@ int main(int argc, char *argv[]){
   timeDiffV.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
 
   {   
-    REAL8   t0, ts, tn;
+    REAL8   t0, ts, tn, midTimeBase;
     INT4   j; 
 
+    midTimeBase=0.5*timeBase;
     ts = timeV.data[0].gpsSeconds;
     tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
     t0=ts+tn;
-    timeDiffV.data[0] = 0.0;
+    timeDiffV.data[0] = midTimeBase;
 
     for (j=1; j< mObsCoh; ++j){
       ts = timeV.data[j].gpsSeconds;
       tn = timeV.data[j].gpsNanoSeconds * 1.00E-9;  
-      timeDiffV.data[j] = ts+tn -t0; 
+      timeDiffV.data[j] = ts+tn -t0+midTimeBase; 
     }  
   }
 
@@ -598,44 +599,6 @@ int main(int argc, char *argv[]){
     }  
   }
  
-  /* ****************************************************************/
-  /*  Reading the time & detector-velocity corresponding to each SFT */
-  /* ****************************************************************/
-/*
- *   velV.length = mObsCoh;
- *   velV.data = NULL;
- *   velV.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor));
- * 
- *   timeV.length = mObsCoh;
- *   timeV.data = NULL;  
- *   timeV.data = (LIGOTimeGPS *)LALMalloc(mObsCoh*sizeof(LIGOTimeGPS));
- * 
- *   {
- *     UINT4   j; 
- *     FILE   *fp = NULL;
- *     INT4    r;
- * 
- *     fp = fopen( fnameVelocity, "r");
- *     if (fp==NULL){
- *       fprintf(stderr,"Unable to find file %s\n",fnameVelocity);
- *       return 1;
- *     }
- *     / *  read data format:  INT4 INT4  REAL8 REAL8 REAL8 * / <<<<<<<<<<<<<
- *     for (j=0; j<mObsCoh;++j){
- *       r= fscanf(fp, "%d %d %lf %lf %lf\n",
- *                 &(timeV.data[j].gpsSeconds),
- * 		&(timeV.data[j].gpsNanoSeconds), 
- * 		&(velV.data[j].x), &(velV.data[j].y),&(velV.data[j].z) );
- * 		
- *       if ( r !=5 ) {
- *        fprintf(stderr,"Unable to assign how many SFTs from %s\n",fnameVelocity);
- *        return 1;
- *       }   
- *     }
- *     fclose(fp);
- *   }
- */
-  
   /******************************************************************/ 
   /*   setting of parameters */ 
   /******************************************************************/ 
@@ -654,8 +617,6 @@ int main(int argc, char *argv[]){
   injectPar.spnFmax.data = NULL; 
   injectPar.spnFmax.length=msp;   /*only 1 spin */
   injectPar.spnFmax.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
-  /* check values !!!!! */ 
-  /* injectPar.spnFmax.data[0] =(nfSizeCylinder/2)*deltaF/injectPar.timeObs; */
   injectPar.spnFmax.data[0] = (nfSizeCylinder/2) *deltaF/timeDiffV.data[mObsCoh-1];
   
   pulsarInject.spindown.length = msp;
