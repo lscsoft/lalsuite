@@ -369,7 +369,8 @@ int main(int argc,char *argv[])
 	    if (CList1.Ctag[i]) 
 	      {
 		k++;
-		fprintf(fpOut,"%1.15le %le %le %le\n", CList1.f[i],CList1.Alpha[i],CList1.Delta[i],CList1.F[i]);
+		fprintf(fpOut,"%16.12f %l0.8f %l0.8f %l0.5f\n",
+			CList1.f[i],CList1.Alpha[i],CList1.Delta[i],CList1.F[i]);
 		CList1.CtagCounter[i]=k;
 	      }
 	  }
@@ -382,7 +383,8 @@ int main(int argc,char *argv[])
 	    if (CList2.Ctag[i]) 
 	      {
 		k++;
-		fprintf(fpOut,"%1.15le %le %le %le\n", CList2.f[i],CList2.Alpha[i],CList2.Delta[i],CList2.F[i]);  
+		fprintf(fpOut,"%16.12f %l0.8f %l0.8f %l0.5f\n",
+			CList2.f[i],CList2.Alpha[i],CList2.Delta[i],CList2.F[i]);  
 		CList2.CtagCounter[i]=k;
 	      }    
 	  }
@@ -394,7 +396,8 @@ int main(int argc,char *argv[])
       for (i=0; i < numCoincidences; i++) 
 	{
 	  UINT4 k = indicesCCfa[i];  /* print out ordered by joint significance */
-	  fprintf(fpOut,"%d %d %le\n", CList1.CtagCounter[CP[k].c1],CList2.CtagCounter[CP[k].c2],CP[k].fa);
+	  fprintf(fpOut,"%d %d %le\n",
+		  CList1.CtagCounter[CP[k].c1],CList2.CtagCounter[CP[k].c2],CP[k].fa);
 	}
 
 /*       for (i=0; i < numCoincidences; i++)  */
