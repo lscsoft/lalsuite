@@ -56,7 +56,7 @@ CHAR *uvar_Fname2;
 BOOLEAN uvar_help;
 
 #define relError(x,y) (fabs( (x)-(y) )/(x))
-
+#define max(x,y) ( (x) > (y) ? (x) : (y) )
 /*----------------------------------------------------------------------
  * main function 
  *----------------------------------------------------------------------*/
@@ -73,6 +73,7 @@ main(int argc, char *argv[])
   REAL8 eps8 = 10.0 * LAL_REAL8_EPS;
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
   REAL8 relErr;
+  UINT4 nlines1, nlines2;
 
   lalDebugLevel = 0;
 
@@ -93,17 +94,39 @@ main(int argc, char *argv[])
   LAL_CALL (LALParseDataFile (&status, &Fstats1, uvar_Fname1), &status);
   LAL_CALL (LALParseDataFile (&status, &Fstats2, uvar_Fname2), &status);
 
-  if ( Fstats2->lines->nTokens != Fstats2->lines->nTokens )
+  nlines1 = Fstats1->lines->nTokens;
+  nlines2 = Fstats2->lines->nTokens;
+
+  /* last line now HAS to contain 'DONE'-marker */
+  line1 = Fstats1->lines->tokens[nlines1-1];
+  line2 = Fstats2->lines->tokens[nlines2-1];
+
+  if ( strstr(line1, "DONE") == NULL )  /* allowing for future variations like '%DONE' etc */
     {
-      LALPrintError ("\nFstats files '%s' and '%s' have different length\n", uvar_Fname1, uvar_Fname2);
+      LALPrintError ("\nERROR: File '%s' is not properly terminated by '*DONE*' marker!\n\n", uvar_Fname1);
+      exit(1);
+    }
+
+  if ( strstr(line2, "DONE") == NULL )  
+    {
+      LALPrintError ("\nERROR: File '%s' is not properly terminated by '*DONE*' marker!\n\n", uvar_Fname2);
+      exit(1);
+    }
+  
+  if ( nlines1 != nlines2 )
+    {
+      LALPrintError ("\nFstats files '%s' and '%s' have different length.\n", uvar_Fname1, uvar_Fname2);
+      LALPrintError (" len1 = %d, len2 = %d\n\n", nlines1, nlines2);
       exit(1);
     }
 
   /* step through the two files and compare (trying to avoid stumbling on roundoff-errors ) */
-  for (i=0; i < Fstats1->lines->nTokens; i++)
+  for (i=0; i < (nlines1 - 1) ; i++)	/* avoid last line containing '*DONE*' */
     {
       line1 = Fstats1->lines->tokens[i];
       line2 = Fstats2->lines->tokens[i];
+
+      /* scan ordinary Fstats-lines */
       if ( 7 != sscanf (line1, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
 			" %" LAL_INT4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT, 
 			&freq1, &a1, &d1, &N1, &mean1, &std1, &max1) ) 
