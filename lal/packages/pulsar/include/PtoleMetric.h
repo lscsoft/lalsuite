@@ -78,7 +78,7 @@ necessities, not needing function pointers etc.
 
 \begin{description}
 
-\item[\texttt{SkyPosition position}] The position on the sky at which the
+\item[\texttt{SkyPosition position}] The equatorial coordinates at which the
 metric components are evaluated.
 
 \item[\texttt{REAL4Vector *spindown}] The spindown parameters for which the
