@@ -206,7 +206,7 @@ int main(int argc,char *argv[])
 		  CC.fa[k]=CC.fa1[k]*CC.fa2[k];
 
 		  k++;
-		  if (k = MAXCOINC)
+		  if (k == MAXCOINC)
 		    {
 		      fprintf(stderr,"Too many coincident candidates! Exiting... \n");
 		      return 1;
