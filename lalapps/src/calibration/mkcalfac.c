@@ -92,10 +92,9 @@ int read_time_series( struct series *aser, struct series *abser,
 #define CALURL "http://blue.ligo-wa.caltech.edu/engrun/Calib_Home/html/cal_home.html"
 
 #define USAGE( s ) do { \
-  fprintf( stderr, "Usage: %s -run run -ifo 'H1'|'H2'|'L1' -ver VXX file", s );\
-  fprintf( stderr, " [ [ -ifo 'H1'|'H2'|'L1' -ver VXX file2 ] ...]\n" ); \
-  fprintf( stderr, "Calibration files found at URL:\n" CALURL "\n" ); \
-  exit( 1 ); } while ( 0 )
+fprintf( stdout, "Usage: %s --run E11 --ifo H1 --ver V01 file\n", s );\
+fprintf( stdout, "Calibration files found at URL:\n" CALURL "\n" ); \
+} while ( 0 )
 
 #define A_CHANNEL "CAL-CAV_FAC"
 #define AB_CHANNEL "CAL-OLOOP_FAC"
@@ -112,11 +111,13 @@ int main( int argc, char *argv[] )
   const char *ver = NULL;
   const char *ifo = NULL;
   int arg;
+  int done = 0;
 
   /* parse arguments */
   if ( argc == 1 )
   {
     USAGE( argv[0] );
+    exit( 1 );
   }
   for ( arg = 1; arg < argc; ++arg )
   {
@@ -124,21 +125,21 @@ int main( int argc, char *argv[] )
     char ailwd[64];
     char abname[64];
     char abilwd[64];
-    if ( strstr( argv[arg], "-run" ) )
+    if ( strstr( argv[arg], "--run" ) )
     {
       if ( run )
       {
         fprintf( stderr, "Error: run \"%s\" already specified\n", run );
-        USAGE( argv[0] );
+        exit( 1 );
       }
       run = argv[++arg];
     }
-    else if ( strstr( argv[arg], "-ifo" ) )
+    else if ( strstr( argv[arg], "--ifo" ) )
     {
       if ( ! run )
       {
         fprintf( stderr, "Error: run not specified\n" );
-        USAGE( argv[0] );
+        exit( 1 );
       }
       ifo = argv[++arg];
       if ( site && site != *ifo )
@@ -152,18 +153,24 @@ int main( int argc, char *argv[] )
       sprintf( abname, "%s\\:" AB_CHANNEL, ifo );
       sprintf( abilwd, "%s-%s-" AB_CHANNEL ".ilwd", run, ifo );
     }
-    else if ( strstr( argv[arg], "-ver" ) )
+    else if ( strstr( argv[arg], "--ver" ) )
     {
       if ( ! run || ! ifo )
       {
         fprintf( stderr, "Error: run and/or ifo not specified\n" );
-        USAGE( argv[0] );
+        exit( 1 );
       }
       ver = argv[++arg];
+    }
+    else if ( strstr( argv[arg], "--help" ) )
+    {
+      USAGE( argv[0] );
+      exit( 0 );
     }
     else if ( strstr( argv[arg], "-h" ) )
     {
       USAGE( argv[0] );
+      exit( 0 );
     }
     else
     {
@@ -173,8 +180,15 @@ int main( int argc, char *argv[] )
       if ( ! ifo || ! run || ! ver )
       {
         fprintf( stderr, "Error: ifo, run or version not specified\n" );
-        USAGE( argv[0] );
+        exit( 1 );
       }
+      if ( done )
+      {
+        fprintf( stderr, 
+            "Error: only one calibration can be generated at a time\n" );
+        exit( 1 );
+      }
+      done = 1;
       /* get a and ab data and metadata */
       a.name  = aname;
       a.unit  = "none";
