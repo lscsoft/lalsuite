@@ -463,11 +463,12 @@ sys.stdout.flush()
 # loop over H1 master science segments
 for seg in h1_data:
   # make sure that we do not do a data find more than once per science segment
+  done_df_for_seg = None
   # loop over the master analysis chunks in the science segment
   for chunk in seg:
     # now loop over all the L1 data that we need to filter
     for seg_to_do in l1_lho_data:
-      #if the current chunk is in one of the segments we need to filter
+      # if the current chunk is in one of the segments we need to filter
       if chunk_in_segment(chunk,seg_to_do):
         # make sure we have done one and only one datafind for the segment
         if not done_df_for_seg:
@@ -525,6 +526,7 @@ sys.stdout.flush()
 # loop over H1 master science segments
 for seg in h2_data:
   # make sure that we do not do a data find more than once per science segment
+  done_df_for_seg = None
   # loop over the master analysis chunks in the science segment
   for chunk in seg:
     # now loop over all the L1 data that we need to filter
