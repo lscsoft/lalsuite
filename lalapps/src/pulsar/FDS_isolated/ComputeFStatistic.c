@@ -42,10 +42,11 @@ RCSID( "$Id$");
 ***************************************************** <lalErrTable> */
 #define COMPUTEFSTATC_ENULL 		1
 #define COMPUTEFSTATC_ESYS     		2
+#define COMPUTEFSTATC_EINPUT   		3
 
 #define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATC_MSGESYS		"System call failed (probably file IO)"
-
+#define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
 /*************************************************** </lalErrTable> */
 
 
@@ -64,10 +65,10 @@ REAL8 uvar_dFreq 	= 0.0;
 REAL8 uvar_FreqBand 	= 0.0;
 REAL8 uvar_Alpha 	= 0.0;
 REAL8 uvar_dAlpha 	= 0.001;
-REAL8 uvar_AlphaBand 	= 0.0;
+REAL8 uvar_AlphaBand 	= 0;
 REAL8 uvar_Delta 	= 0.0;
 REAL8 uvar_dDelta 	= 0.001;
-REAL8 uvar_DeltaBand 	= 0.0;
+REAL8 uvar_DeltaBand 	= 0;
 REAL8 uvar_Spin;
 REAL8 uvar_dSpin 	= 0.0;
 REAL8 uvar_SpinBand;
@@ -161,7 +162,7 @@ initUserVars (LALStatus *stat)
   regUserVar (EstimSigParam,UVAR_BOOL,'p',"Do Signal Parameter Estimation");
   regUserVar (Fthreshold,UVAR_REAL8, 'F', "Signal Set the threshold for selection of 2F");
   regUserVar (BaseName, UVAR_STRING, 'i', "The base name of the input  file you want to read");
-  regUserVar (metricType,UVAR_INT4,  'M', "Metric for template grid: 0=none, 1 = PtoleMetric, 2 = CoherentMetric");
+  regUserVar (metricType,UVAR_INT4,  'M', "Metric for template grid: 0=none, 1 = PtoleMetric, 2 = Coherent+Ptole");
   regUserVar (metricMismatch,UVAR_REAL8,'X',"Maximal mismatch for metric tiling");
   regUserVar (debug, 	UVAR_INT4,   'v', "Set lalDebugLevel");
   regUserVar (help, 	UVAR_BOOL,   'h', "Print this message");
@@ -1282,18 +1283,22 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   if (uvar_skyRegion == NULL)
     {
       REAL8 a, d, Da, Dd;
-      REAL8 eps = 1.0e-12;	/* slightly push outside the upper and right border (for backwards compatibility) */
       a = uvar_Alpha;
       d = uvar_Delta;
-      Da = uvar_AlphaBand + eps;
-      Dd = uvar_DeltaBand + eps;
-
-      uvar_skyRegion = LALMalloc (512); /* should be enough for 4 points... */
-      sprintf (uvar_skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
-	      a, d, 
-	      a + Da, d, 
-	      a + Da, d + Dd,
-	      a, d + Dd );
+      Da = uvar_AlphaBand;
+      Dd = uvar_DeltaBand;
+      /* consistency check either one point given or a 2D region! */
+      ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      
+      uvar_skyRegion = LALMalloc (512); /* should be enough for max 4 points... */
+      if ( (Da == 0) || (Dd == 0) ) 	/* only one point */
+	sprintf (uvar_skyRegion, "(%.16f, %.16f)", a, d);
+      else				/* or a rectangle */
+	sprintf (uvar_skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
+		 a, d, 
+		 a + Da, d, 
+		 a + Da, d + Dd,
+		 a, d + Dd );
     } /* if !uvar_skyRegion */
   /* ----------------------------------------------------------------------*/
 
