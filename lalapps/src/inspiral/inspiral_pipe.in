@@ -301,14 +301,7 @@ for seg in data:
 
     trigbank = inspiral.TrigToTmpltNode(trig_job)
     trigbank.add_var_arg(insp1.get_output())
-    trigbank.set_start(chunk.start())
-    trigbank.set_end(chunk.end())
-    if usertag:
-      trigbank.set_output(ifo2 + '-TRIGBANK_' + usertag + '_' + ifo1 + '-' 
-        + str(chunk.start()) + '-' + str(chunk.dur()) + '.xml')
-    else:
-      trigbank.set_output(ifo2 + '-TRIGBANK_' + ifo1 + '-' + str(chunk.start())
-        + '-' + str(chunk.dur()) + '.xml')
+    trigbank.make_trigbank(chunk,ifo1,ifo2,usertag)
 
     if do_inspiral:
       trigbank.add_parent(insp1)

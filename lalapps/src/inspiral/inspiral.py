@@ -280,13 +280,22 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__output = None
 
-  def set_output(self,file):
+  def make_trigbank(self,chunk,source_ifo,dest_ifo,usertag):
     """
     Sets the name of triggered template bank file.
-    file = template bank file name.
+    chunk = the analysis chunk that is being 
+    source_ifo = the name of the ifo that the triggers come from
+    dest_ifo = the name of the ifo that the templates will be used for
+    usertag = usertag to tag the output filename with
     """
-    self.__output = file
-    self.add_var_opt('triggered-bank',file)
+    self.set_start(chunk.start())
+    self.set_end(chunk.end())
+    outfile = dest_ifo + '-TRIGBANK_' + source_ifo
+    if usertag:
+      outfile += '_' + usertag 
+    outfile += '-' + str(chunk.start()) + '-' + str(chunk.dur()) + '.xml'
+    self.__output = outfile
+    self.add_var_opt('triggered-bank',outfile)
 
   def get_output(self):
     """
