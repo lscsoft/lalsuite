@@ -132,9 +132,8 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_inca job used by the inspiral pipeline. The static options are
   read from the section [inca] in the ini file.  The stdout and stderr from
-  the job are directed to the logs directory. The job always runs in the
-  scheduler universe. The path to the executable is determined from the ini
-  file.
+  the job are directed to the logs directory.  The path to the executable is 
+  determined from the ini file.
   """
   def __init__(self,cp):
     """
@@ -154,6 +153,47 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/inca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('inca.sub')
 
+class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_sire job used by the inspiral pipeline. The stdout and stderr from
+  the job are directed to the logs directory. The path to the executable is 
+  determined from the ini file.
+  """
+  def __init__(self,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','sire')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
+    
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    self.set_stdout_file('logs/sire-$(macroifo)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/sire-$(macroifo)-$(cluster)-$(process).err')
+    self.set_sub_file('sire.sub')
+
+class Tama2LigoLwJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_tama2ligolw job used by the inspiral pipeline. The stdout and 
+  stderr from the job are directed to the logs directory. The path to the 
+  executable is determined from the ini file.
+  """
+  def __init__(self,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','tama2lw')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
+    
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    self.set_stdout_file('logs/tama2ligolw-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/tama2ligolw-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('tama2ligolw.sub')
 
 class DataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -412,4 +452,37 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     return basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+
+
+class SireNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+  """
+  A SireNode runs an instance of the single inspiral reader code in a Condor
+  DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_inca.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__ifo = None
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+class Tama2LigoLwNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+  """
+  A Tama2LigoLwNode runs an instance of the tama triggers to LIGO Lw XML 
+  converter in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_inca.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__input = None
+    self.__output = None
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+
+
 
