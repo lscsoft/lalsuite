@@ -166,7 +166,8 @@ EPSearch (
     {
         ABORT (status, EPSEARCHH_EINCOMP, EPSEARCHH_MSGEINCOMP );
     }
-    
+   
+#if 0
     /* write diagnostic info to disk */
     { /* output normalized power spectrum MSW 7/19/02 */
       FILE *fp;
@@ -177,6 +178,7 @@ EPSearch (
       }    
       fclose(fp);
     }
+#endif
     
     /* loop over data applying excess power method */
     for ( i=0 ; i<(INT4)tmpDutyCycle ; i++)
@@ -232,7 +234,7 @@ EPSearch (
         imdummy += fseries->data->data[j].im * fseries->data->data[j].im;
       }
       
-#ifdef PRINTAVERAGE
+#if 0
       {
         FILE *fp;
         fp = fopen("./power.dat","a");
