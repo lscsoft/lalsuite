@@ -188,10 +188,10 @@ LALFindChirpSPTemplate (
   x1 = pow( LAL_PI * m * LAL_MTSUN_SI * deltaF, -1.0/3.0 );
 
   /* frequency cutoffs */
-  tmplt->fCutoff = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * m * LAL_MTSUN_SI);
+  tmplt->fFinal = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * m * LAL_MTSUN_SI);
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
-  kmax = tmplt->fCutoff / deltaF < numPoints/2 ? 
-    tmplt->fCutoff / deltaF : numPoints/2;
+  kmax = tmplt->fFinal / deltaF < numPoints/2 ? 
+    tmplt->fFinal / deltaF : numPoints/2;
 
   /* compute psi0: used in range reduction */
   {

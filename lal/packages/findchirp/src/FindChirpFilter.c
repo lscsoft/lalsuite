@@ -178,8 +178,8 @@ LALFindChirpFilterSegment (
   tmpltSignal = input->fcTmplt->data->data;
   deltaT = params->deltaT;
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
-  kmax = input->fcTmplt->tmplt.fCutoff / deltaF < numPoints/2 ? 
-    input->fcTmplt->tmplt.fCutoff / deltaF : numPoints/2;
+  kmax = input->fcTmplt->tmplt.fFinal / deltaF < numPoints/2 ? 
+    input->fcTmplt->tmplt.fFinal / deltaF : numPoints/2;
 
   /* the length of the chisq bin vec is the number of bin boundaries so the */
   /* number of chisq bins is (length - 1) or 0 if there are no boundaries   */
