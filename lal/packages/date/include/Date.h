@@ -36,6 +36,10 @@ information.  The various time systems are discussed in~\cite{esaa:1992}.
 #   define _REENTRANT
 #endif
 
+#ifndef _POSIX_PTHREAD_SEMANTICS
+#   define _POSIX_PTHREAD_SEMANTICS
+#endif
+
 /* Linux */
 #ifndef __USE_POSIX
 #   define __USE_POSIX
@@ -136,9 +140,9 @@ typedef enum
 \subsubsection*{Enumeration \texttt{LALLeapSecAccuracy}}
 \index{\texttt{LALLeapSecAccuracy}}
 
-This enumerated type is used as a parameter for \texttt{LALUtime()} to
-specify if complete accuracy is required in use of leap seconds.  The
-allowed values are:
+This enumerated type is used as a parameter for \texttt{LALGPStoUTC()} and
+\texttt{LALUTCtoGPS()} to specify if complete accuracy is required in use
+of leap seconds.  The allowed values are:
 
 \medskip\noindent
 \begin{tabular}{ll}
@@ -146,6 +150,10 @@ allowed values are:
   \verb+LALLEAPSEC_STRICT+ & require all leap seconds
 \end{tabular}
 \bigskip
+
+If strict accuracy is selected, the code will \texttt{ABORT} if leap second
+data is not current.  Otherwise, a warning will be printed, and the code
+will continue execution.
 
 </lalLaTeX> */
 typedef enum
