@@ -61,7 +61,7 @@ LALGSLErrorHandler(
     const char *reason,
     const char *file,
     int line,
-    int gsl_error
+    int my_gsl_error
     )
 { /* </lalVerbatim> */
   if ( ! lalGSLGlobalStatusPtr )
@@ -72,8 +72,8 @@ LALGSLErrorHandler(
   }
   lalGSLGlobalStatusPtr->statusPtr = NULL;
   INITSTATUS( lalGSLGlobalStatusPtr, "LALGSLErrorHandler", LALGSLC );
-  lalGSLGlobalStatusPtr->statusDescription = gsl_strerror( gsl_error );
-  lalGSLGlobalStatusPtr->statusCode        = gsl_error;
+  lalGSLGlobalStatusPtr->statusDescription = gsl_strerror( my_gsl_error );
+  lalGSLGlobalStatusPtr->statusCode        = my_gsl_error;
   lalGSLGlobalStatusPtr->file              = file;
   lalGSLGlobalStatusPtr->line              = line;
   LALError( lalGSLGlobalStatusPtr, reason );

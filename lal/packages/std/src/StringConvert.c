@@ -149,6 +149,7 @@ NRCSID( STRINGCONVERTC, "$Id$" );
 static UINT8
 LALStringToU8AndSign( INT2 *sign, const CHAR *string, CHAR **endptr )
 {
+  union { char *s; const char *cs; } bad;/* there is a REASON for warnings... */
   const CHAR *here = string;         /* current position in string */
   CHAR c;                            /* current character in string */
   UINT4 n = LAL_UINT8_MAXDIGITS - 1; /* number of worry-free digits */
@@ -170,7 +171,8 @@ LALStringToU8AndSign( INT2 *sign, const CHAR *string, CHAR **endptr )
     value = (UINT8)( c - '0' );
     here++;
   } else {
-    *endptr = (CHAR *)string;
+    bad.cs = string; /* ... and this avoids the warnings... BAD! */
+    *endptr = bad.s;
     return 0;
   }
 
@@ -205,7 +207,8 @@ LALStringToU8AndSign( INT2 *sign, const CHAR *string, CHAR **endptr )
   }
 
   /* Return appropriate values. */
-  *endptr = (CHAR *)here;
+  bad.cs = here; /* ... and this avoids the warnings... BAD! */
+  *endptr = bad.s;
   return value;
 }
 
