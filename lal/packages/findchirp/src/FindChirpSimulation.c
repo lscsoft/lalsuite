@@ -34,14 +34,6 @@ in the linked list of \texttt{SimInspiralTable} structures \texttt{events}
 into the data \texttt{chan}. The response function \texttt{resp} should
 contain the response function to use when injecting the signals into the data.
 
-\item[\texttt{LALRandomPPNParamStruc()}] populates the \texttt{PPNParamStruc}
-pointed to by \texttt{ppnParams} with a random pair of masses. The mass
-range is set by the \texttt{mMin} and \texttt{mMax} fields of 
-\texttt{massParams}. The \texttt{tSampling} and \texttt{fLower} fields of 
-\texttt{massParams} should be set to the desired sampling rate and 
-low frequency cutoff of the signal respectively.
-\end{description}
-
 \subsubsection*{Algorithm}
 
 \noindent None.
