@@ -295,7 +295,7 @@ PrintResults(
 	    InspiralTemplate       injected,
 	    InspiralWaveOverlapOut overlapout);
 
-extern int lalDebugLevel=1;
+extern int lalDebugLevel=0;
 
 int
 main (int argc, char **argv ) 
@@ -647,7 +647,62 @@ main (int argc, char **argv )
 	       
 	       /*  fend ? */
 	       
-		   fendBCV = list[j].params.fFinal ;
+	       for (l = 0; l< coarseIn.numFcutTemplates; l++)
+		 {
+		   if (coarseIn.numFcutTemplates == 1) 
+		     frac = 1;
+		   else
+		     frac = (1.L - 1.L/pow(2.L, 1.5L)) / (coarseIn.numFcutTemplates-1.L);
+		   
+		   fendBCV  = list[j].params.fFinal * (1.L - (REAL8) l * frac);
+
+		       
+		   if (fendBCV  > randIn.param.fLower &&
+		       fendBCV < list[j].params.tSampling / 2.0)
+		     {			   
+		       
+		       overlapin.param.fFinal   =  fendBCV;
+		       overlapin.param.fCutoff  =  fendBCV;
+		       
+		       
+		       /* Extract some values for template creation*/
+		       k = floor(fendBCV / df);
+		       matrix.a21 = VectorA21.data[k];
+		       matrix.a11 = VectorA11.data[k];
+		       matrix.a22 = VectorA22.data[k];
+		       
+		       /* Template creation*/
+		       LALCreateFilters(&Filter1,
+					&Filter2,
+					VectorPowerFm5_3,
+					VectorPowerFm2_3,
+					VectorPowerFm7_6,
+					VectorPowerFm1_2,
+					matrix,
+					kMin,					       
+					list[j].params.psi0,
+					list[j].params.psi3
+					);
+		       
+		       /* The overlap given two filters and the input signal*/
+		       LALWaveOverlapBCV(&status, 
+					 &correlation,
+					 &overlapout,
+					 &overlapin,
+					 &Filter1,
+					 &Filter2,
+					 matrix,
+					 otherIn);
+			   
+		       KeepHighestValues(overlapout, j, &overlapoutmax, &omax, &jmax);
+		       
+		     }
+		 }		 	     	       
+	       break;
+	     case InQuadrature:
+	       if (coarseIn.approximant ==BCV)
+		 {
+		   
 		   
 		   for (l = 0; l< coarseIn.numFcutTemplates; l++)
 		     {
@@ -656,96 +711,38 @@ main (int argc, char **argv )
 		       else
 			 frac = (1.L - 1.L/pow(2.L, 1.5L)) / (coarseIn.numFcutTemplates-1.L);
 		       
-		       list[j].params.fFinal = fendBCV * (1.L - (REAL8) l * frac);
-		       list[j].params.fCutoff = fendBCV * (1.L - (REAL8) l * frac);
+		       fendBCV = list[j].params.fFinal * (1.L - (REAL8) l * frac);
 		       
-		       if (list[j].params.fFinal  > randIn.param.fLower &&
-			   list[j].params.fFinal < list[j].params.tSampling / 2.0)
+		       if (fendBCV > randIn.param.fLower &&
+			   fendBCV < list[j].params.tSampling / 2.0)
 			 {			   
 			   
-			   overlapin.param.fFinal  = list[j].params.fFinal;
-			   overlapin.param.fCutoff  = list[j].params.fFinal;
+			   overlapin.param.fFinal = fendBCV;
+			   
+			   for (i=0; i<(INT4)signal.length; i++) correlation.data[i] = 0.;	   	   	  
 			   
 			   
-			   /* Extract some values for template creation*/
-			   k = floor(overlapin.param.fFinal / df);
-			   matrix.a21 = VectorA21.data[k];
-			   matrix.a11 = VectorA11.data[k];
-			   matrix.a22 = VectorA22.data[k];
-			   
-			   /* Template creation*/
-			   LALCreateFilters(&Filter1,
-					    &Filter2,
-					    VectorPowerFm5_3,
-					    VectorPowerFm2_3,
-					    VectorPowerFm7_6,
-					    VectorPowerFm1_2,
-					    matrix,
-					    kMin,					       
-					    list[j].params.psi0,
-					    list[j].params.psi3
-					    );
-			   
-			   /* The overlap given two filters and the input signal*/
-			   LALWaveOverlapBCV(&status, 
-					     &correlation,
-					     &overlapout,
-					     &overlapin,
-					     &Filter1,
-					     &Filter2,
-					     matrix,
-					     otherIn);
+			   LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 			   
 			   KeepHighestValues(overlapout, j, &overlapoutmax, &omax, &jmax);
-
-			 }
-		     }		 	     	       
-		   break;
-		 case InQuadrature:
-		   if (coarseIn.approximant ==BCV)
-		     {
-		       fendBCV = list[j].params.fFinal ;
-		       
-		       for (l = 0; l< coarseIn.numFcutTemplates; l++)
-			 {
-			   if (coarseIn.numFcutTemplates == 1) 
-			     frac = 1;
-			   else
-			     frac = (1.L - 1.L/pow(2.L, 1.5L)) / (coarseIn.numFcutTemplates-1.L);
-			   
-			   list[j].params.fFinal = fendBCV * (1.L - (REAL8) l * frac);
-			   
-			   if (list[j].params.fFinal  > randIn.param.fLower &&
-			       list[j].params.fFinal < list[j].params.tSampling / 2.0)
-			     {			   
-			       
-			       overlapin.param.fFinal = randIn.param.fCutoff;
-			       overlapin.param.fCutoff = randIn.param.fCutoff;
-			       
-			       for (i=0; i<(INT4)signal.length; i++) correlation.data[i] = 0.;	   	   	  
-			       
-			       
-			       LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
-			       
-			       KeepHighestValues(overlapout, j, &overlapoutmax, &omax, &jmax);
-			     }
 			 }
 		     }
-		   else
-		     {
-		       /* SHOULD be replace by flso of the template in the bank*/
-		       list[j].params.fFinal   = 1./LAL_PI/pow(6, 1.5)/(list[j].params.mass1+list[j].params.mass2)/LAL_MTSUN_SI;
-
-		       overlapin.param.fFinal  = randIn.param.fFinal;
-		       overlapin.param.fCutoff = randIn.param.fFinal;
-		       
-		       for (i=0; i<(INT4)signal.length; i++) correlation.data[i] = 0.;	   	   	  
-		       
-		       
-		       LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
-		       
-		       KeepHighestValues(overlapout, j, &overlapoutmax, &omax, &jmax);		     		     
-		     }
+		 }
+	       else
+		 {
+		   /* SHOULD be replace by flso of the template in the bank*/
+		   list[j].params.fFinal   = 1./LAL_PI/pow(6, 1.5)/(list[j].params.mass1+list[j].params.mass2)/LAL_MTSUN_SI;
+		   
+		   overlapin.param.fFinal  = randIn.param.fFinal;
+		   overlapin.param.fCutoff = randIn.param.fFinal;
+		   
+		   for (i=0; i<(INT4)signal.length; i++) correlation.data[i] = 0.;	   	   	  
+		   
+		   
+		   LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
+		   
+		   KeepHighestValues(overlapout, j, &overlapoutmax, &omax, &jmax);		     		     
+		 }
 		   
 		   
 		   overlapout.alpha = -1;	       
@@ -1677,9 +1674,9 @@ LALWaveOverlapBCV(
   ATTATCHSTATUSPTR(status);
   
   
-  /*  overlapin->param.nStartPad = 0;
+  overlapin->param.nStartPad = 0;
   overlapin->param.startPhase = 0;
-  */
+  
   /* to compute the scalar products xi,= <x,hk> we need TF(x)==========================*/
   corrin.fCutoff      = overlapin->param.fFinal;
   corrin.samplingRate = overlapin->param.tSampling;
