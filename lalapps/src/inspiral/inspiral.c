@@ -1824,14 +1824,14 @@ int main( int argc, char *argv[] )
           }
 
           if ( writeCData )
-	  {
-	    CHAR cdataStr[LALNameLength];
-	    LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
-			 "CData_%d", nCDataFr++ );
-	    strcpy( fcFilterParams->cVec->name, chan.name );
-	    outFrame = fr_add_proc_COMPLEX8TimeSeries( outFrame, 
-	        fcFilterParams->cVec, "none", cdataStr );
-	  }
+          {
+            CHAR cdataStr[LALNameLength];
+            LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
+                "CData_%d", nCDataFr++ );
+            strcpy( fcFilterParams->cVec->name, chan.name );
+            outFrame = fr_add_proc_COMPLEX8TimeSeries( outFrame, 
+                fcFilterParams->cVec, "none", cdataStr );
+          }
 
           if ( writeChisq )
           {
