@@ -52,14 +52,28 @@ int ConvertXYtoRTperi(XYLocation *XYloc, RTPLocation *RTPloc)
   /* convert to R and alpha easily */
   sma=sqrt(X*X+Y*Y);
   alpha=atan2(Y,X);
+  /* keep the range of alpha as 0 -> 2pi */
+  if (alpha<0.0) alpha=alpha+LAL_TWOPI; 
 
   /* Convert alpha and R to time since periapse as measured in SSB */
   Torb=alpha*(period)/LAL_TWOPI;
   Tlight=sma*sin(alpha);
   deltaT=Torb+Tlight;
-  LALFloatToInterval(&status,&interval,&deltaT);
-  LALDecrementGPS(&status,&tperi,&tstartSSB,&interval);
   
+  if (alpha>=0.0) {
+    LALFloatToInterval(&status,&interval,&deltaT);
+    LALDecrementGPS(&status,&tperi,&tstartSSB,&interval);
+  }
+  /*else if (alpha<0.0) {
+    deltaT=(-1.0)*deltaT;
+    LALFloatToInterval(&status,&interval,&deltaT);
+    LALIncrementGPS(&status,&tperi,&tstartSSB,&interval);
+    }*/
+  else {
+    printf("error with alpha is parameter conversion\n");
+    exit(1);
+  }
+
   /* fill in RTPLocation structure */
   RTPloc->sma=sma;
   RTPloc->period=period;
@@ -67,6 +81,7 @@ int ConvertXYtoRTperi(XYLocation *XYloc, RTPLocation *RTPloc)
   RTPloc->tperi.gpsNanoSeconds=tperi.gpsNanoSeconds;
   RTPloc->ecc=ecc;
   RTPloc->argp=argp;
+
 
   return 0;
 
@@ -141,7 +156,7 @@ static void OrbPhaseFunc(LALStatus *status, REAL8 *y, REAL8 alpha, void *y0)
 {
   INITSTATUS(status, "OrbPhaseFunc", "Function OrbPhaseFunc()");
   ASSERT(y0,status, 1, "Null pointer");
-  /* this is the transendal function we need to solve to find the true initial phase */
+  /* this is the transendental function we need to solve to find the true initial phase */
   /* note that it also includes a retarded time delay */
   *y = *(REAL8 *)y0*(-1.0) + alpha*(period_GLOBAL/LAL_TWOPI)+sma_GLOBAL*sin(alpha);
   RETURN(status);
