@@ -230,6 +230,8 @@ Duncan Brown
   --enable-event-cluster       turn on maximization over chirp length
   --disable-event-cluster      turn off maximization over chirp length
 
+  --approximant APPROX         approximant to be used. {TaylorF2|BCV}
+
   --enable-output              write the results to a LIGO LW XML file
   --disable-output             do not write LIGO LW XML output file
 
@@ -265,7 +267,7 @@ lalapps_inspiral \
 --enable-high-pass 5.000000e+01 --debug-level 33 \
 --gps-start-time 734357353 --gps-end-time 734358377 \
 --chisq-bins 8 --spectrum-type median --enable-event-cluster \
---minimal-match 9.700000e-01
+--minimal-match 9.700000e-01 --approximant TaylorF2
 \end{verbatim}
 
 \item[Author] 
@@ -301,12 +303,16 @@ Duncan Brown
 [\verb$--triggered-bank$ \textsc{file}
 \verb$--minimal-match$  \textsc{M}] 
 [\verb$--dm$ \textsc{$\delta m$}]
+[\verb$--dpsi0$ \textsc{$\delta \psi_0$}]
+[\verb$--dpsi3$ \textsc{$\delta \psi_3$}]
 [\verb$--dt$ \textsc{$\delta t$}] \newline
 %
 [\verb$--epsilon$ \textsc{$\epsilon$}]
 [\verb$--kappa$ \textsc{$\kappa$}]
 [\verb$--ifo-b-snr-threshold$ \textsc{SNRSTAR}]
 [\verb$--ifo-b-range-cut$] \newline 
+%
+[\verb$--approximant$] \newline
 %
 [\verb$--silde-time$ \textsc{sec}]
 [\verb$--slide-time-ns$ \textsc{ns}] 
@@ -440,9 +446,20 @@ the search.
 coincident if both mass parameters agree within $\delta m$.  If not
 supplied,  then $\delta m = 0$.
 
+\item[\texttt{--dpsi0} \textsc{$\delta \psi_0$}] Optional. Accept triggers as
+coincident if \textsc{$\psi_0$} parameters agree within $\delta \psi_0$.  If not
+supplied,  then $\delta  \psi_0 = 0$.
+
+\item[\texttt{--dpsi3} \textsc{$\delta \psi_3$}] Optional. Accept triggers as
+coincident if \textsc{$\psi_3$} parameters agree within $\delta \psi_3$. 
+ If notsupplied,  then $\delta  \psi_3 = 0$.
+
 \item[\texttt{--dt} \textsc{$\delta t$}] Optional. Accept triggers as
 coincident if their end times agree within $\delta t$ milliseconds.  If not
 supplied,  then $\textsc{$\delta t$} = 0$.
+
+\item[\texttt{--approximant} APPROX] Required. Set approximant to APPROX.
+{TaylorF2|BCV}.
 
 \item[\texttt{--gps-start-time} \textsc{GPS seconds}] Required.  Look for
 coincident triggers with end times after \textsc{GPS seconds}.
