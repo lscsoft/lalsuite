@@ -1,4 +1,5 @@
 #include <getopt.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,6 +32,7 @@
 #include <processtable.h>
 
 int snprintf(char *str, size_t size, const char *format, ...);
+int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 
 NRCSID( POWERC, "power $Id$");
 RCSID( "power $Id$");
@@ -235,15 +237,26 @@ static void print_alloc_fail(const char *prog, const char *msg)
 	fprintf(stderr, "%s: error: memory allocation failure %s\n", prog, msg);
 }
 
+static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, const char *type, const char *param, const char *format, ...)
+{
+	va_list ap;
 
-#define ADD_PROCESS_PARAM( pptype, format, ppvalue ) { \
-	proc_param->next = LALCalloc(1, sizeof(ProcessParamsTable)); \
-	proc_param = proc_param->next; \
-	snprintf( proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue ); \
-	snprintf( proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME ); \
-	snprintf( proc_param->param, LIGOMETA_PARAM_MAX, "--%s", long_options[option_index].name ); \
-	snprintf( proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+	va_start(ap, format);
+	
+	*proc_param = LALCalloc(1, sizeof(**proc_param));
+	(*proc_param)->next = NULL;
+	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
+	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
+	snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
+	vsnprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, format, ap);
+
+	va_end(ap);
+
+	return(&(*proc_param)->next);
 }
+
+#define ADD_PROCESS_PARAM(type, format, value) \
+	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, format, value); } while(0)
 
 static int check_for_missing_parameters(LALStatus *stat, char *prog, struct option *long_options, EPSearchParams *params)
 {
@@ -355,6 +368,44 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 }
 
 
+void parse_command_line_debug(
+	int argc,
+	char *argv[],
+	EPSearchParams *params,
+	MetadataTable *procparams
+)
+{
+	ProcessParamsTable **paramaddpoint = &procparams->processParamsTable;
+	int c;
+	int option_index;
+	struct option long_options[] = {
+		{"debug-level",         required_argument, NULL,           'D'},
+		{NULL, 0, NULL, 0}
+	};
+
+	/*
+	 * Find end of process params table
+	 */
+
+	while(*paramaddpoint)
+		paramaddpoint = &(*paramaddpoint)->next;
+
+	/*
+	 * Find and parse only the debug level command line options
+	 */
+
+	opterr = 1;	/* silence error messages */
+	do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) {
+
+		case 'D':
+		set_debug_level(optarg);
+		ADD_PROCESS_PARAM("string", "%s", optarg);
+		default:
+		break;
+	} while(c != -1);
+}
+
+
 void parse_command_line( 
 	int argc, 
 	char *argv[], 
@@ -371,7 +422,7 @@ void parse_command_line(
 	INT8 gpstmp;
 	INT8 gpsStartTimeNS = 0;
 	INT8 gpsStopTimeNS = 0;
-	ProcessParamsTable *proc_param = procparams->processParamsTable;
+	ProcessParamsTable **paramaddpoint = &procparams->processParamsTable;
 	LALStatus stat = blank_status;
 	struct option long_options[] = {
 		{"bandwidth",           required_argument, NULL,           'A'},
@@ -416,6 +467,13 @@ void parse_command_line(
 		{"window-shift",        required_argument, NULL,           'd'},
 		{NULL, 0, NULL, 0}
 	};
+
+	/*
+	 * Find end of process params table
+	 */
+
+	while(*paramaddpoint)
+		paramaddpoint = &(*paramaddpoint)->next;
 
 	/*
 	 * Set parameter defaults.
@@ -464,6 +522,7 @@ void parse_command_line(
 	 * Parse command line.
 	 */
 
+	opterr = 1;	/* enable error messages */
 	do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) {
 		case 'A':
 		params->tfTilingInput.length = atoi(optarg);
@@ -489,8 +548,7 @@ void parse_command_line(
 		break;
 
 		case 'D':
-		set_debug_level(optarg);
-		ADD_PROCESS_PARAM("string", "%s", optarg);
+		/* ignore --debug-level */
 		break;
 
 		case 'E':
@@ -1272,10 +1330,10 @@ int main( int argc, char *argv[])
 	 * Initialize everything
 	 */
 
+	memset(&stat, 0, sizeof(stat));
 	lal_errhandler = LAL_ERR_EXIT;
 	set_debug_level("3");
-
-	memset(&stat, 0, sizeof(stat));
+	/*parse_command_line_debug(argc, argv, &params, &procparams);*/
 
 	/* create the process and process params tables */
 	procTable.processTable = LALCalloc(1, sizeof(ProcessTable));
