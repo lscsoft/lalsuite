@@ -50,7 +50,7 @@ characters), \verb+LALOpenDataFile()+ returns \verb+NULL+ and sets
 
 The routines \verb+LALSnprintf()+ and \verb+LALVsnprintf()+ are
 implementations of the standard C \verb+snprintf()+ and \verb+vsnprintf()+,
-which don't seem to be terribly standard on many systems yet.  These routines
+which do not seem to be terribly standard on many systems yet.  These routines
 were written and copywrited by Mark Martinec (\verb+<mark.martinec@ijs.si>+)
 and are available from \verb+http://www.ijs.si/software/snprintf+.  They have
 been incorporated (almost) verbatim into the file \verb+LALStdio.c+, and the

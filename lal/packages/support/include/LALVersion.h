@@ -39,7 +39,7 @@ configuration information.
     ( LAL_VERSION_MAJOR == ( major ) && LAL_VERSION_MINOR >= ( minor ) ) )
 \end{verbatim}
 
-This macro returns 0 (false) if you don't have the require version of LAL, or
+This macro returns 0 (false) if you do not have the require version of LAL, or
 1 (true) if you do.
 
 \subsection*{Error conditions}
