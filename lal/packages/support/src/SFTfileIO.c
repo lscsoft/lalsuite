@@ -482,6 +482,7 @@ LALReadSFTheader (LALStatus  *status,
   /* read version-number */
   if  (fread (&version, sizeof(version), 1, fp) != 1) {
     fclose (fp);
+    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
@@ -494,12 +495,14 @@ LALReadSFTheader (LALStatus  *status,
   /* fail if still not conformant to spec */
   if ((version < 1.0) || (version - (UINT4)(version) != 0) || (version > 1000)) {
     fclose (fp);
+    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
   /* check compatibility of version with this function */
   if (version != 1) {
     fclose (fp);
+    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIOH_EVERSION, SFTFILEIOH_MSGEVERSION);
   }
 
@@ -514,6 +517,7 @@ LALReadSFTheader (LALStatus  *status,
   if (fread( rawheader, header_len_v1, 1, fp) != 1) {
     fclose (fp);
     LALFree (rawheader);
+    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
@@ -549,21 +553,25 @@ LALReadSFTheader (LALStatus  *status,
 
   /* gps_sec and gps_nsec >= 0 */
   if ( (header1.gpsSeconds < 0) || (header1.gpsNanoSeconds <0) ) {
+    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
   /* tbase > 0 */
   if ( header1.timeBase <= 0 ) {
+    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
   /* fminindex >= 0 */
   if (header1.fminBinIndex < 0) {
+    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
   
   /* nsamples >= 0 */
   if (header1.length < 0) {
+    if (lalDebugLevel) LALPrintError ("\nInvalid SFT-file: %s\n\n", fname);
     ABORT (status, SFTFILEIOH_EHEADER,  SFTFILEIOH_MSGEHEADER);
   }
 
@@ -874,8 +882,11 @@ find_files (const CHAR *globdir)
       thisFname = entry.name;
 #endif
       /* now check if glob-pattern fpattern matches the current filename */
-      if ( amatch(thisFname, fpattern) )
+      if ( amatch(thisFname, fpattern) 
+	   /* and check if we didnt' match some obvious garbage like "." or ".." : */
+	   && strcmp( thisFname, ".") && strcmp( thisFname, "..") )
 	{
+
 	  numFiles ++;
 	  if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
 	    LALFree (dname);
