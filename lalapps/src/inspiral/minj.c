@@ -41,24 +41,25 @@ RCSID( "$Id$" );
 #define PROGRAM_NAME "minj"
 
 #define USAGE \
-"lalapps_inspinj [options]\n"\
-  "\nDefaults are shown in brackets\n\n" \
-  "  --help                   display this message\n"\
-  "  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
-  "  --gps-end-time TIME      end injections at GPS time TIME (734367613)\n"\
-  "  --time-step STEP         space injections by ave of STEP sec (2630/PI)\n"\
-  "  --time-interval TIME     distribute injections in interval TIME (0)\n"\
-  "  --seed SEED              seed random number generator with SEED (1)\n"\
-  "  --user-tag STRING        set the usertag to STRING\n"\
-  "  --minimum-mass MIN       set the minimum componenet mass to MIN (0.2)\n"\
-  "  --maximum-mass MAX       set the maximum componenet mass to MAX (1.0)\n"\
-  "  --core-radius A          set the galactic core radius to A kpc (8.5)\n"\
-  "  --flatten-halo Q         set the halo flattening parameter to Q (1)\n"\
-  "  --halo-radius RMAX       set the maximum halo radius to RMAX kpc (50)\n"\
-  "\n"
+"lalapps_minj [options]\n"\
+"\nDefaults are shown in brackets\n\n" \
+"  --help                   display this message\n"\
+"  --verbose                    print progress information\n"\
+"  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
+"  --gps-end-time TIME      end injections at GPS time TIME (734367613)\n"\
+"  --time-step STEP         space injections by ave of STEP sec (2630/PI)\n"\
+"  --time-interval TIME     distribute injections in interval TIME (0)\n"\
+"  --seed SEED              seed random number generator with SEED (1)\n"\
+"  --user-tag STRING        set the usertag to STRING\n"\
+"  --minimum-mass MIN       set the minimum componenet mass to MIN (0.2)\n"\
+"  --maximum-mass MAX       set the maximum componenet mass to MAX (1.0)\n"\
+"  --core-radius A          set the galactic core radius to A kpc (8.5)\n"\
+"  --flatten-halo Q         set the halo flattening parameter to Q (1)\n"\
+"  --halo-radius RMAX       set the maximum halo radius to RMAX kpc (50)\n"\
+"\n"
 
-  ProcessParamsTable *next_process_param( const char *name, const char *type,
-      const char *fmt, ... )
+ProcessParamsTable *next_process_param( const char *name, const char *type,
+    const char *fmt, ... )
 {
   ProcessParamsTable *pp;
   va_list ap;
@@ -69,7 +70,10 @@ RCSID( "$Id$" );
     exit( 1 );
   }
   strncpy( pp->program, PROGRAM_NAME, LIGOMETA_PROGRAM_MAX );
-  LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
+  if ( ! strcmp( name, "userTag" ) || ! strcmp( name, "user-tag" ) )
+    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "-userTag" );
+  else
+    LALSnprintf( pp->param, LIGOMETA_PARAM_MAX, "--%s", name );
   strncpy( pp->type, type, LIGOMETA_TYPE_MAX );
   va_start( ap, fmt );
   LALVsnprintf( pp->value, LIGOMETA_VALUE_MAX, fmt, ap );
@@ -103,11 +107,11 @@ int main( int argc, char *argv[] )
   REAL4         Rmax = 50.0 * KPC;      /* halo radius */
   REAL4         q = 1.0;                /* flatten halo */
 
-#if 0
   /* parameters of the injection */
   GalacticInspiralParamStruc    galacticPar;
   PPNParamStruc                 injection;
 
+#if 0
   /* site end time and effective distance */
   LALPlaceAndGPS       *place_and_gps;
   LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
@@ -131,6 +135,7 @@ int main( int argc, char *argv[] )
   struct option long_options[] =
   {
     {"help",                    no_argument,       0,                'h'},
+    {"verbose",                 no_argument,       &vrbflg,           1 },
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
@@ -178,7 +183,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "ha:b:t:i:s:A:B:p:q:r:Z:", long_options, &option_index );
+        "ha:b:t:i:s:A:B:p:q:r:vZ:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -331,8 +336,9 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, a );
           exit( 1 );
         }
-        next_process_param( long_options[option_index].name, 
-            "float", "%e", a );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", a );
         break;
 
       case 'q':
@@ -346,8 +352,9 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, q );
           exit( 1 );
         }
-        next_process_param( long_options[option_index].name, 
-            "float", "%e", q );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", q );
         break;
 
       case 'r':
@@ -361,8 +368,9 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, Rmax );
           exit( 1 );
         }
-        next_process_param( long_options[option_index].name, 
-            "float", "%e", Rmax );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "float", "%e", Rmax );
         break;
 
       case 'Z':
@@ -370,12 +378,15 @@ int main( int argc, char *argv[] )
         optarg_len = strlen( optarg ) + 1;
         userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
         memcpy( userTag, optarg, optarg_len );
-        next_process_param( "-userTag", "string", "%s", optarg );
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "string", "%s", optarg );
         break;
 
       case 'z':
         set_debug_level( optarg );
-        next_process_param( long_options[option_index].name, 
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
             "string", "%s", optarg );
         break;
 
@@ -405,7 +416,25 @@ int main( int argc, char *argv[] )
     }
     exit( 1 );
   }
+
+  if ( vrbflg )
+    fprintf( stderr, "generating injections between %d and %d\n",
+        gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
+
+
+  /*
+   *
+   * initialize variables and create storage for the first injection
+   *
+   */
   
+
+  memset( &galacticPar, 0, sizeof(GalacticInspiralParamStruc) );
+  memset( &injection, 0, sizeof(PPNParamStruc) );
+  memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
+  this_inj = injections.simInspiralTable = (SimInspiralTable *)
+    LALCalloc( 1, sizeof(SimInspiralTable) );
+
 
   /*
    *
@@ -418,13 +447,13 @@ int main( int argc, char *argv[] )
   if ( userTag )
   {
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
-        randSeed, userTag, gpsStartTime, 
+        randSeed, userTag, gpsStartTime.gpsSeconds, 
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
     LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
-        randSeed, gpsStartTime, 
+        randSeed, gpsStartTime.gpsSeconds, 
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
 
@@ -432,7 +461,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
 
   /* write the process table */
-  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "H1H2L1" );
+  LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
         &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, process_table ), 
@@ -471,9 +500,9 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   while ( injections.simInspiralTable )
   {
-    this_inj= injections.simInspiralTable;
+    this_inj = injections.simInspiralTable;
     injections.simInspiralTable = injections.simInspiralTable->next;
-    free( this_inj );
+    LALFree( this_inj );
   }
 
   /* close the injection file */
