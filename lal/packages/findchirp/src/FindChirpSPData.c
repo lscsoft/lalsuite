@@ -500,6 +500,36 @@ LALFindChirpSPData (
       outputData[k].im =  p*y + q*x;
     }
 
+#if 0
+    /* write out strain amplitude spectral density */
+    {
+      UINT4 kk;
+      FILE *fp;
+      REAL8 modr, asd;
+
+      umask( 002 );
+
+      if ( ! (fp = fopen( "/home/duncan/incomming/asd.dat", "w" )) )
+      {
+        ABORT( status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      }
+
+      for ( kk = 0; kk < fcSeg->data->data->length; ++kk )
+      {
+        modr = sqrt( resp[kk].re * resp[kk].re + resp[kk].im * resp[kk].im );
+        asd = modr * spec[kk];
+
+        fprintf( fp, "%e\t%e\t%e\t%e\n", 
+            (REAL4) kk / ( (REAL4) fcSeg->data->data->length * params->deltaT ),
+            modr, spec[kk], asd );
+      }
+
+      fclose( fp );
+    }
+#endif
+            
+
+
 
     /*
      *

@@ -171,15 +171,17 @@ waitForExch:
 
       case ExchInspiralEvent:
 
-#if 0
-        fprintf( stderr, "master: ExchInspiralEvent\n" );
-#endif
 
         /* recieve a linked list of inspiral events from a slave */
         LALExchangeInspiralEventList( status->statusPtr, eventList, thisExch );
         CHECKSTATUSPTR( status );
 
-
+#if 0
+        fprintf( stdout, "master: ExchInspiralEvent from slave %d "
+            "list at %p template number %d\n", 
+            thisExch->partnerProcNum, *eventList, (*eventList)->tmplt.number );
+        fflush( stdout );
+#endif
 
         /*
          *
@@ -210,6 +212,12 @@ waitForExch:
               for ( fineBank = thisTmplt->tmpltPtr->fine; fineBank;
                   fineBank = fineBank->next )
               {
+#if 0
+                fprintf( stdout, "inserting fine bank %p about %p\n",
+                    fineBank, tmpltInsert );
+                fflush( stdout );
+#endif
+
                 LALFindChirpCreateTmpltNode( status->statusPtr, 
                     fineBank, &tmpltInsert );
                 CHECKSTATUSPTR( status );
@@ -219,6 +227,17 @@ waitForExch:
 
                 /* increase the count of the number of templates */
                 params->numTmplts++;
+#if 0
+                /* clear the event list since this is not the lowest template */
+                while ( *eventList )
+                {
+                  InspiralEvent *tmpEvent;
+                  tmpEvent = *eventList;
+                  *eventList = (*eventList)->next;
+                  LALFree (tmpEvent);
+                  tmpEvent = NULL;
+                }
+#endif
               }
             }
           }
@@ -279,7 +298,7 @@ waitForExch:
 
       case ExchFinished:
 
-#if 0
+#if 1
         fprintf( stderr, "master: ExchInspiralFinished\n" );
 #endif
 
@@ -318,7 +337,17 @@ waitForExch:
     if ( params->tmpltCurrent )
     {
       /* this is arse */
-      *(params->fracRemaining) = 1.0;
+      INT4 numTotal = 0;
+      INT4 numDone  = 0;
+      InspiralTemplateNode *tmpltTotalPtr = params->tmpltHead;
+      InspiralTemplateNode *tmpltDonePtr  = params->tmpltHead;
+      
+      while( tmpltTotalPtr = tmpltTotalPtr->next ) 
+        ++numTotal;
+      while( (tmpltDonePtr = tmpltDonePtr->next) != params->tmpltCurrent ) 
+        ++numDone;
+
+      *(params->fracRemaining) = 1.0 - (REAL4) numDone / (REAL4) numTotal;
     }
     else /* we are all the way through the bank */
     {

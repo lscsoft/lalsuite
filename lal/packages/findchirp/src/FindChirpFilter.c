@@ -569,10 +569,13 @@ LALFindChirpFilterSegment (
     /* ignore corrupted data at start and end */
     ignoreIndex = ( input->segment->invSpecTrunc / 2 ) + deltaEventIndex;
 
+#if 0
     fprintf( stdout, "m1 = %e m2 = %e => %e seconds => %d points\n"
-        "ignoreIndex = %d\n", 
-        m1, m2, chirpTime, deltaEventIndex, ignoreIndex );
+        "invSpecTrunc = %d => ignoreIndex = %d\n", 
+        m1, m2, chirpTime, deltaEventIndex, 
+        input->segment->invSpecTrunc, ignoreIndex );
     fflush( stdout );
+#endif
 
     /* XXX check that we are not filtering corrupted data XXX */
     /* XXX this is hardwired to 1/4 segment length        XXX */
@@ -584,6 +587,11 @@ LALFindChirpFilterSegment (
     ignoreIndex = numPoints / 4;
   }
 
+#if 1
+    fprintf( stdout, "filtering from %d to %d\n",
+        ignoreIndex, numPoints - ignoreIndex );
+    fflush( stdout );
+#endif
 
   /*
    *
@@ -747,6 +755,7 @@ LALFindChirpFilterSegment (
           thisEvent->effDist = (input->fcTmplt->tmpltNorm * 
               input->segment->segNorm * input->segment->segNorm) / thisEvent->snrsq;
           thisEvent->effDist = sqrt( thisEvent->effDist );
+
           thisEvent->snrsq  *= norm;
 
           /* allocate memory for the newEvent */
@@ -762,7 +771,7 @@ LALFindChirpFilterSegment (
 
           /* stick minimal data into the event */
           thisEvent->timeIndex = j;
-          thisEvent->snrsq = norm * modqsq;
+          thisEvent->snrsq = modqsq;
         }
       }
     }
@@ -805,7 +814,6 @@ LALFindChirpFilterSegment (
           input->segment->segNorm * input->segment->segNorm) / thisEvent->snrsq;
       thisEvent->effDist = sqrt( thisEvent->effDist );
     thisEvent->snrsq  *= norm;
-
   }    
 
 
