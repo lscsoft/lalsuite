@@ -31,6 +31,8 @@ typedef struct tagReadDataPairParams {
 static void parse_options(INT4 argc, CHAR *argv[]);
 static void readDataPair(LALStatus *status, StreamPair *streamPair,
 		ReadDataPairParams *params);
+static void adam_readDataPair(LALStatus *status, StreamPair *streamPair,
+		ReadDataPairParams *params);
 static REAL4TimeSeries *get_time_series(LALStatus *status, CHAR *ifo,
 		CHAR *cacheFile, CHAR *channel, LIGOTimeGPS start, LIGOTimeGPS end);
 static REAL4TimeSeries *get_ligo_data(LALStatus *status, FrStream *stream,
