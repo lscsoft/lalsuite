@@ -155,12 +155,14 @@ More detailed documentation can be found in the source code itself.
  *    c. LAL includes
  */
 
+
 #include <lal/LUT.h>
 
 
 /*
  * 4. Assignment of Id string using NRCSID()  
  */
+
 NRCSID (CONSTRUCTPLUTC, "$Id$");
 
 
@@ -419,6 +421,7 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
   INT4 ifailMinus = 1; /* =1 (ok, continue to previous bin), =0 (stop) */
 
   INT4 directionPlus;  /* = +1,or -1 */
+  INT4 directionPlusZero;  /* = +1,or -1 */
   INT4 directionMinus; /* = +1,or -1 */
 
   INT4 pathology;   /* =1 (normal), =0 (anormal case) */
@@ -486,6 +489,7 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
     }    
   }
   
+  directionPlusZero= directionPlus;
 
   /********************************************************/
   /* moving to the other bins                             */
@@ -577,7 +581,7 @@ static void  FillPLUT(HOUGHParamPLUT  *par, HOUGHptfLUT  *lut,
       /* circle case */
       pathology = 1; /* provisionally */
       SecondCircleCase(currentBin, &lastBorder,alpha, ang1, ang2, 
-		       directionPlus, &rcOldMinus, 
+		       directionPlusZero, &rcOldMinus, 
 		       &pathology, &directionMinus, 
 		       &ifailMinus, lut, patch);
     }    
