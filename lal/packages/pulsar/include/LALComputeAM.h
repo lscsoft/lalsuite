@@ -109,8 +109,10 @@ typedef struct AMCoeffsParamsTag
   EphemerisData        *edat;       /* the ephemerides                */
   LALDetAndSource      *das;        /* det and source information     */
   LALFrDetector        *det;        /* detector geometry              */
-  REAL4                polAngle;   /* polarization angle             */
-  REAL4                tObs;       /* observation time               */
+  REAL4                polAngle;    /* polarization angle             */
+  INT4                mObsSFT;     /* number of SFTs in obs time     */
+  LIGOTimeGPS          ts0;
+  LIGOTimeGPS          tsEnd;
 } AMCoeffsParams;
 
 

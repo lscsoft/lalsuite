@@ -275,12 +275,12 @@ void LALDemod (LALStatus 	        *stat,
 			FFT 		**input, 
 			DemodPar 	*params);
 
-void times(REAL8 ,
+static void times(REAL8 ,
 		 INT4, 
 		 LIGOTimeGPS *, 
 		 INT4 );
 
-void times2(REAL8 tSFT, INT4 howMany, LIGOTimeGPS **ts, INT4 **sftPerCoh, INT4 sw, INT4 mCohSFT);
+static void times2(REAL8 tSFT, INT4 howMany, LIGOTimeGPS **ts, INT4 **sftPerCoh, INT4 sw, INT4 mCohSFT);
 	
 /* <lalLaTeX>
 \newpage\input{LALDemodTestC}
