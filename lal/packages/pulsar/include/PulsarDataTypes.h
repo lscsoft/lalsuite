@@ -24,6 +24,7 @@ Provides general structures and data-types used in pulsar-searches.
 #include <lal/LALDatatypes.h>
 #include <lal/DetectorSite.h>
 #include <lal/Date.h>
+#include <lal/SkyCoordinates.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus
