@@ -15,8 +15,8 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh  \
 	$(FRAMEPROGRAMS) 
 
-CFSsources = 	ComputeFStatistic.h		\
-		rngmed.c rngmed.h clusters.c clusters.h  	\
+CFSsources = 	ComputeFStatistic.h	\
+		clusters.c clusters.h  	\
 		DopplerScan.c DopplerScan.h NeighboringGridPoints.c
 
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c $(CFSsources)
@@ -37,11 +37,11 @@ lalapps_makeInvetofile_SOURCES=makeInvetofile.c
 
 lalapps_extractSFTband_SOURCES=extractSFTband.c
 
-lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h rngmed.c rngmed.h
+lalapps_FindSh_SOURCES=FindSh.c FindSh.h clusters.c clusters.h
 
 compareFstats_SOURCES = compareFstats.c
 
-ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c 	rngmed.c rngmed.h clusters.c clusters.h  			\
+ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c clusters.c clusters.h  \
 	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
 
 ##----------------------------------------------------------------------
