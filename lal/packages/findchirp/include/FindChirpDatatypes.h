@@ -259,13 +259,13 @@ and it must be recomputed for each template $\tilde{h}_k$.
 the weighted power in the template. For frequency domain templates, this is
 the summand in equation (\ref{eq:spsegnorm})
 \begin{equation}
-\texttt{templtPowerVec->data[k]} = 
+\mathtt{templtPowerVec->data[k]} = 
 \frac{\left(\frac{k}{N}\right)^{-\frac{7}{3}}}{d^2|R|^2S_v\left(\left|f_k\right|\right)}.
 \end{equation}
 and can be computed once then re-used for all templates.  For time domain
 templates, this is the summand in equation (\ref{eq:spsegnorm})
 \begin{equation}
-\texttt{templtPowerVec->data[k]} = 
+\mathtt{templtPowerVec->data[k]} = 
 \frac{\tilde{h}_{k}}{d^2|R|^2S_v\left(\left|f_k\right|\right)}.
 \end{equation}
 which must be re-computed for each template $\tilde{h}_k$.  This quantity is
