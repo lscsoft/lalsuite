@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Program \texttt{DirichletTest.c}}
-\label{s:DirichletTest.c}
+\label{stochastic:ss:DirichletTest.c}
 
 Test suite for LALDirichlet().
 
@@ -20,14 +20,14 @@ This program tests the function {\tt LALDirichlet()}.
 It tests all error conditions listed in the Error codes table.
 It also writes to files the values of the Dirichlet kernel for three
 different valid test cases.
-See Figs.~\ref{f:dirichlet_fig1}-\ref{f:dirichlet_fig3}.
+See Figs.~\ref{stochastic:f:dirichlet_fig1}-\ref{stochastic:f:dirichlet_fig3}.
 
 % figures %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{figure}[htbp!]
 \begin{center}
 \noindent\includegraphics[angle=-90,width=4in]{stochasticDirichletFig1}
-\caption{\label{f:dirichlet_fig1}
+\caption{\label{stochastic:f:dirichlet_fig1}
 Dirichlet kernel for $N=10$, $\Delta x =.01$, and $0\le x\le 1$.}
 \end{center}
 \end{figure}
@@ -35,7 +35,7 @@ Dirichlet kernel for $N=10$, $\Delta x =.01$, and $0\le x\le 1$.}
 \begin{figure}[htbp!]
 \begin{center}
 \noindent\includegraphics[angle=-90,width=4in]{stochasticDirichletFig2}
-\caption{\label{f:dirichlet_fig2}
+\caption{\label{stochastic:f:dirichlet_fig2}
 Dirichlet kernel for $N=11$, $\Delta x =.01$, and $0\le x\le 1$.}
 \end{center}
 \end{figure}
@@ -43,7 +43,7 @@ Dirichlet kernel for $N=11$, $\Delta x =.01$, and $0\le x\le 1$.}
 \begin{figure}[htbp!]
 \begin{center}
 \noindent\includegraphics[angle=-90,width=4in]{stochasticDirichletFig3}
-\caption{\label{f:dirichlet_fig3}
+\caption{\label{stochastic:f:dirichlet_fig3}
 Dirichlet kernel for $N=10$, $\Delta x =.01$, and $0\le x\le 2$.}
 \end{center}
 \end{figure}
@@ -83,7 +83,8 @@ None.
 #include <lal/PrintVector.h>
 #include <lal/Dirichlet.h>
 
-INT4 lalDebugLevel = LALMSGLVL3;
+/* INT4 lalDebugLevel = LALMSGLVL3; */
+int lalDebugLevel = LALNDEBUG;
 
 int check ( LALStatus*, INT4, const CHAR* );
 

@@ -1,36 +1,10 @@
 ## Process this file with automake to produce Makefile.in
-TEXFILES = Overlap.tex Dirichlet.tex CrossCorr.tex
-DVIFILES = Overlap.dvi Dirichlet.dvi CrossCorr.dvi
-#SUFFIXES = .tex .dvi
-MOSTLYCLEANFILES = *.log *.aux
-CLEANFILES = Overlap.dvi Overlap.pdf Dirichlet.dvi Dirichlet.pdf \
-             CrossCorr.dvi CrossCorr.pdf
-EXTRA_DIST = $(TEXFILES) \
-        GEO600LHO.eps GEO600LHO.pdf \
-        GEO600LLO.eps GEO600LLO.pdf \
-        GEO600VIRGO.eps GEO600VIRGO.pdf \
-        LLOLHO.eps LLOLHO.pdf \
-        TAMA300GEO600.eps TAMA300GEO600.pdf \
-        TAMA300LHO.eps TAMA300LHO.pdf \
-        TAMA300LLO.eps TAMA300LLO.pdf \
-        TAMA300VIRGO.eps TAMA300VIRGO.pdf \
-        VIRGOLHO.eps VIRGOLHO.pdf \
-        VIRGOLLO.eps VIRGOLLO.pdf \
-        fig1.eps fig1.pdf \
-        fig2.eps fig2.pdf \
-        fig3.eps fig3.pdf \
-        data.eps data.pdf \
-        kernel1.eps kernel1.pdf \
-        kernel2.eps kernel2.pdf \
-        kernel3.eps kernel3.pdf
+PACKAGE = stochastic
+MOSTLYCLEANFILES = main.log main.ilg main.blg main.out
+CLEANFILES = main.aux main.bbl main.glo main.ind main.idx \
+             main.lof main.lot main.toc
+DISTCLEANFILES = main.dvi main.ps main.pdf
+EXTRA_DIST = main.tex $(srcdir)/$(PACKAGE)*
 
-dvi-local: $(EXTRA_DIST)
-	for file in $(EXTRA_DIST) ; do \
-          if [ ! -f $$file ] ; then cp -f $(srcdir)/$$file $$file ; fi ; \
-        done
-	for texfile in $(TEXFILES) ; do \
-          @LATEX@ $$texfile ; @LATEX@ $$texfile ; \
-        done
-
-#dvi-local: $(DVIFILES)
-#.tex.dvi:; @LATEX@ $< ; @LATEX@ $<
+dvi-local:
+	$(top_builddir)/doc/laldoc/ldoc-pkg.sh $(PACKAGE) $(srcdir) $(top_builddir) $(top_srcdir)

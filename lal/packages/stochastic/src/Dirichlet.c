@@ -5,7 +5,7 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{Dirichlet.c}}
-\label{s:Dirichlet.c}
+\label{stochastic:ss:Dirichlet.c}
 
 Calculates the values of the Dirichlet kernel.
 
@@ -15,7 +15,7 @@ Calculates the values of the Dirichlet kernel.
 
 \subsubsection*{Description}
 
-{\tt LALDirichlet()} calculates the values of the Dirichlet kernel \cite{PW}:
+{\tt LALDirichlet()} calculates the values of the Dirichlet kernel \cite{stochastic:PW}:
 %
 \[
 {\cal D}_N(x):=
@@ -52,7 +52,7 @@ be replaced by a Dirac delta function.
 
 /**************************************** <lalLaTeX file="DirichletCB">
 
-\bibitem{PW}
+\bibitem{stochastic:PW}
 {\em Spectral analysis for physical applications},
 by Donald B.\ Percival and Andrew T.\ Walden
 (Cambridge University Press, Cambridge, 1993), p.\ 26-27.
