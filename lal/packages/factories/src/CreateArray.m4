@@ -76,7 +76,7 @@ void PROG (Status       *status,
            atype       **array,
            UINT4Vector  *dimLength) 
 {
-  UINT4 arrayDataSize = 0;
+  UINT4 arrayDataSize = 1;
   UINT4 numDims;
   UINT4 dim;
 
