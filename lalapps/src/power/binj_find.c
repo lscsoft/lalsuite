@@ -196,6 +196,9 @@ static int keep_this_injection(SimBurstTable *injection, struct options_t option
 		return(FALSE);
 	if (options.maxCentralfreqFlag && !(injection->freq < options.maxCentralfreq))
 		return(FALSE);
+	if (options.playground && !isPlayground(injection->l_peak_time.gpsSeconds, injection->l_peak_time.gpsSeconds))
+		return(FALSE);
+
 	return(TRUE);
 }
 
@@ -236,7 +239,7 @@ static SimBurstTable *extract_injections(LALStatus *stat, SimBurstTable *injecti
 	SimBurstTable **addpoint = &head;
 	INT8 peaktime;
 
-	while(injection) {
+	for(; injection; injection = injection->next) {
 		LAL_CALL(LALGPStoINT8(stat, &peaktime, &injection->l_peak_time), stat);
 		if ((start < peaktime) && (peaktime < end)) {
 			*addpoint = LALMalloc(sizeof(**addpoint));
@@ -428,7 +431,7 @@ int main(int argc, char **argv)
 
 	/* triggers */
 	SnglBurstTable *tmpEvent = NULL, *currentEvent = NULL;
-	SnglBurstTable burstEvent, *burstEventList = NULL;
+	SnglBurstTable *burstEventList = NULL;
 	SnglBurstTable *detEventList = NULL, *detTrigList = NULL, *prevTrig = NULL;
 
 	/* injections */
@@ -585,18 +588,10 @@ int main(int argc, char **argv)
 
 
   /*******************************************************************
-   * END PARSE ARGUMENTS                                             *
-   *******************************************************************/
-
-
-  /*******************************************************************
    * initialize things
    *******************************************************************/
 	lal_errhandler = LAL_ERR_EXIT;
 	set_debug_level("1");
-	memset(&burstEvent, 0, sizeof(SnglBurstTable));
-	memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
-	xmlStream.fp = NULL;
 
   /*******************************************************************
    * Read and trim the injection list                                *
@@ -627,69 +622,66 @@ int main(int argc, char **argv)
 
 	currentEvent = detEventList = burstEventList;
 	for (currentSimBurst = simBurstList; currentSimBurst; currentSimBurst = currentSimBurst->next) {
-		/* check if the injection is made in the playground */
-		if ((options.playground && !(isPlayground(currentSimBurst->l_peak_time.gpsSeconds, currentSimBurst->l_peak_time.gpsSeconds))) == 0) {
-			ninjected++;
+		ninjected++;
 
-			/* write the injected signals to an output file */
-			if (injSimList == NULL) {
-				injSimList = tmpSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-				prevSimBurst = tmpSimBurst;
-			} else {
-				tmpSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-				prevSimBurst->next = tmpSimBurst;
-			}
-			memcpy(tmpSimBurst, currentSimBurst, sizeof(SimBurstTable));
+		/* write the injected signals to an output file */
+		if (injSimList == NULL) {
+			injSimList = tmpSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
 			prevSimBurst = tmpSimBurst;
-			tmpSimBurst = tmpSimBurst->next = NULL;
+		} else {
+			tmpSimBurst = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
+			prevSimBurst->next = tmpSimBurst;
+		}
+		memcpy(tmpSimBurst, currentSimBurst, sizeof(SimBurstTable));
+		prevSimBurst = tmpSimBurst;
+		tmpSimBurst = tmpSimBurst->next = NULL;
 
-			/* convert injection time to INT8 */
-			LAL_CALL(LALGPStoINT8(&stat, &injPeakTime, &(currentSimBurst->l_peak_time)), &stat);
+		/* convert injection time to INT8 */
+		LAL_CALL(LALGPStoINT8(&stat, &injPeakTime, &(currentSimBurst->l_peak_time)), &stat);
 
 
-			/* loop over the burst events */
-			while (currentEvent != NULL) {
+		/* loop over the burst events */
+		while (currentEvent != NULL) {
 
-				/* convert start time to INT8 */
-				LAL_CALL(LALGPStoINT8(&stat, &burstStartTime, &(currentEvent->start_time)), &stat);
+			/* convert start time to INT8 */
+			LAL_CALL(LALGPStoINT8(&stat, &burstStartTime, &(currentEvent->start_time)), &stat);
 
-				if (injPeakTime < burstStartTime)
-					break;
+			if (injPeakTime < burstStartTime)
+				break;
 
-				LAL_CALL(LALCompareSimBurstAndSnglBurst(&stat, currentSimBurst, currentEvent, &accParams), &stat);
+			LAL_CALL(LALCompareSimBurstAndSnglBurst(&stat, currentSimBurst, currentEvent, &accParams), &stat);
 
-				if (accParams.match) {
-					ndetected++;
+			if (accParams.match) {
+				ndetected++;
 
-					/*write the detected triggers */
-					if (detTrigList == NULL) {
-						detTrigList = tmpEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
-						prevTrig = tmpEvent;
-					} else {
-						tmpEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
-						prevTrig->next = tmpEvent;
-					}
-					memcpy(tmpEvent, currentEvent, sizeof(SnglBurstTable));
+				/*write the detected triggers */
+				if (detTrigList == NULL) {
+					detTrigList = tmpEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
 					prevTrig = tmpEvent;
-					tmpEvent = tmpEvent->next = NULL;
-
-					/* write the injected signals to an output file */
-					if (injFoundList == NULL) {
-						injFoundList = tmpInjFound = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-						prevInjFound = tmpInjFound;
-					} else {
-						tmpInjFound = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
-						prevInjFound->next = tmpInjFound;
-					}
-					memcpy(tmpInjFound, currentSimBurst, sizeof(SimBurstTable));
-					prevInjFound = tmpInjFound;
-					tmpInjFound = tmpInjFound->next = NULL;
-
-					break;
+				} else {
+					tmpEvent = (SnglBurstTable *) LALCalloc(1, sizeof(SnglBurstTable));
+					prevTrig->next = tmpEvent;
 				}
+				memcpy(tmpEvent, currentEvent, sizeof(SnglBurstTable));
+				prevTrig = tmpEvent;
+				tmpEvent = tmpEvent->next = NULL;
 
-				currentEvent = currentEvent->next;
+				/* write the injected signals to an output file */
+				if (injFoundList == NULL) {
+					injFoundList = tmpInjFound = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
+					prevInjFound = tmpInjFound;
+				} else {
+					tmpInjFound = (SimBurstTable *) LALCalloc(1, sizeof(SimBurstTable));
+					prevInjFound->next = tmpInjFound;
+				}
+				memcpy(tmpInjFound, currentSimBurst, sizeof(SimBurstTable));
+				prevInjFound = tmpInjFound;
+				tmpInjFound = tmpInjFound->next = NULL;
+
+				break;
 			}
+
+			currentEvent = currentEvent->next;
 		}
 	}
 
@@ -704,6 +696,9 @@ int main(int argc, char **argv)
   /*****************************************************************
    * open output xml file
    *****************************************************************/
+	memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
+	xmlStream.fp = NULL;
+
 	/* List of injections that were actually made */
 
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, injmadeFile), &stat);
