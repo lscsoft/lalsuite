@@ -29,7 +29,7 @@
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
 
-#define PROGRAM_NAME "lalapps_tmpltbank"
+#define PROGRAM_NAME "tmpltbank"
 
 #define USAGE \
 "go fish"
