@@ -228,6 +228,7 @@ static void LALInspiralTaylorF2Phasing7PN (REAL8 v, REAL8 *phase, expnCoeffs *ak
    REAL8 x, y, z;
    x = v*v;
    y = x*x;
+   z = y*x;
    /*
    fprintf(stderr, "This order is currently not implemented\n");
    exit(0);
