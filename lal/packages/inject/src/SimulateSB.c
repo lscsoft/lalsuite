@@ -183,7 +183,6 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
   /* other variables used */
   REAL8             deltaF;
   RandomParams     *randParams=NULL;
-  INT4              seed=123; /*Initialize seed for generating random numbers*/  
   
   /* vector for storing random numbers */ 
   REAL4Vector      *gaussdevsX1=NULL;
@@ -423,7 +422,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
   
   /* create parameters for generating random numbers from seed */
   LALCreateRandomParams( status->statusPtr, 
-			 &randParams, seed ); 
+			 &randParams, params->seed ); 
   BEGINFAIL( status )
     {
       TRY( LALSDestroyVector( status->statusPtr, 
