@@ -43,6 +43,7 @@ int main( void )
 #include <lal/LALConstants.h>
 #include <lal/FrameStream.h>
 #include <lal/IIRFilter.h>
+#include <lal/BandPassTimeSeries.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
@@ -63,7 +64,6 @@ RCSID( "$Id$" );
 #define CVS_DATE "$Date$"
 
 int snprintf(char *str, size_t size, const  char  *format, ...);
-long long atoll(const char *nptr);
 char *strsep(char **stringp, const char *delim);
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
@@ -73,6 +73,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
  * variables that control program behaviour
  *
  */
+
 
 /* debugging */
 extern int vrbflg;                      /* verbocity of lal function    */
@@ -91,8 +92,10 @@ INT4  inputDataLength = 0;              /* number of points in input    */
 
 /* data conditioning parameters */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
+INT4   highPass         = -1;           /* enable high pass on raw data */
+REAL4  highPassFreq     = 0;            /* high pass frequency          */
 REAL4  fLow             = -1;           /* low frequency cutoff         */
-INT4   specType         = -1;           /* given, median or mean psd    */
+INT4   specType         = 0;            /* given, median or mean psd    */
 INT4   invSpecTrunc     = -1;           /* length of inverse spec (s)   */
 REAL4  dynRangeExponent = -1;           /* exponent of dynamic range    */
 
@@ -143,11 +146,18 @@ int main( int argc, char *argv[] )
   FindChirpFilterParams        *fcFilterParams = NULL;
   FindChirpFilterInput         *fcFilterInput  = NULL;
   
+  /* inspiral structures */
+  InspiralTemplate             *tmplt = NULL;
+  InspiralEvent                *event = NULL;
+
   /* output data */
   MetadataTable         proctable;
   MetadataTable         procparams;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
+
+  /* counters and other variables */
+  UINT4 i, k;
 
 
   /*
@@ -231,26 +241,40 @@ int main( int argc, char *argv[] )
   chan.deltaT = 1.0 / (REAL8) sampleRate;
   chan.sampleUnits = lalADCCountUnit;
   
-  /* create the data segment vector */
-  LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
-        &chan, &spec, &resp, fcInitParams ), &status );
-
   /* read the data channel time series from frames */
   LAL_CALL( LALFrOpen( &status, &frStream, NULL, "*.gwf" ), &status );
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
   frChan.name = fqChanName;
   frChan.type = ADCDataChannel;
-  LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream );
-  if ( status.statusCode != FRAMESTREAMH_EDONE )
-  {
-    lal_errhandler( &status, "LALFrGetREAL4TimeSeries", __FILE__, __LINE__,
-        rcsid );
-  }
+  LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
+      &status );
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
 
+  /* create the data segment vector */
+  LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
+        &chan, &spec, &resp, fcInitParams ), &status );
+
   /* call the magic calibration function to get the calibration */
+  resp.epoch.gpsSeconds = 600000000;
+  
+  for ( k = 0; k < resp.data->length; ++k )
+  {
+    resp.data->data[k].re = 1.0;
+    resp.data->data[k].im = 0;
+  }
   
   /* read in the template bank from a text file */
+  tmplt = (InspiralTemplate *)
+    LALCalloc( 1, sizeof(InspiralTemplate) );
+  {
+    REAL4 m1 = 1.4;
+    REAL4 m2 = 1.4;
+    tmplt->mass1     = m1;
+    tmplt->mass2     = m2;
+    tmplt->totalMass = m1 + m2;
+    tmplt->mu        = m1 * m2 / tmplt->totalMass;
+    tmplt->eta       = tmplt->mu / tmplt->totalMass;
+  }
 
 
   /*
@@ -260,9 +284,26 @@ int main( int argc, char *argv[] )
    */
   
 
-  /* band pass the data to get rid of low frequency crap */
+  /* high pass the data to get a prevent bleeding of low frequences in psd */
+  if ( highPass )
+  {
+    PassBandParamStruc highpassParam;
+    highpassParam.nMax = 4;
+    highpassParam.f1 = highPassFreq;
+    highpassParam.f2 = -1.0;
+    highpassParam.a1 = 0.1;
+    highpassParam.a2 = -1.0;
 
-  /* compute the median power spectrum for the data channel */
+    LAL_CALL( LALButterworthREAL4TimeSeries( &status, &chan, &highpassParam ),
+        &status );
+  }
+
+  /* compute the power spectrum for the data channel */
+  for ( k = 0; k < spec.data->length; ++k )
+  {
+    /* value of 4 is hardwared to match frame files */
+    spec.data->data[k] = 2.0 * chan.deltaT * 4.0;
+  }
 
 
   /*
@@ -286,11 +327,13 @@ int main( int argc, char *argv[] )
   fcDataParams->fLow = fLow;
   fcDataParams->dynRange = fcTmpltParams->dynRange = 
     pow( 2.0, dynRangeExponent );
+  fcDataParams->deltaT = fcTmpltParams->deltaT = 1.0 / (REAL4) sampleRate;
   fcTmpltParams->fLow = fLow;
 
   /* initialize findchirp filter functions */
   LAL_CALL( LALFindChirpFilterInit( &status, &fcFilterParams, fcInitParams ), 
       &status );
+  fcFilterParams->deltaT = 1.0 / (REAL4) sampleRate;
   fcFilterParams->computeNegFreq = 0;
 
   LAL_CALL( LALCreateFindChirpInput( &status, &fcFilterInput, fcInitParams ), 
@@ -299,6 +342,11 @@ int main( int argc, char *argv[] )
         fcInitParams->numChisqBins, fcInitParams->numPoints ), 
       &status );
 
+  /* parse the thresholds */
+  fcFilterParams->rhosqThresh = atof( rhosqStr );
+  fcFilterParams->chisqThresh = atof( chisqStr );
+  fcFilterParams->maximiseOverChirp = 1;
+  
 
   /*
    *
@@ -307,6 +355,34 @@ int main( int argc, char *argv[] )
    */
   
 
+  LAL_CALL( LALFindChirpSPData (&status, fcSegVec, dataSegVec, fcDataParams),
+      &status );
+
+  LAL_CALL( LALFindChirpSPTemplate( &status, fcFilterInput->fcTmplt, 
+        tmplt, fcTmpltParams ), &status );
+
+  fcFilterInput->tmplt = tmplt;
+
+  for ( i = 0; i < fcSegVec->length ; ++i )
+  {
+    fcFilterInput->segment = fcSegVec->data + i;
+    event = NULL;
+
+    LAL_CALL( LALFindChirpFilterSegment( &status, &event, fcFilterInput,
+          fcFilterParams ), &status );
+
+    if ( event ) 
+    { 
+      fprintf( stdout, "woo hoo!\n" );
+
+      while ( event )
+      {
+        InspiralEvent *thisEvent = event;
+        event = thisEvent->next;
+        LALFree( thisEvent );
+      }
+    }
+  }
 
 
   /*
@@ -314,6 +390,7 @@ int main( int argc, char *argv[] )
    * free the structures used by findchirp
    *
    */
+
 
   LAL_CALL( LALFindChirpChisqVetoFinalize( &status, 
         fcFilterParams->chisqParams, fcInitParams->numChisqBins ), 
@@ -339,6 +416,8 @@ int main( int argc, char *argv[] )
    */
 
 
+  LALFree( tmplt );
+
   LAL_CALL( LALFinalizeDataSegmentVector( &status, &dataSegVec ), &status );
   LAL_CALL( LALSDestroyVector( &status, &(chan.data) ), &status );
   LAL_CALL( LALSDestroyVector( &status, &(spec.data) ), &status );
@@ -351,8 +430,6 @@ int main( int argc, char *argv[] )
    *
    */
 
-
-  /* store the job end time in the process table */
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
@@ -420,6 +497,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"disable-event-cluster",   no_argument,       &eventCluster,     0 },
     {"enable-output",           no_argument,       &enableOutput,     1 },
     {"disable-output",          no_argument,       &enableOutput,     0 },
+    {"disable-high-pass",       no_argument,       &highPass,         0 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
@@ -440,6 +518,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"rhosq-thresholds",        required_argument, 0,                'q'},
     {"chisq-thresholds",        required_argument, 0,                'r'},
     {"comment",                 required_argument, 0,                's'},
+    {"enable-high-pass",        required_argument, 0,                't'},
     {"debug-level",             required_argument, 0,                'z'},
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
@@ -468,7 +547,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     int option_index = 0;
 
     c = getopt_long( argc, argv, 
-        "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:", long_options, &option_index );
+        "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:z:", 
+        long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -494,7 +574,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'a':
         {
-          long long int gstartt = atoll( optarg );
+          long int gstartt = atol( optarg );
           if ( gstartt < 441417609 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
@@ -511,8 +591,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
       case 'b':
         {
-          long long int gendt = atoll( optarg );
-          if ( gendt > 999999999 )
+          long int gendt = atol( optarg );
+          if ( gendt > 999999999 || gendt < 0 )
           {
             fprintf( stderr, "invalid argument to --%s:\n"
                 "GPS end time is after " 
@@ -627,11 +707,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'j':
-        if ( ! strcmp( "file", optarg ) )
-        {
-          specType = 0;
-        }
-        else if ( ! strcmp( "mean", optarg ) )
+        if ( ! strcmp( "mean", optarg ) )
         {
           specType = 1;
         }
@@ -643,7 +719,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown power spectrum type: "
-              "%s (must be file, mean or median)\n", 
+              "%s (must be mean or median)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -753,6 +829,20 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         break;
 
+      case 't':
+        highPass = 1;
+        highPassFreq = (REAL4) atof( optarg );
+        if ( fLow < 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "low frequency cutoff is less than 0 Hz: "
+              "(%f Hz specified)\n",
+              long_options[option_index].name, highPassFreq );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", highPassFreq );
+        break;
+
       case 'z':
         set_debug_level( optarg );
         break;
@@ -804,8 +894,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
   else
   {
-    fprintf( stderr, "one of --enable-output or --disable-output "
-        "arguments must be specified\n" );
+    fprintf( stderr, "--enable-output or --disable-output "
+        "argument must be specified\n" );
     exit( 1 );
   }
 
@@ -833,8 +923,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
   else
   {
-    fprintf( stderr, "one of --enable-event-cluster or "
-        "--disable-event-cluster arguments must be specified\n" );
+    fprintf( stderr, "--enable-event-cluster or "
+        "--disable-event-cluster argument must be specified\n" );
     exit( 1 );
   }
 
@@ -883,10 +973,18 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
-  /* check sample rate has been sepcified */
+  /* check sample rate has been given */
   if ( sampleRate < 0 )
   {
     fprintf( stderr, "--sample-rate must be specified\n" );
+    exit( 1 );
+  }
+
+  /* check high pass option has been given */
+  if ( highPass < 0 )
+  {
+    fprintf( stderr, "--disable-high-pass or --enable-high-pass (freq)"
+        " must be specified\n" );
     exit( 1 );
   }
 
@@ -920,7 +1018,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--low-frequency-cutoff must be specified\n" );
     exit( 1 );
   }
-  if ( specType < 0 )
+  if ( specType == 0 )
   {
     fprintf( stderr, "--spectrum-type must be specified\n" );
     exit( 1 );
