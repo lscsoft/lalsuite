@@ -530,7 +530,7 @@ LALFindChirpBCVTemplate (
   {
     REAL4 x    = x1 * xfac[kmin];
     REAL4 psi  = 
-      psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
+      psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
     psi0 = -2 * LAL_PI * ( floor ( 0.5 * psi / LAL_PI ) );
   }
   /* XXX work needed here... check psi */
@@ -547,7 +547,7 @@ LALFindChirpBCVTemplate (
     {
       REAL4 x    = x1 * xfac[k];
       REAL4 psi  = 
-        psi20 + x * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
+        psi20 + (x * x) * ( psi15 + x * ( psi10 + x * ( psi05 + x * ( psi00 ))));
       REAL4 psi1 = psi + psi0;
       REAL4 psi2;  /* defining psi2 every time through the loop necessary? */
       /* XXX work needed here... check psi */  
