@@ -93,7 +93,6 @@ static int apply_mask_flag;
 static int high_pass_flag;
 static int overlap_hann_flag;
 static int test_flag;
-static int post_analysis_flag;
 static int recentre_flag;
 extern int vrbflg;
 
@@ -179,8 +178,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
 
   /* output file */
-  FILE *outOne, *outTwo;
-  CHAR outputFilenameOne[200], outputFilenameTwo[200];
+  FILE *out;
+  CHAR outputFilename[200];
 
   /* xml output file name */
   CHAR xmlFileName[FILENAME_MAX];
@@ -191,8 +190,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* results parameters */
   REAL8 y, yOpt;
-  REAL8 varTheo, inVarTheoSum ;
-  REAL8 ptEst, error;
+  REAL8 varTheo;
 
   /* input data segment */
   INT4 duration, durationEff, extrasec;
@@ -1010,15 +1008,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     /* initialize parameters for post analysis */
     yOpt = 0;
-    inVarTheoSum = 0;
 
     /* open output file */
-    LALSnprintf(outputFilenameOne, LALNameLength, \
+    LALSnprintf(outputFilename, LALNameLength, \
         "%s/stat-%s%s-%lld-%lld-%d.dat", outputFilePath, ifoOne, ifoTwo, \
-        startTime, endTime, MCLoop);
-    /* open output file */
-    LALSnprintf(outputFilenameTwo, LALNameLength, \
-        "%s/post-%s%s-%lld-%lld-%d.dat", outputFilePath, ifoOne, ifoTwo, \
         startTime, endTime, MCLoop);
 
     for (n = 0; n < N; n++)
@@ -1715,33 +1708,15 @@ INT4 main(INT4 argc, CHAR *argv[])
           fprintf(stdout, "varTheo = %e\n", varTheo);
         }
 
-        if (post_analysis_flag)
-        {
-          yOpt = yOpt + (y/varTheo);
-          inVarTheoSum = inVarTheoSum + 1. / varTheo;
-        }
-
         /* output to file */
-        outOne = fopen(outputFilenameOne, "a");
-        fprintf(outOne,"%d %e %e\n", gpsStartTime.gpsSeconds, y, \
+        out = fopen(outputFilename, "a");
+        fprintf(out,"%d %e %e\n", gpsStartTime.gpsSeconds, y, \
             sqrt(varTheo));
-        fclose(outOne);
+        fclose(out);
       }
     }
 
     lal_errhandler = LAL_ERR_EXIT;
-
-    /* need to add post analysis for overlapping hann */
-    if (post_analysis_flag)
-    {
-      ptEst = (yOpt / inVarTheoSum) /(REAL8)segmentDuration;
-      error = sqrt (1./inVarTheoSum ) /(REAL8)segmentDuration;
-      outTwo = fopen(outputFilenameTwo, "a");
-      fprintf(outTwo,"%d %d %e %e\n", startTime, endTime, ptEst, error);
-      fclose(outTwo);
-      if (vrbflg)
-        fprintf(stdout, "ptEst = %e, error = %e\n", ptEst, error);
-    }
   }
 
   /* write out xml */
@@ -1876,7 +1851,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --hpf-attenuation N           high pass filter attenuation\n"\
   " --hpf-order N                 high pass filter order\n"\
   " --recentre                    recentre jobs\n"\
-  " --post-analysis               perform post analysis\n"\
   " --middle-segment              use middle segment in PSD estimation\n"\
   " --inject                      inject a signal into the data\n"\
   " --scale-factor N              scale factor for injection\n"\
@@ -1915,7 +1889,6 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       {"apply-mask", no_argument, &apply_mask_flag, 1},
       {"high-pass-filter", no_argument, &high_pass_flag, 1},
       {"overlap-hann", no_argument, &overlap_hann_flag, 1},
-      {"post-analysis", no_argument, &post_analysis_flag,1},
       {"verbose", no_argument, &vrbflg, 1},
       {"test", no_argument, &test_flag, 1},
       {"recentre", no_argument, &recentre_flag,1},
