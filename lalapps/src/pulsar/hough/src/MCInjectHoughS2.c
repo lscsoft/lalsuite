@@ -87,7 +87,7 @@ int main(int argc, char *argv[]){
   CHAR   *fnameOut = NULL;               /* The output prefix filename */
   
   UINT4  numberCount,maxNumberCount;
-  INT4   nTemplates, controlN, controlNH;
+  INT4   nTemplates, controlN, controlNN, controlNH;
   UINT4  numberCountV[NTEMPLATES];
    
   INT4   mObsCoh, nfSizeCylinder;
@@ -761,6 +761,7 @@ int main(int argc, char *argv[]){
   for(MCloopId=0; MCloopId < nMCloop; ++MCloopId){
 
     controlN=1; /* checks if near template corresponds to max number count*/
+    controlNN=nh0;
     controlNH=1;  /* checks if near template corresponds to max 
     		number count for the highest h0 value */
     
@@ -1106,7 +1107,7 @@ void GenerateInjectParams(LALStatus   *status,
     for (ii=0; ii<2; ii++){
       for (jj=0; jj<2; jj++) {
       templProjected.x = dX1[ii];
-      templProjected.y = dX2[ii];
+      templProjected.y = dX2[jj];
       TRY( LALStereoInvProjectCart( status->statusPtr,
                                 &templRotated, &templProjected ), status );
       TRY( LALInvRotatePolarU( status->statusPtr, &(closeTemplates->skytemp[kk]), &templRotated, 
