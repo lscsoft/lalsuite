@@ -107,7 +107,6 @@ BOOLEAN FILE_FSTATS = 1;
 #define USE_BOINC_DEBUG 0
 /* for getpid() */
 #include <sys/types.h>
-#include <unistd.h>
 
 #include "boinc_api.h"
 #include "filesys.h"
