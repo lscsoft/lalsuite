@@ -391,6 +391,7 @@ LALFindChirpBCVTemplate (
   UINT4        numPoints  = 0;
   REAL4        deltaF     = 0.0;
   REAL4        m          = 0.0;  
+  REAL4        chirpMass  = 0.0;
   REAL4        eta        = 0.0; 
   REAL4        mu         = 0.0;  /* now only used in normalisation */
   COMPLEX8    *expPsi     = NULL;
@@ -451,13 +452,6 @@ LALFindChirpBCVTemplate (
   /* zero output */
   memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );
 
-  /* parameters */
-  deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); /* not defined in tmplt */
-  m      = tmplt->totalMass;  /* correct? */
-  eta    = tmplt->eta;        
-  mu     = tmplt->mu;         /* now only used in normalisation */
-/* work needed here... */
-
   /* psi coefficients */
   psi00 = tmplt->psi0;        /* BCV only uses psi0, psi15:            */
   psi05 = 0.0; /*tmplt->psi1;*/ /* -> psi1,2,4 don't exist in tmplt      */
@@ -465,6 +459,17 @@ LALFindChirpBCVTemplate (
   psi15 = tmplt->psi3;        /* & which name convention to use?       */
   psi20 = 0.0; /*tmplt->psi4;*/
 /* work needed here... */
+
+  /* parameters */
+  deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); /* not defined in tmplt */
+  m      = - psi15 / ( 16 * LAL_PI * LAL_PI * psi00 );
+  eta    = 3 / ( 128 * psi00 * pow( LAL_PI * m, 5.0/3.0 ) );       
+  mu     = eta * m;
+/* work needed here... check definitions are correct */
+
+  /* defining chirp mass (to the power of 5/3 => rename) */
+  chirpMass = pow( 1.0 / LAL_PI, 5.0/3.0) * ( 3 / (128 * psi00));
+/* work needed here... required? */
 
   /* template dependent normalisation */
   distNorm = 2.0 * LAL_MRSUN_SI / (cannonDist * 1.0e6 * LAL_PC_SI);
@@ -477,6 +482,8 @@ LALFindChirpBCVTemplate (
   fcTmplt->tmpltNorm *= fcTmplt->tmpltNorm;
   
   fcTmplt->tmpltNorm *= distNorm * distNorm;
+
+  
   
   /* x1 */   /* does this explanation suffice? */
   x1 = pow( deltaF, -1.0/3.0 );
