@@ -26,8 +26,9 @@ Routines for reading SFT binary files
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Prototypes}
 \idx{LALReadSFTheader()}
-\idx{LALReadSFTtype()}
+\idx{LALReadSFTdata()}
 \idx{LALReadSFTfile()}
+\idx{LALReadSFTfiles()}
 \idx{LALWriteSFTtoFile()}
 \vspace{0.1in}
 \input{SFTfileIOD}
@@ -70,7 +71,7 @@ typedef struct {
 /* prototypes for internal helper functions */
 static StringVector *find_files (const CHAR *globdir);
 static void DestroyStringVector (StringVector *strings);
-
+static void LALCopySFT (LALStatus *stat, SFTtype *dest, const SFTtype *src);
 static void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 
 /* number of bytes in SFT-header v1.0 */
@@ -250,7 +251,7 @@ LALReadSFTfile (LALStatus *stat,
 
 
   /* and read it, using the lower-level function: */
-  LALReadSFTtype (stat->statusPtr, outputSFT, fname, fminBinIndex);
+  LALReadSFTdata (stat->statusPtr, outputSFT, fname, fminBinIndex);
   BEGINFAIL (stat) {
     LALDestroySFTtype (stat->statusPtr, &outputSFT);
   } ENDFAIL (stat);
@@ -263,12 +264,13 @@ LALReadSFTfile (LALStatus *stat,
   /* **************************************************/
 
   /* let's re-normalize and fill data into output-vector */
-  for (i=0; i < readlen; i++)
-    {
-      outputSFT->data->data[i].re *= renorm;
-      outputSFT->data->data[i].im *= renorm;
-    }    
-
+  if (renorm != 1)
+    for (i=0; i < readlen; i++)
+      {
+	outputSFT->data->data[i].re *= renorm;
+	outputSFT->data->data[i].im *= renorm;
+      }    
+  
   /* that's it: return */
   *sft = outputSFT;
 
@@ -335,13 +337,14 @@ LALReadSFTfiles (LALStatus *stat,
        * this is a bit complicated by the fact that it's a vector
        * of SFTtypes, not pointers: therefore we need to *COPY* the stuff !
        */
-      LALCopySFTtype (stat->statusPtr, &(out->data[i]), sft);
+      LALCopySFT (stat->statusPtr, &(out->data[i]), sft);
       BEGINFAIL (stat) {
 	LALDestroySFTVector (stat->statusPtr, &out);
 	LALDestroySFTtype (stat->statusPtr, &sft);
       } ENDFAIL (stat);
 
       LALDestroySFTtype (stat->statusPtr, &sft);
+      sft = NULL;
 
     } /* for i < numSFTs */
 
@@ -475,7 +478,7 @@ LALWriteSFTtoFile (LALStatus  *status,
  *------------------------------------------------------------*/
 /* <lalVerbatim file="SFTfileIOD"> */
 void
-LALReadSFTtype(LALStatus *status,
+LALReadSFTdata(LALStatus *status,
 	       SFTtype    *sft,    /* asumed  memory is allocated  */
 	       const CHAR *fname,
 	       INT4 fminBinIndex)
@@ -581,7 +584,43 @@ LALReadSFTtype(LALStatus *status,
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
-} /* LALReadSFTtype() */
+} /* LALReadSFTdata() */
+
+
+/*----------------------------------------------------------------------
+ *  copy an entire SFT-type into another
+ *  we require the destination to have at least as many frequency-bins
+ *  as the source, but it can have less..
+ *----------------------------------------------------------------------*/
+void
+LALCopySFT (LALStatus *stat, SFTtype *dest, const SFTtype *src)
+{
+
+  INITSTATUS( stat, "LALDestroySFTVector", SFTFILEIOC);
+
+  ASSERT (dest,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (dest->data,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (src, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (src->data, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+
+  /* some hard requirements */
+  if ( dest->data->length < src->data->length ) {
+    ABORT (stat, SFTFILEIOH_ECOPYSIZE, SFTFILEIOH_MSGECOPYSIZE);
+  }
+  
+  /* copy head */
+  strcpy (dest->name, src->name);
+  dest->epoch = src->epoch;
+  dest->f0 = src->f0;
+  dest->deltaF = src->deltaF;
+  dest->sampleUnits = src->sampleUnits;
+  /* copy data */
+  memcpy (dest->data->data, src->data->data, dest->data->length * sizeof (dest->data->data[0]));
+  
+  RETURN (stat);
+
+} /* LALCopySFT() */
+
 
 
 /***********************************************************************
@@ -635,6 +674,7 @@ find_files (const CHAR *globdir)
   UINT4 numFiles = 0;
   StringVector *ret = NULL;
   UINT4 j;
+  UINT4 namelen;
 
   ptr1 = strrchr (globdir, '/');
   
@@ -664,7 +704,6 @@ find_files (const CHAR *globdir)
       LALFree (dname);
       return (NULL);
     }
-  LALFree (dname);
 
   while ( (entry = readdir (dir)) != NULL )
     {
@@ -674,20 +713,22 @@ find_files (const CHAR *globdir)
 	  if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
 	    return (NULL);
 	  }
-	  
-	  if ( (filelist[ numFiles - 1 ] = LALCalloc (1, strlen(entry->d_name) + 1 )) == NULL) {
+
+	  namelen = strlen(entry->d_name) + strlen(dname) + 2 ;
+	  if ( (filelist[ numFiles - 1 ] = LALCalloc (1, namelen)) == NULL) {
 	    for (j=0; j < numFiles; j++)
 	      LALFree (filelist[j]);
 	    LALFree (filelist);
 	    return (NULL);
 	  }
 
-	  strcpy(filelist[numFiles-1], entry->d_name);
+	  sprintf(filelist[numFiles-1], "%s/%s", dname, entry->d_name);
 	}
 
     } /* while more directory entries */
 
   closedir (dir);
+  LALFree (dname);
 
   /* ok, did we find anything? */
   if (numFiles == 0)
