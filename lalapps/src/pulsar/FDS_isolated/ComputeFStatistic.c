@@ -231,6 +231,7 @@ FILE *fpstat=NULL;		/**< output-file: F-statistic candidates and cluster-informa
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 int reverse_endian=-1;          /**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
+CHAR ckp_fname[260];			/* filename of checkpoint-file, global for polka */
 
 
 /*----------------------------------------------------------------------*/
@@ -338,7 +339,6 @@ int main(int argc,char *argv[])
   LALStatus *stat = &global_status;
 
   INT4 *maxIndex=NULL; 			/*  array that contains indexes of maximum of each cluster */
-  CHAR ckp_fname[260];			/* filename of checkpoint-file */
   INT4 spdwn;				/* counter over spindown-params */
   DopplerScanInit scanInit;		/* init-structure for DopperScanner */
   DopplerScanState thisScan = emptyScan; /* current state of the Doppler-scan */
@@ -701,9 +701,11 @@ int main(int argc,char *argv[])
     fclose(fpstat);
   }
 
+#ifndef RUN_POLKA
   /* remove checkpoint-file */
   remove (ckp_fname);
-  
+#endif
+
   /* Free DopplerScan-stuff (grid) */
   LAL_CALL ( FreeDopplerScan(stat, &thisScan), stat);
   
@@ -2797,12 +2799,14 @@ void worker() {
 #endif
 #else
   int a1,a2,retval;
+  CHAR ckptfile1[260];
   /* find first // delimiter */ 
   for(a1=0;(a1<globargc)&&(strncmp(globargv[a1],"//",3);a1++);
-  if(a1==globargc)
-	  retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
-  else
-	  retval=boincmain(a1,globargv);
+  /* if there was no //, argc==a1 and this is old-style command line */
+ retval=boincmain(a1,globargv);
+  /* handle old-style command line for backward compatibility */
+  if(a1<globargc) {
+  strncpy(chkptfile1,ckp_fname,260);
   if !(retval){
     /* find second // delimiter */ 
 	for(a2=a1+1;(a2<globargc)&&(strncmp(globargv[a2],"//",3);a2++);
@@ -2810,9 +2814,16 @@ void worker() {
   	  retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
     else
       retval=boincmain(a2-a1-1,&(globargv[a1+1]));
-    if !(retval)
+	if !(retval)
       retval=polka(globargv-a2-1,&(globargv[a2+1]));
   }
+  /* remove checkpoint-files */
+  remove (ckp_fname);
+  remove (ckptfile1);
+  /* TODO: remove FStat-files */
+  } else
+  remove (ckp_fname);
+  /* TODO: compression */
 #endif
   boinc_finish(retval);
   return;
