@@ -552,10 +552,12 @@ void getCartesianComponents( REAL4 u[3],
   REAL8 uRho = - sinLat * uNorth + cosLat * sinAlt;
   /* uLambda == uEast */
 
+#if DETECTORSITEH_PRINTF
   printf("uNorth = %g\n",uNorth);
   printf("uEast = %g\n",uEast);
   printf("uUp = %g\n",sinAlt);
   printf("uRho = %g\n",uRho);
+#endif  
 
   u[0] = cosLon * uRho - sinLon * uEast;
   u[1] = sinLon * uRho + cosLon * uEast;
@@ -609,12 +611,18 @@ void LALCreateDetector( LALStatus             *status,
   latRad = input->vertexLatitudeDegrees * LAL_PI_180;
   lonRad = input->vertexLongitudeDegrees * LAL_PI_180;
 
+#if DETECTORSITEH_PRINTF
   printf("LAT = %g radians, LON = %g radians\n", latRad, lonRad);
+#endif
 
   cosLat = cos(latRad); sinLat = sin(latRad);
+#if DETECTORSITEH_PRINTF
   printf("cos(LAT) = %g, sin(LAT) = %g\n", cosLat, sinLat);
+#endif
   cosLon = cos(lonRad); sinLon = sin(lonRad);
+#if DETECTORSITEH_PRINTF
   printf("cos(LON) = %g, sin(LON) = %g\n", cosLon, sinLon);
+#endif
 
   ellipsoidalDenominator = sqrt( (LAL_AWGS84_SI * LAL_AWGS84_SI)
                             * (cosLat * cosLat)
@@ -630,7 +638,9 @@ void LALCreateDetector( LALStatus             *status,
     = sinLat * ( (LAL_BWGS84_SI * LAL_BWGS84_SI) / ellipsoidalDenominator
                  + (REAL8) input->vertexElevation );
 
+#if DETECTORSITEH_PRINTF
   printf("%d %d\n", type, LALDETECTORTYPE_IFODIFF);
+#endif
 
   if (type != LALDETECTORTYPE_IFOYARM)
   {
@@ -641,7 +651,9 @@ void LALCreateDetector( LALStatus             *status,
                              sin(input->xArmAzimuthRadians),
                              cosLat, sinLat, cosLon, sinLon );
 
+#if DETECTORSITEH_PRINTF
     printf("xArm = (%g, %g, %g)\n", xArm[0], xArm[1], xArm[2]);
+#endif
   }
 
   if (type != LALDETECTORTYPE_IFOXARM && type != LALDETECTORTYPE_CYLBAR)
@@ -653,7 +665,9 @@ void LALCreateDetector( LALStatus             *status,
                              sin(input->yArmAzimuthRadians),
                              cosLat, sinLat, cosLon, sinLon );
 
+#if DETECTORSITEH_PRINTF
     printf("yArm = (%g, %g, %g)\n", yArm[0], yArm[1], yArm[2]);
+#endif
   }
 
 

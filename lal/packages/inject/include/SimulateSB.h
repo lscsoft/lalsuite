@@ -5,11 +5,11 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \section{Header \texttt{SimulateSB.h}}
-\label{stochastic:s:SimulateSB.h}
+\label{inject:s:SimulateSB.h}
 
 Provides prototype and error code information for the modules needed
-to simulate a whitened stochastic background signal in a pair of 
-interferometric detectors, given the appropriate representations of the 
+to simulate a stochastic background signal (whitened, if desired) in a pair of 
+detectors, given the appropriate representations of the 
 detector transfer function in each detector. 
 
 \subsection*{Synopsis}
@@ -92,55 +92,47 @@ extern "C" {
 
 \subsubsection*{Structures associated with 
   \texttt{SimulateSB.c}
-  (Sec.~\ref{stochastic:ss:SimulateSB.c})}
+  (Sec.~\ref{inject:ss:SimulateSB.c})}
 
-\subsubsection*{\texttt{struct SimulateSBOutput}}
-\idx[Type]{SimulateSBOutput}
+\subsubsection*{\texttt{struct SSSimStochBGOutput}}
+\idx[Type]{SSSimStochBGOutput}
 
 \noindent Contains the output data produced by 
-\texttt{LALSimulateSB()}. It contains 
-the simulated whitened stochastic background signal component of the output of 
-an interferometric detector.
-The fields are:
+\texttt{LALSSSimStochBGTimeSeries()}. It comprises of a pair of 
+(real) time-series simulated stochastic background signal in the outputs of 
+a given pair of detectors. The fields are:
 
 \begin{description}
-\item[\texttt{REAL4TimeSeries *whitenedSimulatedSB1}]
-The simulated whitened stochastic background signal component of the output of 
-the first interferometric detector.
-\item[\texttt{REAL4TimeSeries *whitenedSimulatedSB2}]
-The simulated whitened stochastic background signal component of the output of 
-the second interferometric detector.
+\item[\texttt{REAL4TimeSeries *SSimStochBG1}]
+Simulated stochastic background signal in the output of 
+the first detector.
+\item[\texttt{REAL4TimeSeries *SSimStochBG2}]
+Simulated stochastic background signal in the output of 
+the second detector.
 \end{description}
 
 *********************************************************** </lalLaTeX> */
 
-  typedef struct tagSimulateSBOutput {
-    REAL4TimeSeries    *whitenedSimulatedSB1;
-    REAL4TimeSeries    *whitenedSimulatedSB2;
-  } SimulateSBOutput;
+  typedef struct tagSSSimStochBGOutput {
+    REAL4TimeSeries    *SSimStochBG1;
+    REAL4TimeSeries    *SSimStochBG2;
+  } SSSimStochBGOutput;
   
-  
-  /*********************************************************** <lalLaTeX> 
+/*********************************************************** <lalLaTeX> 
 							       
-\subsubsection*{\texttt{struct SimulateSBInput}}
-\idx[Type]{SimulateSBInput}
+\subsubsection*{\texttt{struct SSSimStochBGInput}}
+\idx[Type]{SSSimStochBGInput}
 							       
 \noindent Contains the input data needed by 
-\texttt{LALSimulateSB()}
+\texttt{LALSSSimStochBGTimeSeries()}
 to calculate the whitened stochastic background signal in the output of 
-an interferometric detector.
+a detector.
 The fields are:
 
 \begin{description}
-\item[\texttt{REAL4FrequencySeries *overlapReductionFunction}]
-The overlap reduction function $\gamma(f)$ describing the pair of detector
-sites.
 \item[\texttt{REAL4FrequencySeries *omegaGW}] The spectrum 
 $\Omega_{\scriptstyle{\rm GW}}(f)$ of the stochastic gravitational-wave
 background.
-\item[\texttt{LALDetectorPair detectors}]
-The site location information of the pair of detectors involved in the 
-stochastic background search.
 \item[\texttt{COMPLEX8FrequencySeries *whiteningFilter1}]
 The frequency-domain response function $\tilde{R}_1(f)$ for the first detector.
 \item[\texttt{COMPLEX8FrequencySeries *whiteningFilter2}]
@@ -149,25 +141,22 @@ The frequency-domain response function $\tilde{R}_2(f)$ for the second detector.
 
 *********************************************************** </lalLaTeX> */
 
-  typedef struct tagSimulateSBInput {
-    REAL4FrequencySeries     *overlapReductionFunction;
+  typedef struct tagSSSimStochBGInput {
     REAL4FrequencySeries     *omegaGW;
-    const LALDetectorPair    *detectors; 
     COMPLEX8FrequencySeries  *whiteningFilter1;
     COMPLEX8FrequencySeries  *whiteningFilter2;
-  } SimulateSBInput;
+  } SSSimStochBGInput;
   
   
 /*********************************************************** <lalLaTeX> 
 
 
-\subsubsection*{\texttt{struct SimulateSBParams}}
-\idx[Type]{SimulateSBParams}
+\subsubsection*{\texttt{struct SSSimStochBGParams}}
+\idx[Type]{SSSimStochBGParams}
 
-\noindent Contains the parameters used by
-\texttt{LALSimulateSB()} to determine the whitened stochastic background 
-signal in the output of an interferometric detector.
-The fields are:
+\noindent Contains the parameters used by \texttt{LALSSSimStochBGTimeSeries()} 
+to compute the whitened stochastic background signal in the output of an 
+interferometric detector. The fields are:
 
 \begin{description}
 \item[\texttt{UINT4 length}]
@@ -176,116 +165,41 @@ The number of points in the output time series.
 \item[\texttt{REAL8 deltaT}]
 The temporal spacing of the output time series.
 
-\item[\texttt{REAL8 f0}]
-The start frequency of the frequency series 
-$\Omega_{\scriptstyle{\rm GW}}(f)$.
+\item[\texttt{LALDetector *detector1}]
+The site location and orinetation information of first detector involved in 
+the stochastic background search.
 
-\item[\texttt{REAL4 alpha}]
-The exponent in the frequency power law of $\Omega_{\scriptstyle{\rm GW}}(f) 
-= \Omega_{\scriptstyle{\rm R}} (f/f_{\scriptstyle{\rm R}})^\alpha$.
+\item[\texttt{LALDetector *detector2}]
+The site location and orinetation information of second detector involved in 
+the stochastic background search.
 
-\item[\texttt{REAL4 fRef}]
-The reference frequency in the frequency series 
-$\Omega_{\scriptstyle{\rm GW}}(f)$.
+\item[\texttt{LALUnit SSimStochBGTimeSeries1Unit}]
+The unit field of the stochastic background, expressed as a Real4 
+time series, in detector 1.
 
-\item[\texttt{REAL4 omegaRef}]
-The value of $\Omega_{\scriptstyle{\rm GW}}(f)$ at the reference frequency
-$f_{\scriptstyle{\rm R}}$.
-
-\item[\texttt{COMPLEX8Vector *ccounts[2]}]
-A pair of frequency series representing a whitened 
-simulated stochastic background in a pair of detectors.
-
-\item[\texttt{COMPLEX8Vector *ccountsTmp[2]}]
-A pair of frequency series required to temporarily store data before 
-computing \texttt{*ccounts[2]}.
-
-\item[\texttt{REALFFTPlan *invPlan}]
-The FFT plan needed to obtain time series representation of data in
-\texttt{*ccounts[2]}.
-
-\item[\texttt{REAL4Vector *gaussdevs}]
-Vector for storing real random numbers with a normal distribution of
-zero mean and unit variance.
+\item[\texttt{LALUnit SSimStochBGTimeSeries2Unit}]
+The unit field of the stochastic background, expressed as a Real4 
+time series, in detector 2.
 
 \end{description}
 *********************************************************** </lalLaTeX> */
 
-  typedef struct tagSimulateSBParams {
-    UINT4     length;   /* time length of output vector data samples */
-    REAL8     deltaT;   /* time spacing */
-    REAL8     f0;       /* start frequency */
-    REAL4     alpha;    /* exponent in power law: omegaGW(f) = f^alpha */
-    REAL4     fRef;     /* reference normalization frequency */
-    REAL4     omegaRef; /* reference omega coefficient for normalization */
-  }
-  SimulateSBParams;
+  typedef struct tagSSSimStochBGParams {
+    UINT4        length;   /* time length of output vector data samples */
+    REAL8        deltaT;   /* time spacing */
+    INT4         seed;     /* for random numbers x, y */
+    LALDetector  detectorOne; 
+    LALDetector  detectorTwo;
+    LALUnit      SSimStochBGTimeSeries1Unit;    
+    LALUnit      SSimStochBGTimeSeries2Unit;
+  } SSSimStochBGParams;
 
-/********************************************************** <lalLaTeX>
 
-\subsubsection*{\texttt{struct SimulateSBInitParams}}
-\idx[Type]{SimulateSBInitParams}
-
-\noindent Contains the parameters used by
-\texttt{LALSimulateSB()} to create its output structure.
-The fields are:
-
-\begin{description}
-\item[\texttt{UINT4 length}]
-The number of points in the output time series.
-
-\end{description}
-*********************************************************** </lalLaTeX> */
-
-  typedef struct tagSimulateSBInitParams {
-    UINT4     length;   /* time length of output vector data samples */
-  }
-  SimulateSBInitParams;
-  
   void
-  LALCreateSimulateSBOutput (
-			     LALStatus                     *status,
-			     SimulateSBOutput             **output,
-			     SimulateSBInitParams          *params
-			     );
-  
-  void
-  LALDestroySimulateSBOutput (
-			      LALStatus                      *status,
-			      SimulateSBOutput              **output
-			      );
-  
-  void
-  LALSimulateSBInit (
-		     LALStatus                     *status,
-		     SimulateSBParams             **output,
-		     SimulateSBInitParams          *params
-		     );
-  
-  void
-  LALSimulateSBFinalize (
-			 LALStatus                     *status,
-			 SimulateSBParams             **output
-			 );
-  
-  void
-  LALCreateSimulateSBInput (
-			    LALStatus                     *status,
-			    SimulateSBInput              **output,
-			    SimulateSBInitParams          *params
-			    );
-  
-  void
-  LALDestroySimulateSBInput (
-			     LALStatus                      *status,
-			     SimulateSBInput               **output
-			     );
-  
-  void
-  LALSimulateSB( LALStatus                  *status,
-		 SimulateSBOutput          **output,
-		 SimulateSBInput            *input,
-		 SimulateSBParams           *params );
+  LALSSSimStochBGTimeSeries( LALStatus                  *status,
+			     SSSimStochBGOutput           *output, 
+			     SSSimStochBGInput            *input,
+			     SSSimStochBGParams           *params );
   
 #ifdef  __cplusplus
 }

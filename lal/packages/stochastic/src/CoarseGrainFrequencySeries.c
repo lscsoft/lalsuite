@@ -207,11 +207,11 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
   REAL8         f0Coarse, f0Fine;
   REAL8         fMinCoarse, fMinFine;
   REAL8         deltaFCoarse, deltaFFine;
-  REAL4         offset, resRatio;
+  REAL8         offset, resRatio;
 
   UINT4         k, l;
   UINT4         lMin, lMax;
-  REAL4         lamMin, lamMax;
+  REAL8         lamMin, lamMax;
   REAL4         value;
 
   /* initialize status structure */
@@ -355,7 +355,7 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /* make sure maximum frequency in coarse-grained series is not
      more than maximum frequency in fine-grained series */
-  if ( offset + resRatio * ( (REAL4) lengthCoarse - 0.5 ) 
+  if ( offset + resRatio * ( (REAL8) lengthCoarse - 0.5 ) 
        > lengthFine - 0.5 )
   {
     ABORT( status,
@@ -370,9 +370,9 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
     lamMax = (resRatio / 2.0) - 0.5 ;
     lMax = (UINT4) floor(lamMax);
 
-    if ( lamMax != (REAL4) lMax )
+    if ( lamMax != (REAL8) lMax )
     {
-      value = ( lamMax - (REAL4) lMax ) * input->data->data[lMax+1];
+      value = ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1];
     }
     else {
       value = 0.0;
@@ -395,18 +395,18 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
 
   for ( ; k < lengthCoarse ; ++k )
   {
-    lamMin = offset + ( (REAL4) k - 0.5 ) * resRatio + 0.5 ;
+    lamMin = offset + ( (REAL8) k - 0.5 ) * resRatio + 0.5 ;
     lMin = (UINT4) ceil(lamMin);
 
-    if ( lamMin != (REAL4) lMin ) {
-      value = ( (REAL4) lMin - lamMin ) * input->data->data[lMin-1];
+    if ( lamMin != (REAL8) lMin ) {
+      value = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1];
     }
     else 
     {
       value = 0.0;
     }
 
-    lamMax = offset + ( (REAL4) k + 0.5 ) * resRatio - 0.5 ;
+    lamMax = offset + ( (REAL8) k + 0.5 ) * resRatio - 0.5 ;
     lMax = (UINT4) floor(lamMax);    
 
     for ( l = lMin ; l <= lMax ; ++l) 
@@ -414,8 +414,8 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
       value += input->data->data[l];
     }
 
-    if ( lamMax != (REAL4) lMax ) {
-      value += ( lamMax - (REAL4) lMax ) * input->data->data[lMax+1];
+    if ( lamMax != (REAL8) lMax ) {
+      value += ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1];
     }
 
     output->data->data[k] = value / resRatio;
@@ -685,11 +685,11 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
   REAL8         f0Coarse, f0Fine;
   REAL8         fMinCoarse, fMinFine;
   REAL8         deltaFCoarse, deltaFFine;
-  REAL4         offset, resRatio;
+  REAL8         offset, resRatio;
 
   UINT4         k, l;
   UINT4         lMin, lMax;
-  REAL4         lamMin, lamMax;
+  REAL8         lamMin, lamMax;
   COMPLEX8      value;
 
   /* initialize status structure */
@@ -836,7 +836,7 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
   /* make sure maximum frequency in coarse-grained series is not
      more than maximum frequency in fine-grained series */
-  if ( offset + resRatio * ( (REAL4) lengthCoarse - 0.5 ) 
+  if ( offset + resRatio * ( (REAL8) lengthCoarse - 0.5 ) 
        > lengthFine - 0.5 )
   {
     ABORT( status,
@@ -860,9 +860,9 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
     /* printf("%f %d %d\n",lamMax,lMax,lengthFine); */
 
-    if ( lamMax != (REAL4) lMax )
+    if ( lamMax != (REAL8) lMax )
     {
-      value.re = ( lamMax - (REAL4) lMax ) * input->data->data[lMax+1].re;
+      value.re = ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1].re;
     }
     else {
       value.re = 0.0;
@@ -888,21 +888,21 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
   for ( ; k < lengthCoarse ; ++k )
   {
-    lamMin = offset + ( (REAL4) k - 0.5 ) * resRatio + 0.5 ;
+    lamMin = offset + ( (REAL8) k - 0.5 ) * resRatio + 0.5 ;
     lMin = (UINT4) ceil(lamMin);
 
     /* printf("%f %d\n",lamMin,lMin); */
 
-    if ( lamMin != (REAL4) lMin ) {
-      value.re = ( (REAL4) lMin - lamMin ) * input->data->data[lMin-1].re;
-      value.im = ( (REAL4) lMin - lamMin ) * input->data->data[lMin-1].im;
+    if ( lamMin != (REAL8) lMin ) {
+      value.re = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1].re;
+      value.im = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1].im;
     }
     else 
     {
       value.re = value.im = 0.0;
     }
 
-    lamMax = offset + ( (REAL4) k + 0.5 ) * resRatio - 0.5 ;
+    lamMax = offset + ( (REAL8) k + 0.5 ) * resRatio - 0.5 ;
     lMax = (UINT4) floor(lamMax);    
 
     /*    printf("%f %d %d\n",lamMax,lMax,lengthFine); */
@@ -913,9 +913,9 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
       value.im += input->data->data[l].im;
     }
 
-    if ( lamMax != (REAL4) lMax ) {
-      value.re += ( lamMax - (REAL4) lMax ) * input->data->data[lMax+1].re;
-      value.im += ( lamMax - (REAL4) lMax ) * input->data->data[lMax+1].im;
+    if ( lamMax != (REAL8) lMax ) {
+      value.re += ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1].re;
+      value.im += ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1].im;
     }
 
     output->data->data[k].re = value.re / resRatio;

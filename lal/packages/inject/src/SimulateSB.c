@@ -5,12 +5,15 @@ $Id$
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{SimulateSB.c}}
-\label{stochastic:ss:SimulateSB.c}
+\label{inject:ss:SimulateSB.c}
 
 Simulates whitened time-domain signal in a pair 
-of interferometric detectors that arises purely from  an isotropic and
+of detectors that arises purely from  an isotropic and
 unpolarized stochastic background of gravitational radiation with the
-desired power spectrum, $\Omega_{\scriptstyle{\rm GW}}(f)$.
+desired power spectrum, $\Omega_{\scriptstyle{\rm GW}}(f)$. This module 
+will evolve beyond its present funtionality to produce only \texttt{real} 
+time-series signal for a pair of interferometric detectors. 
+
 
 \subsubsection*{Prototypes}
 \input{SimulateSBCP}
@@ -21,7 +24,7 @@ desired power spectrum, $\Omega_{\scriptstyle{\rm GW}}(f)$.
 The frequency domain strains $\widetilde{h}_1(f_i)$ 
 and $\widetilde{h}_2(f_j)$ caused by
 the stochastic background in two detectors are random variables that have
-zero mean and that obey  \cite{simulatesb:Allen:1999}:
+zero mean and that obey  \cite{inject:Allen:1999}:
   \begin{equation}
     \langle\widetilde{h}_1^*(f_i)\widetilde{h}_1(f_j)\rangle
     = \frac{3H_0^2T}{20\pi^2}\delta_{ij}f_i^{-3}
@@ -41,7 +44,7 @@ zero mean and that obey  \cite{simulatesb:Allen:1999}:
   \end{equation}
 where $\langle\rangle$ denotes ensemble average, $T$ is the time of
 observation, and $\gamma$ is the overlap reduction function
-\cite{simulatesb:Flanagan:1993}. Above, $\widetilde{h}_1(f_i)$ and 
+\cite{inject:Flanagan:1993}. Above, $\widetilde{h}_1(f_i)$ and 
 $\widetilde{h}_2(f_j)$ are the Fourier components of the gravitational strains
 $h_1(t)$ and $h_2(t)$ at the two detectors. 
 
@@ -87,22 +90,34 @@ Fourier transforms of the above frequency series are taken.
 
 \subsubsection*{Algorithm}
 
-The routine \texttt{LALSimulateSB()} first inputs the frequency series 
-describing the overlap reduction function consistent with the specified
-pair of detectors. It uses this information, the specified power
+The routine \texttt{LALSSSimStochBGTimeSeries()} produces only \texttt{real} 
+time-series signal for a pair of interferometric detectors. It
+first inputs the frequency 
+series describing the power spectrum of the stochastic background,
+$\Omega_{\scriptstyle{\rm GW}}(|f|)$, which the simulated 
+signal is required to represent. It also inputs two \texttt{COMPLEX8}
+frequency series corresponding, respectively, to the two detector
+response functions. As parameters, it takes the two \texttt{LALDetector}
+structures corresponding to the two detectors in which the signal is to be 
+mimicked. It also takes the time length (given in terms of the number of 
+time data samples), the time spacing, a seed (for generating random
+numbers), and a couple of \texttt{LALUnit} structures for specifying the
+units of the two time-series signals that the routine outputs.
+
+Using the specified power
 spectrum for the stochastic background, and a random number generator (of
-zero mean, unit variance Gaussian distributions) to generate 
+zero mean, unit variance Gaussian distributions), the routine produces 
 $\widetilde{h}_1(f_i)$ and $\widetilde{h}_2(f_i)$. The 
 response functions of the two detectors are then used to whiten the two 
-strains in the Fourier domain. Their inverse transform is taken to obtain
+strains in the Fourier domain. Their inverse transform is then taken to obtain
 at each detector the whitened simulated signal in the time domain.
 
 \subsubsection*{Uses}
 
 \begin{verbatim}
-LALOverlapReductionFunction()
 LALStochasticOmegaGW()
 LALReverseRealFFT()
+LALNormalDeviates()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -116,13 +131,13 @@ LALReverseRealFFT()
 ******************************************************* </lalLaTeX> */ 
 
 /**************************** <lalLaTeX file="SimulateSBCB">
-\bibitem{simulate:Allen:1999}
+\bibitem{inject:Allen:1999}
   B.~Allen and J.~D.~Romano, ``Detecting a stochastic background of
   gravitational radiation: Signal processing strategies and
   sensitivities''
   Phys.\ Rev.\ D {\bf 59}, 102001 (1999);
   \href{http://www.arXiv.org/abs/gr-qc/9710117}{gr-qc/9710117}
-  \bibitem{simulate:Flanagan:1993}
+  \bibitem{inject:Flanagan:1993}
   E.~Flanagan, ``The sensitivity of the laser interferometer gravitational 
   wave observatory (LIGO) to a stochastic background, and its dependence on
   the detector orientations''
@@ -143,438 +158,49 @@ LALReverseRealFFT()
 #include <lal/Units.h>
 #include <lal/PrintVector.h>
 #include <lal/Random.h>
-#include <lal/SimulateSB.h> 
+#include <lal/SimulateSB.h>
 
 NRCSID (SIMULATESBC, "$Id$");
 
 /* <lalVerbatim file="SimulateSBCP"> */
 void
-LALCreateSimulateSBOutput (
-			   LALStatus                     *status,
-			   SimulateSBOutput             **output,
-			   SimulateSBInitParams          *params
-			   )
-     /* </lalVerbatim> */
-{
-  SimulateSBOutput          *outputPtr;
-
-  INITSTATUS( status, "LALCreateSimulateSBOutput", SIMULATESBC );
-  ATTATCHSTATUSPTR( status );
-
-  /* check that the arguments are reasonable */
-  /* parameter structure */
-  ASSERT(params != NULL, status, 
-         SIMULATESBH_ENULLP,
-         SIMULATESBH_MSGENULLP);
-  ASSERT(params->length > 0, status, 
-         SIMULATESBH_ENONPOSLEN,
-         SIMULATESBH_MSGENONPOSLEN);
-
-  /* output structure */
-  ASSERT(output != NULL, status, 
-         SIMULATESBH_ENULLP,
-         SIMULATESBH_MSGENULLP);
-  
-  /* create the output structure */
-  outputPtr = *output = (SimulateSBOutput *)
-    LALCalloc( 1, sizeof(SimulateSBOutput) );
-  if ( ! outputPtr ) 
-    { 
-      ABORT( status, SIMULATESBH_EALOC, SIMULATESBH_MSGEALOC );
-    }
-  
-  /* create memory for the whitenedSimulatedSB1 structure */
-  outputPtr->whitenedSimulatedSB1 = (REAL4TimeSeries *)
-    LALCalloc( 1, sizeof(REAL4TimeSeries) );
-  if ( ! outputPtr->whitenedSimulatedSB1 ) 
-    { 
-      LALFree( *output );
-      *output = NULL;
-      ABORT( status, SIMULATESBH_EALOC, SIMULATESBH_MSGEALOC );
-    }
-
-  /* create memory for the whitenedSimulatedSB1 data */
-  LALSCreateVector(status->statusPtr, &(outputPtr->whitenedSimulatedSB1->data),
-		   params->length);
-  BEGINFAIL( status )
-    {
-      LALFree( outputPtr->whitenedSimulatedSB1 ); 
-      outputPtr->whitenedSimulatedSB1 = NULL;
-      LALFree( *output );
-      *output = NULL;
-    }
-  ENDFAIL( status );
-
-  /* create memory for the whitenedSimulatedSB2 structure */
-  outputPtr->whitenedSimulatedSB2 = (REAL4TimeSeries *)
-    LALCalloc( 1, sizeof(REAL4TimeSeries) );
-  if ( ! outputPtr->whitenedSimulatedSB2 ) 
-    { 
-      LALFree( outputPtr->whitenedSimulatedSB1->data );
-      LALFree( outputPtr->whitenedSimulatedSB1 );
-      outputPtr->whitenedSimulatedSB1 = NULL;
-      LALFree( *output );
-      *output = NULL;
-      ABORT( status, SIMULATESBH_EALOC, SIMULATESBH_MSGEALOC );
-    }
-  
-    /* create memory for the whitenedSimulatedSB2 data */
-  LALSCreateVector(status->statusPtr, &(outputPtr->whitenedSimulatedSB2->data),
-		   params->length);
-  BEGINFAIL( status )
-    {
-      LALFree( outputPtr->whitenedSimulatedSB2 );
-      LALFree( outputPtr->whitenedSimulatedSB1->data );
-      LALFree( outputPtr->whitenedSimulatedSB1 );
-      outputPtr->whitenedSimulatedSB1 = NULL;
-      outputPtr->whitenedSimulatedSB2 = NULL;
-      LALFree( *output );
-      *output = NULL;
-    }
-  ENDFAIL( status );
-
-  /* normal exit */
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-
-/* <lalVerbatim file="SimulateSBCP"> */
-void
-LALDestroySimulateSBOutput (
-			    LALStatus                      *status,
-			    SimulateSBOutput              **output
-			    )
-/* </lalVerbatim> */
-{
-  SimulateSBOutput          *outputPtr;
-
-  INITSTATUS( status, "LALDestroySimulateSBOutput", SIMULATESBC );
-  ATTATCHSTATUSPTR( status );
-  
-  /* check that the arguments are reasonable */
-  
-  /* output structure */
-  ASSERT(output != NULL, status, 
-         SIMULATESBH_ENULLP,
-         SIMULATESBH_MSGENULLP);
-  
-  /* destroy the output data storage */
-  outputPtr = *output;
-  LALSDestroyVector(status->statusPtr, 
-		    &(outputPtr->whitenedSimulatedSB1->data) );
-  CHECKSTATUSPTR( status );
-
-  LALSDestroyVector(status->statusPtr, 
-		    &(outputPtr->whitenedSimulatedSB2->data) );
-  CHECKSTATUSPTR( status );
-
-  /* destroy the output whitenedSimulatedSB structures */
-  LALFree( outputPtr->whitenedSimulatedSB1 );
-  LALFree( outputPtr->whitenedSimulatedSB2 );
-
-  /* destroy the output structure */
-  LALFree( outputPtr );
-  *output = NULL;
-  
-  /* normal exit */
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-
-/* <lalVerbatim file="SimulateSBCP"> */
-void
-LALSimulateSBInit (
-		   LALStatus                     *status,
-		   SimulateSBParams             **output,
-		   SimulateSBInitParams          *params
-		   )
-     /* </lalVerbatim> */
-{
-  SimulateSBParams          *outputPtr;
-  
-  INITSTATUS( status, "LALSimulateSBInit", SIMULATESBC );
-  ATTATCHSTATUSPTR( status );
-
-  /* check that the arguments are reasonable */
-
-  /* output structure */
-  ASSERT(output != NULL, status, 
-         SIMULATESBH_ENULLP,
-         SIMULATESBH_MSGENULLP);
- 
-  /* parameter structure */
-  ASSERT(params != NULL, status, 
-         SIMULATESBH_ENULLP,
-         SIMULATESBH_MSGENULLP);
-
-  /* ensure that number of points in time segment is positive */
-  ASSERT(params->length > 0 , status, 
-         SIMULATESBH_ENONPOSLEN,
-         SIMULATESBH_MSGENONPOSLEN);
-
-  /* create the output structure */
-  outputPtr = *output = (SimulateSBParams *)
-    LALCalloc( 1, sizeof(SimulateSBParams) );
-  if ( ! outputPtr ) 
-    { 
-      ABORT( status, SIMULATESBH_EALOC, SIMULATESBH_MSGEALOC );
-    }
-  
-  
-  /* normal exit */
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-/* <lalVerbatim file="SimulateSBCP"> */
-void
-LALSimulateSBFinalize (
-		       LALStatus                     *status,
-		       SimulateSBParams             **output
-		       )
-     /* </lalVerbatim> */
-{
-  SimulateSBParams          *outputPtr;
-  
-  INITSTATUS( status, "LALSimulateSBFinalize", SIMULATESBC );
-  ATTATCHSTATUSPTR( status );
-  
-  /* check that the arguments are reasonable */
-  
-  /* output structure */
-  ASSERT(output != NULL, status, 
-         SIMULATESBH_ENULLP,
-         SIMULATESBH_MSGENULLP);
-
-  /* local pointer to output structure */
-  outputPtr = *output;
-  
-  /* destroy the output structure */
-  LALFree( outputPtr );
-  *output = NULL;
-  
-  /* normal exit */
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-
-/* <lalVerbatim file="SimulateSBCP"> */
-void
-LALCreateSimulateSBInput (
-			  LALStatus                     *status,
-			  SimulateSBInput              **output,
-			  SimulateSBInitParams          *params
-			  )
-     /* </lalVerbatim> */
-{
-  SimulateSBInput          *outputPtr;
-  
-  INITSTATUS( status, "LALCreateSimulateSBInput", SIMULATESBC );
-  ATTATCHSTATUSPTR( status );
-  
-  /* check that the arguments are reasonable */
-  
-  /* output structure */
-  ASSERT(output != NULL, status, 
-         SIMULATESBH_ENULLP,
-         SIMULATESBH_MSGENULLP);
-
-  /* create the output structure */
-  outputPtr = *output = (SimulateSBInput *)
-    LALCalloc( 1, sizeof(SimulateSBInput) );
-  if ( ! outputPtr ) 
-    { 
-      ABORT( status, SIMULATESBH_EALOC, SIMULATESBH_MSGEALOC );
-    }
-  
-  /* create memory for the overlapReductionFunction structure */ 
-  outputPtr->overlapReductionFunction = (REAL4FrequencySeries *)
-    LALCalloc( 1, sizeof(REAL4FrequencySeries) );
-  if ( ! outputPtr->overlapReductionFunction ) 
-    { 
-      LALFree( *output );
-      *output = NULL;
-      ABORT( status, SIMULATESBH_EALOC, SIMULATESBH_MSGEALOC );
-    }
-  
-  /* create memory for the omegaGW structure */
-  outputPtr->omegaGW = (REAL4FrequencySeries *)
-    LALCalloc( 1, sizeof(REAL4FrequencySeries) );
-  if ( ! outputPtr->omegaGW ) 
-    { 
-      LALFree( *output );
-      *output = NULL;
-      ABORT( status, SIMULATESBH_EALOC, SIMULATESBH_MSGEALOC );
-    }
-   
-  /* create memory for the overlapReductionFunction data */
-  LALSCreateVector(status->statusPtr, 
-		   &(outputPtr->overlapReductionFunction->data),
-		   ((params->length)/2 + 1));
-  BEGINFAIL( status )
-    {
-      LALFree( outputPtr->overlapReductionFunction );
-      outputPtr->overlapReductionFunction = NULL;
-      LALFree( *output );
-      *output = NULL;
-    }
-  ENDFAIL( status );
-  
-  /* create memory for the omegaGW data */
-  LALSCreateVector(status->statusPtr, &(outputPtr->omegaGW->data),
-		   ((params->length)/2 + 1) );
-  BEGINFAIL( status )
-    {
-      LALFree( outputPtr->omegaGW );
-      outputPtr->omegaGW = NULL;
-      LALFree( *output );
-      *output = NULL;
-    }
-  ENDFAIL( status );
-  
-  /* create memory for the whiteningFilter1 structure */
-  outputPtr->whiteningFilter1 = (COMPLEX8FrequencySeries *)
-    LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
-  if ( ! outputPtr->whiteningFilter1 ) 
-    { 
-      LALFree( *output );
-      *output = NULL;
-      ABORT( status, SIMULATESBH_EALOC, SIMULATESBH_MSGEALOC );
-    }
-  
-  /* create memory for the whiteningFilter2 structure */
-  outputPtr->whiteningFilter2 = (COMPLEX8FrequencySeries *)
-    LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
-  if ( ! outputPtr->whiteningFilter2 ) 
-    { 
-      LALFree( *output );
-      *output = NULL;
-      ABORT( status, SIMULATESBH_EALOC, SIMULATESBH_MSGEALOC );
-    }
-  
-  
-  /* create memory for the whiteningFilter1 data */
-  LALCCreateVector(status->statusPtr, &(outputPtr->whiteningFilter1->data),
-		   ((params->length)/2 + 1));
-  BEGINFAIL( status )
-    {
-      LALFree( outputPtr->whiteningFilter1 );
-      outputPtr->whiteningFilter1 = NULL;
-      LALFree( *output );
-      *output = NULL;
-    }
-  ENDFAIL( status );
-  
-  /* create memory for the whiteningFilter2 data */
-  LALCCreateVector(status->statusPtr, &(outputPtr->whiteningFilter2->data),
-		   ((params->length)/2 + 1) );
-  BEGINFAIL( status )
-    {
-      LALFree( outputPtr->whiteningFilter2 );
-      outputPtr->whiteningFilter2 = NULL;
-      LALFree( *output );
-      *output = NULL;
-    }
-  ENDFAIL( status );
-  
-  
-  /* normal exit */
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-
-/* <lalVerbatim file="SimulateSBCP"> */
-void
-LALDestroySimulateSBInput (
-			   LALStatus                      *status,
-			   SimulateSBInput               **output
-			   )
-     /* </lalVerbatim> */
-{
-  SimulateSBInput          *outputPtr;
-  
-  INITSTATUS( status, "LALDestroySimulateSBInput", SIMULATESBC );
-  ATTATCHSTATUSPTR( status );
-  
-  /* check that the arguments are reasonable */
-  
-  /* output structure */
-  ASSERT(output != NULL, status, 
-         SIMULATESBH_ENULLP,
-         SIMULATESBH_MSGENULLP);
-  
-  /* destroy the output data storage */
-  outputPtr = *output;
-  LALSDestroyVector(status->statusPtr, 
-		    &(outputPtr->overlapReductionFunction->data) );
-  CHECKSTATUSPTR( status );
-
-  LALSDestroyVector(status->statusPtr, 
-		    &(outputPtr->omegaGW->data) );
-  CHECKSTATUSPTR( status );
-
-  LALCDestroyVector(status->statusPtr, 
-		    &(outputPtr->whiteningFilter1->data) );
-  CHECKSTATUSPTR( status );
-
-  LALCDestroyVector(status->statusPtr, 
-		    &(outputPtr->whiteningFilter2->data) );
-  CHECKSTATUSPTR( status );
-
-  /* destroy the output whiteningFilter structures */
-  LALFree( outputPtr->overlapReductionFunction );
-  LALFree( outputPtr->omegaGW );
-  LALFree( outputPtr->whiteningFilter1 );
-  LALFree( outputPtr->whiteningFilter2 );
-  
-  /* destroy the output structure */
-  LALFree( outputPtr );
-  *output = NULL;
-  
-  /* normal exit */
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-/* <lalVerbatim file="SimulateSBCP"> */
-void
-LALSimulateSB( LALStatus                  *status,
-	       SimulateSBOutput          **output,
-	       SimulateSBInput            *input,
-	       SimulateSBParams           *params 
+LALSSSimStochBGTimeSeries( LALStatus                    *status,
+			   SSSimStochBGOutput           *output,
+			   SSSimStochBGInput            *input,
+			   SSSimStochBGParams           *params 
 	       )
      /* </lalVerbatim> */
 {
-  /* output */
-  SimulateSBOutput *outputPtr=NULL;
-  REAL4Vector      *outData[2]={NULL,NULL};
-  
   /* parameters */
   UINT4             length;   /* (time) length of output vector data samples */
   UINT4             freqlen;
   REAL8             deltaT;   /* time spacing */
   REAL8             f0;       /* start frequency */
-  REAL8             fRef;    /* reference normalization frequency */
   
   /* counters */ 
   UINT4             i;
-  UINT4             j;
   
   /* other variables used */
   REAL8             deltaF;
   RandomParams     *randParams=NULL;
-  INT4              seed=123;         
+  INT4              seed;         
   
   /* vector for storing random numbers */ 
-  REAL4Vector      *gaussdevs=NULL;
+  REAL4Vector      *gaussdevsX1=NULL;
+  REAL4Vector      *gaussdevsY1=NULL;
+  REAL4Vector      *gaussdevsX2=NULL;
+  REAL4Vector      *gaussdevsY2=NULL;
+  
+  /* LAL structure needed as input/output for computing overlap 
+     reduction function */
+  LALDetectorPair                    detectors;
+  REAL4FrequencySeries               overlap;
+  OverlapReductionFunctionParameters ORFparameters;
+  
   
   /* IFO output counts in freq domain : */
-  COMPLEX8Vector  *ccounts[2]={NULL,NULL};
-  COMPLEX8Vector  *ccountsTmp[2]={NULL,NULL};
+  COMPLEX8Vector   *ccounts[2]={NULL,NULL};
+  COMPLEX8Vector   *ccountsTmp[2]={NULL,NULL};
   
   /* Plan for reverse FFTs */ 
   RealFFTPlan      *invPlan=NULL;  
@@ -582,6 +208,7 @@ LALSimulateSB( LALStatus                  *status,
   /* initialize status pointer */
   INITSTATUS(status, "LALSimulateSB", SIMULATESBC);
   ATTATCHSTATUSPTR(status);
+  
   
   /*
    *
@@ -592,7 +219,19 @@ LALSimulateSB( LALStatus                  *status,
   /***** check input/output structures exist *****/
 
   /* output structure */
-  ASSERT(output, status, 
+  ASSERT(output !=NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+  ASSERT(output->SSimStochBG1->data !=NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+  ASSERT(output->SSimStochBG2->data !=NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+  ASSERT(output->SSimStochBG1->data->data !=NULL, status, 
+         SIMULATESBH_ENULLP,
+         SIMULATESBH_MSGENULLP);
+  ASSERT(output->SSimStochBG2->data->data !=NULL, status, 
          SIMULATESBH_ENULLP,
          SIMULATESBH_MSGENULLP);
   
@@ -601,18 +240,8 @@ LALSimulateSB( LALStatus                  *status,
          SIMULATESBH_ENULLP,
          SIMULATESBH_MSGENULLP);
   
-  /* overlap member of input */
-  ASSERT(input->overlapReductionFunction != NULL, status, 
-         SIMULATESBH_ENULLP,
-         SIMULATESBH_MSGENULLP);
-
   /* omega member of input */
   ASSERT(input->omegaGW != NULL, status, 
-         SIMULATESBH_ENULLP,
-         SIMULATESBH_MSGENULLP);
-  
-  /* detectorpair member of input */
-  ASSERT(input->detectors != NULL, status, 
          SIMULATESBH_ENULLP,
          SIMULATESBH_MSGENULLP);
   
@@ -623,11 +252,6 @@ LALSimulateSB( LALStatus                  *status,
 
   /* Second detector's complex response (whitening filter) part of input */
   ASSERT(input->whiteningFilter2 != NULL, status, 
-         SIMULATESBH_ENULLP,
-         SIMULATESBH_MSGENULLP);
-
-  /* data member of overlap */
-  ASSERT(input->overlapReductionFunction->data != NULL, status, 
          SIMULATESBH_ENULLP,
          SIMULATESBH_MSGENULLP);
 
@@ -674,7 +298,7 @@ LALSimulateSB( LALStatus                  *status,
   /**** check for legality ****/
   
   /* start frequency must not be negative */
-  f0 = params->f0;
+  f0 = input->omegaGW->f0;
   if (f0 < 0)
     {
       ABORT( status,
@@ -687,12 +311,7 @@ LALSimulateSB( LALStatus                  *status,
   /* frequency length = length/2 +1  */
   length = params->length;
   freqlen = length/2 +1;
-  if (input->overlapReductionFunction->data->length != (length/2 +1)) 
-    {
-      ABORT(status,
-	    SIMULATESBH_EMMLEN,
-	    SIMULATESBH_MSGEMMLEN);
-    }
+
   if (input->omegaGW->data->length != (length/2 +1)) 
     {
       ABORT(status,
@@ -741,21 +360,6 @@ LALSimulateSB( LALStatus                  *status,
     }
   
   
-  /** check for reference frequency lower and upper limits **/ 
-  fRef = params->fRef;
-  if ( fRef < deltaF )
-    {
-      ABORT(status,
-	    SIMULATESBH_EOORFREF,
-	    SIMULATESBH_MSGEOORFREF);
-    }
-  if ( fRef > ((length-1)*deltaF) )
-    {
-      ABORT(status,
-	    SIMULATESBH_EOORFREF,
-	    SIMULATESBH_MSGEOORFREF);
-    }
-
   /*
    *
    *EVERYHTING OKAY HERE 
@@ -765,31 +369,203 @@ LALSimulateSB( LALStatus                  *status,
 
   /******** create fft plans and workspace vectors *****/
 
-  /* fft plan */
   LALCreateReverseRealFFTPlan(status->statusPtr,&invPlan,length,0);
-  CHECKSTATUSPTR( status); 
+  CHECKSTATUSPTR( status ); 
+
+  LALSCreateVector( status->statusPtr, 
+		    &gaussdevsX1, freqlen ); 
+  BEGINFAIL( status )
+    {
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }
+  ENDFAIL( status );
+  
+
+  LALSCreateVector( status->statusPtr, 
+		    &gaussdevsY1, freqlen ); 
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }
+  ENDFAIL( status );
   
   LALSCreateVector( status->statusPtr, 
-		    &gaussdevs, 4*length ); 
-  CHECKSTATUSPTR( status); 
+		    &gaussdevsX2, freqlen ); 
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }
+  ENDFAIL( status );
+  
+  LALSCreateVector( status->statusPtr, 
+		    &gaussdevsY2, freqlen ); 
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }
+  ENDFAIL( status );
   
   /* create parameters for generating random numbers from seed */
   LALCreateRandomParams( status->statusPtr, 
 			 &randParams, seed ); 
-  CHECKSTATUSPTR( status);
+  BEGINFAIL( status )
+    {
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }
+  ENDFAIL( status );
   
+  LALCCreateVector(status->statusPtr, &ccounts[0],freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }  
+  ENDFAIL( status );
+  
+  LALCCreateVector(status->statusPtr, &ccounts[1],freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALCDestroyVector(status->statusPtr, &ccounts[0]), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }  
+  ENDFAIL( status );
+  
+  LALCCreateVector(status->statusPtr, &ccountsTmp[0],freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALCDestroyVector(status->statusPtr, &ccounts[1]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccounts[0]), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }  
+  ENDFAIL( status );
+  
+  LALCCreateVector(status->statusPtr, &ccountsTmp[1],freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALCDestroyVector(status->statusPtr, &ccountsTmp[0]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccounts[1]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccounts[0]), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }  
+  ENDFAIL( status );
+
+  overlap.data = NULL;
+  LALSCreateVector(status->statusPtr, &(overlap.data),freqlen);
+  BEGINFAIL( status )
+    {
+      TRY( LALCDestroyVector(status->statusPtr, &ccountsTmp[1]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccountsTmp[0]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccounts[1]), status);
+      TRY( LALCDestroyVector(status->statusPtr, &ccounts[0]), status);
+      TRY( LALDestroyRandomParams( status->statusPtr, 
+				   &randParams), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX2), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsY1), status ); 
+      TRY( LALSDestroyVector( status->statusPtr, 
+			      &gaussdevsX1), status ); 
+      TRY( LALDestroyRealFFTPlan( status->statusPtr, 
+				  &invPlan ), status );
+    }  
+  ENDFAIL( status );
+    
   /* create random numbers from parameters */
   LALNormalDeviates( status->statusPtr, 
-		     gaussdevs, randParams ); 
+		     gaussdevsX1, randParams ); 
   CHECKSTATUSPTR( status);
-  
-  for (i=0;i<2;i++)
-    {
-    LALCCreateVector(status->statusPtr, &ccounts[i],freqlen);
-    LALCCreateVector(status->statusPtr, &ccountsTmp[i],freqlen);
-  }
-  CHECKSTATUSPTR( status); 
-  
+
+  LALNormalDeviates( status->statusPtr, 
+		     gaussdevsY1, randParams ); 
+  CHECKSTATUSPTR( status);
+
+  LALNormalDeviates( status->statusPtr, 
+		     gaussdevsX2, randParams ); 
+  CHECKSTATUSPTR( status);
+
+  LALNormalDeviates( status->statusPtr, 
+		     gaussdevsY2, randParams ); 
+  CHECKSTATUSPTR( status);
+
+  ORFparameters.length   = length/2 + 1;
+  ORFparameters.f0       = f0;
+  ORFparameters.deltaF   = deltaF;
+  detectors.detectorOne  = params->detectorOne;
+  detectors.detectorTwo  = params->detectorTwo;
+  LALOverlapReductionFunction( status->statusPtr, &overlap, 
+			       &detectors, &ORFparameters);
+  CHECKSTATUSPTR( status);
+
   if (f0 == 0)
     {
       REAL4    gamma;
@@ -801,12 +577,14 @@ LALSimulateSB( LALStatus                  *status,
       COMPLEX8 wFilter2;
        
       /* loop over frequencies; will do DC and Nyquist below */
-      j=0;
       for (i = 1; i < freqlen; ++i)
 	{
-	  gamma = input->overlapReductionFunction->data->data[i];
-	  omega = input->omegaGW->data->data[i];
 	  freq  = i*deltaF;	  
+
+	  gamma = overlap.data->data[i];
+
+	  omega = input->omegaGW->data->data[i];
+	  
 	  factor = deltaF * sqrt(3.0L * length * deltaT * omega / 
 				 (40.0L *freq*freq*freq)
 				 )* LAL_H0FAC_SI / LAL_PI;
@@ -815,12 +593,10 @@ LALSimulateSB( LALStatus                  *status,
 	  wFilter1 = input->whiteningFilter1->data->data[i];
 	  wFilter2 = input->whiteningFilter2->data->data[i];
 	  
-	  ccountsTmp[0]->data[i].re=factor*gaussdevs->data[j++];
-	  ccountsTmp[0]->data[i].im=factor*gaussdevs->data[j++];
-	  ccountsTmp[1]->data[i].re=ccountsTmp[0]->data[i].re*gamma+
-	    factor2*gaussdevs->data[j++];
-	  ccountsTmp[1]->data[i].im=ccountsTmp[0]->data[i].im*gamma+
-	    factor2*gaussdevs->data[j++];
+	  ccountsTmp[0]->data[i].re=factor*gaussdevsX1->data[i];
+	  ccountsTmp[0]->data[i].im=factor*gaussdevsY1->data[i];
+	  ccountsTmp[1]->data[i].re=ccountsTmp[0]->data[i].re*gamma+factor2*gaussdevsX2->data[i];
+	  ccountsTmp[1]->data[i].im=ccountsTmp[0]->data[i].im*gamma+factor2*gaussdevsY2->data[i];
 	  
 	  ccounts[0]->data[i].re = wFilter1.re * ccountsTmp[0]->data[i].re -
 	    wFilter1.im * ccountsTmp[0]->data[i].im;
@@ -841,7 +617,7 @@ LALSimulateSB( LALStatus                  *status,
 	}
       
       /* Compute the whitened Nyquist (real) component */
-      gamma = input->overlapReductionFunction->data->data[length/2];
+      gamma = overlap.data->data[length/2];
       omega = input->omegaGW->data->data[length/2];
       freq = deltaF*length/2;
       
@@ -867,11 +643,11 @@ LALSimulateSB( LALStatus                  *status,
 			     )* LAL_H0FAC_SI / LAL_PI;
       factor2 = sqrt(1-gamma*gamma)*factor;
       
-      ccountsTmp[0]->data[length/2].re=factor*gaussdevs->data[j++];
+      ccountsTmp[0]->data[length/2].re=factor*gaussdevsX1->data[length/2];
       
       ccountsTmp[1]->data[length/2].re=
 	(ccountsTmp[0]->data[length/2].re*gamma + 
-	 factor2*gaussdevs->data[j++]);
+	 factor2*gaussdevsX2->data[length/2]);
       
       ccounts[0]->data[length/2].re = 
 	(wFilter1.re * ccountsTmp[0]->data[length/2].re - 
@@ -884,51 +660,40 @@ LALSimulateSB( LALStatus                  *status,
 	 wFilter2.im * ccountsTmp[1]->data[length/2].im);
       ccounts[1]->data[length/2].im = 0;
       
-      for (i=0;i<2;i++)
-	{
-	  LALSCreateVector(status->statusPtr, 
-			   &outData[i],length);
-	}
-      CHECKSTATUSPTR( status );
-     
-      /* InvFFT from freq to time domain & get output (no detector noise) */
-      for (i=0;i<2;i++)
-	{
-	  LALReverseRealFFT(status->statusPtr,outData[i],
-			    ccounts[i],invPlan);
-	}
-      CHECKSTATUSPTR( status );
-      
       /*
        * 
-       * assign parameters to output 
+       * assign parameters and data to output 
        *
        */
       
-      outputPtr = *output = (SimulateSBOutput *)
-	LALCalloc(1, sizeof(SimulateSBOutput));
-      if( ! outputPtr )
-	{ 
-	  ABORT( status, SIMULATESBH_EALOC, SIMULATESBH_MSGEALOC);
-	}
       
-      outputPtr->whitenedSimulatedSB1->f0                   = f0;
-      outputPtr->whitenedSimulatedSB1->deltaT               = deltaT;
-      outputPtr->whitenedSimulatedSB1->epoch.gpsSeconds     = 0;
-      outputPtr->whitenedSimulatedSB1->epoch.gpsNanoSeconds = 0;
-      outputPtr->whitenedSimulatedSB1->data                 = outData[0];
-      outputPtr->whitenedSimulatedSB2->f0                   = 0; 
-      outputPtr->whitenedSimulatedSB2->deltaT               = deltaT;
-      outputPtr->whitenedSimulatedSB2->epoch.gpsSeconds     = 0;
-      outputPtr->whitenedSimulatedSB2->epoch.gpsNanoSeconds = 0;
-      outputPtr->whitenedSimulatedSB2->data                 = outData[1];
+      /*ReverseFFT from freq to time domain & get output (no detector noise)*/ 
+      LALReverseRealFFT(status->statusPtr,output->SSimStochBG1->data,
+			ccounts[0],invPlan); 
+      LALReverseRealFFT(status->statusPtr,output->SSimStochBG2->data,
+			ccounts[1],invPlan); 
       
+      /*
+       * 
+       * assign parameters and data to output 
+       *
+       */
       
-      strncpy( outputPtr->whitenedSimulatedSB1->name, 
-	       "Simulated stochastic background One", LALNameLength );
-      strncpy( outputPtr->whitenedSimulatedSB2->name, 
-	       "Simulated stochastic background Two", LALNameLength );
-      
+      output->SSimStochBG1->f0                   = f0;
+      output->SSimStochBG1->deltaT               = deltaT;
+      output->SSimStochBG1->epoch.gpsSeconds     = 0;
+      output->SSimStochBG1->epoch.gpsNanoSeconds = 0;
+      output->SSimStochBG1->sampleUnits          = params->SSimStochBGTimeSeries1Unit;
+      strncpy( output->SSimStochBG1->name, 
+	       "Whitened-SimulatedSBOne", LALNameLength );
+
+      output->SSimStochBG2->f0                   = f0;
+      output->SSimStochBG2->deltaT               = deltaT;
+      output->SSimStochBG2->epoch.gpsSeconds     = 0;
+      output->SSimStochBG2->epoch.gpsNanoSeconds = 0;
+      output->SSimStochBG2->sampleUnits          = params->SSimStochBGTimeSeries2Unit;
+      strncpy( output->SSimStochBG2->name, 
+	       "Whitened-SimulatedSBTwo", LALNameLength );
     } /* if (f0 == 0) */
   else
     {
@@ -939,8 +704,21 @@ LALSimulateSB( LALStatus                  *status,
 	    SIMULATESBH_MSGENOTYETHETERO); 
     }
   
+  /* clean up and exit */
   
-  /* normal exit */
+  LALDestroyRealFFTPlan(status->statusPtr,&invPlan);
+  LALDestroyRandomParams(status->statusPtr,&randParams);
+  LALSDestroyVector(status->statusPtr, &gaussdevsX1);
+  LALSDestroyVector(status->statusPtr, &gaussdevsY1);
+  LALSDestroyVector(status->statusPtr, &gaussdevsX2);
+  LALSDestroyVector(status->statusPtr, &gaussdevsY2);
+  LALSDestroyVector(status->statusPtr, &(overlap.data));
+  for (i=0;i<2;i++){
+    LALCDestroyVector(status->statusPtr, &ccountsTmp[i]);
+    LALCDestroyVector(status->statusPtr, &ccounts[i]);
+  }
+  LALCheckMemoryLeaks();
+  
   DETATCHSTATUSPTR(status);
   RETURN(status);
   

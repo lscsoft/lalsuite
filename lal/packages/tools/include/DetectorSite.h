@@ -154,7 +154,7 @@ NRCSID (DETECTORSITEH, "$Id$");
 
 /************************************ </lalErrTable> */
 
-
+#define DETECTORSITEH_PRINTF        0
 
 /********************************* <lalLaTeX> 
 
