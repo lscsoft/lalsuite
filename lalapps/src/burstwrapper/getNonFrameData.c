@@ -2,18 +2,37 @@
 #include "datacondAPI/DatacondCaller.h"
 #include "datacondAPI/TransFunc.h"
 
+/*****************************************/
+/* get non-frame data */
+
+/* loop over lines in rFiles, add to datacond callchain & algorithm */
+/* format is:
+   file push/pass datacond_symbol
+   pass option not supported yet
+   file can be a URL */
+/*****************************************/
+
 int getNonFrameData(char *rFiles, 
 		    char **algorithms, 
 		    int *Nsymbols,
 		    datacond_symbol_type **symbols) {
 
-  char *p0, *p1;
-  char *buf;
+  /*
+    Arguments:
+    rFiles: string with responseFiles
+    algorithms: modifiable string with algorithms (not used by function!)
+    Nsymbols: number of symbols
+    symbols: datacond symbols
+  */
+
+  char *p0, *p1;  /* pointers for string manipulation */
+  char *buf;      /* local copy of rfiles */
 
   buf = (char *)calloc(1+strlen(rFiles),sizeof(char));
 
   /* process line by line */
 
+  /* 1st line */
   p0 = rFiles;
   p1 = strchr(rFiles,'\n');
   if(p1) {
@@ -22,9 +41,10 @@ int getNonFrameData(char *rFiles,
     strcpy(buf,p0);
   }
 
+  /* loop over non-empty lines */
   while(strlen(buf)) {
 
-    char file[1024], pp[64], name[256];
+    char file[1024], pp[64], name[256]; /* fields */
 
     if(buf[0] != '\n') {
 
@@ -35,17 +55,19 @@ int getNonFrameData(char *rFiles,
       /* FORMAT: file push/pass name */
       sscanf(buf,"%s\t%s\t%s",file,pp,name);
 
-      if(!strcmp(pp,"push")) {
+      if(!strcmp(pp,"push")) { /* send data to datacondAPI */
 
 	char *alias, *fname;
 
+	/* permanent memory for alias */
 	alias = (char *)calloc(1 + strlen(name), sizeof(char));
 	strcpy(alias,name);
 
+	/* permanent memory for file name */
 	fname = (char *)calloc(1 + strlen(file), sizeof(char));
 	strcpy(fname, file);
 
-	/* sending file to datacond */
+	/* sending file to datacond by creating new symbol */
 	*symbols = (datacond_symbol_type *)realloc(*symbols, (1 + *Nsymbols) * sizeof(datacond_symbol_type));
 	(*symbols + *Nsymbols)->s_direction = DATACOND_SYMBOL_INPUT;
 	(*symbols + *Nsymbols)->s_translator = TranslateILwdFile;

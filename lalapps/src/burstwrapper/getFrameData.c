@@ -11,22 +11,43 @@
 RCSID( "getFrameData.c" );
 NRCSID( GETFRAMEDATAC, "getFrameData.c" );
 
+/*****************************************/
+/* acquire data */
+
+/* loop over lines in fQuery, get data, add to datacond callchain */
+/* Format is:
+   frame_type Site [file] GPS_Start-GPS_End channel alias
+   file is optional, and is a frame file that overrides LSCdataFind
+   channel can be adc(H2:LSC-AS_Q), proc(H2:CAL-OLOOP_FAC), or proc(H2:CAL-RESPONSE!0!7000.0001!), for instance; same format as LDAS
+   alias is a name to represent the data in the datacondAPI
+*/
+/*****************************************/
+
 int getFrameData(char *fQuery, 
 		 char *dataserver,
 		 int *Nsymbols,
 		 datacond_symbol_type **symbols) {
 
+  /*
+    Arguments:
+    fQuery: string containing the frame queries
+    dataserver: server for LSCdataFind, or frame cache file
+    Nsymbols: number of datacondAPI symbols
+    symbols: datacondAPI symbols
+  */
+
   /* NOTE: symbols->name and symbols->s_user_data must be freed */
 
-  static LALStatus      stat;
+  static LALStatus      stat;  /* LAL status pointer */
 
-  char *p0, *p1;
-  char *buf;
+  char *p0, *p1;   /* pointers for string manipulation */
+  char *buf;       /* buffer for local copy of fQuery */
 
   buf = (char *)calloc(1+strlen(fQuery),sizeof(char));
 
   /* process line by line */
 
+  /* 1st line: */
   p0 = fQuery;
   p1 = strchr(fQuery,'\n');
   if(p1) {
@@ -35,12 +56,14 @@ int getFrameData(char *fQuery,
     strcpy(buf,p0);
   }
 
+  /* loop as long as line contains stuff: */
   while(strlen(buf)) {
 
-    char type[256], IFO[256], channel[256], Times[256], File[1024];
-    char *alias = (char *)calloc(256, sizeof(char));
-    char *q, *T0, *T1;
+    char type[256], IFO[256], channel[256], Times[256], File[1024]; /* fields */
+    char *alias = (char *)calloc(256, sizeof(char)); /* alias name */
+    char *q, *T0, *T1;  /* for string manipulation */
 
+    /* data of different types: */
     REAL4TimeSeries *inputR4;
     REAL8TimeSeries *inputR8;
     COMPLEX8TimeSeries *inputC8;
@@ -51,12 +74,12 @@ int getFrameData(char *fQuery,
     COMPLEX8FrequencySeries *inputFC8;
     COMPLEX16FrequencySeries *inputFC16;
     
-    LALTYPECODE otype;
-    ObjectType stype;
+    LALTYPECODE otype;   /* LAL type */
+    ObjectType stype;    /* frame object type */
 
-    LIGOTimeGPS endEpoch;
+    LIGOTimeGPS endEpoch; 
 
-    double start = 0.0, end = -1.0;
+    double start = 0.0, end = -1.0;  /* for name!lower!upper selection */
 
     if(buf[0]!='\n') {
 
@@ -65,7 +88,9 @@ int getFrameData(char *fQuery,
 #endif
 
       /* Examine line
-	 Format: type IFO times channel alias */
+	 Format: type IFO times channel alias
+	 or type IFO File times channel alias
+      */
       if(sscanf(buf,"%s\t%s\t%s\t%s\t%s\t%s",type,IFO,File,Times,channel,alias) != 6) {
 	if(sscanf(buf,"%s\t%s\t%s\t%s\t%s",type,IFO,Times,channel,alias) != 5) {	
 	  fprintf(stderr,"Malformed frame query: %s\n",buf);
@@ -73,6 +98,7 @@ int getFrameData(char *fQuery,
 	}
       }
     
+      /* split time interval in start and end times */
       q = strchr(Times,'-');
       if(!q) {
 	fprintf(stderr,"Times: T0-T1\n");
@@ -84,20 +110,20 @@ int getFrameData(char *fQuery,
 
       /* get data */
       {
-	char tname[] = "/tmp/getFrameDataXXXXXX";
-	char cmd[1024];
-	char *path;
+	char tname[] = "/tmp/getFrameDataXXXXXX";   /* temporary filename */
+	char cmd[1024];  /* shell command */
+	char *path;      /* path */
 	char *p;
-	FrCache              *frameCache    = NULL;
-	FrStream             *stream        = NULL;
-	FrChanIn             ChannelIn;
+	FrCache              *frameCache    = NULL;  /* LAL frame cache */
+	FrStream             *stream        = NULL;  /* LAL frame stream */
+	FrChanIn             ChannelIn;              /* LAL channel info */
 
-	/* build channel type */
+	/* build channel type: adc, proc, sim */
 	if((p=strstr(channel,"adc("))) {
-	  ChannelIn.name = p + 4;
+	  ChannelIn.name = p + 4; /* channel name */
 	  p=strchr(p,')');
 	  *p=0;
-	  ChannelIn.type = ADCDataChannel;
+	  ChannelIn.type = ADCDataChannel;  /* channel type */
 	} else if((p=strstr(channel,"proc("))) {
 	  ChannelIn.name = p + 5;
 	  p=strchr(p,')');
@@ -113,10 +139,14 @@ int getFrameData(char *fQuery,
 	  return 1;
 	}
 
-	/* check for subset request */
+	/* check for subset request with name!low!high notation */
 	if((p=strchr(ChannelIn.name,'!'))) {
-	  char *q;
+	  
+	  /* Channel name contains a ! */
 
+	  char *q;  /* for string manipulation */
+
+	  /* parse lower bound */
 	  *p=0;
 	  p=p+1;
 	  q=strchr(p,'!');
@@ -128,6 +158,7 @@ int getFrameData(char *fQuery,
 	  *q=0;
 	  start = atof(p);
 
+	  /* parse upper bound */
 	  p=q+1;
 	  q=strchr(p,'!');
 	  if(!q) {
@@ -138,6 +169,7 @@ int getFrameData(char *fQuery,
 	  *q=0;
 	  end = atof(p);
 
+	  /* check it makes sense */
 	  if(end<=start) {
 	    fprintf(stderr,"Malformed channel subset request\n");
 	    return 1;
@@ -146,9 +178,10 @@ int getFrameData(char *fQuery,
 	
 	/* find the data */
 	if(!strstr(dataserver,CACHEFILENAME)) {
-	  /* use LSCdataFind */
+	  /* use LSCdataFind since dataserver doesn't contain
+	     the string defined in CACHEFILENAME */
 	  {
-	    int fid = mkstemp(tname);
+	    int fid = mkstemp(tname); /* create unique temporary file */
 	    if(fid==-1) {
 	      fprintf(stderr,"Can't create temp file\n");
 	      return 1;
@@ -156,14 +189,18 @@ int getFrameData(char *fQuery,
 	    close(fid);
 	  }
 	
+	  /* get executable location from environment variable */
 	  path = getenv("LSC_DATAGRID_CLIENT_LOCATION");
 	  if(!path) {
 	    fprintf(stderr,"Environment variable LSC_DATAGRID_CLIENT_LOCATION not set\n");
 	    return 1;
 	  }
       
+	  /* construct LSCdataFind command */
+	  /* send output to temporary file tname */
 	  sprintf(cmd,"source %s/setup.sh; %s/ldg-client/bin/LSCdataFind --server %s --observatory %s --type %s --gps-start-time %s --gps-end-time %s --url-type file --lal-cache > %s", path, path, dataserver, IFO, type, T0, T1, tname);
 
+	  /* run & check success of shell command */
 	  if(system(cmd) == -1) {
 	    fprintf(stderr,"system call failed\n");
 	    perror("Error");
@@ -171,17 +208,20 @@ int getFrameData(char *fQuery,
 	    return 1;
 	  }
 
-	  /* get the data */
+	  /* get the data with LAL functions */
 	  LAL_CALL( LALFrCacheImport( &stat, &frameCache, tname ), &stat );
 	  LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat );
 	  LAL_CALL( LALDestroyFrCache( &stat, &frameCache ), &stat );
 	
-	  unlink(tname);
+	  unlink(tname); /* remove temporary file */
+
 	} else {
 	  /* we have a cache file */
-	  char tname[] = "/tmp/getFrameDataXXXXXX";
-	  char cmd[2048];
-	  int fid = mkstemp(tname);
+	  /* dataserver thus points to file name */
+
+	  char tname[] = "/tmp/getFrameDataXXXXXX"; /* temporary file name */
+	  char cmd[2048];  /* shell command */
+	  int fid = mkstemp(tname); /* create and open temp file */
 	  char gotIt = 0;
 
 	  if(fid==-1) {
@@ -193,11 +233,15 @@ int getFrameData(char *fQuery,
 	  {
 	    FILE *in;
 	    char buf[2048];
+
+	    /* open cache file */
 	    if((in=fopen(dataserver,"r"))==NULL) {
 	      fprintf(stderr,"Can't open %s\n",dataserver);
 	      return 1;
 	    }
 	    
+	    /* loop over file; save in tempfile lines with
+	       the right frame type */
 	    while(fgets(buf,2048,in)) {
 	      if(strstr(buf,type)) {
 		gotIt = 1;
@@ -205,53 +249,68 @@ int getFrameData(char *fQuery,
 	      }
 	    }
 
+	    /* close input file */
 	    fclose(in);
 	  }
 
+	  /* close output file */
 	  *buf = '\n';
 	  write(fid,buf,1);
 	  close(fid);
 
+	  /* check for at least one match */
 	  if(!gotIt) {
 	    fprintf(stderr,"No frame file matches request for type %s\n",type);
 	    return 1;
 	  }
 
-	  /* get the data */
+	  /* get the data with LAL functions */
 	  LAL_CALL( LALFrCacheImport( &stat, &frameCache, tname ), &stat );
 	  LAL_CALL( LALFrCacheOpen( &stat, &stream, frameCache ), &stat );
 	  LAL_CALL( LALDestroyFrCache( &stat, &frameCache ), &stat );
 
+	  /* remove temp file */
 	  unlink(tname);
 	}
 
 
+	/* obtain the type of the series */
 	LAL_CALL( LALFrGetSeriesType(&stat, &otype, &stype, &ChannelIn, stream), &stat);
 
-	switch ( stype ) {
+	switch ( stype ) {   /* switch between time and frequency series */
 
 	case TimeSeries:
 
-	  switch ( otype ) {
+	  switch ( otype ) {  /* switch between datatypes */
 
-	  case LAL_S_TYPE_CODE:
-	    /* find data in frame */
+	  case LAL_S_TYPE_CODE:  /* REAL4 */
+
+	    /* find data in frame: */
 	    inputR4 = (REAL4TimeSeries *)calloc(1,sizeof(REAL4TimeSeries));
 	    inputR4->data = NULL;
-	    LAL_CALL( LALFrGetREAL4TimeSeries( &stat, inputR4, &ChannelIn, stream),&stat);
+
+	    /* get series info */
+	    LAL_CALL( LALFrGetREAL4TimeSeries( &stat, inputR4, &ChannelIn, stream),&stat); 
+
+	    /* set requested start: */
 	    inputR4->epoch.gpsSeconds     = (INT4)floor(atof(T0));
 	    inputR4->epoch.gpsNanoSeconds = (INT4)(1e9*(atof(T0) - floor(atof(T0))));
+	    
+	    /* look for data in frame: */
 	    LAL_CALL( LALFrSeek(&stat, &(inputR4->epoch), stream),&stat);
-	    /* allocate memory */
-	    {
-	      double t0 = (double)(inputR4->epoch.gpsSeconds) + 1e-9*(double)(inputR4->epoch.gpsNanoSeconds);
-	      INT4 length = (INT4)floor((atof(T1) - t0)/inputR4->deltaT);
 
-	      if(inputR4->data) {
+	    {
+	      /* allocate memory: */
+
+	      double t0 = (double)(inputR4->epoch.gpsSeconds) + 1e-9*(double)(inputR4->epoch.gpsNanoSeconds); /* start time */
+	      INT4 length = (INT4)floor((atof(T1) - t0)/inputR4->deltaT); /* number of data points */
+
+	      if(inputR4->data) { /* destroy whatever is there already */
 		LAL_CALL(LALDestroyVector(&stat,&(inputR4->data)),&stat);
 		inputR4->data = NULL;
 	      }
 
+	      /* allocate memory: */
 	      LAL_CALL ( LALCreateVector( &stat, &(inputR4->data), length), &stat);
 	    }
 	    
@@ -261,30 +320,35 @@ int getFrameData(char *fQuery,
 	    /* datacond convention: f0 = 1/sampling rate */
 	    inputR4->f0 = 1.0/inputR4->deltaT;
 
-	    /* Calculate end */
 	    {
-	      int iend;
+	      /* Calculate end */
+
+	      int iend; /* end index */
+
 	      iend = (int)floor((atof(T1) - (double)(inputR4->epoch.gpsSeconds) + 1e-9*(double)(inputR4->epoch.gpsNanoSeconds))/inputR4->deltaT);
-	      iend = (iend>0) ? iend : 1;
+
+	      iend = (iend>0) ? iend : 1; /* make sure have at least one datapoint */
 	      inputR4->data->length = iend;
 	    }
 
 	    /* truncate and shift if necessary */
 	    if(end>0) {
 	      int ind, sind, eind;
-	      sind = (int)floor(start / inputR4->deltaT);
-	      eind = (int)floor((start+end) / inputR4->deltaT);
+	      sind = (int)floor(start / inputR4->deltaT); /* start index */
+	      eind = (int)floor((start+end) / inputR4->deltaT); /* end index */
 	      eind = (eind > inputR4->data->length) ? inputR4->data->length : eind;
 
+	      /* shift */
 	      for(ind=sind; ind<eind; ind++) {
 		inputR4->data->data[ind-sind] = inputR4->data->data[ind];
 	      }
 
+	      /* reset length */
 	      inputR4->data->length = eind - sind;
 
 	    }
 
-	    break;
+	    break; /* end of REAL4 case */
 	    
 	  case LAL_D_TYPE_CODE:
 	    inputR8 = (REAL8TimeSeries *)calloc(1,sizeof(REAL8TimeSeries));
@@ -412,6 +476,11 @@ int getFrameData(char *fQuery,
 	    break;
 	    
 	  case LAL_Z_TYPE_CODE:
+
+	    /***********************************************************/
+	    /* Note: might not be valid; see LAL_C_TYPE_CODE */
+	    /***********************************************************/
+
 	    inputC16 = (COMPLEX16TimeSeries *)calloc(1,sizeof(COMPLEX16TimeSeries));
 	    inputC16->data = NULL;
 	    LAL_CALL( LALFrGetCOMPLEX16TimeSeries( &stat, inputC16, &ChannelIn, stream),&stat);
@@ -469,6 +538,7 @@ int getFrameData(char *fQuery,
 	  break;
 
 	  /*************************************************************/
+
 	case FrequencySeries:
 
 	  switch ( otype ) {
@@ -493,6 +563,8 @@ int getFrameData(char *fQuery,
 	    LAL_CALL( LALFrGetCOMPLEX8FrequencySeries( &stat, inputFC8, &ChannelIn, stream),&stat);
 
 	    { 
+	      /* end GPS time needed by translation function */
+
 	      double t = atof(T1);
 	      endEpoch.gpsSeconds = (INT4)floor(t);
 	      endEpoch.gpsNanoSeconds = (INT4)(t - floor(t));
@@ -538,9 +610,9 @@ int getFrameData(char *fQuery,
 
       }
 
-      /* add to datacond */
+      /* add to datacond symbols */
       *symbols = (datacond_symbol_type *)realloc(*symbols, (1 + *Nsymbols) * sizeof(datacond_symbol_type));
-      (*symbols + *Nsymbols)->s_direction = DATACOND_SYMBOL_INPUT;
+      (*symbols + *Nsymbols)->s_direction = DATACOND_SYMBOL_INPUT; /* input */
       (*symbols + *Nsymbols)->s_symbol_name = alias;
       (*symbols + *Nsymbols)->s_aux_data = NULL;
       
@@ -574,19 +646,22 @@ int getFrameData(char *fQuery,
 
 	switch ( otype ) {
 	case LAL_S_TYPE_CODE:
+	  /* note: invalid */
 	  (*symbols + *Nsymbols)->s_translator = TranslateREAL4FrequencySeries;
 	  (*symbols + *Nsymbols)->s_user_data = inputFR4;
 	  break;
 	case LAL_D_TYPE_CODE:
+	  /* note: invalid */
 	  (*symbols + *Nsymbols)->s_translator = TranslateREAL8FrequencySeries;
 	  (*symbols + *Nsymbols)->s_user_data = inputFR8;
 	  break;
 	case LAL_C_TYPE_CODE:
 	  (*symbols + *Nsymbols)->s_translator = TranslateCOMPLEX8FrequencySeries;
 	  (*symbols + *Nsymbols)->s_user_data = inputFC8;
-	  (*symbols + *Nsymbols)->s_aux_data = &endEpoch;
+	  (*symbols + *Nsymbols)->s_aux_data = &endEpoch; 
 	  break;
 	case LAL_Z_TYPE_CODE:
+	  /* note: invalid */
 	  (*symbols + *Nsymbols)->s_translator = TranslateCOMPLEX16FrequencySeries;
 	  (*symbols + *Nsymbols)->s_user_data = inputFC16;
 	  break;

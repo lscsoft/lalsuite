@@ -1,11 +1,3 @@
-/*
-r ldas-gridmon.ligo.caltech.edu "RDS_R_L3 H 733662523-733662524 adc(H1:LSC-AS_Q) x" "output( x, _, _, result, FinalResult);" "-filterparams,fileOutput\:/usr1/jsylvest/ZM1_jsylvest//jobH1.jsylvest.731739060.164.bin,H1:LSC-AS_Q,4915200,,,,,,0,,TFCLUSTERS,__H1etg__" "./SG130_p.ilwd push SG130"
-
-ldas-gridmon.ligo.caltech.edu "RDS_R_L3 H 733662523-733662524 adc(H1:LSC-AS_Q) x" "output( x, _, _, result, FinalResult);" "-filterparams,fileOutput\:/usr1/jsylvest/ZM1_jsylvest//jobH1.jsylvest.731739060.164.bin,H1:LSC-AS_Q,4915200,,,,,,0,,TFCLUSTERS,H1:LSC-AS_Q,0.01833,1,0,0,0.0078125,-400.0,-1000.0,-1.5,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" "./SG130_p.ilwd push SG130"
-
-*/
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -46,6 +38,7 @@ int main(int argc, char *argv[]) {
   lal_errhandler = LAL_ERR_EXIT;
   set_debug_level( "227" ); /* no memory debugging */
 
+  /* look at command line arguments */
   if(argc<5) {
     fprintf(stderr,"burstdso [-nocondor] dataserver framesQuery algorithms filterParams [responseFiles] [fraction]\n");
     fprintf(stderr,"frameQuery, algorithms, filterParams and responseFiles can be files or strings\n");
@@ -70,6 +63,9 @@ int main(int argc, char *argv[]) {
 
   /*****************************************/
   /* parse parameters */
+  /* If the parameter is a string, it is stored directly. 
+     If, however, the parameter is a file, the the content
+     of the file is stored in the appropriate variable. */
   /*****************************************/
   {
     /* frame query */
@@ -197,6 +193,16 @@ int main(int argc, char *argv[]) {
 
   /*****************************************/
   /* prepare output symbols */
+  /* For each output statement in the algorithms, we
+     have to allocate an entry in the symbols table
+     for the stand-alone datacondAPI, so that the data
+     can be sent back to the analysis code. In the 
+     output statement, the comment field must comtain
+     the datatype of the output data in square brackets,
+     for instance:
+     output(cavfaccplx,_,_,H2:CAL-CAV_FAC,H2 cavity factor [COMPLEX8TimeSeries]);
+     Note that this is not necessary if the output type
+     is a single precision time series. */
   /*****************************************/
   if(OutputSymbols(algorithms, &Nsymbols, &symbols)) {
     fprintf(stderr,"ERROR: OutputSymbols\n");
@@ -207,6 +213,12 @@ int main(int argc, char *argv[]) {
   /* acquire data */
   /*****************************************/
   /* loop over lines in fQuery, get data, add to datacond callchain */
+  /* Format is:
+     frame_type Site [file] GPS_Start-GPS_End channel alias
+     file is optional, and is a frame file that overrides LSCdataFind
+     channel can be adc(H2:LSC-AS_Q), proc(H2:CAL-OLOOP_FAC), or proc(H2:CAL-RESPONSE!0!7000.0001!), for instance; same format as LDAS
+     alias is a name to represent the data in the datacondAPI
+  */
 
   if(nocondor) {
 
@@ -228,6 +240,11 @@ int main(int argc, char *argv[]) {
   /* get non-frame data */
   /*****************************************/
   /* loop over lines in rFiles, add to datacond callchain & algorithm */
+  /* format is:
+     file push/pass datacond_symbol
+     pass option not supported yet
+     file can be a URL */
+
   if(rFiles) {
     if(getNonFrameData(rFiles, &algorithms, &Nsymbols, &symbols)) {
       fprintf(stderr,"ERROR: can't get non-frame data\n");

@@ -4,17 +4,41 @@
 #include <string.h>
 #include <strings.h>
 
+  /*****************************************/
+  /* prepare output symbols */
+  /* For each output statement in the algorithms, we
+     have to allocate an entry in the symbols table
+     for the stand-alone datacondAPI, so that the data
+     can be sent back to the analysis code. In the 
+     output statement, the comment field must comtain
+     the datatype of the output data in square brackets,
+     for instance:
+     output(cavfaccplx,_,_,H2:CAL-CAV_FAC,H2 cavity factor [COMPLEX8TimeSeries]);
+     Note that this is not necessary if the output type
+     is a single precision time series. */
+  /*****************************************/
 int OutputSymbols(char *algorithms, 
 		  int *Nsymbols,
 		  datacond_symbol_type **symbols) {
 
+  /*
+    Arguments:
+    algorithms: string with datacondAPI actions
+    Nsymbols: number of datacondAPI symbols
+    symbols: datacondAPI symbols chain
+
+    Returns 0 if OK, 1 on error.
+  */
+
   /* NOTE: allocates name in symbol table */
   
-  char *p0, *p1;
-  char *buf;
+  char *p0, *p1;  /* pointers for string manipulation */
+  char *buf;      /* local copy of algorithms string */
 
   buf = (char *)calloc(1+strlen(algorithms),sizeof(char));
 
+
+  /* copy first line of algorithms into buf
   p0 = algorithms;
   p1 = strchr(algorithms,'\n');
   if(p1) {
@@ -23,18 +47,21 @@ int OutputSymbols(char *algorithms,
     strcpy(buf,p0);
   }
 
+  /* loop as long as we have actions */
   while(strlen(buf) || buf[0]=='\n') {
 
 #ifdef DEBUGBURST
     fprintf(stderr,"Algo: %s\n",buf);
 #endif
 
+    /* check if we have an output statement */
     if(strstr(buf,"output(")) {
 
-      char *r, *s, *tmp, *name;
+      char *r, *s, *tmp, *name; /* pointers for string manipulation */
 
       tmp = buf;
 
+      /* find fourth argument of comma separated list: */
       r = strchr(tmp,',');
       if(!r) { fprintf(stderr,"Malformed output: %s\n",buf); return 1; }
 
@@ -51,6 +78,7 @@ int OutputSymbols(char *algorithms,
 
       *s = 0;
 
+      /* this is fourth argument (name): */
       name = (char *)calloc(1 + strlen(r), sizeof(char));
       strcpy(name, r);
 
@@ -66,22 +94,23 @@ int OutputSymbols(char *algorithms,
 	}
       }
 
-      /* look at comment */
+      /* look at comment (fifth argument) */
       s = s+1;
       r = strchr(s,')');
       if(!r) { fprintf(stderr,"Malformed output: %s\n",buf); return 1; }
       *r = 0;
 
-      /* add to datacond */
+      /* add to datacond symbols */
       *symbols = (datacond_symbol_type *)realloc(*symbols, (1 + *Nsymbols) * sizeof(datacond_symbol_type));
-      (*symbols + *Nsymbols)->s_direction = DATACOND_SYMBOL_OUTPUT;
-      
+      (*symbols + *Nsymbols)->s_direction = DATACOND_SYMBOL_OUTPUT; /* output */
+      /* choose translation function according to datatype */
       if(strstr(s,"COMPLEX8FrequencySeries")) {
 	(*symbols + *Nsymbols)->s_translator = TranslateCOMPLEX8FrequencySeries;
       } else {
 	if(strstr(s, "COMPLEX8TimeSeries")) {
 	  (*symbols + *Nsymbols)->s_translator = TranslateCOMPLEX8TimeSeries;
 	} else {
+	  /* default is REAL4 time series */
 	  (*symbols + *Nsymbols)->s_translator = TranslateREAL4TimeSeries;
 	}
       }
@@ -115,10 +144,19 @@ int OutputSymbols(char *algorithms,
 }
 
 
-
+/*****************************************/
+/* condition data by running the datacondAPI */
+/*****************************************/
 int ConditionData(int Nsymbols,
 		  datacond_symbol_type *symbols,
 		  char *algorithms) {
+
+  /*
+    Arguments:
+    Nsymbols: number of symbols
+    symbols: datacondAPI symbols
+    algorithms: datacondAPI actions as a string
+  */
 
   int	error = 0;
   char* aliases = "";
@@ -132,6 +170,8 @@ int ConditionData(int Nsymbols,
 			  symbols,
 			  Nsymbols,
 			  &error_message );
+
+  /* check return status: */
   if ( error != DATACOND_OK )
     {
       switch( error )
@@ -150,7 +190,7 @@ int ConditionData(int Nsymbols,
       return 1;
     }
 
-  /* by definition, symbols[0] is the GW channel */
+  /* by definition, symbols[0] is the GW channel and must contain data */
   if ( symbols[0].s_user_data == NULL )
     {
       fprintf( stderr, "Produced no results\n" );

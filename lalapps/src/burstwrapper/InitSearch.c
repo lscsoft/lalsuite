@@ -64,6 +64,12 @@ The \texttt{libldastfclusters.so} requires the following arguments to the wrappe
 int InitSearch(char *filterParams, 
 	       BurstSearchParams *params) {
 
+  /*
+    Arguments:
+    filterParams: string with filter parameters for the ETG
+    params: structure with all parameters needed by the ETG and wrapper
+  */
+
   static LALStatus status;
 
   UINT4 i;
