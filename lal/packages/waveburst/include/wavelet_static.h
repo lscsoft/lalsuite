@@ -6,7 +6,7 @@
 #include "lal/LALWavelet.h"
 
 static int _f2l(int level, int indx);
-static int _l2f(int level, int layer);
+/* static int _l2f(int level, int layer); */
 static void _getSliceL(int level, int layer, Wavelet *wavelet, Slice *slice);
 static void _getSliceF(int indx, Wavelet *wavelet, Slice *slice);
 static int _getOffset(int level,int layer);
@@ -28,7 +28,7 @@ static void _copyPixel(PixelWavelet *to, PixelWavelet *from);
 static void _assignPixel(PixelWavelet **to, PixelWavelet *from);
 static BOOLEAN _create2DintArray(int ***a, int n1, int n2);
 static void _destroy2DintArray(int ***a, int n1);
-static void _print2DintArray(int ***a, FILE *out, int n1, int n2);
+/* static void _print2DintArray(int ***a, FILE *out, int n1, int n2); */
 static int _clusterMain(ClusterWavelet *wavelet);
 static int _clusterR(ClusterWavelet *wavelet, int k);
 static REAL4 _noise(ClusterWavelet *w, INT4 number);
@@ -46,7 +46,7 @@ static void _clusterProperties(ClusterWavelet *w);
 
 static void _doubleToSecNan(double t, UINT4 *sec, UINT4 *nan);
 static double _secNanToDouble(UINT4 sec, UINT4 nan);
-static int _nanoSeconds2steps(REAL4TimeSeries *ts, int nanoseconds);
+/* static int _nanoSeconds2steps(REAL4TimeSeries *ts, int nanoseconds); */
 
 static void _freeREAL4TimeSeries(REAL4TimeSeries **t);
 static void _freeREAL4FrequencySeries(REAL4FrequencySeries **psd);
@@ -686,6 +686,7 @@ static int _f2l(int level, int indx)
   return n;
 }
 
+#if 0 /* NOT USED */
 static int _l2f(int level, int layer)
 {
   int n = layer;
@@ -697,6 +698,7 @@ static int _l2f(int level, int layer)
   }
   return n;
 }
+#endif
 
 static void _getSliceL(int level, int layer, Wavelet *wavelet, Slice *slice)
 {
@@ -1174,10 +1176,12 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 
 }
 
+#if 0 /* NOT USED */
 static int _nanoSeconds2steps(REAL4TimeSeries *ts, int nanoseconds)
 {
   return (int)(nanoseconds*pow(10,-9)/ts->deltaT+0.0001);
 }
+#endif 
 
 static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
 {
@@ -1668,6 +1672,7 @@ static BOOLEAN _create2DintArray(int ***a, int n1, int n2)
   return result;
 }
 
+#if 0 /* NOT USED */
 static void _print2DintArray(int ***a, FILE *out, int n1, int n2)
 {
   int i,j;
@@ -1680,6 +1685,7 @@ static void _print2DintArray(int ***a, FILE *out, int n1, int n2)
       fprintf(out,"\n");
     }
 }
+#endif
 
 
 
@@ -1752,7 +1758,7 @@ static int _clusterMain(ClusterWavelet *w)
     }
 
     if(w->volumes[k]!=m){
-      fprintf(stderr,"Size mismatch: m=%d, volume=%d\n",m,w->volumes[k]);
+      fprintf(stderr,"Size mismatch: m=%d, volume=%d\n",(int)m,w->volumes[k]);
     }
   }
 
@@ -3096,12 +3102,12 @@ static void _setFilterD(Wavelet *w)
 
 static void _setFilterH(Wavelet *w)
 {
-
+  w = NULL;
 }
 
 static void _setFilterM(Wavelet *w)
 {
-
+  w = NULL;
 }
 
 static void _forwardFWT(Wavelet *w, int level, int layer, const double *pLPF, const double *pHPF)
