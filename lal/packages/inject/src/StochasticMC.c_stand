@@ -670,8 +670,8 @@ void LALStochasticMCStand (LALStatus *status,
      wFilter1.epoch.gpsSeconds = caltime;
      wFilter2.epoch.gpsSeconds = caltime;
 
-     LALExtractFrameResponse( status->statusPtr, &wFilter1,catalog1 ,ifo1,freqlen );
-     LALExtractFrameResponse( status->statusPtr, &wFilter2,catalog2 ,ifo2,freqlen  );
+     LALExtractFrameResponse( status->statusPtr, &wFilter1,catalog1 ,ifo1,0);
+     LALExtractFrameResponse( status->statusPtr, &wFilter2,catalog2 ,ifo2,0);
 
  
      /* force DC to be 0 and nyquist to be real */
@@ -936,9 +936,9 @@ void LALStochasticMCStandSplice (LALStatus *status,
   LALSCreateVector(status->statusPtr, &(omegaGW.data), freqlen);
   
   whitenedSSimStochBG1.data = NULL;
-  LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG1.data), lengthseg);
+  LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG1.data), 0);
   whitenedSSimStochBG2.data = NULL;
-  LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG2.data), lengthseg);
+  LALSCreateVector(status->statusPtr, &(whitenedSSimStochBG2.data), 0);
 
   
   /* define SimulateSBParams */
