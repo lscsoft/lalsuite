@@ -1250,6 +1250,8 @@ main( int argc, char *argv[] )
      return code;
    }
 
+   randomParams = NULL;
+
    LALCreateRandomParams( &status, &randomParams, optSeed );
 
    /* fill time series with normal deviates */
