@@ -29,10 +29,10 @@ Module to generate effective-one-body waveforms.
 \input{LALEOBWaveformForInjectionCP}
 \index{\verb&LALEOBWaveformForInjection()&}
 \begin{itemize}
-\item {\tt inject_hc:} Output containing the 0-phase inspiral waveform.
-\item {\tt inject_hp:} Output containing the $\pi/2$-phase inspiral waveform.
-\item {\tt inject_phase:} Output containing the phase of inspiral waveform.
-\item {\tt inject_freq:} Output containing the frequency of inspiral waveform.
+\item {\tt inject\_hc:} Output containing the 0-phase inspiral waveform.
+\item {\tt inject\_hp:} Output containing the $\pi/2$-phase inspiral waveform.
+\item {\tt inject\_phase:} Output containing the phase of inspiral waveform.
+\item {\tt inject\_freq:} Output containing the frequency of inspiral waveform.
 \item {\tt params:} Input containing binary chirp parameters.
 \end{itemize}
 
@@ -1094,7 +1094,7 @@ Record the final cutoff frequency of BD Waveforms for record keeping
 /*======INJECTION =========================================*/
 /*=========================================================*/
 
-/*  <lalVerbatim file="LALEOBWaveformCP"> */
+/*  <lalVerbatim file="LALEOBWaveformForInjectionCP"> */
 void 
 LALEOBWaveformForInjection (
 			    LALStatus        *status,
