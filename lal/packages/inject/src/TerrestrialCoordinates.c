@@ -348,6 +348,7 @@ LALEquatorialToGeographic( LALStatus   *stat,
   /* Add to longitude, and exit. */
   output->system = COORDINATESYSTEM_GEOGRAPHIC;
   output->longitude = input->longitude - gmst;
+  output->latitude = input->latitude;
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
@@ -386,6 +387,7 @@ LALGeographicToEquatorial( LALStatus   *stat,
   /* Subtract from longitude, and exit. */
   output->system = COORDINATESYSTEM_EQUATORIAL;
   output->longitude = input->longitude + gmst;
+  output->latitude = input->latitude;
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
