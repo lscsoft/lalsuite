@@ -3,9 +3,9 @@
 	 No calibration or noise estimation is needed or performed */
 	 
 /* Matt Pitkin (26/03/04) CrabTNHeterodyne.c v0.1 */
-
+/*
 $Id$
-
+*/
 /* headers */
 #include <stdio.h>
 #include <string.h>
@@ -23,8 +23,8 @@ INT4 lalDebugLevel = 1;
 
 #define EPHEMFILE "crab_ephemeris.txt"
 #define MAXLENGTH 200000
-#define NUM 1000 /* max num of lines in crab ephem file (ok for next 61 years
-										file contains 266 lines as of 15 Jan 2004) */
+#define NUM 1000 
+/* max num of lines in crab ephem file (ok for next 61 years file contains 266 lines as of 15 Jan 2004) */
 
 int main(int argc, char *argv[]){
 	static LALStatus status;
