@@ -1252,8 +1252,7 @@ cleanexit:
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  free( searchsumm.searchSummaryTable );
-
+  
   /* write the search summvars table */
   if ( numTmplts )
   {
@@ -1276,8 +1275,10 @@ cleanexit:
     LALSnprintf( summvalue.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
         "%s", PROGRAM_NAME );
     summvalue.summValueTable->version = 0;
-    summvalue.summValueTable->start_time = gpsStartTime;
-    summvalue.summValueTable->end_time = gpsEndTime;
+    summvalue.summValueTable->start_time = 
+	searchsumm.searchSummaryTable->out_start_time;
+    summvalue.summValueTable->end_time = 
+	searchsumm.searchSummaryTable->out_end_time;
     LALSnprintf( summvalue.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
     LALSnprintf( summvalue.summValueTable->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
         "%s", "inspiral_effective_distance" );
@@ -1291,6 +1292,9 @@ cleanexit:
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   }
 
+  /* free the search summary table */
+  free( searchsumm.searchSummaryTable );
+  
   /* write the sngl_inspiral triggers to the output xml */
   if ( savedEvents.snglInspiralTable )
   {
