@@ -147,7 +147,7 @@ CSParams;
 
 /* <lalLaTeX>
 \newpage\input{ComputeSkyHV}
-%\newpage\input{ComputeSkyC}
+\newpage\input{ComputeSkyC}
 </lalLaTeX> */
 
 void ComputeSky (LALStatus *status, 

@@ -228,12 +228,10 @@ void LALDemod (LALStatus 	*stat,
 			FFT 		**xHatCoh, 
 			FFT 		**input, 
 			DemodPar 	*params);
-void tdb (REAL8 	alpha, 
-		REAL8 		delta, 
-		REAL8 		t, 
-		REAL8 		*, 
-		REAL8 		*, 
-		CHAR 		*);
+
+/* MODIFIED BY JOLIEN: repaced tdb with lalTDBHook */
+extern void ( *lalTDBHook )( REAL8 , REAL8 , REAL8, REAL8 *, REAL8 *, CHAR * );
+
 void times(REAL8 ,
 		 int, 
 		 LIGOTimeGPS *, 

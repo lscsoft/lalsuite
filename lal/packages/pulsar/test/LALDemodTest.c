@@ -206,6 +206,9 @@ int main(int argc, char **argv)
 	INT2 tmp=0;
 	INT2 arg;
 
+        /* ADDED BY JOLIEN: set lalTDBHook to function tdb */
+        lalTDBHook = tdb;
+
 	/* Parse command line options */	
 	arg=1;
 	while(arg<argc) {
