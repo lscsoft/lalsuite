@@ -2152,6 +2152,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
   /* hann duration */
   if (overlap_hann_flag)
   {
+    fprintf(stderr, "Overlapping Hann windows are currently unsupported!\n");
+    exit(1);
+
     if (hannDuration != -1)
     {
       fprintf(stderr, "Overlapping Hann windows specified, --hann-duration " \
