@@ -196,8 +196,10 @@ else:
 # create the Condor jobs that will be used in the DAG
 df_job = inspiral.DataFindJob(cp)
 insp_job = inspiral.InspiralJob(cp)
-trig_job = inspiral.TrigToTmpltJob(cp)
 inca_job = inspiral.IncaJob(cp)
+
+# name of the trigtotmplt executable that is used as a pre script
+trig_exec = cp.get('condor','trigtotmplt')
 
 # set better submit file names than the default
 if usertag:
@@ -205,13 +207,11 @@ if usertag:
 else:
   subsuffix = '.bkgr.sub'
 insp_job.set_sub_file( basename + '.inspiral' + subsuffix )
-trig_job.set_sub_file( basename + '.trigtotmplt' + subsuffix )
 inca_job.set_sub_file( basename + '.inca' + subsuffix )
 
 # set the usertag in the jobs
 if usertag:
   insp_job.add_opt('user-tag',usertag)
-  trig_job.add_opt('user-tag',usertag)
   inca_job.add_opt('user-tag',usertag)
 
 # add the injections
@@ -221,7 +221,6 @@ if do_inj:
 # set the condor job priority
 if condor_prio:
   insp_job.add_condor_cmd('priority',condor_prio)
-  trig_job.add_condor_cmd('priority',condor_prio)
   inca_job.add_condor_cmd('priority',condor_prio)
 
 # add the slide time argument
@@ -281,9 +280,6 @@ ifo1 = cp.get('pipeline','ifo1')
 ifo2 = cp.get('pipeline','ifo2')
 ifo2_snr = cp.get('pipeline','ifo2-snr-threshold')
 
-# set the name of the ifo to generate the triggered bank from
-trig_job.add_opt('ifo-a',ifo1)
-
 # create a list to store the inspiral jobs
 insp_nodes = []
 
@@ -308,8 +304,6 @@ for s_seg in s_data:
 
   for s_chunk in s_seg:
 
-    trigbank = inspiral.TrigToTmpltNode(trig_job)
-    
     # figure out which ifo1 chunks overlap with this slid chunk
     for seg in data:
       for chunk in seg:
@@ -318,20 +312,15 @@ for s_seg in s_data:
           ) or (
           chunk.end() >= s_chunk.start() and chunk.end() <= s_chunk.end()
           ):
-            trigbank.add_var_arg(ifo1_bn + str(chunk.start()) + '-' + 
-             str(chunk.dur()) + '.xml')
+            trigbank_name = ifo1_bn + str(chunk.start()) + '-' + \
+              str(chunk.dur()) + '.xml'
 
-    trigbank.set_start(s_chunk.start())
-    trigbank.set_end(s_chunk.end())
     if usertag:
-      trigbank.set_output(ifo2 + '-TRIGBANK_' + usertag + '_' + ifo1 + '-' 
-        + str(s_chunk.start()) + '-' + str(s_chunk.dur()) + '.xml')
+      trigbank_output = ifo2 + '-TRIGBANK_' + usertag + '_' + ifo1 + '-' \
+        + str(s_chunk.start()) + '-' + str(s_chunk.dur()) + '.xml'
     else:
-      trigbank.set_output(ifo2 + '-TRIGBANK_' + ifo1 + '-' 
-        + str(s_chunk.start()) + '-' + str(chunk.dur()) + '.xml')
-
-    if do_trigbank:
-      dag.add_node(trigbank)
+      trigbank_output = ifo2 + '-TRIGBANK_' + ifo1 + '-' \
+        + str(s_chunk.start()) + '-' + str(chunk.dur()) + '.xml'
 
     insp2 = inspiral.InspiralNode(insp_job)
     insp2.set_start(s_chunk.start())
@@ -340,10 +329,19 @@ for s_seg in s_data:
     insp2.add_var_opt('snr-threshold',ifo2_snr)
     insp2.add_var_opt('trig-start-time',s_chunk.trig_start())
     insp2.set_cache(df2.get_output())
-    insp2.set_bank(trigbank.get_output())
+    insp2.set_bank(trigbank_output)
 
     if do_trigbank:
-      insp2.add_parent(trigbank)
+      insp2.set_pre_script(trig_exec)
+      insp2.add_pre_script_arg('--gps-start-time ' + str(s_chunk.start()))
+      insp2.add_pre_script_arg('--gps-end-time ' + str(s_chunk.end()))
+      insp2.add_pre_script_arg('--ifo-a ' + ifo1)
+      insp2.add_pre_script_arg('--triggered-bank ' + trigbank_output)
+      for opt in cp.options('trigtotmplt'):
+        arg = string.strip(cp.get('trigtotmplt',opt))
+        insp2.add_pre_script_arg('--' + opt + ' ' + arg )
+      if usertag:
+        insp2.add_pre_script_arg('--user-tag ' + usertag)
     if do_triginsp:
       dag.add_node(insp2)
 
