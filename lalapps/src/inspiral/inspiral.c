@@ -533,7 +533,7 @@ int main( int argc, char *argv[] )
 
   /*
    *
-   * write the filter data to disk as text files
+   * write the filter data to disk
    *
    */
 
@@ -1298,6 +1298,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   return 0;
 }
 
+
+/*
+ *
+ * functions to write data to frame files, since lal doesn't have this yet
+ *
+ */
+
+
 FrameH *fr_add_proc_REAL4TimeSeries ( 
     FrameH                     *frame, 
     REAL4TimeSeries            *chan,
@@ -1376,6 +1384,7 @@ FrameH *fr_add_proc_COMPLEX8FrequencySeries (
 #undef ADD_PROCESS_PARAM
 
 /* --- function to graph an array of REAL4 ------------------------------ */
+#if 1
 void
 graphREAL4 (
     REAL4      *array, 
@@ -1401,5 +1410,6 @@ graphREAL4 (
 
   return;
 }
+#endif
 
 #endif /* HAVE_GETOPT_H */
