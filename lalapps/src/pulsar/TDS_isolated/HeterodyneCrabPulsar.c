@@ -10,7 +10,7 @@
 /* The function's inputs params have be swithced about to conform to 
 	 the LAL Spec */
 
-$id:$
+$Id$
 
 #include <math.h>
 #include <stdio.h>
