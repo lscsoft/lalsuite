@@ -621,6 +621,12 @@ LALFindChirpFilterSegment (
   ASSERT( input->fcTmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( input->segment, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
+  /* make sure that the template and the segment are both stationary phase */
+  ASSERT( input->fcTmplt->approximant == TaylorF2, status,
+      FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
+  ASSERT( input->segment->approximant == TaylorF2, status,
+      FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
+
 
   /*
    *
@@ -1200,6 +1206,12 @@ LALFindChirpBCVFilterSegment (
   ASSERT( input->tmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( input->fcTmplt, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( input->segment, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+
+  /* make sure that the template and the segment are both BCV */
+  ASSERT( input->fcTmplt->approximant == BCV, status,
+      FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
+  ASSERT( input->segment->approximant == BCV, status,
+      FINDCHIRPH_EAPRX, FINDCHIRPH_MSGEAPRX );
 
 
   /*

@@ -104,6 +104,12 @@ LALFindChirpSPTemplateInit (
   ASSERT( params->numPoints > 0, status, 
       FINDCHIRPSPH_ENUMZ, FINDCHIRPSPH_MSGENUMZ );
 
+  /* check that we are making a waveform that we know about */
+  if ( params->approximant != TaylorF2 && params->approximant != BCV )
+  {
+    ABORT( status, FINDCHIRPSPH_EUAPX, FINDCHIRPSPH_MSGEUAPX );
+  }
+
 
   /*
    *
@@ -119,6 +125,9 @@ LALFindChirpSPTemplateInit (
   {
     ABORT( status, FINDCHIRPSPH_EALOC, FINDCHIRPSPH_MSGEALOC );
   }
+
+  /* store the waveform approximant */
+  outputPtr->approximant = params->approximant;
 
   /* create the vector to store x^(-7/6) */
   LALCreateVector( status->statusPtr, &(outputPtr->xfacVec), 
@@ -257,6 +266,11 @@ LALFindChirpSPTemplate (
   /* check that the parameter structure exists */
   ASSERT( params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
+  /* check that the parameter structure is set */
+  /* to the correct waveform approximant       */
+  ASSERT( params->approximant == TaylorF2, status, 
+      FINDCHIRPSPH_EMAPX, FINDCHIRPSPH_MSGEMAPX );
+
   /* check that the timestep is positive */
   ASSERT( params->deltaT > 0, status, 
       FINDCHIRPSPH_EDELT, FINDCHIRPSPH_MSGEDELT );
@@ -276,6 +290,9 @@ LALFindChirpSPTemplate (
   expPsi = fcTmplt->data->data;
   xfac = params->xfacVec->data;
   numPoints = fcTmplt->data->length;
+
+  /* store the waveform approximant */
+  fcTmplt->approximant = TaylorF2;
 
   /* zero output */
   memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );
@@ -435,6 +452,11 @@ LALFindChirpBCVTemplate (
   /* check that the parameter structure exists */         
   ASSERT( params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
 
+  /* check that the parameter structure is set */
+  /* to the correct waveform approximant       */
+  ASSERT( params->approximant == BCV, status, 
+      FINDCHIRPSPH_EMAPX, FINDCHIRPSPH_MSGEMAPX );
+
   /* check that the timestep is positive */
   ASSERT( params->deltaT > 0, status,                        
       FINDCHIRPSPH_EDELT, FINDCHIRPSPH_MSGEDELT );
@@ -445,7 +467,7 @@ LALFindChirpBCVTemplate (
 
   /*
    *
-   * compute the stationary phase template
+   * compute the BCV template
    *
    */
 
@@ -454,6 +476,9 @@ LALFindChirpBCVTemplate (
   expPsi    = fcTmplt->data->data;
   xfac      = params->xfacVec->data;
   numPoints = fcTmplt->data->length;
+
+  /* store the waveform approximant */
+  fcTmplt->approximant = BCV;
 
   /* zero output */
   memset( expPsi, 0, numPoints * sizeof(COMPLEX8) );

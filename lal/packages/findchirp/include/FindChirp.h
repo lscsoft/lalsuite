@@ -157,6 +157,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_ESMSM 18
 #define FINDCHIRPH_EHETR 19
 #define FINDCHIRPH_EDFDT 20
+#define FINDCHIRPH_EAPRX 21
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPH_MSGEALOC "Memory allocation error"
@@ -173,6 +174,7 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGESMSM "Size mismatch between vectors"
 #define FINDCHIRPH_MSGEHETR "Attempting to simulate heterodyned GW"
 #define FINDCHIRPH_MSGEDFDT "Waveform sampling interval is too large"
+#define FINDCHIRPH_MSGEAPRX "Incorrect waveform approximant"
 /* </lalErrTable> */
 
 
@@ -452,6 +454,7 @@ tagFindChirpFilterParams
   FindChirpChisqParams         *chisqParams;
   FindChirpChisqInput          *chisqInput;
   FindChirpChisqInput          *chisqInputBCV;
+  Approximant                   approximant;
 }
 FindChirpFilterParams;
 /* </lalVerbatim> */
