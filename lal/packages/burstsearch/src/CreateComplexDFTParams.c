@@ -63,13 +63,15 @@ LALCreateComplexDFTParams (
 
   if(sign==1)
     {
-      LALEstimateFwdComplexFFTPlan (status->statusPtr, &((*dftParams)->plan), 
-                              params->length);
+      /* _Estimate_ the FFT plan */
+      LALCreateForwardComplexFFTPlan (status->statusPtr, &((*dftParams)->plan), 
+                              params->length, 0);
     }
   else
     {
-      LALEstimateInvComplexFFTPlan (status->statusPtr, &((*dftParams)->plan), 
-                              params->length);
+      /* _Estimate_ the FFT plan */
+      LALCreateReverseComplexFFTPlan (status->statusPtr, &((*dftParams)->plan), 
+                              params->length, 0);
     }
   CHECKSTATUSPTR (status);
 

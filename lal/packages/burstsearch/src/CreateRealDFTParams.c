@@ -60,13 +60,15 @@ LALCreateRealDFTParams (
 
   if(sign==1)
     {
-      LALEstimateFwdRealFFTPlan (status->statusPtr, &((*dftParams)->plan), 
-                              params->length);
+      /* Estimate the FFT plan */
+      LALCreateForwardRealFFTPlan (status->statusPtr, &((*dftParams)->plan), 
+                              params->length, 0);
     }
   else
     {
-      LALEstimateInvRealFFTPlan (status->statusPtr, &((*dftParams)->plan), 
-                              params->length);
+      /* Estimate the FFT plan */
+      LALCreateReverseRealFFTPlan (status->statusPtr, &((*dftParams)->plan), 
+                              params->length, 0);
     }
   CHECKSTATUSPTR (status);
 

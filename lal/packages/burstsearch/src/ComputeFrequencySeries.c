@@ -97,7 +97,7 @@ LALComputeFrequencySeries (
   };
 
   /* compute the DFT */
-  LALFwdRealFFT (status->statusPtr, freqSeries->data, tmp, dftParams->plan);
+  LALForwardRealFFT (status->statusPtr, freqSeries->data, tmp, dftParams->plan);
   CHECKSTATUSPTR (status);
 
   LALDestroyVector (status->statusPtr, &tmp);

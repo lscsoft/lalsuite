@@ -258,7 +258,7 @@ LALTimeSeriesToTFPlane (
 	}
       
       /* Do the FFT */
-      LALFwdRealFFT (status->statusPtr, tmp1, tmp, input->dftParams->plan);
+      LALForwardRealFFT (status->statusPtr, tmp1, tmp, input->dftParams->plan);
       CHECKSTATUSPTR (status);
       
       /* Copy the result into appropriate spot in output structure */
