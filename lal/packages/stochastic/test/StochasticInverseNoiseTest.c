@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
   /**************************************************/
 
   /* allocate memory */
-  printf("About to create\n");
+  /* printf("About to create\n"); */
   LALSCreateVector(&status, &(wNoise.data),
 		   STOCHASTICINVERSENOISETESTC_LENGTH);
   if ( code = CheckStatus(&status, 0 , "", STOCHASTICINVERSENOISETESTC_EFLS,
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
   {
     return code;
   }
-  printf("Just created\n");
+  /* printf("Just created\n"); */
 
   LALSCreateVector(&status, &(invNoise.data), 
 		   STOCHASTICINVERSENOISETESTC_LENGTH);
