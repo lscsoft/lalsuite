@@ -1,6 +1,11 @@
-function [Dat,Segs] = read_burstdso_files(path,I);
+function [Dat,Segs] = read_burstdso_files(path,I,username);
 
-%path = '/home/jsylvest/public_html/burstdso/Tuning/Data/v1.3/H2';
+if(nargin==2)
+     [st,username] = system('whoami');
+     if(st) 
+     error('cannot get user name from whoami; use read_burstdso_files(path,I,username)');
+     end
+end
 
 if(isempty(strfind(path,'*')))
  dd = dir([path '/job*']);
@@ -23,7 +28,8 @@ for jj=1:length(I)
      j = I(jj);
      disp(dd(j).name);
 
-     A = sscanf(dd(j).name,'job%c%i.jsylvest.%i.%i.bin.%i.%i.0');
+     scanline = ['job%c%i.' username '.%i.%i.bin.%i.%i.0'];
+     A = sscanf(dd(j).name,scanline);
      Segs.time_s = [Segs.time_s ; A(5)];
      Segs.time_ns = [Segs.time_ns ; A(6)];
 
