@@ -449,7 +449,7 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *
 
 		*timeAnalyzed += read_search_summary_start_end(line, &start, &end, NULL);
 
-		*injectionaddpoint = extract_injections(stat, *injection, start + 1000000000LL, end * 1000000000LL);
+		*injectionaddpoint = extract_injections(stat, *injection, start * 1000000000LL, end * 1000000000LL);
 		while(*injectionaddpoint)
 			injectionaddpoint = &(*injectionaddpoint)->next;
 
@@ -463,7 +463,7 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *
 
 	/*
 	 * FIXME: LAL's memory management blows.  On Saikat's S3 injections,
-	 * this loop takes about .25 seconds PER ITERATION!
+	 * this loop takes about .25 seconds PER ITERATION!  (KCC)
 	while(*injection) {
 		SimBurstTable *tmp = *injection;
 		*injection = (*injection)->next;
@@ -483,7 +483,6 @@ static SnglBurstTable *read_trigger_list(LALStatus *stat, char *filename, INT4 *
  *                                Entry Point
  * =============================================================================
  */
-
 
 int main(int argc, char **argv)
 {
@@ -509,11 +508,10 @@ int main(int argc, char **argv)
 	INT4 gpsEndTime = S2StopTime;
 
 	/* triggers */
-	SnglBurstTable *event;
+	SnglBurstTable *event, *bestmatch;
 	SnglBurstTable *burstEventList = NULL;
 	SnglBurstTable *detectedTriggers = NULL;
 	SnglBurstTable **detTriggersAddPoint = &detectedTriggers;
-	SnglBurstTable *bestmatch;
 
 	/* injections */
 	SimBurstTable *injection;
@@ -657,9 +655,10 @@ int main(int argc, char **argv)
 	simBurstList = read_injection_list(&stat, injectionFile, gpsStartTime, gpsEndTime, options);
 
 	/*
-	 * Read the trigger list;  remove injections from the injection list
-	 * that lie outside the time intervals that were actually analyzed
-	 * according to the search summary tables.  Sort the trigger list too.
+	 * Read and trim the trigger list;  remove injections from the
+	 * injection list that lie outside the time intervals that were
+	 * actually analyzed according to the search summary tables.  Sort the
+	 * trigger list too.
 	 */
 
 	burstEventList = read_trigger_list(&stat, inputFile, &timeAnalyzed, &simBurstList, options);
@@ -709,13 +708,13 @@ int main(int argc, char **argv)
 		ndetected++;
 
 		/* record the detected trigger */
-		*detTriggersAddPoint = LALCalloc(1, sizeof(**detTriggersAddPoint));
+		*detTriggersAddPoint = LALMalloc(sizeof(**detTriggersAddPoint));
 		**detTriggersAddPoint = *bestmatch;
 		detTriggersAddPoint = &(*detTriggersAddPoint)->next;
 		*detTriggersAddPoint = NULL;
 
 		/* record the detected injection */
-		*detInjectionsAddPoint = LALCalloc(1, sizeof(**detInjectionsAddPoint));
+		*detInjectionsAddPoint = LALMalloc(sizeof(**detInjectionsAddPoint));
 		**detInjectionsAddPoint = *injection;
 		detInjectionsAddPoint = &(*detInjectionsAddPoint)->next;
 		*detInjectionsAddPoint = NULL;
