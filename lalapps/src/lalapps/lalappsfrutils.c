@@ -43,7 +43,7 @@ FrameH *fr_add_proc_REAL4TimeSeries (
         chan->deltaT * (REAL8) chan->data->length );
     fdata.dom = Time;
     fdata.type = FR_VECT_4R;
-    fdata.step = (float) chan->deltaT;
+    fdata.step = (double) chan->deltaT;
     fdata.unit = unit;
     fdata.size = (size_t) chan->data->length;
     fdata.data = (float *) chan->data->data;
@@ -68,7 +68,7 @@ FrameH *fr_add_proc_REAL4FrequencySeries (
         (chan->data->length - 1) / (chan->deltaF * chan->data->length) );
     fdata.dom = Freq;
     fdata.type = FR_VECT_4R;
-    fdata.step = (float) chan->deltaF;
+    fdata.step = (double) chan->deltaF;
     fdata.unit = unit;
     fdata.size = (size_t) chan->data->length;
     fdata.data = (float *) chan->data->data;
@@ -93,7 +93,7 @@ FrameH *fr_add_proc_COMPLEX8FrequencySeries (
         (chan->data->length - 1) / (chan->deltaF * chan->data->length) );
     fdata.dom = Freq;
     fdata.type = FR_VECT_8C;
-    fdata.step = (float) chan->deltaF;
+    fdata.step = (double) chan->deltaF;
     fdata.unit = unit;
     fdata.size = (size_t) chan->data->length;
     fdata.data = (float *) chan->data->data;
@@ -125,7 +125,7 @@ FrameH *fr_add_proc_REAL8FrequencySeries (
         (chan->data->length - 1) / (chan->deltaF * chan->data->length) );
     fdata.dom = Freq;
     fdata.type = FR_VECT_8R;
-    fdata.step = (float) chan->deltaF;
+    fdata.step = (double) chan->deltaF;
     fdata.unit = unit;
     fdata.size = (size_t) chan->data->length;
 

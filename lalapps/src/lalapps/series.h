@@ -22,7 +22,7 @@ struct series
   LIGOTimeGPS tend;
   domain      dom;
   int         type;
-  float       step;
+  double      step;
   const char *unit;
   size_t      size;
   float      *data;
