@@ -723,6 +723,7 @@ LALInspiralChooseModel(
    in1.t=0.0;
    in1.v0=ak->v0;
    in1.t0=ak->t0;
+   in1.vlso=ak->vlso;
    in1.totalmass = ak->totalmass;
    in1.dEnergy = f->dEnergy;
    in1.flux = f->flux;

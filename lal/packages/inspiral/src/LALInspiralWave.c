@@ -146,6 +146,10 @@ void LALInspiralWave(LALStatus *status,
            LALEOBWaveform(status->statusPtr, signal, params);
            CHECKSTATUSPTR(status);
 	   break;
+      case BCV:
+           LALBCVWaveform(status->statusPtr, signal, params);
+           CHECKSTATUSPTR(status);
+	   break;
       case TaylorF1:
 	   LALInspiralStationaryPhaseApprox1(status->statusPtr, signal, params); 
            CHECKSTATUSPTR(status);

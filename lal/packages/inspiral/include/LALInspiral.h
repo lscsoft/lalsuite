@@ -186,7 +186,16 @@ The inspiral waveform parameter structure containing information about the
   (\texttt{mass1} need not be larger than \texttt{mass2} (input/output).
   \item \texttt { spin1[3]:} Spin vector of the primary (currently not in use)
   \item \texttt { spin2[3]:} Spin vector of the secondary (currently not in use)
+  \item \texttt { sourceTheta:} Co-latitute in the direction to the source.
+  \item \texttt { sourcePhi:} Azimuth angle in the direction to the source.
+  \item \texttt { orbitTheta0:} Initial co-latitute of the orbit.
+  \item \texttt { orbitPhi0:} Initial azimuth angle of the orbit.
   \item \texttt { inclination:} Inclination of the orbit  (currently not in use)
+  \item \texttt { distance:} Distance to the binary in seconds
+  \item \texttt { psi0:} BCV parameter $\psi_0.$
+  \item \texttt { psi3:} BCV parameter $\psi_3.$
+  \item \texttt { fendBCV:} BCV cutoff frequency $f_{\rm cut}$
+  \item \texttt { alpha:} BCV amplitude correction factor $\alpha f_{\rm cut}^{2/3}$
   \item \texttt { eccentricity:} initial eccentricity of the orbit  (currently not in use)
   \item \texttt { totalMass:} total mass of the binary $m=m_1+m_2$ in solar mass (input/output).
   \item \texttt { eta:} symmetric mass ratio $\eta=m_1m_2/m^2.$ (input/output). 
@@ -355,6 +364,7 @@ typedef enum {
   PadeT1,
   PadeF1,
   EOB,
+  BCV,
   DJS,
   INSPA,
   IRSPA,
@@ -381,11 +391,15 @@ tagInspiralTemplate
   REAL8 sourcePhi;
   REAL8 orbitTheta0;
   REAL8 orbitPhi0;
-  REAL8 distance; /* in seconds */
+  REAL8 distance; 
   REAL8 inclination;
   REAL8 eccentricity;
   REAL8 totalMass; 
   REAL8 chirpMass; 
+  REAL8 psi0;
+  REAL8 psi3;
+  REAL8 fendBCV;
+  REAL8 alpha;
   REAL8 t0; 
   REAL8 t2; 
   REAL8 t3; 
@@ -1075,6 +1089,7 @@ void LALRungeKutta4(
   REAL8Vector *,
   rk4In *,
   void *);
+
 /*  <lalLaTeX>
 \newpage\input{LALInspiralStationaryPhaseApprox1C}
 </lalLaTeX>  */
@@ -1083,6 +1098,16 @@ LALInspiralStationaryPhaseApprox1 (
    LALStatus *status,
    REAL4Vector *signal,
    InspiralTemplate *params);
+
+/*  <lalLaTeX>
+\newpage\input{LALBCVWaveformC}
+</lalLaTeX>  */
+
+void LALBCVWaveform(
+		    LALStatus *status,
+		    REAL4Vector *signal, 
+		    InspiralTemplate *params
+		    );
 
 /*  <lalLaTeX>
 \newpage\input{LALEOBWaveformC}

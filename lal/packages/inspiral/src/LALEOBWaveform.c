@@ -225,7 +225,7 @@ Userful for debugging: Make sure a solution for r exists.
 
       t = (++count-params->nStartPad) * dt;
 /*----------------------------------------------------------
-      printf("%e %e %e %e %e %e %e\n", t, r, v, s, p, q, h);
+      printf("%e %e %e %e %e %e %e %e\n", t, r*r*r*p, r, v, s, p, q, h);
       if (v>ak->vlso) printf("TLSO=%e\n", t);
       printf("&\n");
 ----------------------------------------------------------*/

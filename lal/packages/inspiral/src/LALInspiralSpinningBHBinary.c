@@ -48,9 +48,9 @@ static void LALInspiralPolarisationAngle( REAL8 *psi, REAL8 psiOld, REAL8 *NCap,
 /* compute beam factors Fplus and Fcross */
 static void LALInspiralBeamFactors(REAL8 *Fplus, REAL8 *Fcross, REAL8 Fp0, REAL8 Fp1, REAL8 Fc0, REAL8 Fc1, REAL8 psi);
 /* compute polarisation phase phi */
-static void LALInspiralPolarisationPhase(REAL8 *phi, REAL8 phiOld, REAL8 NCapDotL, REAL8 magL, REAL8 Fplus, REAL8 Fcross); 
+static void LALInspiralPolarisationPhase(REAL8 *phi, REAL8 phiOld, REAL8 NCapDotLByL, REAL8 Fplus, REAL8 Fcross); 
 /* computes modulated amplitude A */
-static void LALInspiralModulatedAmplitude(REAL8 *amp, REAL8 v, REAL8 amp0, REAL8 NCapDotL, REAL8 Fplus, REAL8 Fcross);
+static void LALInspiralModulatedAmplitude(REAL8 *amp, REAL8 v, REAL8 amp0, REAL8 NCapDotLByL, REAL8 Fplus, REAL8 Fcross);
 /* computes the derivatives of vectors L, S1 and S2 */
 void LALACSTDerivatives (REAL8Vector *values, REAL8Vector *dvalues, void *funcParams);
 
@@ -76,7 +76,7 @@ LALInspiralSpinModulatedWave(
         UINT4 j, count;
 	/* polarisation and antenna pattern */
 	REAL8 psi, psiOld, Fplus, Fcross, Fp0, Fp1, Fc0, Fc1, magL, amp, amp0, phi, phiOld, Amplitude, Phi, dPhi;
-	REAL8 v, t, tMax, dt, f, fOld, fn, phase, phi0, MCube, Theta, etaBy5M, NCapDotL;
+	REAL8 v, t, tMax, dt, f, fOld, fn, phase, phi0, MCube, Theta, etaBy5M, NCapDotL, NCapDotLByL;
 	/* source direction angles */
 	InspiralACSTParams acstPars;
 	REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
@@ -128,8 +128,8 @@ LALInspiralSpinModulatedWave(
 	/* total mass in seconds */
 	acstPars.M = LAL_MTSUN_SI * in->totalMass;
 	/* Combination of masses that appears in the evolution of L, S1 and S2 */
-	acstPars.fourM1Plus = (4.L*in->mass1 + 3.L*in->mass2)/(in->mass1*MCube);
-	acstPars.fourM2Plus = (4.L*in->mass2 + 3.L*in->mass1)/(in->mass2*MCube);
+	acstPars.fourM1Plus = (4.L*in->mass1 + 3.L*in->mass2)/(2.*in->mass1*MCube);
+	acstPars.fourM2Plus = (4.L*in->mass2 + 3.L*in->mass1)/(2.*in->mass2*MCube);
 	acstPars.oneBy2Mcube = 0.5L/MCube;
 	acstPars.threeBy2Mcube = 1.5L/MCube;
 	acstPars.thirtytwoBy5etc = (32.L/5.L) * pow(in->eta,2.) * acstPars.M;
@@ -191,6 +191,7 @@ LALInspiralSpinModulatedWave(
 	phiOld = 0.L;
 	magL = sqrt(values.data[0]*values.data[0] + values.data[1]*values.data[1] + values.data[2]*values.data[2]);
 	NCapDotL = acstPars.NCap[0]*values.data[0] + acstPars.NCap[1]*values.data[1] + acstPars.NCap[2]*values.data[2];
+	NCapDotLByL = NCapDotL/magL;
 
 	/* Initial values of */
 	/* the polarization angle */
@@ -198,9 +199,9 @@ LALInspiralSpinModulatedWave(
 	/* beam pattern factors */
 	LALInspiralBeamFactors(&Fplus, &Fcross, Fp0, Fp1, Fc0, Fc1, psi);
 	/* the polarization phase */
-	LALInspiralPolarisationPhase(&phi, phiOld, NCapDotL, magL, Fplus, Fcross);
+	LALInspiralPolarisationPhase(&phi, phiOld, NCapDotLByL, Fplus, Fcross);
 	/* modulated amplitude */
-	LALInspiralModulatedAmplitude(&amp, v, amp0, NCapDotL, Fplus, Fcross);
+	LALInspiralModulatedAmplitude(&amp, v, amp0, NCapDotLByL, Fplus, Fcross);
 
 	phase = Phi + phi;
 	phi0 = -phase + in->startPhase;
@@ -254,12 +255,13 @@ LALInspiralSpinModulatedWave(
 		/* Compute the magnitude of the angular-momentum and its component along line-of-sight. */
 		magL = sqrt(values.data[0]*values.data[0] + values.data[1]*values.data[1] + values.data[2]*values.data[2]);
 		NCapDotL = acstPars.NCap[0]*values.data[0]+acstPars.NCap[1]*values.data[1]+acstPars.NCap[2]*values.data[2];
+		NCapDotLByL = NCapDotL/magL;
 
 		/* Compute the polarisation angle, beam factors, polarisation phase and modulated amplitude */
 		LALInspiralPolarisationAngle(&psi, psiOld, &acstPars.NCap[0], &values.data[0]);
 		LALInspiralBeamFactors(&Fplus, &Fcross, Fp0, Fp1, Fc0, Fc1, psi);
-		LALInspiralPolarisationPhase(&phi, phiOld, NCapDotL, magL, Fplus, Fcross);
-		LALInspiralModulatedAmplitude(&amp, v, amp0, NCapDotL, Fplus, Fcross);
+		LALInspiralPolarisationPhase(&phi, phiOld, NCapDotLByL, Fplus, Fcross);
+		LALInspiralModulatedAmplitude(&amp, v, amp0, NCapDotLByL, Fplus, Fcross);
 
 		/* The new phase of the signal is ... */
 		phase = Phi + phi;
@@ -325,15 +327,12 @@ static void
 LALInspiralPolarisationPhase(
 		REAL8 *phi,
 		REAL8 phiOld,
-		REAL8 NCapDotL, 
-		REAL8 magL, 
+		REAL8 NCapDotLByL, 
 		REAL8 Fplus, 
 		REAL8 Fcross
 		) 
 {
-	REAL8 NCapDotLByL;
 	/* page 6278, Eqs. (19b) of ACST */
-	NCapDotLByL = NCapDotL/magL;
 	*phi=atan(2.L*NCapDotLByL*Fcross/((1.L + NCapDotLByL*NCapDotLByL)*Fplus));
 
 	/* If you require your polarisation phase to be continuous, then uncomment the line below */
