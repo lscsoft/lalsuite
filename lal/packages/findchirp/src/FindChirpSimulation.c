@@ -70,7 +70,7 @@ LALFindChirpInjectSignals (
 
   LALGPStoINT8( status->statusPtr, &chanStartTime, &(chan->epoch) );
   CHECKSTATUSPTR( status );
- 
+
   /* fixed waveform injection parameters */
   ppnParams.deltaT   = chan->deltaT;
   ppnParams.lengthIn = 0;
@@ -128,7 +128,7 @@ LALFindChirpInjectSignals (
     CHECKSTATUSPTR( status );
     pair.unitTwo = &unit;
     LALUnitMultiply( status->statusPtr, &(detector.transfer->sampleUnits),
-			  &pair );
+        &pair );
     CHECKSTATUSPTR( status );
   }
 
@@ -164,11 +164,11 @@ LALFindChirpInjectSignals (
   {
 
 
-   /* 
-    *
-    * populate ppn parameter structure from injection event 
-    *
-    */
+    /* 
+     *
+     * populate ppn parameter structure from injection event 
+     *
+     */
 
 
     /* input fields */
@@ -216,63 +216,59 @@ LALFindChirpInjectSignals (
     waveformStartTime = thisEvent->coaTime - 
       (INT8) ( 1000000000.0 * ppnParams.tc );
 
-    /* if the waveform lies within the time series, inject it */
-    if ( waveformStartTime >= chanStartTime )
+    /* clear the signal structure */
+    memset( &signal, 0, sizeof(REAL4TimeSeries) );
+
+    /* set the start times for injection */
+    LALINT8toGPS( status->statusPtr, 
+        &(signal.epoch), &waveformStartTime );
+    CHECKSTATUSPTR( status );
+    memcpy( &(waveform.a->epoch), &(signal.epoch), 
+        sizeof(LIGOTimeGPS) );
+    memcpy( &(waveform.f->epoch), &(signal.epoch), 
+        sizeof(LIGOTimeGPS) );
+    memcpy( &(waveform.phi->epoch), &(signal.epoch), 
+        sizeof(LIGOTimeGPS) );
+
+    /* set the parameters for the signal time series */
+    signal.deltaT = chan->deltaT;
+    if ( ( signal.f0 = chan->f0 ) != 0 )
     {
-      /* clear the signal structure */
-      memset( &signal, 0, sizeof(REAL4TimeSeries) );
-
-      /* set the start times for injection */
-      LALINT8toGPS( status->statusPtr, 
-          &(signal.epoch), &waveformStartTime );
-      CHECKSTATUSPTR( status );
-      memcpy( &(waveform.a->epoch), &(signal.epoch), 
-          sizeof(LIGOTimeGPS) );
-      memcpy( &(waveform.f->epoch), &(signal.epoch), 
-          sizeof(LIGOTimeGPS) );
-      memcpy( &(waveform.phi->epoch), &(signal.epoch), 
-          sizeof(LIGOTimeGPS) );
-
-      /* set the parameters for the signal time series */
-      signal.deltaT = chan->deltaT;
-      if ( ( signal.f0 = chan->f0 ) != 0 )
-      {
-        ABORT( status, FINDCHIRPENGINEH_EHETR, FINDCHIRPENGINEH_MSGEHETR );
-      }
-      signal.sampleUnits = lalADCCountUnit;
-
-      /* simulate the detectors response to the inspiral */
-      LALSCreateVector( status->statusPtr, &(signal.data), 
-          (UINT4) ppnParams.length );
-      CHECKSTATUSPTR( status );
-      
-      LALSimulateCoherentGW( status->statusPtr, 
-          &signal, &waveform, &detector );
-      CHECKSTATUSPTR( status );
-
-      /* inject the signal into the data channel */
-      LALSSInjectTimeSeries( status->statusPtr, chan, &signal );
-      CHECKSTATUSPTR( status );
-
-      /* destroy the signal */
-      LALSDestroyVector( status->statusPtr, &(signal.data) );
-      CHECKSTATUSPTR( status );
+      ABORT( status, FINDCHIRPENGINEH_EHETR, FINDCHIRPENGINEH_MSGEHETR );
     }
+    signal.sampleUnits = lalADCCountUnit;
+
+    /* simulate the detectors response to the inspiral */
+    LALSCreateVector( status->statusPtr, &(signal.data), 
+        (UINT4) ppnParams.length );
+    CHECKSTATUSPTR( status );
+
+    LALSimulateCoherentGW( status->statusPtr, 
+        &signal, &waveform, &detector );
+    CHECKSTATUSPTR( status );
+
+    /* inject the signal into the data channel */
+    LALSSInjectTimeSeries( status->statusPtr, chan, &signal );
+    CHECKSTATUSPTR( status );
+
+    /* destroy the signal */
+    LALSDestroyVector( status->statusPtr, &(signal.data) );
+    CHECKSTATUSPTR( status );
 
     LALSDestroyVectorSequence( status->statusPtr, &(waveform.a->data) );
     CHECKSTATUSPTR( status );
-    
+
     LALSDestroyVector( status->statusPtr, &(waveform.f->data) );
     CHECKSTATUSPTR( status );
-    
+
     LALDDestroyVector( status->statusPtr, &(waveform.phi->data) );
     CHECKSTATUSPTR( status );
-    
+
     LALFree( waveform.a );
     LALFree( waveform.f );
     LALFree( waveform.phi );
   }
-  
+
   LALCDestroyVector( status->statusPtr, &( detector.transfer->data ) );
   CHECKSTATUSPTR( status );
 
