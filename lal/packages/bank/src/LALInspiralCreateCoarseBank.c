@@ -595,8 +595,6 @@ LALInspiralCreateCoarseBank(
 
 
 
-NRCSID (GETINSPIRALMOMENTSC, "Id: $");
-
 static void
 GetInspiralMoments (
 		LALStatus            *status,
@@ -608,7 +606,7 @@ GetInspiralMoments (
    UINT4 k;
    InspiralMomentsIn in;
 
-   INITSTATUS (status, "LALInspiralCreateCoarseBank", GETINSPIRALMOMENTSC);
+   INITSTATUS (status, "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC);
    ATTATCHSTATUSPTR(status);
   
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
@@ -678,8 +676,6 @@ GetInspiralMoments (
 
 
 
-NRCSID (LALINSPIRALCREATEFLATBANKC, "Id: $");
-
 /*  <lalVerbatim file="LALInspiralCreateFlatBankCP"> */
 void 
 LALInspiralCreateFlatBank(
@@ -693,7 +689,7 @@ LALInspiralCreateFlatBank(
   REAL8 x0, x1;
   UINT4 nlist = 0;
 
-  INITSTATUS (status, "LALInspiralCreateFlatBank", LALINSPIRALCREATEFLATBANKC);
+  INITSTATUS (status, "LALInspiralCreateFlatBank", LALINSPIRALCREATECOARSEBANKC);
   ATTATCHSTATUSPTR(status);
   /* From the knowledge of the metric and the minimal match find the constant
    * increments bankParams->dx0 and bankParmams->dx1
@@ -736,8 +732,6 @@ LALInspiralCreateFlatBank(
 
 
 
-NRCSID (LALINSPIRALBCVFCUTBANKC, "Id: $");
-
 /*  <lalVerbatim file="LALInspiralBCVFcutBankCP"> */
 void 
 LALInspiralBCVFcutBank(
@@ -751,7 +745,7 @@ LALInspiralBCVFcutBank(
 	REAL8 frac, fendBCV;
 
   
-	INITSTATUS (status, "LALInspiralBCVFcutBank", LALINSPIRALBCVFCUTBANKC);
+	INITSTATUS (status, "LALInspiralBCVFcutBank", LALINSPIRALCREATECOARSEBANKC);
 	ATTATCHSTATUSPTR(status);
 	nf=numFcutTemplates;
 	ndx = nlist = *NList;
