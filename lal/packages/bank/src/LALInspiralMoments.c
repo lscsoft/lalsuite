@@ -310,7 +310,7 @@ LALInspiralMoments(
   /* make sure that the minimum and maximum of the integral are within */
   /* the frequency series                                              */
   fMax = pars.shf->f0 + (REAL8) pars.shf->data->length * pars.shf->deltaF;
-  if ( pars.xmin < pars.shf->f0 || pars.xmax > fMax )
+  if ( pars.xmin < pars.shf->f0 || pars.xmax > fMax+LAL_REAL4_EPS )
   {
     ABORT( status, LALINSPIRALBANKH_EFRANGE, LALINSPIRALBANKH_MSGEFRANGE );
   }
