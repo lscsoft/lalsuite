@@ -1,4 +1,4 @@
-/* ****************************************************************
+/*****************************************************************
 File: LALIndependentTestDetReponce.c
 
 Authors: Greg Mendell, Malik Rakhmanov Started: May 20 2003.
@@ -7,7 +7,7 @@ Code: Independently tests of LALComputeDetAMResponse using
 model for F_+ and F_x given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 
 Original Author: Patrick Brian Cameron.  Started: SURF Project Summer 2002.
-Original code: generated test continuous graviational wave signals using
+Original code: generated test of continuous graviational wave signals using
 the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 
 *******************************************************************/
@@ -30,6 +30,14 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 09/30/03 gam: Always call GenerateResponseFuncUsingLAL
 09/30/03 gam: Removed all other unnecessary code.
 09/30/03 gam: Add code to test difference between independent and LAL values for F_+ and F_x.
+10/13/03 gam: Fix bug - when some output files requested but not others, no output occurs. 
+10/13/03 gam: Use independent code from Jolien Creighton to convert GPS to Sidereal time.
+10/13/03 gam: Include GEO detector as an option.
+10/13/03 gam: Use constants independent of LAL.
+10/14/04 gam: Update definition of gamma when angle between arms, zeta, != pi/2.
+10/14/04 gam: Change input RA, DEC and orientation angle (polarization angle) in config file to be in radians.
+10/14/04 gam: Use independent detector geometry values when doing independent calculation.
+              WARNING: LHO AND LLO VALUES WERE TAKEN FROM OTHER LIGO SOURCES; GEO VALUES ARE NOT INDEPENDENT BUT TAKEN FROM LAL
 */
 
 #include <stdio.h>
@@ -60,20 +68,35 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
      "      code, but make sure the none of the comments in the config file start\n" \
      "      before the new value, or extend past the line size of 80 characters.\n"
 
-#define usage( program ) fprintf( stderr, usgfmt, program )
+#define usage( program ) fprintf( stdout, usgfmt, program )
+
+/* 10/13/04 gam; independent values for pi/2, pi, and 2pi */
+#define LALIND_PI_2  1.57079633
+#define LALIND_PI    3.14159265
+#define LALIND_TWOPI 6.28318531
+/* 10/13/04 gam; allowed timing difference between LMST from LAL and independent code */
+#define LALIND_TIMETOLERANCE 32
 
 NRCSID( LALINDEPENDENTTESTDETRESPONSEC, "$Id$" );
 
-void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec, REAL8Vector *fPlus, REAL8Vector *fCross);
+/* void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec, REAL8Vector *fPlus, REAL8Vector *fCross); */ /* 10/14/04 gam */
+void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, REAL8 inputXArmAzimuthRadians, REAL8 inputVertexLatitudeRadians, INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec,  REAL8Vector *fPlus, REAL8Vector *fCross);
 
 void PrintLALDetector(LALDetector *detector);
 
 void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet, REAL8 sampleRate, LIGOTimeGPS *gps, LALDetAMResponseSeries  *am_response_series_ptr);
 
-extern char *optarg;
-REAL8 omegaEarth = LAL_TWOPI/LAL_DAYSID_SI;
-REAL8 omegaEarthSun = LAL_TWOPI/LAL_YRSID_SI;
+/* 10/13/03 gam: Use independent code from Jolien Creighton to convert GPS to Sidereal time. */
+REAL8 greenwich_mean_sidereal_time( INT4 gpssec, INT4 gpsnan, INT4 taiutc );
 
+extern char *optarg;
+/* REAL8 omegaEarth = LAL_TWOPI/LAL_DAYSID_SI; */
+/* REAL8 omegaEarthSun = LAL_TWOPI/LAL_YRSID_SI; */
+REAL8 omegaEarth = LALIND_TWOPI/(23.0*3600.0 + 56.0*60.0 + 4.091);  /* Number of ordinary seconds in one sidereal day */
+REAL8 omegaEarthSun = LALIND_TWOPI/(365.0*86400.0 + 6.0*3600.0 + 9.0*60.0 + 10.0); /* Number of ordinary seconds in one sidereal year */
+REAL8 zeta = ((REAL8)LALIND_PI_2);               /* 10/13/04 gam; angle between the detector arms */
+REAL8 sinZeta = 1.0;                             /* 10/13/04 gam */
+REAL8 zetaGEO = 94.33*((REAL8)LALIND_PI)/180.0;  /* 10/13/04 gam; value from JKS paper */
 INT4 lalDebugLevel = 0;
 
 int main( int argc, char *argv[] )
@@ -123,6 +146,11 @@ int main( int argc, char *argv[] )
   /* first num is longitude, second is latitude (radians) 05/14/03 gam */
   LALFrDetector testFrDetector;
 
+  /* 10/14/04 gam; for independent values for detector geometry: */
+  REAL8 indXArmAzimuthRadians;
+  REAL8 indVertexLongitudeRadians;
+  REAL8 indVertexLatitudeRadians;
+  
   /* Vectors For Results */
   REAL8Vector *fPlus=NULL, *fCross=NULL;
 
@@ -131,6 +159,7 @@ int main( int argc, char *argv[] )
   REAL8 sampleRate = 0, duration = 0;
   UINT4 lgthDataSet = 0;
   REAL8 phiStart = 0.0;
+  REAL8 phiStartLAL = 0.0;  /* 10/13/04 gam */  
 
   /* LALMSTUnitsAndAcc uandacc = { MST_RAD, LALLEAPSEC_STRICT}; */ /* 05/20/03 gam */
   LALMSTUnitsAndAcc uandacc; /* 05/20/03 gam */
@@ -191,17 +220,20 @@ int main( int argc, char *argv[] )
   /* R.A. of the Source */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
-  pulsar.equatorialCoords.longitude = LAL_PI_180*(atof( valueString->data ));
+  /* pulsar.equatorialCoords.longitude = LAL_PI_180*(atof( valueString->data )); */
+  pulsar.equatorialCoords.longitude = atof( valueString->data ); /* 10/14/04 gam; input needs to be in radians already */
 
   /* Declination of the Source */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
-  pulsar.equatorialCoords.latitude = LAL_PI_180*(atof( valueString->data ));
+  /* pulsar.equatorialCoords.latitude = LAL_PI_180*(atof( valueString->data )); */
+  pulsar.equatorialCoords.latitude = atof( valueString->data ); /* 10/14/04 gam; input needs to be in radians already */
 
   /* Polarization Angle */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
-  pulsar.orientation = LAL_PI_180*atof( valueString->data );
+  /* pulsar.orientation = LAL_PI_180*atof( valueString->data ); */
+  pulsar.orientation = atof( valueString->data ); /* 10/14/04 gam; input needs to be in radians already */
 
   /* Start Time */
   fgets(lineString->data, lineSize, configFile);
@@ -226,35 +258,58 @@ int main( int argc, char *argv[] )
   /* Detector Site */
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
-  if(valueString->data[0] == 'H')
+  if(valueString->data[0] == 'H') {
     detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  if(valueString->data[0] == 'L')
+    /* 10/14/04 gam; fill in independent values for detector geometry: */
+    indXArmAzimuthRadians = 5.6548781395;
+    indVertexLongitudeRadians = -2.08405709267;
+    indVertexLatitudeRadians = 0.810795009136;
+  }
+  if(valueString->data[0] == 'L') {
     detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if(valueString->data[0] == 'D')
-    {
-      fprintf( stderr,  "Enter Properties of test detector\n" );
+    /* 10/14/04 gam; fill in independent values for detector geometry: */
+    indXArmAzimuthRadians = 4.40317821503;
+    indVertexLongitudeRadians = -1.5843089819;
+    indVertexLatitudeRadians = 0.533423006535;
+  }
+  if(valueString->data[0] == 'G') {
+    detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+    /* 10/14/04 gam; fill in values for detector geometry: WARNING, THESE ARE NOT INDEPENDENT BUT TAKEN FROM LAL */
+    indXArmAzimuthRadians = 1.1936010122;
+    indVertexLongitudeRadians = 0.17116780435;
+    indVertexLatitudeRadians = 0.91184982752;
+    zeta = zetaGEO;         /* 10/13/04 gam; use value from above from JKS paper */
+    sinZeta = sin(zetaGEO); /* 10/13/04 gam; use value from above from JKS paper */
+  }
+  if(valueString->data[0] == 'D') {
+      fprintf( stdout,  "Enter Properties of test detector\n" );
       /* fprintf( stderr, "Detector Longitude (deg): " );
       scanf( "%lf", &testFrDetector.vertexLongitudeDegrees ); */ /* 05/14/03 gam */
-      fprintf( stderr, "Detector Longitude (radians): " );
+      fprintf( stdout, "Detector Longitude (radians): " );
       scanf( "%lf", &testFrDetector.vertexLongitudeRadians );
 
       /* fprintf( stderr, "Detector Latitude (deg): " );
       scanf( "%lf" , &testFrDetector.vertexLatitudeDegrees ); */ /* 05/14/03 gam */
-      fprintf( stderr, "Detector Latitude (radians): " );
+      fprintf( stdout, "Detector Latitude (radians): " );
       scanf( "%lf" , &testFrDetector.vertexLatitudeRadians );
 
       /* fprintf( stderr, "Detector xArmAzimuth (deg): " ); */ /* 05/14/03 gam */
-      fprintf( stderr, "Detector xArmAzimuth (radians): " );
+      fprintf( stdout, "Detector xArmAzimuth (radians): " );
       scanf( "%f", &testFrDetector.xArmAzimuthRadians );
 
       /* testFrDetector.xArmAzimuthRadians *= LAL_PI_180; */ /* 05/14/03 gam */
-      /* testFrDetector.yArmAzimuthRadians = testFrDetector.xArmAzimuthRadians + LAL_PI_2; */ /* 05/15/03 gam */
-      testFrDetector.yArmAzimuthRadians = testFrDetector.xArmAzimuthRadians - LAL_PI_2;
+      /* testFrDetector.yArmAzimuthRadians = testFrDetector.xArmAzimuthRadians + LAL_PI_2; */ /* 05/15/03 gam */      
+      /* testFrDetector.yArmAzimuthRadians = testFrDetector.xArmAzimuthRadians - LAL_PI_2; */ /* 10/13/04 gam */
+      testFrDetector.yArmAzimuthRadians = testFrDetector.xArmAzimuthRadians - zeta;
       testFrDetector.vertexElevation = 0.0;
       testFrDetector.xArmAltitudeRadians = 0.0;
       testFrDetector.yArmAltitudeRadians = 0.0;
       LALCreateDetector( &status, &detector, &testFrDetector, LALDETECTORTYPE_IFODIFF);
-    }
+      /* 10/14/04 gam; fill in independent values for detector geometry: */
+      indXArmAzimuthRadians = testFrDetector.xArmAzimuthRadians;
+      indVertexLongitudeRadians = testFrDetector.vertexLongitudeRadians;
+      indVertexLatitudeRadians = testFrDetector.vertexLatitudeRadians;
+  }
 
   /* tolerance */
   fgets(lineString->data, lineSize, configFile);
@@ -293,6 +348,10 @@ int main( int argc, char *argv[] )
       i++;
     }
     outFileFCross = fopen(valueString->data, "w");
+ } else {
+    /* 10/13/03 gam; still need to get filenames */
+    fgets(lineString->data, lineSize, configFile);
+    fgets(lineString->data, lineSize, configFile);     
  }
 
   fgets(lineString->data, lineSize, configFile);
@@ -325,7 +384,12 @@ int main( int argc, char *argv[] )
       i++;
     }
     outFileLALCross = fopen(valueString->data, "w");
+ } else {
+    /* 10/13/03 gam; still need to get filenames */
+    fgets(lineString->data, lineSize, configFile);
+    fgets(lineString->data, lineSize, configFile);     
  }
+ 
 
   fgets(lineString->data, lineSize, configFile);
   strncpy(valueString->data, lineString->data, valueSize);
@@ -358,33 +422,32 @@ int main( int argc, char *argv[] )
       i++;
     }
     outFileCrossDiff = fopen(valueString->data, "w");
-
+ } else {
+    /* 10/13/03 gam; still need to get filenames */
+    fgets(lineString->data, lineSize, configFile);
+    fgets(lineString->data, lineSize, configFile);     
  }
+ 
  fclose(configFile);
 
   /* Echo Parameters */
-  if( lalDebugLevel > 1)
+  if( lalDebugLevel > 0)
     {
-      fprintf( stderr,  "\n" );
-      fprintf( stderr, "Source Info\n" );
-      fprintf( stderr, "RA: %e\n", pulsar.equatorialCoords.longitude );
-      fprintf( stderr, "Dec: %e\n", pulsar.equatorialCoords.latitude );
-      fprintf( stderr, "Polarization: %f\n", pulsar.orientation );
-      fprintf( stderr, "\n" );
-
-      fprintf( stderr, "Date Info\n" );
-      fprintf( stderr, "For GPS Seconds, NanoSeconds: %10d, %9d\n", gpsTime.gpsSeconds, gpsTime.gpsNanoSeconds );
-      fprintf( stderr, "\n" );
-
-      fprintf( stderr, "Sampling Rate: %f\n", sampleRate );
-      fprintf( stderr, "Length of Data Set: %f\n", duration );
-      fprintf( stderr, "\n");
-
+      /* 10/14/04 gam; reformat: */
+      fprintf( stdout,  "\n" );
+      fprintf( stdout, "Source Info:\n" );
+      fprintf( stdout, "RA (radians): %e\n", pulsar.equatorialCoords.longitude );
+      fprintf( stdout, "Dec (radians): %e\n", pulsar.equatorialCoords.latitude );
+      fprintf( stdout, "Polarization (radians): %f\n", pulsar.orientation );
+      fprintf( stdout, "For GPS Seconds, NanoSeconds: %10d, %10d\n", gpsTime.gpsSeconds, gpsTime.gpsNanoSeconds );
+      fprintf( stdout, "Sampling Rate (Hz): %f\n", sampleRate );
+      fprintf( stdout, "Length of Data Set (seconds): %f\n", duration );
+      fprintf( stdout, "Ang. Vel. of Earth (radians/s) = %e\n", omegaEarth );
+      fprintf( stdout, "Ang. Vel. of Earth about the Sun (radians/s) = %e\n", omegaEarthSun );
+      fprintf( stdout, "Independent detector vertex longitude: %.11g\n", indVertexLongitudeRadians ); /* 10/14/04 gam */
+      fprintf( stdout, "Independent detector vertex latitude: %.11g\n", indVertexLatitudeRadians  );  /* 10/14/04 gam */
+      fprintf( stdout, "Independent detector xArm Azimuth: %.11g\n", indXArmAzimuthRadians );         /* 10/14/04 gam */       
       PrintLALDetector( &detector );
-
-      fprintf( stderr, "Ang. Vel. of Earth = %e\n", omegaEarth );
-      fprintf( stderr, "Ang. Vel. of Earth about the Sun = %e\n", omegaEarthSun );
-      fprintf( stderr, "\n");
     }
 
   /*
@@ -395,12 +458,43 @@ int main( int argc, char *argv[] )
 
   /* Compute Local Sidereal Time at the start of the data set*/
   /* LALGPStoLMST1(&status, &phiStart,  &place_and_gps, MST_RAD); */ /* 05/20/03 gam */
-  LALGPStoLMST1(&status, &phiStart,  &place_and_gps, &uandacc);
-
-  if(lalDebugLevel > 1) fprintf( stderr, "LMST (radians)= %f\n", phiStart );
+  /* LALGPStoLMST1(&status, &phiStart,  &place_and_gps, &uandacc); */  /* 10/13/03 gam*/
+  /* if(lalDebugLevel > 1) fprintf( stderr, "LMST (radians)= %f\n", phiStart ); */ /* 10/13/03 gam*/
+  /* 10/13/03 gam */
+  LALGPStoLMST1(&status, &phiStartLAL,  &place_and_gps, &uandacc);
+  phiStartLAL = fmod(phiStartLAL,LAL_TWOPI);  /* put into interval 0 to 2pi */
+  if(lalDebugLevel > 0) {
+     fprintf(stdout, "Local Mean Sidereal Time from LAL (radians) = %f\n", phiStartLAL);
+     fflush(stdout);
+  }
+  
+  /****************************************************************************/ 
+  /* !!! 10/13/03 gam; get Local Mean Sidereal Time from independent code !!! */
+  /* Use routine from Jolien Creighton. the last argument is integer TAI - UTC which is the number
+     of leap seconds (the difference between atomic time and UTC); assume 32 is accurate enough. */
+  /* Also note sidereal time is alway the angle the vernal equinoix is west of the local
+     meridian; i.e., between 0 and 2pi in radians. However, the detector longitude is measured
+     + when east of Greenwich and - when west of Greenwich. */ /* 10/14/04 gam; update with ind detector geometry. */    
+  phiStart = greenwich_mean_sidereal_time( (INT4)gpsTime.gpsSeconds, (INT4)gpsTime.gpsNanoSeconds, 32 ); 
+  if (indVertexLongitudeRadians > 0.0) {
+     phiStart = phiStart + indVertexLongitudeRadians; /* convert GMST to LMST for eastern longitude */
+  } else {
+     phiStart = phiStart + ((REAL8)LALIND_TWOPI) + indVertexLongitudeRadians; /* convert GMST to LMST for western logitude */
+  }
+  phiStart = fmod(phiStart,LALIND_TWOPI);  /* put into interval 0 to 2pi */
+  if(lalDebugLevel > 0) {
+    fprintf( stdout, "Local Mean Sidereal Time from independent code (radians) = %f\n", phiStart );
+    fflush(stdout);
+  }
+  
+  if ( fabs(phiStart - phiStartLAL)*3600.0*24.0/((REAL8)LALIND_TWOPI) > ((REAL8)LALIND_TIMETOLERANCE)) {
+      fprintf(stderr, "\nERROR: Local Mean Sidereal Time from LAL and independent code differ by more than %.6g seconds!\n\n",((REAL8)LALIND_TIMETOLERANCE));
+      fflush(stderr);
+      exit(1);      
+  }
 
   /* Intialize Arrays */
-  if(lalDebugLevel > 0) fprintf( stderr, "Creating Vectors.\n" );
+  if(lalDebugLevel > 1) fprintf( stdout, "Creating Vectors.\n" );
 
   LALDCreateVector(&status, &fPlus, lgthDataSet);
   LALDCreateVector(&status, &fCross, lgthDataSet);
@@ -423,14 +517,15 @@ int main( int argc, char *argv[] )
       timevec->data[i] = i*(1.0/sampleRate);
     }
 
-  if(lalDebugLevel > 0) {
+  if(lalDebugLevel > 1) {
     fprintf(stdout, "Computing Independent Response Functions.\n" );
     fflush(stdout);
   }
 
-  GenerateResponseFuncNotUsingLAL(&pulsar, &detector, lgthDataSet, phiStart, timevec, fPlus, fCross );
+  /* GenerateResponseFuncNotUsingLAL(&pulsar, &detector, lgthDataSet, phiStart, timevec, fPlus, fCross ); */ /* 10/14/04 gam */
+  GenerateResponseFuncNotUsingLAL(&pulsar, indXArmAzimuthRadians, indVertexLatitudeRadians, lgthDataSet, phiStart, timevec, fPlus, fCross );
 
-  if(lalDebugLevel > 0) {
+  if(lalDebugLevel > 1) {
     fprintf(stdout, "Computing Response Functions Using LAL.\n" );
     fflush(stdout);
   }
@@ -439,7 +534,7 @@ int main( int argc, char *argv[] )
 
   /* Write out files */
   if (outputIndependentFPlusFCross) {
-    if(lalDebugLevel > 0) fprintf( stderr, "Writing Independent F_+ and F_x to File.\n" );
+    if(lalDebugLevel > 1) fprintf( stdout, "Writing Independent F_+ and F_x to File.\n" );
     for (i = 0;i<lgthDataSet; i++) {
         fprintf(outFileFPlus, "%.15f\n", fPlus->data[i]);
         fprintf(outFileFCross, "%.15f\n", fCross->data[i]);
@@ -448,7 +543,7 @@ int main( int argc, char *argv[] )
     fclose(outFileFCross);
   }
   if (outputLALFPlusFCross) {
-    if(lalDebugLevel > 0) fprintf( stderr, "Writing LAL F_+ and F_x to File.\n" );
+    if(lalDebugLevel > 1) fprintf( stdout, "Writing LAL F_+ and F_x to File.\n" );
     for (i = 0; i < lgthDataSet; ++i) {
         fprintf(outFileLALPlus, "%.15f\n", am_response_series.pPlus->data->data[i]);
         fprintf(outFileLALCross, "%.15f\n", am_response_series.pCross->data->data[i]);
@@ -459,8 +554,8 @@ int main( int argc, char *argv[] )
   }
 
   /* Compute differences; write out differences if requested */ /* 09/30/03 gam */
-  if(lalDebugLevel > 0) fprintf( stderr, "Computing differences LAL F_+ - Independent F_+ and LAL F_x - Independent F_x.\n" );
-  if (outputFPlusFCrossDiffs && lalDebugLevel > 0) fprintf( stderr, "Writing differences LAL F_+ - Independent F_+ and LAL F_x - Independent F_x to File.\n" );
+  if(lalDebugLevel > 1) fprintf( stdout, "Computing differences LAL F_+ - Independent F_+ and LAL F_x - Independent F_x.\n" );
+  if (outputFPlusFCrossDiffs && lalDebugLevel > 1) fprintf( stdout, "Writing differences LAL F_+ - Independent F_+ and LAL F_x - Independent F_x to File.\n" );
   maxFPlusDiff = 0.0;  /* initialize */
   maxFCrossDiff = 0.0; /* initialize */
   for (i = 0; i < lgthDataSet; ++i) {
@@ -512,32 +607,39 @@ int main( int argc, char *argv[] )
   /* Test differences. End with error if difference exceed tolerance. */
   if (maxFPlusDiff > tolerance || maxFCrossDiff > tolerance) {
     if (maxFPlusDiff > tolerance) {
-      fprintf(stderr, "\nLAL F_+ - Independent F_+ Difference Test Failed!\n");
+      fprintf(stderr, "\nERROR: LAL F_+ - Independent F_+ Difference Test Failed!\n\n");
       fflush(stderr);
     }
     if (maxFCrossDiff > tolerance) {
-      fprintf(stderr, "\nLAL F_x - Independent F_x Difference Test Failed!\n");
+      fprintf(stderr, "\nERROR: LAL F_x - Independent F_x Difference Test Failed!\n\n");
       fflush(stderr);
     }
     exit(1);
   }
 
   if(lalDebugLevel > 0) {
-    fprintf(stdout, "\nALL LALIndependentTestDetResponse Test Passed!\n");
+    fprintf(stdout, "\nALL LALIndependentTestDetResponse Tests Passed!\n");
     fflush(stdout);
   }
 
   return 0;
 }
 
-void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet,
-			    REAL8 phiStart, REAL8Vector *timevec,  REAL8Vector *fPlus, REAL8Vector *fCross)
+/* void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, LALDetector *detector, INT4 lgthDataSet,
+			    REAL8 phiStart, REAL8Vector *timevec,  REAL8Vector *fPlus, REAL8Vector *fCross) */
+/* 10/14/04 gam; make inputXArmAzimuthRadians and inputVertexLatitudeRadians inputs */
+void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, REAL8 inputXArmAzimuthRadians, REAL8 inputVertexLatitudeRadians,
+     INT4 lgthDataSet, REAL8 phiStart, REAL8Vector *timevec,  REAL8Vector *fPlus, REAL8Vector *fCross)
 {
   REAL8 aCoeff, bCoeff;
   /* REAL8 gammaAngle = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
-  REAL8 gammaAngle = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians;
+  /* REAL8 gammaAngle = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */
+  /* REAL8 gammaAngle = ((REAL8)LALIND_PI_2) + zeta/2.0 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */
+  REAL8 gammaAngle = ((REAL8)LALIND_PI_2) + zeta/2.0 - inputXArmAzimuthRadians;
+  
   /* REAL8 detLatitude = LAL_PI_180*detector->frDetector.vertexLatitudeDegrees; */ /* 05/14/03 gam */
-  REAL8 detLatitude = detector->frDetector.vertexLatitudeRadians;
+  /* REAL8 detLatitude = detector->frDetector.vertexLatitudeRadians; */ /* 10/14/04 gam */
+  REAL8 detLatitude = inputVertexLatitudeRadians;
   INT4 i;
 
   /* Compute Fplus and Fcross from JKS */ /* 09/30/03 gam aCoeff and bCoeff no longer vectors */
@@ -562,8 +664,8 @@ void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, LALDetector *detector, I
       bCoeff += 0.5*sin(2.0*gammaAngle)*sin(2.0*detLatitude)*cos(pulsar->equatorialCoords.latitude)
 	*sin(pulsar->equatorialCoords.longitude-phiStart-omegaEarth*timevec->data[i]);
       /* Note: Assumes Interferometer Arms are Perpendicular */
-      fPlus->data[i] = aCoeff*cos(2.0*pulsar->orientation) + bCoeff*sin(2.0*pulsar->orientation);
-      fCross->data[i] = bCoeff*cos(2.0*pulsar->orientation) - aCoeff*sin(2.0*pulsar->orientation);
+      fPlus->data[i] = sinZeta*( aCoeff*cos(2.0*pulsar->orientation) + bCoeff*sin(2.0*pulsar->orientation) );  /* 10/13/04 gam; add sinZeta */
+      fCross->data[i] = sinZeta*( bCoeff*cos(2.0*pulsar->orientation) - aCoeff*sin(2.0*pulsar->orientation) ); /* 10/13/04 gam; add sinZeta */
   }
   return;
 }
@@ -571,22 +673,37 @@ void GenerateResponseFuncNotUsingLAL(LALSource *pulsar, LALDetector *detector, I
 void PrintLALDetector(LALDetector *detector)
 {
   /* REAL8 gamma = detector->frDetector.xArmAzimuthRadians + LAL_PI_4; */ /* 05/15/03 gam */
-  REAL8 gamma = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians;
-
-  fprintf( stderr,  "Location  = { { %.6e, %.6e, %.6e },\n", detector->location[0],
-	   detector->location[1], detector->location[2] );
-  fprintf( stderr, " \"%s\",\n", detector->frDetector.name);
-  /* fprintf( stderr, "Location =   %.6g, %.6g, %.6g,\n",
+  /* REAL8 gamma = LAL_PI_2 + LAL_PI_4 - detector->frDetector.xArmAzimuthRadians; */ /* 10/14/04 gam */
+  REAL8 gamma = ((REAL8)LAL_PI_2) + zeta/2.0 - detector->frDetector.xArmAzimuthRadians;
+  REAL8 computedZeta = fabs(detector->frDetector.xArmAzimuthRadians - detector->frDetector.yArmAzimuthRadians); /* 10/14/04 gam */
+  
+  /* 10/14/04 gam; add in rest of structure and reformat: */
+  
+  if ( computedZeta > ((REAL8)LAL_PI) ) {
+       computedZeta = ((REAL8)LAL_TWOPI) - computedZeta;
+  }
+    
+  fprintf( stdout,"Detector name: %s,\n", detector->frDetector.name);
+  fprintf( stdout,"Detector struct location array  = { %.6e, %.6e, %.6e },\n", detector->location[0], 
+           detector->location[1], detector->location[2] );
+  
+  /* fprintf( stdout, "Location =   %.6g, %.6g, %.6g,\n",
 	   detector->frDetector.vertexLongitudeDegrees,
 	   detector->frDetector.vertexLatitudeDegrees,
 	   detector->frDetector.vertexElevation); */ /* 05/14/03 gam */
-  fprintf( stderr, "Location =   %.6g, %.6g, %.6g,\n",
+  fprintf( stdout, "frDetector struct vertex long. (radians), lat. (radians), elev. =   %.11g, %.11g, %.11g\n",
 	   detector->frDetector.vertexLongitudeRadians,
 	   detector->frDetector.vertexLatitudeRadians,
 	   detector->frDetector.vertexElevation);
-  fprintf( stderr, "Angle to Arm Bisector %f\n", gamma );
-  fprintf( stderr, "\n" );
-
+    
+  fprintf( stdout, "frDetector struct xarm azimuth, yarm azimuth, xarm altitude (clockwise from north), yarm altitude (all in radians) =  %.11g, %.11g, %.11g, %.11g\n",
+           detector->frDetector.xArmAzimuthRadians,
+           detector->frDetector.yArmAzimuthRadians,
+           detector->frDetector.xArmAltitudeRadians,
+           detector->frDetector.yArmAltitudeRadians);
+  
+  fprintf( stdout, "Detector angle between arms and angle to arm bisector counter-clockwise from east = %.11g, %.11g\n", computedZeta, gamma);
+  fprintf( stdout, "\n" );
   return;
 }
 
@@ -608,17 +725,17 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
   uandacc.units = MST_RAD;
   uandacc.accuracy = LALLEAPSEC_STRICT;
 
-  if (lalDebugLevel > 0)  {
-     fprintf(stdout,"status->statusCode = %i \n", status->statusCode);
-     fprintf(stdout,"status->statusPtr->statusCode = %i \n", status->statusPtr->statusCode);
+  if (lalDebugLevel > 1)  {
+     /* fprintf(stdout,"status->statusCode = %i \n", status->statusCode);
+     fprintf(stdout,"status->statusPtr->statusCode = %i \n", status->statusPtr->statusCode); */
      printf("Source Info\n");
      printf("RA: %e\n", pulsar->equatorialCoords.longitude);
      printf("Dec: %e\n", pulsar->equatorialCoords.latitude);
      printf("Psi: %e\n", pulsar->orientation);
-     printf("Det #1 location: (%7.4e, %7.4e, %7.4e)\n",
+     printf("Detector location: (%7.4e, %7.4e, %7.4e)\n",
 	   detector->location[0], detector->location[1],
            detector->location[2]);
-     fprintf(stderr, "GPS = {%10d, %9d}\n", gps->gpsSeconds, gps->gpsNanoSeconds);
+     fprintf(stdout, "GPS = {%10d, %9d}\n", gps->gpsSeconds, gps->gpsNanoSeconds);
   }
 
   /* Add detector and source into structures */
@@ -631,8 +748,8 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
   LALGPStoLMST1(status->statusPtr, &lmsthours, &place_and_gps, &uandacc);
   CHECKSTATUSPTR (status);
 
-  if (lalDebugLevel > 0)  {
-    fprintf(stdout, "LMST = %7e \n", lmsthours);
+  if (lalDebugLevel > 1)  {
+    fprintf(stdout, "In GenerateResponseFuncUsingLAL LMST = %7e \n", lmsthours); /* 10/13/04 gam */
   }
 
   /* Compute instantaneous AM response */
@@ -644,16 +761,13 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
   LALComputeDetAMResponse(status->statusPtr, &am_response, &det_and_pulsar, &gps_and_acc);
   CHECKSTATUSPTR (status);
 
-   if (lalDebugLevel > 0) {
-   }
-
   time_info.epoch.gpsSeconds     = gps->gpsSeconds;
   time_info.epoch.gpsNanoSeconds = gps->gpsNanoSeconds;
   time_info.deltaT               = 1.0/sampleRate;
   time_info.nSample              = lgthDataSet;
   time_info.accuracy = LALLEAPSEC_STRICT; /* 09/26/03 gam */
 
-   if (lalDebugLevel > 0) {
+   if (lalDebugLevel > 1) {
       printf("Start computing AM response vectors\n");
       /* fprintf(stdout, "am_response_series_ptr->pPlus->data->length = %d\n", am_response_series_ptr->pPlus->data->length);
       fprintf(stdout, "am_response_series_ptr->pCross->data->length = %d\n", am_response_series_ptr->pCross->data->length);
@@ -665,7 +779,7 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
   LALComputeDetAMResponseSeries(status->statusPtr, am_response_series_ptr, &det_and_pulsar, &time_info);
   CHECKSTATUSPTR (status);
 
-  if (lalDebugLevel > 0) {
+  if (lalDebugLevel > 1) {
       printf("Done computing AM response vectors\n");
       /* printf("am_response_series_ptr->pPlus->data->length = %d\n", am_response_series_ptr->pPlus->data->length);
       printf("am_response_series_ptr->pCross->data->length = %d\n", am_response_series_ptr->pCross->data->length);
@@ -674,4 +788,86 @@ void GenerateResponseFuncUsingLAL(LALStatus *status, LALSource *pulsar, LALDetec
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
+}
+
+
+/* 10/13/03 gam: Use independent code from Jolien Creighton to convert GPS to Sidereal time. */
+/* Notes from Jolien:
+Here is my GPS -> Sidereal conversion routine, which is entirely
+independent of the code in LAL.  (I didn't write the code in LAL,
+and I didn't even look at it while writing this routine.)  There
+are some references in comments in the code.
+
+For some reason, I represent sidereal time in the range [0,2pi).
+You can change a couple of lines at the end if you want it in a
+different range.
+
+The code was not written to be greatly efficient.  Instead it is
+a rather plodding and straightforward implementation for testing
+purposes.
+
+I have checked the routine with the USNO observatory sidereal time
+calculator and I find that it agrees to around ~1ms or less, I think...
+(you should double check).
+
+You need to give the routine the integer TAI - UTC which is the number
+of leap seconds (the difference between atomic time and UTC).  The
+value is currently 32 I think (and has been for the past year or two).
+This is, of course, non-algorithmic so you just have to look it up
+(and wait for new leap seconds to be announced).
+
+If you want accuracy better than about 1s of sidereal time, you probably
+need to do a very careful monitoring of the Earth's motion, so this
+routine will not be sufficient.  It does give you the "correct" sidereal
+time, but the exact position of quasars will drift around by up to a
+fraction of a second before a leap second is added.  So unless you are
+monitoring this motion, I'm not sure how meaningful it is to require
+too much more accuracy in sidereal time.
+
+Cheers
+Jolien
+*/
+REAL8 greenwich_mean_sidereal_time( INT4 gpssec, INT4 gpsnan, INT4 taiutc )
+{
+   /* cf. S. Aoki et al., A&A 105, 359 (1982) eqs. 13 & 19 */
+   /* also cf. http://aa.usno.navy.mil */
+   /* Note: 00h UT 01 Jan 2000 has JD=2451544.5 and GPS=630720013 */
+   const REAL8 JD_12h_01_Jan_2000     = 2451545.0;
+   const REAL8 JD_00h_01_Jan_2000     = 2451544.5;
+   const REAL8 GPS_00h_01_Jan_2000    = 630720013;
+   const REAL8 TAIUTC_00h_01_Jan_2000 = 32; /* leap seconds: TAI - UTC */
+
+
+   REAL8 t;
+   REAL8 dpU;
+   REAL8 TpU;
+   REAL8 gmst;
+
+   /* compute number of seconds since 00h UT 01 Jan 2000 */
+   t  = gpssec - GPS_00h_01_Jan_2000;
+   t += 1e-9 * gpsnan;
+   t += taiutc - TAIUTC_00h_01_Jan_2000;
+
+   /* compute number of days since 12h UT 01 Jan 2000 */
+   dpU  = floor( t / ( 24.0 * 3600.0 ) ); /* full days since 0h UT 01 
+Jan 2000 */
+   dpU += JD_00h_01_Jan_2000 - JD_12h_01_Jan_2000; /* i.e., -0.5 */
+
+   /* compute number of centuries since 12h UT 31 Dec 1899 */
+   TpU = dpU / 36525.0;
+
+   /* compute the gmst at 0h of the current day */
+   gmst = 24110.54841
+     + TpU * ( 8640184.812866
+         + TpU * ( 0.093104
+           - TpU * 6.2e-6 ) ); /* seconds */
+
+   /* add the sidereal time since the start of the day */
+   t = fmod( t, 24.0 * 3600.0 ); /* seconds since start of day */
+   gmst += t * 1.002737909350795; /* corrections omitted */
+
+   /* convert to fractions of a day and to radians */
+   gmst = fmod( gmst / ( 24.0 * 3600.0 ), 1.0 ); /* fraction of day */
+   gmst *= 2.0 * M_PI; /* radians */
+   return gmst;
 }
