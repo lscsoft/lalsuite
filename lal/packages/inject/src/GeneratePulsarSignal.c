@@ -239,7 +239,9 @@ for calls to trig functions.  There may be a slight speedup in using LUTs.
 
 \vfill{\footnotesize\input{GeneratePulsarSignalCV}}
 
-******************************************************* </lalLaTeX> */
+
+******************************************************* </lalLaTeX> */ 
+
 #include <math.h>
 
 #include <lal/AVFactories.h>
@@ -276,7 +278,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
 			 REAL4TimeSeries **signal, 	   /* output time-series */
 			 const PulsarSignalParams *params) /* input params */
 { /* </lalVerbatim> */
-  SpinOrbitCWParamStruc sourceParams = emptyCWParams; 
+SpinOrbitCWParamStruc sourceParams = emptyCWParams; 
   CoherentGW sourceSignal = emptySignal;
   DetectorResponse detector;
   REAL8 SSBduration;
@@ -345,7 +347,6 @@ LALGeneratePulsarSignal (LALStatus *stat,
   TRY (LALConvertGPS2SSB (stat->statusPtr, &t0, params->startTimeGPS, params), stat);
   t0.gpsSeconds -= (UINT4)sourceParams.deltaT; /* start one time-step earlier to be safe */
 
-
   /* end time in SSB */
   t1 = params->startTimeGPS;
   TRY ( LALAddFloatToGPS (stat->statusPtr, &t1, &t1, params->duration), stat);
@@ -412,6 +413,8 @@ LALGeneratePulsarSignal (LALStatus *stat,
   if ( (output = LALCalloc (1, sizeof (*output) )) == NULL) {
     ABORT (stat,  GENERATEPULSARSIGNALH_EMEM,  GENERATEPULSARSIGNALH_MSGEMEM);
   }
+
+  /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
   LALCreateVector (stat->statusPtr, &(output->data), (UINT4) ceil( params->samplingRate * params->duration) );
   BEGINFAIL(stat) {
     LALFree (output);
@@ -454,23 +457,25 @@ LALSignalToSFTs (LALStatus *stat,
 		 const SFTParams *params)	/* params for output-SFTs */
 { /* </lalVerbatim> */
   UINT4 numSFTs;			/* number of SFTs */
-  UINT4 numSamples;			/* number of time-samples in each Tsft */
+  UINT4 numSFTsamples;			/* number of time-samples in an Tsft */
   UINT4 iSFT;
-  REAL8 Band, samplesb2, f0, deltaF;
+  REAL8 Band, SFTsamples, f0, deltaF;
   LIGOTimeGPSVector *timestamps = NULL;
   REAL4Vector timeStretch = {0,0};
   LIGOTimeGPS tStart;			/* start time of input time-series */
   LIGOTimeGPS tLast;			/* start-time of last _possible_ SFT */
   LIGOTimeGPS tmpTime;
   REAL8 duration, delay;
-  UINT4 SFTlen;				/* number of samples in an SFT */
-  UINT4 indexShift;
+  UINT4 SFTlen;				/* number of frequency-bins in an SFT */
   UINT4 index0n;			/* first frequency-bin to use from noise-SFT */
   SFTtype *thisSFT, *thisNoiseSFT;	/* SFT-pointers */
   REAL4 renorm;				/* renormalization-factor of taking only part of an SFT */
   SFTVector *sftvect = NULL;		/* return value. For better readability */
   UINT4 j;
   RealFFTPlan *pfwd = NULL;		/* FFTW plan */
+  LIGOTimeGPS tPrev;			/* real timstamp of previous SFT */
+  UINT4 totalIndex;			/* timestep-index to start next FFT from */
+  INT4 relIndexShift;			/* relative index-shift from previous SFT (number of timesteps) */
 
   INITSTATUS( stat, "LALSignalToSFTs", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
@@ -493,19 +498,20 @@ LALSignalToSFTs (LALStatus *stat,
     TRY (checkNoiseSFTs (stat->statusPtr, params->noiseSFTs, f0, f0 + Band, deltaF), stat);
   }
     
-  /* make sure that number of samples is an integer (up to possible rounding errors */
-  samplesb2 = Band * params->Tsft;		/* this is a float!*/
-  numSamples = 2 * (UINT4) (samplesb2 + 0.5);	/* round to int */
-  ASSERT ( fabs(samplesb2 - numSamples/2)/samplesb2 < eps, stat, 
+  /* make sure that number of timesamples/SFT is an integer (up to possible rounding errors */
+  SFTsamples = params->Tsft / signal->deltaT;		/* this is a float!*/
+  numSFTsamples = (UINT4) (SFTsamples + 0.5);		/* round to closest int */
+  ASSERT ( fabs(SFTsamples - numSFTsamples)/SFTsamples < eps, stat, 
 	   GENERATEPULSARSIGNALH_EINCONSBAND, GENERATEPULSARSIGNALH_MSGEINCONSBAND);
   
   /* Prepare FFT: compute plan for FFTW */
-  TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, numSamples, 0), stat); 	
+  TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, numSFTsamples, 0), stat); 	
 
   /* get some info about time-series */
   tStart = signal->epoch;					/* start-time of time-series */
-  duration = (UINT4) (1.0* signal->data->length * signal->deltaT + 0.5); /* total duration in seconds (rounded up!) */
+
   /* get last possible start-time for an SFT */
+  duration =  (UINT4) (1.0* signal->data->length * signal->deltaT +0.5); /* total duration rounded to seconds */
   TRY ( LALAddFloatToGPS (stat->statusPtr, &tLast, &tStart, duration - params->Tsft), stat);
 
   /* for simplicity we _always_ work with timestamps. 
@@ -528,7 +534,7 @@ LALSignalToSFTs (LALStatus *stat,
 
   /* prepare SFT-vector for return */
   numSFTs = timestamps->length;			/* number of SFTs to produce */
-  SFTlen = (UINT4)(numSamples/2) + 1;		/* number of frequency-bins per SFT */
+  SFTlen = (UINT4)(numSFTsamples/2) + 1;	/* number of frequency-bins per SFT */
 
   LALCreateSFTVector (stat->statusPtr, &sftvect, numSFTs, SFTlen);
   BEGINFAIL (stat) {
@@ -536,23 +542,29 @@ LALSignalToSFTs (LALStatus *stat,
       LALDestroyTimestampVector (stat->statusPtr, &timestamps);
   } ENDFAIL (stat);
 
-  /* main loop: FFT the stuff */
+  tPrev = tStart;	/* initialize */
+  totalIndex = 0;	/* start from first timestep by default */
+
+  /* main loop: apply FFT the requested time-stretches */
   for (iSFT = 0; iSFT < numSFTs; iSFT++)
     {
       thisSFT = &(sftvect->data[iSFT]);	/* point to current SFT-slot */
 
       /* find the start-bin for this SFT in the time-series */
-      TRY ( LALDeltaFloatGPS (stat->statusPtr, &delay, &(timestamps->data[iSFT]), &tStart), stat);
-      indexShift = (UINT4) (delay / signal->deltaT + 0.5);	/* round properly */
-      timeStretch.length = numSamples;    
-      timeStretch.data = signal->data->data + indexShift;	/* point to the right sample-bin */
+      TRY ( LALDeltaFloatGPS (stat->statusPtr, &delay, &(timestamps->data[iSFT]), &tPrev), stat);
+      relIndexShift = (INT4) (delay / signal->deltaT + 0.5);	/* round properly: picks *closest* timestep (==> "nudging") !!  */
+      totalIndex += relIndexShift;
 
+      timeStretch.length = numSFTsamples;    
+      timeStretch.data = signal->data->data + totalIndex;	/* point to the right sample-bin */
 
       /* fill the header of the i'th output SFT */
-      TRY( LALAddFloatToGPS (stat->statusPtr, &tmpTime, &tStart, (indexShift * signal->deltaT)), stat);	
-      thisSFT->epoch = tmpTime;			/* set the ACTUAL timestamp! */
+      TRY ( LALAddFloatToGPS (stat->statusPtr, &tmpTime, &tPrev, relIndexShift * signal->deltaT), stat);
+      thisSFT->epoch = tmpTime;			/* set the ACTUAL timestamp! (can be different from requested one ==> "nudging") */
       thisSFT->f0 = signal->f0;			/* minimum frequency */
       thisSFT->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
+
+      tPrev = tmpTime;				/* prepare next loop */
 
       /* ok, issue at least a warning if we have "nudged" an SFT-timestamp */
       if (lalDebugLevel > 0)
@@ -592,17 +604,24 @@ LALSignalToSFTs (LALStatus *stat,
       /* Now add the noise-SFTs if given */
       if (params->noiseSFTs)
 	{
+	  COMPLEX8 *data, *noise;
 	  thisNoiseSFT = &(params->noiseSFTs->data[iSFT]);
 	  index0n = (UINT4) ((thisSFT->f0 - thisNoiseSFT->f0) / thisSFT->deltaF);
-	  /* The renormalization follows strictly makefakedata_v2, even if I admittedly
-	     don't quite understand this... */
+
+	  /* The renormalization follows strictly makefakedata_v2. */
 	  renorm = 1.0*SFTlen/(thisNoiseSFT->data->length);
+
+	  data = &(thisSFT->data->data[0]);
+	  noise = &(thisNoiseSFT->data->data[index0n]);
 	  for (j=0; j < SFTlen; j++)
 	    {
-	      thisSFT->data->data[j].re += renorm * thisNoiseSFT->data->data[index0n + j].re;
-	      thisSFT->data->data[j].im += renorm * thisNoiseSFT->data->data[index0n + j].im;
+	      data->re += renorm * noise->re;
+	      data->im += renorm * noise->im;
+	      data++;
+	      noise++;
 	    } /* for j < SFTlen */
-	}
+	
+	} /* if noiseSFTs */
 
     } /* for iSFT < numSFTs */ 
 
@@ -1360,6 +1379,7 @@ make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft)
   
 } /* make_timestamps() */
 
+#define oneBillion 1000000000;
 /*----------------------------------------------------------------------
  *   check that all timestamps given lie within the range [t0, t1] 
  *    return: 0 if ok, -1 if not
@@ -1368,22 +1388,34 @@ int
 check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1)
 {
   LALStatus status1, status2;
-  REAL8 diff0, diff1;
+  INT4 diff0_s, diff0_ns, diff1_s, diff1_ns;
   UINT4 i;
+  LIGOTimeGPS *ti;
 
   status1 = status2 = emptyStatus;
 
   for (i = 0; i < timestamps->length; i ++)
     {
-      LALDeltaFloatGPS (&status1, &diff0, &(timestamps->data[i]), &t0);
-      LALDeltaFloatGPS (&status2, &diff1, &t1, &(timestamps->data[i]));
+      ti = &(timestamps->data[i]);
+      diff0_s = ti->gpsSeconds - t0.gpsSeconds;
+      diff0_ns = ti->gpsNanoSeconds - t0.gpsNanoSeconds;
+      if ( diff0_ns < 0 )
+	{
+	  diff0_ns += oneBillion;
+	  diff0_s -= 1;
+	}
 
-      /* catch errors */
-      if (status1.statusCode || status2.statusCode)
-	return (-2);
+
+      diff1_s = t1.gpsSeconds - ti->gpsSeconds;
+      diff1_ns = t1.gpsNanoSeconds - ti->gpsNanoSeconds;
+      if (diff1_ns < 0)
+	{
+	  diff1_ns += oneBillion;
+	  diff0_s -= 1;
+	}
 
       /* check timestamps-bounds */
-      if ( (diff0 < 0) || (diff1 < 0) ) 
+      if ( (diff0_s < 0) || (diff1_s < 0) ) 
 	return (-1);
 
     } /* for i < numSFTs */
@@ -1415,7 +1447,7 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
       
       if (deltaFn != deltaF) {
 	if (lalDebugLevel) 
-	  LALPrintError ("\n\nNoise-SFTs have delta_f=%f inconsistent with signal-SFTs delta_f=%f\n", deltaFn, deltaF);
+	  LALPrintError ("\n\nTime-base of noise-SFTs Tsft_n=%f differs from signal-SFTs Tsft=%f\n", 1.0/deltaFn, 1.0/deltaF);
 	ABORT (stat,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
       }
 
@@ -1425,12 +1457,12 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
 	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBAND, GENERATEPULSARSIGNALH_MSGENOISEBAND);
       }
       
-      shift = (fn0 - f0) / deltaF;
+      shift = (f0 - fn0) / deltaF;
       /* frequency bins have to coincide! ==> check that shift is integer!  */
       nshift = (UINT4)(shift+0.5);
       if ( fabs( nshift - shift) > eps ) {
 	if (lalDebugLevel) 
-	  LALPrintError ("\n\nNoise frequency-bins don't coincide with signal-bins. Shift=%f (has to be integer)\n", shift);
+	  LALPrintError ("\n\nNoise frequency-bins don't coincide with signal-bins. Shift=%g (has to be integer)\n", shift);
 	ABORT (stat, GENERATEPULSARSIGNALH_ENOISEBINS, GENERATEPULSARSIGNALH_MSGENOISEBINS);
       }
 
@@ -1462,6 +1494,9 @@ correct_phase (LALStatus* stat, SFTtype *sft, LIGOTimeGPS tHeterodyne)
   /* check if we really need to do anything here? (i.e. is deltaT an integer?) */
   if ( fabs (deltaT - (INT4) deltaT ) > eps )
     {
+      if (lalDebugLevel)
+	LALPrintError ("Warning: we need to apply  heterodyning phase-correction now: correct_phase()");
+
       deltaT *= LAL_TWOPI;
 
       cosx = cos (deltaT);
