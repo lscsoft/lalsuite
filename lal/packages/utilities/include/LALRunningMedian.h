@@ -79,7 +79,7 @@ NRCSID (LALRUNNINGMEDIANH, "$Id$");
 This is the parameter structure for the LALRunningMedian functions.
 Currently the only parameter supported is the blocksize, the number
 of elements a single median is calculated from. The current
-implementation requires the blocksize to be >2.
+implementation requires the blocksize to be $>2$.
 \begin{verbatim}
 typedef struct tagLALRunningMedianPar
 {

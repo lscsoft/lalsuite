@@ -18,14 +18,14 @@ LALRunningMedianTest [length blocksize [lalDebugLevel]]
 
 This program test the LALRunningMedian functions
 First the proper function of the input checks is tested.
-Then reads an array size and a block size from the command
+Then it reads an array size and a block size from the command
 line, fills an array of the given size with random numbers,
 computes medians of all blocks with blocksize using the
 LALRunningMedian functions and compares the results against
 inividually calculated medians. The test is repeated with
-blocksize-1 (to check for even/odd errors).
+blocksize - 1 (to check for even/odd errors).
 The default values for array length and window
-width if none are given on the command line are 1024 and 512
+width are 1024 and 512.
 
 \subsubsection*{Exit codes}
 \input{LALRunningMedianTestCE}
