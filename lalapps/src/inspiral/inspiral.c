@@ -109,6 +109,10 @@ CHAR  ifo[3];                           /* two character ifo code       */
 CHAR *channelName = NULL;               /* channel string               */
 UINT4 inputDataLength = 0;              /* number of points in input    */
 REAL4 minimalMatch = -1;                /* override bank minimal match  */
+INT4  geoData = 0;                      /* input is REAL8 GEO data      */
+REAL4 geoHighPassFreq = -1;             /* GEO high pass frequency      */
+INT4  geoHighPassOrder = -1;            /* GEO high pass filter order   */
+REAL4 geoHighPassAtten = -1;            /* GEO high pass attenuation    */
 
 /* data conditioning parameters */
 LIGOTimeGPS slideData   = {0,0};        /* slide data for time shifting */
@@ -186,6 +190,7 @@ int main( int argc, char *argv[] )
 
   /* raw input data storage */
   REAL4TimeSeries               chan;
+  REAL8TimeSeries               geoChan;
   REAL4FrequencySeries          spec;
   COMPLEX8FrequencySeries       resp;
   DataSegmentVector            *dataSegVec = NULL;
@@ -464,11 +469,14 @@ int main( int argc, char *argv[] )
 
   /* set the params of the input data time series */
   memset( &chan, 0, sizeof(REAL4TimeSeries) );
+  memset( &geoChan, 0, sizeof(REAL8TimeSeries) );
   chan.epoch = gpsStartTime;
   chan.epoch.gpsSeconds -= padData;   /* subtract pad seconds from start */
   /* subtract slide from start */
   chan.epoch.gpsSeconds -= slideData.gpsSeconds; 
   chan.epoch.gpsNanoSeconds -= slideData.gpsNanoSeconds;
+  /* copy the start time into the GEO time series */
+  geoChan.epoch = chan.epoch;
 
   /* open a frame cache or files, seek to required epoch and set chan name */
   if ( frInCacheName )
@@ -483,9 +491,25 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALFrSeek( &status, &(chan.epoch), frStream ), &status );
   frChan.name = fqChanName;
 
-  /* determine the sample rate of the raw data and allocate enough memory */
-  LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
-      &status );
+  if ( geoData )
+  {
+    /* determine the sample rate of the raw data */
+    LAL_CALL( LALFrGetREAL8TimeSeries( &status, &geoChan, &frChan, frStream ),
+        &status );
+
+    /* copy the data paramaters from the GEO channel to input data channel */
+    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
+    chan.epoch          = geoChan.epoch;
+    chan.deltaT         = geoChan.deltaT;
+    chan.f0             = geoChan.f0;
+    chan.sampleUnits    = geoChan.sampleUnits;
+  }
+  else
+  {
+    /* determine the sample rate of the raw data */
+    LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
+        &status );
+  }
 
   /* store the input sample rate */
   this_search_summvar = searchsummvars.searchSummvarsTable = 
@@ -520,6 +544,12 @@ int main( int argc, char *argv[] )
   inputLengthNS = 
     (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
   numInputPoints = (UINT4) floor( inputLengthNS / (chan.deltaT * 1.0e9) + 0.5 );
+  if ( geoData )
+  {
+    /* create storage for the GEO input data */
+    LAL_CALL( LALDCreateVector( &status, &(geoChan.data), numInputPoints ), 
+        &status );
+  }
   LAL_CALL( LALSCreateVector( &status, &(chan.data), numInputPoints ), 
       &status );
 
@@ -527,9 +557,56 @@ int main( int argc, char *argv[] )
       "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
       chan.deltaT, numInputPoints );
 
-  /* read the data channel time series from frames */
-  LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
-      &status );
+  if ( geoData )
+  {
+    /* XXX Stas: read in the GEO data here XXX */
+    PassBandParamStruc geoHighpassParam;
+
+    /* read the GEO data from the time series into geoChan      */
+    /* which already has the correct amount of memory allocated */
+    if ( vrbflg ) fprintf( stdout, "reading GEO data from frames... " );
+
+
+
+
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+
+    /* high pass the GEO data using the parameters specified on the cmd line */
+    geoHighpassParam.nMax = geoHighPassOrder;
+    geoHighpassParam.f1 = -1.0;
+    geoHighpassParam.f2 = (REAL8) geoHighPassFreq;
+    geoHighpassParam.a1 = -1.0;
+    geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAtten);
+    if ( vrbflg ) fprintf( stdout, "applying %d order high pass to GEO data: "
+        "%3.2f of signal passes at %4.2f Hz\n", 
+        geoHighpassParam.nMax, geoHighpassParam.a2, geoHighpassParam.f2 );
+
+
+
+
+    /* cast the GEO data to REAL4 in the chan time series       */
+    /* which already has the correct amount of memory allocated */
+
+
+
+
+    /* re-copy the data paramaters from the GEO channel to input data channel */
+    LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "%s", geoChan.name );
+    chan.epoch          = geoChan.epoch;
+    chan.deltaT         = geoChan.deltaT;
+    chan.f0             = geoChan.f0;
+    chan.sampleUnits    = geoChan.sampleUnits;
+
+    /* free the REAL8 GEO input data */
+    LAL_CALL( LALDDestroyVector( &status, &(geoChan.data) ), &status );
+    geoChan.data = NULL;
+  }
+  else
+  {
+    /* read the data channel time series from frames */
+    LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
+        &status );
+  }
   memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
   /* store the start and end time of the raw channel in the search summary */
@@ -1958,6 +2035,10 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --frame-cache                obtain frame data from LAL frame cache FILE\n"\
 "  --calibration-cache FILE     obtain calibration from LAL frame cache FILE\n"\
 "  --channel-name CHAN          read data from interferometer channel CHAN\n"\
+"  --geo-data                   data in frame files is REAL8 GEO data\n"\
+"  --geo-high-pass-freq F       high pass GEO data above F Hz using an IIR filter\n"\
+"  --geo-high-pass-order O      set the order of the GEO high pass filter to O\n"\
+"  --geo-high-pass-atten A      set the attenuation of the high pass filter to A\n"\
 "\n"\
 "  --injection-file FILE        inject simulated inspiral signals from FILE\n"\
 "\n"\
@@ -2032,6 +2113,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"disable-high-pass",       no_argument,       &highPass,         0 },
     {"inject-overhead",		no_argument,	   &injectOverhead,   1 },
     {"data-checkpoint",         no_argument,       &dataCheckpoint,   1 },
+    {"geo-data",                no_argument,       &geoData,          1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
@@ -2044,6 +2126,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"number-of-segments",      required_argument, 0,                'e'},
     {"segment-overlap",         required_argument, 0,                'f'},
     {"sample-rate",             required_argument, 0,                'g'},
+    {"geo-high-pass-freq",      required_argument, 0,                'E'},
+    {"geo-high-pass-order",     required_argument, 0,                'P'},
+    {"geo-high-pass-atten",     required_argument, 0,                'Q'},
     {"help",                    no_argument,       0,                'h'},
     {"low-frequency-cutoff",    required_argument, 0,                'i'},
     {"spectrum-type",           required_argument, 0,                'j'},
@@ -2112,7 +2197,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "A:B:C:D:F:G:H:I:J:K:L:M:N:O:R:T:U:V:W:X:Y:Z:"
+        "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:T:U:V:W:X:Y:Z:"
         "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:z:",
         long_options, &option_index );
 
@@ -2375,6 +2460,45 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "int", "%d", sampleRate );
+        break;
+
+      case 'E':
+        geoHighPassFreq = (REAL4) atof( optarg );
+        if ( geoHighPassFreq <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GEO high pass filter frequency must be greater than 0 Hz: "
+              "(%f Hz specified)\n",
+              long_options[option_index].name, geoHighPassFreq );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", geoHighPassFreq );
+        break;
+
+      case 'P':
+        geoHighPassOrder = (INT4) atoi( optarg );
+        if ( geoHighPassOrder <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GEO high pass filter order must be greater than 0: "
+              "(%d specified)\n",
+              long_options[option_index].name, geoHighPassOrder );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", geoHighPassOrder );
+        break;
+
+      case 'Q':
+        geoHighPassAtten = (REAL4) atof( optarg );
+        if ( geoHighPassAtten < 0.0 || geoHighPassAtten > 1.0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "GEO high pass attenuation must be in the range [0:1]: "
+              "(%f specified)\n",
+              long_options[option_index].name, geoHighPassAtten );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", geoHighPassAtten );
         break;
 
       case 'h':
@@ -3025,6 +3149,29 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if ( highPassAtten < 0 )
     {
       fprintf( stderr, "--high-pass-attenuation must be specified\n" );
+      exit( 1 );
+    }
+  }
+
+  if ( geoData )
+  {
+    /* check that geo high pass parameters have been specified */
+    if ( geoHighPassFreq < 0 )
+    {
+      fprintf( stderr, 
+          "--geo-high-pass-freq must be specified for GEO data\n" );
+      exit( 1 );
+    }
+    if ( geoHighPassOrder < 0 )
+    {
+      fprintf( stderr, 
+          "--geo-high-pass-order must be specified for GEO data\n" );
+      exit( 1 );
+    }
+    if ( highPassAtten < 0 )
+    {
+      fprintf( stderr, 
+          "--geo-high-pass-atten must be specified for GEO data\n" );
       exit( 1 );
     }
   }
