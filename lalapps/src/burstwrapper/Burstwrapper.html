@@ -7,10 +7,25 @@
 </head>
 <body alink="#000099" vlink="#990099" link="#000099"
  style="color: rgb(0, 0, 0); background-color: rgb(255, 255, 255);">
-<h1>Burstwrapper</h1>
+<h1><a class="mozTocH1" name="mozTocId642322"></a>Burstwrapper</h1>
 Julien Sylvestre<br>
-<hr style="width: 100%; height: 2px;"><br>
-<h3>Introduction</h3>
+<hr style="width: 100%; height: 2px;">
+<ol id="mozToc">
+<!--mozToc h3 1 h5 2 h6 3 h6 4 h6 5 h6 6--><li><a href="#mozTocId898244">Introduction</a></li>
+  <li><a href="#mozTocId131779">Installation</a></li>
+  <li><a href="#mozTocId413772">Operation</a>
+    <ol>
+      <li><a href="#mozTocId764443">TFClusters in stand-alone mode</a></li>
+      <li><a href="#mozTocId223272">TFClusters under LDAS</a></li>
+      <li><a href="#mozTocId266228">TFClusters under Condor </a></li>
+      <li><a href="#mozTocId93890">Data consolidation</a></li>
+      <li><a href="#mozTocId181218">Coincidence analysis</a></li>
+    </ol>
+  </li>
+  <li><a href="#mozTocId200911">Additional information</a></li>
+</ol>
+<hr style="width: 100%; height: 2px;">
+<h3><a class="mozTocH3" name="mozTocId898244"></a>Introduction</h3>
 &nbsp;&nbsp;&nbsp; The Burstwrapper module in the LALAPPS repository
 contains all the tools needed for a burst analysis with multiple
 interferometers. Burstwrapper tools have been used in production only
@@ -29,7 +44,7 @@ environment</li>
 </div>
 &nbsp;&nbsp;&nbsp; They are described in more details in the
 "Operation" section.<br>
-<h3>Installation</h3>
+<h3><a class="mozTocH3" name="mozTocId131779"></a>Installation</h3>
 <ol>
   <li>Check out the LALAPPS repository from the appropriate <a
  href="http://www.lsc-group.phys.uwm.edu/lal/index.html#cvs">CVS archive</a>.</li>
@@ -80,8 +95,9 @@ tool), type 'make matlab', and add
 $LALAPPSLOCATION/src/burstwrapper/matlab to your matlab path.<br>
   </li>
 </ol>
-<h3>Operation</h3>
-<h5>TFClusters in stand-alone mode</h5>
+<h3><a class="mozTocH3" name="mozTocId413772"></a>Operation</h3>
+<h5><a class="mozTocH5" name="mozTocId764443"></a>TFClusters in
+stand-alone mode</h5>
 <ol>
   <li>Make sure that the shell variable BURSTWRAPPER is set to the
 src/burstwrapper directory of lalapps.</li>
@@ -95,7 +111,7 @@ missing calibration frames.</li>
   <li>Look for output (job*.bin) files in the current directory.<br>
   </li>
 </ol>
-<h5>TFClusters under LDAS</h5>
+<h5><a class="mozTocH5" name="mozTocId223272"></a>TFClusters under LDAS</h5>
 <ol>
   <li>Make sure that the shell variable BURSTWRAPPER is set to the
 src/burstwrapper directory of lalapps.</li>
@@ -111,7 +127,8 @@ missing calibration frames.</li>
 script.<br>
   </li>
 </ol>
-<h5>TFClusters under Condor <br>
+<h5><a class="mozTocH5" name="mozTocId266228"></a>TFClusters under
+Condor <br>
 </h5>
 <ol>
   <li>Make sure that the shell variable BURSTWRAPPER is set to the
@@ -127,7 +144,7 @@ allow all your jobs to run.</li>
 the Driver.H1.tcl file for errors; all should be due to missing data,
 e.g. missing calibration frames.</li>
 </ol>
-<h5>Data consolidation</h5>
+<h5><a class="mozTocH5" name="mozTocId93890"></a>Data consolidation</h5>
 <ol>
   <li>Each output file (*.bin file) can contain triggers for more than
 one set of injection parameters or set of ETG parameters. Running "gtoc
@@ -173,7 +190,7 @@ segments which have been processed by all 3 IFOs, and sblit the result.<br>
   </li>
 </ol>
 <br>
-<h5>Coincidence analysis</h5>
+<h5><a class="mozTocH5" name="mozTocId181218"></a>Coincidence analysis</h5>
 <ol>
   <li>In matlab, add src/burstwrapper/matlab from the lalapps directory
 to
@@ -181,13 +198,17 @@ your PATH.</li>
   <li>Edit triple_coin_S2.m to point to the directories containing the
 sblitted files, and select the proper frequency band.</li>
   <li>Run triple_coin_S2.</li>
-  <li>The output ...<br>
+  <li>Two files are produced in the data path defined in
+triple_coin_S2.m: a list of livetimes vs. lag (livetime.dat) and a file
+with the coincident events vs. lag (triple_coin_S2.dat). The format of
+the latter file is peak time, duration, 0, 0, lag.<br>
   </li>
 </ol>
-<h3>Additional information</h3>
+<h3><a class="mozTocH3" name="mozTocId200911"></a>Additional information</h3>
 <ul>
   <li>Patrick Sutton's notes on TFClusters and the burstwrapper</li>
-  <li>The S2 analysis with TFClusters and the burstwrapper<br>
+  <li>The <a href="http://www.ligo.caltech.edu/%7Ejsylvest/S2/Report/">S2
+analysis</a> with TFClusters and the burstwrapper<br>
   </li>
 </ul>
 <br>

@@ -774,13 +774,17 @@ if { [ info exists MDCFrames ] } {
     set MDCalias ""
 }
 
+if { [ info exists $useResponse ] == 0 } {
+    set useResponse ""
+}
+
     set LDASJOB "
         dataPipeline
         -np $NNodes
         -dynlib /dso-test/libldasburst.so.0.0.0
         -returnprotocol http://results.iwld
         -metadataapi ligolw
-        -filterparams ($binoutput$burstoutput$channel,$Ndata,$injWave,$injAmp,$injAlpha,$injDelta,$injPsi,$injN,$injTimes,$ETG,$ETGParams)
+        -filterparams ($binoutput$burstoutput$useResponse$channel,$Ndata,$injWave,$injAmp,$injAlpha,$injDelta,$injPsi,$injN,$injTimes,$ETG,$ETGParams)
         -subject BURST
         -datacondtarget wrapper
 #       -datacondtarget datacond
