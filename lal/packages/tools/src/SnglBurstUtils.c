@@ -16,6 +16,7 @@ $Id$
 </lalVerbatim> 
 #endif
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
@@ -23,8 +24,6 @@ $Id$
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
-
-long long int llabs(long long int);
 
 NRCSID( SNGLBURSTUTILSC, "$Id$" );
 
@@ -385,7 +384,6 @@ LALClusterSnglBurstTable (
 	}
 
 	/* count the number of events in the modified list */
-
 	for(*nevents = 1; startEvent; startEvent = startEvent->next)
 		*nevents++;
 
