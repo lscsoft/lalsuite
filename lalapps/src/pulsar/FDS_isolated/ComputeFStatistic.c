@@ -86,6 +86,9 @@ extern double fraction_done;
 void use_boinc_filename1(char** orig_name);
 void use_boinc_filename0(char* orig_name);
 
+
+void sighandler(int sig);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -242,6 +245,8 @@ int BOINC_ERR_EXIT(LALStatus  *stat, const char *func, const char *file, const i
 }
 #endif
 
+LALStatus *sig_stat;
+
 /** 
  * MAIN function of ComputeFStatistic code.
  * Calculate the F-statistic over a given portion of the parameter-space
@@ -279,6 +284,16 @@ int main(int argc,char *argv[])
 #else
   lal_errhandler = LAL_ERR_EXIT;
 #endif
+
+  /* install signal handler for catching SEGV etc */
+  sig_stat=&status;
+  if (signal(SIGSEGV, sighandler)==SIG_IGN)
+    signal(SIGSEGV, SIG_IGN);
+  if (signal(SIGFPE, sighandler)==SIG_IGN)
+    signal(SIGFPE, SIG_IGN);
+  if (signal(SIGUSR1, sighandler)==SIG_IGN)
+    signal(SIGUSR1, SIG_IGN);
+
 
   /* register all user-variable */
   LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
@@ -2871,6 +2886,28 @@ int main(int argc, char *argv[]){
   /* we never get here!! */
   return 222;
 }
+
+/* signal handlers */
+
+void sighandler(int sig){
+  fprintf(stderr, "Application caught signal %d.\nStack Trace:\n", sig);
+  
+  while (sig_stat) {
+    fprintf(stderr, "%s at line %d of file %s\n", sig_stat->function, sig_stat->line, sig_stat->file);
+    sig_stat=sig_stat->statusPtr;
+  }
+  boinc_finish(4321);
+  return;
+}
+ 
+
+
+
+
+
+
+
+
 #endif /*USE_BOINC*/
 
 
