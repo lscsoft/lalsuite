@@ -4,7 +4,7 @@ NEED_FRAME = ResampleTimeSeriesTest ComputeCalibrationFactorsTest
 EXTRA_TEXSOURCES =
 else
 NEED_FRAME = 
-EXTRA_TEXSOURCES = ResampleTimeSeriesTest.c ComputeCalibrationFactorsText.c
+EXTRA_TEXSOURCES = ResampleTimeSeriesTest.c ComputeCalibrationFactorsTest.c
 endif
 check_PROGRAMS = UnitsTest DetectorSiteTest LALTestDetResponse0 LALIndependentTestDetResponse ComputeTransferTest CoherentEstimationTest $(NEED_FRAME)
 UnitsTest_SOURCES = UnitsTest.c
