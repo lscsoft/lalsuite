@@ -50,19 +50,21 @@ zero.
 
 \subsubsection*{Exit codes}
 ****************************************** </lalLaTeX><lalErrTable> */
-#define TWODMESHTESTC_ENORM 0
-#define TWODMESHTESTC_ESUB  1
-#define TWODMESHTESTC_EARG  2
-#define TWODMESHTESTC_EBAD  3
-#define TWODMESHTESTC_EMEM  4
-#define TWODMESHTESTC_EFILE 5
+#define TWODMESHTESTC_ENORM   0
+#define TWODMESHTESTC_ESUB    1
+#define TWODMESHTESTC_EARG    2
+#define TWODMESHTESTC_EBAD    3
+#define TWODMESHTESTC_EMEM    4
+#define TWODMESHTESTC_EFILE   5
+#define TWODMESHTESTC_EMETRIC 6
 
-#define TWODMESHTESTC_MSGENORM "Normal exit"
-#define TWODMESHTESTC_MSGESUB  "Subroutine failed"
-#define TWODMESHTESTC_MSGEARG  "Error parsing arguments"
-#define TWODMESHTESTC_MSGEBAD  "Bad argument value"
-#define TWODMESHTESTC_MSGEMEM  "Memory allocation error"
-#define TWODMESHTESTC_MSGEFILE "Could not open file"
+#define TWODMESHTESTC_MSGENORM   "Normal exit"
+#define TWODMESHTESTC_MSGESUB    "Subroutine failed"
+#define TWODMESHTESTC_MSGEARG    "Error parsing arguments"
+#define TWODMESHTESTC_MSGEBAD    "Bad argument value"
+#define TWODMESHTESTC_MSGEMEM    "Memory allocation error"
+#define TWODMESHTESTC_MSGEFILE   "Could not open file"
+#define TWODMESHTESTC_MSGEMETRIC "Ellipse axis length is zero or negative within the specified region"
 /******************************************** </lalErrTable><lalLaTeX>
 
 \subsubsection*{Algorithm}
@@ -225,10 +227,9 @@ int lalDebugLevel = 0;
 
 /* Other numerical constants. */
 #define MISMATCH (1.0)  /* arbitrary mismatch threshold used */
-#define AXISMIN (9e-20) /* sqrt( MISMATCH / LAL_REAL4_MAX ) */
 
 /* Usage format string. */
-#define USAGE "Usage: %s TwoDMeshTest [-o outfile] [-p psfile flags] [-d debug] [-b dx1 dy1 dx2 dy2 ]\n\t[-e a b c] [-x dadx dbdx dcdx] [-y dady dbdy dcdy]"
+#define USAGE "Usage: %s TwoDMeshTest [-o outfile] [-p psfile flags] [-d debug]\n\t[-b dx1 dy1 dx2 dy2 ] [-e a b c]\n\t[-x dadx dbdx dcdx] [-y dady dbdy dcdy]\n"
 
 /* Macros for printing errors and testing subroutines. */
 #define ERROR( code, msg, statement )                                \
@@ -265,10 +266,10 @@ char *lalWatch;
 #endif
 
 /* Local prototypes. */
-static void
+void
 LALRangeTest( LALStatus *stat, REAL4 range[2], REAL4 x, void *params );
 
-static void
+void
 LALMetricTest( LALStatus *stat,
 	       REAL4 metric[3],
 	       REAL4 position[2],
@@ -296,8 +297,8 @@ main(int argc, char **argv)
   REAL4 dady = DADY, dbdy = DBDY, dcdy = DCDY;
 
 
-  /* DEBUG: Do nothing at present. */
-  return 0;
+  /* DEBUG: Do nothing at present.
+  return 0; */
 
 
   /* Parse argument list.  arg stores the current position. */
@@ -315,7 +316,7 @@ main(int argc, char **argv)
       }
     }
     /* Parse PostScript file option. */
-    if ( !strcmp( argv[arg], "-p" ) ) {
+    else if ( !strcmp( argv[arg], "-p" ) ) {
       if ( argc > arg + 2 ) {
 	arg++;
 	psfile = argv[arg++];
@@ -398,7 +399,6 @@ main(int argc, char **argv)
     }
   } /* End of argument parsing loop. */
 
-
   /* Set up range function and parameters. */
   if ( ( dx1 == 0.0 ) && ( dx2 == 0.0 ) ) {
     ERROR( TWODMESHTESTC_EBAD, TWODMESHTESTC_MSGEBAD,
@@ -437,6 +437,22 @@ main(int argc, char **argv)
   }
 
   /* Set up metric function and parameters. */
+  if ( ( a <= 0.0 ) ||
+       ( a + dadx*dx1 + dady*dy1 <= 0.0 ) ||
+       ( a + dadx*dx2 + dady*dy2 <= 0.0 ) ||
+       ( a + dadx*( dx1 + dx2 ) + dady*( dy1 + dy2 ) <= 0.0 ) ) {
+    ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
+	   "axis a:" );
+    return TWODMESHTESTC_EBAD;
+  }
+  if ( ( b <= 0.0 ) ||
+       ( b + dbdx*dx1 + dbdy*dy1 <= 0.0 ) ||
+       ( b + dbdx*dx2 + dbdy*dy2 <= 0.0 ) ||
+       ( b + dbdx*( dx1 + dx2 ) + dbdy*( dy1 + dy2 ) <= 0.0 ) ) {
+    ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
+	   "axis b:" );
+    return TWODMESHTESTC_EBAD;
+  }
   metricParams[0] = a;
   metricParams[1] = b;
   metricParams[2] = c;
@@ -513,14 +529,14 @@ main(int argc, char **argv)
   }
 
   /* Free the mesh, and exit. */
-  SUB( LALSDestroyTwoDMesh( &stat, &mesh, NULL ), &stat );
+  SUB( LALDestroyTwoDMesh( &stat, &mesh, NULL ), &stat );
   LALCheckMemoryLeaks();
   INFO( TWODMESHTESTC_MSGENORM );
   return TWODMESHTESTC_ENORM;
 }
 
 
-static void
+void
 LALRangeTest( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
 {
   REAL4 *xy = (REAL4 *)( params ); /* params recast to its proper type */
@@ -582,7 +598,7 @@ LALRangeTest( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
 }
 
 
-static void
+void
 LALMetricTest( LALStatus *stat,
 	       REAL4 metric[3],
 	       REAL4 position[2],
@@ -602,8 +618,8 @@ LALMetricTest( LALStatus *stat,
   a = abc[0] + position[0]*abc[3] + position[1]*abc[6];
   b = abc[1] + position[0]*abc[4] + position[1]*abc[7];
   c = abc[2] + position[0]*abc[5] + position[1]*abc[8];
-  if ( ( fabs( a ) < AXISMIN ) || ( fabs( b ) < AXISMIN ) ) {
-    ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );
+  if ( a*b == 0.0 ) {
+    ABORT( stat, TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC );
   }
 
   /* Compute eigenvalues and trigonometric functions. */
