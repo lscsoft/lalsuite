@@ -125,7 +125,8 @@ int main(int argc, char **argv)
     fclose(fp);
     JointUL = h2 + (UL-cp2)*(h-h2)/(cp-cp2);
     
-    if (f0[i]>0) eccUL = JointUL*30352.82952*DIST[i]*1000.0*3.09e16/(f0[i]*f0[i]);   
+   /* if (f0[i]>0) eccUL = JointUL*30352.82952*DIST[i]*1000.0*3.09e16/(f0[i]*f0[i]);   */
+    if (f0[i]>0) eccUL = JointUL*30662.10384*DIST[i]*3.08568025e19/(f0[i]*f0[i]);   
     else
     {
       printf("error1\n");
