@@ -2487,11 +2487,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
         /* save out cc spectra as frame */
         if (vrbflg)
-        {
           fprintf(stdout, "Saving ccSpectra to frame...\n");
-          write_ccspectra_frame(ccSpectrum, ifoOne, ifoTwo, \
-              gpsAnalysisTime, segmentDuration);
-        }
+        write_ccspectra_frame(ccSpectrum, ifoOne, ifoTwo, \
+            gpsAnalysisTime, segmentDuration);
       }
       
       /* cc statistic */
