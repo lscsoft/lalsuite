@@ -15,7 +15,7 @@
 
 NRCSID (MAIN, "$Id$");
 
-int lalDebugLevel = 1;
+int lalDebugLevel = 0;
 
 static
 void PrintInspiralBank (
@@ -56,8 +56,8 @@ main ( void )
 
   /* bank generation parameters */
   bankIn->massRange     = MinMaxComponentMass;
-  bankIn->mMin          = 1.0;
-  bankIn->mMax          = 3.0;
+  bankIn->mMin          = 0.3;
+  bankIn->mMax          = 0.8;
   bankIn->MMax          = bankIn->mMax * 2.;
   bankIn->mmCoarse      = 0.97;
   bankIn->mmFine        = 0.99;
