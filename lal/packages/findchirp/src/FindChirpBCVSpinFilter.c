@@ -618,8 +618,8 @@ for (k = 0; k < (numPoints/2)+1; ++k )
 {
 inputData1[k].re *= invRootNormData;
 inputData1[k].im *= invRootNormData;  
-}
-/*  /*  UNCOMMENT LOOP TO NORMALISE INPUT  */
+}*/
+  /*  UNCOMMENT LOOP TO NORMALISE INPUT  */
 
         LALCreateReverseRealFFTPlan(status->statusPtr, &prev1, numPoints,0);
         LALSCreateVector(status->statusPtr, &dVec, numPoints);
@@ -1002,124 +1002,95 @@ fprintf (fpqBCVSpin2, "%d\t%e\t%e\n", j, qBCVSpin2[j].re, qBCVSpin2[j].im);
     * calculate signal to noise squared 
     *
     */
-
-   /* square and add terms calc above */
-
-   /* limits ?, normalisation */
-
+    
 memset (params->rhosqVec->data->data, 0, numPoints * sizeof (REAL4) );
 
 maxRho = 0;
 maxRhoCount = 0;
-
-/*invNumPoints = deltaF;*/   /*1./((REAL4) numPoints);*/
-
-
-
-
- /* accounting for factors of 2 q, qBCVSpin1,  qBCVSpin2. make this more efficient later */ 
- /* dividing by numPoints since not done in IFFT */
                                                                                                                            
- for ( j = 0; j < numPoints; ++j)
-       {
-           q[j].re *= normFac;  /*4 * invNumPoints; */    /*  2 * invNumPoints;*/  
-           q[j].im *= normFac; /*- 4 * invNumPoints; */    /* -2 * invNumPoints;*/
-           qBCVSpin1[j].re *= normFac;/*  4 * invNumPoints; */  /*   2 * invNumPoints;*/
-           qBCVSpin1[j].im *= normFac;/* -4 * invNumPoints; */ /*  -2 * invNumPoints;*/
-           qBCVSpin2[j].re *= normFac;  /*  4 * invNumPoints;*/  /*   2 * invNumPoints;*/
-           qBCVSpin2[j].im *= normFac;/* -4 * invNumPoints;*/  /*  -2 * invNumPoints;*/
-       }
-
-
-
-   for ( j = 0; j < numPoints; ++j)
-       {
-   rhosq   = q[j].re * q[j].re + q[j].im * q[j].im; 
-   rhosq  += qBCVSpin1[j].re * qBCVSpin1[j].re + qBCVSpin1[j].im * qBCVSpin1[j].im; 
-   rhosq  += qBCVSpin2[j].re * qBCVSpin2[j].re + qBCVSpin2[j].im * qBCVSpin2[j].im;
-
-
-  /* calc alpha values at each time step */
-
-
-
- 
-   /* Inverse FFT normalisation, division by numPoints squared */
-
- /*  rhosq  = rhosq / pow(numPoints,2);*/
-
-/*fprintf (stdout, "rhosq            = %e \n", rhosq);*/
-
-
-   params->rhosqVec->data->data[j] = rhosq;  /*copied from Eirini's code */
-
-/*fprintf (stdout, "rhosqVec            = %e \n",  params->rhosqVec->data->data[j] );*/
-   rho    = pow(rhosq, 0.5);
-
- /*  rho    *= 2/(deltaT); */     /*  Normalises rho, but messes up alphas */
-     
-fprintf (fpRho, "%d\t%e\n", j, rho);
-
-   /* finding max value of rho in time */
-if (rho > maxRho)
+for ( j = 0; j < numPoints; ++j)
 	{
-	maxRho = rho;
-        maxRhoCount = j;
-	}
+	q[j].re *= normFac;  /*4 * invNumPoints; */    /*  2 * invNumPoints;*/  
+        q[j].im *= normFac; /*- 4 * invNumPoints; */    /* -2 * invNumPoints;*/
+        qBCVSpin1[j].re *= normFac;/*  4 * invNumPoints; */  /*   2 * invNumPoints;*/
+        qBCVSpin1[j].im *= normFac;/* -4 * invNumPoints; */ /*  -2 * invNumPoints;*/
+        qBCVSpin2[j].re *= normFac;  /*  4 * invNumPoints;*/  /*   2 * invNumPoints;*/
+       	qBCVSpin2[j].im *= normFac;/* -4 * invNumPoints;*/  /*  -2 * invNumPoints;*/
+   /*    }
+   for ( j = 0; j < numPoints; ++j)
+       {     */
+   	rhosq   = 0.;
+   	rhosq   = q[j].re * q[j].re + q[j].im * q[j].im; 
+   	rhosq  += qBCVSpin1[j].re * qBCVSpin1[j].re + qBCVSpin1[j].im * qBCVSpin1[j].im; 
+   	rhosq  += qBCVSpin2[j].re * qBCVSpin2[j].re + qBCVSpin2[j].im * qBCVSpin2[j].im;
 
-/*fprintf (stdout, "maxRho       = %e \n", maxRho);
-fprintf (stdout, "maxRhoCount  = %d \n", maxRhoCount);*/
+	params->rhosqVec->data->data[j] = rhosq;  /*copied from Eirini's code */
+        /*fprintf (stdout, "rhosqVec            = %e \n",  params->rhosqVec->data->data[j] );*/
+   
+        rho    = pow(rhosq, 0.5);
+        fprintf (fpRho, "%d\t%e\n", j, rho);
 
-   invRho = 1/rho;
+        /* finding max value of rho in time */
+	if (rho > maxRho)
+		{
+		maxRho = rho;
+        	maxRhoCount = j;
+		}
 
-/*   alpha1 = q[j].re * invRho;
-   alpha2 = q[j].im * invRho;
-   alpha3 = qBCVSpin1[j].re * invRho;
-   alpha4 = qBCVSpin1[j].im * invRho;
-   alpha5 = qBCVSpin2[j].re * invRho;
-   alpha6 = qBCVSpin2[j].im * invRho;*/
+	/*fprintf (stdout, "maxRho       = %e \n", maxRho);
+	fprintf (stdout, "maxRhoCount  = %d \n", maxRhoCount);*/
 
-   alpha1 = q[j].re * invRho;
-   alpha4 = q[j].im * invRho;
-   alpha2 = qBCVSpin1[j].re * invRho;
-   alpha5 = qBCVSpin1[j].im * invRho;
-   alpha3 = qBCVSpin2[j].re * invRho;
-   alpha6 = qBCVSpin2[j].im * invRho;
+   	invRho = 1/rho;
 
+	/* choice of 2 different naming conventions for alpha's */
+	/* alpha1 = q[j].re * invRho;
+   	alpha2 = q[j].im * invRho;
+   	alpha3 = qBCVSpin1[j].re * invRho;
+   	alpha4 = qBCVSpin1[j].im * invRho;
+   	alpha5 = qBCVSpin2[j].re * invRho;
+   	alpha6 = qBCVSpin2[j].im * invRho;*/
 
+   	alpha1 = q[j].re * invRho;
+   	alpha4 = q[j].im * invRho;
+  	alpha2 = qBCVSpin1[j].re * invRho;
+   	alpha5 = qBCVSpin1[j].im * invRho;
+   	alpha3 = qBCVSpin2[j].re * invRho;
+   	alpha6 = qBCVSpin2[j].im * invRho;
 
+        /* alphaSumSq calc for checking purposes, should = 1 */
+        alphaSumSq  =  pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2)
+                    +  pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
 
- alphaSumSq  =  pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2)
-                + pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
-
-
-
-fprintf (fpalphaSumSq, "%d\t%e\t%e\t%e\t%e\t%e\t%e\t%e\n", j, alphaSumSq, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6);
+	fprintf (fpalphaSumSq, "%d\t%e\t%e\t%e\t%e\t%e\t%e\t%e\n", j, alphaSumSq,
+                                 alpha1, alpha2, alpha3, alpha4, alpha5, alpha6);
 
        } 
 
- invMaxRho = 1 / maxRho;
-                                                        
+       /*
+	*
+	* Reconstructing waveform corresponding to maximum rho event
+	*
+	*/
+
+invMaxRho = 1 / maxRho;                                                    
 fprintf (stdout, "maxRho       = %e \n", maxRho);
 fprintf (stdout, "maxRhoCount  = %d \n", maxRhoCount);
                                                                      
 /* calc alpha values in time domain */
-                                                                                                                             
-/*   alpha1 = q[maxRhoCount].re * invMaxRho;
-   alpha2 = q[maxRhoCount].im * invMaxRho;
-   alpha3 = qBCVSpin1[maxRhoCount].re * invMaxRho;
-   alpha4 = qBCVSpin1[maxRhoCount].im * invMaxRho;
-   alpha5 = qBCVSpin2[maxRhoCount].re * invMaxRho;
-   alpha6 = qBCVSpin2[maxRhoCount].im * invMaxRho;*/
+                                      
+/* choice of 2 diff naming conventions for alpha's */                                                                        /*   alpha1 = q[maxRhoCount].re * invMaxRho;
+alpha2 = q[maxRhoCount].im * invMaxRho;
+alpha3 = qBCVSpin1[maxRhoCount].re * invMaxRho;
+alpha4 = qBCVSpin1[maxRhoCount].im * invMaxRho;
+alpha5 = qBCVSpin2[maxRhoCount].re * invMaxRho;
+alpha6 = qBCVSpin2[maxRhoCount].im * invMaxRho;*/
 
-   alpha1 = q[maxRhoCount].re * invMaxRho;
-   alpha4 = q[maxRhoCount].im * invMaxRho;
-   alpha2 = qBCVSpin1[maxRhoCount].re * invMaxRho;
-   alpha5 = qBCVSpin1[maxRhoCount].im * invMaxRho;
-   alpha3 = qBCVSpin2[maxRhoCount].re * invMaxRho;
-   alpha6 = qBCVSpin2[maxRhoCount].im * invMaxRho;
-
-
+alpha1 = q[maxRhoCount].re * invMaxRho;
+alpha4 = q[maxRhoCount].im * invMaxRho;
+alpha2 = qBCVSpin1[maxRhoCount].re * invMaxRho;
+alpha5 = qBCVSpin1[maxRhoCount].im * invMaxRho;
+alpha3 = qBCVSpin2[maxRhoCount].re * invMaxRho;
+alpha6 = qBCVSpin2[maxRhoCount].im * invMaxRho;
 
 fprintf (stdout, "alpha1       = %e \n", alpha1);
 fprintf (stdout, "alpha2       = %e \n", alpha2);
@@ -1128,96 +1099,82 @@ fprintf (stdout, "alpha4       = %e \n", alpha4);
 fprintf (stdout, "alpha5       = %e \n", alpha5);
 fprintf (stdout, "alpha6       = %e \n", alpha6);
 
-  alphaSumSq  =  pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2) 
-                + pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
+alphaSumSq  =  pow(alpha1,2) + pow(alpha2,2) + pow(alpha3,2) 
+            +  pow(alpha4,2) + pow(alpha5,2) + pow(alpha6,2);
 
 fprintf (stdout, "alphaSumSq       = %e \n", alphaSumSq);
 
+/*calc freq domain waveform, store in qtilde[k]  */
 
+/* setting DC frequencies to 0 */
+qtilde[0].re = 0;
+qtilde[0].im = 0;
 
-                                                                                                                  
- /*calc freq domain waveform, store in qtilde[k]  */
+/* setting NYQUIST frequencies to 0 */
+qtilde[numPoints/2].re = 0;
+qtilde[numPoints/2].im = 0;
 
-  qtilde[0].re = 0;
-  qtilde[0].im = 0;
+/* creates time domain offset for reconstructed waveform */ 
+factor = LAL_TWOPI * 0.5;
+fprintf(stdout, "factor=%e\n", factor);
 
-  qtilde[numPoints/2].re = 0;
-  qtilde[numPoints/2].im = 0;
-
-  factor = LAL_TWOPI * 0.5;
-  fprintf(stdout, "factor=%e\n", factor);
-
-  for ( k = 1; k < (numPoints/2); ++k )
-  {                                                                                                                          
-    REAL4 x = tmpltSignal[k].re;
-    REAL4 y = - tmpltSignal[k].im;
-                                                                                                                             
-/* check here */                                                                                                                             
-/*    qtilde[k].re         = (alpha1 * x - alpha2 * y) * A1Vec->data[k] ;
-    qtilde[k].re        += (alpha3 * x - alpha4 * y) * A2Vec->data[k] ;
-    qtilde[k].re        += (alpha5 * x - alpha6 * y) * A3Vec->data[k] ;     
-
-    qtilde[k].im         = (alpha1 * y + alpha2 * x) * A1Vec->data[k] ;
-    qtilde[k].im        += (alpha3 * y + alpha4 * x) * A2Vec->data[k] ;
-    qtilde[k].im        += (alpha5 * y + alpha6 * x) * A3Vec->data[k] ;*/
-   
-
-    qtilde[k].re         = (alpha1 * x - alpha4 * y) * A1Vec->data[k] ;
-    qtilde[k].re        += (alpha2 * x - alpha5 * y) * A2Vec->data[k] ;
-    qtilde[k].re        += (alpha3 * x - alpha6 * y) * A3Vec->data[k] ;
-                                                                                                                             
-    qtilde[k].im         = (alpha1 * y + alpha4 * x) * A1Vec->data[k] ;
-    qtilde[k].im        += (alpha2 * y + alpha5 * x) * A2Vec->data[k] ;
-    qtilde[k].im        += (alpha3 * y + alpha6 * x) * A3Vec->data[k] ;
-
-
-
-   }
+for ( k = 1; k < (numPoints/2); ++k )
+	{                                                                                                                   
+	REAL4 x = tmpltSignal[k].re; 
+        REAL4 y = - tmpltSignal[k].im;
   
+	/* corresponds to other alpha naming convention */          
+        /*  qtilde[k].re         = (alpha1 * x - alpha2 * y) * A1Vec->data[k] ;
+        qtilde[k].re        += (alpha3 * x - alpha4 * y) * A2Vec->data[k] ;
+  	qtilde[k].re        += (alpha5 * x - alpha6 * y) * A3Vec->data[k] ;     
+
+    	qtilde[k].im         = (alpha1 * y + alpha2 * x) * A1Vec->data[k] ;
+        qtilde[k].im        += (alpha3 * y + alpha4 * x) * A2Vec->data[k] ;
+        qtilde[k].im        += (alpha5 * y + alpha6 * x) * A3Vec->data[k] ;*/
+   
+	qtilde[k].re         = (alpha1 * x - alpha4 * y) * A1Vec->data[k] ;
+    	qtilde[k].re        += (alpha2 * x - alpha5 * y) * A2Vec->data[k] ;
+        qtilde[k].re        += (alpha3 * x - alpha6 * y) * A3Vec->data[k] ;
+                                                                                                                             
+        qtilde[k].im         = (alpha1 * y + alpha4 * x) * A1Vec->data[k] ;
+	qtilde[k].im        += (alpha2 * y + alpha5 * x) * A2Vec->data[k] ;
+	qtilde[k].im        += (alpha3 * y + alpha6 * x) * A3Vec->data[k] ;
+	}
+
+/* calculate overlap of reconstructed waveform with itself, should  = 1 */  
 normData =  0.;
 
 for (k = 0; k < (numPoints/2)+1; ++k )
-{
-normData += ((qtilde[k].re * qtilde[k].re) + (qtilde[k].im * qtilde[k].im))
-             * wtilde[k].re;
-}
+	{
+	normData += ((qtilde[k].re * qtilde[k].re) + (qtilde[k].im * qtilde[k].im))
+                   * wtilde[k].re;
+	}
                                                                                                                              
 normData *= 4 * deltaF;
                                                                                                                              
 fprintf (stdout, "normData = %e\n", normData);
 
+/* inverse FFT to find time domain reconstructed waveform, store in hVec */
 
+LALCreateReverseRealFFTPlan(status->statusPtr, &prev, numPoints,0);
+LALSCreateVector(status->statusPtr, &hVec, numPoints);
+LALSCreateVector(status->statusPtr, &HVec, numPoints);
 
+/* setting DC and NYQUIST parts to 0 */
+HVec->data[0] = 0.;
+HVec->data[numPoints/2] = 0.;
 
-
-
-
-/* inverse FFT to find time domain waveform, store in hVec */
-
-
-        LALCreateReverseRealFFTPlan(status->statusPtr, &prev, numPoints,0);
-        LALSCreateVector(status->statusPtr, &hVec, numPoints);
-        LALSCreateVector(status->statusPtr, &HVec, numPoints);
-/*
-COMPLEX8Vector *HVec = NULL;
-*/
-
-        for (i=1; i<(numPoints/2); i++)
-
-        {
-/* time offset */
-                HVec->data[i] = qtilde[i].re *  cos((REAL4)i*factor) - qtilde[i].im *  sin((REAL4)i*factor);
-                HVec->data[numPoints-i] = -qtilde[i].im *  cos((REAL4)i*factor) - qtilde[i].re *  sin((REAL4)i*factor);  
-/* - to correct time reversal */
+for (i=1; i<(numPoints/2); i++)
+	{
+	HVec->data[i] = qtilde[i].re *  cos((REAL4)i*factor) - qtilde[i].im *  sin((REAL4)i*factor);
+	HVec->data[numPoints-i] = qtilde[i].im *  cos((REAL4)i*factor) + qtilde[i].re *  sin((REAL4)i*factor);  
+	/* no - sign needed to correct time reversal */
 	}       
-                HVec->data[0] = 0.;
-                HVec->data[numPoints/2] = 0.;
-
- 	
- for (i=1; i<(numPoints/2)+1; i++)
+                
+/*for (i=1; i<(numPoints/2)+1; i++)
         {
-	 fprintf (fpWvfIm, "%d %e %e\n", i, HVec->data[i], HVec->data[numPoints-i]);
-	}
+	fprintf (fpWvfIm, "%d %e %e\n", i, HVec->data[i], HVec->data[numPoints-i]);
+	}*/
 
 fprintf (stdout, "before FFT \n");
 
@@ -1226,28 +1183,19 @@ CHECKSTATUSPTR( status );
 
 fprintf (stdout, "after FFT \n");
 
-
-/*
-LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec,
-                   params->qtildeVec, params->invPlan );
-   CHECKSTATUSPTR( status );*/
-
 for ( j = 0; j < numPoints; ++j)
-       
 	{
 /*	fprintf (stdout, "q[j]            = %e \n", q[j]);
 	fprintf (stdout, "q[j].re         = %e \n", q[j].re);
-	fprintf (stdout, "q[j].im         = %e \n", q[j].im);*/
-
-/*	fprintf (fpWvtIm, "%d\t%e\n", j, q[j].im);*/
-/*        fprintf (fpWvtRe, "%d\t%e\n", j, q[j].re);*/
+	fprintf (stdout, "q[j].im         = %e \n", q[j].im);
+	fprintf (fpWvtIm, "%d\t%e\n", j, q[j].im);
+        fprintf (fpWvtRe, "%d\t%e\n", j, q[j].re);*/
  
+        hVec->data[j] *= deltaF;         /* trying to normalise  reconstructed wvf */
 
-hVec->data[j] *= deltaF;         /* trying to normalise  reconstructed wvf */
+        /* hVec->data[j] *= maxRho; */   /* sets Recon wvf equal in ampl. to input wave */
 
-hVec->data[j] *= maxRho;         /* sets Recon wvf equal in ampl. to input wave */
-
-fprintf (fpRecon, "%d\t%e\n", j, hVec->data[j]);
+	fprintf (fpRecon, "%d\t%e\n", j, hVec->data[j]);
 
 
        }
@@ -1285,58 +1233,18 @@ fclose (fpStrain1Im);
 
 fclose (fpDataNorm);
 
-
-fprintf (stdout, "after closing output files \n");
-
-
 LALDDestroyVector ( status->statusPtr, &A1Vec);
-
-fprintf (stdout, "after closing A1 \n");
-
-
 LALDDestroyVector ( status->statusPtr, &A2Vec);
-
-                                                                              
-fprintf (stdout, "after closing A2 \n");
-
-
 LALDDestroyVector ( status->statusPtr, &A3Vec);
-
-fprintf (stdout, "after closing A3 \n");
-
-
 LALSDestroyVector ( status->statusPtr, &hVec);
-
-fprintf (stdout, "after closing hVec \n");
-
-
 LALSDestroyVector ( status->statusPtr, &HVec);
-
-fprintf (stdout, "after closing Hvec \n");
-
-
 LALDestroyRealFFTPlan ( status->statusPtr, &prev);
-
 LALSDestroyVector ( status->statusPtr, &dVec);
-                                                                                                                             
-fprintf (stdout, "after closing hVec \n");
-                                                                                                                             
-                                                                                                                             
 LALSDestroyVector ( status->statusPtr, &DVec);
-                                                                                                                             
-fprintf (stdout, "after closing Hvec \n");
-                                                                                                                             
-                                                                                                                             
 LALDestroyRealFFTPlan ( status->statusPtr, &prev1);
-
-
-
-
-
-                                                                                                                             
 
 fprintf (stdout, "just before end  of FindChirpBCVSpinFilter \n");
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+DETATCHSTATUSPTR( status );
+RETURN( status );
 }
