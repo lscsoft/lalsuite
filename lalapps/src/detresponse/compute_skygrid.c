@@ -431,14 +431,18 @@ void compute_skygrid(LALStatus * status)
       (void)mystrlcpy(ser_sum_file_name, sum_file_name, LALNameLength);
       (void)mystrlcpy(ser_relfreq_file_name, relfreq_file_name, LALNameLength);
       
-      /* al files have no format suffix */
-      if (!(strncasecmp(&(args_info.format_arg[1]), "al", LALNameLength) == 0))
+      if ((args_info.format_arg[0]=='m') ||
+          (args_info.format_arg[0]=='M'))
       {
         (void)strncat(ser_cross_file_name, dottimestamp, LALNameLength);
         (void)strncat(ser_plus_file_name, dottimestamp, LALNameLength);
         (void)strncat(ser_sum_file_name, dottimestamp, LALNameLength);  
         (void)strncat(ser_relfreq_file_name, dottimestamp, LALNameLength);  
+      }
       
+      /* al files have no format suffix */
+      if (!(strncasecmp(&(args_info.format_arg[1]), "al", LALNameLength) == 0))
+      {
         (void)strncat(ser_cross_file_name, outfile_suffix, LALNameLength);
         (void)strncat(ser_plus_file_name, outfile_suffix, LALNameLength);
         (void)strncat(ser_sum_file_name, outfile_suffix, LALNameLength);  
