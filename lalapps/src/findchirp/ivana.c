@@ -1,6 +1,7 @@
 /*=============================================================================
 ivana - Inspiral Veto ANAlysis
 Written June-July 2002 by Peter Shawhan
+Modified various times after that
 
 To compile/link on Solaris:
 gcc -g ivana.c -I$LIGOTOOLS/include -L$LIGOTOOLS/lib -ldataflow -lsocket -lnsl\
@@ -68,14 +69,22 @@ int main( int argc, char **argv )
   char candFile[256];
   char vetospec[1024];
   char outFile[256] = "";
+  char vetoRangeFile[256] = "";
+  FILE *vrfile = NULL;
   char intext[256], temptext[256];
-  char* arg;
+  char *arg, *val, opt='\0';
+  size_t vallen;
+  char *rangespec = NULL;
+  float tempval;
+  float snrcut = 1.0;
+  float chisqcut = 1.0e10;
   char* nextptr;
   char* chptr;
   char* chptr2;
   char* tokptr;
   FILE* fd;
   int timeBase = 0;
+  double timeBaseD;
   double tTemp1, tTemp2;
 
   Range range[MAXTIMERANGES];
@@ -90,9 +99,9 @@ int main( int argc, char **argv )
   int ivfile, jvfile;
 
   double tCand, tCandLast=-999.0, tDeadNeg=-2.0e9, tDeadPos=-2.0e9;
-  float snrCand;
+  float snrCand, chisqCand;
   double tdead1, tdead2;
-  int iCandS, iCandNS, iCandSnr;
+  int iCandS, iCandNS, iCandSnr, iCandChisq;
   int status, status2, ostatus, candeof=0;
   int iveto, iarg, iposarg=0, ipos, pass, clusPass;
   char ttext[64];
@@ -144,240 +153,344 @@ int main( int argc, char **argv )
   for ( iarg=1; iarg<argc; iarg++ ) {
     arg = argv[iarg];
 
-    /*-- First check for a flag (a dash followed by a non-digit) --*/
-    if ( *arg == '-' && strchr("0123456789",arg[1])==NULL ) {
-      switch (arg[1]) {
-      case 'd':
-	debug++;
-	break;
-      default:
-	printf( "Invalid flag: %s\n", arg );
-	PrintUsage(); return 1;
+    /*-- See whether this introduces an option --*/
+    if ( arg[0]=='-' && strchr("0123456789",arg[1])==NULL && arg[1] != '\0' ) {
+      /*-- There are no valid multi-letter options, so the rest of the
+	argument (if any) must be the value associated with the option --*/
+      opt = arg[1];
+      if ( strlen(arg) > 2 ) {
+	val = arg+2;
+	vallen = strlen(arg) - 2;
+      } else {
+	val = NULL;
+	vallen = 0;
       }
-      continue;
+    } else {
+      val = arg;
+      vallen = strlen(val);
     }
 
-    /*-- If we get here, then we have a positional argument --*/
-    iposarg++;
-    switch (iposarg) {
+    switch (opt) {
 
-    case 1:
-      /*-- Candidate event file --*/
+    case '\0':   /*-- Positional argument --*/
 
-      strncpy( candFile, arg, sizeof(candFile) );
-      if ( candFile[sizeof(candFile)-1] != '\0' ) {
-	printf( "Error: candidate file name is too long\n" ); return 1;
-      }
+      iposarg++;
+      switch (iposarg) {
 
-      break;
+      case 1:
+	/*-- Candidate event file --*/
 
-    case 2:
-      /*-- Veto specification (comma-sep list of filename/window pairs) --*/
+	strncpy( candFile, arg, sizeof(candFile) );
+	if ( candFile[sizeof(candFile)-1] != '\0' ) {
+	  printf( "Error: candidate file name is too long\n" ); return 1;
+	}
 
-      /*-- If veto specification is blank, skip it --*/
-      if ( *arg == '\0' ) {
 	break;
-      }
 
-      do {
+      case 2:
+	/*-- Veto specification (comma-sep list of filename/window pairs) --*/
 
-	vFile = &(vetoFile[nvetofiles]);
-
-	/*-- Split off the window specification (in parentheses) --*/
-	chptr = strchr( arg, '(' );
-	if ( chptr == NULL || arg[strlen(arg)-1] != ')' ) {
-	  printf ( "Each item in the veto specification must consist of"
-		   " filename followed, in\nparentheses, by"
-		   " (negative,positive) window limits\n" );
-	  PrintUsage(); return 1;
-	}
-	/*-- Null-terminate just the filename part --*/
-	*chptr = '\0'; chptr++;
-
-	/*-- Find the end of this item --*/
-	chptr2 = strchr( chptr, ')' );
-	if ( chptr2 == NULL ) {
-	  printf ( "Missing close-paren in veto specification\n" );
-	  PrintUsage(); return 1;
-	}
-	chptr2++;
-	/*-- At this point, chptr2 points to the next item (if any) --*/
-	switch ( *chptr2 )
-	{
-	case '\0':
-	  /*-- No more veto specification items in list --*/
-	  nextptr = NULL;
+	/*-- If veto specification is blank, skip it --*/
+	if ( *arg == '\0' ) {
 	  break;
-	case ',':
-	  /*-- There's another veto specification item in the list --*/
-	  nextptr = chptr2 + 1;
-	  break;
-	default:
-	  printf ( "Items in list of veto specifications must be separated"
-		   " by a comma\n" );
-	  PrintUsage(); return 1;
 	}
 
-	/*-- Copy the filename --*/
-	strncpy( vFile->filename, arg, sizeof(vFile->filename) );
-	if ( vFile->filename[sizeof(vFile->filename)-1] != '\0' ) {
-	  printf( "Error: veto file name is too long\n" ); return 1;
-	}
+	do {
 
-	/*-- Set defaults for window --*/
-	vFile->winNeg = 0.0;
-	vFile->winPos = 0.0;
-	vFile->snrRatio = 1000000.0;
+	  vFile = &(vetoFile[nvetofiles]);
 
-	/*-- Copy the window specification string --*/
-	strncpy( vetospec, chptr, sizeof(vetospec) );
-	if ( vetospec[sizeof(vetospec)-1] != '\0' ) {
-	  printf( "Error: veto specification string is too long\n" ); return 1;
-	}
-
-	/*-- Loop over tokens in the window specification string, delimited by
-	  spaces and/or commas --*/
-	chptr = vetospec;
-	ipos = 0;
-	while ( (tokptr=(char*)strtok(chptr," ,")) != NULL ) {
-	  ipos++;
-	  switch (ipos) {
-	  case 1:
-	    sscanf( tokptr, "%lf", &(vFile->winNeg) );
-	    break;
-	  case 2:
-	    sscanf( tokptr, "%lf", &(vFile->winPos) );
-	    break;
-	  case 3:
-	    sscanf( tokptr, "%f", &(vFile->snrRatio) );
-	    break;
+	  /*-- Split off the window specification (in parentheses) --*/
+	  chptr = strchr( arg, '(' );
+	  if ( chptr == NULL || arg[strlen(arg)-1] != ')' ) {
+	    printf ( "Each item in the veto specification must consist of"
+		     " filename followed, in\nparentheses, by"
+		     " (negative,positive) window limits\n" );
+	    PrintUsage(); return 1;
 	  }
-	  chptr = NULL;
-	}
+	  /*-- Null-terminate just the filename part --*/
+	  *chptr = '\0'; chptr++;
 
-	nvetofiles++;
-	if ( nextptr != NULL ) { arg = nextptr; }
+	  /*-- Find the end of this item --*/
+	  chptr2 = strchr( chptr, ')' );
+	  if ( chptr2 == NULL ) {
+	    printf ( "Missing close-paren in veto specification\n" );
+	    PrintUsage(); return 1;
+	  }
+	  chptr2++;
+	  /*-- At this point, chptr2 points to the next item (if any) --*/
+	  switch ( *chptr2 ) {
+	  case '\0':
+	    /*-- No more veto specification items in list --*/
+	    nextptr = NULL;
+	    break;
+	  case ',':
+	    /*-- There's another veto specification item in the list --*/
+	    nextptr = chptr2 + 1;
+	    break;
+	  default:
+	    printf ( "Items in list of veto specifications must be separated"
+		     " by a comma\n" );
+	    PrintUsage(); return 1;
+	  }
 
-      } while ( nextptr != NULL );
+	  /*-- Copy the filename --*/
+	  strncpy( vFile->filename, arg, sizeof(vFile->filename) );
+	  if ( vFile->filename[sizeof(vFile->filename)-1] != '\0' ) {
+	    printf( "Error: veto file name is too long\n" ); return 1;
+	  }
 
-      break;
+	  /*-- Set defaults for window --*/
+	  vFile->winNeg = 0.0;
+	  vFile->winPos = 0.0;
+	  vFile->snrRatio = 1000000.0;
 
-    case 3:
-      /*-- Range or range-file --*/
-
-      /*-- First try to parse as a time range --*/
-      chptr = strchr( arg, '-' );
-      if ( chptr != NULL ) {
-	*chptr = '\0'; chptr++;
-	tTemp1 = 0.0; tTemp2 = 2.0e9;
-	/*-- Try to parse --*/
-	status = 1; status2 = 1;
-	if ( strlen(arg) > 0 ) { status = sscanf( arg, "%lf", &tTemp1 ); }
-	if ( strlen(chptr) > 0 ) { status2 = sscanf( chptr, "%lf", &tTemp2 ); }
-	chptr--; *chptr = '-';
-	if ( status && status2 &&
-	     (tTemp1 > 1.0e6 || (tTemp2 > 1.0e8 && tTemp2 < 1.9e9) ) ) {
-	  /*-- User specified a time range --*/
-
-	  if ( tTemp2 <= tTemp1 ) {
-	    printf( "Invalid range specification (t2<=t1): %s\n", arg );
+	  /*-- Copy the window specification string --*/
+	  strncpy( vetospec, chptr, sizeof(vetospec) );
+	  if ( vetospec[sizeof(vetospec)-1] != '\0' ) {
+	    printf( "Error: veto specification string is too long\n" );
 	    return 1;
 	  }
 
-	  nRange = 1;
-	  InitRange( &range[0], tTemp1, tTemp2 );
-	}
-      }
+	  /*-- Loop over tokens in the window specification string, delimited
+	    by spaces and/or commas --*/
+	  chptr = vetospec;
+	  ipos = 0;
+	  while ( (tokptr=(char*)strtok(chptr," ,")) != NULL ) {
+	    ipos++;
+	    switch (ipos) {
+	    case 1:
+	      sscanf( tokptr, "%lf", &(vFile->winNeg) );
+	      break;
+	    case 2:
+	      sscanf( tokptr, "%lf", &(vFile->winPos) );
+	      break;
+	    case 3:
+	      sscanf( tokptr, "%f", &(vFile->snrRatio) );
+	      break;
+	    }
+	    chptr = NULL;
+	  }
 
-      /*-- If nRange is still 0, interpret this as a filename (unless it is
-	blank) --*/
-      strcpy( temptext, arg );
-      if ( nRange == 0 && strtok(temptext," ") != NULL ) {
-	fd = fopen( arg, "r" );
-	if ( fd == NULL ) {
-	  printf( "Error opening range-definition file %s\n", arg );
+	  nvetofiles++;
+	  if ( nextptr != NULL ) { arg = nextptr; }
+
+	} while ( nextptr != NULL );
+
+	break;
+
+      case 3:
+	/*-- Range or range-file --*/
+	if ( rangespec ) {
+	  printf( "Error: cannot have multiple range specifications\n" );
 	  PrintUsage(); return 1;
 	}
+	rangespec = arg;
+	break;
 
-	/*-- Read lines from the file and parse them --*/
-	while ( fgets(intext,sizeof(intext),fd) ) {
-	  intext[sizeof(intext)-1] = '\0';
-
-	  /*-- Strip off comments --*/
-	  chptr = strchr( intext, '#' );
-	  if ( chptr ) { *chptr = '\0'; }
-
-	  /*-- Skip any leading spaces or tabs --*/
-	  chptr2 = intext;
-	  while ( *chptr2 == ' ' ) { chptr2++; }
-	  /*-- If line is blank, go on to the next line --*/
-	  if ( strlen(chptr2) == 0 ) { continue; }
-
-	  /*-- Parse as a range --*/
-
-	  chptr = strchr( chptr2, '-' );
-	  if ( chptr == NULL ) {
-	    /*-- Start and stop times might be separated by a space --*/
-	    chptr = strchr( chptr2, ' ' );
-	    if ( chptr == NULL ) {
-	      printf( "Error parsing time range in %s: %s\n", arg, intext );
-	      fclose(fd); return 1;
-	    }
-	  }
-	  *chptr = '\0'; chptr++;
-	  tTemp1 = 0.0; tTemp2 = 2.0e9;
-
-	  if ( strlen(chptr2) > 0 ) {
-	    if ( sscanf( chptr2, "%lf", &tTemp1 ) < 1 ) {
-	      printf( "Error parsing beginning of time range: %s\n", chptr2 );
-	      fclose(fd); return 1;
-	    }
-	  }
-
-	  if ( strlen(chptr) > 0 ) {
-	    if ( sscanf( chptr, "%lf", &tTemp2 ) < 1 ) {
-	      printf( "Error parsing end of time range: %s\n", chptr );
-	      fclose(fd); return 1;
-	    }
-	  }
-
-	  if ( tTemp2 <= tTemp1 ) {
-	    chptr--; *chptr = '-';
-	    printf( "Invalid range specification (t2<=t1): %s\n", intext );
-	    fclose(fd); return 1;
-	  }
-
-	  /*-- Add this to the array of ranges --*/
-	  InitRange( &range[nRange], tTemp1, tTemp2 );
-	  nRange++;
+      case 4:
+	/*-- Output filename --*/
+	if ( strlen(outFile) ) {
+	  printf( "Error: cannot have multiple output files for events\n" );
+	  PrintUsage(); return 1;
 	}
+	strncpy( outFile, arg, sizeof(outFile) );
+	if ( outFile[sizeof(outFile)-1] != '\0' ) {
+	  printf( "Error: output file name is too long\n" ); return 1;
+	}
+	break;
 
-	fclose( fd );
-      }
+      default:
+	printf( "Too many positional arguments\n" );
+	PrintUsage(); return 1;
+
+      } /*-- End of switch (iposarg) --*/
 
       break;
 
-    case 4:
-      /*-- Output filename --*/
+    case 'd':        /*-- Debug flag --*/
+      debug++;
+      opt = '\0';
+      break;
 
-      strncpy( outFile, arg, sizeof(outFile) );
-      if ( outFile[sizeof(outFile)-1] != '\0' ) {
-	printf( "Error: output file name is too long\n" ); return 1;
+    case 'r':        /*-- Range specification --*/
+      if ( val ) {
+	if ( rangespec ) {
+	  printf( "Error: cannot have multiple range specifications\n" );
+	  PrintUsage(); return 1;
+	}
+	rangespec = val;
+	opt = '\0';
       }
+      break;
 
+    case 'o':        /*-- Output file --*/
+      if ( val ) {
+	if ( strlen(outFile) ) {
+	  printf( "Error: cannot produce multiple output files\n" );
+	  PrintUsage(); return 1;
+	}
+	strncpy( outFile, val, sizeof(outFile) );
+	if ( outFile[sizeof(outFile)-1] != '\0' ) {
+	  printf( "Error: output file name is too long\n" ); return 1;
+	}
+	opt = '\0';
+      }
+      break;
+
+    case 'v':        /*-- Veto range file --*/
+      if ( val ) {
+	if ( strlen(vetoRangeFile) ) {
+	  printf( "Error: cannot produce multiple veto range files\n" );
+	  PrintUsage(); return 1;
+	}
+	strncpy( vetoRangeFile, val, sizeof(vetoRangeFile) );
+	if ( vetoRangeFile[sizeof(vetoRangeFile)-1] != '\0' ) {
+	  printf( "Error: veto range file name is too long\n" ); return 1;
+	}
+	opt = '\0';
+      }
+      break;
+
+    case 's':        /*-- SNR cut --*/
+      if ( val ) {
+	status = sscanf( val, "%f", &tempval );
+	if ( status == 0 ) {
+	  printf( "Error: unable to parse SNR cut value as a float: %s\n",
+		  val );
+	  PrintUsage(); return 1;
+	}
+	snrcut = (float) tempval;
+	opt = '\0';
+      }
+      break;
+
+    case 'c':        /*-- CHISQ cut --*/
+      if ( val ) {
+	status = sscanf( val, "%f", &tempval );
+	if ( status == 0 ) {
+	  printf( "Error: unable to parse CHISQ cut value as a float: %s\n",
+		  val );
+	  PrintUsage(); return 1;
+	}
+	chisqcut = (float) tempval;
+	opt = '\0';
+      }
       break;
 
     default:
-      printf( "Too many positional arguments\n" );
+      printf( "Invalid flag: %s\n", arg );
       PrintUsage(); return 1;
 
-    } /*-- End of switch (iposarg) --*/
+    } /*-- End of switch on 'opt' --*/
 
   } /*-- End of loop over arguments (iarg) --*/
 
   if ( iposarg < 2 ) {
     printf( "Not enough arguments\n" );
     PrintUsage(); return 1;
+  }
+
+  if ( opt != '\0' ) {
+    printf( "The -%c flag must be followed by a value\n", opt );
+    PrintUsage(); return 1;
+  }
+
+  /*-- Parse the range spec (explicit range, or filename) --*/
+  if ( rangespec ) {
+    /*-- First try to parse as a time range --*/
+    chptr = strchr( rangespec, '-' );
+    if ( chptr != NULL ) {
+      *chptr = '\0'; chptr++;
+      tTemp1 = 0.0; tTemp2 = 2.0e9;
+      /*-- Try to parse --*/
+      status = 1; status2 = 1;
+      if ( strlen(rangespec) > 0 ) {
+	status = sscanf( rangespec, "%lf", &tTemp1 );
+      }
+      if ( strlen(chptr) > 0 ) {
+	status2 = sscanf( chptr, "%lf", &tTemp2 );
+      }
+      chptr--; *chptr = '-';
+      if ( status && status2 &&
+	   (tTemp1 > 1.0e6 || (tTemp2 > 1.0e8 && tTemp2 < 1.9e9) ) ) {
+	/*-- User specified a time range --*/
+
+	if ( tTemp2 <= tTemp1 ) {
+	  printf( "Invalid range specification (t2<=t1): %s\n", rangespec );
+	  return 1;
+	}
+
+	nRange = 1;
+	InitRange( &range[0], tTemp1, tTemp2 );
+      }
+    }
+
+    /*-- If nRange is still 0, interpret this as a filename (unless it is
+      blank) --*/
+    strcpy( temptext, rangespec );
+    if ( nRange == 0 && strtok(temptext," ") != NULL ) {
+      fd = fopen( rangespec, "r" );
+      if ( fd == NULL ) {
+	printf( "Error opening range-definition file %s\n", rangespec );
+	PrintUsage(); return 1;
+      }
+
+      /*-- Read lines from the file and parse them --*/
+      while ( fgets(intext,sizeof(intext),fd) ) {
+	intext[sizeof(intext)-1] = '\0';
+
+	/*-- Strip off comments --*/
+	chptr = strchr( intext, '#' );
+	if ( chptr ) { *chptr = '\0'; }
+
+	/*-- Skip any leading spaces or tabs --*/
+	chptr2 = intext;
+	while ( *chptr2 == ' ' ) { chptr2++; }
+	/*-- If line is blank, go on to the next line --*/
+	if ( strlen(chptr2) == 0 ) { continue; }
+
+	/*-- Parse as a range --*/
+
+	chptr = strchr( chptr2, '-' );
+	if ( chptr == NULL ) {
+	  /*-- Start and stop times might be separated by a space --*/
+	  chptr = strchr( chptr2, ' ' );
+	  if ( chptr == NULL ) {
+	    printf( "Error parsing time range in %s: %s\n",
+		    rangespec, intext );
+	    fclose(fd); return 1;
+	  }
+	}
+	*chptr = '\0'; chptr++;
+	tTemp1 = 0.0; tTemp2 = 2.0e9;
+
+	if ( strlen(chptr2) > 0 ) {
+	  if ( sscanf( chptr2, "%lf", &tTemp1 ) < 1 ) {
+	    printf( "Error parsing beginning of time range: %s\n", chptr2 );
+	    fclose(fd); return 1;
+	  }
+	}
+
+	if ( strlen(chptr) > 0 ) {
+	  if ( sscanf( chptr, "%lf", &tTemp2 ) < 1 ) {
+	    printf( "Error parsing end of time range: %s\n", chptr );
+	    fclose(fd); return 1;
+	  }
+	}
+
+	if ( tTemp2 <= tTemp1 ) {
+	  chptr--; *chptr = '-';
+	  printf( "Invalid range specification (t2<=t1): %s\n", intext );
+	  fclose(fd); return 1;
+	}
+
+	/*-- Add this to the array of ranges --*/
+	InitRange( &range[nRange], tTemp1, tTemp2 );
+	nRange++;
+      }
+
+      fclose( fd );
+    }
   }
 
   if (debug >= 1) {
@@ -433,11 +546,14 @@ int main( int argc, char **argv )
       AbortAll( candEnv, vetoFile, nvetofiles, outEnv );
       return 4;
     }
-
+ 
     /*-- It is OK for the "SNR" column to be absent --*/
     iCandSnr = MetaioFindColumn( candEnv, "snr" );
 
-  }
+    /*-- It is OK for the "CHISQ" column to be absent --*/
+    iCandChisq = MetaioFindColumn( candEnv, "chisq" );
+
+ }
 
   /*-- Open file(s) of vetoes --*/
   for ( ivfile=0; ivfile<nvetofiles; ivfile++ ) {
@@ -532,6 +648,16 @@ int main( int argc, char **argv )
     MetaioCopyEnv( outEnv, candEnv );
   }
 
+  /*-- Open the output veto range file, if necessary --*/
+  if ( strlen(vetoRangeFile) > 0 ) {
+    vrfile = fopen( vetoRangeFile, "w" );
+    if ( vrfile == NULL ) {
+      printf( "Error opening veto range file %s\n", vetoRangeFile );
+      AbortAll( candEnv, vetoFile, nvetofiles, outEnv );
+      return 2;
+    }
+  }
+
 
   /*---------- Loop over rows in the candidate file ----------*/
 
@@ -579,6 +705,7 @@ int main( int argc, char **argv )
 	  to retain more numerical precision in time values --*/
 	if ( timeBase == 0 ) {
 	  timeBase = atoi(ttext);
+	  timeBaseD = (double) timeBase;
 	  /*-- Modify all time ranges to be relative to the time base --*/
 	  for ( jRange=0; jRange<nRange; jRange++ ) {
 	    range[jRange].t1 -= (double) timeBase;
@@ -589,6 +716,11 @@ int main( int argc, char **argv )
 	tCand = (double) ( atoi(ttext) - timeBase ) + secfrac + 0.5*dur;
 	/*-- I'm not sure if an "SNR" or "significance" is in the file --*/
 	snrCand = 1.0;
+	chisqCand = 0.0;
+
+	/*-- Apply the SNR and CHISQ cuts --*/
+	if ( snrCand < snrcut || chisqCand > chisqcut ) continue;
+
 	pass = 1;
 	if ( debug >= 2 ) printf( "tCand is %.4lf\n", tCand );
 	break;
@@ -598,50 +730,68 @@ int main( int argc, char **argv )
     } else {
       /*-- We're reading from a LIGO_LW file --*/
 
-      status = MetaioGetRow(candEnv);
-      if ( status == -1 ) {
-	printf( "Error while getting row from candidate file %s\n", candFile );
-	AbortAll( candEnv, vetoFile, nvetofiles, outEnv );
-	return 6;
+      while ( 1 ) {
 
-      } else if ( status == 0 ) {
-	/*-- Reached end of file --*/
-	candeof = 1;
-	/*-- Set a time extremely far in the future, so that we read all
-	  veto events which are "relevant" (i.e. fall within range) --*/
-	tCand = 2.0e9;
+	status = MetaioGetRow(candEnv);
+	if ( status == -1 ) {
+	  printf( "Error while getting row from candidate file %s\n",
+		  candFile );
+	  AbortAll( candEnv, vetoFile, nvetofiles, outEnv );
+	  return 6;
 
-      } else {
+	} else if ( status == 0 ) {
+	  /*-- Reached end of file --*/
+	  candeof = 1;
+	  /*-- Set a time extremely far in the future, so that we read all
+	    veto events which are "relevant" (i.e. fall within range) --*/
+	  tCand = 2.0e9;
+	  break;
 
-	/*-- Get time --*/
-	table = &(candEnv->ligo_lw.table);
-
-	/*-- If this is the first event, set the time base.  This is a trick
-	  to retain more numerical precision in time values --*/
-	if ( timeBase == 0 ) {
-	  timeBase = table->elt[iCandS].data.int_4s;
-	  /*-- Modify all time ranges to be relative to the time base --*/
-	  for ( jRange=0; jRange<nRange; jRange++ ) {
-	    range[jRange].t1 -= (double) timeBase;
-	    range[jRange].t2 -= (double) timeBase;
-	  }
-	}
-
-	/*-- Get the time of this event candidate --*/
-	tCand = (double) ( table->elt[iCandS].data.int_4s - timeBase )
-	  + 1.0e-9 * (double) table->elt[iCandNS].data.int_4s;
-
-	/*-- Also get the SNR (if known) --*/
-	if ( iCandSnr >= 0 ) {
-	  snrCand = table->elt[iCandSnr].data.real_4;
 	} else {
-	  snrCand = 1.0;
-	}
 
-	pass = 1;
-	if ( debug >= 2 ) printf( "tCand is %.4lf\n", tCand );
+	  /*-- Get time --*/
+	  table = &(candEnv->ligo_lw.table);
 
-      }  /*-- End block if we read a row successfully --*/
+	  /*-- If this is the first event, set the time base.  This is a trick
+	    to retain more numerical precision in time values --*/
+	  if ( timeBase == 0 ) {
+	    timeBase = table->elt[iCandS].data.int_4s;
+	    timeBaseD = (double) timeBase;
+	    /*-- Modify all time ranges to be relative to the time base --*/
+	    for ( jRange=0; jRange<nRange; jRange++ ) {
+	      range[jRange].t1 -= (double) timeBase;
+	      range[jRange].t2 -= (double) timeBase;
+	    }
+	  }
+
+	  /*-- Get the time of this event candidate --*/
+	  tCand = (double) ( table->elt[iCandS].data.int_4s - timeBase )
+	    + 1.0e-9 * (double) table->elt[iCandNS].data.int_4s;
+
+	  /*-- Also get the SNR (if known) --*/
+	  if ( iCandSnr >= 0 ) {
+	    snrCand = table->elt[iCandSnr].data.real_4;
+	  } else {
+	    snrCand = 1.0;
+	  }
+
+	  /*-- Also get the CHISQ (if known) --*/
+	  if ( iCandChisq >= 0 ) {
+	    chisqCand = table->elt[iCandChisq].data.real_4;
+	  } else {
+	    chisqCand = 0.0;
+	  }
+
+	  /*-- Apply the SNR and CHISQ cuts --*/
+	  if ( snrCand < snrcut || chisqCand > chisqcut ) continue;
+
+	  pass = 1;
+	  if ( debug >= 2 ) printf( "tCand is %.4lf\n", tCand );
+	  break;
+
+	}  /*-- End block if we read a row successfully --*/
+
+      }  /*-- End of while loop --*/
 
     }  /*-- End code branch for different kinds of input files --*/
 
@@ -848,6 +998,16 @@ int main( int argc, char **argv )
       if ( tdead1 > tDeadPos ) {
 	/*-- There is a live gap between the existing veto cluster and this
 	  veto event, so start a new veto cluster --*/
+	/*-- First, flush out the old veto cluster to the veto range file --*/
+	if ( vrfile && tDeadNeg > -2.0e9 ) {
+	  if ( debug >= 3 ) {
+	    printf( "Writing out veto range: %.6f %.6f\n", tDeadNeg,tDeadPos );
+	  }
+	  fprintf( vrfile, "%.6lf %.6lf\n",
+		   timeBaseD + (double) tDeadNeg,
+		   timeBaseD + (double) tDeadPos );
+	}
+	  
 	tDeadNeg = tdead1;
 	tDeadPos = tdead2;
 	vRange->dead += (tdead2 - tdead1);
@@ -982,8 +1142,30 @@ int main( int argc, char **argv )
       vRange->dead -= (tDeadPos - tDeadNeg);
     } else if ( tDeadPos > cRange->t2 ) {
       vRange->dead -= (tDeadPos - cRange->t2 );
+      /*-- Flush out the last veto cluster (mod) to the veto range file --*/
+      if ( vrfile ) {
+	if ( debug >= 3 ) {
+	  printf( "Writing out veto range: %.6f %.6lf\n", tDeadNeg,cRange->t2);
+	}
+	fprintf( vrfile, "%.6lf %.6lf\n",
+		 timeBaseD + (double) tDeadNeg,
+		 timeBaseD + cRange->t2 );
+      }
+    }
+  } else {
+    /*-- Flush out the last veto cluster to the veto range file --*/
+    if ( vrfile && tDeadNeg > 0.0 ) {
+      if ( debug >= 3 ) {
+	printf( "Writing out veto range: %.6f %.6f\n", tDeadNeg,tDeadPos );
+      }
+      fprintf( vrfile, "%.6lf %.6lf\n",
+	       timeBaseD + (double) tDeadNeg,
+	       timeBaseD + (double) tDeadPos );
     }
   }
+
+  /*-- Close the veto range file, if it is open --*/
+  if ( vrfile ) { fclose( vrfile ); }
 
   /*-- Fill cluster "fail" fields --*/
   for ( jRange=0; jRange<nRange; jRange++ ) {
@@ -1032,7 +1214,7 @@ ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
     cRange = &range[jRange];
 
     if ( jRange < nRange ) {
-      printf( "%10.0lf %5.0lf", (double)timeBase+cRange->t1, cRange->secs );
+      printf( "%10.0lf %5.0lf", timeBaseD+cRange->t1, cRange->secs );
     } else {
       printf( "   Total %7.0lf", cRange->secs );
     }
@@ -1096,31 +1278,33 @@ ___Start__ _Dur_ __Veto__used__used% __Cand___cut___cut% _Clus___cut__cut% dead%
 /*===========================================================================*/
 void PrintUsage()
 {
-  printf( "Usage:  ivana <candidate file> <veto spec> [<range spec>]"
-	  " [<output file>]\n" );
-  printf( "  <candidate file> is simply the name of a LIGO_LW table file.\n" );
-  printf( "  <veto spec> consists of one or more items separated by commas."
-                             "  Each item has\n"
-          "      the form '<file>(<negWindow>,<posWindow>[,<snrRatio>])'."
-                             "  <snrRatio> is\n"
-	  "      optional; if specified, then signal candidates will NOT be"
-                             " vetoed if the\n"
-	  "      signal SNR exceeds the veto SNR by a factor of <snrRatio>"
-	                     " or greater.\n"
-	  "      NOTE: Enclose <veto spec> in quotes to prevent the shell"
-	                     " from\n"
-	  "      interpreting the parentheses!\n"
-	  "      Examples:  'mich_ctrl5.xml(-0.5,+1,1.5)'\n"
-	  "                 'mich_ctrl5.xml(-0.4,0.4),../data/H2_POBQ_snr7.xml"
-	                     "(-.3,.3,2)'\n" );
-  printf( "  <range spec> can be a GPS time range separated by a dash,\n"
-	  "      e.g. '693960000-693961000', or the name of a file containing"
-	  " a list of\n      ranges of that form (one per line, optionally"
-	  " followed by a comment).\n      If omitted, the range is taken to"
-	  " extend from the first candidate event\n      to the last candidate"
-	  " event.\n" );
-  printf( "  <output file> is the name of the output file to store all"
-	  " un-vetoed events in\n      LIGO_LW format.\n" );
+  printf( "\nNew syntax:   ivana <candidate_file> <veto_spec> [-r <range_spec>]\n                       [-o <output_file>] [-v <veto_range_file>]\n                       [-s <snr_cut>] [-c <chisq_cut>]\n  Options introduced by hyphenated flags can appear in any order\n" );
+
+  printf( "\nAlt. syntax:  ivana <candidate_file> <veto_spec> [<range_spec>]"
+	  " [<output_file>]\n\n" );
+
+  printf( "<candidate_file> is the name of a LIGO_LW table file.\n" );
+  printf( "<veto_spec> consists of one or more items separated by commas.  Each item has\n"
+          "    the form '<file>(<negWindow>,<posWindow>[,<snrRatio>])'.  <snrRatio> is\n"
+	  "    optional; if specified, then signal candidates will NOT be vetoed if the\n"
+	  "    signal SNR exceeds the veto SNR by a factor of <snrRatio> or greater.\n"
+	  "    NOTE: Enclose <veto_spec> in quotes to prevent the shell from\n"
+	  "    interpreting the parentheses!\n"
+	  "    Examples:  'mich_ctrl5.xml(-0.5,+1,1.5)'\n"
+	  "               'mich_ctrl5.xml(-0.4,0.4),../data/H2_POBQ_snr7.xml(-.3,.3,2)'\n" );
+  printf( "<range_spec> can be a GPS time range separated by a dash,\n"
+	  "    e.g. '693960000-693961000', or the name of a file containing a list of\n"
+	  "    ranges of that form (one per line, optionally followed by a comment).\n"
+	  "    If omitted, the range is taken to extend from the first candidate event\n"
+	  "    to the last candidate event.\n" );
+  printf( "<output_file> is the name of the output file to store all un-vetoed events in\n"
+	  "    LIGO_LW format.\n" );
+  printf( "<veto_range_file> is the name of the output file to generate with veto time\n"
+	  "    ranges in ASCII format (each line containing a start time and a stop time).\n" );
+  printf( "<snr_cut> is an optional cut to ignore candidate events with SNR below the\n"
+	  "    specified value.\n" );
+  printf( "<chisq_cut> is an optional cut to ignore candidate events with CHISQ above the\n"
+	  "    specified value.\n" );
 
   return;
 }
