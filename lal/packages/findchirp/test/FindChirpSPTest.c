@@ -89,7 +89,7 @@ main (int argc, char *argv[])
   FILE                         *fpSpec;
   FILE                         *fpResp;
 
-  FILE                         *fpRhosq;
+  FILE                         *fpRhosq = NULL;
 
   REAL4                         sigma;
   REAL4                         Sfk;
@@ -231,7 +231,7 @@ main (int argc, char *argv[])
       rhosqThresh, chisqThresh);
   fprintf( stdout, "               mass = %5.2f\n\n", mass );
 
-  for ( i = 0; i < dataSegVec->length; ++i )
+  for ( i = 0; (UINT4)i < dataSegVec->length; ++i )
   {
     REAL4 time;
     dataSeg = dataSegVec->data;
@@ -484,7 +484,7 @@ main (int argc, char *argv[])
 
   if ( rhosqout )
   {
-    for ( j = 0; j < filterParams->rhosqVec->length; ++j )
+    for ( j = 0; (UINT4)j < filterParams->rhosqVec->length; ++j )
     {
       fprintf( fpRhosq, "%d\t%e\n", j, filterParams->rhosqVec->data[j] );
     }
@@ -782,7 +782,7 @@ ParseOptions (
  * function to graph an array of REAL4's for debugging
  *
  */
-void
+static void
 graphREAL4 (
     REAL4      *array, 
     INT4        n,
@@ -819,7 +819,7 @@ graphREAL4 (
  * function to graph an array of INT2's for debugging
  *
  */
-void 
+static void 
 graphINT2 (
     INT2       *array, 
     INT4        n,
@@ -856,7 +856,7 @@ graphINT2 (
  * function to graph an array of INT4's for debugging
  *
  */
-void 
+static void 
 graphINT4 (
     INT4       *array, 
     INT4        n,

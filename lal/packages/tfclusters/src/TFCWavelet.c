@@ -160,7 +160,7 @@ LALComputeWaveletSpectrogram (
     smax = (UINT4)floor(tmp);
   }
 
-  ASSERT (smax - smin + 1 == tspec->freqBins, status, TFCWAVELETH_EINCOMP, TFCWAVELETH_MSGEINCOMP );
+  ASSERT (smax - smin + 1 == (UINT4)tspec->freqBins, status, TFCWAVELETH_EINCOMP, TFCWAVELETH_MSGEINCOMP );
 
   ASSERT (tspec->deltaT == pow(2.0,(double)smin) * tseries->deltaT, status, TFCWAVELETH_EINCOMP, TFCWAVELETH_MSGEINCOMP );
 
@@ -267,7 +267,7 @@ LALComputeWaveletSpectrogram (
       /* plug into output */
       if(smin <= is && is <= smax) {
 	ssiz = 1<<(1 + is - smin);
-	for(i=0;ssiz*i + algn + ip < params->timeBins; i++) {
+	for(i=0;ssiz*i + algn + ip < (UINT4)params->timeBins; i++) {
 	  spower[(is-smin) + params->freqBins * (ssiz*i + algn + ip)] = smooth->data[i] * smooth->data[i];
 	}
       }
@@ -293,7 +293,7 @@ LALComputeWaveletSpectrogram (
       if(smin <= is && is <= smax) {
 	ssiz = 1<<(1 + is - smin);
 	dsiz = 1<<(is-smin);
-	for(i=0;ssiz*i + algn + dsiz + ip < params->timeBins;i++) {
+	for(i=0;ssiz*i + algn + dsiz + ip < (UINT4)params->timeBins;i++) {
 	  spower[(is-smin) + params->freqBins * (ssiz*i + algn + dsiz + ip)] = smooth->data[i] * smooth->data[i];
 	}
       }

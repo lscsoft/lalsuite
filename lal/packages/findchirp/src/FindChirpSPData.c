@@ -330,7 +330,7 @@ LALFindChirpSPData (
   
   COMPLEX8             *outputData;
 
-  UINT4                *chisqBin;
+  UINT4                *chisqBin = NULL;
   UINT4                 numChisqBins;
   UINT4                 chisqPt;
   REAL4                 increment;

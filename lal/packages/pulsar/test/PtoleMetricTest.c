@@ -97,7 +97,7 @@ int main( int argc, char *argv[] ) {
   }
   /* Good spindown parameters: all zero */
   LALCreateVector( &status, &spindown, NUM_SPINDOWN );
-  for (j=0; j<spindown->length; j++)
+  for (j=0; (UINT4)j<spindown->length; j++)
     spindown->data[j] = 0;
   in.spindown = spindown;
 

@@ -307,28 +307,28 @@ int main( int argc, char *argv[] )
   printf("Checking LHO...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexLHODIFF];
 
-  if ( code = CheckDetector( &status, &cachedDetector ) )
+  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
   {
     return code;
   }
 
   printf("Checking LLO...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if ( code = CheckDetector( &status, &cachedDetector ) )
+  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
   {
     return code;
   }
 
   printf("Checking VIRGO...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  if ( code = CheckDetector( &status, &cachedDetector ) )
+  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
   {
     return code;
   }
 
   printf("Checking GEO600...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if ( code = CheckDetector( &status, &cachedDetector ) )
+  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
   {
     return code;
   }
@@ -336,14 +336,14 @@ int main( int argc, char *argv[] )
 
   printf("Checking TAMA300...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  if ( code = CheckDetector( &status, &cachedDetector ) )
+  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
   {
     return code;
   }
 
   printf("Checking CIT40...\n");
   cachedDetector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
-  if ( code = CheckDetector( &status, &cachedDetector ) )
+  if ( ( code = CheckDetector( &status, &cachedDetector ) ) )
   {
     return code;
   }

@@ -87,10 +87,11 @@ LALComputeSpectrogram (
 		       )
 {
   UINT4 sid, olap, NN, minF;
-  INT4 i,j;
+  /* INT4 i,j; */
+  INT4 j;
   REAL8 *power;
 
-  LALWindowParams winParams;
+  /* LALWindowParams winParams; */
   TFPlaneParams *params;
 
   RealFFTPlan *pfwd = NULL;
@@ -173,11 +174,11 @@ LALComputeSpectrogram (
   norm = (REAL8)NN;
 
   /* Get TF representation */
-  for(sid = 0; sid < params->timeBins; sid++) {
+  for(sid = 0; sid < (UINT4)params->timeBins; sid++) {
     Pvec.data = tseries->data->data + sid * (NN - olap);
     LALForwardRealFFT(status->statusPtr, Hvec, &Pvec, pfwd);
 
-    for(j=minF; j< minF + params->freqBins; j++)
+    for(j=minF; (UINT4)j< minF + params->freqBins; j++)
       power[sid*params->freqBins + j - minF] = ((REAL8)Hvec->data[j].re * (REAL8)Hvec->data[j].re + (REAL8)Hvec->data[j].im * (REAL8)Hvec->data[j].im) / norm;
   }
 
@@ -607,8 +608,8 @@ LALGetClusters (
 
   for(i=0;i<nfriends;i++)
     {
-      if(where[friends1[i]] == -1 &&
-	 where[friends2[i]] == -1) /* create new burst */
+      if(where[friends1[i]] == -1U &&
+	 where[friends2[i]] == -1U) /* create new burst */
 	{
 	  where[friends1[i]] = clist->nclusters;
 	  where[friends2[i]] = clist->nclusters;
@@ -657,8 +658,8 @@ LALGetClusters (
 	    clist->P[clist->nclusters-1][j] = tlist.P[friends2[i]][j - tlist.sizes[friends1[i]]];}
 	}
 
-      if(where[friends1[i]] != -1 &&
-	 where[friends2[i]] == -1) /* append second */
+      if(where[friends1[i]] != -1U &&
+	 where[friends2[i]] == -1U) /* append second */
 	{
 	  where[friends2[i]] = where[friends1[i]];
 
@@ -685,8 +686,8 @@ LALGetClusters (
 	    clist->P[where[friends1[i]]][j+j0] = tlist.P[friends2[i]][j];}
 	}      
 
-      if(where[friends1[i]] == -1 &&
-	 where[friends2[i]] != -1) /* append first */
+      if(where[friends1[i]] == -1U &&
+	 where[friends2[i]] != -1U) /* append first */
 	{
 	  where[friends1[i]] = where[friends2[i]];
 
@@ -782,7 +783,7 @@ LALClustersPowerThreshold (
 {
   UINT4 i,j;
   REAL4 po, P0;
-  REAL4 prob, norm;
+  REAL4 prob /* , norm */ ;
 
   INITSTATUS (status, "LALClustersPowerThreshold", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);

@@ -207,7 +207,7 @@ void LALPtoleMetric( LALStatus *status,
           PTOLEMETRICH_MSGENULL );
   ASSERT( metric->data != NULL, status, PTOLEMETRICH_ENULL,
           PTOLEMETRICH_MSGENULL );
-  ASSERT( metric->length == (dim+2)*(dim+3)/2, status, PTOLEMETRICH_EDIM,
+  ASSERT( metric->length == (UINT4)(dim+2)*(dim+3)/2, status, PTOLEMETRICH_EDIM,
           PTOLEMETRICH_MSGEDIM );
 
   /* This section saves typing and makes the equations more legible. */
@@ -262,7 +262,7 @@ void LALPtoleMetric( LALStatus *status,
   metric->data[5] *= 2 + 2*(s1*c1-s0*c0)/dpsi - pow(2*(s1-s0)/dpsi,2);
 
   /* Spindown-angle metric components, before projection */
-  for (j=1; j<=input->spindown->length; j++) {
+  for (j=1; j<=(INT4)input->spindown->length; j++) {
 
     /* Spindown-RA: 1+(j+2)*(j+3)/2 */
     metric->data[1+(j+2)*(j+3)/2] = 0;

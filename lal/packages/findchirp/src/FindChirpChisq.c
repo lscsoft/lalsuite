@@ -45,9 +45,6 @@ LALFindChirpChisqVetoInit (
   ASSERT( ! params->qtildeBinVec, status, 
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
 
-  ASSERT( numChisqBins >= 0, status, 
-      FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
-
 
   /*
    *
@@ -166,9 +163,6 @@ LALFindChirpChisqVetoFinalize (
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
   ASSERT( params->qtildeBinVec, status, 
       FINDCHIRPCHISQH_ENNUL, FINDCHIRPCHISQH_MSGENNUL );
-  ASSERT( numChisqBins >= 0, status, 
-      FINDCHIRPCHISQH_ECHIZ, FINDCHIRPCHISQH_MSGECHIZ );
-
 
   /*
    *

@@ -82,12 +82,16 @@ INT4 t2000 = 630720013; /* gps time at Jan 1, 2000 00:00:00 UTC */
 INT4 t1998 = 630720013-730*86400-1;/* gps at Jan 1,1998 00:00:00 UTC*/
 
 int
-main()
+main( void )
 {
   static LALStatus stat;
   
   INT4 i,k; /*dummy indices*/
   EphemerisData *edat = NULL;
+
+  char eEphFileBad[] = "earth47.dat";
+  char eEphFile[] = "earth98.dat";
+  char sEphFile[] = "sun98.dat"
   
   
   REAL8 alpha,delta;  /* RA and DEC (radians) in 
@@ -101,8 +105,8 @@ main()
 
 /* Checking response if data files not present */
 
-  (*edat).ephiles.earthEphemeris = "earth47.dat";
-  (*edat).ephiles.sunEphemeris = "sun98.dat";
+  (*edat).ephiles.earthEphemeris = eEphFileBad;
+  (*edat).ephiles.sunEphemeris = sEphFile;
   (*edat).leap = 12;
   LALInitBarycenter(&stat, edat);  
 
@@ -140,8 +144,8 @@ main()
   by Rejean Dupuis comparing LALBarycenter to TEMPO for thousands
   of source positions and times. */
 
-  (*edat).ephiles.earthEphemeris = "earth98.dat";
-  (*edat).ephiles.sunEphemeris = "sun98.dat";
+  (*edat).ephiles.earthEphemeris = eEphFile;
+  (*edat).ephiles.sunEphemeris = sEphFile;
 
 /* Next give the number of leap secs added from start of GPS epoch to
    tgps. It's perfectly OK to instead give the number of leap

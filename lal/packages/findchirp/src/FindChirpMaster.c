@@ -116,7 +116,9 @@ LALFindChirpMaster (
           tmpBankHead = (InspiralTemplate *) 
             LALCalloc( tmpNumTmplts, sizeof(InspiralTemplate) );
           if ( ! tmpBankHead )
+          {
             ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
+          }
 
           /* copy the templates from the bank to the temporary  */
           /* template storage                                   */

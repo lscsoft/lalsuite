@@ -156,7 +156,7 @@ ParseOptions (int argc, char *argv[]);
 
 
 /* LIGO-1 power spectrum; returns strain/rHz */
-float s_of_f(float freq) {
+static float s_of_f(float freq) {
   int i;
   double slope,y;
 
@@ -283,7 +283,7 @@ int main( int argc, char *argv[] ){
   parametersOmega.omegaRef = SIMULATESBTESTC_OMEGAREF;
   LALStochasticOmegaGW(&status, &omegaGW, &parametersOmega);
   
-  for (i=1;i<freqlen;i++){
+  for (i=1;(UINT4)i<freqlen;i++){
     /* response fn */
     float freq = i/(SBParams.deltaT*SBParams.length);
     float factor=SIMULATESBTESTC_RMS/(sqrt(fnyquist)*s_of_f(freq));
@@ -327,9 +327,9 @@ int main( int argc, char *argv[] ){
     {
       /* test behavior for null pointer to real time series for output */
       LALSSSimStochBGTimeSeries(&status, NULL, &SBInput, &SBParams);
-      if ( code = CheckStatus(&status, SIMULATESBH_ENULLP, 
+      if ( ( code = CheckStatus(&status, SIMULATESBH_ENULLP, 
 			      SIMULATESBH_MSGENULLP,SIMULATESBTESTC_ECHK,
-			      SIMULATESBTESTC_MSGECHK) ) 
+			      SIMULATESBTESTC_MSGECHK) ) )
 	{
 	  return code;
 	}
@@ -340,9 +340,9 @@ int main( int argc, char *argv[] ){
       SBOutput.SSimStochBG1 = &whitenedSSimStochBG1;
       SBOutput.SSimStochBG2 = &whitenedSSimStochBG2;
       LALSSSimStochBGTimeSeries(&status, &SBOutput, NULL, &SBParams);
-      if ( code = CheckStatus(&status, SIMULATESBH_ENULLP, 
+      if ( ( code = CheckStatus(&status, SIMULATESBH_ENULLP, 
 			      SIMULATESBH_MSGENULLP,SIMULATESBTESTC_ECHK,
-			      SIMULATESBTESTC_MSGECHK) ) 
+			      SIMULATESBTESTC_MSGECHK) ) )
 	{
 	  return code;
 	}
@@ -364,22 +364,22 @@ int main( int argc, char *argv[] ){
   
   /* generate whitened simulated SB data */
   LALSSSimStochBGTimeSeries(&status, &SBOutput, &SBInput, &SBParams);
-  if ( code = CheckStatus(&status, 0, "", 
-			  SIMULATESBTESTC_EFLS, SIMULATESBTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0, "", 
+			  SIMULATESBTESTC_EFLS, SIMULATESBTESTC_MSGEFLS) ) )
     {
       return code;
     }
   
   /* Mean square */
   totnorm2=0.0;
-  for (i=0;i<length;i++)
+  for (i=0;(UINT4)i<length;i++)
     totnorm2+=((whitenedSSimStochBG1.data->data[i])*(whitenedSSimStochBG1.data->data[i]));
   totnorm2/=length;
   printf("Mean square of whitened output is: %e\n",totnorm2);
   
   /* check normalizations */
   totnorm=0.0;
-  for (i=1;i<freqlen;i++){
+  for (i=1;(UINT4)i<freqlen;i++){
     REAL8 freq=i*SIMULATESBTESTC_RATE/SIMULATESBTESTC_LENGTH;
     REAL8 resp=SIMULATESBTESTC_RMS/(sqrt(fnyquist)*s_of_f(freq));
     totnorm+=resp*resp*(omegaGW.data->data[i])/(freq*freq*freq);
@@ -397,14 +397,14 @@ int main( int argc, char *argv[] ){
   }
   /* clean up valid data */
   LALSDestroyVector(&status, &(whitenedSSimStochBG1.data));
-  if ( code = CheckStatus(&status, 0 , "", SIMULATESBTESTC_EFLS,
-			  SIMULATESBTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "", SIMULATESBTESTC_EFLS,
+			  SIMULATESBTESTC_MSGEFLS) ) )
     {
       return code;
     }
   LALSDestroyVector(&status, &(whitenedSSimStochBG2.data));
-  if ( code = CheckStatus(&status, 0 , "", SIMULATESBTESTC_EFLS,
-			  SIMULATESBTESTC_MSGEFLS) ) 
+  if ( ( code = CheckStatus(&status, 0 , "", SIMULATESBTESTC_EFLS,
+			  SIMULATESBTESTC_MSGEFLS) ) )
     {
       return code;
     }

@@ -1673,7 +1673,7 @@ static REAL8 mu(const REAL4FrequencySeries* omegaGW,
   REAL8      f3;
   REAL8      deltaF;
   INT4       length;
-  REAL8      mu = 0.0;
+  REAL8      muval = 0.0;
 
   deltaF = omegaGW->deltaF;
   length = omegaGW->data->length;
@@ -1686,10 +1686,10 @@ static REAL8 mu(const REAL4FrequencySeries* omegaGW,
     {
       f = i*deltaF;
       f3 = f*f*f;
-      mu += (2.0  * constant * (omegaGW->data->data[i]) *
+      muval += (2.0  * constant * (omegaGW->data->data[i]) *
             (overlap->data->data[i]) * (optimal->data->data[i].re))/f3;  
     }
-    return mu;
+    return muval;
 }
 
 /* Usage () Message */

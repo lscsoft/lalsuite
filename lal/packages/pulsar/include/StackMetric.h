@@ -182,7 +182,7 @@ typedef struct tagMetricParamStruc{
 \newpage\input{CoherentMetricC}
 </lalLaTeX> */
 void
-LALCoherentMetric( LALStatus *stat,
+LALCoherentMetric( LALStatus *,
 		   REAL8Vector *metric,
 		   REAL8Vector *lambda,
 		   MetricParamStruc *params );
@@ -191,7 +191,7 @@ LALCoherentMetric( LALStatus *stat,
 \newpage\input{StackMetricC}
 </lalLaTeX> */
 void
-LALStackMetric( LALStatus *stat,
+LALStackMetric( LALStatus *,
 		REAL8Vector *metric,
 		REAL8Vector *lambda,
 		MetricParamStruc *params );
@@ -200,7 +200,7 @@ LALStackMetric( LALStatus *stat,
 \newpage\input{ProjectMetricC}
 </lalLaTeX> */
 void
-LALProjectMetric( LALStatus *stat, REAL8Vector *metric, BOOLEAN errors );
+LALProjectMetric( LALStatus *, REAL8Vector *metric, BOOLEAN errors );
 
 /* <lalLaTeX>
 \newpage\input{StackMetricTestC}

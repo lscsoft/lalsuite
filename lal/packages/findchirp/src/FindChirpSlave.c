@@ -46,7 +46,7 @@ CreateRandomPPNParamStruc (
     REAL4               mMin,
     REAL4               mMax,
     REAL8               deltaT,
-    RandomParams       *rand
+    RandomParams       *rpar
     )
 {
   REAL4         mDiff      = mMax - mMin;
@@ -67,8 +67,8 @@ CreateRandomPPNParamStruc (
   params->deltaT = deltaT;
 
   /* set up the masses */
-  TRY( LALUniformDeviate( status->statusPtr, m1, rand ), status );
-  TRY( LALUniformDeviate( status->statusPtr, m2, rand ), status );
+  TRY( LALUniformDeviate( status->statusPtr, m1, rpar ), status );
+  TRY( LALUniformDeviate( status->statusPtr, m2, rpar ), status );
   *m1 = mMin + mDiff * *m1;
   *m2 = mMin + mDiff * *m2;
   params->mTot = *m1 + *m2;
@@ -105,7 +105,9 @@ GetTemplateBankMPI (
   ATTATCHSTATUSPTR( status );
 
   if ( *tmpltBankHead )
+  {
     ABORT( status, FINDCHIRPENGINEH_ENNUL, FINDCHIRPENGINEH_MSGENNUL );
+  }
 
   /* set up mpi exchange inspiral template type */
   exchInspiralTemplates.exchObjectType = ExchInspiralTemplate;
@@ -170,7 +172,9 @@ OutputEventsMPI (
   ATTATCHSTATUSPTR( status );
 
   if ( ! eventList )
+  {
     ABORT( status, FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  }
 
   /* set up mpi exchange inspiral event type */
   exchInspiralEvents.exchObjectType    = ExchInspiralEvent;

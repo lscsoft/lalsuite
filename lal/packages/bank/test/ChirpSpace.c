@@ -9,7 +9,7 @@
 
 INT4 lalDebugLevel=4;
 
-int main () {
+int main ( void ) {
    static InspiralTemplate p;
    static LALStatus status;
    double mmin, Mmax, totalMmax, compmmin, m2;

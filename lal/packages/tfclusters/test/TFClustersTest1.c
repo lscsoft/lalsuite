@@ -47,6 +47,7 @@ Returns 0 on success, otherwise returns 1.
 NRCSID (MAIN, "$Id$");
 
 
+#include <lal/AVFactories.h>
 #include <lal/TFClusters.h>
 #include <lal/Random.h>
 
@@ -54,8 +55,6 @@ NRCSID (MAIN, "$Id$");
 
 int lalDebugLevel = 0; /* painfully slow if not zero, because of realloc function that is being used ad nauseum */
 
-static void
-TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
 
 int main(int argc, char* argv[]) {

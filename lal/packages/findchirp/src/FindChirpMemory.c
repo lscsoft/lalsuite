@@ -256,8 +256,6 @@ LALCreateFindChirpSegmentVector (
       status, FINDCHIRPH_ESEGZ, FINDCHIRPH_MSGESEGZ );
   ASSERT( params->numPoints > 0, 
       status, FINDCHIRPH_ENUMZ, FINDCHIRPH_MSGENUMZ );
-  ASSERT( params->numChisqBins >= 0, status, 
-      FINDCHIRPH_ECHIZ, FINDCHIRPH_MSGECHIZ );
 
 
   /*

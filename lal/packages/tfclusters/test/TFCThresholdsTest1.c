@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "lal/LALRCSID.h"
 
 NRCSID (MAIN, "$Id$");

@@ -53,12 +53,12 @@ function.
 The modules under this header will typically provide function pairs of
 the form:
 \begin{verbatim}
-void LALTau( LALStatus             *stat,
+void LALTau( LALStatus             *,
              REAL8                 *tau,
              REAL8Vector           *variables,
              PulsarTimesParamStruc *constants );
 
-void LALDTau( LALStatus             *stat,
+void LALDTau( LALStatus             *,
               REAL8Vector           *dTau,
               REAL8Vector           *variables,
               PulsarTimesParamStruc *constants );
@@ -247,19 +247,19 @@ typedef struct tagPulsarTimesParamStruc {
 \newpage\input{GetEarthTimesC}
 </lalLaTeX> */
 void
-LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times );
+LALGetEarthTimes( LALStatus *, PulsarTimesParamStruc *times );
 
 /* <lalLaTeX>
 \newpage\input{TBaryPtolemaicC}
 </lalLaTeX> */
 void
-LALTBaryPtolemaic( LALStatus             *stat,
+LALTBaryPtolemaic( LALStatus             *,
 		   REAL8                 *tBary,
 		   REAL8Vector           *variables,
 		   PulsarTimesParamStruc *constants );
 
 void
-LALDTBaryPtolemaic( LALStatus             *stat,
+LALDTBaryPtolemaic( LALStatus             *,
 		    REAL8Vector           *dtBary,
 		    REAL8Vector           *variables,
 		    PulsarTimesParamStruc *constants );
@@ -268,13 +268,13 @@ LALDTBaryPtolemaic( LALStatus             *stat,
 \newpage\input{TSpinC}
 </lalLaTeX> */
 void
-LALTSpin( LALStatus             *stat,
+LALTSpin( LALStatus             *,
 	  REAL8                 *tSpin,
 	  REAL8Vector           *variables,
 	  PulsarTimesParamStruc *constants );
 
 void
-LALDTSpin( LALStatus             *stat,
+LALDTSpin( LALStatus             *,
 	   REAL8Vector           *dtSpin,
 	   REAL8Vector           *variables,
 	   PulsarTimesParamStruc *constants );
@@ -283,13 +283,13 @@ LALDTSpin( LALStatus             *stat,
 \newpage\input{TCompC}
 </lalLaTeX> */
 void
-LALTComp( LALStatus             *stat,
+LALTComp( LALStatus             *,
 	  REAL8                 *tComp,
 	  REAL8Vector           *variables,
 	  PulsarTimesParamStruc *constants );
 
 void
-LALDTComp( LALStatus             *stat,
+LALDTComp( LALStatus             *,
 	   REAL8Vector           *dtComp,
 	   REAL8Vector           *variables,
 	   PulsarTimesParamStruc *constants );

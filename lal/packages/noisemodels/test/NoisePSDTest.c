@@ -25,7 +25,7 @@ Module to create NoiseSpectralDensity.
 
 INT4 lalDebugLevel=1;
 /*  <lalVerbatim file="NoisePSDTestCP"> */
-int main () 
+int main ( void ) 
 {  /*  </lalVerbatim>  */
 
    static LALStatus status;

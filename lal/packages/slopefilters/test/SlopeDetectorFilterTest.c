@@ -322,7 +322,7 @@ int main( int argc, char *argv[] )
   for(i=0;i<output->length;++i) {
     if(fabs((REAL8)output->data[i]/(REAL8)convfilterexpout[i]-1) > 
        SLOPEDETECTORFILTERTESTC_EQUALITYTOLERANCE) {
-      printf("Convolution result error exceeds tolerance at LALSlopeConvolutionFilter.\n",i);
+      printf("Convolution result error exceeds tolerance at LALSlopeConvolutionFilter. %d\n",i);
       return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
     }
   }
@@ -347,7 +347,7 @@ int main( int argc, char *argv[] )
     /* printf("Slope output %u is %f.\n",i,output->data[i]); */
     if(fabs((REAL8)sampper*(REAL8)output->data[i]/(REAL8)slopedetectexpout[i]-1) > 
        SLOPEDETECTORFILTERTESTC_EQUALITYTOLERANCE) {
-      printf("Convolution result error exceeds tolerance at LALSlopeLineFitFilter (slope).\n",i);
+      printf("Convolution result error exceeds tolerance at LALSlopeLineFitFilter (slope). %d\n",i);
       return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
     } 
   }
@@ -367,7 +367,7 @@ int main( int argc, char *argv[] )
     /* printf("Offset output %u is %f.\n",i,output->data[i]); */
     if(fabs((REAL8)output->data[i]/(REAL8)offsetdetectexpout[i]-1) > 
        SLOPEDETECTORFILTERTESTC_EQUALITYTOLERANCE) {
-      printf("Convolution error exceeds tolerance at LALSlopeLineFitFilter (offset).\n",i);
+      printf("Convolution error exceeds tolerance at LALSlopeLineFitFilter (offset).\n %d",i);
       return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
       } 
   }
@@ -387,7 +387,7 @@ int main( int argc, char *argv[] )
     /* printf("ALF output %u is %f.\n",i,output->data[i]); */
     if(fabs((REAL8)output->data[i]/(REAL8)alfdetectexpout[i]-1) > 
        SLOPEDETECTORFILTERTESTC_EQUALITYTOLERANCE) {
-      printf("Convolution error exceeds tolerance at LALSlopeLineFitFilter (alf).\n",i);
+      printf("Convolution error exceeds tolerance at LALSlopeLineFitFilter (alf).\n %d",i);
       return SLOPEDETECTORFILTERTESTC_EINCOMPATIBLEOUTPUT;
       } 
   }

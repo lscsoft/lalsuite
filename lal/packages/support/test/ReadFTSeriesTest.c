@@ -1271,13 +1271,13 @@ int main( void )
   if (fabs(dTimeSeries.deltaT) - (dTimeSeries2.deltaT)/dTimeSeries.deltaT
       > READFTSERIESTEST_TOL) 
   {
-    fprintf(stderr,"DeltaT Mismatch [ReadFTSeriesTest:%s]\n",status.statusCode,
+    fprintf(stderr,"DeltaT Mismatch [ReadFTSeriesTest:%d,%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFLS);
     return READFTSERIESTESTC_EFLS;
   }
   if (strcmp(dTimeSeries.name,dTimeSeries2.name) != 0) 
   {
-    fprintf(stderr,"Name Mismatch [ReadFTSeriesTest:%s]\n",status.statusCode,
+    fprintf(stderr,"Name Mismatch [ReadFTSeriesTest:%d,%s]\n",status.statusCode,
 	    status.statusDescription, READFTSERIESTESTC_MSGEFLS);
     return READFTSERIESTESTC_EFLS;
   }

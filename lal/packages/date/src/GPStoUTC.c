@@ -53,6 +53,9 @@ The latest leap second that can be accounted for is the one added at the end
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
 
+struct tm *gmtime_r( const time_t *, struct tm * );
+char *asctime_r( const struct tm *, char *, int );
+
 int main(int argc, char *argv[])
 {
     static LALStatus   status;

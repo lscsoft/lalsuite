@@ -70,7 +70,7 @@ void printf_timeseries (int n, float *signal, double delta, double t0)
 }
 
 
-int main () {
+int main ( void ) {
    REAL4Vector signal1, signal2;
    InspiralTemplate params;
    double dt;

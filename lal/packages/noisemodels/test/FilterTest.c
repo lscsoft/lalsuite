@@ -72,7 +72,7 @@ void printf_timeseries (INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0);
 INT4 lalDebugLevel=0;
      
 int 
-main () 
+main ( void ) 
 {
    InspiralTemplateList *list=NULL;
    static LALStatus status;
