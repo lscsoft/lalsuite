@@ -288,13 +288,13 @@ $\beta$ of the vertex, in radians.
   the reference ellipsoid, in meters.
   \item[\texttt{REAL4 xArmAltitudeRadians}]  The angle ${\mathcal{A}}_X$ up from the
   local tangent plane of the reference ellipsoid to the X arm, in radians.
-  \item[\texttt{REAL4 xArmAzimuthRadians}] The angle $\zeta_X$ counterclockwise
-  from East to the projection of the X arm into the local tangent plane of
+  \item[\texttt{REAL4 xArmAzimuthRadians}] The angle $\zeta_X$ clockwise
+  from North to the projection of the X arm into the local tangent plane of
   the reference ellipsoid, in radians.
   \item[\texttt{REAL4 yArmAltitudeRadians}]  The angle ${\mathcal{A}}_Y$ up from the
   local tangent plane of the reference ellipsoid to the Y arm, in radians.
-  \item[\texttt{REAL4 yArmAzimuthRadians}] The angle $\zeta_Y$ counterclockwise
-  from East to the projection of the Y arm into the local tangent plane of
+  \item[\texttt{REAL4 yArmAzimuthRadians}] The angle $\zeta_Y$ clockwise
+  from North to the projection of the Y arm into the local tangent plane of
   the reference ellipsoid, in radians.
 \end{description}
 
