@@ -49,6 +49,7 @@ RCSID("$Id$");
 #define CVS_DATE "$Date$"
 #define CVS_SOURCE "$Source$"
 
+/* xml process param table helper */
 #define ADD_PROCESS_PARAM(pptype, format, ppvalue) \
   this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
     calloc(1, sizeof(ProcessParamsTable)); \
@@ -59,6 +60,7 @@ RCSID("$Id$");
   LALSnprintf(this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype); \
   LALSnprintf(this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue);
 
+/* window duration for psd estimation */
 #define PSD_WINDOW_DURATION 4
 
 /* system error checking */
@@ -316,6 +318,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   else
     padData = 0;
 
+  /* calculate number of intervals, and required shift to get to next
+   * interval */
   if (overlap_hann_flag)
   {
     numIntervals = (2 * (numSegments - 2)) - 1;
@@ -374,6 +378,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         gpsStartTime, 0, 1./resampleRate, lalDimensionlessUnit, \
         segmentLength), &status);
 
+  /* allocate memory for temporary segments - to be re-worked */
   for (i = 0; i < segsInInt; i++)
   {
     segOne[i]= segTwo[i] = NULL;
@@ -383,11 +388,13 @@ INT4 main(INT4 argc, CHAR *argv[])
     memset(segTwo[i]->data, 0, segTwo[i]->length * sizeof(*segTwo[i]->data));
   }
 
+  /* allocate memory for injections - to be re-worked */
   if (inject_flag)
   {
     if (vrbflg)
       fprintf(stdout, "Allocating memory for MC...\n");
 
+    /* set  monte carlo parameters */
     MCdeltaT = 1.0 / resampleRate;
     MCdeltaF = (REAL8)resampleRate / (REAL8)segmentLength;
     MCfreqLength = (segmentLength / 2) + 1;
@@ -413,6 +420,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           "MCresponseTwo", gpsCalibTime, 0, MCdeltaF, countPerStrain, \
           MCfreqLength), &status);
 
+    /* allocate memory for temporary monte carlo segments */
     for (i = 0; i < segsInInt; i++)
     {
       MCrespOne[i]= MCrespTwo[i] = NULL;
@@ -496,6 +504,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         "responseTwo", gpsCalibTime, fMin, deltaF, countPerAttoStrain, \
         filterLength), &status);
 
+  /* allocate memory for temporary response functions */
   for (i = 0; i < segsInInt; i++)
   {
     respOne[i]= respTwo[i] = NULL;
@@ -528,9 +537,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (vrbflg)
     fprintf(stdout, "Generating data segment window...\n");
 
+  /* for overlapping hann windows, the hann window length is the segment
+   * length */
   if (overlap_hann_flag)
     hannDuration = segmentDuration;
 
+  /* create window for data */
   dataWindow = data_window(&status, seriesOne->deltaT, 0, \
       segmentLength, hannDuration);
 
@@ -719,6 +731,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         }
         else
         {
+          /* generate response function */
           responseTempOne->epoch = gpsCalibTime;
           if (vrbflg)
           {
@@ -752,6 +765,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         }
         else
         {
+          /* generate response function */
           responseTempTwo->epoch = gpsCalibTime;
           if (vrbflg)
           {
@@ -781,9 +795,9 @@ INT4 main(INT4 argc, CHAR *argv[])
           respTwo[segLoop]->data[i] = responseTwo->data->data[i];
         }
 
-        /* convert response function for use in the MC routine */
         if (inject_flag)
         {
+          /* convert response function for use in the MC routine */
           MCresponseOne->epoch = gpsCalibTime;
           MCresponseTwo->epoch = gpsCalibTime;
           LAL_CALL(LALResponseConvert(&status, MCresponseOne, \
@@ -817,6 +831,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       for (segLoop = 0; segLoop < segsInInt; segLoop++)
       {
+        /* set segment start and end time */
         gpsSegStartTime.gpsSeconds = gpsStartTime.gpsSeconds + \
                                      (interLoop * intervalDuration) + \
                                      (segLoop * segmentDuration);
@@ -829,6 +844,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         responseOne->epoch = gpsCalibTime;
         responseTwo->epoch = gpsCalibTime;
 
+        /* copy to temporary storage */
         for (i = 0; i < filterLength; i++)
         {
           responseOne->data->data[i] = respOne[segLoop]->data[i];
@@ -838,6 +854,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         /* simulate signal */
         if (inject_flag)
         {
+          /* copy to temporay storage */
           for (i = 0; i < MCfreqLength; i++)
           {
             MCresponseOne->data->data[i] = MCrespOne[segLoop]->data[i];
@@ -909,7 +926,9 @@ INT4 main(INT4 argc, CHAR *argv[])
           segTwo[segLoop]->data[i] = segmentTwo->data->data[i];
         }
 
-        if ((middle_segment_flag == 0) && (segLoop == segMiddle))
+        /* check if on middle segment and if we want to include this in
+         * the analysis */
+        if ((segLoop == segMiddle) && (middle_segment_flag == 0))
         {
           if (vrbflg)
             fprintf(stdout, "Ignoring middle segment..\n");
@@ -959,6 +978,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* average calibrated PSDs and take inverse */
       for (i = 0; i < filterLength; i++)
       {
+        /* average */
         if (middle_segment_flag == 0)
         {
           calPsdOne->data[i] = calPsdOne->data[i] / (REAL4)(segsInInt - 1);
@@ -969,6 +989,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           calPsdOne->data[i] = calPsdOne->data[i] / (REAL4)segsInInt;
           calPsdTwo->data[i] = calPsdTwo->data[i] / (REAL4)segsInInt;
         }
+        /* take inverse */
         calInvPsdOne->data->data[i] = 1. / calPsdOne->data[i];
         calInvPsdTwo->data->data[i] = 1. / calPsdTwo->data[i];
       }
@@ -1012,6 +1033,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             gpsAnalysisTime.gpsSeconds);
       }
 
+      /* copy to temporary storage */
       for (i = 0; i < segmentLength; i++)
       {
         segmentOne->data->data[i] = segOne[segMiddle]->data[i];
@@ -1039,13 +1061,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       if (vrbflg)
         fprintf(stdout, "Generating cross correlation spectrum...\n");
 
-      /* cc spectrum */
-      for (i = 0; i < filterLength; i++)
-      {
-        responseOne->data->data[i] = respOne[segMiddle]->data[i];
-        responseTwo->data->data[i] = respTwo[segMiddle]->data[i];
-      }
-
+      /* calculate cc spectrum */
       LAL_CALL(LALStochasticCrossCorrelationSpectrumCal(&status, \
             ccSpectrum, &ccIn, epochsMatch), &status);
 
