@@ -109,6 +109,23 @@ LALFindChirpBCVSpinTemplate (
   psi20 = 0.0; /*tmplt->psi4;*/
   /* XXX work needed here... */
 
+ /* parameters */
+  deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints ); 
+  /* XXX not defined in tmplt */
+  m      = - psi15 / ( 16 * LAL_PI * LAL_PI * psi00 );       /* total mass */
+  eta    = 3 / ( 128 * psi00 * pow( LAL_PI * m, 5.0/3.0 ) ); /* symmetric mass ratio */      
+  mu     = eta * m;                                          /* ? */
+  /* defns checked against Bank documentation */
+
+  /* defining chirp mass (to the power of 5/3 => rename) */
+  chirpMass = pow( 1.0 / LAL_PI, 5.0/3.0) * ( 3 / (128 * psi00));
+  /*  chirpMass = m * pow(eta,3/5); */
+
+  /*
+   *
+   * template dependent normalisation
+   *
+   */
 
   /*code*/
 
