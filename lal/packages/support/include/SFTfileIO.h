@@ -7,7 +7,7 @@
  *
  * Revision: $Id$
  *
- * History:   Created by Sintes May 21, 2003
+ * History:   Created by Sintes & Prix May 21, 2003
  *            Modified by Machenschalk Jun 16, 2004
  *
  *-----------------------------------------------------------------------
@@ -18,80 +18,25 @@ Author: Sintes, A.M., Prix. R, Machenschalk, B.
 $Id$
 ************************************* </lalVerbatim> */
 
-/*
- * 
- * Documentation:
- * 
- * The Relevant functions are the ones described here.
- * Please, have a look at the structures here defined first.
- * 
- * ReadSFTbinHeader1 (LALStatus  *status,
- *                    SFTHeader1 *header, CHAR  *fname);
- *    Reads the header from a given SFT file.		   
- * 
- * ReadSFTtype (LALStatus  *status,
- *               SFTtype *sft, CHAR *fname, INT4 fminBinIndex );	
- *    Reads from one SFT file  "fname" a COMPLEX8FrequencySeries "sft".
- *    The memory of the sft is assumed to be alocated before, i.e, you know
- *    the numer of elements you want to read, The first element that will
- *    be read will correspond to  fminBinIndex.
- *    
- * ReadCOMPLEX8SFTbinData1 (LALStatus  *status,
- *           COMPLEX8SFTData1    *sft, CHAR   *fname ); 
- *    Reads from one SFT file  "fname" a  COMPLEX8SFTData1 "sft".
- *    The memory for the sft should already be allocated.
- *    You need to specify the sft.length and sft.fminBinIndex before the call.
- *    This function will fill in the rest of the fields in the sft.
- * 	    
- */
    	      	   
 /* <lalLaTeX>  *********************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Header \texttt{SFTfileIO.h}}
 \label{s:SFTfileIO.h}
-Routines for reading SFT binary files
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Routines for reading and writing SFT binary files
+
 \subsection*{Synopsis}
 
 \begin{verbatim}
 #include <lal/SFTfileIO.h>
 \end{verbatim}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error conditions}
-\vspace{0.1in}
-\input{SFTfileIOHErrorTable}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{SFTfileIOHV}}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage\input{SFTfileIOC}
-%%%%%%%%%% Test program. %%
-\newpage\input{SFTfileIOTestC}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 *************************************************</lalLaTeX> */
 
-/*
- * 4.  Protection against double inclusion (include-loop protection)
- *     Note the naming convention!
- */
-
-#ifndef _SFTFILEIO_H
+#ifndef _SFTFILEIO_H  	/* Double-include protection. */
 #define _SFTFILEIO_H
 
-/*
- * 5. Includes. This header may include others; if so, they go immediately 
- *    after include-loop protection. Includes should appear in the following 
- *    order: 
- *    a. Standard library includes
- *    b. LDAS includes
- *    c. LAL includes
- */
-
+/* includes */
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -103,27 +48,16 @@ Routines for reading SFT binary files
 #include <lal/SeqFactories.h>
 #include <lal/PulsarDataTypes.h>
 
-/*
- *   Protection against C++ name mangling
- */
-
-#ifdef  __cplusplus
+#ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
 
- /*
- * 6. Assignment of Id string using NRCSID()  
- */
-  
 NRCSID (SFTFILEIOH, "$Id$");
-  
-/*
- * 7. Error codes and messages. This must be auto-extracted for 
- *    inclusion in the documentation.
- */
-  
-/* <lalErrTable file="SFTfileIOHErrorTable"> */
-  
+
+/********************************************************** <lalLaTeX>
+\subsection*{Error codes}
+</lalLaTeX>
+***************************************************** <lalErrTable> */
 #define SFTFILEIOH_ENULL 	1
 #define SFTFILEIOH_EFILE 	2
 #define SFTFILEIOH_EHEADER 	3
@@ -149,35 +83,28 @@ NRCSID (SFTFILEIOH, "$Id$");
 #define SFTFILEIOH_MSGEGLOB 	"Failed to get filelist from directory/pattern"
 #define SFTFILEIOH_MSGECOPYSIZE	"Target SFT-struct has not enough frequency-bins for copying"
 #define SFTFILEIOH_MSGEDIFFLENGTH "Sorry, can only read SFTs of identical length (currently)"
+/*************************************************** </lalErrTable> */
 
-/* </lalErrTable>  */
+/****************************************************** <lalLaTeX>
+\subsection*{Types}
 
+\subsubsection*{Structure \texttt{SFTHeader}}
+\idx[Type]{SFTHeader}
 
-/* ******************************************************
- * 8. Macros. But, note that macros are deprecated. 
- *    They could be moved to the modules where are needed 
- */
-  
+This structure contains the header-info contained in an SFT of specification 
+version v1.0.
 
-/* *******************************************************
- * 9. Constant Declarations. (discouraged) 
- */
- 
-
-
-/* **************************************************************
- * 10. Structure, enum, union, etc., typdefs.
- */
-
-/* this header currently corresponds to SFT-spec v 1.0 */
+</lalLaTeX> */
+/* <lalVerbatim> */
 typedef struct tagSFTHeader {
-  REAL8  version;
-  INT4   gpsSeconds;
+  REAL8  version;		/* SFT version-number (currently only 1.0 allowed )*/
+  INT4   gpsSeconds;		/* gps start-time */
   INT4   gpsNanoSeconds;
-  REAL8  timeBase;
-  INT4   fminBinIndex;
-  INT4   length;  
+  REAL8  timeBase;		/* length of data-stretch in seconds */
+  INT4   fminBinIndex;		/* first frequency-index contained in SFT */
+  INT4   length;  		/* number of frequency bins */
 } SFTHeader;
+/* </lalVerbatim> */
 
 /* just for reference: this is the FrequencySeries type:
  * {
@@ -191,13 +118,14 @@ typedef struct tagSFTHeader {
  * COMPLEX8FrequencySeries;
  */
 
-/*
- * 11. Extern Global variables. (discouraged) 
- */
-  
+/********************************************************** <lalLaTeX>
+\vfill{\footnotesize\input{SFTfileIOHV}}
+\newpage\input{SFTfileIOC}
+\newpage\input{SFTfileIOTestC}
+******************************************************* </lalLaTeX> */
 
 /*
- * 12. Functions Declarations (i.e., prototypes).
+ * Functions Declarations (i.e., prototypes).
  */
 
 void LALReadSFTheader (LALStatus  *status, SFTHeader *header, const CHAR *fname); 

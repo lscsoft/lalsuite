@@ -2,12 +2,12 @@
  *
  * File Name: SFTfileIO.c
  *
- * Authors: Sintes, A.M.,  Krishnan, B. Machenschalk, B.
+ * Authors: Sintes, A.M.,  Prix, R., Krishnan, B. Machenschalk, B.
  *          inspired from Siemens, X.
  *
  * Revision: $Id$
  *
- * History:   Created by Sintes May 21, 2003
+ * History:   Created by Sintes & Prix May 21, 2003
  *            Modified by Krishnan on Feb 22, 2004
  *            Modified by Machenschalk on Jun 16 2004
  *
@@ -21,38 +21,90 @@ $Id$
 
 /* <lalLaTeX>  *******************************************************
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{MOdule \texttt{SFTfileIO.c}}
+\subsection{Module \texttt{SFTfileIO.c}}
 \label{ss:SFTfileIO.c}
-Routines for reading SFT binary files
+Routines for reading and writing SFT binary files
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \subsubsection*{Prototypes}
 \idx{LALReadSFTheader()}
 \idx{LALReadSFTdata()}
 \idx{LALReadSFTfile()}
 \idx{LALReadSFTfiles()}
 \idx{LALWriteSFTfile()}
-\vspace{0.1in}
-\input{SFTfileIOD}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{SFTfileIOCP}
+
 \subsubsection*{Description}
 
-Will be written soon! :)
+\begin{description}
 
-Watch this space.
+\item{LALReadSFTfile():} basic SFT reading-function. Given filename
+(\verb+fname+) and frequency-limits (\verb+fmin, fmax+), returns the
+SFTtype containing the data.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\textbf{Note 1:} the \emph{actual} returned frequency-band is
+\verb+[floor(fmin), ceil(fmax)]+, i.e. the requested
+frequency-band is guaranteed to be contained in the output (if present
+in the SFT-file), but can be slightly larger.
+
+\textbf{Note 2:} The special input \verb+fmin=fmax=0+ means to read and
+return the \emph{whole} frequency-band contained in the SFT-file.
+
+\item{LALReadSFTfiles():} higher-level SFT-reading function to read a
+list of SFT files and return an \verb+SFTvector+. The handling of
+\verb+fmin, fmax+ is identical to \verb+LALReadSFTfile+.
+
+\textbf{Note 1:} currently the argument of \verb+globdir+ is interpreted
+a bit unconventionally, namely if you pass \verb+"path1/subdir/pattern"+,
+this will be matched \verb+"path1/subdir/*pattern*"+. This might be
+changed in the near future to require you to specify the file-pattern
+explicitly. 
+
+\textbf{Note 2:} currently the SFTs matching the pattern are required
+to have the same number of frequency bins, otherwise an error will be
+returned. (This might be relaxed in the future).
+
+\item{LALWriteSFTfile():} given an SFT (\verb+SFTtype *sft+), write it
+into a file (\verb+CHAR *outfname+). 
+
+\item{LALReadSFTheader():} lower-level function to read only the
+SFT-header of a given file.
+
+\item{LALReadSFTdata():} lower-level function to read an SFT-file. The
+two main differences to \verb+LALReadSFTfile()+ are: 1) the memory for
+SFTtype has to be allocated already with the number of frequency bins
+to be read, and 2) one specifies the first frequency-index to be read,
+instead of the physical frequencies.
+
+\item{LALCopySFT():} copy an SFT-struct and its data from \verb+src+
+to \verb+dest+. Note that the destination SFTtype has to be allocated
+already and has to have the same size (number of frequency-bins) as 
+\verb+src+.
+
+\end{description}
+
+\subsubsection*{Algorithm}
+
 \subsubsection*{Uses}
-\begin{verbatim}
-LALHO()
-\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{verbatim}
+LALCreateSFTtype	LALDestroySFTtype
+LALCreateSFTVector	LALDestroySFTVector
+LALOpenDataFile		LALPrintError
+LALMalloc		LALCalloc
+LALRealloc		LALFree
+
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+The current library only supports SFT-files conforming to the
+SFT-version v1.0. The future API should mostly remain the same when
+upgrading to v2.0 (impending), but minor changes/additions should be
+expected. 
+
 \vfill{\footnotesize\input{SFTfileIOCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 *********************************************** </lalLaTeX> */
 #include <sys/types.h>
@@ -66,8 +118,6 @@ LALHO()
 #include <lal/SFTfileIO.h>
 
 NRCSID (SFTFILEIOC, "$Id$");
-
-
 
 /* for private use: a vector of 'strings' */
 typedef struct {
@@ -88,16 +138,307 @@ void LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname);
 /* number of bytes in SFT-header v1.0 */
 static const size_t header_len_v1 = 32;	
 
-/*
- * The functions that make up the guts of this module
- */
 
+
+/***********************************************************************
+ * The functions that make up the guts of this module
+ ***********************************************************************/
+
+
+/*----------------------------------------------------------------------
+ * Read a given frequency-range from an SFT-file into a memory struct SFTtype
+ *
+ * NOTE: currently only SFT-spec v1.0 is supported! 
+ *
+ * NOTE2: this is a convenience wrapper for LALReadSFTheader() and LALReadSFTdata()
+ *
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="SFTfileIOCP"> */
+void
+LALReadSFTfile (LALStatus *stat, 
+		SFTtype **sft, 		/* output SFT */
+		REAL8 fmin, 		/* lower frequency-limit */
+		REAL8 fmax,		/* upper frequency-limit */
+		const CHAR *fname)	/* path+filename */
+{ /* </lalVerbatim> */
+  SFTHeader  header;		/* SFT file-header version1 */
+  REAL8 deltaF;
+  UINT4 readlen;
+  INT4 fminBinIndex, fmaxBinIndex;
+  SFTtype *outputSFT = NULL;
+  UINT4 i;
+  REAL4 renorm;
+
+  INITSTATUS (stat, "LALReadSFTfile", SFTFILEIOC);
+  ATTATCHSTATUSPTR (stat); 
+  
+  ASSERT (sft, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (*sft == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
+  ASSERT (fname,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (fmin <= fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+
+  /* read the header */
+  TRY ( LALReadSFTheader (stat->statusPtr, &header, fname), stat);
+
+  /* ----- figure out which data we want to read ----- */
+  deltaF = 1.0 / header.timeBase;
+
+  /* special case: fmin==fmax==0 means "read all" */
+  if ( (fmin == 0) && (fmax == 0) )
+    {
+      fminBinIndex = header.fminBinIndex;
+      fmaxBinIndex = fminBinIndex + header.length - 1;
+    }
+  else
+    {
+      /* find the right frequency-bin and number of bins
+       * The rounding here is chosen such that the required 
+       * frequency-interval is _guaranteed_ to lie within the 
+       * returned range  */
+      fminBinIndex = (INT4) floor (fmin * header.timeBase);  /* round this down */
+      fmaxBinIndex = (INT4) ceil  (fmax * header.timeBase);  /* round up */
+    }
+
+  readlen = (UINT4)(fmaxBinIndex - fminBinIndex) + 1;	/* number of bins to read */
+
+  /* allocate the final SFT to be returned */
+  TRY ( LALCreateSFTtype (stat->statusPtr, &outputSFT, readlen), stat);
+
+
+  /* and read it, using the lower-level function: */
+  LALReadSFTdata (stat->statusPtr, outputSFT, fname, fminBinIndex);
+  BEGINFAIL (stat) {
+    LALDestroySFTtype (stat->statusPtr, &outputSFT);
+  } ENDFAIL (stat);
+
+
+  /***************************************************
+   * FIXME: questionable renormalization follows... to be clarified
+   ***************************************************/
+  renorm = 1.0 * readlen / header.length;
+  /* **************************************************/
+
+  /* let's re-normalize and fill data into output-vector */
+  if (renorm != 1)
+    for (i=0; i < readlen; i++)
+      {
+	outputSFT->data->data[i].re *= renorm;
+	outputSFT->data->data[i].im *= renorm;
+      }    
+  
+  /* that's it: return */
+  *sft = outputSFT;
+
+  DETATCHSTATUSPTR (stat);
+  RETURN(stat);
+
+} /* LALReadSFTfile() */
+
+
+
+/* ----------------------------------------------------------------------
+ * read a whole bunch of SFTs at once: given a file-pattern, read and 
+ * return a vector of SFTs
+ *
+ * the input-glob is a bit special: the file-part is interpreted as a 
+ * match-string: so test1/thisdir/SFT  would match all "*SFT* files
+ * in test1/thisdir/ !
+ *
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="SFTfileIOCP"> */
+void
+LALReadSFTfiles (LALStatus *stat,
+		 SFTVector **sftvect,	/* output SFT vector */
+		 REAL8 fmin,		/* lower frequency-limit */
+		 REAL8 fmax,		/* upper frequency-limit */
+		 const CHAR *globdir)	/* "path/filepattern" */
+{ /* </lalVerbatim> */
+
+  UINT4 i, numSFTs;
+  SFTVector *out = NULL;
+  SFTtype *sft = NULL;
+  StringVector *fnames;
+
+  INITSTATUS (stat, "LALReadSFTfiles", SFTFILEIOC);
+  ATTATCHSTATUSPTR (stat); 
+  
+  ASSERT (sftvect, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (*sftvect == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
+  ASSERT (globdir,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
+  ASSERT (fmin <= fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+
+
+  /* make filelist 
+   * NOTE: we don't use glob() as it was reported to fail under condor */
+  if ( (fnames = find_files (globdir)) == NULL) {
+    ABORT (stat, SFTFILEIOH_EGLOB, SFTFILEIOH_MSGEGLOB);
+  }
+
+  numSFTs = fnames->length;
+
+  for (i=0; i < numSFTs; i++)
+    {
+      LALReadSFTfile (stat->statusPtr, &sft, fmin, fmax, fnames->data[i]);
+      BEGINFAIL (stat) {
+	if (out) LALDestroySFTVector (stat->statusPtr, &out);
+      } ENDFAIL (stat);
+      /* this is a bit tricky: first we need to read one SFT to know how
+       * many frequency-bins we need. 
+       * This also means: ALL our SFTs currently have to be of same length! */
+      if (out == NULL) {
+	LALCreateSFTVector (stat->statusPtr, &out, numSFTs, sft->data->length);
+      }
+
+      /* Check that SFTs have same length (current limitation) */
+      if ( sft->data->length != out->data->data->length)
+	{
+	  LALDestroySFTVector (stat->statusPtr, &out);
+	  LALDestroySFTtype (stat->statusPtr, &sft);
+	  ABORT (stat, SFTFILEIOH_EDIFFLENGTH, SFTFILEIOH_MSGEDIFFLENGTH);
+	} /* if length(thisSFT) != common length */
+
+      /* transfer the returned SFT into the SFTVector 
+       * this is a bit complicated by the fact that it's a vector
+       * of SFTtypes, not pointers: therefore we need to *COPY* the stuff !
+       */
+      LALCopySFT (stat->statusPtr, &(out->data[i]), sft);
+      BEGINFAIL (stat) {
+	LALDestroySFTVector (stat->statusPtr, &out);
+	LALDestroySFTtype (stat->statusPtr, &sft);
+      } ENDFAIL (stat);
+
+      LALDestroySFTtype (stat->statusPtr, &sft);
+      sft = NULL;
+
+    } /* for i < numSFTs */
+
+  DestroyStringVector (fnames);
+
+  *sftvect = out;
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+
+} /* LALReadSFTfiles () */
+
+
+
+/* ----------------------------------------------------------------------*/
+/* function to write an entire SFT to a file 
+ * 
+ * NOTE: currently only SFT-spec v1.0 is supported
+ *
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="SFTfileIOCP"> */
+void
+LALWriteSFTfile (LALStatus  *status,
+		 const SFTtype *sft,		/* input: SFT to write to disk */
+		 const CHAR *outfname)		/*  filename */
+{ /* </lalVerbatim> */
+
+  FILE  *fp = NULL;
+  COMPLEX8  *inData;
+  INT4  i;
+  UINT4 datalen;
+  REAL4  *rawdata;
+  CHAR *rawheader, *ptr;
+  SFTHeader header;
+
+  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
+  ATTATCHSTATUSPTR (status);   
+ 
+  /*   Make sure the arguments are not NULL and perform basic checks*/ 
+  ASSERT (sft,   status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL);
+  ASSERT (sft->data,  status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (sft->deltaF > 0, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
+  ASSERT (outfname, status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL); 
+
+  /* fill in the header information */
+  header.version = 1.0;
+  header.gpsSeconds = sft->epoch.gpsSeconds;
+  header.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
+  header.timeBase = 1.0 / sft->deltaF;
+  header.fminBinIndex = (INT4) floor (sft->f0 / sft->deltaF + 0.5);	/* round to closest int! */
+  header.length = sft->data->length; 
+
+  /* build raw header for writing to disk */
+  rawheader = LALCalloc (1, header_len_v1);
+  if (rawheader == NULL) {
+    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
+  }
+  ptr = rawheader;
+  *(REAL8*) ptr = header.version;
+  ptr += sizeof (REAL8);
+  *(INT4*) ptr = header.gpsSeconds;
+  ptr += sizeof (INT4);
+  *(INT4*) ptr = header.gpsNanoSeconds;
+  ptr += sizeof (INT4);
+  *(REAL8*) ptr = header.timeBase;
+  ptr += sizeof (REAL8);
+  *(INT4*) ptr = header.fminBinIndex;
+  ptr += sizeof (INT4);
+  *(INT4*) ptr = header.length; 
+
+  /* write data into a contiguous REAL4-array */
+  datalen = 2 * header.length * sizeof(REAL4);	/* amount of bytes for SFT-data */
+
+  rawdata = LALCalloc (1, datalen);
+  if (rawdata == NULL) {
+    LALFree (rawheader);
+    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
+  }
+
+  inData = sft->data->data;
+  for ( i = 0; i < header.length; i++)
+    {
+      rawdata[2 * i]     = inData[i].re;
+      rawdata[2 * i + 1] = inData[i].im;
+    } /* for i < length */
+
+
+  /* open the file for writing */
+  fp = fopen(outfname, "wb");
+  if (fp == NULL) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    ABORT (status, SFTFILEIOH_EFILE,  SFTFILEIOH_MSGEFILE);
+  }
+
+  /* write the header*/
+  if( fwrite( rawheader, header_len_v1, 1, fp) != 1) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    fclose (fp);
+    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+  }
+  
+  /* write the data */
+  if (fwrite( rawdata, datalen, 1, fp) != 1) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    fclose (fp);
+    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
+  }
+
+  /* done */
+  fclose(fp);
+  LALFree (rawheader);
+  LALFree (rawdata);
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* WriteSFTtoFile() */
+
+
 
 /*----------------------------------------------------------------------*/
-/* <lalVerbatim file="SFTfileIOD"> */
-void LALReadSFTheader (LALStatus  *status,
-                       SFTHeader   *header,
-		       const CHAR  *fname)
+/* <lalVerbatim file="SFTfileIOCP"> */
+void 
+LALReadSFTheader (LALStatus  *status,
+		  SFTHeader   *header,	/* returned header */
+		  const CHAR  *fname)	/* path+filename */
 { /* </lalVerbatim> */
   
   FILE *fp = NULL;
@@ -218,292 +559,6 @@ void LALReadSFTheader (LALStatus  *status,
 
 
 
-/*----------------------------------------------------------------------
- * Read a given frequency-range from an SFT-file into a memory struct SFTtype
- *
- * NOTE: currently only SFT-spec v1.0 is supported! 
- *
- * NOTE2: this is a convenience wrapper for LALReadSFTheader() and LALReadSFTdata()
- *
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="SFTfileIOD"> */
-void
-LALReadSFTfile (LALStatus *stat, 
-		SFTtype **sft, 		/* output SFT */
-		REAL8 fmin, 		/* lower frequency-limit */
-		REAL8 fmax,		/* upper frequency-limit */
-		const CHAR *fname)	/* filename */
-{ /* </lalVerbatim> */
-  SFTHeader  header;		/* SFT file-header version1 */
-  REAL8 deltaF;
-  UINT4 readlen;
-  INT4 fminBinIndex, fmaxBinIndex;
-  SFTtype *outputSFT = NULL;
-  UINT4 i;
-  REAL4 renorm;
-
-  INITSTATUS (stat, "LALReadSFTfile", SFTFILEIOC);
-  ATTATCHSTATUSPTR (stat); 
-  
-  ASSERT (sft, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (*sft == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
-  ASSERT (fname,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (fmin <= fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
-
-  /* read the header */
-  TRY ( LALReadSFTheader (stat->statusPtr, &header, fname), stat);
-
-  /* ----- figure out which data we want to read ----- */
-  deltaF = 1.0 / header.timeBase;
-
-  /* special case: fmin==fmax==0 means "read all" */
-  if ( (fmin == 0) && (fmax == 0) )
-    {
-      fminBinIndex = header.fminBinIndex;
-      fmaxBinIndex = fminBinIndex + header.length - 1;
-    }
-  else
-    {
-      /* find the right frequency-bin and number of bins
-       * The rounding here is chosen such that the required 
-       * frequency-interval is _guaranteed_ to lie within the 
-       * returned range  */
-      fminBinIndex = (INT4) floor (fmin * header.timeBase);  /* round this down */
-      fmaxBinIndex = (INT4) ceil  (fmax * header.timeBase);  /* round up */
-    }
-
-  readlen = (UINT4)(fmaxBinIndex - fminBinIndex) + 1;	/* number of bins to read */
-
-  /* allocate the final SFT to be returned */
-  TRY ( LALCreateSFTtype (stat->statusPtr, &outputSFT, readlen), stat);
-
-
-  /* and read it, using the lower-level function: */
-  LALReadSFTdata (stat->statusPtr, outputSFT, fname, fminBinIndex);
-  BEGINFAIL (stat) {
-    LALDestroySFTtype (stat->statusPtr, &outputSFT);
-  } ENDFAIL (stat);
-
-
-  /***************************************************
-   * FIXME: questionable renormalization follows... to be clarified
-   ***************************************************/
-  renorm = 1.0 * readlen / header.length;
-  /* **************************************************/
-
-  /* let's re-normalize and fill data into output-vector */
-  if (renorm != 1)
-    for (i=0; i < readlen; i++)
-      {
-	outputSFT->data->data[i].re *= renorm;
-	outputSFT->data->data[i].im *= renorm;
-      }    
-  
-  /* that's it: return */
-  *sft = outputSFT;
-
-  DETATCHSTATUSPTR (stat);
-  RETURN(stat);
-
-} /* LALReadSFTfile() */
-
-
-
-/* ----------------------------------------------------------------------
- * read a whole bunch of SFTs at once: given a file-pattern, read and 
- * return a vector of SFTs
- *
- * the input-glob is a bit special: the file-part is interpreted as a 
- * match-string: so test1/thisdir/SFT  would match all "*SFT* files
- * in test1/thisdir/ !
- *
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="SFTfileIOD"> */
-void
-LALReadSFTfiles (LALStatus *stat,
-		 SFTVector **sftvect,
-		 REAL8 fmin,
-		 REAL8 fmax,
-		 const CHAR *globdir)
-{ /* </lalVerbatim> */
-
-  UINT4 i, numSFTs;
-  SFTVector *out = NULL;
-  SFTtype *sft = NULL;
-  StringVector *fnames;
-
-  INITSTATUS (stat, "LALReadSFTfiles", SFTFILEIOC);
-  ATTATCHSTATUSPTR (stat); 
-  
-  ASSERT (sftvect, stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (*sftvect == NULL, stat, SFTFILEIOH_ENONULL, SFTFILEIOH_MSGENONULL);
-  ASSERT (globdir,  stat, SFTFILEIOH_ENULL,  SFTFILEIOH_MSGENULL);
-  ASSERT (fmin <= fmax, stat, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
-
-
-  /* make filelist 
-   * NOTE: we don't use glob() as it was reported to fail under condor */
-  if ( (fnames = find_files (globdir)) == NULL) {
-    ABORT (stat, SFTFILEIOH_EGLOB, SFTFILEIOH_MSGEGLOB);
-  }
-
-  numSFTs = fnames->length;
-
-  for (i=0; i < numSFTs; i++)
-    {
-      LALReadSFTfile (stat->statusPtr, &sft, fmin, fmax, fnames->data[i]);
-      BEGINFAIL (stat) {
-	if (out) LALDestroySFTVector (stat->statusPtr, &out);
-      } ENDFAIL (stat);
-      /* this is a bit tricky: first we need to read one SFT to know how
-       * many frequency-bins we need. 
-       * This also means: ALL our SFTs currently have to be of same length! */
-      if (out == NULL) {
-	LALCreateSFTVector (stat->statusPtr, &out, numSFTs, sft->data->length);
-      }
-
-      /* Check that SFTs have same length (current limitation) */
-      if ( sft->data->length != out->data->data->length)
-	{
-	  LALDestroySFTVector (stat->statusPtr, &out);
-	  LALDestroySFTtype (stat->statusPtr, &sft);
-	  ABORT (stat, SFTFILEIOH_EDIFFLENGTH, SFTFILEIOH_MSGEDIFFLENGTH);
-	} /* if length(thisSFT) != common length */
-
-      /* transfer the returned SFT into the SFTVector 
-       * this is a bit complicated by the fact that it's a vector
-       * of SFTtypes, not pointers: therefore we need to *COPY* the stuff !
-       */
-      LALCopySFT (stat->statusPtr, &(out->data[i]), sft);
-      BEGINFAIL (stat) {
-	LALDestroySFTVector (stat->statusPtr, &out);
-	LALDestroySFTtype (stat->statusPtr, &sft);
-      } ENDFAIL (stat);
-
-      LALDestroySFTtype (stat->statusPtr, &sft);
-      sft = NULL;
-
-    } /* for i < numSFTs */
-
-  DestroyStringVector (fnames);
-
-  *sftvect = out;
-
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
-
-} /* LALReadSFTfiles () */
-
-
-
-/* ----------------------------------------------------------------------*/
-/* function to write an entire SFT to a file 
- * 
- * NOTE: currently only SFT-spec v1.0 is supported
- *
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="SFTfileIOD"> */
-void
-LALWriteSFTfile (LALStatus  *status,
-		   const SFTtype *sft,
-		   const CHAR *outfname)
-{ /* </lalVerbatim> */
-
-  FILE  *fp = NULL;
-  COMPLEX8  *inData;
-  INT4  i;
-  UINT4 datalen;
-  REAL4  *rawdata;
-  CHAR *rawheader, *ptr;
-  SFTHeader header;
-
-  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
-  ATTATCHSTATUSPTR (status);   
- 
-  /*   Make sure the arguments are not NULL and perform basic checks*/ 
-  ASSERT (sft,   status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL);
-  ASSERT (sft->data,  status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
-  ASSERT (sft->deltaF > 0, status, SFTFILEIOH_EVAL, SFTFILEIOH_MSGEVAL);
-  ASSERT (outfname, status, SFTFILEIOH_ENULL, SFTFILEIOH_MSGENULL); 
-
-  /* fill in the header information */
-  header.version = 1.0;
-  header.gpsSeconds = sft->epoch.gpsSeconds;
-  header.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
-  header.timeBase = 1.0 / sft->deltaF;
-  header.fminBinIndex = (INT4) floor (sft->f0 / sft->deltaF + 0.5);	/* round to closest int! */
-  header.length = sft->data->length; 
-
-  /* build raw header for writing to disk */
-  rawheader = LALCalloc (1, header_len_v1);
-  if (rawheader == NULL) {
-    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
-  }
-  ptr = rawheader;
-  *(REAL8*) ptr = header.version;
-  ptr += sizeof (REAL8);
-  *(INT4*) ptr = header.gpsSeconds;
-  ptr += sizeof (INT4);
-  *(INT4*) ptr = header.gpsNanoSeconds;
-  ptr += sizeof (INT4);
-  *(REAL8*) ptr = header.timeBase;
-  ptr += sizeof (REAL8);
-  *(INT4*) ptr = header.fminBinIndex;
-  ptr += sizeof (INT4);
-  *(INT4*) ptr = header.length; 
-
-  /* write data into a contiguous REAL4-array */
-  datalen = 2 * header.length * sizeof(REAL4);	/* amount of bytes for SFT-data */
-
-  rawdata = LALCalloc (1, datalen);
-  if (rawdata == NULL) {
-    LALFree (rawheader);
-    ABORT (status, SFTFILEIOH_EMEM, SFTFILEIOH_MSGEMEM);    
-  }
-
-  inData = sft->data->data;
-  for ( i = 0; i < header.length; i++)
-    {
-      rawdata[2 * i]     = inData[i].re;
-      rawdata[2 * i + 1] = inData[i].im;
-    } /* for i < length */
-
-
-  /* open the file for writing */
-  fp = fopen(outfname, "wb");
-  if (fp == NULL) {
-    LALFree (rawheader);
-    LALFree (rawdata);
-    ABORT (status, SFTFILEIOH_EFILE,  SFTFILEIOH_MSGEFILE);
-  }
-
-  /* write the header*/
-  if( fwrite( rawheader, header_len_v1, 1, fp) != 1) {
-    LALFree (rawheader);
-    LALFree (rawdata);
-    fclose (fp);
-    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
-  }
-  
-  /* write the data */
-  if (fwrite( rawdata, datalen, 1, fp) != 1) {
-    LALFree (rawheader);
-    LALFree (rawdata);
-    fclose (fp);
-    ABORT (status, SFTFILEIOH_EFILE, SFTFILEIOH_MSGEFILE);
-  }
-
-  /* done */
-  fclose(fp);
-  LALFree (rawheader);
-  LALFree (rawdata);
-
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* WriteSFTtoFile() */
-
 /* ------------------------------------------------------------
  * this is a function for low-level SFT data-reading:
  * the SFT-data is read starting from fminBinIndex and filled
@@ -513,12 +568,12 @@ LALWriteSFTfile (LALStatus  *status,
  *       to the caller of this function!!
  *
  *------------------------------------------------------------*/
-/* <lalVerbatim file="SFTfileIOD"> */
+/* <lalVerbatim file="SFTfileIOCP"> */
 void
 LALReadSFTdata(LALStatus *status,
-	       SFTtype    *sft,    /* assuming memory is allocated  */
-	       const CHAR *fname,
-	       INT4 fminBinIndex)
+	       SFTtype    *sft,    /* return SFT: assuming memory is allocated  */
+	       const CHAR *fname,  /* path+filename */
+	       INT4 fminBinIndex)  /* minimun frequency-index to read */
 { /* </lalVerbatim> */
   FILE        *fp = NULL;
   SFTHeader  header;
@@ -631,15 +686,19 @@ LALReadSFTdata(LALStatus *status,
 
 } /* LALReadSFTdata() */
 
+
 
 /*----------------------------------------------------------------------
  *  copy an entire SFT-type into another
  *  we require the destination to have at least as many frequency-bins
  *  as the source, but it can have less..
  *----------------------------------------------------------------------*/
+/* <lalVerbatim file="SFTfileIOCP"> */
 void
-LALCopySFT (LALStatus *stat, SFTtype *dest, const SFTtype *src)
-{
+LALCopySFT (LALStatus *stat, 
+	    SFTtype *dest, 	/* output: copied SFT (has to be allocated) */
+	    const SFTtype *src)	/* input-SFT to be copied */
+{ /* </lalVerbatim> */
 
   INITSTATUS( stat, "LALDestroySFTVector", SFTFILEIOC);
 
@@ -667,7 +726,7 @@ LALCopySFT (LALStatus *stat, SFTtype *dest, const SFTtype *src)
 } /* LALCopySFT() */
 
 
-
+
 /***********************************************************************
  * internal helper functions
  ***********************************************************************/
