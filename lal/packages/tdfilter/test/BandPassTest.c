@@ -61,6 +61,7 @@ LALButterworthREAL4TimeSeries()
 
 ******************************************************* </lalLaTeX> */
 
+#include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <string.h>
 #include <stdlib.h>
