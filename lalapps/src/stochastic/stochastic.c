@@ -92,16 +92,16 @@ INT4 intervalDuration = 180;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
 INT4 calibOffset = 29;
-CHAR *frameCache1 = NULL;
-CHAR *frameCache2 = NULL;
-CHAR *calCache1 = NULL;
-CHAR *calCache2 = NULL;
-CHAR *channel1 = NULL;
-CHAR *channel2 = NULL;
-CHAR ifo1[LALNameLength] = "H1";
-CHAR ifo2[LALNameLength] = "L1";
-INT4 site1 = 0;
-INT4 site2 = 1;
+CHAR *frameCacheOne = NULL;
+CHAR *frameCacheTwo = NULL;
+CHAR *calCacheOne = NULL;
+CHAR *calCacheTwo = NULL;
+CHAR *channelOne = NULL;
+CHAR *channelTwo = NULL;
+CHAR ifoOne[LALNameLength] = "H1";
+CHAR ifoTwo[LALNameLength] = "L1";
+INT4 siteOne = 0;
+INT4 siteTwo = 1;
 
 /* frequency band */
 INT4 fMin = 50;
@@ -388,18 +388,18 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* set segment input parameters */
-  streamParams.frameCache1 = frameCache1;
-  streamParams.frameCache2 = frameCache2;
-  streamParams.ifo1 = ifo1;
-  streamParams.ifo2 = ifo2;
-  streamParams.channel1 = channel1;
-  streamParams.channel2 = channel2;
+  streamParams.frameCacheOne = frameCacheOne;
+  streamParams.frameCacheTwo = frameCacheTwo;
+  streamParams.ifoOne = ifoOne;
+  streamParams.ifoTwo = ifoTwo;
+  streamParams.channelOne = channelOne;
+  streamParams.channelTwo = channelTwo;
   streamParams.buffer = 0;
   streamParams.sampleRate = sampleRate;
   streamParams.resampleRate = resampleRate;
   streamParams.duration = segmentDuration + 2 * padData;
-  streamPair.stream1 = &segmentPad1;
-  streamPair.stream2 = &segmentPad2;
+  streamPair.streamOne = &segmentPad1;
+  streamPair.streamTwo = &segmentPad2;
 
   if (inject_flag)
   {
@@ -430,8 +430,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     /* define parameters for SimulateSB */
     SBParams.length = segmentPadLength;
     SBParams.deltaT = 1. / resampleRate;
-    SBParams.detectorOne = lalCachedDetectors[site1];
-    SBParams.detectorTwo = lalCachedDetectors[site2];
+    SBParams.detectorOne = lalCachedDetectors[siteOne];
+    SBParams.detectorTwo = lalCachedDetectors[siteTwo];
     SBParams.SSimStochBGTimeSeries1Unit = lalADCCountUnit;
     SBParams.SSimStochBGTimeSeries2Unit = lalADCCountUnit;
 
@@ -778,8 +778,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   ORFparams.deltaF = deltaF;
 
   /* set overlap reduction function detector pair */
-  detectors.detectorOne = lalCachedDetectors[site1];
-  detectors.detectorTwo = lalCachedDetectors[site2];
+  detectors.detectorOne = lalCachedDetectors[siteOne];
+  detectors.detectorTwo = lalCachedDetectors[siteTwo];
 
   if (verbose_flag)
     fprintf(stdout, "Generating the overlap reduction function...\n");
@@ -977,11 +977,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* open output file */
     LALSnprintf(outputFilename1, LALNameLength, \
-        "%s/stat-%s%s-%lld-%lld-%d.dat", outputFilePath, ifo1, ifo2, \
+        "%s/stat-%s%s-%lld-%lld-%d.dat", outputFilePath, ifoOne, ifoTwo, \
         startTime, endTime, MCLoop);
     /* open output file */
     LALSnprintf(outputFilename2, LALNameLength, \
-        "%s/post-%s%s-%lld-%lld-%d.dat", outputFilePath, ifo1, ifo2, \
+        "%s/post-%s%s-%lld-%lld-%d.dat", outputFilePath, ifoOne, ifoTwo, \
         startTime, endTime, MCLoop);
 
     for (n = 0; n < N; n++)
@@ -1042,7 +1042,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds  + calibOffset;
             response1.epoch  = response2.epoch  = gpsCalibTime;
 
-            if (strncmp(ifo1, "G1", 2) == 0)
+            if (strncmp(ifoOne, "G1", 2) == 0)
             {
               for (i = 0; i < filterLength; i++)
               {
@@ -1059,8 +1059,8 @@ INT4 main(INT4 argc, CHAR *argv[])
                     gpsCalibTime.gpsSeconds );
               }
               memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
-              calfacts.ifo = ifo1;
-              LAL_CALL(LALFrCacheImport(&status, &calibCache, calCache1), \
+              calfacts.ifo = ifoOne;
+              LAL_CALL(LALFrCacheImport(&status, &calibCache, calCacheOne), \
                   &status);
               LAL_CALL(LALExtractFrameResponse(&status, &responseTemp1, \
                     calibCache, &calfacts), &status);
@@ -1084,7 +1084,7 @@ INT4 main(INT4 argc, CHAR *argv[])
               }
             }
 
-            if (strncmp(ifo2, "G1", 2) == 0)
+            if (strncmp(ifoTwo, "G1", 2) == 0)
             {
               for (i = 0; i < filterLength; i++)
               {
@@ -1101,8 +1101,8 @@ INT4 main(INT4 argc, CHAR *argv[])
                     gpsCalibTime.gpsSeconds );
               }
               memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
-              calfacts.ifo = ifo2;
-              LAL_CALL(LALFrCacheImport(&status, &calibCache, calCache2 ), \
+              calfacts.ifo = ifoTwo;
+              LAL_CALL(LALFrCacheImport(&status, &calibCache, calCacheTwo ), \
                   &status);
               LAL_CALL(LALExtractFrameResponse( &status, &responseTemp2, \
                     calibCache, &calfacts), &status);
@@ -1234,7 +1234,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           gpsCalibTime.gpsSeconds = gpsStartTime.gpsSeconds + calibOffset;
           response1.epoch  = response2.epoch = gpsCalibTime;
 
-          if (strncmp(ifo1, "G1", 2) == 0)
+          if (strncmp(ifoOne, "G1", 2) == 0)
           {
             for (i = 0; i < filterLength; i++)
             {
@@ -1251,8 +1251,8 @@ INT4 main(INT4 argc, CHAR *argv[])
                   gpsCalibTime.gpsSeconds );
             }
             memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
-            calfacts.ifo = ifo1;
-            LAL_CALL(LALFrCacheImport(&status, &calibCache, calCache1 ), \
+            calfacts.ifo = ifoOne;
+            LAL_CALL(LALFrCacheImport(&status, &calibCache, calCacheOne ), \
                 &status);
             LAL_CALL(LALExtractFrameResponse(&status, &responseTemp1, \
                   calibCache, &calfacts), &status);
@@ -1276,7 +1276,7 @@ INT4 main(INT4 argc, CHAR *argv[])
             }
           }
 
-          if (strncmp(ifo2, "G1", 2) == 0)
+          if (strncmp(ifoTwo, "G1", 2) == 0)
           {
             for (i = 0; i < filterLength; i++)
             {
@@ -1293,8 +1293,8 @@ INT4 main(INT4 argc, CHAR *argv[])
                   gpsCalibTime.gpsSeconds );
             }
             memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
-            calfacts.ifo = ifo2;
-            LAL_CALL(LALFrCacheImport(&status, &calibCache, calCache2 ), \
+            calfacts.ifo = ifoTwo;
+            LAL_CALL(LALFrCacheImport(&status, &calibCache, calCacheTwo ), \
                 &status);
             LAL_CALL(LALExtractFrameResponse(&status, &responseTemp2, \
                   calibCache, &calfacts), &status);
@@ -1760,10 +1760,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   */
 
   /* free calloc'd memory */
-  free(frameCache1);
-  free(frameCache2);
-  free(calCache1);
-  free(calCache2);
+  free(frameCacheOne);
+  free(frameCacheTwo);
+  free(calCacheOne);
+  free(calCacheTwo);
 
   return 0;
 }
@@ -1822,8 +1822,8 @@ void parseOptions(INT4 argc, CHAR *argv[])
   struct stat fileStatus;
 
   /* tempory variables */
-  CHAR *channel1Temp = NULL;
-  CHAR *channel2Temp = NULL;
+  CHAR *channelOneTemp = NULL;
+  CHAR *channelTwoTemp = NULL;
 
   while(1)
   {
@@ -2163,24 +2163,24 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'i':
         /* ifo for first stream */
-        strncpy(ifo1, optarg, LALNameLength);
+        strncpy(ifoOne, optarg, LALNameLength);
 
         /* set site */
-        if (strncmp(ifo1, "H1", 2) == 0)
+        if (strncmp(ifoOne, "H1", 2) == 0)
         {
-          site1 = 0;
+          siteOne = 0;
         }
-        else if (strncmp(ifo1, "H2", 2) == 0)
+        else if (strncmp(ifoOne, "H2", 2) == 0)
         {
-          site1 = 0;
+          siteOne = 0;
         }
-        else if (strncmp(ifo1, "L1", 2) == 0)
+        else if (strncmp(ifoOne, "L1", 2) == 0)
         {
-          site1 = 1;
+          siteOne = 1;
         }
-        else if (strncmp(ifo1, "G1", 2) == 0)
+        else if (strncmp(ifoOne, "G1", 2) == 0)
         {
-          site1 = 3;
+          siteOne = 3;
         }
         else
         {
@@ -2192,24 +2192,24 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
       case 'I':
         /* ifo for second stream */
-        strncpy(ifo2, optarg, LALNameLength);
+        strncpy(ifoTwo, optarg, LALNameLength);
 
         /* set site */
-        if (strncmp(ifo2, "H1", 2) == 0)
+        if (strncmp(ifoTwo, "H1", 2) == 0)
         {
-          site2 = 0;
+          siteTwo = 0;
         }
-        else if (strncmp(ifo2, "H2", 2) == 0)
+        else if (strncmp(ifoTwo, "H2", 2) == 0)
         {
-          site2 = 0;
+          siteTwo = 0;
         }
-        else if (strncmp(ifo2, "L1", 2) == 0)
+        else if (strncmp(ifoTwo, "L1", 2) == 0)
         {
-          site2 = 1;
+          siteTwo = 1;
         }
-        else if (strncmp(ifo2, "G1", 2) == 0)
+        else if (strncmp(ifoTwo, "G1", 2) == 0)
         {
-          site1 = 3;
+          siteOne = 3;
         }
         else
         {
@@ -2222,31 +2222,31 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'y':
         /* channel one */
         optarg_len = strlen(optarg) + 4;
-        channel1Temp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        channel1 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(channel1Temp, optarg, optarg_len);
+        channelOneTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        channelOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(channelOneTemp, optarg, optarg_len);
         break;
 
       case 'Y':
         /* channel two */
         optarg_len = strlen(optarg) + 4;
-        channel2Temp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        channel2 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(channel2Temp, optarg, optarg_len);
+        channelTwoTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        channelTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(channelTwoTemp, optarg, optarg_len);
         break;
 
       case 'd':
         /* data cache one */
         optarg_len = strlen(optarg) + 1;
-        frameCache1 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(frameCache1, optarg, optarg_len);
+        frameCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        strncpy(frameCacheOne, optarg, optarg_len);
 
         /* check that file exists */
-        if ( stat(frameCache1, &fileStatus) == -1)
+        if ( stat(frameCacheOne, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
-              long_options[option_index].name, frameCache1);
+              long_options[option_index].name, frameCacheOne);
           exit(1);
         }
 
@@ -2255,15 +2255,15 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'D':
         /* data cache two */
         optarg_len = strlen(optarg) + 1;
-        frameCache2 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(frameCache2, optarg, optarg_len);
+        frameCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        strncpy(frameCacheTwo, optarg, optarg_len);
 
         /* check that file exists */
-        if ( stat(frameCache2, &fileStatus) == -1)
+        if ( stat(frameCacheTwo, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
-              long_options[option_index].name, frameCache2);
+              long_options[option_index].name, frameCacheTwo);
           exit(1);
         }
 
@@ -2272,15 +2272,15 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'r':
         /* calibration cache one */
         optarg_len = strlen(optarg) + 1;
-        calCache1 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(calCache1, optarg, optarg_len);
+        calCacheOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        strncpy(calCacheOne, optarg, optarg_len);
 
         /* check that file exists */
-        if ( stat(calCache1, &fileStatus) == -1)
+        if ( stat(calCacheOne, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
-              long_options[option_index].name, calCache1);
+              long_options[option_index].name, calCacheOne);
           exit(1);
         }
 
@@ -2289,15 +2289,15 @@ void parseOptions(INT4 argc, CHAR *argv[])
       case 'R':
         /* calibration cache two */
         optarg_len = strlen(optarg) + 1;
-        calCache2 = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        strncpy(calCache2, optarg, optarg_len);
+        calCacheTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        strncpy(calCacheTwo, optarg, optarg_len);
 
         /* check that file exists */
-        if ( stat(calCache2, &fileStatus) == -1)
+        if ( stat(calCacheTwo, &fileStatus) == -1)
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "File does not exist: (%s specified)\n", \
-              long_options[option_index].name, calCache2);
+              long_options[option_index].name, calCacheTwo);
           exit(1);
         }
 
@@ -2380,17 +2380,17 @@ void parseOptions(INT4 argc, CHAR *argv[])
   }
 
   /* set channels */
-  strcpy(channel1, ifo1);
-  strcpy(channel2, ifo2);
-  strcat(channel1, ":");
-  strcat(channel2, ":");
-  strcat(channel1, channel1Temp);
-  strcat(channel2, channel2Temp);
-  free(channel1Temp);
-  free(channel2Temp);
+  strcpy(channelOne, ifoOne);
+  strcpy(channelTwo, ifoTwo);
+  strcat(channelOne, ":");
+  strcat(channelTwo, ":");
+  strcat(channelOne, channelOneTemp);
+  strcat(channelTwo, channelTwoTemp);
+  free(channelOneTemp);
+  free(channelTwoTemp);
 
-  printf("channel1 = %s\n", channel1);
-  printf("channel2 = %s\n", channel2);
+  printf("channelOne = %s\n", channelOne);
+  printf("channelTwo = %s\n", channelTwo);
   exit(1);
 
   return;
@@ -2435,8 +2435,8 @@ void readDataPair(LALStatus *status,
   bufferStartTime.gpsNanoSeconds = 0;
 
   /* set channels */
-  frChanIn1.name = params->channel1;
-  frChanIn2.name = params->channel2;
+  frChanIn1.name = params->channelOne;
+  frChanIn2.name = params->channelTwo;
   frChanIn2.type = ADCDataChannel;
   frChanIn1.type = ADCDataChannel;
 
@@ -2459,7 +2459,7 @@ void readDataPair(LALStatus *status,
   memset(dataStream2.data->data, 0, \
       dataStream2.data->length * sizeof(*dataStream2.data->data));
 
-  if ((strncmp(ifo1, "G1", 2) == 0) || (strncmp(ifo2, "G1", 2) == 0))
+  if ((strncmp(ifoOne, "G1", 2) == 0) || (strncmp(ifoTwo, "G1", 2) == 0))
   {
     dataStreamGeo.epoch = bufferStartTime;
     dataStreamGeo.data = NULL;
@@ -2474,7 +2474,7 @@ void readDataPair(LALStatus *status,
     fprintf(stdout, "Opening first frame cache...\n");
 
   /* open first frame cache */
-  LALFrCacheImport(status->statusPtr, &frCache1, params->frameCache1);
+  LALFrCacheImport(status->statusPtr, &frCache1, params->frameCacheOne);
   CHECKSTATUSPTR(status);
   LALFrCacheOpen(status->statusPtr, &frStream1, frCache1);
   CHECKSTATUSPTR(status);
@@ -2486,7 +2486,7 @@ void readDataPair(LALStatus *status,
   LALFrSeek(status->statusPtr, &(bufferStartTime), frStream1);
   CHECKSTATUSPTR(status);
 
-  if (strncmp(ifo1, "G1", 2) == 0)
+  if (strncmp(ifoOne, "G1", 2) == 0)
   {
     LALFrGetREAL8TimeSeries(status->statusPtr, &dataStreamGeo, \
         &frChanIn1, frStream1);
@@ -2530,7 +2530,7 @@ void readDataPair(LALStatus *status,
         &frChanIn1, frStream1);
     CHECKSTATUSPTR(status);
   }
-  if (strcmp(params->frameCache1, params->frameCache2) == 0)
+  if (strcmp(params->frameCacheOne, params->frameCacheTwo) == 0)
   {
     if (verbose_flag)
     {
@@ -2565,7 +2565,7 @@ void readDataPair(LALStatus *status,
       fprintf(stdout, "Opening second frame cache...\n");
 
     /* open second frame cache and read in second channel */
-    LALFrCacheImport(status->statusPtr, &frCache2, params->frameCache2);
+    LALFrCacheImport(status->statusPtr, &frCache2, params->frameCacheTwo);
     CHECKSTATUSPTR(status);
     LALFrCacheOpen(status->statusPtr, &frStream2, frCache2);
     CHECKSTATUSPTR(status);
@@ -2577,7 +2577,7 @@ void readDataPair(LALStatus *status,
     LALFrSeek(status->statusPtr, &(bufferStartTime), frStream2);
     CHECKSTATUSPTR(status);
 
-    if (strncmp(ifo2, "G1", 2) == 0)
+    if (strncmp(ifoTwo, "G1", 2) == 0)
     {
       LALFrGetREAL8TimeSeries(status->statusPtr, &dataStreamGeo, \
           &frChanIn2, frStream2);
@@ -2641,24 +2641,24 @@ void readDataPair(LALStatus *status,
   }
 
   /* build output */
-  strncpy(streamPair->stream1->name,dataStream1.name, LALNameLength);
-  strncpy(streamPair->stream2->name,dataStream2.name, LALNameLength);
-  streamPair->stream1->epoch.gpsSeconds = startTime;
-  streamPair->stream2->epoch.gpsSeconds = startTime;
-  streamPair->stream1->epoch.gpsNanoSeconds = 0;
-  streamPair->stream2->epoch.gpsNanoSeconds = 0;
-  streamPair->stream1->deltaT = 1./(REAL8)resampleRate;
-  streamPair->stream2->deltaT = 1./(REAL8)resampleRate;
-  streamPair->stream1->f0 = streamPair->stream2->f0 = 0;
-  streamPair->stream1->sampleUnits = dataStream1.sampleUnits;
-  streamPair->stream2->sampleUnits = dataStream2.sampleUnits;
+  strncpy(streamPair->streamOne->name,dataStream1.name, LALNameLength);
+  strncpy(streamPair->streamTwo->name,dataStream2.name, LALNameLength);
+  streamPair->streamOne->epoch.gpsSeconds = startTime;
+  streamPair->streamTwo->epoch.gpsSeconds = startTime;
+  streamPair->streamOne->epoch.gpsNanoSeconds = 0;
+  streamPair->streamTwo->epoch.gpsNanoSeconds = 0;
+  streamPair->streamOne->deltaT = 1./(REAL8)resampleRate;
+  streamPair->streamTwo->deltaT = 1./(REAL8)resampleRate;
+  streamPair->streamOne->f0 = streamPair->streamTwo->f0 = 0;
+  streamPair->streamOne->sampleUnits = dataStream1.sampleUnits;
+  streamPair->streamTwo->sampleUnits = dataStream2.sampleUnits;
 
   /* remove buffer, and hence corruption due to resampling */
   for (i = 0; i < params->duration * resampleRate; i++)
   {
-    streamPair->stream1->data->data[i] = \
+    streamPair->streamOne->data->data[i] = \
       dataStream1.data->data[i + (resampleRate * buffer)];
-    streamPair->stream2->data->data[i] = \
+    streamPair->streamTwo->data->data[i] = \
       dataStream2.data->data[i + (resampleRate * buffer)];
   }
 

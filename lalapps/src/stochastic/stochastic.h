@@ -18,19 +18,19 @@ extern "C" {
 NRCSID (STOCHASTICH, "$Id$" );
 
 typedef struct tagStreamPair {
-	REAL4TimeSeries *stream1;
-	REAL4TimeSeries *stream2;
+	REAL4TimeSeries *streamOne;
+	REAL4TimeSeries *streamTwo;
 } StreamPair;
 
 typedef struct tagReadDataPairParams {
 	UINT8 startTime;
 	INT4 duration;
-	CHAR *frameCache1;
-	CHAR *frameCache2;
-	CHAR *ifo1;
-	CHAR *ifo2;
-	CHAR *channel1;
-	CHAR *channel2;
+	CHAR *frameCacheOne;
+	CHAR *frameCacheTwo;
+	CHAR *ifoOne;
+	CHAR *ifoTwo;
+	CHAR *channelOne;
+	CHAR *channelTwo;
 	INT4 buffer;
 	INT4 sampleRate;
 	INT4 resampleRate;
