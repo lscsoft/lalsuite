@@ -94,29 +94,10 @@ LALFindChirpBCVSpinData (
 
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
-
-  FILE                 *fpspec       = NULL;
-  FILE		       *fprespRe     = NULL;
-  FILE                 *fprespIm     = NULL;
-  FILE                 *fpStrainRe   = NULL;
-  FILE                 *fpStrainIm   = NULL;
-  FILE                 *fpDataIn     = NULL;
-  FILE                 *fpOutRe      = NULL;
-  FILE                 *fpOutIm      = NULL;
-  FILE                 *fpwtildeData = NULL;
-
-  int 			doTest;
   
   /*declaration*/
   INITSTATUS( status, "LALFindChirpBCVSpinData", FINDCHIRPBCVSPINDATAC );
   ATTATCHSTATUSPTR( status );
-
-  /*
-   *
-   * make sure that the arguments are reasonable
-   * Identical to Eirini's except for aproximant term
-   *
-   */
 
   /* check that the output exists */
   ASSERT( fcSegVec, status,
@@ -147,10 +128,6 @@ LALFindChirpBCVSpinData (
       FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
   ASSERT( params->ampVec->data, status,
       FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
-  /*ASSERT( params->ampVecBCV, status,
-      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL ); 
-  ASSERT( params->ampVecBCV->data, status,
-      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );*/
   ASSERT( params->ampVecBCVSpin1, status,
       FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
   ASSERT( params->ampVecBCVSpin1->data, status,
@@ -202,25 +179,6 @@ LALFindChirpBCVSpinData (
   ASSERT( dataSegVec->data->chan->data, status,
       FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": dataSegVec->data->chan->data" );
-  
-  /*
-   * Set output level
-   */ 
-
-  doTest = 0; /* set to 1 for lots of output, useful for testing */
-  
-  if (doTest ==1)
-  {	  
-  	fpDataIn     = fopen ("DataIn.dat","w");
-  	fpOutRe      = fopen ("OutRe.dat","w");
-  	fpOutIm      = fopen ("OutIm.dat","w");
-  	fprespRe     = fopen ("respRe.dat","w");
-  	fprespIm     = fopen ("respIm.dat","w");
-  	fpStrainRe   = fopen ("StrainRe.dat","w");
-  	fpStrainIm   = fopen ("StrainIm.dat","w");
-  	fpspec       = fopen ("spec.dat","w");
-  	fpwtildeData = fopen ("wtildeData.dat","w");
-  }
        	
   /*
    *
@@ -244,11 +202,9 @@ LALFindChirpBCVSpinData (
    * loop over data segments
    *
    */
-
+  
   for ( i = 0; i < dataSegVec->length; ++i )
   {
-  	/* fprintf (stdout, "segment number %d\n", i); */
-
     	/*
      	 *
      	 * set up segment dependent pointers
@@ -281,16 +237,6 @@ LALFindChirpBCVSpinData (
 
 	/* store the waveform approximant in the data segment */
     	fcSeg->approximant = BCVSpin;
-        
-	if (doTest ==1)
-	{	
-		fprintf (stdout, "Writing input data (time domain) to file \n");
-		
-		for ( k = 0; k < dataVec->length; ++k )
-       		{
-        		fprintf (fpDataIn, "%d\t%e\n",  k, dataVec->data[k]);
-       		}
-	}	
 
     	/*
      	 *
@@ -309,24 +255,9 @@ LALFindChirpBCVSpinData (
    	 	REAL4 q = outputData[k].im;
    	 	REAL4 x = resp[k].re * params->dynRange;
     		REAL4 y = resp[k].im * params->dynRange;
- 
-		if (doTest ==1)
-		{
-	 		fprintf (fpOutRe,  "%d\t%e\n",k,outputData[k].re);  
-    			fprintf (fpOutIm,  "%d\t%e\n",k,outputData[k].im);  
-
-			fprintf (fprespRe, "%d\t%e\n",k,resp[k].re);
-    			fprintf (fprespIm, "%d\t%e\n",k,resp[k].im); 
-		}
 		
     		outputData[k].re =  (p*x) - (q*y);
     		outputData[k].im =  (p*y) + (q*x);
-
-  		if (doTest ==1)
-		{
-			fprintf (fpStrainRe, "%d\t%e\n",k,outputData[k].re);
-  			fprintf (fpStrainIm, "%d\t%e\n",k,outputData[k].im); 
-		}
   	}
 
 
@@ -366,17 +297,12 @@ LALFindChirpBCVSpinData (
     	/* compute inverse of S_v */
    	for ( k = cut; k < params->wtildeVec->length; ++k )
     	{
-                if (doTest ==1)
-		{	
-			fprintf (fpspec, "%d\t%e\n",k,spec[k]); 
-		}
-			
       		if ( spec[k] == 0 )
       		{
         	ABORT( status, FINDCHIRPBCVSPINH_EDIVZ, 
 		FINDCHIRPBCVSPINH_MSGEDIVZ );
       		}
-      
+		
 		wtilde[k].re = 1.0 / spec[k];
     	}
 
@@ -453,34 +379,6 @@ LALFindChirpBCVSpinData (
 
       		wtilde[k].re *= invmodsqResp;
     	}
-
-	if (doTest ==1)
-	{	
- 		fprintf (stdout, "dynRange = %e\n", params->dynRange);
- 		fprintf (stdout, "cut = %d\n", cut); 
-		fprintf (stdout, "resp[cut].re %e\n", resp[cut].re);
- 		fprintf (stdout, "resp[cut].im %e\n", resp[cut].im);
- 		fprintf (stdout, "wtilde[cut].re %e\n", wtilde[cut].re);
-		
-		for (k = 1; k < params->wtildeVec->length; ++k)
-    		{
-  		fprintf (fpwtildeData, "%d\t%e\t%e\n", 
-				k,wtilde[k].re, wtilde[k].im);
-    		}
-	}
-		
-  if (doTest ==1)
-  {
-  	fclose (fpDataIn);
-  	fclose (fpOutRe);
-  	fclose (fpOutIm);
- 	fclose (fprespRe);
-  	fclose (fprespIm);
-  	fclose (fpStrainRe);
-  	fclose (fpStrainIm);
-  	fclose (fpspec);
-  	fclose (fpwtildeData);
-  }
 	
   DETATCHSTATUSPTR( status );
   RETURN( status );
