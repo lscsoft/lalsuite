@@ -1,10 +1,7 @@
 """
-$Id$
-
 Classes needed for the stochastic analysis pipeline.
-
 This script produces the necessary condor submit and dag files to run
-the standalone stochastic code on LIGO data.
+the standalone stochastic code on LIGO/GEO data.
 """
 
 
@@ -23,6 +20,7 @@ def version():
   Return version
   """
   return __version__
+
 
 class StochasticError(exceptions.Exception):
   def __init__(self, args=None):
