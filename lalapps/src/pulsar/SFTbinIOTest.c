@@ -1,6 +1,6 @@
 /*-----------------------------------------------------------------------
  *
- * File Name: SFTbinTest.c
+ * File Name: SFTbinIOTest.c
  * Authors: Sintes, A.M., 
  *
  * Revision: $Id$
@@ -10,7 +10,7 @@
  *
  *-----------------------------------------------------------------------
  */
-/************************************ <lalVerbatim file="SFTbinTestCV">
+/************************************ <lalVerbatim file="SFTbinIOTestCV">
 Author: Sintes, A.M.,
 $Id$
 ************************************* </lalVerbatim> */
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]){
   } /* End of argument parsing loop. */
   /******************************************************************/
   
-  SUB( ReadSFTbinHeader1( &status, &header, fname),  &status );
+  SUB( LALReadSFTbinHeader1( &status, &header, fname),  &status );
   printf("I am able to read the header \n");
   printf("length = %d \n", header.length);
   printf("time = %lf \n", header.timeBase);
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]){
   printf("now trying to reread the original sft with another function.\n");
   
   SUB( LALCCreateVector (&status, &(sft2.data), length),  &status ); 
-  SUB( ReadSFTtype( &status, &sft2, fname, sft.fminBinIndex),  &status );
+  SUB( LALReadSFTtype( &status, &sft2, fname, sft.fminBinIndex),  &status );
   printf("..successful\n");
   printf(" sft2 f0 = %lf \n", sft2.f0);
   printf(" sft2 deltaF = %lf \n", sft2.deltaF);

@@ -46,15 +46,15 @@ $Id$
    	      	   
 /* <lalLaTeX>  *********************************************
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Header \texttt{SFTbin.h}}
-\label{s:SFTbin.h}
+\section{Header \texttt{SFTbinIO.h}}
+\label{s:SFTbinIO.h}
 Routines for reading SFT binary files
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection*{Synopsis}
 
 \begin{verbatim}
-#include <lal/SFTbin.h>
+#include <lal/SFTbinIO.h>
 \end{verbatim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -66,9 +66,9 @@ Routines for reading SFT binary files
 \vfill{\footnotesize\input{SFTbinHV}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage\input{SFTbinC}
+\newpage\input{SFTbinIOC}
 %%%%%%%%%% Test program. %%
-\newpage\input{TestSFTbinC}
+\newpage\input{SFTbinIOTestC}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -219,12 +219,12 @@ typedef COMPLEX8FrequencySeries         SFTtype;
  * 12. Functions Declarations (i.e., prototypes).
  */
 
-void ReadSFTbinHeader1 (LALStatus  *status,
+void LALReadSFTbinHeader1 (LALStatus  *status,
                    SFTHeader1    *header,
 		   CHAR          *fname
 		   );
 
-void ReadSFTtype (LALStatus  *status,
+void LALReadSFTtype (LALStatus  *status,
 		 SFTtype    *sft,  /* asumed  memory is allocated  */
 		 CHAR       *fname,
 		 INT4       fminBinIndex

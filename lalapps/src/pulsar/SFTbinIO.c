@@ -27,11 +27,10 @@ Routines for reading SFT binary files
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{SFTbinD}
-\index{\verb&ReadSFTbinHeader1()&}
+\index{\verb&LALReadSFTbinHeader1()&}
+\index{\verb&LALReadSFTtype()&}
 \index{\verb&ReadCOMPLEX8SFTbinData1()&}
 \index{\verb&ReadCOMPLEX16SFTbinData1()&}
-\index{\verb&COMPLEX8SFT2Periodogram1()&}
-\index{\verb&COMPLEX16SFT2Periodogram1()&}
 \idx{ReadSFTfile()}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Description}
@@ -67,7 +66,7 @@ NRCSID (SFTBINC, "$Id$");
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
 /* *******************************  <lalVerbatim file="SFTbinD"> */
-void ReadSFTbinHeader1 (LALStatus  *status,
+void LALReadSFTbinHeader1 (LALStatus  *status,
                      SFTHeader1   *header,
                      CHAR          *fname)
 { /*   *********************************************  </lalVerbatim> */
@@ -77,7 +76,7 @@ void ReadSFTbinHeader1 (LALStatus  *status,
   size_t    errorcode;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ReadSFTbinHeader1", SFTBINC);
+  INITSTATUS (status, "LALReadSFTbinHeader1", SFTBINC);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
@@ -109,7 +108,7 @@ void ReadSFTbinHeader1 (LALStatus  *status,
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="SFTbinD"> */
-void ReadSFTtype(LALStatus  *status,
+void LALReadSFTtype(LALStatus  *status,
                  SFTtype    *sft,    /* asumed  memory is allocated  */
                  CHAR       *fname,
 		 INT4       fminBinIndex)
@@ -123,7 +122,7 @@ void ReadSFTtype(LALStatus  *status,
   REAL8      deltaF,timeBase;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ReadSFTtype", SFTBINC);
+  INITSTATUS (status, "LALReadSFTtype", SFTBINC);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
