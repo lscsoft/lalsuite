@@ -1175,39 +1175,35 @@ LALEOBWaveformForInjection (
   REAL8 apFac, acFac;/* extra factor in plus and cross amplitudes */
   REAL8 phiC;/* phase at coalescence */
   
-  
+ CHAR message[256];
+  InspiralInit paramsInit;   
     
   INITSTATUS(status, "LALEOBWaveformForInjection", LALEOBWAVEFORMTEMPLATESC);
   ATTATCHSTATUSPTR(status);
 
 
   /* Make sure parameter and waveform structures exist. */
-  ASSERT( params, status, LALINSPIRALH_ENULL,
-	  LALINSPIRALH_MSGENULL );
+  ASSERT( params, status, LALINSPIRALH_ENULL,  LALINSPIRALH_MSGENULL );
   ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
   /* Make sure waveform fields don't exist. */
-  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL,
-	  LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL,
-	  LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL,
-	  LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL,
-	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
-  ASSERT(params, status, LALINSPIRALH_ENULL, 
-	 LALINSPIRALH_MSGENULL);
-  ASSERT(params->fLower > 0., status, LALINSPIRALH_ESIZE, 
-	 LALINSPIRALH_MSGESIZE);
-  ASSERT(params->tSampling > 0., status, LALINSPIRALH_ESIZE,
-	 LALINSPIRALH_MSGESIZE);
-  ASSERT(params->totalMass > 0., status, LALINSPIRALH_ESIZE,
-	 LALINSPIRALH_MSGESIZE);
-
-  LALInspiralSetup (status->statusPtr, &ak, params);
-  CHECKSTATUSPTR(status);
-  LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
-  CHECKSTATUSPTR(status);
+  /* Compute some parameters*/
+  LALInspiralInit(status->statusPtr, params, &paramsInit);
+  CHECKSTATUSPTR(status);   
+  if (paramsInit.nbins==0)
+    {
+      DETATCHSTATUSPTR(status);
+      RETURN (status);      
+    }
+  func = paramsInit.func;
+  ak   = paramsInit.ak;
+  
+  dt = 1./params->tSampling;
+  
 
   mTot   =  params->mass1 + params->mass2;
   etab   =  params->mass1 * params->mass2;
@@ -1217,81 +1213,81 @@ LALEOBWaveformForInjection (
   cosI   = cos( params->inclination );
   mu     = etab * mTot;  
   fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
-  dt     = -1. * etab / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
   f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;   
   apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
   apFac *= 1.0 + cosI*cosI;
   acFac *= 2.0*cosI;
-  /* compute an approximate length*/
-  x = (ak.tn) * params->tSampling ;
-  ndx = ceil(log10(x)/log10(2.));
-  length = pow(2, ndx);
+    params->nStartPad = 0;
 
-  /* and now we can allocate memory for some time series */
-
-  
-
-  /* memset(&ff,0,sizeof(REAL4TimeSeries));*/
-  LALSCreateVector(status->statusPtr, &ff, length);
+  /* Now we can allocate memory and vector for coherentGW structure*/     
+  LALSCreateVector(status->statusPtr, &ff, paramsInit.nbins);
   CHECKSTATUSPTR(status);
-
-  LALSCreateVector(status->statusPtr, &a, 2*length);
+  LALSCreateVector(status->statusPtr, &a, 2*paramsInit.nbins);
   CHECKSTATUSPTR(status);
-
-  LALDCreateVector(status->statusPtr, &phi, length);
+  LALDCreateVector(status->statusPtr, &phi, paramsInit.nbins);
   CHECKSTATUSPTR(status);
   
+   /* By default the waveform is empty */
+  for (count = 0; count < paramsInit.nbins; count++) 
+    {
+      ff->data[count]           = 0.;
+      a->data[2*count+1]        = 0.;
+      phi->data[count]          = 0.;
+      a->data[2*count]          = 0.;
+    }
+  count = 0;
 
-  
 
-  /* Allocate all the memory required to dummy and then point the various
+ /* Allocate all the memory required to dummy and then point the various
      arrays to dummy - this makes it easier to handle memory failures */
-  
   dummy.length = nn * 6;
-  
-  values.length = dvalues.length = newvalues.length =
-    yt.length = dym.length = dyt.length = nn;
+  values.length 	= dvalues.length	= newvalues.length = nn;
+  yt.length 		= dym.length		= dyt.length = nn;
   
   if (!(dummy.data = (REAL8 * ) LALMalloc(sizeof(REAL8) * nn * 6))) {
     ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
   }
-
-  values.data = &dummy.data[0];
-  dvalues.data = &dummy.data[nn];
+  
+  values.data    = &dummy.data[0];
+  dvalues.data   = &dummy.data[nn];
   newvalues.data = &dummy.data[2*nn];
-  yt.data = &dummy.data[3*nn];
-  dym.data = &dummy.data[4*nn];
-  dyt.data = &dummy.data[5*nn];
+  yt.data    = &dummy.data[3*nn];
+  dym.data   = &dummy.data[4*nn];
+  dyt.data   = &dummy.data[5*nn];
   
-  dt = 1./params->tSampling;
-  eta = ak.eta;
-  m = ak.totalmass;
+  /* -- Some aliases -- */
+  dt 	= 1./params->tSampling;
+  eta	= ak.eta;
+  m 	= ak.totalmass;
   
-  t = 0.0;
-  in1.t = t;
-  in1.t0 = ak.t0;
-  in1.v0 = ak.v0;
-  in1.vlso = ak.vlso;
+ 
+  /* -- let's find the initial velocity first fiven the lower frequency -- */
+  t 		= 0.0;
+  in1.t 	= t;
+  in1.t0 	= ak.t0;
+  in1.v0 	= ak.v0;
+  in1.vlso 	= ak.vlso;
   in1.totalmass = ak.totalmass;
-  in1.dEnergy = func.dEnergy;
-  in1.flux = func.flux;
-  in1.coeffs = &ak;
-
+  in1.dEnergy 	= func.dEnergy;
+  in1.flux 	= func.flux;
+  in1.coeffs 	= &ak;
+  
   LALInspiralVelocity(status->statusPtr, &v, &in1);
   CHECKSTATUSPTR(status);
   
   omega = pow(v,3.);
-  f = omega/(LAL_PI*m);
   
-  in2.v0 = ak.v0;
-  in2.phi0 = params->startPhase;
-  in2.dEnergy = func.dEnergy;
-  in2.flux = func.flux;
-  in2.coeffs = &ak;
+  /* -- then the initial phase -- */
+  in2.v0 	= ak.v0;
+  in2.phi0 	= params->startPhase;
+  in2.dEnergy 	= func.dEnergy;
+  in2.flux	= func.flux;
+  in2.coeffs 	= &ak;
   LALInspiralPhasing1(status->statusPtr, &s, v, &in2);
   CHECKSTATUSPTR(status);
   s = s/2.;
-  
+
+  /* -- as well as the light ring value where to stop the waveform -- */
   rofomegain.eta = eta;
   rofomegain.omega = omega;
   
@@ -1317,109 +1313,201 @@ LALEOBWaveformForInjection (
   LALDBisectionFindRoot(status->statusPtr, &rn, &rootIn, funcParams);
   CHECKSTATUSPTR(status);
   
+ /* -- Finally, let's find the initial radius -- 
+   * Here the code might crash in the BisectionFindRoot. First we have to check that the
+   * values of the brackets are negative for the minimal value of r and positive for 
+   * its maximum value. */
 
-    switch (params->order)
-     {
-     case twoPN:
-     case twoPointFivePN:
-       rootIn.function = LALrOfOmega;
-       rootIn.xmax = 100.;
-       rootIn.xmin = 6.;
-       LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, funcParams);
-       CHECKSTATUSPTR(status);
-       break;
-     case threePN:
-       rootIn.function = LALrOfOmega3PN;
-       pr3in.eta = eta;
-       pr3in.omegaS = params->OmegaS;
-       pr3in.zeta2 = params->Zeta2;
-       pr3in.omega = omega;
-       rootIn.xmax = 100.;
-       rootIn.xmin = 6.;
-       LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, (void *)&pr3in);
-       CHECKSTATUSPTR(status);
-       break;
-     default:
-       fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
-       exit(0);
-     }
+  /* For information, rofOmega of a (0.2, 0.2)Mo system with a Flower=10Hz is 
+   * equal to 459 therefore rootIn.xmax =1000 is large enough for most of the
+   *  systems we deal with . cokelaer, May 2004. */
   
-  /*params->rInitial = r;
-  params->vInitial = v;
-  params->rLightRing = rn; */
+  /* rootIn.min = 3  which corresponds to the local minima of the function. Below, 
+   *  the function might return nan values. That's why we use the finite function
+   *  of the standard math library.*/
+  rootIn.function = LALrOfOmega;
+  rootIn.xmax 	= 1000.;
+  rootIn.xmin 	= 3.;
+  
+  /* No check status here. We check manually since we want to get the hand back from those
+   *  two calls.
+   *  First, let's check what's happen with root.xmax */
+  LALrOfOmega(status->statusPtr, &r, rootIn.xmax, funcParams);
+  sprintf(message, "EOB:initialCondition:For omega=rootIn.xmax=%lf, LALrOfOmega return r=%lf", rootIn.xmax, r);
+  LALInfo(status->statusPtr, message);
+  if (r < 0 || finite(r)==0 ) {   
+    sprintf(message, LALINSPIRALH_MSGEROOTINIT);
+    LALWarning(status->statusPtr, message);
+    sprintf(message, LALINSPIRALH_MSGESTOPPED);
+    LALWarning(status->statusPtr, message);		
+    
+    LALSDestroyVector(status->statusPtr, &ff);
+    CHECKSTATUSPTR(status);
+    LALSDestroyVector(status->statusPtr, &a);
+    CHECKSTATUSPTR(status);
+    LALDDestroyVector(status->statusPtr, &phi);
+    CHECKSTATUSPTR(status);
+    
+    LALFree(dummy.data);
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
+  }
+  
+  /* Then, let's check what's happen  with rootIn.xmin*/
+  LALrOfOmega(status->statusPtr, &r, rootIn.xmin, funcParams);
+  sprintf(message, "EOB:initialCondition:For omega=rootIn.xmin=%lf, LALrOfOmega return r=%lf", rootIn.xmin, r);
+  LALInfo(status->statusPtr, message);
+  if (r > 0 || finite(r)==0){
+    sprintf(message, LALINSPIRALH_MSGEROOTINIT);
+    LALWarning(status->statusPtr, message);		
+    sprintf(message, LALINSPIRALH_MSGESTOPPED);
+    LALWarning(status->statusPtr, message);	
+    
+    LALSDestroyVector(status->statusPtr, &ff);
+    CHECKSTATUSPTR(status);
+    LALSDestroyVector(status->statusPtr, &a);
+    CHECKSTATUSPTR(status);
+    LALDDestroyVector(status->statusPtr, &phi);
+    CHECKSTATUSPTR(status);
+    
+    LALFree(dummy.data);
+    DETATCHSTATUSPTR(status);
+    RETURN(status);
+  }
 
-  in3.totalmass = ak.totalmass;
-  in3.dEnergy = func.dEnergy;
-  in3.flux = func.flux;
-  in3.coeffs = &ak;
-  funcParams = (void *) &in3;
+
+  /* -- the inital radius might be found since the brackets seem to give a positive 
+   * and a negative value. let's try to find it  -- */   
+  switch (params->order)
+    {
+    case twoPN:
+    case twoPointFivePN:       
+      funcParams 	= (void *) &rofomegain;
+      rootIn.function 	= LALrOfOmega;
+      rootIn.xmax 	= 1000.; /*should be add in the header*/
+      rootIn.xmin 	= 3.;    /* should be add in the header */
+      
+      LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, funcParams);
+      CHECKSTATUSPTR(status);
+      break;
+    case threePN:
+      rootIn.function 	= LALrOfOmega3PN;
+      pr3in.eta 	= eta;
+      pr3in.omegaS 	= params->OmegaS;
+      pr3in.zeta2 	= params->Zeta2;
+      pr3in.omega 	= omega;
+      rootIn.xmax 	= 1000.;
+      rootIn.xmin 	= 3.;
+      
+      LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, (void *)&pr3in);
+      CHECKSTATUSPTR(status);
+	
+    
+      break;
+    default: /*should not reach that point. it should be checked before I guess*/
+      fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
+      exit(0);
+    }
+  
+  sprintf(message, "EOB:initialCondition:Initial r found = %lf\n", r);
+  LALInfo(status->statusPtr, message); 
+
+        
+  if (r < 6){
+    sprintf(message, "EOB:initialCondition:Initial r found = %lf too small (below 6 no waveform is generated)\n", r);
+    LALWarning(status->statusPtr, message); 
+    
+    LALSDestroyVector(status->statusPtr, &ff);
+    CHECKSTATUSPTR(status);
+    LALSDestroyVector(status->statusPtr, &a);
+    CHECKSTATUSPTR(status);
+    LALDDestroyVector(status->statusPtr, &phi);
+    CHECKSTATUSPTR(status);
+    
+    LALFree(dummy.data);
+    DETATCHSTATUSPTR(status);
+    RETURN(status);    
+  }
 
 
+  /* -- let's find the initial momentum -- */
+  /* LALInspiralPhasing1(v) gives the GW phase (= twice the orbital phase).
+     The ODEs we solve give the orbital phase. Therefore, set the
+     initial phase to be half the GW pahse.   */
+  in3.totalmass 	= ak.totalmass;
+  in3.dEnergy		= func.dEnergy;
+  in3.flux 		= func.flux;
+  in3.coeffs		= &ak;
+  funcParams 		= (void *) &in3;
+  
   switch (params->order)
     {
     case twoPN:
     case twoPointFivePN:
       LALpphiInit(&q, r, eta);
-      LALprInit(&p, r, &in3);
+      LALprInit(&p, r, &in3);       
       in4.function = LALHCapDerivatives;
       break;
     case threePN:
     case threePointFivePN:
-      LALpphiInit3PN(&q,r,eta, params->OmegaS);
-      rootIn.function = LALprInit3PN;
-      rootIn.xmax = 5;
-      rootIn.xmin = -10;
-      /* first we compute vr (we need coeef->Fp6) */
-      pr3in.in3copy = in3; 
-      pr3in.eta = eta;
-      pr3in.omegaS = params->OmegaS;
-      pr3in.r = r;
-      pr3in.q = q; 
-      pr3in.zeta2 = params->Zeta2;
-      pr3in.omega = omega;
-      LALvr3PN(&pr3in.vr,(void *) &pr3in);
+      LALpphiInit3PN(&q, r, eta, params->OmegaS);
+      rootIn.function 	= LALprInit3PN;
+      rootIn.xmax 	= 5;  /* have to check validity of those brackets.*/
+      rootIn.xmin 	= -10; /* idem */
+      /* first we compute vr (we need coeff->Fp6) */
+      pr3in.in3copy 	= in3; 
+      pr3in.eta 	= eta;
+      pr3in.omegaS 	= params->OmegaS;
+      pr3in.zeta2 	= params->Zeta2;
+      pr3in.r		= r;
+      pr3in.q		= q; 
+      pr3in.omega 	= omega;
+      
+      LALvr3PN(&pr3in.vr, (void *) &pr3in);
       /* then we compute the initial value of p */
       LALDBisectionFindRoot(status->statusPtr, &p, &rootIn,(void *) &pr3in );
       CHECKSTATUSPTR(status);
+      
       in4.function = LALHCapDerivatives3PN;
       break;
     default:
-      fprintf(stderr, "There are no EOB waveforms at order %d\n", params->order);
-      exit(0);
+      break;
     }
-
-
+  
+  sprintf( message, "rInitial= %lf, vinitial= %lf, lightring= %lf, initial phase= %lf, pphase%lf, pr=%lf ", 
+	   r, v , rn, s, q, p);
+  LALInfo(status->statusPtr, message);
+  
+  /** --------------------------------------------------------------------- */
+  /** -- actual computation started here -- */   
   values.data[0] = r;
   values.data[1] = s;
   values.data[2] = p;
   values.data[3] = q;
   
+  in4.y 	= &values;
+  in4.h 	= dt/m;
+  in4.n 	= nn;
+  in4.yt 	= &yt;
+  in4.dym 	= &dym;
+  in4.dyt 	= &dyt;
   
-  in4.function = LALHCapDerivatives;
-  in4.y = &values;
-  in4.h = dt/m;
-  in4.n = nn;
-  in4.yt = &yt;
-  in4.dym = &dym;
-  in4.dyt = &dyt;
-
-  
-  t = 0.0;
+  t     = 0.0;
   count = 0;
-  rOld = r+0.1;
-
-
-
-
+  rOld  = r+0.1;
+  
+  
   do
     {
       /*    ASSERT(count< (INT4)inject_hc->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);*/
       rOld = r;
       
-      
-      if (params->order<threePN) LALHCapDerivatives(&values, &dvalues, funcParams);
-      else  LALHCapDerivatives3PN(&values, &dvalues, funcParams);
-      
+      if (params->order<threePN) {
+	LALHCapDerivatives(&values, &dvalues, funcParams);
+      }
+      else {
+	LALHCapDerivatives3PN(&values, &dvalues, funcParams);
+      }
       
       v = pow(omega, oneby3);
       
@@ -1430,14 +1518,11 @@ LALEOBWaveformForInjection (
       a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
       phi->data[count]          = (REAL8)(2* s);
       
-      
-      
       omega = dvalues.data[1];
       in4.dydx = &dvalues;
       in4.x = t/m;
       LALRungeKutta4(status->statusPtr, &newvalues, &in4, funcParams);
       CHECKSTATUSPTR(status);
-      
       
       r = values.data[0] = newvalues.data[0];
       s = values.data[1] = newvalues.data[1];
@@ -1455,88 +1540,96 @@ LALEOBWaveformForInjection (
   /*params->rFinal = rOld;
   params->vFinal = v;*/
   params->fFinal = pow(v,3.)/(LAL_PI*m);
-  phiC =  phi->data[count-1] ;
+ sprintf(message, "cycles = %lf", s/3.14159);
+  LALInfo(status, message);
 
-  for (i=0; i<count;i++)
+
+  if ( (s/LAL_PI) < 2 ){
+    sprintf(message, "The waveform has only %lf cycles; we don't keep waveform with less than 2 cycles.", 
+	       s/LAL_PI );
+    LALWarning(status, message);
+  }
+  else
     {
-      phi->data[i] =  phi->data[i] - phiC +ppnParams->phi;
-    }
-
-  /* Allocate the waveform structures. */
-  if ( ( waveform->a = (REAL4TimeVectorSeries *)
-	 LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
-    ABORT( status, LALINSPIRALH_EMEM,
-	   LALINSPIRALH_MSGEMEM );
-  }
-  memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
-  if ( ( waveform->f = (REAL4TimeSeries *)
-	 LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
-    LALFree( waveform->a ); waveform->a = NULL;
-    ABORT( status, LALINSPIRALH_EMEM,
-	   LALINSPIRALH_MSGEMEM );
-  }
-  memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
-  if ( ( waveform->phi = (REAL8TimeSeries *)
-	 LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
-    LALFree( waveform->a ); waveform->a = NULL;
-    LALFree( waveform->f ); waveform->f = NULL;
-    ABORT( status, LALINSPIRALH_EMEM,
-	   LALINSPIRALH_MSGEMEM );
-  }
-  memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
-
-
-
-  in.length = (UINT4)count;
-  in.vectorLength = 2;
-  LALSCreateVectorSequence( status->statusPtr,
-			    &( waveform->a->data ), &in );
-  CHECKSTATUSPTR(status);      
-  LALSCreateVector( status->statusPtr,
-		    &( waveform->f->data ), count);
-  CHECKSTATUSPTR(status);      
-  LALDCreateVector( status->statusPtr,
-		    &( waveform->phi->data ), count );
-  CHECKSTATUSPTR(status);        
-  
-  
-  
-
-  memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
-  memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
-  memcpy(waveform->phi->data->data ,phi->data, count*(sizeof(REAL8)));
-
-
- 
-
-
-  waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
-    = 1./params->tSampling;
-
-  waveform->a->sampleUnits = lalStrainUnit;
-  waveform->f->sampleUnits = lalHertzUnit;
-  waveform->phi->sampleUnits = lalDimensionlessUnit;
-
-  /*should add this ? 
-    waveform->position = params->position;
-    waveform->psi = params->psi;
-  */
-
-  LALSnprintf( waveform->a->name, LALNameLength, "EOB inspiral amplitudes" );
-  LALSnprintf( waveform->f->name, LALNameLength, "EOB inspiral frequency" );
-  LALSnprintf( waveform->phi->name, LALNameLength, "EOB inspiral phase" );
-
-  /* --- fill some output ---*/
-  ppnParams->tc     = (double)(count-1) / params->tSampling ;
-  ppnParams->length = count;
-  ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
-			       - waveform->f->data->data[count-2]))
-		       * ppnParams->deltaT;
-  ppnParams->fStop  = params->fFinal;
-  ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
-  ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
-
-  ppnParams->fStart   = ppnParams->fStartIn;
+      phiC =  phi->data[count-1] ;
+      
+      for (i=0; i<count;i++)
+	{
+	  phi->data[i] =  phi->data[i] - phiC +ppnParams->phi;
+	}
+      
+      /* Allocate the waveform structures. */
+      if ( ( waveform->a = (REAL4TimeVectorSeries *)
+	     LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
+	ABORT( status, LALINSPIRALH_EMEM,
+	       LALINSPIRALH_MSGEMEM );
+      }
+      memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
+      if ( ( waveform->f = (REAL4TimeSeries *)
+	     LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
+	LALFree( waveform->a ); waveform->a = NULL;
+	ABORT( status, LALINSPIRALH_EMEM,
+	       LALINSPIRALH_MSGEMEM );
+      }
+      memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
+      if ( ( waveform->phi = (REAL8TimeSeries *)
+	     LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
+	LALFree( waveform->a ); waveform->a = NULL;
+	LALFree( waveform->f ); waveform->f = NULL;
+	ABORT( status, LALINSPIRALH_EMEM,
+	       LALINSPIRALH_MSGEMEM );
+      }
+      memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
+      
+      
+      
+      in.length = (UINT4)count;
+      in.vectorLength = 2;
+      LALSCreateVectorSequence( status->statusPtr,
+				&( waveform->a->data ), &in );
+      CHECKSTATUSPTR(status);      
+      LALSCreateVector( status->statusPtr,
+			&( waveform->f->data ), count);
+      CHECKSTATUSPTR(status);      
+      LALDCreateVector( status->statusPtr,
+			&( waveform->phi->data ), count );
+      CHECKSTATUSPTR(status);        
+      
+      
+      
+      memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
+      memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
+      memcpy(waveform->phi->data->data ,phi->data, count*(sizeof(REAL8)));
+      
+      
+      waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
+	= 1./params->tSampling;
+      
+      waveform->a->sampleUnits = lalStrainUnit;
+      waveform->f->sampleUnits = lalHertzUnit;
+      waveform->phi->sampleUnits = lalDimensionlessUnit;
+      
+      /*should add this ? 
+	waveform->position = params->position;
+	waveform->psi = params->psi;
+      */
+      
+      LALSnprintf( waveform->a->name, LALNameLength, "EOB inspiral amplitudes" );
+      LALSnprintf( waveform->f->name, LALNameLength, "EOB inspiral frequency" );
+      LALSnprintf( waveform->phi->name, LALNameLength, "EOB inspiral phase" );
+      
+      /* --- fill some output ---*/
+      ppnParams->tc     = (double)(count-1) / params->tSampling ;
+      ppnParams->length = count;
+      ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
+				   - waveform->f->data->data[count-2]))
+	* ppnParams->deltaT;
+      ppnParams->fStop  = params->fFinal;
+      ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
+      ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
+      
+      ppnParams->fStart   = ppnParams->fStartIn;
+    } /* end phase condition*/
 
   /* --- free memory --- */
 
