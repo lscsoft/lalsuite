@@ -46,6 +46,10 @@ NRCSID( LALTESTDETRESPONSE0C, "$Id$" );
 
 int lalDebugLevel = 0;
 
+static void REAL4VectorSubtraction(REAL4Vector *pA, REAL4Vector *pB,
+                                   REAL4Vector *pAminusB);
+static REAL4 REAL4VectorRMS(REAL4Vector *pVector);
+
 int main(int argc, char *argv[])
 {
   static LALStatus  status;
@@ -58,6 +62,7 @@ int main(int argc, char *argv[])
 
   LALDetAMResponseSeries    am_response_series = {NULL,NULL,NULL};
   REAL4TimeSeries           plus_series, cross_series, scalar_series;
+  /* REAL4Vector               diffVector; */
   LALTimeIntervalAndNSample time_info;
 
   UINT4 i;
@@ -77,18 +82,20 @@ int main(int argc, char *argv[])
   pulsar.orientation                = 0.;  /* orientation */
 
   /*
-   * Set up a detector at (0.E, 0.N)
+   * As per John Whelan's suggestion, directly create a LALDetector 
+   * structure rather than starting with a LALFrDetector structure.
    */
-  strcpy(frdet.name, "TEST IFO");
-  frdet.vertexLongitudeDegrees = 0.;
-  frdet.vertexLatitudeDegrees  = 0.;
-  frdet.vertexElevation        = 0.;
-  frdet.xArmAltitudeRadians    = 0.;
-  frdet.xArmAzimuthRadians     = 0.;
-  frdet.yArmAltitudeRadians    = 0.;
-  frdet.yArmAzimuthRadians     = LAL_PI_2;
+  detector.location[0] = LAL_AWGS84_SI;
+  detector.location[1] = 0.;
+  detector.location[2] = 0.;
+  detector.response[0][0] = 0.;
+  detector.response[1][1] = 0.5;
+  detector.response[2][2] = -0.5;
+  detector.response[0][1] = detector.response[1][0] = 0.;
+  detector.response[0][2] = detector.response[2][0] = 0.;
+  detector.response[1][2] = detector.response[2][1] = 0.;
+  detector.type = LALDETECTORTYPE_ABSENT;
 
-  LALCreateDetector(&status, &detector, &frdet, LALDETECTORTYPE_IFODIFF);
   if (status.statusCode && lalDebugLevel > 0)
     {
       fprintf(stderr,
@@ -239,7 +246,20 @@ int main(int argc, char *argv[])
           printf("%1.6e, ", am_response_series.pScalar->data->data[i]);
         }
       printf(")\n");
+
+
+      /* print out quadrature sum of plus- and cross-response */
+      printf("sqrt(PLUS^2 + CROSS^2): (");
+      for (i = 0; i < time_info.nSample; ++i)
+        {
+          printf("%1.6e, ", sqrt(am_response_series.pPlus->data->data[i] *
+                                 am_response_series.pPlus->data->data[i] +
+                                 am_response_series.pCross->data->data[i] *
+                                 am_response_series.pCross->data->data[i]));
+        }
+      printf(")\n");
     }
+
 
   LALSDestroyVector(&status, &(am_response_series.pPlus->data));
   LALSDestroyVector(&status, &(am_response_series.pCross->data));
@@ -248,4 +268,44 @@ int main(int argc, char *argv[])
   LALCheckMemoryLeaks();
 
   return 0;
+}
+
+
+/*
+ * subtracts two REAL4Vectors; user must do all allocation beforehand
+ */
+static void REAL4VectorSubtraction(REAL4Vector *pA, REAL4Vector *pB,
+                                   REAL4Vector *pAminusB)
+{
+  UINT4 i;
+
+  /* Check for compatible dimensions */
+  if ((pA->length != pB->length) || (pAminusB->length != pA->length) ||
+      (pAminusB->length != pB->length)) 
+    {
+      fprintf(stderr, "VectorSubtraction: ERROR: incompatible dimensions\n");
+      exit(13);
+    }
+
+  for (i = 0; i < pA->length; ++i)
+    {
+      pAminusB->data[i] = pA->data[i] - pB->data[i];
+    }
+
+    return;
+}
+
+static REAL4 REAL4VectorRMS(REAL4Vector *pVector)
+{
+  UINT4 i;
+  REAL4 result = 0.;
+
+  for (i = 0; i < pVector->length; ++i)
+    {
+      result += pVector->data[i] * pVector->data[i];
+    }
+
+  result /= pVector->length;
+
+  return sqrt(result);
 }
