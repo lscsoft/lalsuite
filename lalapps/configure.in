@@ -50,6 +50,7 @@ AC_CHECK_LIB(lalframe, LALFrOpen)
 
 dnl Checks for header files.
 AC_HEADER_STDC
+AC_CHECK_HEADERS(getopt.h)
 AC_CHECK_HEADERS([lal/LALStdlib.h])
 if test "${frame}" = "true"; then
   AC_CHECK_HEADERS(FrameL.h, , LALAPPS_DISABLE_FRAME)
@@ -57,6 +58,12 @@ fi
 if test "${dataflow}" = "true"; then
   AC_CHECK_HEADERS(metaio.h, , AC_MSG_ERROR(could not find metaio.h))
 fi
+
+AC_MSG_CHECKING(for gethostname prototype in unistd.h)
+AC_EGREP_HEADER(gethostname,unistd.h,AC_MSG_RESULT(yes)
+AC_DEFINE(HAVE_GETHOSTNAME_PROTOTYPE,1,
+[Define if gethostname prototype is in unistd.h]),
+AC_MSG_RESULT(no))
 
 AM_CONDITIONAL(FRAME, test x$frame = xtrue)
 AM_CONDITIONAL(DATAFLOW, test x$dataflow = xtrue)
