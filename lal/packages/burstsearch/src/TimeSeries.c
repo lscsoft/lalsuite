@@ -257,7 +257,7 @@ void LALShrinkREAL4TimeSeries(
 	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(first_sample + num_samples <= series->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	XLALShrinkREAL4TimeSeries(series, first_sample, num_samples);
-	ASSERT(series->data->length != num_samples, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	ASSERT(series->data->length == num_samples, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	RETURN(status);
 }
