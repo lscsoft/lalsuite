@@ -1,16 +1,17 @@
-($ID$)
 
-Written by Bernd Machenschalk Jul 2004
+HOWTO compile ComputeFStatistic for Windows and build a BOINC client from it
+----------------------------------------------------------------------------
+
+Written by Bernd Machenschalk Jul/Aug 2004
+($Id$)
+
 
 This document should tell you how to build ComputeFStatistic as a
 BOINC client for Windows.
 
 Two different cases are documented here, depending on the compiler used:
 Case A: Microsoft Visual C++ .NET with wrapper
-Case B: Cross-compiling with MinGW (e.g. on Linux)
-
-This s rather preliminary - don't expect this to work right away.
-
+Case B: Cross-compiling with MinGW (e.g. on Linux). No BOINC support here.
 
 
 Environment Prerequisites
@@ -161,8 +162,10 @@ with some exceptions:
 Most of them doesn't harm, but its at your own risk.
 - use the "cross-" scripts instead of "./configure" and "make"
 
-
-1. fftw2 (compiles faster than fftw3 and we don't actually use it):
+#########
+# fftw2 #
+#########
+# (compiles faster than fftw3 and we don't actually use it):
 
 cd /work
 wget ftp://ftp.fftw.org/pub/fftw/fftw-2.1.5.tar.gz
@@ -176,11 +179,15 @@ make && make install
   cp "$i" "`echo $i | sed 's/^lib//'`" ; done )
 
 
-2. LAL (CVS)
+#############
+# LAL (CVS) #
+#############
 
 cd /work
-cvs -d ":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft" login
-cvs -d ":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft" co lal
+cvs -d ":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft"\
+ login
+cvs -d ":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft"\
+ co lal
 cd lal
 
 #this gives a mode to libtool and gets rid of the gsl checks
@@ -242,11 +249,12 @@ make && make install
 's/^lib//'`" ; done )
 
 
-LALAPPS
+###########
+# LALAPPS #
+###########
 
-cvs -d
-":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft" co
-lalapps
+cvs -d ":pserver:anonymous@gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft"\
+ co lalapps
 
 cd lalapps
 
@@ -256,52 +264,121 @@ cp $f $f.pt
 sed 's/processtable\..//g' $f.pt > $f
 
 ./00boot
-./configure --with-extra-cppflags=-I/work/include
---with-extra-libs=-L/work/lib --prefix=/work
+./configure --with-extra-cppflags="-I/work/include -DNOGLOB"\
+ --with-extra-libs=-L/work/lib --prefix=/work
 
 #build the lalapps library
 cd src/lalapps
 make && make install
 
 #build the ComputeFStatistic binary
-#currently that involves manual removing / commenting out all
-#glob related stuff from ComputeFStatistic.c and ComputeFSTatistic.h
 cd ../pulsar/FDS_isolated
 make lalapps_ComputeFStatistic.exe
 
 
 
-So far building BOINC and linking it to ComputeFStatistic only works
-with MSVC. I will write a HOWTO for the cross compiling as soon as I
-know how it works there.
+#########
+# BOINC #
+#########
 
-BOINC
+# This uses the MSVC tools. No support for MinGW. 
 
-Download the boinc source into /work (zip archive, CVS instructions may
-follow). If you have already a Cygwin shell open, you may unzip a .zip
-archive using
-
+# checkout BOINC
 cd /work
-unzip boinc*.zip
+cvs -d :pserver:anonymous@alien.ssl.berkeley.edu:/home/cvs/cvsroot\
+ checkout boinc
 
-You will get a directory boinc_public. The easiest Way to build the lib
-is to locate "boinc.sln" in boinc_public\win_build in the Windows
-Explorer and double-click it. This should open the Visual Studio IDE.
-In the first white field in the second row there will probably be
-written "Debug". I switched that to "Release" for now. From the Menu
-"Build" now select "Build solution". This will compile the BOINC dll.
+# LALAPPS part
 
-
-Link ComputeFStatistic to BOINC
-
-#it is assumed that you already modified lalapps
-#and built the lalapps lib as above) and built boinc
-#in /work/boinc_public
-#this curretly definetly doesn't work!
+# it is assumed that lalapps is already configured and 
+# lalapps/src/lalapps.obj has been built as above in the
+# LALAPPS section
 
 cd /work/lalapps
-./configure \
- --with-extra-cppflags='-DUSE_BOINC=1 -I/work/include -I/work/boinc_public/lib'\
- --with-extra-libs='-L/work/lib -L/work/boinc_public/win_build' --prefix=/work
 
+# configure lalapps to use BOINC
+./configure --with-extra-cppflags="-I/work/include -DUSE_BOINC=1 -DNOGLOB"\
+ --with-extra-libs=-L/work/lib --prefix=/work
+
+cd src/pulsar/FDS_isolated
+make clean
+
+# The following is MEANT to FAIL, since linking doesn't work (yet).
+# However this builds all necessary dependencies (object files).
+make lalapps_ComputeFStatistic.exe
+
+# collect the necessary objects in the BOINC source tree
+mkdir -p /work/boinc/win_build/CFS/obj
+cp  *.obj ../../lalapps/lalapps.obj /work/boinc/win_build/CFS/obj
+cp /work/lib/lib*.lib /work/boinc/win_build/CFS/obj
+
+
+
+# BOINC part
+
+cd /work/boinc/win_build
+
+#boinc files
+# the first line containig all the options has to be a single long line,
+# we wrap this a bit
+echo '/O2 /Ot /G7 /GA /I "../lib/" /I "../api/" /I "../client"
+ /I "../client/win" /I "./" /D "WIN32" /D "NDEBUG" /D "_WINDOWS"
+ /D "_CONSOLE" /D "_AFXDLL" /D "_MBCS" /FD /EHsc /YX"../lib/boinc_win.h"
+ /Fp".\CFS\obj/boinc_win.pch" /Fo".\CFS\obj/" /Fd".\CFS\obj/" /W3 /c /TP
+ /nologo' | tr -d \\012>CFS/cmp1.rsp
+echo \ >>CFS/cmp1.rsp
+# the following derives the list of necessary files from the
+# upper_case project file, section "BOINC Source Files"
+awk '/<Filter/{c=1} \
+     (c==1)&&/Name="BOINC Source Files"/{c=2} \
+     (c==2)&&/RelativePath=/{print} \
+     /<\/Filter/{c=0}' upper_case.vcproj |
+ sed 's/[^"]*"//;s/".*//' >>CFS/cmp1.rsp
+
+#build boinc stuff
+cl.exe @CFS/cmp1.rsp
+
+# the MS WIndows compiler requires a WinMain() instead of main()
+echo '
+#include "boinc_win.h"
+#include "util.h"
+
+extern int main(int argc, char** argv);
+
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst,
+                   LPSTR Args, int WinMode) {
+    LPSTR command_line;
+    char* argv[100];
+    int argc;
+
+    command_line = GetCommandLine();
+    argc = parse_command_line( command_line, argv );
+    return main(argc, argv);
+}
+'>CFS/WinMain.C
+
+# tell how to build it
+echo '/O2 /Ot /G7 /GA /I "../lib/" /I "../api/" /I "../client"
+ /I "../client/win" /I "./" /D "WIN32" /D "NDEBUG" /D "_WINDOWS"
+ /D "_CONSOLE" /D "_AFXDLL" /D "_MBCS" /FD /EHsc
+ /YX"../lib/boinc_win.h" /Fp".\CFS\obj\boinc_win.pch" /Fo".\CFS\obj/"
+ /Fd".\CFS\obj/" /W3 /c /TP /nologo'|tr -d \\012>CFS/cmp2.rsp
+echo '
+..\lib\util.C
+.\CFS\WinMain.C
+'>>CFS/cmp2.rsp
+
+# compile WinMain capsule
+cl.exe @CFS/cmp2.rsp
+
+# linking
+echo '/OUT:".\CFS\CFS_WIN32.exe" /INCREMENTAL:NO /NOLOGO /DEBUG
+ /PDB:".\CFS\CFS_WIN32.pdb" /SUBSYSTEM:WINDOWS /MACHINE:X86
+ winmm.lib opengl32.lib glu32.lib glaux.lib odbc32.lib
+ odbccp32.lib' | tr -d \\012 >CFS/link.rsp
+echo \ >>CFS/link.rsp
+ls ./CFS/obj/*.obj ./CFS/obj/*.lib | tr / \\\\ >>CFS/link.rsp
+
+# link it all together
+link.exe @CFS/link.rsp
 
