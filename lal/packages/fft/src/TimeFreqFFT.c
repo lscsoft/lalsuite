@@ -585,6 +585,10 @@ LALREAL4AverageSpectrum (
         fftIm = fSegment->data[k].im;
         fSeries->data->data[k] += fftRe * fftRe + fftIm * fftIm;
       }
+
+      /* halve the DC and Nyquist components to be consistent with T010095 */
+      fSeries->data->data[0] /= 2;
+      fSeries->data->data[fLength - 1] /= 2;
     }
     else if ( params->method == useMedian )
     {
@@ -595,6 +599,10 @@ LALREAL4AverageSpectrum (
         fftIm = fSegment->data[k].im;
         psdSeg[i * fLength + k] = fftRe * fftRe + fftIm * fftIm;
       }
+
+      /* halve the DC and Nyquist components to be consistent with T010095 */
+      fSeries->data->data[i * fLength] /= 2;
+      fSeries->data->data[i * fLength + fLength - 1] /= 2;
     }
   }
 
