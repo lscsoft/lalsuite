@@ -43,8 +43,8 @@ NRCSID (DRIVEHOUGHCOLORC, "$Id$");
 	If not set, the program will look into ./data1\n\
  [-o outdir basefilename] \n\
         This is a string that prefixes some output filenames.\n\
-        The results will be written to outdir/skypatch_<number>/basefilename_stats or
-        outdir/skypatch_<number>/basefilename_histo
+        The results will be written to outdir/skypatch_<number>/basefilename_stats or\n\
+        outdir/skypatch_<number>/basefilename_histo\n\
  	If not set, the program will write into ./outHM1/skypatch_<number>/HM\n\
  [-V time-velocity data file]\n\
         This is a string of the output time-velocity data file.\n\
