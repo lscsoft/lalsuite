@@ -117,11 +117,11 @@ LALGetInspiralParams( LALStatus                  *stat,
   z = input->z*1e3*LAL_PC_SI;
 
   /* Compute Galactic geocentric spherical coordinates. */
-  max = x;
-  if ( y > max )
-    max = y;
-  if ( z > max )
-    max = z;
+  max = fabs( x );
+  if ( fabs( y ) > max )
+    max = fabs( y );
+  if ( fabs( z ) > max )
+    max = fabs( z );
   if ( max == 0.0 ) {
     ABORT( stat, GENERATEPPNINSPIRALH_EDBAD,
 	   GENERATEPPNINSPIRALH_MSGEDBAD );
