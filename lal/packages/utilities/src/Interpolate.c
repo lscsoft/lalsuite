@@ -9,8 +9,8 @@
 
 #ifndef _MATH_H
 #include <math.h>
-#define _MATH_H
 #ifndef _MATH_H
+#define _MATH_H
 #endif
 #endif
 
