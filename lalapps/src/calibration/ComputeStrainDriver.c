@@ -278,6 +278,14 @@ static FrChanIn chanin_exc;
   InputData.f=CLA.f;
   InputData.To=CLA.To;
 
+  /* check input data epoch agrees with command line arguments */
+  if ( InputData.AS_Q.epoch.gpsSeconds != CLA.GPSStart )
+    {
+      fprintf(stderr,"GPS start time of data (%d) does nopt agree with requested start time (%d). Exiting.", 
+	      InputData.AS_Q.epoch.gpsSeconds, CLA.GPSStart);
+      return 1;
+    }
+
   /* Allocate output data */
   OutputData.h.epoch=InputData.AS_Q.epoch;
   OutputData.h.deltaT=InputData.AS_Q.deltaT;
