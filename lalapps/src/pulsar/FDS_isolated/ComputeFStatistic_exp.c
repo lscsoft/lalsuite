@@ -1359,8 +1359,7 @@ INT4 EstimatePSDLines(void)
   INT2 windowSize=100;                  /* Running Median Window Size*/
   REAL4 THR=10000.0;
   
-  REAL4 xre,xim,freq;
-  REAL8 r0,r1,r2;
+  REAL4 xre,xim;
 
   OutliersInput  *outliersInput;
   OutliersParams *outliersParams;
@@ -1448,6 +1447,8 @@ INT4 EstimatePSDLines(void)
 #ifdef FILE_PSD
      /*  PSD.txt file contains freq, PSD, noise floor   */
      for (i=0;i<nbins;i++){ 
+       REAL4 freq;
+       REAL8 r0,r1,r2;
        freq=(GV.ifmin+i)/GV.tsft;
        r0=Sp->data[i];
        r1=FloorSp->data[i];
@@ -1507,6 +1508,8 @@ INT4 EstimatePSDLines(void)
 #ifdef FILE_PSDLINES
    /*  PSDLines file contains: PSD, noise floor and lines. */
    for (i=0;i<Ntot;i++){ 
+     REAL4 freq;
+     REAL8 r0,r1,r2;
      j=SpLines->Iclust[i];
      freq=(GV.ifmin+SpLines->Iclust[i])/GV.tsft;
      r0=Sp->data[j];
@@ -1519,6 +1522,8 @@ INT4 EstimatePSDLines(void)
 #ifdef FILE_PSD   
    /*  PSD.txt file contains freq, PSD, noise floor   */
    for (i=0;i<nbins;i++){ 
+     REAL4 freq;
+     REAL8 r0,r1,r2;
      freq=(GV.ifmin+i)/GV.tsft;
      r0=Sp->data[i];
      r1=FloorSp->data[i];
@@ -1564,9 +1569,6 @@ INT4 EstimateFLines(void)
   INT2 windowSize=100;
   REAL4 THR=10.0;
   
-  REAL4 freq;
-  REAL8 r0,r1,r2;
-
   REAL8 dmp;
 
   OutliersInput  *outliersInput;
@@ -1657,6 +1659,8 @@ INT4 EstimateFLines(void)
 #ifdef FILE_FTXT
      /*  F.txt file contains freq, F, noise floor of F   */
      for (i=0;i<nbins;i++){ 
+       REAL4 freq;
+       REAL8 r0,r1,r2;
        freq=GV.userInput.Freq + i*GV.userInput.dFreq;
        r0=F1->data[i];
        r1=FloorF1->data[i];
@@ -1723,6 +1727,8 @@ INT4 EstimateFLines(void)
 #ifdef FILE_FLINES  
    /*  FLines file contains: F, noise floor and lines. */
    for (i=0;i<Ntot;i++){ 
+     REAL4 freq;
+     REAL8 r0,r1,r2;
      j=SpLines->Iclust[i];
      freq=(GV.userInput.Freq+SpLines->Iclust[i]*GV.userInput.dFreq);
      r0=F1->data[j];
@@ -1734,6 +1740,8 @@ INT4 EstimateFLines(void)
 #ifdef FILE_FTXT   
    /*  PSD.txt file contains freq, PSD, noise floor   */
    for (i=0;i<nbins;i++){ 
+     REAL4 freq;
+     REAL8 r0,r1,r2;
      freq=GV.userInput.Freq + i*GV.userInput.dFreq;
      r0=F1->data[i];
      r1=FloorF1->data[i];
