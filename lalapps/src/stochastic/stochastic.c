@@ -31,8 +31,6 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataTables.h>
 
-#include <lal/PrintVector.h>
-
 #include <lalapps.h>
 #include <processtable.h>
 
