@@ -57,7 +57,7 @@ void LALComputeFreqStringTemplate(
     COMPLEX8FrequencySeries *output,
     REAL4		power
     )
-{ /* </lalVerbatim> */
+{
   REAL4 freq = output->f0;
   UINT4 i;
 
@@ -147,14 +147,13 @@ static void LALMakeStringBank(
 }
 
 
-/* <lalVerbatim file="RingCP"> */
 void
 LALCreateStringTemplateBank(
     LALStatus              *status,
     StringTemplateBank      **output,
     StringTemplateBankInput  *input
     )
-{ /* </lalVerbatim> */
+{
   StringTemplateBank *bank;
 
   INITSTATUS( status, "LALCreateStringTemplateBank", STRINGC );
@@ -186,13 +185,12 @@ LALCreateStringTemplateBank(
 }
 
 
-/* <lalVerbatim file="RingCP"> */
 void
 LALDestroyStringTemplateBank(
     LALStatus         *status,
     StringTemplateBank **bank
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS( status, "LALDestroyStringTemplateBank", STRINGC );
   ASSERT( bank, status, STRINGH_ENULL, STRINGH_MSGENULL );
   ASSERT( *bank, status, STRINGH_ENULL, STRINGH_MSGENULL );
