@@ -32,6 +32,7 @@
 /* 04/15/04 gam; Fix help when no command line arguments */
 /* 05/07/04 gam; add alternative to using glob */
 /* 05/07/04 gam; Do not check d_type when using readdir since it is often UNKOWN. */
+/* 05/11/04 gam; Add RunStackSlideMonteCarloSimulation to software inject signals into the SFTs for Monte Carlo simulations */
 
 /*********************************************/
 /*                                           */
@@ -39,6 +40,12 @@
 /*                                           */
 /*********************************************/
 /* #define DEBUG_READSFT_CODE */
+#define INCLUDE_RUNSTACKSLIDEMONTECARLO_CODE
+/* #define DEBUG_MONTECARLOTIMEDOMAIN_DATA */
+/* #define PRINT_MONTECARLOTIMEDOMAIN_DATA */
+/* #define DEBUG_MONTECARLOSFT_DATA */
+/* #define PRINT_MONTECARLOSFT_DATA */
+/* #define PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA */
 /*********************************************/
 /*                                           */
 /* END SECTION: define preprocessor flags    */
@@ -112,9 +119,15 @@ int main(int argc,char *argv[])
 
   StackSlideConditionData(&status,params);  
   INTERNAL_CHECKSTATUS_FROMMAIN(status)  
-    
-  StackSlideApplySearch(&status,params);
-  INTERNAL_CHECKSTATUS_FROMMAIN(status)    
+
+  if ( (params->testFlag & 2) > 0) {    
+    /* 05/11/04 gam; Add code to software inject signals into the SFTs for Monte Carlo simulations */    
+    RunStackSlideMonteCarloSimulation(&status,params);
+    INTERNAL_CHECKSTATUS_FROMMAIN(status);    
+  } else {      
+    StackSlideApplySearch(&status,params);
+    INTERNAL_CHECKSTATUS_FROMMAIN(status)
+  }
   
   StackSlideFinalizeSearch(&status,params);
   INTERNAL_CHECKSTATUS_FROMMAIN(status)    
@@ -496,6 +509,11 @@ int SetGlobalVariables(StackSlideSearchParams *params)
 /*                                        */
 /******************************************/
 
+/******************************************/
+/*                                        */
+/* START FUNCTION: Freemem                */
+/*                                        */
+/******************************************/
 int Freemem(StackSlideSearchParams *params)
 {
 
@@ -526,3 +544,209 @@ int Freemem(StackSlideSearchParams *params)
   
   return 0;
 }
+/******************************************/
+/*                                        */
+/* END FUNCTION: Freemem                  */
+/*                                        */
+/******************************************/
+
+/*********************************************************/
+/*                                                       */
+/* START FUNCTION: RunStackSlideMonteCarloSimulation     */
+/* Injects fake signals and runs Monte Carlo simulation. */
+/*                                                       */
+/*********************************************************/
+void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams *params)
+{
+
+  INT4    i = 0; /* all purpose index */
+  INT4    j = 0; /* all purpose index */    
+#ifdef NOTHING
+  INT4    k = 0; /* another all purpose index */
+  REAL8 **savSkyPosData;     /* Used to save Parameter Space Data */
+  REAL8 **savFreqDerivData;  /* Used to save Frequency Derivative Data */
+#endif
+
+#ifdef INCLUDE_RUNSTACKSLIDEMONTECARLO_CODE
+
+  PulsarSignalParams *pPulsarSignalParams = NULL;
+  REAL4TimeSeries *signal = NULL;
+  LIGOTimeGPS GPSin;            /* reference-time for pulsar parameters at the detector; will convert to SSB! */
+  LALDetector cachedDetector;
+  REAL8 cosIota;               /* cosine of inclination angle iota of the source */
+  REAL8 h_0;                   /* Source amplitude */  
+  SFTParams *pSFTParams = NULL;
+  LIGOTimeGPSVector timestamps;
+  SFTVector *outputSFTs = NULL;
+  REAL4 renorm;               /* Need to renormalize SFTs to account for different sample rates */
+
+  INITSTATUS( status, "RunStackSlideMonteCarloSimulation", COMPUTESTACKSLIDESUMSC );
+  ATTATCHSTATUSPTR(status);
+    
+  /* Function prototypes in GeneratePulsarSignal.h */ /* 
+  void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const PulsarSignalParams *params);
+  void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
+  void LALCreateSFTVector (LALStatus *stat, SFTVector **output, UINT4 numSFTs, UINT4 SFTlen);
+  void LALDestroySFTVector (LALStatus *stat, SFTVector **vect);
+  void LALConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+  void LALConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+  void LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect);
+  void LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition *posIn); */
+    
+  pPulsarSignalParams = (PulsarSignalParams *)LALMalloc(sizeof(PulsarSignalParams));
+    
+  /* pPulsarSignalParams->pulsar.tRef = ...;  Set this up last after pulsar.position, site, and ephemerides are set up. */
+        
+  pPulsarSignalParams->pulsar.position.longitude = params->skyPosData[0][0];
+  pPulsarSignalParams->pulsar.position.latitude = params->skyPosData[i][1];
+  pPulsarSignalParams->pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
+  
+  pPulsarSignalParams->pulsar.psi = 0.0;
+  
+  cosIota = 1.0;
+  h_0 = params->threshold4;
+  pPulsarSignalParams->pulsar.aPlus = 0.5*h_0*(1.0 + cosIota*cosIota);
+  pPulsarSignalParams->pulsar.aCross = h_0*cosIota;
+  
+  pPulsarSignalParams->pulsar.phi0 = 0.0;
+  
+  pPulsarSignalParams->pulsar.f0 = params->f0SUM + params->bandSUM/4.0;
+    
+  if (params->numSpinDown > 0) {
+    LALDCreateVector(status->statusPtr, &(pPulsarSignalParams->pulsar.spindown),((UINT4)params->numSpinDown));
+    CHECKSTATUSPTR (status);
+    for(i=0;i<params->numSpinDown;i++) {
+      pPulsarSignalParams->pulsar.spindown->data[i] = params->freqDerivData[0][i];
+    }
+  } else {
+    pPulsarSignalParams->pulsar.spindown = NULL;
+  }
+  
+  pPulsarSignalParams->orbit = NULL;
+ 
+  pPulsarSignalParams->transfer = NULL;
+  
+  /* Set up pulsar.position, site, and ephemerides. */
+  if (strstr(params->IFO, "LHO")) {
+       cachedDetector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  } else if (strstr(params->IFO, "LLO")) {
+       cachedDetector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  } else if (strstr(params->IFO, "GEO")) {
+      cachedDetector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  } else if (strstr(params->IFO, "VIRGO")) {
+      cachedDetector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  } else if (strstr(params->IFO, "TAMA")) {
+      cachedDetector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+  } else {
+      /* "Invalid or null IFO" */
+      /* ABORT( status, DRIVESTACKSLIDEH_EIFO, DRIVESTACKSLIDEH_MSGEIFO); */
+  }    
+  pPulsarSignalParams->site = &cachedDetector;     
+  pPulsarSignalParams->ephemerides = params->edat;  
+        
+  pPulsarSignalParams->startTimeGPS = params->actualStartTime;
+  pPulsarSignalParams->duration = (UINT4)params->duration;
+  pPulsarSignalParams->samplingRate = (REAL8)ceil(2.0*params->bandBLK); /* Make sampleRate an integer so that T*samplingRate = integer for integer T */
+  pPulsarSignalParams->fHeterodyne = params->f0BLK;
+  
+  /* Find the time at the SSB that corresponds to the arrive time at the detector of first data requested. */
+  GPSin.gpsSeconds = (INT4)params->gpsStartTimeSec;     /* GPS start time of data requested seconds */
+  GPSin.gpsNanoSeconds = (INT4)params->gpsStartTimeNan; /* GPS start time of data requested nanoseconds */
+  LALConvertGPS2SSB(status->statusPtr,&(pPulsarSignalParams->pulsar.tRef), GPSin, pPulsarSignalParams);
+  CHECKSTATUSPTR (status);
+  /* pPulsarSignalParams->pulsar.tRef = tRef; */
+  
+  LALGeneratePulsarSignal(status->statusPtr, &signal, pPulsarSignalParams);
+  CHECKSTATUSPTR (status);
+  
+  #ifdef DEBUG_MONTECARLOTIMEDOMAIN_DATA
+    fprintf(stdout,"signal->deltaT = %23.10e \n",signal->deltaT);
+    fprintf(stdout,"signal->epoch.gpsSeconds = %i \n",signal->epoch.gpsSeconds);
+    fprintf(stdout,"signal->epoch.gpsNanoSeconds = %i \n",signal->epoch.gpsNanoSeconds);
+    fprintf(stdout,"pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate, signal->data->length = %g %i\n",pPulsarSignalParams->duration*pPulsarSignalParams->samplingRate,signal->data->length);
+    fflush(stdout);
+  #endif    
+  #ifdef PRINT_MONTECARLOTIMEDOMAIN_DATA
+    for(i=0;i<signal->data->length;i++)  {
+      fprintf(stdout,"signal->data->data[%i] = %g\n",i,signal->data->data[i]);
+      fflush(stdout);
+    }
+  #endif
+      
+  pSFTParams = (SFTParams *)LALMalloc(sizeof(SFTParams));
+  pSFTParams->Tsft = params->tBLK;
+  timestamps.length = params->numBLKs;
+  timestamps.data = params->timeStamps; 
+  pSFTParams->timestamps = &timestamps;
+  pSFTParams->noiseSFTs = NULL;
+  
+  LALSignalToSFTs(status->statusPtr, &outputSFTs, signal, pSFTParams);
+  CHECKSTATUSPTR (status);
+
+  #ifdef DEBUG_MONTECARLOSFT_DATA  
+    fprintf(stdout,"params->numBLKs, outputSFTs->length = %i, %i \n",params->numBLKs,outputSFTs->length);
+    fflush(stdout);
+    for(i=0;i<outputSFTs->length;i++) {
+      fprintf(stdout,"params->f0BLK, outputSFTs->data[%i].f0 = %g, %g\n",i,params->f0BLK,outputSFTs->data[i].f0);
+      fprintf(stdout,"params->tBLK, 1.0/outputSFTs->data[%i].deltaF = %g, %g\n",i,params->tBLK,1.0/outputSFTs->data[i].deltaF);
+      fprintf(stdout,"params->timeStamps[%i].gpsSeconds, outputSFTs->data[%i].epoch.gpsSeconds = %i, %i\n",i,i,params->timeStamps[i].gpsSeconds,outputSFTs->data[i].epoch.gpsSeconds);
+      fprintf(stdout,"params->timeStamps[%i].gpsNanoSeconds, outputSFTs->data[%i].epoch.gpsNanoSeconds = %i, %i\n",i,i,params->timeStamps[i].gpsNanoSeconds,outputSFTs->data[i].epoch.gpsNanoSeconds);
+      fprintf(stdout,"params->nBinsPerBLK, outputSFTs->data[%i].data->length = %i, %i\n",i,params->nBinsPerBLK,outputSFTs->data[i].data->length);
+      fflush(stdout);
+    }
+  #endif
+  #ifdef PRINT_MONTECARLOSFT_DATA
+    for(i=0;i<outputSFTs->length;i++) {
+      for(j=0;j<outputSFTs->data[i].data->length;j++) {
+        fprintf(stdout,"outputSFTs->data[%i].data->data[%i].re, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,outputSFTs->data[i].data->data[j].re,outputSFTs->data[i].data->data[j].im);
+        fflush(stdout);
+      }
+    }
+  #endif
+  
+  /* Add Injections to input data */
+  for(i=0;i<params->numBLKs;i++) {
+    renorm = ((REAL4)GV.nsamples)/((REAL4)outputSFTs->data[i].data->length); /* Should be the same for all SFTs, but just in case recompute. */
+    #ifdef DEBUG_MONTECARLOSFT_DATA  
+      fprintf(stdout,"Mutiplying outputSFTs->data[%i] with renorm = %g \n",i,renorm);
+      fflush(stdout);
+    #endif  
+    for(j=0;j<params->nBinsPerBLK;j++) {
+       #ifdef PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA
+         fprintf(stdout,"params->BLKData[%i]->fft->data->data[%i].re, outputSFTs->data[%i].data->data[%i].re = %g, %g\n",i,j,i,j,params->BLKData[i]->fft->data->data[j].re,renorm*outputSFTs->data[i].data->data[j].re);
+         fprintf(stdout,"params->BLKData[%i]->fft->data->data[%i].im, outputSFTs->data[%i].data->data[%i].im = %g, %g\n",i,j,i,j,params->BLKData[i]->fft->data->data[j].im,renorm*outputSFTs->data[i].data->data[j].im);
+         fflush(stdout);
+       #endif
+       params->BLKData[i]->fft->data->data[j].re += renorm*outputSFTs->data[i].data->data[j].re;
+       params->BLKData[i]->fft->data->data[j].re += renorm*outputSFTs->data[i].data->data[j].im;
+    }
+  }  
+  
+  LALDestroySFTVector(status->statusPtr, &outputSFTs);
+  LALFree(pPulsarSignalParams);
+
+  LALFree(signal->data->data);
+  LALFree(signal->data);
+  LALFree(signal);
+  
+  LALFree(pSFTParams);  
+        
+  if (params->numSpinDown > 0) {
+    LALDDestroyVector(status->statusPtr, &(pPulsarSignalParams->pulsar.spindown));
+    CHECKSTATUSPTR (status);
+  }
+  LALFree(pPulsarSignalParams);
+#endif
+          
+  StackSlideApplySearch(status->statusPtr,params);
+  CHECKSTATUSPTR (status);
+    
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR (status);          
+}
+/*********************************************************/
+/*                                                       */
+/* END FUNCTION: RunStackSlideMonteCarloSimulation       */
+/* Injects fake signals and runs Monte Carlo simulation. */
+/*                                                       */
+/*********************************************************/

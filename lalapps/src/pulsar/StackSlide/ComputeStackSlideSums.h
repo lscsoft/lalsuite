@@ -12,6 +12,7 @@
 /* 01/23/04 gam; Increase MAXFILES from 40000 to 80000 to allow running on more SFTs */
 /*               (Should allocate memory for this in the future.)                    */
 /* 05/07/04 gam; add alternative to using glob */
+/* 05/11/04 gam; Add code to software inject signals into the SFTs for Monte Carlo simulations */
 
 #ifndef _COMPUTESTACKSLIDESUMS_H
 #define _COMPUTESTACKSLIDESUMS_H
@@ -45,9 +46,11 @@
 /* Next two are used when calibrating BLKs */
 /* #include <ExtractSeries.h> */
 #include <lal/VectorOps.h>
-#include <lal/RealFFT.h>
+/* #include <lal/RealFFT.h> */ /* 05/11/04 gam; not needed */
 #include <lal/LALConstants.h>
 #include <lal/Units.h>
+/* 05/11/04 gam; next is needed to inject signals for Monte Carlo simulations. */
+#include <lal/GeneratePulsarSignal.h>
 #include <errno.h>
 #include "DriveStackSlide.h"
 /*********************************************/
@@ -140,6 +143,7 @@ struct headertag {
 int ReadSFTData(StackSlideSearchParams *params);
 int SetGlobalVariables(StackSlideSearchParams *params);
 int Freemem(StackSlideSearchParams *params);
+void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams *params); /* 05/11/04 gam */
 /*********************************************/
 /*                                           */
 /* END SECTION: prototype declarations       */

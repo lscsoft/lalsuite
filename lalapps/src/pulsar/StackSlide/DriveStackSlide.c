@@ -78,6 +78,11 @@
 /* 04/15/04 gam; Add debugOptionFlag to struct StackSlideSkyPatchParams */
 /* 04/26/04 gam; Change LALStackSlide to StackSlide and LALSTACKSLIDE to STACKSLIDE for initial entry to LALapps. */
 /* 05/05/04 gam; Change params->normalizationThreshold to params->normalizationParameter.  If normalizing with running median use this to correct bias in median to get mean. */
+/* 05/11/04 gam; Add code to software inject signals into the SFTs for Monte Carlo simulations */
+/* 05/11/04 gam; Move SECTION: set up parameter space into StackSlideInitSearch; free memory in StackSlideFinalizeSearch */
+/* 05/11/04 gam; Free edata ephemeris data in StackSlideFinalizeSearch */
+/* 05/11/04 gam; If (params->testFlag & 1) > 0 output the Hough number count */
+/* 05/11/04 gam; If (params->testFlag & 2) > 0 inject fake signals and run Monte Carlo Simulation; use threshold4 for h_0*/
    
 /*********************************************/
 /*                                           */
@@ -165,8 +170,9 @@ void StackSlideInitSearch(
 {
   
   /* UINT2 i; */
-  INT4 i;  
-
+  INT4 i;
+  INT4 k;  /* 05/11/04 gam */
+  
  INITSTATUS( status, "StackSlideInitSearch", DRIVESTACKSLIDEC );
  ATTATCHSTATUSPTR (status);
 
@@ -442,8 +448,8 @@ void StackSlideInitSearch(
     	fprintf(stdout,"set threshold1         %23.16e; #32 REAL4 peak found if power is above this. \n", params->threshold1);
     	fprintf(stdout,"set threshold2         %23.16e; #33 REAL4 peak ends if power drops below this. \n", params->threshold2);
     	fprintf(stdout,"set threshold3         %23.16e; #34 REAL4 ratio peak height to valley depth that indicates a new peak rather than subpeak in a cluster. \n", params->threshold3); /* 01/20/04 gam */
-    	fprintf(stdout,"set threshold4         %23.16e; #35 REAL4 unused. \n", params->threshold4); /* 01/27/04 gam */
-    	fprintf(stdout,"set threshold5         %23.16e; #36 REAL4 unused (except when params->testFlag == 1; see below). \n", params->threshold5); /* 01/27/04 gam */
+    	fprintf(stdout,"set threshold4         %23.16e; #35 REAL4 unused (except when params->testFlag & 2 > 0; see below).\n", params->threshold4); /* 05/11/04 gam */ /* 01/27/04 gam */
+    	fprintf(stdout,"set threshold5         %23.16e; #36 REAL4 unused (except when params->testFlag & 1 > 0; see below).\n", params->threshold5); /* 05/11/04 gam */ /* 01/27/04 gam */
     	fprintf(stdout,"set maxWidthBins       %23d; #37 REAL4 maximum width in bins. \n", params->maxWidthBins); /* 02/20/04 gam */ /* 02/23/04 gam */
     	fprintf(stdout,"#The thresholdFlag rules are: \n");
     	fprintf(stdout,"# if (params->thresholdFlag <= 0) do not analyze SUMs for peaks about threshold,\n");
@@ -472,7 +478,9 @@ void StackSlideInitSearch(
     	fprintf(stdout,"# if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.\n");
     	fprintf(stdout,"# if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.\n"); /* 04/15/04 gam */
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set testFlag           %23d; #46 INT2 specify test case (0 no test; 1 output Hough number counts instead of power. \n", params->testFlag);
+    	fprintf(stdout,"set testFlag           %23d; #46 INT2 specify test case.\n", params->testFlag); /* 05/11/04 gam */
+    	fprintf(stdout,"# if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.\n"); /* 05/11/04 gam */
+    	fprintf(stdout,"# if ((testFlag & 2) > 0) inject fake signals and run Monte Carlo Simulation; use threshold4 for h_0.\n");   /* 05/11/04 gam */
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set numSUMsPerCall     %23d; #47 INT4 nuber of SUMs to produce each call to StackSlide (currently unused). \n", params->numSUMsPerCall);
     	fprintf(stdout,"\n");
@@ -662,6 +670,101 @@ void StackSlideInitSearch(
 /**********************************************/
 /*                                            */
 /* END SECTION: validate parameters           */
+/*                                            */
+/**********************************************/
+
+/* 05/11/04 gam; Move SECTION: set up parameter space into StackSlideInitSearch; free memory in StackSlideFinalizeSearch */
+/**********************************************/
+/*                                            */
+/* START SECTION: set up parameter space      */
+/*                                            */
+/**********************************************/
+
+  #ifdef DEBUG_DRIVESTACKSLIDE
+  	fprintf(stdout, "\nSTART SECTION: set up parameter space\n");
+  	fflush(stdout);
+  #endif
+ 
+ params->skyPosData=(REAL8 **)LALMalloc(params->numSkyPosTotal*sizeof(REAL8 *));
+ for(i=0;i<params->numSkyPosTotal;i++)
+ {
+        params->skyPosData[i] = (REAL8 *)LALMalloc(2*sizeof(REAL8));
+ }
+
+ if (params->numSpinDown > 0) {
+   params->freqDerivData=(REAL8 **)LALMalloc(params->numFreqDerivTotal*sizeof(REAL8 *));
+   for(i=0;i<params->numFreqDerivTotal;i++)
+   {
+        params->freqDerivData[i] = (REAL8 *)LALMalloc(params->numSpinDown*sizeof(REAL8));
+   }
+ }
+
+ /* 0 = use input delta for each param, 1 = params are input as vectors of data, 2 = use input param metric, 3 = create param metric */
+ if (params->parameterSpaceFlag == 0) {
+
+   /* 01/31/04 gam; now call CountOrAssignSkyPosData */
+   /* INT4 iRA = 0;
+   INT4 iDec = 0; */
+   
+   INT4 iFDeriv1 = 0;
+   INT4 iFDeriv2 = 0;
+   INT4 iFDeriv3 = 0;
+   INT4 iFDeriv4 = 0;
+   INT4 iFDeriv5 = 0;
+
+   INT4 repeatFDeriv1every = 0;
+   INT4 repeatFDeriv2every = 0;
+   INT4 repeatFDeriv3every = 0;
+   INT4 repeatFDeriv4every = 0;
+   INT4 repeatFDeriv5every = 0;
+
+   for(i=0;i<params->numSpinDown;i++)
+   {
+        switch(i) {
+	   case  0: repeatFDeriv1every = params->numFDeriv1; break;
+	   case  1: repeatFDeriv2every = params->numFDeriv2*repeatFDeriv1every; break;
+	   case  2: repeatFDeriv3every = params->numFDeriv3*repeatFDeriv2every; break;
+	   case  3: repeatFDeriv4every = params->numFDeriv4*repeatFDeriv3every; break;
+	   case  4: repeatFDeriv5every = params->numFDeriv5*repeatFDeriv4every; break;
+	}
+   }
+
+   /*   for(i=0;i<params->numSkyPosTotal;i++)
+   {
+	iDec = i % params->stksldSkyPatchData->numDec;
+	iRA = floor(i/params->stksldSkyPatchData->numDec);
+	params->skyPosData[i][0] = params->stksldSkyPatchData->startRA + iRA*params->stksldSkyPatchData->deltaRA;
+	params->skyPosData[i][1] = params->stksldSkyPatchData->startDec + iDec*params->stksldSkyPatchData->deltaDec;
+   } */ /* 01/31/04 gam */
+   /* 01/31/04 gam; Note arg3 is 1; call CountOrAssignSkyPosData to assign params->skyPosData on the 2-sphere */
+   CountOrAssignSkyPosData(params->skyPosData,&(params->numSkyPosTotal),1,params->stksldSkyPatchData);
+
+   for(i=0;i<params->numFreqDerivTotal;i++)
+   {
+        for(k=0;k<params->numSpinDown;k++)
+	{
+		if (k == 0) {
+		   iFDeriv1 = i % params->numFDeriv1;
+		   params->freqDerivData[i][k] = params->startFDeriv1 + iFDeriv1*params->deltaFDeriv1;
+		} else if (k == 1) {
+		   iFDeriv2 = floor((i % repeatFDeriv2every)/repeatFDeriv1every);
+		   params->freqDerivData[i][k] = params->startFDeriv2 + iFDeriv2*params->deltaFDeriv2;
+		} else if (k == 2) {
+		   iFDeriv3 = floor((i % repeatFDeriv3every)/repeatFDeriv2every);
+		   params->freqDerivData[i][k] = params->startFDeriv3 + iFDeriv3*params->deltaFDeriv3;
+		} else if (k == 3) {
+		   iFDeriv4 = floor((i % repeatFDeriv4every)/repeatFDeriv3every);
+		   params->freqDerivData[i][k] = params->startFDeriv4 + iFDeriv4*params->deltaFDeriv4;
+		} else if (k == 4) {
+		   iFDeriv5 = floor((i % repeatFDeriv5every)/repeatFDeriv4every);
+		   params->freqDerivData[i][k] = params->startFDeriv5 + iFDeriv4*params->deltaFDeriv5;
+		} /* END if (k == 0) ELSE ... */
+        } /* END for(k=0;k<params->numSpinDown;k++) */
+   } /* END for(i=0;i<params->numFreqDerivTotal;i++) */
+ } /* END if (params->parameterSpaceFlag == 0) */
+/**********************************************/
+/*                                            */
+/* END SECTION: set up parameter space        */
 /*                                            */
 /**********************************************/
 
@@ -1081,99 +1184,7 @@ void StackSlideApplySearch(
 /*                                            */
 /**********************************************/
 
-/**********************************************/
-/*                                            */
-/* START SECTION: set up parameter space      */
-/*                                            */
-/**********************************************/
-
-  #ifdef DEBUG_DRIVESTACKSLIDE
-  	fprintf(stdout, "\nSTART SECTION: set up parameter space\n");
-  	fflush(stdout);
-  #endif
- 
- params->skyPosData=(REAL8 **)LALMalloc(params->numSkyPosTotal*sizeof(REAL8 *));
- for(i=0;i<params->numSkyPosTotal;i++)
- {
-	params->skyPosData[i] = (REAL8 *)LALMalloc(2*sizeof(REAL8));
- }
-
- if (params->numSpinDown > 0) {
-   params->freqDerivData=(REAL8 **)LALMalloc(params->numFreqDerivTotal*sizeof(REAL8 *));
-   for(i=0;i<params->numFreqDerivTotal;i++)
-   {
-	params->freqDerivData[i] = (REAL8 *)LALMalloc(params->numSpinDown*sizeof(REAL8));
-   }
- }
-
- /* 0 = use input delta for each param, 1 = params are input as vectors of data, 2 = use input param metric, 3 = create param metric */
- if (params->parameterSpaceFlag == 0) {
-
-   /* 01/31/04 gam; now call CountOrAssignSkyPosData */
-   /* INT4 iRA = 0;
-   INT4 iDec = 0; */
-   
-   INT4 iFDeriv1 = 0;
-   INT4 iFDeriv2 = 0;
-   INT4 iFDeriv3 = 0;
-   INT4 iFDeriv4 = 0;
-   INT4 iFDeriv5 = 0;
-
-   INT4 repeatFDeriv1every = 0;
-   INT4 repeatFDeriv2every = 0;
-   INT4 repeatFDeriv3every = 0;
-   INT4 repeatFDeriv4every = 0;
-   INT4 repeatFDeriv5every = 0;
-
-   for(i=0;i<params->numSpinDown;i++)
-   {
-        switch(i) {
-	   case  0: repeatFDeriv1every = params->numFDeriv1; break;
-	   case  1: repeatFDeriv2every = params->numFDeriv2*repeatFDeriv1every; break;
-	   case  2: repeatFDeriv3every = params->numFDeriv3*repeatFDeriv2every; break;
-	   case  3: repeatFDeriv4every = params->numFDeriv4*repeatFDeriv3every; break;
-	   case  4: repeatFDeriv5every = params->numFDeriv5*repeatFDeriv4every; break;
-	}
-   }
-
-   /*   for(i=0;i<params->numSkyPosTotal;i++)
-   {
-	iDec = i % params->stksldSkyPatchData->numDec;
-	iRA = floor(i/params->stksldSkyPatchData->numDec);
-	params->skyPosData[i][0] = params->stksldSkyPatchData->startRA + iRA*params->stksldSkyPatchData->deltaRA;
-	params->skyPosData[i][1] = params->stksldSkyPatchData->startDec + iDec*params->stksldSkyPatchData->deltaDec;
-   } */ /* 01/31/04 gam */
-   /* 01/31/04 gam; Note arg3 is 1; call CountOrAssignSkyPosData to assign params->skyPosData on the 2-sphere */
-   CountOrAssignSkyPosData(params->skyPosData,&(params->numSkyPosTotal),1,params->stksldSkyPatchData);
-
-   for(i=0;i<params->numFreqDerivTotal;i++)
-   {
-        for(k=0;k<params->numSpinDown;k++)
-	{
-		if (k == 0) {
-		   iFDeriv1 = i % params->numFDeriv1;
-		   params->freqDerivData[i][k] = params->startFDeriv1 + iFDeriv1*params->deltaFDeriv1;
-		} else if (k == 1) {
-		   iFDeriv2 = floor((i % repeatFDeriv2every)/repeatFDeriv1every);
-		   params->freqDerivData[i][k] = params->startFDeriv2 + iFDeriv2*params->deltaFDeriv2;
-		} else if (k == 2) {
-		   iFDeriv3 = floor((i % repeatFDeriv3every)/repeatFDeriv2every);
-		   params->freqDerivData[i][k] = params->startFDeriv3 + iFDeriv3*params->deltaFDeriv3;
-		} else if (k == 3) {
-		   iFDeriv4 = floor((i % repeatFDeriv4every)/repeatFDeriv3every);
-		   params->freqDerivData[i][k] = params->startFDeriv4 + iFDeriv4*params->deltaFDeriv4;
-		} else if (k == 4) {
-		   iFDeriv5 = floor((i % repeatFDeriv5every)/repeatFDeriv4every);
-		   params->freqDerivData[i][k] = params->startFDeriv5 + iFDeriv4*params->deltaFDeriv5;
-		} /* END if (k == 0) ELSE ... */
-        } /* END for(k=0;k<params->numSpinDown;k++) */
-   } /* END for(i=0;i<params->numFreqDerivTotal;i++) */
- } /* END if (params->parameterSpaceFlag == 0) */
-/**********************************************/
-/*                                            */
-/* END SECTION: set up parameter space        */
-/*                                            */
-/**********************************************/
+/* 05/11/04 gam; SECTION: set up parameter space was here; moved into StackSlideInitSearch */ 
 
 /**********************************************/
 /*                                            */
@@ -1434,7 +1445,8 @@ void StackSlideApplySearch(
         }
         
         /* 03/03/04 gam; If params->testFlag == 1 output the Hough number count instead of power using threshold5 as the cutoff after normalizing. */
-        if (params->testFlag == 1) {
+        /* if (params->testFlag == 1) */ /* 05/11/04 gam; If (params->testFlag & 1) > 0 output the Hough number count */
+        if ( (params->testFlag & 1) > 0 ) {
            #ifdef DEBUG_TESTCASE
                fprintf(stdout, "Using threshold5 = %g as cutoff to output Hough number count! \n",params->threshold5);
                fflush(stdout);
@@ -1450,7 +1462,7 @@ void StackSlideApplySearch(
                  }
               }
            } /* END for(k=0;k<params->numSTKs;k++) */
-        } /* END if (params->testFlag == 1) */
+        } /* END if ( (params->testFlag & 1) > 0 ) */
         
         params->finishedSTKs = 1;  /* Set equal to true when all STKs for this job have been created */
 
@@ -2346,20 +2358,22 @@ void StackSlideApplySearch(
          LALFree(params->STKData);
 
          /* Deallocate memory for the freqDerivData structure */
-         if (params->numSpinDown > 0) {
+         /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
+         /* if (params->numSpinDown > 0) {
             for(i=0;i<params->numFreqDerivTotal;i++)
             {
 	        LALFree(params->freqDerivData[i]);
             }
             LALFree(params->freqDerivData);
-         }
+         } */
 
 	 /* Deallocate memory for the skyPosData structure */
-         for(i=0;i<params->numSkyPosTotal;i++)
+         /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
+         /* for(i=0;i<params->numSkyPosTotal;i++)
          {
 	     LALFree(params->skyPosData[i]);
          }
-         LALFree(params->skyPosData);
+         LALFree(params->skyPosData); */
 
 	 /* LALFree(params->timeStamps); */  /* alloc and dealloc of timeStamps handled in calling code */
 
@@ -2374,9 +2388,10 @@ void StackSlideApplySearch(
 	 LALFree(params->BLKData); */ /* alloc and dealloc of BLKData handled in calling code */
 
 	 /* Deallocate ephemeris data */
-         LALFree(params->edat->ephemS);
+         /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
+         /* LALFree(params->edat->ephemS);
          LALFree(params->edat->ephemE);
-         LALFree(params->edat);
+         LALFree(params->edat); */
          
          /* 11/08/03 gam; Add in first version of StackSlide written by Mike Landry */  	 
 	 LALFree(stksldParams);
@@ -2389,8 +2404,9 @@ void StackSlideApplySearch(
          if (outputLoudestFromSUMs) {
            LALFree(pLALUpdateLoudestStackSlideParams);  /* 02/17/04 gam */
          }
-
-         LALFree(params->stksldSkyPatchData);
+         
+         /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
+         /* LALFree(params->stksldSkyPatchData); */
  
         /**********************************************/
         /*                                            */
@@ -2432,7 +2448,9 @@ void StackSlideFinalizeSearch(
     StackSlideSearchParams *params
     )
 {
-
+  
+  INT4          i = 0; /* 05/11/04 gam */
+  
   INITSTATUS( status, "StackSlideFinalizeSearch", DRIVESTACKSLIDEC );
   ATTATCHSTATUSPTR (status);
 
@@ -2444,7 +2462,6 @@ void StackSlideFinalizeSearch(
   /* params->searchMaster is used by LDAS; set to TRUE in this code */
   if (params->searchMaster) {
 
-
   /**********************************************/
   /*                                            */
   /* START SECTION: Deallocate remaining memory */
@@ -2455,6 +2472,32 @@ void StackSlideFinalizeSearch(
         fprintf(stdout, "\nSTART SECTION: Deallocate remaining memory\n");
         fflush(stdout);
    #endif
+   
+  /* Deallocate memory for the freqDerivData structure */
+  /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
+  if (params->numSpinDown > 0) {
+    for(i=0;i<params->numFreqDerivTotal;i++)
+    {
+        LALFree(params->freqDerivData[i]);
+    }
+    LALFree(params->freqDerivData);
+  }
+
+  /* Deallocate memory for the skyPosData structure */
+  /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
+  for(i=0;i<params->numSkyPosTotal;i++)
+  {
+       LALFree(params->skyPosData[i]);
+  }
+  LALFree(params->skyPosData);
+   
+  /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
+  LALFree(params->edat->ephemS);
+  LALFree(params->edat->ephemE);
+  LALFree(params->edat);
+         
+  /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
+  LALFree(params->stksldSkyPatchData);
 
   LALFree(params->ifoNickName);
   LALFree(params->IFO);
@@ -3070,7 +3113,8 @@ void CountOrAssignSkyPosData(REAL8 **skyPosData, INT4 *numSkyPosTotal, BOOLEAN r
               #ifdef INCLUDE_DEBUG_SKY_POSITIONS_CODE
                 /* 04/15/04 gam */
                 if ((params->debugOptionFlag & 4) > 0 ) {
-	          fprintf(stdout,"RA = skyPosData[%i][0] = %g, RA = skyPosData[%i][1] = %g \n",i,skyPosData[i][0],i,skyPosData[i][1]);
+	          /* fprintf(stdout,"RA = skyPosData[%i][0] = %g, RA = skyPosData[%i][1] = %g \n",i,skyPosData[i][0],i,skyPosData[i][1]); */ /* 04/11/04 gam */
+	          fprintf(stdout,"RA = skyPosData[%i][0] = %g, DEC = skyPosData[%i][1] = %g \n",i,skyPosData[i][0],i,skyPosData[i][1]);  
 	          fflush(stdout);
                 }
               #endif
