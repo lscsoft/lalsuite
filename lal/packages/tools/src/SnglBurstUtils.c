@@ -110,14 +110,11 @@ void XLALClusterSnglBurst(SnglBurstTable *a, SnglBurstTable *b)
 static int ModifiedforClustering(SnglBurstTable *prevEvent, SnglBurstTable *thisEvent)
 {
 	REAL4 fa1, fa2, fb1, fb2;
-	LALStatus status;
 	REAL8 deltaT;
 	REAL8 epsilon = 1e-8;	/* seconds */
 
-	memset(&status, 0, sizeof(status));
-
 	/* compute difference in peak times */
-	LALDeltaFloatGPS(&status, &deltaT, &prevEvent->peak_time, &thisEvent->peak_time);
+	deltaT = XLALDeltaFloatGPS(&prevEvent->peak_time, &thisEvent->peak_time);
 
 	/* compute the start and stop frequencies of the prevEvent */
 	fa1 = prevEvent->central_freq - 0.5 * prevEvent->bandwidth;
@@ -385,8 +382,15 @@ LALClusterSnglBurstTable (
 	}
 
 	/* count the number of events in the modified list */
-	for(*nevents = 1; startEvent; startEvent = startEvent->next)
+	{
+	REAL4 longest = 0.0;
+	for(*nevents = 1; startEvent; startEvent = startEvent->next) {
+		if(startEvent->duration > longest)
+			longest = startEvent->duration;
 		*nevents++;
+	}
+	fprintf(stderr, "longest event = %f s\n", longest);
+	}
 
 	/* normal exit */
 	DETATCHSTATUSPTR (status);
