@@ -1259,7 +1259,7 @@ int main( int argc, char *argv[] )
 	    LAL_CALL( LALGPStoINT8( &status, &te, 
 		&(currentEffRange[j]->end_time) ), &status );
 	  
-	    if ( (ts < ta) && (ta < te) )
+	    if ( (ts <= ta) && (ta < te) )
 	    {
 	      /* use this value of inspiral_effective_distance */
 	      d_range[j] = currentEffRange[j]->value;
