@@ -70,6 +70,13 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
   const INT8 mod_play = 6370000000000LL;
   INT8 end_mod_play;
 
+  /* if the end precedes the start of S2, then there is no playground, since
+   * we only define playground from S2 onwards */
+  if ( seg_end < S2_start )
+  {
+    return 0LL;
+  }
+
   /* handle a segment that contains two or more playground */
   /* segments by recursively bisecting it                  */
   if ( seg_length >= mod_play )
