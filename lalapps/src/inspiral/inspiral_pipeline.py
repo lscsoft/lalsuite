@@ -106,7 +106,7 @@ queue
     sub_fh.close()
 
   def banksub(self):
-    boolargs = re.compile(r'(disable-high-pass|write-strain-spectrum)')
+    boolargs = re.compile(r'(disable-high-pass|write-strain-spectrum|verbose)')
     sub_fh = open( self.basename + '.tmpltbank.condor', 'w' )
     print >> sub_fh, """\
 universe = %s
@@ -131,7 +131,7 @@ queue""" % self.basename
     sub_fh.close()
 
   def inspiralsub(self):
-    boolargs = re.compile(r'(disable-high-pass|enable-event-cluster)')
+    boolargs = re.compile(r'(disable-high-pass|enable-event-cluster|verbose)')
     sub_fh = open( self.basename + '.inspiral.condor', 'w' )
     print >> sub_fh, """\
 universe = %s
