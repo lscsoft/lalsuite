@@ -1,14 +1,11 @@
-/*
-<lalVerbatim file="DateHV">
+/* <lalVerbatim file="DateHV">
 
 Author: David Chin <dwchin@umich.edu> +1-734-730-1274
 $Id$
 
-</lalVerbatim>
-*/
+</lalVerbatim> */
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 
 \section{Header \texttt{Date.h}}
 \label{s:Date.h}
@@ -24,8 +21,7 @@ This header covers routines for manipulating date and time
 information.  The various time systems are discussed in~cite{esaa:1992}.
 
 
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
 #ifndef _DATE_H
 #define _DATE_H
@@ -55,79 +51,25 @@ extern "C"
 
 NRCSID (DATEH, "$Id$");
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 \subsection*{Error conditions}
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
-/*
-<lalErrTable> 
-*/
-#define JULIAN_ENULLINPUT    1
-#define JULIAN_ENULLOUTPUT   2
-#define JULIAN_EDATETOOEARLY 3
+/* <lalErrTable> */
+#define DATEH_ENULLINPUT    1
+#define DATEH_ENULLOUTPUT   2
+#define DATEH_EDATETOOEARLY 3
+#define DATEH_ERANGE        4
+#define DATEH_EBUFFTOOSMALL 5
 
-#define JULIAN_MSGENULLINPUT "Input is NULL"
-#define JULIAN_MSGENULLOUTPUT "Output is NULL"
-#define JULIAN_MSGEDATETOOEARLY "Date too early: Julian Day can only be computed for dates >= 1900-Mar"
-
-#define UTOGPS_ENULLINPUT   1
-#define UTOGPS_ENULLOUTPUT  2
-    
-#define UTOGPS_MSGENULLINPUT "Input is NULL"
-#define UTOGPS_MSGENULLOUTPUT "Output is NULL"
+#define DATEH_MSGENULLINPUT "Input is NULL"
+#define DATEH_MSGENULLOUTPUT "Output is NULL"
+#define DATEH_MSGEDATETOOEARLY "Date too early: Julian Day can only be computed for dates >= 1900-Mar"
+#define DATEH_MSGERANGE "Input time out of range: 0 <= utc seconds <= 946684823"
+#define DATEH_MSGEBUFFTOOSMALL "Output timestamp string too small: min. size = 26"
     
 
-#define UTIME_ENULLINPUT  1
-#define UTIME_ENULLOUTPUT 2
-#define UTIME_ERANGE      3
-
-#define UTIME_MSGENULLINPUT "Input is NULL"
-#define UTIME_MSGENULLOUTPUT "Output is NULL"
-#define UTIME_MSGERANGE "Input time out of range: 0 <= utcSeconds <= 946684823"
-
-
-#define DATESTRING_ENULLINPUT    1
-#define DATESTRING_ENULLOUTPUT   2
-#define DATESTRING_EBUFFTOOSMALL 3
-
-#define DATESTRING_MSGENULLINPUT "Input is NULL"
-#define DATESTRING_MSGENULLOUTPUT "Output is NULL"
-#define DATESTRING_MSGEBUFFTOOSMALL "Output timestamp string too small: min. size = 26"
-    
-#define SECSTOLALDATE_ENULLOUTPUT 1
-    
-#define SECSTOLALDATE_MSGENULLOUTPUT "Output is NULL"
-
-
-#define LMST1_ENULLINPUT  1
-#define LMST1_ENULLOUTPUT 2
-    
-#define GMST1_ENULLINPUT  1
-#define GMST1_ENULLOUTPUT 2
-
-#define GPSTOLMST1_ENULLINPUT 1
-#define GPSTOLMST1_ENULLOUTPUT 2
-
-#define GPSTOGMST1_ENULLINPUT 1
-#define GPSTOGMST1_ENULLOUTPUT 2    
-
-
-#define LMST1_MSGENULLINPUT "Input is NULL"
-#define LMST1_MSGENULLOUTPUT "Output is NULL"
-    
-#define GMST1_MSGENULLINPUT "Input is NULL"
-#define GMST1_MSGENULLOUTPUT "Output is NULL"
-
-#define GPSTOLMST1_MSGENULLINPUT "Input is NULL"
-#define GPSTOLMST1_MSGENULLOUTPUT "Output is NULL"
-    
-#define GPSTOGMST1_MSGENULLINPUT "Input is NULL"
-#define GPSTOGMST1_MSGENULLOUTPUT "Output is NULL"    
-
-/*
-</lalErrTable>
+/* </lalErrTable>
 
 <lalLaTeX>
 
@@ -135,19 +77,15 @@ NRCSID (DATEH, "$Id$");
 \subsection*{Structures}
 
 
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 
 \vfill{\footnotesize\input{DateHV}}
 
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 
 \subsection*{Types}
 
@@ -167,8 +105,7 @@ Time. The allowed values are:
 \end{tabular}
 \bigskip
 
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
 typedef enum
 {
@@ -179,16 +116,14 @@ typedef enum
 } LALMSTUnits;
 
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 
 \subsubsection*{Structure \texttt{LALUnixDate}}
 \index{\texttt{LALUnixDate}}
 
 This structure is just the standard Unix \texttt{tm} structure.
 
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
 /*
  * The standard Unix tm structure
@@ -197,8 +132,7 @@ typedef struct
 tm
 LALUnixDate;
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 
 \subsubsection*{Structure \texttt{LIGOTimeUnix}}
 \index{\texttt{LIGOTimeUnix}}
@@ -215,8 +149,7 @@ epoch (1970-Jan-01 00:00:00). The fileds are:
   up to the time in question
 \end{description}
 
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
 /*
  * This time object is exactly like LIGOTimeGPS, except for the name.
@@ -230,8 +163,7 @@ tagLIGOTimeUnix
 }
 LIGOTimeUnix;
 
-/*
-<lalLaTeX>
+/* <lalLaTeX>
 
 
 \subsubsection{Structure \texttt{LALTimeInterval}}
@@ -245,8 +177,7 @@ and \texttt{LIGOTimeUnix} times.  The fields are:
   fractional part, in nanoseconds)
 \end{description}
 
-</lalLaTeX>
-*/
+</lalLaTeX> */
 
 /*
  * This time object is for time intervals, i.e. no reference epoch implied
@@ -258,7 +189,21 @@ tagLALTimeInterval
     INT4 nanoSeconds;
 }
 LALTimeInterval;
-    
+
+/* <lalLaTeX>
+
+
+\subsubsection{Structure \texttt{LALTimezone}}
+
+This structure is used for storing information about time zones.  The
+fields are:
+
+\begin{description}
+\item[\texttt{INT4 secondsWest}] Seconds West of UTC (Greenwich)
+\item[\texttt{INT4 dst}] Daylight Savings Time correction to apply
+\end{description}
+
+</lalLaTeX> */
 
 /*
  * Encode timezone information
@@ -269,7 +214,24 @@ tagLALTimezone
     INT4 secondsWest; /* seconds West of UTC */
     INT4 dst;         /* Daylight Savings Time correction to apply */
 }
-LALTimezone;    
+LALTimezone;
+
+/* <lalLaTeX>
+
+
+\subsubsection{Structure \texttt{LALDate}}
+
+This structure is an extension of \texttt{LALUnixDate} to include
+residual nanosecond information and timezone information.  The fields
+are:
+
+\begin{description}
+\item[\texttt{LALUnixDate unixDate}] Unix date in \texttt{struct tm}
+  format 
+\item[\texttt{INT4 residualNanoSeconds}] Residual nanoseconds
+\item[\texttt{LALTimezone timezone} Timezone information] 
+\end{description}
+</lalLaTeX> */
 
 /*
  * Date and time structure
@@ -283,6 +245,23 @@ tagLALDate
 }
 LALDate;
 
+
+/* <lalLaTeX>
+
+
+\subsubsection{Structure \texttt{LALPlaceAndGPS}}
+
+This structure stores pointers to a \texttt{LALDetector} and a
+\texttt{LIGOTimeGPS}. Its sole purpose is to aggregate these
+structures for passing to functions.  The fields are:
+
+\begin{description}
+\item[\texttt{LALDetector *p_detector}] Pointer to a detector
+\item[\texttt{LIGOTimeGPS *p_gps}] Pointer to a GPS time structure
+\end{description}
+
+</lalLaTeX> */
+
 /*
  * Place and time structures
  */
@@ -290,26 +269,49 @@ LALDate;
 typedef struct
 tagLALPlaceAndGPS
 {
-    LALDetector *detector;   /* pointer to a detector */
-    LIGOTimeGPS *gps;        /* pointer to GPS time */
+    LALDetector *p_detector;   /* pointer to a detector */
+    LIGOTimeGPS *p_gps;        /* pointer to GPS time */
 }
 LALPlaceAndGPS;
+
+/* <lalLaTeX>
+
+
+\subsubsection{Structure \texttt{LALPlaceAndDate}}
+
+Like \texttt{LALPlaceAndGPS}, this structure aggregates a pointer to a
+detector and a pointer to a date.  This is another convenience
+structure, used in calling \texttt{LALLMST1()}.  The fields are:
+
+\begin{description}
+\item[\texttt{LALDetector *p_detector}] Pointer to a detector
+\item[\texttt{LALDate *p_date}] Pointer to a date
+\end{description}
+
+</lalLaTeX> */
 
 /* Second, with Date-Time */
 typedef struct
 tagLALPlaceAndDate
 {
-    LALDetector *detector;   /* pointer to a detector */
-    LALDate     *date;       /* pointer to a date */
+    LALDetector *p_detector;   /* pointer to a detector */
+    LALDate     *p_date;       /* pointer to a date */
 }
 LALPlaceAndDate;
 
-/*
- * 9. Functions Declarations (i.e., prototypes).
+
+
+/* 
+ * Function prototypes
  */
-void LALJulianDay(LALStatus*,
-                  INT4*,
-                  const LALDate*);
+
+/* <lalLaTeX>
+\newpage\input{JulianC}
+</lalLaTeX> */
+
+void LALJulianDay(LALStatus     *status,
+                  INT4          *jDay,
+                  const LALDate *date);
 
 void LALModJulianDay(LALStatus*,
                      REAL8*,

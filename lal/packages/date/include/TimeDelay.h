@@ -1,7 +1,7 @@
 /*
 <lalVerbatim file="TimeDelayHV">
 
-Author: Chin, David <dwchin@umich.edu> 1-734-730-1274
+Author: David Chin <dwchin@umich.edu> 1-734-730-1274
 $Id$
    
 </lalVerbatim> */
@@ -58,16 +58,18 @@ NRCSID( TIMEDELAYH, "$Id$" );
 
 \subsection*{Structures}
 \begin{verbatim}
-TwoDetectors
+TwoDetsTimeAndASource
 \end{verbatim}
-\index{\texttt{TwoDetectors}}
+\index{\texttt{TwoDetsTimeAndASource}}
 
-\noindent This structure stores two \verb@LALDetector@ structures.  The
+\noindent This structure stores two pointers to \verb@LALPlaceAndGPS@
+structures, and a pointer to a \verb@SkyPosition@ structure.  The
 fields are:
+
 \begin{description}
-\item[\texttt{LALPlaceAndGPS *detector1}] The first detector
-\item[\texttt{LALPlaceAndGPS *detector2}] The second detector
-\item[\texttt{SkyPosition *source}] The source location (equatorial
+\item[\texttt{LALPlaceAndGPS *p_det_and_time1}] The first detector and GPS
+\item[\texttt{LALPlaceAndGPS *p_det_and_time2}] The second detector and GPS
+\item[\texttt{SkyPosition *p_source}] The source location (equatorial
     co\"{o}dinates in decimal radians)
 \end{description}
 
@@ -76,21 +78,39 @@ fields are:
 typedef struct
 tagTwoDetsTimeAndASource
 {
-  LALPlaceAndGPS *det_and_time1; /* the first detector and detection time */
-  LALPlaceAndGPS *det_and_time2; /* the second detector and detection time */
-  SkyPosition    *source;        /* source Equatorial location
+  LALPlaceAndGPS *p_det_and_time1; /* the first detector and detection time */
+  LALPlaceAndGPS *p_det_and_time2; /* the second detector and detection time */
+  SkyPosition    *p_source;        /* source Equatorial location
                                   * (lon=RA, lat=dec) in decimal
                                   * radians */ 
 }
 TwoDetsTimeAndASource;
 
 
+/* <lalLaTeX>
+
+\begin{verbatim}
+DetTimeAndASource}
+\end{verbatim}
+\index{\texttt{DetTimeAndASource}}
+
+\noindent This structure stores one pointer to a \verb@LALPlaceAndGPS@
+structure, and a pointer to a \verb@SkyPosition@ structure.  The
+fields are:
+
+\begin{description}
+\item[\texttt{LALPlaceAndGPS *p_det_and_time}] The detector and GPS
+\item[\texttt{SkyPosition *p_source}]  The source location (equatorial
+    co\"{o}dinates in decimal radians)
+\end{description}
+
+</lalLaTeX> */
   
 typedef struct
 tagDetTimeAndASource
 {
-  LALPlaceAndGPS *det_and_time; /* detector and detection time */
-  SkyPosition    *source;       /* source Equatorial location
+  LALPlaceAndGPS *p_det_and_time; /* detector and detection time */
+  SkyPosition    *p_source;       /* source Equatorial location
                                  * (lon=RA, lat=dec) in decimal
                                  * radians */ 
 }
@@ -111,8 +131,8 @@ DetTimeAndASource;
 
 void
 LALTimeDelay( LALStatus                   *stat,
-              REAL8                       *delay,
-              const TwoDetsTimeAndASource *two_detectors_time_and_source );
+              REAL8                       *p_delay,
+              const TwoDetsTimeAndASource *p_two_detectors_time_and_source );
 
 
 /* <lalLaTeX>
@@ -121,7 +141,7 @@ LALTimeDelay( LALStatus                   *stat,
 
 void
 LALTimeDelayFromEarthCenter( LALStatus               *stat,
-                             REAL8                   *p_time_diff,
+                             REAL8                   *p_delay,
                              const DetTimeAndASource *p_det_time_and_source );
 
 #ifdef __cplusplus

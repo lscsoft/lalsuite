@@ -1,7 +1,7 @@
 /*
 <lalVerbatim file="TimeDelayFromEarthCenterCV">
 
-Author: Chin, David <dwchin@umich.edu> +1-734-730-1274
+Author: David Chin <dwchin@umich.edu> +1-734-730-1274
 $Id$
 
 </lalVerbatim>
@@ -33,7 +33,12 @@ of the Earth.
 
 \subsubsection*{Algorithm}
 
-TBA. See Anderson, \emph{et al.} in the mean time.
+The vector of the location of the detector is projected onto the line
+connecting the center of the Earth and the source.  That projection
+gives the distance of the detector from the center of the Earth along
+the line connecting the center of the Earth and the source.  The time
+delay, then, is the amount of time it takes light to travel that
+projected distance.
 
 The GPS time for the detector is taken to be the time when the signal
 arrives at the center of the Earth.  As in Anderson, \emph{et al.}, we
@@ -67,9 +72,7 @@ static REAL8 dotprod(REAL8 vec1[3], REAL8 vec2[3])
 }
 
 
-/*
-<lalVerbatim file="TimeDelayFromEarthCenterCP">
-*/
+/* <lalVerbatim file="TimeDelayFromEarthCenterCP"> */
 void
 LALTimeDelayFromEarthCenter( LALStatus               *stat,
                              REAL8                   *p_time_diff,
@@ -125,15 +128,15 @@ LALTimeDelayFromEarthCenter( LALStatus               *stat,
    */
     /* need GMST in radians */
   TRY( LALGPStoU( stat->statusPtr, &unixTime,
-                  p_det_time_and_source->det_and_time->gps ), stat );
+                  p_det_time_and_source->p_det_and_time->p_gps ), stat );
   TRY( LALUtime( stat->statusPtr, &date, &unixTime ), stat );
   TRY( LALGMST1( stat->statusPtr, &gmst1, &date, MST_RAD ), stat );
 
   /* polar angle, theta */
-  src_polar.latitude = LAL_PI_2 - p_det_time_and_source->source->latitude;
+  src_polar.latitude = LAL_PI_2 - p_det_time_and_source->p_source->latitude;
 
   /* azimuthal angle, phi */
-  src_polar.longitude = p_det_time_and_source->source->longitude - gmst1;
+  src_polar.longitude = p_det_time_and_source->p_source->longitude - gmst1;
 
 
   /*
@@ -150,10 +153,10 @@ LALTimeDelayFromEarthCenter( LALStatus               *stat,
    * compute the location vector of detector 1 
    */
   /* latitude of detector, in radians */
-  lat = p_det_time_and_source->det_and_time->detector->frDetector.vertexLatitudeDegrees * LAL_PI_180;
+  lat = p_det_time_and_source->p_det_and_time->p_detector->frDetector.vertexLatitudeDegrees * LAL_PI_180;
   
   /* longitude of detector, in radians */
-  lon = p_det_time_and_source->det_and_time->detector->frDetector.vertexLongitudeDegrees * LAL_PI_180;
+  lon = p_det_time_and_source->p_det_and_time->p_detector->frDetector.vertexLongitudeDegrees * LAL_PI_180;
 
   cosLat = cos(lat);
   sinLat = sin(lat);
@@ -161,7 +164,7 @@ LALTimeDelayFromEarthCenter( LALStatus               *stat,
   /* local radius of curvature at detector */
   R  = a2 / sqrt(a2 * cosLat * cosLat +
                  b2 * sinLat * sinLat);
-  Rh = R + p_det_time_and_source->det_and_time->detector->frDetector.vertexElevation;
+  Rh = R + p_det_time_and_source->p_det_and_time->p_detector->frDetector.vertexElevation;
 
   detLoc[0] = Rh * cosLat * cos(lon);
   detLoc[1] = Rh * cosLat * sin(lon);

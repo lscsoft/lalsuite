@@ -134,15 +134,15 @@ LALTimeDelay( LALStatus                    *stat,
   
   /* need GMST in radians */
   TRY( LALGPStoU( stat->statusPtr, &unixTime,
-                  p_dets_time_and_source->det_and_time1->gps ), stat );
+                  p_dets_time_and_source->p_det_and_time1->p_gps ), stat );
   TRY( LALUtime( stat->statusPtr, &date, &unixTime ), stat );
   TRY( LALGMST1( stat->statusPtr, &gmst1, &date, MST_RAD ), stat );
 
   /* polar angle, theta */
-  src_polar.latitude = LAL_PI_2 - p_dets_time_and_source->source->latitude;
+  src_polar.latitude = LAL_PI_2 - p_dets_time_and_source->p_source->latitude;
 
   /* azimuthal angle, phi */
-  src_polar.longitude = p_dets_time_and_source->source->longitude - gmst1;
+  src_polar.longitude = p_dets_time_and_source->p_source->longitude - gmst1;
 
   /*
    * compute the unit vector of the source direction
@@ -158,10 +158,10 @@ LALTimeDelay( LALStatus                    *stat,
    * compute the location vector of detector 1 
    */
   /* latitude of detector 1, in radians */
-  lat1 = p_dets_time_and_source->det_and_time1->detector->frDetector.vertexLatitudeDegrees * LAL_PI_180;
+  lat1 = p_dets_time_and_source->p_det_and_time1->p_detector->frDetector.vertexLatitudeDegrees * LAL_PI_180;
   
   /* longitude of detector 1, in radians */
-  lon1 = p_dets_time_and_source->det_and_time1->detector->frDetector.vertexLongitudeDegrees * LAL_PI_180;
+  lon1 = p_dets_time_and_source->p_det_and_time1->p_detector->frDetector.vertexLongitudeDegrees * LAL_PI_180;
 
   cosLat1 = cos(lat1);
   sinLat1 = sin(lat1);
@@ -169,7 +169,7 @@ LALTimeDelay( LALStatus                    *stat,
   /* local rad. of curv. at detector 1 */
   R1  = a2 / sqrt(a2 * cosLat1 * cosLat1 +
                   b2 * sinLat1 * sinLat1); 
-  Rh1 = R1 + p_dets_time_and_source->det_and_time1->detector->frDetector.vertexElevation;
+  Rh1 = R1 + p_dets_time_and_source->p_det_and_time1->p_detector->frDetector.vertexElevation;
 
   detLoc1[0] = Rh1 * cosLat1 * cos(lon1);
   detLoc1[1] = Rh1 * cosLat1 * sin(lon1);
@@ -180,10 +180,10 @@ LALTimeDelay( LALStatus                    *stat,
    * compute the location vector of detector 2
    */  
   /* latitude of detector 2, in radians */
-  lat2 = p_dets_time_and_source->det_and_time2->detector->frDetector.vertexLatitudeDegrees * LAL_PI / (REAL8)180.;
+  lat2 = p_dets_time_and_source->p_det_and_time2->p_detector->frDetector.vertexLatitudeDegrees * LAL_PI / (REAL8)180.;
   
   /* longitude of detector 2, in radians */
-  lon2 = p_dets_time_and_source->det_and_time2->detector->frDetector.vertexLongitudeDegrees * LAL_PI / (REAL8)180.;
+  lon2 = p_dets_time_and_source->p_det_and_time2->p_detector->frDetector.vertexLongitudeDegrees * LAL_PI / (REAL8)180.;
 
   cosLat2 = cos(lat2);
   sinLat2 = sin(lat2);
@@ -191,7 +191,7 @@ LALTimeDelay( LALStatus                    *stat,
   /* local rad. of curv. at detector 2*/
   R2  = a2 / sqrt(a2 * cosLat2 * cosLat2 +
                   b2 * sinLat2 * sinLat2); 
-  Rh2 = R2 + p_dets_time_and_source->det_and_time2->detector->frDetector.vertexElevation;
+  Rh2 = R2 + p_dets_time_and_source->p_det_and_time2->p_detector->frDetector.vertexElevation;
 
   detLoc2[0] = Rh2 * cosLat2 * cos(lon2);
   detLoc2[1] = Rh2 * cosLat2 * sin(lon2);

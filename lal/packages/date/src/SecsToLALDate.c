@@ -60,7 +60,7 @@ LALSecsToLALDate(LALStatus  *status,
      * Check pointer to output variable
      */
     ASSERT (date != (LALDate *)NULL, status,
-            SECSTOLALDATE_ENULLOUTPUT, SECSTOLALDATE_MSGENULLOUTPUT);
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     /*
      * Make sure time is positive, i.e. seconds == #secs since 0h

@@ -145,20 +145,20 @@ LALUtime ( LALStatus           *status,
      * Check pointer to input variable
      */
     ASSERT (unixtime != (LIGOTimeUnix *)NULL, status,
-            UTIME_ENULLINPUT, UTIME_MSGENULLINPUT);
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check for valid input
      */
     tmptime = unixtime->unixSeconds;
     ASSERT (tmptime >= 0 && tmptime <= maxtested, status,
-            UTIME_ERANGE, UTIME_MSGERANGE);
+            DATEH_ERANGE, DATEH_MSGERANGE);
     
     /*
      * Check pointer to output variable.
      */
     ASSERT (utc != (LALDate *)NULL, status,
-            UTIME_ENULLOUTPUT, UTIME_MSGENULLOUTPUT);
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
 
     /*

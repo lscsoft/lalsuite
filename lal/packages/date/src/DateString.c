@@ -55,19 +55,19 @@ LALDateString (LALStatus     *status,
      * Check pointer to input variable
      */
     ASSERT (date != (LALDate *)NULL, status,
-            DATESTRING_ENULLINPUT, DATESTRING_MSGENULLINPUT);
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable.
      */
     ASSERT (timestamp != (CHARVector *)NULL, status,
-            DATESTRING_ENULLOUTPUT, DATESTRING_MSGENULLOUTPUT);
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     /*
      * Check that timestamp buffer is large enough
      */
     ASSERT (timestamp->length >= 26, status,
-            DATESTRING_EBUFFTOOSMALL, DATESTRING_MSGEBUFFTOOSMALL);
+            DATEH_EBUFFTOOSMALL, DATEH_MSGEBUFFTOOSMALL);
 
     /*
      * Use strftime (3) to form ISO8601-format time stamp, plus day name

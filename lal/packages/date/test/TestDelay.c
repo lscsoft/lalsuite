@@ -55,6 +55,9 @@ This program does zero-th order tests for \texttt{LALTimeDelay()}.
 
 NRCSID( TESTDELAYC, "$Id$" );
 
+/* This should already be defined as X_EPS in /usr/include/values.h */
+#define DOUBLE_EPSILON 1.0536712127723507013e-08
+
 
 int lalDebugLevel = 0;
 
@@ -115,11 +118,11 @@ int main( void )
   gps.gpsSeconds     = 60858;
   gps.gpsNanoSeconds = 0;
 
-  det1_and_gps.detector = &detector1;
-  det1_and_gps.gps      = &gps;
+  det1_and_gps.p_detector = &detector1;
+  det1_and_gps.p_gps      = &gps;
 
-  det1_and_source.det_and_time = &det1_and_gps;
-  det1_and_source.source       = &source;
+  det1_and_source.p_det_and_time = &det1_and_gps;
+  det1_and_source.p_source       = &source;
 
   LALTimeDelayFromEarthCenter(&stat, &delay, &det1_and_source);
 
@@ -137,7 +140,7 @@ int main( void )
     printf("H_PREC = %18.13e\n", (float)H_PREC);
   */
 
-  if ((fabs(delay) - (REAL8)LAL_REARTH_SI / (REAL8)LAL_C_SI) < X_EPS)
+  if ((fabs(delay) - (REAL8)LAL_REARTH_SI / (REAL8)LAL_C_SI) < DOUBLE_EPSILON)
     return 0;
   else
     return 1;

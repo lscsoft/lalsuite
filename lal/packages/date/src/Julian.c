@@ -118,9 +118,9 @@ NRCSID (JULIANC, "$Id$");
  * Compute Julian Day for given Gregorian date
  */
 void
-LALJulianDay (LALStatus        *status,
-           INT4          *jDay,
-           const LALDate *date)
+LALJulianDay (LALStatus     *status,
+              INT4          *jDay,
+              const LALDate *date)
 {
     INT4 y, m, d;
 
@@ -130,13 +130,13 @@ LALJulianDay (LALStatus        *status,
      * Check pointer to input variable
      */
     ASSERT (date != (LALDate *)NULL, status,
-            JULIAN_ENULLINPUT, JULIAN_MSGENULLINPUT);
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable:
      */
     ASSERT (jDay != (INT4 *)NULL, status,
-            JULIAN_ENULLOUTPUT, JULIAN_MSGENULLOUTPUT);
+DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     /*
      * Pull out Year, Month, Day, and convert from the
@@ -157,8 +157,8 @@ LALJulianDay (LALStatus        *status,
      */
     if (y < 1900 || (y == 1900 && m < 3))
     {
-        ABORT (status, JULIAN_EDATETOOEARLY,
-               JULIAN_MSGEDATETOOEARLY);
+        ABORT (status, DATEH_EDATETOOEARLY,
+               DATEH_MSGEDATETOOEARLY);
     }
 
     /*
@@ -190,13 +190,13 @@ LALModJulianDay (LALStatus        *status,
      * Check pointer to input variable
      */
     ASSERT (date != (LALDate *)NULL, status,
-            JULIAN_ENULLINPUT, JULIAN_MSGENULLINPUT);
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable:
      */
     ASSERT (modJDay   != (REAL8 *)NULL, status,
-            JULIAN_ENULLOUTPUT, JULIAN_MSGENULLOUTPUT);
+DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     LALJulianDay(status, &jd, date);
 
@@ -226,13 +226,13 @@ LALJulianDate (LALStatus        *status,
      * Check pointer to input variable
      */
     ASSERT (date != (LALDate *)NULL, status,
-            JULIAN_ENULLINPUT, JULIAN_MSGENULLINPUT);
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable:
      */
     ASSERT (jDateOut != (REAL8 *)NULL, status,
-            JULIAN_ENULLOUTPUT, JULIAN_MSGENULLOUTPUT);
+DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     /*
      * Extract Hour, Minute, Second, and residual nanoseconds
@@ -266,9 +266,9 @@ LALJulianDate (LALStatus        *status,
  * Compute Modified Julian Date for given Gregorian date and UTC time
  */
 void
-LALModJulianDate (LALStatus        *status,
-               REAL8         *modJDate,
-               const LALDate *date)
+LALModJulianDate (LALStatus     *status,
+                  REAL8         *modJDate,
+                  const LALDate *date)
 {
     INT4  hr, min, sec;
     REAL8 jdate;
@@ -279,13 +279,13 @@ LALModJulianDate (LALStatus        *status,
      * Check pointer to input variable
      */
     ASSERT (date != (LALDate *)NULL, status,
-            JULIAN_ENULLINPUT, JULIAN_MSGENULLINPUT);
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable:
      */
     ASSERT (modJDate != (REAL8 *)NULL, status,
-            JULIAN_ENULLOUTPUT, JULIAN_MSGENULLOUTPUT);
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     /*
      * Extract Hour, Minute, and Second

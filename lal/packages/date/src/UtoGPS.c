@@ -80,14 +80,14 @@ LALUtoGPS (LALStatus             *status,
      * Check pointer to input variable
      */
     ASSERT (unixtime != (LIGOTimeUnix *)NULL, status,
-            UTOGPS_ENULLINPUT, UTOGPS_MSGENULLINPUT);
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable:
      * allocate memory if necessary
      */
     ASSERT (gpstime != (LIGOTimeGPS *)NULL, status,
-            UTOGPS_ENULLOUTPUT, UTOGPS_MSGENULLOUTPUT);
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
 
     /* shift the time to GPS time
@@ -107,9 +107,9 @@ LALUtoGPS (LALStatus             *status,
  * Output:
  */
 void
-LALGPStoU (LALStatus            *status,
-        LIGOTimeUnix      *unixtime,
-        const LIGOTimeGPS *gpstime)
+LALGPStoU (LALStatus         *status,
+           LIGOTimeUnix      *unixtime,
+           const LIGOTimeGPS *gpstime)
 {
     INITSTATUS (status, "LALGPStoU", UTOGPSC);
 
@@ -117,14 +117,14 @@ LALGPStoU (LALStatus            *status,
      * Check pointer to input variable
      */
     ASSERT (gpstime != (LIGOTimeGPS *)NULL, status,
-            UTOGPS_ENULLINPUT, UTOGPS_MSGENULLINPUT);
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable:
      * allocate memory if necessary
      */
     ASSERT (unixtime != (LIGOTimeUnix *)NULL, status,
-            UTOGPS_ENULLOUTPUT, UTOGPS_MSGENULLOUTPUT);
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     /* shift the time to UTC time
      * GPS epoch is 1980-01-06, Unix epoch is 1970-01-01, so GPS time must

@@ -95,13 +95,13 @@ LALGMST1 (LALStatus     *status,
      * Check pointer to input variables
      */
     ASSERT (date != (LALDate *)NULL, status,
-            GMST1_ENULLINPUT, GMST1_MSGENULLINPUT);
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable
      */
     ASSERT (gmst != (REAL8 *)NULL, status,
-            GMST1_ENULLOUTPUT, GMST1_MSGENULLOUTPUT);
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     /*
      * Compute LALGMST1 for 0h UT1 on given date in seconds since J2000.0 
@@ -170,13 +170,13 @@ void LALGPStoGMST1( LALStatus         *status,
      * Check pointer to input variables
      */
     ASSERT (p_gps != (LIGOTimeGPS *)NULL, status,
-            GPSTOGMST1_ENULLINPUT, GPSTOGMST1_MSGENULLINPUT);
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable
      */
     ASSERT (p_gmst != (REAL8 *)NULL, status,
-            GPSTOGMST1_ENULLOUTPUT, GPSTOGMST1_MSGENULLOUTPUT);
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     /*
      * Convert GPS to date-time structure
@@ -202,14 +202,14 @@ void LALGPStoGMST1( LALStatus         *status,
  */
 void
 LALLMST1 (LALStatus             *status,
-          REAL8                 *lmst,
-          const LALPlaceAndDate *place_and_date,
+          REAL8                 *p_lmst,
+          const LALPlaceAndDate *p_place_and_date,
           LALMSTUnits            outunits)
 {
     REAL8 gmst;
 	REAL8 day = 0;
     REAL8 longitude =
-        place_and_date->detector->frDetector.vertexLongitudeDegrees;
+        p_place_and_date->p_detector->frDetector.vertexLongitudeDegrees;
 
 
     INITSTATUS (status, "LALLMST1", LMST1C);
@@ -217,21 +217,21 @@ LALLMST1 (LALStatus             *status,
     /*
      * Check pointer to input variables
      */
-    ASSERT (place_and_date != (LALPlaceAndDate *)NULL, status,
-            LMST1_ENULLINPUT, LMST1_MSGENULLINPUT);
+    ASSERT (p_place_and_date != (LALPlaceAndDate *)NULL, status,
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable
      */
-    ASSERT (lmst != (REAL8 *)NULL, status,
-            LMST1_ENULLOUTPUT, LMST1_MSGENULLOUTPUT);
+    ASSERT (p_lmst != (REAL8 *)NULL, status,
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     /*
      * Compute LMST1 in seconds since J2000.0
      */
 
     /* get GMST1 in seconds */
-    LALGMST1(status, &gmst, place_and_date->date, outunits);
+    LALGMST1(status, &gmst, p_place_and_date->p_date, outunits);
 
     /* convert longitude to appropriate units of sidereal time */
     switch (outunits)
@@ -255,10 +255,10 @@ LALLMST1 (LALStatus             *status,
         break;
     }
 
-    *lmst = gmst + longitude;
+    *p_lmst = gmst + longitude;
 
-	while (*lmst < 0)
-        *lmst += day;
+	while (*p_lmst < 0)
+        *p_lmst += day;
 
     RETURN (status);
 } /* END LALLMST1() */
@@ -285,27 +285,27 @@ void LALGPStoLMST1( LALStatus             *status,
      * Check pointer to input variables
      */
     ASSERT (p_place_and_gps != (LALPlaceAndGPS *)NULL, status,
-            GPSTOLMST1_ENULLINPUT, GPSTOLMST1_MSGENULLINPUT);
+            DATEH_ENULLINPUT, DATEH_MSGENULLINPUT);
 
     /*
      * Check pointer to output variable
      */
     ASSERT (p_lmst != (REAL8 *)NULL, status,
-            GPSTOLMST1_ENULLOUTPUT, GPSTOLMST1_MSGENULLOUTPUT);
+            DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
     /*
      * Convert GPS to date-time structure
      */
 
     /* first, GPS to Unix */
-    LALGPStoU(status, &unixTime, p_place_and_gps->gps);
+    LALGPStoU(status, &unixTime, p_place_and_gps->p_gps);
 
     /* then, Unix to date-time */
     LALUtime(status, &date, &unixTime);
 
     /* stuff it all into a LALPlaceAndDate */
-    place_and_date.detector = p_place_and_gps->detector;
-    place_and_date.date     = &date;
+    place_and_date.p_detector = p_place_and_gps->p_detector;
+    place_and_date.p_date     = &date;
 
     LALLMST1(status, p_lmst, &place_and_date, outunits);
 
