@@ -41,6 +41,8 @@ given search area and resolution
 #include <lal/StringInput.h>
 
 #include <lal/ConfigFile.h>
+#include <lal/Velocity.h>
+
 
 #include "DopplerScan.h"
 
@@ -90,6 +92,7 @@ void loadSkyGridFile (LALStatus *stat, DopplerScanGrid **grid, const CHAR *fname
 void plotGrid (LALStatus *stat, DopplerScanGrid *grid, const SkyRegion *region, const DopplerScanInit *init);
 
 void freeGrid (DopplerScanGrid *grid);
+void printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const DopplerScanInit *init);
 
 /*----------------------------------------------------------------------*/
 /* <lalVerbatim file="DopplerScanCP"> */
@@ -200,6 +203,9 @@ InitDopplerScan( LALStatus *stat,
     {
       LALPrintError ("\nDEBUG: plotting sky-grid into file 'mesh_debug.agr' ...");
       TRY( plotGrid (stat->statusPtr, scan->grid, &(scan->skyRegion), init), stat);
+      LALPrintError (" done. \n");
+      LALPrintError ("\nDEBUG: outputing predicted frequency-shifts 'dFreq.pred' \n");
+      TRY ( printFrequencyShifts (stat->statusPtr, scan, init), stat);
       LALPrintError (" done. \n");
     }
 
@@ -1232,3 +1238,102 @@ writeSkyGridFile (LALStatus *stat, const DopplerScanGrid *grid, const CHAR *fnam
   RETURN (stat);
 
 } /* writeSkyGridFile() */
+
+/*----------------------------------------------------------------------
+ * 
+ * write predicted frequency-shift of Fmax as function of sky-position
+ *
+ *----------------------------------------------------------------------*/
+void
+printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const DopplerScanInit *init)
+{
+  FILE *fp;
+  const CHAR *fname = "dFreq.pred";
+  const DopplerScanGrid *node = NULL;
+
+  REAL8 v[3];
+  REAL8 np[3], n[3];
+  REAL8 fact, kappa0;
+  REAL8 alpha, delta, f0;
+  REAL8* vel;
+  REAL8* acc;
+  REAL8 t0e;        /*time since first entry in Earth ephem. table */  
+  INT4 ientryE;      /*entry in look-up table closest to current time, tGPS */
+
+  REAL8 tinitE;           /*time (GPS) of first entry in Earth ephem table*/
+  REAL8 tdiffE;           /*current time tGPS minus time of nearest entry
+                             in Earth ephem look-up table */
+  REAL8 tgps[2];
+  EphemerisData *edat = init->ephemeris;
+  UINT4 j;
+  REAL8 corr0, corr1, accN, accDot[3];
+  REAL8 Tobs, dT;
+
+  INITSTATUS( stat, "printFrequencyShifts", DOPPLERSCANC );
+  ATTATCHSTATUSPTR (stat);
+
+  if ( (fp = fopen(fname, "w")) == NULL) {
+    LALPrintError ("\nERROR: could not open %s for writing!\n", fname);
+    ABORT (stat, DOPPLERSCANH_ESYS, DOPPLERSCANH_MSGESYS);
+  }
+
+  /* get detector velocity */
+  Tobs = init->obsDuration;
+
+  tgps[0] = (REAL8)(init->obsBegin.gpsSeconds);
+  tgps[1] = (REAL8)(init->obsBegin.gpsNanoSeconds);
+
+  tinitE = edat->ephemE[0].gps;
+  dT = edat->dtEtable;
+  t0e = tgps[0] - tinitE;
+  ientryE = floor((t0e/dT) +0.5e0);  /*finding Earth table entry closest to arrival time*/
+
+  tdiffE = t0e - edat->dtEtable*ientryE + tgps[1]*1.e-9; /*tdiff is arrival 
+	      time minus closest Earth table entry; tdiff can be pos. or neg. */
+
+  vel = edat->ephemE[ientryE].vel;
+  acc = edat->ephemE[ientryE].acc; 
+
+  for (j=0;j<3;j++){
+    accDot[j] = (edat->ephemE[ientryE+1].acc[j] - edat->ephemE[ientryE].acc[j]) / dT;
+    v[j] = vel[j] + acc[j]*tdiffE + 0.5 * acc[j] * Tobs;
+  }
+
+
+  node = scan->grid;
+
+  /* signal params */
+  alpha = 0.8;
+  delta = 1.0;
+  f0 = 101.0;
+
+  n[0] = cos(delta) * cos(alpha);
+  n[1] = cos(delta) * sin(alpha);
+  n[2] = sin(delta);
+  
+  kappa0 = (1.0 + n[0]*v[0] + n[1]*v[1] + n[2]*v[2] );
+
+  accN = (acc[0]*n[0] + acc[1]*n[1] + acc[2]*n[2]);
+  corr1 = (1.0/60.0)* (accN * accN) * Tobs * Tobs / kappa0;
+
+  while (node)
+    {
+      np[0] = cos(node->delta) * cos(node->alpha);
+      np[1] = cos(node->delta) * sin(node->alpha);
+      np[2] = sin(node->delta);
+
+      fact = 1.0 / (1.0 + np[0]*v[0] + np[1]*v[1] + np[2]*v[2] );
+      
+      fprintf (fp, "%.7f %.7f %.7f\n", node->alpha, node->delta, fact);
+
+      node = node->next;
+    } /* while grid-points */
+  
+
+
+  fclose (fp);
+  
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+
+} /* printFrequencyShifts() */
