@@ -182,6 +182,9 @@ int main( int argc, char *argv[] ) {
   MetricParamStruc tevparam;        /* Input structure for CoherentMetric */
   PulsarTimesParamStruc tevpulse;   /* Input structure for CoherentMetric */
                                     /* (this is a member of tevparam) */
+  PulsarTimesParamStruc baryparams; /* barycentering parameters */
+  PulsarTimesParamStruc spinparams; /* spindown parameters */
+  PulsarTimesParamStruc compparams; /* composite parameters */
   EphemerisData   *eph;             /* To store ephemeris data */
   int             detector;         /* Which detector to use: */
                                     /* 1 = Hanford,  2 = Livingston,  */
@@ -191,7 +194,7 @@ int main( int argc, char *argv[] ) {
   float           a,b,c,d,e,f;      /* To input point in standard format */
   int             ra_min, ra_max;   /* Min and max RA for ellipse plot */
   int             dec_min, dec_max; /* Min and max dec for ellipse plot */
-  float           f1;           /* The max spindown parameter */
+  float           f1;               /* The max spindown parameter */
   float           tau;              /* The spindown age */
   float           c_ellipse;        /* Centers of ellipses */
   float           r_ellipse;        /* Radii of ellipses */
@@ -258,7 +261,7 @@ int main( int argc, char *argv[] ) {
       mismatch = atof( optarg );
       break;
     case 'n':
-      if( metric_code == 1 )
+      if( metric_code == 1 || metric_code == 2)
         numSpindown = atoi( optarg );
       break;
     case 'p':
@@ -366,8 +369,23 @@ int main( int argc, char *argv[] ) {
    tevpulse.ephemeris = eph;
 
    /* Choose CoherentMetric timing function */
-   if(metric_code==2)
-     tevparam.dtCanon = LALDTBaryPtolemaic;
+   if(metric_code==2) {
+     baryparams.epoch = tevpulse.epoch;
+     baryparams.latitude = tevpulse.latitude;
+     baryparams.longitude = tevpulse.longitude;
+     spinparams.epoch = tevpulse.epoch;
+     spinparams.t0 = tevpulse.t0;
+     compparams.epoch = tevpulse.epoch;
+     compparams.t1 = LALDTBaryPtolemaic;
+     compparams.t2 = LALDTSpin;
+     compparams.dt1 = LALDTBaryPtolemaic;
+     compparams.dt2 = LALDTSpin;
+     compparams.constants1 = &baryparams;
+     compparams.constants2 = &spinparams;
+     compparams.nArgs = 2;
+     tevparam.dtCanon = LALDTComp;
+     tevparam.constants = &compparams;
+   }
    if(metric_code==3)
      tevparam.dtCanon = LALDTEphemeris;
 
