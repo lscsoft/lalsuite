@@ -119,10 +119,8 @@ class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['trigtotmplt']:
       self.add_ini_args(cp,sec)
     
-    self.set_stdout_file(
-      'logs/trigtotmplt-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime).out')
-    self.set_stderr_file(
-      'logs/trigtotmplt-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime).err')
+    self.set_stdout_file('logs/trigtotmplt-$(macrooutput).out')
+    self.set_stderr_file('logs/trigtotmplt-$(macrooutput).err')
     self.set_sub_file('trigtotmplt.sub')
 
 
