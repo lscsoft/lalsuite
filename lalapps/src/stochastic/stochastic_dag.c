@@ -1196,7 +1196,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* reduce to the optimal filter frequency range */
       response1.epoch = response2.epoch = gpsCalibTime;
       response1.data->data = responseTemp1.data->data + numFMin;
-      response2.data->data = responseTemp2.data->data + numFMax;
+      response2.data->data = responseTemp2.data->data + numFMin;
 
       /* print */
       if ((test_flag) && (segLoop == testSeg))
