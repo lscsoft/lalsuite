@@ -44,7 +44,7 @@
 #define TDDOUBLE 1
 
 /* should we shift timestamps to compensate for timing errors */
-#define TIMESHIFT 0
+#define TIMESHIFT  0
 
 /* should we use the new 2*DF/SRATE normalization convention? */
 #define NEWNORM 1
