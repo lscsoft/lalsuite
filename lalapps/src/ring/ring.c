@@ -514,8 +514,10 @@ int parse_options( int argc, char **argv )
     { "gps-end-time-ns",         required_argument, 0, 'B' },
     { "channel-name",            required_argument, 0, 'c' },
     { "calibration-frame-cache", required_argument, 0, 'C' },
+    { "calibration-cache",       required_argument, 0, 'C' },
     { "debug-level",             required_argument, 0, 'd' },
     { "data-frame-cache",        required_argument, 0, 'D' },
+    { "frame-cache",             required_argument, 0, 'D' },
     { "frame-files",             required_argument, 0, 'f' },
     { "frame-path",              required_argument, 0, 'F' },
     { "bank-start-template",     required_argument, 0, 'i' },
@@ -596,13 +598,13 @@ int parse_options( int argc, char **argv )
       case 'c': /* channel-name */
         frchan = optarg;
         break;
-      case 'C': /* calibration-frame-cache */
+      case 'C': /* calibration-frame-cache or calibration-cache */
         frcalib = optarg;
         break;
       case 'd': /* debug-level */
         dbglvl = optarg;
         break;
-      case 'D': /* data-frame-cache */
+      case 'D': /* data-frame-cache or frame-cache */
         frdata = optarg;
         break;
       case 'f': /* frame-files */
@@ -1103,9 +1105,11 @@ const char *usgfmt =
 "  --gps-end-time endsec\n\t\tend time in GPS seconds [start + 64]\n\n"
 "  --gps-end-time-ns endnan\n\t\tend time in GPS nano-seconds [0]\n\n"
 "  --channel-name channel\n\t\tchannel to analyze [H1:LSC-AS_Q]\n\n"
-"  --calibration-frame-cache calcache\n\t\tcalib frame cache file [use ascii]\n\n"
+"  --calibration-frame-cache calcache\n"
+"  --calibration-cache       calcache\n\t\tcalib frame cache file [use ascii]\n\n"
 "  --response-file respfile\n\t\tascii response file [response.asc]\n\n"
-"  --data-frame-cache datcache\n\t\tdata frame cache file [don't use cache]\n\n"
+"  --data-frame-cache datcache\n"
+"  --frame-cache      datcache\n\t\tdata frame cache file [don't use cache]\n\n"
 "  --frame-files pattern\n\t\tframe file to use [*.gwf]\n\n"
 "  --frame-path path\n\t\tpath to look for frame files [.]\n\n"
 "  --bank-start-template bmin\n\t\tfirst template of bank to use [0]\n\n"

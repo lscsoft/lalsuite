@@ -1,0 +1,299 @@
+#!/usr/bin/env python2.2
+"""
+inspiral_pipeline.py - standalone inspiral pipeline driver script
+
+$Id$
+
+This script produced the necessary condor submit and dag files to run
+the standalone inspiral code on LIGO data
+"""
+
+__author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
+__date__ = '$Date$'
+__version__ = '$Revision$'[11:-2]
+
+# import standard modules and append the lalapps prefix to the python path
+import sys, os
+import getopt, re, string
+import tempfile
+import ConfigParser
+sys.path.append('@PYTHONLIBDIR@')
+
+# import the modules we need to build the pipeline
+import pipeline, ring
+
+def usage():
+  msg = """\
+Usage: lalapps_ring_pipe [options]
+
+  -h, --help               display this message
+  -v, --version            print version information and exit
+  -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
+
+  -d, --datafind           run LALdataFind to create frame cache files
+  -r, --ring               run lalapps_ring on the first IFO
+
+  -j, --injections         add simulated rings from injection file
+
+  -p, --playground-only    only create chunks that overlap with playground
+  -m, --missing-playground pick up only missing playground from chunks
+  -P, --priority PRIO      run jobs with condor priority PRIO
+
+  -f, --config-file FILE   use configuration file FILE
+  -l, --log-path PATH      directory to write condor log file
+"""
+  print >> sys.stderr, msg
+
+# pasrse the command line options to figure out what we should do
+shortop = "hvdtrTICpmju:P:f:l:"
+longop = [
+  "help",
+  "version",
+  "datafind",
+  "ring",
+  "injections",
+  "playground-only",
+  "missing-playground",
+  "user-tag=",
+  "priority=",
+  "config-file=",
+  "log-path="
+  ]
+
+try:
+  opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
+except getopt.GetoptError:
+  usage()
+  sys.exit(1)
+
+config_file = None
+do_datafind = None
+do_ring = None
+do_inj = None
+usertag = None
+playground_only = 0
+condor_prio = None
+config_file = None
+log_path = None
+missing_play = None
+
+for o, a in opts:
+  if o in ("-v", "--version"):
+    print "$Id$"
+    sys.exit(0)
+  elif o in ("-h", "--help"):
+    usage()
+    sys.exit(0)
+  elif o in ("-d", "--datafind"):
+    do_datafind = 1
+  elif o in ("-r", "--ring"):
+    do_ring = 1
+  elif o in ("-j", "--injections"):
+    do_inj = 1
+  elif o in ("-u", "--user-tag"):
+    usertag = a
+  elif o in ("-p", "--playground-only"):
+    playground_only = 1
+  elif o in ("-m", "--missing-playground"):
+    playground_only = 1
+    missing_play = 1
+  elif o in ("-P", "--priority"):
+    condor_prio = a
+  elif o in ("-f", "--config-file"):
+    config_file = a
+  elif o in ("-l", "--log-path"):
+    log_path = a
+  else:
+    print >> sys.stderr, "Unknown option:", o
+    usage()
+    sys.exit(1)
+
+if not config_file:
+  print >> sys.stderr, "No configuration file specified."
+  print >> sys.stderr, "Use --config-file FILE to specify location."
+  sys.exit(1)
+
+if not log_path:
+  print >> sys.stderr, "No log file path specified."
+  print >> sys.stderr, "Use --log-path PATH to specify a location."
+  sys.exit(1)
+
+# try and make a directory to store the cache files and job logs
+try: os.mkdir('cache')
+except: pass
+try: os.mkdir('logs')
+except: pass
+
+# create the config parser object and read in the ini file
+cp = ConfigParser.ConfigParser()
+cp.read(config_file)
+
+# if a usertag has been specified, override the config file
+if usertag:
+  cp.set('pipeline','user-tag',usertag)
+else:
+  try:
+    usertag = string.strip(cp.get('pipeline','user-tag'))
+  except:
+    usertag = None
+
+# create a log file that the Condor jobs will write to
+basename = re.sub(r'\.ini',r'',config_file)
+tempfile.tempdir = log_path
+if usertag:
+  tempfile.template = basename + '.' + usertag + '.dag.log.'
+else:
+  tempfile.template = basename + '.dag.log.'
+logfile = tempfile.mktemp()
+fh = open( logfile, "w" )
+fh.close()
+
+# create the DAG writing the log to the specified directory
+dag = pipeline.CondorDAG(logfile)
+if usertag:
+  dag.set_dag_file(basename + '.' + usertag + '.dag')
+else:
+  dag.set_dag_file(basename + '.dag')
+
+# create the Condor jobs that will be used in the DAG
+df_job = ring.DataFindJob(cp)
+ring_job = ring.RingJob(cp)
+
+# set better submit file names than the default
+if usertag:
+  subsuffix = '.' + usertag + '.sub'
+else:
+  subsuffix = '.sub'
+df_job.set_sub_file( basename + '.datafind'+ subsuffix )
+ring_job.set_sub_file( basename + '.ring' + subsuffix )
+
+# set the usertag in the jobs
+if usertag:
+  ring_job.add_opt('user-tag',usertag)
+
+# add the injections
+if do_inj:
+  ring_job.add_opt('injection-file',cp.get('input','injection-file'))
+
+# set the condor job priority
+if condor_prio:
+  df_job.add_condor_cmd('priority',condor_prio)
+  ring_job.add_condor_cmd('priority',condor_prio)
+
+# get the pad and chunk lengths from the values in the ini file
+pad = 0
+n = int(cp.get('data', 'filter-segsz'))
+s = int(cp.get('data', 'number-of-segments'))
+r = int(cp.get('data', 'sample-rate'))
+length = n * s / r
+overlap = n / r
+
+# read science segs that are greater or equal to a chunk from the input file
+data = pipeline.ScienceData()
+data.read(cp.get('input','segments'),length)
+
+# create the chunks from the science segments
+data.make_chunks(length,overlap,playground_only)
+data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
+
+# only process jobs that were missed with the bad playground algorithm
+if missing_play:
+  bad_data = pipeline.ScienceData()
+  bad_data.read(cp.get('input','segments'),length)
+  bad_data.make_chunks_bad_play(length,overlap,playground_only)
+  bad_data.make_chunks_from_unused_bad_play(
+    length,overlap/2,playground_only,overlap/2)
+ 
+  good_segs = []
+  bad_segs = []
+
+  for i in range(len(data)):
+    good_segs.append({})
+    bad_segs.append({})
+
+    for chunk in data[i]:
+      good_segs[i][chunk.start()] = chunk
+    for chunk in bad_data[i]:
+      bad_segs[i][chunk.start()] = chunk
+
+  for i in range(len(data)):
+    missed = [good_segs[i][k] for k in good_segs[i] if k not in bad_segs[i]]
+    data[i]._ScienceSegment__chunks = missed
+
+# get the order of the ifos to filter
+ifo = cp.get('pipeline','ifo')
+snr = cp.get('pipeline','snr-threshold')
+
+# create all the LALdataFind jobs to run in sequence
+prev_df1 = None
+prev_df2 = None
+first_df2 = None
+
+# create a list to store the ring jobs
+ring_nodes = []
+
+for seg in data:
+  # find all the data
+  df1 = ring.DataFindNode(df_job)
+  df1.set_start(seg.start() - pad)
+  df1.set_end(seg.end() + pad)
+  df1.set_ifo(ifo)
+  if prev_df1: 
+    df1.add_parent(prev_df1)
+
+  if do_datafind:
+    dag.add_node(df1)
+
+  prev_df1 = df1
+
+  seg_ring_nodes = []
+
+  for chunk in seg:
+
+    ring1 = ring.RingNode(ring_job)
+    ring1.set_start(chunk.start())
+    ring1.set_end(chunk.end())
+    ring1.add_var_opt('filter-thresh',snr)
+    ring1.set_ifo(ifo)
+    ring1.set_cache(df1.get_output())
+
+    if do_ring:
+      dag.add_node(ring1)
+
+    # add the two ring jobs for this chunk to the stored list
+    seg_ring_nodes.append(ring1)
+
+  # add the ring jobs for this segment to the list
+  ring_nodes.append(seg_ring_nodes)
+
+# write out the DAG
+dag.write_sub_files()
+dag.write_dag()
+
+# write out a log file for this script
+if usertag:
+  log_fh = open(basename + '.pipeline.' + usertag + '.log', 'w')
+else:
+  log_fh = open(basename + '.pipeline.log', 'w')
+  
+log_fh.write( "$Id$" + "\n\n" )
+log_fh.write( "Invoked with arguments:\n" )
+for o, a in opts:
+  log_fh.write( o + ' ' + a + '\n' )
+log_fh.write( "\n" )
+log_fh.write( "Parsed " + str(len(data)) + " science segments\n" )
+total_data = 0
+for seg in data:
+  for chunk in seg:
+    total_data += len(chunk)
+print >> log_fh, "total data =", total_data
+
+print >> log_fh, "\n===========================================\n"
+print >> log_fh, data
+for seg in data:
+  print >> log_fh, seg
+  for chunk in seg:
+    print >> log_fh, chunk
+
+sys.exit(0)
+
