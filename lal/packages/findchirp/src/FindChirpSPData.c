@@ -622,7 +622,7 @@ LALFindChirpSPData (
       chisqPt   = 0;
       partSum   = 0.0;
 
-      /* calulate the frequencies of the chi-squared bin boundaries */
+      /* calculate the frequencies of the chi-squared bin boundaries */
       chisqBin[chisqPt++] = 0;
 
       for ( k = 1; k < fcSeg->data->data->length; ++k ) 
@@ -647,6 +647,8 @@ LALFindChirpSPData (
 }
 
 
+/* <lalVerbatim file="FindChirpBCVDataCP"> */
+void
 LALFindChirpBCVData (
     LALStatus                  *status,
     FindChirpSegmentVector     *fcSegVec,
@@ -662,6 +664,8 @@ LALFindChirpBCVData (
   REAL4                *amp;
   COMPLEX8             *wtilde;
   REAL4                *tmpltPower;
+  REAL4		       *tmpltPower1;
+  REAL4		       *tmpltPower2;
 
   REAL4Vector          *dataVec;
   REAL4                *spec;
@@ -679,10 +683,6 @@ LALFindChirpBCVData (
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
 
-  REAL4                 b1;
-  REAL4                 a2;
-  REAL4                 I73;
-  REAL4                 I1;
 
   INITSTATUS( status, "LALFindChirpBCVData", FINDCHIRPSPDATAC );
   ATTATCHSTATUSPTR( status );
@@ -939,6 +939,8 @@ LALFindChirpBCVData (
 
 
     fcSeg->segNorm = 0.0;
+    fcSeg->b1 = 0.0;
+    fcSeg->a2 = 0.0;
 
     for ( k = 0; k < cut; ++k )
     {
@@ -950,14 +952,16 @@ LALFindChirpBCVData (
 
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
-      tmpltPower[k]   = amp[k] * amp[k] * wtilde[k].re;
-      fcSeg->segNorm += tmpltPower[k];
-      I73 += tmpltPower[k];
-      I1 +=tmpltPower[k] * pow( (k/(fcSeg->data->data->length)), 4.0/3.0);
+      tmpltPower1[k]   = amp[k] * amp[k] * wtilde[k].re;
+      tmpltPower2[k]   = tmpltPower1[k] *
+	pow( (k/(fcSeg->data->data->length)), 4.0/3.0 );
+      fcSeg->segNorm += tmpltPower[k]; /* probably not necessary for BCV */
+      fcSeg->b1 += tmpltPower1[k];
+      fcSeg->a2 += tmpltPower2[k];
     }
 
-    b1 = 1.0 / 2.0 / sqrt(I73) ;
-    a2 = 1.0 / 2.0 / sqrt(I1) ;
+    fcSeg->b1 = 1.0 / 2.0 / sqrt( fcSeg->b1 ) ;
+    fcSeg->a2 = 1.0 / 2.0 / sqrt( fcSeg->a2 ) ;
 
     for ( k = cut; k < fcSeg->data->data->length; ++k )
     {
@@ -992,17 +996,17 @@ LALFindChirpBCVData (
 
     if ( numChisqBins )
     {
-      increment = fcSeg->segNorm / (REAL4) numChisqBins;
+      increment = (fcSeg->b1 + fcSeg->a2) / (REAL4) numChisqBins;
       nextBin   = increment;
       chisqPt   = 0;
       partSum   = 0.0;
 
-      /* calulate the frequencies of the chi-squared bin boundaries */
+      /* calculate the frequencies of the chi-squared bin boundaries */
       chisqBin[chisqPt++] = 0;
 
       for ( k = 1; k < fcSeg->data->data->length; ++k )
       {
-        partSum += tmpltPower[k];
+        partSum += ( tmpltPower1[k] + tmpltPower2[k] ); 
         if ( partSum >= nextBin )
         {
           chisqBin[chisqPt++] = k;
@@ -1012,6 +1016,11 @@ LALFindChirpBCVData (
       }
       chisqBin[numChisqBins] = fcSeg->data->data->length;
     }
+
+    /* final values of normalization constants b1 and a2 */
+    fcSeg->b1 = 1.0 / 2.0 / sqrt( fcSeg->b1 ) ;
+    fcSeg->a2 = 1.0 / 2.0 / sqrt( fcSeg->a2 ) ;
+
 
   } /* end loop over data segments */
 

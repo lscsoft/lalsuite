@@ -21,6 +21,8 @@ $Id$
 
 Provides structures and functions to condition interferometer data
 and generate binary inspiral chirps using the stationary phase approximation.
+Recent addition deals with the conditioning of the data using the BCV
+templates.
 
 \subsection*{Synopsis}
 
@@ -242,6 +244,15 @@ LALFindChirpSPDataFinalize (
     LALStatus                  *status,
     FindChirpSPDataParams     **output
     );
+
+void
+LALFindChirpBCVData (
+    LALStatus                  *status,
+    FindChirpSegmentVector     *fcSegVec,
+    DataSegmentVector          *dataSegVec,
+    FindChirpSPDataParams      *params
+    );
+
 
 #if 0
 <lalLaTeX>

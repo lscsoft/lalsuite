@@ -1032,6 +1032,7 @@ LALFindChirpBCVFilterSegment (
   REAL4                 normFFT;              
   REAL4                 b1;                  
   REAL4                 a2;                  
+  REAL4                 templateNorm;
 
   FindChirpChisqInput  *chisqInput1;
   FindChirpChisqInput  *chisqInput2;
@@ -1127,9 +1128,10 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   
   
   /* template and data */
-  inputData = input->segment->data->data->data;
-  tmpltSignal = input->fcTmplt->data->data;
-  deltaT = params->deltaT;
+  inputData    = input->segment->data->data->data;
+  tmpltSignal  = input->fcTmplt->data->data;
+  templateNorm = input->fcTmplt->tmpltNorm;
+  deltaT       = params->deltaT;
 
   /* the length of the chisq bin vec is the number of bin   */
   /* _boundaries_ so the number of chisq bins is length - 1 */
@@ -1151,7 +1153,12 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
 
   {
-    /* calculate the length of the chirp, this part needs to be changed */
+    /* length of the chirp:                      */
+    /* For BCV, the chirpTime is not calculated  */
+    /* but set to 1.5 seconds.                   */
+    /* chirpTime is not recorded                 */
+    /* just used to maximize over chirp.         */
+#if 0
     REAL4 eta = input->tmplt->eta;
     REAL4 m1 = input->tmplt->mass1;
     REAL4 m2 = input->tmplt->mass2;
@@ -1166,8 +1173,14 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
     REAL4 x3 = x*x2;
     REAL4 x4 = x2*x2;
     REAL4 x8 = x4*x4;
-    /* REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8; */
-    REAL4 chirpTime = 1.0;
+    REAL4 chirpTime = c0*(1 + c2*x2 + c3*x3 + c4*x4)/x8; 
+#endif
+    REAL4 m1 = input->tmplt->mass1;
+    REAL4 m2 = input->tmplt->mass2;
+    REAL4 m = m1 + m2;
+    REAL4 fmin = input->segment->fLow;
+    REAL4 x  = pow(LAL_PI*m*LAL_MTSUN_SI*fmin, 1.0/3.0);
+    REAL4 chirpTime = 1.5;
 
     /* template parameters */
     REAL4 psi0 = input->tmplt->psi0;                        
@@ -1175,10 +1188,9 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
     REAL4 fendBCV = input->tmplt->fendBCV;                  
     /* k that corresponds to fendBCV  */
     UINT4 kendBCV = floor( numPoints * deltaT * fendBCV );  
-    /* REAL4 b1 = input->segment->b1;  */
-    /* REAL4 a2 = input->segment->a2;  */
-    REAL4 b1 = 7.0 / 3.0 ;    /* temporarily */
-    REAL4 a2 = 1.0 ;          /* temporarily */
+    /* BCV normalization */
+    REAL4 b1 = input->segment->b1;  
+    REAL4 a2 = input->segment->a2; 
 
     deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
 
@@ -1293,14 +1305,14 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
     memset( params->rhosqVec->data->data, 0, numPoints * sizeof( REAL4 ) );
 
   /* normalisation */
-  /*  For the BCV templates, tmpltNorm is at the moment equal to 1. */
-  /*  normFFT = (deltaT/numPoints), and multiplies the FFT result.  */
-  /*  norm is left as it was, maybe for later use                   */
-  params->norm = normFFT = (deltaT / (REAL4)numPoints) ;            
-  norm =  4.0 * (deltaT / (REAL4)numPoints) / input->segment->segNorm ; 
+  /*  For the BCV templates, templateNorm is equal to                    */
+  /*  (5*m/96) * (M/pi^2)^(2/3) (Tsun/Dt)^(-1/3) (2*Msun(L)*d/1Mpc)^2    */
+
+  params->norm = norm =
+     (deltaT / (REAL4)numPoints) * (deltaT / (REAL4)numPoints) * templateNorm;
 
   /* normalised snr threhold */
-  modqsqThresh = params->rhosqThresh / normFFT / normFFT ;
+  modqsqThresh = params->rhosqThresh / norm ;
 
   /* we threshold on the "modified" chisq threshold computed from       */
   /*   chisqThreshFac = delta^2 * norm / p                              */
@@ -1320,7 +1332,7 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   /* The raw chisq is stored in the database. this quantity is chisq    */
   /* distributed with 2p-2 degrees of freedom.                          */
   mismatch = 1.0 - input->tmplt->minMatch;
-  chisqThreshFac = normFFT*normFFT * mismatch * mismatch / (REAL4) numChisqBins;
+  chisqThreshFac = norm * mismatch * mismatch / (REAL4) numChisqBins;
 
   /* if full snrsq vector is required, store the snrsq */
   if ( params->rhosqVec )
@@ -1345,7 +1357,7 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
               ( 2.0 * b1 * q1[j].im + 2.0 * a2 * q2[j].im );   
       REAL4 modqsq = modq1sq + modq2sq + 
 	      2.0 * sqrt( modq1sq ) * sqrt( modq2sq ) ;       
-      params->rhosqVec->data->data[j] = normFFT * normFFT * modqsq;   
+      params->rhosqVec->data->data[j] = norm * modqsq;   
     }
   }
 
@@ -1388,7 +1400,9 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 	
         /* pointer to the chisq bin vector in the segment */
         params->chisqParams->chisqBinVec = input->segment->chisqBinVec;
-        params->chisqParams->norm        = normFFT;
+        params->chisqParams->norm        = norm;
+	params->chisqParams->b1          = b1 ;
+	params->chisqParams->a2          = a2 ;
 #if 0
         params->chisqParams->bankMatch   = input->tmplt->minMatch;
 #endif
@@ -1453,7 +1467,7 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
            CHECKSTATUSPTR( status );
 
            /* set the impuse time for the event */
-           thisEvent->template_duration = (REAL8) chirpTime;
+           /* thisEvent->template_duration = (REAL8) chirpTime; */
 
 	   /* record the ifo and channel name for the event */
 	   strncpy( thisEvent->ifo, input->segment->data->name,
@@ -1479,6 +1493,8 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 	   /* temporarily */
 	   thisEvent->tau0   = (REAL4) input->tmplt->psi0; 
 	   thisEvent->tau3   = (REAL4) input->tmplt->psi3;
+	   thisEvent->mchirp = LAL_1_PI *
+		   pow( 3.0 / 128.0 / input->tmplt->psi0 , 3.0/5.0 );
 
            /* set the type of the template used in the analysis */
            LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
@@ -1499,8 +1515,6 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
              thisEvent->chisq     = 0;
              thisEvent->chisq_dof = 0;
            }
-	   /* sigmasq and effD commented out                        */
-	   /* until we figure out the normalization                 */
 #if 0	   
            thisEvent->sigmasq = norm * input->segment->segNorm *
                input->segment->segNorm * input->fcTmplt->tmpltNorm;
@@ -1510,7 +1524,7 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
            thisEvent->eff_distance = sqrt( thisEvent->eff_distance );
 #endif	   
 
-           thisEvent->snr *= (normFFT * normFFT);      
+           thisEvent->snr *= norm;      
            thisEvent->snr = sqrt( thisEvent->snr );
 
            /* compute the time since the snr crossing */
@@ -1563,7 +1577,7 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
     CHECKSTATUSPTR( status );
 
     /* set the impuse time for the event */
-    thisEvent->template_duration = (REAL8) chirpTime;
+    /* thisEvent->template_duration = (REAL8) chirpTime; */
 
     /* record the ifo name for the event */
     strncpy( thisEvent->ifo, input->segment->data->name,
@@ -1589,6 +1603,8 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
     /* temporarily */
     thisEvent->tau0   = (REAL4) input->tmplt->psi0;   
     thisEvent->tau3   = (REAL4) input->tmplt->psi3;  
+    thisEvent->mchirp = LAL_1_PI *
+	    pow( 3.0 / 128.0 / input->tmplt->psi0, 3.0/5.0 );
 
 
     /* set the type of the template used in the analysis */
@@ -1610,8 +1626,6 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
       thisEvent->chisq     = 0;
       thisEvent->chisq_dof = 0;
     }
-      /* sigmasq and effD commented out                 */
-      /* until we figure out the normalization          */
 #if 0    
       thisEvent->sigmasq = norm * input->segment->segNorm *
           input->segment->segNorm * input->fcTmplt->tmpltNorm;
@@ -1621,7 +1635,7 @@ ASSERT( qVec1, status, FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
       thisEvent->eff_distance = sqrt( thisEvent->eff_distance ); 
 #endif      
 
-      thisEvent->snr *= ( normFFT * normFFT ) ;   
+      thisEvent->snr *=  norm ;   
       thisEvent->snr = sqrt( thisEvent->snr );
 
       /* compute the time since the snr crossing */

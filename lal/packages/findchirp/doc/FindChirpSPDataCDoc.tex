@@ -23,9 +23,12 @@ structure and sets the address to NULL.
 
 \item[\texttt{LALFindChirpSPData()}] conditions the interferometer data
 as described by the algorithm below.
+
+\item[\texttt{LALFindChirpBCVData()}] conditions the interferometer data
+as described by the algorithm below.
 \end{description}
 
-\subsubsection*{Algorithm}
+\subsubsection*{Algorithm for SP templates}
 
 The \texttt{LALFindChirpSPData()} function takes as input three quantities
 \begin{enumerate}
@@ -134,6 +137,10 @@ in the quantity
 {\left|\mathtt{dynRange}\times R(f_k)\right|^2 S_v(|f_k|)}.
 \end{equation}
 into equal intervals are stored in the array \texttt{chisqBin}.
+
+\subsubsection*{Algorithm for BCV templates}
+
+The \texttt{LALFindChirpBCVData()} function takes as input...
 
 \subsubsection*{Uses}
 \begin{verbatim}

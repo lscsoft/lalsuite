@@ -110,6 +110,8 @@ typedef struct
 tagFindChirpChisqParams
 {
   REAL4                         norm;
+  REAL4                         b1;
+  REAL4                         a2;
 #if 0
   REAL4                         bankMatch;
 #endif
@@ -133,17 +135,26 @@ function \texttt{FindChirpChisqVeto()}.  It is created and destroyed by the
 functions. The fields are:
 
 \begin{description}
-\item[\texttt{REAL4 norm}] The normalization...
+\item[\texttt{REAL4 norm}] The normalization factor for the SP templates.
+Equals $4 \Delta t / (N segNorm)$.
+
+\item[\texttt{REAL4 b1}] BCV-template normalization parameter.
+
+\item[\texttt{REAL4 a2}] BCV-template normalization parameter.
 
 \item[\texttt{REAL4 bankMatch}] Template bank match...
 
-\item[\texttt{UINT4Vector *chisqBinVec}] A vector containing the...
+\item[\texttt{UINT4Vector *chisqBinVec}] A vector containing the boundaries
+of the bins for the chi-squared veto.
 
 \item[\texttt{ComplexFFTPlan *plan}] The FFTW plan used by the inverse DFT.
 
 \item[\texttt{COMPLEX8Vector *qtildeBinVec}] ...
 
-\item[\texttt{COMPLEX8Vector **qBinVecPtr}] ...
+\item[\texttt{COMPLEX8Vector **qBinVecPtr}] Pointer to an array of pointers.
+Corresponds to $q_l(t_j)$, which is the contribution of the $l$-th frequency 
+bin to the signal-to-noise ratio at the time $t_j$ (up to the appropriate
+normalization.
 \end{description}
 </lalLaTeX>
 #endif

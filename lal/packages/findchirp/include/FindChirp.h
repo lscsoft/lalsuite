@@ -61,7 +61,7 @@ given by
 
 \item The matched filter normalization $\sigma^2$:
 \begin{equation}
-\sigma^2 = 4 \left(\frac{\Delta T}{N}\right)
+\sigma^2 = 4 \left(\frac{\Delta t}{N}\right)
            \left(\frac{2T_\odot c}{1\mathrm{Mpc}}\right)^2 d^2 A^2(M,\eta)
            \sum_{k=0}^{N/2} \frac{k^{-\frac{7}{3}}}{|dR|^2S_v(|f_k|)}
 \end{equation}
@@ -92,16 +92,16 @@ q_j = \sum_{k=0}^{N/2} e^{2\pi ijk/N}
 
 Then the quantities that we compute in the code are just:
 \begin{equation}
-\rho^2(t_j) = \frac{16}{\sigma^2}\left(\frac{\delta T}{N}\right)^2
+\rho^2(t_j) = \frac{16}{\sigma^2}\left(\frac{\Delta t}{N}\right)^2
 \cdot\mathtt{tmpltNorm}\cdot|q_j|^2,
 \end{equation}
 \begin{equation}
-\sigma^2 = 4\left(\frac{\Delta t}{N}\right)^2 \cdot
+\sigma^2 = 4\left(\frac{\Delta t}{N}\right) \cdot
            \mathtt{tmpltNorm}\cdot\mathtt{segNorm}
 \end{equation}
 and
 \begin{equation}
-D_\mathrm{eff} = \mathtt{tmpltNorm}\cdot \mathtt{segNorm}^2\cdot |q_j|^{-2}
+D_\mathrm{eff}^2 = \mathtt{tmpltNorm}\cdot \mathtt{segNorm}^2\cdot |q_j|^{-2}
 \end{equation}
 
 \subsection*{Synopsis}
@@ -277,6 +277,8 @@ tagFindChirpSegment
   UINT4Vector                  *chisqBinVec;
   REAL8                         deltaT;
   REAL4                         segNorm;
+  REAL4                         b1;     
+  REAL4                         a2;     
   REAL4                         fLow;
   UINT4                         invSpecTrunc;
   UINT4                         number;
@@ -308,6 +310,10 @@ input data.
 
 \item[\texttt{REAL4 segNorm}] The template independent part of the 
 normalisation constant $\sigma$.
+
+\item[\texttt{REAL4 b1}] BCV-template normalization parameter.
+
+\item[\texttt{REAL4 a2}] BCV-template normalization parameter.
 
 \item[\texttt{UINT4 invSpecTrunc}] The number of points to which the inverse 
 power spectrum \ospsd is truncated to in the time domain in order to smooth

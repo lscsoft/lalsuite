@@ -554,9 +554,8 @@ LALFindChirpBCVChisqVeto (
 #endif
 
 
-  /* temporarily */
-  b1 = 7.0 / 3.0 ;
-  a2 = 1.0;
+  b1 = params->b1 ;
+  a2 = params->a2 ;
 
 
   /*
@@ -626,10 +625,14 @@ LALFindChirpBCVChisqVeto (
   {
     for ( l = 0; l < numChisqBins; ++l )
     {
-      REAL4 X1 = qBinVecPtr1[l]->data[j].re;
-      REAL4 Y1 = qBinVecPtr1[l]->data[j].im;
-      REAL4 X2 = qBinVecPtr2[l]->data[j].re;
-      REAL4 Y2 = qBinVecPtr2[l]->data[j].im;
+      REAL4 X1 = 2.0 * b1 * qBinVecPtr1[l]->data[j].re - 
+	2.0 * a2 * qBinVecPtr1[l]->data[j].re ;
+      REAL4 Y1 = 2.0 * b1 * qBinVecPtr1[l]->data[j].im -
+	2.0 * a2 * qBinVecPtr1[l]->data[l].im ;
+      REAL4 X2 = 2.0 * b1 * qBinVecPtr1[l]->data[j].re +
+	2.0 * a2 * qBinVecPtr2[l]->data[j].re ;
+      REAL4 Y2 = 2.0 * b1 * qBinVecPtr1[l]->data[j].im + 
+	2.0 * a2 * qBinVecPtr2[l]->data[j].im;
 
 #if 0
       REAL4 deltaXl = chisqNorm * Xl -
@@ -640,27 +643,23 @@ LALFindChirpBCVChisqVeto (
       chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
 #endif
 
-      REAL4 mod1 = sqrt( 
-		      ( 2.0 * b1 * X1 - 2.0 * a2 * X2 -  
+      REAL4 mod1 = ( X1 -
       ( 2.0 * b1 * q1[j].re - 2.0 * a2 * q2[j].re ) / (REAL4) (numChisqBins) ) *
-                      ( 2.0 * b1 * X1 - 2.0 * a2 * X2 -  
+                   ( X1 -  
       ( 2.0 * b1 * q1[j].re - 2.0 * a2 * q2[j].re ) / (REAL4) (numChisqBins) ) +
-                      ( 2.0 * b1 * Y1 - 2.0 * a2 * Y2 -  
+                   ( Y1 -   
       ( 2.0 * b1 * q1[j].im - 2.0 * a2 * q2[j].im ) / (REAL4) (numChisqBins) ) *
-                      ( 2.0 * b1 * Y1 - 2.0 * a2 * Y2 - 
-      ( 2.0 * b1 * q1[j].im - 2.0 * a2 * q2[j].im ) / (REAL4) (numChisqBins) )
-		        );			    
+                   ( Y1 - 
+      ( 2.0 * b1 * q1[j].im - 2.0 * a2 * q2[j].im ) / (REAL4) (numChisqBins) );
 
-      REAL4 mod2 = sqrt( 
-                      ( 2.0 * b1 * X1 + 2.0 * a2 * X2 -
+      REAL4 mod2 = ( X2 -  
       ( 2.0 * b1 * q1[j].re + 2.0 * a2 * q2[j].re ) / (REAL4) (numChisqBins) ) *
-		      ( 2.0 * b1 * X1 + 2.0 * a2 * X2 -     
+		   ( X2 -     
       ( 2.0 * b1 * q1[j].re + 2.0 * a2 * q2[j].re ) / (REAL4) (numChisqBins) ) +
-           	      ( 2.0 * b1 * Y1 + 2.0 * a2 * Y2 -    
+           	   ( Y2 -    
       ( 2.0 * b1 * q1[j].im + 2.0 * a2 * q2[j].im ) / (REAL4) (numChisqBins) ) *
-                      ( 2.0 * b1 * Y1 + 2.0 * a2 * Y2 -    
-      ( 2.0 * b1 * q1[j].im + 2.0 * a2 * q2[j].im ) / (REAL4) (numChisqBins) ) 
-                        );
+                   ( Y2 -    
+      ( 2.0 * b1 * q1[j].im + 2.0 * a2 * q2[j].im ) / (REAL4) (numChisqBins) ); 
 
       REAL4 deltachisq = mod1 + mod2 ; 
             deltachisq *= deltachisq ;
