@@ -10,6 +10,7 @@ RCSID( "$Id$" );
   "Usage: %s [options]\n" \
   "Options [default in brackets]:\n" \
   "  -h            print this message\n" \
+  "  -V            print version info\n" \
   "  -v            verbose\n" \
   "  -d dbglvl     set debug level to dbglvl [0]\n" \
   "  -o outfile    use output file outfile [stdout]\n"
