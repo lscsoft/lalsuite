@@ -130,3 +130,35 @@ void `LALCut'SERIESTYPE (
 
 	RETURN(status);
 }
+
+
+size_t `XLALShrink'SERIESTYPE (
+	SERIESTYPE *series,
+	size_t first,
+	size_t length
+)
+{
+	if(!series)
+		return(0);
+
+	series->f0 += first * series->deltaF;
+	return(`XLALShrink'SEQUENCETYPE (series->data, first, length));
+}
+
+
+void `LALShrink'SERIESTYPE (
+	LALStatus *status,
+	SERIESTYPE *series,
+	size_t first,
+	size_t length
+)
+{
+	INITSTATUS(status, "`LALShrink'SERIESTYPE", TIMESERIESC);
+
+	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(first < series->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+	`XLALShrink'SERIESTYPE (series, first, length);
+
+	RETURN(status);
+}

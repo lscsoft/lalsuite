@@ -42,3 +42,16 @@ void `LALCut'SERIESTYPE (
 	size_t first,
 	size_t length
 );
+
+size_t `XLALShrink'SERIESTYPE (
+	SERIESTYPE *series,
+	size_t first,
+	size_t length
+);
+
+void `LALShrink'SERIESTYPE (
+	LALStatus *status,
+	SERIESTYPE *series,
+	size_t first,
+	size_t length
+);
