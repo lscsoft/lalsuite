@@ -74,35 +74,50 @@ float **matrix(long nrow, long ncol)
 
         /* allocate pointers to rows */
         m=(float **) malloc((size_t)((nrow)*sizeof(float*)));
-        if (!m) exit(1);
+        if (!m) {
+          fprintf(stderr,"Memory allocation problems in matrix\n");
+          exit(1);
+        }
 
         /* allocate rows and set pointers to them */
         m[0]=(float *) malloc((size_t)((nrow*ncol)*sizeof(float)));
-        if (!m[0]) exit(2);
+        if (!m[0]){
+          fprintf(stderr,"Memory allocation problems in matrix\n");
+          exit(2);
+        }
 
-        for(i=1;i<=nrow;i++) m[i]=m[i-1]+ncol;
+        for(i=1;i<nrow;i++) m[i]=m[i-1]+ncol;
 
         /* return pointer to array of pointers to rows */
         return m;
 }
 
+void free_matrix(float **m)
+{
+  free(m[0]);
+  free(m);
+}
 
 
 int snprintf(char *str,size_t size,const char *format, ...); 
 int zmnormalise(int n,int n1,float **amp,float rhosq,float **eamplitude,REAL4FrequencySeries *spectrum);
 void zmfft(int n1, float *ampfft, float *ampfftre, float *ampfftim);
 void correl(int num, float *re, float *RE, float *im, float *IM, float *corr);
-float zminproduct(int num, float *re, float *im, float *amp);
+float zminproduct(int num, float *re, float *im, float *amp, REAL4FrequencySeries *spectrum);
 
 /* ZM waveform parameters */
 FrChanIn   channelIn;               /* channnel information                  */
-INT4       numPoints      = 4096;    /* number of samples from frames: 0.25s */
+INT4       numPoints      = 32768;    /* number of samples from frames: 0.25s */
 INT4       sampleRate     = 16384;   /* sample rate in Hz                    */
 CHAR      *dirname        = NULL;    /* name of directory with frame file    */
 CHAR      *outFile        = NULL;    /* name of ascii outfile                */
+CHAR      *corrFile       = NULL;    /* name of ascii outfile                */
 
 /* some global output flags */
 int verbose = 0;
+int start_index = 0;
+int printCorrelation = 0;
+FILE *fpcc;
 
 int main(int argc, char **argv)
 {
@@ -112,10 +127,11 @@ int main(int argc, char **argv)
   int i, j;
   int n, m;
   char filename[30], outputfile[30];
-  float Amp[78][4096];
-  float *amp[78];
-  float *eamplitude[78];
+  float **Amp;
+  float *amp[200];
+  float *eamplitude[200];
   float minimal_match=0.0;
+  int numWaves=0;
 
   /* data storage */
   REAL4TimeSeries            series;
@@ -137,7 +153,11 @@ int main(int argc, char **argv)
     {"dirname",                 required_argument, 0,                'd'},
     {"outfile",                 required_argument, 0,                'o'},
     {"min-match",               required_argument, 0,                'm'},
+    {"numwaves",                required_argument, 0,                'n'},
+    {"numpoints",               required_argument, 0,                'N'},
+    {"corrfile",                required_argument, 0,                'p'},
     {"help",                    no_argument,       0,                'h'}, 
+    {"start-index",             required_argument, 0,                's'},
     {"debug-level",             required_argument, 0,                'z'},
     {"version",                 no_argument,       0,                'V'},
     {0, 0, 0, 0}
@@ -199,14 +219,33 @@ int main(int argc, char **argv)
         memcpy( outFile, optarg, optarg_len );
         break;
 
+      case 'p':
+        optarg_len = strlen( optarg ) + 1;
+        corrFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( corrFile, optarg, optarg_len );
+        printCorrelation = 1;
+        break;
+
       case 'm':
         minimal_match = atof( optarg );
+        break;
+        
+      case 'n':
+        numWaves = atoi( optarg );
+        break;
+        
+      case 'N':
+        numPoints = atoi( optarg );
         break;
 
       case 'h':
         /* help message */
         fprintf( stderr, USAGE , argv[0]);
         exit( 1 );
+        break;
+
+      case 's':
+        start_index = atoi( optarg );
         break;
 
       case 'z':
@@ -247,7 +286,19 @@ int main(int argc, char **argv)
     fprintf( stderr, USAGE, argv[0] );
     exit( 1 );
   }
+
+  if ( !numWaves ){
+    fprintf(stderr,"Must supply numwaves match\n");
+    fprintf( stderr, USAGE, argv[0] );
+    exit( 1 );
+  }
   /* End of argument parsing loop. */
+
+  /* open file for coefficients */
+  fpcc = fopen("components.txt","w");
+  
+  /* allocate some memory */
+  Amp = matrix(numWaves,numPoints);
 
 
   /*******************************************************
@@ -268,7 +319,7 @@ int main(int argc, char **argv)
   LAL_CALL( LALFrOpen( &stat, &stream, dirname, "zm-waveforms.gwf" ), &stat);
 
   /* initialize everything */
-  strcpy(series.name,"ZMSIM_ZM_WAVEFORM_0" );
+  strcpy(series.name,"SIM_WAVE_0" );
   channelIn.name = series.name;
   channelIn.type = LAL_PROC_CHAN;
   LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
@@ -276,15 +327,18 @@ int main(int argc, char **argv)
   series.epoch.gpsNanoSeconds = 0;
 
   /* loop over the frame file */
-  for(i=0;i<78;i++){
+  for(i=0;i<numWaves;i++){
 
     /* make sure we're at the start of the frame file */
     LAL_CALL( LALFrSeek(&stat, &(series.epoch), stream), &stat);
 
     /* which waveform are we going to select? */
-    snprintf(filename,30,"ZMSIM_ZM_WAVEFORM_%d",i);
+    snprintf(filename,30,"SIM_WAVE_%d",i);
     strcpy(series.name, filename);
     channelIn.name = series.name;
+
+    if ( verbose )
+      fprintf(stdout,"Reading in wave %d\n",i);
 
     /* get the data */
     LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), 
@@ -293,7 +347,7 @@ int main(int argc, char **argv)
     /* put the data into the array that we have for it */
     for(j=0;j<series.data->length;j++){
       /* amp. of the interpolated waveforms*/
-      Amp[i][j] = series.data->data[j];  
+      Amp[i][j] = 1e20 * series.data->data[j];  
     }
   }
 
@@ -313,30 +367,33 @@ int main(int argc, char **argv)
 
   LAL_CALL( LALReadNoiseSpectrum( &stat, &spectrum, "noise-initial_ligo.dat"), &stat);
 
+    /* normalize the spectrum to avoid numerical errors */
+    for(j=0;j<=numPoints/2;j++){
+      spectrum.data->data[j] /= spectrum.data->data[0];
+    }
+   
   if ( verbose )
     fprintf(stdout,"Finished reading in the noise spectrum\n");
 
 
 
-  /**************************** 
-   * step 2 
-   ****************************/
-
-  for(i=0;i<78;i++){
+  /**************************************************************
+   * step 2:  initialize the amplitudes and construct the basis
+   *************************************************************/
+  m=0;
+  for(i=0;i<numWaves;i++){
     amp[i] = Amp[i];
   }
 
-  n=78;
-  m=0;
-
   /** m = no. of basis vectors required**/
-  m=zmnormalise(n,numPoints,amp,minimal_match,eamplitude,&spectrum); 
+  m=zmnormalise(numWaves,numPoints,amp,minimal_match,eamplitude,&spectrum); 
   printf("%f %d\n",minimal_match,m);
+
 
   /*************************************************************
    * Build the frames from the interpolated waveforms
    ************************************************************/
-  for(i=1;i<m;i++){
+  for(i=0;i<m;i++){
     snprintf(outputfile,30,"ZMBASIS_%0d",i);
 
     for(j=0;j<numPoints;j++){
@@ -356,6 +413,8 @@ int main(int argc, char **argv)
   FrameWrite( outFrame, frOutFile );
   FrFileOEnd( frOutFile );
 
+  fclose(fpcc);
+
   return 0;   
 }
 
@@ -364,22 +423,36 @@ int main(int argc, char **argv)
 
 
 
-/*****************************************************
+/********************************************************************
+ * Function:  this function does the whole orthonormalization process.
+ * It needs to know how many waveforms there are (n),  how many points in
+ * each (n1),  a pointer to the waveforms (amp),  a minimal match for
+ * termination (minimal_match),  a handle for the new basis vectors
+ * (eamplitude) and the noise spectrum for which the computation is
+ * being done.
  *****************************************************/
 
-#define NMAX 100
-#define N1MAX 4096
+#define NMAX 200
+#define N1MAX 65536 
 
-int zmnormalise(int n,int n1,float **amp,float rhosq,float **eamplitude,REAL4FrequencySeries *spectrum)
+int zmnormalise(
+    int n,
+    int n1,
+    float **amp,
+    float minimal_match,
+    float **eamplitude,
+    REAL4FrequencySeries *spectrum
+    )
 {
   int i,j,p,l,k,m;
   float *ampfft=NULL, *ampfftre=NULL, *ampfftim=NULL;
   float sum1, sum_ii;
   float **ampre, **ampim;
   float **correlation, **eamp;
-  float rhom[N1MAX];
+  float *rhom;
+  int   zmnumber[NMAX];
   float *redum[NMAX], *imdum[NMAX], *ampdum[NMAX];
-  float e_real[NMAX][N1MAX/2+1], e_imagin[NMAX][N1MAX/2+1];
+  float **e_real, **e_imagin;
   float c[NMAX];
   float *rho_max, *shift, *corr;
   float *RE, *IM, *re, *im;
@@ -388,6 +461,8 @@ int zmnormalise(int n,int n1,float **amp,float rhosq,float **eamplitude,REAL4Fre
   float *dum1, *dum2, *dum3;
   int index,toshift;
   float sumfinal, rho_max_min;
+  float rhosq;
+  FILE *fpcorr;
 
   if ( n > NMAX || n1 > N1MAX )
   {
@@ -397,194 +472,203 @@ int zmnormalise(int n,int n1,float **amp,float rhosq,float **eamplitude,REAL4Fre
     exit( 1 );
   }
 
-  ampre=matrix(NMAX,N1MAX/2+1);
-  ampim=matrix(NMAX,N1MAX/2+1);
+  /* initialize a bunch of stuff */
+  rhom = (float*)malloc( n1 * sizeof(REAL4) );
+  ampre=matrix(n,n1/2+1);
+  ampim=matrix(n,n1/2+1);
+  e_real=matrix(n,n1/2+1);
+  e_imagin=matrix(n,n1/2+1);
+  rhosq = minimal_match * minimal_match;
+  for( i=0 ; i< n ; i++ ) zmnumber[i] = i;
 
-  /************************
-   * Step 3:normalise the waveforms
-   * **********************/
+  if( printCorrelation ){
+    fpcorr = fopen(corrFile,"w");
+  }
+
+
+  /******************************************************************
+   * Step 3: normalise the waveforms
+   * ***************************************************************/
   ampfftre=(float*)malloc((n1/2+1)*sizeof(float));
   ampfftim=(float*)malloc((n1/2+1)*sizeof(float));
 
   for(i=0;i<n;i++){
 
-
+    /* point ampfft at the waveforms one at a time */
     ampfft = amp[i];
 
-    sum1=0;
+    /* **************************************************************
+     * compute the DFT of the waveform and store the real and imag
+     * parts in ampfftre and ampfftim respectively 
+     * *************************************************************/
+    zmfft(n1,ampfft,ampfftre,ampfftim);  
 
-    zmfft(n1,ampfft,ampfftre,ampfftim);  /** this function finds the fft **/
-
-    for(j=0;j<=n1/2;j++){
-      spectrum->data->data[j] /= spectrum->data->data[0];
-    }
-    
+    /* compute the norm of the waveform */
+    sum1=0.0;
     for(j=0;j<=n1/2;j++){
       sum1 += 4.0*(ampfftre[j]*ampfftre[j]+ampfftim[j]*ampfftim[j]) / 
         (spectrum->data->data[j]);
     }
     
+    /* normalize the waveform within the specified inner product */
     for(j=0;j<n1;j++){
       amp[i][j]=amp[i][j]/sqrt(sum1);
     }
-    
+   
+    /* normalize the waveform, whiten and store for later */
     for(j=0;j<=n1/2;j++){
       ampre[i][j]=(ampfftre[j]/sqrt(sum1))/(sqrt(spectrum->data->data[j]));
       ampim[i][j]=(ampfftim[j]/sqrt(sum1))/(sqrt(spectrum->data->data[j]));
     }
 
   }
+
   free(ampfftre);
   free(ampfftim);
 
-  /*********************
+  
+  /******************************************************************
    * Step 4: assign the dummy pointers 
-   *******************************************/
-
+   *****************************************************************/
   for(i=0;i<n;i++){
-    ampdum[i]=amp[i];
-    redum[i]=ampre[i];
-    imdum[i]=ampim[i];
+    ampdum[i]=amp[i];    /* time-domain normalized waveform           */
+    redum[i]=ampre[i];   /* freq-domain normalized, whitened waveform */
+    imdum[i]=ampim[i];   /* freq-domain normalized, whitened waveform */
   }
 
-  /*********************
-   * Step 5: Set e_0
-   ******************************************/
+  
+  /*****************************************************************
+   * Step 5: Set up the basis vectors and select the zeroth
+   *****************************************************************/
   eamp=matrix(NMAX,N1MAX);
+  correlation=matrix(NMAX,N1MAX);
+
+  {
+    int zmdum = zmnumber[start_index];
+    zmnumber[start_index] = zmnumber[0];
+    zmnumber[0] = zmdum;
+  }
+  dum1=redum[start_index];
+  redum[start_index]=redum[0];
+  redum[0]=dum1;
+  dum2=imdum[start_index];
+  imdum[start_index]=imdum[0];
+  imdum[0]=dum2;
+  dum3=ampdum[start_index];				  
+  ampdum[start_index]=ampdum[0];
+  ampdum[0]=dum3;
+
   for(j=0;j<n1;j++){
     eamp[0][j]=ampdum[0][j];
   }
+  eamplitude[0]=eamp[0];
   for(j=0;j<=n1/2;j++){
     e_real[0][j]=redum[0][j];
     e_imagin[0][j]=imdum[0][j];
   }
 
-  /*******************
-   * Step 6: Orthonormalisation
-   * ******************************************/
-  correlation=matrix(NMAX,N1MAX);
 
+  /******************************************************************
+   * Step 6: Loop over remaining vectors
+   * ***************************************************************/
   for(i=1;i<(n);i++){
 
-    /********************
-     * Step 6a
-     * ******************************************/
-    rho_max=(float*)malloc(n*sizeof(float));
-    shift=(float*)malloc(n*sizeof(float));
+    
+    /***************************************************************
+     * Step 6a:  allocate and initialize snr and shift vectors
+     * *************************************************************/
+    rho_max=(float*)calloc(n,sizeof(float));
+    shift=(float*)calloc(n,sizeof(float));
 
-    for(p=0;p<n;p++){
-      rho_max[p]=0;
-      shift[p]=0;
-    }
-    /*******************
-     * Step 6b
-     * ***************************************/
+    
+    /**************************************************************
+     * Step 6b: loop over dummy vectors to find most orthogonal 
+     * ************************************************************/
     for(j=i;j<n;j++){
 
-      for(l=0;l<n1;l++){               /*rhom:rho^2; set rho^2 to 0*/
-        rhom[l]=0;
-      }
+      memset( rhom, 0, n1*sizeof(REAL4) );
 
       RE = redum[j];
       IM = imdum[j];
 
-      /********
+      /*************************************************************
        * Step 6b-1: find the correlation of the waveform pointed 
        * to by the j-th dummy pointer with the basis vectors already 
        * formed
-       ****************************/
-
+       ************************************************************/
+      corr=(float*)calloc(n1,sizeof(float));
       for(k=i-1;k>=0;k--){
         re = e_real[k];
         im = e_imagin[k];
 
-        corr=(float*)malloc(n1*sizeof(float));
+        memset( corr, 0, n1*sizeof(float) );
 
-        correl(n1,re,RE,im,IM,corr);  /********function*********/
-
-        for(l=0;l<n1;l++){
-          correlation[k][l]=0;
-        }
+        correl(n1,re,RE,im,IM,corr);
 
         for(l=0;l<n1;l++){   
           correlation[k][l]=corr[l];
-
         }
-
-        free(corr);
       }
+      free(corr);
 
-      /*********Step 6b-2******************************/
-
+      /**************************************************************
+       * Step 6b-2:  compute the amplitude of the projection of the
+       * waveform into the basis spanned by existing basis vectors
+       * ***********************************************************/
       for(l=0;l<n1;l++){
         for(k=i-1;k>=0;k--){
           rhom[l]+=(correlation[k][l]*correlation[k][l]);
         }
       }
 
-      /**********Step 6b-3*****************************/
-
-      if(rhom[0]>=rhom[1]){
-        rho_max[j]=rhom[0];
-        shift[j]=0;
-      }
-      else if(rhom[0]<rhom[1]){
-        rho_max[j]=rhom[1];
-        shift[j]=1;
-      }
-      for(l=2;l<n1;l++){
-        if(rho_max[j]>=rhom[l]){
-          rho_max[j]=rho_max[j];
-          shift[j]=shift[j];
-        }
-        else if(rho_max[j]<rhom[l]){
+      /*************************************************************
+       * Step 6b-3:  find max snr and shift
+       *************************************************************/
+      rho_max[j]=rhom[0];
+      shift[j]=0;
+      for(l=1;l<n1;l++){
+        if(rho_max[j]<rhom[l]){
           rho_max[j]=rhom[l];
           shift[j]=l;
         }
       }
+
     }
 
-    /*************Step 6c********************************/
-
-    index=0;
-    toshift=0;
-    rho_max_min=0;
-
-    if(rho_max[i]>=rho_max[i+1]){
-      rho_max_min=rho_max[i+1];
-      index=(i+1);
-      toshift=shift[i+1];
-    }
-    else if(rho_max[i]<rho_max[i+1]){
-      rho_max_min=rho_max[i];
-      index=i;
-      toshift=shift[i];
-    }
-    for(k=i+2;k<n;k++){
+    /***************************************************************
+     * Step 6c:  find most orthogonal vector
+     ***************************************************************/
+    rho_max_min=rho_max[i];
+    index=i;
+    toshift=shift[i];
+    for(k=i+1;k<n;k++){
       if(rho_max_min>=rho_max[k]){
         rho_max_min=rho_max[k];
         index=k;
         toshift=shift[k];
       }
-      else if(rho_max_min<rho_max[k]){
-        rho_max_min=rho_max_min;
-        index=index;
-        toshift=toshift;
-      }
     }
-    /*******************************************/
 
-    /*	printf("index=%d toshift=%d\n",index, toshift);
-        printf("corr_min=%f\n",4.0*rho_max_min);*/
+    if ( verbose ){
+    	fprintf(stdout,"zmnumber=%d index=%d toshift=%d minRhoMax=%f\n",
+            zmnumber[index], index, toshift,sqrt(rho_max_min));
+    }
 
 
-    /**************Step 6d: Check******************************/
-
-    if(rhosq<=rho_max_min && 1.0>=rho_max_min)
+    /***********************************************************
+     * Step 6d: test for minimal match
+     ***********************************************************/
+    if(rhosq<=rho_max_min){
+      if(rho_max_min > 1)
+        fprintf(stderr,"MinRhoMax > 1.0:  %f\n",rho_max_min);
       break;
+    }
 
-    /**************Step 6e*****************************/
-
+    
+    /**********************************************************
+     * Step 6e:  for the most orthogonal vector construct a shifted
+     * time series which will be used to construct the basis vector
+     **********************************************************/
     ampshift=(float*)malloc(n1*sizeof(float));	
     if(toshift<=n1/2){
       for(j=toshift;j<n1;j++){
@@ -604,20 +688,24 @@ int zmnormalise(int n,int n1,float **amp,float rhosq,float **eamplitude,REAL4Fre
       }
     }
 
-    /************Step 6f**************************************/
 
+    /*****************************************************************
+     * Step 6f: compute the inner product of the shifted vector with
+     * the the previous basis vectors.
+     ****************************************************************/
     for(k=i-1;k>=0;k--){
-
       o_re=e_real[k];
       o_im=e_imagin[k];
 
-      c[k]=zminproduct(n1,o_re,o_im,ampshift);  /*******function********/
+      /* compute inner product */
+      c[k]=zminproduct(n1,o_re,o_im,ampshift,spectrum);
     }
 
-    /************Step 6g: Orthogonalize***************************************/
-
+    
+    /****************************************************************
+     * Step 6g: Orthogonalize the shifted vector 
+     ***************************************************************/
     oamp=(float*)malloc(n1*sizeof(float));
-
     for(j=0;j<n1;j++){
       sumfinal =0;
       for(k=i-1;k>=0;k--){
@@ -626,39 +714,59 @@ int zmnormalise(int n,int n1,float **amp,float rhosq,float **eamplitude,REAL4Fre
       oamp[j]=ampshift[j]-sumfinal;
     }
 
-    /************Step 6h***********************************/
+
+    /****************************************************************
+     * Step 6h:  normalize the new basis vector
+     ***************************************************************/
     oamp_re=(float*)malloc((n1/2+1)*sizeof(float));
     oamp_im=(float*)malloc((n1/2+1)*sizeof(float));
 
+    /* put DFT into oamp_re and oamp_im respectively */
+    zmfft(n1,oamp,oamp_re,oamp_im);
 
-    zmfft(n1,oamp,oamp_re,oamp_im);            /******function******/
-
+    /* the normalization constant */
     sum_ii=0;	  
     for(j=0;j<=n1/2;j++){
-      sum_ii+=4.0*(oamp_re[j]*oamp_re[j]+oamp_im[j]*oamp_im[j]);
+      sum_ii+=4.0*(oamp_re[j]*oamp_re[j]+oamp_im[j]*oamp_im[j])/ 
+        (spectrum->data->data[j]);
     }
 
-
+    /* do the normalization and point output at new basis vector */
     for(j=0;j<n1;j++){
       eamp[i][j]=oamp[j]/sqrt(sum_ii);
     }
-    /*  for(j=0;j<n1;j++){	
-        eamp[i][j]=oamp[j];
-        }*/
     eamplitude[i]=eamp[i];
 
-
+    /* keep the DFT of the new basis vector,  be sure to normalize */
     for(j=0;j<=n1/2;j++){
-      e_real[i][j]=oamp_re[j]/sqrt(sum_ii);
-      e_imagin[i][j]=oamp_im[j]/sqrt(sum_ii);
+      e_real[i][j]=(oamp_re[j]/sqrt(sum_ii))/(sqrt(spectrum->data->data[j]));
+      e_imagin[i][j]=(oamp_im[j]/sqrt(sum_ii))/(sqrt(spectrum->data->data[j]));
     }
-    /*  for(j=0;j<=n1/2;j++){
-        e_real[i][j]=oamp_re[j];
-        e_imagin[i][j]=oamp_im[j];
-        }*/
 
-    /***********************Step 6i***************************************/
+    if ( printCorrelation ){
+      float *tmpRe, *tmpIm;
 
+      corr=(float*)calloc(n1,sizeof(float));
+      tmpRe = e_real[i];
+      tmpIm = e_imagin[i];
+
+      correl(n1,tmpRe,tmpRe,tmpIm,tmpIm,corr);
+
+      for(l=0;l<n1;l++){   
+        fprintf(fpcorr,"%e ",corr[l]);
+      }
+      fprintf(fpcorr,"\n");
+      free(corr);
+    }
+    
+    /*****************************************************************
+     * Step 6i: re-index the original set of waveforms
+     *****************************************************************/
+    {
+      int zmdum = zmnumber[i];
+      zmnumber[i] = zmnumber[index];
+      zmnumber[index] = zmdum;
+    }
     dum1=redum[i];
     redum[i]=redum[index];
     redum[index]=dum1;
@@ -669,20 +777,37 @@ int zmnormalise(int n,int n1,float **amp,float rhosq,float **eamplitude,REAL4Fre
     ampdum[i]=ampdum[index];
     ampdum[index]=dum3;
 
-    /*************************************************************/
+    fprintf(fpcc, "comp = [",zmnumber[index]);
+    for(k=0;k<=i;k++){
+      o_re=e_real[k];
+      o_im=e_imagin[k];
 
+      /* compute inner product */
+      c[k]=zminproduct(n1,o_re,o_im,ampshift,spectrum);
+      fprintf(fpcc, "%f ",c[k]);
+      fflush(fpcc);
+    }
+    fprintf(fpcc, "];\n");
+
+    /****************************************************************
+     * clean up
+     ****************************************************************/
     free(rho_max);
     free(shift);
     free(oamp);
     free(oamp_re);
     free(oamp_im);
     free(ampshift);
-
-
-    /************************************************************/
-
   }
-  /************************return the no. of basis vectors**************/
+
+  if( printCorrelation ){
+    fclose(fpcorr);
+  }
+
+
+  /*****************************************************************
+   * return the no. of basis vectors
+   * ***************************************************************/
   m=i-1;
 
   return m;
@@ -758,13 +883,13 @@ void correl(int num, float *re, float *RE, float *im, float *IM, float *corr)
 
 
   /* Create an FFTW plan for reverse REAL FFT */
-  LALCreateReverseRealFFTPlan( &stat, &prev, num, 0);
+  LAL_CALL( LALCreateReverseRealFFTPlan( &stat, &prev, num, 0), &stat);
 
   /* Create an S (float) vectors of length "num" to hold time data */
-  LALSCreateVector( &stat, &hvec, num );
+  LAL_CALL( LALSCreateVector( &stat, &hvec, num ), &stat);
 
   /* Create C (complex) vectors of length num/2+1 to hold FFT */
-  LALCCreateVector( &stat, &Hvec, num/2+1 );
+  LAL_CALL( LALCCreateVector( &stat, &Hvec, num/2+1 ), &stat);
 
 
   productre =(float*) malloc((num/2+1)*sizeof(float));
@@ -782,18 +907,19 @@ void correl(int num, float *re, float *RE, float *im, float *IM, float *corr)
     Hvec->data[i].re = pre;
     Hvec->data[i].im = pim;
   }
+  Hvec->data[num/2].im=Hvec->data[0].im=0.0;
 
-  LALReverseRealFFT(&stat, hvec, Hvec, prev);
+  LAL_CALL( LALReverseRealFFT(&stat, hvec, Hvec, prev), &stat);
 
   for(i=0;i<num;i++){
     corr[i]=2.0*hvec->data[i];
   }
 
-  LALDestroyRealFFTPlan( &stat, &prev );
+  LAL_CALL( LALDestroyRealFFTPlan( &stat, &prev ), &stat);
 
   /* get rid of the vectors */
-  LALSDestroyVector( &stat, &hvec );
-  LALCDestroyVector( &stat, &Hvec );
+  LAL_CALL( LALSDestroyVector( &stat, &hvec ), &stat);
+  LAL_CALL( LALCDestroyVector( &stat, &Hvec ), &stat);
 
   free(productre);
   free(productim);
@@ -802,7 +928,13 @@ void correl(int num, float *re, float *RE, float *im, float *IM, float *corr)
 }
 
 
-float zminproduct(int num, float *re, float *im, float *amp)
+float zminproduct(
+    int num, 
+    float *re, 
+    float *im, 
+    float *amp,
+    REAL4FrequencySeries *spectrum
+    )
 {
 
   static LALStatus stat;
@@ -851,7 +983,7 @@ float zminproduct(int num, float *re, float *im, float *amp)
   sum=0;
 
   for(i=0;i<=num/2;i++){
-    sum += reA[i]*re[i] + imA[i]*im[i];
+    sum += (reA[i]*re[i] + imA[i]*im[i])/sqrt(spectrum->data->data[i]);
   }
 
 
