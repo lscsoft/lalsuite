@@ -806,6 +806,14 @@ int main(int argc, char **argv)
       }
     }
 
+    if (coincidence == TRUE)
+    /* keep the injection event */
+      {
+        prevSimEvent = currentSimEvent;
+        currentSimEvent = currentSimEvent->next;
+        coincidence = FALSE;
+      }
+
     fprintf( stdout, "done sorting, number of coincidences found is %d\n", 
         numFound);
 
