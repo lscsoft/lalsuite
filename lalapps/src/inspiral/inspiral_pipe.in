@@ -145,6 +145,11 @@ cp.read(config_file)
 # if a usertag has been specified, override the config file
 if usertag:
   cp.set('pipeline','user-tag',usertag)
+else:
+  try:
+    cp.get('pipeline','user-tag')
+  except:
+    usertag = None
 
 # create a log file that the Condor jobs will write to
 basename = re.sub(r'\.ini',r'',config_file)
