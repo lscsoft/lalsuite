@@ -150,6 +150,9 @@ illustrated in Fig.~\ref{stochastic:f:CrossCorrFlowchart}.
 
 *********************************************************** </lalLaTeX> */
 
+#ifndef _STOCHASTICCROSSCORRELATION_H
+#define _STOCHASTICCROSSCORRELATION_H
+
 #include <lal/LALStdlib.h>
 #include <lal/DetectorSite.h>
 #include <lal/Units.h>
@@ -551,6 +554,8 @@ LALOverlapReductionFunction(LALStatus                     *status,
 #ifdef  __cplusplus
 }
 #endif /* C++ protection */
+
+#endif /* _STOCHASTICCROSSCORRELATION_H */
 
 /********************************************************** <lalLaTeX>
 
