@@ -4,24 +4,100 @@
 		
 		Also contains function to read TEMPO .par files to obtain parameters
 		and errors on parameters (if available) */
-
+/* <lalVerbatim file="BinaryPulsarTimingHV">
+	 Author: Pitkin, M. D.
+	 $Id$
+*/
 /* Matt Pitkin 29/04/04 */
+
+/* <lalLaTeX>
+	 \section{Header \texttt{BinaryPulsarTiming.h}}
+	 label{ss:BinaryPulsarTiming.h}
+	 
+	 Calculates time delay to a signal from a pulsar in a binary system.
+	 
+	 \subsection*{Synopsis}
+	 \begin{verbatim}
+	 #include <lal/BinaryPulsarTiming.h>
+	 \end{verbatim}
+	 
+	 \noindent This header covers routines for calculating the time delay to a
+	 signal from a pulsar in a binary system. The are also routines for reading
+	 pulsar data from TEMPO .par file formats.
+	 </lalLaTeX> */
 
 #ifndef _BINARYPULSARTIMING_H
 #define _BINARYPULSARTIMING_H
 
 #include <lal/LALStdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* <lalLaTeX>
+	 \subsection*{Error conditions}
+	 </lalLaTeX> */
+	 
+/* <lalErrTable> */
+#define BINARYPULSARTIMINGH_ENULLINPUT 1
+#define BINARYPULSARTIMINGH_ENULLOUTPUT 2
+#define BINARYPULSARTIMINGH_ENULLPARAMS 3
+#define BINARYPULSARTIMINGH_ENULLBINARYMODEL 4
+#define BINARYPULSARTIMINGH_ENULLTBFLAG 5
+#define BINARYPULSARTIMINGH_ENULLPULSARANDPATH 6
+#define BINARYPULSARTIMINGH_EPARFILEERROR 7
+
+#define BINARYPULSARTIMINGH_MSGENULLINPUT "Input was Null"
+#define BINARYPULSARTIMINGH_MSGENULLOUTPUT "Output was Null"
+#define BINARYPULSARTIMINGH_MSGENULLPARAMS "Params was Null"
+#define BINARYPULSARTIMINGH_MSGNULLBINARYMODEL "Binary model is Null or not specified - you should not be in the binary timing routine" 
+#define BINARYPULSARTIMINGH_MSGENULLTBFLAG "tbflag is Null"
+#define BINARYPULSARTIMINGH_MSGENULLPULSARANDPATH "Path to pulsar.par file not specified"
+#define BINARYPULSARTIMINGH_MSGEPARFILEERROR ".par file path is wrong or file doesn't exist"
+/* </lalErrTable> */
+
+/* <lalLaTeX>
+	 \subsection*{Structures}
+	 \idx[Type]{BinaryPulsar{Params}
+	 \idx[Type]{BinaryPulsarInput}
+	 \idx[Type]{BinaryPulsarOutput}
+	 
+	 \begin{verbatim}
+	 typedef struct tagBinaryPulsarParams BinaryPulsarParams;
+	 \end{verbatim}
+	 
+	 This structure contains all the pulsars parameters. The structure does not
+	 have to be used for a binary pulsar, but can just contain the parameters for
+	 an isolated pulsar. All parameters are in the same units as given by TEMPO.
+	 
+	 \begin{verbatim}
+	 typedef struct tagBinaryPulsarInput BinaryPulsarInput;
+	 \end{verbatim}
+	 
+	 This structure contains the input time at which the binary correction needs
+	 to be calculated.
+	 
+	 \begin{verbatim}
+	 typedef struct tagBinaryPulsarOutput BinaryPulsarOutput;
+	 \end{verbatim}
+	 
+	 This structure contains the binary time delay for the input time.
+	 
+	 </lalLaTeX> */
+
 /**** DEFINE STRUCTURES ****/
 
 typedef struct
 tagBinaryPulsarParams
 {
+	CHAR *name;		/* pulsar name */
+	
 	CHAR *model; 	/* TEMPO binary model e.g. BT, DD, ELL1 */
-	REAL8 tb;			/* Time of arrival (TOA) at the SSB */
+	/*REAL8 tb;			 Time of arrival (TOA) at the SSB 
 	CHAR *tbflag;	/* flag is "MJD" if tb in MJD (no leap secs needed)
-									 flag is "GPS" if tb in GPS (need to subtract leap secs) */
-	UINT4 leapSecs;/* number of leap seconds at GPS time tb */
+									 flag is "GPS" if tb in GPS (need to subtract leap secs) 
+	UINT4 leapSecs;/* number of leap seconds at GPS time tb 
 	REAL8 t0;			/* epoch of data */
 	
 	REAL8 f0;
@@ -127,15 +203,30 @@ tagBinaryPulsarParams
 }BinaryPulsarParams;
 
 typedef struct
+tagBinaryPulsarInput
+{
+	REAL8 tb;			/* Time of arrival (TOA) at the SSB */
+	CHAR *tbflag;	/* flag is "MJD" if tb in MJD (no leap secs needed)
+									 flag is "GPS" if tb in GPS (need to subtract leap secs) */
+	UINT4 leapSecs;/* number of leap seconds at GPS time tb */
+	REAL8 t0;			/* epoch of data */
+}BinaryPulsarInput;
+
+typedef struct
 tagBinaryPulsarOutput
 {
 	REAL8 deltaT;	/* deltaT to add to TDB in order to account for binary */
 }BinaryPulsarOutput;
 
+/* <lalLaTeX>
+	 \newpage\input{BinaryPulsarTimingC}
+	 </lalLaTeX> */
+
 /**** DEFINE FUNCTIONS ****/
 void
 LALBinaryPulsarDeltaT( LALStatus						*status,
 											 BinaryPulsarOutput		*output,
+											 BinaryPulsarInput		*input,
 											 BinaryPulsarParams		*params );
 											 
 void
@@ -143,12 +234,15 @@ LALReadTEMPOParFile(	LALStatus							*status,
 											BinaryPulsarParams		*output,
 											CHAR									*pulsarAndPath );
 											
-/* define a function to convert RA and Dec on format dd:mm:ss.ss
-	 or ddmmss.ss 
-	 into the number of degrees as a float
+/* define a function to convert RA and Dec in format dd:mm:ss.ss
+	 or ddmmss.ss into the number of degrees as a float
 	 degs is the string containing the dd/hh:mm:ss.sss
 	 coords is either ra/RA or dec/DEC															*/
 double
-degsToRads(char *degs, char *coords);
-											 
+LALDegsToRads(char *degs, char *coords);
+
+#ifdef __cplusplus
+}
 #endif
+											 
+#endif /* _BINARYPULSARTIMING_H */
