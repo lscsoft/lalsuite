@@ -399,7 +399,6 @@ given by the argument to the flag \texttt{--cluster-window}
 (required to be less than the length of the data segment).
 
 \end{description}
-</lalLaTeX> 
 
 \subsubsection*{Structure \texttt{FindChirpFilterParams}}
 \idx[Type]{FindChirpFilterParams}
