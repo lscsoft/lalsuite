@@ -1762,6 +1762,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         " must be specified\n" );
     exit( 1 );
   }
+  else if ( ! highPass )
+  {
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--disable-high-pass" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
 
   /* check validity of input data length */
   inputDataLength = numPoints * numSegments - ( numSegments - 1 ) * ovrlap;
