@@ -74,7 +74,7 @@ void readDataPair(LALStatus *status,
 	INT4 sampleRate;
      
 	/* read parameters */
-        startTime = params->startTime;
+	startTime = params->startTime;
 	buffer = params->buffer;
 	resampleRate = params->resampleRate;
 	sampleRate = params->sampleRate;

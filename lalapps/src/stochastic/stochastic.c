@@ -94,7 +94,7 @@ INT4 siteTwo;
 /* misc parameters */
 INT4 hannDuration = 1;
 INT4 padData = 1;
-BOOLEAN mask = 0;
+BOOLEAN applyMask = 0;
 BOOLEAN PRINT = 0;
 
 /* default input data parameters */
@@ -112,31 +112,15 @@ CHAR ifoTwo[LALNameLength] = "H2";
 
 INT4 main(INT4 argc, CHAR *argv[])
 {
-	/* parse command line options */
-	parseOptions(argc, argv);
-
 	/* variable declarations */
 
 	/* status pointer */
 	LALStatus status;
 	status.statusPtr = NULL;
 
-	/* error handler */
-	lal_errhandler = LAL_ERR_EXIT;
-	set_debug_level( "7" );
-
 	/* output file */
 	FILE *out;
 	CHAR outputFilename[LALNameLength];
-
-	/* open output file */
-	snprintf(outputFilename, LALNameLength, "output-%s%s-%d.dat", ifoOne, \
-			ifoTwo, (INT4)startTime);
-	if ((out = fopen(outputFilename, "w")) == NULL)
-	{
-		fprintf(stderr, "Can't open file for output...\n");
-		exit(1);
-	}
 
 	/* counters */
 	INT4 i, segLoop;
@@ -157,6 +141,119 @@ INT4 main(INT4 argc, CHAR *argv[])
 	StreamPair streamPair;
 	REAL4TimeSeries streamOne;
 	REAL4TimeSeries streamTwo;
+
+	/* simulated signal structures */
+	SSSimStochBGOutput MCoutput;
+	MonteCarloParams MCparams;
+	MonteCarloInput MCinput;
+
+	/* simulated output structures */
+	REAL4TimeSeries SimStochBGOne;
+	REAL4TimeSeries SimStochBGTwo;
+
+	/* data structures for segments */
+	INT4 segmentLength;
+	REAL4TimeSeries segmentOne;
+	REAL4TimeSeries segmentTwo;
+
+	/* data structures for PSDs */
+	INT4 overlapPSDLength;
+	INT4 psdTempLength;
+	INT4 windowPSDLength;
+	INT4 filterLength;
+	INT4 numPointInf;
+	INT4 numPointSup;
+	LALWindowParams winparPSD;
+	AverageSpectrumParams specparPSD;
+	REAL4FrequencySeries psdTempOne;
+	REAL4FrequencySeries psdTempTwo;
+	REAL4FrequencySeries psdOne;
+	REAL4FrequencySeries psdTwo;
+	LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};
+
+	/* response functions */
+	COMPLEX8FrequencySeries responseTempOne;
+	COMPLEX8FrequencySeries responseTempTwo;
+	COMPLEX8FrequencySeries responseOne;
+	COMPLEX8FrequencySeries responseTwo;
+	INT4 respLength;
+	LIGOTimeGPS gpsCalTime;
+	LIGOTimeGPS duration;
+	LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
+
+	/* calibrated and half calibrated inverse noise data structures */
+	REAL4FrequencySeries calInvPSDOne;
+	REAL4FrequencySeries calInvPSDTwo;
+	COMPLEX8FrequencySeries halfCalPSDOne;
+	COMPLEX8FrequencySeries halfCalPSDTwo;
+
+	/* units for inverse noise */
+	LALUnit calPSDUnit = {36,{0,0,-1,0,0,-2,0},{0,0,0,0,0,0,0}};
+	LALUnit halfCalPSDUnit = {18,{0,0,0,0,0,-1,-1},{0,0,0,0,0,0,0}};
+
+	/* window for segment data streams */
+	REAL4TimeSeries dataWindow;
+
+	/* hann window */
+	INT4 hannLength;
+	LALWindowParams hannParams;
+	REAL4Vector *hannWindow;
+
+	/* zeropad and fft structures */
+	SZeroPadAndFFTParameters zeroPadParams;
+	RealFFTPlan *fftDataPlan = NULL;
+	COMPLEX8FrequencySeries hBarTildeOne;
+	COMPLEX8FrequencySeries hBarTildeTwo;
+	UINT4 zeroPadLength;
+	UINT4 fftDataLength;
+
+	/* overlap reduction function */
+	LALDetectorPair detectors;
+	REAL4FrequencySeries overlap;
+	OverlapReductionFunctionParameters ORFparams;
+	LALUnit overlapUnit = {0,{0,0,0,0,0,2,0},{0,0,0,0,0,0,0}};
+
+	/* frequency mask structures */
+	REAL4FrequencySeries mask;
+	REAL4Vector *maskTemp;
+
+	/* spectrum structures */
+	StochasticOmegaGWParameters omegaGWParams;
+	REAL4FrequencySeries omegaGW;
+
+	/* structures for optimal filter normalisation */
+	StochasticOptimalFilterNormalizationInput normInput;
+	StochasticOptimalFilterNormalizationOutput normOutput;
+	StochasticOptimalFilterNormalizationParameters normParams;
+	REAL4WithUnits normLambda;
+	REAL4WithUnits normSigma;
+	REAL8 lambda;
+
+	/* structures for optimal filter */
+	COMPLEX8FrequencySeries optFilter;
+	StochasticOptimalFilterInput optFilterIn;
+
+	/* structures for CC spectrum and CC statistics */
+	StochasticCrossCorrelationInput ccIn;
+	BOOLEAN epochsMatch;
+	REAL4WithUnits ccStat;
+	COMPLEX8FrequencySeries ccSpectrum;
+
+	/* parse command line options */
+	parseOptions(argc, argv);
+
+	/* error handler */
+	lal_errhandler = LAL_ERR_EXIT;
+	set_debug_level( "7" );
+
+	/* open output file */
+	snprintf(outputFilename, LALNameLength, "output-%s%s-%d.dat", ifoOne, \
+			ifoTwo, (INT4)startTime);
+	if ((out = fopen(outputFilename, "w")) == NULL)
+	{
+		fprintf(stderr, "Can't open file for output...\n");
+		exit(1);
+	}
 
 	if (PRINT)
 	{
@@ -215,15 +312,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	streamPair.streamOne = &streamOne;
 	streamPair.streamTwo = &streamTwo;
 
-	/* simulated signal structures */
-	SSSimStochBGOutput MCoutput;
-	MonteCarloParams MCparams;
-	MonteCarloInput MCinput;
-
-	/* simulated output structures */
-	REAL4TimeSeries SimStochBGOne;
-	REAL4TimeSeries SimStochBGTwo;
-
 	/* set parameter structure for monte carlo simulations */
 	MCparams.lengthSegment = calibDuration * resampleRate;
 	if ((streamDuration % calibDuration) == 0)
@@ -272,11 +360,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	MCoutput.SSimStochBG1 = &SimStochBGOne;
 	MCoutput.SSimStochBG2 = &SimStochBGTwo;
 
-	/* data structures for segments */
-	INT4 segmentLength;
-	REAL4TimeSeries segmentOne;
-	REAL4TimeSeries segmentTwo;
-
 	/* set length for data segments */
 	segmentLength = segmentDuration * resampleRate;
 
@@ -308,21 +391,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 			segmentOne.data->length * sizeof(*segmentOne.data->data));
 	memset(segmentTwo.data->data, 0, \
 			segmentTwo.data->length * sizeof(*segmentTwo.data->data));
-
-	/* data structures for PSDs */
-	INT4 overlapPSDLength;
-	INT4 psdTempLength;
-	INT4 windowPSDLength;
-	INT4 filterLength;
-	INT4 numPointInf;
-	INT4 numPointSup;
-	LALWindowParams winparPSD;
-	AverageSpectrumParams specparPSD;
-	REAL4FrequencySeries psdTempOne;
-	REAL4FrequencySeries psdTempTwo;
-	REAL4FrequencySeries psdOne;
-	REAL4FrequencySeries psdTwo;
-	LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};
 
 	/* set PSD window length */
 	windowPSDLength = (UINT4)(resampleRate / deltaF);
@@ -415,16 +483,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	LAL_CALL( LALCreateREAL4Window(&status, &specparPSD.window, &winparPSD), \
 			&status );
 
-	/* response functions */
-	COMPLEX8FrequencySeries responseTempOne;
-	COMPLEX8FrequencySeries responseTempTwo;
-	COMPLEX8FrequencySeries responseOne;
-	COMPLEX8FrequencySeries responseTwo;
-	INT4 respLength;
-	LIGOTimeGPS gpsCalTime;
-	LIGOTimeGPS duration;
-	LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
-
 	/* set parameters for response functions */
 	respLength = (UINT4)(fMax / deltaF) + 1;
 	duration.gpsSeconds = 0;
@@ -492,16 +550,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	memset(responseTwo.data->data, 0, \
 			responseTwo.data->length * sizeof(*responseTwo.data->data));
 
-	/* calibrated and half calibrated inverse noise data structures */
-	REAL4FrequencySeries calInvPSDOne;
-	REAL4FrequencySeries calInvPSDTwo;
-	COMPLEX8FrequencySeries halfCalPSDOne;
-	COMPLEX8FrequencySeries halfCalPSDTwo;
-
-	/* units for inverse noise */
-	LALUnit calPSDUnit = {36,{0,0,-1,0,0,-2,0},{0,0,0,0,0,0,0}};
-	LALUnit halfCalPSDUnit = {18,{0,0,0,0,0,-1,-1},{0,0,0,0,0,0,0}};
-
 	/* set metadata fields for inverse noise structures */
 	strncpy(calInvPSDOne.name, "calInvPSDOne", LALNameLength);
 	strncpy(calInvPSDTwo.name, "calInvPSDTwo", LALNameLength);
@@ -565,9 +613,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	inverseNoiseOutTwo.calibratedInverseNoisePSD = &calInvPSDTwo;
 	inverseNoiseOutTwo.halfCalibratedInverseNoisePSD = &halfCalPSDTwo;
 
-	/* window for segment data streams */
-	REAL4TimeSeries dataWindow;
-
 	/* set window parameters for segment data streams */
 	strncpy(dataWindow.name, "dataWindow", LALNameLength);
 	dataWindow.sampleUnits = lalDimensionlessUnit;
@@ -600,11 +645,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 	if (hannDuration != 0)
 	{
 		/* generate pure Hann window */
-		INT4 hannLength = hannDuration * resampleRate;
-		LALWindowParams hannParams;
+		hannLength = hannDuration * resampleRate;
 		hannParams.length = hannLength;
 		hannParams.type = Hann;
-		REAL4Vector *hannWindow;
 
 		/* allocate memory for hann window */
 		hannWindow = NULL;
@@ -632,14 +675,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	{
 		LALSPrintTimeSeries(&dataWindow, "dataWindow.dat");
 	}
-
-	/* zeropad and fft structures */
-	SZeroPadAndFFTParameters zeroPadParams;
-	RealFFTPlan *fftDataPlan = NULL;
-	COMPLEX8FrequencySeries hBarTildeOne;
-	COMPLEX8FrequencySeries hBarTildeTwo;
-	UINT4 zeroPadLength;
-	UINT4 fftDataLength;
 
 	/* zeropad lengths */
 	zeroPadLength = 2 * segmentLength;
@@ -676,12 +711,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	zeroPadParams.length = zeroPadLength;
 
 	/* quantities needed to build the optimal filter */
-
-	/* overlap reduction function */
-	LALDetectorPair detectors;
-	REAL4FrequencySeries overlap;
-	OverlapReductionFunctionParameters ORFparams;
-	LALUnit overlapUnit = {0,{0,0,0,0,0,2,0},{0,0,0,0,0,0,0}};
 
 	/* set metadata fields for overlap reduction function */
 	strncpy(overlap.name, "overlap", LALNameLength);
@@ -725,10 +754,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 		LALSPrintFrequencySeries(&overlap, "overlap.dat");
 	}
 
-	/* spectrum structures */
-	StochasticOmegaGWParameters omegaGWParams;
-	REAL4FrequencySeries omegaGW;
-
 	/* set metadata fields for spectrum */
 	strncpy(omegaGW.name, "omegaGW", LALNameLength);
 	omegaGW.sampleUnits = lalDimensionlessUnit;
@@ -763,12 +788,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 	LAL_CALL( LALStochasticOmegaGW(&status, &omegaGW, &omegaGWParams), &status );
 
 	/* frequency mask */
-	if (mask)
+	if (applyMask)
 	{
-		/* frequency mask structures */
-		REAL4FrequencySeries mask;
-		REAL4Vector *maskTemp;
-
 		/* set metadata fields for frequency mask */
 		strncpy(mask.name, "mask", LALNameLength);
 		mask.deltaF = deltaF;
@@ -853,14 +874,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 		LALSPrintFrequencySeries(&omegaGW, "omegaGW.dat");
 	}
 
-	/* structures for optimal filter normalisation */
-	StochasticOptimalFilterNormalizationInput normInput;
-	StochasticOptimalFilterNormalizationOutput normOutput;
-	StochasticOptimalFilterNormalizationParameters normParams;
-	REAL4WithUnits normLambda;
-	REAL4WithUnits normSigma;
-	REAL8 lambda;
-
 	/* set normalisation parameters */
 	normParams.fRef = fRef;
 	normParams.heterodyned = 0;
@@ -876,10 +889,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	/* set normalisation output */
 	normOutput.normalization = &normLambda;
 	normOutput.variance = &normSigma;
-
-	/* structures for optimal filter */
-	COMPLEX8FrequencySeries optFilter;
-	StochasticOptimalFilterInput optFilterIn;
 
 	/* set metadata fields for optimal filter */
 	strncpy(optFilter.name, "optFilter", LALNameLength);
@@ -904,12 +913,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 	optFilterIn.omegaGW = &omegaGW;
 	optFilterIn.halfCalibratedInverseNoisePSD1 = &halfCalPSDOne;
 	optFilterIn.halfCalibratedInverseNoisePSD2 = &halfCalPSDTwo;
-
-	/* structures for CC spectrum and CC statistics */
-	StochasticCrossCorrelationInput ccIn;
-	BOOLEAN epochsMatch;
-	REAL4WithUnits ccStat;
-	COMPLEX8FrequencySeries ccSpectrum;
 
 	/* set metadata fields for CC spectrum */
 	strncpy(ccSpectrum.name, "ccSpectrum", LALNameLength);
@@ -1395,7 +1398,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
 
 			case 'k':
 				/* frequency masking */
-				mask = 1;
+				applyMask = 1;
 				break;
 
 			case 'v':
