@@ -138,7 +138,6 @@ in the code.
 NRCSID( PTOLEMETRICC, "$Id$" );
 
 /* Bounds on acceptable parameters, may be somewhat arbitrary */
-#define MAX_SPINDOWN 10                        /* No. of spindown parameters */
 #define MIN_DURATION (LAL_DAYSID_SI/LAL_TWOPI) /* Metric acts funny if
                                                 * duration too short */
 #define MIN_MAXFREQ  1.                        /* Arbitrary */
@@ -164,28 +163,20 @@ void LALPtoleMetric( LALStatus *status,
   REAL4 lat, lon;    /* latitude and longitude of detector site */
 
   INITSTATUS( status, "LALPtoleMetric", PTOLEMETRICC );
-/*  ATTATCHSTATUSPTR( status ); */
 
-  /* Check for valid input structures. */
+  /* Check for valid input structure. */
   ASSERT( input != NULL, status, PTOLEMETRICH_ENULL,
           PTOLEMETRICH_MSGENULL );
 
   /* Check for valid sky position. */
-  /* ASSERT valid coordinate system, when those functions are written */
+  ASSERT( input->position.system == COORDINATESYSTEM_EQUATORIAL, status,
+          PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
   ASSERT( input->position.longitude >= 0, status, PTOLEMETRICH_EPARM,
           PTOLEMETRICH_MSGEPARM );
   ASSERT( input->position.longitude < LAL_TWOPI, status, PTOLEMETRICH_EPARM,
           PTOLEMETRICH_MSGEPARM );
   ASSERT( abs(input->position.latitude) <= LAL_PI_2, status,
           PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-
-  /* Check for valid spindown parameter vector. */
-  ASSERT( input->spindown != NULL, status, PTOLEMETRICH_ENULL,
-          PTOLEMETRICH_MSGENULL );
-  ASSERT( input->spindown->length <= MAX_SPINDOWN, status,
-          PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-
-  /* Check for valid epoch. */
 
   /* Check for valid duration. */
   ASSERT( input->duration > MIN_DURATION, status, PTOLEMETRICH_EPARM,
@@ -202,7 +193,10 @@ void LALPtoleMetric( LALStatus *status,
           PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
 
   /* Check that metric has been provided. */
-  dim = 2+input->spindown->length;
+  if( input->spindown )
+    dim = 2+input->spindown->length;
+  else
+    dim = 2;
   ASSERT( metric != NULL, status, PTOLEMETRICH_ENULL,
           PTOLEMETRICH_MSGENULL );
   ASSERT( metric->data != NULL, status, PTOLEMETRICH_ENULL,
@@ -215,18 +209,11 @@ void LALPtoleMetric( LALStatus *status,
   lon = input->site.vertexLongitudeDegrees*LAL_PI/180;
 
   /* Spindown-spindown metric components, before projection */
-#if 0
-  for (j=1; j<=dim-2; j++)
-    for (k=1; k<=j; k++)
-      /* j,k spindown = j+2,k+2 metric component */
-      metric->data[(k+2)+(j+2)*(j+3)/2]
-          = pow(LAL_TWOPI*input->maxFreq*input->duration,2)*j*k/(j+2)/(j+3)
-          /(k+2)/(k+3)/(j+k+3);
-#endif
-  for (j=1; j<=dim-2; j++)
-    for (k=1; k<=j; k++)
-      metric->data[(k+2)+(j+2)*(j+3)/2] = pow(LAL_TWOPI*input->maxFreq
-        *input->duration,2)/(j+2)/(k+2)/(j+k+3);
+  if( input->spindown )
+    for (j=1; j<=dim-2; j++)
+      for (k=1; k<=j; k++)
+        metric->data[(k+2)+(j+2)*(j+3)/2] = pow(LAL_TWOPI*input->maxFreq
+          *input->duration,2)/(j+2)/(k+2)/(j+k+3);
 
   /* Is equatorial radius good enough? */
   dayR = LAL_REARTH_SI / LAL_C_SI * cos(lat);
@@ -262,30 +249,31 @@ void LALPtoleMetric( LALStatus *status,
   metric->data[5] *= 2 + 2*(s1*c1-s0*c0)/dpsi - pow(2*(s1-s0)/dpsi,2);
 
   /* Spindown-angle metric components, before projection */
-  for (j=1; j<=(INT4)input->spindown->length; j++) {
+  if( input->spindown )
+    for (j=1; j<=(INT4)input->spindown->length; j++) {
 
-    /* Spindown-RA: 1+(j+2)*(j+3)/2 */
-    metric->data[1+(j+2)*(j+3)/2] = 0;
-    for (k=j+1; k>=0; k--)
-      metric->data[1+(j+2)*(j+3)/2] += pow(-1,(k+1)/2)*factrl(j+1)
-        /factrl(j+1-k)/pow(dpsi,k)*((k%2)?s1:c1);
-    metric->data[1+(j+2)*(j+3)/2] += pow(-1,j/2)/pow(dpsi,j+1)*factrl(j+1)
-      *((j%2)?c0:s0);
-    metric->data[1+(j+2)*(j+3)/2] -= (c1-c0)/(j+2);
-    metric->data[1+(j+2)*(j+3)/2] *= -pow(LAL_TWOPI*input->maxFreq,2)*dayR
-      *cosd/dayW/(j+1);
+      /* Spindown-RA: 1+(j+2)*(j+3)/2 */
+      metric->data[1+(j+2)*(j+3)/2] = 0;
+      for (k=j+1; k>=0; k--)
+        metric->data[1+(j+2)*(j+3)/2] += pow(-1,(k+1)/2)*factrl(j+1)
+          /factrl(j+1-k)/pow(dpsi,k)*((k%2)?s1:c1);
+      metric->data[1+(j+2)*(j+3)/2] += pow(-1,j/2)/pow(dpsi,j+1)*factrl(j+1)
+        *((j%2)?c0:s0);
+      metric->data[1+(j+2)*(j+3)/2] -= (c1-c0)/(j+2);
+      metric->data[1+(j+2)*(j+3)/2] *= -pow(LAL_TWOPI*input->maxFreq,2)*dayR
+        *cosd/dayW/(j+1);
 
-    /* Spindown-dec: 2+(j+2)*(j+3)/2 */
-    metric->data[2+(j+2)*(j+3)/2] = 0;
-    for (k=j+1; k>=0; k--)
-      metric->data[2+(j+2)*(j+3)/2] -= pow(-1,k/2)*factrl(j+1)/factrl(j+1-k)
-        /pow(dpsi,k)*((k%2)?c1:s1);
-    metric->data[2+(j+2)*(j+3)/2] += pow(-1,(j+1)/2)/pow(dpsi,j+1)
-      *factrl(j+1)*((j%2)?s0:c0);
-    metric->data[2+(j+2)*(j+3)/2] += (s1-s0)/(j+2);
-    metric->data[2+(j+2)*(j+3)/2] *= pow(LAL_TWOPI*input->maxFreq,2)*dayR
-      *sind/dayW/(j+1);
-  }
+      /* Spindown-dec: 2+(j+2)*(j+3)/2 */
+      metric->data[2+(j+2)*(j+3)/2] = 0;
+      for (k=j+1; k>=0; k--)
+        metric->data[2+(j+2)*(j+3)/2] -= pow(-1,k/2)*factrl(j+1)/factrl(j+1-k)
+          /pow(dpsi,k)*((k%2)?c1:s1);
+      metric->data[2+(j+2)*(j+3)/2] += pow(-1,(j+1)/2)/pow(dpsi,j+1)
+        *factrl(j+1)*((j%2)?s0:c0);
+      metric->data[2+(j+2)*(j+3)/2] += (s1-s0)/(j+2);
+      metric->data[2+(j+2)*(j+3)/2] *= pow(LAL_TWOPI*input->maxFreq,2)*dayR
+        *sind/dayW/(j+1);
+    } /* for( j... ) */
 
   /* f0-f0 : 0 */
   metric->data[0] = pow(LAL_PI*input->duration,2)/3;
@@ -296,9 +284,10 @@ void LALPtoleMetric( LALStatus *status,
   metric->data[3] = -2*pow(LAL_PI,2)*input->maxFreq*dayR/dayW*sind;
   metric->data[3] *= s1+s0 + 2/dpsi*(c1-c0);
   /* f0-spindown : 0+(j+2)*(j+3)/2 */
-  for (j=1; j<=dim-2; j++)
-    metric->data[(j+2)*(j+3)/2] = 2*pow(LAL_PI,2)*input->maxFreq
-      *pow(input->duration,2)/(j+2)/(j+3);
+  if( input->spindown )
+    for (j=1; j<=dim-2; j++)
+      metric->data[(j+2)*(j+3)/2] = 2*pow(LAL_PI,2)*input->maxFreq
+        *pow(input->duration,2)/(j+2)/(j+3);
 
   /* All done */
   RETURN( status );
