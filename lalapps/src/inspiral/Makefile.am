@@ -6,14 +6,16 @@ TMPLTBANKSRC = ligolwbank.h ligolwbank.c tmpltbank.c \
                inspiralfrutils.c inspiralfrutils.h
 TRIGTOTMPLTSRC = trigtotmplt.c ligolwbank.h ligolwbank.c
 PRINTINSPIRALSRC = print_inspiral.c ligolwbank.h ligolwbank.c
+INCASRC = inca.c
 if FRAME
 if DATAFLOW
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank lalapps_trigtotmplt \
-               lalapps_print_inspiral
+               lalapps_print_inspiral lalapps_inca
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_trigtotmplt_SOURCES = $(TRIGTOTMPLTSRC)
 lalapps_print_inspiral_SOURCES = $(PRINTINSPIRALSRC)
+lalapps_inca_SOURCES = $(INCASRC)
 else
 bin_PROGRAMS = 
 endif
@@ -30,7 +32,7 @@ lalapps_inspiral_pipe: inspiral_pipe.in
 
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
              $(TRIGTOTMPLTSRC) $(PRINTINSPIRALSRC) \
-             inspiral_pipe.in
+             $(INCASRC) inspiral_pipe.in
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
