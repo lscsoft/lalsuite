@@ -65,7 +65,7 @@ BOOLEAN FILE_FSTATS = 1;
 int boincmain(int argc, char *argv[]);
 typedef int bool;
 FILE *boinc_fopen(const char *path, const char *mode);
-extern int boinc_init(bool standalone);
+extern int boinc_init();
 extern int boinc_finish(int);
 extern int boinc_resolve_filename(const char*, char*, int len);
 extern int boinc_fraction_done(double fraction_complete);
@@ -75,7 +75,7 @@ int boinc_time_to_checkpoint();
 void boinc_checkpoint_completed();
 
 #if !NO_BOINC_GRAPHICS
-extern int boinc_init_graphics();
+extern int boinc_init_graphics(void (*worker)());
 extern int boinc_finish_graphics();
 #endif
 
@@ -2781,38 +2781,40 @@ void use_boinc_filename1(char **orig_name ) {
   return;
 }
 
+int globargc=0;
+char **globargv=NULL;
+int globreturnvalue=0;
+
+void worker() {
+  int retval=boincmain(globargc,globargv);
+  globreturnvalue=retval;
+  boinc_finish(retval);
+  return;
+}
+
 int main(int argc, char *argv[]){
-  int returnvalue;
+  
+  globargc=argc;
+  globargv=argv;
 
   /* boinc_init() needs to be run before any boinc_api functions are used */
-  boinc_init(FALSE);
+  boinc_init();
+
 #if !NO_BOINC_GRAPHICS
-  boinc_init_graphics();
+  boinc_init_graphics(worker);
 #endif
-#if USE_BOINC_DEBUG
-  {
-    char commandstring[256];
-    /* char *cmd_name = argv[0]; */
-    pid_t process_id=getpid();
-    sprintf(commandstring,"ddd %s %d &","../../projects/ein*/einstein*" ,process_id);
-    system(commandstring);
-    sleep(20);
-  }
-#endif /*USE_BOINC_DEBUG*/
-  
-  /* do computation */
-  returnvalue=boincmain(argc, argv);
   
 #if !NO_BOINC_GRAPHICS
   boinc_finish_graphics();
 #endif
-  boinc_finish(returnvalue);
+  boinc_finish(globreturnvalue);
   return 0;
 }
 #endif /*USE_BOINC*/
 
 
 /** Check presence and consistency of checkpoint-file and use to set loopcounter if valid.
+
  *  The name of the checkpoint-file is <fname>.ckp
  *  @param[OUT] loopcounter	number of completed loops (refers to main-loop in main())
  *  @param[OUT] bytecounter	bytes nominally written to fstats file (for consistency-check)
