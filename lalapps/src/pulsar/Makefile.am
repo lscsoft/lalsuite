@@ -8,11 +8,10 @@ lalapps_make_sfts_SOURCES = make_sfts.c
 else
 bin_PROGRAMS = 
 endif
-EXTRA_DIST =  lalapps_make_job_input_data \
-lalapps_make_sfts \
+EXTRA_DIST = \
+make_locked_data_list \
 make_cluster_data_list \
 make_job_input_data.c \
-make_locked_data_list \
 make_sfts.c \
 README \
 S1-H1segments.txt \
