@@ -99,7 +99,7 @@ do {                                                                 \
 
 int main(int argc, char *argv[]){ 
   static LALStatus       status;  
-  static LALConfigData *cfgdata;
+  static LALParsedDataFile *cfgdata;
   
   BOOLEAN testBool;
   CHAR *string1 = NULL;
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]){
   REAL8 somefloat;
   BOOLEAN wasRead = FALSE;
 
-  SUB (LALLoadConfigFile (&status, &cfgdata, "ConfigFileSample.cfg"), &status);
+  SUB (LALParseDataFile (&status, &cfgdata, "ConfigFileSample.cfg"), &status);
 
   SUB (LALReadConfigREAL8Variable  (&status, &somefloat, cfgdata, "float1", &wasRead), &status);
   SUB (LALReadConfigSTRINGVariable (&status, &string1,   cfgdata, "string1", &wasRead), &status);
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]){
   SUB (LALReadConfigBOOLVariable   (&status, &testBool,  cfgdata, "testBool", &wasRead), &status);
 
   SUB (LALCheckConfigReadComplete (&status, cfgdata, CONFIGFILE_ERROR), &status);
-  SUB (LALDestroyConfigData (&status, &cfgdata), &status);
+  SUB (LALDestroyParsedDataFile (&status, &cfgdata), &status);
 
   /* now check the stuff got read-in correctly */
   if (somefloat != 1.0) {
