@@ -73,7 +73,6 @@ tagDataSegment
   REAL4FrequencySeries    *spec;
   COMPLEX8FrequencySeries *resp;
   INT4                     number;
-  INT4                     level;
 }
 DataSegment;
 \end{verbatim}
@@ -218,7 +217,6 @@ tagDataSegment
   REAL4FrequencySeries    *spec;
   COMPLEX8FrequencySeries *resp;
   INT4                     number;
-  INT4                     level;
 }
 DataSegment;
 
