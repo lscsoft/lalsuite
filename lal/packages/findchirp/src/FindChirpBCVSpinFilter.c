@@ -367,7 +367,7 @@ LALFindChirpBCVSpinFilterSegment (
   /* will need to set up ignoreIndex and deltaEventIndex */
   /* for time being... */
   /* temporarily set chirpTime equal to 0.5 seconds */
-  chirpTime = 0.5;
+  chirpTime = 0.25;
   deltaEventIndex = (UINT4) rint( (chirpTime / deltaT) + 1.0 );
   
   /* ignore corrupted data at start and end */
@@ -382,9 +382,20 @@ LALFindChirpBCVSpinFilterSegment (
   /* XXX reset ignoreIndex to one quarter of a segment XXX */
   ignoreIndex = numPoints / 4;
   
+  /* REMOVE THIS */
+  /*  ignoreIndex = 0; */
+  /* REMOVE THIS */
+    
+  
   fprintf (stdout, "ignoreIndex = %d\n", ignoreIndex);
    
 
+
+  if (input->fcTmplt->tmplt.beta == 0)
+  {
+ 	params->rhosqThresh = 69;
+	fprintf (stdout, "beta = 0 so changing rhosq thresh = %e\n ", params->rhosqThresh);
+  }
   
   rhosqThresh = params->rhosqThresh;
   modqsqThresh = rhosqThresh;  
