@@ -172,12 +172,12 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
 {
   /* variables */
   REAL4TimeSeries *series;
-  FrChanIn channelIn;
+  FrChanIn channel_in;
   size_t length;
 
   /* set channelIn */
-  channelIn.name = channel;
-  channelIn.type = ADCDataChannel;
+  channel_in.name = channel;
+  channel_in.type = ADCDataChannel;
 
   if (vrbflg)
     fprintf(stderr, "Allocating memory for \"%s\" series...\n", channel);
@@ -190,7 +190,7 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
     fprintf(stderr, "Reading \"%s\" series metadata...\n", channel);
 
   /* get the series meta data */
-  LAL_CALL(LALFrGetREAL4TimeSeriesMetadata(status, series, &channelIn, \
+  LAL_CALL(LALFrGetREAL4TimeSeriesMetadata(status, series, &channel_in, \
         stream), status);
 
   if (vrbflg)
@@ -205,7 +205,8 @@ static REAL4TimeSeries *get_ligo_data(LALStatus *status,
 
   /* seek to and read data */
   LAL_CALL(LALFrSeek(status, &start, stream), status);
-  LAL_CALL(LALFrGetREAL4TimeSeries(status, series, &channelIn, stream), status);
+  LAL_CALL(LALFrGetREAL4TimeSeries(status, series, &channel_in, stream), \
+      status);
 
   return(series);
 }
@@ -218,16 +219,16 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
     LIGOTimeGPS end)
 {
   /* variables */
-  PassBandParamStruc highPassParam;
+  PassBandParamStruc high_pass_params;
   REAL4TimeSeries *series;
   REAL8TimeSeries *geo;
-  FrChanIn channelIn;
+  FrChanIn channel_in;
   size_t length;
   size_t i;
 
   /* set channelIn */
-  channelIn.name = channel;
-  channelIn.type = ADCDataChannel;
+  channel_in.name = channel;
+  channel_in.type = ADCDataChannel;
 
   if (vrbflg)
     fprintf(stderr, "Allocating memory for \"%s\" series...\n", channel);
@@ -240,7 +241,7 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
     fprintf(stderr, "Reading \"%s\" series metadata...\n", channel);
 
   /* get the series meta data */
-  LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(status, geo, &channelIn, \
+  LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(status, geo, &channel_in, \
         stream), status);
 
   if (vrbflg)
@@ -255,18 +256,19 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
 
   /* seek to and read data */
   LAL_CALL(LALFrSeek(status, &start, stream), status);
-  LAL_CALL(LALFrGetREAL8TimeSeries(status, geo, &channelIn, stream), status);
+  LAL_CALL(LALFrGetREAL8TimeSeries(status, geo, &channel_in, stream), status);
 
   if (vrbflg)
     fprintf(stdout, "High pass filtering \"%s\"...\n", channel);
 
   /* high pass filter before casting to a REAL4 */
-  highPassParam.nMax = geoHighPassOrder;
-  highPassParam.f1 = -1;
-  highPassParam.f2 = geoHighPassFreq;
-  highPassParam.a1 = -1;
-  highPassParam.a2 = geoHighPassAtten;
-  LAL_CALL(LALButterworthREAL8TimeSeries(status, geo, &highPassParam), status);
+  high_pass_params.nMax = geoHighPassOrder;
+  high_pass_params.f1 = -1;
+  high_pass_params.f2 = geoHighPassFreq;
+  high_pass_params.a1 = -1;
+  high_pass_params.a2 = geoHighPassAtten;
+  LAL_CALL(LALButterworthREAL8TimeSeries(status, geo, &high_pass_params), \
+      status);
 
   if (vrbflg)
     fprintf(stdout, "Casting \"%s\" as a REAL4...\n", channel);
@@ -286,7 +288,7 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
 /* read a time series */
 static REAL4TimeSeries *get_time_series(LALStatus *status,
     CHAR *ifo,
-    CHAR *cacheFile,
+    CHAR *cache_file,
     CHAR *channel,
     LIGOTimeGPS start,
     LIGOTimeGPS end,
@@ -295,11 +297,11 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   /* variables */
   REAL4TimeSeries *series;
   FrStream *stream = NULL;
-  FrCache *frameCache = NULL;
-  ResampleTSParams params;
+  FrCache *frame_cache = NULL;
+  ResampleTSParams resample_params;
   size_t difference;
   size_t length;
-  PassBandParamStruc filterParam;
+  PassBandParamStruc high_pass_params;
 
   /* calculate time difference */
   difference = delta_gps_to_float(status, end, start);
@@ -311,20 +313,13 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
     end.gpsSeconds += buffer;
   }
 
-  /* set high pass filter parameters */
-  filterParam.nMax = highPassOrder;
-  filterParam.f1 = -1;
-  filterParam.f2 = highPassFreq;
-  filterParam.a1 = -1;
-  filterParam.a2 = highPassAtten;
- 
   if (vrbflg)
-    fprintf(stdout, "Opening frame cache \"%s\"...\n", cacheFile);
+    fprintf(stdout, "Opening frame cache \"%s\"...\n", cache_file);
 
   /* open frame stream */
-  LAL_CALL(LALFrCacheImport(status, &frameCache, cacheFile), status);
-  LAL_CALL(LALFrCacheOpen(status, &stream, frameCache), status);
-  LAL_CALL(LALDestroyFrCache(status, &frameCache), status);
+  LAL_CALL(LALFrCacheImport(status, &frame_cache, cache_file), status);
+  LAL_CALL(LALFrCacheOpen(status, &stream, frame_cache), status);
+  LAL_CALL(LALDestroyFrCache(status, &frame_cache), status);
 
   /* turn on checking for missing data */
   stream->mode = LAL_FR_VERBOSE_MODE;
@@ -354,11 +349,12 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
       fprintf(stdout, "Resampling to %d Hz...\n", resampleRate);
 
     /* set resample parameters */
-    params.deltaT = 1./resampleRate;
-    params.filterType = defaultButterworth;
+    resample_params.deltaT = 1./resampleRate;
+    resample_params.filterType = defaultButterworth;
 
     /* resample */
-    LAL_CALL(LALResampleREAL4TimeSeries(status, series, &params), status);
+    LAL_CALL(LALResampleREAL4TimeSeries(status, series, &resample_params), \
+        status);
   }
 
   /* high pass fitering */
@@ -370,8 +366,16 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
           series->name);
     }
 
+    /* set high pass filter parameters */
+    high_pass_params.nMax = highPassOrder;
+    high_pass_params.f1 = -1;
+    high_pass_params.f2 = highPassFreq;
+    high_pass_params.a1 = -1;
+    high_pass_params.a2 = highPassAtten;
+
+    /* high pass filter */
     LAL_CALL(LALButterworthREAL4TimeSeries(status, series, \
-          &filterParam), status);
+          &high_pass_params), status);
   }
 
   /* remove resample buffer */
@@ -400,22 +404,22 @@ static REAL4FrequencySeries *omega_gw(LALStatus *status,
 {
   /* variables */
   REAL4FrequencySeries *series;
-  StochasticOmegaGWParameters params;
+  StochasticOmegaGWParameters omega_params;
 
   /* create and initialise frequency series */
   LAL_CALL(LALCreateREAL4FrequencySeries(status, &series, "OmegaGW", \
         gps_time, f0, deltaF, lalDimensionlessUnit, length), status);
 
   /* set parameters */
-  params.alpha = exponent;
-  params.fRef = f_ref;
-  params.omegaRef = omega_ref;
-  params.length = length;
-  params.f0 = f0;
-  params.deltaF = deltaF;
+  omega_params.alpha = exponent;
+  omega_params.fRef = f_ref;
+  omega_params.omegaRef = omega_ref;
+  omega_params.length = length;
+  omega_params.f0 = f0;
+  omega_params.deltaF = deltaF;
 
   /* calculate spectrum */
-  LAL_CALL(LALStochasticOmegaGW(status, series, &params), status);
+  LAL_CALL(LALStochasticOmegaGW(status, series, &omega_params), status);
 
   return(series);
 }
@@ -431,7 +435,7 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
 {
   /* variables */
   REAL4FrequencySeries *series;
-  OverlapReductionFunctionParameters params;
+  OverlapReductionFunctionParameters overlap_params;
   LALDetectorPair detectors;
 
   /* create and initialise frequency series */
@@ -439,17 +443,17 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
         gps_time, f0, deltaF, lalDimensionlessUnit, length), status);
 
   /* set parameters */
-  params.length = length;
-  params.f0 = f0;
-  params.deltaF = deltaF;
+  overlap_params.length = length;
+  overlap_params.f0 = f0;
+  overlap_params.deltaF = deltaF;
 
   /* set detectors */
   detectors.detectorOne = lalCachedDetectors[site_one];
   detectors.detectorTwo = lalCachedDetectors[site_two];
 
   /* calculate overlap reduction function */
-  LAL_CALL(LALOverlapReductionFunction(status, series, &detectors, &params), \
-      status);
+  LAL_CALL(LALOverlapReductionFunction(status, series, &detectors, \
+        &overlap_params), status);
 
   return(series);
 }
@@ -616,7 +620,7 @@ static REAL4TimeSeries *hann_window(LALStatus *status,
   /* variables */
   REAL4TimeSeries *series;
   LIGOTimeGPS gps_time;
-  LALWindowParams params;
+  LALWindowParams window_params;
 
   /* set time */
   gps_time.gpsSeconds = 0;
@@ -627,11 +631,11 @@ static REAL4TimeSeries *hann_window(LALStatus *status,
         deltaT, lalDimensionlessUnit, length), status);
 
   /* set window parameters */
-  params.length = length;
-  params.type = Hann;
+  window_params.length = length;
+  window_params.type = Hann;
 
   /* generate window */
-  LAL_CALL(LALWindow(status, series->data, &params), status);
+  LAL_CALL(LALWindow(status, series->data, &window_params), status);
 
   return(series);
 }
