@@ -233,8 +233,8 @@ main (  int argc, char **argv )
 		   fprintf(stderr,"         -m2 : mass of companion (%7.2f) SolarMass\n", params.mass2);
 		   fprintf(stderr,"         -m3 : mass of primary (%7.2f) in template\n", tmpltParams.mass1);
 		   fprintf(stderr,"         -m4 : mass of companion (%7.2f) in template\n", tmpltParams.mass2);
-		   fprintf(stderr,"      -order : order of PN model (%7.2d) of signal\n", params.order);
-		   fprintf(stderr,"      -order : order of PN model (%7.2d) of template\n", params.order);
+		   fprintf(stderr,"     -order1 : order of PN model (%7.2d) of signal\n", params.order);
+		   fprintf(stderr,"     -order2 : order of PN model (%7.2d) of template\n", params.order);
 		   fprintf(stderr,"       -psi0 : Max value of psi0 (%7.2f)\n", params.psi0);
 		   fprintf(stderr,"       -psi3 : Min value of psi3 (%7.2f)\n", params.psi3);
 		   fprintf(stderr,"       -fcut : Cutoff frequency for BCV (%7.2f)\n\n", params.fFinal);

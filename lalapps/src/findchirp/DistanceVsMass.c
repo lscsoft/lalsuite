@@ -2,7 +2,8 @@
  * Given the noise amplitude/power spectral density as a two-column
  * ascii file this code returns the distance in Mpc as a function of the
  * total mass to binaries with equal masses and an rms orientation 
- * and produce an SNR of 5 when integrated up to the light ring R=2.8 M.
+ * and produce an SNR of 5 when integrated up to the LSO at R=6M
+ * or the light ring at R=2.8 M.
  *
  */
 #include <stdlib.h>
@@ -21,6 +22,11 @@ int main (int argc, char **argv)
 
 	if (argc!=3)
 	{
+                fprintf(stderr, "* Given the noise amplitude/power spectral density as a two-column\n");
+                fprintf(stderr, "* ascii file this code returns the distance in Mpc as a function of the\n");
+                fprintf(stderr, "* total mass to binaries with equal masses and an rms orientation \n");
+                fprintf(stderr, "* and produce an SNR of 5 when integrated up to the LSO R=6M or \n");
+                fprintf(stderr, "* the light ring R=2.8 M.\n");
 		fprintf(stderr, "-----------------------------\n");
 		fprintf (stderr, "Usage: %s ampSpec (0/1) LO (0/1)\n", argv[0]);
 		fprintf (stderr, "ampSpec: should be 0 if input spectrum is power and 1 if amplitude\n");
@@ -73,7 +79,7 @@ int main (int argc, char **argv)
 		idealD = 2.5 * rmsD;
 		/* Convert the mass in seconds to solar masses */
 		totalMass /= MTSUN_SI;
-	        if (totalMass < 1000.) fprintf(stdout, "%e %e %e %e\n", totalMass, rmsD, idealD, freq);
+	        if (totalMass < 5000.) fprintf(stdout, "%e %e %e %e\n", totalMass, rmsD, idealD, freq);
 		fOld = freq;
 	}
 	fprintf(stdout, "&\n");
