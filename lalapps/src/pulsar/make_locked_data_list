@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# This script makes lists of desired locked segments
+
+
+make_segment_list(){
+    fname=$1-$2segments.txt
+    tbase=$3
+    ofile=$1-$2.$tbase
+    tail -n +3 $fname | awk '{x=int($3/'$tbase'); if ( x > 0 ) print x , $1+int(($2-$1-'$tbase'*x)/2),'$tbase'  }' >  $ofile
+}
+
+
+# Parse command line
+if [ $# -ne 2 ]
+then
+  echo "Usage: $0  SCIENCE-RUN-NUMBER SFT-TIME-SEC"
+  echo "Examples:"
+  echo "$0 S1 60"
+  echo "$0 S2 1200"
+  exit
+fi
+
+
+
+tbase=$2
+
+
+make_segment_list $1 H1 $tbase
+make_segment_list $1 H2 $tbase
+make_segment_list $1 L1 $tbase
+

@@ -1,0 +1,92 @@
+LALAPPS package for making SFTs in GEO format
+
+Author: Bruce Allen ballen@gravity.phys.uwm.edu
+
+This is a small package of scripts and executables for making SFT data
+in the GEO SFT binary format.
+
+This README contains a description and operating instructions.  Note
+that the package is intended for use on the Medusa cluster at UWM, and
+makes certain assumptions about how data is distributed.  To use the
+package on another system will probably require some (minor)
+modifications.
+
+*********************************************************************
+
+STEP 0
+GENERATE LIST OF ALL LIGO DATA ON THE CLUSTER
+
+To start, generate a (sorted) list of all the data on the cluster.
+This can be done by running the script:
+   ./make_cluster_data_list S1
+which takes a single argument, which is the name of the run.
+
+[Note: You can monitor the action of this script by using tail
+S1-alldata.]
+
+This script does two things.
+
+First, it looks over all the nodes on the cluster, looking under
+/netdata for any files of type *.gwf.  These file names are combined
+into a single text file called S1-alldata, where S1 will be replaced
+by the run name.
+
+Second, it makes four lists of data (S1.LLO.full, S1.LLO.RDS,
+S1.LHO.full, S1.LHO.RDS) which are sorted by GPS time.  S1 is replaced
+by the run name.
+
+INPUTS:  listing of files under /netdata/s001 - /netdata/s296
+OUTPUTS: S1-alldata, S1.LLO.full.sorted,  S1.LHO.full.sorted, S1.LLO.RDS.sorted,  S1.LHO.RDS.sorted
+
+
+STEP 1:
+GENERATE A LIST OF ALL THE LOCKED SEGMENTS TO MAKE SFTS
+
+You will need a listing of all the locked time stretches for
+which you will want to make SFTs. The files:
+  S1-H1segments.txt
+  S1-H2segments.txt
+  S1-L1segments.txt
+contain this data for the S1 run.  The files were obtained from
+Gabriella Gonzalez's web page and contain two lines of text, that
+will be ignored by the SFT code, followed by three columns of
+integers:
+START-GPS   STOP-GPS   LENGTH
+The first two columns are the start and end GPS times of the locked
+stretch, and the third column is the STOP-START difference.
+
+You can use the script
+./make_locked_data_list S1 60
+or
+./make_locked_data_list S2 1234
+to generate lists of SFTs to make.  The first argument is the run
+name, and the second argument is the length in seconds of the SFTs.
+
+This script uses the following algorithm.  For a given locked stretch,
+it fits as many segments of the desired length into the stretch as
+possible.  Any extra time left over is balanced between the two ends.
+So for example if you have requested SFTs of length 100 seconds, and
+there is a locked stretch of length 760 seconds, the script will skip
+the first 30 seconds, then assign seven 100 second SFTs, then skip the
+last 30 seconds.
+
+The output files produced by this process contain 3 columns:
+number of segments
+GPS start time of first segment
+length of segment
+For example:
+7 714379371 1200
+denotes 7 segments of length 1200 seconds.
+
+INPUTS:  S1-H1segments.txt, S1-H2segments.txt, S1-L1segments.txt
+OUTPUTS: S1-H1.60,S1-H2.60, S1-L1.60
+
+
+
+STEP 3:
+
+The next step is to make a listing (in "just the right format") of
+where the SFT-making code can find the data that it needs.  Do do
+this, first create an directory to contain the output (lists of files
+and times)
+mkdir S1-H1.60-lists S1-H2.60-lists S1-L1.60-lists 
