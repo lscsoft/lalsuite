@@ -140,7 +140,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* get number of segments */
   deltaF = (REAL8) (1. / FFTDuration);
   segmentDuration = numFFT * FFTDuration;
-  numSegments = (INT4)((stopTime - startTime) / segmentDuration );
+  numSegments = (INT4)floor((stopTime - startTime) / segmentDuration );
 
   /* set length for data segments */
   segmentLength = segmentDuration * resampleRate;
@@ -427,7 +427,7 @@ void parseOptions(INT4 argc, CHAR *argv[])
     size_t optarg_len;
 
     c = getopt_long(argc, argv, 
-                    "ht:T:l:A:a:f:n:i:I:z:V",
+                    "ht:T:l:A:a:f:n:i:I:d:D:z:V",
  		    long_options, &option_index);
 
     if (c == -1)
