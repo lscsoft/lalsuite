@@ -2,6 +2,7 @@
  * Author: David Chin <dwchin@umich.edu> +1-734-709-9119
  * $Id$
  */
+#include <stdio.h>
 #include <ctype.h>
 #include "config.h"
 #include "detresponse.h"
