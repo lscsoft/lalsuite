@@ -97,7 +97,7 @@ int main( int argc, char *argv[] )
 {
   static LIGOTimeGPS  tbeg;
   static size_t size;
-  static float  step;
+  static double step;
   static char   site;
   struct FrFile *frfile = NULL;
   struct FrameH *frame  = NULL;

@@ -38,7 +38,7 @@ int read_freq_series( struct series *ser, const char *fname )
   ser->data = calloc( 2 * n, sizeof( *ser->data ) );
 
   get_next_line( line, sizeof( line ), fp );
-  sscanf( line, "%*e %e %e\n", &a, &b );
+  sscanf( line, "%*le %e %e\n", &a, &b );
   if ( isnan( a ) || isnan( b ) )
   {
     ser->data[0] = 1;
@@ -51,7 +51,7 @@ int read_freq_series( struct series *ser, const char *fname )
   }
 
   get_next_line( line, sizeof( line ), fp );
-  sscanf( line, "%e %e %e\n", &ser->step, &a, &b );
+  sscanf( line, "%le %e %e\n", &ser->step, &a, &b );
   if ( isnan( a ) || isnan( b ) )
   {
     ser->data[2] = 1;
@@ -98,7 +98,7 @@ int main( int argc, char *argv[] )
 {
   static char   site;
   static size_t size;
-  static float  step;
+  static double step;
   struct FrFile *frfile = NULL;
   struct FrameH *frame  = NULL;
   const char *run = NULL;
