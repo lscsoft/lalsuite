@@ -15,7 +15,22 @@ There are two LALApps mail lists/archives which are shared with LAL. These are:
   http://www.lsc-group.phys.uwm.edu/mailman/listinfo.cgi/lal-discuss
 
 This README file explains how to build and install LALApps for use on the
-LSCdatagrid.
+LSCdatagrid. The sections of this README are:
+
+  2. Get LAL from CVS: instructions for getting LAL from CVS
+
+  3. Get LALApps from CVS: instructions for getting LALApps from CVS
+
+  4. Important notes about required software: descsribes the pre-requisties 
+  for installing LALApps and contains important notes for LIGOTools users
+
+  5. Decide how you want install the required software: lists the options for
+  getting the software required to build LAL and LALApps
+
+  6. Installing the required software: install instructions for the required
+  software
+
+  7. Install LAL and LALApps: install instructions for LAL and LALApps
 
 
 ------------------------------------------------------------------------------
@@ -59,7 +74,7 @@ LALApps.
 
 ------------------------------------------------------------------------------
 
-3. Important notes about required software
+4. Important notes about required software
 
 To build LALApps, you must have LAL installed. LAL requires the following
 software to be installed:
@@ -70,8 +85,8 @@ software to be installed:
 	libframe-6.14
 	libmetaio-5.4
 
-Step 4 below describes the various options for getting the software. If you do
-NOT have LIGOtools installed, you can skip to step 4 now, otherwise read the
+Step 5 below describes the various options for getting the software. If you do
+NOT have LIGOtools installed, you can skip to step 5 now, otherwise read the
 rest of this section.
 
 Note that if you have LIGOtools installed, you must REMOVE the lal and lalapps
@@ -113,37 +128,39 @@ removed it. You are now ready to continue.
 
 ------------------------------------------------------------------------------
 
-4. Decide how you want install LALApps, LAL and the required software
+5. Decide how you want install the required software
 
 You have the following options for installing LALApps, LAL and the 
 required software. Choose the one that suits you best and then follow the
-relevant instruction below. Once you have completed either 5.1, 5.2 or 5.3 you
+relevant instruction below. Once you have completed either 6.1, 6.2 or 6.3 you
 are ready to use and develop LAL and LALApps. 
 
-Section 5.4 explains how to install the required software from RPMs or Debian
+Section 6.4 explains how to install the required software from RPMs or Debian
 packages and is included for administrators of LSCdataGrid clusters. If you
 are installing on your own machine it is recomended that you follow section
-5.1.
+6.1.
 
  -- you have your own desktop or laptop machine without some or all 
-    of the required software		----> follow step 5.1 below
+    of the required software		----> follow step 6.1 below
 
  -- you have a LIGOtools distribution (that you control) installed on 
     your machine and you want to obtain the required software via
-    LIGOtools				----> follow step 5.2 below
+    LIGOtools				----> follow step 6.2 below
 
  -- you are logged into an LSCdatagrid cluster machines (for example 
     the UWM cluster or one of the LIGO lab ldas-grid machines)
-    					----> follow step 5.3 below
+    					----> follow step 6.3 below
 
  -- you are the system administrator of an LSC cluster machine or you 
     want to install the required software as RPMs or .deb files on 
-    your machine			----> follow step 5.4 below
+    your machine			----> follow step 6.4 below
 
 
 ------------------------------------------------------------------------------
 
-5.1 Installing from source
+6. Installing the required software.
+
+6.1 Installing from source
 
 Choose a directory in which to install the required software (i.e. the
 software other than LAL and LALApps). 
@@ -163,23 +180,12 @@ Add the following to your .profile if you use a bourne shell (e.g. bash):
     . ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh
   fi
 
-  LAL_LOCATION=${HOME}/opt/lal           # <- change this as appropriate
-  export LAL_LOCATION
-  if [ -f ${LAL_LOCATION}/etc/lal-user-env.sh ] ; then
-    . ${LAL_LOCATION}/etc/lal-user-env.sh
-  fi
-        
 If you are using a C shell (e.g., tcsh), instead add these lines to
 your .login:
 
   setenv LSCSOFT_LOCATION ${HOME}/opt/lscsoft   # <- change this as appropriate
   if ( -r ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh ) then
     source ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh
-  endif
-
-  setenv LAL_LOCATION ${HOME}/opt/lal           # <- change this as appropriate
-  if ( -r ${LAL_LOCATION}/etc/lal-user-env.csh ) then
-    source ${LAL_LOCATION}/etc/lal-user-env.csh
   endif
 
 Now log out and log back in to make sure these environment variables are set.
@@ -203,47 +209,16 @@ or if you run a C-shell (e.g. tcsh) type:
   
   source ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh
 
-Now build and install LAL by typing:
-
-  cd ${LAL_LOCATION}/src/lal
-  ./configure --prefix=${LAL_LOCATION} --disable-mpi
-  make
-  make install
-
-Make sure you have access to the software you just installed. You can either
-log out and log back in (safest) or if you run a bourne shall (e.g. bash)
-type:
-
-  source ${LAL_LOCATION}/etc/lal-user-env.sh
-
-or if you run a C-shell (e.g. tcsh) type:
-  
-  source ${LAL_LOCATION}/etc/lal-user-env.csh
-
-Now build and install LALApps by typing the following. If you want to build
-LALApps to run in the condor standard universe, and you have condor installed
-on the machine that you are building on, add --enable-condor to the configure
-options:
-
-  cd ${LAL_LOCATION}/src/lalapps
-  ./configure --prefix=${LAL_LOCATION}
-  make
-  make install
-
-You are now ready to use LALApps! Please see the LALApps README.contrib for
-help on adding code to LALApps and the LALApps README.bugs for information on
-reporting bugs.
-
 
 ------------------------------------------------------------------------------
 
-5.2 Installing using LIGOtools. 
+6.2 Installing using LIGOtools. 
 
 NOTE: THE LIGOTOOLS INSTRUCTIONS HERE DO NOT CURRENTLY WORK SINCE GSL AND
-FFTW3 ARE NOT YET IN LIGOTOOLS. AS A TEMPORARY MEASURE PLEASE USE STEP 5.1
+FFTW3 ARE NOT YET IN LIGOTOOLS. AS A TEMPORARY MEASURE PLEASE USE STEP 6.1
 ABOVE. 
 
-Make sure you remove the LIGOtools lal and lalapps as described in step 2.
+Make sure you remove the LIGOtools lal and lalapps as described in step 4.
 
 Type 
 
@@ -260,72 +235,12 @@ LIGOTOOLS is /home/duncan/projects/ligotools
   dataflow     5.5        
   fftw         3.0.1
   gsl          1.5
-
-Note that pkgconfig is not required for if you are getting the required
-software from LIGOtools.
-
-Now build LAL as follows:
-
-   cd ${LAL_LOCATION}/src/lal
-   ./configure --prefix=${LAL_LOCATION} \
-     --with-extra-cppflags="-I${LIGOTOOLS}/include" \
-     --with-extra-ldflags="-L${LIGOTOOLS}/lib" --disable-mpi
-   make
-   make install
-
-Make sure you have access to the software you just installed. You can either
-log out and log back in (safest) or if you run a bourne shall (e.g. bash)
-type:
-
-  source ${LAL_LOCATION}/etc/lal-user-env.sh
-
-or if you run a C-shell (e.g. tcsh) type:
-  
-  source ${LAL_LOCATION}/etc/lal-user-env.csh
-
-Now build LALApps as follows. If you want to build LALApps to run in the
-condor standard universe, and you have condor installed on the machine that
-you are building on, add --enable-condor to the configure options:
-
-   cd ${LAL_LOCATION}/src/lalapps
-   ./configure --prefix=${LAL_LOCATION} \
-     --with-extra-cppflags="-I${LIGOTOOLS}/include -I{LAL_PREFIX}/include" \
-     --with-extra-ldflags="-L${LIGOTOOLS}/lib -L${LAL_PREFIX}/lib"
-   make
-   make install
-
-LALApps is now installed and ready for use. The binaries will be installed in
-the directory 
-
-   ${LAL_LOCATION}/bin
-
-which is added to your path by the lal-user-env script.
-
-Add the following to your .profile if you use a bourne shell (e.g. bash):
-        
-  LAL_LOCATION=${HOME}/opt/lal           # <- change this as appropriate
-  export LAL_LOCATION
-  if [ -f ${LAL_LOCATION}/etc/lal-user-env.sh ] ; then
-    . ${LAL_LOCATION}/etc/lal-user-env.sh
-  fi
-        
-If you are using a C shell (e.g., tcsh), instead add these lines to
-your .login:
-
-  setenv LAL_LOCATION ${HOME}/opt/lal           # <- change this as appropriate
-  if ( -r ${LAL_LOCATION}/etc/lal-user-env.csh ) then
-    source ${LAL_LOCATION}/etc/lal-user-env.csh
-  endif
-
-
-You are now ready to use LALApps! Please see the LALApps README.contrib for
-help on adding code to LALApps and the LALApps README.bugs for information on
-reporting bugs.
+  pkgconfig    0.15.0
 
 
 ------------------------------------------------------------------------------
 
-5.3 Installing on a LSCdataGrid cluster machine
+6.3 Installing on a LSCdataGrid cluster machine
 
 If you are building LAL and LALApps on an an LSCdataGrid cluster machine, for
 example the UWM cluster or a LIGO lab cluster, then the required pre-requisite
@@ -342,59 +257,12 @@ If you are running on an LSCdataGrid system not listed above, contact the
 administrator of the system to find out which scripts and/or environment
 variables need to be set for you to be able to see the requred software.
 
-Once you have access to the pre-requisite software, to install LAL type the
-following, making sure you you have LAL_LOCATION set to where you decided to
-install LAL and LALApps.
-
-  cd ${LAL_LOCATION}/src/lal
-  ./configure --prefix=${LAL_LOCATION}
-  make
-  make install
-
-Add the following to your .profile if you use a bourne shell (e.g. bash):
-        
-  LAL_LOCATION=${HOME}/opt/lal           # <- change this as appropriate
-  export LAL_LOCATION
-  if [ -f ${LAL_LOCATION}/etc/lal-user-env.sh ] ; then
-    . ${LAL_LOCATION}/etc/lal-user-env.sh
-  fi
-        
-If you are using a C shell (e.g., tcsh), instead add these lines to
-your .login:
-
-  setenv LAL_LOCATION ${HOME}/opt/lal           # <- change this as appropriate
-  if ( -r ${LAL_LOCATION}/etc/lal-user-env.csh ) then
-    source ${LAL_LOCATION}/etc/lal-user-env.csh
-  endif
-
-Make sure you have access to the software you just installed. You can either
-log out and log back in (safest) or if you run a bourne shall (e.g. bash)
-type:
-
-  source ${LAL_LOCATION}/etc/lal-user-env.sh
-
-or if you run a C-shell (e.g. tcsh) type:
-  
-  source ${LAL_LOCATION}/etc/lal-user-env.csh
-
-Now build and install LALApps by typing the following. If you want to build
-LALApps to run in the condor standard universe, and you have condor installed
-on the machine that you are building on, add --enable-condor to the configure
-options:
-
-  cd ${LAL_LOCATION}/src/lalapps
-  ./configure --prefix=${LAL_LOCATION}
-  make
-  make install
-
-You are now ready to use LALApps! Please see the LALApps README.contrib for
-help on adding code to LALApps and the LALApps README.bugs for information on
-reporting bugs.
-
 
 ------------------------------------------------------------------------------
 
-5.4 Installing the required software as RPMs or .debs from a repository
+6.4 Installing the required software from a repository
+
+6.4.1 Installing binary RPMs
 
 WARNING: These instructions are intended to be helpful for users of RPM who
 wish to install the software required by LAL system-wide.  However, these
@@ -428,7 +296,7 @@ now login as root and install the RPMs
   rpm -Uvh libmetaio-5.4-3.i386.rpm libmetaio-devel-5.4-3.i386.rpm
 
 
-1.3 BUILDING REQUIRED SOFTWARE FROM SOURCE RPMS
+6.4.2 Building the required software from source RPMs
 
 If you cannot use these binary RPMs and you wish to build from source RPMs,
 follow these instructions.
@@ -458,3 +326,83 @@ finally install the new binary RPMs
   rpm -Uvh i386/libframe-devel-6.14-1.i386.rpm
   rpm -Uvh i386/libmetaio-5.4-3.i386.rpm
   rpm -Uvh i386/libmetaio-devel-5.4-3.i386.rpm
+
+
+6.4.3 Installing from Debian packages
+
+[to be filled in by Kipp and Woody]
+
+
+------------------------------------------------------------------------------
+
+7. Install LAL and LALApps
+
+7.1 Install LAL
+
+Now build and install LAL by typing:
+
+  cd ${LAL_LOCATION}/src/lal
+  ./configure --prefix=${LAL_LOCATION} --disable-mpi
+  make
+  make install
+
+Add the following to your .profile if you use a bourne shell (e.g. bash):
+        
+  LAL_LOCATION=${HOME}/opt/lal           # <- change this as appropriate
+  export LAL_LOCATION
+  if [ -f ${LAL_LOCATION}/etc/lal-user-env.sh ] ; then
+    . ${LAL_LOCATION}/etc/lal-user-env.sh
+  fi
+        
+If you are using a C shell (e.g., tcsh), instead add these lines to
+your .login:
+
+  setenv LAL_LOCATION ${HOME}/opt/lal           # <- change this as appropriate
+  if ( -r ${LAL_LOCATION}/etc/lal-user-env.csh ) then
+    source ${LAL_LOCATION}/etc/lal-user-env.csh
+  endif
+
+Make sure you have access to the software you just installed. You can either
+log out and log back in (safest) or if you run a bourne shall (e.g. bash)
+type:
+
+  source ${LAL_LOCATION}/etc/lal-user-env.sh
+
+or if you run a C-shell (e.g. tcsh) type:
+  
+  source ${LAL_LOCATION}/etc/lal-user-env.csh
+
+
+7.2 Install LALApps
+
+Now build and install LALApps. If you are planning to run your programs under
+condor, see the note below.
+
+To build and install LALApps type:
+
+  cd ${LAL_LOCATION}/src/lalapps
+  ./configure --prefix=${LAL_LOCATION}
+  make
+  make install
+
+You are now ready to use LALApps! Please see the LALApps README.contrib for
+help on adding code to LALApps and the LALApps README.bugs for information on
+reporting bugs.
+
+Note: If you want to run your LALApps programs in the condor standard universe
+you will need to make sure that the LALApps programs are linked for condor. To
+do this, you must be compiling on a system that has condor_compile installed
+(contact the system administrator to find out if and where condor is
+installed). If you do not link for condor, you can run under the condor
+vanilla universe, but this is discouraged as you code will not be able to
+checkpoint.
+
+To link LALApps for Condor add --enable-condor to the configure options, i.e.
+to build LALApps type:
+  
+  cd ${LAL_LOCATION}/src/lalapps
+  ./configure --prefix=${LAL_LOCATION} --enable-condor
+  make
+  make install
+
+The binaries built will be able to run under the condor standard universe.
