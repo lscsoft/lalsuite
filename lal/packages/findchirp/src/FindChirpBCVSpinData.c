@@ -103,6 +103,10 @@ LALFindChirpBCVSpinData (
   FILE                 *fpspec;
   FILE		       *fprespRe;
   FILE                 *fprespIm;
+  FILE                 *fpStrainRe;
+  FILE                 *fpStrainIm;
+
+  FILE                 *fpDataIn = NULL;
 
 
   /*declaration*/
@@ -218,7 +222,10 @@ ASSERT( params->ampVecBCVSpin2, status,
   fpspec    = fopen ("spec.dat","w");
   fprespRe  = fopen ("respRe.dat","w");
   fprespIm  = fopen ("respIm.dat","w");
+  fpStrainRe= fopen ("StrainRe.dat","w");
+  fpStrainIm= fopen ("StrainIm.dat","w");
 
+  fpDataIn = fopen ("DataIn.dat","w");
 
 
 
@@ -255,8 +262,6 @@ fprintf (stdout, "dataSegVec->length %d\n", dataSegVec->length);
 
   for ( i = 0; i < dataSegVec->length; ++i )
   {
-
-
 
 /*fprintf ( stdout, "just inside loop over data segments in LALFindChirpBCVSpinData \n");*/
 
@@ -302,6 +307,13 @@ fprintf (stdout, "dataSegVec->length %d\n", dataSegVec->length);
     /* store the waveform approximant in the data segment */
     fcSeg->approximant = BCVSpin;
 
+
+  for ( i = 0; i < dataVec->length; ++i )
+       {
+        fprintf (fpDataIn, "%d\t%e\n",  i, dataVec->data[i]);
+       }
+
+
 /*fprintf ( stdout, "just after approx = BCVSpin in LALFindChirpBCVSpinData \n");*/
  
 
@@ -337,6 +349,11 @@ fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
 
     outputData[k].re =  p*x - q*y;
     outputData[k].im =  p*y + q*x;
+  
+    fprintf (fpStrainRe, "%d\t%e\n",k,outputData[k].re);
+    fprintf (fpStrainIm, "%d\t%e\n",k,outputData[k].im);
+
+
   }
 
  /*fprintf ( stdout, "just after htilde etc. calc. of LALFindChirpBCVSpinData \n");*/
@@ -380,9 +397,12 @@ fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
      */
 
 
-    if ( params->invSpecTrunc )
-    {
+ if ( params->invSpecTrunc )
+ {
       /* compute square root of inverse power spectrum */
+
+      fprintf(stdout, "truncating wtilde!");
+     
       for ( k = cut; k < params->wtildeVec->length; ++k )
       {
         wtilde[k].re = sqrt( wtilde[k].re );
@@ -420,7 +440,7 @@ fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
       /* set nyquist and dc to zero */
       wtilde[params->wtildeVec->length - 1].re = 0.0;
       wtilde[0].re                             = 0.0;
-    }
+ }
 
     /* set inverse power spectrum below cut to zero */
     memset( wtilde, 0, cut * sizeof(COMPLEX8) );
@@ -437,6 +457,9 @@ fprintf ( stdout, "fcSeg->data->data->length  %d\n", fcSeg->data->data->length);
         ABORT( status, FINDCHIRPBCVSPINH_EDIVZ, FINDCHIRPBCVSPINH_MSGEDIVZ );
       }
       invmodsqResp = 1.0 / modsqResp;
+   
+   /*  fprintf(stdout, "invmodsqResp %e\n", invmodsqResp);*/
+
       wtilde[k].re *= invmodsqResp;
     }
 
@@ -518,6 +541,10 @@ fclose(fprespRe);
 fclose(fprespIm);
 fclose(fpspec);
 fclose(fpdataVec);
+fclose(fpStrainRe);
+fclose(fpStrainIm);
+fclose (fpDataIn);
+
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
