@@ -56,6 +56,9 @@ RCSID("$Id$");
 "  --ifo-a ifo_name             name of first ifo (e.g. L1, H1 or H2)\n"\
 "  --ifo-b ifo_name             name of second ifo (e.g. L1, H1 or H2)\n"\
 "\n"\
+"  --triggered-bank FILE        write a triggered bank insted of doing inca\n"\
+"  --minimal-match M            set minimal match of triggered bank to M\n"\
+"\n"\
 "  --epsilon error              set effective distance test epsilon (default 2)\n"\
 "  --kappa error                set effective distance test kappa (default 0.01)\n"\
 "  --dm mass                    mass coincidence window (default 0)\n"\
@@ -78,6 +81,41 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
           LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
           LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
+/*
+ *
+ * compare function used by qsort
+ *
+ */
+
+
+int compareTmpltsByMass ( const void *a, const void *b )
+{
+  SnglInspiralTable *aPtr = *((SnglInspiralTable **)a);
+  SnglInspiralTable *bPtr = *((SnglInspiralTable **)b);
+
+  if ( aPtr->mass1 > bPtr->mass1 )
+  {
+    return 1;
+  }
+  else if ( aPtr->mass1 < bPtr->mass1 )
+  {
+    return -1;
+  }
+  else if ( aPtr->mass2 > bPtr->mass2 )
+  {
+    return 1;
+  }
+  else if ( aPtr->mass2 < bPtr->mass2 )
+  {
+    return -1;
+  }
+  else
+  {
+    return 0;
+  }
+}
+
+
 int main( int argc, char *argv[] )
 {
   static LALStatus      status;
@@ -93,13 +131,18 @@ int main( int argc, char *argv[] )
   CHAR *userTag = NULL;
 
   CHAR  fileName[FILENAME_MAX];
+  CHAR *trigBankFile = NULL;
+  CHAR *xmlFileName;
 
+  INT4  numEvents = 0;
+  INT4  numIFO;
   INT4  have_ifo_a_trigger = 0;
   INT4  isPlay = 0;
   INT8  ta, tb;
   INT4  numTriggers[MAXIFO];
   INT4  inStartTime = -1;
   INT4  inEndTime = -1;
+  REAL4 minMatch = -1;
 
   SnglInspiralTable    *inspiralEventList[MAXIFO];
   SnglInspiralTable    *currentTrigger[MAXIFO];
@@ -128,6 +171,8 @@ int main( int argc, char *argv[] )
     {"ifo-a",                   required_argument, 0,                'a'},
     {"ifo-b",                   required_argument, 0,                'b'},
     {"epsilon",                 required_argument, 0,                'e'},
+    {"triggered-bank",          required_argument, 0,                'T'},
+    {"minimal-match",           required_argument, 0,                'M'},
     {"kappa",                   required_argument, 0,                'k'},
     {"dm",                      required_argument, 0,                'm'},
     {"dt",                      required_argument, 0,                't'},
@@ -188,7 +233,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:e:k:m:t:q:r:s:hz:Z:", long_options, &option_index );
+        "a:b:e:k:m:t:q:r:s:hz:Z:M:T:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == -1 )
@@ -355,6 +400,26 @@ int main( int argc, char *argv[] )
             optarg );
         break;
 
+      case 'T':
+        optarg_len = strlen( optarg ) + 1;
+        trigBankFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( trigBankFile, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case 'M':
+        minMatch = (REAL4) atof( optarg );
+        if ( minMatch <= 0 )
+        {
+          fprintf( stdout, "invalid argument to --%s:\n"
+              "minimal match of bank must be > 0: "
+              "(%f specified)\n",
+              long_options[option_index].name, minMatch );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%e", minMatch );
+        break;
+
       case '?':
         fprintf( stderr, USAGE , argv[0]);
         exit( 1 );
@@ -380,6 +445,13 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* check for minimal match when doing a triggered bank */
+  if ( trigBankFile && minMatch < 0 )
+  {
+    fprintf( stderr, "--minimal-match must be specified\n" );
+    exit( 1 );
+  }
+  
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
   {
@@ -426,6 +498,16 @@ int main( int argc, char *argv[] )
         LIGOMETA_PARAM_MAX, "--no-playground" );
   }
 
+
+  /* decide how many ifos we have based on what we are doing */
+  if ( trigBankFile )
+  {
+    numIFO = 1;
+  }
+  else
+  {
+    numIFO = 2;
+  }
     
 
   /*
@@ -440,7 +522,7 @@ int main( int argc, char *argv[] )
     for( i = optind; i < argc; ++i )
     {
       INT4 haveSearchSum = 0;
-      INT4 numTriggers = 0;
+      INT4 numFileTriggers = 0;
       SnglInspiralTable *inputData = NULL;
       SearchSummaryTable *inputSummary = NULL;
 
@@ -475,25 +557,25 @@ int main( int argc, char *argv[] )
       if ( vrbflg ) 
         fprintf( stdout, "reading triggers from file: %s\n", argv[i] );
 
-      numTriggers = 
+      numFileTriggers = 
         LALSnglInspiralTableFromLIGOLw( &inputData, argv[i], 0, -1 );
 
-      if ( numTriggers < 0 )
+      if ( numFileTriggers < 0 )
       {
         fprintf( stderr, "error: unable to read sngl_inspiral table from %s\n", 
             argv[i] );
         exit( 1 );
       }
-      else if ( numTriggers > 0 )
+      else if ( numFileTriggers > 0 )
       {
         INT4 knownIFO = 0;
 
         if ( vrbflg ) 
           fprintf( stdout, "got %d sngl_inspiral rows from %s for ifo %s\n", 
-            numTriggers, argv[i], inputData->ifo );
+            numFileTriggers, argv[i], inputData->ifo );
 
         /* locate the ifo associated with these triggers and store them */
-        for ( j = 0; j < MAXIFO; ++j )
+        for ( j = 0; j < numIFO ; ++j )
         {
           if ( ! strncmp( ifoName[j], inputData->ifo, LIGOMETA_IFO_MAX ) )
           {
@@ -513,6 +595,12 @@ int main( int argc, char *argv[] )
             {
               /* spin on to the end of the linked list */
               currentTrigger[j] = currentTrigger[j]->next;
+            }
+
+            /* store number of triggers from ifo a for trigtotmplt algorithm */
+            if ( j == 0 ) 
+            {
+              numEvents += numFileTriggers;
             }
 
             if ( vrbflg ) fprintf( stdout, "added triggers to list\n" );
@@ -541,14 +629,69 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-
-  for ( j = 0; j < MAXIFO; ++j )
+  for ( j = 0; j < numIFO; ++j )
   {
-    if ( ! currentTrigger[j] )
+    if ( ! inspiralEventList[j] )
     {
       fprintf( stdout, "No triggers read in for interferometer %d\n", j );
       goto cleanexit;
     }
+  }
+
+
+  /*
+   *
+   * code for generating a triggered bank
+   *
+   */
+
+
+  if ( trigBankFile )
+  {
+    SnglInspiralTable   **eventHandle = NULL;
+    SnglInspiralTable    *thisEvent = NULL;
+    SnglInspiralTable    *prevEvent = NULL;
+    
+    eventHandle = (SnglInspiralTable **) 
+      LALCalloc( numEvents, sizeof(SnglInspiralTable *) );
+
+    for ( i = 0, thisEvent = inspiralEventList[0]; i < numEvents; 
+        ++i, thisEvent = thisEvent->next )
+    {
+      eventHandle[i] = thisEvent;
+    }
+    if ( vrbflg ) fprintf( stdout, "sorting events by mass... " );
+    qsort( eventHandle, numEvents, sizeof(eventHandle[0]), 
+        compareTmpltsByMass );
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+
+    /* create a linked list of sorted templates */
+    coincidentEvents[0] = prevEvent = eventHandle[0];
+    numTriggers[0] = 1;
+    for ( i = 1; i < numEvents; ++i )
+    {
+      if ( (prevEvent->mass1 == eventHandle[i]->mass1)  &&
+          (prevEvent->mass2 == eventHandle[i]->mass2) ) 
+      {
+        /* discard the event as it is a duplicate */
+        LALFree( eventHandle[i] );
+      }
+      else
+      {
+        /* add the event to the linked list */
+        prevEvent = prevEvent->next = eventHandle[i];
+        ++numTriggers[0];
+      }
+    }
+    prevEvent->next = NULL;
+
+    if ( vrbflg ) fprintf( stdout, "found %d sngl_inspiral rows for bank %s\n", 
+        numTriggers[0], trigBankFile );
+
+    LALFree( eventHandle );
+
+    /* skip the inca code and write out the bank */
+    goto cleanexit;
   }
 
 
@@ -559,7 +702,7 @@ int main( int argc, char *argv[] )
    */
 
 
-  for ( j = 0; j < MAXIFO; ++j )
+  for ( j = 0; j < numIFO; ++j )
   {
     if ( vrbflg ) fprintf( stdout, "Sorting triggers from ifo %d\n", j );
     LAL_CALL( LALSortSnglInspiral( &status, &(inspiralEventList[j]),
@@ -576,7 +719,7 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "Moving to first trigger in window\n" );
 
-  for ( j = 0; j < MAXIFO; ++j )
+  for ( j = 0; j < numIFO; ++j )
   {
     currentTrigger[j] = inspiralEventList[j];
   }
@@ -683,7 +826,7 @@ int main( int argc, char *argv[] )
           if ( vrbflg )
             fprintf( stdout, "    >>> found coincidence <<<\n" );
 
-          for ( j = 0; j < MAXIFO; ++j )
+          for ( j = 0; j < numIFO; ++j )
           {
             /* only record the triggers from the primary ifo once */
             if ( ! writeUniqTrigs || j || ( ! j && ! have_ifo_a_trigger ) )
@@ -749,23 +892,35 @@ cleanexit:
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
-  for ( j = 0; j < MAXIFO; ++j )
+  for ( j = 0; j < numIFO; ++j )
   {
-    if ( userTag )
+
+    /* set the file name correctly */
+    if ( trigBankFile )
     {
-      LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", ifoName[j],
-          userTag, startCoincidence, endCoincidence - startCoincidence );
+      xmlFileName = trigBankFile;
     }
     else
     {
-      LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[j],
-          startCoincidence, endCoincidence - startCoincidence );
+      if ( userTag )
+      {
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA_%s-%d-%d.xml", ifoName[j],
+            userTag, startCoincidence, endCoincidence - startCoincidence );
+      }
+      else
+      {
+        LALSnprintf( fileName, FILENAME_MAX, "%s-INCA-%d-%d.xml", ifoName[j],
+            startCoincidence, endCoincidence - startCoincidence );
+      }
+
+      xmlFileName = fileName;
     }
 
     searchsumm.searchSummaryTable->nevents = numTriggers[j];
 
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, fileName), &status );
+    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, xmlFileName), 
+        &status );
 
     /* write process table */
     LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
@@ -828,7 +983,7 @@ cleanexit:
     free( this_proc_param );
   }
 
-  for( j = 0; j < MAXIFO ; ++j )
+  for( j = 0; j < numIFO; ++j )
   {
 
     while ( coincidentEvents[j] )
