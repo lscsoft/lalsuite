@@ -15,27 +15,6 @@
 
 NRCSID( FINDCHIRPSLAVEC, "$Id$" );
 
-/*----------------------------------------------------------------------*/
-static void
-I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input )
-{
-  /* convert INT8 nanoseconds to LIGOTimeGPS */
-  INT8 s = input / 1000000000LL;
-  output->gpsSeconds = (INT4)( s );
-  output->gpsNanoSeconds = (INT4)( input - 1000000000LL*s );
-  return;
-}
-
-/*----------------------------------------------------------------------*/
-static void
-LIGOTimeGPSToI8( INT8 *output, LIGOTimeGPS input )
-{
-  /* convert LIGOTimeGPS to INT8 nanoseconds */
-  *output = (INT8) input.gpsNanoSeconds 
-    + 1000000000LL * (INT8) input.gpsSeconds;
-  return;
-}
-
 /*-----------------------------------------------------------------------*/
 static void
 CreateRandomPPNParamStruc (
@@ -88,7 +67,6 @@ CreateRandomPPNParamStruc (
 }
 
 /*-----------------------------------------------------------------------*/
-#ifdef LAL_MPI_ENABLED
 static void 
 GetTemplateBankMPI ( 
     LALStatus          *status,
@@ -136,26 +114,8 @@ GetTemplateBankMPI (
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
-#endif /* LAL_MPI_ENABLED */
-
 
 /*-----------------------------------------------------------------------*/
-static void
-GetTemplateBankFile ( 
-    LALStatus                  *status,
-    InspiralTemplate          **tmpltBankHead,
-    FILE                       *tmpltBankFilePtr
-    )
-{
-  INITSTATUS( status, "GetTemplateBankFile", FINDCHIRPSLAVEC );
-
-  /* read template bank from a specified file */
-
-  RETURN( status );
-}
-
-/*-----------------------------------------------------------------------*/
-#ifdef LAL_MPI_ENABLED
 static void 
 OutputEventsMPI ( 
     LALStatus          *status,
@@ -193,25 +153,8 @@ OutputEventsMPI (
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
-#endif /* LAL_MPI_ENABLED */
 
 /*-----------------------------------------------------------------------*/
-static void
-OutputEventsFile ( 
-    LALStatus                  *status,
-    InspiralEvent              *eventList,
-    FILE                       *eventFilePtr
-    )
-{
-  INITSTATUS( status, "OutputEventsFile", FINDCHIRPSLAVEC );
-
-  /* write inspiral events to a file */
-
-  RETURN( status );
-}
-
-/*-----------------------------------------------------------------------*/
-#ifdef LAL_MPI_ENABLED
 static void 
 ExchNumTmpltsFilteredMPI ( 
     LALStatus          *status,
@@ -243,7 +186,6 @@ ExchNumTmpltsFilteredMPI (
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
-#endif /* LAL_MPI_ENABLED */
 
 /*-----------------------------------------------------------------------*/
 void
@@ -259,15 +201,11 @@ LALFindChirpSlave (
   INT4                         *filterSegment    = NULL;
   InspiralTemplate             *tmpltBankHead    = NULL;
   InspiralTemplate             *currentTmplt     = NULL;
-  InspiralTemplateNode         *tmpltNodeHead    = NULL;
-  InspiralTemplateNode         *currentTmpltNode = NULL;
   InspiralEvent                *eventList        = NULL;
   InspiralEvent               **eventListHandle  = NULL;
-#ifdef LAL_MPI_ENABLED
   UINT4                         numberOfTemplates;
   InitExchParams                initExchParams;
   MPI_Comm                     *mpiComm;
-#endif /* LAL_MPI_ENABLED */
 
 
   INITSTATUS( status, "FindChirpSlave", FINDCHIRPSLAVEC );
@@ -313,71 +251,50 @@ LALFindChirpSlave (
 
   /*
    * 
-   * if MPI is defined and we are using it, set up the exchange params
+   * set up the exchange params
    *
    */
 
 
-#ifdef LAL_MPI_ENABLED
-  if ( params->useMPI )
-  {
-    ASSERT( params->mpiComm, status,
-        FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
+  ASSERT( params->mpiComm, status,
+      FINDCHIRPENGINEH_ENULL, FINDCHIRPENGINEH_MSGENULL );
 
-    mpiComm = (MPI_Comm *) params->mpiComm;
-    MPI_Comm_rank( initExchParams.mpiComm = *mpiComm, 
-        &(initExchParams.myProcNum) );
-  }
-#endif /* HAVE_MPI */
+  mpiComm = (MPI_Comm *) params->mpiComm;
+  MPI_Comm_rank( initExchParams.mpiComm = *mpiComm, 
+      &(initExchParams.myProcNum) );
 
 
   /*
-   *
-   * get template parameter bank
-   *
+  *
+  * get template parameter bank
+  *
    */
 
 
-  /* If we have mpi enabled, there is a choice between getting the      */
-  /* template bank from a file or getting it from the master via mpi.   */
-  /* If we do not have mpi enabled, then the only choice is to get it   */
-  /* from the file.                                                     */
-#ifdef LAL_MPI_ENABLED
-  if ( params->useMPI )
+  /* get template bank from master using MPI */
+  GetTemplateBankMPI( status->statusPtr, &tmpltBankHead, 
+      &numberOfTemplates, initExchParams );
+  CHECKSTATUSPTR( status );
+
+  /* if no template bank is returned, tell the master that the slave */
+  /* is shutting down                                                */
+  if ( ! tmpltBankHead )
   {
-    /* get template bank from master using MPI */
-    GetTemplateBankMPI( status->statusPtr, &tmpltBankHead, 
-        &numberOfTemplates, initExchParams );
+    ExchParams       *thisExchPtr = NULL;
+    ExchParams        exchFinished;
+
+    /* exchange finished message */
+    exchFinished.exchObjectType         = ExchFinished;
+    exchFinished.send                   = 0; /* master sends */
+    exchFinished.numObjects             = 0; /* irrelevant */
+    exchFinished.partnerProcNum         = 0; /* master */
+
+    /* tell the master the slave is shutting down */
+    LALInitializeExchange( status->statusPtr, &thisExchPtr, 
+        &exchFinished, &initExchParams );
     CHECKSTATUSPTR( status );
 
-    /* if no template bank is returned, tell the master that the slave */
-    /* is shutting down                                                */
-    if ( ! tmpltBankHead )
-    {
-      ExchParams       *thisExchPtr = NULL;
-      ExchParams        exchFinished;
-
-      /* exchange finished message */
-      exchFinished.exchObjectType         = ExchFinished;
-      exchFinished.send                   = 0; /* master sends */
-      exchFinished.numObjects             = 0; /* irrelevant */
-      exchFinished.partnerProcNum         = 0; /* master */
-
-      /* tell the master the slave is shutting down */
-      LALInitializeExchange( status->statusPtr, &thisExchPtr, 
-          &exchFinished, &initExchParams );
-      CHECKSTATUSPTR( status );
-
-      LALFinalizeExchange( status->statusPtr, &thisExchPtr );
-      CHECKSTATUSPTR( status );
-    }
-  }
-  else
-#endif /* LAL_MPI_ENABLED */
-  {
-    /* get template bank from a specified file */
-    GetTemplateBankFile( status->statusPtr, 
-        &tmpltBankHead, params->tmpltBankFilePtr );
+    LALFinalizeExchange( status->statusPtr, &thisExchPtr );
     CHECKSTATUSPTR( status );
   }
 
@@ -387,28 +304,6 @@ LALFindChirpSlave (
   {
     *(params->notFinished) = 0;
     goto exit;
-  }
-
-
- /*
-  *
-  * create a linked list of template nodes for the coarse templates
-  *
-  */
-
-
-  LALFindChirpCreateTmpltNode( status->statusPtr, tmpltBankHead, 
-      &tmpltNodeHead );
-  CHECKSTATUSPTR( status );
-
-  currentTmpltNode = tmpltNodeHead;
-
-  for ( currentTmplt = tmpltBankHead->next; currentTmplt; 
-      currentTmplt = currentTmplt->next )
-  {
-    LALFindChirpCreateTmpltNode( status->statusPtr, currentTmplt, 
-        &currentTmpltNode );
-    CHECKSTATUSPTR( status );
   }
 
 
@@ -433,46 +328,34 @@ LALFindChirpSlave (
 
   while ( 1 )
   {
-#if 0
-    fprintf( stdout, "---- top of while(1) -------------------\n" );
-    if ( params->simParams ) 
-      fprintf( stdout, "simCount = %u\n", simCount );
-    fflush( stdout );
-#endif
 
-
-    /*
-     *
-     * simulated data generation
-     *
-     */
+   /*
+    *
+    * simulated data generation
+    *
+    */
 
 
     /* if we are doing a simulation, regenerate the  data internally    */
     /* according to the rules below                                     */
     if ( params->simParams )
     {
-        DataSegment    *currentDataSeg = dataSegVec->data;
+      DataSegment    *currentDataSeg = dataSegVec->data;
 
-        REAL4   dynRange   = params->dataParams->dynRange;
-        REAL4   dynRangeSq = dynRange * dynRange;
+      REAL4   dynRange   = params->dataParams->dynRange;
+      REAL4   dynRangeSq = dynRange * dynRange;
 
-        REAL8   deltaT = currentDataSeg->chan->deltaT;
-        REAL8   deltaF = currentDataSeg->spec->deltaF;
+      REAL8   deltaT = currentDataSeg->chan->deltaT;
+      REAL8   deltaF = currentDataSeg->spec->deltaF;
 
-        UINT4   tdLength = currentDataSeg->chan->data->length;
-        UINT4   fdLength = currentDataSeg->spec->data->length;
+      UINT4   tdLength = currentDataSeg->chan->data->length;
+      UINT4   fdLength = currentDataSeg->spec->data->length;
 
-        REAL8   psdFactor = 9.0e-46;
-        REAL8   minPsd;
-        REAL4   response;
-        REAL4   transfer;
-        REAL4   spectrum;
-
-#if 0
-      fprintf( stdout, "warning: simulation mode\n" );
-      fflush( stdout );
-#endif
+      REAL8   psdFactor = 9.0e-46;
+      REAL8   minPsd;
+      REAL4   response;
+      REAL4   transfer;
+      REAL4   spectrum;
 
       if ( params->simParams->simType == fcBankMinimalMatch )
       {
@@ -530,16 +413,8 @@ LALFindChirpSlave (
           CreateRandomPPNParamStruc( status->statusPtr, 
               &ppnParams, &mass1, &mass2, 
               params->simParams->mMin, params->simParams->mMax, deltaT,
-             params->simParams->randomParams );
+              params->simParams->randomParams );
           CHECKSTATUSPTR( status );
-
-#if 0
-          /* XXX force the params to be a for 1.4,1.4 chirp for testing */
-          mass1 = 1.2;
-          mass2 = 2.0;
-          ppnParams.mTot = mass1 + mass2;
-          ppnParams.eta = mass1 * mass2 / ( ppnParams.mTot * ppnParams.mTot );
-#endif
 
           /* set the parameters in the loudest event structure          */
           loudestEvent[i].id = loudestEvent[i].segmentNumber = 
@@ -548,19 +423,11 @@ LALFindChirpSlave (
           loudestEvent[i].tmplt.mass2     = (REAL8) mass2;
           loudestEvent[i].tmplt.eta       = (REAL8) ppnParams.eta;
           loudestEvent[i].tmplt.totalMass = (REAL8) ppnParams.mTot;
-#if 0
-          fprintf( stdout, "random chirp generated: m1 = %e, m2 = %e\n", 
-              mass1, mass2 );
-#endif
 
           /* generate the inspiral waveform                             */
           memset( &waveform, 0, sizeof(CoherentGW) );
           LALGeneratePPNInspiral( status->statusPtr, &waveform, &ppnParams );
-#if 0
-          fprintf( stdout, "%d: %s\n", ppnParams.termCode,
-	       ppnParams.termDescription );
-          fflush( stdout );
-#endif
+          CHECKSTATUSPTR( status );
 
           /* place the waveform in the middle of the data segment       */
           if ( ppnParams.length > tdLength )
@@ -598,6 +465,7 @@ LALFindChirpSlave (
           LALSDestroyVector( status->statusPtr, &(waveform.f->data) );
           CHECKSTATUSPTR( status );
           LALDDestroyVector( status->statusPtr, &(waveform.phi->data) );
+          CHECKSTATUSPTR( status );
           LALFree( waveform.a );
           LALFree( waveform.f );
           LALFree( waveform.phi );
@@ -608,37 +476,6 @@ LALFindChirpSlave (
             params->dataParams );
         CHECKSTATUSPTR( status );
         params->dataConditioned = 1;
-
-#if 0
-        {
-          FILE  *tdfp, *fdfp;
-
-          if ( ! (tdfp = fopen( "/home/duncan/incomming/td.dat", "w" ))
-              || ! (fdfp = fopen( "/home/duncan/incomming/fd.dat", "w" )) )
-          {
-            ABORT( status, 999, "an egregious error has occoured" );
-          }
-
-          for ( j = 0; j < tdLength; ++j )
-          {
-            fprintf( tdfp, "%u\t%e\n", j, 
-                dataSegVec->data->chan->data->data[j] );
-          }
-          fclose( tdfp );
-
-          for ( k = 0; k < fdLength; ++k )
-          {
-            fprintf( fdfp, "%u\t%e\t%e\t%e\t%e\n", k, 
-                dataSegVec->data->spec->data->data[k],
-                dataSegVec->data->resp->data->data[k].re,
-                dataSegVec->data->resp->data->data[k].im,
-                params->dataParams->wtildeVec->data[k].re,
-                params->dataParams->wtildeVec->data[k].re );
-          }
-          fclose( tdfp );
-          fclose( fdfp );
-        }
-#endif
 
         /* compute the normalisation of the injected signal (s|s)       */
         for ( i = 0; i < dataSegVec->length; ++i )
@@ -656,12 +493,6 @@ LALFindChirpSlave (
           sigNorm *= ( 4.0 * (REAL4) deltaT ) / (REAL4) tdLength;
 
           params->simParams->signalNorm[i] = sigNorm;
-
-#if 0
-          fprintf( stdout, "sigNorm[%u] = %e\n", i,
-              params->simParams->signalNorm[i] );
-          fflush( stdout );
-#endif
         }
       }
       else if ( params->simParams->simType == fcGaussianNoise ||
@@ -685,7 +516,7 @@ LALFindChirpSlave (
           LALNormalDeviates( status->statusPtr, 
               dataVec, params->simParams->randomParams );
           CHECKSTATUSPTR( status );
-          
+
           for ( j = 0; j < tdLength; ++j )
           {
             data[j] *= gaussianVar;
@@ -761,14 +592,13 @@ LALFindChirpSlave (
      */
 
 
-    for ( currentTmpltNode = tmpltNodeHead; currentTmpltNode; 
-        currentTmpltNode = currentTmpltNode->next )
+    for ( currentTmplt = tmpltBankHead; currentTmplt; 
+        currentTmplt = currentTmplt->next )
     {
       UINT4 insertedTemplates = 0;
       
       /* set the template pointer the address of the current template */
-      /* in the list of template nodes                                */
-      currentTmplt = params->filterInput->tmplt = currentTmpltNode->tmpltPtr;
+      params->filterInput->tmplt = currentTmplt;
 
       /* pointer to the array of segments to filter against the */
       /* current template: this is what we base the decision    */
@@ -819,14 +649,6 @@ LALFindChirpSlave (
         {
           /* point the filter input to this data segment */
           params->filterInput->segment = params->fcSegVec->data + i;
-#if 0
-          fprintf( stdout, "filtering segment %d against template %d\n",
-              params->filterInput->segment->number,
-              currentTmplt->number );
-          fprintf( stdout, "template %d: m1 = %e, m2 = %e\n",
-              currentTmplt->number, currentTmplt->mass1, currentTmplt->mass2 );
-          fflush( stdout );
-#endif
 
           /* filter the data segment against the template */
           LALFindChirpFilterSegment( status->statusPtr, eventListHandle, 
@@ -836,85 +658,22 @@ LALFindChirpSlave (
           /* dereference the eventListHandle to get a pointer the events */
           eventList = *eventListHandle;
 
-#if 0
-          {
-            InspiralEvent *tmpEvent = eventList;
-            UINT4          tmpEventCtr = 0;
-            
-            while ( tmpEvent )
-            {
-              tmpEventCtr++;
-              tmpEvent = tmpEvent->next;
-            }
-
-            fprintf( stdout, "slave: %u events found at %p\n", 
-                tmpEventCtr, eventList );
-            fflush( stdout );
-          }
-#endif
           /* process list of returned events */
           if ( eventList )
           {
-            if ( currentTmplt->fine && ! insertedTemplates )
-            {
-              /* we need to insert the fine list of templates and tag */
-              /* the inserted template to that this data segment      */
-              /* is filtered against them                             */
-              InspiralTemplate       *fineTmplt;
-              InspiralTemplateNode   *insertNode = currentTmpltNode;
-
-              for ( fineTmplt = currentTmplt; fineTmplt;
-                  fineTmplt = fineTmplt->next )
-              {
-                LALFindChirpCreateTmpltNode( status->statusPtr, 
-                    fineTmplt, &insertNode );
-                CHECKSTATUSPTR( status );
-
-                fineTmplt->segmentIdVec->data[i] = 1;
-              }
-
-              insertedTemplates = 1;
-            }
-            else if ( currentTmplt->fine && insertedTemplates )
-            {
-              /* we do not need to insert fine templates, but we need     */
-              /* to tag the inserted fine templates so that this data     */
-              /* segment is filtered against them                         */
-              InspiralTemplateNode     *fineTmpltNode;
-              /* record the level of this template                        */
-              UINT4 fineTmpltLevel = currentTmpltNode->next->tmpltPtr->level;
-
-              /* start at the fist fine template that we have inserted    */
-              /* and continue until we reach the next coarse template     */
-              for ( fineTmpltNode = currentTmpltNode->next;
-                  fineTmpltNode->tmpltPtr->level == fineTmpltLevel;
-                  fineTmpltNode = fineTmpltNode->next )
-              {
-                fineTmpltNode->tmpltPtr->segmentIdVec->data[i] = 1;
-                fineTmpltNode = fineTmpltNode->next;
-              }
-            }
-            else if ( params->simParams && 
+            if ( params->simParams && 
              params->simParams->simType == fcBankMinimalMatch )
             {
               /* if we just want the loudest event, save only the loudest */
               /* in the list for the data segment                         */
               InspiralEvent *loudestEvent = params->simParams->loudestEvent;
-#if 0
-              fprintf( stdout, "searching for loudest event\n" );
-              fflush( stdout );
-#endif
+
               while ( eventList )
               {
                 InspiralEvent *thisEvent = eventList;
 
                 if ( thisEvent->snrsq > loudestEvent[i].snrsq )
                 {
-#if 0
-                  fprintf( stdout, "found new loudest event: %e\n",
-                      thisEvent->snrsq );
-                  fflush( stdout );
-#endif
                   memcpy( &(loudestEvent[i].time), &(thisEvent->time),
                       sizeof(LIGOTimeGPS) );
                   memcpy( loudestEvent[i].ifoName, thisEvent->ifoName,
@@ -962,34 +721,6 @@ LALFindChirpSlave (
 
       } /* end loop over data segments */
 
-
-      /* 
-       *
-       * if the next template up a level, remove all the inserted templates 
-       *
-       */
-
-
-      if ( currentTmpltNode->next )
-      {
-        InspiralTemplate       *nextTmplt = currentTmpltNode->next->tmpltPtr;
-        UINT4                   currentLevel = currentTmplt->level;
-
-        if ( nextTmplt->level < currentLevel )
-        {
-          while ( currentTmpltNode->tmpltPtr->level == currentLevel )
-          {
-            memset( currentTmpltNode->tmpltPtr->segmentIdVec->data, 0, 
-                currentTmpltNode->tmpltPtr->segmentIdVec->length 
-                * sizeof( UINT4 ) );
-            LALFindChirpDestroyTmpltNode( status->statusPtr, 
-                &currentTmpltNode );
-            CHECKSTATUSPTR( status );
-          }
-        }
-      }
-
-
     } /* end loop over templates */
 
 
@@ -1002,27 +733,12 @@ LALFindChirpSlave (
       {
         /* compute match amd store in snrsq field */
         loudestEvent[i].snrsq /= signalNorm[i];
-#if 0
-        fprintf( stdout, "snrsq = %e, snr = %e\n", loudestEvent[i].snrsq,
-            sqrt( loudestEvent[i].snrsq ) );
-#endif
       }
 
       /* send loudest events to the master */
-#ifdef LAL_MPI_ENABLED
-      if ( params->useMPI )
-      {
-        OutputEventsMPI ( status->statusPtr, params->simParams->loudestEvent, 
-            initExchParams );
-        CHECKSTATUSPTR( status );
-      }
-      else
-#endif /* LAL_MPI_ENABLED */
-      {
-        OutputEventsFile ( status->statusPtr, params->simParams->loudestEvent, 
-            params->eventFilePtr );
-        CHECKSTATUSPTR( status );
-      }                
+      OutputEventsMPI ( status->statusPtr, params->simParams->loudestEvent, 
+          initExchParams );
+      CHECKSTATUSPTR( status );
 
       /* free the loudest event array and the normalisation */
       LALFree( params->simParams->signalNorm );
@@ -1050,37 +766,19 @@ LALFindChirpSlave (
    */
 
 
-  /* free linked list of template nodes */
-  while ( tmpltNodeHead )
-  {
-    currentTmpltNode = tmpltNodeHead;
-    tmpltNodeHead = tmpltNodeHead->next;
-    LALFree( currentTmpltNode );
-    currentTmpltNode = NULL;
-  }
-
   /* free the template bank */
   LALFindChirpDestroyInspiralBank( status->statusPtr, &tmpltBankHead );
   CHECKSTATUSPTR( status );
 
-  /* if we are using mpi then we are not finished unless the master     */
-  /* returns no templates. if we are not using mpi, then we are done.   */
-#ifdef LAL_MPI_ENABLED
-  if ( params->useMPI )
-  {
-    *(params->notFinished) = 1;
-    /* return the number of templates that we have just filtered to the */
-    /* master so that it can caluclate progress information for the     */
-    /* wrapperAPI                                                       */
-    ExchNumTmpltsFilteredMPI( status->statusPtr, numberOfTemplates, 
-        initExchParams );
-    CHECKSTATUSPTR( status );
-  }
-  else
-#endif /* LAL_MPI_ENABLED */
-  {
-    *(params->notFinished) = 0;
-  }
+  /* we are not finished unless the master returns no templates.      */
+  *(params->notFinished) = 1;
+
+  /* return the number of templates that we have just filtered to the */
+  /* master so that it can caluclate progress information for the     */
+  /* wrapperAPI                                                       */
+  ExchNumTmpltsFilteredMPI( status->statusPtr, numberOfTemplates, 
+      initExchParams );
+  CHECKSTATUSPTR( status );
 
   /* normal exit */
 exit:
