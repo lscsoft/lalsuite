@@ -150,7 +150,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
-#include <lal/TimeFreqFFT.h>
+#include "TimeFreqFFT.h"
 #include <lal/LALConstants.h>
 
 NRCSID( TIMEFREQFFTC, "$Id$" );
@@ -664,6 +664,190 @@ LALREAL4AverageSpectrum (
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
+
+
+void
+LALCOMPLEX8AverageSpectrum (
+    LALStatus                   *status,
+    COMPLEX8FrequencySeries     *fSeries,
+    REAL4TimeSeries             *tSeries0,
+    REAL4TimeSeries             *tSeries1,
+    AverageSpectrumParams       *params
+    )
+/* </lalVerbatim> */
+{
+  UINT4                 i, j, k, l;          /* seg, ts and freq counters       */
+  UINT4                 numSeg;           /* number of segments in average   */
+  UINT4                 fLength;          /* length of requested power spec  */
+  UINT4                 tLength;          /* length of time series segments  */
+  REAL4Vector          *tSegment[2] = {NULL,NULL};
+  COMPLEX8Vector       *fSegment[2] = {NULL,NULL};
+  REAL4                *tSeriesPtr0,*tSeriesPtr1 ;
+  REAL4                 psdNorm = 0;      /* factor to multiply windows data */
+  REAL4                 fftRe0, fftIm0, fftRe1, fftIm1;
+  LALUnit               unit;
+  LALUnitPair           pair;
+  RAT4                  negRootTwo = { -1, 1 };
+
+  INITSTATUS (status, "LALCOMPLEX8AverageSpectrum", TIMEFREQFFTC);
+  ATTATCHSTATUSPTR (status);
+
+  /* check the input and output data pointers are non-null */
+  ASSERT( fSeries, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( fSeries->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( fSeries->data->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( tSeries0, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( tSeries0->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( tSeries0->data->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+   ASSERT( tSeries1, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( tSeries1->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( tSeries1->data->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+
+  /* check the contents of the parameter structure */
+  ASSERT( params, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( params->window, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( params->window->data, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  ASSERT( params->window->data->length > 0, status,
+      TIMEFREQFFTH_EZSEG, TIMEFREQFFTH_MSGEZSEG );
+  ASSERT( params->plan, status,
+      TIMEFREQFFTH_ENULL, TIMEFREQFFTH_MSGENULL );
+  if ( !  ( params->method == useUnity || params->method == useMean || 
+        params->method == useMedian ) )
+  {
+    ABORT( status, TIMEFREQFFTH_EUAVG, TIMEFREQFFTH_MSGEUAVG );
+  }
+
+  /* check that the window length and fft storage lengths agree */
+  fLength = fSeries->data->length;
+  tLength = params->window->data->length;
+  if ( fLength != tLength / 2 + 1 )
+  {
+    ABORT( status, TIMEFREQFFTH_EMISM, TIMEFREQFFTH_MSGEMISM );
+  }
+
+  /* compute the number of segs, check that the length and overlap are valid */
+  numSeg = (tSeries0->data->length - params->overlap) / (tLength - params->overlap);
+  if ( (tSeries0->data->length - params->overlap) % (tLength - params->overlap) )
+  {
+    ABORT( status, TIMEFREQFFTH_EMISM, TIMEFREQFFTH_MSGEMISM );
+  }
+
+  /* clear the output spectrum and the workspace frequency series */
+  memset( fSeries->data->data, 0, fLength * sizeof(COMPLEX8) );
+
+  /* compute the parameters of the output frequency series data */
+  fSeries->epoch = tSeries0->epoch;
+  fSeries->f0 = tSeries0->f0;
+  fSeries->deltaF = 1.0 / ( (REAL8) tLength * tSeries0->deltaT );
+  /* THIS IS WRONG: GIVES SQUARE-ROOT OF CORRECT UNITS */
+  /*
+  pair.unitOne = &(tSeries->sampleUnits);
+  pair.unitTwo = &lalHertzUnit;
+  LALUnitRaise( status->statusPtr, &unit, pair.unitTwo, &negRootTwo );
+  CHECKSTATUSPTR( status );
+  pair.unitTwo = &unit;
+  */
+  pair.unitOne = &(tSeries0->sampleUnits);
+  pair.unitTwo = &(tSeries0->sampleUnits);
+  LALUnitMultiply( status->statusPtr, &unit, &pair );
+  CHECKSTATUSPTR( status );
+  pair.unitOne = &unit;
+  pair.unitTwo = &lalSecondUnit;
+  LALUnitMultiply( status->statusPtr, &(fSeries->sampleUnits), &pair );
+  CHECKSTATUSPTR( status );
+
+  /* create temporary storage for the dummy time domain segment */
+  for (l = 0; l < 2; l ++){
+  LALCreateVector( status->statusPtr, &tSegment[l], tLength );
+  CHECKSTATUSPTR( status );
+
+  /* create temporary storage for the individual ffts */
+  LALCCreateVector( status->statusPtr, &fSegment[l], fLength );
+  CHECKSTATUSPTR( status );}
+
+
+  /* compute each of the power spectra used in the average */
+  for ( i = 0, tSeriesPtr0 = tSeries0->data->data, tSeriesPtr1 = tSeries1->data->data; i < (UINT4) numSeg; ++i )
+  {
+    /* copy the time series data to the dummy segment */
+    memcpy( tSegment[0]->data, tSeriesPtr0, tLength * sizeof(REAL4) );
+    memcpy( tSegment[1]->data, tSeriesPtr1, tLength * sizeof(REAL4) );
+    /* window the time series segment */
+    for ( j = 0; j < tLength; ++j )
+    {
+      tSegment[0]->data[j] *= params->window->data->data[j];
+      tSegment[1]->data[j] *= params->window->data->data[j];
+    }
+
+    /* compute the fft of the data segment */
+    LALForwardRealFFT( status->statusPtr, fSegment[0], tSegment[0], params->plan );
+    CHECKSTATUSPTR (status);
+    LALForwardRealFFT( status->statusPtr, fSegment[1], tSegment[1], params->plan );
+    CHECKSTATUSPTR (status);
+
+    /* advance the segment data pointer to the start of the next segment */
+    tSeriesPtr0 += tLength - params->overlap;
+    tSeriesPtr1 += tLength - params->overlap;
+
+    /* compute the psd components */
+    /*use mean method here*/
+      /* we can get away with less storage */
+      for ( k = 0; k < fLength; ++k )
+      {
+        fftRe0 = fSegment[0]->data[k].re;
+        fftIm0 = fSegment[0]->data[k].im;
+        fftRe1 = fSegment[1]->data[k].re;
+        fftIm1 = fSegment[1]->data[k].im;
+        fSeries->data->data[k].re += fftRe0 * fftRe1 + fftIm0 * fftIm1;
+        fSeries->data->data[k].im += - fftIm0 * fftRe1 + fftRe0 * fftIm1;
+        //fSeries->data->data[k].im +=1.;
+      }
+
+      /* halve the DC and Nyquist components to be consistent with T010095 */
+      fSeries->data->data[0].re /= 2;
+      fSeries->data->data[fLength - 1].re /= 2;
+      fSeries->data->data[0].im /= 2;
+      fSeries->data->data[fLength - 1].im /= 2;
+    
+      }
+
+  /* destroy the dummy time series segment and the fft scratch space */
+  for (l = 0; l < 2; l ++){
+  LALDestroyVector( status->statusPtr, &tSegment[l] );
+  CHECKSTATUSPTR( status );
+  LALCDestroyVector( status->statusPtr, &fSegment[l] );
+  CHECKSTATUSPTR( status );}
+
+  /* compute the desired average of the spectra */
+  
+    /* normalization constant for the arithmentic mean */
+    psdNorm = ( 2.0 * tSeries1->deltaT ) / 
+      ( (REAL4) numSeg * params->window->sumofsquares );
+
+    /* normalize the psd to it matches the conventions document */
+    for ( k = 0; k < fLength; ++k )
+    {
+      fSeries->data->data[k].re *= psdNorm;
+      fSeries->data->data[k].im *= psdNorm;
+    }
+ 
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
 
 
 /*

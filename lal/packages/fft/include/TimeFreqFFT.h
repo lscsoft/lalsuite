@@ -203,7 +203,14 @@ LALREAL4AverageSpectrum (
     REAL4TimeSeries             *tSeries,
     AverageSpectrumParams       *params
     );
-
+void
+LALCOMPLEX8AverageSpectrum (
+    LALStatus                   *status,
+    COMPLEX8FrequencySeries     *fSeries,
+    REAL4TimeSeries             *tSeries0,
+    REAL4TimeSeries             *tSeries1,
+    AverageSpectrumParams       *params
+    );
 void
 LALTimeFreqComplexFFT(
     LALStatus               *status,
