@@ -173,6 +173,51 @@ if [ -n "${LSCSOFT_PREFIX}" ]; then
 fi
 EOF
 #/ignore
+#ignore
+rm -f $LSCSOFT_ETCDIR/lscsoft-user-env.csh || fail
+cat > $LSCSOFT_ETCDIR/lscsoft-user-env.csh <<\EOF
+# Source this file to set up your environment to use lscsoft software.
+# This requires that LSCSOFT_LOCATION be set.
+# LSCSOFT_PREFIX will be set by this script to save the current location
+# so that the old LSCSOFT_PREFIX information can be removed from your
+# environment if LSCSOFT_LOCATION is changed and this file is resourced.
+# If LSCSOFT_LOCATION is set but empty then the previous location is
+# removed from the environment.
+
+if ( ! ${?LSCSOFT_LOCATION} ) then
+  echo "ERROR: environment variable LSCSOFT_LOCATION not defined"
+  exit 1
+endif
+
+if ( ! ${?LD_LIBRARY_PATH} ) then
+  setenv LD_LIBRARY_PATH ''
+endif
+
+if ( ! ${?MANPATH} ) then
+  setenv MANPATH ''
+endif
+
+
+if ( ${?LSCSOFT_PREFIX} ) then
+  if (  "${LSCSOFT_PREFIX}" != "" ) then
+    setenv PATH `echo "${PATH}" | sed -e "s%:${LSCSOFT_PREFIX}[^:]*%%g" -e "s%^${LSCSOFT_PREFIX}[^:]*:\{0,1\}%%"`
+    setenv LD_LIBRARY_PATH `echo "${LD_LIBRARY_PATH}" | sed -e "s%:${LSCSOFT_PREFIX}[^:]*%%g" -e "s%^${LSCSOFT_PREFIX}[^:]*:\{0,1\}%%"`
+    setenv MANPATH `echo "${MANPATH}" | sed -e "s%:${LSCSOFT_PREFIX}[^:]*%%g" -e "s%^${LSCSOFT_PREFIX}[^:]*:\{0,1\}%%"`
+  endif
+endif
+
+setenv LSCSOFT_PREFIX ${LSCSOFT_LOCATION}
+
+if ( "${LSCSOFT_PREFIX}" != "" ) then
+  setenv PATH `echo "${PATH}" | sed -e "s%:${LSCSOFT_PREFIX}[^:]*%%g" -e "s%^${LSCSOFT_PREFIX}[^:]*:\{0,1\}%%"`
+  setenv LD_LIBRARY_PATH `echo "${LD_LIBRARY_PATH}" | sed -e "s%:${LSCSOFT_PREFIX}[^:]*%%g" -e "s%^${LSCSOFT_PREFIX}[^:]*:\{0,1\}%%"`
+  setenv MANPATH `echo "${MANPATH}" | sed -e "s%:${LSCSOFT_PREFIX}[^:]*%%g" -e "s%^${LSCSOFT_PREFIX}[^:]*:\{0,1\}%%"`
+  setenv PATH ${LSCSOFT_LOCATION}/bin:${PATH}
+  setenv LD_LIBRARY_PATH ${LSCSOFT_LOCATION}/lib:${LD_LIBRARY_PATH}
+  setenv MANPATH ${LSCSOFT_LOCATION}/man:${MANPATH}
+endif
+EOF
+#/ignore
 
 ## Finally, you need to set the environment variable "LSCSOFT_LOCATION"
 ## to be where you have installed this software.
@@ -199,6 +244,12 @@ please add the following to your .profile:
         LSCSOFT_LOCATION=$LSCSOFT_PREFIX
         export LSCSOFT_LOCATION
         . \${LSCSOFT_LOCATION}/etc/lscsoft-user-env.sh
+
+If you are using a C shell (e.g., tcsh), instead add these lines to
+your .login:
+
+        setenv LSCSOFT_LOCATION $LSCSOFT_PREFIX
+        source ${LSCSOFT_LOCATION}/etc/lscsoft-user-env.csh
 
 =======================================================================
 EOF
