@@ -74,8 +74,6 @@ void LALComputeAM (LALStatus          *status,
 
   REAL4 zeta;                  /* sine of angle between detector arms        */
   INT4 i;                      /* temporary loop index                       */ 
-  EarthState earth;            /* earth information needed for LALBarycenter */
-  EmissionTime emit;           /* output of LALBarycenter                    */
   LALDetAMResponse response;   /* output of LALComputeDetAMResponse          */
   LALGPSandAcc timeAndAcc;     /* parameter structure to LALComputeAMResponse*/
 
