@@ -11,8 +11,8 @@ Calculates the values of the optimal filter function for the
 standard cross-correlation statistic.
 
 \subsubsection*{Prototypes}
-\input{StochasticOptimalFilterCP}
 \idx{LALStochasticOptimalFilter()}
+\input{StochasticOptimalFilterCP}
 
 \subsubsection*{Description}
 
@@ -261,10 +261,11 @@ NRCSID (STOCHASTICOPTIMALFILTERC,
 
 /* <lalVerbatim file="StochasticOptimalFilterCP"> */
 void
-LALStochasticOptimalFilter( LALStatus                          *status,
-                            COMPLEX8FrequencySeries            *optimalFilter,
-                            const StochasticOptimalFilterInput *input,
-                            const REAL8                        fRef )
+LALStochasticOptimalFilter(
+            LALStatus                                  *status,
+            COMPLEX8FrequencySeries                    *optimalFilter,
+            const StochasticOptimalFilterInput         *input,
+            const StochasticOptimalFilterParameters    *parameters )
 /* </lalVerbatim> */
 {
 
@@ -313,112 +314,112 @@ LALStochasticOptimalFilter( LALStatus                          *status,
   /***** check for null pointers *****/
   /* input structure */
   ASSERT(input != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* output structure */
   ASSERT(optimalFilter != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
  
   /* overlap member of input */
   ASSERT(input->overlapReductionFunction != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* omega member of input */
   ASSERT(input->omegaGW != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* inverse noise 1 of input */
   ASSERT(input->unWhitenedInverseNoisePSD1 != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* inverse noise 2 of input */
   ASSERT(input->unWhitenedInverseNoisePSD2 != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
   /* half-whitened inverse noise 1 of input */
   ASSERT(input->halfWhitenedInverseNoisePSD1 != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* half-whitened inverse noise 2 of input */
   ASSERT(input->halfWhitenedInverseNoisePSD2 != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data member of overlap */
   ASSERT(input->overlapReductionFunction->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data member of omega */
   ASSERT(input->omegaGW->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data member of inverse noise 1 */
   ASSERT(input->unWhitenedInverseNoisePSD1->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data member of inverse noise 2 */
   ASSERT(input->unWhitenedInverseNoisePSD2->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data member of half-whitened inverse noise 1 */
   ASSERT(input->halfWhitenedInverseNoisePSD1->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data member of half-whitened inverse noise 2 */
   ASSERT(input->halfWhitenedInverseNoisePSD2->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data member of output */
   ASSERT(optimalFilter->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data-data member of overlap */
   ASSERT(input->overlapReductionFunction->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data-data member of omega */
   ASSERT(input->omegaGW->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data-data member of inverse noise 1 */
   ASSERT(input->unWhitenedInverseNoisePSD1->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data-data member of inverse noise 2 */
   ASSERT(input->unWhitenedInverseNoisePSD2->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data-data member of half whitened inverse noise 1 */
   ASSERT(input->halfWhitenedInverseNoisePSD1->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data-data member of half whitened inverse noise 2 */
   ASSERT(input->halfWhitenedInverseNoisePSD2->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* data-data member of output structure */
   ASSERT(optimalFilter->data->data != NULL, status, 
-         STOCHASTICCROSSCORRELATIONH_ENULLP,
-         STOCHASTICCROSSCORRELATIONH_MSGENULLP);
+         STOCHASTICCROSSCORRELATIONH_ENULLPTR,
+         STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /*** done with null pointers ***/
 
@@ -549,13 +550,13 @@ LALStochasticOptimalFilter( LALStatus                          *status,
          STOCHASTICCROSSCORRELATIONH_MSGEMMDELTAF);
   }
   /** check for reference frequency lower and upper limits **/ 
-  if ( fRef < f0 + deltaF )
+  if ( parameters->fRef < f0 + deltaF )
   {
     ABORT(status,
          STOCHASTICCROSSCORRELATIONH_EOORFREF,
          STOCHASTICCROSSCORRELATIONH_MSGEOORFREF);
   }
-  if ( fRef > f0 + ((REAL8)(length-1)*deltaF) )
+  if ( parameters->fRef > f0 + ((REAL8)(length-1)*deltaF) )
   {
     ABORT(status,
          STOCHASTICCROSSCORRELATIONH_EOORFREF,
@@ -641,40 +642,41 @@ LALStochasticOptimalFilter( LALStatus                          *status,
   /* Now change power of ten to account for scaled Hubble constant */
 
   optimalFilter->sampleUnits.powerOfTen += 36;
-  
-  if (f0 == 0)
+
+  /* calculate lambda */
+  /* find omegaRef */
+  xRef = (UINT4)((parameters->fRef)/deltaF);
+  if ( ((parameters->fRef)/deltaF) == (REAL8)(xRef) )
   {
-    /* calculate lambda */
-    /* find omegaRef */
-    xRef = (UINT4)((fRef)/deltaF);
-    if ( ((fRef)/deltaF) == (REAL8)(xRef) )
+    omegaRef = input->omegaGW->data->data[xRef];
+  }
+  else
+  {
+    omega1   = input->omegaGW->data->data[xRef];
+    omega2   = input->omegaGW->data->data[xRef+1];
+    freq1    = xRef * deltaF; 
+    freq2    = (xRef + 1) * deltaF;
+    if (omega1 <= 0)
     {
-      omegaRef = input->omegaGW->data->data[xRef];
+      ABORT( status,
+	     STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA,
+	     STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA );
     }
     else
     {
-      omega1   = input->omegaGW->data->data[xRef];
-      omega2   = input->omegaGW->data->data[xRef+1];
-      freq1    = xRef * deltaF; 
-      freq2    = (xRef + 1) * deltaF;
-      if (omega1 <= 0)
-      {
-        ABORT( status,
-         STOCHASTICCROSSCORRELATIONH_ENONPOSOMEGA,
-         STOCHASTICCROSSCORRELATIONH_MSGENONPOSOMEGA );
-      }
-      else
-      {
-        exponent = ((log((fRef)/freq1))/(log(freq2/freq1)));
-      }
-      omegaRef = omega1*(pow((omega2/omega1),exponent));
+      exponent = ((log((parameters->fRef)/freq1))/(log(freq2/freq1)));
     }
-    
-    /* calculate inverse lambda value */
-    lambdaInv = 0.0; 
-    for (i = 1; i < length; ++i)
-    {
-      f = f0 + deltaF * (REAL8) i;
+    omegaRef = omega1*(pow((omega2/omega1),exponent));
+  }
+  
+  /* calculate inverse lambda value */
+  lambdaInv = 0.0; 
+
+  
+
+  for ( i = ( f0 == 0 ? 1 : 0 ) ; i < length; ++i)
+  {
+    f = f0 + deltaF * (REAL8) i;
 
       f3 = f * f * f;
       f6 = f3 * f3;
@@ -684,20 +686,22 @@ LALStochasticOptimalFilter( LALStatus                          *status,
       p1Inv = input->unWhitenedInverseNoisePSD1->data->data[i];
       p2Inv = input->unWhitenedInverseNoisePSD2->data->data[i];
 
-      lambdaInv += 2.0 * omegaTimesGamma * omegaTimesGamma * p1Inv * p2Inv 
+      lambdaInv += omegaTimesGamma * omegaTimesGamma * p1Inv * p2Inv 
         / f6;
     }
 
-    lambdaInv /= omegaRef 
+    lambdaInv /= omegaRef
       * ( (20.0L * LAL_PI * LAL_PI) 
           / ( 3.0L * (LAL_H0FAC_SI*1e+18) * (LAL_H0FAC_SI*1e+18) )
           );
+
+    if ( !parameters->heterodyned ) lambdaInv *= 2.0;
 
     optimalFilter->data->data[0].re = 0;
     optimalFilter->data->data[0].im = 0;
       
     /* calculate optimal filter values */  
-    for (i = 1; i < length; ++i)
+    for (i = ( f0 == 0 ? 1 : 0 ) ; i < length; ++i)
     {
       f = f0 + deltaF * (REAL8) i;
 
@@ -718,15 +722,6 @@ LALStochasticOptimalFilter( LALStatus                          *status,
       cPtrOptimalFilter->im = realFactor * 
         ( (p1HWInv.re) * (p2HWInv.im) - (p1HWInv.im) * (p2HWInv.re) );
     }
-
-  } /* if f0 == 0 */
-  else
-  {
-    /*****This abort should be replaced with the correct *****/
-       /***** non-zero heterodyne frequency procedure******/
-    ABORT(status, STOCHASTICCROSSCORRELATIONH_ENOTYETHETERO,
-          STOCHASTICCROSSCORRELATIONH_MSGENOTYETHETERO); 
-  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
