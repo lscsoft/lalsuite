@@ -739,6 +739,9 @@ LALClusterWavelet(LALStatus *status,
 
   _clusterProperties((*output)->w);
 
+  (*output)->w->nonZeroFractionAfterClustering=
+    ((REAL4)_countNonZeroes((*output)->w->wavelet->data))/(*output)->w->wavelet->data->data->length;
+
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
@@ -766,6 +769,9 @@ LALReuseClusterWavelet(LALStatus *status,
     _duplicateClusterStructure(*output, input);
 
   _clusterProperties((*output)->w);
+
+  (*output)->w->nonZeroFractionAfterClustering=
+    ((REAL4)_countNonZeroes((*output)->w->wavelet->data))/(*output)->w->wavelet->data->data->length;
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
