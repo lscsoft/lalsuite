@@ -67,9 +67,7 @@ RCSID( "$Id$" );
 "  --halo-radius RMAX       set the maximum halo radius to RMAX kpc (50)\n"\
 "\n"
 
-#define KPC ( 1e3 * LAL_PC_SI )
-#define MPC ( 1e6 * LAL_PC_SI )
-#define GPC ( 1e9 * LAL_PC_SI )
+/* all units are in kpc since this is what GalacticInspiralParamStruc expects */
 
 extern int vrbflg;
 struct halo_pdf_params
@@ -132,9 +130,9 @@ int main( int argc, char *argv[] )
   CHAR         *userTag = NULL;
   REAL4         minMass = 0.1;
   REAL4         maxMass = 1.0;
-  REAL4         r_core = 5.0 * KPC;     /* core radius */
-  REAL4         r_max = 50.0 * KPC;     /* halo radius */
-  REAL4         q = 1.0;                /* flatten halo */
+  REAL4         r_core = 5.0;     /* kpc core radius */
+  REAL4         r_max = 50.0;     /* kpc halo radius */
+  REAL4         q = 1.0;          /* flatten halo */
 
   /* program variables */
   RandomParams *randParams = NULL;
