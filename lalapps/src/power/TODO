@@ -1,0 +1,41 @@
+Condor scripts:
+==============
+
+* use a DAG to submit jobs to the cluster
+* expand DAG to include generation of summary information
+* expand DAG to include clustering and coincidence step
+
+
+Power code tasks:
+================
+
+*  Move the output to the end of power.c
+*  Add proctable to power.c
+*  Add ability to notch out lines
+*  Add ability to output spectrum, etc.
+*  Add ability to read in the calibration data
+*  Add ability to read in injection files
+*  Add ability to inject into data
+*  Add ability to output calibrated power in band
+  
+
+snglBurstHistogram:
+==================
+
+*  Modify time-freq output to produce 3-d plot
+*  Add ability to parse the xml files when proctable is present
+
+
+sngBurstCoincidence:
+===================
+
+*  Add a code which takes three xml files & looks for coincidence
+*  Enhance code to do sensible clustering (difficult)
+*  Enhance code to check freq coincidence
+*  Enhance code to check amplitude consistency
+
+
+multiPower:
+==========
+
+*  Develop a code to do multi-detector power searches
