@@ -32,5 +32,6 @@ option "nsample"               u   "number of samples" int no
 option "sampling-interval"     i   "sampling time interval, in seconds" double no
 
 # misc. options
+option "format"                F   "output format" string default="am" no
 option "verbosity"             v   "verbosity level for debugging" int default="0" no
 option "debug"                 e   "debug level" int default="0" no

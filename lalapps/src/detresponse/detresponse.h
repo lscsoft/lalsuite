@@ -46,7 +46,8 @@ void  skygrid_square(skygrid_t square, const skygrid_t input);
 REAL4 skygrid_rms(const skygrid_t input);
 void  skygrid_sqrt(skygrid_t result, const skygrid_t input);
 INT4  skygrid_copy(skygrid_t dest, const skygrid_t src);
-void  skygrid_print(const char * comments, const skygrid_t input,
+void  skygrid_print(const char * format,
+                    const LIGOTimeGPS * gps, const skygrid_t input,
                     const char * filename, const char * mode);
 void  skygrid_fabs(skygrid_t absgrid, const skygrid_t input);
 void  skygrid_add(skygrid_t sum, const skygrid_t a, const skygrid_t b);
@@ -73,7 +74,7 @@ void  set_source_params(LALSource * source, const char * name, REAL8 ra_rad,
                         REAL8 dec_rad, REAL8 orien_rad);
 
 void generate_timeseries_response(LALStatus * status);
-void compute_skygrid(LALStatus * status);
+void compute_skygrid(LALStatus * status, char * format_argkj);
 
 void multiply_vectors(REAL4Vector * out,
                       const REAL4Vector * a, const REAL4Vector * b);

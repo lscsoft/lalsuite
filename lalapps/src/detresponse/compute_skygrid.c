@@ -71,7 +71,7 @@ static double relval(double ra, double dec, int i, int nrelvals)
     return retval;
 }
 
-void compute_skygrid(LALStatus * status)
+void compute_skygrid(LALStatus * status, char * format_arg)
 {
   LALDetector             detector;
   LALFrDetector           fr_detector;
@@ -89,7 +89,14 @@ void compute_skygrid(LALStatus * status)
   CHAR                    plus_file_name[LALNameLength];
   CHAR                    sum_file_name[LALNameLength];
   CHAR                    relfreq_file_name[LALNameLength];
+  CHAR                    ser_cross_file_name[LALNameLength];
+  CHAR                    ser_plus_file_name[LALNameLength];
+  CHAR                    ser_sum_file_name[LALNameLength];
+  CHAR                    ser_relfreq_file_name[LALNameLength];
+  CHAR                    dottimestamp[LALNameLength];
+  CHAR                    outfile_suffix[5];
   INT4                    i, j, k, cnt;
+  FILE                  * timesfile;
 
   /* null out strings */
   cross_file_name[0] = '\0';
@@ -177,9 +184,25 @@ void compute_skygrid(LALStatus * status)
   /*
    * set up output file names
    */
-  (void)mystrlcpy(cross_file_name, "whole_sky_cross.txt", LALNameLength);
-  (void)mystrlcpy(plus_file_name, "whole_sky_plus.txt", LALNameLength);
-  (void)mystrlcpy(sum_file_name, "whole_sky_sum.txt", LALNameLength);
+      
+  /* first, the suffixes */
+  if ((strncasecmp(args_info.format_arg, "am", LALNameLength) == 0) ||
+      (strncasecmp(args_info.format_arg, "af", LALNameLength) == 0))
+    {
+      (void)mystrlcpy(outfile_suffix, ".txt", LALNameLength);
+    }
+  else
+    {
+      (void)mystrlcpy(outfile_suffix, ".dat", LALNameLength);
+    }
+   
+  (void)mystrlcpy(cross_file_name, "whole_sky_cross", LALNameLength);
+  (void)mystrlcpy(plus_file_name, "whole_sky_plus", LALNameLength);
+  (void)mystrlcpy(sum_file_name, "whole_sky_sum", LALNameLength);
+
+  (void)strncat(cross_file_name, outfile_suffix, LALNameLength);
+  (void)strncat(plus_file_name, outfile_suffix, LALNameLength);
+  (void)strncat(sum_file_name, outfile_suffix, LALNameLength);  
 
   if (lalDebugLevel && (verbosity_level & 4))
     {
@@ -192,7 +215,7 @@ void compute_skygrid(LALStatus * status)
    * compute response over whole sky
    */
 
-  /* snapshot */
+  /* SNAPSHOT */
   det_and_source.pDetector = &detector;
   det_and_source.pSource   = &source;
 
@@ -215,25 +238,30 @@ void compute_skygrid(LALStatus * status)
         }
     }
 
-  skygrid_print("cross", grid_cros_sq, cross_file_name, "w");
-  skygrid_print("plus", grid_plus_sq, plus_file_name, "w");
-  skygrid_print("sum", grid_sum_sq, sum_file_name, "w");
+  skygrid_print(format_arg, &(gps_and_acc.gps), grid_cros_sq, cross_file_name, "w");
+  skygrid_print(format_arg, &(gps_and_acc.gps), grid_plus_sq, plus_file_name, "w");
+  skygrid_print(format_arg, &(gps_and_acc.gps), grid_sum_sq, sum_file_name, "w");
 
 
-  /* time series */
-  (void)mystrlcpy(cross_file_name, "ser_whole_sky_cross.txt", LALNameLength);
-  (void)mystrlcpy(plus_file_name, "ser_whole_sky_plus.txt", LALNameLength);
-  (void)mystrlcpy(sum_file_name, "ser_whole_sky_sum.txt", LALNameLength);
-  (void)mystrlcpy(relfreq_file_name, "ser_whole_sky_relfreq.txt", LALNameLength);
-
+  /* TIME SERIES */
+  (void)mystrlcpy(cross_file_name, "ser_whole_sky_cross", LALNameLength);
+  (void)mystrlcpy(plus_file_name, "ser_whole_sky_plus", LALNameLength);
+  (void)mystrlcpy(sum_file_name, "ser_whole_sky_sum", LALNameLength);
+  (void)mystrlcpy(relfreq_file_name, "ser_whole_sky_relfreq", LALNameLength);
+  
   /* zero out arrays */
   skygrid_zero(grid_cros_sq);
   skygrid_zero(grid_plus_sq);
   skygrid_zero(grid_sum_sq);
   skygrid_zero(grid_relfreq);
   
+  timesfile = xfopen("times.txt", "w");
+  
   for (k = 0; k < (int)time_info.nSample; ++k)
     {
+      fprintf(timesfile, "%.9d\n", gps_and_acc.gps.gpsSeconds);
+      snprintf(dottimestamp, LALNameLength, ".%.9d", gps_and_acc.gps.gpsSeconds);
+      
       for (j = 0; j < NUM_RA; ++j)
         {
           source.equatorialCoords.longitude =
@@ -247,12 +275,9 @@ void compute_skygrid(LALStatus * status)
               LALComputeDetAMResponse(status, &response, &det_and_source,
                                       &gps_and_acc);
 
-              grid_cros_sq[cnt] += response.cross * response.cross /
-                time_info.nSample;
-              grid_plus_sq[cnt] += response.plus  * response.plus /
-                time_info.nSample;
-              grid_sum_sq[cnt]  += (grid_cros_sq[cnt] + grid_plus_sq[cnt]) /
-                time_info.nSample;
+              grid_cros_sq[cnt] = response.cross * response.cross;
+              grid_plus_sq[cnt] = response.plus  * response.plus;
+              grid_sum_sq[cnt]  = (grid_cros_sq[cnt] + grid_plus_sq[cnt]);
                 
               grid_relfreq[cnt] += relval(source.equatorialCoords.latitude,
                                           source.equatorialCoords.longitude,
@@ -262,27 +287,39 @@ void compute_skygrid(LALStatus * status)
         
         LALIncrementGPS(status, &(gps_and_acc.gps), &(gps_and_acc.gps),
                       &time_interval);
+       
+        /* set up filenames */
+        (void)mystrlcpy(ser_cross_file_name, cross_file_name, LALNameLength);
+        (void)mystrlcpy(ser_plus_file_name, plus_file_name, LALNameLength);
+        (void)mystrlcpy(ser_sum_file_name, sum_file_name, LALNameLength);
+        (void)mystrlcpy(ser_relfreq_file_name, relfreq_file_name, LALNameLength);
+
+        (void)strncat(ser_cross_file_name, dottimestamp, LALNameLength);
+        (void)strncat(ser_plus_file_name, dottimestamp, LALNameLength);
+        (void)strncat(ser_sum_file_name, dottimestamp, LALNameLength);  
+        (void)strncat(ser_relfreq_file_name, dottimestamp, LALNameLength);  
+
+        (void)strncat(ser_cross_file_name, outfile_suffix, LALNameLength);
+        (void)strncat(ser_plus_file_name, outfile_suffix, LALNameLength);
+        (void)strncat(ser_sum_file_name, outfile_suffix, LALNameLength);  
+        (void)strncat(ser_relfreq_file_name, outfile_suffix, LALNameLength);  
         
-        if (k != 0)
-          {
-            skygrid_print("series cross", grid_cros_sq, cross_file_name, "a");
-            skygrid_print("series plus", grid_plus_sq, plus_file_name, "a");
-            skygrid_print("series sum", grid_sum_sq, sum_file_name, "a");
-            skygrid_print("series relfreq", grid_relfreq, relfreq_file_name, "a");
-          }
-        else
-          {
-            skygrid_print("series cross", grid_cros_sq, cross_file_name, "w");
-            skygrid_print("series plus", grid_plus_sq, plus_file_name, "w");
-            skygrid_print("series sum", grid_sum_sq, sum_file_name, "w");
-            skygrid_print("series relfreq", grid_relfreq, relfreq_file_name, "w");
-          }
-    }
+        skygrid_print(format_arg, &(gps_and_acc.gps), grid_cros_sq, ser_cross_file_name, "w");
+        skygrid_print(format_arg, &(gps_and_acc.gps), grid_plus_sq, ser_plus_file_name, "w");
+        skygrid_print(format_arg, &(gps_and_acc.gps), grid_sum_sq, ser_sum_file_name, "w");
+        skygrid_print(format_arg, &(gps_and_acc.gps), grid_relfreq, ser_relfreq_file_name, "w");
+        
+    } 
+  fclose(timesfile);    
   
-  /* time-averaged */
-  (void)mystrlcpy(cross_file_name, "int_whole_sky_cross.txt", LALNameLength);
-  (void)mystrlcpy(plus_file_name, "int_whole_sky_plus.txt", LALNameLength);
-  (void)mystrlcpy(sum_file_name, "int_whole_sky_sum.txt", LALNameLength);
+  /* TIME-AVERAGED */
+  (void)mystrlcpy(cross_file_name, "int_whole_sky_cross", LALNameLength);
+  (void)mystrlcpy(plus_file_name, "int_whole_sky_plus", LALNameLength);
+  (void)mystrlcpy(sum_file_name, "int_whole_sky_sum", LALNameLength);
+  
+  (void)strncat(cross_file_name, outfile_suffix, LALNameLength);
+  (void)strncat(plus_file_name, outfile_suffix, LALNameLength);
+  (void)strncat(sum_file_name, outfile_suffix, LALNameLength);  
 
   /* zero out arrays */
   skygrid_zero(grid_cros_sq);
@@ -317,9 +354,9 @@ void compute_skygrid(LALStatus * status)
                       &time_interval);
     }
 
-  skygrid_print("integrated cross", grid_cros_sq, cross_file_name, "w");
-  skygrid_print("integrated plus", grid_plus_sq, plus_file_name, "w");
-  skygrid_print("integrated sum", grid_sum_sq, sum_file_name, "w");
+  skygrid_print(format_arg, &(gps_and_acc.gps), grid_cros_sq, cross_file_name, "w");
+  skygrid_print(format_arg, &(gps_and_acc.gps), grid_plus_sq, plus_file_name, "w");
+  skygrid_print(format_arg, &(gps_and_acc.gps), grid_sum_sq, sum_file_name, "w");
   
   return;
 }
@@ -395,23 +432,62 @@ INT4 skygrid_copy(skygrid_t dest, const skygrid_t src)
 
 
 
-void skygrid_print(const char * comments,
-                   const skygrid_t input, const char * filename,
-                   const char *mode)
+void skygrid_print(const char * format,
+                   const LIGOTimeGPS * gps,
+                   const skygrid_t input, 
+                   const char * filename,
+                   const char * mode)
 {
-  INT4 i, j;
+  INT4 i, j, fmtcode;
   FILE * outfile = NULL;
-
+  
   outfile = xfopen(filename, mode);
+  
+  if (strncasecmp(format, "am", LALNameLength) == 0)
+    fmtcode = 0;
+  else if (strncasecmp(format, "af", LALNameLength) == 0)
+    fmtcode = 1;
+  else if (strncasecmp(format, "b", LALNameLength) == 0)
+    fmtcode = 3;
+  else 
+    fmtcode = 0;
 
-  if (comments != (char *)NULL)
-    fprintf(outfile, "# %s\n", comments);
-
-  for (i = 0; i < NUM_RA; ++i)
+  if (fmtcode == 0)
     {
-      for (j = 0; j < NUM_DEC; ++j)
-        fprintf(outfile, "% 14.8e\t", input[i*NUM_DEC + j]);
-      fprintf(outfile, "\n");
+      if (gps != (LIGOTimeGPS *)NULL)
+        fprintf(outfile, "%c %.9d\n", '%', gps->gpsSeconds);
+
+      for (i = 0; i < NUM_RA; ++i)
+        {
+          for (j = 0; j < NUM_DEC; ++j)
+            fprintf(outfile, "% 14.8e\t", input[i*NUM_DEC + j]);
+          fprintf(outfile, "\n");
+        }
+    }
+  else if (fmtcode == 1)
+    {
+     if (gps != (LIGOTimeGPS *)NULL)
+            fprintf(outfile, "%c %.9d\n", '%', gps->gpsSeconds);
+        
+     const int tot = NUM_RA * NUM_DEC;
+     for (i = 0; i < tot; ++i)
+       {
+        fprintf(outfile, "% 14.8e\t", input[i]); 
+       }
+     fprintf(outfile, "\n");
+    }
+  else if (fmtcode == 3)
+    {
+      /* no comments for binary output */
+      const size_t num_el = NUM_DEC*NUM_RA;
+      if (gps == (LIGOTimeGPS *)NULL)
+        {
+          fprintf(stderr, "must specify GPS timestamp for binary format\n");
+          exit(22);
+        }
+      fwrite(&(gps->gpsSeconds), sizeof(INT4), 1, outfile);
+      fwrite(&num_el, sizeof(INT4), 1, outfile);
+      fwrite(input, sizeof(REAL4), num_el, outfile);
     }
 
   xfclose(outfile);

@@ -1,0 +1,6 @@
+# $Id$
+
+The freq modulation stuff is correct only for S2
+It uses a circular orbit and spherical Earth model,
+and the initial conditions are hard coded to S2.
+
