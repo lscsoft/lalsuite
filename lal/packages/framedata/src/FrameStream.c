@@ -508,9 +508,11 @@ static int fr_seek( FrStream *stream, LIGOTimeGPS *epoch )
   file1 = stream->flist;
   if ( epoch->gpsSeconds < file1->t0 )
   {
+    int rew_code;
     errno = EINVAL;
-    return fr_rewind( stream );
+    rew_code = fr_rewind( stream );
     stream->state |= LAL_FR_GAP;
+    return rew_code;
   }
 
   /* if epoch is after last file */
