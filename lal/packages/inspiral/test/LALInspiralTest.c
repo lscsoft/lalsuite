@@ -75,8 +75,7 @@ int main () {
    InspiralTemplate params;
    double dt;
    static LALStatus status;
-   expnCoeffs ak;
-   INT4 n;
+   UINT4 n;
 
    params.ieta=1; 
    params.mass1=10.; 

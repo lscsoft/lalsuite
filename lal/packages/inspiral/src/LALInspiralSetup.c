@@ -142,10 +142,12 @@ void LALInspiralSetup (LALStatus *status,
                        InspiralTemplate *params) 
 {  /* </lalVerbatim>  */
    
-   int ieta, pnorder=7;
-   REAL8 a, b, lso, eta, vpole, omegaS;
-   REAL8 a1, a2, a3, a4, a5, a6, a7, taylorcoeffs[8];
-   REAL8 c1, c2, c3, c4, c5, c6, c7, padecoeffs[8];
+   INT4 ieta;
+   /*INT4  pnorder=7;
+    * */
+   REAL8 lso, eta, vpole;
+   REAL8 a1, a2, a3, a4, a5, a6, a7;
+   REAL8 c1, c2, c3, c4, c5, c6, c7;
    REAL8 oneby6=1.0/6.0;
 
    INITSTATUS (status, "LALInspiralSetup", LALINSPIRALSETUPC);
@@ -160,6 +162,7 @@ void LALInspiralSetup (LALStatus *status,
    ASSERT (params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (params->tSampling > 2*params->fCutoff, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
+   vpole = 0.0;
    ak->omegaS = 0.;
    ak->ieta = params->ieta;
    ak->EulerC = 0.577;
@@ -518,7 +521,7 @@ static void LALPadeCoeffs7(int n, double *cs, double *as)
     /* Local variables */
     static int i__;
     static double a0, a1, c0, c1, a2, c2, a3, c3, a4, c4, a5, 
-	    c5, a6, c6, a7, c7, a8, c8, a9, c9, a10, a11, c10;
+	    c5, a6, c6, a7;
     
     static double t3, t4, t8, t9, t10, t11, t12, t13, t14, t15, t21, t18, t19,
 	    t22, t23, t24, t25, t26, t27, t28, t29, t30, t32, t33, t34, t37, 
@@ -538,7 +541,7 @@ static void LALPadeCoeffs7(int n, double *cs, double *as)
 	    t231, t233, t234, t235, t236, t237, t238, t240, t243, t244, t245, 
 	    t247, t248, t249, t250, t251, t252, t254, t255, t260, t261, t262, 
 	    t265, t267, t268, t270, t271, t273, t275, t276, t278, t280, t281, 
-	    t283, t284, t286, t289, t290;
+	    t283, t284, t286, t289;
 
 /* ---------------------------------------------------------------------- */
     a0 = as[0];

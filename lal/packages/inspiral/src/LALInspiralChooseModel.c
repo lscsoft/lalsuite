@@ -458,7 +458,7 @@ LALInspiralChooseModel(
    InspiralTemplate *params)
 { /* </lalVerbatim>  */
 
-   REAL8 v, FtN, vn, vlso;
+   REAL8 vn, vlso;
    TofVIn in1;
    REAL8 tofv;
    void *in2;
@@ -470,12 +470,15 @@ LALInspiralChooseModel(
    ASSERT (ak,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params->order != oneHalfPN,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
-   ASSERT(params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+   vlso = 0;
 
    switch (params->order) 
    {
       case newtonian:
+      case oneHalfPN:
       switch (params->approximant) 
       {
          case TaylorT1:
@@ -707,7 +710,7 @@ LALInspiralChooseModel(
          default:
             break;
       }
-      defult:
+      default:
          break;
    }
 

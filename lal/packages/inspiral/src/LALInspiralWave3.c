@@ -251,7 +251,11 @@ void LALInspiralWave3 (
 /* Here's the part which calculates the waveform */
 
   c1 = eta/(5.*totalMass);
-  i=0; while (i<startShift) output->data[i++] = 0.0;
+  i=0; while (i<startShift) 
+  {
+      output->data[i] = 0.0;
+      i++;
+  }
 
   t=0.0;
   td = c1*(tc-t);
@@ -285,7 +289,11 @@ void LALInspiralWave3 (
 /*
   fprintf(stderr, "%e %e\n", f, fHigh);
 */
-  while (i < (int)output->length) output->data[i++]=0.0;
+  while (i < (int)output->length) 
+  {
+      output->data[i]=0.0;
+      i++;
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

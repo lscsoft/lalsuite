@@ -116,7 +116,7 @@ typedef enum {
   t01,
   t02,
   t03,
-  t04,
+  t04
  } InputMasses;
 /* </lalVerbatim>  */
 
@@ -526,7 +526,7 @@ void LALInspiralWave(
 
 void LALInspiralWaveLength (
    LALStatus *status,
-   INT4 *n,
+   UINT4 *n,
    InspiralTemplate params);
 
 /*  <lalLaTeX>
@@ -863,6 +863,12 @@ void LALRungeKutta4(
 void LALEOBWaveform(
 	LALStatus *status,
 	REAL4Vector *signal,
+	InspiralTemplate *params);
+
+void LALEOBWaveformTemplates(
+	LALStatus *status,
+	REAL4Vector *signal1,
+	REAL4Vector *signal2,
 	InspiralTemplate *params);
 
 void LALHCapDerivatives(

@@ -146,7 +146,10 @@ void LALInspiralWave1Templates(LALStatus *status,
 
    count = 0;
    while (count < params->nStartPad) 
-      *(signal1->data + count) = *(signal2->data + count++) = 0.;
+   {
+      *(signal1->data + count) = *(signal2->data + count) = 0.;
+      count++;
+   }
 
    t = 0.0;
    do {
@@ -167,7 +170,10 @@ void LALInspiralWave1Templates(LALStatus *status,
    } while (t < ak.tn);
 
    while (count < (int)signal1->length) 
-      *(signal1->data + count) = *(signal2->data + count++) = 0.;
+   {
+      *(signal1->data + count) = *(signal2->data + count) = 0.;
+      count++;
+   }
 
    LALFree(dummy.data);
 

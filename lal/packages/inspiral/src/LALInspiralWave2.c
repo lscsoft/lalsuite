@@ -206,11 +206,11 @@ void LALInspiralWave2(
   ASSERT(output,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
   ASSERT(output->data,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
   ASSERT(params,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
-  ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((INT4)params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((REAL8)params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((REAL8)params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   LALInspiralSetup(status->statusPtr, &ak, params);
   CHECKSTATUSPTR(status);
@@ -287,7 +287,11 @@ void LALInspiralWave2(
   rootIn.xmin = 0.999999*fs;
 
   i=0;
-  while (i<startShift) output->data[i++] = 0.0;
+  while (i<startShift) 
+  {
+      output->data[i] = 0.0;
+      i++;
+  }
 
 /* Now cast the input structure to argument 4 of BisectionFindRoot so that it 
   of type void * rather than InspiralToffInput  */
@@ -313,7 +317,11 @@ void LALInspiralWave2(
     CHECKSTATUSPTR(status);
   } while (freq < fHigh && freq > fOld && toffIn.t < -tC);
 
-  while (i<output->length) output->data[i++]=0.0;
+  while (i<(INT4)output->length) 
+  {
+      output->data[i]=0.0;
+      i++;
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

@@ -87,9 +87,10 @@ LALInspiralParameterCalc (
    ATTATCHSTATUSPTR(status);
  
    ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(params->massChoice <= 6, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->massChoice >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT((INT4)params->massChoice <= 6, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
+   totalMass = 0.0;
    ieta = params->ieta;
    ieta = 1.;
    oneby4 = 1./4.;
@@ -249,7 +250,11 @@ LALInspiralParameterCalc (
          params->mu = eta*totalMass;
 
       break;
+      default:
+      case t01:
+      break;
    }
+   
    if (params->eta > oneby4) params->eta-=tiny;
    totalMass = totalMass*LAL_MTSUN_SI;
    params->t0 = 5.0/(256.0*eta*pow(totalMass,fiveby3)*pow(piFl,eightby3));

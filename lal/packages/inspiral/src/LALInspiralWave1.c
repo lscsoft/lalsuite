@@ -225,7 +225,11 @@ void LALInspiralWave1(LALStatus *status,
    in4.dyt = &dyt;
 
    count = 0;
-   while (count < params->nStartPad) *(signal->data + count++) = 0.;
+   while (count < params->nStartPad) 
+   {
+       *(signal->data + count) = 0.;
+       count++;
+   }
 
    t = 0.0;
    piM = LAL_PI * m;
@@ -244,7 +248,11 @@ void LALInspiralWave1(LALStatus *status,
       f = v*v*v/piM;
    } while (t < ak.tn && f<fHigh);
 
-   while (count < (int)signal->length) *(signal->data + count++) = 0.;
+   while (count < (int)signal->length) 
+   {
+       *(signal->data + count) = 0.;
+       count++;
+   }
 
    LALFree(dummy.data);
 
