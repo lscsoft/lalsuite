@@ -954,9 +954,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
           /* compute inverse calibrate PSDs */
           calInvPsdOne = inverse_noise(&status, psdOne, responseOne);
-          LALSPrintFrequencySeries(calInvPsdOne, "1.dat");
           calInvPsdTwo = inverse_noise(&status, psdTwo, responseTwo);
-          LALSPrintFrequencySeries(calInvPsdTwo, "2.dat");
 
           /* sum over calibrated PSDs for average */
           for (i = 0; i < filterLength; i++)
