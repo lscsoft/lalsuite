@@ -53,7 +53,7 @@ This program does zero-th order tests for \texttt{LALTimeDelay()}.
 #include <lal/DetectorSite.h>
 
 
-NRCSID( TESTDELAYC, "$Id$" );
+NRCSID( LALTESTDELAYC, "$Id$" );
 
 /* This should already be defined as X_EPS in /usr/include/values.h */
 #define DOUBLE_EPSILON 1.0536712127723507013e-08
@@ -99,14 +99,14 @@ int main( void )
   frdet1.yArmAzimuthRadians     = 0.;
 
   LALCreateDetector(&stat, &detector1, &frdet1, LALDETECTORTYPE_IFODIFF);
-  if (status.statusCode && lalDebugLevel > 0)
+  if (stat.statusCode && lalDebugLevel > 0)
     {
       fprintf(stderr, "TestDelay: LALCreateDetector failed, line %i, %s\n",
               __LINE__, LALTESTDELAYC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      REPORTSTATUS(&stat);
+      return stat.statusCode;
     }
-  REPORTSTATUS(&status);
+  REPORTSTATUS(&stat);
 
   /*
    * Expect the location vector to be (R, 0, 0): R = radius of Earth
@@ -127,12 +127,12 @@ int main( void )
   frdet2.yArmAzimuthRadians     = 0.;
 
   LALCreateDetector(&stat, &detector2, &frdet2, LALDETECTORTYPE_IFODIFF);
-  if (status.statusCode && lalDebugLevel > 0)
+  if (stat.statusCode && lalDebugLevel > 0)
     {
       fprintf(stderr, "TestDelay: LALCreateDetector failed, line %i, %s\n",
               __LINE__, LALTESTDELAYC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      REPORTSTATUS(&stat);
+      return stat.statusCode;
     }  
   REPORTSTATUS(&stat);
 
@@ -150,13 +150,13 @@ int main( void )
   det1_and_source.p_source       = &source;
 
   LALTimeDelayFromEarthCenter(&stat, &delay, &det1_and_source);
-  if (status.statusCode && lalDebugLevel > 0)
+  if (stat.statusCode && lalDebugLevel > 0)
     {
       fprintf(stderr,
               "TestDelay: LALTimeDelayFromEarthCenter() failed, line %i, %s\n",
               __LINE__, LALTESTDELAYC);
-      REPORTSTATUS(&status);
-      return status.statusCode;
+      REPORTSTATUS(&stat);
+      return stat.statusCode;
     }
   REPORTSTATUS(&stat);
 

@@ -100,7 +100,7 @@ fields are:
 
 \begin{description}
 \item{\verb+LALPlaceAndGPS *p_det_and_time+} The detector and GPS
-\item{[\verb+SkyPosition *p_source+}  The source location (equatorial
+\item{\verb+SkyPosition *p_source+}  The source location (equatorial
     co\"{o}dinates in decimal radians)
 \end{description}
 

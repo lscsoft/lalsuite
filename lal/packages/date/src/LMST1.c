@@ -231,6 +231,8 @@ LALGMST1 (LALStatus     *status,
   const REAL8      d =    8640184.812866;
   const REAL8      e = 3155760000.0;
 
+  char infostr[256];
+
   INITSTATUS (status, "LALGMST1", LMST1C);
   ATTATCHSTATUSPTR(status);
 
@@ -247,7 +249,7 @@ LALGMST1 (LALStatus     *status,
           DATEH_ENULLOUTPUT, DATEH_MSGENULLOUTPUT);
 
   /*
-   * Compute GMST1 for 0h UT1 on given date in seconds 
+   * Compute GMST1 for UT1 on given date in seconds 
    */
   TRY( LALJulianDate( status->statusPtr, &jdate, p_date ), status );
   jdate -= J2000_0;
@@ -304,6 +306,12 @@ LALGMST1 (LALStatus     *status,
       break;
     default:
       break;
+    }
+
+  if (lalDebugLevel > 0)
+    {
+      sprintf(infostr, "LALGMST1: *p_gmst = %g\n", *p_gmst);
+      LALInfo(status, infostr);
     }
 
   DETATCHSTATUSPTR(status);

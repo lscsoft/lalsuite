@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = TestJulianDay TestLMST TestLMST2 TestDelay TestDateString TestGPStoUTC TestUTCtoGPS
+check_PROGRAMS = TestJulianDay TestLMST TestLMST2 TestDelay TestDateString TestGPStoUTC TestUTCtoGPS TestGPStoGMST1
 TestJulianDay_SOURCES = TestJulianDay.c
 TestJulianDay_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 TestLMST_SOURCES = TestLMST.c
@@ -14,6 +14,8 @@ TestGPStoUTC_SOURCES = TestGPStoUTC.c
 TestGPStoUTC_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 TestUTCtoGPS_SOURCES = TestUTCtoGPS.c
 TestUTCtoGPS_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
+TestGPStoGMST1_SOURCES = TestGPStoGMST1.c
+TestGPStoGMST1_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 #TestGPStoMST_SOURCES = TestGPStoMST.c
 #TestGPStoMST_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include

@@ -95,7 +95,7 @@ int main(void)
         {
           fprintf(stderr,
                   "TestGPStoUTC: LALCHARDestroyVector() failed, line %i, %s\n",
-                  __LINE__, LALTESTGPSTOUTC);
+                  __LINE__, LALTESTGPSTOUTCC);
           REPORTSTATUS(&status);
           return status.statusCode;
         }
@@ -109,7 +109,7 @@ int main(void)
     {
       fprintf(stderr,
               "TestGPStoUTC: LALCHARDestroyVector() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTC);
+              __LINE__, LALTESTGPSTOUTCC);
       REPORTSTATUS(&status);
       return status.statusCode;
     }
