@@ -1,0 +1,51 @@
+#!/bin/csh
+
+# first argument is data directory, e.g. jsylvest/S2_ZM1/
+# second argument is IFO, e.g. H1
+#
+# The script runs over all nodes, and runs GetEffnBac (must be
+# in your path; get it from burst-dso). The time window used is
+# 100 ms, and the offset is 0.5s. 
+
+set cdir=`pwd`
+
+@ n=1
+@ nnodes=210
+
+while ( $n <= $nnodes ) 
+
+	echo "node$n"
+
+	if ( -d /data/node$n ) then
+
+	 if ( -d /data/node$n/$1 ) then
+
+	 set dl1=`ls /data/node$n/$1/job$2*.bin`
+	 if ( `echo $dl1 | wc -w` > 0 ) then
+
+		foreach file ( /data/node$n/$1/job$2*.bin )
+
+		echo $file
+
+		GetEffnBac2 -t 0.1 0.5 0 -o $file:t:r.eff $file
+
+		end
+
+	 endif
+
+	 endif
+
+	endif
+
+	@ n++
+
+
+end
+
+cd $cdir
+
+MergeEffFast.tcl $2.eff *.eff
+
+echo "****************************************"
+echo "Results saved in $2.eff"
+echo "****************************************"

@@ -1,10 +1,10 @@
 LAL = $(LALLOCATION)
 MATLAB = /apps/matlab/
 
-CFLAGS = -Wall -I. -g -O
+CFLAGS = -Wall -I. -I$(LAL)/include -g -O
 CC = gcc $(CFLAGS)
 
-all : reab sblit ShellInjection ShellInjection1
+all : reab sblit ShellInjection ShellInjection1 GetEffnBac2
 	cp reab sblit ShellInjection ShellInjection1 ../
 
 ShellInjection : ShellInjection.c Makefile
@@ -22,10 +22,18 @@ gtoc : gtoc.o metaio.o
 reab : reab.o ReadBurstBin.o
 	$(CC) -o reab reab.o ReadBurstBin.o -O
 
+GetEffnBac2 : GetEffnBac2.o BurstProcess.o Coincidences.o
+	$(CC) -o GetEffnBac2 GetEffnBac2.o BurstProcess.o Coincidences.o -O -lm
+
 metaio.o : metaio.c metaio.h Makefile
 
 ReadBurstBin.o : ReadBurstBin.c Makefile
 
+BurstProcess.o : BurstProcess.c Makefile
+
+Coincidences.o : Coincidences.c Makefile
+
+GetEffnBac2.o : GetEffnBac2.c Makefile
 
 #### MATLAB ####
 
