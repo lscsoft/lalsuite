@@ -181,7 +181,8 @@ LALInspiralSetup (
    ak->FTa3 = 4.*LAL_PI;
    ak->FTa4 = -44711./9072.+9271.*ieta*eta/504.+65.*ieta*eta*eta/18.;
    ak->FTa5 = -(8191./672.+535./24.*ieta*eta)*LAL_PI;
-   ak->FTa6 = 6643739519./69854400. + 16.*LAL_PI*LAL_PI/3.
+   ak->FTl6 = -1712./105.;
+   ak->FTa6 = 6643739519./69854400. + 16.*LAL_PI*LAL_PI/3. + ak->FTl6 * log (4.L)
             - 1712./105.*ak->EulerC+ (-11497453./272160. + 41.*LAL_PI*LAL_PI/48.
                + 176./9. * ak->lambda - 88.*ak->theta/3.) * ieta*eta
             - 94403./3024. * ieta*eta*eta - 775./324. * ieta * eta*eta*eta;
@@ -299,7 +300,7 @@ LALInspiralSetup (
    ak->fTa3 = ak->FTa3 - ak->FTa2/vpole;
    ak->fTa4 = ak->FTa4 - ak->FTa3/vpole;
    ak->fTa5 = ak->FTa5 - ak->FTa4/vpole;
-   ak->fTa6 = ak->FTa6 - ak->FTa5/vpole;
+   ak->fTa6 = ak->FTa6 + ak->FTl6*log(ak->vlsoP4) - ak->FTa5/vpole;
    ak->fTa7 = ak->FTa7 - ak->FTa6/vpole;
 /* 
    Pade coefficients of f(v);  assumes that a0=1 => c0=1 

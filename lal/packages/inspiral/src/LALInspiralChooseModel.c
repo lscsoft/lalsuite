@@ -402,6 +402,8 @@ static REAL8 Fp6(REAL8 v, expnCoeffs *ak)
    flux = ak->fPaN * v10/ ((1.+ak->fPa1*v/(1.+ak->fPa2*v/ (1.+ak->fPa3*v 
         / (1.+ak->fPa4*v / (1.+ak->fPa5*v / (1.+ak->fPa6*v)))))) 
         * (1.-v/ak->vpoleP6));
+   /* */
+   flux *= (1.+  log(v/ak->vlsoP4) * ak->FTl6 * pow(v,6.)) ;
    return (flux);
 }
 

@@ -71,11 +71,24 @@ typedef struct tagrOfOmegaIn {
    REAL8 eta, omega;
 } rOfOmegaIn;
 
+typedef struct tagPr3In {
+  REAL8 eta, omegaS, omega, vr,r,q;
+  InspiralDerivativesIn in3copy; 
+} pr3In;
+
 static void LALHCapDerivatives(REAL8Vector *values, REAL8Vector *dvalues, void *funcParams);
 static void LALprInit(REAL8 *pr, REAL8 r, InspiralDerivativesIn *ak);
 static void LALpphiInit(REAL8 *phase, REAL8 r, REAL8 eta);
 static void LALlightRingRadius(LALStatus *status, REAL8 *x, REAL8 r, void *params);
 static void LALrOfOmega (LALStatus *status, REAL8 *x, REAL8 r, void *params);
+
+static void LALHCapDerivatives3PN(REAL8Vector *values, REAL8Vector *dvalues, void *funcParams);
+static void LALprInit3PN(LALStatus *status, REAL8 *pr , REAL8 , void  *params);
+static void LALpphiInit3PN(REAL8 *phase, REAL8 r, REAL8 eta);
+static void LALlightRingRadius3PN(LALStatus *status, REAL8 *x, REAL8 r, void *params);
+static void LALrOfOmega3PN (LALStatus *status, REAL8 *x, REAL8 r, void *params);
+static void LALvr3PN(REAL8 *vr, void *params);
+
 
 NRCSID (LALEOBWAVEFORMC, "$Id$");
 
@@ -224,6 +237,285 @@ LALHCapDerivatives(
    */
 }
 
+
+
+/*----------------------------------------------------------------------*/
+
+  void
+LALpphiInit3PN(
+	    REAL8 *phase,
+	    REAL8 r,
+	    REAL8 eta
+	    )
+{
+  REAL8 u, u2, u3,  a4, a4p4eta, a4peta2, NA, DA, A, dA;
+  REAL8 omegaS = 0;
+
+  u = 1./r;
+  u2 = u*u;
+  u3 = u2*u;
+  a4 = (ninty4by3etc - 2. * omegaS) * eta;
+  a4p4eta = a4 + 4. * eta;
+  a4peta2 = a4 + eta * eta;
+  NA = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
+  DA = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
+  A = NA/DA;
+  dA = ( (a4 - 16. + 8. * eta) * DA - NA * (a4p4eta + 4. * a4p4eta * u + 12. * a4peta2  * u2))/(DA*DA);
+
+  *phase = sqrt(-dA/(2.*u*A + u2 * dA));
+
+}
+/*---------------------------------------------------------------*/
+
+NRCSID (LALPRINIT3PN, "$Id$");
+ void 
+LALprInit3PN(
+	     LALStatus *status, 
+	     REAL8 *pr,
+	     REAL8 p,
+	     void *params
+	     ) 
+{
+  REAL8   u, u2, u3, u4, p2, p3, p4, q2, A, DA, NA;
+  REAL8  onebyD, AbyD, Heff, HReal, etahH;
+  REAL8 omegaS, eta, a4, a4p4eta, a4peta2, z3, r, vr, q;
+  pr3In *ak;
+  
+  INITSTATUS(status, "LALprInit3PN", LALPRINIT3PN);
+  ATTATCHSTATUSPTR(status);
+  ak = (pr3In *) params;
+  
+  eta = ak->eta;
+  vr = ak->vr;
+  r = ak->r;
+  q = ak->q;
+  omegaS = ak->omegaS;
+  
+     
+   p2 = p*p;
+   p3 = p2*p;
+   p4 = p2*p2;
+   q2 = q*q;
+   u = 1./ r;
+   u2 = u*u;
+   u3 = u2 * u;
+   u4 = u2 * u2;
+   z3 = 2. * (4. - 3. * eta) * eta;
+   a4 = (ninty4by3etc - 2. * omegaS) * eta;
+   a4p4eta = a4 + 4. * eta;
+   a4peta2 = a4 + eta * eta;  
+
+/* From DJS 14, 15 */
+   NA = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
+   DA = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
+   A = NA/DA;
+   onebyD = 1. + 6.*eta*u2 + 2. * ( 26. - 3. * eta) * eta * u3;
+   AbyD = A * onebyD;   
+
+   Heff = pow (A*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2), 0.5);
+   HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
+   etahH = eta*Heff*HReal;
+   
+   *pr = -vr +  A*(AbyD*p + 2. * z3 * u2 * p3)/etahH; 
+   
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
+}
+void 
+omegaofr3PN (
+	     REAL8 *x,
+	     REAL8 r, 
+	     REAL8 eta) 
+{
+   REAL8 u, u2, u3, a4, a4p4eta, a4peta2, NA, DA, A, dA;
+   REAL8   omegaS = 0;
+   u = 1./r;
+   u2 = u*u;
+   u3 = u2*u;
+   a4 = (ninty4by3etc - 2. * omegaS) * eta;
+   a4p4eta = a4 + 4. * eta;
+   a4peta2 = a4 + eta * eta;
+   NA = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
+   DA = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
+   A = NA/DA;
+   dA = ( (a4 - 16. + 8. * eta) * DA - NA * (a4p4eta + 4. * a4p4eta * u + 12. * a4peta2  * u2))/(DA*DA);
+   *x = pow(u,1.5) * sqrt ( -0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
+
+}
+
+void 
+LALrOfOmega3PN(
+	    LALStatus *status, 
+	    REAL8 *x, 
+	    REAL8 r, 
+	    void *params)
+{
+  REAL8  omega1,omega2,eta ;
+  rOfOmegaIn *rofomegain;
+  
+   
+  
+  rofomegain = (rOfOmegaIn *) params;
+  eta = rofomegain->eta;
+
+  omega1 = rofomegain->omega;
+  omegaofr3PN(&omega2,r, eta);
+  *x = -omega1 + omega2;
+
+}
+/*----------------------------------------------------------------------*/
+NRCSID (LALLIGHTRINGRADIUS3PNC, "$Id$");
+ void 
+LALlightRingRadius3PN(
+		      LALStatus *status, 
+		      REAL8 *x, 
+		      REAL8 r, 
+		      void *params
+		      ) 
+{ 
+  REAL8 eta, u, u2, u3, a4, a4p4eta,a4peta2, NA, DA, A, dA;
+  rOfOmegaIn *rofomegain;
+  REAL8 omegaS=0;
+  rofomegain = (rOfOmegaIn *) params;
+  eta = rofomegain->eta;
+  u = 1./r;
+  u2 = u*u;
+  u3 = u2*u;
+  a4 = (ninty4by3etc - 2. * omegaS) * eta;
+  a4p4eta = a4 + 4. * eta;
+  a4peta2 = a4 + eta * eta;
+  NA = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
+  DA = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
+  A = NA/DA;
+  dA = ( (a4 - 16. + 8. * eta) * DA - NA * (a4p4eta + 4. * a4p4eta * u + 12. * a4peta2  * u2))/(DA*DA);
+  *x = 2 * A + dA * u;
+}
+/*----------------------------------------------------------------------*/
+
+ void 
+LALHCapDerivatives3PN(
+		  REAL8Vector *values,
+		  REAL8Vector *dvalues,
+		  void *funcParams
+		  )
+{
+   REAL8 r, s, p, q, u, u2, u3, u4, p2, p3, p4, q2, Apot, DA, NA;
+   REAL8  dA, onebyD, DonebyD, AbyD, Heff, HReal, etahH;
+   REAL8 omega, v, eta, a4, a4p4eta, a4peta2, z2, z30, z3, zeta2;
+   REAL8 a5, n1, c1, d1, d2, d3, oneby4meta, vu, omegaS;
+   REAL8    flexNonAdiab = 0;
+   REAL8    flexNonCirc = 0;
+
+   InspiralDerivativesIn *ak;
+
+   ak = (InspiralDerivativesIn *) funcParams;
+   eta = ak->coeffs->eta;
+
+   zeta2 = 0;
+   omegaS = 0;
+   r = values->data[0];
+   s = values->data[1];
+   p = values->data[2];
+   q = values->data[3];
+
+   p2 = p*p;
+   p3 = p2*p;
+   p4 = p2*p2;
+   q2 = q*q;
+   u = 1./r;
+   u2 = u*u;
+   u3 = u2 * u;
+   u4 = u2 * u2;
+   z30 = 2.L * (4.L - 3.L * eta) * eta;
+   z2 = 0.75L * z30 * zeta2,
+   z3 = z30 * (1.L - zeta2);
+
+   a4 = (ninty4by3etc - 2. * omegaS) * eta;
+   a5 = 0;
+   a4p4eta = a4 + 4. * eta;
+   a4peta2 = a4 + eta * eta;
+   
+   /* From DJS 3PN Hamiltonian */
+   oneby4meta = 1./(4.-eta);
+   n1 = 0.5 * (a4 - 16. + 8.*eta) * oneby4meta;
+   d1 = 0.5 * a4p4eta * oneby4meta;
+   d2 = a4p4eta * oneby4meta;
+   d3 = 2. * a4peta2 * oneby4meta;
+   NA = 1. + n1 * u;
+   DA = 1 + d1*u + d2*u2 + d3*u3;
+   Apot = NA/DA;
+   
+   onebyD = 1. + 6.*eta*u2 + (2. * ( 26. - 3. * eta) * eta - z2)* u3;
+   AbyD = Apot * onebyD;
+   Heff = pow (Apot*(1. + AbyD * p2 + q*q * u2 + z30 * (p4 + zeta2*(-0.25*p4
+        + 0.75  * p2 * q2 * u2 )) * u2), 0.5);
+   HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
+
+   dA = -u2/(DA*DA) * (n1*DA - NA * (d1 + 2.*d2*u + 3.*d3*u2));
+
+   DonebyD = -12.*eta*u3 - (6.*(26. - 3.*eta)*eta - z2)*u4;
+   etahH = eta*Heff*HReal;
+
+   dvalues->data[0] = Apot*(AbyD*p +  z30 * u2 *(2.* p3 
+              + zeta2*(-0.5*p3 + 0.75*p*q2*u2)))/etahH;
+   dvalues->data[1] = omega = Apot * q * u2 * (1. + 0.75*z30*zeta2*p2*u2)/ etahH;
+   v = pow(omega,oneby3);
+
+   dvalues->data[2] = -0.5 * Apot * (dA*Heff*Heff/(Apot*Apot) - 2.*q2*u3 
+              + (dA * onebyD + Apot * DonebyD) * p2
+              + z30 * u3 *(-2.* p4+zeta2*(0.5*p4 - 3.0*p2*q2*u2))) / etahH;
+
+   c1 = 1.+(u2 - 2.*u3*Apot/dA) * q2;
+   dvalues->data[3] = -(1. - flexNonAdiab*c1) * (1. + flexNonCirc*p2/(q2*u2)) * ak->flux(v,ak->coeffs)/(eta * v*v*v);
+   vu = pow(u,0.5);
+}
+
+
+
+/*----------------------------------------------------------------------*/
+ void LALvr3PN(REAL8 *vr, void *params ) 
+{
+  REAL8 A, dA, d2A, NA, DA, dDA, dNA, d2DA;
+  REAL8 u, u2, u3, v, x1; 
+  REAL8 eta,a4, a4p4eta, a4peta2, FDIS;
+  
+  pr3In *pr3in;
+  pr3in = (pr3In *)params;
+
+  eta = pr3in->eta;     
+  u = 1./ pr3in->r;
+
+  u2 = u*u;
+  u3 = u2*u;
+  
+  a4 = (ninty4by3etc - 2. * pr3in->omegaS) * eta;
+  a4p4eta = a4 + 4. * eta;
+  a4peta2 = a4 + eta * eta;
+  NA = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
+  DA = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
+  A = NA/DA;
+  dNA = (a4 - 16. + 8. * eta);
+  dDA = (a4p4eta + 4. * a4p4eta * u + 12. * a4peta2  * u2);
+  d2DA = 4. * a4p4eta + 24. * a4peta2 * u;
+  
+  dA = (dNA * DA - NA * dDA)/ (DA*DA);
+  d2A = (-NA * DA * d2DA - 2. * dNA * DA * dDA + 2. * NA * dDA * dDA)/pow(DA,3.);
+  v = pow(pr3in->omega,oneby3);
+  FDIS = -pr3in->in3copy.flux(v, pr3in->in3copy.coeffs)/(eta* pr3in->omega);
+  x1 = -1./u2 * sqrt (-dA * pow(2.* u * A + u2 * dA, 3.) ) / (2.* u * dA * dA + A*dA - u * A * d2A);
+  *vr = FDIS * x1;
+}
+
+
+/*----------------------------------------------------------------------*/
+
+
+
+
+
+
+
+
 /*  <lalVerbatim file="LALEOBWaveformCP"> */
 void 
 LALEOBWaveform (
@@ -240,6 +532,7 @@ LALEOBWaveform (
    InspiralPhaseIn in2;
    InspiralDerivativesIn in3;
    rk4In in4;
+   pr3In pr3in; 
    void *funcParams;
    expnCoeffs ak;
    expnFunc func;
@@ -317,8 +610,20 @@ LALEOBWaveform (
    rofomegain.eta = eta;
    rofomegain.omega = omega;
 
-   rootIn.xacc = 1.0e-8;
-   rootIn.function = LALlightRingRadius;
+   rootIn.xacc = 1.0e-16;
+   switch (params->order)
+     {
+     case twoPN:
+     case twoPointFivePN:
+       rootIn.function = LALlightRingRadius;
+       break;
+     case threePN:
+       rootIn.function = LALlightRingRadius3PN;
+       break;
+     default:
+       fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
+       exit(0);
+     }
    rootIn.xmax = 2.;
    rootIn.xmin = 4.;
    funcParams = (void *) &rofomegain;
@@ -342,7 +647,20 @@ Userful for debugging: Make sure a solution for r exists.
    LALDBisectionFindRoot(status->statusPtr, &rn, &rootIn, funcParams);
    CHECKSTATUSPTR(status);
 
-   rootIn.function = LALrOfOmega;
+    switch (params->order)
+     {
+     case twoPN:
+     case twoPointFivePN:
+       rootIn.function = LALrOfOmega;
+       break;
+     case threePN:
+       rootIn.function = LALrOfOmega3PN;
+       break;
+     default:
+       fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
+       exit(0);
+     }
+
    rootIn.xmax = 100.;
    rootIn.xmin = 6.;
    LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, funcParams);
@@ -363,8 +681,37 @@ Userful for debugging: Make sure a solution for r exists.
    in3.coeffs = &ak;
    funcParams = (void *) &in3;
 
-   LALprInit(&p, r, &in3);
-   LALpphiInit(&q, r, eta);
+switch (params->order)
+     {
+     case twoPN:
+     case twoPointFivePN:
+       LALpphiInit(&q, r, eta);
+       LALprInit(&p, r, &in3);
+       in4.function = LALHCapDerivatives;
+       break;
+     case threePN:
+     case threePointFivePN:
+       LALpphiInit3PN(&q,r,eta);
+       rootIn.function = LALprInit3PN;
+       rootIn.xmax = 5;
+       rootIn.xmin = -10;
+       //first we compute vr (we need coeef->Fp6)
+       pr3in.in3copy = in3; 
+       pr3in.eta = eta;
+       pr3in.omegaS = params->OmegaS;
+       pr3in.r = r;
+       pr3in.q = q; 
+       pr3in.omega = omega;
+       LALvr3PN(&pr3in.vr,(void *) &pr3in);
+       // then we compute the initial value of p
+       LALDBisectionFindRoot(status->statusPtr, &p, &rootIn,(void *) &pr3in );
+       CHECKSTATUSPTR(status);
+       in4.function = LALHCapDerivatives3PN;
+       break;
+     default:
+       fprintf(stderr, "There are no EOB waveforms at order %d\n", params->order);
+       exit(0);
+     }
 
    values.data[0] = r;
    values.data[1] = s;
@@ -372,7 +719,6 @@ Userful for debugging: Make sure a solution for r exists.
    values.data[3] = q;
 
    
-   in4.function = LALHCapDerivatives;
    in4.y = &values;
    in4.h = dt/m;
    in4.n = nn;
@@ -398,16 +744,20 @@ Userful for debugging: Make sure a solution for r exists.
    {
       ASSERT(count< (INT4)signal->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
       rOld = r;
-      v = pow(omega, oneby3);
+      if (params->order<threePN) LALHCapDerivatives(&values, &dvalues, funcParams);
+      else  LALHCapDerivatives3PN(&values, &dvalues, funcParams);
+
+
+      v = pow(dvalues.data[1], oneby3);
       h = params->signalAmplitude * v*v * cos(2.*s);
       *(signal->data + count) = (REAL4) h;
-      LALHCapDerivatives(&values, &dvalues, funcParams);
+
       omega = dvalues.data[1];
       in4.dydx = &dvalues;
       in4.x = t/m;
       LALRungeKutta4(status->statusPtr, &newvalues, &in4, funcParams);
       CHECKSTATUSPTR(status);
-
+     
       r = values.data[0] = newvalues.data[0];
       s = values.data[1] = newvalues.data[1];
       p = values.data[2] = newvalues.data[2];
@@ -458,6 +808,7 @@ LALEOBWaveformTemplates (
    InspiralPhaseIn in2;
    InspiralDerivativesIn in3;
    rk4In in4;
+   pr3In pr3in; 
    void *funcParams;
    expnCoeffs ak;
    expnFunc func;
@@ -537,8 +888,21 @@ LALEOBWaveformTemplates (
    rofomegain.eta = eta;
    rofomegain.omega = omega;
 
-   rootIn.xacc = 1.0e-8;
-   rootIn.function = LALlightRingRadius;
+   
+   rootIn.xacc = 1.0e-16;
+   switch (params->order)
+     {
+     case twoPN:
+     case twoPointFivePN:
+       rootIn.function = LALlightRingRadius;
+       break;
+     case threePN:
+       rootIn.function = LALlightRingRadius3PN;
+       break;
+     default:
+       fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
+       exit(0);
+     }
    rootIn.xmax = 2.;
    rootIn.xmin = 4.;
    funcParams = (void *) &rofomegain;
@@ -562,7 +926,19 @@ Userful for debugging: Make sure a solution for r exists.
    LALDBisectionFindRoot(status->statusPtr, &rn, &rootIn, funcParams);
    CHECKSTATUSPTR(status);
 
-   rootIn.function = LALrOfOmega;
+   switch (params->order)
+     {
+     case twoPN:
+     case twoPointFivePN:
+       rootIn.function = LALrOfOmega;
+       break;
+     case threePN:
+       rootIn.function = LALrOfOmega3PN;
+       break;
+     default:
+       fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", params->order);
+       exit(0);
+     }
    rootIn.xmax = 100.;
    rootIn.xmin = 6.;
    LALDBisectionFindRoot(status->statusPtr, &r, &rootIn, funcParams);
@@ -583,8 +959,37 @@ Userful for debugging: Make sure a solution for r exists.
    in3.coeffs = &ak;
    funcParams = (void *) &in3;
 
-   LALprInit(&p, r, &in3);
-   LALpphiInit(&q, r, eta);
+   switch (params->order)
+     {
+     case twoPN:
+     case twoPointFivePN:
+       LALpphiInit(&q, r, eta);
+       LALprInit(&p, r, &in3);
+       in4.function = LALHCapDerivatives;
+       break;
+     case threePN:
+     case threePointFivePN:
+       LALpphiInit3PN(&q,r,eta);
+       rootIn.function = LALprInit3PN;
+       rootIn.xmax = 5;
+       rootIn.xmin = -10;
+       //first we compute vr (we need coeef->Fp6)
+       pr3in.in3copy = in3; 
+       pr3in.eta = eta;
+       pr3in.omegaS = params->OmegaS;
+       pr3in.r = r;
+       pr3in.q = q; 
+       pr3in.omega = omega;
+       LALvr3PN(&pr3in.vr,(void *) &pr3in);
+       // then we compute the initial value of p
+       LALDBisectionFindRoot(status->statusPtr, &p, &rootIn,(void *) &pr3in );
+       CHECKSTATUSPTR(status);
+       in4.function = LALHCapDerivatives3PN;
+       break;
+     default:
+       fprintf(stderr, "There are no EOB waveforms at order %d\n", params->order);
+       exit(0);
+     }
 
    values.data[0] = r;
    values.data[1] = s;
@@ -613,19 +1018,25 @@ Userful for debugging: Make sure a solution for r exists.
    while (r>=rn && r<rOld) {
       ASSERT(count< (INT4)signal1->length, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
       rOld = r;
+      
+     if (params->order<threePN) LALHCapDerivatives(&values, &dvalues, funcParams);
+     else  LALHCapDerivatives3PN(&values, &dvalues, funcParams);
+      CHECKSTATUSPTR(status);
+
+
       v = pow(omega, oneby3);
       amp = params->signalAmplitude *v*v;
       h1 = amp * cos(2.*s);
       h2 = amp * cos(2.*s + LAL_PI_2);
       *(signal1->data + count) = (REAL4) h1;
       *(signal2->data + count) = (REAL4) h2;
-      LALHCapDerivatives(&values, &dvalues, funcParams);
-      CHECKSTATUSPTR(status);
+      
       omega = dvalues.data[1];
       in4.dydx = &dvalues;
       in4.x = t/m;
       LALRungeKutta4(status->statusPtr, &newvalues, &in4, funcParams);
       CHECKSTATUSPTR(status);
+
 
       r = values.data[0] = newvalues.data[0];
       s = values.data[1] = newvalues.data[1];
