@@ -186,7 +186,7 @@ for seg in data:
       dag.add_node(df2)
 
   if ifo1[0] == ifo2[0]:
-    df2 == df1
+    df2 = df1
 
   for chunk in seg:
     stoch = stochastic.StochasticNode(stoch_job)
