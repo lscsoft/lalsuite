@@ -25,7 +25,7 @@
  * The only function needed is {\tt LALBCVWaveform.}
  *
  * The Fourier transform of a chirp waveform in the restricted post-Newtonian
- * approximation in * the stationary phase approximation is given, for 
+ * approximation in the stationary phase approximation is given, for 
  * positive frequencies $f,$ by
  * \begin{equation}
  * \tilde h(f) = h_0 f^{-7/6} \exp \left [ \sum_k \psi_k f^{(k-5)/3} \right ],

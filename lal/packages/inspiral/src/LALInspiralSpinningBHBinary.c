@@ -21,13 +21,17 @@ two spinning compact stars.
 
 \subsubsection*{Description}
 Using the formalism described in Apostolatos 
-et al \cite{ACST94} and Blanchet et al. \cite{BDIWW} this module computes
+et al \cite{ACST94} and Blanchet et al. \cite{BDIWW} and formulas
+summarized in Sec.~\ref{sec:smirches} this module computes
 the spin-modulated chirps from a pair of compact stars in orbit around
 each other. 
  
 \subsubsection*{Algorithm}
-This code uses a fourth-order Runge-Kutta algorithm to solve the differential
-equations as a set of nine, coupled first-order differential equations.
+This code uses a fourth-order Runge-Kutta algorithm to solve the nine 
+first-order, coupled, ordinary differential equations in Eq.~\ref{eqn:precession1}
+Eq.~\ref{eqn:precession2} and Eq.~\ref{eqn:precession3}. The solution is then used
+in Eq.~\ref{eq:waveform} (and following equations) to get the waveform  emitted
+by a spinning black hole binary.
 
 \subsubsection*{Uses}
 

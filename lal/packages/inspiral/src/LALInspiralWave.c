@@ -46,7 +46,7 @@ from Newtonian to 3.5 PN order, {\tt PadeT1} exists at order 1.5PN and higher,
 {\tt EOB} at orders 2 and higher. {\tt SpinTaylorT3} is implemented only at 2PN order
 by solving the evolution equations for the spin and orbital angular momenta and a
 time-domain phasing formula. Finally, PN order is undefined for {\tt BCV.} 
-The approximant and the order are set up the enums \texttt{Approximant} and \texttt{Order,}
+The approximant and the order are set up by the enums \texttt{Approximant} and \texttt{Order,}
 respectively.
 
 The waveforms are all terminated one bin before the last stable orbit is reached.
