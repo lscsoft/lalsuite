@@ -94,33 +94,33 @@ static void print_usage(char *program)
       "\n"\
       "   --parameter-test test        set parameters with which to test coincidence:\n"\
       "                                (m1_and_m2|mchirp_and_eta)\n"\
-      "  [--g1-time-accuracy]          specify the timing accuracy of G1\n"\
-      "  [--h1-time-accuracy]          specify the timing accuracy of H1\n"\
-      "  [--h2-time-accuracy]          specify the timing accuracy of H2\n"\
-      "  [--l1-time-accuracy]          specify the timing accuracy of L1\n"\
-      "  [--t1-time-accuracy]          specify the timing accuracy of T1\n"\
-      "  [--v1-time-accuracy]          specify the timing accuracy of V1\n"\
-      
-      "  [--g1-mass-accuracy]          specify the mass accuracy of G1\n"\
-      "  [--h1-mass-accuracy]          specify the mass accuracy of H1\n"\
-      "  [--h2-mass-accuracy]          specify the mass accuracy of H2\n"\
-      "  [--l1-mass-accuracy]          specify the mass accuracy of L1\n"\
-      "  [--t1-mass-accuracy]          specify the mass accuracy of T1\n"\
-      "  [--v1-mass-accuracy]          specify the mass accuracy of V1\n"\
-
-      "  [--g1-mchirp-accuracy]        specify the mchirp accuracy of G1\n"\
-      "  [--h1-mchirp-accuracy]        specify the mchirp accuracy of H1\n"\
-      "  [--h2-mchirp-accuracy]        specify the mchirp accuracy of H2\n"\
-      "  [--l1-mchirp-accuracy]        specify the mchirp accuracy of L1\n"\
-      "  [--t1-mchirp-accuracy]        specify the mchirp accuracy of T1\n"\
-      "  [--v1-mchirp-accuracy]        specify the mchirp accuracy of V1\n"\
-      
-      "  [--g1-eta-accuracy]           specify the eta accuracy of G1\n"\
-      "  [--h1-eta-accuracy]           specify the eta accuracy of H1\n"\
-      "  [--h2-eta-accuracy]           specify the eta accuracy of H2\n"\
-      "  [--l1-eta-accuracy]           specify the eta accuracy of L1\n"\
-      "  [--t1-eta-accuracy]           specify the eta accuracy of T1\n"\
-      "  [--v1-eta-accuracy]           specify the eta accuracy of V1\n"\
+      "  [--g1-time-accuracy]  g1_dt   specify the timing accuracy of G1 in ms\n"\
+      "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n"\
+      "  [--h2-time-accuracy]  h2_dt   specify the timing accuracy of H2 in ms\n"\
+      "  [--l1-time-accuracy]  l1_dt   specify the timing accuracy of L1 in ms\n"\
+      "  [--t1-time-accuracy]  t1_dt   specify the timing accuracy of T1 in ms\n"\
+      "  [--v1-time-accuracy]  v1_dt   specify the timing accuracy of V1 in ms\n"\
+      "\n"\
+      "  [--g1-mass-accuracy]  g1_dm   specify the mass accuracy of G1\n"\
+      "  [--h1-mass-accuracy]  h1_dm   specify the mass accuracy of H1\n"\
+      "  [--h2-mass-accuracy]  h2_dm   specify the mass accuracy of H2\n"\
+      "  [--l1-mass-accuracy]  l1_dm   specify the mass accuracy of L1\n"\
+      "  [--t1-mass-accuracy]  t1_dm   specify the mass accuracy of T1\n"\
+      "  [--v1-mass-accuracy]  v1_dm   specify the mass accuracy of V1\n"\
+      "\n"\
+      "  [--g1-mchirp-accuracy] g1_dmchirp  specify the mchirp accuracy of G1\n"\
+      "  [--h1-mchirp-accuracy] h1_dmchirp  specify the mchirp accuracy of H1\n"\
+      "  [--h2-mchirp-accuracy] h2_dmchirp  specify the mchirp accuracy of H2\n"\
+      "  [--l1-mchirp-accuracy] l1_dmchirp  specify the mchirp accuracy of L1\n"\
+      "  [--t1-mchirp-accuracy] t1_dmchirp  specify the mchirp accuracy of T1\n"\
+      "  [--v1-mchirp-accuracy] v1_dmchirp  specify the mchirp accuracy of V1\n"\
+      "\n"\
+      "  [--g1-eta-accuracy] g1_deta   specify the eta accuracy of G1\n"\
+      "  [--h1-eta-accuracy] h1_deta   specify the eta accuracy of H1\n"\
+      "  [--h2-eta-accuracy] h2_deta   specify the eta accuracy of H2\n"\
+      "  [--l1-eta-accuracy] l1_deta   specify the eta accuracy of L1\n"\
+      "  [--t1-eta-accuracy] t1_deta   specify the eta accuracy of T1\n"\
+      "  [--v1-eta-accuracy] v1_deta   specify the eta accuracy of V1\n"\
       "\n"\
       "   --data-type DATA_TYPE        specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
