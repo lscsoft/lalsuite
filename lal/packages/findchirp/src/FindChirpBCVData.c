@@ -381,7 +381,6 @@ LALFindChirpBCVData (
 
 
 #if 0
-    fcSeg->segNorm = 0.0;
     Power    = 0.0;
     PowerBCV = 0.0;
 #endif
@@ -392,10 +391,6 @@ LALFindChirpBCVData (
 
     for ( k = 0; k < cut; ++k )
     {
-      fcSeg->a1->data[k] = 0.0;
-      fcSeg->b1->data[k] = 0.0;
-      fcSeg->b2->data[k] = 0.0;
-      
       outputData[k].re = 0.0;
       outputData[k].im = 0.0;
       outputDataBCV[k].re = 0.0;
@@ -404,6 +399,9 @@ LALFindChirpBCVData (
 
     memset( tmpltPower, 0, params->tmpltPowerVec->length * sizeof(REAL4) );
     memset( tmpltPowerBCV,0, params->tmpltPowerVecBCV->length * sizeof(REAL4) );
+    memset( fcSeg->a1->data, 0, fcSeg->a1->length * sizeof(REAL4) );
+    memset( fcSeg->b1->data, 0, fcSeg->b1->length * sizeof(REAL4) );
+    memset( fcSeg->b2->data, 0, fcSeg->b2->length * sizeof(REAL4) );
 
     /* 
      * moments necessary for the calculation of
@@ -412,20 +410,25 @@ LALFindChirpBCVData (
 
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
-#if 0
-      fcSeg->segNorm += amp[k] * amp[k] * wtilde[k].re ; /* for std-candle */
-#endif
       I73 += 4.0 * amp[k] * amp[k] * wtilde[k].re ;
       I53 += 4.0 * amp[k] *  ampBCV[k] * wtilde[k].re ;
       I1 += 4.0 * ampBCV[k] * ampBCV[k] * wtilde[k].re;  
 
       /* calculation of a1, b1 and b2 for each ending frequency */
-      fcSeg->a1->data[k] = 1.0 / sqrt(I73) ;
-      fcSeg->b2->data[k] = 1.0 / sqrt( I1 - I53*I53/I73 ) ;
-      fcSeg->b1->data[k] = - I53 * fcSeg->b2->data[k] / I73 ;
+      /* making sure to avoid division by 0                     */
+      if ( (I1 - I53*I53/I73) > 0 )
+      {
+        fcSeg->b2->data[k] = 1.0 / sqrt( I1 - I53*I53/I73 ) ;
+      }
+      if ( I73 > 0 )
+      {
+        fcSeg->a1->data[k] = 1.0 / sqrt(I73) ;
+        fcSeg->b1->data[k] = - I53 * fcSeg->b2->data[k] / I73 ;
+      }
     }
 
 
+    /* the following is only necessary if we are doing a chisq veto... */
     for ( k = 1; k < fcSeg->data->data->length; ++k )
     {
       tmpltPower[k]    = amp[k] * sqrt(wtilde[k].re);
