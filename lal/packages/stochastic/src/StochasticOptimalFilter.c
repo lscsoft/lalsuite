@@ -645,8 +645,8 @@ LALStochasticOptimalFilter(
 
   /* calculate lambda */
   /* find omegaRef */
-  xRef = (UINT4)((parameters->fRef)/deltaF);
-  if ( ((parameters->fRef)/deltaF) == (REAL8)(xRef) )
+  xRef = (UINT4)((parameters->fRef - f0)/deltaF);
+  if ( ((parameters->fRef - f0)/deltaF) == (REAL8)(xRef) )
   {
     omegaRef = input->omegaGW->data->data[xRef];
   }
@@ -654,8 +654,8 @@ LALStochasticOptimalFilter(
   {
     omega1   = input->omegaGW->data->data[xRef];
     omega2   = input->omegaGW->data->data[xRef+1];
-    freq1    = xRef * deltaF; 
-    freq2    = (xRef + 1) * deltaF;
+    freq1    = f0 + xRef * deltaF; 
+    freq2    = f0 + (xRef + 1) * deltaF;
     if (omega1 <= 0)
     {
       ABORT( status,
