@@ -84,7 +84,7 @@ ProcessParamsTable *this_proc_param;
 /* parameters for the stochastic search */
 
 /* sampling parameters */
-INT4 resampleRate = -1;
+INT4 resampleRate;
 REAL8 deltaF = 0.25;
 
 /* data parameters */
@@ -345,6 +345,19 @@ INT4 main(INT4 argc, CHAR *argv[])
       gpsStartTime, gpsEndTime, padData);
   seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
       gpsStartTime, gpsEndTime, padData);
+
+  /* check that the two series have the same sample rate */
+  if (seriesOne->deltaT != seriesTwo->deltaT)
+  {
+    fprintf(stderr, "series have different sample rates...\n");
+    exit(1);
+  }
+  else
+  {
+    /* get resample rate, if required */
+    if (!resampleRate)
+      resampleRate = (INT4)(1./seriesOne->deltaT);
+  }
 
   /* initialize calibration gps time structure */
   gpsCalibTime.gpsSeconds = startTime + calibOffset;
@@ -2032,13 +2045,6 @@ void parse_options(INT4 argc, CHAR *argv[])
   if (segmentDuration == -1)
   {
     fprintf(stderr, "--segment-duration must be specified\n");
-    exit(1);
-  }
-
-  /* resample rate */
-  if (resampleRate == -1)
-  {
-    fprintf(stderr, "--resample-rate must be specified\n");
     exit(1);
   }
 
