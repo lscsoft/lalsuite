@@ -80,6 +80,8 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_EBUFFTOOSMALL    5
 #define DATEH_EASCTIMEFAIL     6
 #define DATEH_EGPSDATETOOEARLY 7
+#define DATEH_EFORMATPARAMOUTOFRANGE 8
+#define DATEH_EACCPARAMOUTOFRANGE    9
 
 #define DATEH_MSGENULLINPUT "Input is NULL"
 #define DATEH_MSGENULLOUTPUT "Output is NULL"
@@ -88,7 +90,9 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_MSGEBUFFTOOSMALL "Output timestamp string too small: min. size = 26"
 #define DATEH_MSGEASCTIMEFAIL "asctimeUNDERSCOREr() failed"
 #define DATEH_MSGEGPSDATETOOEARLY "Date too early: GPS time only defined for times on or after 1980-Jan-06 00:00:00 UTC"
-    
+#define DATEH_MSGEFORMATPARAMOUTOFRANGE "Format parameter out of range: must be one of LALLEAPSECunderscoreTAIUTC or LALLEAPSECunderscoreGPSUTC"
+#define DATEH_MSGEACCPARAMOUTOFRANGE "Accuracy parameter out of range: must be one of LALLEAPSECunderscoreSTRICT or LALLEAPSECunderscoreLOOSE"
+  
 
 /* </lalErrTable>
 
@@ -140,9 +144,9 @@ typedef enum
 \subsubsection*{Enumeration \texttt{LALLeapSecAccuracy}}
 \idx[Type]{LALLeapSecAccuracy}
 
-This enumerated type is used as a parameter for \texttt{LALGPStoUTC()} and
-\texttt{LALUTCtoGPS()} to specify if complete accuracy is required in use
-of leap seconds.  The allowed values are:
+This enumerated type is used as a parameter for \texttt{LALGPStoUTC()},
+\texttt{LALUTCtoGPS()}, and \texttt{LALLeapSecs()} to specify if complete
+accuracy is required in use of leap seconds.  The allowed values are:
 
 \medskip\noindent
 \begin{tabular}{ll}
@@ -161,7 +165,32 @@ typedef enum
   LALLEAPSEC_LOOSE,
   LALLEAPSEC_STRICT
 } LALLeapSecAccuracy;
-    
+
+/* <lalLaTeX>
+
+\subsubsection*{Enumeration \texttt{LALLeapSecFormat}}
+\idx[Type]{LALLeapSecFormat}
+
+This enumerated type is used as a parameter for \texttt{LALLeapSecs()} to
+specify whether TAI-UTC or GPS-UTC should be returned.  TAI-UTC is the
+total number of leap seconds added to UTC since the TAI epoch.  GPS-UTC is
+the total number of leap seconds added since the GPS epoch.  These two
+quantities are related by:  TAI-UTC = GPS-UTC + 19.
+
+\medskip\noindent
+\begin{tabular}{ll}
+  \verb+LALLEAPSEC_TAIUTC+ & return TAI-UTC \\
+  \verb+LALLEAPSEC_GPSUTC+ & return GPS-UTC
+\end{tabular}
+\bigskip
+
+</lalLaTeX> */
+
+typedef enum
+{
+  LALLEAPSEC_TAIUTC,
+  LALLEAPSEC_GPSUTC
+} LALLeapSecFormat;
 
 
 /* <lalLaTeX>
@@ -293,6 +322,29 @@ tagLALPlaceAndDate
 }
 LALPlaceAndDate;
 
+/* <lalLaTeX>
+
+\subsubsection{Structure \texttt{LALLeapSecFormatAndAcc}}
+\idx[Type]{LALLeapSecFormatAndAcc}
+
+This structure aggregates the \texttt{LALLeapSecFormat} and
+\texttt{LALLeapSecAccuracy} parameters for passing to
+\texttt{LALLeapSecs()}.
+
+The \texttt{format} field specifies whether \texttt{LALLeapSecs()} returns
+TAI-UTC or GPS-UTC.  The \texttt{accuracy} field specifies whether a
+warning/error should be produced if the function is given an input GPS time
+that may result in a leap second not being accounted for.
+
+</lalLaTeX> */
+
+typedef struct
+tagLALLeapSecFormatAndAcc
+{
+  LALLeapSecFormat   format;
+  LALLeapSecAccuracy accuracy;
+}
+LALLeapSecFormatAndAcc;
 
 
 /* 
@@ -330,38 +382,34 @@ void LALDateString (LALStatus     *status,
 </lalLaTeX> */
 
 void LALGMST1 (LALStatus     *status,
-               REAL8         *gmst,     /* output - GMST1 */
-               const LALDate *date,     /* input  - date and time */
+               REAL8         *gmst,        /* output - GMST1 */
+               const LALDate *date,        /* input  - date and time */
                LALMSTUnits    outunits);   /* GMST1 units */
 
 void LALGPStoGMST1( LALStatus         *status,
-                    REAL8             *gmst,   /* output - GMST1 */
-                    const LIGOTimeGPS *gps,    /* input - GPS time */
+                    REAL8             *gmst,      /* output - GMST1 */
+                    const LIGOTimeGPS *gps,       /* input - GPS time */
                     LALMSTUnits        outunits); /* GMST1 units */
 
 void LALLMST1 (LALStatus             *status,
-               REAL8                 *lmst,            /* output - LMST1 */
-               const LALPlaceAndDate *placeAndDate,  /* input -
-                                                          location
-                                                          and date */ 
-               LALMSTUnits            outunits);         /* LMST1 units */
+               REAL8                 *lmst,          /* output - LMST1 */
+               const LALPlaceAndDate *placeAndDate,  /* input -  location
+                                                        and date */ 
+               LALMSTUnits            outunits);     /* LMST1 units */
 
 void LALGPStoLMST1( LALStatus             *status,
-                    REAL8                 *lmst,      /* output - LMST1 */
-                    const LALPlaceAndGPS  *placeAndGps, /* input -
-                                                               location and
-                                                               GPS */  
-                    LALMSTUnits            outunits);       /* LMST1 units */
+                    REAL8                 *lmst,        /* output - LMST1 */
+                    const LALPlaceAndGPS  *placeAndGps, /* input - location and
+                                                           GPS */  
+                    LALMSTUnits            outunits);   /* LMST1 units */
 
 /* <lalLaTeX>
 \newpage\input{SecsToLALDateC}
 </lalLaTeX> */
 
-void LALSecsToLALDate(LALStatus*,
-                      LALDate*,
-                      REAL8);
-
-
+void LALSecsToLALDate(LALStatus *status,
+                      LALDate   *date,
+                      REAL8     );
 
 /* <lalLaTeX>
 \newpage\input{GPStoUTCC}
@@ -378,17 +426,26 @@ LALUTCtoGPS (LALStatus                *status,
              const LALDate            *pUtcDate,
              const LALLeapSecAccuracy *pAccuracy);
 
-/* The following is from S.J. Berukoff, included at his request */
+
+void
+LALLeapSecs (LALStatus                    *status,
+             INT4                         *p_leapSecs,
+             const LIGOTimeGPS            *p_gpsTime,
+             const LALLeapSecFormatAndAcc *p_formatAndAcc);
+
+/* The following 2 functions are from S.J. Berukoff, included at his request */
 /* <lalLaTeX>
 \newpage\input{GPStoFloatC}
 </lalLaTeX> */
 void LALGPStoFloat (LALStatus *,
-                     REAL8     *, 
-                     LIGOTimeGPS *);
+                    REAL8     *, 
+                    const LIGOTimeGPS *);
 
 void LALFloatToGPS(LALStatus *, 
                    LIGOTimeGPS *, 
-                   REAL8 *);
+                   const REAL8 *);
+
+
 
 
 

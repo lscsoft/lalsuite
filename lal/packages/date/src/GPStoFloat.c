@@ -17,6 +17,7 @@ Converts between \texttt{LIGOTimeGPS} and \texttt{REAL8} formats.
 \vspace{0.1in}
 \input{GPStoFloatCP}
 \idx{GPStoFloat()}
+\idx{FloatToGPS()}
 
 \subsubsection*{Description}
 
@@ -44,9 +45,9 @@ NRCSID(GPSTOFLOATC, "$Id$");
 
 /* <lalVerbatim file="GPStoFloatCP"> */
 void
-LALGPStoFloat( LALStatus   *stat,
-               REAL8       *p_flt_time,
-               LIGOTimeGPS *p_gps_time)
+LALGPStoFloat( LALStatus         *stat,
+               REAL8             *p_flt_time, /* output - floating point GPS seconds */
+               const LIGOTimeGPS *p_gps_time) /* input - GPS seconds */
 {  /* </lalVerbatim> */
 
   INT4 secs, nanosecs;
@@ -71,8 +72,8 @@ LALGPStoFloat( LALStatus   *stat,
 /* <lalVerbatim file="GPStoFloatCP"> */
 void
 LALFloatToGPS( LALStatus   *stat,
-               LIGOTimeGPS *p_gps_time,
-               REAL8       *p_flt_time)
+               LIGOTimeGPS *p_gps_time,  /* output - GPS time */
+               const REAL8 *p_flt_time)  /* input - floating point GPS seconds */
 {  /* </lalVerbatim> */
 
   /* Don't blame me for these obtuse variable names */

@@ -1,5 +1,6 @@
 ## Process this file with automake to produce Makefile.in
-check_PROGRAMS = TestJulianDay TestLMST TestLMST2 TestDelay TestDateString TestGPStoUTC TestUTCtoGPS TestGPStoGMST1
+check_PROGRAMS = TestJulianDay TestLMST TestLMST2 TestDelay TestDateString \
+                 TestGPStoUTC TestUTCtoGPS TestGPStoGMST1 TestLeapSecs TestGPStoFloat
 TestJulianDay_SOURCES = TestJulianDay.c
 TestJulianDay_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 TestLMST_SOURCES = TestLMST.c
@@ -16,10 +17,14 @@ TestUTCtoGPS_SOURCES = TestUTCtoGPS.c
 TestUTCtoGPS_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 TestGPStoGMST1_SOURCES = TestGPStoGMST1.c
 TestGPStoGMST1_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+TestLeapSecs_SOURCES = TestLeapSecs.c
+TestLeapSecs_LDADD   = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+TestGPStoFloat_SOURCES = TestGPStoFloat.c
+TestGPStoFloat_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 #TestGPStoMST_SOURCES = TestGPStoMST.c
 #TestGPStoMST_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-TESTS = TestJulianDay TestLMST TestDelay TestDateString TestGPStoUTC TestUTCtoGPS
+TESTS = TestJulianDay TestLMST TestDelay TestDateString TestGPStoUTC TestUTCtoGPS TestLeapSecs TestGPStoFloat
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
