@@ -72,7 +72,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def get_ifo_one(self):
     """
-    Returns the IFO code of the primary interferometer.
+    Returns the IFO code of the first interferometer.
     """
     return self.__ifo_one
 
@@ -86,7 +86,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
   def get_ifo_two(self):
     """
-    Returns the IFO code of the primary interferometer.
+    Returns the IFO code of the second interferometer.
     """
     return self.__ifo_two
 
