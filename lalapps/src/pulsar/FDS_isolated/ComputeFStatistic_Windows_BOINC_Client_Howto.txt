@@ -238,7 +238,7 @@ char *asctime_r(const struct tm *t, char *s) {
 cp /lib/libm.a /work/lib/m.lib
 
 ./00boot
-./configure --disable-fftw3 --with-extra-cppflags=-I/work/include
+./configure --disable-fftw3 --with-extra-cppflags=-I/work/include\
 --with-extra-libs=-L/work/lib --prefix=/work
 make && make install
 
