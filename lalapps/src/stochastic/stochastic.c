@@ -10,45 +10,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <math.h>
 #include <errno.h>
-
-#include <unistd.h>
 #include <getopt.h>
 
-#include <FrameL.h>
-
 #include <lal/AVFactories.h>
-#include <lal/Calibration.h>
-#include <lal/ComplexFFT.h>
-#include <lal/CoarseGrainFrequencySeries.h>
 #include <lal/Date.h>
-#include <lal/DetectorSite.h>
-#include <lal/FrameCache.h>
 #include <lal/FrameCalibration.h>
 #include <lal/FrameStream.h>
-#include <lal/LALConstants.h>
-#include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
-#include <lal/LALStatusMacros.h>
 #include <lal/LALStdio.h>
-#include <lal/LALStdlib.h>
 #include <lal/PrintFTSeries.h>
-#include <lal/PrintVector.h>
-#include <lal/Random.h>
-#include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/SimulateSB.h>
-#include <lal/StreamInput.h>
 #include <lal/StochasticCrossCorrelation.h>
-#include <lal/TimeFreqFFT.h>
-#include <lal/Units.h>
-#include <lal/Window.h>
-#include <lal/IIRFilter.h>
-#include <lal/BandPassTimeSeries.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/LIGOLwXML.h>
