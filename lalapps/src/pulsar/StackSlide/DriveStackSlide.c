@@ -103,6 +103,8 @@
 /* 12/06/04 gam; add params->gpsEpochStartTimeNan; get gpsEpochStartTime, gpsEpochStartTimeNan, and gpsStartTime from command line; */
 /* 12/06/04 gam; change calibrationFlag to cosInclinationAngle */
 /* 12/06/04 gam; if (params->testFlag & 8) > 0 use fixed values for psi and cosIota during Monte Carlo simulations */
+/* 12/18/04 gam; Change LALSRunningMedian to LALSRunningMedian2 */
+/* 12/18/04 gam; Remove unused CVS_REVISION, CVS_DATE, and UNKNOWN. */
 
 /*********************************************/
 /*                                           */
@@ -171,9 +173,6 @@ NRCSID( DRIVESTACKSLIDEC, "$Id$");
 #define PROGRAM_NAME "stackslide"
 #define CVS_ID_STRING "$Id$"
 #define CVS_SOURCE "$Source$"
-/* #define CVS_REVISION "$Revision$" */  /* 02/11/04 gam; comment out this and next two. */
-/* #define CVS_DATE "$Date$" */
-/* #define UNKNOWN "unknown" */ 
 #define BLANK " "
 
 /******************************************/
@@ -1514,7 +1513,8 @@ void StackSlideApplySearch(
               
            /* For each STK, call LALSRunningMedian; use medians to normalize the STK. */
            for(k=0;k<params->numSTKs;k++) {
-              LALSRunningMedian(status->statusPtr, medians, params->STKData[k]->data, runningMedianParams);
+              /* LALSRunningMedian(status->statusPtr, medians, params->STKData[k]->data, runningMedianParams); */
+              LALSRunningMedian2(status->statusPtr, medians, params->STKData[k]->data, runningMedianParams); /* 12/18/04 gam */
               CHECKSTATUSPTR (status);
 
               /* 05/05/04 gam; If normalizing with running median use normalizationParameter to correct bias in median to get mean. */
