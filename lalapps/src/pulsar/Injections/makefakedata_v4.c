@@ -786,6 +786,12 @@ void FreeMem (LALStatus* stat, ConfigVars_t *cfg)
     TRY (LALDestroySFTVector(stat->statusPtr, &(cfg->noiseSFTs)), stat);
   }
 
+  /* free transfer-function if we have one.. */
+  if ( cfg->transfer ) {
+    TRY ( LALCDestroyVector(stat->statusPtr, &(cfg->transfer->data)), stat);
+    LALFree (cfg->transfer);
+  }
+
   /* Clean up earth/sun Ephemeris tables */
   LALFree(cfg->edat.ephemE);
   LALFree(cfg->edat.ephemS);
@@ -1087,15 +1093,15 @@ LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **tra
 	}
 
       /* first line: set f0 */
-      if ( i == 0 )
+      if ( i == startline )
 	ret->f0 = f1;
 
       /* second line: set deltaF */
-      if ( i == 1 )
+      if ( i == startline + 1 )
 	ret->deltaF = f1 - ret->f0;
 	
       /* check constancy of frequency-step */
-      if ( (f1 - f0 != ret->deltaF) && (i > 1) )
+      if ( (f1 - f0 != ret->deltaF) && (i > startline) )
 	{
 	  LALPrintError ("\nIllegal frequency-step %f != %f in line %d of file %s\n\n",
 			 (f1-f0), ret->deltaF, i, fname);
@@ -1103,8 +1109,8 @@ LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **tra
 	}
 
       /* now convert into transfer-function and (Re,Im): T = A^-1 */
-      data->data[i].re = (REAL4)( cos(phi) / amp );
-      data->data[i].im = (REAL4)(-sin(phi) / amp );
+      data->data[i-startline].re = (REAL4)( cos(phi) / amp );
+      data->data[i-startline].im = (REAL4)(-sin(phi) / amp );
       
     } /* for i < numlines */
 
