@@ -63,7 +63,7 @@ NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
 
 /* cvs info */
-#define PROGRAM_NAME "stochastic"
+#define PROGRAM_NAME "lalapps_stochastic"
 #define CVS_ID "$Id$"
 #define CVS_REVISION "$Revision$"
 #define CVS_DATE "$Date$"
@@ -100,6 +100,12 @@ static int recentre_flag;
 /* xml comment */
 CHAR comment[LIGOMETA_COMMENT_MAX];
 
+/* xml tables */
+MetadataTable proctable;
+MetadataTable procparams;
+ProcessParamsTable *this_proc_param;
+LIGOLwXMLStream xmlStream;
+
 /* parameters for the stochastic search */
 
 /* sampling parameters */
@@ -109,8 +115,8 @@ REAL8 deltaF = 0.25;
 
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
-UINT8 startTime = 0;
-UINT8 endTime = 0;
+INT4 startTime = 0;
+INT4 endTime = 0;
 INT4 intervalDuration = -1;
 INT4 segmentDuration = -1;
 INT4 calibOffset = -1;
@@ -176,14 +182,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   FILE *outOne, *outTwo;
   CHAR outputFilenameOne[200], outputFilenameTwo[200];
 
+  /* xml output file name */
+  CHAR xmlFileName[FILENAME_MAX];
+
   /* counters */
   INT4 i, j, n, segLoop, interLoop, N;
   INT4 firstpass, pathology;
-
-  /* xml tables */
-  MetadataTable proctable;
-  MetadataTable procparams;
-  ProcessParamsTable *this_proc_param;
 
   /* results parameters */
   REAL8 y, yOpt;
@@ -303,23 +307,21 @@ INT4 main(INT4 argc, CHAR *argv[])
   lal_errhandler = LAL_ERR_EXIT;
 
   /* create the process and process params tables */
-  printf("arse0!\n");
   proctable.processTable = (ProcessTable *) calloc(1, sizeof(ProcessTable));
-  printf("arse1!\n");
   LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->start_time), \
         &accuracy), &status);
-  printf("arse2!\n");
   LAL_CALL(populate_process_table(&status, proctable.processTable, \
         PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE), &status);
-  printf("arse3!\n");
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) \
                     calloc(1, sizeof(ProcessParamsTable));
-  printf("arse4!\n");
   memset(comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR));
-  printf("arse5!\n");
 
   /* parse command line options */
   parseOptions(argc, argv);
+
+  /* get xml file name */
+  LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-stochastic-%d-%d.xml", \
+      ifoOne, ifoTwo, startTime, endTime);
 
   /* only add a buffer if the data is going to be resample and/or high
    * pass filtered */
@@ -1735,12 +1737,40 @@ INT4 main(INT4 argc, CHAR *argv[])
       ptEst = (yOpt / inVarTheoSum) /(REAL8)segmentDuration;
       error = sqrt (1./inVarTheoSum ) /(REAL8)segmentDuration;
       outTwo = fopen(outputFilenameTwo, "a");
-      fprintf(outTwo,"%lld %lld %e %e\n", startTime, endTime, ptEst, error);
+      fprintf(outTwo,"%d %d %e %e\n", startTime, endTime, ptEst, error);
       fclose(outTwo);
       if (verbose_flag)
         fprintf(stdout, "ptEst = %e, error = %e\n", ptEst, error);
     }
   }
+
+  /* write out xml */
+  if (verbose_flag)
+    fprintf(stdout, "Writing output XML files...\n");
+
+  /* opening xml file stream */
+  memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
+  LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlStream, xmlFileName), &status);
+
+  /* write out process and process params tables */
+  LAL_CALL(LALGPSTimeNow(&status, &(proctable.processTable->end_time), \
+        &accuracy), &status);
+  LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, process_table), \
+      &status);
+  LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, proctable, \
+        process_table), &status);
+  LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
+  free(proctable.processTable);
+
+  /* write the process params table */
+  LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, \
+        process_params_table), &status);
+  LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, procparams, \
+        process_params_table), &status);
+  LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
+
+  /* close xml file */
+  LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
 
   /* cleanup */
   LAL_CALL(LALDestroyRealFFTPlan(&status, &(specparPSD.plan)), &status);
@@ -1856,13 +1886,14 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --test                        output intermediate results\n"\
   " --test-interval N             interval to test\n"\
   " --test-segment N              segment to test\n"\
-  " --test-trial N                trail to test\n"\
+  " --test-trial N                trial to test\n"\
   " --geo-hpf-frequency N         GEO high pass filter knee frequency\n"\
   " --geo-hpf-attenuation N       GEO high pass filter attenuation\n"\
   " --geo-hpf-order N             GEO high pass filter order\n"\
   " --alpha N                     exponent on filter spectrum\n"\
   " --f-ref N                     reference frequency for filter spectrum\n"\
-  " --omega0 N                    reference omega_0 for filter spectrum\n"
+  " --omega0 N                    reference omega_0 for filter spectrum\n"\
+  " --comment STRING              set the process table to STRING\n"
 
 /* parse command line options */
 static void parseOptions(INT4 argc, CHAR *argv[])
@@ -1972,7 +2003,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "GPS start time is prior to 1 January 1994 00:00:00 UTC " \
-              "(%lld specified)\n", long_options[option_index].name, \
+              "(%d specified)\n", long_options[option_index].name, \
               startTime);
           exit(1);
         }
@@ -1980,10 +2011,12 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "GPS start time is after 14 September 2011 01:46:26 UTC " \
-              "(%lld specified)\n", long_options[option_index].name, \
+              "(%d specified)\n", long_options[option_index].name, \
               startTime);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("int", "%ld", startTime);
 
         break;
 
@@ -1996,7 +2029,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "GPS end time is prior to 1 January 1994 00:00:00 UTC " \
-              "(%lld specified)\n", long_options[option_index].name, \
+              "(%d specified)\n", long_options[option_index].name, \
               endTime);
           exit(1);
         }
@@ -2004,10 +2037,12 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "GPS end time is after 14 September 2011 01:46:26 UTC " \
-              "(%lld specified)\n", long_options[option_index].name, \
+              "(%d specified)\n", long_options[option_index].name, \
               endTime);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("int", "%ld", endTime);
 
         break;
 
@@ -2024,6 +2059,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("int", "%d", intervalDuration);
+
         break;
 
       case 'e':
@@ -2038,6 +2075,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               long_options[option_index].name, segmentDuration);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("int", "%d", segmentDuration);
 
         break;
 
@@ -2055,6 +2094,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("int", "%d", sampleRate);
+
         break;
 
       case 'g':
@@ -2071,6 +2112,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("int", "%d", resampleRate);
+
         break;
 
       case 'h':
@@ -2085,6 +2128,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               long_options[option_index].name, fMin);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("int", "%d", fMin);
 
         break;
 
@@ -2101,6 +2146,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("int", "%d", fMax);
+
         break;
 
       case 'j':
@@ -2115,6 +2162,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               long_options[option_index].name, hannDuration);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("int", "%d", hannDuration);
 
         break;
 
@@ -2132,6 +2181,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("float", "%e", highPassFreq);
+
         break;
 
       case 'l':
@@ -2147,6 +2198,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               highPassAtten);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("float", "%e", highPassAtten);
 
         break;
 
@@ -2164,6 +2217,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("float", "%e", highPassOrder);
+
         break;
 
       case 'n':
@@ -2179,6 +2234,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               geoHighPassFreq);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("float", "%e", geoHighPassFreq);
 
         break;
 
@@ -2196,6 +2253,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("float", "%e", geoHighPassAtten);
+
         break;
 
       case 'p':
@@ -2211,6 +2270,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               geoHighPassOrder);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("float", "%e", geoHighPassOrder);
 
         break;
 
@@ -2243,6 +2304,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("string", "%s", ifoOne);
+
         break;
 
       case 'r':
@@ -2274,6 +2337,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("string", "%s", ifoTwo);
+
         break;
 
       case 's':
@@ -2282,6 +2347,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         channelOneTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         channelOne = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(channelOneTemp, optarg, optarg_len);
+        ADD_PROCESS_PARAM("string", "%s", channelOneTemp);
         break;
 
       case 't':
@@ -2290,6 +2356,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
         channelTwoTemp = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         channelTwo = (CHAR*)calloc(optarg_len, sizeof(CHAR));
         strncpy(channelTwoTemp, optarg, optarg_len);
+        ADD_PROCESS_PARAM("string", "%s", channelTwoTemp);
         break;
 
       case 'u':
@@ -2306,6 +2373,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               long_options[option_index].name, frameCacheOne);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("string", "%s", frameCacheOne);
 
         break;
 
@@ -2324,6 +2393,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("string", "%s", frameCacheTwo);
+
         break;
 
       case 'w':
@@ -2340,6 +2411,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               long_options[option_index].name, calCacheOne);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("string", "%s", calCacheOne);
 
         break;
 
@@ -2358,11 +2431,14 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("string", "%s", calCacheTwo);
+
         break;
 
       case 'y':
         /* calibration time offset */
         calibOffset = atoi(optarg);
+        ADD_PROCESS_PARAM("int", "%d", calibOffset);
         break;
 
       case 'z':
@@ -2378,16 +2454,20 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("int", "%d", maskBin);
+
         break;
 
       case 'A':
         /* scale factor */
         scaleFactor = atof(optarg);
+        ADD_PROCESS_PARAM("float", "%e", scaleFactor);
         break;
 
       case 'B':
         /* seed */
         seed = atoi(optarg);
+        ADD_PROCESS_PARAM("float", "%e", seed);
         break;
 
       case 'C':
@@ -2402,6 +2482,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               "(%d specified)\n", long_options[option_index].name, NLoop);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("int", "%d", NLoop);
 
         break;
 
@@ -2420,6 +2502,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("string", "%s", outputFilePath);
+
         break;
 
       case 'E':
@@ -2434,6 +2518,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               long_options[option_index].name, testInter);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("int", "%d", testInter);
 
         break;
 
@@ -2450,6 +2536,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("int", "%d", testSeg);
+
         break;
 
       case 'G':
@@ -2465,11 +2553,14 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("int", "%d", testTrial);
+
         break;
 
       case 'H':
         /* set debug level */
         set_debug_level( optarg );
+        ADD_PROCESS_PARAM("string", "%s", optarg);
         break;
 
       case 'I':
@@ -2481,6 +2572,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       case 'J':
         /* filter spectrum exponent */
         alpha = atof(optarg);
+        ADD_PROCESS_PARAM("float", "%e", alpha);
         break;
 
       case 'K':
@@ -2496,6 +2588,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
           exit(1);
         }
 
+        ADD_PROCESS_PARAM("float", "%e", fRef);
+
         break;
 
       case 'L':
@@ -2510,6 +2604,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
               long_options[option_index].name, omegaRef);
           exit(1);
         }
+
+        ADD_PROCESS_PARAM("float", "%e", omegaRef);
 
         break;
 
@@ -2780,8 +2876,8 @@ static void parseOptions(INT4 argc, CHAR *argv[])
   /* stop time before start time */
   if (startTime > endTime)
   {
-    fprintf(stderr, "Invalid start/end time; end time (%lld) is before " \
-        "start time (%lld)\n", endTime, startTime);
+    fprintf(stderr, "Invalid start/end time; end time (%d) is before " \
+        "start time (%d)\n", endTime, startTime);
     exit(1);
   }
 
