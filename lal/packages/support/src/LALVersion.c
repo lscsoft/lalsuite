@@ -56,10 +56,16 @@ LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose )
   ASSERT( size > 0, status, LALVERSIONH_ESIZE, LALVERSIONH_MSGESIZE );
 
   nchar = verbose ?
-    LALSnprintf( message, size, "This is LAL Version %s\nCompiled on %s\n"
-        "With arguments %s\n(RCS %s)\n",
-        lalVersion, lalConfigureDate, lalConfigureArgs, LALVERSIONC ) :
-    LALSnprintf( message, size, "This is LAL Version %s\n", lalVersion ) ;
+    LALSnprintf( message, size,
+        "LAL Version:         %s\n"
+        "CVS Tag:             %s\n"
+        "Build Date:          %s\n"
+        "Configure Date:      %s\n"
+        "Configure Arguments: %s\n"
+        "(RCS %s)\n",
+        lalVersion, LAL_CVS_TAG, lalBuildDate, lalConfigureDate,
+        lalConfigureArgs, LALVERSIONC ) :
+    LALSnprintf( message, size, "LAL Version: %s\n", lalVersion ) ;
 
   if ( nchar < 0 )
   {
