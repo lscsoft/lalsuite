@@ -102,6 +102,7 @@ static void makeWhiteNoise(
 /* some global output flags */
 INT4               verbose       = FALSE;
 INT4               cluster       = FALSE;
+INT4               geodata       = FALSE;
 INT4               printSpectrum = FALSE;
 INT4               printData     = FALSE;
 INT4               whiteNoise    = FALSE;   /* insertion of Gaussian white noise */
@@ -150,6 +151,7 @@ int main( int argc, char *argv[])
 
     /* data storage */
     REAL4TimeSeries            series;
+    REAL8TimeSeries            geoSeries;
     COMPLEX8FrequencySeries    resp;
 
     /* Burst events */
@@ -252,14 +254,46 @@ int main( int argc, char *argv[])
          * Determine information about the channel and seek to the
          * right place in the fram files 
          */
-        LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
-        series.epoch.gpsSeconds     = epoch.gpsSeconds;
-        series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
-        LAL_CALL( LALFrSeek(&stat, &(series.epoch), stream), &stat);
+        if (geodata){
+          INT4 i;
 
-        /* get the data */
-        LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
+          /* create and initialize the time series vector */
+          geoSeries.data = NULL;
+          LAL_CALL( LALDCreateVector( &stat, &geoSeries.data, numPoints), &stat);
+          memset( geoSeries.data->data, 0, geoSeries.data->length*sizeof(REAL4) );
+          geoSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
+          geoSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+          strcpy(geoSeries.name, params->channelName);
+          geoSeries.deltaT = 1.0/((REAL8) sampleRate);
+          geoSeries.f0 = 0.0;
+          geoSeries.sampleUnits = lalADCCountUnit;
+          LAL_CALL( LALFrGetREAL8TimeSeries( &stat, &geoSeries, &channelIn, stream), &stat);
+          geoSeries.epoch.gpsSeconds     = epoch.gpsSeconds;
+          geoSeries.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+          LAL_CALL( LALFrSeek(&stat, &(geoSeries.epoch), stream), &stat);
 
+          /* get the data */
+          LAL_CALL( LALFrGetREAL8TimeSeries( &stat, &geoSeries, &channelIn, stream), &stat);
+          for(i=0;i<numPoints;i++){
+            series.data->data[i] = (REAL4) geoSeries.data->data[i];
+          }
+          series.epoch.gpsSeconds = geoSeries.epoch.gpsSeconds;
+          series.epoch.gpsNanoSeconds = geoSeries.epoch.gpsNanoSeconds;
+          strcpy(series.name, geoSeries.name);
+          series.deltaT = geoSeries.deltaT;
+          series.f0 = geoSeries.f0;
+          series.sampleUnits = lalADCCountUnit;
+        }
+        else
+        {
+          LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
+          series.epoch.gpsSeconds     = epoch.gpsSeconds;
+          series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+          LAL_CALL( LALFrSeek(&stat, &(series.epoch), stream), &stat);
+
+          /* get the data */
+          LAL_CALL( LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream), &stat);
+        }
         /* store the start and end time of the raw channel in the search summary */
         searchsumm.searchSummaryTable->in_start_time = series.epoch;
         LAL_CALL( LALGPStoFloat( &stat, &tmpTime, &(series.epoch) ), 
@@ -529,6 +563,7 @@ int initializeEPSearch(
         /* these options set a flag */
         {"verbose",                 no_argument,       &verbose,           TRUE },
         {"cluster",                 no_argument,       &cluster,           TRUE },
+        {"geodata",                 no_argument,       &geodata,           TRUE },
         /* these options don't set a flag */
         {"alphdef",                 required_argument, 0,                 'a'}, 
         {"channel",                 required_argument, 0,                 'b'}, 
