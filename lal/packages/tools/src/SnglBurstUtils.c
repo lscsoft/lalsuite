@@ -441,7 +441,8 @@ static void XLALSnglBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 XLALClusterSnglBurstTable (
-	SnglBurstTable *list,
+	SnglBurstTable **list,
+	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
 	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 )
 /* </lalVerbatim> */
@@ -452,7 +453,7 @@ XLALClusterSnglBurstTable (
 	do {
 		did_cluster = 0;
 
-		for(a = list; a; a = a->next)
+		for(a = *list; a; a = a->next)
 			for(prev = a, b = a->next; b; b = prev->next) {
 				if(!testfunc((const SnglBurstTable * const *) &a, (const SnglBurstTable * const *) &b)) {
 					XLALSnglBurstCluster(a, b);
@@ -470,13 +471,13 @@ XLALClusterSnglBurstTable (
 void
 LALClusterSnglBurstTable (
 	LALStatus *status,
-	SnglBurstTable *list,
+	SnglBurstTable **list,
+	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
 	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 )
 /* </lalVerbatim> */
 {
 	INITSTATUS (status, "LALClusterSnglBurstTable", SNGLBURSTUTILSC);
-	XLALClusterSnglBurstTable(list, testfunc);
+	XLALClusterSnglBurstTable(list, bailoutfunc, testfunc);
 	RETURN(status);
 }
-

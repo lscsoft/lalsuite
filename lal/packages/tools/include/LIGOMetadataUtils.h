@@ -499,14 +499,16 @@ LALCompareSimBurstAndSnglBurst(
 
 void
 XLALClusterSnglBurstTable(
-	SnglBurstTable  *list,
+	SnglBurstTable  **list,
+	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
 	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 );
 
 void
 LALClusterSnglBurstTable(
 	LALStatus       *status,
-	SnglBurstTable  *list,
+	SnglBurstTable  **list,
+	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
 	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 );
 
