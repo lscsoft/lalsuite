@@ -1654,7 +1654,7 @@ class ScienceData:
     # check for an empty list
     if len(self) == 0:
       # return a segment representing all time
-      self.__sci_segs = ScienceSegment(tuple(0,0,1999999999,1999999999))
+      self.__sci_segs = ScienceSegment(tuple([0,0,1999999999,1999999999]))
 
     # go through the list checking for validity as we go
     outlist = []
