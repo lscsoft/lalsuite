@@ -35,26 +35,26 @@ INT4 main(INT4 argc, CHAR *argv[]) {
   RandomParams *rpar = NULL;
 
   CHAR channel[10] = "H1:test";
-  UINT4 N = 10*16384; /* length of data */
+  UINT4 N = 155648; /* length of data */
   UINT4 i;
 
   /* set parameters */
   par = &params;
   
   SetStringParameter(par,"-filterparams");
-  SetStringParameter(par,"163840");    /* number of points per segment */
-  SetStringParameter(par,"1");         /* number of segments */
-  SetStringParameter(par,"0");         /* overlap of each segment */
+  SetStringParameter(par,"16384");    /* number of points per segment */
+  SetStringParameter(par,"16");         /* number of segments */
+  SetStringParameter(par,"8192");         /* overlap of each segment */
   SetStringParameter(par,"3");         /* ? */
   SetStringParameter(par,"2");         /* ? */
   SetStringParameter(par,"2");         /* ? */
   SetStringParameter(par,"100.0");     /* low frequency bound of search */
   SetStringParameter(par,"1.0");       /* frequency steps */
-  SetStringParameter(par,"1024.0");    /* bandwidth above low freq */
+  SetStringParameter(par,"1024");    /* bandwidth above low freq */
   SetStringParameter(par,"2.0");       /* ? */
   SetStringParameter(par,"0.5");       /* ? */
-  SetStringParameter(par,"1");         /* segment analyzed at one time */
-  SetStringParameter(par,"1.0e-36");   /* dso threshold */
+  SetStringParameter(par,"16");         /* segment analyzed at one time */
+  SetStringParameter(par,"1.0e-5");   /* dso threshold */
   SetStringParameter(par,"10");        /* events to communicate to master */
   SetStringParameter(par,channel);     /* channel name */
   SetStringParameter(par,"0");         /* ? */
