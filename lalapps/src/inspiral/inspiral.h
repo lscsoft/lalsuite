@@ -171,7 +171,6 @@
 "                 --chisq-threshold 0.001 --verbose --debug-level NDEBUG\n" \
 "\n"
 
-#define RESULT_FILE "results.xml"
 #define BANK_FILE "tmpltbank.xml"
 
 int snprintf(char *str, size_t size, const  char  *format, ...);

@@ -129,8 +129,9 @@ int main( int argc, char *argv[] )
   InspiralTemplateNode         *tmpltInsert  = NULL;
 
   /* inspiral events */
-  InspiralEvent                *event     = NULL;
-  InspiralEvent                *eventList = NULL;
+  SnglInspiralTable            *event       = NULL;
+  SnglInspiralTable            *eventList   = NULL;
+  MetadataTable                 savedEvents;
 
   /* output data */
   MetadataTable         proctable;
@@ -142,6 +143,7 @@ int main( int argc, char *argv[] )
   UINT4 i, k;
   INT4  inserted;
   INT4  currentLevel;
+  CHAR  fname[256];
 
 
   /*
@@ -177,6 +179,9 @@ int main( int argc, char *argv[] )
     snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
+
+  /* make sure the pointer to the first event is null */
+  savedEvents.snglInspiralTable = NULL;
 
 
   /* 
@@ -477,6 +482,14 @@ int main( int argc, char *argv[] )
           {
             fprintf( stdout, "***>  dumping events  <***\n" );
           }
+          if ( ! savedEvents.snglInspiralTable )
+          {
+            savedEvents.snglInspiralTable = eventList;
+          }
+          else
+          {
+            event->next = eventList;
+          }
         }
         else
         {
@@ -488,14 +501,13 @@ int main( int argc, char *argv[] )
           fcSegVec->data[i].level += 1;
         } 
 
-        /* destroy the events */
-        while ( eventList )
+        /* save a pointer to the last event in the list */
+        while ( eventList->next )
         {
-          event = eventList;
           eventList = eventList->next;
-          LALFree( event );
-          event = NULL;
         }
+        event = eventList;
+        eventList = NULL;
       } /* end if ( events ) */
 
       /* if going up a level, remove inserted nodes, reset segment levels */ 
@@ -626,7 +638,6 @@ int main( int argc, char *argv[] )
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
       writeRhosq || writeChisq )
   {
-    char fname[256];
     snprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.gwf",
         site, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
@@ -638,7 +649,10 @@ int main( int argc, char *argv[] )
 
   /* open the output xml file */
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, RESULT_FILE ), &status );
+  snprintf( fname, sizeof(fname), "%s-INSPIRAL-%d-%d.xml",
+      site, gpsStartTime.gpsSeconds,
+      gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname), &status );
 
   /* write the process table */
   snprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "%s", ifo );
@@ -665,6 +679,20 @@ int main( int argc, char *argv[] )
   }
 
   /* write the inspiral events to the file */
+  if ( savedEvents.snglInspiralTable )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ), 
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, 
+          sngl_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  }
+  while ( savedEvents.snglInspiralTable )
+  {
+    event = savedEvents.snglInspiralTable;
+    savedEvents.snglInspiralTable = savedEvents.snglInspiralTable->next;
+    LALFree( event );
+  }
 
   /* close the output xml file */
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
