@@ -504,6 +504,7 @@ LALCompareInspirals (
 
   
 
+  /* XXX Need to add light travel time between sites XXX */
   if ( labs( ta - tb ) < (aAcc.dt + bAcc.dt) )
   {
     LALInfo( status, "Triggers pass time coincidence test");
