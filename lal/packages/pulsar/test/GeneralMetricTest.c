@@ -357,9 +357,8 @@ int main( int argc, char *argv[] ) {
      tevpulse.dt1 = LALDTBaryPtolemaic;
    }
    if( metric_code == 3 ) {
-/* WE NEED TO WRITE SUCH A FUNCTION!
+     /* WE NEED TO WRITE SUCH A FUNCTION!*/
      tevpulse.t1 = LALTEphemeris;
- */
      tevpulse.dt1 = LALDTEphemeris;
    }
    tevpulse.t2 = LALTSpin;
