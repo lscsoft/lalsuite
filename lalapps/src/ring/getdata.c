@@ -280,7 +280,7 @@ int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency )
     highpasspar.f1   = -1;
     highpasspar.a1   = -1;
     highpasspar.f2   = frequency;
-    highpasspar.a1   = 0.9; /* this means 10% attenuation at f2 */
+    highpasspar.a2   = 0.9; /* this means 10% attenuation at f2 */
     verbose( "highpass filtering data at %g Hz\n", frequency );
     LAL_CALL( LALDButterworthREAL4TimeSeries( &status, series, &highpasspar ),
         &status );
