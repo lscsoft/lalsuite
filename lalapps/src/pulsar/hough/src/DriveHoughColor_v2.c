@@ -164,10 +164,17 @@ int main(int argc, char *argv[]){
 
   CHAR   filehisto[256];
   CHAR   filestats[256];
+
 #ifdef PRINTEVENTS
   FILE   *fpEvents = NULL;
   CHAR   fileEvents[256];
 #endif
+
+#ifdef PRINTTEMPLATES
+  FILE *fpTemplates=NULL;
+  CHAR fileTemplates[256];
+#endif
+
   UINT2  blocksRngMed;
 
 #ifdef TIMING
@@ -381,7 +388,6 @@ int main(int argc, char *argv[]){
   }
   /******************************************************************/
  
-
 
    /*****************************************************************/
    /* read skypatch info */
@@ -728,15 +734,17 @@ int main(int argc, char *argv[]){
       /* opening the output statistic, and event files */
       /******************************************************************/  
       
-      /* create the directory fnameOut/skypatch_$j */
+      /* create the directory name fnameOut/skypatch_$j */
       strcpy(  filestats, fnameOut);
       strcat( filestats, "skypatch_");
       {
 	CHAR tempstr[16];
-	sprintf(tempstr, "%d", skyCounter);
+	sprintf(tempstr, "%d", skyCounter+1);
 	strcat( filestats, tempstr);
       }
       strcat( filestats, "/");
+
+      /* now create directory fnameout/akypatch_$j using mkdir */
       errno = 0;
       {
 	/* check whether file can be created or if it exists already 
@@ -749,14 +757,19 @@ int main(int argc, char *argv[]){
 	    return 1;  /* stop the program */
 	  }
       }
-      /* create the base filenames for the stats, histo and event files*/
+
+      /* create the base filenames for the stats, histo and event files and template files*/
       strcat( filestats, fbasenameOut);
       strcpy(filehisto, filestats);
 #ifdef PRINTEVENTS
       strcpy( fileEvents, filestats);
 #endif
-      
-      /* create and open the stats file for writing */
+#ifdef PRINTTEMPLATES
+      strcpy(fileTemplates, filestats);
+#endif
+
+
+            /* create and open the stats file for writing */
       strcat(  filestats, "stats");
       fp1=fopen(filestats,"w");
       if ( !fp1 ){
@@ -776,6 +789,17 @@ int main(int argc, char *argv[]){
       setlinebuf(fpEvents); /*line buffered on */  
 #endif
 
+
+#ifdef PRINTTEMPLATES
+      /* create and open templates file */
+      strcat( fileTemplates, "templates");
+      fpTemplates = fopen(fileTemplates, "w");
+      if ( !fpTemplates ){
+	fprintf(stderr, "Unable to create file %s\n", fileTemplates);
+	return DRIVEHOUGHCOLOR_EFILE;
+      }
+      setlinebuf(fpTemplates); /*line buffered on */   
+#endif 
 
       /* ****************************************************************/
       /*  general parameter settings and 1st memory allocation */
@@ -953,6 +977,7 @@ int main(int argc, char *argv[]){
 	  if( PrintHmap2m_file( &ht, fnameOut, iHmap ) ) return 5;
 #endif 
 	  
+
 	  fprintf(fp1, "%d %f %f %d %d %f %f %f 0.0 \n",
 		  iHmap, sourceLocation.alpha, sourceLocation.delta,
 		  stats.maxCount, stats.minCount, stats.avgCount,stats.stdDev,
@@ -961,6 +986,11 @@ int main(int argc, char *argv[]){
 	  SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
 				 &patch, &parDem), &status );
 #endif      
+
+#ifdef PRINTTEMPLATES
+	  SUB( PrintHoughTemplates (&status, fpTemplates, &ht, &patch, &parDem), &status);
+#endif
+
 	  ++iHmap;
 	  
 	  
@@ -1006,6 +1036,11 @@ int main(int argc, char *argv[]){
 	      SUB( PrintHoughEvents (&status, fpEvents, houghThreshold, &ht,
 				     &patch, &parDem), &status );
 #endif    
+
+#ifdef PRINTTEMPLATES
+	  SUB( PrintHoughTemplates (&status, fpTemplates, &ht, &patch, &parDem), &status);
+#endif
+
 	      ++iHmap;
 	      
 	      /* what else with output, equal to non-spin case */
@@ -1053,6 +1088,10 @@ int main(int argc, char *argv[]){
       fclose(fp1);
 #ifdef PRINTEVENTS
       fclose(fpEvents);
+#endif
+
+#ifdef PRINTTEMPLATES
+      fclose(fpTemplates);
 #endif
      
       
@@ -1330,6 +1369,66 @@ void PrintHoughEvents (LALStatus       *status,
   RETURN (status);
 }    
 /* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
+
+
+/* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
+/******************************************************************/
+/*  Find and print events to a given open file */
+/******************************************************************/
+void PrintHoughTemplates (LALStatus       *status,
+        	      FILE            *fpTemplates,
+		      HOUGHMapTotal   *ht,
+	    	      HOUGHPatchGrid  *patch,
+	 	      HOUGHDemodPar   *parDem)
+{
+
+  REAL8UnitPolarCoor sourceLocation;
+  UINT2    xPos, yPos, xSide, ySide;
+  INT4     temp;
+  REAL8    f0;
+  /* --------------------------------------------- */
+  INITSTATUS (status, "PrintHoughEvents", DRIVEHOUGHCOLORC);
+  ATTATCHSTATUSPTR (status);
+  
+ /* make sure arguments are not null */
+  ASSERT (patch , status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (parDem, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (ht, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL);
+
+ /* make sure input hough map is ok*/
+  ASSERT (ht->xSide > 0, status, DRIVEHOUGHCOLOR_EBAD,DRIVEHOUGHCOLOR_MSGEBAD);
+  ASSERT (ht->ySide > 0, status, DRIVEHOUGHCOLOR_EBAD,DRIVEHOUGHCOLOR_MSGEBAD);
+  
+  /* read input parameters */
+  xSide = ht->xSide;
+  ySide = ht->ySide; 
+  
+  f0=(ht->f0Bin)*(ht->deltaF);
+  
+  for(yPos =0; yPos<ySide; yPos++){
+    for(xPos =0; xPos<xSide; xPos++){
+      /* read the current number count */
+      temp = ht->map[yPos*xSide + xPos];
+      TRY( Stereo2SkyLocation(status->statusPtr, 
+			      &sourceLocation,xPos,yPos,patch, parDem), status);
+      if (ht->spinRes.length) {
+	fprintf(fpTemplates, "%d %f %f %f %g \n", 
+		temp, sourceLocation.alpha, sourceLocation.delta, 
+		f0, ht->spinRes.data[0]);
+      }
+      else {
+	fprintf(fpTemplates, "%d %f %f %f %g \n", 
+		temp, sourceLocation.alpha, sourceLocation.delta, 
+		f0,0.00);
+      }
+    }
+  }
+  	 
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}    
+
 /* >>>>>>>>>>>>>>Remove this last one. Not used any more<<<<<<<<<<<<< */
 
 

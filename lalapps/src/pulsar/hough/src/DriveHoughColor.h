@@ -150,6 +150,12 @@ void PrintHoughEvents (LALStatus       *status,
 	    	      HOUGHPatchGrid  *patch,
 	 	      HOUGHDemodPar   *parDem);	     
 
+void PrintHoughTemplates (LALStatus       *status,
+        	      FILE            *fpEvents,
+		      HOUGHMapTotal   *ht,
+	    	      HOUGHPatchGrid  *patch,
+	 	      HOUGHDemodPar   *parDem);	     
+
 void Periodo2PSDrng (LALStatus  *status,
            REAL8Periodogram1    *psd,
            REAL8Periodogram1    *peri,
