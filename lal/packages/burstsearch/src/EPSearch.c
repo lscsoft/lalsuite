@@ -207,6 +207,49 @@ static void ComputeAverageSpectrum_old(
 }
 
 
+static void ComputeAverageSpectrum_new(
+	LALStatus *status,
+	REAL4FrequencySeries *spectrum,
+	REAL4TimeSeries *tseries,
+	EPSearchParams *params,
+	INT4 numSegs,
+	EPDataSegment *segment
+)
+{
+	int i;
+	LALWindowParams winParams;
+	AverageSpectrumParams spec_params = {};
+
+	INITSTATUS(status, "ComputeAverageSpectrum", EPSEARCHC);
+	ATTATCHSTATUSPTR(status);
+
+	winParams.type = params->winParams.type;
+	winParams.length = 2 * params->ntotT;
+	LALCreateREAL4Window(status->statusPtr, &spec_params.window, &winParams);
+	CHECKSTATUSPTR(status);
+	LALCreateForwardRealFFTPlan(status->statusPtr, &spec_params.plan, spec_params.window->data->length, 0);
+	CHECKSTATUSPTR(status);
+
+	spec_params.overlap = spec_params.window->data->length - params->ovrlap;
+	spec_params.method = params->initParams->method;
+
+	LALREAL4AverageSpectrum(status->statusPtr, spectrum, tseries, &spec_params);
+	CHECKSTATUSPTR(status);
+
+	LALDestroyREAL4Window(status->statusPtr, &spec_params.window);
+	CHECKSTATUSPTR(status);
+
+	LALDestroyRealFFTPlan(status->statusPtr, &spec_params.plan);
+	CHECKSTATUSPTR(status);
+
+	for(i = 0; i < spectrum->data->length; i++)
+		spectrum->data->data[i] *= 8.285050e+03;
+
+	DETATCHSTATUSPTR(status);
+	RETURN(status);
+}
+
+
 /******** <lalVerbatim file="EPSearchCP"> ********/
 void
 EPSearch (
@@ -255,7 +298,7 @@ EPSearch (
     params->numEvents=0;
 
     /* Compute the average spectrum */
-    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, fseries->data->length);
+    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, fseries->data->length);
     CHECKSTATUSPTR(status);
 
     ComputeAverageSpectrum_old(status->statusPtr, AverageSpec, tseries, params, tmpDutyCycle, params->epSegVec->data + params->currentSegment);
