@@ -420,9 +420,19 @@ int main(int argc,char *argv[])
   /* parse the rest of the command line */
   LAL_CALL (LALUserVarReadCmdline(stat,argc,argv),stat);
 
+  /* print out helpstring if requested and return */
+  if (uvar_help)
+    {
+      CHAR *helpstring = NULL;
+      LAL_CALL (LALUserVarHelpString (stat, &helpstring, argv[0]), stat);
+      printf ("\n%s\n", helpstring);
+      LALFree (helpstring);
+      return COMPUTEFSTAT_EXIT_USAGE;
+    } /* if help requested */
+
   /* check that requirements are satisfied */
   LAL_CALL (LALUserVarCheckRequired(stat),stat);
-
+  
 #else
   LAL_CALL (LALUserVarReadAllInput(stat,argc,argv),stat);	
 #endif
