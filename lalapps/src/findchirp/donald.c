@@ -639,7 +639,7 @@ int main(int argc, char **argv)
                 }
             }
         }
-        fprintf(ulout,"# snr numevents efficiency\n");
+        fprintf(ulout,"# snr numevents efficiency R_90%(Hz)\n");
 
         compout = fopen("comparisons.txt","a");
         first=1;
@@ -649,11 +649,10 @@ int main(int argc, char **argv)
             thresholdIn.dof=2.0*(numevents[k]+1);
             LALChi2Threshold(&status, &mu, &thresholdIn);
             mu /= 2.0;
-            fprintf( ulout, "%f %f %f %e %e %e\n", snrbin[k],numevents[k],
+            fprintf( ulout, "%f %f %f %e\n", snrbin[k],numevents[k],
                     efficiency[k]/(float)countsamples,
                     (3600.0*countsamples*(float)mu)/
-                    (efficiency[k]*(time_analyzed)), mu,
-                    thresholdIn.dof);
+                    (efficiency[k]*(time_analyzed)));
             if ( numevents[k] == 0 && first ){
                 fprintf(compout,"%f\t%e\t%f\t%f\n",coincidence_window,
                         delm,distance,efficiency[k]/(float)countsamples);
