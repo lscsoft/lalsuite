@@ -100,6 +100,9 @@ Usage: lalapps_inspiral_pipe [options]
   -D, --l1h2-coincidence   generate run inca to generate triggers for L1H2
   -E, --l1h1h2-coincidence generate run inca to generate triggers for L1H1H2
 
+  -s, --slide-time T       slide data by T secs for background estimation
+  -n, --slide-time-ns T    slide data by T nanosecs for background estimation
+
   -j, --injections FILE    add simulated inspirals from sim_inspiral in FILE
 
   -p, --playground-only    only create chunks that overlap with playground
@@ -127,6 +130,8 @@ longop = [
   "l1h1-coincidence",
   "l1h2-coincidence",
   "l1h1h2-coincidence",
+  "slide-time=",
+  "slide-time-ns=",
   "injections=",
   "playground-only",
   "priority=",
@@ -151,6 +156,8 @@ do_h2_inspiral = None
 do_l1h1_coinc = None
 do_l1h2_coinc = None
 do_l1h1h2_coinc = None
+slide_sec = 0
+slide_ns = 0
 inj_file = None
 playground_only = 0
 condor_prio = None
@@ -188,6 +195,10 @@ for o, a in opts:
     do_l1h1h2_coinc = 1
   elif o in ("-j", "--injections"):
     inj_file = a
+  elif o in ("-s", "--slide-time"):
+    slide_sec = int(a)
+  elif o in ("-n", "--slide-time-ns"):
+    slide_ns = int(a)
   elif o in ("-p", "--playground-only"):
     playground_only = 1
   elif o in ("-P", "--priority"):
@@ -291,6 +302,21 @@ if condor_prio:
   trig_job.add_condor_cmd('priority',condor_prio)
   inca_job.add_condor_cmd('priority',condor_prio)
 
+# add the slide time argument
+if slide_sec:
+  h_insp_job = inspiral.InspiralJob(cp)
+  h_insp_job.set_sub_file( basename + '.h_inspiral' + subsuffix )
+  if usertag:
+    h_insp_job.add_opt('user-tag',usertag)
+  if inj_file:
+    h_insp_job.add_opt('injection-file',inj_file)
+  if condor_prio:
+    h_insp_job.add_condor_cmd('priority',condor_prio)
+  h_insp_job.add_opt('slide-time',str(slide_sec))
+  h_insp_job.add_opt('slide-time-ns',str(slide_ns))
+  h_inca_job.add_opt('slide-time',str(slide_sec))
+  h_inca_job.add_opt('slide-time-ns',str(slide_ns))
+
 ##############################################################################
 # get the thresholds, pad and chunk lengths from the values in the ini file
 l1_snr = cp.get('pipeline','l1-snr-threshold')
@@ -330,8 +356,8 @@ print "done"
 print "making master chunks...",
 sys.stdout.flush()
 l1_data.make_chunks(length,overlap,playground_only)
-h1_data.make_chunks(length,overlap,playground_only)
-h2_data.make_chunks(length,overlap,playground_only)
+h1_data.make_chunks(length,overlap,playground_only,slide_sec)
+h2_data.make_chunks(length,overlap,playground_only,slide_sec)
 
 # set the default trig start time to 64 seconds into the segment
 for data_set in [l1_data, h1_data, h2_data]:
@@ -339,9 +365,12 @@ for data_set in [l1_data, h1_data, h2_data]:
     for chunk in seg:
       chunk.set_trig_start(chunk.start()+overlap/2)
 
-l1_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
-h1_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
-h2_data.make_chunks_from_unused(length,overlap/2,playground_only,overlap/2)
+l1_data.make_chunks_from_unused(
+  length,overlap/2,playground_only,overlap/2)
+h1_data.make_chunks_from_unused(
+  length,overlap/2,playground_only,overlap/2,slide_sec)
+h2_data.make_chunks_from_unused(
+  length,overlap/2,playground_only,overlap/2,slide_sec)
 
 # set the default trig end time 64 seconds before the end of the segment
 for data_set in [l1_data, h1_data, h2_data]:
@@ -464,8 +493,15 @@ for seg in h1_data:
         if not done_df_for_seg:
           df = inspiral.DataFindNode(df_job)
           df.set_ifo('H1')
-          df.set_start(seg.start() - pad)
-          df.set_end(seg.end() + pad)
+          if slide_sec > 0:
+            df.set_start(seg.start() - pad - slide_sec)
+            df.set_end(seg.end() + pad)
+          elif slide_sec < 0:
+            df.set_start(seg.start() - pad)
+            df.set_end(seg.end() + pad - slide_sec)
+          else:
+            df.set_start(seg.start() - pad)
+            df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
           if do_datafind: dag.add_node(df)
           prev_df = df
@@ -480,7 +516,10 @@ for seg in h1_data:
             if do_inspiral: trigbank.add_parent(l1_done.get_dag_node())
             if do_h1_trigbank: dag.add_node(trigbank)
         # analyze the H1 master chunk with this triggered template bank
-        insp = inspiral.InspiralNode(insp_job)
+        if slide_sec:
+          insp = inspiral.InspiralNode(h_insp_job)
+        else:
+          insp = inspiral.InspiralNode(insp_job)
         insp.set_start(chunk.start())
         insp.set_end(chunk.end())
         insp.set_ifo('H1')
@@ -520,8 +559,15 @@ for seg in h2_data:
         if not done_df_for_seg:
           df = inspiral.DataFindNode(df_job)
           df.set_ifo('H2')
-          df.set_start(seg.start() - pad)
-          df.set_end(seg.end() + pad)
+          if slide_sec > 0:
+            df.set_start(seg.start() - pad - slide_sec)
+            df.set_end(seg.end() + pad)
+          elif slide_sec < 0:
+            df.set_start(seg.start() - pad)
+            df.set_end(seg.end() + pad - slide_sec)
+          else:
+            df.set_start(seg.start() - pad)
+            df.set_end(seg.end() + pad)
           if prev_df: df.add_parent(prev_df)
           if do_datafind: dag.add_node(df)
           prev_df = df
@@ -536,7 +582,10 @@ for seg in h2_data:
             if do_inspiral: trigbank.add_parent(l1_done.get_dag_node())
             if do_h2_trigbank: dag.add_node(trigbank)
         # analyze the H2 master chunk with this triggered template bank
-        insp = inspiral.InspiralNode(insp_job)
+        if slide_sec:
+          insp = inspiral.InspiralNode(h_insp_job)
+        else:
+          insp = inspiral.InspiralNode(insp_job)
         insp.set_start(chunk.start())
         insp.set_end(chunk.end())
         insp.set_ifo('H2')
