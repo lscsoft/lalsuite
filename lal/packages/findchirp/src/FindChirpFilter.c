@@ -901,6 +901,10 @@ LALFindChirpFilterSegment (
               (LALNameLength - 3) * sizeof(CHAR) );
           thisEvent->impulse_time = thisEvent->end_time;
 
+          /* record the coalescence phase of the chirp */
+          thisEvent->coa_phase = (REAL4) 
+            atan( q[timeIndex].im / q[timeIndex].re );
+
           /* copy the template into the event */
           thisEvent->mass1  = (REAL4) input->tmplt->mass1;
           thisEvent->mass2  = (REAL4) input->tmplt->mass2;
@@ -1000,6 +1004,10 @@ LALFindChirpFilterSegment (
     strncpy( thisEvent->channel, input->segment->data->name + 3,
         (LALNameLength - 3) * sizeof(CHAR) );
     thisEvent->impulse_time = thisEvent->end_time;
+
+    /* record the coalescence phase of the chirp */
+    thisEvent->coa_phase = (REAL4) 
+      atan( q[timeIndex].im / q[timeIndex].re );
 
     /* copy the template into the event */
     thisEvent->mass1  = (REAL4) input->tmplt->mass1;
