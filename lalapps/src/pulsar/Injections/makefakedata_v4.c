@@ -181,7 +181,6 @@ NRCSID (MAKEFAKEDATAC, "$Id$");
 
 
 #include <lal/LALConfig.h>
-/* #include <lal/LALStdlib.h> */
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/SeqFactories.h>
@@ -567,7 +566,7 @@ int main(int argc,char *argv[]) {
       params.pulsar.spindown = NULL;
 
     params.orbit = NULL;		/* isolated pulsar */
-    params.transferFunction = NULL;    	/* use unit transfer-function */
+    params.transfer = NULL;    	/* use unit transfer-function */
     params.site = &(Detector);
     params.ephemerides = edat;
 
