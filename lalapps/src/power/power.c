@@ -1030,7 +1030,7 @@ static REAL4TimeSeries *get_time_series(
 
 	/* Open frame stream */
 	if(cachefile && dirname && options.verbose)
-		fprintf(stderr, "Warning: --frame-cache ignored (using --frame-dir)\n");
+		fprintf(stderr, "get_time_series(): warning: --frame-cache ignored (using --frame-dir)\n");
 	if(dirname)
 		LAL_CALL(LALFrOpen(stat, &stream, dirname, "*.gwf"), stat);
 	else if(cachefile) {
@@ -1051,8 +1051,9 @@ static REAL4TimeSeries *get_time_series(
 
 	/* Check for missing data */
 	if(stream->state | LAL_FR_GAP) {
-		fprintf(stderr, "Error: gap in data between GPS times %d.%09d s and %d.%09d s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
+		fprintf(stderr, "get_time_series(): error: gap in data detected between GPS times %d.%09d s and %d.%09d s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
 		LAL_CALL(LALDestroyREAL4TimeSeries(stat, series), stat);
+		series = NULL;
 	}
 
 	/* Clean up */
@@ -1089,7 +1090,7 @@ static void makeWhiteNoise(
 		REAL4 norm = 0.0;
 		for(i = 0; i < series->data->length; i++)
 			norm += series->data->data[i] * series->data->data[i];
-		fprintf(stderr, "the norm is %e\n", sqrt(norm / series->data->length));
+		fprintf(stderr, "makeWhiteNoise(): the norm is %e\n", sqrt(norm / series->data->length));
 	}
 }
 
@@ -1120,7 +1121,7 @@ static COMPLEX8FrequencySeries *generate_response(
 	LAL_CALL(LALCreateCOMPLEX8FrequencySeries(stat, &response, channelIn.name, epoch, 0.0, (REAL8) frameSampleRate / (REAL8) length, strainPerCount, length / 2 + 1), stat);
 
 	if(options.verbose) 
-		fprintf(stderr, "generating response at GPS time %u.%09u s\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds );
+		fprintf(stderr, "generate_response(): working at GPS time %u.%09u s\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds );
 
 	/* getting the response is handled differently for geo */
 	if(geodata)
@@ -1153,22 +1154,22 @@ static void add_burst_injections(
 	SimBurstTable *injections = NULL;
 
 	if(!response) {
-		fprintf(stderr, "Must supply calibration information for injections\n");
+		fprintf(stderr, "add_burst_injections(): must supply calibration information for injections\n");
 		exit(1);
 	}
 
 	if(options.verbose)
-		fprintf(stderr, "Reading in SimBurst Table\n");
+		fprintf(stderr, "add_burst_injections(): reading in SimBurst Table\n");
 
 	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, injectionFile, startTime, stopTime), stat);
 
 	if(options.verbose)
-		fprintf(stderr, "Injecting signals into time series\n");
+		fprintf(stderr, "add_burst_injections(): injecting signals into time series\n");
 
 	LAL_CALL(LALBurstInjectSignals(stat, series, injections, response), stat); 
 
 	if(options.verbose)
-		fprintf(stderr, "Finished making the injections\n");
+		fprintf(stderr, "add_burst_injections(): finished making the injections\n");
 
 	while(injections) {
 		SimBurstTable *thisEvent = injections;
@@ -1193,7 +1194,7 @@ static void add_mdc_injections(LALStatus *stat, const char *mdcCacheFile, REAL4T
 	size_t i;
 
 	if(options.verbose)
-		fprintf(stderr, "Using MDC frames for injections\n");
+		fprintf(stderr, "add_mdc_injections(): using MDC frames for injections\n");
 
 	/* open mdc cache */
 	LAL_CALL(LALFrCacheImport(stat, &frcache, mdcCacheFile), stat);
@@ -1249,10 +1250,10 @@ static SnglBurstTable **analyze_series(
 	if(psdlength > series->data->length) {
 		psdlength = window_commensurate(series->data->length, params->windowLength, params->windowShift);
 		if(options.verbose)
-			fprintf(stderr, "Warning: PSD average length exceeds available data --- reducing PSD average length to %d samples\n", psdlength);
+			fprintf(stderr, "analyze_series(): warning: PSD average length exceeds available data --- reducing PSD average length to %d samples\n", psdlength);
 		if(!psdlength) {
 			if(options.verbose)
-				fprintf(stderr, "Warning: cowardly refusing to analyze 0 samples... skipping series\n");
+				fprintf(stderr, "analyze_series(): warning: cowardly refusing to analyze 0 samples... skipping series\n");
 			return(addpoint);
 		}
 	}
@@ -1263,7 +1264,7 @@ static SnglBurstTable **analyze_series(
 		LAL_CALL(LALCutREAL4TimeSeries(stat, &interval, series, start, psdlength), stat);
 
 		if(options.verbose)
-			fprintf(stderr, "Analyzing samples %i -- %i\n", start, start + interval->data->length);
+			fprintf(stderr, "analyze_series(): analyzing samples %i -- %i\n", start, start + interval->data->length);
 
 		LAL_CALL(EPSearch(stat, interval, params, addpoint), stat);
 		while(*addpoint)
@@ -1434,6 +1435,16 @@ int main( int argc, char *argv[])
 		 */
 
 		series = get_time_series(&stat, dirname, cachefile, epoch, options.stopEpoch, numPoints, &params);
+
+		/*
+		 * If we specified input files but nothing got read, there
+		 * was an error.
+		 */
+
+		if((dirname || cachefile) && !series) {
+			fprintf(stderr, "%s: error: failure reading input data\n", argv[0]);
+			exit(1);
+		}
 
 		/*
 		 * Create an empty series of 1s if we didn't read one (eg.
