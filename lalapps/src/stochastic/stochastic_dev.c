@@ -612,7 +612,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     /* allocate memory for frequency mask */
     LAL_CALL(LALCreateREAL4FrequencySeries(&status, &maskTemp, \
-          "maksTemp", gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
+          "maskTemp", gpsStartTime, 0, deltaF, lalDimensionlessUnit, \
           respLength), &status);
     LAL_CALL(LALCreateREAL4FrequencySeries(&status, &mask, \
           "mask", gpsStartTime, fMin, deltaF, lalDimensionlessUnit, \
