@@ -345,12 +345,40 @@ LALFindChirpBCVSpinFilterSegment (
     }
    }
  
-  
+   /* 
+    *
+    * inverse fft to get q, qBCV and qBCVSpin 
+    *    
+    */
 
- 
- 
+   LALCOMPLEX8VectorFFT( status->statusPtr, params->qVec, 
+		   params->qtildeVec, params->invPlan );
+   CHECKSTATUSPTR( status );
 
+   LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCV, 
+		   params->qtildeVecBCV, params->invPlan );
+   CHECKSTATUSPTR( status );
 
+   /* LALCOMPLEX8VectorFFT( status->statusPtr, params->qVecBCVSpin, 
+		   params->qtildeVecBCVSpin, params->invPlan );
+		   CHECKSTATUSPTR( status );*/
+
+   /* 
+    *
+    * calculate signal to noise squared 
+    *
+    */
+
+   /* square and add terms calc above */
+
+   /* limits ?, normalisation */
+
+   /*  for ( j = 0; j < numPoints; ++j)
+       { 
+   rhosq[j]   = q[j].re * q[j].re + q[j].im * q[j].im; 
+   rhosq[j]  += qBCV[j].re * qBCV[j].re + qBCV[j].im * qBCV[j].im; 
+   rhosq[j]  += qBCVSpin[j].re * qBCVSpin[j].re + qBCVSpin[j].im * qBCVSpin[j].im; 
+   } */
 
 /*code*/
 
