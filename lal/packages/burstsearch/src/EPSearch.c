@@ -236,14 +236,17 @@ static void ComputeAverageSpectrum_new(
 	LALREAL4AverageSpectrum(status->statusPtr, spectrum, tseries, &spec_params);
 	CHECKSTATUSPTR(status);
 
+	/* Adjust the normalization to agree with our old implementation.
+	 * Eventually, the rest of the code will be migrated to the LAL
+	 * conventions, and this will not be needed. */
+	for(i = 0; i < spectrum->data->length; i++)
+		spectrum->data->data[i] /= 2 * tseries->deltaT;
+
 	LALDestroyREAL4Window(status->statusPtr, &spec_params.window);
 	CHECKSTATUSPTR(status);
 
 	LALDestroyRealFFTPlan(status->statusPtr, &spec_params.plan);
 	CHECKSTATUSPTR(status);
-
-	for(i = 0; i < spectrum->data->length; i++)
-		spectrum->data->data[i] *= 8.285050e+03;
 
 	DETATCHSTATUSPTR(status);
 	RETURN(status);
@@ -301,7 +304,7 @@ EPSearch (
     LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, fseries->data->length);
     CHECKSTATUSPTR(status);
 
-    ComputeAverageSpectrum_old(status->statusPtr, AverageSpec, tseries, params, tmpDutyCycle, params->epSegVec->data + params->currentSegment);
+    ComputeAverageSpectrum_new(status->statusPtr, AverageSpec, tseries, params, tmpDutyCycle, params->epSegVec->data + params->currentSegment);
     CHECKSTATUSPTR(status);
 
     /* write diagnostic info to disk */
