@@ -270,6 +270,7 @@ tagSnglBurstTable
   CHAR          search[LIGOMETA_SEARCH_MAX];
   CHAR          channel[LIGOMETA_CHANNEL_MAX];
   LIGOTimeGPS   start_time;
+  LIGOTimeGPS   peak_time;
   REAL4         duration;
   REAL4         central_freq;
   REAL4         bandwidth;
