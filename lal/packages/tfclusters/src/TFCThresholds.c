@@ -143,11 +143,13 @@ static REAL8 RiceThreshold(REAL8 bpp, REAL8 Q, REAL8 P0, REAL4 eGoal) {
 
 
 
+#if 0 /* NOT USED */
 static void RiceWrapper(REAL4 P, REAL4 *f, REAL4 *df, REAL8 P0, REAL8 Q, REAL8 bpp) {
 
   *f = RiceInt(bpp, P, Q, P0);
   *df = Rice(P, Q, P0);
 }
+#endif
 
 static REAL4 Rice(REAL4 Pt, REAL8 Q, REAL8 P0) {
   /* computes the value of the Rice distribution */
@@ -519,6 +521,7 @@ return(  exp(x) * chbevl( 32.0/x - 2.0, B, 25 ) / sqrt(x) );
 
 
 
+#if 0 /* NOT USED */
 static REAL8 i0e(REAL8 x)
 {
 REAL8 y;
@@ -534,6 +537,7 @@ if( x <= 8.0 )
 return(  chbevl( 32.0/x - 2.0, B, 25 ) / sqrt(x) );
 
 }
+#endif
 
 
 static REAL8 chbevl(REAL8 x, REAL8 array[], INT4 n)
