@@ -39,7 +39,7 @@ LALFindChirpInjectSignals (
   INT8                  chanStartTime;
   REAL4TimeSeries       signal;
   COMPLEX8Vector       *unity = NULL;
-
+  CHAR                  warnMsg[512];
 
   INITSTATUS( status, "LALFindChirpInjectSignals", FINDCHIRPSIMULATIONC );
   ATTATCHSTATUSPTR( status );
@@ -192,6 +192,25 @@ LALFindChirpInjectSignals (
     ppnParams.epoch.gpsSeconds     = 0;
     ppnParams.epoch.gpsNanoSeconds = 0;
 
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg), 
+        "ppnParams.mTot = %e\n"
+        "ppnParams.eta = %e\n"
+        "ppnParams.d = %e\n"
+        "ppnParams.inc = %e\n"
+        "ppnParams.phi = %e\n"
+        "ppnParams.psi = %e\n"
+        "ppnParams.position.longitude = %e\n", 
+        "ppnParams.position.latitude = %e\n", 
+        ppnParams.mTot, 
+        ppnParams.eta, 
+        ppnParams.d,
+        ppnParams.inc,
+        ppnParams.phi,
+        ppnParams.psi, 
+        ppnParams.position.longitude, 
+        ppnParams.position.latitude );
+    LALInfo( status, warnMsg );
+
 
     /* 
      *
@@ -208,9 +227,10 @@ LALFindChirpInjectSignals (
 
     if ( ppnParams.dfdt > 2.0 ) 
     {
-      fprintf( stderr, "Waveform sampling interval is too large:\n"
+      snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+          "Waveform sampling interval is too large:\n"
           "\tmaximum df*dt = %f", ppnParams.dfdt );
-      fflush( stderr );
+      ABORT( status, 999, warnMsg );
     }
 
     /* get the gps start time of the signal to inject */
@@ -218,6 +238,15 @@ LALFindChirpInjectSignals (
         &(thisEvent->geocent_end_time) );
     CHECKSTATUSPTR( status );
     waveformStartTime -= (INT8) ( 1000000000.0 * ppnParams.tc );
+
+    snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg), 
+        "thisEvent->geocent_end_time.gpsSeconds = %d\n"
+        "thisEvent->geocent_end_time.gpsNanoSeconds = %d\n"
+        "waveformStartTime = %lld\n",
+        thisEvent->geocent_end_time.gpsSeconds,
+        thisEvent->geocent_end_time.gpsNanoSeconds,
+    waveformStartTime );
+    LALInfo( status, warnMsg );
 
     /* clear the signal structure */
     memset( &signal, 0, sizeof(REAL4TimeSeries) );
