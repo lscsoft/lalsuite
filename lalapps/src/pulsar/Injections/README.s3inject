@@ -1,0 +1,301 @@
+This is the README file for the pulsar injection package for E10/S3.
+See CHANGELOG for a log of changes.
+
+October 15, 2003
+
+Bruce Allen
+ballen@gravity.phys.uwm.edu
++49 331 567 7131 [UTC + 1]
++49 331 740 8705 [UTC + 1]
++49 162 740 6918 [UTC + 1]
+(414) 229-6439   [UTC - 6]
+(414) 962-0516   [UTC - 6]
+
+
+
+HOW TO USE
+----------
+
+[0] HOW IT WORKS
+
+There are two executables: makefakedata_v2 and s3inject.
+
+Included is a simple Makefile to build these executables, which needs
+paths to the LAL include files and libraries.  I've tested this with
+LAL 2.1 under both solaris and linux. I've included a Makefile.solaris
+and Makefile.linux.  make -f Makefile.yourOS should do it.
+
+makefakedata_v2 generates a continuous stream of data for a single
+pulsar, using a file called Pulsar.N to get the pulsar's parameters,
+and command line arguments to get the starting GPS time and detector
+name.  It can write either to files or to stdout.
+
+s3inject starts up M copies of makefakedata, each with a
+different set of parameters, gathers their output, and adds it
+together, writing it to stdout.
+
+Both of these executables support a "-h" command-line argument that
+will give you a command-line argument summary description.  Try it
+before reading further:
+
+./makefakedata_v2 -h
+./s3inject -h
+    
+In this document we assume you will inject 5 pulsar signals total.
+
+[1] HOW TO USE IT -- CREATE PULSAR PARAMETER FILES
+
+Create a files called Pulsar.0 to Pulsar.4 containing the parameters
+of the pulsars that you wish the inject.  These files should be
+"almost" identical at the different sites.  They only differ because
+the Actuation function differs between the sites.
+
+I have included five files - but note that the parameters to be used
+"for real" still need to be determined.  People who should help
+creating these parameter files include: Riles, S. Anderson,
+G. Mendell, X. Siemens, G. Woan and M. Landry.  These files, once
+created, should be made read-only, and should only be modified if the
+instrument Actuation function changes.  Be sure to save a copy of them
+someplace safe.
+
+Note: Each pulsar's parameters are defined at a particular fiducial
+Solar System Barycenter (SSB) time.  In this document, I call this
+time t_S.  I suggest for E10 and S3 we use t_S=751680013 (November 1,
+2003, 00:00:00 UTC). The actual choice of this time is not important,
+but it should be fixed and invariant.  The team defining pulsar
+parameters may wish to change the value to something that they find
+convenient.
+
+At the end of this document is a more detailed description of the
+Pulsar.N parameter files.
+
+Some useful GPS times are:
+October 17, 2003 00:00:00 UTC  750384013
+October 24, 2003 00:00:00 UTC  750988813
+November  1 2003 00:00:00 UTC  751680013
+December 31 2003 00:00:00 UTC  756864013
+
+[2] HOW TO USE IT -- CREATE COMMAND-LINE ARGUMENT FILES
+
+Create files called in.0 to in.4.  Each file should contain one line.
+This is used to construct the command-line arguments for
+makefakedata_v2.
+
+ The file in.0 should look like this:
+
+./makefakedata_v2 -i Pulsar.0 -I LHO -S 751680013 -b
+
+and the other in.N files should be identical except that they should
+contain Pulsar.N.  The in.N files at LLO should contain "LLO" rather
+than "LHO".
+
+Note: the path "./makefakedata_v2" should if possible be replaced by a
+complete path, ie one starting with "/".
+
+[3] HOW TO USE IT -- VERIFY SETUP
+
+To test your setup, do the following:
+./s3inject -n 5 -G 751680013 -s
+
+The "-s" option is a show option.  It makes ./s3inject read
+the command line files in.N and show you the EXACT commands it would
+actually run (preceeded by an integer count of the form [XX]).  The
+'-G' command line argument is the GPS time at which to start producing
+data.
+
+Now let's make some output (but just from one pulsar):
+./s3inject -n 1 -G 751680013 -T -X 2> infolog  | head -20
+
+The 2> infolog redirects stderr into an information log. Have a look.
+
+The -T option makes s3inject output in human readable text
+rather than binary
+
+The -X option makes s3inject output an X axis as well.
+
+Notice that the first number output by s3inject is ALWAYS
+1234.5, which is a key to use in checking endian ordering and general
+sanity.
+
+Now let's go "whole hog":
+./s3inject -n 5 -G 751680013 2> infolog  | od -w4 -f | more
+This shows you the raw binary output in single column format
+
+[4] HOW TO USE IT -- CPU and RESOURCE USE
+
+On my 1 GHz PIII laptop, this job:
+./s3inject -n 5 -G 751680013 2> infolog  > /dev/null
+
+runs at five time real time speed, has a starup latency of around 1
+second, and uses 11 MB of memory per pulsar (55 MB total).
+
+[5] HOW TO USE IT -- DEFINING Pulsar.* files
+
+The definitions in Pulsar.N
+---------------------------
+
+This file should contain one number per line, followed by white space
+(tabs or space) followed by text.  The text is NOT optional!
+
+Here is a typical file:
+
+30.0			Tsft in seconds.  Lenth of time chunks made internally
+200000			nTsft: the number of chunks made.  This is large enough for > 2 months
+0.0			Frequency f0 start with
+8192.0			Frequency band (sets sample rate)
+0.0			Sigma (std of noise).  When 0, only signal present.
+1.0			Aplus
+0.0			Across
+0.0			psi
+0.0			phi0
+789.01234567890123	f0 frequency
+0.23456789012345	lattitude in radians (declination delta)
+0.345678901234567890	longitude in radians (right ascension alpha)
+2			Number of spindown parameters (in this case, two)
+-1.e-8			Value of f_1 (note, here f_1=f0_LAL*f1_LAL)
+-1.e-17			Value of f_2 (note, here f_2=f0_LAL*f2_LAL)
+
+Sky position:
+
+This structure contains gravitational wave source position (in
+Equatorial coordinates), and orientation angle.
+
+[The following paragraph is quoted almost-verbatim from the LAL 2.1
+documentation, header SkyCoordinates.h.]
+
+Equatorial coordinates are the standard sky-fixed coordinate
+system. The z-axis is defined as for geographic coordinates, above;
+the plane orthogonal to this passing through the Earth's centre is
+called the equator. The x-axis is defined to be the direction, as
+viewed from the centre of the Earth, where the Sun appears to cross
+the equator moving north in spring. This is called the vernal equinox,
+and is shown in Fig. 16.6. In this coordinate system, the latitude
+coordinate is called the declination \delta and the longitude
+coordinate is called the right ascension \alpha.
+
+Tsft is the internal chunk time size.  Reduce it to decrease latency.
+nTsft is the number of chunks made.  200000 x 30 secs > 2 months
+Leave f0 and the band unchanged, and sigma at zero.
+
+Aplus and Across set the amplitude of the two polarizations.  This is
+where you can insert an amplitude calibration factor.
+
+The only other value to note is phi.  This is where you can insert a
+phase calibration offset, if needed.  Note: phi is NOT scaled by a
+factor of two.  In other words, if you set phi=PI, you'll find the
+output inverted.  If you set phi=PI/2, you'll see the output phase
+retarted.  In other words, the peak of a particular cycle occurs one
+quarter of a cycle EARLIER.
+
+To see this clearly, just do something like:
+
+./s3inject -n 1 -G 751680013 -T | head -100 > junk1
+
+Then change the value of phi0 in Pulsar.0, and do it again:
+
+./s3inject -n 1 -G 751680013 -T | head -100 > junk2
+
+Comparing junk1 and junk2 should make the sign convention of phi0 very
+clear.
+
+[7] HOW TO USE IT - CALIBRATION LINES
+
+The s3inject executable can inject up to three calibration
+lines.  Here they are denoted by L==low, M==medium and H==high to
+indicate the frequency.  They are defined by:
+
+  DARM = A_L sin(2 pi f_L (GPS-GPS_0)) + 
+         A_M sin(2 pi f_M (GPS-GPS_0)) +
+         A_H sin(2 pi f_H (GPS-GPS_0))
+
+where GPS_0 = 751680013.  In the code, the frequencies are hardwired to:
+
+  f_L = 52.296875 = 52+1/4+1/32+1/64 Hz
+  f_M = 166.6875  = 166+1/2+1/8+1/16 Hz
+  f_H = 927.6875  = 927+1/2+1/8+1/16 Hz
+
+These can be changed, but (1) MUST be exactly represented as IEEE754
+floats (not doubles) and (2) MUST be positive.
+
+The amplitudes of the injected lines are defined by three arguments (-L, -M and -H) to
+s3inject which set the amplitudes of the three lines.  The arguments are, for example:
+
+./s3inject -n 0 -T  -G 12345678 -L 17.76 | more
+
+will inject a calibration line at low frequency with an amplitude of
+17.76.  You can include any combination of -L, -M and -H.  If one of
+these arguments is not present, then its assumed amplitude is zero.
+
+You can inject five pulsars plus three calibration lines with:
+./s3inject -n 5 -L 0.003 -M 0.0006 -H 0.8 -G 751680013 -T | more
+
+Note: a good check that the calibration line injection code works
+correctly is to compare the output with GPS times offset by integer
+multiples of 64 seconds.  Since the smallest fractional part of the
+frequencies above is 1/64 Hz, the calibration signal should repeat
+exactly every 64 seconds.
+
+The '-p' option to s3inject prints out the built-in
+calibration line frequencies.
+
+[8] COMMENTS
+
+I've tried to make s3inject fairly robust.  In particular,
+it catches SIGCHLD and if a child has been terminated (rather than
+just being stopped) it tries to say why.  System related errors print
+errno and it's interpretation.  Most error messages should come with a
+PID to help figure out which process is going bad.
+
+Note that under Solaris, the pid returned with these error messages
+appears to be the PID of the shell (started by popen) under which the
+child was started.  This is usually one less than the PID of the
+associated makefakedata_v2 process.
+
+If you send SIGUSR1 to s3inject:
+kill -SIGUSR1 PID
+then it will report to stderr the amount of simulated data that it has
+made (days/hours/minutes/seconds). Be careful NOT to send the signal
+to the entire process group, since the children don't catch this
+signal and will respond to it by terminating!
+
+
+The s3inject program can be used to inject signals from sources OTHER
+than pulsars.  To use it in this way, your code must do the following:
+
+(1) write data to stdout, errors to stderr
+
+(2) take a command line argument which is GPS seconds and start its
+    output at that time:
+    -G secs
+ 
+(3) be able to run faster than real time under solaris.  It should
+produce data at a sample rate of 16384 Hz in blocks of an integer
+number of seconds (called S below).
+
+(4) have the following internal structure.  Here S is the number of
+seconds, for example, 30, that your code uses internally to compute
+the next block of output.
+
+main() {
+
+    float magic=1234.5;
+    int length=S*16384;
+
+    fwrite(&magic,  sizeof(float), 1, stdout);
+    fwrite(&length, sizeof(int)  , 1, stdout);
+
+    while (1) {
+	compute next output data.  May be time-consuming.
+   
+        fwrite(&data, sizeof(float), len, stdout);
+     
+        fflush(stdout);
+    }
+}
+
+The fflush(stdout) is VERY important.  It ensures that your program
+will have time to compute its next block of data BEFORE it is needed
+by s3 inject.
+
+(5) create an in.N file for your executable.  See description above.
+
