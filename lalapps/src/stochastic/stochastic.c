@@ -2856,7 +2856,10 @@ void readDataPair(LALStatus *status,
         &frChanInOne, frStreamOne);
     CHECKSTATUSPTR(status);
   }
-  if (strcmp(params->frameCacheOne, params->frameCacheTwo) == 0)
+
+  /* if site ids are the same then both ifo channels will be in same
+   * file */
+  if (siteOne == siteTwo)
   {
     if (verbose_flag)
     {
