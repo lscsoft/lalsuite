@@ -360,6 +360,24 @@ typedef enum {
 /* </lalVerbatim>  */
 
 
+/* <lalVerbatim file="LALInputMassesH">  */
+typedef enum {
+   m1Andm2,
+   totalMassAndEta,
+   totalMassAndMu,
+   t01,
+   t02,
+   t03,
+   t04,
+   psi0Andpsi3
+ } InputMasses;
+/* </lalVerbatim>  */
+
+/* <lalLaTeX>
+\idx[Type]{InputMasses}
+</lalLaTeX>  */
+
+
 /* <lalVerbatim file="LALInspiralTemplateH">  */
 typedef struct
 tagInspiralTemplate
@@ -437,8 +455,8 @@ tagInspiralTemplate
   REAL8 vInitial;
   REAL8 rFinal;
   REAL8 rInitial;
-  REAL8 rLightRing;
-  InputMasses massChoice;*/
+  REAL8 rLightRing;*/
+  InputMasses massChoice;
   INT4Vector *segmentIdVec; 
   struct tagInspiralTemplate *next;
   struct tagInspiralTemplate *fine; 
