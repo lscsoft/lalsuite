@@ -1,14 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+extern void srand48 (long int);
+extern double drand48 (void);
+
 int main ( int argc, char *argv[] )
 {
-  int    i, j, ntmplts;
-  double mmin, mmax, mass;
+  int    i, ntmplts;
+  double mmin, mmax;
   FILE   *fp = NULL;
   FILE   *bankfp = NULL;
   FILE   *txtfp = NULL;
-  int    seed = 0;
+  long int seed = 0;
   
   if ( argc != 4 )
   {
@@ -40,7 +43,7 @@ int main ( int argc, char *argv[] )
     seed += rbyte << ( i * 8 );
   }
 
-  close( fp );
+  fclose( fp );
 
   srand48( seed );
 

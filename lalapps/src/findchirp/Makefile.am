@@ -7,12 +7,14 @@ else
 DATAFLOWPROGRAMS = 
 endif
 bin_PROGRAMS = lalapps_findchirp lalapps_inspinj lalapps_inspinj_s1 \
-               lalapps_findchirp_post lalapps_inspawgfile $(DATAFLOWPROGRAMS)
+               lalapps_findchirp_post lalapps_inspawgfile $(DATAFLOWPROGRAMS) \
+               lalapps_random_bank
 lalapps_findchirp_SOURCES = findchirp.c findchirp.h findchirp_args.c
 lalapps_inspinj_SOURCES = inspinj.c
 lalapps_inspinj_s1_SOURCES = inspinj_s1.c
 lalapps_findchirp_post_SOURCES = findchirp_post.c
 lalapps_inspawgfile_SOURCES = inspawgfile.c
+lalapps_random_bank_SOURCES = random_bank.c
 if DATAFLOW
 lalapps_exc_resp_SOURCES = exc_resp.c
 lalapps_trump_SOURCES = trump.c trump.h event_utils.c event_utils.h
