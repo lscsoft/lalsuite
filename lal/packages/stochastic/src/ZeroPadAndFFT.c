@@ -136,7 +136,7 @@ LALSZeroPadAndFFT(LALStatus                *status,
   LALUnitPair   unitPair;
 
   /* initialize status structure */
-  INITSTATUS(status, "ZeroPadAndFFT.c", ZEROPADANDFFTC);
+  INITSTATUS(status, "LALSZeroPadAndFFT", ZEROPADANDFFTC);
   ATTATCHSTATUSPTR(status);
 
   /* ERROR CHECKING --------------------------------------------------- */
