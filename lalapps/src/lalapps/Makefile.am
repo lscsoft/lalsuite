@@ -5,6 +5,8 @@ FRAMESRCS = series.c series.h
 else
 FRAMESRCS = 
 endif
+pythonlibdir = ${prefix}/lib/python
+pythonlib_SCRIPTS = pipeline.py
 noinst_LTLIBRARIES = liblalapps.la
 liblalapps_la_SOURCES = lalapps.c lalapps.h getopt.c getopt1.c getopt.h \
                         processtable.c processtable.h $(FRAMESRCS)
