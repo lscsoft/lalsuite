@@ -93,22 +93,124 @@ void `LALCut'SEQUENCETYPE (
 }
 
 
-size_t `XLALShrink'SEQUENCETYPE (
+SEQUENCETYPE *`XLALCopy'SEQUENCETYPE (
+	SEQUENCETYPE *sequence
+)
+{
+	return(`XLALCut'SEQUENCETYPE (sequence, 0, sequence->length));
+}
+
+
+void `LALCopy'SEQUENCETYPE (
+	LALStatus *status,
+	SEQUENCETYPE **output,
+	SEQUENCETYPE *input
+)
+{
+	INITSTATUS(status, "`LALCopy'SEQUENCETYPE", SEQUENCEC);
+	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	*output = `XLALCopy'SEQUENCETYPE (input);
+	ASSERT(*output != NULL, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+	RETURN(status);
+}
+
+
+static void `Shift'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
-	size_t first,
+	int count
+)
+{
+	memshift(sequence->data, sequence->length * sizeof(*sequence->data), count * (int) sizeof(*sequence->data));
+}
+
+
+void `XLALShift'SEQUENCETYPE (
+	SEQUENCETYPE *sequence,
+	int count
+)
+{
+	if(!sequence || !sequence->data || !count)
+		return;
+
+	`Shift'SEQUENCETYPE (sequence, count);
+	if((size_t) labs(count) >= sequence->length)
+		memset(sequence->data, 0, sequence->length * sizeof(*sequence->data));
+	else if(count > 0)
+		memset(sequence->data, 0, count * sizeof(*sequence->data));
+	else
+		memset(sequence->data + sequence->length + count, 0, -count * sizeof(*sequence->data));
+}
+
+
+void `LALShift'SEQUENCETYPE (
+	LALStatus *status,
+	SEQUENCETYPE *sequence,
+	int count
+)
+{
+	INITSTATUS(status, "`LALShift'SEQUENCETYPE", SEQUENCEC);
+	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	`XLALShift'SEQUENCETYPE (sequence, count);
+	RETURN(status);
+}
+
+
+/* FIXME: this function does not take care to move the least number of bytes
+ * possible.  A performance gain would be realized by being more careful. */
+size_t `XLALResize'SEQUENCETYPE (
+	SEQUENCETYPE *sequence,
+	int first,
 	size_t length
 )
 {
 	if(!sequence || !sequence->data)
 		return(0);
 
-	sequence->length = length;
-	memmove(sequence->data, sequence->data + first, length * sizeof(*sequence->data));
-	sequence->data = LALRealloc(sequence->data, length * sizeof(*sequence->data));
-	if(!sequence->data)
-		sequence->length = 0;
+	if(length > sequence->length) {
+		/* need to increase memory */
+		sequence->data = LALRealloc(sequence->data, length * sizeof(*sequence->data));
 
-	return(sequence->length);
+		if(sequence->data)
+			`Shift'SEQUENCETYPE (sequence, -first);
+		else
+			length = 0;
+	} else {
+		/* do not need to increase memory */
+		`Shift'SEQUENCETYPE (sequence, -first);
+		sequence->data = LALRealloc(sequence->data, length * sizeof(*sequence->data));
+		if(!sequence->data)
+			length = 0;
+	}
+
+	return(sequence->length = length);
+}
+
+
+void `LALResize'SEQUENCETYPE (
+	LALStatus *status,
+	SEQUENCETYPE *sequence,
+	int first,
+	size_t length
+)
+{
+	size_t new_length;
+
+	INITSTATUS(status, "`LALResize'SEQUENCETYPE", SEQUENCEC);
+	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	new_length = `XLALResize'SEQUENCETYPE (sequence, first, length);
+	ASSERT(new_length == length, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	RETURN(status);
+}
+
+
+size_t `XLALShrink'SEQUENCETYPE (
+	SEQUENCETYPE *sequence,
+	size_t first,
+	size_t length
+)
+{
+	return(`XLALResize'SEQUENCETYPE (sequence, first, length));
 }
 
 

@@ -57,9 +57,67 @@ void `LALCut'SEQUENCETYPE (
 );
 /* </lalVerbatim> */
 
-/* <lalLaTeX file="SequenceShrinkP">
+/* <lalLaTeX file="SequenceCutP">
+\idx{`XLALCopy'SEQUENCETYPE ()}
+</lalLaTeX> <lalVerbatim file="SequenceCutP"> */
+SEQUENCETYPE *`XLALCopy'SEQUENCETYPE (
+	SEQUENCETYPE *sequence
+);
+/* </lalVerbatim> */
+
+/* <lalLaTeX file="SequenceCutP">
+\idx{`LALCopy'SEQUENCETYPE ()}
+</lalLaTeX> <lalVerbatim file="SequenceCutP"> */
+void `LALCopy'SEQUENCETYPE (
+	LALStatus *status,
+	SEQUENCETYPE **output,
+	SEQUENCETYPE *input
+);
+/* </lalVerbatim> */
+
+/* <lalLaTeX file="SequenceShiftP">
+\idx{`XLALShift'SEQUENCETYPE ()}
+</lalLaTeX> <lalVerbatim file="SequenceShiftP"> */
+void `XLALShift'SEQUENCETYPE (
+	SEQUENCETYPE *sequence,
+	int count
+);
+/* </lalVerbatim> */
+
+/* <lalLaTeX file="SequenceShiftP">
+\idx{`LALShift'SEQUENCETYPE ()}
+</lalLaTeX> <lalVerbatim file="SequenceShiftP"> */
+void `LALShift'SEQUENCETYPE (
+	LALStatus *status,
+	SEQUENCETYPE *sequence,
+	int count
+);
+/* </lalVerbatim> */
+
+/* <lalLaTeX file="SequenceResizeP">
+\idx{`XLALResize'SEQUENCETYPE ()}
+</lalLaTeX> <lalVerbatim file="SequenceResizeP"> */
+size_t `XLALResize'SEQUENCETYPE (
+	SEQUENCETYPE *sequence,
+	int first,
+	size_t length
+);
+/* </lalVerbatim> */
+
+/* <lalLaTeX file="SequenceResizeP">
+\idx{`LALResize'SEQUENCETYPE ()}
+</lalLaTeX> <lalVerbatim file="SequenceResizeP"> */
+void `LALResize'SEQUENCETYPE (
+	LALStatus *status,
+	SEQUENCETYPE *sequence,
+	int first,
+	size_t length
+);
+/* </lalVerbatim> */
+
+/* <lalLaTeX file="SequenceResizeP">
 \idx{`XLALShrink'SEQUENCETYPE ()}
-</lalLaTeX> <lalVerbatim file="SequenceShrinkP"> */
+</lalLaTeX> <lalVerbatim file="SequenceResizeP"> */
 size_t `XLALShrink'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	size_t first,
@@ -67,9 +125,9 @@ size_t `XLALShrink'SEQUENCETYPE (
 );
 /* </lalVerbatim> */
 
-/* <lalLaTeX file="SequenceShrinkP">
+/* <lalLaTeX file="SequenceResizeP">
 \idx{`LALShrink'SEQUENCETYPE ()}
-</lalLaTeX> <lalVerbatim file="SequenceShrinkP"> */
+</lalLaTeX> <lalVerbatim file="SequenceResizeP"> */
 void `LALShrink'SEQUENCETYPE (
 	LALStatus *status,
 	SEQUENCETYPE *sequence,
@@ -77,3 +135,4 @@ void `LALShrink'SEQUENCETYPE (
 	size_t length
 );
 /* </lalVerbatim> */
+

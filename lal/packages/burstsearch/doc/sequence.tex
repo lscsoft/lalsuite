@@ -70,7 +70,11 @@ to pass \texttt{NULL} to these functions.
 \subsubsection{Name}
 
 \texttt{XLALCut}\textit{sequencetype}\texttt{()},
-\texttt{LALCut}\textit{sequencetype}\texttt{()}
+\texttt{LALCut}\textit{sequencetype}\texttt{()},
+\texttt{XLALCopy}\textit{sequencetype}\texttt{()},
+\texttt{LALCopy}\textit{sequencetype}\texttt{()}
+
+\subsubsection{Synopsis}
 
 \subsubsection{Synopsis}
 
@@ -89,10 +93,36 @@ existing sequence.
 \verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
 
 
-\subsection{Shrinking Functions}
+\subsection{Shifting Functions}
 
 \subsubsection{Name}
 
+\texttt{XLALShift}\textit{sequencetype}\texttt{()},
+\texttt{LALShift}\textit{sequencetype}\texttt{()}
+
+\subsubsection{Synopsis}
+
+\begin{verbatim}
+#include <lal/Sequence.h>
+\end{verbatim}
+\input{SequenceShiftP}
+
+\subsubsection{Description}
+
+These functions shift the samples in a sequence, with zeros being placed in
+the space that is freed.
+
+\subsubsection{Author}
+
+\verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
+
+
+\subsection{Resizing Functions}
+
+\subsubsection{Name}
+
+\texttt{XLALResize}\textit{sequencetype}\texttt{()},
+\texttt{LALResize}\textit{sequencetype}\texttt{()},
 \texttt{XLALShrink}\textit{sequencetype}\texttt{()},
 \texttt{LALShrink}\textit{sequencetype}\texttt{()}
 
@@ -101,11 +131,22 @@ existing sequence.
 \begin{verbatim}
 #include <lal/Sequence.h>
 \end{verbatim}
-\input{SequenceShrinkP}
+\input{SequenceResizeP}
 
 \subsubsection{Description}
 
-These functions reduce the size of an existing sequence.
+The resize functions alter the size of an existing sequence.  The sequence
+is adjust to have the specified length, and that part of the original
+sequence starting at sample first is used to fill the new sequence.  If
+first is negative, then the start of the new sequence is padded by that
+many samples.  If part of the new sequence does not correspond to some part
+of the original sequence, then those samples are uninitialized (this
+behaviour may change in the future).
+
+The shrink functions, originally, could only handle the special case in
+which the new sequence is wholly contained in the original sequence.  Now
+the shrink functions are wrappers for the resize functions and are only
+retained for backwards compatibility.
 
 \subsubsection{Author}
 

@@ -14,6 +14,28 @@
 
 NRCSID(SEQUENCEC, "$Id$");
 
+/*
+ * Shift the bytes in the buffer buff, whose length is length, count bytes to
+ * higher addresses.  If the magnitude of count is greater than or equal to
+ * that of length, then nothing is done.
+ */
+
+static void memshift(void *buff, size_t length, int count)
+{
+	if(count >= 0) {
+		if(length > (size_t) count)
+			memmove((char *) buff + count, buff, length - count);
+	} else {
+		if(length > (size_t) -count)
+			memmove(buff, (char *) buff - count, length + count);
+	}
+}
+
+
+/*
+ * Begin library functions...
+ */
+
 define(`DATATYPE',REAL4)
 include(SequenceC.m4)
 
