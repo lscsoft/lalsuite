@@ -5,14 +5,16 @@ TMPLTBANKSRC = tmpltbank.c tmpltbank.h
 TRIGTOTMPLTSRC = trigtotmplt.c
 COHERESRC = coherent_inspiral.c inspiral.h
 INCASRC = inca.c
+SIRESRC = sire.c
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank lalapps_trigtotmplt \
-               lalapps_inca lalapps_coherent_inspiral
+               lalapps_inca lalapps_coherent_inspiral lalapps_sire
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_trigtotmplt_SOURCES = $(TRIGTOTMPLTSRC)
 lalapps_inca_SOURCES = $(INCASRC)
+lalapps_sire_SOURCES = $(SIRESRC)
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
 else
 bin_PROGRAMS = 
@@ -31,7 +33,7 @@ lalapps_inspiral_pipe_bkgr: inspiral_pipe_bkgr.in
 	sed s+@PYTHONLIBDIR@+${pythonlibdir}+g inspiral_pipe_bkgr.in > lalapps_inspiral_pipe_bkgr
 
 EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
-             $(TRIGTOTMPLTSRC) \
+             $(TRIGTOTMPLTSRC) $(SIRESRC) \
              $(INCASRC) inspiral_pipe.in s2_dag.ini \
              $(COHERESRC) $(SCRIPTS) inspiral_pipe_bkgr.in
 
