@@ -1,26 +1,24 @@
 ## Process this file with automake to produce Makefile.in
 MOSTLYCLEANFILES = logfile *.log *.ilg *.blg *.out
-CLEANFILES = *.aux *.bbl *.dvi *.glo *.idx *.ind *.lof *.lot *.tex *.toc \
+CLEANFILES = *.aux *.bbl *.dvi *.glo *.idx *.ind *.lof *.lot *.toc \
              *.eps *.pdf *.ps
+DISTCLEANFILES = *.sty *.cls *.tex
 
 dvi-local:
 	rm -f *.aux
-	cp $(srcdir)/../ligodcc.cls .
-	cp $(srcdir)/../lalspec.* .
-	@LATEX@ lalspec.tex
-	@LATEX@ lalspec.tex
-	@LATEX@ lalspec.tex
-	rm -f ligodcc.cls
-	rm -f lalspec.tex
-	mv lalspec.* ..
-	cp $(srcdir)/../lsd.* .
-	rm -f lsdFig*
-	@LN_S@ `pwd`/$(srcdir)/../lsdFig* .
-	rm -f schedule.*
-	@LN_S@ `pwd`/$(srcdir)/../schedule.* .
-	pool_size=400000 @LATEX@ lsd.tex
-	@MKIND@ lsd.idx
-	pool_size=400000 @LATEX@ lsd.tex
-	pool_size=400000 @LATEX@ lsd.tex
-	rm -f lsd.tex
-	mv lsd.* ..
+	@ docdir=`cd $(top_srcdir)/doc && pwd` ; \
+          sources="$$docdir/ligodcc.cls $$docdir/lal.sty $$docdir/lalspec.tex $$docdir/lsd.tex $$docdir/lsdFig* $$docdir/schedule.*"; \
+          for file in $$sources ; do \
+            if test ! -f `basename $$file` ; then \
+	      cmd="@LN_S@ $$file ."; echo "$$cmd"; $$cmd; \
+	    fi; \
+          done
+	@LATEX@ lalspec && @LATEX@ lalspec && @LATEX@ lalspec
+	pool_size=400000 @LATEX@ lsd && @MKIND@ lsd && \
+	pool_size=400000 @LATEX@ lsd && \
+	pool_size=400000 @LATEX@ lsd
+	@ for file in lalspec.dvi lalspec.pdf lalspec.ps lsd.dvi lsd.pdf lsd.ps; do \
+	    if test -f $$file ; then \
+	      cmd="cp $$file .."; echo "$$cmd"; $$cmd; \
+	    fi; \
+	  done

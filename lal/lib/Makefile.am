@@ -5,45 +5,21 @@ lib_LTLIBRARIES = liblal.la
 liblal_la_SOURCES = LALEmpty.c
 
 if FRAME
-PKG_FRAME = $(top_builddir)/packages/framedata/src/libframedata.la
+PKG_FRAME = @LIBLISTFRAME@
 else
 PKG_FRAME = 
 endif
 
 if MPI
-PKG_MPI = $(top_builddir)/packages/comm/src/libcomm.la                 \
-          $(top_builddir)/packages/findchirp/src/libfindchirp.la
+PKG_MPI = @LIBLISTMPI@
 else
 PKG_MPI = 
 endif
 
 if FRAMEANDMPI
-PKG_FRAMEANDMPI = 
+PKG_FRAMEANDMPI = @LIBLISTMPIFRAME@
 else
 PKG_FRAMEANDMPI = 
 endif
 
-liblal_la_LIBADD = \
-           $(top_builddir)/packages/support/src/libsupport.la           \
-           $(top_builddir)/packages/tools/src/libtools.la               \
-           $(top_builddir)/packages/sample/src/libsample.la             \
-           $(top_builddir)/packages/hello/src/libhello.la               \
-           $(top_builddir)/packages/factories/src/libfactories.la       \
-           $(top_builddir)/packages/vectorops/src/libvectorops.la       \
-           $(top_builddir)/packages/utilities/src/libutilities.la       \
-           $(top_builddir)/packages/inject/src/libinject.la             \
-           $(top_builddir)/packages/date/src/libdate.la                 \
-           $(top_builddir)/packages/tdfilter/src/libtdfilter.la         \
-           $(top_builddir)/packages/window/src/libwindow.la             \
-           $(top_builddir)/packages/fft/src/libfft.la                   \
-           $(top_builddir)/packages/timefreq/src/libtimefreq.la         \
-           $(top_builddir)/packages/clremoval/src/libclremoval.la       \
-           $(top_builddir)/packages/stochastic/src/libstochastic.la     \
-           $(top_builddir)/packages/inspiral/src/libinspiral.la         \
-           $(top_builddir)/packages/noisemodels/src/libnoisemodels.la   \
-           $(top_builddir)/packages/bank/src/libbank.la                 \
-           $(top_builddir)/packages/pulsar/src/libpulsar.la             \
-           $(top_builddir)/packages/fct/src/libfct.la                   \
-           $(top_builddir)/packages/burstsearch/src/libburstsearch.la   \
-           $(top_builddir)/packages/tracksearch/src/libtracksearch.la   \
-           $(PKG_FRAME) $(PKG_MPI) $(PKG_FRAMEANDMPI)
+liblal_la_LIBADD = @LIBLISTBASE@ $(PKG_FRAME) $(PKG_MPI) $(PKG_FRAMEANDMPI)

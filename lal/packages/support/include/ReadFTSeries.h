@@ -67,7 +67,7 @@ void LALZReadFrequencySeries(LALStatus* status,  COMPLEX16FrequencySeries *serie
 
 
 
-/****************************** <lalErrTable file = "ReadFTSeriesHE"> */
+/****************************** <lalErrTable file="ReadFTSeriesHE"> */
 
 #define  READFTSERIESH_EFILENOTFOUND       1
 #define  READFTSERIESH_EPARSE              2

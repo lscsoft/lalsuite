@@ -1,8 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 pkginclude_HEADERS = CLR.h
-
-all-local: $(top_builddir)/include/lal/CLR.h
-
-$(top_builddir)/include/lal/CLR.h: CLR.h
-	cp -f $(srcdir)/CLR.h $(top_builddir)/include/lal
-
+MOSTLYCLEANFILES = .dvi-dep
+DISTCLEANFILES = *.tex
+all-local: include-link
+dvi-local: .dvi-dep

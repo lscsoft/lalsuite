@@ -10,7 +10,7 @@ endif
 EXTRA_DIST      = NoTest CommTestMPICH CommTestLAM CommTestMain.c CommTestMaster.c CommTestSlave.c CommTestGlobal.h
 
 CommTestMain_SOURCES = CommTestMain.c CommTestMaster.c CommTestSlave.c
-CommTestMain_LDADD = $(top_builddir)/lib/liblal.la
+CommTestMain_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = PI* Slave*.out Slave*.err machines killscript lamhosts CommTestSchema
 CLEANFILES = CommTestMain

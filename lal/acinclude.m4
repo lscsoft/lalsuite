@@ -177,8 +177,8 @@ echo "* Possible problems:                                         *"
 echo "*   - FFTW version < 2.0                                     *"
 echo "*   - Compiler could not find header sfftw.h or fftw.h       *"
 echo "*   - FFTW was not configured with the --enable-float option *"
-LAL_FFTW_MSG_ERROR
-)])
+LAL_FFTW_MSG_ERROR,
+AC_MSG_RESULT(unknown) ) ] )
 
 AC_DEFUN(LAL_SRFFTW_WORKS,
 [AC_MSG_CHECKING(whether single precison real FFTW works)
@@ -201,8 +201,8 @@ echo "*   - FFTW version < 2.0                                     *"
 echo "*   - Compiler could not find header srfftw.h or rfftw.h     *"
 echo "*   - FFTW was not configured with the --enable-float option *"
 echo "**************************************************************"
-LAL_FFTW_MSG_ERROR
-)])
+LAL_FFTW_MSG_ERROR,
+AC_MSG_RESULT(unknown) ) ] )
 
 AC_DEFUN(LAL_CHECK_FRAMELIB,
 [ if test "${frame}" = "true"; then
@@ -213,7 +213,8 @@ AC_DEFUN(LAL_CHECK_FRAMELIB,
           int main() { return FRAMELIB_VERSION < 3.85 ? 1 : 0 ; }],
           AC_MSG_RESULT(yes),
           [AC_MSG_RESULT(no),
-            AC_MSG_ERROR(FrameL.h not found or FRAMELIB_VERSION < 3.85)])
+            AC_MSG_ERROR(FrameL.h not found or FRAMELIB_VERSION < 3.85)],
+          AC_MSG_RESULT(unknown))
   fi
 ])
 

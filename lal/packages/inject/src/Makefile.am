@@ -8,3 +8,6 @@ libinject_la_SOURCES =	\
 ## Hack to get this working for now... change later
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../../date/include
 #INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+MOSTLYCLEANFILES = .dvi-dep
+DISTCLEANFILES = *.tex
+dvi-local: .dvi-dep

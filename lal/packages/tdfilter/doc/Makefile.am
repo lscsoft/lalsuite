@@ -1,10 +1,8 @@
 ## Process this file with automake to produce Makefile.in
-PACKAGE = tdfilters
-MOSTLYCLEANFILES = main.log main.ilg main.blg main.out
-CLEANFILES = main.aux main.bbl main.glo main.ind main.idx \
-             main.lof main.lot main.toc
-DISTCLEANFILES = main.dvi main.ps main.pdf
-EXTRA_DIST = main.tex $(srcdir)/$(PACKAGE)*
-
-dvi-local:
-	$(top_builddir)/doc/laldoc/ldoc-pkg.sh $(PACKAGE) $(srcdir) $(top_builddir) $(top_srcdir)
+DOCSOURCEFILES = tdfilters.tex
+MOSTLYCLEANFILES = .dvi-dep
+CLEANFILES = main.dvi main.pdf main.ps
+EXTRA_DIST = $(DOCSOURCEFILES)
+dvi-local: .dvi-dep
+distclean-local:
+	-rm -fr .adoc

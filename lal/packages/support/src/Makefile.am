@@ -1,13 +1,16 @@
 ## Process this file with automake to produce Makefile.in
 noinst_LTLIBRARIES = libsupport.la
+lib_LTLIBRARIES = liblalsupport.la
 
-libsupport_la_SOURCES = LALStdio.c LALVersion.c LALMalloc.c LALError.c \
-                        PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c\
-                        ReadFrequencySeries.c ReadTimeSeries.c
+libsupport_la_SOURCES = LALStd.c LALVersion.c LALMalloc.c LALError.c \
+  PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
+  ReadFrequencySeries.c ReadTimeSeries.c
 
-MAINTAINERCLEANFILES = PrintVector.c \
-                       PrintFrequencySeries.c PrintTimeSeries.c\
-                       ReadFrequencySeries.c ReadTimeSeries.c
+liblalsupport_la_SOURCES = FileIO.c PrintVector.c PrintFrequencySeries.c \
+  PrintTimeSeries.c ReadFrequencySeries.c ReadTimeSeries.c
+
+MAINTAINERCLEANFILES = PrintVector.c PrintFrequencySeries.c PrintTimeSeries.c \
+  ReadFrequencySeries.c ReadTimeSeries.c
 
 EXTRA_DIST = PrintVector.m4 LALPrintVector.m4 \
              PrintTimeSeries.m4 LALPrintTimeSeries.m4 \
@@ -17,6 +20,9 @@ EXTRA_DIST = PrintVector.m4 LALPrintVector.m4 \
              ReadTimeSeries.m4 LALReadTimeSeries.m4
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+MOSTLYCLEANFILES = .dvi-dep
+DISTCLEANFILES = *.tex
+dvi-local: .dvi-dep
 
 PrintVector.c: PrintVector.m4 LALPrintVector.m4
 	m4 PrintVector.m4 > PrintVector.c

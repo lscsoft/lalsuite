@@ -1,4 +1,3 @@
-
 *******************************************************************************
 
 A message from the librarian:
@@ -19,28 +18,36 @@ using the --with-gcc-flags configure option.
 
 *******************************************************************************
 
-There are two ways of developing code for a LAL package:
 
-(i)  installing LAL on you system and developing your package outside the lal
-     source tree using your own custom makefiles
+To modify an existing package, you can access the LAL CVS archive using a
+pserver.  However, you will need a username and password to be able to modify
+the CVS archive.  Contact the software coordinator,
+Alan Wiseman <agw@gravity.phys.uwm.edu>,
+to obtain a username/password, along with instructions.
 
-(ii) developing your package within the LAL source tree and allowing the lal
-     configure script to generate the makefiles for you.
 
-This file explains how to develop code using the second method. To do this you
-will need automake installed on your system. This is available from
+To add an additional package, you must submit the package as a tar-ball to
+the software coordinator,
+Alan Wiseman <agw@gravity.phys.uwm.edu>,
+to be added to the CVS archive.  (Only the librarian should add directories
+to the CVS archive.)
+
+
+This file tells you how to develop a new package for submission.  To do this
+you will need automake installed on your system. This is available from
 
 ftp://ftp.gnu.org/software/automake
 
 This example shows how to add a package called "mypackage" to LAL.
 
-( 1) Create a directory mypackage in the packages subdirectory of your lal
+
+(1)  Create a directory mypackage in the packages subdirectory of your lal
      source distribution:
 
        cd packages
        mkdir mypackage
 
-( 2) The mypackage directory should contain subdirectories src, include, doc
+(2)  The mypackage directory should contain subdirectories src, include, doc
      and test and a Makefile.am that contains the single line:
      SUBDIRS = include src test doc
 
@@ -48,23 +55,25 @@ This example shows how to add a package called "mypackage" to LAL.
        mkdir include src test doc
        echo "SUBDIRS = include src test doc" > Makefile.am
 
-( 3) Enter the doc directory and copy doc/Makefile.am from packages/sample
+(3)  Enter the doc directory and copy doc/Makefile.am from packages/sample
 
        cd doc
        cp ../../sample/doc/Makefile.am .
 
      Edit this Makefile.am and change the line
    
-       PACKAGE = sample
+       DOCSOURCEFILES = sample.tex
 
      to
 
-       PACKAGE = mypackage
+       DOCSOURCEFILES = mypackage.tex
+
+     Add any additional figures, etc., to the DOCSOURCEFILES.
 
      See the Appendix (below) for a discussion of the texfiles that need to be
      created in the doc directory.
 
-( 4) Enter the include directory and copy include/Makefile.am from
+(4)  Enter the include directory and copy include/Makefile.am from
      packages/sample
 
        cd ../include
@@ -72,40 +81,17 @@ This example shows how to add a package called "mypackage" to LAL.
 
      Change this Makefile.am as follows:
      
-     (a) change the line
+     Change the line
 
-         pkginclude_HEADERS = LALSample.h LALTemplate.h
+     pkginclude_HEADERS = LALSample.h LALTemplate.h
 
-         to list all the header files in your package, for example if the
-         header files were called MyHeaderA.h MyHeaderB.h and MyHeaderC.h,
-         this line would read:
+     to list all the header files in your package, for example if the
+     header files were called MyHeaderA.h MyHeaderB.h and MyHeaderC.h,
+     this line would read:
 
-         pkginclude_HEADERS = MyHeaderA.h MyHeaderB.h MyHeaderC.h
+     pkginclude_HEADERS = MyHeaderA.h MyHeaderB.h MyHeaderC.h
      
-     (b) make sure all your headers are listed in the "all-local:" dependency,
-         so change this from
-     
-         all-local: $(top_builddir)/include/lal/LALSample.h   \
-                    $(top_builddir)/include/lal/LALTemplate.h
-     
-         to
-     
-         all-local: $(top_builddir)/include/lal/MyHeaderA.h \
-                    $(top_builddir)/include/lal/MyHeaderB.h \
-                    $(top_builddir)/include/lal/MyHeaderC.h
-     
-         Note the backslash to continue the line until the last header.
-     
-     (c) for each header file listed in all-local there should be a make
-         instruction to copy the header to the top level-include directory:
-     
-          $(top_builddir)/include/lal/MyHeaderA.h: MyHeaderA.h
-                cp -f $(srcdir)/MyHeaderA.h $(top_builddir)/include/lal
-
-          and so on, remembering that it should be a <TAB> on the second
-          line, not spaces.
-
-( 5) Enter the src directory and copy src/Makefile.am from packages/sample
+(5)  Enter the src directory and copy src/Makefile.am from packages/sample
 
        cd ../src
        cp ../../sample/src/Makefile.am .
@@ -131,8 +117,7 @@ This example shows how to add a package called "mypackage" to LAL.
      packages/[framedata|comm|findchirp]/src
      as a guide to constructing your own.
 
-         
-( 6) Enter the test directory and copy test/Makefile.am from packages/sample
+(6)  Enter the test directory and copy test/Makefile.am from packages/sample
      
        cd ../test
        cp ../../sample/test/Makefile.am .
@@ -149,16 +134,16 @@ This example shows how to add a package called "mypackage" to LAL.
      and link them to LAL. Change the lines                                
      
      LALSampleTest_SOURCES = LALSampleTest.c
-     LALSampleTest_LDADD = $(top_builddir)/lib/liblal.la
+     LALSampleTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
      LALTemplateTest_SOURCES = LALTemplateTest.c
-     LALTemplateTest_LDADD = $(top_builddir)/lib/liblal.la
+     LALTemplateTest_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
                                                           
      to
           
      MyTestProgA_SOURCES = MyTestProgA.c
-     MyTestProgA_LDADD = $(top_builddir)/lib/liblal.la
+     MyTestProgA_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
      MyTestProgB_SOURCES = MyTestProgB.c              
-     MyTestProgB_LDADD = $(top_builddir)/lib/liblal.la
+     MyTestProgB_LDADD = $(top_builddir)/lib/liblal.la $(top_builddir)/packages/support/src/liblalsupport.la
      
      and the line                            
      
@@ -169,99 +154,43 @@ This example shows how to add a package called "mypackage" to LAL.
                                 
      TESTS = MyTestProgA MyTestProgB
                                          
-( 7) Go up to the packages directory and edit the Makefile.am there
-                                                                  
-       cd ../..
-       vi Makefile.am
-     
-     Add your package to the "SUBDIRS =" line:
-     
-     SUBDIRS = std support sample hello factories vectorops utilities date \
-               tdfilter window fft timefreq stochastic inspiral framedata  \
-               comm findchirp burstsearch tracksearch mypackage
-     
-( 8) Go up to the lib directory at the top level and edit the Makefile.am
-     there                                                               
+     If your test programs require data files, e.g., mypackage.dat, then add:
 
-       cd ../lib
-       vi Makefile.am
-     
-     Add your package to the "liblal_la_LIBADD =" line by adding the line
-     
-           $(top_builddir)/packages/mypackage/src/libmypackage.la           \
-     
-     before the line                               
-     
-           $(PKG_FRAME) $(PKG_MPI) $(PKG_FRAMEANDMPI)
-     
-     If your package depends on frame or mpi, read the instructions in the
-     Makefile.am
-     
-( 9) Go to the top level and edit the file configure.in
-     
-       cd ..
-       vi configure.in  
-     
-     At the bottom of this file is a large section that begins
-                                                              
-     AC_OUTPUT( Makefile                               \
-     
-     At the end of this section, before the closing brace, add the Makefiles
-     to be generated in your package. To do this, just add the lines        
-     
-           packages/mypackage/Makefile          \
-           packages/mypackage/doc/Makefile      \
-           packages/mypackage/include/Makefile  \
-           packages/mypackage/src/Makefile      \                          
-           packages/mypackage/test/Makefile     \
-     
-(10) Now at the top level, you need to run automake to generate the Makefile.in
-     files from the Makefile.am                                                
-     
-       automake  
+     TESTS_ENVIRONMENT = LAL_DATA_PATH=$(srcdir)
+     noinst_DATA = mypackage.dat
+     EXTRA_DIST = $(DATA)
 
-     Now run autoconf to rebuild the configure script             
-     
-       autoconf
-                                       
-     Ignore any warnings about "AC_TRY_RUN called without default to allow cross
-     compiling"
-     
-     This completes the process of adding your package. You can now follow
-     the instructions in the INSTALL file to configure and make LAL.
+     If your test programs produce output files, e.g., mypackage.out, then
+     add these files to the MOSTLYCLEANFILES
 
+(7)  Add the package name mypackage to the appropriate variable in the file
+     00boot.  Unless mypackage is to be built only with an --enable option
+     to configure, add it to the end of the variable
+
+     lal_pkg_list_base="support tools ... mypackage"
+
+(8)  Run 00boot:
+
+       ./00boot
+
+     This completes the process of adding your package. You can now follow the
+     instructions in the INSTALL file to configure and make LAL.
 
 
 Appendix: how to use laldoc to generate documentation.
 
-     The makefile in the doc directory uses the program laldoc and the script
-     ldoc-pkg.sh to extract documentation from the .c and .h files.  These
-     files are found in the doc/laldoc directory.  If you have not yet made
-     LAL, you can create these files by typing
+     The makefile in the include, src, and test directories use the program
+     laldoc to extract documentation from the .c and .h files.  These files
+     are then linked to the top-level doc/autodoc directory and to the
+     package's (hidden) doc/.adoc directory.
 
-       cd doc/laldoc
-       make
+     In the package's doc directory there needs to be the following texfile:
 
-     Now return to the doc subdirectory of mypackage
-
-       cd ../../packages/mypackage/doc
-
-     In this directory there needs to be two texfiles:
-
-     main.tex:      this file is used to make the documentation in the
-                    packages/mypackage/doc directory
-
-     mypackage.tex: this file is read by main.tex to make the documentation
-                    in the packages/mypackage/doc directory and is also read
-                    by lsd.tex in the top-level doc directory to make the
-                    mypackage documentation in the lsd
-
-     The main.tex file is almost the same in all directories.  First, copy the
-     main.tex from the sample package
-
-       cp ../../sample/doc/main.tex .
-
-     then edit the file and replace support.tex with mypackage.tex.
+     mypackage.tex
+     
+     This file is read by a driver texfile to make the documentation in the
+     packages/mypackage/doc directory and is also read by lsd.tex in the
+     top-level doc directory to make the mypackage documentation in the lsd
 
      The mypackage.tex file does three things: (i) it begins a new chapter of
      documentation for the package mypackage, (ii) it writes a blurb about what
@@ -282,15 +211,17 @@ Appendix: how to use laldoc to generate documentation.
      Finally, any figures should be included in the doc directory.  These
      figures should begin with the package name, e.g., mypackageFig1.eps,
      mypackageFig1a.eps, mypackagePicture.eps, etc.  Both eps and pdf versions
-     of the figures should be present.
+     of the figures should be present.  (Use the program epstopdf to create
+     pdf versions.)
 
      If everything is correct, then you should be able to generate the
      documentation for your package by issuing the command
 
-       ../../../doc/laldoc/ldoc-pkg.sh mypackage
-
-     or by typing
-
        make dvi
 
-     (which does essentially the same thing).
+     The package will have its own documentation in a file
+     packages/mypackage/doc/main.[dvi|pdf].
+
+     In the directory packages/mypackage.  If any errors occur, consult the
+     file packages/mypackage/doc/.adoc/laldoc.log for laldoc errors or the
+     file packages/mypackage/doc/.adoc/main.log for tex errors.

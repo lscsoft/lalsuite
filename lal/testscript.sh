@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh +x
 
 # How to fail
 fail () {
@@ -62,8 +62,8 @@ LOG="$TOPDIR/testscript.log"
 
 # Start fresh
 
-lal=`grep AM_INIT_AUTOMAKE configure.in | sed 's/[^a-z]//g'`
-ver=`grep AM_INIT_AUTOMAKE configure.in | sed 's/[^\.0-9]//g'`
+lal=`sed -n 's/package=//p' 00boot`
+ver=`sed -n 's/version=//p' 00boot`
 lalver="$lal-$ver"
 
 echo ">>> Testing $lalver [sending output to file `basename $LOG`]"

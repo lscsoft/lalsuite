@@ -7,3 +7,6 @@ libstochastic_la_SOURCES = StochasticCrossCorrelation.c \
 #  FalseAlarm.c FalseDismissal.c FDismissalVsFAlarm.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+MOSTLYCLEANFILES = .dvi-dep
+DISTCLEANFILES = *.tex
+dvi-local: .dvi-dep

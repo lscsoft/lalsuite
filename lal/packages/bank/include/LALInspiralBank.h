@@ -306,7 +306,8 @@ LALInspiralUpdateParams(
 );
 
 /* <lalLaTeX>
-\newpage\input{LALInspiralWaveLengthC}
+% TAKEN OUT BY JOLIEN: THIS IS NOT IN BANK
+%\newpage\input{LALInspiralWaveLengthC}
 </lalLaTeX>  */
 
 void 

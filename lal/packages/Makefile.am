@@ -1,9 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = std support tools sample hello factories vectorops utilities      \
-          inject date tdfilter window fft timefreq clremoval stochastic     \
-          inspiral noisemodels bank pulsar fct framedata comm findchirp     \
-          burstsearch tracksearch
+SUBDIRS = @PKGLIST@
 
 EXTRA_DIST = \
         $(srcdir)/templates/Makefile.am.example \

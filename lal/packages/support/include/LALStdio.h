@@ -20,7 +20,8 @@ Provides standard LAL IO functions.
 functions.
 
 \vfill{\footnotesize\input{LALStdioHV}}
-\newpage\input{LALStdioC}
+\newpage\input{LALStdC}
+\newpage\input{FileIOC}
 
 </lalLaTeX>
 #endif /* autodoc block */

@@ -6,3 +6,6 @@ libpulsar_la_SOURCES = \
   DestroyResampleRules.c ApplyResampleRules.c PolycoToTimingDifference.c \
   RulesToTimingDifference.c LALDemod.c ComputeSky.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+MOSTLYCLEANFILES = .dvi-dep
+DISTCLEANFILES = *.tex
+dvi-local: .dvi-dep

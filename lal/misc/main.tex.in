@@ -1,5 +1,5 @@
 \documentclass[oneside]{book}
-\usepackage{../lal,hyperref,color,chapterbib,fancyhdr,makeidx}
+\usepackage{array,fancyhdr,graphicx,hyperref,makeidx,wrapfig}
 \setlength{\textheight}{9.0in}
 \setlength{\textwidth}{6.0in}
 \setlength{\topmargin}{-0.00in}
@@ -17,7 +17,7 @@
 
 \tableofcontents
 
-\include{factories}
+\include{@package@}
 
 \printindex
 

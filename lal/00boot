@@ -5,6 +5,54 @@
 ##
 ## This script is not to be included in the distribution.
 
+## LAL version:
+package=lal
+version=0.8
+
+## Add a new package here:
+
+# Base (non-conditionally-compiled) packages:
+lal_pkg_list_base="support tools sample hello factories vectorops utilities inject date tdfilter window fft timefreq clremoval stochastic inspiral noisemodels bank pulsar fct burstsearch tracksearch"
+
+# Packages compiled only with --enable-mpi
+lal_pkg_list_mpi="comm findchirp"
+
+# Packages compiled only with --enable-frame
+lal_pkg_list_frame="framedata"
+
+# Packages compiled only with --enable-mpi and --enable-frame
+lal_pkg_list_frame_mpi=""
+
+## Do not edit below here!
+
+# All packages
+lal_pkg_list="std $lal_pkg_list_base $lal_pkg_list_mpi $lal_pkg_list_frame $lal_pkg_list_frame_mpi"
+
+#lal_pkgout_list=`for pkg in $lal_pkg_list; do pkgdir=packages/$pkg; echo -n "$pkgdir/Makefile $pkgdir/doc/Makefile:$pkgdir/doc/Makefile.in:misc/doc.mk $pkgdir/include/Makefile:$pkgdir/include/Makefile.in:misc/include.mk:misc/dvi.mk $pkgdir/src/Makefile:$pkgdir/src/Makefile.in:misc/dvi.mk $pkgdir/test/Makefile:$pkgdir/test/Makefile.in:misc/dvi.mk " ; done`
+#lal_out_list="Makefile doc/Makefile doc/laldoc/Makefile doc/autodoc/Makefile include/Makefile include/lal/Makefile lib/Makefile packages/Makefile $lal_pkgout_list "
+#dollar='$'
+#lal_lib_list_base=`for pkg in $lal_pkg_list_base; do echo -n "$dollar(top_builddir)/packages/$pkg/src/lib$pkg.la " ; done`
+#lal_lib_list_mpi=`for pkg in $lal_pkg_list_mpi; do echo -n "$dollar(top_builddir)/packages/$pkg/src/lib$pkg.la " ; done`
+#lal_lib_list_frame=`for pkg in $lal_pkg_list_frame; do echo -n "$dollar(top_builddir)/packages/$pkg/src/lib$pkg.la " ; done`
+#lal_lib_list_mpi_frame=`for pkg in $lal_pkg_list_mpi_frame; do echo -n "$dollar(top_builddir)/packages/$pkg/src/lib$pkg.la " ; done`
+
+test -f 00boot.sed && rm 00boot.sed
+
+#cat >> 00boot.sed <<EOF
+#s%@PKG@%$package%g
+#s%@VER@%$version%g
+#s%@PKGLIST@%$lal_pkg_list%g
+#s%@OUTLIST@%$lal_out_list%g
+#s%@LIBLISTBASE@%$lal_lib_list_base%g
+#s%@LIBLISTMPI@%$lal_lib_list_mpi%g
+#s%@LIBLISTFRAME@%$lal_lib_list_frame%g
+#s%@LIBLISTMPIFRAME@%$lal_lib_list_mpi_frame%g
+#EOF
+
+#sed -f 00boot.sed configure.boot > configure.in
+
+#rm 00boot.sed
+
 # Help message
 helpmsg="Usage $0 [options]
 Options: [defaults in brackets after description]"
@@ -15,7 +63,7 @@ helpmsg="$helpmsg
 
 INCLUDEDEPS=""
 
-# Process args
+## Process args
 while test $# -gt 0 ; do
   option=$1
   case "$option" in
@@ -30,6 +78,193 @@ while test $# -gt 0 ; do
   shift
 done
 
+
+## Find an echo that accepts -n
+ECHO=${ECHO:-echo}
+if test ! "`$ECHO -n a`" = "a" ; then
+  echo "*** Warning: echo does not support -n"
+  echo "*** make sure /usr/ucb is ahead of /usr/bin in PATH"
+  echo "*** or set variable ECHO to an echo that supports -n"
+  echo "*** trying /usr/ucb/echo..."
+  ECHO=/usr/ucb/echo
+  if test ! "`$ECHO -n a`" = "a" ; then
+    echo "*** Error: could not find an appropriate echo!"
+    exit 1
+  fi
+  echo "*** using $ECHO"
+fi
+
+## Here is the stuff to make configure.in
+
+# Preamble
+cat > configure.in <<EOF
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(include/config.h.in)
+AM_INIT_AUTOMAKE($package, $version)
+AM_CONFIG_HEADER(include/config.h include/lal/LALConfig.h)
+EOF
+
+# Body
+cat >> configure.in <<\EOF
+lal_version_major=`echo "$VERSION" | cut -d. -f1`
+lal_version_minor=`echo "$VERSION" | cut -d. -f2`
+lal_configure_date=`date -u +"%Y/%m/%e %T %Z"`
+AC_DEFINE_UNQUOTED(LAL_VERSION, "$VERSION", [LAL Version])
+AC_DEFINE_UNQUOTED(LAL_VERSION_MAJOR, $lal_version_major, [LAL Version Major Number] )
+AC_DEFINE_UNQUOTED(LAL_VERSION_MINOR, $lal_version_minor, [LAL Version Minor Number] )
+AC_DEFINE_UNQUOTED(LAL_CONFIGURE_ARGS, "$ac_configure_args", [LAL Configure Arguments])
+AC_DEFINE_UNQUOTED(LAL_CONFIGURE_DATE, "$lal_configure_date", [LAL Configure Date])
+
+LAL_WITH_CC
+LAL_WITH_MPICC
+LAL_WITH_EXTRA_CPPFLAGS
+LAL_WITH_EXTRA_CFLAGS
+LAL_WITH_EXTRA_LDFLAGS
+LAL_WITH_EXTRA_LIBS
+LAL_WITH_GCC_FLAGS
+
+LAL_ENABLE_FRAME
+LAL_ENABLE_MPI
+AM_CONDITIONAL(FRAME, test x$frame = xtrue)
+AM_CONDITIONAL(MPI, test x$mpi = xtrue)
+AM_CONDITIONAL(FRAMEANDMPI, test x$frame = xtrue -a x$mpi = xtrue)
+
+LAL_ENABLE_DEBUG
+LAL_ENABLE_MACROS
+LAL_ENABLE_PTHREAD_LOCK
+
+dnl Checks for programs.
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AM_PROG_LIBTOOL
+AC_CHECK_PROGS(LATEX, pdflatex latex, echo)
+AC_CHECK_PROGS(MKIND, makeindex, echo)
+AC_CHECK_PROGS(DVIPS, dvips, echo)
+AC_MSG_CHECKING(if $LATEX accepts --interaction=batchmode)
+cat > conflatextest.tex <<\CEOF
+\documentclass{article}
+\begin{document}
+\end{document}
+CEOF
+if $LATEX --interaction=batchmode conflatextest.tex >/dev/null 2>&1
+then
+LATEX="$LATEX --interaction=batchmode"
+AC_MSG_RESULT(yes)
+else
+AC_MSG_RESULT(no)
+fi
+rm -f conflatextest.*
+
+dnl Checks for libraries.
+AC_CHECK_LIB(m, sin)
+AC_SEARCH_LIBS(fftw_one, sfftw fftw, , LAL_FFTW_MSG_ERROR, -lm)
+AC_SEARCH_LIBS(rfftw_one, srfftw rfftw, , LAL_FFTW_MSG_ERROR, -lm)
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(sys/time.h unistd.h getopt.h malloc.h)
+AC_CHECK_HEADERS(sfftw.h fftw.h, break)
+AC_CHECK_HEADERS(srfftw.h rfftw.h, break)
+LAL_SFFTW_WORKS
+LAL_SRFFTW_WORKS
+
+dnl Checks for optional libraries and header files.
+if test "${frame}" = "true"; then
+  LAL_CHECK_FRAMELIB
+fi
+if test "${mpi}" = "true"; then
+  LAL_CHECK_MPI
+fi
+if test "${lal_pthread_lock}" = "true"; then
+  AC_CHECK_HEADERS(pthread.h, break)
+fi
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_STRINGIZE
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+LAL_CHECK_SIZEOF(short, 2)
+LAL_CHECK_SIZEOF(int, 4)
+LAL_CHECK_SIZEOF(long, 4)
+LAL_CHECK_SIZEOF(long long, 8)
+LAL_CHECK_SIZEOF(float, 4)
+LAL_CHECK_SIZEOF(double, 8)
+
+dnl Checks for library functions.
+AC_CHECK_FUNCS(getopt)
+AC_CHECK_FUNCS(getopt_long)
+AC_FUNC_VPRINTF
+AC_CHECK_FUNCS(putenv)
+
+dnl Add gcc specific flags --- must be done at end or tests will break!
+if test "$GCC" = yes; then
+  CFLAGS="$CFLAGS $lal_gcc_flags"
+fi
+EOF
+
+# Substitutions
+$ECHO -n "LIBLISTBASE='" >> configure.in
+for pkg in $lal_pkg_list_base ; do
+  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+done
+echo "'" >> configure.in
+
+$ECHO -n "LIBLISTMPI='" >> configure.in
+for pkg in $lal_pkg_list_mpi ; do
+  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+done
+echo "'" >> configure.in
+
+$ECHO -n "LIBLISTFRAME='" >> configure.in
+for pkg in $lal_pkg_list_frame ; do
+  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+done
+echo "'" >> configure.in
+
+$ECHO -n "LIBLISTMPIFRAME='" >> configure.in
+for pkg in $lal_pkg_list_mpi_frame ; do
+  $ECHO -n "\$(top_builddir)/packages/$pkg/src/lib$pkg.la " >> configure.in
+done
+echo "'" >> configure.in
+
+cat >> configure.in <<EOF
+PKGLIST="$lal_pkg_list"
+AC_SUBST(PKGLIST)
+AC_SUBST(LIBLISTBASE)
+AC_SUBST(LIBLISTMPI)
+AC_SUBST(LIBLISTFRAME)
+AC_SUBST(LIBLISTMPIFRAME)
+EOF
+
+# Output
+cat >> configure.in <<\EOF
+AC_OUTPUT([ \
+  Makefile \
+  doc/Makefile \
+  doc/laldoc/Makefile \
+  doc/autodoc/Makefile \
+  include/Makefile \
+  include/lal/Makefile \
+  lib/Makefile \
+  packages/Makefile \
+EOF
+
+for pkg in $lal_pkg_list; do
+  pkgdir=packages/$pkg
+  echo "  $pkgdir/Makefile \\" >> configure.in
+  echo "  $pkgdir/doc/Makefile:$pkgdir/doc/Makefile.in:misc/doc.mk \\" >> configure.in
+  echo "  $pkgdir/include/Makefile:$pkgdir/include/Makefile.in:misc/include.mk:misc/dvi.mk \\" >> configure.in
+  echo "  $pkgdir/src/Makefile:$pkgdir/src/Makefile.in:misc/dvi.mk \\" >> configure.in
+  echo "  $pkgdir/test/Makefile:$pkgdir/test/Makefile.in:misc/dvi.mk \\" >> configure.in
+done
+echo "])" >> configure.in
+
+
+## Now run m4 to generate sources
 
 cd packages/support/src
 m4 PrintVector.m4 > PrintVector.c
@@ -50,6 +285,9 @@ m4 VectorFactoriesTest.m4 > VectorFactoriesTest.c
 m4 VectorSequenceFactoriesTest.m4 > VectorSequenceFactoriesTest.c
 m4 ArrayFactoriesTest.m4 > ArrayFactoriesTest.c
 cd ../../..
+
+
+## Generate the Makefile.in's and the configure script
 
 aclocal
 autoheader

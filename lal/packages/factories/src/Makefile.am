@@ -11,6 +11,9 @@ EXTRA_DIST = \
   VectorSequenceFactories.m4 CreateVectorSequence.m4 DestroyVectorSequence.m4
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+MOSTLYCLEANFILES = .dvi-dep
+DISTCLEANFILES = *.tex
+dvi-local: .dvi-dep
 
 
 VectorFactories.c: VectorFactories.m4 CreateVector.m4 DestroyVector.m4
