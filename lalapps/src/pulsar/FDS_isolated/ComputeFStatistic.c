@@ -1,9 +1,9 @@
-/*********************************************************************************/
-/** \file ComputeFStatistic.c
+/*********************************************************************************
+ ** \file ComputeFStatistic.c
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
  * Implements the so-called "F-statistic" as introduced in JKS98.
  *                                                                          
- * \author		      Y. Ioth, M.A. Papa, X. Siemens, R.Prix        
+ * \author		   Y. Ioth, M.A. Papa, X. Siemens, R.Prix, B. Machenschalk
  *                                                                          
  *                 Albert Einstein Institute/UWM - started September 2002   
  *********************************************************************************/
@@ -65,8 +65,12 @@ BOOLEAN FILE_FSTATS = 1;
 #define USE_BOINC 0
 #endif
 
-#ifndef NO_BOINC_GRAPHICS
-#define NO_BOINC_GRAPHICS 0
+#ifndef BOINC_APP_GRAPHICS
+#ifdef NO_BOINC_GRAPHICS
+#define BOINC_APP_GRAPHICS 0
+#else
+#endif
+#define BOINC_APP_GRAPHICS 1
 #endif
 
 /* compress earth and sun files and output Fstats file, using zip.
@@ -77,6 +81,8 @@ BOOLEAN FILE_FSTATS = 1;
 
 
 #if USE_BOINC
+
+/* Boinc diag constants */
 #define BOINC_DIAG_DUMPCALLSTACKENABLED     0x00000001L
 #define BOINC_DIAG_HEAPCHECKENABLED         0x00000002L
 #define BOINC_DIAG_MEMORYLEAKCHECKENABLED   0x00000004L
@@ -88,7 +94,9 @@ BOOLEAN FILE_FSTATS = 1;
 #define BOINC_DIAG_REDIRECTSTDOUTOVERWRITE  0x00000100L
 #define BOINC_DIAG_TRACETOSTDERR            0x00000200L
 #define BOINC_DIAG_TRACETOSTDOUT            0x00000400L
+
 #include <signal.h>
+
 #ifndef _WIN32
 #include <pthread.h>
 #endif
@@ -105,27 +113,37 @@ BOOLEAN FILE_FSTATS = 1;
 #include "boinc_zip.h"
 #endif
 
-#if !NO_BOINC_GRAPHICS
+#if BOINC_APP_GRAPHICS
 #include "graphics_api.h"
 #endif
 
 #define fopen boinc_fopen
-char *fstatbuff=NULL;
+
+char *fstatbuff = NULL;
 int boincmain(int argc, char *argv[]);
 void worker();
 
-extern double fraction_done;
+/* hooks for communication with the graphics thread */
+void (*set_search_pos_hook)() = NULL;
+int (*boinc_init_graphics_hook)() = NULL;
+double *fraction_done_hook = NULL;
+
 void use_boinc_filename1(char** orig_name);
 void use_boinc_filename0(char* orig_name);
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-  /* FIXME: include proper header for this! */
+
+#if (BOINC_APP_GRAPHICS == 1)
+extern double fraction_done;
+/* FIXME: include proper header for this! */
 extern void set_search_pos(float RAdeg, float DEdeg);
+#endif
+
 void sighandler(int sig);
 
+/* polka prototype */
 #ifdef RUN_POLKA
 int polka(int argc,char *argv[]);
 #endif
@@ -236,10 +254,11 @@ FILE *fpstat=NULL;		/**< output-file: F-statistic candidates and cluster-informa
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 int reverse_endian=-1;          /**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
-CHAR Fstatsfilename[256];	/* Fstats file name*/
-CHAR ckp_fname[260];		/* filename of checkpoint-file, global for polka */
+CHAR Fstatsfilename[256]; 		/* Fstats file name*/
+CHAR ckp_fname[260];			/* filename of checkpoint-file, global for polka */
 CHAR *Outputfilename; 		/* Name of output file, either Fstats- or Polka file name*/
-INT4 cfsRunNo = 0;		/* the CFS run no if ran multiple times 0=run only once, 1=first run, 2=second run */
+INT4 cfsRunNo = 0; 		    /* the CFS run no if ran multiple times 0=run only once, 1=first run, 2=second run */
+
 
 /*----------------------------------------------------------------------*/
 /* local prototypes */
@@ -597,10 +616,9 @@ int main(int argc,char *argv[])
 	if (local_fraction_done>1.0)
 	  local_fraction_done=1.0;
 	boinc_fraction_done(local_fraction_done);
-#if !NO_BOINC_GRAPHICS
-	/* pass variable externally to graphics routines */
-	fraction_done=local_fraction_done;
-#endif
+ 	    /* pass variable externally to graphics routines */
+	    if (fraction_done_hook != NULL)
+	      *fraction_done_hook=local_fraction_done;
       }
 #endif
       if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
@@ -616,13 +634,16 @@ int main(int argc,char *argv[])
 
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
-#if (USE_BOINC && !NO_BOINC_GRAPHICS)
+#if USE_BOINC
       /* pass current search position, for use with starsphere.C
 	 revision 4.6 or greater. Need to convert radians to
 	 degrees. */
-      set_search_pos((float)(180.0*Alpha/LAL_PI), (float)(180.0*Delta/LAL_PI));
-#endif /* USE_BOINC and !NO_BOINC_GRAPHICS*/
-
+	  if (set_search_pos_hook != NULL){
+		float pAlpha=(180.0*Alpha/LAL_PI), pDelta=(180.0*Delta/LAL_PI);
+        set_search_pos_hook(pAlpha,pDelta);
+	  }
+#endif
+	  
       LAL_CALL (CreateDemodParams(stat), stat);
 #ifdef FILE_AMCOEFFS
 	  PrintAMCoeffs(Alpha, Delta, DemodParams->amcoe);
@@ -2820,6 +2841,7 @@ void worker() {
   int a1,a2,retval;
   CHAR ckptfname1[260];
   CHAR Fstatsfilename1[260];
+
   /* find first // delimiter */ 
   for(a1=0;(a1<globargc)&&(strncmp(globargv[a1],"//",3));a1++);
   if(a1==globargc)
@@ -2891,6 +2913,12 @@ int main(int argc, char *argv[]){
   if (signal(SIGILL, sighandler)==SIG_IGN)
     signal(SIGILL, SIG_IGN);
 
+#if (BOINC_APP_GRAPHICS == 1)
+  set_search_pos_hook = (void*)set_search_pos;
+  boinc_init_graphics_hook = (void*)boinc_init_graphics;
+  fraction_done_hook = &fraction_done;
+#endif
+
 #ifdef _WIN32
   boinc_init_diagnostics(BOINC_DIAG_DUMPCALLSTACKENABLED |
 			 BOINC_DIAG_HEAPCHECKENABLED |
@@ -2899,21 +2927,23 @@ int main(int argc, char *argv[]){
 			 BOINC_DIAG_TRACETOSTDERR);
 #endif
   
-#if NO_BOINC_GRAPHICS
   /* boinc_init() or boinc_init_graphics() needs to be run before any
      boinc_api functions are used */
-  boinc_init();
-  worker();
-#else
-  { 
+#if BOINC_APP_GRAPHICS
+  if (boinc_init_graphics_hook != NULL) { 
     /* only returns if trouble creating worker thread */
-    int retval=boinc_init_graphics(worker);
+    int retval = boinc_init_graphics_hook(worker);
     if (retval)
       fprintf(stderr,"boinc_init_graphics() returned %d: unable to create worker thread\n", retval);
     boinc_finish(1234+retval);
+  } else {
+#endif
+	  boinc_init();
+      worker();
+#if BOINC_APP_GRAPHICS
   }
 #endif
-  
+
   /* we never get here!! */
   return 222;
 }
