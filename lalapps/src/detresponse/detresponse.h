@@ -22,8 +22,10 @@
 #include <lal/DetectorSite.h>
 #include <lal/TimeDelay.h>
 #include <lal/DetResponse.h>
+#include <lal/Velocity.h>
 #include <lal/Units.h>
 #include <lal/VectorOps.h>
+#include <lal/SkyCoordinates.h>
 
 #include <lal/PrintFTSeries.h>
 #include <lal/StreamOutput.h>
@@ -37,7 +39,7 @@
 
 /* number of grid points in declination and right ascension */
 #define NUM_DEC 11
-#define NUM_RA  24
+#define NUM_RA  25
 
 typedef REAL4 skygrid_t[NUM_RA * NUM_DEC];
 
@@ -74,7 +76,7 @@ void  set_source_params(LALSource * source, const char * name, REAL8 ra_rad,
                         REAL8 dec_rad, REAL8 orien_rad);
 
 void generate_timeseries_response(LALStatus * status);
-void compute_skygrid(LALStatus * status, char * format_argkj);
+void compute_skygrid(LALStatus * status, char * format_arg);
 
 void multiply_vectors(REAL4Vector * out,
                       const REAL4Vector * a, const REAL4Vector * b);
