@@ -256,6 +256,7 @@ LALFindChirpSlave (
     )
 {
   UINT4                         i, j, k;
+  UINT4                         simCount;
   INT4                         *filterSegment    = NULL;
   InspiralTemplate             *tmpltBankHead    = NULL;
   InspiralTemplate             *currentTmplt     = NULL;
@@ -382,12 +383,18 @@ LALFindChirpSlave (
    */
 
 
+  /* if this is a simulation, initialize the simulation counter         */
+  if ( params->simParams )
+  {
+    simCount = params->simParams->simCount;
+  }
+
   while ( 1 )
   {
 #if 0
     fprintf( stdout, "---- top of while(1) -------------------\n" );
     if ( params->simParams ) 
-      fprintf( stdout, "simCount = %u\n", params->simParams->simCount );
+      fprintf( stdout, "simCount = %u\n", simCount );
     fflush( stdout );
 #endif
 
@@ -484,10 +491,12 @@ LALFindChirpSlave (
              params->simParams->randomParams );
           CHECKSTATUSPTR( status );
 
-          /* XXX set params so they match Bruce's 1.4,1.4 chirp */
+#if 0
+          /* XXX force the params to be a for 1.4,1.4 chirp for testing */
           mass1 = mass2 = 1.4;
           ppnParams.mTot = mass1 + mass2;
           ppnParams.eta = mass1*mass2/( ppnParams.mTot*ppnParams.mTot );
+#endif
 
           /* set the parameters in the loudest event structure          */
           loudestEvent[i].id = loudestEvent[i].segmentNumber = 
@@ -499,7 +508,6 @@ LALFindChirpSlave (
 #if 0
           fprintf( stdout, "random chirp generated: m1 = %e, m2 = %e\n", 
               mass1, mass2 );
-          fflush( stdout );
 #endif
 
           /* generate the inspiral waveform                             */
@@ -592,7 +600,7 @@ LALFindChirpSlave (
         /* compute the normalisation of the injected signal (s|s)       */
         for ( i = 0; i < dataSegVec->length; ++i )
         {
-          REAL4     sigNorm = params->simParams->signalNorm[i];
+          REAL4     sigNorm = 0;
           REAL4    *tmpltPower = params->dataParams->tmpltPowerVec->data;
           COMPLEX8 *fcData = (params->fcSegVec->data + i)->data->data->data;
 
@@ -603,8 +611,12 @@ LALFindChirpSlave (
                   fcData[k].im * fcData[k].im ) / tmpltPower[k];
           }
           sigNorm *= ( 4.0 * (REAL4) deltaT ) / (REAL4) tdLength;
+
+          params->simParams->signalNorm[i] = sigNorm;
+
 #if 0
-          fprintf( stdout, "sigNorm[%u] = %e\n", i, sigNorm );
+          fprintf( stdout, "sigNorm[%u] = %e\n", i,
+              params->simParams->signalNorm[i] );
           fflush( stdout );
 #endif
         }
@@ -633,18 +645,7 @@ LALFindChirpSlave (
           
           for ( j = 0; j < tdLength; ++j )
           {
-            data[j] = floor( 0.5 + gaussianVar * data[j] );
-#if 0
-            /* should we dither the data? if so how? */
-            if ( data[j] > 2047 )
-            {
-              data[j] = 2047;
-            }
-            else if ( data[j] < -2048 )
-            {
-              data[j] = -2048;
-            }
-#endif
+            data[j] *= gaussianVar;
           }
 
           spectrum = 2.0 * gaussianVarsq * deltaT;
@@ -779,6 +780,8 @@ LALFindChirpSlave (
           fprintf( stdout, "filtering segment %d against template %d\n",
               params->filterInput->segment->number,
               currentTmplt->number );
+          fprintf( stdout, "template %d: m1 = %e, m2 = %e\n",
+              currentTmplt->number, currentTmplt->mass1, currentTmplt->mass2 );
           fflush( stdout );
 #endif
           /* filter the data segment against the template */
@@ -854,6 +857,8 @@ LALFindChirpSlave (
 #endif
                   memcpy( &(loudestEvent[i].time), &(thisEvent->time),
                       sizeof(LIGOTimeGPS) );
+                  memcpy( loudestEvent[i].ifoName, thisEvent->ifoName,
+                      2 * sizeof(CHAR) );
                   loudestEvent[i].snrsq   = thisEvent->snrsq;
                   loudestEvent[i].chisq   = thisEvent->chisq;
                   loudestEvent[i].sigma   = thisEvent->sigma;
@@ -966,7 +971,7 @@ LALFindChirpSlave (
     {
       break;
     }
-    else if ( ! --(params->simParams->simCount) ) 
+    else if ( ! --simCount ) 
     {
       break;
     }
