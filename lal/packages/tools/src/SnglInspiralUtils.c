@@ -236,6 +236,63 @@ LALCompareSnglInspiral (
   RETURN (status);
 }
 
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+void
+LALCompareSnglInspiralBCV (
+    LALStatus                *status,
+    SnglInspiralTable        *aPtr,
+    SnglInspiralTable        *bPtr,
+    SnglInspiralAccuracy     *params
+    )
+/* </lalVerbatim> */
+{
+  INT8 ta, tb;
+  REAL4 dpsi0, dpsi3;
+  REAL4 sigmaRatio;
+
+  INITSTATUS( status, "LALCompareSnglInspiral", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  params->match = 0;
+
+  LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
+  LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
+
+  /* compate on triggger time coincidence */
+  if ( labs( ta - tb ) < params->dt )
+  {
+   dpsi0 = fabs( aPtr->psi0 - bPtr->psi0 );
+   dpsi3 = fabs( aPtr->psi3 - bPtr->psi3 );
+
+   /* compare psi0 and psi3 parameters */
+   if ( dpsi0 <= params->dpsi0 && dpsi3 <= params->dpsi3 )
+   {
+      LALInfo( status, "Triggers pass the psi-coincidence test" );
+    }
+    else if ( dpsi0 <= params->dpsi0 && !(dpsi3 <= params->dpsi3) )
+    {
+      LALInfo( status, "Triggers fail psi3-coincidence test" );
+    }
+    else if ( !(dpsi0 <= params->dpsi0) && dpsi3 <= params->dpsi3 )
+    {
+      LALInfo( status, "Triggers fail psi0-coincidence test" );
+    }
+    else 
+    {
+      LALInfo( status, "Triggers fail psi-coincidence test" );
+    }
+  }
+  else
+  {
+    LALInfo( status, "Triggers fails time coincidence test" );
+  }
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+
+
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
 LALClusterSnglInspiralTable (
