@@ -19,6 +19,7 @@
  **** </lalLaTeX> */
 
 #include <lal/LALDatatypes.h>
+#include <lal/BandPassTimeSeries.h>
 
 #ifndef _RESAMPLETIMESERIES_H
 #define _RESAMPLETIMESERIES_H
@@ -39,10 +40,20 @@ NRCSID( RESAMPLETIMESERIESH, "$Id$" );
 #define RESAMPLETIMESERIESH_ENULL 1
 #define RESAMPLETIMESERIESH_ENNUL 2
 #define RESAMPLETIMESERIESH_EZERO 3
+#define RESAMPLETIMESERIESH_ERATE 4
+#define RESAMPLETIMESERIESH_EUPSM 5
+#define RESAMPLETIMESERIESH_EHIGH 6
+#define RESAMPLETIMESERIESH_ELOG2 7
+#define RESAMPLETIMESERIESH_EFILT 8
 
 #define RESAMPLETIMESERIESH_MSGENULL "No calibration generated: Null pointer"
 #define RESAMPLETIMESERIESH_MSGENNUL "No calibration generated: Non-null pointer"
 #define RESAMPLETIMESERIESH_MSGEZERO "Length of input time series is zero"
+#define RESAMPLETIMESERIESH_MSGERATE "Sample rate is zero"
+#define RESAMPLETIMESERIESH_MSGEUPSM "Cannot upsample"
+#define RESAMPLETIMESERIESH_MSGEHIGH "Input sample rate is greater than 32kHz"
+#define RESAMPLETIMESERIESH_MSGELOG2 "Only power-of-two resampling is avaliable"
+#define RESAMPLETIMESERIESH_MSGEFILT "Unknown filter type"
 /**** </lalErrTable> */
 
 /**** <lalLaTeX>
@@ -51,14 +62,27 @@ NRCSID( RESAMPLETIMESERIESH, "$Id$" );
  *
  **** </lalLaTeX> */
 
+typedef enum
+{
+  defaultButterworth
+}
+ResampleTSFilter;
+
+typedef union
+tagResampleTimeSeriesFilterPars
+{
+  PassBandParamStruc    butterworth;
+}
+ResampleTSFilterParams;
+
 typedef struct
 tagResampleTimeSeriesParams
 {
-  LIGOTimeGPS   epoch;
-  REAL8         deltaT;
-  UINT4         length;
+  REAL8                   deltaT;
+  ResampleTSFilter        filterType;
+  ResampleTSFilterParams  filterParams;
 }
-ResampleTimeSeriesParams;
+ResampleTSParams;
 
 /**** <lalLaTeX>
  * 
@@ -69,9 +93,9 @@ ResampleTimeSeriesParams;
 
 void
 LALResampleREAL4TimeSeries(
-    LALStatus                  *status,
-    REAL4TimeSeries            *data, 
-    ResampleTimeSeriesParams   *params
+    LALStatus          *status,
+    REAL4TimeSeries    *ts, 
+    ResampleTSParams   *params
     );
 
 #ifdef __cplusplus
