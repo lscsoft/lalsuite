@@ -60,8 +60,8 @@ static REAL8TimeSeries h,hR,uphR,hC,hCX,hCY;
 int p;
 PassBandParamStruc highpassfilterpar,lowpassfilterpar;
 
-/*  INITSTATUS( status, "LALComputeStrain", COMPUTESTRAINC ); */
-/*  ATTATCHSTATUSPTR( status ); */
+ INITSTATUS( status, "LALComputeStrain", COMPUTESTRAINC );
+ ATTATCHSTATUSPTR( status );
 
 
   /* high pass filter parameters */ 
@@ -79,23 +79,24 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   lowpassfilterpar.f1    = 6000.0;
   lowpassfilterpar.a1    = 0.5;
 
-  if(XLALMakeFilters(&Cinv,&G,&AA,&AX,&AY)) RETURN( status );
-  if(XLALMakeFilters2(status,&CinvLAL,&GLAL,&AALAL,&AXLAL,&AYLAL)) RETURN( status );
-  if(XLALGetFactors(status, output, input))  RETURN( status );
-/* ABORT(status,13,"Broke at factors"); */
-  /* add #define's to Calibration.h */
+  if(XLALMakeFilters(&Cinv,&G,&AA,&AX,&AY)) ABORT(status,111,"Broke making iir filters");
+  if(XLALMakeFilters2(status,&CinvLAL,&GLAL,&AALAL,&AXLAL,&AYLAL)) ABORT(status,112,"Broke making LAL iir filters");
+  if(XLALGetFactors(status, output, input)) ABORT(status,113,"Broke making factors");
   
   /* Create vectors that will hold the residual, control and net strain signals */
-  LALDCreateVector(status/* ->statusPtr */,&h.data,input->AS_Q.data->length);
-/*   CHECKSTATUSPTR( status ); */
+  LALDCreateVector(status->statusPtr,&h.data,input->AS_Q.data->length);
+  CHECKSTATUSPTR( status );
+  LALDCreateVector(status->statusPtr,&hR.data,input->AS_Q.data->length);
+  CHECKSTATUSPTR( status );
+  LALDCreateVector(status->statusPtr,&hC.data,input->AS_Q.data->length);
+  CHECKSTATUSPTR( status );
+  LALDCreateVector(status->statusPtr,&hCX.data,input->AS_Q.data->length);
+  CHECKSTATUSPTR( status );
+  LALDCreateVector(status->statusPtr,&hCY.data,input->AS_Q.data->length);
+  CHECKSTATUSPTR( status );
+  LALDCreateVector(status->statusPtr,&uphR.data,UpSamplingFactor*input->AS_Q.data->length);
+  CHECKSTATUSPTR( status );
 
-
-
-  LALDCreateVector(status,&hR.data,input->AS_Q.data->length);
-  LALDCreateVector(status,&hC.data,input->AS_Q.data->length);
-  LALDCreateVector(status,&hCX.data,input->AS_Q.data->length);
-  LALDCreateVector(status,&hCY.data,input->AS_Q.data->length);
-  LALDCreateVector(status,&uphR.data,UpSamplingFactor*input->AS_Q.data->length);
   h.deltaT=input->AS_Q.deltaT;
   hR.deltaT=input->AS_Q.deltaT;
   hC.deltaT=input->AS_Q.deltaT;
@@ -111,30 +112,35 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   }
 
   /* high pass filter both time series */
-  LALButterworthREAL8TimeSeries(status,&hR,&highpassfilterpar);
-  LALButterworthREAL8TimeSeries(status,&hC,&highpassfilterpar);
+  LALButterworthREAL8TimeSeries(status->statusPtr,&hR,&highpassfilterpar);
+  CHECKSTATUSPTR( status );
+  LALButterworthREAL8TimeSeries(status->statusPtr,&hC,&highpassfilterpar);
+  CHECKSTATUSPTR( status );
   
-/*   if(XLALHighPass(&hR)) RETURN( status ); */
-/*   if(XLALHighPass(&hC)) RETURN( status ); */
+/*   if(XLALHighPass(&hR)) ABORT(status,113,"Broke highpassing hR"); */
+/*   if(XLALHighPass(&hC)) ABORT(status,115,"Broke highpassing hC"); */
 
   /* ---------- Compute Residual Strain -------------*/
   /* to get the residual strain we must first divide AS_Q by alpha */
-  if(XLALhROverAlpha(&hR, output)) RETURN( status );
+  if(XLALhROverAlpha(&hR, output)) ABORT(status,116,"Broke at hR/alpha") ;
 
   /* then we upsample (and smooth it with a low pass filter) */
-  if(XLALUpsamplehR(&uphR, &hR, UpSamplingFactor)) RETURN( status );
-  LALButterworthREAL8TimeSeries(status,&uphR,&lowpassfilterpar);
+  if(XLALUpsamplehR(&uphR, &hR, UpSamplingFactor)) ABORT(status,117,"Broke upsampling hR");
+  LALButterworthREAL8TimeSeries(status->statusPtr,&uphR,&lowpassfilterpar);
+  CHECKSTATUSPTR( status );
 
-/*   if(XLALLowPass(&uphR)) RETURN( status ); */
+/*   if(XLALLowPass(&uphR)) ABORT(status,118,"Broke lowpassing uphR"); */
 
   /* then we filter through the inverse of the sensing function */
-/*   if(XLALFilterSeries(&Cinv, &uphR)) RETURN( status ); */
+/*   if(XLALFilterSeries(&Cinv, &uphR)) ABORT(status,119,"Broke filtering hR through Cinv"); */
 
-  LALIIRFilterREAL8Vector(status,uphR.data,&CinvLAL);
+  LALIIRFilterREAL8Vector(status->statusPtr,uphR.data,&CinvLAL);
+  CHECKSTATUSPTR( status );
 
   /* Low pass again before downsampling */
-  LALButterworthREAL8TimeSeries(status,&uphR,&lowpassfilterpar);
-/*   if(XLALLowPass(&uphR)) RETURN( status ); */
+  LALButterworthREAL8TimeSeries(status->statusPtr,&uphR,&lowpassfilterpar);
+  CHECKSTATUSPTR( status );
+/*   if(XLALLowPass(&uphR)) ABORT(status,120,"Broke lowpassing uphR"); */
  
   /* then we downsample and voila' */
   for (p=0; p<hR.data->length; p++) {
@@ -143,13 +149,13 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
 
   /* ---------- Compute Control Strain -------------*/
   /* to get the control strain we first multiply AS_Q by beta */
-  XLALhCTimesBeta(&hC, output);
+  if( XLALhCTimesBeta(&hC, output)) ABORT(status,120,"Broke in hC x beta");
   
   /* Now we filter through the servo */
   for(p=NGfilt-1;p>=0;p--){
-/*     if (XLALFilterSeries(&G[p],&hC)) RETURN( status ); */
-    LALIIRFilterREAL8Vector(status,hC.data,&GLAL[p]);
-
+/*     if (XLALFilterSeries(&G[p],&hC)) ABORT(status,121,"Broke filtering hC through servo"); */
+    LALIIRFilterREAL8Vector(status->statusPtr,hC.data,&GLAL[p]);
+    CHECKSTATUSPTR( status );
   }
   /* and adjust to account for servo gain to get darm_ctrl */ 
   for (p=0; p<hC.data->length;p++) {
@@ -166,8 +172,9 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   
   /* Filter x-arm */
   for(p = NAXfilt-1; p >= 0; p--){
-/*     if (XLALFilterSeries(&AX[p],&hCX)) RETURN( status ); */
-    LALIIRFilterREAL8Vector(status,hCX.data,&AXLAL[p]);
+/*     if (XLALFilterSeries(&AX[p],&hCX)) ABORT(status,122,"Broke filtering hC through AX"); */
+    LALIIRFilterREAL8Vector(status->statusPtr,hCX.data,&AXLAL[p]);
+    CHECKSTATUSPTR( status );
   }
   /* Adjust to account for digital gain on x-arm*/ 
   for (p=0; p< hC.data->length;p++) {
@@ -176,8 +183,9 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   
   /* Filter y-arm */
   for(p = NAYfilt-1; p >= 0; p--){
-/*     if (XLALFilterSeries(&AY[p],&hCY)) RETURN( status ); */
-    LALIIRFilterREAL8Vector(status,hCY.data,&AYLAL[p]);
+/*     if (XLALFilterSeries(&AY[p],&hCY)) ABORT(status,123,"Broke filtering hC through AY"); */
+    LALIIRFilterREAL8Vector(status->statusPtr,hCY.data,&AYLAL[p]);
+    CHECKSTATUSPTR( status );
   }
   /* Adjust to account for digital gain on y-arm*/ 
   for (p = 0; p < hC.data->length; p++) {
@@ -190,18 +198,22 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   }
 
   /* filter through analog part of actuation and voila' */ 
-/*   if (XLALFilterSeries(&AA,&hC)) RETURN( status ); */
-    LALIIRFilterREAL8Vector(status,hC.data,&AALAL);
+/*   if (XLALFilterSeries(&AA,&hC)) ABORT(status,124,"Broke filtering hC through AA"); */
+    LALIIRFilterREAL8Vector(status->statusPtr,hC.data,&AALAL);
+    CHECKSTATUSPTR( status );
 
 
   /* ---------- Compute Net Strain -------------*/
 
   /* for good measure we high pass filter both residual and control signals again
      before adding them together */
-  LALButterworthREAL8TimeSeries(status,&hR,&highpassfilterpar);
-  LALButterworthREAL8TimeSeries(status,&hC,&highpassfilterpar);
-/*   XLALHighPass(&hR); */
-/*   XLALHighPass(&hC); */
+  LALButterworthREAL8TimeSeries(status->statusPtr,&hR,&highpassfilterpar);
+  CHECKSTATUSPTR( status );
+  LALButterworthREAL8TimeSeries(status->statusPtr,&hC,&highpassfilterpar);
+  CHECKSTATUSPTR( status );
+
+/*   if (XLALHighPass(&hR))ABORT(status,125,"Broke in final highpassing of hR"); */
+/*   if (XLALHighPass(&hC))ABORT(status,126,"Broke in final highpassing of hC"); */
 
   /* now add control and residual signals together and we're done */
   for (p=0; p < h.data->length; p++) {
@@ -210,14 +222,65 @@ PassBandParamStruc highpassfilterpar,lowpassfilterpar;
   }
 
   /* destroy vectors that hold the data */
-  LALDDestroyVector(status,&h.data);
-  LALDDestroyVector(status,&hR.data);
-  LALDDestroyVector(status,&uphR.data);
-  LALDDestroyVector(status,&hC.data);
-  LALDDestroyVector(status,&hCX.data);
-  LALDDestroyVector(status,&hCY.data);
+  LALDDestroyVector(status->statusPtr,&h.data);
+  CHECKSTATUSPTR( status );
+  LALDDestroyVector(status->statusPtr,&hR.data);
+  CHECKSTATUSPTR( status );
+  LALDDestroyVector(status->statusPtr,&uphR.data);
+  CHECKSTATUSPTR( status );
+  LALDDestroyVector(status->statusPtr,&hC.data);
+  CHECKSTATUSPTR( status );
+  LALDDestroyVector(status->statusPtr,&hCX.data);
+  CHECKSTATUSPTR( status );
+  LALDDestroyVector(status->statusPtr,&hCY.data);
+  CHECKSTATUSPTR( status );
 
-/*   DETATCHSTATUSPTR( status ); */
+  /* Destroy vectors that hold filter coefficients */
+
+  LALDDestroyVector(status->statusPtr,&CinvLAL.directCoef);
+  CHECKSTATUSPTR( status );
+  LALDDestroyVector(status->statusPtr,&CinvLAL.recursCoef);
+  CHECKSTATUSPTR( status );
+  LALDDestroyVector(status->statusPtr,&CinvLAL.history);
+  CHECKSTATUSPTR( status );
+
+  for(p=0;p<NGfilt;p++){
+    LALDDestroyVector(status->statusPtr,&GLAL[p].directCoef);
+    CHECKSTATUSPTR( status );
+    LALDDestroyVector(status->statusPtr,&GLAL[p].recursCoef);
+    CHECKSTATUSPTR( status );
+    LALDDestroyVector(status->statusPtr,&GLAL[p].history);   
+    CHECKSTATUSPTR( status );
+  }
+
+  LALDDestroyVector(status->statusPtr,&AALAL.directCoef);
+  CHECKSTATUSPTR( status );
+  LALDDestroyVector(status->statusPtr,&AALAL.recursCoef);
+  CHECKSTATUSPTR( status );
+  LALDDestroyVector(status->statusPtr,&AALAL.history);
+  CHECKSTATUSPTR( status );
+
+  for(p=0;p<NAXfilt;p++){
+    LALDDestroyVector(status->statusPtr,&AXLAL[p].directCoef);
+    CHECKSTATUSPTR( status );
+    LALDDestroyVector(status->statusPtr,&AXLAL[p].recursCoef);
+    CHECKSTATUSPTR( status );
+    LALDDestroyVector(status->statusPtr,&AXLAL[p].history);
+    CHECKSTATUSPTR( status );
+  }
+
+  for(p=0;p<NAYfilt;p++){
+    LALDDestroyVector(status->statusPtr,&AYLAL[p].directCoef);
+    CHECKSTATUSPTR( status );
+    LALDDestroyVector(status->statusPtr,&AYLAL[p].recursCoef);
+    CHECKSTATUSPTR( status );
+    LALDDestroyVector(status->statusPtr,&AYLAL[p].history);
+    CHECKSTATUSPTR( status );
+  }
+
+
+
+  DETATCHSTATUSPTR( status );
   RETURN( status );
 }
 
@@ -496,9 +559,9 @@ int XLALMakeFilters2(LALStatus *status, REAL8IIRFilter *CinvLAL, REAL8IIRFilter 
   int l,n;
   
 
-  LALDCreateVector(status,&CinvLAL->directCoef,CinvDirectOrder);
-  LALDCreateVector(status,&CinvLAL->recursCoef,CinvRecursOrder);
-  LALDCreateVector(status,&CinvLAL->history,CinvDirectOrder-1);
+  LALDCreateVector(status->statusPtr,&CinvLAL->directCoef,CinvDirectOrder);
+  LALDCreateVector(status->statusPtr,&CinvLAL->recursCoef,CinvRecursOrder);
+  LALDCreateVector(status->statusPtr,&CinvLAL->history,CinvDirectOrder-1);
 
   for(l=0;l<CinvDirectOrder;l++) CinvLAL->directCoef->data[l]=CinvDirectCoefs[l];
   for(l=0;l<CinvDirectOrder;l++) CinvLAL->recursCoef->data[l]=-CinvRecursCoefs[l];
@@ -506,9 +569,9 @@ int XLALMakeFilters2(LALStatus *status, REAL8IIRFilter *CinvLAL, REAL8IIRFilter 
 
   for(n=0;n<NGfilt;n++){
 
-    LALDCreateVector(status,&GLAL[n].directCoef,G_Dord);
-    LALDCreateVector(status,&GLAL[n].recursCoef,G_Dord);
-    LALDCreateVector(status,&GLAL[n].history,G_Dord-1);
+    LALDCreateVector(status->statusPtr,&GLAL[n].directCoef,G_Dord);
+    LALDCreateVector(status->statusPtr,&GLAL[n].recursCoef,G_Dord);
+    LALDCreateVector(status->statusPtr,&GLAL[n].history,G_Dord-1);
    
     /* Fill coefficient vectors with coefficients from filters.h */
     for(l=0;l<G_Dord;l++) GLAL[n].directCoef->data[l]=G_D[n][l];
@@ -518,9 +581,9 @@ int XLALMakeFilters2(LALStatus *status, REAL8IIRFilter *CinvLAL, REAL8IIRFilter 
   }
 
 
-  LALDCreateVector(status,&AALAL->directCoef, A_0_Rord);
-  LALDCreateVector(status,&AALAL->recursCoef, A_0_Rord);
-  LALDCreateVector(status,&AALAL->history, A_0_Rord-1);
+  LALDCreateVector(status->statusPtr,&AALAL->directCoef, A_0_Rord);
+  LALDCreateVector(status->statusPtr,&AALAL->recursCoef, A_0_Rord);
+  LALDCreateVector(status->statusPtr,&AALAL->history, A_0_Rord-1);
 
   /* Fill coefficient vectors with coefficients from filters.h */
   for(l=0;l< A_0_Rord;l++) AALAL->directCoef->data[l]=A_0_D[l];
@@ -530,9 +593,9 @@ int XLALMakeFilters2(LALStatus *status, REAL8IIRFilter *CinvLAL, REAL8IIRFilter 
 
   for(n=0;n<NAXfilt;n++){
    
-    LALDCreateVector(status,&AXLAL[n].directCoef, A_digital_Rord);
-    LALDCreateVector(status,&AXLAL[n].recursCoef, A_digital_Rord);
-    LALDCreateVector(status,&AXLAL[n].history, A_digital_Rord-1);
+    LALDCreateVector(status->statusPtr,&AXLAL[n].directCoef, A_digital_Rord);
+    LALDCreateVector(status->statusPtr,&AXLAL[n].recursCoef, A_digital_Rord);
+    LALDCreateVector(status->statusPtr,&AXLAL[n].history, A_digital_Rord-1);
 
     for(l=0;l< A_digital_Rord;l++) AXLAL[n].directCoef->data[l]=AX_D[n][l];
     for(l=0;l< A_digital_Rord;l++) AXLAL[n].recursCoef->data[l]=-AX_R[n][l];
@@ -541,9 +604,9 @@ int XLALMakeFilters2(LALStatus *status, REAL8IIRFilter *CinvLAL, REAL8IIRFilter 
   }
 
   for(n=0;n<NAYfilt;n++){
-    LALDCreateVector(status,&AYLAL[n].directCoef, A_digital_Rord);
-    LALDCreateVector(status,&AYLAL[n].recursCoef, A_digital_Rord);
-    LALDCreateVector(status,&AYLAL[n].history, A_digital_Rord-1);
+    LALDCreateVector(status->statusPtr,&AYLAL[n].directCoef, A_digital_Rord);
+    LALDCreateVector(status->statusPtr,&AYLAL[n].recursCoef, A_digital_Rord);
+    LALDCreateVector(status->statusPtr,&AYLAL[n].history, A_digital_Rord-1);
 
     for(l=0;l< A_digital_Rord;l++) AYLAL[n].directCoef->data[l]=AY_D[n][l];
     for(l=0;l< A_digital_Rord;l++) AYLAL[n].recursCoef->data[l]=-AY_R[n][l];
@@ -637,14 +700,14 @@ REAL4 deltaT=input->AS_Q.deltaT, To=input->To;
 INT4 length = input->AS_Q.data->length;
 
   /* Create local data vectors */
-  LALCreateVector(status,&asq.data,(UINT4)(To/input->AS_Q.deltaT +0.5));
-  LALCreateVector(status,&darm.data,(UINT4)(To/input->DARM.deltaT +0.5));
-  LALCreateVector(status,&exc.data,(UINT4)(To/input->EXC.deltaT +0.5));
+  LALCreateVector(status->statusPtr,&asq.data,(UINT4)(To/input->AS_Q.deltaT +0.5));
+  LALCreateVector(status->statusPtr,&darm.data,(UINT4)(To/input->DARM.deltaT +0.5));
+  LALCreateVector(status->statusPtr,&exc.data,(UINT4)(To/input->EXC.deltaT +0.5));
 
   /* Create Window vectors */
-  LALCreateVector(status,&asqwin,(UINT4)(To/input->AS_Q.deltaT +0.5));
-  LALCreateVector(status,&darmwin,(UINT4)(To/input->DARM.deltaT +0.5));
-  LALCreateVector(status,&excwin,(UINT4)(To/input->EXC.deltaT +0.5));
+  LALCreateVector(status->statusPtr,&asqwin,(UINT4)(To/input->AS_Q.deltaT +0.5));
+  LALCreateVector(status->statusPtr,&darmwin,(UINT4)(To/input->DARM.deltaT +0.5));
+  LALCreateVector(status->statusPtr,&excwin,(UINT4)(To/input->EXC.deltaT +0.5));
 
   /* assign time spacing for local time series */
   asq.deltaT=input->AS_Q.deltaT;
@@ -656,15 +719,15 @@ INT4 length = input->AS_Q.data->length;
   /* windows for time domain channels */
   /* asq */
   winparams.length=(INT4)(To/asq.deltaT +0.5);
-  LALWindow(status,asqwin,&winparams);
+  LALWindow(status->statusPtr,asqwin,&winparams);
   
   /* darm */
   winparams.length=(INT4)(To/darm.deltaT +0.5);
-  LALWindow(status,darmwin,&winparams);
+  LALWindow(status->statusPtr,darmwin,&winparams);
 
   /* exc */
   winparams.length=(INT4)(To/exc.deltaT +0.5);
-  LALWindow(status,excwin,&winparams);
+  LALWindow(status->statusPtr,excwin,&winparams);
 
   for(m=0; m < (UINT4)(deltaT*length) / To; m++)
     {
@@ -692,7 +755,7 @@ INT4 length = input->AS_Q.data->length;
       params.openloop =  input->Go;
       params.digital = input->Do;
 
-      LALComputeCalibrationFactors(status,&factors,&params);
+      LALComputeCalibrationFactors(status->statusPtr,&factors,&params);
 
       output->alpha.data->data[m]= factors.alpha;
       output->beta.data->data[m]= factors.beta;
@@ -710,13 +773,13 @@ INT4 length = input->AS_Q.data->length;
     }
 
   /* Clean up */
-  LALDestroyVector(status,&darm.data);
-  LALDestroyVector(status,&exc.data);
-  LALDestroyVector(status,&asq.data);
+  LALDestroyVector(status->statusPtr,&darm.data);
+  LALDestroyVector(status->statusPtr,&exc.data);
+  LALDestroyVector(status->statusPtr,&asq.data);
 
-  LALDestroyVector(status,&asqwin);
-  LALDestroyVector(status,&darmwin);
-  LALDestroyVector(status,&excwin);
+  LALDestroyVector(status->statusPtr,&asqwin);
+  LALDestroyVector(status->statusPtr,&darmwin);
+  LALDestroyVector(status->statusPtr,&excwin);
 
   return 0;
 }
