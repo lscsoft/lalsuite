@@ -566,28 +566,6 @@ void EPConditionData(
 
     ASSERT (params, status, EPSEARCHH_ENULLP, EPSEARCHH_MSGENULLP);
 
-    /****************************************************************
-     * 
-     * check that there is enough data to construct the required segments
-     * :TODO:  This assumes that overlap is half the number of points
-     * in a segment.  
-     *
-     * Also,  ovrlap points of data are ignored at the beginning and
-     * end because of the Butterworth filter corruption.  As a result,
-     * we should have 2 * ovrlap more points than one expects
-     *
-     * This changes with new time-frequency plane construction
-     *
-     ****************************************************************/
-
-    if ( series->data->length < 
-            params->initParams->numPoints * ( params->initParams->numSegments - 1 ) / 2 +
-            4 * params->ovrlap )
-    {
-        ABORT (status, EPSEARCHH_EDATZ, EPSEARCHH_MSGEDATZ); 
-    }
-
-
     /* **************************************************************
      *
      * Resample the data if necessary
@@ -636,16 +614,8 @@ void EPConditionData(
     LALButterworthREAL4TimeSeries(status->statusPtr, series, &highpassParam);
     CHECKSTATUSPTR (status);
             
-    /* Point dummyData ovrlap into series to avoid corruption */
-    dummyData = series->data->data;
-    /* no need for the next line with segments twice as long 
-     * dummyData += (params->ovrlap);
-     */
-    LALGPStoINT8(status->statusPtr, &dataTimeNS, &series->epoch);
-    /* no need for the next line with segments twice as long 
-     * dataTimeNS += (INT8) (1e9 * params->ovrlap * series->deltaT);
-     */
-
+    LALShrinkREAL4TimeSeries(status->statusPtr, series, params->ovrlap, series->data->length - 2*params->ovrlap);
+    CHECKSTATUSPTR (status);
     /****************************************************************
      * 
      * clean up and return
