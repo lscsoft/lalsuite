@@ -291,6 +291,7 @@ Usage: lalapps_inspiral_pipe [options]
   -j, --injections FILE    add simulated inspirals from sim_inspiral in FILE
 
   -S, --time-slide SEC     slide TAMA data forward by SEC seconds
+  -N, --time-slide-ns NS   slide TAMA data forward by NS nano seconds
 
   -P, --priority PRIO      run jobs with condor priority PRIO
 
@@ -303,7 +304,7 @@ Usage: lalapps_inspiral_pipe [options]
 
 ##############################################################################
 # pasrse the command line options to figure out what we should do
-shortop = "hvu:cj:pP:l:f:sodLS:tO"
+shortop = "hvu:cj:pP:l:f:sodLS:N:tO"
 longop = [
   "help",
   "version",
@@ -318,6 +319,7 @@ longop = [
   "datafind-only",
   "ligo-analysis",
   "time-slide=",
+  "time-slide-ns=",
   "tama-coincidence",
   "tama-output"
   ]
@@ -376,6 +378,8 @@ for o, a in opts:
     playground_only = 2
   elif o in ("-S", "--time-slide"):
     slide_time =  int(a) 
+  elif o in ("-N", "--time-slide-ns"):
+    slide_time_ns = int(a)
   elif o in ("-P", "--priority"):
     condor_prio = a
   elif o in ("-l", "--log-path"):
@@ -399,7 +403,7 @@ if not config_file:
 
 
 ##############################################################################
-# try and make a directory to store the cache files and job logs
+# try to make a directory to store the cache files and job logs
 try: os.mkdir('cache')
 except: pass
 try: os.mkdir('logs')
@@ -455,8 +459,7 @@ sire_job = inspiral.SireJob(cp)
 sire_inj_job = inspiral.SireJob(cp)
 sire_cl_inj_job = inspiral.SireJob(cp)
 
-
-
+#############################################################################
 # set better submit file names than the default
 if usertag:
   subsuffix = '.' + usertag + '.sub'
@@ -475,8 +478,7 @@ sire_job.set_sub_file( basename + '.sire' + subsuffix )
 sire_inj_job.set_sub_file( basename + '.sire_inj' + subsuffix )
 sire_cl_inj_job.set_sub_file( basename + '.sire_inj_clust' + subsuffix )
 
-
-
+#############################################################################
 # set the usertag in the jobs
 if usertag:
   tmplt_job.add_opt('user-tag',usertag)
@@ -491,12 +493,13 @@ if usertag:
   sire_inj_job.add_opt('user-tag',usertag)
   sire_cl_inj_job.add_opt('user-tag',usertag)
 
-
+#############################################################################
 # add the injections
 if inj_file:
   insp_job.add_opt('injection-file',inj_file)
   trig_insp_job.add_opt('injection-file',inj_file)
 
+#############################################################################
 # add the playground information to the inca and sire jobs
 if playground_only:
   inca_job.add_opt('playground-only',' ')
@@ -519,7 +522,14 @@ else:
   sire_inj_job.add_opt('exclude-playground',' ')
   sire_cl_inj_job.add_opt('exclude-playground',' ')
 
-  
+#############################################################################
+# add the slide argument to inca if we are doing a background estimation
+if slide_time:
+  lt_inca_job.add_opt('slide-time',str(slide_time))
+  if slide_time_ns:
+    lt_inca_job.add_opt('slide-time-ns',str(slide_time))
+
+#############################################################################  
 # set the condor job priority
 if condor_prio:
   df_job.add_condor_cmd('priority',condor_prio)
@@ -534,12 +544,6 @@ if condor_prio:
   sire_job.add_condor_cmd('priority',condor_prio)
   sire_inj_job.add_condor_cmd('priority',condor_prio)
   sire_cl_inj_job.add_condor_cmd('priority',condor_prio)
-
-# add the slide argument to inca if we are doing a background estimation
-if slide_time:
-  lt_inca_job.add_opt('slide-time',str(slide_time))
-  if slide_time_ns:
-    lt_inca_job.add_opt('slide-time-ns',str(slide_time))
 
 ##############################################################################
 # get the thresholds, pad and chunk lengths from the values in the ini file
@@ -559,6 +563,8 @@ o = int(cp.get('inspiral', 'segment-overlap'))
 length = ( n * s - ( s - 1 ) * o ) / r
 overlap = o / r
 
+
+
 ##############################################################################
 # Step 1: read science segs that are greater or equal to the length of data
 # in a chunk (defined by the variable "length" above)
@@ -574,16 +580,9 @@ h1_data.read(cp.get('input','h1-segments'),length)
 h2_data.read(cp.get('input','h2-segments'),length)
 if tama_overlap or tama_coincidence or slide_time:
   # read in the tama file in the format provided and store as science data
-  t_data = []
-  file = open(cp.get('input','tama-segments'),"r")
-  for line in file:
-    columns = line.split()
-    id = int(columns[0])
-    start = int(math.ceil(float(columns[3])))
-    end = int(math.floor(float(columns[4])))
-    dur = end - start	
-    x = pipeline.ScienceSegment(tuple([id, start, end, dur]))
-    t_data.append(x)
+  t_data = pipeline.ScienceData()
+  t_data.tama_read(cp.get('input','tama-segments'))
+  if playground_only: t_data.play()
 print "done"
 
 ##############################################################################
@@ -844,7 +843,10 @@ for seg in h1_h2_data:
 print "done"
 
 ##############################################################################
-# Step 14: Run tama2ligolw on the tama triggers
+# Step 14: Run tama2ligolw on the tama triggers creating two lists:
+# T1-INSPIRAL: containing all those triggers which occur in times being used 
+#              in the LIGO-TAMA analysis
+# TAMA-INSPIRAL: containing all TAMA triggers.
 
 if tama_coincidence or slide_time:
   print "Converting triggers to LIGO Lw xml format...",
@@ -889,8 +891,9 @@ if tama_coincidence or slide_time:
     if tama_coincidence: dag.add_node(tama2lw)
     tama_data_analyzed.append(AnalyzedTAMAData(seg,tama2lw))
 
-    if slide_time: tama_analyzed = tama_data_analyzed
-    else: tama_analyzed = tama_segs_analyzed
+  tama_analyzed = []
+  if slide_time: tama_analyzed = tama_data_analyzed
+  else: tama_analyzed = tama_segs_analyzed
 
   print "done"
 
@@ -902,7 +905,7 @@ if tama_coincidence or slide_time:
 ##############################################################################
 # Step 15: Test for coincidence between the single IFO ligo and tama triggers
 if slide_time:
-  print "re-computing TAMA data with slide...",
+  print "re-computing TAMA and LIGO/TAMA data with slide...",
   sys.stdout.flush()
 
   if not slide_time_ns:
@@ -916,6 +919,9 @@ if slide_time:
   for seg in t_data:
     seg.set_start(seg.start() + seg_start_increment)
     seg.set_end(seg.end() + seg_end_increment)
+
+  ligo_tama_data = copy.deepcopy(ligo_data)
+  ligo_tama_data.intersection(t_data)
 
   print "done"
   sys.stdout.flush()
@@ -1377,9 +1383,12 @@ if output_segs:
       seg.dur()))
   f.close()
 
-if tama_overlap or tama_coincidence:
+if tama_overlap or tama_coincidence or slide_time:
   print >> log_fh, "\n===========================================\n"
-  print >> log_fh, "Tama Locked Segments:\n"
+  if slide_time: 
+    print >> log_fh, "Slid Tama Segments:\n"
+  else:
+    print >> log_fh, "Tama Locked Segments:\n"
   total_time = 0
   for tama_seg in t_data:
     print >> log_fh, tama_seg
@@ -1387,28 +1396,33 @@ if tama_overlap or tama_coincidence:
   print >> log_fh, "\n total time", total_time, "seconds"
 
 
-if tama_coincidence:
+if tama_coincidence or slide_time:
   print >> log_fh, "\n===========================================\n"
   log_fh.write( 
-    "Getting triggers from " + str(len(tama_segs_analyzed)) + \
+    "Getting triggers from " + str(len(tama_analyzed)) + \
     " TAMA segments\n" )
   total_time = 0
-  for t_done in tama_segs_analyzed:
+  for t_done in tama_analyzed:
     print >> log_fh, t_done.get_seg()
     seg = t_done.get_seg()
     total_time += seg.dur() 
   print >> log_fh, "\n total time", total_time, "seconds"
   
    
-if tama_overlap or tama_coincidence:
+if tama_overlap or tama_coincidence or slide_time:
   if output_segs:
-    f = open('tama_segs.txt', 'w')
+    if slide_time:
+      f = open('tama_slide_segs.txt', 'w')
+    elif playground_only:
+      f = open('tama_play_segs.txt', 'w')
+    else:
+      f = open('tama_segs.txt', 'w')
     for seg in t_data:
       f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
         seg.dur()))
     f.close()
 
-if tama_coincidence:  
+if tama_coincidence or slide_time:  
   print >> log_fh, "\n===========================================\n"
   log_fh.write( "Writing " + str(len(ligo_tama_data)) + 
     " LIGO-TAMA coincident segments\n" )
@@ -1419,7 +1433,9 @@ if tama_coincidence:
   print >> log_fh, "\n total time", total_time, "seconds"
 
   if output_segs:
-    if playground_only:
+    if slide_time:
+      f = open('ligo_tama_slide_segs.txt', 'w')
+    elif playground_only:
       f = open('ligo_tama_play_segs.txt', 'w')
     else:
       f = open('ligo_tama_segs.txt', 'w')
