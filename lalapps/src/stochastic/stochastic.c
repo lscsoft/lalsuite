@@ -463,14 +463,10 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 
 	/* allocate memory for reduced frequency band PSDs */
-	psdOne.data = NULL;
-	psdTwo.data = NULL;
-	LAL_CALL( LALCreateVector(&status, &psdOne.data, filterLength), &status );
-	LAL_CALL( LALCreateVector(&status, &psdTwo.data, filterLength), &status );
-	memset (psdOne.data->data, 0, \
-			psdOne.data->length * sizeof(*psdOne.data->data));
-	memset( psdTwo.data->data, 0, \
-			psdTwo.data->length * sizeof(*psdTwo.data->data));
+	psdOne.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+	psdTwo.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+	psdOne.data->length = filterLength;
+	psdTwo.data->length = filterLength;
 
 	/* set window parameters for PSD estimation */
 	winparPSD.length = windowPSDLength;
@@ -1082,11 +1078,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 		}
 
 		/* reduce to the optimal filter frequency range */
-		for (i = 0; i < filterLength; i++)
-		{
-			psdOne.data->data[i] = psdTempOne.data->data[i + numFMin];
-			psdTwo.data->data[i] = psdTempTwo.data->data[i + numFMin];
-		}
+		psdOne.data->data = psdTempOne.data->data + numFMin;
+		psdTwo.data->data = psdTempTwo.data->data + numFMin;
 
 		/* output the results */
 		if (verbose_flag)
@@ -1233,8 +1226,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 	LALFree(segmentTwo.data);
 	LAL_CALL( LALDestroyVector(&status, &(psdTempOne.data)), &status );
 	LAL_CALL( LALDestroyVector(&status, &(psdTempTwo.data)), &status );
-	LAL_CALL( LALDestroyVector(&status, &(psdOne.data)), &status );
-	LAL_CALL( LALDestroyVector(&status, &(psdTwo.data)), &status );
+	LALFree(psdOne.data);
+	LALFree(psdTwo.data);
 	LAL_CALL( LALCDestroyVector(&status, &(responseOne.data)), &status );
 	LAL_CALL( LALCDestroyVector(&status, &(responseTwo.data)), &status );
 	LAL_CALL( LALCDestroyVector(&status, &(responseTempOne.data)), &status );
