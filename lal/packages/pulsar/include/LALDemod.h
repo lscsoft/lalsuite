@@ -101,7 +101,7 @@ Now, computing $\hat{F_{\hat{a}}}$ and $\hat{F_{\hat{b}}}$ can be done in parall
 #include <lal/DetectorSite.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
-#include <lal/LALComputeAM.h>
+#include "LALComputeAM.h"
 #include <lal/ComputeSky.h>
 #include <lal/LALBarycenter.h>
 
@@ -223,6 +223,7 @@ typedef struct DemodParTag{
   REAL8		*skyConst;	/* Constants computed in ComputeSky.c */
   REAL8		*spinDwn;	/* Spindown parameter set */
   AMCoeffs      *amcoe;
+  INT4          *sftPerCoh;
 }DemodPar;
 
 
@@ -255,8 +256,8 @@ typedef struct FFTTag
 typedef struct DeFTPeriodogramTag
 {
   REAL8FrequencySeries *fft;
-  COMPLEX16FrequencySeries *fA;
-  COMPLEX16FrequencySeries *fB;
+  COMPLEX16FrequencySeries *fA;   
+  COMPLEX16FrequencySeries *fB;   
   ParameterSet par;
 } DeFTPeriodogram;
 
@@ -278,6 +279,8 @@ void times(REAL8 ,
 		 INT4, 
 		 LIGOTimeGPS *, 
 		 INT4 );
+
+void times2(REAL8 tSFT, INT4 howMany, LIGOTimeGPS **ts, INT4 **sftPerCoh, INT4 sw, INT4 mCohSFT);
 	
 /* <lalLaTeX>
 \newpage\input{LALDemodTestC}

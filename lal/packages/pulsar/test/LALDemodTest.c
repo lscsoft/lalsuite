@@ -223,15 +223,12 @@ if ( lalDebugLevel & LALERROR )                                      \
 }                                                                    \
 else (void)(0)
 
-#include <lal/LALDemod.h>
-#include <lal/LALInitBarycenter.h>
-#include <lal/FileIO.h>
-#include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
+#include "LALDemod.h"
 
 static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 
 static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
+
 
 NRCSID(LALDEMODTESTC, "$Id$");
 
@@ -242,12 +239,10 @@ int main(int argc, char **argv)
   static LALStatus status;
 	
   /***** VARIABLE DECLARATION *****/
-  char earthEphemeris[] = "earth98.dat";
-  char sunEphemeris[] = "sun98.dat";
 
   ParameterSet *signalParams;
   ParameterSet *templateParams;
-  char *basicInputsFile;
+  const char *basicInputsFile;
   FILE *bif;
   REAL8 tObs, tCoh, tSFT;
   REAL8 oneOverSqrtTSFT;
@@ -279,10 +274,10 @@ int main(int argc, char **argv)
 	
   DeFTPeriodogram **xHat;
 	
-  FILE /* *PeaksFile, *TimeSFile, *SftFile, */ *XhatFile;
+  FILE *PeaksFile, *TimeSFile, *SftFile, *XhatFile;
 
   const CHAR *noi=NULL;
-  INT4 deletions=1;
+  INT4 deletions=0;
   const CHAR *output=NULL;
 	
   CHAR filename[13];
@@ -310,7 +305,9 @@ int main(int argc, char **argv)
   DetectorResponse cwDetector;
   AMCoeffsParams *amParams;
   AMCoeffs amc;
-
+  INT4 *sftPerCoh;
+  INT4 totalSFT=0;
+  
 #define DEBUG 1
 #if (0)
      
@@ -359,7 +356,7 @@ int main(int argc, char **argv)
     /* turn timestamp deletions on? if string is not NULL, it will be */
     else if(!strcmp(argv[arg],"-d"))
       {
-	deletions=atoi(argv[++arg]);
+	deletions=1;
 	arg++;
       }
     
@@ -446,9 +443,6 @@ int main(int argc, char **argv)
   /*	rounded the resulting number of samples to the nearest smallest power 	*/ 
   /*	of two. 							       	*/
 
-  /* Convert signal spindown to conform with GenerateTaylorCW() definition */
-  for(i=0;i<signalParams->spind->m;i++){signalParams->spind->spParams[i] /= f0;}
-
   {
     REAL8 tempf0Band;
     /* compute size of SFT wings */
@@ -456,9 +450,9 @@ int main(int argc, char **argv)
     /* Adjust search band to include wings */
     f0Band += 2.0*fWing;
     tempf0Band = f0Band;
-    tSFT=9.6e4/sqrt(f0);
+    tSFT=1.0e3;/*9.6e4/sqrt(f0);*/
     nDeltaF = (INT4)(ceil(f0Band*tSFT));
-    tSFT = (REAL8)nDeltaF/f0Band;
+      /* tSFT = (REAL8)nDeltaF/f0Band;*/
     oneOverSqrtTSFT = 1.0/sqrt(tSFT);
     /* Number of data in time series for 1 SFT */
     dfSFT=1.0/tSFT;
@@ -495,21 +489,34 @@ int main(int argc, char **argv)
   /* Number of SFTs needed during observation time */
   mObsSFT=mCohSFT*mObsCoh;	
 
+  printf("%d %d %d\n",mObsSFT,mObsCoh,mCohSFT);
+
   /* convert input angles from degrees to radians */
   signalParams->skyP->alpha=signalParams->skyP->alpha*LAL_TWOPI/360.0;
   signalParams->skyP->delta=signalParams->skyP->delta*LAL_TWOPI/360.0;
   templateParams->skyP->alpha=templateParams->skyP->alpha*LAL_TWOPI/360.0;
   templateParams->skyP->delta=templateParams->skyP->delta*LAL_TWOPI/360.0;
 
+  /* Convert signal spindown to conform with GenerateTaylorCW() definition */
+  for(i=0;i<signalParams->spind->m;i++){signalParams->spind->spParams[i] /= f0;}
+
   /***** END USEFUL QUANTITIES *****/	
 
 
   /***** CALL ROUTINE TO GENERATE TIMESTAMPS *****/
 	
-  timeStamps=(LIGOTimeGPS *)LALMalloc(mObsSFT*sizeof(LIGOTimeGPS));
-  times(tSFT, mObsSFT, timeStamps, deletions);
-	
-  /***** END TIMESTAMPS *****/
+  /*times(tSFT, mObsSFT, timeStamps, deletions);*/
+  i=0;
+  times2(tSFT, mObsCoh, &timeStamps, &sftPerCoh, deletions, mCohSFT);
+  /*
+    In order to tell many of the loops in this code how many times to iterate,
+     we set a variable which is equal to the last entry in the sftPerCoh array.
+     Note, that for no gaps, this number is simply mObsSFT; with gaps, it's 
+     something else.  Regardless, this is the value that the subroutines know 
+     as mObsSFT.
+  */
+  totalSFT = sftPerCoh[mObsCoh];
+    /***** END TIMESTAMPS *****/
 
 
   /***** CREATE NOISE *****/
@@ -540,8 +547,8 @@ int main(int argc, char **argv)
 
   /* Quantities computed for barycentering */
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = earthEphemeris;
-  (*edat).ephiles.sunEphemeris = sunEphemeris;
+  (*edat).ephiles.earthEphemeris = "earth98.dat";
+  (*edat).ephiles.sunEphemeris = "sun98.dat";
 
   /* Read in ephemerides */  
   LALInitBarycenter(&status, edat);
@@ -560,13 +567,12 @@ int main(int argc, char **argv)
   baryinput.delta=signalParams->skyP->delta;
   baryinput.dInv=0.e0;
 
-
   /***** CREATE SIGNAL *****/
   
   /* Set up parameter structure */  
   /* Source position */
-  genTayParams.position.latitude  = signalParams->skyP->delta;
-  genTayParams.position.longitude = signalParams->skyP->alpha;
+  genTayParams.position.latitude  = signalParams->skyP->alpha;
+  genTayParams.position.longitude = signalParams->skyP->delta;
   genTayParams.position.system = COORDINATESYSTEM_EQUATORIAL;
   /* Source polarization angle */
   /* Note, that the way we compute the statistic, we don't care what this value is. */
@@ -653,8 +659,8 @@ int main(int argc, char **argv)
      * array is the width of the band we're interested in,
      * plus f0*4E-4 for the 'wings', plus a bit of wiggle room.
      */
-    SFTData=(FFT **)LALMalloc(mObsSFT*sizeof(FFT *));
-    for(i=0;i<mObsSFT;i++){
+    SFTData=(FFT **)LALMalloc(totalSFT*sizeof(FFT *));
+    for(i=0;i<totalSFT;i++){
       SFTData[i]=(FFT *)LALMalloc(sizeof(FFT));
       SFTData[i]->fft=(COMPLEX8FrequencySeries *)
 	LALMalloc(sizeof(COMPLEX8FrequencySeries));
@@ -668,13 +674,13 @@ int main(int argc, char **argv)
      * be warned that these files may be HUGE (10s-100s of GB).
      */
 #if(0)   
-    PeaksFile=LALFopen("/tmp/peaks.data","w");
+    PeaksFile=LALFopen("/scratch/steveb/peaks.data","w");
 #endif
 #if(0)	
-    TimeSFile=LALFopen("/tmp/ts.data","w");
+    TimeSFile=LALFopen("/opt/data/new/ts.data","w");
 #endif
 #if(0)
-    SftFile=LALFopen("/tmp/sft.data","w");
+    SftFile=LALFopen("/opt/data/new/sft.data","w");
 #endif
 
     {
@@ -682,7 +688,7 @@ int main(int argc, char **argv)
       
       LALSCreateVector(&status, &tempTS, (UINT4)len); 
       
-      for(a=0;a<mObsSFT;a++)
+      for(a=0;a<totalSFT;a++)
 	{
 	  REAL4Vector *ts = timeSeries->data;
 	  /*  
@@ -715,16 +721,6 @@ int main(int argc, char **argv)
 	  
 	  /* Perform FFTW-LAL Fast Fourier Transform */
 	  LALForwardRealFFT(&status, fvec, tempTS, pfwd);
-
-	    
-#if(0)
-	  {INT4 g;
-	  for(g=0; g<fvec->length; g++)
-	    {
-	      COMPLEX8 temp= fvec->data[g];
-	      fprintf(SftFile,"%20.10lf\n",temp.re*temp.re+temp.im*temp.im);
-	    }}
-#endif
 	  
 	  {     
 	    INT4 fL = ifMin;
@@ -737,16 +733,20 @@ int main(int argc, char **argv)
 		/* Also normalise */
 		tempSFT[cnt].re = fTemp[fL].re * oneOverSqrtTSFT;
 		tempSFT[cnt].im = fTemp[fL].im * oneOverSqrtTSFT;
+
 #if (0)
 		fprintf(SftFile,"%20.12lf %20.12lf\n", (REAL8)fL*dfSFT, tempSFT[cnt].re*tempSFT[cnt].re+tempSFT[cnt].im*tempSFT[cnt].im);
 #endif
+
 		cnt++; fL++;
 		
 	      }
 
 #if(0)
 	    for(i=0;i<cnt-1;i++)
-	      {	
+	      {
+		REAL8 pw,pwMax;
+
 		pw = SFTData[a]->fft->data->data[i].re * 
 		  SFTData[a]->fft->data->data[i].re +
 		  SFTData[a]->fft->data->data[i].im *
@@ -760,18 +760,21 @@ int main(int argc, char **argv)
 	      }
 	    {
 	      REAL8 Temp, Temp2, Temp3;
+	      INT4 ipwMax;
 	      TimeToFloat(&Temp, &(timeStamps[a]));
 	      TimeToFloat(&Temp2, &(timeStamps[0]));
 	      Temp3 = (Temp-Temp2)/86400.0;
 	      fprintf(PeaksFile,"%d\t%d\n",ipwMax,a);
 	    }
 #endif
+
 	  }
 	  /* assign particulars to each SFT */
 	  SFTData[a]->fft->data->length = nDeltaF+1;  
 	  SFTData[a]->fft->epoch = timeStamps[a];
 	  SFTData[a]->fft->f0 = f0Min; /* this is the frequency of the first freq in the band */
 	  SFTData[a]->fft->deltaF = dfSFT;
+	  printf("Created SFT number %d of %d\n.",a, mObsSFT);
 	  
 	}
       LALSDestroyVector(&status, &tempTS);
@@ -886,17 +889,17 @@ int main(int argc, char **argv)
   amParams->earth = &earth;
   amParams->edat = edat;
   amParams->das->pDetector = &cachedDetector; 
-  amParams->das->pSource->equatorialCoords.latitude = templateParams->skyP->delta;
-  amParams->das->pSource->equatorialCoords.longitude = templateParams->skyP->alpha;
+  amParams->das->pSource->equatorialCoords.latitude = signalParams->skyP->alpha;
+  amParams->das->pSource->equatorialCoords.longitude = signalParams->skyP->delta;
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams->polAngle = genTayParams.psi;
-  amParams->tObs = tObs;
+  amParams->mObsSFT = totalSFT;
  /* Allocate space for AMCoeffs */
   amc.a = NULL;
   amc.b = NULL;
-  LALSCreateVector(&status, &(amc.a), (UINT4)mObsSFT);
-  LALSCreateVector(&status, &(amc.b), (UINT4)mObsSFT);
+  LALSCreateVector(&status, &(amc.a), (UINT4)totalSFT);
+  LALSCreateVector(&status, &(amc.b), (UINT4)totalSFT);
  
  /* 
   * Compute timestamps for middle of each ts chunk 
@@ -908,22 +911,27 @@ int main(int argc, char **argv)
   * of 10ksec, the value changes significantly.  
   */
   {
-    LIGOTimeGPS *midTS;  /* MODIFIED BY JOLIEN: DYNAMIC MEMORY ALLOCATION */
-    midTS = LALCalloc( mObsSFT, sizeof( *midTS ) );
-    if ( ! midTS )
-      return fprintf( stderr, "Allocation error near line %d", __LINE__ ), 1;
+    LIGOTimeGPS *midTS;
+	REAL8 t;
 
-    for(k=0; k<mObsSFT; k++)
+	midTS = (LIGOTimeGPS *)LALCalloc(totalSFT,sizeof(LIGOTimeGPS));
+    /* compute timestamps of end and beg */
+    amParams->ts0 = timeStamps[0];
+    TimeToFloat(&t, &(timeStamps[0]));
+    t+=tObs;
+    FloatToTime(&(amParams->tsEnd), &t);
+    
+    for(k=0; k<totalSFT; k++)
       {
 	REAL8 teemp=0.0;
        
 	TimeToFloat(&teemp, &(timeStamps[k]));
-	teemp += 0.5/dfSFT;
+	teemp += 0.5*tSFT;
 	FloatToTime(&(midTS[k]), &teemp);
       }
     /* Compute the AM coefficients */
     LALComputeAM(&status, &amc, midTS, amParams);
-    LALFree( midTS );
+    LALFree(midTS);
   }
 
   /***** DEMODULATE SIGNAL *****/
@@ -931,7 +939,7 @@ int main(int argc, char **argv)
  /* Allocate space and set quantity values for demodulation parameters */
   demParams=(DemodPar *)LALMalloc(sizeof(DemodPar));
   demParams->skyConst=(REAL8 *)LALMalloc((2*templateParams->spind->m * 
-					  (mObsSFT+1)+2*mObsSFT+3)*sizeof(REAL8));
+					  (totalSFT+1)+2*totalSFT+3)*sizeof(REAL8));
   demParams->spinDwn=(REAL8 *)LALMalloc(templateParams->spind->m*sizeof(REAL8));
   demParams->if0Max=if0Max;
   demParams->if0Min=if0Min;
@@ -940,27 +948,27 @@ int main(int argc, char **argv)
   demParams->ifMin=ifMin;
   demParams->spinDwnOrder=templateParams->spind->m;
   demParams->amcoe = &amc;
- 
- for(i=0;i<signalParams->spind->m;i++)
-   {
-     demParams->spinDwn[i]=templateParams->spind->spParams[i];
-   }
- 
- /* Allocate space and set quantities for call to ComputeSky() */
- csParams=(CSParams *)LALMalloc(sizeof(CSParams));
- csParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
- csParams->skyPos[0]=templateParams->skyP->alpha;
+  demParams->sftPerCoh = sftPerCoh;
+  for(i=0;i<signalParams->spind->m;i++)
+    {
+      demParams->spinDwn[i]=templateParams->spind->spParams[i];
+    }
+  
+  /* Allocate space and set quantities for call to ComputeSky() */
+  csParams=(CSParams *)LALMalloc(sizeof(CSParams));
+  csParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
+  csParams->skyPos[0]=templateParams->skyP->alpha;
  csParams->skyPos[1]=templateParams->skyP->delta;
  csParams->tGPS=timeStamps;
  csParams->spinDwnOrder=templateParams->spind->m;
- csParams->mObsSFT=mObsSFT;
+ csParams->mObsSFT=totalSFT;
  csParams->tSFT=tSFT;
  csParams->edat=edat; 
  csParams->emit=&emit;
  csParams->earth=&earth;
  csParams->baryinput=&baryinput;
 
-  iSkyCoh=0;
+ iSkyCoh=0;
   
   /* Call COMPUTESKY() */
   ComputeSky(&status, demParams->skyConst, iSkyCoh, csParams);
@@ -988,29 +996,49 @@ int main(int argc, char **argv)
       xHat[i]->fB->data->data=(COMPLEX16 *)LALMalloc((UINT4)((if0Max-if0Min+1)*mCohSFT)*sizeof(COMPLEX16));      
       xHat[i]->fB->data->length=(UINT4)((if0Max-if0Min+1)*mCohSFT);
     }
-  
-  for(k=0; k<mObsCoh; k++)
-    {
-      demParams->iCoh=k;
-      
-      /**************************/
-      /*       DEMODULATE       */
-      /**************************/
-      
-      LALDemod(&status, *(xHat+k), SFTData, demParams);
-      if(output!=NULL){
-	sprintf(filename,"/scratch/steveb/xhat_%d.data",k);
-	XhatFile=LALFopen(filename,"w");
-	printf("Dumping demodulated data to disk: xhat_%d.data  \n",k);
-	for(i=0;i<(if0Max-if0Min)*mCohSFT+1;i++) {
-	  fprintf(XhatFile,"%24.16f\t%24.16f\n",f0Min+(REAL8)i/tCoh, 	
-		  xHat[k]->fft->data->data[i]);
-	}
-	LALFclose(XhatFile);
-      }
+  {
+    FILE *ff;
+    printf("Got here.\n");
+    ff=fopen("/scratch/steveb/new/deftPeaks.data","a");
 
-    }		
-  /***** END DEMODULATION *****/
+    for(k=0; k<mObsCoh; k++)
+      {
+	demParams->iCoh=k;
+	
+	/**************************/
+	/*       DEMODULATE       */
+	/**************************/
+	
+	LALDemod(&status, *(xHat+k), SFTData, demParams);
+	if(output!=NULL){
+	  sprintf(filename,"/scratch/steveb/new/xhat_%d.data",k);
+	  XhatFile=LALFopen(filename,"w");
+	  printf("Dumping demodulated data to disk: xhat_%d.data  \n",k);
+	  
+	  for(i=0;i<(if0Max-if0Min)*mCohSFT+1;i++) {
+	    fprintf(XhatFile,"%24.16f\t%24.16f\n",f0Min+(REAL8)i/tCoh, 	
+		    xHat[k]->fft->data->data[i]);
+	  }
+	  LALFclose(XhatFile);
+	}
+      }
+    {
+      INT4 ipwMax=0, ipw=0;
+      REAL8 pw=0.0, pwMax=0.0;
+      INT4 count=0;
+      
+      while(count< (if0Max-if0Min)*mCohSFT-1)
+	{
+	  REAL8 *temp=xHat[0]->fft->data->data;
+	  pw = temp[count]+temp[count-1]+temp[count+1]+temp[count-2]+temp[count+2];
+	  if(pw>pwMax) {pwMax=pw;ipwMax=count;}
+	  count++;
+	}
+    fprintf(ff,"%d %10.10lf %10.10lf\n", ipwMax,tCoh, pwMax);
+    }
+    fclose(ff);
+  }	
+/***** END DEMODULATION *****/
 			
 		
   /***** DEALLOCATION *****/
@@ -1023,7 +1051,7 @@ int main(int argc, char **argv)
   LALFree(amParams);
   
   /* Deallocate SFTData structure, since we don't need it anymore */
-  for(i=0;i<mObsSFT;i++)
+  for(i=0;i<totalSFT;i++)
     {
       LALFree(SFTData[i]->fft->data->data);
       LALFree(SFTData[i]->fft->data);
@@ -1064,9 +1092,12 @@ int main(int argc, char **argv)
   LALFree(demParams->spinDwn);
   LALFree(demParams);
 	
-  LALFree(timeStamps);
   LALFree(basicInputsFile);
   /* Anything else */
+
+  /* Deallocate timestamps */
+  LALFree(timeStamps);
+  LALFree(sftPerCoh);
 
   LALFree(edat->ephemS);
   LALFree(edat->ephemE);
@@ -1077,23 +1108,146 @@ int main(int argc, char **argv)
 
 
 /***** This is the routine which computes the timestamps *****/
-void times(REAL8 tSFT, INT4 howMany, LIGOTimeGPS *ts, INT4 sw)
+static void times(REAL8 tSFT, INT4 howMany, LIGOTimeGPS *ts, INT4 sw)
 {
   int i=0, j=0;
   int temp1=0, temp2=0;
 
   while(i<sw*howMany)
     {
-      temp1=floor(tSFT*i);
+      temp1=floor(tSFT*(double)i);
       temp2=(int)((tSFT*(double)i-temp1)*1E9);
-	
+      /* This is Jan 1 1998 + 30 days, roughly */
       ts[j].gpsSeconds=temp1+567648000+86400*30;
       ts[j].gpsNanoSeconds=temp2;
-		
       i=i+sw;
       j++;
     }
 }
+
+/* This routine can generate timestamps with random dropouts.
+   Memory is allocated inside this routine, and it must be 
+   freed by the user at the end of its usefulness.  The allocated
+   memory is for the timeStamps and sftPerCoh vectors.
+*/
+/* THIS IS HOW THIS ROUTINE WORKS */
+/* This routine can generate timestamps with random dropouts.  
+   This is done by applying the '-d' switch on the command line.  The t.s. are 
+   made inside two nested while loops.  The outer loop loops over the order
+   of DeFT to create; the inner loop, the SFTs which create a DeFT.  Thus,
+   in order to create gaps, the random number generator decides inside the
+   inner loop whether to create a gap or not.  If it decides yes (create 
+   a gap) the index over the SFTs is incremented, but no timestamp is 
+   computed.  If no, the timestamp is computed, and two counters are 
+   incremented to signify this fact.  One counter counts the number of
+   timestamps that have been made for this tCoh, and inserts this number 
+   into the output array sftPerCoh.  This array contains the value of alpha
+   that each demodulation needs to begin with.  The other counter counts the 
+   number of SFTs generated.
+*/
+static void times2(REAL8 tSFT, INT4 mObsCoh, LIGOTimeGPS **ts, INT4 **sftPerCoh, INT4 sw, INT4 mCohSFT)
+{
+  int i=0, j=0, k=0, m=0;
+  int temp2=0;
+  double temp1=0;
+  FILE *tS2;
+
+  LIGOTimeGPS *tempTS;
+  INT4 *tempPC;
+  
+  tempTS=(LIGOTimeGPS *)LALCalloc((mObsCoh+1)*mCohSFT, sizeof(LIGOTimeGPS));
+  tempPC=(INT4 *)LALCalloc(mObsCoh+1, sizeof(INT4));
+  /* this is because first alpha of demod needs 0 index */
+  tempPC[0]=0;
+
+  if(sw!=0){
+    int seed;
+    INT4 r;
+    FILE *tS, *dO;
+    
+    tS=fopen("gaps.ts","w");
+    dO=fopen("drop.ts","w");
+    seed=getpid();
+    srand(seed);
+  
+    while(i<mObsCoh)
+      {
+	k=0;
+	while(k<mCohSFT)
+	  {
+	    if( (rand()/(RAND_MAX+1.0)) <= 0.70 )
+	      {
+		int temp=i*mCohSFT+k;
+		temp1=floor(tSFT*(double)temp);
+		temp2=(int)((tSFT*(double)temp-temp1)*1.0E9);
+		/* This is Jan 1 1998 + 30 days, roughly */
+		tempTS[j].gpsSeconds=temp1+567648000+86400*30;
+		tempTS[j].gpsNanoSeconds=temp2;
+		fprintf(tS,"T.S. %d is %d.%d.\n", j, tempTS[j].gpsSeconds, tempTS[j].gpsNanoSeconds);
+		j++;m++;
+	      }
+	    k++;
+	  }
+	if( m == 0 ) k--;
+	else
+	  {
+	    tempPC[i+1] = m;
+	    i++;
+	  }
+	  fprintf(dO, "DO %d is %d.\n", i-1, tempPC[i]);
+      }
+    fclose(tS);
+    fclose(dO);
+
+    /* Now write to output arrays */
+    *ts=(LIGOTimeGPS *)LALCalloc(j, sizeof(LIGOTimeGPS));
+    *sftPerCoh=(INT4 *)LALCalloc(mObsCoh+1, sizeof(INT4));
+    i=0;
+    while(i<mObsCoh+1) 
+      {
+	(*sftPerCoh)[i] = tempPC[i];
+	i++;
+      }
+    i=0;
+    while(i<j)
+      {
+	(*ts)[i].gpsSeconds = tempTS[i].gpsSeconds;
+	(*ts)[i].gpsNanoSeconds = tempTS[i].gpsNanoSeconds;
+	i++;  
+      }
+  }
+
+  else
+    {
+      tS2=fopen("nogaps.ts", "w");
+      *ts=(LIGOTimeGPS *)LALCalloc(mObsCoh*mCohSFT, sizeof(LIGOTimeGPS));      
+      *sftPerCoh=(INT4 *)LALCalloc(mObsCoh+1, sizeof(INT4));
+      (*sftPerCoh)[0]=0;
+      while(i<mObsCoh)
+	{
+	  j=0;
+	  (*sftPerCoh)[i+1] += (i+1)*mCohSFT;
+	  while(j<mCohSFT)
+	    {
+	      int x = i*mCohSFT+j;
+	      temp1=(int)(floor(tSFT*(double)x));
+	      temp2=(int)((tSFT*(double)x-temp1)*1.E9);
+	      /* This is Jan 1 1998 + 30 days, roughly */
+	      (*ts)[x].gpsSeconds = temp1+567648000+86400*30;
+	      (*ts)[x].gpsNanoSeconds = temp2;
+	      fprintf(tS2,"T.S. %d is %d.%d\n", x, (*ts)[x].gpsSeconds, (*ts)[x].gpsNanoSeconds); 
+	      j++;
+	    }
+	  i++;
+	}
+      fclose(tS2);
+    }
+
+    /* Free up local memory */
+    LALFree(tempTS);
+    LALFree(tempPC);
+}
+
 
 static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps)
 {
