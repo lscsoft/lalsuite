@@ -69,12 +69,12 @@ BOOLEAN FILE_FSTATS = 1;
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "BOINC/boinc_api.h"
-#include "BOINC/filesys.h"
-#include "BOINC/diagnostics.h"
+#include "boinc_api.h"
+#include "filesys.h"
+#include "diagnostics.h"
 
 #if !NO_BOINC_GRAPHICS
-#include "BOINC/graphics_api.h"
+#include "graphics_api.h"
 #endif
 
 #define fopen boinc_fopen
