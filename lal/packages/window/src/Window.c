@@ -1,5 +1,5 @@
-/****************************************************** <lalVerbatim file=WindowCV>
-Author: Bruce Allen
+/************************************************* <lalVerbatim file=WindowCV>
+Authors: Allen, B. and Brown, D. A.
 $Id$
 ****************************************************** </lalVerbatim>*/
 /****************************************************** <lalLaTeX>
@@ -18,13 +18,16 @@ currently available are:
 \item Parzen
 \item Papoulis
 \item Hamming
+\item Kaiser
 \end{itemize}
 It should be straighforward to add additional window functions if
 they are desired.
 \subsubsection*{Prototypes}
 \input{WindowCP}
 \idx{LALWindow()}
-Note that the \texttt{paramters} argument handles both input and output.
+Note that the the function \verb|LALWindow()| is depricated and will soon be
+deleted. Windows should be created and destroyed by calles to the 
+\verb|LALCreateREAL4Window()| and \verb|LALDestroyREAL4Window()| functions.
 
 \subsubsection*{Description}
 This function creates a time-domain window function in a vector of
@@ -44,6 +47,7 @@ $x=2 \pi j/N$, and $y=|2j/N-1|$,
                     &=&  2 (1-y)^3 {\rm\ if\ } y>1/2\\
 {\rm Papoulis:\ } w_j &=& {1 \over \pi} \sin (\pi  y  ) + ( 1 -  y  ) \cos (\pi  y  )\\
 {\rm Hamming:\ } w_j &=& 1-0.46 (1 + \cos x ) \\
+{\rm Kaiser:\ } w_j &=& I_0\left( \beta\sqrt{1 - (y - 1)^2} \right)/I_0(\beta) \\
 \end{eqnarray*}
 These window functions are shown in Fig.~\ref{f:window} for $N=1024$.
 \begin{figure}
@@ -62,6 +66,33 @@ NRCSID (WINDOW, "$Id$");
 
 static const char *WindowTypeNames[] = WINDOWNAMELIST;
 
+static REAL8 BesselI0( REAL8 x )
+{
+  /*
+   * 
+   * Calculates the value of the 0th order, modified Bessel function of the 
+   * first kind using a power series expansion. (See "Handbook of Math.
+   * Functions," eds. Abramowitz and Stegun, 9.6.12 for details.) NOTE: the
+   * accuracy of the expansion is chosen to be 2e-9. Stolen from Philip.
+   *
+   */
+
+
+  REAL8 ds = 1.0;
+  REAL8 d  = 0.0;
+  REAL8 s  = 1.0;
+
+  do 
+  { 
+    d  += 2.0; 
+    ds *= x*x/(d*d); 
+    s  += ds; 
+  } 
+  while (ds > 2e-9); 
+
+  return s; 
+} 
+
 /* <lalVerbatim file="WindowCP"> */
 void 
 LALWindow( LALStatus       *status, 
@@ -75,6 +106,7 @@ LALWindow( LALStatus       *status,
   REAL8 wss;    /* window summed and squared */
   REAL8 win;
   REAL8 x,y,z;
+  REAL8 beta, betaI0;
 
   /* Initialize status structure   */
   INITSTATUS(status,"LALWindow Function",WINDOW);
@@ -98,6 +130,14 @@ LALWindow( LALStatus       *status,
   ASSERT(vector->length==length,status,
          WINDOWH_EWRONGLENGTH,WINDOWH_MSGEWRONGLENGTH);
   ASSERT(vector->data!=NULL,status,WINDOWH_ENULLDATA,WINDOWH_MSGENULLDATA);
+
+  /* check that if the case of a Kaiser window, beta is positive */
+  if ( windowtype == Kaiser )
+  {
+    ASSERT(parameters->beta >= 0,status, WINDOWH_EBETA,WINDOWH_MSGEBETA);
+    beta = parameters->beta;
+    betaI0 = BesselI0( beta );
+  }
 
   wss=0.0;
   for (i=0;i<length;i++)
@@ -145,6 +185,13 @@ LALWindow( LALStatus       *status,
       win=1.0-0.46*(1.0+cos(x));
       break;
 
+    case Kaiser:
+      {
+        REAL8 kai = (i - (length-1.0)/2.0)*2.0/((REAL8)length-1.0);
+        win = BesselI0( beta * sqrt(1.0 - kai*kai) )/betaI0;
+      }
+      break;
+
     /* Default case -- this will NEVER happen -- it is trapped above! */
     default:
       ABORT(status,WINDOWH_ETYPEUNKNOWN,WINDOWH_MSGETYPEUNKNOWN);
@@ -159,45 +206,47 @@ LALWindow( LALStatus       *status,
   RETURN(status);
 }
 
+/* <lalVerbatim file="WindowCP"> */
 void LALCreateREAL4Window (
     LALStatus    *status,
     REAL4Window **output,
-    UINT4         length,
-    WindowType    type
+    LALWindowParams *params
+/* </lalVerbatim> */
     )
 {
-  LALWindowParams       wpars;
-
   INITSTATUS( status, "LALCreateREAL4Window", WINDOW );
   ATTATCHSTATUSPTR( status );
 
   ASSERT( output, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
   ASSERT( ! *output, status, WINDOWH_ENNUL, WINDOWH_MSGENNUL );
+  ASSERT( params, status, WINDOWH_ENULL, WINDOWH_MSGENULL );
 
   /* allocate the storage for the window vector */
   *output = (REAL4Window *) LALCalloc( 1, sizeof(REAL4Window) );
-  LALCreateVector( status->statusPtr, &((*output)->data), length );
+  LALCreateVector( status->statusPtr, &((*output)->data), params->length );
   CHECKSTATUSPTR( status );
 
   /* compute the window */
-  (*output)->type = wpars.type = type;
-  wpars.length = (INT4) length;
-  LALWindow( status->statusPtr, (*output)->data, &wpars );
+  (*output)->type = params->type;
+  LALWindow( status->statusPtr, (*output)->data, params );
   CHECKSTATUSPTR( status );
 
   /* copy the output params to the structure */
-  (*output)->sumofsquares = wpars.sumofsquares;
-  strncpy( (*output)->windowname, wpars.windowname, 
+  (*output)->sumofsquares = params->sumofsquares;
+  (*output)->beta = params->beta;
+  strncpy( (*output)->windowname, params->windowname, 
       LALNameLength * sizeof(CHAR) );
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
 
+/* <lalVerbatim file="WindowCP"> */
 void LALDestroyREAL4Window (
     LALStatus     *status,
     REAL4Window  **output
     )
+/* </lalVerbatim> */
 {
   INITSTATUS( status, "LALCreateREAL4Window", WINDOW );
   ATTATCHSTATUSPTR( status );

@@ -1,5 +1,5 @@
 /******************************** <lalVerbatim file="WindowTestCV">
-Author:Bruce Allen
+Authora:Allen, B. and Brown, D. A.
 Revision: $Id$
 **************************************************** </lalVerbatim> */
 /********************************************************** <lalLaTeX>
@@ -17,7 +17,7 @@ WindowTest
 
 \subsubsection*{Description}
 This program outputs 7 text files, with names
-\texttt{PrintVector.000} to \texttt{PrintVector.006}.
+\texttt{PrintVector.000} to \texttt{PrintVector.007}.
 Each of these contain one of the window functions show in
 Fig.~\ref{f:window} for $N=1024$.   These files
 may be viewed for example by using the public domain graphing
@@ -26,9 +26,8 @@ program xmgr, and typing:
 xmgr PrintVector.*
 \end{verbatim}
 
-The program also tests all error conditions, and checks that the sum of
- these windows squared
-add to the correct values.  If there is an error in execution,
+The program also tests all error conditions, and checks that the sum of these
+windows squared add to the correct values.  If there is an error in execution,
 the corresponding error message is printed.
 
 Upon successful completion, the program prints:
@@ -88,7 +87,8 @@ int main( void )
     341.333984375,     /* Bartlett */
     276.1142857152779,   /* Parzen */
     300.357781729967622,   /* Papoulis */
-    406.9376};     /* Hamming */
+    406.9376,     /* Hamming */
+    375.178192052468 }; /* Kaiser */
 
     LALCreateVector (&status, &vector, 1024);
 
@@ -135,14 +135,17 @@ int main( void )
 
 
     /* Test normalizations */
-    for (wintype=Rectangular;wintype<=Hamming;wintype++)
+    for (wintype=Rectangular;wintype<=Kaiser;wintype++)
     {
       params.length=vector->length;
       params.type=wintype;
+      params.beta = 6.0;
       LALWindow(&status,vector,&params);
       if (fabs(params.sumofsquares-testsquares[(int)wintype])>1.e-5)
       {
         printf("FAIL: Window %s appears incorrect.\n",params.windowname);
+        printf("Expected %16.12f, got %16.12f\n", testsquares[(int)wintype],
+            params.sumofsquares );
         return 1;
       }
       if (PRINT) LALPrintVector(vector);
