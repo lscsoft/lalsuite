@@ -10,7 +10,7 @@
 /*                                                                               */
 /*                       University of Glasgow - last modified 26/03/2004        */
 /*********************************************************************************/
-$Id$
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -172,6 +172,9 @@ int main(int argc, char **argv)
 /* calculate mean and sample variance of each 30 minute chunk */  
   for (i=0;i<cnt;i+=SN)
   {  
+    /* new */  
+    avg.re = 0.0;
+    avg.im = 0.0;
     for (j=0;j<SN;j++)
     {
       avg.re += C[i+j].re;
