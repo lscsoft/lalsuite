@@ -123,7 +123,7 @@ main ( void )
    randIn.SignalAmp = 10.L;
    randIn.NoiseAmp = 1.;
    randIn.useed = 83275488;
-   randIn.mMin = 10.0;
+   randIn.mMin = 3.0;
    randIn.mMax = 20.0;
    randIn.MMax = 2.*randIn.mMax;
    randIn.param.startTime=0.0; 
@@ -176,7 +176,7 @@ main ( void )
    overlapin.revp = revp;
    file = fopen("RandomInspiralSignalTest.out", "w");
 
-   randIn.param.approximant = BCV;
+   randIn.param.approximant = PadeT1;
    i=4;
    while (i--) {
       randIn.type = 0;
@@ -221,7 +221,7 @@ main ( void )
       }
 
       randIn.type = 2;
-      randIn.param.approximant = BCV;
+      randIn.param.approximant = PadeT1;
       randIn.param.massChoice = psi0Andpsi3;
       LALRandomInspiralSignal(&status, &signal, &randIn);
       if (TimeDomain)
