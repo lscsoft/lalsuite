@@ -18,10 +18,13 @@
  * This program uses InspiralSpinBank() to generate a template bank from
  * command line parameter input.  It also has the option to make a
  * \MATHEMATICA notebook using LALMath3DPlot() which will plot the 3D
- * template bank. 
+ * template bank. If the \texttt{-b} option is specified, the program will
+ * read the template bank from an XML file instead of generating it.
  *
  * \subsubsection{Command line options}
  * \begin{description}
+ * \item[-b]
+ * Specifies the XML file to read template bank from.
  * \item[-n] 
  * Specifies the minimum smaller mass between 0 and 5.0 $M\odot$.
  * \item[-x]
@@ -38,14 +41,18 @@
  * \input{InspiralSpinBankTestCE}
  *
  * \subsubsection*{Notes}
+ *
  * \begin{itemize}
+ *
  * \item The metric used in InspiralSpinBank() is only valid for binary
  * systems with a total mass $<15M\odot$ where the minimum larger mass is at
  * least twice the maximum smaller mass.  Choosing mass values that violate
  * these conditions will cause an error message.
- * \item It is unlikely that you will be able to run a \MATHEMATICA notebook
- * that contains more than 10,000 tiles.  Adjust your parameters accordingly
- * if you plan to view a plot.
+ *
+ * \item Only up to 10,000 templates will be read from an XML file. Anything
+ * more than that is likely to bog \MATHEMATICA down. Keep this in mind even
+ * if you are generating a template bank from model noise.
+ *
  * \end{itemize}
  *
  * \vfill{\footnotesize\input{InspiralSpinBankTestCV}}
@@ -69,6 +76,7 @@
 #include <lal/LALNoiseModels.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdlib.h>
+#include <lal/LIGOLwXMLRead.h>
 
 
 extern char *optarg;
@@ -78,10 +86,12 @@ extern char *optarg;
 #define INSPIRALSPINBANKTESTC_ENORM     0
 #define INSPIRALSPINBANKTESTC_EMEM      1
 #define INSPIRALSPINBANKTESTC_ESUB      2
+#define INSPIRALSPINBANKTESTC_EFILE     4
 
 #define INSPIRALSPINBANKTESTC_MSGENORM  "Normal exit"
 #define INSPIRALSPINBANKTESTC_MSGEMEM   "Memory allocation error"
 #define INSPIRALSPINBANKTESTC_MSGESUB   "Subroutine error"
+#define INSPIRALSPINBANKTESTC_MSGEFILE  "File I/O error"
 /* </lalErrTable> */
 
 NRCSID(LALINSPIRALSPINBANKTESTC, "$Id$");
@@ -92,7 +102,7 @@ int main( int argc, char *argv[] )
   INT4 loop = 0; /* loop counter */
   Math3DPointList *list = NULL;    /* structure for mathematica plot */
   Math3DPointList *first = NULL;
-  SnglInspiralTable *tiles = NULL;
+  SnglInspiralTable *bankHead = NULL;
   SnglInspiralTable *tmplt = NULL;
   InspiralCoarseBankIn coarseIn;
   INT4 ntiles = 0;                 /* number of tiles */
@@ -107,6 +117,7 @@ int main( int argc, char *argv[] )
   InspiralMomentsEtc moments;
   REAL4 F0 = 0;
   REAL4 noiseMin = 1;
+  BOOLEAN haveXML = 0;
  
   if( (list = (Math3DPointList *) LALCalloc( 1, sizeof( Math3DPointList )))
       == NULL )
@@ -129,6 +140,15 @@ int main( int argc, char *argv[] )
     optflag++;  
     switch (opt)
     {
+      case 'b':
+	if( (ntiles = LALSnglInspiralTableFromLIGOLw( &bankHead, optarg, 1,
+            10000)) < 1 )
+        {
+          fprintf( stderr, INSPIRALSPINBANKTESTC_MSGEFILE );
+          return INSPIRALSPINBANKTESTC_EFILE;
+        }
+        haveXML = 1;
+        break;
       case 'm':
         coarseIn.mmCoarse = atof( optarg );       
         break;
@@ -153,39 +173,40 @@ int main( int argc, char *argv[] )
         break;
     }
   }
-  while( (opt = getopt( argc, argv, "n:m:x:ps" )) != -1 );
+  while( (opt = getopt( argc, argv, "b:n:m:x:ps" )) != -1 );
   
-  coarseIn.shf.data = NULL;
-  memset( &(coarseIn.shf), 0, sizeof( REAL8FrequencySeries ) );
-  coarseIn.shf.f0 = 0;
-  LALDCreateVector( &stat, &psd, coarseIn.fUpper ); 
-  df = 1.0;
-  LALNoiseSpectralDensity( &stat, psd, &LALLIGOIPsd, df );
-  coarseIn.shf.data = psd;
-  coarseIn.shf.deltaF = df;
-  
-  for( loop = 0; loop < psd->length; loop++ )
+  /* Generate template bank from model noise if not given an XML file. */
+  if( !haveXML )
   {
-    if( psd->data[loop] > 0 && psd->data[loop] < noiseMin )
-    { 
-      F0 = (REAL4) coarseIn.shf.deltaF * loop;
-      noiseMin = psd->data[loop];
+    coarseIn.shf.data = NULL;
+    memset( &(coarseIn.shf), 0, sizeof( REAL8FrequencySeries ) );
+    coarseIn.shf.f0 = 0;
+    LALDCreateVector( &stat, &psd, coarseIn.fUpper ); 
+    df = 1.0;
+    LALNoiseSpectralDensity( &stat, psd, &LALLIGOIPsd, df );
+    coarseIn.shf.data = psd;
+    coarseIn.shf.deltaF = df;
+    for( loop = 0; loop < psd->length; loop++ )
+    {
+      if( psd->data[loop] > 0 && psd->data[loop] < noiseMin )
+      { 
+        F0 = (REAL4) coarseIn.shf.deltaF * loop;
+        noiseMin = psd->data[loop];
+      }
+    }
+    LALInspiralSpinBank( &stat, &bankHead, &ntiles, coarseIn );
+    if( stat.statusCode )
+    {
+      LALError( &stat, INSPIRALSPINBANKTESTC_MSGESUB );
+      printf( INSPIRALSPINBANKTESTC_MSGESUB );
+      return INSPIRALSPINBANKTESTC_ESUB;
     }
   }
 
-  LALInspiralSpinBank( &stat, &tiles, &ntiles, coarseIn );
-  REPORTSTATUS(&stat);
-  if( stat.statusCode )
-  {
-    LALError( &stat, INSPIRALSPINBANKTESTC_MSGESUB );
-    printf( INSPIRALSPINBANKTESTC_MSGESUB );
-    return INSPIRALSPINBANKTESTC_ESUB;
-  }
-
-  /* Mathematica Plot Stuff */
+  /* Convert template bank structure to plot input structure. */
   if( Math3DPlot )
   {
-    for( tmplt = tiles; tmplt != NULL; tmplt = tmplt->next )
+    for( tmplt = bankHead; tmplt != NULL; tmplt = tmplt->next )
     {
       list->x = tmplt->psi0;
       list->y = tmplt->psi3;

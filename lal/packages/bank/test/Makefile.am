@@ -25,7 +25,7 @@ BCVTemplatesFlatMesh_SOURCES = BCVTemplatesFlatMesh.c
 BCVTemplatesFlatMesh_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 InspiralSpinBankTest_SOURCES = InspiralSpinBankTest.c
-InspiralSpinBankTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+InspiralSpinBankTest_LDADD = $(top_builddir)/packages/support/src/liblalmetaio.la $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = ChirpSpace CoarseTest CoarseTest2 MetricTest MetricTestBCV PNTemplates BCVTemplates BCVTemplatesFlatMesh InspiralSpinBankTest
