@@ -91,6 +91,7 @@ strncpy()
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/Units.h>
 #include <lal/AVFactories.h>
+#include <lal/FrequencySeries.h>
 #include <string.h>
 
 #define invNoise output->calibratedInverseNoisePSD
@@ -119,7 +120,7 @@ LALStochasticInverseNoiseCal(
   LALUnitPair unitPair;
   LALUnit wInvNoiseUnits;
 
-  COMPLEX8FrequencySeries hcInvNoise;
+  COMPLEX8FrequencySeries *hcInvNoise;
 
   /* initialize status structure */
   INITSTATUS(status, "LALStochasticInverseNoiseCal", STOCHASTICINVERSENOISEC);
@@ -240,18 +241,12 @@ LALStochasticInverseNoiseCal(
   /*---------------Valid data here---------------*/
 
   strncpy(invNoise->name, "Calibrated invserse noise PSD", LALNameLength);
-  strncpy(hcInvNoise.name, "half-calibrated invserse noise PSD", LALNameLength);
-
-  hcInvNoise.deltaF = deltaF;
-  hcInvNoise.f0 = f0;
-  hcInvNoise.epoch = wNoise->epoch;
 
   /* allocate memory for half calibrated inverse noise */
-  hcInvNoise.data = NULL;
-  TRY(LALCCreateVector(status->statusPtr, &(hcInvNoise.data), length), status);
-  memset(hcInvNoise.data->data, 0, \
-      hcInvNoise.data->length * sizeof(*hcInvNoise.data->data));
-  
+	TRY(LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &hcInvNoise, \
+        "half-calibrated invserse noise PSD", wNoise->epoch, f0, deltaF, \
+        lalDimensionlessUnit, length), status);
+
   /* unit structure manipulation */
 
   /* Find units of uncalibrated inverse power spectrum */
@@ -264,28 +259,29 @@ LALStochasticInverseNoiseCal(
    * units */
   unitPair.unitOne = &(wFilter->sampleUnits);
   unitPair.unitTwo = &wInvNoiseUnits;
-  TRY(LALUnitMultiply(status->statusPtr, &(hcInvNoise.sampleUnits), \
+  TRY(LALUnitMultiply(status->statusPtr, &(hcInvNoise->sampleUnits), \
         &unitPair), status);
 
   /* multiply by response function units to get calibrated inv noise units */
-  unitPair.unitTwo = &(hcInvNoise.sampleUnits);
+  unitPair.unitTwo = &(hcInvNoise->sampleUnits);
   TRY(LALUnitMultiply(status->statusPtr, &(invNoise->sampleUnits), \
         &unitPair), status);
 
+	
   sStopPtr = wNoise->data->data + length;
 
   if (f0 == 0)
   {
     /* set DC channel to zero */
-    hcInvNoise.data->data[0].re = 0;
-    hcInvNoise.data->data[0].im = 0;
+    hcInvNoise->data->data[0].re = 0;
+    hcInvNoise->data->data[0].im = 0;
     invNoise->data->data[0] = 0;
 
     /* initialize pointers */
     sPtrPW = wNoise->data->data + 1;
     cPtrR = wFilter->data->data + 1;
     sPtrIP = invNoise->data->data + 1;
-    cPtrIPHC = hcInvNoise.data->data + 1;
+    cPtrIPHC = hcInvNoise->data->data + 1;
   } /* if (f0 == 0) */
   else
   {
@@ -293,7 +289,7 @@ LALStochasticInverseNoiseCal(
     sPtrPW = wNoise->data->data;
     cPtrR = wFilter->data->data;
     sPtrIP = invNoise->data->data;
-    cPtrIPHC = hcInvNoise.data->data;
+    cPtrIPHC = hcInvNoise->data->data;
   }
 
   for (; sPtrPW < sStopPtr ; ++sPtrPW, ++cPtrR, ++sPtrIP, ++cPtrIPHC)
