@@ -736,8 +736,10 @@ int main(int argc, char *argv[]){
 	strcat( filestats, tempstr);
       }
       strcat( filestats, "/");
+      mkdir(filestats, S_IRWXU | S_IRWXG | S_IRWXO);
+
       strcat( filestats, fbasenameOut);
-      /*mkdir(filestats);*/
+      
 
       strcpy(filehisto, filestats);
 #ifdef PRINTEVENTS
@@ -1317,3 +1319,12 @@ void PrintHoughEvents (LALStatus       *status,
 }    
 /* >>>>>>>>>>>>>>>>>>>>>*************************<<<<<<<<<<<<<<<<<<<< */
 /* >>>>>>>>>>>>>>Remove this last one. Not used any more<<<<<<<<<<<<< */
+
+
+
+
+
+
+
+
+
