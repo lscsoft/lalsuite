@@ -2,6 +2,7 @@
 Author: Sathyaprakash, B. S.
 $Id$
 $Name$
+$Author$
 </lalVerbatim>  */
 
 /*  <lalLaTeX>
