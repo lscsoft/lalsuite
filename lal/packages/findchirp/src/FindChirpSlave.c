@@ -35,9 +35,6 @@ CreateRandomPPNParamStruc (
   INITSTATUS( status, "CreateRandomPPNParamStruc", FINDCHIRPSLAVEC );
   ATTATCHSTATUSPTR( status );
 
-  /* debugging */
-  fmin       = 40.0;
-
   /* fixed parameters. */
   params->position.latitude = params->position.longitude = 0.0;
   params->position.system = COORDINATESYSTEM_EQUATORIAL;
@@ -419,7 +416,7 @@ LALFindChirpSlave (
           CreateRandomPPNParamStruc( status->statusPtr, 
               &ppnParams, &mass1, &mass2, 
               params->simParams->mMin, params->simParams->mMax, 
-              params->dataParams->fLow, deltaT,
+              params->simParams->fLowInject, deltaT,
               params->simParams->randomParams );
           CHECKSTATUSPTR( status );
 
