@@ -1,5 +1,5 @@
 /************************************ <lalVerbatim file="UnitCompareCV">
-Author: Whelan, J. T.
+Author: Whelan, J.~T.
 $Id$  
 ************************************* </lalVerbatim> */
 
@@ -41,8 +41,19 @@ turn.
 #define TRUE 1
 #define FALSE 0
 
-#include <lal/LALStdlib.h>
-#include <lal/Units.h>
+#ifndef _LALSTDLIB_H
+#include "LALStdlib.h"
+#ifndef _LALSTDLIB_H
+#define _LALSTDLIB_H
+#endif
+#endif
+
+#ifndef _UNITS_H
+#include "Units.h"
+#ifndef _UNITS_H
+#define _UNITS_H
+#endif
+#endif
 
 NRCSID( UNITCOMPAREC, "$Id$" );
 /* <lalVerbatim file="UnitCompareCP"> */
