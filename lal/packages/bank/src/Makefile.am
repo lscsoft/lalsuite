@@ -3,7 +3,6 @@ noinst_LTLIBRARIES = libbank.la
 libbank_la_SOURCES = \
 LALDeterminant3.c\
 LALInspiralComputeMetric.c\
-LALInspiralComputeBCVMetric.c\
 LALInspiralComputeParams.c\
 LALInspiralCreateCoarseBank.c\
 LALInspiralCreateFineBank.c\
