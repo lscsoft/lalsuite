@@ -103,8 +103,8 @@ REAL4 omegaRef = 1.;
 
 /* monte carlo parameters */
 BOOLEAN splice = 0;
-REAL4 scaleFactor = 156.25;
-UINT4 seed;
+REAL4 scaleFactor = 1;
+INT4 seed;
 
 /* misc parameters */
 INT4 hannDuration = 1;
@@ -321,53 +321,56 @@ INT4 main(INT4 argc, CHAR *argv[])
 	streamPair.streamOne = &streamOne;
 	streamPair.streamTwo = &streamTwo;
 
-	/* set parameter structure for monte carlo simulations */
-	MCparams.lengthSegment = calibDuration * resampleRate;
-	if ((streamDuration % calibDuration) == 0)
-	{
-		MCparams.numSegment = streamDuration / calibDuration;
-	}
-	else
-	{
-		MCparams.numSegment = (streamDuration / calibDuration) + 1;
-	}
-	MCparams.sampleRate = resampleRate;
-	MCparams.startTime = startTime;
-	MCparams.seed = seed;
-	MCparams.fRef = fRef;
-	MCparams.f0 = 0.;
-	MCparams.omegaRef = omegaRef;
-	MCparams.alpha = alpha;
-	MCparams.siteOne = siteOne;
-	MCparams.siteTwo = siteTwo;
+        if (inject_flag)
+	{ 
+        	/* set parameter structure for monte carlo simulations */
+        	MCparams.lengthSegment = calibDuration * resampleRate;
+        	if ((segmentDuration % calibDuration) == 0)
+        	{
+         		MCparams.numSegment = segmentDuration / calibDuration;
+        	}
+        	else
+        	{
+        		MCparams.numSegment = (segmentDuration / calibDuration) + 1;
+        	}
+        	MCparams.sampleRate = resampleRate;
+        	MCparams.startTime = startTime;
+        	MCparams.seed = seed;
+        	MCparams.fRef = fRef;
+        	MCparams.f0 = 0.;
+        	MCparams.omegaRef = omegaRef;
+        	MCparams.alpha = alpha;
+        	MCparams.siteOne = siteOne;
+        	MCparams.siteTwo = siteTwo;
 
-	/* set input structure for monte carlo simulations */
-	MCinput.ifoOne = ifoOne;
-	MCinput.ifoTwo = ifoTwo;
-	MCinput.calCacheOne = calCacheOne;
-	MCinput.calCacheTwo = calCacheTwo;
-	MCLength = MCparams.numSegment * MCparams.lengthSegment;
+        	/* set input structure for monte carlo simulations */
+        	MCinput.ifoOne = ifoOne;
+         	MCinput.ifoTwo = ifoTwo;
+        	MCinput.calCacheOne = calCacheOne;
+        	MCinput.calCacheTwo = calCacheTwo;
+        	MCLength = MCparams.numSegment * MCparams.lengthSegment;
 
-	if (verbose_flag)
-	{
-		fprintf(stdout, "Allocating memory for MC...\n");
-	}
+        	if (verbose_flag)
+        	{
+        		fprintf(stdout, "Allocating memory for MC...\n");
+        	}
 
-	/* allocate memory for monte carlo */
-	SimStochBGOne.data = NULL;
-	LAL_CALL( LALSCreateVector(&status, &(SimStochBGOne.data), MCLength), \
-			&status );
-	SimStochBGTwo.data = NULL;
-	LAL_CALL( LALSCreateVector(&status, &(SimStochBGTwo.data), MCLength), \
-			&status );
-	memset(SimStochBGOne.data->data, 0, \
-			SimStochBGOne.data->length * sizeof(*SimStochBGOne.data->data));
-	memset(SimStochBGTwo.data->data, 0, \
-			SimStochBGTwo.data->length * sizeof(*SimStochBGTwo.data->data));
+        	/* allocate memory for monte carlo */
+        	SimStochBGOne.data = NULL;
+        	LAL_CALL( LALSCreateVector(&status, &(SimStochBGOne.data), MCLength), \
+        			&status );
+        	SimStochBGTwo.data = NULL;
+        	LAL_CALL( LALSCreateVector(&status, &(SimStochBGTwo.data), MCLength), \
+        			&status );
+        	memset(SimStochBGOne.data->data, 0, \
+        			SimStochBGOne.data->length * sizeof(*SimStochBGOne.data->data));
+        	memset(SimStochBGTwo.data->data, 0, \
+        			SimStochBGTwo.data->length * sizeof(*SimStochBGTwo.data->data));
 
-	/* output structure for LALStochasticMC */
-	MCoutput.SSimStochBG1 = &SimStochBGOne;
-	MCoutput.SSimStochBG2 = &SimStochBGTwo;
+        	/* output structure for LALStochasticMC */
+        	MCoutput.SSimStochBG1 = &SimStochBGOne;
+        	MCoutput.SSimStochBG2 = &SimStochBGTwo;
+        }
 
 	/* set length for data segments */
 	segmentLength = segmentDuration * resampleRate;
@@ -954,46 +957,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 		LALSPrintTimeSeries(&streamTwo, "stream2.dat");
 	}
 
-	/* simulate signal */
-	if (inject_flag)
-	{
-		/* perform monte carlo */
-		if (splice)
-		{
-			monteCarloSplice(&status, &MCoutput, &MCinput, &MCparams);
-		}
-		else
-		{
-			monteCarlo(&status, &MCoutput, &MCinput, &MCparams);
-		}
-
-		/* output the results */
-		if (verbose_flag)
-		{
-			LALSPrintTimeSeries(&SimStochBGOne, "simStochBG1.dat");
-			LALSPrintTimeSeries(&SimStochBGTwo, "simStochBG2.dat");
-		}
-
-		/* multiply by scale factor and inject into real data */
-		for (i = 0; i < streamLength ; i++)
-		{
-			streamOne.data->data[i] = streamOne.data->data[i] + \
-				(scaleFactor * SimStochBGOne.data->data[i]);
-			streamTwo.data->data[i] = streamTwo.data->data[i] + \
-				(scaleFactor * SimStochBGTwo.data->data[i]);
-		}
-
-		/* clean up */
-		LAL_CALL( LALDestroyVector(&status, &SimStochBGOne.data), &status );
-		LAL_CALL( LALDestroyVector(&status, &SimStochBGTwo.data), &status );
-	}
-
-	/* output the results */
-	if (verbose_flag)
-	{
-		LALSPrintTimeSeries(&streamOne, "signal1.dat");
-		LALSPrintTimeSeries(&streamTwo, "signal2.dat");
-	}
 
 	/*
 	 ** loop over segments **
@@ -1026,6 +989,33 @@ INT4 main(INT4 argc, CHAR *argv[])
 			segmentTwo.data->data[i] = streamTwo.data->data[i + \
 				(segLoop * segmentLength)];
 		}
+
+                /* simulate signal */
+        	if (inject_flag)
+        	{
+                        MCparams.startTime = gpsStartTime.gpsSeconds;
+        	        seed = (INT4)(time(NULL));
+                        MCparams.seed = seed;
+         		/* perform monte carlo */
+                	monteCarlo(&status, &MCoutput, &MCinput, &MCparams);	
+
+        		/* output the results */
+        		if (verbose_flag)
+        		{
+        			LALSPrintTimeSeries(&SimStochBGOne, "simStochBG1.dat");
+        			LALSPrintTimeSeries(&SimStochBGTwo, "simStochBG2.dat");
+        		}
+
+        		/* multiply by scale factor and inject into real data */
+        		for (i = 0; i < streamLength ; i++)
+        		{
+			segmentOne.data->data[i] = segmentOne.data->data[i] + \
+				(scaleFactor * SimStochBGOne.data->data[i]);
+			segmentTwo.data->data[i] = segmentTwo.data->data[i] + \
+				(scaleFactor * SimStochBGTwo.data->data[i]);
+        		}
+        	}
+
 
 		/* output the results */
 		if (verbose_flag)
@@ -1250,7 +1240,11 @@ INT4 main(INT4 argc, CHAR *argv[])
 	}
 	LAL_CALL( LALCDestroyVector(&status, &(hBarTildeOne.data)), &status );
 	LAL_CALL( LALCDestroyVector(&status, &(hBarTildeTwo.data)), &status );
-
+        if (inject_flag)
+	{       
+		LAL_CALL( LALDestroyVector(&status, &SimStochBGOne.data), &status );
+		LAL_CALL( LALDestroyVector(&status, &SimStochBGTwo.data), &status );
+        }
 	/* close output file */
 	fclose(out);
 
