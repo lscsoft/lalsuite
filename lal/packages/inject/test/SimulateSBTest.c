@@ -1,10 +1,6 @@
 /*********************** <lalVerbatim file="SimulateSBTestCV">
 Author: Sukanta Bose (Adapted from a non-LAL code written by Bruce Allen)
-<<<<<<< SimulateSBTest.c
 $Id$
-=======
-$Id$
->>>>>>> 1.3
 ********************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -337,8 +333,8 @@ int main( int argc, char *argv[] ){
 	{
 	  return code;
 	}
-      printf("  PASS: null pointer to output series results in error:
-       \n\"%s\"\n", SIMULATESBH_MSGENULLP);
+      printf("  PASS: null pointer to output series results in error: \n"
+		      "\"%s\"\n", SIMULATESBH_MSGENULLP);
       
       /* test behavior for null pointer to input structure */
       LALSSSimStochBGTimeSeries(&status, &SBOutput, NULL, &SBParams);
@@ -348,8 +344,8 @@ int main( int argc, char *argv[] ){
 	{
 	  return code;
 	}
-      printf("  PASS: null pointer to input structure results in error: 
-	 \n\"%s\"\n", SIMULATESBH_MSGENULLP);
+      printf("  PASS: null pointer to input structure results in error: \n"
+		      "\"%s\"\n", SIMULATESBH_MSGENULLP);
     }
   
 #endif /* LAL_NDEBUG */
