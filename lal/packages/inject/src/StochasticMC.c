@@ -342,21 +342,18 @@ void LALStochasticMCDso (LALStatus *status,
   COMPLEX8Vector                    *response[2]={NULL,NULL};
   
   /* Counters & output */
-  INT4                               i,n,m,k,loop;
+  INT4                               i,loop;
   INT4                               seed;
   REAL8                              totnorm;
   REAL8                              totnorm2;
 
-  /* files to store response functions  */
- 
-  CHAR                               Respfile1[LALNameLength];
-  CHAR                               Respfile2[LALNameLength];
-  
-
   /* various times, frequencies, sample rates */
-  UINT4                              starttime,caltime;
-  UINT4                              length, lengthsplice, lengthseg;
-  UINT4                              numseg, caliboffset;
+	INT4                               caltime;
+  UINT4                              starttime;
+  UINT4                              length;
+	INT4                               lengthseg;
+  INT4                               numseg;
+  UINT4                              caliboffset;
   UINT4                              freqlen;
   REAL8                              deltaF, deltaT, sRate;
   INT4 site1, site2;
@@ -599,7 +596,7 @@ void LALStochasticMCDso (LALStatus *status,
 
         /* Mean square */
         totnorm2=0.0;
-        for (i=0;(UINT4)i<lengthseg;i++)
+        for (i=0;i<lengthseg;i++)
         totnorm2+=((whitenedSSimStochBG1.data->data[i])*(whitenedSSimStochBG1.data->data[i]));
     
         totnorm2/=lengthseg;
@@ -683,26 +680,22 @@ void LALStochasticMCDsoSplice (LALStatus *status,
   COMPLEX8FrequencySeries            wFilter2;
 
   REAL4Vector **longTrain1 = NULL, **shortTrain1 = NULL, **longTrain2 = NULL, **shortTrain2 = NULL;
-  REAL4Vector *output[2] = {NULL,NULL} ;
   /* vector to store response functions of a pair of detectors  */
   COMPLEX8Vector                    *response[2]={NULL,NULL};
   
   /* Counters & output */
-  INT4                               i,n,m,k,loop;
+  INT4                               i,m,k,loop;
   INT4                               seed;
-  REAL8                              totnorm;
-  REAL8                              totnorm2;
-
-  /* files to store response functions  */
- 
-  CHAR                               Respfile1[LALNameLength];
-  CHAR                               Respfile2[LALNameLength];
-  
 
   /* various times, frequencies, sample rates */
-  UINT4                              starttime,caltime;
-  UINT4                              length, lengthsplice, lengthseg;
-  UINT4                              numseg, numsegsplice,numsegtot, spliceoffset;
+	INT4                               caltime;
+  UINT4                              starttime;
+	INT4                               lengthseg;
+  UINT4                              length;
+	INT4                               numseg;
+	INT4                               numsegsplice;
+	INT4                               numsegtot;
+  UINT4                              spliceoffset;
   UINT4                              freqlen;
   REAL8                              deltaF, deltaT, sRate;
   INT4 site1, site2;
@@ -937,9 +930,8 @@ void LALStochasticMCDsoSplice (LALStatus *status,
 
 
   for (loop = 0; loop < numsegtot; loop ++)
-   
-   {
-    seed = seed + loop*2;
+	{
+		seed = seed + loop*2;
     SBParams.seed = seed;
          
     wFilter1.epoch.gpsSeconds = caltime;
@@ -974,20 +966,21 @@ void LALStochasticMCDsoSplice (LALStatus *status,
 
     /* generate whitened simulated SB data */     
     LALSSSimStochBGTimeSeries(status->statusPtr, &SBOutput, &SBInput, &SBParams);
-     if (loop%2==0)
-       {
-	 m = (UINT4)(loop/2);
-         longTrain1[m] =  whitenedSSimStochBG1.data;
-         longTrain2[m] =  whitenedSSimStochBG2.data;}
-      else 
-	{
-         shortTrain1[m] = whitenedSSimStochBG1.data;
-	 shortTrain2[m] = whitenedSSimStochBG2.data;
-        } 
-     caltime = caltime + spliceoffset;            
-   }
 
-    
+		if (loop%2==0)
+		{
+			m = (UINT4)(loop/2);
+			longTrain1[m] =  whitenedSSimStochBG1.data;
+			longTrain2[m] =  whitenedSSimStochBG2.data;
+		}
+		else
+		{
+			shortTrain1[m] = whitenedSSimStochBG1.data;
+		  shortTrain2[m] = whitenedSSimStochBG2.data;
+		}
+		caltime = caltime + spliceoffset;
+	}
+	    
     /* splice the long and short data trains into the output vector */
     SinusoidalSplice(longTrain1, shortTrain1,MCoutput->SSimStochBG1->data , numsegsplice, spliceoffset);
     SinusoidalSplice(longTrain2, shortTrain2,MCoutput->SSimStochBG2->data, numsegsplice, spliceoffset);
