@@ -25,6 +25,7 @@
 /* Need analysis of SUMs to search for events above threshold and width of events; time analyze SUMs to veto lines vs signals. */
 /* Input SFTs are not sorted; thus actualStartTime and actualEndTime are not always correct; this only affects search summary table but should be fixed */
 /* Check if endtime is OK, or should endtime - tBKL be used to not get SFTs with end time past gpsStartTime + duration? */
+/* For now fix DeltaRA, DeltaDec,and DeltaFDeriv1 to default values when finding mismatch during Monte Carlo; need to make these adjustable */
 
 /* REVISIONS: */
 /* 12/03/03 gam; Based code on StackSlide.c from LALWrapper DSO */
@@ -43,6 +44,7 @@
 /* 05/28/04 gam; Use LALUniformDeviate from LAL utilities package (include <lal/Random.h>) to generate random mismatch during Monte Carlo. */
 /* 06/01/04 gam; Make sure CHECKSTATUSPTR called after every LAL function call */
 /* 06/01/04 gam; pPulsarSignalParams->startTimeGPS and duration should be based on gpsStartTime and duration, not actualStartTime */
+/* 06/01/04 gam; For now fix DeltaRA, DeltaDec,and DeltaFDeriv1 to default values when finding mismatch during Monte Carlo */
 
 /*********************************************/
 /*                                           */
@@ -605,9 +607,13 @@ void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams
   INT4 rndCount;
   REAL8 cosTmpDEC;
   REAL8 tmpDeltaRA;
-  REAL8 DeltaRA = params->stksldSkyPatchData->deltaRA;
+  /* REAL8 DeltaRA = params->stksldSkyPatchData->deltaRA;
   REAL8 DeltaDec = params->stksldSkyPatchData->deltaDec;
-  REAL8 DeltaFDeriv1 = params->deltaFDeriv1;
+  REAL8 DeltaFDeriv1 = params->deltaFDeriv1; */
+  /* 06/01/04 gam; For now fix DeltaRA, DeltaDec,and DeltaFDeriv1 to default values when finding mismatch during Monte Carlo */
+  REAL8 DeltaRA = 0.01;
+  REAL8 DeltaDec = 0.01;
+  REAL8 DeltaFDeriv1 = -1.0e-10;
   REAL8 DeltaFDeriv2 = params->deltaFDeriv2;
   REAL8 DeltaFDeriv3 = params->deltaFDeriv3;
   REAL8 DeltaFDeriv4 = params->deltaFDeriv4;
