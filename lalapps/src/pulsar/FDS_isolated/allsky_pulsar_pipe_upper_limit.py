@@ -557,7 +557,8 @@ while cont:
           line_kounter=0
           for line in chisq_file:
             line_kounter=line_kounter+1
-            [crap,crap,crap,schisq1]=line.split(None,5)
+            [crap,crap,sdof1,schisq1]=line.split(None,5)
+#            [crap,crap,crap,schisq1]=line.split(None,5)
           chisq_file.close()
           if line_kounter != 1:
             print 'Chi sq. larger or smaller than expected. Exiting 4'
@@ -566,8 +567,11 @@ while cont:
             sys.exit(0)
 
           chisq1=float(schisq1)
-          
-          chisq_th=(4*(2*float(chisq_points)+1)-4)*(math.sqrt(F1)/10.0 +1)**2
+          dof1=float(sdof1)    
+          chisq_th=dof1*(math.sqrt(F1)/10.0 +1)**2
+#          chisq_th=(4*(2*float(chisq_points)+1)-4)*(math.sqrt(F1)/10.0 +1)**2
+
+
 
           if chisq1 < chisq_th:
             chisq1_pass=1
@@ -654,7 +658,8 @@ while cont:
           line_kounter=0
           for line in chisq_file:
             line_kounter=line_kounter+1
-            [crap,crap,crap,schisq2]=line.split(None,5)
+            [crap,crap,sdof2,schisq2]=line.split(None,5)
+#            [crap,crap,crap,schisq2]=line.split(None,5)
           chisq_file.close()
           if line_kounter != 1:
             print 'Chi sq. larger or smaller than expected. Exiting 5'
@@ -663,8 +668,9 @@ while cont:
             sys.exit(0)
         
           chisq2=float(schisq2)
-            
-          chisq_th=(4*(2*float(chisq_points)+1)-4)*(math.sqrt(F2)/10.0 +1)**2
+          dof2=float(sdof2)          
+          chisq_th=dof2*(math.sqrt(F2)/10.0 +1)**2 
+#          chisq_th=(4*(2*float(chisq_points)+1)-4)*(math.sqrt(F2)/10.0 +1)**2
 
           if chisq2 < chisq_th:
             chisq2_pass=1
