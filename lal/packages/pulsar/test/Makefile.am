@@ -10,13 +10,15 @@ pkgdata_DATA = eigen_Tf0-1e8_n-2.dat eigenInv_Tf0-1e8_n-2.dat \
   earth02.dat sun02.dat \
   earth03.dat sun03.dat \
   earth04.dat sun04.dat \
+  earth00-04.dat sun00-04.dat \
   earth98.ilwd sun98.ilwd \
   earth99.ilwd sun99.ilwd \
   earth00.ilwd sun00.ilwd \
   earth01.ilwd sun01.ilwd \
   earth02.ilwd sun02.ilwd \
   earth03.ilwd sun03.ilwd \
-  earth04.ilwd sun04.ilwd
+  earth04.ilwd sun04.ilwd \
+  earth00-04.ilwd sun00-04.ilwd
 #EXTRA_DIST = $(DATA) ephemtoilwd.sh
 EXTRA_DIST = $(DATA) LALDemodTest.c ephemtoilwd.sh
 EXTRA_TEXSOURCES = LALDemodTest.c
