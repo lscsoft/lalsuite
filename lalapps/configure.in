@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl $Id$
 AC_INIT(src/config.h.in)
-AM_INIT_AUTOMAKE(lalapps, 3.0)
+AM_INIT_AUTOMAKE(lalapps, 3.1)
 AM_CONFIG_HEADER(src/config.h)
 
 dnl Put version/configure info in config.h header
