@@ -113,6 +113,7 @@ LALExchangeInspiralTemplate (
     )
 {
   CHARVector box; /* a box to hold some bytes of data */
+  INT4Vector segmentIdVec;
 
   INITSTATUS (status, "LALExchangeInspiralTemplate", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);

@@ -98,26 +98,28 @@ LALFindChirpCreateInspiralBank (
   }
 
   /* and copy the template data into it */
-  memcpy( tmpltPtr, &(coarseList[0].params), sizeof(InspiralTemplate) );
+  memcpy( tmpltPtr, &(coarseList[0].params), 
+      sizeof(InspiralTemplate) );
   tmpltPtr->number = tmpltCounter;
   tmpltPtr->level = 0;
   tmpltPtr->next = NULL;
   tmpltPtr->fine = NULL;
 
-  /* create the list of segments to be filtered and turn them all on */
-  tmpltPtr->numSegments = params->numSegments;
-  tmpltPtr->segmentId = (INT4 *) 
-    LALCalloc( params->numSegments, sizeof(INT4) );
-  if ( ! tmpltPtr->segmentId )
+  /* create the list of segments to be filtered... */
+  LALI4CreateVector( status->statusPtr, &(tmpltPtr->segmentIdVec), 
+      params->numSegments );
+  BEGINFAIL( status )
   {
     LALFree( coarseList );
     TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
         status );
-    ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
   }
-  for ( i = 0; i < params->numSegments; ++i )
+  ENDFAIL( status );
+
+  /* ...and turn them all on */
+  for ( i = 0; i < tmpltPtr->segmentIdVec->length; ++i )
   {
-    tmpltPtr->segmentId[i] = 1;
+    tmpltPtr->segmentIdVec->data[i] = 1;
   }
 
   /* ...and the rest of the bank */
@@ -135,28 +137,29 @@ LALFindChirpCreateInspiralBank (
     tmpltPtr = tmpltPtr->next;
 
     /* copy the template data */
-    memcpy( tmpltPtr, &(coarseList[tmpltCounter].params), sizeof(InspiralTemplate) );
+    memcpy( tmpltPtr, &(coarseList[tmpltCounter].params), 
+        sizeof(InspiralTemplate) );
     tmpltPtr->number = tmpltCounter;
     tmpltPtr->level = 0;
     tmpltPtr->next = NULL;
     tmpltPtr->fine = NULL;
 
-    /* create the list of segments to be filtered and turn them all on */
-    tmpltPtr->numSegments = params->numSegments;
-    tmpltPtr->segmentId = (INT4 *) 
-      LALCalloc( params->numSegments, sizeof(INT4) );
-    if ( ! tmpltPtr->segmentId )
+    /* create the list of segments to be filtered... */
+    LALI4CreateVector( status->statusPtr, &(tmpltPtr->segmentIdVec), 
+        params->numSegments );
+    BEGINFAIL( status )
     {
       LALFree( coarseList );
       TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
           status );
-      ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
     }
-    for ( i = 0; i < params->numSegments; ++i )
-    {
-      tmpltPtr->segmentId[i] = 1;
-    }
+    ENDFAIL( status );
 
+    /* ...and turn them all on */
+    for ( i = 0; i < tmpltPtr->segmentIdVec->length; ++i )
+    {
+      tmpltPtr->segmentIdVec->data[i] = 1;
+    }
   }
 
 
@@ -227,20 +230,23 @@ LALFindChirpCreateInspiralBank (
         fineTmpltPtr->next = NULL;
         fineTmpltPtr->fine = NULL;
 
-        /* create the list of segments to be filtered */
-        fineTmpltPtr->numSegments = params->numSegments;
-        fineTmpltPtr->segmentId = (INT4 *) 
-          LALCalloc( params->numSegments, sizeof(INT4) );
-        if ( ! fineTmpltPtr->segmentId )
+        /* create the list of segments to be filtered... */
+        LALI4CreateVector( status->statusPtr, &(fineTmpltPtr->segmentIdVec), 
+            params->numSegments );
+        BEGINFAIL( status )
         {
           LALFree( coarseList );
           LALFree( fineList );
           LALFree( fineBankIn );
           TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
               status );
-          ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
         }
+        ENDFAIL( status );
 
+        /* ...and turn them all off */
+        memset( fineTmpltPtr->segmentIdVec->data, 0, 
+            tmpltPtr->segmentIdVec->length * sizeof(INT4) );
+         
         /* ...and the rest of the fine bank */
         for ( i = 1; i < numFine; ++i )
         {
@@ -264,19 +270,22 @@ LALFindChirpCreateInspiralBank (
           fineTmpltPtr->next = NULL;
           fineTmpltPtr->fine = NULL;
 
-          /* create the list of segments to be filtered */
-          fineTmpltPtr->numSegments = params->numSegments;
-          fineTmpltPtr->segmentId = (INT4 *) 
-            LALCalloc( params->numSegments, sizeof(INT4) );
-          if ( ! fineTmpltPtr->segmentId )
+          /* create the list of segments to be filtered... */
+          LALI4CreateVector( status->statusPtr, &(fineTmpltPtr->segmentIdVec), 
+              params->numSegments );
+          BEGINFAIL( status )
           {
             LALFree( coarseList );
             LALFree( fineList );
             LALFree( fineBankIn );
             TRY( LALFindChirpDestroyInspiralBank( status->statusPtr, bankHead ),
                 status );
-            ABORT( status, FINDCHIRPENGINEH_EALOC, FINDCHIRPENGINEH_MSGEALOC );
           }
+          ENDFAIL( status );
+
+          /* ...and turn them all off */
+          memset( fineTmpltPtr->segmentIdVec->data, 0, 
+              tmpltPtr->segmentIdVec->length * sizeof(INT4) );
         }
 
       } /* end if any fine templates returned */
@@ -330,7 +339,9 @@ LALFindChirpDestroyInspiralBank (
       CHECKSTATUSPTR( status );
     }
     *bankHead = (*bankHead)->next;
-    LALFree( current->segmentId );
+    LALI4DestroyVector( status->statusPtr, &(current->segmentIdVec) );
+    CHECKSTATUSPTR( status );
+
     LALFree( current );
   }
 

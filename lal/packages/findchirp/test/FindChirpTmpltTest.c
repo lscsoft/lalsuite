@@ -150,10 +150,10 @@ PrintInspiralBank (
         current->eta, current->mu,
         current->next, current->fine );
     fprintf( fp, "   > " );
-    for ( i = 0; i < current->numSegments; ++i )
+    for ( i = 0; i < current->segmentIdVec->length; ++i )
     {
-      fprintf( fp, "segmentId[%d] = %d  ",
-          i, current->segmentId[i] );
+      fprintf( fp, "segment[%d] = %d  ",
+          i, current->segmentIdVec->data[i] );
     }
     fprintf( fp, "\n\n" );
     fflush( fp );

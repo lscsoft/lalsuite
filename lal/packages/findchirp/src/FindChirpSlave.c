@@ -156,10 +156,13 @@ LALFindChirpSlave (
     {
       eventList = NULL;
 
-      /* if the heirarchical level of the data segment exceeds that of the */
-      /* template, filter it                                               */
-      if ( fcSegVec->data[i].level >= bankCurrent->level )
+      /* should we filter this segment against this template? */
+      fprintf( stderr, "checking segment %d\n", 
+          fcSegVec->data[i].number );
+      if ( bankCurrent->segmentIdVec->data[fcSegVec->data[i].number] )
       {
+        fprintf( stderr, "filtering segment %d\n", 
+            fcSegVec->data[i].number );
 
         params->filterInput->segment = fcSegVec->data + i;
 
@@ -196,9 +199,6 @@ LALFindChirpSlave (
             LALFree( current );
           }
 
-          /* increment the level of data segment */
-          fcSegVec->data[i].level++;
-
         } /* end if... eventList */
 
       } /* end if... filter */
@@ -208,8 +208,10 @@ LALFindChirpSlave (
   } /* end loop over linked list */
 
 
+  fprintf( stderr, "destroying inspiral bank... " );
   LALFindChirpDestroyInspiralBank( status->statusPtr, &bankHead );
   CHECKSTATUSPTR( status );
+  fprintf( stderr, "done\n" );
 
   *notFinished = 1;
 
