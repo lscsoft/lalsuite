@@ -5,7 +5,8 @@ libinject_la_SOURCES =	\
 	GenerateTaylorCW.c	SimulateCoherentGW.c \
 	InjectVector.c		InjectTimeSeries.c \
 	CelestialCoordinates.c	TerrestrialCoordinates.c \
-	SkyCoordinates.c	SimulateSB.c
+	SkyCoordinates.c	SimulateSB.c \
+	SimulateInspiral.c
 ## Hack to get this working for now... change later
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../../date/include
 #INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include

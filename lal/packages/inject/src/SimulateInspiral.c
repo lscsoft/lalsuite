@@ -1,0 +1,368 @@
+/***************************** <lalVerbatim file="SimulateInspiralCV">
+Author: Creighton, T. D.
+$Id$
+**************************************************** </lalVerbatim> */
+
+/********************************************************** <lalLaTeX>
+
+\subsection{Module \texttt{SimulateInspiral.c}}
+\label{ss:SimulateInspiral.c}
+
+Injects inspiral waveforms into detector output.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{SimulateInspiralCP}
+\idx{LALSimulateInspiral()}
+
+\subsubsection*{Description}
+
+This function generates a binary inspiral signal using the parameters
+in \verb@*params@, simulates an instrument's response to that signal
+using the instrument transfer function \verb@*transfer@, and injects
+the resulting waveform into detector output stored in \verb@*output@.
+
+The \verb@*output@ time series should have all of its fields set to
+their desired values, and should have a data sequence already
+allocated; the function \verb@LALSimulateInspiral()@ simply adds the
+inspiral waveform on top of the existing data. The \verb@epoch@ and
+\verb@deltaT@ fields must be set, as they are used to determine the
+sample rate and time positioning of the injected signal.  The
+\verb@sampleUnits@ field must be set to \verb@lalADCCountUnit@ for
+consistency.
+
+The \verb@*transfer@ frequency series should define the complex
+frequency response function $T(f)$ taking the differential strain
+signal $\tilde{h}(f)$ to detector response
+$\tilde{o}(f)=T(f)\tilde{h}(f)$, and should have units of ADC counts
+per strain.  It is treated as zero outside its frequency domain, and
+is linearly interpolated between its frequency samples.
+
+The \verb@*params@ structure represents the parameters of an inspiral
+signal to be injected (if \verb@params->next@=\verb@NULL@), or the
+head of a linked list of parameter structures for multiple injections.
+For each structure, if the \verb@signalAmplitude@ field is $\geq0$,
+the injected waveform will be scaled to give it the correct
+characteristic detection amplitude, and the \verb@effDist@ field is
+set appropriately.  If \verb@signalAmplitude@$<0$ and
+\verb@effDist@$>0$, the waveform is injected with that effective
+distance, and the \verb@signalAmplitude@ field is set appropriately.
+If \verb@signalAmplitude@$<0$ and \verb@effDist@$\leq0$, an error is
+returned (that and all subsequent injections are skipped).
+
+An error is also returned (and no injections performed) if any of the
+fields of \verb@*output@ and \verb@*transfer@ are not set to usable
+values, including such things as wrong units or bad sampling
+intervals.
+
+\subsubsection*{Usage}
+
+One of the most useful applications of this routine is to generate
+simulated noise containing a signal.  The following code snippet
+generates white Gaussian noise with rms amplitude \verb@SIGMA@, and
+injects a signal with intrinsic signal-to-noise ratio
+$\sqrt{(h|h)}=$\verb@SNR@ into it, coalescing at a time \verb@DT@
+seconds from the start of the time series, with a wave phase
+\verb@PHI@ at coalescence.  The \verb@REAL4TimeSeries output@ and
+\verb@COMPLEX8FrequencySeries transfer@ structures are assumed to be
+defined and allocated outside of this block.
+
+******************************************************* </lalLaTeX> */
+#if 0
+/* <lalVerbatim> */
+{
+  UINT4 i;
+  SimulateInspiralParamStruc inspParams;
+  RandomParams *randParams = NULL;
+
+  /* Generate white Gaussian noise. */
+  LALCreateRandomParams( status->statusPtr, &randParams, 0 );
+  LALNormalDeviates( status->statusPtr, output.data, randParams );
+  for ( i = 0; i < output.data->length; i++ )
+    output.data->data[i] *= SIGMA;
+  LALDestroyRandomParams( status->statusPtr, &randParams );
+
+  /* Inject signal. */
+  inspParams.timeC = output.epoch;
+  inspParams.timeC.gpsSeconts += DT;
+  inspParams.phiC = PHI; inspParams.mass1 = M1; inspParams.mass2 = M2;
+  inspParams.signalAmplitude = SNR*SIGMA;
+  inspParams.next = NULL;
+  LALSimulateInspiral( status->statusPtr, &output, &transfer, &inspParams );
+}
+/* </lalVerbatim> */
+#endif
+/********************************************************** <lalLaTeX>
+
+\subsubsection*{Algorithm}
+
+The default mode of operation, when one specifies the desired
+amplitude, is as follows:
+
+First, \verb@LALGeneratePPNInspiral()@ is called to generate the
+signal, placing the source at a distance of 1Mpc with optimal
+orientation.  For lack of anything better, the amplitude and phase
+functions are sampled at the full sampling interval as the output data
+stream.  This function call also returns the time at coalescence.
+
+Second, the waveform produced by the signal in the detector output
+stream is calculated.  The basic algorithm is the same as that in
+\verb@LALSimulateCoherentGW()@, but we can simplify it significantly
+because we ignore polarization responses, time delays, and
+interpolation between time samples.  Thus we have only to compute the
+effect of the frequency transfer function ${\cal T}(f)$.  As stated in
+the \verb@SimulateCoherentGW.h@ header, for quasiperiodic waveforms
+$h(t)=\mathrm{Re}[{\cal H}(t)e^{i\phi(t)}]$ we can approximate the
+instrument response (in the absence of noise) as:
+$$
+o(t) \approx \mathrm{Re}[{\cal T}\{f(t)\}{\cal H}(t)e^{i\phi(t)}] \;.
+$$
+In our case we are only sensitive to a single polarization (let's say
+$h_+$), so we take ${\cal H}(t)=A_+(t)$, where the phase of $\cal H$
+is absorbed into the coalescence phase of $\phi$.  Then we can write
+the instrument response as:
+$$
+o(t) \approx A_+(t)[ T_\mathrm{re}\{f(t)\}\cos\phi(t)
+	- T_\mathrm{im}\{f(t)\}\sin\phi(t) ] \;.
+$$
+This calculation can be done in place and stored in one of the arrays
+for the amplitude, phase, or frequency functions, since they are
+already sampled at the correct rate and have the correct length.
+
+Third, the characteristic detection amplitude is computed, and the
+whole waveform is scaled so that it has the correct value.
+Simultaneously, the effective distance is set to \mbox{1Mpc/(the scale
+factor)}.  The epoch is also adjusted to give the waveform the correct
+coalescence time.
+
+Finally, \verb@LALSSInjectTimeSeries()@ is called to inject the
+waveform into the output time series.  The whole procedure is repeated
+for any other nodes in the linked list of parameters.
+
+If any parameter structure specifies the effective distance in place
+of the characteristic detection amplitude, then the signal is injected
+with that effective distance and is not rescaled.  The characteristic
+detection amplitude field is set to the measured value.
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALWarning()
+LALDDestroyVector()           LALFree()
+LALSDestroyVector()           LALSDestroyVectorSequence()
+LALGeneratePPNInspiral()      LALSSInjectTimeSeries()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{SimulateInspiralCV}}
+
+******************************************************* </lalLaTeX> */
+
+#include <math.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALError.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/Units.h>
+#include <lal/Inject.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/GeneratePPNInspiral.h>
+#include <lal/SimulateInspiral.h>
+
+/* The lower cutoff frequency is defined as the point where the
+   sensitivity is reduced by a factor of CUTOFF, or as the frequency
+   FMIN (in Hz), whichever is higher. */
+#define SIMULATEINSPIRALC_CUTOFF (0.000001)
+#define SIMULATEINSPIRALC_FMIN   (10)
+
+NRCSID( SIMULATEINSPIRALC, "$Id$" );
+
+/* <lalVerbatim file="SimulateInspiralCP"> */
+void
+LALSimulateInspiral( LALStatus                  *stat,
+		     REAL4TimeSeries            *output,
+		     COMPLEX8FrequencySeries    *transfer,
+		     SimulateInspiralParamStruc *params )
+{ /* </lalVerbatim> */
+  CHAR name[LALNameLength]; /* name of output time series */
+  UINT4 i;                  /* an index */
+  REAL4 xferMax;            /* maximum amplitude of transfer function */
+  COMPLEX8 *tData;          /* pointer to transfer function data */
+  PPNParamStruc ppnParams;  /* the parameters of the inspiral */
+  CoherentGW signal;        /* the signal generated */
+
+  /* Frequency interpolation constants.  By linear interpolation, the
+     transfer function at any frequency f is given by:
+
+                            f - f_k                  f_{k+1} - f
+     T(f) = T(f_{k+1}) * -------------  +  T(f_k) * -------------
+                         f_{k+1} - f_k              f_{k+1} - f_k
+
+          = x*T_{k+1}  +  ( 1 - x )*T_k
+
+     where:
+
+     y = ( f - f0 )/deltaF = fOffset + dfInv*f
+     k = (int)( y )
+     x = y - k
+
+  */
+  REAL8 dfInv, fOffset;
+
+  INITSTATUS( stat, "LALSimulateInspiral", SIMULATEINSPIRALC );
+  ATTATCHSTATUSPTR( stat );
+
+  /* Make sure argument structures and their fields exist. */
+  ASSERT( output, stat, SIMULATEINSPIRALH_ENUL,
+	  SIMULATEINSPIRALH_MSGENUL );
+  ASSERT( output->data, stat, SIMULATEINSPIRALH_ENUL,
+	  SIMULATEINSPIRALH_MSGENUL );
+  ASSERT( output->data->data, stat, SIMULATEINSPIRALH_ENUL,
+	  SIMULATEINSPIRALH_MSGENUL );
+  ASSERT( transfer, stat, SIMULATEINSPIRALH_ENUL,
+	  SIMULATEINSPIRALH_MSGENUL );
+  ASSERT( transfer->data, stat, SIMULATEINSPIRALH_ENUL,
+	  SIMULATEINSPIRALH_MSGENUL );
+  ASSERT( transfer->data->data, stat, SIMULATEINSPIRALH_ENUL,
+	  SIMULATEINSPIRALH_MSGENUL );
+
+  /* Set up interpolation constants for the transfer function. */
+  ASSERT( transfer->deltaF != 0.0, stat, SIMULATEINSPIRALH_EDF,
+	  SIMULATEINSPIRALH_MSGEDF );
+  dfInv = 1.0/transfer->deltaF;
+  fOffset = -dfInv*transfer->f0;
+
+  /* Find the low-frequency cutoff of the transfer function, defined
+     as the point where the amplitude of the response drops to
+     SIMULATEINSPIRALC_CUTOFF times its maximum. */
+  xferMax = 0.0;
+  tData = transfer->data->data;
+  i = transfer->data->length;
+  while ( i-- ) {
+    REAL4 xfer = fabs( tData->re ) + fabs( tData->im );
+    if ( xfer > xferMax )
+      xferMax = xfer;
+    tData++;
+  }
+  xferMax *= SIMULATEINSPIRALC_CUTOFF;
+  tData = transfer->data->data;
+  i = 0;
+  while ( fabs( tData->re ) + fabs( tData->im ) < xferMax ) {
+    tData++;
+    i++;
+  }
+  ppnParams.fStartIn = transfer->f0 + i*transfer->deltaF;
+  if ( ppnParams.fStartIn < SIMULATEINSPIRALC_FMIN )
+    ppnParams.fStartIn = SIMULATEINSPIRALC_FMIN;
+
+  /* Set up other parameters that won't change between injections. */
+  memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+  ppnParams.deltaT = output->deltaT;
+  tData = transfer->data->data;
+  strncpy( name, output->name, LALNameLength );
+
+  /* Inject for each node in the list of parameters. */
+  while ( params ) {
+    BOOLEAN fFlag = 0; /* whether we stepped outside transfer domain */
+    INT8 tc;           /* coalescence time, in GPS nanoseconds */
+    REAL4 amp2 = 0.0;  /* characteristic detection amplitude squared */
+    REAL4 *aData;      /* pointer to amplitude data */
+    REAL4 *fData;      /* pointer to frequency data */
+    REAL8 *phiData;    /* pointer to phase data */
+
+    /* First, generate the inspiral amplitude and phase as functions
+       of time. */
+    ppnParams.mTot = params->mass1 + params->mass2;
+    ppnParams.eta = params->mass1*params->mass2
+      /ppnParams.mTot/ppnParams.mTot;
+    ppnParams.phi = params->phiC;
+    ppnParams.d = 1000000.0*LAL_PC_SI;
+    if ( params->signalAmplitude < 0.0 ) {
+      if ( params->effDist <= 0.0 ) {
+	ABORT( stat, SIMULATEINSPIRALH_EBAD, SIMULATEINSPIRALH_MSGEBAD );
+      }
+      ppnParams.d *= params->effDist;
+    }
+    TRY( LALGeneratePPNInspiral( stat->statusPtr, &signal,
+				 &ppnParams ), stat );
+
+    /* Next, simulate the instrument response.  To save memory, this
+       will be done in place, overwriting the frequency function
+       signal.f since it has the right type and length.  Also compute
+       characteristic detection amplitude. */
+    aData = signal.a->data->data;
+    fData = signal.f->data->data;
+    phiData = signal.phi->data->data;
+    for ( i = 0; i < signal.f->data->length; i++ ) {
+      REAL8 y = fOffset + *fData*dfInv;
+      if ( y < 0.0 || y >= transfer->data->length ) {
+	*fData = 0.0;
+	fFlag = 1;
+      } else {
+	UINT4 k = (UINT4)( y );
+	REAL8 x = y - k;
+	REAL4 tRe = x*tData[k+1].re + ( 1.0 - x )*tData[k].re;
+	REAL4 tIm = x*tData[k+1].im + ( 1.0 - x )*tData[k].im;
+	*fData = *aData*( tRe*cos( *phiData ) - tIm*sin( *phiData ) );
+	amp2 += (*fData)*(*fData);
+      }
+      aData+=2;
+      fData++;
+      phiData++;
+    }
+    signal.f->sampleUnits = lalADCCountUnit;
+
+    /* Warn if we ever stepped outside of the frequency domain of the
+       transfer function. */
+    if ( fFlag )
+      LALWarning( stat, "Signal passed outside of the frequency domain"
+		  " of the transfer function (transfer function is"
+		  " treated as zero outside its specified domain)" );
+
+    /* Rescale either amplitude or distance, and shift time. */
+    if ( params->signalAmplitude < 0.0 )
+      params->signalAmplitude = sqrt( amp2 );
+    else {
+      amp2 = params->signalAmplitude / sqrt( amp2 );
+      fData = signal.f->data->data;
+      i = signal.f->data->length;
+      while ( i-- ) {
+	*fData *= amp2;
+	fData++;
+      }
+      if ( amp2 == 0.0 )
+	params->effDist = LAL_REAL4_MAX;
+      else
+	params->effDist = 1.0 / amp2;
+    }
+    tc = 1000000000*params->timeC.gpsSeconds + params->timeC.gpsNanoSeconds;
+    tc -= (INT8)( 1000000000.0*ppnParams.tc );
+    signal.f->epoch.gpsSeconds = tc / 1000000000;
+    signal.f->epoch.gpsNanoSeconds = tc % 1000000000;
+
+    /* Inject the waveform into the output data, and reset everything
+       for the next injection. */
+    TRY( LALSDestroyVectorSequence( stat->statusPtr, &(signal.a->data) ),
+	 stat );
+    TRY( LALDDestroyVector( stat->statusPtr, &(signal.phi->data) ),
+	 stat );
+    LALFree( signal.a ); signal.a = NULL;
+    LALFree( signal.phi ); signal.phi = NULL;
+    LALSSInjectTimeSeries( stat->statusPtr, output, signal.f );
+    BEGINFAIL( stat ) {
+      TRY( LALSDestroyVector( stat->statusPtr, &(signal.f->data) ),
+	   stat );
+      LALFree( signal.f ); signal.f = NULL;
+    } ENDFAIL( stat );
+    TRY( LALSDestroyVector( stat->statusPtr, &(signal.f->data) ),
+	 stat );
+    LALFree( signal.f ); signal.f = NULL;
+    strncpy( output->name, name, LALNameLength );
+    params = params->next;
+  }
+
+  /* End of parameter list; no further cleanup should be necessary. */
+  DETATCHSTATUSPTR( stat );
+  RETURN( stat );
+}

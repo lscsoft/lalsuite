@@ -9,6 +9,9 @@ The routines currently available are:
 \begin{description}
 \item[\texttt{GeneratePPNInspiral.h}] Provides routines to generate
 parametrized post-Newtonian inspiral waveforms up to 5/2 order.
+\item[\texttt{GenerateTaylorCW.h}] Provides a routine to generate
+continuous quasiperiodic waveforms with Taylor-parametrized frequency
+evolution.
 \end{description}
 
 \item Simulating a detector's theoretical response to an incoming
@@ -32,11 +35,18 @@ and other (perhaps more generic) ways of simulating the detector
 response may be added under item~2.  Item~3, however, is unlikely to
 need much updating.
 
+In addition to these basic divisions, the package may include routines
+that perform other useful tasks in signal injection or source
+simulation, such as combining signal generation, detector simulation,
+and injection into a single function call, or modelling astrophysical
+distributions of sources.
+
 \newpage\input{InjectH}
 \newpage\input{SimulateCoherentGWH}
 \newpage\input{GeneratePPNInspiralH}
 \newpage\input{GenerateTaylorCWH}
 \newpage\input{SkyCoordinatesH}
+\newpage\input{SimulateInspiralH}
 \newpage\input{SimulateSBH}
 
 \newpage\begin{thebibliography}{1}
