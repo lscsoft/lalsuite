@@ -369,7 +369,7 @@ int main(int argc,char *argv[])
 
 #if USE_BOINC
   use_boinc_filename0(Fstatsfilename);
-  use_boinc_filename0(ckp_fname);
+  /* use_boinc_filename0(ckp_fname); */
 #endif /* USE_BOINC */
 
   /*----------------------------------------------------------------------
@@ -417,6 +417,43 @@ int main(int argc,char *argv[])
 
   while (1)
     {
+      /* flush fstats-file and write checkpoint-file */
+      if (fpstat)
+	{
+	  FILE *fp;
+	  if ( (fp = fopen(ckp_fname, "wb")) == NULL) /* overwrite old file */
+	    {
+	      LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
+	      exit ( COMPUTEFSTATC_ECHECKPOINT );
+	    }
+	  if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %ld", loopcounter, fstat_bytecounter) < 0)
+	    {
+	      LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
+	      exit ( COMPUTEFSTATC_ECHECKPOINT );
+	    }
+	  fclose (fp);
+	  fflush (fpstat);
+	  
+	} /* if fpstat */
+      
+      /* Show some progress */
+#if USE_BOINC
+      {
+	double local_fraction_done=((double)loopcounter)/((double)thisScan.numGridPoints);
+	if (local_fraction_done<0.0)
+	  local_fraction_done=0.0;
+	if (local_fraction_done>1.0)
+	  local_fraction_done=1.0;
+	boinc_fraction_done(local_fraction_done);
+#if !NO_BOINC_GRAPHICS
+	/* pass variable externally to graphics routines */
+	fraction_done=local_fraction_done;
+#endif
+      }
+#endif
+      if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
+					(100.0* loopcounter / thisScan.numGridPoints));
+      
       LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
 
       /* Have we scanned all DopplerPositions yet? */
@@ -498,42 +535,6 @@ int main(int argc,char *argv[])
 
       loopcounter ++;		/* number of *completed* loops */
 
-      /* flush fstats-file and write checkpoint-file */
-      if (fpstat)
-	{
-	  FILE *fp;
-	  if ( (fp = fopen(ckp_fname, "wb")) == NULL) /* overwrite old file */
-	    {
-	      LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
-	      exit ( COMPUTEFSTATC_ECHECKPOINT );
-	    }
-	  if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %ld", loopcounter, fstat_bytecounter) < 0)
-	    {
-	      LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
-	      exit ( COMPUTEFSTATC_ECHECKPOINT );
-	    }
-	  fclose (fp);
-	  fflush (fpstat);
-
-	} /* if fpstat */
-
-      /* Show some progress */
-#if USE_BOINC
-      {
-	double local_fraction_done=((double)loopcounter)/((double)thisScan.numGridPoints);
-	if (local_fraction_done<0.0)
-	  local_fraction_done=0.0;
-	if (local_fraction_done>1.0)
-	  local_fraction_done=1.0;
-	boinc_fraction_done(local_fraction_done);
-#if !NO_BOINC_GRAPHICS
-	/* pass variable externally to graphics routines */
-	fraction_done=local_fraction_done;
-#endif
-      }
-#endif
-      if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
-					(100.0* loopcounter / thisScan.numGridPoints));
     } /*  while SkyPos */
   
   if (uvar_outputFstat && fpOut)
