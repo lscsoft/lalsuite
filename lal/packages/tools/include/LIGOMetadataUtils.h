@@ -390,44 +390,50 @@ LALPopulateSimInspiralSiteInfo(
 void
 XLALSortSnglBurst(
 	SnglBurstTable **head,
-	int (*comparefunc)(const SnglBurstTable **, const SnglBurstTable **)
+	int (*comparefunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 );
 
 void
 LALSortSnglBurst(
 	LALStatus *status,
 	SnglBurstTable **head,
-	int (*comparefunc)(const SnglBurstTable **, const SnglBurstTable **)
+	int (*comparefunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 );
 
 int
 XLALCompareSnglBurstByStartTime(
-	const SnglBurstTable **a,
-	const SnglBurstTable **b
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
 );
 
 int
 XLALCompareSnglBurstByTime(
-	const SnglBurstTable **a,
-	const SnglBurstTable **b
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
 );
 
 int
 XLALCompareSnglBurstByLowFreq(
-	const SnglBurstTable **a,
-	const SnglBurstTable **b
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
 );
 
 int
 XLALCompareSnglBurstByFreq(
-	const SnglBurstTable **a,
-	const SnglBurstTable **b
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
 );
 
 int
 XLALCompareSnglBurstByStartTimeAndLowFreq(
-	const SnglBurstTable **a,
-	const SnglBurstTable **b
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+);
+
+int
+XLALCompareSnglBurst(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
 );
 
 void
@@ -438,6 +444,12 @@ LALCompareSnglBurst(
 	int *match
 );
 
+int
+XLALCompareSimBurstAndSnglBurst(
+	const SimBurstTable * const *a,
+	const SnglBurstTable * const *b
+);
+
 void
 LALCompareSimBurstAndSnglBurst(
 	LALStatus *status,
@@ -446,9 +458,16 @@ LALCompareSimBurstAndSnglBurst(
 	int *match
 );
 
+int
+XLALSnglBurstClusterTest(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+);
+
 void
 XLALClusterSnglBurstTable(
-	SnglBurstTable  *list
+	SnglBurstTable  *list,
+	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 );
 
 void

@@ -38,12 +38,16 @@ NRCSID( SNGLBURSTUTILSC, "$Id$" );
 \input{SnglBurstUtilsCP}
 \idx{LALSortSnglBurst()}
 \idx{XLALSortSnglBurst()}
-\idx{LALCompareSnglBurst()}
-\idx{XLALCompareSnglBurstByLowFreq()}
-\idx{XLALCompareSnglBurstByFreq()}
 \idx{XLALCompareSnglBurstByStartTime()}
 \idx{XLALCompareSnglBurstByTime()}
+\idx{XLALCompareSnglBurstByLowFreq()}
+\idx{XLALCompareSnglBurstByFreq()}
 \idx{XLALCompareSnglBurstByStartTimeAndLowFreq()}
+\idx{LALCompareSnglBurst()}
+\idx{XLALCompareSnglBurst()}
+\idx{LALCompareSimBurstAndSnglBurst()}
+\idx{XLALCompareSimBurstAndSnglBurst()}
+\idx{XLALSnglBurstClusterTest()}
 \idx{LALClusterSnglBurstTable()}
 \idx{XLALClusterSnglBurstTable()}
 
@@ -102,7 +106,7 @@ static REAL4 hi_freq(const SnglBurstTable *x)
 void
 XLALSortSnglBurst(
 	SnglBurstTable **head,
-	int (*comparefunc)(const SnglBurstTable **, const SnglBurstTable **)
+	int (*comparefunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 )
 /* </lalVerbatim> */
 {
@@ -142,7 +146,7 @@ void
 LALSortSnglBurst(
 	LALStatus *status,
 	SnglBurstTable **head,
-	int (*comparefunc)(const SnglBurstTable **, const SnglBurstTable **)
+	int (*comparefunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 )
 /* </lalVerbatim> */
 {
@@ -159,8 +163,8 @@ LALSortSnglBurst(
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int
 XLALCompareSnglBurstByStartTime(
-	const SnglBurstTable **a,
-	const SnglBurstTable **b
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
 )
 /* </lalVerbatim> */
 {
@@ -184,8 +188,8 @@ XLALCompareSnglBurstByStartTime(
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int
 XLALCompareSnglBurstByTime(
-	const SnglBurstTable **a,
-	const SnglBurstTable **b
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
 )
 /* </lalVerbatim> */
 {
@@ -204,8 +208,8 @@ XLALCompareSnglBurstByTime(
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int
 XLALCompareSnglBurstByLowFreq(
-	const SnglBurstTable **a,
-	const SnglBurstTable **b
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
 )
 /* </lalVerbatim> */
 {
@@ -229,8 +233,8 @@ XLALCompareSnglBurstByLowFreq(
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int
 XLALCompareSnglBurstByFreq(
-	const SnglBurstTable **a,
-	const SnglBurstTable **b
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
 )
 /* </lalVerbatim> */
 {
@@ -243,29 +247,41 @@ XLALCompareSnglBurstByFreq(
 
 
 /*
- * Compare two events first by start time, then by lowest frequency for ties.
+ * Compare two events first by start time, then by lowest frequency to break
+ * ties.
  */
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int
 XLALCompareSnglBurstByStartTimeAndLowFreq(
-	const SnglBurstTable **a,
-	const SnglBurstTable **b
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
 )
 /* </lalVerbatim> */
 {
 	int result;
 
 	result = XLALCompareSnglBurstByStartTime(a, b);
-	if(result)
-		return(result);
-	return(XLALCompareSnglBurstByLowFreq(a, b));
+	if(!result)
+		result = XLALCompareSnglBurstByLowFreq(a, b);
+	return(result);
 }
 
 
 /*
  * Check to see if two events overlap in time and frequency.
  */
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareSnglBurst(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+)
+/* </lalVerbatim> */
+{
+	return(!XLALCompareSnglBurstByTime(a, b) && !XLALCompareSnglBurstByFreq(a, b));
+}
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
@@ -278,9 +294,7 @@ LALCompareSnglBurst(
 /* </lalVerbatim> */
 {
 	INITSTATUS (status, "LALCompareSnglBurst", SNGLBURSTUTILSC);
-
-	*match = !XLALCompareSnglBurstByTime(&a, &b) && !XLALCompareSnglBurstByFreq(&a, &b);
-
+	*match = XLALCompareSnglBurst(&a, &b);
 	RETURN(status);
 }
 
@@ -289,6 +303,21 @@ LALCompareSnglBurst(
  * Check to see if a SimBurstTable event lies within the tile defined by the
  * given SnglBurstTable event.
  */
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareSimBurstAndSnglBurst(
+	const SimBurstTable * const *a,
+	const SnglBurstTable * const *b
+)
+/* </lalVerbatim> */
+{
+	INT8 ta;
+
+	ta = XLALGPStoINT8(&(*a)->geocent_peak_time);
+
+	return((start_time(*b) < ta) && (ta < end_time(*b)) && (lo_freq(*b) < (*a)->freq) && ((*a)->freq < hi_freq(*b)));
+}
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
@@ -300,28 +329,32 @@ LALCompareSimBurstAndSnglBurst(
 )
 /* </lalVerbatim> */
 {
-	INT8 ta;
-
 	INITSTATUS(status, "LALCompareSimBurstAndSnglBurst", SNGLBURSTUTILSC);
-
-	ta = XLALGPStoINT8(&a->geocent_peak_time);
-
-	*match = (start_time(b) < ta) && (ta < end_time(b)) && (lo_freq(b) < a->freq) && (a->freq < hi_freq(b));
-
+	*match = XLALCompareSimBurstAndSnglBurst(&a, &b);
 	RETURN(status);
 }
 
 
 /*
- * Returns true if two events should be clustered (peak times are within 10 ns
- * of each other and their frequency bands overlap).
+ * Returns FALSE if two events should be clustered (peak times are within 10 ns
+ * of each other and their frequency bands overlap).  The reason for the
+ * aparently backwards return value is that in this way this function's
+ * prototype is identical to those passed to the sorting routine;  thus the
+ * same test functions can, in principle, be used for both.  Think of this
+ * function as the equivalent of the != operator.
  */
 
-static int should_cluster(const SnglBurstTable *a, const SnglBurstTable *b)
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALSnglBurstClusterTest(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+)
+/* </lalVerbatim> */
 {
 	const REAL8 epsilon = 1e-8;	/* seconds */
 
-	return((fabs(XLALDeltaFloatGPS(&a->peak_time, &b->peak_time)) < epsilon) && !XLALCompareSnglBurstByFreq(&a, &b));
+	return((fabs(XLALDeltaFloatGPS(&(*a)->peak_time, &(*b)->peak_time)) >= epsilon) || XLALCompareSnglBurstByFreq(a, b));
 }
 
 
@@ -329,7 +362,7 @@ static int should_cluster(const SnglBurstTable *a, const SnglBurstTable *b)
  * cluster events a and b, storing result in a
  */
 
-static void XLALClusterSnglBurst(SnglBurstTable *a, SnglBurstTable *b)
+static void XLALSnglBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
 {
 	REAL4 f_lo, f_hi;
 	INT8 ta_start, ta_end, tb_start, tb_end;
@@ -376,13 +409,15 @@ static void XLALClusterSnglBurst(SnglBurstTable *a, SnglBurstTable *b)
 
 /*
  * Recursively cluster a linked list of SnglBurstTable events until the list
- * stops changing.
+ * stops changing.  testfunc() should return FALSE if the two given events are
+ * to be clustered.
  */
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 XLALClusterSnglBurstTable (
-	SnglBurstTable   *list
+	SnglBurstTable *list,
+	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 )
 /* </lalVerbatim> */
 {
@@ -394,8 +429,8 @@ XLALClusterSnglBurstTable (
 
 		for(a = list; a; a = a->next)
 			for(prev = a, b = a->next; b; b = prev->next) {
-				if(should_cluster(a, b)) {
-					XLALClusterSnglBurst(a, b);
+				if(!testfunc((const SnglBurstTable * const *) &a, (const SnglBurstTable * const *) &b)) {
+					XLALSnglBurstCluster(a, b);
 					prev->next = b->next;
 					LALFree(b);
 					did_cluster = 1;
@@ -409,13 +444,13 @@ XLALClusterSnglBurstTable (
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 LALClusterSnglBurstTable (
-	LALStatus        *status,
-	SnglBurstTable   *list
+	LALStatus *status,
+	SnglBurstTable *list
 )
 /* </lalVerbatim> */
 {
 	INITSTATUS (status, "LALClusterSnglBurstTable", SNGLBURSTUTILSC);
-	XLALClusterSnglBurstTable(list);
+	XLALClusterSnglBurstTable(list, XLALSnglBurstClusterTest);
 	RETURN(status);
 }
 
