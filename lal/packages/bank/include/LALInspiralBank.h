@@ -521,7 +521,7 @@ LALInspiralSpinBank(
     LALStatus         	 *status,
     SnglInspiralTable   **tiles,
     INT4      		 *ntiles,
-    InspiralCoarseBankIn  coarseIn
+    InspiralCoarseBankIn *coarseIn
     );
 
 #if 0

@@ -199,7 +199,7 @@ int main( int argc, char *argv[] )
         noiseMin = psd->data[loop];
       }
     }
-    LALInspiralSpinBank( &stat, &bankHead, &ntiles, coarseIn );
+    LALInspiralSpinBank( &stat, &bankHead, &ntiles, &coarseIn );
     if( stat.statusCode )
     {
       LALError( &stat, INSPIRALSPINBANKTESTC_MSGESUB );

@@ -85,7 +85,7 @@ LALInspiralBankGeneration(
 
   case BCVSpin:
     /* Use LALInspiralSpinBank(); no need to convert output. */
-    TRY( LALInspiralSpinBank( status->statusPtr, first, ntiles, *input ),
+    TRY( LALInspiralSpinBank( status->statusPtr, first, ntiles, input ),
          status );   
     if (*ntiles < 1){       
       ABORT( status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );

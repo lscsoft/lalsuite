@@ -246,7 +246,7 @@ LALInspiralSpinBank(
     LALStatus         	 *status,
     SnglInspiralTable   **tiles,
     INT4      		 *ntiles,
-    InspiralCoarseBankIn  coarseIn
+    InspiralCoarseBankIn *coarseIn
     )
 /* </lalVerbatim> */
 {
@@ -276,27 +276,29 @@ LALInspiralSpinBank(
   ATTATCHSTATUSPTR( status );
   
   
+  ASSERT( coarseIn, status, LALINSPIRALBANKH_ENULL,
+          LALINSPIRALBANKH_MSGENULL );
   /* Check that minimal match is OK. */
-  ASSERT( coarseIn.mmCoarse > 0, status, LALINSPIRALBANKH_ECHOICE,
+  ASSERT( coarseIn->mmCoarse > 0, status, LALINSPIRALBANKH_ECHOICE,
           LALINSPIRALBANKH_MSGECHOICE );
-  ASSERT( coarseIn.mmCoarse < 1, status, LALINSPIRALBANKH_ECHOICE,
+  ASSERT( coarseIn->mmCoarse < 1, status, LALINSPIRALBANKH_ECHOICE,
           LALINSPIRALBANKH_MSGECHOICE );
   /* Another mass bound needed, or go to psi bounds instead? */
-  ASSERT( coarseIn.mMin > 0, status, LALINSPIRALBANKH_ECHOICE,
+  ASSERT( coarseIn->mMin > 0, status, LALINSPIRALBANKH_ECHOICE,
           LALINSPIRALBANKH_MSGECHOICE );
-  ASSERT( coarseIn.MMax > 0, status, LALINSPIRALBANKH_ECHOICE,
+  ASSERT( coarseIn->MMax > 0, status, LALINSPIRALBANKH_ECHOICE,
           LALINSPIRALBANKH_MSGECHOICE );
-  ASSERT( coarseIn.MMax > 2*coarseIn.mMin, status, LALINSPIRALBANKH_ECHOICE,
-          LALINSPIRALBANKH_MSGECHOICE );
+  ASSERT( coarseIn->MMax > 2*coarseIn->mMin, status,
+          LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
   /* Check that noise curve exists. */
-  ASSERT( coarseIn.shf.data, status, LALINSPIRALBANKH_ENULL,
+  ASSERT( coarseIn->shf.data, status, LALINSPIRALBANKH_ENULL,
           LALINSPIRALBANKH_MSGENULL );
-  ASSERT( coarseIn.shf.data->data, status, LALINSPIRALBANKH_ENULL,
+  ASSERT( coarseIn->shf.data->data, status, LALINSPIRALBANKH_ENULL,
           LALINSPIRALBANKH_MSGENULL );
 
   /*These parameters have not been added to InspiralCoarseBankIn yet, but when they are the will need to be checked */
   /*
-    if (coarseIn.betaMax < 0) 
+    if (coarseIn->betaMax < 0) 
       ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
   */
 
@@ -315,19 +317,19 @@ LALInspiralSpinBank(
   ENDFAIL(status);
 
   /* Set f0 to frequency of minimum of noise curve. */
-  for( cnt = 0; cnt < (INT4) coarseIn.shf.data->length; cnt++ )
+  for( cnt = 0; cnt < (INT4) coarseIn->shf.data->length; cnt++ )
   {
-    if( coarseIn.shf.data->data[cnt] > 0 && coarseIn.shf.data->data[cnt] <
+    if( coarseIn->shf.data->data[cnt] > 0 && coarseIn->shf.data->data[cnt] <
         shf0 )
     {
-      f0 = (REAL4) coarseIn.shf.deltaF * cnt;
-      shf0 = coarseIn.shf.data->data[cnt];
+      f0 = (REAL4) coarseIn->shf.deltaF * cnt;
+      shf0 = coarseIn->shf.data->data[cnt];
     }
   }
   /* Compute noise moments. */
-  inspiralTemplate.fLower = coarseIn.fLower;
-  inspiralTemplate.fCutoff = coarseIn.fUpper;
-  LALGetInspiralMoments( status->statusPtr, &moments, &coarseIn.shf,
+  inspiralTemplate.fLower = coarseIn->fLower;
+  inspiralTemplate.fCutoff = coarseIn->fUpper;
+  LALGetInspiralMoments( status->statusPtr, &moments, &(coarseIn->shf),
                          &inspiralTemplate );
   BEGINFAIL(status)                                                           
     cleanup(status->statusPtr,&metric,&metricDimensions,&eigenval,*tiles,tmplt,ntiles);
@@ -356,14 +358,14 @@ LALInspiralSpinBank(
   {
     ABORT(status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE);
   }
-  dxp = 1.333333*sqrt(2*(1-coarseIn.mmCoarse)/eigenval->data[0]);
-  dyp = 1.333333*sqrt(2*(1-coarseIn.mmCoarse)/eigenval->data[1]);
-  dzp = 0.6666667*sqrt(2*(1-coarseIn.mmCoarse)/eigenval->data[2]);
+  dxp = 1.333333*sqrt(2*(1-coarseIn->mmCoarse)/eigenval->data[0]);
+  dyp = 1.333333*sqrt(2*(1-coarseIn->mmCoarse)/eigenval->data[1]);
+  dzp = 0.6666667*sqrt(2*(1-coarseIn->mmCoarse)/eigenval->data[2]);
   theta = atan2( -metric->data[3], -metric->data[0] );
 
   /* Hardcode mass range on higher mass for the moment. */
-  m2Min = coarseIn.mMin*LAL_MTSUN_SI;
-  m2Max = coarseIn.MMax*LAL_MTSUN_SI/2;
+  m2Min = coarseIn->mMin*LAL_MTSUN_SI;
+  m2Max = coarseIn->MMax*LAL_MTSUN_SI/2;
   m1Min = 2.0*m2Max;
   m1Max = 15.0*LAL_MTSUN_SI - m2Max;
 
