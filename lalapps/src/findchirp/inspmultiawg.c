@@ -138,7 +138,7 @@ main(int argc, char **argv)
   static LALStatus stat;      /* status structure */
   CHAR	*sourcefile = NULL;   /* name of sourcefile */
   CHAR	*actfile = NULL;      /* name of respfile */
-  CHAR	*outfile = NULL;      /* name of outfile */
+  CHAR	*summfile = NULL;      /* name of summfile */
   CHAR  *tag = NULL;	      /* user-tag */
   CHAR  ifo[3]="";	      /* name of IFO */
   CHAR  fname[256];	      /* name of outfile */
@@ -203,7 +203,7 @@ main(int argc, char **argv)
       {"verbose",	      no_argument,  &verbose_flag, 1},
       {"source",              required_argument,  0,  'a'},
       {"actuation",           required_argument,  0,  'b'},
-      {"outfile",	      required_argument,  0,  'c'},
+      {"summary",	      required_argument,  0,  'c'},
       {"ifo",		      required_argument,  0,  'd'},
       {"darm2inj",	      required_argument,  0,  'e'},
       {"length",	      required_argument,  0,  'f'},
@@ -260,11 +260,11 @@ main(int argc, char **argv)
 	break;
 
       case 'c':
-	/* Parse outfile option */
+	/* Parse summfile option */
       	{
-	  outfile = optarg;
+	  summfile = optarg;
 	  xmloutput = TRUE;
-	  ADD_PROCESS_PARAM( "string", "%s", outfile );
+	  ADD_PROCESS_PARAM( "string", "%s", summfile );
 	}
 	break;
 
@@ -713,11 +713,11 @@ main(int argc, char **argv)
     fclose( fp );
   }
  /*****************************************************************
-   * open output xml file
+   * open summary xml file
    *****************************************************************/
-  if ( outfile )
+  if ( summfile )
   {
-    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfile), &stat);
+    LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, summfile), &stat);
 
 
     /* write out the process and process params tables */
@@ -771,7 +771,7 @@ main(int argc, char **argv)
       }
     }
 
-    /* close the output file */
+    /* close the summary file */
     LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
   }
 
