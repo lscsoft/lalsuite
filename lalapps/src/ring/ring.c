@@ -110,6 +110,7 @@ int bmin = -1;
 int bmax = -1;
 int verbose;
 int strain_data;
+int geo_data;
 
 /* flags for writing output */
 int write_raw_data;
@@ -136,6 +137,10 @@ float test_inject_qual;
 float test_inject_ampl;
 float test_inject_phase;
 
+/* geo high pass filter parameters */
+float geoHighPassFreq = 70.;
+float geoHighPassOrder = 8;
+float geoHighPassAtten = 0.1;
 
 const char *fpars;
 int         fargc = 1;
@@ -573,6 +578,7 @@ int parse_options( int argc, char **argv )
     /* these options set a flag */
     { "verbose", no_argument, &vrbflg, 1 },
     { "strain-data", no_argument, &strain_data, 1 },
+    { "geo-data", no_argument, &geo_data, 1 },
     /* these options don't set a flag */
     { "help",    no_argument, 0, 'h' },
     { "version", no_argument, 0, 'V' },
@@ -608,10 +614,13 @@ int parse_options( int argc, char **argv )
     { "filter-fmax",             required_argument, 0, 'Z' },
     { "filter-qmin",             required_argument, 0, 'Z' },
     { "filter-qmax",             required_argument, 0, 'Z' },
-    { "filter-phase",            required_argument, 0, 'Z' },
     { "filter-maxmm",            required_argument, 0, 'Z' },
     { "filter-thresh",           required_argument, 0, 'Z' },
     { "filter-scale",            required_argument, 0, 'Z' },
+    /* these options are for geo data high pass filter */
+    { "geo-high-pass-freq",      required_argument, 0, 'G' },
+    { "geo-high-pass-order",     required_argument, 0, 'H' },
+    { "geo-high-pass-atten",     required_argument, 0, 'P' },
     /* these options are for writing output */
     { "write-format", required_argument, 0, 'w' },
     { "write-raw-data",         no_argument, &write_raw_data,         1 },
@@ -629,7 +638,7 @@ int parse_options( int argc, char **argv )
     /* nul terminate */
     { 0, 0, 0, 0 }
   };
-  char args[] = "hVa:A:b:B:c:C:d:D:f:F:i:j:I:o:O:r:s:T:U:w:z:Z:";
+  char args[] = "hVa:A:b:B:c:C:d:D:f:F:i:j:I:o:O:r:s:T:U:w:z:Z:G:H:P";
 
   program  = argv[0];
   fargv[0] = my_strdup( program );
@@ -738,6 +747,19 @@ int parse_options( int argc, char **argv )
             strstr( long_options[option_index].name, "filter" ) + 6 );
         fargv[fargc++] = my_strdup( optarg );
         break;
+     
+      case 'G': /* geo high pass filter knee frequency  */
+	geoHighPassFreq= atof(optarg);
+	break;
+                          
+       case 'H': /* geo high pass filter order  */
+	 geoHighPassOrder = atoi(optarg);
+	 break;
+
+       case 'P': /* geo high pass filter attenuation  */
+	  geoHighPassAtten = atof(optarg);
+	  break;
+
       case '?':
         exit( 1 );
       default:
@@ -849,10 +871,17 @@ REAL4TimeSeries *get_data( UINT4 segsz, const char *ifo )
   FrChanIn   chanin = blank_chanin;
   FrStream  *stream = NULL;
   REAL4TimeSeries *channel;
-  UINT4     npts;
+  REAL8TimeSeries *geoChannel;
+  UINT4     npts, j;
+  
+  PassBandParamStruc geoHighpassParam;
 
   /* allocate memory */
   channel = my_calloc( 1, sizeof( *channel ) );
+  if ( geo_data )
+   {
+     geoChannel = my_calloc(1, sizeof( *geoChannel ) );
+   }
 
   if ( test_gaussian_data ) /* generate white gaussian noise */
   {
@@ -911,17 +940,65 @@ REAL4TimeSeries *get_data( UINT4 segsz, const char *ifo )
     /* get the data */
     vrbmsg( "read %f seconds of data", duration );
 
-    /* call first time to get sample rate */
-    LAL_CALL( LALFrGetREAL4TimeSeries( &status, channel, &chanin, stream ),
+    if (geo_data)
+     {
+      /* call first time to get sample rate */
+      LAL_CALL( LALFrGetREAL8TimeSeries( &status, geoChannel, &chanin, stream ),
         &status );
-    /* compute how much data we need to get and allocate memory */
-    npts = duration / channel->deltaT;
-    LAL_CALL( LALSCreateVector( &status, &channel->data, npts ), &status );
-    /* get the data */
-    LAL_CALL( LALFrGetREAL4TimeSeries( &status, channel, &chanin, stream ),
+      /* compute how much data we need to get and allocate memory */
+      npts = duration / geoChannel->deltaT;
+      LAL_CALL( LALDCreateVector( &status, &geoChannel->data, npts ), &status );     LAL_CALL( LALSCreateVector( &status, &channel->data, npts ), &status );
+      /* get the data */
+      LAL_CALL( LALFrGetREAL8TimeSeries( &status, geoChannel, &chanin, stream ),
         &status );
-    /* close the frame file */
-    LAL_CALL( LALFrClose( &status, &stream ), &status );
+
+      /* close the frame file */
+      LAL_CALL( LALFrClose( &status, &stream ), &status );
+
+      /* high pass the GEO data using the parameters specified on the cmd line */      
+       
+       geoHighpassParam.nMax = geoHighPassOrder;
+       geoHighpassParam.f1 = -1.0;
+       geoHighpassParam.f2 = (REAL8) geoHighPassFreq;
+       geoHighpassParam.a1 = -1.0;
+       geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAtten);
+
+       LAL_CALL( LALButterworthREAL8TimeSeries( &status, geoChannel, 
+          &geoHighpassParam ), &status );
+      
+       /* cast the GEO data to REAL4 in the channel time series       */
+       /* which already has the correct amount of memory allocated */
+       for ( j = 0 ; j < npts ; ++j )
+        {
+         channel->data->data[j] = (REAL4) (geoChannel->data->data[j]);
+         }
+       
+        /* re-copy the data paramaters from the GEO channel to input data channel */
+        LALSnprintf( channel->name, LALNameLength * sizeof(CHAR), "%s", geoChannel->name );
+        channel->epoch          = geoChannel->epoch;
+        channel->deltaT         = geoChannel->deltaT;
+        channel->f0             = geoChannel->f0;
+        channel->sampleUnits    = geoChannel->sampleUnits;
+       
+       /* free the REAL8 GEO input data */
+       LAL_CALL( LALDDestroyVector( &status, &geoChannel->data ), &status );
+       geoChannel->data = NULL;
+     }
+ 
+    else
+     {
+      /* call first time to get sample rate */
+      LAL_CALL( LALFrGetREAL4TimeSeries( &status, channel, &chanin, stream ),
+        &status );
+      /* compute how much data we need to get and allocate memory */
+      npts = duration / channel->deltaT;
+      LAL_CALL( LALSCreateVector( &status, &channel->data, npts ), &status );
+      /* get the data */
+      LAL_CALL( LALFrGetREAL4TimeSeries( &status, channel, &chanin, stream ),
+        &status );
+      /* close the frame file */
+      LAL_CALL( LALFrClose( &status, &stream ), &status );
+     }
   }
 
   /* if this is strain data, correct the units */
@@ -1226,6 +1303,7 @@ const char *usgfmt =
 "  --frame-cache      datcache\n\t\tdata frame cache file [don't use cache]\n\n"
 "  --frame-files pattern\n\t\tframe file to use [*.gwf]\n\n"
 "  --frame-path path\n\t\tpath to look for frame files [.]\n\n"
+"  --geo-data\n\t\tdata is double precision\n\n"
 "  --strain-data\n\t\tdata is strain data (use unit response)\n\n"
 "  --bank-start-template bmin\n\t\tfirst template of bank to use [0]\n\n"
 "  --bank-end-tempate bmax\n\t\tlast template of bank to use [last]\n\n"
@@ -1259,10 +1337,13 @@ const char *usgfmt =
 "  --filter-fmax fmax\n\t\tset maximum frequency for bank to fmax (Hz)\n\n"
 "  --filter-qmin qmin\n\t\tset minimum quality for bank to qmin\n\n"
 "  --filter-qmax qmax\n\t\tset maximum quality for bank to qmax\n\n"
-"  --filter-phase phase\n\t\tset template filter phase to phase (rad, 0 = cosine; -pi/2 = sine)\n\n"
 "  --filter-maxmm maxmm\n\t\tset maximum mismatch of bank to maxmm\n\n"
 "  --filter-thresh thrsh\n\t\tset ringdown event snr threshold to thrsh\n\n"
-"  --filter-scale scale\n\t\tscale response function by a factor of scale [1]\n\n";
+"  --filter-scale scale\n\t\tscale response function by a factor of scale [1]\n\n"
+"  --geo-high-pass-freq scale\n\t\tknee frequency for geo high pass filter[1]\n\n"
+"  --geo-high-pass-order scale\n\t\torder of geo high pass filter[1]\n\n"
+"  --geo-high-pass-atten scale\n\t\tattenuation of geo high pass filter[1]\n\n";
+
 
 int usage( const char *program )
 {
