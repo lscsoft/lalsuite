@@ -70,5 +70,6 @@ AC_OUTPUT( 				\
         src/frametools/Makefile         \
 	src/findchirp/Makefile		\
 	src/stochastic/Makefile		\
+	src/power/Makefile		\
 	src/ring/Makefile		\
 )
