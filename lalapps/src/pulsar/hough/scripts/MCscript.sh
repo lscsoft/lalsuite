@@ -76,7 +76,7 @@ mkdir -p $tempworkdir
 cd $tempworkdir
 
 # create temporary directory to write the output
-$tempoutdir=${tempworkdir}/${det}
+tempoutdir=${tempworkdir}/${det}
 mkdir -p $tempoutdir
 
 # ----------------------------------
@@ -85,7 +85,7 @@ mkdir -p $tempoutdir
 
 rsync -a $startdir/sun00-04.dat .
 rsync -a $startdir/earth00-04.dat .
-rsync -a $startdir/MCInjectComputeHough .
+rsync -a $startdir/MCInjectS2 .
 rsync -a $startdir/${det}_h0range.run .
 rsync -a ${startdir}/${harmonicsfile} .
 echo finished copying stuff
@@ -97,18 +97,18 @@ band=1.0
 echo frequency range is from $freq Hz with bandwidth $band Hz
 
 # choose range for h0
-h0rangeinfo=`./${det}_h0range.run $freqindex`
+h0rangeinfo=`./${det}_h0range.run $freq`
 lowh0=`echo $h0rangeinfo | awk '{print $1}'`
 highh0=`echo $h0rangeinfo | awk '{print $2}'`
 echo range of h0 is from $lowh0 to $highh0
 
 # now run MCInject
-./MCInjectS2 -d 0 -i ${detnum} -f $freq -b 1.0 -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -o $tempoutdir/MC_$det_$freq -N 10 -m $lowh0 -M $highh0 -n 10 -H $harmonicsfile
+./MCInjectS2 -d 0 -i ${detnum} -f $freq -b 1.0 -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -o $tempoutdir/MC_$det_$freq -N 1000 -m $lowh0 -M $highh0 -n 10 -H $harmonicsfile
 
 echo finished running injections
 
 # create the output directory
 mkdir -p $startdir/$det
-rsync -a $tempoutdir/$det $startdir
+rsync -a $tempoutdir $startdir
 
 echo done!
