@@ -613,7 +613,7 @@ Patrick Brady
 %
 \verb$--gps-start-time$ \textsc{seconds} 
 \verb$--gps-end-time$ \textsc{seconds} 
-[\verb$--write-all-triggers$] \newline
+[\verb$--write-uniq-triggers$] \newline
 %
 \textsc{(LIGO Lightweight XML files)}
 
@@ -627,8 +627,10 @@ job and a \texttt{sngl\_inspiral} table containing the triggers from
 \textsc{IFOA} that are found to be in coincidence with triggers in
 \textsc{IFOB}. The secondary output file conatins only a
 \texttt{sngl\_inspiral} table which contains the triggers from \textsc{IFOB}
-that are found to be in coincidence with the triggers from \textsc{IFOA}. The
-IFO B file may contain more triggers than the IFO A file.
+that are found to be in coincidence with the triggers from \textsc{IFOA}. 
+Each trigger in the \textsc{IFOA} file corresponds to the coincident trigger
+in the \textsc{IFOB} file, so there may be duplicate  \textsc{IFOA} triggers.
+To prevent this, specify the \verb$--write-uniq-triggers$ option.
 
 The output files are named in the standard way for inspiral pipeline output.
 The primary triggers are in a file named\\
@@ -666,11 +668,6 @@ It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
 interfereometer to use as the interferometer B in the coincidence algorithm.
 It must be a two letter IFO code e.g. \texttt{L1}, \texttt{H1}, etc.
 
-\item[\texttt{--ifo-b} \textsc{trigfile.b}] Required.  A LIGO lightweight
-XML file with triggers from interferometer B.  This argument can be
-called multiple times.  Triggers are sorted \emph{after} all files
-have been read in. 
-
 \item[\texttt{--drhoplus} \textsc{$\delta\rho_+$}] Optional. Accept triggers
 with $\rho_B < (\sigma_B/\sigma_A) \rho_A + \delta\rho_+$ as possible
 coincidences.  If not supplied,  then $\delta\rho_+ = 0$.
@@ -698,12 +695,11 @@ coincident triggers with end times before \textsc{GPS seconds}.
 %identifies the first trigger in a cluster,  then displaces it if its
 %\textsc{snr} is exceeded by an event with a smaller \textsc{chisq}.
 
-\item[\texttt{--write-all-triggers}] Optional.  The default behaviour is to
-only write unique triggers from IFO A. Hoewever, since a trigger from IFO A
-may match two or more triggers from IFO B, it is sometimes useful to write
-the all the triggers from IFO A, so that there is a one-to-one map between the
-IFO A trigger file and IFO B trigger file. This option causes the IFO A
-trigger to be written in this way.
+\item[\texttt{--write-uniq-triggers}] Optional.  The default behaviour is to
+only write all triggers from IFO A. However, a trigger from IFO A
+may match two or more triggers from IFO B, so it may be duplicated in the 
+output. Specifying this option causes only unique IFO A triggers to be
+written.
 
 \item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string} to the
 comment field in the process table. If not specified, no comment is added. 
