@@ -38,6 +38,7 @@ $Id$
 NRCSID (TFCLUSTERSC, "$Id$");
 
 
+#include <lal/AVFactories.h>
 #include <lal/TFClusters.h>
 #include <math.h>
 
@@ -1746,7 +1747,7 @@ static void GetNearestNeighb(CList *clist, Spectrogram *tpower, REAL8 *rho, UINT
 
 static UINT4 ClustDistance(UINT4 s1, UINT4 *t1, UINT4 *f1, UINT4 s2, UINT4 *t2, UINT4 *f2)
 {
-  UINT4 d = -1, i, j, dtmp;
+  UINT4 d = -1U, i, j, dtmp;
 
   for(i=0;i<s1;i++)
     for(j=0;j<s2;j++)
