@@ -276,8 +276,10 @@ void LALSRungeKutta4(
   /* subsequent steps: accumulate dx estimates */
   for ( step = 1; step < NSTEP; ++step )
   {
-    REAL4Vector dxvec = { n, params->dx->data + n * step };
+    REAL4Vector dxvec;
     UINT4 s;
+    dxvec.length = n;
+    dxvec.data = params->dx->data + n * step;
     params->indep->t = t + a[step] * dt;
     memcpy( xout, x, n * sizeof( *x ) );
     for ( s = 0; s < step; ++s )
@@ -396,8 +398,10 @@ void LALSRungeKutta5(
   /* subsequent steps: accumulate dx estimates */
   for ( step = 1; step < NSTEP; ++step )
   {
-    REAL4Vector dxvec = { n, params->dx->data + n * step };
+    REAL4Vector dxvec;
     UINT4 s;
+    dxvec.length = n;
+    dxvec.data = params->dx->data + n * step;
     params->indep->t = t + a[step] * dt;
     memcpy( xout, x, n * sizeof( *x ) );
     for ( s = 0; s < step; ++s )
