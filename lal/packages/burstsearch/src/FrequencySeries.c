@@ -12,6 +12,7 @@ $Id$
 #include <lal/LALErrno.h>
 #include <lal/LALError.h>
 #include <lal/FrequencySeries.h>
+#include <lal/Sequence.h>
 
 NRCSID(FREQUENCYSERIESC, "$Id$");
 
@@ -20,11 +21,8 @@ void XLALDestroyCOMPLEX8FrequencySeries(
 	COMPLEX8FrequencySeries *series
 )
 {
-	if(series) {
-		if(series->data)
-			LALFree(series->data->data);
-		LALFree(series->data);
-	}
+	if(series)
+		XLALDestroyCOMPLEX8Sequence(series->data);
 	LALFree(series);
 }
 
@@ -46,11 +44,8 @@ void XLALDestroyREAL4FrequencySeries(
 	REAL4FrequencySeries *series
 )
 {
-	if(series) {
-		if(series->data)
-			LALFree(series->data->data);
-		LALFree(series->data);
-	}
+	if(series)
+		XLALDestroyREAL4Sequence(series->data);
 	LALFree(series);
 }
 
@@ -79,15 +74,12 @@ COMPLEX8FrequencySeries *XLALCreateCOMPLEX8FrequencySeries(
 {
 	COMPLEX8FrequencySeries *new;
 	COMPLEX8Sequence *sequence;
-	COMPLEX8 *data;
 
 	new = LALMalloc(sizeof(*new));
-	sequence = LALMalloc(sizeof(*sequence));
-	data = LALMalloc(length * sizeof(*data));
-	if(!new || !sequence || !data) {
+	sequence = XLALCreateCOMPLEX8Sequence(length);
+	if(!new || !sequence) {
 		LALFree(new);
-		LALFree(sequence);
-		LALFree(data);
+		XLALDestroyCOMPLEX8Sequence(sequence);
 		return(NULL);
 	}
 
@@ -97,8 +89,6 @@ COMPLEX8FrequencySeries *XLALCreateCOMPLEX8FrequencySeries(
 	new->deltaF = deltaF;
 	new->sampleUnits = sampleUnits;
 	new->data = sequence;
-	sequence->data = data;
-	sequence->length = length;
 
 	return(new);
 }
@@ -137,15 +127,12 @@ REAL4FrequencySeries *XLALCreateREAL4FrequencySeries(
 {
 	REAL4FrequencySeries *new;
 	REAL4Sequence *sequence;
-	REAL4 *data;
 
 	new = LALMalloc(sizeof(*new));
-	sequence = LALMalloc(sizeof(*sequence));
-	data = LALMalloc(length * sizeof(*data));
-	if(!new || !sequence || !data) {
+	sequence = XLALCreateREAL4Sequence(length);
+	if(!new || !sequence) {
 		LALFree(new);
-		LALFree(sequence);
-		LALFree(data);
+		XLALDestroyREAL4Sequence(sequence);
 		return(NULL);
 	}
 
@@ -155,8 +142,6 @@ REAL4FrequencySeries *XLALCreateREAL4FrequencySeries(
 	new->deltaF = deltaF;
 	new->sampleUnits = sampleUnits;
 	new->data = sequence;
-	sequence->data = data;
-	sequence->length = length;
 
 	return(new);
 }

@@ -148,19 +148,14 @@ REAL4Sequence *XLALCutREAL4Sequence(
 )
 {
 	REAL4Sequence *new;
-	REAL4 *data;
 
-	new = LALMalloc(sizeof(*new));
-	data = LALMalloc(length * sizeof(*data));
-	if(!sequence || !sequence->data || !new || !data) {
-		LALFree(new);
-		LALFree(data);
+	new = XLALCreateREAL4Sequence(length);
+	if(!sequence || !sequence->data || !new) {
+		XLALDestroyREAL4Sequence(new);
 		return(NULL);
 	}
 
-	new->data = data;
-	new->length = length;
-	memcpy(new->data, sequence->data + first, length * sizeof(*data));
+	memcpy(new->data, sequence->data + first, length * sizeof(*new->data));
 
 	return(new);
 }

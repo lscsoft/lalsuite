@@ -10,6 +10,7 @@ $Id$
 #include <lal/LALStatusMacros.h>
 #include <lal/LALErrno.h>
 #include <lal/LALError.h>
+#include <lal/Sequence.h>
 #include <lal/TimeSeries.h>
 
 NRCSID(TIMESERIESC, "$Id$");
@@ -19,11 +20,8 @@ void XLALDestroyCOMPLEX8TimeSeries(
 	COMPLEX8TimeSeries *series
 )
 {
-	if(series) {
-		if(series->data)
-			LALFree(series->data->data);
-		LALFree(series->data);
-	}
+	if(series)
+		XLALDestroyCOMPLEX8Sequence(series->data);
 	LALFree(series);
 }
 
@@ -45,11 +43,8 @@ void XLALDestroyREAL4TimeSeries(
 	REAL4TimeSeries *series
 )
 {
-	if(series) {
-		if(series->data)
-			LALFree(series->data->data);
-		LALFree(series->data);
-	}
+	if(series)
+		XLALDestroyREAL4Sequence(series->data);
 	LALFree(series);
 }
 
@@ -78,15 +73,12 @@ COMPLEX8TimeSeries *XLALCreateCOMPLEX8TimeSeries(
 {
 	COMPLEX8TimeSeries *new;
 	COMPLEX8Sequence *sequence;
-	COMPLEX8 *data;
 
 	new = LALMalloc(sizeof(*new));
-	sequence = LALMalloc(sizeof(*sequence));
-	data = LALMalloc(length * sizeof(*data));
-	if(!new || !sequence || !data) {
+	sequence = XLALCreateCOMPLEX8Sequence(length);
+	if(!new || !sequence) {
 		LALFree(new);
-		LALFree(sequence);
-		LALFree(data);
+		XLALDestroyCOMPLEX8Sequence(sequence);
 		return(NULL);
 	}
 
@@ -96,8 +88,6 @@ COMPLEX8TimeSeries *XLALCreateCOMPLEX8TimeSeries(
 	new->deltaT = deltaT;
 	new->sampleUnits = sampleUnits;
 	new->data = sequence;
-	sequence->data = data;
-	sequence->length = length;
 
 	return(new);
 }
@@ -136,15 +126,12 @@ REAL4TimeSeries *XLALCreateREAL4TimeSeries(
 {
 	REAL4TimeSeries *new;
 	REAL4Sequence *sequence;
-	REAL4 *data;
 
 	new = LALMalloc(sizeof(*new));
-	sequence = LALMalloc(sizeof(*sequence));
-	data = LALMalloc(length * sizeof(*data));
-	if(!new || !sequence || !data) {
+	sequence = XLALCreateREAL4Sequence(length);
+	if(!new || !sequence) {
 		LALFree(new);
-		LALFree(sequence);
-		LALFree(data);
+		XLALDestroyREAL4Sequence(sequence);
 		return(NULL);
 	}
 
@@ -154,8 +141,6 @@ REAL4TimeSeries *XLALCreateREAL4TimeSeries(
 	new->deltaT = deltaT;
 	new->sampleUnits = sampleUnits;
 	new->data = sequence;
-	sequence->data = data;
-	sequence->length = length;
 
 	return(new);
 }
@@ -191,24 +176,20 @@ REAL4TimeSeries *XLALCutREAL4TimeSeries(
 {
 	REAL4TimeSeries *new;
 	REAL4Sequence *sequence;
-	REAL4 *data;
+
+	if(!series || !series->data)
+		return(NULL);
 
 	new = LALMalloc(sizeof(*new));
-	sequence = LALMalloc(sizeof(*sequence));
-	data = LALMalloc(num_samples * sizeof(*data));
-	if(!series || !series->data || !series->data->data || !new || !sequence || !data) {
+	sequence = XLALCutREAL4Sequence(series->data, first_sample, num_samples);
+	if(!new || !sequence) {
 		LALFree(new);
-		LALFree(sequence);
-		LALFree(data);
+		XLALDestroyREAL4Sequence(sequence);
 		return(NULL);
 	}
 
 	*new = *series;
 	new->data = sequence;
-	sequence->data = data;
-	sequence->length = num_samples;
-	memcpy(sequence->data, series->data->data + first_sample, num_samples * sizeof(*data));
-
 	new->epoch = XLALAddFloatToGPS(new->epoch, first_sample * new->deltaT);
 
 	return(new);
