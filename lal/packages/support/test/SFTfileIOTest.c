@@ -11,7 +11,7 @@
  *-----------------------------------------------------------------------
  */
 /************************************ <lalVerbatim file="SFTfileIOTestCV">
-Author: Sintes, A.M., Prix, R.
+Author: Sintes, A.M., Prix, R., Machenschalk, B.
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -78,7 +78,8 @@ INT4 lalDebugLevel=3;
 #define THRESHOLD 2.0
 #define OUTFILE1 "./TestOutputSFT.0"
 #define OUTFILE2 "./TestOutputSFT.1"
-#define INFILE "inputsft.0"
+#define INFILE  "inputsft.0" /* little endian sft */
+#define INFILE2 "inputsft.1" /* big endian sft */
 
 /* Usage format string. */
 
@@ -127,6 +128,7 @@ int main(int argc, char *argv[]){
   static LALStatus       status;  /* LALStatus pointer */ 
   SFTtype *sft1 = NULL;
   SFTtype *sft2 = NULL;
+  SFTtype *sft3 = NULL;
   SFTVector *sftvect = NULL;
   REAL8 fmin, fmax;
     
@@ -209,6 +211,36 @@ int main(int argc, char *argv[]){
     ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
     return SFTFILEIOTESTC_ESFTDIFF;
   }
+
+  /* read the big-endian sft if default input file was used */
+  if (0 == strcmp(INFILE,fname)) {
+    printf ("Testing LALReadSFTfile() with big-endian SFT\n");
+
+    SUB (LALReadSFTfile (&status, &sft3, fmin, fmax, INFILE2), &status);
+
+    /* compare sft3 and sft2 */
+    if ( (sft3->epoch.gpsSeconds != sft2->epoch.gpsSeconds)
+	 || (sft3->epoch.gpsNanoSeconds != sft2->epoch.gpsNanoSeconds)  )
+    {
+      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+      return SFTFILEIOTESTC_ESFTDIFF;
+    }
+    if ( (sft3->f0 != sft2->f0) || (sft3->deltaF != sft2->deltaF) ) {
+      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+      return SFTFILEIOTESTC_ESFTDIFF;
+    }
+    if ( sft3->data->length != sft2->data->length) {
+      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+      return SFTFILEIOTESTC_ESFTDIFF;
+    }
+    if ( memcmp (sft3->data->data, sft2->data->data, sft3->data->length) ) {
+      ERROR (SFTFILEIOTESTC_ESFTDIFF, SFTFILEIOTESTC_MSGESFTDIFF, 0);
+      return SFTFILEIOTESTC_ESFTDIFF;
+    }
+
+    LALDestroySFTtype (&status, &sft3);
+  }
+
   LALDestroySFTtype (&status, &sft1);
   LALDestroySFTtype (&status, &sft2);
 
