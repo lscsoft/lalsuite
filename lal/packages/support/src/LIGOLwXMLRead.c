@@ -1282,6 +1282,10 @@ InspiralTmpltBankFromLIGOLw (
     {"psi3",    -1, 11},
     {"beta",    -1, 12},
     {"f_final", -1, 13},
+    {"end_time", -1, 14},
+    {"end_time_ns", -1, 15},
+    {"event_id", -1, 16},
+    {"ifo", -1, 17},
     {NULL,      0, 0}
   };
 
@@ -1342,14 +1346,23 @@ InspiralTmpltBankFromLIGOLw (
     return 0;
   }
 
-  /* figure out the column positions of the template parameters */
+    /* figure out the column positions of the template parameters */
   for ( i = 0; tableDir[i].name; ++i )
   {
     if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
     {
       fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
-      MetaioClose(env);
-      return -1;
+
+      if ( ! strcmp(tableDir[i].name, "event_id") )
+      {
+        fprintf( stderr, 
+            "The event_id column is not populated, continuing anyway\n");
+      }
+      else
+      {
+        MetaioClose(env);
+        return -1;
+      }
     }
   }
 
@@ -1392,6 +1405,8 @@ InspiralTmpltBankFromLIGOLw (
       for ( j = 0; tableDir[j].name; ++j )
       {
         REAL4 colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+	INT4 i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+	UINT8 i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
         if ( tableDir[j].idx == 0 )
         {
           thisTmplt->mass1 = colData;
@@ -1447,6 +1462,29 @@ InspiralTmpltBankFromLIGOLw (
         else if ( tableDir[j].idx == 13 )
         {
           thisTmplt->fFinal = colData;
+        }
+	else if ( tableDir[j].idx == 14 )
+	{
+	  thisTmplt->end_time.gpsSeconds = i4colData;
+	}
+	else if ( tableDir[j].idx == 15 )
+	{
+	  thisTmplt->end_time.gpsNanoSeconds = i4colData;
+	}
+        else if ( tableDir[j].idx == 16 )
+        {
+          if ( tableDir[j].pos > 0 && i8colData )
+          {
+            thisTmplt->event_id = (EventIDColumn *) 
+                 LALCalloc( 1, sizeof(EventIDColumn) );
+            thisTmplt->event_id->id = i8colData;
+            thisTmplt->event_id->inspiralTemplate = thisTmplt;
+          }
+        }
+        else if ( tableDir[j].idx == 17 )
+        {
+          LALSnprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), 
+             "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
         }
         else
         {
