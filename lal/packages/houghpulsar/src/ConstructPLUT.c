@@ -1933,9 +1933,13 @@ static void CheckLeftCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   yymin  = ceil( kkk );
    /* yymin  = ceil( (ylower/patch->deltaY-0.5) +patch->ySide/2.); */
 
-  /* getting the pixel center */
-  ylower = patch->yCoor[yymin];
-  yupper = patch->yCoor[yymax];
+  /* NEVER try here getting the pixel center, problems looking like
+     horizontal lines */
+/*
+ *   ylower = patch->yCoor[yymin];
+ *   yupper = patch->yCoor[yymax];
+ * 
+ */
   
 
   /*********************************************************/
@@ -2108,10 +2112,7 @@ static void CheckRightCircle(REAL8 xc, REAL8 yc, REAL8 radius,
   yymin  = ceil( kkk );
    /* yymin  = ceil( (ylower/patch->deltaY-0.5) +patch->ySide/2.); */
  
-  /* getting the pixel center */
-  ylower = patch->yCoor[yymin];
-  yupper = patch->yCoor[yymax];
-
+ 
  
   /*********************************************************/
   /* looking at the upper-right quadrant */
