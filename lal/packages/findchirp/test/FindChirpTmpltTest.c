@@ -55,8 +55,10 @@ main ( void )
   }
 
   /* bank generation parameters */
+  bankIn->massRange     = MinMaxComponentMass;
   bankIn->mMin          = 1.0;
-  bankIn->MMax          = 6.0;
+  bankIn->mMax          = 3.0;
+  bankIn->MMax          = bankIn->mMax * 2.;
   bankIn->mmCoarse      = 0.95;
   bankIn->mmFine        = 0.99;
   bankIn->fLower        = 40.;
@@ -65,7 +67,7 @@ main ( void )
   bankIn->tSampling     = 4096.;
   bankIn->order         = twoPN;
   bankIn->approximant   = TaylorT1;
-  bankIn->space         = Tau0Tau2;
+  bankIn->space         = Tau0Tau3;
   bankIn->etamin        = bankIn->mMin * ( bankIn->MMax - bankIn->mMin) /
     ( bankIn->MMax * bankIn->MMax );
 
