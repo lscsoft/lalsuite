@@ -298,7 +298,7 @@ for seg in data:
 
     trigbank = inspiral.TrigToTmpltNode(trig_job)
     trigbank.add_var_arg(insp1.get_output())
-    trigbank.make_trigbank(chunk,ifo1,ifo2,usertag)
+    trigbank.make_trigbank(chunk,0,ifo1,ifo2,usertag)
 
     if do_inspiral:
       trigbank.add_parent(insp1)
