@@ -105,7 +105,9 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
       IS_TIME( ser->type ) ? seconds : hertz, ser->unit );
   proc = calloc( 1, sizeof( *proc ) );
   proc->classe     = FrProcDataDef();
+#if defined FR_VERS && FR_VERS < 5000
   proc->sampleRate = IS_TIME( ser->type ) ? 1.0 / ser->step : -1;
+#endif
   proc->fShift     = 0;
   proc->data       = vect;
   proc->next       = frame->procData;

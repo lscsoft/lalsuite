@@ -5,6 +5,7 @@
 #include <FrameL.h>
 #include "series.h"
 
+int lalDebugLevel = 0;
 
 char *get_next_line( char *line, size_t size, FILE *fp )
 {
