@@ -259,7 +259,7 @@ void shifter(float *data, int length, int shift){
     return;
 
   /* check that shift range seems reasonable */
-  if (delta<0 || delta>length/8){
+  if (abs(shift)>length/8){
     pout("shifter(): shift amount %d seems too big/small for length %d array\n",
 	 shift, length);
     exit(1);
@@ -311,7 +311,7 @@ int main(int argc,char *argv[]){
   /* vector holding the frame data */
   FrVect *frvect;        
   
-#if (1)
+#if (0)
   checktimingcorrections();
 #endif
 
