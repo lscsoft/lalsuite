@@ -14,6 +14,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <lalapps.h>
+#include <lal/LALConfig.h>
+#ifdef LAL_MPI_ENABLED
+#undef LAL_MPI_ENABLED
+#endif
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>

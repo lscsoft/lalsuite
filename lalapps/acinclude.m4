@@ -55,6 +55,18 @@ AC_DEFUN(LALAPPS_WITH_CC,
         ],)
 ])
 
+AC_DEFUN(LALAPPS_ENABLE_CONDOR,
+[AC_ARG_ENABLE(
+	condor,
+	[  --enable-condor         compile for use with condor [default=no] ],
+	[ case "${enableval}" in
+	    yes) condor=true;;
+	    no)  condor=false;;
+	    *) AC_MSG_ERROR(bad value ${enableval} for --enable-condor) ;;
+          esac
+        ], [ condor=false ] )
+])
+
 AC_DEFUN(LALAPPS_CHECK_LAL,
 [AC_MSG_CHECKING([for -llal])
 AC_CACHE_VAL(ac_cv_lib_lal,

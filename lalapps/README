@@ -38,6 +38,10 @@ Instructions to get, compile, and install LALApps from the CVS repository:
           --with-extra-libs=LIBS
               additional library flags (usually -l or -L flags)
 
+          --enable-condor
+	      compile using condor_compile so that the executables can be run
+              in the condor "standard" universe (which enables checkpointing)
+
 
   3.  Build and install LALApps
 
@@ -61,7 +65,7 @@ Instructions to get, compile, and install LALApps from the CVS repository:
 Please read the INSTALL file for additional help on installation.
 
 
-
+
 *******************************************************************************
 
 
@@ -76,23 +80,39 @@ Here are the essential instructions.
 
 1. Sources:
 
-   Put your sources in the src subdirectory.  Sources include all your .c files
-   and all your .h files.
+   Put your sources in a subdirectory, hereafter src/myprogdir, of the src
+   subdirectory.  Sources include all your .c files and all your .h files.
+   As a general rule, bundle a bunch of programs that are related (e.g., using
+   the same source files or pertaining to the same search type) into a single
+   subdirectory.
 
-   Edit the Makefile.am so that your program is built.  The program that is
-   built should have a name like lalapps_myprog.  This is so that you don't
-   clobber another program that somewhat may have installed with the same name.
-   Suppose your sources are myprog.c and myprog.h.  Then the Makefile.am should
-   have the line
+   If you have created a new subdirectory within the src subdirectory, edit
+   the file src/Makefile.am to add the new directory (myprogdir) to the SUBDIRS
+   line.  Copy the file src/example/Makefile.am to src/myprogdir and edit it
+   to build the new program (see below).  Also add the new Makefile
+   (src/myprogdir/Makefile) to the AC_OUTPUT command at the end of the
+   configure.in file (in the top lalapps directory).
+
+   Edit the file src/myprogdir/Makefile.am so that your program is built.  The
+   program that is built should have a name like lalapps_myprog.  This is so
+   that you don't clobber another program that somewhat may have installed with
+   the same name.  Suppose your sources are myprog.c and myprog.h.  Then the
+   Makefile.am should have the line
 
      lalapps_myprog_SOURCES = myprog.c myprog.h
 
-   If you also use some of the functionality in lalapps.c and lalapps.h then
-   you should have
-
-     lalapps_myprog_SOURCES = myprog.c myprog.h lalapps.c lalapps.h
-
    Finally, be sure to add lalapps_myprog to the bin_PROGRAMS variable.
+
+   Note that the file src/myprogdir/Makefile.am should have a line like:
+
+     INCLUDES = -I$(top_srcdir)/src
+
+   if you need to include config.h, or the lines
+
+     INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+     LDADD = $(top_builddir)/src/lalapps/liblalapps.la
+
+   if you are also using the lalapps routines.
 
 
 2. Documentation:

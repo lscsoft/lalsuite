@@ -8,11 +8,20 @@ LALAPPS_WITH_EXTRA_CPPFLAGS
 LALAPPS_WITH_EXTRA_CFLAGS
 LALAPPS_WITH_EXTRA_LDFLAGS
 LALAPPS_WITH_EXTRA_LIBS
+LALAPPS_ENABLE_CONDOR
 
 dnl Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
 AC_PROG_CPP
+if test "x$condor" = "xtrue"; then
+  AC_CHECK_PROGS(CONDOR_COMPILE, condor_compile)
+  CC="$CONDOR_COMPILE $CC"
+  AC_CANONICAL_HOST
+  case "$host" in
+    *-*-linux* | *-*-osf* | *-*-hpux* ) CFLAGS="$CFLAGS -static" AC_DISABLE_SHARED;;
+  esac
+fi
 if test "$GCC" = yes; then
   CFLAGS="$CFLAGS -ansi -W -Wall"
 fi
@@ -26,9 +35,20 @@ AC_CHECK_PROGS(DVIPS, dvips, echo)
 dnl Checks for libraries.
 AC_CHECK_LIB(m, sin)
 LALAPPS_CHECK_LAL
+AC_CHECK_LIB(lalsupport, LALOpenDataFile)
 
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([lal/LALStdlib.h])
 
-AC_OUTPUT( Makefile src/Makefile doc/Makefile man/Makefile )
+AC_OUTPUT( 				\
+	Makefile 			\
+	doc/Makefile 			\
+	man/Makefile 			\
+	src/Makefile			\
+	src/lalapps/Makefile            \
+	src/example/Makefile		\
+	src/calibration/Makefile	\
+	src/findchirp/Makefile		\
+	src/stochastic/Makefile		\
+)
