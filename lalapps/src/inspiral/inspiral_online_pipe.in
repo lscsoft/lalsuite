@@ -217,7 +217,7 @@ for seg in data:
       insp.set_ifo(ifo)
       insp.set_cache(df.get_output())
       insp.set_bank(subbank)
-      insp.set_user_tag('user-tag',"%2.2d" % i)
+      insp.set_user_tag("%2.2d" % i)
       i = i + 1
       insp.add_parent(split)
       dag.add_node(insp)
