@@ -320,46 +320,46 @@ simulated data.
 \newcommand{\parm}[1]{$<$\textit{#1}$>$}
 
 \item[Synopsis]
-\prog{lalapps\_power}
-\option{--bandwidth}~\parm{bandwidth}
-[\option{--calibration-cache}~\parm{cache file}]
-\option{--channel-name}~\parm{string}
-[\option{--cluster}]
-[\option{--debug-level}~\parm{level}]
-\option{--default-alpha}~\parm{alpha}
-[\option{--event-limit}~\parm{count}]
-\option{--filter-corruption}~\parm{samples}
-\option{--frame-cache}~\parm{cache file}
-\option{--frame-dir}~\parm{directory}
-\option{--frame-sample-rate}~\parm{Hz}
-[\option{--geodata}~\parm{high pass corner frequency}]
-\option{--gps-end-time}~\parm{seconds}
-\option{--gps-end-time-ns}~\parm{nanoseconds}
-\option{--gps-start-time}~\parm{seconds}
-\option{--gps-start-time-ns}~\parm{nanoseconds}
-[\option{--help}]
-[\option{--injection-file}~\parm{file name}]
-\option{--low-freq-cutoff}~\parm{Hz}
-[\option{--mdc-cache}~\parm{cache file}]
-[\option{--mdc-channel}~\parm{channel name}]
-\option{--min-freq-bin}~\parm{nfbin}
-\option{--min-time-bin}~\parm{ntbin}
-[\option{--noise-amplitude}~\parm{amplitude}]
-\option{--nsigma}~\parm{sigma}
-[\option{--printData}]
-[\option{--printSpectrum}]
-\option{--psd-average-method}~\parm{method}
-\option{--psd-average-points}~\parm{samples}
-[\option{--ram-limit}~\parm{MebiBytes}]
-\option{--resample-filter}~\parm{filter type}
-[\option{--seed}~\parm{seed}]
-\option{--target-sample-rate}~\parm{Hz}
-\option{--tile-overlap-factor}~\parm{factor}
-\option{--threshold}~\parm{threshold}
-[\option{--user-tag}~\parm{comment}]
-[\option{--verbose}]
-\option{--window}~\parm{window}
-\option{--window-length}~\parm{samples}
+\prog{lalapps\_power} \newline \hspace*{0.5in}
+\option{--bandwidth}~\parm{bandwidth} \newline \hspace*{0.5in}
+[\option{--calibration-cache}~\parm{cache file}] \newline \hspace*{0.5in}
+\option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
+[\option{--cluster}] \newline \hspace*{0.5in}
+[\option{--debug-level}~\parm{level}] \newline \hspace*{0.5in}
+\option{--default-alpha}~\parm{alpha} \newline \hspace*{0.5in}
+[\option{--event-limit}~\parm{count}] \newline \hspace*{0.5in}
+\option{--filter-corruption}~\parm{samples} \newline \hspace*{0.5in}
+\option{--frame-cache}~\parm{cache file} \newline \hspace*{0.5in}
+\option{--frame-dir}~\parm{directory} \newline \hspace*{0.5in}
+\option{--frame-sample-rate}~\parm{Hz} \newline \hspace*{0.5in}
+[\option{--geodata}~\parm{high pass corner frequency}] \newline \hspace*{0.5in}
+\option{--gps-end-time}~\parm{seconds} \newline \hspace*{0.5in}
+\option{--gps-end-time-ns}~\parm{nanoseconds} \newline \hspace*{0.5in}
+\option{--gps-start-time}~\parm{seconds} \newline \hspace*{0.5in}
+\option{--gps-start-time-ns}~\parm{nanoseconds} \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in}
+[\option{--injection-file}~\parm{file name}] \newline \hspace*{0.5in}
+\option{--low-freq-cutoff}~\parm{Hz} \newline \hspace*{0.5in}
+[\option{--mdc-cache}~\parm{cache file}] \newline \hspace*{0.5in}
+[\option{--mdc-channel}~\parm{channel name}] \newline \hspace*{0.5in}
+\option{--min-freq-bin}~\parm{nfbin} \newline \hspace*{0.5in}
+\option{--min-time-bin}~\parm{ntbin} \newline \hspace*{0.5in}
+[\option{--noise-amplitude}~\parm{amplitude}] \newline \hspace*{0.5in}
+\option{--nsigma}~\parm{sigma} \newline \hspace*{0.5in}
+[\option{--printData}] \newline \hspace*{0.5in}
+[\option{--printSpectrum}] \newline \hspace*{0.5in}
+\option{--psd-average-method}~\parm{method} \newline \hspace*{0.5in}
+\option{--psd-average-points}~\parm{samples} \newline \hspace*{0.5in}
+[\option{--ram-limit}~\parm{MebiBytes}] \newline \hspace*{0.5in}
+\option{--resample-filter}~\parm{filter type} \newline \hspace*{0.5in}
+[\option{--seed}~\parm{seed}] \newline \hspace*{0.5in}
+\option{--target-sample-rate}~\parm{Hz} \newline \hspace*{0.5in}
+\option{--tile-overlap-factor}~\parm{factor} \newline \hspace*{0.5in}
+\option{--threshold}~\parm{threshold} \newline \hspace*{0.5in}
+[\option{--user-tag}~\parm{comment}] \newline \hspace*{0.5in}
+[\option{--verbose}] \newline \hspace*{0.5in}
+\option{--window}~\parm{window} \newline \hspace*{0.5in}
+\option{--window-length}~\parm{samples} \newline \hspace*{0.5in}
 \option{--window-shift}~\parm{samples}
 
 \item[Description] 
@@ -688,19 +688,21 @@ as they are discarded from the only windows in which they appear.
 \item[Example]
 To run the program,  type:
 \begin{verbatim}
- lalapps_power --npts 16384  --nseg 1200  --olap 8192   --olapfctr 3   --minfbin 2 \
- --mintbin 2   --flow 130   --delf 1   --lngth 256   --nsigma 2   \
- --alphdef 0.5   --segdcle 64   --threshold 1e-09   --etomstr 100 \
- --channel H1:LSC-AS_Q   --simtype 0  --spectype useMedian  --window 2 \
- --gps-start-time 729332600    --gps-start-time_ns 0 --gps-end-time 729332800  \
- --gps-end-time-ns 0  --sample-rate 16384   --frame-cache frcache-H-729332032-729333188.out \
- --user-tag 040511 --verbose  --dbglevel 65 \
- --calibration-cache /ldas_outgoing/calibration/cache_files/H1-CAL-V03-729273600-734367600.cache \
- --injfile HL-INJECTIONS_1_S20507043-729332032-1156.xml \
+ lalapps_power --npts 16384  --nseg 1200  --olap 8192 --olapfctr 3 \  
+ --minfbin 2  --mintbin 2   --flow 130  --delf 1   --lngth 256     \
+ --nsigma 2  --alphdef 0.5  --segdcle 64  --threshold 1e-09        \
+ --etomstr 100  --channel H1:LSC-AS_Q   --simtype 0                \
+ --spectype useMedian  --window 2 --gps-start-time 729332600       \
+ --gps-start-time_ns 0 --gps-end-time 729332800                    \
+ --gps-end-time-ns 0  --sample-rate 16384                          \
+ --frame-cache frcache-H-729332032-729333188.out --user-tag 040511 \
+ --verbose  --dbglevel 65                                          \
+ --calibration-cache H1-CAL-V03-729273600-734367600.cache          \
+ --injfile HL-INJECTIONS_1_S20507043-729332032-1156.xml            
 \end{verbatim}
 
-\item[Author]
-Patrick Brady
+\item[Authors]
+Patrick Brady,  Kipp Cannon and Saikat Ray Majumder 
 \end{entry}
 \clearpage
 
