@@ -248,6 +248,13 @@ set templateStopFDeriv5  0;
 set templateDeltaFDeriv5 0;
 set templateNumFDeriv5   0; 
 
+set templateOrbitalEccentricity 0;
+set templatealphaSX1 0;
+set templatedeltaSX1 0;
+set templateArgPeriapse 0;  
+set templateSMAcentral 0; 
+set templatedeltaSMA 0;
+set binaryFlag 0;
 set searchThresholdFlag  0;
 set searchThreshold1     0;
 set searchThreshold2     0;
@@ -298,7 +305,11 @@ source $job_file;
 # Setting the MAIN command:
 
 #set cmd "exec ./ComputeStackSlideSums $FILTERPARAMS $sun_edat_file $earth_edat_file $sft_path_pattern $output_file"; # 04/15/04 gam
+if { $binaryFlag == "0" } {
 set cmd "exec ./ComputeStackSlideSums $FILTERPARAMS $sun_edat_file $earth_edat_file $sft_path_pattern $output_file $::DEBUG_OPTION_FLAG";
+} else {
+set cmd "exec ./ComputeStackSlideSums $FILTERPARAMS $sun_edat_file $earth_edat_file $sft_path_pattern $output_file $::DEBUG_OPTION_FLAG $FILTERBINARYPARAMS"; }
+#05/02/16 vir
 
 Print "\ncommand = $cmd\n";
 

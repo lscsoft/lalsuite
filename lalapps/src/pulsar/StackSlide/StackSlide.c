@@ -262,6 +262,8 @@ void StackSlideOld(	LALStatus *status,
  	 	
 
   kSUM = iSky*numLoopOnSpindown + params->iFreqDeriv; /* 01/28/04 gam; need to find index to which to SUM */
+ /*05/02/18 vir kSUM=iSky*(numLoopOnSpinDown*params->nMaxSMA*params->nMaxTperi)+...*/
+  /*... + params->iFreqDeriv*(params->nMaxSMA*params->nMaxTperi)+params->iSMA*(params->nMaxTperi) + params->iT;*/
   
   printf("iMinSTK is %d\n",iMinSTK);
   
@@ -317,9 +319,10 @@ void StackSlideOld(	LALStatus *status,
       
       for(i=0;i<params->nBinsPerSUM; i++) {
                SUMData[kSUM]->data->data[i] =  SUMData[kSUM]->data->data[i]/((REAL4)params->numSTKs);
-      printf("Normalized sum is %f\n",SUMData[kSUM]->data->data[i]);
+  /*    printf("Normalized sum is %f\n",SUMData[kSUM]->data->data[i]);*/
                            	          }	
-      
+      /*05/02/18 vir: params->ParamsSMA[kSUM]=params->SemiMajorAxis;*/
+      /*05/02/18 vir: params->ParamsTperi[kSUM]=params->TperiapseSSB*/
        printf("end function StackSlide\n");     
 	
   CHECKSTATUSPTR (status);

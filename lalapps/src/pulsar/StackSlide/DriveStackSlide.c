@@ -376,6 +376,8 @@ params->deltaSMA = 0;
 		case 91: params->TperiapseSSBNanoSec=(UINT4)atol(argv[i]); break;	 
 		case 92: params->SMAcentral=(REAL8)atof(argv[i]); break;
 		case 93: params->deltaSMA=(REAL8)atof(argv[i]); break;/*put this =0 if you don't want a random SMA*/
+			 /*case 94: params->nMaxSMA=(INT4)atol(argv[i]); break;*/
+			 /*case 95: params->nMaxTperi=(INT4)atol(argv[i]); break;*/
 
 	}
   } /* end for (i=1; i<argc; i++)  */
@@ -423,8 +425,10 @@ params->deltaSMA = 0;
      }
      if (params->numSpinDown > 0) {
         params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal;
+	/*05/02/18 vir: params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal*params->nMaxSMA*params->nMaxTperi;*/
      } else {
         params->numParamSpacePts = params->numSkyPosTotal;
+	/*05/02/18 vir: params->numParamSpacePts = params->numSkyPosTotal*params->nMaxSMA*params->nMaxTperi; */
      }
   } else {
      ABORT( status, DRIVESTACKSLIDEH_EPARAMSPACEFLAG, DRIVESTACKSLIDEH_MSGEPARAMSPACEFLAG); /* 02/02/04 gam */
@@ -1886,6 +1890,11 @@ stksldParams->TperiapseSSBNanoSec=params->TperiapseSSBNanoSec;
 stksldParams->deltaSMA=params->deltaSMA;
 stksldParams->SMAcentral=params->SMAcentral;
 
+/*05/02/17 vir: stksldParams->nMaxSMA=params->nMaxSMA;*/
+/*05/02/17 vir: stksldParams->nMaxTperi=params->nMaxTperi;*/
+/*05/02/17 vir: stksldParams->ParamsSMA=(REAL8 *)LALMalloc((stksldParams->numSkyPosTotal*params->numSpinDown*params->nMaxSMA*params->nMaxTperi)*sizeof(REAL8)); */
+/*05/02/17 vir: stksldParams->ParamsTperi=(UINT4 *)LALMalloc((stksldParams->numSkyPosTotal*stksldParams->numSpinDown*params->nMaxSMA*params->nMaxTperi)*sizeof(UINT4));*/
+
   /* 12/03/04 gam */
   if ( ( (params->testFlag & 1) > 0 ) || ( (params->weightFlag & 1) > 0 ) ) {
     stksldParams->divideSUMsByNumSTKs = 0; /* FALSE if Hough Test or PowerFlux weighting is done. */
@@ -2247,7 +2256,12 @@ stksldParams->SMAcentral=params->SMAcentral;
     /*Feb 14/05 vir: ADDED HERE BINARY CASE*/
     
 if((params->binaryFlag & 1) == 1){
- for(kSUM=0;kSUM < 1;kSUM++) {
+	
+	FILE *binaryfp; /* 05/02/17 vir: pointer to output file for sums*/
+
+	char filename[]="myoutbinary.txt";
+		
+ for(kSUM=0;kSUM < params->numSUMsTotal;kSUM++) {
     
  i = kSUM/numFreqDerivIncludingNoSpinDown;   /* 01/28/04 gam; index to params->skyPosData for this SUM; */
     j = kSUM % numFreqDerivIncludingNoSpinDown; /* 01/28/04 gam; index to params->freqDerivData for this SUM; */    
@@ -2268,16 +2282,35 @@ if((params->binaryFlag & 1) == 1){
 	    stksldParams->skyPosData[0][0]=params->alphaSX1;
 	    stksldParams->skyPosData[0][1]=params->deltaSX1;
 
-INT4 iSMA=0;
-INT4 iSMAmax=10;/*total number of point in par. space to investigate*/
+/*INT4 iSMA=0;
+INT4 iSMAmax=10;*//*total number of point in par. space to investigate*/
 /*Call StackSlidebinary for every point in parameter space*/
 		/*for(iSMA=0; iSMA<iSMAmax; iSMA++ )*/
 		StackSlideBinary(status->statusPtr, stksldParams, params->STKData, params->SUMData);
-	printf("FindBinaryLoudest\n");
+
+   if(params->deltaSMA == 0)/*if(params->nMaxSMA ==1)&&(params->nMaxTperi ==1)*/
+      {	
+	binaryfp=fopen(filename, "w+");
+	
+	for (k=0; k< params->nBinsPerSUM ; k++)
+	 {
+	   fprintf(binaryfp,"%f %f\n", params->f0SUM + (REAL8)k*params->dfSUM, params->SUMData[0]->data->data[k]);/*05/02/17 vir*/
+         }
+	fclose(binaryfp);
+      } /*05/02/17 vir: write sum on the file only for no mismatch*/
+    
+    else {
 	/*Look for loudest event in SUMData*/
-FindBinaryLoudest( params->SUMData, stksldParams );
+/*05/02/17 vir: for mismatched params, output only the loudest event */
+      
+    FindBinaryLoudest( params->SUMData, stksldParams );
+    /*FindBinaryLoudest(params->SUMData, stksldParams,PeakFreq, LoudestEvent);*/
 printf("the SemiMajorAxis is %f\n", stksldParams->SemiMajorAxis);
- }
+/*printf(stdout,"%f %f %f\n", PeakFreq, LoudestEvent,stksldParams->ParamsSMA[kSUM], stksldParams->ParamsTperi[kSUM]);*/
+    }/*end of else deltaSMA > 0*/
+
+}/*end of for kSUM*/
+
 }/*end of if binaryFlag==1*/
 
   /* 02/17/04 gam; output the loudest events */
@@ -3476,15 +3509,25 @@ void FindBinaryLoudest( REAL4FrequencySeries **SUMData, StackSlideParams *stksld
 	REAL8 peakFreq;
 	INT4 i;
 	INT4 indexFreq=0;
+ 
+
+	FILE *binaryLE;
+	char filename2[]="outLE.txt";
+
+	binaryLE=fopen(filename2, "a+");
+/*05/02/17 vir: for(iSMA=0; iSMA<stksldParams->nMaxSMA; iSMA++){*/
 	for (i=iMinSTK; i<iMaxSTK; i++)
 	{
 		if(SUMData[0]->data->data[i] > max)
 		{ max = SUMData[0]->data->data[i];
 		  indexFreq=i;
 		}
-	/*peakFreq=*/
+	peakFreq=stksldParams->f0SUM + indexFreq*stksldParams->dfSUM; 
 	}
-printf("Loudest binary peak is %f and index freq is %d\n", max,indexFreq);
+printf("Loudest binary peak is %f and corr freq is %f SMA %f\n", max, peakFreq, stksldParams->SemiMajorAxis);
+fprintf(binaryLE,"%f %f %f\n",max , peakFreq, stksldParams->SemiMajorAxis);
+/*}for iSMA*/
+fclose(binaryLE);
 }
 
 

@@ -66,7 +66,7 @@ printf("Start function StackSlideBinary\n");
 
   REAL4 randval;
    RandomParams *randPar=NULL;
-
+   INT4 seed=0;
 
  for(iSky=0;iSky<stksldParams->numSkyPosTotal;iSky++)
   	{
@@ -111,22 +111,25 @@ printf("Start function StackSlideBinary\n");
         csParams->TperiapseSSB.gpsSeconds=stksldParams->TperiapseSSBSec;
         csParams->TperiapseSSB.gpsNanoSeconds=stksldParams->TperiapseSSBNanoSec;
 /*these are passed through the command line, MAKE SURE ABOUT CALLING params structure*/
-	
 
-/*        for(iSMA=0; iSMA < iSMAmax; iSMA++){*/
+	/* for(iSMA=0; iSMA < stksldParams->nMaxSMA; iSMA++){ 05/02/18 vir: for each point generate a new random*/
+	/* for (iT=0; iT < stksldParams->nMaxTperi; iT++)*/
+LALCreateRandomParams(status->statusPtr, &randPar, seed); /*05/02/17 vir: create random params*/
               LALUniformDeviate(status->statusPtr, &randval, randPar);
 	      /*CHECKSTATUSPTR (status); */
 	      
-	      stksldParams->SemiMajorAxis=stksldParams->SMAcentral+((REAL8)randval-0.5)*(stksldParams->deltaSMA);                      csParams->SemiMajorAxis=stksldParams->SemiMajorAxis;
-
-		 
+	      stksldParams->SemiMajorAxis=stksldParams->SMAcentral+((REAL8)randval-0.5)*(stksldParams->deltaSMA);                         
+	      csParams->SemiMajorAxis=stksldParams->SemiMajorAxis;
+	      /*stksldParams->TperiapseSSBsec=params->Tpericentral+((REAL8)randval-0.5)*(stksldParams->deltaTperi); */
+              /*05/02/17 vir: stksldParams->SMA[iSMA]=stksldParams->SemiMajorAxis;*/
+	      /*05/02/18 vir: csParams->TperiapseSSBsec=stksldParams->TperiapseSSBsec; this is now assigned in CL*/	 
 		 /* Call STACKSLIDECOMPUTESKYBINARY() */
 	StackSlideComputeSkyBinary(status->statusPtr, pTdotsAndDeltaTs, iSkyCoh, csParams);
 
 
    	/*CHECKSTATUSPTR (status);*/
 
-	         /* Call STACKSLIDE() for every point in spindown parameter space*/
+	         /* Call STACKSLIDE() for every point in spindown and SMA parameter space*/
 
 	if (stksldParams->numFreqDerivTotal==0) {
 	   numLoopOnSpindown = 1;  /* Even if no spindown, need to execute iFreqDeriv loop once to handle case of zero spindown */
@@ -138,7 +141,6 @@ printf("Start function StackSlideBinary\n");
  	for(stksldParams->iFreqDeriv=0;stksldParams->iFreqDeriv<numLoopOnSpindown;stksldParams->iFreqDeriv++)/*put this outside*/
   	{
  		
-printf("numLoop on SpinDown is %d\n",numLoopOnSpindown);
 
 
 /*for (iFreqDeriv = 0; iFreqDeriv<stksldParams->numSpinDown; iFreqDeriv++)
@@ -146,11 +148,13 @@ printf("numLoop on SpinDown is %d\n",numLoopOnSpindown);
 	
 	StackSlide(status->statusPtr,SUMData,STKData,pTdotsAndDeltaTs,stksldParams); /*temporary definad below but afterwords called in from lal using #include <lal/LALStackSlide.h>*/
 /*}*/
-	
 	} /* for iFreqDeriv = 0 to numFreqDerivTotal */
 
-	/*}end of for iT*/
-	/*}end of for iSMA*/
+
+LALDestroyRandomParams(status->statusPtr, &randPar );
+
+           /*}end of for iSMA 05/02/17 vir*/
+	 /*}end of for iT*/
 	}/*end of for iSky*/
            /* Deallocate space for ComputeSky parameters */
 	LALFree(csParams->skyPos);
