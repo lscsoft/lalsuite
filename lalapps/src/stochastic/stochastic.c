@@ -85,16 +85,16 @@ REAL8 deltaF = 0.25;
 
 /* data parameters */
 LIGOTimeGPS gpsStartTime;
-UINT8 startTime = 730793098;
-UINT8 stopTime = 730793218;
+UINT8 startTime = 752242030;
+UINT8 stopTime = 752242212;
 INT4 intervalDuration = 180;
 INT4 segmentDuration = 60;
 INT4 calibDuration = 60;
 INT4 calibOffset = 30;
-CHAR frameCache1[200] = "H-729332040.cache";
-CHAR frameCache2[200] = "H-729332040.cache";
-CHAR calCache1[200] = "calibration/H1-CAL-V03-729273600-734367600_smooth.cache";
-CHAR calCache2[200] = "calibration/L1-CAL-V03-729273600-734367600.cache";
+CHAR frameCache1[200] = "H-752242020.cache";
+CHAR frameCache2[200] = "L-752242020.cache";
+CHAR calCache1[200] = "calibration/H1-CAL-V02-751651244-757699245.cache";
+CHAR calCache2[200] = "calibration/L1-CAL-V02-751651248-757699249.cache";
 CHAR channel1[LALNameLength]= "H1:LSC-AS_Q";
 CHAR channel2[LALNameLength]= "L1:LSC-AS_Q";
 CHAR ifo1[LALNameLength] = "H1";
@@ -1076,15 +1076,18 @@ INT4 main(INT4 argc, CHAR *argv[])
        {
         fprintf(stdout, "request GPS time %d\n",gpsCalibTime.gpsSeconds );
        }
-     
+      memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );     
       calfacts.ifo = ifo1;          
       LAL_CALL( LALExtractFrameResponse( &status, &responseTemp1, calCache1,
-                                          &calfacts), &status );
+                                         &calfacts), &status );
+      
+      
+      memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
       calfacts.ifo = ifo2;
       LAL_CALL( LALExtractFrameResponse(&status, &responseTemp2, calCache2,
                                          &calfacts), &status );
                 
-
+       
        /* exit loop if calibration not found */
        /*
        if ((status.statusCode !=0)||(responseTemp1.data==NULL))
