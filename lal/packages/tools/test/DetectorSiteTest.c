@@ -86,8 +86,7 @@ TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 static void
 ClearStatus (LALStatus *status);
 
-NRCSID( DETECTORSITETESTC, "$Id: DetectorSiteTest.c,v 1.7 2001/05/16 00:51:11 r
-osa Exp $" );
+NRCSID( DETECTORSITETESTC, "$Id$" );
 
 #define DETECTORSITETESTC_LOCTOL 3e-2
 #define DETECTORSITETESTC_RESTOL 1e-06
