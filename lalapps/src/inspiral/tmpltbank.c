@@ -165,7 +165,10 @@ int main ( int argc, char *argv[] )
   MetadataTable         templateBank;
   MetadataTable         proctable;
   MetadataTable         procparams;
+  MetadataTable         searchsumm;
+  MetadataTable         searchsummvars;
   MetadataTable         candle;
+  SearchSummvarsTable  *this_search_summvar;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
 
@@ -181,6 +184,7 @@ int main ( int argc, char *argv[] )
   UINT4 numInputPoints;
   const REAL8 epsilon = 1.0e-8;
   UINT4 resampleChan = 0;
+  REAL8 tsLength;
   LIGOTimeGPS duration = {0, 0};
 
 
@@ -206,6 +210,11 @@ int main ( int argc, char *argv[] )
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
+  /* create the search summary and zero out the summvars table */
+  searchsumm.searchSummaryTable = (SearchSummaryTable *)
+    calloc( 1, sizeof(SearchSummaryTable) );
+  searchsummvars.searchSummvarsTable = NULL;
+
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
 
@@ -215,13 +224,22 @@ int main ( int argc, char *argv[] )
   if ( ! *comment )
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-  } else {
+    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
+        " " );
+  }
+  else
+  {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+        "%s", comment );
+    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
 
   /* make sure the pointer to the first template is null */
   templateBank.snglInspiralTable = NULL;
+
+  /* the number of nodes for a standalone job is always 1 */
+  searchsumm.searchSummaryTable->nnodes = 1;
 
 
   /*
@@ -262,6 +280,13 @@ int main ( int argc, char *argv[] )
 
   /* XXX check that there are no gaps in the data XXX */
   FR_CHECK_GAPS;
+
+  /* store the input sample rate */
+  this_search_summvar = searchsummvars.searchSummvarsTable = 
+    (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+  LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+      "raw data sample rate" );
+  this_search_summvar->value = chan.deltaT;
 
   /* determine if we need to resample the channel */
   if ( vrbflg )
@@ -305,6 +330,14 @@ int main ( int argc, char *argv[] )
   /* XXX check that there are no gaps in the data XXX */
   FR_CHECK_GAPS;
 
+  /* store the start and end time of the raw channel in the search summary */
+  searchsumm.searchSummaryTable->in_start_time = chan.epoch;
+  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ), 
+      &status );
+  tsLength += chan.deltaT * (REAL8) chan.data->length;
+  LAL_CALL( LALFloatToGPS( &status, 
+        &(searchsumm.searchSummaryTable->in_end_time), &tsLength ), &status );
+
   /* close the frame file stream and destroy the cache */
   LAL_CALL( LALFrClose( &status, &frStream ), &status );
   if ( frInCacheName ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), 
@@ -337,6 +370,13 @@ int main ( int argc, char *argv[] )
     if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
         &chan, "ct", "RAW_RESAMP" );
   }
+
+  /* store the filter data sample rate */
+  this_search_summvar = this_search_summvar->next = 
+    (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+  LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
+      "filter data sample rate" );
+  this_search_summvar->value = chan.deltaT;
 
 
   /*
@@ -386,6 +426,15 @@ int main ( int argc, char *argv[] )
       "data channel length = %d\nstarting at %d sec %d ns\n", 
       padData , chan.deltaT , chan.data->length, 
       chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
+
+  /* store the start and end time of the filter channel in the search summ */
+  searchsumm.searchSummaryTable->out_start_time = chan.epoch;
+  LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ), 
+      &status );
+  tsLength += chan.deltaT * (REAL8) chan.data->length;
+  LAL_CALL( LALFloatToGPS( &status, 
+        &(searchsumm.searchSummaryTable->out_end_time), &tsLength ), 
+      &status );
 
   /* compute the windowed power spectrum for the data channel */
   avgSpecParams.window = NULL;
@@ -644,6 +693,9 @@ int main ( int argc, char *argv[] )
     }
   }
 
+  /* save the number of templates in the search summary table */
+  searchsumm.searchSummaryTable->nevents = numCoarse;
+
 
   /*
    *
@@ -724,6 +776,26 @@ int main ( int argc, char *argv[] )
     free( this_proc_param );
   }
 
+  /* write the search summary table */
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
+        search_summary_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
+        search_summary_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+
+  /* write the search summvars table */
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
+        search_summvars_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars, 
+        search_summvars_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  while( searchsummvars.searchSummvarsTable )
+  {
+    this_search_summvar = searchsummvars.searchSummvarsTable;
+    searchsummvars.searchSummvarsTable = this_search_summvar->next;
+    LALFree( this_search_summvar );
+  }
+
   /* write the standard candle to the file */
   if ( computeCandle )
   {
@@ -735,7 +807,6 @@ int main ( int argc, char *argv[] )
     LALFree( candle.summValueTable );
     candle.summValueTable = NULL;
   }
-    
 
   /* write the template bank to the file */
   if ( templateBank.snglInspiralTable )
@@ -753,10 +824,8 @@ int main ( int argc, char *argv[] )
     LALFree( tmplt );
   }
 
-
   /* close the output xml file */
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
-
 
   /* free the rest of the memory, check for memory leaks and exit */
   free( calCacheName );
