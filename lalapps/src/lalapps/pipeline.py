@@ -446,6 +446,7 @@ class AnalysisJob:
     """
     self.__cp = cp
     self.__channel = string.strip(self.__cp.get('input','channel'))
+
   def get_config(self,sec,opt):
     """
     Get the configration variable in a particular section of this jobs ini
@@ -454,6 +455,7 @@ class AnalysisJob:
     opt = option from section sec.
     """
     return string.strip(self.__cp.get(sec,opt))
+
   def channel(self):
     """
     Returns the name of the channel that this job is filtering. Note that 
@@ -461,6 +463,7 @@ class AnalysisJob:
     IOO-MC_F. The IFO is set on a per node basis, not a per job basis.
     """
     return self.__channel
+
   def calibration(self,ifo):
     """
     Returns the name of the calibration file to use for the given IFO.
