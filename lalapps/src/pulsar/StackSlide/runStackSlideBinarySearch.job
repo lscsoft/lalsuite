@@ -256,7 +256,8 @@ set TperiapseSSBSec     $templateTperiapseSSBSec;
 set TperiapseSSBNanoSec $templateTperiapseSSBNanoSec;
 set SMAcentral          $templateSMAcentral;    #central value of semi major axis in parameter space
 set deltaSMA            $templatedeltaSMA;
-
+set nMaxSMA             $templatenMaxSMA;
+set nMaxTperi           $templatenMaxTperi;
 #set templateNumSpinDown 1; 
 
 #set templateStartFDeriv1 0;
@@ -272,4 +273,4 @@ set deltaSMA            $templatedeltaSMA;
 
 set FILTERPARAMS "$gpsEpochStartTime $gpsEpochStartTimeNan $gpsStartTimeSec $duration $numBLKs $tBLK $tEffBLK $f0BLK $bandBLK $nBinsPerBLK $numBLKsPerSTK $tEffSTK $f0STK $bandSTK $nBinsPerSTK $numSTKsPerSUM $tEffSUM $f0SUM $bandSUM $nBinsPerSUM $ifoNickName $IFO $patchName $patchNumber $tDomainChannel $fDomainChannel $inputDataTypeFlag $parameterSpaceFlag $stackTypeFlag $Dterms $thresholdFlag $threshold1 $threshold2 $threshold3 $threshold4 $threshold5 $maxWidthBins $weightFlag $orientationAngle $cosInclinationAngle $normalizationFlag $f0NRM $bandNRM $nBinsPerNRM $normalizationParameter $testFlag $numSUMsPerCall $outputSUMFlag $outputEventFlag $keepThisNumber $startRA $stopRA $deltaRA $numRA $startDec $stopDec $deltaDec $numDec $numSpinDown $startFDeriv1 $stopFDeriv1 $deltaFDeriv1 $numFDeriv1 $startFDeriv2 $stopFDeriv2 $deltaFDeriv2 $numFDeriv2 $startFDeriv3 $stopFDeriv3 $deltaFDeriv3 $numFDeriv3 $startFDeriv4 $stopFDeriv4 $deltaFDeriv4 $numFDeriv4 $startFDeriv5 $stopFDeriv5 $deltaFDeriv5 $numFDeriv5";
 
-set FILTERBINARYPARAMS "$binaryFlag $OrbitalEccentricity $alphaSX1 $deltaSX1 $ArgPeriapse $TperiapseSSBSec $TperiapseSSBNanoSec $SMAcentral $deltaSMA"
+set FILTERBINARYPARAMS "$binaryFlag $OrbitalEccentricity $alphaSX1 $deltaSX1 $ArgPeriapse $TperiapseSSBSec $TperiapseSSBNanoSec $SMAcentral $deltaSMA $nMaxSMA $nMaxTperi"

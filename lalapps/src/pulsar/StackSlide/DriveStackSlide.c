@@ -376,12 +376,11 @@ params->deltaSMA = 0;
 		case 91: params->TperiapseSSBNanoSec=(UINT4)atol(argv[i]); break;	 
 		case 92: params->SMAcentral=(REAL8)atof(argv[i]); break;
 		case 93: params->deltaSMA=(REAL8)atof(argv[i]); break;/*put this =0 if you don't want a random SMA*/
-			 /*case 94: params->nMaxSMA=(INT4)atol(argv[i]); break;*/
-			 /*case 95: params->nMaxTperi=(INT4)atol(argv[i]); break;*/
+                case 94: params->nMaxSMA=(INT4)atoi(argv[i]); break;	/*05/02/18 vir:added entry*/		 
+		case 95: params->nMaxTperi=(INT4)atoi(argv[i]); break; /*05/02/18 vir: added entry*/
 
 	}
   } /* end for (i=1; i<argc; i++)  */
- 
  #ifdef DEBUG_INPUTBLK_CODE
 	fprintf(stdout,"\n\nparams->numBLKs = %i \n", params->numBLKs);
 	fprintf(stdout,"params->nBinsPerBLK = %i \n", params->nBinsPerBLK);
@@ -424,17 +423,23 @@ params->deltaSMA = 0;
 		}
      }
      if (params->numSpinDown > 0) {
-        params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal;
-	/*05/02/18 vir: params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal*params->nMaxSMA*params->nMaxTperi;*/
-     } else {
-        params->numParamSpacePts = params->numSkyPosTotal;
-	/*05/02/18 vir: params->numParamSpacePts = params->numSkyPosTotal*params->nMaxSMA*params->nMaxTperi; */
-     }
+	      if (params->binaryFlag==0){
+                    params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal;}
+	                   /*05/02/18 vir:*/ 
+	      else { params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivTotal*params->nMaxSMA*params->nMaxTperi;}
+     }	/*end if numspindown > 0*/                
+   
+     else {
+	     if(params->binaryFlag==0){
+        params->numParamSpacePts = params->numSkyPosTotal;}
+/*05/02/18 vir:*/ else{ params->numParamSpacePts = params->numSkyPosTotal*params->nMaxSMA*params->nMaxTperi; 
+	     }}
   } else {
      ABORT( status, DRIVESTACKSLIDEH_EPARAMSPACEFLAG, DRIVESTACKSLIDEH_MSGEPARAMSPACEFLAG); /* 02/02/04 gam */
   }
   params->numSUMsTotal = params->numSUMsPerParamSpacePt*params->numParamSpacePts;  /* Total Number of Sums = numSUMsPerParamPt*numParamSpacePts */
- 
+ printf("numSUMstotal is %d\n",params->numSUMsTotal);
+
  #ifdef INCLUDE_DEBUG_PARAMETERS_CODE
    /* 04/15/04 gam; Add INT2 params->debugOptionFlag; if (params->debugOptionFlag & 1) > 0 print commandline args to stdout */
    if ((params->debugOptionFlag & 1) > 0 ) {
@@ -745,7 +750,7 @@ params->deltaSMA = 0;
   	fprintf(stdout, "\nSTART SECTION: set up parameter space\n");
   	fflush(stdout);
   #endif
- 
+  
  params->skyPosData=(REAL8 **)LALMalloc(params->numSkyPosTotal*sizeof(REAL8 *));
  for(i=0;i<params->numSkyPosTotal;i++)
  {
@@ -821,7 +826,8 @@ params->deltaSMA = 0;
 		   params->freqDerivData[i][k] = params->startFDeriv5 + iFDeriv4*params->deltaFDeriv5;
 		} /* END if (k == 0) ELSE ... */
         } /* END for(k=0;k<params->numSpinDown;k++) */
-   } /* END for(i=0;i<params->numFreqDerivTotal;i++) */
+   }
+ /* END for(i=0;i<params->numFreqDerivTotal;i++) */
  } /* END if (params->parameterSpaceFlag == 0) */
 /**********************************************/
 /*                                            */
@@ -1889,10 +1895,12 @@ stksldParams->TperiapseSSBSec=params->TperiapseSSBSec;
 stksldParams->TperiapseSSBNanoSec=params->TperiapseSSBNanoSec;
 stksldParams->deltaSMA=params->deltaSMA;
 stksldParams->SMAcentral=params->SMAcentral;
+stksldParams->nMaxSMA=params->nMaxSMA;
 
 /*05/02/17 vir: stksldParams->nMaxSMA=params->nMaxSMA;*/
 /*05/02/17 vir: stksldParams->nMaxTperi=params->nMaxTperi;*/
-/*05/02/17 vir: stksldParams->ParamsSMA=(REAL8 *)LALMalloc((stksldParams->numSkyPosTotal*params->numSpinDown*params->nMaxSMA*params->nMaxTperi)*sizeof(REAL8)); */
+/*05/02/17 vir: stksldParams->ParamsSMA=(REAL8 *)LALMalloc((stksldParams->numSkyPosTotal*params->numSpinDown*params->nMaxSMA*params->nMaxTperi)*sizeof(REAL8));*/
+stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/*stores SMA for each sum in parameter space*/
 /*05/02/17 vir: stksldParams->ParamsTperi=(UINT4 *)LALMalloc((stksldParams->numSkyPosTotal*stksldParams->numSpinDown*params->nMaxSMA*params->nMaxTperi)*sizeof(UINT4));*/
 
   /* 12/03/04 gam */
@@ -2256,13 +2264,15 @@ stksldParams->SMAcentral=params->SMAcentral;
     /*Feb 14/05 vir: ADDED HERE BINARY CASE*/
     
 if((params->binaryFlag & 1) == 1){
-	
+	 
 	FILE *binaryfp; /* 05/02/17 vir: pointer to output file for sums*/
-
+        FILE *binaryLE;
 	char filename[]="myoutbinary.txt";
-		
- for(kSUM=0;kSUM < params->numSUMsTotal;kSUM++) {
-    
+	char filename2[]="outLE.txt";	
+
+		for(kSUM=0;kSUM < params->numSUMsTotal;kSUM++) {
+    binaryLE=fopen(filename2, "w");
+
  i = kSUM/numFreqDerivIncludingNoSpinDown;   /* 01/28/04 gam; index to params->skyPosData for this SUM; */
     j = kSUM % numFreqDerivIncludingNoSpinDown; /* 01/28/04 gam; index to params->freqDerivData for this SUM; */    
     stksldParams->skyPosData = &(params->skyPosData[i]);
@@ -2270,25 +2280,15 @@ if((params->binaryFlag & 1) == 1){
          stksldParams->freqDerivData = &(params->freqDerivData[j]);
     }    
 
-	/*csParams->OrbitalEccentricity=params->OrbitalEccentricity;
-	csParams->ArgPeriapse=params->ArgPeriapse;
-	csParams->TperiapseSSB.gpsSeconds->params->TperiapseSSBSec;
-	csParams->TperiapseSSB.gpsNanoSeconds->params->TperiapseSSBNanoSec;
-	csParams->OrbitalPeriod=66960;
-	csParams->SemiMajorAxis=params->SMAcentral;*/
 
     
-	            stksldParams->numSkyPosTotal=1;
+            stksldParams->numSkyPosTotal=1;
 	    stksldParams->skyPosData[0][0]=params->alphaSX1;
 	    stksldParams->skyPosData[0][1]=params->deltaSX1;
 
-/*INT4 iSMA=0;
-INT4 iSMAmax=10;*//*total number of point in par. space to investigate*/
-/*Call StackSlidebinary for every point in parameter space*/
-		/*for(iSMA=0; iSMA<iSMAmax; iSMA++ )*/
-		StackSlideBinary(status->statusPtr, stksldParams, params->STKData, params->SUMData);
+	    StackSlideBinary(status->statusPtr, stksldParams, params->STKData, params->SUMData);
 
-   if(params->deltaSMA == 0)/*if(params->nMaxSMA ==1)&&(params->nMaxTperi ==1)*/
+	     if((params->nMaxSMA ==1)&&(params->nMaxTperi ==1))
       {	
 	binaryfp=fopen(filename, "w+");
 	
@@ -2296,20 +2296,21 @@ INT4 iSMAmax=10;*//*total number of point in par. space to investigate*/
 	 {
 	   fprintf(binaryfp,"%f %f\n", params->f0SUM + (REAL8)k*params->dfSUM, params->SUMData[0]->data->data[k]);/*05/02/17 vir*/
          }
-	fclose(binaryfp);
-      } /*05/02/17 vir: write sum on the file only for no mismatch*/
+	      }/* 05/02/17 vir: write sum on the file only for no mismatch*/
     
     else {
 	/*Look for loudest event in SUMData*/
-/*05/02/17 vir: for mismatched params, output only the loudest event */
-      
-    FindBinaryLoudest( params->SUMData, stksldParams );
-    /*FindBinaryLoudest(params->SUMData, stksldParams,PeakFreq, LoudestEvent);*/
-printf("the SemiMajorAxis is %f\n", stksldParams->SemiMajorAxis);
-/*printf(stdout,"%f %f %f\n", PeakFreq, LoudestEvent,stksldParams->ParamsSMA[kSUM], stksldParams->ParamsTperi[kSUM]);*/
-    }/*end of else deltaSMA > 0*/
+         /*05/02/17 vir: for mismatched params, output only the loudest event */
+      printf("the SemiMajorAxis is %f\n", stksldParams->SemiMajorAxis);
+
+      FindBinaryLoudest(params->SUMData, stksldParams);
+fprintf(binaryLE,"%f %f %f\n",stksldParams->peakFreq, stksldParams->LoudestEvent,  stksldParams->ParamsSMA[kSUM]);
+    
+   }/*end of else deltaSMA > 0*/
 
 }/*end of for kSUM*/
+fclose(binaryLE);
+fclose(binaryfp);
 
 }/*end of if binaryFlag==1*/
 
@@ -2528,7 +2529,8 @@ printf("the SemiMajorAxis is %f\n", stksldParams->SemiMajorAxis);
          LALFree(params->edat->ephemE);
          LALFree(params->edat); */
          
-         /* 11/08/03 gam; Add in first version of StackSlide written by Mike Landry */  	 
+         /* 11/08/03 gam; Add in first version of StackSlide written by Mike Landry */
+         LALFree(stksldParams->ParamsSMA);/*05/02/18*/
 	 LALFree(stksldParams);
          
          /* 01/20/04 gam; Change findStackSlidePeaks to LALFindStackSlidePeaks; put params into struct */
@@ -2636,7 +2638,6 @@ void StackSlideFinalizeSearch(
   LALFree(params->earthEdatFile);
   LALFree(params->sftDirectory);
   LALFree(params->outputFile);
-
   /* LALFree(params); */ /*Declared and freed in the calling function */
 
   /**********************************************/
@@ -3506,28 +3507,22 @@ void FindBinaryLoudest( REAL4FrequencySeries **SUMData, StackSlideParams *stksld
 	INT4 iMinSTK=0; 
 	INT4 iMaxSTK=stksldParams->nBinsPerSUM;
 	
-	REAL8 peakFreq;
 	INT4 i;
 	INT4 indexFreq=0;
  
 
-	FILE *binaryLE;
-	char filename2[]="outLE.txt";
-
-	binaryLE=fopen(filename2, "a+");
-/*05/02/17 vir: for(iSMA=0; iSMA<stksldParams->nMaxSMA; iSMA++){*/
 	for (i=iMinSTK; i<iMaxSTK; i++)
 	{
 		if(SUMData[0]->data->data[i] > max)
 		{ max = SUMData[0]->data->data[i];
 		  indexFreq=i;
 		}
-	peakFreq=stksldParams->f0SUM + indexFreq*stksldParams->dfSUM; 
+	stksldParams->peakFreq=stksldParams->f0SUM + indexFreq*stksldParams->dfSUM; 
 	}
-printf("Loudest binary peak is %f and corr freq is %f SMA %f\n", max, peakFreq, stksldParams->SemiMajorAxis);
-fprintf(binaryLE,"%f %f %f\n",max , peakFreq, stksldParams->SemiMajorAxis);
-/*}for iSMA*/
-fclose(binaryLE);
+	stksldParams->LoudestEvent=max;
+
+	/*printf("Loudest binary peak is %f and corr freq is %f SMA %f\n", max, stksldParams->peakFreq, stksldParams->SemiMajorAxis);*/
+
 }
 
 

@@ -31,7 +31,8 @@ set templateTperiapseSSBSec 731163027;
 set templateTperiapseSSBNanoSec 0;
 set templateSMAcentral 1.44; #central value of semi major axis in parameter space
 set templatedeltaSMA 0;
-
+set templatenMaxSMA 1;  #max num of semimajor axis templates 05/02/18
+set templatenMaxTperi 1; #max num of Tperiapse templates 05/02/18
 set templateNumSpinDown 1; 
 
 set templateStartFDeriv1 0;

@@ -439,10 +439,10 @@ REAL8 SMAcentral; /*central value of SemiMajor axis in parameter space to be use
 /*REAL8 Tpericentral;*/ /*central value of last periapse passage before obs time starts to be used in a MC search*/
 REAL4 deltaTperi; /*half-uncertainty on T periapse*/
 REAL8 deltaSMA; /*half uncertainty on the semi Major axis*/
-
+INT4 nMaxSMA;  /*max number of template semi-major-axis in parameter space*/
+INT4 nMaxTperi;/* max numb of template Tperi in param space*/
 /*end of binary params*/
-  
-  INT4    numSTKsPerSUM;             /* Number of STKs to use to make one SUM (Usually duration/tSTK) */
+    INT4    numSTKsPerSUM;             /* Number of STKs to use to make one SUM (Usually duration/tSTK) */
     INT4    numSUMsPerParamSpacePt;  /* Number of output SUMs per parameter space point = params->duration/params->tSUM. (Usually will = 1) */
     REAL8   tSUM;                      /* duration in seconds of output SUMs = tSTK*numSTKsPerSUM. (Usually = duration) */
   REAL8   tEffSUM;                   /* Effective duration of SUM such that dfSUM = 1.0/tEffSUM */

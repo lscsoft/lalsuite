@@ -17,7 +17,7 @@ void StackSlideBinary(      LALStatus *status,
 			
 {
 	
-    INT4 i,m;
+    INT4 i,m,iSMA;
     static INT4 iSky = 0;       /* index gives which Sky Position */    
     INT8 iSkyCoh=0;
     /*INT4 iFreqDeriv;*/
@@ -27,12 +27,8 @@ void StackSlideBinary(      LALStatus *status,
 
 printf("Start function StackSlideBinary\n");    
 	StackSlideSkyParams *csParams;           /* Container for ComputeSky */
-	/* INT4 iSkyCoh;                           For ComputeSky */
-	
  
-       /* REAL4FrequencySeries **STKData;  */
-       /* REAL4FrequencySeries **SUMData;*/
-
+      
 	
 	TdotsAndDeltaTs *pTdotsAndDeltaTs;
 
@@ -47,11 +43,7 @@ printf("Start function StackSlideBinary\n");
 	csParams=(StackSlideSkyParams *)LALMalloc(sizeof(StackSlideSkyParams));
 	csParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
 
-        /*SUMData=(REAL4FrequencySeries **)LALMalloc(sizeof(REAL4FrequencySeries *));
-        SUMData[0]=(REAL4FrequencySeries *)LALMalloc(sizeof(REAL4FrequencySeries));
-        SUMData[0]->data=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
-        SUMData[0]->data->data=(REAL4 *)LALMalloc(stksldParams->nBinsPerSUM*sizeof(REAL4));*/
-
+   
 
   	pTdotsAndDeltaTs=(TdotsAndDeltaTs *)LALMalloc(sizeof(TdotsAndDeltaTs));
   	pTdotsAndDeltaTs->vecTDots  = (REAL8 *)LALMalloc(sizeof(REAL8)*stksldParams->numSTKs);
@@ -112,7 +104,7 @@ printf("Start function StackSlideBinary\n");
         csParams->TperiapseSSB.gpsNanoSeconds=stksldParams->TperiapseSSBNanoSec;
 /*these are passed through the command line, MAKE SURE ABOUT CALLING params structure*/
 
-	/* for(iSMA=0; iSMA < stksldParams->nMaxSMA; iSMA++){ 05/02/18 vir: for each point generate a new random*/
+	 for(iSMA=0; iSMA < stksldParams->nMaxSMA; iSMA++){ /*05/02/18 vir: for each point generate a new random*/
 	/* for (iT=0; iT < stksldParams->nMaxTperi; iT++)*/
 LALCreateRandomParams(status->statusPtr, &randPar, seed); /*05/02/17 vir: create random params*/
               LALUniformDeviate(status->statusPtr, &randval, randPar);
@@ -121,9 +113,10 @@ LALCreateRandomParams(status->statusPtr, &randPar, seed); /*05/02/17 vir: create
 	      stksldParams->SemiMajorAxis=stksldParams->SMAcentral+((REAL8)randval-0.5)*(stksldParams->deltaSMA);                         
 	      csParams->SemiMajorAxis=stksldParams->SemiMajorAxis;
 	      /*stksldParams->TperiapseSSBsec=params->Tpericentral+((REAL8)randval-0.5)*(stksldParams->deltaTperi); */
-              /*05/02/17 vir: stksldParams->SMA[iSMA]=stksldParams->SemiMajorAxis;*/
+              
 	      /*05/02/18 vir: csParams->TperiapseSSBsec=stksldParams->TperiapseSSBsec; this is now assigned in CL*/	 
-		 /* Call STACKSLIDECOMPUTESKYBINARY() */
+	
+	      /* Call STACKSLIDECOMPUTESKYBINARY() */
 	StackSlideComputeSkyBinary(status->statusPtr, pTdotsAndDeltaTs, iSkyCoh, csParams);
 
 
@@ -153,7 +146,7 @@ LALCreateRandomParams(status->statusPtr, &randPar, seed); /*05/02/17 vir: create
 
 LALDestroyRandomParams(status->statusPtr, &randPar );
 
-           /*}end of for iSMA 05/02/17 vir*/
+           }/*end of for iSMA 05/02/17 vir*/
 	 /*}end of for iT*/
 	}/*end of for iSky*/
            /* Deallocate space for ComputeSky parameters */

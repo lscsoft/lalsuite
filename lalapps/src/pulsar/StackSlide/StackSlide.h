@@ -119,7 +119,9 @@ tagStackSlideParams /* substituted tagStackSlideBinaryParams*/
 {
 	REAL8 **skyPosData;  
 	REAL8 **freqDerivData;  
-       	INT4 numSkyPosTotal;
+        REAL8 *ParamsSMA;
+	REAL8 *ParamsTperi;
+	INT4 numSkyPosTotal;
 	INT4 numFreqDerivTotal;
 	BOOLEAN divideSUMsByNumSTKs;	
 	REAL8 f0STK;
@@ -146,6 +148,9 @@ tagStackSlideParams /* substituted tagStackSlideBinaryParams*/
 	REAL8 deltaSMA;
 	REAL8 SMAcentral;
         INT4 iFreqDeriv;
+        REAL8 LoudestEvent;
+	REAL8 peakFreq;
+	INT4 nMaxSMA;
 }
 StackSlideParams; 
 

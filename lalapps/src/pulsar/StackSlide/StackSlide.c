@@ -321,7 +321,8 @@ void StackSlideOld(	LALStatus *status,
                SUMData[kSUM]->data->data[i] =  SUMData[kSUM]->data->data[i]/((REAL4)params->numSTKs);
   /*    printf("Normalized sum is %f\n",SUMData[kSUM]->data->data[i]);*/
                            	          }	
-      /*05/02/18 vir: params->ParamsSMA[kSUM]=params->SemiMajorAxis;*/
+      /*05/02/18 vir:*/ params->ParamsSMA[kSUM]=params->SemiMajorAxis;
+      
       /*05/02/18 vir: params->ParamsTperi[kSUM]=params->TperiapseSSB*/
        printf("end function StackSlide\n");     
 	
@@ -687,7 +688,7 @@ fprintf(stdout,"leap %d\n",params->edat->leap);
 	 basedTperi = pow(dTperi, (REAL8)m+1);
 	 printf("basedTperi %f\n",basedTperi);
 /*!*/	 /*the 2 lines below must be changed */
-	 printf("spindownorder %d \n",params->spinDwnOrder);
+	
 	 /* Calculate A coefficients */
 	/* skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m]=1.0/((REAL8)m+1.0)*basedTperi*dTperi-0.5*params->tSFT*basedTperi*Tdotbin;*/
 	 /* Calculate B coefficients */
