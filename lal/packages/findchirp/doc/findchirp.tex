@@ -13,26 +13,43 @@ T_\odot &=& \left( {G \over c^3} \right) M_\odot = 4.925491 \times
 The \verb|findchirp| functions measure masses in units of $M_\odot$ 
 and times in units of seconds.
 
-\section{Conventions used for Discrete Quantities}
+\section{Conventions used for Fourier Transforms}
 
 We use the following conventions for the discrete Fourier transform and 
 its inverse. If $h(t_j) \equiv h_j$ is a time domain quantity sampled at
 $N$ discrete points with a sampling interval $\Delta t$, then its Fourier 
-transform $H(f_k)$ is
+transform $\tilde{h}(f_k)$ is
 \begin{equation}
-H(f_k) = \Delta t \sum_{j=0}^{N-1} h_j e^{2\pi ijk/N}
+\tilde{h}(f_k) = \Delta t \sum_{j=0}^{N-1} h_j e^{2\pi ijk/N}
 \end{equation}
 and the discrete Fourier transform of $h_j$ is defined to be
 \begin{equation}
-H_k = \sum_{j=0}^{N-1} h_j e^{2\pi ijk/N}.
+\tilde{h}_k = \sum_{j=0}^{N-1} h_j e^{2\pi ijk/N}.
 \end{equation}
 The inverse Fourier transform is 
 \begin{eqnarray}
 \nonumber
-h_j &=& \frac{1}{N\Delta t} \sum_{k=0}^{N-1} H(f_k) e^{-2\pi ijk/N} \\
-h_j &=& \frac{1}{N} \sum_{k=0}^{N-1} H_k e^{-2\pi ijk/N}
+h_j &=& \frac{1}{N\Delta t} \sum_{k=0}^{N-1} \tilde{h}(f_k) e^{-2\pi ijk/N} \\
+h_j &=& \frac{1}{N} \sum_{k=0}^{N-1} \tilde{h}_k e^{-2\pi ijk/N}
 \end{eqnarray}
 since $\Delta f = (N\Delta t)^{-1}$.
+
+\section{Conventions Used for Power Spectra}
+
+Consider a time series of white Gaussian noise with zero mean and variance
+$\sigma^2$, that is
+\begin{eqnarray}
+\nonumber
+\langle n(t) \rangle &=& 0, \\
+\langle n^2(t) \rangle &=& \sigma^2. \\
+\end{eqnarray}
+
+Consider a signal $n(t)$. We \emph{define} the one sided power spectrum of
+this signal to be
+\begin{equation}
+\langle \tilde{n}(f) \tilde{n}^\ast(f') \rangle
+= \frac{1}{2} S(|f|) \delta(f-f')
+\end{equation}
 
 We define the discrete one-sided power spectrum $S_k$ to by
 \begin{equation}
