@@ -15,6 +15,8 @@ NRCSID( COHERENTESTIMATIONC, "$Id$" );
 double cosh(double);
 double acosh(double);
 
+static INT4 jacobi(float **a, int n, float d[], float **v, int *nrot);
+
 void
 LALCoherentEstimation ( LALStatus          *stat,
 			REAL4TimeSeries *output,
@@ -26,9 +28,6 @@ LALCoherentEstimation ( LALStatus          *stat,
      o order of in must be same as order of params->filters
      o output time wrt center of Earth
   */
-
-  static INT4
-    jacobi(float **a, int n, float d[], float **v, int *nrot);
 
   INT4 /* Sret, */
     i, j, k, /* counters */
