@@ -17,6 +17,7 @@ static int _getLayer(REAL4TimeSeries **layerOut, int indx, Wavelet *wavelet);
 static void _putLayer(REAL4TimeSeries *layerData, int layer, Wavelet *wavelet);
 static void _assignREAL4TimeSeriesMetadata(REAL4TimeSeries **left, REAL4TimeSeries *right);
 static void _assignREAL4TimeSeries(REAL4TimeSeries **left, REAL4TimeSeries *right);
+static void _assignREAL4FrequencySeries(REAL4FrequencySeries **left,REAL4FrequencySeries *right);
 static void _assignWavelet(Wavelet **left,Wavelet *right);
 static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right);
 
@@ -30,6 +31,7 @@ static void _destroy2DintArray(int ***a, int n1);
 static void _print2DintArray(int ***a, FILE *out, int n1, int n2);
 static int _clusterMain(ClusterWavelet *wavelet);
 static int _clusterR(ClusterWavelet *wavelet, int k);
+static REAL4 _noise(ClusterWavelet *w, INT4 number);
 
 static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseClusterWavelet *input);
 
@@ -42,11 +44,12 @@ static int _compareAbs(const void *a, const void *b);
 
 static void _clusterProperties(ClusterWavelet *w);
 
-void _doubleToSecNan(double t, UINT4 *sec, UINT4 *nan);
-double _secNanToDouble(UINT4 sec, UINT4 nan);
+static void _doubleToSecNan(double t, UINT4 *sec, UINT4 *nan);
+static double _secNanToDouble(UINT4 sec, UINT4 nan);
 static int _nanoSeconds2steps(REAL4TimeSeries *ts, int nanoseconds);
 
 static void _freeREAL4TimeSeries(REAL4TimeSeries **t);
+static void _freeREAL4FrequencySeries(REAL4FrequencySeries **psd);
 static void _freeWavelet(Wavelet **w);
 static void _freeClusterWavelet(ClusterWavelet **w);
 static void _freeOutPercentile(OutputPercentileWavelet **p);
@@ -896,6 +899,27 @@ static void _assignREAL4TimeSeries(REAL4TimeSeries **left, REAL4TimeSeries *righ
   }
 }
 
+static void _assignREAL4FrequencySeries(REAL4FrequencySeries **left,REAL4FrequencySeries *right)
+{
+  int i;
+
+  (*left)=(REAL4FrequencySeries*)LALCalloc(1,sizeof(REAL4FrequencySeries));
+  (*left)->data=(REAL4Sequence*)LALCalloc(1,sizeof(REAL4Sequence));
+  (*left)->data->data=(REAL4*)LALCalloc(right->data->length,sizeof(REAL4));
+
+  strcpy((*left)->name,right->name);
+  (*left)->epoch=right->epoch;
+  (*left)->f0=right->f0;
+  (*left)->deltaF=right->deltaF;
+  (*left)->sampleUnits=right->sampleUnits;
+
+  (*left)->data->length=right->data->length;
+  for(i=0;i<right->data->length;i++)
+    {
+      (*left)->data->data[i]=right->data->data[i];
+    }
+}
+
 /* wavelet copy constructor */
 static void _assignWavelet(Wavelet **left,Wavelet *right)
 {
@@ -927,9 +951,12 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 {
   UINT4 i,j,M;
   /*  int M;*/
+  M = _getMaxLayer(right->wavelet)+1;
   _createClusterWavelet(left);
   if(right->wavelet!=NULL) _assignWavelet(&(*left)->wavelet,right->wavelet);
   if(right->original!=NULL) _assignWavelet(&(*left)->original,right->original);
+  if(right->psd!=NULL) _assignREAL4FrequencySeries(&(*left)->psd,right->psd);
+
   (*left)->pMaskCount=right->pMaskCount;
   (*left)->clusterCount=right->clusterCount;
   (*left)->clusterType=right->clusterType;
@@ -942,8 +969,9 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
   (*left)->nonZeroFractionAfterVetoes=right->nonZeroFractionAfterVetoes;
   (*left)->pixelSwapApplied=right->pixelSwapApplied;
   (*left)->pixelMixerApplied=right->pixelMixerApplied;
+  (*left)->noise_rms_flag=right->noise_rms_flag;
+  (*left)->calibration_max_freq=right->calibration_max_freq;
 
-  M = _getMaxLayer(right->wavelet)+1;
   if(right->medians!=NULL)
     {
       (*left)->medians=(REAL4*)LALCalloc(M,sizeof(REAL4));
@@ -958,6 +986,14 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
       for(i=0;i<M;i++)
 	{
 	  (*left)->norm50[i]=right->norm50[i];
+	}
+    }
+  if(right->avgPSD!=NULL)
+    {
+      (*left)->avgPSD=(REAL4*)LALCalloc(M,sizeof(REAL4));
+      for(i=0;i<M;i++)
+	{
+	  (*left)->avgPSD[i]=right->avgPSD[i];
 	}
     }
   if(right->pMask!=NULL)
@@ -1125,6 +1161,15 @@ static void  _assignClusterWavelet(ClusterWavelet **left, ClusterWavelet *right)
 	  (*left)->bandwidth[i]=right->bandwidth[i];
 	}
     }
+
+   if(right->noise_rms!=NULL)
+     {
+       (*left)->noise_rms=(REAL4*)LALCalloc(right->clusterCount,sizeof(REAL4));
+       for(i=0;i<right->clusterCount;i++)
+	 {
+	   (*left)->noise_rms[i]=right->noise_rms[i];
+	 }
+     }
 
 
 }
@@ -1555,21 +1600,8 @@ static double _setMask(ClusterWavelet *w, int nc, BOOLEAN aura)
       }
     }
   }
-/*    printf("-----------------------"); */
-/*    printf("FT\n"); */
-/*    _print2DintArray(&FT, stdout,ni,nj); */
-/*    printf("-----------------------"); */
-/*    printf("-----------------------"); */
-/*    printf("XY\n"); */
-/*    _print2DintArray(&XY, stdout,ni,nj); */
-/*    printf("-----------------------"); */
-
   _destroy2DintArray(&FT,ni);
   _destroy2DintArray(&XY,ni);
-
-  /*   printf("setMask: 4\n");fflush(stdout); */
-
-/*    printf("pMaskCount=%d maxPixels=%d\n",w->pMaskCount,maxPixels); fflush(stdout); */
 
   w->pMask=(PixelWavelet**)LALRealloc(w->pMask,w->pMaskCount*sizeof(PixelWavelet*));
 
@@ -1766,6 +1798,15 @@ static void _freeREAL4TimeSeries(REAL4TimeSeries **t)
   LALFree((*t)->data->data);
   LALFree((*t)->data);
   LALFree((*t));
+  *t=NULL;
+}
+
+static void _freeREAL4FrequencySeries(REAL4FrequencySeries **psd)
+{
+  LALFree((*psd)->data->data);
+  LALFree((*psd)->data);
+  LALFree((*psd));
+  *psd=NULL;
 }
 
 static void _freeWavelet(Wavelet **w)
@@ -1944,11 +1985,11 @@ static int _compareAbs(const void *a, const void *b)
 
 static void _clusterProperties(ClusterWavelet *w)
 {
-  UINT4 i, j, f, ff, t;
+  UINT4 i, j, f, ff, t, count;
   double a,b;
   double delta_t, delta_f;
   double x;
-  int N;
+  int N,M,min,max;
   Slice s;
 
   delta_t=w->wavelet->data->deltaT*(1<<w->wavelet->level);
@@ -1956,6 +1997,34 @@ static void _clusterProperties(ClusterWavelet *w)
   N=w->wavelet->data->data->length/(1<<w->wavelet->level);
   w->delta_t=delta_t;
   w->delta_f=delta_f;
+
+  M = _getMaxLayer(w->wavelet)+1;
+
+  if(w->noise_rms_flag)
+    {
+      w->avgPSD=(REAL4*)LALCalloc(M,sizeof(REAL4));
+      for(i=0;i<M;i++)
+	{
+	  w->avgPSD[i]=0.0;
+	  count=0;
+	  min=(int)(i*delta_f/w->psd->deltaF);
+	  max=(int)((i+1)*delta_f/w->psd->deltaF);
+	  if(max<w->psd->data->length)
+	    {
+	      for(j=min;j<max;j++)
+		{
+		  count++;
+		  w->avgPSD[i]+=w->psd->data->data[j];
+		}
+	      if(count!=0) w->avgPSD[i] /= count;
+	    }
+	  else
+	    {
+	      w->avgPSD[i]=w->avgPSD[i-1];
+	    }
+	}
+    }
+
 
   if(w->coreSize!=NULL) LALFree(w->coreSize);
   if(w->correlation!=NULL) LALFree(w->correlation);
@@ -1970,6 +2039,7 @@ static void _clusterProperties(ClusterWavelet *w)
   if(w->startFrequency!=NULL) LALFree(w->startFrequency);
   if(w->stopFrequency!=NULL) LALFree(w->stopFrequency);
   if(w->bandwidth!=NULL) LALFree(w->bandwidth);
+  if(w->noise_rms!=NULL) LALFree(w->noise_rms);
   if(w->blobs!=NULL)
     {
       for(i=0;i<w->clusterCount;i++)
@@ -2002,6 +2072,7 @@ static void _clusterProperties(ClusterWavelet *w)
   w->startFrequency=(REAL4*)LALCalloc(w->clusterCount,sizeof(REAL4));
   w->stopFrequency=(REAL4*)LALCalloc(w->clusterCount,sizeof(REAL4));
   w->bandwidth=(REAL4*)LALCalloc(w->clusterCount,sizeof(REAL4));
+  w->noise_rms=(REAL4*)LALCalloc(w->clusterCount,sizeof(REAL4));
   w->blobs=(ClusterBlobWavelet*)LALCalloc(w->clusterCount,sizeof(ClusterBlobWavelet));
 
   for(i=0;i<w->clusterCount;i++)
@@ -2110,16 +2181,32 @@ static void _clusterProperties(ClusterWavelet *w)
 
       w->duration[i]=w->relativeStopTime[i] - w->relativeStartTime[i] + delta_t;
       w->bandwidth[i]=w->stopFrequency[i] - w->startFrequency[i] + delta_f;
+
+      if(w->noise_rms_flag) w->noise_rms[i]=_noise(w,i);
     }
 }
 
-void _doubleToSecNan(double t, UINT4 *sec, UINT4 *nan)
+static REAL4 _noise(ClusterWavelet *w, INT4 number)
+{
+  REAL4 noise=0.0;
+  int i,j;
+
+  for(i=0;i<w->coreSize[number];i++)
+    {
+      noise+=w->norm50[w->pMask[w->cList[number][i]]->frequency]*
+	w->norm50[w->pMask[w->cList[number][i]]->frequency]*
+	w->avgPSD[w->pMask[w->cList[number][i]]->frequency];
+    }
+  return sqrt(noise);
+}
+
+static void _doubleToSecNan(double t, UINT4 *sec, UINT4 *nan)
 {
   *sec=(UINT4)t;
   *nan=(UINT4)((t-*sec)*pow(10,9));
 }
 
-double _secNanToDouble(UINT4 sec, UINT4 nan)
+static double _secNanToDouble(UINT4 sec, UINT4 nan)
 {
   double t= ((double)sec + (double)nan/pow(10,9));
   return t;
@@ -2130,8 +2217,10 @@ static void _createClusterWavelet(ClusterWavelet **w)
   *w=(ClusterWavelet*)LALMalloc(sizeof(ClusterWavelet));
   (*w)->wavelet=NULL;
   (*w)->original=NULL;
+  (*w)->psd=NULL;
   (*w)->medians=NULL;
   (*w)->norm50=NULL;
+  (*w)->avgPSD=NULL;
   (*w)->pMaskCount=0;
   (*w)->clusterCount=0;
   (*w)->clusterCountFinal=0;
@@ -2154,6 +2243,9 @@ static void _createClusterWavelet(ClusterWavelet **w)
   (*w)->startFrequency=NULL;
   (*w)->stopFrequency=NULL;
   (*w)->bandwidth=NULL;
+  (*w)->noise_rms=NULL;
+  (*w)->noise_rms_flag=FALSE;
+  (*w)->calibration_max_freq=-1.0;
   (*w)->nonZeroFractionAfterPercentile=-1.0;
   (*w)->nonZeroFractionAfterCoincidence=-1.0;
   (*w)->nonZeroFractionAfterSetMask=-1.0;
@@ -2182,6 +2274,11 @@ static void _freeClusterWavelet(ClusterWavelet **w)
       _freeWavelet(&(*w)->original);
       (*w)->original=NULL;
     }
+  if((*w)->psd!=NULL)
+    {
+      _freeREAL4FrequencySeries(&(*w)->psd);
+      (*w)->psd=NULL;
+    }
   if((*w)->medians!=NULL)
     {
       LALFree((*w)->medians);
@@ -2191,6 +2288,11 @@ static void _freeClusterWavelet(ClusterWavelet **w)
     {
       LALFree((*w)->norm50);
       (*w)->norm50=NULL;
+    }
+  if((*w)->avgPSD!=NULL)
+    {
+      LALFree((*w)->avgPSD);
+      (*w)->avgPSD=NULL;
     }
   if((*w)->pMask!=NULL)
     {
@@ -2291,6 +2393,12 @@ static void _freeClusterWavelet(ClusterWavelet **w)
       LALFree((*w)->bandwidth);
       (*w)->bandwidth=NULL;
     }
+  if((*w)->noise_rms!=NULL)
+    {
+      LALFree((*w)->noise_rms);
+      (*w)->noise_rms=NULL;
+    }
+
   if((*w)->blobs!=NULL)
     {
       for(i=0;i<(*w)->clusterCount;i++)
@@ -3290,6 +3398,7 @@ static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseCl
   output->w->simulationType=input->another->simulationType;
   output->w->delta_t=input->another->delta_t;
   output->w->delta_f=input->another->delta_f;
+  output->w->noise_rms_flag=input->another->noise_rms_flag;
 
   output->w->coreSize=NULL;
   output->w->correlation=NULL;
@@ -3304,6 +3413,7 @@ static int _duplicateClusterStructure(OutputClusterWavelet *output, InputReuseCl
   output->w->startFrequency=NULL;
   output->w->stopFrequency=NULL;
   output->w->bandwidth=NULL;
+  output->w->noise_rms=NULL;
   output->w->blobs=NULL;
   
   output->w->pMask=(PixelWavelet**)LALCalloc(output->w->pMaskCount,sizeof(PixelWavelet*));

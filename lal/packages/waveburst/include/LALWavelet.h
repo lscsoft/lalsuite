@@ -268,8 +268,13 @@ tagClusterWavelet
   Wavelet *wavelet;
   Wavelet *original;
 
+  REAL4FrequencySeries *psd;
+
   REAL4 *medians;
   REAL4 *norm50;
+  REAL4 *avgPSD;
+
+  REAL4 calibration_max_freq;
 
   UINT4 pMaskCount;
   UINT4 clusterCount;
@@ -298,6 +303,8 @@ tagClusterWavelet
   REAL4 *startFrequency;
   REAL4 *stopFrequency;
   REAL4 *bandwidth;
+  REAL4 *noise_rms;
+  BOOLEAN noise_rms_flag;
 
   ClusterBlobWavelet *blobs;
   
