@@ -208,6 +208,7 @@ static void ComputeAverageSpectrum(
 void
 EPSearch (
         LALStatus               *status,
+        REAL4TimeSeries         *tseries,
         EPSearchParams          *params,
         SnglBurstTable         **burstEvent,
         UINT4                    tmpDutyCycle

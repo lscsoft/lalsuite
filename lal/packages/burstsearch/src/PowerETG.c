@@ -111,7 +111,7 @@ same vector of string as the power dso.
   /* EPConditionData(status->statusPtr, &tmp, EPparams);
      CHECKSTATUSPTR (status);*/
   
-  EPSearch(status->statusPtr, EPparams, &burstEvent, EPparams->initParams->segDutyCycle);
+  EPSearch(status->statusPtr, &tmp, EPparams, &burstEvent, EPparams->initParams->segDutyCycle);
   CHECKSTATUSPTR (status);
   
   EPFinalizeSearch(status->statusPtr, (void *)(&EPparams));

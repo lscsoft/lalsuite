@@ -612,7 +612,7 @@ int main( int argc, char *argv[])
         }
 
         /* This is the main engine of the excess power method */ 
-        LAL_CALL( EPSearch (&stat, params, &tmpEvent, tmpDutyCycle), &stat);
+        LAL_CALL( EPSearch (&stat, &interval, params, &tmpEvent, tmpDutyCycle), &stat);
 
         if ( tmpEvent != NULL ){
 
