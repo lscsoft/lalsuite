@@ -9,6 +9,9 @@
  *-----------------------------------------------------------------------
  */
 
+#ifndef INSPIRAL_H_
+#define INSPIRAL_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -176,21 +179,5 @@
 int snprintf(char *str, size_t size, const  char  *format, ...);
 char *strsep(char **stringp, const char *delim);
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
-FrameH *fr_add_proc_REAL4TimeSeries ( 
-    FrameH          *frame, 
-    REAL4TimeSeries *chan,
-    const char      *unit,
-    const char      *suffix
-    );
-FrameH *fr_add_proc_REAL4FrequencySeries ( 
-    FrameH               *frame, 
-    REAL4FrequencySeries *chan,
-    const char           *unit,
-    const char           *suffix
-    );
-FrameH *fr_add_proc_COMPLEX8FrequencySeries ( 
-    FrameH                  *frame, 
-    COMPLEX8FrequencySeries *chan,
-    const char              *unit,
-    const char              *suffix
-    );
+
+#endif
