@@ -1,0 +1,207 @@
+% This file is meant to be included in another 
+\documentclass{article}
+\begin{document}
+\section{ComplexFFT}
+
+\subsection{Purpose}
+
+Perform complex-to-complex fast Fourier transforms of vectors using the
+package FFTW~\cite{fj:1998}.
+
+\subsection{Synopsis}
+
+% Syntax: argument definitions, calling signature
+
+\begin{verbatim}
+#include "ComplexFFT.h"
+
+void EstimateFwdComplexFFTPlan( Status *status, ComplexFFTPlan **plan, INT4 size );
+void EstimateInvComplexFFTPlan( Status *status, ComplexFFTPlan **plan, INT4 size );
+void MeasureFwdComplexFFTPlan( Status *status, ComplexFFTPlan **plan, INT4 size );
+void MeasureInvComplexFFTPlan( Status *status, ComplexFFTPlan **plan, INT4 size );
+void DestroyComplexFFTPlan( Status *status, ComplexFFTPlan **plan );
+
+void COMPLEX8VectorFFT(
+    Status         *status,
+    COMPLEX8Vector *out,
+    COMPLEX8Vector *in,
+    ComplexFFTPlan *plan
+    );
+\end{verbatim}
+
+\subsection{Description}
+
+This package provides a LAL-style interface with the FFTW fast Fourier
+transform package~\cite{fj:1998}.
+
+The routines \texttt{EstimateFwdComplexFFTPlan()},
+\texttt{EstimateInvComplexFFTPlan()}, \texttt{MeasureFwdComplexFFTPlan()}, and
+\texttt{MeasureInvComplexFFTPlan()} create plans for computing the forward and
+inverse FFTs.  The optimum plan is either estimated (reasonably fast) or
+measured (can be time-consuming, but gives better performance).  The routine
+\texttt{DestroyComplexFFTPlan()} destroys any of these flavours of plans.
+
+The routine \texttt{COMPLEX8VectorFFT()} performs either the forward or
+inverse FFT depending on the plan.  The discrete Fourier transform $H_k$,
+$k=0\ldots n-1$ of a vector $h_j$, $j=0\ldots n-1$, of length $n$ is defined
+by
+\[
+  H_k = \sum_{j=0}^{n-1} h_j e^{2\pi ijk/n}
+\]
+and, similarly, the inverse Fourier transform is defined by
+\[
+  h_j = \frac{1}{n}\sum_{k=0}^{n-1} H_k e^{-2\pi ijk/n}.
+\]
+However, the present implementation of the inverse FFT omits the factor of
+$1/n$.
+
+Notes:
+\begin{enumerate}
+\item The sign convention used here agrees with the definition in
+\textit{Numerical Recipes}~\cite{ptvf:1992}, but is opposite from the one used
+by FFTW~\cite{fj:1998}.
+\item The result of the inverse FFT must be multiplied by $1/n$ to recover the
+original vector.
+\item The size $n$ of the transform can be any positive integer; the
+performance is $O(n\log n)$.  However, better performance is obtained if $n$
+is the product of powers of 2, 3, 5, 7, and zero or one power of either 11 or
+13.  Transforms when $n$ is a power of 2 are especially fast.  See
+Ref.~\cite{fj:1998}.
+\item Thread safety: The creation of plans is \emph{not} thread-safe!  That
+is, all plans should be created by a single thread---if two threads are
+simultaneously creating plans, possible errors can happen.  However, the use
+of plans in the actual FFTing is thread-safe.
+\item LALMalloc() is used by all the fftw routines.
+\end{enumerate}
+
+\subsection{Operating Instructions}
+
+% Detailed usage 
+
+\begin{verbatim}
+const UINT4 n = 17;   /* example length of sequence of vectors */
+
+static Status status; 
+
+ComplexFFTPlan *pfwd = NULL;
+ComplexFFTPlan *pinv = NULL;
+COMPLEX8Vector *avec = NULL;
+COMPLEX8Vector *bvec = NULL;
+COMPLEX8Vector *cvec = NULL;
+
+/* create data vector and sequence */
+EstimateFwdComplexFFTPlan( &status, &pfwd, n );
+EstimateInvComplexFFTPlan( &status, &pinv, n );
+CCreateVector( &status, &avec, n );
+CCreateVector( &status, &bvec, n );
+CCreateVector( &status, &cvec, n );
+
+/* assign data ... */
+
+/* perform FFTs */
+COMPLEX8VectorFFT( &status, bvec, avec, pfwd );
+COMPLEX8VectorFFT( &status, cvec, bvec, pinv );
+
+/* destroy plans, vectors, and sequences */
+DestroyComplexFFTPlan( &status, &pfwd );
+DestroyComplexFFTPlan( &status, &pinv );
+CDestroyVector( &status, &avec );
+CDestroyVector( &status, &bvec );
+CDestroyVector( &status, &cvec );
+\end{verbatim}
+
+\subsubsection{Arguments}
+
+% Describe meaning of each argument
+
+\begin{itemize}
+\item \texttt{status} is a universal status structure.  Its contents are
+assigned by the functions.
+\item \texttt{n} is the size of the transform.  It
+must be greater than zero, and it is best if it is a power of two.
+\item \texttt{pfwd} and \texttt{pinv} are the foward and inverse FFT plans
+respectively.
+\item \texttt{avec} is a complex vector of length \texttt{n} containing the
+complex data.
+\item \texttt{bvec} is a complex vector of length \texttt{n} containing the
+the FFT of the data.
+\item \texttt{cvec} is a complex vector of length \texttt{n} containing the
+the inverse FFT of the FFT of the data.
+\end{itemize}
+
+\subsubsection{Options}
+
+None. 
+
+\subsubsection{Error conditions}
+
+% What constitutes an error condition? What do the error codes mean?
+
+These functions all set the universal status structure on return.
+Error conditions are described in the following table.
+
+\begin{table}
+\begin{tabular}{|r|l|p{2in}|}\hline
+status  & status          & Description\\
+code    & description     & \\\hline
+COMPLEXFFT\_ENULL 1   & Null pointer
+  & an argument is NULL or contains a NULL pointer\\
+COMPLEXFFT\_ENNUL 2   & Non-null pointer
+  & trying to create a plan that already exists \\
+COMPLEXFFT\_ESIZE 4   & Invalid input size
+  & plan size must be greater than zero\\
+COMPLEXFFT\_ESZMM 8   & Size mismatch
+  & sizes of vector(s) do not agree with plan\\
+COMPLEXFFT\_ESLEN 16  & Invalid/mismatched sequence length
+  & sequence lengths are not the same\\
+COMPLEXFFT\_ESAME 32  & Input/Output data vectors are the same
+  & input and output vectors need to be distinct\\
+\hline
+\end{tabular}
+\caption{Error conditions for all ComplexFFT functions}\label{tbl:CV}
+\end{table}
+                                
+\subsection{Algorithms}
+
+The FFTW~\cite{fj:1998} is used.
+
+% Describe algorithm by which work is done
+
+\subsection{Accuracy}
+
+% For numerical routines address issues related to accuracy:
+% approximations, argument ranges, etc.
+
+
+\subsection{Tests}
+
+% Describe the tests that are part of the test suite
+
+\subsection{Uses}
+
+% What LAL, other routines does this one call?
+
+\subsection{Notes}
+
+\subsection{References}
+
+% Any references for algorithms, tests, etc.
+\begin{thebibliography}{0}
+\bibitem{fj:1998}
+  M. Frigo and S. G. Johnson,
+  \textit{FFTW User's Manual},
+  (Massachusetts Institute of Technology, Cambridge, USA, 1998).
+  URL: \texttt{http://www.fftw.org/doc}
+\bibitem{ptvf:1992}
+  W. H. Press, S. A. Teukolsky, W. T. Vetterling, and B. P. Flannery,
+  \textit{Numerical Recipes in C: The Art of Scientific Computing}, 2nd ed.
+  (Cambridge University Press, Cambridge, England, 1992).
+\end{thebibliography}
+
+\end{document}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 
+
