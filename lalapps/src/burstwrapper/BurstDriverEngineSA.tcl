@@ -1087,23 +1087,11 @@ foreach l1 $SegmentList {
 			}
 
 			## define frame query
-			set frqueryREF " { $CALREFTYPE $IFO {} $caltimes Proc($IFO2:CAL-CAV_GAIN!0!7000.0001!,$IFO2:CAL-RESPONSE!0!7000.0001!) } "
+			set frqueryREF "$CALREFTYPE $IFO $caltimes proc($IFO2:CAL-CAV_GAIN!0!7000.0001!) h1gain\n$CALREFTYPE $IFO $caltimes proc($IFO2:CAL-RESPONSE!0!7000.0001!) h1resp"
 		     
 
-			## set calibration channel name
-			set h1oloop [ mkchannelnt $IFO2:CAL-OLOOP_FAC ]
-			set h1cavfac [ mkchannelnt $IFO2:CAL-CAV_FAC ]
-			set h1gain [ mkchannelnt $IFO2:CAL-CAV_GAIN ]
-			set h1resp [ mkchannelnt $IFO2:CAL-RESPONSE ]
-
 			## get alpha's/beta's
-			set frqueryFAC " { $FTypeCALFAC $IFO {} $ctimes Proc($IFO2:CAL-OLOOP_FAC,$IFO2:CAL-CAV_FAC) } "
-
-			## datacond aliases for calibration
-			set calaliases "                   h1oloop  = $h1oloop;
-                   h1cavfac = $h1cavfac;
-                   h1gain   = $h1gain;
-                   h1resp   = $h1resp;"
+			set frqueryFAC "$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-OLOOP_FAC h1oloop\n$FTypeCALFAC $IFO $ctimes proc($IFO2:CAL-CAV_FAC) h1cavfac"
 
 
 			## datacond algorithms for calibration
@@ -1111,14 +1099,14 @@ foreach l1 $SegmentList {
                         cavfac = float(h1cavfac);
                         cavfaccplx = complex(cavfac);
 
-                        output(cavfaccplx,_,_,$IFO2:CAL-CAV_FAC,$IFO2 cavity factor);
+                        output(cavfaccplx,_,_,$IFO2:CAL-CAV_FAC,$IFO2 cavity factor \[COMPLEX8TimeSeries\]);
 
                         oloop = float(h1oloop);
                         oloopcplx = complex(oloop);
 
-                        output(oloopcplx,_,_,$IFO2:CAL-OLOOP_FAC,$IFO2 open loop factor);
-                        output(h1gain,_,_,$IFO2:CAL-CAV_GAIN,$IFO2 reference cavity gain);
-                        output(h1resp,_,_,$IFO2:CAL-RESPONSE,$IFO2 reference response);
+                        output(oloopcplx,_,_,$IFO2:CAL-OLOOP_FAC,$IFO2 open loop factor \[COMPLEX8TimeSeries\]);
+                        output(h1gain,_,_,$IFO2:CAL-CAV_GAIN,$IFO2 reference cavity gain \[COMPLEX8FrequencySeries\]);
+                        output(h1resp,_,_,$IFO2:CAL-RESPONSE,$IFO2 reference response \[COMPLEX8FrequencySeries\]);
 
                         h1cavfacf = float(h1cavfac);
                         h1cavfacf = complex(h1cavfacf);
