@@ -61,11 +61,8 @@ main (int argc, char *argv[])
   bankIn->iflso         = 0;
   bankIn->tSampling     = 4000.;
   bankIn->NoisePsd      = LALLIGOIPsd;
-  /* bankIn->method        = one; */
   bankIn->order         = twoPN;
-  /* bankIn->approximant   = taylor; */
-  bankIn->approximant   = TaylorF2;
-  /* bankIn->domain        = TimeDomain; */
+  bankIn->approximant   = TaylorT2;
   bankIn->space         = Tau0Tau3;
   bankIn->etamin        = bankIn->mMin * ( bankIn->MMax - bankIn->mMin) /
     ( bankIn->MMax * bankIn->MMax );
