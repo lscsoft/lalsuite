@@ -391,24 +391,25 @@ void COMPLEX16SFT2Periodogram1 (LALStatus  *status,
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
 /********************************* <lalVerbatim file="SFTbinD"> */
-void FindNumberHarmonics (LALStatus           *status,
+void FindNumberHarmonics (LALStatus    *status,
 			  LineHarmonicsInfo   *harmonicInfo,
-			  CHAR                *fname)
+			  CHAR         *fname)
 {/*   *********************************************  </lalVerbatim> */
  /* this function finds the number of harmonic sets in file "fname" and
     checks the file format */
 
   FILE *fp = NULL;
   CHAR  dump[128];
-  INT4  harmonicCount, r; 
+  INT4   harmonicCount, r, tempint; 
   REAL8 temp1, temp2, temp3, temp4;   
+
 
   INITSTATUS (status, "FindNumberHarmonics", SFTBINC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
-  ASSERT (harmonicInfo, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
-  ASSERT (fname, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  //ASSERT (LineHarmonicsInfo, status, SFTBINH_ENULL, SFTBINH_MSGENULL );
+  //ASSERT (fname, status, SFTBINH_ENULL, SFTBINH_MSGENULL );
 
   /* open harmonics file for reading */
   fp = fopen( fname, "r");
@@ -417,13 +418,14 @@ void FindNumberHarmonics (LALStatus           *status,
   harmonicCount = 0;
 
   do {
-    r=fscanf(fp,"%lf%lf%lf%lf%s\n", &temp1, &temp2, &temp3, &temp4, dump);
+    r=fscanf(fp,"%lf%lf%d%lf%lf%s\n", &temp1, &temp2, 
+	     &tempint, &temp3, &temp4, dump);
     /* make sure the line has the right number of entries or is EOF */
-    ASSERT( (r==5)||(r==EOF), status, SFTBINH_EHEADER, SFTBINH_MSGEVAL);
-    if (r==5) harmonicCount++;
+    ASSERT( (r==6)||(r==EOF), status, SFTBINH_EHEADER, SFTBINH_MSGEVAL);
+    if (r==6) harmonicCount++;
   } while ( r != EOF);
 
-  harmonicInfo->nLines = harmonicCount;
+  harmonicInfo->nHarmonicSets = harmonicCount;
 
   fclose(fp);
 
@@ -436,15 +438,16 @@ void FindNumberHarmonics (LALStatus           *status,
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="SFTbinD"> */
 void  ReadHarmonicsInfo (LALStatus          *status,
-			 LineHarmonicsInfo  *lineInfo,
+			 LineHarmonicsInfo  *harmonicsInfo,
 			 CHAR               *fname)
 {/*   *********************************************  </lalVerbatim> */
   /* this reads the information about the lines: central frequency, left wing and 
      right wing */
   FILE    *fp = NULL;
-  INT4    r, count, nLines;
+  INT4    r, count, nHarmonicSets;
   REAL8   *startFreq=NULL;
   REAL8   *gapFreq=NULL;
+  INT4    *numHarmonics=NULL;
   REAL8   *leftWing=NULL;
   REAL8   *rightWing=NULL;
   CHAR    dump[128];
@@ -453,28 +456,31 @@ void  ReadHarmonicsInfo (LALStatus          *status,
   ATTATCHSTATUSPTR (status);  
 
   /* make sure arguments are not null */
-  ASSERT (lineInfo, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
-  ASSERT (lineInfo->nLines > 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
-  ASSERT (lineInfo->startFreq, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
-  ASSERT (lineInfo->gapFreq, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
-  ASSERT (lineInfo->leftWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
-  ASSERT (lineInfo->rightWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+  ASSERT (harmonicsInfo, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+  ASSERT (harmonicsInfo->nHarmonicSets > 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
+  ASSERT (harmonicsInfo->startFreq, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (harmonicsInfo->gapFreq, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (harmonicsInfo->numHarmonics, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (harmonicsInfo->leftWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+  ASSERT (harmonicsInfo->rightWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
   ASSERT (fname, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
  
   /* open line noise file for reading */
   fp = fopen( fname, "r");
   ASSERT (fp, status, SFTBINH_EFILE,  SFTBINH_MSGEFILE);
 
-  nLines = lineInfo->nLines;
-  startFreq = lineInfo->startFreq;
-  gapFreq = lineInfo->gapFreq;
-  leftWing = lineInfo->leftWing;
-  rightWing = lineInfo->rightWing;
+  nHarmonicSets = harmonicsInfo->nHarmonicSets;
+  startFreq = harmonicsInfo->startFreq;
+  gapFreq = harmonicsInfo->gapFreq;
+  numHarmonics = harmonicsInfo->numHarmonics; 
+  leftWing = harmonicsInfo->leftWing;
+  rightWing = harmonicsInfo->rightWing;
 
   /* read line information from file */
-  for (count = 0; count < nLines; count++){
-    r=fscanf(fp,"%lf%lf%lf%lf%s\n", startFreq+count, gapFreq+count, leftWing+count, rightWing+count, dump);
-    ASSERT(r==5, status, SFTBINH_EHEADER, SFTBINH_MSGEVAL);
+  for (count = 0; count < nHarmonicSets; count++){
+    r=fscanf(fp,"%lf%lf%d%lf%lf%s\n", startFreq+count, gapFreq+count, numHarmonics+count, 
+	     leftWing+count, rightWing+count, dump);
+    ASSERT(r==6, status, SFTBINH_EHEADER, SFTBINH_MSGEVAL);
   }
 
   fclose(fp);
@@ -484,6 +490,78 @@ void  ReadHarmonicsInfo (LALStatus          *status,
   RETURN (status);
 
 }
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* *******************************  <lalVerbatim file="SFTbinD"> */
+void  Harmonics2Lines (LALStatus          *status,
+		       LineNoiseInfo      *lineInfo,
+		       LineHarmonicsInfo  *harmonicsInfo)
+{/*   *********************************************  </lalVerbatim> */
+  /* this reads the information about the lines: central frequency, left wing and 
+     right wing */
+  
+  INT4    count1, count2, nHarmonicSets, maxCount;
+  REAL8   *startFreq;
+  REAL8   *gapFreq;
+  INT4    *numHarmonics;
+  REAL8   *leftWing;
+  REAL8   *rightWing;
+  REAL8   f0, deltaf, leftDeltaf, rightDeltaf;
+
+
+  INITSTATUS (status, "Harmonics2Lines", SFTBINC);
+  ATTATCHSTATUSPTR (status);  
+
+  /* make sure arguments are not null */
+  ASSERT (harmonicsInfo, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+  ASSERT (harmonicsInfo->nHarmonicSets > 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
+  ASSERT (harmonicsInfo->startFreq, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (harmonicsInfo->gapFreq, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (harmonicsInfo->numHarmonics, status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  ASSERT (harmonicsInfo->leftWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+  ASSERT (harmonicsInfo->rightWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+
+  ASSERT (lineInfo, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+  ASSERT (lineInfo->nLines > 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL); 
+  ASSERT (lineInfo->lineFreq, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+  ASSERT (lineInfo->leftWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+  ASSERT (lineInfo->rightWing, status, SFTBINH_ENULL, SFTBINH_MSGENULL); 
+ 
+  nHarmonicSets = harmonicsInfo->nHarmonicSets;
+  startFreq = harmonicsInfo->startFreq;
+  gapFreq = harmonicsInfo->gapFreq;
+  numHarmonics = harmonicsInfo->numHarmonics; 
+  leftWing = harmonicsInfo->leftWing;
+  rightWing = harmonicsInfo->rightWing;
+
+
+
+
+  for (count1=0; count1 < nHarmonicSets; count1++)
+    {
+      maxCount = *(numHarmonics+count1);
+      f0 = *(startFreq + count1);
+      deltaf = *(gapFreq + count1);
+      leftDeltaf = *(leftWing + count1);
+      rightDeltaf = *(rightWing + count1);
+      for (count2=0; count2 < maxCount; count2++)
+	{
+	  *(lineInfo->lineFreq + count2) = f0 + count2 * deltaf;
+	  *(lineInfo->leftWing + count2) = leftDeltaf;
+	  *(lineInfo->rightWing + count2) = rightDeltaf;
+	}
+    }
+
+
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+
+}
+
+
+
+
 
 
 /*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/

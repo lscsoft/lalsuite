@@ -68,7 +68,7 @@ Routines for reading SFT binary files
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string.h> 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -178,9 +178,10 @@ NRCSID (SFTBINH, "$Id$");
   } LineNoiseInfo; 
 
   typedef struct tagLineHarmonicsInfo{
-    INT4         nLines; /* number of sets of harmonics */
+    INT4         nHarmonicSets; /* number of sets of harmonics */
     REAL8        *startFreq; /* starting frequency of set */
     REAL8        *gapFreq;  /* frequency difference between adjacent harmonics */
+    INT4         *numHarmonics; /* Number of harmonics */  
     REAL8        *leftWing; /* width to the left of each line in set */
     REAL8        *rightWing; /* width to the right */
   } LineHarmonicsInfo; 
@@ -227,6 +228,11 @@ void  ReadHarmonicsInfo (LALStatus          *status,
 			 LineHarmonicsInfo  *lineInfo,
 			 CHAR               *fname
 			 );
+
+void  Harmonics2Lines (LALStatus          *status,
+		       LineNoiseInfo      *lineInfo,
+		       LineHarmonicsInfo  *harmonicsInfo
+		       );
 
 
 void FindNumberLines (LALStatus        *status,
