@@ -125,7 +125,7 @@ static void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 static LIGOTimeGPSVector* make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft);
 static int check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1);
 static void checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF);
-static REAL4 mymax (REAL4 x, REAL4 y);
+static void correct_phase (LALStatus* stat, SFTtype *sft, LIGOTimeGPS tHeterodyne);
 /*----------------------------------------------------------------------*/
 
 NRCSID( GENERATEPULSARSIGNALC, "$Id$");
@@ -247,7 +247,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
   detector.transfer = params->transfer;
   detector.site = params->site;
   detector.ephemerides = params->ephemerides;
-  detector.heterodyneEpoch = params->startTimeGPS;  /* set the heterodyne epoch to the start-time */
+  detector.heterodyneEpoch = params->startTimeGPS;  /* always set the heterodyne epoch to the start-time */
   
   /* ok, we  need to prepare the output time-series */
   if ( (output = LALCalloc (1, sizeof (*output) )) == NULL) {
@@ -314,7 +314,7 @@ LALSignalToSFTs (LALStatus *stat,
   UINT4 j;
 
 
-  INITSTATUS( stat, "AddSignalToSFTs", GENERATEPULSARSIGNALC);
+  INITSTATUS( stat, "LALSignalToSFTs", GENERATEPULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
   
   ASSERT (outputSFTs != NULL, stat, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
@@ -419,6 +419,9 @@ LALSignalToSFTs (LALStatus *stat,
 	LALDestroySFTVector (stat->statusPtr, &sftvect);
       } ENDFAIL(stat);
 
+
+      /* correct heterodyning-phase */
+      correct_phase (stat->statusPtr, thisSFT, signal->epoch);	/* theterodyne = signal->epoch!*/
 
       /* Now add the noise-SFTs if given */
       if (params->noiseSFTs)
@@ -733,42 +736,6 @@ LALDestroySFTVector (LALStatus *stat,
 
 
 /*----------------------------------------------------------------------
- *  copy an entire SFT-type into another
- *  we require the destination to have at least as many frequency-bins
- *  as the source, but it can have less..
- *----------------------------------------------------------------------*/
-void
-LALCopySFTtype (LALStatus *stat, SFTtype *dest, const SFTtype *src)
-{
-
-  INITSTATUS( stat, "LALDestroySFTVector", GENERATEPULSARSIGNALC);
-
-  ASSERT (dest,  stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (dest->data,  stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (src, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (src->data, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-
-  /* some hard requirements */
-  if ( dest->data->length < src->data->length ) {
-    ABORT (stat, GENERATEPULSARSIGNALH_ECOPYSIZE, GENERATEPULSARSIGNALH_MSGECOPYSIZE);
-  }
-  
-  /* copy head */
-  strcpy (dest->name, src->name);
-  dest->epoch = src->epoch;
-  dest->f0 = src->f0;
-  dest->deltaF = src->deltaF;
-  dest->sampleUnits = src->sampleUnits;
-  /* copy data */
-  memcpy (dest->data->data, src->data->data, dest->data->length);
-  
-  RETURN (stat);
-
-} /* LALCopySFTtype() */
-
-
-
-/*----------------------------------------------------------------------
  * allocate a LIGOTimeGPSVector
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="GeneratePulsarSignalCP"> */
@@ -797,7 +764,7 @@ LALCreateTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect, UINT4 lengt
 
   RETURN (stat);
   
-} /* LALDestroyTimestampVector() */
+} /* LALCreateTimestampVector() */
 
 
 
@@ -808,16 +775,12 @@ LALCreateTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect, UINT4 lengt
 void
 LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
 { /* </lalVerbatim> */
-  UINT4 i;
-
   INITSTATUS( stat, "LALDestroyTimestampVector", GENERATEPULSARSIGNALC);
 
   ASSERT (vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
   ASSERT (*vect != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
 
-  for (i=0; i < (*vect)->length; i++)
-    LALFree ( (*vect)->data);
-
+  LALFree ( (*vect)->data);
   LALFree ( *vect );
   
   *vect = NULL;
@@ -1090,126 +1053,6 @@ write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series)
 } /* write_timeSeriesR4() */
 
 
-
-
-void 
-write_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
-{
-  FILE *fp;
-  REAL4 rpw,ipw;
-  INT4 i;
-  REAL8 Tsft;
-  
-
-  struct headertag {
-    REAL8 endian;
-    INT4  gps_sec;
-    INT4  gps_nsec;
-    REAL8 tbase;
-    INT4  firstfreqindex;
-    INT4  nsamples;
-  } header;
-
-  INITSTATUS( stat, "write_SFT", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR( stat );
-
-  fp = fopen (fname, "w");
-
-  if( !fp ) {
-    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
-  }
-
-  header.endian=1.0;
-  header.gps_sec = sft->epoch.gpsSeconds;
-  header.gps_nsec = sft->epoch.gpsNanoSeconds;
-
-  Tsft = 1.0 / sft->deltaF;
-  header.tbase = Tsft;
-  header.firstfreqindex = (UINT4)( sft->f0 / sft->deltaF );
-  header.nsamples=sft->data->length - 1;		/* following makefakedata_v2, but WHY -1 ?? */
-
-  /* write header */
-  if (fwrite( (void*)&header, sizeof(header), 1, fp) != 1) {
-    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
-  }
-
-  for (i=0; i < header.nsamples; i++)
-    {
-      rpw = sft->data->data[i].re;
-      ipw = sft->data->data[i].im;
-
-      if (fwrite((void*)&rpw, sizeof(REAL4), 1, fp) != 1) { 
-	ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS); 
-      }
-      if (fwrite((void*)&ipw, sizeof(REAL4),1,fp) != 1) {  
-	ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS); 
-      }
-        
-    } /* for i < nsamples */
-  
-  fclose(fp);
-
-  DETATCHSTATUSPTR( stat );
-  RETURN (stat);
-  
-} /* write_SFT() */
-
-REAL4 mymax (REAL4 x, REAL4 y)
-{
-  return (x > y ? x : y);
-}
-/* little debug-function: compare two sft's and print relative errors */
-void
-compare_SFTs (const SFTtype *sft1, const SFTtype *sft2)
-{
-  static LALStatus status;
-  UINT4 i;
-  REAL4 errpow= 0, errph = 0;
-  REAL4 re1, re2, im1, im2, pow1, pow2, phase1, phase2;
-  REAL8 Tdiff;
-
-  if (sft1->data->length != sft2->data->length) 
-    {
-      printf ("\ncompare_SFTs(): lengths differ! %d != %d\n", sft1->data->length, sft2->data->length);
-      return;
-    }
-  LALDeltaFloatGPS (&status, &Tdiff, &(sft1->epoch), &(sft2->epoch));
-  if ( Tdiff != 0.0 ) 
-    printf ("epochs differ: (%d s, %d ns)  vs (%d s, %d ns)\n", 
-	    sft1->epoch.gpsSeconds, sft1->epoch.gpsNanoSeconds, sft2->epoch.gpsSeconds, sft2->epoch.gpsNanoSeconds);
-
-  if ( sft1->f0 != sft2->f0)
-    printf ("fmin differ: %fHz vs %fHz\n", sft1->f0, sft2->f0);
-
-  if ( sft1->deltaF != sft2->deltaF )
-    printf ("deltaF differs: %fHz vs %fHz\n", sft1->deltaF, sft2->deltaF);
-
-  for (i=0; i < sft1->data->length; i++)
-    {
-      re1 = sft1->data->data[i].re;
-      im1 = sft1->data->data[i].im;
-      re2 = sft2->data->data[i].re;
-      im2 = sft2->data->data[i].im;
-
-      pow1 = sqrt(re1*re1 + im1*im1);
-      pow2 = sqrt(re2*re2 + im2*im2);
-
-      phase1 = atan2 (im1, re1);
-      phase2 = atan2 (im2, re2);
-
-      errpow = mymax (errpow, (pow1-pow2)/pow1 );
-      errph = mymax (errph, phase1 - phase2 );
-
-    } /* for i */
-
-
-  printf ("maximal relative error in power: %e, max phaseerror: %e radians\n", errpow, errph);
-
-  return;
-
-} /* compare_SFTs() */
-
-
 /* write an SFT in xmgrace-readable format */
 void 
 LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
@@ -1336,4 +1179,37 @@ dump_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
   DETATCHSTATUSPTR( stat );
   RETURN (stat);
   
-} /* write_SFT() */
+} /* dump_SFT() */
+
+/*----------------------------------------------------------------------
+ * Yousuke's phase-correction function, taken from makefakedata_v2
+ *----------------------------------------------------------------------*/
+void
+correct_phase (LALStatus* stat, SFTtype *sft, LIGOTimeGPS tHeterodyne) 
+{
+  UINT4 i;
+  REAL8 cosx,sinx;
+  COMPLEX8 fvec1;
+  REAL8 deltaT;
+
+  INITSTATUS( stat, "correct_phase", GENERATEPULSARSIGNALC);
+  ATTATCHSTATUSPTR( stat );
+
+  TRY (LALDeltaFloatGPS(stat->statusPtr, &deltaT, &(sft->epoch), &tHeterodyne), stat);
+
+  deltaT *= LAL_TWOPI * sft->f0; 
+
+  cosx=cos(deltaT);
+  sinx=sin(deltaT);
+
+  for (i = 0; i < sft->data->length; i++)
+    {
+      fvec1 = sft->data->data[i];
+      sft->data->data[i].re = fvec1.re * cosx - fvec1.im * sinx;
+      sft->data->data[i].im = fvec1.im * cosx + fvec1.re * sinx;
+    } /* for i < length */
+  
+  DETATCHSTATUSPTR( stat );
+  RETURN (stat);
+  
+} /* correct_phase() */
