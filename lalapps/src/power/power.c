@@ -234,7 +234,7 @@ int main( int argc, char *argv[])
       }
 
       /* compute the number of points in a chunk */
-      numPoints = min(params->initParams->numSegments,(totalNumPoints - usedNumPoints)) ;
+      numPoints = min(params->numSegments,(totalNumPoints - usedNumPoints)) ;
 
       if(verbose) {
         fprintf(stdout,"read in %i points\n",numPoints);
@@ -534,26 +534,25 @@ int main( int argc, char *argv[])
       if (verbose)
 	fprintf(stdout,"Got %i points to analyse after conditioning\n", series.data->length);
 
-      /* first check if the params->initParams->segDutyCycle of data are
-       * available or not?  If not, then set the
-       * params->initParams->segDutyCycle to be equal to the length of data
-       * available 
+      /* first check if the params->segDutyCycle of data are available or not?
+       * If not, then set the params->segDutyCycle to be equal to the length of
+       * data available 
        */
-      if(params->initParams->segDutyCycle > series.data->length)
-	      params->initParams->segDutyCycle = series.data->length;
+      if(params->segDutyCycle > series.data->length)
+	      params->segDutyCycle = series.data->length;
 
-      for(start_sample = 0; start_sample < (int) (series.data->length - 3*params->ovrlap); start_sample += params->initParams->segDutyCycle - 3 * params->ovrlap) {
+      for(start_sample = 0; start_sample < (int) (series.data->length - 3*params->ovrlap); start_sample += params->segDutyCycle - 3 * params->ovrlap) {
         REAL4TimeSeries *interval;
 
-	/* if the no. of points left is less than the
-	 * params->initParams->segDutyCycle then move the epoch back so that it
-	 * can cut out params->initParams->segDutyCycle of data 
+	/* if the no. of points left is less than the params->segDutyCycle then
+	 * move the epoch back so that it can cut out params->segDutyCycle of
+	 * data 
 	 */
 
-	if(series.data->length - start_sample < params->initParams->segDutyCycle)
-	  start_sample = series.data->length - params->initParams->segDutyCycle;
+	if(series.data->length - start_sample < params->segDutyCycle)
+	  start_sample = series.data->length - params->segDutyCycle;
 
-        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, params->initParams->segDutyCycle), &stat);
+        LAL_CALL(LALCutREAL4TimeSeries(&stat, &interval, &series, start_sample, params->segDutyCycle), &stat);
 	
         if (verbose)
           fprintf(stdout,"Analyzing samples %i -- %i\n", start_sample, start_sample + interval->data->length);
@@ -834,11 +833,9 @@ void initializeEPSearch(
 	}
 
 	(*params)->tfTilingInput = LALMalloc(sizeof(CreateTFTilingIn));
-	(*params)->initParams = LALMalloc(sizeof(EPInitParams));
 	(*params)->compEPInput = LALMalloc(sizeof(ComputeExcessPowerIn));
-	if(!(*params)->tfTilingInput || !(*params)->initParams || !(*params)->compEPInput) {
+	if(!(*params)->tfTilingInput || !(*params)->compEPInput) {
 		LALFree((*params)->tfTilingInput);
-		LALFree((*params)->initParams);
 		LALFree((*params)->compEPInput);
 		LALFree(*params); *params = NULL;
 		print_alloc_fail(argv[0], "");
@@ -1071,7 +1068,8 @@ void initializeEPSearch(
 		case 'T':
 		(*params)->tfTilingInput->minFreqBins = atoi(optarg);
 		if((*params)->tfTilingInput->minFreqBins <= 0) {
-			fprintf(stderr,"invalid argument to --%s: must be > 0 (%i specified)\n", long_options[option_index].name, (*params)->tfTilingInput->minFreqBins);
+			sprintf(msg,"must be > 0 (%i specified)", (*params)->tfTilingInput->minFreqBins);
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
 		ADD_PROCESS_PARAM("int", "%d", (*params)->tfTilingInput->minFreqBins);
@@ -1099,13 +1097,13 @@ void initializeEPSearch(
 		break;
 
 		case 'W':
-		(*params)->initParams->numPoints = atoi(optarg);
-		if((*params)->initParams->numPoints <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", (*params)->initParams->numPoints);
+		(*params)->numPoints = atoi(optarg);
+		if((*params)->numPoints <= 0) {
+			sprintf(msg, "must be > 0 (%i specified)", (*params)->numPoints);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
-		ADD_PROCESS_PARAM("int", "%d", (*params)->initParams->numPoints);
+		ADD_PROCESS_PARAM("int", "%d", (*params)->numPoints);
 		break;
 
 		case 'X':
@@ -1120,13 +1118,13 @@ void initializeEPSearch(
 
 		case 'Y':
 		if(!strcmp(optarg, "useMean"))
-			(*params)->initParams->method = useMean;
+			(*params)->method = useMean;
 		else if(!strcmp(optarg, "useMedian"))
-			(*params)->initParams->method = useMedian;
+			(*params)->method = useMedian;
 		else if (!strcmp(optarg, "useUnity"))
-			(*params)->initParams->method = useUnity;
+			(*params)->method = useUnity;
 		else {
-			sprintf(msg, "must be \"useMean\", \"useMedian\", or \"useUnity\" (\"%s\" specified)", optarg);
+			sprintf(msg, "must be \"useMean\", \"useMedian\", or \"useUnity\"");
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
@@ -1134,8 +1132,8 @@ void initializeEPSearch(
 		break;
 
 		case 'Z':
-		(*params)->initParams->segDutyCycle = atoi(optarg);
-		ADD_PROCESS_PARAM("int", "%d", (*params)->initParams->segDutyCycle);
+		(*params)->segDutyCycle = atoi(optarg);
+		ADD_PROCESS_PARAM("int", "%d", (*params)->segDutyCycle);
 		break;
 
 		case 'a':
@@ -1154,7 +1152,7 @@ void initializeEPSearch(
 		else if(!strcmp("butterworth", optarg))
 			resampFiltType = 1;
 		else {
-			sprintf(msg, "must be \"ldas\", or \"butterworth\" (\"%s\" supplied)", optarg);
+			sprintf(msg, "must be \"ldas\", or \"butterworth\"");
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			exit(1);
 		}
@@ -1263,7 +1261,7 @@ void initializeEPSearch(
 	LAL_CALL(LALINT8toGPS(&stat, &stopEpoch, &gpsStopTimeNS), &stat);
 	totalNumPoints = DeltaGPStoINT8(&stat, &stopEpoch, &startEpoch) * frameSampleRate / 1000000000L;
 
-	(*params)->initParams->numSegments = ram / (4 * sizeof(REAL4));
+	(*params)->numSegments = ram / (4 * sizeof(REAL4));
 }
 
 #undef ADD_PROCESS_PARAMS

@@ -100,14 +100,14 @@ static void ComputeAverageSpectrum(
 	ATTATCHSTATUSPTR(status);
 
 	winParams.type = params->winParams.type;
-	winParams.length = 2 * params->initParams->numPoints;
+	winParams.length = 2 * params->numPoints;
 	LALCreateREAL4Window(status->statusPtr, &spec_params.window, &winParams);
 	CHECKSTATUSPTR(status);
 	LALCreateForwardRealFFTPlan(status->statusPtr, &spec_params.plan, spec_params.window->data->length, 0);
 	CHECKSTATUSPTR(status);
 
 	spec_params.overlap = spec_params.window->data->length - params->ovrlap;
-	spec_params.method = params->initParams->method;
+	spec_params.method = params->method;
 
 	LALREAL4AverageSpectrum(status->statusPtr, spectrum, tseries, &spec_params);
 	CHECKSTATUSPTR(status);
@@ -183,7 +183,7 @@ EPSearch (
     ASSERT(burstEvent, status, EXCESSPOWERH_ENULLP, EXCESSPOWERH_MSGENULLP);
 
     /* Compute the average spectrum */
-    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->initParams->numPoints + 1);
+    LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->numPoints + 1);
     CHECKSTATUSPTR(status);
     ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
     CHECKSTATUSPTR(status);
@@ -199,12 +199,12 @@ EPSearch (
     }
 
     /* assign temporary memory for the frequency data */
-    LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->initParams->numPoints + 1);
+    LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", LIGOTIMEGPSINITIALIZER, 0, 0, LALUNITINITIALIZER, params->numPoints + 1);
     CHECKSTATUSPTR(status);
 
     /* create the dft params */
     winParams.type = params->winParams.type;
-    winParams.length = 2 * params->initParams->numPoints;
+    winParams.length = 2 * params->numPoints;
     LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
     CHECKSTATUSPTR(status);
 
@@ -437,16 +437,13 @@ void EPInitSearch(
     }
 
     (*params)->tfTilingInput = LALMalloc (sizeof(CreateTFTilingIn));
-    (*params)->initParams = LALMalloc (sizeof(EPInitParams));
     (*params)->compEPInput = LALMalloc (sizeof(ComputeExcessPowerIn));
     /* EK - Channel name to process (e.g. "ifodmro") */
     (*params)->channelName = LALMalloc(strlen( argv[15] )+1 );
 
-    if ( !(*params)->tfTilingInput || !(*params)-> initParams ||
-         !(*params)-> compEPInput || !(*params)->channelName )
+    if(!(*params)->tfTilingInput || !(*params)-> compEPInput || !(*params)->channelName)
     {
         LALFree ((*params)->tfTilingInput);
-        LALFree ((*params)->initParams);
         LALFree ((*params)->compEPInput);
 	LALFree ((*params)->channelName);
         LALFree (*params); *params = NULL;
@@ -460,11 +457,11 @@ void EPInitSearch(
      */
 
     /* Number of data points in a segment */
-    (*params)->initParams->numPoints        = atoi( argv[1] );
+    (*params)->numPoints        = atoi( argv[1] );
     /* Number of overlapping data segments */
-    (*params)->initParams->numSegments      = atoi( argv[2] );
+    (*params)->numSegments      = atoi( argv[2] );
     /* Number of segments sent to slave */
-    (*params)->initParams->segDutyCycle     = atoi( argv[12] ); 
+    (*params)->segDutyCycle     = atoi( argv[12] ); 
     /* Overlap betweeen segments (# of points) */
     (*params)->ovrlap                       = atoi( argv[3] );  
     /* Identify events with alpha less that this value */
@@ -494,10 +491,10 @@ void EPInitSearch(
     (*params)->simType = 0;
     /* Spectrum method to use */
     if ( !strcmp( argv[17], "useMean" ) ) {
-        (*params)->initParams->method       = useMean;
+        (*params)->method                   = useMean;
     } 
     else if ( !strcmp( argv[17], "useMedian" ) ) {
-        (*params)->initParams->method       = useMedian;
+        (*params)->method                   = useMedian;
     }
     else {
         ABORT( status, EPSEARCHH_ESPEC, EPSEARCHH_MSGESPEC);
@@ -651,9 +648,6 @@ EPFinalizeSearch(
   
   /* free compEPInput */
   LALFree ((*params)->compEPInput);
-
-  /* free EPInitParams */
-  LALFree ((*params)->initParams); 
 
   /* free TFTiling initialisation parameters */
   LALFree ((*params)->tfTilingInput);

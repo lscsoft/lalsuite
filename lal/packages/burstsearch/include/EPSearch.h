@@ -102,16 +102,6 @@ NRCSID (EPSEARCHH, "$Id$");
 #define INPUTNAME_RESPONSE  "response"
 
 typedef struct
-tagEPInitParams
-{
-  UINT4                         numPoints;
-  UINT4                         numSegments;
-  UINT4                         segDutyCycle;
-  AvgSpecMethod                 method;
-}
-EPInitParams;
-
-typedef struct
 tagEPSearchParams
 {
   BOOLEAN                       searchMaster;
@@ -126,7 +116,10 @@ tagEPSearchParams
   REAL8                         alphaThreshold;
   INT4                          events2Master;     /* Added Erik Kats */
   CHAR                         *channelName;       /* Added Erik Kats */
-  EPInitParams                 *initParams;
+  UINT4                         numPoints;
+  UINT4                         numSegments;
+  UINT4                         segDutyCycle;
+  AvgSpecMethod                 method;
   CreateTFTilingIn             *tfTilingInput;
   ComputeExcessPowerIn         *compEPInput;
   LALWindowParams               winParams;
