@@ -385,7 +385,7 @@ print "done"
 
 ##############################################################################
 # Step 3: find all data that is analyzable.
-print "determining analyzable data"
+print "determining analyzable data",
 sys.stdout.flush()
 
 l1_data_out = copy.deepcopy(l1_data)
@@ -409,7 +409,7 @@ print "done"
 
 ##############################################################################
 # Step 4: find all single ifo L1 data that we can analyze
-print "computing L1 single ifo data..."
+print "computing L1 single ifo data...",
 sys.stdout.flush()
 l1_single_data = copy.deepcopy(l1_data_out)
 l1_single_data.intersection(not_h1_data_out)
@@ -422,7 +422,7 @@ print "done"
 
 ##############################################################################
 # Step 5: Compute the ScienceSegments for the H1/H2 double coincident data
-print "computing H1/H2 double coincident data..."
+print "computing H1/H2 double coincident data...",
 sys.stdout.flush()
 h1_h2_data = copy.deepcopy(h1_data_out)
 h1_h2_data.intersection(h2_data_out)
@@ -434,7 +434,7 @@ print "done"
 
 ##############################################################################
 # Step 6: Compute the Science Segments for the single ifo LHO data
-print "computing single ifo H1 and H2 data..."
+print "computing single ifo H1 and H2 data...",
 sys.stdout.flush()
 
 h1_data_to_do = copy.deepcopy(h1_data_out)
@@ -737,8 +737,6 @@ if output_segs:
   ligo_data.union(h1_single_data)
   ligo_data.union(h2_single_data)
   ligo_data.union(h1_h2_data)
-  if playground_only:
-    ligo_data.play()
   ligo_data.coalesce()
 
   f = open('ligo_segs_analyzed.txt', 'w')
@@ -750,9 +748,17 @@ if output_segs:
   lt_data = copy.deepcopy(ligo_data)
   lt_data.intersection(t_data)
 
-  f = open('ligo_tama_segs_analyzed.txt', 'w')
+  f = open('ligo_tama_segs.txt', 'w')
   for seg in lt_data:
     f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
       seg.dur()))
   f.close()
+
+  if playground_only:
+    lt_data.play()
+    f = open('ligo_tama_playground.txt', 'w')
+    for seg in lt_data:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+	seg.dur()))
+    f.close()
 sys.exit(0)
