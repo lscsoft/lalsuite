@@ -120,6 +120,28 @@ int compare_double( double x, double y )
   }
   return 0;
 }
+int compare_single( float x, float y )
+{
+  float diff;
+  float denom;
+  if ( x < LAL_REAL4_MIN )
+  {
+    if ( y < LAL_REAL4_MIN )
+      return 0;
+    else
+      denom = fabs( y );
+  }
+  else
+  {
+    denom = fabs( x );
+  }
+  diff = fabs( x - y );
+  if ( diff / denom > 10.0 * LAL_REAL4_EPS )
+  {
+    return 1;
+  }
+  return 0;
+}
 
 struct rngmed_val_index {
   REAL8 data;
@@ -249,7 +271,7 @@ int testSRunningMedian(LALStatus *stat, REAL4Sequence *input, UINT4 length, LALR
       median = (index_block[param.blocksize/2-1].data+index_block[param.blocksize/2].data)/2;
 
     /* compare results */
-    if(compare_double(median,medians->data[i])) {
+    if(compare_single(median,medians->data[i])) {
       printf("ERROR: index:%d median:%f running median:%f mismatch\n", i, median, medians->data[i]);
       LALFree(index_block);
       LALFree(medians);
