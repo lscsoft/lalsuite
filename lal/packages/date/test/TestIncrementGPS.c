@@ -43,8 +43,8 @@ static BOOLEAN compare_gps_ok(LALStatus *status,
 
 static int sprint_gps_time(char *str, const LIGOTimeGPS *p_gps);
 
-static int sprint_time_interval(char *str,
-                                const LALTimeInterval *p_time_interval);
+/* static int sprint_time_interval(char *str,
+                                const LALTimeInterval *p_time_interval); */
 
 static int print_incr_errmsg_maybe(const char *msg,
                                    const LIGOTimeGPS *p_expected_gps,
@@ -52,12 +52,12 @@ static int print_incr_errmsg_maybe(const char *msg,
 
 static BOOLEAN increment_gps_ok(LALStatus *status,
                                 LALTimeInterval *p_delta,
-                                const LIGOTimeGPS *p_expected_gps,
+                                LIGOTimeGPS *p_expected_gps,
                                 const LIGOTimeGPS *p_got_gps);
 
 static BOOLEAN decrement_gps_ok(LALStatus *status,
                                 LALTimeInterval *p_delta,
-                                const LIGOTimeGPS *p_expected_gps,
+                                LIGOTimeGPS *p_expected_gps,
                                 const LIGOTimeGPS *p_got_gps);
 
 
@@ -394,6 +394,7 @@ static int sprint_gps_time(char *str, const LIGOTimeGPS *p_gps)
 }
 
 
+#if 0 /* NOT USED */
 static int sprint_time_interval(char *str,
                                 const LALTimeInterval *p_time_interval)
 {
@@ -401,6 +402,7 @@ static int sprint_time_interval(char *str,
                   "%9d:%09d", p_time_interval->seconds,
                   p_time_interval->nanoSeconds);
 }
+#endif
 
 
 
@@ -436,7 +438,7 @@ static int print_incr_errmsg_maybe(const char *msg,
 
 static BOOLEAN increment_gps_ok(LALStatus *status,
                                 LALTimeInterval *p_delta,
-                                const LIGOTimeGPS *p_init_gps,
+                                LIGOTimeGPS *p_init_gps,
                                 const LIGOTimeGPS *p_expected_gps)
 {
   LALGPSCompareResult cmprslt;
@@ -484,7 +486,7 @@ static BOOLEAN increment_gps_ok(LALStatus *status,
 
 static BOOLEAN decrement_gps_ok(LALStatus *status,
                                 LALTimeInterval *p_delta,
-                                const LIGOTimeGPS *p_init_gps,
+                                LIGOTimeGPS *p_init_gps,
                                 const LIGOTimeGPS *p_expected_gps)
 {
   LALGPSCompareResult cmprslt;
