@@ -608,6 +608,7 @@ void LALSRunningMedian( LALStatus *status,
     Sort the first block of param.blocksize samples
     ------------------------------------*/
   index_block =(struct rngmed_val_index8 *)LALCalloc(param.blocksize, sizeof(struct rngmed_val_index8));
+
   if(!index_block) {
     ABORT(status,LALRUNNINGMEDIANH_EMALOC1,LALRUNNINGMEDIANH_MSGEMALOC1);
   }
@@ -616,8 +617,8 @@ void LALSRunningMedian( LALStatus *status,
     index_block[k].index=k;
   }
 
-  qsort(index_block, param.blocksize, sizeof(struct rngmed_val_index4),rngmed_sortindex4);
-  
+  qsort(index_block, param.blocksize, sizeof(struct rngmed_val_index8),rngmed_sortindex8);
+
   sorted_indices=(REAL4 *)LALCalloc(param.blocksize,sizeof(REAL4));
 
   for(k=0;k<param.blocksize;k++){
