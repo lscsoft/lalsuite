@@ -439,7 +439,7 @@ static REAL4FrequencySeries *overlap_reduction_function(LALStatus *status,
 static REAL4TimeSeries *cut_time_series(LALStatus *status,
     REAL4TimeSeries *input,
     LIGOTimeGPS start,
-    LIGOTimeGPS end)
+    UINT4 duration)
 {
   /* variables */
   REAL4TimeSeries *series;
@@ -447,7 +447,7 @@ static REAL4TimeSeries *cut_time_series(LALStatus *status,
   INT4 first;
 
   /* calculate length of segment to cut */
-  length = floor((XLALDeltaFloatGPS(&end, &start) / input->deltaT) + 0.5);
+  length = floor((duration / input->deltaT) + 0.5);
 
   /* get first bin */
   first = (INT4)((start.gpsSeconds - input->epoch.gpsSeconds) / input->deltaT);
@@ -1912,7 +1912,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   LIGOTimeGPS gpsStartTime;
   LIGOTimeGPS gpsEndTime;
   LIGOTimeGPS gpsSegStartTime;
-  LIGOTimeGPS gpsSegEndTime;
   LIGOTimeGPS gpsAnalysisTime;
   REAL4TimeSeries *seriesOne;
   REAL4TimeSeries *seriesTwo;
@@ -2144,8 +2143,6 @@ INT4 main(INT4 argc, CHAR *argv[])
       LAL_CALL(LALAddFloatToGPS(&status, &gpsSegStartTime, &gpsStartTime, \
             (REAL8)((interLoop * segmentShift) + \
                     (segLoop * segmentDuration))), &status);
-      LAL_CALL(LALAddFloatToGPS(&status, &gpsSegEndTime, &gpsSegStartTime, \
-            (REAL8)segmentDuration), &status);
 
       /* get epoch for response function */
       LAL_CALL(LALAddFloatToGPS(&status, &gpsCalibTime, &gpsSegStartTime, \
@@ -2165,9 +2162,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       /* cut segments from series */
       segmentOne = cut_time_series(&status, seriesOne, gpsSegStartTime, \
-          gpsSegEndTime);
+          segmentDuration);
       segmentTwo = cut_time_series(&status, seriesTwo, gpsSegStartTime, \
-          gpsSegEndTime);
+          segmentDuration);
 
       /* compute response functions */
       responseOne = generate_response(&status, ifoOne, calCacheOne, \
@@ -2241,12 +2238,10 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* cut analysis segment from series */
-    LAL_CALL(LALAddFloatToGPS(&status, &gpsSegEndTime, &gpsAnalysisTime, \
-          (REAL8)segmentDuration), &status);
     segmentOne = cut_time_series(&status, seriesOne, gpsAnalysisTime, \
-        gpsSegEndTime);
+        segmentDuration);
     segmentTwo = cut_time_series(&status, seriesTwo, gpsAnalysisTime, \
-        gpsSegEndTime);
+        segmentDuration);
 
     if (vrbflg)
       fprintf(stdout, "Constructing cross correlation spectrum...\n");
