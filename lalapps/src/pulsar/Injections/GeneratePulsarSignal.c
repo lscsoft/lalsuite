@@ -99,7 +99,7 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalP
   time.gpsSeconds += params->duration;
   TRY (ConvertGPS2SSB (stat->statusPtr, &time, time, params), stat);	 /* convert time to SSB */
   SSBduration = time.gpsSeconds - sourceParams.spinEpoch.gpsSeconds +2 ;
-  sourceParams.length = (UINT4)( 1.0* SSBduration / sourceParams.deltaT );
+  sourceParams.length = (UINT4)( 1.0* SSBduration / sourceParams.deltaT ) + 1;
 
   /*
    * finally, call the function to generate the source waveform 

@@ -476,9 +476,7 @@ int main(int argc,char *argv[]) {
      the first timestamp, so that the interpolation table goes beyond the
      times that we need at the begining */
   spinorbit.epoch    = SSBfirst;
-  /* RP: testing
-    spinorbit.epoch.gpsSeconds -= 0.75*LTT;
-  */
+  spinorbit.epoch.gpsSeconds -= 0.75*LTT;
   
   /* Set the interpolation table length large enough that the
      interpolation table extends beyond the end time. */
