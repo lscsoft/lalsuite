@@ -1072,7 +1072,7 @@ SimInspiralTableFromLIGOLw (
   i = nrows = 0;
   while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
   {
-    INT4 geo_time = env->ligo_lw.table.elt[tableDir[0].pos].data.int_4s;
+    INT4 geo_time = env->ligo_lw.table.elt[tableDir[1].pos].data.int_4s;
 
       /* get the injetcion time and check that it is within the time window */
       if ( ! endTime || geo_time > startTime && geo_time < endTime )
