@@ -28,6 +28,12 @@ $Id$
      \subsubsection{Prototypes}
      \input{LALMath3DPlotCP}
      \idx{LALMath3DPlot()}
+     \noindent\texttt{*stat} LALStatus structure pointer\\
+     \\\texttt{*first} Math3DPointList stucture pointer\\ 
+     \\\texttt{*ntiles} INT4 pointer to the number of templates in the plot.\\
+     \\\texttt{PointSize} REAL4 $\epsilon[0,1]$ which specifies the relative size of each 
+     * point to the final display area.  (e.g. 1 would fill the enire plot.)  Eventually
+     * this setting should be automatically and cleverly determined.
      </lalLaTeX>
      END SUBSUBSECTION - PROTOTYPES "LALMath3DPlot()" -------------------------------- */
 
@@ -59,7 +65,7 @@ $Id$
      \begin{itemize}
    * \item The output of this function is ``Math3DNotebook.nb" and will appear in the 
    * directory of the program that called this function.
-   * \item Exported \MATHEMATICA graphics have no preferred directory and will appear in 
+   * \item Exported \MATHEMATICA graphics  will appear in 
    * your home directory for unix users and in the $\backslash$Mathematica directory for 
    * Windows users unless you have another path configured in your \MATHEMATICA 
    * installation. It is necessary to change the file name within the notebook to avoid 
@@ -95,7 +101,8 @@ NRCSID(LALMATH3DPLOTC, "$Id$");
 void
 LALMath3DPlot( LALStatus *stat, 
                Math3DPointList *first, 
-               INT4 *ntiles) 
+               INT4 *ntiles,
+               REAL4 PointSize) 
 /* </lalVerbatim>*/
 {
   FILE *nb; 				/* pointer to the notebook file */
@@ -192,7 +199,7 @@ LALMath3DPlot( LALStatus *stat,
         END_SECTIONCELL;
         BEG_INPUTCELL;
           fprintf(nb, "TILES  = \n"); 
-          fprintf(nb, "Graphics3D[{PointSize[0.02],"); 
+          fprintf(nb, "Graphics3D[{PointSize[%f],",PointSize); 
           list = first;
           while(list->next) 
           {
@@ -215,9 +222,9 @@ LALMath3DPlot( LALStatus *stat,
         END_INPUTCELL;
         BEG_INPUTCELL;
           fprintf(nb, "Do[tile[T]=Show[TILES, Background -> RGBColor[.93, .91, .89], ");
-          fprintf(nb, "ViewPoint -> {1-(.99 T/frames)^2, T/(4 frames), (T/frames)^2},ImageSize->AnimationSize], {T, 0, frames, 1}];\n");
+          fprintf(nb, "ViewPoint -> {1-(.99 T/frames)^2, T/(4 frames), 2 (T/frames)^2},ImageSize->AnimationSize], {T, 0, frames, 1}];\n");
           fprintf(nb, "Do[tile[frames+T]=Show[TILES, Background -> RGBColor[.93, .91, .89], ViewPoint -> {.005+(T/frames)^2, ");
-          fprintf(nb, "0.25-T/(4 frames), 1-(.99 T/frames)^2},ImageSize->AnimationSize], {T, 0, frames, 1}];\n");
+          fprintf(nb, "0.25-T/(4 frames), 2-2 (.99 T/frames)^2},ImageSize->AnimationSize], {T, 0, frames, 1}];\n");
         END_INPUTCELL_;  
       END_GROUPCELLC;
       BEG_GROUPCELL;

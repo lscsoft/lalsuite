@@ -34,8 +34,8 @@
     #include <lal/LALMathematica.h>
     \end{verbatim}
   * This header file defines macros containing \MATHEMATICA syntax that is otherwise messy 
-  * to implement into C source files.  With these macros one can easily write a function 
-  * that will output a \MATHEMATICA notebook. Simply\ldots
+  * to implement into C source files.  Here is how to use these macros to make your own
+  * program generate a \MATHEMATICA notebook.
     \begin{enumerate}
   * \item Open a file with a pointer named ``nb" and a file extenstion ``.nb".  
   * \item Use BEG\_NOTEBOOK to start the notebook file.  
@@ -130,9 +130,9 @@
   * \item Obviously the definitions and functions associated with 
   * this header are NOT lal complient and thus do not belong in any lal routines except 
   * test programs.
-  * \item There are many more commands to manipulate \MATHEMATICA notebooks that are not
-  * included in this header.  The macros are only what is necessary for a 
-  * \emph{bare minimum} interface.   
+  * \item There are many more commands to manipulate the structure of \MATHEMATICA 
+  * notebooks that are not included in this header.  The macros are only what is 
+  * necessary for a \emph{bare minimum} interface.   
     \end{itemize} 
     </lalLaTeX>
     END SUBSECTION NOTES --------------------------------------------------------------*/
@@ -146,7 +146,13 @@
     \newpage\input{LALMath3DPlotC}
     </lalLaTeX> 
     END - MODULES INPUT - "LALMath3DPlot.c" -------------------------------------------*/ 
-  
+
+  /*NEWPAGE - TESTS INPUT - "LALMath3DPlotTest.c" -------------------------------------*/
+    /* <lalLaTeX>
+    \newpage\input{LALMath3DPlotTestC}
+    </lalLaTeX>
+    END - TESTS INPUT - "LALMath3DPlotTest.c" -----------------------------------------*/  
+
 /*END SECTION - HEADER - "LalMathematica.h" -------------------------------------------*/
 
 
@@ -204,4 +210,5 @@ typedef struct Math3DPointList{
 void  
 LALMath3DPlot( LALStatus *stat, 
                Math3DPointList *first, 
-               INT4 *ntiles );
+               INT4 *ntiles, 
+               REAL4 PointSize);
