@@ -88,7 +88,7 @@ tagSearchSummaryIndex
 SearchSummaryIndex;
 
 typedef struct
-tagSnglInspiralErrors
+tagSnglInspiralAccuracy
 {
     INT4  match;
     REAL4 dRhoPlus;
@@ -96,7 +96,7 @@ tagSnglInspiralErrors
     INT8  dtime;
     REAL4 dm;
 }
-SnglInspiralErrors;
+SnglInspiralAccuracy;
     
 typedef struct
 tagcandParams{
@@ -231,7 +231,7 @@ LALCompareSnglInspiral(
         LALStatus                *status,
         SnglInspiralTable        *aPtr,
         SnglInspiralTable        *bPtr,
-        SnglInspiralErrors       *params
+        SnglInspiralAccuracy       *params
     );
 
 void readInspiralTriggers( 

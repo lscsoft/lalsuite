@@ -81,10 +81,10 @@ int main(int argc, char **argv)
     SnglInspiralTable        *coincidentEvents=NULL;
     SnglInspiralTable      **inspiralEventList=NULL;
     SnglInspiralTable      **currentTrigger=NULL;
-    SnglInspiralErrors        errorParams;
-    MetadataTable             myTable;
-    LIGOLwXMLStream           xmlStream;
-    INT4                      i, j;
+    SnglInspiralAccuracy     errorParams;
+    MetadataTable            myTable;
+    LIGOLwXMLStream          xmlStream;
+    INT4                     i, j;
 
     /* getopt arguments */
     struct option long_options[] =
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
             sizeof(SnglInspiralTable) );
     currentTrigger    = (SnglInspiralTable **) LALCalloc( 2, 
             sizeof(SnglInspiralTable) );
-    memset( &errorParams, 0, sizeof(SnglInspiralErrors) );
+    memset( &errorParams, 0, sizeof(SnglInspiralAccuracy) );
     memset( &nTrigFile, 0, MAXIFO * sizeof(INT4) );
 
     /*******************************************************************
@@ -363,7 +363,7 @@ int main(int argc, char **argv)
                             LALCalloc(1, sizeof(SnglInspiralTable) );
                         prevEvent->next = outEvent;
                     }
-                    memcpy( outEvent, currentTrigger[1], sizeof(SnglInspiralTable));
+                    memcpy( outEvent, currentTrigger[0], sizeof(SnglInspiralTable));
                     prevEvent = outEvent;
                     outEvent = outEvent->next = NULL;
                 }

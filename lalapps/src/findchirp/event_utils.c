@@ -400,7 +400,7 @@ LALCompareSnglInspiral(
         LALStatus                *status,
         SnglInspiralTable        *aPtr,
         SnglInspiralTable        *bPtr,
-        SnglInspiralErrors       *params
+        SnglInspiralAccuracy     *params
     )
 {
     INT8 ta, tb;
