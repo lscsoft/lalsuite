@@ -57,8 +57,8 @@ defined in this file are
 \item SIM\_INST\_PARAMS\_ROW 
 \item LIGOLW\_XML\_STOCHASTIC
 \item STOCHASTIC\_ROW
-\item LIGOLW\_XML\_STOCHSUMM
-\item STOCH_SUMM\_ROW
+\item LIGOLW\_XML\_STOCH\_SUMM
+\item STOCH\_SUMM\_ROW
 \item LIGOLW\_XML\_EXT\_TRIGGERS
 \item EXT\_TRIGGERS\_ROW
 \end{itemize}
@@ -452,7 +452,7 @@ extern "C" {
 #define STOCHASTIC_ROW \
 "         \"process:process_id:0\",\"%s\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.2f,%.2f,%22.16e,%22.16e"
 
-#define LIGOLW_XML_STOCHSUMM \
+#define LIGOLW_XML_STOCH\_SUMM \
 "   <Table Name=\"stochsummgroup:stochsumm:table\">\n" \
 "      <Column Name=\"stochsummgroup:stochsumm:process_id\" Type=\"ilwd:char\"/>\n" \
 "      <Column Name=\"stochsummgroup:stochsumm:ifo_one\" Type=\"lstring\"/>\n" \
