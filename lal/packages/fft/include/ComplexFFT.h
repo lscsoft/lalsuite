@@ -75,7 +75,7 @@ typedef struct tagComplexFFTPlan ComplexFFTPlan;
 /* #define KEEP_OLD_COMPLEX_FFT */
 
 void
-LALCreateForwardComplexPlan(
+LALCreateForwardComplexFFTPlan(
     LALStatus       *status,
     ComplexFFTPlan **plan,
     UINT4            size,
