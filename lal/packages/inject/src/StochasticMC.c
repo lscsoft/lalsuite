@@ -715,7 +715,7 @@ void LALStochasticMCDso (LALStatus *status,
   wFilter2.data = response[1];
 
 
-  for (loop = 0; loop < numsegtot; loop ++)
+  for (loop = 0; loop < numseg; loop ++)
    
    {
     seed = seed + loop*2;
