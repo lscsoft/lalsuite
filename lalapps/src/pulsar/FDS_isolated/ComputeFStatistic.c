@@ -221,43 +221,18 @@ int main(int argc,char *argv[])
   }
 #endif
 	
+  /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
-
-  /* use metric-grid? and if so, for what maximal mismatch? */
   scanInit.metricType = uvar_Metric;
   scanInit.metricMismatch = uvar_metricMismatch;
-
   scanInit.obsBegin = SFTData[0]->fft->epoch;
   scanInit.obsDuration = SFTData[GV.SFTno-1]->fft->epoch.gpsSeconds - scanInit.obsBegin.gpsSeconds + GV.tsft;
-
-  /*  scanInit.obsDuration = 36000; */
-
   scanInit.fmax  = uvar_Freq;
   if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
   scanInit.Detector = GV.Detector;
-
-  if (uvar_skyRegion)
-    {
-      scanInit.skyRegion = LALMalloc (strlen (uvar_skyRegion) + 1);
-      strcpy (scanInit.skyRegion, uvar_skyRegion);
-    }
-  else	 /* parse (Alpha+AlphaBand, Delta+DeltaBand) into a sky-region string */
-    {
-      REAL8 a, d, Da, Dd;
-      REAL8 eps = 1.0e-12;	/* slightly push outside the upper and right border (for backwards compatibility) */
-      a = uvar_Alpha;
-      d = uvar_Delta;
-      Da = uvar_AlphaBand + eps;
-      Dd = uvar_DeltaBand + eps;
-
-      scanInit.skyRegion = LALMalloc (512); /* should be enough for 4 points... */
-      sprintf (scanInit.skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
-	      a, d, 
-	      a + Da, d, 
-	      a + Da, d + Dd,
-	      a, d + Dd );
-    }
+  scanInit.skyRegion = LALMalloc (strlen (uvar_skyRegion) + 1);
+  strcpy (scanInit.skyRegion, uvar_skyRegion);
 
   InitDopplerScan ( &status, &thisScan, scanInit);
   
@@ -1269,6 +1244,28 @@ SetGlobalVariables(ConfigVariables *cfg)
       Fstat.Fa = NULL;
       Fstat.Fb = NULL;
     }
+
+  /* ----------------------------------------------------------------------*/
+  /* prepare sky-region string if user provided the old alpha, dalpha, etc. 
+   * this is a bit of a cheat, as user did not really specify uvar_skyRegion 
+   * but we can live with that for now... */
+  if (uvar_skyRegion == NULL)
+    {
+      REAL8 a, d, Da, Dd;
+      REAL8 eps = 1.0e-12;	/* slightly push outside the upper and right border (for backwards compatibility) */
+      a = uvar_Alpha;
+      d = uvar_Delta;
+      Da = uvar_AlphaBand + eps;
+      Dd = uvar_DeltaBand + eps;
+
+      uvar_skyRegion = LALMalloc (512); /* should be enough for 4 points... */
+      sprintf (uvar_skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
+	      a, d, 
+	      a + Da, d, 
+	      a + Da, d + Dd,
+	      a, d + Dd );
+    } /* if !uvar_skyRegion */
+  /* ----------------------------------------------------------------------*/
 
   /* Tell the user what we have arrived at */
 #ifdef DEBG_SGV

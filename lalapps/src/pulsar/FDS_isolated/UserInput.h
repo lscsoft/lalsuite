@@ -34,9 +34,9 @@ NRCSID( USERINPUTH, "$Id$");
 </lalLaTeX>
 ***************************************************** <lalErrTable> */
 #define USERINPUTH_ENULL 	1
-#define USERINPUTH_ENONULL	6
-#define USERINPUTH_EMEM		9
-#define USERINPUTH_EOPT		10
+#define USERINPUTH_ENONULL	2
+#define USERINPUTH_EMEM		3
+#define USERINPUTH_EOPT		4
 
 #define USERINPUTH_MSGENULL 	"Arguments contained an unexpected null pointer."
 #define USERINPUTH_MSGENONULL	"Output pointer is not NULL"
@@ -71,8 +71,8 @@ typedef struct {
 } UserVariable;
 
 
+  /* this helps users to set up a consistent array of UserVariable's */
 #define regUserVar(name,type,option,help) { #name, type, option, help, &(uvar_ ## name) }
-
 
 
 /********************************************************** <lalLaTeX>
