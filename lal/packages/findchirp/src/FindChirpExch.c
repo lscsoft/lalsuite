@@ -224,6 +224,10 @@ LALExchangeInspiralEventList (
 {
   InspiralEvent   *eventCurrent = NULL;
   InspiralEvent   *prev         = NULL;
+  InspiralEvent   *events       = NULL;
+  UINT4            numEvents    = 0;
+  INT4             i, code;
+  MPI_Status       stat;
 
   INITSTATUS (status, "LALExchangeInspiralEvent", FINDCHIRPEXCHC);
   ATTATCHSTATUSPTR (status);
@@ -234,18 +238,49 @@ LALExchangeInspiralEventList (
     /* check that we have a bank to send */
     ASSERT (*eventHead, status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
 
-    /* exchange the template bank */
+    /* count the events */
     for (eventCurrent = *eventHead;
         eventCurrent != NULL;
         eventCurrent = eventCurrent->next
         )
     {
-      LALExchangeInspiralEvent (status->statusPtr, eventCurrent, exchParams);
-      CHECKSTATUSPTR (status);
+      numEvents++;
     }
 
-    ASSERT (!eventCurrent, status, FINDCHIRPEXCHH_ENNUL, FINDCHIRPEXCHH_MSGENNUL);
+    /* exchange the number of events */
+    LALExchangeUINT4( status->statusPtr, &numEvents, exchParams );
+    CHECKSTATUSPTR (status);
 
+    /* allocate memory for array of pointers to events */
+    events = NULL;
+    events = (InspiralEvent *) LALMalloc (numEvents * sizeof(InspiralEvent));
+
+    /*  Make sure that the allocation was succesful */
+    if ( !(events) ){
+      ABORT (status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
+    }
+
+    /* copy out events into array */
+    i=0;
+    for (eventCurrent = *eventHead;
+        eventCurrent != NULL;
+        eventCurrent = eventCurrent->next
+        )
+    {
+      i++;
+      memcpy( (events + i-1), eventCurrent, sizeof(InspiralEvent));
+    }
+
+    /* send the array */
+    code = MPI_Send( events, numEvents * sizeof(InspiralEvent), MPI_BYTE, 
+        exchParams->partnerProcNum, MPIZ, exchParams->mpiComm );
+    if ( code != MPI_SUCCESS )
+    {
+      ABORT( status, FINDCHIRPEXCHH_EMPIE, FINDCHIRPEXCHH_MSGEMPIE);
+    }
+
+    /* free the memory */
+    LALFree(events);
   }
   else /* I am receiving */
   {
@@ -253,7 +288,28 @@ LALExchangeInspiralEventList (
     /* check that this is a new list */
     ASSERT (!*eventHead, status, FINDCHIRPEXCHH_ENNUL, FINDCHIRPEXCHH_MSGENNUL);
 
+    /* receive the number of events */
+    LALExchangeUINT4( status->statusPtr, &numEvents, exchParams );
+    CHECKSTATUSPTR (status);
+
+    /* allocate memory for array of pointers to events */
+    events = NULL;
+    events = (InspiralEvent *) LALMalloc (numEvents * sizeof(InspiralEvent));
+
+    /*  Make sure that the allocation was succesful */
+    if ( !(events) ){
+      ABORT (status, FINDCHIRPEXCHH_ENULL, FINDCHIRPEXCHH_MSGENULL);
+    }
+
+    code = MPI_Recv( events, numEvents * sizeof(InspiralEvent), MPI_BYTE, 
+        exchParams->partnerProcNum, MPIZ, exchParams->mpiComm, &stat );
+    if ( code != MPI_SUCCESS || stat.MPI_ERROR != MPI_SUCCESS )
+    {
+      ABORT( status, FINDCHIRPEXCHH_EMPIE, FINDCHIRPEXCHH_MSGEMPIE);
+    }
+
     /* recieve the template bank */
+    i=0;
     do
     {
       /* create memory for the template */
@@ -263,16 +319,21 @@ LALExchangeInspiralEventList (
       /* make a note of the first node in the list to return */
       if ( *eventHead == NULL ) *eventHead = eventCurrent;
 
-      /* recieve the template */
-      LALExchangeInspiralEvent (status->statusPtr, eventCurrent, exchParams);
-      CHECKSTATUSPTR (status);
-
+      /* copy the event from the array */
+      memcpy( eventCurrent, (events + i), sizeof(InspiralEvent));
+ 
       /* point the previous node to this node */
       if ( prev != NULL ) prev->next = eventCurrent;
       prev = eventCurrent;
 
-    } while ( eventCurrent->next != NULL );
+      /* increment counter */
+      ++i;
+    } while ( eventCurrent->next != NULL && i<numEvents);
 
+    /* Terminate the linked list */
+    eventCurrent->next = NULL;
+
+    LALFree(events);
   }
 
   DETATCHSTATUSPTR (status);

@@ -186,11 +186,7 @@ OutputEventsMPI (
       &exchInspiralEvents, &initExchParams );
   CHECKSTATUSPTR( status );
 
-  for ( event = eventList; event; event = event->next )
-  {
-    LALExchangeInspiralEvent( status->statusPtr, event, thisExchPtr );
-    CHECKSTATUSPTR( status );
-  }
+  LALExchangeInspiralEventList (status->statusPtr, &eventList, thisExchPtr);
 
   LALFinalizeExchange( status->statusPtr, &thisExchPtr );
   CHECKSTATUSPTR( status );
