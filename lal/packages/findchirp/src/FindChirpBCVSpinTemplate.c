@@ -245,6 +245,7 @@ LALFindChirpBCVSpinTemplate (
 	fprintf (stdout, "deltaF    = %e \n", deltaF);
   	fprintf (stdout, "kmin      = %d \n", kmin);
   	fprintf (stdout, "kmax      = %d \n", kmax);
+  	fprintf (stdout, "beta      = %e \n", beta);
   }
  
   /* compute psi0: used in range reduction */
@@ -410,14 +411,25 @@ LALFindChirpBCVSpinTemplate (
   }
                                                                                                                              
   /* Expensive or well used quantities calc before loop */
-                                                                                                                             
+ 
+  
   rootI           = sqrt(I);
   denominator     = I*M  +  0.5*pow(I,2) - pow(J,2);
   rootDenominator = sqrt(denominator);
   numerator1      = (I*L)-(J*K);
   denominator1    =  sqrt( (0.5*pow(I,2)) -(I*M) - pow(K,2)
           -  (pow(numerator1,2)/denominator) );
-                                                                                                                          
+                           
+  fcTmplt->momentI               = I;
+  fcTmplt->momentJ               = J;
+  fcTmplt->momentK               = K;
+  
+  fcTmplt->rootMomentI           = rootI;
+  fcTmplt->numFactor             = denominator; 
+  fcTmplt->numFactor1            = rootDenominator;
+  fcTmplt->numFactor2            = numerator1; 
+  fcTmplt->numFactor3            = denominator1; 
+  
   if (doTest == 1)
   {
 	fprintf (stdout, "rootI           = %e \n", rootI);
@@ -426,7 +438,7 @@ LALFindChirpBCVSpinTemplate (
 	fprintf (stdout, "denominator1    = %e \n", denominator1);
 	fprintf (stdout, "numerator1      = %e \n\n", numerator1);    
   }
-
+  
   A1Vec = fcTmplt->A1BCVSpin->data;
   A2Vec = fcTmplt->A2BCVSpin->data;
   A3Vec = fcTmplt->A3BCVSpin->data;
@@ -434,6 +446,11 @@ LALFindChirpBCVSpinTemplate (
   /*LALDCreateVector(status->statusPtr, &A1Vec, (numPoints/2)+1);
   LALDCreateVector(status->statusPtr, &A2Vec, (numPoints/2)+1);
   LALDCreateVector(status->statusPtr, &A3Vec, (numPoints/2)+1);*/
+  
+  /* IMPROVE THIS */
+  memset( A1Vec, 0, ((numPoints/2)+1) * sizeof(REAL4) );
+  memset( A2Vec, 0, ((numPoints/2)+1) * sizeof(REAL4) );
+  memset( A3Vec, 0, ((numPoints/2)+1) * sizeof(REAL4) );
   
   A1Vec[0] = 0;  
   A2Vec[0] = 0;
@@ -443,7 +460,8 @@ LALFindChirpBCVSpinTemplate (
   {
   	/* fprintf(stdout,"Inside beta = 0 loop \n"); */
 	                                                                                                                 
-        for ( k = 1; k < ((numPoints/2)+1); ++k )
+        /*for ( k = 1; k < ((numPoints/2)+1); ++k )*/
+        for ( k = kmin; k < kmax; ++k )
 	{
 		A1Vec[k] = ampBCVSpin1[k] / rootI;
 		A2Vec[k] = 0.0;
@@ -461,7 +479,8 @@ LALFindChirpBCVSpinTemplate (
     {
   	/* fprintf(stdout,"Inside beta not = 0 loop \n"); */
 
- 	for ( k = 1; k < ((numPoints/2)+1); ++k )
+        /*for ( k = 1; k < ((numPoints/2)+1); ++k )*/
+ 	for ( k = kmin; k < kmax; ++k )
   	{
     		A1Vec[k] = ampBCVSpin1[k] / rootI;
     		A2Vec[k] = ampBCVSpin1[k] 
@@ -490,7 +509,8 @@ LALFindChirpBCVSpinTemplate (
   {	
 	fprintf (stdout, "Checking orthonormalisation of amplitude vectors \n");
 	  
-  	for (k=0; k < (numPoints/2) + 1; ++k)
+  	/*for (k=0; k < (numPoints/2) + 1; ++k)*/
+  	for (k=kmin; k < kmax; ++k)
   	{ 
   		A1A1 += A1Vec[k] * A1Vec[k] * wtilde[k].re;
 		A2A2 += A2Vec[k] * A2Vec[k] * wtilde[k].re;
