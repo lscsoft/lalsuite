@@ -19,8 +19,7 @@ Module to generate subsequent sky-positions.
 \subsubsection*{Description}
 
 This module generates subsequent sky-positions corresponding to a 
-given search area and resolution and possibly taking account of the
-detector sensitivity pattern (.. in the future).
+given search area and resolution 
 
 \subsubsection*{Algorithm}
 
@@ -58,12 +57,12 @@ static int meshOrder = ORDER_DELTA_ALPHA;
  * containing all the parameters used there: */
 typedef struct {
   PtoleMetricIn *metricParams;	/* the actual parameters for the metric-functions */
-  LALMetricType metricType;	/* which metric to use: NONE, PTOLE, COHERENT, ... */
+  PulsarMetricType metricType;	/* which metric to use: NONE, PTOLE, COHERENT, ... */
 } getMetricParams_t;
 
 /* the SkyScanner can be in one of the following states */
 enum {
-  STATE_IDLE,   	/* not initialized yet */
+  STATE_IDLE = 0,   	/* not initialized yet */
   STATE_READY,		/* initialized and ready */
   STATE_FINISHED,
   STATE_LAST
@@ -88,8 +87,7 @@ static PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
 void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params );
 
-void printGrid (LALStatus *stat, DopplerScanGrid *grid, SkyRegion *region, 
-		TwoDMeshParamStruc *meshpar, LALMetricType metricType); 
+	
 void ConvertTwoDMesh2Grid ( LALStatus *stat, DopplerScanGrid **grid, 
 			    const TwoDMeshNode *mesh2d, const SkyRegion *region );
 
@@ -97,201 +95,79 @@ BOOLEAN pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon );
 
 void gridFlipOrder ( TwoDMeshNode *grid );
 
+void buildFlatGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *region, REAL8 dAlpha, REAL8 dDelta);
+void buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dBeta);
+void buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion,  const DopplerScanInit *init);
+
+void printGrid (LALStatus *stat, DopplerScanGrid *grid, const SkyRegion *region, const DopplerScanInit *init);
+
+void freeGrid (DopplerScanGrid *grid);
+
 /*----------------------------------------------------------------------*/
 /* <lalVerbatim file="DopplerScanCP"> */
 void
 InitDopplerScan( LALStatus *stat, 
-		 DopplerScanState *scan, /* the initialized scan-structure */
-		 DopplerScanInit init)	/* init-params */
+		 DopplerScanState *scan, 	/* the un-initialized scan-structure */
+		 const DopplerScanInit *init)		/* init-params */
 { /* </lalVerbatim> */
-  TwoDMeshNode *mesh2d = NULL;
-  DopplerScanGrid *node, head = empty_grid;
-  TwoDMeshParamStruc meshpar = empty_meshpar;
-  PtoleMetricIn metricpar = empty_metricpar;
-  LALMetricType metricType;
-  SkyPosition thisPoint;
-  REAL8 step_alpha, step_delta, cos_delta;
-  getMetricParams_t getMetricParams;
+  DopplerScanGrid *node; 
+  PulsarMetricType metricType;
 
   INITSTATUS( stat, "DopplerScanInit", DOPPLERSCANC );
-  ATTATCHSTATUSPTR( stat ); /* prepare for call of LAL-subroutines */
+  ATTATCHSTATUSPTR (stat); 
 
   /* This traps coding errors in the calling routine. */
   ASSERT ( scan != NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );  
-
-  scan->state = STATE_IDLE;  /* uninitialized */
-
-  /* several functions here need that info, so the easiest is to make this global */
-  metricType = init.metricType;
-
+  ASSERT ( scan->state == STATE_IDLE, stat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  ASSERT ( init->gridType < GRID_LAST, stat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  
   /* trap some abnormal input */
-  if (init.skyRegion == NULL) {
-    ABORT (stat,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
-  }
+  if ( (init->gridType != GRID_FILE) && (init->skyRegion == NULL) ) 
+    {
+      LALPrintError ( "\nERROR: No sky-region was specified!\n\n");
+      ABORT (stat,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
+    } 
+  if ( (init->gridType == GRID_FILE) && (init->skyGridFile == NULL) )
+    {
+      LALPrintError ("\nERROR: no skyGridFile has been specified!\n\n");
+      ABORT (stat,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
+    }
 
+  /* general initializations */
   scan->grid = NULL;  
   scan->gridNode = NULL;
+  
+  if (init->gridType != GRID_FILE ) {
+    TRY (ParseSkyRegion (stat->statusPtr, &(scan->skyRegion), init->skyRegion ), stat);
 
-  TRY (ParseSkyRegion (stat->statusPtr, &(scan->skyRegion), init.skyRegion ), stat);
-
-  /* treat special case: only one point given */
-  if (scan->skyRegion.numVertices == 1)
-    metricType = LAL_METRIC_NONE;	/* make sure we don't try to use metric here */
-  else if (scan->skyRegion.numVertices == 2)	/* this is an anomaly! */
-    {
+    if (scan->skyRegion.numVertices == 2)	{ /* this is an anomaly! Allowed are either 1 or >= 3 */
       ABORT (stat, DOPPLERSCANH_E2DSKY, DOPPLERSCANH_MSGE2DSKY);
     }
+  } /* if gridType != GRID_FILE */
 
-  /* some general mesh-settings are needed in any case (metric or not) */
-  meshpar.getRange = getRange;
-
-  if (meshOrder == ORDER_ALPHA_DELTA)
+ 
+  switch (init->gridType)
     {
-      meshpar.domain[0] = scan->skyRegion.lowerLeft.longitude;
-      meshpar.domain[1] = scan->skyRegion.upperRight.longitude;
-    }
-  else
-    {
-      meshpar.domain[0] = scan->skyRegion.lowerLeft.latitude;
-      meshpar.domain[1] = scan->skyRegion.upperRight.latitude;
-    }
+    case GRID_FLAT:		/* flat-grid: constant dAlpha, dDelta */
 
-  meshpar.rangeParams = (void*) &(scan->skyRegion); 
-
-  switch (metricType)      
-    {
-    case LAL_METRIC_NONE:		/* manual stepping */
-
-      scan->dAlpha = fabs(init.dAlpha);
-      scan->dDelta = fabs(init.dDelta);
-  
-      /* ok now we manually set up the complete grid */
-      thisPoint = scan->skyRegion.lowerLeft;	/* start from lower-left corner */
-
-      node = &head;		/* start our grid with an empty head */
-
-      while (1)
-	{
-	  if (pointInPolygon ( &thisPoint, &(scan->skyRegion) ) )
-	    {
-	      /* prepare this node */
-	      node->next = LALCalloc (1, sizeof(DopplerScanGrid));
-	      if (node->next == NULL) {
-		ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
-	      }
-	      node = node->next;
-	      
-	      node->alpha = thisPoint.longitude;
-	      node->delta = thisPoint.latitude;
-	    } /* if pointInPolygon() */
-	  
-	  thisPoint.latitude += scan->dDelta;
-	  
-	  if (thisPoint.latitude > scan->skyRegion.upperRight.latitude)
-	    {
-	      thisPoint.latitude = scan->skyRegion.lowerLeft.latitude;
-	      thisPoint.longitude += scan->dAlpha;
-	    } 
-	  
-	  /* this it the break-condition: are we done yet? */
-	  if (thisPoint.longitude >= scan->skyRegion.upperRight.longitude + scan->dAlpha)
-	    break;
-	  
-	} /* while(1) */
-
-      scan->grid = head.next;	/* set result: could be NULL! */
+      TRY ( buildFlatGrid ( stat->statusPtr, &(scan->grid), &(scan->skyRegion), init->dAlpha, init->dDelta), stat);
 
       break;
 
-    case LAL_METRIC_PSEUDO_ISOTROPIC: 	/* variant of manual stepping: try to produce an isotropic mesh */
-      
-      /* ok now we manually set up the complete grid */
-      thisPoint = scan->skyRegion.lowerLeft;	/* start from lower-left corner */
+    case GRID_ISOTROPIC: 	/* variant of manual stepping: try to produce an isotropic mesh */
 
-      step_delta = init.metricMismatch;	/* delta step-size is fixed */
-      cos_delta = fabs(cos (thisPoint.latitude));
-
-      node = &head;		/* start our grid with an empty head */
-
-      while (1)
-	{
-	  if (pointInPolygon ( &thisPoint, &(scan->skyRegion) ) )
-	    {
-	      /* prepare this node */
-	      node->next = LALCalloc (1, sizeof(DopplerScanGrid));
-	      if (node->next == NULL) {
-		ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
-	      }
-	      node = node->next;
-	      
-	      node->alpha = thisPoint.longitude;
-	      node->delta = thisPoint.latitude;
-	    } /* if pointInPolygon() */
-	  
-	  step_alpha = init.metricMismatch / cos_delta;	/* alpha stepsize depends on delta */
-
-	  thisPoint.longitude += step_alpha;
-	  if (thisPoint.longitude > scan->skyRegion.upperRight.longitude)
-	    {
-	      thisPoint.longitude = scan->skyRegion.lowerLeft.longitude;
-	      thisPoint.latitude += step_delta;	
-	      cos_delta = fabs (cos (thisPoint.latitude));
-	    } 
-
-	  /* this it the break-condition: are we done yet? */
-	  if (thisPoint.latitude > scan->skyRegion.upperRight.latitude)
-	    break;
-	  
-	} /* while(1) */
-
-      scan->grid = head.next;	/* set result: could be NULL! */
+      TRY ( buildIsotropicGrid ( stat->statusPtr, &(scan->grid), &(scan->skyRegion), init->metricMismatch), stat);
 
       break;
 
-    case LAL_METRIC_PTOLE:
-    case LAL_METRIC_COHERENT_PTOLE:
-    case LAL_METRIC_COHERENT_EXACT:
+    case GRID_METRIC:
 
-      /* Prepare call of TwoDMesh(): the mesh-parameters */
-      meshpar.mThresh = init.metricMismatch;
-      meshpar.nIn = 1e6;  	/* maximum nodes in mesh */ /*  FIXME: hardcoded */
-      
-      /* helper-function: range and metric */
-      meshpar.getMetric = getMetric;
-      /* and its parameters: metric-parms & which metric */
-      getMetricParams.metricParams = &(metricpar);
-      getMetricParams.metricType = metricType;
-      meshpar.metricParams = (void *) &(getMetricParams);
-
-      /* set up the metric parameters proper (using PtoleMetricIn as container-type) */
-      metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
-      /* currently, CreateVector's are broken as they don't allow length=0 */
-      /*      TRY( LALSCreateVector( stat->statusPtr, &(scan->MetricPar.spindown), 0 ), stat ); 	*/
-      /* FIXME: replace when fixed in LAL */
-      metricpar.spindown = LALMalloc ( sizeof(REAL4Vector) );
-      metricpar.spindown->length=0;
-      metricpar.spindown->data=NULL;
-
-      metricpar.epoch = init.obsBegin;
-      metricpar.duration = init.obsDuration;
-      metricpar.maxFreq = init.fmax;
-      metricpar.site = init.Detector;
-      metricpar.ephemeris = init.ephemeris;	/* required for ephemeris-based metric */
-
-      scan->grid = NULL;      
-      /* finally: create the mesh! (ONLY 2D for now!) */
-      TRY( LALCreateTwoDMesh( stat->statusPtr, &mesh2d, &meshpar ), stat);
-
-      /* convert this 2D-mesh into our grid-structure, including clipping to the skyRegion */
-      TRY (ConvertTwoDMesh2Grid ( stat->statusPtr, &(scan->grid), mesh2d, &(scan->skyRegion) ), stat);
-
-      /* get rid of 2D-mesh */
-      TRY (LALDestroyTwoDMesh ( stat->statusPtr,  &mesh2d, 0), stat);
+      TRY ( buildMetricGrid (stat->statusPtr, &(scan->grid), &(scan->skyRegion), init), stat);
 
       break;
 
     default:
-      LALPrintError ("Unknown metric-type `%d`\n", metricType);
+      LALPrintError ("\nUnknown metric-type `%d`\n\n", metricType);
       ABORT ( stat, DOPPLERSCANH_EMETRIC, DOPPLERSCANH_MSGEMETRIC);
       break;
 
@@ -315,7 +191,7 @@ InitDopplerScan( LALStatus *stat,
   /* initialize grid-pointer to first node in list */
   scan->gridNode = scan->grid; 	
 
-  /* count number of nodes in our Dopperscan-grid */
+  /* count number of nodes in our Dopplerscan-grid */
   scan->numGridPoints = 0;
   node = scan->grid;
   while (node)
@@ -325,18 +201,11 @@ InitDopplerScan( LALStatus *stat,
     }
 
 
-  if (lalDebugLevel)
+  if (lalDebugLevel >= 3)
     {
       LALPrintError ("\nFinal Scan-grid has %d nodes\n", scan->numGridPoints);
-      TRY( printGrid (stat->statusPtr, scan->grid, &(scan->skyRegion), &meshpar, metricType ), stat);
+      TRY( printGrid (stat->statusPtr, scan->grid, &(scan->skyRegion), init), stat);
     }
-
-  if (metricpar.spindown) {
-    /* FIXME: this is currently broken in LAL, as length=0 is not allowed */
-    /*    TRY (LALSDestroyVector ( stat->statusPtr, &(scan->MetricPar.spindown) ), stat); */
-    LALFree (metricpar.spindown);
-    metricpar.spindown = NULL;
-  }
 
   scan->state = STATE_READY;
 
@@ -353,7 +222,7 @@ InitDopplerScan( LALStatus *stat,
 void
 FreeDopplerScan (LALStatus *stat, DopplerScanState *scan)
 { /* </lalVerbatim> */
-  DopplerScanGrid *node, *next;
+
   INITSTATUS( stat, "FreeDopplerScan", DOPPLERSCANC);
   ATTATCHSTATUSPTR (stat);
 
@@ -361,17 +230,14 @@ FreeDopplerScan (LALStatus *stat, DopplerScanState *scan)
   ASSERT( scan != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
   
   if ( scan->state == STATE_IDLE )
-    LALWarning (stat, "freeing uninitialized DopplerScan.");
+    {
+      LALError (stat, "freeing uninitialized DopplerScan.");
+      ABORT (stat, DOPPLERSCANH_ENOINIT, DOPPLERSCANH_MSGENOINIT);
+    }
   else if ( scan->state != STATE_FINISHED )
     LALWarning (stat, "freeing unfinished DopplerScan.");
 
-  node=scan->grid;
-  while (node)
-    {
-      next = node->next;
-      LALFree (node);
-      node = next;
-    } /* while node */
+  freeGrid (scan->grid);
 
   scan->grid = scan->gridNode = NULL;
 
@@ -385,6 +251,27 @@ FreeDopplerScan (LALStatus *stat, DopplerScanState *scan)
   RETURN( stat );
 
 } /* FreeDopplerScan() */
+
+/* helper-function: free the linked list containing the grid */
+void
+freeGrid (DopplerScanGrid *grid)
+{
+  DopplerScanGrid *node, *next;
+
+  if ( grid == NULL)
+    return;
+
+  node = grid;
+
+  while (node)
+    {
+      next = node->next;
+      LALFree (node);
+      node = next;
+    } /* while node */
+
+  return;
+} /* freeGrid() */
 
 /*----------------------------------------------------------------------*/
 /* <lalVerbatim file="DopplerScanCP"> */
@@ -492,7 +379,7 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
   REAL8Vector   *metric = NULL;  /* for output of metric */
   getMetricParams_t *ourParams = (getMetricParams_t*) params;
   PtoleMetricIn *metricpar = ourParams->metricParams;
-  LALMetricType metricType = ourParams->metricType;
+  PulsarMetricType metricType = ourParams->metricType;
 
   /* Set up shop. */
   INITSTATUS( stat, "getMetric", DOPPLERSCANC );
@@ -570,37 +457,29 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 void 
 printGrid (LALStatus *stat, 
 	   DopplerScanGrid *grid, 
-	   SkyRegion *region, 
-	   TwoDMeshParamStruc *meshpar, 
-	   LALMetricType metricType)
+	   const SkyRegion *region, 
+	   const DopplerScanInit *init)
 {
   FILE *fp = NULL;
   DopplerScanGrid *node;
-  REAL8Vector  *metric = NULL;   /* Parameter-space metric: for plotting ellipses */
-  REAL8 gaa, gad, gdd, angle, smaj, smin;
   REAL8 alpha, delta;
-  REAL8 mismatch = meshpar->mThresh;
   UINT4 set, i;
   UINT4 dim;
-  getMetricParams_t *getMetricParams = (getMetricParams_t*) meshpar->metricParams;
-  PtoleMetricIn *metricPar = NULL;
+  PulsarMetricType metricType;
+
   const CHAR *xmgrHeader = 
     "@version 50103\n"
     "@title \"Sky-grid\"\n"
     "@world xmin -0.1\n"
     "@world xmax 6.4\n"
-    "@world ymin -3.2\n"
-    "@world ymax 3.2\n"
+    "@world ymin -1.58\n"
+    "@world ymax 1.58\n"
     "@xaxis label \"alpha\"\n"
     "@yaxis label \"delta\"\n";
 
   /* Set up shop. */
   INITSTATUS( stat, "printGrid", DOPPLERSCANC );
   ATTATCHSTATUSPTR( stat );
-
-  if (getMetricParams) {
-    metricPar = getMetricParams->metricParams;
-  }
 
   /* currently we use only f0, alpha, delta: -> 3D metric */
   dim = 3;
@@ -637,12 +516,29 @@ printGrid (LALStatus *stat,
   }
 
 
-  if (metricPar)
+  /* if metric is given: plot ellipses */
+  metricType = init->metricType;
+  if ( ( metricType > LAL_METRIC_NONE) && (metricType < LAL_METRIC_LAST) )
     {
+      REAL8Vector  *metric = NULL;   /* Parameter-space metric: for plotting ellipses */
+      REAL8 gaa, gad, gdd, angle, smaj, smin;
+      REAL8 mismatch = init->metricMismatch;
+      PtoleMetricIn metricPar;
+
       set++;
 
-      /* plot ellipses (we need metric for that) */
+      /* set up the metric parameters common to all sky-points */
+      metricPar.position.system = COORDINATESYSTEM_EQUATORIAL;
+      metricPar.spindown = LALCalloc ( 1, sizeof(REAL4Vector) );
+      metricPar.spindown->length=0;
+      metricPar.spindown->data=NULL;
+      metricPar.epoch = init->obsBegin;
+      metricPar.duration = init->obsDuration;
+      metricPar.maxFreq = init->fmax;
+      metricPar.site = init->Detector;
+
       TRY( LALDCreateVector( stat->statusPtr, &metric, dim*(dim+1)/2 ), stat);
+
       node = grid;
       while (node)
 	{
@@ -652,13 +548,13 @@ printGrid (LALStatus *stat,
 	  /* Get the metric at this skypos */
 	  /* only need the update the position, the other
 	   * parameter have been set already ! */
-	  metricPar->position.longitude = alpha;
-	  metricPar->position.latitude  = delta;
+	  metricPar.position.longitude = alpha;
+	  metricPar.position.latitude  = delta;
 
 	  /* make sure we "normalize" point before calling metric */
-	  TRY( LALNormalizeSkyPosition (stat->statusPtr, &(metricPar->position), &metricPar->position), stat);
+	  TRY( LALNormalizeSkyPosition (stat->statusPtr, &(metricPar.position), &(metricPar.position) ), stat);
 
-	  TRY( LALMetricWrapper( stat->statusPtr, metric, metricPar, metricType ), stat);
+	  TRY( LALMetricWrapper( stat->statusPtr, metric, &metricPar, init->metricType ), stat);
 
 	  TRY( LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
 
@@ -703,7 +599,9 @@ printGrid (LALStatus *stat,
 	  
 	} /* while node */
       
+      LALFree (metricPar.spindown);
       TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+
 
     } /* if plotEllipses */
       
@@ -724,8 +622,8 @@ printGrid (LALStatus *stat,
 void
 LALMetricWrapper (LALStatus *stat, 
 		  REAL8Vector *metric, 		/* output: metric (pre-allocated)*/
-		  PtoleMetricIn *input, 	/* input-params for the metric */
-		  LALMetricType metricType)	/* which type of metric to use */
+		  const PtoleMetricIn *input, 	/* input-params for the metric */
+		  PulsarMetricType metricType)	/* which type of metric to use */
 { /* </lalVerbatim> */
   MetricParamStruc params = empty_MetricParamStruc;
   PulsarTimesParamStruc spinParams = empty_PulsarTimesParamStruc;
@@ -739,18 +637,18 @@ LALMetricWrapper (LALStatus *stat,
 
   ASSERT ( input, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
   ASSERT ( input->spindown, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
-  if (metricType == LAL_METRIC_COHERENT_EXACT) {
+  if (metricType == LAL_METRIC_COHERENT_EPHEM) {
     ASSERT ( input->ephemeris != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   }
 
   switch (metricType)
     {
-    case LAL_METRIC_PTOLE: /* use Ben&Ian's analytic ptolemaic metric */
+    case LAL_METRIC_PTOLE_ANALYTIC: /* use Ben&Ian's analytic ptolemaic metric */
       TRY ( LALPtoleMetric (stat->statusPtr, metric, input), stat);
       break;
 
     case LAL_METRIC_COHERENT_PTOLE:   /* use CoherentMetric + Ptolemaic timing */
-    case LAL_METRIC_COHERENT_EXACT:   /* use CoherentMetric + ephemeris timing */
+    case LAL_METRIC_COHERENT_EPHEM:   /* use CoherentMetric + ephemeris timing */
       nSpin = input->spindown->length;
 
       /* Set up constant parameters for barycentre transformation. */
@@ -1041,3 +939,217 @@ ConvertTwoDMesh2Grid ( LALStatus *stat,
   RETURN (stat);
 
 } /* ConvertTwoDMesh2Grid() */
+
+
+/*----------------------------------------------------------------------
+ *
+ * make a "flat" grid, i.e. a grid with fixed mesh-sizes dAlpha, dDelta
+ *
+ *----------------------------------------------------------------------*/
+void
+buildFlatGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta)
+{
+  SkyPosition thisPoint;
+  DopplerScanGrid head = empty_grid;  /* empty head to start grid-list */
+  DopplerScanGrid *node = NULL;
+
+  INITSTATUS( stat, "makeFlatGrid", DOPPLERSCANC );
+
+  ASSERT ( grid, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( skyRegion, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( (dAlpha > 0) && (dDelta > 0), stat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+  ASSERT ( *grid == NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
+
+  thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
+
+  node = &head;
+
+  while (1)
+    {
+      if (pointInPolygon (&thisPoint, skyRegion) )
+	{
+	  /* prepare this node */
+	  node->next = LALCalloc (1, sizeof(DopplerScanGrid));
+	  if (node->next == NULL) {
+	    freeGrid ( head.next );
+	    ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+	  }
+	  node = node->next;
+	  
+	  node->alpha = thisPoint.longitude;
+	  node->delta = thisPoint.latitude;
+	} /* if pointInPolygon() */
+	  
+      thisPoint.latitude += dDelta;
+	  
+      if (thisPoint.latitude > skyRegion->upperRight.latitude)
+	{
+	  thisPoint.latitude = skyRegion->lowerLeft.latitude;
+	  thisPoint.longitude += dAlpha;
+	} 
+      
+      /* this it the break-condition: are we done yet? */
+      if (thisPoint.longitude >= skyRegion->upperRight.longitude + dAlpha)
+	break;
+	  
+    } /* while(1) */
+
+  *grid = head.next;	/* return final grid-list */
+
+  
+  RETURN (stat);
+
+} /* buildFlatGrid */
+
+
+/*----------------------------------------------------------------------
+ *
+ * make an (approx.) isotropic grid, i.e. with cells of fixed solid-angle dBeta^2
+ *
+ *----------------------------------------------------------------------*/
+void
+buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dBeta)
+{
+  SkyPosition thisPoint;
+  DopplerScanGrid head = empty_grid;  /* empty head to start grid-list */
+  DopplerScanGrid *node = NULL;
+  REAL8 step_alpha, step_delta, cos_delta;
+
+  INITSTATUS( stat, "makeIsotropicGrid", DOPPLERSCANC );
+
+  ASSERT ( grid, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( skyRegion, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( (dBeta > 0), stat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+  ASSERT ( *grid == NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
+
+  thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
+
+  step_delta = dBeta;	/* delta step-size is fixed */
+  cos_delta = fabs(cos (thisPoint.latitude));
+
+  node = &head;		/* start our grid with an empty head */
+
+  while (1)
+    {
+      if (pointInPolygon ( &thisPoint, skyRegion ) ) 
+	{
+	  /* prepare this node */
+	  node->next = LALCalloc (1, sizeof(DopplerScanGrid));
+	  if (node->next == NULL) {
+	    freeGrid ( head.next );
+	    ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+	  }
+	  node = node->next;
+	      
+	  node->alpha = thisPoint.longitude;
+	  node->delta = thisPoint.latitude;
+	} /* if pointInPolygon() */
+      
+      step_alpha = dBeta / cos_delta;	/* alpha stepsize depends on delta */
+
+      thisPoint.longitude += step_alpha;
+      if (thisPoint.longitude > skyRegion->upperRight.longitude)
+	{
+	  thisPoint.longitude = skyRegion->lowerLeft.longitude;
+	  thisPoint.latitude += step_delta;	
+	  cos_delta = fabs (cos (thisPoint.latitude));
+	} 
+
+      /* this it the break-condition: are we done yet? */
+      if (thisPoint.latitude > skyRegion->upperRight.latitude)
+	break;
+	  
+    } /* while(1) */
+
+  *grid = head.next;	/* set result: could be NULL! */
+
+  RETURN (stat);
+
+} /* buildIsotropicGrid() */
+
+/*----------------------------------------------------------------------
+ *
+ * make skygrid using a specified metric
+ *
+ *----------------------------------------------------------------------*/
+void
+buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion,  const DopplerScanInit *init)
+{
+  SkyPosition thisPoint;
+  TwoDMeshNode *mesh2d = NULL;
+  TwoDMeshParamStruc meshpar = empty_meshpar;
+  PtoleMetricIn metricpar = empty_metricpar;
+  getMetricParams_t getMetricParams;
+
+  INITSTATUS( stat, "makeMetricGrid", DOPPLERSCANC );
+  ATTATCHSTATUSPTR (stat);
+
+  ASSERT ( grid, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( skyRegion, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT ( *grid == NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL);
+  ASSERT ( (init->metricType > LAL_METRIC_NONE) && (init->metricType < LAL_METRIC_LAST), 
+	   stat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+
+  thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
+  
+  /* some general mesh-settings are needed in metric case */
+  meshpar.getRange = getRange;
+      
+  if (meshOrder == ORDER_ALPHA_DELTA)
+    {
+      meshpar.domain[0] = skyRegion->lowerLeft.longitude;
+      meshpar.domain[1] = skyRegion->upperRight.longitude;
+    }
+  else
+    {
+      meshpar.domain[0] = skyRegion->lowerLeft.latitude;
+      meshpar.domain[1] = skyRegion->upperRight.latitude;
+    }
+  
+  meshpar.rangeParams = (void*) skyRegion;
+
+  /* Prepare call of TwoDMesh(): the mesh-parameters */
+  meshpar.mThresh = init->metricMismatch;
+  meshpar.nIn = 1e6;  	/* maximum nodes in mesh */ /*  FIXME: hardcoded */
+      
+  /* helper-function: range and metric */
+  meshpar.getMetric = getMetric;
+  /* and its parameters: metric-parms & which metric */
+  getMetricParams.metricParams = &(metricpar);
+  getMetricParams.metricType = init->metricType;
+  meshpar.metricParams = (void *) &(getMetricParams);
+
+  /* set up the metric parameters proper (using PtoleMetricIn as container-type) */
+  metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
+  /* currently, CreateVector's are broken as they don't allow length=0 */
+  /*      TRY( LALSCreateVector( stat->statusPtr, &(scan->MetricPar.spindown), 0 ), stat ); 	*/
+  /* FIXME: replace when fixed in LAL */
+  metricpar.spindown = LALCalloc ( 1, sizeof(REAL4Vector) );
+  metricpar.spindown->length=0;
+  metricpar.spindown->data=NULL;
+
+  metricpar.epoch = init->obsBegin;
+  metricpar.duration = init->obsDuration;
+  metricpar.maxFreq = init->fmax;
+  metricpar.site = init->Detector;
+
+  /* finally: create the mesh! (ONLY 2D for now!) */
+  TRY( LALCreateTwoDMesh( stat->statusPtr, &mesh2d, &meshpar ), stat);
+
+  if (metricpar.spindown) {
+    /* FIXME: this is currently broken in LAL, as length=0 is not allowed */
+    /*    TRY (LALSDestroyVector ( stat->statusPtr, &(scan->MetricPar.spindown) ), stat); */
+    LALFree (metricpar.spindown);
+    metricpar.spindown = NULL;
+  }
+
+  /* convert this 2D-mesh into our grid-structure, including clipping to the skyRegion */
+  ConvertTwoDMesh2Grid ( stat->statusPtr, grid, mesh2d, skyRegion );
+
+  /* get rid of 2D-mesh */
+  TRY ( LALDestroyTwoDMesh ( stat->statusPtr,  &mesh2d, 0), stat);
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+
+} /* buildMetricGrid() */
