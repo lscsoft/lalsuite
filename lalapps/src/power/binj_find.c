@@ -92,7 +92,7 @@ struct options_t {
 
 static void set_option_defaults(struct options_t *options)
 {
-	options->verbose = 0;
+	options->verbose = FALSE;
 
 	options->playground = FALSE;
 	options->noplayground = FALSE;
@@ -100,30 +100,30 @@ static void set_option_defaults(struct options_t *options)
 	options->best_confidence = FALSE;
 	options->best_peaktime = FALSE;
 
-	options->maxCentralfreqFlag = 0;
+	options->maxCentralfreqFlag = FALSE;
 	options->maxCentralfreq = 0.0;
-	options->minCentralfreqFlag = 0;
+	options->minCentralfreqFlag = FALSE;
 	options->minCentralfreq = 0.0;
 
-	options->maxConfidenceFlag = 0;
+	options->maxConfidenceFlag = FALSE;
 	options->maxConfidence = 0.0;
 
-	options->minDurationFlag = 0;
+	options->minDurationFlag = FALSE;
 	options->minDuration = 0.0;
-	options->maxDurationFlag = 0;
+	options->maxDurationFlag = FALSE;
 	options->maxDuration = 0.0;
 
-	options->maxBandwidthFlag = 0;
+	options->maxBandwidthFlag = FALSE;
 	options->maxBandwidth = 0.0;
 
-	options->maxAmplitudeFlag = 0;
+	options->maxAmplitudeFlag = FALSE;
 	options->maxAmplitude = 0.0;
-	options->minAmplitudeFlag = 0;
+	options->minAmplitudeFlag = FALSE;
 	options->minAmplitude = 0.0;
 
-	options->maxSnrFlag = 0;
+	options->maxSnrFlag = FALSE;
 	options->maxSnr = 0.0;
-	options->minSnrFlag = 0;
+	options->minSnrFlag = FALSE;
 	options->minSnr = 0.0;
 }
 
@@ -169,7 +169,7 @@ static int isPlayground(INT4 gpsStart, INT4 gpsEnd)
 	segMiddle = gpsStart + (INT4) (0.5 * (gpsEnd - gpsStart));
 	segMiddle = (segMiddle - runStart) % playInterval;
 
-	return(segStart < playLength || segEnd < playLength || segMiddle < playLength);
+	return((segStart < playLength) || (segEnd < playLength) || (segMiddle < playLength));
 }
 
 
@@ -232,19 +232,19 @@ static SimBurstTable *free_this_injection(SimBurstTable *injection)
 
 static SimBurstTable *trim_injection_list(SimBurstTable *injection, struct options_t options)
 {
-	SimBurstTable *head, *prev;
+	SimBurstTable *head;
 
 	while(injection && !keep_this_injection(injection, options))
 		injection = free_this_injection(injection);
 	head = injection;
 
-	/* FIXME: don't check the first event again */
-	for(prev = injection; injection; injection = prev->next) {
-		if(keep_this_injection(injection, options))
-			prev = injection;
-		else
-			prev->next = free_this_injection(injection);
-	}
+	if(injection)
+		while(injection->next) {
+			if(keep_this_injection(injection->next, options))
+				injection = injection->next;
+			else
+				injection->next = free_this_injection(injection->next);
+		}
 
 	return(head);
 }
@@ -402,19 +402,19 @@ static SnglBurstTable *free_this_event(SnglBurstTable * event)
 
 static SnglBurstTable *trim_event_list(SnglBurstTable *event, struct options_t options)
 {
-	SnglBurstTable *head, *prev;
+	SnglBurstTable *head;
 
 	while(event && !keep_this_event(event, options))
 		event = event->next;
 	head = event;
 
-/* FIXME: don't check the first event again */
-	for(prev = event; event; event = prev->next) {
-		if(keep_this_event(event, options))
-			prev = event;
-		else
-			prev->next = free_this_event(event);
-	}
+	if(event)
+		while(event->next) {
+			if(keep_this_event(event->next, options))
+				event = event->next;
+			else
+				event->next = free_this_event(event->next);
+		}
 
 	return(head);
 }
