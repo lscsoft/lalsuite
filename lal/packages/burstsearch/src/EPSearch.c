@@ -180,7 +180,7 @@ static SnglBurstTable *ModTFTileToBurstEvent(
 	event->start_time = *epoch; 
 
 	/* Moving the epoch has to be fixed */ 
-	XLALAddFloatToGPS(&event->start_time, (0.5 + (tile->tstart * tile->deltaT)));
+	XLALAddFloatToGPS(&event->start_time, (tile->tstart * tile->deltaT));
 	event->duration = (tile->tend - tile->tstart ) * tile->deltaT;
 	event->peak_time = event->start_time;
 	XLALAddFloatToGPS(&event->peak_time, 0.5 * event->duration);
