@@ -117,7 +117,7 @@ LALCheckMemoryLeaks
 #include <lal/LALNoiseModels.h>
 #include <lal/AVFactories.h>
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel=0;
 
 /* Nlist = expected number of coarse grid templates; if not sufficient increase */
      
@@ -136,18 +136,18 @@ main ( void )
    coarseIn = (InspiralCoarseBankIn *)LALMalloc(sizeof(InspiralCoarseBankIn));
    fineIn = (InspiralFineBankIn *)LALMalloc(sizeof(InspiralFineBankIn));
 
-   coarseIn->mMin = 5.0;
-   coarseIn->mMax = 20.0;
+   coarseIn->mMin = 1.0;
+   coarseIn->mMax = 3.0;
    coarseIn->MMax = coarseIn->mMax * 2.0;
-   coarseIn->massRange = MinComponentMassMaxTotalMass;
-   /* coarseIn->massRange = MinMaxComponentMass; */
+   /* coarseIn->massRange = MinComponentMassMaxTotalMass;*/
+   coarseIn->massRange = MinMaxComponentMass; 
 
    coarseIn->mmCoarse = 0.90;
    coarseIn->mmFine = 0.97;
    coarseIn->fLower = 40.;
-   coarseIn->fUpper = 4000;
+   coarseIn->fUpper = 2000;
    coarseIn->iflso = 0;
-   coarseIn->tSampling = 8192.L;
+   coarseIn->tSampling = 4096.L;
    coarseIn->order = twoPN;
    coarseIn->approximant = TaylorT1;
    coarseIn->space = Tau0Tau3;
@@ -160,10 +160,9 @@ main ( void )
    memset( &(coarseIn->shf), 0, sizeof(REAL8FrequencySeries) );
    coarseIn->shf.f0 = 0;
    LALDCreateVector( status, &(coarseIn->shf.data), numPSDpts );
-   coarseIn->shf.deltaF = coarseIn->tSampling / (REAL8) coarseIn->shf.data->length;
+   coarseIn->shf.deltaF = coarseIn->tSampling / ( 2.L * (REAL8) coarseIn->shf.data->length + 1.L);
    LALNoiseSpectralDensity (status, coarseIn->shf.data, noisemodel, coarseIn->shf.deltaF );
    
-
    coarseIn->iflso = 0.;
    LALInspiralCreateCoarseBank(status, &coarseList, &clist, *coarseIn);
 
@@ -181,6 +180,7 @@ main ( void )
    }
 
   printf("&\n");
+  exit(0);
 
   fineIn->coarseIn = *coarseIn;
   for (j=0; j<clist; j+=48) 
