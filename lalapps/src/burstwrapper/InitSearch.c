@@ -32,7 +32,7 @@ The \texttt{libldastfclusters.so} requires the following arguments to the wrappe
    [7] = polarization angle(s) (rad)
    [8] = number of independent injections to perform (total)
    [9] = injection time(s) in number of samples. See notes for details.
-   [10] = ETG to use (TFCLUSTERS,SLOPE,POWER)
+   [10] = ETG to use (TFCLUSTERS,SLOPE)
    [11] = first ETG parameter
    [11+n] = nth ETG parameter
 
@@ -363,8 +363,6 @@ int InitSearch(char *filterParams,
     params->ETG = TFCLUSTERS;
   } else if(!strcmp(cbuf,"SLOPE")) {
     params->ETG = SLOPE;
-  } else if(!strcmp(cbuf,"POWER")) {
-    params->ETG = POWER;
   } else {
     SABORT(INITSEARCHH_EIN, INITSEARCHH_MSGEIN );
   }
