@@ -199,7 +199,7 @@ CalibrationUpdateParams;
 
 typedef
 struct StrainOutTag {
-  REAL8TimeSeries ht;   /* pointer to the timeseries containing h(t) */
+  REAL8TimeSeries h;   /* pointer to the timeseries containing h(t) */
   COMPLEX16TimeSeries alpha; /* pointer to the alpha time series */
   COMPLEX16TimeSeries beta;  /* pointer to the beta time series */
 } StrainOut;
