@@ -1,9 +1,16 @@
-\chapter{Package \texttt{pulsar}}
+\chapter{Package \texttt{pulsar}: common routines}
+
+\chapter{Package \texttt{pulsar}: stack-slide routines}
+Teviet Creighton
+\bigskip
 
 This package provides routines for searching for slowly-modulated
 continuous periodic gravitational waves, using coherent or
 semi-coherent demodulation techniques.  It is currently under
 construction.
+
+There are three parts to this package: common routines, stack-slide algorithm
+routines, and hough transform routines.
 
 \newpage\input{PulsarTimesH}
 \newpage\input{StackMetricH}
@@ -15,4 +22,40 @@ construction.
 \bibitem{Brady_P:2000}
   P.~R. Brady and T. Creighton, Phys. Rev. D\textbf{61}, 082001
   (2000).
+\end{thebibliography}
+
+\chapter{Package \texttt{pulsar}: Hough transform routines}
+Steven Berukoff, M. Alessandra Papa
+\bigskip
+
+
+This package provides a routine to perform a demodulation on a set of data.
+In particular, this routine works with frequency domain data by combining
+short timescale Fourier Transforms (SFTs) into longer time baseline
+demodulated Fourier Transforms (DeFTs). If the assumptions under which the
+method was developed are met (\cite{Williams:1999}), then the demodulation
+procedure concentrates the total power (within $5\%-10\%$) in a single
+frequency bin. In practice, due to the discretization of frequency space, this
+power may be shared between two neighbouring bins.
+
+The procedure follows that outlined in \cite{Williams:1999} and is part of the
+continuous-wave search algorithm outlined in \cite{Schutz:1999}.  Briefly, the
+routine takes input SFTs, corrects for modulation effects due to intrinsic
+frequency spindown and Earth's motion, and outputs a DeFT of long time
+baseline. In general the routine can be easily adapted to correct for an
+arbitrary modulation effect simply by the use of a suitable timing routine,
+here \verb+tdb()+ .
+
+The package is organized under the headers \verb+LALDemod.h+ and
+\verb+ComputeSky.h+ and the modules \verb+LALDemod.c+ and \verb+ComputeSky.c+.
+
+
+\newpage\input{LALDemodH}
+\newpage\input{ComputeSkyH}
+
+\newpage\begin{thebibliography}{0}
+\bibitem{Williams:1999}
+	Peter R. Williams, Bernard F. Schutz.  gr-qc/9912029.
+\bibitem{Schutz:1999}
+	Bernard F. Schutz, M. A. Papa.  gr-qc/9905018. 
 \end{thebibliography}
