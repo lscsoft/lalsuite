@@ -123,8 +123,7 @@ typedef struct {
   LIGOTimeGPS	epoch; 
   REAL8		f0;	 
   REAL8		deltaF;
-  UINT4		length;
-  COMPLEX8	*data;
+  COMPLEX8Vector *data;
 } SFTtype;
 
 /* now we need a whole vector of those, so we define a trivial 

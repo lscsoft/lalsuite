@@ -166,11 +166,14 @@ LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries *signal, PulsarSignalP
 void
 AddSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, REAL4TimeSeries *signal, SFTParams *params)
 {
-  UINT4 numSFTs, SFTlen;
+  UINT4 numSFTs, numSamples;
   UINT4 iSFT;
-  REAL8 duration, tFirst, tLast, tt;
+  REAL8 duration, tFirst, tLast, tt, delay;
   REAL8 Band;
   RealFFTPlan *pfwd = NULL;
+  LIGOTimeGPS *timestamps;
+  REAL4Vector timeStretch = {0,0};
+  UINT4 shift;
 
   INITSTATUS( stat, "AddSignalToSFTs", PULSARSIGNALC);
   ATTATCHSTATUSPTR( stat );
@@ -185,29 +188,38 @@ AddSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, REAL4TimeSeries *signal
    * that the resulting number of samples in an SFT is an integer 
    * the user shouldn't care about this...: max diff = 1/Tsft
    */
-  SFTlen = (UINT4) ceil( 2.0 * params->FreqBand * params->Tsft);	/* round up */
-  Band = 1.0 * SFTlen / (2.0 * params->Tsft );
+  numSamples = (UINT4) ceil( 2.0 * params->FreqBand * params->Tsft);	/* round up */
+  Band = 1.0 * numSamples / (2.0 * params->Tsft );
 
   /* Prepare FFT: compute plan for FFTW */
-  TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, SFTlen, 0), stat);
+  TRY (LALCreateForwardRealFFTPlan(stat->statusPtr, &pfwd, numSamples, 0), stat);
 
   /* determine number of SFTs to be produced */
   duration = 1.0* signal->data->length * signal->deltaT;
+  LALGPStoFloat (stat->statusPtr, &tFirst, &(signal->epoch) );	/* REAL8 start-time in s */
+  tLast = tFirst + (duration - params->Tsft);
+
   if (params->timestamps == NULL)	/* no timestamps: cover total time-series */
-    numSFTs = (UINT4)( duration / params->Tsft );
+    {
+      numSFTs = (UINT4)( duration / params->Tsft );
+      /* ok, this might seem a bit stupid, but the rest of the code gets clearer
+       * if we _always_ work with timestamps. Therefore, we just generate them
+       * now if none have been provided by the user
+       */
+      if ( (timestamps = LALCalloc (1, numSFTs * sizeof (LIGOTimeGPS) )) == NULL) {
+	ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
+      }
+
+      for (iSFT = 0; iSFT < numSFTs; iSFT++)
+	{
+	  tt = tFirst + iSFT * params->Tsft;
+	  LALFloatToGPS (stat->statusPtr, &(timestamps[iSFT]), &tt);
+	} /* for iSFT */
+    }
   else	/* ok, let's use them timestamps.. */
     {
-      /* check consistency of timestamps */
+      timestamps = params->timestamps;
       numSFTs = params->Nsft;
-      tFirst = signal->epoch.gpsSeconds * 1e9 + signal->epoch.gpsNanoSeconds;
-      tLast = tFirst + 1e9 * (duration  - params->Tsft );
-      for (iSFT=0; iSFT < numSFTs; iSFT++) 
-	{
-	  tt = params->timestamps[iSFT].gpsSeconds * 1e9 + params->timestamps[iSFT].gpsNanoSeconds;
-	  if ( (tt < tFirst)  || (tt > tLast) ) {
-	    ABORT (stat,  PULSARSIGNALH_ETIMEBOUND,  PULSARSIGNALH_MSGETIMEBOUND);
-	  } 
-	} /* for iSFT */
     } /* if timestamps */
 
 
@@ -217,57 +229,58 @@ AddSignalToSFTs (LALStatus *stat, SFTVector *outputSFTs, REAL4TimeSeries *signal
   if (outputSFTs->SFTs == NULL) {
     ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
   }
+
+  /* main loop */
   for (iSFT = 0; iSFT < numSFTs; iSFT++)
     {
-      if (params->timestamps) 
-	outputSFTs->SFTs[iSFT].epoch  = params->timestamps[iSFT];
-      else
-	{
-	  INT4 secs;
-	  tt = tFirst + iSFT * params->Tsft * 1e9;
-	  secs = (INT4) tt * 1e-9;
-	  outputSFTs->SFTs[iSFT].epoch.gpsSeconds = secs;
-	  outputSFTs->SFTs[iSFT].epoch.gpsNanoSeconds = (INT4)( tt - secs*1e9);
-	}
       outputSFTs->SFTs[iSFT].f0 = signal->f0;
-      outputSFTs->SFTs[iSFT].deltaF = params->FreqBand / SFTlen;;
-      outputSFTs->SFTs[iSFT].length = SFTlen;
+      outputSFTs->SFTs[iSFT].deltaF = 1.0 / params->Tsft;
 
-      if ( (outputSFTs->SFTs[iSFT].data = LALCalloc (1, SFTlen * sizeof (COMPLEX8))) == NULL)
-	{
-	  UINT4 j;
-	  for (j=0; j < iSFT; j++)
-	    LALFree (outputSFTs->SFTs[j].data);
-	  LALFree (outputSFTs->SFTs);
-	  LALDestroyRealFFTPlan(stat->statusPtr, &pfwd);
-	  ABORT (stat, PULSARSIGNALH_EMEM, PULSARSIGNALH_MSGEMEM);
-	} /* if out-of-memory */
-    } /* for iSFT < numSFTs */
+      LALCCreateVector(stat->statusPtr, &(outputSFTs->SFTs[iSFT].data), (UINT4)(1.0*numSamples/2 + 1) );
+      BEGINFAIL(stat) {
+	UINT4 j;
+	for (j=0; j < iSFT; j++) 
+	  LALCDestroyVector (stat->statusPtr, &(outputSFTs->SFTs[iSFT].data) );
+	LALFree (outputSFTs->SFTs);
+	LALDestroyRealFFTPlan(stat->statusPtr, &pfwd);
+      } ENDFAIL(stat);
 
-  /* FIXME: original makefakedata-code follows here */
-  /* This is the main loop that produces output data */
-  for (iSFT = 0; iSFT < numSFTs; iSFT++)
-    {
-      /* This sets the time at which the output is given...*/
-      /*
-      timeSeries->epoch=timestamps[iSFT];
     
-      shift = (INT4)(2.0* Band* (timestamps[iSFT].gpsSeconds - timestamps[0].gpsSeconds));
+      LALGPStoFloat (stat->statusPtr, &tt, &timestamps[iSFT] );
+      /* brief consistency-check */
+      if (  (tt < tFirst) || (tt > tLast) ) {
+	ABORT (stat, PULSARSIGNALH_ETIMEBOUND, PULSARSIGNALH_MSGETIMEBOUND);
+      }
 
-      timeSeries->data->data =  totalTimeSeries->data->data + shift;
-      */
-      /* Perform FFTW-LAL Fast Fourier Transform */
-      /*
-      SUB(LALForwardRealFFT(&status, fvec, timeSeries->data, pfwd), &status);
-      */
-    
-    } /* end of loop over different SFTs */
+      delay = tt - tFirst;
+      shift = (UINT4) (delay / signal->deltaT + 0.5);	/* round properly */
+      
+      timeStretch.length = numSamples;    
+      timeStretch.data = signal->data->data + shift;		/* point to the right sample-bin */
 
+      /* the central step: FFT the ith time-stretch into an SFT-slot */
+      LALForwardRealFFT (stat->statusPtr, outputSFTs->SFTs[iSFT].data, &timeStretch, pfwd);
+      BEGINFAIL(stat) {
+	UINT4 j;
+	for (j=0; j < iSFT; j++) 
+	  LALCDestroyVector (stat->statusPtr, &(outputSFTs->SFTs[iSFT].data) );
+	LALFree (outputSFTs->SFTs);
+	LALDestroyRealFFTPlan(stat->statusPtr, &pfwd);
+      } ENDFAIL(stat);
+
+      /* Now set the ACTUAL timestamp corresponding to the shift ! */
+      delay = 1.0 * shift * signal->deltaT;
+      tt = tFirst + delay;
+      LALFloatToGPS (stat->statusPtr, &(outputSFTs->SFTs[iSFT].epoch), &tt );
+
+    } /* for iSFT < numSFTs */ 
 
 
   /* clean up */
   LALDestroyRealFFTPlan(stat->statusPtr, &pfwd);
-
+  /* did we get timestamps or did we make them? */
+  if (params->timestamps == NULL)
+    LALFree (timestamps);
 
   DETATCHSTATUSPTR( stat );
   RETURN (stat);

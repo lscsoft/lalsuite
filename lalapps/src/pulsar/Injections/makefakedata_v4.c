@@ -544,6 +544,9 @@ int main(int argc,char *argv[]) {
     PulsarSignalParams params;
     static REAL4TimeSeries Tseries;
     LIGOTimeGPS time1, time2;
+    static SFTVector SFTs;
+    SFTParams sftParams;
+    UINT4 i;
 
     params.pulsar.TRefSSB = SSBpulsarparams;
     params.pulsar.Alpha = genTayParams.position.longitude;
@@ -575,6 +578,22 @@ int main(int argc,char *argv[]) {
     SUB (LALGeneratePulsarSignal (&status, &Tseries, &params), &status );
 
     SUB ( LALPrintR4TimeSeries (&status, &Tseries, "test2.agr"), &status);
+
+    sftParams.FreqBand = Band;
+    sftParams.Tsft = Tsft;
+    sftParams.Nsft = 0; /* not used */
+    sftParams.timestamps = NULL;
+    sftParams.noiseSFTs = NULL;
+
+    SUB (AddSignalToSFTs (&status, &SFTs, &Tseries, &sftParams), &status);
+
+
+    /* free the stuff */
+    for (i=0; i < SFTs.length; i++) 
+      {
+	SUB (LALCDestroyVector (&status, &(SFTs.SFTs[i].data) ), &status);
+      }
+    LALFree ( SFTs.SFTs );
 
     LALFree (Tseries.data->data);
     LALFree (Tseries.data);
