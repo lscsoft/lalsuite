@@ -4,3 +4,8 @@ The freq modulation stuff is correct only for S2
 It uses a circular orbit and spherical Earth model,
 and the initial conditions are hard coded to S2.
 
+GPS times for S2 (from http://www.phys.lsu.edu/faculty/gonzalez/S2LockStats/LIGOTAMALockStats/)
+    start 729273613
+    end   734367613
+
+
