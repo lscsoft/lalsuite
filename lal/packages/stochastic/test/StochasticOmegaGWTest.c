@@ -77,7 +77,7 @@ StochasticOmegaGWTest -e 1 -n 1000 -F 100 -O 1e-6 -a 2 -o OmegaGW.dat
 \begin{figure}[htb!]
 \begin{center}
 \noindent
-\includegraphics[width=4in]{stochasticOmegaGWQuadratic}
+\includegraphics[width=4in,angle=-90]{stochasticOmegaGWQuadratic}
 \caption{\label{stochastic:f:quadOmega}
 A quadratic stochastic gravitational-wave background spectrum.}
 \end{center}

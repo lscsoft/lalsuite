@@ -81,7 +81,7 @@ OverlapReductionFunctionTest -e 1 -n 10000 -s 0 -t 1 -o LHOLLOOverlap.dat
 \begin{figure}[htb!]
   \begin{center}
     \noindent
-    \includegraphics[width=4in]{stochasticOverlapLHOLLO}
+    \includegraphics[width=4in,angle=-90]{stochasticOverlapLHOLLO}
     \caption{\label{stochastic:f:LLOLHO}
       Overlap reduction function for the LLO--LHO pair.}
   \end{center}
