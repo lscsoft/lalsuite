@@ -345,9 +345,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   seriesTwo = get_time_series(&status, ifoTwo, frameCacheTwo, channelTwo, \
       gpsStartTime, gpsEndTime, padData);
 
-  LALSPrintTimeSeries(seriesOne, "1.dat");
-  LALSPrintTimeSeries(seriesTwo, "2.dat");
-
   /* initialize calibration gps time structure */
   gpsCalibTime.gpsSeconds = startTime + calibOffset;
   gpsCalibTime.gpsNanoSeconds = 0;
@@ -618,8 +615,8 @@ INT4 main(INT4 argc, CHAR *argv[])
 
     for (i = segmentLength - (hannLength / 2); i < segmentLength; i++)
     {
-      dataWindow.data->data[i] = \
-                                 hannWindow->data[i - segmentLength + hannLength];
+      dataWindow.data->data[i] = hannWindow->data[i - \
+                                 segmentLength + hannLength];
     }
   }
 
@@ -1002,9 +999,11 @@ INT4 main(INT4 argc, CHAR *argv[])
           for (i = 0; i < segmentPadLength ; i++)
           {
             segmentPadOne->data->data[i] = segPadOne[segLoop]->data[i] + \
-                                           (scaleFactor * SimStochBGOne->data->data[i]);
+                                           (scaleFactor * \
+                                            SimStochBGOne->data->data[i]);
             segmentPadTwo->data->data[i] = segPadTwo[segLoop]->data[i] + \
-                                           (scaleFactor * SimStochBGTwo->data->data[i]);
+                                           (scaleFactor * \
+                                            SimStochBGTwo->data->data[i]);
           }
 
           /* increase seed */
@@ -1333,9 +1332,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   if (stochHead)
   {
     outputTable.stochasticTable = stochHead;
-    LALBeginLIGOLwXMLTable(&status, &xmlStream, stochastic_table);
-    LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, stochastic_table);
-    LALEndLIGOLwXMLTable(&status, &xmlStream);
+    LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, stochastic_table), \
+        &status);;
+    LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, \
+          stochastic_table), &status);
+    LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
   }
 
   /* close xml file */
