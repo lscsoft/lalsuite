@@ -58,16 +58,18 @@ maximum-mass = 20.0
 minimal-match = 0.95
 high-frequency-cutoff = 2048.0
 order = twoPN
-approximant = BCV
-space = Psi0Psi3
+approximant = TaylorF2 {for BNS} BCV {for BCV}
+space = Tau0Tau3 {for BNS} Psi0Psi3 {for BCV}
 debug-level = 33
+; the following are necessary for the BCV search
 minimum-psi0 = 10.0
 maximum-psi0 = 550000.0
 minimum-psi3 = -4000.0
 maximum-psi3 = -10.0
 alpha = 0.0
 maximum-fcut-tmplts = 3
-
+; end of BCV-necessary tmpltbank arguments
+`
 [inspiral]
 minimal-match = 0.9
 segment-overlap = 524288
@@ -77,11 +79,11 @@ enable-output =
 enable-event-cluster = 
 chisq-bins = 0
 debug-level = 33
-approximant = BCV
+approximant = TaylorF2 {for BNS} BCV {for BCV}
 
 [trigtotmplt]
 minimal-match = 0.95
-parameter-test = psi0_and_psi3
+parameter-test = m1_and_m2 {for BNS} psi0_and_psi3 {for BCV}
 debug-level = 33
 
 [inca]
@@ -90,8 +92,10 @@ epsilon = 2.0
 kappa = 5000.0
 dt = 15.0
 dm = 0.03
+parameter-test =m1_and_m2 {for BNS} psi0_and_psi3 {for BCV}
+debug-level = 33
+; the following are necessary for the BCV search only
 dpsi0 = 0.0
 dpsi3 = 0.0
-parameter-test = psi0_and_psi3
-debug-level = 33
+; end of BCV-necessary arguments
 \end{verbatim}
