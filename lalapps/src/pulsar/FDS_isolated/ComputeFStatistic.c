@@ -429,6 +429,7 @@ int main(int argc,char *argv[])
 #endif
 	  {
 	    FILE *fp;
+	    fflush (fpstat);
 	    if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
 	      LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
 	      return COMPUTEFSTATC_ECHECKPOINT;
@@ -438,7 +439,6 @@ int main(int argc,char *argv[])
 	      return COMPUTEFSTATC_ECHECKPOINT;
 	    }
 	    fclose (fp);
-	    fflush (fpstat);
 #if USE_BOINC
 	    boinc_checkpoint_completed();
 #endif
