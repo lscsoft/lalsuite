@@ -129,7 +129,7 @@ int main ( int argc, char *argv[] )
     {"comment",                 required_argument, 0,                'c'},
     {"input",                   required_argument, 0,                'i'},
     {"output",                  required_argument, 0,                'o'},
-    {"minimum-match",           required_argument, 0,                'm'},
+    {"minimal-match",           required_argument, 0,                'm'},
     {"debug-level",             required_argument, 0,                'z'},
     {"snr-threshold",           required_argument, 0,                's'},
     {"help",                    no_argument,       0,                'h'},
@@ -254,7 +254,7 @@ int main ( int argc, char *argv[] )
         if ( minMatch <= 0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
-              "minimum match of bank must be > 0: "
+              "minimal match of bank must be > 0: "
               "(%f specified)\n",
               long_options[option_index].name, minMatch );
           exit( 1 );
@@ -316,7 +316,7 @@ int main ( int argc, char *argv[] )
   }
   if ( minMatch < 0 )
   {
-    fprintf( stderr, "--minimum-match must be specified\n" );
+    fprintf( stderr, "--minimal-match must be specified\n" );
     exit( 1 );
   }
 

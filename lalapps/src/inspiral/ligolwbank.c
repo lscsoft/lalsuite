@@ -362,7 +362,7 @@ InspiralTmpltBankFromLIGOLw (
   while ( (mioStatus = MetaioGetRow(env)) == 1 )
   {
     if ( ! strcmp( env->ligo_lw.table.elt[pParParam].data.lstring.data, 
-          "--minimum-match" ) )
+          "--minimal-match" ) )
     {
       minMatch = (REAL4) 
         atof( env->ligo_lw.table.elt[pParValue].data.lstring.data );

@@ -671,7 +671,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     /* template bank generation parameters */
     {"minimum-mass",            required_argument, 0,                'A'},
     {"maximum-mass",            required_argument, 0,                'B'},
-    {"minimum-match",           required_argument, 0,                'C'},
+    {"minimal-match",           required_argument, 0,                'C'},
     {"high-frequency-cutoff",   required_argument, 0,                'D'},
     {"order",                   required_argument, 0,                'E'},
     {"approximant",             required_argument, 0,                'F'},
@@ -1302,7 +1302,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
   if ( minMatch < 0 )
   {
-    fprintf( stderr, "--minimum-match must be specified\n" );
+    fprintf( stderr, "--minimal-match must be specified\n" );
     exit( 1 );
   }
   if ( fUpper < 0 )

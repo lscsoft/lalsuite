@@ -90,7 +90,7 @@
 "\n" \
 "   --minimum-mass real_4           minimum (component) mass in the bank\n" \
 "   --maximum-mass real_4           maximum (component) mass in the bank\n" \
-"   --minimum-match real_4          minimal match of the template bank\n" \
+"   --minimal-match real_4          minimal match of the template bank\n" \
 "   --low-frequency-cutoff real_4   high frequency cutoff\n"\
 "   --high-frequency-cutoff real_4  upper frequency cutoff\n"\
 "   --order lstring                 post-Newtonian order of the waveform\n" \
@@ -128,7 +128,7 @@
 "                  --channel-name \"L1:LSC-AS_Q\" \n" \
 "                  --frame-cache s1_bank_data.catalog \n" \
 "                  --calibration-cache s1_bank_cal.catalog \n" \
-"                  --minimum-mass 1.0 --maximum-mass 3.0 --minimum-match 0.97 \n" \
+"                  --minimum-mass 1.0 --maximum-mass 3.0 --minimal-match 0.97 \n" \
 "                  --high-frequency-cutoff 1024.0 \n" \
 "                  --order twoPN --approximant TaylorT1 --space Tau0Tau3 \n" \
 "                  --write-raw-data --write-spectrum \n" \
