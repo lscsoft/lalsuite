@@ -161,7 +161,7 @@ int main(int argc, char *argv[]){
   directory = SFTDIRECTORY;
   fnameOut = FILEOUT;
   blocksRngMed = BLOCKSRNGMED;
-  SUB( RngMedBias( &status, &normalizeThr, blocksRngMed ), &status ); 
+  SUB( LALRngMedBias( &status, &normalizeThr, blocksRngMed ), &status ); 
 
   /* to be removed */
 /*
@@ -299,7 +299,7 @@ int main(int argc, char *argv[]){
 	if ( argc > arg + 1 ) {
 	  arg++;
 	  blocksRngMed = atoi( argv[arg++] );
-          SUB( RngMedBias( &status, &normalizeThr, blocksRngMed ), &status );	  
+          SUB( LALRngMedBias( &status, &normalizeThr, blocksRngMed ), &status );	  
 	} else {
 	  ERROR( DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG, 0 );
 	  LALPrintError( USAGE, *argv );

@@ -1876,7 +1876,7 @@ int NormaliseSFTDataRngMdn(LALStatus *status)
   */
   
   if (GV.noise != 1)
-    RngMedBias (status, &medianbias, windowSize);
+    LALRngMedBias (status, &medianbias, windowSize);
   
   LALDCreateVector(status, &Sp, (UINT4)nbins);
   LALDCreateVector(status, &RngMdnSp, (UINT4)nbins);

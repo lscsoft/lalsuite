@@ -2049,7 +2049,7 @@ INT4 NormaliseSFTDataRngMdn(LALStatus *status)
   */
 
   if (uvar_SignalOnly != 1)
-    RngMedBias (status, &medianbias, windowSize);
+    LALRngMedBias (status, &medianbias, windowSize);
 
 
   LALDCreateVector(status, &Sp, (UINT4)nbins);
