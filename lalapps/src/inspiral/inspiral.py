@@ -355,6 +355,16 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     self.__output = None
+    self.__input_ifo = None
+    self.__output_ifo = None
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_user_tag(self,usertag):
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    return self.__usertag
 
   def make_trigbank(self,chunk,max_slide,source_ifo,dest_ifo,
     usertag=None,ifo_tag=None):
@@ -390,12 +400,49 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__output = outfile
     self.add_var_opt('triggered-bank',outfile)
 
+  def set_input_ifo(self,ifo):
+  
+    self.add_var_opt('input-ifo', ifo)
+    self.__input_ifo = ifo
+
+  def get_input_ifo(self):
+  
+    return self.__input_ifo
+  
+
+  def set_output_ifo(self,ifo):
+  
+    self.add_var_opt('output-ifo', ifo)
+    self.__output_ifo = ifo
+
+  def get_output_ifo(self):
+  
+    return self.__output_ifo
+ 
+
   def get_output(self):
     """
     Returns the name of the triggered template bank file.
     """
     return self.__output
-    
+
+  def get_trig_out(self):
+    """
+    Returns the name of the output file from lalapps_trigbank
+    """
+    if not self.get_start() or not self.get_end() or not self.get_output_ifo():
+      raise InspiralError, "Start time, end time or output ifo is not set"
+      
+
+    basename = self.get_output_ifo() + '-TRIGBANK'
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag 
+
+    return basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.xml'
 
 
 class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
