@@ -130,7 +130,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* time variables */
   LIGOTimeGPS gpsStartTime;
   LIGOTimeGPS gpsIntervalStart;
-  LIGOTimeGPS gpsSegmentStart;
+  LIGOTimeGPS gpsSegmentAStart;
+  LIGOTimeGPS gpsSegmentBStart;
+  LIGOTimeGPS gpsSegmentCStart;
 
   /* input data structures */
   INT4 padData;
@@ -149,8 +151,12 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* data structures for segments */
   INT4 segmentLength;
   INT4 segmentShift;
-  REAL4TimeSeries segmentOne;
-  REAL4TimeSeries segmentTwo;
+  REAL4TimeSeries segmentOneA;
+  REAL4TimeSeries segmentOneB;
+  REAL4TimeSeries segmentOneC;
+  REAL4TimeSeries segmentTwoA;
+  REAL4TimeSeries segmentTwoB;
+  REAL4TimeSeries segmentTwoC;
 
   /* data structures for PSDs */
   INT4 overlapPSDLength;
@@ -168,10 +174,18 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALUnit psdUnits = {0,{0,0,1,0,0,0,2},{0,0,0,0,0,0,0}};
 
   /* response functions */
-  COMPLEX8FrequencySeries responseTempOne;
-  COMPLEX8FrequencySeries responseTempTwo;
-  COMPLEX8FrequencySeries responseOne;
-  COMPLEX8FrequencySeries responseTwo;
+  COMPLEX8FrequencySeries responseTempOneA;
+  COMPLEX8FrequencySeries responseTempOneB;
+  COMPLEX8FrequencySeries responseTempOneC;
+  COMPLEX8FrequencySeries responseTempTwoA;
+  COMPLEX8FrequencySeries responseTempTwoB;
+  COMPLEX8FrequencySeries responseTempTwoC;
+  COMPLEX8FrequencySeries responseOneA;
+  COMPLEX8FrequencySeries responseOneB;
+  COMPLEX8FrequencySeries responseOneC;
+  COMPLEX8FrequencySeries responseTwoA;
+  COMPLEX8FrequencySeries responseTwoB;
+  COMPLEX8FrequencySeries responseTwoC;
   INT4 respLength;
   CalibrationUpdateParams calfacts;
   LALUnit countPerAttoStrain = {18,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
@@ -361,14 +375,30 @@ INT4 main(INT4 argc, CHAR *argv[])
   segmentLength = segmentDuration * resampleRate;
 
   /* set metadata fields for data segments */
-  strncpy(segmentOne.name, "segmentOne", LALNameLength);
-  strncpy(segmentTwo.name, "segmentTwo", LALNameLength);
-  segmentOne.sampleUnits = streamOne.sampleUnits;
-  segmentTwo.sampleUnits = streamTwo.sampleUnits;
-  segmentOne.deltaT = 1./(REAL8)resampleRate;
-  segmentTwo.deltaT = 1./(REAL8)resampleRate;
-  segmentOne.f0 = 0;
-  segmentTwo.f0 = 0;
+  strncpy(segmentOneA.name, "segmentOneA", LALNameLength);
+  strncpy(segmentOneB.name, "segmentOneB", LALNameLength);
+  strncpy(segmentOneC.name, "segmentOneC", LALNameLength);
+  strncpy(segmentTwoA.name, "segmentTwoA", LALNameLength);
+  strncpy(segmentTwoB.name, "segmentTwoB", LALNameLength);
+  strncpy(segmentTwoC.name, "segmentTwoC", LALNameLength);
+  segmentOneA.sampleUnits = streamOne.sampleUnits;
+  segmentOneB.sampleUnits = streamOne.sampleUnits;
+  segmentOneC.sampleUnits = streamOne.sampleUnits;
+  segmentTwoA.sampleUnits = streamTwo.sampleUnits;
+  segmentTwoB.sampleUnits = streamTwo.sampleUnits;
+  segmentTwoC.sampleUnits = streamTwo.sampleUnits;
+  segmentOneA.deltaT = 1./(REAL8)resampleRate;
+  segmentOneB.deltaT = 1./(REAL8)resampleRate;
+  segmentOneC.deltaT = 1./(REAL8)resampleRate;
+  segmentTwoA.deltaT = 1./(REAL8)resampleRate;
+  segmentTwoB.deltaT = 1./(REAL8)resampleRate;
+  segmentTwoC.deltaT = 1./(REAL8)resampleRate;
+  segmentOneA.f0 = 0;
+  segmentOneB.f0 = 0;
+  segmentOneC.f0 = 0;
+  segmentTwoA.f0 = 0;
+  segmentTwoB.f0 = 0;
+  segmentTwoC.f0 = 0;
 
   if (vrbflg)
   {
@@ -376,10 +406,18 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* allocate memory for data segments */
-  segmentOne.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  segmentTwo.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
-  segmentOne.data->length = segmentLength;
-  segmentTwo.data->length = segmentLength;
+  segmentOneA.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+  segmentOneB.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+  segmentOneC.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+  segmentTwoA.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+  segmentTwoB.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+  segmentTwoC.data = (REAL4Sequence*)LALCalloc(1, sizeof(REAL4Sequence));
+  segmentOneA.data->length = segmentLength;
+  segmentOneB.data->length = segmentLength;
+  segmentOneC.data->length = segmentLength;
+  segmentTwoA.data->length = segmentLength;
+  segmentTwoB.data->length = segmentLength;
+  segmentTwoC.data->length = segmentLength;
 
   /* set PSD window length */
   windowPSDLength = (UINT4)(resampleRate / deltaF);
@@ -472,14 +510,30 @@ INT4 main(INT4 argc, CHAR *argv[])
   respLength = (UINT4)(fMax / deltaF) + 1;
 
   /* set metadata fields for response functions */
-  strncpy(responseTempOne.name, "responseTempOne", LALNameLength);
-  strncpy(responseTempTwo.name, "responseTempTwo", LALNameLength);
-  responseTempOne.sampleUnits = countPerAttoStrain;
-  responseTempTwo.sampleUnits = countPerAttoStrain;
-  responseTempOne.deltaF = deltaF;
-  responseTempTwo.deltaF = deltaF;
-  responseTempOne.f0 = 0;
-  responseTempTwo.f0 = 0;
+  strncpy(responseTempOneA.name, "responseTempOneA", LALNameLength);
+  strncpy(responseTempOneB.name, "responseTempOneB", LALNameLength);
+  strncpy(responseTempOneC.name, "responseTempOneC", LALNameLength);
+  strncpy(responseTempTwoA.name, "responseTempTwoA", LALNameLength);
+  strncpy(responseTempTwoB.name, "responseTempTwoB", LALNameLength);
+  strncpy(responseTempTwoC.name, "responseTempTwoC", LALNameLength);
+  responseTempOneA.sampleUnits = countPerAttoStrain;
+  responseTempOneB.sampleUnits = countPerAttoStrain;
+  responseTempOneC.sampleUnits = countPerAttoStrain;
+  responseTempTwoA.sampleUnits = countPerAttoStrain;
+  responseTempTwoB.sampleUnits = countPerAttoStrain;
+  responseTempTwoC.sampleUnits = countPerAttoStrain;
+  responseTempOneA.deltaF = deltaF;
+  responseTempOneB.deltaF = deltaF;
+  responseTempOneC.deltaF = deltaF;
+  responseTempTwoA.deltaF = deltaF;
+  responseTempTwoB.deltaF = deltaF;
+  responseTempTwoC.deltaF = deltaF;
+  responseTempOneA.f0 = 0;
+  responseTempOneB.f0 = 0;
+  responseTempOneC.f0 = 0;
+  responseTempTwoA.f0 = 0;
+  responseTempTwoB.f0 = 0;
+  responseTempTwoC.f0 = 0;
 
   if (vrbflg)
   {
@@ -487,27 +541,63 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* allocate memory for response functions */
-  responseTempOne.data = NULL;
-  responseTempTwo.data = NULL;
-  LAL_CALL( LALCCreateVector(&status, &(responseTempOne.data), respLength), \
+  responseTempOneA.data = NULL;
+  responseTempOneB.data = NULL;
+  responseTempOneC.data = NULL;
+  responseTempTwoA.data = NULL;
+  responseTempTwoB.data = NULL;
+  responseTempTwoC.data = NULL;
+  LAL_CALL( LALCCreateVector(&status, &(responseTempOneA.data), respLength), \
       &status );
-  LAL_CALL( LALCCreateVector(&status, &(responseTempTwo.data), respLength), \
+  LAL_CALL( LALCCreateVector(&status, &(responseTempOneB.data), respLength), \
       &status );
-  memset(responseTempOne.data->data, 0, \
-      responseTempOne.data->length * sizeof(*responseTempOne.data->data));
-  memset(responseTempTwo.data->data, 0, \
-      responseTempTwo.data->length * sizeof(*responseTempTwo.data->data));
+  LAL_CALL( LALCCreateVector(&status, &(responseTempOneC.data), respLength), \
+      &status );
+  LAL_CALL( LALCCreateVector(&status, &(responseTempTwoA.data), respLength), \
+      &status );
+  LAL_CALL( LALCCreateVector(&status, &(responseTempTwoB.data), respLength), \
+      &status );
+  LAL_CALL( LALCCreateVector(&status, &(responseTempTwoC.data), respLength), \
+      &status );
+  memset(responseTempOneA.data->data, 0, \
+      responseTempOneA.data->length * sizeof(*responseTempOneA.data->data));
+  memset(responseTempOneB.data->data, 0, \
+      responseTempOneB.data->length * sizeof(*responseTempOneB.data->data));
+  memset(responseTempOneC.data->data, 0, \
+      responseTempOneC.data->length * sizeof(*responseTempOneC.data->data));
+  memset(responseTempTwoA.data->data, 0, \
+      responseTempTwoA.data->length * sizeof(*responseTempTwoA.data->data));
+  memset(responseTempTwoB.data->data, 0, \
+      responseTempTwoB.data->length * sizeof(*responseTempTwoB.data->data));
+  memset(responseTempTwoC.data->data, 0, \
+      responseTempTwoC.data->length * sizeof(*responseTempTwoC.data->data));
 
   /* reduced frequency band response functions */
   /* set metadata fields for reduced frequency band response functions */
-  strncpy(responseOne.name, "responseOne", LALNameLength);
-  strncpy(responseTwo.name, "responseTwo", LALNameLength);
-  responseOne.sampleUnits = countPerAttoStrain;
-  responseTwo.sampleUnits = countPerAttoStrain;
-  responseOne.deltaF = deltaF;
-  responseTwo.deltaF = deltaF;
-  responseOne.f0 = fMin;
-  responseTwo.f0 = fMin;
+  strncpy(responseOneA.name, "responseOneA", LALNameLength);
+  strncpy(responseOneB.name, "responseOneB", LALNameLength);
+  strncpy(responseOneC.name, "responseOneC", LALNameLength);
+  strncpy(responseTwoA.name, "responseTwoA", LALNameLength);
+  strncpy(responseTwoB.name, "responseTwoB", LALNameLength);
+  strncpy(responseTwoC.name, "responseTwoC", LALNameLength);
+  responseOneA.sampleUnits = countPerAttoStrain;
+  responseOneB.sampleUnits = countPerAttoStrain;
+  responseOneC.sampleUnits = countPerAttoStrain;
+  responseTwoA.sampleUnits = countPerAttoStrain;
+  responseTwoB.sampleUnits = countPerAttoStrain;
+  responseTwoC.sampleUnits = countPerAttoStrain;
+  responseOneA.deltaF = deltaF;
+  responseOneB.deltaF = deltaF;
+  responseOneC.deltaF = deltaF;
+  responseTwoA.deltaF = deltaF;
+  responseTwoB.deltaF = deltaF;
+  responseTwoC.deltaF = deltaF;
+  responseOneA.f0 = fMin;
+  responseOneB.f0 = fMin;
+  responseOneC.f0 = fMin;
+  responseTwoA.f0 = fMin;
+  responseTwoB.f0 = fMin;
+  responseTwoC.f0 = fMin;
 
   if (vrbflg)
   {
@@ -516,10 +606,18 @@ INT4 main(INT4 argc, CHAR *argv[])
   }
 
   /* allocate memory for reduced frequency band response functions */
-  responseOne.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
-  responseTwo.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
-  responseOne.data->length = filterLength;
-  responseTwo.data->length = filterLength;
+  responseOneA.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
+  responseOneB.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
+  responseOneC.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
+  responseTwoA.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
+  responseTwoB.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
+  responseTwoC.data = (COMPLEX8Sequence*)LALCalloc(1, sizeof(COMPLEX8Sequence));
+  responseOneA.data->length = filterLength;
+  responseOneB.data->length = filterLength;
+  responseOneC.data->length = filterLength;
+  responseTwoA.data->length = filterLength;
+  responseTwoB.data->length = filterLength;
+  responseTwoC.data->length = filterLength;
 
   /* set metadata fields for inverse noise structures */
   strncpy(calInvPSDOne.name, "calInvPSDOne", LALNameLength);
@@ -568,9 +666,9 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* set inverse noise inputs */
   inverseNoiseInOne.unCalibratedNoisePSD = &psdOne;
-  inverseNoiseInOne.responseFunction = &responseOne;
+  inverseNoiseInOne.responseFunction = &responseOneB;
   inverseNoiseInTwo.unCalibratedNoisePSD = &psdTwo;
-  inverseNoiseInTwo.responseFunction = &responseTwo;
+  inverseNoiseInTwo.responseFunction = &responseTwoB;
 
   /* set inverse noise outputs */
   inverseNoiseOutOne.calibratedInverseNoisePSD = &calInvPSDOne;
@@ -985,11 +1083,20 @@ INT4 main(INT4 argc, CHAR *argv[])
     intervalTwo.epoch = gpsIntervalStart;
 
     /* define segment epoch */
-    gpsSegmentStart.gpsSeconds = startTime + (j * segmentShift) + \
+    gpsSegmentAStart.gpsSeconds = startTime + (j * segmentShift);
+    gpsSegmentAStart.gpsNanoSeconds = 0;
+    gpsSegmentBStart.gpsSeconds = startTime + (j * segmentShift) + \
       segmentDuration;
-    gpsSegmentStart.gpsNanoSeconds = 0;
-    segmentOne.epoch = gpsSegmentStart;
-    segmentTwo.epoch = gpsSegmentStart;
+    gpsSegmentBStart.gpsNanoSeconds = 0;
+    gpsSegmentCStart.gpsSeconds = startTime + (j * segmentShift) + \
+      (2 * segmentDuration);
+    gpsSegmentCStart.gpsNanoSeconds = 0;
+    segmentOneA.epoch = gpsSegmentAStart;
+    segmentOneB.epoch = gpsSegmentBStart;
+    segmentOneC.epoch = gpsSegmentCStart;
+    segmentTwoA.epoch = gpsSegmentAStart;
+    segmentTwoB.epoch = gpsSegmentBStart;
+    segmentTwoC.epoch = gpsSegmentCStart;
 
     if (vrbflg)
     {
@@ -1003,19 +1110,31 @@ INT4 main(INT4 argc, CHAR *argv[])
     intervalTwo.data->data = streamTwo.data->data + (j * \
         segmentShift * resampleRate);
 
-    /* build segment */
-    segmentOne.data->data = streamOne.data->data + \
+    /* build segments */
+    segmentOneA.data->data = streamOne.data->data + \
+      (resampleRate * j * segmentShift);
+    segmentOneB.data->data = streamOne.data->data + \
       (resampleRate * ((j * segmentShift) + segmentDuration));
-    segmentTwo.data->data = streamTwo.data->data + \
+    segmentOneC.data->data = streamOne.data->data + \
+      (resampleRate * ((j * segmentShift) + (2 * segmentDuration)));
+    segmentTwoA.data->data = streamTwo.data->data + \
+      (resampleRate * j * segmentShift);
+    segmentTwoB.data->data = streamTwo.data->data + \
       (resampleRate * ((j * segmentShift) + segmentDuration));
+    segmentTwoC.data->data = streamTwo.data->data + \
+      (resampleRate * ((j * segmentShift) + (2 * segmentDuration)));
 
     /* output the results */
     if (debug_flag)
     {
       LALSPrintTimeSeries(&intervalOne, "interval1.dat");
       LALSPrintTimeSeries(&intervalTwo, "interval2.dat");
-      LALSPrintTimeSeries(&segmentOne, "segment1.dat");
-      LALSPrintTimeSeries(&segmentTwo, "segment2.dat");
+      LALSPrintTimeSeries(&segmentOneA, "segment1a.dat");
+      LALSPrintTimeSeries(&segmentOneB, "segment1b.dat");
+      LALSPrintTimeSeries(&segmentOneC, "segment1c.dat");
+      LALSPrintTimeSeries(&segmentTwoA, "segment2a.dat");
+      LALSPrintTimeSeries(&segmentTwoB, "segment2b.dat");
+      LALSPrintTimeSeries(&segmentTwoC, "segment2c.dat");
     }
 
     if (vrbflg)
@@ -1024,9 +1143,9 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* zero pad and fft */
-    LAL_CALL( LALSZeroPadAndFFT(&status, &hBarTildeOne, &segmentOne, \
+    LAL_CALL( LALSZeroPadAndFFT(&status, &hBarTildeOne, &segmentOneB, \
           &zeroPadParams), &status );
-    LAL_CALL( LALSZeroPadAndFFT(&status, &hBarTildeTwo, &segmentTwo, \
+    LAL_CALL( LALSZeroPadAndFFT(&status, &hBarTildeTwo, &segmentTwoB, \
           &zeroPadParams), &status );
 
     /* save */
@@ -1069,16 +1188,36 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* compute response function */
-    responseTempOne.epoch = gpsSegmentStart;
-    responseTempTwo.epoch = gpsSegmentStart;
+    responseTempOneA.epoch = gpsSegmentAStart;
+    responseTempOneB.epoch = gpsSegmentBStart;
+    responseTempOneC.epoch = gpsSegmentCStart;
+    responseTempTwoA.epoch = gpsSegmentAStart;
+    responseTempTwoB.epoch = gpsSegmentBStart;
+    responseTempTwoC.epoch = gpsSegmentCStart;
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoOne;
-    LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
-          &calfacts), &status );
+    LAL_CALL( LALExtractFrameResponse(&status, &responseTempOneA, \
+          calCacheOne, &calfacts), &status );
+    memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
+    calfacts.ifo = ifoOne;
+    LAL_CALL( LALExtractFrameResponse(&status, &responseTempOneB, \
+          calCacheOne, &calfacts), &status );
+    memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
+    calfacts.ifo = ifoOne;
+    LAL_CALL( LALExtractFrameResponse(&status, &responseTempOneC, \
+          calCacheOne, &calfacts), &status );
     memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
     calfacts.ifo = ifoTwo;
-    LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
-          &calfacts), &status );
+    LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwoA, \
+          calCacheTwo, &calfacts), &status );
+    memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
+    calfacts.ifo = ifoTwo;
+    LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwoB, \
+          calCacheTwo, &calfacts), &status );
+    memset(&calfacts, 0, sizeof(CalibrationUpdateParams));
+    calfacts.ifo = ifoTwo;
+    LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwoC, \
+          calCacheTwo, &calfacts), &status );
 
     if (vrbflg)
     {
@@ -1087,14 +1226,22 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* reduce to the optimal filter frequency range */
-    responseOne.data->data = responseTempOne.data->data + numFMin;
-    responseTwo.data->data = responseTempTwo.data->data + numFMin;
+    responseOneA.data->data = responseTempOneA.data->data + numFMin;
+    responseOneB.data->data = responseTempOneB.data->data + numFMin;
+    responseOneC.data->data = responseTempOneC.data->data + numFMin;
+    responseTwoA.data->data = responseTempTwoA.data->data + numFMin;
+    responseTwoB.data->data = responseTempTwoB.data->data + numFMin;
+    responseTwoC.data->data = responseTempTwoC.data->data + numFMin;
 
     /* output the results */
     if (debug_flag)
     {
-      LALCPrintFrequencySeries(&responseOne, "response1.dat");
-      LALCPrintFrequencySeries(&responseTwo, "response2.dat");
+      LALCPrintFrequencySeries(&responseOneA, "response1a.dat");
+      LALCPrintFrequencySeries(&responseOneB, "response1b.dat");
+      LALCPrintFrequencySeries(&responseOneC, "response1c.dat");
+      LALCPrintFrequencySeries(&responseTwoA, "response2a.dat");
+      LALCPrintFrequencySeries(&responseTwoB, "response2b.dat");
+      LALCPrintFrequencySeries(&responseTwoC, "response2c.dat");
     }
 
     if (vrbflg)
@@ -1143,7 +1290,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* build optimal filter */
-    optFilter.epoch = gpsSegmentStart;
+    optFilter.epoch = gpsSegmentAStart;
     LAL_CALL( LALStochasticOptimalFilter(&status, &optFilter, &optFilterIn, \
           &normLambda), &status );
 
@@ -1185,7 +1332,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     }
 
     /* output to file */
-    fprintf(out, "%d %e %e\n", gpsSegmentStart.gpsSeconds, sqrt(varTheo), y);
+    fprintf(out, "%d %e %e\n", gpsSegmentBStart.gpsSeconds, sqrt(varTheo), y);
   }
 
   /* close output file */
@@ -1194,20 +1341,32 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* cleanup */
   LAL_CALL( LALDestroyRealFFTPlan(&status, &(psdParams.plan)), &status );
   LAL_CALL( LALDestroyRealFFTPlan(&status, &fftDataPlan), &status );
-  LAL_CALL( LALDestroyVector(&status, &(streamOne.data)), &status );
-  LAL_CALL( LALDestroyVector(&status, &(streamTwo.data)), &status );
   LALFree(intervalOne.data);
   LALFree(intervalTwo.data);
-  LALFree(segmentOne.data);
-  LALFree(segmentTwo.data);
-  LAL_CALL( LALDestroyVector(&status, &(psdTempOne.data)), &status );
-  LAL_CALL( LALDestroyVector(&status, &(psdTempTwo.data)), &status );
+  LALFree(segmentOneA.data);
+  LALFree(segmentOneB.data);
+  LALFree(segmentOneC.data);
+  LALFree(segmentTwoA.data);
+  LALFree(segmentTwoB.data);
+  LALFree(segmentTwoC.data);
+  LAL_CALL( LALDestroyVector(&status, &(streamOne.data)), &status );
+  LAL_CALL( LALDestroyVector(&status, &(streamTwo.data)), &status );
   LALFree(psdOne.data);
   LALFree(psdTwo.data);
-  LAL_CALL( LALCDestroyVector(&status, &(responseTempOne.data)), &status );
-  LAL_CALL( LALCDestroyVector(&status, &(responseTempTwo.data)), &status );
-  LALFree(responseOne.data);
-  LALFree(responseTwo.data);
+  LAL_CALL( LALDestroyVector(&status, &(psdTempOne.data)), &status );
+  LAL_CALL( LALDestroyVector(&status, &(psdTempTwo.data)), &status );
+  LALFree(responseOneA.data);
+  LALFree(responseOneB.data);
+  LALFree(responseOneC.data);
+  LALFree(responseTwoA.data);
+  LALFree(responseTwoB.data);
+  LALFree(responseTwoC.data);
+  LAL_CALL( LALCDestroyVector(&status, &(responseTempOneA.data)), &status );
+  LAL_CALL( LALCDestroyVector(&status, &(responseTempOneB.data)), &status );
+  LAL_CALL( LALCDestroyVector(&status, &(responseTempOneC.data)), &status );
+  LAL_CALL( LALCDestroyVector(&status, &(responseTempTwoA.data)), &status );
+  LAL_CALL( LALCDestroyVector(&status, &(responseTempTwoB.data)), &status );
+  LAL_CALL( LALCDestroyVector(&status, &(responseTempTwoC.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(calInvPSDOne.data)), &status );
   LAL_CALL( LALDestroyVector(&status, &(calInvPSDTwo.data)), &status );
   LAL_CALL( LALCDestroyVector(&status, &(halfCalPSDOne.data)), &status );
