@@ -3,6 +3,7 @@
 /*                                                                               */
 /*                                     X. Siemens                                */
 /*                   (takes in two Fstats file to look for coincidence)          */
+/*                    modified by Bernd Machenschalk for Einstein@Home           */
 /*                                                                               */
 /*                                  UWM - January  2005                          */
 /*********************************************************************************/
@@ -43,10 +44,12 @@ RCSID ("$Id$");
 #endif
 
 #if USE_BOINC
+/* BOINC includes */
 #include "boinc_api.h"
 #include "filesys.h"
-
+/* alias fopen - this will take care of architecture-specific problem handling */
 #define fopen boinc_fopen
+/* this global variable communicates the output filename to the calling routine in CFS */
 extern CHAR *Outputfilename;
 #endif
 
@@ -195,6 +198,11 @@ int main(int argc,char *argv[])
       /* loop iover candidates in first array */
       for (i=0; i < CList1.length; i++)
         {
+#if USE_BOINC
+          /* make sure the cpu time is updated */ 
+          if (boinc_time_to_checkpoint())
+            boinc_checkpoint_completed();
+#endif
           if  (SortedC1[i].f >= PolkaCommandLineArgs.fmin && SortedC1[i].f <= PolkaCommandLineArgs.fmax)
             {
               int iFreq2, iAlpha2,iDelta2;
@@ -346,9 +354,10 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
                   CList1.CtagCounter[CP[k].c1],CList2.CtagCounter[CP[k].c2],CP[k].fa);
         }
     }
+  /* write end marker */
   fprintf(fpOut,"%%DONE\n");    
 #if USE_BOINC
-  /* write end marker */
+  /* make the output filename known to teh boinc main() routine in ComputeFStatistic */
   Outputfilename=resolved_filename;
 #endif
   fclose(fpOut);
