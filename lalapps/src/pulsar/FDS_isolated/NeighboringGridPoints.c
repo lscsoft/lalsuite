@@ -72,6 +72,10 @@ refine the original skyRegion so that there are about "targetNumGridPoints" grid
 void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
 
 
+/**
+ * Refine the skyRegion to search only at neighboring grid points of the 
+ * center of the original skyRegion. 
+ */
 void 
 InitDopplerScanOnRefinedGrid ( LALStatus *status, 
 			       DopplerScanState *theScan,  /*!<  Output DopplerScanState variable includes a refined skyRegion  */ 
