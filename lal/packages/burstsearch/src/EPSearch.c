@@ -454,6 +454,7 @@ EPSearch(
 
 		/*
 		 * Convert the TFTiles into sngl_burst events for output.
+		 * The threhsold cut determined by alpha is applied here
 		 */
 		if (params->tfPlaneMethod == useMultipleTFPlane)
 		  EventAddPoint = TFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
