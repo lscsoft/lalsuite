@@ -11,7 +11,7 @@
 
 #if 0
 <lalVerbatim file="SnglInspiralUtilsCV">
-Author: Brown, D. A.
+Author: Brown, D. A. and Fairhurst, S.
 $Id$
 </lalVerbatim> 
 #endif
@@ -37,7 +37,7 @@ NRCSID( SNGLINSPIRALUTILSC, "$Id$" );
 <lalLaTeX>
 \subsection{Module \texttt{SnglInspiralUtils.c}}
 
-\noindent Blah.
+Provides a set of utilities for manipulating \texttt{snglInspiralTable}s.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -58,7 +58,67 @@ NRCSID( SNGLINSPIRALUTILSC, "$Id$" );
 
 \subsubsection*{Description}
 
-\noindent Blah.
+The function \texttt{LALSortSnglInspiral()} sorts a list of single inspiral
+tables.  The function simply calls qsort with the appropriate comparison
+function, \texttt{comparfunc}.  It then ensures that the head of the sorted
+list is returned.  There then follow several comparison functions for single
+inspiral tables.  \texttt{LALCompareSnglInspiralByMass ()} first compares the
+\texttt{mass1} entry of the two inspiral tables, returning 1 if the first mass
+is larger and -1 if the second is larger.  In the case that the \texttt{mass1}
+fields are equal, a similar comparsion is performed on \texttt{mass2}.  If
+these also agree, 0 is returned.  \texttt{LALCompareSnglInspiralByPsi()}
+compares the \texttt{Psi0} and \texttt{Psi3} fields in two single inspiral
+tables.  The function is analogous to the mass comparison described above.
+\texttt{LALCompareSnglInspiralByTime} compares the end times of two single
+inspiral tables, returnng 1 if the first time is larger, 0 if equal and -1 if
+the second time is larger.
+
+\texttt{LALCompareSnglInspiral()} tests whether two single inspiral tables pass
+a coincidence test.  The coincidence parameters are given by \texttt{params}
+which is a \texttt{SnglInspiralAccuracy} structure.  It tests first that the
+\texttt{ifo} fields are different.  If they are, it then tests for time and
+mass coincidence, where mass coincidence may be any one of
+\texttt{psi0\_and\_psi3}, \texttt{m1\_and\_m2}, \texttt{mchirp\_and\_eta}.
+Finally, if the test is on \texttt{m1\_and\_m2}, consistency of effective
+distances is also checked.  If the two single inspiral tables pass coincidences
+the \texttt{params.match} is set to 1, otherwise it is set to zero.
+
+\texttt{LALClusterSnglInspiralTable ()} clusters single inspiral triggers
+within a time window \texttt{dtimeNS}.  The triggers are compared either by
+\texttt{snr}, \texttt{snr\_and\_chisq} or \texttt{snrsq\_over\_chisq}.  The
+"loudest" trigger, as determined by the selected algorithm, within each time
+window is returned.
+
+\texttt{LALTimeCutSingleInspiral()} takes in a linked list of single inspiral
+tables and returns only those which occur after the given \texttt{startTime}
+and before the \texttt{endTime}.
+
+\texttt{LALIfoScanSingleInspiral()} scans through a linked list of single
+inspiral tables and returns those which are from the requested \texttt{ifo}.
+The \texttt{output} is a pointer to the head of a linked list of single
+inspiral tables for the specified instrument.
+
+\texttt{LALPlayTestSingleInspiral()} tests whether single inspiral events
+occured in playground or non-playground times.  It then returns the requested
+subset of events which occurred in the times specified by \texttt{dataType},
+which must be one of \texttt{playground\_only}, \texttt{exclude\_play} or
+\texttt{all\_data}.  
+
+\texttt{LALCreateTrigBank()} takes in a list of single inspiral tables and
+returns a template bank.  The function tests whether a given template produced
+multiple triggers.  If it did, only one copy of the template is retained.
+Triggers are tested for coincidence in \texttt{m1\_and\_m2} or
+\texttt{psi0\_and\_psi3}. 
+
+\texttt{LALIncaCoincidenceTest()} performs a coincidence test between triggers
+from two interferometers.  It tests pairs of events for both time and mass
+coincidence and returns two equal length lists of coincident events.  Note that
+if an event in one detector is coincident with several events in the other 
+detector, the output lists will contain several copies of this event.
+
+\texttt{LALTamaCoincidenceTest()} also performs a coincidence test between
+triggers from two interferometers, but with a slightly different coincidence test.  First, it locates all triggers in the second instrument which are coincident with triggers in the first instrument.  Then, it clusters these triggers using the appropriate \texttt{clusterchioce}.  Finally, it tests for mass coincidence between the first trigger and the clustered trigger from the second instrument.
+
 
 \subsubsection*{Algorithm}
 
@@ -66,7 +126,7 @@ NRCSID( SNGLINSPIRALUTILSC, "$Id$" );
 
 \subsubsection*{Uses}
 
-\noindent None.
+\noindent LALCalloc, LALFree, LALGPStoINT8, LALINT8NanoSecIsPlayground.
 
 \subsubsection*{Notes}
 %% Any relevant notes.
@@ -249,14 +309,39 @@ LALCompareSnglInspiral (
   INITSTATUS( status, "LALCompareSnglInspiral", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
-  params->match = 0;
+  params->match = 1;
+
+  /* check that triggers come from different IFOs */
+  if( strcmp(aPtr->ifo, bPtr->ifo) )
+  {
+    LALInfo( status, "Triggers from different IFOs");
+    params->match = 1;
+  }
+  else
+  {
+    LALInfo( status, "Triggers from same IFO");
+    params->match = 0;
+  }
 
   LALGPStoINT8( status->statusPtr, &ta, &(aPtr->end_time) );
   LALGPStoINT8( status->statusPtr, &tb, &(bPtr->end_time) );
 
   /* compare on trigger time coincidence */
-  if ( labs( ta - tb ) < params->dt )
+  if ( labs( ta - tb ) < params->dt && params->match)
   {
+    LALInfo( status, "Triggers pass time coincidence test");
+    params->match = 1;
+  }
+  else if ( labs( ta - tb ) < params->dt && params->match)
+  {
+    LALInfo( status, "Triggers fail time coincidence test" );
+    params->match = 0;
+  }
+
+  /* perform the mass parameter test */
+  if( params->match )
+  {
+    /* compare psi0 and psi3 parameters */
     if ( params->test == psi0_and_psi3 )
     {
       dpsi0 = fabs( aPtr->psi0 - bPtr->psi0 );
@@ -264,12 +349,13 @@ LALCompareSnglInspiral (
 
       if ( dpsi0 <= params->dpsi0 && dpsi3 <= params->dpsi3 )
       {
-        params->match = 1;
         LALInfo( status, "Triggers are coincident in psi0 and psi3" );
+        params->match = 1;
       }
       else
       {
         LALInfo( status, "Triggers are not coincident in psi0 and psi3" );
+        params->match = 0;
       }
     }
     else if ( params->test == m1_and_m2 )
@@ -280,21 +366,13 @@ LALCompareSnglInspiral (
       /* compare mass1 and mass2 parameters */
       if ( dm1 <= params->dm && dm2 <= params->dm )
       {
-        if ( fabs( 
-              (aPtr->eff_distance - bPtr->eff_distance) / aPtr->eff_distance
-              ) < params->epsilon / bPtr->snr + params->kappa )
-        {
-          params->match = 1;
-          LALInfo( status, "Triggers are coincident in eff_distance" );
-        }
-        else
-        {
-          LALInfo( status, "Triggers fail eff_distance coincidence test" );
-        }
+        LALInfo( status, "Triggers are coincident in mass1 and mass2" );
+        params->match = 1;
       }
       else
       {
-        LALInfo( status, "Triggers fail mass coincidence test" );
+        LALInfo( status, "Triggers are not coincident in mass1 and mass2" );
+        params->match = 0;
       }
     }
     else if ( params->test == mchirp_and_eta )
@@ -305,22 +383,36 @@ LALCompareSnglInspiral (
       /* compare mchirp and eta parameters */
       if ( dmchirp <= params->dmchirp && deta <= params->deta )
       {
-        params->match = 1;
         LALInfo( status, "Triggers are coincident in mchirp and eta" );
+        params->match = 1;
       }
       else
       {
         LALInfo( status, "Triggers fail mchirp, eta coincidence test" );
+        params->match = 0;
       }
     }
     else
     {
       LALInfo( status, "error: unknown test\n" );
+      params->match = 0;
     }
   }
-  else
+
+  /* check for distance consistency */
+  if ( params->match && params->test == m1_and_m2 )
   {
-    LALInfo( status, "Triggers fail time coincidence test" );
+    if ( fabs( (aPtr->eff_distance - bPtr->eff_distance) / aPtr->eff_distance) 
+        < params->epsilon / bPtr->snr + params->kappa )
+    {
+      LALInfo( status, "Triggers are coincident in eff_distance" );
+      params->match = 1;
+    }
+    else
+    {
+      LALInfo( status, "Triggers fail eff_distance coincidence test" );
+      params->match = 0;
+    }
   }
 
   DETATCHSTATUSPTR (status);
@@ -480,7 +572,9 @@ LALIfoScanSingleInspiral(
   ATTATCHSTATUSPTR( status );
 
   /* check that output is null and input non-null */
-  ASSERT( !output, status, 
+  ASSERT( output, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( !(*output), status, 
       LIGOMETADATAUTILSH_ENNUL, LIGOMETADATAUTILSH_MSGENNUL );
   ASSERT( input, status, 
       LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
@@ -498,12 +592,12 @@ LALIfoScanSingleInspiral(
       if ( ! output  )
       {
         *output = keptEvent = (SnglInspiralTable *) 
-          LALMalloc( sizeof(SnglInspiralTable) );
+          LALCalloc( 1, sizeof(SnglInspiralTable) );
       }
       else
       {
         keptEvent = keptEvent->next = (SnglInspiralTable *) 
-          LALMalloc( sizeof(SnglInspiralTable) );
+          LALCalloc( 1, sizeof(SnglInspiralTable) );
       }
       keptEvent = thisEvent;
       keptEvent->next = NULL;
@@ -802,12 +896,12 @@ LALIncaCoincidenceTest(
           if ( ! coincidentEvents[j] )
           {
             coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
-              LALMalloc( sizeof(SnglInspiralTable) );
+              LALCalloc( 1, sizeof(SnglInspiralTable) );
           }
           else
           {
             outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
-              LALMalloc( sizeof(SnglInspiralTable) );
+              LALCalloc( 1, sizeof(SnglInspiralTable) );
           }
 
           memcpy( outEvent[j], currentTrigger[j], sizeof(SnglInspiralTable) );
@@ -917,12 +1011,12 @@ LALTamaCoincidenceTest(
         if ( ! timeCoincHead )
         {
           timeCoincHead = thisTimeCoinc = (SnglInspiralTable *) 
-            LALMalloc( sizeof(SnglInspiralTable) );
+            LALCalloc( 1, sizeof(SnglInspiralTable) );
         }
         else
         {
           thisTimeCoinc = thisTimeCoinc->next = (SnglInspiralTable *) 
-            LALMalloc( sizeof(SnglInspiralTable) );
+            LALCalloc( 1, sizeof(SnglInspiralTable) );
         }
 
         memcpy( thisTimeCoinc, currentTrigger[1], 
@@ -931,8 +1025,8 @@ LALTamaCoincidenceTest(
         thisTimeCoinc->next = NULL;
       }
       currentTrigger[1] = currentTrigger[1]->next;
-     
-      
+
+
     }  /* end loop over current events */
 
 
@@ -944,7 +1038,7 @@ LALTamaCoincidenceTest(
 
       currentTrigger[1] = timeCoincHead;
 
-      
+
       /* call the LAL function which compares events parameters */
       LALCompareSnglInspiral( status->statusPtr, currentTrigger[0],
           currentTrigger[1], errorParams );
@@ -959,19 +1053,19 @@ LALTamaCoincidenceTest(
           if ( ! coincidentEvents[j] )
           {
             coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
-              LALMalloc( sizeof(SnglInspiralTable) );
+              LALCalloc( 1, sizeof(SnglInspiralTable) );
           }
           else
           {
             outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
-              LALMalloc( sizeof(SnglInspiralTable) );
+              LALCalloc( 1, sizeof(SnglInspiralTable) );
           }
 
           memcpy( outEvent[j], currentTrigger[j], sizeof(SnglInspiralTable) );
           outEvent[j]->next = NULL;
         }  
       }
-      
+
       /* reset the list of time coincident triggers to null */
       LALFree( timeCoincHead );
       timeCoincHead = NULL;
