@@ -119,9 +119,6 @@ substantial speedups for many FFTs, which seems the most likely situation.
 #include <lal/GeneratePulsarSignal.h>
 
 /*----------------------------------------------------------------------*/
-/* prototypes for internal functions */
-void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
-static void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
 static LIGOTimeGPSVector* make_timestamps (const LIGOTimeGPS *tStart, REAL8 duration, REAL8 Tsft);
 static int check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1);
 static void checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF);
@@ -153,7 +150,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
   CoherentGW sourceSignal = emptySignal;
   DetectorResponse detector;
   REAL8 SSBduration;
-  LIGOTimeGPS tmpTime = {0,0};
+  LIGOTimeGPS t0, t1, tmpTime;
   REAL4TimeSeries *output;
   UINT4 i;
 
@@ -189,8 +186,9 @@ LALGeneratePulsarSignal (LALStatus *stat,
     sourceParams.rPeriNorm = 0.0;		/* this defines an isolated pulsar */
 
 
-  /* pulsar reference-time in SSB frame !*/
-  sourceParams.spinEpoch = params->pulsar.tRef;
+  /* pulsar reference-time in SSB frame(!): tRef is in UTC -> convert  */
+  TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, params->pulsar.tRef, params), stat);
+  sourceParams.spinEpoch = tmpTime;
 
   /* sampling-timestep and length for source-parameters */
   sourceParams.deltaT = 60;	/* in seconds; hardcoded default from makefakedata_v2 
@@ -199,18 +197,21 @@ LALGeneratePulsarSignal (LALStatus *stat,
 				 * which will then be used for interpolation */
 
   /* start-time in SSB time */
-  TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, params->startTimeGPS, params), stat);
-  sourceParams.epoch = tmpTime;
-  sourceParams.epoch.gpsSeconds -= (UINT4)sourceParams.deltaT; /* start one time-step earlier to be safe */
+  TRY (LALConvertGPS2SSB (stat->statusPtr, &t0, params->startTimeGPS, params), stat);
+  t0.gpsSeconds -= (UINT4)sourceParams.deltaT; /* start one time-step earlier to be safe */
 
-  tmpTime = params->startTimeGPS;
-  TRY ( LALAddFloatToGPS (stat->statusPtr, &tmpTime, &tmpTime, params->duration), stat);
 
-  TRY (LALConvertGPS2SSB (stat->statusPtr, &tmpTime, tmpTime, params), stat);	 /* convert time to SSB */
+  /* end time in SSB */
+  t1 = params->startTimeGPS;
+  TRY ( LALAddFloatToGPS (stat->statusPtr, &t1, &t1, params->duration), stat);
+  TRY (LALConvertGPS2SSB (stat->statusPtr, &t1, t1, params), stat);	 /* convert time to SSB */
 
-  TRY (LALDeltaFloatGPS (stat->statusPtr, &SSBduration, &tmpTime, &(sourceParams.spinEpoch)), stat);
+  /* get duration of source-signal */
+  TRY (LALDeltaFloatGPS (stat->statusPtr, &SSBduration, &t1, &t0), stat);
+  SSBduration += 2.0 * sourceParams.deltaT; /* add two time-steps to be safe */
+
+  sourceParams.epoch = t0; 
   sourceParams.length = (UINT4) ceil( SSBduration / sourceParams.deltaT );
-  sourceParams.length += 2 * sourceParams.deltaT; /* add two time-steps to be safe */
 
   /* we use frequency-spindowns, but GenerateSpinOrbitCW wants it f0-normalized,
      so we have to do that here: */
@@ -911,275 +912,6 @@ checkNoiseSFTs (LALStatus *stat, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL
 } /* checkNoiseSFTs() */
 
 
-
-/***********************************************************************
- *
- * the following are temporary DEBUGGING + TESTING functions only
- *
- ***********************************************************************/
-
-/*----------------------------------------------------------------------
- * export a REAL4 time-series in an xmgrace graphics file 
- *----------------------------------------------------------------------*/
-void
-PrintR4TimeSeries (LALStatus *stat, const REAL4TimeSeries *series, const CHAR *fname)
-{
-  FILE *fp = NULL;
-  UINT4 set;
-  const CHAR *xmgrHeader = 
-    "@version 50103\n"
-    "@xaxis label \"T (sec)\"\n"
-    "@yaxis label \"A\"\n";
-
-  /* Set up shop. */
-  INITSTATUS( stat, "PrintR4TimeSeries", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR( stat );
-
-  fp = fopen (fname, "w");
-
-  if( !fp ) {
-    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
-  }
-  
-  fprintf (fp, xmgrHeader);
-  fprintf (fp, "@title \"REAL4 Time-Series: %s\"\n", series->name);
-  fprintf (fp, "@subtitle \"GPS-start: %f, f0 = %e\"\n", 
-	   1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds / 1.0e9, series->f0);
-
-  /* Print set header. */
-  set = 0;
-  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
-  fprintf( fp, "@s%d color (0,0,0)\n", set );
-
-  write_timeSeriesR4 (fp, series);
-      
-  fclose(fp);
-
-  DETATCHSTATUSPTR( stat );
-  RETURN (stat);
-
-} /* PrintR4TimeSeries() */
-
-/*----------------------------------------------------------------------
- * write a CoherentGW type signal into an xmgrace file
- *----------------------------------------------------------------------*/
-void
-PrintGWSignal (LALStatus *stat, const CoherentGW *signal, const CHAR *fname)
-{
-  FILE *fp;
-  UINT4 set;
-  const CHAR *xmgrHeader = 
-    "@version 50103\n"
-    "@xaxis label \"T (sec)\"\n"
-    "@yaxis label \"A\"\n";
-
-
-  INITSTATUS( stat, "PrintGWSignal", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR( stat );
-
-  fp = fopen (fname, "w");
-
-  if( !fp ) {
-    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
-  }
-
-  fprintf (fp, xmgrHeader);
-  fprintf (fp, "@title \"GW source signal\"\n");
-  fprintf (fp, "@subtitle \"position: (alpha,delta) = (%f, %f), psi = %f\"\n", 
-	   signal->position.longitude, signal->position.latitude, signal->psi);
-
-
-  /* Print set header. */
-  set = 0;
-  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
-  fprintf( fp, "@s%d color (0,0,0)\n", set );
-  write_timeSeriesR4 (fp, signal->f);
-
-  /* Print set header. */
-  set ++;
-  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
-  fprintf( fp, "@s%d color (0,0,0)\n", set );
-  write_timeSeriesR8 (fp, signal->phi);
-
-  fclose (fp);
-
-  DETATCHSTATUSPTR( stat );
-  RETURN (stat);
-
-} /* PrintGWSignal() */
-
-
-/* internal helper-function */
-void
-write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series)
-{
-  REAL8 timestamp; 
-  UINT4 i;
-
-  if (series == NULL)
-    {
-      printf ("\nempty input!\n");
-      return; 
-    }
-
-  timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
-
-  for( i = 0; i < series->data->length; i++)
-    {
-      fprintf( fp, "%16.9f %e\n", timestamp, series->data->data[i] );
-      timestamp += series->deltaT;
-    }
-
-  return;
-
-} /* write_timeSeriesR4() */
-
-void
-write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series)
-{
-  REAL8 timestamp; 
-  UINT4 i;
-
-  timestamp = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
-
-  for( i = 0; i < series->data->length; i++)
-    {
-      fprintf( fp, "%f %e\n", timestamp, series->data->data[i] );
-      timestamp += series->deltaT;
-    }
-
-  return;
-
-} /* write_timeSeriesR4() */
-
-
-/* write an SFT in xmgrace-readable format */
-void 
-LALwriteSFTtoXMGR (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
-{
-  FILE *fp;
-
-  REAL4 val;
-  UINT4 i;
-  REAL8 Tsft, freqBand;
-  REAL8 f0, df, ff;
-  UINT4 set, nsamples;
-
-  const CHAR *xmgrHeader = 
-    "@version 50103\n"
-    "@xaxis label \"f (Hz)\"\n";
-
-  INITSTATUS( stat, "LALwriteSFTtoXMGR", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR( stat );
-
-  fp = fopen (fname, "w");
-
-  if( !fp ) {
-    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
-  }
-
-
-  f0 = sft->f0;
-  df = sft->deltaF;
-  nsamples = sft->data->length;
-  Tsft = 1.0 / sft->deltaF;
-  freqBand = nsamples * df;
-
-  fprintf (fp, xmgrHeader);
-  fprintf (fp, "@subtitle \"epoch = (%d s, %d ns), Tsft = %f\"\n", 
-	   sft->epoch.gpsSeconds, sft->epoch.gpsNanoSeconds, Tsft);
-
-  set = 0;
-  /* Print set header. */
-  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
-  fprintf( fp, "@s%d color (0,0,1)\n", set );
-  for (i=0; i < nsamples; i++)
-    {
-      ff = f0 + i*df;
-      val = sft->data->data[i].re;
-
-      fprintf(fp, "%f %e\n", ff, val);
-        
-    } /* for i < nsamples */
-
-  set ++;
-  /* Print set header. */
-  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
-  fprintf( fp, "@s%d color (0,1,0)\n", set );
-  for (i=0; i < nsamples; i++)
-    {
-      ff = f0 + i*df;
-      val = sft->data->data[i].im;
-
-      fprintf(fp, "%f %e\n", ff, val);
-        
-    } /* for i < nsamples */
-
-  set ++;
-  /* Print set header. */
-  fprintf( fp, "\n@target G0.S%d\n@type xy\n", set);
-  fprintf( fp, "@s%d color (1,0,0)\n", set );
-  for (i=0; i < nsamples; i++)
-    {
-      ff = f0 + i*df;
-      val = (sft->data->data[i].re * sft->data->data[i].re + sft->data->data[i].im*sft->data->data[i].im) / freqBand;
-      
-      fprintf(fp, "%f %e\n", ff, val);
-        
-    } /* for i < nsamples */
-
-  
-  fclose(fp);
-
-  DETATCHSTATUSPTR( stat );
-  RETURN (stat);
-  
-} /* write_SFT() */
-
-
-/* dump an SFT into a text-file */
-void 
-dump_SFT (LALStatus *stat, const SFTtype *sft, const CHAR *fname)
-{
-  FILE *fp;
-
-  REAL4 valre, valim;
-  UINT4 i;
-  REAL8 Tsft, freqBand;
-  REAL8 f0, df, ff;
-  UINT4 nsamples;
-
-  INITSTATUS( stat, "dump_SFT", GENERATEPULSARSIGNALC);
-  ATTATCHSTATUSPTR( stat );
-
-  fp = fopen (fname, "w");
-
-  if( !fp ) {
-    ABORT (stat, GENERATEPULSARSIGNALH_ESYS, GENERATEPULSARSIGNALH_MSGESYS);
-  }
-
-
-  f0 = sft->f0;
-  df = sft->deltaF;
-  nsamples = sft->data->length;
-  Tsft = 1.0 / sft->deltaF;
-  freqBand = nsamples * df;
-
-  for (i=0; i < nsamples; i++)
-    {
-      ff = f0 + i*df;
-      valre = sft->data->data[i].re;
-      valim = sft->data->data[i].im;
-      fprintf(fp, "%f %e %e\n", ff, valre, valim);
-        
-    } /* for i < nsamples */
-  
-  fclose(fp);
-
-  DETATCHSTATUSPTR( stat );
-  RETURN (stat);
-  
-} /* dump_SFT() */
 
 /*----------------------------------------------------------------------
  * Yousuke's phase-correction function, taken from makefakedata_v2
