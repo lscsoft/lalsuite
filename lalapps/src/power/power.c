@@ -261,6 +261,54 @@ static void makeWhiteNoise(
 
 /*
  * ============================================================================
+ *                               MDC injections
+ * ============================================================================
+ */
+
+static void add_mdc_injections(LALStatus *stat, const char *mdcCacheFile, REAL4TimeSeries *series)
+{
+	REAL4TimeSeries *mdc;
+	FrStream *frstream = NULL;
+	FrCache *frcache = NULL;
+	size_t i;
+
+	if(options.verbose)
+		fprintf(stderr, "Using MDC frames for injections\n");
+
+	/* open mdc cache */
+	LAL_CALL(LALFrCacheImport(stat, &frcache, mdcCacheFile), stat);
+	LAL_CALL(LALFrCacheOpen(stat, &frstream, frcache), stat);
+	LAL_CALL(LALDestroyFrCache(stat, &frcache), stat);
+
+	/* create and initialize the mdc time series vector */
+	LAL_CALL(LALCreateREAL4TimeSeries(stat, &mdc, mdcparams->channelName, series->epoch, series->f0, series->deltaT, series->sampleUnits, series->data->length), stat);
+
+	/* get the mdc signal data */
+	LAL_CALL(LALFrGetREAL4TimeSeries(stat, mdc, &mdcchannelIn, frstream), stat);
+	mdc->epoch = series->epoch;
+	LAL_CALL(LALFrSeek(stat, &mdc->epoch, frstream), stat);
+	LAL_CALL(LALFrGetREAL4TimeSeries(stat, mdc, &mdcchannelIn, frstream), stat);
+
+	/* write diagnostic info to disk */
+	if(options.printData)
+		LALPrintTimeSeries(mdc, "./timeseriesmdc.dat");
+
+	/* add the mdc signal to the given time series */
+	for(i = 0; i < series->data->length; i++)
+		series->data->data[i] += mdc->data->data[i];
+
+	/* write diagnostic info to disk */
+	if(options.printData)
+		LALPrintTimeSeries(series, "./timeseriesasqmdc.dat");
+
+	/* clean up */
+	LAL_CALL(LALDestroyREAL4TimeSeries(stat, mdc), stat);
+	LAL_CALL(LALFrClose(stat, &frstream), stat);
+}
+
+
+/*
+ * ============================================================================
  *                              Event clustering
  * ============================================================================
  */
@@ -426,33 +474,36 @@ int main( int argc, char *argv[])
 			makeWhiteNoise(&stat, series, options.seed, options.noiseAmpl);
 		}
 
-      /* write diagnostic info to disk */
-      if(options.printData)
-        LALPrintTimeSeries(series, "./timeseriesasq.dat");
+		/* write diagnostic info to disk */
+		if(options.printData)
+			LALPrintTimeSeries(series, "./timeseriesasq.dat");
 
-      /* create storage for the response function */
-      if(calCacheFile) {
-        size_t i;
-        const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
+		/* create the response function */
+		if(calCacheFile) {
+			size_t i;
+			const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
-	LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&stat, &resp, channelIn.name, epoch, 0.0, (REAL8) frameSampleRate / (REAL8) numPoints, strainPerCount, numPoints / 2 + 1), &stat);
+			LAL_CALL(LALCreateCOMPLEX8FrequencySeries(&stat, &resp, channelIn.name, epoch, 0.0, (REAL8) frameSampleRate / (REAL8) numPoints, strainPerCount, numPoints / 2 + 1), &stat);
 
-        /* generate the response function for the current time */
-        if(options.verbose) 
-          fprintf(stderr, "generating response at time %d sec %d ns\n", resp->epoch.gpsSeconds, resp->epoch.gpsNanoSeconds );
+			/* generate the response function for the current
+			 * time */
+			if(options.verbose) 
+				fprintf(stderr, "generating response at time %d sec %d ns\n", resp->epoch.gpsSeconds, resp->epoch.gpsNanoSeconds );
 
-        /* getting the response is handled differently for geo */
-        if(geodata)
-          for(i = 0; i < resp->data->length; i++) {
-            resp->data->data[i].re = 1.0;
-            resp->data->data[i].im = 0.0;
-        } else {
-          CalibrationUpdateParams calfacts;
-          memset(&calfacts, 0, sizeof(calfacts));
-          calfacts.ifo = ifo;
-          LAL_CALL(LALExtractFrameResponse(&stat, resp, calCacheFile, &calfacts), &stat);
-        }
-      } 
+			/* getting the response is handled differently for
+			 * geo */
+			if(geodata)
+				for(i = 0; i < resp->data->length; i++) {
+					resp->data->data[i].re = 1.0;
+					resp->data->data[i].im = 0.0;
+				}
+			else {
+				CalibrationUpdateParams calfacts;
+				memset(&calfacts, 0, sizeof(calfacts));
+				calfacts.ifo = ifo;
+				LAL_CALL(LALExtractFrameResponse(&stat, resp, calCacheFile, &calfacts), &stat);
+			}
+		} 
 
       /*****************************************************************
        * Add injections into the time series:  
@@ -495,47 +546,12 @@ int main( int argc, char *argv[])
           LALPrintTimeSeries(series, "./injections.dat");
       }
 
-      /* if one wants to use mdc signals for injections */
+		/*
+		 * Add MDC injections if requested.
+		 */
 
-      if(mdcCacheFile) {
-        REAL4TimeSeries *mdcSeries;
-	FrStream *stream = NULL;
-	FrCache *frameCache = NULL;
-        size_t i;
-
-        if(options.verbose)
-          fprintf(stderr, "Using MDC frames for injections\n");
-
-        /* open mdc cache */
-        LAL_CALL(LALFrCacheImport(&stat, &frameCache, mdcCacheFile), &stat);
-        LAL_CALL(LALFrCacheOpen(&stat, &stream, frameCache), &stat);
-        LAL_CALL(LALDestroyFrCache(&stat, &frameCache), &stat);
-
-        /* create and initialize the mdc time series vector */
-	LAL_CALL(LALCreateREAL4TimeSeries(&stat, &mdcSeries, mdcparams->channelName, series->epoch, series->f0, series->deltaT, series->sampleUnits, series->data->length), &stat);
-
-        /* get the mdc signal data */
-        LAL_CALL(LALFrGetREAL4TimeSeries( &stat, mdcSeries, &mdcchannelIn, stream), &stat);
-        mdcSeries->epoch = epoch;
-        LAL_CALL(LALFrSeek(&stat, &mdcSeries->epoch, stream), &stat);
-        LAL_CALL(LALFrGetREAL4TimeSeries(&stat, mdcSeries, &mdcchannelIn, stream), &stat);
-
-        /* write diagnostic info to disk */
-        if(options.printData)
-          LALPrintTimeSeries(mdcSeries, "./timeseriesmdc.dat");
-
-        /* add the signal to the As_Q data */
-        for(i = 0; i < series->data->length; i++)
-          series->data->data[i] += mdcSeries->data->data[i];
-
-        /* write diagnostic info to disk */
-        if(options.printData)
-          LALPrintTimeSeries(series, "./timeseriesasqmdc.dat");
-
-        /* clean up */
-        LAL_CALL(LALDestroyREAL4TimeSeries(&stat, mdcSeries), &stat);
-        LAL_CALL(LALFrClose(&stat, &stream), &stat);
-      }
+		if(mdcCacheFile)
+			add_mdc_injections(&stat, mdcCacheFile, series);
 
 		/*
 		 * Condition data.
