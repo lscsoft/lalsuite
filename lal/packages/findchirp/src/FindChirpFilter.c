@@ -968,7 +968,7 @@ LALFindChirpFilterSegment (
 
           /* compute the time since the snr crossing */
           thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
-          thisEvent->event_duration /= (REAL8) deltaT;
+          thisEvent->event_duration *= (REAL8) deltaT;
           
           /* store the start of the crossing */
           eventStartIdx = j;
@@ -1085,7 +1085,7 @@ LALFindChirpFilterSegment (
 
     /* compute the time since the snr crossing */
     thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
-    thisEvent->event_duration /= (REAL8) deltaT;
+    thisEvent->event_duration *= (REAL8) deltaT;
   }    
 
 
@@ -1592,8 +1592,9 @@ LALFindChirpBCVFilterSegment (
            thisEvent->snr = sqrt( thisEvent->snr );
 
            /* compute the time since the snr crossing */
-           thisEvent->event_duration= (REAL8) timeIndex - (REAL8) eventStartIdx;
-	   thisEvent->event_duration /= (REAL8) deltaT;
+           thisEvent->event_duration = 
+             (REAL8) timeIndex - (REAL8) eventStartIdx;
+	   thisEvent->event_duration *= (REAL8) deltaT;
 
            /* store the start of the crossing */
            eventStartIdx = j;
@@ -1692,7 +1693,7 @@ LALFindChirpBCVFilterSegment (
 
       /* compute the time since the snr crossing */
       thisEvent->event_duration = (REAL8) timeIndex - (REAL8) eventStartIdx;
-      thisEvent->event_duration /= (REAL8) deltaT;
+      thisEvent->event_duration *= (REAL8) deltaT;
   }
 
 
