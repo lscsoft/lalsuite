@@ -89,7 +89,7 @@ enum { ascii_format, xml_format, frame_format };
 /* global variables: these are the program parameters */
 ProcessParamsTable *procpartab;
 
-LIGOTimeGPS dur = { 0, 0};
+CalibrationUpdateParams calfacts;
 LIGOTimeGPS tstart;
 LIGOTimeGPS tend;
 double duration = 64; /* default is to analyze 64 seconds of data */
@@ -926,7 +926,9 @@ COMPLEX8FrequencySeries *get_response( UINT4 segsz, double dt, const char *ifo )
   if ( frcalib ) /* use calibration cache file to extract & update response */
   {
     vrbmsg( "get calibration data from frames in cache file %s", frcalib );
-    LAL_CALL( LALExtractFrameResponse( &status, response, frcalib, ifo, &dur ),
+    memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+    calfacts.ifo = ifo;
+    LAL_CALL( LALExtractFrameResponse( &status, response, frcalib, &calfacts ),
         &status );
   }
   else /* get fixed response function from an ascii file */
