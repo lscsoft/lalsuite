@@ -4,41 +4,90 @@ $Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
-\subsection{Module \texttt{GeneratePulsarSignal}}
+\subsection{Module \texttt{GeneratePulsarSignal.c}}
 \label{ss:GeneratePulsarSignal.c}
 
-Module to generate subsequent sky-position.
+Module to generate simulated pulsar-signals.
 
 \subsubsection*{Prototypes}
-\input{GeneratePulsarSignalCP}
 \idx{LALGeneratePulsarSignal()}
 \idx{LALSignalToSFTs()}
+\idx{LALConvertSSB2GPS()}
+\idx{LALConvertGPS2SSB()}
 \idx{LALCreateSFTVector()}
 \idx{LALDestroySFTVector()}
 \idx{LALDestroyTimestampVector()}
-\idx{LALConvertSSB2GPS()}
-\idx{LALConvertGPS2SSB()}
 \idx{LALNormalizeSkyPosition()}
 
+\input{GeneratePulsarSignalCP}
+
+\newpage
 \subsubsection*{Description}
 
-This module generates a fake pulsar-signal, either for an isolated or a binary pulsar. 
+\begin{itemize}
+\item The main function \verb+LALGeneratePulsarSignal()+ generates a fake
+pulsar-signal, either for an isolated or a binary pulsar. It returns a
+time-series with the generated signal as received by the detector. 
+
+\item The time-series can then be turned into a vector of short time-base FFTs
+(so-called "SFTs") by using the function \verb+LALSignalToSFTs()+.
+These SFTs are the data-format used by most frequency-domain pulsar codes,
+therefore these functions can be directly used in a Monte-Carlo
+injection driver. 
+\end{itemize}
+
+
+This module also contains a few more general-purpose helper-functions:
+
+\begin{itemize}
+\item Namely, \verb+LALConvertSSB2GPS()+ and \verb+LALConvertGPS2SSB()+
+which convert arrival times for a given source (not necessarily a
+pulsar!) the detector ("GPS") and the solar-system barycenter
+("SSB"). 
+NOTE: only the source-location (\verb+params->pulsar.position+), the
+detector-site (\verb+params->site+) and the ephemeris-data
+(\verb+params->ephemerides+)are used from the
+\verb+PulsarSignalParams+-structure.  
+
+\item Furthermore, \verb+LALCreateSFTVector()+ and\verb+LALDestroySFTVector()+ 
+respectively allocate and free an SFT-vector. The API is identical to
+the LAL-factories (cf.~\ref{s:AVFactories.h}).
+Similarly, \verb+LALDestroyTimestampVector()+ frees a bunch of
+GPS-timestamps.
+
+\item Finally, \verb+LALNormalizeSkyPosition()+ "normalizes" any given
+(spherical) sky-position (in radians), which means it projects the
+angles into $[0, 2\pi) \times [-\pi/2, \pi/2]$ if they lie outside.
+\end{itemize}
 
 \subsubsection*{Algorithm}
 
+\verb+LALGeneratePulsarSignal()+ is basically a wrapper for the two
+LAL-functions \verb+GenerateSpinOrbitCW()+
+(cf.~\ref{ss:GenerateSpinOrbitCW.c}) to produce the source-signal, and
+\verb+LALSimulateCoherentGW()+ (cf.~\ref{ss:SimulateCoherentGW.c}) to
+turn it into a time-series at the detector.
+
+
+\verb+LALSignalToSFTs()+ uses \verb+LALForwardRealFFT()+
+(cf.~\ref{ss:RealFFT.c}) appropriately on the input-timeseries to 
+produce the required output-SFTs. 
+
+NOTE: handling of FFTW-plan
+
 \subsubsection*{Uses}
 \begin{verbatim}
-LALGenerateSpinOrbitCW()	LALSimulateCoherentGW()
-LALBarycenterEarth() 		LALBarycenter()
-LALCreateForwardRealFFTPlan() 	LALDestroyRealFFTPlan()
+LALGenerateSpinOrbitCW()        LALSimulateCoherentGW()
+LALBarycenterEarth()            LALBarycenter()
+LALAddFloatToGPS()              LALDeltaFloatGPS()
+LALCreateForwardRealFFTPlan()   LALDestroyRealFFTPlan()
 LALForwardRealFFT()
-LALAddFloatToGPS() 		LALDeltaFloatGPS()
-LALCalloc()			LALFree()
-LALDCreateVector()		LALDDestroyVector()
-LALCCreateVector()		LALCDestroyVector()
-LALCreateVector()
-LALSDestroyVector() 		LALSDestroyVectorSequence()
-LALPrintError()
+
+LALCalloc()                     LALFree()
+LALDCreateVector()              LALDDestroyVector()
+LALCCreateVector()              LALCDestroyVector()
+LALCreateVector()               LALSDestroyVector()
+LALSDestroyVectorSequence()     LALPrintError()
 \end{verbatim}
 
 \subsubsection*{Notes}
@@ -82,6 +131,7 @@ static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining
  * generate a time-series at the detector for a given pulsar
  ***********************************************************************/
 /* <lalVerbatim file="GeneratePulsarSignalCP"> */
+/* --------------- the central functions of this module --------------- */
 void
 LALGeneratePulsarSignal (LALStatus *stat, 
 			 REAL4TimeSeries **signal, 	   /* output time-series */
@@ -134,7 +184,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
   sourceParams.deltaT = 60;	/* in seconds; hardcoded default from makefakedata_v2 */
 
   /* start-time in SSB time */
-  TRY (ConvertGPS2SSB (stat->statusPtr, &time, params->startTimeGPS, params), stat);
+  TRY (LALConvertGPS2SSB (stat->statusPtr, &time, params->startTimeGPS, params), stat);
   sourceParams.epoch = time;
   /* ----------
      FIXME: argh, circumvent some mysterious bug in SimulateCoherentGW()... */
@@ -143,7 +193,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
 
   time = params->startTimeGPS;
   time.gpsSeconds += params->duration;
-  TRY (ConvertGPS2SSB (stat->statusPtr, &time, time, params), stat);	 /* convert time to SSB */
+  TRY (LALConvertGPS2SSB (stat->statusPtr, &time, time, params), stat);	 /* convert time to SSB */
   SSBduration = time.gpsSeconds - sourceParams.spinEpoch.gpsSeconds;
   sourceParams.length = (UINT4)( 1.0* SSBduration / sourceParams.deltaT );
   /* ----------
@@ -192,7 +242,7 @@ LALGeneratePulsarSignal (LALStatus *stat,
   /* we need to set the heterodyne epoch in GPS time, but we want to use
    * the pulsar reference-time for that (which is in SSB), so we have to convert it first
    */
-  TRY ( ConvertSSB2GPS (stat->statusPtr, &time, params->pulsar.TRefSSB, params), stat);
+  TRY ( LALConvertSSB2GPS (stat->statusPtr, &time, params->pulsar.TRefSSB, params), stat);
   detector.heterodyneEpoch = time;
   
   /* ok, we  need to prepare the output time-series */
@@ -243,12 +293,13 @@ LALSignalToSFTs (LALStatus *stat,
   UINT4 numSFTs;			/* number of SFTs */
   UINT4 numSamples;			/* number of time-samples in each Tsft */
   UINT4 iSFT;
-  REAL8 Band, samples, f0, deltaF;
+  REAL8 Band, samplesb2, f0, deltaF;
   RealFFTPlan *pfwd = NULL;
   LIGOTimeGPSVector *timestamps = NULL;
   REAL4Vector timeStretch = {0,0};
   LIGOTimeGPS tStart;			/* start time of input time-series */
   LIGOTimeGPS tLast;			/* start-time of last _possible_ SFT */
+  LIGOTimeGPS tmpTime;
   REAL8 duration, delay;
   UINT4 SFTlen;				/* number of samples in an SFT */
   UINT4 indexShift;
@@ -281,11 +332,10 @@ LALSignalToSFTs (LALStatus *stat,
   }
     
   /* make sure that number of samples is an integer (up to possible rounding errors */
-  samples = 2.0 * Band * params->Tsft;		/* this is a float!*/
-  numSamples = (UINT4) (samples + 0.5);		/* round to int */
-  ASSERT ( fabs(samples - numSamples)/samples < eps, stat, 
+  samplesb2 = Band * params->Tsft;		/* this is a float!*/
+  numSamples = 2 * (UINT4) (samplesb2 + 0.5);	/* round to int */
+  ASSERT ( fabs(samplesb2 - numSamples/2)/samplesb2 < eps, stat, 
 	   GENERATEPULSARSIGNALH_EINCONSBAND, GENERATEPULSARSIGNALH_MSGEINCONSBAND);
-
   
   /* Prepare FFT: compute plan for FFTW */
   /* FIXME: put some buffering + measure best plan */
@@ -334,7 +384,22 @@ LALSignalToSFTs (LALStatus *stat,
       indexShift = (UINT4) (delay / signal->deltaT + 0.5);	/* round properly */
       timeStretch.length = numSamples;    
       timeStretch.data = signal->data->data + indexShift;	/* point to the right sample-bin */
-      /* FIXME: double-check that timestamps are consistent with time-series sampling! */
+
+
+      /* fill the header of the i'th output SFT */
+      TRY( LALAddFloatToGPS (stat->statusPtr, &tmpTime, &tStart, (indexShift * signal->deltaT)), stat);	
+      thisSFT->epoch = tmpTime;			/* set the ACTUAL timestamp! */
+      thisSFT->f0 = signal->f0;			/* minimum frequency */
+      thisSFT->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
+
+      /* ok, issue at least a warning if we have "nudged" an SFT-timestamp */
+      if (lalDebugLevel)
+	{
+	  REAL8 diff;
+	  TRY ( LALDeltaFloatGPS (stat->statusPtr, &diff, &(timestamps->data[iSFT]), &tmpTime), stat);
+	  if (diff != 0)
+	    LALPrintError ("Warning: timestamp had to be 'nudged' by %e s to fit with time-series\n", diff);
+	} /* if lalDebugLevel */
 
       /* the central step: FFT the ith time-stretch into an SFT-slot */
       LALForwardRealFFT (stat->statusPtr, thisSFT->data, &timeStretch, pfwd);
@@ -342,10 +407,6 @@ LALSignalToSFTs (LALStatus *stat,
 	LALDestroySFTVector (stat->statusPtr, &sftvect);
       } ENDFAIL(stat);
 
-      /* prepare the i'th output SFT with the result */
-      thisSFT->epoch = timestamps->data[iSFT];	/* set the proper timestamp */
-      thisSFT->f0 = signal->f0;			/* minimum frequency */
-      thisSFT->deltaF = 1.0 / params->Tsft;	/* frequency-spacing */
 
       /* Now add the noise-SFTs if given */
       if (params->noiseSFTs)
@@ -381,6 +442,132 @@ LALSignalToSFTs (LALStatus *stat,
   RETURN (stat);
 
 } /* LALSignalToSFTs() */
+
+
+
+
+/*----------------------------------------------------------------------
+ * convert earth-frame GPS time into barycentric-frame SSB time for given source
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+/*--------------- some useful helper-functions ---------------*/
+void
+LALConvertGPS2SSB (LALStatus* stat, 
+		   LIGOTimeGPS *SSBout, 	/* output: arrival-time in SSB */
+		   LIGOTimeGPS GPSin, 		/* input: GPS-arrival time at detector */
+		   const PulsarSignalParams *params) /* define source-location and detector */
+{ /* </lalVerbatim> */
+  EarthState earth;
+  EmissionTime emit;
+  BarycenterInput baryinput;
+  SkyPosition tmp;
+
+  INITSTATUS( stat, "ConvertGPS2SSB", GENERATEPULSARSIGNALC );
+  ATTATCHSTATUSPTR (stat);
+
+  ASSERT (SSBout != NULL, stat,  GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+  ASSERT (params != NULL, stat,  GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
+
+  baryinput.site = *(params->site);
+  /* account for a quirk in LALBarycenter(): -> see documentation of type BarycenterInput */
+  baryinput.site.location[0] /= LAL_C_SI;
+  baryinput.site.location[1] /= LAL_C_SI;
+  baryinput.site.location[2] /= LAL_C_SI;
+  if (params->pulsar.position.system != COORDINATESYSTEM_EQUATORIAL)
+    {
+      /* FIXME: do proper conversion or error-reporting */
+      printf ("\nARGH: non-equatorial coords not implemented here yet, sorry!\n");
+      exit(-1);	/* suicide */
+    }
+
+  TRY( LALNormalizeSkyPosition (stat->statusPtr, &tmp, &(params->pulsar.position)), stat);
+  baryinput.alpha = tmp.longitude;
+  baryinput.delta = tmp.latitude;
+  baryinput.dInv = 0.e0;	/* following makefakedata_v2 */
+
+  baryinput.tgps = GPSin;
+
+  TRY (LALBarycenterEarth(stat->statusPtr, &earth, &GPSin, params->ephemerides), stat);
+  TRY (LALBarycenter(stat->statusPtr, &emit, &baryinput, &earth), stat);
+
+  *SSBout = emit.te;
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+
+} /* LALConvertGPS2SSB() */
+
+
+/*----------------------------------------------------------------------
+ * convert  barycentric frame SSB time into earth-frame GPS time
+ *
+ * NOTE: this uses simply the inversion-routine used in the original
+ *       makefakedata_v2
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
+void
+LALConvertSSB2GPS (LALStatus *stat, 
+		   LIGOTimeGPS *GPSout,		 /* output: GPS-arrival-time at detector */
+		   LIGOTimeGPS SSBin, 		 /* input: signal arrival time at SSB */
+		   const PulsarSignalParams *params) /* params defining source-location and detector */
+{ /* </lalVerbatim> */
+
+  LIGOTimeGPS SSBofguess;
+  LIGOTimeGPS GPSguess;
+  INT4 iterations, E9=1000000000;
+  INT8 delta, guess;
+
+  INITSTATUS( stat, "ConvertSSB2GPS", GENERATEPULSARSIGNALC );
+  ATTATCHSTATUSPTR (stat);
+
+  /* 
+   * To start root finding, use SSBpulsarparams as guess 
+   * (not off by more than 400 secs! 
+   */
+  GPSguess = SSBin;
+
+  /* now find GPS time corresponding to SSBin by iterations */
+  for (iterations = 0; iterations < 100; iterations++) 
+    {
+      /* find SSB time of guess */
+      TRY ( LALConvertGPS2SSB (stat->statusPtr, &SSBofguess, GPSguess, params), stat);
+
+      /* compute difference between that and what we want */
+      delta  = SSBin.gpsSeconds;
+      delta -= SSBofguess.gpsSeconds;
+      delta *= E9;
+      delta += SSBin.gpsNanoSeconds;
+      delta -= SSBofguess.gpsNanoSeconds;
+      
+      /* break if we've converged: let's be strict to < 1 ns ! */
+      if (delta == 0)
+	break;
+
+      /* use delta to make next guess */
+      guess  = GPSguess.gpsSeconds;
+      guess *= E9;
+      guess += GPSguess.gpsNanoSeconds;
+      guess += delta;
+
+      GPSguess.gpsSeconds = guess / E9;
+      guess -= GPSguess.gpsSeconds * E9;	/* get ns remainder */
+      GPSguess.gpsNanoSeconds = guess;
+
+    } /* for iterations < 100 */
+
+  /* check for convergence of root finder */
+  if (iterations == 100) {
+    ABORT ( stat, GENERATEPULSARSIGNALH_ESSBCONVERT, GENERATEPULSARSIGNALH_MSGESSBCONVERT);
+  }
+
+  /* Now that we've found the GPS time that corresponds to the given SSB time */
+  *GPSout = GPSguess;
+  
+  
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+
+} /* LALConvertSSB2GPS() */
 
 
 
@@ -497,130 +684,6 @@ LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect)
   RETURN (stat);
   
 } /* LALDestroyTimestampVector() */
-
-
-
-/*----------------------------------------------------------------------
- * convert earth-frame GPS time into barycentric-frame SSB time for given source
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
-void
-LALConvertGPS2SSB (LALStatus* stat, 
-		   LIGOTimeGPS *SSBout, 	/* output: arrival-time in SSB */
-		   LIGOTimeGPS GPSin, 		/* input: GPS-arrival time at detector */
-		   const PulsarSignalParams *params) /* define source-location and detector */
-{ /* </lalVerbatim> */
-  EarthState earth;
-  EmissionTime emit;
-  BarycenterInput baryinput;
-  SkyPosition tmp;
-
-  INITSTATUS( stat, "ConvertGPS2SSB", GENERATEPULSARSIGNALC );
-  ATTATCHSTATUSPTR (stat);
-
-  ASSERT (SSBout != NULL, stat,  GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (params != NULL, stat,  GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-
-  baryinput.site = *(params->site);
-  /* account for a quirk in LALBarycenter(): -> see documentation of type BarycenterInput */
-  baryinput.site.location[0] /= LAL_C_SI;
-  baryinput.site.location[1] /= LAL_C_SI;
-  baryinput.site.location[2] /= LAL_C_SI;
-  if (params->pulsar.position.system != COORDINATESYSTEM_EQUATORIAL)
-    {
-      /* FIXME: do proper conversion or error-reporting */
-      printf ("\nARGH: non-equatorial coords not implemented here yet, sorry!\n");
-      exit(-1);	/* suicide */
-    }
-
-  TRY( LALNormalizeSkyPosition (stat->statusPtr, &tmp, &(params->pulsar.position)), stat);
-  baryinput.alpha = tmp.longitude;
-  baryinput.delta = tmp.latitude;
-  baryinput.dInv = 0.e0;	/* following makefakedata_v2 */
-
-  baryinput.tgps = GPSin;
-
-  TRY (LALBarycenterEarth(stat->statusPtr, &earth, &GPSin, params->ephemerides), stat);
-  TRY (LALBarycenter(stat->statusPtr, &emit, &baryinput, &earth), stat);
-
-  *SSBout = emit.te;
-
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
-
-} /* LALConvertGPS2SSB() */
-
-
-/*----------------------------------------------------------------------
- * convert  barycentric frame SSB time into earth-frame GPS time
- *
- * NOTE: this uses simply the inversion-routine used in the original
- *       makefakedata_v2
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
-void
-LALConvertSSB2GPS (LALStatus *stat, 
-		   LIGOTimeGPS *GPSout,		 /* output: GPS-arrival-time at detector */
-		   LIGOTimeGPS SSBin, 		 /* input: signal arrival time at SSB */
-		   const PulsarSignalParams *params) /* params defining source-location and detector */
-{ /* </lalVerbatim> */
-
-  LIGOTimeGPS SSBofguess;
-  LIGOTimeGPS GPSguess;
-  INT4 iterations, E9=1000000000;
-  INT8 delta, guess;
-
-  INITSTATUS( stat, "ConvertSSB2GPS", GENERATEPULSARSIGNALC );
-  ATTATCHSTATUSPTR (stat);
-
-  /* 
-   * To start root finding, use SSBpulsarparams as guess 
-   * (not off by more than 400 secs! 
-   */
-  GPSguess = SSBin;
-
-  /* now find GPS time corresponding to SSBin by iterations */
-  for (iterations = 0; iterations < 100; iterations++) 
-    {
-      /* find SSB time of guess */
-      TRY ( ConvertGPS2SSB (stat->statusPtr, &SSBofguess, GPSguess, params), stat);
-
-      /* compute difference between that and what we want */
-      delta  = SSBin.gpsSeconds;
-      delta -= SSBofguess.gpsSeconds;
-      delta *= E9;
-      delta += SSBin.gpsNanoSeconds;
-      delta -= SSBofguess.gpsNanoSeconds;
-      
-      /* break if we've converged: let's be strict to < 1 ns ! */
-      if (delta == 0)
-	break;
-
-      /* use delta to make next guess */
-      guess  = GPSguess.gpsSeconds;
-      guess *= E9;
-      guess += GPSguess.gpsNanoSeconds;
-      guess += delta;
-
-      GPSguess.gpsSeconds = guess / E9;
-      guess -= GPSguess.gpsSeconds * E9;	/* get ns remainder */
-      GPSguess.gpsNanoSeconds = guess;
-
-    } /* for iterations < 100 */
-
-  /* check for convergence of root finder */
-  if (iterations == 100) {
-    ABORT ( stat, GENERATEPULSARSIGNALH_ESSBCONVERT, GENERATEPULSARSIGNALH_MSGESSBCONVERT);
-  }
-
-  /* Now that we've found the GPS time that corresponds to the given SSB time */
-  *GPSout = GPSguess;
-  
-  
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
-
-} /* ConvertSSB2GPS() */
 
 
 
