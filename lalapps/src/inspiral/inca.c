@@ -79,16 +79,17 @@ int main( int argc, char *argv[] )
   static LALStatus      status;
   LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
-  INT4  usePlayground = 0;
+  INT4  usePlayground = 1;
   INT4  verbose = 0;
   INT4  startCoincidence = -1;
   INT4  endCoincidence = -1;
   CHAR *outfileName = NULL;
   CHAR  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
   CHAR  comment[LIGOMETA_COMMENT_MAX];
-  CHAR *userTag;
+  CHAR *userTag = NULL;
 
   INT4  isPlay = 0;
+  INT8  ta, tb;
 
   SnglInspiralTable    *inspiralEventList[MAXIFO];
   SnglInspiralTable    *currentTrigger[MAXIFO];
@@ -420,7 +421,7 @@ int main( int argc, char *argv[] )
           {
             knownIFO = 1;
 
-            if ( inspiralEventList[j] )
+            if ( ! inspiralEventList[j] )
             {
               /* store the head of the linked list */
               inspiralEventList[j] = currentTrigger[j] = inputData;
@@ -435,6 +436,9 @@ int main( int argc, char *argv[] )
               /* spin on to the end of the linked list */
               currentTrigger[j] = currentTrigger[j]->next;
             }
+
+            if ( verbose ) fprintf( stdout, "added triggers to list\n" );
+            break;
           }
         }
 
@@ -519,15 +523,31 @@ int main( int argc, char *argv[] )
    */
 
 
-  if ( verbose ) fprintf( stdout, "Start loop over ifo A\n" );
+  if ( verbose ) fprintf( stdout, "start loop over ifo A\n" );
 
   while ( (currentTrigger[0] ) && 
       (currentTrigger[0]->end_time.gpsSeconds < endCoincidence) )
   {
-    INT8 ta, tb;
+    if ( verbose ) fprintf( stdout, "  using IFO A trigger at %d + %10.10f\n",
+        currentTrigger[0]->end_time.gpsSeconds, 
+        ((REAL4)currentTrigger[0]->end_time.gpsNanoSeconds/1000000000.0) );
 
     LAL_CALL( LALGPStoINT8( &status, &ta, &(currentTrigger[0]->end_time) ), 
         &status );
+
+    LAL_CALL( LALINT8NanoSecIsPlayground( &status, &isPlay, &ta ), &status );
+
+    if ( verbose )
+    {
+      if ( isPlay )
+      {
+        fprintf( stdout, "  trigger is playground\n" );
+      } 
+      else
+      {
+        fprintf( stdout, "  trigger is not playground\n" );
+      }
+    }
 
     /* spin ifo b until the current trigger is within the coinicdence */
     /* window of the current ifo a trigger                            */
@@ -545,16 +565,16 @@ int main( int argc, char *argv[] )
       currentTrigger[1] = currentTrigger[1]->next;
     }
 
-    if ( verbose ) fprintf( stdout, "Start loop over ifo B\n" );
-
-    /* look for coincident events in B within the time window */
-    LAL_CALL( LALGPSIsPlayground( &status, &isPlay, 
-          &(currentTrigger[0]->end_time) ), &status );
-
     /* if we are playground only and the trigger is in playground or we are */
     /* not using playground and the trigger is not in the playground...     */
     if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) )
     {
+      if ( verbose ) 
+        fprintf( stdout, "  start loop over IFO B trigger at %d + %10.10f\n",
+            currentTrigger[1]->end_time.gpsSeconds, 
+            ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds/1000000000.0) );
+
+      /* look for coincident events in B within the time window */
       currentEvent = currentTrigger[1];
 
       while ( currentEvent )
@@ -569,34 +589,48 @@ int main( int argc, char *argv[] )
         }
         else
         {
-          /* this is a LAL function which compares events parameters */
+          /* call the LAL function which compares events parameters */
+          if ( verbose ) 
+            fprintf( stdout, "    comparing IFO B trigger at %d + %10.10f\n",
+                currentEvent->end_time.gpsSeconds, 
+                ((REAL4)currentEvent->end_time.gpsNanoSeconds/1000000000.0) );
+
           LAL_CALL( LALCompareSnglInspiral( &status, currentTrigger[0],
-                currentEvent, &errorParams ), &status );
+                currentTrigger[1], &errorParams ), &status );
         }
 
         if ( errorParams.match )
         {
           /* store this event for output */
+          if ( verbose )
+            fprintf( stdout, "    >>> found coincidence <<<\n" );
+
           if ( ! coincidentEvents )
           {
             coincidentEvents = outEvent = (SnglInspiralTable *) 
-              LALCalloc( 1, sizeof(SnglInspiralTable) );
+              LALMalloc( sizeof(SnglInspiralTable) );
           }
           else
           {
             outEvent = outEvent->next = (SnglInspiralTable *) 
-              LALCalloc( 1, sizeof(SnglInspiralTable) );
+              LALMalloc( sizeof(SnglInspiralTable) );
           }
 
           memcpy( outEvent, currentTrigger[0], sizeof(SnglInspiralTable) );
+          outEvent->next = NULL;
+
         }
+
         currentEvent = currentEvent->next;
-      }
-    }
+
+      } /* end loop over current events */
+
+    } /* end if ( IFO A is playground ) */
 
     /* go to the next ifo a trigger */
     currentTrigger[0] = currentTrigger[0]->next;
-  }
+
+  } /* end loop over ifo A events */
 
 
   /*
@@ -607,6 +641,8 @@ int main( int argc, char *argv[] )
 
 
 cleanexit:
+
+  if ( verbose ) fprintf( stdout, "writing output file... " );
 
   LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, outfileName), &status );
 
@@ -628,12 +664,6 @@ cleanexit:
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
         process_params_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-  while( processParamsTable.processParamsTable )
-  {
-    this_proc_param = processParamsTable.processParamsTable;
-    processParamsTable.processParamsTable = this_proc_param->next;
-    free( this_proc_param );
-  }
 
   /* write the sngl_inspiral table */
   if ( coincidentEvents )
@@ -648,6 +678,8 @@ cleanexit:
 
   LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream), &status );
 
+  if ( verbose ) fprintf( stdout, "done\n" );
+
 
   /*
    *
@@ -655,6 +687,16 @@ cleanexit:
    *
    */
 
+
+  if ( verbose ) fprintf( stdout, "freeing memory... " );
+  fflush( stdout );
+
+  while( processParamsTable.processParamsTable )
+  {
+    this_proc_param = processParamsTable.processParamsTable;
+    processParamsTable.processParamsTable = this_proc_param->next;
+    free( this_proc_param );
+  }
 
   while ( coincidentEvents )
   {
@@ -675,6 +717,8 @@ cleanexit:
 
   free( outfileName );
   if ( userTag ) free( userTag );
+
+  if ( verbose ) fprintf( stdout, "done\n" );
 
   LALCheckMemoryLeaks();
 
