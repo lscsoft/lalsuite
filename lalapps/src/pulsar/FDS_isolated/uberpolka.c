@@ -290,7 +290,7 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
                   SortedC1[k1].F, exp(SortedC1[k1].lfa),
                   SortedC2[k2].f, SortedC2[k2].Alpha, SortedC2[k2].Delta, 
                   SortedC2[k2].F, exp(SortedC2[k2].lfa),
-				  exp(SortedC1[k1].lfa)*exp(SortedC2[k2].lfa));
+                                  exp(SortedC1[k1].lfa)*exp(SortedC2[k2].lfa));
         }
     }else{
       /* sort by delta, alpha, f (just like Fstats file) */
@@ -414,8 +414,8 @@ int FineCoincidenceTest(CandidateList c1, CandidateList c2, struct PolkaCommandL
           SortedC2[c2.iCand].fa=(1+F2/2)*exp(-F2/2);
 
           log(a*exp(b)) == log(exp(log(a))*exp(b)) == log(exp(log(a)+b)) == log(a)+b
-	  */
-	  SortedC1[c1.iCand].lfa=log(1+F1/2)-F1/2;
+          */
+          SortedC1[c1.iCand].lfa=log(1+F1/2)-F1/2;
           SortedC2[c2.iCand].lfa=log(1+F2/2)-F2/2;
           
           thisCP->c1=c1.iCand;
@@ -581,8 +581,8 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
        line1 or null chars read) */
     if (!len || line1[len-1] != '\n') {
       LALPrintError(
-	      "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
-	      i+1, fname, line1);
+              "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
+              i+1, fname, line1);
       fclose(fp);
       return 1;
     }
@@ -646,12 +646,12 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
       CandidateList *cl=&(*CList)[i];
 
       if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
-	LALPrintError(
-		"Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
-		i+1, fname, line1);
-	LALFree ((*CList));
-	fclose(fp);
-	return 1;
+        LALPrintError(
+                "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
+                i+1, fname, line1);
+        LALFree ((*CList));
+        fclose(fp);
+        return 1;
       }
       
       cl->Ctag=0;
@@ -664,59 +664,59 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 
       /* check that values that are read in are sensible */
       if (
-	  cl->f < 0.0                        ||
-	  cl->F < 0.0                        ||
-	  cl->Alpha <         0.0 - epsilon  ||
-	  cl->Alpha >   LAL_TWOPI + epsilon  ||
-	  cl->Delta < -0.5*LAL_PI - epsilon  ||
-	  cl->Delta >  0.5*LAL_PI + epsilon  ||									
-	  !finite(cl->f)                     ||
-	  !finite(cl->Alpha)                 ||
-	  !finite(cl->Delta)                 ||
-	  !finite(dmp1)                      ||
-	  !finite(dmp2)                      ||
-	  !finite(dmp3)                      ||
-	  !finite(cl->F)
-	  ) {
-	  LALPrintError(
-		  "Line %d of file %s has invalid values.\n"
-		  "First 255 chars are:\n"
-		  "%s\n"
-		  "1st and 7th field should be positive.\n" 
-		  "2nd field should lie between 0 and %1.15f.\n" 
-		  "3rd field should lie between %1.15f and %1.15f.\n"
-		  "All fields should be finite\n",
-		  i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
-	  LALFree ((*CList));
-	  fclose(fp);
-	  return 1;
-	}
-	   
-	   
+          cl->f < 0.0                        ||
+          cl->F < 0.0                        ||
+          cl->Alpha <         0.0 - epsilon  ||
+          cl->Alpha >   LAL_TWOPI + epsilon  ||
+          cl->Delta < -0.5*LAL_PI - epsilon  ||
+          cl->Delta >  0.5*LAL_PI + epsilon  ||                                                                 
+          !finite(cl->f)                     ||
+          !finite(cl->Alpha)                 ||
+          !finite(cl->Delta)                 ||
+          !finite(dmp1)                      ||
+          !finite(dmp2)                      ||
+          !finite(dmp3)                      ||
+          !finite(cl->F)
+          ) {
+          LALPrintError(
+                  "Line %d of file %s has invalid values.\n"
+                  "First 255 chars are:\n"
+                  "%s\n"
+                  "1st and 7th field should be positive.\n" 
+                  "2nd field should lie between 0 and %1.15f.\n" 
+                  "3rd field should lie between %1.15f and %1.15f.\n"
+                  "All fields should be finite\n",
+                  i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
+          LALFree ((*CList));
+          fclose(fp);
+          return 1;
+        }
+           
+           
 
       /* check that the FIRST character following the Fstat value is a
-	 newline.  Note deliberate LACK OF WHITE SPACE char before %c
-	 above */
+         newline.  Note deliberate LACK OF WHITE SPACE char before %c
+         above */
       if (newline != '\n') {
-	LALPrintError(
-		"Line %d of file %s had extra chars after F value and before newline.\n"
-		"First 255 chars are:\n"
-		"%s\n",
-		i+1, fname, line1);
-	LALFree ((*CList));
-	fclose(fp);
-	return 1;
+        LALPrintError(
+                "Line %d of file %s had extra chars after F value and before newline.\n"
+                "First 255 chars are:\n"
+                "%s\n",
+                i+1, fname, line1);
+        LALFree ((*CList));
+        fclose(fp);
+        return 1;
       }
 
       /* check that we read 7 quantities with exactly the right format */
       if ( read != 8 )
         {
           LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
-			 "Line in question is\n%s",
-			 read, 8, i+1, fname, line1);		    
+                         "Line in question is\n%s",
+                         read, 8, i+1, fname, line1);               
           LALFree ((*CList));
-	  fclose(fp);
-	  return 1;
+          fclose(fp);
+          return 1;
         }
 
       i++;
@@ -724,8 +724,8 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   /* check that we read ALL lines! */
   if (i != numlines) {
     LALPrintError(
-	    "Read of file %s terminated after %d line but numlines=%d\n",
-	    fname, i, numlines);
+            "Read of file %s terminated after %d line but numlines=%d\n",
+            fname, i, numlines);
     LALFree((*CList));
     fclose(fp);
     return 1;
@@ -734,8 +734,8 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   /* read final line with %DONE\n marker */
   if (!fgets(line1, sizeof(line1), fp)) {
     LALPrintError(
-	    "Failed to find marker line of file %s\n",
-	    fname);
+            "Failed to find marker line of file %s\n",
+            fname);
     LALFree((*CList));
     fclose(fp);
     return 1;
@@ -744,8 +744,8 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   /* check for %DONE\n marker */
   if (strcmp(line1, DONE_MARKER)) {
     LALPrintError(
-	    "Failed to parse marker: 'final' line of file %s contained %s not %s",
-	    fname, line1, DONE_MARKER);
+            "Failed to parse marker: 'final' line of file %s contained %s not %s",
+            fname, line1, DONE_MARKER);
     LALFree ((*CList));
     fclose(fp);
     return 1;
@@ -754,8 +754,8 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   /* check that we are now at the end-of-file */
   if (fgetc(fp) != EOF) {
     LALPrintError(
-	    "File %s did not terminate after %s",
-	    fname, DONE_MARKER);
+            "File %s did not terminate after %s",
+            fname, DONE_MARKER);
     LALFree ((*CList));
     fclose(fp);
     return 1;
@@ -769,12 +769,12 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   for (j=0; j<uplim; j++)
     {
       if(compareCdaf(*CList+j,*CList+j+1) != -1)
-	{
-	  LALPrintError( "Candidates in line %d and %d in Fstats file %s are not in the correct order. Exiting.\n", 
-		  j+1,j+2, fname);
-	  LALFree ((*CList));
-	  return 1;
-	}
+        {
+          LALPrintError( "Candidates in line %d and %d in Fstats file %s are not in the correct order. Exiting.\n", 
+                  j+1,j+2, fname);
+          LALFree ((*CList));
+          return 1;
+        }
     }
 
   return 0;
