@@ -88,6 +88,8 @@ tagSnglInspiralAccuracy
   REAL4 kappa;
   INT8  dt;
   REAL4 dm;
+  REAL4 dpsi0;
+  REAL4 dpsi3;
 }
 SnglInspiralAccuracy;
 
@@ -163,6 +165,12 @@ LALCompareSnglInspiralByTime (
     const void *b
     );
 
+int
+LALCompareSnglInspiralByPsi (
+    const void *a,
+    const void *b
+    );
+
 void
 LALCompareSnglInspiral (
     LALStatus                *status,
@@ -170,6 +178,14 @@ LALCompareSnglInspiral (
     SnglInspiralTable        *bPtr,
     SnglInspiralAccuracy     *params
     );
+
+void
+LALCompareSnglInspiralBCV (
+    LALStatus                *status,
+    SnglInspiralTable        *aPtr,
+    SnglInspiralTable        *bPtr,
+    SnglInspiralAccuracy     *params
+    ); 
 
 void
 LALClusterSnglInspiralTable (
