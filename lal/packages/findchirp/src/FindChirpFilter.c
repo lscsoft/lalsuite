@@ -786,6 +786,7 @@ LALFindChirpFilterSegment (
               2 * sizeof(CHAR) );
           strncpy( thisEvent->channel, input->segment->data->name + 3,
               (LALNameLength - 3) * sizeof(CHAR) );
+          thisEvent->impulse_time = thisEvent->end_time;
 
           /* copy the template into the event */
           thisEvent->mass1  = (REAL4) input->tmplt->mass1;
@@ -874,6 +875,7 @@ LALFindChirpFilterSegment (
         2 * sizeof(CHAR) );
     strncpy( thisEvent->channel, input->segment->data->name + 3,
         (LALNameLength - 3) * sizeof(CHAR) );
+    thisEvent->impulse_time = thisEvent->end_time;
 
     /* copy the template into the event */
     thisEvent->mass1  = (REAL4) input->tmplt->mass1;
