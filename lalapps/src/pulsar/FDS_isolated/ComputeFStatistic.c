@@ -200,6 +200,9 @@ int polka(int argc,char *argv[]);
 #define COMPUTEFSTAT_EXIT_USER     	 20  /* user asked for exit */
 #define COMPUTEFSTAT_EXIT_DEMOD     	 21  /* error in LAL-Demod */
 #define COMPUTEFSTAT_EXIT_SIGNAL	 22   /* exited on signal */
+#define COMPUTEFSTAT_EXIT_BOINCRESOLVE	 23   /* boinc_resolve_filename failed */
+#define COMPUTEFSTAT_EXIT_DLOPEN	 24   /* problems with dynamic lib */
+#define COMPUTEFSTAT_EXIT_WORKER	 25   /* can't start worker-thread */
 #define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* this is added to the LAL status to get BOINC exit value */
 
 /*----------------------------------------------------------------------
@@ -245,9 +248,6 @@ REAL8 uvar_startTime;
 REAL8 uvar_endTime;
 #if BOINC_COMPRESS
 BOOLEAN uvar_useCompression;
-#endif
-#ifdef USE_BOINC
-INT4 uvar_maxIterations;	/* for boinc-debugging: stop after maxIterations */
 #endif
 /*----------------------------------------------------------------------*/
 /* some other global variables */
@@ -668,16 +668,6 @@ int main(int argc,char *argv[])
       
       LAL_CALL (NextDopplerPos( stat, &dopplerpos, &thisScan ), stat);
 
-#if USE_BOINC
-      /* BOINC-DEBUG don't do more than maxIterations skypositions for debugging */
-      if ( uvar_maxIterations && (loopcounter > uvar_maxIterations) )
-	{
-	  thisScan.state = STATE_FINISHED;
-	  fprintf (stdout, "APP DEBUG: done maxIterations==%d skypositions, considering this finished now.(DEBUG).\n",
-		   uvar_maxIterations); fflush(stdout);
-	}
-#endif
-      
       /* Have we scanned all DopplerPositions yet? */
       if (thisScan.state == STATE_FINISHED)
 	break;
@@ -872,7 +862,6 @@ initUserVars (LALStatus *stat)
 #if USE_BOINC
   uvar_doCheckpointing = TRUE;
   uvar_expLALDemod = TRUE;
-  uvar_maxIterations = 0;
 #else
   uvar_doCheckpointing = FALSE;
   uvar_expLALDemod = FALSE;
@@ -924,9 +913,6 @@ initUserVars (LALStatus *stat)
   LALregREALUserVar(stat, 	endTime, 	 0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time >= this value. Default:");
 #if BOINC_COMPRESS
   LALregBOOLUserVar(stat,	useCompression,  0,  UVAR_OPTIONAL, "BOINC: use compression for download/uploading data");
-#endif
-#if USE_BOINC
-  LALregINTUserVar(stat,	maxIterations,  0,  UVAR_OPTIONAL, "BOINC DEBUG: do maximally this many skypositions (0 means ALL)");
 #endif
 
   DETATCHSTATUSPTR (stat);
@@ -2906,7 +2892,7 @@ void use_boinc_filename0(char *orig_name ) {
 	    "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
 	    orig_name);
 
-    boinc_finish(2);
+    boinc_finish(COMPUTEFSTAT_EXIT_BOINCRESOLVE);
   }
   strcpy(orig_name, resolved_name);
   return;
@@ -2919,7 +2905,7 @@ void use_boinc_filename1(char **orig_name ) {
 	    "Can't resolve file \"%s\"\n"
 	    "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
 	    *orig_name);
-    boinc_finish(2);
+    boinc_finish(COMPUTEFSTAT_EXIT_BOINCRESOLVE);
   }
   LALFree(*orig_name);
   *orig_name = (CHAR*) LALCalloc(strlen(resolved_name)+1,1);
@@ -2936,11 +2922,11 @@ void worker() {
   if (graphics_lib_handle) {
     if (!(set_search_pos_hook = dlsym(graphics_lib_handle,"set_search_pos"))) {
       fprintf(stderr, "unable to resolve set_search_pos(): %s\n", dlerror());
-      boinc_finish(1);
+      boinc_finish(COMPUTEFSTAT_EXIT_DLOPEN);
     }
     if (!(fraction_done_hook = dlsym(graphics_lib_handle,"fraction_done"))) {
       fprintf(stderr, "unable to resolve fraction_done(): %s\n", dlerror());
-      boinc_finish(1);
+      boinc_finish(COMPUTEFSTAT_EXIT_DLOPEN);
     }
   }
   else
@@ -3126,18 +3112,17 @@ int main(int argc, char *argv[]){
     /* no dynamic library, just call boinc_init_graphics() */
     retval = boinc_init_graphics(worker);
 #endif /* BOINC_GRAPHICS==1 */
-    if (retval)
-      fprintf(stderr,"boinc_init_graphics[_lib]() returned %d: unable to create worker thread\n", retval);
-    boinc_finish(1234+retval);
+    fprintf(stderr,"boinc_init_graphics[_lib]() returned %d. This indicates an error...\n", retval);
+    boinc_finish(COMPUTEFSTAT_EXIT_WORKER );
   }
 #endif /*  BOINC_GRAPHICS>0 */
     
     boinc_init();
     worker();
-    boinc_finish(222);
+    boinc_finish(COMPUTEFSTAT_EXIT_WORKER );
     /* we never get here!! */
-    return 222;
-  }
+    return 0;
+}
   
   
 #ifdef __GLIBC__
@@ -3174,7 +3159,7 @@ void sighandler(int sig){
 
       if ( killcounter >= 4 )
 	{
-	  fprintf (stdout, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n"); fflush(stdout);
+	  fprintf (stderr, "APP DEBUG: got 4th kill-signal, guess you mean it. Exiting now\n");
 	  boinc_finish(COMPUTEFSTAT_EXIT_USER);
 	}
       else
