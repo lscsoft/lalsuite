@@ -139,7 +139,7 @@ INT4       sampleRate     = -1;     /* sample rate in Hz                  */
 CHAR      *calCacheFile  = NULL;    /* name of the calibration cache file */
 CHAR      *injectionFile = NULL;    /* file with list of injections       */
 CHAR      *mdcCacheFile  = NULL;    /* name of mdc signal cache file */
-
+ResampleTSFilter resampFiltType = -1;
 
 /* GEO data high pass corner freq. */
 REAL8	  fcorner	= 100.0;	/* corner frequency in Hz */
@@ -175,7 +175,7 @@ int main( int argc, char *argv[])
     COMPLEX8FrequencySeries    resp;
     REAL4TimeSeries            mdcSeries;
     ResampleTSParams           resampleParams;
-    ResampleTSFilter           resampFiltType;
+ 
 
     /* Burst events */
     SnglBurstTable      *burstEvent    = NULL;
