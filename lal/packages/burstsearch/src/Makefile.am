@@ -6,3 +6,7 @@ MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
 @DVIMKFILE@
+
+Sequence.m4 : SequenceC.m4
+%.c : %.m4
+	cd $(srcdir) && m4 $< >$@

@@ -6,3 +6,7 @@ all-local: include-link
 dvi-local: .dvi-dep
 @INCLUDEMKFILE@
 @DVIMKFILE@
+
+Sequence.m4 : SequenceH.m4
+%.h : %.m4
+	cd $(srcdir) && m4 $< >$@
