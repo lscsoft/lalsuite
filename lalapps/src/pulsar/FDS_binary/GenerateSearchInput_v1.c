@@ -18,6 +18,7 @@ REAL8 fmin,band,fres;
 CHAR datadir[256],efiles[56],basename[256],yr[256],ifo[256],bintempfile[256],outfile[256],fout[256];
 BOOLEAN signalflag;
 BOOLEAN estimflag;
+BOOLEAN binflag;
 REAL8 doppler,thresh;
 INT4 dterms,window;
 REAL8 tspan;
@@ -36,8 +37,10 @@ int main(int argc,char *argv[])
   
   if (OutputConfigFile()) return 2;
 
-  if (OutputBinTemplateFile()) return 3;
-
+  if (binflag) {
+    if (OutputBinTemplateFile()) return 3;
+  }
+    
   return 0;
 
 }
@@ -119,6 +122,7 @@ int ReadCommandLine(int argc,char *argv[])
   dterms=16; /* k */
   estimflag=0; /* m */
   signalflag=1; /* S */
+  binflag=0;   /* determines wether we output a binary template file or not */
   thresh=0.0; /* T */
   tstart=0; /* q */
   tspan=0; /* Q */
@@ -234,15 +238,19 @@ int ReadCommandLine(int argc,char *argv[])
       break;
     case 'A':
       sma=atof(optarg);
+      binflag=1;
       break;
     case 'P':
       period=atof(optarg);
+      binflag=1;
       break;
     case 'X':
       tperisec=atoi(optarg);
+      binflag=1;
       break;
     case 'x':
       tperins=atoi(optarg);
+      binflag=1;
       break;
     case 'q':
       tstart=atoi(optarg);
@@ -252,9 +260,11 @@ int ReadCommandLine(int argc,char *argv[])
       break;
     case 'e':
       ecc=atof(optarg);
+      binflag=1;
       break;
     case 'u':
       argp=atof(optarg);
+      binflag=1;
       break;
     case 'O':
       temp=optarg;
