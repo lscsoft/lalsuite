@@ -8,14 +8,14 @@
 #include <lal/UserInput.h>
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>
+#include <lalapps.h>
 
 #include "ComputeFStatistic.h"
 #include "rngmed.h"
 #include "clusters.h"
 #include "DopplerScan.h"
 
-
-NRCSID( COMPUTEFSTATISTIC, "$Id$");
+RCSID( "$Id$");
 
 /*
 #define DEBG_FAFB                
@@ -35,6 +35,19 @@ NRCSID( COMPUTEFSTATISTIC, "$Id$");
 #define FILE_PSDLINES 
 #define FILE_SPRNG 
 */
+
+/********************************************************** <lalLaTeX>
+\subsection*{Error codes}
+</lalLaTeX>
+***************************************************** <lalErrTable> */
+#define COMPUTEFSTATC_ENULL 		1
+#define COMPUTEFSTATC_ESYS     		2
+
+#define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
+#define COMPUTEFSTATC_MSGESYS		"System call failed (probably file IO)"
+
+/*************************************************** </lalErrTable> */
+
 
 /*----------------------------------------------------------------------*/
 /* 
@@ -77,8 +90,6 @@ FFT **SFTData=NULL;                 /* SFT Data for LALDemod */
 DemodPar *DemodParams  = NULL;      /* Demodulation parameters for LALDemod */
 LIGOTimeGPS *timestamps=NULL;       /* Time stamps from SFT data */
 LALFstat Fstat;
-INT4 lalDebugLevel=0; /* ,i,a,d,s; *//* ,irec; */
-static LALStatus status;
 AMCoeffs amc;
 REAL8 MeanOneOverSh=0.0;
 REAL8 Alpha,Delta;
@@ -95,24 +106,29 @@ REAL8 medianbias=1.0;
 DopplerScanState thisScan;
 ConfigVariables GV;
 
-/* local prototypes */
-INT2 SetGlobalVariables(ConfigVariables *cfg);
-INT4 ReadSFTData(void);
-INT4 CreateDemodParams(void);
-INT4 NormaliseSFTData(void);
-INT4 CreateDetector(LALDetector *Detector);
-INT4 AllocateMem(void);
-INT4 Freemem(void);
+static const LALStatus empty_status;
 
+/* local prototypes */
+void CreateDemodParams (LALStatus *status);
+void AllocateMem (LALStatus *status);
+void SetGlobalVariables (LALStatus *status, ConfigVariables *cfg);
+void CreateDetector (LALStatus *status, LALDetector *Detector);
+void Freemem (LALStatus *status);
+
+INT4 EstimatePSDLines(LALStatus *status);
+INT4 EstimateFLines(LALStatus *status);
+INT4 NormaliseSFTDataRngMdn (LALStatus *status);
+
+INT4 NormaliseSFTData(void);
+INT4 ReadSFTData (void);
 INT4 EstimateSignalParameters(INT4 * maxIndex);
-INT4 EstimatePSDLines(void);
-INT4 EstimateFLines(void);
 INT4 writeFLines(INT4 *maxIndex);
-INT4 NormaliseSFTDataRngMdn(void);
 INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
 INT4 EstimateFloor(REAL8Vector *Sp, INT2 windowSize, REAL8Vector *SpFloor);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
+INT4 NormaliseSFTData(void);
+
 
 void initUserVars (LALStatus *stat);
 /* make it a bit easier for us to register all the user-variables in a constistent way */
@@ -122,7 +138,7 @@ void initUserVars (LALStatus *stat);
 void
 initUserVars (LALStatus *stat)
 {
-  INITSTATUS( stat, "initUserVars", COMPUTEFSTATISTIC );
+  INITSTATUS( stat, "initUserVars", rcsid );
 
   regUserVar (Dterms, 	UVAR_INT4,   't', "Number of terms to keep in Dirichlet kernel sum");
   regUserVar (Freq, 	UVAR_REAL8,  'f', "Starting search frequency in Hz");
@@ -163,10 +179,16 @@ int main(int argc,char *argv[])
   INT4 *maxIndex=NULL; /*  array that contains indexes of maximum of each cluster */
   DopplerPosition dopplerpos;
   SkyPosition thisPoint;
-  DopplerScanInit scanInit;
   CHAR Fstatsfilename[256];         /* Fstats file name*/
   CHAR Fmaxfilename[256];           /* Fmax file name*/
   INT4 i, s;
+  DopplerScanInit scanInit;
+  LIGOTimeGPS t0, t1;
+  REAL8 duration;
+  LALStatus status = empty_status;	/* initialize status */
+
+  /* set LAL error-handler */
+  lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
   /*----------------------------------------------------------------------
    * ok, this is awkward, but the LALDebugLevel has to be set _first thing_, 
@@ -181,9 +203,11 @@ int main(int argc,char *argv[])
   } /* for cmd-line */
   /*----------------------------------------------------------------------*/
 
-  initUserVars (&status); 	/* register all user-variable */
+  /* register all user-variable */
+  LAL_CALL (initUserVars (&status), &status); 	
 
-  LALUserVarReadAllInput (&status, argc,argv);	/* do ALL cmdline and cfgfile handling */
+  /* do ALL cmdline and cfgfile handling */
+  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);	
 
   /* print help-string and exit if -h was specified */
   if (uvar_help)
@@ -198,9 +222,9 @@ int main(int argc,char *argv[])
       exit (0);
     }
 
-  if (SetGlobalVariables (&GV) ) return 2;
+  LAL_CALL ( SetGlobalVariables (&status, &GV), &status);
 
-  if (AllocateMem()) return 3;
+  LAL_CALL ( AllocateMem(&status), &status);
 
   if (ReadSFTData()) return 4;
 
@@ -211,7 +235,7 @@ int main(int argc,char *argv[])
   }
 #endif
 
-  if (NormaliseSFTDataRngMdn()) return 5;
+  LAL_CALL (NormaliseSFTDataRngMdn(&status), &status);
 
 #ifdef FILE_FMAX  
   /*   open file */
@@ -233,40 +257,31 @@ int main(int argc,char *argv[])
     return 2;
   }
 #endif
-	
+  
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
   scanInit.metricType = uvar_metricType;
   scanInit.metricMismatch = uvar_metricMismatch;
-  scanInit.obsBegin = SFTData[0]->fft->epoch;
-  scanInit.obsDuration = SFTData[GV.SFTno-1]->fft->epoch.gpsSeconds - scanInit.obsBegin.gpsSeconds + GV.tsft;
+  t0 = SFTData[0]->fft->epoch;
+  t1 = SFTData[GV.SFTno-1]->fft->epoch;
+  scanInit.obsBegin = t0;
+  LAL_CALL ( LALDeltaFloatGPS ( &status, &duration, &t1, &t0), &status);
+  scanInit.obsDuration = duration + GV.tsft;
   scanInit.fmax  = uvar_Freq;
   if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
   scanInit.Detector = GV.Detector;
   scanInit.skyRegion = LALMalloc (strlen (uvar_skyRegion) + 1);
   strcpy (scanInit.skyRegion, uvar_skyRegion);
 
-  InitDopplerScan ( &status, &thisScan, scanInit);
+  LAL_CALL ( InitDopplerScan ( &status, &thisScan, scanInit), &status);
   
   LALFree (scanInit.skyRegion);
   
-  if (status.statusCode != 0)
-    {
-      REPORTSTATUS( &status );
-      return (-1);
-    }
-  
-  
   while (1)
     {
-      NextDopplerPos( &status, &dopplerpos, &thisScan );
+      LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
 
-      if (status.statusCode != 0)
-	{
-	  REPORTSTATUS( &status );
-	  return (-1);
-	}
       /* Have we scanned all DopplerPositions yet? */
       if (dopplerpos.finished)  
 	break;
@@ -277,16 +292,17 @@ int main(int argc,char *argv[])
       Delta = thisPoint.latitude;
       
       
-      if (CreateDemodParams()) return 6;
+      LAL_CALL (CreateDemodParams(&status), &status);
       /* loop over spin params */
       for(s=0;s<GV.SpinImax;s++)
 	{
 	  DemodParams->spinDwn[0]=uvar_Spin + s*uvar_dSpin;
-	  LALDemod (&status, &Fstat, SFTData, DemodParams);
+	  LAL_CALL (LALDemod (&status, &Fstat, SFTData, DemodParams), &status);
 	  
 	  /*  This fills-in highFLines that are then used by discardFLines */
-	  if (GV.FreqImax > 5)
-	    if (EstimateFLines()) return 6;
+	  if (GV.FreqImax > 5) {
+	    LAL_CALL (EstimateFLines(&status), &status);
+	  }
 	  
 
 #ifdef DEBG_MAIN
@@ -344,10 +360,11 @@ int main(int argc,char *argv[])
 #ifdef FILE_FSTATS  
   fclose(fpstat);
 #endif
-  if (Freemem()) return 7;
+  LAL_CALL (Freemem(&status), &status);
 
   return 0;
-}
+
+} /* main() */
 
 
 /*******************************************************************************/
@@ -697,7 +714,7 @@ int writeFaFb(INT4 *maxIndex)
 
 /*******************************************************************************/
 
-int CreateDemodParams(void)
+void CreateDemodParams (LALStatus *status)
 {
   CSParams *csParams  = NULL;        /* ComputeSky parameters */
   BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
@@ -708,19 +725,22 @@ int CreateDemodParams(void)
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
   LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
   INT4 leap;
-
   INT4 k;
+
+  INITSTATUS (status, "CreateDemodParams", rcsid);
+  ATTATCHSTATUSPTR (status);
   
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = GV.EphemEarth;     
   (*edat).ephiles.sunEphemeris = GV.EphemSun;         
 
-  LALLeapSecs(&status,&leap,&timestamps[0],&formatAndAcc);
+  TRY (LALLeapSecs(status->statusPtr,&leap,&timestamps[0],&formatAndAcc), status);
   (*edat).leap=leap;
 
-  LALInitBarycenter(&status, edat);               /* Reads in ephemeris files */
+  /* Reads in ephemeris files */
+  TRY (LALInitBarycenter(status->statusPtr, edat), status);               
  
-/* Detector location: MAKE INTO INPUT!!!!! */
+  /* Detector location: MAKE INTO INPUT!!!!! */
   baryinput.site.location[0]=GV.Detector.location[0]/LAL_C_SI;
   baryinput.site.location[1]=GV.Detector.location[1]/LAL_C_SI;
   baryinput.site.location[2]=GV.Detector.location[2]/LAL_C_SI;
@@ -752,12 +772,12 @@ int CreateDemodParams(void)
    for(k=0; k<GV.SFTno; k++)
      { 
        REAL8 teemp=0.0;
-       LALGPStoFloat(&status,&teemp, &(timestamps[k]));
+       TRY (LALGPStoFloat(status->statusPtr, &teemp, &(timestamps[k])), status);
        teemp += 0.5*GV.tsft;
-       LALFloatToGPS(&status,&(midTS[k]), &teemp);
+       TRY (LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
      }
    
-   LALComputeAM(&status, &amc, midTS, amParams); 
+   TRY (LALComputeAM(status->statusPtr, &amc, midTS, amParams), status); 
 
 /* ComputeSky stuff*/
   csParams=(CSParams *)LALMalloc(sizeof(CSParams));
@@ -787,8 +807,8 @@ int CreateDemodParams(void)
 
   DemodParams->returnFaFb = uvar_EstimSigParam;
 
-  ComputeSky(&status,DemodParams->skyConst,0,csParams);        /* compute the */
-						               /* "sky-constants" A and B */
+  /* compute the "sky-constants" A and B */
+  TRY ( ComputeSky (status->statusPtr, DemodParams->skyConst, 0, csParams), status);  
   LALFree(midTS);
 
   LALFree(csParams->skyPos);
@@ -802,34 +822,40 @@ int CreateDemodParams(void)
   LALFree(edat->ephemS);
   LALFree(edat);
 
-  return 0;
-}
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* CreateDemodParams() */
 
 /*******************************************************************************/
-int AllocateMem(void)
+void AllocateMem(LALStatus *status)
 {
   INT4 k;
 
+  INITSTATUS (status, "AllocateMem", rcsid);
+  ATTATCHSTATUSPTR (status);
 
   /* Allocate space for AMCoeffs */
   amc.a = NULL;
   amc.b = NULL;
-  LALSCreateVector(&status, &(amc.a), (UINT4) GV.SFTno);
-  LALSCreateVector(&status, &(amc.b), (UINT4) GV.SFTno);
+  TRY (LALSCreateVector(status->statusPtr, &(amc.a), (UINT4) GV.SFTno), status);
+  TRY (LALSCreateVector(status->statusPtr, &(amc.b), (UINT4) GV.SFTno), status);
 
   /* Allocate DemodParams structure */
-  DemodParams=(DemodPar *)LALMalloc(sizeof(DemodPar));
+  DemodParams=(DemodPar *)LALCalloc(1, sizeof(DemodPar));
   
   /* space for sky constants */
   /* Based on maximum index for array of as and bs sky constants as from ComputeSky.c */
   k=4*(GV.SFTno-1)+4; 
-  DemodParams->skyConst=(REAL8 *)LALMalloc(k*sizeof(REAL8));
+  DemodParams->skyConst = (REAL8 *)LALMalloc(k*sizeof(REAL8));
 
   /* space for spin down params */
-  DemodParams->spinDwn=(REAL8 *)LALMalloc(sizeof(REAL8));
+  DemodParams->spinDwn = (REAL8 *)LALMalloc(sizeof(REAL8));
   
-  return 0;
-}
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* AllocateMem() */
 
 /*******************************************************************************/
 
@@ -1040,8 +1066,8 @@ int ReadSFTData(void)
 
 /*******************************************************************************/
 
-INT2 
-SetGlobalVariables(ConfigVariables *cfg)
+void
+SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 {
 
   CHAR command[512];
@@ -1050,6 +1076,9 @@ SetGlobalVariables(ConfigVariables *cfg)
   REAL8 df;                         /* freq resolution */
   INT4 fileno=0;   
   glob_t globbuf;
+
+  INITSTATUS (status, "SetGlobalVariables", rcsid);
+  ATTATCHSTATUSPTR (status);
 
   /* do some sanity checks on the user-input before we proceed */
   if(uvar_IFO == -1)
@@ -1125,14 +1154,14 @@ SetGlobalVariables(ConfigVariables *cfg)
       if (fp==NULL) 
 	{
 	  fprintf(stderr,"Could not find %s\n",cfg->EphemEarth);
-	  return 1;
+	  ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
 	}
       fclose(fp);
       fp=fopen(cfg->EphemSun,"r");
       if (fp==NULL) 
 	{
 	  fprintf(stderr,"Could not find %s\n",cfg->EphemSun);
-	  return 1;
+	  ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
 	}
       fclose(fp);
   /* ********************************************** */
@@ -1155,7 +1184,7 @@ SetGlobalVariables(ConfigVariables *cfg)
   if(globbuf.gl_pathc==0)
     {
       fprintf(stderr,"No SFTs in directory %s ... Exiting.\n",uvar_DataDir);
-      return 1;
+      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
 
   while ((UINT4)fileno < globbuf.gl_pathc) 
@@ -1165,7 +1194,7 @@ SetGlobalVariables(ConfigVariables *cfg)
       if (fileno > MAXFILES)
 	{
 	  fprintf(stderr,"Too many files in directory! Exiting... \n");
-	  return 1;
+	  ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
 	}
     }
   globfree(&globbuf);
@@ -1176,11 +1205,9 @@ SetGlobalVariables(ConfigVariables *cfg)
   if(uvar_IFO == 0) cfg->Detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   if(uvar_IFO == 1) cfg->Detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
   if(uvar_IFO == 2) cfg->Detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
-  if(uvar_IFO == 3)
-    {
-        if (CreateDetector(&(cfg->Detector))) return 5;
-    }
-
+  if(uvar_IFO == 3) {
+    TRY (CreateDetector(status->statusPtr, &(cfg->Detector)), status);
+  }
 
   /* open FIRST file and get info from it*/
   fp=fopen(cfg->filelist[0],"r");
@@ -1189,7 +1216,7 @@ SetGlobalVariables(ConfigVariables *cfg)
   if (errorcode!=1) 
     {
       fprintf(stderr,"No header in data file %s\n",cfg->filelist[0]);
-      return 1;
+      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
 
   /* check that data is correct endian order */
@@ -1198,7 +1225,7 @@ SetGlobalVariables(ConfigVariables *cfg)
       fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[0]);
       fprintf(stderr,"It could be a file format error (big/little\n");
       fprintf(stderr,"endian) or the file might be corrupted\n\n");
-      return 2;
+      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
   fclose(fp);
 
@@ -1211,7 +1238,7 @@ SetGlobalVariables(ConfigVariables *cfg)
   if (errorcode!=1) 
     {
       fprintf(stderr,"No header in data file %s\n",cfg->filelist[fileno-1]);
-      return 1;
+      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
   /* check that data is correct endian order */
   if (header.endian!=1.0)
@@ -1219,7 +1246,7 @@ SetGlobalVariables(ConfigVariables *cfg)
       fprintf(stderr,"First object in file %s is not (double)1.0!\n",cfg->filelist[fileno-1]);
       fprintf(stderr,"It could be a file format error (big/little\n");
       fprintf(stderr,"endian) or the file might be corrupted\n\n");
-      return 2;
+      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
   fclose(fp);
 
@@ -1292,8 +1319,10 @@ SetGlobalVariables(ConfigVariables *cfg)
     fprintf(stdout,"# ==> DeFT baseline:                  %f hours\n",(cfg->Tf - cfg->Ti)/3600.0);
 #endif
 
-  return 0;  
-}
+    DETATCHSTATUSPTR (status);
+    RETURN (status);
+
+} /* SetGlobalVariables() */
 
 /*******************************************************************************/
 
@@ -1301,12 +1330,15 @@ SetGlobalVariables(ConfigVariables *cfg)
 
 /*******************************************************************************/
 
-int CreateDetector(LALDetector *Detector){
-
+void CreateDetector(LALStatus *status, LALDetector *Detector)
+{
 /*   LALDetector Detector;  */
   LALFrDetector detector_params;
   LALDetectorType bar;
   LALDetector Detector1;
+
+  INITSTATUS (status, "CreateDetector", rcsid);
+  ATTATCHSTATUSPTR (status);
 
 /*   detector_params=(LALFrDetector )LALMalloc(sizeof(LALFrDetector)); */
  
@@ -1318,19 +1350,24 @@ int CreateDetector(LALDetector *Detector){
   detector_params.xArmAltitudeRadians=0.0;
   detector_params.xArmAzimuthRadians=44.0*LAL_PI/180.0;
 
-  LALCreateDetector(&status,&Detector1,&detector_params,bar);
+  TRY (LALCreateDetector(status->statusPtr, &Detector1, &detector_params, bar), status);
 
   *Detector=Detector1;
 
-  return 0;
-}
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* CreateDetector() */
 
 /*******************************************************************************/
 
-int Freemem(void) 
+void Freemem(LALStatus *status) 
 {
 
   INT4 k;
+
+  INITSTATUS (status, "Freemem", rcsid);
+  ATTATCHSTATUSPTR (status);
 
   /* Free SFTData */
   for (k=0;k<GV.SFTno;k++)
@@ -1353,28 +1390,37 @@ int Freemem(void)
     }
 
   /* Free DemodParams */
-  LALSDestroyVector(&status, &(DemodParams->amcoe->a));
-  LALSDestroyVector(&status, &(DemodParams->amcoe->b));
-
-  LALFree(DemodParams->skyConst);
-  LALFree(DemodParams->spinDwn);
-  LALFree(DemodParams);
+  if (DemodParams->amcoe)
+    {
+      TRY (LALSDestroyVector(status->statusPtr, &(DemodParams->amcoe->a)), status);
+      TRY (LALSDestroyVector(status->statusPtr, &(DemodParams->amcoe->b)), status);
+    }
+  if (DemodParams)
+    {
+      LALFree(DemodParams->skyConst);
+      LALFree(DemodParams->spinDwn);
+      LALFree(DemodParams);
+    }
+     
 
   /* Free config-Variables and userInput stuff */
-  LALDestroyUserVars (&status);
+  TRY (LALDestroyUserVars (status->statusPtr), status);
 
   /* Free DopplerScan-stuff (grid) */
-  FreeDopplerScan (&status, &thisScan);
+  TRY (FreeDopplerScan (status->statusPtr, &thisScan), status);
 
   /* this comes from clusters.c */
   if (highFLines->clusters) LALFree(highFLines->clusters);
   if (highFLines->Iclust) LALFree(highFLines->Iclust);
   if (highFLines->NclustPoints) LALFree(highFLines->NclustPoints);
 
+
+  DETATCHSTATUSPTR (status);
+
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
-  
-  return 0;
+
+  RETURN (status);
 
 } /* Freemem() */
 
@@ -1523,7 +1569,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 
 /*******************************************************************************/
 
-INT4 EstimatePSDLines(void)
+INT4 EstimatePSDLines(LALStatus *status)
 {
 #ifdef FILE_PSD
   FILE *outfile;
@@ -1574,8 +1620,8 @@ INT4 EstimatePSDLines(void)
   /*   return 0; */
   /* } */
   
-  LALDCreateVector(&status, &Sp, nbins);
-  LALDCreateVector(&status, &FloorSp, nbins);
+  LALDCreateVector(status, &Sp, nbins);
+  LALDCreateVector(status, &FloorSp, nbins);
   
   
   /* loop over each SFTs */
@@ -1646,8 +1692,8 @@ INT4 EstimatePSDLines(void)
      LALFree(outliers);
      LALFree(outliersParams);
      LALFree(outliersInput);
-     LALDDestroyVector(&status,&Sp);
-     LALDDestroyVector(&status,&FloorSp);
+     LALDDestroyVector(status,&Sp);
+     LALDDestroyVector(status,&FloorSp);
 
      return 0;
 
@@ -1722,8 +1768,8 @@ INT4 EstimatePSDLines(void)
    LALFree(outliers);
    LALFree(outliersParams);
    LALFree(outliersInput);
-   LALDDestroyVector(&status,&Sp);
-   LALDDestroyVector(&status,&FloorSp);
+   LALDDestroyVector(status,&Sp);
+   LALDDestroyVector(status,&FloorSp);
    LALFree(SpClParams);
    LALFree(clustersInput);
 
@@ -1732,7 +1778,7 @@ INT4 EstimatePSDLines(void)
 
 /*******************************************************************************/
 
-INT4 EstimateFLines(void)
+INT4 EstimateFLines(LALStatus *status)
 {
 #ifdef FILE_FTXT  
   FILE *outfile;
@@ -1796,8 +1842,8 @@ INT4 EstimateFLines(void)
 #endif
 
 
-  LALDCreateVector(&status, &F1, nbins);
-  LALDCreateVector(&status, &FloorF1, nbins);
+  LALDCreateVector(status, &F1, nbins);
+  LALDCreateVector(status, &FloorF1, nbins);
     
   /* loop over SFT data to estimate noise */
   for (j=0;j<nbins;j++){
@@ -1857,8 +1903,8 @@ INT4 EstimateFLines(void)
      LALFree(outliers);
      LALFree(outliersParams);
      LALFree(outliersInput);
-     LALDDestroyVector(&status,&F1);
-     LALDDestroyVector(&status,&FloorF1);
+     LALDDestroyVector(status,&F1);
+     LALDDestroyVector(status,&FloorF1);
 
      /*      fprintf(stderr,"Nclusters zero \n"); */
      /*      fflush(stderr); */
@@ -1940,8 +1986,8 @@ INT4 EstimateFLines(void)
    LALFree(outliers);
    LALFree(outliersParams);
    LALFree(outliersInput);
-   LALDDestroyVector(&status,&F1);
-   LALDDestroyVector(&status,&FloorF1);
+   LALDDestroyVector(status,&F1);
+   LALDDestroyVector(status,&FloorF1);
    LALFree(SpClParams);
    LALFree(clustersInput);
 
@@ -1953,7 +1999,7 @@ INT4 EstimateFLines(void)
 /*******************************************************************************/
 /*******************************************************************************/
 
-INT4 NormaliseSFTDataRngMdn(void)
+INT4 NormaliseSFTDataRngMdn(LALStatus *status)
 {
 #ifdef FILE_SPRNG  
   FILE *outfile;
@@ -1973,11 +2019,11 @@ INT4 NormaliseSFTDataRngMdn(void)
   */
 
   if (uvar_SignalOnly != 1)
-    RngMedBias (&status, &medianbias, windowSize);
+    RngMedBias (status, &medianbias, windowSize);
 
 
-  LALDCreateVector(&status, &Sp, (UINT4)nbins);
-  LALDCreateVector(&status, &RngMdnSp, (UINT4)nbins);
+  LALDCreateVector(status, &Sp, (UINT4)nbins);
+  LALDCreateVector(status, &RngMdnSp, (UINT4)nbins);
 
   nbins=(INT2)nbins;
 
@@ -2072,8 +2118,8 @@ INT4 NormaliseSFTDataRngMdn(void)
   
   LALFree(N);
   LALFree(Sp1);
-  LALDDestroyVector(&status, &RngMdnSp);
-  LALDDestroyVector(&status, &Sp);
+  LALDDestroyVector(status, &RngMdnSp);
+  LALDDestroyVector(status, &Sp);
   
   return 0;
 }
