@@ -77,6 +77,9 @@ NRCSID( DETRESPONSEC, "$Id$" );
  * $Id$
  */
 
+
+static const INT4 oneBillion = 1000000000;
+
 /*
  * Private functions
  */
@@ -822,6 +825,7 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
   /* Want to loop over the time and call LALComputeDetAMResponse() */
   LALDetAMResponse  instResponse;
   LIGOTimeGPS       gps;
+  LIGOTimeGPS       tmpgps;
   LALTimeInterval   dt;
   UINT4             i;
   char              infostr[128];
@@ -848,6 +852,17 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
 
   ASSERT(pTimeInfo != (LALTimeIntervalAndNSample *)NULL, status,
          DETRESPONSEH_ENULLINPUT, DETRESPONSEH_MSGENULLINPUT);
+
+  /*
+   * Set names
+   */
+  pResponseSeries->pPlus->name[0]   = '\0';
+  pResponseSeries->pCross->name[0]  = '\0';
+  pResponseSeries->pScalar->name[0] = '\0';
+
+  strncpy(pResponseSeries->pPlus->name, "plus", LALNameLength);
+  strncpy(pResponseSeries->pCross->name, "cross", LALNameLength);
+  strncpy(pResponseSeries->pScalar->name, "scalar", LALNameLength);
 
   /*
    * Set sampling parameters
@@ -904,7 +919,7 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
 
   if (pResponseSeries->pScalar->data->length < pTimeInfo->nSample)
     {
-      if (lalDebugLevel >= 8)      
+      if (lalDebugLevel & 0x08)
         LALInfo(status, "scalar sequence too short -- reallocating");
 
       TRY( LALSDestroyVector(status->statusPtr,
@@ -917,12 +932,18 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
   
 
   /*
-   * Loop to compute each element in time series
+   * Loop to compute each element in time series; rint(3) is a std C
+   * function that rounds floating point numbers properly.
    */
   gps = pTimeInfo->epoch;
+  /*
   dt.seconds     = (INT4)(pTimeInfo->deltaT);
-  dt.nanoSeconds = (INT4)(pTimeInfo->deltaT - (REAL8)(dt.seconds)) *
-    1000000000;
+  dt.nanoSeconds = (INT4)rint((pTimeInfo->deltaT - (REAL8)(dt.seconds)) *
+                              (REAL8)oneBillion);
+  */
+
+  TRY(LALFloatToInterval(status->statusPtr, &dt, &(pTimeInfo->deltaT)),
+      status);
 
   for (i = 0; i < pTimeInfo->nSample; ++i)
     {
@@ -938,9 +959,10 @@ LALComputeDetAMResponseSeries( LALStatus              *status,
       pResponseSeries->pPlus->data->data[i]   = instResponse.plus;
       pResponseSeries->pCross->data->data[i]  = instResponse.cross;
       pResponseSeries->pScalar->data->data[i] = instResponse.scalar;
+
+      tmpgps = gps;
       
-      gps.gpsSeconds     += dt.seconds;
-      gps.gpsNanoSeconds += dt.nanoSeconds;
+      TRY(LALIncrementGPS(status->statusPtr, &gps, &tmpgps, &dt), status);
     }
 
   DETATCHSTATUSPTR(status);
