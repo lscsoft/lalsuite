@@ -658,8 +658,8 @@ LALFindChirpSlave (
       }
 
       /* unless this is a minimal match or a gaussian noise simulation, */
-      /* (re)bandpass the data and (re)compule the psd or we have not   */
-      /* been passed a psd by the datacond api that we must use         */
+      /* (re)bandpass the data and (re)compule the psd                  */
+      /* if the datacond provides us with a psd, then we keep it        */
       if ( params->simParams->simType != fcBankMinimalMatch &&
           params->simParams->simType != fcGaussianNoise &&
           params->simParams->simType != fcGaussianNoiseInject &&
@@ -761,6 +761,8 @@ LALFindChirpSlave (
         LALWindowParams           winParams;
         RealDFTParams            *dftParams = NULL;
 
+        REAL4TimeSeries           badSegment[4];
+
         memset( &segmentFFT, 0, sizeof(COMPLEX8FrequencySeries) );
         memset( &winParams, 0, sizeof(LALWindowParams) );
 
@@ -775,6 +777,49 @@ LALFindChirpSlave (
         LALCreateRealDFTParams( status->statusPtr , &dftParams, &winParams, 1 );
         CHECKSTATUSPTR( status );
 
+        /* allocate the "bad segment" storage */
+        for ( i = 0; i < 4; ++i )
+        {
+          memcpy( badSegment + i, &(params->dataChannel), 
+              sizeof(REAL4TimeSeries) );
+          badSegment[i].data = (REAL4Sequence *) 
+            LALCalloc( 1, sizeof(REAL4Sequence) );
+          badSegment[i].data->length = 262144;
+          badSegment[i].data->data = 
+            params->dataChannel.data + i * 262144;
+        }
+
+        /* compute the fft of each "bad segment" */
+        for ( i = 0; i < 4; ++i )
+        {
+          LALComputeFrequencySeries( status->statusPtr, &segmentFFT, 
+              badSegment + i, dftParams );
+          CHECKSTATUSPTR (status);
+
+          for ( k = 0; k < fdLength; ++k )
+          {
+            REAL4 fftRe = segmentFFT.data->data[k].re;
+            REAL4 fftIm = segmentFFT.data->data[k].im;
+            specPtr->data->data[k] += fftRe * fftRe + fftIm * fftIm;
+          }
+        }
+
+        /* renormalize "bad segment" psd to conventions document standard */
+        {
+          REAL4 psdnorm = ( 2.0 * deltaT ) / 4.0;
+          for ( k = 0; k < fdLength; ++k )
+          {
+            specPtr->data->data[k] *= psdnorm;
+          }
+        }
+
+        /* free the "bad segment" storage */
+        for ( i = 0; i < 4; ++i )
+        {
+          LALFree( badSegment[i].data );
+        }
+
+#if 0
         for ( i = 0; i < dataSegVec->length; ++i )
         {
           /* compute the fft of each data segment */
@@ -798,6 +843,7 @@ LALFindChirpSlave (
             specPtr->data->data[k] *= psdnorm;
           }
         }
+#endif
 
         LALDestroyRealDFTParams( status->statusPtr , &dftParams );
         CHECKSTATUSPTR( status );
@@ -888,7 +934,7 @@ LALFindChirpSlave (
       }
       else
       {
-        fprintf( stdout, "spec type = %d\n", params->specType );
+        fprintf( stdout, "spectrum type is: %d\n", params->specType );
         fflush( stdout );
         ABORT( status, FINDCHIRPENGINEH_ESTPE, FINDCHIRPENGINEH_MSGESTPE );
       }
