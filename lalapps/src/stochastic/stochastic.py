@@ -63,6 +63,7 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__f_min = None
     self.__f_max = None
     self.__usertag = None
+    self.__output_dir = None
 
   def set_ifo_one(self, ifo):
     """
@@ -185,6 +186,13 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_var_opt('user-tag',usertag)
     self.__usertag = usertag
 
+  def set_output_dir(self,dir):
+    """
+    Set the output directory
+    """
+    self.add_var_opt('output-dir',dir)
+    self.__output_dir = dir
+
   def get_output(self):
     """
     Returns the file name of output from the stochastic code. This must be
@@ -200,25 +208,13 @@ class StochasticNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if self.__usertag:
       basename += '_' + self.__usertag
 
-    filename = basename + '-' + str(self.get_start()) + '-' + \
-               str(self.get_end()) + '.xml'
-    return filename
-
-  def get_output_bayes(self):
-    """
-    Returns the file name of output from the stochastic bayesian search
-    code. This must be kept synchronized with the name of the output
-    file in stochastic.c.
-    """
-    if not self.get_start() or not self.get_end() or not \
-      self.get_ifo_one() or not self.get_ifo_two() or not \
-      self.get_f_min() or not self.get_f_max():
-        raise StochasticError, "Start time, end time, ifo one, ifo " \
-          "two, f_min or f_max has not been set"
-
-    basename = str(self.get_f_min()) + '-' + str(self.get_f_min())
-
-    filename = basename + '/' + self.get_output()
+    if self.__output_dir:
+      filename = self.__output_dir + '/' + basename + '-' + \
+                 str(self.get_start()) + '-' + str(self.get_end()) + \
+                 '.xml'
+    else:
+      filename = basename + '-' + str(self.get_start()) + '-' + \
+                 str(self.get_end()) + '.xml'
 
     return filename
 

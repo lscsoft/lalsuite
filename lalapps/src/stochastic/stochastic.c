@@ -137,7 +137,7 @@ REAL4 geoHighPassAtten = -1; /* 0.9; */
 INT4 maskBin = -1;
 
 /* output file */
-CHAR *outputFilePath = NULL;
+CHAR *outputPath = NULL;
 
 /* helper functions */
 
@@ -921,16 +921,16 @@ static void parse_options(INT4 argc, CHAR *argv[])
       case 'f':
         /* directory for output files */
         optarg_len = strlen(optarg) + 1;
-        outputFilePath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
-        memcpy(outputFilePath, optarg, optarg_len);
-        if ((stat(outputFilePath, &fileStatus) == -1) && (errno = ENOENT))
+        outputPath = (CHAR*)calloc(optarg_len, sizeof(CHAR));
+        memcpy(outputPath, optarg, optarg_len);
+        if ((stat(outputPath, &fileStatus) == -1) && (errno = ENOENT))
         {
           fprintf(stderr, "Invalid argument to --%s:\n" \
               "Directory does not exist: (%s specified)\n", \
-              long_options[option_index].name, outputFilePath);
+              long_options[option_index].name, outputPath);
           exit(1);
         }
-        ADD_PROCESS_PARAM("string", "%s", outputFilePath);
+        ADD_PROCESS_PARAM("string", "%s", outputPath);
         break;
 
       case 'g':
@@ -1656,6 +1656,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
 
   /* xml */
+  CHAR baseName[FILENAME_MAX];
   CHAR xmlFileName[FILENAME_MAX];
   LIGOLwXMLStream xmlStream;
   StochasticTable *stochHead = NULL;
@@ -1788,24 +1789,15 @@ INT4 main(INT4 argc, CHAR *argv[])
   parse_options(argc, argv);
 
   /* get xml file name */
-  if (bayes_flag)
+  if (userTag)
   {
-    LALSnprintf(xmlFileName, FILENAME_MAX, \
-        "%.0f-%.0f/%s%s-stochastic-%d-%d.xml", fMin, fMax, ifoOne, ifoTwo, \
-        startTime, endTime);
+    LALSnprintf(baseName, FILENAME_MAX, "%s%s-stochastic_%s_%d-%d", \
+        ifoOne, ifoTwo, userTag, startTime, endTime);
   }
   else
   {
-    if (userTag)
-    {
-      LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-stochastic_%s_%d-%d.xml", \
-          ifoOne, ifoTwo, userTag, startTime, endTime);
-    }
-    else
-    {
-      LALSnprintf(xmlFileName, FILENAME_MAX, "%s%s-stochastic-%d-%d.xml", \
-          ifoOne, ifoTwo, startTime, endTime);
-    }
+    LALSnprintf(baseName, FILENAME_MAX, "%s%s-stochastic-%d-%d", \
+        ifoOne, ifoTwo, startTime, endTime);
   }
 
   /* get number of segments */
@@ -2670,6 +2662,18 @@ INT4 main(INT4 argc, CHAR *argv[])
   this_proc_param = procparams.processParamsTable;
   procparams.processParamsTable = procparams.processParamsTable->next;
   free(this_proc_param);
+
+  /* set xml output file */
+  if (outputPath[0])
+  {
+    LALSnprintf(xmlFileName, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml",
+        outputPath, baseName);
+  }
+  else
+  {
+    LALSnprintf(xmlFileName, FILENAME_MAX * sizeof(CHAR), "%s.xml",
+        baseName);
+  }
 
   /* write out xml */
   if (vrbflg)

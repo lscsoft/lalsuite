@@ -234,6 +234,10 @@ for seg in data:
       # get band for analysis
       min = f_min + (i * f_band)
       max = min + f_band
+      # try and make a directory to store the xml files
+      dir = "%.0f-%.0f" % (min, max)
+      try: os.mkdir(dir)
+      except: pass
       # set up job
       stoch = stochastic.StochasticNode(stoch_job)
       stoch.set_start(chunk.start())
@@ -247,9 +251,7 @@ for seg in data:
       stoch.set_f_min(min)
       stoch.set_f_max(max)
       stoch.set_f_ref((float)(min + max)/2)
-      # try and make a directory to store the xml files
-      try: os.mkdir("%.0f-%0.f" % (min, max))
-      except: pass
+      stoch.set_output_dir(dir)
 
       # add dependancy on LSCdataFind jobs, if required
       if do_datafind:
