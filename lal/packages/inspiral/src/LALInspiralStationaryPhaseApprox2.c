@@ -96,6 +96,7 @@ LALInspiralStationaryPhaseApprox2
    }
    n = signal->length;
    nby2 = n/2;
+   memset( &ak, 0, sizeof( ak ) );
    LALInspiralSetup(status->statusPtr, &ak, params);
    CHECKSTATUSPTR(status);
    LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
