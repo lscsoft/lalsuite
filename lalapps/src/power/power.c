@@ -250,11 +250,16 @@ int main( int argc, char *argv[])
 						params->initParams), &stat); 
 
       /* decrement the total number of segments */
-      totalNumSegs -= params->initParams->numSegments;
-
+      if (totalNumSegs >= params->initParams->numSegments+1 )
+	{
+	  totalNumSegs -= (params->initParams->numSegments+1);
+	}
+      else
+	totalNumSegs = 0;
+	
       /* compute the number of points in a chunk */
       numPoints = params->initParams->numSegments * (
-          params->initParams->numPoints - params->ovrlap )
+	  params->initParams->numPoints - params->ovrlap )
         + 3 * params->ovrlap;
       
     /* create and initialize the time series vector */
@@ -515,15 +520,23 @@ int main( int argc, char *argv[])
     {
       REAL8 tmpTime=0;
 
-      /* store the start and end time of the raw channel in the search summary */
+      /* store the 'actual' start and end time(accounting for the  
+       * 0.5 sec's at the begining & end) in the search summary */
+
       LAL_CALL( LALGPStoFloat( &stat, &tmpTime, &(series.epoch) ), 
           &stat );
       tmpTime += series.deltaT * (REAL8) params->ovrlap;
-      LAL_CALL( LALFloatToGPS( &stat, 
-            &(searchsumm.searchSummaryTable->out_start_time), &tmpTime ), &stat );
+      if ( !(searchsumm.searchSummaryTable->out_start_time.gpsSeconds) )
+	{
+	  LAL_CALL( LALFloatToGPS( &stat, 
+		&(searchsumm.searchSummaryTable->out_start_time), &tmpTime ), &stat );
+	}
       tmpTime += series.deltaT * ((REAL8) series.data->length - 2.0 * (REAL8) params->ovrlap);
-      LAL_CALL( LALFloatToGPS( &stat, 
-            &(searchsumm.searchSummaryTable->out_end_time), &tmpTime ), &stat );
+      if ( totalNumSegs <= 0 )
+	{
+	  LAL_CALL( LALFloatToGPS( &stat, 
+                &(searchsumm.searchSummaryTable->out_end_time), &tmpTime ), &stat );
+	}
     }
     
     /*******************************************************************
