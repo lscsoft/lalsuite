@@ -675,10 +675,10 @@ int main( int argc, char *argv[] )
     highpassParam.f1 = -1.0;
     highpassParam.f2 = (REAL8) highPassFreq;
     highpassParam.a1 = -1.0;
-    highpassParam.a2 = 1.0 - (REAL8) highPassAtten; /* a2 is not attenuation */
+    highpassParam.a2 = (REAL8)(1.0 - highPassAtten); /* a2 is not attenuation */
 
-    if ( vrbflg ) fprintf( stdout, "applying %d order high pass to data: "
-        "%e of signal passes at %e Hz\n", 
+    if ( vrbflg ) fprintf( stdout, "applying %d order high pass: "
+        "%3.2f of signal passes at %4.2f Hz\n", 
         highpassParam.nMax, highpassParam.a2, highpassParam.f2 );
 
     LAL_CALL( LALButterworthREAL4TimeSeries( &status, &chan, &highpassParam ),
@@ -2053,7 +2053,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'I':
-        highPassAtten = (REAL4) atoi( optarg );
+        highPassAtten = (REAL4) atof( optarg );
         if ( highPassAtten < 0.0 || highPassAtten > 1.0 )
         {
           fprintf( stdout, "invalid argument to --%s:\n"
@@ -2062,7 +2062,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
               long_options[option_index].name, highPassAtten );
           exit( 1 );
         }
-        ADD_PROCESS_PARAM( "int", "%e", highPassAtten );
+        ADD_PROCESS_PARAM( "float", "%e", highPassAtten );
         break;
 
       case 'u':
