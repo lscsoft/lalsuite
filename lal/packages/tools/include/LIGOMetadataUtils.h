@@ -364,6 +364,16 @@ LALGalacticInspiralParamsToSimInspiralTable(
     );
 
 void
+LALInspiralSiteTimeAndDist( 
+    LALStatus         *status,
+    SimInspiralTable  *output,
+    LALDetector       *detector,
+    LIGOTimeGPS       *endTime,
+    REAL4             *effDist,
+    SkyPosition       *skyPos
+    );
+
+void
 LALPopulateSimInspiralSiteInfo(
     LALStatus                  *status,
     SimInspiralTable           *output

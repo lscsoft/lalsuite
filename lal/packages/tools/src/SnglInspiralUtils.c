@@ -1097,13 +1097,15 @@ LALGalacticInspiralParamsToSimInspiralTable(
 }
 
 /* function to compute the site end time and effective distance of an event */
-static void site_time_and_dist( 
+void
+LALInspiralSiteTimeAndDist( 
     LALStatus         *status,
+    SimInspiralTable  *output,
     LALDetector       *detector,
-    LIGOTimeGPS       *end_time,
-    REAL4             *eff_dist,
-    SkyPosition       *skyPos,
-    SimInspiralTable  *sim_inspiral)
+    LIGOTimeGPS       *endTime,
+    REAL4             *effDist,
+    SkyPosition       *skyPos
+    )
 {
   LALGPSandAcc          gpsAndAcc;
   LALSource             source;
@@ -1114,6 +1116,21 @@ static void site_time_and_dist(
   REAL8			time_diff_ns;
   REAL4                 splus, scross, cosiota;
 
+  INITSTATUS( status, "LALInspiralSiteTimeAndDist", SNGLINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  /* check that the arguments are not null */
+  ASSERT( output, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( detector, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( endTime, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( effDist, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  ASSERT( skyPos, status, 
+      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+
   memset( &source, 0, sizeof(LALSource) );
   memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
   memset( &detTimeAndSource, 0, sizeof(DetTimeAndASource) );
@@ -1121,9 +1138,9 @@ static void site_time_and_dist(
 
 
   source.equatorialCoords = *skyPos;
-  source.orientation      = sim_inspiral->polarization;
+  source.orientation      = output->polarization;
 
-  placeAndGPS.p_gps = &(sim_inspiral->geocent_end_time);
+  placeAndGPS.p_gps = &(output->geocent_end_time);
 
   detTimeAndSource.p_det_and_time = &placeAndGPS;
   detTimeAndSource.p_source = skyPos;
@@ -1133,22 +1150,22 @@ static void site_time_and_dist(
   detAndSource.pDetector = detector;
 
   gpsAndAcc.accuracy = LALLEAPSEC_STRICT;
-  gpsAndAcc.gps = sim_inspiral->geocent_end_time;
+  gpsAndAcc.gps = output->geocent_end_time;
 
   /* initialize end time with geocentric value */
-  *end_time = sim_inspiral->geocent_end_time;
+  *endTime = output->geocent_end_time;
 
   /* calculate the detector end time */
   LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns, 
       &detTimeAndSource );
   CHECKSTATUSPTR( status );
-  LALAddFloatToGPS( status->statusPtr, end_time,
-      end_time, time_diff_ns );
+  LALAddFloatToGPS( status->statusPtr, endTime,
+      endTime, time_diff_ns );
   CHECKSTATUSPTR( status );
 
   /* initialize distance with real distance and compute splus and scross */
-  *eff_dist = 2.0 * sim_inspiral->distance;
-  cosiota = cos( sim_inspiral->inclination );
+  *effDist = 2.0 * output->distance;
+  cosiota = cos( output->inclination );
   splus = -( 1.0 + cosiota * cosiota );
   scross = -2.0 * cosiota;
 
@@ -1158,9 +1175,10 @@ static void site_time_and_dist(
   CHECKSTATUSPTR( status );
 
   /* compute the effective distance */
-  *eff_dist /= sqrt( 
+  *effDist /= sqrt( 
       splus*splus*resp.plus*resp.plus + scross*scross*resp.cross*resp.cross );
 
+  /* normal exit */
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
@@ -1198,36 +1216,36 @@ LALPopulateSimInspiralSiteInfo(
   detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
   end_time = &(output->h_end_time);
   eff_dist = &(output->eff_dist_h);
-  site_time_and_dist(status, &detector, end_time, eff_dist, 
-      &skyPos, output);
+  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
+      eff_dist, &skyPos);
 
   /* LIGO Livingston observatory*/
   detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
   end_time = &(output->l_end_time);
   eff_dist = &(output->eff_dist_l);
-  site_time_and_dist(status, &detector, end_time, eff_dist, 
-      &skyPos, output);
+  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
+      eff_dist, &skyPos);
 
   /* GEO observatory*/
   detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   end_time = &(output->g_end_time);
   eff_dist = &(output->eff_dist_g);
-  site_time_and_dist(status, &detector, end_time, eff_dist, 
-      &skyPos, output);
+  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
+      eff_dist, &skyPos);
 
   /* TAMA observatory*/
   detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
   end_time = &(output->t_end_time);
   eff_dist = &(output->eff_dist_t);
-  site_time_and_dist(status, &detector, end_time, eff_dist, 
-      &skyPos, output);
+  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
+      eff_dist, &skyPos);
 
   /* Virgo observatory*/
   detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
   end_time = &(output->v_end_time);
   eff_dist = &(output->eff_dist_v);
-  site_time_and_dist(status, &detector, end_time, eff_dist, 
-      &skyPos, output);
+  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
+      eff_dist, &skyPos);
 
   /* 
    *
