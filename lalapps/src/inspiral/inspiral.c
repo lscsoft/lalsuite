@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <regex.h>
+#include <pwd.h>
 
 #include <lalapps.h>
 #include <lal/LALConfig.h>
@@ -32,10 +33,9 @@
 RCSID( "$Id$" );
 
 #define PROGRAM_NAME "lalapps_inspiral"
-#define CVS_VERSION  "$Revision$"
-#define CVS_SOURCE   "$Source$"
 
 long long atoll(const char *nptr);
+int gethostname(char *name, size_t len);
 
 
 /*
@@ -116,14 +116,14 @@ int main( int argc, char *argv[] )
   time_t        ticks;
   LALDate       laldate;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_LOOSE;
-  CHAR          process_program[] = "lalapps_inspiral";
-  /* CHAR         *process_version_str = NULL; */
-  /* CHAR         *process_cvs_repository_str = NULL; */
-  /* LIGOTimeGPS   process_cvs_entry_time; */
+  CHAR          process_program[] = PROGRAM_NAME;
+  CHAR          process_version[64];
+  CHAR          process_cvs_repository[256];
+  LIGOTimeGPS   process_cvs_entry_time;
   INT4          process_isonline = 0;
-  CHAR          process_node[] = "medusa";
-  CHAR          process_username[] = "duncan";
-  INT4          process_unix_procid = 9999;
+  CHAR          process_node[64];
+  CHAR          process_username[16];
+  INT4          process_unix_procid;
   LIGOTimeGPS   process_start_time;
   LIGOTimeGPS   process_end_time;
   INT4          process_jobid = 0;
@@ -157,6 +157,49 @@ int main( int argc, char *argv[] )
   LAL_CALL(
       LALUTCtoGPS( &status, &process_start_time, &laldate, &accuracy ),
       &status );
+  
+  /* process table entries */
+  {
+    const char cvs_revison[] = "$Revision$"; 
+    const char cvs_source[] =
+      "$Source$";
+    const char cvs_date[] = "$Date$";
+    const char rev_str[] = "$Revision ";
+    const char source_str[] = "$Source ";
+    const char date_str[] = "$Date ";
+    char *cvsstrstart, *cvsstrend;
+    struct passwd *pwent;
+    size_t cvsstrlen;
+    
+    /* cvs revision */
+    memset( process_version, 0, 64 * sizeof(CHAR) );
+    cvsstrstart = cvs_revison + strlen(rev_str) + 1;
+    cvsstrend   = strstr( cvs_revison, " $" );
+    cvsstrlen = cvsstrend - cvsstrstart;
+    memcpy( process_version, cvsstrstart, cvsstrlen < 64 ? cvsstrlen : 64 );
+    process_version[63] = '\0';
+
+    /* cvs repository */
+    memset( process_cvs_repository, 0, 256 * sizeof(CHAR) );
+    cvsstrstart = cvs_source + strlen(source_str) + 1;
+    cvsstrend   = strstr( cvs_source, "/inspiral.c,v $" );
+    cvsstrlen = cvsstrend - cvsstrstart;
+    memcpy( process_cvs_repository, cvsstrstart, 
+        cvsstrlen < 256 ? cvsstrlen : 256 );
+    process_cvs_repository[255] = '\0';
+
+    process_unix_procid = getpid();
+    if ( gethostname( process_node, 64 ) < 0 )
+    {
+      perror( "could not determine host name" );
+      exit( 1 );
+    }
+    if ( ! (pwent = getpwuid( getuid() )) )
+    {
+      perror( "could not get password structure" );
+    }
+    strncpy( process_username, pwent->pw_name, 16 * sizeof(CHAR) );
+  }
   
   /* open the output file */
   if ( ! (outputFp = fopen( outputFile, "w" )) )
@@ -678,8 +721,8 @@ int main( int argc, char *argv[] )
   fprintf( resultFp, "         \"%s\",\"%s\",\"%s\",%d,"
       "%d,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",",
       process_program,
-      "process_version_str",
-      "process_cvs_repository_str",
+      process_version,
+      process_cvs_repository,
       500000000,
       process_isonline,
       process_node,
