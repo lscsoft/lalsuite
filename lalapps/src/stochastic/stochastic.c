@@ -1717,9 +1717,6 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* data structures for PSDs */
   REAL8 deltaF;
-  INT4 psdWindowLength;
-  INT4 overlapPSDLength;
-  INT4 psdTempLength;
   INT4 filterLength;
   INT4 numFMin;
   INT4 numFMax;
@@ -1944,9 +1941,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   numFMax = (INT4)(fMax / deltaF);
 
   /* get lengths */
-  psdWindowLength = PSD_WINDOW_DURATION * resampleRate;
-  overlapPSDLength = psdWindowLength / 2;
-  psdTempLength = (psdWindowLength / 2) + 1;
   filterLength = numFMax - numFMin + 1;
 
   if (vrbflg)
