@@ -823,6 +823,10 @@ LALFindChirpFilterSegment (
           thisEvent->tau5   = (REAL4) input->tmplt->t5;
           thisEvent->ttotal = (REAL4) input->tmplt->tC;
 
+          /* set the type of the template used in the analysis */
+          LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+              "FindchirpSPtwoPN" );
+
           /* set snrsq, chisq, sigma and effDist for this event */
           if ( input->segment->chisqBinVec->length )
           {
@@ -915,6 +919,10 @@ LALFindChirpFilterSegment (
     thisEvent->tau4   = (REAL4) input->tmplt->t4;
     thisEvent->tau5   = (REAL4) input->tmplt->t5;
     thisEvent->ttotal = (REAL4) input->tmplt->tC;
+
+    /* set the type of the template used in the analysis */
+    LALSnprintf( thisEvent->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+        "FindchirpSPtwoPN" );
 
     /* set snrsq, chisq, sigma and effDist for this event */
     if ( input->segment->chisqBinVec->length )
