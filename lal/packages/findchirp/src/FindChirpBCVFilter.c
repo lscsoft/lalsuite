@@ -311,12 +311,20 @@ LALFindChirpBCVFilterSegment (
 
 
   /*
-   * make sure that non-zero values have been assigned to a1, b1 and b2
+   * if one or more of a1, b1 and b2 are 0, output a message
    */
 
   if ( !fabs(a1) || !fabs(b1) || !fabs(b2) )
   {
-    ABORT(status, FINDCHIRPBCVH_EZNRM, FINDCHIRPBCVH_MSGEZNRM);
+    if ( lalDebugLevel & LALINFO )
+    {
+       CHAR infomsg[256];
+       LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
+              "a1 = %e b1 = %e b2 = %e\n"
+              "fFinal = %e deltaF = %e numPoints = %d => kFinal = %d\n",
+               a1, b1, b2, fFinal, deltaF, numPoints, kFinal ); 
+       LALInfo( status, infomsg );
+    }
   }
 
 
