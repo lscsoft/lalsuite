@@ -46,6 +46,15 @@ NRCSID( SNGLINSPIRALUTILSC, "$Id$" );
 \idx{LALCompareSnglInspiralByMass()}
 \idx{LALCompareSnglInspiralByPsi()}
 \idx{LALCompareSnglInspiralByTime()}
+\idx{LALCompareSnglInspiral()}
+\idx{LALClusterSnglInspiralTable()}
+\idx{LALTimeCutSingleInspiral()}
+\idx{LALIfoScanSingleInspiral()}
+\idx{LALPlayTestSingleInspiral()}
+\idx{LALCreateTrigBank()}
+\idx{LALIncaCoincidenceTest()}
+\idx{LALTamaCoincidenceTest()}
+                                                                                
 
 \subsubsection*{Description}
 
@@ -255,12 +264,12 @@ LALCompareSnglInspiral (
 
       if ( dpsi0 <= params->dpsi0 && dpsi3 <= params->dpsi3 )
       {
-	params->match = 1;
-	LALInfo( status, "Triggers are coincident in psi0 and psi3" );
+        params->match = 1;
+        LALInfo( status, "Triggers are coincident in psi0 and psi3" );
       }
       else
       {
-	LALInfo( status, "Triggers are not coincident in psi0 and psi3" );
+        LALInfo( status, "Triggers are not coincident in psi0 and psi3" );
       }
     }
     else if ( params->test == m1_and_m2 )
@@ -271,21 +280,21 @@ LALCompareSnglInspiral (
       /* compare mass1 and mass2 parameters */
       if ( dm1 <= params->dm && dm2 <= params->dm )
       {
-	if ( fabs( 
-	      (aPtr->eff_distance - bPtr->eff_distance) / aPtr->eff_distance
-	      ) < params->epsilon / bPtr->snr + params->kappa )
-	{
-	  params->match = 1;
-	  LALInfo( status, "Triggers are coincident in eff_distance" );
-	}
-	else
-	{
-	  LALInfo( status, "Triggers fail eff_distance coincidence test" );
-	}
+        if ( fabs( 
+              (aPtr->eff_distance - bPtr->eff_distance) / aPtr->eff_distance
+              ) < params->epsilon / bPtr->snr + params->kappa )
+        {
+          params->match = 1;
+          LALInfo( status, "Triggers are coincident in eff_distance" );
+        }
+        else
+        {
+          LALInfo( status, "Triggers fail eff_distance coincidence test" );
+        }
       }
       else
       {
-	LALInfo( status, "Triggers fail mass coincidence test" );
+        LALInfo( status, "Triggers fail mass coincidence test" );
       }
     }
     else if ( params->test == mchirp_and_eta )
@@ -296,12 +305,12 @@ LALCompareSnglInspiral (
       /* compare mchirp and eta parameters */
       if ( dmchirp <= params->dmchirp && deta <= params->deta )
       {
-	params->match = 1;
-	LALInfo( status, "Triggers are coincident in mchirp and eta" );
+        params->match = 1;
+        LALInfo( status, "Triggers are coincident in mchirp and eta" );
       }
       else
       {
-	LALInfo( status, "Triggers fail mchirp, eta coincidence test" );
+        LALInfo( status, "Triggers fail mchirp, eta coincidence test" );
       }
     }
     else
@@ -356,20 +365,20 @@ LALClusterSnglInspiralTable (
     {
       /* displace previous event in cluster */
       if ( 
-	  (
-	   (clusterchoice == snr_and_chisq) && 
-	   (thisEvent->snr > prevEvent->snr) && 
-	   (thisEvent->chisq < prevEvent->chisq)
-	  ) || (
-	    (clusterchoice == snrsq_over_chisq) &&
-	    (thisEvent->snr)*(thisEvent->snr)/(thisEvent->chisq) > 
-	    (prevEvent->snr)*(prevEvent->snr)/(prevEvent->chisq)
-	    ) || (
-	      (clusterchoice == snr) && (thisEvent->snr > prevEvent->snr)
-	      )
-	 )
+          (
+           (clusterchoice == snr_and_chisq) && 
+           (thisEvent->snr > prevEvent->snr) && 
+           (thisEvent->chisq < prevEvent->chisq)
+          ) || (
+            (clusterchoice == snrsq_over_chisq) &&
+            (thisEvent->snr)*(thisEvent->snr)/(thisEvent->chisq) > 
+            (prevEvent->snr)*(prevEvent->snr)/(prevEvent->chisq)
+            ) || (
+              (clusterchoice == snr) && (thisEvent->snr > prevEvent->snr)
+              )
+         )
       {
-	memcpy( prevEvent, thisEvent, sizeof(SnglInspiralTable) );
+        memcpy( prevEvent, thisEvent, sizeof(SnglInspiralTable) );
       }
 
       /* otherwise just dump this event from cluster */
@@ -424,16 +433,16 @@ LALTimeCutSingleInspiral(
     thisEvent = thisEvent->next;
 
     if ( tmpEvent->end_time.gpsSeconds >= startTime->gpsSeconds &&
-	tmpEvent->end_time.gpsSeconds < endTime->gpsSeconds )
+        tmpEvent->end_time.gpsSeconds < endTime->gpsSeconds )
     {
       /* keep this template */
       if ( ! inspiralEventList  )
       {
-	inspiralEventList = tmpEvent;
+        inspiralEventList = tmpEvent;
       }
       else
       {
-	prevEvent->next = tmpEvent;
+        prevEvent->next = tmpEvent;
       }
       tmpEvent->next = NULL;
       prevEvent = tmpEvent;
@@ -485,13 +494,13 @@ LALIfoScanSingleInspiral(
       /* IFOs match so write this entry to the output table */
       if ( ! output  )
       {
-	*output = keptEvent = (SnglInspiralTable *) 
-	  LALMalloc( sizeof(SnglInspiralTable) );
+        *output = keptEvent = (SnglInspiralTable *) 
+          LALMalloc( sizeof(SnglInspiralTable) );
       }
       else
       {
-	keptEvent = keptEvent->next = (SnglInspiralTable *) 
-	  LALMalloc( sizeof(SnglInspiralTable) );
+        keptEvent = keptEvent->next = (SnglInspiralTable *) 
+          LALMalloc( sizeof(SnglInspiralTable) );
       }
       keptEvent = thisEvent;
       keptEvent->next = NULL;
@@ -500,9 +509,7 @@ LALIfoScanSingleInspiral(
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
-
 }  
-
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -541,25 +548,25 @@ LALPlayTestSingleInspiral(
       LALINT8NanoSecIsPlayground( status->statusPtr, &isPlay, &triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) || 
-	  ( (*dataType == exclude_play) && ! isPlay) )
+          ( (*dataType == exclude_play) && ! isPlay) )
       {
-	/* keep this trigger */
-	if ( ! inspiralEventList  )
-	{
-	  inspiralEventList = tmpEvent;
-	}
-	else
-	{
-	  prevEvent->next = tmpEvent;
-	}
-	tmpEvent->next = NULL;
-	prevEvent = tmpEvent;
-	++numTriggers;
+        /* keep this trigger */
+        if ( ! inspiralEventList  )
+        {
+          inspiralEventList = tmpEvent;
+        }
+        else
+        {
+          prevEvent->next = tmpEvent;
+        }
+        tmpEvent->next = NULL;
+        prevEvent = tmpEvent;
+        ++numTriggers;
       }
       else
       {
-	/* discard this template */
-	LALFree( tmpEvent );
+        /* discard this template */
+        LALFree( tmpEvent );
       }
     }
     *eventHead = inspiralEventList; 
@@ -584,7 +591,6 @@ LALPlayTestSingleInspiral(
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
-
 }  
 
 
@@ -626,17 +632,17 @@ LALCreateTrigBank(
   }
 
   if ( *test == m1_and_m2 )
-  {	    
+  {     
     LALInfo( status, "sorting events by mass... " ); 
     qsort( eventHandle, numEvents, sizeof(eventHandle[0]), 
-	LALCompareSnglInspiralByMass );
+        LALCompareSnglInspiralByMass );
     LALInfo( status, "done\n" ); 
   }
   else if ( *test == psi0_and_psi3 )
   { 
     LALInfo( status, "sorting events by psi... " );
     qsort( eventHandle, numEvents, sizeof(eventHandle[0]),
-	LALCompareSnglInspiralByPsi );
+        LALCompareSnglInspiralByPsi );
     LALInfo( status, "done\n" );
   }
   else
@@ -656,33 +662,33 @@ LALCreateTrigBank(
     if ( *test == m1_and_m2 )
     {
       if ( (prevEvent->mass1 == eventHandle[i]->mass1)  &&
-	  (prevEvent->mass2 == eventHandle[i]->mass2) ) 
+          (prevEvent->mass2 == eventHandle[i]->mass2) ) 
       {
-	/* discard the event as it is a duplicate */
-	LALFree( eventHandle[i] );
-	LALInfo( status, "-" );
+        /* discard the event as it is a duplicate */
+        LALFree( eventHandle[i] );
+        LALInfo( status, "-" );
       }
       else
       {
-	/* add the event to the linked list */
-	prevEvent = prevEvent->next = eventHandle[i];
-	LALInfo( status, "+" );
+        /* add the event to the linked list */
+        prevEvent = prevEvent->next = eventHandle[i];
+        LALInfo( status, "+" );
       }
     }
     else if ( *test == psi0_and_psi3 )
     {
       if ( (prevEvent->psi0 == eventHandle[i]->psi0)  &&
-	  (prevEvent->psi3 == eventHandle[i]->psi3) )
+          (prevEvent->psi3 == eventHandle[i]->psi3) )
       {
-	/* discard the event as it is a duplicate */
-	LALFree( eventHandle[i] );
-	LALInfo( status, "-" );
+        /* discard the event as it is a duplicate */
+        LALFree( eventHandle[i] );
+        LALInfo( status, "-" );
       }
       else
       {
-	/* add the event to the linked list */
-	prevEvent = prevEvent->next = eventHandle[i];
-	LALInfo( status, "+" );
+        /* add the event to the linked list */
+        prevEvent = prevEvent->next = eventHandle[i];
+        LALInfo( status, "+" );
       }
     }
     else
@@ -705,555 +711,246 @@ LALCreateTrigBank(
 }
 
 
-/* Function to return memory address of pointer to IFO inspiral table*/
-void
-LALSnglInspiralLookup(
-    LALStatus          *status,
-    SnglInspiralTable **snglInspiralPtr,
-    CoincInspiralTable *coincInspiral,
-    char               *ifo 
-    )
-{
-  INITSTATUS( status, "LALSnglInspiralLookup", SNGLINSPIRALUTILSC );
-  
-  switch ( ifo[0] ) 
-  {
-    case 'G':
-      snglInspiralPtr = &(coincInspiral->G1Inspiral);
-      break;
-
-    case 'H':
-      if ( !strcmp( ifo, "H1" ) )
-      {
-	snglInspiralPtr = &(coincInspiral->H1Inspiral);
-      }
-      else if (!strcmp( ifo, "H2" ) )
-      {
-	snglInspiralPtr = &(coincInspiral->H2Inspiral);
-      }
-      else
-      {
-	/* Invalid Hanford Detector */
-	snglInspiralPtr = NULL;
-      }	
-      break;
-
-    case 'L':
-      snglInspiralPtr = &(coincInspiral->L1Inspiral);
-      break;
-
-    case 'T':
-      snglInspiralPtr = &(coincInspiral->T1Inspiral);
-      break;
-
-    case 'V':
-      snglInspiralPtr = &(coincInspiral->V1Inspiral);
-      break;
-
-    default:
-      /* Invalid Detector Site */
-      snglInspiralPtr = NULL;
-  }
-
-  RETURN (status);
-}
-
-
-
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
-LALAddSnglInspiralToCoinc(
+LALIncaCoincidenceTest(
     LALStatus                  *status,
-    CoincInspiralTable        **coincPtr,
-    SnglInspiralTable          *snglInspiral
-    )
-/* </lalVerbatim> */
-{
-  CoincInspiralTable  *coincInspiral;
-  INITSTATUS( status, "LALAddSnglInspiralToCoinc", SNGLINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
-
-  ASSERT( coincPtr, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( *coincPtr, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( snglInspiral, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-
-
-  coincInspiral = *coincPtr;
-
-  switch ( (snglInspiral->ifo)[0] ) 
-  {
-    case 'G':
-      coincInspiral->G1Inspiral = snglInspiral;
-      break;
-
-    case 'H':
-      if ( !strcmp( snglInspiral->ifo, "H1" ) )
-      {
-	coincInspiral->H1Inspiral = snglInspiral;
-      }
-      else if (!strcmp( snglInspiral->ifo, "H2" ) )
-      {
-	coincInspiral->H2Inspiral = snglInspiral;
-      }
-      else
-      {
-	/* Invalid Hanford Detector */
-	ABORT( status, LIGOMETADATAUTILSH_EDET, LIGOMETADATAUTILSH_MSGEDET );
-      }	
-      break;
-
-    case 'L':
-      coincInspiral->L1Inspiral = snglInspiral;
-      break;
-
-    case 'T':
-      coincInspiral->T1Inspiral = snglInspiral;
-      break;
-
-    case 'V':
-      coincInspiral->V1Inspiral = snglInspiral;
-      break;
-
-    default:
-      /* Invalid Detector Site */
-      ABORT( status, LIGOMETADATAUTILSH_EDET, LIGOMETADATAUTILSH_MSGEDET );
-  }
-
-  ++(coincInspiral->numIfos);
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}
-
-
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
-void
-LALCreateNewCoinc(
-    LALStatus                  *status,
-    CoincInspiralTable        **coincPtr,
-    CoincInspiralTable         *coincInspiral,
-    SnglInspiralTable          *snglInspiral
-    )
-/* </lalVerbatim> */
-{
-  CoincInspiralTable  *newCoincInspiral;
-  INITSTATUS( status, "LALAddSnglInspiralToCoinc", SNGLINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
-
-  ASSERT( coincPtr, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( *coincPtr, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( snglInspiral, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-
-
-  /* allocate memory for the new IFO coinc table */
-  newCoincInspiral = (CoincInspiralTable *) 
-    LALCalloc( 1, sizeof(CoincInspiralTable) );
-
-
-  /* copy over the single IFO event */
-  memcpy( newCoincInspiral, coincInspiral, sizeof(CoincInspiralTable) );
-
-
-  /* add the additional sngl_inspiral to the new coinc */
-  LALAddSnglInspiralToCoinc( status->statusPtr, &newCoincInspiral, 
-      snglInspiral );
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}
-
-
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
-void
-LALSnglInspiralCoincTest(
-    LALStatus                  *status,
-    CoincInspiralTable         *coincInspiral,
-    SnglInspiralTable          *snglInspiral,
+    SnglInspiralTable         **ifoAOutput,
+    SnglInspiralTable         **ifoBOutput,
+    SnglInspiralTable          *ifoAInput,
+    SnglInspiralTable          *ifoBInput,
     SnglInspiralAccuracy       *errorParams
     )
 /* </lalVerbatim> */
 {
-  SnglInspiralTable    *thisCoincEntry;
-  INT4                  match = 1;
-  INT4                  j = 0;
-  static char         *ifoList[] = {"Unknown IFO", "G1", "H1", "H2", 
-    "L1", "T1", "V1"};
-    
+  SnglInspiralTable    *currentTrigger[2];
+  SnglInspiralTable    *coincidentEvents[2];
+  SnglInspiralTable    *outEvent[2];
+  SnglInspiralTable    *currentEvent;
 
-  INITSTATUS( status, "LALSnglInspiralCoincTest", SNGLINSPIRALUTILSC );
+  INT8 ta,tb;
+  INT4 j;
+
+  INITSTATUS( status, "LALIncaCoincidenceTest", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
+  memset( currentTrigger, 0, 2 * sizeof(SnglInspiralTable *) );
+  memset( coincidentEvents, 0, 2 * sizeof(SnglInspiralTable *) );
+  memset( outEvent, 0, 2 * sizeof(SnglInspiralTable *) );
 
-  /* Loop over sngl_inspirals contained in coinc_inspiral */
-  for ( j = 1; j < 7; j++)
+  
+  if ( ! ifoAInput )
   {
-    LALSnglInspiralLookup( status->statusPtr, &thisCoincEntry, coincInspiral, 
-	ifoList[j] );
+    LALInfo( status, "No input triggers from IFO A, exiting");
+  }
 
-    if ( thisCoincEntry )
+  if ( ! ifoBInput )
+  {
+    LALInfo( status, "No input triggers from IFO B, exiting");
+  }
+
+  currentTrigger[1] = ifoBInput;
+
+  for( currentTrigger[0]=ifoAInput; currentTrigger[0]; 
+      currentTrigger[0] = currentTrigger[0]->next  )
+  {
+    LALGPStoINT8( status->statusPtr, &ta, &(currentTrigger[0]->end_time) );
+
+    /* spin ifo b until the current trigger is within the coinicdence */
+    /* window of the current ifo a trigger                            */
+    while ( currentTrigger[1] )
     {
-      /* snglInspiral entry exists for this IFO, perform coincidence test */
-      if ( !strcmp( snglInspiral->ifo, thisCoincEntry->ifo ) )
-      {
-	LALInfo( status, "We already have a coinc from this IFO" );
-	errorParams->match = 0;
-      }
+      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
 
-      else
+      if ( tb > ta - errorParams->dt )
       {
-	LALCompareSnglInspiral ( status->statusPtr, snglInspiral, 
-	    thisCoincEntry, errorParams );
+        /* we have reached the time coinicidence window */
+        break;
       }
-      /* set match to zero if no match.  Keep same if match */
-      match *= errorParams->match;
+      currentTrigger[1] = currentTrigger[1]->next;
     }
 
-    /* returm errorParams->match to be 1 if we match, zero otherwise */
-    errorParams->match = match;
-    if ( errorParams->match == 0 ) LALInfo( status, "Coincidence test failed" );
-    if ( errorParams->match == 0 ) LALInfo( status, "Coincidence test passed" );
+    /* look for coincident events in B within the time window */
+    currentEvent = currentTrigger[1];
 
+    while ( currentTrigger[1] )
+    {
+      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
 
-    DETATCHSTATUSPTR (status);
-    RETURN (status);
-  }
+      if (tb > ta + errorParams->dt )
+      {
+        /* we are outside the time coincidence so move to next event */
+        break;
+      }
+      else
+      {
+        /* call the LAL function which compares events parameters */
+        LALCompareSnglInspiral( status->statusPtr, currentTrigger[0],
+            currentTrigger[1], errorParams );
+      }
+
+      if ( errorParams->match )
+      {
+        /* store this event for output */
+        LALInfo( status, "    >>> found coincidence <<<" );
+
+        for ( j = 0; j < 2; ++j )
+        {
+          if ( ! coincidentEvents[j] )
+          {
+            coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
+              LALMalloc( sizeof(SnglInspiralTable) );
+          }
+          else
+          {
+            outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
+              LALMalloc( sizeof(SnglInspiralTable) );
+          }
+
+          memcpy( outEvent[j], currentTrigger[j], sizeof(SnglInspiralTable) );
+          outEvent[j]->next = NULL;
+        }  
+      }
+
+      currentTrigger[1] = currentTrigger[1]->next;
+
+    } /* end loop over current events */
+
+    /* go back to saved current IFO B trigger */
+    currentTrigger[1] = currentEvent;
+
+  } /* end loop over ifo A events */
+
+  *ifoAOutput = coincidentEvents[0];
+  *ifoBOutput = coincidentEvents[1];
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 }
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
-LALGalacticInspiralParamsToSimInspiralTable(
+LALTamaCoincidenceTest(
     LALStatus                  *status,
-    SimInspiralTable           *output,
-    GalacticInspiralParamStruc *input,
-    RandomParams               *params
+    SnglInspiralTable         **ifoAOutput,
+    SnglInspiralTable         **ifoBOutput,
+    SnglInspiralTable          *ifoAInput,
+    SnglInspiralTable          *ifoBInput,
+    SnglInspiralAccuracy       *errorParams,
+    SnglInspiralClusterChoice   clusterchoice
     )
 /* </lalVerbatim> */
 {
-  PPNParamStruc         ppnParams;
-  LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
-  LALGPSandAcc          gpsAndAcc;
-  SkyPosition	        skyPos;
-  LALSource             source;
-  LALPlaceAndGPS        placeAndGPS;
-  DetTimeAndASource     detTimeAndSource;
-  LALDetector           lho = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  LALDetector           llo = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  LALDetAndSource       detAndSource;
-  LALDetAMResponse      resp;
-  REAL8			time_diff_ns;
-  REAL4                 splus, scross, cosiota;
+  SnglInspiralTable    *currentTrigger[2];
+  SnglInspiralTable    *coincidentEvents[2];
+  SnglInspiralTable    *outEvent[2];
+  SnglInspiralTable    *currentEventHead, *currentEvent;
 
-  INITSTATUS( status, "LALGalacticParamsToSimInspiral", SNGLINSPIRALUTILSC );
+  INT8 ta,tb;
+  INT4 j;
+
+  INITSTATUS( status, "LALIncaCoincidenceTest", SNGLINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
-  ASSERT( output, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( input, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( params, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
+  memset( currentTrigger, 0, 2 * sizeof(SnglInspiralTable *) );
 
-
-  /*
-   *
-   * compute sky position and inspiral params
-   *
-   */
-
-
-  /* generate the ppn inspiral params */
-  memset( &ppnParams, 0, sizeof(PPNParamStruc) );
-  LALGetInspiralParams( status->statusPtr, &ppnParams, input, params );
-  CHECKSTATUSPTR( status );
-
-  if ( ppnParams.position.system != COORDINATESYSTEM_EQUATORIAL )
+  if ( ! ifoAInput )
   {
-    ABORT( status, LIGOMETADATAUTILSH_ECOOR, LIGOMETADATAUTILSH_MSGECOOR );
+    LALInfo( status, "No input triggers from IFO A, exiting");
   }
 
-  /* copy the inspiral data into sim_inspiral table */
-  output->mass1        = input->m1;
-  output->mass2        = input->m2;
-  output->eta          = ppnParams.eta;
-  output->distance     = ppnParams.d / (1.0e6 * LAL_PC_SI); /* Mpc */
-  output->longitude    = ppnParams.position.longitude;
-  output->latitude     = ppnParams.position.latitude;
-  output->inclination  = ppnParams.inc;
-  output->coa_phase    = ppnParams.phi;
-  output->polarization = ppnParams.psi;
+  if ( ! ifoBInput )
+  {
+    LALInfo( status, "No input triggers from IFO B, exiting");
+  }
 
-  /* populate geocentric end time */
-  output->geocent_end_time = input->geocentEndTime;
+  currentTrigger[1] = ifoBInput;
 
-  /* populate gmst field */
-  LALGPStoGMST1( status->statusPtr, &(output->end_time_gmst), 
-      &(output->geocent_end_time), &gmstUnits );
-  CHECKSTATUSPTR( status );
+  for( currentTrigger[0]=ifoAInput; currentTrigger[0]; 
+      currentTrigger[0] = currentTrigger[0]->next  )
+  {
+    LALGPStoINT8( status->statusPtr, &ta, &(currentTrigger[0]->end_time) );
 
-  /* set up params for the site end times and detector response */
-  memset( &skyPos, 0, sizeof(SkyPosition) );
-  memset( &source, 0, sizeof(LALSource) );
-  memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
-  memset( &detTimeAndSource, 0, sizeof(DetTimeAndASource) );
-  memset( &detAndSource, 0, sizeof(LALDetAndSource) );
+    LALInfo( status, printf("  using IFO A trigger at %d + %10.10f\n",
+        currentTrigger[0]->end_time.gpsSeconds, 
+        ((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) ));
 
-  skyPos.longitude = output->longitude;
-  skyPos.latitude  = output->latitude;
-  skyPos.system    = COORDINATESYSTEM_EQUATORIAL;
+    /* spin ifo b until the current trigger is within the coinicdence */
+    /* window of the current ifo a trigger                            */
+    while ( currentTrigger[1] )
+    {
+      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
 
-  source.equatorialCoords = skyPos;
-  source.orientation      = output->polarization;
+      if ( tb > ta - errorParams->dt )
+      {
+        /* we have reached the time coinicidence window */
+        break;
+      }
+      currentTrigger[1] = currentTrigger[1]->next;
+    }
 
-  placeAndGPS.p_gps = &(output->geocent_end_time);
+    /* look for coincident events in B within the time window */
+    currentEventHead = currentEvent = currentTrigger[1];
 
-  detTimeAndSource.p_det_and_time = &placeAndGPS;
-  detTimeAndSource.p_source = &skyPos;
+    while ( currentTrigger[1] )
+    {
+      LALGPStoINT8( status->statusPtr, &tb, &(currentTrigger[1]->end_time) );
 
-  detAndSource.pSource = &source;
+      if (tb > ta + errorParams->dt )
+      {
+        /* we are outside the time coincidence so move to next event */
+        LALInfo( status, "outside the time coincidence window\n" );
+        break;
+      }
+      else
+      {
+        currentEvent = currentEvent->next = currentTrigger[1];
+      }
+    }
+    currentEvent->next = NULL;
 
-  gpsAndAcc.accuracy = LALLEAPSEC_STRICT;
-  gpsAndAcc.gps = output->geocent_end_time;
+    LALClusterSnglInspiralTable ( status->statusPtr, currentEventHead, 
+        2 * errorParams->dt, clusterchoice);
 
+    currentTrigger[1] = currentEventHead;
 
-  /*
-   *
-   * compute site end times
-   *
-   */
+    /* call the LAL function which compares events parameters */
+    LALCompareSnglInspiral( status->statusPtr, currentTrigger[0],
+        currentTrigger[1], errorParams );
 
+    if ( errorParams->match )
+    {
+      /* store this event for output */
+      LALInfo( status, "    >>> found coincidence <<<\n" );
 
-  /* initialize end times with geocentric value */
-  output->h_end_time = output->l_end_time = input->geocentEndTime;
+      for ( j = 0; j < 2; ++j )
+      {
+        if ( ! coincidentEvents[j] )
+        {
+          coincidentEvents[j] = outEvent[j] = (SnglInspiralTable *) 
+            LALMalloc( sizeof(SnglInspiralTable) );
+        }
+        else
+        {
+          outEvent[j] = outEvent[j]->next = (SnglInspiralTable *) 
+            LALMalloc( sizeof(SnglInspiralTable) );
+        }
 
-  /* ligo hanford observatory */
-  placeAndGPS.p_detector = &lho;
-  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns, 
-      &detTimeAndSource );
-  CHECKSTATUSPTR( status );
-  LALAddFloatToGPS( status->statusPtr, &(output->h_end_time),
-      &(output->h_end_time), time_diff_ns );
-  CHECKSTATUSPTR( status );
+        memcpy( outEvent[j], currentTrigger[j], sizeof(SnglInspiralTable) );
+        outEvent[j]->next = NULL;
+      }  
+    }
 
-  /* ligo livingston observatory */
-  placeAndGPS.p_detector = &llo;
-  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns, 
-      &detTimeAndSource );
-  CHECKSTATUSPTR( status );
-  LALAddFloatToGPS( status->statusPtr, &(output->l_end_time), 
-      &(output->l_end_time), time_diff_ns );
-  CHECKSTATUSPTR( status );
+    /* go back to saved current IFO B trigger */
+    currentTrigger[1] = currentEvent;
 
+  } /* end loop over ifo A events */
 
-  /*
-   *
-   * compute the effective distance of the inspiral
-   *
-   */
-
-
-  /* initialize distances with real distance and compute splus and scross */
-  output->eff_dist_h = output->eff_dist_l = 2.0 * output->distance;
-  cosiota = cos( output->inclination );
-  splus = -( 1.0 + cosiota * cosiota );
-  scross = -2.0 * cosiota;
-
-  /* compute the response of the LHO detectors */
-  detAndSource.pDetector = &lho;
-  LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
-      &gpsAndAcc );
-  CHECKSTATUSPTR( status );
-
-  /* compute the effective distance for LHO */
-  output->eff_dist_h /= sqrt( 
-      splus*splus*resp.plus*resp.plus + scross*scross*resp.cross*resp.cross );
-
-  /* compute the response of the LLO detector */
-  detAndSource.pDetector = &llo;
-  LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
-      &gpsAndAcc );
-  CHECKSTATUSPTR( status );
-
-  /* compute the effective distance for LLO */
-  output->eff_dist_l /= sqrt( 
-      splus*splus*resp.plus*resp.plus + scross*scross*resp.cross*resp.cross );
-
-
-  /* 
-   *
-   * normal exit
-   *
-   */
-
+  *ifoAOutput = coincidentEvents[0];
+  *ifoBOutput = coincidentEvents[1];
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
 
-/* function to compute the site end time and effective distance of an event */
-void
-LALInspiralSiteTimeAndDist( 
-    LALStatus         *status,
-    SimInspiralTable  *output,
-    LALDetector       *detector,
-    LIGOTimeGPS       *endTime,
-    REAL4             *effDist,
-    SkyPosition       *skyPos
-    )
-{
-  LALGPSandAcc          gpsAndAcc;
-  LALSource             source;
-  LALPlaceAndGPS        placeAndGPS;
-  DetTimeAndASource     detTimeAndSource;
-  LALDetAndSource       detAndSource;
-  LALDetAMResponse      resp;
-  REAL8			time_diff_ns;
-  REAL4                 splus, scross, cosiota;
-
-  INITSTATUS( status, "LALInspiralSiteTimeAndDist", SNGLINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
-
-  /* check that the arguments are not null */
-  ASSERT( output, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( detector, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( endTime, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( effDist, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-  ASSERT( skyPos, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-
-  memset( &source, 0, sizeof(LALSource) );
-  memset( &placeAndGPS, 0, sizeof(LALPlaceAndGPS) );
-  memset( &detTimeAndSource, 0, sizeof(DetTimeAndASource) );
-  memset( &detAndSource, 0, sizeof(LALDetAndSource) );
-
-
-  source.equatorialCoords = *skyPos;
-  source.orientation      = output->polarization;
-
-  placeAndGPS.p_gps = &(output->geocent_end_time);
-
-  detTimeAndSource.p_det_and_time = &placeAndGPS;
-  detTimeAndSource.p_source = skyPos;
-  detTimeAndSource.p_det_and_time->p_detector = detector;
-
-  detAndSource.pSource = &source;
-  detAndSource.pDetector = detector;
-
-  gpsAndAcc.accuracy = LALLEAPSEC_STRICT;
-  gpsAndAcc.gps = output->geocent_end_time;
-
-  /* initialize end time with geocentric value */
-  *endTime = output->geocent_end_time;
-
-  /* calculate the detector end time */
-  LALTimeDelayFromEarthCenter( status->statusPtr, &time_diff_ns, 
-      &detTimeAndSource );
-  CHECKSTATUSPTR( status );
-  LALAddFloatToGPS( status->statusPtr, endTime,
-      endTime, time_diff_ns );
-  CHECKSTATUSPTR( status );
-
-  /* initialize distance with real distance and compute splus and scross */
-  *effDist = 2.0 * output->distance;
-  cosiota = cos( output->inclination );
-  splus = -( 1.0 + cosiota * cosiota );
-  scross = -2.0 * cosiota;
-
-  /* compute the response of the detector */
-  LALComputeDetAMResponse( status->statusPtr, &resp, &detAndSource,
-      &gpsAndAcc );
-  CHECKSTATUSPTR( status );
-
-  /* compute the effective distance */
-  *effDist /= sqrt( 
-      splus*splus*resp.plus*resp.plus + scross*scross*resp.cross*resp.cross );
-
-  /* normal exit */
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}
-
-
-
-/* <lalVerbatim file="SnglInspiralUtilsCP"> */
-void
-LALPopulateSimInspiralSiteInfo(
-    LALStatus                  *status,
-    SimInspiralTable           *output
-    )
-/* </lalVerbatim> */
-{
-  SkyPosition	        skyPos;
-  LALDetector           detector; 
-  REAL4                *eff_dist;
-  LIGOTimeGPS          *end_time;
-
-
-  INITSTATUS( status, "LALPopulateSimInspiralSiteInfo", SNGLINSPIRALUTILSC );
-  ATTATCHSTATUSPTR( status );
-
-  ASSERT( output, status, 
-      LIGOMETADATAUTILSH_ENULL, LIGOMETADATAUTILSH_MSGENULL );
-
-  /* set up params for the geocent end time and source location */
-  memset( &skyPos, 0, sizeof(SkyPosition) );
-
-  skyPos.longitude = output->longitude;
-  skyPos.latitude  = output->latitude;
-  skyPos.system    = COORDINATESYSTEM_EQUATORIAL;
-
-  /* LIGO Hanford observatory*/
-  detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  end_time = &(output->h_end_time);
-  eff_dist = &(output->eff_dist_h);
-  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
-      eff_dist, &skyPos);
-
-  /* LIGO Livingston observatory*/
-  detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  end_time = &(output->l_end_time);
-  eff_dist = &(output->eff_dist_l);
-  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
-      eff_dist, &skyPos);
-
-  /* GEO observatory*/
-  detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  end_time = &(output->g_end_time);
-  eff_dist = &(output->eff_dist_g);
-  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
-      eff_dist, &skyPos);
-
-  /* TAMA observatory*/
-  detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  end_time = &(output->t_end_time);
-  eff_dist = &(output->eff_dist_t);
-  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
-      eff_dist, &skyPos);
-
-  /* Virgo observatory*/
-  detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  end_time = &(output->v_end_time);
-  eff_dist = &(output->eff_dist_v);
-  LALInspiralSiteTimeAndDist(status->statusPtr, output, &detector, end_time, 
-      eff_dist, &skyPos);
-
-  /* 
-   *
-   * normal exit
-   *
-   */
-
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}

@@ -246,6 +246,7 @@ LALTimeSortSummValue (
  *
  */
 
+/* sngl inspiral */
 
 void
 LALSortSnglInspiral (
@@ -321,6 +322,30 @@ LALCreateTrigBank(
     );
 
 void
+LALIncaCoincidenceTest(
+    LALStatus                  *status,
+    SnglInspiralTable         **ifoAOutput,
+    SnglInspiralTable         **ifoBOutput,
+    SnglInspiralTable          *ifoAInput,
+    SnglInspiralTable          *ifoBInput,
+    SnglInspiralAccuracy       *errorParams
+    );
+
+void
+LALTamaCoincidenceTest(
+    LALStatus                  *status,
+    SnglInspiralTable         **ifoAOutput,
+    SnglInspiralTable         **ifoBOutput,
+    SnglInspiralTable          *ifoAInput,
+    SnglInspiralTable          *ifoBInput,
+    SnglInspiralAccuracy       *errorParams,
+    SnglInspiralClusterChoice   clusterchoice
+    );
+
+
+/* coinc inspiral */
+
+void
 LALSnglInspiralLookup(
     LALStatus                  *status,
     SnglInspiralTable         **snglInspiralPtr,
@@ -354,6 +379,8 @@ LALSnglInspiralCoincTest(
     SnglInspiralAccuracy       *errorParams
     );
 
+
+/* sim inspiral */
 
 void
 LALGalacticInspiralParamsToSimInspiralTable(
@@ -482,6 +509,8 @@ LALClusterSnglBurstTable(
 
 \newpage\input{LIGOMetadataUtilsC}
 \newpage\input{SnglInspiralUtilsC}
+\newpage\input{CoincInspiralUtilsC}
+\newpage\input{SimInspiralUtilsC}
 </lalLaTeX>
 #endif
 
