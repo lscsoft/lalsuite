@@ -554,7 +554,7 @@ LALInspiralWave1ForInjection(
      f2a = pow (f2aFac * omega, 2./3.);
      a->data[2*count]          = (REAL4)(4.*apFac * f2a);
      a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
-     phi->data[count]          = (REAL8)(2* p);
+     phi->data[count]          = (REAL8)(p);
 
      
      LALInspiralDerivatives(&values, &dvalues, funcParams);

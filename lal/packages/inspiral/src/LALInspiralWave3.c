@@ -58,6 +58,9 @@ phase by $\pi/2$.
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
+#include <lal/Units.h>
+#include <lal/SeqFactories.h>
+
 
 typedef struct
 {
@@ -388,48 +391,82 @@ NRCSID (LALINSPIRALWAVE3FORINJECTIONC, "$Id$");
 void 
 LALInspiralWave3ForInjection (
    LALStatus        *status,
-   REAL4Vector      *inject_hc,
-   REAL4Vector      *inject_hp,
-   REAL4Vector      *inject_phase,
-   REAL4Vector      *inject_freq,
+   CoherentGW       *waveform,   
    InspiralTemplate *params
    )
 
 { /* </lalVerbatim>  */
 
-  INT4 i, startShift, count;
-  REAL8 dt, fu, ieta, eta, tc, totalMass, t, td, c1, phi0, phi1, phi;
+  INT4 i, startShift, count, length;
+  REAL8 dt, fu, ieta, eta, tc, totalMass, t, td, c1, phi0, phi1, phi,omega;
   REAL8 v, f, fHigh, amp, tmax, fOld, phase;
   expnFunc func;
   expnCoeffs ak;
+  REAL4Vector *a=NULL;
+  REAL4Vector *ff=NULL ;
+  REAL8Vector *phiv=NULL;
+  CreateVectorSequenceIn in;
+  REAL8 unitHz,f2a, mu, mTot, cosI, etab, fFac,  f2aFac, apFac, acFac, phiC;
+    
+  mTot   =  params->mass1 + params->mass2;
+  etab   =  params->mass1 * params->mass2;
+  etab  /= mTot;
+  etab  /= mTot;
+  unitHz = (mTot) *LAL_MTSUN_SI*(REAL8)LAL_PI;
+  cosI   = cos( params->inclination );
+  mu     = etab * mTot;  
+  fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
+  dt     = -1. * etab / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
+  f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;   
+  apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
+  apFac *= 1.0 + cosI*cosI;
+  acFac *= 2.0 * cosI;
 
-  REAL8 unitHz; 
-  unitHz = (params->mass1 +params->mass2) *LAL_MTSUN_SI*(REAL8)LAL_PI;
+  
 
 
   INITSTATUS (status, "LALInspiralWave3ForInjection", LALINSPIRALWAVE3FORINJECTIONC);
   ATTATCHSTATUSPTR(status);
   
-  ASSERT(inject_hc,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(inject_hp,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(inject_hc->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(inject_hp->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  
-  ASSERT(inject_phase,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(inject_freq,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(inject_freq->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(inject_phase->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
+/* Make sure parameter and waveform structures exist. */
+  ASSERT( params, status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
+  /* Make sure waveform fields don't exist. */
+  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL,
+	  LALINSPIRALH_MSGENULL );
+   
+  
 
   ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL); 
   ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-  LALInspiralSetup (status->statusPtr, &ak, params);
-  CHECKSTATUSPTR(status);
-  LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
-  CHECKSTATUSPTR(status);
+  /*Compute some parameters*/
+   LALInspiralSetup (status->statusPtr, &ak, params);
+   CHECKSTATUSPTR(status);
+   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
+   CHECKSTATUSPTR(status);
+   LALInspiralWaveLength(status->statusPtr, &length, *params);
+   CHECKSTATUSPTR(status);
+
+  
+   /*Now we can allocate memory and vector for coherentGW structure*/     
+   LALSCreateVector(status->statusPtr, &ff, length);
+   CHECKSTATUSPTR(status);   
+   LALSCreateVector(status->statusPtr, &a, 2*length);
+   CHECKSTATUSPTR(status);   
+   LALDCreateVector(status->statusPtr, &phiv, length);
+   CHECKSTATUSPTR(status);
+  
 
   dt = 1.0/(params->tSampling);    /* sampling rate  */
   fu = params->fCutoff;            /* upper frequency cutoff  */
@@ -473,14 +510,8 @@ LALInspiralWave3ForInjection (
 /* Here's the part which calculates the waveform */
 
   c1 = eta/(5.*totalMass);
-  i=0; while (i<startShift) 
-  {
-       *(inject_hc->data + i) = 
-       *(inject_hp->data + i) = 
-       *(inject_phase ->data +i) =
-       *(inject_freq->data +i) = 0.;
-      i++;
-  }
+  i=0;
+
 
   t=0.0;
   td = c1*(tc-t);
@@ -496,17 +527,19 @@ LALInspiralWave3ForInjection (
   fOld = 0.0;
 
 /* We stop if any of the following conditions fail */
-
   while (f<fHigh && t<tmax && f>fOld) 
   {
     fOld = f; 
     v = pow(f*LAL_PI*totalMass, oneby3);
     amp = params->signalAmplitude * v*v;
 
-    *(inject_hc->data + i) = (REAL4) amp;
-    *(inject_hp->data + i) = (REAL4) amp;
-    *(inject_phase->data + i) = (REAL8) (phase);
-    *(inject_freq->data + i) = (REAL4) v*v*v / unitHz;
+    omega = v*v*v;
+
+    ff->data[count]= (REAL4)(omega/unitHz);
+    f2a = pow (f2aFac * omega, 2./3.);
+    a->data[2*count]          = (REAL4)(4.*apFac * f2a);
+    a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
+    phiv->data[count]          = (REAL8)(phase);
 
 
     ++i;
@@ -523,16 +556,83 @@ LALInspiralWave3ForInjection (
 /*
   fprintf(stderr, "%e %e\n", f, fHigh);
 */
-
-   while (i<(INT4)inject_hp->length) 
-
-  {
-     *(inject_hc->data + i) = 
-       *(inject_hp->data + i) = 
-       *(inject_phase ->data +i) =
-       *(inject_freq->data +i) =0.;
-      i++;
+/*wrap the phase vector*/
+   phiC =  phiv->data[count-1] ;
+   for (i=0; i<count;i++)
+     {
+       phiv->data[i] =  phiv->data[i] -phiC;
+     }
+/* Allocate the waveform structures. */
+  if ( ( waveform->a = (REAL4TimeVectorSeries *)
+	 LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
+    ABORT( status, LALINSPIRALH_EMEM,
+	   LALINSPIRALH_MSGEMEM );
   }
+  memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
+  if ( ( waveform->f = (REAL4TimeSeries *)
+	 LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
+    LALFree( waveform->a ); waveform->a = NULL;
+    ABORT( status, LALINSPIRALH_EMEM,
+	   LALINSPIRALH_MSGEMEM );
+  }
+  memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
+  if ( ( waveform->phi = (REAL8TimeSeries *)
+	 LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
+    LALFree( waveform->a ); waveform->a = NULL;
+    LALFree( waveform->f ); waveform->f = NULL;
+    ABORT( status, LALINSPIRALH_EMEM,
+	   LALINSPIRALH_MSGEMEM );
+  }
+  memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
+
+
+
+  in.length = (UINT4)count;
+  in.vectorLength = 2;
+  LALSCreateVectorSequence( status->statusPtr,
+			    &( waveform->a->data ), &in );
+  CHECKSTATUSPTR(status);      
+  LALSCreateVector( status->statusPtr,
+		    &( waveform->f->data ), count);
+  CHECKSTATUSPTR(status);      
+  LALDCreateVector( status->statusPtr,
+		    &( waveform->phi->data ), count );
+  CHECKSTATUSPTR(status);        
+  
+  
+  
+
+  memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
+  memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
+  memcpy(waveform->phi->data->data ,phiv->data, count*(sizeof(REAL8)));
+
+
+ 
+  dt = -1. * etab / ( params->tSampling * 5.0*LAL_MTSUN_SI*mTot );      
+
+  waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
+    = 1./params->tSampling;
+
+  waveform->a->sampleUnits = lalStrainUnit;
+  waveform->f->sampleUnits = lalHertzUnit;
+  waveform->phi->sampleUnits = lalDimensionlessUnit;
+ LALSnprintf( waveform->a->name, LALNameLength, "EOB inspiral amplitudes" );
+  LALSnprintf( waveform->f->name, LALNameLength, "EOB inspiral frequency" );
+  LALSnprintf( waveform->phi->name, LALNameLength, "EOB inspiral phase" );
+
+
+  params->tC = count / params->tSampling ;
+  params->tSampling = (REAL4)(waveform->f->data->data[count-1]
+			      -
+			      waveform->f->data->data[count-2]);
+  /* - (waveform->f->data[count-2]);*/
+  params->tSampling /= (REAL4)dt;
+  params->nStartPad = count;
+
+  LALFree(a->data);
+  LALFree(ff->data);
+  LALFree(phiv->data);
+
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
