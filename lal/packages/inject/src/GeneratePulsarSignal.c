@@ -1208,9 +1208,13 @@ LALDestroySFTtype (LALStatus *stat,
   ATTATCHSTATUSPTR (stat);
 
   ASSERT (sft != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  ASSERT (*sft != NULL, stat, GENERATEPULSARSIGNALH_ENULL,  GENERATEPULSARSIGNALH_MSGENULL);
-  
 
+  /* be flexible: if points to null, nothing to do here.. (like 'free()') */
+  if (*sft == NULL) {
+    DETATCHSTATUSPTR( stat );
+    RETURN (stat);
+  }
+    
   LALCDestroyVector (stat->statusPtr, &((*sft)->data) );
   LALFree ( (*sft) );
 
