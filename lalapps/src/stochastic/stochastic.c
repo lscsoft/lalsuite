@@ -1027,7 +1027,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 		responseTempTwo.epoch = gpsStartTime;
                 
 		LAL_CALL( LALExtractFrameResponse(&status, &responseTempOne, calCacheOne, \
-					ifoOne, $duration), &status );
+					ifoOne, &duration), &status );
 
 		if ((status.statusCode !=0)||(responseTempOne.data==NULL))
 		  {
@@ -1040,7 +1040,7 @@ INT4 main(INT4 argc, CHAR *argv[])
                          
                
 		LAL_CALL( LALExtractFrameResponse(&status, &responseTempTwo, calCacheTwo, \
-					ifoTwo, $duration), &status );
+					ifoTwo, &duration), &status );
                 
                 if ((status.statusCode !=0)||(responseTempTwo.data==NULL))
 		  {
