@@ -4,7 +4,6 @@
  */
 #include "config.h"
 #include "cmdline.h"
-#include "mystrncasecmp.h"
 #include "detresponse.h"
 
 
