@@ -236,6 +236,7 @@ void LALInitSearch(
   params->haveData        = 0;
   params->currentSegment  = 0;
   params->winParams.type = Bartlett;
+  params->initParams->method = useMean;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
