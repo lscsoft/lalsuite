@@ -227,7 +227,8 @@ int main(int argc, char **argv)
             if ( tmpConfidence < logThreshold ){
                 if (freqHistogram){
                     i=(INT4)((tmpFreq-fstart-0.5*bandwidth)/df);
-                    while (i<(INT4)((tmpFreq-fstart+0.5*bandwidth)/df)){
+                    while (i<(INT4)((tmpFreq-fstart+0.5*bandwidth)/df) &&
+                            i < nFreqBins){
                         freqHistData[i] += 1;
                         tmpHistData[i] += 1;
                         i++;
@@ -264,9 +265,13 @@ int main(int argc, char **argv)
         MetaioAbort(triggerEnv);
     }
 
+    LALFree( freqHistData );
+    LALFree( tmpHistData );
     if (tfHistogram){
         fclose(fpTFHist);
     }
+
+    LALCheckMemoryLeaks();
 
     return 0;
 }
