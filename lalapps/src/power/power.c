@@ -1,12 +1,17 @@
 #include <stdio.h>
+#include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/AVFactories.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALConstants.h>
 #include <lal/FrameStream.h>
+#include <lal/EPData.h>
 #include <lal/EPSearch.h>
 #include <lal/BurstSearch.h>
+#include <lal/PrintFTSeries.h>
+#include <lal/Random.h>
+#include <lal/IIRFilter.h>
 #include "LALWrapperInterface.h"
 
 INT4 lalDebugLevel = LALMSGLVL3;
@@ -99,25 +104,37 @@ LALPrintBurstEvent (
 int main( int argc, char *argv[])
 {
     static LALStatus      stat;
-    INT4                  inarg = 1;
+    INT4                  inarg        = 1;
     void                 *searchParams = NULL;
     LALInitSearchParams   initSearchParams;
-    EPSearchParams       *params = NULL;
-    FrStream             *stream = NULL;
+    EPSearchParams       *params       = NULL;
+    FrStream             *stream       = NULL;
     FrChanIn              channelIn;
-    INT4                  numPoints=4096;
-    CHAR                 *dirname = NULL;
+    INT4                  numPoints    = 4096;
+    CHAR                 *dirname      = NULL;
     REAL4TimeSeries       series;
     LIGOTimeGPS           epoch;
-    BOOLEAN               epochSet = FALSE;
+    BOOLEAN               epochSet     = FALSE;
     LALSearchInput        inout;
-    BurstEvent           *burstEvent = NULL;
-    LALMPIParams          *mpiParams = NULL;
+    BurstEvent           *burstEvent   = NULL;
+    LALMPIParams         *mpiParams    = NULL;
+    
+    /* new application instance variables added 7/17/02 MSW */
+    BOOLEAN               whiteNoise   = FALSE;   /* enable insertion of Gaussian white noise */
+    BOOLEAN               sineBurst    = FALSE;   /* enable insertion of shaped sine burst */
+    REAL4                 sineFreq     = 100.0;   /* nominal frequency of sine burst */
+    REAL4                 sineOffset   = 1.0;     /* position of sine burst center in time series */
+    REAL4                 sineAmpl     = 1.0;     /* peak amplitude of sine burst */
+    REAL4                 sineWidth    = 1.0;     /* width (in sigmas) of sine burst */
+    INT4                  index        = 0;       /* global loop index */
+    BOOLEAN               applyFilter  = FALSE;   /* enable IIR filter */
+    EPMethod              searchMethod = useMean; /* control search method */
+    REAL4                 noiseAmpl    = 1.0;     /* gain factor for white noise */
 
     initSearchParams.argv = (CHAR **) LALMalloc( (size_t)(POWERC_NARGS * sizeof(CHAR*)) );
 
     /*******************************************************************
-    * PARSE ARGUMENTS (arg stores the current position)               *
+    * PARSE ARGUMENTS (inarg stores the current position)               *
     *******************************************************************/
 
     if (argc <= 1){
@@ -302,19 +319,84 @@ int main( int argc, char *argv[])
                 return POWERC_EARG;
             }
         }
-        else if ( !strcmp( argv[inarg], "--framedir" ) ) {
-            if ( argc > inarg + 1 ) {
-                inarg++;
-                dirname = argv[inarg++];
-            }else{
-                LALPrintError( USAGE, *argv );
-                return POWERC_EARG;
+        else if ( !strcmp( argv[inarg], "--framedir" ) )
+        {
+          /* enable loading frame data from disk */
+          if ( argc > inarg + 1 ) {
+              inarg++;
+              dirname = argv[inarg++];
+          }else{
+              LALPrintError( USAGE, *argv );
+              return POWERC_EARG;
+          }
+        }
+        else if ( !strcmp( argv[inarg], "--noise" ) )
+        {
+          /* enable insertion of Gaussian white noise */
+          /* up to 1 numeric parameter may be entered */
+          whiteNoise = TRUE;
+          inarg++;
+          if (argv[inarg] && (argv[inarg][0] != '-'))
+          {
+            noiseAmpl = atof(argv[inarg++]);
+          }
+        }
+        else if ( !strcmp( argv[inarg], "--sine" ) )
+        {
+          /* enable insertion of shaped sine burst */
+          /* up to 4 numeric parameters may be entered */
+          sineBurst = TRUE;
+          inarg++;
+          if (argv[inarg] && (argv[inarg][0] != '-'))
+          {
+            sineFreq = atof(argv[inarg++]);
+            if (argv[inarg] && (argv[inarg][0] != '-'))
+            {
+              sineOffset = atof(argv[inarg++]);
+              if (argv[inarg] && (argv[inarg][0] != '-'))
+              {
+                sineAmpl = atof(argv[inarg++]);
+                if (argv[inarg] && (argv[inarg][0] != '-'))
+                {
+                  sineWidth = atof(argv[inarg++]);
+                }
+              }
             }
+          }
+        }
+        else if ( !strcmp( argv[inarg], "--filter" ) )
+        {
+          /* enable IIR filter */
+          /* no numeric parameters are expected */
+          applyFilter = TRUE;
+          inarg++;
+        }
+        /* enum to control search method added 7/19/02 MSW */
+        else if ( !strcmp( argv[inarg], "--mean" ) )
+        {
+          searchMethod = useMean;
+          inarg++;
+        }
+        else if ( !strcmp( argv[inarg], "--median" ) )
+        {
+          searchMethod = useMedian;
+          inarg++;
+        }
+        else if ( !strcmp( argv[inarg], "--unity" ) )
+        {
+          searchMethod = useUnity;
+          inarg++;
         }
         /* Check for unrecognized options. */
         else if ( argv[inarg][0] == '-' ) {
             LALPrintError( "Unrecognized options\n" );
             return POWERC_EARG;
+        }
+        /* Default case for unknown arguments */
+        else
+        {
+          LALPrintError( "Unknown arguments\n" );
+          return POWERC_EARG;
         }
     } /* End of argument parsing loop. */
 
@@ -325,36 +407,151 @@ int main( int argc, char *argv[])
     initSearchParams.startTime = 0;
     initSearchParams.dataDuration = 0;  
     initSearchParams.realtimeRatio = 0;
-
+    series.data = NULL;
+    LALCreateVector( &stat, &series.data, numPoints);
+    for (index = 0; index < numPoints; index++)
+      {series.data->data[index] = 0.0;}  /* clear out vector */
+    if ( epochSet )
+    {
+      series.epoch.gpsSeconds     = epoch.gpsSeconds;
+      series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+    }
+    strcpy(series.name, "what");
+    series.deltaT = 61.03515625e-6;
+    series.f0 = 0.0;
+    series.sampleUnits.powerOfTen = 0;
+    for (index = 0; index < LALNumUnits; index++)
+    {
+      series.sampleUnits.unitNumerator[index] = 0;
+      series.sampleUnits.unitDenominatorMinusOne[index] = 0;
+    }
+    
     LALInitSearch( &stat, &searchParams, &initSearchParams);
     params = (EPSearchParams *) searchParams;
+    
+    /* set method in search parameters */
+    params->initParams->method = searchMethod;
 
-   
     /*******************************************************************
     * GET AND CONDITION THE DATA                                       *
     *******************************************************************/
     
-    /* Open frame stream */
-    LALFrOpen( &stat, &stream, dirname, "*.gwf" );
+    /* only try to load frame if name is specified */
+    if (dirname)
+    {
+      /* Open frame stream */
+      LALFrOpen( &stat, &stream, dirname, "*.gwf" );
 
-    /* Determine information about the channel */
-    series.data = NULL;
-    LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream);
-    if ( epochSet ){
-        series.epoch.gpsSeconds = epoch.gpsSeconds;
-        series.epoch.gpsNanoSeconds = epoch.gpsNanoSeconds;
+      /* Determine information about the channel */
+      LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream);
+      LALFrSeek(&stat, &(series.epoch), stream);
+
+      /* get the data */
+      LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream);
+
+      /* close the frame stream */
+      LALFrClose( &stat, &stream );
     }
-    LALFrSeek(&stat, &(series.epoch), stream);
 
-    /* allocate time series */
-    LALCreateVector( &stat, &series.data, numPoints);
+    /* populate time series with white noise if specified */
+    if (whiteNoise)
+    {
+      long   length  = series.data->length;
+      long   index   = 0;
+      static RandomParams *rparams = NULL;
+      INT4 seed = 1;  /* TODO set non-zero for debugging 6/11/02 MSW */
 
-    /* get the data */
-    LALFrGetREAL4TimeSeries( &stat, &series, &channelIn, stream);
+      /* generate Gaussian white noise with unit variance */
+      LALCreateRandomParams(&stat, &rparams, seed);
+      LALNormalDeviates(&stat, series.data, rparams);
+      LALDestroyRandomParams(&stat, &rparams);
+      
+      /* apply gain factor to noise in time series */
+      for (index = 0; index < length; index++)
+      {
+        double sample = series.data->data[index];
+        sample *= noiseAmpl;
+        series.data->data[index] = sample;
+      }
+    }
+    
+    /* insert shaped sine burst into time series if specified */
+    if (sineBurst)
+    {
+      double deltaT  = series.deltaT;
+      long   length  = series.data->length;
+      long   index   = 0;
+      long   offset  = floor (sineOffset / deltaT);
+      double sigmaSq = sineWidth * sineWidth / deltaT / deltaT;
+      double incr    = 2.0 * 3.141593 * sineFreq * deltaT;
+ 
+      for (index = 0; index < length; index++)
+      {
+        double sample = series.data->data[index];
+        sample += exp(-1.0 / 2.0 * (index - offset) * (index - offset) / sigmaSq)
+               * sineAmpl * sin(index * incr);
+        series.data->data[index] = sample;
+      }
+    }
+    
+    /* apply IIR filter to input time series */
+    if (applyFilter)
+    {
+      /* IIR filter coefficients obtained from MatLab */
+      /* numerator coefficients are 'direct', denominator coefficients are 'recursive' */
+      /* NOTE: sign change required for all recursive coefficients from MatLab */
+      /* coefficients shown are for 4th order band reject at 1 kHz */
+#define FILTER_ORDER 4
+#define DEGRADE   0.125
+      REAL4 mydirectCoef[FILTER_ORDER + 1] =
+        {
+          0.6640677019464 + DEGRADE * -1.0,
+         -2.4578369166290 + DEGRADE *  2.9719655202650,
+          3.6023622225730 + DEGRADE * -3.4861344923810,
+         -2.4578369166290 + DEGRADE *  1.9437083129930,
+          0.6640677019464 + DEGRADE * -0.4443631340847
+        };
+      REAL4 myrecursCoef[FILTER_ORDER + 1] =
+        {
+         -1.0000000000000,       /* this coefficient must = -1 */
+          2.9719655202650,
+         -3.4861344923810,
+          1.9437083129930,
+         -0.4443631340847
+        };
+      REAL4 myhistory[FILTER_ORDER] =
+        {0.0, 0.0, 0.0, 0.0}; /* history length equals filter order */
 
-    /* close the frame stream */
-    LALFrClose( &stat, &stream );
+      /* allocate local data structures */
+      REAL4IIRFilter myfilter;
+      REAL4Vector mydirectVector;
+      REAL4Vector myrecursVector;
+      REAL4Vector myhistoryVector;
 
+      /* populate filter structs */
+      myfilter.name = "my_filter";
+      mydirectVector.length  = FILTER_ORDER + 1;  /* same as array sizes, above */
+      myrecursVector.length  = FILTER_ORDER + 1;
+      myhistoryVector.length = FILTER_ORDER;
+      mydirectVector.data    = mydirectCoef;
+      myrecursVector.data    = myrecursCoef;
+      myhistoryVector.data   = myhistory;
+      myfilter.deltaT        = series.deltaT;
+      myfilter.directCoef    = &mydirectVector;
+      myfilter.recursCoef    = &myrecursVector;
+      myfilter.history       = &myhistoryVector;
+
+      /* apply instant-by-instant filter to fill pipeline */
+      for (index = 0; index < numPoints; index++)
+        {LALSIIRFilter(series.data->data[index], &myfilter);}  /* discard filter output */
+
+      /* apply IIR in place to modify input vector */
+      LALIIRFilterREAL4Vector(&stat, series.data, &myfilter);
+    }
+    
+    /* write diagnostic info to disk */
+    LALPrintTimeSeries( &series, "./timeseries.dat" );
+    
     /* set up the data input for ConditionData */
     inout.numberSequences = 3;
     inout.sequences = (multiDimData *) LALMalloc( (size_t) 
@@ -412,13 +609,31 @@ int main( int argc, char *argv[])
         }
 
         /* tell operator how we are doing */
-        fprintf(stderr,"Analyzing segments %i -- %i\n", params->currentSegment,
-                 params->currentSegment + tmpDutyCycle);
+        fprintf(stderr,"Analyzing segments %i -- %i", params->currentSegment,
+          params->currentSegment + tmpDutyCycle - 1);
+        switch(searchMethod)
+        {
+          case useMean:
+            fprintf(stderr, ", using mean method.\n");
+            break;
+            
+          case useMedian:
+            fprintf(stderr, ", using median method.\n");
+            break;
+            
+          case useUnity:
+            fprintf(stderr, ", using unity method.\n");
+            break;
+            
+          default:
+            fprintf(stderr, ", using unknown method.\n");
+            break;
+        }
 
         /* This is the main engine of the excess power method */ 
         EPSearch (&stat, params, &burstEvent, tmpDutyCycle);
 
-        /* free the temporary memory containin the events */
+        /* free the temporary memory containing the events */
         while (burstEvent)
         {
             BurstEvent *thisEvent;
