@@ -71,6 +71,19 @@ LALCompareSnglInspiralByTime(
     const void *b
     );
 
+void
+LALSortSnglBurst(
+    LALStatus          *status,
+    SnglBurstTable **eventHead,
+    int(*comparfunc)    (const void *, const void *)
+    );
+
+int
+LALCompareSnglBurstByTime(
+    const void *a,
+    const void *b
+    );
+
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{LIGOMetadataUtilsHV}}

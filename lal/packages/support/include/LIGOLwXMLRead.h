@@ -18,7 +18,9 @@ $Id$
 #ifndef _LIGOLWXMLREAD_H
 #define _LIGOLWXMLREAD_H
 
+#include <metaio.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -35,13 +37,81 @@ NRCSID( LIGOLWXMLREADH, "$Id$" );
 </lalLaTeX> */
 
 /* <lalErrTable file="LIGOLwXMLReadHE"> */
-#define LALHELLOH_ENULL  1
-#define LALHELLOH_MSGENULL  "Null pointer"
+#define LIGOLWXMLREADH_ENULL 1
+#define LIGOLWXMLREADH_ENNUL 2
+#define LIGOLWXMLREADH_EALOC 3
+#define LIGOLWXMLREADH_EUTAB 4
+#define LIGOLWXMLREADH_ENCOL 5
+#define LIGOLWXMLREADH_ENTAB 6
+#define LIGOLWXMLREADH_EPARS 7
+
+#define LIGOLWXMLREADH_ENTAB 8
+#define LIGOLWXMLREADH_EENDT 8
+#define LIGOLWXMLREADH_ETMSM 9
+#define LIGOLWXMLREADH_ETNOP 10
+
+#define LIGOLWXMLREADH_MSGENULL "Null pointer"
+#define LIGOLWXMLREADH_MSGENNUL "Non-null pointer"
+#define LIGOLWXMLREADH_MSGEALOC "Memory allocation error"
+#define LIGOLWXMLREADH_MSGEUTAB "Unknown metadata table type"
+#define LIGOLWXMLREADH_MSGENCOL "Unable to find table column"
+#define LIGOLWXMLREADH_MSGENTAB "Requested table not found in file"
+#define LIGOLWXMLREADH_MSGEPARS "Error parsing table"
+
+#define LIGOLWXMLREADH_MSGENTAB "No table type specified"
+#define LIGOLWXMLREADH_MSGEENDT "Ending a table without an beginning a table"
+#define LIGOLWXMLREADH_MSGETMSM "Table type mismatch"
+#define LIGOLWXMLREADH_MSGETNOP "Table not begun for writing"
 /* </lalErrTable> */
+
+
+#if 0
+<lalLaTeX>
+\subsection*{Structures}
+
+\subsubsection*{Type \texttt{tagMetaTableDirectory}}
+\idx[Type]{tagMetaTableDirectory}
+</lalLaTeX>
+#endif
+
+/* <lalVerbatim> */
+typedef struct
+tagMetaTableDirectory
+{
+  CHAR *name;
+  INT4   pos;
+  INT4   idx;
+}
+MetaTableDirectory;
+/* </lalVerbatim> */
 
 /* <lalLaTeX>
 \newpage\input{LIGOLwXMLReadC}
 </lalLaTeX> */
+
+void
+LALCreateMetaTableDir(
+    LALStatus              *status,
+    MetaTableDirectory    **tableDir,
+    const MetaioParseEnv    env,
+    MetadataTableType       table
+    );
+
+void
+LALSnglBurstTableFromLIGOLw (
+    LALStatus          *status,
+    SnglBurstTable    **eventHead,
+    CHAR               *fileName
+    );
+
+int
+LALSnglInspiralTableFromLIGOLw (
+    SnglInspiralTable **eventHead,
+    CHAR               *fileName,
+    INT4                startEvent,
+    INT4                stopEvent
+    );
+
 
 #ifdef  __cplusplus
 }
