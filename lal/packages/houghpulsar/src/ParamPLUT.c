@@ -118,7 +118,7 @@ void LALHOUGHParamPLUT (LALStatus    *status,
 { /* </lalVerbatim> */
 
   /* --------------------------------------------- */
-  INT2    i;
+  
   REAL8   f0;  /* frequency corresponding to f0Bin */
   REAL8   deltaF;  /*  df=1/TCOH  */
   REAL8   delta;
@@ -126,7 +126,7 @@ void LALHOUGHParamPLUT (LALStatus    *status,
   REAL8   xiX, xiY, xiZ;
   REAL8   modXi,invModXi;
   REAL8UnitPolarCoor   xiInit; 
-  UINT4   spinOrder;
+  UINT4   spinOrder, i;
   REAL8   *spinF;
   REAL8   timeDiff;    /*  T(t)-T(t0) */
   REAL8   timeDiffProd; 
