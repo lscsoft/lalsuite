@@ -81,7 +81,7 @@ static int overlap_hann_flag;
 static int verbose_flag;
 static int test_flag;
 static int post_analysis_flag;
-static int recenter_flag;
+static int recentre_flag;
 
 /* parameters for the stochastic search */
 
@@ -295,8 +295,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   segMiddle = (INT4)((numSegments - 1) / 2);
   segmentShift = segmentDuration;
 
-  /* recenter */
-  if (recenter_flag)
+  /* recentre */
+  if (recentre_flag)
   {
     durationEff = (INT4)(((duration - (2 * padData)) / segmentDuration ) * \
                   segmentDuration);
@@ -1807,7 +1807,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   " --hpf-frequency N             high pass filter knee frequency\n"\
   " --hpf-attenuation N           high pass filter attenuation\n"\
   " --hpf-order N                 high pass filter order\n"\
-  " --recenter                    recenter jobs\n"\
+  " --recentre                    recentre jobs\n"\
   " --post-analysis               perform post analysis\n"\
   " --middle-segment              use middle segment in PSD estimation\n"\
   " --inject                      inject a signal into the data\n"\
@@ -1846,7 +1846,7 @@ static void parseOptions(INT4 argc, CHAR *argv[])
       {"post-analysis", no_argument, &post_analysis_flag,1},
       {"verbose", no_argument, &verbose_flag, 1},
       {"test", no_argument, &test_flag, 1},
-      {"recenter", no_argument, &recenter_flag,1},
+      {"recentre", no_argument, &recentre_flag,1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
       {"gps-start-time", required_argument, 0, 'b'},
