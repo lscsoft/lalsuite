@@ -1,4 +1,3 @@
-
 /*-----------------------------------------------------------------------
  *
  * File Name: MCInjectComputeHough.c
@@ -65,7 +64,7 @@ int main(int argc, char *argv[]){
   static LIGOTimeGPSVector    timeV;
   static REAL8Cart3CoorVector velV;
   static REAL8Vector          timeDiffV;
-  static REAL8Vector          foft;
+  static REAL8                foft;
   static HoughPulsarTemplate  pulsarTemplate;
   SFTVector  *inputSFTs  = NULL;  
   EphemerisData   *edat = NULL;
@@ -83,7 +82,7 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_SFTdir = NULL; /* the directory where the SFT  could be */
   CHAR   *uvar_fnameOut = NULL;               /* The output prefix filename */
   CHAR   *uvar_fnameIn = NULL;  
-  UINT4  numberCount, index;
+  INT4   numberCount, index;
   UINT8  nTemplates;   
   UINT4   mObsCoh, nfSizeCylinder;
   REAL8  uvar_peakThreshold, normalizeThr;
@@ -110,6 +109,12 @@ int main(int argc, char *argv[]){
   msp = 1; /*only one spin-down */
   nfSizeCylinder = NFSIZE;
  
+  /* memory allocation for spindown */
+  pulsarTemplate.spindown.length = msp;
+  pulsarTemplate.spindown.data = NULL;
+  pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
+ 
+
   detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF]; /* default */
   uvar_ifo = IFO;
   if (uvar_ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
@@ -171,7 +176,7 @@ int main(int argc, char *argv[]){
   /* get the log string */
   SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
-  fprintf( fpLog, "## LOG FILE FOR MCInjectValidate\n\n");
+  fprintf( fpLog, "## Log file for HoughValidate\n\n");
   fprintf( fpLog, "# User Input:\n");
   fprintf( fpLog, "#-------------------------------------------\n");
   fprintf( fpLog, logstr);
@@ -306,7 +311,8 @@ int main(int argc, char *argv[]){
     /* calculate psd using running median */
     SUB( LALPeriodo2PSDrng( &status, &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
     
-    /* select sft bins to get peakgrams using threshold */    
+    /* select sft bins to get peakgrams using threshold */
+    threshold = uvar_peakThreshold/normalizeThr;      
     SUB( LALSelectPeakColorNoise(&status, pgV[tempLoopId], &threshold,&periPSD), &status); 	
     
   } /* end of loop over sfts */
@@ -334,7 +340,7 @@ int main(int argc, char *argv[]){
   }
   
   /******************************************************************/
-  /* compute the time difference relative to startTime for all SFT */
+  /* compute the time difference relative to startTime for all SFTs */
   /******************************************************************/
   timeDiffV.length = mObsCoh;
   timeDiffV.data = NULL; 
@@ -348,7 +354,7 @@ int main(int argc, char *argv[]){
     ts = timeV.data[0].gpsSeconds;
     tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
     t0=ts+tn;
-    timeDiffV.data[0] = 0.0;
+    timeDiffV.data[0] = midTimeBase;
 
     for (j=1; j< mObsCoh; ++j){
       ts = timeV.data[j].gpsSeconds;
@@ -365,8 +371,7 @@ int main(int argc, char *argv[]){
   (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
   
   /******************************************************************/
-  /* compute detector velocity for those time stamps  
-     if it is too slow , we can read it from the file genrated from the driver*/
+  /* compute detector velocity for those time stamps                */
   /******************************************************************/
   velV.length = mObsCoh;
   velV.data = NULL;
@@ -395,7 +400,8 @@ int main(int argc, char *argv[]){
     /* read in ephemeris data */
     SUB( LALInitBarycenter( &status, edat), &status);
     velPar.edat = edat;
-    
+
+    /* now calculate average velocity */    
     for(j=0; j< velV.length; ++j){
       velPar.startTime.gpsSeconds     = timeV.data[j].gpsSeconds;
       velPar.startTime.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
@@ -407,26 +413,9 @@ int main(int argc, char *argv[]){
     }  
   }
 
-  /******************************************************************/ 
-  /*   setting of parameters */ 
-  /******************************************************************/ 
+    
 
-  
-  pulsarTemplate.spindown.length = msp;
-  pulsarTemplate.spindown.data = NULL;
-  pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
- 
-  
-  
-  threshold = uvar_peakThreshold/normalizeThr; 
-  
-
-  
-  foft.length = mObsCoh;
-  foft.data = NULL;
-  foft.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
-  /* ****************************************************************/
-   
+  /* loop over templates */    
   for(loopId=0; loopId < nTemplates; ++loopId){
     
     /* set template parameters */    
@@ -436,14 +425,10 @@ int main(int argc, char *argv[]){
     pulsarTemplate.spindown.data[0] = spndnVec[loopId];
 	   
  
-    /* ****************************************************************/
-    /* Computing the frequency path f(t) = f0(t)* (1+v/c.n)  fot the Hough map */
-    /* ****************************************************************/   
     {
       REAL8   f0new, vcProdn, timeDiffN;
-      REAL8   sourceDelta, sourceAlpha, cosDelta;
-      UINT4   j;
-      INT4    i, nspin, factorialN; 
+      REAL8   sourceDelta, sourceAlpha, cosDelta, factorialN;
+      UINT4   j, i, f0newBin; 
       REAL8Cart3Coor       sourceLocation;
       
       sourceDelta = pulsarTemplate.latitude;
@@ -452,44 +437,45 @@ int main(int argc, char *argv[]){
       
       sourceLocation.x = cosDelta* cos(sourceAlpha);
       sourceLocation.y = cosDelta* sin(sourceAlpha);
-      sourceLocation.z = sin(sourceDelta);
-      
-      nspin = pulsarTemplate.spindown.length;
-      for (j=0; j<mObsCoh; ++j){  /* loop for all different time stamps */
-	vcProdn = velV.data[j].x * sourceLocation.x
-	  + velV.data[j].y * sourceLocation.y
-	  + velV.data[j].z * sourceLocation.z;
-	f0new = pulsarTemplate.f0;
-	factorialN = 1;
-	timeDiffN = timeDiffV.data[j];
-	
-	for (i=0; i<nspin;++i){ /* loop for spin-down values */
-	  factorialN *=(i+1);
-	  f0new += pulsarTemplate.spindown.data[i]* timeDiffN / factorialN;
-	  timeDiffN *= timeDiffN;
-	}
-	foft.data[j] = f0new * (1.0 +vcProdn);
-      }    
-    } /* end of block calculating frequency path */
-    
-    /* initialize number count */
-    numberCount=0;
-    
-    /* ****************************************************************/
-    /* loop over peakgrams and produce the number-count*/
-    /* ****************************************************************/      
-    for (tempLoopId=0; tempLoopId < mObsCoh; tempLoopId++){
+      sourceLocation.z = sin(sourceDelta);      
 
-      /* get the right peakgram */      
-      pg1 = pgV[tempLoopId];
+      /* loop for all different time stamps,calculate frequency and produce number count*/ 
+      /* first initialize number count */
+      numberCount=0;
+      for (j=0; j<mObsCoh; ++j)
+	{  
+	  /* calculate v/c.n */
+	  vcProdn = velV.data[j].x * sourceLocation.x
+	    + velV.data[j].y * sourceLocation.y
+	    + velV.data[j].z * sourceLocation.z;
 
-      /* calculate frequency bin for template */
-      index = floor( foft.data[tempLoopId]*timeBase -sftFminBin+0.5); 
+	  /* loop over spindown values to find f_0 */
+	  f0new = pulsarTemplate.f0;
+	  factorialN = 1.0;
+	  timeDiffN = timeDiffV.data[j];	  
+	  for (i=0; i<msp;++i)
+	    { 
+	      factorialN *=(i+1.0);
+	      f0new += pulsarTemplate.spindown.data[i]*timeDiffN / factorialN;
+	      timeDiffN *= timeDiffN;
+	    }
+	  
+	  f0newBin = floor(f0new*timeBase + 0.5);
+	  foft = f0newBin * (1.0 +vcProdn) / timeBase;    
+	  
+	  /* get the right peakgram */      
+	  pg1 = pgV[j];
+	  
+	  /* calculate frequency bin for template */
+	  index =  floor( foft * timeBase + 0.5 ) - sftFminBin; 
+	  
+	  /* update the number count */
+	  numberCount+=pg1->data[index]; 
+	}      
       
-      /* update the number count */
-      numberCount+=pg1->data[index]; 
-    } /* end of loop over sfts */
-      
+    } /* end of block calculating frequency path and number count */      
+    
+
     /******************************************************************/
     /* printing result in the output file */
     /******************************************************************/
@@ -526,8 +512,6 @@ int main(int argc, char *argv[]){
   LALFree(timeV.data);
   LALFree(timeDiffV.data);
   LALFree(velV.data);
-  LALFree(foft.data);
-
   
   LALFree(pulsarTemplate.spindown.data);
    

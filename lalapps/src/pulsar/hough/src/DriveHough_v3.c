@@ -28,13 +28,14 @@ NRCSID (DRIVEHOUGHCOLORC, "$Id$");
  *****************************************************************/
 
 INT4 lalDebugLevel=0;
-#define EARTHEPHEMERIS "/afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/earth03.dat"
-#define SUNEPHEMERIS "/afs/aeiw/grawave/Linux/lal/lal/packages/pulsar/test/sun03.dat"
+#define EARTHEPHEMERIS "./earth00-04.dat"
+#define SUNEPHEMERIS "./sun00-04.dat"
 
 #define ACCURACY 0.00000001 /* of the velocity calculation */
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
-#define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs"
+#define SFTDIRECTORY "/home/badkri/L1sfts"  
+/* #define SFTDIRECTORY "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs" */
 #define DIROUT "./outHM1/"      /* prefix file output */
 #define BASENAMEOUT "HM1"
 #define FILEVELOCITY "./velocity.data"  /* name: file with time-velocity info */
@@ -417,7 +418,7 @@ int main(int argc, char *argv[]){
     /* bandwith to be read should account for Doppler effects and 
        possible spin-down-up */
 
-    f0Bin = uvar_f0*timeBase;     /* initial frequency to be analyzed */
+    f0Bin = floor( uvar_f0*timeBase + 0.5);     /* initial frequency to be analyzed */
 
     length =  uvar_fSearchBand*timeBase; 
     fLastBin = f0Bin+length;   /* final frequency to be analyzed */

@@ -308,20 +308,29 @@ void LALSelectPeakColorNoise(LALStatus  *status,
   ASSERT (thr, status, PEAKSELECTH_ENULL, PEAKSELECTH_MSGENULL);
   ASSERT (in,  status, PEAKSELECTH_ENULL, PEAKSELECTH_MSGENULL);
   
-  pg->epoch.gpsSeconds     = in->psd.epoch.gpsSeconds;
+  /* check that the psd and periodogram are consistent */
+  ASSERT(in->psd.timeBase==in->periodogram.timeBase,status,  PEAKSELECTH_EVAL, PEAKSELECTH_MSGEVAL);
+  ASSERT(in->psd.fminBinIndex==in->periodogram.fminBinIndex,status, PEAKSELECTH_EVAL, PEAKSELECTH_MSGEVAL);
+  ASSERT(in->psd.length==in->periodogram.length, status, PEAKSELECTH_EVAL, PEAKSELECTH_MSGEVAL);
+  ASSERT(in->psd.epoch.gpsSeconds==in->periodogram.epoch.gpsSeconds, status, PEAKSELECTH_EVAL, PEAKSELECTH_MSGEVAL);
+  ASSERT(in->psd.epoch.gpsNanoSeconds==in->periodogram.epoch.gpsNanoSeconds, status, PEAKSELECTH_EVAL, PEAKSELECTH_MSGEVAL);
+
+
+  pg->epoch.gpsSeconds     = in->psd.epoch.gpsSeconds; 
   pg->epoch.gpsNanoSeconds = in->psd.epoch.gpsNanoSeconds;
   pg->timeBase     = in->psd.timeBase;
   pg->fminBinIndex = in->psd.fminBinIndex;
   
   length = in->psd.length;
+
+  /* make sure that the length of the peakgram is consistent */
+  ASSERT (length==pg->length,  status, PEAKSELECTH_EVAL, PEAKSELECTH_MSGEVAL);
+
   nPeaks = 0;
 
-  ASSERT (length==pg->length,  status, PEAKSELECTH_EVAL, PEAKSELECTH_MSGEVAL);
-  ASSERT (length==in->periodogram.length,  status, PEAKSELECTH_EVAL, PEAKSELECTH_MSGEVAL);
-  
   if (length > 0){
     UCHAR  *out;
-    REAL8  *psd;
+    REAL8  *psd; 
     REAL8  *peri;
     REAL8  threshold;
     INT4   n;
