@@ -1231,18 +1231,21 @@ if quick_slide:
   sire_ligo = inspiral.SireNode(sire_job)
   sire_tama = inspiral.SireNode(sire_job)
   
-  fname_ligo = 'LIGO-TAMA-COINCIDENT-TRIGGERS' + quick_slide + '.input'
-  fname_tama = 'TAMA-LIGO-COINCIDENT-TRIGGERS' + quick_slide + '.input'
+  fname_ligo = 'LIGO-TAMA-COINCIDENT-TRIGGERS_' + str(quick_slide)
+  fname_tama = 'TAMA-LIGO-COINCIDENT-TRIGGERS_' + str(quick_slide)
+
+  f_ligo = fname_ligo + '.input'
+  f_tama = fname_tama + '.input'
   
-  fl = open(fname_ligo, 'w')
-  ft = open(fname_tama, 'w')
+  fl = open(f_ligo, 'w')
+  ft = open(f_tama, 'w')
   
   # do inca to get coincidence between H1 triggers and TAMA triggers
   for ifo in ['H1', 'H2', 'L1', 'H1H2']:
     lt_inca = inspiral.IncaNode(lt_inca_job)
     lt_inca.set_start(s2start)
     lt_inca.set_end(s2end)
-    lt_inca.add_var_opt('user-tag', quick_slide)
+    lt_inca.set_user_tag('SLIDE' + str(quick_slide))
     if ifo == 'H1H2':
       lt_inca.set_ifo_a('H1')
     else:
@@ -1267,24 +1270,23 @@ if quick_slide:
     sire_ligo.add_parent( lt_inca )
     sire_tama.add_parent( lt_inca )
 
-    fl.write('%s\n' % lt_inca.get_dag_node().get_output_a())
-    ft.write('%s\n' % lt_inca.get_dag_node().get_output_b())
+    fl.write('%s\n' % lt_inca.get_output_a())
+    ft.write('%s\n' % lt_inca.get_output_b())
     
   fl.close()
   ft.close()
 
   # do two sires to get the LIGO triggers and the TAMA triggers
-  sire_ligo.add_var_opt('input',fname)
-  sire_tama.add_var_opt('input',fname)
-  
+  sire_ligo.add_var_opt('input',fname_ligo)
+  sire_tama.add_var_opt('input',fname_tama)
+ 
+  cluster = 0
   sire_ligo.set_outputs(fname_ligo,usertag,cluster,slide_time,tama_output)
   sire_tama.set_outputs(fname_tama,usertag,cluster,slide_time,tama_output)
 
   dag.add_node(sire_ligo) 
   dag.add_node(sire_tama) 
 
-
-  
 
 ##############################################################################
 # Write out the DAG, help message and log file
