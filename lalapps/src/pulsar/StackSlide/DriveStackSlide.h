@@ -55,7 +55,8 @@
 /* 05/26/04 gam; Change finishedSUMs to finishedSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
 /* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
 /* 07/09/04 gam; If using running median, use LALRngMedBias to set params->normalizationParameter to correct bias in the median. */
-
+/* 08/30/04 gam; if (outputEventFlag & 4) > 0 set returnOneEventPerSUM to TRUE; only the loudest event from each SUM is then returned. */
+  
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
 
@@ -330,6 +331,7 @@ tagLALFindStackSlidePeakParams
   BOOLEAN updateMeanStdDev;   /* 03/02/04 gam */  
   BOOLEAN vetoWidePeaks;      /* 02/20/04 gam */
   BOOLEAN vetoOverlapPeaks;   /* 02/20/04 gam */
+  BOOLEAN returnOneEventPerSUM; /* 08/30/04 gam */
   REAL4   threshold1;
   REAL4   threshold2;
   INT4    maxWidthBins;   /* 02/17/04 gam; maximum width in bins */

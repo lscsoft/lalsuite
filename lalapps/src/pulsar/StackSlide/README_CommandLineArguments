@@ -100,10 +100,11 @@ set keepThisNumber                           1; #50 INT4 how many events to keep
 #The outputEventFlag rules: 
 # if (outputEventFlag <= 0) do not output xml file,
 # if (outputEventFlag > 0) output xml file.
-  if (((outputEventFlag & 2) > 0) && (keepThisNumber > 0)) keep only keepThisNumber loudest events based on this criteria: 
-   keep the loudest event for every eventBandWidth = params->bandSUM/keepThisNumber, which is the same as, 
-   keep the loudest event for every nBinsPerOutputEvent = params->nBinsPerSUM/keepThisNumber; 
-   thus if keepThisNumber == 1 then we only output the loudest event; if keepThisNumber == nBinsPerSUM we output the loudest event for every bin.
+# if (((outputEventFlag & 2) > 0) && (keepThisNumber > 0)) keep only keepThisNumber loudest events based on this criteria: 
+#  keep the loudest event for every eventBandWidth = params->bandSUM/keepThisNumber, which is the same as, 
+#  keep the loudest event for every nBinsPerOutputEvent = params->nBinsPerSUM/keepThisNumber; 
+#  thus if keepThisNumber == 1 then we only output the loudest event; if keepThisNumber == nBinsPerSUM we output the loudest event for every bin.
+# if ((outputEventFlag & 4) > 0) the loudest event from each template (i.e., each sky position and set of spindown parameters) is output. 
 
 set startRA             0.0000000000000000e+00; #51 REAL8 start right ascension in radians. 
 set stopRA              0.0000000000000000e+00; #52 REAL8 end right ascension in radians. 

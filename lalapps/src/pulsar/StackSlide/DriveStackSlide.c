@@ -88,6 +88,7 @@
 /* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
 /* 07/09/04 gam; If using running median, use LALRngMedBias to set params->normalizationParameter to correct bias in the median. */
 /* 08/02/04 gam; if (params->testFlag & 4) > 0 ComputeSky uses reference time: params->timeStamps[0].gpsSeconds, params->timeStamps[0].gpsNanoSeconds */
+/* 08/30/04 gam; if (outputEventFlag & 4) > 0 set returnOneEventPerSUM to TRUE; only the loudest event from each SUM is then returned. */
 
 /*********************************************/
 /*                                           */
@@ -501,10 +502,11 @@ void StackSlideInitSearch(
     	fprintf(stdout,"#The outputEventFlag rules: \n");
     	fprintf(stdout,"# if (outputEventFlag <= 0) do not output xml file,\n");
     	fprintf(stdout,"# if (outputEventFlag > 0) output xml file.\n");
-    	fprintf(stdout,"  if (((outputEventFlag & 2) > 0) && (keepThisNumber > 0)) keep only keepThisNumber loudest events based on this criteria: \n");
-    	fprintf(stdout,"   keep the loudest event for every eventBandWidth = params->bandSUM/keepThisNumber, which is the same as, \n");
-    	fprintf(stdout,"   keep the loudest event for every nBinsPerOutputEvent = params->nBinsPerSUM/keepThisNumber; \n");
-    	fprintf(stdout,"   thus if keepThisNumber == 1 then we only output the loudest event; if keepThisNumber == nBinsPerSUM we output the loudest event for every bin.\n");
+    	fprintf(stdout,"# if (((outputEventFlag & 2) > 0) && (keepThisNumber > 0)) keep only keepThisNumber loudest events based on this criteria: \n");
+    	fprintf(stdout,"#  keep the loudest event for every eventBandWidth = params->bandSUM/keepThisNumber, which is the same as, \n");
+    	fprintf(stdout,"#  keep the loudest event for every nBinsPerOutputEvent = params->nBinsPerSUM/keepThisNumber; \n");
+    	fprintf(stdout,"#  thus if keepThisNumber == 1 then we only output the loudest event; if keepThisNumber == nBinsPerSUM we output the loudest event for every bin.\n");
+    	fprintf(stdout,"# if ((outputEventFlag & 4) > 0) the loudest event from each template (i.e., each sky position and set of spindown parameters) is output. \n"); /* 08/30/04 gam */
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set startRA            %23.16e; #51 REAL8 start right ascension in radians. \n", params->stksldSkyPatchData->startRA);
     	fprintf(stdout,"set stopRA             %23.16e; #52 REAL8 end right ascension in radians. \n", params->stksldSkyPatchData->stopRA);
@@ -1989,6 +1991,12 @@ void StackSlideApplySearch(
     pLALFindStackSlidePeakParams->updateMeanStdDev = updateMeanStdDev; /* 03/02/04 gam */
     pLALFindStackSlidePeakParams->vetoWidePeaks = vetoWidePeaks;       /* 02/20/04 gam */
     pLALFindStackSlidePeakParams->vetoOverlapPeaks = vetoOverlapPeaks; /* 02/20/04 gam */
+    /* 08/30/04 gam; if (outputEventFlag & 4) > 0 set returnOneEventPerSUM to TRUE; only the loudest event from each SUM is then returned. */
+    if ( (params->outputEventFlag & 4) > 0 ) {
+       pLALFindStackSlidePeakParams->returnOneEventPerSUM = 1;
+    } else {
+       pLALFindStackSlidePeakParams->returnOneEventPerSUM = 0;
+    }
     pLALFindStackSlidePeakParams->threshold1 = params->threshold1;
     pLALFindStackSlidePeakParams->threshold2 = params->threshold2;
     pLALFindStackSlidePeakParams->fracPwDrop = params->threshold3;    /* 02/20/04 gam; fraction minimum power in a cluster must be below subpeak to count as new peak */
@@ -2970,6 +2978,9 @@ void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4F
 		  eventCount++; /* 02/04/04 gam; found a peak or a cluster of peaks; keep track of how many */
                   /* 02/04/04 gam; allocate memory for peaks linked lists: */
 		  if (eventCount == 1) {
+                    if (params->returnOneEventPerSUM) {
+                       findMorePeaks = 0;  /* 08/30/04 gam; first event found = loudest event; return after setting this peak below. */
+                    }
                     #ifdef DEBUG_FIND_PEAKS
                        fprintf(stdout,"\nFound peak(s) in SUM #%i for template parameters:\n",params->iSUM);
                        fprintf(stdout,"RA = %18.10f\n",params->skyPosData[params->iSky][0]);
