@@ -60,7 +60,7 @@ jmp_buf jump;
 FILE *mystderr;
 
 /* replacement for LALRaise */
-int TestRaise( int sig, const char *fmt, ... )
+static int TestRaise( int sig, const char *fmt, ... )
 {
   va_list ap;
   va_start( ap, fmt );
@@ -110,12 +110,19 @@ while ( 0 )
 
 int lalDebugLevel = LALMEMDBG;
 
+/* make these global so they don't get clobbered by longjmp */
+size_t   i;
+size_t   j;
+size_t   n;
+size_t  *p;
+size_t  *q;
+size_t  *r;
+size_t  *s;
+size_t **v;
+
 /* do a bunch of allocations/deallocations that are OK */
 static int testOK( void )
 {
-  int *p;
-  int *q;
-  int  i;
   int keep = lalDebugLevel;
 
   lalDebugLevel &= ~( LALNMEMDBG | LALNMEMPAD | LALNMEMTRK );
@@ -128,8 +135,8 @@ static int testOK( void )
   trial( q = LALRealloc( q, 0 ), 0, "" );
   if ( q ) die( memory not freed );
   trial( LALCheckMemoryLeaks(), SIGSEGV, "LALCheckMemoryLeaks: memory leak\n" );
-  if ( *(((size_t*)p)-1) != (size_t)0xABadCafe ) die( wrong magic );
-  if ( *(((size_t*)p)-2) != 4096 * sizeof( *p ) ) die( wrong size );
+  if ( *( p - 1 ) != (size_t)0xABadCafe ) die( wrong magic );
+  if ( *( p - 2 ) != 4096 * sizeof( *p ) ) die( wrong size );
   trial( LALFree( p ), 0, "" );
   trial( LALCheckMemoryLeaks(), 0, "" );
 
@@ -157,8 +164,8 @@ static int testOK( void )
   trial( q = LALRealloc( q, 0 ), 0, "" );
   if ( q ) die( memory not freed );
   trial( LALCheckMemoryLeaks(), SIGSEGV, "LALCheckMemoryLeaks: memory leak\n" );
-  if ( *(((size_t*)p)-1) != (size_t)0xABadCafe ) die( wrong magic );
-  if ( *(((size_t*)p)-2) != 4096 * sizeof( *p ) ) die( wrong size );
+  if ( *( p - 1 ) != (size_t)0xABadCafe ) die( wrong magic );
+  if ( *( p - 2 ) != 4096 * sizeof( *p ) ) die( wrong size );
   trial( LALFree( p ), 0, "" );
   trial( LALCheckMemoryLeaks(), 0, "" );
 
@@ -183,9 +190,6 @@ static int testOK( void )
 /* test to make sure padding does what it's supposed to do */
 static int testPadding( void )
 {
-  size_t *p;
-  size_t *q;
-  size_t  n;
   int keep = lalDebugLevel;
 
   lalDebugLevel |= LALNMEMTRK;
@@ -236,11 +240,9 @@ static int testPadding( void )
 /* test to make sure alloc list does what it's supposed to do */
 static int testAllocList( void )
 {
-  size_t *p;
-  size_t *q;
-  size_t *r;
-  size_t *s = malloc( sizeof( *s ) );
   int keep = lalDebugLevel;
+
+  s = malloc( sizeof( *s ) );
 
   lalDebugLevel |= LALNMEMPAD;
   lalDebugLevel &= ~( LALNMEMDBG | LALNMEMTRK );
@@ -275,35 +277,33 @@ static int testAllocList( void )
 /* stress test the realloc routine */
 static int stressTestRealloc( void )
 {
-  int mxsz = 256;
-  int sz   = 1;
-  int **v  = NULL;
+  const size_t nmax = 256;
   int keep = lalDebugLevel;
+
+  v = NULL;
 
   lalDebugLevel &= ~( LALMEMINFO | LALNMEMDBG | LALNMEMPAD | LALNMEMTRK );
 
   /* ascending */
-  for ( sz = 1; sz <= mxsz; ++sz )
+  for ( n = 1; n <= nmax; ++n )
   {
-    int  i;
-    int  j;
-    int *u;
-    trial( v = LALRealloc( v, sz * sizeof( *v ) ), 0, "" );
-    trial( u = v[sz - 1] = LALRealloc( NULL, sz * sizeof( **v ) ), 0, "" );
-    for ( i = 0; i < sz; ++i ) u[i] = sz - 1;
-    for ( i = 0; i < sz; ++i )
+    size_t *u;
+    trial( v = LALRealloc( v, n * sizeof( *v ) ), 0, "" );
+    trial( u = v[n - 1] = LALRealloc( NULL, n * sizeof( **v ) ), 0, "" );
+    for ( i = 0; i < n; ++i ) u[i] = n - 1;
+    for ( i = 0; i < n; ++i )
     {
-      trial( u = v[i] = LALRealloc( v[i], sz * sizeof( *u ) ), 0, "" );
-      for ( j = 0; j < sz - 1; ++j )
-        if ( u[j] != sz - 1 ) die( wrong contents );
-      for ( j = 0; j < sz; ++j )
-        u[j] = sz;
+      trial( u = v[i] = LALRealloc( v[i], n * sizeof( *u ) ), 0, "" );
+      for ( j = 0; j < n - 1; ++j )
+        if ( u[j] != n - 1 ) die( wrong contents );
+      for ( j = 0; j < n; ++j )
+        u[j] = n;
     }
   }
 
-  for ( sz = 0; sz < mxsz; ++sz )
+  for ( n = 0; n < nmax; ++n )
   {
-    trial( v[sz] = LALRealloc( v[sz], 0 ), 0, "" );
+    trial( v[n] = LALRealloc( v[n], 0 ), 0, "" );
   }
   trial( v = LALRealloc( v, 0 ), 0, "" );
 
