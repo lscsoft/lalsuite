@@ -1,3 +1,6 @@
+%define _prefix @prefix@
+%define _mandir %{_prefix}/share/man
+%define _sysconfdir %{_prefix}/etc
 Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
@@ -9,7 +12,6 @@ URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Jolien Creighton <jolien@uwm.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 Requires: gsl fftw3 libframe libmetaio
-%define _prefix @prefix@
 Prefix: %{_prefix}
 
 %description
@@ -51,7 +53,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files
 %defattr(-,root,root)
 %{_bindir}/lal-version
+%{_sbindir}/uninstall-lal.sh
 %{_libdir}/*.so*
+%{_sysconfdir}/lal-user-env.*
 
 %files devel
 %defattr(-,root,root)
@@ -60,5 +64,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/pkgconfig/*
 %{_includedir}/lal
 %{_datadir}/*
+%{_mandir}/man1/lal-config.1*
+%{_mandir}/man3/lal.3*
 
 
