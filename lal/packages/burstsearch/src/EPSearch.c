@@ -3,28 +3,28 @@ Author: Brady, P
 $Id$
 ********* </lalVerbatim> ********/
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <math.h>
-#include <lal/LALStdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <lal/BandPassTimeSeries.h>
+#include <lal/BurstSearch.h>
+#include <lal/EPData.h>
+#include <lal/ExcessPower.h>
+#include <lal/FrequencySeries.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/Thresholds.h>
-#include <lal/ExcessPower.h>
-#include <lal/BurstSearch.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/EPData.h>
-#include <lal/Random.h>
-#include <lal/BandPassTimeSeries.h>
-#include <lal/TimeFreqFFT.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/LALRCSID.h>
+#include <lal/LALStdlib.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
+#include <lal/Random.h>
+#include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
-#include <lal/FrequencySeries.h>
-#include <lal/PrintFTSeries.h>
+#include <lal/SeqFactories.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/Thresholds.h>
+#include <lal/Window.h>
 
 NRCSID (EPSEARCHC, "$Id$");
 
