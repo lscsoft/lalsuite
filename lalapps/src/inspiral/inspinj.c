@@ -166,7 +166,7 @@ int main( int argc, char *argv[] )
   fprintf( fp, "\t\t<real_8 name='time:step_size' units='sec'>%e</real_8>\n",
       meanTimeStep );
 
-  fprintf( fp, "\t<int_4u ndim='2' dims='2,%d' units='s,ns'>", ninj );
+  fprintf( fp, "\t<int_4u name='data' ndim='2' dims='2,%d' units='s,ns'>", ninj );
   fprintf( fp, "%d 0", startTime );
   tlistelem = tlisthead->next;
   for ( inj = 1; inj < ninj; ++inj )
@@ -197,7 +197,7 @@ int main( int argc, char *argv[] )
   fprintf( fp, "\t<real_8 name='time:step_size' units='sec'>%e</real_8>\n",
       meanTimeStep );
 
-  fprintf( fp, "\t<real_4 ndim='2' dims='%d,%d' units='" UNITS "'>",
+  fprintf( fp, "\t<real_4 name='data' ndim='2' dims='%d,%d' units='" UNITS "'>",
       numElem, ninj );
   for ( inj = 0; inj < ninj; ++inj )
   {
