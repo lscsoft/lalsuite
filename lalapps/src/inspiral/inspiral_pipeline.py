@@ -19,6 +19,12 @@ import getopt
 import re
 import ConfigParser
 
+def isplay(t):
+  if ((t - 729273613) % 6370) < 600:
+    return 1
+  else:
+    return 0
+
 class InspiralChunk:
   def __init__(self,start,end):
     self.start = start
@@ -51,11 +57,6 @@ class ScienceSegment:
       dur -= seg_incr
     self.used = self.duration - dur
 
-  def isplay(self,t):
-    if ((t - 729273613) % 6370) < 600:
-      return 1
-    else:
-      return 0
 
 class InspiralPipeline:
   """
