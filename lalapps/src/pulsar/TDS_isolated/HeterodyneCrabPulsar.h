@@ -2,8 +2,9 @@
 
 /* Matt Pitkin 26/03/04 - function arguments have been changed to conform to the
    LAL Spec */
-
+/*
 $Id$
+*/
 
 #ifndef _HETERODYNECRABPULSAR_H
 #define _HETERODYNECRABPULSAR_H

@@ -9,8 +9,9 @@
 /* Matt Pitkin 26/03/04 */
 /* The function's inputs params have be swithced about to conform to 
 	 the LAL Spec */
-
+/*
 $Id$
+*/
 
 #include <math.h>
 #include <stdio.h>
