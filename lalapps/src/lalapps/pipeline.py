@@ -948,12 +948,15 @@ class ScienceData:
     """
     for seg in self.__sci_segs:
       # if there is unused data longer than the minimum chunk length
-      if seg.unused() > min_length:
+      print seg, "has", seg.unused(), "unused seconds"
+      if seg.unused() >= min_length:
         start = seg.end() - length
         end = seg.end()
         middle = start + length / 2
         if (not play) or (play and (((end-sl-729273613)%6370) < (600+length))):
           seg.add_chunk(start, end, end - seg.unused() - trig_overlap )
+          print "  adding chunk for seg", seg, "with length",
+          print (end - (end - seg.unused() - trig_overlap)), "seconds"
         seg.set_unused(0)
 
   def intersection(self, other):
