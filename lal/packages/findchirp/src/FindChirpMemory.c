@@ -611,7 +611,7 @@ LALDestroyFindChirpSegmentVector (
     /* template independent part of stationary phase filter */
     LALCDestroyVector (status->statusPtr, &segPtr[i].data->data);
     CHECKSTATUSPTR (status);
-    if ( segPtr[i].dataBCV->data )
+    if ( segPtr[i].dataBCV && segPtr[i].dataBCV->data )
     {
       LALCDestroyVector (status->statusPtr, &segPtr[i].dataBCV->data);
       CHECKSTATUSPTR (status);
