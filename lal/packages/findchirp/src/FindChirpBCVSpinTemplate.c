@@ -104,7 +104,7 @@ LALFindChirpBCVSpinTemplate (
   REAL8                *A3Vec            = NULL;
   REAL4                 deltaT;
   REAL4                 fLow;
-/*  REAL4                 A1A1             = 0.0;
+ /* REAL4                 A1A1             = 0.0;
   REAL4                 A2A2             = 0.0;
   REAL4                 A3A3 		 = 0.0;
   REAL4                 A1A2 		 = 0.0;
@@ -183,7 +183,7 @@ LALFindChirpBCVSpinTemplate (
   kmin = params->fLow / deltaF > 1 ? params->fLow / deltaF : 1;
   kmax = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
   beta = tmplt->beta; 
-
+  
   /* Preliminary BCVSpin bank does not populate fFinal */
   /* will estimate fFinal form psi0, psi3 as quick fix */
   
@@ -346,11 +346,13 @@ LALFindChirpBCVSpinTemplate (
 
   /* checking orthonormalisation of A vectors */
 
-/*  {	
+  /*
+  {	
 	fprintf (stdout, "Checking orthonormalisation of amplitude vectors \n");
 	  
-  	for (k=kmin; k < kmax; ++k)
-  	{ 
+  	for (k=kmin; k < kmax; ++k)   
+  	{
+
   		A1A1 += A1Vec[k] * A1Vec[k] * wtilde[k].re;
 		A2A2 += A2Vec[k] * A2Vec[k] * wtilde[k].re;
         	A3A3 += A3Vec[k] * A3Vec[k] * wtilde[k].re;
