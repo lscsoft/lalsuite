@@ -44,7 +44,7 @@ LALDestroyVector()
 
 \subsubsection*{Notes}
 
-\vfill{\footnotesize\input{FindChirpBCVDataCV}}
+\vfill{\footnotesize\input{FindChirpBCVTemplateCV}}
 </lalLaTeX> 
 #endif
 

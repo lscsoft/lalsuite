@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpSBCVTemplate.c
  *
- * Author: Brown D. A., Spinning BCV modifications by Jones, G
+ * Author: Brown D. A., Spinning BCV-Modifications: Jones, G
  * 
  * Revision: $Id$
  * 
@@ -14,18 +14,58 @@
 #include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpSP.h>
+#include <lal/FindChirpBCVSpin.h>
 
 NRCSID (FINDCHIRPSBCVTEMPLATEC, "$Id$");
 
-/*documenation later*/
+#if 0 
+<lalVerbatim file="FindChirpBCVSpinTemplateCV">
+Author: Brown, D. A., Spinning BCV-Modifications: Jones, G
+$Id$
+</lalVerbatim> 
+
+<lalLaTeX>
+\subsection{Module \texttt{FindChirpBCVSpinTemplate.c}}
+\label{ss:FindChirpBCVSpinTemplate.c}
+
+Provides functions to create spinning BCV detection templates in a form that
+can be used by the \texttt{FindChirpBCVSpinFilter()} function.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpBCVSpinTemplateCP}
+\idx{LALFindChirpBCVSpinTemplate()}
+
+The function \texttt{LALFindChirpBCVSpinTemplate()} creates the 
+spinning BCV template as described by the algorithm below.
+
+\subsubsection*{Algorithm}
+
+Blah.
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALCalloc()
+LALFree()
+LALCreateVector()
+LALDestroyVector()
+\end{verbatim}
+
+\subsubsection*{Notes}
+
+\vfill{\footnotesize\input{FindChirpBCVSpinTemplateCV}}
+</lalLaTeX> 
+#endif
+
+/* <lalVerbatim file="FindChirpBCVSpinTemplateCP"> */
 void
 LALFindChirpBCVSpinTemplate (
     LALStatus                  *status,
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *tmplt,
-    FindChirpSPTmpltParams     *params
-		)
+    FindChirpTmpltParams       *params
+    )
+/* </lalVerbatim> */
 {
   UINT4        numPoints  = 0;
   REAL4        deltaF     = 0.0;
@@ -64,26 +104,26 @@ LALFindChirpBCVSpinTemplate (
 
   /* check that the output structures exist */
   ASSERT( fcTmplt, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
   ASSERT( fcTmplt->data, status, 
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
   ASSERT( fcTmplt->data->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 
   /* check that the parameter structure exists */         
-  ASSERT( params, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( params, status, FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 
   /* check that the parameter structure is set */
   /* to the correct waveform approximant       */
   ASSERT( params->approximant == BCVSpin, status, 
-      FINDCHIRPSPH_EMAPX, FINDCHIRPSPH_MSGEMAPX );
+      FINDCHIRPBCVSPINH_EMAPX, FINDCHIRPBCVSPINH_MSGEMAPX );
 
   /* check that the timestep is positive */
   ASSERT( params->deltaT > 0, status,                        
-      FINDCHIRPSPH_EDELT, FINDCHIRPSPH_MSGEDELT );
+      FINDCHIRPBCVSPINH_EDELT, FINDCHIRPBCVSPINH_MSGEDELT );
 
   /* check that the input exists */
-  ASSERT( tmplt, status, FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+  ASSERT( tmplt, status, FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 
  /*
    *

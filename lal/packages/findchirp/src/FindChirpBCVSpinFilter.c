@@ -1,4 +1,4 @@
- /*----------------------------------------------------------------------- 
+/*----------------------------------------------------------------------- 
  * 
  * File Name: FindChirpBCVSpinFilter.c
  *
@@ -19,7 +19,29 @@ $Id$
 \subsection{Module \texttt{FindChirpBCVSpinFilter.c}}
 \label{ss:FindChirpBCVSpinFilter.c}
 
-\input{FindChirpBCVSpinFilterCDoc}
+Provides functions to filter data for spinning BCV templates.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpBCVSpinFilterCP}
+\idx{LALFindChirpBCVSpinFilter()}
+
+The function \texttt{LALFindChirpBCVSpinFilter()} filters data for 
+spinning BCV templates as described by the algorithm below.
+
+\subsubsection*{Algorithm}
+
+Blah.
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALCalloc()
+LALFree()
+LALCreateVector()
+LALDestroyVector()
+\end{verbatim}
+
+\subsubsection*{Notes}
 
 \vfill{\footnotesize\input{FindChirpBCVSpinFilterCV}}
 </lalLaTeX> 
@@ -32,23 +54,23 @@ $Id$
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpSP.h>
+#include <lal/FindChirpBCVSpin.h>
 
 
 NRCSID (FINDCHIRPBCVSPINFILTERC, "$Id$");
 
-/*documenation later*/
+/* <lalVerbatim file="FindChirpBCVSpinFilterCP"> */
 void
 LALFindChirpBCVSpinFilterSegment (
     LALStatus                  *status,
     SnglInspiralTable         **eventList,
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params,             
-    FindChirpSPDataParams      *fcDataParams,
+    FindChirpDataParams        *fcDataParams,
     FindChirpSegmentVector     *fcSegVec,
     DataSegmentVector          *dataSegVec
   )
-
+/* </lalVerbatim> */
 {
   UINT4                 i, j, k;
   UINT4                 numPoints;

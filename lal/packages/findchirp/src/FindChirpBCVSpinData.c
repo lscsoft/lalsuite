@@ -19,7 +19,30 @@ $Id$
 \subsection{Module \texttt{FindChirpBCVSpinData.c}}
 \label{ss:FindChirpBCVSpinData.c}
 
-\input{FindChirpBCVSpinDataCDoc}
+Provides functions to condition data prior to filtering with spinning BCV
+detection templates.
+
+\subsubsection*{Prototypes}
+\vspace{0.1in}
+\input{FindChirpBCVDataCP}
+\idx{LALFindChirpBCVData()}
+
+The function \texttt{LALFindChirpBCVSpinData()} constions the data
+as described by the algorithm below.
+
+\subsubsection*{Algorithm}
+
+Blah.
+
+\subsubsection*{Uses}
+\begin{verbatim}
+LALCalloc()
+LALFree()
+LALCreateVector()
+LALDestroyVector()
+\end{verbatim}
+
+\subsubsection*{Notes}
 
 \vfill{\footnotesize\input{FindChirpBCVSpinDataCV}}
 </lalLaTeX> 
@@ -31,20 +54,20 @@ $Id$
 #include <lal/DataBuffer.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
-#include <lal/FindChirpSP.h>
+#include <lal/FindChirpBCVSpin.h>
 
 
 NRCSID (FINDCHIRPBCVSPINDATAC, "$Id$");
 
-/*documenation later*/
+/* <lalVerbatim file="FindChirpBCVSpinDataCP"> */
 void
 LALFindChirpBCVSpinData (
     LALStatus                  *status,
     FindChirpSegmentVector     *fcSegVec,
     DataSegmentVector          *dataSegVec,
-    FindChirpSPDataParams      *params
+    FindChirpDataParams        *params
     )
-
+/* </lalVerbatim> */
 {
   UINT4                 i, k;
   UINT4                 cut;
@@ -95,98 +118,98 @@ LALFindChirpBCVSpinData (
 
   /* check that the output exists */
   ASSERT( fcSegVec, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": fcSegVec" );
   ASSERT( fcSegVec->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": fcSegVec->data" );
   ASSERT( fcSegVec->data->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": fcSegVec->data->data" );
   ASSERT( fcSegVec->data->data->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": fcSegVec->data->data->data" );
  /* ASSERT( fcSegVec->data->dataBCV, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": fcSegVec->data->dataBCV" );
   ASSERT( fcSegVec->data->dataBCV->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": fcSegVec->data->dataBCV->data" );*/
 
   /* check that the parameter structure exists */
   ASSERT( params, status, 
-	  FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL 
+	  FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL 
 	  ": params" );
 
   /* check that the parameter structure is set */
   /* to the correct waveform approximant       */
   ASSERT( params->approximant == BCVSpin, status, 
-      FINDCHIRPSPH_EMAPX, FINDCHIRPSPH_MSGEMAPX );
+      FINDCHIRPBCVSPINH_EMAPX, FINDCHIRPBCVSPINH_MSGEMAPX );
   
   /* check that the workspace vectors exist */
   ASSERT( params->ampVec, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
   ASSERT( params->ampVec->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
  /*ASSERT( params->ampVecBCV, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL ); 
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL ); 
    ASSERT( params->ampVecBCV->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );*/
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );*/
 ASSERT( params->ampVecBCVSpin1, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
    ASSERT( params->ampVecBCVSpin1->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 ASSERT( params->ampVecBCVSpin2, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
    ASSERT( params->ampVecBCVSpin2->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 
   ASSERT( params->wVec, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
   ASSERT( params->wVec->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 
   ASSERT( params->wtildeVec, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
   ASSERT( params->wtildeVec->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 
   ASSERT( params->tmpltPowerVec, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
   ASSERT( params->tmpltPowerVec->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 /*  ASSERT( params->tmpltPowerVecBCV, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
   ASSERT( params->tmpltPowerVecBCV->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );*/
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );*/
 
 
   /* check that the fft plans exist */
   ASSERT( params->fwdPlan, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
   ASSERT( params->invPlan, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL );
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL );
 
   /* check that the parameter values are reasonable */
   ASSERT( params->deltaT > 0, status,
-      FINDCHIRPSPH_EDELT, FINDCHIRPSPH_MSGEDELT );
+      FINDCHIRPBCVSPINH_EDELT, FINDCHIRPBCVSPINH_MSGEDELT );
   ASSERT( params->fLow >= 0, status,
-      FINDCHIRPSPH_EFLOW, FINDCHIRPSPH_MSGEFLOW );
+      FINDCHIRPBCVSPINH_EFLOW, FINDCHIRPBCVSPINH_MSGEFLOW );
   ASSERT( params->dynRange > 0, status,
-      FINDCHIRPSPH_EDYNR, FINDCHIRPSPH_MSGEDYNR );
+      FINDCHIRPBCVSPINH_EDYNR, FINDCHIRPBCVSPINH_MSGEDYNR );
 
   /* check that the input exists */
   ASSERT( dataSegVec, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": dataSegVec" );
   ASSERT( dataSegVec->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": dataSegVec->data" );
   ASSERT( dataSegVec->data->chan, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": dataSegVec->data->chan" );
   ASSERT( dataSegVec->data->chan->data, status,
-      FINDCHIRPSPH_ENULL, FINDCHIRPSPH_MSGENULL
+      FINDCHIRPBCVSPINH_ENULL, FINDCHIRPBCVSPINH_MSGENULL
       ": dataSegVec->data->chan->data" );
   
  /*fprintf ( stdout, "just after assert statements of LALFindChirpBCVSpinData \n");*/
@@ -253,7 +276,7 @@ ASSERT( params->ampVecBCVSpin2, status,
     }
 
     ASSERT( params->wtildeVec->length == fcSeg->data->data->length, status,
-        FINDCHIRPSPH_EMISM, FINDCHIRPSPH_MSGEMISM );
+        FINDCHIRPBCVSPINH_EMISM, FINDCHIRPBCVSPINH_MSGEMISM );
 
 /*fprintf ( stdout, "just after chisq in LALFindChirpBCVSpinData \n");*/
 
@@ -315,7 +338,7 @@ ASSERT( params->ampVecBCVSpin2, status,
     {
       if ( spec[k] == 0 )
       {
-        ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
+        ABORT( status, FINDCHIRPBCVSPINH_EDIVZ, FINDCHIRPBCVSPINH_MSGEDIVZ );
       }
       wtilde[k].re = 1.0 / spec[k];
     }
@@ -381,7 +404,7 @@ ASSERT( params->ampVecBCVSpin2, status,
       REAL4 invmodsqResp;
       if ( modsqResp == 0 )
       {
-        ABORT( status, FINDCHIRPSPH_EDIVZ, FINDCHIRPSPH_MSGEDIVZ );
+        ABORT( status, FINDCHIRPBCVSPINH_EDIVZ, FINDCHIRPBCVSPINH_MSGEDIVZ );
       }
       invmodsqResp = 1.0 / modsqResp;
       wtilde[k].re *= invmodsqResp;
