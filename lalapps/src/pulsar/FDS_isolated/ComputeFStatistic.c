@@ -88,6 +88,7 @@ REAL8 uvar_f1dotBand;
 REAL8 uvar_Fthreshold;
 CHAR *uvar_EphemDir;
 CHAR *uvar_EphemYear;
+INT4  uvar_gridType;
 INT4  uvar_metricType;
 REAL8 uvar_metricMismatch;
 CHAR *uvar_skyRegion;
@@ -97,7 +98,7 @@ CHAR *uvar_BaseName;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
-
+CHAR *uvar_skyGridFile;
 /*----------------------------------------------------------------------*/
 
 FFT **SFTData=NULL;                 /* SFT Data for LALDemod */
@@ -247,6 +248,7 @@ int main(int argc,char *argv[])
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
+  scanInit.gridType = uvar_gridType;
   scanInit.metricType = uvar_metricType;
   scanInit.metricMismatch = uvar_metricMismatch;
   t0 = SFTData[0]->fft->epoch;
@@ -258,12 +260,11 @@ int main(int argc,char *argv[])
   if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
   scanInit.Detector = &GV.Detector;
   scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
-  scanInit.skyRegion = LALMalloc (strlen (uvar_skyRegion) + 1);
-  strcpy (scanInit.skyRegion, uvar_skyRegion);
+  scanInit.skyRegion = GV.skyRegion;
+  scanInit.skyGridFile = uvar_skyGridFile;
 
-  LAL_CALL ( InitDopplerScan ( &status, &thisScan, scanInit), &status);
-  
-  LALFree (scanInit.skyRegion);
+  LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status);
+
   
   if (uvar_outputFstat)
     if ( (fpOut = fopen (uvar_outputFstat, "w")) == NULL)
@@ -402,14 +403,17 @@ initUserVars (LALStatus *stat)
   uvar_f1dotBand = 0.0;
   
   uvar_Fthreshold = 10.0;
+  uvar_metricType = LAL_METRIC_NONE;
+  uvar_gridType = GRID_FLAT;
 
-  uvar_metricType =  LAL_METRIC_NONE;	
   uvar_metricMismatch = 0.02;
 
   uvar_help = FALSE;
   uvar_outputLabel = NULL;
 
   uvar_outputFstat = NULL;
+
+  uvar_skyGridFile = NULL;
 
   /* register all our user-variables */
  
@@ -435,13 +439,14 @@ initUserVars (LALStatus *stat)
   LALregREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
   LALregBOOLUserVar(stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
   LALregREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-  LALregINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Template metric: 0=none, 1 = Ptole-analytic,\n\
-                                    2 = Ptole-numeric 3=exact, 4=pseudo-isotropic");
+  LALregINTUserVar(stat, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
+  LALregINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
   LALregREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
   LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
   LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
   LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
   LALregSTRINGUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
+  LALregSTRINGUserVar(stat,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -1160,12 +1165,6 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   ATTATCHSTATUSPTR (status);
 
   /* do some sanity checks on the user-input before we proceed */
-  if (! LALUserVarWasSet(&uvar_IFO) )
-    {
-      LALPrintError("\nNo interferometer specified (option 'IFO')\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }      
-
   if(!uvar_DataDir && !uvar_mergedSFTFile)
     {
       LALPrintError ( "\nMust use -D or -B option.\n"
@@ -1182,21 +1181,9 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
-  if (uvar_EphemDir == NULL)
-    {
-      LALPrintError ("\nNo ephemeris directory specified (option 'EphemDir')\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }      
-
   if (uvar_EphemYear == NULL)
     {
       LALPrintError ("\nNo ephemeris year specified (option 'EphemYear')\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }      
-
-  if( ! LALUserVarWasSet (&uvar_Freq))
-    {
-      LALPrintError ("\nNo search frequency specified; (option 'Freq')\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
@@ -1420,46 +1407,63 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       Fstat.Fb = NULL;
     }
 
-  /* safety-check: only allow EITHER of skyRegion OR (Alpha,AlphaBand, Delta, DeltaBand) */
-  if ( !LALUserVarWasSet(&uvar_skyRegion) && (!LALUserVarWasSet(&uvar_Alpha)||!LALUserVarWasSet(&uvar_Delta)) ) 
-    {
-      LALPrintError ("\nEither (Alpha,Delta) or a skyRegion HAVE to be specified!\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
-  /* now check that only one of those two has been given! ;) */
-  if ( LALUserVarWasSet(&uvar_skyRegion) 
-       && (LALUserVarWasSet(&uvar_Alpha)||LALUserVarWasSet(&uvar_Delta)
-	   ||LALUserVarWasSet(&uvar_AlphaBand)||LALUserVarWasSet(&uvar_DeltaBand)) ) 
-    {
-      LALPrintError ("\nYou can only specify EITHER (Alpha,Delta,AlphaBand,DeltaBand) OR skyRegion !\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  /*----------------------------------------------------------------------
+   * initialize template-grid related parameters 
+   */
+  {
+    UINT2 haveSkyRegion, haveAlphaDelta, haveGridFile, haveMetric, needMetric;
+
+    haveSkyRegion  = (uvar_skyRegion != NULL);
+    haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
+    haveGridFile   = (uvar_skyGridFile != NULL);
+    haveMetric     = (uvar_metricType > LAL_METRIC_NONE);
+    needMetric     = (uvar_gridType == GRID_METRIC);
+
+    if ( haveSkyRegion + haveAlphaDelta + haveGridFile != 1) 
+      {
+	LALPrintError ("\nExactly ONE of (Alpha,Delta), skyRegion or skyGridFile has to be specified!\n\n");
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+
+    if (haveSkyRegion)
+      {
+	cfg->skyRegion = LALCalloc(1, strlen(uvar_skyRegion)+1);
+	strcpy (cfg->skyRegion, uvar_skyRegion);
+      }
+    else if (haveAlphaDelta)	/* parse this into a sky-region */
+      {
+	REAL8 eps = 1.0e-9;
+	REAL8 a, d, Da, Dd;
+	a = uvar_Alpha;
+	d = uvar_Delta;
+	Da = uvar_AlphaBand + eps;	/* slightly push outwards to make sure boundary-points are included */
+	Dd = uvar_DeltaBand + eps;
+	/* consistency check either one point given or a 2D region! */
+	ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      
+	cfg->skyRegion = LALMalloc (512); /* should be enough for max 4 points... */
+	if ( (Da == 0) || (Dd == 0) ) 	/* only one point */
+	  sprintf (cfg->skyRegion, "(%.16f, %.16f)", a, d);
+	else				/* or a rectangle */
+	  sprintf (cfg->skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
+		   a, d, 
+		   a + Da, d, 
+		   a + Da, d + Dd,
+		   a, d + Dd );
+      }
+    
+
+    if (haveMetric && !needMetric) {
+	LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
     }
 
-  /* ----------------------------------------------------------------------*/
-  /* prepare sky-region string if user provided the old alpha, dalpha, etc. 
-   * this is a bit of a cheat, as user did not really specify uvar_skyRegion 
-   * but we can live with that for now... */
-  if (uvar_skyRegion == NULL)
-    {
-      REAL8 eps = 1.0e-9;
-      REAL8 a, d, Da, Dd;
-      a = uvar_Alpha;
-      d = uvar_Delta;
-      Da = uvar_AlphaBand + eps;	/* slightly push outwards to make sure boundary-points are included */
-      Dd = uvar_DeltaBand + eps;
-      /* consistency check either one point given or a 2D region! */
-      ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-      
-      uvar_skyRegion = LALMalloc (512); /* should be enough for max 4 points... */
-      if ( (Da == 0) || (Dd == 0) ) 	/* only one point */
-	sprintf (uvar_skyRegion, "(%.16f, %.16f)", a, d);
-      else				/* or a rectangle */
-	sprintf (uvar_skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
-		 a, d, 
-		 a + Da, d, 
-		 a + Da, d + Dd,
-		 a, d + Dd );
-    } /* if !uvar_skyRegion */
+    if (needMetric && !haveMetric) {
+      LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+    }
+
+  } /* end: template-grid stuff */
+
   /* ----------------------------------------------------------------------*/
   /*
    * initialize Ephemeris-data 
@@ -1582,6 +1586,8 @@ void Freemem(LALStatus *status)
 
   /* Free DopplerScan-stuff (grid) */
   TRY (FreeDopplerScan (status->statusPtr, &thisScan), status);
+  if (GV.skyRegion)
+    LALFree ( GV.skyRegion );
 
   /* this comes from clusters.c */
   if (highFLines->clusters) LALFree(highFLines->clusters);
