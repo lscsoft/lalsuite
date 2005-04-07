@@ -145,7 +145,7 @@ int main( int argc, char *argv[] )
     {"comment",                required_argument,     0,                 's'},
     {"user-tag",               required_argument,     0,                 'Z'},
     {"userTag",                required_argument,     0,                 'Z'},
-    {"ifo-tag",		             required_argument,     0,		             'I'},
+    {"ifo-tag",                required_argument,     0,                 'I'},
     {"help",                   no_argument,           0,                 'h'}, 
     {"debug-level",            required_argument,     0,                 'z'},
     {"version",                no_argument,           0,                 'V'},
@@ -564,7 +564,7 @@ int main( int argc, char *argv[] )
         }
 
         /* scroll to the end of the linked list of triggers */
-        for ( ; currentTrigger; currentTrigger = currentTrigger->next );
+        for ( ; currentTrigger->next; currentTrigger = currentTrigger->next );
 
         if ( vrbflg ) fprintf( stdout, "added triggers to list\n" );
         numTriggers += numFileTriggers;
