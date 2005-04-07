@@ -15,19 +15,31 @@ from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("-w", "--workdir", dest="workdir",
                   help="Directory where the result file will be.",
-		  default="/home/yousuke/workspace/S3EatH/worskapce/")
+		  default="./")
 parser.add_option("-t", "--targetdir", dest="targetdir",
                   help="Directory under which the data files will be.",
-		  default="/home/yousuke/workspace/S3EatH/S3/")
+		  default="./targetdir/")
 parser.add_option("-r", "--resultfile", dest="resultfile",
                   help="Name of the result file.",
 		  default="Combined")
 (options, args) = parser.parse_args()
 
 
-workdir=options.workdir
-targetdir=options.targetdir
-resultfile=workdir+options.resultfile
+
+## set-up directories and files
+workdir=os.path.abspath(options.workdir)+"/"
+targetdir=os.path.abspath(options.targetdir)+"/"
+resultfile=os.path.abspath(workdir+options.resultfile)
+## check if there are such directories.
+if os.path.isdir(workdir) is False:
+    print "Directory ",workdir ," does not exist."
+if os.path.isdir(targetdir) is False:
+    print "Directory ",targetdir ," does not exist."
+## print out the directories.
+print "working directory: "+workdir
+print "target directory: "+targetdir
+print "result file name: "+resultfile
+
 
 
 
@@ -52,7 +64,7 @@ def addfilename(targetfile="",niter=2):
 	os.remove(__tmpfilename)
 
 
-def datamodifier(targetfile="",textfrom="",textto=""):
+def textcutter(targetfile="",textfrom="",textto=""):
    """
       From the targetfile, take contents between textfrom and textto.
    """
@@ -63,7 +75,7 @@ def datamodifier(targetfile="",textfrom="",textto=""):
    if os.path.isfile(targetfile) is False:
       print __errmsg, targetfile, "does not exit!!" 
       sys.exit() 
-   __tmpfilename=targetfile+"_tmp_datamodifier"
+   __tmpfilename=targetfile+"_tmp_textcutter"
    shutil.move(targetfile,__tmpfilename)
    __command=["sed -e /",
               textfrom,
@@ -80,8 +92,31 @@ def datamodifier(targetfile="",textfrom="",textto=""):
    os.remove(__tmpfilename)
  
 
+def addfooterinfo(targetfile="",info=""):
+   """
+	add info to the targetfile footer. 
+   """	
+   __funcname="addfooterinfo"  
+   __errmsg="Error"+" in "+__funcname
+   if (targetfile is ""):
+      print __errmsg, "Enough numbers of arguments are not given." 
+      sys.exit()    
+   if os.path.isfile(targetfile) is False:
+      print __errmsg, targetfile, "does not exit!!" 
+      sys.exit() 
+##      
+   __tmpfilename=targetfile+"_tmp_addfilename"
+   shutil.move(targetfile,__tmpfilename)
+   __command=["sed -e '$a",
+              info, "' < ", __tmpfilename,
+              " > ", targetfile]
+   __comexe=string.join(__command,"")
+   os.system(__comexe)
+   os.remove(__tmpfilename)
 
-def filecombiner(fromfile="",tofile=sys.stdout):
+
+
+def appendfile(fromfile="",tofile=sys.stdout):
     """
        Append fromfile to tofile.
     """
@@ -96,6 +131,15 @@ def filecombiner(fromfile="",tofile=sys.stdout):
 if os.path.isfile(resultfile):		
    print "Current size of the result file."
    os.system("du -h "+resultfile)
+   uinput=raw_input("Do you want to delete [d], or append [a]?:[d/a]")
+   if uinput is "d":
+       os.system("rm -f "+resultfile)
+   elif uinput is "a":
+       pass
+   else:
+       sys.exit()
+       
+
 print "size of the target file before unzip"
 os.system("du -h "+targetdir+" | tail -n 1")
 uinput=raw_input("Are you sure to proceed?:[y/n]")
@@ -117,8 +161,11 @@ for parentdir, childdirs, files in os.walk(targetdir):
 	   zipfilename=copiedfile+"_tmp.zip"   
 	   shutil.move(copiedfile,zipfilename)
 	   os.system("unzip -q "+zipfilename)   # Unzip the copied file
-	   os.remove(zipfilename)	
-	   datamodifier(targetfile=copiedfile,textfrom=textfrom,textto=textto)
+	   os.remove(zipfilename)
+           ## take sections from textfrom to textto.
+	   textcutter(targetfile=copiedfile,textfrom=textfrom,textto=textto)
+           ## write the file name at each section header.
 	   addfilename(targetfile=copiedfile)
-	   filecombiner(fromfile=copiedfile,tofile=resultfile)
+           ## append the file into one result file.
+	   appendfile(fromfile=copiedfile,tofile=resultfile)
 	   os.remove(copiedfile)
