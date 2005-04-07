@@ -18,6 +18,9 @@
 #include <glob.h>
 #endif
 
+#define	 __USE_ISOC99 1
+#include <math.h>
+
 /* LAL-includes */
 #include <lal/AVFactories.h>
 #include <lal/RngMedBias.h>
@@ -3846,10 +3849,14 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
 
 /* ---------------------------------------------------------------------- */
-/* new test-version of LAL-Demod using single precision only */
+/* new test-version of LAL-Demod using single precision  */
+
+#define TWOPI_FLOAT     6.283185307f  		/* 2*pi */
+#define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/* 1 / (2pi) */ 
+
 
 /* <lalVerbatim file="LALDemodCP"> */
-void TestLALDemod2 (LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
+void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 /* </lalVerbatim> */
 { 
 
@@ -3941,7 +3948,7 @@ void TestLALDemod2 (LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *para
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<params->SFTno;alpha++)
       {
-        REAL8 tempFreq0, tempFreq1;
+        REAL4 tempFreq0, tempFreq1;
         REAL4 tsin, tcos;
         COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
         REAL4 a = params->amcoe->a->data[alpha];
@@ -4018,8 +4025,6 @@ void TestLALDemod2 (LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *para
 
         tempFreq1 = tempFreq0 + params->Dterms - 1;     /* positive if Dterms > 1 (trivial) */
 
-        x = LAL_TWOPI * tempFreq1;      /* positive! */
-
         /* we branch now (instead of inside the central loop)
          * depending on wether x can ever become SMALL in the loop or not, 
          * because it requires special treatment in the Dirichlet kernel
@@ -4035,6 +4040,9 @@ void TestLALDemod2 (LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *para
               {
                 COMPLEX8 Xalpha_k = Xalpha[sftIndex];
                 sftIndex ++;
+                x = TWOPI_FLOAT * tempFreq1;
+                tempFreq1 --;
+
                 /* If x is small we need correct x->0 limit of Dirichlet kernel */
                 if( fabs(x) <  SMALL) 
                   {
@@ -4052,9 +4060,6 @@ void TestLALDemod2 (LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *para
                     imagXP += Xalpha_k.im * realP;
                   }
                 
-                tempFreq1 --;
-                x = LAL_TWOPI * tempFreq1;
-                
               } /* for k < klim */
 
           } /* if x could become close to 0 */
@@ -4066,19 +4071,18 @@ void TestLALDemod2 (LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *para
             imagXP=0.0;
 
             /* Loop over terms in dirichlet Kernel */
-            for(k=0; k < klim ; k++)
+            for(k=klim; k > 0 ; k--)
               {
-                REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
-                COMPLEX8 Xa = *Xalpha_k;
-                Xalpha_k ++;
+                REAL4 xinv = OOTWOPI_FLOAT / tempFreq1;
                 tempFreq1 --;
                 
                 realP = tsin * xinv;
                 imagP = tcos * xinv;
                 /* these four lines compute P*xtilde */
-                realXP += Xa.re * realP - Xa.im * imagP;
-                imagXP += Xa.re * imagP + Xa.im * realP;
+                realXP += Xalpha_k->re * realP - Xalpha_k->im * imagP;
+                imagXP += Xalpha_k->re * imagP + Xalpha_k->im * realP;
 
+                Xalpha_k ++;
               } /* for k < klim */
 
           } /* if x cannot be close to 0 */
