@@ -270,7 +270,7 @@ void LALPtoleMetric( LALStatus *status,
   /***************************************************************/
   /* Small D_p_o overwrite:                                      */
   /***************************************************************/
-  j_max = 7;
+  j_max = 1;
   D_p_o_crit = 1.4e-2; /* This corresponds to about 70000 seconds */
 
   sum1  = next1 = D_p_o/2.0;
@@ -404,17 +404,28 @@ void LALPtoleMetric( LALStatus *status,
 
   /* orbital t^2 cos */
 
-  I[1] = (2*sin(phi_o_i) + 2*omega_o*T*cos_p_o + (-2 + pow(omega_o*T,2))*sin_p_o)/pow(omega_o*T,3);
+  I[1] = (2*sin(phi_o_i) + 2*D_p_o*cos_p_o + (-2 + pow(D_p_o,2))*sin_p_o)/pow(D_p_o,3);
 
   /* spin t^2 cos */
-  I[2] = (2*sin(phi_s_i) + 2*omega_s*T*cos_p_s + (-2 + pow(omega_s*T,2))*sin_p_s)/pow(omega_s*T,3);
+  I[2] = (2*sin(phi_s_i) + 2*D_p_s*cos_p_s + (-2 + pow(D_p_s,2))*sin_p_s)/pow(D_p_s,3);
 
   /* orbital t^2 sin */
-  I[3] = (-2*cos(phi_o_i) + 2*omega_o*T*sin_p_o - (-2 + pow(omega_o*T,2))*cos_p_o)/pow(omega_o*T,3);
+  I[3] = (-2*cos(phi_o_i) + 2*D_p_o*sin_p_o - (-2 + pow(D_p_o,2))*cos_p_o)/pow(D_p_o,3);
 
   /*spin t^2 sin */
 
-  I[4] = (-2*cos(phi_s_i) + 2*omega_s*T*sin_p_s - (-2 + pow(omega_s*T,2))*cos_p_s)/pow(omega_s*T,3);
+  I[4] = (-2*cos(phi_s_i) + 2*D_p_s*sin_p_s - (-2 + pow(D_p_s,2))*cos_p_s)/pow(D_p_s,3);
+
+/* Special overwrite for the orbital integrals: *********************/
+  if(D_p_o < 2*D_p_o_crit)
+    {
+      /*   I[1] = (2*(sin_p_o - D_p_o*(sum1*sin_p_o - (1-sum2)*cos_p_o)) + 2*D_p_o*cos_p_o + (-2 + pow(D_p_o,2))*sin_p_o)/pow(D_p_o,3);
+	   I[3] = (-2*(cos_p_o - D_p_o*(sum1*cos_p_o + (1-sum2)*sin_p_o)) + 2*D_p_o*sin_p_o - (-2 + pow(D_p_o,2))*cos_p_o)/pow(D_p_o,3);*/
+      I[1] = 1/3*sin(phi_o_i) + 1/4*D_p_o*cos(phi_o_i);
+      I[3] = 1/3*cos(phi_o_i) - 1/4*D_p_o*sin(phi_o_i);
+    }
+  /***********************************************************/
+
 
   /* The 4-dim metric components: */
   /* g_pp = */
