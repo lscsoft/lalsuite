@@ -102,6 +102,7 @@ simulated data.
 \item[Synopsis]
 \prog{lalapps\_power} \newline \hspace*{0.5in}
 \option{--bandwidth}~\parm{bandwidth} \newline \hspace*{0.5in}
+[\option{--calibrated-data}~\parm{high pass frequency}] \newline \hspace*{0.5in}
 [\option{--calibration-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
 [\option{--cluster}] \newline \hspace*{0.5in}
@@ -112,7 +113,6 @@ simulated data.
 \option{--frame-cache}~\parm{cache file} \newline \hspace*{0.5in}
 \option{--frame-dir}~\parm{directory} \newline \hspace*{0.5in}
 \option{--frame-sample-rate}~\parm{Hz} \newline \hspace*{0.5in}
-[\option{--geodata}~\parm{high pass corner frequency}] \newline \hspace*{0.5in}
 \option{--gps-end-time}~\parm{seconds} \newline \hspace*{0.5in}
 \option{--gps-end-time-ns}~\parm{nanoseconds} \newline \hspace*{0.5in}
 \option{--gps-start-time}~\parm{seconds} \newline \hspace*{0.5in}
@@ -191,8 +191,21 @@ parameter \parm{bandwidth} is related to the physical bandwidth by the
 formula
 \[
 \mbox{\parm{bandwidth}}
-   = T \times (f_{\mathrm{high} - f_{\mathrm{low}}}).
+   = T \times (f_{\mathrm{high}} - f_{\mathrm{low}}).
 \]
+
+\item[\option{--calibrated-data} \parm{high pass frequency}]
+When the \option{--calibrated-data} option is supplied, input time series
+data is read as IEEE double-precision samples.  Calibrated data, for
+example from the GEO detector, is stored in double-precision rather than
+single-precision format.
+
+This program uses IEEE single-precision internally, so double-precision
+data must be quantized prior to processing.  It is typically necessary to
+remove low-frequency noise from the signal prior to quantization in order
+to reduce the loss of fidelity.  \parm{high pass frequency} sets the
+cut-off frequency, in Hertz, of the high-pass filter applied to the time
+series prior to quantization to single-precision.
 
 \item[\option{--calibration-cache} \parm{cache file}]
 Specify the location of calibration information.  \parm{cache file} gives
@@ -264,15 +277,6 @@ side-effect of the code's input logic, and there is an on-going effort to
 remove the need to specify this information on the command line.  A future
 version of this program will be able to obtain this information directly
 from the input files.
-
-\item[\option{--geodata} \parm{high pass corner frequency}]
-Enable the processing of data from the GEO detector.  Data from the GEO
-detector is not high-pass filtered and is stored in IEEE double-precision
-format.  This program uses IEEE single-precision internally, so the
-low-frequency noise present in the original data needs to be removed prior
-to the reduction of sample precision or signal fidelity will be lost.
-\parm{high pass corner frequency} sets the cut-off frequency of the
-high-pass filter to be used.
 
 \item[\option{--gps-end-time} \parm{seconds}]
 Set the integer part of the GPS time up to which input data should be read

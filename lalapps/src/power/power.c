@@ -74,7 +74,6 @@ static struct {
 	int cluster;                /* TRUE == perform clustering          */
 	CHAR *comment;              /* user comment                        */
 	int FilterCorruption;       /* samples corrupted by conditioning   */
-	REAL8 fcorner;              /* GEO high pass corner freq, in Hz    */
 	INT4 maxSeriesLength;       /* RAM-limited input length            */
 	REAL4 noiseAmpl;            /* gain factor for white noise         */
 	INT4 printData;
@@ -83,11 +82,10 @@ static struct {
 	INT4 seed;                  /* set non-zero to generate noise      */
 	LIGOTimeGPS startEpoch;     /* gps start time                      */
 	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
-	INT4 verbose;
+	int verbose;
+	int calibrated;             /* input is double-precision h(t)      */
+	REAL8 cal_high_pass;        /* double->single high pass freq (Hz)  */
 } options;
-
-/* some global output flags */
-INT4 geodata;
  
 /* global variables */
 FrChanIn channelIn;                 /* channnel information                */
@@ -199,7 +197,7 @@ static void print_usage(char *program)
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
 "	 --frame-dir <directory>\n" \
-"	[--geodata <high pass corner frequency>]\n" \
+"	[--calibrated-data <high pass frequency>]\n" \
 "	 --gps-end-time <seconds>\n" \
 "	 --gps-end-time-ns <nanoseconds>\n" \
 "	 --gps-start-time <seconds>\n" \
@@ -425,10 +423,10 @@ void parse_command_line(
 	int useoverwhitening;
 	int c;
 	int option_index;
-	int ram = 0;
+	int ram = 0;	/* default */
 	INT8 gpstmp;
-	INT8 gpsStartTimeNS = 0;
-	INT8 gpsStopTimeNS = 0;
+	INT8 gpsStartTimeNS = 0;	/* impossible */
+	INT8 gpsStopTimeNS = 0;	/* impossible */
 	ProcessParamsTable **paramaddpoint = &procparams->processParamsTable;
 	LALStatus stat = blank_status;
 	struct option long_options[] = {
@@ -442,7 +440,7 @@ void parse_command_line(
 		{"filter-corruption",	required_argument, NULL,           'j'},
 		{"frame-cache",         required_argument, NULL,           'G'},
 		{"frame-dir",           required_argument, NULL,           'H'},
-		{"geodata",		required_argument, NULL,           'J'},
+		{"calibrated-data",	required_argument, NULL,           'J'},
 		{"gps-end-time",        required_argument, NULL,           'K'},
 		{"gps-end-time-ns",     required_argument, NULL,           'L'},
 		{"gps-start-time",      required_argument, NULL,           'M'},
@@ -505,7 +503,6 @@ void parse_command_line(
 	options.calCacheFile = NULL;	/* default */
 	options.cluster = FALSE;	/* default */
 	options.comment = "";		/* default */
-	options.fcorner = -1.0;		/* impossible */
 	options.FilterCorruption = -1;	/* impossible */
 	options.noiseAmpl = -1.0;	/* default */
 	options.printData = FALSE;	/* default */
@@ -513,10 +510,11 @@ void parse_command_line(
 	options.ResampleRate = 0;	/* impossible */
 	options.seed = 1;	/* default */
 	options.verbose = FALSE;	/* default */
+	options.calibrated = FALSE;	/* default */
+	options.cal_high_pass = -1.0;	/* impossible */
 
 	cachefile = NULL;	/* default */
 	dirname = NULL;	/* default */
-	geodata = FALSE;	/* default */
 	memset(ifo, 0, sizeof(ifo));	/* default */
 	burstInjectionFile = NULL;	/* default */
 	inspiralInjectionFile = NULL;	/* default */
@@ -597,13 +595,13 @@ void parse_command_line(
 		break;
 
 		case 'J':
-		options.fcorner = atof(optarg);
-		if(options.fcorner < 0.0) {
-			sprintf(msg, "must be >= 0.0 Hz (%f Hz specified)", options.fcorner);
+		options.calibrated = TRUE;
+		options.cal_high_pass = atof(optarg);
+		if(options.cal_high_pass < 0.0) {
+			sprintf(msg, "must not be negative (%f Hz specified)", options.cal_high_pass);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		geodata = TRUE;
 		ADD_PROCESS_PARAM("double");
 		break;
 
@@ -664,8 +662,8 @@ void parse_command_line(
 		case 'Q':
 		params->tfTilingInput.flow = atof(optarg);
 		params->tfPlaneParams.flow = atof(optarg);
-		if((params->tfTilingInput.flow < 0.0) || (params->tfTilingInput.flow > 150.0)) {
-			sprintf(msg,"must be between 0 Hz and 150 Hz inclusively (%f specified)", params->tfTilingInput.flow);
+		if((params->tfTilingInput.flow < 0.0)) {
+			sprintf(msg,"must not be negative (%f Hz specified)", params->tfTilingInput.flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -919,8 +917,15 @@ void parse_command_line(
 		break;
 	} while(c != -1);
 
-	if(args_are_bad)
-		exit(1);
+	/*
+	 * Make sure windowShift and windowLength are OK.
+	 */
+
+	if(params->windowLength < 2 * params->windowShift) {
+		sprintf(msg, "must be >= 2 * --window-shift = %u (%u specified)", 2 * params->windowShift, params->windowLength);
+		print_bad_argument(argv[0], "window-length", msg);
+		args_are_bad = TRUE;
+	}
 
 	/*
 	 * Convert the start and stop times to LIGOTimeGPS structures.
@@ -928,7 +933,7 @@ void parse_command_line(
 
 	if(gpsStartTimeNS > gpsStopTimeNS) {
 		fprintf(stderr, "%s: error: GPS start time > GPS stop time\n", argv[0]);
-		exit(1);
+		args_are_bad = TRUE;
 	}
 	LAL_CALL(LALINT8toGPS(&stat, &options.startEpoch, &gpsStartTimeNS), &stat);
 	LAL_CALL(LALINT8toGPS(&stat, &options.stopEpoch, &gpsStopTimeNS), &stat);
@@ -945,17 +950,14 @@ void parse_command_line(
 	 */
 
 	if(!check_for_missing_parameters(&stat, argv[0], long_options, params))
-		exit(1);
+		args_are_bad = TRUE;
 
 	/*
-	 * Make sure windowShift and windowLength are OK.
+	 * Exit if anything was wrong with the command line.
 	 */
 
-	if(params->windowLength < 2 * params->windowShift) {
-		sprintf(msg, "must be >= 2 * --window-shift = %u (%u specified)", 2 * params->windowShift, params->windowLength);
-		print_bad_argument(argv[0], "window-length", msg);
+	if(args_are_bad)
 		exit(1);
-	}
 
 	/*
 	 * Ensure PSDAverageLength is comensurate with the analysis window
@@ -965,11 +967,11 @@ void parse_command_line(
 	options.PSDAverageLength = block_commensurate(options.PSDAverageLength, params->windowLength, params->windowShift);
 
 	/*
-	 * Sanity check on GEO high-pass filter corner frequency.
+	 * Sanity check on calibrated data quantization high-pass frequency.
 	 */
 
-	if(options.fcorner >= params->tfTilingInput.flow)
-		fprintf(stderr, "%s: warning: GEO high-pass corner frequency (%f) greater than TF plane low frequency (%f)\n", argv[0], options.fcorner, params->tfTilingInput.flow);
+	if(options.cal_high_pass > params->tfTilingInput.flow)
+		fprintf(stderr, "%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options.cal_high_pass, params->tfTilingInput.flow);
 
 	/*
 	 * Miscellaneous chores.
@@ -991,7 +993,7 @@ void parse_command_line(
  * ============================================================================
  */
 
-static REAL4TimeSeries *get_geo_data(
+static REAL8TimeSeries *get_real8_data(
 	LALStatus *stat,
 	FrStream *stream,
 	const char *chname,
@@ -1000,48 +1002,65 @@ static REAL4TimeSeries *get_geo_data(
 	size_t lengthlimit
 )
 {
-	PassBandParamStruc highpassParam;
-	REAL4TimeSeries *series;
-	REAL8TimeSeries *geo;
-	size_t i;
+	REAL8TimeSeries *series;
 	size_t length;
 
 	/* create and initialize the time series vector */
-	LAL_CALL(LALCreateREAL8TimeSeries(stat, &geo, chname, start, 0.0, 0.0, lalADCCountUnit, 0), stat);
+	LAL_CALL(LALCreateREAL8TimeSeries(stat, &series, chname, start, 0.0, 0.0, lalADCCountUnit, 0), stat);
 
 	/* get the meta data */
-	LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(stat, geo, &channelIn, stream), stat);
+	LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(stat, series, &channelIn, stream), stat);
 
 	/* resize to the correct number of samples */
-	length = DeltaGPStoFloat(stat, &end, &start) / geo->deltaT;
+	length = DeltaGPStoFloat(stat, &end, &start) / series->deltaT;
 	if(lengthlimit)
 		length = min(length, lengthlimit);
-	LAL_CALL(LALResizeREAL8TimeSeries(stat, geo, 0, length), stat);
+	LAL_CALL(LALResizeREAL8TimeSeries(stat, series, 0, length), stat);
 
 	/* read the data */
 	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
 	if(options.verbose)
-		fprintf(stderr, "get_geo_data(): reading %u samples (%.9lf s) at GPS time %u.%09u s\n", geo->data->length, geo->data->length * geo->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
-	LAL_CALL(LALFrGetREAL8TimeSeries(stat, geo, &channelIn, stream), stat);
-
-	/* high pass filter before casting REAL8 to REAL4 */
-	highpassParam.nMax = 4;
-	highpassParam.f2 = options.fcorner;
-	highpassParam.f1 = -1.0;
-	highpassParam.a2 = 0.9;
-	highpassParam.a1 = -1.0;
-	LAL_CALL(LALButterworthREAL8TimeSeries(stat, geo, &highpassParam), stat);
-
-	/* copy data into a REAL4 time series */
-	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, geo->name, geo->epoch, geo->f0, geo->deltaT, geo->sampleUnits, geo->data->length), stat);
-	for(i = 0; i < series->data->length; i++)
-		series->data->data[i] = geo->data->data[i];
-	LAL_CALL(LALDestroyREAL8TimeSeries(stat, geo), stat);
+		fprintf(stderr, "get_real8_data(): reading %u samples (%.9lf s) at GPS time %u.%09u s\n", series->data->length, series->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
+	LAL_CALL(LALFrGetREAL8TimeSeries(stat, series, &channelIn, stream), stat);
 
 	return(series);
 }
 
-static REAL4TimeSeries *get_ligo_data(
+static REAL4TimeSeries *get_calibrated_data(
+	LALStatus *stat,
+	FrStream *stream,
+	const char *chname,
+	LIGOTimeGPS start,
+	LIGOTimeGPS end,
+	size_t lengthlimit
+)
+{
+	REAL8TimeSeries *calibrated;
+	REAL4TimeSeries *series;
+	PassBandParamStruc highpassParam;
+	unsigned int i;
+
+	/* retrieve calibrated data as REAL8 time series */
+	calibrated = get_real8_data(stat, stream, chname, start, end, lengthlimit);
+
+	/* high pass filter before casting REAL8 to REAL4 */
+	highpassParam.nMax = 4;
+	highpassParam.f2 = options.cal_high_pass;
+	highpassParam.f1 = -1.0;
+	highpassParam.a2 = 0.9;
+	highpassParam.a1 = -1.0;
+	LAL_CALL(LALButterworthREAL8TimeSeries(stat, calibrated, &highpassParam), stat);
+
+	/* copy data into a REAL4 time series */
+	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, calibrated->name, calibrated->epoch, calibrated->f0, calibrated->deltaT, calibrated->sampleUnits, calibrated->data->length), stat);
+	for(i = 0; i < series->data->length; i++)
+		series->data->data[i] = calibrated->data->data[i];
+	LAL_CALL(LALDestroyREAL8TimeSeries(stat, calibrated), stat);
+
+	return(series);
+}
+
+static REAL4TimeSeries *get_real4_data(
 	LALStatus *stat,
 	FrStream *stream,
 	const char *chname,
@@ -1068,7 +1087,7 @@ static REAL4TimeSeries *get_ligo_data(
 	/* read the data */
 	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
 	if(options.verbose)
-		fprintf(stderr, "get_ligo_data(): reading %u samples (%.9lf s) at GPS time %u.%09u s\n", series->data->length, series->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
+		fprintf(stderr, "get_real4_data(): reading %u samples (%.9lf s) at GPS time %u.%09u s\n", series->data->length, series->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
 	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
 
 	return(series);
@@ -1104,10 +1123,10 @@ static REAL4TimeSeries *get_time_series(
 	stream->mode = LAL_FR_VERBOSE_MODE;
 
 	/* Get the data */
-	if(geodata)
-		series = get_geo_data(stat, stream, params->channelName, start, end, lengthlimit);
+	if(options.calibrated)
+		series = get_calibrated_data(stat, stream, params->channelName, start, end, lengthlimit);
 	else
-		series = get_ligo_data(stat, stream, params->channelName, start, end, lengthlimit);
+		series = get_real4_data(stat, stream, params->channelName, start, end, lengthlimit);
 
 	/* Check for missing data */
 	if(stream->state & LAL_FR_GAP) {
@@ -1184,8 +1203,8 @@ static COMPLEX8FrequencySeries *generate_response(
 	if(options.verbose) 
 		fprintf(stderr, "generate_response(): working at GPS time %u.%09u s\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds );
 
-	/* getting the response is handled differently for geo */
-	if(geodata)
+	/* getting the response is handled differently for calibrated data */
+	if(options.calibrated)
 		for(i = 0; i < response->data->length; i++)
 			response->data->data[i] = one;
 	else {
