@@ -39,6 +39,15 @@ enum {
   ephemeris       /* CoherentMetric() + TEphemeris() */
 } metric_type = undefined; 
 
+enum {
+  undetermined,
+  hanford,        /* detector locations, obvious from name  */
+  livingston,
+  geo,
+  tama,
+  virgo,
+} detector_location = undetermined;
+
 
 /* Limits of sky search  */
 REAL4 ra_min  = 0.0;
@@ -60,13 +69,6 @@ int main( int argc, char *argv[] )
 
   LALStatus stat = blank_status;  /* status structure */
 
-  /* Define option input variables */
-  char detector[]      = "livingston";   /* choice of detector
-                           'hanford'    = LIGO Hanford
-                           'livingston' = LIGO Livingston (default)
-                           'virgo'      = VIRGO
-                           'geo'        = GEO600
-                           'TAMA'       = TAMA300          */
 
   /* Define input variables and set default values */
   int begin            = 731265908;  /* start time of integration */
@@ -90,10 +92,11 @@ int main( int argc, char *argv[] )
   REAL4 f1;
   int option_index = 0; /* getopt_long option index */
   int opt; /* Argument for switch statement with getopt_long */
+  int detector_argument;
 
   /* Set getopt_long option arguments */
   static struct option long_options[] = {
-    {"metric-type",        1, 0, 1},
+    {"metric-type",       1, 0, 1},
     {"start-gps-seconds", 1, 0, 2},
     {"detector",          1, 0, 3},
     {"debug-level",       1, 0, 4},
@@ -105,19 +108,11 @@ int main( int argc, char *argv[] )
     {0, 0, 0, 0}
   };
 
-  int detector_count;                /* Counter for detector option */
-  char hanford[]     = "hanford";    /* input strings for detector option */
-  char livingston[]  = "livingston";
-  char virgo[]       = "virgo";
-  char geo[]         = "geo";
-  char tama[]        = "tama";
-
-
   /* Set up. */
   lal_errhandler = LAL_ERR_EXIT;
 
   /* Parse command-line options. */
-  while( (opt = getopt_long( argc, argv, "a:bcdefghjk", long_options, &option_index )) != -1 )
+  while( (opt = getopt_long( argc, argv, "a:bc:defghjk", long_options, &option_index )) != -1 )
   {
     
     switch ( opt ) {
@@ -136,17 +131,16 @@ int main( int argc, char *argv[] )
       break;
 
     case 3:
-      for (detector_count = 1; detector_count <= strlen(optarg); detector_count++)
-      {
-        if ((optarg[detector_count] != hanford[detector_count]) && 
-            (optarg[detector_count] != livingston[detector_count]) && 
-            (optarg[detector_count] != virgo[detector_count]) &&
-            (optarg[detector_count] != geo[detector_count]) &&
-            (optarg[detector_count] != tama[detector_count]))
-          printf("Invalid option argument for the --detector option\n");
-        else if ( detector_count == strlen(optarg) )
-          strcpy( detector, optarg);
-      }
+      if( !strcmp( optarg, "hanford" ) )
+	detector_location = hanford;
+      if( !strcmp( optarg, "livingston" ) )
+	detector_location = livingston;
+      if( !strcmp( optarg, "geo" ) )
+	detector_location = geo;
+      if( !strcmp( optarg, "tama" ) )
+	detector_location = tama;
+      if( !strcmp( optarg, "virgo" ) )
+	detector_location = virgo;
       break;
 
     case 4:
@@ -188,12 +182,42 @@ printf( "parsed options...\n" );
   mesh.domain[1] = dec_max;
 
 
+  /* Set detector location  */
+  switch( detector_location ) {
+ 
+  case hanford:
+    detector_argument = LALDetectorIndexLHODIFF;
+    break;
+
+  case livingston:
+    detector_argument = LALDetectorIndexLLODIFF;
+    break;
+
+  case geo:
+    detector_argument = LALDetectorIndexGEO600DIFF;
+    break;
+
+  case tama:
+    detector_argument = LALDetectorIndexTAMA300DIFF;
+    break;
+
+  case virgo:
+    detector_argument = LALDetectorIndexVIRGODIFF;
+    break;
+
+  default:
+    printf( "invalid detector location\n" );
+    exit(1);
+
+  }
+  printf( "Set detector location ...\n" );
+
   /* Set metric input parameters. */
   switch( metric_type ) {
 
   case ptolemetric:
     /* fill PtoleMetric() input structure */
-    search.site = &lalCachedDetectors[LALDetectorIndexLLODIFF];
+    search.site = &lalCachedDetectors[detector_argument];
     search.position.system = COORDINATESYSTEM_EQUATORIAL;
     search.spindown = NULL;
     search.epoch.gpsSeconds = begin;
@@ -215,7 +239,7 @@ printf( "parsed options...\n" );
     tevparam.start = 0; /* start time relative to epoch */
     LAL_CALL( LALGetEarthTimes( &stat, &tevpulse ), &stat );
     tevpulse.t0 = 0.0; /* relative reference time for spindown defs */
-    tevpulse.site = &lalCachedDetectors[LALDetectorIndexLLODIFF];
+    tevpulse.site = &lalCachedDetectors[detector_argument];
     tevpulse.epoch.gpsSeconds = begin;
     tevpulse.epoch.gpsNanoSeconds = 0;
     tevparam.deltaT = duration;
