@@ -1,19 +1,12 @@
 /*-----------------------------------------------------------------------
-
+ *
  * File Name: skynet.c
-
  *
-
  * Authors: Essinger-Hileman, T. and Owen, B.
-
  *
-
  * Revision: $Id$
-
  *
-
  *-----------------------------------------------------------------------
-
  */
 
 
@@ -36,21 +29,30 @@
 #include <lal/TwoDMesh.h>
 
 
-RCSID( "$Id" );
+RCSID( "$Id$" );
+
+/* type of parameter space metric to use */
+enum {
+  undefined,      /* duh */
+  ptolemetric,    /* PtoleMetric() */
+  baryptolemaic,  /* CoherentMetric() + TBaryPtolemaic() */
+  ephemeris       /* CoherentMetric() + TEphemeris() */
+} metric_type = undefined; 
 
 
 /* Limits of sky search  */
 REAL4 ra_min  = 0.0;
 REAL4 ra_max  = LAL_TWOPI*0.999; /* BEN: need to fix this */
-REAL4 dec_min = 0.0;
+REAL4 dec_min = -LAL_PI_2;
 REAL4 dec_max = LAL_PI_2;
-REAL4 MAX_NODES = 1e6; /* limit on number of nodes for TwoDMesh  */
+REAL4 MAX_NODES = 2e6; /* limit on number of nodes for TwoDMesh  */
 
 
 void getRange( LALStatus *, REAL4 [2], REAL4, void * );
 void getMetric( LALStatus *, REAL4 [3], REAL4 [2], void * );
 
 char *optarg = NULL; /* option argument for getopt_long() */
+REAL8Vector *tevlambda;
 
 
 int main( int argc, char *argv[] )
@@ -59,11 +61,6 @@ int main( int argc, char *argv[] )
   LALStatus stat = blank_status;  /* status structure */
 
   /* Define option input variables */
-  char metric_code[]   = "ptolemetric";  /* choice of LAL metric code
-                           'ptolemetric'   = Ptolemetric(default),
-                           'baryptolemaic' = CoherentMetric + DTBarycenter,
-                           'ephemeris'     = CoherentMetric + DTEphemeris  */
-
   char detector[]      = "livingston";   /* choice of detector
                            'hanford'    = LIGO Hanford
                            'livingston' = LIGO Livingston (default)
@@ -79,11 +76,14 @@ int main( int argc, char *argv[] )
   REAL4 mismatch       = 0.05;       /* mismatch threshold of mesh */
   REAL4 max_frequency  = 1e3;        /* maximum frequency of search (Hz) */
 
-  /* Define structures for TwoDMesh and Ptolemetric  */
+  /* structures for LAL functions */
   TwoDMeshNode *firstNode;
   static TwoDMeshParamStruc mesh;
   static PtoleMetricIn search;
+  static MetricParamStruc tevparam;
   TwoDMeshNode *node;
+  EphemerisData *eph;
+  PulsarTimesParamStruc tevpulse;
 
   /* other useful variables */
   FILE *fp;                       /* where to write the output */
@@ -93,7 +93,7 @@ int main( int argc, char *argv[] )
 
   /* Set getopt_long option arguments */
   static struct option long_options[] = {
-    {"lal-metric",        1, 0, 1},
+    {"metric-type",        1, 0, 1},
     {"start-gps-seconds", 1, 0, 2},
     {"detector",          1, 0, 3},
     {"debug-level",       1, 0, 4},
@@ -104,11 +104,6 @@ int main( int argc, char *argv[] )
     {"max-frequency",     1, 0, 9},
     {0, 0, 0, 0}
   };
-
-  int metric_count;                      /* Counter for lal-metric option */
-  char ptolemetric[] = "ptolemetric";    /* input strings, lal-metric option */
-  char baryptolemaic[] = "baryptolemaic";
-  char ephemeris[] = "ephemeris";
 
   int detector_count;                /* Counter for detector option */
   char hanford[]     = "hanford";    /* input strings for detector option */
@@ -125,104 +120,63 @@ int main( int argc, char *argv[] )
   while( (opt = getopt_long( argc, argv, "a:bcdefghjk", long_options, &option_index )) != -1 )
   {
     
-    switch ( opt )
+    switch ( opt ) {
 
-    {
-
-    case 1: /* lal-metric option */
-      
-      for (metric_count = 1; metric_count <= strlen(optarg); metric_count++)
-	{
-	  if ((optarg[metric_count] != ptolemetric[metric_count]) && 
-              (optarg[metric_count] != baryptolemaic[metric_count]) && 
-              (optarg[metric_count] != ephemeris[metric_count]))
-	    {
-	      printf("Invalid option argument for the --lal-metric option\n");
-	      break;
-	    }
-	  else if ( metric_count == strlen(optarg) )
-	    {
-	      strcpy( metric_code, optarg);
-	      break;
-	    }
-	}
+    case 1: /* metric-type option */
+      if( !strcmp( optarg, "ptolemetric" ) )
+        metric_type = ptolemetric;
+      if( !strcmp( optarg, "baryptolemaic" ) )
+        metric_type = baryptolemaic;
+      if( !strcmp( optarg, "ephemeris" ) )
+        metric_type = ephemeris;
+      break;
 
     case 2: /* start-gps-seconds option */
-      {
-	begin = atoi ( optarg );
-	break;
-      }
+      begin = atoi ( optarg );
+      break;
 
     case 3:
- 
       for (detector_count = 1; detector_count <= strlen(optarg); detector_count++)
-	{
-	  if ((optarg[detector_count] != hanford[detector_count]) && 
-              (optarg[detector_count] != livingston[detector_count]) && 
-              (optarg[detector_count] != virgo[detector_count]) &&
-              (optarg[detector_count] != geo[detector_count]) &&
-              (optarg[detector_count] != tama[detector_count]))
-	    {
-	      printf("Invalid option argument for the --detector option\n");
-	      break;
-	    }
-	  else if ( detector_count == strlen(optarg) )
-	    {
-              strcpy( detector, optarg);
-	      break;
-	    }
-	}
+      {
+        if ((optarg[detector_count] != hanford[detector_count]) && 
+            (optarg[detector_count] != livingston[detector_count]) && 
+            (optarg[detector_count] != virgo[detector_count]) &&
+            (optarg[detector_count] != geo[detector_count]) &&
+            (optarg[detector_count] != tama[detector_count]))
+          printf("Invalid option argument for the --detector option\n");
+        else if ( detector_count == strlen(optarg) )
+          strcpy( detector, optarg);
+      }
+      break;
 
     case 4:
-      {
-	set_debug_level( optarg );
-	break;
-      }
+      set_debug_level( optarg );
+      break;
 
     case 5:
-      {
-	duration = atoi (optarg);
-	break;
-      }
+      duration = atoi (optarg);
+      break;
 
     case 6:
-      {
-	min_spindown = atoi ( optarg );
-	break;
-      }
+      min_spindown = atoi ( optarg );
+      break;
 
     case 7:
-      {
-	spindown_order = atoi ( optarg );
-	break;
-      }
+      spindown_order = atoi ( optarg );
+      break;
 
     case 8:
-      {
-	mismatch = atof( optarg );
-	break;
-      }
+      mismatch = atof( optarg );
+      break;
 
     case 9:
-      {
-	max_frequency = atoi( optarg );
-	break;
-      }
+      max_frequency = atoi( optarg );
+      break;
 
     }/*switch( opt )*/
 
   }/*while ( getopt... )*/
-
-
-  /* Return input parameter values */
-  printf("\nmetric_code is %s\n", metric_code);
-  printf("integration start is %d seconds\n", begin); 
-  printf("detector is %s\n", detector); 
-  printf("Integration duration is %f seconds\n", duration); 
-  printf("Minimum spindown age is %f seconds\n", min_spindown); 
-  printf("spindown order is %d\n", spindown_order); 
-  printf("Mismatch of mesh is %f\n", mismatch); 
-  printf("Maximum frequency of integration is %f Hz\n\n", max_frequency);
+printf( "parsed options...\n" );
 
 
   /* Set TwoDMesh input parameters. */
@@ -230,20 +184,60 @@ int main( int argc, char *argv[] )
   mesh.nIn = MAX_NODES;
   mesh.getRange = getRange;
   mesh.getMetric = getMetric;
-  mesh.metricParams = (void *) &search;
   mesh.domain[0] = dec_min;
   mesh.domain[1] = dec_max;
-  mesh.rangeParams = (void *) &search;
-  
 
-  /* Set PtoleMetric input parameters. */
-  search.site = &lalCachedDetectors[LALDetectorIndexLLODIFF];
-  search.position.system = COORDINATESYSTEM_EQUATORIAL;
-  search.spindown = NULL;
-  search.epoch.gpsSeconds = begin;
-  search.epoch.gpsNanoSeconds = 0;
-  search.duration = duration;
-  search.maxFreq = max_frequency;
+
+  /* Set metric input parameters. */
+  switch( metric_type ) {
+
+  case ptolemetric:
+    /* fill PtoleMetric() input structure */
+    search.site = &lalCachedDetectors[LALDetectorIndexLLODIFF];
+    search.position.system = COORDINATESYSTEM_EQUATORIAL;
+    search.spindown = NULL;
+    search.epoch.gpsSeconds = begin;
+    search.epoch.gpsNanoSeconds = 0;
+    search.duration = duration;
+    search.maxFreq = max_frequency;
+    /* tell TwoDMesh() to use PtoleMetric() */
+    mesh.metricParams = (void *) &search;
+    mesh.rangeParams = (void *) &search;
+    break;
+
+  case baryptolemaic:
+    tevlambda = NULL;
+    LAL_CALL( LALDCreateVector( &stat, &tevlambda, 3+spindown_order ), &stat );
+    tevlambda->data[0] = max_frequency;
+    tevparam.constants = &tevpulse;
+    tevparam.n = 1;
+    tevparam.errors = 0;
+    tevparam.start = 0; /* start time relative to epoch */
+    LAL_CALL( LALGetEarthTimes( &stat, &tevpulse ), &stat );
+    tevpulse.t0 = 0.0; /* relative reference time for spindown defs */
+    tevpulse.site = &lalCachedDetectors[LALDetectorIndexLLODIFF];
+    tevpulse.epoch.gpsSeconds = begin;
+    tevpulse.epoch.gpsNanoSeconds = 0;
+    tevparam.deltaT = duration;
+    /* set timing function */
+    tevparam.dtCanon = LALDTBaryPtolemaic;
+
+  case ephemeris:
+    eph = (EphemerisData *) LALMalloc( sizeof(EphemerisData) );
+    eph->ephiles.earthEphemeris = "earth00-04.dat";
+    eph->ephiles.sunEphemeris = "sun00-04.dat";
+    eph->leap = 13; /* for years 2000-2004; shouldn't matter if wrong */
+    LAL_CALL( LALInitBarycenter( &stat, eph ), &stat );
+    tevpulse.ephemeris = eph;
+    tevparam.dtCanon = LALDTEphemeris;
+    break;
+
+  default:
+    printf( "bad metric type\n" );
+    exit(1);
+
+  }
+printf( "set input parameters...\n" );
 
   /* Create 2D mesh. */
   firstNode = NULL;
