@@ -273,6 +273,53 @@ print_gridding(gridding_t *g, char *fn, gridding_printmode_t mode)
 } /* END: print_gridding() */
 
 
+void
+print_ra_grid(gridding_t *g, char *fn)
+{
+  UINT4 i, j;
+  FILE *outfile = NULL;
+
+  if (fn != NULL)
+    outfile = xfopen(fn, "wo");
+  else
+    outfile = stdout;
+
+  for (i = 0; i < g->ra->length; ++i)
+  {
+    for (j = 0; j < g->dec->length; ++j)
+    {
+      fprintf(outfile, "% 20.14e\t", g->ra->data[i]);
+    }
+    fprintf(outfile, "\n");
+  }
+  fclose(outfile);
+} /* END: print_ra_grid() */
+
+
+void
+print_dec_grid(gridding_t *g, char *fn)
+{
+  UINT4 i, j;
+  FILE *outfile = NULL;
+
+  if (fn != NULL)
+    outfile = xfopen(fn, "wo");
+  else
+    outfile = stdout;
+
+  for (i = 0; i < g->ra->length; ++i)
+  {
+    for (j = 0; j < g->dec->length; ++j)
+    {
+      fprintf(outfile, "% 20.14e\t", g->dec->data[j]);
+    }
+    fprintf(outfile, "\n");
+  }
+  fclose(outfile);
+} /* END: print_ra_grid() */
+
+
+
 static 
 double 
 rad_to_deg(double rad)

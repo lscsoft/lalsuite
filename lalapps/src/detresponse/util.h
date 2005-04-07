@@ -24,6 +24,9 @@ void print_source(const LALSource * source);
 /* print time info */
 void print_time_info(const LALTimeIntervalAndNSample * time_info);
 
+/* print detector response */
+void print_response(const LALDetAMResponse *resp);
+
 int mystrncasecmp(char *s1, char *s2, unsigned int n);
 
 /* strlcpy is non-standard, so emulate it here */

@@ -34,12 +34,10 @@
 #include "skygrid.h"
 #include "cmdline.h"
 
+#include "set_source_params.h"
 
 
 REAL8 deg_to_rad(REAL8 degrees);
-
-void  set_source_params(LALSource * source, const char * name, REAL8 ra_rad,
-                        REAL8 dec_rad, REAL8 orien_rad);
 
 void generate_timeseries_response(LALStatus * status);
 void compute_skygrid(LALStatus * status, EphemerisData *p_ephemeris_data,

@@ -125,6 +125,22 @@ main(int argc, char **argv)
   print_gridding(&g, "irr_dec_var_ra.dat", DETRESP_XYPAIRS_ASCII);
 
   cleanup_gridding(&s, &g);
+
+  printf("\n*   *   *   *   *   *   *   *   *   *\n");
+
+  printf("RUN 7 - RA and Dec in separate files\n");
+
+  init_gridding(&g);
+
+  num_ra = 48;
+  num_dec = 22;
+  make_gridding(&s, &g, num_ra, DETRESP_REGGRID,
+		num_dec, DETRESP_REGGRID, &ephem, &gps, acc);
+
+  print_ra_grid(&g, "test_ra_reg.txt");
+  print_dec_grid(&g, "test_dec_reg.txt");
+
+  cleanup_gridding(&s, &g);
   
   /*
    * Housekeeping

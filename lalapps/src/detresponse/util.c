@@ -96,7 +96,30 @@ print_source(const LALSource * source)
 void
 PrintLALDetector(LALDetector * const detector)
 {
-  printf( "Detector  = \n");
+  printf("Detector  = \n");
+  switch(detector->type) {
+    case LALDETECTORTYPE_IFODIFF:
+      printf("IFO, differential mode\n");
+      break;
+    case LALDETECTORTYPE_IFOXARM:
+      printf("IFO, one-arm mode (X-arm)\n");
+      break;
+    case LALDETECTORTYPE_IFOYARM:
+      printf("IFO, one-arm mode (Y-arm\n");
+      break;
+    case LALDETECTORTYPE_IFOCOMM:
+      printf("IFO, common mode\n");
+      break;
+    case LALDETECTORTYPE_CYLBAR:
+      printf("Cylindrical bar\n");
+      break;
+    case LALDETECTORTYPE_ABSENT:
+      printf("Undefined\n");
+      break;
+    default:
+      printf("Undefined\n");
+      break;
+  } 
   printf("{\n");
   printf("  { % 22.15e, % 22.15e, % 22.15e },\n",
          detector->location[0],
@@ -136,14 +159,33 @@ PrintLALDetector(LALDetector * const detector)
 
 void print_time_info(const LALTimeIntervalAndNSample * p_time_info)
 {
-  printf("time_info.epoch.gpsSeconds     = % 9d\n",
+  printf("Accuracy: ");
+  switch (p_time_info->accuracy) {
+    case LALLEAPSEC_STRICT:
+      printf("strict\n");
+      break;
+    case LALLEAPSEC_LOOSE:
+      printf("loose\n");
+      break;
+    default:
+      printf("undefined\n");
+      break;
+  }
+  printf("time_info.epoch.gpsSeconds     = % 14d\n",
          (*p_time_info).epoch.gpsSeconds);
-  printf("time_info.epoch.gpsNanoSeconds = % 9d\n",
+  printf("time_info.epoch.gpsNanoSeconds = % 14d\n",
          (*p_time_info).epoch.gpsNanoSeconds);
-  printf("time_info.deltaT               = % 14.20e\n",
+  printf("time_info.deltaT               = % 14e\n",
          (*p_time_info).deltaT);
-  printf("time_info.nSample              = % 9d\n",
+  printf("time_info.nSample              = % 14d\n",
          (*p_time_info).nSample);
+}
+
+
+void print_response(const LALDetAMResponse *r)
+{
+  printf("Plus:  % 20.14e\n", r->plus);
+  printf("Cross: % 20.14e\n", r->cross);
 }
 
 /*

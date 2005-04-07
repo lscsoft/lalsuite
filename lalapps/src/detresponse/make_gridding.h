@@ -95,4 +95,8 @@ void zero_gridding(LALStatus *status, gridding_t *p_gridding);
 void print_gridding(gridding_t *p_gridding, char *filename,
                     gridding_printmode_t mode);
 
+void print_ra_grid(gridding_t *p_gridding, char *filename);
+
+void print_dec_grid(gridding_t *p_gridding, char *filename);
+
 #endif

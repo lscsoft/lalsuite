@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "detresponse.h"
+#include "set_source_params.h"
 
 void set_source_params(LALSource * source, const char *name, REAL8 ra_rad,
                        REAL8 dec_rad, REAL8 orien_rad)
