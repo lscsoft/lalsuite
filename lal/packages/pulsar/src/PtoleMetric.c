@@ -270,7 +270,7 @@ void LALPtoleMetric( LALStatus *status,
   /***************************************************************/
   /* Small D_p_o overwrite:                                      */
   /***************************************************************/
-  j_max = 1;
+  j_max = 7;
   D_p_o_crit = 1.4e-2; /* This corresponds to about 70000 seconds */
 
   sum1  = next1 = D_p_o/2.0;
@@ -421,8 +421,8 @@ void LALPtoleMetric( LALStatus *status,
     {
       /*   I[1] = (2*(sin_p_o - D_p_o*(sum1*sin_p_o - (1-sum2)*cos_p_o)) + 2*D_p_o*cos_p_o + (-2 + pow(D_p_o,2))*sin_p_o)/pow(D_p_o,3);
 	   I[3] = (-2*(cos_p_o - D_p_o*(sum1*cos_p_o + (1-sum2)*sin_p_o)) + 2*D_p_o*sin_p_o - (-2 + pow(D_p_o,2))*cos_p_o)/pow(D_p_o,3);*/
-      I[1] = 1/3*sin(phi_o_i) + 1/4*D_p_o*cos(phi_o_i);
-      I[3] = 1/3*cos(phi_o_i) - 1/4*D_p_o*sin(phi_o_i);
+      I[1] = 1./3.*sin(phi_o_i) + 1./4.*D_p_o*cos(phi_o_i);
+      I[3] = 1./3.*cos(phi_o_i) - 1./4.*D_p_o*sin(phi_o_i);
     }
   /***********************************************************/
 
