@@ -14,6 +14,8 @@ $Id$
 /* #define DEBUG_STACKSLIDE_ISOLATED */
 /* #define DEBUG_SUM_TEMPLATEPARAMS */
 /* #define PRINT_STACKSLIDE_BINOFFSETS */
+/* #define PRINT_STACKSLIDE_BINMISMATCH */
+/* #define PRINT_STACKSLIDE_SPECIAL_DEBUGGING_INFO */
 /*********************************************/
 /*                                           */
 /* END SECTION: define preprocessor flags    */
@@ -363,10 +365,40 @@ void StackSlideOld(	LALStatus *status,
                f_t = f_t * pTdotsAndDeltaTs->vecTDots[k];
                /* binoffset = floor(( (f_t - params->f0STK) * params->tSTK) + 0.5 ); */ /* 12/06/04 gam */
                binoffset = floor(( (f_t - refFreq) * params->tSTK) + 0.5 );
+               
+               #ifdef PRINT_STACKSLIDE_BINMISMATCH
+                  fprintf(stdout, "%i binmismatch = %g \n",params->timeStamps[k].gpsSeconds,fabs( ((f_t - refFreq) * params->tSTK) - (REAL8)binoffset ));
+                  fflush(stdout);
+               #endif
 
                #ifdef PRINT_STACKSLIDE_BINOFFSETS
                   fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
-                  fflush(stdout);   
+                  fflush(stdout);
+               #endif
+               
+               #ifdef PRINT_STACKSLIDE_SPECIAL_DEBUGGING_INFO
+                  /* A comparison is made between the STK bin with maximum power
+                     and the STK power when demodulating for the SUM midpoint
+                     frequency, i.e., the bin for that freq + binoffset.
+                     For an injected signal into the middle of the SUM band
+                     these should agree if StackSlide is working properly. */
+                  {
+                    INT4 iPwrMax = -1;
+                    REAL4 pwrMax = 0.0;
+                    for(i=0;i<STKData[k]->data->length; i++) {
+                      if (pwrMax < STKData[k]->data->data[i]) {
+                        iPwrMax = i;
+                        pwrMax = STKData[k]->data->data[i];
+                      }
+                    }
+                    fprintf(stdout, "In StackSlide for SFT #%i iPwrMax = %i, pwrMax = %g \n",k,iPwrMax,pwrMax);
+                  }
+                  fprintf(stdout, "In StackSlide for SFT #%i STK(binoffset-1) = %g \n",k,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset-1]);
+                  fprintf(stdout, "In StackSlide for SFT #%i ibinoffset = %i, STK(binoffset) = %g \n",k,iMinSTK + params->nBinsPerSUM/2+binoffset, STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset]);
+                  fprintf(stdout, "In StackSlide for SFT #%i STK(binoffset+1) = %g \n",k,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset+1]);
+                  fprintf(stdout, "In StackSlide for SFT #%i REAL8 binoffset = %g \n",k,((f_t - refFreq) * params->tSTK));
+                  fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
+                  fflush(stdout);
                #endif
 
                /* Add the power from this STK into the SUM with the appropriate binoffset */
