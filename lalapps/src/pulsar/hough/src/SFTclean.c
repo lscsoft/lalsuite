@@ -294,7 +294,7 @@ int main(int argc, char *argv[]){
 
       /* clean the sft */
       if (nLines > 0)
-	SUB( CleanCOMPLEX8SFT( &status, sft, 2, window, &lines), &status);
+	SUB( CleanCOMPLEX8SFT( &status, sft, 20, window, &lines), &status);
       
       /* make the output sft filename */
       sprintf(tempstr1, "%d", sft->epoch.gpsSeconds);
