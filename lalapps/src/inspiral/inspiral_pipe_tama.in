@@ -261,14 +261,14 @@ def sire_segs(segments,output,file_name,sire_job,dag,playground_only=None,
   f.close()
   sire.add_var_opt('input',fname)
   if inj_file:
-    coinc_time = int(cp.get('pipeline','inj-coinc'))
+    inj_coinc = int(cp.get('pipeline','inj-coinc'))
     sire.set_inj_outputs(file_name,inj_coinc,usertag,cluster,slide_time,
       tama_output)
     sire.add_var_opt('injection-file',inj_file)
-    sire.add_var_opt('injection-coincidence',coinc_time)
+    sire.add_var_opt('injection-coincidence',inj_coinc)
     if cluster:
       sire.add_var_opt('cluster-algorithm',cp.get('pipeline','cluster-alg'))
-      sire.add_var_opt('cluster-time',2*coinc_time)
+      sire.add_var_opt('cluster-time',2*inj_coinc)
     
   else:
     sire.set_outputs(file_name,usertag,cluster,slide_time,tama_output)
