@@ -168,13 +168,14 @@ class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     
     for sec in ['thinca']:
       self.add_ini_opts(cp,sec)
+    for sec in ['thinca-slide']:
+      self.add_ini_opts(cp,sec)
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
     self.set_stdout_file('logs/thinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
     self.set_stderr_file('logs/thinca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('thinca.sub')
-
 
 class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
@@ -554,6 +555,7 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__ifo_l1 = None
     self.__ifo_t1 = None
     self.__ifo_v1 = None
+    self.__num_slides = None
     self.__usertag = job.get_config('pipeline','user-tag')
     
   def set_ifo(self, ifo):
@@ -579,7 +581,7 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     elif ifo == 'V1':
       self.add_var_opt('v1-triggers','')
       self.__ifo_v1 = 'V1'
-
+  
   def get_ifo_g1(self):
     """
     Returns the IFO code of g1.
@@ -636,6 +638,19 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     return ifos
 
+  def set_num_slides(self, num_slides):
+    """
+    Set number of time slides to undertake
+    """
+    self.add_var_opt('num-slides',num_slides)
+    self.__num_slides = num_slides
+
+  def get_num_slides(self):
+    """
+    Returns the num_slides from .ini (>0 => time slides desired)
+    """
+    return self.__num_slides
+
   def set_user_tag(self,usertag):
     """
     Set the usertag for a given job
@@ -657,7 +672,10 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_ifos():
       raise InspiralError, "Start time, end time or ifos have not been set"
     
-    basename = self.get_ifos() + '-THINCA'
+    if self.__num_slides:
+      basename = self.get_ifos() + '-THINCA_SLIDE'
+    else:
+      basename = self.get_ifos() + '-THINCA'
 
     if self.__usertag:
       basename += '_' + self.__usertag 
