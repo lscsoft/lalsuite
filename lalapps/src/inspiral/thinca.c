@@ -154,6 +154,7 @@ int main( int argc, char *argv[] )
 
   INT4         slideStep[LAL_NUM_IFO];
   LIGOTimeGPS  slideTimes[LAL_NUM_IFO];
+  LIGOTimeGPS  slideReset[LAL_NUM_IFO];
   INT4         numSlides = 0;
   INT4         slideNum  = 0;
 
@@ -304,6 +305,7 @@ int main( int argc, char *argv[] )
   /* set the time slide data to zero */
   memset( &slideStep, 0, LAL_NUM_IFO * sizeof(INT4) );
   memset( &slideTimes, 0, LAL_NUM_IFO * sizeof(LIGOTimeGPS) );
+  memset( &slideReset, 0, LAL_NUM_IFO * sizeof(LIGOTimeGPS) );
   
   /* parse the arguments */
   while ( 1 )
@@ -1223,10 +1225,16 @@ int main( int argc, char *argv[] )
       
       for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
-        slideTimes[ifoNumber].gpsSeconds = slideStep[ifoNumber];
         if( slideNum == -numSlides )
         {
-          slideTimes[ifoNumber].gpsSeconds *= -numSlides;
+          INT4 tmpSlide = (- numSlides * slideStep[ifoNumber]);
+          slideTimes[ifoNumber].gpsSeconds = tmpSlide;
+          slideReset[ifoNumber].gpsSeconds = (-tmpSlide);
+        }
+        else
+        {
+          slideTimes[ifoNumber].gpsSeconds = slideStep[ifoNumber];
+          slideReset[ifoNumber].gpsSeconds -= slideStep[ifoNumber];
         }
       }
     
@@ -1261,6 +1269,12 @@ int main( int argc, char *argv[] )
         /* write out all coincs as singles with event IDs */
         LAL_CALL( LALExtractSnglInspiralFromCoinc( &status, &slideOutput, 
             coincInspiralList, &startCoinc, slideNum), &status );
+
+        /* the output triggers should be slid back to original time */
+        LAL_CALL( LALTimeSlideSingleInspiral( &status, slideOutput,
+            &startCoinc, &endCoinc, slideReset), &status) ;
+        LAL_CALL( LALSortSnglInspiral( &status, &(slideOutput),
+            LALCompareSnglInspiralByTime ), &status );
       }
       
       if ( snglOutput )
