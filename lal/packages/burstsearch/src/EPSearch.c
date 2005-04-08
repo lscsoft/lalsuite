@@ -536,7 +536,7 @@ EPSearch(
 void EPConditionData(
 	LALStatus        *status,
 	REAL4TimeSeries  *series,
-	REAL4             flow,
+	REAL8             flow,
 	REAL8             resampledeltaT,
 	ResampleTSFilter  resampFiltType,
 	INT4              corruption
@@ -569,7 +569,7 @@ void EPConditionData(
 	 */
 
 	highpassParam.nMax = 8;
-	highpassParam.f2 = flow - 10.0;
+	highpassParam.f2 = flow;
 	highpassParam.f1 = -1.0;
 	highpassParam.a2 = 0.9;
 	highpassParam.a1 = -1.0;

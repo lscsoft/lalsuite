@@ -118,6 +118,7 @@ simulated data.
 \option{--gps-start-time}~\parm{seconds} \newline \hspace*{0.5in}
 \option{--gps-start-time-ns}~\parm{nanoseconds} \newline \hspace*{0.5in}
 [\option{--help}] \newline \hspace*{0.5in}
+\option{--high-pass}~\parm{Hz} \newline \hspace*{0.5in}
 [\option{--injection-file}~\parm{file name}] \newline \hspace*{0.5in}
 \option{--low-freq-cutoff}~\parm{Hz} \newline \hspace*{0.5in}
 [\option{--mdc-cache}~\parm{cache file}] \newline \hspace*{0.5in}
@@ -297,6 +298,13 @@ data to \parm{seconds}.
 \item[\option{--help}]
 Display a usage message and exit.
 
+\item[\option{--high-pass} \parm{Hz}]
+The input time series is high-pass filtered as part of the input data
+conditioning.  This argument sets the cut-off frequency for this filter.
+In older versions of the program, this frequency has hard-coded to be
+\unit{10}{\hertz} below the lower bound of the frequency band being
+searched or \unit{150}{Hz}, which ever was lower.
+
 \item[\option{--injection-file} \parm{file name}]
 Use \parm{file name} as a LIGO lightweight XML file containing a list of
 injections to be made.   The file should contain a \verb+sim_burst+ table
@@ -453,6 +461,7 @@ lalapps_power \
 --gps-end-time-ns 0 \
 --gps-start-time 754008323 \
 --gps-start-time-ns 0 \
+--high-pass 120.0 \
 --low-freq-cutoff 130.0 \
 --min-freq-bin 2 \
 --min-time-bin 2 \
@@ -490,7 +499,7 @@ information about the power distribution in advance of detection.
 Consider a sampled time-series $s_j$ consisting of $N$ data points
 sampled once per $\Delta$ seconds.  In our case,  this data has been
 high-pss filtered using a Butterworth filter as described in
-Sec.~\ref{ss:butterworth} but this does not change the algorithm,  so
+Sec.~\ref{section:Butterworth} but this does not change the algorithm,  so
 we ignore it here.  This data is then windowed (using a user specified
 window) and transformed into the frequency domain
 \begin{equation}

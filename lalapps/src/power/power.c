@@ -84,6 +84,7 @@ static struct {
 	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
 	int verbose;
 	int calibrated;             /* input is double-precision h(t)      */
+	REAL8 high_pass;            /* conditioning high pass freq (Hz)    */
 	REAL8 cal_high_pass;        /* double->single high pass freq (Hz)  */
 } options;
  
@@ -356,6 +357,10 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			arg_is_missing = !params->tfPlaneMethod;
 			break;
 
+			case 'o':
+			arg_is_missing = options.high_pass < 0.0;
+			break;
+
 			default:
 			arg_is_missing = FALSE;
 			break;
@@ -431,6 +436,7 @@ void parse_command_line(
 	LALStatus stat = blank_status;
 	struct option long_options[] = {
 		{"bandwidth",           required_argument, NULL,           'A'},
+		{"calibrated-data",	required_argument, NULL,           'J'},
 		{"calibration-cache",   required_argument, NULL,           'B'},
 		{"channel-name",        required_argument, NULL,           'C'},
 		{"cluster",             no_argument, &options.cluster,    TRUE},
@@ -440,13 +446,13 @@ void parse_command_line(
 		{"filter-corruption",	required_argument, NULL,           'j'},
 		{"frame-cache",         required_argument, NULL,           'G'},
 		{"frame-dir",           required_argument, NULL,           'H'},
-		{"calibrated-data",	required_argument, NULL,           'J'},
 		{"gps-end-time",        required_argument, NULL,           'K'},
 		{"gps-end-time-ns",     required_argument, NULL,           'L'},
 		{"gps-start-time",      required_argument, NULL,           'M'},
 		{"gps-start-time-ns",   required_argument, NULL,           'N'},
 		{"help",                no_argument,       NULL,           'O'},
 		{"high-freq-cutoff",    required_argument, NULL,           'k'},
+		{"high-pass",           required_argument, NULL,           'o'},
 		{"burstinjection-file", required_argument, NULL,           'P'},
 		{"inspiralinjection-file", required_argument, NULL,        'I'},
 		{"low-freq-cutoff",     required_argument, NULL,           'Q'},
@@ -511,6 +517,7 @@ void parse_command_line(
 	options.seed = 1;	/* default */
 	options.verbose = FALSE;	/* default */
 	options.calibrated = FALSE;	/* default */
+	options.high_pass = -1.0;	/* impossible */
 	options.cal_high_pass = -1.0;	/* impossible */
 
 	cachefile = NULL;	/* default */
@@ -896,6 +903,16 @@ void parse_command_line(
 		ADD_PROCESS_PARAM("string");
 		break;
 
+		case 'o':
+		options.high_pass = atof(optarg);
+		if(options.high_pass < 0.0) {
+			sprintf(msg, "must not be negative (%f Hz specified)", options.high_pass);
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
+			args_are_bad = TRUE;
+		}
+		ADD_PROCESS_PARAM("float");
+		break;
+
 		/* option sets a flag */
 		case 0:
 		break;
@@ -967,11 +984,14 @@ void parse_command_line(
 	options.PSDAverageLength = block_commensurate(options.PSDAverageLength, params->windowLength, params->windowShift);
 
 	/*
-	 * Sanity check on calibrated data quantization high-pass frequency.
+	 * Sanity filter frequencies.
 	 */
 
 	if(options.cal_high_pass > params->tfTilingInput.flow)
 		fprintf(stderr, "%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options.cal_high_pass, params->tfTilingInput.flow);
+
+	if(options.high_pass > params->tfTilingInput.flow - 10.0)
+		fprintf(stderr, "%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options.high_pass, params->tfTilingInput.flow);
 
 	/*
 	 * Miscellaneous chores.
@@ -1610,7 +1630,7 @@ int main( int argc, char *argv[])
 		 * Condition the time series data.
 		 */
 
-		LAL_CALL(EPConditionData(&stat, series, params.tfTilingInput.flow, (REAL8) 1.0 / options.ResampleRate, resampFiltType, options.FilterCorruption), &stat);
+		LAL_CALL(EPConditionData(&stat, series, options.high_pass, (REAL8) 1.0 / options.ResampleRate, resampFiltType, options.FilterCorruption), &stat);
 
 		if(options.verbose)
 			fprintf(stderr, "%s: %u samples (%.9f s) remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT);
