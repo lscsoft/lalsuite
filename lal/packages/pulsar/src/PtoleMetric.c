@@ -476,20 +476,20 @@ void LALPtoleMetric( LALStatus *status,
   if(dim==3) {
     /* g_p1 = */
     big_metric->data[10] = 
-      LAL_PI*f*T/3;
+      T*LAL_PI*f*T/3;
     
     /* g_f1= */
     big_metric->data[11]=
-      pow(LAL_PI*T,2)*f/2;
+      T*pow(LAL_PI*T,2)*f/2;
 
     /* g_a1 = */
-    big_metric->data[12] = 2*pow(LAL_PI*f,2)*T*(-cos_d*sin_a*(R_o*I[1] + R_s*cos_l*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));   
+    big_metric->data[12] = T*2*pow(LAL_PI*f,2)*T*(-cos_d*sin_a*(R_o*I[1] + R_s*cos_l*I[2])+ cos_d*cos_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]));   
     
     /* g_d1 = */
-    big_metric->data[13] = 2*pow(LAL_PI*f,2)*T*(-sin_d*cos_a*(R_o*I[1] + R_s*cos_l*I[2])- sin_d*sin_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]) + cos_d*(R_o*sin_i*I[3] + R_s*sin_l/3));
+    big_metric->data[13] = T*2*pow(LAL_PI*f,2)*T*(-sin_d*cos_a*(R_o*I[1] + R_s*cos_l*I[2])- sin_d*sin_a*(R_o*cos_i*I[3] + R_s*cos_l*I[4]) + cos_d*(R_o*sin_i*I[3] + R_s*sin_l/3));
     
     /* g_11 = */
-    big_metric->data[14] = pow(LAL_PI*f*T,2)/5;
+    big_metric->data[14] = T*T*pow(LAL_PI*f*T,2)/5;
   }
     
   
