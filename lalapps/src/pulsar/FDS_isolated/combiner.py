@@ -126,6 +126,30 @@ def appendfile(fromfile="",tofile=sys.stdout):
     os.system("cat "+fromfile+" >> "+tofile)
 
 
+
+def addinfoToEachRaw(targetfile="",info=""):
+    """
+       add info to each raw. 
+    """
+    __funcname="addinfoToEachRaw"  
+    __errmsg="Error"+" in "+__funcname
+    if (targetfile is ""):
+        print __errmsg, "Enough numbers of arguments are not given." 
+        sys.exit()    
+    if os.path.isfile(targetfile) is False:
+        print __errmsg, targetfile, "does not exit!!" 
+        sys.exit() 
+##      
+    __tmpfilename=targetfile+"_tmp_addfilename"
+    shutil.move(targetfile,__tmpfilename)
+    __command=["sed -e 's/$/   ",
+               info, "/' < ", __tmpfilename,
+               " > ", targetfile]
+    __comexe=string.join(__command,"")
+    os.system(__comexe)
+    os.remove(__tmpfilename)
+
+    
 ##---------------------------------------------------------------
 ## Ask intention
 if os.path.isfile(resultfile):		
@@ -151,7 +175,7 @@ else:
 
 ##---------------------------------------------------------------
 ## Main 
-
+fileid=1
 for parentdir, childdirs, files in os.walk(targetdir):
     for file in files:              # For each file under the targetdir,
 	if file is not []:          # If there is a file, 
@@ -164,8 +188,11 @@ for parentdir, childdirs, files in os.walk(targetdir):
 	   os.remove(zipfilename)
            ## take sections from textfrom to textto.
 	   textcutter(targetfile=copiedfile,textfrom=textfrom,textto=textto)
+           addinfoToEachRaw(targetfile=copiedfile,info=str(fileid))
+           fileid+=1
            ## write the file name at each section header.
 	   addfilename(targetfile=copiedfile)
            ## append the file into one result file.
 	   appendfile(fromfile=copiedfile,tofile=resultfile)
 	   os.remove(copiedfile)
+
