@@ -268,9 +268,7 @@ int main(int argc, char *argv[]){
       LALFree(harmonics.rightWing);
     }
 
-  LALFree(uvar_harmonicfname);
-  LALFree(uvar_inputSFTDir);
-  LALFree(uvar_outputSFTDir);
+  SUB (LALDestroyUserVars(&status), &status);
 
   LALCheckMemoryLeaks(); 
 
