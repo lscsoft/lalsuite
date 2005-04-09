@@ -262,7 +262,7 @@ for parentdir, childdirs, files in os.walk(targetdir):
 	   shutil.copy2(targetfile,copiedfile) # Copy file to working dir.
 	   zipfilename=copiedfile+"_tmp.zip"   
 	   shutil.move(copiedfile,zipfilename)
-	   os.system("unzip -q "+zipfilename)   # Unzip the copied file
+	   os.system("unzip -qa "+zipfilename)   # Unzip the copied file
 	   os.remove(zipfilename)	
 	   fileseparater(targetfile=copiedfile,textto=textto,resultdir=resultdir)
 ## This loop add various information to files.
