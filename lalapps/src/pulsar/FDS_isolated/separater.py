@@ -58,7 +58,31 @@ except OSError, err:
 ## Functions
 ##---------------------------------------------------------------
 
-def addheaderinfo(targetfile="",info="",headerlabel="%"):
+def addheaderinfo(targetfile="",info=""):
+   """
+	add info to the targetfile header. 
+   """	
+   __funcname="addheaderinfo"  
+   __errmsg="Error"+" in "+__funcname
+   if (targetfile is ""):
+      print __errmsg, "Enough numbers of arguments are not given." 
+      sys.exit()    
+   if os.path.isfile(targetfile) is False:
+      print __errmsg, targetfile, "does not exist!!" 
+      sys.exit() 
+##      
+   __tmpfilename=targetfile+"_tmp_addfilename"
+   shutil.move(targetfile,__tmpfilename)
+   __command=["sed -e '1i",
+              info, "' < ", __tmpfilename,
+              " > ", targetfile]
+   __comexe=string.join(__command,"")
+   os.system(__comexe)
+   os.remove(__tmpfilename)
+
+
+
+def addheaderinfo2(targetfile="",info="",headerlabel="%"):
    """
 	add info to the targetfile header. The file header should be 
 	indicated by headerlabel. 
@@ -80,6 +104,7 @@ def addheaderinfo(targetfile="",info="",headerlabel="%"):
    __comexe=string.join(__command,"")
    os.system(__comexe)
    os.remove(__tmpfilename)
+
 
 
 
@@ -106,6 +131,53 @@ def addfooterinfo(targetfile="",info=""):
    os.remove(__tmpfilename)
 
 
+def addinfoToEachRaw(targetfile="",info=""):
+    """
+       add info to each raw. 
+    """
+    __funcname="addinfoToEachRaw"  
+    __errmsg="Error"+" in "+__funcname
+    if (targetfile is ""):
+        print __errmsg, "Enough numbers of arguments are not given." 
+        sys.exit()    
+    if os.path.isfile(targetfile) is False:
+        print __errmsg, targetfile, "does not exit!!" 
+        sys.exit() 
+##      
+    __tmpfilename=targetfile+"_tmp_addfilename"
+    shutil.move(targetfile,__tmpfilename)
+    __command=["sed -e 's/^/",
+               info, "    /' < ", __tmpfilename,
+               " > ", targetfile]
+    __comexe=string.join(__command,"")
+    os.system(__comexe)
+    os.remove(__tmpfilename)
+    
+
+def deleteinfo(targetfile="",label=""):
+    """
+       delete info whose first colomn has a label label.
+    """
+    __funcname="deleteinfo"  
+    __errmsg="Error"+" in "+__funcname
+    if (targetfile is ""):
+        print __errmsg, "Enough numbers of arguments are not given." 
+        sys.exit()    
+    if os.path.isfile(targetfile) is False:
+        print __errmsg, targetfile, "does not exit!!" 
+        sys.exit() 
+##      
+    __tmpfilename=targetfile+"_tmp_addfilename"
+    shutil.move(targetfile,__tmpfilename)
+    __command=["sed -e '/^",
+               label, "/d' < ", __tmpfilename,
+               " > ", targetfile]
+    __comexe=string.join(__command,"")
+    os.system(__comexe)
+    os.remove(__tmpfilename)
+
+
+    
 
 
 
@@ -193,10 +265,15 @@ for parentdir, childdirs, files in os.walk(targetdir):
 	   os.system("unzip -q "+zipfilename)   # Unzip the copied file
 	   os.remove(zipfilename)	
 	   fileseparater(targetfile=copiedfile,textto=textto,resultdir=resultdir)
-## This loop add filenames to files header.
+## This loop add various information to files.
+fileid=1
 for parentdir, childdirs, files in os.walk(resultdir):
     for file in files:              # For each file under the targetdir,
 	if file is not []:          # If there is a file, 
 	   targetfile=os.path.join(parentdir,file)
-	   addheaderinfo(targetfile=targetfile,info=file)
+	   deleteinfo(targetfile=targetfile,label="%")
+           addinfoToEachRaw(targetfile=targetfile,info=str(fileid))
+           fileid+=1           
+	   addheaderinfo(targetfile=targetfile,info="%"+file)
 	   addfooterinfo(targetfile=targetfile,info="%DONE")
+
