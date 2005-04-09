@@ -52,19 +52,16 @@ INT4 lalDebugLevel=0;
 /* defaults chosen for L1 */
 
 #define HARMONICFILE "./harmonicsS2LLO4KC.txt" 
-#define INPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs"
-#define OUTPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO-clean/S2_L1_Funky-v3Calv5DQ30MinSFTs-clean"
+/*#define INPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs"*/
+#define INPUTSFTDIR "/home/badkri/L1sfts/"
+/*#define OUTPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO-clean/S2_L1_Funky-v3Calv5DQ30MinSFTs-clean"*/
+#define OUTPUTSFTDIR "/home/badkri/lscsoft/lalapps/src/pulsar/hough/src/temp/"
 #define STARTFREQ 150.0
 #define BANDFREQ 300.0
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define WINDOWSIZE 100
 #define MAXBINS 20
 
-
-#define USAGE "Usage: %s [-d debuglevel] (0)\n [-w window size] (100)\n [-H harmonics file name] (./harmonicsS2LLO4KC.txt)\n [-i input sft dir] (/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs)\n [-o output sft dir] (/nfs/morbo/geo600/hannover/sft/S2-LIGO-clean/S2_L1_Funky-v3Calv5DQ30MinSFTs-clean) \n [-f start frequency] (150.0 Hz) \n [-b bandwidth] (300Hz) \n [-h print usage] \n"
-
-
-/* Usage format string. */
 
 
 /*********************************************************************/
@@ -111,7 +108,7 @@ char *lalWatch;
 int main(int argc, char *argv[]){ 
   static LALStatus       status;  /* LALStatus pointer */ 
   static SFTtype         *sft;
-  static LineNoiseInfo   lines;
+  static LineNoiseInfo   lines, lines2;
   static LineHarmonicsInfo harmonics; 
   
   INT4 j; 
@@ -193,6 +190,15 @@ int main(int argc, char *argv[]){
       lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
 
       SUB( Harmonics2Lines( &status, &lines, &harmonics), &status);
+
+
+      lines2.nLines = nLines;
+      lines2.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+
+      SUB( ChooseLines( &status, &lines2, &lines, uvar_fStart, uvar_fStart + uvar_fBand), &status);
+      nLines = lines2.nLines;
     }
 
 
@@ -236,7 +242,7 @@ int main(int argc, char *argv[]){
 
       /* clean the sft */
       if (nLines > 0)
-	SUB( CleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines), &status);
+	SUB( CleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines2), &status);
       
       /* make the output sft filename */
       sprintf(tempstr1, "%d", sft->epoch.gpsSeconds);
@@ -257,6 +263,11 @@ int main(int argc, char *argv[]){
       LALFree(lines.lineFreq);
       LALFree(lines.leftWing);
       LALFree(lines.rightWing);
+
+      LALFree(lines2.lineFreq);
+      LALFree(lines2.leftWing);
+      LALFree(lines2.rightWing);
+
     }
  
   if (nHarmonicSets > 0)

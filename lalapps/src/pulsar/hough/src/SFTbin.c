@@ -803,7 +803,7 @@ void ChooseLines (LALStatus        *status,
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-
+/* function to count how many lines affect a given frequency */
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 void CheckLines ( LALStatus           *status,
 		  INT4                *countL,
@@ -853,7 +853,7 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 { /*   *********************************************  </lalVerbatim> */
   /* function to clean the SFT based on the line information read earlier */
   
-  INT4     nLines, count, leftCount, rightCount, lineBin, minBin, maxBin, k;
+  INT4     nLines, count, leftCount, rightCount, lineBin, minBin, maxBin, k, tempk;
   INT4     leftWingBins, rightWingBins, length;
   REAL8    deltaF, f0, tBase;
   REAL8    meanRe, meanIm, stdRe, stdIm;
@@ -910,10 +910,11 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
   fclose(fp);
 
   TRY ( LALCreateRandomParams (status->statusPtr, &randPar, seed), status);
-  TRY ( LALCreateVector (status->statusPtr, &ranVector, nLines), status);
+  TRY ( LALCreateVector (status->statusPtr, &ranVector, 2*(2*width*nLines + nLines)), status);
   TRY ( LALNormalDeviates (status->statusPtr, ranVector, randPar), status);
   TRY ( LALDestroyRandomParams (status->statusPtr, &randPar), status);  
-  
+
+  tempk = 0;  
   /* loop over the lines */
   for (count = 0; count < nLines; count++){
     
@@ -951,10 +952,14 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
       
       /* set sft value at central frequency to noise */
       inData = sft->data->data + lineBin - minBin;
-      randVal = ranVector->data + count;  
+
+      randVal = ranVector->data + tempk;  
       inData->re = meanRe + stdRe * (*randVal);
+      tempk++;
+
+      randVal = ranVector->data + tempk;  
       inData->im = meanIm + stdIm * (*randVal);
-      
+      tempk++;
     
       /* now go left and set the left wing to noise */
       /* make sure that we are always within the sft band */
@@ -963,8 +968,14 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 	for (leftCount = 0; leftCount < leftWingBins; leftCount++){
 	  if ( (lineBin - minBin - leftCount > 0)){
 	    inData = sft->data->data + lineBin - minBin - leftCount - 1;
+
+	    randVal = ranVector->data + tempk;  
 	    inData->re = meanRe + stdRe * (*randVal);
+	    tempk++;
+
+	    randVal = ranVector->data + tempk;  
 	    inData->im = meanIm + stdIm * (*randVal);
+	    tempk++;
 	  }
 	}
       }
@@ -974,8 +985,14 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 	for (rightCount = 0; rightCount < rightWingBins; rightCount++){
 	  if ( (maxBin - lineBin - rightCount > 0)){
 	    inData = sft->data->data + lineBin - minBin + rightCount + 1;
+
+	    randVal = ranVector->data + tempk;  
 	    inData->re = meanRe + stdRe * (*randVal);
+            tempk++;
+
+	    randVal = ranVector->data + tempk;  
 	    inData->im = meanIm + stdIm * (*randVal);
+	    tempk++;
 	  }
 	}
       }
