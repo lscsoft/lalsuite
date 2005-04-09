@@ -58,6 +58,8 @@ INT4 lalDebugLevel=0;
 #define BANDFREQ 300.0
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define WINDOWSIZE 100
+#define MAXBINS 20
+
 
 #define USAGE "Usage: %s [-d debuglevel] (0)\n [-w window size] (100)\n [-H harmonics file name] (./harmonicsS2LLO4KC.txt)\n [-i input sft dir] (/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs)\n [-o output sft dir] (/nfs/morbo/geo600/hannover/sft/S2-LIGO-clean/S2_L1_Funky-v3Calv5DQ30MinSFTs-clean) \n [-f start frequency] (150.0 Hz) \n [-b bandwidth] (300Hz) \n [-h print usage] \n"
 
@@ -101,6 +103,8 @@ do {                                                                 \
 char *lalWatch;
 #endif
 
+#define TRUE (1==1)
+#define FALSE (1==0)
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
@@ -110,122 +114,60 @@ int main(int argc, char *argv[]){
   static LineNoiseInfo   lines;
   static LineHarmonicsInfo harmonics; 
   
-  CHAR *harmonicfname;        /* file with harmonics info */
-  CHAR *inputSFTDir;    /* directory for unclean sfts */
-  CHAR *outputSFTDir;   /* directory for cleaned sfts */
-  INT4 j, window, arg; 
+  INT4 j; 
   INT4 nLines=0, count1, nHarmonicSets;
   INT4 mObsCoh;  
-  REAL8 fStart, fBand;
   CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
   CHAR tempstr1[256], tempstr2[256]; 
 
+  /* user input variables */
+  BOOLEAN uvar_help;
+  CHAR *uvar_harmonicfname;        /* file with harmonics info */
+  CHAR *uvar_inputSFTDir;    /* directory for unclean sfts */
+  CHAR *uvar_outputSFTDir;   /* directory for cleaned sfts */
+  REAL8 uvar_fStart, uvar_fBand;
+  INT4  uvar_window, uvar_maxBins;
+
   /* set defaults */
-  harmonicfname = (CHAR *)LALMalloc(256 * sizeof(CHAR));
-  strcpy(harmonicfname,HARMONICFILE); 
-  fStart = STARTFREQ;
-  fBand = BANDFREQ;  
-  inputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
-  strcpy(inputSFTDir, INPUTSFTDIR);
 
-  outputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
-  strcpy(outputSFTDir, OUTPUTSFTDIR);
-  window = WINDOWSIZE;
+  lalDebugLevel = 0;
+  /* LALDebugLevel must be called before anything else */
+  SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
-  /********************************************************/  
-  /* Parse argument list.  i stores the current position. */
-  /********************************************************/
-  arg = 1;
-  while ( arg < argc ) {
-    /* Parse debuglevel option. */
-    if ( !strcmp( argv[arg], "-d" ) ) {
-      if ( argc > arg + 1 ) {
-        arg++;
-        lalDebugLevel = atoi( argv[arg++] );
-      } else {
-        ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return SFTCLEANC_EARG;
-      }
-    }  
-    /* parse harmonicsfile */
-    else if ( !strcmp( argv[arg], "-H" ) ) {
-      if ( argc > arg + 1 ) {
-        arg++;
-        harmonicfname = argv[arg++];
-      } else {
-        ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return SFTCLEANC_EARG;
-      }
-    }  
-    /* parse input SFT directory */
-    else if ( !strcmp( argv[arg], "-i" ) ) {
-      if ( argc > arg + 1 ) {
-        arg++;
-        inputSFTDir = argv[arg++];
-      } else {
-        ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return SFTCLEANC_EARG;
-      }
-    }  
-    /* parse output SFT dir */
-    else if ( !strcmp( argv[arg], "-o" ) ) {
-      if ( argc > arg + 1 ) {
-        arg++;
-        outputSFTDir = argv[arg++];
-      } else {
-        ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return SFTCLEANC_EARG;
-      }
-    }  
-    /* parse start freq dir */
-    else if ( !strcmp( argv[arg], "-f" ) ) {
-      if ( argc > arg + 1 ) {
-        arg++;
-        fStart = atof(argv[arg++]);
-      } else {
-        ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return SFTCLEANC_EARG;
-      }
-    }  
-    /* parse start freq dir */
-    else if ( !strcmp( argv[arg], "-w" ) ) {
-      if ( argc > arg + 1 ) {
-        arg++;
-        window = atof(argv[arg++]);
-      } else {
-        ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return SFTCLEANC_EARG;
-      }
-    }  
-    /* parse bandwidth  */
-    else if ( !strcmp( argv[arg], "-b" ) ) {
-      if ( argc > arg + 1 ) {
-        arg++;
-        fBand = atof(argv[arg++]);
-      } else {
-        ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
-        LALPrintError( USAGE, *argv );
-        return SFTCLEANC_EARG;
-      }
-    }  
-    /* Unrecognized option. */
-    else {
-      ERROR( SFTCLEANC_EARG, SFTCLEANC_MSGEARG, 0 );
-      LALPrintError( USAGE, *argv );
-      return SFTCLEANC_EARG;
-    }
-  } 
+  uvar_help = FALSE;
 
-  /* End of argument parsing loop. */
-  /******************************************************************/   
+  uvar_harmonicfname = (CHAR *)LALMalloc(256 * sizeof(CHAR));
+  strcpy(uvar_harmonicfname,HARMONICFILE); 
+  
+  uvar_inputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
+  strcpy(uvar_inputSFTDir, INPUTSFTDIR);
 
-  SUB( FindNumberHarmonics (&status, &harmonics, harmonicfname), &status); 
+  uvar_outputSFTDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
+  strcpy(uvar_outputSFTDir, OUTPUTSFTDIR);
+
+  uvar_fStart = STARTFREQ;
+  uvar_fBand = BANDFREQ;  
+  uvar_window = WINDOWSIZE;
+  uvar_maxBins = MAXBINS;
+
+  /* register user input variables */
+  SUB( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                          &uvar_help),            &status);  
+  SUB( LALRegisterSTRINGUserVar( &status, "inputSFTDir",     'i', UVAR_OPTIONAL, "Input SFT Directory",                         &uvar_inputSFTDir),     &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "outputSFTDir",    'o', UVAR_OPTIONAL, "Output SFT Directory",                        &uvar_outputSFTDir),    &status);
+  SUB( LALRegisterSTRINGUserVar( &status, "harmonicfname",   'H', UVAR_OPTIONAL, "File with list of lines",                     &uvar_harmonicfname),   &status);
+  SUB( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Frequency to start cleaning",                 &uvar_fStart),          &status);
+  SUB( LALRegisterREALUserVar(   &status, "fBand",           'b', UVAR_OPTIONAL, "Frequency Band",                              &uvar_fBand),           &status);
+  SUB( LALRegisterINTUserVar(    &status, "window",          'w', UVAR_OPTIONAL, "No. of bins for generating random numbers",   &uvar_window),          &status);
+  SUB( LALRegisterINTUserVar(    &status, "maxBins",         'm', UVAR_OPTIONAL, "Max. No. of bins to clean",                   &uvar_maxBins),         &status);
+
+  /* read all command line variables */
+  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
+
+  /* exit if help was required */
+  if (uvar_help)
+    exit(0); 
+ 
+  SUB( FindNumberHarmonics (&status, &harmonics, uvar_harmonicfname), &status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
 
   if (nHarmonicSets > 0)
@@ -237,7 +179,7 @@ int main(int argc, char *argv[]){
       harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
     
 
-      SUB( ReadHarmonicsInfo( &status, &harmonics, harmonicfname ), &status);
+      SUB( ReadHarmonicsInfo( &status, &harmonics, uvar_harmonicfname ), &status);
       
       nLines = 0;
       for (count1=0; count1 < nHarmonicSets; count1++)
@@ -259,7 +201,7 @@ int main(int argc, char *argv[]){
     glob_t   globbuf;
     INT4    jj;
      
-    strcpy(command, inputSFTDir);
+    strcpy(command, uvar_inputSFTDir);
     strcat(command, "/*SFT*.*");
     
     globbuf.gl_offs = 1;
@@ -267,7 +209,7 @@ int main(int argc, char *argv[]){
     
     if(globbuf.gl_pathc==0)
       {
-	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", inputSFTDir);
+	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", uvar_inputSFTDir);
 	return 1;  /* stop the program */
       }
     
@@ -290,15 +232,15 @@ int main(int argc, char *argv[]){
   for (j=0; j < mObsCoh; j++)
     { 
       sft=NULL;
-      SUB (LALReadSFTfile (&status, &sft, fStart, fStart + fBand, filelist[j]), &status);
+      SUB (LALReadSFTfile (&status, &sft, uvar_fStart, uvar_fStart + uvar_fBand, filelist[j]), &status);
 
       /* clean the sft */
       if (nLines > 0)
-	SUB( CleanCOMPLEX8SFT( &status, sft, 20, window, &lines), &status);
+	SUB( CleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines), &status);
       
       /* make the output sft filename */
       sprintf(tempstr1, "%d", sft->epoch.gpsSeconds);
-      strcpy(tempstr2,outputSFTDir);
+      strcpy(tempstr2,uvar_outputSFTDir);
       strcat(tempstr2, "/CLEAN_SFT.");
       strcat(tempstr2, tempstr1);
 
@@ -326,9 +268,9 @@ int main(int argc, char *argv[]){
       LALFree(harmonics.rightWing);
     }
 
-  LALFree(harmonicfname);
-  LALFree(inputSFTDir);
-  LALFree(outputSFTDir);
+  LALFree(uvar_harmonicfname);
+  LALFree(uvar_inputSFTDir);
+  LALFree(uvar_outputSFTDir);
 
   LALCheckMemoryLeaks(); 
 
