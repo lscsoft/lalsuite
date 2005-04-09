@@ -127,6 +127,31 @@ def appendfile(fromfile="",tofile=sys.stdout):
 
 
 
+def deleteinfo(targetfile="",label=""):
+    """
+       delete info whose first colomn has a label label.
+    """
+    __funcname="deleteinfo"  
+    __errmsg="Error"+" in "+__funcname
+    if (targetfile is ""):
+        print __errmsg, "Enough numbers of arguments are not given." 
+        sys.exit()    
+    if os.path.isfile(targetfile) is False:
+        print __errmsg, targetfile, "does not exit!!" 
+        sys.exit() 
+##      
+    __tmpfilename=targetfile+"_tmp_addfilename"
+    shutil.move(targetfile,__tmpfilename)
+    __command=["sed -e '/^",
+               label, "/d' < ", __tmpfilename,
+               " > ", targetfile]
+    __comexe=string.join(__command,"")
+    os.system(__comexe)
+    os.remove(__tmpfilename)
+
+
+
+
 def addinfoToEachRaw(targetfile="",info=""):
     """
        add info to each raw. 
@@ -142,7 +167,8 @@ def addinfoToEachRaw(targetfile="",info=""):
 ##      
     __tmpfilename=targetfile+"_tmp_addfilename"
     shutil.move(targetfile,__tmpfilename)
-    __command=["sed -e 's/$/   ",
+##    __command=["sed -e 's/$/   ",
+    __command=["sed -e 's/^/   ",
                info, "/' < ", __tmpfilename,
                " > ", targetfile]
     __comexe=string.join(__command,"")
@@ -184,15 +210,20 @@ for parentdir, childdirs, files in os.walk(targetdir):
 	   shutil.copy2(targetfile,copiedfile) # Copy file to working dir.
 	   zipfilename=copiedfile+"_tmp.zip"   
 	   shutil.move(copiedfile,zipfilename)
-	   os.system("unzip -q "+zipfilename)   # Unzip the copied file
+	   os.system("unzip -qa "+zipfilename)   # Unzip the copied file
 	   os.remove(zipfilename)
            ## take sections from textfrom to textto.
 	   textcutter(targetfile=copiedfile,textfrom=textfrom,textto=textto)
-           addinfoToEachRaw(targetfile=copiedfile,info=str(fileid))
+           ## delete line whose first line has label.
+           deleteinfo(targetfile=copiedfile,label="%")
+           addinfoToEachRaw(targetfile=copiedfile,info=str(fileid)+"   ")
            fileid+=1
+
            ## write the file name at each section header.
-	   addfilename(targetfile=copiedfile)
+##	   addfilename(targetfile=copiedfile)
            ## append the file into one result file.
 	   appendfile(fromfile=copiedfile,tofile=resultfile)
 	   os.remove(copiedfile)
 
+
+addfooterinfo(targetfile=resultfile,info="%DONE")
