@@ -4256,8 +4256,8 @@ void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
         if ((xTemp < 0) || (!finite(xTemp)))
           {
             fprintf (stderr, "The assumption xTemp >= 0 failed ... that should not be possible!!\n");
-	    if (!finite(xTemp)) 
-	      fprintf (stderr, "xTemp has been calculated as infinite.\n");
+            if (!finite(xTemp)) 
+              fprintf (stderr, "xTemp has been calculated as infinite.\n");
             fprintf (stderr, "DEBUG: loop=%d, xTemp=%f, f=%f, alpha=%d, tempInt1[alpha]=%d\n", 
                      i, xTemp, f, alpha, tempInt1[alpha]);
             fprintf (stderr, "DEBUG: skyConst[ tempInt1[ alpha ] ] = %f, xSum[ alpha ]=%f\n",
@@ -4306,12 +4306,12 @@ void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
 
         sftIndex = k1 - params->ifmin;
 
-	if(sftIndex < 0){
-              fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod run %d\n", sftIndex, cfsRunNo);
-              fprintf(stderr," alpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-                      alpha, k1, xTemp, params->Dterms, params->ifmin);
-	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-	}
+        if(sftIndex < 0){
+          fprintf(stderr,"ERROR! sftIndex = %d < 0 in TestLALDemod run %d\n", sftIndex, cfsRunNo);
+          fprintf(stderr," alpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+                  alpha, k1, xTemp, params->Dterms, params->ifmin);
+          ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+        }
 
         tempFreq1 = tempFreq0 + params->Dterms - 1;     /* positive if Dterms > 1 (trivial) */
 
@@ -4359,88 +4359,89 @@ void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
           {
             COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
 
-			REAL4 realXP0=0.0, imagXP0=0.0;
-			REAL4 realXP1=0.0, imagXP1=0.0;
-			REAL4 realXP2=0.0, imagXP2=0.0;
-			REAL4 realXP3=0.0, imagXP3=0.0;
+            REAL4 realXP0=0.0, imagXP0=0.0;
+            REAL4 realXP1=0.0, imagXP1=0.0;
+            REAL4 realXP2=0.0, imagXP2=0.0;
+            REAL4 realXP3=0.0, imagXP3=0.0;
 
              /* Loop over terms in dirichlet Kernel */
              for(k=0; k+3 < klim ; k+=4)
                {
-				REAL4 realP0, realP1, realP2, realP3;
-				REAL4 imagP0, imagP1, imagP2, imagP3;
-				REAL4 xinv0, xinv1, xinv2, xinv3;
+                 REAL4 realP0, realP1, realP2, realP3;
+                 REAL4 imagP0, imagP1, imagP2, imagP3;
+                 REAL4 xinv0, xinv1, xinv2, xinv3;
 
                  xinv0 = (REAL4)OOTWOPI / (REAL4)(tempFreq1);
-				tempFreq1--;
+                 tempFreq1--;
                  xinv1 = (REAL4)OOTWOPI / (REAL4)(tempFreq1);
-				tempFreq1--;
+                 tempFreq1--;
                  xinv2 = (REAL4)OOTWOPI / (REAL4)(tempFreq1);
-				tempFreq1--;
+                 tempFreq1--;
                  xinv3 = (REAL4)OOTWOPI / (REAL4)(tempFreq1);
-				tempFreq1--;
+                 tempFreq1--;
 
-				{
-				REAL4 Xa_re0 = Xalpha_k[0].re;
-				REAL4 Xa_im0 = Xalpha_k[0].im;
-				REAL4 Xa_re1 = Xalpha_k[1].re;
-				REAL4 Xa_im1 = Xalpha_k[1].im;
-				REAL4 Xa_re2 = Xalpha_k[2].re;
-				REAL4 Xa_im2 = Xalpha_k[2].im;
-				REAL4 Xa_re3 = Xalpha_k[3].re;
-				REAL4 Xa_im3 = Xalpha_k[3].im;
+                 {
+                   REAL4 Xa_re0 = Xalpha_k[0].re;
+                   REAL4 Xa_im0 = Xalpha_k[0].im;
+                   REAL4 Xa_re1 = Xalpha_k[1].re;
+                   REAL4 Xa_im1 = Xalpha_k[1].im;
+                   REAL4 Xa_re2 = Xalpha_k[2].re;
+                   REAL4 Xa_im2 = Xalpha_k[2].im;
+                   REAL4 Xa_re3 = Xalpha_k[3].re;
+                   REAL4 Xa_im3 = Xalpha_k[3].im;
 
-                 realP0 = tsin * xinv0;
-                 imagP0 = tcos * xinv0;
-                 realP1 = tsin * xinv1;
-                 imagP1 = tcos * xinv1;
-                 realP2 = tsin * xinv2;
-                 imagP2 = tcos * xinv2;
-                 realP3 = tsin * xinv3;
-                 imagP3 = tcos * xinv3;
+                   realP0 = tsin * xinv0;
+                   imagP0 = tcos * xinv0;
+                   realP1 = tsin * xinv1;
+                   imagP1 = tcos * xinv1;
+                   realP2 = tsin * xinv2;
+                   imagP2 = tcos * xinv2;
+                   realP3 = tsin * xinv3;
+                   imagP3 = tcos * xinv3;
 
-                 Xalpha_k +=4;
+                   Xalpha_k +=4;
 
-				 /* compute P*xtilde */
-				realXP0 += Xa_re0 * realP0 - Xa_im0 * imagP0;
-                 imagXP0 += Xa_re0 * imagP0 + Xa_im0 * realP0;
-				realXP1 += Xa_re1 * realP1 - Xa_im1 * imagP1;
-                 imagXP1 += Xa_re1 * imagP1 + Xa_im1 * realP1;
-				realXP2 += Xa_re2 * realP2 - Xa_im2 * imagP2;
-                 imagXP2 += Xa_re2 * imagP2 + Xa_im2 * realP2;
-				realXP3 += Xa_re3 * realP3 - Xa_im3 * imagP3;
-                 imagXP3 += Xa_re3 * imagP3 + Xa_im3 * realP3;
-				}
+                   /* compute P*xtilde */
+                   realXP0 += Xa_re0 * realP0 - Xa_im0 * imagP0;
+                   imagXP0 += Xa_re0 * imagP0 + Xa_im0 * realP0;
+                   realXP1 += Xa_re1 * realP1 - Xa_im1 * imagP1;
+                   imagXP1 += Xa_re1 * imagP1 + Xa_im1 * realP1;
+                   realXP2 += Xa_re2 * realP2 - Xa_im2 * imagP2;
+                   imagXP2 += Xa_re2 * imagP2 + Xa_im2 * realP2;
+                   realXP3 += Xa_re3 * realP3 - Xa_im3 * imagP3;
+                   imagXP3 += Xa_re3 * imagP3 + Xa_im3 * realP3;
+                 }
 
-			} /* for k < klim */
-			realXP = (realXP0 + realXP1) + (realXP2 + realXP3);
-			imagXP = (imagXP0 + imagXP1) + (imagXP2 + imagXP3);
+               } /* for k < klim */
+
+             realXP = (realXP0 + realXP1) + (realXP2 + realXP3);
+             imagXP = (imagXP0 + imagXP1) + (imagXP2 + imagXP3);
 
              for(; k < klim ; k++)
                {
                  REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
-				REAL4 Xa_re = Xalpha_k->re;
-				REAL4 Xa_im = Xalpha_k->im;
+                 REAL4 Xa_re = Xalpha_k->re;
+                 REAL4 Xa_im = Xalpha_k->im;
                  Xalpha_k ++;
                  tempFreq1 --;
 
                  realP = tsin * xinv;
                  imagP = tcos * xinv;
                  /* compute P*xtilde */
-				realXP += Xa_re * realP - Xa_im * imagP;
+                                realXP += Xa_re * realP - Xa_im * imagP;
                  imagXP += Xa_re * imagP + Xa_im * realP;
 
                } /* for k < klim */
 
-			
+                        
           } /* if x cannot be close to 0 */
         
 
-	if(sftIndex-1 > GV.ifmax-GV.ifmin){
-	      fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-		      sftIndex-1, GV.ifmax-GV.ifmin, alpha, k1, xTemp, params->Dterms, params->ifmin);
-	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-	}
+        if(sftIndex-1 > GV.ifmax-GV.ifmin){
+          fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+                  sftIndex-1, GV.ifmax-GV.ifmin, alpha, k1, xTemp, params->Dterms, params->ifmin);
+          ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+        }
 
 
 
