@@ -230,8 +230,10 @@ struct StrainInTag {
   INT4 NAX;
   INT4 NAY;
   INT4 delta;
-  INT4 testsensing;
+  INT4 usefactors;
   INT4 wings;               /* size of wings in seconds */
+  INT4 fftconv;
+  INT4 outalphas;
 } StrainIn;
 
 typedef
@@ -290,6 +292,9 @@ void LALMakeFIRLP(LALStatus *status,
 		  REAL8IIRFilter *G, 
 		  int USF);
 
+void LALMakeFIRLPALPHAS(LALStatus *status, 
+		  REAL8IIRFilter *G);
+
 void LALMakeFIRHP(LALStatus *status, 
 		  REAL8IIRFilter *G);
 
@@ -302,10 +307,9 @@ void LALFreeFilter(LALStatus *status,
 		   REAL8IIRFilter *F2, 
 		   int ORDER);
 
-int XLALhROverAlphaBeta(REAL8TimeSeries *hR, StrainOut *output);
-int XLALhCTimesBeta(REAL8TimeSeries *hC, StrainOut *output);
-int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
-
+int XLALDivideTimeSeries(REAL8TimeSeries *hR, REAL8TimeSeries *ALPHAS);
+int XLALUpsample(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
+int XLALUpsampleLinear(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor);
 
 #ifdef  __cplusplus
 #pragma { /** to match the next brace **/

@@ -65,6 +65,7 @@ struct CommandLineArgsTag {
   INT4 GPSEnd;             /* End GPS time for the segment to be calibrated */
   INT4 testsensing;
   INT4 testactuation;
+  INT4 requirehistories;   /* flag that causes program to exit if histories are not present */
   char *FrCacheFile;       /* Frame cache file for corresponding time */
   char *exc_chan;          /* excitation channel name */    
   char *darm_chan;         /* darm channel name */ 
@@ -115,11 +116,10 @@ int FreeMem(void);
 int main(int argc,char *argv[])
 {
 #define FRAMETYPE "H1_RDS_C01_LX"
-#define CHANNELH "H1:Calibrated-Strain"
-#define CHANNELHC "H1:Control-Strain"
-#define CHANNELHR "H1:Residual-Strain"
+#define CHANNELH "H1:LSC-STRAIN"
 #define CHANNELA "H1:Alpha"
 #define CHANNELB "H1:Beta"
+#define DATADIR "/archive/home/xsiemens/hoft/S4/H1/H"
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   if (ReadData(CommandLineArgs)) return 2;
@@ -140,9 +140,10 @@ int main(int argc,char *argv[])
 			   OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT));
   TESTSTATUS( &status );
 
-  strncpy( OutputData.hR.name, CHANNELHR, sizeof( OutputData.hR.name ) );
-  strncpy( OutputData.hC.name, CHANNELHC, sizeof( OutputData.hC.name ) );
+  strncpy( OutputData.hR.name, CHANNELH, sizeof( OutputData.hR.name ) );
+  strncpy( OutputData.hC.name, CHANNELH, sizeof( OutputData.hC.name ) );
   strncpy( OutputData.h.name,  CHANNELH, sizeof( OutputData.h.name  ) );
+
 
   if (CommandLineArgs.testsensing)
     {
@@ -150,7 +151,7 @@ int main(int argc,char *argv[])
       memset(site, 0, sizeof(site));
       memcpy(site, CommandLineArgs.asq_chan, sizeof(site));
       {
-	FrOutPar opar = { site, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
+	FrOutPar opar = { DATADIR, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
 	
 	LALFrWriteREAL8TimeSeries( &status, &OutputData.hR, &opar );
 	TESTSTATUS( &status );
@@ -159,7 +160,7 @@ int main(int argc,char *argv[])
       memset(site, 0, sizeof(site));
       memcpy(site, CommandLineArgs.asq_chan, sizeof(site));
       {
-	FrOutPar opar = { site, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
+	FrOutPar opar = { DATADIR, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
 	
 	LALFrWriteREAL8TimeSeries( &status, &OutputData.hC, &opar );
 	TESTSTATUS( &status );
@@ -168,7 +169,7 @@ int main(int argc,char *argv[])
       memset(site, 0, sizeof(site));
       memcpy(site, CommandLineArgs.asq_chan, sizeof(site));
       {
-	FrOutPar opar = { site, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
+	FrOutPar opar = { DATADIR, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
 	
 	LALFrWriteREAL8TimeSeries( &status, &OutputData.h, &opar );
 	TESTSTATUS( &status );
@@ -390,6 +391,14 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
 	      fileGPS, OutputData.h.epoch.gpsSeconds+InputData.wings/2);
       fprintf(stdout,"Will use filter histories in file %s.\n",CLA.filterfile);    
     }else{
+      if (CLA.requirehistories)
+	{
+	  fprintf(stderr,"GPS start time of time series plus half the overlap (%d) does not agree with filters file GPS time (%d).\n", 
+		  OutputData.h.epoch.gpsSeconds+InputData.wings/2,fileGPS);
+	  fprintf(stderr,"Filter histories required to continue. Exiting!\n");
+	  LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
+	  return 1;
+	}
       fprintf(stderr,"GPS start time of time series plus half the overlap (%d) does not agree with filters file GPS time (%d).\n", 
 	      OutputData.h.epoch.gpsSeconds+InputData.wings/2,fileGPS);
       fprintf(stderr,"Will NOT use filter histories in file %s.\n",CLA.filterfile);
@@ -920,8 +929,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"asq-channel",         required_argument, NULL,           'A'},
     {"darm-channel",        required_argument, NULL,           'D'},
     {"darmerr-channel",     required_argument, NULL,           'R'},
-    {"gps-start-time",        required_argument, NULL,           's'},
-    {"gps-end-time",      required_argument, NULL,           'e'},
+    {"gps-start-time",      required_argument, NULL,           's'},
+    {"gps-end-time",        required_argument, NULL,           'e'},
     {"olg-re",              required_argument, NULL,           'i'},
     {"olg-im",              required_argument, NULL,           'j'},
     {"servo-re",            required_argument, NULL,           'k'},
@@ -929,11 +938,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"wings",               required_argument, NULL,           'o'},
     {"test-sensing",        no_argument, NULL,                 'r'},
     {"test-actuation",      no_argument, NULL,                 'c'},
-    {"delta",               no_argument, NULL,                 'u'},
+    {"delta",               no_argument, NULL,                 'd'},
+    {"no-factors",          no_argument, NULL,                 'u'},
+    {"td-fir",              no_argument, NULL,                 'x'},
+    {"output-factors",      no_argument, NULL,                 'y'},
+    {"require-histories",   required_argument, NULL,           'H'},
     {"help",                no_argument, NULL,                 'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hrcuf:C:A:E:D:R:F:s:e:i:j:k:l:t:o:";
+  char args[] = "hrcduxyf:C:A:E:D:R:F:s:e:i:j:k:l:t:o:H:";
   
   /* Initialize default values */
   CLA->f=0.0;
@@ -952,9 +965,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->D0Im=0.0;
   CLA->testsensing=0;
   CLA->testactuation=0;
+  CLA->requirehistories=0;
 
   InputData.delta=0;
   InputData.wings=0;
+  InputData.usefactors=1;
+  InputData.fftconv=1;
+  InputData.outalphas=0;
 
   /* Scan through list of command line arguments */
   while ( 1 )
@@ -973,7 +990,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->f=atof(optarg);
       break;
     case 't':
-      /* calibration line frequency */
+      /* factors integration time */
       CLA->To=atof(optarg);
       break;
     case 'C':
@@ -981,7 +998,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->FrCacheFile=optarg;
       break;
     case 'F':
-      /* name of frame cache file */
+      /* name of filter cache file */
       CLA->filterfile=optarg;
       break;
     case 'E':
@@ -997,49 +1014,65 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->darm_chan=optarg;
       break;    
     case 'R':
-      /* name of darm channel */
+      /* name of darm err channel */
       CLA->darmerr_chan=optarg;
       break;    
     case 's':
-      /* calibration line frequency */
+      /* GPS start */
       CLA->GPSStart=atof(optarg);
       break;
     case 'e':
-      /* calibration line frequency */
+      /* GPS end */
       CLA->GPSEnd=atof(optarg);
       break;
     case 'i':
-      /* calibration line frequency */
+      /* real part of OLG */
       CLA->G0Re=atof(optarg);
       break;
     case 'j':
-      /* calibration line frequency */
+      /* imaginary part of OLG */
       CLA->G0Im=atof(optarg);
       break;
     case 'k':
-      /* calibration line frequency */
+      /*  real part of servo*/
       CLA->D0Re=atof(optarg);
       break;
     case 'l':
-      /* calibration line frequency */
+      /*  imaginary part of servo */
       CLA->D0Im=atof(optarg);
       break;
-    case 'u':
-      /* calibration line frequency */
+    case 'd':
+      /*  use unit impulse*/
       InputData.delta=1;
       break;
     case 'r':
-      /* calibration line frequency */
-      CLA->testsensing=1;
-      InputData.testsensing=1;
+      /*  output residual signal */
+      CLA->testsensing=1; 
       break;
     case 'c':
-      /* calibration line frequency */
+      /* output control signal */
       CLA->testactuation=1;
       break;
     case 'o':
-      /* calibration line frequency */
+      /*  wing size (at each end have this many extra seconds) */
       InputData.wings=atoi(optarg);
+      break;
+    case 'u':
+      /* don't use calibration factors in teh strain computation */
+      InputData.usefactors=0;
+      break;
+    case 'x':
+      /* use time domain FIR filtering instead of FFT convolution */
+      InputData.fftconv=0;
+      break;
+    case 'y':
+      /* output calibration factors (the code will output them into the residual signal
+	 hence the testsensing=1) */
+      InputData.outalphas=1;
+      CLA->testsensing=1;       
+      break;
+    case 'H':
+      CLA->requirehistories=atoi(optarg);       
       break;
     case 'h':
       /* print usage/help message */
@@ -1061,7 +1094,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\twings (-o)\tINTEGER\t Size of wings in seconds.\n");
       fprintf(stdout,"\ttest-sensing (-r)\tFLAG\t Output residual strain only.\n");
       fprintf(stdout,"\ttest-actuation (-c)\tFLAG\t Output control strain only.\n");
-      fprintf(stdout,"\tdelta (-u)\tFLAG\t Use unit impulse.\n");
+      fprintf(stdout,"\tdelta (-d)\tFLAG\t Use unit impulse.\n");
+      fprintf(stdout,"\tno-factors (-u)\tFLAG\t Do not use factors in strain computation.\n");
+      fprintf(stdout,"\ttd-fir (-x)\tFLAG\t Use time-domain FIR filtering (default is FFT convolution).\n");
+      fprintf(stdout,"\toutput-factors (-y)\tFLAG\t Outputs upsampled calibration factors time series.\n");
+      fprintf(stdout,"\trequire-histories (-H)\tINT\t If set to 1 program exits if filter histories in filters file do not agree with GPS time.\n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;

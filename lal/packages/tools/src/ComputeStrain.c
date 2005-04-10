@@ -17,6 +17,7 @@ None
 </lalLaTeX> */
 
 #include <math.h>
+#include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/Calibration.h>
@@ -40,6 +41,9 @@ None
 
 #define MAXALPHAS 10000
 
+#define N_FIR_LP_ALPHAS 8192
+#define fhigh_FIRLP_ALPHAS 0.00001220703125
+
 #define N_FIR_LP 100
 #define fhigh_FIRLP .6103515625
 
@@ -56,10 +60,11 @@ void LALComputeStrain(
 {
 /* Inverse sensing, servo, analog actuation, digital x 
 actuation  digital y actuation */
-static REAL8TimeSeries uphR,hCX,hCY;
+static REAL8TimeSeries uphR,hCX,hCY,ALPHAS,upALPHAS;
 int p, NWingsR,NWingsC;
 REAL8IIRFilter LPFIR;
 REAL8IIRFilter HPFIR;
+REAL8IIRFilter ALPHASLPFIR;
 REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
 
 
@@ -80,13 +85,9 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
  CHECKSTATUSPTR( status );
  LALDCreateVector(status->statusPtr,&hCY.data,input->AS_Q.data->length);
  CHECKSTATUSPTR( status );
- LALDCreateVector(status->statusPtr,&uphR.data,input->CinvUSF*input->AS_Q.data->length);
- CHECKSTATUSPTR( status );
 
- uphR.deltaT=input->AS_Q.deltaT/input->CinvUSF;
-
- NWingsR = (int)(input->wings/input->AS_Q.deltaT) * input->CinvUSF;
- NWingsC = (int) input->wings/input->AS_Q.deltaT;
+ NWingsR = (int)(input->wings/input->AS_Q.deltaT + 0.5) * input->CinvUSF;
+ NWingsC = (int)(input->wings/input->AS_Q.deltaT + 0.5);
 
  /* copy AS_Q input into residual strain as double */  
  for (p=0; p<(int)output->hR.data->length; p++) 
@@ -122,17 +123,12 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
  
  /* ---------- Compute Residual Strain -------------*/
 
- /* to get the residual strain we must first divide AS_Q by alpha */
- if (!input->delta && !input->testsensing)
-   {
-     if(XLALhROverAlphaBeta(&(output->hR), output)) 
-       {
-	 ABORT(status,116,"Broke at hR/alpha");
-       }
-   }
+ LALDCreateVector(status->statusPtr,&uphR.data,input->CinvUSF*input->AS_Q.data->length);
+ CHECKSTATUSPTR( status );
+ uphR.deltaT=input->AS_Q.deltaT/input->CinvUSF;
 
  /* then we upsample (and smooth it with a low pass filter) */
- if(XLALUpsamplehR(&uphR, &(output->hR), input->CinvUSF)) 
+ if(XLALUpsample(&uphR, &(output->hR), input->CinvUSF)) 
    { 
      ABORT(status,117,"Broke upsampling hR");
    }
@@ -142,9 +138,10 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
    uphR.data->data[p]=uphR.data->data[p-input->CinvDelay];
  }
 
+ /* An odd filtere with N points introduces an (N-1)/2 delay */
  /* apply advance to compensate for FIR delay */
- for (p=0; p<(int)uphR.data->length-(2*N_FIR_LP+1); p++){
-   uphR.data->data[p]=uphR.data->data[p+(2*N_FIR_LP+1)];
+ for (p=0; p<(int)uphR.data->length-(2*N_FIR_LP); p++){
+   uphR.data->data[p]=uphR.data->data[p+(2*N_FIR_LP)];
  }
  /* Low pass filter twice to smooth time series */
  LALIIRFilterREAL8Vector(status->statusPtr,uphR.data,&(LPFIR));
@@ -178,8 +175,8 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
 
 
  /* apply advance to compensate for Low Pass FIR delay */
- for (p=0; p<(int)uphR.data->length-(2*N_FIR_LP+1); p++){
-   uphR.data->data[p]=uphR.data->data[p+(2*N_FIR_LP+1)];
+ for (p=0; p<(int)uphR.data->length-(2*N_FIR_LP); p++){
+   uphR.data->data[p]=uphR.data->data[p+(2*N_FIR_LP)];
  }
  /* Low pass filter twice to smooth time series */
  LALIIRFilterREAL8Vector(status->statusPtr,uphR.data,&(LPFIR));
@@ -192,6 +189,74 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
    output->hR.data->data[p]=uphR.data->data[p*input->CinvUSF];
  }
 
+ LALDDestroyVector(status->statusPtr,&uphR.data);
+ CHECKSTATUSPTR( status );
+
+ /* Create time series that hold alpha time series and upsampled alpha time-series */
+ LALDCreateVector(status->statusPtr,&ALPHAS.data,output->alpha.data->length);
+ CHECKSTATUSPTR( status );
+ LALDCreateVector(status->statusPtr,&upALPHAS.data,input->AS_Q.data->length);
+ CHECKSTATUSPTR( status );
+ upALPHAS.deltaT=input->AS_Q.deltaT;
+ 
+ /* copy factors into time series */
+ for (p=0; p<(int)ALPHAS.data->length; p++) 
+   {
+     ALPHAS.data->data[p]=output->alphabeta.data->data[p].re;
+   }
+ 
+ /* upsample using a linear interpolation */
+ if(XLALUpsampleLinear(&upALPHAS, &ALPHAS, (int) (output->alphabeta.deltaT/input->AS_Q.deltaT+0.5)))
+   { 
+     ABORT(status,117,"Broke upsampling Alphas");
+   }
+ 
+ /* Generate alphas LP filter to smooth linearly interpolated factors time series */
+ LALMakeFIRLPALPHAS(status->statusPtr, &ALPHASLPFIR);
+ CHECKSTATUSPTR( status );
+
+ /* Note that I do not compensate for delay 
+    if factors are computed every second then everything is fine */
+ if (input->fftconv)
+   {
+     LALFIRFilter(status->statusPtr,&upALPHAS,&ALPHASLPFIR);
+     CHECKSTATUSPTR( status );
+   }else{
+     LALIIRFilterREAL8Vector(status->statusPtr,upALPHAS.data,&(ALPHASLPFIR));
+     CHECKSTATUSPTR( status );
+   }
+ 
+ /* finally we divide by alpha*beta */
+ if (input->usefactors)
+   {
+     if(XLALDivideTimeSeries(&(output->hR), &upALPHAS)) 
+       {
+	 ABORT(status,116,"Broke at hR/alpha");
+       }
+   }
+
+ if (input->outalphas)
+   {
+     /* set output to alphas */
+     for (p=0; p<(int)output->hR.data->length; p++) {
+       output->hR.data->data[p]=upALPHAS.data->data[p];
+     }
+   }
+
+ /* destroy low and high pass filters */ 
+ LALDDestroyVector(status->statusPtr,&(ALPHASLPFIR.directCoef));
+ CHECKSTATUSPTR( status );
+ LALDDestroyVector(status->statusPtr,&(ALPHASLPFIR.recursCoef));
+ CHECKSTATUSPTR( status );
+ LALDDestroyVector(status->statusPtr,&(ALPHASLPFIR.history));
+ CHECKSTATUSPTR( status );
+     
+ /* destroy both alphas time series */
+ LALDDestroyVector(status->statusPtr,&upALPHAS.data);
+ CHECKSTATUSPTR( status );
+ LALDDestroyVector(status->statusPtr,&ALPHAS.data);
+ CHECKSTATUSPTR( status );
+
  /* ---------- Compute Control Strain -------------*/
 
  /* first implement the time delay filter; start at end to avoid overwriting */
@@ -199,11 +264,23 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
    output->hC.data->data[p]=output->hC.data->data[p-input->AADelay];
  }
 
+ /* then apply advance to compensate for FIR delay */
+ for (p=0; p<(int)output->hC.data->length-(2*N_FIR_HP); p++){
+   output->hC.data->data[p]=output->hC.data->data[p+(2*N_FIR_HP)];
+ }
  /* then high pass filter DARM_CTRL */
- LALFIRFilter(status->statusPtr,&(output->hC),&(HPFIR));
- CHECKSTATUSPTR( status );
- LALFIRFilter(status->statusPtr,&(output->hC),&(HPFIR));
- CHECKSTATUSPTR( status );
+ if (input->fftconv)
+   {
+     LALFIRFilter(status->statusPtr,&(output->hC),&(HPFIR));
+     CHECKSTATUSPTR( status );
+     LALFIRFilter(status->statusPtr,&(output->hC),&(HPFIR));
+     CHECKSTATUSPTR( status );
+   }else{
+     LALIIRFilterREAL8Vector(status->statusPtr,output->hC.data,&(HPFIR));
+     CHECKSTATUSPTR( status );
+     LALIIRFilterREAL8Vector(status->statusPtr,output->hC.data,&(HPFIR));
+     CHECKSTATUSPTR( status );
+   }
 
  /* ===================== */
  /* CAREFUL FILTERING: FILTER UP TO WINGS, THEN COPY FILTERS THEN CONTINUE UNTIL END */
@@ -291,6 +368,7 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
     output->hC.data->data[p]=(hCX.data->data[p]+hCY.data->data[p])/2; 
  }
 
+
  /* ---------- Compute Net Strain -------------*/
 
  /* add x-arm and y-arm and voila' */
@@ -301,8 +379,6 @@ REAL8IIRFilter *CinvWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
  /* ------------------------------------------*/
 
  /* destroy vectors that hold the data */
- LALDDestroyVector(status->statusPtr,&uphR.data);
- CHECKSTATUSPTR( status );
  LALDDestroyVector(status->statusPtr,&hCX.data);
  CHECKSTATUSPTR( status );
  LALDDestroyVector(status->statusPtr,&hCY.data);
@@ -430,6 +506,50 @@ void LALMakeFIRLP(LALStatus *status, REAL8IIRFilter *LPFIR, int USF)
   RETURN( status );
 
 }
+
+/*******************************************************************************/
+void LALMakeFIRLPALPHAS(LALStatus *status, REAL8IIRFilter *LPFIR)
+{
+  int N=2*N_FIR_LP_ALPHAS+1,l;
+  int k[2*N_FIR_LP_ALPHAS+1];
+  REAL8 fN=fhigh_FIRLP_ALPHAS;
+
+  INITSTATUS( status, "LALMakeFIRLPALPHAS", COMPUTESTRAINC );
+  ATTATCHSTATUSPTR( status );
+
+  LPFIR->directCoef=NULL;
+  LPFIR->recursCoef=NULL;
+  LPFIR->history=NULL;
+
+  LALDCreateVector(status->statusPtr,&(LPFIR->directCoef),N);
+  CHECKSTATUSPTR( status );
+  LALDCreateVector(status->statusPtr,&(LPFIR->recursCoef),N);
+  CHECKSTATUSPTR( status );
+  LALDCreateVector(status->statusPtr,&(LPFIR->history),N-1);
+  CHECKSTATUSPTR( status );
+
+  for(l=0;l<N;l++) LPFIR->recursCoef->data[l]=0.0;
+  for(l=0;l<N-1;l++) LPFIR->history->data[l]=0.0;
+
+  for (l=0; l<N;l++)
+    {
+      k[l]=l-N_FIR_LP_ALPHAS;
+      if(k[l] != 0)
+	{
+	  LPFIR->directCoef->data[l]=(sin(LAL_PI*fN*k[l])/(LAL_PI*k[l]))*
+	    exp(-0.5*pow(3.0*(double)k[l]/(double)N_FIR_LP_ALPHAS,2))/8.318081379762647e-02;
+	}else{
+	  LPFIR->directCoef->data[l]=fN;
+	}
+    }
+
+
+/*   for(l=0;l<N;l++) fprintf(stdout,"%1.16e\n", LPFIR->directCoef->data[l]); */
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+
+}
 /*******************************************************************************/
 
 void LALMakeFIRHP(LALStatus *status, REAL8IIRFilter *HPFIR)
@@ -477,7 +597,7 @@ void LALMakeFIRHP(LALStatus *status, REAL8IIRFilter *HPFIR)
 
 /*******************************************************************************/
 
-int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
+int XLALUpsample(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
 {
   int n;
 
@@ -496,37 +616,49 @@ int XLALUpsamplehR(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
 
 /*******************************************************************************/
 
-int XLALhROverAlphaBeta(REAL8TimeSeries *hR, StrainOut *output)
+int XLALUpsampleLinear(REAL8TimeSeries *uphR, REAL8TimeSeries *hR, int up_factor)
 {
   int n,m;
-  double time,InterpolatedAlphaBeta;
-  double alphabeta[MAXALPHAS],tainterp[MAXALPHAS];
 
-  /* copy output alphas into local array */
-  for(m=0; m < (int)output->alphabeta.data->length; m++)
+  /* Set all values to 0 */
+  for (n=0; n < (int)uphR->data->length; n++) {
+    uphR->data->data[n] = 0.0;
+  }
+
+  /* Set one in every up_factor to the value of hR x USR */
+  for (n=0; n < (int)hR->data->length; n++) 
     {
-      alphabeta[m]=output->alphabeta.data->data[m].re;
-      tainterp[m]= m*output->alphabeta.deltaT;
+      REAL8 y1=hR->data->data[n],y2;
+     
+      if(n < hR->data->length-1) y2=hR->data->data[n+1];
+      if(n == hR->data->length-1) y2=hR->data->data[n];
+
+      for (m=0; m < (int)up_factor; m++) 
+	{
+	  uphR->data->data[n*up_factor+m] = y1+m*(y2-y1)/up_factor;
+	}
+    }
+  return 0;
+}
+
+/*******************************************************************************/
+
+int XLALDivideTimeSeries(REAL8TimeSeries *hR, REAL8TimeSeries *ALPHAS)
+{
+
+  int n;
+
+  if (hR->data->length != ALPHAS->data->length)
+    {
+      fprintf(stderr,"Length of residual strin time series (%d), not the same as factors time series, (%d)\n"
+	      ,hR->data->length, ALPHAS->data->length);
+      return 1;
     }
 
-  time=0.0;    /* time variable */
-  
-  {
-    gsl_interp_accel *acc_alphabeta = gsl_interp_accel_alloc();      /* GSL spline interpolation stuff */
-    gsl_spline *spline_alphabeta = gsl_spline_alloc(gsl_interp_cspline,output->alphabeta.data->length);
-    gsl_spline_init(spline_alphabeta,tainterp,alphabeta,output->alphabeta.data->length);
-
-    for (n = 0; n < (int)hR->data->length; n++) 
-      {
-	InterpolatedAlphaBeta=gsl_spline_eval(spline_alphabeta,time,acc_alphabeta);
-	
-	hR->data->data[n] /= InterpolatedAlphaBeta;
-	time=time+hR->deltaT;
-      }
-  /* clean up GSL spline interpolation stuff */
-  gsl_spline_free(spline_alphabeta);
-  gsl_interp_accel_free(acc_alphabeta);
-  }
+  for (n = 0; n < (int)hR->data->length; n++) 
+    {
+      hR->data->data[n] /= ALPHAS->data->data[n];
+    }
 
   return 0;
 }
@@ -646,10 +778,12 @@ INT4 localtime = input->AS_Q.epoch.gpsSeconds;
 	 if (m>0) factors.beta.re=output->beta.data->data[m-1].re;
 	 facterrflag=1;
 	}
+      
+      localtime=localtime+(int)To;
 
       if (facterrflag == 1)
 	{
-	  fprintf(stderr,"%d %e %e %e %e %e %e %e %e %e %e %e %e\n",localtime+(int)m*To, 
+	  fprintf(stderr,"BADFACTORS: %d %e %e %e %e %e %e %e %e %e %e %e %e\n",localtime, 
 		  factors.alphabeta.re,factors.alphabeta.im,
 		  factors.beta.re,factors.beta.im,
 		  factors.alpha.re,factors.alpha.im,
@@ -696,65 +830,84 @@ INT4 localtime = input->AS_Q.epoch.gpsSeconds;
 void LALFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter *FIR)
 {
   REAL8TimeSeries *tseriesFIR=NULL;
+  REAL8TimeSeries *tseriesDATA=NULL;
   COMPLEX16FrequencySeries *vtilde=NULL, *vtildeFIR=NULL;
   REAL8FFTPlan  *fplan = NULL, *rplan = NULL;
   int n;
+  int xlerr;
 
   INITSTATUS( status, "LALFIRFilter", COMPUTESTRAINC );
   ATTATCHSTATUSPTR( status );
   
-  /* create time series that will hold FIR filter */
-  LALCreateREAL8TimeSeries(status->statusPtr, &tseriesFIR, tseries->name, tseries->epoch, 0.0, 
-				   tseries->deltaT, tseries->sampleUnits, tseries->data->length);
+  /* create time series that will hold FIR filter (with room for zero padding) */
+  LALCreateREAL8TimeSeries(status->statusPtr, &tseriesFIR, tseries->name, 
+			   tseries->epoch, 0.0, tseries->deltaT, tseries->sampleUnits, 
+			   tseries->data->length+FIR->directCoef->length);
+  CHECKSTATUSPTR( status );
+
+  /* create time series that will hold data  (with room for zero padding) */
+  LALCreateREAL8TimeSeries(status->statusPtr, &tseriesDATA, tseries->name, 
+			   tseries->epoch, 0.0, tseries->deltaT, tseries->sampleUnits, 
+			   tseries->data->length+FIR->directCoef->length);
   CHECKSTATUSPTR( status );
 
   /* initialise values in FIR time series */
-  for (n = 0; n < (int)tseries->data->length; n++) 
+  for (n = 0; n < (int)tseriesDATA->data->length; n++) 
     {
       tseriesFIR->data->data[n]=0.0;
+      tseriesDATA->data->data[n]=0.0;
     }
   /* set first few to values in FIR filter */
+  /* Here I want to make sure the FIR filter in in wrap-around order */
+/*   for (n = 0; n <= (int)(FIR->directCoef->length-1)/2; n++)  */
+/*     { */
+/*       tseriesFIR->data->data[n]=FIR->directCoef->data[n+(FIR->directCoef->length-1)/2]; */
+/*     } */
+/*   for (n = 0; n < (int) (FIR->directCoef->length-1)/2; n++)  */
+/*     { */
+/*       tseriesFIR->data->data[(tseriesFIR->data->length-1)-n]=FIR->directCoef->data[((FIR->directCoef->length-1)/2-1)-n]; */
+/*     } */
   for (n = 0; n < (int)FIR->directCoef->length; n++) 
     {
       tseriesFIR->data->data[n]=FIR->directCoef->data[n];
     }
 
+  /* set first few to values in data series */
+  for (n = 0; n < (int)tseries->data->length; n++) 
+    {
+      tseriesDATA->data->data[n]=tseries->data->data[n];
+    }
+
   /* create frequency series that will hold FT's of both timne series */ 
   LALCreateCOMPLEX16FrequencySeries(status->statusPtr, &vtilde,tseries->name , tseries->epoch, 0.0, 
 				   1.0 / (tseries->data->length * tseries->deltaT), 
-				   tseries->sampleUnits, tseries->data->length / 2 + 1);
+				   tseries->sampleUnits, tseriesDATA->data->length / 2 + 1);
   CHECKSTATUSPTR( status );
   LALCreateCOMPLEX16FrequencySeries(status->statusPtr, &vtildeFIR,tseries->name , tseries->epoch, 0.0, 
 				   1.0 / (tseries->data->length * tseries->deltaT), 
-				   tseries->sampleUnits, tseries->data->length / 2 + 1);
+				   tseries->sampleUnits, tseriesDATA->data->length / 2 + 1);
   CHECKSTATUSPTR( status );
 
   /* make fft plans */
-  LALCreateForwardREAL8FFTPlan(status->statusPtr, &fplan, tseries->data->length, 0 );
+  LALCreateForwardREAL8FFTPlan(status->statusPtr, &fplan, tseriesDATA->data->length, 0 );
   CHECKSTATUSPTR( status );
-  LALCreateReverseREAL8FFTPlan(status->statusPtr, &rplan, tseries->data->length, 0 );
+  LALCreateReverseREAL8FFTPlan(status->statusPtr, &rplan, tseriesDATA->data->length, 0 );
   CHECKSTATUSPTR( status );
 
   /* fft both series */
-  if( XLALREAL8TimeFreqFFT(vtilde, tseries, fplan) < 0 )
+  xlerr=XLALREAL8TimeFreqFFT(vtilde, tseriesDATA, fplan);
+  if( xlerr < 0 )
     {   
-      fprintf(stderr,"Failed creating FT of time series\n");
+      fprintf(stderr,"Failed creating FT of time series. Errorcode: %d\n",xlerr);
       DETATCHSTATUSPTR( status );
       RETURN(status);
     }
-   if( XLALREAL8TimeFreqFFT(vtildeFIR, tseriesFIR, fplan) < 0 )
+  xlerr=XLALREAL8TimeFreqFFT(vtildeFIR, tseriesFIR, fplan);
+  if( xlerr < 0 )
     {   
-      fprintf(stderr,"Failed creating FT of FIR filter time series\n");
+      fprintf(stderr,"Failed creating FT of FIR filter time series. Errorcode: %d\n",xlerr);
       DETATCHSTATUSPTR( status );
       RETURN(status);
-    }
-
-  /* set the phases of FIR FT to zero */
-  for (n = 0; n < (int)vtildeFIR->data->length; n++) 
-    {
-      REAL8 re=vtildeFIR->data->data[n].re, im=vtildeFIR->data->data[n].im;
-      vtildeFIR->data->data[n].re=sqrt(pow(re,2)+pow(im,2));
-      vtildeFIR->data->data[n].im=0.0;
     }
  
   /* multiply both FT's */
@@ -767,16 +920,17 @@ void LALFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter *F
     }
 
   /* reverse FFT into original time series */
-  if( XLALREAL8FreqTimeFFT(tseries, vtilde, rplan) < 0 )
+  xlerr=XLALREAL8FreqTimeFFT(tseriesDATA, vtilde, rplan);
+  if( xlerr < 0 )
     {   
-      fprintf(stderr,"Failed creating IFT of FIR and time series\n");
+      fprintf(stderr,"Failed creating IFT of FIR and time series. Errorcode: %d\n",xlerr);
       DETATCHSTATUSPTR( status );
       RETURN(status);
     }
 
   for (n = 0; n < (int)tseries->data->length; n++) 
     {
-      tseries->data->data[n] /= tseries->deltaT;
+      tseries->data->data[n] = tseriesDATA->data->data[n]/tseries->deltaT;
     }
 
   /* Destroy everything */
@@ -790,6 +944,8 @@ void LALFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter *F
   LALDestroyCOMPLEX16FrequencySeries(status->statusPtr, vtildeFIR);
   CHECKSTATUSPTR( status );
   LALDestroyREAL8TimeSeries(status->statusPtr, tseriesFIR);
+  CHECKSTATUSPTR( status );
+  LALDestroyREAL8TimeSeries(status->statusPtr, tseriesDATA);
   CHECKSTATUSPTR( status );
 
   DETATCHSTATUSPTR( status );
