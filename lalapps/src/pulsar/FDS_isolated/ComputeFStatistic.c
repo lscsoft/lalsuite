@@ -318,6 +318,7 @@ extern "C" {
   void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
   void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
   void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
+  void TestLALDemodR8(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
 
 #ifdef FILE_AMCOEFFS
   void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc);
@@ -747,10 +748,12 @@ int main(int argc,char *argv[])
 	    case 2:
 	      LAL_CALL ( TestLALDemod2(stat, &Fstat, SFTData, DemodParams), stat);
 	      break;
-	    case 3:
+#ifndef _MSC_VER
+		case 3:
 	      LAL_CALL ( TestLALDemod3(stat, &Fstat, SFTData, DemodParams), stat);
 	      break;
-	    case 4:
+#endif
+        case 4:
 	      LAL_CALL ( TestLALDemodR8(stat, &Fstat, SFTData, DemodParams), stat);
 	      break;
 	    default:
@@ -4144,6 +4147,9 @@ void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
 /*----------------------------------------------------------------------*/
 /* Gaurav's version */
 
+/* commented out for MS compiler as doesn't work there */
+#ifndef _MSC_VER
+
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 /* </lalVerbatim> */
@@ -4474,6 +4480,7 @@ void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
 
 } /* TestLALDemod3() */
 
+#endif
 
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemodR8(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
