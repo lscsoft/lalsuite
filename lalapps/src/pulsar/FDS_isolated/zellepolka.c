@@ -79,8 +79,6 @@ struct PolkaCommandLineArgsTag
   REAL8 Deltaf;      /* Size of coincidence window in Hz */
   REAL8 DeltaAlpha;  /* Size of coincidence window in radians */
   REAL8 DeltaDelta;  /* Size of coincidence window in radians */
-  REAL8 fmin;        /* Minimum frequency of candidate in first IFO */
-  REAL8 fmax;        /* Maximum frequency of candidate in first IFO */
   UINT4 EAH;         /* Einstein at home flag for alternative output */ 
 } PolkaCommandLineArgs;
 
@@ -164,7 +162,7 @@ int main(int argc,char *argv[])
   REAL8 local_fraction_done;
 #endif
 
-  lalDebugLevel = 0;
+  lalDebugLevel = 3;
 
   /* Reads command line arguments */
   if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) {
@@ -640,15 +638,13 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
   INT4 c; 
   INT4 option_index = 0;
 
-  const char *optstring = "hF:f:a:d:m:M:o:s:e:b";
+  const char *optstring = "hF:f:a:d:m:M:o:b";
   struct option long_options[] =
     {
       {"fstatsfile",            required_argument, 0,   'F'},
       {"frequency-window",      required_argument, 0,   'f'},
       {"delta-window",          required_argument, 0,   'd'},
       {"alpha-window",          required_argument, 0,   'a'},
-      {"fmin",                  required_argument, 0,   's'},
-      {"fmax",                  required_argument, 0,   'e'},
       {"outputfile",            required_argument, 0,   'o'},
       {"EAHoutput",             no_argument, 0,         'b'},
       {"help",                  no_argument, 0,         'h'},
@@ -661,8 +657,6 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
   CLA->Deltaf=0.0;
   CLA->DeltaAlpha=0;
   CLA->DeltaDelta=0;
-  CLA->fmin=0;
-  CLA->fmax=0;
   CLA->EAH=0;
 
   /* reset gnu getopt */
@@ -691,14 +685,6 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
         /* Spin down order */
         CLA->DeltaAlpha=atof(optarg);
         break;
-      case 's':
-        /* Spin down order */
-        CLA->fmin=atof(optarg);
-        break;
-      case 'e':
-        /* Spin down order */
-        CLA->fmax=atof(optarg);
-        break;
       case 'd':
         /* Spin down order */
         CLA->DeltaDelta=atof(optarg);
@@ -715,8 +701,6 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
         LALPrintError("\t--frequency-window (-f)\tFLOAT\tFrequency window in Hz (0.0)\n");
         LALPrintError("\t--alpha-window (-a)\tFLOAT\tAlpha window in radians (0.0)\n");
         LALPrintError("\t--delta-window (-d)\tFLOAT\tDelta window in radians (0.0)\n");
-        LALPrintError("\t--fmin (-s)\tFLOAT\t Minimum frequency of candidate in 1st IFO\n");
-        LALPrintError("\t--fmax (-e)\tFLOAT\t Maximum frequency of candidate in 1st IFO\n");
         LALPrintError("\t--EAHoutput (-b)\tFLAG\t Einstein at home output flag. \n");
         LALPrintError("\t--help        (-h)\t\tThis message\n");
         exit(0);
@@ -743,19 +727,6 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
       return 1;
     }      
 
-  if(CLA->fmin == 0.0)
-    {
-      LALPrintError("No minimum frequency specified.\n");
-      LALPrintError("For help type %s -h\n", argv[0]);
-      return 1;
-    }      
-
-  if(CLA->fmax == 0.0)
-    {
-      LALPrintError("No maximum frequency specified.\n");
-      LALPrintError("For help type %s -h\n", argv[0]);
-      return 1;
-    }      
 
   return errflg;
 }
