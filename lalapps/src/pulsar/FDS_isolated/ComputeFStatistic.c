@@ -748,11 +748,9 @@ int main(int argc,char *argv[])
 	    case 2:
 	      LAL_CALL ( TestLALDemod2(stat, &Fstat, SFTData, DemodParams), stat);
 	      break;
-#ifndef _MSC_VER
 		case 3:
 	      LAL_CALL ( TestLALDemod3(stat, &Fstat, SFTData, DemodParams), stat);
 	      break;
-#endif
         case 4:
 	      LAL_CALL ( TestLALDemodR8(stat, &Fstat, SFTData, DemodParams), stat);
 	      break;
@@ -4147,9 +4145,6 @@ void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
 /*----------------------------------------------------------------------*/
 /* Gaurav's version */
 
-/* commented out for MS compiler as doesn't work there */
-#ifndef _MSC_VER
-
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 /* </lalVerbatim> */
@@ -4385,6 +4380,7 @@ void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
                  xinv3 = (REAL4)OOTWOPI / (REAL4)(tempFreq1);
 				tempFreq1--;
 
+				{
 				REAL4 Xa_re0 = Xalpha_k[0].re;
 				REAL4 Xa_im0 = Xalpha_k[0].im;
 				REAL4 Xa_re1 = Xalpha_k[1].re;
@@ -4393,8 +4389,6 @@ void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
 				REAL4 Xa_im2 = Xalpha_k[2].im;
 				REAL4 Xa_re3 = Xalpha_k[3].re;
 				REAL4 Xa_im3 = Xalpha_k[3].im;
-
-                 Xalpha_k +=4;
 
                  realP0 = tsin * xinv0;
                  imagP0 = tcos * xinv0;
@@ -4405,7 +4399,9 @@ void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
                  realP3 = tsin * xinv3;
                  imagP3 = tcos * xinv3;
 
-                 /* compute P*xtilde */
+                 Xalpha_k +=4;
+
+				 /* compute P*xtilde */
 				realXP0 += Xa_re0 * realP0 - Xa_im0 * imagP0;
                  imagXP0 += Xa_re0 * imagP0 + Xa_im0 * realP0;
 				realXP1 += Xa_re1 * realP1 - Xa_im1 * imagP1;
@@ -4414,6 +4410,7 @@ void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
                  imagXP2 += Xa_re2 * imagP2 + Xa_im2 * realP2;
 				realXP3 += Xa_re3 * realP3 - Xa_im3 * imagP3;
                  imagXP3 += Xa_re3 * imagP3 + Xa_im3 * realP3;
+				}
 
 			} /* for k < klim */
 			realXP = (realXP0 + realXP1) + (realXP2 + realXP3);
@@ -4479,8 +4476,6 @@ void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
   RETURN( status );
 
 } /* TestLALDemod3() */
-
-#endif
 
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemodR8(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
