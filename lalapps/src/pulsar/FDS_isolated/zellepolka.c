@@ -9,42 +9,45 @@
 /*********************************************************************************/
 
 
+
+
+/* ----------------------------------------------------------------------------- */
+/* defines */
+#ifndef FALSE
+#define FALSE (1==0)
+#endif
+#ifndef TRUE
+#define TRUE  (1==1)
+#endif
+
+#define DONE_MARKER "%DONE\n"
+
+#ifndef USE_BOINC
+#define USE_BOINC 0
+#endif
+
+
+/* ----------------------------------------------------------------------------- */
+/* file includes */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "getopt.h"
+#include <math.h>
+
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include <math.h>
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/ConfigFile.h>
+#include <lal/UserInput.h>
 
 #include <lalapps.h>
 
-#include "getopt.h"
-
-RCSID ("$Id$");
-
-/* some error codes and messages */
-#define POLKAC_ENULL            1
-#define POLKAC_ENONULL          2
-#define POLKAC_ESYS             3
-#define POLKAC_EINVALIDFSTATS   4
-#define POLKAC_EMEM             5
-
-#define POLKAC_MSGENULL         "Arguments contained an unexpected null pointer"
-#define POLKAC_MSGENONULL       "Input pointer was not NULL"
-#define POLKAC_MSGESYS          "System call failed (probably file IO"
-#define POLKAC_MSGEINVALIDFSTATS "Invalid Fstats file"
-#define POLKAC_MSGEMEM          "Sorry, ran out of memory... bye."
-
-#ifndef USE_BOINC
-#define USE_BOINC 0
-#endif
 
 #if USE_BOINC
 /* BOINC includes */
@@ -67,11 +70,33 @@ extern double *fraction_done_hook;
 int finite(double);
 #endif
 
+
+/* ----------------------------------------------------------------------------- */
+/* some error codes and messages */
+#define POLKAC_ENULL            1
+#define POLKAC_ENONULL          2
+#define POLKAC_ESYS             3
+#define POLKAC_EINVALIDFSTATS   4
+#define POLKAC_EMEM             5
+
+#define POLKAC_MSGENULL         "Arguments contained an unexpected null pointer"
+#define POLKAC_MSGENONULL       "Input pointer was not NULL"
+#define POLKAC_MSGESYS          "System call failed (probably file IO"
+#define POLKAC_MSGEINVALIDFSTATS "Invalid Fstats file"
+#define POLKAC_MSGEMEM          "Sorry, ran out of memory... bye."
+
 #define UBERPOLKA_EXIT_ERRCLINE 31
 #define UBERPOLKA_EXIT_READCND  32
 #define UBERPOLKA_EXIT_FCTEST   33
 #define UBERPOLKA_EXIT_OUTFAIL  34
 
+
+
+
+
+
+/* ----------------------------------------------------------------------------- */
+/* structures */
 struct PolkaCommandLineArgsTag 
 {
   char *FstatsFile; /* Names of Fstat files to be read in */
@@ -79,6 +104,9 @@ struct PolkaCommandLineArgsTag
   REAL8 Deltaf;      /* Size of coincidence window in Hz */
   REAL8 DeltaAlpha;  /* Size of coincidence window in radians */
   REAL8 DeltaDelta;  /* Size of coincidence window in radians */
+  REAL8 Shiftf;      /* Parallel shift of frequency in Hz of cell */
+  REAL8 ShiftAlpha;  /* Parallel shift of Alpha in Hz of cell */
+  REAL8 ShiftDelta;  /* Parallel shift of Delta in Hz of cell */
   UINT4 EAH;         /* Einstein at home flag for alternative output */ 
 } PolkaCommandLineArgs;
 
@@ -86,36 +114,37 @@ struct PolkaCommandLineArgsTag
 coarse frequency and sky bins */
 typedef struct CandidateListTag
 {
-  REAL8 f;           /* Frequency */
-  REAL4 Alpha;       /* longitude -> REAL4*/
-  REAL4 Delta;       /* latitude -> REAL4 */
-  REAL4 F;           /* Maximum value of F for the cluster -> REAL4*/
-  UINT4 iCand;       /* Candidate id -> UINT4 */
-  INT4 FileID;      /* File ID */
-  INT4  iFreq;       /* Frequency index INT4 */
-  INT4 iDelta;      /* Declination index -> INT4 */
-  INT4 iAlpha;      /* Right ascension index -> INT4  */
-  REAL4 lfa;         /* log of false alarm probability for that candidate ->REAL4*/
-} CandidateList; /* ~ Fstat lines */ 
+  UINT4 iCand;       /* Candidate id: unique with in this program.  */
+  REAL8 f;           /* Frequency of the candidate */
+  REAL4 Alpha;       /* right ascension of the candidate */
+  REAL4 Delta;       /* declination  of the candidate */
+  REAL4 F;           /* Maximum value of F for the cluster */
+  INT4 FileID;       /* File ID to specify from which file the candidate under consideration originaly comes. */
+  INT4  iFreq;       /* Frequency index */
+  INT4 iDelta;       /* Declination index. This can be negative. */
+  INT4 iAlpha;       /* Right ascension index */
+  REAL4 lfa;         /* minus log of false alarm probability for that candidate */
+} CandidateList;     /* ~ Fstat lines */ 
 
 struct int4_linked_list {
   INT4 data;
   struct int4_linked_list *next;
-};
+}; 
 
 typedef struct CellDataTag
 {
-  INT4 iFreq;
-  INT4 iDelta;
-  INT4 iAlpha;
-  struct int4_linked_list *CandID; 
-  INT4 nCand; /* number of the data in this cell. */
-  REAL4 significance; /* minus log of joint false alarm */
+  INT4 iFreq;          /* Frequency of the cell */
+  INT4 iDelta;         /* Declination of the cell */
+  INT4 iAlpha;         /* Right ascension of the cell */
+  INT4 nCand;          /* number of the data in this cell. */
+  REAL4 significance;  /* minus log of joint false alarm of the candidates in this cell. */
+  struct int4_linked_list *CandID;  /* linked structure that has candidate id-s of the candidates in this cell. */
 } CellData;
 
 
 
-
+/* ----------------------------------------------------------------------------- */
+/* Function declarelations */
 int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
 int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA);
 int ReadOneCandidateFile(CandidateList **CList, const char *fname);
@@ -128,22 +157,20 @@ struct int4_linked_list *add_int4_data(struct int4_linked_list *list_ptr, INT4 *
 void get_info_of_the_cell( CellData *cd, struct int4_linked_list *list_ptr );
 
 
+
+/* ----------------------------------------------------------------------------- */
+/* Global variables. */
+LALStatus global_status;
 extern INT4 lalDebugLevel;
+extern int vrbflg;
 
 CandidateList *SortedC;
-
 UINT4  CLength=0;
 
-INT4 numCoincidences=0;
 
 
-#ifndef FALSE
-#define FALSE (1==0)
-#endif
-#ifndef TRUE
-#define TRUE  (1==1)
-#endif
 
+RCSID ("$Id$");
 
 
 /* ------------------------------------------------------------------------------------------*/
@@ -162,7 +189,11 @@ int main(int argc,char *argv[])
   REAL8 local_fraction_done;
 #endif
 
-  lalDebugLevel = 3;
+  LALStatus *stat = &global_status;
+  lalDebugLevel = 0 ;  
+  vrbflg = 1;   /* verbose error-messages */
+  LAL_CALL (LALGetDebugLevel(stat, argc, argv, 'v'), stat);
+
 
   /* Reads command line arguments */
   if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) {
@@ -197,9 +228,9 @@ int main(int argc,char *argv[])
   /* Initialise arrays of sorted candidates to use for bsearch */
   for (icand=0;icand<CLength;icand++)
     {
-      SortedC[icand].iFreq=(INT4) (SortedC[icand].f/(PolkaCommandLineArgs.Deltaf));
-      SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PolkaCommandLineArgs.DeltaDelta));
-      SortedC[icand].iAlpha=(INT4)(SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PolkaCommandLineArgs.DeltaAlpha));
+      SortedC[icand].iFreq=(INT4) (SortedC[icand].f/(PolkaCommandLineArgs.Deltaf) + PolkaCommandLineArgs.Shiftf  );
+      SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PolkaCommandLineArgs.DeltaDelta)  + PolkaCommandLineArgs.ShiftDelta );
+      SortedC[icand].iAlpha=(INT4)(SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PolkaCommandLineArgs.DeltaAlpha)  + PolkaCommandLineArgs.ShiftAlpha  );
     }
   
   /* sort arrays of candidates */
@@ -292,6 +323,7 @@ int main(int argc,char *argv[])
     delete_int4_linked_list( cell[icell].CandID );
   }
   LALFree(cell);
+
 
   LALCheckMemoryLeaks(); 
 
@@ -414,7 +446,7 @@ int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-#define DONE_MARKER "%DONE\n"
+
 
 /* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
 int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
@@ -638,15 +670,18 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
   INT4 c; 
   INT4 option_index = 0;
 
-  const char *optstring = "hF:f:a:d:m:M:o:b";
+  const char *optstring = "hI:f:a:d:F:D:A:o:E";
   struct option long_options[] =
     {
-      {"fstatsfile",            required_argument, 0,   'F'},
+      {"input-data-file",       required_argument, 0,   'I'},
       {"frequency-window",      required_argument, 0,   'f'},
       {"delta-window",          required_argument, 0,   'd'},
       {"alpha-window",          required_argument, 0,   'a'},
+      {"frequency-shift",       required_argument, 0,   'F'},
+      {"delta-shift",           required_argument, 0,   'D'},
+      {"alpha-shift",           required_argument, 0,   'A'},
       {"outputfile",            required_argument, 0,   'o'},
-      {"EAHoutput",             no_argument, 0,         'b'},
+      {"EAHoutput",             no_argument, 0,         'E'},
       {"help",                  no_argument, 0,         'h'},
       {0, 0, 0, 0}
     };
@@ -657,6 +692,11 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
   CLA->Deltaf=0.0;
   CLA->DeltaAlpha=0;
   CLA->DeltaDelta=0;
+
+  CLA->Shiftf=0.0;
+  CLA->ShiftAlpha=0;
+  CLA->ShiftDelta=0;
+
   CLA->EAH=0;
 
   /* reset gnu getopt */
@@ -669,7 +709,7 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
       if (c == -1) 
         break;
       switch (c) {
-      case 'F':
+      case 'I':
         /* SFT directory */
         CLA->FstatsFile=optarg;
         break;
@@ -689,19 +729,34 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
         /* Spin down order */
         CLA->DeltaDelta=atof(optarg);
         break;
-      case 'b':
+      case 'F':
+        /* Spin down order */
+        CLA->Shiftf=atof(optarg);
+        break;
+      case 'A':
+        /* Spin down order */
+        CLA->ShiftAlpha=atof(optarg);
+        break;
+      case 'D':
+        /* Spin down order */
+        CLA->ShiftDelta=atof(optarg);
+        break;
+      case 'E':
         /* Spin down order */
         CLA->EAH=1;
         break;
       case 'h':
         /* print usage/help message */
         LALPrintError("Arguments are (defaults):\n");
-        LALPrintError("\t--fstatsfile (-F)\tSTRING\tFirst candidates Fstats file\n");
+        LALPrintError("\t--fstatsfile (-I)\tSTRING\tFirst candidates Fstats file\n");
         LALPrintError("\t--outputfile  (-o)\tSTRING\tName of ouput candidates file\n");
         LALPrintError("\t--frequency-window (-f)\tFLOAT\tFrequency window in Hz (0.0)\n");
         LALPrintError("\t--alpha-window (-a)\tFLOAT\tAlpha window in radians (0.0)\n");
         LALPrintError("\t--delta-window (-d)\tFLOAT\tDelta window in radians (0.0)\n");
-        LALPrintError("\t--EAHoutput (-b)\tFLAG\t Einstein at home output flag. \n");
+        LALPrintError("\t--frequency-shift (-F)\tFLOAT\tFrequency window in Hz (0.0)\n");
+        LALPrintError("\t--alpha-shift (-A)\tFLOAT\tAlpha window in radians (0.0)\n");
+        LALPrintError("\t--delta-shift (-D)\tFLOAT\tDelta window in radians (0.0)\n");
+        LALPrintError("\t--EAHoutput (-E)\tFLAG\t Einstein at home output flag. \n");
         LALPrintError("\t--help        (-h)\t\tThis message\n");
         exit(0);
         break;
@@ -730,3 +785,85 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
 
   return errflg;
 }
+
+
+#if 0
+CHAR* uvar_InputData;
+CHAR* uvar_OutputData;
+REAL8 uvar_FreqWindow;
+REAL8 uvar_AlphaWindow;
+REAL8 uvar_DeltaWindow;
+REAL8 uvar_FreqShift;
+REAL8 uvar_AlphaShift;
+REAL8 uvar_DeltaShift;
+BOOLEAN uvar_help;
+BOOLEAN uvar_EAHoutput;
+
+
+void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCommandLineArgsTag *CLA) 
+{
+  INITSTATUS( stat, "ReadCommandLineArgs", rcsid );
+  ATTATCHSTATUSPTR (stat);
+
+  uvar_help = 0;
+  uvar_EAHoutput = 0;
+
+  uvar_InputData = NULL;
+  uvar_OutputData = NULL;
+
+  uvar_FreqWindow = 0.0;
+  uvar_AlphaWindow = 0.0;
+  uvar_DeltaWindow = 0.0;
+
+  uvar_FreqShift = 0.0;
+  uvar_AlphaShift = 0.0;
+  uvar_DeltaShift = 0.0;
+
+  /* register all our user-variables */
+  LALregBOOLUserVar(stat,       help,           'h', UVAR_HELP,     "Print this message"); 
+  LALregBOOLUserVar(stat,       EAHoutput,      'E', UVAR_OPTIONAL, "Einstein at Home output"); 
+
+  LALregSTRINGUserVar(stat,     InputData,      'I', UVAR_REQUIRED, "Input candidates Fstats file.");
+  LALregSTRINGUserVar(stat,     OutputData,     'o', UVAR_REQUIRED, "Ouput candidates file name");
+
+  LALregREALUserVar(stat,       FreqWindow,     'f', UVAR_REQUIRED, "Frequency window in Hz");
+  LALregREALUserVar(stat,       AlphaWindow,    'a', UVAR_REQUIRED, "Right ascension window in radians");
+  LALregREALUserVar(stat,       DeltaWindow,    'd', UVAR_REQUIRED, "Declination window in radians");
+  LALregREALUserVar(stat,       FreqShift,      'F', UVAR_REQUIRED, "Frequency shift in FreqWindow");
+  LALregREALUserVar(stat,       AlphaShift,     'A', UVAR_REQUIRED, "Right ascension shift in AlphaWindow");
+  LALregREALUserVar(stat,       DeltaShift,     'D', UVAR_REQUIRED, "Declination shift in DeltaWindow");
+
+  TRY (LALUserVarReadAllInput(stat->statusPtr,argc,argv),stat); 
+
+  CLA->FstatsFile = (CHAR *) LALMalloc(sizeof(uvar_InputData)+1);
+  if(CLA->FstatsFile == NULL)
+    {
+      LALPrintError("No 1st candidates file specified; input with -1 option.\n");
+      LALPrintError("For help type %s -h\n", argv[0]);
+      return;
+    }      
+  CLA->OutputFile = (CHAR *) LALMalloc(sizeof(uvar_OutputData)+1);
+  if(CLA->OutputFile == NULL)
+    {
+      LALFree(CLA->FstatsFile); 
+      LALPrintError("No ouput filename specified; input with -o option.\n");
+      LALPrintError("For help type %s -h\n", argv[0]);
+      return;
+    }      
+
+  CLA->Deltaf = uvar_FreqWindow;
+  CLA->DeltaAlpha = uvar_AlphaWindow;
+  CLA->DeltaDelta = uvar_DeltaWindow;
+
+  CLA->Shiftf = uvar_FreqShift;
+  CLA->ShiftAlpha = uvar_AlphaShift;
+  CLA->ShiftDelta = uvar_DeltaShift;
+
+  CLA->EAH = uvar_EAHoutput;
+
+  LALDestroyUserVars(stat);
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+}
+#endif
