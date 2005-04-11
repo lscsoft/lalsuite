@@ -116,14 +116,14 @@ typedef struct CandidateListTag
 {
   UINT4 iCand;       /* Candidate id: unique with in this program.  */
   REAL8 f;           /* Frequency of the candidate */
-  REAL4 Alpha;       /* right ascension of the candidate */
-  REAL4 Delta;       /* declination  of the candidate */
-  REAL4 F;           /* Maximum value of F for the cluster */
+  REAL8 Alpha;       /* right ascension of the candidate */
+  REAL8 Delta;       /* declination  of the candidate */
+  REAL8 F;           /* Maximum value of F for the cluster */
   INT4 FileID;       /* File ID to specify from which file the candidate under consideration originaly comes. */
   INT4  iFreq;       /* Frequency index */
   INT4 iDelta;       /* Declination index. This can be negative. */
   INT4 iAlpha;       /* Right ascension index */
-  REAL4 lfa;         /* minus log of false alarm probability for that candidate */
+  REAL8 lfa;         /* minus log of false alarm probability for that candidate */
 } CandidateList;     /* ~ Fstat lines */ 
 
 struct int4_linked_list {
@@ -137,7 +137,7 @@ typedef struct CellDataTag
   INT4 iDelta;         /* Declination of the cell */
   INT4 iAlpha;         /* Right ascension of the cell */
   INT4 nCand;          /* number of the data in this cell. */
-  REAL4 significance;  /* minus log of joint false alarm of the candidates in this cell. */
+  REAL8 significance;  /* minus log of joint false alarm of the candidates in this cell. */
   struct int4_linked_list *CandID;  /* linked structure that has candidate id-s of the candidates in this cell. */
 } CellData;
 
@@ -151,7 +151,7 @@ int ReadOneCandidateFile(CandidateList **CList, const char *fname);
 int compareCIStructs(const void *ip, const void *jp);
 int compareCdaf(const void *ip, const void *jp);
 int rintcompare(INT4 *idata1, INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
-int rfloatcompare(REAL4 *rdata1, REAL4 *rdata2, size_t s); /* compare two REAL4 arrays of size s.*/
+int rfloatcompare(REAL8 *rdata1, REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
 void delete_int4_linked_list(struct int4_linked_list *list_ptr);
 struct int4_linked_list *add_int4_data(struct int4_linked_list *list_ptr, INT4 *data);
 void get_info_of_the_cell( CellData *cd, struct int4_linked_list *list_ptr );
@@ -395,7 +395,7 @@ int compareCIStructs(const void *a, const void *b)
 
   res = rintcompare( ap,  bp, 4);
   if( res == 0 ) {
-    REAL4 F1, F2;
+    REAL8 F1, F2;
     F1=ip->F;
     F2=jp->F;
     /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */ 
@@ -404,7 +404,7 @@ int compareCIStructs(const void *a, const void *b)
   return res;
 } /* int compareCIStructs() */
 
-int rfloatcompare(REAL4 *ap, REAL4 *bp, size_t n) {
+int rfloatcompare(REAL8 *ap, REAL8 *bp, size_t n) {
   if( (*ap) == (*bp) ) { 
     if ( n > 1 ){  
       return rfloatcompare( ap+1, bp+1, n-1 );
@@ -550,7 +550,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
       }
       
       read = sscanf (line1, 
-                     "%" LAL_INT4_FORMAT "%" LAL_REAL8_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT " %" LAL_REAL4_FORMAT 
+                     "%" LAL_INT4_FORMAT "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT 
                      "%c", 
                      &(cl->FileID), &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->F), &newline );
 
