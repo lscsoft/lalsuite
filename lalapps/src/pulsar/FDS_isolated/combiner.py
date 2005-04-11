@@ -252,9 +252,17 @@ def appendfile(fromfile="",tofile=sys.stdout):
 
 ##---------------------------------------------------------------
 ## Ask intention
-if os.path.isdir(tmpdir):		
+if os.path.isfile(resultfile):		
    print "Current size of the result file."
    os.system("du -h "+resultfile)
+   uinput=raw_input("Do you want to delete [d] the existing result file or append [a] results to it?:[d/a]")
+   if uinput is "d":
+       os.remove(resultfile)
+   elif uinput is "a":
+       pass
+   else:
+       sys.exit()
+   
 print "size of the target directory before unzip"
 os.system("du -h "+targetdir+" | tail -n 1")
 uinput=raw_input("Are you sure to proceed?:[y/n]")
