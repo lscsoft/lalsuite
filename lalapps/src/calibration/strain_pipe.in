@@ -14,7 +14,7 @@ __version__ = '$Revision$'[11:-2]
 
 
 # import standard modules and append the lalapps prefix to the python path
-import sys, os
+import sys, os, shutil 
 import getopt, re, string
 import tempfile
 import ConfigParser
@@ -30,26 +30,28 @@ Usage: lalapps_ring_pipe [options]
 
   -h, --help               display this message
   -v, --version            print version information and exit
-  -c, --config-file FILE   use configuration file FILE
-  -l, --log-path PATH      directory to write condor log file
   -s, --gps-start-time     GPS start time
   -e, --gps-end-time       GPS end time
+  -S, --segment-file       segments file
+  -a,  IGNORED
+  -b,  IGNORED
   -f, --dag-file           basename for .dag file (excluding the .dag)
   -t, --aux-path           path to auxiliary files
 """
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hv:c:l:s:e:f:t:"
+shortop = "hv:s:e:S:f:t:a:b:"
 longop = [
   "help",
   "version",
-  "config-file=",
-  "log-path=",
   "gps-start-time=",
   "gps-end-time=",
+  "segment-file=",
   "dag-file=",
-  "aux-path="
+  "aux-path=",
+  "trig-start",
+  "trig-end"
   ]
 
 try:
@@ -64,6 +66,7 @@ GPSStart = None
 GPSEnd = None
 basename = None
 aux_path = None
+segment_filename = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -72,22 +75,27 @@ for o, a in opts:
   elif o in ("-h", "--help"):
     usage()
     sys.exit(0)
-  elif o in ("-c", "--config-file"):
-    config_file = a
-  elif o in ("-l", "--log-path"):
-    log_path = a
   elif o in ("-s", "--gps-start-time"):
     GPSStart = a
   elif o in ("-e", "--gps-end-time"):
     GPSEnd = a
+  elif o in ("-S", "--segment-file"):
+    segment_filename = a
   elif o in ("-f", "--dag-file"):
     basename = a
   elif o in ("-t", "--aux-path"):
     aux_path = a
+  elif o in ("-a", "--trig-start"):
+    pass
+  elif o in ("-b", "--trig-end"):
+    pass
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
     sys.exit(1)
+
+config_file = aux_path + '/strainDAG.ini'
+log_path = '/usr1/xsiemens/'
 
 if not config_file:
   print >> sys.stderr, "No configuration file specified."
@@ -99,18 +107,9 @@ if not log_path:
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
-if not GPSStart:
-  print >> sys.stderr, "No GPS start time  specified."
-  print >> sys.stderr, "Use --help for usage details."
-  sys.exit(1)
-
-if not GPSEnd:
-  print >> sys.stderr, "No GPS end time  specified."
-  print >> sys.stderr, "Use --help for usage details."
-  sys.exit(1)
-
-if not GPSEnd:
-  print >> sys.stderr, "No GPS end time  specified."
+if (not GPSStart or not GPSEnd) and not segment_filename:
+  print >> sys.stderr, "No GPS start time and end times or segment filename specified."
+  print >> sys.stderr, "Either GPS start time and end times, or a segment filename must be specified."  
   print >> sys.stderr, "Use --help for usage details."
   sys.exit(1)
 
@@ -131,6 +130,11 @@ except: pass
 try: os.mkdir('cache')
 except: pass
 
+# here determone whether I am running using a segment file or not
+running_online = 0
+if not segment_filename:
+  running_online = 1
+
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
 cp.read(config_file)
@@ -144,7 +148,7 @@ fh.close()
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
-dag.set_dag_file(basename + '.dag')
+dag.set_dag_file(basename)
 
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
@@ -155,28 +159,35 @@ subsuffix = '.sub'
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 strain_job.set_sub_file( basename + '.strain' + subsuffix )
   
+# if runnign on-line make segments filename
+if running_online:
+  segment_file=open('strain_segment.txt',mode='w')
+  print >> segment_file, '1',GPSStart,' ',GPSEnd,' ',int(GPSEnd)-int(GPSStart)
+  segment_file.close()
+  segment_filname='strain_segment.txt'
+
 # get the pad and chunk lengths from the values in the ini file
 length = int(cp.get('pipeline', 'segment-length'))
 overlap = int(cp.get('strain', 'wings'))
 
-# make segments filename
-segment_file=open('strain_segment.txt',mode='w')
-print >> segment_file, '1',GPSStart,' ',GPSEnd,' ',int(GPSEnd)-int(GPSStart)
-segment_file.close()
-
 # read science segs that are greater or equal to a chunk from the input file
 data = pipeline.ScienceData()
-data.read('strain_segment.txt',length)
+data.read(segment_filename,length)
 
 # create the chunks from the science segments
 data.make_chunks(length+2*overlap,2*overlap,0,0,0)
 
+if not running_online:
+  #make chunk with whatever's left over
+  data.make_short_chunks_from_unused(2*overlap+1,2*overlap,0,0,0)
+#make_short_chunks_from_unused(self, min_length, overlap=0, play=0, sl=0, excl_play=0)
 # get the ifo to filter
 ifo = cp.get('pipeline','ifo')
 datatype = cp.get('input','type') 
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df = None
+segment_no = 0
 for seg in data:
   # find all the data for first ifo
   df = pipeline.LSCDataFindNode(df_job)
@@ -190,18 +201,30 @@ for seg in data:
   dag.add_node(df)
   prev_df = df
 
+  filters_filename = aux_path+'/'+cp.get('input', 'filters-file')+str(segment_no)
+  shutil.copy(aux_path+'/'+cp.get('input', 'filters-file'),filters_filename)
+  segment_no = segment_no + 1
+
   # create strain jobs also to run in sequence
   prev_strain = None
+  hist = 0
   for chunk in seg:
     #String job for first ifo
     strain1 = strain.StrainNode(strain_job)
     strain1.set_start(chunk.start())
     strain1.set_end(chunk.end())
     strain1.set_cache(df.get_output())
+    strain1.add_var_opt('filters-file',filters_filename)
     
+    # add datafind job as parent
     strain1.add_parent(df)
+    # add previous strain job as parent
     if prev_strain:
       strain1.add_parent(prev_strain)
+      hist=1
+    # here I add requirement of history presence
+    strain1.add_var_opt('require-histories',hist)
+    
     dag.add_node(strain1)
     prev_strain=strain1
 
@@ -233,8 +256,38 @@ for seg in data:
   for chunk in seg:
     print >> log_fh, chunk, 'length', int(chunk.end())-int(chunk.start())
     endgps=chunk.end()
+    
+if running_online:
+  print >> sys.stdout, seg.start(),int(chunk.end())-2*overlap
 
-print >> sys.stdout, seg.start(),int(chunk.end())-2*overlap
+if not running_online:
+  # write a message telling the user that the DAG has been written
+  print "\nCreated a DAG file which can be submitted by executing"
+  print "\n   condor_submit_dag", dag.get_dag_file()
+  print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+  If you are running LSCdataFind jobs, do not forget to initialize your grid 
+  proxy certificate on the condor submit machine by running the commands
+  
+  unset X509_USER_PROXY
+  grid-proxy-init -hours 72
+
+  Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
+  If you expect the LSCdataFind jobs to take longer to complete, increase the
+  time specified in the -hours option to grid-proxy-init. You can check that 
+  the grid proxy has been sucessfully created by executing the command:
+
+  grid-cert-info -all -file /tmp/x509up_u`id -u`
+  
+  This will also give the expiry time of the proxy. You should also make sure
+  that the environment variable LSC_DATAFIND_SERVER is set the hostname and
+  optional port of server to query. For example on the UWM medusa cluster this
+  you should use
+
+  export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
+
+  Contact the administrator of your cluster to find the hostname and port of the
+  LSCdataFind server.
+  """
 
 sys.exit(0)
 
