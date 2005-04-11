@@ -139,6 +139,9 @@ typedef struct CellDataTag
   INT4 nCand;          /* number of the data in this cell. */
   REAL8 significance;  /* minus log of joint false alarm of the candidates in this cell. */
   struct int4_linked_list *CandID;  /* linked structure that has candidate id-s of the candidates in this cell. */
+  REAL8 Freq;
+  REAL8 Alpha;
+  REAL8 Delta;
 } CellData;
 
 
@@ -155,7 +158,7 @@ int rfloatcompare(REAL8 *rdata1, REAL8 *rdata2, size_t s); /* compare two REAL8 
 void delete_int4_linked_list(struct int4_linked_list *list_ptr);
 struct int4_linked_list *add_int4_data(struct int4_linked_list *list_ptr, INT4 *data);
 void get_info_of_the_cell( CellData *cd, struct int4_linked_list *list_ptr );
-
+int compareSignificance(const void *a, const void *b);
 
 
 /* ----------------------------------------------------------------------------- */
@@ -221,6 +224,9 @@ int main(int argc,char *argv[])
     cell[icell].iDelta = 0;
     cell[icell].iAlpha = 0;
     cell[icell].nCand = 0;
+    cell[icell].Freq = 0.0;
+    cell[icell].Delta = 0.0;
+    cell[icell].Alpha = 0.0;
     cell[icell].significance = 0;
   }
   
@@ -245,7 +251,6 @@ int main(int argc,char *argv[])
   cell[icell].iFreq = SortedC[icand].iFreq;
   cell[icell].iDelta = SortedC[icand].iDelta;
   cell[icell].iAlpha = SortedC[icand].iAlpha;
-  /*  cell[icell].CandID = add_int4_data( cell[icell].CandID, &(SortedC[icand].iCand) ); */
   cell[icell].CandID->data = SortedC[icand].iCand; 
   cell[icell].nCand = 1;
 
@@ -287,7 +292,6 @@ int main(int argc,char *argv[])
 	  cell[icell].iFreq = SortedC[icand].iFreq;
 	  cell[icell].iDelta = SortedC[icand].iDelta;
 	  cell[icell].iAlpha = SortedC[icand].iAlpha;
-	  /* cell[icell].CandID = add_int4_data( cell[icell].CandID, &(SortedC[icand].iCand) ); */
 	  cell[icell].CandID->data = SortedC[icand].iCand; 
 	  cell[icell].nCand = 1;
 	}
@@ -303,13 +307,26 @@ int main(int argc,char *argv[])
     }/* loop over candidate list */      
   /* ---------------------------------------------------------------------------------------------------------------*/      
 
+
+
+  /* ---------------------------------------------------------------------------------------------------------------*/      
+
+  /* sort arrays of candidates */
   { 
     FILE *fp = NULL;
     UINT4 ncell=icell+1;
-    fp = fopen(PolkaCommandLineArgs.OutputFile,"w");
+
     for(icell=0;icell<ncell;icell++) {
       get_info_of_the_cell( &cell[icell], cell[icell].CandID );
-      fprintf(fp,"%10d %10d %10d %10d %22.12f\n",
+    }
+
+    qsort(cell, (size_t)ncell, sizeof(CellData), compareSignificance);
+
+    fp = fopen(PolkaCommandLineArgs.OutputFile,"w");
+    for(icell=0;icell<ncell;icell++) {
+      fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
+	      "%10d %10d %10d %10d %22.12f\n",
+	      cell[icell].Freq,cell[icell].Delta,cell[icell].Alpha,
 	      cell[icell].iFreq,cell[icell].iDelta,cell[icell].iAlpha,
 	      cell[icell].nCand,
 	      cell[icell].significance);
@@ -366,8 +383,15 @@ void get_info_of_the_cell( CellData *cd, struct int4_linked_list *list_ptr )
   while( p !=NULL ) {
     idx = p->data;
     cd->significance += SortedC[idx].lfa;
+    cd->Alpha += SortedC[idx].Alpha;
+    cd->Delta += SortedC[idx].Delta;
+    cd->Freq += SortedC[idx].f;
     p = p->next;
   }
+
+  cd->Alpha /= cd->nCand;
+  cd->Delta /= cd->nCand;
+  cd->Freq  /= cd->nCand;
   return;
 }
 
@@ -403,6 +427,30 @@ int compareCIStructs(const void *a, const void *b)
   } 
   return res;
 } /* int compareCIStructs() */
+
+
+
+
+
+
+int compareSignificance(const void *a, const void *b)
+{
+  const CellData *ip = a;
+  const CellData *jp = b;
+  int res;
+
+  REAL8 F1, F2;
+  F1=ip->significance;
+  F2=jp->significance;
+  /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */ 
+  res = rfloatcompare( &F2,  &F1, 1);
+  return res;
+} /* int compareCIStructs() */
+
+
+
+
+
 
 int rfloatcompare(REAL8 *ap, REAL8 *bp, size_t n) {
   if( (*ap) == (*bp) ) { 
@@ -787,6 +835,8 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
 }
 
 
+
+/* THE FOLLOWING PART HAS NOT BEEN TESTED YET. */
 #if 0
 CHAR* uvar_InputData;
 CHAR* uvar_OutputData;
