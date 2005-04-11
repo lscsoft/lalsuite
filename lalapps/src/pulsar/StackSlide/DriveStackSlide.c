@@ -391,7 +391,8 @@ params->deltaSMA = 0;
 
 	}
   } /* end for (i=1; i<argc; i++)  */
- #ifdef DEBUG_INPUTBLK_CODE
+
+#ifdef DEBUG_INPUTBLK_CODE
     fprintf(stdout,"\n\nparams->numBLKs = %i \n", params->numBLKs);
     fprintf(stdout,"params->nBinsPerBLK = %i \n", params->nBinsPerBLK);
     fprintf(stdout,"params->f0BLK = %g \n", params->f0BLK);

@@ -111,6 +111,7 @@ LALCreateRandomParams(status->statusPtr, &randPar, seed); /*05/02/17 vir: create
 	      /*CHECKSTATUSPTR (status); */
 	      
 	      stksldParams->SemiMajorAxis=stksldParams->SMAcentral+((REAL8)randval-0.5)*(stksldParams->deltaSMA);                         
+	      printf("SMA is %f\n",stksldParams->SemiMajorAxis);
 	      csParams->SemiMajorAxis=stksldParams->SemiMajorAxis;
 	      /*stksldParams->TperiapseSSBsec=params->Tpericentral+((REAL8)randval-0.5)*(stksldParams->deltaTperi); */
               

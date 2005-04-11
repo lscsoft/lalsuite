@@ -33,12 +33,12 @@ set templateSMAcentral 1.44; #central value of semi major axis in parameter spac
 set templatedeltaSMA 0;
 set templatenMaxSMA 1;  #max num of semimajor axis templates 05/02/18
 set templatenMaxTperi 1; #max num of Tperiapse templates 05/02/18
-set templateNumSpinDown 1; 
+set templateNumSpinDown 0; 
 
 set templateStartFDeriv1 0;
 set templateStopFDeriv1  0;
 set templateDeltaFDeriv1 0;
-set templateNumFDeriv1   1;
+set templateNumFDeriv1   0;
 
 set testbinaryFlag         1; # if = 1 then binary search
 set searchThresholdFlag    1; # if > 0 find peaks; see rules below
