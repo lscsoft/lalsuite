@@ -183,6 +183,8 @@ void LALFastGeneratePulsarSFTs (LALStatus *stat, SFTVector **outputSFTs, const S
 void LALConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void LALConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 
+void LALMakeTimestamps (LALStatus *lstat, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
+
 /********************************************************** <lalLaTeX>
 %% \newpage\input{LALSampleTestC}
 ******************************************************* </lalLaTeX> */
