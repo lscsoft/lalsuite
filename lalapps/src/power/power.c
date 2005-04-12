@@ -89,7 +89,6 @@ static struct {
 } options;
  
 /* global variables */
-FrChanIn channelIn;                 /* channnel information                */
 FrChanIn mdcchannelIn;              /* mdc signal only channnel info       */
 EPSearchParams *mdcparams;          /* mdc search param                    */
 CHAR ifo[3];                        /* two character interferometer        */
@@ -97,8 +96,8 @@ CHAR *cachefile;                    /* name of file with frame cache info  */
 CHAR *dirname;                      /* name of directory with frames       */
 
 /* data conditioning parameters */
-CHAR *burstInjectionFile;                /* file with list of burst injections        */
-CHAR *inspiralInjectionFile;                /* file with list of burst injections        */
+CHAR *burstInjectionFile;           /* file with list of burst injections  */
+CHAR *inspiralInjectionFile;        /* file with list of burst injections  */
 CHAR *mdcCacheFile;                 /* name of mdc signal cache file       */
 ResampleTSFilter resampFiltType;
 
@@ -555,8 +554,6 @@ void parse_command_line(
 
 		case 'C':
 		params->channelName = optarg;
-		channelIn.name = optarg;
-		channelIn.type = ADCDataChannel;
 		memcpy(ifo, optarg, sizeof(ifo) - 1);
 		ADD_PROCESS_PARAM("string");
 		break;
@@ -1013,35 +1010,72 @@ void parse_command_line(
  * ============================================================================
  */
 
+static REAL4TimeSeries *get_real4_data(
+	LALStatus *stat,
+	FrStream *stream,
+	const char *chname,
+	LIGOTimeGPS start,
+	REAL8 duration,
+	size_t lengthlimit
+)
+{
+	REAL4TimeSeries *series;
+	FrChanIn chinfo;
+	size_t length;
+
+	chinfo.name = chname;
+	chinfo.type = ADCDataChannel;
+
+	/* create and initialize the time series vector */
+	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, chname, start, 0.0, 0.0, lalADCCountUnit, 0), stat);
+
+	/* get the series meta data */
+	LAL_CALL(LALFrGetREAL4TimeSeriesMetadata(stat, series, &chinfo, stream), stat);
+
+	/* resize to the correct number of samples */
+	length = duration / series->deltaT;
+	if(lengthlimit && (lengthlimit < length))
+		length = lengthlimit;
+	LAL_CALL(LALResizeREAL4TimeSeries(stat, series, 0, length), stat);
+
+	/* read the data */
+	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
+	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &chinfo, stream), stat);
+
+	return(series);
+}
+
 static REAL8TimeSeries *get_real8_data(
 	LALStatus *stat,
 	FrStream *stream,
 	const char *chname,
 	LIGOTimeGPS start,
-	LIGOTimeGPS end,
+	REAL8 duration,
 	size_t lengthlimit
 )
 {
 	REAL8TimeSeries *series;
+	FrChanIn chinfo;
 	size_t length;
+
+	chinfo.name = chname;
+	chinfo.type = ADCDataChannel;
 
 	/* create and initialize the time series vector */
 	LAL_CALL(LALCreateREAL8TimeSeries(stat, &series, chname, start, 0.0, 0.0, lalADCCountUnit, 0), stat);
 
 	/* get the meta data */
-	LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(stat, series, &channelIn, stream), stat);
+	LAL_CALL(LALFrGetREAL8TimeSeriesMetadata(stat, series, &chinfo, stream), stat);
 
 	/* resize to the correct number of samples */
-	length = DeltaGPStoFloat(stat, &end, &start) / series->deltaT;
-	if(lengthlimit)
-		length = min(length, lengthlimit);
+	length = duration / series->deltaT;
+	if(lengthlimit && (lengthlimit < length))
+		length = lengthlimit;
 	LAL_CALL(LALResizeREAL8TimeSeries(stat, series, 0, length), stat);
 
 	/* read the data */
 	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
-	if(options.verbose)
-		fprintf(stderr, "get_real8_data(): reading %u samples (%.9lf s) at GPS time %u.%09u s\n", series->data->length, series->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
-	LAL_CALL(LALFrGetREAL8TimeSeries(stat, series, &channelIn, stream), stat);
+	LAL_CALL(LALFrGetREAL8TimeSeries(stat, series, &chinfo, stream), stat);
 
 	return(series);
 }
@@ -1051,7 +1085,7 @@ static REAL4TimeSeries *get_calibrated_data(
 	FrStream *stream,
 	const char *chname,
 	LIGOTimeGPS start,
-	LIGOTimeGPS end,
+	double duration,
 	size_t lengthlimit
 )
 {
@@ -1061,7 +1095,7 @@ static REAL4TimeSeries *get_calibrated_data(
 	unsigned int i;
 
 	/* retrieve calibrated data as REAL8 time series */
-	calibrated = get_real8_data(stat, stream, chname, start, end, lengthlimit);
+	calibrated = get_real8_data(stat, stream, chname, start, duration, lengthlimit);
 
 	/* high pass filter before casting REAL8 to REAL4 */
 	highpassParam.nMax = 4;
@@ -1080,9 +1114,10 @@ static REAL4TimeSeries *get_calibrated_data(
 	return(series);
 }
 
-static REAL4TimeSeries *get_real4_data(
+static REAL4TimeSeries *get_time_series(
 	LALStatus *stat,
-	FrStream *stream,
+	const char *dirname,
+	const char *cachefile,
 	const char *chname,
 	LIGOTimeGPS start,
 	LIGOTimeGPS end,
@@ -1090,42 +1125,9 @@ static REAL4TimeSeries *get_real4_data(
 )
 {
 	REAL4TimeSeries *series;
-	size_t length;
-
-	/* create and initialize the time series vector */
-	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, chname, start, 0.0, 0.0, lalADCCountUnit, 0), stat);
-
-	/* get the series meta data */
-	LAL_CALL(LALFrGetREAL4TimeSeriesMetadata(stat, series, &channelIn, stream), stat);
-
-	/* resize to the correct number of samples */
-	length = DeltaGPStoFloat(stat, &end, &start) / series->deltaT;
-	if(lengthlimit)
-		length = min(length, lengthlimit);
-	LAL_CALL(LALResizeREAL4TimeSeries(stat, series, 0, length), stat);
-
-	/* read the data */
-	LAL_CALL(LALFrSeek(stat, &start, stream), stat);
-	if(options.verbose)
-		fprintf(stderr, "get_real4_data(): reading %u samples (%.9lf s) at GPS time %u.%09u s\n", series->data->length, series->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
-	LAL_CALL(LALFrGetREAL4TimeSeries(stat, series, &channelIn, stream), stat);
-
-	return(series);
-}
-
-static REAL4TimeSeries *get_time_series(
-	LALStatus *stat,
-	const char *dirname,
-	const char *cachefile,
-	LIGOTimeGPS start,
-	LIGOTimeGPS end,
-	size_t lengthlimit,
-	EPSearchParams *params
-)
-{
-	REAL4TimeSeries *series;
 	FrStream *stream = NULL;
 	FrCache *frameCache = NULL;
+	double duration = DeltaGPStoFloat(stat, &end, &start);
 
 	/* Open frame stream */
 	if(cachefile && dirname && options.verbose)
@@ -1144,9 +1146,9 @@ static REAL4TimeSeries *get_time_series(
 
 	/* Get the data */
 	if(options.calibrated)
-		series = get_calibrated_data(stat, stream, params->channelName, start, end, lengthlimit);
+		series = get_calibrated_data(stat, stream, chname, start, duration, lengthlimit);
 	else
-		series = get_real4_data(stat, stream, params->channelName, start, end, lengthlimit);
+		series = get_real4_data(stat, stream, chname, start, duration, lengthlimit);
 
 	/* Check for missing data */
 	if(stream->state & LAL_FR_GAP) {
@@ -1154,6 +1156,10 @@ static REAL4TimeSeries *get_time_series(
 		LAL_CALL(LALDestroyREAL4TimeSeries(stat, series), stat);
 		series = NULL;
 	}
+
+	/* verbosity */
+	if(options.verbose)
+		fprintf(stderr, "get_time_series(): read %u samples (%.9lf s) at GPS time %u.%09u s\n", series->data->length, series->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
 
 	/* Clean up */
 	LAL_CALL(LALFrClose(stat, &stream), stat);
@@ -1203,6 +1209,7 @@ static void makeWhiteNoise(
 static COMPLEX8FrequencySeries *generate_response(
 	LALStatus *stat,
 	const char *calcachefile,
+	const char *chname,
 	REAL8 deltaT,
 	LIGOTimeGPS epoch,
 	size_t length
@@ -1218,7 +1225,7 @@ static COMPLEX8FrequencySeries *generate_response(
 	memset(&calfacts, 0, sizeof(calfacts));
 	calfacts.ifo = ifo;
 
-	LAL_CALL(LALCreateCOMPLEX8FrequencySeries(stat, &response, channelIn.name, epoch, 0.0, 1.0 / (length * deltaT), strainPerCount, length / 2 + 1), stat);
+	LAL_CALL(LALCreateCOMPLEX8FrequencySeries(stat, &response, chname, epoch, 0.0, 1.0 / (length * deltaT), strainPerCount, length / 2 + 1), stat);
 
 	if(options.verbose) 
 		fprintf(stderr, "generate_response(): working at GPS time %u.%09u s\n", response->epoch.gpsSeconds, response->epoch.gpsNanoSeconds );
@@ -1550,7 +1557,7 @@ int main( int argc, char *argv[])
 		 * Get the data,
 		 */
 
-		series = get_time_series(&stat, dirname, cachefile, epoch, options.stopEpoch, options.maxSeriesLength, &params);
+		series = get_time_series(&stat, dirname, cachefile, params.channelName, epoch, options.stopEpoch, options.maxSeriesLength);
 
 		/*
 		 * If we specified input files but nothing got read, there
@@ -1597,7 +1604,7 @@ int main( int argc, char *argv[])
 
 			/* Create the response function */
 			if(options.calCacheFile)
-				response = generate_response(&stat, options.calCacheFile, series->deltaT, series->epoch, series->data->length);
+				response = generate_response(&stat, options.calCacheFile, params.channelName, series->deltaT, series->epoch, series->data->length);
 
 
 			if(options.printData)
