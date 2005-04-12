@@ -1,4 +1,4 @@
- /*-----------------------------------------------------------------------
+/*-----------------------------------------------------------------------
  *
  * File Name: makefakedata_v4.c
  *
@@ -61,7 +61,8 @@ typedef struct
 
   LIGOTimeGPS startTimeGPS;	/**< start-time of observation */
   UINT4 duration;		/**< total duration of observation in seconds */
-  UINT4 Tchunk;			/**< produce data in chunks of Tchunk (mostly for hardware-injections) */
+  UINT4 Tchunk;			/**< produce timeseries-data in chunks of Tchunk */
+  UINT4 numchunks;		/**< number of chunks to produce timeseries in */
 
   LIGOTimeGPSVector *timestamps;/**< a vector of timestamps to generate time-series/SFTs for */
 
@@ -117,6 +118,15 @@ CHAR *uvar_logfile;		/**< name of logfile */
 CHAR *uvar_timestampsFile;	/**< Timestamps file */
 INT4 uvar_startTime;		/**< Start-time of requested signal in detector-frame (GPS seconds) */
 INT4 uvar_duration;		/**< Duration of requested signal in seconds */
+
+/* generation mode of timer-series: all-at-once or per-sft */
+INT4 uvar_generationMode;	/**< How to generate the timeseries: all-at-once or per-sft */
+typedef enum
+  {
+    GENERATE_ALL_AT_ONCE = 0,	/**< generate whole time-series at once before turning into SFTs */
+    GENERATE_PER_SFT,		/**< generate timeseries individually for each SFT */
+    GENERATE_LAST		/**< end-marker */
+  } GenerationMode;
 
 /* time-series sampling + heterodyning frequencies */
 REAL8 uvar_fmin;		/**< Lowest frequency in output SFT (= heterodyning frequency) */
@@ -174,11 +184,11 @@ main(int argc, char *argv[])
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
   BinaryOrbitParams orbit;
-  UINT4 Tchunk, i_chunk, numchunks;
+  UINT4 i_chunk;
 
   UINT4 i;
 
-  lalDebugLevel = 0;
+  lalDebugLevel = 0;	/* default value */
   vrbflg = 1;		/* verbose error-messages */
 
   /* set LAL error-handler */
@@ -227,24 +237,12 @@ main(int argc, char *argv[])
   params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (= 2 * frequency-Band) */
   params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
 
-
-  /* normally we produce the whole time-series at once, but for
-   * hardware-injections we do it in chunks of Tsft (because of high sampling rate) */
-  if ( uvar_hardwareTDD )
-    {
-      Tchunk = (UINT4)(uvar_Tsft+0.5);
-      numchunks = ceil( (1.0*GV.duration) / (1.0*Tchunk) );
-    }
-  else
-    {
-      numchunks = 1;
-      Tchunk = GV.duration;
-    }
-
+  /* initial parameters for the main-loop */
   params.startTimeGPS = GV.startTimeGPS;
-  params.duration     = Tchunk;
+  params.duration     = GV.Tchunk;
 
-  for ( i_chunk = 0; i_chunk < numchunks; i_chunk++ )
+  /* produce timeseries in numchunks pieces: allows avoiding memory-limitations */
+  for ( i_chunk = 0; i_chunk < GV.numchunks; i_chunk++ )
     {
 
       /*----------------------------------------
@@ -306,9 +304,7 @@ main(int argc, char *argv[])
 	      exit (MAKEFAKEDATAC_EBINARYOUT);
 	    }
 	  fflush (stdout);
-	  /* now prepare next step */
-	  params.startTimeGPS.gpsSeconds += Tchunk;
-
+	
 	} /* if hardware injections */
 
       /*----------------------------------------
@@ -343,7 +339,12 @@ main(int argc, char *argv[])
 	  Tseries = NULL;
 	}
 
-    } /* produce timeseries in nchunks stretches of Tchunk duration  */
+      /* now prepare next chunk */
+      params.startTimeGPS.gpsSeconds += GV.Tchunk;
+      
+
+
+    } /* for i_chunk < numchunks */
 
   if (SFTs) 
     LAL_CALL (LALDestroySFTVector(&status, &SFTs), &status);
@@ -496,6 +497,35 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
  
   } /* END: setup signal start + duration */
 
+  /*----------------------------------------------------------------------*/
+  /* currently there are only two modes: [uvar_generationMode]
+   * 1) produce the whole timeseries at once [default], 
+   *       [GENERATE_ALL_AT_ONCE]
+   * 2) produce timeseries for each SFT,
+   *       [GENERATE_PER_SFT]
+   * 
+   * Mode 2 which is useful if 1) is too memory-intensive (e.g. for hardware-injections)
+   *
+   * intermediate modes would require a bit more work because the 
+   * case with specified timestamps (allowing for gaps) would be 
+   * a bit more tricky ==> this is left for future extensions if found useful
+   */
+  if ( (uvar_generationMode < 0) || (uvar_generationMode >= GENERATE_LAST) )
+    {
+      LALPrintError ("\nIllegal input for 'generationMode': must lie within [0, %d]\n\n", GENERATE_LAST -1);
+      ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+    }
+  if ( (uvar_generationMode == GENERATE_PER_SFT) || uvar_hardwareTDD )	
+    {
+      cfg->Tchunk = (UINT4)(uvar_Tsft+0.5);
+    }
+  else
+    {
+      cfg->Tchunk = cfg->duration;
+    }
+  cfg->numchunks = ceil( (1.0*cfg->duration) / (1.0*cfg->Tchunk) );
+
+
   /* ---------- for SFT output: calculate effective fmin and Band ---------- */
   if ( LALUserVarWasSet( &uvar_outSFTbname ) )
     {
@@ -575,7 +605,6 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
     cfg->edat = edat;	/* struct-copy */
 
   } /* END: prepare barycentering routines */
-  /*----------------------------------------------------------------------*/
 
   /* -------------------- handle binary orbital params if given -------------------- */
 
@@ -696,13 +725,15 @@ InitUserVars (LALStatus *stat)
 
   uvar_logfile = NULL;
 
+  uvar_generationMode = GENERATE_ALL_AT_ONCE;	/* per default we generate the whole timeseries first (except for hardware-injections)*/
+
   /* ---------- register all our user-variable ---------- */
 
   /* output options */
   LALregSTRINGUserVar(stat, outSFTbname,'n', UVAR_OPTIONAL, "Path and basefilename of output SFT files");
 
   LALregSTRINGUserVar(stat, TDDfile,	't', UVAR_OPTIONAL, "Filename for output of time-series");
-  LALregBOOLUserVar(stat,   hardwareTDD,'b', UVAR_OPTIONAL, "Hardware injection: output TDD in binary format, in chunks of Tsft seconds");
+  LALregBOOLUserVar(stat,   hardwareTDD,'b', UVAR_OPTIONAL, "Hardware injection: output TDD in binary format (implies generationMode=1)");
 
   LALregSTRINGUserVar(stat, logfile,	'l', UVAR_OPTIONAL, "Filename for log-output");
 
@@ -717,6 +748,9 @@ InitUserVars (LALStatus *stat)
   LALregINTUserVar(stat,   startTime,	'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
   LALregINTUserVar(stat,   duration,	 0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
   LALregSTRINGUserVar(stat,timestampsFile,0, UVAR_OPTIONAL, "Timestamps file");
+  
+  /* generation-mode of timeseries: all-at-once or per-sft */
+  LALregINTUserVar(stat,   generationMode, 0,  UVAR_OPTIONAL, "How to generate timeseries: 0=all-at-once, 1=per-sft");
 
   /* sampling and heterodyning frequencies */
   LALregREALUserVar(stat,   fmin,	 0 , UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
