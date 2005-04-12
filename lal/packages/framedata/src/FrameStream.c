@@ -557,7 +557,7 @@ int XLALFrNext( FrStream *stream )
 }
 
 
-int XLALFrSeek( FrStream *stream, LIGOTimeGPS *epoch )
+int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
 {
   static const char *func = "XLALFrSeek";
   FrFileInfo *file1;
@@ -985,9 +985,9 @@ LALFrNext(
 /* <lalVerbatim file="FrameStreamCP"> */
 void
 LALFrSeek(
-    LALStatus   *status,
-    LIGOTimeGPS *epoch,
-    FrStream    *stream
+    LALStatus         *status,
+    const LIGOTimeGPS *epoch,
+    FrStream          *stream
     )
 { /* </lalVerbatim> */
   CHAR frErrMsg[1024];

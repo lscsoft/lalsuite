@@ -244,7 +244,7 @@ int XLALFrState( FrStream *stream );
 int XLALFrClearErr( FrStream *stream );
 int XLALFrRewind( FrStream *stream );
 int XLALFrNext( FrStream *stream );
-int XLALFrSeek( FrStream *stream, LIGOTimeGPS *epoch );
+int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch );
 int XLALFrTell( LIGOTimeGPS *epoch, FrStream *stream );
 int XLALFrGetpos( FrPos *position, FrStream *stream );
 int XLALFrSetpos( FrStream *stream, FrPos *position );
@@ -327,9 +327,9 @@ LALFrRewind(
 
 void
 LALFrSeek(
-    LALStatus   *status,
-    LIGOTimeGPS *epoch,
-    FrStream    *stream
+    LALStatus         *status,
+    const LIGOTimeGPS *epoch,
+    FrStream          *stream
     );
 
 void
