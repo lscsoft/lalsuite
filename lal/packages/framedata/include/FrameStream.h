@@ -271,6 +271,14 @@ int XLALFrGetREAL8FrequencySeries( REAL8FrequencySeries *series, FrStream *strea
 int XLALFrGetCOMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series, FrStream *stream );
 int XLALFrGetCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series, FrStream *stream );
 
+INT2TimeSeries *XLALFrReadINT2TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
+INT4TimeSeries *XLALFrReadINT4TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
+INT8TimeSeries *XLALFrReadINT8TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
+REAL4TimeSeries *XLALFrReadREAL4TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
+REAL8TimeSeries *XLALFrReadREAL8TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
+COMPLEX8TimeSeries *XLALFrReadCOMPLEX8TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
+COMPLEX16TimeSeries *XLALFrReadCOMPLEX16TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
+
 
 /*
  *

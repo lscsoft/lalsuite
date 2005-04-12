@@ -102,6 +102,7 @@
 #include <lal/Units.h>
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
+#include <lal/TimeSeries.h>
 
 NRCSID( FRAMESERIESC, "$Id$" );
 

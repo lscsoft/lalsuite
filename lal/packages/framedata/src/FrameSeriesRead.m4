@@ -607,3 +607,34 @@ FUNCM (
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
+
+
+STYPE *`XLALFrRead'STYPE (
+	FrStream *stream,
+	const char *chname,
+	const LIGOTimeGPS *start,
+	REAL8 duration,
+	size_t lengthlimit
+)
+{
+	STYPE *series;
+	size_t length;
+
+	/* create and initialize the time series vector */
+	series = `XLALCreate'STYPE (chname, start, 0.0, 0.0, &lalADCCountUnit, 0);
+
+	/* get the series meta data */
+	`XLALFrGet'STYPE`Metadata' (series, stream);
+
+	/* resize to the correct number of samples */
+	length = duration / series->deltaT;
+	if(lengthlimit && (lengthlimit < length))
+		length = lengthlimit;
+	`XLALResize'STYPE (series, 0, length);
+
+	/* read the data */
+	XLALFrSeek (stream, start);
+	`XLALFrGet'STYPE (series, stream);
+
+	return(series);
+}

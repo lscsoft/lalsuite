@@ -1010,66 +1010,6 @@ void parse_command_line(
  * ============================================================================
  */
 
-static REAL4TimeSeries *XLALFrReadREAL4TimeSeries(
-	FrStream *stream,
-	const char *chname,
-	const LIGOTimeGPS *start,
-	REAL8 duration,
-	size_t lengthlimit
-)
-{
-	REAL4TimeSeries *series;
-	size_t length;
-
-	/* create and initialize the time series vector */
-	series = XLALCreateREAL4TimeSeries(chname, start, 0.0, 0.0, &lalADCCountUnit, 0);
-
-	/* get the series meta data */
-	XLALFrGetREAL4TimeSeriesMetadata(series, stream);
-
-	/* resize to the correct number of samples */
-	length = duration / series->deltaT;
-	if(lengthlimit && (lengthlimit < length))
-		length = lengthlimit;
-	XLALResizeREAL4TimeSeries(series, 0, length);
-
-	/* read the data */
-	XLALFrSeek(stream, start);
-	XLALFrGetREAL4TimeSeries(series, stream);
-
-	return(series);
-}
-
-static REAL8TimeSeries *XLALFrReadREAL8TimeSeries(
-	FrStream *stream,
-	const char *chname,
-	const LIGOTimeGPS *start,
-	REAL8 duration,
-	size_t lengthlimit
-)
-{
-	REAL8TimeSeries *series;
-	size_t length;
-
-	/* create and initialize the time series vector */
-	series = XLALCreateREAL8TimeSeries(chname, start, 0.0, 0.0, &lalADCCountUnit, 0);
-
-	/* get the meta data */
-	XLALFrGetREAL8TimeSeriesMetadata(series, stream);
-
-	/* resize to the correct number of samples */
-	length = duration / series->deltaT;
-	if(lengthlimit && (lengthlimit < length))
-		length = lengthlimit;
-	XLALResizeREAL8TimeSeries(series, 0, length);
-
-	/* read the data */
-	XLALFrSeek(stream, start);
-	XLALFrGetREAL8TimeSeries(series, stream);
-
-	return(series);
-}
-
 static REAL4TimeSeries *get_calibrated_data(
 	LALStatus *stat,
 	FrStream *stream,
