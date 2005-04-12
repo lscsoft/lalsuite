@@ -61,8 +61,6 @@ typedef struct
 
   LIGOTimeGPS startTimeGPS;	/**< start-time of observation */
   UINT4 duration;		/**< total duration of observation in seconds */
-  UINT4 Tchunk;			/**< produce timeseries-data in chunks of Tchunk */
-  UINT4 numchunks;		/**< number of chunks to produce timeseries in */
 
   LIGOTimeGPSVector *timestamps;/**< a vector of timestamps to generate time-series/SFTs for */
 
@@ -184,7 +182,7 @@ main(int argc, char *argv[])
   SFTVector *SFTs = NULL;
   REAL4TimeSeries *Tseries = NULL;
   BinaryOrbitParams orbit;
-  UINT4 i_chunk;
+  UINT4 i_chunk, numchunks;
 
   UINT4 i;
 
@@ -234,24 +232,40 @@ main(int argc, char *argv[])
   params.ephemerides = &(GV.edat);
 
   /* characterize the output time-series */
-  params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (= 2 * frequency-Band) */
+  params.samplingRate 	= 2.0 * GV.fBand_eff;	/* sampling rate of time-series (=2*frequency-Band) */
   params.fHeterodyne  	= GV.fmin_eff;		/* heterodyning frequency for output time-series */
 
-  /* initial parameters for the main-loop */
-  params.startTimeGPS = GV.startTimeGPS;
-  params.duration     = GV.Tchunk;
-
-  /* produce timeseries in numchunks pieces: allows avoiding memory-limitations */
-  for ( i_chunk = 0; i_chunk < GV.numchunks; i_chunk++ )
+  /* set-up main-loop according to 'generation-mode' (all-at-once' or 'per-sft') */
+  switch ( uvar_generationMode )
     {
+    case GENERATE_ALL_AT_ONCE:
+      params.duration     = GV.duration;
+      numchunks = 1;
+      break;
+    case GENERATE_PER_SFT:
+      params.duration = (UINT4) ceil(uvar_Tsft);
+      numchunks = GV.timestamps->length;
+      break;
+    default:
+      LALPrintError ("\nIllegal value for generationMode %d\n\n", uvar_generationMode);
+      return MAKEFAKEDATAC_EARG;
+      break;
+    } /* switch generationMode */
 
+  /* ----------
+   * Main loop: produce time-series and turn it into SFTs,
+   * either all-at-once or per-sft 
+   * ----------*/
+  for ( i_chunk = 0; i_chunk < numchunks; i_chunk++ )
+    {
+      params.startTimeGPS = GV.timestamps->data[i_chunk];
+      
       /*----------------------------------------
        * generate the (heterodyned) time-series 
        *----------------------------------------*/
       LAL_CALL (LALGeneratePulsarSignal(&status, &Tseries, &params), &status );
 
-
-      /* HARDWARE-INJECTION: 
+      /* for HARDWARE-INJECTION: 
        * before the first chunk we send magic number and chunk-length to stdout 
        */
       if ( uvar_hardwareTDD && (i_chunk == 0) )
@@ -315,17 +329,43 @@ main(int argc, char *argv[])
 	{
 	  CHAR *fname;
 	  SFTParams sftParams = empty_sftParams;
+	  LIGOTimeGPSVector ts;
+	  SFTVector noise;
 	  
 	  sftParams.Tsft = uvar_Tsft;
-	  sftParams.timestamps = GV.timestamps;
-	  sftParams.noiseSFTs = GV.noiseSFTs;
+
+	  switch (uvar_generationMode)
+	    {
+	    case GENERATE_ALL_AT_ONCE:
+	      sftParams.timestamps = GV.timestamps;
+	      sftParams.noiseSFTs = GV.noiseSFTs;
+	      break;
+	    case GENERATE_PER_SFT:
+	      ts.length = 1;
+	      ts.data = &(GV.timestamps->data[i_chunk]);
+	      sftParams.timestamps = &(ts);
+	      sftParams.noiseSFTs = NULL;
+	      if ( GV.noiseSFTs )
+		{
+		  noise.length = 1;
+		  noise.data = &(GV.noiseSFTs->data[i_chunk]);
+		  sftParams.noiseSFTs = &(noise);
+		}
+
+	      break;
+
+	    default:
+	      LALPrintError ("\ninvalid Value for generationMode\n");
+	      return MAKEFAKEDATAC_EBAD;
+	      break;
+	    }
 	  
 	  LAL_CALL ( LALSignalToSFTs(&status, &SFTs, Tseries, &sftParams), &status);
 	  
 	  fname = LALCalloc (1, strlen (uvar_outSFTbname) + 10);
 	  for (i=0; i < SFTs->length; i++)
 	    {
-	      sprintf (fname, "%s.%05d", uvar_outSFTbname, i);
+	      sprintf (fname, "%s.%05d", uvar_outSFTbname, i_chunk*SFTs->length + i);
 	      LAL_CALL (LALWriteSFTfile(&status, &(SFTs->data[i]), fname), &status);
 	    } /* for i < nSFTs */
 	  LALFree (fname);
@@ -339,15 +379,13 @@ main(int argc, char *argv[])
 	  Tseries = NULL;
 	}
 
-      /* now prepare next chunk */
-      params.startTimeGPS.gpsSeconds += GV.Tchunk;
-      
-
+      if (SFTs) 
+	{
+	  LAL_CALL (LALDestroySFTVector(&status, &SFTs), &status);
+	  SFTs = NULL;
+	}
 
     } /* for i_chunk < numchunks */
-
-  if (SFTs) 
-    LAL_CALL (LALDestroySFTVector(&status, &SFTs), &status);
   
   LAL_CALL (FreeMem(&status, &GV), &status);	/* free the rest */
   
@@ -410,12 +448,18 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
   } /* END: prepare spindown parameters */
 
   /* ---------- prepare detector ---------- */
-  if      (!strcmp(uvar_detector,"LHO"))   cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  else if (!strcmp(uvar_detector,"LLO"))   cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  else if (!strcmp(uvar_detector,"VIRGO")) cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  else if (!strcmp(uvar_detector,"GEO"))   cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  else if (!strcmp(uvar_detector,"TAMA"))  cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  else if (!strcmp(uvar_detector,"CIT"))   cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+  if      (!strcmp(uvar_detector,"LHO"))   
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  else if (!strcmp(uvar_detector,"LLO"))   
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  else if (!strcmp(uvar_detector,"VIRGO")) 
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  else if (!strcmp(uvar_detector,"GEO"))   
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  else if (!strcmp(uvar_detector,"TAMA"))  
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+  else if (!strcmp(uvar_detector,"CIT"))   
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else {
     LALPrintError ("\nUnknown detector specified: `%s\n\n", uvar_detector);
     ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
@@ -445,7 +489,8 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
 	  }
 	if ( uvar_duration < uvar_Tsft )
 	  {
-	    LALPrintError ("\nERROR: requested duration of %d sec is less than minimal chunk-size of Tsft =%.0f sec.\n\n",
+	    LALPrintError ("\nERROR: requested duration of %d sec is less than minimal "
+			   "chunk-size of Tsft =%.0f sec.\n\n",
 			   uvar_duration, uvar_Tsft);
 	    ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
@@ -454,12 +499,14 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
     
     if ( ! ( haveStart || haveTimestamps ) )
       {
-	LALPrintError ("\nCould not infer start of observation-period (need either 'startTime' or 'timestampsFile')\n\n");
+	LALPrintError ("\nCould not infer start of observation-period (need either"
+		       "'startTime' or 'timestampsFile')\n\n");
 	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
     if ( (haveStart || haveDuration) && haveTimestamps )
       {
-	LALPrintError ("\nOverdetermined observation-period (both 'startTime'/'duration' and 'timestampsFile' given)\n\n");
+	LALPrintError ("\nOverdetermined observation-period (both 'startTime'/'duration'"
+		       "and 'timestampsFile' given)\n\n");
 	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
 
@@ -492,7 +539,10 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
 	cfg->startTimeGPS.gpsSeconds = uvar_startTime;
 	cfg->startTimeGPS.gpsNanoSeconds = 0;
 	cfg->duration = (UINT4)uvar_duration;
-	cfg->timestamps = NULL;
+	/* for simplicity we *ALWAYS* use timestamps, 
+	 * so we generate them now as the user didnt' specify them */
+	TRY(LALMakeTimestamps(stat->statusPtr, &(cfg->timestamps), cfg->startTimeGPS, 
+			      uvar_duration, uvar_Tsft ), stat);
       } /* !haveTimestamps */
  
   } /* END: setup signal start + duration */
@@ -512,19 +562,18 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
    */
   if ( (uvar_generationMode < 0) || (uvar_generationMode >= GENERATE_LAST) )
     {
-      LALPrintError ("\nIllegal input for 'generationMode': must lie within [0, %d]\n\n", GENERATE_LAST -1);
+      LALPrintError ("\nIllegal input for 'generationMode': must lie within [0, %d]\n\n", 
+		     GENERATE_LAST -1);
       ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
-  if ( (uvar_generationMode == GENERATE_PER_SFT) || uvar_hardwareTDD )	
-    {
-      cfg->Tchunk = (UINT4)(uvar_Tsft+0.5);
-    }
-  else
-    {
-      cfg->Tchunk = cfg->duration;
-    }
-  cfg->numchunks = ceil( (1.0*cfg->duration) / (1.0*cfg->Tchunk) );
 
+  /* this is a violation of the UserInput-paradigm that no user-variables 
+   * should by modified by the code, but this is the easiest way to do
+   * this here, and the log-output of user-variables will not be changed
+   * by this [it's already been written], so in this case it should be safe..
+   */
+  if ( uvar_hardwareTDD )
+    uvar_generationMode = GENERATE_PER_SFT;
 
   /* ---------- for SFT output: calculate effective fmin and Band ---------- */
   if ( LALUserVarWasSet( &uvar_outSFTbname ) )
