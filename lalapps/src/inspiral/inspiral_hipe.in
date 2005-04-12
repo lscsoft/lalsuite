@@ -4,10 +4,10 @@ inspiral_hipe.in - standalone inspiral pipeline driver script
 
 $Id$
 
-This script generates the condor DAG necessary to analyze LIGO data through 
-the inspiral pipeline.  The DAG does datafind, tmpltbank, inspiral, inca and 
-sire steps of the pipeline.  It analyzes the single, double and triple ifo 
-times accordingly.  It can also be run with injections.
+This script generates the condor DAG necessary to analyze LIGO and GEO data 
+through the inspiral pipeline.  The DAG does datafind, tmpltbank, inspiral, 
+inca and sire steps of the pipeline.  It analyzes the single, double, triple 
+and quadro ifo times accordingly.  It can also be run with injections.
 """
 
 __author__ = 'Stephen Fairhurst <sfairhur@gravity.phys.uwm.edu>'
@@ -54,7 +54,9 @@ class AnalyzedIFOData:
     
 ##############################################################################
 # function to set up datafind, template bank and inspiral jobs for an ifo  
-def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,insp_opts,pad,prev_df,dag,usertag=None):
+def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,insp_opts,\
+                data_opts,pad,prev_df,dag,usertag=None):
+
   """
   Analyze the data from a single IFO.  Since the way we treat all this data is
   the same, this function is the same for all interferometers. Returns the last
@@ -63,10 +65,12 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,insp_opts,
   ifo_data = the master science segs for the IFO
   ifo_name = the name of the IFO
   ifo_to_do = the science segments we need to analyze
-  tmplt_job = the template bank job we should use 
+  tmplt_job = if not GeoBank:  template bank job we should use 
   insp_job = the condor job that we should use to analyze data
   df_job = the condor job to find the data
   insp_opts = the instrument specific arguments to be added to inspiral
+  data_opts = the data conditioning specific arguments to be added to tmplt
+              and inspiral
   pad = data start/end padding
   prev_df = the previous LSCdataFind job that was executed
   dag = the DAG to attach the nodes to
@@ -77,8 +81,32 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,insp_opts,
   insp_job.add_ini_opts(cp,'no-veto-inspiral')
   
   # add the ifo specific options
+
   insp_job.add_ini_opts(cp,insp_opts)
+  insp_job.add_ini_opts(cp,data_opts)
+ 
+  calibrated = None
+  for opt in cp.options(data_opts):
+     if (opt.find('calibrated') >-1):
+        calibrated = 1
+  if calibrated: print "we use calibrated data for ", ifo_name  
+   
+ 
+  # to analyze GEO data we use either a fixed bank specified in
+  # the ini-file or the bank based on geo data
   
+  GeoBank = None  
+  channel = cp.get('input','ligo-channel')
+  if ifo_name == "G1": 
+     GeoBank = cp.get(insp_opts,'bank-file')
+     channel = cp.get('input','geo-channel')
+  if GeoBank: print "For G1 we use bank ", GeoBank
+
+  if not GeoBank: tmplt_job.add_ini_opts(cp,data_opts)
+   
+  tmplt_job.set_channel(channel)
+  insp_job.set_channel(channel)
+
   chunks_analyzed = []
   # loop over the master science segments
   for seg in ifo_data:
@@ -97,26 +125,30 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,insp_opts,
           done_this_chunk = 1
 
           # make sure we have done one and only one datafind for the segment
-          if not seg.get_df_node():
-            df = pipeline.LSCDataFindNode(df_job)
-            df.set_observatory(ifo_name[0])
-            df.set_start(seg.start() - pad)
-            df.set_end(seg.end() + pad)
-            seg.set_df_node(df)
-            if prev_df: df.add_parent(prev_df)
-            if do_datafind: dag.add_node(df)
-            prev_df = df
+          if not read_cache:
+             if not seg.get_df_node():
+               df = pipeline.LSCDataFindNode(df_job)
+               df.set_observatory(ifo_name[0])
+               df.set_start(seg.start() - pad)
+               df.set_end(seg.end() + pad)
+               seg.set_df_node(df)
+               if prev_df: df.add_parent(prev_df)
+               if do_datafind: dag.add_node(df)
+               prev_df = df
+          else:
+               prev_df = None  
 
           # make a template bank job for the master chunk
           bank = inspiral.TmpltBankNode(tmplt_job)
           bank.set_start(chunk.start())
           bank.set_end(chunk.end())
           bank.set_ifo(ifo_name)
-          bank.set_cache(df.get_output())
-          bank.calibration()
+          if not read_cache: bank.set_cache(df.get_output())
+          else: bank.set_cache(cp.get('datafind',ifo_name+"-cache"))
+          if not calibrated: bank.calibration()
           if do_datafind: bank.add_parent(df)
-          if do_tmpltbank: dag.add_node(bank)
-
+          if (do_tmpltbank and not GeoBank): dag.add_node(bank)
+                 
           # make an inspiral job for the master chunk
           insp = inspiral.InspiralNode(insp_job)
           insp.set_start(chunk.start())
@@ -124,11 +156,13 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,insp_opts,
           insp.set_trig_start(chunk.trig_start())
           insp.set_trig_end(chunk.trig_end())
           insp.set_ifo(ifo_name)
-          insp.set_cache(df.get_output())
-          insp.calibration()
-          insp.set_bank(bank.get_output())
+          if not read_cache: insp.set_cache(df.get_output())
+          else:  insp.set_cache(cp.get('datafind',ifo_name+"-cache"))
+          if not calibrated: insp.calibration()
+          if not GeoBank: 
+              insp.set_bank(bank.get_output())
           if do_datafind: insp.add_parent(df)
-          if do_tmpltbank: insp.add_parent(bank)
+          if (do_tmpltbank and not GeoBank): insp.add_parent(bank)
           if do_insp: dag.add_node(insp)
 
           # store this chunk in the list of filtered data
@@ -136,9 +170,13 @@ def analyze_ifo(ifo_data,ifo_name,ifo_to_do,tmplt_job,insp_job,df_job,insp_opts,
 
   return tuple([prev_df,chunks_analyzed])
 
+
+
 ##############################################################################
 # function to set up trigbank and inspiral jobs for an ifo  
-def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,insp_veto_job,insp_opts,dag,usertag=None):
+def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
+                  insp_veto_job,insp_opts,data_opts, dag,usertag=None):
+
   """
   Perform the trigbank and second inspiral steps for the single ifo data.  
   Since the way we treat all this data is the same, this function is the same 
@@ -151,6 +189,8 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,insp_veto_job
   trig_job = the triggered bank job we should use 
   insp_veto_job = the condor job that we should use to analyze data
   insp_opts = the instrument specific arguments to be added to inspiral
+  data_opts = the data conditioning specific arguments to be added to tmplt 
+              and inspiral
   dag = the DAG to attach the nodes to
   usertag = the usertag to add to the job names
   """
@@ -159,6 +199,19 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,insp_veto_job
   insp_veto_job.add_ini_opts(cp,'veto-inspiral')
   # add ifo specific options
   insp_veto_job.add_ini_opts(cp,insp_opts)
+  insp_veto_job.add_ini_opts(cp,data_opts)
+  
+  channel = cp.get('input','ligo-channel')
+  if ifo_name == "G1": 
+     channel = cp.get('input','geo-channel')
+
+  calibrated = None
+  for opt in cp.options(data_opts):
+     if (opt.find('calibrated') >-1):
+        calibrated = 1
+  
+  insp_veto_job.set_channel(channel)
+
   trig_chunks_analyzed = []
   
   # loop over the master science segments
@@ -173,7 +226,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,insp_veto_job
 
         # if the current chunk is in one of the segments we need to filter
         if (inspiral.overlap_test(chunk,coinc_done.get_chunk()) ):
-        
+
           if not done_this_chunk:
             # make sure we only filter the master chunk once
             done_this_chunk = 1
@@ -196,8 +249,9 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,insp_veto_job
             insp.set_trig_end(chunk.trig_end())
             insp.set_ifo(ifo_name)
             insp.set_ifo_tag(coinc_ifos)
-            insp.set_cache(seg.get_df_node().get_output())
-            insp.calibration()
+            if not read_cache: insp.set_cache(seg.get_df_node().get_output())
+            else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
+            if not calibrated: insp.calibration()
             insp.set_bank(trigbank.get_trig_out())
             if do_datafind: insp.add_parent(seg.get_df_node())
             if do_trigbank: insp.add_parent(trigbank)
@@ -210,6 +264,14 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,insp_veto_job
           # jobs already set up, just add the var_arg and parent to trigbank
           trigbank.add_var_arg(coinc_done.get_dag_node().get_output())
           if do_coinc: trigbank.add_parent(coinc_done.get_dag_node())
+
+
+#          for coinc_done in coinc_data:
+#            if inspiral.overlap_test(chunk,coinc_done.get_chunk()):
+#              trigbank.add_var_arg(coinc_done.get_dag_node().get_output())
+#              if do_coincidence: trigbank.add_parent(coinc_done.get_dag_node())
+
+
 
   return trig_chunks_analyzed
 
@@ -284,6 +346,7 @@ def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
     if slides:
       thinca.set_num_slides(slides)
 
+
     # add all IFO A master chunks that overlap with segment to input
     for done in ifo_a_analyzed:
       if inspiral.overlap_test(done.get_chunk(),seg):
@@ -305,7 +368,7 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
   ifo_c_analyzed,ifo_c_name,ifo_triple,triple_coinc_job,dag,do_coinc,
   do_insp,usertag=None,ifotag=None,slides=None):
   """
-  Run thinca on the double coincident times from each of the sets of IFOs. 
+  Run thinca on the triple coincident times from each of the sets of IFOs. 
   Since the way we treat all this data is the same, this function is the same 
   for all three cases. 
   
@@ -324,7 +387,7 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
   ifotag = the ifotag to add to the output file name
   slides = number of time slides req'd, used as a boolean
   """
-
+  
   triple_coinc_analyzed = []
   for seg in ifo_triple:
     thinca = inspiral.ThincaNode(triple_coinc_job)
@@ -336,6 +399,7 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
       thinca.set_ifo(ifo)
     if slides:
       thinca.set_num_slides(slides)
+
 
     # add all IFO A master chunks that overlap with segment to input
     for done in ifo_a_analyzed:
@@ -358,10 +422,81 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
 
   return triple_coinc_analyzed
 
+
+##############################################################################
+# function to do inca on 4 IFO data 
+def quadro_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,\
+  ifo_c_analyzed,ifo_c_name,ifo_d_analyzed,ifo_d_name,ifo_quadro,\
+  quadro_coinc_job,dag,do_coinc,do_insp,usertag=None,ifotag=None,\
+  slides=None):
+  """
+  Run thinca on the 4-way coincident times from each of the sets of IFOs. 
+  Since the way we treat all this data is the same, this function is the same 
+  for all cases. 
+  
+  ifo_a_analyzed = the analyzed chunks for the first IFO
+  ifo_a_name = the name of the first IFO
+  ifo_b_analyzed = the analyzed chunks for the second IFO
+  ifo_b_name = the name of the second IFO
+  ifo_c_analyzed = the analyzed chunks for the third IFO
+  ifo_c_name = the name of the third IFO
+  ifo_d_analyzed = the analyzed chunks for the fourth IFO
+  ifo_d_name = the name of the fourth IFO
+  ifo_quadro = the triple coincident IFO science segments 
+  quadro_coinc_job = the condor job to do three IFO thinca
+  dag = the DAG to attach the nodes to
+  do_coinc = whether we should add these jobs to dag
+  do_insp  = whether the previous inspiral jobs are in the dag
+  usertag = the usertag to add to the output file name
+  ifotag = the ifotag to add to the output file name
+  slides = number of time slides req'd, used as a boolean
+  """
+
+  quadro_coinc_analyzed = []
+  for seg in ifo_quadro:
+    thinca = inspiral.ThincaNode(quadro_coinc_job)
+    thinca.set_start(seg.start())
+    thinca.set_end(seg.end())
+    if ifotag:
+      thinca.set_ifo_tag(ifotag)
+    for ifo in [ifo_a_name, ifo_b_name, ifo_c_name, ifo_d_name]:
+      thinca.set_ifo(ifo)
+    if slides:
+      thinca.set_num_slides(slides)
+
+    # add all IFO A master chunks that overlap with segment to input
+    for done in ifo_a_analyzed:
+      if inspiral.overlap_test(done.get_chunk(),seg):
+        thinca.add_var_arg(done.get_dag_node().get_output())
+        if do_insp: thinca.add_parent(done.get_dag_node())
+    # add all IFO B master chunks that overlap with segment to input
+    for done in ifo_b_analyzed:
+      if inspiral.overlap_test(done.get_chunk(),seg):
+        thinca.add_var_arg(done.get_dag_node().get_output())
+        if do_insp: thinca.add_parent(done.get_dag_node())
+    # add all IFO C master chunks that overlap with segment to input
+    for done in ifo_c_analyzed:
+      if inspiral.overlap_test(done.get_chunk(),seg):
+        thinca.add_var_arg(done.get_dag_node().get_output())
+        if do_insp: thinca.add_parent(done.get_dag_node())
+    # add all IFO D master chunks that overlap with segment to input
+    for done in ifo_d_analyzed:
+      if inspiral.overlap_test(done.get_chunk(),seg):
+        thinca.add_var_arg(done.get_dag_node().get_output())
+        if do_insp: thinca.add_parent(done.get_dag_node())
+    
+    if do_coinc: dag.add_node(thinca)
+    quadro_coinc_analyzed.append(AnalyzedIFOData(seg,thinca))
+
+  return quadro_coinc_analyzed
+
+
+
 ##############################################################################
 # function to do sweep up data using sire  
 def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
   cluster=None,ifo_cut=None):
+
   """
   Do a sire to sweep up all the triggers of a specific kind
   
@@ -386,7 +521,8 @@ def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
   if usertag:
     fname += '_' + usertag
   fname += '.input'
-  
+ 
+ 
   # add all the input files
   f = open(fname, 'w')
   for seg in segments:
@@ -411,6 +547,56 @@ def sire_segs(segments,output,file_name,sire_job,dag,do_input,usertag=None,
 
   if do_input: dag.add_node(sire) 
 
+def single_ifo(ifo1_data, not_ifo2_data, not_ifo3_data, not_ifo4_data):
+  """
+    compute the single ifo segments for ifo1, excluding ifo2, ifo3, ifo4
+    ifo1_data = data segments for ifo1
+    not_ifo2_data = time segments when ifo2 is not operational
+    not_ifo3_data = time segments when ifo3 is not operational
+    not_ifo4_data = time segments when ifo4 is not operational
+  """ 
+
+  single_data = pipeline.ScienceData()
+  single_data = copy.deepcopy(ifo1_data)
+  single_data.intersect_4(not_ifo2_data, not_ifo3_data, not_ifo4_data)
+   
+  return single_data
+
+
+def double_ifo(ifo1_data, ifo2_data, not_ifo3_data, not_ifo4_data):
+   """
+    compute double coincidence segments for ifo1, ifo2, excluding ifo3 and ifo4
+    arguments:
+    ifo1_data = data segments for ifo1
+    ifo2_data = data segments for ifo2
+    not_ifo3_data = time segments when ifo3 is not operational
+    not_ifo4_data = time segments when ifo4 is not operational
+   """
+   double_data = pipeline.ScienceData()
+   double_data = copy.deepcopy(ifo1_data)
+   double_data.intersect_4(ifo2_data, not_ifo3_data, not_ifo4_data)
+  
+   return double_data 
+
+
+def triple_ifo(ifo1_data, ifo2_data, ifo3_data, not_ifo4_data):
+   """
+   compute tripple coincidence segments for ifo_1, ifo_2, ifo_3, excluding ifo4
+   arguments:
+   ifo1_data = data segments for ifo1
+   ifo2_data = data segments for ifo2
+   ifo3_data = data segments for ifo3
+   not_ifo4_data = time segments when ifo4 is not operational
+   """
+   triple_data = pipeline.ScienceData()
+   triple_data = copy.deepcopy(ifo1_data)
+   triple_data.intersect_4(ifo2_data, ifo3_data, not_ifo4_data)
+   
+   return triple_data
+
+
+
+
 ##############################################################################
 # help message
 
@@ -419,40 +605,46 @@ def usage():
   msg = """\
 Usage: lalapps_inspiral_hipe [options]
 
-  -h, --help                   display this message
-  -v, --version                print version information and exit
-  -u, --user-tag TAG           tag the job with TAG (overrides value in ini file)
+  -h, --help              display this message
+  -v, --version           print version information and exit
+  -u, --user-tag TAG      tag the job with TAG (overrides value in ini file)
  
-  -a, --h1-data                analyze h1 data
-  -b, --h2-data                analyze h2 data
-  -l, --l1-data                analyze l1 data
+  -a, --h1-data           analyze h1 data
+  -b, --h2-data           analyze h2 data
+  -l, --l1-data           analyze l1 data
+  -g, --g1-data		  analyze g1 data
 
-  -S, --one-ifo                analyze single ifo data
-  -D, --two-ifo                analyze two interferometer data
-  -T, --three-ifo              analyze three interferometer data
+  -L, --ligo-only	  analyse ligo detctors only
   
-  -A, --analyze-all            analyze all ifos and all data (over-rides above)
+  -S, --one-ifo           analyze single ifo data (not usable for GEO)
+  -D, --two-ifo           analyze two interferometer data
+  -T, --three-ifo         analyze three interferometer data
+  -Q, --four-ifo	  analyze four intereferometer data
+  
+  -A, --analyze-all       analyze all ifos and all data (over-rides above)
 
-  -d, --datafind               run LSCdataFind to create frame cache files
-  -t, --template-bank          run lalapps_tmpltbank to generate template banks
-  -i, --inspiral               run lalapps_inspiral to generate triggers
-  -c, --coincidence            run lalapps_thinca to test for coincidence
-  -B, --trigbank               run lalapps_trigbank for banks of coinc triggers
-  -V, --inspiral-veto          run lalapps_inspiral with vetos
-  -C, --second-coincidence     run lalapps_thinca on the inspiral veto triggers
-  -s, --sire                   do sires to sweep up triggers
-
-  -P, --priority PRIO          run jobs with condor priority PRIO
-
-  -f, --config-file FILE       use configuration file FILE
-  -l, --log-path PATH          directory to write condor log file
-  -o, --output-segs            output the segment lists of analyzed data
+  -d, --datafind          run LSCdataFind to create frame cache files
+  -t, --template-bank     run lalapps_tmpltbank to generate template banks
+  -i, --inspiral          run lalapps_inspiral to generate triggers
+  -c, --coincidence       run lalapps_thinca to test for coincidence
+  -B, --trigbank          run lalapps_trigbank for banks of coinc triggers
+  -V, --inspiral-veto     run lalapps_inspiral with vetos
+  -C, --second-coinc      run lalapps_thinca on the inspiral veto triggers
+  -s, --sire              do sires to sweep up triggers
+  
+  -R, --read-cache        use to read chache file cpecified in ini-file
+                          (use it if LSCDataFind is broken)
+  -P, --priority PRIO     run jobs with condor priority PRIO
+  
+  -f, --config-file FILE  use configuration file FILE
+  -p, --log-path PATH     directory to write condor log file
+  -o, --output-segs       output the segment lists of analyzed data
 """
   print >> sys.stderr, msg
 
 ##############################################################################
 # parse the command line options to figure out what we should do
-shortop = "hvu:abLSDTAdticBVCsP:f:l:o"
+shortop = "hvu:ablgLSDTQAdticBVCsRP:f:p:o"
 longop = [
   "help",
   "version",
@@ -460,9 +652,12 @@ longop = [
   "h1-data",
   "h2-data",
   "l1-data",
+  "g1-data",
+  "ligo-only",
   "one-ifo",
   "two-ifo",
   "three-ifo",
+  "four-ifo",
   "analyze-all",
   "datafind",
   "template-bank",
@@ -470,8 +665,9 @@ longop = [
   "coincidence",
   "trigbank",
   "inspiral-veto",
-  "second-coincidence",
+  "second-coinc",
   "sire",
+  "read-cache"
   "priority=",
   "config-file=",
   "log-path=",
@@ -487,10 +683,13 @@ except getopt.GetoptError:
 do_h1 = None
 do_h2 = None
 do_l1 = None
+do_g1 = None
+ligo_only = None
 
 do_one_ifo = None
 do_two_ifo = None
 do_three_ifo = None
+do_four_ifo = None
 
 do_datafind = None
 do_tmpltbank = None
@@ -509,6 +708,7 @@ output_segs = 0
 condor_prio = None
 config_file = None
 log_path = None
+read_cache = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -521,21 +721,29 @@ for o, a in opts:
     do_h1 = 1
   elif o in ("-b", "--h2-data"):
     do_h2 = 1
-  elif o in ("-L", "--l1-data"):
+  elif o in ("-l", "--l1-data"):
     do_l1 = 1
+  elif o in ("-g", "--g1-data"):
+    do_g1 = 1
+  elif o in ("-L", "--ligo-only"):
+    ligo_only = 1
   elif o in ("-S", "--one-ifo"):
     do_one_ifo = 1
   elif o in ("-D", "--two-ifo"):
     do_two_ifo = 1
   elif o in ("-T", "--three-ifo"):
     do_three_ifo = 1
+  elif o in ("-Q", "--four-ifo"):
+    do_four_ifo = 1
   elif o in ("-A", "--analyze-all"):
     do_h1 = 1
     do_h2 = 1
     do_l1 = 1
+    do_g1 = 1
     do_one_ifo = 1
     do_two_ifo = 1
     do_three_ifo = 1
+    do_four_ifo = 1
   elif o in ("-d", "--datafind"):
     do_datafind = 1
   elif o in ("-t", "--template-bank"):
@@ -552,6 +760,8 @@ for o, a in opts:
     do_second_coinc = 1
   elif o in ("-s", "--sire"):
     do_sire = 1
+  elif o in ("-R", "--read-cache"):
+    read_cache = 1
   elif o in ("-u", "--user-tag"):
     usertag = a
   elif o in ("-o", "--output-segs"):
@@ -560,7 +770,7 @@ for o, a in opts:
     condor_prio = a
   elif o in ("-f", "--config-file"):
     config_file = a
-  elif o in ("-l", "--log-path"):
+  elif o in ("-p", "--log-path"):
     log_path = a
   else:
     print >> sys.stderr, "Unknown option:", o
@@ -576,6 +786,16 @@ if not log_path:
   print >> sys.stderr, "No log file path specified."
   print >> sys.stderr, "Use --log-path PATH to specify a location."
   sys.exit(1)
+
+#if do_g1 and not do_h1 and not do_h2 and not do_l1:
+#  print >> sys.stderr, "GEO has to be analysed only in coincidence: give second detector."
+#  sys.exit(1)
+
+if do_g1 and ligo_only:
+  print >> sys.stderr, "You have asked to analyze Geo and set the flag  \
+ligo_only, make your mind."
+  sys.exit(1)
+
 
 ##############################################################################
 # try to make a directory to store the cache files and job logs
@@ -624,29 +844,71 @@ else:
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 tmplt_job = inspiral.TmpltBankJob(cp)
 trig_job = inspiral.TrigToTmpltJob(cp)
+
 insp_h1_job = inspiral.InspiralJob(cp)
 insp_h2_job = inspiral.InspiralJob(cp)
 insp_l1_job = inspiral.InspiralJob(cp)
+insp_g1_job = inspiral.InspiralJob(cp)
 insp_h1v_job = inspiral.InspiralJob(cp)
 insp_h2v_job = inspiral.InspiralJob(cp)
 insp_l1v_job = inspiral.InspiralJob(cp)
+insp_g1v_job = inspiral.InspiralJob(cp)
+
 single_inca_job = inspiral.IncaJob(cp)
+
 thinca_h1h2_job = inspiral.ThincaJob(cp)
 thinca_h1l1_job = inspiral.ThincaJob(cp)
 thinca_h2l1_job = inspiral.ThincaJob(cp)
+thinca_g1l1_job = inspiral.ThincaJob(cp)
+thinca_g1h1_job = inspiral.ThincaJob(cp)
+thinca_g1h2_job = inspiral.ThincaJob(cp)
+
 thinca_h1h2l1_job = inspiral.ThincaJob(cp)
+thinca_g1h1l1_job = inspiral.ThincaJob(cp)
+thinca_g1h2l1_job = inspiral.ThincaJob(cp)
+thinca_g1h1h2_job = inspiral.ThincaJob(cp)
+
+thinca_h1h2l1g1_job = inspiral.ThincaJob(cp)
+
 thinca_slides_h1h2_job = inspiral.ThincaJob(cp)
 thinca_slides_h1l1_job = inspiral.ThincaJob(cp)
 thinca_slides_h2l1_job = inspiral.ThincaJob(cp)
+thinca_slides_h1g1_job = inspiral.ThincaJob(cp)
+thinca_slides_l1g1_job = inspiral.ThincaJob(cp)
+thinca_slides_h2g1_job = inspiral.ThincaJob(cp)
+
 thinca_slides_h1h2l1_job = inspiral.ThincaJob(cp)
+thinca_slides_h1h2g1_job = inspiral.ThincaJob(cp)
+thinca_slides_h1l1g1_job = inspiral.ThincaJob(cp)
+thinca_slides_h2l1g1_job = inspiral.ThincaJob(cp)
+
+thinca_slides_h1h2l1g1_job = inspiral.ThincaJob(cp)
+
 thinca2_h1h2_job = inspiral.ThincaJob(cp)
 thinca2_h1l1_job = inspiral.ThincaJob(cp)
 thinca2_h2l1_job = inspiral.ThincaJob(cp)
 thinca2_h1h2l1_job = inspiral.ThincaJob(cp)
+thinca2_h1g1_job = inspiral.ThincaJob(cp)
+thinca2_h2g1_job = inspiral.ThincaJob(cp)
+thinca2_l1g1_job = inspiral.ThincaJob(cp)
+thinca2_h1h2g1_job = inspiral.ThincaJob(cp)
+thinca2_h1l1g1_job = inspiral.ThincaJob(cp)
+thinca2_h2l1g1_job = inspiral.ThincaJob(cp)
+thinca2_h1h2l1g1_job = inspiral.ThincaJob(cp)
+
 thinca2_slides_h1h2_job = inspiral.ThincaJob(cp)
 thinca2_slides_h1l1_job = inspiral.ThincaJob(cp)
 thinca2_slides_h2l1_job = inspiral.ThincaJob(cp)
+thinca2_slides_h1g1_job = inspiral.ThincaJob(cp)
+thinca2_slides_l1g1_job = inspiral.ThincaJob(cp)
+thinca2_slides_h2g1_job = inspiral.ThincaJob(cp)
+
 thinca2_slides_h1h2l1_job = inspiral.ThincaJob(cp)
+thinca2_slides_h1h2g1_job = inspiral.ThincaJob(cp)
+thinca2_slides_h1l1g1_job = inspiral.ThincaJob(cp)
+thinca2_slides_h2l1g1_job = inspiral.ThincaJob(cp)
+
+thinca2_slides_h1h2l1g1_job = inspiral.ThincaJob(cp)
 
 
 sire_job = inspiral.SireJob(cp)
@@ -661,29 +923,73 @@ else:
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 tmplt_job.set_sub_file( basename + '.tmpltbank' + subsuffix )
 trig_job.set_sub_file( basename + '.trigbank' + subsuffix )
+
 insp_h1_job.set_sub_file( basename + '.inspiral_h1' + subsuffix )
 insp_h2_job.set_sub_file( basename + '.inspiral_h2' + subsuffix )
 insp_l1_job.set_sub_file( basename + '.inspiral_l1' + subsuffix )
+insp_g1_job.set_sub_file( basename + '.inspiral_g1' + subsuffix )
 insp_h1v_job.set_sub_file( basename + '.inspiral_h1_veto' + subsuffix )
 insp_h2v_job.set_sub_file( basename + '.inspiral_h2_veto' + subsuffix )
 insp_l1v_job.set_sub_file( basename + '.inspiral_l1_veto' + subsuffix )
+insp_g1v_job.set_sub_file( basename + '.inspiral_g1_veto' + subsuffix )
+
 single_inca_job.set_sub_file( basename + '.s_inca' + subsuffix )
+
 thinca_h1h2_job.set_sub_file( basename + '.thinca_h1h2' + subsuffix )
 thinca_h1l1_job.set_sub_file( basename + '.thinca_h1l1' + subsuffix )
 thinca_h2l1_job.set_sub_file( basename + '.thinca_h2l1' + subsuffix )
+thinca_g1l1_job.set_sub_file( basename + '.thinca_g1l1' + subsuffix )
+thinca_g1h1_job.set_sub_file( basename + '.thinca_g1h1' + subsuffix )
+thinca_g1h2_job.set_sub_file( basename + '.thinca_g1h2' + subsuffix )
+
 thinca_h1h2l1_job.set_sub_file( basename + '.thinca_h1h2l1' + subsuffix )
+thinca_g1h1h2_job.set_sub_file( basename + '.thinca_h1h2g1' + subsuffix )
+thinca_g1h1l1_job.set_sub_file( basename + '.thinca_h1l1g1' + subsuffix )
+thinca_g1h2l1_job.set_sub_file( basename + '.thinca_h2l1g1' + subsuffix )
+
+thinca_h1h2l1g1_job.set_sub_file( basename + '.thinca_h1h2l1g1' + subsuffix )
+
 thinca_slides_h1h2_job.set_sub_file( basename + '.thinca_slides_h1h2' + subsuffix )
 thinca_slides_h1l1_job.set_sub_file( basename + '.thinca_slides_h1l1' + subsuffix )
 thinca_slides_h2l1_job.set_sub_file( basename + '.thinca_slides_h2l1' + subsuffix )
+thinca_slides_h1g1_job.set_sub_file( basename + '.thinca_slides_h1g1' + subsuffix )
+thinca_slides_l1g1_job.set_sub_file( basename + '.thinca_slides_l1g1' + subsuffix )
+thinca_slides_h2g1_job.set_sub_file( basename + '.thinca_slides_h2g1' + subsuffix )
+
 thinca_slides_h1h2l1_job.set_sub_file( basename + '.thinca_slides_h1h2l1' + subsuffix )
+thinca_slides_h1h2g1_job.set_sub_file( basename + '.thinca_slides_h1h2g1' + subsuffix )
+thinca_slides_h1l1g1_job.set_sub_file( basename + '.thinca_slides_h1l1g1' + subsuffix )
+thinca_slides_h2l1g1_job.set_sub_file( basename + '.thinca_slides_h2l1g1' + subsuffix )
+
+thinca_slides_h1h2l1g1_job.set_sub_file( basename + '.thinca_slides_h1h2l1g1' + subsuffix )
+
 thinca2_h1h2_job.set_sub_file( basename + '.thinca2_h1h2' + subsuffix )
 thinca2_h1l1_job.set_sub_file( basename + '.thinca2_h1l1' + subsuffix )
 thinca2_h2l1_job.set_sub_file( basename + '.thinca2_h2l1' + subsuffix )
+thinca2_h1g1_job.set_sub_file( basename + '.thinca2_h1g1' + subsuffix )
+thinca2_l1g1_job.set_sub_file( basename + '.thinca2_l1g1' + subsuffix )
+thinca2_h2g1_job.set_sub_file( basename + '.thinca2_h2g1' + subsuffix )
+
 thinca2_h1h2l1_job.set_sub_file( basename + '.thinca2_h1h2l1' + subsuffix )
+thinca2_h1h2g1_job.set_sub_file( basename + '.thinca2_h1h2g1' + subsuffix )
+thinca2_h1l1g1_job.set_sub_file( basename + '.thinca2_h1l1g1' + subsuffix )
+thinca2_h2l1g1_job.set_sub_file( basename + '.thinca2_h2l1g1' + subsuffix )
+
+thinca2_h1h2l1g1_job.set_sub_file( basename + '.thinca2_h1h2l1g1' + subsuffix )
+
 thinca2_slides_h1h2_job.set_sub_file( basename + '.thinca2_slides_h1h2' + subsuffix )
 thinca2_slides_h1l1_job.set_sub_file( basename + '.thinca2_slides_h1l1' + subsuffix )
 thinca2_slides_h2l1_job.set_sub_file( basename + '.thinca2_slides_h2l1' + subsuffix )
+thinca2_slides_h1g1_job.set_sub_file( basename + '.thinca2_slides_h1g1' + subsuffix )
+thinca2_slides_h2g1_job.set_sub_file( basename + '.thinca2_slides_h2g1' + subsuffix )
+thinca2_slides_l1g1_job.set_sub_file( basename + '.thinca2_slides_l1g1' + subsuffix )
+
 thinca2_slides_h1h2l1_job.set_sub_file( basename + '.thinca2_slides_h1h2l1' + subsuffix )
+thinca2_slides_h1h2g1_job.set_sub_file( basename + '.thinca2_slides_h1h2g1' + subsuffix )
+thinca2_slides_h1l1g1_job.set_sub_file( basename + '.thinca2_slides_h1l1g1' + subsuffix )
+thinca2_slides_h2l1g1_job.set_sub_file( basename + '.thinca2_slides_h2l1g1' + subsuffix )
+
+thinca2_slides_h1h2l1g1_job.set_sub_file( basename + '.thinca2_slides_h1h2l1g1' + subsuffix )
 
 sire_job.set_sub_file( basename + '.sire' + subsuffix )
 sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
@@ -693,29 +999,74 @@ sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
 if usertag:
   tmplt_job.add_opt('user-tag',usertag)
   trig_job.add_opt('user-tag',usertag)
+
   insp_h1_job.add_opt('user-tag',usertag)
   insp_h2_job.add_opt('user-tag',usertag)
   insp_l1_job.add_opt('user-tag',usertag)
+  insp_g1_job.add_opt('user-tag',usertag)
   insp_h1v_job.add_opt('user-tag',usertag)
   insp_h2v_job.add_opt('user-tag',usertag)
   insp_l1v_job.add_opt('user-tag',usertag)
+  insp_g1v_job.add_opt('user-tag',usertag)
+
   single_inca_job.add_opt('user-tag',usertag)
+
   thinca_h1h2_job.add_opt('user-tag',usertag)
   thinca_h1l1_job.add_opt('user-tag',usertag)
   thinca_h2l1_job.add_opt('user-tag',usertag)
+  thinca_g1l1_job.add_opt('user-tag',usertag)
+  thinca_g1h1_job.add_opt('user-tag',usertag)
+  thinca_g1h2_job.add_opt('user-tag',usertag)
+
   thinca_h1h2l1_job.add_opt('user-tag',usertag)
+  thinca_g1h1h2_job.add_opt('user-tag',usertag)
+  thinca_g1h1l1_job.add_opt('user-tag',usertag)
+  thinca_g1h2l1_job.add_opt('user-tag',usertag)
+  
+  thinca_h1h2l1g1_job.add_opt('user-tag',usertag)
+ 
   thinca_slides_h1h2_job.add_opt('user-tag',usertag)
   thinca_slides_h1l1_job.add_opt('user-tag',usertag)
   thinca_slides_h2l1_job.add_opt('user-tag',usertag)
+  thinca_slides_h1g1_job.add_opt('user-tag',usertag)
+  thinca_slides_h2g1_job.add_opt('user-tag',usertag)
+  thinca_slides_l1g1_job.add_opt('user-tag',usertag)
+
   thinca_slides_h1h2l1_job.add_opt('user-tag',usertag)
+  thinca_slides_h1h2g1_job.add_opt('user-tag',usertag)
+  thinca_slides_h1l1g1_job.add_opt('user-tag',usertag)
+  thinca_slides_h2l1g1_job.add_opt('user-tag',usertag)
+
+  thinca_slides_h1h2l1g1_job.add_opt('user-tag',usertag)
+ 
   thinca2_h1h2_job.add_opt('user-tag',usertag)
   thinca2_h1l1_job.add_opt('user-tag',usertag)
   thinca2_h2l1_job.add_opt('user-tag',usertag)
+  thinca2_h1g1_job.add_opt('user-tag',usertag)
+  thinca2_h2g1_job.add_opt('user-tag',usertag)
+  thinca2_l1g1_job.add_opt('user-tag',usertag)
+ 
   thinca2_h1h2l1_job.add_opt('user-tag',usertag)
+  thinca2_h1h2g1_job.add_opt('user-tag',usertag)
+  thinca2_h1l1g1_job.add_opt('user-tag',usertag)
+  thinca2_h2l1g1_job.add_opt('user-tag',usertag)
+
+  thinca2_h1h2l1g1_job.add_opt('user-tag',usertag)
+
   thinca2_slides_h1h2_job.add_opt('user-tag',usertag)
   thinca2_slides_h1l1_job.add_opt('user-tag',usertag)
   thinca2_slides_h2l1_job.add_opt('user-tag',usertag)
+  thinca2_slides_h1g1_job.add_opt('user-tag',usertag)
+  thinca2_slides_h2g1_job.add_opt('user-tag',usertag)
+  thinca2_slides_l1g1_job.add_opt('user-tag',usertag)
+
   thinca2_slides_h1h2l1_job.add_opt('user-tag',usertag)
+  thinca2_slides_h1h2g1_job.add_opt('user-tag',usertag)
+  thinca2_slides_h1l1g1_job.add_opt('user-tag',usertag)
+  thinca2_slides_h2l1g1_job.add_opt('user-tag',usertag)
+
+  thinca2_slides_h1h2l1g1_job.add_opt('user-tag',usertag)
+ 
   sire_job.add_opt('user-tag',usertag)
   sire_clust_job.add_opt('user-tag',usertag)
 
@@ -725,29 +1076,76 @@ if condor_prio:
   df_job.add_condor_cmd('priority',condor_prio)
   tmplt_job.add_condor_cmd('priority',condor_prio)
   trig_job.add_condor_cmd('priority',condor_prio)
+
   insp_h1_job.add_condor_cmd('priority',condor_prio)
   insp_h2_job.add_condor_cmd('priority',condor_prio)
   insp_l1_job.add_condor_cmd('priority',condor_prio)
+  insp_g1_job.add_condor_cmd('priority',condor_prio)
   insp_h1v_job.add_condor_cmd('priority',condor_prio)
   insp_h2v_job.add_condor_cmd('priority',condor_prio)
   insp_l1v_job.add_condor_cmd('priority',condor_prio)
+  insp_g1v_job.add_condor_cmd('priority',condor_prio)
+
   single_inca_job.add_condor_cmd('priority',condor_prio)
+
   thinca_h1h2_job.add_condor_cmd('priority',condor_prio)
   thinca_h1l1_job.add_condor_cmd('priority',condor_prio)
   thinca_h2l1job.add_condor_cmd('priority',condor_prio)
+  thinca_g1l1job.add_condor_cmd('priority',condor_prio)
+  thinca_g1h1job.add_condor_cmd('priority',condor_prio)
+  thinca_g1h2job.add_condor_cmd('priority',condor_prio)
+
   thinca_h1h2l1_job.add_condor_cmd('priority',condor_prio)
+  thinca_g1h1h2_job.add_condor_cmd('priority',condor_prio)
+  thinca_g1h1l1_job.add_condor_cmd('priority',condor_prio)
+  thinca_g1h2l1_job.add_condor_cmd('priority',condor_prio)
+  
+  thinca_h1h2l1g1_job.add_condor_cmd('priority',condor_prio)
+ 
   thinca_slides_h1h2_job.add_condor_cmd('priority',condor_prio)
   thinca_slides_h1l1_job.add_condor_cmd('priority',condor_prio)
   thinca_slides_h2l1job.add_condor_cmd('priority',condor_prio)
+  thinca_slides_h1g1_job.add_condor_cmd('priority',condor_prio)
+  thinca_slides_h2g1_job.add_condor_cmd('priority',condor_prio)
+  thinca_slides_l1g1_job.add_condor_cmd('priority',condor_prio)
+
   thinca_slides_h1h2l1_job.add_condor_cmd('priority',condor_prio)
+  thinca_slides_h1h2g1_job.add_condor_cmd('priority',condor_prio)
+  thinca_slides_h1l1g1_job.add_condor_cmd('priority',condor_prio)
+  thinca_slides_h2l1g1_job.add_condor_cmd('priority',condor_prio)
+
+  thinca_slides_h1h2l1g1_job.add_condor_cmd('priority',condor_prio)
+ 
   thinca2_h1h2_job.add_condor_cmd('priority',condor_prio)
   thinca2_h1l1_job.add_condor_cmd('priority',condor_prio)
-  thinca2_h2l1job.add_condor_cmd('priority',condor_prio)
+  thinca2_h2l1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_h1g1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_h2g1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_l1g1_job.add_condor_cmd('priority',condor_prio)
+  
   thinca2_h1h2l1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_h1h2g1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_h1l1g1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_h2l1g1_job.add_condor_cmd('priority',condor_prio)
+
+  thinca2_h1h2l1g1_job.add_condor_cmd('priority',condor_prio)
+
   thinca2_slides_h1h2_job.add_condor_cmd('priority',condor_prio)
   thinca2_slides_h1l1_job.add_condor_cmd('priority',condor_prio)
   thinca2_slides_h2l1job.add_condor_cmd('priority',condor_prio)
+  thinca2_slides_h1g1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_slides_h2g1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_slides_l1g1_job.add_condor_cmd('priority',condor_prio)
+
   thinca2_slides_h1h2l1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_slides_h1h2g1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_slides_h1l1g1_job.add_condor_cmd('priority',condor_prio)
+  thinca2_slides_h2l1g1_job.add_condor_cmd('priority',condor_prio)
+
+  thinca2_slides_h1h2l1g1_job.add_condor_cmd('priority',condor_prio)
+ 
+
+
   sire_job.add_condor_cmd('priority',condor_prio)
   sire_clust_job.add_condor_cmd('priority',condor_prio)
 
@@ -763,11 +1161,15 @@ if inj_file:
   insp_h1_job.add_opt('injection-file',inj_file)
   insp_h2_job.add_opt('injection-file',inj_file)
   insp_l1_job.add_opt('injection-file',inj_file)
+  insp_g1_job.add_opt('injection-file',inj_file)
   insp_h1v_job.add_opt('injection-file',inj_file)
   insp_h2v_job.add_opt('injection-file',inj_file)
   insp_l1v_job.add_opt('injection-file',inj_file)
+  insp_g1v_job.add_opt('injection-file',inj_file)
+
   sire_job.add_opt('injection-file',inj_file)
   sire_clust_job.add_opt('injection-file',inj_file)
+
 
 ##############################################################################
 # read in the number of time-slides from the ini file 
@@ -791,19 +1193,59 @@ if play_data_mask == 'playground_only':
   thinca_h1h2_job.add_opt('data-type','playground_only')
   thinca_h1l1_job.add_opt('data-type','playground_only')
   thinca_h2l1_job.add_opt('data-type','playground_only')
+  thinca_g1l1_job.add_opt('data-type','playground_only')
+  thinca_g1h1_job.add_opt('data-type','playground_only')
+  thinca_g1h2_job.add_opt('data-type','playground_only')
+ 
   thinca_h1h2l1_job.add_opt('data-type','playground_only')
+  thinca_g1h1h2_job.add_opt('data-type','playground_only')
+  thinca_g1h1l1_job.add_opt('data-type','playground_only')
+  thinca_g1h2l1_job.add_opt('data-type','playground_only')
+  
+  thinca_h1h2l1g1_job.add_opt('data-type','playground_only')
+
   thinca_slides_h1h2_job.add_opt('data-type','playground_only')
   thinca_slides_h1l1_job.add_opt('data-type','playground_only')
   thinca_slides_h2l1_job.add_opt('data-type','playground_only')
+  thinca_slides_h1g1_job.add_opt('data-type','playground_only')
+  thinca_slides_h2g1_job.add_opt('data-type','playground_only')
+  thinca_slides_l1g1_job.add_opt('data-type','playground_only')
+
   thinca_slides_h1h2l1_job.add_opt('data-type','playground_only')
+  thinca_slides_h1h2g1_job.add_opt('data-type','playground_only')
+  thinca_slides_h1h2g1_job.add_opt('data-type','playground_only')
+  thinca_slides_h1h2g1_job.add_opt('data-type','playground_only')
+
+  thinca_slides_h1h2l1g1_job.add_opt('data-type','playground_only')
+
   thinca2_h1h2_job.add_opt('data-type','playground_only')
   thinca2_h1l1_job.add_opt('data-type','playground_only')
   thinca2_h2l1_job.add_opt('data-type','playground_only')
+  thinca2_h1g1_job.add_opt('data-type','playground_only')
+  thinca2_h2g1_job.add_opt('data-type','playground_only')
+  thinca2_l1g1_job.add_opt('data-type','playground_only')
+  
   thinca2_h1h2l1_job.add_opt('data-type','playground_only')
+  thinca2_h1h2g1_job.add_opt('data-type','playground_only')
+  thinca2_h1l1g1_job.add_opt('data-type','playground_only')
+  thinca2_h2l1g1_job.add_opt('data-type','playground_only')
+ 
+  thinca2_h1h2l1g1_job.add_opt('data-type','playground_only')
+ 
   thinca2_slides_h1h2_job.add_opt('data-type','playground_only')
   thinca2_slides_h1l1_job.add_opt('data-type','playground_only')
   thinca2_slides_h2l1_job.add_opt('data-type','playground_only')
+  thinca2_slides_h1g1_job.add_opt('data-type','playground_only')
+  thinca2_slides_h2g1_job.add_opt('data-type','playground_only')
+  thinca2_slides_l1g1_job.add_opt('data-type','playground_only')
+
   thinca2_slides_h1h2l1_job.add_opt('data-type','playground_only')
+  thinca2_slides_h1h2g1_job.add_opt('data-type','playground_only')
+  thinca2_slides_h1h2g1_job.add_opt('data-type','playground_only')
+  thinca2_slides_h1h2g1_job.add_opt('data-type','playground_only')
+
+  thinca2_slides_h1h2l1g1_job.add_opt('data-type','playground_only')
+
   trig_job.add_opt('data-type','playground_only')
   sire_job.add_opt('playground-only',' ')
   sire_clust_job.add_opt('playground-only',' ')
@@ -814,19 +1256,59 @@ elif play_data_mask == 'exclude_playground':
   thinca_h1h2_job.add_opt('data-type','exclude_play')
   thinca_h1l1_job.add_opt('data-type','exclude_play')
   thinca_h2l1_job.add_opt('data-type','exclude_play')
+  thinca_g1l1_job.add_opt('data-type','exclude_play')
+  thinca_g1h1_job.add_opt('data-type','exclude_play')
+  thinca_g1h2_job.add_opt('data-type','exclude_play')
+
   thinca_h1h2l1_job.add_opt('data-type','exclude_play')
+  thinca_g1h1h2_job.add_opt('data-type','exclude_play')
+  thinca_g1h1l1_job.add_opt('data-type','exclude_play')
+  thinca_g1h2l1_job.add_opt('data-type','exclude_play')
+
+  thinca_h1h2l1g1_job.add_opt('data-type','exclude_play')
+
   thinca_slides_h1h2_job.add_opt('data-type','exclude_play')
   thinca_slides_h1l1_job.add_opt('data-type','exclude_play')
   thinca_slides_h2l1_job.add_opt('data-type','exclude_play')
+  thinca_slides_h1g1_job.add_opt('data-type','exclude_play')
+  thinca_slides_l1g1_job.add_opt('data-type','exclude_play')
+  thinca_slides_h2g1_job.add_opt('data-type','exclude_play')
+
   thinca_slides_h1h2l1_job.add_opt('data-type','exclude_play')
+  thinca_slides_h1h2g1_job.add_opt('data-type','exclude_play')
+  thinca_slides_h1l1g1_job.add_opt('data-type','exclude_play')
+  thinca_slides_h2l1g1_job.add_opt('data-type','exclude_play')
+
+  thinca_slides_h1h2l1g1_job.add_opt('data-type','exclude_play')
+
   thinca2_h1h2_job.add_opt('data-type','exclude_play')
   thinca2_h1l1_job.add_opt('data-type','exclude_play')
   thinca2_h2l1_job.add_opt('data-type','exclude_play')
+  thinca2_h1g1_job.add_opt('data-type','exclude_play')
+  thinca2_l1g1_job.add_opt('data-type','exclude_play')
+  thinca2_h2g1_job.add_opt('data-type','exclude_play')
+
   thinca2_h1h2l1_job.add_opt('data-type','exclude_play')
+  thinca2_h1h2g1_job.add_opt('data-type','exclude_play')
+  thinca2_h1l1g1_job.add_opt('data-type','exclude_play')
+  thinca2_h2l1g1_job.add_opt('data-type','exclude_play')
+
+  thinca2_h1h2l1g1_job.add_opt('data-type','exclude_play')
+
   thinca2_slides_h1h2_job.add_opt('data-type','exclude_play')
   thinca2_slides_h1l1_job.add_opt('data-type','exclude_play')
   thinca2_slides_h2l1_job.add_opt('data-type','exclude_play')
+  thinca2_slides_h1g1_job.add_opt('data-type','exclude_play')
+  thinca2_slides_l1g1_job.add_opt('data-type','exclude_play')
+  thinca2_slides_h2g1_job.add_opt('data-type','exclude_play')
+
   thinca2_slides_h1h2l1_job.add_opt('data-type','exclude_play')
+  thinca2_slides_h1h2g1_job.add_opt('data-type','exclude_play')
+  thinca2_slides_h1l1g1_job.add_opt('data-type','exclude_play')
+  thinca2_slides_h2l1g1_job.add_opt('data-type','exclude_play')
+
+  thinca2_slides_h1h2l1g1_job.add_opt('data-type','exclude_play')
+
   trig_job.add_opt('data-type','exclude_play')
   sire_job.add_opt('exclude-playground',' ')
   sire_clust_job.add_opt('exclude-playground',' ')
@@ -837,19 +1319,60 @@ elif play_data_mask == 'all_data':
   thinca_h1h2_job.add_opt('data-type','all_data')
   thinca_h1l1_job.add_opt('data-type','all_data')
   thinca_h2l1_job.add_opt('data-type','all_data')
+  thinca_g1l1_job.add_opt('data-type','all_data')
+  thinca_g1h1_job.add_opt('data-type','all_data')
+  thinca_g1h2_job.add_opt('data-type','all_data')
+
   thinca_h1h2l1_job.add_opt('data-type','all_data')
+  thinca_g1h1h2_job.add_opt('data-type','all_data')
+  thinca_g1h1l1_job.add_opt('data-type','all_data')
+  thinca_g1h2l1_job.add_opt('data-type','all_data')
+
+  thinca_h1h2l1g1_job.add_opt('data-type','all_data')
+ 
   thinca_slides_h1h2_job.add_opt('data-type','all_data')
   thinca_slides_h1l1_job.add_opt('data-type','all_data')
   thinca_slides_h2l1_job.add_opt('data-type','all_data')
+  thinca_slides_h1g1_job.add_opt('data-type','all_data')
+  thinca_slides_l1g1_job.add_opt('data-type','all_data')
+  thinca_slides_h2g1_job.add_opt('data-type','all_data')
+
   thinca_slides_h1h2l1_job.add_opt('data-type','all_data')
+  thinca_slides_h1h2g1_job.add_opt('data-type','all_data')
+  thinca_slides_h1l1g1_job.add_opt('data-type','all_data')
+  thinca_slides_h2l1g1_job.add_opt('data-type','all_data')
+
+  thinca_slides_h1h2l1g1_job.add_opt('data-type','all_data')
+ 
   thinca2_h1h2_job.add_opt('data-type','all_data')
   thinca2_h1l1_job.add_opt('data-type','all_data')
   thinca2_h2l1_job.add_opt('data-type','all_data')
+  thinca2_h1g1_job.add_opt('data-type','all_data')
+  thinca2_l1g1_job.add_opt('data-type','all_data')
+  thinca2_h2g1_job.add_opt('data-type','all_data')
+
   thinca2_h1h2l1_job.add_opt('data-type','all_data')
+  thinca2_h1h2g1_job.add_opt('data-type','all_data')
+  thinca2_h1l1g1_job.add_opt('data-type','all_data')
+  thinca2_h2l1g1_job.add_opt('data-type','all_data')
+
+  thinca2_h1h2l1g1_job.add_opt('data-type','all_data')
+
   thinca2_slides_h1h2_job.add_opt('data-type','all_data')
   thinca2_slides_h1l1_job.add_opt('data-type','all_data')
   thinca2_slides_h2l1_job.add_opt('data-type','all_data')
+  thinca2_slides_h1g1_job.add_opt('data-type','all_data')
+  thinca2_slides_l1g1_job.add_opt('data-type','all_data')
+  thinca2_slides_h2g1_job.add_opt('data-type','all_data')
+
   thinca2_slides_h1h2l1_job.add_opt('data-type','all_data')
+  thinca2_slides_h1h2g1_job.add_opt('data-type','all_data')
+  thinca2_slides_h1l1g1_job.add_opt('data-type','all_data')
+  thinca2_slides_h2l1g1_job.add_opt('data-type','all_data')
+
+  thinca2_slides_h1h2l1g1_job.add_opt('data-type','all_data')
+
+
   trig_job.add_opt('data-type','all_data')
   sire_job.add_opt('all-data',' ')
   sire_clust_job.add_opt('all-data',' ')
@@ -962,6 +1485,19 @@ if l1_segments:
   l1_data.make_chunks_from_unused(length,overlap/2,playground_only,
       0,0,overlap/2)
 
+# G1
+try:
+  g1_segments = cp.get('input', 'g1-segments')
+except:
+  g1_segments = None
+
+g1_data = pipeline.ScienceData()  
+if g1_segments:
+  g1_data.read(cp.get('input', 'g1-segments'),length) 
+  g1_data.make_chunks(length,overlap,playground_only,0,overlap/2)
+  g1_data.make_chunks_from_unused(length,overlap/2,playground_only,
+      0,0,overlap/2)
+
 print "done"
 
 ##############################################################################
@@ -970,9 +1506,10 @@ print "done"
 h1_data_out = copy.deepcopy(h1_data)
 h2_data_out = copy.deepcopy(h2_data)
 l1_data_out = copy.deepcopy(l1_data)
+g1_data_out = copy.deepcopy(g1_data)
 
 # remove start and end of science segments which can't be analyzed for triggers
-for sci_data in [h1_data_out,h2_data_out,l1_data_out]:
+for sci_data in [h1_data_out,h2_data_out,l1_data_out, g1_data_out]:
   for seg in sci_data:
     seg.set_start(seg.start()+overlap/2)
     seg.set_end(seg.end()-overlap/2)
@@ -981,6 +1518,7 @@ if playground_only:
   h1_data_out.play()
   h2_data_out.play()
   l1_data_out.play()
+  g1_data_out.play()
   
 not_h1_data_out = copy.deepcopy(h1_data_out)
 not_h1_data_out.coalesce()
@@ -994,48 +1532,118 @@ not_l1_data_out = copy.deepcopy(l1_data_out)
 not_l1_data_out.coalesce()
 not_l1_data_out.invert()
   
+not_g1_data_out = copy.deepcopy(g1_data_out)
+not_g1_data_out.coalesce()
+not_g1_data_out.invert()
+
+# determine the 4-way coincident data, if it is to be analyzed
+
+h1_h2_l1_g1_data = pipeline.ScienceData()
+if do_four_ifo and do_h1 and do_l1 and do_h2 and do_g1:
+   h1_h2_l1_g1_data = copy.deepcopy(h1_data_out)
+   h1_h2_l1_g1_data.intersect_4(h2_data_out, l1_data_out, g1_data_out)
+   
+
 # determine the triple data, if it is to be analyzed
 h1_h2_l1_triple_data = pipeline.ScienceData() 
+h1_h2_g1_triple_data = pipeline.ScienceData()
+h1_l1_g1_triple_data = pipeline.ScienceData()
+h2_l1_g1_triple_data = pipeline.ScienceData()
 
-if do_three_ifo and do_h1 and do_h2 and do_l1:  
-  h1_h2_l1_triple_data = copy.deepcopy(h1_data_out)
-  h1_h2_l1_triple_data.intersect_3(h2_data_out,l1_data_out)
+if ligo_only:
+   if do_three_ifo and do_h1 and do_h2 and do_l1:
+      h1_h2_l1_triple_data = triple_ifo(h1_data_out, h2_data_out, l1_data_out, \
+                                        h1_data_out)
+else:
+   if do_three_ifo:
+      if do_h1 and do_h2 and do_l1:
+         h1_h2_l1_triple_data = triple_ifo(h1_data_out, h2_data_out, \
+                                           l1_data_out, not_g1_data_out)
+      if do_h1 and do_h2 and do_g1:
+         h1_h2_g1_triple_data = triple_ifo(h1_data_out, h2_data_out, \
+                                           g1_data_out, not_l1_data_out)
+      if do_h1 and do_l1 and do_g1:
+         h1_l1_g1_triple_data = triple_ifo(h1_data_out, l1_data_out, \
+                                           g1_data_out, not_h2_data_out)
+      if do_h2 and do_l1 and do_g1:
+         h2_l1_g1_triple_data = triple_ifo(h2_data_out, l1_data_out, \
+                                           g1_data_out, not_h1_data_out)
+      
 
 # determine the double data, if it is to be analyzed
 h1_h2_double_data = pipeline.ScienceData()
 h1_l1_double_data = pipeline.ScienceData()
 h2_l1_double_data = pipeline.ScienceData()
+g1_l1_double_data = pipeline.ScienceData()
+g1_h1_double_data = pipeline.ScienceData()
+g1_h2_double_data = pipeline.ScienceData()
 
-if do_two_ifo:
-  if do_h1 and do_h2:
-    h1_h2_double_data = copy.deepcopy(h1_data_out)
-    h1_h2_double_data.intersect_3(h2_data_out, not_l1_data_out)
-  
-  if do_h1 and do_l1:
-    h1_l1_double_data = copy.deepcopy(h1_data_out)
-    h1_l1_double_data.intersect_3(l1_data_out, not_h2_data_out)
-  
-  if do_h2 and do_l1:
-    h2_l1_double_data = copy.deepcopy(h2_data_out)
-    h2_l1_double_data.intersect_3(l1_data_out, not_h1_data_out)
-  
+
+if ligo_only:
+   if do_two_ifo:
+     if do_h1 and do_h2:
+        h1_h2_double_data = double_ifo(h1_data_out, h2_data_out, \
+                                       not_l1_data_out, h1_data_out)
+     if do_h1 and do_l1:
+        h1_l1_double_data = double_ifo(h1_data_out, l1_data_out, \
+                                       not_h2_data_out, h1_data_out)
+     if do_h2 and do_l1:
+        h2_l1_double_data = double_ifo(h2_data_out, l1_data_out, \
+                                       not_h1_data_out, h2_data_out)
+else:
+   if do_two_ifo:
+     if do_h1 and do_h2:
+        h1_h2_double_data = double_ifo(h1_data_out, h2_data_out, \
+                                       not_l1_data_out, not_g1_data_out)
+     if do_h1 and do_l1:
+        h1_l1_double_data = double_ifo(h1_data_out, l1_data_out, \
+                                       not_h2_data_out, not_g1_data_out)
+     if do_h2 and do_l1:
+        h2_l1_double_data = double_ifo(h2_data_out, l1_data_out, \
+                                       not_h1_data_out, not_g1_data_out)
+     if do_g1 and do_l1:
+        g1_l1_double_data = double_ifo(g1_data_out, l1_data_out, \
+                                       not_h2_data_out, not_h1_data_out)
+     if do_g1 and do_h1:
+        g1_h1_double_data = double_ifo(g1_data_out, h1_data_out, \
+                                       not_h2_data_out, not_l1_data_out)
+     if do_g1 and do_h2:
+        g1_h2_double_data = double_ifo(g1_data_out, h2_data_out, \
+                                       not_h1_data_out, not_l1_data_out)
+
+
 # determine the single data, if it is to be analyzed
 h1_single_data = pipeline.ScienceData()
 h2_single_data = pipeline.ScienceData()
 l1_single_data = pipeline.ScienceData()
- 
-if do_one_ifo:
-  if do_h1:
-    h1_single_data = copy.deepcopy(h1_data_out)
-    h1_single_data.intersect_3(not_h2_data_out, not_l1_data_out)
-  
-  if do_h2:
-    h2_single_data = copy.deepcopy(h2_data_out)
-    h2_single_data.intersect_3(not_h1_data_out, not_l1_data_out)
-  
-  if do_l1:
-    l1_single_data = copy.deepcopy(l1_data_out)
-    l1_single_data.intersect_3(not_h1_data_out, not_h2_data_out)
+g1_single_data = pipeline.ScienceData()
+
+if ligo_only:
+  if do_one_ifo: 
+     if do_h1:
+        h1_single_data = single_ifo(h1_data_out, not_h2_data_out, \
+                                    not_l1_data_out, h1_data_out)
+     if do_h2:
+        h2_single_data = single_ifo(h2_data_out, not_h1_data_out, \
+                                    not_l1_data_out, h2_data_out)
+     if do_l1:
+        l1_single_data = single_ifo(l1_data_out, not_h1_data_out, \
+                                    not_h2_data_out, l1_data_out)
+else:
+  if do_one_ifo: 
+     if do_h1:
+        h1_single_data = single_ifo(h1_data_out, not_h2_data_out, \
+                                    not_l1_data_out, not_g1_data_out)
+     if do_h2:
+        h2_single_data = single_ifo(h2_data_out, not_h1_data_out, \
+                                    not_l1_data_out, not_g1_data_out)
+     if do_l1:
+        l1_single_data = single_ifo(l1_data_out, not_h1_data_out, \
+                                    not_h2_data_out, not_g1_data_out)
+     if do_g1:
+        g1_single_data = single_ifo(g1_data_out, not_h1_data_out, \
+                                    not_h2_data_out, not_l1_data_out)
+
   
 ##############################################################################
 # Step 3: Compute the Science Segments to analyze
@@ -1043,52 +1651,90 @@ if do_one_ifo:
 h1_data_to_do = copy.deepcopy(h1_single_data)
 h1_data_to_do.union(h1_h2_double_data)
 h1_data_to_do.union(h1_l1_double_data)
+h1_data_to_do.union(g1_h1_double_data)
 h1_data_to_do.union(h1_h2_l1_triple_data)
+h1_data_to_do.union(h1_h2_g1_triple_data)
+h1_data_to_do.union(h1_l1_g1_triple_data)
+h1_data_to_do.union(h1_h2_l1_g1_data)
 h1_data_to_do.coalesce()
   
 h2_data_to_do = copy.deepcopy(h2_single_data)
 h2_data_to_do.union(h1_h2_double_data)
 h2_data_to_do.union(h2_l1_double_data)
+h2_data_to_do.union(g1_h2_double_data)
 h2_data_to_do.union(h1_h2_l1_triple_data)
+h2_data_to_do.union(h1_h2_g1_triple_data)
+h2_data_to_do.union(h2_l1_g1_triple_data)
+h2_data_to_do.union(h1_h2_l1_g1_data)
 h2_data_to_do.coalesce()
   
 l1_data_to_do = copy.deepcopy(l1_single_data)
 l1_data_to_do.union(h1_l1_double_data)
 l1_data_to_do.union(h2_l1_double_data)
+l1_data_to_do.union(g1_l1_double_data)
 l1_data_to_do.union(h1_h2_l1_triple_data)
+l1_data_to_do.union(h1_l1_g1_triple_data)
+l1_data_to_do.union(h2_l1_g1_triple_data)
+l1_data_to_do.union(h1_h2_l1_g1_data)
 l1_data_to_do.coalesce()
+
+g1_data_to_do = copy.deepcopy(g1_single_data)
+g1_data_to_do.union(g1_l1_double_data)
+g1_data_to_do.union(g1_h1_double_data)
+g1_data_to_do.union(g1_h2_double_data)
+g1_data_to_do.union(h1_h2_g1_triple_data)
+g1_data_to_do.union(h1_l1_g1_triple_data)
+g1_data_to_do.union(h2_l1_g1_triple_data)
+g1_data_to_do.union(h1_h2_l1_g1_data)
+g1_data_to_do.coalesce()
+
 
 ##############################################################################
 # Step 4: Determine which of the master chunks needs to be filtered
 
-# H1
 h1_chunks_analyzed = []
+h2_chunks_analyzed = []
+l1_chunks_analyzed = []
+g1_chunks_analyzed = []
+
+# H1
 prev_df = None
 
 print "setting up jobs to filter H1 data...",
 sys.stdout.flush()
 (prev_df,h1_chunks_analyzed) = analyze_ifo(h1_data,'H1',h1_data_to_do,  
-  tmplt_job,insp_h1_job,df_job,'h1-inspiral',pad,prev_df,dag,usertag=None)
+   tmplt_job,insp_h1_job,df_job,'h1-inspiral','ligo-data',pad,prev_df,dag,
+   usertag=None)
 print "done"
 
 # H2
-h2_chunks_analyzed = []
 
 print "setting up jobs to filter H2 data...",
 sys.stdout.flush()
 (prev_df,h2_chunks_analyzed) = analyze_ifo(h2_data,'H2',h2_data_to_do,
-  tmplt_job,insp_h2_job,df_job,'h2-inspiral',pad,prev_df,dag,usertag=None)
+    tmplt_job,insp_h2_job,df_job,'h2-inspiral','ligo-data',pad,prev_df,dag,
+    usertag=None)
 print "done"
 
 # L1
-l1_chunks_analyzed = []
 
 print "setting up jobs to filter L1 data...",
 sys.stdout.flush()
 (prev_df,l1_chunks_analyzed) = analyze_ifo(l1_data,'L1',l1_data_to_do,
-  tmplt_job,insp_l1_job,df_job,'l1-inspiral',pad,prev_df,dag,usertag=None)
+  tmplt_job,insp_l1_job,df_job,'l1-inspiral','ligo-data',pad,prev_df,dag,
+  usertag=None)
 print "done"
-  
+
+# G1  
+
+print "setting up jobs to filter G1 data..."
+sys.stdout.flush()
+(prev_df,g1_chunks_analyzed) = analyze_ifo(g1_data,'G1',g1_data_to_do,
+  tmplt_job,insp_g1_job,df_job,'g1-inspiral','geo-data',pad,prev_df,dag,
+  usertag=None)
+print "done"
+
+
 ############################################################################## 
 # Step 4S: Run sire on the single ifo triggers
 print "setting up sire jobs ...",
@@ -1110,6 +1756,10 @@ if do_sire:
   if len(l1_chunks_analyzed):
     sire_segs(l1_chunks_analyzed,'output','L1-INSPIRAL',sire_clust_job,dag,
       do_insp,usertag,do_clust,'L1')
+
+  if len(g1_chunks_analyzed):
+    sire_segs(g1_chunks_analyzed,'output','G1-INSPIRAL',sire_clust_job,dag,
+      do_insp,usertag,do_clust,'G1')
 
 print "done"
 
@@ -1134,6 +1784,11 @@ l1_single_coinc_nodes = []
 l1_single_coinc_nodes = single_coinc(l1_chunks_analyzed,'L1',l1_single_data,
   single_inca_job,dag, usertag)
 
+# G1
+g1_single_coinc_nodes = []
+g1_single_coinc_nodes = single_coinc(g1_chunks_analyzed,'G1',g1_single_data,
+  single_inca_job,dag, usertag)
+
 print "done"
  
 ############################################################################## 
@@ -1149,7 +1804,7 @@ if do_sire:
     if do_h1 and len(h1_single_data):
       sire_segs(h1_single_coinc_nodes,'output_a','H1-SIRE_SINGLE_IFO',
         sire_clust_job,dag,do_coinc,usertag,do_clust,'H1')
-        
+ 
     if do_h2 and len(h2_single_data):
       sire_segs(h2_single_coinc_nodes,'output_a','H2-SIRE_SINGLE_IFO',
         sire_clust_job,dag,do_coinc,usertag,do_clust,'H2')
@@ -1157,7 +1812,11 @@ if do_sire:
     if do_l1 and len(l1_single_data):
       sire_segs(l1_single_coinc_nodes,'output_a','L1-SIRE_SINGLE_IFO',
         sire_clust_job,dag,do_coinc,usertag,do_clust,'L1')
- 
+
+    if do_g1 and len(g1_single_data):
+      sire_segs(g1_single_coinc_nodes,'output_a','G1-SIRE_SINGLE_IFO',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'G1')
+
 print "done"
  
  
@@ -1182,6 +1841,24 @@ h1_l1_double_coinc_nodes = double_coinc(h1_chunks_analyzed,'H1',
 h2_l1_double_coinc_nodes = []
 h2_l1_double_coinc_nodes = double_coinc(h2_chunks_analyzed,'H2',
   l1_chunks_analyzed,'L1',h2_l1_double_data,thinca_h2l1_job,dag,do_coinc,
+  do_insp,usertag)
+
+# H1-G1
+h1_g1_double_coinc_nodes = []
+h1_g1_double_coinc_nodes = double_coinc(h1_chunks_analyzed,'H1',
+  g1_chunks_analyzed,'G1',g1_h1_double_data,thinca_g1h1_job,dag,do_coinc,
+  do_insp,usertag)
+
+# H2-G1
+h2_g1_double_coinc_nodes = []
+h2_g1_double_coinc_nodes = double_coinc(h2_chunks_analyzed,'H2',
+  g1_chunks_analyzed,'G1',g1_h2_double_data,thinca_g1h2_job,dag,do_coinc,
+  do_insp,usertag)
+
+# L1-G1
+l1_g1_double_coinc_nodes = []
+l1_g1_double_coinc_nodes = double_coinc(l1_chunks_analyzed,'L1',
+  g1_chunks_analyzed,'G1',g1_l1_double_data,thinca_g1l1_job,dag,do_coinc,
   do_insp,usertag)
 
 print "done"
@@ -1228,8 +1905,37 @@ if do_sire:
       sire_segs(h1_l1_double_coinc_nodes,'output','L1-SIRE_H2L1',
         sire_clust_job,dag,do_coinc,usertag,do_clust,'L1')
 
-print "done"
 
+    if do_g1 and do_l1 and len(g1_l1_double_data):
+      sire_segs(l1_g1_double_coinc_nodes,'output','L1G1-SIRE',sire_job,
+        dag,do_coinc,usertag)
+  
+      sire_segs(l1_g1_double_coinc_nodes,'output','L1-SIRE_L1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'H2')
+      sire_segs(l1_g1_double_coinc_nodes,'output','G1-SIRE_L1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'G1')
+
+    if do_g1 and do_h1 and len(g1_h1_double_data):
+      sire_segs(h1_g1_double_coinc_nodes,'output','H1G1-SIRE',sire_job,
+        dag,do_coinc,usertag)
+  
+      sire_segs(h1_g1_double_coinc_nodes,'output','H1-SIRE_H1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'H2')
+      sire_segs(h1_g1_double_coinc_nodes,'output','G1-SIRE_H1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'G1')
+
+
+    if do_g1 and do_h2 and len(g1_h2_double_data):
+      sire_segs(h2_g1_double_coinc_nodes,'output','H2G1-SIRE',sire_job,
+        dag,do_coinc,usertag)
+  
+      sire_segs(h2_g1_double_coinc_nodes,'output','H2-SIRE_H2G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'H2')
+      sire_segs(h2_g1_double_coinc_nodes,'output','G1-SIRE_H2G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'G1')
+
+
+print "done"
 
 ##############################################################################
 # Step 6slide: Time slide each of the disjoint sets of double coincidence data
@@ -1239,6 +1945,9 @@ print "setting up thinca slide jobs on double IFO data...",
 h1_h2_double_coinc_slides_nodes = []
 h1_l1_double_coinc_slides_nodes = []
 h2_l1_double_coinc_slides_nodes = []
+h1_g1_double_coinc_slides_nodes = []
+h2_g1_double_coinc_slides_nodes = []
+l1_g1_double_coinc_slides_nodes = []
 
 
 if num_slides:
@@ -1257,7 +1966,23 @@ if num_slides:
     l1_chunks_analyzed,'L1',h2_l1_double_data,thinca_slides_h2l1_job,dag,
     do_coinc, do_insp, usertag, ifotag, num_slides)
 
+  # H1-G1
+  h1_g1_double_coinc_slides_nodes = double_coinc(h1_chunks_analyzed,'H1',
+    g1_chunks_analyzed,'G1',g1_h1_double_data,thinca_slides_h1g1_job,dag,
+    do_coinc, do_insp, usertag, ifotag, num_slides)
+
+  # H2-G1
+  h2_g1_double_coinc_slides_nodes = double_coinc(h2_chunks_analyzed,'H2',
+    g1_chunks_analyzed,'G1',g1_h2_double_data,thinca_slides_h2g1_job,dag,
+    do_coinc, do_insp, usertag, ifotag, num_slides)
+
+  # L1-G1
+  l1_g1_double_coinc_slides_nodes = double_coinc(l1_chunks_analyzed,'L1',
+    g1_chunks_analyzed,'G1',g1_l1_double_data,thinca_slides_l1g1_job,dag,
+    do_coinc, do_insp, usertag, ifotag, num_slides)
+
 print "done"
+
 
 
 ############################################################################## 
@@ -1270,6 +1995,24 @@ h1_h2_l1_triple_coinc_nodes = []
 h1_h2_l1_triple_coinc_nodes = triple_coinc(h1_chunks_analyzed,'H1',
   h2_chunks_analyzed,'H2',l1_chunks_analyzed,'L1',h1_h2_l1_triple_data,
   thinca_h1h2l1_job,dag,do_coinc,do_insp,usertag)
+
+# H1-H2-G1
+h1_h2_g1_triple_coinc_nodes = []
+h1_h2_g1_triple_coinc_nodes = triple_coinc(h1_chunks_analyzed,'H1',
+  h2_chunks_analyzed,'H2',g1_chunks_analyzed,'G1',h1_h2_g1_triple_data,
+  thinca_g1h1h2_job,dag,do_coinc,do_insp,usertag)
+
+# H1-L1-G1
+h1_l1_g1_triple_coinc_nodes = []
+h1_l1_g1_triple_coinc_nodes = triple_coinc(h1_chunks_analyzed,'H1',
+  l1_chunks_analyzed,'L1',g1_chunks_analyzed,'G1',h1_l1_g1_triple_data,
+  thinca_g1h1l1_job,dag,do_coinc,do_insp,usertag)
+
+# H2-L1-G1
+h2_l1_g1_triple_coinc_nodes = []
+h2_l1_g1_triple_coinc_nodes = triple_coinc(h2_chunks_analyzed,'H2',
+  l1_chunks_analyzed,'L1',g1_chunks_analyzed,'G1',h2_l1_g1_triple_data,
+  thinca_g1h2l1_job,dag,do_coinc,do_insp,usertag)
 
 print "done"
 
@@ -1291,10 +2034,45 @@ if do_sire:
         
       sire_segs(h1_h2_l1_triple_coinc_nodes,'output','H1-SIRE_H1H2L1',
         sire_clust_job,dag,do_coinc,usertag,do_clust,'H1')
+
       sire_segs(h1_h2_l1_triple_coinc_nodes,'output','H2-SIRE_H1H2L1',
         sire_clust_job,dag,do_coinc,usertag,do_clust,'H2')
       sire_segs(h1_h2_l1_triple_coinc_nodes,'output','L1-SIRE_H1H2L1',
         sire_clust_job,dag,do_coinc,usertag,do_clust,'L1')
+    
+    if do_h1 and do_h2 and do_g1 and len(h1_h2_g1_triple_data):
+      sire_segs(h1_h2_g1_triple_coinc_nodes,'output','H1H2G1-SIRE',sire_job,
+        dag,do_coinc,usertag)
+        
+      sire_segs(h1_h2_g1_triple_coinc_nodes,'output','H1-SIRE_H1H2G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'H1')
+      sire_segs(h1_h2_g1_triple_coinc_nodes,'output','H2-SIRE_H1H2G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'H2')
+      sire_segs(h1_h2_g1_triple_coinc_nodes,'output','G1-SIRE_H1H2G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'G1')
+    
+    if do_h1 and do_l1 and do_g1 and len(h1_l1_g1_triple_data):
+      sire_segs(h1_l1_g1_triple_coinc_nodes,'output','H1L1G1-SIRE',sire_job,
+        dag,do_coinc,usertag)
+        
+      sire_segs(h1_l1_g1_triple_coinc_nodes,'output','H1-SIRE_H1L1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'H1')
+      sire_segs(h1_l1_g1_triple_coinc_nodes,'output','L1-SIRE_H1H2G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'L1')
+      sire_segs(h1_l1_g1_triple_coinc_nodes,'output','G1-SIRE_H1H2G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'G1')
+    
+    if do_h2 and do_l1 and do_g1 and len(h2_l1_g1_triple_data):
+      sire_segs(h2_l1_g1_triple_coinc_nodes,'output','H2L1G1-SIRE',sire_job,
+        dag,do_coinc,usertag)
+        
+      sire_segs(h2_l1_g1_triple_coinc_nodes,'output','H2-SIRE_H2L1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'H2')
+      sire_segs(h2_l1_g1_triple_coinc_nodes,'output','L1-SIRE_H2L1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'L1')
+      sire_segs(h2_l1_g1_triple_coinc_nodes,'output','G1-SIRE_H2L1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'G1')
+    
 
 print "done"
 
@@ -1304,6 +2082,9 @@ print "done"
 print "setting up thinca slide jobs on triple IFO data...",
 
 h1_h2_l1_triple_coinc_slides_nodes = []
+h1_h2_g1_triple_coinc_slides_nodes = []
+h1_l1_g1_triple_coinc_slides_nodes = []
+h2_l1_g1_triple_coinc_slides_nodes = []
 
 
 if num_slides:
@@ -1312,12 +2093,84 @@ if num_slides:
     h2_chunks_analyzed,'H2',l1_chunks_analyzed,'L1',h1_h2_l1_triple_data,
     thinca_slides_h1h2l1_job,dag,do_coinc,do_insp,usertag,ifotag, num_slides)
 
+  # H1-H2-G1
+  h1_h2_g1_triple_coinc_slides_nodes = triple_coinc(h1_chunks_analyzed,'H1',
+    h2_chunks_analyzed,'H2',g1_chunks_analyzed,'G1',h1_h2_g1_triple_data,
+    thinca_slides_h1h2g1_job,dag,do_coinc,do_insp,usertag,ifotag, num_slides)
+
+  # H1-L1-G1
+  h1_l1_g1_triple_coinc_slides_nodes = triple_coinc(h1_chunks_analyzed,'H1',
+    l1_chunks_analyzed,'L1',g1_chunks_analyzed,'G1',h1_l1_g1_triple_data,
+    thinca_slides_h1l1g1_job,dag,do_coinc,do_insp,usertag,ifotag, num_slides)
+
+  # H2-L1-G1
+  h2_l1_g1_triple_coinc_slides_nodes = triple_coinc(h2_chunks_analyzed,'H2',
+    l1_chunks_analyzed,'L1',g1_chunks_analyzed,'G1',h2_l1_g1_triple_data,
+    thinca_slides_h2l1g1_job,dag,do_coinc,do_insp,usertag,ifotag, num_slides)
+
 print "done"
 
 
+############################################################################## 
+# Step 8: Run thinca on each of the disjoint sets of 4-way coincidence data
+
+print "setting up thinca jobs on four IFO data...",
+
+# H1-H2-L1-G1
+h1_h2_l1_g1_qudro_coinc_nodes = []
+h1_h2_l1_g1_quadro_coinc_nodes = quadro_coinc(h1_chunks_analyzed,'H1',
+  h2_chunks_analyzed,'H2',l1_chunks_analyzed,'L1',g1_chunks_analyzed,'G1', 
+  h1_h2_l1_g1_data, thinca_h1h2l1g1_job,dag,do_coinc,do_insp,usertag)
+
+print "done"
+
+############################################################################## 
+# Step 8S: Run sire on the four ifo data
+print "setting up sire jobs ...",
+sys.stdout.flush()
+
+do_clust = 1
+
+if do_sire:
+ 
+  # a sire of the four ifo coincidences, and clustered sires for each ifo
+ if do_four_ifo:
+ 
+    if do_h1 and do_h2 and do_l1 and do_g1 and len(h1_h2_l1_g1_data):
+      sire_segs(h1_h2_l1_g1_quadro_coinc_nodes,'output','H1H2L1G1-SIRE',sire_job,
+        dag,do_coinc,usertag)
+        
+      sire_segs(h1_h2_l1_g1_quadro_coinc_nodes,'output','H1-SIRE_H1H2L1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'H1')
+      sire_segs(h1_h2_l1_g1_quadro_coinc_nodes,'output','H2-SIRE_H1H2L1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'H2')
+      sire_segs(h1_h2_l1_g1_quadro_coinc_nodes,'output','L1-SIRE_H1H2L1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'L1')
+      sire_segs(h1_h2_l1_g1_quadro_coinc_nodes,'output','G1-SIRE_H1H2L1G1',
+        sire_clust_job,dag,do_coinc,usertag,do_clust,'G1')
+
+print "done"
 
 ##############################################################################
-# Step 8: Run trigbank and inspiral on each instrument in double times
+# Step 8slide: Time slide the set of 4-way coincidence data
+
+print "setting up thinca slide jobs on triple IFO data...",
+
+h1_h2_l1_g1_coinc_slides_nodes = []
+
+
+if num_slides:
+  # H1-H2-L1-G1
+  h1_h2_l1_g1_coinc_slides_nodes = quadro_coinc(h1_chunks_analyzed,'H1',
+    h2_chunks_analyzed,'H2',l1_chunks_analyzed,'L1',g1_chunks_analyzed, 'G1',
+    h1_h2_l1_g1_data,thinca_slides_h1h2l1g1_job,dag,do_coinc,do_insp,usertag,
+    ifotag, num_slides)
+
+print "done"
+
+
+##############################################################################
+# Step 9: Run trigbank and inspiral on each instrument in double times
 
 # H1 in H1H2 times
 print "setting up jobs to filter H1 data with coinc trigs from H1 H2...",
@@ -1331,11 +2184,27 @@ sys.stdout.flush()
 h1_h2_double_coinc_nodes = h1_h2_double_coinc_nodes + h1_h2_double_coinc_slides_nodes 
 h1_l1_double_coinc_nodes = h1_l1_double_coinc_nodes + h1_l1_double_coinc_slides_nodes 
 h2_l1_double_coinc_nodes = h2_l1_double_coinc_nodes + h2_l1_double_coinc_slides_nodes 
+h1_g1_double_coinc_nodes = h1_g1_double_coinc_nodes + h1_g1_double_coinc_slides_nodes 
+l1_g1_double_coinc_nodes = l1_g1_double_coinc_nodes + l1_g1_double_coinc_slides_nodes 
+h2_g1_double_coinc_nodes = h2_g1_double_coinc_nodes + h2_g1_double_coinc_slides_nodes 
+
+h1_h2_l1_triple_coinc_nodes = h1_h2_l1_triple_coinc_nodes + \
+				h1_h2_l1_triple_coinc_slides_nodes
+h1_h2_g1_triple_coinc_nodes = h1_h2_g1_triple_coinc_nodes + \
+				h1_h2_g1_triple_coinc_slides_nodes
+h1_l1_g1_triple_coinc_nodes = h1_l1_g1_triple_coinc_nodes + \
+				h1_l1_g1_triple_coinc_slides_nodes
+h2_l1_g1_triple_coinc_nodes = h2_l1_g1_triple_coinc_nodes + \
+				h2_l1_g1_triple_coinc_slides_nodes
+
+h1_h2_l1_g1_quadro_coinc_nodes = h1_h2_l1_g1_quadro_coinc_nodes + \
+				h1_h2_l1_g1_coinc_slides_nodes
 
 h1_analyzed_h1h2 = []
 h1_analyzed_h1h2 = trig_inspiral(h1_data,'H1',h1_h2_double_coinc_nodes,'H1H2',
-  trig_job,insp_h1v_job,'h1-inspiral',dag,usertag=None)
+  trig_job,insp_h1v_job,'h1-inspiral','ligo-data',dag,usertag=None)
 print "done"
+
 
 # H2 in H1H2 times
 print "setting up jobs to filter H2 data with coinc trigs from H1 H2...",
@@ -1344,7 +2213,7 @@ sys.stdout.flush()
 h2_analyzed_h1h2 = []
 
 h2_analyzed_h1h2 = trig_inspiral(h2_data,'H2',h1_h2_double_coinc_nodes,'H1H2',
-  trig_job,insp_h2v_job,'h2-inspiral',dag,usertag=None)
+  trig_job,insp_h2v_job,'h2-inspiral','ligo-data',dag,usertag=None)
 print "done"
 
 
@@ -1354,7 +2223,7 @@ sys.stdout.flush()
 
 h1_analyzed_h1l1 = []
 h1_analyzed_h1l1 = trig_inspiral(h1_data,'H1',h1_l1_double_coinc_nodes,'H1L1',
-  trig_job,insp_h1v_job,'h1-inspiral',dag,usertag=None)
+  trig_job,insp_h1v_job,'h1-inspiral','ligo-data',dag,usertag=None)
 print "done"
 
 # L1 in H1L1 times
@@ -1364,7 +2233,7 @@ sys.stdout.flush()
 l1_analyzed_h1l1 = []
 
 l1_analyzed_h1l1 = trig_inspiral(l1_data,'L1',h1_l1_double_coinc_nodes,'H1L1',
-  trig_job,insp_l1v_job,'l1-inspiral',dag,usertag=None)
+  trig_job,insp_l1v_job,'l1-inspiral','ligo-data',dag,usertag=None)
 print "done"
 
 
@@ -1374,7 +2243,7 @@ sys.stdout.flush()
 
 h2_analyzed_h2l1 = []
 h2_analyzed_h2l1 = trig_inspiral(h2_data,'H2',h2_l1_double_coinc_nodes,'H2L1',
-  trig_job,insp_h2v_job,'h2-inspiral',dag,usertag=None)
+  trig_job,insp_h2v_job,'h2-inspiral','ligo-data',dag,usertag=None)
 print "done"
 
 # L1 in H2L1 times
@@ -1383,7 +2252,67 @@ sys.stdout.flush()
 
 l1_analyzed_h2l1 = []
 l1_analyzed_h2l1 = trig_inspiral(l1_data,'L1',h2_l1_double_coinc_nodes,'H2L1',
-  trig_job,insp_l1v_job,'l1-inspiral',dag,usertag=None)
+  trig_job,insp_l1v_job,'l1-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+
+# H1 in H1G1 times
+print "setting up jobs to filter H1 data with coinc trigs from H1 G1...",
+sys.stdout.flush()
+
+h1_analyzed_h1g1 = []
+h1_analyzed_h1g1 = trig_inspiral(h1_data,'H1',h1_g1_double_coinc_nodes,'H1G1',
+  trig_job,insp_h1v_job,'h1-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+
+# H2 in H2G1 times
+print "setting up jobs to filter H2 data with coinc trigs from H2 G1...",
+sys.stdout.flush()
+
+h2_analyzed_h2g1 = []
+h2_analyzed_h2g1 = trig_inspiral(h2_data,'H2',h2_g1_double_coinc_nodes,'H2G1',
+  trig_job,insp_h2v_job,'h2-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+
+# L1 in L1G1 times
+print "setting up jobs to filter L1 data with coinc trigs from L1 G1...",
+sys.stdout.flush()
+
+l1_analyzed_l1g1 = []
+l1_analyzed_l1g1 = trig_inspiral(l1_data,'L1',l1_g1_double_coinc_nodes,'L1G1',
+  trig_job,insp_l1v_job,'l1-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+
+# G1 in H1G1 times
+print "setting up jobs to filter G1 data with coinc trigs from H1 G1...",
+sys.stdout.flush()
+
+g1_analyzed_h1g1 = []
+g1_analyzed_h1g1 = trig_inspiral(g1_data,'G1',h1_g1_double_coinc_nodes,'H1G1',
+  trig_job,insp_g1v_job,'g1-inspiral','geo-data',dag,usertag=None)
+print "done"
+
+
+# G1 in H2G1 times
+print "setting up jobs to filter G1 data with coinc trigs from H2 G1...",
+sys.stdout.flush()
+
+g1_analyzed_h2g1 = []
+g1_analyzed_h2g1 = trig_inspiral(g1_data,'G1',h2_g1_double_coinc_nodes,'H2G1',
+  trig_job,insp_g1v_job,'g1-inspiral','geo-data',dag,usertag=None)
+print "done"
+
+
+# G1 in L1G1 times
+print "setting up jobs to filter G1 data with coinc trigs from L1 G1...",
+sys.stdout.flush()
+
+g1_analyzed_l1g1 = []
+g1_analyzed_l1g1 = trig_inspiral(g1_data,'G1',l1_g1_double_coinc_nodes,'L1G1',
+  trig_job,insp_g1v_job,'g1-inspiral','geo-data',dag,usertag=None)
 print "done"
 
 # H1 in H1H2L1 times
@@ -1392,32 +2321,150 @@ sys.stdout.flush()
 
 h1_analyzed_h1h2l1 = []
 h1_analyzed_h1h2l1 = trig_inspiral(h1_data,'H1',h1_h2_l1_triple_coinc_nodes,
-  'H1H2L1',trig_job,insp_h1v_job,'h1-inspiral',dag,usertag=None)
+  'H1H2L1',trig_job,insp_h1v_job,'h1-inspiral','ligo-data',dag,usertag=None)
 print "done"
 
-# H2 in H1H2 times
+# H2 in H1H2L1 times
 print "setting up jobs to filter H2 data with coinc trigs from H1 H2 L1...",
 sys.stdout.flush()
 
 h2_analyzed_h1h2l1 = []
 
 h2_analyzed_h1h2l1 = trig_inspiral(h2_data,'H2',h1_h2_l1_triple_coinc_nodes,
-  'H1H2L1',trig_job,insp_h2v_job,'h2-inspiral',dag,usertag=None)
+  'H1H2L1',trig_job,insp_h2v_job,'h2-inspiral','ligo-data',dag,usertag=None)
 print "done"
 
-# H1 in H1H2L1 times
-print "setting up jobs to filter H1 data with coinc trigs from H1 H2 L1...",
+# L1 in H1H2L1 times
+print "setting up jobs to filter L1 data with coinc trigs from H1 H2 L1...",
 sys.stdout.flush()
 
 l1_analyzed_h1h2l1 = []
 l1_analyzed_h1h2l1 = trig_inspiral(l1_data,'L1',h1_h2_l1_triple_coinc_nodes,
-  'H1H2L1',trig_job,insp_l1v_job,'l1-inspiral',dag,usertag=None)
+  'H1H2L1',trig_job,insp_l1v_job,'l1-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+# H1 in H1H2G1 times
+print "setting up jobs to filter H1 data with coinc trigs from H1 H2 G1...",
+sys.stdout.flush()
+
+h1_analyzed_h1h2g1 = []
+h1_analyzed_h1h2g1 = trig_inspiral(h1_data,'H1',h1_h2_g1_triple_coinc_nodes,
+  'H1H2G1',trig_job,insp_h1v_job,'h1-inspiral','ligo-data',dag,usertag=None)
 print "done"
 
 
+# H2 in H1H2G1 times
+print "setting up jobs to filter H2 data with coinc trigs from H1 H2 G1...",
+sys.stdout.flush()
+
+h2_analyzed_h1h2g1 = []
+h2_analyzed_h1h2g1 = trig_inspiral(h2_data,'H2',h1_h2_g1_triple_coinc_nodes,
+  'H1H2G1',trig_job,insp_h2v_job,'h2-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+
+# G1 in H1H2G1 times
+print "setting up jobs to filter G1 data with coinc trigs from H1 H2 G1...",
+sys.stdout.flush()
+
+g1_analyzed_h1h2g1 = []
+g1_analyzed_h1h2g1 = trig_inspiral(g1_data,'G1',h1_h2_g1_triple_coinc_nodes,
+  'H1H2G1',trig_job,insp_g1v_job,'g1-inspiral','geo-data',dag,usertag=None)
+print "done"
+
+
+# H1 in H1L1G1 times
+print "setting up jobs to filter H1 data with coinc trigs from H1 L1 G1...",
+sys.stdout.flush()
+
+h1_analyzed_h1l1g1 = []
+h1_analyzed_h1l1g1 = trig_inspiral(h1_data,'H1',h1_l1_g1_triple_coinc_nodes,
+  'H1L1G1',trig_job,insp_h1v_job,'h1-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+# L1 in H1L1G1 times
+print "setting up jobs to filter L1 data with coinc trigs from H1 L1 G1...",
+sys.stdout.flush()
+
+l1_analyzed_h1l1g1 = []
+l1_analyzed_h1l1g1 = trig_inspiral(l1_data,'L1',h1_l1_g1_triple_coinc_nodes,
+  'H1L1G1',trig_job,insp_l1v_job,'l1-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+# G1 in H1L1G1 times
+print "setting up jobs to filter G1 data with coinc trigs from H1 L1 G1...",
+sys.stdout.flush()
+
+g1_analyzed_h1l1g1 = []
+g1_analyzed_h1l1g1 = trig_inspiral(g1_data,'G1',h1_l1_g1_triple_coinc_nodes,
+  'H1L1G1',trig_job,insp_g1v_job,'g1-inspiral','geo-data',dag,usertag=None)
+print "done"
+
+# H2 in H2L1G1 times
+print "setting up jobs to filter H2 data with coinc trigs from H2 L1 G1...",
+sys.stdout.flush()
+
+h2_analyzed_h2l1g1 = []
+h2_analyzed_h2l1g1 = trig_inspiral(h2_data,'H2',h2_l1_g1_triple_coinc_nodes,
+  'H2L1G1',trig_job,insp_h2v_job,'h2-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+# L1 in H2L1G1 times
+print "setting up jobs to filter L1 data with coinc trigs from H2 L1 G1...",
+sys.stdout.flush()
+
+l1_analyzed_h2l1g1 = []
+l1_analyzed_h2l1g1 = trig_inspiral(l1_data,'L1',h2_l1_g1_triple_coinc_nodes,
+  'H2L1G1',trig_job,insp_l1v_job,'l1-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+# G1 in H2L1G1 times
+print "setting up jobs to filter G1 data with coinc trigs from H2 L1 G1...",
+sys.stdout.flush()
+
+g1_analyzed_h2l1g1 = []
+g1_analyzed_h2l1g1 = trig_inspiral(g1_data,'G1', h2_l1_g1_triple_coinc_nodes,
+  'H2L1G1',trig_job,insp_g1v_job,'g1-inspiral','geo-data',dag,usertag=None)
+print "done"
+
+# H1 in H1H2L1G1 times
+print "setting up jobs to filter H1 data with coinc trigs from H1 H2 L1 G1...",
+sys.stdout.flush()
+
+h1_analyzed_h1h2l1g1 = []
+h1_analyzed_h1h2l1g1 = trig_inspiral(h1_data,'H1',h1_h2_l1_g1_quadro_coinc_nodes,
+  'H1H2L1G1',trig_job,insp_h1v_job,'h1-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+# H2 in H1H2L1G1 times
+print "setting up jobs to filter H2 data with coinc trigs from H1 H2 L1 G1...",
+sys.stdout.flush()
+
+h2_analyzed_h1h2l1g1 = []
+h2_analyzed_h1h2l1g1 = trig_inspiral(h2_data,'H2',h1_h2_l1_g1_quadro_coinc_nodes,
+  'H1H2L1G1',trig_job,insp_h2v_job,'h2-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+# L1 in H1H2L1G1 times
+print "setting up jobs to filter L1 data with coinc trigs from H1 H2 L1 G1...",
+sys.stdout.flush()
+
+l1_analyzed_h1h2l1g1 = []
+l1_analyzed_h1h2l1g1 = trig_inspiral(l1_data,'L1',h1_h2_l1_g1_quadro_coinc_nodes,
+  'H1H2L1G1',trig_job,insp_l1v_job,'l1-inspiral','ligo-data',dag,usertag=None)
+print "done"
+
+# G1 in H1H2L1G1 times
+print "setting up jobs to filter G1 data with coinc trigs from H1 H2 L1 G1...",
+sys.stdout.flush()
+
+g1_analyzed_h1h2l1g1 = []
+g1_analyzed_h1h2l1g1 = trig_inspiral(g1_data,'G1',h1_h2_l1_g1_quadro_coinc_nodes,
+  'H1H2L1G1',trig_job,insp_g1v_job,'g1-inspiral','geo-data',dag,usertag=None)
+print "done"
 
 ##############################################################################
-# Step 9: Run thinca on each of the disjoint sets of double coincidence data
+# Step 10: Run thinca on each of the disjoint sets of double coincidence data
 
 print "setting up thinca jobs on double IFO data...",
 
@@ -1439,11 +2486,29 @@ h2_l1_double_coinc = double_coinc(h2_analyzed_h2l1,'H2',l1_analyzed_h2l1,'L1',
   h2_l1_double_data,thinca2_h2l1_job,dag,do_second_coinc,do_insp_veto,usertag,
   'H2L1')
 
+# H1-G1
+h1_g1_double_coinc = []
+h1_g1_double_coinc = double_coinc(h1_analyzed_h1g1,'H1',g1_analyzed_h1g1,'G1',
+  g1_h1_double_data,thinca2_h1g1_job,dag,do_second_coinc,do_insp_veto,usertag,
+  'H1G1')
+
+# H2-G1
+h2_g1_double_coinc = []
+h2_g1_double_coinc = double_coinc(h2_analyzed_h2g1,'H2',g1_analyzed_h2g1,'G1',
+  g1_h2_double_data,thinca2_h2g1_job,dag,do_second_coinc,do_insp_veto,usertag,
+  'H2G1')
+
+# L1-G1
+l1_g1_double_coinc = []
+l1_g1_double_coinc = double_coinc(l1_analyzed_l1g1,'L1',g1_analyzed_h1g1,'G1',
+  g1_l1_double_data,thinca2_l1g1_job,dag,do_second_coinc,do_insp_veto,usertag,
+  'L1G1')
+
 print "done"
 
 
 ############################################################################## 
-# Step 9S: Run sire on the double coincident data surviving the vetoes
+# Step 10S: Run sire on the double coincident data surviving the vetoes
 print "setting up sire jobs ...",
 sys.stdout.flush()
 
@@ -1459,6 +2524,7 @@ if do_sire:
   
       sire_segs(h1_h2_double_coinc,'output','H1-SIRE_VETO_H1H2',
         sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H1')
+
       sire_segs(h1_h2_double_coinc,'output','H2-SIRE_VETO_H1H2',
         sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H2')
         
@@ -1483,17 +2549,49 @@ if do_sire:
       sire_segs(h1_l1_double_coinc_nodes,'output','L1-SIRE_VETO_H2L1',
         sire_clust_job,dag,do_second_coinc,usertag,do_clust,'L1')
 
+
+    if do_h1 and do_g1 and len(g1_h1_double_data):
+      sire_segs(h1_g1_double_coinc,'output','H1G1-SIRE_VETO',sire_job,
+        dag,do_second_coinc,usertag)
+  
+      sire_segs(h1_g1_double_coinc,'output','H1-SIRE_VETO_H1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H1')
+      sire_segs(h1_g1_double_coinc,'output','G1-SIRE_VETO_H1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'G1')
+        
+
+    if do_h2 and do_g1 and len(g1_h2_double_data):
+      sire_segs(h2_g1_double_coinc,'output','H2G1-SIRE_VETO',sire_job,
+        dag,do_second_coinc,usertag)
+  
+      sire_segs(h2_g1_double_coinc,'output','H2-SIRE_VETO_H2G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H2')
+      sire_segs(h2_g1_double_coinc,'output','G1-SIRE_VETO_H2G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'G1')
+
+    if do_l1 and do_g1 and len(g1_l1_double_data):
+      sire_segs(l1_g1_double_coinc,'output','L1G1-SIRE_VETO',sire_job,
+        dag,do_second_coinc,usertag)
+  
+      sire_segs(l1_g1_double_coinc,'output','L1-SIRE_VETO_L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'L1')
+      sire_segs(l1_g1_double_coinc,'output','G1-SIRE_VETO_L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'G1')
+
+
 print "done"
 
 ##############################################################################
-# Step 9slide: Time slide each of the disjoint sets of double coincidence data
+# Step 10slide: Time slide each of the disjoint sets of double coincidence data
 
 print "setting up thinca slide jobs on double IFO data...",
 
 h1_h2_double_second_coinc_slides_nodes = []
 h1_l1_double_second_coinc_slides_nodes = []
 h2_l1_double_second_coinc_slides_nodes = []
-
+h1_g1_double_second_coinc_slides_nodes = []
+h2_g1_double_second_coinc_slides_nodes = []
+l1_g1_double_second_coinc_slides_nodes = []
 
 if num_slides:
   # H1-H2
@@ -1511,10 +2609,27 @@ if num_slides:
     l1_analyzed_h2l1,'L1',h2_l1_double_data,thinca2_slides_h2l1_job,dag,
     do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
 
+  # H1-G1
+  h1_g1_double_second_coinc_slides_nodes = double_coinc(h1_analyzed_h1g1,'H1',
+    g1_chunks_analyzed,'G1',g1_h1_double_data,thinca2_slides_h1g1_job,dag,
+    do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
+ 
+  # H2-G1
+  h2_g1_double_second_coinc_slides_nodes = double_coinc(h2_analyzed_h2g1,'H2',
+    g1_chunks_analyzed,'G1',g1_h2_double_data,thinca2_slides_h2g1_job,dag,
+    do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
+
+  # L1-G1
+  l1_g1_double_second_coinc_slides_nodes = double_coinc(l1_analyzed_l1g1,'L1',
+    g1_chunks_analyzed,'G1',g1_l1_double_data,thinca2_slides_l1g1_job,dag,
+    do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
+
 print "done"
 
+
+
 ############################################################################## 
-# Step 10: Run thinca on each of the disjoint sets of triple coincidence data
+# Step 11: Run thinca on each of the disjoint sets of triple coincidence data
 
 print "setting up thinca jobs on three IFO data...",
 
@@ -1524,11 +2639,31 @@ h1_h2_l1_triple_coinc = triple_coinc(h1_analyzed_h1h2l1,'H1',
   h2_analyzed_h1h2l1,'H2',l1_analyzed_h1h2l1,'L1',h1_h2_l1_triple_data,
   thinca2_h1h2l1_job,dag,do_second_coinc,do_insp_veto,usertag,'H1H2L1')
 
+# H1-H2-G1
+h1_h2_g1_triple_coinc = []
+h1_h2_g1_triple_coinc = triple_coinc(h1_analyzed_h1h2g1,'H1',
+  h2_analyzed_h1h2g1,'H2',g1_analyzed_h1h2g1,'G1',h1_h2_g1_triple_data,
+  thinca2_h1h2g1_job,dag,do_second_coinc,do_insp_veto,usertag,'H1H2G1')
+
+# H1-L1-G1
+h1_l1_g1_triple_coinc = []
+h1_l1_g1_triple_coinc = triple_coinc(h1_analyzed_h1l1g1,'H1',
+  l1_analyzed_h1l1g1,'L1',g1_analyzed_h1l1g1,'G1',h1_l1_g1_triple_data,
+  thinca2_h1l1g1_job,dag,do_second_coinc,do_insp_veto,usertag,'H1L1G1')
+
+# H2-L1-G1
+h2_l1_g1_triple_coinc = []
+h2_l1_g1_triple_coinc = triple_coinc(h2_analyzed_h2l1g1,'H2',
+  l1_analyzed_h2l1g1,'L1',g1_analyzed_h2l1g1,'G1',h2_l1_g1_triple_data,
+  thinca2_h2l1g1_job,dag,do_second_coinc,do_insp_veto,usertag,'H2L1G1')
+
+
+
 print "done"
 
 
 ############################################################################## 
-# Step 10S: Run sire on the triple coincident triggers surviving vetoes
+# Step 11S: Run sire on the triple coincident triggers surviving vetoes
 print "setting up sire jobs ...",
 sys.stdout.flush()
 
@@ -1550,14 +2685,50 @@ if do_sire:
       sire_segs(h1_h2_l1_triple_coinc,'output','L1-SIRE_VETO_H1H2L1',
         sire_clust_job,dag,do_second_coinc,usertag,do_clust,'L1')
 
+    if do_h1 and do_h2 and do_g1 and len(h1_h2_g1_triple_data):
+      sire_segs(h1_h2_g1_triple_coinc,'output','H1H2G1-SIRE_VETO',sire_job,
+        dag,do_second_coinc,usertag)
+        
+      sire_segs(h1_h2_g1_triple_coinc,'output','H1-SIRE_VETO_H1H2G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H1')
+      sire_segs(h1_h2_g1_triple_coinc,'output','H2-SIRE_VETO_H1H2G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H2')
+      sire_segs(h1_h2_g1_triple_coinc,'output','G1-SIRE_VETO_H1H2G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'G1')
+
+    if do_h1 and do_l1 and do_g1 and len(h1_l1_g1_triple_data):
+      sire_segs(h1_l1_g1_triple_coinc,'output','H1L1G1-SIRE_VETO',sire_job,
+        dag,do_second_coinc,usertag)
+        
+      sire_segs(h1_l1_g1_triple_coinc,'output','H1-SIRE_VETO_H1L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H1')
+      sire_segs(h1_l1_g1_triple_coinc,'output','L1-SIRE_VETO_H1L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'L1')
+      sire_segs(h1_l1_g1_triple_coinc,'output','G1-SIRE_VETO_H1L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'G1')
+
+    if do_h2 and do_l1 and do_g1 and len(h2_l1_g1_triple_data):
+      sire_segs(h2_l1_g1_triple_coinc,'output','H2L1G1-SIRE_VETO',sire_job,
+        dag,do_second_coinc,usertag)
+        
+      sire_segs(h2_l1_g1_triple_coinc,'output','H2-SIRE_VETO_H2L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H2')
+      sire_segs(h2_l1_g1_triple_coinc,'output','L1-SIRE_VETO_H2L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'L1')
+      sire_segs(h2_l1_g1_triple_coinc,'output','G1-SIRE_VETO_H2L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'G1')
+
 print "done"
 
 ##############################################################################
-# Step 10slide: Time slide the set of triple coincidence data
+# Step 11slide: Time slide the set of triple coincidence data
 
 print "setting up thinca slide jobs on triple IFO data...",
 
 h1_h2_l1_triple_second_coinc_slides_nodes = []
+h1_h2_g1_triple_second_coinc_slides_nodes = []
+h1_l1_g1_triple_second_coinc_slides_nodes = []
+h2_l1_g1_triple_second_coinc_slides_nodes = []
 
 
 if num_slides:
@@ -1566,11 +2737,89 @@ if num_slides:
     h2_analyzed_h1h2l1,'H2',l1_analyzed_h1h2l1,'L1',h1_h2_l1_triple_data,
     thinca2_slides_h1h2l1_job,dag,do_second_coinc,do_insp_veto,usertag,ifotag,num_slides)
 
+  # H1-H2-G1
+  h1_h2_g1_triple_second_coinc_slides_nodes = triple_coinc(h1_analyzed_h1h2g1,'H1',
+    h2_analyzed_h1h2g1,'H2',g1_analyzed_h1h2g1,'G1',h1_h2_g1_triple_data,
+    thinca2_slides_h1h2g1_job,dag,do_second_coinc,do_insp_veto,usertag,ifotag,num_slides)
+
+  # H1-L1-G1
+  h1_l1_g1_triple_second_coinc_slides_nodes = triple_coinc(h1_analyzed_h1l1g1,'H1',
+    l1_analyzed_h1l1g1,'L1',g1_analyzed_h1l1g1,'G1',h1_l1_g1_triple_data,
+    thinca2_slides_h1l1g1_job,dag,do_second_coinc,do_insp_veto,usertag,ifotag,num_slides)
+
+  # H2-L1-G1
+  h2_l1_g1_triple_second_coinc_slides_nodes = triple_coinc(h2_analyzed_h2l1g1,'H2',
+    l1_analyzed_h2l1g1,'L1',g1_analyzed_h2l1g1,'G1',h2_l1_g1_triple_data,
+    thinca2_slides_h2l1g1_job,dag,do_second_coinc,do_insp_veto,usertag,ifotag,num_slides)
+
 print "done"
 
+
   
+############################################################################## 
+# Step 12: Run thinca on each of the disjoint sets of 4-way coincidence data
+
+print "setting up thinca jobs on quadro IFO data...",
+
+# H1-H2-L1-G1
+h1_h2_l1_g1_quadro_coinc = []
+h1_h2_l1_g1_quadro_coinc = quadro_coinc(h1_analyzed_h1h2l1g1,'H1',
+  h2_analyzed_h1h2l1g1,'H2',l1_analyzed_h1h2l1g1,'L1', g1_analyzed_h1h2l1g1, 
+  'G1',h1_h2_l1_g1_data, thinca2_h1h2l1g1_job,dag,do_second_coinc,
+  do_insp_veto,usertag,'H1H2L1G1')
+
+print "done"
+
+
+############################################################################## 
+# Step 12S: Run sire on the 4-way coincident triggers surviving vetoes
+
+print "setting up sire jobs ...",
+sys.stdout.flush()
+
+do_clust = 1
+
+if do_sire:
+ 
+  # a sire of the three ifo coincidences, and clustered sires for each ifo
+ if do_four_ifo:
+    if do_h1 and do_h2 and do_l1 and do_g1 and len(h1_h2_l1_g1_data):
+      sire_segs(h1_h2_l1_g1_quadro_coinc,'output','H1H2L1G1-SIRE_VETO',sire_job,
+        dag,do_second_coinc,usertag)
+        
+      sire_segs(h1_h2_l1_g1_quadro_coinc,'output','H1-SIRE_VETO_H1H2L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H1')
+      sire_segs(h1_h2_l1_g1_quadro_coinc,'output','H2-SIRE_VETO_H1H2L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'H2')
+      sire_segs(h1_h2_l1_g1_quadro_coinc,'output','L1-SIRE_VETO_H1H2L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'L1')
+      sire_segs(h1_h2_l1_g1_quadro_coinc,'output','G1-SIRE_VETO_H1H2L1G1',
+        sire_clust_job,dag,do_second_coinc,usertag,do_clust,'G1')
+
+print "done"
+
+
 ##############################################################################
-# Step 10: Write out the DAG, help message and log file
+# Step 12slide: Time slide the set of 4-way coincidence data
+
+print "setting up thinca slide jobs on quadro IFO data...",
+
+h1_h2_l1_g1_second_coinc_slides_nodes = []
+
+
+if num_slides:
+  # H1-H2-L1-G1
+  h1_h2_l1_g1_second_coinc_slides_nodes = quadro_coinc(h1_analyzed_h1h2l1g1,'H1',
+    h2_analyzed_h1h2l1g1,'H2',l1_analyzed_h1h2l1g1,'L1',g1_analyzed_h1h2l1g1,'G1',
+    h1_h2_l1_g1_data,thinca2_slides_h1h2l1g1_job,dag,do_second_coinc,do_insp_veto,
+    usertag,ifotag,num_slides)
+
+print "done"
+
+
+
+##############################################################################
+# Step 13: Write out the DAG, help message and log file
 dag.write_sub_files()
 dag.write_dag()
 
@@ -1589,7 +2838,7 @@ Enter your pass phrase when promted. The proxy will be valid for 72 hours.
 If you expect the LSCdataFind jobs to take longer to complete, increase the
 time specified in the -hours option to grid-proxy-init. You can check that 
 the grid proxy has been sucessfully created by executing the command:
- 
+
   grid-cert-info -all -file /tmp/x509up_u`id -u`
 
 This will also give the expiry time of the proxy. You should also make sure
@@ -1609,7 +2858,7 @@ if usertag:
   log_fh = open(basename + '.pipeline.' + usertag + '.log', 'w')
 else:
   log_fh = open(basename + '.pipeline.log', 'w')
-
+  
 log_fh.write( "$Id$" + "\n" )
 log_fh.write( "$Name$" + "\n\n" )
 log_fh.write( "Invoked with arguments:\n" )
@@ -1622,12 +2871,13 @@ log_fh.write( cp.get('pipeline','cvs-tag') + "\n\n" )
 
 print >> log_fh, "\n===========================================\n"
 print >> log_fh, "Science Segments and master chunks:\n"
-for sci_data in [h1_data, h2_data, l1_data]:
+for sci_data in [h1_data, h2_data, l1_data, g1_data]:
   print >> log_fh, sci_data
   for seg in sci_data:
     print >> log_fh, " ", seg
     for chunk in seg:
       print >> log_fh, "   ", chunk
+
 
 print >> log_fh, "\n===========================================\n"
 log_fh.write( 
@@ -1656,6 +2906,16 @@ total_time = 0
 for l1_done in l1_chunks_analyzed:
   print >> log_fh, l1_done.get_chunk()
   total_time += len(l1_done.get_chunk())
+print >> log_fh, "\n total time", total_time, "seconds"
+
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( 
+  "Filtering " + str(len(g1_chunks_analyzed)) + " G1 master chunks\n" )
+total_time = 0
+for g1_done in g1_chunks_analyzed:
+  print >> log_fh, g1_done.get_chunk()
+  total_time += len(g1_done.get_chunk())
 print >> log_fh, "\n total time", total_time, "seconds"
 
 
@@ -1718,6 +2978,26 @@ if output_segs and len(l1_single_data):
       seg.dur()))
   f.close()
 
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( "Writing " + str(len(g1_single_data)) + 
+  " G1 single IFO science segments\n" )
+total_time = 0
+for seg in g1_single_data:
+  print >> log_fh, seg
+  total_time += seg.dur()
+print >> log_fh, "\n total time", total_time, "seconds"
+
+if output_segs and len(g1_single_data):
+  if playground_only:
+    f = open('g1_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('g1_segs_analyzed.txt', 'w')
+  for seg in g1_single_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
   
 print >> log_fh, "\n===========================================\n"
 log_fh.write( "Writing " + str(len(h1_h2_double_data)) + 
@@ -1776,6 +3056,67 @@ if output_segs and len(h2_l1_double_data):
       seg.dur()))
   f.close()
 
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( "Writing " + str(len(g1_h1_double_data)) + 
+  " H1/G1 double coincident segments\n" )
+total_time = 0
+for seg in g1_h1_double_data:
+  print >> log_fh, seg
+  total_time += seg.dur()
+print >> log_fh, "\n total time", total_time, "seconds"
+
+if output_segs and len(g1_h1_double_data):
+  if playground_only:
+    f = open('h1_g1_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('h1_g1_segs_analyzed.txt', 'w')
+  for seg in g1_h1_double_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( "Writing " + str(len(g1_l1_double_data)) + 
+  " L1/G1 double coincident segments\n" )
+total_time = 0
+for seg in g1_l1_double_data:
+  print >> log_fh, seg
+  total_time += seg.dur()
+print >> log_fh, "\n total time", total_time, "seconds"
+
+if output_segs and len(g1_l1_double_data):
+  if playground_only:
+    f = open('l1_g1_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('l1_g1_segs_analyzed.txt', 'w')
+  for seg in g1_l1_double_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( "Writing " + str(len(g1_h2_double_data)) + 
+  " H2/G1 double coincident segments\n" )
+total_time = 0
+for seg in g1_h2_double_data:
+  print >> log_fh, seg
+  total_time += seg.dur()
+print >> log_fh, "\n total time", total_time, "seconds"
+
+if output_segs and len(g1_h2_double_data):
+  if playground_only:
+    f = open('h2_g1_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('h2_g1_segs_analyzed.txt', 'w')
+  for seg in g1_h2_double_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
+
   
 print >> log_fh, "\n===========================================\n"
 log_fh.write( "Writing " + str(len(h1_h2_l1_triple_data)) + 
@@ -1797,5 +3138,84 @@ if output_segs and len(h1_h2_l1_triple_data):
   f.close()
 
   
+print >> log_fh, "\n===========================================\n"
+log_fh.write( "Writing " + str(len(h1_h2_g1_triple_data)) + 
+  " H1/H2/G1 triple coincident segments\n" )
+total_time = 0
+for seg in h1_h2_g1_triple_data:
+  print >> log_fh, seg
+  total_time += seg.dur()
+print >> log_fh, "\n total time", total_time, "seconds"
+
+if output_segs and len(h1_h2_g1_triple_data):
+  if playground_only:
+    f = open('h1_h2_g1_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('h1_h2_g1_segs_analyzed.txt', 'w')
+  for seg in h1_h2_g1_triple_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( "Writing " + str(len(h1_l1_g1_triple_data)) + 
+  " H1/L1/G1 triple coincident segments\n" )
+total_time = 0
+for seg in h1_l1_g1_triple_data:
+  print >> log_fh, seg
+  total_time += seg.dur()
+print >> log_fh, "\n total time", total_time, "seconds"
+
+if output_segs and len(h1_l1_g1_triple_data):
+  if playground_only:
+    f = open('h1_l1_g1_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('h1_l1_g1_segs_analyzed.txt', 'w')
+  for seg in h1_l1_g1_triple_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( "Writing " + str(len(h2_l1_g1_triple_data)) + 
+  " H2/L1/G1 triple coincident segments\n" )
+total_time = 0
+for seg in h2_l1_g1_triple_data:
+  print >> log_fh, seg
+  total_time += seg.dur()
+print >> log_fh, "\n total time", total_time, "seconds"
+
+if output_segs and len(h2_l1_g1_triple_data):
+  if playground_only:
+    f = open('h2_l1_g1_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('h2_l1_g1_segs_analyzed.txt', 'w')
+  for seg in h2_l1_g1_triple_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
+
+print >> log_fh, "\n===========================================\n"
+log_fh.write( "Writing " + str(len(h1_h2_l1_g1_data)) + 
+  " H1/H2/L1/G1 quadrupole coincident segments\n" )
+total_time = 0
+for seg in h1_h2_l1_g1_data:
+  print >> log_fh, seg
+  total_time += seg.dur()
+print >> log_fh, "\n total time", total_time, "seconds"
+
+if output_segs and len(h1_h2_l1_g1_data):
+  if playground_only:
+    f = open('h1_h2_l1_g1_play_segs_analyzed.txt', 'w')
+  else:  
+    f = open('h1_h2_l1_g1_segs_analyzed.txt', 'w')
+  for seg in h1_h2_l1_g1_data:
+    f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+      seg.dur()))
+  f.close()
+
 sys.exit(0)
 
