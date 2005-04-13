@@ -54,7 +54,7 @@ REAL4 ra_min  = 0.0;
 REAL4 ra_max  = LAL_TWOPI*0.999; /* BEN: need to fix this */
 REAL4 dec_min = -LAL_PI_2;
 REAL4 dec_max = LAL_PI_2;
-REAL4 MAX_NODES = 2e6; /* limit on number of nodes for TwoDMesh  */
+REAL4 MAX_NODES = 8e6; /* limit on number of nodes for TwoDMesh  */
 
 
 void getRange( LALStatus *, REAL4 [2], REAL4, void * );
@@ -218,6 +218,7 @@ printf( "parsed options...\n" );
   case ptolemetric:
     /* fill PtoleMetric() input structure */
     search.site = &lalCachedDetectors[detector_argument];
+    printf( "Set search site to %d\n", detector_argument );
     search.position.system = COORDINATESYSTEM_EQUATORIAL;
     search.spindown = NULL;
     search.epoch.gpsSeconds = begin;
@@ -281,10 +282,10 @@ printf( "set input parameters...\n" );
 
 
   /* Clean up and leave. */
-  LALDestroyTwoDMesh( &stat, &firstNode, &mesh.nOut );
+  LAL_CALL( LALDestroyTwoDMesh( &stat, &firstNode, &mesh.nOut ), &stat );
   printf( "destroyed %d nodes\n", mesh.nOut );
  
-  LALCheckMemoryLeaks();
+  LAL_CALL( LALCheckMemoryLeaks(), &stat );
   return 0;
 } /* main() */
 
@@ -323,12 +324,12 @@ void getMetric( LALStatus *stat,
   Ppatch->position.longitude = x[1];
   Ppatch->position.latitude =  x[0];
 
-  LALPtoleMetric( stat->statusPtr, metric, Ppatch );
+  LAL_CALL( LALPtoleMetric( stat->statusPtr, metric, Ppatch ), stat );
 
   BEGINFAIL( stat )
     TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   ENDFAIL( stat );
-  LALProjectMetric( stat->statusPtr, metric, 0 );
+  LAL_CALL( LALProjectMetric( stat->statusPtr, metric, 0 ), stat );
   BEGINFAIL( stat )
     TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   ENDFAIL( stat );
