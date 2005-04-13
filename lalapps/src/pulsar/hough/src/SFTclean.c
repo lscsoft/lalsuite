@@ -116,6 +116,11 @@ int main(int argc, char *argv[]){
   CHAR filelist[MAXFILES][MAXFILENAMELENGTH];
   CHAR tempstr1[256], tempstr2[256]; 
 
+  /* log file and strings */
+  FILE   *fpLog=NULL;
+  CHAR   *fnameLog=NULL; 
+  CHAR   *logstr=NULL; 
+
   /* user input variables */
   BOOLEAN uvar_help;
   CHAR *uvar_harmonicfname;        /* file with harmonics info */
@@ -162,6 +167,52 @@ int main(int argc, char *argv[]){
   /* exit if help was required */
   if (uvar_help)
     exit(0); 
+
+  /********logging the user input variables*********************/
+  /* open log file for writing */
+  fnameLog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
+  strcpy(fnameLog,uvar_outputSFTDir);
+  strcat(fnameLog, "/CLEAN_log");
+  if ((fpLog = fopen(fnameLog, "w")) == NULL) {
+    fprintf(stderr, "Unable to open file %s for writing\n", fnameLog);
+    LALFree(fnameLog);
+    exit(1);
+  }
+
+  /* get the log string */
+  SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+
+  fprintf( fpLog, "## LOG FILE FOR SFT Cleaning\n\n");
+  fprintf( fpLog, "# User Input:\n");
+  fprintf( fpLog, "#-------------------------------------------\n");
+  fprintf( fpLog, logstr);
+  LALFree(logstr);
+
+  /* copy contents of harmonics file into logfile */
+  fprintf(fpLog, "\n\n# Contents of harmonics file:\n");
+  fclose(fpLog);
+  {
+    CHAR command[1024] = "";
+    sprintf(command, "cat %s >> %s", uvar_harmonicfname, fnameLog);
+    system(command);
+  }
+
+  /* append an ident-string defining the exact CVS-version of the code used */
+  fpLog = fopen(fnameLog, "a");
+  {
+    CHAR command[1024] = "";
+    fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
+    fprintf (fpLog, "# -----------------------------------------\n");
+    fclose (fpLog);
+    
+    sprintf (command, "ident %s | sort -u >> %s", argv[0], fnameLog);
+    system (command);	/* we don't check this. If it fails, we assume that */
+    			/* one of the system-commands was not available, and */
+    			/* therefore the CVS-versions will not be logged */
+
+    LALFree(fnameLog); 
+  }
+  /*end of logging*********************************************************/
  
   SUB( FindNumberHarmonics (&status, &harmonics, uvar_harmonicfname), &status); 
   nHarmonicSets = harmonics.nHarmonicSets; 

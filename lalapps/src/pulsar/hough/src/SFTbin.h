@@ -78,6 +78,7 @@ Routines for reading SFT binary files
 #include <lal/PulsarDataTypes.h>
 #include <lal/UserInput.h>
 #include <lal/LUT.h>
+#include <lal/RngMedBias.h>
 
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_rng.h>

@@ -855,10 +855,8 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
   
   INT4     nLines, count, leftCount, rightCount, lineBin, minBin, maxBin, k, tempk;
   INT4     leftWingBins, rightWingBins, length, sumBins;
-  REAL8    deltaF, f0, tBase;
-  REAL8    meanRe, meanIm, stdRe, stdIm, stdPow, medianPow;
-  REAL8    *tempDataRe=NULL; 
-  REAL8    *tempDataIm=NULL;  
+  REAL8    deltaF, f0, tBase, bias;
+  REAL8    stdPow, medianPow;
   REAL8    *tempDataPow=NULL;
   REAL8    *lineFreq=NULL;
   REAL8    *leftWing=NULL;
@@ -886,6 +884,9 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
   ASSERT (width >= 0, status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
   length = sft->data->length;
   ASSERT (length > 0, status, SFTBINH_EHEADER, SFTBINH_MSGEVAL);
+
+  /* get the value of RngMedBias from the window size */
+  TRY( LALRngMedBias( status->statusPtr, &bias, 2*window ), status ); 
   
   /* copy pointers from input */
   nLines = lineInfo->nLines;
@@ -899,8 +900,7 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
   minBin = floor(f0/deltaF + 0.5);
   maxBin = minBin + length - 1;
 
-  tempDataRe = LALMalloc(2*window*sizeof(REAL8));
-  tempDataIm = LALMalloc(2*window*sizeof(REAL8));
+  /* allocate memory for storing sft power */
   tempDataPow = LALMalloc(2*window*sizeof(REAL8));
  
   fp=fopen("/dev/urandom", "r");
@@ -939,15 +939,13 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
     /* check that frequency is within band of sft and line is not too wide*/
     if ((lineBin >= minBin) && (lineBin <= maxBin) && (leftWingBins <= width) && (rightWingBins <= width)){
 
-      /* estimate the mean and std deviation of "window" # of bins each side */
+      /* estimate the sft power in "window" # of bins each side */
       for (k = 0; k < window ; k++){
 	if (maxBin - lineBin - rightWingBins - k > 0)
 	  inData = sft->data->data + lineBin - minBin + rightWingBins + k + 1;
 	else
 	  inData = sft->data->data + length - 1;
 
-	tempDataRe[k] = inData->re;
-	tempDataIm[k] = inData->im;
 	tempDataPow[k] = (inData->re)*(inData->re) + (inData->im)*(inData->im);
 	
 	if (lineBin - minBin -leftWingBins - k > 0)
@@ -955,31 +953,21 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 	else 
 	  inData = sft->data->data;
 
-	tempDataRe[k + window] = inData->re;
-	tempDataIm[k + window] = inData->im;
 	tempDataPow[k+window] = (inData->re)*(inData->re) + (inData->im)*(inData->im);   
       }
     
-      meanRe = gsl_stats_mean(tempDataRe,1,2*window); 
-      meanIm = gsl_stats_mean(tempDataIm,1,2*window);  
-      /* meanRe = 0.0;   */
-      /* meanIm = 0.0; */   
-      stdRe = gsl_stats_sd(tempDataRe,1,2*window); 
-      stdIm = gsl_stats_sd(tempDataIm,1,2*window); 
       gsl_sort( tempDataPow, 1, 2*window);
       medianPow = gsl_stats_median_from_sorted_data(tempDataPow, 1, 2*window);
-      stdPow = sqrt(medianPow/(2 * log(2.0)));
+      stdPow = sqrt(medianPow/(2 * bias));
       
       /* set sft value at central frequency to noise */
       inData = sft->data->data + lineBin - minBin;
 
       randVal = ranVector->data + tempk;  
-      /* inData->re = meanRe + stdRe * (*randVal);  */
       inData->re = stdPow * (*randVal); 
       tempk++;
 
       randVal = ranVector->data + tempk;  
-      /* inData->im = meanIm + stdIm * (*randVal); */
       inData->im = stdPow * (*randVal); 
       tempk++;
     
@@ -992,12 +980,10 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 	    inData = sft->data->data + lineBin - minBin - leftCount - 1;
 
 	    randVal = ranVector->data + tempk;  
-	    /* inData->re = meanRe + stdRe * (*randVal); */
 	    inData->re = stdPow * (*randVal); 
 	    tempk++;
 
 	    randVal = ranVector->data + tempk;  
-	    /* inData->im = meanIm + stdIm * (*randVal);  */
 	    inData->im = stdPow * (*randVal); 
 	    tempk++;
 	  }
@@ -1011,12 +997,10 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 	    inData = sft->data->data + lineBin - minBin + rightCount + 1;
 
 	    randVal = ranVector->data + tempk;  
-	    /* inData->re = meanRe + stdRe * (*randVal); */
 	    inData->re = stdPow * (*randVal); 
             tempk++;
 
 	    randVal = ranVector->data + tempk;  
-	    /* inData->im = meanIm + stdIm * (*randVal);  */
 	    inData->im = stdPow * (*randVal);
 	    tempk++;
 	  }
@@ -1026,8 +1010,6 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
   } /* end loop over lines */
 
   /* free memory */
-  LALFree(tempDataRe);
-  LALFree(tempDataIm);
   LALFree(tempDataPow);
   TRY (LALDestroyVector (status->statusPtr, &ranVector), status);
 
