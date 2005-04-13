@@ -37,15 +37,33 @@ NRCSID( SIMINSPIRALUTILSC, "$Id$" );
 <lalLaTeX>
 \subsection{Module \texttt{SimInspiralUtils.c}}
 
-\noindent Blah.
+Provides a set of utilities for manipulating \texttt{simInspiralTable}s.
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{SimInspiralUtilsCP}
-
+\idx{LALGalacticInspiralParamsToSimInspiralTable()}
+\idx{LALInspiralSiteTimeAndDist()}
+\idx{LALPopulateSimInspiralSiteInfo()}
+  
 \subsubsection*{Description}
 
-\noindent Blah.
+The function \texttt{LALInspiralSiteTimeAndDist()} calculates detector end
+time (\texttt{endTime}) and effective distance (\texttt{effDist}) for an
+inspiral signal from a specific location in the sky (\texttt{skyPos}) assumed
+to be given in equatorial coordinates.  The detector end time is obtained by
+using \texttt{LALTimeDelayFromEarthCenter()}, while the effective distance
+requires calculation of the detector response, calculated using
+\texttt{LALComputeDetAMResponse()}. 
+
+The function \texttt{LALPopulateSimInspiralSiteInfo()} populates the end time
+and effective distance for each of the interferometer sites.  The sky location
+(in equatorial coordinates) is assumed to be already contained in the input
+\texttt{SimInspiralTable}.  The end time and effective distance for each site
+is calculated by calling \texttt{LALInspiralSiteTimeAndDist()} once for each
+of the detectors, and setting the \texttt{detector} appropriately.
+    
+    
 
 \subsubsection*{Algorithm}
 
@@ -53,7 +71,8 @@ NRCSID( SIMINSPIRALUTILSC, "$Id$" );
 
 \subsubsection*{Uses}
 
-\noindent None.
+\noindent LALGetInspiralParams, LALGPStoGMST1, LALTimeDelayFromEarthCenter, 
+  LALAddFloatToGPS, LALComputeDetAMResponse.
 
 \subsubsection*{Notes}
 %% Any relevant notes.
@@ -76,7 +95,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
   PPNParamStruc         ppnParams;
   LALMSTUnitsAndAcc     gmstUnits = { MST_HRS, LALLEAPSEC_STRICT };
   LALGPSandAcc          gpsAndAcc;
-  SkyPosition         skyPos;
+  SkyPosition           skyPos;
   LALSource             source;
   LALPlaceAndGPS        placeAndGPS;
   DetTimeAndASource     detTimeAndSource;
@@ -251,7 +270,7 @@ LALInspiralSiteTimeAndDist(
   DetTimeAndASource     detTimeAndSource;
   LALDetAndSource       detAndSource;
   LALDetAMResponse      resp;
-  REAL8     time_diff_ns;
+  REAL8                 time_diff_ns;
   REAL4                 splus, scross, cosiota;
 
   INITSTATUS( status, "LALInspiralSiteTimeAndDist", SIMINSPIRALUTILSC );
@@ -331,7 +350,7 @@ LALPopulateSimInspiralSiteInfo(
     )
 /* </lalVerbatim> */
 {
-  SkyPosition         skyPos;
+  SkyPosition           skyPos;
   LALDetector           detector; 
   REAL4                *eff_dist;
   LIGOTimeGPS          *end_time;
