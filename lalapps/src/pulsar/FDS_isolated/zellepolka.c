@@ -78,6 +78,7 @@ int finite(double);
 #define POLKAC_ESYS             3
 #define POLKAC_EINVALIDFSTATS   4
 #define POLKAC_EMEM             5
+#define POLKAC_ENORMAL          6
 
 #define POLKAC_MSGENULL         "Arguments contained an unexpected null pointer"
 #define POLKAC_MSGENONULL       "Input pointer was not NULL"
@@ -90,7 +91,7 @@ int finite(double);
 #define UBERPOLKA_EXIT_FCTEST   33
 #define UBERPOLKA_EXIT_OUTFAIL  34
 
-
+#define POLKA_EXIT_OK 0
 
 
 
@@ -145,21 +146,23 @@ typedef struct CellDataTag
 } CellData;
 
 
-
 /* ----------------------------------------------------------------------------- */
 /* Function declarelations */
-int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
+void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCommandLineArgsTag *CLA); 
 int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA);
 int ReadOneCandidateFile(CandidateList **CList, const char *fname);
 int compareCIStructs(const void *ip, const void *jp);
-int compareCdaf(const void *ip, const void *jp);
 int rintcompare(INT4 *idata1, INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
 int rfloatcompare(REAL8 *rdata1, REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
 void delete_int4_linked_list(struct int4_linked_list *list_ptr);
 struct int4_linked_list *add_int4_data(struct int4_linked_list *list_ptr, INT4 *data);
 void get_info_of_the_cell( CellData *cd, struct int4_linked_list *list_ptr );
 int compareSignificance(const void *a, const void *b);
+void FreeMemory(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *cell);
 
+/*
+int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
+*/
 
 /* ----------------------------------------------------------------------------- */
 /* Global variables. */
@@ -197,12 +200,15 @@ int main(int argc,char *argv[])
   vrbflg = 1;   /* verbose error-messages */
   LAL_CALL (LALGetDebugLevel(stat, argc, argv, 'v'), stat);
 
-
   /* Reads command line arguments */
+#if 0
   if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) {
     fprintf(stderr,"ReadCommandLine failed\n");
     return UBERPOLKA_EXIT_ERRCLINE;
   }
+#endif
+
+  LAL_CALL( ReadCommandLineArgs( stat, argc,argv, &PolkaCommandLineArgs ), stat); 
 
   /* Reads in candidare files, set CLength */
   if (ReadCandidateFiles(PolkaCommandLineArgs)) {
@@ -335,18 +341,38 @@ int main(int argc,char *argv[])
   }
 
 
-  LALFree(SortedC);
-  for(icell=0;icell<CLength;icell++) {
-    delete_int4_linked_list( cell[icell].CandID );
-  }
-  LALFree(cell);
-
+  LAL_CALL( FreeMemory(stat, &PolkaCommandLineArgs, cell), stat);
 
   LALCheckMemoryLeaks(); 
 
   return 0;
  
 }
+
+/*******************************************************************************/
+/* Free memory */
+void FreeMemory(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *cell)
+{
+  INITSTATUS( stat, "FreeMemory", rcsid );
+  ATTATCHSTATUSPTR (stat);
+
+  UINT4 icell;
+
+  LALFree(CLA->FstatsFile);
+  LALFree(CLA->OutputFile);
+
+  LALFree(SortedC);
+
+  for(icell=0;icell<CLength;icell++) {
+    delete_int4_linked_list( cell[icell].CandID );
+  }
+  LALFree(cell);
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+}
+
+
 
 /*******************************************************************************/
 /* add data to linked structure */
@@ -431,8 +457,6 @@ int compareCIStructs(const void *a, const void *b)
 
 
 
-
-
 int compareSignificance(const void *a, const void *b)
 {
   const CellData *ip = a;
@@ -482,7 +506,7 @@ int rintcompare(INT4 *ap, INT4 *bp, size_t n) {
 
 
 /*******************************************************************************/
-
+/* We would use glob in the future to read different files ? */
 int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 {
   if (ReadOneCandidateFile ( &SortedC, CLA.FstatsFile)) return 1;
@@ -710,8 +734,10 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 
 } /* ReadOneCandidateFile() */
 
-/*******************************************************************************/
 
+
+/*******************************************************************************/
+#if 0
 int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA) 
 {
   INT2 errflg = 0;
@@ -819,7 +845,7 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
 
   if(CLA->FstatsFile == NULL)
     {
-      LALPrintError("No 1st candidates file specified; input with -1 option.\n");
+      LALPrintError("No candidates file specified; input with -I option.\n");
       LALPrintError("For help type %s -h\n", argv[0]);
       return 1;
     }      
@@ -833,27 +859,27 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
 
   return errflg;
 }
-
-
-
-/* THE FOLLOWING PART HAS NOT BEEN TESTED YET. */
-#if 0
-CHAR* uvar_InputData;
-CHAR* uvar_OutputData;
-REAL8 uvar_FreqWindow;
-REAL8 uvar_AlphaWindow;
-REAL8 uvar_DeltaWindow;
-REAL8 uvar_FreqShift;
-REAL8 uvar_AlphaShift;
-REAL8 uvar_DeltaShift;
-BOOLEAN uvar_help;
-BOOLEAN uvar_EAHoutput;
+#endif
 
 
 void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCommandLineArgsTag *CLA) 
 {
   INITSTATUS( stat, "ReadCommandLineArgs", rcsid );
   ATTATCHSTATUSPTR (stat);
+
+  ASSERT( CLA != NULL, stat, POLKAC_ENULL, POLKAC_MSGENULL);
+
+  CHAR* uvar_InputData;
+  CHAR* uvar_OutputData;
+  REAL8 uvar_FreqWindow;
+  REAL8 uvar_AlphaWindow;
+  REAL8 uvar_DeltaWindow;
+  REAL8 uvar_FreqShift;
+  REAL8 uvar_AlphaShift;
+  REAL8 uvar_DeltaShift;
+  BOOLEAN uvar_help;
+  BOOLEAN uvar_EAHoutput;
+
 
   uvar_help = 0;
   uvar_EAHoutput = 0;
@@ -879,27 +905,36 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCom
   LALregREALUserVar(stat,       FreqWindow,     'f', UVAR_REQUIRED, "Frequency window in Hz");
   LALregREALUserVar(stat,       AlphaWindow,    'a', UVAR_REQUIRED, "Right ascension window in radians");
   LALregREALUserVar(stat,       DeltaWindow,    'd', UVAR_REQUIRED, "Declination window in radians");
-  LALregREALUserVar(stat,       FreqShift,      'F', UVAR_REQUIRED, "Frequency shift in FreqWindow");
-  LALregREALUserVar(stat,       AlphaShift,     'A', UVAR_REQUIRED, "Right ascension shift in AlphaWindow");
-  LALregREALUserVar(stat,       DeltaShift,     'D', UVAR_REQUIRED, "Declination shift in DeltaWindow");
+  LALregREALUserVar(stat,       FreqShift,      'F', UVAR_OPTIONAL, "Frequency shift in FreqWindow");
+  LALregREALUserVar(stat,       AlphaShift,     'A', UVAR_OPTIONAL, "Right ascension shift in AlphaWindow");
+  LALregREALUserVar(stat,       DeltaShift,     'D', UVAR_OPTIONAL, "Declination shift in DeltaWindow");
 
   TRY (LALUserVarReadAllInput(stat->statusPtr,argc,argv),stat); 
 
-  CLA->FstatsFile = (CHAR *) LALMalloc(sizeof(uvar_InputData)+1);
+  if (uvar_help) {	/* if help was requested, we're done here */
+    LALDestroyUserVars(stat->statusPtr);
+    exit(POLKA_EXIT_OK);
+  }
+
+
+  CLA->FstatsFile = (CHAR *) LALMalloc(strlen(uvar_InputData)+1);
   if(CLA->FstatsFile == NULL)
     {
-      LALPrintError("No 1st candidates file specified; input with -1 option.\n");
+      LALPrintError("No candidates file specified; input with -I option.\n");
       LALPrintError("For help type %s -h\n", argv[0]);
-      return;
+      RETURN (stat);
     }      
-  CLA->OutputFile = (CHAR *) LALMalloc(sizeof(uvar_OutputData)+1);
+  CLA->OutputFile = (CHAR *) LALMalloc(strlen(uvar_OutputData)+1);
   if(CLA->OutputFile == NULL)
     {
       LALFree(CLA->FstatsFile); 
       LALPrintError("No ouput filename specified; input with -o option.\n");
       LALPrintError("For help type %s -h\n", argv[0]);
-      return;
+      RETURN (stat);
     }      
+
+  strcpy(CLA->FstatsFile,uvar_InputData);
+  strcpy(CLA->OutputFile,uvar_OutputData);
 
   CLA->Deltaf = uvar_FreqWindow;
   CLA->DeltaAlpha = uvar_AlphaWindow;
@@ -911,9 +946,13 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCom
 
   CLA->EAH = uvar_EAHoutput;
 
-  LALDestroyUserVars(stat);
+  LALDestroyUserVars(stat->statusPtr);
+  BEGINFAIL(stat) {
+    LALFree(CLA->FstatsFile);
+    LALFree(CLA->OutputFile);
+  } ENDFAIL(stat);
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 }
-#endif
+
