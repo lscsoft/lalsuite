@@ -655,7 +655,7 @@ int main(int argc,char *argv[])
       return COMPUTEFSTATC_ECHECKPOINT;;
     }
   } /* if loopcounter > 0 */
-    
+  
   while (1)
     {
       /* flush fstats-file and write checkpoint-file */
@@ -683,7 +683,7 @@ int main(int argc,char *argv[])
 #endif
         } /* if doCheckpointing && fpstat */
       
-
+      
       /* Show some progress */
 #if USE_BOINC
       {
@@ -700,43 +700,43 @@ int main(int argc,char *argv[])
         if (local_fraction_done>1.0)
           local_fraction_done=1.0;
         boinc_fraction_done(local_fraction_done);
-            /* pass variable externally to graphics routines */
-            if (fraction_done_hook != NULL)
-              *fraction_done_hook=local_fraction_done;
+	/* pass variable externally to graphics routines */
+	if (fraction_done_hook != NULL)
+	  *fraction_done_hook=local_fraction_done;
       }
 #endif
       if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
                                         (100.0* loopcounter / thisScan.numGridPoints));
       
       LAL_CALL (NextDopplerPos( stat, &dopplerpos, &thisScan ), stat);
-
+      
       /* Have we scanned all DopplerPositions yet? */
       if (thisScan.state == STATE_FINISHED)
         break;
-
+      
       LAL_CALL (LALNormalizeSkyPosition(stat, &thisPoint, &(dopplerpos.skypos) ), stat);
-
+      
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
 #if USE_BOINC
       /* pass current search position, for use with starsphere.C
          revision 4.6 or greater. Need to convert radians to
          degrees. */
-          if (set_search_pos_hook != NULL){
-                float pAlpha=(180.0*Alpha/LAL_PI), pDelta=(180.0*Delta/LAL_PI);
+      if (set_search_pos_hook != NULL){
+	float pAlpha=(180.0*Alpha/LAL_PI), pDelta=(180.0*Delta/LAL_PI);
         set_search_pos_hook(pAlpha,pDelta);
-          }
+      }
 #endif
-          
+      
       LAL_CALL (CreateDemodParams(stat), stat);
 #ifdef FILE_AMCOEFFS
-          PrintAMCoeffs(Alpha, Delta, DemodParams->amcoe);
+      PrintAMCoeffs(Alpha, Delta, DemodParams->amcoe);
 #endif
-          /* loop over spin params */
+      /* loop over spin params */
       for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
         {
           DemodParams->spinDwn[0] = uvar_f1dot + spdwn * uvar_df1dot;
-
+	  
           switch ( uvar_expLALDemod )
 	    {
 	    case 0: 
@@ -748,18 +748,18 @@ int main(int argc,char *argv[])
 	    case 2:
 	      LAL_CALL ( TestLALDemod2(stat, &Fstat, SFTData, DemodParams), stat);
 	      break;
-		case 3:
+	    case 3:
 	      LAL_CALL ( TestLALDemod3(stat, &Fstat, SFTData, DemodParams), stat);
 	      break;
-        case 4:
+	    case 4:
 	      LAL_CALL ( TestLALDemodR8(stat, &Fstat, SFTData, DemodParams), stat);
 	      break;
 	    default:
 	      LALPrintError ("Error: invalid expLALDemod value %d\n", uvar_expLALDemod);
 	      return COMPUTEFSTATC_EINPUT;
 	    }
-
-
+	  
+	  
           /*  This fills-in highFLines that contains the outliers of F*/
           if (GV.FreqImax > 5) {
             LAL_CALL (EstimateFLines(stat), stat);
@@ -774,7 +774,7 @@ int main(int argc,char *argv[])
                   fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17f\n", 
                            uvar_Freq + i*GV.dFreq, Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
                 }
-
+	      
             } /* if outputFstat */
 
           
@@ -782,7 +782,7 @@ int main(int argc,char *argv[])
           if (highFLines != NULL && highFLines->Nclusters > 0)
             {
               int bytesWritten = 0;
-
+	      
               maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
             
               /*  for every cluster writes the information about it in file Fstats */
@@ -3862,16 +3862,13 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
 /* ---------------------------------------------------------------------- */
 /* new test-version of LAL-Demod using single precision  */
-
-#define TWOPI_FLOAT     6.283185307f  		/* 2*pi */
+#define TWOPI_FLOAT     6.28318530717958f  /* 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/* 1 / (2pi) */ 
-
 
 /* <lalVerbatim file="LALDemodCP"> */
 void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 /* </lalVerbatim> */
 { 
-
   INT4 alpha,i;                 /* loop indices */
   REAL8 *xSum=NULL, *ySum=NULL; /* temp variables for computation of fs*as and fs*bs */
   INT4 s;                       /* local variable for spinDwn calcs. */
@@ -3910,7 +3907,8 @@ void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
   ASSERT ( (Fs != NULL)&&(Fs->F != NULL), status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   if (params->returnFaFb)
     {
-      ASSERT ( (Fs->Fa != NULL)&&(Fs->Fb != NULL), status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+      ASSERT ( (Fs->Fa != NULL)&&(Fs->Fb != NULL), status, 
+	       COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
     }
 
   /* variable redefinitions for code readability */
@@ -3960,7 +3958,7 @@ void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<params->SFTno;alpha++)
       {
-        REAL4 tempFreq0, tempFreq1;
+        REAL8 tempFreq0, tempFreq1;
         REAL4 tsin, tcos;
         COMPLEX8 *Xalpha=input[alpha]->fft->data->data;
         REAL4 a = params->amcoe->a->data[alpha];
@@ -4037,6 +4035,8 @@ void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
 
         tempFreq1 = tempFreq0 + params->Dterms - 1;     /* positive if Dterms > 1 (trivial) */
 
+        x = LAL_TWOPI * tempFreq1;      /* positive! */
+
         /* we branch now (instead of inside the central loop)
          * depending on wether x can ever become SMALL in the loop or not, 
          * because it requires special treatment in the Dirichlet kernel
@@ -4052,9 +4052,6 @@ void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
               {
                 COMPLEX8 Xalpha_k = Xalpha[sftIndex];
                 sftIndex ++;
-                x = TWOPI_FLOAT * tempFreq1;
-                tempFreq1 --;
-
                 /* If x is small we need correct x->0 limit of Dirichlet kernel */
                 if( fabs(x) <  SMALL) 
                   {
@@ -4072,6 +4069,9 @@ void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
                     imagXP += Xalpha_k.im * realP;
                   }
                 
+                tempFreq1 --;
+                x = LAL_TWOPI * tempFreq1;
+                
               } /* for k < klim */
 
           } /* if x could become close to 0 */
@@ -4083,30 +4083,30 @@ void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *param
             imagXP=0.0;
 
             /* Loop over terms in dirichlet Kernel */
-            for(k=klim; k > 0 ; k--)
+            for(k=0; k < klim ; k++)
               {
-                REAL4 xinv = OOTWOPI_FLOAT / tempFreq1;
+                REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
+                COMPLEX8 Xa = *Xalpha_k;
+                Xalpha_k ++;
                 tempFreq1 --;
                 
                 realP = tsin * xinv;
                 imagP = tcos * xinv;
                 /* these four lines compute P*xtilde */
-                realXP += Xalpha_k->re * realP - Xalpha_k->im * imagP;
-                imagXP += Xalpha_k->re * imagP + Xalpha_k->im * realP;
+                realXP += Xa.re * realP - Xa.im * imagP;
+                imagXP += Xa.re * imagP + Xa.im * realP;
 
-                Xalpha_k ++;
               } /* for k < klim */
 
           } /* if x cannot be close to 0 */
         
 
-	if(sftIndex-1 > GV.ifmax-GV.ifmin){
-	      fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-		      sftIndex-1, GV.ifmax-GV.ifmin, alpha, k1, xTemp, params->Dterms, params->ifmin);
-	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	if(sftIndex-1 > GV.ifmax-GV.ifmin) {
+	  fprintf(stderr,"ERROR! sftIndex = %d > %d in TestLALDemod\nalpha=%d,"
+		  "k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+		  sftIndex-1, GV.ifmax-GV.ifmin, alpha, k1, xTemp, params->Dterms, params->ifmin);
+	  ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
-
-
 
         /* implementation of amplitude demodulation */
         {
