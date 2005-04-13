@@ -81,7 +81,8 @@ Routines for reading SFT binary files
 
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>  
+#include <gsl/gsl_randist.h>
+#include <gsl/gsl_sort.h>  
 /*
  *   Protection against C++ name mangling
  */

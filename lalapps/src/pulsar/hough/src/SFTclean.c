@@ -50,14 +50,13 @@ INT4 lalDebugLevel=0;
 
 #define MAXFILENAMELENGTH 256
 /* defaults chosen for L1 */
-
-#define HARMONICFILE "./harmonicsS2LLO4KC.txt" 
+#define HARMONICFILE "./harmonicsS2LLO4K_200_400.txt" 
 /*#define INPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO/S2_L1_Funky-v3Calv5DQ30MinSFTs"*/
 #define INPUTSFTDIR "/home/badkri/L1sfts/"
 /*#define OUTPUTSFTDIR "/nfs/morbo/geo600/hannover/sft/S2-LIGO-clean/S2_L1_Funky-v3Calv5DQ30MinSFTs-clean"*/
 #define OUTPUTSFTDIR "/home/badkri/lscsoft/lalapps/src/pulsar/hough/src/temp/"
-#define STARTFREQ 150.0
-#define BANDFREQ 300.0
+#define STARTFREQ 359.0
+#define BANDFREQ 2.0
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define WINDOWSIZE 100
 #define MAXBINS 20
