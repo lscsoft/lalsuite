@@ -980,7 +980,7 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 
       randVal = ranVector->data + tempk;  
       /* inData->im = meanIm + stdIm * (*randVal); */
-      inData->re = stdPow * (*randVal); 
+      inData->im = stdPow * (*randVal); 
       tempk++;
     
       /* now go left and set the left wing to noise */
@@ -998,7 +998,7 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 
 	    randVal = ranVector->data + tempk;  
 	    /* inData->im = meanIm + stdIm * (*randVal);  */
-	    inData->re = stdPow * (*randVal); 
+	    inData->im = stdPow * (*randVal); 
 	    tempk++;
 	  }
 	}
@@ -1017,7 +1017,7 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 
 	    randVal = ranVector->data + tempk;  
 	    /* inData->im = meanIm + stdIm * (*randVal);  */
-	    inData->re = stdPow * (*randVal);
+	    inData->im = stdPow * (*randVal);
 	    tempk++;
 	  }
 	}
