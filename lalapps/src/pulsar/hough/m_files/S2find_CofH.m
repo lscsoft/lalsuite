@@ -6,14 +6,21 @@
 % load the file with all the maximun numbercount per frequency already cleaned
 %NC=load('AllSkyMax_4k_H1_0.005c');
 %NC=load('/local_data/badkri/S2results/CLEAN_H1');
+
 NC=load('/home/sintes/S2_ligo/AllSkyMax_2k_H2_0.005c2');
+%NC=load('/home/sintes/S2_ligo/AllSkyMax_4k_H1_0.005c2');
+%NC=load('/home/sintes/S2_ligo/AllSkyMax_4k_L1_0.005c');
 
 %the directory where the MC results are placed
 DirectoryMC = '/home/sintes/S2_ligo/MC_allsky/';
 Detector = 'H2';
+%Detector = 'H1_newline_finest';
+%Detector = 'L1_fine';
 
 MCfilepath = strcat(DirectoryMC,Detector);
 MCfilepre  = strcat(MCfilepath,'/MC_H2_');
+%MCfilepre  = strcat(MCfilepath,'/MC_H1_');
+%MCfilepre  = strcat(MCfilepath,'/MC_L1_');
 
 fileoutput1 = strcat(Detector,'_CofH');
 fid1 = fopen(fileoutput1, 'w');
