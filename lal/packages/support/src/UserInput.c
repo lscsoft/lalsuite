@@ -549,6 +549,7 @@ LALUserVarHelpString (LALStatus *stat,
   LALUserVariable *ptr;
   CHAR *helpstr = NULL;
   size_t newlen = 0;
+  BOOLEAN haveDevOpt = 0;	/* have we got any 'developer'-options */
 
   INITSTATUS (stat, "LALUserVarHelpString", USERINPUTC);
   ATTATCHSTATUSPTR (stat);
@@ -584,9 +585,12 @@ LALUserVarHelpString (LALStatus *stat,
       strcat (helpstr, strbuf);	/* add this line to the helpstring */
     }
 
-  /* treat the remaining "normal" entries */
+  /* FIRST PASS: treat all "normal" entries excluding DEVELOPER-options */
   while ( (ptr=ptr->next) != NULL)
     {
+      if (ptr->state & UVAR_DEVELOPER)
+	continue;	/* skip developer-options to be treated a second pass */
+
       if (ptr->state & UVAR_REQUIRED)
 	strcpy (defaultstr, "REQUIRED");
       else if (ptr->state & UVAR_HELP)
@@ -624,6 +628,77 @@ LALUserVarHelpString (LALStatus *stat,
 
     } /* while ptr->next */
 
+  /* ---------- SECOND PASS through user-options: 
+   * show DEVELOPER-options only if lalDebugLevel >= 1 
+   */
+  if ( lalDebugLevel )
+    {
+      strcpy(strbuf, 
+	     "\n   ---------- The following are 'Developer'-options not useful " 
+	     "for most users:----------\n\n");
+      newlen += strlen (strbuf);
+      helpstr = LALRealloc (helpstr, newlen);
+      if ( helpstr == NULL) {
+	ABORT (stat, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+      }
+
+      strcat (helpstr, strbuf);	/* add this line to the helpstring */
+  
+      ptr = &UVAR_vars;
+      while ( (ptr=ptr->next) != NULL )
+	{
+	  CHAR *valstr = NULL;
+
+	  if ( ! (ptr->state & UVAR_DEVELOPER) )	/* only treat developer-options */
+	    continue;
+	  
+	  haveDevOpt = 1;
+	  
+	  TRY ( UvarValue2String(stat->statusPtr, &valstr, ptr), stat);
+	  strncpy (defaultstr, valstr, UVAR_MAXDEFSTR);	/* cut short for default-entry */
+	  defaultstr[UVAR_MAXDEFSTR-1] = 0;
+	  LALFree (valstr);
+	  valstr = NULL;
+	  
+	  if (ptr->optchar != 0)
+	    sprintf (optstr, "-%c,", ptr->optchar);
+	  else
+	    strcpy (optstr, "   ");
+	  
+	  LALSnprintf (strbuf, UVAR_MAXHELPLINE,  "  %s --%-15s %-6s   %s [%s] \n", 
+		       optstr,
+		       ptr->name ? ptr->name : "-NONE-", 
+		       typestr[ptr->type], 
+		       ptr->help ? ptr->help : "-NONE-",
+		       defaultstr);
+	  
+	  /* now increase allocated memory by the right amount */
+	  newlen += strlen (strbuf);
+	  helpstr = LALRealloc (helpstr, newlen);
+	  if ( helpstr == NULL) {
+	    ABORT (stat, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+	  }
+	  
+	  strcat (helpstr, strbuf);	/* add this line to the helpstring */
+	  
+	} /* while ptr->next: 2nd PASS for DEVELOPER-options */
+      
+      if ( !haveDevOpt )	/* no developer-options found: say something */
+	{
+	  strcpy(strbuf, "   -- NONE --\n\n");
+	  newlen += strlen (strbuf);
+	  helpstr = LALRealloc (helpstr, newlen);
+	  if ( helpstr == NULL) {
+	    ABORT (stat, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+	  }
+	  
+	  strcat (helpstr, strbuf);	/* add this line to the helpstring */
+	} /* if !haveDevOpt */
+
+
+    } /* if lalDebugLevel: output developer-options */
+
+  /* finished: return final helpstring */
   *helpstring = helpstr;
 
   DETATCHSTATUSPTR(stat);

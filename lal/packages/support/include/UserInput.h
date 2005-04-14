@@ -112,9 +112,10 @@ TRY(LALRegisterSTRINGUserVar((stat)->statusPtr, #name, option, flag, help, &(uva
 /** state-flags: required, has_default, was_set */
 typedef enum {
   UVAR_OPTIONAL		= 0,	/**< not required, and hasn't been set */
-  UVAR_REQUIRED 	= 1,	/**< we require the user to set this variable */
-  UVAR_HELP		= 2,	/**< special variable: trigger output of help-string */
-  UVAR_WAS_SET 		= (1<<7)/**< flag that this user-var has been set by user */
+  UVAR_REQUIRED 	= 1<<0,	/**< we require the user to set this variable */
+  UVAR_HELP		= 1<<1,	/**< special variable: trigger output of help-string */
+  UVAR_DEVELOPER	= 1<<2,	/**< OPTIONAL and partly hidden in help-output */
+  UVAR_WAS_SET 		= 1<<7	/**< flag that this user-var has been set by user */
 } UserVarState;
 
 /** Format for logging User-input: configFile- or cmdLine-style.
