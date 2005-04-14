@@ -102,7 +102,7 @@ static void print_usage(char *program)
       "  [--v1-triggers]               input triggers from V1\n"\
       "\n"\
       "   --parameter-test     test    set parameters with which to test coincidence:\n"\
-      "                                (m1_and_m2|mchirp_and_eta)\n"\
+      "                                (m1_and_m2|mchirp_and_eta|psi0_and_psi3)\n"\
       "  [--g1-time-accuracy]  g1_dt   specify the timing accuracy of G1 in ms\n"\
       "  [--h1-time-accuracy]  h1_dt   specify the timing accuracy of H1 in ms\n"\
       "  [--h2-time-accuracy]  h2_dt   specify the timing accuracy of H2 in ms\n"\
