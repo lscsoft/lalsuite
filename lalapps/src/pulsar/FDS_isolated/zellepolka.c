@@ -156,13 +156,11 @@ int compareCandidates(const void *ip, const void *jp);
 int compareSignificance(const void *a, const void *b);
 int rintcompare(INT4 *idata1, INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
 int rfloatcompare(REAL8 *rdata1, REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
-void add_int4_data(struct int4_linked_list **list_ptr, INT4 *data);
-
-
+void add_int4_data(LALStatus *stat, struct int4_linked_list **list_ptr, INT4 *data);
 void delete_int4_linked_list(struct int4_linked_list *list_ptr);
 void get_info_of_the_cell( CellData *cd, CandidateList *CList);
+void PrintResult(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *cell, UINT4 *ncell);
 void FreeMemory(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *cell, CandidateList *CList, UINT4 datalen);
-
 
 
 /* ----------------------------------------------------------------------------- */
@@ -183,17 +181,18 @@ int polka(int argc,char *argv[])
 int main(int argc,char *argv[]) 
 #endif
 {
+  LALStatus *stat = &global_status;
+  lalDebugLevel = 0 ;  
+  vrbflg = 1;   /* verbose error-messages */
+
   UINT4  CLength=0;
-  CandidateList *SortedC;
+  CandidateList *SortedC = NULL;
   CellData *cell = NULL;
-  UINT4 icell, icand;
+  UINT4 icell, icand, ncell;
 #if USE_BOINC
   REAL8 local_fraction_done;
 #endif
 
-  LALStatus *stat = &global_status;
-  lalDebugLevel = 0 ;  
-  vrbflg = 1;   /* verbose error-messages */
   LAL_CALL (LALGetDebugLevel(stat, argc, argv, 'v'), stat);
 
   /* Reads command line arguments */
@@ -248,7 +247,7 @@ int main(int argc,char *argv[])
 	  if( SortedC[icand].FileID != lastFileIDinThisCell ) 
 	    {
 	      /* This candidate has a different file id from the candidates in this cell. */
-	      add_int4_data( &(cell[icell].CandID), &(icand) );
+	      add_int4_data( stat, &(cell[icell].CandID), &(icand) );
 	      cell[icell].nCand += 1;
 	    } 
 	  else 
@@ -281,31 +280,20 @@ int main(int argc,char *argv[])
   /* ---------------------------------------------------------------------------------------------------------------*/      
 
 
+  /* Get the information in each cell. */
+  ncell=icell+1; /* number of the cells in which more than one candidate exists. */
+  for(icell=0;icell<ncell;icell++) {
+    get_info_of_the_cell( &cell[icell], SortedC);
+  }  
+
+
+  /* Sort arrays of candidates based on significance. */
+  qsort(cell, (size_t)ncell, sizeof(CellData), compareSignificance);
+
 
   /* ---------------------------------------------------------------------------------------------------------------*/      
   /* Output results */
-  /* first, sort arrays of candidates based on significance. */
-  { 
-    FILE *fp = NULL;
-    UINT4 ncell=icell+1;
-
-    for(icell=0;icell<ncell;icell++) {
-      get_info_of_the_cell( &cell[icell], SortedC);
-    }
-
-    qsort(cell, (size_t)ncell, sizeof(CellData), compareSignificance);
-
-    fp = fopen(PolkaCommandLineArgs.OutputFile,"w");
-    for(icell=0;icell<ncell;icell++) {
-      fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
-	      "%10d %10d %10d %10d %22.12f\n",
-	      cell[icell].Freq,cell[icell].Delta,cell[icell].Alpha,
-	      cell[icell].iFreq,cell[icell].iDelta,cell[icell].iAlpha,
-	      cell[icell].nCand,
-	      cell[icell].significance);
-    }
-    fclose(fp);
-  }
+  LAL_CALL( PrintResult( stat, &PolkaCommandLineArgs, cell, &ncell),stat );
 
   LAL_CALL( FreeMemory(stat, &PolkaCommandLineArgs, cell, SortedC, CLength), stat);
 
@@ -314,6 +302,9 @@ int main(int argc,char *argv[])
   return 0;
  
 }
+
+
+
 
 
 
@@ -370,6 +361,32 @@ void PrepareCells( LALStatus *stat, CellData **cell, UINT4 CLength )
 
 
 /*******************************************************************************/
+/* Output results */
+void PrintResult(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *cell, UINT4 *ncell)
+{
+  INITSTATUS( stat, "PrintResult", rcsid );
+  UINT4 icell;
+
+    FILE *fp = NULL;
+    fp = fopen(CLA->OutputFile,"w");
+    for(icell=0;icell<(*ncell);icell++) {
+      fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
+	      "%10d %10d %10d %10d %22.12f\n",
+	      cell[icell].Freq,cell[icell].Delta,cell[icell].Alpha,
+	      cell[icell].iFreq,cell[icell].iDelta,cell[icell].iAlpha,
+	      cell[icell].nCand,
+	      cell[icell].significance);
+    }
+    fclose(fp);
+
+
+  RETURN (stat);
+}
+
+
+
+
+/*******************************************************************************/
 /* Free memory */
 void FreeMemory(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *cell, CandidateList *CList, UINT4 CLength)
 {
@@ -396,26 +413,31 @@ void FreeMemory(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *
 
 /*******************************************************************************/
 /* add data to linked structure */
-void add_int4_data(struct int4_linked_list **list_ptr, INT4 *data)
+void add_int4_data(LALStatus *stat, struct int4_linked_list **list_ptr, INT4 *data)
 {
+  INITSTATUS( stat, "add_int4_data", rcsid );
+
   struct int4_linked_list *p = NULL;
   p = (struct int4_linked_list *) LALMalloc(sizeof(struct int4_linked_list));
   if( p == NULL ) {
     LALPrintError("Could not allocate Memory! \n");
-    exit(POLKAC_EMEM);
+    ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
+    RETURN (stat);
   }
   p->data = *(data);
   p->next = *list_ptr;
   *list_ptr = p;
+
+  RETURN (stat);
 }
 
 
 
 /* delete data to linked structure */
-void delete_int4_linked_list(struct int4_linked_list *list_ptr)
+void delete_int4_linked_list( struct int4_linked_list *list_ptr )
 {
   struct int4_linked_list *q;
-  while( list_ptr !=NULL ) {
+  while( list_ptr !=NULL ) {  /* FIX ME: limit number of iterations finite. */
     q = list_ptr->next;
     LALFree( list_ptr );
     list_ptr = q;
@@ -425,12 +447,13 @@ void delete_int4_linked_list(struct int4_linked_list *list_ptr)
 
 
 /* get info of this cell. */
-void get_info_of_the_cell( CellData *cd, CandidateList *CList)
+void get_info_of_the_cell( CellData *cd, CandidateList *CList )
 {
   INT4 idx;
   struct int4_linked_list *p;
   p = cd->CandID;
-  while( p !=NULL ) {
+
+  while( p !=NULL ) { /* FIX ME: limit number of iterations finite. */
     idx = p->data;
     cd->significance += CList[idx].lfa;
     cd->Alpha += CList[idx].Alpha;
