@@ -131,6 +131,20 @@ static void print_usage(char *program)
       "  [--t1-eta-accuracy] t1_deta   specify the eta accuracy of T1\n"\
       "  [--v1-eta-accuracy] v1_deta   specify the eta accuracy of V1\n"\
       "\n"\
+      "  [--g1-psi0-accuracy]  g1_dpsi0   specify the psi0 accuracy of G1\n"\
+      "  [--h1-psi0-accuracy]  h1_dpsi0   specify the psi0 accuracy of H1\n"\
+      "  [--h2-psi0-accuracy]  h2_dpsi0   specify the psi0 accuracy of H2\n"\
+      "  [--l1-psi0-accuracy]  l1_dpsi0   specify the psi0 accuracy of L1\n"\
+      "  [--t1-psi0-accuracy]  t1_dpsi0   specify the psi0 accuracy of T1\n"\
+      "  [--v1-psi0-accuracy]  v1_dpsi0   specify the psi0 accuracy of V1\n"\
+      "\n"\
+      "  [--g1-psi3-accuracy]  g1_dpsi3   specify the psi3 accuracy of G1\n"\
+      "  [--h1-psi3-accuracy]  h1_dpsi3   specify the psi3 accuracy of H1\n"\
+      "  [--h2-psi3-accuracy]  h2_dpsi3   specify the psi3 accuracy of H2\n"\
+      "  [--l1-psi3-accuracy]  l1_dpsi3   specify the psi3 accuracy of L1\n"\
+      "  [--t1-psi3-accuracy]  t1_dpsi3   specify the psi3 accuracy of T1\n"\
+      "  [--v1-psi3-accuracy]  v1_dpsi3   specify the psi3 accuracy of V1\n"\
+      "\n"\
       "   --data-type        data_type specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
@@ -259,6 +273,18 @@ int main( int argc, char *argv[] )
     {"l1-eta-accuracy",     required_argument, 0,                    'p'},
     {"t1-eta-accuracy",     required_argument, 0,                    'q'},
     {"v1-eta-accuracy",     required_argument, 0,                    'r'},
+    {"g1-psi0-accuracy",    required_argument, 0,                    '2'},
+    {"h1-psi0-accuracy",    required_argument, 0,                    '3'},
+    {"h2-psi0-accuracy",    required_argument, 0,                    '4'},
+    {"l1-psi0-accuracy",    required_argument, 0,                    '5'},
+    {"t1-psi0-accuracy",    required_argument, 0,                    '6'},
+    {"v1-psi0-accuracy",    required_argument, 0,                    '7'},
+    {"g1-psi3-accuracy",    required_argument, 0,                    '8'},
+    {"h1-psi3-accuracy",    required_argument, 0,                    '9'},
+    {"h2-psi3-accuracy",    required_argument, 0,                    '!'},
+    {"l1-psi3-accuracy",    required_argument, 0,                    '-'},
+    {"t1-psi3-accuracy",    required_argument, 0,                    '+'},
+    {"v1-psi3-accuracy",    required_argument, 0,                    '='},
     {"parameter-test",      required_argument, 0,                    'a'},
     {"gps-start-time",      required_argument, 0,                    's'},
     {"gps-end-time",        required_argument, 0,                    't'},
@@ -317,7 +343,8 @@ int main( int argc, char *argv[] )
 
     c = getopt_long_only( argc, argv, 
         "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VZ:"
-        "a:b:c:d:e:f:g:hi:k:m:n:o:p:q:r:s:t:x:z:", 
+        "a:b:c:d:e:f:g:hi:k:m:n:o:p:q:r:s:t:x:z:"
+        "2:3:4:5:6:7:8:9:!:-:+:=:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -351,8 +378,6 @@ int main( int argc, char *argv[] )
         else if ( ! strcmp( "psi0_and_psi3", optarg ) )
         {
           accuracyParams.test = psi0_and_psi3;
-          fprintf(stderr, "psi0_and_psi3 test not yet implemented\n");
-          exit(1);
         }
         else if ( ! strcmp( "mchirp_and_eta", optarg ) )
         {
@@ -752,10 +777,83 @@ int main( int argc, char *argv[] )
         exit( 1 );
         break;
 
+      case '2':
+     /* psi0 mass accuracy G1  */
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].dpsi0 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '3':
+     /* psi0 mass accuracy H1  */
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dpsi0 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '4':
+     /* psi0 mass accuracy H2  */
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dpsi0 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+     
+      case '5':
+     /* psi0 mass accuracy L1  */
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dpsi0 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '6':
+     /* psi0 mass accuracy T1  */
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].dpsi0 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '7':
+     /* psi0 mass accuracy V1  */
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dpsi0 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '8':
+     /* psi3 mass accuracy G1  */
+        accuracyParams.ifoAccuracy[LAL_IFO_G1].dpsi3 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '9':
+     /* psi3 mass accuracy H1  */
+        accuracyParams.ifoAccuracy[LAL_IFO_H1].dpsi3 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '!':
+     /* psi3 mass accuracy H2  */
+        accuracyParams.ifoAccuracy[LAL_IFO_H2].dpsi3 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '-':
+     /* psi3 mass accuracy L1  */
+        accuracyParams.ifoAccuracy[LAL_IFO_L1].dpsi3 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '+':
+     /* psi3 mass accuracy T1  */
+        accuracyParams.ifoAccuracy[LAL_IFO_T1].dpsi3 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
+      case '=':
+     /* psi3 mass accuracy V1  */
+        accuracyParams.ifoAccuracy[LAL_IFO_V1].dpsi3 = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg );
+        break;
+
       default:
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
         print_usage(argv[0]);
         exit( 1 );
+
     }
   }
 
