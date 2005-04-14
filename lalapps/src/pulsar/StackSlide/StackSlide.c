@@ -14,6 +14,8 @@ $Id$
 /* 12/06/04 gam; use refFreq = STK frequency in the middle of the SUM band as the reference to calculate how many bins to slide, rather than f0STK. */
 /* 02/21/05 gam; propagate divideSUMsByNumSTKs and refFreq from StackSlideOld to new StackSlide function; */
 /* 02/22/05 gam; Fix bug, kSUM not set correctly in StackSlide function; clean up indentation everywhere */
+/* 04/12/05 gam; move variables not used by StackSlide function into StackSlideIsolated or StackSlideBinary */
+/* 04/12/05 gam; Simplify StackSlideParams struct; change REAL8 **freqDerivData to REAL8 *freqDerivData; */
 
 /*********************************************/
 /*                                           */
@@ -21,8 +23,9 @@ $Id$
 /*                                           */
 /*********************************************/
 /* #define DEBUG_STACKSLIDE_FNC */
-/* #define DEBUG_STACKSLIDE_FNC_KLOOP */
 /* #define PRINT_STACKSLIDE_BINOFFSETS */
+/* #define PRINT_STACKSLIDE_BINMISMATCH */
+/* #define PRINT_STACKSLIDE_SPECIAL_DEBUGGING_INFO */
 /* #define DEBUG_STACKSLIDECOMPUTESKYBINARY_FNC */
 /* #define DEBUG_STACKSLIDECOMPUTESKY_FNC */
 /*********************************************/
@@ -70,9 +73,6 @@ void StackSlide(	LALStatus *status,
 			StackSlideParams *params)
 {
        
-  /* INT4 iSky = 0; */ /* index gives which Sky Position */       /* 02/22/05 gam; obsolete */
-  /* INT4 iFreqDeriv = 0; */ /* index give which Freq Derivs  */  /* 02/22/05 gam; obsolete */  
-  /* INT4 numLoopOnSpindown; */                                   /* 02/22/05 gam; obsolete */  
   INT4 kSUM = 0; /* index gives which SUM */ /* 02/22/05 gam; HARD CODED TO 0; This function only returns one SUM! */
   INT4 iSUM = 0; /* index gives which SUM bin */  
   REAL8 f_t;
@@ -100,43 +100,53 @@ void StackSlide(	LALStatus *status,
     fprintf(stdout,"invNumSTKs %g\n",invNumSTKs);
     fprintf(stdout,"params->divideSUMsByNumSTKs = %i \n",params->divideSUMsByNumSTKs);  
     fprintf(stdout,"refFreq %g\n",refFreq);
-    fprintf(stdout,"iFreqDeriv is %d\n",params->iFreqDeriv);
     fprintf(stdout,"iMaxSTK is %d\n",iMaxSTK);
     fprintf(stdout,"iMinSTK is %d\n",iMinSTK);
     fprintf(stdout,"numSTKs is %d\n", params->numSTKs);    
     fflush(stdout);
   #endif
-  
-  /* kSUM = iSky*numLoopOnSpindown + params->iFreqDeriv; */ /* 02/22/05 gam; obsolete */ /* 01/28/04 gam; need to find index to which to SUM */
-  /*05/02/18 vir kSUM=iSky*(numLoopOnSpinDown*params->nMaxSMA*params->nMaxTperi)+...*/
-  /*... + params->iFreqDeriv*(params->nMaxSMA*params->nMaxTperi)+params->iSMA*(params->nMaxTperi) + params->iT;*/
 
   for(k=0;k<params->numSTKs;k++) {
 
         /* compute frequency */
-        /* f_t = params->f0STK; */ /*this should be refFreq;*/ /* 02/21/05 gam */
         f_t = refFreq; /* 12/06/04 gam */ /* 02/21/05 gam */
-        #ifdef DEBUG_STACKSLIDE_FNC_KLOOP
-          fprintf(stdout,"start ft is %f\n",f_t);
-          fflush(stdout);
-        #endif
         for (m=0; m<params->numSpinDown; m++) {
-            #ifdef DEBUG_STACKSLIDE_FNC_KLOOP        
-              fprintf(stdout,"numspindown is %d m is %d k is %d \n",params->numSpinDown, m, k );
-              fflush(stdout);
-            #endif
-            f_t += params->freqDerivData[params->iFreqDeriv][m] * pTdotsAndDeltaTs->vecDeltaTs[k][m];
-            /*params->freqDerivData[m] * pTdotsAndDeltaTs->vecDeltaTs[k][m]; */
+            f_t += params->freqDerivData[m] * pTdotsAndDeltaTs->vecDeltaTs[k][m];
         }
-        f_t = f_t * pTdotsAndDeltaTs->vecTDots[k];
-        #ifdef DEBUG_STACKSLIDE_FNC_KLOOP
-          fprintf(stdout,"corrected ft is %f\n",f_t);
-          fflush(stdout);          
-        #endif   
-
-        /* binoffset = floor(( (f_t - params->f0STK) * params->tSTK) + 0.5 ); */ /* 02/21/05 gam */
+        f_t *= pTdotsAndDeltaTs->vecTDots[k]; /* 04/12/05 gam; *= same as f_t = f_t *... but faster */
         binoffset = floor(( (f_t - refFreq) * params->tSTK) + 0.5 ); /* 12/06/04 gam */ /* 02/21/05 gam */
+        
         #ifdef PRINT_STACKSLIDE_BINOFFSETS
+               fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
+               fflush(stdout);
+        #endif
+
+        #ifdef PRINT_STACKSLIDE_BINMISMATCH
+           fprintf(stdout, "%i binmismatch = %g \n",STKData[k]->epoch.gpsSeconds,fabs( ((f_t - refFreq) * params->tSTK) - (REAL8)binoffset ));
+           fflush(stdout);
+        #endif
+ 
+        #ifdef PRINT_STACKSLIDE_SPECIAL_DEBUGGING_INFO
+            /* A comparison is made between the STK bin with maximum power
+               and the STK power when demodulating for the SUM midpoint
+               frequency, i.e., the bin for that freq + binoffset.
+               For an injected signal into the middle of the SUM band
+               these should agree if StackSlide is working properly. */
+            {
+               INT4 iPwrMax = -1;
+               REAL4 pwrMax = 0.0;
+               for(i=0;i<STKData[k]->data->length; i++) {
+                 if (pwrMax < STKData[k]->data->data[i]) {
+                   iPwrMax = i;
+                   pwrMax = STKData[k]->data->data[i];
+                 }
+               }
+               fprintf(stdout, "In StackSlide for SFT #%i iPwrMax = %i, pwrMax = %g \n",k,iPwrMax,pwrMax);
+            }
+            fprintf(stdout, "In StackSlide for SFT #%i STK(binoffset-1) = %g \n",k,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset-1]);
+            fprintf(stdout, "In StackSlide for SFT #%i ibinoffset = %i, STK(binoffset) = %g \n",k,iMinSTK + params->nBinsPerSUM/2+binoffset, STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset]);
+            fprintf(stdout, "In StackSlide for SFT #%i STK(binoffset+1) = %g \n",k,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset+1]);
+            fprintf(stdout, "In StackSlide for SFT #%i REAL8 binoffset = %g \n",k,((f_t - refFreq) * params->tSTK));
             fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
             fflush(stdout);
         #endif
@@ -154,8 +164,8 @@ void StackSlide(	LALStatus *status,
             } else {
                SUMData[kSUM]->data->data[iSUM] += STKData[k]->data->data[i+binoffset];
             }
+        }/*end of for iMinSTK*/
 
-       }/*end of for iMinSTK*/
   } /* END for(k=0;k<params->numSTKs;k++) */
   /* Normalize the SUMs with params->numSTKs*/
       
@@ -168,9 +178,6 @@ void StackSlide(	LALStatus *status,
      }
   }
 
-  /*05/02/18 vir:*/ params->ParamsSMA[kSUM]=params->SemiMajorAxis;
-  /*05/02/18 vir: params->ParamsTperi[kSUM]=params->TperiapseSSB*/
-  
   #ifdef DEBUG_STACKSLIDE_FNC
     fprintf(stdout,"end function StackSlide\n");
     fflush(stdout);

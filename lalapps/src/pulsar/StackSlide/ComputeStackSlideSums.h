@@ -14,6 +14,7 @@
 /* 05/07/04 gam; add alternative to using glob */
 /* 05/11/04 gam; Add code to software inject signals into the SFTs for Monte Carlo simulations */
 /* 05/28/04 gam; Use LALUniformDeviate from LAL utilities package (include <lal/Random.h>) to generate random mismatch during Monte Carlo. */
+/* 04/12/05 gam; Change default Monte Carlo to use RunStackSlideIsolatedMonteCarloSimulation in StackSlideIsolated.c. */
 
 #ifndef _COMPUTESTACKSLIDESUMS_H
 #define _COMPUTESTACKSLIDESUMS_H
@@ -50,11 +51,10 @@
 /* #include <lal/RealFFT.h> */ /* 05/11/04 gam; not needed */
 #include <lal/LALConstants.h>
 #include <lal/Units.h>
-/* 05/11/04 gam; 05/28/04 gam; next two are needed to inject signals for Monte Carlo simulations. */
-#include <lal/GeneratePulsarSignal.h>
-#include <lal/Random.h>
 #include <errno.h>
 #include "DriveStackSlide.h"
+/* 04/12/05 gam; RunStackSlideIsolatedMonteCarloSimulation is in StackSlideIsolated.c. */
+#include "StackSlideIsolated.h"
 /*********************************************/
 /*                                           */
 /* END SECTION: include header files         */
@@ -145,7 +145,6 @@ struct headertag {
 int ReadSFTData(StackSlideSearchParams *params);
 int SetGlobalVariables(StackSlideSearchParams *params);
 int Freemem(StackSlideSearchParams *params);
-void RunStackSlideMonteCarloSimulation(LALStatus *status, StackSlideSearchParams *params); /* 05/11/04 gam */
 /*********************************************/
 /*                                           */
 /* END SECTION: prototype declarations       */

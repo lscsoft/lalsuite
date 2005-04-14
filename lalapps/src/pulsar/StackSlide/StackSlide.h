@@ -8,6 +8,7 @@ $Id$
 /* 06/05/04 gam; Add gpsStartTimeSec and gpsStartTimeNan to StackSlideSkyParams; set these to epoch that gives T0 at SSB. */
 /* 12/03/04 gam; Clean up indentation; remove extraneous or obsolete comments. */
 /* 12/03/04 gam; Add parameter: BOOLEAN divideSUMsByNumSTKs. */
+/* 04/12/05 gam; Simplify StackSlideParams struct; change REAL8 **freqDerivData to REAL8 *freqDerivData; */
 
 /* <lalLaTeX> 
 \section{Header \texttt{StackSlide.h}}
@@ -85,7 +86,8 @@ struct StackSlideParams
 \end{description}
 </lalLaTeX> */
 
-typedef struct
+/* 04/12/05 gam; old version; new version is below */
+/* typedef struct
 tagStackSlideParams
 {
 	REAL8 **skyPosData;  
@@ -110,10 +112,10 @@ tagStackSlideParams
 	EphemerisData *edat;
 	LIGOTimeGPS *timeStamps;
 	BarycenterInput *baryinput;
-        REAL8 		SemiMajorAxis; /* orbital radius of binary (in sec) */
-        REAL8           OrbitalPeriod;         /* Period of binary (in sec) */
-        REAL8           OrbitalEccentricity;   /* Orbital eccentricy */
-        REAL8           ArgPeriapse;    /* Argument of Periapse */
+        REAL8 		SemiMajorAxis;
+        REAL8           OrbitalPeriod;
+        REAL8           OrbitalEccentricity;
+        REAL8           ArgPeriapse;
         UINT4 TperiapseSSBSec;
 	UINT4 TperiapseSSBNanoSec;
 	REAL8 deltaSMA;
@@ -122,6 +124,25 @@ tagStackSlideParams
         REAL8 LoudestEvent;
 	REAL8 peakFreq;
 	INT4 nMaxSMA;
+} 
+StackSlideParams; */
+
+/* 04/12/05 gam; Simplify StackSlideParams struct; change REAL8 **freqDerivData to REAL8 *freqDerivData; */
+typedef struct
+tagStackSlideParams
+{
+        REAL8 *freqDerivData;
+        BOOLEAN divideSUMsByNumSTKs;
+        REAL8 f0STK;
+        REAL8 f0SUM;
+        REAL8 tSTK;
+        REAL8 tSUM;
+        INT4  nBinsPerSUM;
+        INT4  numSTKs;
+        REAL8 dfSUM;
+        UINT4 gpsStartTimeSec;
+        UINT4 gpsStartTimeNan;
+        INT4 numSpinDown;
 }
 StackSlideParams; 
 

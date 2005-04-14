@@ -14,15 +14,15 @@ set params->duration      1.8000000000000000e+04; #4  REAL8 analysis duration
 set numBLKs                                 10; #5  INT4 input number of blocks of data (e.g., actual number of SFTs used in this job). 
 set tBLK                1.8000000000000000e+03; #6  REAL8 time baseline of input BLKs (e.g., of SFTs). 
 set tEffBLK             1.8000000000000000e+03; #7  REAL8 effective time baseline of input BLKs (e.g., not tBLK if oversampling used). 
-set f0BLK               3.0000999999999999e+02; #8  REAL8 start frequency of the input BLKs. 
-set bandBLK             3.8000000000000000e-01; #9  REAL8 frequency band of input BLKs. 
-set nBinsPerBLK                            684; #10 INT4 number of frequency bins one BLKs. 
+set f0BLK               3.0011000000000001e+02; #8  REAL8 start frequency of the input BLKs. 
+set bandBLK             1.7999999999999999e-01; #9  REAL8 frequency band of input BLKs. 
+set nBinsPerBLK                            324; #10 INT4 number of frequency bins one BLKs. 
 
 set numBLKsPerSTK                            1; #11 INT4 number BLKs used to make one STK. 
 set tEffSTK             1.8000000000000000e+03; #12 REAL8 effective time baseline of STKs (deltaF = 1/tEffSTK). 
-set f0STK               3.0000999999999999e+02; #13 REAL8 start frequency of STKs. 
-set bandSTK             3.8000000000000000e-01; #14 REAL8 frequency band of STKs. 
-set nBinsPerSTK                            684; #15 INT4 number of frequency bins in one STK. 
+set f0STK               3.0011000000000001e+02; #13 REAL8 start frequency of STKs. 
+set bandSTK             1.7999999999999999e-01; #14 REAL8 frequency band of STKs. 
+set nBinsPerSTK                            324; #15 INT4 number of frequency bins in one STK. 
 
 set numSTKsPerSUM                           10; #16 INT4 number of STKs used to make one SUM. 
 set tEffSUM             1.8000000000000000e+03; #17 REAL8 effective time baseline of SUMs (deltaF = 1/tEffSUM). 
@@ -73,8 +73,8 @@ set orientationAngle     0.0000000000000000e+00; #39 REAL8 orientation angle in 
 set cosInclinationAngle  0.0000000000000000e+00; #40 REAL8 cosine inclination angle if using fixed value for a Monte Carlo Simulation. 
 
 set normalizationFlag                        4; #41 INT2 what normalization to do. 
-set f0NRM               3.0000999999999999e+02; #42 REAL8 frequency to start with when finding norms. 
-set bandNRM             3.8000000000000000e-01; #43 REAL8 frequency band to use when finding norms. 
+set f0NRM               3.0011000000000001e+02; #42 REAL8 frequency to start with when finding norms. 
+set bandNRM             1.7999999999999999e-01; #43 REAL8 frequency band to use when finding norms. 
 set nBinsPerNRM                             50; #44 INT4 number of frequency bins to use when finding norms. 
 set normalizationParameter  0.0000000000000000e+00; #45 REAL4 see uses below. 
 #The thresholdFlag rules are: 
@@ -157,5 +157,11 @@ set outputFile         myout.txt; #83 CHAR* name of output file (.xml is appende
 
 set debugOptionFlag                          1; #84 INT2 debugging information to print to stdout. 
 # if (debugOptionFlag & 1) > 0 then print command line arguments.
+# if (debugOptionFlag == 1) then print command line arguments and abort!
 # if (debugOptionFlag & 2) > 0 then print table with events.
 # if (debugOptionFlag & 4) > 0 then print sky positions with debugging information.
+# if (debugOptionFlag & 8) > 0 then the STK bin with max power is set to 1, all other to 0.
+#   This flag provides an important validation of the StackSlide code: 
+#   For a signal without noise, the template for the signal should return 
+#   the StackSlide power exactly equal to the number of SFTs! 
+

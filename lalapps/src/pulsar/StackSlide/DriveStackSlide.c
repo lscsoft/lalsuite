@@ -113,7 +113,11 @@
 /*               4. move loops for isolated case (params->binaryFlag == 0) into StackSlideIsolated.c */
 /*               5. use new StackSlide function for isolated case.                                   */
 /* 02/28/05 gam; add extra parameters needed by loop code to StackSlideSearchParams struct */
-
+/* 04/12/05 gam; LIGOLW_XML_TABLE_FOOTER removed from lal, so add as STACKSLIDE_XML_TABLE_FOOTER. */
+/* 04/12/05 gam; Add StackSlideSearchParams *params to StackSlideBinary. */
+/* 04/12/05 gam; Remove from StackSlideParams *stksldParams, those already in StackSlideSearchParams *params */
+/* 04/12/05 gam; if ((params->debugOptionFlag & 8) > 0 ) find maxPwr each SFT, replace bin with 1, all other bins with 0 */
+    
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -138,7 +142,6 @@
 /* #define DEBUG_CALIBRATEBLKS */
 /* #define DEBUG_TESTCASE */
 /* #define INCLUDE_INTERNALLALINITBARYCENTER */
-/* #define DEBUG_BINARY_CODE */
 /*********************************************/
 /*                                           */
 /* END SECTION: define preprocessor flags    */
@@ -248,11 +251,15 @@ void StackSlideInitSearch(
 /* 05/02/14 vir: initialize binary params */
 params->binaryFlag = 0;          /*the isolated case is the default*/
 params->OrbitalEccentricity = 0;
+params->alphaSX1=0;
+params->deltaSX1=0;
 params->ArgPeriapse = 0;
 params->TperiapseSSBSec = 0;
 params->TperiapseSSBNanoSec = 0;
 params->SMAcentral = 0;
 params->deltaSMA = 0;
+params->nMaxSMA=0;
+params->nMaxTperi=0;
  
  for (i = 1; i < argc; i++) {
 
@@ -633,6 +640,10 @@ params->deltaSMA = 0;
     	fprintf(stdout,"# if (debugOptionFlag == 1) then print command line arguments and abort!\n"); /* 02/25/05 gam */
     	fprintf(stdout,"# if (debugOptionFlag & 2) > 0 then print table with events.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 4) > 0 then print sky positions with debugging information.\n");
+    	fprintf(stdout,"# if (debugOptionFlag & 8) > 0 then the STK bin with max power is set to 1, all other to 0.\n");
+    	fprintf(stdout,"#   This flag provides an important validation of the StackSlide code: \n");
+    	fprintf(stdout,"#   For a signal without noise, the template for the signal should return \n");
+    	fprintf(stdout,"#   the StackSlide power exactly equal to the number of SFTs! \n");
         /* 02/25/05 gam; if params->debugOptionFlag == 1 then exit after printing parameters */
         if (params->debugOptionFlag == 1) {
            ABORT( status, DRIVESTACKSLIDEH_EUSERREQUESTEXIT, DRIVESTACKSLIDEH_MSGEUSERREQUESTEXIT);
@@ -1262,7 +1273,7 @@ void StackSlideConditionData(
                 stksldSFTsSearchSummaryTable->num_sums
            );
            /* End the table. */
-           fprintf( params->xmlStream->fp, LIGOLW_XML_TABLE_FOOTER );
+           fprintf( params->xmlStream->fp, STACKSLIDE_XML_TABLE_FOOTER ); /* 04/12/05 gam */
            params->xmlStream->table = no_table;
            LALFree(stksldSFTsSearchSummaryTable);
     }
@@ -1296,12 +1307,8 @@ void StackSlideApplySearch(
     )
 {
 
-  /* UINT4          i = 0; */        /* all purpose index */
-  /* UINT4          k = 0; */        /* another all purpose index */  
-  INT4          i = 0;         /* all purpose index */
-  INT4          j = 0;         /* all purpose index */  /* 02/04/04 gam */
-  INT4          k = 0;         /* another all purpose index */
-  INT4          isav = 0;      /* 10/28/04 gam; saved index value */ 
+  INT4 i = 0; /* all purpose index */
+  INT4 k = 0; /* another all purpose index */
    
   INITSTATUS( status, "StackSlideApplySearch", DRIVESTACKSLIDEC );
   ATTATCHSTATUSPTR(status);
@@ -1313,8 +1320,7 @@ void StackSlideApplySearch(
    
   /* params->searchMaster is used in LDAS; set to TRUE in this code. */
   if (params->searchMaster) {
-  
-    /* 11/08/03 gam; Add in first version of StackSlide written by Mike Landry */  
+
     StackSlideParams *stksldParams;  
     LALFindStackSlidePeakParams *pLALFindStackSlidePeakParams;
     LALFindStackSlidePeakOutputs *pLALFindStackSlidePeakOutputs; /* 03/02/04 gam; this and next 5 lines are LALFindStackSlidePeaks outputs */
@@ -1328,7 +1334,11 @@ void StackSlideApplySearch(
     REAL4 stkNRM = 0.0;   /* 03/03/04 gam */
     INT4 nrmBinCount = 0; /* 03/03/04 gam */
     FILE *fpPSD; /* 04/15/04 gam */
-    
+    LALDetector cachedDetector;
+    REAL4 maxPower = 0;                              /* 02/09/04 gam; power in loudest event */
+    SnglStackSlidePeriodicTable *loudestPeaksArray;  /* 02/17/04 gam; keep track of the loudest events */
+    INT4 totalEventCount = 0;                        /* 02/04/04 gam; found a peak or a cluster of peaks; keep track of how many */  
+        
 /**********************************************/
 /*                                            */
 /* START SECTION: calibrate BLKs              */
@@ -1753,6 +1763,34 @@ void StackSlideApplySearch(
               }
            } /* END for(k=0;k<params->numSTKs;k++) */
         } /* END if ( (params->testFlag & 1) > 0 ) */
+
+        /* 04/12/05 gam; if ((params->debugOptionFlag & 8) > 0 ) find maxPwr each SFT, replace bin with 1, all other bins with 0 */
+        if ((params->debugOptionFlag & 8) > 0 ) {
+           /* The STK bin with maximum power is replaced with 1, all
+              other bins are set to zero. For an injected signal into
+              the middle of the SUM band the output should be the 
+              the number of SFTs if StackSlide is working properly. */
+           INT4 iPwrMax = 0;
+           REAL4 pwrMax = -1.0;
+           for(k=0;k<params->numSTKs;k++) {
+              /* Find the bin with maximum power */
+              iPwrMax = 0;
+              pwrMax = -1.0;
+              for(i=0;i<params->nBinsPerSTK;i++) {
+                if (params->STKData[k]->data->data[i] > pwrMax) {
+                  iPwrMax = i;
+                  pwrMax = params->STKData[k]->data->data[i];
+                }
+              }
+              for(i=0;i<params->nBinsPerSTK;i++) {
+                 if (i == iPwrMax) {
+                    params->STKData[k]->data->data[i] = 1;
+                 } else {
+                    params->STKData[k]->data->data[i] = 0;
+                 }
+              }
+           } /* END for(k=0;k<params->numSTKs;k++) */
+        } /* END if ((params->debugOptionFlag & 8) > 0 ) */
         
         params->finishedSTKs = 1;  /* Set equal to true when all STKs for this job have been created */
 
@@ -1820,23 +1858,12 @@ void StackSlideApplySearch(
       fflush(stdout);
   #endif
 
- /* 02/11/04 gam; Change code to process 1 SUM at a time to allow processing of millions of SUMs per job. */
- params->SUMData=(REAL4FrequencySeries **)LALMalloc(sizeof(REAL4FrequencySeries *));
- params->SUMData[0]=(REAL4FrequencySeries *)LALMalloc(sizeof(REAL4FrequencySeries));
- params->SUMData[0]->data=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
- params->SUMData[0]->data->data=(REAL4 *)LALMalloc(params->nBinsPerSUM*sizeof(REAL4));
- 
-
- stksldParams = (StackSlideParams *)LALMalloc(1*sizeof(StackSlideParams));
-{
-  INT4 kSUM;
-  BarycenterInput baryinput;  
-  LALDetector cachedDetector;
-  /* SnglStackSlidePeriodicTable *peakSav;         */ /* 02/28/05 gam */ /* 02/04/04 gam; needed to remember pointer to start peak linked list */
-  REAL4 maxPower = 0;                              /* 02/09/04 gam; power in loudest event */
-  SnglStackSlidePeriodicTable *loudestPeaksArray;  /* 02/17/04 gam; keep track of the loudest events */
-  INT4 totalEventCount = 0;                        /* 02/04/04 gam; found a peak or a cluster of peaks; keep track of how many */  
-
+  /* 02/11/04 gam; Change code to process 1 SUM at a time to allow processing of millions of SUMs per job. */
+  params->SUMData=(REAL4FrequencySeries **)LALMalloc(sizeof(REAL4FrequencySeries *));
+  params->SUMData[0]=(REAL4FrequencySeries *)LALMalloc(sizeof(REAL4FrequencySeries));
+  params->SUMData[0]->data=(REAL4Vector *)LALMalloc(sizeof(REAL4Vector));
+  params->SUMData[0]->data->data=(REAL4 *)LALMalloc(params->nBinsPerSUM*sizeof(REAL4));
+  
   /* 02/17/04 gam; check whether we are outputing just the loudest events */
   if (params->outputLoudestFromPeaks || params->outputLoudestFromSUMs) {
        loudestPeaksArray = (SnglStackSlidePeriodicTable *)LALMalloc(params->keepThisNumber*sizeof(SnglStackSlidePeriodicTable));
@@ -1849,8 +1876,16 @@ void StackSlideApplySearch(
          }
        #endif         
   }
+  #ifdef INCLUDE_PRINT_PEAKS_TABLE_CODE
+     if ( ((params->debugOptionFlag & 2) > 0) && params->startSUMs ) {
+       fprintf(stdout,"\n   Event_no   SUM_index         RA        DEC    freq_deriv1   frequency      power  pwr_snr   width_bins\n");
+       fflush(stdout);
+     }
+  #endif    
 
-  /* 02/11/04 gam; Change code to process 1 SUM per job; move next 4 lines below */   
+  /* Allocate memory and initialize StackSlideParams *stksldParams used by Isolated and Binary code*/
+  /* Other stksldParams are set up in the StackSlideIsolated and StackSlideBinary functions */
+  stksldParams = (StackSlideParams *)LALMalloc(1*sizeof(StackSlideParams));
   stksldParams->f0STK = params->f0STK;
   stksldParams->f0SUM = params->f0SUM;
   stksldParams->tSTK = params->tSTK;
@@ -1858,41 +1893,15 @@ void StackSlideApplySearch(
   stksldParams->nBinsPerSUM = params->nBinsPerSUM;
   stksldParams->numSTKs = params->numSTKs;
   stksldParams->dfSUM = params->dfSUM;
-  if ( (params->testFlag & 4) > 0 ) {
-    stksldParams->gpsStartTimeSec = (UINT4)params->timeStamps[0].gpsSeconds;     /* 08/02/04 gam */
-    stksldParams->gpsStartTimeNan = (UINT4)params->timeStamps[0].gpsNanoSeconds; /* 08/02/04 gam */
-  } else {
-    stksldParams->gpsStartTimeSec = params->gpsEpochStartTimeSec; /* 12/06/04 gam */
-    stksldParams->gpsStartTimeNan = params->gpsEpochStartTimeNan; /* 12/06/04 gam */
-  }
-  stksldParams->timeStamps = params->timeStamps;
   stksldParams->numSpinDown = params->numSpinDown;
-  stksldParams->edat = params->edat;
-
-  /* Feb 14/05 vir*/
-  stksldParams->binaryFlag = params->binaryFlag;
-  stksldParams->OrbitalEccentricity=params->OrbitalEccentricity;
-  stksldParams->ArgPeriapse=params->ArgPeriapse;
-  /*stksldParams->SemiMajorAxis->params->SemiMajorAxis;*/
-  stksldParams->TperiapseSSBSec=params->TperiapseSSBSec;
-  stksldParams->TperiapseSSBNanoSec=params->TperiapseSSBNanoSec;
-  stksldParams->deltaSMA=params->deltaSMA;
-  stksldParams->SMAcentral=params->SMAcentral;
-  stksldParams->nMaxSMA=params->nMaxSMA;
-
-  /*05/02/17 vir: stksldParams->nMaxSMA=params->nMaxSMA;*/
-  /*05/02/17 vir: stksldParams->nMaxTperi=params->nMaxTperi;*/
-  /*05/02/17 vir: stksldParams->ParamsSMA=(REAL8 *)LALMalloc((stksldParams->numSkyPosTotal*params->numSpinDown*params->nMaxSMA*params->nMaxTperi)*sizeof(REAL8));*/
-  stksldParams->ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8));/*stores SMA for each sum in parameter space*/
-  /*05/02/17 vir: stksldParams->ParamsTperi=(UINT4 *)LALMalloc((stksldParams->numSkyPosTotal*stksldParams->numSpinDown*params->nMaxSMA*params->nMaxTperi)*sizeof(UINT4));*/
-
-  /* 12/03/04 gam */
-  if ( ( (params->testFlag & 1) > 0 ) || ( (params->weightFlag & 1) > 0 ) ) {
+  stksldParams->freqDerivData = NULL;
+  if ( ( (params->testFlag & 1) > 0 ) || ( (params->weightFlag & 1) > 0 ) || ((params->debugOptionFlag & 8) > 0 ) ) {
     stksldParams->divideSUMsByNumSTKs = 0; /* FALSE if Hough Test or PowerFlux weighting is done. */
   } else {
     stksldParams->divideSUMsByNumSTKs = 1; /* default is TRUE */
   }
   
+  /* Set up the IFO for the barycentering routines */
   if (strstr(params->IFO, "LHO")) {
              cachedDetector = lalCachedDetectors[LALDetectorIndexLHODIFF];
   } else if (strstr(params->IFO, "LLO")) {
@@ -1907,16 +1916,14 @@ void StackSlideApplySearch(
              /* "Invalid or null IFO" */
              ABORT( status, DRIVESTACKSLIDEH_EIFO, DRIVESTACKSLIDEH_MSGEIFO);
   }
+  (params->baryinput).site.location[0]=cachedDetector.location[0]/LAL_C_SI;
+  (params->baryinput).site.location[1]=cachedDetector.location[1]/LAL_C_SI;
+  (params->baryinput).site.location[2]=cachedDetector.location[2]/LAL_C_SI;
+  (params->baryinput).alpha=params->stksldSkyPatchData->startRA;
+  (params->baryinput).delta=params->stksldSkyPatchData->startDec;
+  (params->baryinput).dInv=0.e0;  /* Inverse distance to the source.  Not sure what 0.0 does. */
 
-  baryinput.site.location[0]=cachedDetector.location[0]/LAL_C_SI;
-  baryinput.site.location[1]=cachedDetector.location[1]/LAL_C_SI;
-  baryinput.site.location[2]=cachedDetector.location[2]/LAL_C_SI;
-  baryinput.alpha=params->stksldSkyPatchData->startRA;
-  baryinput.delta=params->stksldSkyPatchData->startDec;
-  baryinput.dInv=0.e0;  /* Inverse distance to the source.  Not sure what 0.0 does. */
-    
-  stksldParams->baryinput = &baryinput;
-
+  /* Set up parameters for finding peaks */
   pLALFindStackSlidePeakParams = (LALFindStackSlidePeakParams *)LALMalloc(sizeof(LALFindStackSlidePeakParams));
   pLALFindStackSlidePeakParams->returnPeaks = 1; /* 03/02/04 gam; default case is true */
   /* pLALFindStackSlidePeakParams->updateMeanStdDev = updateMeanStdDev; */ /* 02/28/05 gam */ /* 03/02/04 gam */
@@ -1979,26 +1986,8 @@ void StackSlideApplySearch(
      fprintf( params->xmlStream->fp, LIGOLW_XML_SNGL_LOCAL_STACKSLIDEPERIODIC );
      params->xmlStream->first = 1;
   }       
-  #ifdef INCLUDE_PRINT_PEAKS_TABLE_CODE
-     /* 04/15/04 gam */
-     /* if ((params->debugOptionFlag & 2) > 0 ) */ /* 05/26/04 gam */
-     if ( ((params->debugOptionFlag & 2) > 0) && params->startSUMs ) {
-       fprintf(stdout,"\n   Event_no   SUM_index         RA        DEC    freq_deriv1   frequency      power  pwr_snr   width_bins\n");
-       fflush(stdout);
-     }
-  #endif     
-    
-  /* 02/11/04 gam; Change code to process 1 SUM per job */ 
-  stksldParams->numSkyPosTotal = 1;
-  if (params->numFreqDerivTotal != 0) {
-       stksldParams->numFreqDerivTotal = 1;
-  } else {
-       stksldParams->numFreqDerivTotal = 0;
-  }
-  stksldParams->freqDerivData = NULL;
-    
+
   /* 10/28/04 gam; weight STKs depending on value of params->weightFlag */
-  isav = -1;                             /* initialize */
   if ( (params->weightFlag & 1) > 0 )  {
      if ( ( (params->weightFlag & 2) > 0 ) || ( (params->weightFlag & 4) > 0 ) ) {
           /* 10/28/04 gam; savSTKDATA for reuse with powerFlux style weighting of STKs for each sky position */ 
@@ -2024,56 +2013,13 @@ void StackSlideApplySearch(
       &cachedDetector,
       stksldParams,
       params );
-   CHECKSTATUSPTR (status);  
+   CHECKSTATUSPTR (status);
     
   } else if ((params->binaryFlag & 1) == 1) {
-
-   /*Feb 14/05 vir: ADDED HERE BINARY CASE*/   
-
-   FILE *binaryfp; /* 05/02/17 vir: pointer to output file for sums*/
-   FILE *binaryLE;
-   char filename[]="myoutbinary.txt";
-   char filename2[]="outLE.txt";	
-
-   for(kSUM=0;kSUM < params->numSUMsTotal;kSUM++) {
-     binaryLE=fopen(filename2, "w");
-
-     i = kSUM/params->numFreqDerivIncludingNoSpinDown;   /* 01/28/04 gam; index to params->skyPosData for this SUM; */
-     j = kSUM % params->numFreqDerivIncludingNoSpinDown; /* 01/28/04 gam; index to params->freqDerivData for this SUM; */    
-     stksldParams->skyPosData = &(params->skyPosData[i]);
-     if (params->numFreqDerivTotal != 0) {
-         stksldParams->freqDerivData = &(params->freqDerivData[j]);
-     }    
-
-     stksldParams->numSkyPosTotal=1;
-     stksldParams->skyPosData[0][0]=params->alphaSX1;
-     stksldParams->skyPosData[0][1]=params->deltaSX1;
-
-     StackSlideBinary(status->statusPtr, stksldParams, params->STKData, params->SUMData);
-
-     if((params->nMaxSMA ==1)&&(params->nMaxTperi ==1)) {
-        binaryfp=fopen(filename, "w+");
-
-        for (k=0; k< params->nBinsPerSUM ; k++) {
-           fprintf(binaryfp,"%f %f\n", params->f0SUM + (REAL8)k*params->dfSUM, params->SUMData[0]->data->data[k]);/*05/02/17 vir*/
-        }
-     }/* 05/02/17 vir: write sum on the file only for no mismatch*/    
-     else {
-       /*Look for loudest event in SUMData*/
-        /*05/02/17 vir: for mismatched params, output only the loudest event */
-       #ifdef DEBUG_BINARY_CODE
-         fprintf(stdout,"the SemiMajorAxis is %f\n", stksldParams->SemiMajorAxis);
-         fflush(stdout);
-       #endif
-
-      FindBinaryLoudest(params->SUMData, stksldParams);
-      fprintf(binaryLE,"%f %f %f\n",stksldParams->peakFreq, stksldParams->LoudestEvent,  stksldParams->ParamsSMA[kSUM]);
-    
-     }/*end of else deltaSMA > 0*/
-
-   }/*end of for kSUM*/
-   fclose(binaryLE);
-   fclose(binaryfp);
+   
+   /* 04/12/05 gam; Move everthing but call to StackSlideBinary into StackSlideBinary.c */
+   StackSlideBinary(status->statusPtr, stksldParams, params);
+   CHECKSTATUSPTR (status);
 
   } /* end of if binaryFlag==1 else ...*/
   
@@ -2083,7 +2029,7 @@ void StackSlideApplySearch(
      MetadataTable         searchsummvars;
 
     /* End the stackslide periodic table. */
-    fprintf( params->xmlStream->fp, LIGOLW_XML_TABLE_FOOTER );
+    fprintf( params->xmlStream->fp, STACKSLIDE_XML_TABLE_FOOTER ); /* 04/12/05 gam */
     params->xmlStream->table = no_table;
 
     /* write the search summary table */
@@ -2136,8 +2082,6 @@ void StackSlideApplySearch(
   if (params->outputLoudestFromPeaks || params->outputLoudestFromSUMs) {
      LALFree(loudestPeaksArray);
   }
-              
-}
 
 /******************************/
 /*                            */
@@ -2151,38 +2095,23 @@ void StackSlideApplySearch(
 /*                                       */
 /*****************************************/
 
-   /* if (params->finishedSUMs) */ /* 05/26/04 gam */
-
-         /* 02/11/04 gam; Moved output SUMs code into loop over SUMs */
-
          #ifdef DEBUG_DRIVESTACKSLIDE
              fprintf(stdout, "\nSTART SECTION: Deallocate some memory\n");
              fflush(stdout);
          #endif
-	 
-         /* Deallocate memory for the SUMStats structure */ /* 02/11/04 gam; comment out */
-	 /* LALFree(params->SUMStats); */
 
-         /* Deallocate memory for the SUMData structure */
-         /* for(i=0;i<params->numSUMsTotal;i++)
-         {
-	     LALFree(params->SUMData[i]->data->data);
-	     LALFree(params->SUMData[i]->data);
-	     LALFree(params->SUMData[i]);
-         }
-         LALFree(params->SUMData); */
          /* 02/11/04 gam; Change code to process 1 SUM at a time to allow processing of millions of SUMs per job. */
-	 LALFree(params->SUMData[0]->data->data);
-	 LALFree(params->SUMData[0]->data);
-	 LALFree(params->SUMData[0]);
+         LALFree(params->SUMData[0]->data->data);
+         LALFree(params->SUMData[0]->data);
+         LALFree(params->SUMData[0]);
          LALFree(params->SUMData);
 
          /* Deallocate memory for the STKData structure */
          for(i=0;i<params->numSTKs;i++)
          {
-	     LALFree(params->STKData[i]->data->data);
-	     LALFree(params->STKData[i]->data);
-	     LALFree(params->STKData[i]);
+             LALFree(params->STKData[i]->data->data);
+             LALFree(params->STKData[i]->data);
+             LALFree(params->STKData[i]);
          }
          LALFree(params->STKData);
          
@@ -2209,45 +2138,8 @@ void StackSlideApplySearch(
             } 
         } /* END if ( (params->weightFlag & 1) > 0 ) */         
 
-         /* Deallocate memory for the freqDerivData structure */
-         /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
-         /* if (params->numSpinDown > 0) {
-            for(i=0;i<params->numFreqDerivTotal;i++)
-            {
-	        LALFree(params->freqDerivData[i]);
-            }
-            LALFree(params->freqDerivData);
-         } */
-
-	 /* Deallocate memory for the skyPosData structure */
-         /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
-         /* for(i=0;i<params->numSkyPosTotal;i++)
-         {
-	     LALFree(params->skyPosData[i]);
-         }
-         LALFree(params->skyPosData); */
-
-	 /* LALFree(params->timeStamps); */  /* alloc and dealloc of timeStamps handled in calling code */
-
-	 /* Deallocate BLKData structure */
-	 /* for(i=0;i<params->numBLKs;i++)
-	 {
-	        LALFree(params->BLKData[i]->fft->data->data);
-		LALFree(params->BLKData[i]->fft->data);
-		LALFree(params->BLKData[i]->fft);
-		LALFree(params->BLKData[i]);
-	 }
-	 LALFree(params->BLKData); */ /* alloc and dealloc of BLKData handled in calling code */
-
-	 /* Deallocate ephemeris data */
-         /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
-         /* LALFree(params->edat->ephemS);
-         LALFree(params->edat->ephemE);
-         LALFree(params->edat); */
-         
          /* 11/08/03 gam; Add in first version of StackSlide written by Mike Landry */
-         LALFree(stksldParams->ParamsSMA);/*05/02/18*/
-	 LALFree(stksldParams);
+         LALFree(stksldParams);
          
          /* 01/20/04 gam; Change findStackSlidePeaks to LALFindStackSlidePeaks; put params into struct */
          LALFree(pLALFindStackSlidePeakParams);
@@ -2257,12 +2149,6 @@ void StackSlideApplySearch(
          if (params->outputLoudestFromSUMs) {
            LALFree(pLALUpdateLoudestStackSlideParams);  /* 02/17/04 gam */
          }
-         
-         /* 05/11/04 gam; free memory in StackSlideFinalizeSearch */
-         /* LALFree(params->stksldSkyPatchData); */
-
-      /* OLD else */ /* 05/26/04 gam */
-      /* OLD END if (params->finishedSUMs) else ... */ /* 05/26/04 gam */
       
 /*****************************************/
 /*                                       */
@@ -3259,39 +3145,6 @@ void printOneStackSlideSUM( const REAL4FrequencySeries *oneSUM,
        LALFree(baseOutputFile);
     }
 } /* END void printOneSUM */
-
-/*Feb 14/05 vir */
-/*Start Function FindBinaryLoudest*/
-
-void FindBinaryLoudest( REAL4FrequencySeries **SUMData, StackSlideParams *stksldParams)
-{
-	REAL8 max=0;
-	
-	INT4 iMinSTK=0; 
-	INT4 iMaxSTK=stksldParams->nBinsPerSUM;
-	
-	INT4 i;
-	INT4 indexFreq=0;
- 
-
-	for (i=iMinSTK; i<iMaxSTK; i++)
-	{
-		if(SUMData[0]->data->data[i] > max)
-		{ max = SUMData[0]->data->data[i];
-		  indexFreq=i;
-		}
-	stksldParams->peakFreq=stksldParams->f0SUM + indexFreq*stksldParams->dfSUM; 
-	}
-	stksldParams->LoudestEvent=max;
-       
-       #ifdef DEBUG_BINARY_CODE
-         fprintf(stdout, "Loudest binary peak is %f and corr freq is %f SMA %f\n", max, stksldParams->peakFreq, stksldParams->SemiMajorAxis);
-         fflush(stdout);
-       #endif
-}
-
-/*End function FindBinaryLoudest*/
-
 
 /******************************************/
 /*                                        */

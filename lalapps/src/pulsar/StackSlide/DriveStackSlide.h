@@ -69,7 +69,9 @@
 /*               4. move loops for isolated case (params->binaryFlag == 0) into StackSlideIsolated.c */
 /*               5. use new StackSlide function for isolated case.                                   */
 /* 02/28/05 gam; add extra parameters needed by loop code to StackSlideSearchParams struct */
-
+/* 04/12/05 gam; LIGOLW_XML_TABLE_FOOTER removed from lal, so add as STACKSLIDE_XML_TABLE_FOOTER. */
+/* 04/12/05 gam; add BarycenterInput baryinput; */
+  
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
 
@@ -237,6 +239,12 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 /* 02/09/04 gam; remove fderiv_2-5; remove pw_max_thissum and freq_max_thissum; change false_alarm_prob_upperlimit to false_alarm_prob */
 #define SNGL_LOCAL_STACKSLIDEPERIODIC_ROW \
 "         \"process:process_id:0\",%d,%d,%d,%22.16e,%d,%e,%d,%d,%e,%e,%e,%22.16e,%23.16e,%23.16e,%e,%e"
+
+/* 04/12/05 gam; LIGOLW_XML_TABLE_FOOTER removed from lal, so add as STACKSLIDE_XML_TABLE_FOOTER. */
+#define STACKSLIDE_XML_TABLE_FOOTER \
+"\n" \
+"      </Stream>\n" \
+"   </Table>\n"
 
 /*********************************************/
 /*                                           */
@@ -653,7 +661,9 @@ typedef struct tagStackSlideSearchParams {
   INT2    plusOrCross;  
   INT4    numFreqDerivIncludingNoSpinDown;
   INT4    nBinsPerOutputEvent;
-  
+
+  BarycenterInput baryinput; /* 04/12/05 gam */
+   
   /******************************************/
   /*                                        */
   /* END SECTION: other parameters          */
@@ -733,7 +743,7 @@ void printOneStackSlideSUM( const REAL4FrequencySeries *oneSUM,
                   INT4                       nBinsPerSUM,
                   INT4                       numSUMsTotal
 );
-void FindBinaryLoudest(REAL4FrequencySeries **SUMData, StackSlideParams *stksldParams);
+/* void FindBinaryLoudest(REAL4FrequencySeries **SUMData, StackSlideParams *stksldParams);*/
 
 /******************************************/
 /*                                        */

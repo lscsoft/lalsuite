@@ -4,6 +4,8 @@ $Id$
 ************************************* </lalVerbatim> */
 
 /* REVISIONS: */
+/* 04/12/05 gam; Move from using StackSlideOld to using StackSlide function. */
+/* 04/12/05 gam; add RunStackSlideIsolatedMonteCarloSimulation to StackSlideIsolated.c */
 
 #ifndef _STACKSLIDEISOLATED_H
 #define _STACKSLIDEISOLATED_H
@@ -24,6 +26,9 @@ $Id$
 #include <lal/LIGOLwXMLHeaders.h>
 /* next is needed for tables defined in LAL */
 #include <lal/LIGOMetadataTables.h>
+/* 04/12/05 gam; next two are needed to inject signals for Monte Carlo simulations. */
+#include <lal/GeneratePulsarSignal.h>
+#include <lal/Random.h>
 #include "DriveStackSlide.h"
 #include "StackSlide.h"
 /* #include <lal/LALStackSlide.h> Will need to switch to this version when StackSlide is in LAL. */
@@ -69,10 +74,15 @@ void StackSlideIsolated (
     StackSlideSearchParams           *params
 );
 
+/* 04/12/05 gam */
+void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSearchParams *params, INT4 nSamples);
+
+#ifdef NOTHING
 void StackSlideOld(	LALStatus *status, 
 			REAL4FrequencySeries **SUMData, 
 			REAL4FrequencySeries **STKData, 
 			StackSlideParams *params);
+#endif
 
 #ifdef __cplusplus
 }
