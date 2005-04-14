@@ -149,20 +149,21 @@ typedef struct CellDataTag
 /* ----------------------------------------------------------------------------- */
 /* Function declarelations */
 void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCommandLineArgsTag *CLA); 
-int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA);
-int ReadOneCandidateFile(CandidateList **CList, const char *fname);
-int compareCIStructs(const void *ip, const void *jp);
+void ReadCandidateFiles(LALStatus *stat, CandidateList **Clist, struct PolkaCommandLineArgsTag CLA, UINT4 *datalen);
+void ReadOneCandidateFile(LALStatus *stat, CandidateList **CList, const char *fname, UINT4 *datalen);
+void PrepareCells( LALStatus *stat, CellData **cell, UINT4 datalen );
+int compareCandidates(const void *ip, const void *jp);
+int compareSignificance(const void *a, const void *b);
 int rintcompare(INT4 *idata1, INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
 int rfloatcompare(REAL8 *rdata1, REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
-void delete_int4_linked_list(struct int4_linked_list *list_ptr);
-struct int4_linked_list *add_int4_data(struct int4_linked_list *list_ptr, INT4 *data);
-void get_info_of_the_cell( CellData *cd, struct int4_linked_list *list_ptr );
-int compareSignificance(const void *a, const void *b);
-void FreeMemory(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *cell);
+void add_int4_data(struct int4_linked_list **list_ptr, INT4 *data);
 
-/*
-int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA);
-*/
+
+void delete_int4_linked_list(struct int4_linked_list *list_ptr);
+void get_info_of_the_cell( CellData *cd, CandidateList *CList);
+void FreeMemory(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *cell, CandidateList *CList, UINT4 datalen);
+
+
 
 /* ----------------------------------------------------------------------------- */
 /* Global variables. */
@@ -170,14 +171,7 @@ LALStatus global_status;
 extern INT4 lalDebugLevel;
 extern int vrbflg;
 
-CandidateList *SortedC;
-UINT4  CLength=0;
-
-
-
-
 RCSID ("$Id$");
-
 
 /* ------------------------------------------------------------------------------------------*/
 /* Code starts here.                                                                         */
@@ -189,6 +183,8 @@ int polka(int argc,char *argv[])
 int main(int argc,char *argv[]) 
 #endif
 {
+  UINT4  CLength=0;
+  CandidateList *SortedC;
   CellData *cell = NULL;
   UINT4 icell, icand;
 #if USE_BOINC
@@ -201,55 +197,27 @@ int main(int argc,char *argv[])
   LAL_CALL (LALGetDebugLevel(stat, argc, argv, 'v'), stat);
 
   /* Reads command line arguments */
-#if 0
-  if (ReadCommandLine(argc,argv,&PolkaCommandLineArgs)) {
-    fprintf(stderr,"ReadCommandLine failed\n");
-    return UBERPOLKA_EXIT_ERRCLINE;
-  }
-#endif
-
   LAL_CALL( ReadCommandLineArgs( stat, argc,argv, &PolkaCommandLineArgs ), stat); 
 
   /* Reads in candidare files, set CLength */
-  if (ReadCandidateFiles(PolkaCommandLineArgs)) {
-    fprintf(stderr,"ReadCandidateFiles failed\n");
-    return UBERPOLKA_EXIT_READCND;
-  }
+  LAL_CALL( ReadCandidateFiles(stat, &SortedC, PolkaCommandLineArgs, &CLength), stat);
 
-  if (CLength == 0  )
-    {
-      LALPrintError("CLength = %ud!\n",CLength);
-      exit(1);
-    }/* check that we have candidates. */
+  /* Prepare cells. */
+  LAL_CALL( PrepareCells( stat, &cell, CLength ), stat);  
 
-  cell = (CellData *) LALCalloc(sizeof(CellData),CLength);
-  for(icell=0;icell<CLength;icell++) {
-    cell[icell].CandID = (struct int4_linked_list *) LALCalloc(sizeof(struct int4_linked_list),1);
-    cell[icell].CandID->next = NULL;
-    cell[icell].iFreq = 0;
-    cell[icell].iDelta = 0;
-    cell[icell].iAlpha = 0;
-    cell[icell].nCand = 0;
-    cell[icell].Freq = 0.0;
-    cell[icell].Delta = 0.0;
-    cell[icell].Alpha = 0.0;
-    cell[icell].significance = 0;
-  }
-  
-  
-  /* Initialise arrays of sorted candidates to use for bsearch */
+
+  /* Initialise arrays of sorted candidates. */
   for (icand=0;icand<CLength;icand++)
     {
       SortedC[icand].iFreq=(INT4) (SortedC[icand].f/(PolkaCommandLineArgs.Deltaf) + PolkaCommandLineArgs.Shiftf  );
       SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PolkaCommandLineArgs.DeltaDelta)  + PolkaCommandLineArgs.ShiftDelta );
       SortedC[icand].iAlpha=(INT4)(SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PolkaCommandLineArgs.DeltaAlpha)  + PolkaCommandLineArgs.ShiftAlpha  );
+      SortedC[icand].iCand=icand; /* Keep the original ordering before sort to refer the orignal data later. */
     }
-  
-  /* sort arrays of candidates */
-  qsort(SortedC, (size_t)CLength, sizeof(CandidateList), compareCIStructs);
-  
-  for (icand=0;icand<CLength;icand++) SortedC[icand].iCand=icand;
 
+  /* sort arrays of candidates */
+  qsort(SortedC, (size_t)CLength, sizeof(CandidateList), compareCandidates);
+  
 
   /* initialization */
   icell = 0;
@@ -257,11 +225,11 @@ int main(int argc,char *argv[])
   cell[icell].iFreq = SortedC[icand].iFreq;
   cell[icell].iDelta = SortedC[icand].iDelta;
   cell[icell].iAlpha = SortedC[icand].iAlpha;
-  cell[icell].CandID->data = SortedC[icand].iCand; 
+  cell[icell].CandID->data = icand; 
   cell[icell].nCand = 1;
 
   /* ---------------------------------------------------------------------------------------------------------------*/      
-  /* loop over candidates  */
+  /* main loop over candidates  */
   icell = 0;
   for (icand=1; icand < CLength; icand++)
     {
@@ -271,7 +239,6 @@ int main(int argc,char *argv[])
 	boinc_checkpoint_completed();
 #endif
       
-
       if( SortedC[icand].iFreq  == cell[icell].iFreq  && 
 	  SortedC[icand].iDelta == cell[icell].iDelta &&
 	  SortedC[icand].iAlpha == cell[icell].iAlpha ) 
@@ -281,7 +248,7 @@ int main(int argc,char *argv[])
 	  if( SortedC[icand].FileID != lastFileIDinThisCell ) 
 	    {
 	      /* This candidate has a different file id from the candidates in this cell. */
-	      cell[icell].CandID = add_int4_data( cell[icell].CandID, &(SortedC[icand].iCand) );
+	      add_int4_data( &(cell[icell].CandID), &(icand) );
 	      cell[icell].nCand += 1;
 	    } 
 	  else 
@@ -298,7 +265,7 @@ int main(int argc,char *argv[])
 	  cell[icell].iFreq = SortedC[icand].iFreq;
 	  cell[icell].iDelta = SortedC[icand].iDelta;
 	  cell[icell].iAlpha = SortedC[icand].iAlpha;
-	  cell[icell].CandID->data = SortedC[icand].iCand; 
+	  cell[icell].CandID->data = icand;
 	  cell[icell].nCand = 1;
 	}
            
@@ -316,14 +283,14 @@ int main(int argc,char *argv[])
 
 
   /* ---------------------------------------------------------------------------------------------------------------*/      
-
-  /* sort arrays of candidates */
+  /* Output results */
+  /* first, sort arrays of candidates based on significance. */
   { 
     FILE *fp = NULL;
     UINT4 ncell=icell+1;
 
     for(icell=0;icell<ncell;icell++) {
-      get_info_of_the_cell( &cell[icell], cell[icell].CandID );
+      get_info_of_the_cell( &cell[icell], SortedC);
     }
 
     qsort(cell, (size_t)ncell, sizeof(CellData), compareSignificance);
@@ -340,8 +307,7 @@ int main(int argc,char *argv[])
     fclose(fp);
   }
 
-
-  LAL_CALL( FreeMemory(stat, &PolkaCommandLineArgs, cell), stat);
+  LAL_CALL( FreeMemory(stat, &PolkaCommandLineArgs, cell, SortedC, CLength), stat);
 
   LALCheckMemoryLeaks(); 
 
@@ -349,9 +315,63 @@ int main(int argc,char *argv[])
  
 }
 
+
+
+
+/*******************************************************************************/
+/* Initialize the code: allocate memory, set initial values. */
+void PrepareCells( LALStatus *stat, CellData **cell, UINT4 CLength )
+{
+  INITSTATUS( stat, "InitCode", rcsid );
+  ATTATCHSTATUSPTR (stat);
+
+  UINT4 icell, ncell;
+  INT4 errflg = 0;
+
+  *cell = (CellData *) LALCalloc(sizeof(CellData),CLength);
+  if( *cell == NULL ) {
+    ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
+    DETATCHSTATUSPTR (stat);
+    RETURN (stat);
+  }
+
+  for(icell=0;icell<CLength;icell++) {
+    (*cell)[icell].CandID = (struct int4_linked_list *) LALCalloc(sizeof(struct int4_linked_list),1);
+    if( (*cell)[icell].CandID == NULL ) {
+      errflg = 1;
+      break;
+    }
+    (*cell)[icell].CandID->next = NULL;
+    (*cell)[icell].iFreq = 0;
+    (*cell)[icell].iDelta = 0;
+    (*cell)[icell].iAlpha = 0;
+    (*cell)[icell].nCand = 0;
+    (*cell)[icell].Freq = 0.0;
+    (*cell)[icell].Delta = 0.0;
+    (*cell)[icell].Alpha = 0.0;
+    (*cell)[icell].significance = 0;
+  }
+
+  if( errflg != 0 ) {
+    ncell = icell;
+    for(icell=0;icell<ncell;icell++) {
+      LALFree( (*cell)[icell].CandID );
+    }
+    ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
+    DETATCHSTATUSPTR (stat);
+    RETURN (stat);
+  }
+
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+}
+
+
+
 /*******************************************************************************/
 /* Free memory */
-void FreeMemory(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *cell)
+void FreeMemory(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *cell, CandidateList *CList, UINT4 CLength)
 {
   INITSTATUS( stat, "FreeMemory", rcsid );
   ATTATCHSTATUSPTR (stat);
@@ -361,7 +381,7 @@ void FreeMemory(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *
   LALFree(CLA->FstatsFile);
   LALFree(CLA->OutputFile);
 
-  LALFree(SortedC);
+  LALFree(CList);
 
   for(icell=0;icell<CLength;icell++) {
     delete_int4_linked_list( cell[icell].CandID );
@@ -376,15 +396,19 @@ void FreeMemory(LALStatus *stat, struct PolkaCommandLineArgsTag *CLA, CellData *
 
 /*******************************************************************************/
 /* add data to linked structure */
-struct int4_linked_list *add_int4_data(struct int4_linked_list *list_ptr, INT4 *data)
+void add_int4_data(struct int4_linked_list **list_ptr, INT4 *data)
 {
   struct int4_linked_list *p = NULL;
   p = (struct int4_linked_list *) LALMalloc(sizeof(struct int4_linked_list));
+  if( p == NULL ) {
+    LALPrintError("Could not allocate Memory! \n");
+    exit(POLKAC_EMEM);
+  }
   p->data = *(data);
-  p->next = list_ptr;
-  list_ptr = p;
-  return list_ptr;
+  p->next = *list_ptr;
+  *list_ptr = p;
 }
+
 
 
 /* delete data to linked structure */
@@ -401,17 +425,17 @@ void delete_int4_linked_list(struct int4_linked_list *list_ptr)
 
 
 /* get info of this cell. */
-void get_info_of_the_cell( CellData *cd, struct int4_linked_list *list_ptr )
+void get_info_of_the_cell( CellData *cd, CandidateList *CList)
 {
   INT4 idx;
   struct int4_linked_list *p;
-  p = list_ptr;
+  p = cd->CandID;
   while( p !=NULL ) {
     idx = p->data;
-    cd->significance += SortedC[idx].lfa;
-    cd->Alpha += SortedC[idx].Alpha;
-    cd->Delta += SortedC[idx].Delta;
-    cd->Freq += SortedC[idx].f;
+    cd->significance += CList[idx].lfa;
+    cd->Alpha += CList[idx].Alpha;
+    cd->Delta += CList[idx].Delta;
+    cd->Freq += CList[idx].f;
     p = p->next;
   }
 
@@ -426,7 +450,7 @@ void get_info_of_the_cell( CellData *cd, struct int4_linked_list *list_ptr )
 /*******************************************************************************/
 /* Sorting function to sort candidate indices INCREASING order of f, delta, alpha, and 
    DECREASING ORDER OF F STATISTIC. */
-int compareCIStructs(const void *a, const void *b)
+int compareCandidates(const void *a, const void *b)
 {
   const CandidateList *ip = a;
   const CandidateList *jp = b;
@@ -452,7 +476,7 @@ int compareCIStructs(const void *a, const void *b)
     res = rfloatcompare( &F2,  &F1, 1);
   } 
   return res;
-} /* int compareCIStructs() */
+} /* int compareCandidates() */
 
 
 
@@ -469,10 +493,7 @@ int compareSignificance(const void *a, const void *b)
   /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */ 
   res = rfloatcompare( &F2,  &F1, 1);
   return res;
-} /* int compareCIStructs() */
-
-
-
+} /* int compareSignificance() */
 
 
 
@@ -507,12 +528,15 @@ int rintcompare(INT4 *ap, INT4 *bp, size_t n) {
 
 /*******************************************************************************/
 /* We would use glob in the future to read different files ? */
-int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
+void ReadCandidateFiles(LALStatus *stat, CandidateList **CList, struct PolkaCommandLineArgsTag CLA, UINT4 *clen)
 {
-  if (ReadOneCandidateFile ( &SortedC, CLA.FstatsFile)) return 1;
+  INITSTATUS( stat, "ReadCandidateFiles", rcsid );
+  ATTATCHSTATUSPTR (stat);
 
-  return 0;
+  TRY( ReadOneCandidateFile(stat->statusPtr, CList, CLA.FstatsFile, clen), stat );
 
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
 } /* ReadCandidateFiles() */
 
 
@@ -521,10 +545,9 @@ int ReadCandidateFiles(struct PolkaCommandLineArgsTag CLA)
 
 
 /* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
-int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
+void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const char *fname, UINT4 *candlen)
 {
   UINT4 i;
-  /*  INT4 j, uplim; */
   UINT4 numlines;
   REAL8 epsilon=1e-5;
   char line1[256];
@@ -533,14 +556,20 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   UINT4 checksum=0;
   UINT4 bytecount=0;
 
+
+  INITSTATUS( stat, "ReadOneCandidateFile", rcsid );
+  ATTATCHSTATUSPTR (stat);
+
   /* ------ Open and count candidates file ------ */
   i=0;
   fp=fopen(fname,"rb");
   if (fp==NULL) 
     {
       LALPrintError("File %s doesn't exist!\n",fname);
-      return 1;
-    }
+      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      DETATCHSTATUSPTR (stat);
+      RETURN (stat);
+     }
   while(fgets(line1,sizeof(line1),fp)) {
     unsigned int k;
     size_t len=strlen(line1);
@@ -552,7 +581,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
               "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
               i+1, fname, line1);
       fclose(fp);
-      return 1;
+      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      DETATCHSTATUSPTR (stat);
+      RETURN (stat);
     }
 
     /* increment line counter */
@@ -570,7 +601,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   if ( numlines == 0) 
     {
       LALPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
-      return 1;
+      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      DETATCHSTATUSPTR (stat);
+      RETURN (stat);
     }
 
   /* output a record of the running checksun amd byte count */
@@ -580,12 +613,23 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   if ( strcmp(line1, DONE_MARKER ) ) 
     {
       LALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
-      return 1;
+      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      DETATCHSTATUSPTR (stat);
+      RETURN (stat);
     }
   else
     numlines --;        /* avoid stepping on DONE-marker */
 
-  CLength=numlines;
+  *candlen=numlines;
+
+
+  if (*candlen <= 0  )
+    {
+      LALPrintError("candidate length = %ud!\n",*candlen);
+      exit(1);
+    }/* check that we have candidates. */
+
+
   
   /* reserve memory for fstats-file contents */
   if (numlines > 0)
@@ -594,7 +638,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
       if ( !CList )
         {
           LALPrintError ("Could not allocate memory for candidate file %s\n\n", fname);
-          return 1;
+	  ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
+	  DETATCHSTATUSPTR (stat);
+	  RETURN (stat);
         }
     }
 
@@ -605,7 +651,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
     {
       LALPrintError("fopen(%s) failed!\n", fname);
       LALFree ((*CList));
-      return 1;
+      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      DETATCHSTATUSPTR (stat);
+      RETURN (stat);
     }
   while(i < numlines && fgets(line1,sizeof(line1),fp))
     {
@@ -618,7 +666,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
                 i+1, fname, line1);
         LALFree ((*CList));
         fclose(fp);
-        return 1;
+	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+	DETATCHSTATUSPTR (stat);
+	RETURN (stat);
       }
       
       read = sscanf (line1, 
@@ -652,7 +702,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
                   i+1, fname, line1, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
           LALFree ((*CList));
           fclose(fp);
-          return 1;
+	  ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+	  DETATCHSTATUSPTR (stat);
+	  RETURN (stat);
       }
            
            
@@ -668,7 +720,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
                 i+1, fname, line1);
         LALFree ((*CList));
         fclose(fp);
-        return 1;
+	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+	DETATCHSTATUSPTR (stat);
+	RETURN (stat);
       }
 
       /* check that we read 6 quantities with exactly the right format */
@@ -679,7 +733,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
                          read, 6, i+1, fname, line1);               
           LALFree ((*CList));
           fclose(fp);
-          return 1;
+	  ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+	  DETATCHSTATUSPTR (stat);
+	  RETURN (stat);
         }
 
 
@@ -694,7 +750,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
             fname, i, numlines);
     LALFree((*CList));
     fclose(fp);
-    return 1;
+    ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    DETATCHSTATUSPTR (stat);
+    RETURN (stat);
   }
 
   /* read final line with %DONE\n marker */
@@ -704,7 +762,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
             fname);
     LALFree((*CList));
     fclose(fp);
-    return 1;
+    ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    DETATCHSTATUSPTR (stat);
+    RETURN (stat);
   }
 
   /* check for %DONE\n marker */
@@ -714,7 +774,9 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
             fname, line1, DONE_MARKER);
     LALFree ((*CList));
     fclose(fp);
-    return 1;
+    ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    DETATCHSTATUSPTR (stat);
+    RETURN (stat);
   }
 
   /* check that we are now at the end-of-file */
@@ -724,144 +786,21 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
             fname, DONE_MARKER);
     LALFree ((*CList));
     fclose(fp);
-    return 1;
+    ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    DETATCHSTATUSPTR (stat);
+    RETURN (stat);
   }
 
   /* -- close candidate file -- */
   fclose(fp);     
 
-  return 0;
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
 
 } /* ReadOneCandidateFile() */
 
 
-
-/*******************************************************************************/
-#if 0
-int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA) 
-{
-  INT2 errflg = 0;
-  INT4 c; 
-  INT4 option_index = 0;
-
-  const char *optstring = "hI:f:a:d:F:D:A:o:E";
-  struct option long_options[] =
-    {
-      {"input-data-file",       required_argument, 0,   'I'},
-      {"frequency-window",      required_argument, 0,   'f'},
-      {"delta-window",          required_argument, 0,   'd'},
-      {"alpha-window",          required_argument, 0,   'a'},
-      {"frequency-shift",       required_argument, 0,   'F'},
-      {"delta-shift",           required_argument, 0,   'D'},
-      {"alpha-shift",           required_argument, 0,   'A'},
-      {"outputfile",            required_argument, 0,   'o'},
-      {"EAHoutput",             no_argument, 0,         'E'},
-      {"help",                  no_argument, 0,         'h'},
-      {0, 0, 0, 0}
-    };
-
-  /* Initialize default values */
-  CLA->FstatsFile=NULL;
-  CLA->OutputFile=NULL;
-  CLA->Deltaf=0.0;
-  CLA->DeltaAlpha=0;
-  CLA->DeltaDelta=0;
-
-  CLA->Shiftf=0.0;
-  CLA->ShiftAlpha=0;
-  CLA->ShiftDelta=0;
-
-  CLA->EAH=0;
-
-  /* reset gnu getopt */
-  optind = 0;
-
-  /* Scan through list of command line arguments */
-  while (1)
-    {
-      c = getopt_long(argc, argv, optstring, long_options, &option_index);      
-      if (c == -1) 
-        break;
-      switch (c) {
-      case 'I':
-        /* SFT directory */
-        CLA->FstatsFile=optarg;
-        break;
-      case 'o':
-        /* calibration files directory */
-        CLA->OutputFile=optarg;
-        break;
-      case 'f':
-        /* Spin down order */
-        CLA->Deltaf=atof(optarg);
-        break;
-      case 'a':
-        /* Spin down order */
-        CLA->DeltaAlpha=atof(optarg);
-        break;
-      case 'd':
-        /* Spin down order */
-        CLA->DeltaDelta=atof(optarg);
-        break;
-      case 'F':
-        /* Spin down order */
-        CLA->Shiftf=atof(optarg);
-        break;
-      case 'A':
-        /* Spin down order */
-        CLA->ShiftAlpha=atof(optarg);
-        break;
-      case 'D':
-        /* Spin down order */
-        CLA->ShiftDelta=atof(optarg);
-        break;
-      case 'E':
-        /* Spin down order */
-        CLA->EAH=1;
-        break;
-      case 'h':
-        /* print usage/help message */
-        LALPrintError("Arguments are (defaults):\n");
-        LALPrintError("\t--fstatsfile (-I)\tSTRING\tFirst candidates Fstats file\n");
-        LALPrintError("\t--outputfile  (-o)\tSTRING\tName of ouput candidates file\n");
-        LALPrintError("\t--frequency-window (-f)\tFLOAT\tFrequency window in Hz (0.0)\n");
-        LALPrintError("\t--alpha-window (-a)\tFLOAT\tAlpha window in radians (0.0)\n");
-        LALPrintError("\t--delta-window (-d)\tFLOAT\tDelta window in radians (0.0)\n");
-        LALPrintError("\t--frequency-shift (-F)\tFLOAT\tFrequency window in Hz (0.0)\n");
-        LALPrintError("\t--alpha-shift (-A)\tFLOAT\tAlpha window in radians (0.0)\n");
-        LALPrintError("\t--delta-shift (-D)\tFLOAT\tDelta window in radians (0.0)\n");
-        LALPrintError("\t--EAHoutput (-E)\tFLAG\t Einstein at home output flag. \n");
-        LALPrintError("\t--help        (-h)\t\tThis message\n");
-        exit(0);
-        break;
-      default:
-        /* unrecognized option */
-        errflg++;
-        LALPrintError("Unrecognized option argument %c\n",c);
-        exit(1);
-        break;
-      }
-    }
-
-  if(CLA->FstatsFile == NULL)
-    {
-      LALPrintError("No candidates file specified; input with -I option.\n");
-      LALPrintError("For help type %s -h\n", argv[0]);
-      return 1;
-    }      
-  if(CLA->OutputFile == NULL)
-    {
-      LALPrintError("No ouput filename specified; input with -o option.\n");
-      LALPrintError("For help type %s -h\n", argv[0]);
-      return 1;
-    }      
-
-
-  return errflg;
-}
-#endif
-
-
+/* -------------------------------------------------------------------------------------------------- */
 void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCommandLineArgsTag *CLA) 
 {
   INITSTATUS( stat, "ReadCommandLineArgs", rcsid );
@@ -954,5 +893,5 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCom
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
-}
+} /* void ReadCommandLineArgs()  */
 
