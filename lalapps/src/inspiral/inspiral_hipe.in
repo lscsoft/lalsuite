@@ -667,7 +667,7 @@ longop = [
   "inspiral-veto",
   "second-coinc",
   "sire",
-  "read-cache"
+  "read-cache",
   "priority=",
   "config-file=",
   "log-path=",
