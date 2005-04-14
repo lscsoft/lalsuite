@@ -46,7 +46,7 @@ given search area and resolution
 
 NRCSID( DOPPLERSCANC, "$Id$" );
 
-/* TwoDMesh() can have either of two preferred directions of meshing: */
+/** TwoDMesh() can have either of two preferred directions of meshing: */
 enum {
   ORDER_ALPHA_DELTA,
   ORDER_DELTA_ALPHA
@@ -60,6 +60,19 @@ static int meshOrder = ORDER_DELTA_ALPHA;
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+
+/* Metric indexing scheme: if g_ab for a>=b: index = b + a*(a+1)/2 */
+#define INDEX_ff (0 + 0*(0+1)/2)	/* g_ff */
+#define INDEX_AA (1 + 1*(1+1)/2)	/* g_aa */
+#define INDEX_DD (2 + 2*(2+1)/2)	/* g_dd */
+#define INDEX_DA (1 + 2*(2+1)/2)	/* g_da */
+
+#define INDEX_f1_f  (0 + 3*(3+1)/2)	/* g_f1_f */
+#define INDEX_f1_A  (1 + 3*(3+1)/2)
+#define INDEX_f1_D  (2 + 3*(3+1)/2)
+#define INDEX_f1_f1 (3 + 3*(3+1)/2) 	/* g_f1_f1 */
+
+
 extern INT4 lalDebugLevel;
 
 /* some empty structs for initializations */
@@ -72,7 +85,6 @@ static PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 /* internal prototypes */
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
 void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params );
-void LALMetricWrapper (LALStatus *stat, REAL8Vector *metric, PtoleMetricIn *params);
 void LALTemplateDistance (LALStatus *stat, REAL8 *dist, const DopplerPosition *pos1, const DopplerPosition *pos2);
 REAL8 getDopplermax(EphemerisData *edat);
 
@@ -129,7 +141,7 @@ InitDopplerScan( LALStatus *stat,
   if (init->gridType != GRID_FILE ) {
     TRY (ParseSkyRegion (stat->statusPtr, &(scan->skyRegion), init->skyRegion ), stat);
 
-    if (scan->skyRegion.numVertices == 2)	{ /* this is an anomaly! Allowed are either 1 or >= 3 */
+    if (scan->skyRegion.numVertices == 2){ /* anomaly! Allowed are either 1 or >= 3 */
       ABORT (stat, DOPPLERSCANH_E2DSKY, DOPPLERSCANH_MSGE2DSKY);
     }
   } /* if gridType != GRID_FILE */
@@ -138,27 +150,21 @@ InitDopplerScan( LALStatus *stat,
   switch (init->gridType)
     {
     case GRID_FLAT:		/* flat-grid: constant dAlpha, dDelta */
-
-      TRY ( buildFlatGrid ( stat->statusPtr, &(scan->grid), &(scan->skyRegion), init->dAlpha, init->dDelta), stat);
-
+      TRY ( buildFlatGrid( stat->statusPtr, &(scan->grid), &(scan->skyRegion), 
+			   init->dAlpha, init->dDelta), stat);
       break;
 
     case GRID_ISOTROPIC: 	/* variant of manual stepping: try to produce an isotropic mesh */
-
-      TRY ( buildIsotropicGrid ( stat->statusPtr, &(scan->grid), &(scan->skyRegion), init->dAlpha, init->dDelta), stat);
-
+      TRY ( buildIsotropicGrid( stat->statusPtr, &(scan->grid), &(scan->skyRegion), 
+				init->dAlpha, init->dDelta), stat);
       break;
 
     case GRID_METRIC:
-
       TRY ( buildMetricGrid (stat->statusPtr, &(scan->grid), &(scan->skyRegion), init), stat);
-
       break;
 
     case GRID_FILE:
-
       TRY ( loadSkyGridFile (stat->statusPtr, &(scan->grid), init->skyGridFile), stat);
-
       break;
 
     default:
@@ -195,7 +201,6 @@ InitDopplerScan( LALStatus *stat,
       node = node->next;
     }
 
-
   if (lalDebugLevel >= 1)
     LALPrintError ("\nFinal Scan-grid has %d nodes\n", scan->numGridPoints);
   if (lalDebugLevel >= 3)
@@ -207,6 +212,67 @@ InitDopplerScan( LALStatus *stat,
       TRY ( printFrequencyShifts (stat->statusPtr, scan, init), stat);
       LALPrintError (" done. \n");
     }
+
+  /*----------------------------------------------------------------------*/
+  /* EXPERIMENTAL: Use metric to determine stepping in spindown-values */
+  /*----------------------------------------------------------------------*/
+  if (lalDebugLevel >= 1)
+  {
+    REAL8Vector *metric = NULL;
+    PtoleMetricIn metricpar;
+    REAL8 g_f1_f1, gamma_f1_f1;
+    UINT4 i;
+
+    if ( init->metricType )
+      metricpar.metricType = init->metricType;
+    else
+      metricpar.metricType = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
+
+    metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
+
+    metricpar.spindown = NULL;
+    TRY ( LALSCreateVector (stat->statusPtr, &(metricpar.spindown), 1), stat);
+    metricpar.spindown->data[0] = 0;
+
+    metricpar.epoch = init->obsBegin;
+    metricpar.duration = init->obsDuration;
+    metricpar.site = init->Detector;
+    printf ("\nTesting spindown-metric:\n");
+    for (i=0; i < 25; i++)
+      {
+	REAL8 randval;
+	REAL8 fmax = init->fmax;
+	REAL8 freq;
+
+	randval = 1.0 * rand() / RAND_MAX;
+	metricpar.position.longitude = randval * LAL_TWOPI;
+	randval = 1.0 * rand() / RAND_MAX;
+	metricpar.position.latitude = randval * LAL_PI - LAL_PI_2;
+	randval = 1.0 * rand() / RAND_MAX;
+	freq = 100 + randval * fmax;
+	metricpar.maxFreq = freq;
+
+	TRY ( LALMetricWrapper (stat->statusPtr, &metric, &metricpar), stat);
+
+	g_f1_f1 = metric->data[INDEX_f1_f1] / (freq*freq);
+
+	TRY ( LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
+
+	gamma_f1_f1 = metric->data[INDEX_f1_f1] / (freq*freq);	  
+
+	TRY( LALDDestroyVector (stat->statusPtr, &metric), stat);
+	metric = NULL;
+
+	printf ("\ni=%d: (f,a,d)=(%f,%f,%f): g_f1f1 = %g, gamma_f1f1 = %g", 
+		i, metricpar.maxFreq, metricpar.position.longitude, metricpar.position.latitude,
+		g_f1_f1, gamma_f1_f1);
+
+      } /* for i < 100 */
+
+    printf ("\n\n");
+
+  } /* spindown-metric test */
+  /* ----------------------------------------------------------------------*/
 
   scan->state = STATE_READY;
 
@@ -370,21 +436,17 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params )
  * NOTE: this will be called by TwoDMesh(), therefore
  * skypos is in internalOrder, which is not necessarily ORDER_ALPHA_DELTA!!
  * 
+ * NOTE2: this is only using the 2D projected sky-metric !
+ *
  *----------------------------------------------------------------------*/
 void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 {
-  INT2 dim;  	/* dimension of (full) parameter space (incl. freq) */
   REAL8Vector   *metric = NULL;  /* for output of metric */
   PtoleMetricIn *metricpar = (PtoleMetricIn*) params;
 
   /* Set up shop. */
   INITSTATUS( stat, "getMetric", DOPPLERSCANC );
   ATTATCHSTATUSPTR( stat );
-
-  /* currently we use only f0, alpha, delta: -> 3D metric */
-  dim = 3;
-
-  TRY( LALDCreateVector( stat->statusPtr, &metric, dim*(dim+1)/2 ), stat );
 
   /* Call the metric function. (Ptole or Coherent, which is handled by wrapper) */
   if (meshOrder == ORDER_ALPHA_DELTA)
@@ -399,25 +461,16 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
     }
 
   /* before we call the metric: make sure the sky-position  is "normalized" */
-  TRY ( LALNormalizeSkyPosition (stat->statusPtr, &(metricpar->position), &(metricpar->position)), stat);
+  TRY ( LALNormalizeSkyPosition(stat->statusPtr, &(metricpar->position), 
+				&(metricpar->position)), stat);
 
-  TRY ( LALMetricWrapper( stat->statusPtr, metric, metricpar), stat);
+  TRY ( LALMetricWrapper( stat->statusPtr, &metric, metricpar), stat);
 
-  BEGINFAIL( stat )
-    TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
-  ENDFAIL( stat );
-
-  TRY (LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
+  LALProjectMetric( stat->statusPtr, metric, 0 );
 
   BEGINFAIL( stat )
     TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   ENDFAIL( stat );
-
-
-  /* the general indexing scheme is g_ab for a>=b: index = b + a*(a+1)/2 */
-#define INDEX_AA (1 + 1*(1+1)/2)	/* g_aa */
-#define INDEX_DD (2 + 2*(2+1)/2)	/* g_dd */
-#define INDEX_AD (1 + 2*(2+1)/2)	/* g_ad */
 
   /* Translate output. Careful about the coordinate-order here!! */
   if (meshOrder == ORDER_ALPHA_DELTA)
@@ -431,7 +484,7 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
       g[1] = metric->data[INDEX_AA]; /* gyy */
     }
 
-  g[2] = metric->data[INDEX_AD]; /* gxy = g21: 1 + 2*(2+1)/2 = 4; */
+  g[2] = metric->data[INDEX_DA]; /* gxy = g21: 1 + 2*(2+1)/2 = 4; */
 
   /*
   if (lalDebugLevel >= 3)
@@ -462,7 +515,6 @@ plotGrid (LALStatus *stat,
   DopplerScanGrid *node;
   REAL8 alpha, delta;
   UINT4 set, i;
-  UINT4 dim;
 
   const CHAR *xmgrHeader = 
     "@version 50103\n"
@@ -477,9 +529,6 @@ plotGrid (LALStatus *stat,
   /* Set up shop. */
   INITSTATUS( stat, "plotGrid", DOPPLERSCANC );
   ATTATCHSTATUSPTR( stat );
-
-  /* currently we use only f0, alpha, delta: -> 3D metric */
-  dim = 3;
 
   fp = fopen ("mesh_debug.agr", "w");
 
@@ -500,7 +549,8 @@ plotGrid (LALStatus *stat,
 	{
 	  fprintf( fp, "%e %e\n", region->vertices[i].longitude, region->vertices[i].latitude );
 	}
-      fprintf (fp, "%e %e\n", region->vertices[0].longitude, region->vertices[0].latitude ); /* close contour */
+      /* close contour */
+      fprintf (fp, "%e %e\n", region->vertices[0].longitude, region->vertices[0].latitude ); 
       
       set ++;
     }
@@ -537,8 +587,6 @@ plotGrid (LALStatus *stat,
       metricPar.maxFreq = init->fmax;
       metricPar.site = init->Detector;
 
-      TRY( LALDCreateVector( stat->statusPtr, &metric, dim*(dim+1)/2 ), stat);
-
       node = grid;
       while (node)
 	{
@@ -552,14 +600,15 @@ plotGrid (LALStatus *stat,
 	  metricPar.position.latitude  = delta;
 
 	  /* make sure we "normalize" point before calling metric */
-	  TRY( LALNormalizeSkyPosition (stat->statusPtr, &(metricPar.position), &(metricPar.position) ), stat);
+	  TRY( LALNormalizeSkyPosition(stat->statusPtr, &(metricPar.position), 
+				       &(metricPar.position) ), stat);
 
-	  TRY( LALMetricWrapper( stat->statusPtr, metric, &metricPar), stat);
+	  TRY( LALMetricWrapper( stat->statusPtr, &metric, &metricPar), stat);
 
 	  TRY (LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
 
 	  gaa = metric->data[INDEX_AA];
-	  gad = metric->data[INDEX_AD];
+	  gad = metric->data[INDEX_DA];
 	  gdd = metric->data[INDEX_DD];
 	  
 	  /* Semiminor axis from larger eigenvalue of metric. */
@@ -596,11 +645,14 @@ plotGrid (LALStatus *stat,
 	  }
 	  
 	  node = node -> next;
+
+	  TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+	  metric = NULL;
 	  
 	} /* while node */
       
       LALFree (metricPar.spindown);
-      TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+
 
 
     } /* if plotEllipses */
@@ -616,12 +668,13 @@ plotGrid (LALStatus *stat,
  * this is a "wrapper" to provide a uniform interface to PtoleMetric() 
  * and CoherentMetric().
  *
- * the parameter structure of PtoleMetric() was used, because it's more compact
+ * the parameter structure of PtoleMetric() was used, because it's more 
+ * compact
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="DopplerScanCP"> */
 void
 LALMetricWrapper (LALStatus *stat, 
-		  REAL8Vector *metric, 		/* output: metric (pre-allocated)*/
+		  REAL8Vector **metric, 	/* output: metric */
 		  PtoleMetricIn *input) 	/* input-params for the metric */
 { /* </lalVerbatim> */
   MetricParamStruc params = empty_MetricParamStruc;
@@ -629,34 +682,54 @@ LALMetricWrapper (LALStatus *stat,
   PulsarTimesParamStruc baryParams = empty_PulsarTimesParamStruc;
   PulsarTimesParamStruc compParams = empty_PulsarTimesParamStruc;
   REAL8Vector *lambda = NULL;
-  UINT4 i, nSpin;
+  UINT4 i, nSpin, dim;
 
   INITSTATUS( stat, "LALMetricWrapper", DOPPLERSCANC );
   ATTATCHSTATUSPTR (stat);
 
   ASSERT ( input, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
-  ASSERT ( input->spindown, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+  ASSERT ( metric != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
+  ASSERT ( *metric == NULL, stat, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );
+
   if (input->metricType == LAL_PMETRIC_COH_EPHEM) {
     ASSERT ( input->ephemeris != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   }
 
+
+  if ( input->spindown ) 
+    nSpin = input->spindown->length;
+  else
+    nSpin = 0;
+
+
+  /* allocate the output-metric */
+  dim = 3 + nSpin;	/* dimensionality of parameter-space: alpha,delta,f + spindowns */
+
+  TRY ( LALDCreateVector (stat->statusPtr, metric, dim * (dim+1)/2), stat);
+
   switch (input->metricType)
     {
     case LAL_PMETRIC_COH_PTOLE_ANALYTIC: /* use Ben&Ian's analytic ptolemaic metric */
-      TRY ( LALPtoleMetric (stat->statusPtr, metric, input), stat);
+      LALPtoleMetric (stat->statusPtr, *metric, input);
+      BEGINFAIL(stat) {
+	LALDDestroyVector (stat->statusPtr, metric);
+      }ENDFAIL(stat);
       break;
 
     case LAL_PMETRIC_COH_PTOLE_NUMERIC:   /* use CoherentMetric + Ptolemaic timing */
     case LAL_PMETRIC_COH_EPHEM:   /* use CoherentMetric + ephemeris timing */
-      nSpin = input->spindown->length;
-
       /* Set up constant parameters for barycentre transformation. */
       baryParams.epoch = input->epoch;
       baryParams.t0 = 0;
-      baryParams.latitude = input->site->frDetector.vertexLatitudeRadians;	/* FIXME: should be redundant now, with Detector passed */
+      /* FIXME: should be redundant now, with Detector passed */
+      baryParams.latitude = input->site->frDetector.vertexLatitudeRadians;	
       baryParams.longitude = input->site->frDetector.vertexLongitudeRadians;
+
       baryParams.site = input->site;
-      TRY( LALGetEarthTimes( stat->statusPtr, &baryParams ), stat );
+      LALGetEarthTimes( stat->statusPtr, &baryParams );
+      BEGINFAIL(stat) {
+	LALDDestroyVector (stat->statusPtr, metric);
+      }ENDFAIL(stat);
 
       /* set timing-function for earth-motion: either ptolemaic or ephemeris */
       if (input->metricType == LAL_PMETRIC_COH_PTOLE_NUMERIC)
@@ -666,7 +739,7 @@ LALMetricWrapper (LALStatus *stat,
 	}
       else	/* use precise ephemeris-timing */
 	{
-	  baryParams.t1 = NULL;		/* FIXME: no LALTEphemeris() exists currently (not needed here?) */
+	  baryParams.t1 = NULL;	/* FIXME: no LALTEphemeris() exists currently (not needed here?) */
 	  baryParams.dt1 = LALDTEphemeris;
 	  baryParams.ephemeris = input->ephemeris;
 	}
@@ -704,7 +777,10 @@ LALMetricWrapper (LALStatus *stat,
       params.errors = 0;
 
       /* Set up the parameter list. */
-      TRY ( LALDCreateVector( stat->statusPtr, &lambda, nSpin + 2 + 1 ), stat );
+      LALDCreateVector( stat->statusPtr, &lambda, nSpin + 2 + 1 );
+      BEGINFAIL(stat) {
+	LALDDestroyVector (stat->statusPtr, metric);
+      }ENDFAIL(stat);
 
       lambda->data[0] = (REAL8) input->maxFreq;
       lambda->data[1] = (REAL8) input->position.longitude;	/* alpha */
@@ -717,8 +793,16 @@ LALMetricWrapper (LALStatus *stat,
 	}
 
       /* _finally_ we can call the metric */
-      TRY ( LALCoherentMetric( stat->statusPtr, metric, lambda, &params ), stat );
-      TRY ( LALDDestroyVector( stat->statusPtr, &lambda ), stat );
+      LALCoherentMetric( stat->statusPtr, *metric, lambda, &params );
+      BEGINFAIL(stat) {
+	LALDDestroyVector (stat->statusPtr, metric);
+	LALDDestroyVector( stat->statusPtr, &lambda );
+      }ENDFAIL(stat);
+
+      LALDDestroyVector( stat->statusPtr, &lambda );
+      BEGINFAIL(stat) {
+	LALDDestroyVector (stat->statusPtr, metric);
+      }ENDFAIL(stat);
 
       break;
 
@@ -1117,12 +1201,7 @@ buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion, 
   /* set up the metric parameters proper (using PtoleMetricIn as container-type) */
   metricpar.metricType = init->metricType;
   metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
-  /* currently, CreateVector's are broken as they don't allow length=0 */
-  /*      TRY( LALSCreateVector( stat->statusPtr, &(scan->MetricPar.spindown), 0 ), stat ); 	*/
-  /* FIXME: replace when fixed in LAL */
-  metricpar.spindown = LALCalloc ( 1, sizeof(REAL4Vector) );
-  metricpar.spindown->length=0;
-  metricpar.spindown->data=NULL;
+  metricpar.spindown = NULL;
 
   metricpar.epoch = init->obsBegin;
   metricpar.duration = init->obsDuration;

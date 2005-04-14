@@ -64,42 +64,39 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 
 /*************************************************** </lalErrTable> */
 
-/* a Doppler-scan can be in one of the following states */
+/** a Doppler-scan can be in one of the following states */
 enum {
-  STATE_IDLE = 0,   	/* not initialized yet */
-  STATE_READY,		/* initialized and ready */
-  STATE_FINISHED,
+  STATE_IDLE = 0,   	/**< not initialized yet */
+  STATE_READY,		/**< initialized and ready */
+  STATE_FINISHED,	/**< all templates have been read */
   STATE_LAST
 };
 
-/* NOTE: if you change these, you also need to adapt the help-string + cfs_example-file !! */
+/** different types of Sky-grids: */
 typedef enum
 {
-  GRID_FLAT,			/* "flat" sky-grid: fixed step-size (dAlpha,dDelta) */
-  GRID_ISOTROPIC,		/* approximately isotropic sky-grid */
-  GRID_METRIC,			/* generate grid using a 2D sky-metric */
-  GRID_FILE,			/* read grid from a file */
+  GRID_FLAT,			/**< "flat" sky-grid: fixed step-size (dAlpha,dDelta) */
+  GRID_ISOTROPIC,		/**< approximately isotropic sky-grid */
+  GRID_METRIC,			/**< generate grid using a 2D sky-metric */
+  GRID_FILE,			/**< read grid from a file */
   GRID_LAST
 } DopplerGridType;
 
-/* this structure is handed over to InitDopplerScan() */  
+/** initialization-structure passed to InitDopplerScan() */  
 typedef struct {
-  DopplerGridType gridType;	/* which type of grid to generate */  
-  LALPulsarMetricType metricType; 	/* which metric to use if GRID_METRIC */
+  DopplerGridType gridType;	/**< which type of skygrid to generate */  
+  LALPulsarMetricType metricType; /**< which metric to use if GRID_METRIC */
 
-  REAL8 dAlpha;			/* step-sizes for GRID_FLAT */
+  REAL8 dAlpha;			/**< step-sizes for GRID_FLAT */
   REAL8 dDelta;
-
-  REAL8 metricMismatch;		/* for GRID_METRIC and GRID_ISOTROPIC */
-
-  LIGOTimeGPS obsBegin; 	/* start-time of time-series */
-  REAL8 obsDuration;		/* length of time-series in seconds */
-  REAL8 fmax; 			/* max frequency of search */
-  LALDetector *Detector; 	/* Our detector*/
-  EphemerisData *ephemeris;	/* ephemeris for "exact" metric */
-
-  CHAR *skyRegion;		/* string containing a list of sky-positions describing a sky-region */
-  CHAR *skyGridFile;		/* file containing a sky-grid (list of points) for GRID_FILE */
+  REAL8 metricMismatch;		/**< for GRID_METRIC and GRID_ISOTROPIC */
+  LIGOTimeGPS obsBegin; 	/**< start-time of time-series */
+  REAL8 obsDuration;		/**< length of time-series in seconds */
+  REAL8 fmax; 			/**< max frequency of search */
+  LALDetector *Detector; 	/**< Our detector*/
+  EphemerisData *ephemeris;	/**< ephemeris for "exact" metric */
+  CHAR *skyRegion;		/**< list of sky-positions describing a sky-region */
+  CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) for GRID_FILE */
 } DopplerScanInit;
 
 
@@ -119,9 +116,9 @@ typedef struct {
 
 /* general scan-grid */
 typedef struct tagDopplerScanGrid {
-  REAL8 freq;
   REAL8 alpha;
   REAL8 delta;
+  REAL8 freq;
   REAL8Vector spindowns;
   struct tagDopplerScanGrid *next;
 } DopplerScanGrid;
@@ -131,7 +128,6 @@ typedef struct {
   INT2 state;  			/* idle, ready or finished */
 
   SkyRegion skyRegion; 		/* polygon (and bounding square) defining sky-region  */
-
   UINT4 numGridPoints;		/* how many grid-points */
   DopplerScanGrid *grid; 	/* head of linked list of nodes */  
   DopplerScanGrid *gridNode;	/* pointer to current grid-node in grid */
@@ -150,6 +146,7 @@ void FreeDopplerScan (LALStatus *stat, DopplerScanState *scan);
 
 void writeSkyGridFile (LALStatus *stat, const DopplerScanGrid *grid, const CHAR *fname, const DopplerScanInit *init);
 void ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input);
+void LALMetricWrapper(LALStatus *stat, REAL8Vector **metric, PtoleMetricIn *params);
 
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}
