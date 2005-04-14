@@ -76,7 +76,7 @@ if (inputThreshold > 0)
 else 
  eventPowers = sort(eventPowers);
  lengthEventPowers = length(eventPowers);
- iFARateBin = lengthEventPowers - (falseAlarmRate*totalNumTemplates)
+ iFARateBin = lengthEventPowers - round(falseAlarmRate*totalNumTemplates)
  falseARateThreshold = eventPowers(iFARateBin)
  fprintf('\nfalseARateThreshold found is: %g \n',falseARateThreshold);
  fprintf(fid,'\nfalseARateThreshold event found is: %g \n',falseARateThreshold);
