@@ -216,18 +216,14 @@ InitDopplerScan( LALStatus *stat,
   /*----------------------------------------------------------------------*/
   /* EXPERIMENTAL: Use metric to determine stepping in spindown-values */
   /*----------------------------------------------------------------------*/
-  if (lalDebugLevel >= 1)
   {
     REAL8Vector *metric = NULL;
     PtoleMetricIn metricpar;
     REAL8 g_f1_f1, gamma_f1_f1;
     UINT4 i;
+    REAL8 freq;
 
-    if ( init->metricType )
-      metricpar.metricType = init->metricType;
-    else
-      metricpar.metricType = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
-
+    metricpar.metricType = init->metricType;
     metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
 
     metricpar.spindown = NULL;
@@ -237,41 +233,77 @@ InitDopplerScan( LALStatus *stat,
     metricpar.epoch = init->obsBegin;
     metricpar.duration = init->obsDuration;
     metricpar.site = init->Detector;
-    printf ("\nTesting spindown-metric:\n");
-    for (i=0; i < 25; i++)
+
+    /*----------------------------------------*/
+    /* run a little test of constancy of g_f1f1 over sky and frequencies */
+    if (lalDebugLevel >= 3 && metricpar.metricType)
       {
-	REAL8 randval;
-	REAL8 fmax = init->fmax;
-	REAL8 freq;
+	printf ("\nTesting spindown-metric:\n");
+	for (i=0; i < 25; i++)
+	  {
+	    REAL8 randval;
+	    REAL8 fmax = init->fmax;
+	    
+	    randval = 1.0 * rand() / RAND_MAX;
+	    metricpar.position.longitude = randval * LAL_TWOPI;
+	    randval = 1.0 * rand() / RAND_MAX;
+	    metricpar.position.latitude = randval * LAL_PI - LAL_PI_2;
+	    randval = 1.0 * rand() / RAND_MAX;
+	    freq = 100 + randval * fmax;
+	    metricpar.maxFreq = freq;
+	    
+	    TRY ( LALMetricWrapper (stat->statusPtr, &metric, &metricpar), stat);
+	    
+	    g_f1_f1 = metric->data[INDEX_f1_f1] / (freq*freq);
+	    
+	    TRY ( LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
+	    
+	    gamma_f1_f1 = metric->data[INDEX_f1_f1] / (freq*freq);	  
+	    
+	    TRY( LALDDestroyVector (stat->statusPtr, &metric), stat);
+	    metric = NULL;
+	    
+	    printf ("\ni=%d: (f,a,d)=(%f,%f,%f): g_f1f1 = %g, gamma_f1f1 = %g", 
+		    i, metricpar.maxFreq, metricpar.position.longitude, metricpar.position.latitude,
+		    g_f1_f1, gamma_f1_f1);
 
-	randval = 1.0 * rand() / RAND_MAX;
-	metricpar.position.longitude = randval * LAL_TWOPI;
-	randval = 1.0 * rand() / RAND_MAX;
-	metricpar.position.latitude = randval * LAL_PI - LAL_PI_2;
-	randval = 1.0 * rand() / RAND_MAX;
-	freq = 100 + randval * fmax;
-	metricpar.maxFreq = freq;
+	  } /* for i < Numtests */
+	printf ("\n\n");
 
+      } /* if lalDebugLevel >= 1*/
+    /*----------------------------------------*/
+
+    metricpar.position.longitude = 1;
+    metricpar.position.latitude = 1;
+    freq = init->fmax;
+    metricpar.maxFreq = freq;
+
+    if ( metricpar.metricType )
+      {
 	TRY ( LALMetricWrapper (stat->statusPtr, &metric, &metricpar), stat);
-
-	g_f1_f1 = metric->data[INDEX_f1_f1] / (freq*freq);
-
 	TRY ( LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
-
 	gamma_f1_f1 = metric->data[INDEX_f1_f1] / (freq*freq);	  
-
 	TRY( LALDDestroyVector (stat->statusPtr, &metric), stat);
 	metric = NULL;
 
-	printf ("\ni=%d: (f,a,d)=(%f,%f,%f): g_f1f1 = %g, gamma_f1f1 = %g", 
-		i, metricpar.maxFreq, metricpar.position.longitude, metricpar.position.latitude,
-		g_f1_f1, gamma_f1_f1);
+	/* NOTE: for simplicity we use mismatch, instead of mismatch/2 
+	 * as in the case of spindowns this would require adapting the 
+	 * sky-mismatch too.
+	 * Instead, the user has to adapt 'mismatch' corresponding to 
+	 * the number of dimensions in parameter-space he considers.
+	 */
+	scan->df1dot = sqrt ( init->metricMismatch / gamma_f1_f1 );
+      }
+    else	/* no metric: use 'naive' value of 1/(2*T^2) [previous default in CFS] */
+      {
+	scan->df1dot = 1.0 / (2.0 * init->obsDuration * init->obsDuration);
+      }
+    
+    if (lalDebugLevel >= 1) {
+      printf ("\nStep-size in spindown-values: df1dot = %g\n", scan->df1dot);
+    }
 
-      } /* for i < 100 */
-
-    printf ("\n\n");
-
-  } /* spindown-metric test */
+  } /* spindown-metric */
   /* ----------------------------------------------------------------------*/
 
   scan->state = STATE_READY;
@@ -1191,7 +1223,7 @@ buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion, 
 
   /* Prepare call of TwoDMesh(): the mesh-parameters */
   meshpar.mThresh = init->metricMismatch;
-  meshpar.nIn = 1e6;  	/* maximum nodes in mesh */ /*  FIXME: hardcoded */
+  meshpar.nIn = 1e8;  	/* maximum nodes in mesh */ /*  FIXME: hardcoded */
       
   /* helper-function: range and metric */
   meshpar.getMetric = getMetric;

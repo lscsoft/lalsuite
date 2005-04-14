@@ -129,6 +129,7 @@ typedef struct {
 
   SkyRegion skyRegion; 		/* polygon (and bounding square) defining sky-region  */
   UINT4 numGridPoints;		/* how many grid-points */
+  REAL8 df1dot;			/* stepsize for first spindown-value f1dot */
   DopplerScanGrid *grid; 	/* head of linked list of nodes */  
   DopplerScanGrid *gridNode;	/* pointer to current grid-node in grid */
 } DopplerScanState;

@@ -517,7 +517,7 @@ int main(int argc,char *argv[])
   }
   if (lalDebugLevel) LALPrintError ("done.\n");
 
-  /* should we write the sky-grid to disk? */
+  /* ---------- should we write the sky-grid to disk? ---------- */
   if ( uvar_outputSkyGrid ) 
     {
       LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
@@ -525,8 +525,26 @@ int main(int argc,char *argv[])
       LALPrintError (" done.\n\n");
     }
 
-  if ( lalDebugLevel )
-    LALPrintError ("\nFrequency-bins: %d\n Spindown-bins: %d\n", GV.FreqImax, GV.SpinImax);
+  /* ---------- set spindown-resolution from DopplerScan if not input by user ----------*/
+  if( !LALUserVarWasSet (&uvar_df1dot) ) 
+    GV.df1dot = thisScan.df1dot;
+  else
+    GV.df1dot = uvar_df1dot;
+
+  /*Number of spindown values to calculate F for */
+  GV.SpinImax= (INT4)(uvar_f1dotBand/ GV.df1dot + 0.5) + 1;  
+
+  if (lalDebugLevel >= 1)
+    {
+      printf ("\nFrequency-templates: %d\n", GV.FreqImax);
+
+      printf ("Spindown-band: %g, spindown-resolution df1dot = %g\n",
+	      uvar_f1dotBand, GV.df1dot);
+      printf ("Spindown-templates: %d, first spindown-value: %g\n\n", 
+	      GV.SpinImax, uvar_f1dot);
+    }
+  /* ----------------------------------------------------------------------*/
+
 
   /* if a complete output of the F-statistic file was requested,
    * we open and prepare the output-file here */
@@ -733,9 +751,9 @@ int main(int argc,char *argv[])
       PrintAMCoeffs(Alpha, Delta, DemodParams->amcoe);
 #endif
       /* loop over spin params */
-      for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
+      for (spdwn=0; spdwn < GV.SpinImax; spdwn++)
         {
-          DemodParams->spinDwn[0] = uvar_f1dot + spdwn * uvar_df1dot;
+          DemodParams->spinDwn[0] = uvar_f1dot + spdwn * GV.df1dot;
 	  
           switch ( uvar_expLALDemod )
 	    {
@@ -945,16 +963,16 @@ initUserVars (LALStatus *stat)
   LALregREALUserVar(stat,       AlphaBand,      'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(stat,       DeltaBand,      'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
   LALregSTRINGUserVar(stat,     skyRegion,      'R', UVAR_OPTIONAL, "ALTERNATIVE: specify sky-region by polygon");
-  LALregINTUserVar(stat,        gridType,        0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
+  LALregINTUserVar(stat,        gridType,        0 , UVAR_OPTIONAL, "Template SKY-grid: 0=flat, 1=isotropic, 2=metric, 3=file");
   LALregINTUserVar(stat,        metricType,     'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregREALUserVar(stat,       metricMismatch, 'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
+  LALregREALUserVar(stat,       metricMismatch, 'X', UVAR_OPTIONAL, "Maximal mismatch for SKY-grid (adjust value for more dimensions)");
   LALregREALUserVar(stat,       dAlpha,         'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(stat,       dDelta,         'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
   LALregSTRINGUserVar(stat,     skyGridFile,     0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
   LALregSTRINGUserVar(stat,     outputSkyGrid,   0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
   LALregREALUserVar(stat,       f1dot,          's', UVAR_OPTIONAL, "First spindown parameter f1dot");
   LALregREALUserVar(stat,       f1dotBand,      'm', UVAR_OPTIONAL, "Search-band for f1dot");
-  LALregREALUserVar(stat,       df1dot,         'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
+  LALregREALUserVar(stat,       df1dot,         'e', UVAR_OPTIONAL, "Resolution for f1dot (default: use metric or 1/(2*T^2))");
   LALregSTRINGUserVar(stat,     DataDir,        'D', UVAR_OPTIONAL, "Directory where SFT's are located");
   LALregSTRINGUserVar(stat,     BaseName,       'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
   LALregSTRINGUserVar(stat,     mergedSFTFile,  'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
@@ -2015,18 +2033,10 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     cfg->dFreq=1.0/(2.0*header.tbase*cfg->SFTno);
   else
     cfg->dFreq = uvar_dFreq;
-
-  cfg->FreqImax=(INT4)(uvar_FreqBand/cfg->dFreq+.5)+1;  /*Number of frequency values to calculate F for */
+  
+  /*Number of frequency values to calculate F for */
+  cfg->FreqImax=(INT4)(uvar_FreqBand/cfg->dFreq+.5)+1;  
     
-  /* if user has not input demodulation frequency resolution; set to 1/Tobs */
-  if( !LALUserVarWasSet (&uvar_df1dot) ) 
-    uvar_df1dot=1.0/(2.0*header.tbase*cfg->SFTno*(cfg->Tf - cfg->Ti));
-
-  if (LALUserVarWasSet (&uvar_f1dotBand) && (uvar_f1dotBand != 0) )
-    cfg->SpinImax=(int)(uvar_f1dotBand/uvar_df1dot+.5)+1;  /*Number of spindown values to calculate F for */
-  else
-    cfg->SpinImax = 0;
-
   cfg->nsamples=header.nsamples;    /* # of freq. bins */
 
   cfg->ifmax = (INT4) ceil((1.0+DOPPLERMAX)*(uvar_Freq+uvar_FreqBand)*cfg->tsft)+uvar_Dterms;
