@@ -975,25 +975,27 @@ initUserVars (LALStatus *stat)
   LALregREALUserVar(stat,       df1dot,         'e', UVAR_OPTIONAL, "Resolution for f1dot (default: use metric or 1/(2*T^2))");
   LALregSTRINGUserVar(stat,     DataDir,        'D', UVAR_OPTIONAL, "Directory where SFT's are located");
   LALregSTRINGUserVar(stat,     BaseName,       'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  LALregSTRINGUserVar(stat,     mergedSFTFile,  'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
   LALregSTRINGUserVar(stat,     ephemDir,       'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(stat,     ephemYear,      'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(stat,       SignalOnly,     'S', UVAR_OPTIONAL, "Signal only flag");
   LALregBOOLUserVar(stat,       EstimSigParam,  'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
   LALregREALUserVar(stat,       Fthreshold,     'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-  LALregINTUserVar(stat,        Dterms,         't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
   LALregSTRINGUserVar(stat,     outputLabel,    'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
-  LALregSTRINGUserVar(stat,     outputFstat,     0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
-  LALregBOOLUserVar(stat,       openDX,          0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
-  LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory.");
-  LALregBOOLUserVar(stat,       searchNeighbors, 0,  UVAR_OPTIONAL, "Refine skyregion to neighboring points of original center.");
-  LALregBOOLUserVar(stat,       doCheckpointing, 0,  UVAR_OPTIONAL, "Do checkpointing and resume for previously checkpointed state.");
-  LALregINTUserVar(stat,        expLALDemod,     0,  UVAR_OPTIONAL, "Type of LALDemod to use. 0=standard, 1=exp1, 2=REAL4");
-
   LALregREALUserVar(stat,       startTime,       0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time <  this value. Default:");
   LALregREALUserVar(stat,       endTime,         0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time >= this value. Default:");
+
+  /* the following are 'developer'-options */
+
+  LALregSTRINGUserVar(stat,     outputFstat,     0,  UVAR_DEVELOPER, "Output-file for the F-statistic field over the parameter-space");
+  LALregBOOLUserVar(stat,       openDX,          0,  UVAR_DEVELOPER, "Make output-files openDX-readable (adds proper header)");
+  LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory.");
+  LALregBOOLUserVar(stat,       searchNeighbors, 0,  UVAR_DEVELOPER, "Refine skyregion to neighboring points of original center.");
+  LALregBOOLUserVar(stat,       doCheckpointing, 0,  UVAR_DEVELOPER, "Do checkpointing and resume for previously checkpointed state.");
+  LALregINTUserVar(stat,        expLALDemod,     0,  UVAR_DEVELOPER, "Type of LALDemod to use. 0=standard, 1=exp1, 2=REAL4");
+  LALregINTUserVar(stat,        Dterms,         't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
+  LALregSTRINGUserVar(stat,     mergedSFTFile,  'B', UVAR_DEVELOPER, "Merged SFT's file to be used"); 
 #if BOINC_COMPRESS
-  LALregBOOLUserVar(stat,       useCompression,  0,  UVAR_OPTIONAL, "BOINC: use compression for download/uploading data");
+  LALregBOOLUserVar(stat,       useCompression,  0,  UVAR_DEVELOPER, "BOINC: use compression for download/uploading data");
 #endif
 
   DETATCHSTATUSPTR (stat);
