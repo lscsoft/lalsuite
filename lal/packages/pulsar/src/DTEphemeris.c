@@ -206,7 +206,7 @@ LALDTEphemeris( LALStatus             *status,
 /* <lalVerbatim file="DTEphemerisCP"> */
 void 
 LALTEphemeris( LALStatus   *status, 
-	       REAL8Vector *rv, 
+	       REAL8 *tBary,
 	       REAL8Vector *var, 
 	       PulsarTimesParamStruc *tev )
 { /* </lalVerbatim>*/
@@ -215,18 +215,16 @@ LALTEphemeris( LALStatus   *status,
   EarthState earth; /* Output structure of BarycenterEarth() */
   BarycenterInput baryin; /* Input structure for Barycenter() */
   EmissionTime emit; /*Output structure of Barycenter() */
- 
+
   INITSTATUS(status,"TEphemeris",DTEPHEMERISC);
   ATTATCHSTATUSPTR( status );
 
   /*Make sure that param structs and their fields exist. */
-  ASSERT(rv,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-  ASSERT(rv->data,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(tBary,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
   ASSERT(var,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
   ASSERT(var->data,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
   ASSERT(tev,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
   /*Make sure that array sizes are consistent. */
-  ASSERT(rv->length==var->length+1,status,PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
   ASSERT(var->length>2,status,PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
   /*Make sure ephemeris and detector data have been passed. */
   ASSERT(tev->ephemeris!=NULL,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
@@ -264,8 +262,8 @@ LALTEphemeris( LALStatus   *status,
   /* this gives emit the position, velocity, time etc */
   TRY(LALBarycenter(status->statusPtr,&emit,&baryin,&earth),status);
   
-  rv->data[0]=emit.te.gpsSeconds+1.0e-9*emit.te.gpsNanoSeconds;
-  rv->data[0]-=tev->epoch.gpsSeconds+1.0e-9*tev->epoch.gpsNanoSeconds;
+  *tBary = emit.te.gpsSeconds+1.0e-9*emit.te.gpsNanoSeconds;
+  *tBary -= tev->epoch.gpsSeconds+1.0e-9*tev->epoch.gpsNanoSeconds;
 
   RETURN(status);
 }

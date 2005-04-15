@@ -317,7 +317,7 @@ LALDTEphemeris( LALStatus             *,
 
 void
 LALTEphemeris(LALStatus *,
-	      REAL8Vector *tBary,
+	      REAL8 *tBary,
 	      REAL8Vector *variables,
 	      PulsarTimesParamStruc *constants);
 
