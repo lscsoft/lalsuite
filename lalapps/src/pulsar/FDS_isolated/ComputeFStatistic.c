@@ -877,6 +877,10 @@ int main(int argc,char *argv[])
 void
 initUserVars (LALStatus *stat)
 {
+#ifndef UVAR_DEVELOPER
+#define UVAR_DEVELOPER UVAR_OPTIONAL
+#endif
+
   INITSTATUS( stat, "initUserVars", rcsid );
   ATTATCHSTATUSPTR (stat);
 
