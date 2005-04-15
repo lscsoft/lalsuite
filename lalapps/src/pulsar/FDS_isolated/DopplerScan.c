@@ -303,6 +303,8 @@ InitDopplerScan( LALStatus *stat,
       printf ("\nStep-size in spindown-values: df1dot = %g\n", scan->df1dot);
     }
 
+    TRY (LALSDestroyVector (stat->statusPtr, &(metricpar.spindown)), stat);
+
   } /* spindown-metric */
   /* ----------------------------------------------------------------------*/
 
@@ -684,8 +686,6 @@ plotGrid (LALStatus *stat,
 	} /* while node */
       
       LALFree (metricPar.spindown);
-
-
 
     } /* if plotEllipses */
       
