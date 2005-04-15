@@ -21,6 +21,8 @@
 #endif
 
 #define DONE_MARKER "%DONE\n"
+/* maximum depth of a linked structure. */
+#define LINKEDSTR_MAX_DEPTH 1024 
 
 #ifndef USE_BOINC
 #define USE_BOINC 0
@@ -305,10 +307,6 @@ int main(int argc,char *argv[])
 
 
 
-
-
-
-
 /*******************************************************************************/
 /* Initialize the code: allocate memory, set initial values. */
 void PrepareCells( LALStatus *stat, CellData **cell, UINT4 CLength )
@@ -436,11 +434,14 @@ void add_int4_data(LALStatus *stat, struct int4_linked_list **list_ptr, INT4 *da
 /* delete data to linked structure */
 void delete_int4_linked_list( struct int4_linked_list *list_ptr )
 {
+  INT4 ic;
   struct int4_linked_list *q;
-  while( list_ptr !=NULL ) {  /* FIX ME: limit number of iterations finite. */
+  ic = 0;
+  while( list_ptr !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {  /* FIX ME: limit number of iterations finite. */
     q = list_ptr->next;
     LALFree( list_ptr );
     list_ptr = q;
+    ic++;
   }
   return;
 }
@@ -449,17 +450,19 @@ void delete_int4_linked_list( struct int4_linked_list *list_ptr )
 /* get info of this cell. */
 void get_info_of_the_cell( CellData *cd, CandidateList *CList )
 {
-  INT4 idx;
+  INT4 idx, ic;
   struct int4_linked_list *p;
   p = cd->CandID;
 
-  while( p !=NULL ) { /* FIX ME: limit number of iterations finite. */
+  ic = 0;
+  while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { /* FIX ME: limit number of iterations finite. */
     idx = p->data;
     cd->significance += CList[idx].lfa;
     cd->Alpha += CList[idx].Alpha;
     cd->Delta += CList[idx].Delta;
     cd->Freq += CList[idx].f;
     p = p->next;
+    ic++;
   }
 
   cd->Alpha /= cd->nCand;
