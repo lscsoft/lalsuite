@@ -233,6 +233,7 @@ InitDopplerScan( LALStatus *stat,
     metricpar.epoch = init->obsBegin;
     metricpar.duration = init->obsDuration;
     metricpar.site = init->Detector;
+    metricpar.ephemeris = init->ephemeris;
 
     /*----------------------------------------*/
     /* run a little test of constancy of g_f1f1 over sky and frequencies */
@@ -282,7 +283,7 @@ InitDopplerScan( LALStatus *stat,
       {
 	TRY ( LALMetricWrapper (stat->statusPtr, &metric, &metricpar), stat);
 	TRY ( LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
-	gamma_f1_f1 = metric->data[INDEX_f1_f1] / (freq*freq);	  
+	gamma_f1_f1 = metric->data[INDEX_f1_f1];
 	TRY( LALDDestroyVector (stat->statusPtr, &metric), stat);
 	metric = NULL;
 
@@ -292,7 +293,7 @@ InitDopplerScan( LALStatus *stat,
 	 * Instead, the user has to adapt 'mismatch' corresponding to 
 	 * the number of dimensions in parameter-space he considers.
 	 */
-	scan->df1dot = sqrt ( init->metricMismatch / gamma_f1_f1 );
+	scan->df1dot = sqrt ( init->metricMismatch * freq * freq / gamma_f1_f1 );
       }
     else	/* no metric: use 'naive' value of 1/(2*T^2) [previous default in CFS] */
       {
@@ -300,7 +301,8 @@ InitDopplerScan( LALStatus *stat,
       }
     
     if (lalDebugLevel >= 1) {
-      printf ("\nStep-size in spindown-values: df1dot = %g\n", scan->df1dot);
+      printf ("\ngamma_f1f1 = %g, Step-size in spindown-values: df1dot = %g\n", 
+	      gamma_f1_f1, scan->df1dot);
     }
 
     TRY (LALSDestroyVector (stat->statusPtr, &(metricpar.spindown)), stat);
@@ -771,7 +773,7 @@ LALMetricWrapper (LALStatus *stat,
 	}
       else	/* use precise ephemeris-timing */
 	{
-	  baryParams.t1 = NULL;	/* FIXME: no LALTEphemeris() exists currently (not needed here?) */
+	  baryParams.t1 = LALTEphemeris;	/* LAL-bug: fix type of LALTEphemeris! */
 	  baryParams.dt1 = LALDTEphemeris;
 	  baryParams.ephemeris = input->ephemeris;
 	}
