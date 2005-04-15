@@ -275,6 +275,7 @@ InitDopplerScan( LALStatus *stat,
     /*----------------------------------------*/
 
     metricpar.position = scan->skyRegion.lowerLeft;
+    metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
     freq = init->fmax;
     metricpar.maxFreq = freq;
 
