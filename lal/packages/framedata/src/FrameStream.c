@@ -151,10 +151,7 @@ static struct FrFile *URLFrFileINew( FrFileInfo *file )
 
   /* get protocol, hostname, and path */
   if ( ! file || ! file->url )
-  {
-    errno = EFAULT;
     return NULL;
-  }
   n = sscanf( file->url, "%" XSTR( MAXPROTOCOLLEN ) "[^:]://%"
       XSTR( MAXHOSTNAMELEN ) "[^/]%" XSTR( MAXPATHLEN ) "s", prot, host, path );
   if ( n != 3 ) /* perhaps the hostname has been omitted */
@@ -198,7 +195,6 @@ static struct FrFile *URLFrFileINew( FrFileInfo *file )
   else
   {
     fprintf( stderr, "Unsupported protocol %s.", prot );
-    errno = EINVAL;
     return NULL;
   }
 
@@ -302,6 +298,8 @@ static FrFileInfo * create_flist( FrCache *cache )
       }
       if ( FrTOCReadFull( frfile ) == NULL )
       {
+        XLALPrintError( "XLAL Error: could not read frame TOC from URL %s\n",
+            list[i].url );
         free_flist( list );
         LALFree( list );
         return NULL;
@@ -362,6 +360,8 @@ FrStream * XLALFrCacheOpen( FrCache *cache )
 
   if ( FrTOCReadFull( stream->file ) == NULL )
   {
+    XLALPrintError( "XLAL Error - %s: could not read frame TOC from URL %s\n",
+        func, stream->flist->url );
     FrFileIEnd( stream->file );
     free_flist( stream->flist );
     LALFree( stream );
@@ -457,6 +457,8 @@ int XLALFrRewind( FrStream *stream )
   }
   if ( FrTOCReadFull( stream->file ) == NULL )
   {
+    XLALPrintError( "XLAL Error - %s: could not read frame TOC from URL %s\n",
+        func, stream->flist->url );
     FrFileIEnd( stream->file );
     stream->file   = NULL;
     stream->state |= LAL_FR_ERR | LAL_FR_TOC;
@@ -474,6 +476,10 @@ int XLALFrNext( FrStream *stream )
 
   /* timing accuracy: tenth of a sample interval for a 16kHz fast channel */
   const INT8 tacc = (INT8)floor( 0.1 * 1e9 / 16384.0 );
+  const char *url1;
+  const char *url2;
+  int pos1;
+  int pos2;
   INT8 tnow = 0;
   INT8 texp = 0;
   INT8 tact;
@@ -487,6 +493,8 @@ int XLALFrNext( FrStream *stream )
   /* turn off gap bit */
   stream->state &= ~LAL_FR_GAP;
 
+  url2 = url1 = stream->flist[stream->fnum].url;
+  pos2 = pos1 = stream->pos;
   /* FIXME: assume that stream->file is open */
   if ( stream->file && stream->file->toc )
   {
@@ -505,6 +513,7 @@ int XLALFrNext( FrStream *stream )
       stream->pos = 0;
       ++stream->fnum;
     }
+    pos2 = stream->pos;
   }
 
   /* open a new file if necessary */
@@ -518,11 +527,13 @@ int XLALFrNext( FrStream *stream )
     }
     stream->pos  = 0;
     stream->file = URLFrFileINew( stream->flist + stream->fnum );
+    url2 = stream->flist[stream->fnum].url;
     if ( ! stream->file )
     {
       stream->state |= LAL_FR_ERR | LAL_FR_URL;
       XLAL_ERROR( func, XLAL_EIO );
     }
+    pos2 = stream->pos;
   }
 
   /* open TOC if necessary */
@@ -530,6 +541,8 @@ int XLALFrNext( FrStream *stream )
   {
     if ( FrTOCReadFull( stream->file ) == NULL )
     {
+      XLALPrintError( "XLAL Error - %s: could not read frame TOC from URL %s\n",
+          func, stream->flist[stream->fnum].url );
       FrFileIEnd( stream->file );
       stream->file   = NULL;
       stream->state |= LAL_FR_ERR | LAL_FR_TOC;
@@ -547,9 +560,19 @@ int XLALFrNext( FrStream *stream )
   {
     stream->state |= LAL_FR_GAP;
     if ( stream->mode & LAL_FR_GAPINFO_MODE )
-      XLALPrintInfo( "XLAL Info - %s: gap in frame data.\n", func );
+    {
+      XLALPrintInfo( "XLAL Info - %s: gap in frame data between times "
+          "%.6f and %.6f\n", func, 1e-9 * texp, 1e-9 * tact );
+    }
     if ( ! ( stream->mode & LAL_FR_IGNOREGAP_MODE ) )
+    {
+      XLALPrintError( "XLAL Error - %s: gap in frame data\n", func );
+      XLALPrintError( "XLAL Error - %s: time %.6f "
+          "is end of frame %d of file URL %s\n", func, 1e-9*texp, pos1, url1 );
+      XLALPrintError( "XLAL Error - %s: time %.6f "
+          "is start of frame %d of file URL %s\n", func, 1e-9*tact, pos2, url2);
       XLAL_ERROR( func, XLAL_ETIME );
+    }
     return 2; /* gap code */
   }
 
@@ -589,7 +612,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
     stream->state |= LAL_FR_GAP;
     if ( stream->mode & LAL_FR_TIMEWARN_MODE )
       XLALPrintWarning( "XLAL Warning - %s: "
-          "Requested time before first frame.\n", func );
+          "requested time %d before first frame\n", func, epoch->gpsSeconds );
     if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
       XLAL_ERROR( func, XLAL_ETIME );
     return 1; /* before first file code */
@@ -603,7 +626,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
     stream->state |= LAL_FR_END;
     if ( stream->mode & LAL_FR_TIMEWARN_MODE )
       XLALPrintWarning( "XLAL Warning - %s: "
-          "Requested time after last frame.\n", func );
+          "requested time %d after last frame\n", func, epoch->gpsSeconds );
     if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
       XLAL_ERROR( func, XLAL_ETIME );
     return 2; /* after last file code */
@@ -634,6 +657,9 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
       }
       if ( FrTOCReadFull( stream->file ) == NULL )
       {
+        XLALPrintError(
+            "XLAL Error - %s: could not read frame TOC from URL %s\n",
+            func, file1->url );
         FrFileIEnd( stream->file );
         stream->file   = NULL;
         stream->state |= LAL_FR_ERR | LAL_FR_TOC;
@@ -673,6 +699,9 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
       }
       if ( FrTOCReadFull( stream->file ) == NULL )
       {
+        XLALPrintError(
+            "XLAL Error - %s: could not read frame TOC from URL %s\n",
+            func, file1->url );
         FrFileIEnd( stream->file );
         stream->file   = NULL;
         stream->state |= LAL_FR_ERR | LAL_FR_TOC;
@@ -690,7 +719,7 @@ found:
     stream->epoch.gpsNanoSeconds = stream->file->toc->GTimeN[stream->pos];
     if ( stream->mode & LAL_FR_TIMEWARN_MODE )
       XLALPrintWarning( "XLAL Warning - %s: "
-          "Requested time in gap in frame data.\n", func );
+          "requested time %.6f in gap in frame data\n", func, twant );
     if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
       XLAL_ERROR( func, XLAL_ETIME );
     return 3; /* in a gap code */
@@ -759,6 +788,8 @@ int XLALFrSetpos( FrStream *stream, FrPos *position )
   {
     if ( FrTOCReadFull( stream->file ) == NULL )
     {
+      XLALPrintError( "XLAL Error - %s: could not read frame TOC from URL %s\n",
+          func, stream->flist[stream->fnum].url );
       FrFileIEnd( stream->file );
       stream->file   = NULL;
       stream->state |= LAL_FR_ERR | LAL_FR_TOC;

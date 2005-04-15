@@ -112,16 +112,27 @@ FrCache * XLALFrImportCache( const char *fname )
 
   fp = LALFopen( fname, "r" );
   if ( ! fp )
+  {
+    XLALPrintError( "XLAL Error - %s: couldn't open file %s for input\n",
+        func, fname );
     XLAL_ERROR_NULL( func, XLAL_EIO );
+  }
   numLines = 0;
   while ( fgets( line, sizeof( line ), fp ) )
   {
     if ( strlen( line ) > sizeof( line ) - 2 )
+    {
+      XLALPrintError( "XLAL Error - %s: line too long in %s (max length: %d)\n",
+          func, fname, (int)sizeof( line ) - 2 );
       XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    }
     ++numLines;
   }
   if ( ! numLines )
+  {
+    XLALPrintError( "XLAL Error - %s: empty file %s\n", func, fname );
     XLAL_ERROR_NULL( func, XLAL_EIO );
+  }
 
   cache = LALCalloc( 1, sizeof( *cache ) );
   if ( ! cache )
@@ -349,13 +360,18 @@ FrCache * XLALFrGenerateCache( const CHAR *dirstr, const CHAR *fnptrn )
       LALSnprintf( path, sizeof( path ) - 1, "%s/%s", 
           *dirname ? dirname : ".", fnptrn );
       glob( path, globflags, NULL, &g );
+      fnptrn = path;
       globflags |= GLOB_APPEND;
     }
     while ( nextdir );
   }
 
   if ( ! g.gl_pathc )
+  {
+    XLALPrintError( "XLAL Error - %s: no frame files found in %s",
+        func, fnptrn );
     XLAL_ERROR_NULL( func, XLAL_EIO );
+  }
 
   cache = LALCalloc( 1, sizeof( *cache ) );
   if ( ! cache )
@@ -461,7 +477,11 @@ int XLALFrExportCache( FrCache *cache, const CHAR *fname )
 
   fp = LALFopen( fname, "w" );
   if ( ! fp )
+  {
+    XLALPrintError( "XLAL Error - %s: could not open file %s for output\n",
+        func, fname );
     XLAL_ERROR( func, XLAL_EIO );
+  }
 
   for ( i = 0; i < cache->numFrameFiles; ++i )
   {
@@ -482,7 +502,11 @@ int XLALFrExportCache( FrCache *cache, const CHAR *fname )
         file->description ? file->description : "-", t0, dt,
         file->url ? file->url : "-" );
     if ( c < 1 )
+    {
+      XLALPrintError( "XLAL Error - %s: could not output to file %s\n",
+          func, fname );
       XLAL_ERROR( func, XLAL_EIO );
+    }
   }
   LALFclose( fp );
   return 0;
