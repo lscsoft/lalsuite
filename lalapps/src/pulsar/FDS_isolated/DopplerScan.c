@@ -274,8 +274,7 @@ InitDopplerScan( LALStatus *stat,
       } /* if lalDebugLevel >= 1*/
     /*----------------------------------------*/
 
-    metricpar.position.longitude = 1;
-    metricpar.position.latitude = 1;
+    metricpar.position = scan->skyRegion.lowerLeft;
     freq = init->fmax;
     metricpar.maxFreq = freq;
 
