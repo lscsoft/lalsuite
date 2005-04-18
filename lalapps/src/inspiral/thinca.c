@@ -1304,6 +1304,13 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
         inspiralEventList, &accuracyParams ), &status);
 
+  /* count the coincs */
+  if( coincInspiralList )
+  {
+       for (numCoinc = 1, thisCoinc = coincInspiralList;
+            thisCoinc->next; ++numCoinc, thisCoinc = thisCoinc->next );
+  }
+    
     if ( vrbflg ) fprintf( stdout,
         "%d coincident triggers found.\n", numCoinc);
 
