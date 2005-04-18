@@ -144,7 +144,7 @@ CHAR *uvar_ephemDir;		/**< Directory path for ephemeris files (optional), use LA
 CHAR *uvar_ephemYear;		/**< Year (or range of years) of ephemeris files to be used */
 
 /* pulsar parameters [REQUIRED] */
-REAL8 uvar_refTime;		/**< Pulsar reference time tRef in SSB ('0' means: use startTimeSSB) */
+REAL8 uvar_refTime;		/**< Pulsar reference time tRef in SSB ('0' means: use startTime converted to SSB) */
 
 REAL8 uvar_aPlus;		/**< Plus polarization amplitude aPlus */
 REAL8 uvar_aCross;		/**< Cross polarization amplitude aCross */
@@ -705,16 +705,8 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
   } /* END: Noise params */
 
 
-  /* ----- determine "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  if (LALUserVarWasSet(&uvar_refTime)) 
-    {
-      TRY ( LALFloatToGPS(stat->statusPtr, &(cfg->refTime), &uvar_refTime), stat);
-    } 
-  else
-    {
-      LALPrintError ("\nPulsar referenceTime is required! \n\n");
-      ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-    }
+  /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
+  TRY ( LALFloatToGPS(stat->statusPtr, &(cfg->refTime), &uvar_refTime), stat);
 
   /* ---------- has the user specified an actuation-function file ? ---------- */
   if ( uvar_actuation ) 
@@ -776,6 +768,8 @@ InitUserVars (LALStatus *stat)
 
   uvar_generationMode = GENERATE_ALL_AT_ONCE;	/* per default we generate the whole timeseries first (except for hardware-injections)*/
 
+  uvar_refTime = 0.0;
+
   /* ---------- register all our user-variable ---------- */
 
   /* output options */
@@ -809,7 +803,7 @@ InitUserVars (LALStatus *stat)
   LALregREALUserVar(stat,   Tsft, 	 0 , UVAR_OPTIONAL, "Time baseline Tsft in seconds");
 
   /* pulsar params */
-  LALregREALUserVar(stat,   refTime, 	'S', UVAR_REQUIRED, "Pulsar reference time tRef in SSB");
+  LALregREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Pulsar reference time tRef in SSB (if 0: use startTime -> SSB)");
   LALregREALUserVar(stat,   longitude,	 0 , UVAR_REQUIRED, "Right ascension [radians] alpha of pulsar");
   LALregREALUserVar(stat,   latitude, 	 0 , UVAR_REQUIRED, "Declination [radians] delta of pulsar");
   LALregREALUserVar(stat,   aPlus,	 0 , UVAR_REQUIRED, "Plus polarization amplitude aPlus");
