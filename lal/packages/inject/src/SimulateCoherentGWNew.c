@@ -1095,6 +1095,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   LALSDestroyVector( stat->statusPtr, &interpolatedWave );
   LALCDestroyVector( stat->statusPtr, &interpolatedFFTWave );
   LALCDestroyVector( stat->statusPtr, &CFreqOutput );
+  LALSDestroyVector( stat->statusPtr, &tempWave );
   /* CHECK: end  */
 
   DETATCHSTATUSPTR( stat );
