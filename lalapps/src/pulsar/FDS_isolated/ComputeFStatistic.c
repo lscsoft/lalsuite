@@ -789,8 +789,9 @@ int main(int argc,char *argv[])
               INT4 i;
               for(i=0;i < GV.FreqImax ;i++)
                 {
-                  fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17f\n", 
-                           uvar_Freq + i*GV.dFreq, Alpha, Delta, 2.0*medianbias*Fstat.F[i]);
+                  fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17g %20.17g\n", 
+                           uvar_Freq + i*GV.dFreq, Alpha, Delta, DemodParams->spinDwn[0], 
+			   2.0*medianbias*Fstat.F[i]);
                 }
 	      
             } /* if outputFstat */
