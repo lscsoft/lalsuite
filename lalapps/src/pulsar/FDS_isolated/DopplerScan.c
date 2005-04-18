@@ -62,12 +62,12 @@ static int meshOrder = ORDER_DELTA_ALPHA;
 
 
 /* Metric indexing scheme: if g_ab for a>=b: index = b + a*(a+1)/2 */
-#define INDEX_ff (0 + 0*(0+1)/2)	/* g_ff */
-#define INDEX_AA (1 + 1*(1+1)/2)	/* g_aa */
-#define INDEX_DD (2 + 2*(2+1)/2)	/* g_dd */
-#define INDEX_DA (1 + 2*(2+1)/2)	/* g_da */
+#define INDEX_f0_f0 (0 + 0*(0+1)/2)	/* g_ff */
+#define INDEX_A_A   (1 + 1*(1+1)/2)	/* g_aa */
+#define INDEX_D_D   (2 + 2*(2+1)/2)	/* g_dd */
+#define INDEX_D_A   (1 + 2*(2+1)/2)	/* g_da */
 
-#define INDEX_f1_f  (0 + 3*(3+1)/2)	/* g_f1_f */
+#define INDEX_f1_f0 (0 + 3*(3+1)/2)	/* g_f1_f */
 #define INDEX_f1_A  (1 + 3*(3+1)/2)
 #define INDEX_f1_D  (2 + 3*(3+1)/2)
 #define INDEX_f1_f1 (3 + 3*(3+1)/2) 	/* g_f1_f1 */
@@ -192,7 +192,7 @@ InitDopplerScan( LALStatus *stat,
   /* initialize grid-pointer to first node in list */
   scan->gridNode = scan->grid; 	
 
-  /* count number of nodes in our Dopplerscan-grid */
+  /* count number of nodes in our sky-grid */
   scan->numGridPoints = 0;
   node = scan->grid;
   while (node)
@@ -202,7 +202,7 @@ InitDopplerScan( LALStatus *stat,
     }
 
   if (lalDebugLevel >= 1)
-    LALPrintError ("\nFinal Scan-grid has %d nodes\n", scan->numGridPoints);
+    LALPrintError ("\nSky-grid has %d nodes\n", scan->numGridPoints);
   if (lalDebugLevel >= 3)
     {
       LALPrintError ("\nDEBUG: plotting sky-grid into file 'mesh_debug.agr' ...");
@@ -213,103 +213,28 @@ InitDopplerScan( LALStatus *stat,
       LALPrintError (" done. \n");
     }
 
-  /*----------------------------------------------------------------------*/
-  /* EXPERIMENTAL: Use metric to determine stepping in spindown-values */
-  /*----------------------------------------------------------------------*/
+  /* ----------
+   * setup spacing in frequency and spindowns
+   * NOTE: this is only useful if these spacings
+   * are sufficiently independent of the phase-parameters
+   * ----------*/
   {
-    REAL8Vector *metric = NULL;
-    PtoleMetricIn metricpar;
-    REAL8 g_f1_f1, gamma_f1_f1;
-    UINT4 i;
-    REAL8 freq;
+    REAL8Vector *dfkdot = NULL;
+    TRY ( LALDCreateVector( stat->statusPtr, &dfkdot, 2 ), stat);
+    dfkdot->data[0] = init->fmax;
+    dfkdot->data[1] = 0;
 
-    metricpar.metricType = init->metricType;
-    metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
+    get_dfkdot(stat->statusPtr, dfkdot, scan->skyRegion.lowerLeft, init);
+    BEGINFAIL (stat){
+      LALDDestroyVector (stat->statusPtr, &dfkdot);
+    } ENDFAIL(stat);
 
-    metricpar.spindown = NULL;
-    TRY ( LALSCreateVector (stat->statusPtr, &(metricpar.spindown), 1), stat);
-    metricpar.spindown->data[0] = 0;
+    scan->dFreq = dfkdot->data[0];
+    scan->df1dot = dfkdot->data[1];
 
-    metricpar.epoch = init->obsBegin;
-    metricpar.duration = init->obsDuration;
-    metricpar.site = init->Detector;
-    metricpar.ephemeris = init->ephemeris;
-
-    /*----------------------------------------*/
-    /* run a little test of constancy of g_f1f1 over sky and frequencies */
-    if (lalDebugLevel >= 3 && metricpar.metricType)
-      {
-	printf ("\nTesting spindown-metric:\n");
-	for (i=0; i < 25; i++)
-	  {
-	    REAL8 randval;
-	    REAL8 fmax = init->fmax;
-	    
-	    randval = 1.0 * rand() / RAND_MAX;
-	    metricpar.position.longitude = randval * LAL_TWOPI;
-	    randval = 1.0 * rand() / RAND_MAX;
-	    metricpar.position.latitude = randval * LAL_PI - LAL_PI_2;
-	    randval = 1.0 * rand() / RAND_MAX;
-	    freq = 100 + randval * fmax;
-	    metricpar.maxFreq = freq;
-	    
-	    TRY ( LALMetricWrapper (stat->statusPtr, &metric, &metricpar), stat);
-	    
-	    g_f1_f1 = metric->data[INDEX_f1_f1] / (freq*freq);
-	    
-	    TRY ( LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
-	    
-	    gamma_f1_f1 = metric->data[INDEX_f1_f1] / (freq*freq);	  
-	    
-	    TRY( LALDDestroyVector (stat->statusPtr, &metric), stat);
-	    metric = NULL;
-	    
-	    printf ("\ni=%d: (f,a,d)=(%f,%f,%f): g_f1f1 = %g, gamma_f1f1 = %g", 
-		    i, metricpar.maxFreq, metricpar.position.longitude, metricpar.position.latitude,
-		    g_f1_f1, gamma_f1_f1);
-
-	  } /* for i < Numtests */
-	printf ("\n\n");
-
-      } /* if lalDebugLevel >= 1*/
-    /*----------------------------------------*/
-
-    metricpar.position = scan->skyRegion.lowerLeft;
-    metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
-    freq = init->fmax;
-    metricpar.maxFreq = freq;
-
-    if ( metricpar.metricType )
-      {
-	TRY ( LALMetricWrapper (stat->statusPtr, &metric, &metricpar), stat);
-	TRY ( LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
-	gamma_f1_f1 = metric->data[INDEX_f1_f1];
-	TRY( LALDDestroyVector (stat->statusPtr, &metric), stat);
-	metric = NULL;
-
-	/* NOTE: for simplicity we use mismatch, instead of mismatch/2 
-	 * as in the case of spindowns this would require adapting the 
-	 * sky-mismatch too.
-	 * Instead, the user has to adapt 'mismatch' corresponding to 
-	 * the number of dimensions in parameter-space he considers.
-	 */
-	scan->df1dot = sqrt ( init->metricMismatch * freq * freq / gamma_f1_f1 );
-      }
-    else	/* no metric: use 'naive' value of 1/(2*T^2) [previous default in CFS] */
-      {
-	scan->df1dot = 1.0 / (2.0 * init->obsDuration * init->obsDuration);
-      }
-    
-    if (lalDebugLevel >= 1) {
-      printf ("\ngamma_f1f1 = %g, Step-size in spindown-values: df1dot = %g\n", 
-	      gamma_f1_f1, scan->df1dot);
-    }
-
-    TRY (LALSDestroyVector (stat->statusPtr, &(metricpar.spindown)), stat);
-
-  } /* spindown-metric */
-  /* ----------------------------------------------------------------------*/
-
+    TRY ( LALDDestroyVector(stat->statusPtr, &dfkdot), stat);
+  }
+  
   scan->state = STATE_READY;
 
   /* clean up */
@@ -511,16 +436,16 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
   /* Translate output. Careful about the coordinate-order here!! */
   if (meshOrder == ORDER_ALPHA_DELTA)
     {
-      g[0] = metric->data[INDEX_AA]; /* gxx */
-      g[1] = metric->data[INDEX_DD]; /* gyy */
+      g[0] = metric->data[INDEX_A_A]; /* gxx */
+      g[1] = metric->data[INDEX_D_D]; /* gyy */
     }
   else
     {
-      g[0] = metric->data[INDEX_DD]; /* gxx */
-      g[1] = metric->data[INDEX_AA]; /* gyy */
+      g[0] = metric->data[INDEX_D_D]; /* gxx */
+      g[1] = metric->data[INDEX_A_A]; /* gyy */
     }
 
-  g[2] = metric->data[INDEX_DA]; /* gxy = g21: 1 + 2*(2+1)/2 = 4; */
+  g[2] = metric->data[INDEX_D_A]; /* gxy = g21: 1 + 2*(2+1)/2 = 4; */
 
   /*
   if (lalDebugLevel >= 3)
@@ -643,9 +568,9 @@ plotGrid (LALStatus *stat,
 
 	  TRY (LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
 
-	  gaa = metric->data[INDEX_AA];
-	  gad = metric->data[INDEX_DA];
-	  gdd = metric->data[INDEX_DD];
+	  gaa = metric->data[INDEX_A_A];
+	  gad = metric->data[INDEX_D_A];
+	  gdd = metric->data[INDEX_D_D];
 	  
 	  /* Semiminor axis from larger eigenvalue of metric. */
 	  smin = gaa+gdd + sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
@@ -941,6 +866,7 @@ ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input)
   region->lowerLeft.latitude = LAL_PI;
   region->upperRight.longitude = 0;
   region->upperRight.latitude = 0;
+  region->lowerLeft.system = region->upperRight.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* count number of entries (by # of opening parantheses) */
   pos = input;
@@ -1513,4 +1439,106 @@ getDopplermax(EphemerisData *edat)
 } /* getDopplermax() */
 
 
+/**
+ * determine the canonical spacing in frequency and spindowns, either
+ * from the metric (--metricType) or using the rough guess 1/T^{k+1} 
+ * (if no metric given)
+ * 
+ * In the metric case, the metric is evaluated for skypos and frequencies
+ * and spindowns fkdot. 
+ */
+void
+get_dfkdot( LALStatus *lstat, 
+	    REAL8Vector *dfkdot, 		/**< IN: f0,fkdot values, OUT: spacings */
+	    SkyPosition skypos,			/**< IN: skyposition */
+	    const DopplerScanInit *params)	/**< IN: Doppler-scan parameters */
+{
+  REAL8Vector *metric = NULL;
+  REAL8 g_f0_f0 = 0, gamma_f1_f1 = 0;
+  PtoleMetricIn metricpar = empty_metricpar;
+  UINT4 nSpin, i;
+  REAL8 f0;
 
+  INITSTATUS( lstat, "get_dfkdot", DOPPLERSCANC );
+  ATTATCHSTATUSPTR (lstat); 
+
+  ASSERT ( params != NULL, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
+  ASSERT ( dfkdot != NULL, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
+  ASSERT ( dfkdot->length >= 1, lstat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+
+  nSpin = dfkdot->length - 1;
+
+  if ( nSpin > 1 ) /* currently only 1 spindown supported (FIXME)*/
+    {
+      LALPrintError ("\nSorry, currently only 1 spindown is supported!\n\n");
+      ABORT (lstat,  DOPPLERSCANH_EINPUT ,  DOPPLERSCANH_MSGEINPUT );
+    }
+
+
+  if ( params->metricType )	/* use the metric to fix f0/fdot stepsizes */
+    {
+      /* setup metric parameters */
+      metricpar.metricType = params->metricType;
+      metricpar.position = skypos;
+
+      if ( nSpin ) 
+	{
+	  TRY ( LALSCreateVector (lstat->statusPtr, &(metricpar.spindown), nSpin), lstat);
+	  for (i=0; i < nSpin; i++)
+	    metricpar.spindown->data[i] = dfkdot->data[i+1];
+	}
+      
+      metricpar.epoch = params->obsBegin;
+      metricpar.duration = params->obsDuration;
+      f0 = dfkdot->data[0];		/* keep this, needed later for normalizations */
+      metricpar.maxFreq = f0;
+      
+      metricpar.site = params->Detector;
+      metricpar.ephemeris = params->ephemeris;	/* needed for ephemeris-metrics */
+
+      TRY ( LALMetricWrapper(lstat->statusPtr, &metric, &metricpar), lstat);
+      if ( metricpar.spindown ) {
+	TRY ( LALSDestroyVector(lstat->statusPtr, &(metricpar.spindown)), lstat);
+      }
+      g_f0_f0 = metric->data[INDEX_f0_f0];
+
+      /* NOTE: for simplicity we use params->mismatch, instead of mismatch/D 
+       * where D is the number of parameter-space dimensions
+       * as in the case of spindowns this would require adapting the 
+       * sky-mismatch too.
+       * Instead, the user has to adapt 'mismatch' corresponding to 
+       * the number of dimensions D in the parameter-space considered.
+       */
+
+      dfkdot->data[0] = sqrt ( params->metricMismatch / g_f0_f0 );
+
+      if ( nSpin > 0 )
+	{
+	  TRY ( LALProjectMetric( lstat->statusPtr, metric, 0 ), lstat);
+	  gamma_f1_f1 = metric->data[INDEX_f1_f1];
+	  dfkdot->data[1] = sqrt ( params->metricMismatch * f0 * f0 / gamma_f1_f1 );
+	}
+
+      TRY( LALDDestroyVector (lstat->statusPtr, &metric), lstat);
+      metric = NULL;
+    }
+  else	/* no metric: use 'naive' value of 1/(2*T^k) [previous default in CFS] */
+    {
+      dfkdot->data[0] = 1.0 / (2.0 * params->obsDuration);
+      if (nSpin > 0)
+	dfkdot->data[1] = 1.0 / (2.0 * params->obsDuration * params->obsDuration);
+    }
+
+  if (lalDebugLevel >= 1) 
+    {
+      printf ("\ng_f0_f0 = %g, Step-size in frequencies: dFreq = %g\n",
+	      g_f0_f0, dfkdot->data[0]);
+      if ( nSpin > 0 )
+	printf ("\ngamma_f1f1 = %g, Step-size in spindown-values: df1dot = %g\n", 
+		gamma_f1_f1, dfkdot->data[1]);
+    } /* if lalDebugLevel >= 1 */
+
+  DETATCHSTATUSPTR(lstat);
+  RETURN(lstat);
+
+} /* get_dfkdot() */
