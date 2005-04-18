@@ -108,7 +108,7 @@ adding $\pi$ to $\Omega$ and $\omega$ is equivalent to reversing the
 sign on $i$.
 
 Some spherical trigonometry gives us $R=r\sin(\omega+\upsilon)\sin i$.
-We can differentiate $R$ with respect to $t$, and apply Kepler's
+We can differentiate $R$ with respect to $t$, and apply Keplers
 second law
 $r^2\dot{\upsilon}=r_p^2\dot{\upsilon}_p=\mathrm{constant}$, where
 $\dot{\upsilon}_p$ is the angular speed at periapsis, to get:
@@ -312,28 +312,38 @@ waveform.
 
 ******************************************************* </lalLaTeX> */
 
+/**
+ * This structure stores the parameters for constructing a gravitational
+ * waveform with both a Taylor-polynomial intrinsic frequency and phase,
+ * and a binary-orbit modulation.  As with the PPNParamStruc type
+ * in GeneratePPNInspiral.h, we divide the fields into passed
+ * fields (which are supplied to the final CoherentGW structure
+ * but not used in any calculations), input fields (that are used by the
+ * waveform generator), and output fields (that are set by the waveform
+ * generator).
+ */
 typedef struct tagSpinOrbitCWParamStruc {
   /* Passed parameters. */
-  SkyPosition position;   /* location of source on sky */
-  REAL4 psi;              /* polarization angle (radians) */
+  SkyPosition position;   /**< location of source on sky */
+  REAL4 psi;              /**< polarization angle (radians) */
 
   /* Input parameters. */
-  LIGOTimeGPS epoch;      /* start time of output time series */
-  LIGOTimeGPS spinEpoch;  /* reference time for rotational parameters */
-  LIGOTimeGPS orbitEpoch; /* time of a periapsis passage */
-  REAL8 deltaT;           /* requested sampling interval (s) */
-  UINT4 length;           /* length of time series */
-  REAL4 aPlus, aCross;    /* polarization amplitudes */
-  REAL8 phi0;             /* initial phase (radians) */
-  REAL8 f0;               /* initial frequency (Hz) */
-  REAL8Vector *f;         /* f0-normalized Taylor parameters */
-  REAL8 omega;            /* argument of periapsis (radians) */
-  REAL8 rPeriNorm;        /* projected, normalized periapsis (s) */
-  REAL8 oneMinusEcc;      /* 1 - orbital eccentricity */
-  REAL8 angularSpeed;     /* angular speed at periapsis (Hz) */
+  LIGOTimeGPS epoch;      /**< start time of output time series */
+  LIGOTimeGPS spinEpoch;  /**< reference time for rotational parameters */
+  LIGOTimeGPS orbitEpoch; /**< time of a periapsis passage */
+  REAL8 deltaT;           /**< requested sampling interval (s) */
+  UINT4 length;           /**< length of time series */
+  REAL4 aPlus, aCross;    /**< polarization amplitudes */
+  REAL8 phi0;             /**< initial phase (radians) */
+  REAL8 f0;               /**< initial frequency (Hz) */
+  REAL8Vector *f;         /**< f0-normalized Taylor parameters */
+  REAL8 omega;            /**< argument of periapsis (radians) */
+  REAL8 rPeriNorm;        /**< projected, normalized periapsis (s) */
+  REAL8 oneMinusEcc;      /**< 1 - orbital eccentricity */
+  REAL8 angularSpeed;     /**< angular speed at periapsis (Hz) */
 
   /* Output parameters. */
-  REAL4 dfdt;             /* maximum value of df*dt over any timestep */
+  REAL4 dfdt;             /**< [OUT:] maximum value of df*dt over any timestep */
 } SpinOrbitCWParamStruc;
 
 

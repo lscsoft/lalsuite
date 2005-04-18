@@ -311,15 +311,18 @@ overlap, or where \verb@h@ and any other time series overlap, they
 must be defined consistently.
 
 ******************************************************* </lalLaTeX> */
-
+/**  This structure stores a representation of a plane
+gravitational wave propagating from a particular point on the sky.
+Several alternate representations are permitted to allow a more
+natural characterization of quasiperiodic waveforms.*/
 typedef struct tagCoherentGW {
-  SkyPosition position;     /* sky position of source */
-  REAL4 psi;                /* polarization angle of source */
-  REAL4TimeVectorSeries *h; /* sampled waveforms h_+, h_x */
-  REAL4TimeVectorSeries *a; /* amplitudes A_+, A_x */
-  REAL4TimeSeries *f;       /* instantaneous frequency */
-  REAL8TimeSeries *phi;     /* phase function */
-  REAL4TimeSeries *shift;   /* polarization shift Phi */
+  SkyPosition position;     /**< sky position of source */
+  REAL4 psi;                /**< polarization angle of source */
+  REAL4TimeVectorSeries *h; /**< sampled waveforms \f$h_+, h_\times\f$ */
+  REAL4TimeVectorSeries *a; /**< amplitudes \f$A_+, A_\times\f$ */
+  REAL4TimeSeries *f;       /**< instantaneous frequency */
+  REAL8TimeSeries *phi;     /**< phase function */
+  REAL4TimeSeries *shift;   /**< polarization shift Phi */
 } CoherentGW;
 
 /********************************************************** <lalLaTeX>
@@ -358,12 +361,13 @@ have to add it here.)
 \end{description}
 
 ******************************************************* </lalLaTeX> */
-
+/** This structure contains information required to determine
+    the response of a detector to a gravitational waveform. */
 typedef struct tagDetectorResponse {
-  COMPLEX8FrequencySeries *transfer; /* frequency transfer function */
-  LALDetector *site;           /* detector location and orientation */
-  EphemerisData *ephemerides;  /* Earth and Sun ephemerides */
-  LIGOTimeGPS heterodyneEpoch; /* reference time for heterodyning */
+  COMPLEX8FrequencySeries *transfer; 	/**< frequency transfer function */
+  LALDetector *site;           		/**< detector location and orientation */
+  EphemerisData *ephemerides;  		/**< Earth and Sun ephemerides */
+  LIGOTimeGPS heterodyneEpoch; 		/**< reference time for heterodyning */
 } DetectorResponse;
 
 
