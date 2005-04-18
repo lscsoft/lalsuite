@@ -291,7 +291,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   COMPLEX8Vector *CFreqOutput = NULL;
   INT4 outFreqLength=0;
 
-  INITSTATUS( stat, "LALSimulateCoherentGWNew", SIMULATECOHERENTGWC );
+  INITSTATUS( stat, "LALSimulateCoherentGWNew", SIMULATECOHERENTGWNEWC );
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures and their fields exist. */
