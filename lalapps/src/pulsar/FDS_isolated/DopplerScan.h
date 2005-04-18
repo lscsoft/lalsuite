@@ -114,7 +114,7 @@ typedef struct {
   SkyPosition upperRight;
 } SkyRegion;
 
-/* general scan-grid */
+/** general scan-grid */
 typedef struct tagDopplerScanGrid {
   REAL8 alpha;
   REAL8 delta;
@@ -123,15 +123,15 @@ typedef struct tagDopplerScanGrid {
   struct tagDopplerScanGrid *next;
 } DopplerScanGrid;
 
-/* this structure reflects the internal state of DopplerScan */
+/** this structure reflects the current state of DopplerScan */
 typedef struct {
-  INT2 state;  			/* idle, ready or finished */
-
-  SkyRegion skyRegion; 		/* polygon (and bounding square) defining sky-region  */
-  UINT4 numGridPoints;		/* how many grid-points */
-  REAL8 df1dot;			/* stepsize for first spindown-value f1dot */
-  DopplerScanGrid *grid; 	/* head of linked list of nodes */  
-  DopplerScanGrid *gridNode;	/* pointer to current grid-node in grid */
+  INT2 state;  			/**< idle, ready or finished */
+  SkyRegion skyRegion; 		/**< polygon (and bounding square) defining sky-region  */
+  UINT4 numGridPoints;		/**< how many grid-points */
+  REAL8 dFreq;			/**< stepsize for frequency */
+  REAL8 df1dot;			/**< stepsize for first spindown-value f1dot */
+  DopplerScanGrid *grid; 	/**< head of linked list of skygrid nodes */  
+  DopplerScanGrid *gridNode;	/**< pointer to current grid-node in skygrid */
 } DopplerScanState;
   
 /********************************************************** <lalLaTeX>
@@ -148,6 +148,8 @@ void FreeDopplerScan (LALStatus *stat, DopplerScanState *scan);
 void writeSkyGridFile (LALStatus *stat, const DopplerScanGrid *grid, const CHAR *fname, const DopplerScanInit *init);
 void ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input);
 void LALMetricWrapper(LALStatus *stat, REAL8Vector **metric, PtoleMetricIn *params);
+void get_dfkdot( LALStatus *lstat, REAL8Vector *dfkdot, SkyPosition skypos, const DopplerScanInit *params);
+
 
 /********************************************************** <lalLaTeX>
 \newpage\input{LALSampleTestC}
