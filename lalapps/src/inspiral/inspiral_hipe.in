@@ -2596,7 +2596,7 @@ l1_g1_double_second_coinc_slides_nodes = []
 if num_slides:
   # H1-H2
   h1_h2_double_second_coinc_slides_nodes = double_coinc(h1_analyzed_h1h2,'H1',
-    h2_chunks_analyzed,'H2',h1_h2_double_data,thinca2_slides_h1h2_job,dag,
+    h2_analyzed_h1h2,'H2',h1_h2_double_data,thinca2_slides_h1h2_job,dag,
     do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
   
   # H1-L1
@@ -2611,17 +2611,17 @@ if num_slides:
 
   # H1-G1
   h1_g1_double_second_coinc_slides_nodes = double_coinc(h1_analyzed_h1g1,'H1',
-    g1_chunks_analyzed,'G1',g1_h1_double_data,thinca2_slides_h1g1_job,dag,
+    g1_analyzed_h1g1,'G1',g1_h1_double_data,thinca2_slides_h1g1_job,dag,
     do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
  
   # H2-G1
   h2_g1_double_second_coinc_slides_nodes = double_coinc(h2_analyzed_h2g1,'H2',
-    g1_chunks_analyzed,'G1',g1_h2_double_data,thinca2_slides_h2g1_job,dag,
+    g1_analyzed_h2g1,'G1',g1_h2_double_data,thinca2_slides_h2g1_job,dag,
     do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
 
   # L1-G1
   l1_g1_double_second_coinc_slides_nodes = double_coinc(l1_analyzed_l1g1,'L1',
-    g1_chunks_analyzed,'G1',g1_l1_double_data,thinca2_slides_l1g1_job,dag,
+    g1_analyzed_l1g1,'G1',g1_l1_double_data,thinca2_slides_l1g1_job,dag,
     do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
 
 print "done"
