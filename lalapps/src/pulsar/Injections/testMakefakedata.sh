@@ -21,6 +21,7 @@ if [ -z "$1" ]; then
     newcode=${newcodeDEFAULT}
 else
     newcode="$1"
+    shift 1
     echo "'$newcode'"
 fi
 
@@ -67,7 +68,7 @@ f2dot="1e-13"
 
 dataTMP=In.data-test
 oldCL="-i $dataTMP  -I $IFO -E $ephemdir -S $refTime -n ${testDIR}/SFTtest_v2" ## -D $noiseDir"
-newCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --outSFTbname=${testDIR}/SFTtest_v4 --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot" ## -D$noiseSFTs -v1"
+newCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --latitude=$delta  --longitude=$alpha --detector=$IFO --outSFTbname=${testDIR}/SFTtest_v4 --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot $@" ## -D$noiseSFTs -v1"
 
 ## produce In.data file for makefakedata_v2
 echo "$Tsft	%Tsft_in_sec
