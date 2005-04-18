@@ -346,7 +346,8 @@ extern int vrbflg;
 /*----------------------------------------------------------------------*/
 /* empty structs for initialziations */
 
-DopplerScanState emptyScan;
+DopplerScanState empty_DopplerScanState;
+DopplerScanInit empty_DopplerScanInit;
 
 /* initialize LAL-status.  
  * Note: for this to be thread safe, you MUST not use *this* status structure 
@@ -397,14 +398,12 @@ int main(int argc,char *argv[])
 {
   LALStatus *stat = &global_status;
 
-  INT4 *maxIndex=NULL;                  /*  array that contains indexes of maximum of each cluster */
-  INT4 spdwn;                           /* counter over spindown-params */
-  DopplerScanInit scanInit;             /* init-structure for DopperScanner */
-  DopplerScanState thisScan = emptyScan; /* current state of the Doppler-scan */
+  INT4 *maxIndex=NULL;           /*  array that contains indexes of maximum of each cluster */
+  INT4 spdwn;                    /* counter over spindown-params */
+  DopplerScanInit scanInit = empty_DopplerScanInit; /* init-structure for DopperScanner */
+  DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerPosition dopplerpos;           /* current search-parameters */
   SkyPosition thisPoint;
-  LIGOTimeGPS t0, t1;
-  REAL8 duration;
   FILE *fpOut = NULL;
 
   UINT4 loopcounter;            /* Checkpoint-counters for restarting checkpointed search */
@@ -463,6 +462,85 @@ int main(int argc,char *argv[])
 
   /* main initialization of the code: */
   LAL_CALL ( InitFStat(stat, &GV), stat);
+  
+  /*----------------------------------------------------------------------
+   * prepare initialization of the DopplerScanner to step through paramter space 
+   * In input-structure for this initialization is DopplerScanInit 
+   */
+  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
+  scanInit.metricType = (LALPulsarMetricType) uvar_metricType;
+  scanInit.dAlpha = uvar_dAlpha;
+  scanInit.dDelta = uvar_dDelta;
+  scanInit.gridType = (DopplerGridType) uvar_gridType;
+  scanInit.metricMismatch = uvar_metricMismatch;
+  scanInit.obsBegin.gpsSeconds = GV.Ti;
+  scanInit.obsBegin.gpsNanoSeconds = 0;
+  scanInit.obsDuration = (REAL8) (GV.Tf - GV.Ti);
+  scanInit.fmax  = uvar_Freq;
+  scanInit.fmax += uvar_FreqBand;
+  scanInit.Detector = &GV.Detector;
+  scanInit.ephemeris = GV.edat;         /* used by Ephemeris-based metric */
+  scanInit.skyRegion = GV.skyRegion;
+  scanInit.skyGridFile = uvar_skyGridFile;      /* if applicable */
+
+  if ( uvar_searchNeighbors ) {
+    LAL_CALL ( InitDopplerScanOnRefinedGrid( stat, &thisScan, &scanInit ), stat );
+  } else {
+    LAL_CALL ( InitDopplerScan( stat, &thisScan, &scanInit), stat); 
+  }
+  if (lalDebugLevel) LALPrintError ("done.\n");
+
+  /* ---------- should we write the sky-grid to disk? ---------- */
+  if ( uvar_outputSkyGrid ) 
+    {
+      LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+      LAL_CALL (writeSkyGridFile( stat, thisScan.grid, uvar_outputSkyGrid, &scanInit), stat);
+      LALPrintError (" done.\n\n");
+    }
+
+  /* ---------- set frequency- and spindown-resolution if not input by user ----------*/
+  if ( !LALUserVarWasSet( &uvar_dFreq ) )
+    GV.dFreq = thisScan.dFreq;
+  else
+    GV.dFreq = uvar_dFreq;
+
+  if( !LALUserVarWasSet( &uvar_df1dot) ) 
+    GV.df1dot = thisScan.df1dot;
+  else
+    GV.df1dot = uvar_df1dot;
+
+  /*Number of freq- and spindown values to calculate F for */
+  GV.FreqImax=(INT4)(uvar_FreqBand/GV.dFreq + 0.5) + 1;  
+  GV.SpinImax= (INT4)(uvar_f1dotBand/ GV.df1dot + 0.5) + 1;  
+
+  if (lalDebugLevel >= 1)
+    {
+      printf ("\nFrequency-band: %g, frequency resolution dFreq = %g\n", 
+	      uvar_FreqBand, GV.dFreq);
+      printf ("Frequency-templates: %d, first frequency-value: %g\n", 
+	      GV.FreqImax, uvar_Freq);
+
+      printf ("Spindown-band: %g, spindown-resolution df1dot = %g\n",
+	      uvar_f1dotBand, GV.df1dot);
+      printf ("Spindown-templates: %d, first spindown-value: %g\n\n", 
+	      GV.SpinImax, uvar_f1dot);
+    }
+
+  GV.ifmax = (INT4) ceil((1.0+DOPPLERMAX)*(uvar_Freq+uvar_FreqBand)*GV.tsft)+uvar_Dterms;
+  GV.ifmin = (INT4) floor((1.0-DOPPLERMAX)*uvar_Freq*GV.tsft)-uvar_Dterms;
+
+  /* allocate F-statistic arrays */
+  Fstat.F =(REAL8*)LALMalloc(GV.FreqImax*sizeof(REAL8));
+  if(uvar_EstimSigParam) 
+    {
+      Fstat.Fa =(COMPLEX16*)LALMalloc(GV.FreqImax*sizeof(COMPLEX16));
+      Fstat.Fb =(COMPLEX16*)LALMalloc(GV.FreqImax*sizeof(COMPLEX16));
+    } else {
+      Fstat.Fa = NULL;
+      Fstat.Fb = NULL;
+    }
+
+  /* ----------------------------------------------------------------------*/
 
   /* read in SFT-data */
   if (ReadSFTData()) return COMPUTEFSTAT_EXIT_READSFTFAIL;
@@ -487,63 +565,6 @@ int main(int argc,char *argv[])
     }
   }
 #endif
-  
-  /*----------------------------------------------------------------------
-   * prepare initialization of the DopplerScanner to step through paramter space 
-   * In input-structure for this initialization is DopplerScanInit 
-   */
-  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
-  scanInit.dAlpha = uvar_dAlpha;
-  scanInit.dDelta = uvar_dDelta;
-  scanInit.gridType = (DopplerGridType) uvar_gridType;
-  scanInit.metricType = (LALPulsarMetricType) uvar_metricType;
-  scanInit.metricMismatch = uvar_metricMismatch;
-  t0 = SFTData[0]->fft->epoch;
-  t1 = SFTData[GV.SFTno-1]->fft->epoch;
-  scanInit.obsBegin = t0;
-  LAL_CALL ( LALDeltaFloatGPS( stat, &duration, &t1, &t0), stat);
-  scanInit.obsDuration = duration + GV.tsft;
-  scanInit.fmax  = uvar_Freq;
-  scanInit.fmax += uvar_FreqBand;
-  scanInit.Detector = &GV.Detector;
-  scanInit.ephemeris = GV.edat;         /* used by Ephemeris-based metric */
-  scanInit.skyRegion = GV.skyRegion;
-  scanInit.skyGridFile = uvar_skyGridFile;      /* if applicable */
-
-  if ( uvar_searchNeighbors ) {
-    LAL_CALL ( InitDopplerScanOnRefinedGrid( stat, &thisScan, &scanInit ), stat );
-  } else {
-    LAL_CALL ( InitDopplerScan( stat, &thisScan, &scanInit), stat); 
-  }
-  if (lalDebugLevel) LALPrintError ("done.\n");
-
-  /* ---------- should we write the sky-grid to disk? ---------- */
-  if ( uvar_outputSkyGrid ) 
-    {
-      LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-      LAL_CALL (writeSkyGridFile( stat, thisScan.grid, uvar_outputSkyGrid, &scanInit), stat);
-      LALPrintError (" done.\n\n");
-    }
-
-  /* ---------- set spindown-resolution from DopplerScan if not input by user ----------*/
-  if( !LALUserVarWasSet (&uvar_df1dot) ) 
-    GV.df1dot = thisScan.df1dot;
-  else
-    GV.df1dot = uvar_df1dot;
-
-  /*Number of spindown values to calculate F for */
-  GV.SpinImax= (INT4)(uvar_f1dotBand/ GV.df1dot + 0.5) + 1;  
-
-  if (lalDebugLevel >= 1)
-    {
-      printf ("\nFrequency-templates: %d\n", GV.FreqImax);
-
-      printf ("Spindown-band: %g, spindown-resolution df1dot = %g\n",
-	      uvar_f1dotBand, GV.df1dot);
-      printf ("Spindown-templates: %d, first spindown-value: %g\n\n", 
-	      GV.SpinImax, uvar_f1dot);
-    }
-  /* ----------------------------------------------------------------------*/
 
 
   /* if a complete output of the F-statistic file was requested,
@@ -787,14 +808,42 @@ int main(int argc,char *argv[])
           if (fpOut) 
             {
               INT4 i;
+	      CHAR maxline[1024];
               for(i=0;i < GV.FreqImax ;i++)
                 {
-                  fprintf (fpOut, "%20.17f %20.17f %20.17f %20.17g %20.17g\n", 
-                           uvar_Freq + i*GV.dFreq, Alpha, Delta, DemodParams->spinDwn[0], 
-			   2.0*medianbias*Fstat.F[i]);
-                }
-	      
-            } /* if outputFstat */
+		  CHAR linebuf[1024]; 
+		  static REAL8 Fmax = 0.0;	
+		  REAL8 Fval = 2.0*medianbias*Fstat.F[i];
+
+		  LALSnprintf (linebuf, 1023, "%20.17f %20.17f %20.17f %20.17g %20.17g\n", 
+			    uvar_Freq + i*GV.dFreq, Alpha, Delta, DemodParams->spinDwn[0], Fval);
+		  linebuf[1023] = 0;
+		  fprintf (fpOut, linebuf);
+
+		  /* keep track of  loudest candidate */
+		  if ( Fval > Fmax )
+		    {
+		      Fmax = Fval;
+		      strcpy ( maxline, linebuf );
+		    }
+
+                } /* for i < FreqImax */
+
+	      /* write loudest canidate into separate file outputFstat.loudest */
+	      {
+		FILE *fpLoudest;
+		CHAR fname[1024];
+		strcpy ( fname, uvar_outputFstat);
+		strcat ( fname , ".loudest");
+		if ( (fpLoudest = fopen (fname, "wb")) == NULL)
+		  {
+		    LALPrintError ("\nError opening file '%s' for writing..\n\n", fname);
+		    return COMPUTEFSTAT_EXIT_OPENFSTAT;
+		  }
+		fprintf (fpLoudest, maxline);
+		fclose(fpLoudest);
+	      } /* write loudest candidate to file */
+            } /* if fpOut */
 
           
           /*  This fills-in highFLines  */
@@ -2004,6 +2053,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     cfg->Tf = (INT4) (header.gps_sec+header.tbase);  
     /* Time baseline of SFTs */
     cfg->tsft=header.tbase;  
+    cfg->nsamples=header.nsamples;    /* # of freq. bins in SFT*/
   }
 
   /*----------------------------------------------------------------------
@@ -2029,35 +2079,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     {
       LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
-
-  /*----------------------------------------------------------------------
-   * set some defaults
-   */
-
-  /* if user has not input demodulation frequency resolution; set to 1/2*Tobs */
-  if( !LALUserVarWasSet (&uvar_dFreq) ) 
-    cfg->dFreq=1.0/(2.0*header.tbase*cfg->SFTno);
-  else
-    cfg->dFreq = uvar_dFreq;
-  
-  /*Number of frequency values to calculate F for */
-  cfg->FreqImax=(INT4)(uvar_FreqBand/cfg->dFreq+.5)+1;  
-    
-  cfg->nsamples=header.nsamples;    /* # of freq. bins */
-
-  cfg->ifmax = (INT4) ceil((1.0+DOPPLERMAX)*(uvar_Freq+uvar_FreqBand)*cfg->tsft)+uvar_Dterms;
-  cfg->ifmin = (INT4) floor((1.0-DOPPLERMAX)*uvar_Freq*cfg->tsft)-uvar_Dterms;
-
-  /* allocate F-statistic arrays */
-  Fstat.F =(REAL8*)LALMalloc(cfg->FreqImax*sizeof(REAL8));
-  if(uvar_EstimSigParam) 
-    {
-      Fstat.Fa =(COMPLEX16*)LALMalloc(cfg->FreqImax*sizeof(COMPLEX16));
-      Fstat.Fb =(COMPLEX16*)LALMalloc(cfg->FreqImax*sizeof(COMPLEX16));
-    } else {
-      Fstat.Fa = NULL;
-      Fstat.Fb = NULL;
     }
 
   /*----------------------------------------------------------------------
@@ -2128,16 +2149,20 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
         REAL8 a, d, Da, Dd;
         a = uvar_Alpha;
         d = uvar_Delta;
-        Da = uvar_AlphaBand + eps;      /* slightly push outwards to make sure boundary-points are included */
+
+	/* slightly push outwards to make sure boundary-points are included */
+        Da = uvar_AlphaBand + eps;      
         Dd = uvar_DeltaBand + eps;
         /* consistency check either one point given or a 2D region! */
-        ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+        ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, 
+		 COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       
         cfg->skyRegion = (CHAR*)LALMalloc (512); /* should be enough for max 4 points... */
         if ( (Da == 0) || (Dd == 0) )   /* only one point */
           sprintf (cfg->skyRegion, "(%.16f, %.16f)", a, d);
         else                            /* or a rectangle */
-          sprintf (cfg->skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
+          sprintf (cfg->skyRegion, 
+		   "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
                    a, d, 
                    a + Da, d, 
                    a + Da, d + Dd,
