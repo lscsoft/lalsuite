@@ -181,6 +181,8 @@ void FreeMemory(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell,
 void FreeConfigVars(LALStatus *stat, struct PolkaConfigVarsTag *CLA );
 void GetFilesListInThisDir(LALStatus *stat, CHAR *directory, CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
 void print_Fstat_of_the_cell( FILE *fp, CellData *cd, INT4 ncol, CandidateList *CList );
+int compareNCandidate(const void *a, const void *b);
+
 
 /* ----------------------------------------------------------------------------- */
 /* Global variables. */
@@ -309,8 +311,13 @@ int main(int argc,char *argv[])
   }  
 
 
-  /* Sort arrays of candidates based on significance. */
-  qsort(cell, (size_t)ncell, sizeof(CellData), compareSignificance);
+  /* Sort arrays of candidates based on significance. 
+     qsort(cell, (size_t)ncell, sizeof(CellData), compareSignificance);
+  */
+
+  /* Sort arrays of candidates based on number of candidate. */ 
+  qsort(cell, (size_t)ncell, sizeof(CellData), compareNCandidate);
+  
 
 
   /* ---------------------------------------------------------------------------------------------------------------*/      
@@ -650,6 +657,23 @@ int compareSignificance(const void *a, const void *b)
   res = rfloatcompare( &F2,  &F1, 1);
   return res;
 } /* int compareSignificance() */
+
+
+
+
+int compareNCandidate(const void *a, const void *b)
+{
+  const CellData *ip = a;
+  const CellData *jp = b;
+  int res;
+
+  UINT4 n1, n2;
+  n1=ip->nCand;
+  n2=jp->nCand;
+  /* I put n1 and n2 inversely, because I would like to get decreasingly-ordered set. */ 
+  res = rintcompare( &n2,  &n1, 1);
+  return res;
+} /* int compareNCandidate() */
 
 
 
@@ -1066,7 +1090,10 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
 
   TRY (LALUserVarReadAllInput(stat->statusPtr,argc,argv),stat); 
 
+
   if (uvar_help) {	/* if help was requested, we're done here */
+    LALPrintError("%s\n",rcsid);
+    fflush(stderr);
     LALDestroyUserVars(stat->statusPtr);
     exit(POLKA_EXIT_OK);
   }
