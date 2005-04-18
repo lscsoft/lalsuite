@@ -1253,7 +1253,8 @@ buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion, 
   }
 
   /* convert this 2D-mesh into our grid-structure, including clipping to the skyRegion */
-  ConvertTwoDMesh2Grid ( stat->statusPtr, grid, mesh2d, skyRegion );
+  if ( mesh2d ) 
+    ConvertTwoDMesh2Grid ( stat->statusPtr, grid, mesh2d, skyRegion );
 
   /* get rid of 2D-mesh */
   TRY ( LALDestroyTwoDMesh ( stat->statusPtr,  &mesh2d, 0), stat);
