@@ -171,10 +171,10 @@ INT4  stopTemplate      = -1;           /* index of last template       */
 INT4  numChisqBins      = -1;           /* number of chisq bins         */
 REAL4 snrThresh         = -1;           /* signal to noise thresholds   */
 REAL4 chisqThresh       = -1;           /* chisq veto thresholds        */
-Clustering clusterMethod;               /* chosen clustering algorithm  */  /*XXX*/
-REAL4 clusterWindow     = -1;           /* cluster over time window     */  /*XXX*/
+Clustering clusterMethod;               /* chosen clustering algorithm  */  
+REAL4 clusterWindow     = -1;           /* cluster over time window     */  
 Approximant approximant;                /* waveform approximant         */
-INT4 bcvConstraint      = 0;           /* constraint BCV filter        */
+INT4 bcvConstraint      = 0;            /* constraint BCV filter        */
 
 /* generic simulation parameters */
 enum { unset, urandom, user } randSeedType = unset;    /* sim seed type */
@@ -2524,8 +2524,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --chisq-bins P               set number of chisq veto bins to P\n"\
 "  --snr-threshold RHO          set signal-to-noise threshold to RHO\n"\
 "  --chisq-threshold X          threshold on chi^2 < X * ( p + rho^2 * delta^2 )\n"\
-"  --cluster-method             set clustering type to maximize over chirp with\n"\
-"  --cluster-window             set length of clustering time window if required\n"\
+"  --cluster-method MTHD        set maximize over chirp MTHD (window|none)\n"\
+"  --cluster-window SEC         set length of clustering time window if required\n"\
 "\n"\
 "  --enable-output              write the results to a LIGO LW XML file\n"\
 "  --disable-output             do not write LIGO LW XML output file\n"\
