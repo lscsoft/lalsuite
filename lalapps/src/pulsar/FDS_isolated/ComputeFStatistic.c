@@ -251,7 +251,7 @@ CHAR *uvar_outputFstat;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
-BOOLEAN uvar_searchNeighbors;
+UINT4 uvar_searchNeighbors;
 BOOLEAN uvar_openDX;
 BOOLEAN uvar_doCheckpointing;
 INT4 uvar_expLALDemod;
@@ -927,10 +927,6 @@ int main(int argc,char *argv[])
 void
 initUserVars (LALStatus *stat)
 {
-#ifndef UVAR_DEVELOPER
-#define UVAR_DEVELOPER UVAR_OPTIONAL
-#endif
-
   INITSTATUS( stat, "initUserVars", rcsid );
   ATTATCHSTATUSPTR (stat);
 
@@ -987,7 +983,7 @@ initUserVars (LALStatus *stat)
   uvar_workingDir = (CHAR*)LALMalloc(512);
   strcpy(uvar_workingDir, ".");
 
-  uvar_searchNeighbors = FALSE;
+  uvar_searchNeighbors = 0;
   
   /* if user does not set start/end times, use all SFTs */
   uvar_startTime = -1.0e308;
@@ -1043,7 +1039,7 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,     outputFstat,     0,  UVAR_DEVELOPER, "Output-file for the F-statistic field over the parameter-space");
   LALregBOOLUserVar(stat,       openDX,          0,  UVAR_DEVELOPER, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory.");
-  LALregBOOLUserVar(stat,       searchNeighbors, 0,  UVAR_DEVELOPER, "Refine skyregion to neighboring points of original center.");
+  LALregINTUserVar(stat,        searchNeighbors, 0,  UVAR_DEVELOPER, "Create search-'patch' of N neighboring points around the search-location.");
   LALregBOOLUserVar(stat,       doCheckpointing, 0,  UVAR_DEVELOPER, "Do checkpointing and resume for previously checkpointed state.");
   LALregINTUserVar(stat,        expLALDemod,     0,  UVAR_DEVELOPER, "Type of LALDemod to use. 0=standard, 1=exp1, 2=REAL4");
   LALregINTUserVar(stat,        Dterms,         't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
@@ -1817,6 +1813,12 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   if ( LALUserVarWasSet(&uvar_dFreq) && (uvar_dFreq < 0) )
     {
       LALPrintError ("\nNegative value of stepsize dFreq not allowed!\n\n");
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+
+  if ( uvar_searchNeighbors && (uvar_AlphaBand||uvar_DeltaBand||uvar_FreqBand||uvar_f1dotBand) )
+    {
+      LALPrintError ("\nERROR: specify only one search-location if using --searchNeighbors\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
   /*----------------------------------------------------------------------*/
