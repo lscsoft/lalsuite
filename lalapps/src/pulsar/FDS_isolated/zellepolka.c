@@ -121,6 +121,7 @@ struct PolkaConfigVarsTag
   UINT4 NFiles;      /**<  Number of input files read */
   INT4 Nthr;        /**<  Show exective results of cells with numbers of coincidence above Nthr. */
   REAL4 Sthr;        /**<  Show exective results of cells with significance above Sthr. */
+  BOOLEAN AutoOut; 
   REAL8 Deltaf;      /**<  Size of coincidence window in Hz */
   REAL8 DeltaAlpha;  /**<  Size of coincidence window in radians */
   REAL8 DeltaDelta;  /**<  Size of coincidence window in radians */
@@ -452,58 +453,91 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
   LALFree( count );
 
 
-  /* output only on outliers */
-  if( cell[0].nCand > CLA->Nthr ) 
-    {
+  if( CLA->AutoOut ) 
+    { 
       if( (fpl = fopen(fnameNl,"w")) == NULL || (fpt = fopen(fnameNt,"w")) == NULL )
 	{ 
 	  LALPrintError("\n Cannot open file\n"); 
 	  exit(POLKA_EXIT_ERR); 
 	}
-      icell = 0;
-      while( cell[icell].nCand > CLA->Nthr )      
-	{
-	  fprintf(fpl,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
-		  "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
-		  cell[icell].Freq, cell[icell].Delta, cell[icell].Alpha,
-		  cell[icell].nCand,
-		  cell[icell].significance);
-	  print_Fstat_of_the_cell( fpt, &cell[icell], CList, icell );
-	  icell++;
-	  if( icell >= (*ncell) ) break;
-	}
+      icell=0;
+      fprintf(fpl,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
+	      "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
+	      cell[icell].Freq, cell[icell].Delta, cell[icell].Alpha,
+	      cell[icell].nCand,
+	      cell[icell].significance);
+      print_Fstat_of_the_cell( fpt, &cell[icell], CList, icell );
       fclose(fpt);
       fclose(fpl);
-    } /* if( cell[0].nCand > CLA->Nthr ) */
-
-
-  /* ------------------------------------------------------------- */
-  /* Second Sort arrays of candidates based on significance, if necessary. */ 
-  /* output only on outliers */
-  if( Sigmax > CLA->Sthr ) 
-    {
-      qsort(cell, (size_t) (*ncell), sizeof(CellData), compareSignificance);
       if( (fpl = fopen(fnameFl,"w")) == NULL || (fpt = fopen(fnameFt,"w")) == NULL )
 	{ 
 	  LALPrintError("\n Cannot open file\n"); 
 	  exit(POLKA_EXIT_ERR); 
 	}
-      icell = 0;
-      while( cell[icell].significance > CLA->Sthr )      
-	{
-	  fprintf(fpl,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
-		  "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
-		  cell[icell].Freq, cell[icell].Delta, cell[icell].Alpha,
-		  cell[icell].nCand,
-		  cell[icell].significance);
-	  print_Fstat_of_the_cell( fpt, &cell[icell], CList, icell );
-	  icell++;
-	  if( icell >= (*ncell) ) break;
-	}
+      icell=idxmax;
+      fprintf(fpl,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
+	      "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
+	      cell[icell].Freq, cell[icell].Delta, cell[icell].Alpha,
+	      cell[icell].nCand,
+	      cell[icell].significance);
+      print_Fstat_of_the_cell( fpt, &cell[icell], CList, icell );
       fclose(fpt);
-      fclose(fpl);
-    } /* if( cell[0].significance > CLA->Sthr ) */
-
+      fclose(fpl);     
+    } /* if( CLA->AutoOut ) */ 
+  else 
+    {
+      /* output only on outliers */
+      if( cell[0].nCand >= CLA->Nthr ) 
+	{
+	  if( (fpl = fopen(fnameNl,"w")) == NULL || (fpt = fopen(fnameNt,"w")) == NULL )
+	    { 
+	      LALPrintError("\n Cannot open file\n"); 
+	      exit(POLKA_EXIT_ERR); 
+	    }
+	  icell = 0;
+	  while( cell[icell].nCand >= CLA->Nthr )      
+	    {
+	      fprintf(fpl,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
+		      "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
+		      cell[icell].Freq, cell[icell].Delta, cell[icell].Alpha,
+		      cell[icell].nCand,
+		      cell[icell].significance);
+	      print_Fstat_of_the_cell( fpt, &cell[icell], CList, icell );
+	      icell++;
+	      if( icell >= (*ncell) ) break;
+	    }
+	  fclose(fpt);
+	  fclose(fpl);
+	} /* if( cell[0].nCand > CLA->Nthr ) */
+      
+      
+      /* ------------------------------------------------------------- */
+      /* Second Sort arrays of candidates based on significance, if necessary. */ 
+      /* output only on outliers */
+      if( Sigmax > CLA->Sthr ) 
+	{
+	  qsort(cell, (size_t) (*ncell), sizeof(CellData), compareSignificance);
+	  if( (fpl = fopen(fnameFl,"w")) == NULL || (fpt = fopen(fnameFt,"w")) == NULL )
+	    { 
+	      LALPrintError("\n Cannot open file\n"); 
+	      exit(POLKA_EXIT_ERR); 
+	    }
+	  icell = 0;
+	  while( cell[icell].significance > CLA->Sthr )      
+	    {
+	      fprintf(fpl,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
+		      "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
+		      cell[icell].Freq, cell[icell].Delta, cell[icell].Alpha,
+		      cell[icell].nCand,
+		      cell[icell].significance);
+	      print_Fstat_of_the_cell( fpt, &cell[icell], CList, icell );
+	      icell++;
+	      if( icell >= (*ncell) ) break;
+	    }
+	  fclose(fpt);
+	  fclose(fpl);
+	} /* if( cell[0].significance > CLA->Sthr ) */
+    } /* else of if( CLA->AutoOut ) */
 
 
   RETURN (stat);
@@ -1109,12 +1143,14 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
 
   ASSERT( CLA != NULL, stat, POLKAC_ENULL, POLKAC_MSGENULL);
 
+
   CHAR* uvar_InputData;
   CHAR* uvar_OutputData;
 
   CHAR* uvar_InputDirectory;
   CHAR* uvar_BaseName;
 
+  BOOLEAN uvar_AutoOut;
   INT4 uvar_Nthr;      
   REAL8 uvar_Sthr;      
 
@@ -1129,6 +1165,7 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
 
   const CHAR BNAME[] = "TEST";
 
+  uvar_AutoOut = 0;
   uvar_help = 0;
 
   uvar_InputData = NULL;
@@ -1158,11 +1195,12 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
   LALregSTRINGUserVar(stat,     InputData,      'I', UVAR_REQUIRED, "Input candidates Fstats file.");
   LALregSTRINGUserVar(stat,     OutputData,     'o', UVAR_REQUIRED, "Ouput candidates file name");
 
-  LALregSTRINGUserVar(stat,     InputDirectory, 'i', UVAR_DEVELOPER, "Input candidates Fstats files directory.");
-  LALregSTRINGUserVar(stat,     BaseName,       'b', UVAR_DEVELOPER, "BaseName of the Input Fstats files");
+  LALregSTRINGUserVar(stat,     InputDirectory, 'i', UVAR_DEVELOPER,"Input candidates Fstats files directory.");
+  LALregSTRINGUserVar(stat,     BaseName,       'b', UVAR_DEVELOPER,"BaseName of the Input Fstats files");
 
-  LALregINTUserVar(stat,        Nthr,            0, UVAR_OPTIONAL, "Threshold on number of coincidence");
-  LALregREALUserVar(stat,       Sthr,            0, UVAR_OPTIONAL, "Threshold on significance.");
+  LALregINTUserVar(stat,        Nthr,            0,  UVAR_OPTIONAL, "Threshold on number of coincidence");
+  LALregREALUserVar(stat,       Sthr,            0,  UVAR_OPTIONAL, "Threshold on significance.");
+  LALregBOOLUserVar(stat,       AutoOut,         0,  UVAR_OPTIONAL, "Set Nthr and Sthr to print most significant cell only."); 
 
   LALregREALUserVar(stat,       FreqWindow,     'f', UVAR_REQUIRED, "Frequency window in Hz");
   LALregREALUserVar(stat,       AlphaWindow,    'a', UVAR_REQUIRED, "Right ascension window in radians");
@@ -1228,6 +1266,8 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
     strcpy(CLA->BaseName,uvar_BaseName);
   }
 
+
+  CLA->AutoOut = uvar_AutoOut;
   CLA->Nthr = uvar_Nthr;
   CLA->Sthr = uvar_Sthr;
 
