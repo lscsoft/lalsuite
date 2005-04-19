@@ -72,6 +72,9 @@ struct CommandLineArgsTag {
   char *darmerr_chan;      /* darm_err  channel name */ 
   char *asq_chan;          /* asq channel name */
   char *filterfile;        /* file with filter coefficients */
+  char *frametype;
+  char *strainchannel;
+  char *datadir;
 } CommandLineArgs;
 
 
@@ -115,11 +118,7 @@ int FreeMem(void);
 
 int main(int argc,char *argv[])
 {
-#define FRAMETYPE "H1_RDS_C01_LX"
-#define CHANNELH "H1:LSC-STRAIN"
-#define CHANNELA "H1:Alpha"
-#define CHANNELB "H1:Beta"
-#define DATADIR "/archive/home/xsiemens/hoft/S4/H1/H"
+  FrOutPar opar;
 
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   if (ReadData(CommandLineArgs)) return 2;
@@ -140,42 +139,29 @@ int main(int argc,char *argv[])
 			   OutputData.h.data->length-2*(UINT4)(InputData.wings/OutputData.h.deltaT));
   TESTSTATUS( &status );
 
-  strncpy( OutputData.hR.name, CHANNELH, sizeof( OutputData.hR.name ) );
-  strncpy( OutputData.hC.name, CHANNELH, sizeof( OutputData.hC.name ) );
-  strncpy( OutputData.h.name,  CHANNELH, sizeof( OutputData.h.name  ) );
+  strncpy( OutputData.hR.name, CommandLineArgs.strainchannel, sizeof( OutputData.hR.name ) );
+  strncpy( OutputData.hC.name, CommandLineArgs.strainchannel, sizeof( OutputData.hC.name ) );
+  strncpy( OutputData.h.name,  CommandLineArgs.strainchannel, sizeof( OutputData.h.name  ) );
 
+  opar.source=CommandLineArgs.datadir;
+  opar.description=CommandLineArgs.frametype;
+  opar.type = ProcDataChannel;
+  opar.nframes = 1;
+  opar.frame = 0;
+  opar.run = 4;
 
   if (CommandLineArgs.testsensing)
     {
-        
-      memset(site, 0, sizeof(site));
-      memcpy(site, CommandLineArgs.asq_chan, sizeof(site));
-      {
-	FrOutPar opar = { DATADIR, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
-	
-	LALFrWriteREAL8TimeSeries( &status, &OutputData.hR, &opar );
-	TESTSTATUS( &status );
-      }
+      LALFrWriteREAL8TimeSeries( &status, &OutputData.hR, &opar );
+      TESTSTATUS( &status );
     }else if(CommandLineArgs.testactuation){      
-      memset(site, 0, sizeof(site));
-      memcpy(site, CommandLineArgs.asq_chan, sizeof(site));
-      {
-	FrOutPar opar = { DATADIR, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
-	
-	LALFrWriteREAL8TimeSeries( &status, &OutputData.hC, &opar );
-	TESTSTATUS( &status );
-      }
+      LALFrWriteREAL8TimeSeries( &status, &OutputData.hC, &opar );
+      TESTSTATUS( &status );
     }else{
-      memset(site, 0, sizeof(site));
-      memcpy(site, CommandLineArgs.asq_chan, sizeof(site));
-      {
-	FrOutPar opar = { DATADIR, FRAMETYPE, ProcDataChannel, 1, 0, 2 };
-	
-	LALFrWriteREAL8TimeSeries( &status, &OutputData.h, &opar );
-	TESTSTATUS( &status );
-      }
+      LALFrWriteREAL8TimeSeries( &status, &OutputData.h, &opar );
+      TESTSTATUS( &status );
     }
-
+    
   /* write factors */
   {
     char fname[256], fnumber[16];
@@ -943,10 +929,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"td-fir",              no_argument, NULL,                 'x'},
     {"output-factors",      no_argument, NULL,                 'y'},
     {"require-histories",   required_argument, NULL,           'H'},
+    {"frame-type",          required_argument, NULL,           'T'},
+    {"strain-channel",      required_argument, NULL,           'S'},
+    {"data-dir",            required_argument, NULL,           'z'},
     {"help",                no_argument, NULL,                 'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hrcduxyf:C:A:E:D:R:F:s:e:i:j:k:l:t:o:H:";
+  char args[] = "hrcduxyf:C:A:E:D:R:F:s:e:i:j:k:l:t:o:H:T:S:z:";
   
   /* Initialize default values */
   CLA->f=0.0;
@@ -966,6 +955,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->testsensing=0;
   CLA->testactuation=0;
   CLA->requirehistories=0;
+  CLA->frametype=NULL;
+  CLA->strainchannel=NULL;
+  CLA->datadir=NULL;
 
   InputData.delta=0;
   InputData.wings=0;
@@ -1074,6 +1066,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'H':
       CLA->requirehistories=atoi(optarg);       
       break;
+    case 'T':
+      CLA->frametype=optarg;       
+      break;
+    case 'S':
+      CLA->strainchannel=optarg;       
+      break;
+    case 'z':
+      CLA->datadir=optarg;       
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -1099,6 +1100,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\ttd-fir (-x)\tFLAG\t Use time-domain FIR filtering (default is FFT convolution).\n");
       fprintf(stdout,"\toutput-factors (-y)\tFLAG\t Outputs upsampled calibration factors time series.\n");
       fprintf(stdout,"\trequire-histories (-H)\tINT\t If set to 1 program exits if filter histories in filters file do not agree with GPS time.\n");
+      fprintf(stdout,"\tframe-type (-T)\tSTRING\t Frame type to be written (eg, H1_RDS_C01_LX)\n");
+      fprintf(stdout,"\tstrain-channel (-S)\tSTRING\t Strain channel name in frame (eg, H1:LSC-STRAIN)\n");
+      fprintf(stdout,"\tdata-dir (-z)\tSTRING\t Ouput frame to this directory (eg, /tmp/S4/H1/H). Don't forget the H or L at the end!\n");
       fprintf(stdout,"\thelp (-h)\tFLAG\t This message\n");    
       exit(0);
       break;
@@ -1110,6 +1114,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     }
   }
+
   if(CLA->f == 0.0)
     {
       fprintf(stderr,"No calibration line frequency specified.\n");
@@ -1191,6 +1196,24 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
    if(CLA->asq_chan == NULL)
     {
       fprintf(stderr,"No asq channel specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }      
+   if(CLA->frametype == NULL)
+    {
+      fprintf(stderr,"No frame type specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }      
+   if(CLA->strainchannel == NULL)
+    {
+      fprintf(stderr,"No strain channel specified.\n");
+      fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
+      return 1;
+    }      
+   if(CLA->datadir == NULL)
+    {
+      fprintf(stderr,"No data directory specified.\n");
       fprintf(stderr,"Try ./ComputeStrainDriver -h \n");
       return 1;
     }      
