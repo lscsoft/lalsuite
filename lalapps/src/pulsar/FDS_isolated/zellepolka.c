@@ -428,24 +428,26 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
 
   /* output summary */
   if(lalDebugLevel < 3 ) {
-    fprintf(stderr,"Maximly significant cell: " "f=%" LAL_REAL4_FORMAT "\td=%" LAL_REAL4_FORMAT "\ta=%" LAL_REAL4_FORMAT "\t" 
+    fprintf(stderr,"%% Maximly significant cell: " "f=%" LAL_REAL4_FORMAT "\td=%" LAL_REAL4_FORMAT "\ta=%" LAL_REAL4_FORMAT "\t" 
 	    "#=%" LAL_INT4_FORMAT "\t" "S=%" LAL_REAL4_FORMAT "\n",
 	    cell[idxmax].Freq, cell[idxmax].Delta, cell[idxmax].Alpha,
 	    cell[idxmax].nCand,
 	    cell[idxmax].significance);
-    fprintf(stderr,"Maximly coincident cell : " "f=%" LAL_REAL4_FORMAT "\td=%" LAL_REAL4_FORMAT "\ta=%" LAL_REAL4_FORMAT "\t" 
+    fprintf(stderr,"% Maximly coincident cell : " "f=%" LAL_REAL4_FORMAT "\td=%" LAL_REAL4_FORMAT "\ta=%" LAL_REAL4_FORMAT "\t" 
 	    "#=%" LAL_INT4_FORMAT "\t" "S=%" LAL_REAL4_FORMAT "\n",
 	    cell[0].Freq, cell[0].Delta, cell[0].Alpha,
 	    cell[0].nCand,
 	    cell[0].significance);
     nmax = cell[0].nCand;
-    fprintf(stderr,"# of coincidences: ");
-    for(nc=0;nc<=nmax;nc++) {
+    fprintf(stderr,"%% # of coincidences: \n");
+    /*   for(nc=0;nc<=nmax;nc++) { */
+    for(nc=0;nc<=CLA->NFiles;nc++) {
       fprintf(stderr,"%7d",nc);
     }
     fprintf(stderr,"\n");
-    fprintf(stderr,"# of cells       : ");
-    for(nc=0;nc<=nmax;nc++) {
+    fprintf(stderr,"%% # of cells       : \n");
+    /*   for(nc=0;nc<=nmax;nc++) { */
+    for(nc=0;nc<=CLA->NFiles;nc++) {
       fprintf(stderr,"%7d",count[nc]);
     }
     fprintf(stderr,"\n");
@@ -965,7 +967,7 @@ void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const char *
     }
 
   /* output a record of the running checksun amd byte count */
-  LALPrintError( "%s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
+  LALPrintError( "%% %s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
 
   /* check validity of this Fstats-file */
   if ( strcmp(line1, DONE_MARKER ) ) 
