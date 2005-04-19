@@ -482,13 +482,9 @@ int main(int argc,char *argv[])
   scanInit.ephemeris = GV.edat;         /* used by Ephemeris-based metric */
   scanInit.skyRegion = GV.skyRegion;
   scanInit.skyGridFile = uvar_skyGridFile;      /* if applicable */
+  scanInit.searchNeighbors = uvar_searchNeighbors;
 
-  if ( uvar_searchNeighbors ) {
-    LAL_CALL ( InitDopplerScanOnRefinedGrid( stat, &thisScan, &scanInit ), stat );
-  } else {
-    LAL_CALL ( InitDopplerScan( stat, &thisScan, &scanInit), stat); 
-  }
-  if (lalDebugLevel) LALPrintError ("done.\n");
+  LAL_CALL ( InitDopplerScan( stat, &thisScan, &scanInit), stat); 
 
   /* ---------- should we write the sky-grid to disk? ---------- */
   if ( uvar_outputSkyGrid ) 
