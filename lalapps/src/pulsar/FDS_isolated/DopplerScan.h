@@ -86,7 +86,6 @@ typedef enum
 typedef struct {
   DopplerGridType gridType;	/**< which type of skygrid to generate */  
   LALPulsarMetricType metricType; /**< which metric to use if GRID_METRIC */
-
   REAL8 dAlpha;			/**< step-sizes for GRID_FLAT */
   REAL8 dDelta;
   REAL8 metricMismatch;		/**< for GRID_METRIC and GRID_ISOTROPIC */
@@ -95,6 +94,7 @@ typedef struct {
   REAL8 fmax; 			/**< max frequency of search */
   LALDetector *Detector; 	/**< Our detector*/
   EphemerisData *ephemeris;	/**< ephemeris for "exact" metric */
+  UINT4 searchNeighbors;	/**< number of points per dimension to construct around target-location [0=don't use]*/
   CHAR *skyRegion;		/**< list of sky-positions describing a sky-region */
   CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) for GRID_FILE */
 } DopplerScanInit;
