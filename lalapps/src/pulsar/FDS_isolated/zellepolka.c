@@ -433,21 +433,21 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
 	    cell[idxmax].Freq, cell[idxmax].Delta, cell[idxmax].Alpha,
 	    cell[idxmax].nCand,
 	    cell[idxmax].significance);
-    fprintf(stderr,"% Maximly coincident cell : " "f=%" LAL_REAL4_FORMAT "\td=%" LAL_REAL4_FORMAT "\ta=%" LAL_REAL4_FORMAT "\t" 
+    fprintf(stderr,"%% Maximly coincident cell : " "f=%" LAL_REAL4_FORMAT "\td=%" LAL_REAL4_FORMAT "\ta=%" LAL_REAL4_FORMAT "\t" 
 	    "#=%" LAL_INT4_FORMAT "\t" "S=%" LAL_REAL4_FORMAT "\n",
 	    cell[0].Freq, cell[0].Delta, cell[0].Alpha,
-	    cell[0].nCand,
+	    cell[0].nCand, 
 	    cell[0].significance);
     nmax = cell[0].nCand;
     fprintf(stderr,"%% # of coincidences: \n");
-    /*   for(nc=0;nc<=nmax;nc++) { */
-    for(nc=0;nc<=CLA->NFiles;nc++) {
+
+    nmax = (INT4) CLA->NFiles;
+    for(nc=0;nc<=nmax;nc++) {
       fprintf(stderr,"%7d",nc);
     }
     fprintf(stderr,"\n");
     fprintf(stderr,"%% # of cells       : \n");
-    /*   for(nc=0;nc<=nmax;nc++) { */
-    for(nc=0;nc<=CLA->NFiles;nc++) {
+    for(nc=0;nc<=nmax;nc++) { 
       fprintf(stderr,"%7d",count[nc]);
     }
     fprintf(stderr,"\n");
