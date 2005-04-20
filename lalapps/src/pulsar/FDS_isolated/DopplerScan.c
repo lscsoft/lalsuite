@@ -1576,17 +1576,17 @@ getGridSpacings( LALStatus *lstat,
        * the number of dimensions D in the parameter-space considered.
        */
 
-      spacings->freq = sqrt ( params->metricMismatch / g_f0_f0 );
+      spacings->freq = 2.0 * sqrt ( params->metricMismatch / g_f0_f0 );
 
       TRY ( LALProjectMetric( lstat->statusPtr, metric, 0 ), lstat);
       gamma_f1_f1 = metric->data[INDEX_f1_f1];
-      spacings->f1dot = sqrt( params->metricMismatch * freq * freq / gamma_f1_f1 );
+      spacings->f1dot = 2.0 * sqrt( params->metricMismatch * freq * freq / gamma_f1_f1 );
 
       gamma_a_a = metric->data[INDEX_A_A];
       gamma_d_d = metric->data[INDEX_D_D];
 
-      spacings->Alpha = sqrt ( params->metricMismatch / gamma_a_a );
-      spacings->Delta = sqrt ( params->metricMismatch / gamma_d_d );
+      spacings->Alpha = 2.0 * sqrt ( params->metricMismatch / gamma_a_a );
+      spacings->Delta = 2.0 * sqrt ( params->metricMismatch / gamma_d_d );
 
       TRY( LALDDestroyVector (lstat->statusPtr, &metric), lstat);
       metric = NULL;
@@ -1630,7 +1630,7 @@ getMCDopplerCube (LALStatus *lstat,
   REAL8 Alpha, Delta, freq, f1dot;
   REAL8 dAlpha, dDelta, dfreq, df1dot;
   REAL8 AlphaBand, DeltaBand, freqBand, f1dotBand;
-  UINT4 numSteps;
+  REAL8 numSteps;
 
   INITSTATUS( lstat, "getMCDopplerCube", DOPPLERSCANC );
   ATTATCHSTATUSPTR (lstat); 
@@ -1647,8 +1647,8 @@ getMCDopplerCube (LALStatus *lstat,
   df1dot = spacings.f1dot;
 
   numSteps = PointsPerDim;
-  if ( numSteps )
-    numSteps --;	/* number of intervals =  number of grid-points -1 */
+  if ( PointsPerDim )
+    numSteps -= 1.0e-4;	/* trick: make sure we get the right number of points */
 
   /* figure out corresponding Bands in each dimension */
   AlphaBand = (dAlpha * numSteps);
@@ -1664,7 +1664,7 @@ getMCDopplerCube (LALStatus *lstat,
 
   /* randomize center-point within one grid-cell */
   setRandomSeed();
-#define randShift() (2.0 * rand()/RAND_MAX - 1.0)
+#define randShift() (1.0 * rand()/RAND_MAX - 0.5)
   Alpha += dAlpha * randShift();
   Delta += dDelta * randShift();
   freq  += dfreq  * randShift();

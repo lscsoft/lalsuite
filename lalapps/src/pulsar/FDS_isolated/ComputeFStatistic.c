@@ -527,8 +527,8 @@ int main(int argc,char *argv[])
   }
 
   /* Number of freq- and spindown values to calculate F for */
-  GV.FreqImax = (INT4)(GV.searchRegion.freqBand / GV.dFreq + 0.5) + 1;  
-  GV.SpinImax = (INT4)(GV.searchRegion.f1dotBand/ GV.df1dot + 0.5) + 1;  
+  GV.FreqImax = (INT4)(GV.searchRegion.freqBand / GV.dFreq + 1e-6) + 1;  
+  GV.SpinImax = (INT4)(GV.searchRegion.f1dotBand/ GV.df1dot + 1e-6) + 1;  
 
   if (lalDebugLevel >= 1)
     {
