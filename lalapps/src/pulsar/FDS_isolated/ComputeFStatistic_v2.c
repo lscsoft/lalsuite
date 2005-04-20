@@ -374,8 +374,11 @@ int main(int argc,char *argv[])
       /* Have we scanned all DopplerPositions yet? */
       if (thisScan.state == STATE_FINISHED)
 	break;
-      LALNormalizeSkyPosition (&status, &thisPoint, &(dopplerpos.skypos) );
-      
+
+      /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
+      thisPoint.longitude = dopplerpos.alpha;
+      thisPoint.latitude = dopplerpos.delta;
+      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &thisPoint), &status);
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
       

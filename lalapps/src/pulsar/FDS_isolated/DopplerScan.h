@@ -101,18 +101,30 @@ typedef struct {
 
 /** structure holding one point in (phase-) parameter-space */
 typedef struct {
-  SkyPosition skypos;		/**< sky position (alpha, delta) */
+  REAL8 alpha;			/**< longitude in Radians, EquatorialCoordinates */
+  REAL8 delta;			/**< latitude in Radians, EquatorialCoordinates */
   REAL8 freq;			/**< frequency */
   REAL8Vector *spindown;	/**< spindowns (if any) */
 } DopplerPosition;
 
-
+/** structure describing a polygon-region in the sky */
 typedef struct {
-  UINT4 numVertices;
-  SkyPosition *vertices;
-  SkyPosition lowerLeft;
-  SkyPosition upperRight;
+  UINT4 numVertices;		/**< number of polygon-vertices */
+  SkyPosition *vertices;	/**< array of vertices */
+  SkyPosition lowerLeft;	/**< lower-left point of bounding square */
+  SkyPosition upperRight;	/**< upper-right point of bounding square */
 } SkyRegion;
+
+/** Structure describing a region in paramter-space (a,d,f,f1dot,..). 
+ *  Currently this is simply a direct product of skyRegion x freqBand x f1dotBand.
+ */
+typedef struct {
+  CHAR *skyRegionString;	/**< sky-region string '(a1,d1), (a2,d2), ..' */
+  REAL8 freq;			/**< first point of frequency-interval */
+  REAL8 freqBand;		/**< width of frequency-interval */
+  REAL8 f1dot;			/**< first spindown-value */
+  REAL8 f1dotBand;		/**< width of spindown-interval */
+} DopplerRegion;
 
 /** general scan-grid */
 typedef struct tagDopplerScanGrid {

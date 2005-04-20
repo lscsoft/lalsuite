@@ -751,11 +751,14 @@ int main(int argc,char *argv[])
       /* Have we scanned all DopplerPositions yet? */
       if (thisScan.state == STATE_FINISHED)
         break;
-      
-      LAL_CALL (LALNormalizeSkyPosition(stat, &thisPoint, &(dopplerpos.skypos) ), stat);
-      
+
+      /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
+      thisPoint.longitude = dopplerpos.alpha;
+      thisPoint.latitude = dopplerpos.delta;
+      LAL_CALL (LALNormalizeSkyPosition(stat, &thisPoint, &thisPoint), stat);
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
+
 #if USE_BOINC
       /* pass current search position, for use with starsphere.C
          revision 4.6 or greater. Need to convert radians to

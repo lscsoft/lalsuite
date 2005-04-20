@@ -228,9 +228,8 @@ InitDopplerScan( LALStatus *stat,
     dfkdot->data[0] = 0;
     gridSpacings.spindown = dfkdot;
 
-    gridpoint.skypos.system =  COORDINATESYSTEM_EQUATORIAL;
-    gridpoint.skypos.longitude = scan->grid->alpha;
-    gridpoint.skypos.latitude = scan->grid->delta;
+    gridpoint.alpha = scan->grid->alpha;
+    gridpoint.delta = scan->grid->delta;
     gridpoint.freq = init->fmax;
 
     TRY ( LALDCreateVector( stat->statusPtr, &spindown, 1 ), stat);
@@ -339,8 +338,8 @@ NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
 	scan->state = STATE_FINISHED;
       else
 	{
-	  pos->skypos.longitude = scan->gridNode->alpha;
-	  pos->skypos.latitude =  scan->gridNode->delta;
+	  pos->alpha = scan->gridNode->alpha;
+	  pos->delta =  scan->gridNode->delta;
 
 	  pos->spindown = NULL; /*  FIXME: no spindowns for now */
 
@@ -1559,13 +1558,13 @@ getGridSpacings( LALStatus *lstat,
       ABORT (lstat,  DOPPLERSCANH_EINPUT ,  DOPPLERSCANH_MSGEINPUT );
     }
 
-  spacings->skypos.system = gridpoint->skypos.system;
-
   if ( params->metricType )	/* use the metric to fix f0/fdot stepsizes */
     {
       /* setup metric parameters */
       metricpar.metricType = params->metricType;
-      metricpar.position = gridpoint->skypos;
+      metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
+      metricpar.position.longitude = gridpoint->alpha;
+      metricpar.position.latitude = gridpoint->delta;
 
       if ( nSpin ) 
 	{
@@ -1608,8 +1607,8 @@ getGridSpacings( LALStatus *lstat,
       gamma_a_a = metric->data[INDEX_A_A];
       gamma_d_d = metric->data[INDEX_D_D];
 
-      spacings->skypos.longitude = sqrt ( params->metricMismatch / gamma_a_a );
-      spacings->skypos.latitude = sqrt ( params->metricMismatch / gamma_d_d );
+      spacings->alpha = sqrt ( params->metricMismatch / gamma_a_a );
+      spacings->delta = sqrt ( params->metricMismatch / gamma_d_d );
 
       TRY( LALDDestroyVector (lstat->statusPtr, &metric), lstat);
       metric = NULL;
@@ -1617,8 +1616,8 @@ getGridSpacings( LALStatus *lstat,
   else	/* no metric: use 'naive' value of 1/(2*T^k) [previous default in CFS] */
     {
       spacings->freq = 1.0 / (2.0 * params->obsDuration);
-      spacings->skypos.longitude = params->dAlpha;	/* dummy */
-      spacings->skypos.latitude = params->dDelta;
+      spacings->alpha = params->dAlpha;	/* dummy */
+      spacings->delta = params->dDelta;
 
       if (nSpin > 0)
 	spacings->spindown->data[0] = 1.0 / (2.0 * params->obsDuration * params->obsDuration);
@@ -1627,10 +1626,10 @@ getGridSpacings( LALStatus *lstat,
   if (lalDebugLevel >= 1) 
     {
       printf ("\nDEBUG: grid-spacings from metric=%d in point (a,d,f,fdot)=(%g,%g,%g,%g)\n",
-	      params->metricType, gridpoint->skypos.longitude, gridpoint->skypos.latitude, 
+	      params->metricType, gridpoint->alpha, gridpoint->delta, 
 	      gridpoint->freq, gridpoint->spindown ? gridpoint->spindown->data[0] : 0);
       printf ("dAlpha = %g, dDelta = %g, dFreq = %g, df1dot = %g\n",
-	      spacings->skypos.longitude, spacings->skypos.latitude,
+	      spacings->alpha, spacings->delta,
 	      spacings->freq, spacings->spindown ? spacings->spindown->data[0] : 0);
 
     } /* if lalDebugLevel >= 1 */
