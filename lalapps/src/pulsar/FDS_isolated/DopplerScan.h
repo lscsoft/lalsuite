@@ -101,19 +101,11 @@ typedef struct {
 
 /** structure holding one point in (phase-) parameter-space */
 typedef struct {
-  REAL8 alpha;			/**< longitude in Radians, EquatorialCoordinates */
-  REAL8 delta;			/**< latitude in Radians, EquatorialCoordinates */
+  REAL8 Alpha;			/**< longitude in Radians, EquatorialCoordinates */
+  REAL8 Delta;			/**< latitude in Radians, EquatorialCoordinates */
   REAL8 freq;			/**< frequency */
   REAL8Vector *spindown;	/**< spindowns (if any) */
 } DopplerPosition;
-
-/** structure describing a polygon-region in the sky */
-typedef struct {
-  UINT4 numVertices;		/**< number of polygon-vertices */
-  SkyPosition *vertices;	/**< array of vertices */
-  SkyPosition lowerLeft;	/**< lower-left point of bounding square */
-  SkyPosition upperRight;	/**< upper-right point of bounding square */
-} SkyRegion;
 
 /** Structure describing a region in paramter-space (a,d,f,f1dot,..). 
  *  Currently this is simply a direct product of skyRegion x freqBand x f1dotBand.
@@ -126,10 +118,18 @@ typedef struct {
   REAL8 f1dotBand;		/**< width of spindown-interval */
 } DopplerRegion;
 
+/** structure describing a polygon-region in the sky */
+typedef struct {
+  UINT4 numVertices;		/**< number of polygon-vertices */
+  SkyPosition *vertices;	/**< array of vertices */
+  SkyPosition lowerLeft;	/**< lower-left point of bounding square */
+  SkyPosition upperRight;	/**< upper-right point of bounding square */
+} SkyRegion;
+
 /** general scan-grid */
 typedef struct tagDopplerScanGrid {
-  REAL8 alpha;
-  REAL8 delta;
+  REAL8 Alpha;
+  REAL8 Delta;
   REAL8 freq;
   REAL8Vector spindown;
   struct tagDopplerScanGrid *next;
@@ -140,7 +140,7 @@ typedef struct {
   INT2 state;  			/**< idle, ready or finished */
   SkyRegion skyRegion; 		/**< polygon (and bounding square) defining sky-region  */
   UINT4 numGridPoints;		/**< how many grid-points */
-  REAL8 dFreq;			/**< stepsize in frequency */
+  REAL8 dfreq;			/**< stepsize in frequency */
   REAL8 df1dot;			/**< stepsize in spindown-value f1dot */
   DopplerScanGrid *grid; 	/**< head of linked list of skygrid nodes */  
   DopplerScanGrid *gridNode;	/**< pointer to current grid-node in skygrid */
@@ -163,8 +163,8 @@ void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, REA
 
 void LALMetricWrapper(LALStatus *, REAL8Vector **metric, PtoleMetricIn *params);
 
-void getGridSpacings(LALStatus *, DopplerPosition *spacings, const DopplerPosition *gridpoint, const DopplerScanInit *params);
-
+void getGridSpacings(LALStatus *, DopplerPosition *spacings, DopplerPosition gridpoint, const DopplerScanInit *params);
+void getMCDopplerCube (LALStatus *, DopplerRegion *cube, DopplerPosition signal, UINT4 PointsPerDim, const DopplerScanInit *params);
 
 
 /********************************************************** <lalLaTeX>

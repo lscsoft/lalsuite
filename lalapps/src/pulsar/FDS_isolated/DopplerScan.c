@@ -185,8 +185,8 @@ InitDopplerScan( LALStatus *stat,
       if (scan->grid == NULL) {
 	ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
       }
-      scan->grid->alpha = scan->skyRegion.vertices[0].longitude;
-      scan->grid->delta = scan->skyRegion.vertices[0].latitude;
+      scan->grid->Alpha = scan->skyRegion.vertices[0].longitude;
+      scan->grid->Delta = scan->skyRegion.vertices[0].latitude;
       
     } /* no points found inside of sky-region */
 
@@ -228,17 +228,17 @@ InitDopplerScan( LALStatus *stat,
     dfkdot->data[0] = 0;
     gridSpacings.spindown = dfkdot;
 
-    gridpoint.alpha = scan->grid->alpha;
-    gridpoint.delta = scan->grid->delta;
+    gridpoint.Alpha = scan->grid->Alpha;
+    gridpoint.Delta = scan->grid->Delta;
     gridpoint.freq = init->fmax;
 
     TRY ( LALDCreateVector( stat->statusPtr, &spindown, 1 ), stat);
     spindown->data[0] = 0;
     gridpoint.spindown = spindown;
 
-    TRY ( getGridSpacings( stat->statusPtr, &gridSpacings, &gridpoint, init), stat);
+    TRY ( getGridSpacings( stat->statusPtr, &gridSpacings, gridpoint, init), stat);
 
-    scan->dFreq = gridSpacings.freq;
+    scan->dfreq = gridSpacings.freq;
     scan->df1dot = gridSpacings.spindown->data[0];
 
     TRY ( LALDDestroyVector(stat->statusPtr, &dfkdot), stat);
@@ -338,8 +338,8 @@ NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
 	scan->state = STATE_FINISHED;
       else
 	{
-	  pos->alpha = scan->gridNode->alpha;
-	  pos->delta =  scan->gridNode->delta;
+	  pos->Alpha = scan->gridNode->Alpha;
+	  pos->Delta =  scan->gridNode->Delta;
 
 	  pos->spindown = NULL; /*  FIXME: no spindowns for now */
 
@@ -484,7 +484,7 @@ plotGrid (LALStatus *stat,
 {
   FILE *fp = NULL;
   DopplerScanGrid *node;
-  REAL8 alpha, delta;
+  REAL8 Alpha, Delta;
   UINT4 set, i;
 
   const CHAR *xmgrHeader = 
@@ -494,8 +494,8 @@ plotGrid (LALStatus *stat,
     "@world xmax 6.4\n"
     "@world ymin -1.58\n"
     "@world ymax 1.58\n"
-    "@xaxis label \"alpha\"\n"
-    "@yaxis label \"delta\"\n";
+    "@xaxis label \"Alpha\"\n"
+    "@yaxis label \"Delta\"\n";
 
   /* Set up shop. */
   INITSTATUS( stat, "plotGrid", DOPPLERSCANC );
@@ -533,7 +533,7 @@ plotGrid (LALStatus *stat,
 
   for( node = grid; node; node = node->next )
   {
-    fprintf( fp, "%e %e\n", node->alpha, node->delta );
+    fprintf( fp, "%e %e\n", node->Alpha, node->Delta );
   }
 
 
@@ -561,14 +561,14 @@ plotGrid (LALStatus *stat,
       node = grid;
       while (node)
 	{
-	  alpha =  node->alpha;
-	  delta =  node->delta;
+	  Alpha =  node->Alpha;
+	  Delta =  node->Delta;
 
 	  /* Get the metric at this skypos */
 	  /* only need the update the position, the other
 	   * parameter have been set already ! */
-	  metricPar.position.longitude = alpha;
-	  metricPar.position.latitude  = delta;
+	  metricPar.position.longitude = Alpha;
+	  metricPar.position.latitude  = Delta;
 
 	  /* make sure we "normalize" point before calling metric */
 	  TRY( LALNormalizeSkyPosition(stat->statusPtr, &(metricPar.position), 
@@ -595,7 +595,7 @@ plotGrid (LALStatus *stat,
 	  if (angle > LAL_PI_2) angle -= LAL_PI;
 
 	  /*
-	  printf ("alpha=%f delta=%f\ngaa=%f gdd=%f gad=%f\n", alpha, delta, gaa, gdd, gad);
+	  printf ("Alpha=%f Delta=%f\ngaa=%f gdd=%f gad=%f\n", Alpha, Delta, gaa, gdd, gad);
 	  printf ("smaj = %f, smin = %f angle=%f\n", smaj, smin, angle);
 	  */
 	  set ++;
@@ -612,7 +612,7 @@ plotGrid (LALStatus *stat,
 	    y = smin*sin(c);
 	    r = sqrt( x*x + y*y );
 	    b = atan2 ( y, x );
-	    fprintf( fp, "%e %e\n", alpha + r*cos(angle+b), delta + r*sin(angle+b) );
+	    fprintf( fp, "%e %e\n", Alpha + r*cos(angle+b), Delta + r*sin(angle+b) );
 	  }
 	  
 	  node = node -> next;
@@ -672,7 +672,7 @@ LALMetricWrapper (LALStatus *stat,
 
 
   /* allocate the output-metric */
-  dim = 3 + nSpin;	/* dimensionality of parameter-space: alpha,delta,f + spindowns */
+  dim = 3 + nSpin;	/* dimensionality of parameter-space: Alpha,Delta,f + spindowns */
 
   TRY ( LALDCreateVector (stat->statusPtr, metric, dim * (dim+1)/2), stat);
 
@@ -752,8 +752,8 @@ LALMetricWrapper (LALStatus *stat,
       }ENDFAIL(stat);
 
       lambda->data[0] = (REAL8) input->maxFreq;
-      lambda->data[1] = (REAL8) input->position.longitude;	/* alpha */
-      lambda->data[2] = (REAL8) input->position.latitude;	/* delta */
+      lambda->data[1] = (REAL8) input->position.longitude;	/* Alpha */
+      lambda->data[2] = (REAL8) input->position.latitude;	/* Delta */
 
       if ( nSpin ) 
 	{
@@ -900,8 +900,8 @@ ConvertTwoDMesh2Grid ( LALStatus *stat,
 	  }
 	  node = node->next;
 
-	  node->alpha = point.longitude;
-	  node->delta = point.latitude;
+	  node->Alpha = point.longitude;
+	  node->Delta = point.latitude;
 
 	} /* if point in polygon */
 
@@ -952,8 +952,8 @@ buildFlatGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *skyRegi
 	  }
 	  node = node->next;
 	  
-	  node->alpha = thisPoint.longitude;
-	  node->delta = thisPoint.latitude;
+	  node->Alpha = thisPoint.longitude;
+	  node->Delta = thisPoint.latitude;
 	} /* if pointInPolygon() */
 	  
       thisPoint.latitude += dDelta;
@@ -989,7 +989,7 @@ buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *sk
   SkyPosition thisPoint;
   DopplerScanGrid head = empty_grid;  /* empty head to start grid-list */
   DopplerScanGrid *node = NULL;
-  REAL8 step_alpha, step_delta, cos_delta;
+  REAL8 step_Alpha, step_Delta, cos_Delta;
 
   INITSTATUS( stat, "makeIsotropicGrid", DOPPLERSCANC );
 
@@ -999,8 +999,8 @@ buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *sk
 
   thisPoint = skyRegion->lowerLeft;	/* start from lower-left corner */
 
-  step_delta = dDelta;	/* delta step-size is fixed */
-  cos_delta = fabs(cos (thisPoint.latitude));
+  step_Delta = dDelta;	/* Delta step-size is fixed */
+  cos_Delta = fabs(cos (thisPoint.latitude));
 
   node = &head;		/* start our grid with an empty head */
 
@@ -1016,18 +1016,18 @@ buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *sk
 	  }
 	  node = node->next;
 	      
-	  node->alpha = thisPoint.longitude;
-	  node->delta = thisPoint.latitude;
+	  node->Alpha = thisPoint.longitude;
+	  node->Delta = thisPoint.latitude;
 	} /* if pointInPolygon() */
       
-      step_alpha = dAlpha / cos_delta;	/* alpha stepsize depends on delta */
+      step_Alpha = dAlpha / cos_Delta;	/* Alpha stepsize depends on Delta */
 
-      thisPoint.longitude += step_alpha;
+      thisPoint.longitude += step_Alpha;
       if (thisPoint.longitude > skyRegion->upperRight.longitude)
 	{
 	  thisPoint.longitude = skyRegion->lowerLeft.longitude;
-	  thisPoint.latitude += step_delta;	
-	  cos_delta = fabs (cos (thisPoint.latitude));
+	  thisPoint.latitude += step_Delta;	
+	  cos_Delta = fabs (cos (thisPoint.latitude));
 	} 
 
       /* this it the break-condition: are we done yet? */
@@ -1158,7 +1158,7 @@ loadSkyGridFile (LALStatus *stat, DopplerScanGrid **grid, const CHAR *fname)
 
       node = node->next;
 
-      if ( 2 != sscanf( data->lines->tokens[i], "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &(node->alpha), &(node->delta)) )
+      if ( 2 != sscanf( data->lines->tokens[i], "%" LAL_REAL8_FORMAT "%" LAL_REAL8_FORMAT, &(node->Alpha), &(node->Delta)) )
 	{
 	  LALPrintError ("\nERROR: could not parse line %d in skyGrid-file '%s'\n\n", i, fname);
 	  freeGrid (head.next);
@@ -1202,7 +1202,7 @@ writeSkyGridFile (LALStatus *stat, const DopplerScanGrid *grid, const CHAR *fnam
   node = grid;
   while (node)
     {
-      fprintf (fp, "%g %g \n", node->alpha, node->delta);
+      fprintf (fp, "%g %g \n", node->Alpha, node->Delta);
       node = node->next;
     }
   
@@ -1228,7 +1228,7 @@ printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const Dopp
   REAL8 v[3], a[3];
   REAL8 np[3], n[3];
   REAL8 fact, kappa0;
-  REAL8 alpha, delta, f0;
+  REAL8 Alpha, Delta, f0;
   REAL8* vel;
   REAL8* acc;
   REAL8 t0e;        /*time since first entry in Earth ephem. table */  
@@ -1303,13 +1303,13 @@ printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const Dopp
   node = scan->grid;
 
   /* signal params */
-  alpha = 0.8;
-  delta = 1.0;
+  Alpha = 0.8;
+  Delta = 1.0;
   f0 = 101.0;
 
-  n[0] = cos(delta) * cos(alpha);
-  n[1] = cos(delta) * sin(alpha);
-  n[2] = sin(delta);
+  n[0] = cos(Delta) * cos(Alpha);
+  n[1] = cos(Delta) * sin(Alpha);
+  n[2] = sin(Delta);
   
   kappa0 = (1.0 + n[0]*v[0] + n[1]*v[1] + n[2]*v[2] );
 
@@ -1318,13 +1318,13 @@ printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const Dopp
 
   while (node)
     {
-      np[0] = cos(node->delta) * cos(node->alpha);
-      np[1] = cos(node->delta) * sin(node->alpha);
-      np[2] = sin(node->delta);
+      np[0] = cos(node->Delta) * cos(node->Alpha);
+      np[1] = cos(node->Delta) * sin(node->Alpha);
+      np[2] = sin(node->Delta);
 
       fact = 1.0 / (1.0 + np[0]*v[0] + np[1]*v[1] + np[2]*v[2] );
       
-      fprintf (fp, "%.7f %.7f %.7f\n", node->alpha, node->delta, fact);
+      fprintf (fp, "%.7f %.7f %.7f\n", node->Alpha, node->Delta, fact);
 
       node = node->next;
     } /* while grid-points */
@@ -1509,7 +1509,8 @@ SkySquare2String (LALStatus *lstat,
   RETURN (lstat);
 
 } /* SkySquare2String() */
-    
+
+/*----------------------------------------------------------------------*/    
 /**
  * determine the 'canonical' stepsizes in all parameter-space directions,
  * either from the metric (--metricType) or using {dAlpha,dDelta} and 
@@ -1522,7 +1523,7 @@ SkySquare2String (LALStatus *lstat,
 void
 getGridSpacings( LALStatus *lstat, 
 		 DopplerPosition *spacings,		/**< OUT: grid-spacings in gridpoint */
-		 const DopplerPosition *gridpoint,	/**< IN: gridpoint to get spacings for*/
+		 DopplerPosition gridpoint,		/**< IN: gridpoint to get spacings for*/
 		 const DopplerScanInit *params)		/**< IN: Doppler-scan parameters */
 {
   REAL8Vector *metric = NULL;
@@ -1531,16 +1532,15 @@ getGridSpacings( LALStatus *lstat,
   UINT4 nSpin, i;
   REAL8 f0;
 
-  INITSTATUS( lstat, "get_dfkdot", DOPPLERSCANC );
+  INITSTATUS( lstat, "getGridSpacings", DOPPLERSCANC );
   ATTATCHSTATUSPTR (lstat); 
 
   ASSERT ( params != NULL, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
   ASSERT ( spacings != NULL, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
-  ASSERT ( gridpoint != NULL, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
 
-  if ( gridpoint->spindown )
+  if ( gridpoint.spindown )
     {
-      nSpin = gridpoint->spindown->length;
+      nSpin = gridpoint.spindown->length;
       ASSERT(spacings->spindown, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
       ASSERT(spacings->spindown->length == nSpin, lstat, 
 	     DOPPLERSCANH_EINPUT,DOPPLERSCANH_MSGEINPUT);
@@ -1563,19 +1563,19 @@ getGridSpacings( LALStatus *lstat,
       /* setup metric parameters */
       metricpar.metricType = params->metricType;
       metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
-      metricpar.position.longitude = gridpoint->alpha;
-      metricpar.position.latitude = gridpoint->delta;
+      metricpar.position.longitude = gridpoint.Alpha;
+      metricpar.position.latitude = gridpoint.Delta;
 
       if ( nSpin ) 
 	{
 	  TRY ( LALSCreateVector (lstat->statusPtr, &(metricpar.spindown), nSpin), lstat);
 	  for (i=0; i < nSpin; i++)
-	    metricpar.spindown->data[i] = gridpoint->spindown->data[i];
+	    metricpar.spindown->data[i] = gridpoint.spindown->data[i];
 	}
       
       metricpar.epoch = params->obsBegin;
       metricpar.duration = params->obsDuration;
-      f0 = gridpoint->freq;		/* keep this, needed later for normalizations */
+      f0 = gridpoint.freq;		/* keep this, needed later for normalizations */
       metricpar.maxFreq = f0;
       
       metricpar.site = params->Detector;
@@ -1607,8 +1607,8 @@ getGridSpacings( LALStatus *lstat,
       gamma_a_a = metric->data[INDEX_A_A];
       gamma_d_d = metric->data[INDEX_D_D];
 
-      spacings->alpha = sqrt ( params->metricMismatch / gamma_a_a );
-      spacings->delta = sqrt ( params->metricMismatch / gamma_d_d );
+      spacings->Alpha = sqrt ( params->metricMismatch / gamma_a_a );
+      spacings->Delta = sqrt ( params->metricMismatch / gamma_d_d );
 
       TRY( LALDDestroyVector (lstat->statusPtr, &metric), lstat);
       metric = NULL;
@@ -1616,8 +1616,8 @@ getGridSpacings( LALStatus *lstat,
   else	/* no metric: use 'naive' value of 1/(2*T^k) [previous default in CFS] */
     {
       spacings->freq = 1.0 / (2.0 * params->obsDuration);
-      spacings->alpha = params->dAlpha;	/* dummy */
-      spacings->delta = params->dDelta;
+      spacings->Alpha = params->dAlpha;	/* dummy */
+      spacings->Delta = params->dDelta;
 
       if (nSpin > 0)
 	spacings->spindown->data[0] = 1.0 / (2.0 * params->obsDuration * params->obsDuration);
@@ -1626,10 +1626,10 @@ getGridSpacings( LALStatus *lstat,
   if (lalDebugLevel >= 1) 
     {
       printf ("\nDEBUG: grid-spacings from metric=%d in point (a,d,f,fdot)=(%g,%g,%g,%g)\n",
-	      params->metricType, gridpoint->alpha, gridpoint->delta, 
-	      gridpoint->freq, gridpoint->spindown ? gridpoint->spindown->data[0] : 0);
+	      params->metricType, gridpoint.Alpha, gridpoint.Delta, 
+	      gridpoint.freq, gridpoint.spindown ? gridpoint.spindown->data[0] : 0);
       printf ("dAlpha = %g, dDelta = %g, dFreq = %g, df1dot = %g\n",
-	      spacings->alpha, spacings->delta,
+	      spacings->Alpha, spacings->Delta,
 	      spacings->freq, spacings->spindown ? spacings->spindown->data[0] : 0);
 
     } /* if lalDebugLevel >= 1 */
@@ -1638,3 +1638,114 @@ getGridSpacings( LALStatus *lstat,
   RETURN(lstat);
 
 } /* getGridSpacings() */
+
+/*----------------------------------------------------------------------*/
+/** Determine a (randomized) cubic DopplerRegion around a search-point 
+ *  with (roughly) the given number of grid-points in each dimension.
+ * 
+ *  Motivation: mainly useful for MC tests of the search-grid. 
+ *              For this we need to simulate a 'small' search-grid around 
+ *              the signal-location.
+ *
+ *  This function tries to estimate a region in parameter-space 
+ *  with roughly the given number of grid-points in each dimension.
+ *  The region will be randomized wrt the central point within one
+ *  grid-spacing in order to avoid systematic effects in MC simulations.
+ *
+ *  PointsPerDim == 0 : DopplerRegion will be only one point (randomized within one cell)
+ *  PointsPerDim == 1 : finite DopplerRegion which will contain (roughly) one gridPoint.
+ */
+void
+getMCDopplerCube (LALStatus *lstat, 
+		  DopplerRegion *cube, 		/**< OUT: 'cube' around signal-position */
+		  DopplerPosition signal, 	/**< signal-position: approximate cube-center */
+		  UINT4 PointsPerDim,		/**< desired number of grid-points per dim. */
+		  const DopplerScanInit *params)/**< search+metric paramters */
+{
+  DopplerPosition spacings = empty_DopplerPosition;
+  REAL8 Alpha, Delta, freq, f1dot;
+  REAL8 dAlpha, dDelta, dfreq, df1dot;
+  REAL8 AlphaBand, DeltaBand, freqBand, f1dotBand;
+  UINT4 nSpin;
+
+  INITSTATUS( lstat, "getMCDopplerCube", DOPPLERSCANC );
+  ATTATCHSTATUSPTR (lstat); 
+
+  ASSERT ( params != NULL, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
+  ASSERT ( cube != NULL, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
+  
+  if ( signal.spindown )
+    nSpin = signal.spindown->length;
+  else
+    nSpin = 0;
+
+  if ( nSpin > 1 ) /* currently only 1 spindown supported (FIXME)*/
+    {
+      LALPrintError ("\nSorry, currently only 1 spindown is supported!\n\n");
+      ABORT (lstat,  DOPPLERSCANH_EINPUT ,  DOPPLERSCANH_MSGEINPUT );
+    }
+
+  /* get the grid-spacings at the signal-location */
+  TRY ( getGridSpacings(lstat->statusPtr, &spacings, signal, params), lstat);
+  dAlpha = spacings.Alpha;
+  dDelta = spacings.Delta;
+  dfreq = spacings.freq;
+  if (nSpin)
+    df1dot = spacings.spindown->data[0];
+  else
+    df1dot = 0;
+
+  /* figure out corresponding Bands in each dimension */
+  AlphaBand = dAlpha * PointsPerDim;
+  DeltaBand = dDelta * PointsPerDim;
+  freqBand  = dfreq  * PointsPerDim;
+  f1dotBand = df1dot * PointsPerDim; 
+
+  /* set center-point to signal-location */
+  Alpha = signal.Alpha;
+  Delta = signal.Delta;
+  freq = signal.freq;
+  if ( nSpin )
+    f1dot = signal.spindown->data[0];
+  else
+    f1dot = 0;
+
+  /* 
+   * randomize center-point within one grid-cell (to avoid systematic effects) 
+   */
+  {	/* first seed random seed if entropy-pool is available */
+    FILE *fpRandom;
+    INT4 seed;
+
+    fpRandom = fopen("/dev/urandom", "r");	/* read Linux random-pool for seed */
+    if ( fpRandom == NULL ) {
+      LALPrintError ("\nCould not read from /dev/urandom ... using normal seed.\n\n");
+    }
+    else
+      {
+	fread(&seed, sizeof(INT4),1, fpRandom);
+	srand(seed);
+	fclose(fpRandom);
+      }
+  } /* set random-seed */
+
+  /* random number between [-1, 1] */
+#define randShift() (2.0 * rand()/RAND_MAX - 1.0)
+
+  Alpha += dAlpha * randShift();
+  Delta += dDelta * randShift();
+  freq  += dfreq  * randShift();
+  f1dot += df1dot * randShift();
+
+  /* convert sky-square into a skyRegionString */
+  TRY ( SkySquare2String (lstat->statusPtr, &(cube->skyRegionString), 
+			  Alpha, Delta, AlphaBand, DeltaBand), lstat);
+  cube->freq = freq;
+  cube->freqBand = freqBand;
+  cube->f1dot = f1dot;
+  cube->f1dotBand = f1dotBand;
+
+  DETATCHSTATUSPTR(lstat);
+  RETURN(lstat);
+
+} /* getMCDopplerCube() */
