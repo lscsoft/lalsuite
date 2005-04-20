@@ -245,7 +245,10 @@ int main(int argc,char *argv[])
   if (uvar_help)
     exit (0);
 
-  
+  if ( !uvar_binary ) {
+    LALPrintError ("\nSorry, this code is not functional in the NON-binary case\n\n");
+    exit (COMPUTEFSTATC_EINPUT);
+  }
 
   LAL_CALL ( SetGlobalVariables (&status, &GV), &status);
   
@@ -310,7 +313,6 @@ int main(int argc,char *argv[])
     if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
     scanInit.Detector = &GV.Detector;
     scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
-    scanInit.skyRegion = GV.skyRegion;
     scanInit.skyGridFile = uvar_skyGridFile;
   
   
@@ -393,7 +395,6 @@ int main(int argc,char *argv[])
 	  /* Have we scanned all DopplerPositions yet? */
 	  if (thisScan.state == STATE_FINISHED)
 	    break;
-	  LALNormalizeSkyPosition (&status, &thisPoint, &(dopplerpos.skypos) );
 	  
 	  Alpha = thisPoint.longitude;
 	  Delta = thisPoint.latitude;
