@@ -94,7 +94,7 @@ typedef struct {
   REAL8 fmax; 			/**< max frequency of search */
   LALDetector *Detector; 	/**< Our detector*/
   EphemerisData *ephemeris;	/**< ephemeris for "exact" metric */
-  CHAR *skyRegion;		/**< list of sky-positions describing a sky-region */
+  CHAR *skyRegionString;	/**< list of sky-positions describing a sky-region */
   CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) for GRID_FILE */
 } DopplerScanInit;
 

@@ -49,7 +49,7 @@ typedef struct {
   CHAR **filelist; 		/**< array of filenames to load SFTs from */
   LALDetector Detector;         /**< Our detector*/
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
-  CHAR *skyRegion;		/**< sky-region to search (polygon defined by list of points) */
+  CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
 } ConfigVariables;
   
 struct headertag {

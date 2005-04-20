@@ -84,26 +84,26 @@ static PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 static DopplerPosition empty_DopplerPosition;
 
 /* internal prototypes */
-void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
-void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params );
-void LALTemplateDistance (LALStatus *stat, REAL8 *dist, const DopplerPosition *pos1, const DopplerPosition *pos2);
+void getRange( LALStatus *, REAL4 y[2], REAL4 x, void *params );
+void getMetric( LALStatus *, REAL4 g[3], REAL4 skypos[2], void *params );
+void LALTemplateDistance (LALStatus *, REAL8 *dist, const DopplerPosition *pos1, const DopplerPosition *pos2);
 REAL8 getDopplermax(EphemerisData *edat);
 
-void ConvertTwoDMesh2Grid ( LALStatus *stat, DopplerScanGrid **grid, const TwoDMeshNode *mesh2d, const SkyRegion *region );
+void ConvertTwoDMesh2Grid ( LALStatus *, DopplerScanGrid **grid, const TwoDMeshNode *mesh2d, const SkyRegion *region );
 
 BOOLEAN pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon );
 
 void gridFlipOrder ( TwoDMeshNode *grid );
 
-void buildFlatGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *region, REAL8 dAlpha, REAL8 dDelta);
-void buildIsotropicGrid (LALStatus *stat, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta);
-void buildMetricGrid (LALStatus *stat, DopplerScanGrid **grid, SkyRegion *skyRegion,  const DopplerScanInit *init);
-void loadSkyGridFile (LALStatus *stat, DopplerScanGrid **grid, const CHAR *fname);
+void buildFlatGrid (LALStatus *, DopplerScanGrid **grid, const SkyRegion *region, REAL8 dAlpha, REAL8 dDelta);
+void buildIsotropicGrid (LALStatus *, DopplerScanGrid **grid, const SkyRegion *skyRegion, REAL8 dAlpha, REAL8 dDelta);
+void buildMetricGrid (LALStatus *, DopplerScanGrid **grid, SkyRegion *skyRegion,  const DopplerScanInit *init);
+void loadSkyGridFile (LALStatus *, DopplerScanGrid **grid, const CHAR *fname);
 
-void plotGrid (LALStatus *stat, DopplerScanGrid *grid, const SkyRegion *region, const DopplerScanInit *init);
+void plotGrid (LALStatus *, DopplerScanGrid *grid, const SkyRegion *region, const DopplerScanInit *init);
 
-void freeGrid (DopplerScanGrid *grid);
-void printFrequencyShifts ( LALStatus *stat, const DopplerScanState *scan, const DopplerScanInit *init);
+void freeGrid(DopplerScanGrid *grid);
+void printFrequencyShifts(LALStatus *, const DopplerScanState *scan, const DopplerScanInit *init);
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
 /*----------------------------------------------------------------------*/
@@ -124,7 +124,7 @@ InitDopplerScan( LALStatus *stat,
   ASSERT ( init->gridType < GRID_LAST, stat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
   
   /* trap some abnormal input */
-  if ( (init->gridType != GRID_FILE) && (init->skyRegion == NULL) ) 
+  if ( (init->gridType != GRID_FILE) && (init->skyRegionString == NULL) ) 
     {
       LALPrintError ( "\nERROR: No sky-region was specified!\n\n");
       ABORT (stat,  DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
@@ -140,7 +140,7 @@ InitDopplerScan( LALStatus *stat,
   scan->gridNode = NULL;
   
   if (init->gridType != GRID_FILE ) {
-    TRY (ParseSkyRegionString(stat->statusPtr, &(scan->skyRegion), init->skyRegion ), stat);
+    TRY (ParseSkyRegionString(stat->statusPtr, &(scan->skyRegion), init->skyRegionString), stat);
 
     if (scan->skyRegion.numVertices == 2){ /* anomaly! Allowed are either 1 or >= 3 */
       ABORT (stat, DOPPLERSCANH_E2DSKY, DOPPLERSCANH_MSGE2DSKY);

@@ -480,10 +480,13 @@ int main(int argc,char *argv[])
   scanInit.fmax += uvar_FreqBand;
   scanInit.Detector = &GV.Detector;
   scanInit.ephemeris = GV.edat;         /* used by Ephemeris-based metric */
-  scanInit.skyRegion = GV.skyRegion;
+  scanInit.skyRegionString = GV.skyRegionString;
   scanInit.skyGridFile = uvar_skyGridFile;      /* if applicable */
-  scanInit.searchNeighbors = uvar_searchNeighbors;
 
+  /* the following fct generates a skygrid plus determines dFreq, df1dot,..
+   * Currently the complete template-grid is more of a 'foliation'
+   * by skygrids along f and f1dot, not a full 4D metric template-grid
+   */
   LAL_CALL ( InitDopplerScan( stat, &thisScan, &scanInit), stat); 
 
   /* ---------- should we write the sky-grid to disk? ---------- */
@@ -2109,7 +2112,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       }
     if ( haveSkyRegion && haveAlphaDelta )
       {
-        LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
+        LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta)"
+		       " OR skyRegion!\n\n");
         ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
     if ( useGridFile && !haveGridFile )
@@ -2119,15 +2123,18 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       }
     if ( !useGridFile && haveGridFile )
       {
-        LALWarning (status, "\nWARNING: skyGridFile was specified but not needed ... will be ignored\n");
+        LALWarning (status, "\nWARNING: skyGridFile was specified but not needed ..."
+		    " will be ignored\n");
       }
     if ( useGridFile && (haveSkyRegion || haveAlphaDelta) )
       {
-        LALWarning (status, "\nWARNING: We are using skyGridFile, but sky-region was also specified ... will be ignored!\n");
+        LALWarning (status, "\nWARNING: We are using skyGridFile, but sky-region was"
+		    " also specified ... will be ignored!\n");
       }
     if ( !useMetric && haveMetric) 
       {
-        LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
+        LALWarning (status, "\nWARNING: Metric was specified for non-metric grid..."
+		    " will be ignored!\n");
       }
     if ( useMetric && !haveMetric) 
       {
@@ -2138,36 +2145,15 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     /* pre-process template-related input */
     if (haveSkyRegion)
       {
-        cfg->skyRegion = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-        strcpy (cfg->skyRegion, uvar_skyRegion);
+        cfg->skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+        strcpy (cfg->skyRegionString, uvar_skyRegion);
       }
     else if (haveAlphaDelta)    /* parse this into a sky-region */
       {
-        REAL8 eps = 1.0e-9;
-        REAL8 a, d, Da, Dd;
-        a = uvar_Alpha;
-        d = uvar_Delta;
-
-	/* slightly push outwards to make sure boundary-points are included */
-        Da = uvar_AlphaBand + eps;      
-        Dd = uvar_DeltaBand + eps;
-        /* consistency check either one point given or a 2D region! */
-        ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), status, 
-		 COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-      
-        cfg->skyRegion = (CHAR*)LALMalloc (512); /* should be enough for max 4 points... */
-        if ( (Da == 0) || (Dd == 0) )   /* only one point */
-          sprintf (cfg->skyRegion, "(%.16f, %.16f)", a, d);
-        else                            /* or a rectangle */
-          sprintf (cfg->skyRegion, 
-		   "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
-                   a, d, 
-                   a + Da, d, 
-                   a + Da, d + Dd,
-                   a, d + Dd );
+	TRY ( SkySquare2String( status->statusPtr, &(cfg->skyRegionString), 
+				uvar_Alpha, uvar_Delta, 
+				uvar_AlphaBand, uvar_DeltaBand), status);
       }
-    
-
   } /* end: template-grid stuff */
 
   /* ----------------------------------------------------------------------*/
@@ -2389,10 +2375,10 @@ void Freemem(LALStatus *status)
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars(status->statusPtr), status);
 
-  if (GV.skyRegion)
+  if (GV.skyRegionString)
     {
-      LALFree ( GV.skyRegion );
-      GV.skyRegion = NULL;
+      LALFree ( GV.skyRegionString );
+      GV.skyRegionString = NULL;
     }
 
   /* this comes from clusters.c */

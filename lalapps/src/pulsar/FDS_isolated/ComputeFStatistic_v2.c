@@ -70,7 +70,7 @@ typedef struct {
   UINT4 nsamples;		/**< number of frequency-bins in an SFT */
   LALDetector Detector;         /**< Our detector*/
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
-  CHAR *skyRegion;		/**< sky-region to search (polygon defined by list of points) */
+  CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
   LIGOTimeGPSVector timestamps; /**< SFT timestamps */
   LIGOTimeGPSVector midTS;	/**< midpoints of SFT's */
   computeFStatPar *CFSparams;  	/**< Demodulation parameters for computeFStat() */
@@ -314,7 +314,7 @@ int main(int argc,char *argv[])
   scanInit.fmax  = uvar_Freq + uvar_FreqBand;
   scanInit.Detector = &GV.Detector;
   scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
-  scanInit.skyRegion = GV.skyRegion;
+  scanInit.skyRegionString = GV.skyRegionString;
   scanInit.skyGridFile = uvar_skyGridFile;
   
   if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
@@ -979,29 +979,14 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     /* pre-process template-related input */
     if (haveSkyRegion)
       {
-	cfg->skyRegion = LALCalloc(1, strlen(uvar_skyRegion)+1);
-	strcpy (cfg->skyRegion, uvar_skyRegion);
+	cfg->skyRegionString = LALCalloc(1, strlen(uvar_skyRegion)+1);
+	strcpy (cfg->skyRegionString, uvar_skyRegion);
       }
     else if (haveAlphaDelta)	/* parse this into a sky-region */
       {
-	REAL8 eps = 1.0e-9;
-	REAL8 a, d, Da, Dd;
-	a = uvar_Alpha;
-	d = uvar_Delta;
-	Da = uvar_AlphaBand + eps;	/* slightly push outwards to make sure boundary-points are included */
-	Dd = uvar_DeltaBand + eps;
-	/* consistency check either one point given or a 2D region! */
-	ASSERT ( (Da && Dd)  || ((Da == 0) && (Dd == 0.0)), stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-      
-	cfg->skyRegion = LALMalloc (512); /* should be enough for max 4 points... */
-	if ( (Da == 0) || (Dd == 0) ) 	/* only one point */
-	  sprintf (cfg->skyRegion, "(%.16f, %.16f)", a, d);
-	else				/* or a rectangle */
-	  sprintf (cfg->skyRegion, "(%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f), (%.16f, %.16f)", 
-		   a, d, 
-		   a + Da, d, 
-		   a + Da, d + Dd,
-		   a, d + Dd );
+	TRY ( SkySquare2String( stat->statusPtr, &(cfg->skyRegionString), 
+				uvar_Alpha, uvar_Delta, 
+				uvar_AlphaBand, uvar_DeltaBand), stat);
       }
     
   } /* end: template-grid stuff */
@@ -1177,7 +1162,7 @@ Freemem(LALStatus *stat,  ConfigVariables *cfg)
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (stat->statusPtr), stat);
 
-  LALFree ( cfg->skyRegion );
+  LALFree ( cfg->skyRegionString );
 
   /* this comes from clusters.c */
   if (highFLines->clusters) LALFree(highFLines->clusters);
