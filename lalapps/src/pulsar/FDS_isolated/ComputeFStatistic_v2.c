@@ -314,7 +314,7 @@ int main(int argc,char *argv[])
   scanInit.fmax  = uvar_Freq + uvar_FreqBand;
   scanInit.Detector = &GV.Detector;
   scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
-  scanInit.skyRegionString = GV.skyRegionString;
+  scanInit.searchRegion.skyRegionString = GV.skyRegionString;
   scanInit.skyGridFile = uvar_skyGridFile;
   
   if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");

@@ -199,7 +199,7 @@ int polka(int argc,char *argv[]);
 #define COMPUTEFSTAT_EXIT_READSFTFAIL     8  /* ReadSFT failed */
 #define COMPUTEFSTAT_EXIT_OPENFMAX        9  /* error opening Fmax file */
 #define COMPUTEFSTAT_EXIT_OPENFSTAT      10  /* error opening FStats file */
-#define COMPUTEFSTAT_EXIT_OPENFSTAT2     11  /* error opening FStats file for append (checkpointing) */
+#define COMPUTEFSTAT_EXIT_OPENFSTAT2     11  /* error opening FStats file for append (chkpt) */
 #define COMPUTEFSTAT_EXIT_WRITEFSTAT     12  /* error opening FStats file */
 #define COMPUTEFSTAT_EXIT_WRITEFAFB      13  /* writeFaFb failed */
 #define COMPUTEFSTAT_EXIT_ESTSIGPAR      14  /* EstimateSignalParameters failed */
@@ -214,7 +214,7 @@ int polka(int argc,char *argv[]);
 #define COMPUTEFSTAT_EXIT_BOINCRESOLVE   23   /* boinc_resolve_filename failed */
 #define COMPUTEFSTAT_EXIT_DLOPEN         24   /* problems with dynamic lib */
 #define COMPUTEFSTAT_EXIT_WORKER         25   /* can't start worker-thread */
-#define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* this is added to the LAL status to get BOINC exit value */
+#define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* added to LAL status for BOINC exit value */
 
 /*----------------------------------------------------------------------
  * User-variables: can be set from config-file or command-line */
@@ -251,7 +251,7 @@ CHAR *uvar_outputFstat;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
-UINT4 uvar_searchNeighbors;
+INT4 uvar_searchNeighbors;
 BOOLEAN uvar_openDX;
 BOOLEAN uvar_doCheckpointing;
 INT4 uvar_expLALDemod;
@@ -263,29 +263,28 @@ BOOLEAN uvar_useCompression;
 /*----------------------------------------------------------------------*/
 /* some other global variables */
 
-FFT **SFTData=NULL;             /**< SFT Data for LALDmod */
-DemodPar *DemodParams  = NULL;  /**< Demodulation parameters for LALDemod */
-LIGOTimeGPS *timestamps=NULL;   /**< Time stamps from SFT data */
-LALFstat Fstat;                 /**< output from LALDemod(): F-statistic and amplitudes Fa and Fb */
-AMCoeffs amc;                   /**< amplitude-modulation coefficients (and derived quantities) */
-REAL8 Alpha,Delta;              /**< sky-position currently searched (equatorial coords, radians) */
-Clusters HFLines;               /**< stores information about outliers/clusters in F-statistic */
-Clusters HPLines;               /**< stores information about outliers/clusters in SFT-power spectrum */
+FFT **SFTData=NULL;	/**< SFT Data for LALDmod */
+DemodPar *DemodParams;	/**< Demodulation parameters for LALDemod */
+LIGOTimeGPS *timestamps;/**< Time stamps from SFT data */
+LALFstat Fstat;		/**< output from LALDemod(): F-statistic and amplitudes Fa and Fb */
+AMCoeffs amc; 		/**< amplitude-modulation coefficients (and derived quantities) */
+REAL8 Alpha,Delta;	/**< sky-position currently searched (equatorial coords, radians) */
+Clusters HFLines;	/**< stores information about outliers/clusters in F-statistic */
+Clusters HPLines;	/**< stores information about outliers/clusters in SFT-power spectrum */
 Clusters *highSpLines=&HPLines, *highFLines=&HFLines;
 
-REAL8 medianbias=1.0;           /**< bias in running-median depending on window-size (set in NormaliseSFTDataRngMdn()) */
+REAL8 medianbias=1.0;	/**< median-bias depending on window-size */
 
-FILE *fp_mergedSFT;             /**< input-file containing merged SFTs */
-FILE *fpmax;                    /**< output-file: maximum of F-statistic over frequency-range */
-FILE *fpstat=NULL;              /**< output-file: F-statistic candidates and cluster-information */
+FILE *fp_mergedSFT;	/**< input-file containing merged SFTs */
+FILE *fpmax;		/**< output-file: maximum of F-statistic over frequency-range */
+FILE *fpstat=NULL;	/**< output-file: F-statistic candidates and cluster-information */
 
-ConfigVariables GV;             /**< global container for various derived configuration settings */
-int reverse_endian=-1;          /**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
-CHAR Fstatsfilename[256];               /* Fstats file name*/
-CHAR ckp_fname[260];                    /* filename of checkpoint-file, global for polka */
-CHAR *Outputfilename;           /* Name of output file, either Fstats- or Polka file name*/
-INT4 cfsRunNo = 0;                  /* the CFS run no if ran multiple times 0=run only once, 1=first run, 2=second run */
-
+ConfigVariables GV;	/**< global container for various derived configuration settings */
+int reverse_endian=-1;	/**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
+CHAR Fstatsfilename[256]; /**< Fstats file name*/
+CHAR ckp_fname[260];	/**< filename of checkpoint-file, global for polka */
+CHAR *Outputfilename;	/**< Name of output file, either Fstats- or Polka file name*/
+INT4 cfsRunNo = 0;	/**< CFS run-number: 0=run only once, 1=first run, 2=second run */
 
 /*----------------------------------------------------------------------*/
 /* local prototypes */
@@ -306,7 +305,8 @@ extern "C" {
   INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
   int compare(const void *ip, const void *jp);
   INT4 writeFaFb(INT4 *maxIndex);
-  void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
+  void checkUserInputConsistency (LALStatus *lstat);
+  void getSearchRegion (LALStatus *, DopplerRegion *searchRegion, const DopplerScanInit *params);
 
   void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
   static void swap2(char *location);
@@ -342,12 +342,6 @@ extern "C" {
 #endif
 
 extern int vrbflg;
-
-/*----------------------------------------------------------------------*/
-/* empty structs for initialziations */
-
-DopplerScanState empty_DopplerScanState;
-DopplerScanInit empty_DopplerScanInit;
 
 /* initialize LAL-status.  
  * Note: for this to be thread safe, you MUST not use *this* status structure 
@@ -460,6 +454,9 @@ int main(int argc,char *argv[])
   LAL_CALL (WriteFStatLog (stat, argv), stat);
 #endif /* !USE_BOINC */
 
+  /* do some sanity checks on the user-input before we proceed */
+  LAL_CALL ( checkUserInputConsistency(stat), stat);
+
   /* main initialization of the code: */
   LAL_CALL ( InitFStat(stat, &GV), stat);
   
@@ -476,16 +473,32 @@ int main(int argc,char *argv[])
   scanInit.obsBegin.gpsSeconds = GV.Ti;
   scanInit.obsBegin.gpsNanoSeconds = 0;
   scanInit.obsDuration = (REAL8) (GV.Tf - GV.Ti);
-  scanInit.fmax  = uvar_Freq;
-  scanInit.fmax += uvar_FreqBand;
+  scanInit.fmax  = uvar_Freq + uvar_FreqBand;
   scanInit.Detector = &GV.Detector;
   scanInit.ephemeris = GV.edat;         /* used by Ephemeris-based metric */
-  scanInit.skyRegionString = GV.skyRegionString;
   scanInit.skyGridFile = uvar_skyGridFile;      /* if applicable */
 
-  /* the following fct generates a skygrid plus determines dFreq, df1dot,..
-   * Currently the complete template-grid is more of a 'foliation'
-   * by skygrids along f and f1dot, not a full 4D metric template-grid
+  /* figure out searchRegion from UserInput and possibly --searchNeighbors */
+  scanInit.searchRegion = empty_DopplerRegion;	/* set to empty first */
+  LAL_CALL ( getSearchRegion(stat, &(GV.searchRegion), &scanInit ), stat);
+  scanInit.searchRegion = GV.searchRegion;   /* initialize DopplerScan with result */
+
+  if ( lalDebugLevel )
+    {
+      printf ("\nDEBUG: search-point Alpha=%.16g, Delta=%.16g, freq=%.16g, f1dot=%.16g\n\n",
+	      uvar_Alpha, uvar_Delta, uvar_Freq, uvar_f1dot);
+      printf ("DEBUG: Final search-region:\n");
+      printf ("       skyRegion = '%s'\n", GV.searchRegion.skyRegionString);
+      printf ("       freq in  = [%.16g, %.16g]\n", 
+	      GV.searchRegion.freq, GV.searchRegion.freq + GV.searchRegion.freqBand);
+      printf ("       f1dot in = [%.16g, %.16g]\n\n",
+	      GV.searchRegion.f1dot, GV.searchRegion.f1dot + GV.searchRegion.f1dotBand);
+    }
+
+  /* the following call generates a skygrid plus determines dFreq, df1dot,..
+   * Currently the complete template-grid is more like a 'foliation' of
+   * the parameter-space by skygrids, stacked along f and f1dot, 
+   * not a full 4D metric template-grid
    */
   LAL_CALL ( InitDopplerScan( stat, &thisScan, &scanInit), stat); 
 
@@ -508,25 +521,29 @@ int main(int argc,char *argv[])
   else
     GV.df1dot = uvar_df1dot;
 
-  /*Number of freq- and spindown values to calculate F for */
-  GV.FreqImax=(INT4)(uvar_FreqBand/GV.dFreq + 0.5) + 1;  
-  GV.SpinImax= (INT4)(uvar_f1dotBand/ GV.df1dot + 0.5) + 1;  
+  if ( lalDebugLevel ) {
+    printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
+	    GV.dFreq, GV.df1dot);
+  }
+
+  /* Number of freq- and spindown values to calculate F for */
+  GV.FreqImax = (INT4)(GV.searchRegion.freqBand / GV.dFreq + 0.5) + 1;  
+  GV.SpinImax = (INT4)(GV.searchRegion.f1dotBand/ GV.df1dot + 0.5) + 1;  
 
   if (lalDebugLevel >= 1)
     {
-      printf ("\nFrequency-band: %g, frequency resolution dFreq = %g\n", 
-	      uvar_FreqBand, GV.dFreq);
-      printf ("Frequency-templates: %d, first frequency-value: %g\n", 
-	      GV.FreqImax, uvar_Freq);
-
-      printf ("Spindown-band: %g, spindown-resolution df1dot = %g\n",
-	      uvar_f1dotBand, GV.df1dot);
-      printf ("Spindown-templates: %d, first spindown-value: %g\n\n", 
-	      GV.SpinImax, uvar_f1dot);
+      printf ("Frequency-templates: %d, first frequency-value: %.16g\n", 
+	      GV.FreqImax, GV.searchRegion.freq);
+      printf ("Spindown-templates: %d, first spindown-value: %.16g\n\n", 
+	      GV.SpinImax, GV.searchRegion.f1dot);
     }
-
-  GV.ifmax = (INT4) ceil((1.0+DOPPLERMAX)*(uvar_Freq+uvar_FreqBand)*GV.tsft)+uvar_Dterms;
-  GV.ifmin = (INT4) floor((1.0-DOPPLERMAX)*uvar_Freq*GV.tsft)-uvar_Dterms;
+  {
+    REAL8 f_min, f_max;
+    f_min = GV.searchRegion.freq;
+    f_max = f_min + GV.searchRegion.freqBand;
+    GV.ifmin = (INT4) floor( (1.0-DOPPLERMAX)* f_min * GV.tsft) - uvar_Dterms;
+    GV.ifmax = (INT4) ceil( (1.0+DOPPLERMAX) * f_max * GV.tsft) + uvar_Dterms;
+  }
 
   /* allocate F-statistic arrays */
   Fstat.F =(REAL8*)LALMalloc(GV.FreqImax*sizeof(REAL8));
@@ -985,7 +1002,7 @@ initUserVars (LALStatus *stat)
   uvar_workingDir = (CHAR*)LALMalloc(512);
   strcpy(uvar_workingDir, ".");
 
-  uvar_searchNeighbors = 0;
+  uvar_searchNeighbors = -1;
   
   /* if user does not set start/end times, use all SFTs */
   uvar_startTime = -1.0e308;
@@ -1441,7 +1458,7 @@ void CreateDemodParams (LALStatus *status)
   amParams->das->pSource->equatorialCoords.longitude = Alpha;
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
-  amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
+  amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!*/
   amParams->leapAcc = LALLEAPSEC_STRICT;
 
  /* Mid point of each SFT */
@@ -1701,7 +1718,8 @@ int ReadSFTData(void)
       errorcode=fread((void*)(SFTData[fileno]->fft->data->data), sizeof(COMPLEX8), ndeltaf, fp);
       if (errorcode!=ndeltaf){
         perror(GV.filelist[fileno]);
-        fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", (int)errorcode, ndeltaf);
+        fprintf(stderr, "The SFT data was truncated.  Only read %d not %d complex floats\n", 
+		(int)errorcode, ndeltaf);
         return 6;
       }
       /* reverse byte order if needed */
@@ -1730,9 +1748,9 @@ int ReadSFTData(void)
 
 } /* ReadSFTData() */
 
+/*----------------------------------------------------------------------*/
 /** Do some basic initializations of the F-statistic code before starting the main-loop.
  * Things we do in this function: 
- * \li check consistency of user-input
  * \li prepare ephemeris-data and determine SFT input-files to be loaded
  * \li set some defaults + allocate memory 
  * \li Return 'derived' configuration settings in the struct \em ConfigVariables
@@ -1756,74 +1774,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
   INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
-
-  /* ----------------------------------------------------------------------
-   * do some sanity checks on the user-input before we proceed 
-   */
-  if (!uvar_mergedSFTFile && (uvar_startTime>-1.0e308 || uvar_endTime<1.0e308)) {
-    LALPrintError ( "\nThe --startTime and --endTIme options may ONLY be used\n"
-                    "with merged SFT files, specified with the -B option.\n"
-                    "Try ./ComputeFStatistic -h \n\n");
-    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
-  }
-  
-  if(!uvar_DataDir && !uvar_mergedSFTFile)
-    {
-      LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
-                      "No SFT directory specified; input directory with -D option.\n"
-                      "No merged SFT file specified; input file with -B option.\n"
-                      "Try ./ComputeFStatistic -h \n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
-    }
-
-  if(uvar_DataDir && uvar_mergedSFTFile)
-    {
-      LALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
-                      "Try ./ComputeFStatistic -h \n\n" );
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }      
-
-  if (uvar_ephemYear == NULL)
-    {
-      LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }      
-  /* don't allow negative frequency-band for safety */
-  if ( uvar_FreqBand < 0)
-    {
-      LALPrintError ("\nNegative value of frequency-band not allowed !\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
-
-  /* don't allow negative bands (for safty in griding-routines) */
-  if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
-    {
-      LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
-  /* check for negative stepsizes in Freq, Alpha, Delta */
-  if ( LALUserVarWasSet(&uvar_dAlpha) && (uvar_dAlpha < 0) )
-    {
-      LALPrintError ("\nNegative value of stepsize dAlpha not allowed!\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
-  if ( LALUserVarWasSet(&uvar_dDelta) && (uvar_dDelta < 0) )
-    {
-      LALPrintError ("\nNegative value of stepsize dDelta not allowed!\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
-  if ( LALUserVarWasSet(&uvar_dFreq) && (uvar_dFreq < 0) )
-    {
-      LALPrintError ("\nNegative value of stepsize dFreq not allowed!\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
-
-  if ( uvar_searchNeighbors && (uvar_AlphaBand||uvar_DeltaBand||uvar_FreqBand||uvar_f1dotBand) )
-    {
-      LALPrintError ("\nERROR: specify only one search-location if using --searchNeighbors\n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
-  /*----------------------------------------------------------------------*/
 
   /* set the current working directory */
   if(chdir(uvar_workingDir) != 0)
@@ -1867,7 +1817,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if (!boinc_resolve_filename("earth.zip", zippedname,sizeof(zippedname))) {
       /* if there is, unzip it into the current directory */
       if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "./"))) {
-        fprintf(stderr, "Error in unzipping file %s to earth.  Return value %d\n", zippedname, boinczipret);
+        fprintf(stderr, "Error in unzipping file %s to earth.  Return value %d\n", 
+		zippedname, boinczipret);
         boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
       }
     }
@@ -1875,7 +1826,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if (!boinc_resolve_filename("sun.zip", zippedname, sizeof(zippedname))) {
       /* if there is, unzip it into the current directory */
       if ((boinczipret=boinc_zip(UNZIP_IT, zippedname, "./"))) {
-        fprintf(stderr, "Error in unzipping file %s to sun.  Return value %d\n", zippedname, boinczipret);
+        fprintf(stderr, "Error in unzipping file %s to sun.  Return value %d\n", 
+		zippedname, boinczipret);
         boinc_finish(COMPUTEFSTAT_EXIT_CANTUNZIP);
       }
     }
@@ -1904,7 +1856,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       char tmp[256];
 
       /* prepare memory for another filename */
-      if ( (cfg->filelist = (CHAR**)LALRealloc( cfg->filelist, (fileno+1) * sizeof(CHAR*))) == NULL) {
+      if ( (cfg->filelist=(CHAR**)LALRealloc(cfg->filelist, (fileno+1)*sizeof(CHAR*)))==NULL) {
         ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
       }
       /* store a "file name" composed of merged name + block number */
@@ -1984,9 +1936,10 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     }
     while ((UINT4)fileno < (UINT4)globbuf.gl_pathc) 
       {
-        if ( (cfg->filelist[fileno] = (CHAR*)LALCalloc(1, strlen(globbuf.gl_pathv[fileno])+1)) == NULL) {
-          ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-        }
+        if ((cfg->filelist[fileno]=(CHAR*)LALCalloc(1,strlen(globbuf.gl_pathv[fileno])+1))== NULL)
+	  {
+	    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	  }
         strcpy(cfg->filelist[fileno],globbuf.gl_pathv[fileno]);
         fileno++;
       }
@@ -2081,83 +2034,16 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else
     {
-      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
+      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO',"
+		     " 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
-  /*----------------------------------------------------------------------
-   * initialize+check  template-grid related parameters 
-   */
-  {
-    BOOLEAN haveSkyRegion, haveAlphaDelta, haveGridFile, useGridFile, haveMetric, useMetric;
-
-    haveSkyRegion  = (uvar_skyRegion != NULL);
-    haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
-    haveGridFile   = (uvar_skyGridFile != NULL);
-    useGridFile   = (uvar_gridType == GRID_FILE);
-    haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
-    useMetric     = (uvar_gridType == GRID_METRIC);
 
 #if USE_BOINC
-    if (haveGridFile)
+    if (uvar_skyGridFile)
       use_boinc_filename1(&(uvar_skyGridFile));
-    /*
-      if storage is allocated dynamically, use this instead!
-          use_boinc_filename0(uvar_skyGridFile);
-    */
 #endif
-
-    /* some consistency checks on input to help catch errors */
-    if ( !useGridFile && !(haveSkyRegion || haveAlphaDelta) )
-      {
-        LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
-        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-      }
-    if ( haveSkyRegion && haveAlphaDelta )
-      {
-        LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta)"
-		       " OR skyRegion!\n\n");
-        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-      }
-    if ( useGridFile && !haveGridFile )
-      {
-        LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
-        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);  
-      }
-    if ( !useGridFile && haveGridFile )
-      {
-        LALWarning (status, "\nWARNING: skyGridFile was specified but not needed ..."
-		    " will be ignored\n");
-      }
-    if ( useGridFile && (haveSkyRegion || haveAlphaDelta) )
-      {
-        LALWarning (status, "\nWARNING: We are using skyGridFile, but sky-region was"
-		    " also specified ... will be ignored!\n");
-      }
-    if ( !useMetric && haveMetric) 
-      {
-        LALWarning (status, "\nWARNING: Metric was specified for non-metric grid..."
-		    " will be ignored!\n");
-      }
-    if ( useMetric && !haveMetric) 
-      {
-        LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
-        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
-      }
-
-    /* pre-process template-related input */
-    if (haveSkyRegion)
-      {
-        cfg->skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
-        strcpy (cfg->skyRegionString, uvar_skyRegion);
-      }
-    else if (haveAlphaDelta)    /* parse this into a sky-region */
-      {
-	TRY ( SkySquare2String( status->statusPtr, &(cfg->skyRegionString), 
-				uvar_Alpha, uvar_Delta, 
-				uvar_AlphaBand, uvar_DeltaBand), status);
-      }
-  } /* end: template-grid stuff */
 
   /* ----------------------------------------------------------------------*/
   /*
@@ -2203,21 +2089,296 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   }/* end: init AM- and demod-params */
 
   /* Tell the user what we have arrived at */
-#ifdef DEBG_SGV
-    fprintf(stdout,"\n");
-    fprintf(stdout,"# SFT time baseline:                  %f min\n",header.tbase/60.0);
-    fprintf(stdout,"# SFT freq resolution:                %f Hz\n",df);
-    fprintf(stdout,"# Starting search frequency:          %f Hz\n",uvar_Freq);
-    fprintf(stdout,"# Demodulation frequency band:        %f Hz\n",uvar_FreqBand);
-    fprintf(stdout,"# no of SFT in a DeFT:                %f\n",ceil((1.0*(cfg->Tf - cfg->Ti))/header.tbase));
-    fprintf(stdout,"# Actual # of SFTs:                   %d\n",cfg->SFTno);
-    fprintf(stdout,"# ==> DeFT baseline:                  %f hours\n",(cfg->Tf - cfg->Ti)/3600.0);
-#endif
+  if ( lalDebugLevel >= 2)
+    {
+      printf("\nDEBUG:\n");
+      printf("# SFT time baseline:                  %f min\n",header.tbase/60.0);
+      printf("# Starting search frequency:          %f Hz\n",uvar_Freq);
+      printf("# Demodulation frequency band:        %f Hz\n",uvar_FreqBand);
+      printf("# Actual # of SFTs:                   %d\n", cfg->SFTno);
+      printf("# total observation time:             %f hours\n",(cfg->Tf - cfg->Ti)/3600.0);
+    } /* lalDebugLevel */
 
     DETATCHSTATUSPTR (status);
     RETURN (status);
 
 } /* InitFStat() */
+
+
+/*----------------------------------------------------------------------*/
+/** Some general consistency-checks on user-input.
+ * Throws an error plus prints error-message if problems are found.
+ */
+void
+checkUserInputConsistency (LALStatus *lstat)
+{
+
+  INITSTATUS (lstat, "checkUserInputConsistency", rcsid);  
+
+  if (!uvar_mergedSFTFile && (uvar_startTime>-1.0e308 || uvar_endTime<1.0e308)) {
+    LALPrintError ( "\nThe --startTime and --endTIme options may ONLY be used\n"
+                    "with merged SFT files, specified with the -B option.\n"
+                    "Try ./ComputeFStatistic -h \n\n");
+    ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+  }
+  
+  if(!uvar_DataDir && !uvar_mergedSFTFile)
+    {
+      LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
+                      "No SFT directory specified; input directory with -D option.\n"
+                      "No merged SFT file specified; input file with -B option.\n"
+                      "Try ./ComputeFStatistic -h \n\n");
+      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+    }
+
+  if(uvar_DataDir && uvar_mergedSFTFile)
+    {
+      LALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
+                      "Try ./ComputeFStatistic -h \n\n" );
+      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }      
+
+  if (uvar_ephemYear == NULL)
+    {
+      LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
+      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }      
+  /* don't allow negative frequency-band for safety */
+  if ( uvar_FreqBand < 0)
+    {
+      LALPrintError ("\nNegative value of frequency-band not allowed !\n\n");
+      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+
+  /* don't allow negative bands (for safty in griding-routines) */
+  if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
+    {
+      LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
+      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+  /* check for negative stepsizes in Freq, Alpha, Delta */
+  if ( LALUserVarWasSet(&uvar_dAlpha) && (uvar_dAlpha < 0) )
+    {
+      LALPrintError ("\nNegative value of stepsize dAlpha not allowed!\n\n");
+      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+  if ( LALUserVarWasSet(&uvar_dDelta) && (uvar_dDelta < 0) )
+    {
+      LALPrintError ("\nNegative value of stepsize dDelta not allowed!\n\n");
+      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+  if ( LALUserVarWasSet(&uvar_dFreq) && (uvar_dFreq < 0) )
+    {
+      LALPrintError ("\nNegative value of stepsize dFreq not allowed!\n\n");
+      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+
+  /* grid-related checks */
+  {
+    BOOLEAN haveAlphaBand = LALUserVarWasSet( &uvar_AlphaBand );
+    BOOLEAN haveDeltaBand = LALUserVarWasSet( &uvar_DeltaBand );
+    BOOLEAN haveFreqBand  = LALUserVarWasSet( &uvar_FreqBand );
+    BOOLEAN havef1dotBand = LALUserVarWasSet( &uvar_f1dotBand );
+    BOOLEAN searchNeighbors = LALUserVarWasSet(&uvar_searchNeighbors);
+
+    BOOLEAN haveSkyRegion, haveAlphaDelta, haveGridFile, useGridFile, haveMetric, useMetric;
+
+    haveSkyRegion  = (uvar_skyRegion != NULL);
+    haveAlphaDelta = (LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta) );
+    haveGridFile   = (uvar_skyGridFile != NULL);
+    useGridFile   = (uvar_gridType == GRID_FILE);
+    haveMetric     = (uvar_metricType > LAL_PMETRIC_NONE);
+    useMetric     = (uvar_gridType == GRID_METRIC);
+
+    if ( searchNeighbors && (haveAlphaBand||haveDeltaBand||haveFreqBand||havef1dotBand) )
+    {
+      printf ("\n\n--------------------------------------------------------------------\n");
+      printf ("WARNING: you specified both a search-band and --searchNeighbors\n");
+      printf ("Your input will override the computed 'neighborhood'-band in that directions\n");
+      printf ("Also, there will be no randomization in these directions.\n");
+      printf ("\nPlease be sure you know what you are doing!!\n");
+      printf ("\n--------------------------------------------------------------------\n\n");
+    }
+
+    if ( uvar_skyRegion && searchNeighbors ) 
+      {
+	LALPrintError ("\nERROR: it is currently not allowed to specify both a \n");
+	LALPrintError (  "       skyRegion and searchNeighbors\n\n");
+	ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+
+    if ( (haveAlphaBand && !haveDeltaBand) || (haveDeltaBand && !haveAlphaBand) )
+      {
+	LALPrintError ("\nERROR: Need either BOTH (AlphaBand, DeltaBand) or NONE.\n\n"); 
+        ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+
+    if ( !useGridFile && !(haveSkyRegion || haveAlphaDelta) )
+      {
+        LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
+        ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+    if ( haveSkyRegion && haveAlphaDelta )
+      {
+        LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta)"
+		       " OR skyRegion!\n\n");
+        ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+    if ( useGridFile && !haveGridFile )
+      {
+        LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
+        ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);  
+      }
+    if ( !useGridFile && haveGridFile )
+      {
+        LALWarning (lstat, "\nWARNING: skyGridFile was specified but not needed ..."
+		    " will be ignored\n");
+      }
+    if ( useGridFile && (haveSkyRegion || haveAlphaDelta) )
+      {
+        LALWarning (lstat, "\nWARNING: We are using skyGridFile, but sky-region was"
+		    " also specified ... will be ignored!\n");
+      }
+    if ( !useMetric && haveMetric) 
+      {
+        LALWarning (lstat, "\nWARNING: Metric was specified for non-metric grid..."
+		    " will be ignored!\n");
+      }
+    if ( useMetric && !haveMetric) 
+      {
+        LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
+        ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+      }
+
+  } /* grid-related checks */
+
+  if ( LALUserVarWasSet (&uvar_searchNeighbors) && (uvar_searchNeighbors < 0) ) 
+    {
+      LALPrintError ("\nERROR: searchNeighbors has to be >= 0 !!\n\n");
+      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+    }
+
+  RETURN (lstat);
+} /* checkUserInputConsistency() */
+
+
+/*----------------------------------------------------------------------*/
+/** Determine the DopplerRegion in parameter-space to search over.
+ *  
+ * In normal circumstances this is just given by the User-input, and is trivial.
+ * 
+ * The situation is complicated a little bit by the case of --searchNeighbors, 
+ * in which the searchRegion is determined automatically by getMCDopplerCube().
+ * Namely, we still want to allow the user to selectively override this randomized 
+ * neighborhood search-region if he input search-bands explicitly. 
+ */
+void
+getSearchRegion (LALStatus *lstat, 
+		 DopplerRegion *searchRegion,	/**< OUT: the DopplerRegion to search over */
+		 const DopplerScanInit *params)	/**< IN: DopplerScan params might be needed */
+{
+  BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
+  DopplerRegion ret = empty_DopplerRegion;
+
+  INITSTATUS (lstat, "getSearchRegion", rcsid);  
+  ATTATCHSTATUSPTR (lstat);
+
+  ASSERT ( searchRegion, lstat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( searchRegion->skyRegionString == NULL, lstat, 
+	   COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+
+  /* ---------- start with default-values for the search-region */
+  ret.freq      = uvar_Freq;
+  ret.freqBand  = uvar_FreqBand;
+  ret.f1dot     = uvar_f1dot;
+  ret.f1dotBand = uvar_f1dotBand;
+
+  if (uvar_skyRegion)
+    {
+      ret.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar_skyRegion)+1);
+      if ( ret.skyRegionString == NULL ) {
+	ABORT (lstat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      }
+      strcpy (ret.skyRegionString, uvar_skyRegion);
+    }
+  else if (haveAlphaDelta)    /* parse this into a sky-region */
+    {
+      TRY ( SkySquare2String( lstat->statusPtr, &(ret.skyRegionString),
+			      uvar_Alpha, uvar_Delta, 
+			      uvar_AlphaBand, uvar_DeltaBand), lstat);
+    }
+
+  /* ---------- override with neighbors searchCube */
+  /* if user specified the option -searchNeighbors=N, we generate an 
+   * automatic search-region of N grid-steps in each dimension
+   * around the given search-point
+   */
+  if ( LALUserVarWasSet(&uvar_searchNeighbors) ) 
+    {
+      DopplerRegion cube = empty_DopplerRegion;
+      DopplerPosition signal = empty_DopplerPosition;
+      
+      signal.Alpha = uvar_Alpha;
+      signal.Delta = uvar_Delta;
+      signal.freq  = uvar_Freq;
+      signal.f1dot = uvar_f1dot;
+
+      TRY ( getMCDopplerCube(lstat->statusPtr, 
+			     &cube, signal, uvar_searchNeighbors, params), lstat);
+
+      /* free previous skyRegionString */
+      if ( ret.skyRegionString )
+	LALFree (ret.skyRegionString);
+
+      /* overload defaults with automatic search-region */
+      ret = cube;
+      
+    } /* if searchNeighbors */
+
+  /* ---------- finally, the user can override the 'neighborhood' search-Region
+   * if he explicitly specified search-bands in some (or all) directions.
+   * 
+   * The motivation is to allow more selective control over the search-region,
+   * e.g. by setting certain bands to zero.
+   */ 
+  {
+    BOOLEAN haveAlphaBand = LALUserVarWasSet(&uvar_AlphaBand);
+    BOOLEAN haveDeltaBand = LALUserVarWasSet(&uvar_DeltaBand);
+    BOOLEAN haveFreqBand  = LALUserVarWasSet(&uvar_FreqBand);
+    BOOLEAN havef1dotBand = LALUserVarWasSet(&uvar_f1dotBand);
+    
+    if ( haveAlphaBand || haveDeltaBand )     /* override skyRegion */
+      {
+	CHAR *str = NULL;
+	TRY ( SkySquare2String( lstat->statusPtr, &str,
+				uvar_Alpha, uvar_Delta, 
+				uvar_AlphaBand, uvar_DeltaBand), lstat);
+	if ( ret.skyRegionString) 
+	  LALFree ( ret.skyRegionString );
+
+	ret.skyRegionString = str;
+      }
+
+    if ( haveFreqBand )		/* override frequency-interval */
+      {
+	ret.freq = uvar_Freq;
+	ret.freqBand = uvar_FreqBand;
+      }
+    if ( havef1dotBand )	/* override spindown-interval */
+      {
+	ret.f1dot = uvar_f1dot;
+	ret.f1dotBand = uvar_f1dotBand;
+      }
+
+  } /* final user-override of search-bands */
+
+  *searchRegion = ret;	/* return the result */
+
+  DETATCHSTATUSPTR (lstat);
+  RETURN(lstat);
+
+} /* getSearchRegion() */
+
 
 /***********************************************************************/
 /** Log the all relevant parameters of the present search-run to a log-file.
@@ -2378,10 +2539,10 @@ void Freemem(LALStatus *status)
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars(status->statusPtr), status);
 
-  if (GV.skyRegionString)
+  if (GV.searchRegion.skyRegionString)
     {
-      LALFree ( GV.skyRegionString );
-      GV.skyRegionString = NULL;
+      LALFree ( GV.searchRegion.skyRegionString );
+      GV.searchRegion.skyRegionString = NULL;
     }
 
   /* this comes from clusters.c */

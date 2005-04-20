@@ -82,29 +82,12 @@ typedef enum
   GRID_LAST
 } DopplerGridType;
 
-/** initialization-structure passed to InitDopplerScan() */  
-typedef struct {
-  DopplerGridType gridType;	/**< which type of skygrid to generate */  
-  LALPulsarMetricType metricType; /**< which metric to use if GRID_METRIC */
-  REAL8 dAlpha;			/**< step-sizes for GRID_FLAT */
-  REAL8 dDelta;
-  REAL8 metricMismatch;		/**< for GRID_METRIC and GRID_ISOTROPIC */
-  LIGOTimeGPS obsBegin; 	/**< start-time of time-series */
-  REAL8 obsDuration;		/**< length of time-series in seconds */
-  REAL8 fmax; 			/**< max frequency of search */
-  LALDetector *Detector; 	/**< Our detector*/
-  EphemerisData *ephemeris;	/**< ephemeris for "exact" metric */
-  CHAR *skyRegionString;	/**< list of sky-positions describing a sky-region */
-  CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) for GRID_FILE */
-} DopplerScanInit;
-
-
 /** structure holding one point in (phase-) parameter-space */
 typedef struct {
   REAL8 Alpha;			/**< longitude in Radians, EquatorialCoordinates */
   REAL8 Delta;			/**< latitude in Radians, EquatorialCoordinates */
   REAL8 freq;			/**< frequency */
-  REAL8Vector *spindown;	/**< spindowns (if any) */
+  REAL8 f1dot;			/**< first frequency-derivative (spindown) */
 } DopplerPosition;
 
 /** Structure describing a region in paramter-space (a,d,f,f1dot,..). 
@@ -131,9 +114,26 @@ typedef struct tagDopplerScanGrid {
   REAL8 Alpha;
   REAL8 Delta;
   REAL8 freq;
-  REAL8Vector spindown;
+  REAL8 f1dot;
   struct tagDopplerScanGrid *next;
 } DopplerScanGrid;
+
+
+/** initialization-structure passed to InitDopplerScan() */  
+typedef struct {
+  DopplerRegion searchRegion;	/**< parameter-space region to search over */
+  DopplerGridType gridType;	/**< which type of skygrid to generate */  
+  LALPulsarMetricType metricType; /**< which metric to use if GRID_METRIC */
+  REAL8 dAlpha;			/**< step-sizes for GRID_FLAT */
+  REAL8 dDelta;
+  REAL8 metricMismatch;		/**< for GRID_METRIC and GRID_ISOTROPIC */
+  LIGOTimeGPS obsBegin; 	/**< start-time of time-series */
+  REAL8 obsDuration;		/**< length of time-series in seconds */
+  REAL8 fmax; 			/**< max frequency of search */
+  LALDetector *Detector; 	/**< Our detector*/
+  EphemerisData *ephemeris;	/**< ephemeris for "exact" metric */
+  CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) if GRID_FILE */
+} DopplerScanInit;
 
 /** this structure reflects the current state of DopplerScan */
 typedef struct {
@@ -145,6 +145,13 @@ typedef struct {
   DopplerScanGrid *grid; 	/**< head of linked list of skygrid nodes */  
   DopplerScanGrid *gridNode;	/**< pointer to current grid-node in skygrid */
 } DopplerScanState;
+
+/* some empty structs for initializations */
+extern const DopplerScanGrid empty_DopplerScanGrid;
+extern const DopplerScanState empty_DopplerScanState;
+extern const DopplerScanInit empty_DopplerScanInit;
+extern const DopplerPosition empty_DopplerPosition;
+extern const DopplerRegion empty_DopplerRegion;
   
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{DopplerScanHV}}

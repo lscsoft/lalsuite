@@ -102,16 +102,16 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
 
   /* copy the origianl scanInit to a temporal scanInitTmp. */
   scanInitTmp = scanInit;
-  tmpptr = (CHAR *) LALMalloc( sizeof(CHAR)*( strlen(scanInit->skyRegionString) + 1 ) );
-  strcpy(tmpptr,scanInit->skyRegionString);
-  scanInitTmp->skyRegionString = tmpptr; 
+  tmpptr = (CHAR *) LALMalloc( sizeof(CHAR)*( strlen(scanInit->searchRegion.skyRegionString) + 1 ) );
+  strcpy(tmpptr,scanInit->searchRegion.skyRegionString);
+  scanInitTmp->searchRegion.skyRegionString = tmpptr; 
 
   TRY( InitDopplerScan ( status->statusPtr, theScan, scanInitTmp ), status );
 
   test = ( (INT4) theScan->numGridPoints ) - targetNumGridPoints;
 
   tmpSkyRegion.vertices = NULL; 
-  TRY(ParseSkyRegionString(status->statusPtr,&tmpSkyRegion, scanInitTmp->skyRegionString),status);
+  TRY(ParseSkyRegionString(status->statusPtr,&tmpSkyRegion, scanInitTmp->searchRegion.skyRegionString),status);
   /* Compute a center of the mass, construct an initial sky polygon */
   TRY( ComputeCenterOfMass ( status->statusPtr, &centerOfMass, &tmpSkyRegion ), status );
   if ( status->statusCode ) {
@@ -165,7 +165,7 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status,
 
 
   /* clean up */
-  LALFree( scanInitTmp->skyRegionString );
+  LALFree( scanInitTmp->searchRegion.skyRegionString );
   DETATCHSTATUSPTR (status);
   RETURN( status );
 } /* void InitDopplerScanOnRefinedGrid () */
@@ -244,7 +244,7 @@ RefineSkyRegion (LALStatus *status,
   longitudeCM = centerOfMass->longitude; 
   latitudeCM = centerOfMass->latitude; 
 
-  tmpSkyRegion = (CHAR *) LALMalloc(strlen(scanInit->skyRegionString)+512);
+  tmpSkyRegion = (CHAR *) LALMalloc(strlen(scanInit->searchRegion.skyRegionString)+512);
   if ( tmpSkyRegion == NULL ) {
     ABORT (status,  NEIGHBORINGGRIDPOINTSH_EMEM ,  NEIGHBORINGGRIDPOINTSH_MSGEMEM );
   }
@@ -276,16 +276,16 @@ RefineSkyRegion (LALStatus *status,
   ptr = strrchr ( tmpSkyRegion, ',' );
   *ptr = '\0';
 
-  ptr =  LALRealloc(scanInit->skyRegionString, sizeof(CHAR) * (strlen(tmpSkyRegion)+1) );
+  ptr =  LALRealloc(scanInit->searchRegion.skyRegionString, sizeof(CHAR) * (strlen(tmpSkyRegion)+1) );
   if ( ptr == NULL ) {
     fprintf(stderr,"Unable to reallocate memory.\n");
-    LALFree(scanInit->skyRegionString);
+    LALFree(scanInit->searchRegion.skyRegionString);
     LALFree(tmpstr);
     LALFree(tmpSkyRegion);
     ABORT (status,  NEIGHBORINGGRIDPOINTSH_EMEM ,  NEIGHBORINGGRIDPOINTSH_MSGEMEM );
   }
-  scanInit->skyRegionString = ptr;
-  strcpy(scanInit->skyRegionString, tmpSkyRegion);
+  scanInit->searchRegion.skyRegionString = ptr;
+  strcpy(scanInit->searchRegion.skyRegionString, tmpSkyRegion);
 
   LALFree(tmpstr);
   LALFree(tmpSkyRegion);

@@ -6,6 +6,7 @@
 #include <lal/DetectorSite.h>
 #include <lal/LALBarycenter.h>
 
+#include "DopplerScan.h"
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -35,8 +36,6 @@ possible to the users request, but are not the same.  Don't use these variables!
 typedef struct {
   CHAR EphemEarth[MAXFILENAMELENGTH];	/**< filename of earth-ephemeris data */
   CHAR EphemSun[MAXFILENAMELENGTH];	/**< filename of sun-ephemeris data */
-  INT4 FreqImax;  		/**< number of frequency-bins to compute F-stat for */
-  INT4 SpinImax;		/**< number of spindown-bins to compute F for */
   INT4 ifmax;			/**< highest frequency-bin needed in calculation */
   INT4 ifmin;			/**< lowest frequency-bin needed */
   REAL8 dFreq;			/**< search frequency spacing  */
@@ -47,9 +46,11 @@ typedef struct {
   INT4 Ti;	        	/**< GPS seconds of start of observation */
   INT4 Tf;      	  	/**< GPS-time (seconds) of end of observation */
   CHAR **filelist; 		/**< array of filenames to load SFTs from */
-  LALDetector Detector;         /**< Our detector*/
+  LALDetector Detector;         /**< detector of data to be searched */
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
-  CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
+  DopplerRegion searchRegion;	/**< parameter-space region to search over */
+  INT4 FreqImax;		/**< number of frequency-bins to run LALDemod for */
+  INT4 SpinImax;		/**< number of spindown-values */
 } ConfigVariables;
   
 struct headertag {
