@@ -376,8 +376,8 @@ int main(int argc,char *argv[])
 	break;
 
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-      thisPoint.longitude = dopplerpos.alpha;
-      thisPoint.latitude = dopplerpos.delta;
+      thisPoint.longitude = dopplerpos.Alpha;
+      thisPoint.latitude = dopplerpos.Delta;
       LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &thisPoint), &status);
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;

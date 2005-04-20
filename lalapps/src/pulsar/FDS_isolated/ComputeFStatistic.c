@@ -499,7 +499,7 @@ int main(int argc,char *argv[])
 
   /* ---------- set frequency- and spindown-resolution if not input by user ----------*/
   if ( !LALUserVarWasSet( &uvar_dFreq ) )
-    GV.dFreq = thisScan.dFreq;
+    GV.dFreq = thisScan.dfreq;
   else
     GV.dFreq = uvar_dFreq;
 
@@ -753,8 +753,8 @@ int main(int argc,char *argv[])
         break;
 
       /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-      thisPoint.longitude = dopplerpos.alpha;
-      thisPoint.latitude = dopplerpos.delta;
+      thisPoint.longitude = dopplerpos.Alpha;
+      thisPoint.latitude = dopplerpos.Delta;
       LAL_CALL (LALNormalizeSkyPosition(stat, &thisPoint, &thisPoint), stat);
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
