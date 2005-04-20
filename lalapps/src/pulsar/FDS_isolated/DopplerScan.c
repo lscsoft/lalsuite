@@ -81,6 +81,7 @@ static PtoleMetricIn empty_metricpar;
 static DopplerScanGrid empty_grid;
 static MetricParamStruc empty_MetricParamStruc;
 static PulsarTimesParamStruc empty_PulsarTimesParamStruc;
+static DopplerPosition empty_DopplerPosition;
 
 /* internal prototypes */
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params );
@@ -139,7 +140,7 @@ InitDopplerScan( LALStatus *stat,
   scan->gridNode = NULL;
   
   if (init->gridType != GRID_FILE ) {
-    TRY (ParseSkyRegion (stat->statusPtr, &(scan->skyRegion), init->skyRegion ), stat);
+    TRY (ParseSkyRegionString(stat->statusPtr, &(scan->skyRegion), init->skyRegion ), stat);
 
     if (scan->skyRegion.numVertices == 2){ /* anomaly! Allowed are either 1 or >= 3 */
       ABORT (stat, DOPPLERSCANH_E2DSKY, DOPPLERSCANH_MSGE2DSKY);
@@ -214,25 +215,35 @@ InitDopplerScan( LALStatus *stat,
     }
 
   /* ----------
-   * setup spacing in frequency and spindowns
+   * determine spacings in frequency and spindowns
    * NOTE: this is only useful if these spacings
    * are sufficiently independent of the phase-parameters
    * ----------*/
   {
-    REAL8Vector *dfkdot = NULL;
-    TRY ( LALDCreateVector( stat->statusPtr, &dfkdot, 2 ), stat);
-    dfkdot->data[0] = init->fmax;
-    dfkdot->data[1] = 0;
+    DopplerPosition gridpoint = empty_DopplerPosition;
+    DopplerPosition gridSpacings = empty_DopplerPosition;
+    REAL8Vector *dfkdot = NULL, *spindown = NULL;
 
-    get_dfkdot(stat->statusPtr, dfkdot, scan->skyRegion.lowerLeft, init);
-    BEGINFAIL (stat){
-      LALDDestroyVector (stat->statusPtr, &dfkdot);
-    } ENDFAIL(stat);
+    TRY ( LALDCreateVector( stat->statusPtr, &dfkdot, 1 ), stat);
+    dfkdot->data[0] = 0;
+    gridSpacings.spindown = dfkdot;
 
-    scan->dFreq = dfkdot->data[0];
-    scan->df1dot = dfkdot->data[1];
+    gridpoint.skypos.system =  COORDINATESYSTEM_EQUATORIAL;
+    gridpoint.skypos.longitude = scan->grid->alpha;
+    gridpoint.skypos.latitude = scan->grid->delta;
+    gridpoint.freq = init->fmax;
+
+    TRY ( LALDCreateVector( stat->statusPtr, &spindown, 1 ), stat);
+    spindown->data[0] = 0;
+    gridpoint.spindown = spindown;
+
+    TRY ( getGridSpacings( stat->statusPtr, &gridSpacings, &gridpoint, init), stat);
+
+    scan->dFreq = gridSpacings.freq;
+    scan->df1dot = gridSpacings.spindown->data[0];
 
     TRY ( LALDDestroyVector(stat->statusPtr, &dfkdot), stat);
+    TRY ( LALDDestroyVector(stat->statusPtr, &spindown), stat);
   }
   
   scan->state = STATE_READY;
@@ -331,7 +342,7 @@ NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
 	  pos->skypos.longitude = scan->gridNode->alpha;
 	  pos->skypos.latitude =  scan->gridNode->delta;
 
-	  pos->spindowns.length = 0; /*  FIXME: no spindowns for now */
+	  pos->spindown = NULL; /*  FIXME: no spindowns for now */
 
 	  scan->gridNode = scan->gridNode->next;
 	}
@@ -842,83 +853,6 @@ pointInPolygon ( const SkyPosition *point, const SkyRegion *polygon )
   return inside;
   
 } /* pointInPolygon() */
-
-
-/*----------------------------------------------------------------------
- * parse a string into a SkyRegion structure: the expected string-format is
- *   " (ra1, dec1), (ra2, dec2), (ra3, dec3), ... "
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="DopplerScanCP"> */
-void
-ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input)
-{ /* </lalVerbatim> */
-  const CHAR *pos;
-  UINT4 i;
-
-  INITSTATUS( stat, "ParseSkyRegion", DOPPLERSCANC );
-
-  ASSERT (region != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
-  ASSERT (region->vertices == NULL, stat, DOPPLERSCANH_ENONULL,  DOPPLERSCANH_MSGENONULL);
-  ASSERT (input != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
-
-  region->numVertices = 0;
-  region->lowerLeft.longitude = LAL_TWOPI;
-  region->lowerLeft.latitude = LAL_PI;
-  region->upperRight.longitude = 0;
-  region->upperRight.latitude = 0;
-  region->lowerLeft.system = region->upperRight.system = COORDINATESYSTEM_EQUATORIAL;
-
-  /* count number of entries (by # of opening parantheses) */
-  pos = input;
-  while ( (pos = strchr (pos, '(')) != NULL )
-    {
-      region->numVertices ++;
-      pos ++;
-    }
-
-  if (region->numVertices == 0) {
-    LALPrintError ("Failed to parse sky-region: `%s`\n", input);
-    ABORT (stat, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
-  }
-    
-  
-  /* allocate list of vertices */
-  if ( (region->vertices = LALMalloc (region->numVertices * sizeof (SkyPosition))) == NULL) {
-    ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
-  }
-
-  region->lowerLeft.longitude = LAL_TWOPI;
-  region->lowerLeft.latitude  = LAL_PI/2.0;
-
-  region->upperRight.longitude = 0;
-  region->upperRight.latitude  = -LAL_PI/2;
-
-
-  /* and parse list of vertices from input-string */
-  pos = input;
-  for (i = 0; i < region->numVertices; i++)
-    {
-      if ( sscanf (pos, "(%" LAL_REAL8_FORMAT ", %" LAL_REAL8_FORMAT ")", 
-		   &(region->vertices[i].longitude), &(region->vertices[i].latitude) ) != 2) 
-	{
-	  ABORT (stat, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
-	}
-
-      /* keep track of min's and max's to get the bounding square */
-      region->lowerLeft.longitude = MIN (region->lowerLeft.longitude, region->vertices[i].longitude);
-      region->lowerLeft.latitude  = MIN (region->lowerLeft.latitude, region->vertices[i].latitude);
-
-      region->upperRight.longitude = MAX (region->upperRight.longitude, region->vertices[i].longitude);
-      region->upperRight.latitude  =  MAX (region->upperRight.latitude, region->vertices[i].latitude);
-
-
-      pos = strchr (pos + 1, '(');
-
-    } /* for numVertices */
-
-  RETURN (stat);
-
-} /* ParseSkyRegion() */
 
 /*----------------------------------------------------------------------
  * Translate a TwoDMesh into a DopplerScanGrid using a SkyRegion for clipping
@@ -1438,23 +1372,162 @@ getDopplermax(EphemerisData *edat)
 
 } /* getDopplermax() */
 
-
+/*----------------------------------------------------------------------*/
 /**
- * determine the canonical spacing in frequency and spindowns, either
- * from the metric (--metricType) or using the rough guess 1/T^{k+1} 
- * (if no metric given)
- * 
- * In the metric case, the metric is evaluated for skypos and frequencies
- * and spindowns fkdot. 
+ * parse a skyRegion-string into a SkyRegion structure: the expected 
+ * string-format is
+ *   " (ra1, dec1), (ra2, dec2), (ra3, dec3), ... "
+ *
+ * <lalVerbatim file="DopplerScanCP"> */
+void
+ParseSkyRegionString (LALStatus *stat, SkyRegion *region, const CHAR *input)
+{ /* </lalVerbatim> */
+  const CHAR *pos;
+  UINT4 i;
+
+  INITSTATUS( stat, "ParseSkyRegionString", DOPPLERSCANC );
+
+  ASSERT (region != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+  ASSERT (region->vertices == NULL, stat, DOPPLERSCANH_ENONULL,  DOPPLERSCANH_MSGENONULL);
+  ASSERT (input != NULL, stat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
+
+  region->numVertices = 0;
+  region->lowerLeft.longitude = LAL_TWOPI;
+  region->lowerLeft.latitude = LAL_PI;
+  region->upperRight.longitude = 0;
+  region->upperRight.latitude = 0;
+  region->lowerLeft.system = region->upperRight.system = COORDINATESYSTEM_EQUATORIAL;
+
+  /* count number of entries (by # of opening parantheses) */
+  pos = input;
+  while ( (pos = strchr (pos, '(')) != NULL )
+    {
+      region->numVertices ++;
+      pos ++;
+    }
+
+  if (region->numVertices == 0) {
+    LALPrintError ("Failed to parse sky-region: `%s`\n", input);
+    ABORT (stat, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
+  }
+    
+  
+  /* allocate list of vertices */
+  if ( (region->vertices = LALMalloc (region->numVertices * sizeof (SkyPosition))) == NULL) {
+    ABORT (stat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+  }
+
+  region->lowerLeft.longitude = LAL_TWOPI;
+  region->lowerLeft.latitude  = LAL_PI/2.0;
+
+  region->upperRight.longitude = 0;
+  region->upperRight.latitude  = -LAL_PI/2;
+
+
+  /* and parse list of vertices from input-string */
+  pos = input;
+  for (i = 0; i < region->numVertices; i++)
+    {
+      if ( sscanf (pos, "(%" LAL_REAL8_FORMAT ", %" LAL_REAL8_FORMAT ")", 
+		   &(region->vertices[i].longitude), &(region->vertices[i].latitude) ) != 2) 
+	{
+	  ABORT (stat, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
+	}
+
+      /* keep track of min's and max's to get the bounding square */
+      region->lowerLeft.longitude=MIN(region->lowerLeft.longitude,region->vertices[i].longitude);
+      region->lowerLeft.latitude =MIN(region->lowerLeft.latitude, region->vertices[i].latitude);
+
+      region->upperRight.longitude = MAX( region->upperRight.longitude, 
+					  region->vertices[i].longitude);
+      region->upperRight.latitude  = MAX( region->upperRight.latitude, 
+					  region->vertices[i].latitude);
+
+      pos = strchr (pos + 1, '(');
+
+    } /* for numVertices */
+
+  RETURN (stat);
+
+} /* ParseSkyRegionString() */
+
+/*----------------------------------------------------------------------*/
+/**
+ * parse a 'classical' sky-square (Alpha, Delta, AlphaBand, DeltaBand) into a 
+ * "SkyRegion"-string of the form '(a1,d1), (a2,d2),...'
  */
 void
-get_dfkdot( LALStatus *lstat, 
-	    REAL8Vector *dfkdot, 		/**< IN: f0,fkdot values, OUT: spacings */
-	    SkyPosition skypos,			/**< IN: skyposition */
-	    const DopplerScanInit *params)	/**< IN: Doppler-scan parameters */
+SkySquare2String (LALStatus *lstat,
+		  CHAR **string,	/**< OUT: skyRegion string */
+		  REAL8 Alpha,		/**< longitude of first point */
+		  REAL8 Delta,		/**< latitude of first point */
+		  REAL8 AlphaBand,	/**< longitude-interval */
+		  REAL8 DeltaBand)	/**< latitude-interval */
+{
+  REAL8 eps = 1.0e-9;
+  REAL8 Da, Dd;
+  BOOLEAN onePoint, region2D;
+  CHAR *ret, *buf;
+
+  INITSTATUS( lstat, "SkySquare2String", DOPPLERSCANC );
+
+  /* consistency check either one single point or a real 2D region! */
+  onePoint = (AlphaBand == 0) && (DeltaBand == 0);
+  region2D = (AlphaBand != 0) && (DeltaBand != 0);
+
+  ASSERT ( onePoint || region2D, lstat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+
+  /* slightly push boundaries outwards to make sure boundary-points are included */
+  Da = AlphaBand + eps;      
+  Dd = DeltaBand + eps;
+
+  /* get enough memory for max 4 points... */
+  if ( (buf = LALMalloc (1024)) == NULL ) {
+    ABORT (lstat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+  }
+
+  if ( onePoint )  
+    sprintf (buf, "(%.16g, %.16g)", Alpha, Delta);
+  else                            /* or a 2D rectangle */
+    sprintf (buf, 
+	     "(%.16g, %.16g), (%.16g, %.16g), (%.16g, %.16g), (%.16g, %.16g)", 
+	     Alpha, Delta, 
+	     Alpha + Da, Delta, 
+	     Alpha + Da, Delta + Dd,
+	     Alpha, Delta + Dd );
+ 
+  /* make tight-fitting string */
+  if ( (ret = LALMalloc( strlen(buf) + 1 )) == NULL) {
+    LALFree (buf);
+    ABORT (lstat, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
+  }
+
+  strcpy ( ret, buf );
+  LALFree (buf);
+
+  *string = ret;
+
+  RETURN (lstat);
+
+} /* SkySquare2String() */
+    
+/**
+ * determine the 'canonical' stepsizes in all parameter-space directions,
+ * either from the metric (--metricType) or using {dAlpha,dDelta} and 
+ * rough guesses dfkdot=1/T^{k+1} (if no metric given)
+ * 
+ * In the metric case, the metric is evaluated at the given gridpoint.
+ * 
+ * NOTE: currently only 1 spindown is supported!
+ */
+void
+getGridSpacings( LALStatus *lstat, 
+		 DopplerPosition *spacings,		/**< OUT: grid-spacings in gridpoint */
+		 const DopplerPosition *gridpoint,	/**< IN: gridpoint to get spacings for*/
+		 const DopplerScanInit *params)		/**< IN: Doppler-scan parameters */
 {
   REAL8Vector *metric = NULL;
-  REAL8 g_f0_f0 = 0, gamma_f1_f1 = 0;
+  REAL8 g_f0_f0 = 0, gamma_f1_f1 = 0, gamma_a_a, gamma_d_d;
   PtoleMetricIn metricpar = empty_metricpar;
   UINT4 nSpin, i;
   REAL8 f0;
@@ -1463,10 +1536,22 @@ get_dfkdot( LALStatus *lstat,
   ATTATCHSTATUSPTR (lstat); 
 
   ASSERT ( params != NULL, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
-  ASSERT ( dfkdot != NULL, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
-  ASSERT ( dfkdot->length >= 1, lstat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+  ASSERT ( spacings != NULL, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
+  ASSERT ( gridpoint != NULL, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
 
-  nSpin = dfkdot->length - 1;
+  if ( gridpoint->spindown )
+    {
+      nSpin = gridpoint->spindown->length;
+      ASSERT(spacings->spindown, lstat, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );  
+      ASSERT(spacings->spindown->length == nSpin, lstat, 
+	     DOPPLERSCANH_EINPUT,DOPPLERSCANH_MSGEINPUT);
+    }
+  else
+    {
+      nSpin = 0;
+      ASSERT ( spacings->spindown == NULL, lstat, 
+	       DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );
+    }
 
   if ( nSpin > 1 ) /* currently only 1 spindown supported (FIXME)*/
     {
@@ -1474,23 +1559,24 @@ get_dfkdot( LALStatus *lstat,
       ABORT (lstat,  DOPPLERSCANH_EINPUT ,  DOPPLERSCANH_MSGEINPUT );
     }
 
+  spacings->skypos.system = gridpoint->skypos.system;
 
   if ( params->metricType )	/* use the metric to fix f0/fdot stepsizes */
     {
       /* setup metric parameters */
       metricpar.metricType = params->metricType;
-      metricpar.position = skypos;
+      metricpar.position = gridpoint->skypos;
 
       if ( nSpin ) 
 	{
 	  TRY ( LALSCreateVector (lstat->statusPtr, &(metricpar.spindown), nSpin), lstat);
 	  for (i=0; i < nSpin; i++)
-	    metricpar.spindown->data[i] = dfkdot->data[i+1];
+	    metricpar.spindown->data[i] = gridpoint->spindown->data[i];
 	}
       
       metricpar.epoch = params->obsBegin;
       metricpar.duration = params->obsDuration;
-      f0 = dfkdot->data[0];		/* keep this, needed later for normalizations */
+      f0 = gridpoint->freq;		/* keep this, needed later for normalizations */
       metricpar.maxFreq = f0;
       
       metricpar.site = params->Detector;
@@ -1504,41 +1590,52 @@ get_dfkdot( LALStatus *lstat,
 
       /* NOTE: for simplicity we use params->mismatch, instead of mismatch/D 
        * where D is the number of parameter-space dimensions
-       * as in the case of spindowns this would require adapting the 
+       * as in the case of spindown this would require adapting the 
        * sky-mismatch too.
        * Instead, the user has to adapt 'mismatch' corresponding to 
        * the number of dimensions D in the parameter-space considered.
        */
 
-      dfkdot->data[0] = sqrt ( params->metricMismatch / g_f0_f0 );
+      spacings->freq = sqrt ( params->metricMismatch / g_f0_f0 );
 
+      TRY ( LALProjectMetric( lstat->statusPtr, metric, 0 ), lstat);
       if ( nSpin > 0 )
 	{
-	  TRY ( LALProjectMetric( lstat->statusPtr, metric, 0 ), lstat);
 	  gamma_f1_f1 = metric->data[INDEX_f1_f1];
-	  dfkdot->data[1] = sqrt ( params->metricMismatch * f0 * f0 / gamma_f1_f1 );
+	  spacings->spindown->data[0] = sqrt( params->metricMismatch * f0 * f0 / gamma_f1_f1 );
 	}
+
+      gamma_a_a = metric->data[INDEX_A_A];
+      gamma_d_d = metric->data[INDEX_D_D];
+
+      spacings->skypos.longitude = sqrt ( params->metricMismatch / gamma_a_a );
+      spacings->skypos.latitude = sqrt ( params->metricMismatch / gamma_d_d );
 
       TRY( LALDDestroyVector (lstat->statusPtr, &metric), lstat);
       metric = NULL;
     }
   else	/* no metric: use 'naive' value of 1/(2*T^k) [previous default in CFS] */
     {
-      dfkdot->data[0] = 1.0 / (2.0 * params->obsDuration);
+      spacings->freq = 1.0 / (2.0 * params->obsDuration);
+      spacings->skypos.longitude = params->dAlpha;	/* dummy */
+      spacings->skypos.latitude = params->dDelta;
+
       if (nSpin > 0)
-	dfkdot->data[1] = 1.0 / (2.0 * params->obsDuration * params->obsDuration);
+	spacings->spindown->data[0] = 1.0 / (2.0 * params->obsDuration * params->obsDuration);
     }
 
   if (lalDebugLevel >= 1) 
     {
-      printf ("\ng_f0_f0 = %g, Step-size in frequencies: dFreq = %g\n",
-	      g_f0_f0, dfkdot->data[0]);
-      if ( nSpin > 0 )
-	printf ("\ngamma_f1f1 = %g, Step-size in spindown-values: df1dot = %g\n", 
-		gamma_f1_f1, dfkdot->data[1]);
+      printf ("\nDEBUG: grid-spacings from metric=%d in point (a,d,f,fdot)=(%g,%g,%g,%g)\n",
+	      params->metricType, gridpoint->skypos.longitude, gridpoint->skypos.latitude, 
+	      gridpoint->freq, gridpoint->spindown ? gridpoint->spindown->data[0] : 0);
+      printf ("dAlpha = %g, dDelta = %g, dFreq = %g, df1dot = %g\n",
+	      spacings->skypos.longitude, spacings->skypos.latitude,
+	      spacings->freq, spacings->spindown ? spacings->spindown->data[0] : 0);
+
     } /* if lalDebugLevel >= 1 */
 
   DETATCHSTATUSPTR(lstat);
   RETURN(lstat);
 
-} /* get_dfkdot() */
+} /* getGridSpacings() */

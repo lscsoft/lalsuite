@@ -94,16 +94,16 @@ typedef struct {
   REAL8 fmax; 			/**< max frequency of search */
   LALDetector *Detector; 	/**< Our detector*/
   EphemerisData *ephemeris;	/**< ephemeris for "exact" metric */
-  UINT4 searchNeighbors;	/**< number of points per dimension to construct around target-location [0=don't use]*/
   CHAR *skyRegion;		/**< list of sky-positions describing a sky-region */
   CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) for GRID_FILE */
 } DopplerScanInit;
 
 
+/** structure holding one point in (phase-) parameter-space */
 typedef struct {
-  SkyPosition skypos;
-  REAL8 freq;
-  REAL8Vector spindowns;
+  SkyPosition skypos;		/**< sky position (alpha, delta) */
+  REAL8 freq;			/**< frequency */
+  REAL8Vector *spindown;	/**< spindowns (if any) */
 } DopplerPosition;
 
 
@@ -119,7 +119,7 @@ typedef struct tagDopplerScanGrid {
   REAL8 alpha;
   REAL8 delta;
   REAL8 freq;
-  REAL8Vector spindowns;
+  REAL8Vector spindown;
   struct tagDopplerScanGrid *next;
 } DopplerScanGrid;
 
@@ -128,8 +128,8 @@ typedef struct {
   INT2 state;  			/**< idle, ready or finished */
   SkyRegion skyRegion; 		/**< polygon (and bounding square) defining sky-region  */
   UINT4 numGridPoints;		/**< how many grid-points */
-  REAL8 dFreq;			/**< stepsize for frequency */
-  REAL8 df1dot;			/**< stepsize for first spindown-value f1dot */
+  REAL8 dFreq;			/**< stepsize in frequency */
+  REAL8 df1dot;			/**< stepsize in spindown-value f1dot */
   DopplerScanGrid *grid; 	/**< head of linked list of skygrid nodes */  
   DopplerScanGrid *gridNode;	/**< pointer to current grid-node in skygrid */
 } DopplerScanState;
@@ -141,14 +141,18 @@ typedef struct {
 
 /* Function prototypes */
 
-void InitDopplerScan( LALStatus *stat, DopplerScanState *scan, const DopplerScanInit *init);
-void NextDopplerPos ( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan);
-void FreeDopplerScan (LALStatus *stat, DopplerScanState *scan);
+void InitDopplerScan(LALStatus *, DopplerScanState *scan, const DopplerScanInit *init);
+void NextDopplerPos(LALStatus *, DopplerPosition *pos, DopplerScanState *scan);
+void FreeDopplerScan(LALStatus *, DopplerScanState *scan);
 
-void writeSkyGridFile (LALStatus *stat, const DopplerScanGrid *grid, const CHAR *fname, const DopplerScanInit *init);
-void ParseSkyRegion (LALStatus *stat, SkyRegion *region, const CHAR *input);
-void LALMetricWrapper(LALStatus *stat, REAL8Vector **metric, PtoleMetricIn *params);
-void get_dfkdot( LALStatus *lstat, REAL8Vector *dfkdot, SkyPosition skypos, const DopplerScanInit *params);
+void writeSkyGridFile(LALStatus *, const DopplerScanGrid *grid, const CHAR *fname, const DopplerScanInit *init);
+void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);
+void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, REAL8 AlphaBand, REAL8 DeltaBand);
+
+void LALMetricWrapper(LALStatus *, REAL8Vector **metric, PtoleMetricIn *params);
+
+void getGridSpacings(LALStatus *, DopplerPosition *spacings, const DopplerPosition *gridpoint, const DopplerScanInit *params);
+
 
 
 /********************************************************** <lalLaTeX>
