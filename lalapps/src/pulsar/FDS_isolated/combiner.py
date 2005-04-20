@@ -289,7 +289,12 @@ for parentdir, childdirs, files in os.walk(targetdir):
 	   copiedfile=workdir+file  
 	   targetfile=os.path.join(parentdir,file)   
 	   shutil.copy2(targetfile,copiedfile) # Copy file to working dir.
-           if zipfile.is_zipfile(copiedfile) is True:
+           f=open(copiedfile,'r')
+           buff=f.read(2);
+           f.close()
+           if buff == '%1':
+               pass  # if the file starts with '%1', then we assume the file ascii, do nothing. 
+           else:     # if not, we assume it a zip file and unzip it.
                zipfilename=copiedfile+"_tmp.zip"   
                shutil.move(copiedfile,zipfilename)
                os.system("unzip -qa "+zipfilename)   # Unzip the copied file
@@ -304,8 +309,6 @@ for parentdir, childdirs, files in os.walk(tmpdir):
 	   deleteinfo(targetfile=targetfile,label="%")
            addinfoToEachRaw(targetfile=targetfile,info=str(fileid))
            fileid+=1           
-#	   addheaderinfo(targetfile=targetfile,info="%"+file)
-#	   addfooterinfo(targetfile=targetfile,info="%DONE")
 	   appendfile(fromfile=targetfile,tofile=resultfile)
 
 
