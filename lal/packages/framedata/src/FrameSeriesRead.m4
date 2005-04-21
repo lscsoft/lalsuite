@@ -617,24 +617,35 @@ STYPE *`XLALFrRead'STYPE (
 	size_t lengthlimit
 )
 {
+	static const char *func = "`XLALFrRead'STYPE";
 	STYPE *series;
 	size_t length;
 
-	/* create and initialize the time series vector */
+	/* create and initialize a zero-length time series vector */
 	series = `XLALCreate'STYPE (chname, start, 0.0, 0.0, &lalADCCountUnit, 0);
+	if(!series)
+		XLAL_ERROR_NULL (func, XLAL_EFUNC);
 
-	/* get the series meta data */
-	`XLALFrGet'STYPE`Metadata' (series, stream);
+	/* get the time series meta-data */
+	if(`XLALFrGet'STYPE`Metadata' (series, stream)) {
+		`XLALDestroy'STYPE (series);
+		XLAL_ERROR_NULL (func, XLAL_EFUNC);
+	}
 
-	/* resize to the correct number of samples */
+	/* resize the time series to the correct number of samples */
 	length = duration / series->deltaT;
 	if(lengthlimit && (lengthlimit < length))
 		length = lengthlimit;
-	`XLALResize'STYPE (series, 0, length);
+	if(`XLALResize'STYPE (series, 0, length) != length) {
+		`XLALDestroy'STYPE (series);
+		XLAL_ERROR_NULL (func, XLAL_EFUNC);
+	}
 
 	/* read the data */
-	XLALFrSeek (stream, start);
-	`XLALFrGet'STYPE (series, stream);
+	if(XLALFrSeek (stream, start) || `XLALFrGet'STYPE (series, stream)) {
+		`XLALDestroy'STYPE (series);
+		XLAL_ERROR_NULL (func, XLAL_EFUNC);
+	}
 
 	return(series);
 }
