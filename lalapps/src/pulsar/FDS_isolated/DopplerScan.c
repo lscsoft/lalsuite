@@ -96,6 +96,8 @@ void plotGrid (LALStatus *, DopplerScanGrid *grid, const SkyRegion *region, cons
 void freeGrid(DopplerScanGrid *grid);
 void printFrequencyShifts(LALStatus *, const DopplerScanState *scan, const DopplerScanInit *init);
 void setRandomSeed (void);
+void getSkyEllipse(LALStatus *lstat, SkyEllipse *ellipse, REAL8 mismatch, const REAL8Vector *metric);
+
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
 /*----------------------------------------------------------------------*/
@@ -206,7 +208,7 @@ InitDopplerScan( LALStatus *stat,
 
   /* ----------
    * determine spacings in frequency and spindowns
-   * NOTE: this is only useful if these spacings
+   * NOTE: this is only meaningful if these spacings
    * are sufficiently independent of the phase-parameters
    * ----------*/
   {
@@ -223,9 +225,8 @@ InitDopplerScan( LALStatus *stat,
 
     if (lalDebugLevel)
       {
-	printf ("\nDEBUG: 'theoretical' grid-spacings: \n");
-	printf (  "      dAlpha = %g, dDelta = %g, dFreq = %g, df1dot = %g\n",
-		  gridSpacings.Alpha, gridSpacings.Delta, gridSpacings.Freq, gridSpacings.f1dot);
+	printf ("\nDEBUG: 'theoretical' spacings in frequency and spindown: \n");
+	printf (  "        dFreq = %g, df1dot = %g\n", gridSpacings.Freq, gridSpacings.f1dot);
 
     } /* if lalDebugLevel >= 1 */
 
@@ -523,7 +524,7 @@ plotGrid (LALStatus *stat,
   if ( ( init->metricType > LAL_PMETRIC_NONE) && (init->metricType < LAL_PMETRIC_LAST) )
     {
       REAL8Vector  *metric = NULL;   /* Parameter-space metric: for plotting ellipses */
-      REAL8 gaa, gad, gdd, angle, smaj, smin;
+      SkyEllipse ellipse;
       REAL8 mismatch = init->metricMismatch;
       PtoleMetricIn metricPar;
 
@@ -561,21 +562,7 @@ plotGrid (LALStatus *stat,
 
 	  TRY (LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
 
-	  gaa = metric->data[INDEX_A_A];
-	  gad = metric->data[INDEX_A_D];
-	  gdd = metric->data[INDEX_D_D];
-	  
-	  /* Semiminor axis from larger eigenvalue of metric. */
-	  smin = gaa+gdd + sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
-	  smin = sqrt(2.0* mismatch/smin);
-	  /* Semiminor axis from smaller eigenvalue of metric. */
-	  smaj = gaa+gdd - sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
-	  smaj = sqrt(2.0* mismatch /smaj);
-	  
-	  /* Angle of semimajor axis with "horizontal" (equator). */
-	  angle = atan2( gad, mismatch /smaj/smaj-gdd );
-	  if (angle <= -LAL_PI_2) angle += LAL_PI;
-	  if (angle > LAL_PI_2) angle -= LAL_PI;
+	  TRY (getSkyEllipse(stat->statusPtr, &ellipse, mismatch, metric), stat);
 
 	  /*
 	  printf ("Alpha=%f Delta=%f\ngaa=%f gdd=%f gad=%f\n", Alpha, Delta, gaa, gdd, gad);
@@ -591,11 +578,12 @@ plotGrid (LALStatus *stat,
 	    float c, r, b, x, y;
 	    
 	    c = LAL_TWOPI*i/SPOKES;
-	    x = smaj*cos(c);
-	    y = smin*sin(c);
+	    x = ellipse.smajor * cos(c);
+	    y = ellipse.sminor * sin(c);
 	    r = sqrt( x*x + y*y );
 	    b = atan2 ( y, x );
-	    fprintf( fp, "%e %e\n", Alpha + r*cos(angle+b), Delta + r*sin(angle+b) );
+	    fprintf( fp, "%e %e\n", 
+		     Alpha + r*cos(ellipse.angle+b), Delta + r*sin(ellipse.angle+b) );
 	  }
 	  
 	  node = node -> next;
@@ -1545,10 +1533,12 @@ getGridSpacings( LALStatus *lstat,
       metricpar.duration = params->obsDuration;
       Freq = gridpoint.Freq;		/* keep this, needed later for normalizations */
       metricpar.maxFreq = Freq;
-      
       metricpar.site = params->Detector;
       metricpar.ephemeris = params->ephemeris;	/* needed for ephemeris-metrics */
       metricpar.metricType = params->metricType;
+
+      TRY ( LALNormalizeSkyPosition(lstat->statusPtr, &(metricpar.position), 
+				    &(metricpar.position)), lstat);
 
       TRY ( LALMetricWrapper(lstat->statusPtr, &metric, &metricpar), lstat);
       TRY ( LALSDestroyVector(lstat->statusPtr, &(metricpar.spindown)), lstat);
@@ -1565,7 +1555,12 @@ getGridSpacings( LALStatus *lstat,
 
       spacings->Freq = 2.0 * sqrt ( params->metricMismatch / g_f0_f0 );
 
-      TRY ( LALProjectMetric( lstat->statusPtr, metric, 0 ), lstat);
+      if ( params->projectMetric ) 
+	{
+	  if ( lalDebugLevel ) 
+	    printf ("\ngetGridSpacing(): using the projected metric\n");
+	  TRY ( LALProjectMetric( lstat->statusPtr, metric, 0 ), lstat);
+	}
       gamma_f1_f1 = metric->data[INDEX_f1_f1];
       spacings->f1dot = 2.0 * sqrt( params->metricMismatch * Freq * Freq / gamma_f1_f1 );
 
@@ -1593,14 +1588,23 @@ getGridSpacings( LALStatus *lstat,
 
 /*----------------------------------------------------------------------*/
 /** Determine a (randomized) cubic DopplerRegion around a search-point 
- *  with (roughly) the given number of grid-points in each dimension.
+ *  with (roughly) the given number of grid-points in each non-projected 
+ *  dimension.
  * 
  *  Motivation: mainly useful for MC tests of the search-grid. 
  *              For this we need to simulate a 'small' search-grid around 
  *              the signal-location.
  *
  *  This function tries to estimate a region in parameter-space 
- *  with roughly the given number of grid-points in each dimension.
+ *  with roughly the given number of grid-points in each non-projected dimension. 
+ *
+ *  NOTE: if the frequency has been projected, we needs to search
+ *       the *whole* possible Doppler-range of frequencies, in which the 
+ *       signal can show up. This range is bounded by (from circle-equation)
+ *       |FreqBand/Freq| < beta_orb Delta_n, where beta_orb = V_orb/c ~1e-4,
+ *       and Delta_n = |\vec{n} - \vec{n}_sig| can be estimated from the
+ *       metric sky-ellipses: Delta_n ~ smajor of the sky-ellipse
+ * 
  *  The region will be randomized wrt the central point within one
  *  grid-spacing in order to avoid systematic effects in MC simulations.
  *
@@ -1640,8 +1644,53 @@ getMCDopplerCube (LALStatus *lstat,
   /* figure out corresponding Bands in each dimension */
   AlphaBand = (dAlpha * numSteps);
   DeltaBand = (dDelta * numSteps);
-  FreqBand  = (dFreq  * numSteps);
   f1dotBand = (df1dot * numSteps);
+
+  FreqBand  = (dFreq  * numSteps);	/* 'canonical' value if not projecting */
+
+  /* 
+   * ok, if projected sky-metric is used, we need to estimate
+   * the maximal Delta_n now, so that we can get a reasonable 
+   * bound on the required Frequency-band (the whole Doppler-window
+   * just gets too large for longer observation times... 
+   */
+  if ( params->projectMetric )	/* choose large-enough FreqBand if projecting */
+    {
+      REAL8 DopplerFreqBand;
+      REAL8 fB = FreqBand;
+      PtoleMetricIn metricpar = empty_metricpar;/* we need to know metric for this..:( */
+      SkyEllipse ellipse;
+      REAL8Vector *metric = NULL;
+
+      /* setup metric parameters */
+      metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
+      metricpar.position.longitude = signal.Alpha;
+      metricpar.position.latitude = signal.Delta;
+      TRY ( LALSCreateVector (lstat->statusPtr, &(metricpar.spindown), 1), lstat);
+      metricpar.spindown->data[0] = signal.f1dot / signal.Freq;
+      metricpar.epoch = params->obsBegin;
+      metricpar.duration = params->obsDuration;
+      metricpar.maxFreq = signal.Freq;
+      metricpar.site = params->Detector;
+      metricpar.ephemeris = params->ephemeris;
+      metricpar.metricType = params->metricType;
+      TRY ( LALMetricWrapper(lstat->statusPtr, &metric, &metricpar), lstat);
+      TRY ( LALSDestroyVector(lstat->statusPtr, &(metricpar.spindown)), lstat);
+      TRY ( LALProjectMetric( lstat->statusPtr, metric, 0 ), lstat);
+
+      TRY ( getSkyEllipse(lstat->statusPtr, &ellipse, params->metricMismatch, metric), lstat);
+      TRY ( LALDDestroyVector(lstat->statusPtr, &metric), lstat);
+
+      /* now we can estimate the Doppler-Band on f: |dFreq| < Freq * 1e-4 * smajor */
+      DopplerFreqBand = 2.0 * signal.Freq * 1.0e-4 * ellipse.smajor;
+
+      if ( lalDebugLevel )
+	printf ("\nUsing projected sky-metric: canonical FreqBand would be %g,"
+		" but Doppler-FreqBand = %g\n", fB, DopplerFreqBand);
+
+      FreqBand = MAX( fB, DopplerFreqBand );	/* pick larger one */
+	
+    } /* if project metric */
 
   /* set center-point to signal-location */
   Alpha = signal.Alpha - 0.5 * AlphaBand;
@@ -1692,3 +1741,44 @@ setRandomSeed (void)
 
   return;
 } /* setRandomSeed() */
+
+
+/*----------------------------------------------------------------------*/
+/** get "sky-ellipse" for given metric.
+ */
+void
+getSkyEllipse(LALStatus *lstat, SkyEllipse *ellipse, REAL8 mismatch, const REAL8Vector *metric)
+{
+	
+  REAL8 gaa, gad, gdd;
+  REAL8 smin, smaj, angle;
+
+  INITSTATUS( lstat, "getSkyEllipse", DOPPLERSCANC );
+
+  ASSERT ( metric, lstat, DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
+  ASSERT ( metric->length >= 6, lstat, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+
+  gaa = metric->data[INDEX_A_A];
+  gad = metric->data[INDEX_A_D];
+  gdd = metric->data[INDEX_D_D];
+	  
+  /* Semiminor axis from larger eigenvalue of metric. */
+  smin = gaa+gdd + sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
+  smin = sqrt(2.0* mismatch/smin);
+
+  /* Semimajor axis from smaller eigenvalue of metric. */
+  smaj = gaa+gdd - sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
+  smaj = sqrt(2.0* mismatch /smaj);
+	  
+  /* Angle of semimajor axis with "horizontal" (equator). */
+  angle = atan2( gad, mismatch /smaj/smaj-gdd );
+  if (angle <= -LAL_PI_2) angle += LAL_PI;
+  if (angle > LAL_PI_2) angle -= LAL_PI;
+
+  ellipse->smajor = smaj;
+  ellipse->sminor = smin;
+  ellipse->angle = angle;
+
+  RETURN(lstat);
+
+} /* getSkyEllipse() */
