@@ -40,6 +40,7 @@
 "  --time-step STEP         space injections by ave of STEP sec (2630 / PI)\n"\
 "  --time-interval TIME     distribute injections in interval TIME (0)\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
+"  --lal-eff-dist           calculate effective distances using LAL code\n"\
 "  --waveform NAME          set waveform type to NAME (GeneratePPNtwoPN)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
 "  --tama-output            generate a text file for tama\n"\
@@ -617,6 +618,7 @@ int main( int argc, char *argv[] )
   FILE *fq = NULL;
   int rand_seed = 1;
   static int ilwd = 0;
+  int lalEffDist = 0;
   int tamaOutput = 0;
   int writeDeff = 0;
   int i = 0;
@@ -651,6 +653,7 @@ int main( int argc, char *argv[] )
     {"userTag",                 required_argument, 0,                'Z'},
     {"tama-output",                   no_argument, &tamaOutput,       1 },
     {"write-eff-dist",                no_argument, &writeDeff,        1 },
+    {"lal-eff-dist",                  no_argument, &lalEffDist,       1 },
     {"ilwd",                          no_argument, &ilwd,             1 },
     {0, 0, 0, 0}
   };
@@ -880,6 +883,19 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
   }
 
+  /* store the lalEffDist argument */
+  if ( lalEffDist )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
+        PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+        "--lal-eff-dist" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, " " );
+  }
+
   /* store the ilwd argument */
   if ( ilwd )
   {
@@ -1051,24 +1067,27 @@ int main( int argc, char *argv[] )
     LAL_CALL(LALPopulateSimInspiralSiteInfo( &status, this_sim_insp ), 
         &status);
 
-    /* inspinj has an independent way of calculating the effective distances.
-       Calculate them instead using this */
-    /* XXX Need to implement check that inspinj answers agree with LAL XXX */
+    if ( !lalEffDist )
+    {
+      /* inspinj has an independent way of calculating the effective distances.
+         Calculate them instead using this */
 
-    /* Hanford */
-    this_sim_insp->eff_dist_h = eff_dist( nxH, nyH, injPar, gmst )/MPC;
+      /* Hanford */
+      this_sim_insp->eff_dist_h = eff_dist( nxH, nyH, injPar, gmst )/MPC;
 
-    /* Livingston */
-    this_sim_insp->eff_dist_l = eff_dist( nxL, nyL, injPar, gmst )/MPC;
+      /* Livingston */
+      this_sim_insp->eff_dist_l = eff_dist( nxL, nyL, injPar, gmst )/MPC;
 
-    /* GEO */
-    this_sim_insp->eff_dist_g = eff_dist( nxG, nyG, injPar, gmst )/MPC;
+      /* GEO */
+      this_sim_insp->eff_dist_g = eff_dist( nxG, nyG, injPar, gmst )/MPC;
 
-    /* TAMA */
-    this_sim_insp->eff_dist_t = eff_dist( nxT, nyT, injPar, gmst )/MPC;
+      /* TAMA */
+      this_sim_insp->eff_dist_t = eff_dist( nxT, nyT, injPar, gmst )/MPC;
 
-    /* Virgo */
-    this_sim_insp->eff_dist_v = eff_dist( nxV, nyV, injPar, gmst )/MPC;
+      /* Virgo */
+      this_sim_insp->eff_dist_v = eff_dist( nxV, nyV, injPar, gmst )/MPC;
+
+    }
 
     if ( inj < ninj - 1 )
     {
