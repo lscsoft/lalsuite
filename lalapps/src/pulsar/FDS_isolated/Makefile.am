@@ -27,7 +27,7 @@ CFSsources = 	ComputeFStatistic.h	\
 		clusters.c clusters.h  	\
 		DopplerScan.c DopplerScan.h NeighboringGridPoints.c
 
-lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c $(CFSsources)
+lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c CFSLALDemod.c $(CFSsources)
 
 lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.h	\
 	rngmed.c rngmed.h clusters.c clusters.h  			\

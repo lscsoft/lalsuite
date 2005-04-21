@@ -11,6 +11,8 @@ FILES:
 ComputeFStatistic.h
 ComputeFStatistic.c	: main search-code using JKS98 "F-statistic"
 
+CFSLALDemod.c		: LALDemod variants taken out of ComputeFStatistic for separate compilation & optimization
+
 clusters.h
 clusters.c		: cluster-finding algorithm, very non LAL-compliant
 

@@ -1,10 +1,10 @@
 #ifndef _COMPUTEFSTATISTIC_H
 #define _COMPUTEFSTATISTIC_H
 
-
 #include <lal/LALDatatypes.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALBarycenter.h>
+#include <lal/LALDemod.h>
 
 #include "DopplerScan.h"
 
@@ -14,6 +14,47 @@ extern "C" {
 #endif
 
 #define BUFFERSIZE 1024                                                                   
+
+/*----------------------------------------------------------------------*/
+/* Error-codes */
+
+#define COMPUTEFSTATC_ENULL             1
+#define COMPUTEFSTATC_ESYS              2
+#define COMPUTEFSTATC_EINPUT            3
+#define COMPUTEFSTATC_EMEM              4
+#define COMPUTEFSTATC_ECHECKPOINT       5
+#define COMPUTEFSTATC_ECLUSTER          6
+
+#define COMPUTEFSTATC_MSGENULL          "Arguments contained an unexpected null pointer"
+#define COMPUTEFSTATC_MSGESYS           "System call failed (probably file IO)"
+#define COMPUTEFSTATC_MSGEINPUT         "Invalid input"
+#define COMPUTEFSTATC_MSGEMEM           "Out of memory. Bad."
+#define COMPUTEFSTATC_MSGECHECKPOINT    "Illegal checkpoint"
+#define COMPUTEFSTATC_MSGECLUSTER       "Unspecified error in cluster-related routine"
+
+/*----------------------------------------------------------------------*/
+/* Exit values */
+#define COMPUTEFSTAT_EXIT_OK              0  /* normal exit */
+#define COMPUTEFSTAT_EXIT_USAGE           7  /* user requested help */
+#define COMPUTEFSTAT_EXIT_READSFTFAIL     8  /* ReadSFT failed */
+#define COMPUTEFSTAT_EXIT_OPENFMAX        9  /* error opening Fmax file */
+#define COMPUTEFSTAT_EXIT_OPENFSTAT      10  /* error opening FStats file */
+#define COMPUTEFSTAT_EXIT_OPENFSTAT2     11  /* error opening FStats file for append (chkpt) */
+#define COMPUTEFSTAT_EXIT_WRITEFSTAT     12  /* error opening FStats file */
+#define COMPUTEFSTAT_EXIT_WRITEFAFB      13  /* writeFaFb failed */
+#define COMPUTEFSTAT_EXIT_ESTSIGPAR      14  /* EstimateSignalParameters failed */
+#define COMPUTEFSTAT_EXIT_NOMEM          15  /* out of memory */
+#define COMPUTEFSTAT_EXIT_CANTZIP        16  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_CANTUNZIP      17  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_CANTRENAME     18  /* unable to zip Fstats file */
+#define COMPUTEFSTAT_EXIT_NOPOLKADEL     19  /* no // found in command line */
+#define COMPUTEFSTAT_EXIT_USER           20  /* user asked for exit */
+#define COMPUTEFSTAT_EXIT_DEMOD          21  /* error in LAL-Demod */
+#define COMPUTEFSTAT_EXIT_SIGNAL         22  /* exited on signal */
+#define COMPUTEFSTAT_EXIT_BOINCRESOLVE   23  /* boinc_resolve_filename failed */
+#define COMPUTEFSTAT_EXIT_DLOPEN         24  /* problems with dynamic lib */
+#define COMPUTEFSTAT_EXIT_WORKER         25  /* can't start worker-thread */
+#define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* added to LAL status for BOINC exit value */
 
 /* Maximum fractional doppler shift */
 #define DOPPLERMAX 1.046e-4
@@ -27,8 +68,6 @@ extern "C" {
 just the ones that the user requested.  The actual parameters that
 will be used are computed as exact integers, which correspond as closely as
 possible to the users request, but are not the same.  Don't use these variables! */
-
-
 
 /** Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
@@ -53,15 +92,12 @@ typedef struct {
   INT4 SpinImax;		/**< number of spindown-values */
 } ConfigVariables;
   
-struct headertag {
-    REAL8 endian;
-    INT4  gps_sec;
-    INT4  gps_nsec;
-    REAL8 tbase;
-    INT4  firstfreqindex;
-    INT4  nsamples;
-} header;
-  
+/* LALDemod functions now put into CFSLALDemod.c */
+extern void OrigLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
+extern void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
+extern void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
+extern void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
+extern void TestLALDemodR8(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
 
 #ifdef  __cplusplus
 }
