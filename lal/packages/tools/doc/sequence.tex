@@ -6,7 +6,7 @@ This is a suite of functions for creating, destroying, and manipulating LAL
 sequences.  One pair of functions (the XLAL version and its LAL
 counterpart) is available for each method and sequence type.  For example
 \texttt{XLALCreateREAL4Sequence()} is available for creating sequences of
-\texttt{REAL4} data, and the LAL-stype wrapper
+\texttt{REAL4} data, and the LAL-style wrapper
 \texttt{LALCreateREAL4Sequence()} is provided which is equivalent to the
 XLAL version in all respects except that it adheres to the LAL calling
 conventions (eg.\ it takes a \texttt{LALStatus} pointer as its first
@@ -134,7 +134,7 @@ the space that is freed.
 \subsubsection{Description}
 
 The resize functions alter the size of an existing sequence.  The sequence
-is adjust to have the specified length, and that part of the original
+is adjusted to have the specified length, and that part of the original
 sequence starting at sample first is used to fill the new sequence.  If
 first is negative, then the start of the new sequence is padded by that
 many samples.  If part of the new sequence does not correspond to some part
