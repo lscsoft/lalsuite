@@ -746,10 +746,12 @@ int main(int argc,char *argv[])
       /* pass current search position, for use with starsphere.C
          revision 4.6 or greater. Need to convert radians to
          degrees. */
-      if (set_search_pos_hook != NULL){
-	float pAlpha=(180.0*Alpha/LAL_PI), pDelta=(180.0*Delta/LAL_PI);
-        set_search_pos_hook(pAlpha,pDelta);
-      }
+      if (set_search_pos_hook != NULL)
+	{
+	  REAL4 pAlpha=(180.0*dopplerpos.Alpha / LAL_PI); 
+	  REAL4 pDelta=(180.0*dopplerpos.Delta / LAL_PI);
+	  set_search_pos_hook(pAlpha,pDelta);
+	}
 #endif
       
       LAL_CALL (CreateDemodParams(stat, dopplerpos), stat);
