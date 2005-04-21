@@ -277,8 +277,6 @@ commands
 
   $ unset X509_USER_PROXY
   $ grid-proxy-init -hours 72
-  $ export X509_USER_CERT=`grid-proxy-info -path`
-  $ export X509_USER_KEY=`grid-proxy-info -path`
 
 Enter your pass phrase when promted. The proxy will be valid for 72 hours.
 If you expect the LSCdataFind jobs to take longer to complete, increase
@@ -291,7 +289,7 @@ This will also give the expiry time of the proxy.
 
 You also need to set the LSC_DATAFIND_SERVER environment variable eg.
 
-  $ export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
+  $ export LSC_DATAFIND_SERVER=ldas-gridmon.ligo.caltech.edu
 
 to point to a valid LSC DataFind Server that can be queried for the
 location of the data on the cluster."""
