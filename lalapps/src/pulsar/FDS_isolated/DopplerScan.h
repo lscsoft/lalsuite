@@ -134,6 +134,12 @@ typedef struct tagDopplerScanGrid {
   struct tagDopplerScanGrid *next;
 } DopplerScanGrid;
 
+/** a "sky-ellipse", described by the two major axes and it's angle wrt x-axis */
+typedef struct {
+  REAL8 smajor;
+  REAL8 sminor;
+  REAL8 angle;
+} SkyEllipse;
 
 /** initialization-structure passed to InitDopplerScan() */  
 typedef struct {
@@ -143,11 +149,12 @@ typedef struct {
   REAL8 dAlpha;			/**< step-sizes for GRID_FLAT */
   REAL8 dDelta;
   REAL8 metricMismatch;		/**< for GRID_METRIC and GRID_ISOTROPIC */
-  LIGOTimeGPS obsBegin; 	/**< start-time of time-series */
+  LIGOTimeGPS obsBegin; 	/**< GPS start-time of time-series */
   REAL8 obsDuration;		/**< length of time-series in seconds */
-  REAL8 fmax; 			/**< max frequency of search */
-  LALDetector *Detector; 	/**< Our detector*/
-  EphemerisData *ephemeris;	/**< ephemeris for "exact" metric */
+  BOOLEAN projectMetric;	/**< project the metric orthogonal to Freq? */
+  REAL8 fmax; 			/**< max frequency of search (for projection)*/
+  LALDetector *Detector; 	/**< Current detector */
+  EphemerisData *ephemeris;	/**< ephemeris-data for "exact" metric */
   CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) if GRID_FILE */
 } DopplerScanInit;
 
