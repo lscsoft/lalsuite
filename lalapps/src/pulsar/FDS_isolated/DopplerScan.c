@@ -1536,7 +1536,10 @@ getGridSpacings( LALStatus *lstat,
       metricpar.position.latitude = gridpoint.Delta;
 
       TRY ( LALSCreateVector (lstat->statusPtr, &(metricpar.spindown), 1), lstat);
-      metricpar.spindown->data[0] = gridpoint.f1dot;
+      /* !!NOTE!!: in the metric-codes, the spindown f1 is defined as 
+       * f1 = f1dot / Freq, while here f1dot = d Freq/dt 
+       */
+      metricpar.spindown->data[0] = gridpoint.f1dot / gridpoint.Freq;
       
       metricpar.epoch = params->obsBegin;
       metricpar.duration = params->obsDuration;
