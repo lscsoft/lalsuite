@@ -132,6 +132,8 @@ INT4 lalDebugLevel=3;
 FrCache *framecache;                                           /* frame reading variables */
 FrStream *framestream=NULL;
 
+REAL4 Templateflow;
+
 GlobalVariables GV;   /* A bunch of stuff is stored in here; mainly to protect it from accidents */
 
 StringTemplate strtemplate[MAXTEMPLATES];
@@ -203,53 +205,22 @@ int main(int argc,char *argv[])
 
  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
  
+ /* set lowest frequency of template bank; 
+    should be higher than BW high pass frequency */ 
+ Templateflow=CommandLineArgs.flow+10.0;
+
  if (ReadData(CommandLineArgs)) return 2;
 
  if (ProcessData(CommandLineArgs)) return 4;
 
-/*  { */
-/*    int p; */
-/*    for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
-/*      { */
-/*        fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
-/*      } */
-/*    return 0; */
-/*  } */
-/*  fprintf(stdout,"\n\n"); */
-
  if (CommandLineArgs.InjectionFile != NULL) 
    {
      if (AddInjections(CommandLineArgs)) return 3;
-/*      { */
-/*        int p; */
-/*        for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
-/* 	 { */
-/* 	   fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
-/* 	 } */
-/*        return 0; */
-/*      } */
      /* high pass filter data again with added injection */ 
      if (ProcessData2(CommandLineArgs)) return 3;
-/*      { */
-/*        int p; */
-/*        for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
-/* 	 { */
-/* 	   fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
-/* 	 } */
-/*        return 0; */
-/*      } */
    }
  
  if (DownSample(CommandLineArgs)) return 5;
-
-/*      { */
-/*        int p; */
-/*        for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
-/* 	 { */
-/* 	   fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
-/* 	 } */
-/*        return 0; */
-/*      } */
 
  if (AvgSpectrum(CommandLineArgs)) return 6;
  
@@ -504,8 +475,8 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  (*thisEvent)->peak_time.gpsSeconds      = peaktime / 1000000000;
 	  (*thisEvent)->peak_time.gpsNanoSeconds  = peaktime % 1000000000;
 	  (*thisEvent)->duration     = duration;
-	  (*thisEvent)->central_freq = (strtemplate[m].f+CLA.flow)/2.0;	   
-	  (*thisEvent)->bandwidth    = strtemplate[m].f-CLA.flow;				     
+	  (*thisEvent)->central_freq = (strtemplate[m].f+Templateflow)/2.0;	   
+	  (*thisEvent)->bandwidth    = strtemplate[m].f-Templateflow;				     
 	  (*thisEvent)->snr          = maximum;
 	  (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
 	  (*thisEvent)->confidence   = 0; /* FIXME */
@@ -525,7 +496,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
   COMPLEX8Vector *vtilde = NULL;
   SnglBurstTable *thisEvent = NULL;
 
-  int f_low_index=CLA.flow / GV.StringFilter.deltaF;
+  int f_low_index = Templateflow / GV.StringFilter.deltaF;
   
   /* create vector that will hold the data for each overlapping chunk */ 
   LALSCreateVector( &status, &vector, GV.seg_length);
@@ -596,7 +567,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
 
   fmax = (1.0/GV.ht_proc.deltaT) / 2.0;
 
-  f_low_index = CLA.flow / GV.StringFilter.deltaF;
+  f_low_index = Templateflow / GV.StringFilter.deltaF;
   f_high_index = fmax / GV.StringFilter.deltaF;
   
   t1t1=0.0;
@@ -664,7 +635,7 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
   LALCCreateVector( &status, &vtilde, GV.Spec.data->length );
   TESTSTATUS( &status );
 
-  f_cutoff_index = CLA.flow / GV.StringFilter.deltaF;
+  f_cutoff_index = Templateflow/ GV.StringFilter.deltaF;
 
   memset( vtilde->data, 0, f_cutoff_index  * sizeof( *vtilde->data ) );
  
@@ -710,13 +681,6 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
   /* set all values below the cutoff frequency to 0 */
   memset( GV.StringFilter.data->data, 0, f_cutoff_index  * 
 	  sizeof( *GV.StringFilter.data->data ) );
-
-/*   LALReverseRealFFT( &status, vector, vtilde,  GV.rplan); */
-/*   TESTSTATUS( &status ); */
-
-/*   for ( p = 0 ; p < (int)vector->length; p++ ) */
-/*     fprintf(stdout,"%e\n",vector->data[p]); */
-/*   return 1; */
 
   LALCDestroyVector( &status, &vtilde );
   TESTSTATUS( &status );
