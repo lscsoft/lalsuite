@@ -123,7 +123,7 @@ main(int argc, char *argv[])
     metricpar.position.latitude = uvar_Delta;
 
     LAL_CALL ( LALSCreateVector (&status, &(metricpar.spindown), 1), &status);
-    metricpar.spindown->data[0] = uvar_f1dot;
+    metricpar.spindown->data[0] = uvar_f1dot / uvar_Freq; /* f1 = df/dt / f0 !!*/
       
     metricpar.epoch = config.startTimeGPS;
     metricpar.duration = (REAL4) uvar_duration;
