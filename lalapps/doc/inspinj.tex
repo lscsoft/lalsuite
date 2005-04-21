@@ -21,6 +21,7 @@
 %
 [\texttt{--seed} \textsc{seed}]\newline
 [\texttt{--waveform} \textsc{wave}]\newline
+[\texttt{--lal-eff-dist}]\newline
 [\texttt{--usertag} \textsc{tag}]\newline
 %
 [\texttt{--tama-output}]\newline
@@ -99,6 +100,12 @@ Optional. The string \textsc{wave} will be written into the \texttt{waveform}
 column of the \texttt{sim\_inspiral} table output. This is used by the
 inspiral code to determine which type of waveforms it should inject into the
 data. Defaults is \texttt{GeneratePPNtwoPN}.
+
+\item[\texttt{--lal-eff-dist}]
+Optional.  If this option is specified, the effective distance will be
+calculated using routines from LAL.  Otherwise, the default behaviour is to
+use an independent method contained in inspinj.c.  There is good agreement
+between these two methods, see below for more details.
 
 \item[\texttt{--user-tag} \textsc{string}] Optional. Set the user tag for this
 job to be \textsc{string}. May also be specified on the command line as 
@@ -191,16 +198,15 @@ lalapps_inspinj --seed 45\
 \item[Algorithm]
 
 The algorithm for computing the effective distance will be described in some
-detail below.  The method is to compute both the strain due to the inspiral and
-the detector response in the earth fixed frame.  This frame is such that the
-z-axis points from the earth's centre to the North Pole, the x-axis points from
-the centre to the intersection of the equator and the prime meridian and the
-y-axis is chosen to complete the orthonormal basis.  The
-coordinates of the injection are specified by longitude (or right ascension)
-$\alpha$ and
-latitude (or declination) $\delta$.  The polarization is appropriate for transferring
-from the radiation to earth fixed frame.  These are then converted to the earth
-fixed frame by
+detail below.  The method is to compute both the strain due to the inspiral
+and the detector response in the earth fixed frame.  This frame is such that
+the z-axis points from the earth's centre to the North Pole, the x-axis points
+from the centre to the intersection of the equator and the prime meridian and
+the y-axis is chosen to complete the orthonormal basis.  The coordinates of
+the injection are specified by longitude (or right ascension) $\alpha$ and
+latitude (or declination) $\delta$.  The polarization is appropriate for
+transferring from the radiation to earth fixed frame.  These are then
+converted to the earth fixed frame by
 %
 \begin{eqnarray}
   \theta &=& \frac{\pi}{2} - \delta \\
@@ -305,6 +311,31 @@ compute the effective distance to be:
       cos^{2}(\iota) F_{\times}^{2} \right)
 \end{equation}      
 %
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figures/effective_distance_comparison}
+\caption{Comparison of effective distance computed by inspinj.c and LAL
+routines}
+\label{fig:eff_dist_comparison}
+\end{center}
+\end{figure}
+%
+The algorithm to calculate effective distances described above is completely
+contained within inspinj.c.  There is an independent method of computing
+effective distances can also be called by inspinj.  It is contained in the LAL
+function \texttt{LALPopulateSimInspiralSiteInfo()}.  This function populates
+the site end time and effective distance for all the interferomter sites.  It
+makes use of LAL functionality in the tools and date packages.  These same
+functions are used when generating the injection waveform which is added to
+the data stream (in lalapps\_inspiral).  As a check that these two
+calculations produce the same effective distance, lalapps\_inspinj was run
+twice, once with the \texttt{--lal-eff-dist} option and once without.  Figure
+\ref{eff_dist_comparison} shows the fractional difference in effective
+distance between the two methods for a set of injections.  We see that the
+distances agree within 1\% for all injections, with the largest differences
+occuring for the largest effective disances, i.e.  close to the dead spot of
+the instrument.  For injections which initial LIGO is sensitive to, the
+accuracy is few $\times 10^{-4}$.  
 
 \item[Environment]\leavevmode
 \begin{entry}
