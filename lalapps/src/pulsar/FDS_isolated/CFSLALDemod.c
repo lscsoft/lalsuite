@@ -4,6 +4,10 @@
 
 #include "ComputeFStatistic.h"
 
+#if defined(USE_BOINC) && defined(_WIN32)
+#include "win_lib.h"
+#endif
+
 RCSID( "$Id$");
 
 /* this is defined in C99 and *should* be in math.h.  Long term
