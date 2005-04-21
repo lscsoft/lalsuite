@@ -60,18 +60,6 @@ static int meshOrder = ORDER_DELTA_ALPHA;
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-
-/* Metric indexing scheme: if g_ab for a>=b: index = b + a*(a+1)/2 */
-#define INDEX_f0_f0 (0 + 0*(0+1)/2)	/* g_ff */
-#define INDEX_A_A   (1 + 1*(1+1)/2)	/* g_aa */
-#define INDEX_D_D   (2 + 2*(2+1)/2)	/* g_dd */
-#define INDEX_D_A   (1 + 2*(2+1)/2)	/* g_da */
-
-#define INDEX_f1_f0 (0 + 3*(3+1)/2)	/* g_f1_f */
-#define INDEX_f1_A  (1 + 3*(3+1)/2)
-#define INDEX_f1_D  (2 + 3*(3+1)/2)
-#define INDEX_f1_f1 (3 + 3*(3+1)/2) 	/* g_f1_f1 */
-
 /* some empty structs for initializations */
 static const TwoDMeshParamStruc empty_meshpar;
 static const PtoleMetricIn empty_metricpar;
@@ -227,7 +215,7 @@ InitDopplerScan( LALStatus *stat,
 
     gridpoint.Alpha = scan->grid->Alpha;
     gridpoint.Delta = scan->grid->Delta;
-    gridpoint.freq  = init->fmax;
+    gridpoint.Freq  = init->fmax;
     gridpoint.f1dot = 0;
 
     TRY ( getGridSpacings( stat->statusPtr, &gridSpacings, gridpoint, init), stat);
@@ -237,11 +225,11 @@ InitDopplerScan( LALStatus *stat,
       {
 	printf ("\nDEBUG: 'theoretical' grid-spacings: \n");
 	printf (  "      dAlpha = %g, dDelta = %g, dFreq = %g, df1dot = %g\n",
-		  gridSpacings.Alpha, gridSpacings.Delta, gridSpacings.freq, gridSpacings.f1dot);
+		  gridSpacings.Alpha, gridSpacings.Delta, gridSpacings.Freq, gridSpacings.f1dot);
 
     } /* if lalDebugLevel >= 1 */
 
-    scan->dfreq  = gridSpacings.freq;
+    scan->dFreq  = gridSpacings.Freq;
     scan->df1dot = gridSpacings.f1dot;
   }
   
@@ -340,7 +328,7 @@ NextDopplerPos( LALStatus *stat, DopplerPosition *pos, DopplerScanState *scan)
 	{
 	  pos->Alpha = scan->gridNode->Alpha;
 	  pos->Delta = scan->gridNode->Delta;
-	  pos->freq  = scan->gridNode->freq;
+	  pos->Freq  = scan->gridNode->Freq;
 	  pos->f1dot = scan->gridNode->f1dot;
 
 	  scan->gridNode = scan->gridNode->next;  /* step forward */
@@ -455,14 +443,8 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
       g[1] = metric->data[INDEX_A_A]; /* gyy */
     }
 
-  g[2] = metric->data[INDEX_D_A]; /* gxy = g21: 1 + 2*(2+1)/2 = 4; */
+  g[2] = metric->data[INDEX_A_D]; /* g12: 1 + 2*(2+1)/2 = 4; */
 
-  /*
-  if (lalDebugLevel >= 3)
-    printf ("DEBUG: (ra,dec)=(%f,%f): gxx = %f, gyy = %f, gxy = %f\n", 
-	    metricpar->position.longitude, metricpar->position.latitude,  g[0], g[1], g[2]);
-  */
- 
   /* Clean up and leave. */
   TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   DETATCHSTATUSPTR( stat );
@@ -548,7 +530,6 @@ plotGrid (LALStatus *stat,
       set++;
 
       /* set up the metric parameters common to all sky-points */
-      metricPar.metricType = init->metricType;
       metricPar.position.system = COORDINATESYSTEM_EQUATORIAL;
       metricPar.spindown = LALCalloc ( 1, sizeof(REAL4Vector) );
       metricPar.spindown->length=0;
@@ -557,7 +538,9 @@ plotGrid (LALStatus *stat,
       metricPar.duration = init->obsDuration;
       metricPar.maxFreq = init->fmax;
       metricPar.site = init->Detector;
-
+      metricPar.ephemeris = init->ephemeris;
+      metricPar.metricType = init->metricType;
+      
       node = grid;
       while (node)
 	{
@@ -579,7 +562,7 @@ plotGrid (LALStatus *stat,
 	  TRY (LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
 
 	  gaa = metric->data[INDEX_A_A];
-	  gad = metric->data[INDEX_D_A];
+	  gad = metric->data[INDEX_A_D];
 	  gdd = metric->data[INDEX_D_D];
 	  
 	  /* Semiminor axis from larger eigenvalue of metric. */
@@ -1107,6 +1090,7 @@ buildMetricGrid (LALStatus *stat,
   metricpar.duration = init->obsDuration;
   metricpar.maxFreq = init->fmax;
   metricpar.site = init->Detector;
+  metricpar.ephemeris = init->ephemeris;
 
   /* finally: create the mesh! (ONLY 2D for now!) */
   TRY( LALCreateTwoDMesh( stat->statusPtr, &mesh2d, &meshpar ), stat);
@@ -1536,7 +1520,7 @@ getGridSpacings( LALStatus *lstat,
   REAL8Vector *metric = NULL;
   REAL8 g_f0_f0 = 0, gamma_f1_f1 = 0, gamma_a_a, gamma_d_d;
   PtoleMetricIn metricpar = empty_metricpar;
-  REAL8 freq;
+  REAL8 Freq;
 
   INITSTATUS( lstat, "getGridSpacings", DOPPLERSCANC );
   ATTATCHSTATUSPTR (lstat); 
@@ -1547,7 +1531,6 @@ getGridSpacings( LALStatus *lstat,
   if ( params->gridType == GRID_METRIC)	/* use the metric to fix f0/fdot stepsizes */
     {
       /* setup metric parameters */
-      metricpar.metricType = params->metricType;
       metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
       metricpar.position.longitude = gridpoint.Alpha;
       metricpar.position.latitude = gridpoint.Delta;
@@ -1557,11 +1540,12 @@ getGridSpacings( LALStatus *lstat,
       
       metricpar.epoch = params->obsBegin;
       metricpar.duration = params->obsDuration;
-      freq = gridpoint.freq;		/* keep this, needed later for normalizations */
-      metricpar.maxFreq = freq;
+      Freq = gridpoint.Freq;		/* keep this, needed later for normalizations */
+      metricpar.maxFreq = Freq;
       
       metricpar.site = params->Detector;
       metricpar.ephemeris = params->ephemeris;	/* needed for ephemeris-metrics */
+      metricpar.metricType = params->metricType;
 
       TRY ( LALMetricWrapper(lstat->statusPtr, &metric, &metricpar), lstat);
       TRY ( LALSDestroyVector(lstat->statusPtr, &(metricpar.spindown)), lstat);
@@ -1576,11 +1560,11 @@ getGridSpacings( LALStatus *lstat,
        * the number of dimensions D in the parameter-space considered.
        */
 
-      spacings->freq = 2.0 * sqrt ( params->metricMismatch / g_f0_f0 );
+      spacings->Freq = 2.0 * sqrt ( params->metricMismatch / g_f0_f0 );
 
       TRY ( LALProjectMetric( lstat->statusPtr, metric, 0 ), lstat);
       gamma_f1_f1 = metric->data[INDEX_f1_f1];
-      spacings->f1dot = 2.0 * sqrt( params->metricMismatch * freq * freq / gamma_f1_f1 );
+      spacings->f1dot = 2.0 * sqrt( params->metricMismatch * Freq * Freq / gamma_f1_f1 );
 
       gamma_a_a = metric->data[INDEX_A_A];
       gamma_d_d = metric->data[INDEX_D_D];
@@ -1593,7 +1577,7 @@ getGridSpacings( LALStatus *lstat,
     }
   else	/* no metric: use 'naive' value of 1/(2*T^k) [previous default in CFS] */
     {
-      spacings->freq = 1.0 / (2.0 * params->obsDuration);
+      spacings->Freq = 1.0 / (2.0 * params->obsDuration);
       spacings->Alpha = params->dAlpha;	/* dummy */
       spacings->Delta = params->dDelta;
       spacings->f1dot = 1.0 / (2.0 * params->obsDuration * params->obsDuration);
@@ -1627,9 +1611,9 @@ getMCDopplerCube (LALStatus *lstat,
 		  const DopplerScanInit *params)/**< search+metric parameters */
 {
   DopplerPosition spacings = empty_DopplerPosition;
-  REAL8 Alpha, Delta, freq, f1dot;
-  REAL8 dAlpha, dDelta, dfreq, df1dot;
-  REAL8 AlphaBand, DeltaBand, freqBand, f1dotBand;
+  REAL8 Alpha, Delta, Freq, f1dot;
+  REAL8 dAlpha, dDelta, dFreq, df1dot;
+  REAL8 AlphaBand, DeltaBand, FreqBand, f1dotBand;
   REAL8 numSteps;
 
   INITSTATUS( lstat, "getMCDopplerCube", DOPPLERSCANC );
@@ -1643,7 +1627,7 @@ getMCDopplerCube (LALStatus *lstat,
 
   dAlpha = spacings.Alpha;
   dDelta = spacings.Delta;
-  dfreq  = spacings.freq;
+  dFreq  = spacings.Freq;
   df1dot = spacings.f1dot;
 
   numSteps = PointsPerDim;
@@ -1653,13 +1637,13 @@ getMCDopplerCube (LALStatus *lstat,
   /* figure out corresponding Bands in each dimension */
   AlphaBand = (dAlpha * numSteps);
   DeltaBand = (dDelta * numSteps);
-  freqBand  = (dfreq  * numSteps);
+  FreqBand  = (dFreq  * numSteps);
   f1dotBand = (df1dot * numSteps);
 
   /* set center-point to signal-location */
   Alpha = signal.Alpha - 0.5 * AlphaBand;
   Delta = signal.Delta - 0.5 * DeltaBand;
-  freq  = signal.freq  - 0.5 * freqBand;
+  Freq  = signal.Freq  - 0.5 * FreqBand;
   f1dot = signal.f1dot - 0.5 * f1dotBand;
 
   /* randomize center-point within one grid-cell */
@@ -1667,14 +1651,14 @@ getMCDopplerCube (LALStatus *lstat,
 #define randShift() (1.0 * rand()/RAND_MAX - 0.5)
   Alpha += dAlpha * randShift();
   Delta += dDelta * randShift();
-  freq  += dfreq  * randShift();
+  Freq  += dFreq  * randShift();
   f1dot += df1dot * randShift();
 
   /* convert sky-square into a skyRegionString */
   TRY ( SkySquare2String (lstat->statusPtr, &(cube->skyRegionString), 
 			  Alpha, Delta, AlphaBand, DeltaBand), lstat);
-  cube->freq = freq;
-  cube->freqBand = freqBand;
+  cube->Freq = Freq;
+  cube->FreqBand = FreqBand;
   cube->f1dot = f1dot;
   cube->f1dotBand = f1dotBand;
 
