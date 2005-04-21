@@ -64,6 +64,22 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 
 /*************************************************** </lalErrTable> */
 
+/* Metric indexing scheme: if g_ab for i<=j: index = i + j*(j+1)/2 */
+#define INDEX_f0_f0 (0 + 0*(0+1)/2)
+#define INDEX_f0_A  (0 + 1*(1+1)/2)
+#define INDEX_f0_D  (0 + 2*(2+1)/2)
+#define INDEX_f0_f1 (0 + 3*(3+1)/2)
+
+#define INDEX_A_A   (1 + 1*(1+1)/2)
+#define INDEX_A_D   (1 + 2*(2+1)/2)
+#define INDEX_A_f1  (1 + 3*(3+1)/2)
+
+#define INDEX_D_D   (2 + 2*(2+1)/2)
+#define INDEX_D_f1  (2 + 3*(3+1)/2)
+
+#define INDEX_f1_f1 (3 + 3*(3+1)/2) 
+
+
 /** a Doppler-scan can be in one of the following states */
 enum {
   STATE_IDLE = 0,   	/**< not initialized yet */
@@ -86,17 +102,17 @@ typedef enum
 typedef struct {
   REAL8 Alpha;			/**< longitude in Radians, EquatorialCoordinates */
   REAL8 Delta;			/**< latitude in Radians, EquatorialCoordinates */
-  REAL8 freq;			/**< frequency */
+  REAL8 Freq;			/**< frequency */
   REAL8 f1dot;			/**< first frequency-derivative (spindown) */
 } DopplerPosition;
 
 /** Structure describing a region in paramter-space (a,d,f,f1dot,..). 
- *  Currently this is simply a direct product of skyRegion x freqBand x f1dotBand.
+ *  Currently this is simply a direct product of skyRegion x FreqBand x f1dotBand.
  */
 typedef struct {
   CHAR *skyRegionString;	/**< sky-region string '(a1,d1), (a2,d2), ..' */
-  REAL8 freq;			/**< first point of frequency-interval */
-  REAL8 freqBand;		/**< width of frequency-interval */
+  REAL8 Freq;			/**< first point of Frequency-interval */
+  REAL8 FreqBand;		/**< width of frequency-interval */
   REAL8 f1dot;			/**< first spindown-value */
   REAL8 f1dotBand;		/**< width of spindown-interval */
 } DopplerRegion;
@@ -113,7 +129,7 @@ typedef struct {
 typedef struct tagDopplerScanGrid {
   REAL8 Alpha;
   REAL8 Delta;
-  REAL8 freq;
+  REAL8 Freq;
   REAL8 f1dot;
   struct tagDopplerScanGrid *next;
 } DopplerScanGrid;
@@ -140,7 +156,7 @@ typedef struct {
   INT2 state;  			/**< idle, ready or finished */
   SkyRegion skyRegion; 		/**< polygon (and bounding square) defining sky-region  */
   UINT4 numGridPoints;		/**< how many grid-points */
-  REAL8 dfreq;			/**< stepsize in frequency */
+  REAL8 dFreq;			/**< stepsize in frequency */
   REAL8 df1dot;			/**< stepsize in spindown-value f1dot */
   DopplerScanGrid *grid; 	/**< head of linked list of skygrid nodes */  
   DopplerScanGrid *gridNode;	/**< pointer to current grid-node in skygrid */
