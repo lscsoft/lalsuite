@@ -45,12 +45,9 @@ RCSID( "$Id$");
 
 /*----------------------------------------------------------------------*/
 /* conditional compilation-switches */
-
 /*
-#define NEARESTGRIDPOINTS_ON
 #define DEBG_FAFB                
 #define DEBG_ESTSIGPAR
-#define DEBG_SGV 
 */
 
 /* If FILE_FILENAME is defined, then print the corresponding file  */
@@ -268,7 +265,6 @@ DemodPar *DemodParams;	/**< Demodulation parameters for LALDemod */
 LIGOTimeGPS *timestamps;/**< Time stamps from SFT data */
 LALFstat Fstat;		/**< output from LALDemod(): F-statistic and amplitudes Fa and Fb */
 AMCoeffs amc; 		/**< amplitude-modulation coefficients (and derived quantities) */
-REAL8 Alpha,Delta;	/**< sky-position currently searched (equatorial coords, radians) */
 Clusters HFLines;	/**< stores information about outliers/clusters in F-statistic */
 Clusters HPLines;	/**< stores information about outliers/clusters in SFT-power spectrum */
 Clusters *highSpLines=&HPLines, *highFLines=&HFLines;
@@ -295,16 +291,16 @@ extern "C" {
   void initUserVars (LALStatus *stat);
   INT4 ReadSFTData (void);
   void InitFStat (LALStatus *status, ConfigVariables *cfg);
-  void CreateDemodParams (LALStatus *status);
+  void CreateDemodParams (LALStatus *status, DopplerPosition dopplerpos);
   void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
   void Freemem (LALStatus *status);
   void EstimateFLines(LALStatus *status);
   void NormaliseSFTDataRngMdn (LALStatus *status);
   INT4 EstimateSignalParameters(INT4 * maxIndex);
-  int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum);
-  INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN);
+  int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosition searchpos);
+  INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos);
   int compare(const void *ip, const void *jp);
-  INT4 writeFaFb(INT4 *maxIndex);
+  INT4 writeFaFb(INT4 *maxIndex, DopplerPosition searchpos);
   void checkUserInputConsistency (LALStatus *lstat);
   void getSearchRegion (LALStatus *, DopplerRegion *searchRegion, const DopplerScanInit *params);
 
@@ -485,12 +481,12 @@ int main(int argc,char *argv[])
 
   if ( lalDebugLevel )
     {
-      printf ("\nDEBUG: search-point Alpha=%.16g, Delta=%.16g, freq=%.16g, f1dot=%.16g\n\n",
+      printf ("\nDEBUG: search-point Alpha=%.16g, Delta=%.16g, Freq=%.16g, f1dot=%.16g\n\n",
 	      uvar_Alpha, uvar_Delta, uvar_Freq, uvar_f1dot);
       printf ("DEBUG: Final search-region:\n");
       printf ("       skyRegion = '%s'\n", GV.searchRegion.skyRegionString);
-      printf ("       freq in  = [%.16g, %.16g]\n", 
-	      GV.searchRegion.freq, GV.searchRegion.freq + GV.searchRegion.freqBand);
+      printf ("       Freq in  = [%.16g, %.16g]\n", 
+	      GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
       printf ("       f1dot in = [%.16g, %.16g]\n\n",
 	      GV.searchRegion.f1dot, GV.searchRegion.f1dot + GV.searchRegion.f1dotBand);
     }
@@ -510,9 +506,9 @@ int main(int argc,char *argv[])
       LALPrintError (" done.\n\n");
     }
 
-  /* ---------- set frequency- and spindown-resolution if not input by user ----------*/
+  /* ---------- set Frequency- and spindown-resolution if not input by user ----------*/
   if ( !LALUserVarWasSet( &uvar_dFreq ) )
-    GV.dFreq = thisScan.dfreq;
+    GV.dFreq = thisScan.dFreq;
   else
     GV.dFreq = uvar_dFreq;
 
@@ -526,21 +522,21 @@ int main(int argc,char *argv[])
 	    GV.dFreq, GV.df1dot);
   }
 
-  /* Number of freq- and spindown values to calculate F for */
-  GV.FreqImax = (INT4)(GV.searchRegion.freqBand / GV.dFreq + 1e-6) + 1;  
+  /* Number of Freq- and spindown values to calculate F for */
+  GV.FreqImax = (INT4)(GV.searchRegion.FreqBand / GV.dFreq + 1e-6) + 1;  
   GV.SpinImax = (INT4)(GV.searchRegion.f1dotBand/ GV.df1dot + 1e-6) + 1;  
 
   if (lalDebugLevel >= 1)
     {
       printf ("Frequency-templates: %d, first frequency-value: %.16g\n", 
-	      GV.FreqImax, GV.searchRegion.freq);
+	      GV.FreqImax, GV.searchRegion.Freq);
       printf ("Spindown-templates: %d, first spindown-value: %.16g\n\n", 
 	      GV.SpinImax, GV.searchRegion.f1dot);
     }
   {
     REAL8 f_min, f_max;
-    f_min = GV.searchRegion.freq;
-    f_max = f_min + GV.searchRegion.freqBand;
+    f_min = GV.searchRegion.Freq;
+    f_max = f_min + GV.searchRegion.FreqBand;
     GV.ifmin = (INT4) floor( (1.0-DOPPLERMAX)* f_min * GV.tsft) - uvar_Dterms;
     GV.ifmax = (INT4) ceil( (1.0+DOPPLERMAX) * f_max * GV.tsft) + uvar_Dterms;
   }
@@ -665,13 +661,15 @@ int main(int argc,char *argv[])
 
   /* Checkpointed information is retrieved from checkpoint-file (if found) */
   if (uvar_doCheckpointing)
-    LAL_CALL (getCheckpointCounters( stat, &loopcounter, &checksum, &fstat_bytecounter, Fstatsfilename, ckp_fname ), stat); 
+    LAL_CALL (getCheckpointCounters( stat, &loopcounter, &checksum, &fstat_bytecounter, 
+				     Fstatsfilename, ckp_fname ), stat); 
 
 
   /* allow for checkpointing: 
    * open fstats file for writing or appending, depending on loopcounter. 
    */
-  if ( FILE_FSTATS && ( (fpstat=fopen( Fstatsfilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
+  if ( FILE_FSTATS 
+       && ( (fpstat=fopen( Fstatsfilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
     {
       fprintf(stderr,"in Main: unable to open Fstats file\n");
       return COMPUTEFSTAT_EXIT_OPENFSTAT2;
@@ -705,10 +703,12 @@ int main(int argc,char *argv[])
       }
     }
     /* seek to right point of fstats file (truncate what's left over) */
-    if ( 0 != fseek( fpstat, fstat_bytecounter, SEEK_SET) ) {   /* something gone wrong seeking .. */
-      if (lalDebugLevel) LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
-      return COMPUTEFSTATC_ECHECKPOINT;;
-    }
+    if ( 0 != fseek( fpstat, fstat_bytecounter, SEEK_SET) ) 
+      {   /* something gone wrong seeking .. */
+	if (lalDebugLevel) 
+	  LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
+	return COMPUTEFSTATC_ECHECKPOINT;;
+      }
   } /* if loopcounter > 0 */
   
   while (1)
@@ -727,7 +727,8 @@ int main(int argc,char *argv[])
                 LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
                 return COMPUTEFSTATC_ECHECKPOINT;
               }
-              if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %" LAL_UINT4_FORMAT " %ld\nDONE\n", loopcounter, checksum, fstat_bytecounter) < 0) {
+              if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %" LAL_UINT4_FORMAT " %ld\nDONE\n", 
+			    loopcounter, checksum, fstat_bytecounter) < 0) {
                 LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
                 return COMPUTEFSTATC_ECHECKPOINT;
               }
@@ -760,8 +761,10 @@ int main(int argc,char *argv[])
 	  *fraction_done_hook=local_fraction_done;
       }
 #endif
-      if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
-                                        (100.0* loopcounter / thisScan.numGridPoints));
+      if (lalDebugLevel) 
+	LALPrintError (""
+		       "Search progress: %5.1f%%", 
+		       (100.0* loopcounter / thisScan.numGridPoints));
       
       LAL_CALL (NextDopplerPos( stat, &dopplerpos, &thisScan ), stat);
       
@@ -773,9 +776,9 @@ int main(int argc,char *argv[])
       thisPoint.longitude = dopplerpos.Alpha;
       thisPoint.latitude = dopplerpos.Delta;
       LAL_CALL (LALNormalizeSkyPosition(stat, &thisPoint, &thisPoint), stat);
-      Alpha = thisPoint.longitude;
-      Delta = thisPoint.latitude;
-
+      dopplerpos.Alpha = thisPoint.longitude;
+      dopplerpos.Delta = thisPoint.latitude;
+      
 #if USE_BOINC
       /* pass current search position, for use with starsphere.C
          revision 4.6 or greater. Need to convert radians to
@@ -786,14 +789,14 @@ int main(int argc,char *argv[])
       }
 #endif
       
-      LAL_CALL (CreateDemodParams(stat), stat);
+      LAL_CALL (CreateDemodParams(stat, dopplerpos), stat);
 #ifdef FILE_AMCOEFFS
-      PrintAMCoeffs(Alpha, Delta, DemodParams->amcoe);
+      PrintAMCoeffs(dopplerpos.Alpha, dopplerpos.Delta, DemodParams->amcoe);
 #endif
       /* loop over spin params */
       for (spdwn=0; spdwn < GV.SpinImax; spdwn++)
         {
-          DemodParams->spinDwn[0] = uvar_f1dot + spdwn * GV.df1dot;
+          DemodParams->spinDwn[0] = GV.searchRegion.f1dot + spdwn * GV.df1dot;
 	  
           switch ( uvar_expLALDemod )
 	    {
@@ -835,7 +838,9 @@ int main(int argc,char *argv[])
 		  REAL8 Fval = 2.0*medianbias*Fstat.F[i];
 
 		  LALSnprintf (linebuf, 1023, "%20.17f %20.17f %20.17f %20.17g %20.17g\n", 
-			    uvar_Freq + i*GV.dFreq, Alpha, Delta, DemodParams->spinDwn[0], Fval);
+			       GV.searchRegion.Freq + i * GV.dFreq, 
+			       dopplerpos.Alpha, dopplerpos.Delta, 
+			       DemodParams->spinDwn[0], Fval);
 		  linebuf[1023] = 0;
 		  fprintf (fpOut, linebuf);
 
@@ -873,24 +878,27 @@ int main(int argc,char *argv[])
               maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
             
               /*  for every cluster writes the information about it in file Fstats */
-              if (writeFLines(maxIndex, &bytesWritten, &checksum))
+              if (writeFLines(maxIndex, &bytesWritten, &checksum, dopplerpos))
                 {
                   fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
                   return COMPUTEFSTAT_EXIT_WRITEFSTAT;
                 }
-              fstat_bytecounter += (long)bytesWritten;  /* bookkeeping of nominal length of Fstats-file */
+	      /* bookkeeping of nominal length of Fstats-file */
+              fstat_bytecounter += (long)bytesWritten;  
                   
               if (uvar_EstimSigParam)
                 {
-                  if(writeFaFb(maxIndex)) return COMPUTEFSTAT_EXIT_WRITEFAFB;
-                  if (EstimateSignalParameters(maxIndex)) return COMPUTEFSTAT_EXIT_ESTSIGPAR;
+                  if(writeFaFb(maxIndex, dopplerpos)) 
+		    return COMPUTEFSTAT_EXIT_WRITEFAFB;
+                  if (EstimateSignalParameters(maxIndex)) 
+		    return COMPUTEFSTAT_EXIT_ESTSIGPAR;
                 } /* if signal-estimation */
           
           
               LALFree(maxIndex);
             } /* if highFLines found */
 
-          if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1))
+          if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1, dopplerpos))
             LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
 
           
@@ -1307,7 +1315,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
 
 /* Write the Fa and Fb for the later use of Fstatistic Shape test */
 /* the explicit format specifier like %22.12f looks ugly. */
-int writeFaFb(INT4 *maxIndex)
+int writeFaFb(INT4 *maxIndex, DopplerPosition searchpos)
 {
   INT4 irec,jrec;
   INT4 index,krec=0;
@@ -1318,6 +1326,9 @@ int writeFaFb(INT4 *maxIndex)
   FILE * fp=NULL;
   REAL8 bias=1.0;
   CHAR FaFbfilename[256];
+
+  if ( lalDebugLevel > 10)	/* dummy: avoid warnings */
+    printf ("%f, %f", searchpos.Alpha, searchpos.Delta);
   
   strcpy(FaFbfilename,"FaFb");
   if (uvar_outputLabel)
@@ -1343,15 +1354,15 @@ int writeFaFb(INT4 *maxIndex)
 
     /* The header contains */
     /* N the number of points in the cluster */
-    /* the frequency where the maximum amplitude is */
+    /* the Frequency where the maximum amplitude is */
     /* A,B,C coefficients */
     index=highFLines->Iclust[krec];
 
     fprintf(fp,"%10d\n",N);
     fprintf(fp,"%22.12f %22.12f\n",
-            uvar_Freq+maxIndex[irec]*GV.dFreq,
+            GV.searchRegion.Freq + maxIndex[irec]*GV.dFreq,
             Fstat.F[maxIndex[irec]]*bias*bias);
-    fprintf(fp,"%22.12f %22.12f\n",uvar_Freq + index * GV.dFreq, GV.dFreq);
+    fprintf(fp,"%22.12f %22.12f\n",GV.searchRegion.Freq + index * GV.dFreq, GV.dFreq);
     fprintf(fp,"%22.12f %22.12f %22.12f\n",amc.A,amc.B,amc.C);
 
 
@@ -1392,7 +1403,7 @@ int writeFaFb(INT4 *maxIndex)
                  "%E %20.17f %20.17f "
                  "%22.16f %22.16f %22.16f %22.16f %22.16f %22.16f %22.16f\n",
               uvar_Freq+index*GV.dFreq,Fstat.F[index]*bias*bias,
-              DemodParams->spinDwn[0], Alpha, Delta,
+              DemodParams->spinDwn[0], searchpos.Alpha, searchpos.Delta,
               Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
               Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
               Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
@@ -1421,7 +1432,7 @@ int writeFaFb(INT4 *maxIndex)
 
 /*******************************************************************************/
 
-void CreateDemodParams (LALStatus *status)
+void CreateDemodParams (LALStatus *status, DopplerPosition searchpos)
 {
   CSParams *csParams  = NULL;        /* ComputeSky parameters */
   AMCoeffsParams *amParams;
@@ -1435,12 +1446,12 @@ void CreateDemodParams (LALStatus *status)
   ATTATCHSTATUSPTR (status);
   
   /* Detector location: MAKE INTO INPUT!!!!! */
-  baryinput.site.location[0]=GV.Detector.location[0]/LAL_C_SI;
-  baryinput.site.location[1]=GV.Detector.location[1]/LAL_C_SI;
-  baryinput.site.location[2]=GV.Detector.location[2]/LAL_C_SI;
-  baryinput.alpha=Alpha;
-  baryinput.delta=Delta;
-  baryinput.dInv=0.e0;
+  baryinput.site.location[0] = GV.Detector.location[0]/LAL_C_SI;
+  baryinput.site.location[1] = GV.Detector.location[1]/LAL_C_SI;
+  baryinput.site.location[2] = GV.Detector.location[2]/LAL_C_SI;
+  baryinput.alpha = searchpos.Alpha;
+  baryinput.delta = searchpos.Delta;
+  baryinput.dInv = 0.e0;
 
 /* amParams structure to compute a(t) and b(t) */
 
@@ -1454,8 +1465,8 @@ void CreateDemodParams (LALStatus *status)
   amParams->earth = &earth; 
   amParams->edat = GV.edat;
   amParams->das->pDetector = &GV.Detector; 
-  amParams->das->pSource->equatorialCoords.latitude = Delta;
-  amParams->das->pSource->equatorialCoords.longitude = Alpha;
+  amParams->das->pSource->equatorialCoords.latitude = searchpos.Delta;
+  amParams->das->pSource->equatorialCoords.longitude = searchpos.Alpha;
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!*/
@@ -1482,22 +1493,22 @@ void CreateDemodParams (LALStatus *status)
   csParams->edat = GV.edat;
   csParams->baryinput=&baryinput;
   csParams->spinDwnOrder=1;
-  csParams->skyPos[0]=Alpha;
-  csParams->skyPos[1]=Delta;
+  csParams->skyPos[0] = searchpos.Alpha;
+  csParams->skyPos[1] = searchpos.Delta;
   csParams->earth = &earth;
   csParams->emit = &emit;
 
 /* Finally, DemodParams */
-  DemodParams->amcoe=&amc;
-  DemodParams->spinDwnOrder=1;
-  DemodParams->SFTno=GV.SFTno;
+  DemodParams->amcoe = &amc;
+  DemodParams->spinDwnOrder = 1;
+  DemodParams->SFTno = GV.SFTno;
 
-  DemodParams->f0=uvar_Freq;
-  DemodParams->imax=GV.FreqImax;
-  DemodParams->df=GV.dFreq;
+  DemodParams->f0   = GV.searchRegion.Freq;
+  DemodParams->imax = GV.FreqImax;
+  DemodParams->df   = GV.dFreq;
 
-  DemodParams->Dterms=uvar_Dterms;
-  DemodParams->ifmin=GV.ifmin;
+  DemodParams->Dterms = uvar_Dterms;
+  DemodParams->ifmin = GV.ifmin;
 
   DemodParams->returnFaFb = uvar_EstimSigParam;
 
@@ -1522,7 +1533,7 @@ void CreateDemodParams (LALStatus *status)
 /*  for every cluster writes the information about it in file Fstats */
 /*  precisely it writes: */
 /*  fr_max alpha delta N_points_of_cluster mean std max (of 2F) */
-int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum)
+int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosition searchpos)
 {
   INT4 i,j,j1,j2,k,N;
   REAL8 max,log2val,mean,var,std,R,fr;
@@ -1566,14 +1577,14 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum)
     }/*  end j loop over points of i-th cluster  */
     var=var/N;
     std=sqrt(var);
-    fr=uvar_Freq + imax*GV.dFreq;
+    fr = GV.searchRegion.Freq + imax * GV.dFreq;
 
     /*    print the output */
     if (fpstat) {
       int l;
       int howmany2=0;
       int howmany=sprintf((char *)tmpline, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
-                         fr, Alpha, Delta, N, mean, std, max);
+                         fr, searchpos.Alpha, searchpos.Delta, N, mean, std, max);
       
       if (howmany <= 0) {
         fprintf(stderr,"writeFLines couldn't print to Fstats-file placeholder!\n");
@@ -1675,7 +1686,7 @@ int ReadSFTData(void)
           return 3;
         }
         
-      /* Check that are frequency bins needed are in data set */
+      /* Check that are Frequency bins needed are in data set */
       if (GV.ifmin<header.firstfreqindex || 
           GV.ifmax>header.firstfreqindex+header.nsamples) 
         {
@@ -2010,7 +2021,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     cfg->Tf = (INT4) (header.gps_sec+header.tbase);  
     /* Time baseline of SFTs */
     cfg->tsft=header.tbase;  
-    cfg->nsamples=header.nsamples;    /* # of freq. bins in SFT*/
+    cfg->nsamples=header.nsamples;    /* # of Freq. bins in SFT*/
   }
 
   /*----------------------------------------------------------------------
@@ -2096,7 +2107,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       printf("# Starting search frequency:          %f Hz\n",uvar_Freq);
       printf("# Demodulation frequency band:        %f Hz\n",uvar_FreqBand);
       printf("# Actual # of SFTs:                   %d\n", cfg->SFTno);
-      printf("# total observation time:             %f hours\n",(cfg->Tf - cfg->Ti)/3600.0);
+      printf("# total observation time:             %f hours\n",1.0*(cfg->Tf - cfg->Ti)/3600.0);
     } /* lalDebugLevel */
 
     DETATCHSTATUSPTR (status);
@@ -2288,8 +2299,8 @@ getSearchRegion (LALStatus *lstat,
 	   COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 
   /* ---------- start with default-values for the search-region */
-  ret.freq      = uvar_Freq;
-  ret.freqBand  = uvar_FreqBand;
+  ret.Freq      = uvar_Freq;
+  ret.FreqBand  = uvar_FreqBand;
   ret.f1dot     = uvar_f1dot;
   ret.f1dotBand = uvar_f1dotBand;
 
@@ -2320,7 +2331,7 @@ getSearchRegion (LALStatus *lstat,
       
       signal.Alpha = uvar_Alpha;
       signal.Delta = uvar_Delta;
-      signal.freq  = uvar_Freq;
+      signal.Freq  = uvar_Freq;
       signal.f1dot = uvar_f1dot;
 
       TRY ( getMCDopplerCube(lstat->statusPtr, 
@@ -2359,10 +2370,10 @@ getSearchRegion (LALStatus *lstat,
 	ret.skyRegionString = str;
       }
 
-    if ( haveFreqBand )		/* override frequency-interval */
+    if ( haveFreqBand )		/* override Frequency-interval */
       {
-	ret.freq = uvar_Freq;
-	ret.freqBand = uvar_FreqBand;
+	ret.Freq = uvar_Freq;
+	ret.FreqBand = uvar_FreqBand;
       }
     if ( havef1dotBand )	/* override spindown-interval */
       {
@@ -2613,13 +2624,16 @@ int compare(const void *ip, const void *jp)
  * Basic strategy: sort the array by values of F, then look at the 
  * top ones. Then search for the points above threshold. 
  */
-INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
+INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos)
 {
 
   INT4 *indexes,i,j,iF,N;
   REAL8 mean=0.0, std=0.0 ,log2val /*=log(2.0)*/;
+  
+  log2val = medianbias;
 
-  log2val=medianbias;
+  if ( lalDebugLevel > 10)	/* dummy: avoid warnings */
+    printf ("%f, %f", searchpos.Alpha, searchpos.Delta);
 
   for (i=0;i<highFLines->Nclusters;i++){
     N=highFLines->NclustPoints[i];
@@ -2665,10 +2679,10 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
   if( ic==0 ) {
     fprintf(stderr,"Warning: Search frequency band may be too small to cover the outlier.\n");
     leftEdgeTwoF = Fstat.F[ic];
-    leftEdgeFreq = uvar_Freq+ic*GV.dFreq;
+    leftEdgeFreq = GV.searchRegion.Freq + ic*GV.dFreq;
   } else {/* shift slightly downwards to cover the half-maximum point, if possible */
     leftEdgeTwoF = Fstat.F[ic-1];
-    leftEdgeFreq = uvar_Freq+(ic-1)*GV.dFreq;
+    leftEdgeFreq = GV.searchRegion.Freq + (ic-1)*GV.dFreq;
   }
 
 
@@ -2679,10 +2693,10 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
   if( ic==GV.FreqImax-1 ) {
     fprintf(stderr,"Warning: Search frequency band may be too small to cover the outlier.\n");
     rightEdgeTwoF = Fstat.F[ic];
-    rightEdgeFreq = uvar_Freq+ic*GV.dFreq;
+    rightEdgeFreq = GV.searchRegion.Freq + ic*GV.dFreq;
   } else { /* shift slightly upwards to cover the half-maximum point, if possible */
     rightEdgeTwoF = Fstat.F[ic+1];
-    rightEdgeFreq = uvar_Freq+(ic+1)*GV.dFreq;
+    rightEdgeFreq = GV.searchRegion.Freq + (ic+1)*GV.dFreq;
   }
 
   maximumTwoF= Fstat.F[indexes[0]];
@@ -2698,8 +2712,8 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
     for (ntop=0; ntop<ReturnMaxN; ntop++)
       if (Fstat.F[indexes[ntop]]>TwoFthr){
         err=fprintf(fpmax, "%20.10f %10.8f %10.8f %20.15f\n",
-                    uvar_Freq+indexes[ntop]*GV.dFreq,
-                    Alpha, Delta, 2.0*log2val*Fstat.F[indexes[ntop]]);
+                    GV.searchRegion.Freq + indexes[ntop]*GV.dFreq,
+                    searchpos.Alpha, searchpos.Delta, 2.0*log2val*Fstat.F[indexes[ntop]]);
         if (err<=0) {
           fprintf(stderr,"PrintTopValues couldn't print to Fmax!\n");
           LALFree(indexes);
@@ -2744,8 +2758,9 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 
 #ifdef FILE_FMAX_DEBG    
 /*    print the output */
-  err=fprintf(fpmax,"%10.5f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",uvar_Freq,
-              Alpha, Delta, GV.FreqImax-N, mean, std, 2.0*log2val*Fstat.F[indexes[0]]);
+  err=fprintf(fpmax,"%10.5f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",
+	      GV.searchRegions.Freq, searchpos.Alpha, searchpos.Delta, 
+	      GV.FreqImax-N, mean, std, 2.0*log2val*Fstat.F[indexes[0]]);
 #endif
   LALFree(indexes);
 #ifdef FILE_FMAX_DEBG    
@@ -2809,7 +2824,7 @@ EstimateFLines(LALStatus *stat)
     ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
   }
 #endif
-  /*  file contanis freq, PSD, noise floor,lines */
+  /*  file contanis Freq, PSD, noise floor,lines */
 #ifdef FILE_FLINES  
   if( (outfile1 = fopen("FLines.txt","wb")) == NULL) {
     ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
@@ -2857,14 +2872,14 @@ EstimateFLines(LALStatus *stat)
    if (outliers->Noutliers == 0){
 
 #ifdef FILE_FTXT
-     /*  F.txt file contains freq, F, noise floor of F   */
+     /*  F.txt file contains Freq, F, noise floor of F   */
      for (i=0;i<nbins;i++){ 
-       REAL4 freq;
+       REAL4 Freq;
        REAL8 r0,r1;
-       freq=uvar_Freq + i*GV.dFreq;
+       Freq=uvar_Freq + i*GV.dFreq;
        r0=F1->data[i]*2.0*medianbias;
        r1=FloorF1->data[i]*2.0*medianbias;
-       fprintf(outfile,"%f %E %E\n",freq,r0,r1);
+       fprintf(outfile,"%f %E %E\n",Freq,r0,r1);
      }
 #endif     
 
@@ -2919,25 +2934,25 @@ EstimateFLines(LALStatus *stat)
 #ifdef FILE_FLINES  
    /*  FLines file contains: F, noise floor and lines. */
    for (i=0;i<Ntot;i++){ 
-     REAL8 freq;
+     REAL8 Freq;
      REAL8 r0,r1,r2;
      j=SpLines->Iclust[i];
-     freq=(uvar_Freq+SpLines->Iclust[i]*GV.dFreq);
+     Freq=(uvar_Freq+SpLines->Iclust[i]*GV.dFreq);
      r0=F1->data[j];
      r1=FloorF1->data[j]*2.0*medianbias;
      r2=SpLines->clusters[i]*FloorF1->data[j]*2.0*medianbias;
-     fprintf(outfile1,"%20.17f %E %E %E\n",freq,r0,r1,r2);
+     fprintf(outfile1,"%20.17f %E %E %E\n",Freq,r0,r1,r2);
    }
 #endif
 #ifdef FILE_FTXT   
-   /*  PSD.txt file contains freq, PSD, noise floor   */
+   /*  PSD.txt file contains Freq, PSD, noise floor   */
    for (i=0;i<nbins;i++){ 
-     REAL8 freq;
+     REAL8 Freq;
      REAL8 r0,r1;
-     freq=uvar_Freq + i*GV.dFreq;
+     Freq=uvar_Freq + i*GV.dFreq;
      r0=F1->data[i]*2.0*medianbias;
      r1=FloorF1->data[i]*2.0*medianbias;
-     fprintf(outfile,"%20.17f %E %E\n",freq,r0,r1);
+     fprintf(outfile,"%20.17f %E %E\n",Freq,r0,r1);
    }
 #endif   
 
@@ -2999,8 +3014,6 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
 
   TRY ( LALDCreateVector(stat->statusPtr, &Sp, (UINT4)nbins), stat);
   TRY ( LALDCreateVector(stat->statusPtr, &RngMdnSp, (UINT4)nbins), stat);
-
-  nbins=(INT2)nbins;    /* RP: What the heck is this????? (FIXME) */
 
   if( (N = (REAL8 *) LALCalloc(nbins,sizeof(REAL8))) == NULL) {
     ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
@@ -4941,3 +4954,4 @@ void TestLALDemodR8(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *para
   RETURN( status );
 
 } /* TestLALDemodR8() */
+
