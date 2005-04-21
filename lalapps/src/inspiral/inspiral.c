@@ -2623,8 +2623,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"userTag",                 required_argument, 0,                'Z'},
     {"ifo-tag",                 required_argument, 0,                'I'},
     {"version",                 no_argument,       0,                'V'},
-    {"cluster-method",          required_argument, 0,                '*'},  /*XXX*/
-    {"cluster-window",          required_argument, 0,                '#'},  /*XXX*/
+    {"cluster-method",          required_argument, 0,                '*'},  
+    {"cluster-window",          required_argument, 0,                '#'},  
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -3754,7 +3754,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     fprintf( stderr, "--spectrum-type must be specified\n" );
     exit( 1 );
   }
-  if ( clusterWindow * sampleRate > numPoints )				/*XXX*/
+  if ( clusterWindow * sampleRate > numPoints )				
   {
     fprintf( stderr, "--cluster-window must be less than "
 	"--segment-length\n" );
@@ -3769,6 +3769,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     fprintf( stderr, "--cluster-window must be specified "
  	"if --clustering method 'window' chosen\n" );
+    exit( 1 );
+  }
+  if ( clusterMethod != window && clusterWindow != -1 )
+  {
+    fprintf( stderr, "--cluster-window specified "
+ 	"but --clustering method 'window' not chosen\n" );
     exit( 1 );
   }
   if ( invSpecTrunc < 0 )
