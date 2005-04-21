@@ -432,6 +432,7 @@ int main(int argc,char *argv[])
   scanInit.obsBegin.gpsSeconds = GV.Ti;
   scanInit.obsBegin.gpsNanoSeconds = 0;
   scanInit.obsDuration = (REAL8) (GV.Tf - GV.Ti);
+  scanInit.projectMetric = TRUE;
   scanInit.fmax  = uvar_Freq + uvar_FreqBand;
   scanInit.Detector = &GV.Detector;
   scanInit.ephemeris = GV.edat;         /* used by Ephemeris-based metric */
