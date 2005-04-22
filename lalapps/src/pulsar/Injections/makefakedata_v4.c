@@ -594,9 +594,12 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
       nsamples = 2 * ceil(cfg->fBand_eff * uvar_Tsft);
       cfg->fBand_eff = 1.0*nsamples/(2.0 * uvar_Tsft);
       
-      if ( (cfg->fmin_eff != uvar_fmin) || (cfg->fBand_eff != uvar_Band) )
-	LALPrintError("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to fmin_eff=%f and Band_eff=%f\n\n", 
-		      cfg->fmin_eff, cfg->fBand_eff);
+      if ( lalDebugLevel )
+	{
+	  if ( (cfg->fmin_eff != uvar_fmin) || (cfg->fBand_eff != uvar_Band) )
+	    printf("\nWARNING: for SFT-creation we had to adjust (fmin,Band) to"
+		   " fmin_eff=%f and Band_eff=%f\n\n", cfg->fmin_eff, cfg->fBand_eff);
+	}
       
     } /* END: SFT-specific corrections to fmin and Band */
   else
