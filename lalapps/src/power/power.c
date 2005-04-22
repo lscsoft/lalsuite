@@ -1579,7 +1579,7 @@ int main( int argc, char *argv[])
 		LAL_CALL(EPConditionData(&stat, series, options.high_pass, (REAL8) 1.0 / options.ResampleRate, resampFiltType, options.FilterCorruption), &stat);
 
 		if(options.verbose)
-			fprintf(stderr, "%s: %u samples (%.9f s) remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT);
+			fprintf(stderr, "%s: %u samples (%.9f s) at GPS time %d.%09d s remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
 
 		/*
 		 * Store the start and end times of the data that actually
@@ -1587,8 +1587,8 @@ int main( int argc, char *argv[])
 		 */
 
 		if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds)
-			searchsumm.searchSummaryTable->out_start_time = series->epoch;
-		LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_end_time, &series->epoch, series->deltaT * series->data->length), &stat);
+			LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_start_time, &series->epoch, series->deltaT * (params.windowLength / 2 - params.windowShift)), &stat);
+		LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_end_time, &series->epoch, series->deltaT * (series->data->length - (params.windowLength / 2 - params.windowShift))), &stat);
 
 
 		/*
@@ -1610,15 +1610,6 @@ int main( int argc, char *argv[])
 		LAL_CALL(LALDecrementGPS(&stat, &epoch, &epoch, &overlapCorrection), &stat);
 		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
 	}
-
-	/*
-	 * Adjust the "out" times for the amount of data not analyzed at the
-	 * beginning and end of the first and last analysis windows
-	 * respectively.
-	 */
-
-	LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_start_time, &searchsumm.searchSummaryTable->out_start_time, series->deltaT * (params.windowLength / 2 - params.windowShift)), &stat);
-	LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_end_time, &searchsumm.searchSummaryTable->out_end_time, -series->deltaT * (params.windowLength / 2 - params.windowShift)), &stat);
 
 	/*
 	 * Cluster and sort the events.
