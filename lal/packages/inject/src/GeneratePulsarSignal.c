@@ -545,6 +545,8 @@ LALSignalToSFTs (LALStatus *lstat,
   /* main loop: apply FFT the requested time-stretches */
   for (iSFT = 0; iSFT < numSFTs; iSFT++)
     {
+      REAL8 realDelay;
+
       thisSFT = &(sftvect->data[iSFT]);	/* point to current SFT-slot */
 
       /* find the start-bin for this SFT in the time-series */
@@ -557,7 +559,8 @@ LALSignalToSFTs (LALStatus *lstat,
       timeStretch.data = signal->data->data + totalIndex; /* point to the right sample-bin */
 
       /* fill the header of the i'th output SFT */
-      TRY (LALAddFloatToGPS(lstat->statusPtr, &tmpTime,&tPrev, relIndexShift*signal->deltaT),lstat);
+      realDelay = (REAL4)(relIndexShift * signal->deltaT);  /* avoid rounding-errors*/
+      TRY (LALAddFloatToGPS(lstat->statusPtr, &tmpTime,&tPrev, realDelay),lstat);
       /* set the ACTUAL timestamp! (can be different from requested one ==> "nudging") */
       thisSFT->epoch = tmpTime;			
       thisSFT->f0 = signal->f0;			/* minimum frequency */
