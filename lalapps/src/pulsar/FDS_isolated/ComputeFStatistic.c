@@ -216,7 +216,6 @@ CHAR *uvar_outputFstat;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
-INT4 uvar_searchNeighbors;
 BOOLEAN uvar_openDX;
 BOOLEAN uvar_doCheckpointing;
 INT4 uvar_expLALDemod;
@@ -225,6 +224,10 @@ REAL8 uvar_endTime;
 #if BOINC_COMPRESS
 BOOLEAN uvar_useCompression;
 #endif
+
+INT4 uvar_searchNeighbors;
+INT4 uvar_randomSeed;
+
 /*----------------------------------------------------------------------*/
 /* some other global variables */
 
@@ -278,6 +281,8 @@ extern "C" {
   static void swap8(char *location);
   void swapheader(struct headertag *thisheader);
   void getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long *bytecounter, const CHAR *fstat_fname, const CHAR *ckpfn);
+
+  void setTrueRandomSeed (void);
 
 #ifdef FILE_AMCOEFFS
   void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc);
@@ -1032,7 +1037,6 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,     outputFstat,     0,  UVAR_DEVELOPER, "Output-file for the F-statistic field over the parameter-space");
   LALregBOOLUserVar(stat,       openDX,          0,  UVAR_DEVELOPER, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory.");
-  LALregINTUserVar(stat,        searchNeighbors, 0,  UVAR_DEVELOPER, "Create search-'patch' of N neighboring points around the search-location.");
   LALregBOOLUserVar(stat,       doCheckpointing, 0,  UVAR_DEVELOPER, "Do checkpointing and resume for previously checkpointed state.");
   LALregINTUserVar(stat,        expLALDemod,     0,  UVAR_DEVELOPER, "Type of LALDemod to use. 0=standard, 1=exp1, 2=REAL4");
   LALregINTUserVar(stat,        Dterms,         't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
@@ -1040,6 +1044,11 @@ initUserVars (LALStatus *stat)
 #if BOINC_COMPRESS
   LALregBOOLUserVar(stat,       useCompression,  0,  UVAR_DEVELOPER, "BOINC: use compression for download/uploading data");
 #endif
+
+  LALregINTUserVar(stat,        searchNeighbors, 0,  UVAR_DEVELOPER, "Create search-'patch' of N neighboring points around the search-location.");
+  LALregINTUserVar(stat,        randomSeed,	 0,  UVAR_DEVELOPER, 
+		   "Random-seed for center of MC searchNeighbors 'cube'"
+		   " (use /dev/urandom if not set)");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -2246,8 +2255,9 @@ checkUserInputConsistency (LALStatus *lstat)
  * 
  * The situation is complicated a little bit by the case of --searchNeighbors, 
  * in which the searchRegion is determined automatically by getMCDopplerCube().
- * Namely, we still want to allow the user to selectively override this randomized 
- * neighborhood search-region if he input search-bands explicitly. 
+ * However, in that case we still want to allow the user to selectively 
+ * override this neighborhood search-region by specifying search-bands explicitly. 
+ *
  */
 void
 getSearchRegion (LALStatus *lstat, 
@@ -2300,6 +2310,13 @@ getSearchRegion (LALStatus *lstat,
       signal.Freq  = uvar_Freq;
       signal.f1dot = uvar_f1dot;
 
+      /* set random-seed for MC grid-randomization */
+      if ( LALUserVarWasSet(&uvar_randomSeed) )
+	srand(uvar_randomSeed);
+      else
+	setTrueRandomSeed();
+
+      /* construct MC doppler-cube around signal-location */
       TRY ( getMCDopplerCube(lstat->statusPtr, 
 			     &cube, signal, uvar_searchNeighbors, params), lstat);
 
@@ -3558,4 +3575,31 @@ void PrintAMCoeffs (REAL8 Alpha, REAL8 Delta, AMCoeffs* amc) {
         fclose(fp);
 }
 #endif
+
+
+/*----------------------------------------------------------------------*/
+/** set random-seed from /dev/urandom if possible, otherwise
+ * from uninitialized local-var ;) 
+ */
+void
+setTrueRandomSeed(void)
+{
+  FILE *fpRandom;
+  INT4 seed;		/* NOTE: possibly used initialized! that's ok!! */
+
+  fpRandom = fopen("/dev/urandom", "r");	/* read Linux random-pool for seed */
+  if ( fpRandom == NULL ) 
+    {
+      LALPrintError ("\nCould not read from /dev/urandom ... using default seed.\n\n");
+    }
+  else
+    {
+      fread(&seed, sizeof(INT4),1, fpRandom);
+      fclose(fpRandom);
+    }
+
+  srand(seed);
+
+  return;
+} /* setTrueRandomSeed() */
 

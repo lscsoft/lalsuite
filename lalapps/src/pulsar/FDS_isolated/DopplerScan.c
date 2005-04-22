@@ -95,7 +95,6 @@ void plotGrid (LALStatus *, DopplerScanGrid *grid, const SkyRegion *region, cons
 
 void freeGrid(DopplerScanGrid *grid);
 void printFrequencyShifts(LALStatus *, const DopplerScanState *scan, const DopplerScanInit *init);
-void setRandomSeed (void);
 void getSkyEllipse(LALStatus *lstat, SkyEllipse *ellipse, REAL8 mismatch, const REAL8Vector *metric);
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
@@ -1698,8 +1697,8 @@ getMCDopplerCube (LALStatus *lstat,
   Freq  = signal.Freq  - 0.5 * FreqBand;
   f1dot = signal.f1dot - 0.5 * f1dotBand;
 
-  /* randomize center-point within one grid-cell */
-  setRandomSeed();
+  /* randomize center-point within one grid-cell *
+   * (we assume seed has been set elsewhere) */
 #define randShift() (1.0 * rand()/RAND_MAX - 0.5)
   Alpha += dAlpha * randShift();
   Delta += dDelta * randShift();
@@ -1718,30 +1717,6 @@ getMCDopplerCube (LALStatus *lstat,
   RETURN(lstat);
 
 } /* getMCDopplerCube() */
-
-/*----------------------------------------------------------------------*/
-/** set a random-seed from /dev/urandom, if possible */
-void
-setRandomSeed (void)
-{
-  FILE *fpRandom;
-  INT4 seed;
-
-  fpRandom = fopen("/dev/urandom", "r");	/* read Linux random-pool for seed */
-  if ( fpRandom == NULL ) 
-    {
-      LALPrintError ("\nCould not read from /dev/urandom ... using default seed.\n\n");
-    }
-  else
-    {
-      fread(&seed, sizeof(INT4),1, fpRandom);
-      srand(seed);
-      fclose(fpRandom);
-    }
-
-  return;
-} /* setRandomSeed() */
-
 
 /*----------------------------------------------------------------------*/
 /** get "sky-ellipse" for given metric.
