@@ -30,7 +30,7 @@ $Id$
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 
-double rint(double x);
+#define rint(x) (floor((x)+0.5))
 
 NRCSID (FINDCHIRPCLUSTEREVENTSC, "$Id$"); 
 
