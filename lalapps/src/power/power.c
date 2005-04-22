@@ -975,13 +975,22 @@ void parse_command_line(
 
 	/*
 	 * Ensure PSDAverageLength is comensurate with the analysis window
-	 * length and shift.
+	 * length and its shift.
 	 */
 
 	options.PSDAverageLength = block_commensurate(options.PSDAverageLength, params->windowLength, params->windowShift);
 
 	/*
-	 * Sanity filter frequencies.
+	 * Ensure RAM limit is comensurate with the PSDAverageLength and
+	 * its shift.
+	 */
+
+#if 0
+	options.maxSeriesLength = block_commensurate(options.maxSeriesLength, options.PSDAverageLength, options.PSDAverageLength - (params.windowLength - params.windowShift));
+#endif
+
+	/*
+	 * Sanitize filter frequencies.
 	 */
 
 	if(options.cal_high_pass > params->tfTilingInput.flow)
@@ -998,8 +1007,8 @@ void parse_command_line(
 	params->useOverWhitening = useoverwhitening;
 
 	if(options.verbose) {
-		fprintf(stderr, "%s: available RAM limits analysis to %d samples\n", argv[0], options.maxSeriesLength);
 		fprintf(stderr, "%s: using --psd-average-points %zu\n", argv[0], options.PSDAverageLength);
+		fprintf(stderr, "%s: available RAM limits analysis to %d samples\n", argv[0], options.maxSeriesLength);
 	}
 }
 
@@ -1571,17 +1580,6 @@ int main( int argc, char *argv[])
 
 		if(options.verbose)
 			fprintf(stderr, "%s: %u samples (%.9f s) remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT);
-
-		/*
-		 * Adjust the series length to ensure that an integer number of
-		 * PSD estimates will fit in it.
-		 */
-
-#if 0
-		series->data->length = block_commensurate(series->data->length, options.PSDAverageLength, options.PSDAverageLength - (params.windowLength - params.windowShift));
-		if(options.verbose)
-			fprintf(stderr, "%s: series trimmed to %u samples (%.9f s) in accordance with PSD estimate length\n", argv[0], series->data->length, series->data->length * series->deltaT);
-#endif
 
 		/*
 		 * Store the start and end times of the data that actually
