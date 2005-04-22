@@ -502,10 +502,23 @@ int main(int argc,char *argv[])
       printf ("Spindown-templates: %d, first spindown-value: %.16g\n\n", 
 	      GV.SpinImax, GV.searchRegion.f1dot);
     }
+  /* determine smallest required band of frequency-bins for the search-parameters */
   {
     REAL8 f_min, f_max;
+    REAL8 f1dot_1, f1dot_2, f1dot_max, df;
     f_min = GV.searchRegion.Freq;
     f_max = f_min + GV.searchRegion.FreqBand;
+
+    /* correct for spindown-shift of frequency: extend frequency-band */
+    f1dot_1 = GV.searchRegion.f1dot;
+    f1dot_2 = f1dot_1 + GV.searchRegion.f1dotBand;
+    f1dot_max = fabs(f1dot_1) > fabs(f1dot_2) ? f1dot_1 : f1dot_2;
+    df = f1dot_max * (GV.Tf - GV.Ti);
+    if ( df < 0)
+      f_min += df;
+    else
+      f_max += df;
+
     GV.ifmin = (INT4) floor( (1.0-DOPPLERMAX)* f_min * GV.tsft) - uvar_Dterms;
     GV.ifmax = (INT4) ceil( (1.0+DOPPLERMAX) * f_max * GV.tsft) + uvar_Dterms;
   }
@@ -1888,7 +1901,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       fseek(fp,k,SEEK_CUR);
     }
     /* save final time and time baseline */
-    cfg->Tf = (INT4)(last_time_used + header.tbase);  /* FINAL TIME */
+    cfg->Tf = (INT4)(last_time_used + header.tbase) + 1;  /* FINAL TIME */
     cfg->tsft=header.tbase;  /* Time baseline of SFTs */
     
     /* NOTE: we do NOT close fp here.  If we are using merged SFT file
@@ -1993,7 +2006,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     fclose(fp);
 
     /* FINAL TIME */
-    cfg->Tf = (INT4) (header.gps_sec+header.tbase);  
+    cfg->Tf = (INT4) (header.gps_sec+header.tbase) + 1;  
     /* Time baseline of SFTs */
     cfg->tsft=header.tbase;  
     cfg->nsamples=header.nsamples;    /* # of Freq. bins in SFT*/
