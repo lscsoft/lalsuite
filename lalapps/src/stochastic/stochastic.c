@@ -854,6 +854,7 @@ static REAL4FrequencySeries *frequency_mask(LALStatus *status,
   LIGOTimeGPS epoch;
   INT4 nBins;
   INT4 numFMin;
+  INT4 full_length;
 
   /* initialise time */
   epoch.gpsSeconds = 0;
@@ -863,23 +864,26 @@ static REAL4FrequencySeries *frequency_mask(LALStatus *status,
   nBins = (bins - 1) / 2;
   numFMin = (INT4)(f0 / deltaF);
 
+  /* get length for full frequency band */
+  full_length = length + numFMin;
+
   /* allocate memory for frequency mask */
   LAL_CALL(LALCreateREAL4FrequencySeries(status, &mask, \
         "mask", epoch, 0, deltaF, lalDimensionlessUnit, \
-        length + numFMin), status);
+        full_length), status);
 
   /* set all values to 1 */
-  for (i = 0; i < length; i++)
+  for (i = 0; i < full_length; i++)
     mask->data->data[i] = 1;
 
   /* remove multiples of 16 Hz */
-  for (i = 0; i < length; i += (INT4)(16 / deltaF))
+  for (i = 0; i < full_length; i += (INT4)(16 / deltaF))
   {
     mask->data->data[i]= 0;
 
     for (j = 0; j < nBins; j++)
     {
-      if ((i + 1 + j) < length)
+      if ((i + 1 + j) < full_length)
         mask->data->data[i + 1 + j]= 0;
       if ((i - 1 - j) > 0 )
         mask->data->data[i - 1 - j]= 0;
@@ -887,13 +891,13 @@ static REAL4FrequencySeries *frequency_mask(LALStatus *status,
   }
 
   /* remove multiples of 60 Hz */
-  for (i = 0; i < length; i += (INT4)(60 / deltaF))
+  for (i = 0; i < full_length; i += (INT4)(60 / deltaF))
   {
     mask->data->data[i] = 0;
 
     for (j = 0; j < nBins; j++)
     {
-      if ((i + 1 + j) < length)
+      if ((i + 1 + j) < full_length)
         mask->data->data[i + 1 + j]= 0;
       if ((i - 1 - j) > 0 )
         mask->data->data[i - 1 - j]= 0;
