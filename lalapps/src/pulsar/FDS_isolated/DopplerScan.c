@@ -197,7 +197,7 @@ InitDopplerScan( LALStatus *stat,
     }
 
   if (lalDebugLevel >= 1)
-    LALPrintError ("\nSky-grid has %d nodes\n", scan->numGridPoints);
+    printf ("\nSky-grid has %d nodes\n", scan->numGridPoints);
   if (lalDebugLevel >= 3)
     {
       LALPrintError ("\nDEBUG: plotting sky-grid into file 'mesh_debug.agr' ...");
