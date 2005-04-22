@@ -30,6 +30,8 @@ $Id$
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 
+double rint(double x);
+
 NRCSID (FINDCHIRPCLUSTEREVENTSC, "$Id$"); 
 
 /* <lalVerbatim file="FindChirpClusterEventsCP"> */
