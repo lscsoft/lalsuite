@@ -62,12 +62,12 @@ RCSID( "$Id$" );
 if ( this_summ_value ) \
 { \
   this_summ_value = this_summ_value->next = (SummValueTable *) \
-    LALCalloc( 1, sizeof(SummValueTable) ); \
+  LALCalloc( 1, sizeof(SummValueTable) ); \
 } \
 else \
 { \
   summvalue.summValueTable = this_summ_value = (SummValueTable *) \
-    LALCalloc( 1, sizeof(SummValueTable) ); \
+  LALCalloc( 1, sizeof(SummValueTable) ); \
 } \
 this_summ_value->version = 0; \
 this_summ_value->start_time = searchsumm.searchSummaryTable->in_start_time; \
@@ -75,55 +75,56 @@ this_summ_value->end_time = searchsumm.searchSummaryTable->in_end_time; \
 this_summ_value->value = (REAL4) val; \
 this_summ_value->intvalue = (INT4) intval; \
 LALSnprintf( this_summ_value->name, LIGOMETA_SUMMVALUE_NAME_MAX, "%s", \
-  sv_name ); \
+    sv_name ); \
 LALSnprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
-  "%s", sv_comment ); \
+    "%s", sv_comment ); \
 
-  int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
+int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
-  /*
-   *
-   * variables that control program behaviour
-   *
-   */
+/*
+ *
+ * variables that control program behaviour
+ *
+ */
 
-  /* debugging */
-  extern int vrbflg;                      /* verbocity of lal function    */
-  /* input data parameters */
-  INT8  gpsStartTimeNS    = 0;            /* input data GPS start time ns */
-  LIGOTimeGPS gpsStartTime;               /* input data GPS start time    */
-  INT8  gpsEndTimeNS      = 0;            /* input data GPS end time ns   */
-  LIGOTimeGPS gpsEndTime;                 /* input data GPS end time      */
-  INT8  inputLengthNS     = 0;            /* input data length ns         */
-  INT4  numRespPoints     = -1;            /* num points for calc response */
-  CHAR  *fqChanName       = NULL;         /* name of data channel         */
-  CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
-  CHAR   ifo[3];                          /* two character ifo code       */
-  CHAR   outfileName[FILENAME_MAX];       /* output file name             */
+/* debugging */
+extern int vrbflg;                      /* verbocity of lal function    */
+/* input data parameters */
+INT8  gpsStartTimeNS    = 0;            /* input data GPS start time ns */
+LIGOTimeGPS gpsStartTime;               /* input data GPS start time    */
+INT8  gpsEndTimeNS      = 0;            /* input data GPS end time ns   */
+LIGOTimeGPS gpsEndTime;                 /* input data GPS end time      */
+INT8  inputLengthNS     = 0;            /* input data length ns         */
+INT4  numRespPoints     = -1;           /* num points for calc response */
+CHAR  *fqChanName       = NULL;         /* name of data channel         */
+CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
+CHAR   ifo[3];                          /* two character ifo code       */
+CHAR   outfileName[FILENAME_MAX];       /* output file name             */
 
-  enum { undefined, real_4, real_8 } calData = undefined; /* cal data type */
-  /* data conditioning parameters */
-  INT4   sampleRate       = -1;           /* sample rate of filter data   */
-  INT4   frameLength      = -1;           /* length of output frames      */
-  INT4   injectSafety     = 0;            /* safety length in injections  */
-  UINT4  numFiles         = 0;            /* number of output files needed*/
+enum { undefined, real_4, real_8 } calData = undefined; /* cal data type */
+/* data conditioning parameters */
+INT4   sampleRate       = -1;           /* sample rate of filter data   */
+INT4   frameLength      = -1;           /* length of output frames      */
+INT4   injectSafety     = 0;            /* safety length in injections  */
+UINT4  numFiles         = 0;            /* number of output files needed*/
 
-  CHAR  *calCacheName     = NULL;         /* location of calibration data */
-  CHAR  *injectionFile    = NULL;         /* name of file containing injs */
-  CHAR  *injChanName      = NULL;         /* the injection channel name   */
+CHAR  *calCacheName     = NULL;         /* location of calibration data */
+CHAR  *injectionFile    = NULL;         /* name of file containing injs */
+CHAR  *injChanName      = NULL;         /* the injection channel name   */
 
-  int   injectOverhead	= 0;		/* inject h+ into detector	*/
-  int   numInjections     = 0;
-  SimInspiralTable *injections = NULL;
-  SimInspiralTable    *thisInj = NULL;
+REAL4 injFlow           = 0;            /* injection start frequency    */
+int   injectOverhead    = 0;            /* inject h+ into detector      */
+int   numInjections     = 0;
+SimInspiralTable *injections = NULL;
+SimInspiralTable    *thisInj = NULL;
 
-  /* output parameters */
-  CHAR  *userTag          = NULL;         /* string the user can tag with */
-  int    writeRawData     = 0;            /* write the raw data to frame  */
-  int    writeInjOnly     = 0;            /* write the inj data to frame  */
-  int    writeRawPlusInj  = 0;            /* write raw plus inj to frame  */
-  /* other command line args */
-  CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
+/* output parameters */
+CHAR  *userTag          = NULL;         /* string the user can tag with */
+int    writeRawData     = 0;            /* write the raw data to frame  */
+int    writeInjOnly     = 0;            /* write the inj data to frame  */
+int    writeRawPlusInj  = 0;            /* write raw plus inj to frame  */
+/* other command line args */
+CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
 
 int main( int argc, char *argv[] )
 {
@@ -163,7 +164,7 @@ int main( int argc, char *argv[] )
   CHAR  fname[FILENAME_MAX];
   UINT4 numPoints = 0;
   REAL8 tsLength;
-  INT8  durationNS	= 0;
+  INT8  durationNS      = 0;
   CalibrationUpdateParams inj_calfacts;
   REAL4 inj_alpha = 0;
   REAL4 inj_alphabeta = 0;
@@ -184,9 +185,9 @@ int main( int argc, char *argv[] )
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
-	&accuracy ), &status );
+        &accuracy ), &status );
   LAL_CALL( populate_process_table( &status, proctable.processTable, 
-	PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
@@ -213,14 +214,14 @@ int main( int argc, char *argv[] )
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
     LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
-	" " );
+        " " );
   } 
   else 
   {
     LALSnprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
-	"%s", comment );
+        "%s", comment );
     LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
-	"%s", comment );
+        "%s", comment );
   }
 
 
@@ -246,7 +247,7 @@ int main( int argc, char *argv[] )
 
     /* open a frame cache */
     LAL_CALL( LALFrCacheImport( &status, &frInCache, frInCacheName), 
-	&status );
+        &status );
     LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
 
     /* set the mode of the frame stream to fail on gaps or time errors */
@@ -265,42 +266,42 @@ int main( int argc, char *argv[] )
 
     /* determine the sample rate of the raw data */
     LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
-	&status );
+        &status );
 
     /* store the input sample rate */
     this_search_summvar = searchsummvars.searchSummvarsTable = 
       (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
     LALSnprintf( this_search_summvar->name, LIGOMETA_NAME_MAX * sizeof(CHAR),
-	"raw data sample rate" );
+        "raw data sample rate" );
     this_search_summvar->value = inputDeltaT = chan.deltaT;
 
     /* determine the number of points to get and create storage for the data */
     numPoints = (UINT4) floor( ((REAL8) inputLengthNS) / (chan.deltaT * 1.0e9) 
-	+ 0.5 );
+        + 0.5 );
     LAL_CALL( LALSCreateVector( &status, &(chan.data), numPoints ), 
-	&status );
+        &status );
 
     if ( vrbflg ) fprintf( stdout, "input channel %s has sample interval "
-	"(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
-	chan.deltaT, numPoints );
+        "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
+        chan.deltaT, numPoints );
 
     /* read the data channel time series from frames */
     LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
-	&status );
+        &status );
     memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
     /* store the start and end time of the raw channel in the search summary */
     searchsumm.searchSummaryTable->in_start_time = chan.epoch;
     LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ), 
-	&status );
+        &status );
     tsLength += chan.deltaT * (REAL8) chan.data->length;
     LAL_CALL( LALFloatToGPS( &status, 
-	  &(searchsumm.searchSummaryTable->in_end_time), &tsLength ), &status );
+          &(searchsumm.searchSummaryTable->in_end_time), &tsLength ), &status );
 
     if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
-	"got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
-	chan.name, chan.data->length, chan.deltaT, 
-	chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
+        "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
+        chan.name, chan.data->length, chan.deltaT, 
+        chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
 
     /* 
      *
@@ -319,34 +320,34 @@ int main( int argc, char *argv[] )
 
       /* determine the sample rate of the inj data */
       LAL_CALL( LALFrGetREAL4TimeSeries( &status, &inj, &injChan, frStream ),
-	  &status );
+          &status );
 
       /* determine the number of points to get, create storage for the data */
       numPoints = (UINT4) floor( ((REAL8) inputLengthNS) / 
-	  (inj.deltaT * 1.0e9) + 0.5 );
+          (inj.deltaT * 1.0e9) + 0.5 );
       LAL_CALL( LALSCreateVector( &status, &(inj.data), numPoints ), 
-	  &status );
+          &status );
 
       if ( vrbflg ) fprintf( stdout, "input inj Channel %s has sample interval"
-	  " (deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
-	  inj.deltaT, numPoints );
+          " (deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
+          inj.deltaT, numPoints );
 
       /* read the data inj Channel time series from frames */
       LAL_CALL( LALFrGetREAL4TimeSeries( &status, &inj, &injChan, frStream ),
-	  &status );
+          &status );
       memcpy( &(inj.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
 
 
       if ( vrbflg ) fprintf( stdout, "read inj Channel %s from frame stream\n"
-	  "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
-	  inj.name, inj.data->length, inj.deltaT, 
-	  inj.epoch.gpsSeconds, inj.epoch.gpsNanoSeconds );
+          "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
+          inj.name, inj.data->length, inj.deltaT, 
+          inj.epoch.gpsSeconds, inj.epoch.gpsNanoSeconds );
     }
 
     /* close the frame file stream and destroy the frame cache */
     LAL_CALL( LALFrClose( &status, &frStream ), &status );
     if ( frInCacheName ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), 
-	&status );
+        &status );
   }
 
   /* 
@@ -373,14 +374,14 @@ int main( int argc, char *argv[] )
       inj.epoch = gpsStartTime;
       inj.sampleUnits = lalADCCountUnit;
       LALSnprintf( inj.name, LIGOMETA_CHANNEL_MAX * sizeof(CHAR), "%s:STRAIN", 
-	  ifo );
+          ifo );
       searchsumm.searchSummaryTable->in_start_time = gpsStartTime;
       searchsumm.searchSummaryTable->in_end_time = gpsEndTime;
       numPoints = (UINT4) floor( ((REAL8) inputLengthNS) / (inj.deltaT * 1.0e9) 
-	  + 0.5 );
+          + 0.5 );
     }
     LAL_CALL( LALSCreateVector( &status, &(inj.data), numPoints ), 
-	&status );
+        &status );
     memset( inj.data->data, 0, numPoints * sizeof(REAL4) );
 
 
@@ -392,7 +393,7 @@ int main( int argc, char *argv[] )
 
     /* read in the injection data from XML */
     numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
-	gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds + injectSafety );
+        gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds + injectSafety );
 
     if ( numInjections < 0 )
     {
@@ -401,53 +402,65 @@ int main( int argc, char *argv[] )
     }
     else if ( numInjections )
     {
+      /* store number of injections in search summary */
       searchsumm.searchSummaryTable->nevents = numInjections;
+
+      /* set the injection start frequency */
+      if ( injFlow )
+      {
+        for( thisInj = injections; thisInj; thisInj = thisInj->next )
+        {
+          thisInj->f_lower = injFlow;
+        }
+      }
+         
+      /* create the response function */
       memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
       LAL_CALL( LALCCreateVector( &status, &(injResp.data), 
-	    numRespPoints / 2 + 1 ), &status );
+            numRespPoints / 2 + 1 ), &status );
       injResp.epoch = inj.epoch ;
       injResp.deltaF = 1.0 / ( numRespPoints * inj.deltaT );
       strcpy( injResp.name, inj.name );
 
       if ( calCacheName )
       {
-	/* generate the response function for the current time */
-	if ( vrbflg ) fprintf( stdout, 
-	    "generating response function at time %d sec %d ns\n"
-	    "length = %d points, deltaF = %e Hz\n",
-	    injResp.epoch.gpsSeconds, injResp.epoch.gpsNanoSeconds,
-	    injResp.data->length, injResp.deltaF );
-	injResp.sampleUnits = strainPerCount;
+        /* generate the response function for the current time */
+        if ( vrbflg ) fprintf( stdout, 
+            "generating response function at time %d sec %d ns\n"
+            "length = %d points, deltaF = %e Hz\n",
+            injResp.epoch.gpsSeconds, injResp.epoch.gpsNanoSeconds,
+            injResp.data->length, injResp.deltaF );
+        injResp.sampleUnits = strainPerCount;
 
-	/* initialize the inj_calfacts */
-	memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
-	inj_calfacts.ifo = ifo;
-	durationNS = gpsEndTimeNS - gpsStartTimeNS;
-	LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration), 
-	      &durationNS ), &status );
+        /* initialize the inj_calfacts */
+        memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
+        inj_calfacts.ifo = ifo;
+        durationNS = gpsEndTimeNS - gpsStartTimeNS;
+        LAL_CALL( LALINT8toGPS( &status, &(inj_calfacts.duration), 
+              &durationNS ), &status );
 
-	LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), 
-	    &status );
-	LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCache, 
-	      &inj_calfacts ), &status );
-	LAL_CALL( LALDestroyFrCache( &status, &calCache ), &status );
-	inj_alpha = (REAL4) inj_calfacts.alpha.re;
-	inj_alphabeta = (REAL4) inj_calfacts.alphabeta.re;
-	if ( vrbflg ) fprintf( stdout, 
-	    "for injections, alpha = %f and alphabeta = %f\n",
-	    inj_alpha, inj_alphabeta);
+        LAL_CALL( LALFrCacheImport( &status, &calCache, calCacheName ), 
+            &status );
+        LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCache, 
+              &inj_calfacts ), &status );
+        LAL_CALL( LALDestroyFrCache( &status, &calCache ), &status );
+        inj_alpha = (REAL4) inj_calfacts.alpha.re;
+        inj_alphabeta = (REAL4) inj_calfacts.alphabeta.re;
+        if ( vrbflg ) fprintf( stdout, 
+            "for injections, alpha = %f and alphabeta = %f\n",
+            inj_alpha, inj_alphabeta);
       }
       else 
       {
-	/* generate a unity response function for h(t) */
-	if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
-	injResp.sampleUnits = strainPerCount;
-	for ( k = 0; k < injResp.data->length; ++k )
-	{
-	  injResp.data->data[k].re = 1.0;
-	  injResp.data->data[k].im = 0;
-	}
-	if ( vrbflg ) fprintf( stdout, "done.\n" );
+        /* generate a unity response function for h(t) */
+        if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
+        injResp.sampleUnits = strainPerCount;
+        for ( k = 0; k < injResp.data->length; ++k )
+        {
+          injResp.data->data[k].re = 1.0;
+          injResp.data->data[k].im = 0;
+        }
+        if ( vrbflg ) fprintf( stdout, "done.\n" );
 
       }
 
@@ -461,15 +474,15 @@ int main( int argc, char *argv[] )
        * function of F+ = 1; Fx = 0) */
       if ( injectOverhead )
       {
-	LALSnprintf( inj.name, LALNameLength * sizeof(CHAR), "ZENITH" );
+        LALSnprintf( inj.name, LALNameLength * sizeof(CHAR), "ZENITH" );
       }
 
       LAL_CALL( LALFindChirpInjectSignals( &status, &inj, injections, 
-	    &injResp ), &status );
+            &injResp ), &status );
       LALSnprintf( inj.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
 
       if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
-	  numInjections, injectionFile, inj.name );
+          numInjections, injectionFile, inj.name );
 
       LAL_CALL( LALCDestroyVector( &status, &(injResp.data) ), &status );
     }
@@ -509,64 +522,64 @@ int main( int argc, char *argv[] )
       /* write the injection channel to frame */
       if ( writeInjOnly  ) 
       {
-	strcpy( output.name, inj.name );
-	output.data->data = inj.data->data + n * length;
-	if ( injectionFile )
-	{
-	  /* write out injection channel to INSP_INJ_ONLY */
-	  outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
-	      "INSP_INJ_ONLY" );
-	}
-	else if ( injChanName )
-	{
-	  /* write out injections, preserving input frame name */
-	  outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
-	      NULL );
-	}
+        strcpy( output.name, inj.name );
+        output.data->data = inj.data->data + n * length;
+        if ( injectionFile )
+        {
+          /* write out injection channel to INSP_INJ_ONLY */
+          outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
+              "INSP_INJ_ONLY" );
+        }
+        else if ( injChanName )
+        {
+          /* write out injections, preserving input frame name */
+          outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
+              NULL );
+        }
       }
 
       /* write the raw/raw plus inj data to frame */
       if ( writeRawData || writeRawPlusInj ) 
       {
-	strcpy( output.name, chan.name );
-	output.data->data = chan.data->data + n * length;
+        strcpy( output.name, chan.name );
+        output.data->data = chan.data->data + n * length;
 
-	if ( writeRawData )
-	{
-	  outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
-	      NULL );
-	}
-	
-	/* perform injections into this file's data only, preserve name*/
-	LAL_CALL( LALSSInjectTimeSeries( &status, &output, &inj ), &status );
+        if ( writeRawData )
+        {
+          outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
+              NULL );
+        }
 
-	if ( writeRawPlusInj )
-	{
-	  strcpy( output.name, chan.name );
-	  outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
-	      "PLUS_INSP_INJ" );
-	}
+        /* perform injections into this file's data only, preserve name*/
+        LAL_CALL( LALSSInjectTimeSeries( &status, &output, &inj ), &status );
+
+        if ( writeRawPlusInj )
+        {
+          strcpy( output.name, chan.name );
+          outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
+              "PLUS_INSP_INJ" );
+        }
       }
 
       /* set the output file name */
       if( !outfileName[0] )
       {
-	/* output name not specified, set to IFO-INSPFRINJ-EPOCH-LENGTH.gwf */
-	LALSnprintf( outfileName, FILENAME_MAX * sizeof(CHAR), 
-	    "%s-INSPFRINJ", ifo );
+        /* output name not specified, set to IFO-INSPFRINJ-EPOCH-LENGTH.gwf */
+        LALSnprintf( outfileName, FILENAME_MAX * sizeof(CHAR), 
+            "%s-INSPFRINJ", ifo );
       }
 
       if( userTag )
       {
-	LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-	    "%s_%s-%d-%d.gwf", outfileName, userTag, output.epoch.gpsSeconds, 
-	    frameLength );
+        LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
+            "%s_%s-%d-%d.gwf", outfileName, userTag, output.epoch.gpsSeconds, 
+            frameLength );
       }
       else
       {
-	LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-	    "%s-%d-%d.gwf", outfileName, output.epoch.gpsSeconds, 
-	    frameLength );
+        LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
+            "%s-%d-%d.gwf", outfileName, output.epoch.gpsSeconds, 
+            frameLength );
       }
 
       if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
@@ -596,14 +609,14 @@ int main( int argc, char *argv[] )
   if( userTag )
   {
     LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-	"%s_%s-%d-%d.xml", outfileName, userTag, gpsStartTime.gpsSeconds, 
-	gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        "%s_%s-%d-%d.xml", outfileName, userTag, gpsStartTime.gpsSeconds, 
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
     LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), 
-	"%s-%d-%d.xml", outfileName, gpsStartTime.gpsSeconds, 
-	gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
+        "%s-%d-%d.xml", outfileName, gpsStartTime.gpsSeconds, 
+        gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
 
   }
 
@@ -614,11 +627,11 @@ int main( int argc, char *argv[] )
   if ( vrbflg ) fprintf( stdout, "  process table...\n" );
   LALSnprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->end_time),
-	&accuracy ), &status );
+        &accuracy ), &status );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, 
-	process_table ), &status );
+        process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   free( proctable.processTable );
 
@@ -627,7 +640,7 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), 
       &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, 
-	process_params_table ), &status );
+        process_params_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
   while( procparams.processParamsTable )
   {
@@ -639,9 +652,9 @@ int main( int argc, char *argv[] )
   /* write the search summary table */
   if ( vrbflg ) fprintf( stdout, "  search_summary table...\n" );
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
-	search_summary_table ), &status );
+        search_summary_table ), &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
-	search_summary_table ), &status );
+        search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
 
   /* write the search summvars table */
@@ -649,9 +662,9 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout, "  search_summvars table...\n" );
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
-	  search_summvars_table ), &status );
+          search_summvars_table ), &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars, 
-	  search_summvars_table ), &status );
+          search_summvars_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
     while( searchsummvars.searchSummvarsTable )
     {
@@ -667,9 +680,9 @@ int main( int argc, char *argv[] )
     ADD_SUMM_VALUE( "calibration alphabeta", "injection", inj_alphabeta, 0 );
 
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
-	&status );
+        &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
-	  summ_value_table ), &status );
+          summ_value_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
 
 
@@ -690,9 +703,9 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, "sim_inspiral... " );
     siminspiral.simInspiralTable = injections;
     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
-	  sim_inspiral_table ), &status );
+          sim_inspiral_table ), &status );
     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, siminspiral, 
-	  sim_inspiral_table ), &status );
+          sim_inspiral_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
 
     /* free the temporary memory containing the events */
@@ -722,51 +735,52 @@ int main( int argc, char *argv[] )
 /* ------------------------------------------------------------------------- */
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
-this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-  calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-      PROGRAM_NAME ); \
-      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-	  long_options[option_index].name ); \
-	  LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-	  LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+  this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+calloc( 1, sizeof(ProcessParamsTable) ); \
+LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+    PROGRAM_NAME ); \
+LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+    long_options[option_index].name ); \
+LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define USAGE \
-"lalapps_inspfrinj [options]\n\n"\
-  "  --help                    display this message\n"\
-  "  --verbose                 print progress information\n"\
-  "  --version                 print version information and exit\n"\
-  "  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
-  "  --user-tag STRING         set the process_params usertag to STRING\n"\
-  "  --comment STRING          set the process table comment to STRING\n"\
-  "\n"\
-  "  --gps-start-time SEC      GPS second of data start time\n"\
-  "  --gps-start-time-ns NS    GPS nanosecond of data start time\n"\
-  "  --gps-end-time SEC        GPS second of data end time\n"\
-  "  --gps-end-time-ns NS      GPS nanosecond of data end time\n"\
-  "\n"\
-  "  --frame-cache             obtain frame data from LAL frame cache FILE\n"\
-  "  --calibration-cache FILE  obtain calibration from LAL frame cache FILE\n"\
-  "  --calibrated-data TYPE    calibrated data of TYPE real_4 or real_8\n"\
-  "  --num-resp-points N       num points to determine response function (4194304)\n"\
-  "  --channel-name CHAN       read data from interferometer channel CHAN\n"\
-  "\n"\
-  "  --injection-channel INJ   read injection data from channel INJ\n"\
-  "  --injection-file FILE     inject simulated inspiral signals from FILE\n"\
-  "  --inject-overhead         inject signals from overhead detector\n"\
-  "  --inject-safety SEC       inject signals ending up to SEC after gps end time\n"\
-  "\n"\
-  "  --write-raw-data          write out the raw frame files\n"\
-  "  --write-inj-only          write out frames containing only injections\n"\
-  "  --write-raw-plus-inj      write out frames containing raw data with inj\n"\
-  "\n"\
-  "  --output-frame-length SEC write out data in frames of length SEC\n"\
-  "  --output-file-name OUTPUT set output file names to OUTPUT-GPSTIME-LENGTH.gwf\n"\
-  "                   if not set, default to IFO-INSPFRINJ-GPSTIME-LENGTH.gwf\n"\
-  "\n"\
-  "  --ifo  IFO                specify the IFO (only if not reading frames)\n"\
-  "  --sample-rate             data sample rate (only if not reading frames)\n"\
-  "\n"
+  "lalapps_inspfrinj [options]\n\n"\
+"  --help                    display this message\n"\
+"  --verbose                 print progress information\n"\
+"  --version                 print version information and exit\n"\
+"  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
+"  --user-tag STRING         set the process_params usertag to STRING\n"\
+"  --comment STRING          set the process table comment to STRING\n"\
+"\n"\
+"  --gps-start-time SEC      GPS second of data start time\n"\
+"  --gps-start-time-ns NS    GPS nanosecond of data start time\n"\
+"  --gps-end-time SEC        GPS second of data end time\n"\
+"  --gps-end-time-ns NS      GPS nanosecond of data end time\n"\
+"\n"\
+"  --frame-cache             obtain frame data from LAL frame cache FILE\n"\
+"  --calibration-cache FILE  obtain calibration from LAL frame cache FILE\n"\
+"  --calibrated-data TYPE    calibrated data of TYPE real_4 or real_8\n"\
+"  --num-resp-points N       num points to determine response function (4194304)\n"\
+"  --channel-name CHAN       read data from interferometer channel CHAN\n"\
+"\n"\
+"  --injection-channel INJ   read injection data from channel INJ\n"\
+"  --injection-file FILE     inject simulated inspiral signals from FILE\n"\
+"  --inject-overhead         inject signals from overhead detector\n"\
+"  --inject-safety SEC       inject signals ending up to SEC after gps end time\n"\
+"  --injection-start-freq FLOW inject signals starting at freq FLOW (40Hz)\n"\
+"\n"\
+"  --write-raw-data          write out the raw frame files\n"\
+"  --write-inj-only          write out frames containing only injections\n"\
+"  --write-raw-plus-inj      write out frames containing raw data with inj\n"\
+"\n"\
+"  --output-frame-length SEC write out data in frames of length SEC\n"\
+"  --output-file-name OUTPUT set output file names to OUTPUT-GPSTIME-LENGTH.gwf\n"\
+"                   if not set, default to IFO-INSPFRINJ-GPSTIME-LENGTH.gwf\n"\
+"\n"\
+"  --ifo  IFO                specify the IFO (only if not reading frames)\n"\
+"  --sample-rate             data sample rate (only if not reading frames)\n"\
+"\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
@@ -778,7 +792,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-inj-only",          no_argument,       &writeInjOnly,     1 },
     {"write-raw-plus-inj",      no_argument,       &writeRawPlusInj,  1 },
-    {"inject-overhead",		no_argument,	   &injectOverhead,   1 },
+    {"inject-overhead",         no_argument,       &injectOverhead,   1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
@@ -799,6 +813,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"injection-file",          required_argument, 0,                'w'},
     {"inject-safety",           required_argument, 0,                'S'},
     {"injection-channel",       required_argument, 0,                'I'},
+    {"injection-start-freq",    required_argument, 0,                'L'},
     {"debug-level",             required_argument, 0,                'z'},
     {"user-tag",                required_argument, 0,                'Z'},
     {"userTag",                 required_argument, 0,                'Z'},
@@ -824,9 +839,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-	"A:B:I:N:S:V:Z:"
-	"a:b:c:d:f:hi:l:p:r:s:u:w:y:z:",
-	long_options, &option_index );
+        "A:B:I:L:N:S:V:Z:"
+        "a:b:c:d:f:hi:l:p:r:s:u:w:y:z:",
+        long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -837,342 +852,356 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     switch ( c )
     {
       case 0:
-	/* if this option set a flag, do nothing else now */
-	if ( long_options[option_index].flag != 0 )
-	{
-	  break;
-	}
-	else
-	{
-	  fprintf( stderr, "error parsing option %s with argument %s\n",
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	break;
+        /* if this option set a flag, do nothing else now */
+        if ( long_options[option_index].flag != 0 )
+        {
+          break;
+        }
+        else
+        {
+          fprintf( stderr, "error parsing option %s with argument %s\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
 
       case 'a':
-	/* set gps start seconds */
-	{
-	  long int gstartt = atol( optarg );
-	  if ( gstartt < 441417609 )
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"GPS start time is prior to " 
-		"Jan 01, 1994  00:00:00 UTC:\n"
-		"(%ld specified)\n",
-		long_options[option_index].name, gstartt );
-	    exit( 1 );
-	  }
-	  if ( gstartt > 999999999 )
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"GPS start time is after " 
-		"Sep 14, 2011  01:46:26 UTC:\n"
-		"(%ld specified)\n", 
-		long_options[option_index].name, gstartt );
-	    exit( 1 );
-	  }
-	  gpsStartTimeNS += (INT8) gstartt * 1000000000LL;
-	  ADD_PROCESS_PARAM( "int", "%ld", gstartt );
-	}
-	break;
+        /* set gps start seconds */
+        {
+          long int gstartt = atol( optarg );
+          if ( gstartt < 441417609 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS start time is prior to " 
+                "Jan 01, 1994  00:00:00 UTC:\n"
+                "(%ld specified)\n",
+                long_options[option_index].name, gstartt );
+            exit( 1 );
+          }
+          if ( gstartt > 999999999 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS start time is after " 
+                "Sep 14, 2011  01:46:26 UTC:\n"
+                "(%ld specified)\n", 
+                long_options[option_index].name, gstartt );
+            exit( 1 );
+          }
+          gpsStartTimeNS += (INT8) gstartt * 1000000000LL;
+          ADD_PROCESS_PARAM( "int", "%ld", gstartt );
+        }
+        break;
 
       case 'A':
-	/* set gps start nanoseconds */
-	{
-	  long int gstarttns = atol( optarg );
-	  if ( gstarttns < 0 )
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"GPS start time nanoseconds is negative\n",
-		long_options[option_index].name );
-	    exit( 1 );
-	  }
-	  if ( gstarttns > 999999999 )
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"GPS start time nanoseconds is greater than unity:\n" 
-		"Must be <= 999999999 (%ld specified)\n", 
-		long_options[option_index].name, gstarttns );
-	    exit( 1 );
-	  }
-	  gpsStartTimeNS += (INT8) gstarttns;
-	  ADD_PROCESS_PARAM( "int", "%ld", gstarttns );
-	}
-	break;
+        /* set gps start nanoseconds */
+        {
+          long int gstarttns = atol( optarg );
+          if ( gstarttns < 0 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS start time nanoseconds is negative\n",
+                long_options[option_index].name );
+            exit( 1 );
+          }
+          if ( gstarttns > 999999999 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS start time nanoseconds is greater than unity:\n" 
+                "Must be <= 999999999 (%ld specified)\n", 
+                long_options[option_index].name, gstarttns );
+            exit( 1 );
+          }
+          gpsStartTimeNS += (INT8) gstarttns;
+          ADD_PROCESS_PARAM( "int", "%ld", gstarttns );
+        }
+        break;
 
       case 'b':
-	/* set gps end seconds */
-	{
-	  long int gendt = atol( optarg );
-	  if ( gendt > 999999999 )
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"GPS end time is after " 
-		"Sep 14, 2011  01:46:26 UTC:\n"
-		"(%ld specified)\n", 
-		long_options[option_index].name, gendt );
-	    exit( 1 );
-	  }
-	  else if ( gendt < 441417609 )
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"GPS end time is prior to " 
-		"Jan 01, 1994  00:00:00 UTC:\n"
-		"(%ld specified)\n", 
-		long_options[option_index].name, gendt );
-	    exit( 1 );
-	  }            
-	  gpsEndTimeNS += (INT8) gendt * 1000000000LL;
-	  ADD_PROCESS_PARAM( "int", "%ld", gendt );
-	}
-	break;
+        /* set gps end seconds */
+        {
+          long int gendt = atol( optarg );
+          if ( gendt > 999999999 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS end time is after " 
+                "Sep 14, 2011  01:46:26 UTC:\n"
+                "(%ld specified)\n", 
+                long_options[option_index].name, gendt );
+            exit( 1 );
+          }
+          else if ( gendt < 441417609 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS end time is prior to " 
+                "Jan 01, 1994  00:00:00 UTC:\n"
+                "(%ld specified)\n", 
+                long_options[option_index].name, gendt );
+            exit( 1 );
+          }            
+          gpsEndTimeNS += (INT8) gendt * 1000000000LL;
+          ADD_PROCESS_PARAM( "int", "%ld", gendt );
+        }
+        break;
 
       case 'B':
-	/* set gps end nanoseconds */
-	{
-	  long int gendtns = atol( optarg );
-	  if ( gendtns < 0 )
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"GPS end time nanoseconds is negative\n",
-		long_options[option_index].name );
-	    exit( 1 );
-	  }
-	  else if ( gendtns > 999999999 )
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"GPS end time nanoseconds is greater than unity:\n" 
-		"Must be <= 999999999:\n"
-		"(%ld specified)\n", 
-		long_options[option_index].name, gendtns );
-	    exit( 1 );
-	  }            
-	  gpsEndTimeNS += (INT8) gendtns;
-	  ADD_PROCESS_PARAM( "int", "%ld", gendtns );
-	}
-	break;
+        /* set gps end nanoseconds */
+        {
+          long int gendtns = atol( optarg );
+          if ( gendtns < 0 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS end time nanoseconds is negative\n",
+                long_options[option_index].name );
+            exit( 1 );
+          }
+          else if ( gendtns > 999999999 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "GPS end time nanoseconds is greater than unity:\n" 
+                "Must be <= 999999999:\n"
+                "(%ld specified)\n", 
+                long_options[option_index].name, gendtns );
+            exit( 1 );
+          }            
+          gpsEndTimeNS += (INT8) gendtns;
+          ADD_PROCESS_PARAM( "int", "%ld", gendtns );
+        }
+        break;
 
       case 'c':
-	{
-	  /* create storage for the channel name and copy it */
-	  char *channamptr = NULL;
-	  optarg_len = strlen( optarg ) + 1;
-	  fqChanName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-	  memcpy( fqChanName, optarg, optarg_len );
-	  ADD_PROCESS_PARAM( "string", "%s", optarg );
+        {
+          /* create storage for the channel name and copy it */
+          char *channamptr = NULL;
+          optarg_len = strlen( optarg ) + 1;
+          fqChanName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( fqChanName, optarg, optarg_len );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
 
-	  /* check that we have a proper channel name */
-	  if ( ! (channamptr = strstr( fqChanName, ":" ) ) )
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"channel name must be a full LIGO channel name "
-		"e.g. L1:LSC-AS_Q\n(%s specified)\n",
-		long_options[option_index].name, optarg );
-	    exit( 1 );
-	  }
+          /* check that we have a proper channel name */
+          if ( ! (channamptr = strstr( fqChanName, ":" ) ) )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "channel name must be a full LIGO channel name "
+                "e.g. L1:LSC-AS_Q\n(%s specified)\n",
+                long_options[option_index].name, optarg );
+            exit( 1 );
+          }
 
-	  /* copy the first two characters to the ifo name */
-	  memset( ifo, 0, sizeof(ifo) );
-	  memcpy( ifo, optarg, sizeof(ifo) - 1 );
-	}
-	break;
+          /* copy the first two characters to the ifo name */
+          memset( ifo, 0, sizeof(ifo) );
+          memcpy( ifo, optarg, sizeof(ifo) - 1 );
+        }
+        break;
 
       case 'd':
-	/* set length of output frames */
-	frameLength = (INT4) atoi( optarg );
-	if ( frameLength < 1 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "length of frame must be a positive integer: "
-	      "(%d specified) \n", 
-	      long_options[option_index].name, frameLength );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "int", "%d", frameLength );
-	break;
+        /* set length of output frames */
+        frameLength = (INT4) atoi( optarg );
+        if ( frameLength < 1 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "length of frame must be a positive integer: "
+              "(%d specified) \n", 
+              long_options[option_index].name, frameLength );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", frameLength );
+        break;
 
       case 'f':
-	/* set output file name */
-	if ( LALSnprintf( outfileName, FILENAME_MAX * sizeof(CHAR), 
-	      "%s", optarg ) < 0 )
-	{
-	  fprintf( stderr, "invalid argument to --%s\n"
-	      "outfile name %s too long: string truncated\n",
-	      long_options[option_index].name, optarg );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        /* set output file name */
+        if ( LALSnprintf( outfileName, FILENAME_MAX * sizeof(CHAR), 
+              "%s", optarg ) < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s\n"
+              "outfile name %s too long: string truncated\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case 'h':
-	fprintf( stdout, USAGE );
-	exit( 0 );
-	break;
+        fprintf( stdout, USAGE );
+        exit( 0 );
+        break;
 
       case 'p':
-	/* create storage for the calibration frame cache name */
-	optarg_len = strlen( optarg ) + 1;
-	calCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-	memcpy( calCacheName, optarg, optarg_len );
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        /* create storage for the calibration frame cache name */
+        optarg_len = strlen( optarg ) + 1;
+        calCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( calCacheName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
 
       case 'N':
-	/* store the number of points used in computing the response */
-	numRespPoints = (INT4) atoi( optarg );
-	if ( numRespPoints < 2 || numRespPoints % 2 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "number of points must be an even positive integer,\n"
-	      "(%d specified) \n", 
-	      long_options[option_index].name, numRespPoints );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "int", "%d", numRespPoints );
-	break;
+        /* store the number of points used in computing the response */
+        numRespPoints = (INT4) atoi( optarg );
+        if ( numRespPoints < 2 || numRespPoints % 2 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "number of points must be an even positive integer,\n"
+              "(%d specified) \n", 
+              long_options[option_index].name, numRespPoints );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", numRespPoints );
+        break;
 
-      case 'y':	
-	/* specify which type of calibrated data */
-	{
-	  if ( ! strcmp( "real_4", optarg ) )
-	  {
-	    calData = real_4;
-	  }
-	  else if ( ! strcmp( "real_8", optarg ) )
-	  {
-	    calData = real_8;
-	    fprintf( stderr, "Sorry, code not currently set up to\n"
-		"run on real_8 data\n" );
-	    exit( 1 );
-	  }
-	  else
-	  {
-	    fprintf( stderr, "invalid argument to --%s:\n"
-		"unknown data type specified;\n"
-		"%s (must be one of: real_4, real_8)\n",
-		long_options[option_index].name, optarg);
-	    exit( 1 );
-	  }
-	  ADD_PROCESS_PARAM( "string", "%s", optarg );
-	}
-	break;
+      case 'y': 
+        /* specify which type of calibrated data */
+        {
+          if ( ! strcmp( "real_4", optarg ) )
+          {
+            calData = real_4;
+          }
+          else if ( ! strcmp( "real_8", optarg ) )
+          {
+            calData = real_8;
+            fprintf( stderr, "Sorry, code not currently set up to\n"
+                "run on real_8 data\n" );
+            exit( 1 );
+          }
+          else
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "unknown data type specified;\n"
+                "%s (must be one of: real_4, real_8)\n",
+                long_options[option_index].name, optarg);
+            exit( 1 );
+          }
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
+        }
+        break;
 
       case 'r':
-	/* set the sample rate */
-	sampleRate = (INT4) atoi( optarg );
-	if ( sampleRate < 1 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "sample rate must be a positive integer: "
-	      "(%d specified) \n", 
-	      long_options[option_index].name, sampleRate );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "int", "%d", sampleRate );
-	break;
+        /* set the sample rate */
+        sampleRate = (INT4) atoi( optarg );
+        if ( sampleRate < 1 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "sample rate must be a positive integer: "
+              "(%d specified) \n", 
+              long_options[option_index].name, sampleRate );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", sampleRate );
+        break;
 
+      case 'L':
+        /* set the injection start frequency */
+        injFlow = (REAL4) atof ( optarg );
+        if ( injFlow <= 0 )
+        {
+          fprintf( stderr, "invalide argument to --%s:\n"
+              "injections must start at a positive frequency."
+              "(%f specified) \n",
+              long_options[option_index].name, sampleRate );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "float", "%f", injFlow );
+        break;
+              
       case 'i':
-	{
-	  /* create storage for the ifo name and copy it */
-	  memset( ifo, 0, sizeof(ifo) );
-	  memcpy( ifo, optarg, sizeof(ifo) - 1 );
-	  ADD_PROCESS_PARAM( "string", "%s", optarg );
-	}
-	break;
+        {
+          /* create storage for the ifo name and copy it */
+          memset( ifo, 0, sizeof(ifo) );
+          memcpy( ifo, optarg, sizeof(ifo) - 1 );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
+        }
+        break;
 
 
       case 's':
-	if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "comment must be less than %d characters\n",
-	      long_options[option_index].name, LIGOMETA_COMMENT_MAX );
-	  exit( 1 );
-	}
-	else
-	{
-	  LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
-	}
-	break;
+        if ( strlen( optarg ) > LIGOMETA_COMMENT_MAX - 1 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "comment must be less than %d characters\n",
+              long_options[option_index].name, LIGOMETA_COMMENT_MAX );
+          exit( 1 );
+        }
+        else
+        {
+          LALSnprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
+        }
+        break;
 
       case 'S':
-	injectSafety = (INT4) atoi( optarg );
-	if ( injectSafety < 1 )
-	{
-	  fprintf( stderr, "invalid argument to --%s:\n"
-	      "injection safety must be a positive integer: "
-	      "(%d specified) \n", 
-	      long_options[option_index].name, frameLength );
-	  exit( 1 );
-	}
-	ADD_PROCESS_PARAM( "int", "%d", injectSafety );
-	break;
+        injectSafety = (INT4) atoi( optarg );
+        if ( injectSafety < 1 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "injection safety must be a positive integer: "
+              "(%d specified) \n", 
+              long_options[option_index].name, frameLength );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", injectSafety );
+        break;
 
       case 'I':
-	{
-	  /* create storage for the injection channel name and copy it */
-	  optarg_len = strlen( optarg ) + 1;
-	  injChanName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-	  memcpy( injChanName, optarg, optarg_len );
-	  ADD_PROCESS_PARAM( "string", "%s", optarg );
-	}
-	break;
+        {
+          /* create storage for the injection channel name and copy it */
+          optarg_len = strlen( optarg ) + 1;
+          injChanName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+          memcpy( injChanName, optarg, optarg_len );
+          ADD_PROCESS_PARAM( "string", "%s", optarg );
+        }
+        break;
 
       case 'u':
-	/* create storage for the input frame cache name */
-	optarg_len = strlen( optarg ) + 1;
-	frInCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-	memcpy( frInCacheName, optarg, optarg_len );
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        /* create storage for the input frame cache name */
+        optarg_len = strlen( optarg ) + 1;
+        frInCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( frInCacheName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case 'w':
-	/* create storage for the injection file name */
-	optarg_len = strlen( optarg ) + 1;
-	injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
-	memcpy( injectionFile, optarg, optarg_len );
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        /* create storage for the injection file name */
+        optarg_len = strlen( optarg ) + 1;
+        injectionFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( injectionFile, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case 'z':
-	set_debug_level( optarg );
-	ADD_PROCESS_PARAM( "string", "%s", optarg );
-	break;
+        set_debug_level( optarg );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
 
       case 'Z':
-	/* create storage for the usertag */
-	optarg_len = strlen( optarg ) + 1;
-	userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
-	memcpy( userTag, optarg, optarg_len );
+        /* create storage for the usertag */
+        optarg_len = strlen( optarg ) + 1;
+        userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( userTag, optarg, optarg_len );
 
-	this_proc_param = this_proc_param->next = (ProcessParamsTable *)
-	  calloc( 1, sizeof(ProcessParamsTable) );
-	LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
-	    PROGRAM_NAME );
-	LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
-	LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
-	LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
-	    optarg );
-	break;
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+        LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", 
+            PROGRAM_NAME );
+        LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "-userTag" );
+        LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+            optarg );
+        break;
 
       case 'V':
-	/* print version information and exit */
-	fprintf( stdout, "LIGO/LSC Inspiral Injection Program\n" 
-	    "Steve Fairhurst <sfairhur@gravity.phys.uwm.edu>\n"
-	    "CVS Version: " CVS_ID_STRING "\n"
-	    "CVS Tag: " CVS_NAME_STRING "\n" );
-	exit( 0 );
-	break;
+        /* print version information and exit */
+        fprintf( stdout, "LIGO/LSC Inspiral Injection Program\n" 
+            "Steve Fairhurst <sfairhur@gravity.phys.uwm.edu>\n"
+            "CVS Version: " CVS_ID_STRING "\n"
+            "CVS Tag: " CVS_NAME_STRING "\n" );
+        exit( 0 );
+        break;
 
       case '?':
-	exit( 1 );
-	break;
+        exit( 1 );
+        break;
 
       default:
-	fprintf( stderr, "unknown error while parsing options\n" );
-	exit( 1 );
+        fprintf( stderr, "unknown error while parsing options\n" );
+        exit( 1 );
     }
   }
 
@@ -1193,9 +1222,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-	"%s", PROGRAM_NAME );
+        "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-	"--write-raw-data" );
+        "--write-raw-data" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
@@ -1205,9 +1234,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-	"%s", PROGRAM_NAME );
+        "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-	"--write-inj-only" );
+        "--write-inj-only" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
@@ -1216,9 +1245,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-	"%s", PROGRAM_NAME );
+        "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-	"--write-raw-plus-inj" );
+        "--write-raw-plus-inj" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
@@ -1229,9 +1258,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
     LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
-	"%s", PROGRAM_NAME );
+        "%s", PROGRAM_NAME );
     LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
-	"--inject-overhead" );
+        "--inject-overhead" );
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
@@ -1267,8 +1296,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( gpsEndTimeNS <= gpsStartTimeNS )
   {
     fprintf( stderr, "invalid gps time range: "
-	"start time: %d, end time %d\n",
-	gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
+        "start time: %d, end time %d\n",
+        gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
     exit( 1 );
   }
 
@@ -1276,13 +1305,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( !injectionFile && !injChanName )
   {
     fprintf( stderr, 
-	"either --injection-file or --injection-channel must be specified\n");
+        "either --injection-file or --injection-channel must be specified\n");
     exit( 1 );
   }
   if ( injectionFile && injChanName )
   {
     fprintf( stderr, 
-	    "Only one of --injection-file and --injection-channel may be given\n");
+        "Only one of --injection-file and --injection-channel may be given\n");
     exit( 1 );
   }
 
@@ -1290,7 +1319,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( injChanName && !frInCacheName )
   {
     fprintf( stderr, 
-	    "If --injection-channel specified, also require --frame-cache\n");
+        "If --injection-channel specified, also require --frame-cache\n");
     exit( 1 );
   }
 
@@ -1307,7 +1336,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( inputLengthNS % ( (INT8) frameLength * 1000000000LL ) )
   {
     fprintf(stderr, "data length %d must be a multiple of frame length %d",
-	(INT4) (inputLengthNS / 1000000000LL), frameLength);
+        (INT4) (inputLengthNS / 1000000000LL), frameLength);
     exit( 1 );
   }
   else
@@ -1332,14 +1361,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     if ( sampleRate < 0 )
     {
       fprintf( stderr, "If --frame-cache not specified,\n"
-	  "--sample-rate must be specified\n" );
+          "--sample-rate must be specified\n" );
       exit( 1 );
     }
     /* check that neither write-raw-data or write-raw-plus-inj given */
     if ( writeRawData || writeRawPlusInj )
     {
       fprintf( stderr, "Neither --write-raw-data nor --write-raw-plus-inj\n"
-	  "can be specified when --frame-cache not given\n");
+          "can be specified when --frame-cache not given\n");
     }
   }
 
@@ -1347,14 +1376,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( ! calCacheName && ! calData )
   {
     fprintf( stderr, "Either --calibration-cache must be specified,\n" 
-	"or must run on --calibrated-data.\n");
+        "or must run on --calibrated-data.\n");
     exit( 1 );
   }
   else if ( calCacheName && calData )
   {
     fprintf( stderr, 
-	"Only one of --calibration-cache and --calibrated-data\n"
-	"should be specified\n.");
+        "Only one of --calibration-cache and --calibrated-data\n"
+        "should be specified\n.");
     exit( 1 );
   }
 
@@ -1363,10 +1392,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( numRespPoints < 0 )
   {
     if ( vrbflg ) fprintf( stdout, "--num-resp-points not specified\n"    
-	"This gives the number of points used to obtain response,\n"
-	"Response has numRespPoints/2 + 1 points,\n"
-	"Frequency resolution of 1/(numRespPoints * delta T).\n"
-	"Setting it to a default value of 256 * 16384 = 4194304\n");
+        "This gives the number of points used to obtain response,\n"
+        "Response has numRespPoints/2 + 1 points,\n"
+        "Frequency resolution of 1/(numRespPoints * delta T).\n"
+        "Setting it to a default value of 256 * 16384 = 4194304\n");
     numRespPoints = 4194304;
   }
 
