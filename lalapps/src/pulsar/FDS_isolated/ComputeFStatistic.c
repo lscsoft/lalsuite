@@ -1901,7 +1901,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       fseek(fp,k,SEEK_CUR);
     }
     /* save final time and time baseline */
-    cfg->Tf = (INT4)(last_time_used + header.tbase) + 1;  /* FINAL TIME */
+    cfg->Tf = (INT4)(last_time_used + header.tbase);  /* FINAL TIME */
     cfg->tsft=header.tbase;  /* Time baseline of SFTs */
     
     /* NOTE: we do NOT close fp here.  If we are using merged SFT file
@@ -2006,7 +2006,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     fclose(fp);
 
     /* FINAL TIME */
-    cfg->Tf = (INT4) (header.gps_sec+header.tbase) + 1;  
+    cfg->Tf = (INT4) (header.gps_sec+header.tbase);  
     /* Time baseline of SFTs */
     cfg->tsft=header.tbase;  
     cfg->nsamples=header.nsamples;    /* # of Freq. bins in SFT*/
