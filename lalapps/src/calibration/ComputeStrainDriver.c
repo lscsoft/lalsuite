@@ -127,7 +127,6 @@ int main(int argc,char *argv[])
   LALComputeStrain(&status, &OutputData, &InputData);
   TESTSTATUS( &status );
 
-  if (WriteFiltersFile(CommandLineArgs)) return 4;
 
   LALResizeREAL8TimeSeries(&status, &(OutputData.hR), (int)(InputData.wings/OutputData.hR.deltaT),
 			   OutputData.hR.data->length-2*(UINT4)(InputData.wings/OutputData.hR.deltaT));
@@ -162,32 +161,7 @@ int main(int argc,char *argv[])
       TESTSTATUS( &status );
     }
     
-  /* write factors */
-  {
-    char fname[256], fnumber[16];
-    int p;
-    FILE *fpFACTORS;
-
-    strcpy(fname,"factors-");
-    sprintf(fnumber,"%09d",InputData.AS_Q.epoch.gpsSeconds);
-    strcat(fname,fnumber);
-    fpFACTORS=fopen(fname,"w");
-    if (fpFACTORS==NULL) {
-      fprintf(stderr,"Unable to open factors file %s\n",fname);
-      return 1;
-    }
-
-    for (p=0; p<(int)OutputData.alphabeta.data->length;p++)
-      {
-	fprintf(fpFACTORS,"%d %e %e %e %e %e %e\n",
-		(int)(InputData.AS_Q.epoch.gpsSeconds+p*OutputData.alpha.deltaT),
-		OutputData.alphabeta.data->data[p].re,OutputData.alphabeta.data->data[p].im,
-		OutputData.alpha.data->data[p].re,OutputData.alpha.data->data[p].im,
-		OutputData.beta.data->data[p].re,OutputData.beta.data->data[p].im
-		);
-      }
-    fclose(fpFACTORS);
-  }
+  if (WriteFiltersFile(CommandLineArgs)) return 4;
   
   if(FreeMem()) return 8;
 
@@ -295,7 +269,7 @@ static FrChanIn chanin_exc;
   /* check input data epoch agrees with command line arguments */
   if ( InputData.AS_Q.epoch.gpsSeconds != CLA.GPSStart )
     {
-      fprintf(stderr,"GPS start time of data (%d) does nopt agree with requested start time (%d). Exiting.", 
+      fprintf(stderr,"GPS start time of data (%d) does not agree with requested start time (%d). Exiting.", 
 	      InputData.AS_Q.epoch.gpsSeconds, CLA.GPSStart);
       return 1;
     }
@@ -373,12 +347,24 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
   if (fileGPS == OutputData.h.epoch.gpsSeconds+InputData.wings/2)
     {
       historyflag=1;
-      fprintf(stdout,"Filters file GPS time (%d) agrees with start of AS_Q time series plus half of the overlap (%d).\n",
-	      fileGPS, OutputData.h.epoch.gpsSeconds+InputData.wings/2);
-      fprintf(stdout,"Will use filter histories in file %s.\n",CLA.filterfile);    
+/*       fprintf(stdout,"Filters file GPS time (%d) agrees with start of AS_Q time series plus half of the overlap (%d).\n", */
+/* 	      fileGPS, OutputData.h.epoch.gpsSeconds+InputData.wings/2); */
+/*       fprintf(stdout,"Will use filter histories in file %s.\n",CLA.filterfile);     */
     }else{
       if (CLA.requirehistories)
 	{
+	  /* here I need to add graceful exit if the time is right */
+	  if ( fileGPS ==  (int)(OutputData.h.epoch.gpsSeconds
+				 +OutputData.h.data->length*OutputData.h.deltaT-3*InputData.wings/2))
+	    {
+	      fprintf(stdout,"GPS end time of time series (%d) agrees with filters file GPS time (%d). I may have already written this frame (GPS: %d). \n", 
+		      (int)(OutputData.h.epoch.gpsSeconds+OutputData.h.data->length*OutputData.h.deltaT-3*InputData.wings/2) ,fileGPS, 
+		      OutputData.h.epoch.gpsSeconds+InputData.wings);	
+	      fprintf(stdout,"Exiting gracefully!\n");
+	      LALDestroyParsedDataFile ( &status, &Filters ); TESTSTATUS( &status );
+	      exit (0);
+	    }
+
 	  fprintf(stderr,"GPS start time of time series plus half the overlap (%d) does not agree with filters file GPS time (%d).\n", 
 		  OutputData.h.epoch.gpsSeconds+InputData.wings/2,fileGPS);
 	  fprintf(stderr,"Filter histories required to continue. Exiting!\n");
@@ -388,6 +374,8 @@ int ReadFiltersFile(struct CommandLineArgsTag CLA)
       fprintf(stderr,"GPS start time of time series plus half the overlap (%d) does not agree with filters file GPS time (%d).\n", 
 	      OutputData.h.epoch.gpsSeconds+InputData.wings/2,fileGPS);
       fprintf(stderr,"Will NOT use filter histories in file %s.\n",CLA.filterfile);
+
+
     }
 
 
@@ -747,8 +735,8 @@ int WriteFiltersFile(struct CommandLineArgsTag CLA)
   FiltersFile=fopen(CLA.filterfile, "w");
 
   /* write GPS string */
-  fprintf(FiltersFile,"%d GPS\n", (int)(OutputData.h.epoch.gpsSeconds
-					+OutputData.h.data->length*OutputData.h.deltaT-3*InputData.wings/2));
+  fprintf(FiltersFile,"%d GPS\n", (int)(InputData.AS_Q.epoch.gpsSeconds
+					+InputData.AS_Q.data->length*InputData.AS_Q.deltaT-3*InputData.wings/2));
   /* sengsing section */
   fprintf(FiltersFile,"SENSING\n");
   fprintf(FiltersFile,"%d UPSAMPLING_FACTOR\n",InputData.CinvUSF);
