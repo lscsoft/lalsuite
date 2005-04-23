@@ -363,10 +363,11 @@ int main(int argc,char *argv[])
   DopplerPosition dopplerpos;           /* current search-parameters */
   SkyPosition thisPoint;
   FILE *fpOut = NULL;
-
   UINT4 loopcounter;            /* Checkpoint-counters for restarting checkpointed search */
   long fstat_bytecounter;
   UINT4 checksum=0;             /* Checksum of fstats file contents */
+  CHAR loudest[1024];		/**< result-line for loudest canidate in search-region */
+  REAL8 F_loudest = 0.0;	/**< F-statistic value of loudest (so far) canidate */
 
 #ifdef RUN_POLKA
   INT4 fstats_completed = FALSE; /* did we find a completed fstats file? */
@@ -814,11 +815,9 @@ int main(int argc,char *argv[])
           if (fpOut) 
             {
               INT4 i;
-	      CHAR maxline[1024];
               for(i=0;i < GV.FreqImax ;i++)
                 {
 		  CHAR linebuf[1024]; 
-		  static REAL8 Fmax = 0.0;	
 		  REAL8 Fval = 2.0*medianbias*Fstat.F[i];
 
 		  LALSnprintf (linebuf, 1023, "%20.17f %20.17f %20.17f %20.17g %20.17g\n", 
@@ -829,28 +828,14 @@ int main(int argc,char *argv[])
 		  fprintf (fpOut, linebuf);
 
 		  /* keep track of  loudest candidate */
-		  if ( Fval > Fmax )
+		  if ( Fval > F_loudest )
 		    {
-		      Fmax = Fval;
-		      strcpy ( maxline, linebuf );
+		      F_loudest = Fval;
+		      strcpy ( loudest, linebuf );
 		    }
 
                 } /* for i < FreqImax */
 
-	      /* write loudest canidate into separate file outputFstat.loudest */
-	      {
-		FILE *fpLoudest;
-		CHAR fname[1024];
-		strcpy ( fname, uvar_outputFstat);
-		strcat ( fname , ".loudest");
-		if ( (fpLoudest = fopen (fname, "wb")) == NULL)
-		  {
-		    LALPrintError ("\nError opening file '%s' for writing..\n\n", fname);
-		    return COMPUTEFSTAT_EXIT_OPENFSTAT;
-		  }
-		fprintf (fpLoudest, maxline);
-		fclose(fpLoudest);
-	      } /* write loudest candidate to file */
             } /* if fpOut */
 
           
@@ -910,6 +895,23 @@ int main(int argc,char *argv[])
 
   if (uvar_outputFstat && fpOut)
     fclose (fpOut);
+
+
+  /* now write loudest canidate into separate file ".loudest" */
+  if ( uvar_outputFstat )
+    {
+      FILE *fpLoudest;
+      CHAR fname[1024];
+      strcpy ( fname, uvar_outputFstat);
+      strcat ( fname , ".loudest");
+      if ( (fpLoudest = fopen (fname, "wb")) == NULL)
+	{
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", fname);
+	  return COMPUTEFSTAT_EXIT_OPENFSTAT;
+	}
+      fprintf (fpLoudest, loudest);
+      fclose(fpLoudest);
+    } /* write loudest candidate to file */
 
   if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
   
