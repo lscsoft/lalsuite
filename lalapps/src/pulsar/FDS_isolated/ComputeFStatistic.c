@@ -429,7 +429,7 @@ int main(int argc,char *argv[])
    * prepare initialization of the DopplerScanner to step through paramter space 
    * In input-structure for this initialization is DopplerScanInit 
    */
-  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
+  if (lalDebugLevel) printf ("\nSetting up template grid ...");
   scanInit.metricType = (LALPulsarMetricType) uvar_metricType;
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
@@ -471,9 +471,9 @@ int main(int argc,char *argv[])
   /* ---------- should we write the sky-grid to disk? ---------- */
   if ( uvar_outputSkyGrid ) 
     {
-      LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+      printf ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
       LAL_CALL (writeSkyGridFile( stat, thisScan.grid, uvar_outputSkyGrid, &scanInit), stat);
-      LALPrintError (" done.\n\n");
+      printf (" done.\n\n");
     }
 
   /* ---------- set Frequency- and spindown-resolution if not input by user ----------*/
@@ -744,8 +744,8 @@ int main(int argc,char *argv[])
 	  *fraction_done_hook=local_fraction_done;
       }
 #endif
-      if (lalDebugLevel) 
-	LALPrintError (""
+      if (lalDebugLevel >= 2) 
+	printf (""
 		       "Search progress: %5.1f%%", 
 		       (100.0* loopcounter / thisScan.numGridPoints));
       
@@ -913,7 +913,8 @@ int main(int argc,char *argv[])
       fclose(fpLoudest);
     } /* write loudest candidate to file */
 
-  if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
+  if (lalDebugLevel >= 2) 
+    printf ("\nSearch finished.\n");
   
 #ifdef FILE_FMAX  
   fclose(fpmax);
@@ -3495,31 +3496,31 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   *bytecounter = 0;
   
   /* try opening checkpoint-file read-only */
-  if (lalDebugLevel) LALPrintError("Checking presence of checkpoint-file ... ");
+  if (lalDebugLevel) printf("Checking presence of checkpoint-file ... ");
   if (!(fp = fopen(ckpfn, "rb"))) {
-    if (lalDebugLevel) LALPrintError ("none found. \nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) printf ("none found. \nStarting main-loop from beginning.\n");
     RETURN(stat);
   }
   
   /* try reading checkpoint-counters: three INT's loopcounter, checksum, and fstat_bytecounter */
-  if (lalDebugLevel) LALPrintError ("found! \nTrying to read checkpoint counters from it...");
+  if (lalDebugLevel) printf ("found! \nTrying to read checkpoint counters from it...");
   if ( 4 != fscanf (fp, "%" LAL_UINT4_FORMAT " %" LAL_UINT4_FORMAT " %ld\nDONE%c", &lcount, &cksum, &bcount, &lastnewline) || lastnewline!='\n') {
-    if (lalDebugLevel) LALPrintError ("failed! \nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) printf ("failed! \nStarting main-loop from beginning.\n");
     goto exit;
   }
   fclose( fp );
   
   /* checkpoint-file read successfully: check consistency with fstats-file */
-  if (lalDebugLevel) LALPrintError ("ok.\nChecking if fstats-file is ok ...");
+  if (lalDebugLevel) printf ("ok.\nChecking if fstats-file is ok ...");
   if (!(fp = fopen(fstat_fname, "rb"))) {
-    if (lalDebugLevel) LALPrintError ("none found.\nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) printf ("none found.\nStarting main-loop from beginning.\n");
     RETURN(stat);
   }
 
 
   /* seek to end of fstats file */
   if (fseek( fp, 0, SEEK_END)) {        /* something gone wrong seeking .. */
-    if (lalDebugLevel) LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) printf ("broken fstats-file.\nStarting main-loop from beginning.\n");
     goto exit;
   }
   
@@ -3532,14 +3533,14 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   /* is bytecounter consistent with length of this file? */
   if ( bcount > flen) {
     if (lalDebugLevel) 
-      LALPrintError ("seems corrupted: has %ld bytes instead of %ld.\nStarting main-loop from beginning.\n", flen, bcount);
+      printf ("seems corrupted: has %ld bytes instead of %ld.\nStarting main-loop from beginning.\n", flen, bcount);
     goto exit;
   }
   
   /* compute checksum */
   computecksum=0;
   if (fseek( fp, 0, SEEK_SET)) {        /* something gone wrong seeking .. */
-    if (lalDebugLevel) LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
+    if (lalDebugLevel) printf ("broken fstats-file.\nStarting main-loop from beginning.\n");
     goto exit;
   }
   for (i=0; i<bcount; i++) {
@@ -3551,11 +3552,11 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
   }
   if (computecksum!=cksum) {
     if (lalDebugLevel) 
-      LALPrintError ("fstats file seems corrupted: has incorrect checksum.\nStarting main-loop from beginning.\n");
+      printf ("fstats file seems corrupted: has incorrect checksum.\nStarting main-loop from beginning.\n");
     goto exit;
   }
 
-  if (lalDebugLevel) LALPrintError ("seems ok.\nWill resume from loopcounter = %ld\n", lcount);
+  if (lalDebugLevel) printf ("seems ok.\nWill resume from loopcounter = %ld\n", lcount);
 
   *loopcounter = lcount;
   *bytecounter = bcount;
