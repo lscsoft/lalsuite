@@ -24,7 +24,7 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 EXTRA_DIST = stochastic.py stochastic_pipe.in stochastic_bayes.in \
              stochastic_S3_H1L1.in stochastic_S3_H1L1_bayes.in \
              stochastic_S3_G1H1.in
-MOSTLYCLEANFILES = *stochastic*.xml *ccSpectra*.gwf
+MOSTLYCLEANFILES = *STOCHASTIC*.xml *CCSPECTRA*.gwf
 CLEANFILES = python_config.sed lalapps_stochastic_pipe \
              lalapps_stochastic_bayes stochastic_S3_H1L1.ini \
              stochastic_S3_H1L1_bayes.ini stochastic_S3_G1H1.ini
