@@ -202,8 +202,7 @@ static void print_usage(char *program)
 "	 --gps-end-time-ns <nanoseconds>\n" \
 "	 --gps-start-time <seconds>\n" \
 "	 --gps-start-time-ns <nanoseconds>\n" \
-"	[--help]\n" \
-"	[--high-freq-cutoff <Hz>]\n" \
+"	[--help]\n" 
 "	[--burstinjection-file <file name>]\n" \
 "	[--inspiralinjection-file <file name>]\n" \
 "	 --low-freq-cutoff <Hz>\n" \
@@ -450,7 +449,6 @@ void parse_command_line(
 		{"gps-start-time",      required_argument, NULL,           'M'},
 		{"gps-start-time-ns",   required_argument, NULL,           'N'},
 		{"help",                no_argument,       NULL,           'O'},
-		{"high-freq-cutoff",    required_argument, NULL,           'k'},
 		{"high-pass",           required_argument, NULL,           'o'},
 		{"burstinjection-file", required_argument, NULL,           'P'},
 		{"inspiralinjection-file", required_argument, NULL,        'I'},
@@ -495,6 +493,7 @@ void parse_command_line(
 	params->compEPInput.numSigmaMin = -1.0;	/* impossible */
 	params->tfPlaneMethod = 0;	/* impossible */
 	params->tfTilingInput.flow = -1.0;	/* impossible */
+	params->tfPlaneParams.fhigh = -1.0;	/* impossible */
 	params->tfTilingInput.length = 0;	/* impossible */
 	params->tfTilingInput.minFreqBins = 0;	/* impossible */
 	params->tfTilingInput.minTimeBins = 0;	/* impossible */
@@ -539,8 +538,8 @@ void parse_command_line(
 	do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) {
 		case 'A':
 		params->tfTilingInput.length = atoi(optarg);
-		if(params->tfTilingInput.length <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", params->tfTilingInput.length);
+		if(params->tfTilingInput.length <= 0 || !is_power_of_2(params->tfTilingInput.length) ) {
+			sprintf(msg, "must be > 0 and a power of 2(%i specified)", params->tfTilingInput.length);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -855,16 +854,6 @@ void parse_command_line(
 		ADD_PROCESS_PARAM("int");
 		break;
 
-		case 'k':
-		params->tfPlaneParams.fhigh = atof(optarg);
-		if(params->tfPlaneParams.fhigh < 0) {
-			sprintf(msg,"must be >= 0 (%f specified)",params->tfPlaneParams.fhigh);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("float");
-		break;
-
 		case 'l':
 		params->tfTilingInput.maxTileBand = atof(optarg);
 		params->tfPlaneParams.deltaT = 1 / (2 * params->tfTilingInput.maxTileBand);
@@ -1003,6 +992,7 @@ void parse_command_line(
 	 * Miscellaneous chores.
 	 */
 
+	params->tfPlaneParams.fhigh = params->tfPlaneParams.flow + params->tfTilingInput.length;
 	params->printSpectrum = printSpectrum;
 	params->useOverWhitening = useoverwhitening;
 
