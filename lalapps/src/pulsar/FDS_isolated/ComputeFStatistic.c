@@ -213,6 +213,7 @@ CHAR *uvar_BaseName;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
+CHAR *uvar_outputLoudest;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
@@ -811,8 +812,8 @@ int main(int argc,char *argv[])
             LAL_CALL (EstimateFLines(stat), stat);
           }
           
-          /* if user requested it, we output ALL F-statistic results */
-          if (fpOut) 
+          /* if user requested it, we output ALL F-statistic results or the loudest */
+          if (uvar_outputFstat || uvar_outputLoudest) 
             {
               INT4 i;
               for(i=0;i < GV.FreqImax ;i++)
@@ -825,7 +826,8 @@ int main(int argc,char *argv[])
 			       dopplerpos.Alpha, dopplerpos.Delta, 
 			       DemodParams->spinDwn[0], Fval);
 		  linebuf[1023] = 0;
-		  fprintf (fpOut, linebuf);
+		  if ( fpOut )
+		    fprintf (fpOut, linebuf);
 
 		  /* keep track of  loudest candidate */
 		  if ( Fval > F_loudest )
@@ -898,15 +900,12 @@ int main(int argc,char *argv[])
 
 
   /* now write loudest canidate into separate file ".loudest" */
-  if ( uvar_outputFstat )
+  if ( uvar_outputLoudest )
     {
       FILE *fpLoudest;
-      CHAR fname[1024];
-      strcpy ( fname, uvar_outputFstat);
-      strcat ( fname , ".loudest");
-      if ( (fpLoudest = fopen (fname, "wb")) == NULL)
+      if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
 	{
-	  LALPrintError ("\nError opening file '%s' for writing..\n\n", fname);
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
 	  return COMPUTEFSTAT_EXIT_OPENFSTAT;
 	}
       fprintf (fpLoudest, loudest);
@@ -990,6 +989,7 @@ initUserVars (LALStatus *stat)
   uvar_outputLabel = NULL;
 
   uvar_outputFstat = NULL;
+  uvar_outputLoudest = NULL;
   uvar_openDX = FALSE;
 
   uvar_skyGridFile = NULL;
@@ -1050,7 +1050,6 @@ initUserVars (LALStatus *stat)
 
   /* the following are 'developer'-options */
 
-  LALregSTRINGUserVar(stat,     outputFstat,     0,  UVAR_DEVELOPER, "Output-file for the F-statistic field over the parameter-space");
   LALregBOOLUserVar(stat,       openDX,          0,  UVAR_DEVELOPER, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory.");
   LALregBOOLUserVar(stat,       doCheckpointing, 0,  UVAR_DEVELOPER, "Do checkpointing and resume for previously checkpointed state.");
@@ -1065,6 +1064,8 @@ initUserVars (LALStatus *stat)
   LALregINTUserVar(stat,        randomSeed,	 0,  UVAR_DEVELOPER, 
 		   "Random-seed for center of MC searchNeighbors 'cube'"
 		   " (use /dev/urandom if not set)");
+  LALregSTRINGUserVar(stat,     outputFstat,	0,  UVAR_DEVELOPER, "Output-file for the F-statistic field over the parameter-space");
+  LALregSTRINGUserVar(stat,     outputLoudest,	0,  UVAR_DEVELOPER, "Output-file for the loudest F-statistic candidate in this search");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -3556,7 +3557,8 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
     goto exit;
   }
 
-  if (lalDebugLevel) printf ("seems ok.\nWill resume from loopcounter = %ld\n", lcount);
+  if (lalDebugLevel) 
+    printf ("seems ok.\nWill resume from loopcounter = %d\n", lcount);
 
   *loopcounter = lcount;
   *bytecounter = bcount;
