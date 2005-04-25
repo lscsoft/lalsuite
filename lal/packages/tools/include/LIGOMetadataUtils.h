@@ -114,26 +114,6 @@ and \texttt{all\_data}.
 \subsubsection*{Type \texttt{LALPlaygroundDataMask}}
 </lalLaTeX>
 #endif
-/* <lalVerbatim> */
-typedef enum 
-{
-  LAL_IFO_G1,
-  LAL_IFO_H1,
-  LAL_IFO_H2,
-  LAL_IFO_L1,
-  LAL_IFO_T1,
-  LAL_IFO_V1,
-  LAL_NUM_IFO,
-  LAL_UNKNOWN_IFO = -1
-}  
-InterferometerNumber;
-/*</lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{InterferometerNumber} contains an enum type for describing the 
-interferometer.
-</lalLaTeX>
-#endif
 
 
 /*
@@ -511,14 +491,6 @@ LALAddSnglInspiralToCoinc(
     LALStatus                  *status,
     CoincInspiralTable        **coincPtr,
     SnglInspiralTable          *snglInspiral
-    );
-
-void
-LALSnglInspiralLookup(
-    LALStatus            *status,
-    SnglInspiralTable   **snglInspiralPtr,
-    CoincInspiralTable   *coincInspiral,
-    InterferometerNumber  ifoNumber 
     );
 
 

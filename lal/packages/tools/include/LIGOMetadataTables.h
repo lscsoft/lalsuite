@@ -129,6 +129,26 @@ database tables that are provided.
 </lalLaTeX>
 #endif
 /* <lalVerbatim> */
+typedef enum 
+{
+  LAL_IFO_G1,
+  LAL_IFO_H1,
+  LAL_IFO_H2,
+  LAL_IFO_L1,
+  LAL_IFO_T1,
+  LAL_IFO_V1,
+  LAL_NUM_IFO,
+  LAL_UNKNOWN_IFO = -1
+}  
+InterferometerNumber;
+/*</lalVerbatim> */
+#if 0
+<lalLaTeX>
+The \texttt{InterferometerNumber} contains an enum type for describing the 
+interferometer.
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
 typedef struct
 tagProcessTable
 {
@@ -416,22 +436,18 @@ tagCoincInspiralTable
   struct tagCoincInspiralTable *next;
   CHAR                ifos[LIGOMETA_IFOS_MAX];
   INT4                numIfos;
-  SnglInspiralTable  *G1Inspiral;
-  SnglInspiralTable  *H1Inspiral;
-  SnglInspiralTable  *H2Inspiral;
-  SnglInspiralTable  *L1Inspiral;
-  SnglInspiralTable  *T1Inspiral;
-  SnglInspiralTable  *V1Inspiral;
+  SnglInspiralTable  *snglInspiral[LAL_NUM_IFO];
 }
 CoincInspiralTable;/* </lalVerbatim> */
 #if 0
 <lalLaTeX>
-The \texttt{CoincInspiralTable} contains a pointer to a SnglInspiral
-table for each of the six major interferometric detectors: G1, H1, H2,
-L1, T1 and V1.  In addition, it contains a field in which to store the
-number and names of the IFOs which have non-null SnglInspiralTables.
-This table is meant to provide a simple way to manipulate coincident
-triggers.
+The \texttt{CoincInspiralTable} contains a set of pointers to SnglInspiral
+tables.  The length of the array is set to \texttt{LAL\_NUM\_IFO} which is a
+value of the enum \texttt{InterferometerNumber} described above.  This enum
+also provides an easy way to access the \texttt{SnglInspiral} corresponding to
+each ifo.  In addition the table, it contains a field in which to store the
+number and names of the IFOs which have non-null SnglInspiralTables.  This
+table is meant to provide a simple way to manipulate coincident triggers.
 
 
 \subsubsection*{Type \texttt{SimInspiralTable}}

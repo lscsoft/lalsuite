@@ -45,7 +45,6 @@ NRCSID( COINCINSPIRALUTILSC, "$Id$" );
 \idx{LALCreateTwoIFOCoincList()}
 \idx{LALAddSnglInspiralToCoinc()}
 \idx{LALSnglInspiralCoincTest()}
-\idx{LALSnglInspiralLookup()}
 
 
 \subsubsection*{Description}
@@ -68,11 +67,6 @@ coinc inspirals.  If an \texttt{eventId} already exists for the single
 inspiral, another eventId table is added to the linked list.  The linked list
 of \texttt{eventId}s associated to a single inspiral table allow us to easily
 determine which coincident events each single is a part of.
-
-The function \texttt{LALSnglInspiralLookup()} can be used to retrieve single
-inspiral entries from a coinc inspiral table.  Given an \texttt{ifo} and a
-\texttt{coincInspiral}, it returns a pointer to the relevant single inspiral
-table.
 
 \texttt{LALSnglInspiralCoincTest()} tests for coincidence between a single
 inspiral and a coinc inspiral.  It works by testing for coincidence between
@@ -261,17 +255,17 @@ LALAddSnglInspiralToCoinc(
   switch ( (snglInspiral->ifo)[0] ) 
   {
     case 'G':
-      coincInspiral->G1Inspiral = snglInspiral;
+      coincInspiral->snglInspiral[LAL_IFO_G1] = snglInspiral;
       break;
 
     case 'H':
       if ( !strcmp( snglInspiral->ifo, "H1" ) )
       {
-        coincInspiral->H1Inspiral = snglInspiral;
+        coincInspiral->snglInspiral[LAL_IFO_H1] = snglInspiral;
       }
       else if (!strcmp( snglInspiral->ifo, "H2" ) )
       {
-        coincInspiral->H2Inspiral = snglInspiral;
+        coincInspiral->snglInspiral[LAL_IFO_H2] = snglInspiral;
       }
       else
       {
@@ -281,15 +275,15 @@ LALAddSnglInspiralToCoinc(
       break;
 
     case 'L':
-      coincInspiral->L1Inspiral = snglInspiral;
+      coincInspiral->snglInspiral[LAL_IFO_L1] = snglInspiral;
       break;
 
     case 'T':
-      coincInspiral->T1Inspiral = snglInspiral;
+      coincInspiral->snglInspiral[LAL_IFO_T1] = snglInspiral;
       break;
 
     case 'V':
-      coincInspiral->V1Inspiral = snglInspiral;
+      coincInspiral->snglInspiral[LAL_IFO_V1] = snglInspiral;
       break;
 
     default:
@@ -324,55 +318,6 @@ LALAddSnglInspiralToCoinc(
 
 
 
-/* <lalVerbatim file="CoincInspiralUtilsCP"> */
-void
-LALSnglInspiralLookup(
-    LALStatus            *status,
-    SnglInspiralTable   **snglInspiralPtr,
-    CoincInspiralTable   *coincInspiral,
-    InterferometerNumber  ifoNumber 
-    )
-/* </lalVerbatim> */
-{
-  SnglInspiralTable    *snglInspiralEntry;
-
-  INITSTATUS( status, "LALSnglInspiralLookup", COINCINSPIRALUTILSC );
-
-  switch ( ifoNumber ) 
-  {
-    case LAL_IFO_G1:
-      snglInspiralEntry = coincInspiral->G1Inspiral;
-      break;
-
-    case LAL_IFO_H1:
-      snglInspiralEntry = coincInspiral->H1Inspiral;
-      break;
-
-    case LAL_IFO_H2:
-      snglInspiralEntry = coincInspiral->H2Inspiral;
-      break;
-
-    case LAL_IFO_L1:
-      snglInspiralEntry = coincInspiral->L1Inspiral;
-      break;
-
-    case LAL_IFO_T1:
-      snglInspiralEntry = coincInspiral->T1Inspiral;
-      break;
-
-    case LAL_IFO_V1:
-      snglInspiralEntry = coincInspiral->V1Inspiral;
-      break;
-
-    default:
-      /* Invalid Detector Site */
-      snglInspiralEntry = NULL;
-  }
-  *snglInspiralPtr = snglInspiralEntry;
-
-  RETURN (status);
-}
-
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void
@@ -395,8 +340,7 @@ LALSnglInspiralCoincTest(
   /* Loop over sngl_inspirals contained in coinc_inspiral */
   for ( ifoNumber = 1; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
-    LALSnglInspiralLookup( status->statusPtr, &thisCoincEntry, coincInspiral, 
-        ifoNumber );
+    thisCoincEntry = coincInspiral->snglInspiral[ifoNumber];
 
     if ( thisCoincEntry )
     {
@@ -471,8 +415,7 @@ LALExtractSnglInspiralFromCoinc(
     /* loop over the interferometers */
     for ( j = 1; j < 7; j++)
     {
-      LALSnglInspiralLookup( status->statusPtr, &thisCoincEntry, thisCoinc, 
-        j );
+      thisCoincEntry = thisCoinc->snglInspiral[j];
 
       if ( thisCoincEntry )
       {
