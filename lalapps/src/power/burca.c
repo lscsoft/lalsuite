@@ -32,11 +32,14 @@ of the two ifos do not match "
 #define MAXFILES 128
 #define MSEC   (1000000LL)
 
+/* cluster options */
+enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq } clusterchoice = undefined;
+
 /* Usage format string. */
 #define USAGE "Usage: %s --ifo-a trigfile.a --ifo-b trigfile.b \
 --start-time startCoincidence --stop-time stopCoincidence \
 --drho-plus dRhoPlus --drho-minus dRhoMinus --dt deltat \
---outfile outfilename --noplayground [--help]\n"
+--outfile outfilename --noncfile noncoincfilename --noplayground [--help]\n"
 
          
  
@@ -48,6 +51,7 @@ int main(int argc, char **argv)
     static LALStatus       stat;
     INT4                   usePlayground= 1;
     INT4                   verbose = FALSE;
+    INT4                   cluster = FALSE;
 
     INT4                   isPlay = 0;
     INT4                   deltaT=0;
@@ -63,9 +67,12 @@ int main(int argc, char **argv)
     INT4                   nTrigFile[MAXIFO];
 
     CHAR                   *outfileName=NULL;
+    CHAR                   *outnoncfileName = NULL;
+
     SnglBurstTable         *currentEvent=NULL,*tmpEvent=NULL;
-    SnglBurstTable         *prevEvent=NULL,*outEvent=NULL;
+    SnglBurstTable         *prevEvent=NULL,*prevNonCEvent=NULL,*outEvent=NULL;
     SnglBurstTable         *coincidentEvents=NULL;
+    SnglBurstTable         *noncoincidentEvents = NULL;
     SnglBurstTable        **burstEventList=NULL;
     SnglBurstTable        **currentTrigger=NULL;
     SnglBurstAccuracy       accParams;
@@ -90,6 +97,7 @@ int main(int argc, char **argv)
         {"ifo-a",                   required_argument, 0,                'a'},
         {"ifo-b",                   required_argument, 0,                'b'},
         {"drhoplus",                required_argument, 0,                'c'},
+	{"clustertype",             required_argument, 0,                'f'},
         {"drhominus",               required_argument, 0,                'd'},
         {"dt",                      required_argument, 0,                't'},
         {"start-time",              required_argument, 0,                'r'},
@@ -97,6 +105,7 @@ int main(int argc, char **argv)
         {"slide-time",              required_argument, 0,                'X'},
         {"slide-time-ns",           required_argument, 0,                'Y'},
         {"outfile",                 required_argument, 0,                'o'},
+        {"noncfile",                required_argument, 0,                'e'},
         {"help",                    no_argument,       0,                'h'}, 
         {0, 0, 0, 0}
     };
@@ -128,7 +137,7 @@ int main(int argc, char **argv)
         int option_index = 0;
 
         c = getopt_long_only( argc, argv, 
-                "a:b:c:d:m:t:o:r:s:h", long_options, &option_index );
+                "a:b:c:d:e:f:m:t:o:r:s:h", long_options, &option_index );
 
         /* detect the end of the options */
         if ( c == - 1 )
@@ -218,7 +227,41 @@ int main(int argc, char **argv)
                 }
                 break;
 
-            case 'h':
+            case 'e':
+                /* the name of the output non coinc file */
+                {
+                  size_t len = strlen(optarg) + 1;
+                  outnoncfileName = (CHAR *) LALCalloc( len, sizeof(CHAR) );
+                  memcpy( outnoncfileName, optarg, len);
+                }
+                break;
+
+            case 'f':
+	      /*
+	       * set the cluster option
+	       */			
+	      {
+		if ( ! strcmp( "clusterbypeaktimeandfreq", optarg ) )
+		  {
+		    cluster = TRUE;
+		    clusterchoice = clusterbypeaktimeandfreq;
+		  }
+		else if ( ! strcmp( "clusterbytimeandfreq", optarg ) )
+		  {
+		    cluster = TRUE;
+		    clusterchoice = clusterbytimeandfreq;
+		  }
+		else
+		  {
+		    fprintf( stderr, "invalid argument to --clustertype\n"
+			     "unknown clusterchoice specified;\n"
+			     "(must be one of:clusterbypeaktimeandfreq ,clusterbytimeandfreq )\n");
+		  }
+	      }
+	      break;
+		    
+		    
+	    case 'h':
                 /* help message */
                 fprintf( stderr, USAGE , argv[0]);
                 exit( 1 );
@@ -407,6 +450,7 @@ int main(int argc, char **argv)
             (currentTrigger[0]->start_time.gpsSeconds < endCoincidence.gpsSeconds) )
     {
         INT8 ta, tb;
+	INT8 coin = 0;
 
         LAL_CALL( LALGPStoINT8(&stat, &ta, &(currentTrigger[0]->peak_time)), &stat);
 
@@ -448,7 +492,7 @@ int main(int argc, char **argv)
 
         if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) )
         {
-            tmpEvent = currentTrigger[1];
+	    tmpEvent = currentTrigger[1];
             while (tmpEvent != NULL)
             {
                 LAL_CALL( LALGPStoINT8(&stat, &tb, &(tmpEvent->peak_time)), &stat);
@@ -460,6 +504,7 @@ int main(int argc, char **argv)
 
                 if (!accParams.difference)
                 {
+		  coin = 1;
                     if (coincidentEvents == NULL)
                     {
                         outEvent = coincidentEvents = (SnglBurstTable *)
@@ -480,12 +525,47 @@ int main(int argc, char **argv)
             }
         }
 
+	if (outnoncfileName && coin == 0)
+	{
+	  if (noncoincidentEvents == NULL)
+	  {
+	    outEvent = noncoincidentEvents = (SnglBurstTable *)
+	      LALCalloc(1, sizeof(SnglBurstTable) );
+	    prevNonCEvent = outEvent;
+	  }
+	  else 
+	  {
+	    outEvent = (SnglBurstTable *)
+	      LALCalloc(1, sizeof(SnglBurstTable) );
+	    prevNonCEvent->next = outEvent;
+	  }
+	  memcpy( outEvent, currentTrigger[0], sizeof(SnglBurstTable));
+	  prevNonCEvent = outEvent;
+	  outEvent = outEvent->next = NULL;
+	}
+
         currentTrigger[0] = currentTrigger[0]->next;
     }
 
 
+    /* cluster the events if asked to */
+    if(cluster && clusterchoice == clusterbypeaktimeandfreq){
+      if (outnoncfileName && noncoincidentEvents){
+	LAL_CALL(LALClusterSnglBurstTable(&stat, &noncoincidentEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
+      }
+      if(coincidentEvents)
+	LAL_CALL(LALClusterSnglBurstTable(&stat, &coincidentEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
+    }
+    else if (cluster && clusterchoice == clusterbytimeandfreq){
+      if (outnoncfileName && noncoincidentEvents){
+	LAL_CALL(LALClusterSnglBurstTable(&stat, &noncoincidentEvents, NULL, XLALCompareSnglBurst), &stat);
+      }
+      if(coincidentEvents)
+	LAL_CALL(LALClusterSnglBurstTable(&stat, &coincidentEvents,  NULL, XLALCompareSnglBurst), &stat);
+    }
+
     /*****************************************************************
-     * open output xml file
+     * open output xml file to write coincident triggers
      *****************************************************************/
     LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
 
@@ -496,7 +576,6 @@ int main(int argc, char **argv)
     LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, searchsumm, 
 				      search_summary_table ), &stat );
     LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
-    LALFree( searchsumm.searchSummaryTable );
 
     /*write the triggers */
 
@@ -507,7 +586,30 @@ int main(int argc, char **argv)
     LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
     LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
 
-
+    /*****************************************************************
+     * open output xml file to write non coincident triggers
+     *****************************************************************/
+    if (outnoncfileName)
+    { 
+      LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outnoncfileName), &stat);
+      
+      /* write the search cummary table */
+      LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, search_summary_table ), 
+		&stat );
+      LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, searchsumm, 
+					search_summary_table ), &stat );
+      LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+      
+      /*write the triggers */
+      
+      LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
+      myTable.snglBurstTable = noncoincidentEvents;
+      LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
+					sngl_burst_table), &stat);
+      LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
+      LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+    }
+ 
     /*****************************************************************
      * clean up the memory that has been allocated 
      *****************************************************************/
@@ -516,6 +618,16 @@ int main(int argc, char **argv)
         prevEvent = coincidentEvents;
         coincidentEvents = coincidentEvents->next;
         LALFree( prevEvent );
+    }
+
+    if (outnoncfileName){
+      while ( noncoincidentEvents != NULL)
+	{
+	  prevEvent = noncoincidentEvents;
+	  noncoincidentEvents = noncoincidentEvents->next;
+	  LALFree( prevEvent );
+	} 
+      LALFree(outnoncfileName);
     }
 
     for(j=0; j<2 ; j++)
@@ -532,6 +644,7 @@ int main(int argc, char **argv)
         }
     }
 
+    LALFree( searchsumm.searchSummaryTable );
     LALFree( outfileName );
     LALFree( currentTrigger );
     LALFree( burstEventList );
