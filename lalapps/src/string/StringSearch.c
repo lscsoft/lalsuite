@@ -46,6 +46,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/Date.h>
 
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
+
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 
@@ -101,6 +103,7 @@ struct CommandLineArgsTag {
   INT4 fakenoiseflag;         /* =0 if real noise =1 if fake gaussian noise */
   INT4 whitespectrumflag;     /* =0 if spectrum is to be computed =1 for white spectrum */
   INT4 trigstarttime;         /* start-time of allowed triggers */
+  INT4 cluster;               /* =0 if events are not to be clustered =1 otherwise */
 } CommandLineArgs;
 
 typedef 
@@ -142,7 +145,7 @@ int NTemplates;
 
 LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
 
-SnglBurstTable *events=NULL;
+SnglBurstTable *events=NULL, *cl_events=NULL;
 MetadataTable  procTable;
 MetadataTable  procparams;
 MetadataTable  searchsumm;
@@ -192,6 +195,12 @@ int FindStringBurst(struct CommandLineArgsTag CLA);
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, 
 	       INT4 i, INT4 m, SnglBurstTable **thisEvent);
 
+/* Clusters events in frequency by taking highest SNR within a time window */
+int ClusterEvents(struct CommandLineArgsTag CLA);
+
+/* returns peak time of event */
+static INT8 peak_time(const SnglBurstTable *x);
+
 /* Writes out the xml file with the events it found  */
 int OutputEvents(struct CommandLineArgsTag CLA);
 
@@ -230,7 +239,12 @@ int main(int argc,char *argv[])
 
  if (FindStringBurst(CommandLineArgs)) return 9;
 
- if (OutputEvents(CommandLineArgs)) return 10;
+ if (CommandLineArgs.cluster == 1) 
+   {
+     if (ClusterEvents(CommandLineArgs)) return 10;
+   }
+
+ if (OutputEvents(CommandLineArgs)) return 11;
 
  if (FreeMem()) return 12;
 
@@ -314,6 +328,130 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
 }
 
 
+
+/*******************************************************************************/
+static INT8 peak_time(const SnglBurstTable *x)
+{
+        return(XLALGPStoINT8(&x->peak_time));
+}
+
+/*******************************************************************************/
+static void copy_event(SnglBurstTable *a, SnglBurstTable *b)
+{
+  strncpy( a->ifo, b->ifo, sizeof(b->ifo) );
+  strncpy( a->search, b->search, sizeof( b->search ) );
+  strncpy( a->channel, b->channel, sizeof( b->channel ) );
+ 
+  a->start_time.gpsSeconds     = b->start_time.gpsSeconds;
+  a->start_time.gpsNanoSeconds = b->start_time.gpsNanoSeconds;
+  a->peak_time.gpsSeconds      = b->peak_time.gpsSeconds;
+  a->peak_time.gpsNanoSeconds  = b->peak_time.gpsNanoSeconds;
+  a->duration     = b->duration;
+  a->central_freq = b->	central_freq;   
+  a->bandwidth    = b->	bandwidth;		     
+  a->snr          = b->snr;
+  a->amplitude    = b->amplitude;
+  a->confidence   = b->confidence;
+  
+}
+/*******************************************************************************/
+static void print_event(SnglBurstTable *a)
+{
+ 
+  fprintf(stdout,"%9d.%09d   %e\n",(int)a->peak_time.gpsSeconds,(int)a->peak_time.gpsNanoSeconds, a->snr);
+   
+}
+/*******************************************************************************/
+
+int ClusterEvents(struct CommandLineArgsTag CLA)
+{
+  SnglBurstTable *thisEvent1 = events, *thiscl_event = NULL, *localcl_event = NULL;
+
+  /* this is a quadratic clustering algorithm for now (for every event 
+     (thisEvent), loop through all other events (thisEvent2))*/
+  while ( thisEvent1 )
+    {      
+      INT8 peak1 = peak_time(thisEvent1);
+      SnglBurstTable *thisEvent2 = events; /* these are the events we'll be looping over */
+
+      if ( thiscl_event ) /* create a new event */
+	{
+	  thiscl_event->next = LALCalloc( 1, sizeof( *(cl_events->next) ) );
+	  thiscl_event = thiscl_event->next;
+	}
+      else /* create the list */
+	{
+	  thiscl_event = localcl_event = LALCalloc( 1, sizeof( *cl_events ) );
+	}
+      
+      /* first set clustered event to current event */
+      copy_event(thiscl_event,thisEvent1);
+
+      while ( thisEvent2 )
+	{
+	  INT8 peak2 = peak_time(thisEvent2);
+	  
+	  /* Is this even within the time clustering window? 
+	     The clustering window is computed using the lowest high frequency
+	     cutoff of our template bank which determines the smoothing scale of 
+	     cosmic tring burst event */
+
+	  if ( labs(peak1-peak2)*1e-9 < 1./CLA.fbanklow ) 
+	    { 
+	      /* Now: thisEvent2 is within clustering window of thiEvent1 
+	       and snr is higher then this should be our clustered event */
+	      if ( thiscl_event->snr < thisEvent2->snr )
+		{
+		  copy_event(thiscl_event,thisEvent2);
+		}
+	    }
+	  
+	  thisEvent2 = thisEvent2->next;
+	}
+      thisEvent1 = thisEvent1->next;
+    }
+ 
+  /* Now what I have is a list, the same size as events but with repeats */
+
+  /* copy first event into cluster list */ 
+  if(localcl_event)
+    {
+      thiscl_event = cl_events = LALCalloc( 1, sizeof( *cl_events ) );
+      copy_event(thiscl_event, localcl_event);
+    }
+  /* then loop over events; creating a new cl_events where necessary */
+  while ( localcl_event && localcl_event->next )
+    {
+      INT8 peak1 = peak_time(localcl_event), peak2 = peak_time(localcl_event->next);
+      SnglBurstTable *next = localcl_event->next;
+
+      if (peak1 != peak2)
+	{
+	  thiscl_event->next = LALCalloc( 1, sizeof( *(cl_events->next) ) );
+	  thiscl_event = thiscl_event->next;
+	  copy_event(thiscl_event, localcl_event->next);
+	}
+
+      LALFree( localcl_event );
+      localcl_event = next;
+    }
+  /* free last localcl event */
+  if(localcl_event)
+    {
+      LALFree( localcl_event );
+    }
+  
+  /* Finally sort them again */
+  if (cl_events) 
+    {
+      /* first sort list in increasing GPS peak time */
+      LALSortSnglBurst(&status, &cl_events, XLALCompareSnglBurstByPeakTimeAndSNR);
+      TESTSTATUS( &status );
+    }
+
+  return 0;
+}
+
 /*******************************************************************************/
 
 int OutputEvents(struct CommandLineArgsTag CLA)
@@ -357,7 +495,12 @@ int OutputEvents(struct CommandLineArgsTag CLA)
 
   /* burst table */
   LALBeginLIGOLwXMLTable(&status, &xml, sngl_burst_table);
-  myTable.snglBurstTable = events;
+  if(CLA.cluster == 1 )
+    {
+      myTable.snglBurstTable = cl_events;
+    }else{
+      myTable.snglBurstTable = events;      
+    }
   LALWriteLIGOLwXMLTable(&status, &xml, myTable, sngl_burst_table);
   LALEndLIGOLwXMLTable(&status, &xml);
 
@@ -366,30 +509,48 @@ int OutputEvents(struct CommandLineArgsTag CLA)
 
   /* print events to text */
   {
-    SnglBurstTable *thisEvent = events;
+    SnglBurstTable *thisEvent = NULL;
     FILE *fp;
+
+   if(CLA.cluster == 1 )
+    {
+      thisEvent = cl_events;
+    }else{
+      thisEvent = events;
+    }
+   
     fp = fopen( "events.txt", "w" );
     if ( ! fp )
       {
 	perror( "output file" );
 	exit( 1 );
       }
-    fprintf( fp,"%% gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\n" );
+    fprintf( fp,"%% gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\tduration\n" );
     while ( thisEvent )
       {
 	fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n",
-		 (int) thisEvent->start_time.gpsSeconds,
-		 (int) thisEvent->start_time.gpsNanoSeconds,
+		 (int) thisEvent->peak_time.gpsSeconds,
+		 (int) thisEvent->peak_time.gpsNanoSeconds,
 		 thisEvent->snr,
 		 thisEvent->amplitude,
 		 thisEvent->central_freq,
-		 thisEvent->bandwidth,thisEvent->duration );
+		 thisEvent->bandwidth,thisEvent->duration);
 	thisEvent = thisEvent->next;
       }
     fclose( fp );
   }
 
   /* free event list, process table, search summary and process params */
+   if(CLA.cluster == 1 )
+    {
+      while ( cl_events )
+	{
+	  SnglBurstTable *next = cl_events->next;
+	  LALFree( cl_events );
+	  cl_events = next;
+	}
+    }
+
   while ( events )
   {
     SnglBurstTable *next = events->next;
@@ -423,8 +584,6 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       INT4 pmax=p;
       INT8 timeNS  = (INT8)( 1000000000 ) * (INT8)(CLA.GPSStart+GV.seg_length*i/2*GV.ht_proc.deltaT);
       timeNS += (INT8)( 1e9 * GV.ht_proc.deltaT * p );
-
-/*       fprintf(stdout,"%9.9lf %f\n",(double)timeNS*1e-9,vector->data[p]); */
 
       if ( (fabs(vector->data[p]) > CLA.threshold) && ( (double)(1e-9*timeNS) > (double)CLA.trigstarttime))
 	{
@@ -548,6 +707,14 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
 	  if(FindEvents(CLA, vector, i, m, &thisEvent)) return 1;
 	}
     }
+
+ /* sort events in time; if there are any */
+ if (events) 
+   {
+     /* first sort list in increasing GPS peak time */
+     LALSortSnglBurst(&status, &events, XLALCompareSnglBurstByPeakTimeAndSNR);
+     TESTSTATUS( &status );
+   }
   
   LALSDestroyVector( &status, &vector );
   TESTSTATUS( &status );
@@ -929,10 +1096,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"kink-search",                no_argument, NULL,         'k' },
     {"test-gaussian-data",         no_argument, NULL,          'n' },
     {"test-white-spectrum",        no_argument, NULL,         'w' },
+    {"cluster-events",             no_argument, NULL,         'l' },
     {"help",        no_argument, NULL,         'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwf:b:t:F:C:E:S:i:N:T:s:g:o:";
+  char args[] = "hnckwlf:b:t:F:C:E:S:i:N:T:s:g:o:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -964,6 +1132,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->whitespectrumflag=0;
   CLA->samplerate=4096.0;
   CLA->trigstarttime=0;
+  CLA->cluster=0;
  
   /* initialise ifo string */
   memset(ifo, 0, sizeof(ifo));
@@ -1067,6 +1236,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->whitespectrumflag=1;
       ADD_PROCESS_PARAM("string");
       break;
+    case 'l':
+      /* fake gaussian noise flag */
+      CLA->cluster=1;
+      ADD_PROCESS_PARAM("string");
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -n, -h, -w, -g, -o  and -i. One of -k or -c must be specified. They are:\n");
@@ -1087,6 +1261,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--cusp-search (-c)\t\tFLAG\t Specifies a search for string cusps.\n");
       fprintf(stdout,"\t--test-gaussian-data (-n)\tFLAG\t Use unit variance fake gaussian noise.\n");
       fprintf(stdout,"\t--test-white-spectrum (-w)\tFLAG\t Use constant white noise (used only in combination with fake gaussian noise; otherwise ignored).\n");
+      fprintf(stdout,"\t--cluster-events (-l)\tFLAG\t Cluster events.\n");
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
       fprintf(stdout,"eg ./lalapps_StringSearch --low-freq-cutoff 40.0 --bank-low-freq-cutoff 40.0 --threshold 80.0 --frame-cache ht_local_cache --channel-name H1:Calibrated-Strain --gps-start-time 732847600 --gps-end-time 732849648 --no-of-segments 32 --settling-time 8 --cusp-search\n");
       exit(0);
