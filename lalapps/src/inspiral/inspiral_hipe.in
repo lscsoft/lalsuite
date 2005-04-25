@@ -2057,9 +2057,9 @@ if do_sire:
         
       sire_segs(h1_l1_g1_triple_coinc_nodes,'output','H1-SIRE_H1L1G1',
         sire_clust_job,dag,do_coinc,usertag,do_clust,'H1')
-      sire_segs(h1_l1_g1_triple_coinc_nodes,'output','L1-SIRE_H1H2G1',
+      sire_segs(h1_l1_g1_triple_coinc_nodes,'output','L1-SIRE_H1L1G1',
         sire_clust_job,dag,do_coinc,usertag,do_clust,'L1')
-      sire_segs(h1_l1_g1_triple_coinc_nodes,'output','G1-SIRE_H1H2G1',
+      sire_segs(h1_l1_g1_triple_coinc_nodes,'output','G1-SIRE_H1L1G1',
         sire_clust_job,dag,do_coinc,usertag,do_clust,'G1')
     
     if do_h2 and do_l1 and do_g1 and len(h2_l1_g1_triple_data):
