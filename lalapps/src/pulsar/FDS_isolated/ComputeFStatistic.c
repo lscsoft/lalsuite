@@ -455,7 +455,7 @@ int main(int argc,char *argv[])
       printf ("\nDEBUG: search-point Alpha=%.16g, Delta=%.16g, Freq=%.16g, f1dot=%.16g\n\n",
 	      uvar_Alpha, uvar_Delta, uvar_Freq, uvar_f1dot);
       printf ("DEBUG: Final search-region:\n");
-      printf ("       skyRegion = '%s'\n", GV.searchRegion.skyRegionString);
+      printf ("       skyRegion = \"%s\"\n", GV.searchRegion.skyRegionString);
       printf ("       Freq in  = [%.16g, %.16g]\n", 
 	      GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
       printf ("       f1dot in = [%.16g, %.16g]\n\n",
