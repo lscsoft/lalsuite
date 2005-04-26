@@ -36,21 +36,21 @@ extern INT4 lalDebugLevel;
  * volume.
  */
 
-static INT4 ModDegreesOfFreedom(TFTile *tile)
+static INT4 DegreesOfFreedom(TFTile *tile)
 {
 	return(2 * (tile->tend - tile->tstart)*tile->deltaT * (tile->fend - tile->fstart)*tile->deltaF);
 }
 
-static void ModWeighTFTileList(TFTiling *tfTiling, INT4 maxDOF)
+static void WeighTFTileList(TFTiling *tfTiling, INT4 maxDOF)
 {
 	TFTile *tile;
 	INT4 *weight = LALCalloc(2 * maxDOF, sizeof(*weight));
 
 	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
-		weight[ModDegreesOfFreedom(tile)]++;
+		weight[DegreesOfFreedom(tile)]++;
 
 	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
-		tile->weight = weight[ModDegreesOfFreedom(tile)];
+		tile->weight = weight[DegreesOfFreedom(tile)];
 
 	LALFree(weight);
 }
@@ -103,7 +103,7 @@ static void ComputeAverageSpectrum(
  * Convert a linked list of tiles to a linked list of burst events.
  */
  
-static SnglBurstTable *ModTFTileToBurstEvent(
+static SnglBurstTable *TFTileToBurstEvent(
 	TFTile *tile,
 	LIGOTimeGPS *epoch,
 	EPSearchParams *params  
@@ -144,12 +144,12 @@ static SnglBurstTable *ModTFTileToBurstEvent(
 }
 
 
-static SnglBurstTable **ModTFTilesToSnglBurstTable(TFTile *tile, SnglBurstTable **addpoint, LIGOTimeGPS *epoch, EPSearchParams *params)
+static SnglBurstTable **TFTilesToSnglBurstTable(TFTile *tile, SnglBurstTable **addpoint, LIGOTimeGPS *epoch, EPSearchParams *params)
 {
 	INT4 count;
 
 	for(count = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (count < params->eventLimit); tile = tile->nextTile, count++) {
-		*addpoint = ModTFTileToBurstEvent(tile, epoch, params); 
+		*addpoint = TFTileToBurstEvent(tile, epoch, params); 
 
 		if(*addpoint)
 			addpoint = &(*addpoint)->next;
@@ -397,14 +397,14 @@ EPSearch(
 		 * Determine the weighting for each tile.
 		 */
 
-		ModWeighTFTileList(tfTiling, 10000);
+		WeighTFTileList(tfTiling, 10000);
 
 		/*
 		 * Convert the TFTiles into sngl_burst events for output.
 		 * The threhsold cut determined by alpha is applied here
 		 */
 
-		EventAddPoint = ModTFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
+		EventAddPoint = TFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
 
 		/*
 		 * Reset the flags on the tftiles.
