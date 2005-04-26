@@ -1522,7 +1522,6 @@ getGridSpacings( LALStatus *lstat,
   REAL8Vector *metric = NULL;
   REAL8 g_f0_f0 = 0, gamma_f1_f1 = 0, gamma_a_a, gamma_d_d;
   PtoleMetricIn metricpar = empty_metricpar;
-  REAL8 Freq;
 
   INITSTATUS( lstat, "getGridSpacings", DOPPLERSCANC );
   ATTATCHSTATUSPTR (lstat); 
@@ -1545,8 +1544,7 @@ getGridSpacings( LALStatus *lstat,
       
       metricpar.epoch = params->obsBegin;
       metricpar.duration = params->obsDuration;
-      Freq = gridpoint.Freq;		/* keep this, needed later for normalizations */
-      metricpar.maxFreq = Freq;
+      metricpar.maxFreq = gridpoint.Freq;
       metricpar.site = params->Detector;
       metricpar.ephemeris = params->ephemeris;	/* needed for ephemeris-metrics */
       metricpar.metricType = params->metricType;
@@ -1569,14 +1567,15 @@ getGridSpacings( LALStatus *lstat,
 
       spacings->Freq = 2.0 * sqrt ( params->metricMismatch / g_f0_f0 );
 
-      if ( params->projectMetric ) 
-	{
-	  if ( lalDebugLevel ) 
-	    printf ("\ngetGridSpacing(): using the projected metric\n");
-	  TRY ( LALProjectMetric( lstat->statusPtr, metric, 0 ), lstat);
-	}
+      if ( params->projectMetric ) {
+	TRY ( LALProjectMetric( lstat->statusPtr, metric, 0 ), lstat);
+      }
+      if ( lalDebugLevel ) 
+	printf ("\ngetGridSpacing(): using the %s metric\n", 
+		params->projectMetric ? "projected" : "unprojected");
+      
       gamma_f1_f1 = metric->data[INDEX_f1_f1];
-      spacings->f1dot = 2.0 * sqrt( params->metricMismatch * Freq * Freq / gamma_f1_f1 );
+      spacings->f1dot = 2.0 * gridpoint.Freq * sqrt( params->metricMismatch / gamma_f1_f1 );
 
       gamma_a_a = metric->data[INDEX_A_A];
       gamma_d_d = metric->data[INDEX_D_D];
@@ -1612,7 +1611,7 @@ getGridSpacings( LALStatus *lstat,
  *  This function tries to estimate a region in parameter-space 
  *  with roughly the given number of grid-points in each non-projected dimension. 
  *
- *  NOTE: if the frequency has been projected, we needs to search
+ *  NOTE: if the frequency has been projected, we need to search
  *       the *whole* possible Doppler-range of frequencies, in which the 
  *       signal can show up. This range is bounded by (from circle-equation)
  *       |FreqBand/Freq| < beta_orb Delta_n, where beta_orb = V_orb/c ~1e-4,
