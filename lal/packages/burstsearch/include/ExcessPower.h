@@ -90,18 +90,9 @@ LALAddWhiteNoise (
                REAL8                                noiseLevel
                );
 
-
-void
-LALCreateTFTiling (
-                LALStatus                              *status,
-                TFTiling                            **tfTiling,
-                CreateTFTilingIn                    *input
-                );
-
-
 void
 LALModCreateTFTiling (
-                LALStatus                              *status,
+                LALStatus                           *status,
                 TFTiling                            **tfTiling,
                 CreateTFTilingIn                    *input,
 		TFPlaneParams                       *planeParams
@@ -113,15 +104,6 @@ LALDestroyTFTiling (
                  TFTiling                           **tfTiling
                  );
 
-
-void
-LALComputeTFPlanes (
-                 LALStatus                             *status,
-                 TFTiling                           *tfTiling,
-                 COMPLEX8FrequencySeries            *freqSeries,
-                 UINT4                              windowShift
-                 );
-
 void
 LALModComputeTFPlanes (
                  LALStatus                             *status,
@@ -131,13 +113,6 @@ LALModComputeTFPlanes (
                  REAL4		                    *norm,
 		 REAL4FrequencySeries               *psd
                  );
-
-void
-LALComputeExcessPower (
-                    LALStatus                          *status,
-                    TFTiling                        *tfTiling,
-                    ComputeExcessPowerIn            *input
-                    );
 
 void
 LALModComputeExcessPower (
