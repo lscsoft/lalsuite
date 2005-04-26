@@ -78,7 +78,7 @@ CHAR *uvar_ephemYear;		/**< year-range of ephemeris-file to use */
 INT4  uvar_metricType;		/**< Metric function to use: ptole_analytic, ptole-numeric, ... */
 REAL8 uvar_startTime;		/**< GPS start time of observation */
 REAL8 uvar_duration;		/**< length of observation in seconds */
-BOOLEAN uvar_projected;		/**< project out frequency-component of metric */
+BOOLEAN uvar_projectMetric;	/**< project out frequency-component of metric */
 
 
 extern int vrbflg;
@@ -135,12 +135,12 @@ main(int argc, char *argv[])
     LAL_CALL ( LALMetricWrapper(&status, &metric, &metricpar), &status);
     LAL_CALL ( LALSDestroyVector(&status, &(metricpar.spindown)), &status);
 
-    if (uvar_projected) {
+    if (uvar_projectMetric) {
       LAL_CALL ( LALProjectMetric( &status, metric, 0 ), &status);
     }
 
     printf ("\n %s Metric: (f, alpha, delta, f1) \n", 
-	    uvar_projected ? "Projected":"Unprojected");
+	    uvar_projectMetric ? "Projected":"Unprojected");
     printf (" %g \n", metric->data[INDEX_f0_f0]);
     printf (" %g  %g\n", metric->data[INDEX_f0_A], metric->data[INDEX_A_A]);
     printf (" %g  %g  %g\n", 
@@ -183,7 +183,7 @@ initUserVars (LALStatus *stat)
 
   uvar_startTime = 714180733;
 
-  uvar_projected = FALSE;
+  uvar_projectMetric = FALSE;
 
   /* now register all our user-variable */
 
@@ -202,7 +202,7 @@ initUserVars (LALStatus *stat)
 		    "first spindown-value df/dt");
   LALregINTUserVar(stat,        metricType,     'M', UVAR_OPTIONAL, 
 		   "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregBOOLUserVar(stat,	projected,	 0,  UVAR_OPTIONAL,
+  LALregBOOLUserVar(stat,	projectMetric,	 0,  UVAR_OPTIONAL,
 		    "Project metric onto frequency-surface");
   LALregREALUserVar(stat,       startTime,      't', UVAR_OPTIONAL, 
 		    "GPS start time of observation");

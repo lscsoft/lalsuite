@@ -86,7 +86,7 @@ INT4  uvar_metricType;		/**< Metric function to use: ptole_analytic, ptole-numer
 REAL8 uvar_metricMismatch;	/**< metric mismatch */
 REAL8 uvar_startTime;		/**< GPS start time of observation */
 REAL8 uvar_duration;		/**< length of observation in seconds */
-BOOLEAN uvar_projected;		/**< project out frequency-component of metric */
+BOOLEAN uvar_projectMetric;		/**< project out frequency-component of metric */
 
 /* this are in addition to the above from getMetric.c */
 REAL8 uvar_dAlpha;		/**< Alpha-resolution if GRID_FLAT or GRID_ISOTROPIC */
@@ -147,7 +147,7 @@ main(int argc, char *argv[])
     scanInit.metricMismatch = uvar_metricMismatch;
     scanInit.obsBegin = config.startTimeGPS;
     scanInit.obsDuration = uvar_duration;
-    scanInit.projectMetric = uvar_projected;
+    scanInit.projectMetric = uvar_projectMetric;
     scanInit.fmax  = uvar_Freq;
     scanInit.Detector = &(config.Detector);
     scanInit.ephemeris = config.ephemeris;       /* used by Ephemeris-based metric */
@@ -214,7 +214,7 @@ initUserVars (LALStatus *stat)
 
   uvar_startTime = 714180733;
 
-  uvar_projected = TRUE;
+  uvar_projectMetric = TRUE;
 
   uvar_dAlpha = 0.001;
   uvar_dDelta = 0.001;
@@ -250,7 +250,7 @@ initUserVars (LALStatus *stat)
 		    "first spindown-value df/dt");
   LALregINTUserVar(stat,        metricType,     'M', UVAR_OPTIONAL, 
 		   "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregBOOLUserVar(stat,	projected,	 0,  UVAR_OPTIONAL,
+  LALregBOOLUserVar(stat,	projectMetric,	 0,  UVAR_OPTIONAL,
 		    "Project metric onto frequency-surface");
   LALregREALUserVar(stat,       startTime,      't', UVAR_OPTIONAL, 
 		    "GPS start time of observation");
