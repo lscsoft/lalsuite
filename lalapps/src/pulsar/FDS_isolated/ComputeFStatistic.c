@@ -227,6 +227,7 @@ BOOLEAN uvar_useCompression;
 #endif
 
 INT4 uvar_searchNeighbors;
+BOOLEAN uvar_projectMetric;
 INT4 uvar_randomSeed;
 
 /*----------------------------------------------------------------------*/
@@ -439,7 +440,7 @@ int main(int argc,char *argv[])
   scanInit.obsBegin.gpsSeconds = GV.Ti;
   scanInit.obsBegin.gpsNanoSeconds = 0;
   scanInit.obsDuration = (REAL8) (GV.Tf - GV.Ti);
-  scanInit.projectMetric = TRUE;
+  scanInit.projectMetric = uvar_projectMetric;
   scanInit.fmax  = uvar_Freq + uvar_FreqBand;
   scanInit.Detector = &GV.Detector;
   scanInit.ephemeris = GV.edat;         /* used by Ephemeris-based metric */
@@ -998,6 +999,7 @@ initUserVars (LALStatus *stat)
   strcpy(uvar_workingDir, ".");
 
   uvar_searchNeighbors = -1;
+  uvar_projectMetric = TRUE;
   
   /* if user does not set start/end times, use all SFTs */
   uvar_startTime = -1.0e308;
@@ -1060,12 +1062,17 @@ initUserVars (LALStatus *stat)
   LALregBOOLUserVar(stat,       useCompression,  0,  UVAR_DEVELOPER, "BOINC: use compression for download/uploading data");
 #endif
 
-  LALregINTUserVar(stat,        searchNeighbors, 0,  UVAR_DEVELOPER, "Create search-'patch' of N neighboring points around the search-location.");
+  LALregINTUserVar(stat,        searchNeighbors, 0,  UVAR_DEVELOPER, 
+		   "Create search-'patch' of N neighboring points around the search-location.");
+  LALregBOOLUserVar(stat,	projectMetric,	0,   UVAR_DEVELOPER, 
+		    "Use projected metric for skygrid");
   LALregINTUserVar(stat,        randomSeed,	 0,  UVAR_DEVELOPER, 
 		   "Random-seed for center of MC searchNeighbors 'cube'"
 		   " (use /dev/urandom if not set)");
-  LALregSTRINGUserVar(stat,     outputFstat,	0,  UVAR_DEVELOPER, "Output-file for the F-statistic field over the parameter-space");
-  LALregSTRINGUserVar(stat,     outputLoudest,	0,  UVAR_DEVELOPER, "Output-file for the loudest F-statistic candidate in this search");
+  LALregSTRINGUserVar(stat,     outputFstat,	0,  UVAR_DEVELOPER, 
+		      "Output-file for the F-statistic field over the parameter-space");
+  LALregSTRINGUserVar(stat,     outputLoudest,	0,  UVAR_DEVELOPER, 
+		      "Output-file for the loudest F-statistic candidate in this search");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
