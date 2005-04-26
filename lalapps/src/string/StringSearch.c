@@ -354,13 +354,7 @@ static void copy_event(SnglBurstTable *a, SnglBurstTable *b)
   a->confidence   = b->confidence;
   
 }
-/*******************************************************************************/
-static void print_event(SnglBurstTable *a)
-{
- 
-  fprintf(stdout,"%9d.%09d   %e\n",(int)a->peak_time.gpsSeconds,(int)a->peak_time.gpsNanoSeconds, a->snr);
-   
-}
+
 /*******************************************************************************/
 
 int ClusterEvents(struct CommandLineArgsTag CLA)
@@ -369,6 +363,35 @@ int ClusterEvents(struct CommandLineArgsTag CLA)
 
   /* this is a quadratic clustering algorithm for now (for every event 
      (thisEvent), loop through all other events (thisEvent2))*/
+
+  /* print events to text */
+  {
+    SnglBurstTable *thisEvent = NULL;
+    FILE *fp;
+    thisEvent = events;
+
+    fp = fopen( "all_events.txt", "w" );
+    if ( ! fp )
+      {
+	perror( "output file" );
+	exit( 1 );
+      }
+    fprintf( fp,"%% gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\tduration\n" );
+    while ( thisEvent )
+      {
+	fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n",
+		 (int) thisEvent->peak_time.gpsSeconds,
+		 (int) thisEvent->peak_time.gpsNanoSeconds,
+		 thisEvent->snr,
+		 thisEvent->amplitude,
+		 thisEvent->central_freq,
+		 thisEvent->bandwidth,thisEvent->duration);
+	thisEvent = thisEvent->next;
+      }
+    fclose( fp );
+  }
+
+
   while ( thisEvent1 )
     {      
       INT8 peak1 = peak_time(thisEvent1);
@@ -387,6 +410,8 @@ int ClusterEvents(struct CommandLineArgsTag CLA)
       /* first set clustered event to current event */
       copy_event(thiscl_event,thisEvent1);
 
+
+
       while ( thisEvent2 )
 	{
 	  INT8 peak2 = peak_time(thisEvent2);
@@ -396,7 +421,7 @@ int ClusterEvents(struct CommandLineArgsTag CLA)
 	     cutoff of our template bank which determines the smoothing scale of 
 	     cosmic tring burst event */
 
-	  if ( labs(peak1-peak2)*1e-9 < 1./CLA.fbanklow ) 
+	  if ( fabs((peak1-peak2)*1e-9) < 1./CLA.fbanklow ) 
 	    { 
 	      /* Now: thisEvent2 is within clustering window of thiEvent1 
 	       and snr is higher then this should be our clustered event */
@@ -412,6 +437,35 @@ int ClusterEvents(struct CommandLineArgsTag CLA)
     }
  
   /* Now what I have is a list, the same size as events but with repeats */
+
+  /* print events to text */
+  {
+    SnglBurstTable *thisEvent = NULL;
+    FILE *fp;
+    thisEvent = localcl_event;
+
+    fp = fopen( "firstclustering_events.txt", "w" );
+    if ( ! fp )
+      {
+	perror( "output file" );
+	exit( 1 );
+      }
+    fprintf( fp,"%% gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\tduration\n" );
+    while ( thisEvent )
+      {
+	fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n",
+		 (int) thisEvent->peak_time.gpsSeconds,
+		 (int) thisEvent->peak_time.gpsNanoSeconds,
+		 thisEvent->snr,
+		 thisEvent->amplitude,
+		 thisEvent->central_freq,
+		 thisEvent->bandwidth,thisEvent->duration);
+	thisEvent = thisEvent->next;
+      }
+    fclose( fp );
+  }
+
+
 
   /* copy first event into cluster list */ 
   if(localcl_event)
@@ -448,6 +502,34 @@ int ClusterEvents(struct CommandLineArgsTag CLA)
       LALSortSnglBurst(&status, &cl_events, XLALCompareSnglBurstByPeakTimeAndSNR);
       TESTSTATUS( &status );
     }
+
+
+  {
+    SnglBurstTable *thisEvent = NULL;
+    FILE *fp;
+    thisEvent = cl_events;
+
+    fp = fopen( "secondclustering_events.txt", "w" );
+    if ( ! fp )
+      {
+	perror( "output file" );
+	exit( 1 );
+      }
+    fprintf( fp,"%% gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\tduration\n" );
+    while ( thisEvent )
+      {
+	fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n",
+		 (int) thisEvent->peak_time.gpsSeconds,
+		 (int) thisEvent->peak_time.gpsNanoSeconds,
+		 thisEvent->snr,
+		 thisEvent->amplitude,
+		 thisEvent->central_freq,
+		 thisEvent->bandwidth,thisEvent->duration);
+	thisEvent = thisEvent->next;
+      }
+    fclose( fp );
+  }
+
 
   return 0;
 }
@@ -904,8 +986,6 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
       LALDestroyREAL4Window( &status, &avgSpecParams.window );
       TESTSTATUS( &status );
     }
-
-/*   LALSPrintFrequencySeries( &GV.Spec, "Spectrum.txt" ); */
 
   return 0;
 }
