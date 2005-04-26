@@ -222,7 +222,6 @@ static void print_usage(char *program)
 "	 --resample-filter <filter type>\n" \
 "	 --resample-rate <Hz>\n" \
 "	[--seed <seed>]\n" \
-"	 --tfplane-method <method>\n" \
 "	 --tile-overlap-factor <factor>\n" \
 "	 --threshold <threshold>\n" \
 "	[--useoverwhitening]\n" \
@@ -351,10 +350,6 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			arg_is_missing = !params->tfTilingInput.maxTileBand;
 			break;
 
-			case 'n':
-			arg_is_missing = !params->tfPlaneMethod;
-			break;
-
 			case 'o':
 			arg_is_missing = options.high_pass < 0.0;
 			break;
@@ -469,7 +464,6 @@ void parse_command_line(
 		{"resample-filter",     required_argument, NULL,           'b'},
 		{"resample-rate",       required_argument, NULL,           'e'},
 		{"seed",                required_argument, NULL,           'c'},
-		{"tfplane-method",      required_argument, NULL,           'n'},
 		{"tile-overlap-factor", required_argument, NULL,           'f'},
 		{"threshold",           required_argument, NULL,           'g'},
 		{"useoverwhitening",    no_argument, &useoverwhitening,   TRUE},  
@@ -491,7 +485,7 @@ void parse_command_line(
 	params->method = -1;	/* impossible */
 	params->compEPInput.alphaDefault = 2.0;	/* impossible */
 	params->compEPInput.numSigmaMin = -1.0;	/* impossible */
-	params->tfPlaneMethod = 0;	/* impossible */
+	params->tfPlaneMethod = useSingleTFPlane ; /* The only method possible */
 	params->tfTilingInput.flow = -1.0;	/* impossible */
 	params->tfPlaneParams.fhigh = -1.0;	/* impossible */
 	params->tfTilingInput.length = 0;	/* impossible */
@@ -874,19 +868,6 @@ void parse_command_line(
 			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("float");
-		break;
-
-		case 'n':
-		if(!strcmp(optarg, "useSingleTFPlane"))
-			params->tfPlaneMethod = useSingleTFPlane;
-		else if(!strcmp(optarg, "useMultipleTFPlane"))
-			params->tfPlaneMethod = useMultipleTFPlane;
-		else {
-			sprintf(msg, "must be \"useSingleTFPlane\" or \"useMultipleTFPlane\"");
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("string");
 		break;
 
 		case 'o':
