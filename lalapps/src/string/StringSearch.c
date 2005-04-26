@@ -364,34 +364,6 @@ int ClusterEvents(struct CommandLineArgsTag CLA)
   /* this is a quadratic clustering algorithm for now (for every event 
      (thisEvent), loop through all other events (thisEvent2))*/
 
-  /* print events to text */
-  {
-    SnglBurstTable *thisEvent = NULL;
-    FILE *fp;
-    thisEvent = events;
-
-    fp = fopen( "all_events.txt", "w" );
-    if ( ! fp )
-      {
-	perror( "output file" );
-	exit( 1 );
-      }
-    fprintf( fp,"%% gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\tduration\n" );
-    while ( thisEvent )
-      {
-	fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n",
-		 (int) thisEvent->peak_time.gpsSeconds,
-		 (int) thisEvent->peak_time.gpsNanoSeconds,
-		 thisEvent->snr,
-		 thisEvent->amplitude,
-		 thisEvent->central_freq,
-		 thisEvent->bandwidth,thisEvent->duration);
-	thisEvent = thisEvent->next;
-      }
-    fclose( fp );
-  }
-
-
   while ( thisEvent1 )
     {      
       INT8 peak1 = peak_time(thisEvent1);
@@ -438,34 +410,6 @@ int ClusterEvents(struct CommandLineArgsTag CLA)
  
   /* Now what I have is a list, the same size as events but with repeats */
 
-  /* print events to text */
-  {
-    SnglBurstTable *thisEvent = NULL;
-    FILE *fp;
-    thisEvent = localcl_event;
-
-    fp = fopen( "firstclustering_events.txt", "w" );
-    if ( ! fp )
-      {
-	perror( "output file" );
-	exit( 1 );
-      }
-    fprintf( fp,"%% gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\tduration\n" );
-    while ( thisEvent )
-      {
-	fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n",
-		 (int) thisEvent->peak_time.gpsSeconds,
-		 (int) thisEvent->peak_time.gpsNanoSeconds,
-		 thisEvent->snr,
-		 thisEvent->amplitude,
-		 thisEvent->central_freq,
-		 thisEvent->bandwidth,thisEvent->duration);
-	thisEvent = thisEvent->next;
-      }
-    fclose( fp );
-  }
-
-
 
   /* copy first event into cluster list */ 
   if(localcl_event)
@@ -502,34 +446,6 @@ int ClusterEvents(struct CommandLineArgsTag CLA)
       LALSortSnglBurst(&status, &cl_events, XLALCompareSnglBurstByPeakTimeAndSNR);
       TESTSTATUS( &status );
     }
-
-
-  {
-    SnglBurstTable *thisEvent = NULL;
-    FILE *fp;
-    thisEvent = cl_events;
-
-    fp = fopen( "secondclustering_events.txt", "w" );
-    if ( ! fp )
-      {
-	perror( "output file" );
-	exit( 1 );
-      }
-    fprintf( fp,"%% gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\tduration\n" );
-    while ( thisEvent )
-      {
-	fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n",
-		 (int) thisEvent->peak_time.gpsSeconds,
-		 (int) thisEvent->peak_time.gpsNanoSeconds,
-		 thisEvent->snr,
-		 thisEvent->amplitude,
-		 thisEvent->central_freq,
-		 thisEvent->bandwidth,thisEvent->duration);
-	thisEvent = thisEvent->next;
-      }
-    fclose( fp );
-  }
-
 
   return 0;
 }
