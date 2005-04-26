@@ -401,35 +401,56 @@ void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *params )
 void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 {
   REAL8Vector   *metric = NULL;  /* for output of metric */
-  PtoleMetricIn *metricpar = (PtoleMetricIn*) params;
+  DopplerScanInit *par = (DopplerScanInit*) params;
+  PtoleMetricIn metricpar = empty_metricpar;
 
   /* Set up shop. */
   INITSTATUS( stat, "getMetric", DOPPLERSCANC );
   ATTATCHSTATUSPTR( stat );
 
+  /* set up the metric parameters proper (using PtoleMetricIn as container-type) */
+  metricpar.metricType = par->metricType;
+  metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
+  /* theoretically and empirically it seems that the spindowns 
+   * do not influence the sky-metric to a good approximation,
+   * at least for 'physical' values of spindown. 
+   * We take this 0 therefore
+   */
+  metricpar.spindown = NULL;	
+
+  metricpar.epoch = par->obsBegin;
+  metricpar.duration = par->obsDuration;
+  metricpar.maxFreq = par->fmax;
+  metricpar.site = par->Detector;
+  metricpar.ephemeris = par->ephemeris;
+
   /* Call the metric function. (Ptole or Coherent, which is handled by wrapper) */
   if (meshOrder == ORDER_ALPHA_DELTA)
     {
-      metricpar->position.longitude = skypos[0];
-      metricpar->position.latitude =  skypos[1];
+      metricpar.position.longitude = skypos[0];
+      metricpar.position.latitude =  skypos[1];
     }
   else
     {
-      metricpar->position.longitude = skypos[1];
-      metricpar->position.latitude =  skypos[0];
+      metricpar.position.longitude = skypos[1];
+      metricpar.position.latitude =  skypos[0];
     }
 
   /* before we call the metric: make sure the sky-position  is "normalized" */
-  TRY ( LALNormalizeSkyPosition(stat->statusPtr, &(metricpar->position), 
-				&(metricpar->position)), stat);
+  TRY ( LALNormalizeSkyPosition(stat->statusPtr, &(metricpar.position), 
+				&(metricpar.position)), stat);
 
-  TRY ( LALMetricWrapper( stat->statusPtr, &metric, metricpar), stat);
+  TRY ( LALMetricWrapper( stat->statusPtr, &metric, &metricpar), stat);
 
-  LALProjectMetric( stat->statusPtr, metric, 0 );
+  /* project metric if requested */
+  if (par->projectMetric)
+    {
+      LALProjectMetric( stat->statusPtr, metric, 0 );
 
-  BEGINFAIL( stat )
-    TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
-  ENDFAIL( stat );
+      BEGINFAIL( stat )
+	TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+      ENDFAIL( stat );
+    }
 
   /* Translate output. Careful about the coordinate-order here!! */
   if (meshOrder == ORDER_ALPHA_DELTA)
@@ -447,6 +468,7 @@ void getMetric( LALStatus *stat, REAL4 g[3], REAL4 skypos[2], void *params )
 
   /* Clean up and leave. */
   TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 } /* getMetric() */
@@ -559,7 +581,9 @@ plotGrid (LALStatus *stat,
 
 	  TRY( LALMetricWrapper( stat->statusPtr, &metric, &metricPar), stat);
 
-	  TRY (LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
+	  if ( init->projectMetric ) {
+	    TRY (LALProjectMetric( stat->statusPtr, metric, 0 ), stat);
+	  }
 
 	  TRY (getSkyEllipse(stat->statusPtr, &ellipse, mismatch, metric), stat);
 
@@ -1065,19 +1089,10 @@ buildMetricGrid (LALStatus *stat,
       
   /* helper-function: range and metric */
   meshpar.getMetric = getMetric;
-  /* and its parameters: metric-parms */
-  meshpar.metricParams = (void *) &metricpar;
-
-  /* set up the metric parameters proper (using PtoleMetricIn as container-type) */
-  metricpar.metricType = init->metricType;
-  metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
-  metricpar.spindown = NULL;
-
-  metricpar.epoch = init->obsBegin;
-  metricpar.duration = init->obsDuration;
-  metricpar.maxFreq = init->fmax;
-  metricpar.site = init->Detector;
-  metricpar.ephemeris = init->ephemeris;
+  /* and its parameters: simply pass the whole DopplerScanInit struct, which
+   * contains all the required information 
+   */
+  meshpar.metricParams = (const void *) init;
 
   /* finally: create the mesh! (ONLY 2D for now!) */
   TRY( LALCreateTwoDMesh( stat->statusPtr, &mesh2d, &meshpar ), stat);
