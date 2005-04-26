@@ -17,8 +17,7 @@ $Id$
 #endif
 
 #include <lal/LALStdio.h>
-#include <lal/LIGOLwXMLRead.h>
-#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
@@ -169,7 +168,7 @@ MetaTableDirectory * XLALCreateMetaTableDir(
   switch( table )
   {
     case no_table:
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( func, XLAL_EINVAL );
       break;
     case process_table:
       break;
@@ -205,7 +204,7 @@ MetaTableDirectory * XLALCreateMetaTableDir(
           {
             fprintf( stderr, "unable to find column %s\n", 
                 tmpTableDir[i].name );
-            XLAL_ERROR( func, XLAL_EFAILED );
+            XLAL_ERROR_NULL( func, XLAL_EFAILED );
           }
         }
 
@@ -252,7 +251,7 @@ MetaTableDirectory * XLALCreateMetaTableDir(
           {
             fprintf( stderr, "unable to find column %s\n", 
                 tmpTableDir[i].name );
-            XLAL_ERROR( func, XLAL_EFAILED );
+            XLAL_ERROR_NULL( func, XLAL_EFAILED );
           }
         }
 
@@ -264,7 +263,7 @@ MetaTableDirectory * XLALCreateMetaTableDir(
     case summ_value_table:
       break;
     default: 
-      XLAL_ERROR( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( func, XLAL_EFAILED );
   }
 
   return tableDir;
@@ -308,7 +307,7 @@ SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
   mioStatus = MetaioOpenTable( env, fileName, "sngl_burst" );
   if ( mioStatus )
   {
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR_NULL( func, XLAL_EIO );
   }
 
   /* create table directory to find columns in file*/
@@ -337,7 +336,7 @@ SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
       fprintf( stderr, "could not allocate burst event\n" );
       XLAL_CLOBBER_EVENTS;
       MetaioClose( env );
-      XLAL_ERROR( func, XLAL_ENOMEM );
+      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
     }
 
     /* parse the contents of the row into the InspiralTemplate structure */
@@ -405,7 +404,7 @@ SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
       else
       {
         XLAL_CLOBBER_EVENTS;
-        XLAL_ERROR( func, XLAL_EIO);
+        XLAL_ERROR_NULL( func, XLAL_EIO);
       }
     }
     /* count the number of triggers parsed */
@@ -417,7 +416,7 @@ SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
     fprintf( stderr, "error parsing after row %d\n", i );
     XLAL_CLOBBER_EVENTS;
     MetaioClose( env );
-    XLAL_ERROR( func, XLAL_EIO);
+    XLAL_ERROR_NULL( func, XLAL_EIO);
   }
 
   /* Normal exit */
