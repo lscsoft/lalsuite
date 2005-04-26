@@ -36,26 +36,6 @@ extern INT4 lalDebugLevel;
  * volume.
  */
 
-static INT4 DegreesOfFreedom(TFTile *tile)
-{
-	return(2 * (tile->tend - tile->tstart + 1) * (tile->fend - tile->fstart + 1));
-}
-
-static void WeighTFTileList(TFTiling *tfTiling, INT4 maxDOF)
-{
-	TFTile *tile;
-	INT4 *weight = LALCalloc(2 * maxDOF, sizeof(*weight));
-
-	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
-		weight[DegreesOfFreedom(tile)]++;
-
-	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
-		tile->weight = weight[DegreesOfFreedom(tile)];
-
-	LALFree(weight);
-}
-
-
 static INT4 ModDegreesOfFreedom(TFTile *tile)
 {
 	return(2 * (tile->tend - tile->tstart)*tile->deltaT * (tile->fend - tile->fstart)*tile->deltaF);
@@ -122,45 +102,6 @@ static void ComputeAverageSpectrum(
 /*
  * Convert a linked list of tiles to a linked list of burst events.
  */
-
-static SnglBurstTable *TFTileToBurstEvent(
-	TFTile *tile,
-	LIGOTimeGPS *epoch,
-	EPSearchParams *params  
-)
-{
-	SnglBurstTable *event = LALMalloc(sizeof(*event));
-	if(!event)
-		return(NULL);
-
-	event->next = NULL;
-	strncpy(event->ifo, params->channelName, 2);
-	event->ifo[2] = '\0';
-	strncpy(event->search, "power", LIGOMETA_SEARCH_MAX);
-	strncpy(event->channel, params->channelName, LIGOMETA_CHANNEL_MAX);
-
-	event->start_time = *epoch;
-	XLALAddFloatToGPS(&event->start_time, tile->tstart * tile->deltaT);
-	event->duration = (tile->tend - tile->tstart + 1) * tile->deltaT;
-	event->peak_time = event->start_time;
-	XLALAddFloatToGPS(&event->peak_time, 0.5 * event->duration);
-	event->bandwidth = (tile->fend - tile->fstart + 1) / tile->deltaT;
-	event->central_freq = params->tfTilingInput.flow + tile->fstart/tile->deltaT + (0.5 * event->bandwidth);
-	event->amplitude = tile->excessPower;
-	event->snr = tile->excessPower;
-
-	if(tile->alpha < 0)
-		event->confidence =  LAL_REAL4_MAX;
-	else if(tile->alpha == 0)
-		event->confidence = -LAL_REAL4_MAX;
-	else
-		event->confidence =  log(tile->alpha);
-
-	event->event_id = NULL;
-
-	return(event);
-}
-
  
 static SnglBurstTable *ModTFTileToBurstEvent(
 	TFTile *tile,
@@ -200,21 +141,6 @@ static SnglBurstTable *ModTFTileToBurstEvent(
 	event->event_id = NULL;
 
 	return(event);
-}
-
-
-static SnglBurstTable **TFTilesToSnglBurstTable(TFTile *tile, SnglBurstTable **addpoint, LIGOTimeGPS *epoch, EPSearchParams *params)
-{
-	INT4 count;
-
-	for(count = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (count < params->eventLimit); tile = tile->nextTile, count++) {
-		*addpoint = TFTileToBurstEvent(tile, epoch, params); 
-
-		if(*addpoint)
-			addpoint = &(*addpoint)->next;
-	}
-
-	return(addpoint);
 }
 
 
