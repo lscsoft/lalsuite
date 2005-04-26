@@ -119,6 +119,22 @@ INT8 inspenddt = 0;
  * supplied comparison function.
  */
 
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+INT4 XLALCountSnglBurst( SnglBurstTable *head )
+/* </lalVerbatim> */
+{
+  INT4 length;
+  SnglBurstTable *event;
+  
+  /* count the number of events in the list */
+  for(length = 0, event = head; event; event = event->next)
+    length++;
+
+  return length;
+}
+
+
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 XLALSortSnglBurst(

@@ -82,6 +82,15 @@ of the detectors, and setting the \texttt{detector} appropriately.
 </lalLaTeX>
 #endif
 
+/* a few useful static functions */
+static INT8 geocent_end_time(const SimInspiralTable *x)
+{
+	return(XLALGPStoINT8(&x->geocent_end_time));
+}
+
+
+
+
 /* <lalVerbatim file="SimInspiralUtilsCP"> */
 void
 LALGalacticInspiralParamsToSimInspiralTable(
@@ -414,3 +423,72 @@ LALPopulateSimInspiralSiteInfo(
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
+
+/* <lalVerbatim file="SimInspiralUtilsCP"> */
+void
+XLALSortSimInspiral(
+    SimInspiralTable **head,
+    int (*comparefunc)(const SimInspiralTable * const *, 
+      const SimInspiralTable * const *)
+    )
+/* </lalVerbatim> */
+{
+  INT4 i;
+  INT4 length;
+  SimInspiralTable *event;
+  SimInspiralTable **array;
+
+  /* empty list --> no-op */
+  if(!head || !*head)
+    return;
+
+  /* count the number of events in the list */
+  for(length = 0, event = *head; event; event = event->next)
+    length++;
+
+  /* construct an array of pointers into the list */
+  array = LALCalloc(length, sizeof(*array));
+  for(i = 0, event = *head; event; event = event->next)
+    array[i++] = event;
+
+  /* sort the array using the specified function */
+  qsort(array, length, sizeof(*array), 
+      (int(*)(const void *, const void *)) comparefunc);
+
+  /* re-link the list according to the sorted array */
+  for(i = 0; i < length; i++, head = &(*head)->next)
+    *head = array[i];
+  *head = NULL;
+
+  /* free the array */
+  LALFree(array);
+}
+
+/* <lalVerbatim file="SimInspiralUtilsCP"> */
+int
+XLALCompareSimInspiralByGeocentEndTime(
+	const SimInspiralTable * const *a,
+	const SimInspiralTable * const *b
+)
+/* </lalVerbatim> */
+{
+	INT8 ta, tb;
+	INT8 epsilon = 10;	/* nanoseconds */
+
+	ta = geocent_end_time(*a);
+	tb = geocent_end_time(*b);
+
+	if(ta > tb + epsilon)
+		return(1);
+	if(ta < tb - epsilon)
+		return(-1);
+	return(0);
+}
+
+
+
+
+
+
+
+

@@ -544,6 +544,21 @@ LALPopulateSimInspiralSiteInfo(
     SimInspiralTable           *output
     );
 
+void
+XLALSortSimInspiral(
+    SimInspiralTable **head,
+    int (*comparefunc)(const SimInspiralTable * const *, 
+      const SimInspiralTable * const *)
+    );
+
+int
+XLALCompareSimInspiralByGeocentEndTime(
+	const SimInspiralTable * const *a,
+	const SimInspiralTable * const *b
+    );
+
+
+
 
 /*
  *
@@ -551,6 +566,10 @@ LALPopulateSimInspiralSiteInfo(
  *
  */
 
+INT4 
+XLALCountSnglBurst( 
+    SnglBurstTable *head 
+);
 
 void
 XLALSortSnglBurst(
