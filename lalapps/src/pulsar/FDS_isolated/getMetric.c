@@ -26,22 +26,22 @@
 RCSID ("$Id$");
 
 /* Error codes and messages */
-#define GETMETRICENORM 	0
-#define GETMETRICESUB  	1
-#define GETMETRICEARG  	2
-#define GETMETRICEBAD  	3
-#define GETMETRICEFILE 	4
-#define GETMETRICENOARG 	5
-#define GETMETRICEINPUT 	6
+#define GETMETRIC_ENORM 	0
+#define GETMETRIC_ESUB  	1
+#define GETMETRIC_EARG  	2
+#define GETMETRIC_EBAD  	3
+#define GETMETRIC_EFILE 	4
+#define GETMETRIC_ENOARG 	5
+#define GETMETRIC_EINPUT 	6
 
 
-#define GETMETRICMSGENORM 	"Normal exit"
-#define GETMETRICMSGESUB  	"Subroutine failed"
-#define GETMETRICMSGEARG  	"Error parsing arguments"
-#define GETMETRICMSGEBAD  	"Bad argument values"
-#define GETMETRICMSGEFILE 	"File IO error"
-#define GETMETRICMSGENOARG 	"Missing argument"
-#define GETMETRICMSGEINPUT 	"Invalid user input"
+#define GETMETRIC_MSGENORM 	"Normal exit"
+#define GETMETRIC_MSGESUB  	"Subroutine failed"
+#define GETMETRIC_MSGEARG  	"Error parsing arguments"
+#define GETMETRIC_MSGEBAD  	"Bad argument values"
+#define GETMETRIC_MSGEFILE 	"File IO error"
+#define GETMETRIC_MSGENOARG 	"Missing argument"
+#define GETMETRIC_MSGEINPUT 	"Invalid user input"
 
 /*---------- local defines ---------- */
 #define TRUE (1==1)
@@ -70,13 +70,12 @@ BOOLEAN uvar_help;
 
 CHAR* uvar_IFO;			/**< name of detector (LHO, LLO, GEO, VIRGO,..)*/
 REAL8 uvar_Alpha;		/**< skyposition Alpha: radians, equatorial coords. */
-REAL8 uvar_Delta;		/**< skyposition Dlpha: radians, equatorial coords. */
+REAL8 uvar_Delta;		/**< skyposition Delta: radians, equatorial coords. */
 REAL8 uvar_Freq;		/**< target-frequency */
 REAL8 uvar_f1dot;		/**< target 1. spindown-value df/dt */
 CHAR *uvar_ephemDir;		/**< directory of ephemeris-files */
 CHAR *uvar_ephemYear;		/**< year-range of ephemeris-file to use */
 INT4  uvar_metricType;		/**< Metric function to use: ptole_analytic, ptole-numeric, ... */
-REAL8 uvar_metricMismatch;	/**< metric mismatch */
 REAL8 uvar_startTime;		/**< GPS start time of observation */
 REAL8 uvar_duration;		/**< length of observation in seconds */
 BOOLEAN uvar_projected;		/**< project out frequency-component of metric */
@@ -180,7 +179,6 @@ initUserVars (LALStatus *stat)
 
   uvar_f1dot = 0.0;
   uvar_metricType = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
-  uvar_metricMismatch = 0.02;
   uvar_help = FALSE;
 
   uvar_startTime = 714180733;
@@ -284,7 +282,7 @@ initGeneral (LALStatus *lstat, ConfigVariables *cfg)
     {
       LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO',"
 		     " 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
-      ABORT (lstat, GETMETRICEINPUT, GETMETRICMSGEINPUT);
+      ABORT (lstat, GETMETRIC_EINPUT, GETMETRIC_MSGEINPUT);
     }
 
   DETATCHSTATUSPTR(lstat);
