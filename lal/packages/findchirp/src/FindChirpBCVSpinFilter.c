@@ -56,6 +56,7 @@ LALDestroyVector()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCVSpin.h>
 
+#define rint(x) (floor((x)+0.5))
 
 NRCSID (FINDCHIRPBCVSPINFILTERC, "$Id$");
 
