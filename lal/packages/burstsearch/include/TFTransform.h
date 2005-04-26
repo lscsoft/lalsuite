@@ -156,21 +156,6 @@ LALTimeSeriesToTFPlane (
                      VerticalTFTransformIn         *input
                      );
 
-
-void
-LALFreqSeriesToTFPlane (
-                     LALStatus                         *status,
-                     COMPLEX8TimeFrequencyPlane     *tfp,
-                     COMPLEX8FrequencySeries        *freqSeries,
-                     HorizontalTFTransformIn        *input
-                     );
-void
-LALModFreqSeriesToTFPlane (
-                     LALStatus                         *status,
-                     COMPLEX8TimeFrequencyPlane     *tfp,
-                     COMPLEX8FrequencySeries        *freqSeries,
-                     HorizontalTFTransformIn        *input
-                     );
 void
 LALModModFreqSeriesToTFPlane (
                      LALStatus                         *status,
