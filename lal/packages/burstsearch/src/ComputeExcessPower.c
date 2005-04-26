@@ -29,7 +29,7 @@ NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 
 extern INT4 lalDebugLevel;
 
-/******** <lalVerbatim file="ModComputeExcessPowerCP"> ********/
+/******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
 void
 LALComputeExcessPower (
 		   LALStatus               *status,
@@ -41,7 +41,7 @@ LALComputeExcessPower (
 {
   TFTile             *thisTile;
 
-  INITSTATUS (status, "LALModComputeExcessPower", COMPUTEEXCESSPOWERC);
+  INITSTATUS (status, "LALComputeExcessPower", COMPUTEEXCESSPOWERC);
   ATTATCHSTATUSPTR (status);
 
   /* make sure that arguments are not NULL */

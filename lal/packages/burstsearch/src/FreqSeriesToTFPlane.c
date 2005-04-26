@@ -23,7 +23,7 @@ NRCSID (FREQSERIESTOTFPLANEC, "$Id$");
 #include <lal/SeqFactories.h>
 #include <lal/TFTransform.h>
 
-/******** <lalVerbatim file="ModFreqSeriesToTFPlaneCP"> ********/
+/******** <lalVerbatim file="FreqSeriesToTFPlaneCP"> ********/
 void
 LALFreqSeriesToTFPlane (
     LALStatus                            *status,
@@ -62,7 +62,7 @@ LALFreqSeriesToTFPlane (
   RealFFTPlan *pfwd = NULL;   /* FFTW uses a plan to assess best FFT method */
   RealFFTPlan *prev = NULL;   /* This one is for the reverse FFT */
 
-  INITSTATUS (status, "LALModFreqSeriesToTFPlane", FREQSERIESTOTFPLANEC);
+  INITSTATUS (status, "LALFreqSeriesToTFPlane", FREQSERIESTOTFPLANEC);
   ATTATCHSTATUSPTR (status);
 
   
