@@ -485,7 +485,6 @@ void parse_command_line(
 	params->method = -1;	/* impossible */
 	params->compEPInput.alphaDefault = 2.0;	/* impossible */
 	params->compEPInput.numSigmaMin = -1.0;	/* impossible */
-	params->tfPlaneMethod = useSingleTFPlane ; /* The only method possible */
 	params->tfTilingInput.flow = -1.0;	/* impossible */
 	params->tfPlaneParams.fhigh = -1.0;	/* impossible */
 	params->tfTilingInput.length = 0;	/* impossible */
