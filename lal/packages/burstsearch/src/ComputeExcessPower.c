@@ -31,7 +31,7 @@ extern INT4 lalDebugLevel;
 
 /******** <lalVerbatim file="ModComputeExcessPowerCP"> ********/
 void
-LALModComputeExcessPower (
+LALComputeExcessPower (
 		   LALStatus               *status,
 		   TFTiling                *tfTiling,
 		   ComputeExcessPowerIn    *input,

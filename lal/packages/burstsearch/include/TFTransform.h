@@ -157,7 +157,7 @@ LALTimeSeriesToTFPlane (
                      );
 
 void
-LALModModFreqSeriesToTFPlane (
+LALFreqSeriesToTFPlane (
                      LALStatus                         *status,
                      COMPLEX8TimeFrequencyPlane     *tfp,
                      COMPLEX8FrequencySeries        *freqSeries,

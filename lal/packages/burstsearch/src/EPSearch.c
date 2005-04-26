@@ -354,7 +354,7 @@ EPSearch(
 			/* the factor of 2 here is to account for the
 			 * overlapping */
 			params->tfTilingInput.deltaF = 2.0 * fseries->deltaF;
-			LALModCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput, &params->tfPlaneParams);
+			LALCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput, &params->tfPlaneParams);
 			CHECKSTATUSPTR(status);
 		}
 
@@ -365,7 +365,7 @@ EPSearch(
 		LALInfo(status->statusPtr, "Computing the TFPlanes");
 		CHECKSTATUSPTR(status);
 		normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(REAL4));
-		LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries, tileStartShift, normalisation, Psd);		
+		LALComputeTFPlanes(status->statusPtr, tfTiling, fseries, tileStartShift, normalisation, Psd);		
 		CHECKSTATUSPTR(status);
 	
                  /*
@@ -373,7 +373,7 @@ EPSearch(
 		 */
 		LALInfo(status->statusPtr, "Computing the excess power");
 		CHECKSTATUSPTR(status);
-		LALModComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput, normalisation);
+		LALComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput, normalisation);
 		CHECKSTATUSPTR(status);
 
 		/*

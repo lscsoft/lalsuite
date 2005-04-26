@@ -25,7 +25,7 @@ NRCSID (FREQSERIESTOTFPLANEC, "$Id$");
 
 /******** <lalVerbatim file="ModFreqSeriesToTFPlaneCP"> ********/
 void
-LALModModFreqSeriesToTFPlane (
+LALFreqSeriesToTFPlane (
     LALStatus                            *status,
     COMPLEX8TimeFrequencyPlane           *tfp,
     COMPLEX8FrequencySeries              *freqSeries,

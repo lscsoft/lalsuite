@@ -41,7 +41,7 @@ static INT4 pow1(INT4 a, INT4 b)
 
 /******** <lalVerbatim file="CreateTFTilingCP"> ********/
 void
-LALModCreateTFTiling (
+LALCreateTFTiling (
 		 LALStatus              *status,
 		 TFTiling               **tfTiling,
 		 CreateTFTilingIn       *input,

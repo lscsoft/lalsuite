@@ -91,7 +91,7 @@ LALAddWhiteNoise (
                );
 
 void
-LALModCreateTFTiling (
+LALCreateTFTiling (
                 LALStatus                           *status,
                 TFTiling                            **tfTiling,
                 CreateTFTilingIn                    *input,
@@ -105,7 +105,7 @@ LALDestroyTFTiling (
                  );
 
 void
-LALModComputeTFPlanes (
+LALComputeTFPlanes (
                  LALStatus                             *status,
                  TFTiling                           *tfTiling,
                  COMPLEX8FrequencySeries            *freqSeries,
@@ -115,7 +115,7 @@ LALModComputeTFPlanes (
                  );
 
 void
-LALModComputeExcessPower (
+LALComputeExcessPower (
                     LALStatus                          *status,
                     TFTiling                        *tfTiling,
                     ComputeExcessPowerIn            *input,

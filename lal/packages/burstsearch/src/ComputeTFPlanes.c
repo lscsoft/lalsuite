@@ -33,7 +33,7 @@ extern INT4 lalDebugLevel;
 
 /******** <lalVerbatim file="ComputeTFPlanesCP"> ********/
 void
-LALModComputeTFPlanes (
+LALComputeTFPlanes (
 		 LALStatus                             *status,
 		 TFTiling                           *tfTiling,
 		 COMPLEX8FrequencySeries            *freqSeries,
@@ -82,7 +82,7 @@ LALModComputeTFPlanes (
       /* Compute TF transform */
       LALInfo(status->statusPtr, "Converting Frequency series to TFPlane");
       CHECKSTATUSPTR (status);
-      LALModModFreqSeriesToTFPlane( status->statusPtr, *thisPlane, freqSeries, 
+      LALFreqSeriesToTFPlane( status->statusPtr, *thisPlane, freqSeries, 
                            &transformparams, norm, psd); 
       CHECKSTATUSPTR (status);
     }
