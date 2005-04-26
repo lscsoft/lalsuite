@@ -406,8 +406,7 @@ EPSearch(
 		/* calculate the duration for which tiles are to be created
 		 * in the Single TFPlane
 		 */ 
-		if (params->tfPlaneMethod == useSingleTFPlane)
-		  params->tfPlaneParams.timeDuration = 2*params->windowShift*cutTimeSeries->deltaT;
+		params->tfPlaneParams.timeDuration = 2*params->windowShift*cutTimeSeries->deltaT;
 		
 		LALDestroyREAL4TimeSeries(status->statusPtr, cutTimeSeries);
 		CHECKSTATUSPTR(status);
@@ -429,10 +428,7 @@ EPSearch(
 			/* the factor of 2 here is to account for the
 			 * overlapping */
 			params->tfTilingInput.deltaF = 2.0 * fseries->deltaF;
-			if (params->tfPlaneMethod == useMultipleTFPlane)
-			  LALCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput);
-			else
-			  LALModCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput, &params->tfPlaneParams);
+			LALModCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput, &params->tfPlaneParams);
 			CHECKSTATUSPTR(status);
 		}
 
@@ -442,12 +438,8 @@ EPSearch(
 		tileStartShift = (INT4)(params->windowLength/2)-params->windowShift;
 		LALInfo(status->statusPtr, "Computing the TFPlanes");
 		CHECKSTATUSPTR(status);
-		if (params->tfPlaneMethod == useMultipleTFPlane)
-		  LALComputeTFPlanes(status->statusPtr, tfTiling, fseries, tileStartShift);
-		else{
-		  normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(REAL4));
-		  LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries, tileStartShift, normalisation, Psd);
-		}
+		normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(REAL4));
+		LALModComputeTFPlanes(status->statusPtr, tfTiling, fseries, tileStartShift, normalisation, Psd);		
 		CHECKSTATUSPTR(status);
 	
                  /*
@@ -455,10 +447,7 @@ EPSearch(
 		 */
 		LALInfo(status->statusPtr, "Computing the excess power");
 		CHECKSTATUSPTR(status);
-		if (params->tfPlaneMethod == useMultipleTFPlane)
-		  LALComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput);
-		else
-		  LALModComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput, normalisation);
+		LALModComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput, normalisation);
 		CHECKSTATUSPTR(status);
 
 		/*
@@ -481,19 +470,15 @@ EPSearch(
 		/*
 		 * Determine the weighting for each tile.
 		 */
-		if (params->tfPlaneMethod == useMultipleTFPlane)
-		  WeighTFTileList(tfTiling, 10000);
-		else 
-		  ModWeighTFTileList(tfTiling, 10000);
+
+		ModWeighTFTileList(tfTiling, 10000);
 
 		/*
 		 * Convert the TFTiles into sngl_burst events for output.
 		 * The threhsold cut determined by alpha is applied here
 		 */
-		if (params->tfPlaneMethod == useMultipleTFPlane)
-		  EventAddPoint = TFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
-		else
-		  EventAddPoint = ModTFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
+
+		EventAddPoint = ModTFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
 
 		/*
 		 * Reset the flags on the tftiles.
