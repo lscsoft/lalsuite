@@ -141,9 +141,9 @@ LALFindChirpCreateCoherentInput(
       CHECKSTATUSPTR( status );
       /* store C-data snippet and its associated info */
       memcpy(cohInputData->name, input->name, LALNameLength * sizeof(CHAR) ); 
-      memcpy(cohInputData->data->data, &(input->data->data[cohSegStart]), 2*cohSegLength/deltaT);
+      memcpy(cohInputData->data->data, &(input->data->data[cohSegStart]), fullCohSegLength * sizeof(COMPLEX8) );
       cohInputData->deltaT = deltaT;
-      tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + cohSegStart*deltaT;
+      tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + cohSegStart * deltaT;
       fracpart = modf(tempTime, &intpart);
       cohInputData->epoch.gpsSeconds = (INT4) intpart;
       cohInputData->epoch.gpsNanoSeconds = (INT4) (fracpart*1.0e9); 
@@ -166,7 +166,7 @@ LALFindChirpCreateCoherentInput(
       LALCCreateVector( status->statusPtr, &(cohInputData->data), fullCohSegLength );
       CHECKSTATUSPTR( status );
       memcpy(cohInputData->name, input->name, LALNameLength * sizeof(CHAR) );
-      memcpy( cohInputData->data->data, &(input->data->data[cohSegStart]),fullCohSegLength);
+      memcpy( cohInputData->data->data, &(input->data->data[cohSegStart]),fullCohSegLength * sizeof(COMPLEX8) );
       /* store C-data snippet and its associated info */
       cohInputData->deltaT = deltaT;
       tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + cohSegStart*deltaT;
@@ -188,7 +188,7 @@ LALFindChirpCreateCoherentInput(
       CHECKSTATUSPTR( status );
       /* store C-data snippet and its associated info */
       memcpy(cohInputData->name, input->name, LALNameLength * sizeof(CHAR) );
-      memcpy( cohInputData->data->data, &(input->data->data[cohSegStart + overlap]), fullCohSegLength);
+      memcpy( cohInputData->data->data, &(input->data->data[cohSegStart + overlap]), fullCohSegLength * sizeof(COMPLEX8) );
       cohInputData->deltaT = deltaT;
       tempTime = inputEpochSeconds + inputEpochNanoSeconds*1.0e-9 + (cohSegStart + overlap)*deltaT;
       fracpart = modf(tempTime, &intpart);
