@@ -274,6 +274,8 @@ char *programname=NULL;
 char *earthdata;
 char *sundata;
 
+INT4 donotscaledata = 0;
+
 /* timebaseline of SFT in sec, band SFT in Hz */
 REAL4 Tsft,B,sigma;
 /* smallest frequency in the band B */
@@ -285,7 +287,7 @@ INT4 nTsft;
 INT2 inoise;
 
 /*SCALE factor*/
-REAL4 scale=1.E19;
+REAL4 scale;
 
 /* Our detector*/
 LALDetector Detector;
@@ -434,7 +436,14 @@ int main(int argc,char *argv[]) {
     if (make_filelist())
       return 1;
   }
-  
+
+  if (donotscaledata)
+    {
+      scale = 1;
+    }else{
+      scale = 1e19;
+    }
+
   /* Read in timestamps and place them in timestamps vec*/
   if (read_timestamps(GPStime))
     return 1;
@@ -1276,7 +1285,7 @@ int read_and_add_freq_domain_noise(LALStatus* status, int iSFT) {
 
   fclose(fp);
 
-  norm=((REAL4)(fvec->length-1)*1.0/((REAL4)header.nsamples));
+  norm=((REAL4)(fvec->length-1)*1.0/((REAL4)(header.nsamples-1)));
 
   for (i = 0; i < fvec->length; ++i) {
     fvec->data[i].re += scale*fvecn->data[i].re*norm;
@@ -1326,7 +1335,7 @@ int write_SFTS(int iSFT){
 
 
   FILE *fp;
-  REAL4 rpw,ipw,norm;
+  REAL4 rpw,ipw;
   /* REAL8 fr; */
   char filename[256], filenumber[16];
   int errorcode;
@@ -1365,12 +1374,11 @@ int write_SFTS(int iSFT){
     return 1;
   }
 
-  norm=((REAL4)header.nsamples)*1.0/((REAL4)(fvec->length));
 
   for (i=0;i<fvec->length-1;i++){
 
-    rpw=norm*fvec->data[i].re;
-    ipw=norm*fvec->data[i].im;
+    rpw=fvec->data[i].re;
+    ipw=fvec->data[i].im;
 
     errorcode=fwrite((void*)&rpw, sizeof(REAL4),1,fp);  
     if (errorcode!=1){
@@ -1566,6 +1574,7 @@ void usage(FILE *fp){
 	  "-X Double-precision number    Include time (minus arg) in STRAIN file    [No column of times]\n"
 	  "-E Character String           Directory path for ephemeris files         [./ (current directory)]\n"
 	  "-D Character String           Input noise dir                            [/sft/S2-LIGO/S2_H1_FunkyCal30MinSFTs/]\n"
+	  "-s                            Do not scale the data by 1e19.\n"
 	  "-w                            Window data in time domain before doing FFT\n"
 	  "-b                            Output time-domain data in IEEE754 binary format\n"
 	  "-m                            DON'T output 1234.5 before time-domain binary samples\n"
@@ -1596,7 +1605,7 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
   
   opterr=0;
 
-  while (!errflg && ((c = getopt(argc, argv,":i:n:t:I:G:S:X:E:D:wbmh"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,":i:n:t:I:G:S:X:E:D:wbmhs"))!=-1))
     switch (c) {
     case 'i':
       /* Name of input data file */
@@ -1605,6 +1614,10 @@ int read_commandline_and_file(LALStatus* status, int argc,char *argv[]) {
     case 'n':
       /* Name of SFT data file */
       freqbasefilename=optarg;
+      break;
+    case 's':
+      /* Name of SFT data file */
+      donotscaledata=1;
       break;
     case 't':
       /* Name of TDD file */
