@@ -30,31 +30,18 @@ Usage: lalapps_ring_pipe [options]
 
   -h, --help               display this message
   -v, --version            print version information and exit
-  -d, --datafind           run LSCdataFind to create frame cache files
-  -s, --string             run lalapps_StringSearch
-  -c, --coincidence        run coincidence step
-
   -i, --injections         add simulated bursts
-
-  -p, --playground-only    only create chunks that overlap with playground
-  -P, --priority PRIO      run jobs with condor priority PRIO
-
   -f, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
 """
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdscjP:f:l:"
+shortop = "hvif:l:"
 longop = [
   "help",
   "version",
-  "datafind",
-  "string",
-  "coincidence",
   "injections",
-  "playground-only",
-  "priority=",
   "config-file=",
   "log-path="
   ]
@@ -66,12 +53,7 @@ except getopt.GetoptError:
   sys.exit(1)
 
 config_file = None
-do_datafind = None
-do_string = None
-do_coincidence = None
 do_inj = 0
-playground_only = 0
-condor_prio = None
 config_file = None
 log_path = None
 
@@ -82,18 +64,8 @@ for o, a in opts:
   elif o in ("-h", "--help"):
     usage()
     sys.exit(0)
-  elif o in ("-d", "--datafind"):
-    do_datafind = 1
-  elif o in ("-s", "--string"):
-    do_string = 1
-  elif o in ("-c", "--coincidence"):
-    do_coincidence = 1
   elif o in ("-i", "--injections"):
     do_inj = 1
-  elif o in ("-p", "--playground-only"):
-    playground_only = 1
-  elif o in ("-P", "--priority"):
-    condor_prio = a
   elif o in ("-f", "--config-file"):
     config_file = a
   elif o in ("-l", "--log-path"):
@@ -117,17 +89,14 @@ if not log_path:
 try: os.mkdir('logs')
 except: pass
 
-if do_datafind:
-  try: os.mkdir('cache')
-  except: pass
+try: os.mkdir('cache')
+except: pass
 
-if do_string:
-  try: os.mkdir('triggers')
-  except: pass
-  
-if do_coincidence: 
-  try: os.mkdir('coincidences')
-  except: pass
+try: os.mkdir('triggers')
+except: pass
+
+try: os.mkdir('coincidences')
+except: pass
 
 if do_inj: 
   try: os.mkdir('injections')
@@ -193,32 +162,31 @@ prev_inject = None
 
 for seg in data:
   
-  if do_datafind:
-    # find all the data for first ifo
-    df1 = pipeline.LSCDataFindNode(df_job)
-    df1.set_start(seg.start())
-    df1.set_end(seg.end())
-    df1.set_observatory(ifo1[0])
-    df1.add_var_opt('type',datatype1)
+  # find all the data for first ifo
+  df1 = pipeline.LSCDataFindNode(df_job)
+  df1.set_start(seg.start())
+  df1.set_end(seg.end())
+  df1.set_observatory(ifo1[0])
+  df1.add_var_opt('type',datatype1)
 
-    if prev_df1: 
-      df1.add_parent(prev_df1)
+  if prev_df1: 
+    df1.add_parent(prev_df1)
       
-    dag.add_node(df1)
-    prev_df1 = df1
+  dag.add_node(df1)
+  prev_df1 = df1
 
-    # find data for second ifo
-    df2 = pipeline.LSCDataFindNode(df_job)
-    df2.set_start(seg.start())
-    df2.set_end(seg.end())
-    df2.set_observatory(ifo2[0])
-    df2.add_var_opt('type',datatype2)
-
-    if prev_df2: 
-      df2.add_parent(prev_df2)
+  # find data for second ifo
+  df2 = pipeline.LSCDataFindNode(df_job)
+  df2.set_start(seg.start())
+  df2.set_end(seg.end())
+  df2.set_observatory(ifo2[0])
+  df2.add_var_opt('type',datatype2)
+    
+  if prev_df2: 
+    df2.add_parent(prev_df2)
       
-    dag.add_node(df2)
-    prev_df2 = df2
+  dag.add_node(df2)
+  prev_df2 = df2
 
   if do_inj:
     # create injection jobs
@@ -244,10 +212,8 @@ for seg in data:
     string1.add_var_opt('threshold',snr)
     string1.add_var_opt('trig-start-time',chunk.trig_start())
     string1.add_var_opt('outfile',string1.get_output())
-    if do_datafind: 
-      string1.add_parent(df1)
-    if do_string: 
-      dag.add_node(string1)
+    string1.add_parent(df1)
+    dag.add_node(string1)
 
     #string job for second ifo  
     string2 = cosmicstring.StringNode(string_job)
@@ -258,10 +224,8 @@ for seg in data:
     string2.add_var_opt('threshold',snr)
     string2.add_var_opt('trig-start-time',chunk.trig_start())
     string2.add_var_opt('outfile',string2.get_output())
-    if do_datafind: 
-      string2.add_parent(df2)
-    if do_string: 
-      dag.add_node(string2)
+    string2.add_parent(df2)
+    dag.add_node(string2)
 
     #coincidence stage (one way)
     burca1 = cosmicstring.BurcaNode(burca_job)
@@ -270,14 +234,11 @@ for seg in data:
     burca1.set_ifoa(string1.get_output(),ifo1)
     burca1.set_ifob(string2.get_output(),ifo2) 
     burca1.add_var_opt('outfile',burca1.get_output())
-    if do_datafind: 
-      burca1.add_parent(df1)
-      burca1.add_parent(df2)
-    if do_string: 
-      burca1.add_parent(string1)
-      burca1.add_parent(string2)
-    if do_coincidence:  
-      dag.add_node(burca1)
+    burca1.add_parent(df1)
+    burca1.add_parent(df2)
+    burca1.add_parent(string1)
+    burca1.add_parent(string2)
+    dag.add_node(burca1)
 
     #coincidence stage (the other way)
     burca2 = cosmicstring.BurcaNode(burca_job)
@@ -286,14 +247,11 @@ for seg in data:
     burca2.set_ifoa(string2.get_output(),ifo2)
     burca2.set_ifob(string1.get_output(),ifo1) 
     burca2.add_var_opt('outfile',burca2.get_output())
-    if do_datafind: 
-      burca2.add_parent(df1)
-      burca2.add_parent(df2)
-    if do_string: 
-      burca2.add_parent(string1)
-      burca2.add_parent(string2)
-    if do_coincidence:  
-      dag.add_node(burca2)
+    burca2.add_parent(df1)
+    burca2.add_parent(df2)
+    burca2.add_parent(string1)
+    burca2.add_parent(string2)
+    dag.add_node(burca2)
 
 
 # write out the DAG
