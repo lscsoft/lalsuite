@@ -1606,7 +1606,7 @@ if tama_overlap or tama_coincidence or slide_time or quick_slide:
   print >> log_fh, "\n total time", total_time, "seconds"
 
 
-if tama_coincidence or slide_time or quick_slide:
+if tama_coincidence:
   print >> log_fh, "\n===========================================\n"
   log_fh.write( 
     "Getting triggers from " + str(len(tama_segs_analyzed)) + \
