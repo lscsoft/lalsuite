@@ -1605,6 +1605,16 @@ if tama_overlap or tama_coincidence or slide_time or quick_slide:
     total_time += tama_seg.end() - tama_seg.start()
   print >> log_fh, "\n total time", total_time, "seconds"
 
+  if output_segs:
+    if playground_only:
+      f = open('tama_play_segs.txt', 'w')
+    else:
+      f = open('tama_segs.txt', 'w')
+    for seg in t_data:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+        seg.dur()))
+    f.close()
+
 
 if tama_coincidence:
   print >> log_fh, "\n===========================================\n"
@@ -1619,16 +1629,6 @@ if tama_coincidence:
   print >> log_fh, "\n total time", total_time, "seconds"
   
    
-if tama_overlap or tama_coincidence or slide_time or quick_slide:
-  if output_segs:
-    if playground_only:
-      f = open('tama_play_segs.txt', 'w')
-    else:
-      f = open('tama_segs.txt', 'w')
-    for seg in t_data:
-      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
-        seg.dur()))
-    f.close()
 
 if tama_coincidence or slide_time or quick_slide:  
   print >> log_fh, "\n===========================================\n"
@@ -1654,6 +1654,7 @@ if tama_coincidence or slide_time or quick_slide:
         seg.dur()))
     f.close()
 
+  if output_segs or quick_slide:
     if not playground_only:
       if slide_time:
         f = open('l1_t1_slide_exclude_play.txt', 'w')
@@ -1690,6 +1691,7 @@ if tama_coincidence or slide_time or quick_slide:
         seg.dur()))
     f.close()
 
+  if output_segs or quick_slide:
     if not playground_only:
       if slide_time:
         f = open('h1_t1_slide_exclude_play.txt', 'w')
@@ -1727,6 +1729,7 @@ if tama_coincidence or slide_time or quick_slide:
         seg.dur()))
     f.close()
 
+  if output_segs or quick_slide:
     if not playground_only:
       if slide_time:
         f = open('h2_t1_slide_exclude_play.txt', 'w')
@@ -1764,6 +1767,7 @@ if tama_coincidence or slide_time or quick_slide:
         seg.dur()))
     f.close()
 
+  if output_segs or quick_slide:
     if not playground_only:
       if slide_time:
         f = open('h1_h2_t1_slide_exclude_play.txt', 'w')
@@ -1801,6 +1805,7 @@ if tama_coincidence or slide_time or quick_slide:
         seg.dur()))
     f.close()
 
+  if output_segs or quick_slide:
     if not playground_only:
       if slide_time:
         f = open('ligo_tama_slide_exclude_play.txt', 'w')
