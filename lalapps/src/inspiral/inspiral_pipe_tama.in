@@ -299,7 +299,6 @@ Usage: lalapps_inspiral_pipe [options]
   -Q, --quick-slide SEC    slide TAMA data forward by SEC seconds, 
                            but only do inca on the full LIGO/TAMA trigger lists
                            (not segment by segment)
-                           NOTE: Assumes no H1-H2 coincident triggers!
   
   -P, --priority PRIO      run jobs with condor priority PRIO
 
@@ -671,6 +670,12 @@ if tama_overlap:
   l1_single_data.intersection(t_data)
 if playground_only:
   l1_single_data.play()
+else:
+  l1_single_exclude_play = copy.deepcopy(l1_single_data)
+  l1_single_exclude_play.play()
+  l1_single_exclude_play.invert()
+  l1_single_exclude_play.intersection(l1_single_data)
+  l1_single_exclude_play.coalesce()
 l1_single_data.coalesce()
 print "done"
 
@@ -686,6 +691,12 @@ if tama_overlap:
   h1_h2_data.intersection(t_data)
 if playground_only:
   h1_h2_data.play()
+else:
+  h1_h2_exclude_play = copy.deepcopy(h1_h2_data)
+  h1_h2_exclude_play.play()
+  h1_h2_exclude_play.invert()
+  h1_h2_exclude_play.intersection(h1_h2_data)
+  h1_h2_exclude_play.coalesce()
 h1_h2_data.coalesce()
 print "done"
 
@@ -701,7 +712,6 @@ if tama_overlap:
   h1_data_to_do.intersection(t_data)
 if playground_only:
   h1_data_to_do.play()
-
 h1_data_to_do.coalesce()
 
 h1_single_data = copy.deepcopy(h1_data_out)
@@ -711,6 +721,12 @@ if tama_overlap:
   h1_single_data.intersection(t_data)
 if playground_only:
   h1_single_data.play()
+else:
+  h1_single_exclude_play = copy.deepcopy(h1_single_data)
+  h1_single_exclude_play.play()
+  h1_single_exclude_play.invert()
+  h1_single_exclude_play.intersection(h1_single_data)
+  h1_single_exclude_play.coalesce()
 h1_single_data.coalesce()
 
 h2_single_data = copy.deepcopy(h2_data_out)
@@ -720,6 +736,12 @@ if tama_overlap:
   h2_single_data.intersection(t_data)
 if playground_only:
   h2_single_data.play()
+else:
+  h2_single_exclude_play = copy.deepcopy(h2_single_data)
+  h2_single_exclude_play.play()
+  h2_single_exclude_play.invert()
+  h2_single_exclude_play.intersection(h2_single_data)
+  h2_single_exclude_play.coalesce()
 h2_single_data.coalesce()
 print "done"
 
@@ -732,6 +754,13 @@ ligo_data.union(h1_single_data)
 ligo_data.union(h1_h2_data)
 ligo_data.union(l1_single_data)
 ligo_data.coalesce()
+
+if not playground_only:
+  ligo_exclude_play = copy.deepcopy(h2_single_exclude_play)
+  ligo_exclude_play.union(h1_single_exclude_play)
+  ligo_exclude_play.union(h1_h2_exclude_play)
+  ligo_exclude_play.union(l1_single_exclude_play)
+  ligo_exclude_play.coalesce()
 print "done"
 
 ##############################################################################
@@ -879,17 +908,15 @@ for seg in h1_h2_data:
 print "done"
 
 ##############################################################################
-# Step 14: Run tama2ligolw on the tama triggers creating two lists:
-# T1-INSPIRAL: containing all those triggers which occur in times being used 
-#              in the LIGO-TAMA analysis
-# TAMA-INSPIRAL: containing all TAMA triggers.
+# Step 14: Run tama2ligolw on the tama triggers:
+# These will be stored in files named T1-INSPIRAL-GPSSTART-DURATION.xml.
+# Note: TAMA is only producing triggers for times in the LIGO-TAMA analysis.
 
-if tama_coincidence or slide_time:
+if tama_coincidence:
   print "Converting triggers to LIGO Lw xml format...",
   sys.stdout.flush()
   
-# write out tama triggers in LIGO-TAMA times as T1-INSPIRAL- ...
-if tama_coincidence:
+  # write out tama triggers in LIGO-TAMA times as T1-INSPIRAL- ...
   ligo_tama_data = copy.deepcopy(ligo_data)
   ligo_tama_data.intersection(t_data)
   tama_segs_analyzed = []
@@ -907,38 +934,15 @@ if tama_coincidence:
     dag.add_node(tama2lw)
     tama_segs_analyzed.append(AnalyzedTAMAData(seg,tama2lw))
 
-
-# write out all tama triggers as TAMA-INSPIRAL- ...
-if tama_coincidence or slide_time or quick_slide:
-
-  tama_data_analyzed = []
-  for seg in t_data:
-    tama2lw = inspiral.Tama2LigoLwNode(tama2lw_job)
-    tama2lw.set_start(seg.start())
-    tama2lw.set_end(seg.end())
-    infile = cp.get('input','tama-triggers')
-    tama2lw.set_input(infile)
-    outfile = 'TAMA-INSPIRAL'
-    if usertag: outfile += '_' + usertag 
-    outfile += '-' + str(seg.start()) + '-' + str(seg.end() - seg.start()) + \
-      '.xml'
-    tama2lw.set_output(outfile)
-    if tama_coincidence: dag.add_node(tama2lw)
-    tama_data_analyzed.append(AnalyzedTAMAData(seg,tama2lw))
-
-  tama_analyzed = []
-  if slide_time or quick_slide: tama_analyzed = tama_data_analyzed
-  else: tama_analyzed = tama_segs_analyzed
-
-  print "done"
+print "done"
 
 
 ##############################################################################
-## Any thing below here needs to be redone for each time slide ###############
+## Anything below here needs to be redone for each time slide  ###############
 ##############################################################################
 
 ##############################################################################
-# Step 15: Test for coincidence between the single IFO ligo and tama triggers
+# Step 15: Calculate the LIGO-TAMA data for the time slide
 if slide_time or quick_slide:
   print "re-computing TAMA and LIGO/TAMA data with slide...",
   sys.stdout.flush()
@@ -954,47 +958,85 @@ if slide_time or quick_slide:
   if quick_slide:
     # slide start and end by quick_slide
     seg_start_increment = seg_end_increment = quick_slide
-    
-  for seg in t_data:
+  
+  # calculate ligo tama data
+  ligo_tama_data = copy.deepcopy(t_data)
+  ligo_tama_data.intersection(ligo_data)
+  
+  # slide the segments
+  for seg in ligo_tama_data:
     seg.set_start(seg.start() + seg_start_increment)
     seg.set_end(seg.end() + seg_end_increment)
 
-  ligo_tama_data = copy.deepcopy(ligo_data)
-  ligo_tama_data.intersection(t_data)
+  # intersect with the analyzed ligo data
+  ligo_tama_data.intersection(ligo_data)
 
   print "done"
   sys.stdout.flush()
 
 
+##############################################################################
+# Step 16: Calculate the segments which will be searched for coincidence
+if tama_coincidence or slide_time or quick_slide:
+  print "computing LIGO/TAMA segments...",
+  sys.stdout.flush()
+
+  l1t1_data = copy.deepcopy(l1_single_data)
+  l1t1_data.intersection(ligo_tama_data)
+  h1t1_data = copy.deepcopy(h1_single_data)
+  h1t1_data.intersection(ligo_tama_data)
+  h2t1_data = copy.deepcopy(h2_single_data)
+  h2t1_data.intersection(ligo_tama_data)
+
+  h1h2t1_data = copy.deepcopy(h1_h2_data)
+  h1h2t1_data.intersection(ligo_tama_data)
+
+  l1t1_exclude_play = copy.deepcopy(l1_single_exclude_play)
+  l1t1_exclude_play.intersection(ligo_tama_data)
+  h1t1_exclude_play = copy.deepcopy(h1_single_exclude_play)
+  h1t1_exclude_play.intersection(ligo_tama_data)
+  h2t1_exclude_play = copy.deepcopy(h2_single_exclude_play)
+  h2t1_exclude_play.intersection(ligo_tama_data)
+   
+  h1h2t1_exclude_play = copy.deepcopy(h1_h2_exclude_play)
+  h1h2t1_exclude_play.intersection(ligo_tama_data)
+  
+  ligo_tama_exclude_play = copy.deepcopy(l1t1_exclude_play)
+  ligo_tama_exclude_play.union(h1t1_exclude_play)
+  ligo_tama_exclude_play.union(h2t1_exclude_play)
+  ligo_tama_exclude_play.union(h1h2t1_exclude_play)
+  ligo_tama_exclude_play.coalesce()
+
+  print "done"
+  sys.stdout.flush()
+
+  
+##############################################################################
+# Step 17: Test for coincidence between the single IFO ligo and tama triggers
 if tama_coincidence or slide_time:
   print "setting up jobs to get (single ifo LIGO)-TAMA coincident triggers...",
   sys.stdout.flush()
 
-  l1t1_data = copy.deepcopy(l1_single_data)
-  l1t1_data.intersection(t_data)
-  h1t1_data = copy.deepcopy(h1_single_data)
-  h1t1_data.intersection(t_data)
-  h2t1_data = copy.deepcopy(h2_single_data)
-  h2t1_data.intersection(t_data)
-  
   lt_dt = cp.get('pipeline','lt-dt')
   l1t1_inca_nodes = []
-  l1t1_inca_nodes = lt_coinc(l1t1_data,l1_chunks_analyzed,tama_analyzed,
+  l1t1_inca_nodes = lt_coinc(l1t1_data,l1_chunks_analyzed,tama_segs_analyzed,
     'L1',lt_inca_job,lt_dt,dag,slide_time,usertag)
 
   ht_dt = cp.get('pipeline','ht-dt')
   h1t1_inca_nodes = []
-  h1t1_inca_nodes = lt_coinc(h1t1_data,h1_chunks_analyzed,tama_analyzed,
+  h1t1_inca_nodes = lt_coinc(h1t1_data,h1_chunks_analyzed,tama_segs_analyzed,
     'H1',lt_inca_job,ht_dt,dag,slide_time,usertag)
 
   h2t1_inca_nodes = []
   h2t1_inca_nodes = lt_coinc(h2t1_data,h2_single_chunks_analyzed,
-    tama_analyzed,'H2',lt_inca_job,ht_dt,dag,slide_time,usertag)
+    tama_segs_analyzed,'H2',lt_inca_job,ht_dt,dag,slide_time,usertag)
 
   print "done"
+  sys.stdout.flush()
+
 
 ##############################################################################
-# Step 16: Test for coincidence between the H1-H2 and tama triggers
+# Step 18: Test for coincidence between the H1-H2 and tama triggers
 
 if tama_coincidence or slide_time:
   print "setting up jobs to get (H1-H2 LIGO)-TAMA coincident triggers...",
@@ -1002,7 +1044,7 @@ if tama_coincidence or slide_time:
 
   
   h1h2t1_data = copy.deepcopy(h1_h2_data)
-  h1h2t1_data.intersection(t_data)
+  h1h2t1_data.intersection(ligo_tama_data)
 
   h1h2t1_inca2_nodes = []
   h1h2t1_inca3_nodes = []
@@ -1042,7 +1084,7 @@ if tama_coincidence or slide_time:
         if ligo_analysis: inca3.add_parent(h1_h2_done.get_dag_node())
         inca3.add_var_arg(h1_h2_done.get_dag_node().get_output_b())
     # add all T1 master segments that overlap with segment to input
-    for t_done in tama_analyzed:
+    for t_done in tama_segs_analyzed:
       if inspiral.overlap_test(t_done.get_seg(),seg,abs(slide_time)):
         lt_inca2.add_var_arg(t_done.get_dag_node().get_output())
         if tama_coincidence: lt_inca2.add_parent(t_done.get_dag_node())
@@ -1054,11 +1096,11 @@ if tama_coincidence or slide_time:
     h1h2t1_inca2_nodes.append(AnalyzedIFOData(seg,lt_inca2))
     h1h2t1_inca3_nodes.append(AnalyzedIFOData(seg,inca3))
 
-print "done"
-sys.stdout.flush()
+  print "done"
+  sys.stdout.flush()
 
 ##############################################################################
-# Step 17: Do any sires which are necessary
+# Step 19: Do any sires which are necessary
 
 print "setting up sire jobs ...",
 sys.stdout.flush()
@@ -1100,9 +1142,6 @@ if ligo_analysis:
     playground_only,usertag,tama_output)
 
 if tama_coincidence:
-  # a sire that contains all the TAMA triggers.
-  sire_segs(tama_data_analyzed,'output','TAMA-INSPIRAL',sire_job,dag,
-    playground_only,usertag,tama_output)
   # a sire that contains all the TAMA triggers in LIGO-TAMA times
   sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',sire_job,dag,
     playground_only,usertag,tama_output)
@@ -1240,10 +1279,15 @@ if quick_slide:
   
   # we are only going to do coincidence between the previously obtained
   # L1-INCA_SINGLE_IFO, H1-INCA_SINGLE_IFO, H2-INCA_SINGLE_IFO and
-  # H1-INCA_H1H2 files with the TAMA triggers in TAMA-INSPIRAL
+  # H1-INCA_H1H2 files with the TAMA triggers in T1-INSPIRAL
   #
+  # This makes it impossible for inca/sire to calculate the time searched in a
+  # time slide.  Instead, we calculate it in the dag.
   # Note: this assumes that the analysis was run previously and that ALL
-  # LIGO single site data was analyzed (not just LT coinc data)
+  # LIGO single site data was analyzed.  Additionally, it makes use of the fact
+  # that the LIGO data excludes the playground.  For the TAMA data, we assume
+  # that only the LIGO-TAMA times have been searched, and playground triggers
+  # are included.
   
   # hardwire the start and end times of S2: 
   s2start = 729273613
@@ -1264,7 +1308,7 @@ if quick_slide:
   fl = open(f_ligo, 'w')
   ft = open(f_tama, 'w')
   
-  # do inca to get coincidence between H1 triggers and TAMA triggers
+  # do inca to get coincidence between LIGO triggers and TAMA triggers
   for ifo in ['H1', 'H2', 'L1', 'H1H2']:
     lt_inca = inspiral.IncaNode(lt_inca_job)
     lt_inca.set_start(s2start)
@@ -1280,8 +1324,8 @@ if quick_slide:
       lt_inca.add_var_opt('dt',cp.get('pipeline','lt-dt'))
     else:
       lt_inca.add_var_opt('dt',cp.get('pipeline','ht-dt'))
-    # lt_inca.add_var_opt('kappa',cp.get('pipeline','ligo-t-kappa'))
-    # lt_inca.add_var_opt('epsilon',cp.get('pipeline','ligo-t-epsilon'))
+    lt_inca.add_var_opt('kappa',cp.get('pipeline','ligo-t-kappa'))
+    lt_inca.add_var_opt('epsilon',cp.get('pipeline','ligo-t-epsilon'))
     lt_inca.add_var_opt('parameter-test', 
       cp.get('pipeline','ligo-t-param-test'))
     if ifo == 'H1H2':
@@ -1362,6 +1406,7 @@ log_fh.write( "Config file has CVS strings:\n" )
 log_fh.write( cp.get('pipeline','version') + "\n" )
 log_fh.write( cp.get('pipeline','cvs-tag') + "\n\n" )
 
+
 print >> log_fh, "\n===========================================\n"
 print >> log_fh, "Science Segments and master chunks:\n"
 for sci_data in [l1_data, h1_data, h2_data]:
@@ -1427,6 +1472,15 @@ if output_segs:
       seg.dur()))
   f.close()
 
+  if not playground_only:
+    f = open('l1_exclude_play_analyzed.txt', 'w')
+    for seg in l1_single_exclude_play:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+        seg.dur()))
+    f.close()
+
+
+
 print >> log_fh, "\n===========================================\n"
 log_fh.write( "Writing " + str(len(h1_single_data)) + 
   " H1 science segments\n" )
@@ -1445,6 +1499,13 @@ if output_segs:
     f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
       seg.dur()))
   f.close()
+
+  if not playground_only:
+    f = open('h1_exclude_play_analyzed.txt', 'w')
+    for seg in h1_single_exclude_play:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+        seg.dur()))
+    f.close()
 
 
 print >> log_fh, "\n===========================================\n"
@@ -1466,6 +1527,15 @@ if output_segs:
       seg.dur()))
   f.close()
 
+  if not playground_only:
+    f = open('h2_exclude_play_analyzed.txt', 'w')
+    for seg in h2_single_exclude_play:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+        seg.dur()))
+    f.close()
+
+
+
 print >> log_fh, "\n===========================================\n"
 log_fh.write( "Writing " + str(len(h1_h2_data)) + 
   " H1/H2 double coincident segments\n" )
@@ -1484,6 +1554,15 @@ if output_segs:
     f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
       seg.dur()))
   f.close()
+
+  if not playground_only:
+    f = open('h1_h2_exclude_play_analyzed.txt', 'w')
+    for seg in h1_h2_exclude_play:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+        seg.dur()))
+    f.close()
+
+
 
 print >> log_fh, "\n===========================================\n"
 log_fh.write( "Writing " + str(len(ligo_data)) + 
@@ -1504,12 +1583,18 @@ if output_segs:
       seg.dur()))
   f.close()
 
+  if not playground_only:
+    f = open('ligo_exclude_play_analyzed.txt', 'w')
+    for seg in ligo_exclude_play:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+        seg.dur()))
+    f.close()
+
+  ligo_exclude_play
+
 if tama_overlap or tama_coincidence or slide_time or quick_slide:
   print >> log_fh, "\n===========================================\n"
-  if slide_time or quick_slide: 
-    print >> log_fh, "Slid Tama Segments:\n"
-  else:
-    print >> log_fh, "Tama Locked Segments:\n"
+  print >> log_fh, "Tama Locked Segments:\n"
   total_time = 0
   for tama_seg in t_data:
     print >> log_fh, tama_seg
@@ -1520,23 +1605,19 @@ if tama_overlap or tama_coincidence or slide_time or quick_slide:
 if tama_coincidence or slide_time or quick_slide:
   print >> log_fh, "\n===========================================\n"
   log_fh.write( 
-    "Getting triggers from " + str(len(tama_analyzed)) + \
+    "Getting triggers from " + str(len(tama_segs_analyzed)) + \
     " TAMA segments\n" )
   total_time = 0
-  for t_done in tama_analyzed:
+  for t_done in tama_segs_analyzed:
     print >> log_fh, t_done.get_seg()
     seg = t_done.get_seg()
     total_time += seg.dur() 
   print >> log_fh, "\n total time", total_time, "seconds"
   
    
-if tama_overlap or tama_coincidence or slide_time:
+if tama_overlap or tama_coincidence or slide_time or quick_slide:
   if output_segs:
-    if slide_time:
-      f = open('tama_slide_segs.txt', 'w')
-    elif quick_slide:
-      f = open('tama_quick_slide_segs' + quick_slide + '.txt', 'w')
-    elif playground_only:
+    if playground_only:
       f = open('tama_play_segs.txt', 'w')
     else:
       f = open('tama_segs.txt', 'w')
@@ -1545,6 +1626,153 @@ if tama_overlap or tama_coincidence or slide_time:
         seg.dur()))
     f.close()
 
+if tama_coincidence or slide_time or quick_slide:  
+  print >> log_fh, "\n===========================================\n"
+  log_fh.write( "Writing " + str(len(l1t1_data)) + 
+    " L1-TAMA coincident segments\n" )
+  total_time = 0
+  for seg in l1t1_data:
+    print >> log_fh, seg
+    total_time += seg.dur()
+  print >> log_fh, "\n total time", total_time, "seconds"
+
+  if output_segs:
+    if slide_time:
+      f = open('l1_t1_slide_segs.txt', 'w')
+    elif quick_slide:
+      f = open('l1_t1_quick_slide_segs' + str(quick_slide) + '.txt', 'w')
+    elif playground_only:
+      f = open('l1_t1_play_segs.txt', 'w')
+    else:
+      f = open('l1_t1_segs.txt', 'w')
+    for seg in l1t1_data:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+        seg.dur()))
+    f.close()
+
+    if not playground_only:
+      if slide_time:
+        f = open('l1_t1_slide_exclude_play.txt', 'w')
+      elif quick_slide:
+        f = open('l1_t1_quick_slide' + str(quick_slide) + \
+          '_exclude_play.txt', 'w')
+      else:
+        f = open('l1_t1_exclude_play.txt', 'w')
+      for seg in l1t1_exclude_play:
+        f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+          seg.dur()))
+      f.close()
+
+  print >> log_fh, "\n===========================================\n"
+  log_fh.write( "Writing " + str(len(h1t1_data)) + 
+    " H1-TAMA coincident segments\n" )
+  total_time = 0
+  for seg in h1t1_data:
+    print >> log_fh, seg
+    total_time += seg.dur()
+  print >> log_fh, "\n total time", total_time, "seconds"
+
+  if output_segs:
+    if slide_time:
+      f = open('h1_t1_slide_segs.txt', 'w')
+    elif quick_slide:
+      f = open('h1_t1_quick_slide_segs' + str(quick_slide) + '.txt', 'w')
+    elif playground_only:
+      f = open('h1_t1_play_segs.txt', 'w')
+    else:
+      f = open('h1_t1_segs.txt', 'w')
+    for seg in h1t1_data:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+        seg.dur()))
+    f.close()
+
+    if not playground_only:
+      if slide_time:
+        f = open('h1_t1_slide_exclude_play.txt', 'w')
+      elif quick_slide:
+        f = open('h1_t1_quick_slide' + str(quick_slide) + \
+          '_exclude_play.txt', 'w')
+      else:
+        f = open('h1_t1_exclude_play.txt', 'w')
+      for seg in h1t1_exclude_play:
+        f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+          seg.dur()))
+      f.close()
+
+
+  print >> log_fh, "\n===========================================\n"
+  log_fh.write( "Writing " + str(len(h2t1_data)) + 
+    " H2-TAMA coincident segments\n" )
+  total_time = 0
+  for seg in h2t1_data:
+    print >> log_fh, seg
+    total_time += seg.dur()
+  print >> log_fh, "\n total time", total_time, "seconds"
+
+  if output_segs:
+    if slide_time:
+      f = open('h2_t1_slide_segs.txt', 'w')
+    elif quick_slide:
+      f = open('h2_t1_quick_slide_segs' + str(quick_slide) + '.txt', 'w')
+    elif playground_only:
+      f = open('h2_t1_play_segs.txt', 'w')
+    else:
+      f = open('h2_t1_segs.txt', 'w')
+    for seg in h2t1_data:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+        seg.dur()))
+    f.close()
+
+    if not playground_only:
+      if slide_time:
+        f = open('h2_t1_slide_exclude_play.txt', 'w')
+      elif quick_slide:
+        f = open('h2_t1_quick_slide' + str(quick_slide) + \
+          '_exclude_play.txt', 'w')
+      else:
+        f = open('h2_t1_exclude_play.txt', 'w')
+      for seg in h2t1_exclude_play:
+        f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+          seg.dur()))
+      f.close()
+
+
+  print >> log_fh, "\n===========================================\n"
+  log_fh.write( "Writing " + str(len(h1h2t1_data)) + 
+    " H1-H2-TAMA coincident segments\n" )
+  total_time = 0
+  for seg in h1h2t1_data:
+    print >> log_fh, seg
+    total_time += seg.dur()
+  print >> log_fh, "\n total time", total_time, "seconds"
+
+  if output_segs:
+    if slide_time:
+      f = open('h1_h2_t1_slide_segs.txt', 'w')
+    elif quick_slide:
+      f = open('h1_h2_t1_quick_slide_segs' + str(quick_slide) + '.txt', 'w')
+    elif playground_only:
+      f = open('h1_h2_t1_play_segs.txt', 'w')
+    else:
+      f = open('h1_h2_t1_segs.txt', 'w')
+    for seg in h1h2t1_data:
+      f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+        seg.dur()))
+    f.close()
+
+    if not playground_only:
+      if slide_time:
+        f = open('h1_h2_t1_slide_exclude_play.txt', 'w')
+      elif quick_slide:
+        f = open('h1_h2_t1_quick_slide' + str(quick_slide) + \
+          '_exclude_play.txt', 'w')
+      else:
+        f = open('h1_h2_t1_exclude_play.txt', 'w')
+      for seg in h1h2t1_exclude_play:
+        f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+          seg.dur()))
+      f.close()
+  
 if tama_coincidence or slide_time or quick_slide:  
   print >> log_fh, "\n===========================================\n"
   log_fh.write( "Writing " + str(len(ligo_tama_data)) + 
@@ -1568,5 +1796,19 @@ if tama_coincidence or slide_time or quick_slide:
       f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
         seg.dur()))
     f.close()
+
+    if not playground_only:
+      if slide_time:
+        f = open('ligo_tama_slide_exclude_play.txt', 'w')
+      elif quick_slide:
+        f = open('ligo_tama_quick_slide' + str(quick_slide) + \
+          '_exclude_play.txt', 'w')
+      else:
+        f = open('ligo_tama_exclude_play.txt', 'w')
+      for seg in ligo_tama_exclude_play:
+        f.write('%4d %10d %10d %6d\n' % (seg.id(), seg.start(), seg.end(), 
+          seg.dur()))
+      f.close()
+
 
 sys.exit(0)
