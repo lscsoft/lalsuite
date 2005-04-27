@@ -487,6 +487,7 @@ lt_inca_job = inspiral.IncaJob(cp)
 sire_job = inspiral.SireJob(cp)
 sire_inj_job = inspiral.SireJob(cp)
 sire_cl_inj_job = inspiral.SireJob(cp)
+sire_all_data_job = inspiral.SireJob(cp)
 
 #############################################################################
 # set better submit file names than the default
@@ -506,6 +507,7 @@ lt_inca_job.set_sub_file( basename + '.lt_inca' + subsuffix )
 sire_job.set_sub_file( basename + '.sire' + subsuffix )
 sire_inj_job.set_sub_file( basename + '.sire_inj' + subsuffix )
 sire_cl_inj_job.set_sub_file( basename + '.sire_inj_clust' + subsuffix )
+sire_all_data_job.set_sub_file( basename + '.sire_all_data' + subsuffix )
 
 #############################################################################
 # set the usertag in the jobs
@@ -521,6 +523,7 @@ if usertag:
   sire_job.add_opt('user-tag',usertag)
   sire_inj_job.add_opt('user-tag',usertag)
   sire_cl_inj_job.add_opt('user-tag',usertag)
+  sire_all_data_job.add_opt('user-tag',usertag)
 
 #############################################################################
 # add the injections
@@ -554,6 +557,8 @@ else:
   sire_inj_job.add_opt('exclude-playground',' ')
   sire_cl_inj_job.add_opt('exclude-playground',' ')
 
+sire_all_data_job.add_opt('all-data',' ')
+
 #############################################################################
 # add the slide argument to inca if we are doing a background estimation
 if slide_time:
@@ -579,6 +584,7 @@ if condor_prio:
   sire_job.add_condor_cmd('priority',condor_prio)
   sire_inj_job.add_condor_cmd('priority',condor_prio)
   sire_cl_inj_job.add_condor_cmd('priority',condor_prio)
+  sire_all_data_job.add_condor_cmd('priority',condor_prio)
 
 ##############################################################################
 # get the thresholds, pad and chunk lengths from the values in the ini file
@@ -1142,9 +1148,13 @@ if ligo_analysis:
     playground_only,usertag,tama_output)
 
 if tama_coincidence:
-  # a sire that contains all the TAMA triggers in LIGO-TAMA times
+  # a sire that contains all (play/non-play) TAMA triggers in LIGO-TAMA times
   sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',sire_job,dag,
     playground_only,usertag,tama_output)
+  # a sire that contains all the TAMA triggers in LIGO-TAMA times
+  sire_segs(tama_segs_analyzed,'output','TAMA-INSPIRAL',sire_all_data_job,dag,
+    0,usertag,tama_output)
+
 if tama_coincidence or slide_time:
   # a sire for all the coincidence configurations
   sire_segs(l1t1_inca_nodes,'output_a','L1-INCA_L1T1',sire_job,dag,
@@ -1206,9 +1216,6 @@ if inj_file:
       inj_file,cluster)
   
   if tama_coincidence:
-    # sire to find all TAMA triggers coincident with injections.
-    sire_segs(tama_data_analyzed,'output','TAMA-INSPIRAL',
-      sire_inj_job,dag,playground_only,usertag,tama_output,slide_time,inj_file)
     # a sire that contains all the TAMA triggers coincident with injections
     # in LIGO-TAMA times
     sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',
@@ -1239,9 +1246,6 @@ if inj_file:
 
     # clustered sires to find loudest triggers coincident with injections:
     cluster = 1
-    # TAMA triggers coincident with injections.
-    sire_segs(tama_data_analyzed,'output','TAMA-INSPIRAL',sire_cl_inj_job,dag,
-      playground_only,usertag,tama_output,slide_time,inj_file,cluster)
     # a sire that contains all the TAMA triggers coincident with injections
     # in LIGO-TAMA times
     sire_segs(tama_segs_analyzed,'output','T1-INSPIRAL',sire_cl_inj_job,dag,
