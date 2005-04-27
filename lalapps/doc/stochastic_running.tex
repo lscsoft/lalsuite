@@ -154,12 +154,8 @@ job is a matter a minutes, running a large number of stocahastic jobs at
 the same time will greatly reduce the computational efficiency of a
 cluster. Whilst this problem it resolved it is recommended to submit the
 DAG with the following command, limiting the total number of jobs to run
-to a maximum of 6:
+to a maximum of 30:
 
 \begin{verbatim}
-> condor_submit_dag -maxjobs 6 example_S3_H1L1.dag
+> condor_submit_dag -maxjobs 30 example_S3_H1L1.dag
 \end{verbatim}
-
-\subsection{Example}
-
-This section is under construction...
