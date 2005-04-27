@@ -487,12 +487,19 @@ LALCreateTwoIFOCoincList(
     );
 
 void
+LALCreateNIFOCoincList(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincHead,
+    InspiralAccuracyList       *accuracyParams,
+    INT4                        N
+    );
+
+void
 LALAddSnglInspiralToCoinc(
     LALStatus                  *status,
     CoincInspiralTable        **coincPtr,
     SnglInspiralTable          *snglInspiral
     );
-
 
 void
 LALSnglInspiralCoincTest(
@@ -501,7 +508,6 @@ LALSnglInspiralCoincTest(
     SnglInspiralTable          *snglInspiral,
     InspiralAccuracyList       *accuracyParams
     );
-
 
 void
 LALExtractSnglInspiralFromCoinc(

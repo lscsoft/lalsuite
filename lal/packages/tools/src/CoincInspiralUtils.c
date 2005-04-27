@@ -58,6 +58,11 @@ to add the single inspirals to the coinc.  The function returns
 \texttt{coincOutput} which is a pointer to the head of a linked list of
 \texttt{CoincInspiralTable}s.
 
+\texttt{LALCreateNIFOCoincList()} takes linked list of
+\texttt{CoincInspiralTable}s, assumed to contain (N-1) ifo coincidences and
+creates all N ifo coincidences.  Both the input and output list of
+\texttt{CoincInspiralTable}s are passed as \texttt{coincHead}.  
+
 \texttt{LALAddSnglInspiralToCoinc()} adds a pointer to a single inspiral table
 to a coinc inspiral table.  Upon entry, if \texttt{coincPtr} points to a
 \texttt{NULL} coinc inspiral table, the table is created before a pointer to
@@ -219,6 +224,117 @@ LALCreateTwoIFOCoincList(
   DETATCHSTATUSPTR (status);
   RETURN (status);
 } 
+
+
+/* <lalVerbatim file="CoincInspiralUtilsCP"> */
+void
+LALCreateNIFOCoincList(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincHead,
+    InspiralAccuracyList       *accuracyParams,
+    INT4                        N
+    )
+/* </lalVerbatim> */
+{
+  INT4                          numEvents  = 0;
+  InterferometerNumber          ifoNumber  = LAL_UNKNOWN_IFO;
+  InterferometerNumber          ifoNum     = LAL_UNKNOWN_IFO;
+  InterferometerNumber          firstEntry = LAL_UNKNOWN_IFO;
+  CoincInspiralTable           *thisCoinc     = NULL;
+  CoincInspiralTable           *otherCoinc    = NULL;
+  CoincInspiralTable           *nIfoCoincHead = NULL;
+  CoincInspiralTable           *thisNIfoCoinc = NULL;
+  EventIDColumn                *eventIDHead   = NULL;
+  EventIDColumn                *thisID        = NULL;
+
+
+  INITSTATUS( status, "LALCreateThreeIFOCoincList", COINCINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  /* loop over all the coincidences in the list */
+  for( thisCoinc = *coincHead; thisCoinc; thisCoinc = thisCoinc->next)
+  {
+    /* check that this is an (N-1) coinc */
+    if ( thisCoinc->numIfos == N - 1 )
+    {
+      /* look up the first single inspiral */
+      for ( firstEntry = 0; firstEntry < LAL_NUM_IFO; firstEntry++)
+      {
+        if ( thisCoinc->snglInspiral[firstEntry] )
+        {
+          LALInfo( status, "Found the first entry in the coinc" );
+          break;
+        }
+      }
+
+      /* get the list of event IDs for this first entry */
+      eventIDHead = thisCoinc->snglInspiral[firstEntry]->event_id;
+
+      /* loop over the (N-1) ifo coincs that first entry is a member of 
+       * try to find an N ifo coinc */
+      for( thisID = eventIDHead; thisID; thisID = thisID->next )
+      {
+        otherCoinc = thisID->coincInspiralTable;
+
+        if( otherCoinc->numIfos == N - 1 )
+        {
+          /* loop over all singles which are alphabetically before the 
+           * first one in thisCoinc */
+          for( ifoNumber = 0; ifoNumber < firstEntry; ifoNumber++ )
+          {
+            /* test whether we have an N ifo coincidence */
+            if ( otherCoinc->snglInspiral[ifoNumber] )
+            {
+              LALSnglInspiralCoincTest( status->statusPtr, thisCoinc, 
+                  otherCoinc->snglInspiral[ifoNumber], accuracyParams );
+            }
+
+            if ( accuracyParams->match )
+            {
+              LALInfo( status, "We have found an N ifo coinc, storing");
+              ++numEvents;
+              
+              /* create a N IFO coinc and store */
+              if ( ! nIfoCoincHead  )
+              {
+                nIfoCoincHead = thisNIfoCoinc = (CoincInspiralTable *) 
+                  LALCalloc( 1, sizeof(CoincInspiralTable) );
+              }
+              else
+              {
+                thisNIfoCoinc = thisNIfoCoinc->next = (CoincInspiralTable *) 
+                  LALCalloc( 1, sizeof(CoincInspiralTable) );
+              }
+
+              /* add the single to the new N coinc */
+              LALAddSnglInspiralToCoinc( status->statusPtr, &thisNIfoCoinc,
+                  otherCoinc->snglInspiral[ifoNumber] );
+
+              /* add the triggers from the (N-1) coinc to the new N coinc */
+              for( ifoNum = 0; ifoNum < LAL_NUM_IFO; ifoNum++ )
+              {
+                if( thisCoinc->snglInspiral[ifoNum] )
+                {
+                  LALAddSnglInspiralToCoinc( status->statusPtr, &thisNIfoCoinc,
+                      thisCoinc->snglInspiral[ifoNum] );
+                }
+              }
+            } /* closes: if ( accuracyParams->match ) */
+          }
+        }
+      } /* closes: for( thisID = eventIDHead; thisID; thisID->next ) */
+    }
+  } /* closes: for( thisCoinc = coincHead; thisCoinc; 
+     *              thisCoinc = thisCoinc->next) */
+
+  /* append the N ifo coincs to the end of the linked list */
+  thisCoinc->next = nIfoCoincHead;
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+}
 
 
 
