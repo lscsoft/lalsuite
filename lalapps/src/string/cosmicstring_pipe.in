@@ -30,13 +30,11 @@ Usage: lalapps_ring_pipe [options]
 
   -h, --help               display this message
   -v, --version            print version information and exit
-  -u, --user-tag TAG       tag the job with TAG (overrides value in ini file)
-
   -d, --datafind           run LSCdataFind to create frame cache files
   -s, --string             run lalapps_StringSearch
   -c, --coincidence        run coincidence step
 
-  -j, --injections FILE    add simulated bursts from FILE
+  -i, --injections         add simulated bursts
 
   -p, --playground-only    only create chunks that overlap with playground
   -P, --priority PRIO      run jobs with condor priority PRIO
@@ -47,16 +45,15 @@ Usage: lalapps_ring_pipe [options]
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdscj:u:P:f:l:"
+shortop = "hvdscjP:f:l:"
 longop = [
   "help",
   "version",
   "datafind",
   "string",
   "coincidence",
-  "injections=",
+  "injections",
   "playground-only",
-  "user-tag=",
   "priority=",
   "config-file=",
   "log-path="
@@ -72,8 +69,7 @@ config_file = None
 do_datafind = None
 do_string = None
 do_coincidence = None
-inj_file = None
-usertag = None
+do_inj = 0
 playground_only = 0
 condor_prio = None
 config_file = None
@@ -92,10 +88,8 @@ for o, a in opts:
     do_string = 1
   elif o in ("-c", "--coincidence"):
     do_coincidence = 1
-  elif o in ("-j", "--injections"):
-    inj_file = a
-  elif o in ("-u", "--user-tag"):
-    usertag = a
+  elif o in ("-i", "--injections"):
+    do_inj = 1
   elif o in ("-p", "--playground-only"):
     playground_only = 1
   elif o in ("-P", "--priority"):
@@ -135,65 +129,43 @@ if do_coincidence:
   try: os.mkdir('coincidences')
   except: pass
 
+if do_inj: 
+  try: os.mkdir('injections')
+  except: pass
 
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
 cp.read(config_file)
 
-# if a usertag has been specified, override the config file
-if usertag:
-  cp.set('pipeline','user-tag',usertag)
-else:
-  try:
-    usertag = string.strip(cp.get('pipeline','user-tag'))
-  except:
-    usertag = None
-
 # create a log file that the Condor jobs will write to
 basename = re.sub(r'\.ini',r'',config_file)
 tempfile.tempdir = log_path
-if usertag:
-  tempfile.template = basename + '.' + usertag + '.dag.log.'
-else:
-  tempfile.template = basename + '.dag.log.'
+
+tempfile.template = basename + '.log'
 logfile = tempfile.mktemp()
 fh = open( logfile, "w" )
 fh.close()
 
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
-if usertag:
-  dag.set_dag_file(basename + '.' + usertag + '.dag')
-else:
-  dag.set_dag_file(basename + '.dag')
+dag.set_dag_file(basename + '.dag')
 
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 string_job = cosmicstring.StringJob(cp)
 burca_job = cosmicstring.BurcaJob(cp)
-
+if do_inj: 
+  injection_job = injections.InjJob(cp)
 
 # set better submit file names than the default
-if usertag:
-  subsuffix = '.' + usertag + '.sub'
-else:
-  subsuffix = '.sub'
+subsuffix = '.sub'
 df_job.set_sub_file( basename + '.datafind'+ subsuffix )
 string_job.set_sub_file( basename + '.string' + subsuffix )
 burca_job.set_sub_file( basename + '.burca' + subsuffix )
+if do_inj: 
+  injection_job.set_sub_file( basename + '.binj' + subsuffix ) 
 
-# add the injections
-if inj_file:
-  string_job.add_opt('injection-file',inj_file)
-
-# set the condor job priority
-if condor_prio:
-  df_job.add_condor_cmd('priority',condor_prio)
-  string_job.add_condor_cmd('priority',condor_prio)
-  burca_job.add_condor_cmd('priority',condor_prio)
-  
-# get the pad and chunk lengths from the values in the ini file
-pad = 0
+# get chunk lengths from the values in the ini file
 no_of_segments = int(cp.get('string', 'no-of-segments'))
 length = int(cp.get('pipeline', 'segment-length'))
 overlap = length/no_of_segments/4
@@ -217,37 +189,50 @@ datatype2 = cp.get('input','type2')
 # create all the LSCdataFind jobs to run in sequence
 prev_df1 = None
 prev_df2 = None
-
-# create a list to store the ring jobs
-string_nodes = []
+prev_inject = None
 
 for seg in data:
-  # find all the data for first ifo
-  df1 = pipeline.LSCDataFindNode(df_job)
-  df1.set_start(seg.start() - pad)
-  df1.set_end(seg.end() + pad)
-  df1.set_observatory(ifo1[0])
-  df1.add_var_opt('type',datatype1)
-  if prev_df1: 
-    df1.add_parent(prev_df1)
+  
   if do_datafind:
+    # find all the data for first ifo
+    df1 = pipeline.LSCDataFindNode(df_job)
+    df1.set_start(seg.start())
+    df1.set_end(seg.end())
+    df1.set_observatory(ifo1[0])
+    df1.add_var_opt('type',datatype1)
+
+    if prev_df1: 
+      df1.add_parent(prev_df1)
+      
     dag.add_node(df1)
-  prev_df1 = df1
+    prev_df1 = df1
 
-  # find data for second ifo
-  df2 = pipeline.LSCDataFindNode(df_job)
-  df2.set_start(seg.start() - pad)
-  df2.set_end(seg.end() + pad)
-  df2.set_observatory(ifo2[0])
-  df2.add_var_opt('type',datatype2)
-  if prev_df2: 
-    df2.add_parent(prev_df2)
-  if do_datafind:
+    # find data for second ifo
+    df2 = pipeline.LSCDataFindNode(df_job)
+    df2.set_start(seg.start())
+    df2.set_end(seg.end())
+    df2.set_observatory(ifo2[0])
+    df2.add_var_opt('type',datatype2)
+
+    if prev_df2: 
+      df2.add_parent(prev_df2)
+      
     dag.add_node(df2)
-  prev_df2 = df2
+    prev_df2 = df2
 
-  seg_string_nodes = []
+  if do_inj:
+    # create injection jobs
+    inject  = injections.InjNode(injection_job)
+    inject.set_start(seg.start())
+    inject.set_end(seg.start())
+    df2.add_var_opt('seed',int(1e^7 * random.uniform(0.0,1.0))+1)
 
+    if prev_inject: 
+      prev_inject.add_parent(prev_inject)
+
+    dag.add_node(inject)
+    prev_inject = inject
+    
   for chunk in seg:
     
     #string job for first ifo
@@ -278,21 +263,37 @@ for seg in data:
     if do_string: 
       dag.add_node(string2)
 
-    #coincidence stage
-    burca = cosmicstring.BurcaNode(burca_job)
-    burca.set_start(chunk.start())
-    burca.set_end(chunk.end())
-    burca.set_ifoa(string1.get_output())
-    burca.set_ifob(string2.get_output()) 
-    burca.add_var_opt('outfile',burca.get_output())
+    #coincidence stage (one way)
+    burca1 = cosmicstring.BurcaNode(burca_job)
+    burca1.set_start(chunk.start())
+    burca1.set_end(chunk.end())
+    burca1.set_ifoa(string1.get_output(),ifo1)
+    burca1.set_ifob(string2.get_output(),ifo2) 
+    burca1.add_var_opt('outfile',burca1.get_output())
     if do_datafind: 
-      burca.add_parent(df1)
-      burca.add_parent(df2)
+      burca1.add_parent(df1)
+      burca1.add_parent(df2)
     if do_string: 
-      burca.add_parent(string1)
-      burca.add_parent(string2)
+      burca1.add_parent(string1)
+      burca1.add_parent(string2)
     if do_coincidence:  
-      dag.add_node(burca)
+      dag.add_node(burca1)
+
+    #coincidence stage (the other way)
+    burca2 = cosmicstring.BurcaNode(burca_job)
+    burca2.set_start(chunk.start())
+    burca2.set_end(chunk.end())
+    burca2.set_ifoa(string2.get_output(),ifo2)
+    burca2.set_ifob(string1.get_output(),ifo1) 
+    burca2.add_var_opt('outfile',burca2.get_output())
+    if do_datafind: 
+      burca2.add_parent(df1)
+      burca2.add_parent(df2)
+    if do_string: 
+      burca2.add_parent(string1)
+      burca2.add_parent(string2)
+    if do_coincidence:  
+      dag.add_node(burca2)
 
 
 # write out the DAG
@@ -328,10 +329,7 @@ LSCdataFind server.
 """
 
 # write out a log file for this script
-if usertag:
-  log_fh = open(basename + '.pipeline.' + usertag + '.log', 'w')
-else:
-  log_fh = open(basename + '.pipeline.log', 'w')
+log_fh = open(basename + '.pipeline.log', 'w')
   
 log_fh.write( "$Id$" + "\n\n" )
 log_fh.write( "Invoked with arguments:\n" )
