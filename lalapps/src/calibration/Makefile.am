@@ -29,6 +29,7 @@ EXTRA_DIST = mkcalfac.c mkcalref.c mkcalfiles_test.sh mkcal.py \
   filters-H1-S2.h filters-H1-S3.h filters-H2-S2.h filters-H2-S3.h \
   filters-L1-S2.h filters-L1-S2.h strain_pipe.in
 MOSTLYCLEANFILES = *.ilwd *.gwf
+CLEANFILES = python_config.sed lalapps_strain_pipe
 TESTS = mkcalfiles_test.sh
 
 python_config.sed:
