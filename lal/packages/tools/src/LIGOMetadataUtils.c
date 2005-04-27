@@ -246,7 +246,7 @@ static INT8 PlaygroundOverlap( INT8 seg_end, INT8 seg_length )
 
   /* handle a segment that contains two or more playground */
   /* segments by recursively bisecting it                  */
-  if ( seg_length >= mod_play )
+  if ( seg_length >= (mod_play - play_length) )
   {
     INT8 low_len, high_len, low_play, high_play;
     low_len = high_len = seg_length / LAL_INT8_C(2);
