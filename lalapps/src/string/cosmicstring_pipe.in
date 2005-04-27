@@ -168,10 +168,8 @@ for seg in data:
   df1.set_end(seg.end())
   df1.set_observatory(ifo1[0])
   df1.add_var_opt('type',datatype1)
-
   if prev_df1: 
     df1.add_parent(prev_df1)
-      
   dag.add_node(df1)
   prev_df1 = df1
 
@@ -181,10 +179,8 @@ for seg in data:
   df2.set_end(seg.end())
   df2.set_observatory(ifo2[0])
   df2.add_var_opt('type',datatype2)
-    
   if prev_df2: 
     df2.add_parent(prev_df2)
-      
   dag.add_node(df2)
   prev_df2 = df2
 
@@ -194,10 +190,8 @@ for seg in data:
     inject.set_start(seg.start())
     inject.set_end(seg.start())
     df2.add_var_opt('seed',int(1e^7 * random.uniform(0.0,1.0))+1)
-
     if prev_inject: 
       prev_inject.add_parent(prev_inject)
-
     dag.add_node(inject)
     prev_inject = inject
     
@@ -213,6 +207,8 @@ for seg in data:
     string1.add_var_opt('trig-start-time',chunk.trig_start())
     string1.add_var_opt('outfile',string1.get_output())
     string1.add_parent(df1)
+    if do_inj:
+      string1.add_parent(inject)
     dag.add_node(string1)
 
     #string job for second ifo  
@@ -225,6 +221,8 @@ for seg in data:
     string2.add_var_opt('trig-start-time',chunk.trig_start())
     string2.add_var_opt('outfile',string2.get_output())
     string2.add_parent(df2)
+    if do_inj:
+      string2.add_parent(inject)
     dag.add_node(string2)
 
     #coincidence stage (one way)
@@ -267,19 +265,6 @@ proxy certificate on the condor submit machine by running the commands
 
   unset X509_USER_PROXY
   grid-proxy-init -hours 72
-
-Enter your pass phrase when promted. The proxy will be valid for 72 hours. 
-If you expect the LSCdataFind jobs to take longer to complete, increase the
-time specified in the -hours option to grid-proxy-init. You can check that 
-the grid proxy has been sucessfully created by executing the command:
-
-  grid-cert-info -all -file /tmp/x509up_u`id -u`
-
-This will also give the expiry time of the proxy. You should also make sure
-that the environment variable LSC_DATAFIND_SERVER is set the hostname and
-optional port of server to query. For example on the UWM medusa cluster this
-you should use
-
   export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
 
 Contact the administrator of your cluster to find the hostname and port of the
