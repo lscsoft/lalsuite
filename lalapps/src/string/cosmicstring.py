@@ -133,7 +133,7 @@ class InjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     
-  def get_output(self):
+  def get_output(self, seed):
     """
     Returns the file name of output from the power code. This must be kept
     synchronized with the name of the output file in power.c.
@@ -141,7 +141,7 @@ class InjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end():
       raise InjError, "Start time or end time has not been set"
 
-    basename = 'injections/HL' + '-INJECTIONS-'
+    basename = 'HL' + '-INJECTIONS_'+str(seed)+'-'
 
     return basename + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'

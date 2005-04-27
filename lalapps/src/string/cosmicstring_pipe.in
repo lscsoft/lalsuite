@@ -14,7 +14,7 @@ __version__ = '$Revision$'[11:-2]
 
 
 # import standard modules and append the lalapps prefix to the python path
-import sys, os
+import sys, os, random
 import getopt, re, string
 import tempfile
 import ConfigParser
@@ -98,10 +98,6 @@ except: pass
 try: os.mkdir('coincidences')
 except: pass
 
-if do_inj: 
-  try: os.mkdir('injections')
-  except: pass
-
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
 cp.read(config_file)
@@ -124,7 +120,7 @@ df_job = pipeline.LSCDataFindJob('cache','logs',cp)
 string_job = cosmicstring.StringJob(cp)
 burca_job = cosmicstring.BurcaJob(cp)
 if do_inj: 
-  injection_job = injections.InjJob(cp)
+  injection_job = cosmicstring.InjJob(cp)
 
 # set better submit file names than the default
 subsuffix = '.sub'
@@ -144,8 +140,8 @@ data = pipeline.ScienceData()
 data.read(cp.get('input','segments'),length)
 
 # create the chunks from the science segments
-data.make_chunks(length,overlap,playground_only,0,0)
-data.make_chunks_from_unused(length,0,playground_only,overlap,0,0)
+data.make_chunks(length,overlap,0,0,0)
+data.make_chunks_from_unused(length,0,0,overlap,0,0)
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
@@ -186,10 +182,11 @@ for seg in data:
 
   if do_inj:
     # create injection jobs
-    inject  = injections.InjNode(injection_job)
+    inject  = cosmicstring.InjNode(injection_job)
     inject.set_start(seg.start())
-    inject.set_end(seg.start())
-    df2.add_var_opt('seed',int(1e^7 * random.uniform(0.0,1.0))+1)
+    inject.set_end(seg.end())
+    seed = int(1e6 * random.uniform(0.0,1.0))
+    inject.add_var_opt('seed',seed)
     if prev_inject: 
       prev_inject.add_parent(prev_inject)
     dag.add_node(inject)
@@ -209,6 +206,7 @@ for seg in data:
     string1.add_parent(df1)
     if do_inj:
       string1.add_parent(inject)
+      string1.add_var_opt('injection-file',inject.get_output(seed))
     dag.add_node(string1)
 
     #string job for second ifo  
@@ -223,6 +221,7 @@ for seg in data:
     string2.add_parent(df2)
     if do_inj:
       string2.add_parent(inject)
+      string2.add_var_opt('injection-file',inject.get_output(seed))
     dag.add_node(string2)
 
     #coincidence stage (one way)
