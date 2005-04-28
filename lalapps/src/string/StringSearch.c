@@ -222,41 +222,12 @@ int main(int argc,char *argv[])
 
  if (ProcessData(CommandLineArgs)) return 4;
 
-/*  {  */
-/*    int m;  */
-/*    for ( m = 0 ; m < (int)GV.ht_proc.data->length; m++ )  */
-/*      { */
-/*        fprintf(stdout, "%f %e\n",m*GV.ht_proc.deltaT,GV.ht_proc.data->data[m]); */
-/*      } */
-/*    return 0; */
-/*  }  */
- 
-
  if (CommandLineArgs.InjectionFile != NULL) 
    {
      if (AddInjections(CommandLineArgs)) return 3;
-/*  { */
-/*    int m; */
-/*    for ( m = 0 ; m < (int)GV.ht_proc.data->length; m++ ) */
-/*      { */
-/*        fprintf(stdout, "%f %e\n",m*GV.ht_proc.deltaT,GV.ht_proc.data->data[m]); */
-/*      } */
-/*    return 0; */
-/*  } */
      /* high pass filter data again with added injection */ 
      if (ProcessData2(CommandLineArgs)) return 3;
    }
-
-
-
-/*  { */
-/*    int m; */
-/*    for ( m = 0 ; m < (int)GV.ht_proc.data->length; m++ ) */
-/*      { */
-/*        fprintf(stdout, "%f %e\n",m*GV.ht_proc.deltaT,GV.ht_proc.data->data[m]); */
-/*      } */
-/*    return 0; */
-/*  } */
 
  if (DownSample(CommandLineArgs)) return 5;
 
@@ -769,7 +740,6 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
     {
       f= p*GV.StringFilter.deltaF;
       t1t1 += 4*pow(f,CLA.power)*GV.StringFilter.data->data[p]*GV.StringFilter.deltaF;
-/*       t1t1 += 4*pow(f,CLA.power)*pow(f,CLA.power)/GV.Spec.data->data[p]*GV.Spec.deltaF; */
     }
 
   /* This is the first template, all others will be slightly smaller */ 
@@ -786,7 +756,6 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
     {
       f= p*GV.StringFilter.deltaF;
       t2t2 -= 4*pow(f,CLA.power)*GV.StringFilter.data->data[p]*GV.StringFilter.deltaF;
-/*       t2t2 -= 4*pow(f,CLA.power)*pow(f,CLA.power)/GV.Spec.data->data[p]*GV.Spec.deltaF; */
       
       epsilon=1-sqrt(t2t2/t1t1);
       
@@ -873,16 +842,9 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
       GV.StringFilter.data->data[p] = (re * re + im * im);
     }
 
-
   /* set all values below the cutoff frequency to 0 */
   memset( GV.StringFilter.data->data, 0, f_cutoff_index  * 
 	  sizeof( *GV.StringFilter.data->data ) );
-
-/*   for ( p = 0 ; p < (int)vtilde->length - 1; p++ ) */
-/*     { */
-/*       fprintf(stdout,"%e\n",GV.StringFilter.data->data[p]); */
-/*     } */
-/*   return 1; */
 
   LALCDestroyVector( &status, &vtilde );
   TESTSTATUS( &status );
