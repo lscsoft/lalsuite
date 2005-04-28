@@ -454,7 +454,7 @@ LALSnglInspiralCoincTest(
 
 
   /* Loop over sngl_inspirals contained in coinc_inspiral */
-  for ( ifoNumber = 1; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     thisCoincEntry = coincInspiral->snglInspiral[ifoNumber];
 
@@ -529,7 +529,7 @@ LALExtractSnglInspiralFromCoinc(
       ++eventNum)
   {
     /* loop over the interferometers */
-    for ( j = 0; j < 6; j++)
+    for ( j = 0; j < LAL_NUM_IFO; j++)
     {
       thisCoincEntry = thisCoinc->snglInspiral[j];
 
