@@ -1384,6 +1384,13 @@ if quick_slide:
   sire_tama.set_outputs(fname_tama,usertag,cluster,0,tama_output)
   
   cluster_time = cp.get('pipeline','cluster-time')
+  sire_cl_ligo.add_var_opt('cluster-algorithm',
+    cp.get('pipeline','cluster-alg'))
+  sire_cl_tama.add_var_opt('cluster-algorithm',
+    cp.get('pipeline','cluster-alg'))
+  sire_cl_ligo.add_var_opt('cluster-time',cluster_time)
+  sire_cl_tama.add_var_opt('cluster-time',cluster_time)
+
   sire_cl_ligo.set_outputs(fname_ligo,usertag,cluster_time,0,tama_output)
   sire_cl_tama.set_outputs(fname_tama,usertag,cluster_time,0,tama_output)
 
