@@ -1363,6 +1363,9 @@ if quick_slide:
     sire_ligo.add_parent( lt_inca )
     sire_tama.add_parent( lt_inca )
 
+    sire_cl_ligo.add_parent( lt_inca )
+    sire_cl_tama.add_parent( lt_inca )
+
     fl.write('%s\n' % lt_inca.get_output_a())
     ft.write('%s\n' % lt_inca.get_output_b())
     
