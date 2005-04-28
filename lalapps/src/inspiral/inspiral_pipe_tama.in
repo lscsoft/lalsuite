@@ -542,6 +542,7 @@ if inj_file:
 # add the playground information to the inca and sire jobs
 if quick_slide:
   sire_job.add_opt('all-data',' ')
+  sire_cl_job.add_opt('all-data',' ')
 elif playground_only:
   inca_job.add_opt('playground-only',' ')
   s_inca_job.add_opt('playground-only',' ')
