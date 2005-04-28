@@ -79,6 +79,8 @@ ClearStatus (LALStatus *status);
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
+#define rint(x) (floor((x)+0.5))
+
 
 /*
  *
@@ -89,50 +91,43 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 /* input data parameters */
 
-CHAR  *chanNumber       = NULL;          /* number of data channel       */
-UINT4  numPoints        = -1;            /* points in a segment          */
-INT4   sampleRate       = -1;            /* sample rate of filter data   */
-REAL4  fLow             = -1;            /* low frequency cutoff         */
-
-/* matched filter parameters */
-
-CHAR *bankFileName      = NULL;          /* name of input template bank  */
+CHAR   *chanNumber          = NULL;     /* starting channel number      */
+INT4   sampleRate           = -1;            /* sample rate of filter data   */
+REAL4  fLow                 = -1;            /* low frequency cutoff         */
 
 /*Coherent code specific inputs*/
 
-char H1filename[256];
-char Lfilename[256];
-char GEOfilename[256];
-char VIRGOfilename[256];
-char TAMAfilename[256];
-char H2filename[256];
-UINT2 caseID[6] = {0,0,0,0,0,0}; /* H1 L V G T H2 */
+char   H1filename[256];        
+char   Lfilename[256];         
+char   GEOfilename[256];       
+char   VIRGOfilename[256];      
+char   TAMAfilename[256];       
+char   H2filename[256];        
+                                
+CHAR   *bankFileName        = NULL; /* name of input template bank  */
+CHAR   *eventsOutXML        = NULL;
+CHAR   *cohSNROutFrame      = NULL;
+UINT4  cohSNROut            = 0;    /* default is not to write frame */
+UINT4  eventsOut            = 0;    /* default is not to write events */
+REAL4  cohSNRThresh         = -1;
+INT4   maximizeOverChirp    = 0;    /* default is no clustering */
+INT4   verbose              = 0;
+CHAR   outputPath[FILENAME_MAX];
 
-INT4  verbose = 0;
-
-UINT4            cohSNROut            = 0; /* default is not to write frame */
-CHAR             *cohSNROutFrame      = NULL;
-UINT4            eventsOut            = 0;/* default is not to write events */
-CHAR             *eventsOutXML        = NULL;
-CHAR             outputPath[FILENAME_MAX];
-REAL4            cohSNRThresh         = -1;
-INT4             maximizeOverChirp    = 0; /* default is no clustering */
+LALStatus             status;
+LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
 
 
 int main( int argc, char *argv[] )
 {
-  /* lal function variables */
-  LALStatus             status   = blank_status;
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
-
-  /* frame input data */
-  FrStream     *frStream = NULL;
   FrChanIn      frChan;
 
   /* frame output data */
 
   struct FrFile *frOutFile  = NULL;
   struct FrameH *outFrame   = NULL;
+  FrStream     *frStream = NULL;
+  FrCache      *frInCache = NULL;
 
 
   /* output */
@@ -144,22 +139,33 @@ int main( int argc, char *argv[] )
 
   FILE *filePtr[4];
 
-  CHAR             framename[FILENAME_MAX];
-  CHAR             xmlname[FILENAME_MAX];
+  CHAR   framename[FILENAME_MAX];
+  CHAR   xmlname[FILENAME_MAX];
+  CHAR   cohdataStr[LALNameLength];
+  CHAR   caseIDChars[4][LIGOMETA_IFOS_MAX] = {"0","0","0","0"};
 
-  INT4   numTmplts        = 0;       /* number of templates */
-  INT4   startTemplate    = 0;           
-  INT4   stopTemplate     = 1;
+  INT4   numTmplts        = 0; /* number of templates */
+  INT4   cohSegLength     = 4; /* This should match hardcoded value in inspiral.c */
+  INT4   numPoints        = 0;
+  INT4   startTemplate    = -1;           
+  INT4   stopTemplate     = -1;
   UINT4  numSegments      = 1;       /* number of segments */
   UINT4  numBeamPoints    = 0;       /* number of sky position templates */
+  UINT4  nCohDataFr       = 0;
+  UINT8  eventID          = 0;
 
   REAL4  m1               = 0;
   REAL4  m2               = 0;
 
  /* counters and other variables */
-  INT4                          i,j,k,l;
-  UINT4                         numDetectors = 0;
-  REAL4                         theta,phi,vPlus,vMinus;
+  INT4   i,j,k,l,w;
+  REAL4  theta,phi,vPlus,vMinus;
+  UINT4  numDetectors     = 0;
+  REAL8  tempTime[6]      = {0.0,0.0,0.0,0.0,0.0,0.0};
+  INT4   timeptDiff[5]    = {0,0,0,0,0};
+  UINT2  caseID[6]        = {0,0,0,0,0,0}; /* H1 L V G T H2 */
+  UINT4  fnumPrev[6]      = {0,0,0,0,0,0}; /* H1 L V G T H2 */
+  INT4   chanNumberTemp[6]= {0,0,0,0,0,0};
 
   CoherentInspiralInitParams   *cohInspInitParams = NULL;
   CoherentInspiralFilterParams *cohInspFilterParams = NULL;
@@ -169,6 +175,9 @@ int main( int argc, char *argv[] )
   MultiInspiralTable           *thisEvent = NULL;
   MetadataTable                savedEvents;
   InspiralTemplate             *bankHead = NULL;
+  InspiralTemplate             *bankTemp = NULL;
+  InspiralTemplate             *bankTemp2 = NULL;
+  COMPLEX8TimeSeries            tempSnippet;
 
   char namearray[6][256]  = {"0","0","0","0","0","0"}; /* input frame files */
   char namearray2[6][256] = {"0","0","0","0","0","0"}; /* beam files */
@@ -192,7 +201,6 @@ int main( int argc, char *argv[] )
   for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
       this_proc_param = this_proc_param->next );
 
-
   /* read in the template bank from a ligo lw xml file */
     numTmplts = InspiralTmpltBankFromLIGOLw( &bankHead, bankFileName,
       startTemplate, stopTemplate );
@@ -210,287 +218,686 @@ int main( int argc, char *argv[] )
 
     goto cleanexit;
   }
-  else if ( numTmplts != 1 )
-  {
-    fprintf( stderr, "must only have 1 template in the bank file %s\n", 
-        bankFileName );
-    goto cleanexit;
-  }
-
+  
   if ( verbose ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
 
-/* read in the network detectors */
-  for (l=0;l<6;l++)
-    {
-      if(caseID[l] == 1)
-	numDetectors++;
-    }
 
-  if (verbose)  fprintf(stdout, "You have specified %2d  detector(s).\n",numDetectors);
-  if (verbose)  fprintf(stdout, "The caseID is: %d %d %d %d %d %d (H1,L1,VIRGO,GEO,TAMA,H2) \n",caseID[0],caseID[1],caseID[2],caseID[3],caseID[4],caseID[5]);
+  /* Loop over templates (or event id's) */
 
-  if (numDetectors > 4)
-    {
-    fprintf(stdout, "Too many detectors specified - exiting. \n");
-    goto cleanexit;
-    }
+  
+  numPoints = sampleRate * cohSegLength;
+  bankTemp = bankHead;
+  savedEvents.multiInspiralTable = NULL;
+  k = 0;   
 
-  if (numDetectors == 0)
-    {
-      fprintf(stdout, "You must specify data filename(s) for 1 to 4 detectors - exiting. \n");
-      goto cleanexit;
-    }
+    for( i=0; i<numTmplts; i++)
+      {
+	memcpy( caseIDChars[k], &bankTemp->ifo, sizeof(caseIDChars[k] - 1) );
+	if( verbose ) fprintf(stdout,"%s %s %s %s\n",caseIDChars[0],caseIDChars[1],caseIDChars[2],caseIDChars[3] );
+	eventID = bankTemp->event_id->id;
+	if( verbose ) fprintf(stdout,"eventID = %Ld\n",eventID );
+	if( i != numTmplts - 1 )
+	  {
+	    bankTemp2 = bankTemp;
+	    bankTemp = bankTemp->next;
+	  }
+	if( i != 0 && ((bankTemp->event_id->id != eventID) || (i == numTmplts - 1)))
+	  {
+	    if( k > 0 )
+	      {
+		/* Here we should combine data for the last event */
+		if( verbose ) fprintf(stdout,"combining data for the last event\n");
+		for(j=0;j<4;j++)
+		  {
+		    if( !strcmp( caseIDChars[j],"H1" ) )
+		      {
+			caseID[0] = 1;
+		      }
+		    else if( !strcmp( caseIDChars[j], "L1" ) )
+		      {
+			caseID[1] = 1;
+		      }
+		    else if( !strcmp( caseIDChars[j], "V1" ) )
+		      {
+			caseID[2] = 1;
+		      }
+		    else if( !strcmp( caseIDChars[j], "G1" ) )
+		      {
+			caseID[3] = 1;
+		      }
+		    else if( !strcmp( caseIDChars[j], "T1" ) )
+		      {
+			caseID[4] = 1;
+		      }
+		    else if( !strcmp( caseIDChars[j], "H2" ) )
+		      {
+			caseID[5] = 1;
+		      }
+		  }
 
+		/* Now get the number of detectors */
+		l = 0;
+		for(j=0;j<6;j++)
+		  {
+		    if(caseID[j])
+		      {
+			l++;
+		      }
+		  }
+		numDetectors = l;
 
-  if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 ) {
-    numBeamPoints = 100;
-  }
+		if( verbose ) fprintf(stdout,"numDetectors = %d\n", numDetectors);
+		if( verbose ) fprintf(stdout,"caseID = %d %d %d %d %d %d (H1,L1,V1,G1,T1,H2)\n", caseID[0], caseID[1], caseID[2], caseID[3], caseID[4], caseID[5]);
 
+		if(caseID[0])
+		  {
+		    strcpy(namearray[0],H1filename);
+		    strcpy(namearray2[0],"HBeam.dat");
+		    LALSnprintf( namearray3[0], LALNameLength*sizeof(CHAR), "H1:LSC-AS_Q_CData_%s", chanNumber );
+		  }
 
-  /*
-   *
-   * read in the input data channels
-   *
-   */
+                if(caseID[1])
+                  {
+                    strcpy(namearray[1],Lfilename);
+                    strcpy(namearray2[1],"LBeam.dat");
+                    LALSnprintf( namearray3[1], LALNameLength*sizeof(CHAR), "L1:LSC-AS_Q_CData_%s", chanNumber );
+                  }
 
+                if(caseID[2])
+                  {
+		    /* for the moment, give virgo H2 data and beam pattern functions since */
+		    /* virgo data is not available */
+		    strcpy(namearray[2],VIRGOfilename);
+		    /*strcpy(namearray2[2],"VIRGOBeam.dat");*/ 
+		    strcpy(namearray2[2],"VIRGOBeam.dat");
+		    LALSnprintf(namearray3[2], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%s", chanNumber );
+		  }
 
- /* 
-   *
-   * create and populate coherentInspiral initialization structure 
-   *
-   */
+		if(caseID[3])
+		  {
+		    strcpy(namearray[3],GEOfilename);
+		    strcpy(namearray2[3],"GEOBeam.dat");
+		    LALSnprintf(namearray3[3], LALNameLength*sizeof(CHAR), "G1:LSC-AS_Q_CData_%s", chanNumber );
+		  }
 
-    if ( !(cohInspInitParams = (CoherentInspiralInitParams *) calloc(1,sizeof(CoherentInspiralInitParams)) ))
-  {
-    fprintf( stdout, "could not allocate memory for coherentInspiral init params\n" );
-    goto cleanexit;
-  }
+                if(caseID[4])
+                  { 
+                    strcpy(namearray[4],TAMAfilename);
+                    strcpy(namearray2[4],"TAMABeam.dat");
+                    LALSnprintf(namearray3[4], LALNameLength*sizeof(CHAR), "T1:LSC-AS_Q_CData_%s", chanNumber );
+                  }
 
-  cohInspInitParams->numDetectors            = numDetectors;
-  cohInspInitParams->numSegments             = numSegments;
-  cohInspInitParams->numPoints               = numPoints;
-  cohInspInitParams->numBeamPoints           = numBeamPoints;
-  cohInspInitParams->cohSNROut               = cohSNROut;
+                if(caseID[5])
+                  {
+                    strcpy(namearray[5],H2filename);
+                    strcpy(namearray2[5],"HBeam.dat");
+                    LALSnprintf(namearray3[5], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%s", chanNumber );
+                  }
+		  
+                if(verbose)  fprintf(stdout,"built namearrays\n");
 
-  /*
-   *
-   * create the data structures needed for coherentInspiral
-   *
-   */
+                if(verbose) {
+                    fprintf(stdout,"cache files: %s\n %s\n %s\n %s\n %s\n %s\n",namearray[0],namearray[1],namearray[2],namearray[3],namearray[4],namearray[5]);
+                    fprintf(stdout,"channels: %s\n %s\n %s\n %s\n %s\n %s\n",namearray3[0],namearray3[1],namearray3[2],namearray3[3],namearray3[4],namearray3[5]);
+		}
 
-  if ( verbose ) fprintf( stdout, "initializing coherentInspiral...\n " );
+		/* Now get the data for the involved detectors */
 
-  /* initialize coherentInspiral filter functions */
-  LAL_CALL( LALCoherentInspiralFilterInputInit (&status, &cohInspFilterInput,
+		if ( !(cohInspInitParams = (CoherentInspiralInitParams *) calloc(1,sizeof(CoherentInspiralInitParams)) ))
+		  {
+		    fprintf( stdout, "could not allocate memory for coherentInspiral init params\n" );
+		    goto cleanexit;
+		  }
+
+		cohInspInitParams->numDetectors            = numDetectors;
+		cohInspInitParams->numSegments             = numSegments;
+		cohInspInitParams->numPoints               = numPoints;
+		cohInspInitParams->numBeamPoints           = numBeamPoints;
+		cohInspInitParams->cohSNROut               = cohSNROut;
+
+             /*
+              *
+              * create the data structures needed for coherentInspiral
+              *
+              */
+
+		if ( verbose ) fprintf( stdout, "initializing coherentInspiral...\n " );
+
+		/* initialize coherentInspiral filter functions */
+                LAL_CALL( LALCoherentInspiralFilterInputInit (&status, &cohInspFilterInput,
 						cohInspInitParams), &status );
 
-  TestStatus (&status, "0", 1);
-  ClearStatus (&status);
-
-   /*
-   * information for calculating chirp time
-   */
-
-  m1 = bankHead->mass1;
-  m2 = bankHead->mass2;
+		m1 = bankTemp2->mass1;
+		m2 = bankTemp2->mass2;
  
-  cohInspFilterInput->tmplt = (InspiralTemplate *)
-     LALCalloc(1,sizeof(InspiralTemplate) );
-  cohInspFilterInput->tmplt->mass1 = m1;
-  cohInspFilterInput->tmplt->mass2 = m2;
-  cohInspFilterInput->tmplt->totalMass = m1 + m2;
-  cohInspFilterInput->tmplt->mu = m1 * m2 / (m1 + m2);
-  cohInspFilterInput->tmplt->eta = (m1 * m2) / ((m1 + m2) * (m1 + m2 ));
+		cohInspFilterInput->tmplt = (InspiralTemplate *)
+		  LALCalloc(1,sizeof(InspiralTemplate) );
+		cohInspFilterInput->tmplt->mass1 = m1;
+		cohInspFilterInput->tmplt->mass2 = m2;
+		cohInspFilterInput->tmplt->totalMass = m1 + m2;
+		cohInspFilterInput->tmplt->mu = m1 * m2 / (m1 + m2);
+		cohInspFilterInput->tmplt->eta = (m1 * m2) / ((m1 + m2) * (m1 + m2 ));
 
-  if (verbose)  fprintf( stdout, "m1:%f m2:%f totalmass:%f mu:%f eta%f\n", m1, m2,cohInspFilterInput->tmplt->totalMass,cohInspFilterInput->tmplt->mu,cohInspFilterInput->tmplt->eta);
+		if (verbose)  fprintf( stdout, "m1:%f m2:%f totalmass:%f mu:%f eta%f\n", m1, m2,cohInspFilterInput->tmplt->totalMass,cohInspFilterInput->tmplt->mu,cohInspFilterInput->tmplt->eta);
+
+		LAL_CALL( LALCoherentInspiralFilterParamsInit (&status, &cohInspFilterParams,
+							       cohInspInitParams),&status );
+
+		cohInspFilterParams->deltaT                  = 1/((REAL4) sampleRate);
+		cohInspFilterParams->cohSNRThresh            = cohSNRThresh;
+		cohInspFilterParams->cohSNROut               = cohSNROut;
+		cohInspFilterParams->numTmplts               = 1;
+		cohInspFilterParams->fLow                    = fLow;
+		cohInspFilterParams->maximizeOverChirp       = maximizeOverChirp;
   
+		for( j=0;j < 6; j++ ) {
+		  cohInspFilterParams->detIDVec->data[j] = caseID[j];
+		}
 
-  /* fill the params structure */
-  LAL_CALL( LALCoherentInspiralFilterParamsInit (&status, &cohInspFilterParams,
-						 cohInspInitParams),&status );
-  TestStatus (&status, "0", 1);
-  ClearStatus (&status);
+		w=0;
+		for ( j=0 ; j < 6 ; j++ ) {
+		  if ( caseID[j] ) { 
+		    cohInspFilterParams->detectorVec->detector[w++] = lalCachedDetectors[j];
+		  }
+		}
+
+		if (caseID[5]) {
+		  cohInspFilterParams->detectorVec->detector[numDetectors-1] = lalCachedDetectors[0];
+		}
+
+		if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 )
+		  {
+		    cohInspBeamVec = cohInspFilterInput->beamVec;
+
+		    w=0;
+		    if( verbose ) fprintf(stdout, "This network requires beam-pattern coefficients - reading them in...\n");
+		    for ( j=0 ; j < 6 ; j++ ) {
+		      if ( caseID[j] ) { 
+			filePtr[w] = fopen(namearray2[j], "r");
+			if(!filePtr[w])
+			  {
+			    fprintf(stderr,"The file %s containing the coefficients could not be found - exiting...\n",namearray2[j]);
+			    goto cleanexit;
+			  }
+			for ( l=0 ; l < (INT4) numBeamPoints ; l++)
+			  { 
+			    if( verbose ) fprintf(stdout,"scanning a beam file...");
+			    fscanf(filePtr[w],"%f %f %f %f",&theta,&phi,&vPlus,&vMinus);
+			    if( verbose ) fprintf(stdout,"done\n");
+			    cohInspBeamVec->detBeamArray[w].thetaPhiVs[l].data->data[0] = theta;
+			    cohInspBeamVec->detBeamArray[w].thetaPhiVs[l].data->data[1] = phi;
+			    cohInspBeamVec->detBeamArray[w].thetaPhiVs[l].data->data[2] = vPlus;
+			    cohInspBeamVec->detBeamArray[w].thetaPhiVs[l].data->data[3] = vMinus;
+			  }
+			fclose(filePtr[w++]);
+		      }
+		    } 
+		  }
+		cohInspCVec = cohInspFilterInput->multiCData;
+
+		/* compare fnum for this event to the fnum for the previous event - if they are the same then increment the channel number. if they are different, then set the channel back to zero */
+
+		l = 0;
+		for(j=0;j<6;j++)
+		  {
+		    if( caseID[j] )
+		      {
+			if( verbose ) fprintf(stdout,"import and open cache\n");
+
+			/* read a frame cache from the specified file */
+			LAL_CALL( LALFrCacheImport( &status, &frInCache, namearray[j]), &status );
   
-  cohInspFilterParams->deltaT                  = 1/((REAL4) sampleRate);
-  cohInspFilterParams->cohSNRThresh            = cohSNRThresh;
-  cohInspFilterParams->cohSNROut               = cohSNROut;
-  cohInspFilterParams->numTmplts               = numTmplts;
-  cohInspFilterParams->fLow                    = fLow;
-  cohInspFilterParams->maximizeOverChirp       = maximizeOverChirp;
-  
-  for( i=0;i < 6; i++ ) {
-    cohInspFilterParams->detIDVec->data[i] = caseID[i];
-  }
-  
- /* create and fill the DetectorVector structure of detector IDs*/
-  
+	                /* open the input data frame stream from the frame cache */
+	                LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
 
-  i=0;
-  for ( j=0 ; j < 6 ; j++ ) {
-    if ( caseID[j] ) { 
-      cohInspFilterParams->detectorVec->detector[i++] = lalCachedDetectors[j];
-    }
-  }
+			frStream->mode = LAL_FR_DEFAULT_MODE;
 
-  if (caseID[5]) {
-    cohInspFilterParams->detectorVec->detector[numDetectors-1] = lalCachedDetectors[0];
-  }
+			/*fprintf(stdout,"frstream.epoch = %d %d\n", frStream->epoch.gpsSeconds, frStream->epoch.gpsNanoSeconds );
+			fprintf(stdout,"(nfile,fnum,pos) = (%d, %d, %d)\n", frStream->nfile,frStream->fnum,frStream->pos);
+	                LAL_CALL( LALFrSeek( &status, &(bankTemp2->end_time), frStream ), &status );
+			fprintf(stdout,"numFrameFiles = %d\n",frInCache->numFrameFiles);
+			fprintf(stdout,"frstream.epoch after FrSeek = %d %d\n", frStream->epoch.gpsSeconds, frStream->epoch.gpsNanoSeconds );*/
 
+			if (verbose) fprintf(stdout,"getting the complex8timeseries\n");
+			frChan.name = namearray3[j];
+			LAL_CALL( LALFrGetCOMPLEX8TimeSeries( &status, &(cohInspCVec->cData[l]), &frChan, frStream), &status);
 
-  /* Note that some of the namearray3 elements will need to be changed */
-  /* depending what channels are in the corresponding frame files */
-  if(caseID[0])
-    {
-    strcpy(namearray[0],H1filename);
-    strcpy(namearray2[0],"HBeam.dat");
-    LALSnprintf( namearray3[0], LALNameLength*sizeof(CHAR), "H1:LSC-AS_Q_CData_%s", chanNumber );
-    }
+			/* If the number of the file that was used for the previous event is the same that is used for the current */
+			/* event, then increment the channel number */ 
 
-  if(caseID[1])
-    {
-    strcpy(namearray[1],Lfilename);
-    strcpy(namearray2[1],"LBeam.dat");
-    LALSnprintf( namearray3[1], LALNameLength*sizeof(CHAR), "L1:LSC-AS_Q_CData_%s", chanNumber );
-    }
+			if( frStream->fnum == fnumPrev[j] )
+			  {
+			    if( verbose ) fprintf(stdout,"getting data from the next channel.....");
 
-  if(caseID[2])
-    {
-      /* for the moment, give virgo H2 data and beam pattern functions since */
-      /* virgo data is not available */
-    strcpy(namearray[2],VIRGOfilename);
-    /*strcpy(namearray2[2],"VIRGOBeam.dat");*/ 
-    strcpy(namearray2[2],"VIRGOBeam.dat");
-    LALSnprintf(namearray3[2], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%s", chanNumber );
-    }
+			    LAL_CALL( LALFrClose( &status, &frStream ), &status );
+			    LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
+			    LAL_CALL( LALFrCacheImport( &status, &frInCache, namearray[j]), &status );
+			    LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
 
-  if(caseID[3])
-    {
-    strcpy(namearray[3],GEOfilename);
-    strcpy(namearray2[3],"GEOBeam.dat");
-    LALSnprintf(namearray3[3], LALNameLength*sizeof(CHAR), "G1:LSC-AS_Q_CData_%s", chanNumber );
-    }
+			    frStream->mode = LAL_FR_DEFAULT_MODE;
 
-  if(caseID[4])
-    {
-    strcpy(namearray[4],TAMAfilename);
-    strcpy(namearray2[4],"TAMABeam.dat");
-    LALSnprintf(namearray3[4], LALNameLength*sizeof(CHAR), "T1:LSC-AS_Q_CData_%s", chanNumber );
-    }
+			    /*bankTemp2->end_time.gpsSeconds = bankTemp2->end_time.gpsSeconds - 3;*/
+			    /*LAL_CALL( LALFrSeek( &status, &(bankTemp2->end_time), frStream ), &status );*/
+			    /*fprintf(stdout,"New stream epoch: %d %d\n",frStream->epoch.gpsSeconds, frStream->epoch.gpsNanoSeconds );*/
 
-  if (caseID[5])
-    {
-    strcpy(namearray[5],H2filename);
-    strcpy(namearray2[5],"HBeam.dat");
-    LALSnprintf(namearray3[5], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%s", chanNumber );
-    }
+			    LAL_CALL( LALCDestroyVector( &status, &(cohInspCVec->cData[l].data) ), &status );  
+			    LAL_CALL( LALCCreateVector( &status, &(cohInspCVec->cData[l].data), numPoints ), &status );
+			    /*memset( &(cohInspCVec->cData[k]), 0, sizeof(COMPLEX8TimeSeries) );*/
+			    chanNumberTemp[j] =  chanNumberTemp[j] + 1 ;
+			    if( verbose ) fprintf(stdout,"%d\n",chanNumberTemp[j]);
+			    
 
-  if (verbose)  fprintf(stdout,"built namearrays\n");
-
-  /* Now read in the beam coefficients if necessary */
-
-  if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 )
-    {
-      cohInspBeamVec = cohInspFilterInput->beamVec;
-
-      l=0;
-      if( verbose ) fprintf(stdout, "This network requires beam-pattern coefficients - reading them in...\n");
-      for ( j=0 ; j < 6 ; j++ ) {
-	if ( caseID[j] ) { 
-	  filePtr[l] = fopen(namearray2[j], "r");
-	  if(!filePtr[l])
-	    {
-	      fprintf(stdout,"The file %s containing the coefficients could not be found - exiting...\n",namearray2[j]);
-	      goto cleanexit;
-	    }
-	  for ( k=0 ; k < (INT4) numBeamPoints ; k++)
-	    { 
-	      fprintf(stdout,"scanning a beam file...");
-	      fscanf(filePtr[l],"%f %f %f %f",&theta,&phi,&vPlus,&vMinus);
-	      fprintf(stdout,"done\n");
-	      cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[0] = theta;
-	      cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[1] = phi;
-	      cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[2] = vPlus;
-	      cohInspBeamVec->detBeamArray[l].thetaPhiVs[k].data->data[3] = vMinus;
-	    }
-	  fclose(filePtr[l++]);
-	}
-      } 
-    }
-
-  cohInspCVec = cohInspFilterInput->multiCData;
-
-  if (verbose) {
-   fprintf(stdout,"reading data from frames\n");
-   fprintf(stdout,"namearray: %s\n %s\n %s\n %s\n %s\n %s\n",namearray[0],namearray[1],namearray[2],namearray[3],namearray[4],namearray[5]);
-   fprintf(stdout,"namearray3: %s\n %s\n %s\n %s\n %s\n %s\n",namearray3[0],namearray3[1],namearray3[2],namearray3[3],namearray3[4],namearray3[5]);
-  }
-
-  l=0;
-  for ( j=0 ; j < 6 ; j++ ) {
-    if ( caseID[j] ) {
-      if (verbose) fprintf(stdout,"opening C framefile %s\n",namearray[j]);
-      LAL_CALL( LALFrOpen(&status,&frStream,NULL,namearray[j]), &status);
-      if(!frStream)
-	{
-	  fprintf(stdout,"The file %s does not exist - exiting...\n",
-		  namearray[j]);
-	  goto cleanexit;
-	}
-      if (verbose) fprintf(stdout,"getting the complex8timeseries\n");
-      frChan.name = namearray3[j];
-      LAL_CALL( LALFrGetCOMPLEX8TimeSeries( &status, &(cohInspCVec->cData[l]), &frChan, frStream), &status);
-      if (verbose) fprintf(stdout,"closing frame stream\n");
-      LAL_CALL( LALFrClose( &status, &frStream), &status);
-      l++;
-      TestStatus (&status, "0", 1);
-      ClearStatus (&status);
-    }
-  }
-
-  /*Do the filtering and output events */
-  if (verbose) fprintf(stdout,"filtering the data..\n");
-  if ( maximizeOverChirp && verbose )
-    {
-      fprintf(stdout,"clustering events\n");
-    }		       
-  LALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams); 
+			    switch( j )
+			      {
+			      case 0:
+				LALSnprintf( namearray3[0], LALNameLength*sizeof(INT4), "H1:LSC-AS_Q_CData_%d", chanNumberTemp[0] );
+				break;
+			      case 1:
+				LALSnprintf( namearray3[1], LALNameLength*sizeof(INT4), "L1:LSC-AS_Q_CData_%d", chanNumberTemp[1] );
+				break;
+			      case 2:
+				LALSnprintf( namearray3[2], LALNameLength*sizeof(INT4), "H2:LSC-AS_Q_CData_%d", chanNumberTemp[2] );
+				break;
+			      case 3:
+				LALSnprintf( namearray3[3], LALNameLength*sizeof(INT4), "G1:LSC-AS_Q_CData_%d", chanNumberTemp[3] );
+				break;
+			      case 4:
+				LALSnprintf( namearray3[4], LALNameLength*sizeof(INT4), "T1:LSC-AS_Q_CData_%d", chanNumberTemp[4] );
+				break;
+			      case 5:
+				LALSnprintf( namearray3[5], LALNameLength*sizeof(INT4), "H2:LSC-AS_Q_CData_%d", chanNumberTemp[5] );
+				break;
+			      }
+			    frChan.name = namearray3[j];
+			    LAL_CALL( LALFrGetCOMPLEX8TimeSeries( &status, &(cohInspCVec->cData[l]), &frChan, frStream), &status);
+			  }
+		      
 
 
-  if ( cohSNROut )
-    {
-      strcpy( cohInspFilterParams->cohSNRVec->name, "coherent");
-      outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
-	  cohInspFilterParams->cohSNRVec, "none", "SNR" );
-      if ( outputPath[0] )
-	{
-	  LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s", outputPath, cohSNROutFrame);
-	}
-      else 
-	{
-	  LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s", cohSNROutFrame );
-	}
+			if (verbose) fprintf(stdout,"closing frame stream\n");
+			if( verbose )
+			  {
+			    fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[l].data->data[0].re, cohInspCVec->cData[l].data->data[0].im, cohInspCVec->cData[l].data->data[1].re, cohInspCVec->cData[l].data->data[1].im);
+			    fprintf(stdout,"epoch (s) = %d  epoch (ns) = %d\n",cohInspCVec->cData[l].epoch.gpsSeconds,cohInspCVec->cData[l].epoch.gpsNanoSeconds);
+			    fprintf(stdout,"length = %d\n",cohInspCVec->cData[l].data->length);
+			    fprintf(stdout,"frstream.epoch = %d %d\n", frStream->epoch.gpsSeconds, frStream->epoch.gpsNanoSeconds );
+			  }	 
 
-      if ( verbose ) fprintf( stdout, "writing frame data to %s....", framename );
-      frOutFile = FrFileONew( framename, 0);
-      FrameWrite( outFrame, frOutFile);
-      FrFileOEnd( frOutFile );
-      if ( verbose ) fprintf(stdout, "done\n");
-       if ( !eventsOut )
-	{
-	  while( thisEvent )
-	    {
-	      MultiInspiralTable *tempEvent = thisEvent;
-	      thisEvent = thisEvent->next;
-	      LALFree( tempEvent );
-	    }
-	}
-    }
+			tempTime[l] = cohInspCVec->cData[l].epoch.gpsSeconds + cohInspCVec->cData[l].epoch.gpsNanoSeconds * 1e-9; 
+
+			/*	fprintf(stdout,"(nfile,fnum,pos) = (%d, %d, %d)\n", frStream->nfile,frStream->fnum,frStream->pos);*/
+
+			fnumPrev[j] = frStream->fnum;
+			LAL_CALL( LALFrClose( &status, &frStream ), &status );
+			LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
+	  
+			l++;
+
+		      } /* matches if(caseID[j]) */
+		  } /* matches for(j=0;j<6;j++) */
+
+
+		/*Do the filtering and output events */
+		if (verbose) fprintf(stdout,"filtering the data..\n");
+		if ( maximizeOverChirp && verbose )
+		  {
+		    fprintf(stdout,"clustering events\n");
+		  }		     
+
+		/* Before the data gets filtered, I need to make the c-data snippets commensurate */
+		fprintf(stdout,"tempTimes = %f %f\n",tempTime[0],tempTime[1]);
+
+		for(j=0;j<(INT4)numDetectors - 1;j++)
+		  {
+		    timeptDiff[j] = rint((tempTime[0] - tempTime[j+1]) * sampleRate);
+		    fprintf(stdout,"timeptDiff = %d\n",timeptDiff[j]);
+		  }
+
+		/* Now allocate memory for a temporary storage vector */
+		memset( &tempSnippet, 0, sizeof(COMPLEX8TimeSeries) );
+		LAL_CALL( LALCCreateVector( &status, &(tempSnippet.data), numPoints ), &status );
+
+		/* The following switch statement accomplishes the commensuration of the time series */
+
+		switch( numDetectors )
+		  {
+		  case 2:
+		     if( timeptDiff[0] < 0 )
+		      {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[1].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[1].data->data[j].re = 0;
+			    cohInspCVec->cData[1].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[1].data->data + abs(timeptDiff[0]), tempSnippet.data->data, (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1].data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])+1].im);
+			cohInspCVec->cData[1].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[1].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+			}
+		     else if( timeptDiff[0] > 0 )
+		       {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[1].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[abs(timeptDiff[0])].re,tempSnippet.data->data[abs(timeptDiff[0])].im,tempSnippet.data->data[abs(timeptDiff[0])+1].re,tempSnippet.data->data[abs(timeptDiff[0])+1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[1].data->data[j].re = 0;
+			    cohInspCVec->cData[1].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[1].data->data, tempSnippet.data->data + abs( timeptDiff[0] ), (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1].data->data[0].re, cohInspCVec->cData[1].data->data[0].im, cohInspCVec->cData[1].data->data[1].re, cohInspCVec->cData[1].data->data[1].im);
+			cohInspCVec->cData[1].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[1].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+		       }
+		     else
+		       {
+			 if( verbose ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+		       }
+		    break;
+		  case 3:
+		     if( timeptDiff[0] < 0 )
+		      {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[1].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[1].data->data[j].re = 0;
+			    cohInspCVec->cData[1].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[1].data->data + abs(timeptDiff[0]), tempSnippet.data->data, (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1].data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])+1].im);
+			cohInspCVec->cData[1].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[1].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+			}
+		     else if( timeptDiff[0] > 0 )
+		       {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[1].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[1].data->data[j].re = 0;
+			    cohInspCVec->cData[1].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[1].data->data, tempSnippet.data->data + abs( timeptDiff[0] ), (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1].data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])+1].im);
+			cohInspCVec->cData[1].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[1].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+		       }
+		     else
+		       {
+			 if( verbose ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+		       }
+
+		     if( timeptDiff[1] < 0 )
+		      {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[2].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[2].data->data[j].re = 0;
+			    cohInspCVec->cData[2].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[2].data->data + abs(timeptDiff[1]), tempSnippet.data->data, (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2].data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])+1].im);
+			cohInspCVec->cData[2].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[2].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+			}
+		     else if( timeptDiff[1] > 0 )
+		       {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[2].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[2].data->data[j].re = 0;
+			    cohInspCVec->cData[2].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[2].data->data, tempSnippet.data->data + abs( timeptDiff[1] ), (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
+			if( verbose )fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2].data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])+1].im);
+
+			cohInspCVec->cData[2].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[2].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+		       }
+		     else
+		       {
+			 if( verbose ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+		       }		   
+		    break;
+		  case 4:
+		     if( timeptDiff[0] < 0 )
+		      {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[1].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[1].data->data[j].re = 0;
+			    cohInspCVec->cData[1].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[1].data->data + abs(timeptDiff[0]), tempSnippet.data->data, (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1].data->data[abs(timeptDiff[0])].re, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])].im, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])+1].re, cohInspCVec->cData[1].data->data[abs(timeptDiff[0])+1].im);
+			cohInspCVec->cData[1].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[1].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+			}
+		     else if( timeptDiff[0] > 0 )
+		       {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[1].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[abs(timeptDiff[0])].re,tempSnippet.data->data[abs(timeptDiff[0])].im,tempSnippet.data->data[abs(timeptDiff[0])+1].re,tempSnippet.data->data[abs(timeptDiff[0])+1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[1].data->data[j].re = 0;
+			    cohInspCVec->cData[1].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[1].data->data, tempSnippet.data->data + abs( timeptDiff[0] ), (numPoints - abs(timeptDiff[0])) * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[1].data->data[0].re, cohInspCVec->cData[1].data->data[0].im, cohInspCVec->cData[1].data->data[1].re, cohInspCVec->cData[1].data->data[1].im);
+			cohInspCVec->cData[1].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[1].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+		       }
+		     else
+		       {
+			 if( verbose ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+		       }
+
+
+		     if( timeptDiff[1] < 0 )
+		      {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[2].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[2].data->data[j].re = 0;
+			    cohInspCVec->cData[2].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[2].data->data + abs(timeptDiff[1]), tempSnippet.data->data, (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2].data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])+1].im);
+			cohInspCVec->cData[2].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[2].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+			}
+		     else if( timeptDiff[1] > 0 )
+		       {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[2].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[2].data->data[j].re = 0;
+			    cohInspCVec->cData[2].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[2].data->data, tempSnippet.data->data + abs( timeptDiff[1] ), (numPoints - abs(timeptDiff[1])) * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[2].data->data[abs(timeptDiff[1])].re, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])].im, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])+1].re, cohInspCVec->cData[2].data->data[abs(timeptDiff[1])+1].im);
+			cohInspCVec->cData[2].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[2].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+		       }
+		     else
+		       {
+			 if( verbose ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+		       }
+
+		     if( timeptDiff[2] < 0 )
+		      {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[3].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[3].data->data[j].re = 0;
+			    cohInspCVec->cData[3].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[3].data->data + abs(timeptDiff[2]), tempSnippet.data->data, (numPoints - abs(timeptDiff[2])) * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[3].data->data[abs(timeptDiff[2])].re, cohInspCVec->cData[3].data->data[abs(timeptDiff[2])].im, cohInspCVec->cData[3].data->data[abs(timeptDiff[2])+1].re, cohInspCVec->cData[3].data->data[abs(timeptDiff[2])+1].im);
+			cohInspCVec->cData[3].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[3].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+			}
+		     else if( timeptDiff[2] > 0 )
+		       {
+			memcpy( tempSnippet.data->data, cohInspCVec->cData[3].data->data, numPoints * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"tempSnippet data: %f %f %f %f\n",tempSnippet.data->data[0].re,tempSnippet.data->data[0].im,tempSnippet.data->data[1].re,tempSnippet.data->data[1].im);
+			for(j=0;j<(INT4)numPoints;j++)
+			  {
+			    cohInspCVec->cData[3].data->data[j].re = 0;
+			    cohInspCVec->cData[3].data->data[j].im = 0;
+			  }
+			memcpy( cohInspCVec->cData[3].data->data, tempSnippet.data->data + abs( timeptDiff[2] ), (numPoints - abs(timeptDiff[2])) * sizeof(COMPLEX8) );
+			if( verbose ) fprintf(stdout,"Some frame data: %f %f %f %f\n",cohInspCVec->cData[3].data->data[abs(timeptDiff[2])].re, cohInspCVec->cData[3].data->data[abs(timeptDiff[2])].im, cohInspCVec->cData[3].data->data[abs(timeptDiff[2])+1].re, cohInspCVec->cData[3].data->data[abs(timeptDiff[2])+1].im);
+
+			cohInspCVec->cData[3].epoch.gpsSeconds = cohInspCVec->cData[0].epoch.gpsSeconds;
+			cohInspCVec->cData[3].epoch.gpsNanoSeconds = cohInspCVec->cData[0].epoch.gpsNanoSeconds;
+		       }
+		     else
+		       {
+			 if( verbose ) fprintf(stdout,"Time series are commensurate...directly combining them.\n");
+		       }		   
+		    break;
+		  }
+
+		/* Now that the time series are commensurate, do the filtering... */
+                
+		LALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams);
+		cohInspFilterParams->cohSNRVec->epoch = cohInspCVec->cData[0].epoch;
+
+		if ( cohSNROut )
+		  {
+		    LALSnprintf( cohdataStr, LALNameLength*sizeof(CHAR),
+				 "SNR_%d", nCohDataFr++ );
+		    strcpy( cohInspFilterParams->cohSNRVec->name, "Coherent");
+		    outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
+				 cohInspFilterParams->cohSNRVec, "none", cohdataStr );
+		  }
+
+		if ( !eventsOut )
+		  {
+		    while( thisEvent )
+		      {
+			MultiInspiralTable *tempEvent = thisEvent;
+			thisEvent = thisEvent->next;
+			LALFree( tempEvent );
+		      }
+		  }
+
+		if( thisEvent )
+		  {
+		    fprintf( stdout,"******> Dumping Events <******\n");
+		    if( !savedEvents.multiInspiralTable )
+		      {
+			savedEvents.multiInspiralTable = thisEvent;
+			fprintf(stdout,"1 end_time = %f\n",thisEvent->snr);
+			thisEvent = thisEvent->next;
+			if( thisEvent )
+			  {
+			    while( thisEvent )
+			      {
+				savedEvents.multiInspiralTable->next = NULL;
+				savedEvents.multiInspiralTable->next = thisEvent;
+				fprintf(stdout,"2 end_time = %f\n",thisEvent->snr);
+				thisEvent = thisEvent->next;
+			      }
+			  }
+		      }
+		    else
+		      {
+			while( thisEvent )
+			  {
+			    savedEvents.multiInspiralTable->next = NULL;
+			    savedEvents.multiInspiralTable->next = thisEvent;
+			    fprintf(stdout,"3 end_time = %f\n",thisEvent->snr);
+			    thisEvent = thisEvent->next;
+
+			  }
+		      }
+
+
+	      
+
+		    while( thisEvent )
+			  {
+			    MultiInspiralTable *tempEvent = thisEvent;
+			    thisEvent = thisEvent->next;
+			    LALFree( tempEvent );
+			  }
+
+		  }		  
+
+		/* initialize */
+		LAL_CALL( LALCDestroyVector( &status, &(tempSnippet.data) ), &status );
+		LALFree( cohInspFilterInput->tmplt );
+		cohInspFilterInput->tmplt = NULL;
+		free( cohInspInitParams );
+
+		/* Destroy params structure for coherent filter code */
+		LAL_CALL( LALCoherentInspiralFilterParamsFinalize (&status, 
+								   &cohInspFilterParams), &status );
+                TestStatus (&status, "0", 1);
+		ClearStatus (&status);
+
+                /* Destroy input structure for coherent filter code */
+		LAL_CALL( LALCoherentInspiralFilterInputFinalize (&status, &cohInspFilterInput), &status);
+                TestStatus (&status, "0", 1);
+		ClearStatus (&status);
+
+ 		k = -1;
+		for(j=0;j<4;j++)
+		  {
+		    memcpy(caseIDChars[j], "0",3);
+		  }
+
+		for(j=0;j<6;j++)
+		  {
+		    caseID[j] = 0;
+		  }
+		for(j=0;j<5;j++);
+		{
+		  tempTime[j] = 0.0;
+		  timeptDiff[j] = 0;
+		}
+		tempTime[5] = 0.0;
+	       
+	      }
+	    else
+	      {
+		fprintf(stderr,"Error - there is only one detector associated with event %Ld, aborting...\n", eventID );
+		exit( 1 );
+	      }
+	  }
+	k++;    
+      }
+
+	if ( outputPath[0] )
+	  {
+	    LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s", outputPath, cohSNROutFrame);
+	  }
+        else 
+	  {
+	    LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s", cohSNROutFrame );
+	  }
+
+	if ( verbose ) fprintf( stdout, "writing frame data to %s....", framename );
+	frOutFile = FrFileONew( framename, 0);
+	FrameWrite( outFrame, frOutFile);
+	FrFileOEnd( frOutFile );
+	if ( verbose ) fprintf(stdout, "done\n");
+
+
 
   if ( eventsOut )
     { 
-      savedEvents.multiInspiralTable = NULL; 
-      savedEvents.multiInspiralTable = thisEvent;
       memset( &results, 0, sizeof(LIGOLwXMLStream) );
       if ( outputPath[0] )
 	{
@@ -526,10 +933,10 @@ int main( int argc, char *argv[] )
 
       if( verbose ) fprintf(stdout,"  event params table\n ");
 
-
       LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, multi_inspiral_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
+
 
       while( savedEvents.multiInspiralTable )
 	    {  
@@ -543,40 +950,18 @@ int main( int argc, char *argv[] )
 
     }
 
-  goto cleanexit;
+
+
+ goto cleanexit;
 
  cleanexit:
 
-  LALFree( cohInspFilterInput->tmplt );
-  cohInspFilterInput->tmplt = NULL;
-  free( cohInspInitParams );
-
-  /* Destroy params structure for coherent filter code */
-  LAL_CALL( LALCoherentInspiralFilterParamsFinalize (&status, 
-      &cohInspFilterParams), &status );
-  TestStatus (&status, "0", 1);
-  ClearStatus (&status);
-
-  /* Destroy input structure for coherent filter code */
-  LAL_CALL( LALCoherentInspiralFilterInputFinalize (&status, &cohInspFilterInput), 
-      &status);
-  TestStatus (&status, "0", 1);
-  ClearStatus (&status);
-
- /* free the rest of the memory, check for memory leaks and exit */
-  LALFree( bankHead );
-  bankHead = NULL;
-  if ( cohSNROutFrame ) free( cohSNROutFrame );
-  if ( eventsOutXML ) free( eventsOutXML );
-  free( bankFileName );
-  free( chanNumber );
+  
   if ( verbose ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
+  exit(0);
 
-  /*return 0;*/
-  exit( 0 );
-
-}
+}/* main function end */
 
 
 /* ------------------------------------------------------------------------- */
@@ -633,7 +1018,7 @@ TestStatus (
  * linked list of statuses.
  *
  */
-void
+static void
 ClearStatus (
     LALStatus   *status
             )
@@ -666,9 +1051,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "\n"
 #define USAGE2 \
 "  --bank-file FILE             read template bank parameters from FILE\n"\
-"  --channel-number             the channel (segment) number\n"\
-"  --sample-rate F              filter data at F Hz, downsampling if necessary\n"\
-"  --segment-length N           set data segment length to N points\n"\
+"  --channel-number N           set the starting channel to N\n"\
+"  --sample-rate N              set data sample rate to N\n"\
 "  --cohsnr-threshold RHO          set signal-to-noise threshold to RHO\n"\
 "  --maximize-over-chirp        do clustering\n"\
 "\n"
@@ -676,12 +1060,12 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --write-events <filename(.xml)>    write events to specified xml file\n"\
 "  --write-cohsnr <filename(.gwf)>    write cohsnr to specified frame file\n"\
 "  --output-path                write files here\n"\
-"  --H1-framefile               frame data for H1\n"\
-"  --H2-framefile               frame data for H2\n"\
-"  --L-framefile                frame data for L\n"\
-"  --V-framefile                frame data for V\n"\
-"  --G-framefile                frame data for G\n"\
-"  --T-framefile                frame data for T\n"\
+"  --H1-cachefile               frame data for H1\n"\
+"  --H2-cachefile               frame data for H2\n"\
+"  --L-cachefile                frame data for L\n"\
+"  --V-cachefile                frame data for V\n"\
+"  --G-cachefile                frame data for G\n"\
+"  --T-cachefile                frame data for T\n"\
 "\n"
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
@@ -693,21 +1077,20 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"version",                  no_argument,       0,                 'v'},
      {"debug-level",              required_argument, 0,                 'd'},
      {"low-frequency-cutoff",     required_argument, 0,                 'f'},
+     {"channel-number",           required_argument, 0,                 'k'},
      {"bank-file",                required_argument, 0,                 'u'},
      {"sample-rate",              required_argument, 0,                 'r'},
-     {"segment-length",           required_argument, 0,                 'n'},
      {"cohsnr-threshold",         required_argument, 0,                 'p'},
      {"maximize-over-chirp",      no_argument,       &maximizeOverChirp, 1 },
      {"write-events",             required_argument, 0,                 'e'},
      {"write-cohsnr",             required_argument, 0,                 'o'},
      {"output-path",              required_argument, 0,                 'P'},
-     {"H1-framefile",             required_argument, 0,                 'A'},
-     {"H2-framefile",             required_argument, 0,                 'Z'},
-     {"L-framefile",              required_argument, 0,                 'L'},
-     {"V-framefile",              required_argument, 0,                 'V'},
-     {"G-framefile",              required_argument, 0,                 'G'},
-     {"T-framefile",              required_argument, 0,                 'T'},
-     {"channel-number",           required_argument, 0,                 'k'},
+     {"H1-cachefile",             required_argument, 0,                 'A'},
+     {"H2-cachefile",             required_argument, 0,                 'Z'},
+     {"L-cachefile",              required_argument, 0,                 'L'},
+     {"V-cachefile",              required_argument, 0,                 'V'},
+     {"G-cachefile",              required_argument, 0,                 'G'},
+     {"T-cachefile",              required_argument, 0,                 'T'},
      {0, 0, 0, 0}
    };
 
@@ -721,7 +1104,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-	   "A:G:L:P:T:V:Z:d:e:f:h:k:n:o:p:r:u:v:",
+	   "A:G:L:P:T:V:Z:d:e:f:k:h:o:p:r:u:v:",
 	   long_options, &option_index );
 
        if ( c == -1 )
@@ -735,8 +1118,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         /* if this option set a flag, do nothing else now */
 	   if ( long_options[option_index].flag != 0 )
 	     {
-	       break;
-	     }
+	       break;	     }
 	   else 
 	     {
 	       fprintf( stderr, "error parsing option %s with argument %s\n",
@@ -747,44 +1129,37 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 
 	 case 'A':
 	   strcpy(H1filename,optarg);
-	   caseID[0] = 1;
 	   ADD_PROCESS_PARAM( "string", "%s", H1filename );
 	   break;
 
 	 case 'G':
 	   strcpy(GEOfilename,optarg);
-	   caseID[3] = 1;  
 	   ADD_PROCESS_PARAM( "string", "%s", GEOfilename );
 	   break;
 
 	 case 'L':
 	   strcpy(Lfilename,optarg);
-	   caseID[1] = 1;
 	   ADD_PROCESS_PARAM( "string", "%s", Lfilename );
 	   break;
 
 	 case 'T':
 	   strcpy(TAMAfilename,optarg);
-	   caseID[4] = 1;      
 	   ADD_PROCESS_PARAM( "string", "%s", TAMAfilename );
 	   break;
 
 	 case 'V':
-	   strcpy(VIRGOfilename,optarg);
-	   caseID[2] = 1;	   
+	   strcpy(VIRGOfilename,optarg); 
 	   ADD_PROCESS_PARAM( "string", "%s", VIRGOfilename );
 	   break;
 
 	 case 'Z':
 	   strcpy(H2filename,optarg);
-	   caseID[5] = 1;
 	   ADD_PROCESS_PARAM( "string", "%s", H2filename );
 	   break;
 
 	 case 'P':
 	   memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
-	   LALSnprintf( outputPath, FILENAME_MAX * sizeof(CHAR),
-			"%s", optarg );
+	   LALSnprintf( outputPath, FILENAME_MAX * sizeof(CHAR),"%s", optarg );
 	   ADD_PROCESS_PARAM( "string", "%s", outputPath );
 	   break;
 
@@ -803,11 +1178,6 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	   fprintf( stdout, USAGE2 );
 	   fprintf( stdout, USAGE3 );
 	   exit( 0 );
-	   break;
-
-	 case 'n': /* set number of points in a segment */
-	   numPoints = atoi (optarg);
-	   ADD_PROCESS_PARAM( "int", "%d", numPoints );
 	   break;
 
 	 case 'e':
@@ -831,9 +1201,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	   ADD_PROCESS_PARAM( "float", "%e", cohSNRThresh );
 	   break;
 
-	 case 'r': /* set sampling rate */
-	   sampleRate = atoi (optarg);
-	   ADD_PROCESS_PARAM( "int", "%d", sampleRate );
+	 case 'r': 
+	   sampleRate = atof(optarg);
+	   ADD_PROCESS_PARAM("float", "%e", sampleRate );
 	   break;
 
 	 case 'u':
