@@ -1713,7 +1713,7 @@ getMCDopplerCube (LALStatus *lstat,
 
   /* randomize center-point within one grid-cell *
    * (we assume seed has been set elsewhere) */
-#define randShift() (1.0 * rand()/RAND_MAX - 0.5)
+#define randShift() (1.0 * rand()/RAND_MAX)
   Alpha += dAlpha * randShift();
   Delta += dDelta * randShift();
   Freq  += dFreq  * randShift();
