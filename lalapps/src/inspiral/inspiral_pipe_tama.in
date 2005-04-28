@@ -274,7 +274,7 @@ def sire_segs(segments,output,file_name,sire_job,dag,playground_only=None,
       cluster_time = cp.get('pipeline','cluster-time')
       sire.add_var_opt('cluster-algorithm',cp.get('pipeline','cluster-alg'))
       sire.add_var_opt('cluster-time',cluster_time) 
-
+      sire.add_var_opt('sort',' ')
     sire.set_outputs(file_name,usertag,cluster_time,slide_time,tama_output)
 
   dag.add_node(sire) 
@@ -1196,10 +1196,10 @@ if tama_coincidence or slide_time:
   # repeat these with clustering  
   cluster = 1
   sire_segs(ligo_tama_inca_nodes,'output_a','LIGO-TAMA-COINCIDENT-TRIGGERS',
-    sire_job,dag,playground_only,usertag,tama_output,slide_time,inj_file,
+    sire_cl_job,dag,playground_only,usertag,tama_output,slide_time,inj_file,
     cluster)
   sire_segs(ligo_tama_inca_nodes,'output_a','LIGO-TAMA-COINCIDENT-TRIGGERS',
-    sire_job,dag,playground_only,usertag,tama_output,slide_time,inj_file,
+    sire_cl_job,dag,playground_only,usertag,tama_output,slide_time,inj_file,
     cluster)
   
 if inj_file:
@@ -1384,12 +1384,13 @@ if quick_slide:
   sire_tama.set_outputs(fname_tama,usertag,cluster,0,tama_output)
   
   cluster_time = cp.get('pipeline','cluster-time')
-  sire_cl_ligo.add_var_opt('cluster-algorithm',
-    cp.get('pipeline','cluster-alg'))
-  sire_cl_tama.add_var_opt('cluster-algorithm',
-    cp.get('pipeline','cluster-alg'))
+  cluster_algorithm = cp.get('pipeline','cluster-alg')
+  sire_cl_ligo.add_var_opt('cluster-algorithm',cluster_algorithm)
+  sire_cl_tama.add_var_opt('cluster-algorithm',cluster_algorithm)
   sire_cl_ligo.add_var_opt('cluster-time',cluster_time)
   sire_cl_tama.add_var_opt('cluster-time',cluster_time)
+  sire_cl_ligo.add_var_opt('sort',' ')
+  sire_cl_tama.add_var_opt('sort',' ')
 
   sire_cl_ligo.set_outputs(fname_ligo,usertag,cluster_time,0,tama_output)
   sire_cl_tama.set_outputs(fname_tama,usertag,cluster_time,0,tama_output)
