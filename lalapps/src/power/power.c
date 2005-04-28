@@ -61,6 +61,7 @@ int main(void)
 
 #define TRUE       1
 #define FALSE      0
+#define SCALE      1e10
 
 /*
  * ============================================================================
@@ -71,6 +72,10 @@ int main(void)
 /* Parameters from command line */
 static struct {
 	CHAR *calCacheFile;         /* name of the calibration cache file  */
+ 	CHAR *simCacheFile;         /* name of the sim waveform cache file */
+ 	CHAR *simdirname;           /* name of the dir. with the sim. wave */
+ 	CHAR *simType;              /* type of sim waveform(warren/ott/zm  */
+	REAL8 simFrameSecs;         /* number of seconds in the sim frame  */
 	int cluster;                /* TRUE == perform clustering          */
 	CHAR *comment;              /* user comment                        */
 	int FilterCorruption;       /* samples corrupted by conditioning   */
@@ -84,6 +89,7 @@ static struct {
 	LIGOTimeGPS stopEpoch;      /* gps stop time                       */
 	int verbose;
 	int calibrated;             /* input is double-precision h(t)      */
+	int getcaltimeseries;       /* flag to read in double time series  */ 
 	REAL8 high_pass;            /* conditioning high pass freq (Hz)    */
 	REAL8 cal_high_pass;        /* double->single high pass freq (Hz)  */
 } options;
@@ -222,6 +228,9 @@ static void print_usage(char *program)
 "	 --resample-filter <filter type>\n" \
 "	 --resample-rate <Hz>\n" \
 "	[--seed <seed>]\n" \
+"       [--sim-cache <sim cache file>]\n" \
+"       [--sim-type <sim type>]\n" \
+"       [--sim-seconds <sim seconds>]\n" \
 "	 --tile-overlap-factor <factor>\n" \
 "	 --threshold <threshold>\n" \
 "	[--useoverwhitening]\n" \
@@ -463,6 +472,9 @@ void parse_command_line(
 		{"ram-limit",           required_argument, NULL,           'a'},
 		{"resample-filter",     required_argument, NULL,           'b'},
 		{"resample-rate",       required_argument, NULL,           'e'},
+		{"sim-cache",           required_argument, NULL,           'q'},
+		{"sim-type",            required_argument, NULL,           'r'},
+		{"sim-seconds",         required_argument, NULL,           's'},
 		{"seed",                required_argument, NULL,           'c'},
 		{"tile-overlap-factor", required_argument, NULL,           'f'},
 		{"threshold",           required_argument, NULL,           'g'},
@@ -505,22 +517,28 @@ void parse_command_line(
 	options.printData = FALSE;	/* default */
 	options.PSDAverageLength = 0;	/* impossible */
 	options.ResampleRate = 0;	/* impossible */
-	options.seed = 1;	/* default */
+	options.seed = 1;	        /* default */
 	options.verbose = FALSE;	/* default */
 	options.calibrated = FALSE;	/* default */
+	options.getcaltimeseries = FALSE; /* default */
 	options.high_pass = -1.0;	/* impossible */
 	options.cal_high_pass = -1.0;	/* impossible */
 
-	cachefile = NULL;	/* default */
-	dirname = NULL;	/* default */
+	options.simCacheFile = NULL;	/* default */
+	options.simType = NULL;	        /* default */
+	options.simFrameSecs = 0;       /* default */
+	options.simdirname = NULL;      /* default */
+
+	cachefile = NULL;	        /* default */
+	dirname = NULL;	                /* default */
 	memset(ifo, 0, sizeof(ifo));	/* default */
 	burstInjectionFile = NULL;	/* default */
 	inspiralInjectionFile = NULL;	/* default */
-	mdcCacheFile = NULL;	/* default */
-	mdcparams = NULL;	/* default */
-	printSpectrum = FALSE;	/* default */
-	useoverwhitening = FALSE; /* default */
-	resampFiltType = -1;	/* default */
+	mdcCacheFile = NULL;	        /* default */
+	mdcparams = NULL;	        /* default */
+	printSpectrum = FALSE;	        /* default */
+	useoverwhitening = FALSE;       /* default */
+	resampFiltType = -1;	        /* default */
 
 	/*
 	 * Parse command line.
@@ -879,6 +897,22 @@ void parse_command_line(
 		ADD_PROCESS_PARAM("float");
 		break;
 
+		case 'q':
+		options.simCacheFile = optarg;
+		ADD_PROCESS_PARAM("string");
+		break;
+
+		case 'r':
+		options.simType = optarg;
+		ADD_PROCESS_PARAM("string");
+		break;
+
+		case 's':
+		options.simFrameSecs = atof(optarg);
+		ADD_PROCESS_PARAM("float");
+		break;
+
+
 		/* option sets a flag */
 		case 0:
 		break;
@@ -1030,7 +1064,8 @@ static REAL4TimeSeries *get_time_series(
 	const char *chname,
 	LIGOTimeGPS start,
 	LIGOTimeGPS end,
-	size_t lengthlimit
+	size_t lengthlimit,
+	int getcaltimeseries
 )
 {
 	REAL4TimeSeries *series;
@@ -1054,7 +1089,7 @@ static REAL4TimeSeries *get_time_series(
 	stream->mode = LAL_FR_VERBOSE_MODE;
 
 	/* Get the data */
-	if(options.calibrated)
+	if(options.calibrated && getcaltimeseries)
 		series = get_calibrated_data(stat, stream, chname, &start, duration, lengthlimit);
 	else
 		series = XLALFrReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
@@ -1286,7 +1321,58 @@ static void add_mdc_injections(LALStatus *stat, const char *mdcCacheFile, REAL4T
 	LAL_CALL(LALFrClose(stat, &frstream), stat);
 }
 
+/*
+ * ============================================================================
+ *                           Sim injections
+ * ============================================================================
+ */
 
+static void add_sim_injections(
+        LALStatus *stat,
+	REAL4TimeSeries *series,
+	COMPLEX8FrequencySeries *response,
+	size_t lengthlimit
+)
+{
+	REAL4TimeSeries *plusseries;
+	REAL4TimeSeries *crossseries;
+	char pluschan[30]; 
+	char crosschan[30];
+	LIGOTimeGPS start,end;
+	FILE *fp = NULL;
+	int i;
+
+	/* Set the channel names */
+	if(options.simType) {
+	  snprintf(pluschan,30,"SIM_plus_%s_%d",options.simType,0);	  
+	  snprintf(crosschan,30,"SIM_cross_%s_%d",options.simType,0);
+	} 
+
+	/*Set the start and end times of the sim waveforms */
+	start.gpsSeconds = 0;
+	start.gpsNanoSeconds = 0;
+	LAL_CALL(LALAddFloatToGPS(stat, &end, &start, options.simFrameSecs), stat);
+
+	options.getcaltimeseries = FALSE;
+	/* Get the plus time series */
+	plusseries = get_time_series(stat, options.simdirname, options.simCacheFile, pluschan, start, end, lengthlimit, options.getcaltimeseries );
+
+	/* Get the cross time series */
+	crossseries = get_time_series(stat, options.simdirname, options.simCacheFile, crosschan, start, end, lengthlimit, options.getcaltimeseries  );
+
+	/* write diagnostic info to disk */
+	if(options.printData){
+	  fp = fopen("timeseriessim.dat","w");
+	  for(i = 0;(unsigned)i<plusseries->data->length;i++){
+	    fprintf(fp,"%e %e %e\n",i*plusseries->deltaT,plusseries->data->data[i],crossseries->data->data[i] );
+	  }
+	  fclose(fp);
+	}
+
+	/* Clean up */
+	LAL_CALL(LALDestroyREAL4TimeSeries(stat, plusseries), stat);
+	LAL_CALL(LALDestroyREAL4TimeSeries(stat, crossseries), stat);
+}
 /*
  * ============================================================================
  *                               Analysis Loop
@@ -1463,10 +1549,12 @@ int main( int argc, char *argv[])
 
 	for(epoch = options.startEpoch; CompareGPS(&stat, &epoch, &boundepoch) < 0;) {
 		/*
-		 * Get the data,
+		 * Get the data, if reading calibrated data set the flag
 		 */
+		if (options.calibrated)
+		  options.getcaltimeseries = TRUE;
 
-		series = get_time_series(&stat, dirname, cachefile, params.channelName, epoch, options.stopEpoch, options.maxSeriesLength);
+		series = get_time_series(&stat, dirname, cachefile, params.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.getcaltimeseries);
 
 		/*
 		 * If we specified input files but nothing got read, there
@@ -1508,8 +1596,8 @@ int main( int argc, char *argv[])
 		 * Add burst/inspiral injections into the time series if requested.
 		 */
 
-		if(burstInjectionFile || inspiralInjectionFile) {
-			COMPLEX8FrequencySeries  *response = NULL;
+		if(burstInjectionFile || inspiralInjectionFile || options.simCacheFile) {
+		        COMPLEX8FrequencySeries  *response = NULL;
 
 			/* Create the response function */
 			if(options.calCacheFile)
@@ -1522,8 +1610,11 @@ int main( int argc, char *argv[])
 			/* perform injections */
 			if(burstInjectionFile)
 			  add_burst_injections(&stat, series, response);
-			else
+			else if(inspiralInjectionFile)
 			  add_inspiral_injections(&stat, series, response);
+			else if(options.simCacheFile)
+			  add_sim_injections(&stat, series, response, options.maxSeriesLength);
+		
 
 			if(options.printData)
 				LALPrintTimeSeries(series, "./injections.dat");
@@ -1537,7 +1628,7 @@ int main( int argc, char *argv[])
 		 */
 
 		if(mdcCacheFile) {
-			add_mdc_injections(&stat, mdcCacheFile, series);
+		        add_mdc_injections(&stat, mdcCacheFile, series);
 			if(options.printData)
 				LALPrintTimeSeries(series, "./timeseriesasqmdc.dat");
 		}
@@ -1545,6 +1636,14 @@ int main( int argc, char *argv[])
 		/*
 		 * Condition the time series data.
 		 */
+
+		/* Scale the time series if calibrated data */
+		if (options.calibrated){
+		  UINT4 i;
+		  for(i = 0;i<series->data->length;i++){
+		    series->data->data[i] = SCALE*series->data->data[i];
+		  }
+		}
 
 		LAL_CALL(EPConditionData(&stat, series, options.high_pass, (REAL8) 1.0 / options.ResampleRate, resampFiltType, options.FilterCorruption), &stat);
 
