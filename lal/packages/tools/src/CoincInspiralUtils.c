@@ -529,7 +529,7 @@ LALExtractSnglInspiralFromCoinc(
       ++eventNum)
   {
     /* loop over the interferometers */
-    for ( j = 1; j < 7; j++)
+    for ( j = 0; j < 6; j++)
     {
       thisCoincEntry = thisCoinc->snglInspiral[j];
 
