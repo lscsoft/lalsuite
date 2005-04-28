@@ -229,13 +229,11 @@ def lt_coinc(segments,ligo_chunks,tama_segs,ifo_name,lt_inca_job,dt,
 def sire_segs(segments,output,file_name,sire_job,dag,playground_only=None,
   usertag=None,tama_output=None,slide_time=None,inj_file=None,cluster=None):
   """
-  Perform coincidence test between single IFO LIGO data and TAMA data.
-  Since the way we treat all this data is the same, this function is the same 
-  for all three LIGO ifos. 
+  Sire up the data into one manageable file
   segments = segment list and associated dag nodes
   output = one of output, output_a or output_b
   file_name = the name of the output file
-  sire_job = the condor job that we should to do sire
+  sire_job = the condor job that we should use to do sire
   dag = the DAG to attach the nodes to
   playground_only = flag playground only analysis
   usertag = the user tag for the job
@@ -271,7 +269,13 @@ def sire_segs(segments,output,file_name,sire_job,dag,playground_only=None,
       sire.add_var_opt('cluster-time',2*inj_coinc)
     
   else:
-    sire.set_outputs(file_name,usertag,cluster,slide_time,tama_output)
+    cluster_time = 0
+    if cluster:
+      cluster_time = cp.get('pipeline','cluster-time')
+      sire.add_var_opt('cluster-algorithm',cp.get('pipeline','cluster-alg'))
+      sire.add_var_opt('cluster-time',cluster_time) 
+
+    sire.set_outputs(file_name,usertag,cluster_time,slide_time,tama_output)
 
   dag.add_node(sire) 
 
@@ -485,6 +489,7 @@ s_inca_job = inspiral.IncaJob(cp)
 tama2lw_job = inspiral.Tama2LigoLwJob(cp)
 lt_inca_job = inspiral.IncaJob(cp)
 sire_job = inspiral.SireJob(cp)
+sire_cl_job = inspiral.SireJob(cp)
 sire_inj_job = inspiral.SireJob(cp)
 sire_cl_inj_job = inspiral.SireJob(cp)
 sire_all_data_job = inspiral.SireJob(cp)
@@ -505,6 +510,7 @@ s_inca_job.set_sub_file( basename + '.s_inca' + subsuffix )
 tama2lw_job.set_sub_file( basename + '.tama2lw' + subsuffix )
 lt_inca_job.set_sub_file( basename + '.lt_inca' + subsuffix )
 sire_job.set_sub_file( basename + '.sire' + subsuffix )
+sire_cl_job.set_sub_file( basename + '.sire_cl' + subsuffix )
 sire_inj_job.set_sub_file( basename + '.sire_inj' + subsuffix )
 sire_cl_inj_job.set_sub_file( basename + '.sire_inj_clust' + subsuffix )
 sire_all_data_job.set_sub_file( basename + '.sire_all_data' + subsuffix )
@@ -521,6 +527,7 @@ if usertag:
   tama2lw_job.add_opt('user-tag',usertag)
   lt_inca_job.add_opt('user-tag',usertag)
   sire_job.add_opt('user-tag',usertag)
+  sire_cl_job.add_opt('user-tag',usertag)
   sire_inj_job.add_opt('user-tag',usertag)
   sire_cl_inj_job.add_opt('user-tag',usertag)
   sire_all_data_job.add_opt('user-tag',usertag)
@@ -540,6 +547,7 @@ elif playground_only:
   s_inca_job.add_opt('playground-only',' ')
   lt_inca_job.add_opt('playground-only',' ')
   sire_job.add_opt('playground-only',' ')
+  sire_cl_job.add_opt('playground-only',' ')
   sire_inj_job.add_opt('playground-only',' ')
   sire_cl_inj_job.add_opt('playground-only',' ')
 elif slide_time:
@@ -547,6 +555,7 @@ elif slide_time:
   s_inca_job.add_opt('all-data',' ')
   lt_inca_job.add_opt('all-data',' ')
   sire_job.add_opt('all-data',' ')
+  sire_cl_job.add_opt('all-data',' ')
   sire_inj_job.add_opt('all-data',' ')
   sire_cl_inj_job.add_opt('all-data',' ')
 else:
@@ -554,6 +563,7 @@ else:
   s_inca_job.add_opt('no-playground',' ')
   lt_inca_job.add_opt('no-playground',' ')
   sire_job.add_opt('exclude-playground',' ')
+  sire_cl_job.add_opt('exclude-playground',' ')
   sire_inj_job.add_opt('exclude-playground',' ')
   sire_cl_inj_job.add_opt('exclude-playground',' ')
 
@@ -582,6 +592,7 @@ if condor_prio:
   tama2lw_job.add_condor_cmd('priority',condor_prio)
   lt_inca_job.add_condor_cmd('priority',condor_prio)
   sire_job.add_condor_cmd('priority',condor_prio)
+  sire_cl_job.add_condor_cmd('priority',condor_prio)
   sire_inj_job.add_condor_cmd('priority',condor_prio)
   sire_cl_inj_job.add_condor_cmd('priority',condor_prio)
   sire_all_data_job.add_condor_cmd('priority',condor_prio)
@@ -1175,13 +1186,21 @@ if tama_coincidence or slide_time:
     playground_only,usertag,tama_output,slide_time)
   sire_segs(h1h2t1_inca3_nodes,'output_b','H2-INCA_H1H2T1',sire_job,dag,
     playground_only,usertag,tama_output,slide_time)
-    # one last sire that contains all the coincident LIGO triggers.
+  # one last sire that contains all the coincident LIGO triggers.
   sire_segs(ligo_tama_inca_nodes,'output_a','LIGO-TAMA-COINCIDENT-TRIGGERS',
     sire_job,dag,playground_only,usertag,tama_output,slide_time)
   # and all the coincident TAMA triggers 
   sire_segs(ligo_tama_inca_nodes,'output_b','TAMA-LIGO-COINCIDENT-TRIGGERS',
     sire_job,dag,playground_only,usertag,tama_output,slide_time)
-
+  # repeat these with clustering  
+  cluster = 1
+  sire_segs(ligo_tama_inca_nodes,'output_a','LIGO-TAMA-COINCIDENT-TRIGGERS',
+    sire_job,dag,playground_only,usertag,tama_output,slide_time,inj_file,
+    cluster)
+  sire_segs(ligo_tama_inca_nodes,'output_a','LIGO-TAMA-COINCIDENT-TRIGGERS',
+    sire_job,dag,playground_only,usertag,tama_output,slide_time,inj_file,
+    cluster)
+  
 if inj_file:
   if ligo_analysis:
     # sires to find all triggers coincident with injections:
@@ -1292,7 +1311,7 @@ if quick_slide:
   # that the LIGO data excludes the playground.  For the TAMA data, we assume
   # that only the LIGO-TAMA times have been searched, and playground triggers
   # are included.
-  
+
   # hardwire the start and end times of S2: 
   s2start = 729273613
   s2end = 734367613
@@ -1300,6 +1319,8 @@ if quick_slide:
   # setup the 2 sire files
   sire_ligo = inspiral.SireNode(sire_job)
   sire_tama = inspiral.SireNode(sire_job)
+  sire_cl_ligo = inspiral.SireNode(sire_cl_job)
+  sire_cl_tama = inspiral.SireNode(sire_cl_job)
   
   fname_ligo = 'LIGO-TAMA-COINCIDENT-TRIGGERS'
   fname_tama = 'TAMA-LIGO-COINCIDENT-TRIGGERS'
@@ -1351,13 +1372,22 @@ if quick_slide:
   # do two sires to get the LIGO triggers and the TAMA triggers
   sire_ligo.add_var_opt('input',f_ligo)
   sire_tama.add_var_opt('input',f_tama)
- 
+  sire_cl_ligo.add_var_opt('input',f_ligo)
+  sire_cl_tama.add_var_opt('input',f_tama)
+
   cluster = 0
   sire_ligo.set_outputs(fname_ligo,usertag,cluster,0,tama_output)
   sire_tama.set_outputs(fname_tama,usertag,cluster,0,tama_output)
+  
+  cluster_time = cp.get('pipeline','cluster-time')
+  sire_cl_ligo.set_outputs(fname_ligo,usertag,cluster_time,0,tama_output)
+  sire_cl_tama.set_outputs(fname_tama,usertag,cluster_time,0,tama_output)
 
+  
   dag.add_node(sire_ligo) 
   dag.add_node(sire_tama) 
+  dag.add_node(sire_cl_ligo) 
+  dag.add_node(sire_cl_tama) 
 
 
 ##############################################################################
