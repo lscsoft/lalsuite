@@ -285,8 +285,9 @@ int main( int argc, char *argv[] )
   UINT4 i, j, k;
   INT4  inserted;
   INT4  currentLevel;
+  INT4  cDataForFrame;
   CHAR  fname[FILENAME_MAX];
-  CHAR cdataStr[LALNameLength];
+  CHAR  cdataStr[LALNameLength];
   REAL8 inputLengthNS;
   UINT4 numInputPoints;
   const REAL8 epsilon = 1.0e-8;
@@ -1905,14 +1906,16 @@ int main( int argc, char *argv[] )
 
           if ( writeCData && ! strcmp(ifo,tmpltCurrent->tmpltPtr->ifo) )
           {
+	    cDataForFrame = 0;
 	    trigTime = tmpltCurrent->tmpltPtr->end_time.gpsSeconds + 1e-9 * tmpltCurrent->tmpltPtr->end_time.gpsNanoSeconds;
 	    lowerBound = gpsStartTime.gpsSeconds + numPoints/(4 * sampleRate );
 	    upperBound = gpsEndTime.gpsSeconds - numPoints/(4 * sampleRate );
 
 	    if( trigTime < lowerBound || trigTime > upperBound )
 	      {
-		fprintf(stderr,"The trigger time (from the input template bank) is not within the bounds of uncorrupt data - exiting...\n");
-		exit( 1 );
+		fprintf(stderr,"The trigger time is outside of the segment\n");
+		fprintf(stderr,"Not writing C-data for this segment\n");
+		goto noCdataLoopExitPoint;
 	      }
  
 	    tempTmplt = (SnglInspiralTable *) 
@@ -1930,6 +1933,7 @@ int main( int argc, char *argv[] )
 
 	    if( coherentInputData )
 	      {
+		cDataForFrame = 1;
 		LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
 		       "CData_%d", nCDataFr++ );
 		strcpy( coherentInputData->name, chan.name );
@@ -1940,6 +1944,8 @@ int main( int argc, char *argv[] )
 		coherentInputData = NULL;
 	      }
           }
+
+	noCdataLoopExitPoint:
 
           if ( writeChisq )
           {
@@ -2215,7 +2221,7 @@ if ( vrbflg ) fprintf (stdout, "epoch = %d\n",fcFilterInput->segment->data->epoc
 
   /* write the output frame */
   if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
-      writeRhosq || writeChisq || writeCData )
+      writeRhosq || writeChisq || (writeCData && cDataForFrame) )
   {
     if ( outputPath[0] )
     {
