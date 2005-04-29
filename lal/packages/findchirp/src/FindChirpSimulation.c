@@ -63,6 +63,7 @@ LALFree()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/Inject.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/FindChirp.h>
 
@@ -333,4 +334,65 @@ LALFindChirpInjectSignals (
 
   DETATCHSTATUSPTR( status );
   RETURN( status );
+}
+
+
+
+
+/* <lalVerbatim file="FindChirpSimulationCP"> */
+INT4
+XLALFindChirpSetAnalyzeSegment (
+    DataSegmentVector          *dataSegVec,
+    SimInspiralTable           *injections
+    )
+/* </lalVerbatim> */
+{
+  DataSegment      *currentSegment;
+  SimInspiralTable *thisInjection;
+  SimInspiralTable *head;
+  INT8              chanStartTime;
+  INT8              chanEndTime;
+  UINT4             i;
+
+  /* set all segments not to be analyzed by default */
+  for ( i = 0; i < dataSegVec->length; ++i )
+  {
+    /* point to current segment */
+    currentSegment = dataSegVec->data + i;
+    currentSegment->analyzeSegment = 0;
+  }
+
+  /* make sure the sim inspirals are time ordered */
+  XLALSortSimInspiral(&injections, XLALCompareSimInspiralByGeocentEndTime);
+
+  /* loop over segments checking for injections into each */
+  for ( i = 0; i < dataSegVec->length; ++i )
+  {
+    /* point to current segment */
+    currentSegment = dataSegVec->data + i;
+  
+    /* compute the start and end of segment */
+    chanStartTime = XLALGPStoINT8( &currentSegment->chan->epoch );
+    chanEndTime = chanStartTime + 
+      (INT8) (1e9 * currentSegment->chan->data->length * 
+              currentSegment->chan->deltaT);
+
+    /* look for injection into segment */
+    thisInjection=injections;
+    while (thisInjection)
+    {
+      INT8 ta = XLALGPStoINT8( &thisInjection->geocent_end_time );
+      
+      if ( ta > chanStartTime && ta <= chanEndTime )
+      {
+        currentSegment->analyzeSegment = 1;
+        break;
+      }
+
+      if (ta > chanEndTime)
+        break;
+      
+      thisInjection=thisInjection->next;
+    }
+  }
 }

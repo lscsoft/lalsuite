@@ -182,6 +182,9 @@ LALInitializeDataSegmentVector (
     /* this should be set to a unique number for each segment   */
     currentSegment->number = i;
 
+    /* by default we want to analyze the data in each segment   */
+    currentSegment->analyzeSegment = 1;
+
     /* copy the REAL4TimeSeries information into the data segment */
     origDataPtr = currentSegment->chan->data;
     memcpy( currentSegment->chan, chan, sizeof(REAL4TimeSeries) );
@@ -621,6 +624,9 @@ LALCreateFindChirpSegmentVector (
 
     /* segment id number (invalid) */
     segPtr[i].number = -1;
+    
+    /* default is to analyze all segments */
+    segPtr[i].analyzeSegment = 1;
   }
 
 

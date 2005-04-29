@@ -196,6 +196,7 @@ tagFindChirpSegment
   REAL4                         fLow;
   UINT4                         invSpecTrunc;
   UINT4                         number;
+  UINT4                         analyzeSegment;
   INT4                          level;
   Approximant                   approximant;
 }

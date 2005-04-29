@@ -830,6 +830,12 @@ LALFindChirpInjectSignals (
     COMPLEX8FrequencySeries    *resp
     );
 
+INT4
+XLALFindChirpSetAnalyzeSegment (
+    DataSegmentVector          *dataSegVec,
+    SimInspiralTable           *injections
+    );
+
 #ifdef  __cplusplus
 #pragma {
 }

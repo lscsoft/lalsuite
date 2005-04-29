@@ -364,6 +364,7 @@ LALFindChirpSPData (
 
     fcSeg->deltaT       = dataSeg->chan->deltaT;
     fcSeg->number       = dataSeg->number;
+    fcSeg->analyzeSegment = dataSeg->analyzeSegment;
 
     /* store low frequency cutoff and invSpecTrunc in segment */
     fcSeg->fLow         = params->fLow;
