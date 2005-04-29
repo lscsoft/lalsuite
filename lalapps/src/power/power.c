@@ -988,9 +988,7 @@ void parse_command_line(
 	 * its shift.
 	 */
 
-#if 0
-	options.maxSeriesLength = block_commensurate(options.maxSeriesLength, options.PSDAverageLength, options.PSDAverageLength - (params.windowLength - params.windowShift));
-#endif
+	options.maxSeriesLength = block_commensurate(options.maxSeriesLength, options.PSDAverageLength, options.PSDAverageLength - (params->windowLength - params->windowShift));
 
 	/*
 	 * Sanitize filter frequencies.
