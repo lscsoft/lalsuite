@@ -1480,6 +1480,12 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALInitializeDataSegmentVector( &status, &dataSegVec,
         &chan, &spec, &resp, fcInitParams ), &status );
 
+  if ( injectionFile )
+  {
+    /* set the analyzeSegment flag only on segments with injections */
+    XLALFindChirpSetAnalyzeSegment (dataSegVec, injections);
+  }
+
   /* create the findchirp data storage */
   LAL_CALL( LALCreateFindChirpSegmentVector( &status, &fcSegVec, 
         fcInitParams ), &status );
