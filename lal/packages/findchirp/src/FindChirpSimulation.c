@@ -395,4 +395,6 @@ XLALFindChirpSetAnalyzeSegment (
       thisInjection=thisInjection->next;
     }
   }
+
+  return 0;
 }
