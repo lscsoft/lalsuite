@@ -323,6 +323,11 @@ int main( int argc, char *argv[] )
   SimInstParamsTable *prevSimInstParams = NULL;
   MetadataTable simResults;
 
+  /* injection information */
+  int  numInjections = 0;
+  SimInspiralTable    *injections = NULL;
+  SimInspiralTable    *thisInj = NULL;
+
 
   /*
    *
@@ -964,9 +969,6 @@ int main( int argc, char *argv[] )
     /* so this should be plenty of safety. better to waste cpu than miss */
     /* injected signals...                                               */
     INT4 injSafety = 500;
-    int  numInjections = 0;
-    SimInspiralTable    *injections = NULL;
-    SimInspiralTable    *thisInj = NULL;
 
     /* read in the injection data from XML */
     numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
@@ -1123,13 +1125,6 @@ int main( int argc, char *argv[] )
 
       if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
           numInjections, injectionFile, chan.name );
-
-      while ( injections )
-      {
-        thisInj = injections;
-        injections = injections->next;
-        LALFree( thisInj );
-      }
 
       /* write the raw channel data plus injections to the output frame file */
       if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
@@ -1837,7 +1832,8 @@ int main( int argc, char *argv[] )
         }
 
         /* filter data segment */ 
-        if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level )
+        if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level &&
+            fcSegVec->data[i].analyzeSegment)
         {
           if ( vrbflg ) fprintf( stdout, 
               "filtering segment %d/%d [%lld-%lld] "
@@ -2444,7 +2440,16 @@ if ( vrbflg ) fprintf (stdout, "epoch = %d\n",fcFilterInput->segment->data->epoc
   if ( vrbflg ) fprintf( stdout, "done. XML file closed\n" );
 
   /* free the rest of the memory, check for memory leaks and exit */
-  if ( injectionFile ) free ( injectionFile ); 
+  if ( injectionFile ) 
+  {
+    free ( injectionFile );     
+    while ( injections )
+    {
+      thisInj = injections;
+      injections = injections->next;
+      LALFree( thisInj );
+    }
+  }
   if ( calCacheName ) free( calCacheName );
   if ( frInCacheName ) free( frInCacheName );
   if ( frInType ) free( frInType );
