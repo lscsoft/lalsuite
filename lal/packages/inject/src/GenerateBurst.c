@@ -300,9 +300,7 @@ LALGenerateBurst(
 	{
 	  REAL4 freq=i*dfreq;
           /* Set the FD template */
-/* 	  vtilde->data[i].re = hpeak *  pow((sqrt(1+pow(flow,2)*pow(freq,-2))),-8) * 2 * 1/(1+exp(freq/f0)) * pow(freq,-4.0/3.0);  */
 	  vtilde->data[i].re = hpeak *  pow((sqrt(1+pow(flow,2)*pow(freq,-2))),-8) * pow(freq,-4.0/3.0); 
-/* 	  vtilde->data[i].re = pow(freq,-4.0/3.0);  */
 
 	  if(freq>=f0)
 	    {
@@ -320,11 +318,6 @@ LALGenerateBurst(
       vtilde->data[vtilde->length - 1].re = 0;
       vtilde->data[vtilde->length - 1].im = 0;
 
-/*       for (i=0; i < vtilde->length-1; i++) */
-/* 	{ */
-/* 	  fprintf(stdout, "%e\n",sqrt(pow(vtilde->data[i].re,2)+pow(vtilde->data[i].im,2))/hpeak); */
-/* 	} */
-
       /* Create vector to store h(t) */
       TRY( LALSCreateVector( stat->statusPtr, &vector, n ), stat );
 
@@ -340,10 +333,6 @@ LALGenerateBurst(
       /* make sure injection starts precisely at 0 */
       for ( i = 0 ; i < vector->length; i++ )
 	vector->data[i] -= vector->data[0]; 
-
-/*       for ( i = 0 ; i < vector->length; i++ ) */
-/* 	fprintf(stdout,"%e\n",vector->data[i]); */
-/*       fflush(stdout); */
 
       for ( i = 0; i < n; i++ )
 	{
