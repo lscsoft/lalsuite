@@ -471,6 +471,7 @@ int OutputEvents(struct CommandLineArgsTag CLA)
       outfilename[sizeof(outfilename)-1] = '\0';
     }
 
+
   memset(&xml, 0, sizeof(LIGOLwXMLStream));
   LALOpenLIGOLwXMLFile(&status, &xml, outfilename);
 
@@ -504,40 +505,6 @@ int OutputEvents(struct CommandLineArgsTag CLA)
 
   LALCloseLIGOLwXMLFile(&status, &xml);
   
-
-  /* print events to text */
-  {
-    SnglBurstTable *thisEvent = NULL;
-    FILE *fp;
-
-   if(CLA.cluster == 1 )
-    {
-      thisEvent = cl_events;
-    }else{
-      thisEvent = events;
-    }
-   
-    fp = fopen( "events.txt", "w" );
-    if ( ! fp )
-      {
-	perror( "output file" );
-	exit( 1 );
-      }
-    fprintf( fp,"%% gps start time\tsignal/noise\tamplitude\tfrequency\tbandwidth\tduration\n" );
-    while ( thisEvent )
-      {
-	fprintf( fp, "%9d.%09d\t%e\t%e\t%e\t%e\t%e\n",
-		 (int) thisEvent->peak_time.gpsSeconds,
-		 (int) thisEvent->peak_time.gpsNanoSeconds,
-		 thisEvent->snr,
-		 thisEvent->amplitude,
-		 thisEvent->central_freq,
-		 thisEvent->bandwidth,thisEvent->duration);
-	thisEvent = thisEvent->next;
-      }
-    fclose( fp );
-  }
-
   /* free event list, process table, search summary and process params */
    if(CLA.cluster == 1 )
     {
@@ -727,7 +694,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
 
 int CreateTemplateBank(struct CommandLineArgsTag CLA)
 {
-  REAL4 fmax,f,t1t1,t2t2, epsilon;
+  REAL8 fmax,f,t1t1,t2t2, epsilon;
   int p,f_low_index,f_high_index,k;
 
   fmax = (1.0/GV.ht_proc.deltaT) / 2.0;
