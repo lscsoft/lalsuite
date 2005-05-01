@@ -266,6 +266,12 @@ LALResponseConvert(
     COMPLEX8FrequencySeries *input
     );
 
+INT4
+XLALResponseConvert(
+    COMPLEX8FrequencySeries *output,
+    COMPLEX8FrequencySeries *input
+    );
+
 void LALComputeCalibrationFactors(
     LALStatus              *status,
     CalFactors             *output,    
