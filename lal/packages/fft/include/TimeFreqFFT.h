@@ -21,6 +21,24 @@
  * 
  **** </lalLaTeX> */
 
+/** \defgroup fft Fourier Transform and Spectral Methods
+ *
+ * Performs real-to-complex, complex-to-real FFTs and average power
+ * spectrum estimation.
+ * 
+ * Perform time-to-frequency and frequency-to-time fast Fourier
+ * transforms. Also provides a function to compute mean and median power
+ * spectra with user specified windowning.
+ *
+ * The definition of the Fourier transform is \f$ e^{2 \pi i f t} \f$
+ * and the inline equation version of that is
+ * \f[
+ *  \tilde{h}_k = \sum
+ * \f]
+ * 
+ * 
+ */
+
 #ifndef _TIMEFREQFFT_H
 #define _TIMEFREQFFT_H
 
@@ -266,6 +284,16 @@ int XLALREAL4SpectrumInvertTruncate(
     UINT4                        trunclen,
     REAL4FFTPlan                *fwdplan,
     REAL4FFTPlan                *revplan
+    );
+
+REAL4TimeSeries *XLALRespFilt(
+    REAL4TimeSeries             *strain,
+    COMPLEX8FrequencySeries     *transfer
+    );
+
+REAL4TimeSeries *XLALREAL4Convolution(
+    REAL4TimeSeries             *strain,
+    REAL4TimeSeries             *transfer
     );
 
 
