@@ -281,8 +281,8 @@ LALGenerateBurst(
        dtplus+dtminus; hpeak is the amplitude of the cusp, not the
        value of the strain at the peak, t0 is the central time of the
        cusp, which introduces a phase into the waveform. The low
-       frequency cutoff will be fixed at 10Hz there's nothing special
-       about 10Hz except that it low compared to the ferquecny at which
+       frequency cutoff will be fixed at 1Hz there's nothing special
+       about 1Hz except that it low compared to the ferquecny at which
        we should be high-passing the data; the high frequency cutoff
        is given by f0 */
     {
@@ -291,7 +291,7 @@ LALGenerateBurst(
       REAL4 dfreq=1/(2*duration); /* the factor of two here is becaus the length of injections 
 				     is actually twice the value of the variable duration */
       RealFFTPlan *rplan=NULL;
-      REAL4 flow=10;
+      REAL4 flow=1;
 
       /* create vector that will hold frequency domain template */
       TRY( LALCCreateVector( stat->statusPtr, &vtilde, n / 2 + 1 ), stat );
@@ -300,7 +300,14 @@ LALGenerateBurst(
 	{
 	  REAL4 freq=i*dfreq;
           /* Set the FD template */
-	  vtilde->data[i].re = hpeak *  pow((sqrt(1+pow(flow,2)*pow(freq,-2))),-4) * 2 * 1/(1+exp(freq/f0)) * pow(freq,-4.0/3.0); 
+/* 	  vtilde->data[i].re = hpeak *  pow((sqrt(1+pow(flow,2)*pow(freq,-2))),-8) * 2 * 1/(1+exp(freq/f0)) * pow(freq,-4.0/3.0);  */
+	  vtilde->data[i].re = hpeak *  pow((sqrt(1+pow(flow,2)*pow(freq,-2))),-8) * pow(freq,-4.0/3.0); 
+/* 	  vtilde->data[i].re = pow(freq,-4.0/3.0);  */
+
+	  if(freq>=f0)
+	    {
+	      vtilde->data[i].re *= exp(1-freq/f0); 
+	    }
 
 	  vtilde->data[i].im = vtilde->data[i].re * sin(-LAL_TWOPI*freq*duration);
 	  vtilde->data[i].re = vtilde->data[i].re * cos(-LAL_TWOPI*freq*duration);
@@ -312,6 +319,11 @@ LALGenerateBurst(
       /* set nyquist to zero */
       vtilde->data[vtilde->length - 1].re = 0;
       vtilde->data[vtilde->length - 1].im = 0;
+
+/*       for (i=0; i < vtilde->length-1; i++) */
+/* 	{ */
+/* 	  fprintf(stdout, "%e\n",sqrt(pow(vtilde->data[i].re,2)+pow(vtilde->data[i].im,2))/hpeak); */
+/* 	} */
 
       /* Create vector to store h(t) */
       TRY( LALSCreateVector( stat->statusPtr, &vector, n ), stat );
