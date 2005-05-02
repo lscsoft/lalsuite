@@ -995,7 +995,7 @@ int ReadData(struct CommandLineArgsTag CLA)
 	}
       fclose(devrandom);
 
-      seed = 8030655;
+/*       seed = 8030655; */
 
       LALSCreateVector (&status, &v1, GV.ht.data->length);
       TESTSTATUS( &status );
@@ -1317,11 +1317,26 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
   /* store the input start and end times */
   /* set the start and end time for the search summary */
-  searchsumm.searchSummaryTable->in_start_time.gpsSeconds = CLA->GPSStart;
-  searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds =0;
-  searchsumm.searchSummaryTable->in_end_time.gpsSeconds = CLA->GPSEnd;
-  searchsumm.searchSummaryTable->in_end_time.gpsNanoSeconds =0;
- 
+  {
+    int big_seg_length=CLA->GPSEnd-CLA->GPSStart;
+    int small_seg_length=big_seg_length/CLA->NoOfSegs;
+
+    searchsumm.searchSummaryTable->in_start_time.gpsSeconds = CLA->GPSStart;
+    searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds =0;
+    searchsumm.searchSummaryTable->in_end_time.gpsSeconds = CLA->GPSEnd;
+    searchsumm.searchSummaryTable->in_end_time.gpsNanoSeconds =0;
+
+    if (CLA->trigstarttime > 0)
+      {
+	searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->trigstarttime+small_seg_length/4;
+      }else{
+	searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->GPSStart+small_seg_length/4;
+      }
+    searchsumm.searchSummaryTable->out_start_time.gpsNanoSeconds =0;
+    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = CLA->GPSEnd-small_seg_length/4;
+    searchsumm.searchSummaryTable->out_end_time.gpsNanoSeconds =0;
+  }
+
   return errflg;
 }
 
