@@ -1,10 +1,11 @@
 #include <math.h>
 #include <string.h>
+#include <lal/AVFactories.h>
+#include <lal/Calibration.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-#include <lal/AVFactories.h>
-#include <lal/Units.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/Units.h>
 #include <lal/Window.h>
 
 /** 
@@ -41,7 +42,7 @@ REAL4TimeSeries *XLALRespFilt(
   UINT4 k;
   UINT4 inTimeLength = 0;
   UINT4 paddedTimeLength = 0;
-  const LALUnit strainPerCount = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
+  const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
   const CHAR *chname = "Temporary Transfer";
 
   if ( ! strain || ! transfer )
@@ -83,8 +84,8 @@ REAL4TimeSeries *XLALRespFilt(
   /* make sure the transfer function has the right units and df */
   XLALCreateCOMPLEX8FrequencySeries(&tmpTransfer, chname, 
       strain->epoch, 0.0, 1.0/(paddedTimeLength * strain->deltaT),
-      strainPerCount, tmpFFTWave->length);
-  LALResponseConvert( tmpTransfer, transfer );
+      countPerStrain, tmpFFTWave->length);
+  XLALResponseConvert( tmpTransfer, transfer );
   XLALCCVectorMultiply( tmpFFTWave, tmpFFTWave, tmpTransfer->data ); 
   XLALDestroyCOMPLEX8FrequencySeries(tmpTransfer);
 
