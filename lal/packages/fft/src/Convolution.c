@@ -16,7 +16,6 @@
  *
  * \brief Apply transfer function to time series
  *
- * \author Brady, P R (patrick@gravity.phys.uwm.edu)
  *
  * This function returns the convolution of the time series with 
  * the frequency domain transfer function that has been supplied by
