@@ -41,6 +41,8 @@ On output, the \texttt{metric->data} is arranged with the same indexing
 scheme as in \texttt{CoherentMetric()}. The order of the parameters is
 $(f_0, \alpha, \delta)$.
 
+More comprehensive documentation on the derivation of the metric components can be found in the pulgroup CVS archive as docs/S2/FDS/Isolated/ptolemetric.tex.
+
 \subsubsection*{Uses}
 
 LALGetEarthTimes()
