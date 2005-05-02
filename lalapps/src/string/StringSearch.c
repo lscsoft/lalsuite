@@ -1328,7 +1328,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
     if (CLA->trigstarttime > 0)
       {
-	searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->trigstarttime+small_seg_length/4;
+	searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->trigstarttime;
       }else{
 	searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->GPSStart+small_seg_length/4;
       }
