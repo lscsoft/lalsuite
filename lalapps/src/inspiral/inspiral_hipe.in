@@ -1174,7 +1174,7 @@ if inj_file:
 ##############################################################################
 # read in the number of time-slides from the ini file 
 try:
-  num_slides = cp.get('input','num-slides')
+  num_slides = int(cp.get('input','num-slides'))
 except:
   num_slides = None
 
