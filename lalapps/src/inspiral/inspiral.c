@@ -1908,46 +1908,49 @@ int main( int argc, char *argv[] )
 
           if ( writeCData && ! strcmp(ifo,tmpltCurrent->tmpltPtr->ifo) )
           {
-	    cDataForFrame = 0;
-	    trigTime = tmpltCurrent->tmpltPtr->end_time.gpsSeconds + 1e-9 * tmpltCurrent->tmpltPtr->end_time.gpsNanoSeconds;
-	    lowerBound = gpsStartTime.gpsSeconds + numPoints/(4 * sampleRate );
-	    upperBound = gpsEndTime.gpsSeconds - numPoints/(4 * sampleRate );
+            cDataForFrame = 0;
+            trigTime = tmpltCurrent->tmpltPtr->end_time.gpsSeconds + 1e-9 * 
+              tmpltCurrent->tmpltPtr->end_time.gpsNanoSeconds;
+            lowerBound = gpsStartTime.gpsSeconds + numPoints/(4 * sampleRate );
+            upperBound = gpsEndTime.gpsSeconds - numPoints/(4 * sampleRate );
 
-	    if( trigTime < lowerBound || trigTime > upperBound )
-	      {
-		fprintf(stderr,"The trigger time is outside of the segment\n");
-		fprintf(stderr,"Not writing C-data for this segment\n");
-		goto noCdataLoopExitPoint;
-	      }
- 
-	    tempTmplt = (SnglInspiralTable *) 
-                 LALCalloc(1, sizeof(SnglInspiralTable) );
-	    tempTmplt->event_id = (EventIDColumn *) 
-                 LALCalloc(1, sizeof(EventIDColumn) );
-	    tempTmplt->mass1 = tmpltCurrent->tmpltPtr->mass1;
-	    tempTmplt->end_time.gpsSeconds = tmpltCurrent->tmpltPtr->end_time.gpsSeconds;
-	    tempTmplt->end_time.gpsNanoSeconds = tmpltCurrent->tmpltPtr->end_time.gpsNanoSeconds;
-	    tempTmplt->event_id->id = tmpltCurrent->tmpltPtr->event_id->id;
- 
-           LALFindChirpCreateCoherentInput( &status,
-                  &coherentInputData, fcFilterParams->cVec, 
-                  tempTmplt, 2.0, numPoints / 4 );
+            if ( trigTime < lowerBound || trigTime > upperBound )
+            {
+              fprintf(stderr,"The trigger time is outside of the segment\n");
+              fprintf(stderr,"Not writing C-data for this segment\n");
+              goto noCdataLoopExitPoint;
+            }
 
-	    if( coherentInputData )
-	      {
-		cDataForFrame = 1;
-		LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
-		       "CData_%d", nCDataFr++ );
-		strcpy( coherentInputData->name, chan.name );
-		outFrame = fr_add_proc_COMPLEX8TimeSeries( outFrame,
-		       coherentInputData, "none", cdataStr );
-		LAL_CALL( LALCDestroyVector( &status, 
-                       &(coherentInputData->data) ), &status );
-		coherentInputData = NULL;
-	      }
+            tempTmplt = (SnglInspiralTable *) 
+              LALCalloc(1, sizeof(SnglInspiralTable) );
+            tempTmplt->event_id = (EventIDColumn *) 
+              LALCalloc(1, sizeof(EventIDColumn) );
+            tempTmplt->mass1 = tmpltCurrent->tmpltPtr->mass1;
+            tempTmplt->end_time.gpsSeconds = 
+              tmpltCurrent->tmpltPtr->end_time.gpsSeconds;
+            tempTmplt->end_time.gpsNanoSeconds = 
+              tmpltCurrent->tmpltPtr->end_time.gpsNanoSeconds;
+            tempTmplt->event_id->id = tmpltCurrent->tmpltPtr->event_id->id;
+
+            LALFindChirpCreateCoherentInput( &status,
+                &coherentInputData, fcFilterParams->cVec, 
+                tempTmplt, 2.0, numPoints / 4 );
+
+            if ( coherentInputData )
+            {
+              cDataForFrame = 1;
+              LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
+                  "CData_%d", nCDataFr++ );
+              strcpy( coherentInputData->name, chan.name );
+              outFrame = fr_add_proc_COMPLEX8TimeSeries( outFrame,
+                  coherentInputData, "none", cdataStr );
+              LAL_CALL( LALCDestroyVector( &status, 
+                    &(coherentInputData->data) ), &status );
+              coherentInputData = NULL;
+            }
           }
 
-	noCdataLoopExitPoint:
+noCdataLoopExitPoint:
 
           if ( writeChisq )
           {
@@ -1963,7 +1966,9 @@ int main( int argc, char *argv[] )
             outFrame = fr_add_proc_REAL4TimeSeries( outFrame, 
                 &chisqts, "none", chisqStr );
           }
-if ( vrbflg ) fprintf (stdout, "epoch = %d\n",fcFilterInput->segment->data->epoch );
+          if ( vrbflg ) 
+            fprintf( stdout, "epoch = %d\n",
+                fcFilterInput->segment->data->epoch );
         }
         else
         {
@@ -3484,7 +3489,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         exit( 0 );
         break;
 
-      case '*':								/*XXX*/
+      case '*':
         if ( ! strcmp( "none", optarg ) )
         {
           clusterMethod = noClustering;
