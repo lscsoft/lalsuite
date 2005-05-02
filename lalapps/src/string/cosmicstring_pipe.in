@@ -141,7 +141,7 @@ data.read(cp.get('input','segments'),length)
 
 # create the chunks from the science segments
 data.make_chunks(length,2*overlap,0,0,0)
-data.make_chunks_from_unused(length,0,0,2*overlap,0,0)
+data.make_chunks_from_unused(length,2*overlap,0,2*overlap,0,0)
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
@@ -205,8 +205,8 @@ for seg in data:
     string1.add_var_opt('outfile',string1.get_output())
     string1.add_parent(df1)
     if do_inj:
-      string1.add_parent(inject)
-      string1.add_var_opt('injection-file',inject.get_output(seed))
+      string1.add_parent(inject1)
+      string1.add_var_opt('injection-file',inject1.get_output(seed))
     dag.add_node(string1)
 
     #string job for second ifo  
@@ -220,8 +220,8 @@ for seg in data:
     string2.add_var_opt('outfile',string2.get_output())
     string2.add_parent(df2)
     if do_inj:
-      string2.add_parent(inject)
-      string2.add_var_opt('injection-file',inject.get_output(seed))
+      string2.add_parent(inject1)
+      string2.add_var_opt('injection-file',inject1.get_output(seed))
     dag.add_node(string2)
 
     #coincidence stage (one way)
