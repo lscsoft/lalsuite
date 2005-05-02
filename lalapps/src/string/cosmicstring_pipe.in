@@ -141,7 +141,7 @@ data.read(cp.get('input','segments'),length)
 
 # create the chunks from the science segments
 data.make_chunks(length,2*overlap,0,0,0)
-data.make_chunks_from_unused(length,2*overlap,0,2*overlap,0,0)
+data.make_chunks_from_unused(length,overlap,0,overlap,0,0)
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
