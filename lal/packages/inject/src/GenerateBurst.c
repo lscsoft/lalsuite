@@ -368,7 +368,8 @@ LALBurstInjectSignals(
     LALStatus               *stat, 
     REAL4TimeSeries         *series, 
     SimBurstTable           *injections,
-    COMPLEX8FrequencySeries *resp
+    COMPLEX8FrequencySeries *resp,
+    INT4                     calType
     )
 /* </lalVerbatim> */
 {
@@ -382,6 +383,7 @@ LALBurstInjectSignals(
   REAL4TimeSeries    signal;
   SimBurstTable     *simBurst=NULL;
   LALDetector       *tmpDetector=NULL /*,*nullDetector=NULL*/;
+  COMPLEX8FrequencySeries    *transfer = NULL;
 
   INITSTATUS( stat, "LALBurstInjectSignals", GENERATEBURSTC );
   ATTATCHSTATUSPTR( stat );
@@ -397,16 +399,16 @@ LALBurstInjectSignals(
 
   /* allocate memory and copy the parameters describing the freq series */
   memset( &detector, 0, sizeof( DetectorResponse ) );
-  detector.transfer = (COMPLEX8FrequencySeries *)
+  transfer = (COMPLEX8FrequencySeries *)
     LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
-  if ( ! detector.transfer ) 
+  if ( ! transfer ) 
   {
     ABORT( stat, GENERATEBURSTH_EMEM, GENERATEBURSTH_MSGEMEM );
   }
-  memcpy( &(detector.transfer->epoch), &(resp->epoch),
+  memcpy( &(transfer->epoch), &(resp->epoch),
       sizeof(LIGOTimeGPS) );
-  detector.transfer->f0 = resp->f0;
-  detector.transfer->deltaF = resp->deltaF;
+  transfer->f0 = resp->f0;
+  transfer->deltaF = resp->deltaF;
 
   tmpDetector = detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
   /* set the detector site */
@@ -439,13 +441,13 @@ LALBurstInjectSignals(
     LALUnitRaise( stat->statusPtr, &unit, pair.unitTwo, &negOne );
     CHECKSTATUSPTR( stat );
     pair.unitTwo = &unit;
-    LALUnitMultiply( stat->statusPtr, &(detector.transfer->sampleUnits),
+    LALUnitMultiply( stat->statusPtr, &(transfer->sampleUnits),
         &pair );
     CHECKSTATUSPTR( stat );
   }
 
   /* invert the response function to get the transfer function */
-  LALCCreateVector( stat->statusPtr, &( detector.transfer->data ),
+  LALCCreateVector( stat->statusPtr, &( transfer->data ),
       resp->data->length );
   CHECKSTATUSPTR( stat );
 
@@ -457,7 +459,7 @@ LALBurstInjectSignals(
     unity->data[k].im = 0.0;
   }
 
-  LALCCVectorDivide( stat->statusPtr, detector.transfer->data, unity,
+  LALCCVectorDivide( stat->statusPtr, transfer->data, unity,
       resp->data );
   CHECKSTATUSPTR( stat );
 
@@ -528,11 +530,21 @@ LALBurstInjectSignals(
     /* must set the epoch of signal since it's used by coherent GW */
     signal.epoch = waveform.a->epoch;
     memset( signal.data->data, 0, signal.data->length * sizeof(REAL4) );
+
+    /* decide which way to calibrate the data; defaul to old way */
+    if( calType )
+      detector.transfer=NULL;
+    else
+      detector.transfer=transfer;
     
     /* convert this into an ADC signal */
     LALSimulateCoherentGW( stat->statusPtr, 
         &signal, &waveform, &detector );
     CHECKSTATUSPTR( stat );
+
+    /* if calibration using RespFilt */
+    if( calType == 1 )
+      XLALRespFilt(signal, transfer);
 
     /* inject the signal into the data channel */
     LALSSInjectTimeSeries( stat->statusPtr, series, &signal );
@@ -560,7 +572,7 @@ LALBurstInjectSignals(
   LALSDestroyVector( stat->statusPtr, &(signal.data) );
   CHECKSTATUSPTR( stat );
 
-  LALCDestroyVector( stat->statusPtr, &( detector.transfer->data ) );
+  LALCDestroyVector( stat->statusPtr, &( transfer->data ) );
   CHECKSTATUSPTR( stat );
 
   if ( detector.site ) LALFree( detector.site );

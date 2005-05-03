@@ -110,7 +110,8 @@ LALBurstInjectSignals(
     LALStatus               *stat, 
     REAL4TimeSeries         *series, 
     SimBurstTable           *injections,
-    COMPLEX8FrequencySeries *resp
+    COMPLEX8FrequencySeries *resp,
+    INT4                     calType
     );
 
 #ifdef  __cplusplus
