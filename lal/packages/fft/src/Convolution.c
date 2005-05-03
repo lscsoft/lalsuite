@@ -7,6 +7,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/Window.h>
+#include <lal/FrequencySeries.h>
 
 /** 
  * \addtogroup fft
@@ -82,7 +83,7 @@ REAL4TimeSeries *XLALRespFilt(
   XLALREAL4ForwardFFT( tmpFFTWave, tmpWave, fwdPlan );
 
   /* make sure the transfer function has the right units and df */
-  XLALCreateCOMPLEX8FrequencySeries(&tmpTransfer, chname, 
+  tmpTransfer = XLALCreateCOMPLEX8FrequencySeries(chname, 
       strain->epoch, 0.0, 1.0/(paddedTimeLength * strain->deltaT),
       countPerStrain, tmpFFTWave->length);
   XLALResponseConvert( tmpTransfer, transfer );

@@ -544,7 +544,7 @@ LALBurstInjectSignals(
 
     /* if calibration using RespFilt */
     if( calType == 1 )
-      XLALRespFilt(signal, transfer);
+      XLALRespFilt(&signal, transfer);
 
     /* inject the signal into the data channel */
     LALSSInjectTimeSeries( stat->statusPtr, series, &signal );
