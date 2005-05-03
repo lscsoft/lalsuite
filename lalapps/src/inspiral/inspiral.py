@@ -26,14 +26,14 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   runs in the universe specfied in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','tmpltbank')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
 
     for sec in ['data','tmpltbank']:
       self.add_ini_opts(cp,sec)
@@ -53,14 +53,14 @@ class SplitBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   universe specfied in the ini file. The path to the executable is determined
   from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','splitbank')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
 
     for sec in ['splitbank']:
       self.add_ini_opts(cp,sec)
@@ -78,14 +78,14 @@ class InspiralJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   runs in the universe specfied in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','inspiral')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
 
     for sec in ['data','inspiral']:
       self.add_ini_opts(cp,sec)
@@ -105,14 +105,14 @@ class TrigToTmpltJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   always runs in the scheduler universe. The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','trigtotmplt')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
     
     for sec in ['trigtotmplt']:
       self.add_ini_opts(cp,sec)
@@ -131,14 +131,14 @@ class IncaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   the job are directed to the logs directory.  The path to the executable is 
   determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','inca')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
     
     for sec in ['inca']:
       self.add_ini_opts(cp,sec)
@@ -157,14 +157,14 @@ class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   the job are directed to the logs directory.  The path to the executable is 
   determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','thinca')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
+    pipeline.AnalysisJob.__init__(self,cp,false)
     
     for sec in ['thinca']:
       self.add_ini_opts(cp,sec)
@@ -183,14 +183,14 @@ class SireJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   the job are directed to the logs directory. The path to the executable is 
   determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','sire')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
     
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
@@ -204,14 +204,14 @@ class Tama2LigoLwJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   stderr from the job are directed to the logs directory. The path to the 
   executable is determined from the ini file.
   """
-  def __init__(self,cp):
+  def __init__(self,cp,dax=False):
     """
     cp = ConfigParser object from which options are read.
     """
     self.__executable = cp.get('condor','tama2lw')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
     
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
