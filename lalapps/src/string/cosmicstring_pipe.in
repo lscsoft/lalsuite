@@ -188,7 +188,7 @@ for seg in data:
     seed = int(1e6 * random.uniform(0.0,1.0))
     inject1.add_var_opt('seed',seed)
     if prev_inject: 
-      prev_inject.add_parent(prev_inject)
+      inject1.add_parent(prev_inject)
     dag.add_node(inject1)
     prev_inject = inject1
     
@@ -231,8 +231,6 @@ for seg in data:
     burca1.set_ifoa(string1.get_output(),ifo1)
     burca1.set_ifob(string2.get_output(),ifo2) 
     burca1.add_var_opt('outfile',burca1.get_output())
-    burca1.add_parent(df1)
-    burca1.add_parent(df2)
     burca1.add_parent(string1)
     burca1.add_parent(string2)
     dag.add_node(burca1)
@@ -244,8 +242,6 @@ for seg in data:
     burca2.set_ifoa(string2.get_output(),ifo2)
     burca2.set_ifob(string1.get_output(),ifo1) 
     burca2.add_var_opt('outfile',burca2.get_output())
-    burca2.add_parent(df1)
-    burca2.add_parent(df2)
     burca2.add_parent(string1)
     burca2.add_parent(string2)
     dag.add_node(burca2)
