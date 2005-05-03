@@ -674,6 +674,9 @@ XLALResponseConvert(
   /* determine if units need to be inverted or not (or if they are bad) */
   XLALUnitNormalize( &output->sampleUnits );  
   XLALUnitNormalize( &input->sampleUnits );
+  unitOne = output->sampleUnits;
+  unitTwo = input->sampleUnits;
+
   bad = 0;
   inv = -1;
   for ( i = 0; i < LALNumUnits; ++i )
