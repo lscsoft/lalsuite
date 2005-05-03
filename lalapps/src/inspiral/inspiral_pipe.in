@@ -45,11 +45,13 @@ Usage: lalapps_inspiral_pipe [options]
 
   -f, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
+
+  -x, --dax                write abstract DAX file
 """
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdtiTICpj:u:P:f:l:"
+shortop = "hvdtiTICpj:u:P:f:l:x"
 longop = [
   "help",
   "version",
@@ -64,7 +66,8 @@ longop = [
   "user-tag=",
   "priority=",
   "config-file=",
-  "log-path="
+  "log-path=",
+  "dax"
   ]
 
 try:
@@ -86,6 +89,7 @@ playground_only = 0
 condor_prio = None
 config_file = None
 log_path = None
+dax = False
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -118,6 +122,8 @@ for o, a in opts:
     config_file = a
   elif o in ("-l", "--log-path"):
     log_path = a
+  elif o in ("-x", "--dax"): 	 
+    dax = True
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -164,15 +170,15 @@ fh = open( logfile, "w" )
 fh.close()
 
 # create the DAG writing the log to the specified directory
-dag = pipeline.CondorDAG(logfile)
+dag = pipeline.CondorDAG(logfile,dax)
 if usertag:
-  dag.set_dag_file(basename + '.' + usertag + '.dag')
+  dag.set_dag_file(basename + '.' + usertag)
 else:
-  dag.set_dag_file(basename + '.dag')
+  dag.set_dag_file(basename)
 
 # create the Condor jobs that will be used in the DAG
-df_job = pipeline.LSCDataFindJob('cache','logs',cp)
-tmplt_job = inspiral.TmpltBankJob(cp)
+df_job = pipeline.LSCDataFindJob('cache','logs',cp,dax)
+tmplt_job = inspiral.TmpltBankJob(cp,dax)
 insp_job = inspiral.InspiralJob(cp)
 trig_job = inspiral.TrigToTmpltJob(cp)
 inca_job = inspiral.IncaJob(cp)

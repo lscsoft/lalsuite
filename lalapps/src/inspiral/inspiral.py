@@ -379,6 +379,9 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     ifo_tag = string to tag source interferometers, overrides the source_ifo
     for naming files
     """
+    for infile in self.get_args():
+      self.add_input_file(infile)
+    
     if chunk.trig_start():
       self.set_start(chunk.trig_start() - max_slide)
     else:
@@ -402,24 +405,18 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.add_var_opt('triggered-bank',outfile)
 
   def set_input_ifo(self,ifo):
-  
     self.add_var_opt('input-ifo', ifo)
     self.__input_ifo = ifo
 
   def get_input_ifo(self):
-  
     return self.__input_ifo
-  
 
   def set_output_ifo(self,ifo):
-  
     self.add_var_opt('output-ifo', ifo)
     self.__output_ifo = ifo
 
   def get_output_ifo(self):
-  
     return self.__output_ifo
- 
 
   def get_output(self):
     """
@@ -434,7 +431,6 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end() or not self.get_output_ifo():
       raise InspiralError, "Start time, end time or output ifo is not set"
       
-
     basename = self.get_output_ifo() + '-TRIGBANK'
 
     if self.get_ifo_tag():
@@ -442,8 +438,10 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if self.__usertag:
       basename += '_' + self.__usertag 
 
-    return basename + '-' + str(self.get_start()) + '-' + \
+    trigbank_name = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+    self.add_output_file(trigbank_name)
+    return trigbank_name
 
 
 class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
@@ -537,6 +535,7 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 
     return basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+
 
 class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   """
