@@ -348,6 +348,16 @@ LALGenerateBurst(
       TRY( LALDestroyRealFFTPlan( stat->statusPtr, &rplan ), stat );
     }
   }
+  else if ( !( strcmp( simBurst->waveform, "warren" ) ) )
+  {
+    /* set everything to 0 */
+    for ( i = 0; i < n; i++ ) {
+      *(fData++) = 0.0;
+      *(phiData++) = 0.0;
+      *(aData++) = 0.0;
+      *(aData++) = 0.0;
+    }
+  }
   else
   {
     ABORT( stat, GENERATEBURSTH_ETYP, GENERATEBURSTH_MSGETYP );
