@@ -281,6 +281,7 @@ for seg in data:
     bank.set_end(chunk.end())
     bank.set_ifo(ifo1)
     bank.set_cache(df1.get_output())
+    bank.calibration()
 
     if do_datafind: 
       bank.add_parent(df1)
@@ -297,6 +298,7 @@ for seg in data:
     insp1.set_ifo(ifo1)
     insp1.set_cache(df1.get_output())
     insp1.set_bank(bank.get_output())
+    insp1.calibration()
 
     if do_tmpltbank:
       insp1.add_parent(bank)
@@ -324,6 +326,7 @@ for seg in data:
     insp2.add_var_opt('trig-end-time',chunk.trig_end())
     insp2.set_cache(df2.get_output())
     insp2.set_bank(trigbank.get_output())
+    insp2.calibration()
 
     if do_datafind:
       insp2.add_parent(df2)
