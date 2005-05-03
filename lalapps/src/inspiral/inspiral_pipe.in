@@ -306,7 +306,7 @@ for seg in data:
       dag.add_node(insp1)
 
     trigbank = inspiral.TrigToTmpltNode(trig_job)
-    trigbank.add_var_arg(insp1.get_output())
+    trigbank.add_file_arg(insp1.get_output())
     trigbank.make_trigbank(chunk,0,ifo1,ifo2,usertag)
 
     if do_inspiral:
@@ -360,8 +360,8 @@ for i in range(len(data)):
     # if there is a chunk before this one, add it to the job
     try: 
       data[i][j-1]
-      inca.add_var_arg(insp_nodes[i][j-1][0].get_output())
-      inca.add_var_arg(insp_nodes[i][j-1][1].get_output())
+      inca.add_file_arg(insp_nodes[i][j-1][0].get_output())
+      inca.add_file_arg(insp_nodes[i][j-1][1].get_output())
       if do_inspiral:
         inca.add_parent(insp_nodes[i][j-1][0])
       if do_triginsp:
@@ -370,8 +370,8 @@ for i in range(len(data)):
       pass
 
     # add this chunk to the job
-    inca.add_var_arg(insp_nodes[i][j][0].get_output())
-    inca.add_var_arg(insp_nodes[i][j][1].get_output())
+    inca.add_file_arg(insp_nodes[i][j][0].get_output())
+    inca.add_file_arg(insp_nodes[i][j][1].get_output())
     if do_inspiral:
       inca.add_parent(insp_nodes[i][j][0])
     if do_triginsp:
@@ -380,8 +380,8 @@ for i in range(len(data)):
     # if there is a chunk after this one, add it to the job
     try:
       data[i][j+1]
-      inca.add_var_arg(insp_nodes[i][j+1][0].get_output())
-      inca.add_var_arg(insp_nodes[i][j+1][1].get_output())
+      inca.add_file_arg(insp_nodes[i][j+1][0].get_output())
+      inca.add_file_arg(insp_nodes[i][j+1][1].get_output())
       if do_inspiral:
         inca.add_parent(insp_nodes[i][j+1][0])
       if do_triginsp:
