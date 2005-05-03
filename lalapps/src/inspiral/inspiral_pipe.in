@@ -14,16 +14,13 @@ __version__ = '$Revision$'[11:-2]
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
-import popen2, time
 import getopt, re, string
 import tempfile
 import ConfigParser
-import urlparse
 sys.path.append('@PYTHONLIBDIR@')
 
 # import the modules we need to build the pipeline
-from glue import pipeline
-import inspiral
+import pipeline, inspiral
 
 def usage():
   msg = """\
@@ -47,13 +44,11 @@ Usage: lalapps_inspiral_pipe [options]
 
   -f, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
-
-  -x, --dax                write abstract DAX file
 """
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvdtiTICpj:u:P:f:l:x"
+shortop = "hvdtiTICpj:u:P:f:l:"
 longop = [
   "help",
   "version",
@@ -68,8 +63,7 @@ longop = [
   "user-tag=",
   "priority=",
   "config-file=",
-  "log-path=",
-  "dax"
+  "log-path="
   ]
 
 try:
@@ -91,7 +85,6 @@ playground_only = 0
 condor_prio = None
 config_file = None
 log_path = None
-do_dax = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -117,15 +110,13 @@ for o, a in opts:
   elif o in ("-u", "--user-tag"):
     usertag = a
   elif o in ("-p", "--playground-only"):
-    playground_only = 2
+    playground_only = 1
   elif o in ("-P", "--priority"):
     condor_prio = a
   elif o in ("-f", "--config-file"):
     config_file = a
   elif o in ("-l", "--log-path"):
     log_path = a
-  elif o in ("-x", "--dax"):
-    do_dax = True
   else:
     print >> sys.stderr, "Unknown option:", o
     usage()
@@ -147,16 +138,6 @@ except: pass
 try: os.mkdir('logs')
 except: pass
 
-# don't add datafind to the DAX
-if do_dax:
-  do_datafind = False
-
-# set the file suffix
-if do_dax:
-  dagfilesuffix = '.dax'
-else:
-  dagfilesuffix = '.dag'
-
 # create the config parser object and read in the ini file
 cp = ConfigParser.ConfigParser()
 cp.read(config_file)
@@ -174,9 +155,9 @@ else:
 basename = re.sub(r'\.ini',r'',config_file)
 tempfile.tempdir = log_path
 if usertag:
-  tempfile.template = basename + '.' + usertag + dagfilesuffix + '.log.'
+  tempfile.template = basename + '.' + usertag + '.dag.log.'
 else:
-  tempfile.template = basename + dagfilesuffix + '.log.'
+  tempfile.template = basename + '.dag.log.'
 logfile = tempfile.mktemp()
 fh = open( logfile, "w" )
 fh.close()
@@ -184,9 +165,9 @@ fh.close()
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
 if usertag:
-  dag.set_dag_file(basename + '.' + usertag + dagfilesuffix)
+  dag.set_dag_file(basename + '.' + usertag + '.dag')
 else:
-  dag.set_dag_file(basename + dagfilesuffix)
+  dag.set_dag_file(basename + '.dag')
 
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp)
@@ -259,199 +240,55 @@ first_df2 = None
 # create a list to store the inspiral jobs
 insp_nodes = []
 
-# set the vds group to zero
-group = 0
-
 for seg in data:
-  if not do_dax:
-    # find all the data
-    df1 = pipeline.LSCDataFindNode(df_job)
-    df1.set_start(seg.start() - pad)
-    df1.set_end(seg.end() + pad)
-    df1.set_observatory(ifo1[0])
-    if prev_df1: 
-      df1.add_parent(prev_df1)
-  
-    df2 = pipeline.LSCDataFindNode(df_job)
-    if not first_df2:
-      first_df2 = df2
-    df2.set_start(seg.start() - pad)
-    df2.set_end(seg.end() + pad)
-    df2.set_observatory(ifo2[0])
-    if prev_df2: 
-      df2.add_parent(prev_df2)
-  
-    if do_datafind:
-      dag.add_node(df1)
-      if do_triginsp:
-        dag.add_node(df2)
+  # find all the data
+  df1 = pipeline.LSCDataFindNode(df_job)
+  df1.set_start(seg.start() - pad)
+  df1.set_end(seg.end() + pad)
+  df1.set_observatory(ifo1[0])
+  if prev_df1: 
+    df1.add_parent(prev_df1)
 
-    prev_df1 = df1
-    prev_df2 = df2
+  df2 = pipeline.LSCDataFindNode(df_job)
+  if not first_df2:
+    first_df2 = df2
+  df2.set_start(seg.start() - pad)
+  df2.set_end(seg.end() + pad)
+  df2.set_observatory(ifo2[0])
+  if prev_df2: 
+    df2.add_parent(prev_df2)
+
+  if do_datafind:
+    dag.add_node(df1)
+    if do_triginsp:
+      dag.add_node(df2)
+
+  prev_df1 = df1
+  prev_df2 = df2
 
   seg_insp_nodes = []
 
   for chunk in seg:
-    if do_dax:
-      # if we are generating a DAX then we want to find data now so that we know
-      # before the DAX/DAG is run what the LFNs are that are involved
-
-      # construct an lscdata find query to find the data in a chunk
-      df1 = pipeline.LSCDataFindNode(df_job)
-      df1.set_start(chunk.start() - pad)
-      df1.set_end(chunk.end() + pad)
-      df1.set_observatory(ifo1[0])
-    
-      df2 = pipeline.LSCDataFindNode(df_job)
-      df2.set_start(chunk.start() - pad)
-      df2.set_end(chunk.end() + pad)
-      df2.set_observatory(ifo2[0])
-
-      # run equivalent of LSCdataFind to find LFNs only
-      try:
-        LSC_DATAFIND_SERVER = os.environ['LSC_DATAFIND_SERVER']
-      except:
-        print >>sys.stderr, "LSC_DATAFIND_SERVER not set in environment"
-        sys.exit(1)
-  
-      cmd = "LSCdataFind --server %s %s --names-only" % (LSC_DATAFIND_SERVER, df1.get_cmd_line())
-  
-      print ""
-      print "Finding instrument data files for segment"
-      print "     %s" % str(seg)
-      print "Running LSCdataFind now with command line"
-      print "     %s" % cmd
-      sys.stdout.flush()
-  
-      job = popen2.Popen3(cmd, capturestderr=1, bufsize=1024*1024)
-      ret = job.poll()
-      while ret < 0:
-        time.sleep(1)
-        lines = job.fromchild.readlines()
-        ret = job.poll()
-  
-      if ret:
-        err = job.childerr.readlines()
-        print >>sys.stderr, "Error running LSCdataFind with command line %s: %s" % (cmd, " ".join(err))
-  
-      lfnList = [ s.strip() for s in lines ]
-      print "Found %d logical filenames" % len(lfnList)
-      print ""
-      sys.stdout.flush()
-
-    # now continue to build the DAG or DAX
     bank = inspiral.TmpltBankNode(tmplt_job)
     bank.set_start(chunk.start())
     bank.set_end(chunk.end())
     bank.set_ifo(ifo1)
-    bank.set_vds_group(group)
-
-    # calibration and cache files pointing to calibration:
-    #
-    # If we are running a DAX then we do not want to have
-    # the template bank job read in the paths to calibration
-    # frame files from a LAL cache file. 
-    #
-    # Instead obtain the path to the existing cache file
-    # and parse it to obtain the names of each of the
-    # frame files containing calibration information.
-    #
-    # Eventually this should be replaced to calls to
-    # LSCdataFind or similar.
-    #
-    if not do_dax:
-        bank.calibration()
-    else:
-        bank.add_var_opt('glob-calibration-data', '')
-        bank.calibration_cache_path()
-        cache_filename = bank.get_calibration()
-        pat = re.compile(r'(file://.*)')
-        try:
-            f = open(cache_filename, 'r')
-            lines = f.readlines()
-            
-            for line in lines:
-                    m = pat.search(line)
-                    if not m:
-                            raise IOError
-                    url = m.group(1)
-                    path = urlparse.urlparse(url)[2]
-                    calibration_lfn = os.path.basename(path)
-                    bank.add_input_file(calibration_lfn)
-        except Exception, e:
-            print >>sys.stdout, "Error parsing calibration cache file %s: %s" % (cache_filename, e)
-            sys.exit(1)
-
-    # dax does not require a cache file with output from the
-    # LSCdataFind job
-    if not do_dax:
-        bank.set_cache(df1.get_output())
+    bank.set_cache(df1.get_output())
 
     if do_datafind: 
       bank.add_parent(df1)
     if do_tmpltbank: 
       dag.add_node(bank)
 
-    if do_dax:
-        # add the --glob-frame-data option 
-        bank.add_var_opt('glob-frame-data', '')
-
-        # determine the frame type
-        dict = df_job.get_opts()
-        ftype = dict['type']
-        bank.add_var_opt('frame-type', ftype)
-
-        for lfn in lfnList:
-                bank.add_input_file(lfn)
-
     insp1 = inspiral.InspiralNode(insp_job)
     insp1.set_start(chunk.start())
     insp1.set_end(chunk.end())
     insp1.add_var_opt('trig-start-time',chunk.trig_start())
-    insp1.add_var_opt('trig-end-time',chunk.trig_end())
     insp1.add_var_opt('snr-threshold',ifo1_snr)
     insp1.add_var_opt('chisq-threshold',ifo1_chisq)
     insp1.set_ifo(ifo1)
-    insp1.set_vds_group(group)
-
-    if not do_dax:
-        insp1.calibration()
-    else:
-        insp1.add_var_opt('glob-calibration-data', '')
-        insp1.calibration_cache_path()
-        cache_filename = insp1.get_calibration()
-        pat = re.compile(r'(file://.*)')
-        try:
-            f = open(cache_filename, 'r')
-            lines = f.readlines()
-            
-            for line in lines:
-                    m = pat.search(line)
-                    if not m:
-                            raise IOError
-                    url = m.group(1)
-                    path = urlparse.urlparse(url)[2]
-                    calibration_lfn = os.path.basename(path)
-                    insp1.add_input_file(calibration_lfn)
-        except Exception, e:
-            print >>sys.stdout, "Error parsing calibration cache file %s: %s" % (cache_filename, e)
-            sys.exit(1)
-        
-    if not do_dax:
-        insp1.set_cache(df1.get_output())
-
+    insp1.set_cache(df1.get_output())
     insp1.set_bank(bank.get_output())
-
-    if do_dax:
-        insp1.add_var_opt('glob-frame-data', '')
-
-        # determine the frame type
-        dict = df_job.get_opts()
-        ftype = dict['type']
-        insp1.add_var_opt('frame-type', ftype)
-
-        for lfn in lfnList:
-                insp1.add_input_file(lfn)
 
     if do_tmpltbank:
       insp1.add_parent(bank)
@@ -463,7 +300,6 @@ for seg in data:
     trigbank = inspiral.TrigToTmpltNode(trig_job)
     trigbank.add_var_arg(insp1.get_output())
     trigbank.make_trigbank(chunk,0,ifo1,ifo2,usertag)
-    trigbank.set_vds_group(group)
 
     if do_inspiral:
       trigbank.add_parent(insp1)
@@ -474,22 +310,10 @@ for seg in data:
     insp2.set_start(chunk.start())
     insp2.set_end(chunk.end())
     insp2.set_ifo(ifo2)
-    insp2.set_vds_group(group)
-    if not do_dax:
-        insp2.calibration()
-    else:
-        # at this time insp2 is not part of the pipeline being examined
-        # so we just pass
-        pass
-
     insp2.add_var_opt('snr-threshold',ifo2_snr)
     insp2.add_var_opt('chisq-threshold',ifo2_chisq)
     insp2.add_var_opt('trig-start-time',chunk.trig_start())
-    insp2.add_var_opt('trig-end-time',chunk.trig_end())
-
-    if not do_dax:
-        insp2.set_cache(df2.get_output())
-
+    insp2.set_cache(df2.get_output())
     insp2.set_bank(trigbank.get_output())
 
     if do_datafind:
@@ -501,9 +325,6 @@ for seg in data:
 
     # add the two inspiral jobs for this chunk to the stored list
     seg_insp_nodes.append(tuple([insp1,insp2]))
-
-    # increment the vds group counter for the next chunk
-    group += 1
 
   # add the inspiral jobs for this segment to the list
   insp_nodes.append(seg_insp_nodes)
@@ -563,26 +384,13 @@ for i in range(len(data)):
       dag.add_node(inca)
 
 # write out the DAG
-if not do_dax:
-  dag.write_sub_files()
-
-if do_dax: 
-    dag.write_dax()
-else: 
-    dag.write_dag()
+dag.write_sub_files()
+dag.write_dag()
 
 # write a message telling the user that the DAG has been written
-if do_dax:
-  print """\nCreated a DAX file which can be submitted to the Grid using
-Pegasus. See the page:
-
-  http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/vds_howto.html
-
-for instructions."""
-else:
-  print "\nCreated a DAG file which can be submitted by executing"
-  print "\n   condor_submit_dag", dag.get_dag_file()
-  print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+print "\nCreated a DAG file which can be submitted by executing"
+print "\n   condor_submit_dag", dag.get_dag_file()
+print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
 If you are running LSCdataFind jobs, do not forget to initialize your grid 
 proxy certificate on the condor submit machine by running the commands
 
@@ -604,7 +412,8 @@ you should use
   export LSC_DATAFIND_SERVER=dataserver.phys.uwm.edu
 
 Contact the administrator of your cluster to find the hostname and port of the
-LSCdataFind server."""
+LSCdataFind server.
+"""
 
 # write out a log file for this script
 if usertag:
