@@ -283,6 +283,8 @@ LALCreateNIFOCoincList(
           for( ifoNumber = 0; ifoNumber < firstEntry; ifoNumber++ )
           {
             /* test whether we have an N ifo coincidence */
+            accuracyParams->match = 0;
+
             if ( otherCoinc->snglInspiral[ifoNumber] )
             {
               LALSnglInspiralCoincTest( status->statusPtr, thisCoinc, 
