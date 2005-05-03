@@ -399,9 +399,18 @@ dag.write_sub_files()
 dag.write_dag()
 
 # write a message telling the user that the DAG has been written
-print "\nCreated a DAG file which can be submitted by executing"
-print "\n   condor_submit_dag", dag.get_dag_file()
-print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
+if dax: 	 
+  print """\nCreated a DAX file which can be submitted to the Grid using 	 
+Pegasus. See the page: 	 
+  	 
+  http://www.lsc-group.phys.uwm.edu/lscdatagrid/griphynligo/vds_howto.html 	 
+  	 
+for instructions.
+"""
+else:
+  print "\nCreated a DAG file which can be submitted by executing"
+  print "\n   condor_submit_dag", dag.get_dag_file()
+  print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
 If you are running LSCdataFind jobs, do not forget to initialize your grid 
 proxy certificate on the condor submit machine by running the commands
 
