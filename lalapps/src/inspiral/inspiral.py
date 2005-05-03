@@ -164,7 +164,7 @@ class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.__executable = cp.get('condor','thinca')
     self.__universe = cp.get('condor','universe')
     pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
-    pipeline.AnalysisJob.__init__(self,cp,false)
+    pipeline.AnalysisJob.__init__(self,cp,False)
     
     for sec in ['thinca']:
       self.add_ini_opts(cp,sec)
