@@ -281,6 +281,7 @@ int AddInjections(struct CommandLineArgsTag CLA)
   INT4 stopTime = startTime + GV.ht_proc.data->length * GV.ht_proc.deltaT;
   SimBurstTable *injections = NULL;
   int i;
+  INT4 calType=0;
 
   COMPLEX8 one = {1.0, 0.0};
   COMPLEX8FrequencySeries *response = NULL;
@@ -298,7 +299,7 @@ int AddInjections(struct CommandLineArgsTag CLA)
 			response->data->data[i] = one;
 
   /* Inject the signals into the data */
-  LALBurstInjectSignals(&status, &GV.ht_proc, injections, response); 
+  LALBurstInjectSignals(&status, &GV.ht_proc, injections, response, calType); 
 
   /* free the injection table */
   while(injections) {

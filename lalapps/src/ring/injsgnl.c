@@ -36,6 +36,7 @@ int inject_signal( REAL4TimeSeries *series, int injectSignalType,
   char                     ifoName[3];
   char                     name[LALNameLength];
   REAL8                    sampleRate;
+  INT4                     calType=0;
 
   /* copy injectFile to injFile (to get rid of const qual) */
   strncpy( injFile, injectFile, sizeof( injFile ) - 1 );
@@ -95,7 +96,7 @@ int inject_signal( REAL4TimeSeries *series, int injectSignalType,
     switch ( injectSignalType )
     {
       case burst_inject:
-        LAL_CALL( LALBurstInjectSignals(&status, series, injectList, response),
+        LAL_CALL( LALBurstInjectSignals(&status, series, injectList, response, calType),
             &status );
         break;
       default:

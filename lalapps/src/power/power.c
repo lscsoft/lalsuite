@@ -1201,6 +1201,7 @@ static void add_burst_injections(
 	INT4 startTime = series->epoch.gpsSeconds;
 	INT4 stopTime = startTime + series->data->length * series->deltaT;
 	SimBurstTable *injections = NULL;
+	INT4 calType=0;
 
 	if(!response) {
 		fprintf(stderr, "add_burst_injections(): must supply calibration information for injections\n");
@@ -1215,7 +1216,7 @@ static void add_burst_injections(
 	if(options.verbose)
 		fprintf(stderr, "add_burst_injections(): injecting signals into time series\n");
 
-	LAL_CALL(LALBurstInjectSignals(stat, series, injections, response), stat); 
+	LAL_CALL(LALBurstInjectSignals(stat, series, injections, response, calType), stat); 
 
 	if(options.verbose)
 		fprintf(stderr, "add_burst_injections(): finished making the injections\n");
