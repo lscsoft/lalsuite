@@ -586,7 +586,7 @@ LALBurstInjectSignals(
   CHECKSTATUSPTR( stat );
 
   if ( detector.site ) LALFree( detector.site );
-  LALFree( detector.transfer );
+  LALFree( transfer );
 
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
