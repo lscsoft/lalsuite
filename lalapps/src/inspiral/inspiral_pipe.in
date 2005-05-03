@@ -390,6 +390,8 @@ for i in range(len(data)):
       pass
       
     if do_coinc:
+      inca.get_output_a()
+      inca.get_output_b()
       dag.add_node(inca)
 
 # write out the DAG
