@@ -422,6 +422,7 @@ class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     Returns the name of the triggered template bank file.
     """
+    self.add_output_file(self.__output)
     return self.__output
 
   def get_trig_out(self):
@@ -515,8 +516,10 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if self.__usertag:
       basename += '_' + self.__usertag 
 
-    return basename + '-' + str(self.get_start()) + '-' + \
+    filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+    self.add_output_file(filename)
+    return filename
 
   def get_output_b(self):
     """
@@ -533,8 +536,10 @@ class IncaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     if self.__usertag:
       basename += '_' + self.__usertag 
 
-    return basename + '-' + str(self.get_start()) + '-' + \
+    filename = basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
+    self.add_output_file(filename)
+    return filename
 
 
 class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
