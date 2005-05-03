@@ -88,6 +88,7 @@ REAL4TimeSeries *XLALRespFilt(
       &countPerStrain, tmpFFTWave->length);
   XLALResponseConvert( tmpTransfer, transfer );
   XLALCCVectorMultiply( tmpFFTWave, tmpFFTWave, tmpTransfer->data ); 
+  XLALUnitMultiply( &strain->sampleUnits, &tmpTransfer->sampleUnits, &strain->sampleUnits);
   XLALDestroyCOMPLEX8FrequencySeries(tmpTransfer);
 
   /* Now make sure the DC term has zero real and imaginary parts and
