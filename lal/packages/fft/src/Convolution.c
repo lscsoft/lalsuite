@@ -84,8 +84,8 @@ REAL4TimeSeries *XLALRespFilt(
 
   /* make sure the transfer function has the right units and df */
   tmpTransfer = XLALCreateCOMPLEX8FrequencySeries(chname, 
-      strain->epoch, 0.0, 1.0/(paddedTimeLength * strain->deltaT),
-      countPerStrain, tmpFFTWave->length);
+      &strain->epoch, 0.0, 1.0/(paddedTimeLength * strain->deltaT),
+      &countPerStrain, tmpFFTWave->length);
   XLALResponseConvert( tmpTransfer, transfer );
   XLALCCVectorMultiply( tmpFFTWave, tmpFFTWave, tmpTransfer->data ); 
   XLALDestroyCOMPLEX8FrequencySeries(tmpTransfer);
