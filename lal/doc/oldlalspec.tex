@@ -1,0 +1,2490 @@
+\documentclass[]{ligodcc}
+
+%% use the following line for latex with dvips
+%\usepackage[dvips]{hyperref,color}
+\usepackage{hyperref,color}
+
+%\let\keepverbatim\verbatim
+%\def\verbatim{\color{blue}\keepverbatim}
+%\renewcommand{\texttt}[1]{{\ttfamily\color{blue}#1}}
+
+\setcounter{secnumdepth}{6}
+\setcounter{tocdepth}{6}
+\let\keepverbatim\verbatim
+\def\verbatim{\color{blue}\keepverbatim}
+\def\verb{\relax\ifmmode\hbox\else\leavevmode\null\fi
+  \bgroup
+    \color{blue}%
+    \verb@eol@error \let\do\@makeother \dospecials
+    \verbatim@font\@noligs
+    \@ifstar\@sverb\@verb}
+\renewcommand{\texttt}[1]{{\ttfamily\color{blue}#1}}
+
+%\def\tt{\ttfamily\color{blue}}
+\DeclareOldFontCommand{\tt}{\normalfont\ttfamily\color{blue}}{\mathtt\color{blue}}
+
+
+%% or use the following lines for pdflatex
+%\usepackage[pdftex]{hyperref,color}
+%\voffset=-1.5in
+
+%\def\tt{\ttfamily\color{blue}}
+\DeclareOldFontCommand{\tt}{\normalfont\ttfamily\color{blue}}{\mathtt\color{blue}}
+
+\ligodoc{T990030}{E}
+\ligodocdist{LSC and LIGO \vspace{1.5in} \\
+This is an internal working note of the \\
+LIGO Laboratory and the \\
+LIGO Scientific Collaboration.}
+\title{Numerical Algorithms Library
+Specification and Style Guide}
+\author{Bruce Allen, Kent Blackburn, Duncan Brown, Jolien Creighton, Teviet
+Creighton, Sam Finn, Albert Lazzarini and  Alan Wiseman}
+\rcsid$Id$
+\begin{document}
+
+\maketitle
+
+\section{Table of Contents}
+\tableofcontents
+\listoftables
+\clearpage
+
+
+\section{Introduction}
+\label{introduction}
+
+\subsection{The goal of the  LAL software specification}
+
+The LIGO Laboratory [LL] and  the LIGO Scientific Collaboration [LSC]
+are  developing  the LIGO/LSC Algorithm Library [LAL] for analyzing
+data from interferometric gravitational-wave detectors.  The LL and
+LSC wish to share this software with other projects and invite other
+(international) groups  to contribute to this library.  {\bf The defining
+purpose of this document is to establish a software specification that
+fosters widespread-use and  collaborative-development  of  a
+well-tested analysis  library.} The details in this specification flow
+naturally from this goal.
+
+\begin{enumerate}
+\item 
+More programmers know C than C++; therefore, in order to
+maximize the  number of users and  contributors, the  LL Data Group
+decided to use ANSI standard C  for the LAL. Similarly, we don't
+want contributors to have to climb multiple learning curves just to
+master the tools necessary to write LAL code; therefore we specify a
+minimal list of development tools in Section \ref{sec:laltools}.
+
+\item
+The output of one programmer's routine is likely to be the
+input of another's  routine. To make this exchange easy,  we
+specify reusable data structures for input and output. (We also
+require developers to use them whenever possible.) These are given in
+Section  \ref{sec:laldatatypes}.
+
+\item
+One programmer must be able to use, understand, test and debug another
+programmer's code; therefore we establish some coding conventions
+(Section \ref{sec:codingstyle}),  a uniform layout for the source code
+(Sections \ref{sec:lalfunctions} and \ref{sec:lalcode}),  and the
+specifications for the documentation (Section
+\ref{sec:laldocumentation}). In particular, we
+define the  namespace conventions  in Section \ref{sec:codingstyle}, 
+and  we explain the
+details of  reporting errors in Section \ref{sec:lalfunctions}. 
+
+\item
+It is essential that users and developers know the pedigree of
+the routines; therefore we have defined a version
+control system (CVS) for the library in Section \ref{sec:lalmaint}.  
+
+\item
+Using a standard design for the software will (hopefully) make it
+easier to test routines by comparing data analysis results from
+different groups.
+	
+\item
+Since this code project will grow and evolve, it impossible to foresee
+all the necessary code requirements. Therefore, the LL and LSC will
+continue to jointly update and maintain this specification. The rules
+for this procedure are given in Section \ref{sec:lalmaint}.
+
+\item
+In order to facilitate collaboration, the LSC Software
+Coordinator will ensure that  the code is publicly (and easily)
+available to users and developers.
+
+\end{enumerate}
+
+\subsection{The scope of the LAL specification}
+
+This document formally defines the LIGO/LSC Algorithm Library [LAL].
+This is not a comprehensive document explaining how to write LAL
+functions, rather it lays out general rules for code writing.
+Eventually, we may write a C++ specification for LAL; however, until
+we have such a specification, code must be written in  ANSI standard
+C.
+
+\subsection{Applicability of LAL software}
+
+The LIGO Laboratory and the LSC will work to ensure that all developed
+hardware and software systems support LAL. In turn,  {\bf all
+participating groups will be required to perform scientific analysis
+of  LIGO data using LAL-compliant software}.  Although this
+requirement is quite stringent, it is not intended to stifle
+exploratory development in less formal environments, nor is  it
+intended to interfere with detector diagnostic software being written
+for other purposes.  However, as an analysis moves toward the
+publication of scientific results, the need to validate the findings
+requires that the software must also move toward the collaboration's
+adopted software standard.
+
+The requirement of using LAL compliant software for analysis will
+extend up to the LAL-LDAS interface. In particular, the dynamically
+loaded shared object library functions that form the search engines
+shall be LAL-compliant.
+
+The LAL software shall be available in the public domain, subject only
+to rules in this document.
+
+
+\subsection{How does the LAL fit into the  LDAS?}
+
+LDAS is the analysis environment being developed by the LL and the LSC.
+It consists of a layered and highly modular architecture employing a
+steering language or scripting commands (e.g. Tcl).  The scripting
+language  will execute compiled   C++ code which will use MPI  based
+parallel computing to do the numerically intensive data analysis. [See
+http://www.ldas.ligo.caltech.edu  and Table \ref{appdocs} for detail information
+on LDAS.]
+
+The current plan is to use procedural algorithms and  functions (i.e.,
+LAL routines written in C) wrapped in  C++ code to manipulate the
+data. These functions will be imported into the C++ code as a
+dynamically loaded (shared object) library. These dynamically loaded
+LAL functions will actually perform the data analysis.
+
+\medskip
+\begin{table}
+\caption{List of Applicable Documentation}
+\label{appdocs}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+Description                       &  Document ID \\
+\hline
+\multicolumn{2}{|c|}
+{\bf Data Format Specifications} \\
+\hline \hline
+LDAS White Paper & LIGO-M970065 \\
+\hline
+LDAS Design Requirements Document &  LIGO-T970159 \\
+\hline
+LDAS Conceptual Design Document   &  LIGO-T970160 \\
+\hline
+LDAS Preliminary Design Document  &  LIGO-T990001 \\
+\hline
+LDAS System Software Specification for C, C++ and Java &  LIGO-T970211 \\
+\hline \hline
+\multicolumn{2}{|c|}
+{\bf Data Format Specifications} \\
+\hline
+Specification of a Common Data Frame Format for & \\
+Interferometric Gravitational Wave Detectors  & LIGO-T971030 \\
+\hline
+LIGO Lightweight Data Format Specification &  LIGO-T980091 \\
+\hline
+LIGO Metadata, Event and Reduced Data Requirements &  LIGO-T980070 \\
+\hline
+LIGO Metadata, Event and Reduced Data Requirements &  LIGO-T980070 \\
+\hline \hline
+\multicolumn{2}{|c|}
+{\bf LDAS Software Specifications} \\
+\hline
+FrameAPI Baseline Requirements &  LIGO-T980011. \\
+\hline
+FrameAPI.tcl source code map -- frameAPI.tcl &  on-line TclDoc \\
+\hline
+FrameAPI.tcl emergency procedures source & \\
+code map -- frameEmProc.tcl & non-line TclDoc \\
+\hline
+FrameAPI.tcl operator procedures source  & \\
+code map -- frameOpProcs.tcl &
+	on-line TclDoc \\
+\hline
+MetadataAPI Baseline Requirements & LIGO-T980119 \\
+\hline
+DataConditioningAPI Baseline Requirements & LIGO-T990002 \\
+\hline \hline
+\multicolumn{2}{|c|}
+{\bf Non LIGO Documentation } \\
+\hline
+Enough Rope to Shoot Yourself in the Foot: & \\
+Rules for C and C++ Programming  &
+Allen I.Holub, McGraw-Hill 1995\\
+\hline
+\end{tabular}
+\end{center}
+
+Links accessible via http://www.ldas.ligo.caltech.edu and \\
+http://www.ldas.ligo.caltech.edu/LIGO\_web/dcc/docs. Note that
+some of these documents are still evolving.
+\end{table}
+
+
+\section{LAL coding style}
+\label{sec:codingstyle}
+
+\subsection{LAL namespace conventions}
+
+\subsubsection{The rationale behind the namespace rules}
+
+\begin{enumerate}
+\item
+The naming convention should make  it easier for someone
+(besides the author) to understand the code.
+
+\item
+The naming convention should help avoid  internal (intra-LAL)
+name conflicts.
+
+\item
+LAL will be used in conjunction with other libraries;
+therefore the naming convention should help avoid conflicts with
+non-LAL software packages and system routines.
+
+\end{enumerate}
+
+\subsubsection{The namespace rules}
+
+\begin{enumerate}
+\item
+Names combining multiple words must have subsequent words
+capitalized: {\tt theNewVariable}, {\tt LALTheNewType}.  The names tend to be
+long enough as it is; therefore we do not use the underscore between
+words in a name. [Macros are an exception to this rule. See below.]
+
+\item
+Variable names must begin with a lowercase letter, e.g.
+{\tt myVariable}.
+
+\item
+Function names must begin the prefix {\tt LAL}. The remainder of the
+name should also start with a capital letter, e.g. {\tt LALMyFunction()}.
+The {\tt LAL} prefix will help keep the LAL namespace from conflicting with
+other library namespaces.   As LAL grows, there is also a  risk of
+stepping on our own namespace; therefore don't use nondescript
+function names, such as "{\tt LALCorrelate()}" or "{\tt LALFilter()}".  Use more
+specific names, e.g.  attach the package name or the header-file
+name: {\tt LALInspiralFilter()}.  [Note: Requiring the {\tt LAL} prefix is a
+significant change from earlier versions (7 and earlier) of this
+document. This  required substantial modification of existing
+code, but it was necessary.]
+
+\item
+Custom data structures (i.e. structures not specified in this
+document) must be given names that try to avoid namespace conflicts.
+The name should start with an  Uppercase letter, e.g.
+{\tt LALREAL8MyDataType}. We suggest using the prefix {\tt LAL} to avoid collision
+with other libraries; however this is not a requirement.  Another way
+to avoid conflicts with other packages is to build the name around the
+Atomic datatype, e.g. {\tt REAL8MyPackageVector}. The discussion about
+non-descript function names applies here as well.  Also, names without
+the {\tt LAL} prefix, can step on system names; therefore don't use words
+like time, date, window, etc.
+
+\item
+Source-code file names (modules, headers and test programs)
+should also begin with a capital letter, e.g. {\tt MyModule.c} and
+{\tt MyHeader.h}.
+
+\item
+Acronyms in the name:  When the convention calls for an
+acronym to start with lower case, the entire acronym is written in
+lower case (e.g.  {\tt INT4 gpsSeconds}).  When the convention calls for the
+acronym to start with an upper case letter, the entire acronym is
+capitalized (e.g.  {\tt tagLIGOTimeGPS}). We should never see gPS or Gps.
+
+\item
+Macros ({\tt \#define})  must be all UPPERCASE. Compound macro names
+will use underscores if clarity requires: {\tt THE\_NEXT\_MACRO}. [This is
+only exception to the no-underscore rule.]
+
+
+\item
+Error codes ({\tt statusCode} and {\tt statusDescription}) have a special
+name convention. See Section \ref{ssec:lalstatus}.
+
+\item
+Package names should be all lowercase.
+
+\end{enumerate}
+
+
+\subsection{Physical and numerical constants}
+
+Physical constants will be stored in the header file {\tt LALConstants.h}.
+This is being distributed with the LAL library releases. All constants
+are declared according to the following style:
+{\footnotesize
+\begin{verbatim}
+#define LAL_CONSTANTNAME_STANDARD   value   /* units or description */ 
+\end{verbatim}}
+
+\noindent
+Examples from {\tt LALConstants.h}:
+
+{\footnotesize
+\begin{verbatim}
+#define LAL_PI      3.141592653589793238462643382795029L /* pi             */
+#define LAL_RSUN_SI    6.960e08                          /*solar radius, m */
+#define LAL_SOLMASS_SI  1.9892e30                        /* solar mass,kg  */
+\end{verbatim}}
+
+All constants have the reserved prefix {\tt LAL\_}. The constants have a
+suffix to denote the system of units in which they are defined. If
+there are constants that should be there, but are not, contact the LSC
+Software Coordinator.
+
+\subsection{Style for type declarations}
+
+One variable definition per type declaration is preferred; however a
+few closely related variables can be declared on the same line. This
+allows ease of reading and maintenance. It allows each line to have a
+single comment that pertains to the declaration:
+
+{\footnotesize
+\begin{verbatim}
+TYPE    variableName;    /* helpful or useful comment              */
+INT4    length;         /* number of elements                     */
+INT4    vectorLength;    /* length of each vector in sequence      */
+REAL4    *a,*b,*c;       /* temporary pointer variables            */
+\end{verbatim}}
+
+\section{LAL Data Types}
+\label{sec:laldatatypes}
+
+In order to facilitate sharing of data between LAL routines and
+passing data form LAL to non-LAL library functions (e.g. the rest of
+LDAS) we define a number of generic data structures. You are required
+to use these structures whenever possible in your code.  We recognize
+that we can't plan for every contingency, so, if you find that there
+are structures that are not included, but would have widespread use if
+they were available, please tell the LSC Software Coordinator.
+
+\subsection{Defining data types}
+Structures shall be defined according to the following template:
+\begin{verbatim}
+typedef 	struct 		
+tag<Name> 
+{
+   ...; 
+   ...;
+}
+<Name>;
+\end{verbatim}
+
+Where {\tt <Name>} is replaced by the struct's name. The tag is
+optional.  (Writing the typedef  and the tag-Name in column zero is a
+GNU convention, and not a LAL requirement; however, much of the code
+in the library adheres to this convention.)
+
+\subsection{"Atomic" data types}
+\label{atomic}
+
+To permit LAL code to be transported to various hardware platforms
+(e.g., 32, 64 or 128 bit machines), we will adopt the convention
+described in the LIGO-VIRGO frame specification. To each C/C++ data
+type there will be assigned a CAPITALIZED LAL data type . These
+will be defined in {\tt LALAtomicDatatypes.h}.  See  Table
+\ref{tab:laldatatypes}.  [The structures {\tt COMPLEX8} and {\tt
+COMPLEX16} are also included in our list of atomic data types.]
+
+{\footnotesize
+\begin{verbatim}
+typedef struct tagCOMPLEX8Vector
+{
+  UINT4     length;
+  COMPLEX8 *data;
+}
+COMPLEX8Vector;
+
+typedef struct tagCOMPLEX16Vector
+{
+  UINT4      length;
+  COMPLEX16 *data;
+}
+COMPLEX16Vector;
+\end{verbatim}}
+
+
+\begin{table}
+\caption{LAL data types for algorithm software}
+\label{tab:laldatatypes}
+\begin{tabular}{|c|c|c|c|}
+\hline
+{\bf Data Class} & {\bf C/C++ Data Type} & {\bf Length (Bytes)} & {\bf Comments} \\
+\hline
+\hline
+{\tt CHAR     } &  char             & 1 & Character (signed or unsigned    \\
+{\tt          } &                   &   & is machine dependent)            \\
+\hline
+{\tt UCHAR    } &  unsigned char    & 1 & Unsigned character               \\
+\hline
+{\tt BOOLEAN  } &  unsigned char    & 1 & Unsigned character               \\
+\hline
+{\tt INT2     } &  short or int     & 1 & Signed integer                   \\
+{\tt          } &                   &   & Range ($-2^{15}$, $2^{15}-1)$    \\
+\hline
+{\tt UINT2    } &  unsigned short   & 2 & Unsigned integer                 \\
+{\tt          } &  or unsigned int  &   &                                  \\
+\hline
+{\tt INT4     } &     int           & 4 & Signed integer                   \\
+{\tt          } &   or long         &   & Range ($-2^{31}$, $2^{31}-1)$    \\
+\hline
+{\tt UINT4    } &  unsigned int     & 4 & Unsigned integer                 \\
+{\tt          } & or unsigned long  &   &                                  \\
+\hline
+{\tt  INT8    } &  long             & 8 & Signed integer                   \\
+{\tt          } & or longlong       &   & Range ($-2^{63}$, $2^{63}-1)$    \\
+\hline
+{\tt UINT8    } & unsigned long or  & 8 & Unsigned integer                 \\
+{\tt          } & unsigned longlong &   &                                  \\
+\hline
+{\tt REAL4    } & float             & 4 & IEEE-defined single precision    \\
+{\tt          } &                   &   & floating point number            \\
+\hline
+{\tt REAL8    } & double            & 8 & IEEE-defined double precision    \\
+{\tt          } &                   &   & floating point number            \\
+\hline
+\hline
+\multicolumn{4}{|c|}
+{\bf Composite Data Types (structures)} \\
+\hline
+{\tt COMPLEX8 } & Pair of REAL4     & 8 & Complex number, stored as pair   \\
+{\tt          } &                   &   & of floats (real,imaginary)       \\
+\hline
+{\tt COMPLEX16} & Pair of REAL8     &16 & Complex number, stored as pair    \\
+{\tt          } &                   &   & of doubles (real,imaginary)       \\
+\hline
+\end{tabular}
+\end{table}
+
+\medskip
+
+
+
+The important feature of these data types is that they are of
+specified length, e.g. {\tt UINT4} shall be 4 bytes in length, period. This
+is enforced by the macros in  {\tt LALAtomicDatatypes.h}.
+
+\subsection{Aggregate constructs of atomic data types}
+\label{aggregates}
+
+This list is of aggregate constructs of atomic data types may be
+augmented in the future. These definitions will be included in
+{\tt LALDatatypes.h}. Indexing convention for multi-dimensional arrays will
+follow the C convention of row-major ordering. 
+Table \ref{laldataobjects} lists the
+objects defined below.
+
+\begin{table}
+\caption{LAL data objects.}
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+Data Class & LAL Names & Comments \\
+\hline
+\hline
+\multicolumn{3}{|c|}
+{\bf \ref{atomic} Atomic -- See Table \ref{tab:laldatatypes} } \\
+\hline
+\hline
+\multicolumn{3}{|c|}
+{\bf \ref{aggregates} Aggregates} \\
+\hline
+Vectors    & {\tt <datatype>Vector}          & Aggregates capture   \\  \cline{1-2}
+Array      & {\tt <datatype>Array}           & only numerical data  \\  \cline{1-2}
+           & {\tt <datatype>Sequence}        & for computation      \\  \cline{2-2}
+Sequences  & {\tt <datatype>VectorSequence}  & (e.g. bytes): no     \\  \cline{2-2}
+           & {\tt <datatype>ArraySequence}   & units or physical    \\ 
+           &                                 & information is       \\ 
+           &                                 & provided at          \\ 
+           &                                 & this level           \\ 
+\hline
+\multicolumn{3}{|c|}
+{\bf \ref{structured} Structured} \\
+\hline
+Time       &{\tt LIGOTimeGPS} & {\tt struct} identifying  \\  
+           &                  & GPS time.  Physical units \\  
+           &                  & or dimensions are         \\  
+           &                  & encapsulated in           \\  
+           &                  & the structure             \\  
+\hline
+           & {\tt <datatype>TimeSeries}                & Example: time series,   \\            
+           & {\tt <datatype>FrequencySeries}           & spectra, etc.           \\ \cline{2-3}
+           & {\tt <datatype>SequenceOfTimeSeries}      & Example: two            \\            
+           & {\tt <datatype>SequenceOfFrequencySeries} & polarizations of a      \\                       
+           &                                           & a gravitational wave    \\ \cline{2-3}           
+Series     & {\tt <datatype>TimeVectorSeries}          & Example: time series    \\            
+           & {\tt <datatype>FrequencyVectorSeries}     & of a vector quantity    \\ \cline{2-3}
+           & {\tt <datatype>TimeArraySeries}           & Example: time series    \\            
+           & {\tt <datatype>FrequencyArraySeries}      & of a matrix quantity    \\ \cline{2-3}
+           & {\tt <datatype>TableSeries}               & Example: time series    \\            
+           &                                           & for a group of objects  \\            
+           &                                           & which are represented   \\            
+           &                                           & by a table              \\            
+\hline
+           & {\tt <datatype>FTransferFunction}  & List of $(f,y.z)$ for $H[f]$  \\ 
+           &                                    & $(y,z)$ corresponds to        \\
+Transfer   &                                    & $(M,\phi)$ or (Re,Im) of      \\
+Functions  &                                    & $H[f]$                        \\ \cline{2-3} 
+           & {\tt <datatype>ZPGFilter}          & Zero-Pole-Gain                \\ 
+           &                                    & representation for $H[z]$     \\  
+\hline
+\end{tabular}
+\end{center}
+
+Relevant section numbers are shown in table
+headings. Initially {\texttt {<datatype>}} will be taken by default to be Only
+the from the following list: {\tt CHAR}, {\tt UCHAR}, {\tt REAL4},
+{\tt REAL8}, {\tt COMPLEX8}, {\tt COMPLEX16}, {\tt INT2}, {\tt INT4}, {\tt INT8}, 
+{\tt UINT2}, {\tt  UINT4}, {\tt UINT8}. Additional types may be added
+when shown to be needed.
+\label{laldataobjects}
+\end{table}
+
+
+\subsubsection{Vectors}
+\label{vectors}
+A Vector is a one-dimensional object that corresponds to a collection
+of length = M data elements.
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tag<datatype>Vector
+{
+  UINT4 length;       /* number of element in vector        */
+  <datatype> *data;   /* pointer to data of type <datatype> */
+}
+<datatype>Vector;
+\end{verbatim}}
+
+Here and elsewhere  {\tt <datatype>} can be any of the types in
+Table \ref{laldataobjects},
+footnote a. Structures defined with a {\tt <}...{\tt >} prefix will be
+enumerated in {\tt LALDatatypes.h}  for each corresponding data type that is
+needed. For example, the following vector data types will appear: {\tt
+CHARVector}, {\tt INT2Vector}, {\tt COMPLEX8Vector}, etc. The need for
+explicit typing follows because C, unlike C++, does not support
+template data type definitions. Alternative methods using {\tt enum}
+statements are possible; however, these, unlike the ``hard-wired" type
+casting described above provide extensibility at the cost of case
+checking (if statements) that need to be embedded in the resultant
+code. 
+
+
+\subsubsection{Arrays}
+Array is a {\tt dim = ndim (>1) } object that corresponds to a
+collection of {\tt length = ldim1* ldim2*...*ldimNdim } data elements of the
+same data type, taken from list in caption of Table
+\ref{laldataobjects}.
+
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tagINT2Array
+{
+  UINT4Vector *dimLength;
+  INT2        *data;
+}
+INT2Array;
+\end{verbatim}}
+
+\noindent
+The discussion at the end of Section \ref{vectors}.
+
+
+\subsubsection{Sequences}
+\label{sequences}
+
+A sequence (or a series) is a list of {\tt length = N} compound
+objects. The compound objects may be either vectors or arrays. Note
+that a sequence of scalars is represented by the vector object in
+Section \ref{vectors} above.  All elements of the sequence must have the same
+identical structure.  All data elements are of the same data type,
+taken from the caption of Table \ref{laldataobjects}.
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tag<datatype>VectorSequence
+{
+  UINT4       length;        /* number of vectors in the sequence     */
+  UINT4       vectorLength;  /* length of each vector in the sequence */
+  <datatype>  *data;         /* pointer to data of type <datatype>    */
+}
+<datatype>VectorSequence;
+\end{verbatim}}
+
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tag<datatype>ArraySequence
+{
+  UINT4        length;     /* number of arrays in sequence        */
+  UINT4        arrayDim;   /* dimension of each array in sequence */
+  UINT4Vector *dimLength;  /* length of each dimension of array   */
+  <datatype>  *data;       /* pointer to data of type <datatype>  */
+}
+<datatype>ArraySequence;
+\end{verbatim}}
+
+\noindent
+The discussion at the end of Section \ref{vectors}.
+
+\paragraph{The packing order of a VectorSequence or ArraySequence}~
+\label{packingorderAS} 
+
+\noindent A vector sequence {\tt v} stores a sequence of
+$M$={\tt v->length} vectors
+$\{\vec{v}^{(0)},\vec{v}^{(1)},\ldots,\vec{v}^{(M-1)}\}$, where each
+vector has $N$={\tt v->vectorLength} components
+$\vec{v}^{(j)}=(v^{(j)}_0,\ldots,v^{(j)}_{N-1})$.  The components are
+stored in a flattened array {\tt v->data} in such a way that one
+steps first over the components of each vector, and then over the
+vectors in the sequence:
+\begin{eqnarray}
+\left\{
+\left[\begin{array}{c} v^{(0)}_0 \\ \vdots \\ v^{(0)}_{N-1} \end{array}\right],
+\left[\begin{array}{c} v^{(1)}_0 \\ \vdots \\ v^{(1)}_{N-1} \end{array}\right],
+\ldots ,
+\left[\begin{array}{c}
+v^{(M-1)}_0 \\ \vdots \\ v^{(M-1)}_{N-1} \end{array}\right]
+\right\} \Longrightarrow \nonumber\\
+\left\{ v^{(0)}_0, \ldots, v^{(0)}_{N-1}, v^{(1)}_0, \ldots, v^{(1)}_{N-1},
+\ldots, v^{(M-1)}_0, \ldots, v^{(M-1)}_{N-1} \right\} \; .
+\end{eqnarray}
+That is, the component $v^{(j)}_i$ is stored in
+{\tt v->data[}$j\times N+i${\tt ]}.
+   
+In Section \ref{packingorder} we define a structure where the packing
+is in the other order.
+
+\subsection{LAL structured data types}
+\label{structured}
+
+This list of time structures will be augmented as the need arises. The
+definitions are in {\tt LALDatatypes.h}.
+
+
+\subsubsection{Time}
+
+\paragraph{Time stamps }~
+
+There is a specific data structure to store GPS time. To indicate
+this, the time structure will have ``GPS" (or gps) in its name. 
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tagLIGOTimeGPS
+{
+  INT4 gpsSeconds;
+  INT4 gpsNanoSeconds;
+}
+LIGOTimeGPS;
+\end{verbatim}}
+
+Multiple time stamps (e.g., for a vector of strains, each coming from
+an instrument in a different geographical location) can be
+accommodated as a C array of type LIGOTimeGPS:
+{\footnotesize
+\begin{verbatim}
+LIGOTimeGPS gpsTimeList[10];	/* a list of 10 LIGOTimeGPS structures */
+\end{verbatim}}
+
+\subsubsection{Sequences in time}
+
+
+\paragraph{{\texttt {TimeSeries}} }~
+
+The structure {\tt TimeSeries} is used to represent a sequence of samples
+taken at uniformly spaced intervals of time. A {\tt TimeSeries} object has
+the following attributes:
+
+
+\begin{itemize}
+\vspace{-0.15in}
+\item
+{\tt name} of series
+\vspace{-0.15in}
+\item
+{\tt epoch} - time at which the earliest sample in the series was acquired
+\vspace{-0.15in}
+\item
+{\tt deltaT} -  offset between samples (reciprocal of sample rate).  
+{\bf (Time offset units will be seconds.)}
+\vspace{-0.15in}
+\item
+{\tt units} of values recorded in samples
+\vspace{-0.15in}
+\item
+the {\tt data} is stored in a  {\tt <datatype>Vector}  structure. This structure contains:
+\vspace{-0.15in}
+\item
+the number of elements in the sequence {\tt data->length}
+\vspace{-0.15in}
+\item
+the data itself is in {\tt data->data[]}
+\end{itemize}
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tag<datatype>TimeSeries
+{
+  CHAR          name[LALNameLength]; /* user assigned name           */
+  LIGOTimeGPS   epoch;               /* epoch of first series sample */
+  REAL8         deltaT;              /* sample spacing in time       */
+  REAL8         f0;                  /* base frequency, !=0 if
+                                        heterodyned series           */
+  LALUnit       sampleUnits;         /* units for sampled quantity   */
+  <datatype>Sequence *data;          /* the data                     */
+}
+<datatype>TimeSeries;
+\end{verbatim}}
+
+
+\subparagraph[LALUnit data type]{The {\texttt {name[]}} 
+and {\texttt {LALUnit}} field in structured data types }~
+\label{name}
+
+\noindent
+The {\tt name} field will be an array at most {\tt LALNameLength} characters long.
+{\tt LALNameLength} will be set in {\tt LALDatatypes.h}.  Currently, the value is
+set to 64, although we could make change it.  In previous versions (7
+and earlier) of this document {\tt name} was a {\tt CHAR*}, and it didn't specify
+what form the {\tt name} should take.  This made it cumbersome  to write
+generic routines that freed the memory.  [This method of handling the
+{\tt name} is the same as much of the rest of LDAS.] 
+
+The underlying purpose of LAL is to write routines that take as input
+a LAL data structure and give as output another LAL data structure.
+Many of the LAL structures carry a ``unit'' field, and many LAL
+functions will generate output in which the  units are different than
+the input (e.g. a Fourier Transform will multiply the units by
+``seconds'').  The output must give the correct units for data.  In
+order to facilitate this, LAL use the following Unit field:
+
+{\footnotesize
+\begin{verbatim}
+enum
+{
+  LALUnitIndexMeter,
+  LALUnitIndexKiloGram,
+  LALUnitIndexSecond,
+  LALUnitIndexAmpere,
+  LALUnitIndexKelvin,
+  LALUnitIndexStrain,
+  LALUnitIndexADCCount,
+  LALNumUnits
+};
+
+typedef struct
+tagLALUnit
+{
+  INT2  powerOfTen;
+  INT2  unitNumerator[LALNumUnits];
+  UINT2 unitDenominatorMinusOne[LALNumUnits];
+}
+LALUnit;
+\end{verbatim}}
+
+
+\paragraph{{\texttt {SequenceOfTimeSeries}}  {\bf (Not Implemented yet.)} }~
+
+The structure {\tt SequenceOfTimeSeries} is used to represent a sequence of
+time series, each of which starts at the same time, e.g. the two
+time-series representing the two polarizations of gravitational
+wave. A  {\tt SequenceOfTimeSeries} object has the following attributes:
+
+\begin{itemize}
+\vspace{-0.15in}
+\item
+{\tt name} of series.  See Section \ref{name}.
+\vspace{-0.15in}
+\item
+time of {\tt epoch} - time at which the earliest sample in the series was acquired
+\vspace{-0.15in}
+\item
+{\tt deltaT} offset between samples (reciprocal of sample
+rate).(time offset units will be seconds).  {\bf (Time offset units will
+be seconds.)}
+\vspace{-0.15in}
+\item
+{\tt units} of values recorded in samples. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+the {\tt data} is stored in a {\tt <datatype>VectorSequence}  structure.
+This structure contains:
+\begin{itemize}
+\vspace{-0.10in}
+\item
+the length of the sequence (i.e. the number of series) is  in 
+{\tt data->length}
+\vspace{-0.10in}
+\item
+the number of elements in each time series {\tt data->vectorLength}
+\vspace{-0.10in}
+\item
+the data it self in {\tt data->data[]}
+\end{itemize}
+\end{itemize}
+
+\noindent
+Note: The structure {\tt SequenceOfTimeSeries} is similar to the
+{\tt TimeVectorSeries} structure. The distinction is in the order of the
+packing in {\tt *data}.  See Sections \ref{packingorder}.
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tag<datatype>SequenceOfTimeSeries
+{
+  CHAR          name[LALNameLength]; /* user assigned name           */
+  LIGOTimeGPS   epoch;               /* epoch of first series sample */
+  REAL8         deltaT;              /* sample spacing in time       */
+  REAL8         f0;                  /* base frequency, !=0 if
+                                        heterodyned series           */
+  LALUnit       sampleUnits;         /* units for sampled quantity   */
+  <datatype>VectorSequence *data;    /* the data                     */
+}
+<datatype>TimeSeries;
+\end{verbatim}}
+
+\subparagraph{The packing order of {\texttt {SequenceOfTimeSeries}} }~
+\label{packingorder}
+
+
+\noindent
+As an example of how the packing goes, consider two time series s0[t] and s1[t]:
+
+{\footnotesize
+\begin{verbatim}
+data->length       = 2        ;      /* number of series                  */
+data->vectorLength = 1024     ;      /* number of elements in each series */
+
+data->data[0]      = s0[0]    ;
+data->data[1]      = s0[1]    ;
+  ...
+data->data[1023]   = s0[1023] ;
+
+data->data[1024]   = s1[0]    ;
+data->data[1025]   = s1[1]    ;
+  ...
+data->data[2047]   = s1[1023] ;
+\end{verbatim}}
+
+
+\paragraph{{\texttt {TimeVectorSeries}}  }~
+
+
+The structure {\tt TimeVectorSeries} is used to represent a sequence of
+vectors taken at uniformly spaced intervals of time. A
+{\tt TimeVectorSeries} object has the following attributes:
+
+\begin{itemize}
+\vspace{-0.15in}
+\item
+{\tt name} of series. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+{\tt epoch} - time at which the earliest sample in the series was acquired;
+\vspace{-0.15in}
+\item
+{\tt deltaT} offset between samples (reciprocal of sample rate).  (Time
+offset units will be sec- onds.)
+\vspace{-0.15in}
+\item
+{\tt units} of values recorded in samples. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+the {\tt data} is stored in a {\tt <datatype>VectorSequence}  structure.
+This structure contains: 
+\begin{itemize}
+\vspace{-0.15in}
+\item
+The number of times when data is taken is in {\tt data->length}. This the
+total number of vectors. All the elements of each vector are evaluated at the 
+same time in this structure.
+\item
+The number of elements measure at each time is in {\tt data->vectorLength}
+\item
+The  actual data  values are stored in {\tt data->data[]}.
+\end{itemize}
+\end{itemize}
+
+Note: The packing of {\tt TimeVectorSeries} is described in Section
+\ref{packingorderAS} [Compare Section \ref{packingorder}].
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tag<datatype>TimeVectorSeries
+{
+  CHAR           name[LALNameLength]; /* user assigned name        */
+  LIGOTimeGPS    epoch;               /* time of first elements in
+                                         vector series             */
+  REAL8          deltaT;              /* sample spacing in time -- 
+                                         same for all elements     */
+  REAL8          f0;                  /* base frequency !=0 if 
+                                         heterodyned series        */
+  LALUnit        sampleUnits;         /* units of sampled quantities */
+  <datatype>VectorSequence  *data;    /* the data                  */
+}
+<datatype>TimeVectorSeries;
+\end{verbatim}}
+
+\paragraph{{\texttt {TimeArraySeries}} }~
+
+
+The structure {\tt TimeArraySeries} is used to represent a sequence of
+arrays taken at uniformly spaced intervals of time. A {\tt TimeArraySeries}
+object has the following attributes:
+
+\begin{itemize}
+\vspace{-0.15in}
+\item
+name of series. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+epoch  -  time at which the earliest sample in the series was acquired;
+\vspace{-0.15in}
+\item
+deltaT  - offset between samples (reciprocal of sample rate).  (Time
+offset units will be seconds.)
+\vspace{-0.15in}
+\item
+units of values recorded in samples. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+the data is stored in a {\tt <datatype>ArraySequence}  structure. This
+structure contains:
+\begin{itemize}
+\vspace{-0.10in}
+\item
+The number of time samples is stored in {\tt data->length} This is the
+number of arrays.
+\vspace{-0.10in}
+\item
+The dimension of each array is stored in {\tt data->arrayDim}
+\vspace{-0.10in}
+\item
+The length of each dimension of the array in {\tt data->dimLength}
+[Note:  all the values of each array are taken at same time.]
+\vspace{-0.10in}
+\item
+The data is stored in {\tt data->data[]}
+\end{itemize}
+\end{itemize}
+
+Note: The packing of {\tt TimeVectorSeries} is described in Section
+\ref{packingorderAS} [Compare Section \ref{packingorder}] 
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tag<datatype>TimeArraySeries
+{
+  CHAR           name[LALNameLength]; /* user assigned name        */
+  LIGOTimeGPS    epoch;               /* time of first elements in
+                                         vector series             */
+  REAL8          deltaT;              /* sample spacing in time -- 
+                                         same for all elements     */
+  REAL8          f0;                  /* base frequency !=0 if 
+                                         heterodyned series        */
+  LALUnit        sampleUnits;         /* units of sampled quantities */
+  <datatype>ArraySequence  *data;     /* the data                  */
+}
+<datatype>TimeArraySeries;
+\end{verbatim}}
+
+\subsubsection{Sequences in frequency}
+
+\paragraph{{\texttt {FrequencySeries}} }~
+
+
+The structure {\tt FrequencySeries} is used to represent result of a Fourier
+transformation on a {\tt TimeSeries} object. It may have both negative and
+positive frequency components, depending on the value of the starting
+frequency parameter. A {\tt FrequencySeries} object has the following
+attributes:
+
+\begin{itemize}
+\vspace{-0.15in}
+\item
+{\tt name} of series. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+{\tt epoch} - time at which the earliest sample in 
+the [pre-transformed] data was acquired;
+\vspace{-0.15in}
+\item
+{\tt deltaF} offset between samples.  {\bf (Frequency units will be in Hertz.)}
+\vspace{-0.15in}
+\item
+first frequency in series. 
+\vspace{-0.15in}
+\item
+The series spans the interval {\tt [f0,f0+deltaF,....,f0+(N-1)*deltaF] }
+\vspace{-0.15in}
+\item
+units of values recorded in samples. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+frequency vector sequence of data
+\vspace{-0.15in}
+\item
+the data is stored in a {\tt <datatype>Vector}  structure. This structure contains:
+\begin{itemize}
+\vspace{-0.10in}
+\item
+The number elements in the series is stored in {\tt data->length}
+\vspace{-0.10in}
+\item
+The data itself is in {\tt data->data[]}
+\end{itemize}
+\end{itemize}
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tag<datatype>FrequencySeries
+{
+  CHAR          name[LALNameLength]; /* user assigned name                */
+  LIGOTimeGPS   epoch;               /* time value of first array element */
+  REAL8         f0;                  /* first frequency in sample         */
+  REAL8         deltaF;              /* sample spacing in time            */
+  LALUnit       sampleUnits;         /* units for sampled quantity        */
+  <datatype>Sequence *data;          /* the data                          */
+}
+<datatype>FrequencySeries;
+\end{verbatim}}
+
+\noindent
+{\tt FrequencySeries} can contain any of the following types of spectra:
+\begin{itemize}
+\item
+two-sided frequency series, real or complex (according to vector data
+type declaration)
+\vspace{-0.15in}
+\item
+one-sided frequency series
+\vspace{-0.15in}
+\item
+power-spectrum (one-sided real frequency series)
+\end{itemize}
+
+\paragraph{{\texttt {SequenceOfFrequencySeries}} {\bf (Not implemented
+yet.)} }~
+
+
+The structure SequenceOfFrequencySeries is used to represent result of
+a Fourier transformation on a {\tt SequenceOfTimeSeries} object. It
+may have both negative and positive frequency components, depending
+on the value of the starting frequency parameter. A 
+{\tt SequenceOfFrequencySeries} object has the following attributes:
+
+
+\begin{itemize}
+\vspace{-0.15in}
+\item
+{\tt name} of series. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+time of {epoch} - time at which the earliest sample in the
+[pre-transformed] data was acquired
+\vspace{-0.15in}
+\item
+first frequency in series
+\vspace{-0.15in}
+\item
+{\tt deltaF} offset between samples.  {\bf (Frequency units will be in Hertz.)}
+The series spans the interval{\tt [f0,f0+deltaF,....,f0+(N-1)*deltaF]}
+\vspace{-0.15in}
+\item
+units of values recorded in samples. See Section \ref{name}
+\vspace{-0.15in}
+\item
+the data is stored in a {\tt <datatype>VectorSequence}  structure. This structure contains:
+\begin{itemize}
+\vspace{-0.10in}
+\item
+the length of the sequence (i.e. the number of series) is  in {\tt data->length}
+\vspace{-0.10in}
+\item
+ the number of elements in each time series {\tt data->vectorLength}
+\end{itemize}
+\end{itemize}
+
+
+Note: The structure {\tt SequenceOfFrequencySeries} is similar to the
+{\tt FrequencyVectorSeries} structure. The distinction is in the order of
+the packing in {\tt *data}. See Section \ref{packingorder}.
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tag<datatype>SequenceOfFrequencySeries
+{
+  CHAR          name[LALNameLength]; /* user assigned name           */
+  LIGOTimeGPS   epoch;               /* epoch of first series sample */
+  REAL8         f0;                  /* first frequency in sample    */
+  REAL8         deltaF;              /* sample spacing in time       */
+  LALUnit       sampleUnits;         /* units for sampled quantity   */
+  <datatype>VectorSequence *data;    /* the data                     */
+}
+<datatype>TimeSeries;
+\end{verbatim}}
+
+
+\paragraph{{\texttt {FrequencyVectorSeries}} }~
+
+
+
+The structure {\tt FrequencyVectorSeries} is used to represent result of a
+Fourier transformation on a TimeVectorSeries object. It may have both
+negative and positive frequency components, depending on the value
+of the starting frequency parameter. A {\tt FrequencyVectorSeries} object
+has the following attributes:
+
+
+\begin{itemize}
+\vspace{-0.15in}
+\item
+{\tt name} of series. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+{\tt epoch}  -  time at which the earliest sample in the [pre-transformed]
+data was acquired;
+\vspace{-0.15in}
+\item
+first frequency in series. 
+\vspace{-0.15in}
+\item
+{\tt deltaF}  -  offset between samples.  {\bf (Frequency units will be in Hertz.)}
+The series spans the interval {\tt [f0,f0+deltaF,....,f0+(N-1)*deltaF]}
+\vspace{-0.15in}
+\item
+units of values recorded in samples. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+the data is stored in a {\tt <datatype>VectorSequence}  
+structure. This structure contains:
+\begin{itemize}
+\vspace{-0.10in}
+\item
+The number of elements measured at each frequency is in {\tt data->vectorLength}.
+\vspace{-0.10in}
+\item
+The number of frequencies where  data is taken is in {\tt data->length}.
+\vspace{-0.10in}
+\item
+The actual data  values are stored in {\tt data->data[]}
+\end{itemize}
+\end{itemize}
+
+Note: The structure {\tt SequenceOfFrequencySeries} is similar to the
+{\tt FrequencyVectorSeries} structure. The distinction is in the order of
+the packing in {\tt *data}. See Section \ref{packingorder}.
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tag<datatype>SequenceOfFrequencySeries
+{
+  CHAR          name[LALNameLength]; /* user assigned name           */
+  LIGOTimeGPS   epoch;               /* epoch of first series sample */
+  REAL8         f0;                  /* first frequency in sample    */
+  REAL8         deltaF;              /* sample spacing in time       */
+  LALUnit       sampleUnits;         /* units for sampled quantity   */
+  <datatype>FrequencyVectorSeries  *data;    /* the data                     */
+}
+<datatype>TimeSeries;
+\end{verbatim}}
+
+\paragraph{{\texttt {FrequencyArraySeries}} {\bf (Not yet implemented)} }~
+
+
+The structure FrequencyArraySeries is used to represent result of a
+Fourier transformation on a {\tt TimeArraySeries} object. It may have both
+negative and positive frequency components, depend- ing on the value
+of the starting frequency parameter. A {\tt FrequencyArraySeries} object has
+the following attributes:
+
+
+\begin{itemize}
+\vspace{-0.15in}
+\item
+{\tt name} of series. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+{\tt epoch}  -  time at which the earliest sample in the [pre-transformed]
+data was acquired;
+\vspace{-0.15in}
+\item
+first frequency in series. 
+\vspace{-0.15in}
+\item
+{\tt deltaF} offset between samples.  {\bf (Frequency units will be in Hertz.)}
+The series spans the interval {\tt [f0,f0+deltaF,....,f0+(N-1)*deltaF]}
+\vspace{-0.15in}
+\item
+units of values recorded in samples. See Section \ref{name}.
+\vspace{-0.15in}
+\item
+the data is stored in a {\tt <datatype>ArraySequence}  structure. This
+structure contains:
+\begin{itemize}
+\vspace{-0.1in}
+\item
+The number of frequency  samples is stored in {\tt data->length}
+\vspace{-0.1in}
+\item
+The dimension of each array is stored in {\tt data->arrayDim}
+\vspace{-0.1in}
+\item
+The length of each dimension of the array in {\tt data->dimLength}
+[Note all the values in each array are evaluated at a single frequency.]
+\vspace{-0.1in}
+\item
+The data is stored in {\tt data->data[]}
+\end{itemize}
+\end{itemize}
+
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tag<datatype>FrequencyArraySeries
+{
+  CHAR          name[LALNameLength]; /* user assigned name           */
+  LIGOTimeGPS   epoch;               /* epoch of first series sample */
+  REAL8         f0;                  /* first frequency in sample    */
+  REAL8         deltaF;              /* sample spacing in time       */
+  LALUnit       sampleUnits;         /* units for sampled quantity   */
+  <datatype>ArraySequence  *data;    /* the data                     */
+}
+<datatype>FrequencyArraySeries;
+\end{verbatim}}
+
+
+\subsubsection{Series of n-tuples  {\bf (Not implemented yet.)} }
+
+The structure TableSeries is used to represent ordered n-tuple data
+for which, for example, sampling rate is not a fixed value.
+TableSeries would be used to represent calibration data taken at
+logarithmically spaced frequency intervals. A TableSeries object has
+the following attributes:
+
+\begin{itemize}
+\vspace{-0.1in}
+\item
+name of series. See Section \ref{name}.
+\vspace{-0.1in}
+\item
+time of epoch - time at which the original data which were transformed were acquired;
+\vspace{-0.1in}
+\item
+number of samples in object, N (Hidden in Vector structure)
+\vspace{-0.1in}
+\item
+number of elements per sample - length of each element  (Hidden in Vector structure)
+\vspace{-0.1in}
+\item
+units of values recorded in samples. See Section \ref{name}.
+\vspace{-0.1in}
+\item
+vector sequence table of data 
+\end{itemize}
+
+{\footnotesize
+\begin{verbatim}
+typedef		struct 			
+tag<datatype>TableSeries
+{
+   CHAR       name[LALNameLength];  /* user assigned name                       */
+   LIGOTimeGPS  epoch;              /* time value of first array element        */
+   LALUnits     *sampleUnits;       /* vector with units for sampled quantities */
+   <datatype>VectorSequence  *data; /*  the n-tuple data                        */
+}
+<datatype>TableSeries;
+\end{verbatim}}
+
+
+\subsubsection{{\texttt {TransferFunction}}}
+
+\paragraph{Frequency domain   {\bf (Not implemented yet.)} }~
+
+
+The structure {\tt FTransferFunction} is used to represent $H[s]$:
+
+\begin{itemize}
+\vspace{-0.1in}
+\item
+name of transform.  See Section \ref{name}.
+\vspace{-0.1in}
+\item
+list of frequencies
+\vspace{-0.1in}
+\item
+list of magnitude, phase, or
+\vspace{-0.1in}
+\item
+list of real, imaginary
+\end{itemize}
+
+
+{\footnotesize
+\begin{verbatim}
+enum {XferMag, XferXY} XferType;  /* R*exp[i*phi] vs. x+iy representation for Xfer */
+
+typedef		struct 			
+tag<datatype>FTransferFunction
+{
+   XferType  XferRepresentation;    /* Bode representation for real-imaginary */
+   CHAR name[LALNameLength];        /* user assigned name                     */
+   CHARVector  *HNames;             /* e.g., "f_Hz, H_mag, H_phi_radian\n"    */
+   <datatype>VectorSeries  *hData;  /* the H[s] as 3-tuples                   */
+}
+<datatype>FTransferFunction;
+\end{verbatim}}
+
+\paragraph{Zero, poles and gain representation }~
+
+
+The structure {\tt ZPGFilter} is used to represent a transfer functions as a
+list of zeroes, poles, and a gain.
+
+
+\begin{itemize}
+\vspace{-0.1in}
+\item
+name of transform. See Section \ref{name}.
+\vspace{-0.1in}
+\item
+gain, G (complex)
+\vspace{-0.1in}
+\item
+poles, pk (complex)
+\vspace{-0.1in}
+\item
+zeroes, zk (complex)
+\end{itemize}
+
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tagCOMPLEX8ZPGFilter
+{
+  CHAR            name[LALNameLength];
+  REAL8           deltaT;
+  COMPLEX8Vector *zeros;
+  COMPLEX8Vector *poles;
+  COMPLEX8        gain;
+}
+COMPLEX8ZPGFilter;
+
+typedef struct
+tagCOMPLEX16ZPGFilter
+{
+  CHAR             name[LALNameLength];
+  REAL8            deltaT;
+  COMPLEX16Vector *zeros;
+  COMPLEX16Vector *poles;
+  COMPLEX16        gain;
+}
+COMPLEX16ZPGFilter;
+\end{verbatim}}
+
+
+
+
+
+\subsection{ {\texttt {LALStatus}}}
+\label{ssec:lalstatus}
+
+The {\tt LALStatus} structure is passed to a function to report
+success or failure.
+{\footnotesize
+\begin{verbatim}
+typedef struct
+tagLALStatus
+{
+  INT4                 statusCode;
+  const CHAR          *statusDescription;
+  volatile const CHAR *Id;
+  const CHAR          *function;
+  const CHAR          *file;
+  INT4                 line;
+  struct tagLALStatus *statusPtr;
+  INT4                 level;
+}
+LALStatus;
+\end{verbatim}}
+
+\subsubsection{The LAL {\texttt {statusCode}} and 
+{\texttt {statusDescription}} fields }
+
+ The symbolic values must be provided in the header file, and they
+must  be auto-extracted to appear in the documentation.  
+({\tt statusCode = 0} for successful termination.)
+
+{\footnotesize
+\begin{verbatim}
+/* the values and names of statusCode for a header file CLR.h    */
+/* <lalErrTable file="CLRHErrorTable"> */
+#define CLRH_ENULL 1
+#define CLRH_ESIZE 2
+#define CLRH_ESZMM 4
+  
+#define CLRH_MSGENULL "Null pointer"
+#define CLRH_MSGESIZE "Invalid input size"
+#define CLRH_MSGESZMM "Size mismatch"
+/* </lalErrTable>  */
+\end{verbatim}}
+
+Furthermore, using the naming convention illustrated here is required.
+The  {\tt statusCode}`s (error codes) must begin with the header file name
+(converted to upper case with a trailing H)  and are appended with
+{\tt \_E<name of error>} (e.g. {\tt MYHEADERH\_EDIVZERO}). The
+corresponding {\tt statusDescripiton}'s (error messages) are the same
+except they are appended with {\tt \_MSGE<name of error>} (e.g. {\tt
+MYHEADERH\_MSGEDIVZERO}).  The text string in the message should be a
+brief description of what went wrong.
+
+Note: The leading comment line with the {\tt <lalErrTable file ...}
+and the trailing comment line with {\tt </lalErrTable>} are necessary
+commands to extract this information -- in tabular form -- to the
+documentation.
+
+\subsubsection{The LAL CVS Id string}
+
+In each source code file ({\tt .h} and  {\tt .c}) the version control ``Id''
+string will appear  twice.  [See, e.g., the example header file in
+Appendix A.] In the author-version block at the top of the file, the
+string {\tt \$\relax Id\$} will be converted 
+by the CVS to something like:
+
+\noindent
+{\tt \$\relax Id: filename,v 1.1 2001/03/11 00:12:51 jolien Exp \$}
+
+\noindent
+Also in each file we assign the Id string to string constant. This is
+done in all files with the macro 
+{\tt NRCSID()}.  When you first write {\tt MyFile.c},  you must make the assignment  
+
+\noindent
+{\tt NRCSID(MYFILEC, "\$\relax Id\$");} 
+
+\noindent
+The CVS will convert this to something like
+
+\noindent
+{\tt NRCSID(MYFILEC, "\$\relax Id: MyFile.c,v 1.1 2001/03/11 00:12:51 jolien Exp \$");}
+
+\noindent
+Of course you should use {\tt MYFILEH} in the {\tt .h} files.
+
+The  CVS Id  string contains the  file name, revision number, date,
+author, state identifier [release, alpha, etc.] and locker (if
+locked). Locker contains the loginID of the user (if any) who had
+locked the code for the purpose of making revisions at the time the
+present version was exported. [The only difference between requiring
+the CVS  ``Id'' string and the CVS ``Header'' string is that the Header
+string also gives the absolute path to the file.]
+
+\section{LAL functions}
+\label{sec:lalfunctions}
+\subsection{The burning question}
+
+Do all the routines that I write really have to obey all the  rules
+for LAL functions? Answer: If your function is visible in the library,
+it must obey all the rules given below.  However, many of the
+requirements below pertain to the interface between LAL functions and
+the outside world. Inside a given module you may use static functions
+(i.e. functions that are not visible in the library) that don't jump
+through all these hoops.  Allowing this flexibility is not only
+friendly, it is computationally sound. Many of the LAL function
+requirements are time consuming, e.g. allocating the status
+structure every time you call a LAL function. If we required this to
+be done every time a simple arithmetic function is called in a loop,
+the code would take forever to execute. We could require that the
+arithmetic code be written in-line, and avoid the function call.
+However this discourages programmers from writing  modular code that
+is easy to maintain.
+
+Don't abuse this flexibility. This is not a license to write code that
+doesn't conform to the specification, and then dress it up in a
+wrapper that presents the correct appearance. The Software Coordinator
+is watching!
+
+\subsection{The rules for LAL functions}
+The following are guidelines for writing analysis functions for LIGO
+data. The general style should be consistent with the style
+specification LIGO-T970211.  In cases where what is described below
+differs from T970211, the present document takes precedence.
+
+Functions written according to these guidelines will be simpler to
+verify,  maintain and  incorporate into general analysis systems. In
+the following guidelines, the prototypical analysis function is
+referred to as {\tt LALFunction()}.
+
+\begin{enumerate}
+
+\item
+{\tt LALFunction()} is of type void and shall have a maximum of
+four arguments:
+
+\begin{verbatim}
+void 
+LALFunction( LALStatus              *status, 
+             LALFunctionOutStruct   *output,
+             LALFunctionInStruct    *input,
+             LALFunctionParamStruct *params
+);
+\end{verbatim}
+
+The first argument is a  pointer to a status structure (See Section
+\ref{ssec:lalstatus}.). This argument is required for all LAL functions, period. The
+remaining three arguments are optional. 
+
+The second and third arguments are pointers to an output structure and
+an input structure respectively.  Use the LAL datatypes whenever
+possible for these structures!
+
+The fourth argument is a parameter structure which can be used to pass
+other types of data, including re-entrant behavior information, to the
+function. Code developers are required to use LAL data types
+(described above) where possible within the parameter structure. 
+
+Explanation: This makes it easier to extend or to add extra
+functionality to procedures. When additional arguments are needed they
+can be added as members of the input, output or parameter structures
+without modifying any existing code that calls {\tt LALFunction()}.
+
+Admonition: There is a certain amount of ambiguity about what is an
+input, an output, or a parameter for a function. When you modify a
+function, don't cheat and try to slip something into parameter block
+that is clearly an input or output.  [The software coordinator is
+watching!]
+
+\item
+{\tt LALFunction()} shall return control to the routine that called
+it.The status structure [Section \ref{ssec:lalstatus}] is used to
+report the completion status of the function when it returns. 
+
+{\bf The {\tt statusCode} must be checked -- and the result acted upon
+-- after returning from each function call.}
+
+If {\tt LALFunction()} completes successfully, {\tt statusCode} should
+be set to zero. Upon abnormal termination of {\tt LALFunction()}, {\tt
+statusCode} must be assigned a non-zero value. Values for {\tt
+statusCode} must be documented and assigned symbolic names in {\tt
+LALFunction.h}. {\tt statusDescription} is a pointer to a static
+character string also defined in {\tt LALFunction.h}.  This string
+should provide a brief summary of the problem.  A specific syntax and
+naming convention for the  {\tt statusCode} and the {\tt
+statusDescription} is given in Section \ref{ssec:lalstatus}.  *Id  is a static
+character string assigned in {\tt LALFunction()} and defined in {\tt
+LALFunction.h} that contains CVS information.  The field {\tt
+function}
+contains the name of the function  where the error occurred. {\tt line}
+contains the line number in module  where the error occurred. The
+field {\tt file} contains the name of the module where the error occurred. 
+
+The status structure definition is recursive to permit the status to
+be returned from various levels of nested function calls (i.e.,
+functions called within functions, which are called within
+functions,...).  {\tt level} keeps track of how many levels deep the problem
+actually occurred.
+
+Table \ref{statusCode} shows the negative values for the {\tt
+statusCode} that have been reserved for some generic failures:
+
+
+\begin{table}
+\begin{center}
+\begin{tabular}{|cp{4.2cm}p{6.5cm}|}
+\hline
+Code & Message & Explanation \\
+\hline
+
+{\tt 0} & & Nominal execution; the function returned
+successfully. \\
+
+{\tt -1} & \vspace{-1.4ex}{\tt Recursive error} & The function aborted due
+to failure of a subroutine. \\
+
+\tt -2 & \vspace{-1.4ex}{\tt INITSTATUS}: non-null status pointer & The
+status structure passed to the function had a non-{\tt NULL}
+{\tt statusPtr} field, which blocks the function from calling
+subroutines (it is symptomatic of something screwy going on in the
+calling routine). \\
+
+\tt -4 & \vspace{-1.4ex}{\tt ATTATCHSTATUSPTR}: memory allocation error
+& The function was unable to allocate a {\tt statusPtr} field to pass
+down to a subroutine. \\
+
+\tt -8 & \vspace{-1.4ex}{\tt DETATCHSTATUSPTR}: null status pointer &
+The {\tt statusPtr} field could not be deallocated at the end of all
+subroutine calls; one of the subroutines must have lost it or set it
+to {\tt NULL}. \\
+\hline
+\end{tabular}
+\caption[Reserved negative status codes]{Shows the negative values for the {\texttt {statusCode}} that have been
+reserved for generic failures.}
+\label{statusCode}
+\end{center}
+\end{table}
+
+
+Explanation: If functions always return, the program flow is
+controllable at the highest level. The status code and description
+allows the top level to identify and resolve possible problems. 
+
+\item
+Direct calls to {\tt malloc()}, {\tt free()}, {\tt calloc()} and {\tt
+realloc()} are not allowed.
+
+They are replaced by functions {\tt LALMalloc()}, {\tt LALFree()},
+{\tt LALCalloc()}, {\tt LALRealloc()}. (See file {\tt LALMalloc.h} in
+the LAL distribution. The librarian discourages the use of {\tt
+LALRealloc()}).
+
+Explanation: These simplify tracking memory usage and memory leak
+identification.
+
+\item
+{\bf Upon return from {\tt LALMalloc()} (or the other memory allocation
+routines), the calling function must check for a {\tt NULL} return.}
+
+Explanation: Non needed: it is simply good programming practice.
+
+\item
+{\tt LALFunction()} should free all memory that it allocates, except
+for storage for variable length output parameters.
+The memory must be freed, even when the termination is abnormal!
+
+This simple requirement is one of the one of the most difficult to 
+implement in your code.
+
+Explanation: This avoids memory leaks. Persistent intermediate storage
+and fixed length output parameters should be allocated by the calling
+function.
+
+\item
+Functions and procedures must refer to: 
+{\footnotesize
+\begin{verbatim}
+    extern INT4 lalDebugLevel;
+\end{verbatim}}
+when deciding whether to print debugging information. The
+{\tt lalDebugLevel}  feature has been considerably enhanced from previous
+versions of this document.  It allows very discriminating choices in
+what information will be printed. For example, {\tt lalDebugLevel =0} means
+no information will be printed. {\tt lalDebugLevel = 1} will print only
+print serious error information, {\tt lalDebugLevel = 3} will print
+errors and warnings, {\tt lalDebugLevel = 16} will print only memory
+allocation debugging information. See the documentation in the LAL
+release for the full functionality of this feature. 
+
+Explanation: allows calling program to make discriminating choices
+about diagnostic information to understand unusual behavior. Allowing
+the programmer to  select the debugging information to printed is
+essential: if everything is printed, you can't  find what you are
+looking for. 
+
+Warning: do not test the value of {\tt lalDebugLevel} within critical
+floating point loops. The presence of an integer compare/branch
+instruction often interferes with efficient floating-point execution.
+
+\item
+The function should be in a {\tt .c} file and come with a {\tt .h} header
+file.  Small sets of related functions may be grouped together into a
+single ({\tt File.c}, {\tt File.h}) pair.  See Sections  6.2.1 and 6.2.2 for the
+content and layout of the header and source files.
+
+Explanation: this will make it easier to exchange useful functions. 
+
+\item
+File input/output using fopen(), fclose(), fprintf(), etc. is
+not allowed. 
+
+Custom file I/O functions will be provided. A function should close
+all files that it opens, except for files that are explicitly passed
+to the calling function by a FILE pointer in the output structure.
+
+Explanation: file access may not be available (permissions, space) or
+appropriate on given machines. The custom file I/O routines will deal
+with this.
+
+\item
+Each function must come with a stand-alone test program, which
+can be linked to {\tt LALFunction()}.  See Section 6.2.3. 
+
+\item
+Allocation of significant amounts of memory should use the
+custom {\tt LALmalloc()} rather than automatic stack variables.
+
+Explanation: many machines and shells do not support large stacks.
+Typical stack sizes are 8 to 64 Mbytes. It is easy to blow the stack
+and this can be hard to identify with debuggers and other tools.
+
+\item
+Debugging/information/warning messages should be printed with
+a custom replacement for printf() and fprintf(stderr,...).
+
+This function will be provided and will take the same arguments as
+printf() and possibly other arguments.
+
+Explanation: this allows debugging/information/warning messages to be
+handled in different ways, depending on the operating environment and
+conditions. For example, they might be logged, sent immediately to the
+user, ignored, etc.
+
+
+\item
+Developers should use LAL standard data structures whenever
+possible. See Section 4.
+
+Explanation: It is easier to pass information between functions.
+
+\item
+{\tt LALFunction()} should be re-entrant.
+
+
+In other words, it should not contain variables that save internal
+state information between function invocations. If such state
+variables are needed, then they must be included in one of the argument structures.
+
+Explanation: Functions that are not re-entrant cannot be invoked by
+different routines without special precautions.
+
+\item
+Aliasing (i.e., allowing two structures to point to or share
+the same memory address) is expressly prohibited. An exception to this
+is the case where (mutually exclusive) memory sharing is effectively
+supported by ANSI C (e.g., unions).
+
+Explanation: It becomes difficult to keep track of whether memory is
+being pointed to and, consequently, difficult to avoid memory leaks
+or ``amnesia''  (freeing memory being used). Code maintenance becomes
+more difficult when aliasing is permitted.
+
+\item
+{\tt LALFunction()} should not raise  or trap signals. 
+[There are a few exceptions to this rule that are under the 
+strict control of the LAL Librarian.]
+
+\end{enumerate}
+
+
+\section{LAL code organization}
+\label{sec:lalcode}
+
+This chapter explains the layout of the code within the LAL. First we
+give the large-scale structure: the directory tree.  Then we
+describe the finer structure: the required format and content of the
+individual source files.  
+
+In Chapter 7, you will notice that the code and the  documentation are
+inextricably entwined: the hierarchy  of the code elements (packages,
+headers, modules)  determines the hierarchy of the documentation
+(chapters, sections, subsections).  Even at finer resolution this
+holds:  the contents of the individual source files also matches the
+content of the individual documentation pieces.
+
+\subsection{The big picture: the LAL directory tree}
+All LAL components (i.e. code, header files, Makefiles, configure
+scripts, documentation etc.), will reside in a single directory
+(called lal/ in this discussion) and its subdirectories.  The LSC
+Software Coordinator and Software Librarian will maintain an official
+``master copy'' of the LAL source in the CVS repository. Loosely
+speaking, a ``release'' of the LAL consists of a tar-ball of the
+master copy of this directory. User can download and install a release
+on their own machines. 
+
+Within this top level directory, their will be a subdirectory
+(lal/packages/) where the analysis code will reside. Within this
+subdirectory, every LAL software component will have a named directory
+that contain all files associated with the package (e.g.
+lal/packages/inspiral). The development of ``packages'' will be the
+primary way  collaborators will contribute to the LAL. 
+
+A package subdirectory  (e.g. lal/packages/mypackage) should have the
+source files, documentation  and Makefiles in the following
+subdirectories:
+
+\begin{itemize}
+\item
+{\tt lal/packages/mypackage/include}: all the header files
+associated with this component.  Header files must conform to the
+format and style described in Section 6.2.1.
+
+\item
+{\tt lal/packages/mypackage/src}:  all the source files associated
+with the component. They must conform to the format and style
+described in Section 6.2.2.
+
+
+\item
+{\tt lal/packages/mypackage/test}:  test scripts and all supporting
+files  associated with component-level tests. The tests must conform
+to the format and style described in Section 6.2.3.
+
+\item
+{\tt lal/packages/mypackage/doc}: There will be a LaTeX file in this
+directory capable of assembling a ``stand-alone'' documentation for
+this package. There will also be LaTeX file that forms a chapter in
+comprehensive manual for the entire LAL. Before auto-extraction with
+laldoc, much of the text source for the documentation may reside in
+the code files. See Section 7.
+
+\end{itemize}
+
+\subsubsection{Making LAL code modular}
+
+In order to make LAL code easy to use, it should be modular;
+therefore, as a general rule, packages should have (at most) a few
+headers in the /include directory, (at most) a few  related modules
+should include each header file,  and only a few -- closely related
+-- functions should be in each module.
+
+
+\subsection{The finer picture: the format of LAL code}
+
+\subsubsection{Header Files}
+
+Header files  will conform to the format in Appendix A and contain the
+following information, in the order presented.
+
+\begin{enumerate}
+\item
+An author and Id block. Note, the CVS will supply the file name and
+version number in the Id string. This information must be
+auto-extracted for inclusion in the documentation.
+
+\item
+Brief (one sentence) description of the functionality of the header
+file.
+
+\item
+A comment block with a Synopsis and description of the functionality
+supported by this header.
+
+\item
+Protection against double inclusion.
+
+\item
+Includes. This header may include other headers; if so, they
+go immediately after the double-include protection. Includes should
+appear in the following order:
+\begin{itemize}
+    \item Standard library includes;
+    \item LDAS includes;
+    \item LAL includes;
+\end{itemize}
+
+
+\item 
+Assignment of Id string using NRCSID().  See Section
+\ref{ssec:lalstatus}.
+\item 
+Error codes and messages.  These must be auto extracted for
+inclusion in the documentation.
+\item
+Macros. But, note use of macros is discouraged.
+\item
+Extern Constant Declarations. These are strongly discouraged.
+\item
+Structures, enums, unions,  typedefs, etc.
+\item
+Extern Global Variables. These are strongly discouraged.
+Inform the Software Coordinator.
+\item
+Functions Declarations (i.e., prototypes).
+
+\end{enumerate}
+
+\noindent
+Note: no executable code appears in a header file.
+
+\subsubsection{Source Files}
+
+Source files will conform to the style presented in  Appendix B and
+contain the following information in the order presented.
+
+\begin{enumerate}
+\item
+An author and Id block. Note, the CVS will supply the file
+name and version number in the Id string. This information must be
+auto-extracted for inclusion in the documentation.
+
+\item
+Extended comment block that forms the nucleus of the
+documentation for this module. (See Section 7 for the specific
+outline.) If the text gets too long and the ``code gets lost in the
+documentation", you must move the text elsewhere. 
+
+\item
+Includes. These should be guarded and appear in the following
+order:
+\begin{itemize}
+   \item Standard library includes;
+   \item LDAS includes; 
+   \item LAL includes.
+\end{itemize}
+
+\item
+Assignment of Id string using NRCSID().  See Section
+\ref{ssec:lalstatus} for
+instructions.
+
+\item
+The code.  [The following order is prefered, but there may be
+exceptional circumstances.]
+
+\begin{enumerate}
+   \item
+   Constants, structures (used only internally in this module)
+   \item
+   Type declarations (used only internally)
+   \item
+   Macros (discouraged, used only internally)
+   \item
+   Extern global variable declarations (Strongly discouraged)
+   \item
+   Global variables (Strongly discouraged)
+   \item
+   Static function declarations.
+   \item
+   The functions that make up the guts of this module.  (Remember, to
+   auto-extract the prototypes for inclusion in the documentation.)
+\end{enumerate}
+\end{enumerate}
+
+\subsubsection{Component level tests}
+Along with each header file there should be an executable that tests
+every function prototyped in the header file.  These executables
+should extensively (if not exhaustively) test the error condition that
+can be thrown by a function. The program  should report success or
+failure for all the tests and exit cleanly.
+
+As these executables will not form part of the dynamically loaded
+library of functions, there is a bit more flexibility in how they are
+written.  For example unix shell scripts that run an executable
+multiple times with different command line options are allowed. Also
+keep in mind, these executables should serve as example code on  how
+to use the functions.
+
+As a general rule, a test suite should involve tests from at least
+three categories:
+\begin{itemize}
+   \item
+   Mainline tests, which demonstrate that the routine correctly
+   acts on commonly encountered input data;
+   \item
+   Inside-edge tests, which demonstrate that the routine
+   correctly acts on input data that are barely legitimate;
+   \item
+   Outside-edge tests, which demonstrate that the routine
+   correctly acts on input data that are barely illegitimate.
+\end{itemize}
+
+In the case of illegitimate data, ``success'' of the test involves
+correctly reporting the failure and  returning the appropriate error
+conditions.
+
+\section{LAL code documentation}
+\label{sec:laldocumentation}
+
+Along with any code submission to the LAL library, developers  will
+need to supply documentation. Keep in mind, the documentation, like
+the code, is a deliverable, and the software coordinator will
+carefully review the documentation to ensure that  it adheres to these
+specifications.
+
+Why don't we use the LDAS documentation template for LAL code? Most of
+the LDAS software is written in C++, and therefore the documentation
+is naturally built around ``classes''. LAL code is written in C, thus
+the LDAS model doesn't apply. None the less, our system does mimic the
+LDAS model as closely as possible by building the LAL documentation
+around header files and the modules and functions that include them.
+
+\subsection{The requirements driving  the documentation design}
+
+The defining goals of the LAL specification (widespread-use and
+collaborative-development of the code) lead to a clear requirement for
+the documentation: The documentation should not  only help the author
+maintain his or her code, but it should be clear enough that any
+developer can read it and figure out how the code works. If you find
+yourself saying, ``The easiest way for me to maintain my code is
+...'',  you have missed the point.
+
+The fact that others will need to find their way through the
+documentation  leads naturally to a sensible requirement: The
+documentation must have a uniform presentation. This might be
+cumbersome in the case of simple functions  and restrictive in other
+cases, but it is still necessary.
+
+The documentation must be accurate. Therefore we have a custom-built
+documentation tool (laldoc) that  allows authors to extract code
+fragments, comments and extended LaTeX source from the code files and
+import them  directly into the documentation.
+
+
+\subsection{LAL documentation rules}
+
+The following rules follow naturally from the requirements above:
+
+\begin{enumerate}
+\item
+Documentation will be written in LaTeX. Reason: (1) The
+equation-writing capability of LaTeX.  (2) It is easy to translate
+LaTeX to pdf, so the document can be read on the web. (3) Most of the
+LAL programmers know LaTeX, thus they won't need to learn another
+typesetting language.
+\item
+The author and CVS Id block in the code must be auto-extracted
+from the code and automatically included in the documentation. Reason:
+Obvious. It should be clear what version of the code the documentation
+pertains to.
+\item
+Error codes and error descriptions must be auto-extracted from the
+header files and automatically included in the documentation.  Reason:
+Obvious. There should be no doubt the error information in the
+documentation is exactly what is in the code. There is a simple tool
+within laldoc for doing the extraction.
+\item
+Function prototypes must be auto-extracted and included in the
+documentation.
+\item
+All functions must be entered into the LaTeX document index
+with an /index{} command. Reason: If somebody runs across a function
+in the code, they should be able to find the documentation  by looking
+it up in the index. The LAL prefix on function names should be omitted
+when putting them in the index.
+\item
+All non-LAL data structures  must be entered into the LaTeX
+document index with an /index{} command. Reason: Same as functions.
+\item
+Do not let the code get lost in the documentation. Using
+laldoc allows one to put the source of the documentation in the source
+code files; however the text of the documentation can easily grow to
+be longer than the code itself.  If the comment block containing the
+documentation starts to swamp the code, move some documentation,
+e.g. put the documentation at the end of the file and use the LaTeX
+command  /input{} to build the document.
+
+\end{enumerate}
+
+\subsection{The organization of LAL documentation}
+The organization  of  the documentation follows the organization of
+the code. The hierarchy of the code elements determines the hierarchy
+of the documentation elements. The documentation for each package will
+form a chapter. The documentation for each  header file within the
+package will form a section of the package chapter. The documentation
+for each module that includes that header file will form a subsection
+of the header section. Similarly, the test modules associated with
+each header file will also form a subsection of the header section.
+The  documentation of the individual code pieces also closely follows
+from the code architecture.  This design makes it easy to build the
+documentation with laldoc. The References will come at the end of each
+package chapter. [This method of organizing documentation around
+headers and functions is similar to  the way books on C organize the
+documentation of  the standard libraries.]
+
+The fact that packages form chapters also means that they
+independently form reasonably self-contained documents.  This is
+convenient since packages  are the ``unit-size" of  most of the
+development efforts. 
+
+[Note: Previous versions did not distinguish between documentation
+for, headers, modules, and test executables. The current presentation
+has been considerably rearranged; however all material required in
+previous versions is still required in this version.]
+
+\subsubsection{Header file documentation}
+
+The documentation for each header file within a package
+include/-directory will form a LaTeX section within the package
+chapter. All header  documentation will have a uniform format and
+include the following information in this order.  
+
+\begin{enumerate}
+\item
+Short description: Each header section will begin with a short
+(one sentence) description of the header.
+\item
+Synopsis: A somewhat more extensive explanation of the purpose
+of the header file. Keep in mind, some detailed information may be
+better left to the documentation of the individual modules and
+functions that use this header.
+\item
+Error codes and messages: The error codes and messages must be
+auto-extracted and included in the documentation in a LaTeX table.
+[laldoc has a simple way of doing this.] Additional explanation of the
+errors can go after the table. In particular, explain what measures
+are taken to handle errors.
+\item
+Structures: If you must define a new structures for the input, output,
+or parameter block for your routine, you must document them here.
+Note: these structures must be entered in the LaTeX index with an
+/index{} command. The {\tt LAL} prefix on data-structure names should be
+omitted when putting them in the index.
+\item
+Author-Id block: This should appear as a footnote at the bottom of the
+last page.
+\end{enumerate}
+
+\subsubsection{Module documentation}
+
+The documentation for each module that includes a given header file
+will form a LaTeX subsection within the header-file section. The
+documentation for a module will have a uniform format and include the
+following information in this order.
+
+\begin{enumerate}
+   \item
+   Short description: Each module subsection will begin with a
+   short (one sentence) description of the module.
+   \item
+   Prototypes: The prototypes for all the functions in this module must
+   appear here. Note: these functions must  be entered in the LaTeX index
+   with an /index{} command. The {\tt LAL} prefix should be omitted when
+   putting them in the index.
+   \item
+   Description: Explain  how to use the functions.  Give detailed
+   information about the arguments. Explain any run-time options that
+   may be invoked. Remember that any non-LAL structures used as
+   arguments should be documented in the header-file section.
+   \item
+   Algorithm: Explanation of the algorithm.
+   \item
+   Uses: A list of all the routines that this module uses.
+   \item
+   Notes: Additional discussion can go here.
+   \item
+   Validation Information: This section is a placeholder for formal
+   results of validation testing.  In the mean-time please put
+   information about timing and accuracy here.
+   \item
+   Validation Information: This section is a placeholder for formal
+   results of validation testing.  In the mean-time please put
+   information about timing and accuracy here.
+\end{enumerate}
+
+\subsubsection{Component-level test documentation}
+
+The documentation of the test programs will form a subsection of the
+header file section. The  documentation for the programs will have a
+uniform format and include the following information in this order.
+
+\begin{enumerate}
+\item
+Short description: Each test program subsection will begin
+with a short (one sentence) description of the module, e.g.
+{\tt SampleTest.c} is an executable that tests all functions specified
+in the header {\tt SampleHeader.h}.
+\item
+Usage: Show and explain the  command line syntax
+\item
+Description: Explain in detail what tests are done and how
+they work.
+\item
+Exit Codes: A LaTeX table containing the exit codes. We
+strongly suggest that you extract these from the source in the same
+way error codes are extracted.
+\item
+Uses: A list of all the routines that this module uses.
+\item
+Notes:
+\item
+Author-Id block: This should appear as a footnote at the
+bottom of the last page.
+\end{enumerate}
+
+
+
+
+\section{Maintaining the LAL}
+\label{sec:lalmaint}
+
+\subsection{Version control for the LAL}
+
+The LL and LSC will jointly maintain both the LAL software and the LAL
+specification. The source code and documentation -- and this document
+-- will be kept in a CVS repository. When a package is submitted to
+the library its directory tree will be entered in the CVS repository.
+The revision history of the files will be available on the web. The
+LSC Software Coordinator and Software Librarian will over see the
+day-to-operations of the repository. They will also see that the  most
+up-to-date versions of all code files are  publicly --and easily --
+available on the web. 
+
+\subsection{Numbering the LAL releases Numbering the LAL releases}
+
+In addition to making the individual code pieces available, the LSC
+Software Coordinator and Software Librarian will periodically issue a
+``release" of the entire library. The numbering scheme for releases of
+LAL code will be two numbers separated by a decimal point (.), e.g.
+LAL Release ``X.Y".Individual software components in the library shall
+also be identified by version number.  The version specification for
+the software libraries shall also be in the form ``X.Y". These numbers
+will be supplied automatically by the CVS. Here X = version number.
+This is incremented whenever major changes are introduced. If X is
+incremented, Y is reset to 0. Here Y = revision number. This is
+incremented whenever one or more of the following changes are made:
+(i) software error fixes; (ii) enhancements in existing
+functionality; (iii) modifications for which  X is not incremented.
+
+\subsection{Validation of LAL code}
+
+Verifying that the individual components (functions) work will
+primarily be the responsibility of the code developers.  This is the
+purpose of the test routines described in Section 6.2.3.
+
+The LSC Software Coordinator, the LSC data analysis subgroup chairs
+and the LL personnel will  organize  integrated tests of the analysis
+pipeline  through ``mock data challenges". These tests will be
+conducted to ``validate" the code.
+
+\subsection{Requesting changes in LAL}
+
+The LSC will maintain a web page for submitting bug reports and
+releasing  the code. Currently, this can be found at
+http://www.lsc-group.phys.uwm.edu/lal/.
+
+While in the development phase, updating the code and documentation
+will be largely be the responsibility of the individual code writers.
+However, as we transition to ``production mode'', the procedure for
+updating code will need to  be more formal.  [During the early stages
+a-c will apply.  In the more formal stage a-e apply.]
+
+\renewcommand{\labelenumi}{\alph{enumi}.}
+\begin{enumerate}
+\item
+All modified code  will be verified (and validated in a
+pipeline test if necessary). All affected documentation will be
+revised to show changes.
+\item
+Once available, a new release will be distributed.
+\item
+A history of revisions shall be maintained and made available to users.
+\item
+Change requests will be reviewed jointly by LL and LSC on a regular basis.
+\item
+Those changes which are selected for incorporation shall be
+assigned for implementation to respective groups.
+\end{enumerate}
+\renewcommand{\labelenumi}{\alph{arabic}.}
+
+
+\section{Development tools and software packages used with LAL}
+\label{sec:laltools}
+
+To keep life simple for the users and developers, we limit the
+required packages to a few well chosen items. This minimizes the
+number of learning curves that developers need to be climb before they
+can start coding, and it limits the number of packages that users need
+to install before they can use the LAL functions.
+
+\subsection{Compiling the LAL}
+
+In keeping with the goal of ``broad use" we will try to maintain
+portability of the LAL, e.g. it currently installs several platforms
+with several different compilers.  This portability may be hard to
+maintain in the future, but, as minimum, we will work to insure the
+LAL compiles and installs on 
+
+\begin{itemize}
+\item
+linux [Redhat 6.0 or later] on Intel hardware with a gcc compiler;
+\item
+Solaris 7 on SUN hardware with a gcc compiler.
+\end{itemize}
+
+\subsection{Development tools:}
+
+\begin{itemize}
+\item
+GNU CVS: version 1.10 or greater. [Primarily, this will be
+used by the LSC Software Librarian and Coordinator; other developers
+shouldn't need this.]
+\item
+GNU Autoconf [Primarily, this will be used by the LSC Software
+Librarian and Coordinator; other developers shouldn't need this.]
+\item
+GNU m4: version 1.4 or greater. [Primarily' this will be used
+by the LSC Software Librarian and Coordinator; other developers
+\item
+GNU make: version 3.72 or greater.
+\end{itemize}
+
+
+\subsection{Documentation tools:}
+\begin{itemize}
+   \item
+   LaTeX
+   \item
+   Custom made automatic documentation tool: laldoc.
+   \item
+   PDF (generated by any means).
+\end{itemize}
+
+
+\subsection{Software packages}
+Currently, FFTW is the only software package required for LAL
+installation. All others are optional. Let's keep it  that way.
+
+\begin{itemize}
+   \item
+   FFTW   (Required)  [FFTW  is the current choice for an fft
+   engine; however we have not burned any bridges that would preclude
+   changing to a different package if something better comes along.]
+   \item
+   MPI (Optional)
+   \item
+   Frames (Optional)
+   \item
+   (C)LAPACK (Optional, not implemented yet.)
+   \item
+   Not Numerical Recipes.
+\end{itemize}
+
+
+
+\clearpage
+\appendix{{\Large \bf {Appendix A: LAL Template Header File}}
+\addcontentsline{toc}{section}{Appendix A: LAL Template Header File}
+{\footnotesize
+\begin{verbatim}
+/*[Author-Id block must be auto extracted] <lalVerbatim file="LALTemplateHV">
+ * Author: Hacker, A. Good
+ * $Id$
+*** [Note: CVS will always supply file name in the Id.]  </lalVerbatim> ****/
+
+/* A brief (one sentence) description of what this header is for.   */
+
+/* Synopsis and (longer) Description goes  here                      */
+
+#ifndef _LALTEMPLATE_H /* Protect against double-inclusion         */
+
+#define _LALTEMPLATE_H  /* Note the naming convention               */ 
+
+#include "LALStdlib.h"  /* Include any other headers                */
+
+#ifdef __cplusplus     /* Protect against C++ name mangling        */
+extern "C" {
+#endif
+
+/* You must use  the NRCSID macro to define the RCS ID string       */
+NRCSID(LALTEMPLATEH,"$Id$")
+
+/* Define error codes and messages. These must be auto-extracted
+ * for inclusion in the documentation
+ ********************************** <lalErrTable file="LALTemplateHError"> */
+
+#define LALTEMPLATEH_EONE 1
+#define LALTEMPLATEH_ETWO 2
+
+#define LALTEMPLATEH_MSGEONE "An error condition"
+#define LALTEMPLATEH_MSGETWO "Another error condition"
+
+/********************************** </lalErrTable> */
+ 
+/* Define other global constants or macros  (discouraged)          */
+
+
+/* Define new structures and types. (Use LAL types when possible)  */
+
+
+/* Include external global variables                               */
+
+
+/* Declare global function prototypes                              */
+
+void
+LALTemplate( LALStatus *stat );
+
+#ifdef __cplusplus 
+}                   /* Close C++ protection             */
+#endif
+#endif              /* Close double-include protection  */ 
+\end{verbatim}
+
+
+
+
+\clearpage
+\appendix{{\Large \bf {Appendix B: LAL Template Source File}}
+\addcontentsline{toc}{section}{Appendix B: LAL Template Source File}
+{\footnotesize
+\begin{verbatim}
+/* [Author-Id block must be auto extracted] <lalVerbatim file="LALTemplateCV">
+ * Author: Hacker, A. Good
+ * $Id$
+** [Note: CVS will always supply file name in the Id.]  </lalVerbatim> **/ 
+
+/* The following comments  can (should) form the nucleus of the
+ * documentation. However, if the discussion becomes too long
+ * and the "code gets lost in the documentation", you MUST move the text 
+ * elsewhere.  The easiest thing to do is to put it at the end of 
+ * this module file and \input{} into the documentation here where it is 
+ * needed.
+*/
+/* -------------------------------------------------------------- */
+/* A brief description of what the functions in this module do.      */
+
+/* \input{} the file with the extracted function prototypes.         */
+
+/* Description (Describe how to use the functions in this module)    */
+
+/* Algorithm                                                         */
+
+/* Uses  (what other  functions does  this module call)              */
+
+/* Notes (other comments about the code)                             */
+/* -------------------------------------------------------------- */
+
+#include "LALStdlib.h"    /* include headers.order: std, LDAS, LAL   */
+#include "LALTemplate.h"  /* include LAL header  for this module     */
+
+/* You must use  the NRCSID macro to define the CVS ID string        */
+   NRCSID(LALTEMPLATEH,"$Id$")
+
+/* Now comes the code:
+   [The following order is prefered, but there may be exceptional 
+   circumstances.] 
+
+   1. Constants, enumerated types, structures (used only internally)
+   2. Type declarations (used only internally)  
+   3. Macros.(discouraged)
+   4. Extern global variable declarations. (Strongly discouraged!)
+   5. Static global variables. (Strongly discouraged!)
+   6. Static function declarations:
+   7. The functions that make up the guts of this module.
+      (Remember to auto-extract the prototypes for inclusion in the 
+       documentation.)
+*/
+\end{verbatim}
+}
+
+\end{document}
+
+
+
