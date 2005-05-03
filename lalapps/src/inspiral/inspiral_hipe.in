@@ -756,7 +756,7 @@ for o, a in opts:
     do_trigbank = 1
   elif o in ("-V", "--inspiral-veto"):
     do_insp_veto = 1
-  elif o in ("-C", "--second-coincidence"):
+  elif o in ("-C", "--second-coinc"):
     do_second_coinc = 1
   elif o in ("-s", "--sire"):
     do_sire = 1
