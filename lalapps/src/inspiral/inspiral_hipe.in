@@ -334,6 +334,10 @@ def double_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
   slides = number of time slides req'd, used as a boolean
   """
 
+  # add time slide arguments if doing a slide
+  if slides:
+    double_coinc_job.add_ini_opts(cp,'thinca-slide')
+    
   double_coinc_analyzed = []
   for seg in ifo_double:
     thinca = inspiral.ThincaNode(double_coinc_job)
@@ -387,7 +391,11 @@ def triple_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,
   ifotag = the ifotag to add to the output file name
   slides = number of time slides req'd, used as a boolean
   """
-  
+
+  # add time slide arguments if doing a slide
+  if slides:
+    triple_coinc_job.add_ini_opts(cp,'thinca-slide')
+ 
   triple_coinc_analyzed = []
   for seg in ifo_triple:
     thinca = inspiral.ThincaNode(triple_coinc_job)
@@ -452,6 +460,10 @@ def quadro_coinc(ifo_a_analyzed,ifo_a_name,ifo_b_analyzed,ifo_b_name,\
   slides = number of time slides req'd, used as a boolean
   """
 
+  # add time slide arguments if doing a slide
+  if slides:
+    quadro_coinc_job.add_ini_opts(cp,'thinca-slide')
+ 
   quadro_coinc_analyzed = []
   for seg in ifo_quadro:
     thinca = inspiral.ThincaNode(quadro_coinc_job)
@@ -612,14 +624,14 @@ Usage: lalapps_inspiral_hipe [options]
   -a, --h1-data           analyze h1 data
   -b, --h2-data           analyze h2 data
   -l, --l1-data           analyze l1 data
-  -g, --g1-data		  analyze g1 data
+  -g, --g1-data           analyze g1 data
 
-  -L, --ligo-only	  analyse ligo detctors only
+  -L, --ligo-only         analyse ligo detctors only
   
   -S, --one-ifo           analyze single ifo data (not usable for GEO)
   -D, --two-ifo           analyze two interferometer data
   -T, --three-ifo         analyze three interferometer data
-  -Q, --four-ifo	  analyze four intereferometer data
+  -Q, --four-ifo          analyze four intereferometer data
   
   -A, --analyze-all       analyze all ifos and all data (over-rides above)
 

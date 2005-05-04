@@ -168,8 +168,6 @@ class ThincaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     
     for sec in ['thinca']:
       self.add_ini_opts(cp,sec)
-    for sec in ['thinca-slide']:
-      self.add_ini_opts(cp,sec)
 
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
