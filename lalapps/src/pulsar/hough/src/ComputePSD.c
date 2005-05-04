@@ -1,17 +1,17 @@
 /*-----------------------------------------------------------------------
  *
- * File Name: SFTclean.c
- * Authors:  Krishnan, B. 
+ * File Name: ComputePSD.c
+ * Authors:  Krishnan, B.  ; Sintes, A. M.
  *
  * Revision: $Id$
  *
- * History:   Created by Krishnan July 12, 2004
- *            Modified...
+ * History:   Created by Krishnan 
+ *            Modified by Sintes 
  *
  *-----------------------------------------------------------------------
  */
-/************************************ <lalVerbatim file="SFTbinTestCV">
-Author: Krishnan, B.  
+/************************************ <lalVerbatim file="ComputePSDCV">
+Author: Krishnan, B. , Sintes, A.M. 
 $Id$
 ************************************* </lalVerbatim> */
 
@@ -39,7 +39,7 @@ NRCSID (COMPUTEPSDC, "$Id$");
 
 /* Error codes and messages */
 
-/************** <lalErrTable file="SFTCLEANCErrorTable"> */
+/************** <lalErrTable file="ComputePSDCErrorTable"> */
 #define COMPUTEPSDC_ENORM 0
 #define COMPUTEPSDC_ESUB  1
 #define COMPUTEPSDC_EARG  2
@@ -204,8 +204,9 @@ int main(int argc, char *argv[]){
     LALFree(fnameLog); 
   }
   /*end of logging*********************************************************/
- 
-{ 
+
+ /*********************************************************************/
+  { 
     CHAR     command[256];
     glob_t   globbuf;
     INT4    jj;
@@ -236,6 +237,8 @@ int main(int argc, char *argv[]){
     }
     globfree(&globbuf);	
   }
+
+  /*********************************************************************/
 
   sft=NULL;
   SUB (LALReadSFTfile (&status, &sft, uvar_fStart, uvar_fStart + uvar_fBand, filelist[0]), &status);
@@ -278,6 +281,21 @@ int main(int argc, char *argv[]){
 
       LALDestroySFTtype (&status, &sft);
     }
+
+   /*********************************************************************/
+   /* renormalization for one-sided PSD */
+   
+   {
+     REAL8 factor, Tsft;
+     INT8  Nsamples;
+     
+      Tsft= 1.0/deltaF;
+      Nsamples = 2 * nBins;
+      factor= 2.0*deltaF*Tsft*Tsft/Nsamples/Nsamples/mObsCoh;
+      
+      for (count= 0; count < nBins; count++){ periodo[count] *= factor; }
+    }
+   /*********************************************************************/
 
   /* write periodo to the output file */
   if (  (fpOut = fopen(uvar_outputPSDFILE, "w")) == NULL)
