@@ -202,10 +202,10 @@ INT4 main(INT4 argc, CHAR *argv[])
     {
       numerator += thisStoch->cc_stat / (thisStoch->cc_sigma * \
           thisStoch->cc_sigma);
-      denominator += thisStoch->cc_sigma * thisStoch->cc_sigma;
+      denominator += 1./(thisStoch->cc_sigma * thisStoch->cc_sigma);
     }
-    yOpt = numerator / denominator;
-    sigmaOpt = 1/denominator;
+    yOpt = (1./stochHead->duration.gpsSeconds) * (numerator / denominator);
+    sigmaOpt = (1./stochHead->duration.gpsSeconds) * (1./sqrt(denominator));
 
     /* print results */
     fprintf(stdout, "    yOpt = %e\n", yOpt);
