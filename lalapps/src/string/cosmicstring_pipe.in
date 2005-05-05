@@ -131,9 +131,9 @@ if do_inj:
   injection_job.set_sub_file( basename + '.binj' + subsuffix ) 
 
 # get chunk lengths from the values in the ini file
-no_of_segments = int(cp.get('string', 'no-of-segments'))
+short_seg_lenth = int(cp.get('string', 'short-segment-duration'))
 length = int(cp.get('pipeline', 'segment-length'))
-overlap = length/no_of_segments/4
+overlap = short_seg_lenth/4
 
 # read science segs that are greater or equal to a chunk from the input file
 data = pipeline.ScienceData()
