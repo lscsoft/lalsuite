@@ -96,7 +96,7 @@ struct CommandLineArgsTag {
   char *outputFileName;         /* Name of xml output filename */
   INT4 GPSStart;              /* GPS start time of segment to be analysed */
   INT4 GPSEnd;                /* GPS end time of segment to be analysed */
-  INT4 NoOfSegs;              /* Number of fixed length sub-segments between GPSStart and GPSEnd */
+  INT4 ShortSegDuration;      /* Number of fixed length sub-segments between GPSStart and GPSEnd */
   INT4 TruncSecs;             /* Half the number of seconds truncated at beginning and end of a chunk */
   REAL4 power;                /* Kink (-5/3) or cusp (-4/3) frequency power law */
   REAL4 threshold;            /* event SNR threshold */
@@ -631,7 +631,7 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
   TESTSTATUS( &status );
 
   /* loop over overlapping chunks */ 
-  for(i=0; i < 2*CLA.NoOfSegs - 1 ;i++)
+  for(i=0; i < 2*GV.duration/CLA.ShortSegDuration - 1 ;i++)
     {
       /* populate vector that will hold the data for each overlapping chunk */
       memcpy( vector->data, GV.ht_proc.data->data + i*GV.seg_length/2,vector->length*sizeof( *vector->data ) );
@@ -827,8 +827,8 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
 int AvgSpectrum(struct CommandLineArgsTag CLA)
 {
  
-  GV.seg_length = GV.ht_proc.data->length / CLA.NoOfSegs;
-  
+  GV.seg_length = (int)(CLA.ShortSegDuration/GV.ht_proc.deltaT + 0.5);
+
   LALSCreateVector( &status, &GV.Spec.data, GV.seg_length / 2 + 1 );
   TESTSTATUS( &status );
 
@@ -849,25 +849,14 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
     }
   else
     {
-      LALWindowParams       windowParams;
-      AverageSpectrumParams avgSpecParams;
- 
-      windowParams.type     = Hann;
-      windowParams.length   = GV.seg_length;
- 
-      avgSpecParams.window  = NULL;
-      avgSpecParams.plan    = GV.fplan;
-      avgSpecParams.method  = useMean;
-      avgSpecParams.overlap = GV.seg_length / 2;
+      int segmentLength = GV.seg_length;
+      int segmentStride = GV.seg_length/2;
+      REAL4Window  *window  = NULL;
 
-      LALCreateREAL4Window( &status, &avgSpecParams.window,&windowParams );
-      TESTSTATUS( &status );
-
-      LALREAL4AverageSpectrum( &status, &GV.Spec, &GV.ht_proc, &avgSpecParams );
-      TESTSTATUS( &status );
-      
-      LALDestroyREAL4Window( &status, &avgSpecParams.window );
-      TESTSTATUS( &status );
+      window = XLALCreateWelchREAL4Window( segmentLength );
+      XLALREAL4AverageSpectrumMedianMean( &GV.Spec, &GV.ht_proc, segmentLength,
+					  segmentStride, window, GV.fplan );
+      XLALDestroyREAL4Window( window );
     }
 
   return 0;
@@ -1053,19 +1042,19 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"gps-end-time",        required_argument, NULL,           'E'},
     {"gps-start-time",      required_argument, NULL,           'S'},
     {"injection-file",      required_argument, NULL,           'i'},
-    {"no-of-segments",      required_argument, NULL,           'N'},
+    {"short-segment-duration",      required_argument, NULL,   'd'},
     {"settling-time",       required_argument, NULL,           'T'},
     {"sample-rate",         required_argument, NULL,           's'},
     {"trig-start-time",     required_argument, NULL,           'g'},
-    {"cusp-search",                no_argument, NULL,         'c' },
-    {"kink-search",                no_argument, NULL,         'k' },
+    {"cusp-search",                no_argument, NULL,          'c' },
+    {"kink-search",                no_argument, NULL,          'k' },
     {"test-gaussian-data",         no_argument, NULL,          'n' },
-    {"test-white-spectrum",        no_argument, NULL,         'w' },
-    {"cluster-events",             no_argument, NULL,         'l' },
+    {"test-white-spectrum",        no_argument, NULL,          'w' },
+    {"cluster-events",             no_argument, NULL,          'l' },
     {"help",        no_argument, NULL,         'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwlf:b:t:F:C:E:S:i:N:T:s:g:o:";
+  char args[] = "hnckwlf:b:t:F:C:E:S:i:d:T:s:g:o:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -1087,7 +1076,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->outputFileName=NULL;
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
-  CLA->NoOfSegs=0;
+  CLA->ShortSegDuration=0;
   CLA->TruncSecs=0;
   CLA->power=0.0;
   CLA->fbanklow=0.0;
@@ -1166,9 +1155,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->GPSEnd=atof(optarg);
       ADD_PROCESS_PARAM("int");
       break;
-    case 'N':
+    case 'd':
        /* Number of segment to break-up search into */
-      CLA->NoOfSegs=atof(optarg);
+      CLA->ShortSegDuration=atoi(optarg);
       ADD_PROCESS_PARAM("int");
       break;
     case 'T':
@@ -1221,7 +1210,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--gps-end-time (-E)\t\tINTEGER\t GPS end time.\n");
       fprintf(stdout,"\t--settling-time (-T)\t\tINTEGER\t Number of seconds to truncate inverse square root of power spectrum.\n");
       fprintf(stdout,"\t--trig-start-time (-g)\t\tINTEGER\t GPS start time of triggers to consider.\n");
-      fprintf(stdout,"\t--no-of-segments (-N)\t\tINTEGER\t Number of non-overlapping sub-segments, N. The 2N-1 segments analysed will overlap by 50%s. \n","%");
+      fprintf(stdout,"\t--short-segment-duration (-d)\t\tINTEGER\t Duration of shor segments. They will overlap by 50%s. \n","%");
       fprintf(stdout,"\t--kink-search (-k)\t\tFLAG\t Specifies a search for string kinks.\n");
       fprintf(stdout,"\t--cusp-search (-c)\t\tFLAG\t Specifies a search for string cusps.\n");
       fprintf(stdout,"\t--test-gaussian-data (-n)\tFLAG\t Use unit variance fake gaussian noise.\n");
@@ -1288,9 +1277,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try ./StringSearch -h \n");
       return 1;
     }      
-  if(CLA->NoOfSegs == 0)
+  if(CLA->ShortSegDuration == 0)
     {
-      fprintf(stderr,"Number of segments not specified (they overlap by 50%s).\n","%");
+      fprintf(stderr,"Short segment duration not specified (they overlap by 50%s).\n","%");
       fprintf(stderr,"Try ./StringSearch -h \n");
       return 1;
     }      
@@ -1298,20 +1287,27 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   /* Some consistency checking */
   {
     int big_seg_length=CLA->GPSEnd-CLA->GPSStart;
-    int small_seg_length=big_seg_length/CLA->NoOfSegs;
-     
-    if(small_seg_length*CLA->NoOfSegs != big_seg_length)
+    int small_seg_length=CLA->ShortSegDuration;
+
+    REAL4 x=((float)big_seg_length/(float)small_seg_length)-0.5;
+
+    if ((int)x != x)
       {
-        fprintf(stderr,"There is not an exact integer number (%d) of sub-segments in the total time requested (%d).\n",
-		CLA->NoOfSegs,big_seg_length);
+        fprintf(stderr,"The total duration of the segment T and the short segment duration\n");
+        fprintf(stderr,"Should obey the following rule: T/t - 0.5 shold be an odd integer.\n");
 	return 1;
       } 
-    
-    if( small_seg_length  < 8*CLA->TruncSecs)
+    if (((int)x)%2 != 1)
       {
-        fprintf(stderr,"Sub-segment length T=%d is too small to accomodate truncation time requested.\n",
+        fprintf(stderr,"The total duration of the segment T and the short segment duration\n");
+        fprintf(stderr,"Should obey the following rule: T/t - 0.5 shold be an odd integer.\n");
+	return 1;
+      }     
+    if( CLA->ShortSegDuration/4  < CLA->TruncSecs)
+      {
+        fprintf(stderr,"Short segment length t=%d is too small to accomodate truncation time requested.\n",
 		small_seg_length);
-	fprintf(stderr,"Need T >= 8 x %d = %d\n",CLA->TruncSecs,8*CLA->TruncSecs);
+	fprintf(stderr,"Need short segment t(=%d) to be >= 4 x Truncation length (%d).\n",CLA->ShortSegDuration,CLA->TruncSecs);
 	return 1;
       }    
   }
@@ -1319,8 +1315,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   /* store the input start and end times */
   /* set the start and end time for the search summary */
   {
-    int big_seg_length=CLA->GPSEnd-CLA->GPSStart;
-    int small_seg_length=big_seg_length/CLA->NoOfSegs;
+    int small_seg_length=CLA->ShortSegDuration;
 
     searchsumm.searchSummaryTable->in_start_time.gpsSeconds = CLA->GPSStart;
     searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds =0;
