@@ -1362,24 +1362,24 @@ int main( int argc, char *argv[] )
         if( coincInspiralList )
         {  
           for (numCoincInSlide = 1, thisCoinc = coincInspiralList; 
-            thisCoinc->next; ++numCoincInSlide, thisCoinc = thisCoinc->next );
+              thisCoinc->next; ++numCoincInSlide, thisCoinc = thisCoinc->next );
+
+          if ( vrbflg ) fprintf( stdout,
+              "%d coincident triggers found in slide.\n", numCoincInSlide );
+
+          numCoinc += numCoincInSlide;
+
+
+          /* write out all coincs as singles with event IDs */
+          LAL_CALL( LALExtractSnglInspiralFromCoinc( &status, &slideOutput, 
+                coincInspiralList, &startCoinc, slideNum), &status );
+
+          /* the output triggers should be slid back to original time */
+          LAL_CALL( LALTimeSlideSingleInspiral( &status, slideOutput,
+                &startCoinc, &endCoinc, slideReset), &status) ;
+          LAL_CALL( LALSortSnglInspiral( &status, &(slideOutput),
+                LALCompareSnglInspiralByTime ), &status );
         }
-
-        if ( vrbflg ) fprintf( stdout,
-          "%d coincident triggers found in slide.\n", numCoincInSlide );
-      
-        numCoinc += numCoincInSlide;
-
-
-        /* write out all coincs as singles with event IDs */
-        LAL_CALL( LALExtractSnglInspiralFromCoinc( &status, &slideOutput, 
-            coincInspiralList, &startCoinc, slideNum), &status );
-
-        /* the output triggers should be slid back to original time */
-        LAL_CALL( LALTimeSlideSingleInspiral( &status, slideOutput,
-            &startCoinc, &endCoinc, slideReset), &status) ;
-        LAL_CALL( LALSortSnglInspiral( &status, &(slideOutput),
-            LALCompareSnglInspiralByTime ), &status );
       }
       
       if ( snglOutput )
