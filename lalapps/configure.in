@@ -185,6 +185,7 @@ AC_OUTPUT( 				\
         lalapps.spec                    \
 	doc/Makefile 			\
 	man/Makefile 			\
+	misc/Makefile 			\
 	src/Makefile			\
 	src/lalapps/Makefile            \
 	src/example/Makefile		\

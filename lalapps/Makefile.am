@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-SUBDIRS = src doc man
+SUBDIRS = src doc man misc
 EXTRA_DIST = acconfig.h lalapps.spec.in lalapps.spec
 
 # cvs-clean: more than maintainer-clean, this cleans
