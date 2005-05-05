@@ -136,11 +136,11 @@ LALBinaryPulsarDeltaT( LALStatus						*status,
 	Pb = params->Pb*DAYSTOSECS; /* covert period from days to secs */
 	pbdot = params->Pbdot*1.0e-12;
 	
-	T0 = params->T0*DAYSTOSECS; /* covert T0 from MJD to secs */
-	Tasc = params->Tasc*DAYSTOSECS; /* convert Tasc from MJD to secs */
+	T0 = (params->T0 - 44244.0)*DAYSTOSECS; /* covert T0 from MJD to UTC */
+	Tasc = (params->Tasc - 44244.0)*DAYSTOSECS; /* convert Tasc from MJD to UTC */
 	
 	if(strstr(input->tbflag, "MJD") != NULL){
-		tb = input->tb*DAYSTOSECS;
+		tb = (input->tb - 44244.0)*DAYSTOSECS;
 	}
 	else if(strstr(input->tbflag, "GPS") != NULL){
 		tb = input->tb - input->leapSecs;
