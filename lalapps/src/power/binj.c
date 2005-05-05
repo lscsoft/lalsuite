@@ -50,6 +50,8 @@ int snprintf(char *str, size_t size, const  char  *format, ...);
 "  --hpeak HPEAK            amplitude of SG injection in strain units\n"\
 "  --log-hpeak-min LOGHMIN  min amplitude of SG injection in strain units\n"\
 "  --log-hpeak-max LOGHMAX  max amplitude of SG injection in strain units\n"\
+"  --simwaveform-duration   duration of th esimulated waveform (Warren/Ott/ZM)\n"\
+"  --simwaveform-number     # of the simulated waveform \n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --waveform NAME          set waveform type to NAME (SineGaussian)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
@@ -276,6 +278,8 @@ int main( int argc, char *argv[] ){
   REAL4  log_hpeakMin=0.0;
   REAL4  log_hpeakMax=0.0;
   REAL4  logAmpRange=0.0;
+  REAL4  simwavedur = 0.0;
+  INT4   simnumber = 0;
 
   /* Need to set this to true if one wants to use MDC signals*/
   INT4 mdcFlag =FALSE;
@@ -322,6 +326,8 @@ int main( int argc, char *argv[] ){
     {"seed",                    required_argument, 0,                's'},
     {"time-step",               required_argument, 0,                't'},
     {"waveform",                required_argument, 0,                'w'},
+    {"simwaveform-duration",    required_argument, 0,                'i'},
+    {"simwaveform-number",      required_argument, 0,                'l'},
     {"tau",                     required_argument, 0,                'x'},
     {"freq",                    required_argument, 0,                'y'},
     {"hpeak",                   required_argument, 0,                'z'},
@@ -361,7 +367,7 @@ int main( int argc, char *argv[] ){
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "ha:b:t:s:w:x:y:z:c:Z:", long_options, &option_index );
+        "ha:b:t:s:w:i:l:x:y:z:c:Z:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -538,6 +544,20 @@ int main( int argc, char *argv[] ){
             optarg );
         break;
 
+      case 'i':
+        {
+          simwavedur = atof( optarg );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", simwavedur );
+        }
+        break;
+
+      case 'l':
+        {
+          simnumber = atoi( optarg );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", simnumber );
+        }
+        break;
+
       case 'h':
         fprintf( stderr, USAGE );
         exit( 0 );
@@ -698,9 +718,15 @@ int main( int argc, char *argv[] ){
       this_sim_burst->hpeak = hpeak;
       this_sim_burst->freq = freq;
       this_sim_burst->tau = tau;
-      this_sim_burst->dtplus = 4.0 * tau;
-      this_sim_burst->dtminus = 4.0 * tau;
-      this_sim_burst->zm_number = 0;
+      if (simwavedur){
+	this_sim_burst->dtplus = simwavedur / 2.0;
+	this_sim_burst->dtminus = simwavedur / 2.0 ;
+      }
+      else{
+	this_sim_burst->dtplus = 4.0 * tau;
+	this_sim_burst->dtminus = 4.0 * tau;
+      }
+      this_sim_burst->zm_number = simnumber;
 
       /* set up for site arrival time calculation */
       place_and_gps->p_gps = &(this_sim_burst->geocent_peak_time);
