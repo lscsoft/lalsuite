@@ -1,4 +1,6 @@
 #include <getopt.h>
+#include <lalapps.h>
+#include <processtable.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,10 +10,17 @@
 #include <lal/Date.h>
 #include <lal/EPSearch.h>
 #include <lal/ExcessPower.h>
+#include <lal/FindChirp.h>
+#include <lal/FindChirpSP.h>
+#include <lal/FindChirpTD.h>
+#include <lal/FindChirpBCV.h>
+#include <lal/FindChirpBCVSpin.h>
+#include <lal/FindChirpChisq.h>
 #include <lal/FrameCalibration.h>
 #include <lal/FrameStream.h>
 #include <lal/FrequencySeries.h>
 #include <lal/GenerateBurst.h>
+#include <lal/Inject.h>
 #include <lal/IIRFilter.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
@@ -23,21 +32,15 @@
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/Random.h>
+#include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
+#include <lal/SeqFactories.h>
+#include <lal/SimulateCoherentGW.h>
 #include <lal/TFTransform.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-
-#include <lal/FindChirp.h>
-#include <lal/FindChirpSP.h>
-#include <lal/FindChirpTD.h>
-#include <lal/FindChirpBCV.h>
-#include <lal/FindChirpBCVSpin.h>
-#include <lal/FindChirpChisq.h>
-
-#include <lalapps.h>
-#include <processtable.h>
+#include <lal/VectorOps.h>
 
 int snprintf(char *str, size_t size, const char *format, ...);
 int vsnprintf(char *str, size_t size, const char *format, va_list ap);
@@ -74,7 +77,6 @@ static struct {
 	CHAR *calCacheFile;         /* name of the calibration cache file  */
  	CHAR *simCacheFile;         /* name of the sim waveform cache file */
  	CHAR *simdirname;           /* name of the dir. with the sim. wave */
- 	CHAR *simType;              /* type of sim waveform(warren/ott/zm  */
 	REAL8 simFrameSecs;         /* number of seconds in the sim frame  */
 	int cluster;                /* TRUE == perform clustering          */
 	CHAR *comment;              /* user comment                        */
@@ -104,6 +106,7 @@ CHAR *dirname;                      /* name of directory with frames       */
 /* data conditioning parameters */
 CHAR *burstInjectionFile;           /* file with list of burst injections  */
 CHAR *inspiralInjectionFile;        /* file with list of burst injections  */
+CHAR *simInjectionFile;             /* file with list of sim injections  */
 CHAR *mdcCacheFile;                 /* name of mdc signal cache file       */
 ResampleTSFilter resampFiltType;
 
@@ -229,8 +232,8 @@ static void print_usage(char *program)
 "	 --resample-rate <Hz>\n" \
 "	[--seed <seed>]\n" \
 "       [--sim-cache <sim cache file>]\n" \
-"       [--sim-type <sim type>]\n" \
 "       [--sim-seconds <sim seconds>]\n" \
+"	[--siminjection-file <file name>]\n" \
 "	 --tile-overlap-factor <factor>\n" \
 "	 --threshold <threshold>\n" \
 "	[--useoverwhitening]\n" \
@@ -473,8 +476,8 @@ void parse_command_line(
 		{"resample-filter",     required_argument, NULL,           'b'},
 		{"resample-rate",       required_argument, NULL,           'e'},
 		{"sim-cache",           required_argument, NULL,           'q'},
-		{"sim-type",            required_argument, NULL,           'r'},
 		{"sim-seconds",         required_argument, NULL,           's'},
+		{"siminjection-file",   required_argument, NULL,           't'},
 		{"seed",                required_argument, NULL,           'c'},
 		{"tile-overlap-factor", required_argument, NULL,           'f'},
 		{"threshold",           required_argument, NULL,           'g'},
@@ -525,7 +528,6 @@ void parse_command_line(
 	options.cal_high_pass = -1.0;	/* impossible */
 
 	options.simCacheFile = NULL;	/* default */
-	options.simType = NULL;	        /* default */
 	options.simFrameSecs = 0;       /* default */
 	options.simdirname = NULL;      /* default */
 
@@ -533,6 +535,7 @@ void parse_command_line(
 	dirname = NULL;	                /* default */
 	memset(ifo, 0, sizeof(ifo));	/* default */
 	burstInjectionFile = NULL;	/* default */
+	simInjectionFile = NULL;	/* default */
 	inspiralInjectionFile = NULL;	/* default */
 	mdcCacheFile = NULL;	        /* default */
 	mdcparams = NULL;	        /* default */
@@ -902,16 +905,15 @@ void parse_command_line(
 		ADD_PROCESS_PARAM("string");
 		break;
 
-		case 'r':
-		options.simType = optarg;
-		ADD_PROCESS_PARAM("string");
-		break;
-
 		case 's':
 		options.simFrameSecs = atof(optarg);
 		ADD_PROCESS_PARAM("float");
 		break;
 
+		case 't':
+		  simInjectionFile = optarg;
+		  ADD_PROCESS_PARAM("string");
+		  break;
 
 		/* option sets a flag */
 		case 0:
@@ -1201,7 +1203,7 @@ static void add_burst_injections(
 	INT4 startTime = series->epoch.gpsSeconds;
 	INT4 stopTime = startTime + series->data->length * series->deltaT;
 	SimBurstTable *injections = NULL;
-	INT4 calType=0;
+	INT4 calType=1;
 
 	if(!response) {
 		fprintf(stderr, "add_burst_injections(): must supply calibration information for injections\n");
@@ -1325,53 +1327,239 @@ static void add_mdc_injections(LALStatus *stat, const char *mdcCacheFile, REAL4T
  *                           Sim injections
  * ============================================================================
  */
-
 static void add_sim_injections(
-        LALStatus *stat,
+	LALStatus *stat,
 	REAL4TimeSeries *series,
 	COMPLEX8FrequencySeries *response,
 	size_t lengthlimit
-)
+	)
 {
-	REAL4TimeSeries *plusseries;
-	REAL4TimeSeries *crossseries;
+	REAL4TimeSeries   *signal;
+	DetectorResponse   detector;
+	LALDetector       *tmpDetector=NULL;
+	CoherentGW         waveform;
+	REAL4             *aData;
+	LALTimeInterval   epochCorrection;
+	COMPLEX8FrequencySeries  *transfer = NULL;
+	COMPLEX8Vector    *unity = NULL;
+
 	char pluschan[30]; 
 	char crosschan[30];
 	LIGOTimeGPS start,end;
 	FILE *fp = NULL;
-	int i;
+	UINT4 i, n;
+	REAL8 simDuration;
 
-	/* Set the channel names */
-	if(options.simType) {
-	  snprintf(pluschan,30,"SIM_plus_%s_%d",options.simType,0);	  
-	  snprintf(crosschan,30,"SIM_cross_%s_%d",options.simType,0);
-	} 
-
-	/*Set the start and end times of the sim waveforms */
-	start.gpsSeconds = 0;
-	start.gpsNanoSeconds = 0;
-	LAL_CALL(LALAddFloatToGPS(stat, &end, &start, options.simFrameSecs), stat);
-
-	options.getcaltimeseries = FALSE;
-	/* Get the plus time series */
-	plusseries = get_time_series(stat, options.simdirname, options.simCacheFile, pluschan, start, end, lengthlimit, options.getcaltimeseries );
-
-	/* Get the cross time series */
-	crossseries = get_time_series(stat, options.simdirname, options.simCacheFile, crosschan, start, end, lengthlimit, options.getcaltimeseries  );
-
-	/* write diagnostic info to disk */
-	if(options.printData){
-	  fp = fopen("timeseriessim.dat","w");
-	  for(i = 0;(unsigned)i<plusseries->data->length;i++){
-	    fprintf(fp,"%e %e %e\n",i*plusseries->deltaT,plusseries->data->data[i],crossseries->data->data[i] );
-	  }
-	  fclose(fp);
+	INT4 startTime = series->epoch.gpsSeconds;
+	INT4 stopTime = startTime + series->data->length * series->deltaT;
+	SimBurstTable *injections = NULL;
+	SimBurstTable *simBurst = NULL;
+	BurstParamStruc    burstParam;
+	
+	if(!response) {
+	  fprintf(stderr, "add_sim_injections(): must supply calibration information for injections\n");
+	  exit(1);
+	}
+	
+	/* allocate memory */
+	memset( &detector, 0, sizeof( DetectorResponse ) );
+	transfer = (COMPLEX8FrequencySeries *)LALCalloc( 1, sizeof(COMPLEX8FrequencySeries) );
+	if (!transfer ){
+	  fprintf(stderr, "add_sim_injections(): detector.transfer not allocated\n");
+	  exit(1);
 	}
 
-	/* Clean up */
-	LAL_CALL(LALDestroyREAL4TimeSeries(stat, plusseries), stat);
-	LAL_CALL(LALDestroyREAL4TimeSeries(stat, crossseries), stat);
+	memcpy( &(transfer->epoch), &(response->epoch), sizeof(LIGOTimeGPS) );
+	transfer->f0 = response->f0;
+	transfer->deltaF = response->deltaF;
+	
+	tmpDetector = detector.site = (LALDetector *) LALMalloc( sizeof(LALDetector) );
+
+	/* set the detector site */
+	switch ( series->name[0] )
+	  {
+	  case 'H':
+	    *(detector.site) = lalCachedDetectors[LALDetectorIndexLHODIFF];
+	    LALWarning( stat, "computing waveform for Hanford." );
+	    break;
+	  case 'L':
+	    *(detector.site) = lalCachedDetectors[LALDetectorIndexLLODIFF];
+	    LALWarning( stat, "computing waveform for Livingston." );
+	    break;
+	  default:
+	    LALFree( detector.site );
+	    detector.site = NULL;
+	    tmpDetector = NULL;
+	    LALWarning( stat, "Unknown detector site, computing plus mode "
+			"waveform with no time delay" );
+	    break;
+	  }
+
+	/* set up units for the transfer function */
+	{
+	  RAT4 negOne = { -1, 0 };
+	  LALUnit unit;
+	  LALUnitPair pair;
+	  pair.unitOne = &lalADCCountUnit;
+	  pair.unitTwo = &lalStrainUnit;
+	  LAL_CALL(LALUnitRaise( stat, &unit, pair.unitTwo, &negOne ),stat);
+	  pair.unitTwo = &unit;
+	  LAL_CALL(LALUnitMultiply( stat, &(transfer->sampleUnits), &pair ),stat);
+	}	
+
+	/* invert the response function to get the transfer function */
+	LAL_CALL(LALCCreateVector( stat, &( transfer->data ), response->data->length ),stat);
+	
+	LAL_CALL(LALCCreateVector( stat, &unity, response->data->length ),stat);
+	for ( i = 0; i < response->data->length; ++i ) 
+	  {
+	    unity->data[i].re = 1.0;
+	    unity->data[i].im = 0.0;
+	  }
+	
+	LAL_CALL(LALCCVectorDivide( stat, transfer->data, unity, response->data ),stat);
+	
+	LAL_CALL(LALCDestroyVector( stat, &unity ),stat);
+       	
+	/* Set up a time series to hold signal in ADC counts */
+	LAL_CALL(LALCreateREAL4TimeSeries(stat, &signal, series->name, series->epoch, series->f0, series->deltaT, series->sampleUnits, series->data->length), stat);
+ 	
+	if(options.verbose)
+	  fprintf(stderr, "add_sim_injections(): reading in SimBurst Table\n");
+	
+	LAL_CALL(LALSimBurstTableFromLIGOLw(stat, &injections, simInjectionFile, startTime, stopTime), stat);
+	
+	simBurst = injections;
+	while ( simBurst ){
+	  REAL4TimeSeries    *plusseries;
+	  REAL4TimeSeries    *crossseries;
+	  
+	  /* set the burst params */
+	  burstParam.deltaT = series->deltaT;
+	  if( !( strcmp( simBurst->coordinates, "HORIZON" ) ) ){
+	    burstParam.system = COORDINATESYSTEM_HORIZON;
+	  }
+	  else if ( !( strcmp( simBurst->coordinates, "ZENITH" ) ) ){
+	    /* set coordinate system for completeness */
+	    burstParam.system = COORDINATESYSTEM_EQUATORIAL;
+	    detector.site = NULL;
+	  }
+	  else if ( !( strcmp( simBurst->coordinates, "GEOGRAPHIC" ) ) ){
+	    burstParam.system = COORDINATESYSTEM_GEOGRAPHIC;
+	  }
+	  else if ( !( strcmp( simBurst->coordinates, "EQUATORIAL" ) ) ){
+	    burstParam.system = COORDINATESYSTEM_EQUATORIAL;
+	  }
+	  else if ( !( strcmp( simBurst->coordinates, "ECLIPTIC" ) ) ){
+	    burstParam.system = COORDINATESYSTEM_ECLIPTIC;
+	  }
+	  else if ( !( strcmp( simBurst->coordinates, "GALACTIC" ) ) ){
+	    burstParam.system = COORDINATESYSTEM_GALACTIC;
+	  }
+	  else
+	    burstParam.system = COORDINATESYSTEM_EQUATORIAL;
+
+	  /* Set the channel names */
+	  snprintf(pluschan,30,"SIM_plus_%s_%d",simBurst->waveform,simBurst->zm_number);	  
+	  snprintf(crosschan,30,"SIM_cross_%s_%d",simBurst->waveform,simBurst->zm_number );
+	  
+	  /*Set the start and end times of the sim waveforms */
+	  start.gpsSeconds = 0;
+	  start.gpsNanoSeconds = 0;
+	  simDuration = (simBurst->dtplus + simBurst->dtminus);
+	  n = (INT4) (simDuration / series->deltaT);
+ 
+	  LAL_CALL(LALAddFloatToGPS(stat, &end, &start, simDuration), stat);
+
+	  options.getcaltimeseries = FALSE;
+	  /* Get the plus time series */
+	  plusseries = get_time_series(stat, options.simdirname, options.simCacheFile, pluschan, start, end, lengthlimit, options.getcaltimeseries );
+	  
+	  /* Get the cross time series */
+	  crossseries = get_time_series(stat, options.simdirname, options.simCacheFile, crosschan, start, end, lengthlimit, options.getcaltimeseries  );
+	  
+	  /* write diagnostic info to disk */
+	  if(options.printData){
+	    fp = fopen("timeseriessim.dat","w");
+	    for(i = 0;(unsigned)i<plusseries->data->length;i++){
+	      fprintf(fp,"%e %e %e\n",i*plusseries->deltaT,plusseries->data->data[i],crossseries->data->data[i] );
+	    }
+	    fclose(fp);
+	  }
+
+	  /* read in the waveform in a CoherentGW struct */
+	  memset( &waveform, 0, sizeof(CoherentGW) );
+	  /* this step sets the adata,fdata,phidata to 0 */ 
+	  LAL_CALL(LALGenerateBurst( stat, &waveform, simBurst, &burstParam ),stat);
+
+	  /* correct the waveform epoch:
+	   * Remember the peak time is always at the center of the frame
+	   * Hence the epoch of the waveform is set at 1/2 of the duration
+	   * before the geocent_peak_time, since geocent_peak_time should match
+	   * with the peak time in the frame
+	   */
+	  simDuration = simDuration / 2.0;
+	  LAL_CALL(LALFloatToInterval(stat, &epochCorrection, &simDuration), stat);
+	  LAL_CALL(LALDecrementGPS( stat, &(waveform.a->epoch), &(simBurst->geocent_peak_time), &epochCorrection), stat);
+	
+	  aData = waveform.a->data->data;
+
+	  for( i = 0; i < n; i++){
+	    *(aData++) = plusseries->data->data[i];
+	    *(aData++) = crossseries->data->data[i];
+	  }
+
+	  /* must set the epoch of signal since it's used by coherent GW */
+	  signal->epoch = waveform.a->epoch;
+	  detector.transfer=NULL;
+
+	  /* convert this into an ADC signal */
+	  LAL_CALL(LALSimulateCoherentGW( stat, signal, &waveform, &detector ),stat);	
+	  XLALRespFilt(signal, transfer);
+
+	  if(options.printData){
+	    fp = fopen("timeseriessignal.dat","w");
+	    for(i = 0;(unsigned)i<signal->data->length;i++){
+	      fprintf(fp,"%e %e\n",i*signal->deltaT,signal->data->data[i] );
+	    }
+	    fclose(fp);
+	  }
+	  /* inject the signal into the data channel */
+	  LAL_CALL(LALSSInjectTimeSeries( stat, series, signal ),stat);
+
+	  /* Clean up */
+	  LAL_CALL(LALDestroyREAL4TimeSeries(stat, plusseries), stat);
+	  LAL_CALL(LALDestroyREAL4TimeSeries(stat, crossseries), stat);
+	  LAL_CALL(LALSDestroyVectorSequence(stat, &( waveform.a->data ) ),stat);
+	  LAL_CALL(LALSDestroyVector(stat, &( waveform.f->data ) ),stat);
+	  LAL_CALL(LALDDestroyVector(stat, &( waveform.phi->data ) ),stat);
+	  LALFree( waveform.a );   waveform.a = NULL;
+	  LALFree( waveform.f );   waveform.f = NULL;
+	  LALFree( waveform.phi );  waveform.phi = NULL;
+	  
+	  /* reset the detector site information in case it changed */
+	  detector.site = tmpDetector;
+	  
+	  /* move on to next one */
+	  simBurst = simBurst->next;
+	}
+	
+	LAL_CALL(LALDestroyREAL4TimeSeries(stat, signal), stat);
+	LAL_CALL(LALCDestroyVector(stat, &( transfer->data )),stat);
+	
+	if ( detector.site ) 
+	  LALFree( detector.site );
+	LALFree( transfer );
+	
+	while(injections) {
+	  SimBurstTable *thisEvent = injections;
+	  injections = injections->next;
+	  LALFree(thisEvent);
+	}
+	
 }
+
+
 /*
  * ============================================================================
  *                               Analysis Loop
