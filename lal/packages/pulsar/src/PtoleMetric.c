@@ -3,6 +3,9 @@ Author: Jones D. I.,   Owen, B. J.
 $Id$
 ********************************************************** </lalVerbatim> */
 
+/* some parts of this file are based on code from DopplerScan.c, 
+   written by Reinhard Prix. */
+
 /**************************************************************** <lalLaTeX>
 
 \subsection{Module \texttt{LALPtoleMetric.c}}
@@ -69,6 +72,7 @@ Spindown is not yet included.
 #include <lal/LALStdlib.h>
 #include <lal/PtoleMetric.h>
 #include <lal/PulsarTimes.h>
+#include <lal/StackMetric.h>
 
 
 NRCSID( PTOLEMETRICC, "$Id$" );
@@ -623,3 +627,157 @@ static int factrl( int arg )
   while(--arg>0);
   return ans;
 } /* factrl() */
+
+
+/*----------------------------------------------------------------------
+ * this is a "wrapper" to provide a uniform interface to PtoleMetric() 
+ * and CoherentMetric(), from DopplerScan.c, written by Reinhard Prix.
+ *
+ * the parameter structure of PtoleMetric() was used, because it's more 
+ * compact
+ *----------------------------------------------------------------------*/
+/* <lalVerbatim file="PTOLEMETRICCP"> */
+void LALPulsarMetric ( LALStatus *stat, 
+		       REAL8Vector **metric,  /* output: metric */
+		       PtoleMetricIn *input ) /* input-params for the metric */
+{ /* </lalVerbatim> */
+  static MetricParamStruc params;
+  static PulsarTimesParamStruc spinParams;
+  static PulsarTimesParamStruc baryParams;
+  static PulsarTimesParamStruc compParams;
+  REAL8Vector *lambda = NULL;
+  UINT4 i, nSpin, dim;
+
+  INITSTATUS( stat, "LALPulsarMetric", PTOLEMETRICC );
+  ATTATCHSTATUSPTR (stat);
+
+  ASSERT ( input, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );
+  ASSERT ( metric != NULL, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );
+  ASSERT ( *metric == NULL, stat, PTOLEMETRICH_ENONULL, PTOLEMETRICH_MSGENONULL );
+
+  if (input->metricType == LAL_PMETRIC_COH_EPHEM) {
+    ASSERT ( input->ephemeris != NULL, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL);
+  }
+
+
+  if ( input->spindown ) 
+    nSpin = input->spindown->length;
+  else
+    nSpin = 0;
+
+
+  /* allocate the output-metric */
+  dim = 3 + nSpin;	/* dimensionality of parameter-space: Alpha,Delta,f + spindowns */
+
+  TRY ( LALDCreateVector (stat->statusPtr, metric, dim * (dim+1)/2), stat);
+
+  switch (input->metricType)
+    {
+    case LAL_PMETRIC_COH_PTOLE_ANALYTIC: /* use Ben&Ian's analytic ptolemaic metric */
+      LALPtoleMetric (stat->statusPtr, *metric, input);
+      BEGINFAIL(stat) {
+	LALDDestroyVector (stat->statusPtr, metric);
+      }ENDFAIL(stat);
+      break;
+
+    case LAL_PMETRIC_COH_PTOLE_NUMERIC:   /* use CoherentMetric + Ptolemaic timing */
+    case LAL_PMETRIC_COH_EPHEM:   /* use CoherentMetric + ephemeris timing */
+      /* Set up constant parameters for barycentre transformation. */
+      baryParams.epoch = input->epoch;
+      baryParams.t0 = 0;
+      /* FIXME: should be redundant now, with Detector passed */
+      baryParams.latitude = input->site->frDetector.vertexLatitudeRadians;	
+      baryParams.longitude = input->site->frDetector.vertexLongitudeRadians;
+
+      baryParams.site = input->site;
+      LALGetEarthTimes( stat->statusPtr, &baryParams );
+      BEGINFAIL(stat) {
+	LALDDestroyVector (stat->statusPtr, metric);
+      }ENDFAIL(stat);
+
+      /* set timing-function for earth-motion: either ptolemaic or ephemeris */
+      if (input->metricType == LAL_PMETRIC_COH_PTOLE_NUMERIC)
+	{
+	  baryParams.t1 = LALTBaryPtolemaic;
+	  baryParams.dt1 = LALDTBaryPtolemaic;
+	}
+      else	/* use precise ephemeris-timing */
+	{
+	  baryParams.t1 = LALTEphemeris;	/* LAL-bug: fix type of LALTEphemeris! */
+	  baryParams.dt1 = LALDTEphemeris;
+	  baryParams.ephemeris = input->ephemeris;
+	}
+
+
+      /* Set up input structure for CoherentMetric()  */
+      if (nSpin)
+	{
+	  /* Set up constant parameters for spindown transformation. */
+	  spinParams.epoch = input->epoch;
+	  spinParams.t0 = 0;
+	  
+	  /* Set up constant parameters for composed transformation. */
+	  compParams.epoch = input->epoch;
+	  compParams.t1 = baryParams.t1;
+	  compParams.dt1 = baryParams.dt1;
+	  compParams.t2 = LALTSpin;
+	  compParams.dt2 = LALDTSpin;
+	  compParams.constants1 = &baryParams;
+	  compParams.constants2 = &spinParams;
+	  compParams.nArgs = 2;
+
+	  params.dtCanon = LALDTComp;
+	  params.constants = &compParams;
+	}
+      else	/* simple case: just account for earth motion */
+	{
+	  params.dtCanon = baryParams.dt1;
+	  params.constants = &baryParams;
+	}
+
+      params.start = 0;
+      params.deltaT = (REAL8) input->duration;
+      params.n = 1; 	/* only 1 stack */
+      params.errors = 0;
+
+      /* Set up the parameter list. */
+      LALDCreateVector( stat->statusPtr, &lambda, nSpin + 2 + 1 );
+      BEGINFAIL(stat) {
+	LALDDestroyVector (stat->statusPtr, metric);
+      }ENDFAIL(stat);
+
+      lambda->data[0] = (REAL8) input->maxFreq;
+      lambda->data[1] = (REAL8) input->position.longitude;	/* Alpha */
+      lambda->data[2] = (REAL8) input->position.latitude;	/* Delta */
+
+      if ( nSpin ) 
+	{
+	  for (i=0; i < nSpin; i++)
+	    lambda->data[3 + i] = (REAL8) input->spindown->data[i];
+	}
+
+      /* _finally_ we can call the metric */
+      LALCoherentMetric( stat->statusPtr, *metric, lambda, &params );
+      BEGINFAIL(stat) {
+	LALDDestroyVector (stat->statusPtr, metric);
+	LALDDestroyVector( stat->statusPtr, &lambda );
+      }ENDFAIL(stat);
+
+      LALDDestroyVector( stat->statusPtr, &lambda );
+      BEGINFAIL(stat) {
+	LALDDestroyVector (stat->statusPtr, metric);
+      }ENDFAIL(stat);
+
+      break;
+
+    default:
+      LALPrintError ("Unknown metric type `%d`\n", input->metricType);
+      ABORT (stat, PTOLEMETRICH_EMETRIC,  PTOLEMETRICH_MSGMETRIC);
+      break;
+      
+    } /* switch type */
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+
+} /* LALMetricWrapper() */
