@@ -34,6 +34,7 @@ struct options_t {
 	CHAR *outSnglFile;
 
 	int verbose;
+	int printresult;
 
 	int playground;
 	int noplayground;
@@ -92,6 +93,7 @@ static void set_option_defaults(struct options_t *options)
 	options->outSnglFile = NULL;
 
 	options->verbose = FALSE;
+	options->printresult = FALSE;
 
 	options->playground = FALSE;
 	options->noplayground = FALSE;
@@ -145,6 +147,7 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 {
 	struct option long_options[] = {
 	        {"verbose",          no_argument, &options->verbose, TRUE},
+	        {"printresult",      no_argument, &options->printresult, TRUE},
 		{"playground",       no_argument, &options->playground, TRUE},
 		{"noplayground",     no_argument, &options->noplayground, TRUE},
 		{"best-confidence",  no_argument, &options->best_confidence, TRUE},
@@ -855,6 +858,7 @@ int main(int argc, char **argv)
 
 	/* input loop */
 	FILE *infile;
+	FILE *fp;
 	char line[MAXSTR];
 	INT8 SearchStart, SearchEnd;
 
@@ -938,12 +942,14 @@ int main(int argc, char **argv)
 	/*
 	 * Output some summary information.
 	 */
-
-	fprintf(stdout,"%19.9f seconds = %.1f hours analyzed\n", timeAnalyzed / 1e9, timeAnalyzed / 3.6e12);
-	fprintf(stdout, "Total injections: %d\n", ninjected);
-	fprintf(stdout, "Total detected: %d\n", ndetected);
-	fprintf(stdout, "Efficiency: %f\n", (double) ndetected / ninjected);
-
+	if(options.printresult){
+	  fp = fopen("BinjFindResults.dat","w");
+	  fprintf(fp,"%19.9f seconds = %.1f hours analyzed\n", timeAnalyzed / 1e9, timeAnalyzed / 3.6e12);
+	  fprintf(fp, "Total injections: %d\n", ninjected);
+	  fprintf(fp, "Total detected: %d\n", ndetected);
+	  fprintf(fp, "Efficiency: %f\n", (double) ndetected / ninjected);
+	  fclose(fp);
+	}
 	/*
 	 * Write output XML files.
 	 */
