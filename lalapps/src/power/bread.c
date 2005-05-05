@@ -41,8 +41,8 @@ int gethostname(char *name, int len);
 	"[--min-centralfreq min central_freq] [--max-centralfreq max central_freq] " \
 	"[--max-bandwidth max bw] [--min-bandwidth min bw] " \
 	"[--min-amplitude min amp] [--max-amplitude max amp] " \
-	"[--min-snr min snr] [--max-snr max snr] [--globtrig]" \
-	"[--help]\n"
+	"[--min-snr min snr] [--max-snr max snr] [--globtrig dirname]" \
+	"[--help] [--printsum]\n"
 
 #define SNGLBURSTREADER_EARG   1
 #define SNGLBURSTREADER_EROW   2
@@ -64,8 +64,10 @@ enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq } clusterchoice
 
 struct options_t {
 	int verbose;
+	int printsum;
 	int cluster;
 	int globtrig;
+	char *globdir;
 	int outtxt;
 	int playground;
 	int noplayground;
@@ -119,8 +121,10 @@ struct options_t {
 static void set_option_defaults(struct options_t *options)
 {
 	options->verbose = FALSE;
+	options->printsum = FALSE;
 	options->cluster = FALSE;
 	options->globtrig = FALSE;
+	options->globdir = NULL;
 	options->outtxt = FALSE;
 	options->playground = FALSE;
 	options->noplayground = FALSE;
@@ -168,8 +172,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 	struct option long_options[] = {
 		/* these options set a flag */
 		{"verbose",         no_argument,        &options->verbose, TRUE},
-		/*{"cluster",         no_argument,        &options->cluster, TRUE},*/
-		{"globtrig",        no_argument,        &options->globtrig, TRUE},
+		{"printsum",        no_argument,        &options->printsum, TRUE},
 		/* parameters which determine the output xml file */
 		{"input",           required_argument,  NULL,  'a'},
 		{"outtxt",          required_argument,  NULL,  'b'},
@@ -187,6 +190,7 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 		{"cluster",         required_argument,  NULL,  'n'},
 		{"trig-start-time", required_argument,  NULL,  'q'},
 		{"trig-stop-time",  required_argument,  NULL,  'r'},
+		{"globtrig",        required_argument,  NULL,  's'},
 		{"playground",      no_argument,        &options->playground, TRUE},
 		{"noplayground",    no_argument,        &options->noplayground, TRUE},
 		{"help",            no_argument,        NULL,  'o'}, 
@@ -351,6 +355,14 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 			 */
 			options->trigStopTimeFlag = TRUE;
 			options->trigStopTime = atoi(optarg);
+			break;
+
+			case 's':
+			/*
+			 * only events with time before this are selected
+			 */
+			options->globtrig = TRUE;
+			options->globdir = optarg;
 			break;
 
 			case ':':
@@ -641,7 +653,7 @@ int main(int argc, char **argv)
 {
 	static LALStatus  stat;
 	FILE              *fpout;
-	INT4              timeAnalyzed;
+	INT8              timeAnalyzed;
 	CHAR              line[MAXSTR];
 	CHAR              *infile, *outfile, *outtxt;
 	SnglBurstTable    *burstEventList;
@@ -690,7 +702,7 @@ int main(int argc, char **argv)
 	 * use glob to get the xml files into an internal cache
 	 */
 	if (options.globtrig)
-	  LAL_CALL( LALFrCacheGenerate(&stat, &fileCache, NULL, "*.xml" ), &stat);
+	  LAL_CALL( LALFrCacheGenerate(&stat, &fileCache, options.globdir, "*.xml" ), &stat);
 	else
 	  LAL_CALL(LALFrCacheImport(&stat, &fileCache, infile), &stat);
 	if ( options.trigStartTimeFlag || options.trigStopTimeFlag ){
@@ -703,7 +715,7 @@ int main(int argc, char **argv)
 	}
 
 
-	if(options.verbose) {
+	if(options.printsum) {
 		fpout = fopen("./EPjobstartstop.dat","w");
 		fprintf(fpout, "# This file contains the start & stop times of all jobs that succeded\n");
 	} else
@@ -743,15 +755,6 @@ int main(int argc, char **argv)
 
 
 	/*
-	 * print out the total time analysed
-	 */
-
-	if(options.verbose) {
-		fprintf(fpout, "# Total time analysed = %d\n", timeAnalyzed);
-		fclose(fpout);
-	}
-
-	/*
 	 * Cluster the events
 	 */
 
@@ -766,8 +769,14 @@ int main(int argc, char **argv)
 
 	trim_event_list(&burstEventList, options);
 
-	if(options.verbose)
-		fprintf(stderr, "Total no. of triggers %ld\n", count_events(burstEventList));
+	/*
+	 * print out the total time analysed and the number of triggers found
+	 */
+	if(options.printsum){
+	  fprintf(fpout, "# Total time analysed = %lld nanosec.s\n", timeAnalyzed);
+	  fprintf(fpout, "# Total no. of triggers = %ld\n", count_events(burstEventList));
+	  fclose(fpout);
+	}
 
 
 	/*
