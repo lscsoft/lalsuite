@@ -28,8 +28,8 @@
 #include <lal/Date.h>
 #include <lal/CoherentInspiral.h>
 
-
-double rint(double x);
+#define rint(x) (floor((x)+0.5))
+double modf( double value, double *integerPart );
 
 NRCSID (COHERENTINSPIRALFILTERC, "$Id$");
 
@@ -637,6 +637,9 @@ LALCoherentInspiralFilterSegment (
   REAL4                               timeDelay[4] = {0,0,0,0};
   REAL4                               chirpTime = 0;
   REAL4                               cohSNRThresh = 0;
+  REAL8                               tempTime = 0.0;
+  REAL8                               fracpart = 0.0;
+  REAL8                               intpart = 0.0;
   UINT4                               cohSNROut;
   REAL4                               cohSNRLocal = 0;
   LALDetector                        *detector = NULL;
@@ -837,6 +840,7 @@ LALCoherentInspiralFilterSegment (
 		    eventStartIdx = k;
 		
 		    /* if this is the first event, start the list */
+
 		    thisEvent = *eventList = (MultiInspiralTable *) 
 		      LALCalloc( 1, sizeof(MultiInspiralTable) );
 		
@@ -846,33 +850,42 @@ LALCoherentInspiralFilterSegment (
 		      }
 		
 		    /* record the data that we need for the clustering algorithm */          
-		    thisEvent->end_time.gpsSeconds = k;
+		    tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		    fracpart = modf( tempTime, &intpart );
+		    thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		    thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		    thisEvent->snr = cohSNR;
+		    strcpy(thisEvent->ifos,caseStr);
+		    thisEvent->mass1 = input->tmplt->mass1;
+		    thisEvent->mass2 = input->tmplt->mass2;
+
+		    tempTime = 0.0;
+		    fracpart = 0.0;
+		    intpart = 0.0;
 		    fflush( stdout ); 
 
 		  } /* done creating a new event */
-		  else if (params->maximizeOverChirp && k <= (INT4)(thisEvent->end_time.gpsSeconds + deltaEventIndex) && cohSNR > thisEvent->snr ) {
+		  else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
 		    /* if this is the same event, update the maximum */
-		    thisEvent->end_time.gpsSeconds = k;
+
+		    tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		    fracpart = modf( tempTime, &intpart );
+		    thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		    thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos, caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
 
+		    tempTime = 0.0;
+		    fracpart = 0.0;
+		    intpart = 0.0;
 		    fflush( stdout ); 
 
 		  }
-		  else if ( k > (INT4) (thisEvent->end_time.gpsSeconds + deltaEventIndex) || !(params->maximizeOverChirp) ) {
+		  else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
 		    /* clean up this event */
 		    MultiInspiralTable      *lastEvent = NULL;
-		    INT8                    timeNS1;
-		    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-		    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-		    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-		    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-		
-		    /* store the start of the crossing */
-		    eventStartIdx = k;
 		
 		    /* allocate memory for the newEvent */
 		    lastEvent = thisEvent;
@@ -885,37 +898,30 @@ LALCoherentInspiralFilterSegment (
 		      }
 		
 		    /* stick minimal data into the event */
-		    thisEvent->end_time.gpsSeconds = k;
+
+		    tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		    fracpart = modf( tempTime, &intpart );
+		    thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		    thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos,caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
+
+		    /* Need to initialize the event start index to new value */
+		    if( k > (eventStartIdx + deltaEventIndex) )
+		      {
+			eventStartIdx = k;
+		      }
+		    tempTime = 0.0;
+		    fracpart= 0.0;
+		    intpart = 0.0;
 		   
 		  }
 		} /* matches if (cohSNR > cohSNRThresh) */
 
-	      }
-	  }
-	
-	/* 
-	 *
-	 * clean up the last event if there is one
-	 * 
-	 */
-	
-	
-	if ( thisEvent )
-	  {
-	    INT8                    timeNS1;
-	    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-	    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-	    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-	    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-	    thisEvent->mass1 = input->tmplt->mass1;
-	     thisEvent->mass2 = input->tmplt->mass2;
-	    
-	    fflush( stdout ); 
-	  }
+	      } /* matches for(m=k-buffer....) */
+	  }/* matches for(k=0;... */
       }
     else 
       { /* Network: 2 detectors excluding either H1, H2, or both H1 and H2 */
@@ -952,6 +958,7 @@ LALCoherentInspiralFilterSegment (
 		eventStartIdx = k;
 		
 		/* if this is the first event, start the list */
+
 		thisEvent = *eventList = (MultiInspiralTable *) 
 		  LALCalloc( 1, sizeof(MultiInspiralTable) );
 		
@@ -961,34 +968,46 @@ LALCoherentInspiralFilterSegment (
 		  }
 		
 		/* record the data that we need for the clustering algorithm */          
-		thisEvent->end_time.gpsSeconds = k;
+		tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		fracpart = modf( tempTime, &intpart );
+		thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		thisEvent->snr = cohSNR;
+		strcpy(thisEvent->ifos,caseStr);
+		thisEvent->mass1 = input->tmplt->mass1;
+		thisEvent->mass2 = input->tmplt->mass2;
+
+		tempTime = 0.0;
+		fracpart = 0.0;
+		intpart = 0.0;
 		fflush( stdout ); 
 
-	      } /* done creating a new event */
-	      else if (params->maximizeOverChirp && k <= (INT4) (thisEvent->end_time.gpsSeconds +deltaEventIndex) && cohSNR > thisEvent->snr ) {
+		 } /* done creating a new event */
+	      else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
 		/* if this is the same event, update the maximum */
-		thisEvent->end_time.gpsSeconds = k;
+
+		tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		fracpart = modf( tempTime, &intpart );
+		thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		thisEvent->snr = cohSNR;
 		strcpy(thisEvent->ifos, caseStr);
 		thisEvent->mass1 = input->tmplt->mass1;
 		thisEvent->mass2 = input->tmplt->mass2;
+
+		tempTime = 0.0;
+		fracpart = 0.0;
+		intpart = 0.0;
 		fflush( stdout ); 
-	      }
-	      else if ( k > (INT4) (thisEvent->end_time.gpsSeconds + deltaEventIndex) || !(params->maximizeOverChirp) ) {
+
+	         }
+	      else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
 		/* clean up this event */
-		MultiInspiralTable  *lastEvent = NULL;
-		INT8                    timeNS1;
-		INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-		timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-		thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-		thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-		
-		/* store the start of the crossing */
-		eventStartIdx = k;
+		MultiInspiralTable      *lastEvent = NULL;
 		
 		/* allocate memory for the newEvent */
-		lastEvent = thisEvent;		
+		lastEvent = thisEvent;
+		
 		lastEvent->next = thisEvent = (MultiInspiralTable *) 
 		  LALCalloc( 1, sizeof(MultiInspiralTable) );
 		if ( !(lastEvent->next) )
@@ -997,27 +1016,27 @@ LALCoherentInspiralFilterSegment (
 		  }
 		
 		/* stick minimal data into the event */
-		thisEvent->end_time.gpsSeconds = k;
+
+		tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		fracpart = modf( tempTime, &intpart );
+		thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		thisEvent->snr = cohSNR;
 		strcpy(thisEvent->ifos,caseStr);
 		thisEvent->mass1 = input->tmplt->mass1;
 		thisEvent->mass2 = input->tmplt->mass2;
-		   
-	      }
-	    } /* matches if (cohSNR > cohSNRThresh) */
-	  }
 
-	if ( thisEvent )
-	  {
-	    INT8                    timeNS1;
-	    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-	    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);	    
-	    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-	    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-	    thisEvent->mass1 = input->tmplt->mass1;
-	    thisEvent->mass2 = input->tmplt->mass2;
-	    
-	    fflush( stdout ); 
+		/* Need to initialize the event start index to new value */
+		if( k > (eventStartIdx + deltaEventIndex) )
+		  {
+		    eventStartIdx = k;
+		  }
+		tempTime = 0.0;
+		fracpart= 0.0;
+		intpart = 0.0;
+		   
+	         }
+		} /* matches if (cohSNR > cohSNRThresh) */
 	  }
       }
     break;
@@ -1061,6 +1080,7 @@ LALCoherentInspiralFilterSegment (
 		    eventStartIdx = k;
 		
 		    /* if this is the first event, start the list */
+
 		    thisEvent = *eventList = (MultiInspiralTable *) 
 		      LALCalloc( 1, sizeof(MultiInspiralTable) );
 		
@@ -1070,33 +1090,42 @@ LALCoherentInspiralFilterSegment (
 		      }
 		
 		    /* record the data that we need for the clustering algorithm */          
-		    thisEvent->end_time.gpsSeconds = k;
+		    tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		    fracpart = modf( tempTime, &intpart );
+		    thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		    thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		    thisEvent->snr = cohSNR;
+		    strcpy(thisEvent->ifos,caseStr);
+		    thisEvent->mass1 = input->tmplt->mass1;
+		    thisEvent->mass2 = input->tmplt->mass2;
+
+		    tempTime = 0.0;
+		    fracpart = 0.0;
+		    intpart = 0.0;
 		    fflush( stdout ); 
 
 		  } /* done creating a new event */
-		  else if (params->maximizeOverChirp && k <= (INT4) (thisEvent->end_time.gpsSeconds +deltaEventIndex) && cohSNR > thisEvent->snr ) {
+		  else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
 		    /* if this is the same event, update the maximum */
-		    thisEvent->end_time.gpsSeconds = k;
+
+		    tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		    fracpart = modf( tempTime, &intpart );
+		    thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		    thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos, caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
 
+		    tempTime = 0.0;
+		    fracpart = 0.0;
+		    intpart = 0.0;
 		    fflush( stdout ); 
 
 		  }
-		  else if ( k > (INT4) (thisEvent->end_time.gpsSeconds + deltaEventIndex) || !(params->maximizeOverChirp) ) {
+		  else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
 		    /* clean up this event */
-		    MultiInspiralTable  *lastEvent = NULL;
-		    INT8                    timeNS1;
-		    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-		    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-		    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-		    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-		
-		    /* store the start of the crossing */
-		    eventStartIdx = k;
+		    MultiInspiralTable      *lastEvent = NULL;
 		
 		    /* allocate memory for the newEvent */
 		    lastEvent = thisEvent;
@@ -1109,28 +1138,28 @@ LALCoherentInspiralFilterSegment (
 		      }
 		
 		    /* stick minimal data into the event */
-		    thisEvent->end_time.gpsSeconds = k;
+
+		    tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		    fracpart = modf( tempTime, &intpart );
+		    thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		    thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		    thisEvent->snr = cohSNR;
 		    strcpy(thisEvent->ifos,caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
+
+		    /* Need to initialize the event start index to new value */
+		    if( k > (eventStartIdx + deltaEventIndex) )
+		      {
+			eventStartIdx = k;
+		      }
+		    tempTime = 0.0;
+		    fracpart= 0.0;
+		    intpart = 0.0;
 		   
 		  }
 		} /* matches if (cohSNR > cohSNRThresh) */
 	      }
-	  }
-
-	if ( thisEvent )
-	  {
-	    INT8                    timeNS1;
-	    INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-	    timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-	    thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-	    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-	    thisEvent->mass1 = input->tmplt->mass1;
-	    thisEvent->mass2 = input->tmplt->mass2;
-	    
-	    fflush( stdout ); 
 	  }
       }
     else
@@ -1181,93 +1210,94 @@ LALCoherentInspiralFilterSegment (
 		      }
 		   if( cohSNROut ) params->cohSNRVec->data->data[k] = cohSNR;
 
-		    if ( cohSNR > cohSNRThresh ) {
-		      if ( !*eventList ) {
-			/* store the start of the crossing */
-			eventStartIdx = k;
+		   if ( cohSNR > cohSNRThresh ) {
+		     if ( !*eventList ) {
+		       /* store the start of the crossing */
+		       eventStartIdx = k;
 		
-		        /* if this is the first event, start the list */
-		        thisEvent = *eventList = (MultiInspiralTable *) 
-		          LALCalloc( 1, sizeof(MultiInspiralTable) );
-		
-			if ( !thisEvent )
-			  {
-			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-			  }
-		
-			/* record the data that we need for the clustering algorithm */         
-			thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->snr = cohSNR;
-		        fflush( stdout ); 
+		       /* if this is the first event, start the list */
 
-		      } /* done creating a new event */
-		      else if (params->maximizeOverChirp && k <= (INT4) (thisEvent->end_time.gpsSeconds +deltaEventIndex) && cohSNR > thisEvent->snr ) {
-			/* if this is the same event, update the maximum */
-			thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->snr = cohSNR;
-		        strcpy(thisEvent->ifos, caseStr);
-		        thisEvent->mass1 = input->tmplt->mass1;
-		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+		       thisEvent = *eventList = (MultiInspiralTable *) 
+			 LALCalloc( 1, sizeof(MultiInspiralTable) );
+		
+		       if ( !thisEvent )
+			 {
+			   ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+			 }
+		
+		       /* record the data that we need for the clustering algorithm */          
+		       tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		       fracpart = modf( tempTime, &intpart );
+		       thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		       thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
+		       thisEvent->snr = cohSNR;
+		       strcpy(thisEvent->ifos,caseStr);
+		       thisEvent->mass1 = input->tmplt->mass1;
+		       thisEvent->mass2 = input->tmplt->mass2;
 
-		        fflush( stdout ); 
+		       tempTime = 0.0;
+		       fracpart = 0.0;
+		       intpart = 0.0;
+		       fflush( stdout ); 
 
-		      }
-		      else if ( k > (INT4) (thisEvent->end_time.gpsSeconds + deltaEventIndex) || !(params->maximizeOverChirp) ) {
-		        /* clean up this event */
-		        MultiInspiralTable  *lastEvent = NULL;
-		        INT8                    timeNS1;
-		        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-		        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-		        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-		        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		     } /* done creating a new event */
+		     else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
+		       /* if this is the same event, update the maximum */
+
+		       tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		       fracpart = modf( tempTime, &intpart );
+		       thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		       thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
+		       thisEvent->snr = cohSNR;
+		       strcpy(thisEvent->ifos, caseStr);
+		       thisEvent->mass1 = input->tmplt->mass1;
+		       thisEvent->mass2 = input->tmplt->mass2;
+
+		       tempTime = 0.0;
+		       fracpart = 0.0;
+		       intpart = 0.0;
+		       fflush( stdout ); 
+
+		     }
+		     else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
+		       /* clean up this event */
+		       MultiInspiralTable      *lastEvent = NULL;
 		
-		        /* store the start of the crossing */
-		        eventStartIdx = k;
+		       /* allocate memory for the newEvent */
+		       lastEvent = thisEvent;
 		
-	    	        /* allocate memory for the newEvent */
-		        lastEvent = thisEvent;
+		       lastEvent->next = thisEvent = (MultiInspiralTable *) 
+		         LALCalloc( 1, sizeof(MultiInspiralTable) );
+		       if ( !(lastEvent->next) )
+		         {
+			   ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+		         }
 		
-		        lastEvent->next = thisEvent = (MultiInspiralTable *) 
-		          LALCalloc( 1, sizeof(MultiInspiralTable) );
-		        if ( !(lastEvent->next) )
-		          {
-			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-		          }
-		
-		        /* stick minimal data into the event */
-		        thisEvent->end_time.gpsSeconds = k;
-		        thisEvent->snr = cohSNR;
-		        strcpy(thisEvent->ifos,caseStr);
-		        thisEvent->mass1 = input->tmplt->mass1;
-		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+		       /* stick minimal data into the event */
+
+		       tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		       fracpart = modf( tempTime, &intpart );
+		       thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		       thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
+		       thisEvent->snr = cohSNR;
+		       strcpy(thisEvent->ifos,caseStr);
+		       thisEvent->mass1 = input->tmplt->mass1;
+		       thisEvent->mass2 = input->tmplt->mass2;
+
+		       /* Need to initialize the event start index to new value */
+		       if( k > (eventStartIdx + deltaEventIndex) )
+		         {
+			   eventStartIdx = k;
+		         }
+		       tempTime = 0.0;
+		       fracpart= 0.0;
+		       intpart = 0.0;
 		   
-		      }
+		     }
 		    } /* matches if (cohSNR > cohSNRThresh) */		    
 		  }
 	      }
-
-	    if ( thisEvent )
-	      {
-		INT8                    timeNS1;
-	        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-	        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-	        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-	        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-	        thisEvent->mass1 = input->tmplt->mass1;
-	        thisEvent->mass2 = input->tmplt->mass2;
-	        thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-	        thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
-	    
-	        fflush( stdout ); 
-	      }
-	    
 	  }/* outer loop end */
-
-
       } /* else statement end */
     break;
   case 4: /* Network: 4 detectors including both H1 and H2 */
@@ -1331,46 +1361,54 @@ LALCoherentInspiralFilterSegment (
 			eventStartIdx = k;
 		
 		        /* if this is the first event, start the list */
-		        thisEvent = *eventList = (MultiInspiralTable *) 
-		          LALCalloc( 1, sizeof(MultiInspiralTable) );
+
+			thisEvent = *eventList = (MultiInspiralTable *) 
+			  LALCalloc( 1, sizeof(MultiInspiralTable) );
 		
 			if ( !thisEvent )
 			  {
 			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
 			  }
 		
-			/* record the data that we need for the clustering algorithm */         
-			thisEvent->end_time.gpsSeconds = k;
+			/* record the data that we need for the clustering algorithm */          
+			tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		        fracpart = modf( tempTime, &intpart );
+		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		        thisEvent->snr = cohSNR;
+		        strcpy(thisEvent->ifos,caseStr);
+		        thisEvent->mass1 = input->tmplt->mass1;
+		        thisEvent->mass2 = input->tmplt->mass2;
+
+		        tempTime = 0.0;
+		        fracpart = 0.0;
+		        intpart = 0.0;
 		        fflush( stdout ); 
 
 		      } /* done creating a new event */
-		      else if (params->maximizeOverChirp && k <= (INT4) (thisEvent->end_time.gpsSeconds +deltaEventIndex) && cohSNR > thisEvent->snr ) {
-			/* if this is the same event, update the maximum */
-			thisEvent->end_time.gpsSeconds = k;
+		      else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
+		        /* if this is the same event, update the maximum */
+
+		        tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		        fracpart = modf( tempTime, &intpart );
+		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos, caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 
+		        tempTime = 0.0;
+		        fracpart = 0.0;
+		        intpart = 0.0;
 		        fflush( stdout ); 
 
 		      }
-		      else if ( k > (INT4) (thisEvent->end_time.gpsSeconds + deltaEventIndex) || !(params->maximizeOverChirp) ) {
+		      else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
 		        /* clean up this event */
-		        MultiInspiralTable  *lastEvent = NULL;
-		        INT8                    timeNS1;
-		        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-		        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-		        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-		        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		        MultiInspiralTable      *lastEvent = NULL;
 		
-		        /* store the start of the crossing */
-		        eventStartIdx = k;
-		
-	    	        /* allocate memory for the newEvent */
+		        /* allocate memory for the newEvent */
 		        lastEvent = thisEvent;
 		
 		        lastEvent->next = thisEvent = (MultiInspiralTable *) 
@@ -1381,36 +1419,30 @@ LALCoherentInspiralFilterSegment (
 		          }
 		
 		        /* stick minimal data into the event */
-		        thisEvent->end_time.gpsSeconds = k;
+
+		        tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		        fracpart = modf( tempTime, &intpart );
+		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+
+		        /* Need to initialize the event start index to new value */
+		        if( k > (eventStartIdx + deltaEventIndex) )
+		          {
+			    eventStartIdx = k;
+		          }
+		        tempTime = 0.0;
+		        fracpart= 0.0;
+		        intpart = 0.0;
 		   
 		      }
 		    } /* matches if (cohSNR > cohSNRThresh) */		    
 		  }
 	      }
-	    if ( thisEvent )
-	      {
-	        INT8                    timeNS1;
-	        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-	        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-	        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-	        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-	        thisEvent->mass1 = input->tmplt->mass1;
-	        thisEvent->mass2 = input->tmplt->mass2;
-	        thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-	        thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
-	    
-	        fflush( stdout ); 
-	      }		    
-	    
 	  } /* end for statement prior to computing distances*/
-	
-
       } /* end outer if statement in case4*/
     else
       { /* Network: 4 detectors excluding either H1, H2, or both H1 and H2 */
@@ -1474,47 +1506,55 @@ LALCoherentInspiralFilterSegment (
 			/* store the start of the crossing */
 			eventStartIdx = k;
 		
-		        /* if this is the first event, start the list */
-		        thisEvent = *eventList = (MultiInspiralTable *) 
-		          LALCalloc( 1, sizeof(MultiInspiralTable) );
+			/* if this is the first event, start the list */
+
+			thisEvent = *eventList = (MultiInspiralTable *) 
+			  LALCalloc( 1, sizeof(MultiInspiralTable) );
 		
 			if ( !thisEvent )
 			  {
 			    ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
 			  }
 		
-			/* record the data that we need for the clustering algorithm */         
-			thisEvent->end_time.gpsSeconds = k;
+			/* record the data that we need for the clustering algorithm */          
+			tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		        fracpart = modf( tempTime, &intpart );
+		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		        thisEvent->snr = cohSNR;
+		        strcpy(thisEvent->ifos,caseStr);
+		        thisEvent->mass1 = input->tmplt->mass1;
+		        thisEvent->mass2 = input->tmplt->mass2;
+
+		        tempTime = 0.0;
+		        fracpart = 0.0;
+		        intpart = 0.0;
 		        fflush( stdout ); 
 
 		      } /* done creating a new event */
-		      else if (params->maximizeOverChirp && k <= (INT4) (thisEvent->end_time.gpsSeconds +deltaEventIndex) && cohSNR > thisEvent->snr ) {
-			/* if this is the same event, update the maximum */
-			thisEvent->end_time.gpsSeconds = k;
+		      else if (params->maximizeOverChirp && k <= (eventStartIdx + deltaEventIndex) && cohSNR > thisEvent->snr ) {
+		        /* if this is the same event, update the maximum */
+
+		        tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		        fracpart = modf( tempTime, &intpart );
+		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos, caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
 
+		        tempTime = 0.0;
+		        fracpart = 0.0;
+		        intpart = 0.0;
 		        fflush( stdout ); 
 
 		      }
-		      else if ( k > (INT4) (thisEvent->end_time.gpsSeconds + deltaEventIndex) || !(params->maximizeOverChirp) ) {
+		      else if ( k > (eventStartIdx + deltaEventIndex) || !(params->maximizeOverChirp) ) {
 		        /* clean up this event */
-		        MultiInspiralTable  *lastEvent = NULL;
-		        INT8                    timeNS1;
-		        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-		        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);        
-		        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-		        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
+		        MultiInspiralTable      *lastEvent = NULL;
 		
-		        /* store the start of the crossing */
-		        eventStartIdx = k;
-		
-	    	        /* allocate memory for the newEvent */
+		        /* allocate memory for the newEvent */
 		        lastEvent = thisEvent;
 		
 		        lastEvent->next = thisEvent = (MultiInspiralTable *) 
@@ -1525,36 +1565,30 @@ LALCoherentInspiralFilterSegment (
 		          }
 		
 		        /* stick minimal data into the event */
-		        thisEvent->end_time.gpsSeconds = k;
+
+		        tempTime = cData[0].epoch.gpsSeconds + 1.0e-9 * cData[0].epoch.gpsNanoSeconds + k * deltaT;
+		        fracpart = modf( tempTime, &intpart );
+		        thisEvent->end_time.gpsSeconds = (INT4) intpart;
+		        thisEvent->end_time.gpsNanoSeconds = (INT4) ( 1.0e9*fracpart );
 		        thisEvent->snr = cohSNR;
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
-			thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-			thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
+
+		        /* Need to initialize the event start index to new value */
+		        if( k > (eventStartIdx + deltaEventIndex) )
+		          {
+			    eventStartIdx = k;
+		          }
+		        tempTime = 0.0;
+		        fracpart= 0.0;
+		        intpart = 0.0;
 		   
 		      }
 		    } /* matches if (cohSNR > cohSNRThresh) */
 		  }
 	      }
-	    
-	    if ( thisEvent )
-	      {
-	        INT8                    timeNS1;
-	        INT4                    timeIndex = thisEvent->end_time.gpsSeconds;
-	        timeNS1 = (INT8) (1e9 * timeIndex * deltaT);
-	        thisEvent->end_time.gpsSeconds = (INT4) (timeNS1/1000000000L);
-	        thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS1%1000000000L);
-	        thisEvent->mass1 = input->tmplt->mass1;
-	        thisEvent->mass2 = input->tmplt->mass2;
-	        thisEvent->ligo_axis_ra = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0];
-	        thisEvent->ligo_axis_dec = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1];
-	    
-	        fflush( stdout ); 
-	      }
-
 	  } /*end the outermost for statement prior to computing distances*/
-	
       } /*end else statement */
   } /* end case statement */
   
