@@ -57,13 +57,17 @@ NRCSID( PTOLEMETRICH, "$Id$" );
 \subsection*{Error conditions}
 *********************************************** </lalLaTeX> <lalErrTable> */
 
-#define PTOLEMETRICH_ENULL 0x01
-#define PTOLEMETRICH_EPARM 0x02
-#define PTOLEMETRICH_EDIM  0x04
+#define PTOLEMETRICH_ENULL   0x01
+#define PTOLEMETRICH_EPARM   0x02
+#define PTOLEMETRICH_EDIM    0x04
+#define PTOLEMETRICH_ENONULL 0x08
+#define PTOLEMETRICH_EMETRIC 0x16
 
-#define PTOLEMETRICH_MSGENULL "unexpected null pointer"
-#define PTOLEMETRICH_MSGEPARM "bad parameter value"
-#define PTOLEMETRICH_MSGEDIM  "bad array length"
+#define PTOLEMETRICH_MSGENULL   "unexpected null pointer"
+#define PTOLEMETRICH_MSGEPARM   "bad parameter value"
+#define PTOLEMETRICH_MSGEDIM    "bad array length"
+#define PTOLEMETRICH_MSGENONULL "output pointer is not NULL"
+#define PTOLEMETRICH_MSGMETRIC  "unknown type of metric specified"
 
 /************************************************* </lalErrTable> <lalLaTeX>
 \subsection*{Structures}
@@ -144,6 +148,11 @@ void
 LALPtoleMetric( LALStatus      *status,
                 REAL8Vector    *metric,
                 PtoleMetricIn  *input );
+
+void
+LALPulsarMetric( LALStatus      *status,
+                 REAL8Vector    **metric,
+                 PtoleMetricIn  *input );
 
 /**************************************************************** <lalLaTeX>
 \newpage\input{PtoleMetricTestC}
