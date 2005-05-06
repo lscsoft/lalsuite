@@ -60,7 +60,7 @@ int main(int argc, char **argv)
   plus  = xfopen("ifo_plus.txt","wo");
 
   /*
-   * there are no cached bar detectors, so need to construct one
+   * Create dummy IFO
    */
   (void)mystrlcpy(frdetector.name, "FOOBAR", LALNameLength);
   frdetector.vertexLongitudeRadians = atof(argv[3]) * DEGTORAD;
