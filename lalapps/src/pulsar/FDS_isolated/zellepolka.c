@@ -7,9 +7,8 @@
 /*                                                                                          */
 /*                                  UWM - April  2005                                       */
 /*                             Based on uberpolka written by                                */
-/*                        X Siemens, Bruce Allen, Bernd Machenschalk                        */
+/*                        Xavier Siemens, Bruce Allen, Bernd Machenschalk                   */
 /********************************************************************************************/
-
 
 
 
@@ -43,10 +42,13 @@
 
 #include <unistd.h>
 
-/* #define USE_UNZIP */
+/*
+#define USE_UNZIP 
+*/
 
 #ifdef USE_UNZIP
 #include "unzip.h"
+#include "readzipfile_util.h"
 #endif
 
 #ifdef HAVE_GLOB_H
@@ -86,6 +88,9 @@ int finite(double);
 #endif
 
 
+
+
+
 /* ----------------------------------------------------------------------------- */
 /* some error codes and messages */
 #define POLKAC_ENULL            1
@@ -94,12 +99,16 @@ int finite(double);
 #define POLKAC_EINVALIDFSTATS   4
 #define POLKAC_EMEM             5
 #define POLKAC_ENORMAL          6
+#define POLKAC_EUNZIP           7
+#define POLKAC_EGLOB           8
 
 #define POLKAC_MSGENULL         "Arguments contained an unexpected null pointer"
 #define POLKAC_MSGENONULL       "Input pointer was not NULL"
 #define POLKAC_MSGESYS          "System call failed (probably file IO"
 #define POLKAC_MSGEINVALIDFSTATS "Invalid Fstats file"
 #define POLKAC_MSGEMEM          "Sorry, ran out of memory... bye."
+#define POLKAC_MSGEUNZIP          "Cannot use unzip."
+#define POLKAC_MSGEGLOB          "Cannot use glob."
 
 
 #define POLKA_EXIT_OK 0
@@ -183,6 +192,7 @@ void FreeConfigVars(LALStatus *stat, struct PolkaConfigVarsTag *CLA );
 void GetFilesListInThisDir(LALStatus *stat, CHAR *directory, CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
 void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4 outlier_id );
 int compareNCandidate(const void *a, const void *b);
+void ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fname, UINT4 *candlen);
 
 
 /* ----------------------------------------------------------------------------- */
@@ -193,9 +203,12 @@ extern int vrbflg;
 
 RCSID ("$Id$");
 
+
+
 /* ------------------------------------------------------------------------------------------*/
 /* Code starts here.                                                                         */
 /* ------------------------------------------------------------------------------------------*/
+/* ########################################################################################## */
 /* main() mapped to polka() if using boinc */
 #if USE_BOINC
 int polka(int argc,char *argv[])
@@ -228,7 +241,7 @@ int main(int argc,char *argv[])
 
 
 
-  /* ---------------------------------------------------------------------------------------------------------------*/      
+  /* --------------------------------------------------------------------------------*/      
   /* initialization */
   /* Initialise arrays of sorted candidates. */
   for (icand=0;icand<CLength;icand++)
@@ -252,7 +265,7 @@ int main(int argc,char *argv[])
   cell[icell].CandID->data = icand; 
   cell[icell].nCand = 1;
 
-  /* ---------------------------------------------------------------------------------------------------------------*/      
+  /* ------------------------------------------------------------------------------*/      
   /* main loop over candidates  */
   icell = 0;
   for (icand=1; icand < CLength; icand++)
@@ -280,8 +293,8 @@ int main(int argc,char *argv[])
 	      /* This candidate has the same file id to one of candidates in this cell. */
 	      /* Because the array is already sorted in the DECREASING ORDER OF F, 
 		 we do nothing here. */
-	    }
-	} 
+	    } /* if( SortedC[icand].FileID != lastFileIDinThisCell ) */
+	} /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
       else 
 	{	  
 	  /* This candidate is outside of this cell. */
@@ -291,7 +304,8 @@ int main(int argc,char *argv[])
 	  cell[icell].iAlpha = SortedC[icand].iAlpha;
 	  cell[icell].CandID->data = icand;
 	  cell[icell].nCand = 1;
-	}
+	} /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
+
            
 #if USE_BOINC
       local_fraction_done = 0.99 + 0.01 * (double)i / (double)CLength;
@@ -301,8 +315,8 @@ int main(int argc,char *argv[])
       if (fraction_done_hook != NULL)
 	*fraction_done_hook = local_fraction_done;
 #endif
-    }/* loop over candidate list */      
-  /* ---------------------------------------------------------------------------------------------------------------*/      
+    } /* for (icand=1; icand < CLength; icand++): loop over candidate list */      
+  /* ---------------------------------------------------------------------------------------- */      
 
 
   /* Get the information in each cell. */
@@ -313,13 +327,13 @@ int main(int argc,char *argv[])
 
 
 
-  /* ---------------------------------------------------------------------------------------------------------------*/      
+  /* -----------------------------------------------------------------------------------------*/      
   /* Output results */
   LAL_CALL( PrintResult( stat, &PolkaConfigVars, cell, &ncell, SortedC),stat );
 
 
 
-  /* ---------------------------------------------------------------------------------------------------------------*/      
+  /* -----------------------------------------------------------------------------------------*/      
   /* Clean-up */
   LAL_CALL( FreeMemory(stat, &PolkaConfigVars, cell, SortedC, CLength), stat);
 
@@ -327,12 +341,13 @@ int main(int argc,char *argv[])
 
   return 0;
  
-}
+} /* main() */
 
 
-
-/*******************************************************************************/
-/* Initialize the code: allocate memory, set initial values. */
+/* ########################################################################################## */
+/* ------------------------------------------------------------------------------*/      
+/* Initialize the code: allocate memory, set initial values.                     */
+/* ------------------------------------------------------------------------------*/      
 void PrepareCells( LALStatus *stat, CellData **cell, UINT4 CLength )
 {
   INITSTATUS( stat, "InitCode", rcsid );
@@ -364,6 +379,7 @@ void PrepareCells( LALStatus *stat, CellData **cell, UINT4 CLength )
     (*cell)[icell].significance = 0;
   }
 
+
   if( errflg != 0 ) {
     ncell = icell;
     for(icell=0;icell<ncell;icell++) {
@@ -375,11 +391,10 @@ void PrepareCells( LALStatus *stat, CellData **cell, UINT4 CLength )
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
-}
+} /* PrepareCells() */
 
 
-
-/*******************************************************************************/
+/* ########################################################################################## */
 /* Output results */
 void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell, UINT4 *ncell, CandidateList *CList)
 {
@@ -543,12 +558,11 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
 
 
   RETURN (stat);
-}
+} /* PrintResult() */
 
 
 
-
-/*******************************************************************************/
+/* ########################################################################################## */
 /* Free memory */
 void FreeMemory(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell, CandidateList *CList, UINT4 CLength)
 {
@@ -570,9 +584,10 @@ void FreeMemory(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell,
     
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
-}
+} /* FreeMemory */
 
 
+/* ########################################################################################## */
 void FreeConfigVars(LALStatus *stat, struct PolkaConfigVarsTag *CLA )
 {
   INITSTATUS( stat, "FreeConfigVars", rcsid );
@@ -597,11 +612,10 @@ void FreeConfigVars(LALStatus *stat, struct PolkaConfigVarsTag *CLA )
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
-}
+} /* FreeCOnfigVars */
 
 
-
-/*******************************************************************************/
+/* ########################################################################################## */
 /* add data to linked structure */
 void add_int4_data(LALStatus *stat, struct int4_linked_list **list_ptr, INT4 *data)
 {
@@ -618,10 +632,10 @@ void add_int4_data(LALStatus *stat, struct int4_linked_list **list_ptr, INT4 *da
   *list_ptr = p;
 
   RETURN (stat);
-}
+} /* void add_int4_data() */
 
 
-
+/* ########################################################################################## */
 /* delete data to linked structure */
 void delete_int4_linked_list( struct int4_linked_list *list_ptr )
 {
@@ -641,7 +655,7 @@ void delete_int4_linked_list( struct int4_linked_list *list_ptr )
   return;
 }
 
-
+/* ########################################################################################## */
 /* get info of this cell. */
 void get_info_of_the_cell( CellData *cd, CandidateList *CList )
 {
@@ -674,7 +688,7 @@ void get_info_of_the_cell( CellData *cd, CandidateList *CList )
 }
 
 
-
+/* ########################################################################################## */
 /* print F stat. */
 void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4 oid )
 {
@@ -702,8 +716,7 @@ void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4
 
 
 
-
-/*******************************************************************************/
+/* ########################################################################################## */
 /* Sorting function to sort candidate indices INCREASING order of f, delta, alpha, and 
    DECREASING ORDER OF F STATISTIC. */
 int compareCandidates(const void *a, const void *b)
@@ -736,7 +749,7 @@ int compareCandidates(const void *a, const void *b)
 
 
 
-
+/* ########################################################################################## */
 int compareSignificance(const void *a, const void *b)
 {
   const CellData *ip = a;
@@ -762,7 +775,7 @@ int compareSignificance(const void *a, const void *b)
 
 
 
-
+/* ########################################################################################## */
 int compareNCandidate(const void *a, const void *b)
 {
   const CellData *ip = a;
@@ -815,8 +828,7 @@ int rintcompare(INT4 *ap, INT4 *bp, size_t n) {
 } /* int rintcompare() */
 
 
-
-/*******************************************************************************/
+/* ########################################################################################## */
 /* We would use glob in the future to read different files ? */
 void ReadCandidateFiles(LALStatus *stat, CandidateList **CList, struct PolkaConfigVarsTag *CLA, UINT4 *clen)
 {
@@ -825,26 +837,27 @@ void ReadCandidateFiles(LALStatus *stat, CandidateList **CList, struct PolkaConf
 
   UINT4 k;
 
-  if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) ) {
-    TRY( GetFilesListInThisDir( stat->statusPtr, CLA->InputDir, CLA->BaseName, &(CLA->Filelist), &(CLA->NFiles) ), stat );
-  }
-
   if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) ) 
-    for (k=0;k<CLA->NFiles;k++)
-      {
-	fprintf(stderr,"%s, %d\n",CLA->Filelist[k],CLA->NFiles);
-	/*	UzpUnzipToMemory(); */
-      } 
-
-  /* Unzip file */
-  /* Count number of candidates */
-  /* Allocate memory for candidate list */
-  /* fill data into candidate list array */
-
-  
-  TRY( ReadOneCandidateFile(stat->statusPtr, CList, CLA->FstatsFile, clen), stat );
-  /* The last file is from last file.*/
-  CLA->NFiles = (*CList)[*clen-1].FileID;
+    {
+      TRY( GetFilesListInThisDir( stat->statusPtr, CLA->InputDir, CLA->BaseName, &(CLA->Filelist), &(CLA->NFiles) ), stat );
+      
+      /* Unzip file */
+      /* Count number of candidates */
+      /* Allocate memory for candidate list */
+      /* fill data into candidate list array */
+      
+      *clen = 0;
+      for (k=0;k<CLA->NFiles;k++)
+	{
+	  fprintf(stderr,"%s, %d\n",CLA->Filelist[k],CLA->NFiles);
+	} 
+    } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
+  else 
+    {
+      TRY( ReadOneCandidateFile(stat->statusPtr, CList, CLA->FstatsFile, clen), stat );
+      /* The last file is from last file.*/
+      CLA->NFiles = (*CList)[*clen-1].FileID;
+    } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
 
 
   DETATCHSTATUSPTR (stat);
@@ -852,19 +865,23 @@ void ReadCandidateFiles(LALStatus *stat, CandidateList **CList, struct PolkaConf
 } /* ReadCandidateFiles() */
 
 
-/*******************************************************************************/
 
-
+/* ########################################################################################## */
 void GetFilesListInThisDir(LALStatus *stat, CHAR *directory, CHAR *basename, CHAR ***filelist, UINT4 *nfiles )
 {
+#ifdef HAVE_GLOB_H   
   CHAR command[512];
   UINT4 fileno=0;
-#ifdef HAVE_GLOB_H   
   glob_t globbuf;
 #endif
 
   INITSTATUS (stat, "GetFilesListInThisDir", rcsid);
   ATTATCHSTATUSPTR (stat);
+
+#ifndef HAVE_GLOB_H   
+  LALPrintError("Cannot use GetFilesListInThisDir() without glob.");
+  ABORT( stat, POLKAC_EGLOB, POLKAC_MSGEGLOB);
+#endif
 
   strcpy(command, directory);
   strcat(command,"/*");
@@ -899,19 +916,252 @@ void GetFilesListInThisDir(LALStatus *stat, CHAR *directory, CHAR *basename, CHA
       fileno++;
     }
   globfree(&globbuf);
-#endif
 
   *nfiles = fileno; /* remember this is 1 more than the index value */
+#endif
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 }
 
 
-
-
+/* ########################################################################################## */
 /* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
-void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const char *fname, UINT4 *candlen)
+/*
+TODO:
+Check if *candlen is sensible. (do not overflow.)
+Check if the memory to be allocated is not huge (say, < 768MB?). 
+Check if *CList is either NULL or the memory of which is previously allocated by alloc() or the kind.
+Fill the FileID entry in CList.
+Add the range check and file format check as are done in ReadOneCandidateFile().
+*/
+void  
+ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fname, UINT4 *candlen)
+{
+  FILE *fp;
+#ifdef USE_UNZIP
+  UINT4 numlines;
+  INT4 nread;
+
+  INT4 ic;
+  INT4 length; /* length of file */
+  CHAR *line, *endp; /* pointers to start and end of line */
+  INT4 section = 0;    /* 0: non-POLKA, 1,2: IFO sections,
+			 3: coincidence, 4: end-of-file */
+  UINT4 nlines[2] = {0,0}; /* number of events for each IFO */
+  const INT4 MAX_SECS = 4;
+
+  UzpBuffer uzpbuff;
+  CHAR newline='\0';
+#endif
+
+  INITSTATUS (stat, "ReadCandidateListFromZipFile", rcsid);
+  ATTATCHSTATUSPTR (stat);
+
+
+  /* check if file exists.*/
+  fp=fopen(fname,"rb");
+  if (fp==NULL) 
+    {
+      LALPrintError("File %s doesn't exist!\n",fname);
+      ABORT( stat, POLKAC_ESYS, POLKAC_MSGESYS ); 
+     }
+  fclose(fp);
+
+#ifndef USE_UNZIP
+  /* We should not be here. */
+  LALPrintError("Error: unzip not found.");
+  ABORT( stat, POLKAC_EUNZIP, POLKAC_MSGEUNZIP ); 
+#endif
+
+#ifdef USE_UNZIP
+  uzpbuff.strptr = NULL;
+
+  /* ------------------------------------------------------------------------- */
+  /*  Open and count candidates file */
+  /* Read into buffer.  If this fails, we can't proceed. */
+  if ( getfile( &uzpbuff, fname )  < 0 ) {
+    LALPrintError("Cannot read file %s . \n",fname);
+    ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+  }
+
+  length = uzpbuff.strlength;
+  line = uzpbuff.strptr;
+  if ( !line || length == 0 || *line == '\0' ) {
+    LALPrintError ("Unknown format of the file  %s.\n\n", fname);
+    ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+  }
+
+
+  /* Check for correct ending tag.  If this isn't present, it is
+     safest not to proceed (it greatly simplifies error trapping). */
+  line += length;
+  if ( ( length < 8 || strncmp( line - 8, "\n%DONE\r\n", 8 ) ) &&
+       ( length < 7 || strncmp( line - 7, "\n%DONE\n", 7 ) ) ) {
+    LALPrintError("File %s does not end with the DONE_MARKER. \n",fname);
+    ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+  }
+
+
+  /* Start reading file data line-by-line. */
+  for ( line = uzpbuff.strptr; section < MAX_SECS;
+	*endp = '\n', line = endp + 1 ) {
+
+    /* Find end of line.  Previous endchecking assures us we will not
+       fall off of the end of the file. */
+    endp = line;
+    while ( *endp != '\n' )
+      endp++;
+
+    /* Check for POLKA section divisions or EOF marker. */
+    if ( !strncmp( line, "%1", 2 ) ) {
+      section = 1;
+      continue;
+    } else if ( !strncmp( line, "%2", 2 ) ) {
+      if( section != 1 ) { /* We should have section 1 before 2. */
+	LALPrintError("Unknown format file %s.",fname);
+	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      }
+      section = 2;
+      continue;
+    } else if ( !strncmp( line, "%coincidence", 12 ) ) {
+      if( section != 2 ) { /* We should have section 2 before 3. */
+	LALPrintError("Unknown format file %s.",fname);
+	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      }
+      section = 3;
+      break; /* We are not interested in the section 3 here. */
+    } 
+ 
+
+    /* Do non-POLKA checks: */
+    if ( section == 0 ) {
+      LALPrintError("Unknown format file %s.",fname);
+      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    }
+
+
+    /* Do POLKA IFO-section checks */
+    else if ( section == 1 || section == 2 ) {
+      nlines[section-1] += 1;
+    }
+
+    /* Do POLKA coincidence-section checks. */
+    else { /* we should not be here */
+      LALPrintError("Unknown format file %s.",fname);
+      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    }
+
+    /* Done reading this line. */
+  }
+
+  numlines = nlines[0] + nlines[1]; /* we have two sections. */
+
+  if( numlines == 0 ) { /* This file is empty. Go to the next file.*/
+    LALPrintError( "No candidate events in the file %s\n\n", fname);
+    DETATCHSTATUSPTR (stat);
+    RETURN (stat);
+  } 
+
+  /* ------------------------------------------------------------------------- */
+  /* reserve memory for fstats-file contents */
+  if ( numlines > 0) 
+    { 
+      CandidateList *tmp;
+      tmp = (CandidateList *)realloc (*CList, ( *candlen + numlines )*sizeof(CandidateList));
+      if ( !tmp ) 
+	{ 
+	  LALPrintError("Could not allocate memory for candidate file %s\n\n", fname);
+	  ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
+	}
+      *CList = tmp;
+    }
+
+
+  /* ------------------------------------------------------------------------- */
+  /* Start reading file data line-by-line. */
+  section = 0;
+  ic = (*candlen);
+  for ( line = uzpbuff.strptr; section < MAX_SECS;
+	*endp = '\n', line = endp + 1 ) {
+
+
+    /* Find end of line.  Previous endchecking assures us we will not
+       fall off of the end of the file. */
+    endp = line;
+    while ( *endp != '\n' )
+      endp++;
+
+    /* Check for POLKA section divisions or EOF marker. */
+    if ( !strncmp( line, "%1", 2 ) ) {
+      section = 1;
+      continue;
+    } else if ( !strncmp( line, "%2", 2 ) ) {
+      if( section != 1 ) { /* We should have section 1 before 2. */
+	fprintf(stderr, "Unknown format file %s.",fname);
+	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      }
+      section = 2;
+      continue;
+    } else if ( !strncmp( line, "%coincidence", 12 ) ) {
+      if( section != 2 ) { /* We should have section 2 before 3. */
+	fprintf(stderr, "Unknown format file %s.",fname);
+	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      }
+      section = 3;
+      break; /* We are not interested in the section 3 here. */
+    } 
+ 
+
+    /* Do non-POLKA checks: */
+    if ( section == 0 ) {
+      LALPrintError("Unknown format file %s.",fname);
+      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    }
+
+
+    /* Do POLKA IFO-section checks */
+    else if ( section == 1 || section == 2 ) {
+      CandidateList *cl=&(*CList)[ic];
+      ic++;
+
+      if (strlen(line)==0 || line[strlen(line)-1] != '\n') {
+        LALPrintError( "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
+		       ic+1, fname, line);
+        free ( *CList );
+	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      }
+      
+      nread = sscanf (line, 
+                     "%lf %lf %lf %lf %c", 
+                     &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->TwoF), &newline );
+    }
+
+    /* Do POLKA coincidence-section checks. */
+    else { /* we should not be here */
+      LALPrintError("Unknown format file %s.",fname);
+      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+    }
+    /* Done reading this line. */
+  }
+
+  free( uzpbuff.strptr ); /* uzpbuff is allocated by malloc() in getfile(). It is user's responsibility to free this. */
+
+  (*candlen) += numlines; /* total number of candidate so far */
+#endif
+
+  DETATCHSTATUSPTR (stat);
+  RETURN (stat);
+
+
+} /* void  ReadCandidateListFromZipFile () */
+
+
+
+
+/* ########################################################################################## */
+/* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
+void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const CHAR *fname, UINT4 *candlen)
 {
   UINT4 i;
   UINT4 numlines;
@@ -990,11 +1240,11 @@ void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const char *
 
   
   /* reserve memory for fstats-file contents */
-  if (numlines > 0)
-    {
+  if (numlines > 0) 
+    { 
       *CList = (CandidateList *)LALMalloc (numlines*sizeof(CandidateList));
-      if ( !CList )
-        {
+      if ( !CList ) 
+        { 
           LALPrintError ("Could not allocate memory for candidate file %s\n\n", fname);
 	  ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
         }
@@ -1137,7 +1387,7 @@ void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const char *
 } /* ReadOneCandidateFile() */
 
 
-/* -------------------------------------------------------------------------------------------------- */
+/* ########################################################################################## */
 void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaConfigVarsTag *CLA) 
 {
   INITSTATUS( stat, "ReadCommandLineArgs", rcsid );
@@ -1244,7 +1494,7 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
   strcpy(CLA->OutputFile,uvar_OutputData);
 
   if( LALUserVarWasSet (&uvar_InputDirectory) ) {
-#ifndef USE_UNZIP
+#ifndef HAVE_GLOB_H   
     LALPrintError("Sorry, but you cannot use this feature without glob.h.\n");
     exit(POLKA_EXIT_ERR);
 #endif
