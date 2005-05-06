@@ -60,7 +60,6 @@ REAL4 MAX_NODES = 8e6; /* limit on number of nodes for TwoDMesh  */
 void getRange( LALStatus *, REAL4 [2], REAL4, void * );
 void getMetric( LALStatus *, REAL4 [3], REAL4 [2], void * );
 
-char *optarg = NULL; /* option argument for getopt_long() */
 REAL8Vector *tevlambda;
 
 
