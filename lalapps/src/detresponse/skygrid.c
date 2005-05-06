@@ -41,8 +41,8 @@ void init_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
   CHAR  earthdat_path[PathNameLength];
   CHAR  sundat_path[PathNameLength];
   CHAR *share_path = "/share/lal/";
-  CHAR *fn_earthdat = "/earth00-04.dat";
-  CHAR *fn_sundat = "/sun00-04.dat";
+  CHAR *fn_earthdat = "/earth03-06.dat";
+  CHAR *fn_sundat = "/sun03-06.dat";
   int i;
   
   for (i = 0; i < LALNameLength; ++i)
