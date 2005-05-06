@@ -302,7 +302,7 @@ class LSCDataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   def __init__(self,job):
     """
-    @param job: A CondorDAGJob that can run an instance of LALdataFind.
+    @param job: A CondorDAGJob that can run an instance of LSCdataFind.
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
