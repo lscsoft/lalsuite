@@ -114,12 +114,6 @@ int main(int argc, char **argv)
     
       LALComputeDetAMResponse(&s, &response, &det_and_src, &time_info);
 
-      if (verbosity_level > 0)
-      {
-	print_response(&response);
-	printf("\n\n");
-      }
-
       fprintf(cross, "%14e\t", response.cross);
       fprintf(plus, "%14e\t", response.plus);
     }
