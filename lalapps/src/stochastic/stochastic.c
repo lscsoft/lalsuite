@@ -1198,6 +1198,10 @@ static StochasticTable *stochastic_search(LALStatus *status,
   /* debug file */
   CHAR debug_filename[FILENAME_MAX];
 
+  /* initialise analysis_epoch */
+  analysis_epoch.gpsSeconds = 0;
+  analysis_epoch.gpsNanoSeconds = 0;
+
   /* calculate number of intervals, and required shift to get to next
    * interval */
   if (overlap_hann_flag)
