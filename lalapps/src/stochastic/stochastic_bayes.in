@@ -298,7 +298,7 @@ on a condor submit machine
 
   $ condor_submit_dag""", dag.get_dag_file()
 print """\nIt is currently recommended that you pass condor_submit_dag the option
--maxjobs 6, to limit the maximum of jobs. This is due to condor being
+-maxjobs 30, to limit the maximum of jobs. This is due to condor being
 designed to run jobs that take several hours to complete, whereas the
 stochastic jobs are complete within a few minutes. Running the stochastic
 pipeline on a cluster without the -maxjobs option will essentially bring
