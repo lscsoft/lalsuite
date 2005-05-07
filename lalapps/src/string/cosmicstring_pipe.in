@@ -183,8 +183,8 @@ for seg in data:
   if do_inj:
     # create injection jobs
     inject1  = cosmicstring.InjNode(injection_job)
-    inject1.set_start(seg.start())
-    inject1.set_end(seg.end())
+    inject1.set_start(str(int(seg.start())+overlap))
+    inject1.set_end(str(int(seg.end())-overlap))
     seed = int(1e6 * random.uniform(0.0,1.0))
     inject1.add_var_opt('seed',seed)
     if prev_inject: 
