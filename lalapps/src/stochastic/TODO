@@ -1,0 +1,24 @@
+$Id$
+
+TODO:
+
+stochastic.c:
+
+* implement software injections for preforming monte carlo simulations
+
+* rewrite frequency mask code to enable general frequency masks to be
+  applied, not just multiples of 16 and 60 Hz
+
+* add loop over frequency band for bayesian search within stochastic.c,
+  so that all bands can be analysed without rereading all the data in
+	for each band
+
+stopp.c:
+
+* add support for combining statistics form overlapping hann windows
+
+General:
+
+* XLALify core SGWB routines
+
+* add examples of .ini files for running searchs at CIT, LHO, LLO, etc.
