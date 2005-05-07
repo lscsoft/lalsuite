@@ -172,6 +172,7 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"      Typ
 #define BANKEFFICIENCY_PRINTPSD_FILE		"BE_PSD.dat"			/* Print Psd in a file			*/
 #define BANKEFFICIENCY_PRINTTEMPLATE    	0				/* print the  BCV final template	*/
 #define BANKEFFICIENCY_CHECK                    0				/* Just check that SNR=1 for identical parameters */
+#define BANKEFFICIENCY_FAITHFULNESS                    0				
 
 
 #define BANKEFFICIENCY_PRINTPROTO_FILEXML	"BE_Proto.xml"			/* print the result (xml file)  	*/
@@ -267,6 +268,7 @@ typedef struct{
   OverlapMethodIn overlapMethod;
   INT4 check;				/* compute only one correlation where bothe 
 					   template and signal have the same parameters */
+  INT4 faithfulness;
   INT4 snrAtCoaTime;
   double m1,m2, psi0,psi3, tau0, tau3;
   char *inputPSD;
