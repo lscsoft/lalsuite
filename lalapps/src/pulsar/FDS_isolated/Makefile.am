@@ -61,4 +61,5 @@ TESTS = testFStat.sh
 
 getMetric_SOURCES = getMetric.c DopplerScan.c DopplerScan.h
 
-getMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h
+getMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h LatticeCovering.c
+
