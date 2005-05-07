@@ -27,6 +27,7 @@ int main(int argc, char **argv)
   static LALStatus s;
   FILE            *cross = NULL;
   FILE            *plus  = NULL;
+  FILE            *times = NULL;
   LALGPSandAcc     time_info, delta_t;
   EphemerisData    ephem;
   LALSource        source;
@@ -62,6 +63,7 @@ int main(int argc, char **argv)
 
   cross = xfopen("ifo_cross_skyavg_ts.txt","wo");
   plus  = xfopen("ifo_plus_skyavg_ts.txt","wo");
+  times = xfopen("times.txt","wo");
 
   avg_plus = 0.;
   avg_cross = 0.;
@@ -156,8 +158,9 @@ int main(int argc, char **argv)
     avg_plus  /= LAL_TWOPI * 2.;
     avg_cross /= LAL_TWOPI * 2.;
 
-    fprintf(plus,  "%ld\t% .14e\n", time_info.gps.gpsSeconds, avg_plus);
-    fprintf(cross, "%ld\t% .14e\n", time_info.gps.gpsSeconds, avg_cross);
+    fprintf(plus,  "% .14e\n", avg_plus);
+    fprintf(cross, "% .14e\n", avg_cross);
+    fprintf(times, "%ld\n", time_info.gps.gpsSeconds);
 
     time_info.gps.gpsSeconds += delta_t.gps.gpsSeconds;
   }
@@ -167,6 +170,7 @@ int main(int argc, char **argv)
    */
   fclose(cross);
   fclose(plus);
+  fclose(times);
 
   cleanup_ephemeris(&s, &ephem);
   cleanup_gridding(&s, &g);
