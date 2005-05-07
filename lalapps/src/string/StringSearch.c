@@ -576,7 +576,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	      fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
 	      return 1;
 	    }
-	  while(fabs(vector->data[p]) > CLA.threshold)
+	  while( (fabs(vector->data[p]) > CLA.threshold) || ((p-pstart)* GV.ht_proc.deltaT < (float)CLA.TruncSecs))
 	    {
 	      if(fabs(vector->data[p]) > maximum) 
 		{
