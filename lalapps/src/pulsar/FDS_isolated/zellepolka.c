@@ -42,9 +42,12 @@
 
 #include <unistd.h>
 
-/*
-#define USE_UNZIP 
+
+/* 
+   To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage, 
+   and readzipfile_util.h and .c. from yousuke. 
 */
+/* #define USE_UNZIP  */
 
 #ifdef USE_UNZIP
 #include "unzip.h"
@@ -192,8 +195,10 @@ void FreeConfigVars(LALStatus *stat, struct PolkaConfigVarsTag *CLA );
 void GetFilesListInThisDir(LALStatus *stat, CHAR *directory, CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
 void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4 outlier_id );
 int compareNCandidate(const void *a, const void *b);
-void ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fname, UINT4 *candlen);
 
+#ifdef USE_UNZIP
+void ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fname, UINT4 *candlen, INT4 *FileID);
+#endif
 
 /* ----------------------------------------------------------------------------- */
 /* Global variables. */
@@ -835,7 +840,7 @@ void ReadCandidateFiles(LALStatus *stat, CandidateList **CList, struct PolkaConf
   INITSTATUS( stat, "ReadCandidateFiles", rcsid );
   ATTATCHSTATUSPTR (stat);
 
-  UINT4 k;
+  UINT4 kc;
 
   if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) ) 
     {
@@ -846,11 +851,18 @@ void ReadCandidateFiles(LALStatus *stat, CandidateList **CList, struct PolkaConf
       /* Allocate memory for candidate list */
       /* fill data into candidate list array */
       
-      *clen = 0;
-      for (k=0;k<CLA->NFiles;k++)
+      *clen = 0;     /* We first have to set the candidate list length zero. */
+      *CList = NULL; /* We first have to nullify the list. */
+      for (kc=0;kc<CLA->NFiles;kc++)
 	{
-	  fprintf(stderr,"%s, %d\n",CLA->Filelist[k],CLA->NFiles);
+	  fprintf(stderr,"%s, %d\n",CLA->Filelist[kc],CLA->NFiles);
+#ifdef USE_UNZIP
+	  {INT4 FileID = 2*kc; /* the factor 2 because we have 2 sections. */
+	  ReadCandidateListFromZipFile( stat->statusPtr, CList, &(CLA->Filelist[kc]), *clen, &FileID);
+	  }
+#endif
 	} 
+
     } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
   else 
     {
@@ -925,25 +937,25 @@ void GetFilesListInThisDir(LALStatus *stat, CHAR *directory, CHAR *basename, CHA
 }
 
 
+
+
 /* ########################################################################################## */
 /* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
+#ifdef USE_UNZIP
 /*
 TODO:
-Check if *candlen is sensible. (do not overflow.)
-Check if the memory to be allocated is not huge (say, < 768MB?). 
 Check if *CList is either NULL or the memory of which is previously allocated by alloc() or the kind.
-Fill the FileID entry in CList.
-Add the range check and file format check as are done in ReadOneCandidateFile().
+(how?).
 */
 void  
-ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fname, UINT4 *candlen)
+ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fname, UINT4 *candlen, INT4 *FileID)
 {
   FILE *fp;
-#ifdef USE_UNZIP
+  const UINT4 max_num_candidates = 8000000; /* maximum tractable number of candidate events. */
   UINT4 numlines;
   INT4 nread;
-
-  INT4 ic;
+  REAL8 epsilon=1e-5;
+  UINT4 ic;
   INT4 length; /* length of file */
   CHAR *line, *endp; /* pointers to start and end of line */
   INT4 section = 0;    /* 0: non-POLKA, 1,2: IFO sections,
@@ -953,7 +965,6 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
 
   UzpBuffer uzpbuff;
   CHAR newline='\0';
-#endif
 
   INITSTATUS (stat, "ReadCandidateListFromZipFile", rcsid);
   ATTATCHSTATUSPTR (stat);
@@ -968,17 +979,20 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
      }
   fclose(fp);
 
-#ifndef USE_UNZIP
-  /* We should not be here. */
-  LALPrintError("Error: unzip not found.");
-  ABORT( stat, POLKAC_EUNZIP, POLKAC_MSGEUNZIP ); 
-#endif
+  /* Check if the memory to be allocated is not huge 
+     (say, < 512MB. sizeof(CandidateList) ~ 60B. 512/60 = 8000000). */
+  if( *candlen > max_num_candidates ) {
+    LALPrintError("\nMaximum number of candidate events reached.\n");
+    LALPrintError("\nWe have %u events while the maximum allowed number of events is %u.\n",*candlen,max_num_candidates);
+    ABORT( stat, POLKAC_ESYS, POLKAC_MSGESYS ); 
+  }
 
-#ifdef USE_UNZIP
+
+
   uzpbuff.strptr = NULL;
 
   /* ------------------------------------------------------------------------- */
-  /*  Open and count candidates file */
+  /*  Open and count the size of the candidates file */
   /* Read into buffer.  If this fails, we can't proceed. */
   if ( getfile( &uzpbuff, fname )  < 0 ) {
     LALPrintError("Cannot read file %s . \n",fname);
@@ -992,7 +1006,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
     ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
   }
 
-
+  /* ------------------------------------------------------------------------- */
   /* Check for correct ending tag.  If this isn't present, it is
      safest not to proceed (it greatly simplifies error trapping). */
   line += length;
@@ -1002,8 +1016,8 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
     ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
   }
 
-
-  /* Start reading file data line-by-line. */
+  /* ------------------------------------------------------------------------- */
+  /* Start reading file data line-by-line and count the number of candidate events. */
   for ( line = uzpbuff.strptr; section < MAX_SECS;
 	*endp = '\n', line = endp + 1 ) {
 
@@ -1031,29 +1045,31 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
       }
       section = 3;
       break; /* We are not interested in the section 3 here. */
-    } 
+    }  /*   if ( !strncmp( line, "%1", 2 ) ) {*/
  
 
     /* Do non-POLKA checks: */
-    if ( section == 0 ) {
-      LALPrintError("Unknown format file %s.",fname);
-      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
-    }
-
-
+    if ( section == 0 ) 
+      {
+	LALPrintError("Unknown format file %s.",fname);
+	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      }
     /* Do POLKA IFO-section checks */
-    else if ( section == 1 || section == 2 ) {
-      nlines[section-1] += 1;
-    }
-
+    else if ( section == 1 || section == 2 ) 
+      {
+	nlines[section-1] += 1;
+      }
     /* Do POLKA coincidence-section checks. */
-    else { /* we should not be here */
-      LALPrintError("Unknown format file %s.",fname);
-      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
-    }
+    else 
+      { /* we should not be here */
+	LALPrintError("Unknown format file %s.",fname);
+	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      } /*     if ( section == 0 )  */
+
 
     /* Done reading this line. */
-  }
+  } /*   for ( line = uzpbuff.strptr; section < MAX_SECS; ... */
+  /* ------------------------------------------------------------------------- */
 
   numlines = nlines[0] + nlines[1]; /* we have two sections. */
 
@@ -1097,64 +1113,134 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
       section = 1;
       continue;
     } else if ( !strncmp( line, "%2", 2 ) ) {
-      if( section != 1 ) { /* We should have section 1 before 2. */
-	fprintf(stderr, "Unknown format file %s.",fname);
-	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
-      }
       section = 2;
       continue;
     } else if ( !strncmp( line, "%coincidence", 12 ) ) {
-      if( section != 2 ) { /* We should have section 2 before 3. */
-	fprintf(stderr, "Unknown format file %s.",fname);
-	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
-      }
       section = 3;
       break; /* We are not interested in the section 3 here. */
     } 
  
 
-    /* Do non-POLKA checks: */
-    if ( section == 0 ) {
-      LALPrintError("Unknown format file %s.",fname);
+    if ( section == 1 || section == 2 ) 
+      {
+	CandidateList *cl=&(*CList)[ic];
+	ic++;
+	
+	if (strlen(line)==0 || line[strlen(line)-1] != '\n') {
+	  LALPrintError( "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
+			 ic+1, fname, line);
+	  free ( *CList );
+	  ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+	}
+	
+	nread = sscanf (line, 
+			"%lf %lf %lf %lf %c", 
+			&(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->TwoF), &newline );
+	cl->FileID = (*FileID) + section - 1; /* section can be either 1 or 2. */
+
+
+	/* ------------------------------------------------------------------------- */
+	/* check that values that are read in are sensible */
+	if (
+	    cl->FileID < 0                        ||
+	    cl->f < 0.0                        ||
+	    cl->TwoF < 0.0                        ||
+	    cl->Alpha <         0.0 - epsilon  ||
+	    cl->Alpha >   LAL_TWOPI + epsilon  ||
+	    cl->Delta < -0.5*LAL_PI - epsilon  ||
+	    cl->Delta >  0.5*LAL_PI + epsilon  ||
+	    !finite(cl->FileID)                     ||                                                                 
+	    !finite(cl->f)                     ||
+	    !finite(cl->Alpha)                 ||
+	    !finite(cl->Delta)                 ||
+	    !finite(cl->TwoF)
+	    ) {
+	  LALPrintError(
+			"Line %d of file %s has invalid values.\n"
+			"First 255 chars are:\n"
+			"%s\n"
+			"1st and 4th field should be positive.\n" 
+			"2nd field should lie between 0 and %1.15f.\n" 
+			"3rd field should lie between %1.15f and %1.15f.\n"
+			"All fields should be finite\n",
+			ic+1, fname, line, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
+	  LALFree ((*CList));
+	  free( uzpbuff.strptr );
+	  ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+	} /* end of the check of the range of the values.*/
+      } /*     if ( section == 1 || section == 2 )  */
+    /* Do POLKA coincidence-section checks. */
+    else 
+      { /* we should not be here */
+	LALPrintError("Unknown format file %s.",fname);
+	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+      } /* if ( section == 1 || section == 2 )  */
+    
+    /* Done reading this line and filling CList. */
+
+           
+    /* ------------------------------------------------------------------------- */   
+    /* check that the FIRST character following the Fstat value is a
+       newline.  Note deliberate LACK OF WHITE SPACE char before %c
+       above */
+    if (newline != '\n') {
+      LALPrintError(
+		    "Line %d of file %s had extra chars after F value and before newline.\n"
+		    "First 255 chars are:\n"
+		    "%s\n",
+		    ic+1, fname, line);
+      LALFree ((*CList));
+      free( uzpbuff.strptr );
       ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
-    }
+      }
 
 
-    /* Do POLKA IFO-section checks */
-    else if ( section == 1 || section == 2 ) {
-      CandidateList *cl=&(*CList)[ic];
-      ic++;
 
-      if (strlen(line)==0 || line[strlen(line)-1] != '\n') {
-        LALPrintError( "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
-		       ic+1, fname, line);
-        free ( *CList );
+
+    /* ------------------------------------------------------------------------- */
+    /* check that we read 6 quantities with exactly the right format */
+    if ( nread != 5 )
+      {
+	LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+		       "Line in question is\n%s",
+		       nread, 5, ic+1, fname, line);               
+	LALFree ((*CList));
+	free( uzpbuff.strptr );
 	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       }
-      
-      nread = sscanf (line, 
-                     "%lf %lf %lf %lf %c", 
-                     &(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->TwoF), &newline );
-    }
 
-    /* Do POLKA coincidence-section checks. */
-    else { /* we should not be here */
-      LALPrintError("Unknown format file %s.",fname);
-      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
-    }
-    /* Done reading this line. */
-  }
+  } /*   for ( line = uzpbuff.strptr; section < MAX_SECS; ... ) */
 
   free( uzpbuff.strptr ); /* uzpbuff is allocated by malloc() in getfile(). It is user's responsibility to free this. */
 
+
+  ic++;
+  if (ic != (*candlen) + numlines ) {
+    LALPrintError(
+            "Read of file %s terminated after %d line but numlines=%d\n",
+            fname, ic, numlines);
+    LALFree((*CList));
+    ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+  }
+
+  if ( section != 3 ) {
+    LALPrintError(
+            "Read of file %s terminated not by coincidence section but %s\n",
+            fname, line);
+    LALFree((*CList));
+    ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
+  }
+
+
   (*candlen) += numlines; /* total number of candidate so far */
-#endif
+
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 
 
 } /* void  ReadCandidateListFromZipFile () */
+#endif /* #ifdef USE_UNZIP */
 
 
 
