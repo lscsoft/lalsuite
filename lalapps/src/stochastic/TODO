@@ -17,6 +17,20 @@ stopp.c:
 
 * add support for combining statistics from overlapping hann windows
 
+* modularise
+
+stochastic_pipe.in/stochastic_bayes.in:
+
+* unify stochastic_pipe.in and stochastic_bayes.in into a single script
+
+* call lalapps_stopp for each frequency band to create a single xml file
+  for each frequency band, for the bayesian search
+
+* specify the LDRdataFindServer in the config file
+
+* enable support for GEO/LIGO correlations, script currently checks for
+  calibration information for all detectors - which GEO doesn't need
+
 General:
 
 * XLALify core SGWB routines
