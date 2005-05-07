@@ -15,7 +15,7 @@ stochastic.c:
 
 stopp.c:
 
-* add support for combining statistics form overlapping hann windows
+* add support for combining statistics from overlapping hann windows
 
 General:
 
