@@ -148,6 +148,7 @@ int main(int argc, char **argv)
       
         LALComputeDetAMResponse(&s, &response, &det_and_src, &time_info);
 
+        /* really, am computing the square of the Fs multiplied by the area element */
         avg_plus  += (response.plus * response.plus) * sin(LAL_PI_2 - g.dec->data[j]) * delta_g.ra->data[i] * delta_g.dec->data[j];
         avg_cross += (response.cross * response.cross) * sin(LAL_PI_2 - g.dec->data[j]) * delta_g.ra->data[i] * delta_g.dec->data[j];
       }
@@ -158,6 +159,7 @@ int main(int argc, char **argv)
     avg_plus  /= LAL_TWOPI * 2.;
     avg_cross /= LAL_TWOPI * 2.;
 
+    /* writing out the mean square Fs */
     fprintf(plus,  "% .14e\n", avg_plus);
     fprintf(cross, "% .14e\n", avg_cross);
     fprintf(times, "%ld\n", time_info.gps.gpsSeconds);
