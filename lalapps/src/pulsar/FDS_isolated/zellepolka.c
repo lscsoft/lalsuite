@@ -46,8 +46,9 @@
 /* 
    To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage, 
    and readzipfile_util.h and .c. from yousuke. 
+#define USE_UNZIP  
 */
-/* #define USE_UNZIP  */
+
 
 #ifdef USE_UNZIP
 #include "unzip.h"
@@ -858,7 +859,7 @@ void ReadCandidateFiles(LALStatus *stat, CandidateList **CList, struct PolkaConf
 	  fprintf(stderr,"%s, %d\n",CLA->Filelist[kc],CLA->NFiles);
 #ifdef USE_UNZIP
 	  {INT4 FileID = 2*kc; /* the factor 2 because we have 2 sections. */
-	  ReadCandidateListFromZipFile( stat->statusPtr, CList, &(CLA->Filelist[kc]), *clen, &FileID);
+	  ReadCandidateListFromZipFile( stat->statusPtr, CList, CLA->Filelist[kc], clen, &FileID);
 	  }
 #endif
 	} 
@@ -964,7 +965,6 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
   const INT4 MAX_SECS = 4;
 
   UzpBuffer uzpbuff;
-  CHAR newline='\0';
 
   INITSTATUS (stat, "ReadCandidateListFromZipFile", rcsid);
   ATTATCHSTATUSPTR (stat);
@@ -995,6 +995,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
   /*  Open and count the size of the candidates file */
   /* Read into buffer.  If this fails, we can't proceed. */
   if ( getfile( &uzpbuff, fname )  < 0 ) {
+    if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
     LALPrintError("Cannot read file %s . \n",fname);
     ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
   }
@@ -1002,6 +1003,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
   length = uzpbuff.strlength;
   line = uzpbuff.strptr;
   if ( !line || length == 0 || *line == '\0' ) {
+    if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
     LALPrintError ("Unknown format of the file  %s.\n\n", fname);
     ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
   }
@@ -1012,6 +1014,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
   line += length;
   if ( ( length < 8 || strncmp( line - 8, "\n%DONE\r\n", 8 ) ) &&
        ( length < 7 || strncmp( line - 7, "\n%DONE\n", 7 ) ) ) {
+    free(uzpbuff.strptr);
     LALPrintError("File %s does not end with the DONE_MARKER. \n",fname);
     ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
   }
@@ -1033,6 +1036,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
       continue;
     } else if ( !strncmp( line, "%2", 2 ) ) {
       if( section != 1 ) { /* We should have section 1 before 2. */
+	if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
 	LALPrintError("Unknown format file %s.",fname);
 	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       }
@@ -1040,6 +1044,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
       continue;
     } else if ( !strncmp( line, "%coincidence", 12 ) ) {
       if( section != 2 ) { /* We should have section 2 before 3. */
+	if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
 	LALPrintError("Unknown format file %s.",fname);
 	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       }
@@ -1052,6 +1057,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
     if ( section == 0 ) 
       {
 	LALPrintError("Unknown format file %s.",fname);
+	if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
 	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       }
     /* Do POLKA IFO-section checks */
@@ -1062,6 +1068,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
     /* Do POLKA coincidence-section checks. */
     else 
       { /* we should not be here */
+	if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
 	LALPrintError("Unknown format file %s.",fname);
 	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       } /*     if ( section == 0 )  */
@@ -1075,6 +1082,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
 
   if( numlines == 0 ) { /* This file is empty. Go to the next file.*/
     LALPrintError( "No candidate events in the file %s\n\n", fname);
+    free(uzpbuff.strptr);
     DETATCHSTATUSPTR (stat);
     RETURN (stat);
   } 
@@ -1087,6 +1095,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
       tmp = (CandidateList *)realloc (*CList, ( *candlen + numlines )*sizeof(CandidateList));
       if ( !tmp ) 
 	{ 
+	  if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
 	  LALPrintError("Could not allocate memory for candidate file %s\n\n", fname);
 	  ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
 	}
@@ -1107,6 +1116,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
     endp = line;
     while ( *endp != '\n' )
       endp++;
+    *endp = '\0';
 
     /* Check for POLKA section divisions or EOF marker. */
     if ( !strncmp( line, "%1", 2 ) ) {
@@ -1125,17 +1135,10 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
       {
 	CandidateList *cl=&(*CList)[ic];
 	ic++;
-	
-	if (strlen(line)==0 || line[strlen(line)-1] != '\n') {
-	  LALPrintError( "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
-			 ic+1, fname, line);
-	  free ( *CList );
-	  ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
-	}
-	
+
 	nread = sscanf (line, 
-			"%lf %lf %lf %lf %c", 
-			&(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->TwoF), &newline );
+			"%lf %lf %lf %lf", 
+			&(cl->f), &(cl->Alpha), &(cl->Delta), &(cl->TwoF) );
 	cl->FileID = (*FileID) + section - 1; /* section can be either 1 or 2. */
 
 
@@ -1173,37 +1176,21 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
     else 
       { /* we should not be here */
 	LALPrintError("Unknown format file %s.",fname);
+	if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
 	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
       } /* if ( section == 1 || section == 2 )  */
     
     /* Done reading this line and filling CList. */
 
            
-    /* ------------------------------------------------------------------------- */   
-    /* check that the FIRST character following the Fstat value is a
-       newline.  Note deliberate LACK OF WHITE SPACE char before %c
-       above */
-    if (newline != '\n') {
-      LALPrintError(
-		    "Line %d of file %s had extra chars after F value and before newline.\n"
-		    "First 255 chars are:\n"
-		    "%s\n",
-		    ic+1, fname, line);
-      LALFree ((*CList));
-      free( uzpbuff.strptr );
-      ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
-      }
-
-
-
 
     /* ------------------------------------------------------------------------- */
-    /* check that we read 6 quantities with exactly the right format */
-    if ( nread != 5 )
+    /* check that we read 4 quantities with exactly the right format */
+    if ( nread != 4 )
       {
 	LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
 		       "Line in question is\n%s",
-		       nread, 5, ic+1, fname, line);               
+		       nread, 4, ic+1, fname, line);               
 	LALFree ((*CList));
 	free( uzpbuff.strptr );
 	ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
@@ -1214,7 +1201,6 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
   free( uzpbuff.strptr ); /* uzpbuff is allocated by malloc() in getfile(). It is user's responsibility to free this. */
 
 
-  ic++;
   if (ic != (*candlen) + numlines ) {
     LALPrintError(
             "Read of file %s terminated after %d line but numlines=%d\n",
@@ -1501,7 +1487,7 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
   BOOLEAN uvar_help;
 
 
-  const CHAR BNAME[] = "TEST";
+  const CHAR BNAME[] = "Test";
 
   uvar_AutoOut = 0;
   uvar_help = 0;
@@ -1530,11 +1516,11 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
   /* register all our user-variables */
   LALregBOOLUserVar(stat,       help,           'h', UVAR_HELP,     "Print this message"); 
 
-  LALregSTRINGUserVar(stat,     InputData,      'I', UVAR_REQUIRED, "Input candidates Fstats file.");
+  LALregSTRINGUserVar(stat,     InputData,      'I', UVAR_OPTIONAL, "Input candidates Fstats file.");
   LALregSTRINGUserVar(stat,     OutputData,     'o', UVAR_REQUIRED, "Ouput candidates file name");
 
-  LALregSTRINGUserVar(stat,     InputDirectory, 'i', UVAR_DEVELOPER,"Input candidates Fstats files directory.");
-  LALregSTRINGUserVar(stat,     BaseName,       'b', UVAR_DEVELOPER,"BaseName of the Input Fstats files");
+  LALregSTRINGUserVar(stat,     InputDirectory, 'i', UVAR_OPTIONAL,"Input candidates Fstats files directory.");
+  LALregSTRINGUserVar(stat,     BaseName,       'b', UVAR_OPTIONAL,"BaseName of the Input Fstats files");
 
   LALregINTUserVar(stat,        Nthr,            0,  UVAR_OPTIONAL, "Threshold on number of coincidence");
   LALregREALUserVar(stat,       Sthr,            0,  UVAR_OPTIONAL, "Threshold on significance.");
@@ -1557,18 +1543,37 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
     exit(POLKA_EXIT_OK);
   }
 
+
+  if( LALUserVarWasSet (&uvar_InputData) && 
+      LALUserVarWasSet (&uvar_InputDirectory) ) {
+    LALPrintError("\nCannot set both of InputData and InputDirectory\n");
+    exit(POLKA_EXIT_OK);
+  }
+
+  if( (!LALUserVarWasSet (&uvar_InputData)) && 
+      (!LALUserVarWasSet (&uvar_InputDirectory)) ) {
+    LALPrintError("\nPlease set either InputData and InputDirectory\n");
+    exit(POLKA_EXIT_OK);
+  }
+
+
   CLA->FstatsFile = NULL;
   CLA->OutputFile = NULL;
   CLA->InputDir = NULL;
   CLA->BaseName = NULL;
 
-  CLA->FstatsFile = (CHAR *) LALMalloc(strlen(uvar_InputData)+1);
-  if(CLA->FstatsFile == NULL)
-    {
-      LALPrintError("No candidates file specified; input with -I option.\n");
-      LALPrintError("For help type %s -h\n", argv[0]);
-      RETURN (stat);
-    }      
+
+  if( LALUserVarWasSet (&uvar_InputData) ) {
+    CLA->FstatsFile = (CHAR *) LALMalloc(strlen(uvar_InputData)+1);
+    if(CLA->FstatsFile == NULL)
+      {
+	LALPrintError("No candidates file specified; input with -I option.\n");
+	LALPrintError("For help type %s -h\n", argv[0]);
+	RETURN (stat);
+      }      
+    strcpy(CLA->FstatsFile,uvar_InputData);
+  }
+
   CLA->OutputFile = (CHAR *) LALMalloc(strlen(uvar_OutputData)+1);
   if(CLA->OutputFile == NULL)
     {
@@ -1576,7 +1581,6 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
       ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
     }      
 
-  strcpy(CLA->FstatsFile,uvar_InputData);
   strcpy(CLA->OutputFile,uvar_OutputData);
 
   if( LALUserVarWasSet (&uvar_InputDirectory) ) {
@@ -1594,6 +1598,7 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
   }
 
 
+  /*
   if( LALUserVarWasSet (&uvar_BaseName) ) {
     CLA->BaseName = (CHAR *) LALMalloc(strlen(uvar_BaseName)+1);
     if(CLA->BaseName == NULL)
@@ -1603,6 +1608,15 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
       }          
     strcpy(CLA->BaseName,uvar_BaseName);
   }
+  */
+
+  CLA->BaseName = (CHAR *) LALMalloc(strlen(uvar_BaseName)+1);
+  if(CLA->BaseName == NULL)
+    {
+      FreeConfigVars( stat->statusPtr, CLA );
+      RETURN (stat);
+    }          
+  strcpy(CLA->BaseName,uvar_BaseName);
 
 
   CLA->AutoOut = uvar_AutoOut;
