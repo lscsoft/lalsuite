@@ -17,6 +17,16 @@ static REAL4Vector X2;
 static REAL4Vector X3;
 static REAL4Vector X4;
 
+static COMPLEX8Vector *strainSegment = NULL;
+static COMPLEX8FrequencySeries       resp;
+
+void LALComputeWindowSpectrum(LALStatus *status, 
+			      INT4 numPoints, 
+			      INT4 specType, 
+			      REAL4FrequencySeries  *spec,
+			      REAL4TimeSeries *chan);
+
+static int vrbflg = 0;
 
 int
 main (INT4 argc, CHAR **argv ) 
@@ -35,7 +45,6 @@ main (INT4 argc, CHAR **argv )
   UINT4 	i;
 
 
-  
   REAL8		df;
   REAL8		fendBCV	= 0;
 
@@ -124,7 +133,7 @@ main (INT4 argc, CHAR **argv )
   LAL_CALL(BEGetMaximumSize(&status, randIn, &(signal.length)), 
 	   &status);
   /* we multiply by 2 just for sanity */
-  signal.length *= 2 ;
+  signal.length *= 4 *4 *4;
 
   signal.data 		= (REAL4*) LALCalloc(1, sizeof(REAL4) * signal.length);
 
@@ -258,6 +267,8 @@ main (INT4 argc, CHAR **argv )
   X3.data = (REAL4*) LALMalloc(sizeof(REAL4) * X3.length);
   X4.data = (REAL4*) LALMalloc(sizeof(REAL4) * X4.length);  
 
+  srand(randIn.useed);
+
   /*
    * Main loop is here. We creae random signal and filter 
    * it with the template bank.
@@ -268,12 +279,65 @@ main (INT4 argc, CHAR **argv )
       /* do some initialisation for the output */
       BEInitOverlapOutputIn(&OverlapOutputBestTemplate);
 
+      
       /* LALCreateRandomInjection*/
       randIn.param.approximant   = otherIn.signal; /* The waveform parameter for injection */
       /* however, we might need to cahnge some parameters depending on the user parameters */
+	  
+
       if (otherIn.signal == BCV) {
-	randIn.param.massChoice = psi0Andpsi3;
-	/* ending frequency will be fixed later */
+	randIn.param.massChoice = fixedPsi;
+	
+
+
+	{
+	  int valid = 0 ;
+	  
+	  /* use the random number so generated as the next seed */
+
+	  while (!valid)
+	    {
+	      REAL8 epsilon1 = (float) rand()/(float)RAND_MAX;
+	      REAL8 epsilon2 = (float) rand()/(float)RAND_MAX;
+	      
+	      randIn.param.psi0 = randIn.psi0Min + epsilon1 * (randIn.psi0Max - randIn.psi0Min);
+	      randIn.param.psi3 = randIn.psi3Min + epsilon2 * (randIn.psi3Max - randIn.psi3Min);
+
+
+	      REAL8 fend = 10000000;
+	      int trial = 0; 
+
+	      while ((fend > randIn.param.tSampling/2.) ||( fend < randIn.param.fLower) && (trial < 10) ) 
+		{ 	     
+
+		  REAL8 fLR, fLSO;
+		  REAL8 epsilon3 ;	
+		  epsilon3 = (float) rand()/(float)RAND_MAX;
+
+		  randIn.param.totalMass = -randIn.param.psi3/(16.L*LAL_PI * LAL_PI * randIn.param.psi0);
+		  randIn.param.totalMass *= 2 / LAL_MTSUN_SI;
+ ;
+		  
+		  fLR = 1.L/(LAL_PI * pow (3.L,1.5) * randIn.param.totalMass * LAL_MTSUN_SI); 
+		  fLSO = 1.L/(LAL_PI * pow (6.L,1.5) * randIn.param.totalMass * LAL_MTSUN_SI);		
+
+		  fend = fLSO + (fLR - fLSO) * epsilon3;
+		  fend = fLSO + (fLR - fLSO) * epsilon3;
+
+
+
+		  randIn.param.fFinal = fend;		  
+		  randIn.param.fCutoff = fend;		  
+
+		  trial++;
+		}
+	      if (trial ==10 ) valid = 0;
+	      else valid = 1;
+	  
+	      
+	    } 
+	}
+
       }
       else
 	{ 
@@ -282,10 +346,25 @@ main (INT4 argc, CHAR **argv )
 	  randIn.param.massChoice       = totalMassUAndEta; /* TODO : an input parameter*/
 	}
       /* Let's compute the random parameters of the waveform to inject*/
+      
 
-
+      
       LAL_CALL(BEGenerateInputData(&status, &signal, &randIn, otherIn),
 	       &status);
+      
+      
+
+      /*
+      if (otherIn.NoiseModel == REALPSD)
+	{
+	  for (i=0; i<signal.length/2; i++){
+	    k = signal.length-i;
+	    signal.data[i] = strainSegment->data[i].re; 
+	    signal.data[k] = strainSegment->data[i].im; 
+	  }	   	      
+	}
+
+      */
 
       overlapin.signal 	= signal;
       
@@ -315,7 +394,14 @@ main (INT4 argc, CHAR **argv )
 	    overlapin.param                    = randIn.param;
 	    sizeBank                           = 1;  /* we dont need the whole bank for checking. only one template needed */ 
 	  }	     	     
-	  else {
+	  else if (otherIn.faithfulness){
+	    list[currentTemplateNumber].params = randIn.param;
+	    overlapin.param                    = randIn.param;
+	    overlapin.param.approximant        = otherIn.signal;
+	    sizeBank                           = 1;  /* we dont need the whole bank for checking. only one template needed */ 
+	  }
+	  else
+	  {
 	    /* else we really go through the template parameter */
 	    overlapin.param 	= list[currentTemplateNumber].params;	   
 	    overlapout.max      = -1.;
@@ -340,7 +426,20 @@ main (INT4 argc, CHAR **argv )
 		{
 		case BCV:	   	   	   
 		  /* let us fix the ending frequency of the template for LALOverlap function */
-		  fendBCV = list[currentTemplateNumber].params.fFinal; 
+
+
+
+		  fendBCV = list[currentTemplateNumber].params.fFinal ;
+  		/* if we want to test the BCV metric by injectd BCV signal, we 
+		 * have to get the same final frequnecy for both template and signal */
+		  if (otherIn.signal ==BCV) 
+			  fendBCV = list[currentTemplateNumber].params.fFinal =  randIn.param.fFinal; 
+
+
+
+
+
+
 		  overlapin.param.fFinal   =  fendBCV;
 		  overlapin.param.fCutoff  =  fendBCV;
 		  
@@ -386,24 +485,52 @@ main (INT4 argc, CHAR **argv )
 		    randIn.param.fCutoff = coarseBankIn.fUpper;
 		    overlapin.param = randIn.param;
 		  }
+	  	  else if (otherIn.faithfulness){
+		    list[currentTemplateNumber].params = randIn.param;
+		    overlapin.param                    = randIn.param;
+		    overlapin.param.approximant = otherIn.template;
+		    overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
+		    overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
+		    sizeBank                           = 1;   
+		  }
 		  else
 		    {
 		      overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
 		      overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
 		    }
 
+
+
+
+
 		  
 		  LAL_CALL(LALInspiralWaveOverlap(&status,
 						  &correlation,
 						  &overlapout,
 						  &overlapin), &status);
+		  /*		  Foutput=fopen("BE_correlation.dat", "w");
+		  for (i=0; i<signal.length; i++)
+		    {
+		      fprintf(Foutput, "%e\n",  correlation.data[i]);
+		    }
+		  fclose(Foutput);
 		  
+		  Foutput=fopen("BE_waveformIn.dat", "w");
+		  for (i=0; i<signal.length; i++)
+		    {
+		      fprintf(Foutput, "%e %e\n", i/randIn.param.tSampling , signal.data[i]);
+		    }
+		  fclose(Foutput);	
+		  
+		  */
 		  
 		  BEFillOverlapOutput(overlapout, 
 				      &OverlapOutputThisTemplate);
 		  
 		  break;	     
 		}     /* switch end */
+
+
 	      
 	      
 	      /* fill historgranm of the correlation output */
@@ -648,6 +775,7 @@ void InitInspiralCoarseBankIn(InspiralCoarseBankIn *coarseBankIn)
   coarseBankIn->order       = BANKEFFICIENCY_ORDER_TEMPLATE;  
   coarseBankIn->LowGM     	= BANKEFFICIENCY_LOWGM;
   coarseBankIn->HighGM    	= BANKEFFICIENCY_HIGHGM;
+  coarseBankIn->gridType = BANKGRID_SQUARE;
 }
 
 
@@ -722,6 +850,7 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->PrintBankOverlap	= BANKEFFICIENCY_PRINTBANKOVERLAP;
   otherIn->PrintTemplate	= BANKEFFICIENCY_PRINTTEMPLATE; 
   otherIn->check        	= BANKEFFICIENCY_CHECK;
+  otherIn->faithfulness        	= BANKEFFICIENCY_FAITHFULNESS;
   otherIn->inputPSD          	= NULL;
   otherIn->quietFlag 	     	= BANKEFFICIENCY_QUIETFLAG;
   otherIn->ntrials 	     	= BANKEFFICIENCY_NTRIALS;
@@ -796,8 +925,8 @@ ParseParameters(	INT4 			*argc,
       else if ( strcmp(argv[i], "--psi3") 	== 0 ) {
 	otherIn->psi3 = atof(argv[++i]); 
 	randIn->param.massChoice = fixedPsi; 
-	
       }
+
       else if ( strcmp(argv[i], "--tau0") 	== 0 ) {
 	otherIn->psi0 = atof(argv[++i]);  
 	randIn->param.massChoice = fixedTau; 	
@@ -807,41 +936,57 @@ ParseParameters(	INT4 			*argc,
 	randIn->param.massChoice = fixedTau; 
       }
 
-      else if (strcmp(argv[i],	"--psi0-range")	==0) {
-	coarseBankIn->psi0Min = randIn->psi0Min = atof(argv[++i]);
-	coarseBankIn->psi0Max = randIn->psi0Max = atof(argv[++i]);
+      else if (strcmp(argv[i],	"--bank-psi0-range")	==0) {
+	coarseBankIn->psi0Min =  atof(argv[++i]);
+	coarseBankIn->psi0Max =  atof(argv[++i]);
       }
-      else if (strcmp(argv[i],	"--psi3-range")	==0){
-		coarseBankIn->psi3Max = randIn->psi0Max = atof(argv[++i]);
-		coarseBankIn->psi3Min = randIn->psi3Min = atof(argv[++i]);
+      else if (strcmp(argv[i],	"--bank-psi3-range")	==0){
+	coarseBankIn->psi3Max  = atof(argv[++i]);
+	coarseBankIn->psi3Min  = atof(argv[++i]);
 	}
+
+      else if (strcmp(argv[i],	"--signal-psi0-range")	==0) {
+	randIn->psi0Min = atof(argv[++i]);
+	randIn->psi0Max = atof(argv[++i]);
+      }
+      else if (strcmp(argv[i],	"--signal-psi3-range")	==0){
+	randIn->psi3Max = atof(argv[++i]);
+	randIn->psi3Min = atof(argv[++i]);
+      }
       else if ( strcmp(argv[i],	"--mm")		==0){
 	     coarseBankIn->mmCoarse = atof(argv[++i]);
       }	  
       else if ( strcmp(argv[i],	"--number-fcut")	==0)  
-  	  coarseBankIn->numFcutTemplates = atoi(argv[++i]);	
+	coarseBankIn->numFcutTemplates = atoi(argv[++i]);	
       else if ( strcmp(argv[i],	"--simulation-type")	==0)	     	
-	      randIn->type = atoi(argv[++i]);	
+	randIn->type = atoi(argv[++i]);	
       else if ( strcmp(argv[i],	"--signal-amplitude")	==0)	     
-    	      randIn->SignalAmp = atof(argv[++i]);	
+	randIn->SignalAmp = atof(argv[++i]);	
       else if ( strcmp(argv[i],	"--noise-amplitude")	==0)	     
-    	      randIn->NoiseAmp = atof(argv[++i]);	
+	randIn->NoiseAmp = atof(argv[++i]);	
       else if ( strcmp(argv[i],	"--alpha-bank")	==0)	     
-    	      coarseBankIn->alpha = atof(argv[++i]);      
+	coarseBankIn->alpha = atof(argv[++i]);      
       else if ( strcmp(argv[i],	"--alpha-signal")==0)	     
-    	      randIn->param.alpha = atof(argv[++i]);
+	randIn->param.alpha = atof(argv[++i]);
       else if ( strcmp(argv[i],	"--fFinal")==0)	     
-    	      randIn->param.fCutoff = atof(argv[++i]);
+	randIn->param.fCutoff = atof(argv[++i]);
       else if ( strcmp(argv[i],	"--freq-moment-bank")	==0)	     
 	coarseBankIn->fUpper = atof(argv[++i]);      
       else if ( strcmp(argv[i],	"--template-order")==0)     
-	      coarseBankIn->order = atoi(argv[++i]); 	
+	coarseBankIn->order = atoi(argv[++i]); 	
       else if ( strcmp(argv[i],	"--signal-order")==0) 
-    	      randIn->param.order = atoi(argv[++i]); 	
+	randIn->param.order = atoi(argv[++i]); 	
       else if ( strcmp(argv[i],	"--ntrial")	==0)
-	      otherIn->ntrials = atoi(argv[++i]);       	
+	otherIn->ntrials = atoi(argv[++i]);       	
       else if ( strcmp(argv[i],	"--n")	==0)
-	      otherIn->ntrials = atoi(argv[++i]);       	
+	otherIn->ntrials = atoi(argv[++i]);       	
+      else if ( strcmp(argv[i], "--bank-grid-type")   == 0 ){
+        i++;
+	
+	if (strcmp(argv[i], "square")         == 0)   coarseBankIn->gridType = BANKGRID_SQUARE;
+	else if (strcmp(argv[i], "hexagonal")         == 0)   coarseBankIn->gridType = BANKGRID_HEXAGONAL;
+	else {fprintf(stderr, "bank-grid-type is either square or hexagonal\n"); exit(0);}
+      }
       else if ( strcmp(argv[i],	"--seed")	==0)
 	      randIn->useed = atoi(argv[++i])+1;	
       else if ( strcmp(argv[i],"--lengthFactor") ==0)   
@@ -869,11 +1014,12 @@ ParseParameters(	INT4 			*argc,
       else if ( strcmp(argv[i],"--print-best-overlap")	==0)  	 otherIn->PrintBestOverlap 	= 1;
       else if ( strcmp(argv[i],"--print-best-template")	==0)  	 otherIn->PrintBestTemplate	= 1;
       else if ( strcmp(argv[i],"--snr-at-coa-time")	==0)  	 otherIn->snrAtCoaTime    	= 1;
-
+      else if ( strcmp(argv[i],"--faithfulness")	==0)  	 otherIn->faithfulness    	= 1;
       else if ( strcmp(argv[i],"--print-psd")	        ==0)  	 otherIn->PrintPsd 		= 1;
       else if ( strcmp(argv[i],"--PrintFilter")		==0) 	 otherIn->PrintFilter 		= 1; 
       else if ( strcmp(argv[i],"--print-bank-overlap")	==0)  	 otherIn->PrintBankOverlap 	= 1;
       else if ( strcmp(argv[i],"--print-snr-histo") ==0) otherIn->PrintSNRHisto 	= 1;
+      else if ( strcmp(argv[i],"--verbose") ==0) vrbflg 	= 1;
       else if ( strcmp(argv[i],"--print-template")	==0)  	 otherIn->PrintTemplate 	= 1;
       else if ( strcmp(argv[i],"--print-bank")		==0) 	 otherIn->PrintBank		= 1;
       else if ( strcmp(argv[i],"--print-bank-xml")	==0) 	 otherIn->PrintBankXml	        = 1;
@@ -3185,16 +3331,24 @@ LALCreateRealPsd(LALStatus *status,
     } calData = undefined;
   
 
-  extern int vrbflg;                      /* verbocity of lal function    */
-  
+                 /* verbocity of lal function    */
+
+  INT8  durationNS = 0;  
+  INT8  gpsEndTimeNS     = 0;             /* input data GPS end time ns   */
+  INT8  gpsStartTimeNS   = 0;             /* input data GPS start time ns */
+
   /* parameters used to generate calibrated power spectrum */
   LIGOTimeGPS gpsStartTime = { 0, 0 };    /* input data GPS start time    */
   LIGOTimeGPS gpsEndTime = { 0, 0 };      /* input data GPS end time      */
-  INT4  padData = 0;                      /* saftety margin on input data */
-  CHAR  *fqChanName       = "L1:LSC-AS_Q";         /* name of data channel         */
+  INT4  padData = 8;                      /* saftety margin on input data */
+  CHAR  *fqChanName       = NULL;
+
+
+  CHAR *injectionFile = "/home/cokelaer/Work/TestWaveOverlap/HL-INJECTIONS_1-732005208-2048.xml";
+
   
-  CHAR  *frInCacheName    = "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_L_S2_RDS_R_L3.txt";        
-  /* CHAR  *frInCacheName    = "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_L_S3_RDS_R_L3.txt";   */   
+
+  CHAR  *frInCacheName = NULL;
 
   INT4  numPoints         = (randIn.psd.length-1)*2;           /* points in a segment          */
   INT4  numSegments       = 15;           /* number of segments           */
@@ -3204,16 +3358,15 @@ LALCreateRealPsd(LALStatus *status,
   INT4   resampFiltType   = 0;           /* low pass filter used for res 0 = = ldas*/
   INT4   sampleRate       = randIn.param.tSampling;           /* sample rate of filter data   */
   INT4   highPass         = 1;           /* enable high pass on raw data */
-  REAL4  highPassFreq     = 10;            /* high pass frequency          */
+  REAL4  highPassFreq     = 70;            /* high pass frequency          */
   INT4   highPassOrder    = 8;           /* order of the td iir filter   */
   REAL4  highPassAtten    = 0.1;           /* attenuation of the td filter */
   REAL4  fLow             = bankIn->fLower;           /* low frequency cutoff         */
-  INT4   specType         = 1;           /* use median or mean psd       */
-    CHAR  calCacheName     = "/netw/critical/lioCalibration/cache_files/L1-CAL-V03-729273600-734367600.cache";  
-    /*  CHAR  calCacheName     = "/netw/critical/ligoCalibration/cache_files/L1-CAL-V03-751719553-757699245.cache";   */ 
+  INT4   specType         = 1;           /* use median (1)or mean(0) psd       */
 
+  CHAR  *calCacheName     = NULL;
   INT4   pointCal         = 0;            /* don't average cal over chunk */
-  REAL4  dynRangeExponent = 0;            /*onent of dynamic range    */
+  REAL4  dynRangeExponent = 40;            /*onent of dynamic range    */
   REAL4 geoHighPassFreq = -1;             /* GEO high pass frequency      */
   INT4  geoHighPassOrder = -1;            /* GEO high pass filter order   */
   REAL4 geoHighPassAtten = -1;            /* GEO high pass attenuation    */
@@ -3228,26 +3381,26 @@ LALCreateRealPsd(LALStatus *status,
   FrCache      *calCache = NULL;
   FrStream     *frStream = NULL;
   FrChanIn      frChan;
+  CHAR tmpChName[LALNameLength];
 
-  
+  COMPLEX8FrequencySeries       injResp;
+  COMPLEX8FrequencySeries      *injRespPtr;
+  LIGOTimeGPS slideData   = {0,0};        /* slide data for time shifting */
 
 
-  /* raw input data storage */
+  /* raw iut data storage */
   REAL4TimeSeries               chan;
   REAL8TimeSeries               geoChan;
   REAL4FrequencySeries          spec;
-  COMPLEX8FrequencySeries       resp;
   
   /* structures for preconditioning */
   ResampleTSParams              resampleParams;
-  LALWindowParams               wpars;
-  AverageSpectrumParams         avgSpecParams;
-  
+    
   
   /* counters and other variables */
   UINT4 cut,  j, k;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-
+  
   LALUnitPair pair;
   REAL8 respRe, respIm;
   REAL8 shf;
@@ -3255,20 +3408,23 @@ LALCreateRealPsd(LALStatus *status,
   UINT4 numInputPoints;
   const REAL8 epsilon = 1.0e-8;
   UINT4 resampleChan = 0;
-
-  CalibrationUpdateParams calfacts;
+  CalibrationUpdateParams calfacts, inj_calfacts;
   REAL8 dynRange = 0;
-  UINT8  inputDataLengthNS = -1;
+
+
+
   CHAR         *calGlobPattern;
 
   INITSTATUS( status, "LALCreatRealPsd", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
 
-  fprintf(stderr,"Generating real PSD\n");
-  calData = real_4 ; /*to be used with ligo ; if geo set it to real_8*/
+  /*  fprintf(stderr,"Generating real PSD\n");*/
+  calData = undefined;
 
-  memset( ifo, 0, sizeof(ifo) );
+  memset( ifo, 0, sizeof(ifo));
   memcpy( ifo, "L1", sizeof(ifo) - 1 );
+
+
 
   if ( dynRangeExponent )
   {
@@ -3280,46 +3436,46 @@ LALCreateRealPsd(LALStatus *status,
     dynRange = 1.0;
   }
   if ( vrbflg )
-    fprintf( stdout, "using dynamic range scaling %le\n", dynRange );
-
-  /*  gpsStartTime.gpsSeconds = 752232948; *//*S3*/
-
-    gpsStartTime.gpsSeconds = 729332100; /*S2*/
-  gpsStartTime.gpsNanoSeconds = 0;
+    fprintf( stdout, "using dynamic range scaling %e\n", dynRange );
 
 
+
+
+  /** Add on Thomas BEGIN */ 
+  
+  
+
+/*  calCacheName  =  "/netw/critical/ligoCalibration/cache_files/H1-CAL-V03-751651153-757699245.cache";*/
+  calCacheName  =  "/netw/critical/ligoCalibration/cache_files/L1-CAL-V03-751719553-757699245.cache";
+
+  frInCacheName = "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_L_S3_RDS_R_L3.txt";     
+  fqChanName    = "L1:LSC-AS_Q";        
+  
 
   inputDataLength = numPoints * ( numSegments + 1) / 2 ;
-
-
-
-  /*  fprintf(stderr,"%d %d %d %d %d \n", numPoints, numSegments, sampleRate, randIn.psd.length, 
-      inputDataLength);*/
-
-  gpsEndTime.gpsSeconds = gpsStartTime.gpsSeconds 
-    +  (UINT8) inputDataLength / (UINT8) sampleRate;
-  gpsEndTime.gpsNanoSeconds = 0;
-
-
+  /* 752232948  752243688*/
+  /*gpsStartTimeNS += (INT8) (752578908) * 1000000000LL;*/
+  gpsStartTimeNS += (INT8) (751956468) * 1000000000LL;
+  /*732005200*/
+  gpsStartTimeNS += (INT8) (0);
   
-  {
-    UINT8 gpsChanIntervalNS = gpsEndTime.gpsSeconds * 1000000000LL - 
-      gpsStartTime.gpsSeconds * 1000000000LL;
-    UINT8 inputDataLengthNS = (UINT8) inputDataLength * 1000000000LL / 
-      (UINT8) sampleRate;
-    
-    if ( inputDataLengthNS != gpsChanIntervalNS )
-      {
-      fprintf( stderr, "length of input data and data chunk do not match\n" );
-      fprintf( stderr, "start time: %d, end time %d\n",
-          gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
-      fprintf( stderr, "gps channel time interval: %lld ns\n"
-          "computed input data length: %lld ns\n", 
-          gpsChanIntervalNS, inputDataLengthNS );
-      exit( 1 );
-    }
-  }
+  gpsEndTimeNS = gpsStartTimeNS;
+  gpsEndTimeNS += (INT8) ((UINT8)inputDataLength /(UINT8) sampleRate) 
+    * 1000000000LL;
+  gpsEndTimeNS += (INT8) (0);
+ 
+  LAL_CALL( LALINT8toGPS( status->statusPtr, &gpsStartTime, &gpsStartTimeNS ), 
+	    status->statusPtr ); 
+  LAL_CALL( LALINT8toGPS( status->statusPtr, &gpsEndTime, &gpsEndTimeNS ), 
+	    status->statusPtr );
+  /** End Thomas */
 
+  /*
+   *
+   * read in the input data channel
+   *
+   */
+ 
 
   /* set the time series parameters of the input data and resample params */
   memset( &resampleParams, 0, sizeof(ResampleTSParams) );
@@ -3330,9 +3486,12 @@ LALCreateRealPsd(LALStatus *status,
   memset( &geoChan, 0, sizeof(REAL8TimeSeries) );
   chan.epoch = gpsStartTime;
   chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
-
+  /* subtract slide from start */
+  chan.epoch.gpsSeconds -= slideData.gpsSeconds; 
+  chan.epoch.gpsNanoSeconds -= slideData.gpsNanoSeconds;
   /* copy the start time into the GEO time series */
   geoChan.epoch = chan.epoch;
+
 
   
   if ( vrbflg ) 
@@ -3372,7 +3531,6 @@ LALCreateRealPsd(LALStatus *status,
         status->statusPtr );
   }
 
-
   /* determine if we need to resample the channel */
   if ( vrbflg )
   {
@@ -3395,23 +3553,22 @@ LALCreateRealPsd(LALStatus *status,
     }
   }
 
-  /* determine the number of points to get and create storage forr the data */
-  inputLengthNS = (REAL8) ( 1000000000LL * 
-      ( gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds + 2 * padData ) );
-  chan.deltaT *= 1.0e9;
-  numInputPoints = (UINT4) floor( inputLengthNS / chan.deltaT + 0.5 );
+  /* determine the number of points to get and create storage for the data */
+  inputLengthNS = 
+    (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
+  numInputPoints = (UINT4) floor( inputLengthNS / (chan.deltaT * 1.0e9) + 0.5 );
   if ( calData == real_8 )
-  {
+    {
     /* create storage for the GEO input data */
-    LAL_CALL( LALDCreateVector( status->statusPtr, &(geoChan.data), numInputPoints ), 
-        status->statusPtr );
-  }
+      LAL_CALL( LALDCreateVector( status->statusPtr, &(geoChan.data), numInputPoints ), 
+		status->statusPtr );
+    }
   LAL_CALL( LALSCreateVector( status->statusPtr, &(chan.data), numInputPoints ), 
-      status->statusPtr );
+	    status->statusPtr );
 
   if ( vrbflg ) fprintf( stdout, "input channel %s has sample interval "
       "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
-      chan.deltaT / 1.0e9, numInputPoints );
+      chan.deltaT, numInputPoints );
 
   if ( calData == real_8 )
   {
@@ -3458,32 +3615,269 @@ LALCreateRealPsd(LALStatus *status,
     LAL_CALL( LALDDestroyVector( status->statusPtr, &(geoChan.data) ), status->statusPtr );
     geoChan.data = NULL;
   }
-  else
-  {
-    /* read the data channel time series from frames */
-    LAL_CALL( LALFrGetREAL4TimeSeries( status->statusPtr, &chan, &frChan, frStream ),
-        status->statusPtr );
-
-    if ( calData == real_4 )
+  else if ( calData == real_4)
     {
+      /* read the data channel time series from frames */
+      LAL_CALL( LALFrGetREAL4TimeSeries( status->statusPtr, &chan, &frChan, frStream ),
+		status->statusPtr );
+      
       /* multiply the input data by dynRange */
       for ( j = 0 ; j < numInputPoints ; ++j )
-      {
-        chan.data->data[j] *= dynRange;           
-      }
-      
-    } 
-  }
+	{
+	  chan.data->data[j] *= dynRange;           
+	}
+    }
+  else
+    {
+      /* read the data channel time series from frames */
+      LAL_CALL( LALFrGetREAL4TimeSeries( status->statusPtr, &chan, &frChan, frStream ),
+		status->statusPtr );	
+    }
+
+
+
   memcpy( &(chan.sampleUnits), &lalADCCountUnit, sizeof(LALUnit) );
+
 
   /* close the frame file stream and destroy the cache */
   LAL_CALL( LALFrClose( status->statusPtr, &frStream ), status->statusPtr );
+
+
   LAL_CALL( LALDestroyFrCache( status->statusPtr, &frInCache ), status->statusPtr );
+
 
   if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
       "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
       chan.name, chan.data->length, chan.deltaT, 
       chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
+
+
+
+  /*
+   *
+   * create the random seed if it will be needed
+   *
+   */
+  
+
+  /*
+   *
+   * generate the response function for the requested time
+   *
+   */
+  
+  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
+  LAL_CALL( LALCCreateVector( status->statusPtr, &(resp.data), numPoints / 2 + 1 ), 
+      status->statusPtr );
+  
+  /* set the parameters of the response to match the data */
+  resp.epoch.gpsSeconds = chan.epoch.gpsSeconds + padData;
+  resp.epoch.gpsNanoSeconds = chan.epoch.gpsNanoSeconds;
+  resp.deltaF = (REAL8) sampleRate / (REAL8) numPoints;
+  resp.sampleUnits = strainPerCount;
+  strcpy( resp.name, chan.name );
+
+  /* generate the response function for the current time */
+  if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n",
+			 resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
+  
+  /* initialize the calfacts */
+  memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
+  calfacts.ifo = ifo;
+
+  /* determine length of chunk */
+  if ( pointCal )
+    {
+    calfacts.duration.gpsSeconds = 1;
+    calfacts.duration.gpsNanoSeconds = 0;
+    }
+  else
+    {
+     durationNS = gpsEndTimeNS - gpsStartTimeNS;
+      LAL_CALL( LALINT8toGPS( status->statusPtr, &(calfacts.duration), 
+			      &durationNS ), status->statusPtr );
+    }
+
+  
+  if ( calData )
+  {
+    /* if we are using calibrated data set the response to unity */
+
+    for( k = 0; k < resp.data->length; ++k )
+    {
+      resp.data->data[k].re = (REAL4) (1.0 / dynRange);
+      resp.data->data[k].im = 0.0;
+    }
+  }
+  else
+  {
+    calGlobPattern = NULL;        
+    if ( vrbflg ) fprintf( stdout, 
+          "reading calibration data from cache: %s\n", calCacheName );
+    
+    LAL_CALL( LALCreateCalibFrCache( status->statusPtr, &calCache, calCacheName, 
+          NULL, calGlobPattern ), status->statusPtr );
+
+    if ( calGlobPattern ) LALFree( calGlobPattern );
+
+
+    /* get the response from the frame data */
+    LAL_CALL( LALExtractFrameResponse( status->statusPtr, &resp, calCache, 
+				       &calfacts), status->statusPtr );
+    
+    LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
+    if ( vrbflg ) fprintf( stdout, 
+			   "for calibration of data, alpha = %f and alphabeta = %f\n",
+			   (REAL4) calfacts.alpha.re, (REAL4) calfacts.alphabeta.re);
+  }
+
+
+    injectionFile = NULL;
+    
+
+  if ( injectionFile )
+  {
+    /* get injections within 500 seconds of either end of the segment.   */
+    /* a 0.4,0.4 MACHO starting at 30.0 Hz has length 435.374683 seconds */
+    /* so this should be plenty of safety. better to waste cpu than miss */
+    /* injected signals...                                               */
+    INT4 injSafety = 500;
+    int  numInjections = 0;
+    SimInspiralTable    *injections = NULL;
+    SimInspiralTable    *thisInj = NULL;
+
+    /* read in the injection data from XML */
+    numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
+        gpsStartTime.gpsSeconds - injSafety, 
+        gpsEndTime.gpsSeconds + injSafety );
+
+    if ( numInjections < 0 )
+    {
+      fprintf( stderr, "error: cannot read injection file" );
+      exit( 1 );
+    }
+    else if ( numInjections )
+    {
+
+      fprintf(stderr, "resample injection\n");
+
+      /* see if we need a higher resolution response to do the injections */
+      if ( resampleChan )	
+      {
+	fprintf(stderr, "enter resample injection\n");
+
+        /* we need a different resolution of response function for injections */
+        UINT4 rateRatio = floor( resampleParams.deltaT / chan.deltaT + 0.5 );
+        UINT4 rawNumPoints = rateRatio * numPoints;
+
+        if ( vrbflg ) fprintf( stdout, "rateRatio = %d\nrawNumPoints = %d\n"
+            "chan.deltaT = %e\n", rateRatio, rawNumPoints, chan.deltaT );
+
+        memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
+        LAL_CALL( LALCCreateVector( status->statusPtr, &(injResp.data), 
+              rawNumPoints / 2 + 1 ), status->statusPtr );
+        injResp.epoch = resp.epoch;
+        injResp.deltaF = 1.0 / ( rawNumPoints * chan.deltaT );
+        injResp.sampleUnits = strainPerCount;
+        strcpy( injResp.name, chan.name );
+
+	
+        if ( calData )
+        {
+          /* if we are using calibrated data set the response to unity */
+          if ( vrbflg ) fprintf( stdout, 
+              "setting injection response to inverse dynRange... " );
+	  dynRange = (REAL8) pow( 2.0, 40);
+          for ( k = 0; k < injResp.data->length; ++k )
+          {
+            injResp.data->data[k].re = (REAL4)(1.0/dynRange);
+            injResp.data->data[k].im = 0.0;
+          }
+          injRespPtr = &injResp;
+        }
+        else
+        {
+          /* generate the response function for the current time */
+          if ( vrbflg ) fprintf( stdout, 
+              "generating high resolution response at time %d sec %d ns\n"
+              "length = %d points, deltaF = %e Hz\n",
+              resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
+              injResp.data->length, injResp.deltaF );
+
+          /* initialize the inj_calfacts */
+          memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
+          inj_calfacts.ifo = ifo;
+
+	  LAL_CALL( LALINT8toGPS( status->statusPtr, &(inj_calfacts.duration), 
+				  &durationNS ), status->statusPtr );
+	  
+          /* create the lal calibration frame cache */
+	  calGlobPattern = NULL;
+	  if ( vrbflg ) fprintf( stdout, 
+				 "reading calibration data from cache: %s\n", calCacheName );
+	  
+	  LAL_CALL( LALCreateCalibFrCache( status->statusPtr, &calCache, calCacheName, 
+                NULL, calGlobPattern ), status->statusPtr );
+          if ( calGlobPattern ) LALFree( calGlobPattern );
+
+
+	  /* extract the calibration from frames */
+          LAL_CALL( LALExtractFrameResponse( status->statusPtr, &injResp, calCache, 
+                &inj_calfacts ), status->statusPtr );
+
+	  
+	  LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
+	  
+
+          injRespPtr = &injResp;
+	  
+
+	}
+      }
+      else
+      {
+        /* the data is already at the correct sample rate, just do injections */
+        injRespPtr = &resp;
+        memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
+      }
+
+      /* inject the signals, preserving the channel name (Tev mangles it) */
+
+
+      /* if injectOverhead option, then set chan.name to "ZENITH".  
+       * This causes no detector site to be found in the injection code so
+       * that the injection is done directly overhead (i.e. with a response 
+       * function of F+ = 1; Fx = 0) */
+      LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", chan.name );
+      
+      LALSnprintf( chan.name, LALNameLength * sizeof(CHAR), "ZENITH" );
+
+
+      LAL_CALL( LALFindChirpInjectSignals( status->statusPtr, &chan, injections, 
+            injRespPtr ), status->statusPtr );
+      LALSnprintf( chan.name,  LALNameLength * sizeof(CHAR), "%s", tmpChName );
+
+      if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
+          numInjections, injectionFile, chan.name );
+
+      while ( injections )
+      {
+        thisInj = injections;
+        injections = injections->next;
+        LALFree( thisInj );
+      }
+
+      /* write the raw channel data plus injections to the output frame file */
+
+      if ( injResp.data )
+        LAL_CALL( LALCDestroyVector( status->statusPtr, &(injResp.data) ), status->statusPtr );
+    }
+    else
+    {
+      if ( vrbflg ) fprintf( stdout, "no injections in this chunk\n" );
+    }
+  }
+
 
   /* resample the input data */
   if ( resampleChan )
@@ -3500,22 +3894,13 @@ LALCreateRealPsd(LALStatus *status,
         chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
   }
 
-  /*
-   * 
-   * compute a calibrated strain spectrum
+
+  /* 
+   *
+   * high pass the data, removed pad from time series and check length of data
    *
    */
-
-
-  /* create storage for the response and spectrum */
-  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
-  LAL_CALL( LALSCreateVector( status->statusPtr, &(spec.data), numPoints / 2 + 1 ), 
-      status->statusPtr );
-  memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
-  LAL_CALL( LALCCreateVector( status->statusPtr, &(resp.data), numPoints / 2 + 1 ), 
-      status->statusPtr );
-  resp.epoch = spec.epoch = gpsStartTime;
-
+  
   /* iir filter to remove low frequencies from data channel */
   if ( highPass )
   {
@@ -3549,95 +3934,26 @@ LALCreateRealPsd(LALStatus *status,
       chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
 
 
-  /* compute the windowed power spectrum for the data channel */
-  avgSpecParams.window = NULL;
-  avgSpecParams.plan = NULL;
-  LAL_CALL( LALCreateForwardRealFFTPlan( status->statusPtr, 
-        &(avgSpecParams.plan), numPoints, 0 ), status->statusPtr );
-  switch ( specType )
-  {
-    case 0:
-      avgSpecParams.method = useMean;
-      if ( vrbflg ) fprintf( stdout, "computing mean psd" );
-      break;
-    case 1:
-      avgSpecParams.method = useMedian;
-      if ( vrbflg ) fprintf( stdout, "computing median psd" );
-      break;
-  }
+  /*
+   *
+   * power spectrum estimation
+   *
+   */
 
-  wpars.type = Hann;
-  wpars.length = numPoints;
-  avgSpecParams.overlap = numPoints / 2;
-  if ( vrbflg ) 
-    fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
 
-  LAL_CALL( LALCreateREAL4Window( status->statusPtr, &(avgSpecParams.window),
-        &wpars ), status->statusPtr );
-  LAL_CALL( LALREAL4AverageSpectrum( status->statusPtr, &spec, &chan, &avgSpecParams ),
+  /* create storage for the power spectral estimate */
+  memset( &spec, 0, sizeof(REAL4FrequencySeries) );
+  LAL_CALL( LALSCreateVector( status->statusPtr, &(spec.data), numPoints / 2 + 1 ), 
       status->statusPtr );
-  LAL_CALL( LALDestroyREAL4Window( status->statusPtr, &(avgSpecParams.window) ), 
-      status->statusPtr );
-  LAL_CALL( LALDestroyRealFFTPlan( status->statusPtr, &(avgSpecParams.plan) ), status->statusPtr );
+
 
   
-
-  /* set the parameters of the response to match the data and spectrum */
-  resp.deltaF = spec.deltaF;
-  resp.f0 = spec.f0;
-  resp.sampleUnits = strainPerCount;
-
-  if ( calData )
-  {
-    /* if we are using calibrated data set the response to unity */
-    if ( vrbflg ) fprintf( stdout, "generating unity response function\n" );
-    for( k = 0; k < resp.data->length; ++k )
-    {
-      resp.data->data[k].re = (REAL4) (1.0 / dynRange);
-      resp.data->data[k].im = 0.0;
-    }
-  }
-  else
-  {
-    /* initialize the calfacts */
-    memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
-
-    if ( pointCal )
-    {
-      calfacts.duration.gpsSeconds = 1; 
-      calfacts.duration.gpsNanoSeconds = 0;
-    }
-    else
-    { 
-      calfacts.duration.gpsSeconds = gpsEndTime.gpsSeconds 
-        - gpsStartTime.gpsSeconds;
-    }
-    calfacts.ifo = ifo;
-
-    calGlobPattern = NULL;
-    if ( vrbflg ) fprintf( stdout, 
-			   "reading calibration data from cache: %s\n", calCacheName );
-    
-
-    LAL_CALL( LALCreateCalibFrCache( status->statusPtr, &calCache, calCacheName, 
-          NULL, calGlobPattern ), status->statusPtr );
-
-       
-    /* generate the response function for the current time */
-    if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n"
-        "response parameters f0 = %e, deltaF = %e, length = %d\n",
-        resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
-        resp.f0, resp.deltaF, resp.data->length );
-    LAL_CALL( LALExtractFrameResponse( status->statusPtr, &resp, calCache, 
-          &calfacts ), status->statusPtr );
-
-    /* descroy the frame cache for the calibrated data */
-    LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache ), status->statusPtr );
-
-    if ( vrbflg ) fprintf( stdout, "Values of calibration coefficients \n"
-        "alpha = %f, alpha_beta = %f\n",
-        calfacts.alpha.re, calfacts.alphabeta.re );
-  }
+  LAL_CALL( LALComputeWindowSpectrum( status->statusPtr, 
+				      numPoints,
+				      specType,
+				      &spec, 
+				      &chan ),
+	    status->statusPtr );
 
 
   /* set low frequency cutoff of power spectrum */
@@ -3663,35 +3979,218 @@ LALCreateRealPsd(LALStatus *status,
   shf = spec.data->data[cut] * 
     ( resp.data->data[cut].re * resp.data->data[cut].re +
       resp.data->data[cut].im * resp.data->data[cut].im );
+
   for ( k = 1; k < cut ; ++k )
   {
     bankIn->shf.data->data[k] = shf;
   }
+
   for ( k = cut; k < bankIn->shf.data->length; ++k )
   {
     respRe = (REAL8) resp.data->data[k].re;
     respIm = (REAL8) resp.data->data[k].im;
     bankIn->shf.data->data[k] = (REAL8) spec.data->data[k] *
       ( respRe * respRe + respIm * respIm );
-  }
 
+    
+  }
+  
   fprintf(stderr,"RealPsd generated\n");
-  /*     Foutput= fopen(BANKEFFICIENCY_PRINTPSD_FILE,"w");
+       Foutput= fopen("spec.dat","w");
 
   for (i = 1; i < bankIn->shf.data->length; i++)
-    fprintf(Foutput, "%f %e\n",(float)i*sampleRate/ numPoints, bankIn->shf.data->data[i]);  
+    fprintf(Foutput, "%15.10e\n", bankIn->shf.data->data[i]);  
   fclose(Foutput); 
-
-   Foutput= fopen("psd.dat","w");
+  /*
+   Foutput= fopen("uncalibratedpsd.dat","w");
 
   for (i = 1; i < spec.data->length; i++)
-    fprintf(Foutput, "%f %e\n",(float)i*sampleRate/ numPoints, spec.data->data[i]);  
+    fprintf(Foutput, "%15.10e\n",spec.data->data[i]);  
   fclose(Foutput); 
+
+
+  Foutput= fopen("respre.dat","w");
+
+  for (i = 0; i < spec.data->length; i++){
+    respRe = (REAL8) resp.data->data[i].re;
+    fprintf(Foutput, "%e\n",respRe);  
+  }
+  fclose(Foutput); 
+  
+  Foutput= fopen("respim.dat","w");
+
+  for (i = 1; i < spec.data->length; i++){
+    respIm = (REAL8) resp.data->data[i].im;
+    fprintf(Foutput, "%e\n",respIm);  
+  }
+  fclose(Foutput); 
+
   */
+
+  /* ADD on Thomas Create strain data to be process by Overlap or something else */
+
+
+
+
+
+  {
+    REAL4       *dataPtr;
+    RealFFTPlan                  *fwdPlan = NULL;
+
+
+    REAL4Vector    *rawSegment = NULL ; 
+
+
+    INT4 length;
+
+    length = numPoints/2 + 1;
+    strainSegment = NULL;
+
+    LALCreateVector( status->statusPtr, &rawSegment,
+		     numPoints);
+    CHECKSTATUSPTR( status );
+    
+    LALCCreateVector( status->statusPtr, &strainSegment,
+		      numPoints/2+1);    
+    CHECKSTATUSPTR( status );
+ 
+
+     
+    dataPtr = chan.data->data;
+    rawSegment->data = dataPtr;
+   
+    
+    LALCreateForwardRealFFTPlan( status->statusPtr, &fwdPlan, 
+				 numPoints, 0);
+    CHECKSTATUSPTR( status );
+
+    /* Foutput= fopen("raw0.dat","w");
+    for (i = 1; i < rawSegment->length; i++)
+      fprintf(Foutput, "%e\n", rawSegment->data[i]);  
+    fclose(Foutput); 
+    */
+   
+    
+    
+    LALForwardRealFFT( status->statusPtr, strainSegment,
+		       rawSegment, fwdPlan );
+    CHECKSTATUSPTR( status );
+
+
+
+    dynRange = (REAL8) pow( 2.0, 0);
+    
+    
+    for ( k = 0; k < strainSegment->length; ++k )
+      {
+	
+	REAL4 p = strainSegment->data[k].re;
+	REAL4 q = strainSegment->data[k].im;
+	REAL4 x = resp.data->data[k].re * dynRange;
+	REAL4 y = resp.data->data[k].im * dynRange;
+	
+	strainSegment->data[k].re =  p*x - q*y;
+	strainSegment->data[k].im =  p*y + q*x;
+      }
+    
+    LALDestroyRealFFTPlan(status->statusPtr,&fwdPlan);
+    /*    cut = params->fLow / dataSeg->spec->deltaF > 1 ? */
+    
+    for ( k = 0; k < cut; ++k )
+      {
+	strainSegment->data[k].re = 0.0;
+	strainSegment->data[k].im = 0.0;
+      }
+      
+    dynRange = (REAL8) pow( 2.0, 40);/* pour avoir meme resultat que LAL avant filtrage*/
+    /*  Foutput= fopen("finalstrainre.dat","w");
+    
+    for (i = 0; i < strainSegment->length; i++)
+      fprintf(Foutput, "%15.10e\n", strainSegment->data[i].re*dynRange );  
+      
+      fclose(Foutput); 
+      
+      Foutput= fopen("finalstrainim.dat","w");
+      
+      for (i = 0; i < strainSegment->length; i++)
+	fprintf(Foutput, "%15.10e\n", strainSegment->data[i].im*dynRange );  
+	
+	fclose(Foutput); 
+      
+    */
+  
+  }
+  /* END ADD on Thomas*/                                                                                                                        
+
+
+  /* spec, uncalibrated spec, and raw0.dat identical to 
+     inspiral in FindChipSPData. */
+
 
   DETATCHSTATUSPTR( status );
   RETURN( status );  
 }
+
+
+void LALComputeWindowSpectrum(LALStatus *status, 
+			      INT4 numPoints, 
+			      INT4 specType, 
+			      REAL4FrequencySeries  *spec,
+			      REAL4TimeSeries *chan)
+{
+ 
+  LALWindowParams               wpars;
+  AverageSpectrumParams         avgSpecParams;
+  
+  INITSTATUS( status, "LALCreatRealPsd", BANKEFFICIENCYC );
+  ATTATCHSTATUSPTR( status );
+  
+  /* compute the windowed power spectrum for the data channel */
+  avgSpecParams.window = NULL;
+  avgSpecParams.plan = NULL; 
+
+  LAL_CALL( LALCreateForwardRealFFTPlan( status->statusPtr, 
+					 &(avgSpecParams.plan), numPoints, 0 ), status->statusPtr );
+  
+
+  switch ( specType )
+    {
+    case 0:
+      avgSpecParams.method = useMean;
+      if ( vrbflg ) fprintf( stdout, "computing mean psd" );
+      break;
+    case 1:
+      avgSpecParams.method = useMedian;
+      if ( vrbflg ) fprintf( stdout, "computing median psd" );
+      break;
+  }
+
+
+  wpars.type = Hann;
+  wpars.length = numPoints;
+  avgSpecParams.overlap = numPoints / 2;
+  if ( vrbflg ) 
+    fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
+  
+  LAL_CALL( LALCreateREAL4Window( status->statusPtr, &(avgSpecParams.window),
+				  &wpars ), status->statusPtr );
+  LAL_CALL( LALREAL4AverageSpectrum( status->statusPtr, spec, chan, &avgSpecParams ),
+	    status->statusPtr );
+  LAL_CALL( LALDestroyREAL4Window( status->statusPtr, &(avgSpecParams.window) ), 
+	    status->statusPtr );
+  LAL_CALL( LALDestroyRealFFTPlan( status->statusPtr, &(avgSpecParams.plan) ), status->statusPtr );
+
+
+  DETATCHSTATUSPTR( status );
+  RETURN( status );  
+
+}
+
+
+
+
+
+
 
 
 
