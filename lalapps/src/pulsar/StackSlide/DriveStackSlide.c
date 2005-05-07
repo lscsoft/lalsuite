@@ -117,7 +117,9 @@
 /* 04/12/05 gam; Add StackSlideSearchParams *params to StackSlideBinary. */
 /* 04/12/05 gam; Remove from StackSlideParams *stksldParams, those already in StackSlideSearchParams *params */
 /* 04/12/05 gam; if ((params->debugOptionFlag & 8) > 0 ) find maxPwr each SFT, replace bin with 1, all other bins with 0 */
-    
+/* 05/06/05 gam; if ((params->debugOptionFlag & 16) > 0 ) also replace one bin to either side of bin with maxPwr with 1 */
+/* 05/06/05 gam; If params->debugOptionFlag & 128 > 0 and isolated case, just creates a SUM from the STKs without sliding */
+
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -638,12 +640,15 @@ params->nMaxTperi=0;
     	fprintf(stdout,"set debugOptionFlag    %23d; #84 INT2 debugging information to print to stdout. \n", params->debugOptionFlag);
     	fprintf(stdout,"# if (debugOptionFlag & 1) > 0 then print command line arguments.\n");
     	fprintf(stdout,"# if (debugOptionFlag == 1) then print command line arguments and abort!\n"); /* 02/25/05 gam */
-    	fprintf(stdout,"# if (debugOptionFlag & 2) > 0 then print table with events.\n");
+    	fprintf(stdout,"# if (debugOptionFlag & 2) > 0 then print table with events (isolated case only).\n");
     	fprintf(stdout,"# if (debugOptionFlag & 4) > 0 then print sky positions with debugging information.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 8) > 0 then the STK bin with max power is set to 1, all other to 0.\n");
-    	fprintf(stdout,"#   This flag provides an important validation of the StackSlide code: \n");
-    	fprintf(stdout,"#   For a signal without noise, the template for the signal should return \n");
-    	fprintf(stdout,"#   the StackSlide power exactly equal to the number of SFTs! \n");
+    	fprintf(stdout,"# if (debugOptionFlag & 16) > 0 also set to 1 one bin to either side of the bin with maxPwr.\n");
+    	fprintf(stdout,"# if (debugOptionFlag & 128) > 0 creates SUMs from the STKs without sliding (isolated case only).\n");
+    	fprintf(stdout,"# Use of the debugOptionFlag provides an easy way to validate the StackSlide code! \n");
+    	fprintf(stdout,"# For fake data with a signal and no noise, run on the exact template for the signal with the \n");
+    	fprintf(stdout,"# debugOptionFlag bit for 8, or 8 and 16, set. The StackSlide power should equal the number of SFTs,\n");
+    	fprintf(stdout,"# to within ~4 percent, for debugOptionFlag & 8 > 0 and exactly equal this for debugOptionFlag & 24 > 0.\n");
         /* 02/25/05 gam; if params->debugOptionFlag == 1 then exit after printing parameters */
         if (params->debugOptionFlag == 1) {
            ABORT( status, DRIVESTACKSLIDEH_EUSERREQUESTEXIT, DRIVESTACKSLIDEH_MSGEUSERREQUESTEXIT);
@@ -1785,6 +1790,18 @@ void StackSlideApplySearch(
               for(i=0;i<params->nBinsPerSTK;i++) {
                  if (i == iPwrMax) {
                     params->STKData[k]->data->data[i] = 1;
+                 } else if (i == (iPwrMax-1)) {
+                    if ((params->debugOptionFlag & 16) > 0 ) {
+                       params->STKData[k]->data->data[i] = 1;
+                    } else {
+                       params->STKData[k]->data->data[i] = 0;
+                    }
+                 } else if (i == (iPwrMax+1)) {
+                    if ((params->debugOptionFlag & 16) > 0 ) {
+                       params->STKData[k]->data->data[i] = 1;
+                    } else {
+                       params->STKData[k]->data->data[i] = 0;
+                    }
                  } else {
                     params->STKData[k]->data->data[i] = 0;
                  }

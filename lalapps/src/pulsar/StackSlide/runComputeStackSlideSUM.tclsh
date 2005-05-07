@@ -101,10 +101,18 @@ if { $argc < 13 || $argc > 15} {
     Print "                    2. If \"1\" ComputeStackSlideSums prints command line arguments to stdout.";
     Print "                       (The format is that of a tcl resource file that can be used to set the arguments.)";
     Print "                    3. If \"2\" ComputeStackSlideSums prints a table with events to stdout.";
-    Print "                    4. See README_CommandLineArgument for more debugging options.";
+    Print "                    4. See README_CommandLineArguments for more debugging options.";
     Print " ";
-    Print "If template_freq is set to \"default\" then the value for templateFreq0 set in the template_file will be used.";
-    Print " ";    
+    Print "The command line debug_option also provides an easy way to validate the StackSlide code!";
+    Print "For fake data with a signal and no noise, run on the exact template for the signal with the";
+    Print "command line debug_option bit for 8 set. This sets the bin with max power to 1 in each SFT,";
+    Print "all other bins to 0. If the debug_option bit for 16 is also set, the SFT bin either side of that"
+    Print "with max power is also set to 1. The StackSlide power should equal the number of SFTs, to within";
+    Print "about 4 percent, for debug_option & 8 > 0 and exactly equal this for debug_option & 24 > 0.";
+    Print "See documentation for debugOptionFlag in README_CommandLineArguments for further information."
+    Print " ";
+    Print "Also note that if template_freq is set to \"default\" then the value for templateFreq0 set in the template_file will be used.";
+    Print " ";
     Print "Example 1 (run in standalone mode):";
     Print " ";
     Print "$argv0 H1 731210229 18000 300.2 .05 1800 10 \"../*SFT.*\" testPulsar.params runStackSlideSearch.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run";
@@ -120,16 +128,20 @@ if { $argc < 13 || $argc > 15} {
     Print "Example 3 (run in standalone mode with debug_option 2):";
     Print " ";
     Print "$argv0 H1 731210229 18000 300.2 .05 1800 10 \"../*SFT.*\" testPulsar.params runStackSlideSearch.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run 2";
-    Print " ";    
-    Print "Same as example 1, but a table with events is printed to the screen.";
     Print " ";
-    Print "Example 4 (output condor arguments):";
+    Print "Example 4 (run in standalone mode with debug_option 10 or 26 for code validation; option 26 is shown here):";
+    Print " ";
+    Print "$argv0 H1 731210229 18000 300.2 .05 1800 10 \"../*SFT.*\" testPulsar.params runStackSlideSearch.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt run 26";
+    Print " ";
+    Print "These options validate the code! With debug_option == 26 the power for data with a loud signal or without noise should equal the number of SFTs. See more about the debug_option above.";
+    Print " ";
+    Print "Example 5 (output condor arguments):";
     Print " ";    
     Print "$argv0 H1 731210229 18000 300.2 .05 1800 10 \"../*SFT.*\" testPulsar.params runStackSlideSearch.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myout.txt condor";
     Print " ";
     Print "Use the condor option with \">> condorsubmitfile.sub\" to append this job to a condor submit file.";
     Print " ";
-    Print "Example 5 (test binary case):";
+    Print "Example 6 (test binary case):";
     Print " ";    
     Print "$argv0 H1 731210229 18000 300.2 .05 1800 10 \"../*SFT.*\" testBinaryPulsar.params runStackSlideBinarySearch.job \$LALPREFIX/share/lal/sun00-04.dat \$LALPREFIX/share/lal/earth00-04.dat myoutbinary.txt run";
     Print " ";

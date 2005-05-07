@@ -16,6 +16,7 @@ $Id$
 /* 02/22/05 gam; Fix bug, kSUM not set correctly in StackSlide function; clean up indentation everywhere */
 /* 04/12/05 gam; move variables not used by StackSlide function into StackSlideIsolated or StackSlideBinary */
 /* 04/12/05 gam; Simplify StackSlideParams struct; change REAL8 **freqDerivData to REAL8 *freqDerivData; */
+/* 05/06/05 gam; Add function SumStacks with just creates a SUM from the STKs without sliding */
 
 /*********************************************/
 /*                                           */
@@ -141,14 +142,18 @@ void StackSlide(	LALStatus *status,
                    pwrMax = STKData[k]->data->data[i];
                  }
                }
-               fprintf(stdout, "In StackSlide for SFT #%i iPwrMax = %i, pwrMax = %g \n",k,iPwrMax,pwrMax);
+
+               if (iPwrMax != iMinSTK + params->nBinsPerSUM/2+binoffset) {
+                 fprintf(stdout, "Missed max pwr: SFT #%i, iPwrMax = %i, N/2+binoffset = %i, pwrMax = %g, STK(N/2+binoffset) = %g\n",k,iPwrMax,iMinSTK + params->nBinsPerSUM/2+binoffset,pwrMax,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset]);
+                 fprintf(stdout, "for SFT #%i STK(N/2+binoffset-1) = %g \n",k,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset-1]);
+                 fprintf(stdout, "for SFT #%i STK(N/2+binoffset)   = %g \n",k,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset]);
+                 fprintf(stdout, "for SFT #%i STK(N/2+binoffset+1) = %g \n",k,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset+1]);
+                 fprintf(stdout, "Compare for SFT #%i binoffset vs REAL8 binoffset: %i, %g \n",k,binoffset,((f_t - refFreq) * params->tSTK));
+               } else {
+                 fprintf(stdout, "Found max pwr: SFT #%i, iPwrMax = %i, N/2+binoffset = %i, pwrMax = %g, STK(N/2+binoffset) = %g\n",k,iPwrMax,iMinSTK + params->nBinsPerSUM/2+binoffset,pwrMax,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset]);
+               }
+               fflush(stdout);
             }
-            fprintf(stdout, "In StackSlide for SFT #%i STK(binoffset-1) = %g \n",k,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset-1]);
-            fprintf(stdout, "In StackSlide for SFT #%i ibinoffset = %i, STK(binoffset) = %g \n",k,iMinSTK + params->nBinsPerSUM/2+binoffset, STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset]);
-            fprintf(stdout, "In StackSlide for SFT #%i STK(binoffset+1) = %g \n",k,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset+1]);
-            fprintf(stdout, "In StackSlide for SFT #%i REAL8 binoffset = %g \n",k,((f_t - refFreq) * params->tSTK));
-            fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
-            fflush(stdout);
         #endif
 
         for (i=iMinSTK;i<=iMaxSTK; i++) {
@@ -188,6 +193,62 @@ void StackSlide(	LALStatus *status,
  }   /*end of void StackSlide*/
 /*********************************************************************************/
 /*              END function: StackSlide                                         */
+/*********************************************************************************/
+
+/* 05/06/05 gam; Add function SumStacks with just creates a SUM from the STKs without sliding */
+/*********************************************************************************/
+/*              START function: SumStacks                                        */
+/*********************************************************************************/
+void SumStacks( 	LALStatus *status,
+			REAL4FrequencySeries **SUMData,
+			REAL4FrequencySeries **STKData,
+			StackSlideParams *params)
+{  
+  INT4 kSUM = 0; /* index gives which SUM     */ /* HARD CODED TO 0; This function only returns one SUM! */
+  INT4 iSUM = 0; /* index gives which SUM bin */  
+
+  REAL4 invNumSTKs = 1.0/((REAL4)params->numSTKs);
+
+  INT4 i,k;
+
+  INITSTATUS (status, "SumStacks", STACKSLIDEC);
+  ATTATCHSTATUSPTR(status);
+
+  INT4 iMinSTK = floor((params->f0SUM-params->f0STK)*params->tSTK + 0.5); /* Index of mimimum frequency to include when making SUMs from STKs */
+  INT4 iMaxSTK = iMinSTK + params->nBinsPerSUM - 1;                       /* Index of maximum frequency to include when making SUMs from STKs */
+
+  for (k=0;k<params->numSTKs;k++) {
+
+        for (i=iMinSTK;i<=iMaxSTK; i++) {
+            iSUM = i - iMinSTK;
+            if (k==0) {
+               /* Starting a new SUM: initialize */
+               SUMData[kSUM]->data->data[iSUM] = STKData[k]->data->data[i];
+               SUMData[kSUM]->epoch.gpsSeconds = params->gpsStartTimeSec;
+               SUMData[kSUM]->epoch.gpsNanoSeconds = params->gpsStartTimeNan;
+               SUMData[kSUM]->f0=params->f0SUM;
+               SUMData[kSUM]->deltaF=params->dfSUM;
+               SUMData[kSUM]->data->length=params->nBinsPerSUM;
+            } else {
+               SUMData[kSUM]->data->data[iSUM] += STKData[k]->data->data[i];
+            }
+        }/*end of for iMinSTK*/
+
+  } /* END for(k=0;k<params->numSTKs;k++) */
+  /* Normalize the SUMs with params->numSTKs*/
+
+  if (params->divideSUMsByNumSTKs) {
+     /* Normalize the SUMs with params->numSTKs*/
+     for(i=0;i<params->nBinsPerSUM; i++) {
+        SUMData[kSUM]->data->data[i] = SUMData[kSUM]->data->data[i]*invNumSTKs;
+     }
+  }
+
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR (status);
+ }   /*end of void SumStacks*/
+/*********************************************************************************/
+/*              END function: SumStacks                                          */
 /*********************************************************************************/
 
 /*********************************************************************************/

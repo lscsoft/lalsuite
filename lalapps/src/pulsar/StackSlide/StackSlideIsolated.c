@@ -23,7 +23,8 @@ $Id$
 /* 12/06/04 gam; get params->sampleRate, = effective sample rate, from the SFTs; calculate params->deltaT after reading SFTs. */
 /* 12/06/04 gam; add params->gpsEpochStartTimeNan; get gpsEpochStartTime, gpsEpochStartTimeNan, and gpsStartTime from command line; */ 
 /* 12/06/04 gam; if (params->testFlag & 8) > 0 use fixed values for psi and cosIota during Monte Carlo simulations */
-
+/* 05/06/05 gam; If params->debugOptionFlag & 128 > 0 and isolated case, just creates a SUM from the STKs without sliding */
+    
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -46,6 +47,7 @@ $Id$
 /* #define DEBUG_SETFIXED_RANDVAL */
 /* #define PRINT_ONEMONTECARLO_OUTPUTSFT */
 /* #define PRINT_MAXPOWERANDBINEACHSFT */
+#define PRINT_SLIDINGTURNEDOFF_WARNING
 /*********************************************/
 /*                                           */
 /* END SECTION: define preprocessor flags    */
@@ -174,7 +176,16 @@ void StackSlideIsolated (
     
     /* StackSlideOld(status->statusPtr,params->SUMData,params->STKData,stksldParams);*/ /*Feb 05/14 vir*/
     /* 04/12/05 gam; Move from using StackSlideOld to using StackSlide function. */
-    StackSlide(status->statusPtr,params->SUMData,params->STKData,pTdotsAndDeltaTs,stksldParams);
+    /* 05/06/05 gam; If params->debugOptionFlag & 128 > 0 just creates a SUM from the STKs without sliding */
+    if ((params->debugOptionFlag & 128) > 0 ) {
+      #ifdef PRINT_SLIDINGTURNEDOFF_WARNING
+        fprintf(stdout,"\n\n !!! WARNING: SLIDING TURNED OFF !!! \n\n");
+        fflush(stdout);
+      #endif      
+      SumStacks(status->statusPtr,params->SUMData,params->STKData,stksldParams);
+    } else {
+      StackSlide(status->statusPtr,params->SUMData,params->STKData,pTdotsAndDeltaTs,stksldParams);
+    }
     CHECKSTATUSPTR (status);
     
     /* 02/25/05 gam; utility for printing one SUM to a file */
@@ -183,7 +194,7 @@ void StackSlideIsolated (
     }
 
     #ifdef DEBUG_SUM_TEMPLATEPARAMS
-        fprintf(stdout,"\nTemplate parameters for SUM #%i:\n",kSUM);	
+        fprintf(stdout,"\nTemplate parameters for SUM #%i:\n",kSUM);
         fprintf(stdout,"RA = %18.10f\n",params->skyPosData[iSky][0]);
         fprintf(stdout,"DEC = %18.10f\n",params->skyPosData[iSky][1]);
         for(k=0;k<params->numSpinDown;k++)

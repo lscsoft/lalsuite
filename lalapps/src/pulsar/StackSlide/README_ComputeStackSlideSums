@@ -1,12 +1,12 @@
 1. Basic summary:  
 
-ComputeStackSlideSums inputs blocks of frequency domain data for a sequence of times from SFTs, stacks the power for each frequency for each SFT, slides to correct for doppler shifts and intrinsic frequency evolution, and sums.  Depending on how certain command line arguments are set, the code outputs xml tables with process, event, and summary information and/or the sums in ascii format. It can be configured to search input data over a parameter space for candidate signals or the loudest event, or to software inject fake signals into the input data and perform a Monte Carlo simulation. It can also output an estimate of the PSD for each input SFT.
+ComputeStackSlideSums inputs blocks of frequency domain data for a sequence of times from SFTs, stacks the power for each frequency for each SFT, slides to correct for doppler shifts and intrinsic frequency evolution, and sums.  Depending on how certain command line arguments are set, the code outputs xml tables with process, event, and summary information and/or the sums in ascii format. It can be configured to search input data over a parameter space for candidate signals or the loudest event, or to software inject fake signals into the input data and perform a Monte Carlo simulation. The code can search for for signals from isolated sources or those in binary systems. It can also output an estimate of the PSD for each input SFT and the total sum of the power in all the SFTs without sliding.
 
-The driver script for running the code is runComputeStackSlideSUM.tclsh. This script requires that you have tclshexe in your path. This will be true if you have installed and set up ligotools. Run this script with no command line arguments and with the -h option to learn how to use it.
+The driver script for running the code is runComputeStackSlideSUM.tclsh. This script requires that you have tclshexe in your path. This will be true if you have installed and set up ligotools. Run this script without command line arguments or with the -h option to learn how to use it. The script ./buildStackSlideSimpleCondorDag.tclsh also exists for building condor DAGs that run various pipelines. Run this script without command line arguments to learn how to use it.
 
 The driver script, along with a template_file and a job_file sets up the command line arguments for ComputeStackSlideSums. See README_CommandLineArguments for a complete description of the command line arguments. Note that README_CommandLineArguments also acts as an example tcl resource file for setting these arguments (which could be used in place of the driver script).
 
-The driver script first sources the template_file and then the job_file it is given. Thus set filter parameters that change often in the template_file and the rest in a corresponding job_file. The job_file must set FILTERPARAMS, which is a space delimited list of all the command line arguments for ComputeStackSlideSums, except sun_edat_file, earth_edat_file, sft_path_pattern, and output_file. The runComputeStackSlideSUM.tclsh script appends these to the end of $FILTERPARAMS.
+The driver script first sources the template_file and then the job_file it is given. Thus set parameters that change often in the template_file and the rest in a corresponding job_file. The job_file must set FILTERPARAMS, which is a space delimited list of all the command line arguments for ComputeStackSlideSums, except sun_edat_file, earth_edat_file, sft_path_pattern, and output_file. The runComputeStackSlideSUM.tclsh script appends these to the end of $FILTERPARAMS.
 
 2. How to build the code:  
 
@@ -28,22 +28,47 @@ USR_INCLUDE=/usr/include
 LAL_LIB=$(LALPREFIX)/lib
 USR_LIB=/usr/lib
 
-3. Run "./runComputeStackSlideSUM.tclsh" and "./runComputeStackSlideSUM.tclsh -h" to get instructions on how to run the code.
+3. Running the code.
+ 
+a. Run "./runComputeStackSlideSUM.tclsh" and "./runComputeStackSlideSUM.tclsh -h" to get instructions on how to run the ComputeStackSlideSums code using this driver script.
 
-4. For a simple test, run one of the examples jobs indicated in the instructions from Step 3.
+b. Run "./buildStackSlideSimpleCondorDag.tclsh" to get instructions on how to build a condor DAG for running a StackSlide pipeline.
+
+4. Code Validation
+
+a. For a simple test, run one of the examples jobs indicated in the instructions from Step 3a.
 
 This should output myout.txt and myout.txt.xml. Compare the output with myout.txt.sav. 
 
-5. For a description of the filter parameters that are passed to ComputeStackSlideSums see README_CommandLineArguments. See runComputeStackSlideSUM.tclsh, testPulsar.params, and runComputeStackSlideSUM.job to see how these are set by the script.
+b. The command line argument, debug_option, for runComputeStackSlideSUM.tclsh also provides an easy way to validate the StackSlide code!  This works as follows:
+
+For fake data with a signal and no noise, run on the exact template for the signal with the
+command line debug_option bit for 8 set. This sets the bin with max power to 1 in each SFT,
+all other bins to 0. If the debug_option bit for 16 is also set, the SFT bin either side of that
+with max power is also set to 1. The StackSlide power should equal the number of SFTs, to within
+about 4 percent, for debug_option & 8 > 0 and exactly equal this for debug_option & 24 > 0.
+See documentation for debugOptionFlag in README_CommandLineArguments for further information.
+
+5. For a description of all parameters that are passed to ComputeStackSlideSums see README_CommandLineArguments. See runComputeStackSlideSUM.tclsh, testPulsar.params, runStackSlideSearch.job to see how these are set by the script.
 
 6. Files:
 
-a. ComputeStackSlideSums.c and ComputeStackSlideSums.h:  Contains "main".  The main driver code.
+a. ComputeStackSlideSums.c and ComputeStackSlideSums.h: contains "main".  The main driver code.
 
-b. DriveStackSlide.c and DriveStackSlide.h: Contains driver type functions used by the main driver code.
+b. DriveStackSlide.c and DriveStackSlide.h: contains driver type functions used by the main driver code.
 
-c. StackSlide.c and StackSlide.h: Contains the core algorithm functions; as appropriate these will be transferred to LAL.
+c. StackSlideIsolated.c and StackSlideIsolated.h: contains loops over the parameter space for the isolated search.
 
-d. testPulsar.params:  Sets source parameters for an example pulsar.  Used in the test in Step 4 above.
+d. StackSlideBinary.c and StackSlideBinary.h: contains loops over the parameter space for the binary search.
 
-e. Makefile_ComputeStackSlideSums and Makefile_ComputeStackSlideSumsCondor: files to use with  "make -f" for building ComputeStackSlideSums.
+e. StackSlide.c and StackSlide.h: contains the core algorithm functions; as appropriate these will be transferred to LAL.
+
+f. runComputeStackSlideSUM.tclsh and buildStackSlideSimpleCondorDag.tclsh: scripts for running ComputeStackSlideSums and building pipelines.
+
+g. testPulsar.params andtestBinaryPulsar.params: examples of the template_file that sets some of the search parameters.
+
+h. runStackSlideBinarySearch.job and runStackSlideSearch.job: examples of the job_file that sets the remaining parameters not set on the command line or in the template_file file.
+
+i. FindEffForFixedFalseARate.m, FindEfficienyFromLEandMCdata.m, and TurnLEandMCdataIntoUL.m: matlab scripts that read in the xml output from ComputeStackSlideSums and find detection efficiencies or upper limits.
+
+j. Makefile_ComputeStackSlideSums and Makefile_ComputeStackSlideSumsCondor: files to use with  "make -f" for building ComputeStackSlideSums.

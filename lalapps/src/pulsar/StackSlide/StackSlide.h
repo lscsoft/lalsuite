@@ -9,6 +9,7 @@ $Id$
 /* 12/03/04 gam; Clean up indentation; remove extraneous or obsolete comments. */
 /* 12/03/04 gam; Add parameter: BOOLEAN divideSUMsByNumSTKs. */
 /* 04/12/05 gam; Simplify StackSlideParams struct; change REAL8 **freqDerivData to REAL8 *freqDerivData; */
+/* 05/06/05 gam; Add function SumStacks with just creates a SUM from the STKs without sliding */
 
 /* <lalLaTeX> 
 \section{Header \texttt{StackSlide.h}}
@@ -182,6 +183,15 @@ void StackSlide(	LALStatus *status,
 			REAL4FrequencySeries **SUMData,
 			REAL4FrequencySeries **STKData,
 			TdotsAndDeltaTs *pTdotsAndDeltaTs,
+			StackSlideParams *params);
+
+/* 05/06/05 gam; Add function SumStacks with just creates a SUM from the STKs without sliding */
+/*********************************************************************************/
+/*              START function: SumStacks                                        */
+/*********************************************************************************/
+void SumStacks( 	LALStatus *status,
+			REAL4FrequencySeries **SUMData,
+			REAL4FrequencySeries **STKData,
 			StackSlideParams *params);
 
 void StackSlideComputeSky (LALStatus 	*status,
