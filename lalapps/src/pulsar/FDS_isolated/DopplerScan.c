@@ -1571,8 +1571,18 @@ getGridSpacings( LALStatus *lstat,
 	TRY ( LALProjectMetric( lstat->statusPtr, metric, 0 ), lstat);
       }
       if ( lalDebugLevel ) 
-	printf ("\ngetGridSpacing(): using the %s metric\n", 
-		params->projectMetric ? "projected" : "unprojected");
+	{
+	  printf ("\ngetGridSpacing(): using the %s metric\n", 
+		  params->projectMetric ? "projected" : "unprojected");
+	  printf (" %g \n", g_f0_f0);
+	  printf (" %g  %g\n", metric->data[INDEX_f0_A], metric->data[INDEX_A_A]);
+	  printf (" %g  %g  %g\n", 
+		  metric->data[INDEX_f0_D], metric->data[INDEX_A_D], metric->data[INDEX_D_D]);
+	  printf (" %g  %g  %g  %g\n\n",
+		  metric->data[INDEX_f0_f1], metric->data[INDEX_A_f1], metric->data[INDEX_D_f1],
+		  metric->data[INDEX_f1_f1]);
+	}
+
       
       gamma_f1_f1 = metric->data[INDEX_f1_f1];
       spacings->f1dot = 2.0 * gridpoint.Freq * sqrt( params->metricMismatch / gamma_f1_f1 );
