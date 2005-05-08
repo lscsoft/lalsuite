@@ -51,6 +51,7 @@
 
 
 
+
 #ifdef USE_UNZIP
 #include "unzip.h"
 #include "readzipfile_util.h"
@@ -1624,6 +1625,14 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
   }
 
 
+#ifndef USE_UNZIP
+  if( LALUserVarWasSet (&uvar_InputDirectory) ) {
+    LALPrintError("\nCannot use -i option without enabling unzip.\n");
+    ABORT( stat, POLKAC_EUNZIP, POLKAC_MSGEUNZIP );
+  }
+#endif
+
+
   CLA->FstatsFile = NULL;
   CLA->OutputFile = NULL;
   CLA->InputDir = NULL;
@@ -1665,17 +1674,6 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
   }
 
 
-  /*
-  if( LALUserVarWasSet (&uvar_BaseName) ) {
-    CLA->BaseName = (CHAR *) LALMalloc(strlen(uvar_BaseName)+1);
-    if(CLA->BaseName == NULL)
-      {
-	FreeConfigVars( stat->statusPtr, CLA );
-	RETURN (stat);
-      }          
-    strcpy(CLA->BaseName,uvar_BaseName);
-  }
-  */
 
   CLA->BaseName = (CHAR *) LALMalloc(strlen(uvar_BaseName)+1);
   if(CLA->BaseName == NULL)
