@@ -50,6 +50,7 @@
 */
 
 
+
 #ifdef USE_UNZIP
 #include "unzip.h"
 #include "readzipfile_util.h"
@@ -124,7 +125,7 @@ int finite(double);
 
 /* ----------------------------------------------------------------------------- */
 /* structures */
-struct PolkaConfigVarsTag 
+typedef struct PolkaConfigVarsTag 
 {
   CHAR *FstatsFile;  /**<  Names of Fstat files to be read in */
   CHAR *OutputFile;  /**<  Names of output file */
@@ -141,7 +142,7 @@ struct PolkaConfigVarsTag
   REAL8 Shiftf;      /**<  Parallel shift of frequency in Hz of cell */
   REAL8 ShiftAlpha;  /**<  Parallel shift of Alpha in Hz of cell */
   REAL8 ShiftDelta;  /**<  Parallel shift of Delta in Hz of cell */
-} PolkaConfigVars;
+} PolkaConfigVariables;
 
 /* This structure contains the indices corresponding to the 
 coarse frequency and sky bins */
@@ -194,8 +195,10 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
 void FreeMemory(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell, CandidateList *CList, UINT4 datalen);
 void FreeConfigVars(LALStatus *stat, struct PolkaConfigVarsTag *CLA );
 void GetFilesListInThisDir(LALStatus *stat, CHAR *directory, CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
-void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4 outlier_id );
+void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr );
 int compareNCandidate(const void *a, const void *b);
+void print_info_of_the_cell( FILE *fp, CellData *cd, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr);
+
 
 #ifdef USE_UNZIP
 void ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fname, UINT4 *candlen, INT4 *FileID);
@@ -233,6 +236,9 @@ int main(int argc,char *argv[])
 #if USE_BOINC
   REAL8 local_fraction_done;
 #endif
+
+  PolkaConfigVariables PolkaConfigVars;
+
 
   LAL_CALL (LALGetDebugLevel(stat, argc, argv, 'v'), stat);
 
@@ -332,7 +338,6 @@ int main(int argc,char *argv[])
   }  
 
 
-
   /* -----------------------------------------------------------------------------------------*/      
   /* Output results */
   LAL_CALL( PrintResult( stat, &PolkaConfigVars, cell, &ncell, SortedC),stat );
@@ -406,62 +411,65 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
 {
   INITSTATUS( stat, "PrintResult", rcsid );
   UINT4 icell;
-  CHAR fnameFt[]="polka_outlier_in_Ft";
-  CHAR fnameFl[]="polka_outlier_in_Fl";
-  CHAR fnameNt[]="polka_outlier_in_Nt";
-  CHAR fnameNl[]="polka_outlier_in_Nl";
-  FILE *fp = NULL, *fpt = NULL,*fpl = NULL;
+  CHAR fnameSigTime[]="polka_significant_outlier_2FofTime"; /* Time variation of 2F of some significant outliers. */
+  CHAR fnameSigCell[]="polka_significant_outlier_CellData"; /* Cell information of some significant outliers*/
+  CHAR fnameCoiTime[]="polka_coincident_outlier_2FofTime";  /* Time variation of 2F of some coincident outliers. */
+  CHAR fnameCoiCell[]="polka_coincident_outlier_CellData";  /* Cell information of some coincident outliers*/
+  FILE *fp = NULL, *fpSigTime = NULL, *fpSigCell = NULL, *fpCoiTime = NULL, *fpCoiCell = NULL;
   INT4 *count;
   INT4 nc, nmax,idxmax = 0;
   REAL4 Sigmax = 0.0;
 
-  if( (count = (INT4 *) LALCalloc( (size_t) (CLA->NFiles + 1), sizeof(INT4))) == NULL ) {
-    LALPrintError("Could not allocate Memory! \n");
-    ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
-  }
-  
   /* ------------------------------------------------------------- */
   /* First Sort arrays of candidates based on number of candidate. */ 
   qsort(cell, (size_t) (*ncell), sizeof(CellData), compareNCandidate);
 
-  /* This is full output. */
+
+  nmax = cell[0].nCand; /* This is the number of the maximum coincidences. */
+
+  if( (count = (INT4 *) LALCalloc( (size_t) (nmax + 1), sizeof(INT4))) == NULL ) {
+    LALPrintError("Could not allocate Memory! \n");
+    ABORT (stat, POLKAC_EMEM, POLKAC_MSGEMEM);
+  }
+  
+
+
+  /* ------------------------------------------------------------- */
+  /* Print out to the user-specified output file all the information in all the cell. 
+     This file can be too huge to be tractable.*/
   if( (fp = fopen(CLA->OutputFile,"w")) == NULL ) 
     {
       LALPrintError("\n Cannot open file %s\n",CLA->OutputFile); 
       exit(POLKA_EXIT_ERR);
     }
   /* output for all the cells */
+  print_info_of_the_cell( fp, cell, 0,(*ncell),0,0);
+  fclose(fp);
+
+
+
+  /* number counts and find the most significant event. */
   for(icell=0;icell<(*ncell);icell++) {
     nc=cell[icell].nCand;
     count[nc] += 1;
-    fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
-	    "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
-	    cell[icell].Freq, cell[icell].Delta, cell[icell].Alpha,
-	    cell[icell].nCand,
-	    cell[icell].significance);
     if( Sigmax < cell[icell].significance) {
       Sigmax = cell[icell].significance;
       idxmax = icell;
     }
   }
-  fclose(fp);
 
 
-  /* output summary */
+  /* ------------------------------------------------------------- */
+  /* output summary table. */
   if(lalDebugLevel < 3 ) {
-    fprintf(stderr,"%% Maximly significant cell: " "f=%" LAL_REAL4_FORMAT "\td=%" LAL_REAL4_FORMAT "\ta=%" LAL_REAL4_FORMAT "\t" 
-	    "#=%" LAL_INT4_FORMAT "\t" "S=%" LAL_REAL4_FORMAT "\n",
-	    cell[idxmax].Freq, cell[idxmax].Delta, cell[idxmax].Alpha,
-	    cell[idxmax].nCand,
-	    cell[idxmax].significance);
-    fprintf(stderr,"%% Maximly coincident cell : " "f=%" LAL_REAL4_FORMAT "\td=%" LAL_REAL4_FORMAT "\ta=%" LAL_REAL4_FORMAT "\t" 
-	    "#=%" LAL_INT4_FORMAT "\t" "S=%" LAL_REAL4_FORMAT "\n",
-	    cell[0].Freq, cell[0].Delta, cell[0].Alpha,
-	    cell[0].nCand, 
-	    cell[0].significance);
+    fprintf(stderr,"%% Maximly significant cell : freq [Hz]\tdec [rad]\tra [rad]  # [events]   Sig" "\n");
+    fprintf(stderr, "%%\t\t\t     ");
+    print_info_of_the_cell( stderr, cell, idxmax,idxmax+1,0,0);
+    fprintf(stderr,"%% Maximly coincident cell  : freq [Hz]\tdec [rad]\tra [rad]  # [events]   Sig" "\n");
+    fprintf(stderr, "%%\t\t\t     ");
+    print_info_of_the_cell( stderr, cell, 0,1,0,0);
 
     nmax = cell[0].nCand;
-    nmax = (INT4) CLA->NFiles;
     fprintf(stderr,"%% # of coincidences: \n");
     for(nc=0;nc<=nmax;nc++) {
       fprintf(stderr,"%7d",nc);
@@ -476,61 +484,55 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
   LALFree( count );
 
 
+ 
+  if( CLA->AutoOut || cell[0].nCand >= CLA->Nthr ) 
+    {
+      if( (fpCoiCell = fopen(fnameCoiCell,"w")) == NULL || (fpCoiTime = fopen(fnameCoiTime,"w")) == NULL )
+	{ 
+	  LALPrintError("\n Cannot open file %s or %s\n",fnameCoiCell,fnameCoiTime); 
+	  exit(POLKA_EXIT_ERR); 
+	}
+    }
+
+  if( CLA->AutoOut || Sigmax > CLA->Sthr ) 
+    {
+      if( (fpSigCell = fopen(fnameSigCell,"w")) == NULL || (fpSigTime = fopen(fnameSigTime,"w")) == NULL )
+	{ 
+	  LALPrintError("\n Cannot open file %s or %s\n",fnameSigCell,fnameSigTime); 
+	  exit(POLKA_EXIT_ERR); 
+	}
+    }
+
+
+
+  /* ------------------------------------------------------------- */
   if( CLA->AutoOut ) 
-    { 
-      if( (fpl = fopen(fnameNl,"w")) == NULL || (fpt = fopen(fnameNt,"w")) == NULL )
-	{ 
-	  LALPrintError("\n Cannot open file\n"); 
-	  exit(POLKA_EXIT_ERR); 
-	}
-      icell=0;
-      fprintf(fpl,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
-	      "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
-	      cell[icell].Freq, cell[icell].Delta, cell[icell].Alpha,
-	      cell[icell].nCand,
-	      cell[icell].significance);
-      print_Fstat_of_the_cell( fpt, &cell[icell], CList, icell );
-      fclose(fpt);
-      fclose(fpl);
-      if( (fpl = fopen(fnameFl,"w")) == NULL || (fpt = fopen(fnameFt,"w")) == NULL )
-	{ 
-	  LALPrintError("\n Cannot open file\n"); 
-	  exit(POLKA_EXIT_ERR); 
-	}
-      icell=idxmax;
-      fprintf(fpl,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
-	      "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
-	      cell[icell].Freq, cell[icell].Delta, cell[icell].Alpha,
-	      cell[icell].nCand,
-	      cell[icell].significance);
-      print_Fstat_of_the_cell( fpt, &cell[icell], CList, icell );
-      fclose(fpt);
-      fclose(fpl);     
+    {  /* Output the info of the most significant and the most coincident event. */
+
+      /* Output the info of the most coincident event. */
+      /* Information of the cell. */
+      print_info_of_the_cell( fpCoiCell, cell, 0,1,0,0);
+      /* Print F stat from each file contributed to this cell. */
+      print_Fstat_of_the_cell( fpCoiTime, cell, CList, 0,1,0,0 );
+
+      /* Output the info of the most significant event. */
+      /* Information of the cell. */
+      print_info_of_the_cell( fpSigCell, cell, idxmax,idxmax+1,0,0);
+      /* Print F stat from each file contributed to this cell. */
+      print_Fstat_of_the_cell( fpSigTime, cell, CList, idxmax,idxmax+1,0,0 );
+
     } /* if( CLA->AutoOut ) */ 
   else 
     {
-      /* output only on outliers */
+      /* output only on outliers larger than Nthr on number of coincidences and Sthr on significance.*/
       if( cell[0].nCand >= CLA->Nthr ) 
 	{
-	  if( (fpl = fopen(fnameNl,"w")) == NULL || (fpt = fopen(fnameNt,"w")) == NULL )
-	    { 
-	      LALPrintError("\n Cannot open file\n"); 
-	      exit(POLKA_EXIT_ERR); 
-	    }
-	  icell = 0;
-	  while( cell[icell].nCand >= CLA->Nthr )      
-	    {
-	      fprintf(fpl,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
-		      "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
-		      cell[icell].Freq, cell[icell].Delta, cell[icell].Alpha,
-		      cell[icell].nCand,
-		      cell[icell].significance);
-	      print_Fstat_of_the_cell( fpt, &cell[icell], CList, icell );
-	      icell++;
-	      if( icell >= (*ncell) ) break;
-	    }
-	  fclose(fpt);
-	  fclose(fpl);
+	  
+	  /* Information of the cell. */
+	  print_info_of_the_cell( fpCoiCell, cell, 0, 0, 0, CLA->Nthr);
+	  /* Print F stat from each file contributed to this cell. */
+	  print_Fstat_of_the_cell( fpCoiTime, cell, CList, 0, 0, 0, CLA->Nthr );
+
 	} /* if( cell[0].nCand > CLA->Nthr ) */
       
       
@@ -540,31 +542,51 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
       if( Sigmax > CLA->Sthr ) 
 	{
 	  qsort(cell, (size_t) (*ncell), sizeof(CellData), compareSignificance);
-	  if( (fpl = fopen(fnameFl,"w")) == NULL || (fpt = fopen(fnameFt,"w")) == NULL )
-	    { 
-	      LALPrintError("\n Cannot open file\n"); 
-	      exit(POLKA_EXIT_ERR); 
-	    }
-	  icell = 0;
-	  while( cell[icell].significance > CLA->Sthr )      
-	    {
-	      fprintf(fpl,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
-		      "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
-		      cell[icell].Freq, cell[icell].Delta, cell[icell].Alpha,
-		      cell[icell].nCand,
-		      cell[icell].significance);
-	      print_Fstat_of_the_cell( fpt, &cell[icell], CList, icell );
-	      icell++;
-	      if( icell >= (*ncell) ) break;
-	    }
-	  fclose(fpt);
-	  fclose(fpl);
+
+	  /* Information of the cell. */
+	  print_info_of_the_cell( fpSigCell, cell, 0, 0, CLA->Sthr, 0);
+	  /* Print F stat from each file contributed to this cell. */
+	  print_Fstat_of_the_cell( fpSigTime, cell, CList, 0, 0, CLA->Sthr, 0 );
+
 	} /* if( cell[0].significance > CLA->Sthr ) */
     } /* else of if( CLA->AutoOut ) */
 
 
+  if( CLA->AutoOut || cell[0].nCand >= CLA->Nthr ) {
+    fclose(fpCoiTime);
+    fclose(fpCoiCell);
+  }
+
+  if( CLA->AutoOut || Sigmax > CLA->Sthr ) { 
+    fclose(fpSigTime);
+    fclose(fpSigCell);
+  }
+
+
   RETURN (stat);
 } /* PrintResult() */
+
+
+/* ########################################################################################## */
+/* Print_info_of_the_cell() */
+void print_info_of_the_cell( FILE *fp, CellData *cd, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr)
+{
+  INT4 icell;
+
+  icell = icell_start;
+  while( icell < icell_end && 
+	 cd[icell].significance > sig_thr && 
+	 cd[icell].nCand > ncand_thr ) 
+    {
+      fprintf(fp,"%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t%" LAL_REAL4_FORMAT "\t" 
+	      "%" LAL_INT4_FORMAT "\t" "%" LAL_REAL4_FORMAT "\n",
+	      cd[icell].Freq, cd[icell].Delta, cd[icell].Alpha,
+	      cd[icell].nCand,
+	      cd[icell].significance);
+      icell++;
+    }
+}
+
 
 
 
@@ -581,6 +603,8 @@ void FreeMemory(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell,
 
   if( CList != NULL ) LALFree(CList);
 
+  /* FIX (?) ME:  
+     This part takes really long, when lalDebugLevel = 3. I do not know why.*/
   if( cell != NULL ) {
     for(icell=0;icell<CLength;icell++) {
       delete_int4_linked_list( cell[icell].CandID );
@@ -694,9 +718,48 @@ void get_info_of_the_cell( CellData *cd, CandidateList *CList )
 }
 
 
+
 /* ########################################################################################## */
 /* print F stat. */
-void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4 oid )
+void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr )
+{
+  INT4 idx, ic, icell;
+  struct int4_linked_list *p;
+
+
+  icell = icell_start;
+  while( icell < icell_end && 
+	 cd[icell].significance > sig_thr && 
+	 cd[icell].nCand > ncand_thr ) 
+    {
+
+      p = cd[icell].CandID;
+      
+      ic = 0;
+      while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { 
+	idx = p->data;
+	fprintf(fp,"%" LAL_INT4_FORMAT "\t%" LAL_INT4_FORMAT "\t%" LAL_REAL4_FORMAT "\n", 
+		icell, CList[idx].FileID, CList[idx].TwoF );
+	p = p->next;
+	ic++;
+      } /*   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {  */
+
+      if( ic >  LINKEDSTR_MAX_DEPTH ) {
+	LALPrintError("Maximum depth of linked structure reached!");
+	exit(POLKA_EXIT_ERR);
+      }
+
+      icell++;
+    } /*   while( icell < icell_end && ...  */
+
+  return;
+}
+
+
+#if 0
+/* ########################################################################################## */
+/* print F stat. */
+void print_info_of_the_cell( FILE *fp, CellData *cd, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr)
 {
   INT4 idx, ic;
   struct int4_linked_list *p;
@@ -706,7 +769,7 @@ void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4
   while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { 
     idx = p->data;
     fprintf(fp,"%" LAL_INT4_FORMAT "\t%" LAL_INT4_FORMAT "\t%" LAL_REAL4_FORMAT "\n", 
-	    oid, CList[idx].FileID, CList[idx].TwoF );
+	    outlier_id, CList[idx].FileID, CList[idx].TwoF );
     p = p->next;
     ic++;
   }
@@ -718,7 +781,7 @@ void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4
 
   return;
 }
-
+#endif
 
 
 
@@ -847,31 +910,32 @@ void ReadCandidateFiles(LALStatus *stat, CandidateList **CList, struct PolkaConf
     {
       TRY( GetFilesListInThisDir( stat->statusPtr, CLA->InputDir, CLA->BaseName, &(CLA->Filelist), &(CLA->NFiles) ), stat );
       
-      /* Unzip file */
-      /* Count number of candidates */
-      /* Allocate memory for candidate list */
-      /* fill data into candidate list array */
-      
       *clen = 0;     /* We first have to set the candidate list length zero. */
       *CList = NULL; /* We first have to nullify the list. */
       for (kc=0;kc<CLA->NFiles;kc++)
 	{
-	  fprintf(stderr,"%s, %d\n",CLA->Filelist[kc],CLA->NFiles);
+	  if( lalDebugLevel > 1 ) {
+	    fprintf(stderr,"%s, %d\n",CLA->Filelist[kc],CLA->NFiles);
+	  }
 #ifdef USE_UNZIP
-	  {INT4 FileID = 2*kc; /* the factor 2 because we have 2 sections. */
+	  {INT4 FileID = 2*kc; /* the factor 2 because we have 2 sections in each file. */
 	  ReadCandidateListFromZipFile( stat->statusPtr, CList, CLA->Filelist[kc], clen, &FileID);
 	  }
 #endif
 	} 
 
     } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
-  else 
+  else if ( CLA->FstatsFile != NULL ) 
     {
       TRY( ReadOneCandidateFile(stat->statusPtr, CList, CLA->FstatsFile, clen), stat );
       /* The last file is from last file.*/
       CLA->NFiles = (*CList)[*clen-1].FileID;
     } /* if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) )  */
-
+  else 
+    { /* We should not be here. */
+      LALPrintError("\nYou have to specify either input data directory or input data file.\n");
+      exit(POLKA_EXIT_ERR);;
+    }
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -1081,7 +1145,9 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
   numlines = nlines[0] + nlines[1]; /* we have two sections. */
 
   if( numlines == 0 ) { /* This file is empty. Go to the next file.*/
-    LALPrintError( "No candidate events in the file %s\n\n", fname);
+    if( lalDebugLevel > 1 ) {
+      LALPrintError( "No candidate events in the file %s\n\n", fname);
+    }
     free(uzpbuff.strptr);
     DETATCHSTATUSPTR (stat);
     RETURN (stat);
@@ -1092,7 +1158,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
   if ( numlines > 0) 
     { 
       CandidateList *tmp;
-      tmp = (CandidateList *)realloc (*CList, ( *candlen + numlines )*sizeof(CandidateList));
+      tmp = (CandidateList *)LALRealloc (*CList, ( *candlen + numlines )*sizeof(CandidateList));
       if ( !tmp ) 
 	{ 
 	  if( uzpbuff.strptr != NULL ) free(uzpbuff.strptr);
@@ -1116,7 +1182,8 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
     endp = line;
     while ( *endp != '\n' )
       endp++;
-    *endp = '\0';
+    *endp = '\0'; 
+    /* Replace *endp = '\n' by '\0' makes it easy to read file line by line. */
 
     /* Check for POLKA section divisions or EOF marker. */
     if ( !strncmp( line, "%1", 2 ) ) {
@@ -1306,7 +1373,7 @@ void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const CHAR *
   if (*candlen <= 0  )
     {
       LALPrintError("candidate length = %ud!\n",*candlen);
-      exit(1);
+      exit(POLKA_EXIT_ERR);;
     }/* check that we have candidates. */
 
 
@@ -1516,9 +1583,9 @@ void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaCon
   /* register all our user-variables */
   LALregBOOLUserVar(stat,       help,           'h', UVAR_HELP,     "Print this message"); 
 
-  LALregSTRINGUserVar(stat,     InputData,      'I', UVAR_OPTIONAL, "Input candidates Fstats file.");
   LALregSTRINGUserVar(stat,     OutputData,     'o', UVAR_REQUIRED, "Ouput candidates file name");
 
+  LALregSTRINGUserVar(stat,     InputData,      'I', UVAR_OPTIONAL, "Input candidates Fstats file.");
   LALregSTRINGUserVar(stat,     InputDirectory, 'i', UVAR_OPTIONAL,"Input candidates Fstats files directory.");
   LALregSTRINGUserVar(stat,     BaseName,       'b', UVAR_OPTIONAL,"BaseName of the Input Fstats files");
 
