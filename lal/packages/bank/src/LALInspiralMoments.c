@@ -1,5 +1,5 @@
 /*  <lalVerbatim file="LALInspiralMomentsCV">
-Authors: Brown, D. A., and Sathyaprakash, B. S.
+Authors: Brown, D. A., Cokelaer, T. and  Sathyaprakash, B. S.
 $Id$
 </lalVerbatim>  */
 
