@@ -281,7 +281,7 @@ typedef enum
 GridType;
 /*  </lalVerbatim>  */
 /*  <lalLaTeX> 
-\idx[Type]{GrdiType} 
+\idx[Type]{GridType} 
 </lalLaTeX>  */
 
 
