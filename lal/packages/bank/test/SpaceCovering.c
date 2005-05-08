@@ -1,17 +1,17 @@
-/* <lalVerbatim file="CoarseTest2CV">
-Author: Churches, D. K. and Sathyaprakash, B. S.
+/* <lalVerbatim file="SpaceCoveringCV">
+Author: Thomas Cokelaer 
 $Id$
 </lalVerbatim> */
 
 /* <lalLaTeX>
-\subsection{Program \texttt{CoarseTest2.c}}
-\label{ss:CoarseTest2.c}
+\subsection{Program \texttt{SpaceCovering.c}}
+\label{ss:SpaceCovering.c}
 
 Test code for the \texttt{bank} modules.
 
 \subsubsection*{Usage}
 \begin{verbatim}
-CoarseTest2
+SpaceCovering --template [TaylorT1, EOB ....] --grid-type [square, hexagonal, squareOriented, hexagonalOriented]
 \end{verbatim}
 
 \subsubsection*{Description}
@@ -93,17 +93,12 @@ main(int argc, char **argv)
       else if  ( strcmp(argv[i],	"--grid-type") 	== 0 ) {
 	i++;
 	
-	if (strcmp(argv[i], "square") == 0)   coarseIn.gridType = BANKGRID_SQUARE;
-	else if (strcmp(argv[i], "hexagonal")         == 0)   coarseIn.gridType = BANKGRID_HEXAGONAL;
-	else if (strcmp(argv[i], "squareOriented")         == 0)   coarseIn.gridType = BANKGRID_SQUARE_AND_ORIENTED;
-	else if (strcmp(argv[i], "hexagonalOriented")         == 0)   coarseIn.gridType = BANKGRID_HEXAGONAL_AND_ORIENTED;
+	if (strcmp(argv[i], "square") == 0)   coarseIn.gridType = Square;
+	else if (strcmp(argv[i], "hexagonal")         == 0)   coarseIn.gridType = Hexagonal;
+	else if (strcmp(argv[i], "squareOriented")         == 0)   coarseIn.gridType = OrientedSquare;
+	else if (strcmp(argv[i], "hexagonalOriented")         == 0)   coarseIn.gridType = OrientedHexagonal;
 	else {fprintf(stderr, "bank-grid-type is either square or hexagonal\n"); exit(0);}
 	
-      }
-      else if  ( strcmp(argv[i],	"--scaling") 	== 0 ) {
-	      i++;
-      scaling = sqrt(atof(argv[i]));
-      printf("%f", scaling);
       }
       i++;
     }
@@ -127,8 +122,8 @@ main(int argc, char **argv)
   /* coarseIn.massRange = MinComponentMassMaxTotalMass;*/
   /* minimum value of eta */
   coarseIn.etamin = coarseIn.mMin * ( coarseIn.MMax - coarseIn.mMin) / pow(coarseIn.MMax,2.);
-  coarseIn.psi0Min = 1.e4;
-  coarseIn.psi0Max = 2.5e5;
+  coarseIn.psi0Min = 1.e0;
+  coarseIn.psi0Max = 2.5e4;
   coarseIn.psi3Min = -3e4;
   coarseIn.psi3Max = -10;
   coarseIn.alpha = 0.L;
