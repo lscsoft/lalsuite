@@ -1011,6 +1011,118 @@ PSItoMasses (
 
 
 
+
+
+
+void 
+LALInspiralBCVBankFcutS3 (
+    LALStatus            *status, 
+    InspiralTemplateList **list, 
+    INT4                *NList, 
+    InspiralCoarseBankIn coarseIn
+    ) 
+/*  </lalVerbatim>  */
+{  
+  UINT4 nlist, j, ndx;
+  REAL4 frac;
+  REAL4 LowGM, HighGM;
+  REAL4 fendBCV;
+  INT4  nf;
+  
+
+  INITSTATUS( status, "LALInspiralBCVBankFcutS3", LALINSPIRALCREATECOARSEBANKC );
+
+  nf    = coarseIn.numFcutTemplates;
+
+  ndx   = nlist = *NList;
+
+  LowGM         = coarseIn.LowGM  = 3.;
+  HighGM        = coarseIn.HighGM;
+
+
+  for ( j = 0; j < nlist; ++j )
+  {
+    UINT4 valid = 0;
+    
+    LALEmpiricalPSI2MassesConversion( &((*list)[j].params), &valid , LowGM);   
+    
+    if (valid)
+      {
+	UINT4 i;
+	REAL8 fMax; 
+
+	fMax = (*list)[j].params.fFinal; 
+	if ( (*list)[j].params.tSampling <= 0 )
+	  {
+	    ABORT( status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
+	  }
+	if (fMax >=(*list)[j].params.tSampling/2.0)
+	  {
+	    /* sometimes fMAx is greater than the sampling and the following algorithm 
+	       do not give any template for the corresponding psi0/psi3. However, we want 
+	       at least one template with fMAx= sampling/2 */
+	    fMax = (*list)[j].params.tSampling/2.0 - 1.; 
+	    frac = -1;
+
+	  }
+	else
+	  {
+	    if (nf==1)
+	      frac = 1;
+	    else 
+	      frac = (1.L - 1.L/pow(HighGM/3., 1.5L)) / (nf-1.L);
+	  }
+	
+	for (i=0; i<nf; i++)
+	  {
+	    fendBCV = fMax * (1.L - (REAL4) i * frac);
+
+
+	    /* we search for valid expression of fendBCV and populate the bank */
+	    if ( fendBCV > (*list)[j].params.fLower * 1.5 && 
+		 fendBCV < (*list)[j].params.tSampling / 2.0 )
+	      {
+		
+		++ndx;
+		
+		*list = (InspiralTemplateList *) 
+		  LALRealloc( *list, ndx * sizeof(InspiralTemplateList) );
+		if ( ! *list )
+		  {
+		    ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+		  }
+		memset( *list + ndx - 1, 0, sizeof(InspiralTemplate) );
+		(*list)[ndx-1] = (*list)[j];
+		(*list)[ndx-1].params.fFinal = fendBCV;
+		(*list)[ndx-1].metric = (*list)[0].metric;
+		(*list)[ndx-1].nLayer = i;
+		
+	      }
+	    
+	  }
+	
+      }
+  }
+  
+  
+  for ( j = nlist; j < ndx; ++j )
+  {
+    (*list)[j-nlist] = (*list)[j];
+  }
+
+  *NList = ndx - nlist;
+  *list = LALRealloc( *list, *NList * sizeof(InspiralTemplateList) );
+  if ( ! *list )
+  {
+    ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+  }
+
+
+  RETURN( status );
+}
+
+
+
 /*  <lalVerbatim file="LALInspiralBCVRegularFcutBankCP"> */
 void 
 LALInspiralBCVRegularFcutBank (
@@ -1069,4 +1181,39 @@ LALInspiralBCVRegularFcutBank (
   RETURN( status );
 }
 
+
+
+
+
+
+
+void
+LALEmpiricalPSI2MassesConversion (
+    InspiralTemplate *params,
+    UINT4            *valid,
+    REAL4             lightring
+    )
+{
+  if ( params->psi0 <= 0.L || params->psi3 >= 0.L )
+    {
+      *valid = 0;
+    }
+  else
+    {
+      params->totalMass = -params->psi3/(16.L*LAL_PI * LAL_PI * params->psi0);
+      
+      params->totalMass = params->totalMass * 2  ; /* The factor 2 is purely empiricail and 
+						      comes from simulaitons. ?It seems indeed
+						      tyhat the relation between psi0 and psi3 
+						      which gives the total mass is not really
+						      suitable. Ususally, the total mass is 
+						      twice as much as the estimated one.
+						   */
+      params->fFinal = 1.L/( LAL_PI * pow(lightring, 1.5L) * params->totalMass );
+      params->totalMass /= LAL_MTSUN_SI;
+
+    *valid = 1;
+
+  }
+}
 

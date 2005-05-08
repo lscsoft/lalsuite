@@ -269,6 +269,26 @@ CoordinateSpace;
 \idx[Type]{CoordinateSpace} 
 </lalLaTeX>  */
 
+
+/* <lalVerbatim file="LALGridTypeH"> */
+typedef enum
+{
+  Square, 
+  OrientedSquare,
+  Hexagonal,
+  OrientedHexagonal
+}
+GridType;
+/*  </lalVerbatim>  */
+/*  <lalLaTeX> 
+\idx[Type]{GrdiType} 
+</lalLaTeX>  */
+
+
+
+
+
+
 /* <lalVerbatim file="LALInspiralBankMassRangeH"> */
 typedef enum
 {
@@ -367,7 +387,8 @@ tagInspiralCoarseBankIn
   UINT4                         numFcutTemplates;
   REAL4				HighGM;
   REAL4				LowGM;
-  
+
+  GridType                      gridType;
   Order                         order;        
   Approximant                   approximant;  
 }
@@ -498,6 +519,13 @@ LALInspiralCreateBCVBank (
     );
 
 void 
+LALInspiralBCVBankFcutS3 (
+    LALStatus            *status, 
+    InspiralTemplateList **list, 
+    INT4                *NList, 
+    InspiralCoarseBankIn coarseIn);
+
+void
 LALInspiralBCVFcutBank (
     LALStatus            *status, 
     InspiralTemplateList **list, 
@@ -755,7 +783,17 @@ LALRectangleVertices
    RectangleOut *out,
    RectangleIn *in
 );
-      
+
+
+void 
+LALEmpiricalPSI2MassesConversion(
+    InspiralTemplate    *params,
+    UINT4               *valid,
+    REAL4               lightring
+);
+
+
+
 /* <lalLaTeX>
 \newpage\input{CoarseTestC}
 </lalLaTeX> */
