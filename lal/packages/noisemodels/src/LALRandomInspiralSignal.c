@@ -388,7 +388,7 @@ LALRandomInspiralSignal
 	   randIn->param.approximant == TaylorF1 ||
 	   randIn->param.approximant == TaylorF2 ||
 	   randIn->param.approximant == PadeF1)
-	 {
+	 { 
 	   LALInspiralWave(status->statusPtr, signal, &randIn->param);
 	   CHECKSTATUSPTR(status);
 	 }
@@ -413,6 +413,9 @@ LALRandomInspiralSignal
 	   }
 	 }
        randIn->coalescenceTime = iMax;
+
+       normin.fCutoff = randIn->param.fFinal;
+
 
        LALInspiralWaveNormaliseLSO(status->statusPtr, signal, &norm, &normin);
        CHECKSTATUSPTR(status);
