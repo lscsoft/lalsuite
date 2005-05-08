@@ -751,7 +751,8 @@ LALInspiralCreateBCVBank (
   LALSCreateVectorSequence( status->statusPtr, &tempList, &in );
   CHECKSTATUSPTR( status );
 
-  LALInspiralCreateFlatBank( status->statusPtr, tempList, &bankParams );
+  /*LALInspiralCreateFlatBankS3( status->statusPtr, tempList, &bankParams , coarseIn);*/
+  LALInspiralCreateFlatBank( status->statusPtr, tempList, &bankParams);
   CHECKSTATUSPTR( status );
 
   *nlist = tempList->length;
@@ -787,8 +788,16 @@ LALInspiralCreateBCVBank (
    *
    * If coarseIn.LowGM > 0 it means that we want to use a bank where
    * the cutoff frequency has some physical values betwwen Low and
-   * HighGM */
-  if (coarseIn.LowGM  == -1)
+   * HighGM 
+   * option -2 is used to try hexagonal grid and so on. In that case lowGM is
+   * equal to 3 */
+  if (coarseIn.LowGM  == -2)
+    {
+      LALInspiralBCVBankFcutS3( status->statusPtr, 
+				list, nlist, coarseIn);
+      CHECKSTATUSPTR( status );
+    }
+  else  if (coarseIn.LowGM  == -1)
   {
 	  LALInspiralBCVRegularFcutBank( status->statusPtr, 
 	      list, nlist, coarseIn);
@@ -913,12 +922,6 @@ LALInspiralBCVFcutBank (
 
       for ( i = 0; i < nf; ++i )
       {
-/* I've commented the two following lines that I would like to submit in a close futur.
- * 	if ( fMax > ((*list)[j].params.tSampling / 2.0) ) 
- * 			fMax = (*list)[j].params.tSampling /2. -1;
- *     if (fMax < (*list)[j].params.fLower) 
- *     			fMax = (*list)[j].params.fLower * 3 ;
-*/	
 	fendBCV = fMax * (1.L - (REAL8) i * frac);
 
         if ( (*list)[j].params.tSampling <= 0 )
@@ -1217,3 +1220,151 @@ LALEmpiricalPSI2MassesConversion (
   }
 }
 
+
+
+/* <lalVerbatim file="LALInspiralCreateFlatBankCP"> */
+void 
+LALInspiralCreateFlatBankS3 (
+    LALStatus            *status, 
+    REAL4VectorSequence  *list, 
+    InspiralBankParams   *bankParams,
+    InspiralCoarseBankIn coarseIn
+    )
+/* </lalVerbatim> */
+{  
+  InspiralMetric *metric; 
+  REAL8 minimalMatch; 
+  REAL8 x0, x1, dx1, dx0, x, y;
+  UINT4 nlist = 0;
+  INT4 layer = 1;
+
+  INITSTATUS( status, "LALInspiralCreateFlatBankS3", 
+      LALINSPIRALCREATECOARSEBANKC );
+  ATTATCHSTATUSPTR( status );
+
+  /* From the knowledge of the metric and the minimal match 
+     find the constant increments bankParams->dx0 and 
+     bankParmams->dx1        */
+  metric = bankParams->metric;
+  minimalMatch = bankParams->minimalMatch;
+
+  switch (coarseIn.gridType){
+  case  OrientedHexagonal:
+    dx0 = sqrt(2.L * (1.L - minimalMatch)/metric->g00 );
+    dx1 = sqrt(2.L * (1.L - minimalMatch)/metric->g11 );
+    dx0 *=3./2./sqrt(2.);
+    dx1 *=sqrt(3./2.);
+    break;
+  case OrientedSquare:
+    dx0 = sqrt(2.L * (1.L - minimalMatch)/metric->g00 );
+    dx1 = sqrt(2.L * (1.L - minimalMatch)/metric->g11 );
+    break;
+  case  Hexagonal:
+    LALInspiralUpdateParams( status->statusPtr, 
+			     bankParams, *metric, minimalMatch );
+    CHECKSTATUSPTR( status );
+    dx0 = bankParams->dx0 * 3./2./sqrt(2.);
+    dx1 = bankParams->dx1 * sqrt(3./2.);
+    break;
+
+  case  Square:
+    LALInspiralUpdateParams( status->statusPtr, 
+			     bankParams, *metric, minimalMatch );
+    CHECKSTATUSPTR( status );
+    dx0 = bankParams->dx0;
+    dx1 = bankParams->dx1;
+    break;
+  }
+
+
+  
+  switch (coarseIn.gridType){
+  case OrientedHexagonal:
+  case Hexagonal:
+    
+    /* x1==psi3 and x0==psi0 */
+    for (x1 = bankParams->x1Min -1e6;  x1 <= bankParams->x1Max + 1e6; x1 += dx1)
+      {
+	layer++;
+	for (x0 = bankParams->x0Min - 1e6 +dx0/2.*(layer%2); x0 <= bankParams->x0Max+1e6; x0 += dx0 )
+	  {
+	    UINT4 ndx = 2 * nlist;
+	
+	    if ( coarseIn.gridType == OrientedHexagonal) 
+	      {
+	    
+		x =  x0 *cos(metric->theta) + sin(metric->theta)* x1;
+		y =  x0 *sin(metric->theta) - cos(metric->theta)* x1;
+	      }
+	    else
+	      {
+		x = x0;
+		y = x1;
+	      }
+	    
+	    if ( (x > bankParams->x0Min -dx0/2.) && (y < bankParams->x1Max + dx1/2.) && 
+		 (x < bankParams->x0Max +dx0/2.) && (y > bankParams->x1Min - dx1/2.))
+	      {
+		list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
+		if ( !list->data )
+		  {
+		    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+		  }
+		list->data[ndx] = x;
+		list->data[ndx + 1] = y;
+		    ++nlist; 
+	      }
+	  }
+      
+      }
+      break;
+  
+  case  OrientedSquare:
+  case  Square:
+
+    /* !! dx1 and dx0 are computed in a different way de[pending on the 
+       value of BANKGRId */
+    for (x1 = bankParams->x1Min -1e6;  x1 <= bankParams->x1Max + 1e6; x1 += dx1)
+   {
+	
+	for (x0 = bankParams->x0Min - 1e6 ; x0 <= bankParams->x0Max+1e6; x0 += dx0 )
+
+	  {
+	    UINT4 ndx = 2 * nlist; 
+
+	    if (coarseIn.gridType == OrientedSquare)
+	      {
+		x =  x0 *cos(metric->theta) + sin(metric->theta)* x1 ;
+		y =  x0 *sin(metric->theta) - cos(metric->theta)* x1;
+	      }
+	    else if (coarseIn.gridType == Square)
+	      {
+		x = x0;
+		y = x1;
+	      }
+	    if ( (x > bankParams->x0Min - dx0/2.) && (y < bankParams->x1Max + dx1/2.) && 
+		 (x < bankParams->x0Max + dx0/2.) && (y > bankParams->x1Min - dx1/2.))
+	    
+	      {
+		list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
+		if ( !list->data )
+		  {
+		    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+		  }
+		list->data[ndx] = x;
+		list->data[ndx + 1] = y;
+		++nlist; 
+	      }
+	  }
+      }
+    break;
+  }
+  
+
+
+
+  list->length = nlist;
+
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
+}
