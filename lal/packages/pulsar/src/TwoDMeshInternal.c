@@ -513,7 +513,7 @@ LALTwoDColumn( LALStatus            *stat,
   position[1] = centreClip[0];
   if ( position[1] < centreRange[0] )
     position[1] = centreRange[0];
-  if ( position[1] < centreRange[1] ) {
+  if ( position[1] <= centreRange[1] ) {
 
     /* Add base tile of column. */
     tiled = 1;
