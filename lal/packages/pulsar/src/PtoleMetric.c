@@ -153,16 +153,10 @@ void LALPtoleMetric( LALStatus *status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
   ASSERT( input->position.longitude >= 0, status, PTOLEMETRICH_EPARM,
 	  PTOLEMETRICH_MSGEPARM );
-  ASSERT( input->position.longitude < LAL_TWOPI, status, PTOLEMETRICH_EPARM,
-	  PTOLEMETRICH_MSGEPARM );
+  ASSERT( input->position.longitude <= LAL_TWOPI, status,
+          PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
   ASSERT( abs(input->position.latitude) <= LAL_PI_2, status,
 	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-
-  /* Check for valid duration. */
-#if 0
-  ASSERT( input->duration > MIN_DURATION, status, PTOLEMETRICH_EPARM,
-          PTOLEMETRICH_MSGEPARM );
-#endif
 
   /* Check for valid maximum frequency. */
   ASSERT( input->maxFreq > MIN_MAXFREQ, status, PTOLEMETRICH_EPARM,
@@ -636,10 +630,10 @@ static int factrl( int arg )
  * the parameter structure of PtoleMetric() was used, because it's more 
  * compact
  *----------------------------------------------------------------------*/
-/* <lalVerbatim file="PTOLEMETRICCP"> */
+/* <lalVerbatim file="PulsarMetricCP"> */
 void LALPulsarMetric ( LALStatus *stat, 
-		       REAL8Vector **metric,  /* output: metric */
-		       PtoleMetricIn *input ) /* input-params for the metric */
+		       REAL8Vector **metric,
+		       PtoleMetricIn *input )
 { /* </lalVerbatim> */
   static MetricParamStruc params;
   static PulsarTimesParamStruc spinParams;
@@ -772,7 +766,7 @@ void LALPulsarMetric ( LALStatus *stat,
 
     default:
       LALPrintError ("Unknown metric type `%d`\n", input->metricType);
-      ABORT (stat, PTOLEMETRICH_EMETRIC,  PTOLEMETRICH_MSGMETRIC);
+      ABORT (stat, PTOLEMETRICH_EMETRIC,  PTOLEMETRICH_MSGEMETRIC);
       break;
       
     } /* switch type */
@@ -780,4 +774,4 @@ void LALPulsarMetric ( LALStatus *stat,
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
 
-} /* LALMetricWrapper() */
+} /* LALPulsarMetric() */

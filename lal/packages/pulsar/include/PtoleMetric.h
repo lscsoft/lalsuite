@@ -57,17 +57,17 @@ NRCSID( PTOLEMETRICH, "$Id$" );
 \subsection*{Error conditions}
 *********************************************** </lalLaTeX> <lalErrTable> */
 
-#define PTOLEMETRICH_ENULL   0x01
-#define PTOLEMETRICH_EPARM   0x02
-#define PTOLEMETRICH_EDIM    0x04
-#define PTOLEMETRICH_ENONULL 0x08
-#define PTOLEMETRICH_EMETRIC 0x16
+#define PTOLEMETRICH_ENULL   1
+#define PTOLEMETRICH_EPARM   2
+#define PTOLEMETRICH_EDIM    3
+#define PTOLEMETRICH_ENONULL 4
+#define PTOLEMETRICH_EMETRIC 5
 
 #define PTOLEMETRICH_MSGENULL   "unexpected null pointer"
 #define PTOLEMETRICH_MSGEPARM   "bad parameter value"
 #define PTOLEMETRICH_MSGEDIM    "bad array length"
-#define PTOLEMETRICH_MSGENONULL "output pointer is not NULL"
-#define PTOLEMETRICH_MSGMETRIC  "unknown type of metric specified"
+#define PTOLEMETRICH_MSGENONULL "unexpected non-null pointer"
+#define PTOLEMETRICH_MSGEMETRIC "unknown metric type"
 
 /************************************************* </lalErrTable> <lalLaTeX>
 \subsection*{Structures}
@@ -118,9 +118,9 @@ enum LALPulsarMetricType
 typedef enum
 {
   LAL_PMETRIC_NONE = 0,
-  LAL_PMETRIC_COH_PTOLE_ANALYTIC,	/* analytic ptolemaic approx for the metric */
-  LAL_PMETRIC_COH_PTOLE_NUMERIC,	/* numerical metric using ptole-approximation in timing */
-  LAL_PMETRIC_COH_EPHEM,		/* numerical exact metric using ephemeris-timing */
+  LAL_PMETRIC_COH_PTOLE_ANALYTIC,
+  LAL_PMETRIC_COH_PTOLE_NUMERIC,
+  LAL_PMETRIC_COH_EPHEM,
   LAL_PMETRIC_LAST
 } LALPulsarMetricType;
 /* </lalVerbatim> */
