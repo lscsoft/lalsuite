@@ -847,9 +847,9 @@ fh.close()
 # create the DAG writing the log to the specified directory
 dag = pipeline.CondorDAG(logfile)
 if usertag:
-  dag.set_dag_file(basename + '.' + usertag + '.dag')
+  dag.set_dag_file(basename + '.' + usertag )
 else:
-  dag.set_dag_file(basename + '.dag')
+  dag.set_dag_file(basename )
 
 ##############################################################################
 # create the Condor jobs that will be used in the DAG
