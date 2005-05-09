@@ -44,8 +44,8 @@
 /* 
    To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage, 
    and readzipfile_util.h and .c. from yousuke. 
-#define USE_UNZIP  
 */
+#define USE_UNZIP  
 
 
 
@@ -341,13 +341,6 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, UINT4 CLength )
   UINT4 icell, ncell;
   INT4 errflg = 0;
 
-
-  /* Check if the memory to be allocated is not huge 
-     (say, < 512MB. sizeof(CellData) ~ 60B. 512/60 = 8000000). */
-  if( CLength > 800000 ) {
-    LALPrintError("\nError: the size of the space of the candidate cells too large.\n");
-    ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
-  }
 
   *cell = (CellData *) LALCalloc(sizeof(CellData),CLength);
   if( *cell == NULL ) {
