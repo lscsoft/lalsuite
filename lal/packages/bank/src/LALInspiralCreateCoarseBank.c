@@ -745,13 +745,13 @@ LALInspiralCreateBCVBank (
   bankParams.x0Max = coarseIn.psi0Max;
   bankParams.x1Min = coarseIn.psi3Min;
   bankParams.x1Max = coarseIn.psi3Max;
-
+  
   in.length = 1;
   in.vectorLength = 2;
   LALSCreateVectorSequence( status->statusPtr, &tempList, &in );
   CHECKSTATUSPTR( status );
 
-  /*LALInspiralCreateFlatBankS3( status->statusPtr, tempList, &bankParams , coarseIn);*/
+  /*  LALInspiralCreateFlatBankS3( status->statusPtr, tempList, &bankParams , coarseIn);*/
   LALInspiralCreateFlatBank( status->statusPtr, tempList, &bankParams);
   CHECKSTATUSPTR( status );
 
@@ -1059,26 +1059,24 @@ LALInspiralBCVBankFcutS3 (
 	  {
 	    ABORT( status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
 	  }
-	if (fMax >=(*list)[j].params.tSampling/2.0)
-	  {
-	    /* sometimes fMAx is greater than the sampling and the following algorithm 
-	       do not give any template for the corresponding psi0/psi3. However, we want 
-	       at least one template with fMAx= sampling/2 */
-	    fMax = (*list)[j].params.tSampling/2.0 - 1.; 
-	    frac = -1;
-
-	  }
-	else
-	  {
-	    if (nf==1)
-	      frac = 1;
-	    else 
-	      frac = (1.L - 1.L/pow(HighGM/3., 1.5L)) / (nf-1.L);
-	  }
+        /* the user might request only one layer */	
+	if (nf == 1)
+	    frac = 1;
+	else 
+	    frac = (1.L - 1.L/pow(HighGM/3., 1.5L)) / (nf-1.L);
+	 
+        /* sometimes since fMin is greater than the nyquist frequency, there
+         * is no template generated. This is not acceptable. We need at least
+         * one frequency at the nyquist frequency. */
+        if (((fMax * (1.L - (REAL4) (nf-1) * frac)) >= (*list)[j].params.tSampling/2.0)) 
+         {
+           fMax = (*list)[j].params.tSampling/2.0 - 1. ;
+           frac = -1;
+         }
 	
-	for (i=0; i<nf; i++)
-	  {
-	    fendBCV = fMax * (1.L - (REAL4) i * frac);
+        for (i=0; i<nf; i++)
+        {
+          fendBCV = fMax * (1.L - (REAL4) i * frac);
 
 
 	    /* we search for valid expression of fendBCV and populate the bank */
