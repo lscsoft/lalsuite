@@ -632,14 +632,15 @@ void FreeConfigVars(LALStatus *stat, struct PolkaConfigVarsTag *CLA )
   if( CLA->BaseName != NULL ) LALFree(CLA->BaseName);
 
 
-  if(CLA->Filelist != NULL ) {
-    for (k=0;k<CLA->NFiles;k++)
-      {
-	if(CLA->Filelist[k] != NULL ) 
-	  LALFree (CLA->Filelist[k]);
-      } 
-    LALFree (CLA->Filelist);
-  }
+  if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) ) 
+    { /* We have used glob and allocated mem for Filelist.*/
+      for (k=0;k<CLA->NFiles;k++)
+	{
+	  if(CLA->Filelist[k] != NULL ) 
+	    LALFree (CLA->Filelist[k]);
+	} 
+      LALFree (CLA->Filelist);
+    }
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -906,6 +907,7 @@ void ReadCandidateFiles(LALStatus *stat, CandidateList **CList, struct PolkaConf
   ATTATCHSTATUSPTR (stat);
 
   UINT4 kc;
+
 
   if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) ) 
     {
