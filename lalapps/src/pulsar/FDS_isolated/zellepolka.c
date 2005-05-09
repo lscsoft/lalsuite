@@ -25,10 +25,6 @@
 /* maximum depth of a linked structure. */
 #define LINKEDSTR_MAX_DEPTH 1024 
 
-#ifndef USE_BOINC
-#define USE_BOINC 0
-#endif
-
 
 
 /* ----------------------------------------------------------------------------- */
@@ -71,18 +67,6 @@
 
 #include <lalapps.h>
 
-
-#if USE_BOINC
-/* BOINC includes */
-#include "boinc_api.h"
-#include "filesys.h"
-/* alias fopen - this will take care of architecture-specific problem handling */
-#define fopen boinc_fopen
-/* this global variable communicates the output filename to the calling routine in CFS */
-extern CHAR *Outputfilename;
-/* communicating the progress to the graphics thread */
-extern double *fraction_done_hook;
-#endif
 
 /* this is defined in C99 and *should* be in math.h.  Long term
    protect this with a HAVE_FINITE */
@@ -143,7 +127,7 @@ typedef struct PolkaConfigVarsTag
   REAL8 Shiftf;      /**<  Parallel shift of frequency in Hz of cell */
   REAL8 ShiftAlpha;  /**<  Parallel shift of Alpha in Hz of cell */
   REAL8 ShiftDelta;  /**<  Parallel shift of Delta in Hz of cell */
-} PolkaConfigVariables;
+} PolkaConfigVars;
 
 /* This structure contains the indices corresponding to the 
 coarse frequency and sky bins */
@@ -181,35 +165,42 @@ typedef struct CellDataTag
 
 /* ----------------------------------------------------------------------------- */
 /* Function declarelations */
-void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaConfigVarsTag *CLA); 
-void ReadCandidateFiles(LALStatus *stat, CandidateList **Clist, struct PolkaConfigVarsTag *CLA, UINT4 *datalen);
-void ReadOneCandidateFile(LALStatus *stat, CandidateList **CList, const char *fname, UINT4 *datalen);
-void PrepareCells( LALStatus *stat, CellData **cell, UINT4 datalen );
+void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA ); 
+void GetFilesListInThisDir(LALStatus *stat, CHAR *directory, CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
+void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, UINT4 *datalen );
+void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, UINT4 *datalen );
+
+#ifdef USE_UNZIP
+void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fname, UINT4 *candlen, INT4 *FileID);
+#endif
+
+void PrepareCells( LALStatus *, CellData **cell, UINT4 datalen );
+
+int compareNumOfCoincidences(const void *a, const void *b);
 int compareCandidates(const void *ip, const void *jp);
 int compareSignificance(const void *a, const void *b);
 int rintcompare(INT4 *idata1, INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
 int rfloatcompare(REAL8 *rdata1, REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
-void add_int4_data(LALStatus *stat, struct int4_linked_list **list_ptr, INT4 *data);
-void delete_int4_linked_list(struct int4_linked_list *list_ptr);
-void get_info_of_the_cell( CellData *cd, CandidateList *CList);
-void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell, UINT4 *ncell, CandidateList *CList);
-void FreeMemory(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell, CandidateList *CList, UINT4 datalen);
-void FreeConfigVars(LALStatus *stat, struct PolkaConfigVarsTag *CLA );
-void GetFilesListInThisDir(LALStatus *stat, CHAR *directory, CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
-void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr );
-int compareNCandidate(const void *a, const void *b);
-void print_info_of_the_cell( FILE *fp, CellData *cd, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr);
+
+void add_int4_data(LALStatus *, struct int4_linked_list **list_ptr, INT4 *data);
+void delete_int4_linked_list( LALStatus *stat, struct int4_linked_list *list_ptr);
+void get_info_of_the_cell( LALStatus *stat, CellData *cd, CandidateList *CList);
+
+void PrintResult(LALStatus *, PolkaConfigVars *CLA, CellData *cell, UINT4 *ncell, CandidateList *CList);
+void print_Fstat_of_the_cell( LALStatus *stat, FILE *fp, CellData *cd, CandidateList *CList, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr );
+void print_info_of_the_cell( LALStatus *stat, FILE *fp, CellData *cd, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr);
+
+void FreeMemory(LALStatus *stat, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, UINT4 datalen);
+void FreeConfigVars(LALStatus *stat, PolkaConfigVars *CLA );
 
 
-#ifdef USE_UNZIP
-void ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fname, UINT4 *candlen, INT4 *FileID);
-#endif
+
 
 /* ----------------------------------------------------------------------------- */
 /* Global variables. */
 LALStatus global_status;
 extern INT4 lalDebugLevel;
-extern int vrbflg;
+extern INT4 vrbflg;
 
 RCSID ("$Id$");
 
@@ -219,12 +210,7 @@ RCSID ("$Id$");
 /* Code starts here.                                                                         */
 /* ------------------------------------------------------------------------------------------*/
 /* ########################################################################################## */
-/* main() mapped to polka() if using boinc */
-#if USE_BOINC
-int polka(int argc,char *argv[])
-#else
-int main(int argc,char *argv[]) 
-#endif
+int main(INT4 argc,CHAR *argv[]) 
 {
   LALStatus *stat = &global_status;
   lalDebugLevel = 0 ;  
@@ -234,20 +220,17 @@ int main(int argc,char *argv[])
   CandidateList *SortedC = NULL;
   CellData *cell = NULL;
   UINT4 icell, icand, ncell;
-#if USE_BOINC
-  REAL8 local_fraction_done;
-#endif
 
-  PolkaConfigVariables PolkaConfigVars;
+  PolkaConfigVars PCV;
 
 
   LAL_CALL (LALGetDebugLevel(stat, argc, argv, 'v'), stat);
 
   /* Reads command line arguments */
-  LAL_CALL( ReadCommandLineArgs( stat, argc,argv, &PolkaConfigVars ), stat); 
+  LAL_CALL( ReadCommandLineArgs( stat, argc,argv, &PCV ), stat); 
 
   /* Reads in candidare files, set CLength */
-  LAL_CALL( ReadCandidateFiles(stat, &SortedC, &PolkaConfigVars, &CLength), stat);
+  LAL_CALL( ReadCandidateFiles(stat, &SortedC, &PCV, &CLength), stat);
 
   /* Prepare cells. */
   LAL_CALL( PrepareCells( stat, &cell, CLength ), stat);  
@@ -259,9 +242,9 @@ int main(int argc,char *argv[])
   /* Initialise arrays of sorted candidates. */
   for (icand=0;icand<CLength;icand++)
     {
-      SortedC[icand].iFreq=(INT4) (SortedC[icand].f/(PolkaConfigVars.Deltaf) + PolkaConfigVars.Shiftf  );
-      SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PolkaConfigVars.DeltaDelta)  + PolkaConfigVars.ShiftDelta );
-      SortedC[icand].iAlpha=(INT4)(SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PolkaConfigVars.DeltaAlpha)  + PolkaConfigVars.ShiftAlpha  );
+      SortedC[icand].iFreq=(INT4) (SortedC[icand].f/(PCV.Deltaf) + PCV.Shiftf  );
+      SortedC[icand].iDelta=(INT4)(SortedC[icand].Delta/(PCV.DeltaDelta)  + PCV.ShiftDelta );
+      SortedC[icand].iAlpha=(INT4)(SortedC[icand].Alpha*cos(SortedC[icand].Delta)/(PCV.DeltaAlpha)  + PCV.ShiftAlpha  );
       SortedC[icand].iCand=icand; /* Keep the original ordering before sort to refer the orignal data later. */
     }
 
@@ -283,12 +266,7 @@ int main(int argc,char *argv[])
   icell = 0;
   for (icand=1; icand < CLength; icand++)
     {
-#if USE_BOINC
-      /* make sure the cpu time is updated */ 
-      if (boinc_time_to_checkpoint())
-	boinc_checkpoint_completed();
-#endif
-      
+
       if( SortedC[icand].iFreq  == cell[icell].iFreq  && 
 	  SortedC[icand].iDelta == cell[icell].iDelta &&
 	  SortedC[icand].iAlpha == cell[icell].iAlpha ) 
@@ -320,14 +298,6 @@ int main(int argc,char *argv[])
 	} /*  if( SortedC[icand].iFreq  == cell[icell].iFreq  && .. ) */ 
 
            
-#if USE_BOINC
-      local_fraction_done = 0.99 + 0.01 * (double)i / (double)CLength;
-      /* update progress, the last % is reserved for polka */
-      boinc_fraction_done(local_fraction_done);
-      /* pass variable externally to graphics routines */
-      if (fraction_done_hook != NULL)
-	*fraction_done_hook = local_fraction_done;
-#endif
     } /* for (icand=1; icand < CLength; icand++): loop over candidate list */      
   /* ---------------------------------------------------------------------------------------- */      
 
@@ -335,23 +305,23 @@ int main(int argc,char *argv[])
   /* Get the information in each cell. */
   ncell=icell+1; /* number of the cells in which more than or at least one candidate exists. */
   for(icell=0;icell<ncell;icell++) {
-    get_info_of_the_cell( &cell[icell], SortedC);
+    get_info_of_the_cell( stat, &cell[icell], SortedC);
   }  
 
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Output results */
-  LAL_CALL( PrintResult( stat, &PolkaConfigVars, cell, &ncell, SortedC),stat );
+  LAL_CALL( PrintResult( stat, &PCV, cell, &ncell, SortedC),stat );
 
 
 
   /* -----------------------------------------------------------------------------------------*/      
   /* Clean-up */
-  LAL_CALL( FreeMemory(stat, &PolkaConfigVars, cell, SortedC, CLength), stat);
+  LAL_CALL( FreeMemory(stat, &PCV, cell, SortedC, CLength), stat);
 
   LALCheckMemoryLeaks(); 
 
-  return 0;
+  return(POLKA_EXIT_OK);
  
 } /* main() */
 
@@ -408,9 +378,11 @@ void PrepareCells( LALStatus *stat, CellData **cell, UINT4 CLength )
 
 /* ########################################################################################## */
 /* Output results */
-void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell, UINT4 *ncell, CandidateList *CList)
+void PrintResult(LALStatus *stat, PolkaConfigVars *CLA, CellData *cell, UINT4 *ncell, CandidateList *CList)
 {
   INITSTATUS( stat, "PrintResult", rcsid );
+  ATTATCHSTATUSPTR (stat);
+
   UINT4 icell;
   CHAR fnameSigTime[]="polka_significant_outlier_2FofTime"; /* Time variation of 2F of some significant outliers. */
   CHAR fnameSigCell[]="polka_significant_outlier_CellData"; /* Cell information of some significant outliers*/
@@ -423,7 +395,7 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
 
   /* ------------------------------------------------------------- */
   /* First Sort arrays of candidates based on number of candidate. */ 
-  qsort(cell, (size_t) (*ncell), sizeof(CellData), compareNCandidate);
+  qsort(cell, (size_t) (*ncell), sizeof(CellData), compareNumOfCoincidences);
 
 
   nmax = cell[0].nCand; /* This is the number of the maximum coincidences. */
@@ -444,7 +416,7 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
       exit(POLKA_EXIT_ERR);
     }
   /* output for all the cells */
-  print_info_of_the_cell( fp, cell, 0,(*ncell),0,0);
+  print_info_of_the_cell( stat->statusPtr, fp, cell, 0,(*ncell),0,0);
   fclose(fp);
 
 
@@ -465,10 +437,10 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
   if(lalDebugLevel < 3 ) {
     fprintf(stderr,"%% Maximly significant cell : freq [Hz]\tdec [rad]\tra [rad]  # [events]   Sig" "\n");
     fprintf(stderr, "%%\t\t\t     ");
-    print_info_of_the_cell( stderr, cell, idxmax,idxmax+1,0,0);
+    print_info_of_the_cell( stat->statusPtr, stderr, cell, idxmax,idxmax+1,0,0);
     fprintf(stderr,"%% Maximly coincident cell  : freq [Hz]\tdec [rad]\tra [rad]  # [events]   Sig" "\n");
     fprintf(stderr, "%%\t\t\t     ");
-    print_info_of_the_cell( stderr, cell, 0,1,0,0);
+    print_info_of_the_cell( stat->statusPtr, stderr, cell, 0,1,0,0);
 
     nmax = cell[0].nCand;
     fprintf(stderr,"%% # of coincidences: \n");
@@ -512,15 +484,15 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
 
       /* Output the info of the most coincident event. */
       /* Information of the cell. */
-      print_info_of_the_cell( fpCoiCell, cell, 0,1,0,0);
+      print_info_of_the_cell( stat->statusPtr, fpCoiCell, cell, 0,1,0,0);
       /* Print F stat from each file contributed to this cell. */
-      print_Fstat_of_the_cell( fpCoiTime, cell, CList, 0,1,0,0 );
+      print_Fstat_of_the_cell( stat->statusPtr, fpCoiTime, cell, CList, 0,1,0,0 );
 
       /* Output the info of the most significant event. */
       /* Information of the cell. */
-      print_info_of_the_cell( fpSigCell, cell, idxmax,idxmax+1,0,0);
+      print_info_of_the_cell( stat->statusPtr, fpSigCell, cell, idxmax,idxmax+1,0,0);
       /* Print F stat from each file contributed to this cell. */
-      print_Fstat_of_the_cell( fpSigTime, cell, CList, idxmax,idxmax+1,0,0 );
+      print_Fstat_of_the_cell( stat->statusPtr, fpSigTime, cell, CList, idxmax,idxmax+1,0,0 );
 
     } /* if( CLA->AutoOut ) */ 
   else 
@@ -530,9 +502,9 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
 	{
 	  
 	  /* Information of the cell. */
-	  print_info_of_the_cell( fpCoiCell, cell, 0, 0, 0, CLA->Nthr);
+	  print_info_of_the_cell( stat->statusPtr, fpCoiCell, cell, 0, 0, 0, CLA->Nthr);
 	  /* Print F stat from each file contributed to this cell. */
-	  print_Fstat_of_the_cell( fpCoiTime, cell, CList, 0, 0, 0, CLA->Nthr );
+	  print_Fstat_of_the_cell( stat->statusPtr, fpCoiTime, cell, CList, 0, 0, 0, CLA->Nthr );
 
 	} /* if( cell[0].nCand > CLA->Nthr ) */
       
@@ -545,9 +517,9 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
 	  qsort(cell, (size_t) (*ncell), sizeof(CellData), compareSignificance);
 
 	  /* Information of the cell. */
-	  print_info_of_the_cell( fpSigCell, cell, 0, 0, CLA->Sthr, 0);
+	  print_info_of_the_cell( stat->statusPtr, fpSigCell, cell, 0, 0, CLA->Sthr, 0);
 	  /* Print F stat from each file contributed to this cell. */
-	  print_Fstat_of_the_cell( fpSigTime, cell, CList, 0, 0, CLA->Sthr, 0 );
+	  print_Fstat_of_the_cell( stat->statusPtr, fpSigTime, cell, CList, 0, 0, CLA->Sthr, 0 );
 
 	} /* if( cell[0].significance > CLA->Sthr ) */
     } /* else of if( CLA->AutoOut ) */
@@ -563,16 +535,18 @@ void PrintResult(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell
     fclose(fpSigCell);
   }
 
-
+  DETATCHSTATUSPTR (stat);
   RETURN (stat);
 } /* PrintResult() */
 
 
 /* ########################################################################################## */
 /* Print_info_of_the_cell() */
-void print_info_of_the_cell( FILE *fp, CellData *cd, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr)
+void print_info_of_the_cell( LALStatus *stat, FILE *fp, CellData *cd, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr)
 {
   INT4 icell;
+
+  INITSTATUS( stat, "print_info_of_the_cell", rcsid );
 
   icell = icell_start;
   while( icell < icell_end && 
@@ -586,6 +560,8 @@ void print_info_of_the_cell( FILE *fp, CellData *cd, INT4 icell_start, INT4 icel
 	      cd[icell].significance);
       icell++;
     }
+
+  RETURN (stat);
 }
 
 
@@ -593,7 +569,7 @@ void print_info_of_the_cell( FILE *fp, CellData *cd, INT4 icell_start, INT4 icel
 
 /* ########################################################################################## */
 /* Free memory */
-void FreeMemory(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell, CandidateList *CList, UINT4 CLength)
+void FreeMemory( LALStatus *stat, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, UINT4 CLength)
 {
   INITSTATUS( stat, "FreeMemory", rcsid );
   ATTATCHSTATUSPTR (stat);
@@ -608,7 +584,7 @@ void FreeMemory(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell,
      This part takes really long, when lalDebugLevel = 3. I do not know why.*/
   if( cell != NULL ) {
     for(icell=0;icell<CLength;icell++) {
-      delete_int4_linked_list( cell[icell].CandID );
+      delete_int4_linked_list( stat->statusPtr, cell[icell].CandID );
     }
     LALFree(cell);
   }
@@ -619,10 +595,9 @@ void FreeMemory(LALStatus *stat, struct PolkaConfigVarsTag *CLA, CellData *cell,
 
 
 /* ########################################################################################## */
-void FreeConfigVars(LALStatus *stat, struct PolkaConfigVarsTag *CLA )
+void FreeConfigVars(LALStatus *stat, PolkaConfigVars *CLA )
 {
   INITSTATUS( stat, "FreeConfigVars", rcsid );
-  ATTATCHSTATUSPTR (stat);
 
   UINT4 k;
 
@@ -642,7 +617,6 @@ void FreeConfigVars(LALStatus *stat, struct PolkaConfigVarsTag *CLA )
       LALFree (CLA->Filelist);
     }
 
-  DETATCHSTATUSPTR (stat);
   RETURN (stat);
 } /* FreeCOnfigVars */
 
@@ -669,10 +643,13 @@ void add_int4_data(LALStatus *stat, struct int4_linked_list **list_ptr, INT4 *da
 
 /* ########################################################################################## */
 /* delete data to linked structure */
-void delete_int4_linked_list( struct int4_linked_list *list_ptr )
+void delete_int4_linked_list( LALStatus *stat, struct int4_linked_list *list_ptr )
 {
   INT4 ic;
   struct int4_linked_list *q;
+
+  INITSTATUS( stat, "delete_int4_linked_list", rcsid );
+
   ic = 0;
   while( list_ptr !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {  
     q = list_ptr->next;
@@ -684,16 +661,20 @@ void delete_int4_linked_list( struct int4_linked_list *list_ptr )
     LALPrintError("Maximum depth of linked structure reached!");
     exit(POLKA_EXIT_ERR);
   }
-  return;
+
+  RETURN (stat);
 }
 
 /* ########################################################################################## */
 /* get info of this cell. */
-void get_info_of_the_cell( CellData *cd, CandidateList *CList )
+void get_info_of_the_cell( LALStatus *stat, CellData *cd, CandidateList *CList )
 {
   INT4 idx, ic;
   REAL8 lfa;
   struct int4_linked_list *p;
+
+  INITSTATUS( stat, "get_info_of_the_cell", rcsid );
+
   p = cd->CandID;
 
   ic = 0;
@@ -716,18 +697,20 @@ void get_info_of_the_cell( CellData *cd, CandidateList *CList )
   cd->Alpha /= cd->nCand;
   cd->Delta /= cd->nCand;
   cd->Freq  /= cd->nCand;
-  return;
+  
+  RETURN (stat);
 }
 
 
 
 /* ########################################################################################## */
 /* print F stat. */
-void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr )
+void print_Fstat_of_the_cell( LALStatus *stat, FILE *fp, CellData *cd, CandidateList *CList, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr )
 {
   INT4 idx, ic, icell;
   struct int4_linked_list *p;
 
+  INITSTATUS( stat, "print_Fstat_of_the_cell", rcsid );
 
   icell = icell_start;
   while( icell < icell_end && 
@@ -754,36 +737,9 @@ void print_Fstat_of_the_cell( FILE *fp, CellData *cd, CandidateList *CList, INT4
       icell++;
     } /*   while( icell < icell_end && ...  */
 
-  return;
+
+  RETURN (stat);
 }
-
-
-#if 0
-/* ########################################################################################## */
-/* print F stat. */
-void print_info_of_the_cell( FILE *fp, CellData *cd, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr)
-{
-  INT4 idx, ic;
-  struct int4_linked_list *p;
-  p = cd->CandID;
-
-  ic = 0;
-  while( p !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) { 
-    idx = p->data;
-    fprintf(fp,"%" LAL_INT4_FORMAT "\t%" LAL_INT4_FORMAT "\t%" LAL_REAL4_FORMAT "\n", 
-	    outlier_id, CList[idx].FileID, CList[idx].TwoF );
-    p = p->next;
-    ic++;
-  }
-
-  if( ic >  LINKEDSTR_MAX_DEPTH ) {
-    LALPrintError("Maximum depth of linked structure reached!");
-    exit(POLKA_EXIT_ERR);
-  }
-
-  return;
-}
-#endif
 
 
 
@@ -847,7 +803,7 @@ int compareSignificance(const void *a, const void *b)
 
 
 /* ########################################################################################## */
-int compareNCandidate(const void *a, const void *b)
+int compareNumOfCoincidences(const void *a, const void *b)
 {
   const CellData *ip = a;
   const CellData *jp = b;
@@ -867,11 +823,13 @@ int compareNCandidate(const void *a, const void *b)
   } 
 
   return res;
-} /* int compareNCandidate() */
+} /* int compareNumOfCoincidences() */
 
 
 
-int rfloatcompare(REAL8 *ap, REAL8 *bp, size_t n) {
+int 
+rfloatcompare(REAL8 *ap, REAL8 *bp, size_t n) 
+{
   if( (*ap) == (*bp) ) { 
     if ( n > 1 ){  
       return rfloatcompare( ap+1, bp+1, n-1 );
@@ -885,7 +843,9 @@ int rfloatcompare(REAL8 *ap, REAL8 *bp, size_t n) {
 } /* int rfloatcompare() */
 
 
-int rintcompare(INT4 *ap, INT4 *bp, size_t n) {
+int 
+rintcompare(INT4 *ap, INT4 *bp, size_t n) 
+{
   if( (*ap) == (*bp) ) { 
     if ( n > 1 ){  
       return rintcompare( ap+1, bp+1, n-1 );
@@ -901,7 +861,7 @@ int rintcompare(INT4 *ap, INT4 *bp, size_t n) {
 
 /* ########################################################################################## */
 /* We would use glob in the future to read different files ? */
-void ReadCandidateFiles(LALStatus *stat, CandidateList **CList, struct PolkaConfigVarsTag *CLA, UINT4 *clen)
+void ReadCandidateFiles(LALStatus *stat, CandidateList **CList, PolkaConfigVars *CLA, UINT4 *clen)
 {
   INITSTATUS( stat, "ReadCandidateFiles", rcsid );
   ATTATCHSTATUSPTR (stat);
@@ -1236,7 +1196,7 @@ ReadCandidateListFromZipFile (LALStatus *stat, CandidateList **CList, CHAR *fnam
 			"2nd field should lie between 0 and %1.15f.\n" 
 			"3rd field should lie between %1.15f and %1.15f.\n"
 			"All fields should be finite\n",
-			ic+1, fname, line, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
+			ic+1, fname, line, (REAL8)LAL_TWOPI, (REAL8)-LAL_PI/2.0, (REAL8)LAL_PI/2.0);
 	  LALFree ((*CList));
 	  free( uzpbuff.strptr );
 	  ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
@@ -1308,7 +1268,7 @@ void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const CHAR *
   UINT4 i;
   UINT4 numlines;
   REAL8 epsilon=1e-5;
-  char line1[256];
+  CHAR line1[256];
   FILE *fp;
   INT4 nread;
   UINT4 checksum=0;
@@ -1327,7 +1287,7 @@ void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const CHAR *
       ABORT (stat, POLKAC_EINVALIDFSTATS, POLKAC_MSGEINVALIDFSTATS);
      }
   while(fgets(line1,sizeof(line1),fp)) {
-    unsigned int k;
+    UINT4 k;
     size_t len=strlen(line1);
 
     /* check that each line ends with a newline char (no overflow of
@@ -1346,7 +1306,7 @@ void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const CHAR *
     /* maintain a running checksum and byte count */
     bytecount+=len;
     for (k=0; k<len; k++)
-      checksum+=(int)line1[k];
+      checksum+=(INT4)line1[k];
   }
   numlines=i;
   /* -- close candidate file -- */
@@ -1403,7 +1363,7 @@ void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const CHAR *
     }
   while(i < numlines && fgets(line1,sizeof(line1),fp))
     {
-      char newline='\0';
+      CHAR newline='\0';
       CandidateList *cl=&(*CList)[i];
 
       if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
@@ -1530,7 +1490,7 @@ void  ReadOneCandidateFile (LALStatus *stat, CandidateList **CList, const CHAR *
 
 
 /* ########################################################################################## */
-void ReadCommandLineArgs(LALStatus *stat, int argc,char *argv[], struct PolkaConfigVarsTag *CLA) 
+void ReadCommandLineArgs(LALStatus *stat, INT4 argc,CHAR *argv[], PolkaConfigVars *CLA) 
 {
   INITSTATUS( stat, "ReadCommandLineArgs", rcsid );
   ATTATCHSTATUSPTR (stat);
