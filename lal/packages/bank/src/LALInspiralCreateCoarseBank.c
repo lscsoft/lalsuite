@@ -377,6 +377,7 @@ PSItoMasses (
     REAL4 highGM
 );
 
+
 NRCSID(LALINSPIRALCREATECOARSEBANKC, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralCreateCoarseBankCP"> */
@@ -751,9 +752,16 @@ LALInspiralCreateBCVBank (
   LALSCreateVectorSequence( status->statusPtr, &tempList, &in );
   CHECKSTATUSPTR( status );
 
-  /*  LALInspiralCreateFlatBankS3( status->statusPtr, tempList, &bankParams , coarseIn);*/
-  LALInspiralCreateFlatBank( status->statusPtr, tempList, &bankParams);
-  CHECKSTATUSPTR( status );
+  if (coarseIn.LowGM  == -2)
+  {
+    LALInspiralCreateFlatBankS3( status->statusPtr, tempList, &bankParams , coarseIn);
+    CHECKSTATUSPTR( status );
+  }
+  else 
+  {
+    LALInspiralCreateFlatBank( status->statusPtr, tempList, &bankParams);
+    CHECKSTATUSPTR( status );
+  }
 
   *nlist = tempList->length;
   *list = (InspiralTemplateList *) 
@@ -1073,14 +1081,14 @@ LALInspiralBCVBankFcutS3 (
            fMax = (*list)[j].params.tSampling/2.0 - 1. ;
            frac = -1;
          }
-	
+         
         for (i=0; i<nf; i++)
         {
           fendBCV = fMax * (1.L - (REAL4) i * frac);
 
 
 	    /* we search for valid expression of fendBCV and populate the bank */
-	    if ( fendBCV > (*list)[j].params.fLower * 1.5 && 
+	    if ( fendBCV >= (*list)[j].params.fLower * 1.5 && 
 		 fendBCV < (*list)[j].params.tSampling / 2.0 )
 	      {
 		
@@ -1220,7 +1228,7 @@ LALEmpiricalPSI2MassesConversion (
 
 
 
-/* <lalVerbatim file="LALInspiralCreateFlatBankCP"> */
+/* <lalVerbatim file="LALInspiralCreateFlatBankS3CP"> */
 void 
 LALInspiralCreateFlatBankS3 (
     LALStatus            *status, 
@@ -1234,8 +1242,8 @@ LALInspiralCreateFlatBankS3 (
   REAL8 minimalMatch; 
   REAL8 x0, x1, dx1, dx0, x, y;
   UINT4 nlist = 0;
-  INT4 layer = 1;
-
+  INT4 layer  = 1;
+  INT4 valid = -1;
   INITSTATUS( status, "LALInspiralCreateFlatBankS3", 
       LALINSPIRALCREATECOARSEBANKC );
   ATTATCHSTATUSPTR( status );
@@ -1303,17 +1311,20 @@ LALInspiralCreateFlatBankS3 (
 	    if ( (x > bankParams->x0Min -dx0/2.) && (y < bankParams->x1Max + dx1/2.) && 
 		 (x < bankParams->x0Max +dx0/2.) && (y > bankParams->x1Min - dx1/2.))
 	      {
-		list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
-		if ( !list->data )
-		  {
-		    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
-		  }
-		list->data[ndx] = x;
-		list->data[ndx + 1] = y;
-		    ++nlist; 
+                LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
+                if (valid)
+                {
+                  list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
+                  if ( !list->data )
+                  {
+                    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+                  }
+                  list->data[ndx] = x;
+                  list->data[ndx + 1] = y;
+                  ++nlist;                 
+		}
 	      }
-	  }
-      
+	  }      
       }
       break;
   
@@ -1323,7 +1334,7 @@ LALInspiralCreateFlatBankS3 (
     /* !! dx1 and dx0 are computed in a different way de[pending on the 
        value of BANKGRId */
     for (x1 = bankParams->x1Min -1e6;  x1 <= bankParams->x1Max + 1e6; x1 += dx1)
-   {
+      {
 	
 	for (x0 = bankParams->x0Min - 1e6 ; x0 <= bankParams->x0Max+1e6; x0 += dx0 )
 
@@ -1344,17 +1355,21 @@ LALInspiralCreateFlatBankS3 (
 		 (x < bankParams->x0Max + dx0/2.) && (y > bankParams->x1Min - dx1/2.))
 	    
 	      {
-		list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
-		if ( !list->data )
-		  {
-		    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
+		LALExcludeTemplate(status->statusPtr, &valid, bankParams, x, y);
+                if (valid)
+                {
+                  list->data = (REAL4 *) LALRealloc( list->data, (ndx+2) * sizeof(REAL4) );
+                  if ( !list->data )
+                  {
+                    ABORT(status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM);
 		  }
-		list->data[ndx] = x;
-		list->data[ndx + 1] = y;
-		++nlist; 
+                  list->data[ndx] = x;
+                  list->data[ndx + 1] = y;
+                  ++nlist; 
+                }
 	      }
 	  }
-      }
+   }
     break;
   }
   
@@ -1362,6 +1377,48 @@ LALInspiralCreateFlatBankS3 (
 
 
   list->length = nlist;
+
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
+}
+
+
+
+void
+LALExcludeTemplate(
+    LALStatus            *status, 
+    INT4                 *valid, 
+    InspiralBankParams   *bankParams,
+    REAL4                 x,
+    REAL4                 y)
+{
+  REAL4 psi0Int = 250000.;
+  REAL4 psi3Int = -2500.;
+  
+  REAL4 slope, bias;
+
+  INITSTATUS( status, "LALExcludeTemplate", 
+      LALINSPIRALCREATECOARSEBANKC );
+  ATTATCHSTATUSPTR( status );
+ 
+  
+  if (x > psi0Int && bankParams->x0Max > psi0Int)
+  {
+    slope = (psi3Int  - bankParams->x1Min ) / (bankParams->x0Max - psi0Int);
+    bias = psi3Int - slope * bankParams->x0Max;
+    if ((y - slope * x - bias ) < 0)
+    {
+      *valid = 0;
+    }
+    else 
+    {
+      *valid = 1;
+    }
+  }
+  else 
+  {
+    *valid = 1;
+  }
 
   DETATCHSTATUSPTR(status);
   RETURN (status);

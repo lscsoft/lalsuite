@@ -519,18 +519,37 @@ LALInspiralCreateBCVBank (
     );
 
 void 
+LALInspiralCreateFlatBankS3 (
+    LALStatus            *status, 
+    REAL4VectorSequence  *list, 
+    InspiralBankParams   *bankParams,
+    InspiralCoarseBankIn coarseIn
+    );
+
+void
+LALExcludeTemplate(
+    LALStatus            *status, 
+    INT4                 *valid, 
+    InspiralBankParams   *bankParams,
+    REAL4                 x,
+    REAL4                 y
+    );
+
+void 
 LALInspiralBCVBankFcutS3 (
     LALStatus            *status, 
     InspiralTemplateList **list, 
     INT4                *NList, 
-    InspiralCoarseBankIn coarseIn);
+    InspiralCoarseBankIn coarseIn
+    );
 
 void
 LALInspiralBCVFcutBank (
     LALStatus            *status, 
     InspiralTemplateList **list, 
     INT4                *NList, 
-    InspiralCoarseBankIn coarseIn);
+    InspiralCoarseBankIn coarseIn
+    );
 
 void 
 LALInspiralBCVRegularFcutBank (
