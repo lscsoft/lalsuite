@@ -1404,7 +1404,7 @@ LALExcludeTemplate(
   
   if (x > psi0Int && bankParams->x0Max > psi0Int)
   {
-    slope = (psi3Int  - bankParams->x1Min ) / (bankParams->x0Max - psi0Int);
+    slope = (psi3Int  - (bankParams->x1Min +500.) ) / (bankParams->x0Max - psi0Int);
     bias = psi3Int - slope * bankParams->x0Max;
     if ((y - slope * x - bias ) < 0)
     {
