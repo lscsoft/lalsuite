@@ -68,6 +68,19 @@ in Equation (\ref{eq:ode2}).
 #include <lal/Units.h>
 #include <lal/SeqFactories.h>
 
+static void
+LALInspiralWave1Engine(
+   LALStatus        *status,
+   REAL4Vector      *signal1,
+   REAL4Vector      *signal2,
+   REAL4Vector      *a,
+   REAL4Vector      *ff,
+   REAL8Vector      *phi,
+   INT4             *countback,
+   InspiralTemplate *params
+   );
+
+
 NRCSID (LALINSPIRALWAVE1C, "$Id$");
 
 /*  <lalVerbatim file="LALInspiralWave1CP"> */
@@ -79,149 +92,22 @@ LALInspiralWave1(
    )
  { /* </lalVerbatim>  */
 
-   INT4 n=2, count;
-   REAL8 m, dt, t, v, p, h, f, fu, fHigh, piM;
-   REAL8Vector dummy, values, dvalues, valuesNew, yt, dym, dyt;
-   TofVIn in1;
-   InspiralPhaseIn in2;
-   InspiralDerivativesIn in3;
-   rk4In in4;
-   void *funcParams;
-   expnCoeffs ak;
-   expnFunc func;
+   INT4 count;
    
    INITSTATUS(status, "LALInspiralWave1", LALINSPIRALWAVE1C);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT (signal,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(signal, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signal->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
-   LALInspiralSetup (status->statusPtr, &ak, params);
-   CHECKSTATUSPTR(status);
-   LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
+
+   /* Initially the waveform is empty*/
+   memset(signal->data, 0, signal->length*sizeof(REAL4));
+
+   /*Call the engine function*/
+   LALInspiralWave1Engine(status->statusPtr, signal, NULL, NULL, NULL, NULL, &count, params);
    CHECKSTATUSPTR(status);
    
-   values.length = dvalues.length = valuesNew.length =
-   yt.length = dym.length = dyt.length = n;
-   dummy.length = n * 6;
-   if (!(dummy.data = (REAL8 * ) LALMalloc(sizeof(REAL8) * n * 6))) {
-      ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
-   }
-
-   values.data = &dummy.data[0];
-   dvalues.data = &dummy.data[n];
-   valuesNew.data = &dummy.data[2*n];
-   yt.data = &dummy.data[3*n];
-   dym.data = &dummy.data[4*n];
-   dyt.data = &dummy.data[5*n];
-   
-   /*params->nStartPad = 0;
-   params->nEndPad 	= 0.0;
-*/
-   m = ak.totalmass;
-   dt = 1./params->tSampling;
-   fu = params->fCutoff;
-   if (fu) 
-      fHigh = (fu < ak.flso) ? fu : ak.flso; 
-   else 
-      fHigh = ak.flso;
-
-/* 
-    Check that the highest frequency is less than half 
-    the sampling frequency - the Nyquist theorem 
-*/
-
-   ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(fHigh > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
-
-   ASSERT(ak.totalmass > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-
-   t = 0.0;
-   in1.t = t;
-   in1.t0=ak.t0;
-   in1.v0 = ak.v0;
-   in1.vlso = ak.vlso;
-   in1.totalmass = ak.totalmass;
-   in1.dEnergy = func.dEnergy;
-   in1.flux = func.flux;
-   in1.coeffs = &ak;
-
-   in2.v0 = ak.v0;
-   in2.phi0 = params->startPhase;
-   in2.dEnergy = func.dEnergy;
-   in2.flux = func.flux;
-   in2.coeffs = &ak;
-
-   in3.totalmass = ak.totalmass;
-   in3.dEnergy = func.dEnergy;
-   in3.flux = func.flux;
-   in3.coeffs = &ak;
-   funcParams = (void *) &in3;
-
-   LALInspiralVelocity(status->statusPtr, &v, &in1);
-   CHECKSTATUSPTR(status);
-
-   f = (v*v*v)/(LAL_PI*m);
-
-   LALInspiralPhasing1(status->statusPtr, &p, v, &in2);
-   CHECKSTATUSPTR(status);
-
-
-   *(values.data) = v; 
-   *(values.data+1) = p;
-
-   in4.function = LALInspiralDerivatives;
-   in4.x = t;
-   in4.y = &values;
-   in4.h = dt;
-   in4.n = n;
-   in4.yt = &yt;
-   in4.dym = &dym;
-   in4.dyt = &dyt;
-
-   count = 0;
-   while (count < params->nStartPad) 
-   {
-       *(signal->data + count) = 0.;
-       count++;
-   }
-
-   t = 0.0;
-   piM = LAL_PI * m;
-   do {
-      /* Check we're not writing beyond the end of the vector */
-      if (count >= signal->length) {
-          LALFree(dummy.data);
-          ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
-      }
-
-      h = params->signalAmplitude * v*v * cos(p);
-      LALInspiralDerivatives(&values, &dvalues, funcParams);
-      CHECKSTATUSPTR(status);
-      in4.dydx = &dvalues;
-      in4.x=t;
-      LALRungeKutta4(status->statusPtr, &valuesNew, &in4, funcParams);
-      CHECKSTATUSPTR(status);
-      *(values.data) = v = *(valuesNew.data);
-      *(values.data+1) = p = *(valuesNew.data+1);
-      *(signal->data+count) = (REAL4) h;
-      t = (++count-params->nStartPad) * dt;
-      f = v*v*v/piM;
-   } while (t < ak.tn &&  f<fHigh);
-   params->fFinal = f;
-   params->tC = t;       
-
-   while (count < (int)signal->length) 
-   {
-       *(signal->data + count) = 0.;
-       count++;
-   }
-
-   LALFree(dummy.data);
-
    DETATCHSTATUSPTR(status);
    RETURN (status);
 
@@ -233,9 +119,6 @@ LALInspiralWave1(
    Interface routine needed to generate time-domain T- or a P-approximant
    waveforms by solving the ODEs using a 4th order Runge-Kutta; April 5, 00.
 */
-
-#include <lal/LALInspiral.h>
-#include <lal/LALStdlib.h>
 
 NRCSID (LALINSPIRALWAVE1TEMPLATESC, "$Id$");
 
@@ -249,7 +132,223 @@ LALInspiralWave1Templates(
    )
  { /* </lalVerbatim>  */
 
+   INT4 count;
+   
+   INITSTATUS(status, "LALInspiralWave1Templates", LALINSPIRALWAVE1TEMPLATESC);
+   ATTATCHSTATUSPTR(status);
+
+   ASSERT(signal1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signal2, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signal1->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+   ASSERT(signal2->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+
+   /* Initially the waveforms are empty */
+   memset(signal1->data, 0, signal1->length * sizeof(REAL4));
+   memset(signal2->data, 0, signal2->length * sizeof(REAL4));
+
+   /* Call the engine function */
+   LALInspiralWave1Engine(status->statusPtr, signal1, signal2, NULL, NULL, NULL, &count, params);
+   CHECKSTATUSPTR(status);   
+
+   DETATCHSTATUSPTR(status);
+   RETURN (status);
+
+}
+
+/* 
+   Interface routine needed to generate time-domain T- or a P-approximant
+   waveforms for injection packages T.Cokelaer sept 2003
+*/
+
+NRCSID (LALINSPIRALWAVE1FORINJECTIONC, "$Id$");
+
+/*  <lalVerbatim file="LALInspiralWave1ForInjectionCP"> */
+void 
+LALInspiralWave1ForInjection(
+			     LALStatus        *status,
+			     CoherentGW       *waveform,
+			     InspiralTemplate *params,
+			     PPNParamStruc  *ppnParams			     
+			     )
+{ /* </lalVerbatim>  */
+ 
+  INT4        count, i;
+  REAL8       p, phiC;  
+  
+  REAL4Vector a;           /* pointers to generated amplitude  data */
+  REAL4Vector ff;          /* pointers to generated  frequency data */
+  REAL8Vector phi;         /* generated phase data */
+  
+  CreateVectorSequenceIn in;
+  
+  CHAR message[256];
+  
+  InspiralInit paramsInit;  
+
+  INITSTATUS(status, "LALInspiralWave1ForInjection", LALINSPIRALWAVE1TEMPLATESC);
+  ATTATCHSTATUSPTR(status);
+  
+  /* Make sure parameter and waveform structures exist. */
+  ASSERT( params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
+  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
+  
+  /* Compute some parameters*/
+  LALInspiralInit(status->statusPtr, params, &paramsInit);
+  CHECKSTATUSPTR(status);   
+  
+  if (paramsInit.nbins == 0){
+      DETATCHSTATUSPTR(status);
+      RETURN (status);
+  }
+
+  /* Now we can allocate memory and vector for coherentGW structure*/     
+
+  ff.length  = paramsInit.nbins;
+  a.length   = 2* paramsInit.nbins;
+  phi.length = paramsInit.nbins;
+  
+  ff.data = (REAL4 *) LALCalloc(paramsInit.nbins, sizeof(REAL4));
+  a.data  = (REAL4 *) LALCalloc(2 * paramsInit.nbins, sizeof(REAL4));
+  phi.data= (REAL8 *) LALCalloc(paramsInit.nbins, sizeof(REAL8));
+
+  /* Check momory allocation is okay */
+  if (!(ff.data) || !(a.data) || !(phi.data))
+  {
+    if (ff.data)  LALFree(ff.data);
+    if (a.data)   LALFree(a.data);
+    if (phi.data) LALFree(phi.data);
+
+    ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
+  }
+
+  count = 0;
+
+  /* Call the engine function */
+  LALInspiralWave1Engine(status->statusPtr, NULL, NULL, &a, &ff, &phi, &count, params);
+  BEGINFAIL( status )
+  {
+    LALFree(ff.data);
+    LALFree(a.data);
+    LALFree(phi.data);
+  }
+  ENDFAIL( status );
+     
+  p = phi.data[count-1];
+  
+  params->fFinal = ff.data[count-1];
+  sprintf(message, "cycles = %f", p/LAL_TWOPI);
+  LALInfo(status, message);
+
+  if ( (INT4)(p/LAL_TWOPI) < 2 ){
+    sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.", 
+	       p/(double)LAL_TWOPI );
+    LALWarning(status, message);
+  }
+  else {
+
+      /*wrap the phase vector*/
+      phiC =  phi.data[count-1] ;
+      for (i = 0; i < count; i++)
+	{
+	  phi.data[i] =  phi.data[i] - phiC + ppnParams->phi;
+	}
+      
+      /* Allocate the waveform structures. */
+      if ( ( waveform->a = (REAL4TimeVectorSeries *)
+	     LALCalloc(1, sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
+	ABORT( status, LALINSPIRALH_EMEM,
+	       LALINSPIRALH_MSGEMEM );
+      }
+      if ( ( waveform->f = (REAL4TimeSeries *)
+	     LALCalloc(1, sizeof(REAL4TimeSeries) ) ) == NULL ) {
+	LALFree( waveform->a ); waveform->a = NULL;
+	ABORT( status, LALINSPIRALH_EMEM,
+	       LALINSPIRALH_MSGEMEM );
+      }
+      if ( ( waveform->phi = (REAL8TimeSeries *)
+	     LALCalloc(1, sizeof(REAL8TimeSeries) ) ) == NULL ) {
+	LALFree( waveform->a ); waveform->a = NULL;
+	LALFree( waveform->f ); waveform->f = NULL;
+	ABORT( status, LALINSPIRALH_EMEM,
+	       LALINSPIRALH_MSGEMEM );
+      }
+      
+      
+      
+      in.length = (UINT4)(count);
+      in.vectorLength = 2;
+      
+      LALSCreateVectorSequence( status->statusPtr, &( waveform->a->data ), &in );
+      CHECKSTATUSPTR(status);      
+      
+      LALSCreateVector( status->statusPtr, &( waveform->f->data ), count);
+      CHECKSTATUSPTR(status);      
+      
+      LALDCreateVector( status->statusPtr, &( waveform->phi->data ), count );
+      CHECKSTATUSPTR(status);        
+      
+      memcpy(waveform->f->data->data , ff.data, count*(sizeof(REAL4)));
+      memcpy(waveform->a->data->data , a.data, 2*count*(sizeof(REAL4)));
+      memcpy(waveform->phi->data->data ,phi.data, count*(sizeof(REAL8)));
+      
+      waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
+	= ppnParams->deltaT;
+      
+      waveform->a->sampleUnits    = lalStrainUnit;
+      waveform->f->sampleUnits    = lalHertzUnit;
+      waveform->phi->sampleUnits  = lalDimensionlessUnit;
+      waveform->position = ppnParams->position;
+      waveform->psi = ppnParams->psi;
+
+      LALSnprintf( waveform->a->name, LALNameLength,   "T1 inspiral amplitude" );
+      LALSnprintf( waveform->f->name, LALNameLength,   "T1 inspiral frequency" );
+      LALSnprintf( waveform->phi->name, LALNameLength, "T1 inspiral phase" );
+      
+      /* --- fill some output ---*/
+      ppnParams->tc     = (double)(count-1) / params->tSampling ;
+      ppnParams->length = count;
+      ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
+				   - waveform->f->data->data[count-2]))
+	* ppnParams->deltaT;
+      ppnParams->fStop  = params->fFinal;
+      ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
+      ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
+      
+      ppnParams->fStart   = ppnParams->fStartIn;
+    } /*end of coherentGW storage */
+
+
+  /* --- free memory --- */
+  LALFree(ff.data);
+  LALFree(a.data);
+  LALFree(phi.data);   
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
+}
+
+/*
+ *  Engine function for use by other LALInspiralWave1* functions
+ *  Craig Robinson April 2005
+ */
+
+NRCSID (LALINSPIRALWAVE1ENGINEC, "$Id$");
+
+void
+LALInspiralWave1Engine(
+		LALStatus        *status,
+		REAL4Vector      *signal1,
+		REAL4Vector      *signal2,
+		REAL4Vector      *a,
+		REAL4Vector      *ff,
+		REAL8Vector      *phi,
+		INT4             *countback,
+		InspiralTemplate *params)
+{
    INT4 n=2, count;
+   REAL8 omega;
    REAL8 amp, m, dt, t, v, p, h1, h2, f, fu, fHigh, piM;
    REAL8Vector dummy, values, dvalues, valuesNew, yt, dym, dyt;
    TofVIn in1;
@@ -260,13 +359,20 @@ LALInspiralWave1Templates(
    expnCoeffs ak;
    expnFunc func;
 
-   INITSTATUS(status, "LALInspiralWave1Templates", LALINSPIRALWAVE1TEMPLATESC);
+     REAL8 mTot = 0;
+     REAL8 unitHz = 0;
+     REAL8 f2a = 0;
+     REAL8 mu = 0; 
+     REAL8 cosI = 0;/* cosine of system inclination */
+     REAL8 etab = 0;
+     REAL8 fFac = 0; /* SI normalization for f and t */
+     REAL8 f2aFac = 0;/* factor multiplying f in amplitude function */
+     REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
+  
+     
+   INITSTATUS(status, "LALInspiralWave1Engine", LALINSPIRALWAVE1ENGINEC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT (signal1,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal2,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal1->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (signal2->data,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
    ASSERT (params->nEndPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
@@ -295,6 +401,23 @@ LALInspiralWave1Templates(
    m = ak.totalmass;
    dt = 1./params->tSampling;
 
+   if (a)
+   {
+      mTot   = params->mass1 + params->mass2;
+      etab   = params->mass1 * params->mass2;
+      etab  /= mTot;
+      etab  /= mTot;
+      unitHz = mTot *LAL_MTSUN_SI*(REAL8)LAL_PI;
+      cosI   = cos( params->inclination );
+      mu     = etab * mTot;  
+      fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
+      f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;   
+      apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
+      apFac *= 1.0 + cosI*cosI;
+      acFac *= 2.0*cosI;
+      params->nStartPad = 0;
+   }
+   
    ASSERT(ak.totalmass > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    t = 0.0;
@@ -332,6 +455,15 @@ LALInspiralWave1Templates(
       fHigh = ak.flso;
    f = (v*v*v)/(LAL_PI*m);
 
+/* 
+    Check that the highest frequency is less than half 
+    the sampling frequency - the Nyquist theorem 
+*/
+
+   ASSERT(fHigh < 0.5/dt, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(fHigh > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+   
    LALInspiralPhasing1(status->statusPtr, &p, v, &in2);
    CHECKSTATUSPTR(status);
 
@@ -349,367 +481,72 @@ LALInspiralWave1Templates(
    in4.dyt = &dyt;
 
    count = 0;
-   params->nStartPad = 0; /* for template generation, that value must be zero*/
-   while (count < params->nStartPad) 
-   {
-      *(signal1->data + count) = *(signal2->data + count) = 0.;
-      count++;
+   if (signal2) {
+   params->nStartPad = 0;} /* for template generation, that value must be zero*/
+   
+   else if (signal1) {
+     count = params->nStartPad;
    }
 
    t = 0.0;
    do {
       /* Free up memory and abort if writing beyond the end of vector*/
-      if (count >= signal1->length) {
+      if ((signal1 && count >= signal1->length) || (ff && count >= ff->length))
+      {
           LALFree(dummy.data);
           ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
       }
-      amp = params->signalAmplitude * v*v;
-      h1 = amp * cos(p);
-      h2 = amp * cos(p+LAL_PI_2);
-      *(signal1->data + count) = (REAL4) h1;
-      *(signal2->data + count) = (REAL4) h2;
+
+      /* Non-injection case */
+      if (signal1)
+      {
+         amp = params->signalAmplitude * v*v;
+         h1 = amp * cos(p);
+         *(signal1->data + count) = (REAL4) h1;
+	 if (signal2)
+	 {
+            h2 = amp * cos(p+LAL_PI_2);
+            *(signal2->data + count) = (REAL4) h2;
+	 }
+      }
+
+      /* Injection case */
+      else if (a)
+      {
+          omega = v*v*v;
+    
+          ff->data[count]       = (REAL4)(omega/unitHz);
+          f2a                   = pow (f2aFac * omega, 2./3.);
+          a->data[2*count]      = (REAL4)(4.*apFac * f2a);
+          a->data[2*count+1]    = (REAL4)(4.*acFac * f2a);
+          phi->data[count]      = (REAL8)(p);
+      }
+    
       LALInspiralDerivatives(&values, &dvalues, funcParams);
       CHECKSTATUSPTR(status);
+      
       in4.dydx = &dvalues;
       in4.x=t;
+      
       LALRungeKutta4(status->statusPtr, &valuesNew, &in4, funcParams);
       CHECKSTATUSPTR(status);
+      
       *(values.data) = v = *(valuesNew.data);
       *(values.data+1) = p = *(valuesNew.data+1);
+      
       t = (++count-params->nStartPad) * dt;
       f = v*v*v/piM;
+      
    } while (t < ak.tn && f<fHigh);
    
    params->vFinal = p;
    params->fFinal = f;
    params->tC = t;
-   
-   while (count < (int)signal1->length) 
-   {
-      *(signal1->data + count) = *(signal2->data + count) = 0.;
-      count++;
-   }
 
+   *countback = count;
    LALFree(dummy.data);
 
    DETATCHSTATUSPTR(status);
    RETURN (status);
 
-}
-
-/* 
-   Interface routine needed to generate time-domain T- or a P-approximant
-   waveforms for injection packages T.Cokelaer sept 2003
-*/
-
-NRCSID (LALINSPIRALWAVE1FORINJECTIONC, "$Id$");
-
-/*  <lalVerbatim file="LALInspiralWave1ForInjectionCP"> */
-void 
-LALInspiralWave1ForInjection(
-			     LALStatus        *status,
-			     CoherentGW       *waveform,
-			     InspiralTemplate *params,
-			     PPNParamStruc  *ppnParams			     
-			     )
-{ /* </lalVerbatim>  */
-  
-  INT4 n = 2  ;
-  UINT4 count, i; 
-  REAL8  dt, t, v, p, f, fu, fHigh, piM, omega;
-  REAL8Vector dummy, values, dvalues, valuesNew, yt, dym, dyt;
-  
-  REAL4Vector *a	= NULL;/* pointers to generated amplitude  data */
-  REAL4Vector *ff	= NULL ;/* pointers to generated  frequency data */
-  REAL8Vector *phi	= NULL;/* pointer to generated phase data */
-  
-  CreateVectorSequenceIn in;
-  TofVIn in1;
-  InspiralPhaseIn in2;
-  InspiralDerivativesIn in3;
-  rk4In in4;
-  void *funcParams;
-  expnCoeffs ak;
-  expnFunc func;
-  
-  REAL8 unitHz;
-  REAL8 f2a;
-  REAL8 mu; 
-  REAL8 mTot;
-  REAL8 cosI;/* cosine of system inclination */
-  REAL8 etab;
-  REAL8 fFac; /* SI normalization for f and t */
-  REAL8 f2aFac;/* factor multiplying f in amplitude function */
-  REAL8 apFac, acFac;/* extra factor in plus and cross amplitudes */
-  REAL8 phiC;/* phase at coalescence */
-
-  CHAR message[256];
-  
-  InspiralInit paramsInit;  
-
-  INITSTATUS(status, "LALInspiralWave1ForInjection", LALINSPIRALWAVE1TEMPLATESC);
-  ATTATCHSTATUSPTR(status);
-  
-  /* Make sure parameter and waveform structures exist. */
-  ASSERT( params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT(waveform, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);  
-  ASSERT( !( waveform->a ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  
-  /* Compute some parameters*/
-  LALInspiralInit(status->statusPtr, params, &paramsInit);
-  CHECKSTATUSPTR(status);   
-  
-  if (paramsInit.nbins == 0){
-      DETATCHSTATUSPTR(status);
-      RETURN (status);
-  }
-  func 	= paramsInit.func;
-  ak   	= paramsInit.ak;
-  dt 	= 1./params->tSampling;
-
-
-  mTot   =  params->mass1 + params->mass2;
-  etab   =  params->mass1 * params->mass2;
-  etab  /= mTot;
-  etab  /= mTot;
-  unitHz = (mTot) *LAL_MTSUN_SI*(REAL8)LAL_PI;
-  cosI   = cos( params->inclination );
-  mu     = etab * mTot;  
-  fFac   = 1.0 / ( 4.0*LAL_TWOPI*LAL_MTSUN_SI*mTot );
-  f2aFac = LAL_PI*LAL_MTSUN_SI*mTot*fFac;   
-  apFac  = acFac = -2.0 * mu * LAL_MRSUN_SI/params->distance;
-  apFac *= 1.0 + cosI*cosI;
-  acFac *= 2.0*cosI;
-  params->nStartPad = 0;
-
-  /* Now we can allocate memory and vector for coherentGW structure*/     
-  LALSCreateVector(status->statusPtr, &ff, paramsInit.nbins);
-  CHECKSTATUSPTR(status);   
-  LALSCreateVector(status->statusPtr, &a, 2*paramsInit.nbins);
-  CHECKSTATUSPTR(status);   
-  LALDCreateVector(status->statusPtr, &phi, paramsInit.nbins);
-  CHECKSTATUSPTR(status);
-  
-   /* By default the waveform is empty */
-  for (count = 0; count < paramsInit.nbins; count++) 
-    {
-      ff->data[count]           = 0.;
-      a->data[2*count+1]        = 0.;
-      phi->data[count]          = 0.;
-      a->data[2*count]          = 0.;
-    }
-  count = 0;
-
-  /* some others parameters for inspiral computation*/
-  values.length = dvalues.length = valuesNew.length =
-    yt.length = dym.length = dyt.length = n;
-  dummy.length = n * 6;
-  if (!(dummy.data = (REAL8 * ) LALMalloc(sizeof(REAL8) * n * 6))) {
-    ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
-  }
-  
-  values.data    = &dummy.data[0];
-  dvalues.data   = &dummy.data[n];
-  valuesNew.data = &dummy.data[2*n];
-  yt.data        = &dummy.data[3*n];
-  dym.data       = &dummy.data[4*n];
-  dyt.data       = &dummy.data[5*n];
-  
-
-  dt = 1./params->tSampling;
-
-  
- /* --- actual computation start here --- */
-  t 		= 0.0;
-  in1.t 	= t;
-  in1.t0	= ak.t0;
-  in1.v0 	= ak.v0;
-  in1.vlso 	= ak.vlso;
-  in1.totalmass = ak.totalmass;
-  in1.dEnergy 	= func.dEnergy;
-  in1.flux 	= func.flux;
-  in1.coeffs 	= &ak;
-  LALInspiralVelocity(status->statusPtr, &v, &in1);
-  CHECKSTATUSPTR(status);
-  
-  in2.v0 	= ak.v0;
-  in2.phi0 	= params->startPhase;
-  in2.dEnergy 	= func.dEnergy;
-  in2.flux 	= func.flux;
-  in2.coeffs 	= &ak;
-  LALInspiralPhasing1(status->statusPtr, &p, v, &in2);
-  CHECKSTATUSPTR(status);
-  
-  in3.totalmass = ak.totalmass;
-  in3.dEnergy 	= func.dEnergy;
-  in3.flux 	= func.flux;
-  in3.coeffs 	= &ak;
-  funcParams 	= (void *) &in3;
-  
-  piM = LAL_PI * ak.totalmass;
-  f = (v*v*v)/piM;
-  
-  /* a meetre ailleurs. Au debut avec les asserts?*/
-  fu = params->fCutoff;
-  if (fu) 
-    fHigh = (fu < ak.flso) ? fu : ak.flso; 
-  else 
-    fHigh = ak.flso;
-  f = (v*v*v)/(LAL_PI*ak.totalmass);
-  
-  *(values.data) = v; 
-  *(values.data+1) = p;
-  
-  in4.function 	= LALInspiralDerivatives;
-  in4.x 	= t;
-  in4.y 	= &values;
-  in4.h 	= dt;
-  in4.n 	= n;
-  in4.yt 	= &yt;
-  in4.dym 	= &dym;
-  in4.dyt 	= &dyt;
-  
-  count = 0;
-  t    	= 0.0;
-  
-  /* --- Main loop --- */   
-  do {
-    /* If trying to write beyond the end of a vector
-       free up memory and abort. */
-    if (count >= ff->length) {
-        LALSDestroyVector(status->statusPtr, &ff);
-        CHECKSTATUSPTR(status);
-        LALSDestroyVector(status->statusPtr, &a);
-        CHECKSTATUSPTR(status);
-        LALDDestroyVector(status->statusPtr, &phi);
-        CHECKSTATUSPTR(status);
-
-        LALFree(dummy.data);
-        ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
-    }  
-  
-    omega = v*v*v;
-    
-    ff->data[count]           = (REAL4)(omega/unitHz);
-    f2a                       = pow (f2aFac * omega, 2./3.);
-    a->data[2*count]          = (REAL4)(4.*apFac * f2a);
-    a->data[2*count+1]        = (REAL4)(4.*acFac * f2a);
-    phi->data[count]          = (REAL8)(p);
-    
-    LALInspiralDerivatives(&values, &dvalues, funcParams);
-    CHECKSTATUSPTR(status);
-    
-    in4.dydx = &dvalues;
-    in4.x=t;
-    
-    LALRungeKutta4(status->statusPtr, &valuesNew, &in4, funcParams);
-    CHECKSTATUSPTR(status);
-    
-    *(values.data) = v = *(valuesNew.data);
-    *(values.data+1) = p = *(valuesNew.data+1);
-    
-    t = (++count-params->nStartPad) * dt;
-    f = v*v*v/piM;
-  } while (t < ak.tn && f<fHigh);
-  
-  params->fFinal = ff->data[count-1];
-  sprintf(message, "cycles = %f", p/2./3.14159);
-  LALInfo(status, message);
-
-  if ( (p/2./LAL_PI) < 2 ){
-    sprintf(message, "The waveform has only %f cycles; we don't keep waveform with less than 2 cycles.", 
-	       p/2./(double)LAL_PI );
-    LALWarning(status, message);
-  }
-  else {
-
-      /*wrap the phase vector*/
-      phiC =  phi->data[count-1] ;
-      for (i = 0; i < count; i++)
-	{
-	  phi->data[i] =  phi->data[i] - phiC + ppnParams->phi;
-	}
-      
-      /* Allocate the waveform structures. */
-      if ( ( waveform->a = (REAL4TimeVectorSeries *)
-	     LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
-	ABORT( status, LALINSPIRALH_EMEM,
-	       LALINSPIRALH_MSGEMEM );
-      }
-      memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
-      if ( ( waveform->f = (REAL4TimeSeries *)
-	     LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
-	LALFree( waveform->a ); waveform->a = NULL;
-	ABORT( status, LALINSPIRALH_EMEM,
-	       LALINSPIRALH_MSGEMEM );
-      }
-      memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
-      if ( ( waveform->phi = (REAL8TimeSeries *)
-	     LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
-	LALFree( waveform->a ); waveform->a = NULL;
-	LALFree( waveform->f ); waveform->f = NULL;
-	ABORT( status, LALINSPIRALH_EMEM,
-	       LALINSPIRALH_MSGEMEM );
-      }
-      memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
-      
-      
-      
-      in.length = (UINT4)(count);
-      in.vectorLength = 2;
-      
-      LALSCreateVectorSequence( status->statusPtr, &( waveform->a->data ), &in );
-      CHECKSTATUSPTR(status);      
-      
-      LALSCreateVector( status->statusPtr, &( waveform->f->data ), count);
-      CHECKSTATUSPTR(status);      
-      
-      LALDCreateVector( status->statusPtr, &( waveform->phi->data ), count );
-      CHECKSTATUSPTR(status);        
-      
-      memcpy(waveform->f->data->data , ff->data, count*(sizeof(REAL4)));
-      memcpy(waveform->a->data->data , a->data, 2*count*(sizeof(REAL4)));
-      memcpy(waveform->phi->data->data ,phi->data, count*(sizeof(REAL8)));
-      
-      waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
-	= ppnParams->deltaT;
-      
-      waveform->a->sampleUnits    = lalStrainUnit;
-      waveform->f->sampleUnits    = lalHertzUnit;
-      waveform->phi->sampleUnits  = lalDimensionlessUnit;
-      waveform->position = ppnParams->position;
-      waveform->psi = ppnParams->psi;
-
-      LALSnprintf( waveform->a->name, LALNameLength,   "T1 inspiral amplitude" );
-      LALSnprintf( waveform->f->name, LALNameLength,   "T1 inspiral frequency" );
-      LALSnprintf( waveform->phi->name, LALNameLength, "T1 inspiral phase" );
-      
-      /* --- fill some output ---*/
-      ppnParams->tc     = (double)(count-1) / params->tSampling ;
-      ppnParams->length = count;
-      ppnParams->dfdt   = ((REAL4)(waveform->f->data->data[count-1] 
-				   - waveform->f->data->data[count-2]))
-	* ppnParams->deltaT;
-      ppnParams->fStop  = params->fFinal;
-      ppnParams->termCode        = GENERATEPPNINSPIRALH_EFSTOP;
-      ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFSTOP;
-      
-      ppnParams->fStart   = ppnParams->fStartIn;
-    } /*end of coherentGW storage */
-
-
-  /* --- free memory --- */
-  LALSDestroyVector(status->statusPtr, &ff);
-  CHECKSTATUSPTR(status);
-  LALSDestroyVector(status->statusPtr, &a);
-  CHECKSTATUSPTR(status);
-  LALDDestroyVector(status->statusPtr, &phi);
-  CHECKSTATUSPTR(status);
-
-  LALFree(dummy.data);
-   
-  DETATCHSTATUSPTR(status);
-  RETURN (status);
-}
+}		       
