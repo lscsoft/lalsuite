@@ -179,7 +179,7 @@ else:
 # create the Condor jobs that will be used in the DAG
 df_job = pipeline.LSCDataFindJob('cache','logs',cp,dax)
 tmplt_job = inspiral.TmpltBankJob(cp,dax)
-insp_job = inspiral.InspiralJob(cp)
+insp_job = inspiral.InspiralJob(cp,dax)
 trig_job = inspiral.TrigToTmpltJob(cp)
 inca_job = inspiral.IncaJob(cp)
 
