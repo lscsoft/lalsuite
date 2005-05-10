@@ -59,7 +59,7 @@ RCSID( "$Id$" );
 
 
 #define ADD_SUMM_VALUE( sv_name, sv_comment, val, intval ) \
-if ( this_summ_value ) \
+  if ( this_summ_value ) \
 { \
   this_summ_value = this_summ_value->next = (SummValueTable *) \
   LALCalloc( 1, sizeof(SummValueTable) ); \
@@ -98,10 +98,11 @@ INT8  inputLengthNS     = 0;            /* input data length ns         */
 INT4  numRespPoints     = -1;           /* num points for calc response */
 CHAR  *fqChanName       = NULL;         /* name of data channel         */
 CHAR  *frInCacheName    = NULL;         /* cache file containing frames */
+CHAR  *injCacheName     = NULL;         /* inj cache file for inj frames*/
 CHAR   ifo[3];                          /* two character ifo code       */
 CHAR   outfileName[FILENAME_MAX];       /* output file name             */
 
-enum { undefined, real_4, real_8 } calData = undefined; /* cal data type */
+enum { undefined, real_4, real_8 } calData = undefined; /* cal data type*/
 /* data conditioning parameters */
 INT4   sampleRate       = -1;           /* sample rate of filter data   */
 INT4   frameLength      = -1;           /* length of output frames      */
@@ -314,6 +315,19 @@ int main( int argc, char *argv[] )
       /* set the params of the input data time series */
       inj.epoch = gpsStartTime;
 
+      if ( injCacheName )
+      {
+        /* close current frame cache */
+        LAL_CALL( LALFrClose( &status, &frStream ), &status );
+        if ( frInCacheName ) LAL_CALL( LALDestroyFrCache( &status, 
+              &frInCache ), &status );
+
+        /* open injection frame cache */
+        LAL_CALL( LALFrCacheImport( &status, &frInCache, injCacheName), 
+            &status );
+        LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );
+      }
+
       /* seek to required epoch and set inj name */
       LAL_CALL( LALFrSeek( &status, &(inj.epoch), frStream ), &status );
       injChan.name = injChanName;
@@ -413,7 +427,7 @@ int main( int argc, char *argv[] )
           thisInj->f_lower = injFlow;
         }
       }
-         
+
       /* create the response function */
       memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
       LAL_CALL( LALCCreateVector( &status, &(injResp.data), 
@@ -744,43 +758,55 @@ LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
 LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
 LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
-#define USAGE \
-  "lalapps_inspfrinj [options]\n\n"\
-"  --help                    display this message\n"\
-"  --verbose                 print progress information\n"\
-"  --version                 print version information and exit\n"\
-"  --debug-level LEVEL       set the LAL debug level to LEVEL\n"\
-"  --user-tag STRING         set the process_params usertag to STRING\n"\
-"  --comment STRING          set the process table comment to STRING\n"\
-"\n"\
-"  --gps-start-time SEC      GPS second of data start time\n"\
-"  --gps-start-time-ns NS    GPS nanosecond of data start time\n"\
-"  --gps-end-time SEC        GPS second of data end time\n"\
-"  --gps-end-time-ns NS      GPS nanosecond of data end time\n"\
-"\n"\
-"  --frame-cache             obtain frame data from LAL frame cache FILE\n"\
-"  --calibration-cache FILE  obtain calibration from LAL frame cache FILE\n"\
-"  --calibrated-data TYPE    calibrated data of TYPE real_4 or real_8\n"\
-"  --num-resp-points N       num points to determine response function (4194304)\n"\
-"  --channel-name CHAN       read data from interferometer channel CHAN\n"\
-"\n"\
-"  --injection-channel INJ   read injection data from channel INJ\n"\
-"  --injection-file FILE     inject simulated inspiral signals from FILE\n"\
-"  --inject-overhead         inject signals from overhead detector\n"\
-"  --inject-safety SEC       inject signals ending up to SEC after gps end time\n"\
-"  --injection-start-freq FLOW inject signals starting at freq FLOW (40Hz)\n"\
-"\n"\
-"  --write-raw-data          write out the raw frame files\n"\
-"  --write-inj-only          write out frames containing only injections\n"\
-"  --write-raw-plus-inj      write out frames containing raw data with inj\n"\
-"\n"\
-"  --output-frame-length SEC write out data in frames of length SEC\n"\
-"  --output-file-name OUTPUT set output file names to OUTPUT-GPSTIME-LENGTH.gwf\n"\
-"                   if not set, default to IFO-INSPFRINJ-GPSTIME-LENGTH.gwf\n"\
-"\n"\
-"  --ifo  IFO                specify the IFO (only if not reading frames)\n"\
-"  --sample-rate             data sample rate (only if not reading frames)\n"\
-"\n"
+/*
+ * 
+ * USAGE
+ *
+ */
+static void print_usage(char *program)
+{
+  fprintf(stderr,
+      "Usage:  %s [options] [LIGOLW XML input files]\n" \
+      "The following options are recognized.  Options not surrounded in [] are\n" \
+      "required.\n" \
+      " [--help]                           display this message\n"\
+      " [--verbose]                        print progress information\n"\
+      " [--version]                        print version information and exit\n"\
+      " [--debug-level]          level     set the LAL debug level to level\n"\
+      " [--user-tag]             usertag   set the process_params usertag to usertag\n"\
+      " [--comment]              string    set the process table comment to string\n"\
+      "\n"\
+      "  --gps-start-time        start_time GPS second of data start time\n"\
+      " [--gps-start-time-ns]    start_ns   GPS nanosecond of data start time\n"\
+      "  --gps-end-time          end_time   GPS second of data end time\n"\
+      " [--gps-end-time-ns]      end_ns     GPS nanosecond of data end time\n"\
+      "\n"\
+      " [--frame-cache]          cache      frame cache with locations of data\n"\
+      " [--calibration-cache]    cal_cache  file with location of calibration data\n"\
+      " [--calibrated-data]      type       calibrated data of type (real_4 | real_8)\n"\
+      " [--num-resp-points]      N          num points to determine response function (4194304)\n"\
+      " [--channel-name]         chan       channel from which to read data\n"\
+      "\n"\
+      " [--injection-channel]    inj_chan   channel from which to read inj data\n"\
+      " [--injection-cache]      inj_cache  cache with location of injection data\n"\
+      " [--injection-file]       inj_file   xml file with injection details\n"\
+      " [--inject-overhead]                 inject signals from overhead detector\n"\
+      " [--inject-safety]        safety     inject signals ending up to safety\n" 
+      "                                       seconds after end_time\n"\
+      " [--injection-start-freq] flow       inject signals starting at flow (40Hz)\n"\
+      "\n"\
+      " [--write-raw-data]                  write out raw-data channel\n"\
+      " [--write-inj-only]                  write out inj-only channel\n"\
+      " [--write-raw-plus-inj]              write out raw plus inj channel\n"\
+      "\n"\
+      " [--output-frame-length]  len        length of output frames\n"\
+      " [--output-file-name]     out        set file names to out-gpstime-length.gwf\n"\
+      "                      if not set, default to ifo-inspfrinj-gpstime-length.gwf\n"\
+      "\n"\
+      " [--ifo]                  ifo        specify the ifo (if not reading frames)\n"\
+      " [--sample-rate]          rate       data sample rate (if not reading frames)\n"\
+      "\n", program );
+}
 
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 {
@@ -810,6 +836,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"ifo",                     required_argument, 0,                'i'},
     {"comment",                 required_argument, 0,                's'},
     {"frame-cache",             required_argument, 0,                'u'},
+    {"injection-cache",         required_argument, 0,                'C'},
     {"injection-file",          required_argument, 0,                'w'},
     {"inject-safety",           required_argument, 0,                'S'},
     {"injection-channel",       required_argument, 0,                'I'},
@@ -839,7 +866,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "A:B:I:L:N:S:V:Z:"
+        "A:B:C:I:L:N:S:V:Z:"
         "a:b:c:d:f:hi:l:p:r:s:u:w:y:z:",
         long_options, &option_index );
 
@@ -1021,7 +1048,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'h':
-        fprintf( stdout, USAGE );
+        /* help message */
+        print_usage(argv[0]);
         exit( 0 );
         break;
 
@@ -1096,12 +1124,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           fprintf( stderr, "invalide argument to --%s:\n"
               "injections must start at a positive frequency."
               "(%f specified) \n",
-              long_options[option_index].name, sampleRate );
+              long_options[option_index].name, injFlow );
           exit( 1 );
         }
         ADD_PROCESS_PARAM( "float", "%f", injFlow );
         break;
-              
+
       case 'i':
         {
           /* create storage for the ifo name and copy it */
@@ -1157,6 +1185,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case 'C':
+        /* create storage for the input frame cache name */
+        optarg_len = strlen( optarg ) + 1;
+        injCacheName = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+        memcpy( injCacheName, optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
       case 'w':
         /* create storage for the injection file name */
         optarg_len = strlen( optarg ) + 1;
@@ -1196,11 +1232,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case '?':
+        print_usage(argv[0]);
         exit( 1 );
         break;
 
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
+        print_usage(argv[0]);
         exit( 1 );
     }
   }
