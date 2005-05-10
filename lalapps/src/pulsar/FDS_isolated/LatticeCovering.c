@@ -20,6 +20,7 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_blas.h>
 
 
 #include <lal/LALStdlib.h>
@@ -72,7 +73,17 @@ XLALMetricGramSchmidt(gsl_matrix **orth,
 		      const gsl_matrix *colvect,	
 		      const gsl_matrix *metric);
 
+int
+XLALSquareGeneratingMatrix(gsl_matrix **outmatrix,
+			   const gsl_matrix *inmatrix);
+
 BOOLEAN isSymmetric (const gsl_matrix *Sij);
+
+/* test-functions */
+int main(void);
+void testGS(void);
+int print_matrix (const gsl_matrix *m);
+int print_vector (const gsl_vector *v);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -125,16 +136,16 @@ XLALMetricScalarProduct (const gsl_vector *v1,
 
 
 /** Gram-Schmidt orthogonalization of lin. indep. vectors using a given metric.
- * NOTE: this is a straightforward, naive implementation of the basic
+ * NOTE: this is a straightforward, probably naive implementation of the basic
  * algorithm, completely ignorant about numerically more robust or faster algorithms
  * to do this... [FIXME?].
  *
- * The set of vectors in input and output consists of the matrix-columns of colvect and orth
+ * The set of vectors in input and output consists of the matrix-rows!
  *
  */
 int
-XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal contravariant vects */
-		      const gsl_matrix *invects,/**< matrix of column-vectors */
+XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal row vects */
+		      const gsl_matrix *invects,/**< matrix of row-vectors */
 		      const gsl_matrix *gij)	/**< metric */
 {
   UINT4 numvects, vectdim;
@@ -160,8 +171,8 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal contravariant
     XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EINVAL);
   }
 
-  numvects = invects->size2;	/* number of columns! */
-  vectdim = invects->size1;
+  numvects = invects->size1;	/* number of columns! */
+  vectdim = invects->size2;
 
   /* can't have more vectors than dimensions */
   if ( numvects > vectdim ) {
@@ -176,8 +187,8 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal contravariant
   }
 
 
-  /* prepare output-matrix for orthonomalized vectors */
-  orth = gsl_matrix_calloc ( vectdim, numvects);
+  /* prepare output-matrix for orthonormalized vectors in rows*/
+  orth = gsl_matrix_calloc ( numvects, vectdim);
   if ( orth == NULL ) {
     XLAL_ERROR("XLALMetricGramSchmidt", XLAL_ENOMEM);
   }
@@ -185,7 +196,7 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal contravariant
   /* prepare vector view-arraw on final orthonormal vectors */
   ui = LALCalloc (1, numvects * sizeof(gsl_vector_view) );
   for (i=0; i < numvects; i++)
-    ui[i] = gsl_matrix_column ( orth, i );
+    ui[i] = gsl_matrix_row ( orth, i );
 
 
   /* placeholder for temporary vector */
@@ -197,15 +208,18 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal contravariant
   /*---------- main algorithm ---------- */
   for (i=0; i < numvects; i++)
     {
-
+      REAL8 norm;
       /*---------- Step 1) orthogonalize wrt to previous vectors ----------*/
       
       /* view on input-vector i (convenience) */
-      gsl_vector_const_view vi = gsl_matrix_const_column (invects, i);
+      gsl_vector_const_view vi = gsl_matrix_const_row (invects, i);
+
+      printf ("Read row i=%d of in-matrix:\n", i);
+      print_vector ( &(vi.vector) );
 
       gsl_vector_memcpy ( &(ui[i].vector), &(vi.vector) );
       
-      for (j=0; (i>0) && (j < i-1); j++)
+      for (j=0; (i>0) && (j < i); j++)
 	{
 	  REAL8 proj;
 
@@ -221,6 +235,15 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal contravariant
 	  }
 
 	} /* for j < i-1 */
+
+      /*---------- Step 2) normalize ---------- */
+      
+      norm = XLALMetricScalarProduct ( &(ui[i].vector), &(ui[i].vector), gij );
+      norm = sqrt(norm);
+
+      if ( gsl_vector_scale ( &(ui[i].vector), 1.0/norm ) ) {
+	XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EFUNC);
+      }
       
     } /* for i < numvects */
 
@@ -233,6 +256,84 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal contravariant
   return 0;
 
 } /* XLALMetricGramSchmidt() */
+
+/** Turn a general (non-quadratic) Generating Matrix into a quadratic one.
+ * The input matrix must have columns >= rows, the rows reprenting the 
+ * lattice vectors. This algorithm simply proceeds by constructing an
+ * (Euclidean!) orthonormal basis out of the lattice vectors (using GramSchmidt),
+ * and then expressing the lattice-vectors in this new basis.
+ * 
+ */
+int
+XLALSquareGeneratingMatrix(gsl_matrix **outmatrix, 	/**< OUT: square generating matrix */
+			   const gsl_matrix *inmatrix)	/**< generating matrix */
+{
+  UINT4 rows, cols;
+  gsl_matrix *sq = NULL;	/* output: square generating matrix */
+  gsl_matrix *basis = NULL;	/* orthonormal basis */
+
+  /* check NULL-vectors on input */
+  if ( inmatrix == NULL ) {
+    LALPrintError ("NULL Input received.");
+    XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EINVAL);
+  }
+  
+  /* check that output 'outmatrix' points to a NULL-vector! */
+  if ( *outmatrix != NULL ) {
+    LALPrintError ("Output-vector not set to NULL");
+    XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EINVAL);
+  }
+
+  rows = inmatrix->size1;
+  cols = inmatrix->size2;
+
+  /* rows need to be lattice vectors, and linearly independent */
+  if ( rows > cols ) {
+    LALPrintError ("ERROR: input-matrix must have full row-rank!\n");
+    XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EINVAL);
+  }
+
+  /* allocate output matrix */
+  sq = gsl_matrix_calloc (rows, rows);
+  if ( sq == NULL ) {
+    XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_ENOMEM);
+  }
+
+  /* if input-matrix is quadratic, we're done */
+  if ( rows == cols )
+    gsl_matrix_memcpy ( sq, inmatrix );
+  else
+    {
+      gsl_matrix *gij = gsl_matrix_alloc( cols, cols );
+      if ( !gij ){
+	XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_ENOMEM);
+      }
+      gsl_matrix_set_identity (gij);	/* use Euklidean metric for orthonormalization*/
+      
+      /* find orthonormal basis */
+      if ( XLALMetricGramSchmidt (&basis, inmatrix, gij) ) {
+	XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EFUNC);
+      }
+      
+      /* free metric again */
+      gsl_matrix_free (gij);
+
+      printf ("\nOrthonormal basis:\n");
+      print_matrix (basis);
+
+      /* express generating matrix in this new basis: inmatrix.basis^T */
+      if ( gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, inmatrix, basis, 0.0, sq)) {
+	LALPrintError ("ERROR: Call to  gsl_blas_dgemm() failed\n");
+	XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EFUNC);
+      }
+
+    } /* if cols > rows  */
+
+  /* we're done: return result */
+  (*outmatrix) = sq;
+
+  return 0;
+} /* XLALSquareGeneratingMatrix() */
 
 
 /** check if matrix is symmetric */
@@ -257,3 +358,98 @@ isSymmetric (const gsl_matrix *Sij)
   return TRUE;
 
 } /* isSymmetric() */
+
+int
+print_matrix (const gsl_matrix *m)
+{
+  UINT4 i,j;
+
+  if ( m == NULL ) {
+    printf ("\nERROR: print_matrix called with NULL-matrix \n");
+    return -1;
+  }
+
+  printf ("[");
+  for (i=0; i < m->size1; i++)
+    {
+      for (j=0; j < m->size2; j++)
+	{
+	  printf ("\t%9.6g", gsl_matrix_get (m, i, j) );
+	}
+      printf (";\n");
+    }
+
+  printf ("]\n");
+  return 0;
+}
+
+
+int
+print_vector (const gsl_vector *v)
+{
+  UINT4 i;
+
+  if ( v == NULL ) {
+    printf ("\nERROR: print_vector called with NULL-vector \n");
+    return -1;
+  }
+
+  printf ("[");
+  for (i=0; i < v->size; i++)
+    {
+      printf ("%9.6g ", gsl_vector_get (v, i));
+    }
+  printf (" ]\n");
+
+  return 0;
+}
+
+
+
+/*--------------------------------------------------*/
+/* Test function(s) */
+/*--------------------------------------------------*/
+int main (void)
+{
+  
+  testGS();
+
+  return 0;
+}
+
+void
+testGS(void)
+{
+  gsl_matrix_view m1, gij;
+  gsl_matrix *orto = NULL;
+  gsl_matrix *sGM = NULL;
+
+  REAL8 m1data[] = { 1, 	-1, 	0,
+		    -2.0/3, 	1.0/3, 	1.0/3};
+  
+  REAL8 gijdata[] = { 1, 0, 0,
+		      0, 1, 0,
+		      0, 0, 1  };
+
+  m1 = gsl_matrix_view_array ( m1data, 2, 3 );
+
+  gij = gsl_matrix_view_array ( gijdata, 3, 3 );
+
+  XLALMetricGramSchmidt ( &orto, &(m1.matrix), &(gij.matrix) );
+
+  printf ("\nMetric:\n");
+  print_matrix (&(gij.matrix));
+
+  printf ("\nInput-matrix:\n");
+  print_matrix (&(m1.matrix));
+
+  printf ("\nResulting orthogonal matrix: \n");
+  print_matrix (orto);
+
+
+  XLALSquareGeneratingMatrix( &sGM, &(m1.matrix) );
+
+  printf ("Square generating matrix:\n");
+  print_matrix (sGM);
+
+} /* testGS() */
