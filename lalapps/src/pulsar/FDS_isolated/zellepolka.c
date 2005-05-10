@@ -44,8 +44,9 @@
 /* 
    To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage, 
    and readzipfile_util.h and .c. from yousuke. 
-*/
 #define USE_UNZIP  
+*/
+
 
 
 
