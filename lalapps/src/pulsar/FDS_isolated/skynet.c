@@ -21,6 +21,7 @@
 #include <lal/LALBarycenter.h>
 #include <lal/LALConfig.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALInitBarycenter.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALXMGRInterface.h>
@@ -28,25 +29,28 @@
 #include <lal/StackMetric.h>
 #include <lal/TwoDMesh.h>
 
+#include "DopplerScan.h"
+
 
 RCSID( "$Id$" );
-
-/* type of parameter space metric to use */
+ 
+/* type of parameter space metric to use  */
 enum {
-  undefined,      /* duh */
-  ptolemetric,    /* PtoleMetric() */
-  baryptolemaic,  /* CoherentMetric() + TBaryPtolemaic() */
-  ephemeris       /* CoherentMetric() + TEphemeris() */
-} metric_type = undefined; 
+  undefined,     /* duh */
+  ptolemetric,   /* PtoleMetric() */
+  baryptolemaic, /* CoherentMetric() plus TBaryPtolemaic()  */
+  ephemeris     /* CoherentMetric() plus TEphemeris() */
+} metric_type = undefined;
+
 
 enum {
   undetermined,
-  hanford,        /* detector locations, obvious from name  */
+  hanford,
   livingston,
   geo,
   tama,
-  virgo,
-} detector_location = undetermined;
+  virgo
+} detector = undetermined;
 
 
 /* Limits of sky search  */
@@ -56,10 +60,7 @@ REAL4 dec_min = -LAL_PI_2;
 REAL4 dec_max = LAL_PI_2;
 REAL4 MAX_NODES = 8e6; /* limit on number of nodes for TwoDMesh  */
 
-
-void getRange( LALStatus *, REAL4 [2], REAL4, void * );
-void getMetric( LALStatus *, REAL4 [3], REAL4 [2], void * );
-
+char *optarg = NULL; /* option argument for getopt_long() */
 REAL8Vector *tevlambda;
 
 
@@ -67,7 +68,7 @@ int main( int argc, char *argv[] )
 {
 
   LALStatus stat = blank_status;  /* status structure */
-
+  REAL8Vector outputMetric; /* output argument for PulsarMetric */
 
   /* Define input variables and set default values */
   int begin            = 731265908;  /* start time of integration */
@@ -77,21 +78,22 @@ int main( int argc, char *argv[] )
   REAL4 mismatch       = 0.05;       /* mismatch threshold of mesh */
   REAL4 max_frequency  = 1e3;        /* maximum frequency of search (Hz) */
 
-  /* structures for LAL functions */
-  TwoDMeshNode *firstNode;
-  static TwoDMeshParamStruc mesh;
+
+  /* define PtoleMetricIn structure and define default values */
   static PtoleMetricIn search;
-  static MetricParamStruc tevparam;
-  TwoDMeshNode *node;
-  EphemerisData *eph;
-  PulsarTimesParamStruc tevpulse;
+  search.epoch.gpsSeconds = begin;
+  search.duration = duration;
+  search.maxFreq = max_frequency;
+
+
 
   /* other useful variables */
   FILE *fp;                       /* where to write the output */
   REAL4 f1;
-  int option_index = 0; /* getopt_long option index */
-  int opt; /* Argument for switch statement with getopt_long */
-  int detector_argument;
+  int option_index = 0;  /* getopt_long option index */
+  int opt;               /* Argument for switch statement with getopt_long */
+  int detector_argument; /* setting of detector location */
+
 
   /* Set getopt_long option arguments */
   static struct option long_options[] = {
@@ -116,30 +118,30 @@ int main( int argc, char *argv[] )
     
     switch ( opt ) {
 
-    case 1: /* metric-type option */
+    case 1: /* Set type of metric for LALMetricWrapper */
       if( !strcmp( optarg, "ptolemetric" ) )
         metric_type = ptolemetric;
       if( !strcmp( optarg, "baryptolemaic" ) )
-        metric_type = baryptolemaic;
+	metric_type = baryptolemaic;
       if( !strcmp( optarg, "ephemeris" ) )
-        metric_type = ephemeris;
+	metric_type = ephemeris;
       break;
 
     case 2: /* start-gps-seconds option */
       begin = atoi ( optarg );
       break;
 
-    case 3:
+    case 3: /* Set detector site for LALMetricWrapper */
       if( !strcmp( optarg, "hanford" ) )
-	detector_location = hanford;
+	detector = hanford;
       if( !strcmp( optarg, "livingston" ) )
-	detector_location = livingston;
+	detector = livingston;
       if( !strcmp( optarg, "geo" ) )
-	detector_location = geo;
+	detector = geo;
       if( !strcmp( optarg, "tama" ) )
-	detector_location = tama;
+	detector = tama;
       if( !strcmp( optarg, "virgo" ) )
-	detector_location = virgo;
+	detector = virgo;
       break;
 
     case 4:
@@ -172,180 +174,62 @@ int main( int argc, char *argv[] )
 printf( "parsed options...\n" );
 
 
-  /* Set TwoDMesh input parameters. */
-  mesh.mThresh = mismatch;
-  mesh.nIn = MAX_NODES;
-  mesh.getRange = getRange;
-  mesh.getMetric = getMetric;
-  mesh.domain[0] = dec_min;
-  mesh.domain[1] = dec_max;
+ /* Set metric type  */
+ switch( metric_type ) {
+
+ case ptolemetric: 
+   search.metricType = LAL_PMETRIC_COH_PTOLE_ANALYTIC;
+   break;
+
+ case baryptolemaic:
+   search.metricType = LAL_PMETRIC_COH_PTOLE_NUMERIC;
+   break;
+
+ case ephemeris:
+   search.metricType = LAL_PMETRIC_COH_EPHEM;
+
+ default:
+   printf( "Invalid metric type\n" );
+   exit(1);
+
+ } 
+ printf( "Set metric type\n", metric_type );
 
 
-  /* Set detector location  */
-  switch( detector_location ) {
- 
-  case hanford:
-    detector_argument = LALDetectorIndexLHODIFF;
-    break;
+ /* Set detector location  */
+ switch( detector ) {
 
-  case livingston:
-    detector_argument = LALDetectorIndexLLODIFF;
-    break;
+ case hanford:
+   detector_argument = LALDetectorIndexLHODIFF;
+   break;
 
-  case geo:
-    detector_argument = LALDetectorIndexGEO600DIFF;
-    break;
+ case livingston:
+   detector_argument = LALDetectorIndexLLODIFF;
+   break;
 
-  case tama:
-    detector_argument = LALDetectorIndexTAMA300DIFF;
-    break;
+ case geo:
+   detector_argument = LALDetectorIndexGEO600DIFF;
+   break;
 
-  case virgo:
-    detector_argument = LALDetectorIndexVIRGODIFF;
-    break;
+ case tama:
+   detector_argument = LALDetectorIndexTAMA300DIFF;
+   break;
 
-  default:
-    printf( "invalid detector location\n" );
-    exit(1);
+ case virgo:
+   detector_argument = LALDetectorIndexVIRGODIFF;
+   break;
 
-  }
-  printf( "Set detector location ...\n" );
+ default:
+   printf( "Invalid detector argument\n" );
+   exit(1);
 
-  /* Set metric input parameters. */
-  switch( metric_type ) {
+ }
+ printf( "Set detector location\n", detector );
 
-  case ptolemetric:
-    /* fill PtoleMetric() input structure */
-    search.site = &lalCachedDetectors[detector_argument];
-    printf( "Set search site to %d\n", detector_argument );
-    search.position.system = COORDINATESYSTEM_EQUATORIAL;
-    search.spindown = NULL;
-    search.epoch.gpsSeconds = begin;
-    search.epoch.gpsNanoSeconds = 0;
-    search.duration = duration;
-    search.maxFreq = max_frequency;
-    /* tell TwoDMesh() to use PtoleMetric() */
-    mesh.metricParams = (void *) &search;
-    mesh.rangeParams = (void *) &search;
-    break;
+ search.site = &lalCachedDetectors[detector_argument];
 
-  case baryptolemaic:
-    tevlambda = NULL;
-    LAL_CALL( LALDCreateVector( &stat, &tevlambda, 3+spindown_order ), &stat );
-    tevlambda->data[0] = max_frequency;
-    tevparam.constants = &tevpulse;
-    tevparam.n = 1;
-    tevparam.errors = 0;
-    tevparam.start = 0; /* start time relative to epoch */
-    LAL_CALL( LALGetEarthTimes( &stat, &tevpulse ), &stat );
-    tevpulse.t0 = 0.0; /* relative reference time for spindown defs */
-    tevpulse.site = &lalCachedDetectors[detector_argument];
-    tevpulse.epoch.gpsSeconds = begin;
-    tevpulse.epoch.gpsNanoSeconds = 0;
-    tevparam.deltaT = duration;
-    /* set timing function */
-    tevparam.dtCanon = LALDTBaryPtolemaic;
+ LALPulsarMetric( &stat, &outputMetric, &search );
 
-  case ephemeris:
-    eph = (EphemerisData *) LALMalloc( sizeof(EphemerisData) );
-    eph->ephiles.earthEphemeris = "earth00-04.dat";
-    eph->ephiles.sunEphemeris = "sun00-04.dat";
-    eph->leap = 13; /* for years 2000-2004; shouldn't matter if wrong */
-    LAL_CALL( LALInitBarycenter( &stat, eph ), &stat );
-    tevpulse.ephemeris = eph;
-    tevparam.dtCanon = LALDTEphemeris;
-    break;
-
-  default:
-    printf( "bad metric type\n" );
-    exit(1);
-
-  }
-printf( "set input parameters...\n" );
-
-  /* Create 2D mesh. */
-  firstNode = NULL;
-  LAL_CALL( LALCreateTwoDMesh( &stat, &firstNode, &mesh ), &stat );
-  printf( "created %d nodes\n", mesh.nOut );
-  if( mesh.nOut == MAX_NODES )
-    printf( "This overflowed your limit. Try a smaller search.\n" );
-
-
-  /* Write what we've got to file mesh.dat, if required */
-  fp = fopen( "mesh.dat", "w" );
-
-  for( node = firstNode; node; node = node->next )
-    fprintf( fp, "%e %e\n", 
-	       (double)((node->y)*180/LAL_PI), (double)((node->x)*180/LAL_PI));
-  fclose( fp );
-
-
-  /* Clean up and leave. */
-  LAL_CALL( LALDestroyTwoDMesh( &stat, &firstNode, &mesh.nOut ), &stat );
-  printf( "destroyed %d nodes\n", mesh.nOut );
- 
   LAL_CALL( LALCheckMemoryLeaks(), &stat );
   return 0;
 } /* main() */
-
-
-/* This is the parameter range function as required by TwoDMesh. */
-
-void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *unused )
-{
- 
-  y[0] = ra_min;
-  y[1] = ra_max;
-
-} /* getRange() */
-
-
-/* This is the wrapped metric function as required by TwoDMesh. */
-void getMetric( LALStatus *stat,
-                REAL4 g[3],
-                REAL4 x[2],
-                void *params )
-{
-
-  REAL8Vector      *metric = NULL;   /* for output of metric */
-  PtoleMetricIn    *Ppatch = NULL;   /* pointer for PtoleMetric params */
-  REAL8             determinant;     /* Determinant of projected metric */
-
-
-  Ppatch = params;
-
-  /* set up shop  */
-  INITSTATUS( stat, "getMetric", rcsid );
-  ATTATCHSTATUSPTR( stat );
-  TRY( LALDCreateVector( stat->statusPtr, &metric, 6 ), stat );
-  
- 
-  Ppatch->position.longitude = x[1];
-  Ppatch->position.latitude =  x[0];
-
-  LAL_CALL( LALPtoleMetric( stat->statusPtr, metric, Ppatch ), stat );
-
-  BEGINFAIL( stat )
-    TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
-  ENDFAIL( stat );
-  LAL_CALL( LALProjectMetric( stat->statusPtr, metric, 0 ), stat );
-  BEGINFAIL( stat )
-    TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
-  ENDFAIL( stat );
-
-  determinant = metric->data[5]*metric->data[2]-pow(metric->data[4],2.0);
- 
-
-  /* Translate output. */
-  g[1] = metric->data[2];
-  g[0] = metric->data[5];
-  g[2] = metric->data[4];
- 
-  
-  /* Clean up and leave. */
-  TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
-  DETATCHSTATUSPTR( stat );
-  RETURN( stat );
-  
-
-} /* getMetric() */
