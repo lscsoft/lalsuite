@@ -2440,7 +2440,9 @@ INT4 EstimateFLines(LALStatus *status) /* BINARY-MOD - may only need to change w
   /*  with ~ 10 h observation time */
   /*  0.0001 = 0.0002/2 */
   /*  let me put 0.005 */
-  dmp=0.5+0.0002/GV.dFreq;  /* BINARY-MOD - may need to change this (for 10 hour = +/-(4/T)) */
+ 
+  /*dmp=0.5+0.0002/GV.dFreq; */  /* ISOLATED value */
+  dmp=20;  /* BINARY-MOD - value chosen based on MC simulation.  No signals were found to have width FWHM > 20 search bins  */
   wings=dmp;
 
 
