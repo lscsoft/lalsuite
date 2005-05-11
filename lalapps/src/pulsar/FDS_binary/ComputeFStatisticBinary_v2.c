@@ -20,6 +20,7 @@
 
 #include "ComputeFStatisticBinary_v2.h"    /* BINARY-MOD - Using modified header file */
 #include "GenerateBinaryMesh_v1.h"
+#include "ReadSourceFile_v1.h"
 #include "clusters.h"
 #include "../FDS_isolated/DopplerScan.h"
 
@@ -57,12 +58,12 @@ void use_boinc_filename0(char* orig_name);
 
 /* If FILE_FILENAME is defined, then print the corresponding file  */
 #define FILE_FSTATS /* outputs the basic statistics of each Fstat cluster found for each template */ 
-#define FILE_FMAX   /* outputs the loudest Fstat for each template */
-#define FILE_FLINES 
-#define FILE_FTXT 
-#define FILE_PSD     /* outputs frequency + <UNnormalised PSD> + <UNnormalised PSD RngMed> */
-#define FILE_PSDLINES   /* outputs nothing at present */
-#define FILE_SPRNG   /* outputs frequency + <RngMed> */
+#define FILE_FMAX  /* outputs the loudest Fstat for each template */
+/* #define FILE_FLINES */
+/* #define FILE_FTXT */
+/* #define FILE_PSD */    /* outputs frequency + <UNnormalised PSD> + <UNnormalised PSD RngMed> */
+/* #define FILE_PSDLINES */  /* outputs nothing at present */
+/* #define FILE_SPRNG */  /* outputs frequency + <RngMed> */
 
 
 /********************************************************** <lalLaTeX>
@@ -81,7 +82,7 @@ void use_boinc_filename0(char* orig_name);
 
 /*----------------------------------------------------------------------
  * User-variables: provided either by default, config-file or command-line */
-INT4 uvar_Dterms;
+INT4 uvar_dterms;
 CHAR* uvar_IFO;
 BOOLEAN uvar_SignalOnly;
 BOOLEAN uvar_EstimSigParam;
@@ -117,6 +118,9 @@ CHAR *uvar_outputFstat;
 CHAR *uvar_skyGridFile;
 CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
+CHAR *uvar_sourcefile;
+CHAR *uvar_source;
+REAL8 uvar_overres;
 
 /* try this */
 BOOLEAN uvar_openDX;
@@ -162,7 +166,7 @@ void Freemem (LALStatus *status);
 
 INT4 EstimatePSDLines(LALStatus *status);
 INT4 EstimateFLines(LALStatus *status);
-INT4 NormaliseSFTDataRngMdn (LALStatus *status);
+INT4 NormaliseSFTDataRngMdn(LALStatus *status);
 
 INT4 NormaliseSFTData(void);
 INT4 ReadSFTData (void);
@@ -187,7 +191,7 @@ INT4 ReadBinaryTemplateBank(void);
 void InitDopplerScanOnRefinedGrid ( LALStatus *status, DopplerScanState *theScan, DopplerScanInit *scanInit);
 
 #define EPHEM_YEARS  "00-04"
-#define SFT_BNAME  "SFT"
+#define SFT_BNAME  ""
 
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -212,6 +216,8 @@ int main(int argc,char *argv[])
   FILE *fpOut=NULL;
   UINT4 counter;
   LALStatus status = blank_status;	/* initialize status */
+  binarysource sourceparams;
+  LIGOTimeGPS *dummyGPS=NULL;
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -243,8 +249,8 @@ int main(int argc,char *argv[])
   LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);	
   
   if (uvar_help)
-    exit (0);
-
+    exit (0);  
+  
   if ( !uvar_binary ) {
     LALPrintError ("\nSorry, this code is not functional in the NON-binary case\n\n");
     exit (COMPUTEFSTATC_EINPUT);
@@ -368,10 +374,21 @@ int main(int argc,char *argv[])
   /* BINARY-MOD - Call function to read in Binary template bank */
   if (uvar_binary) {
     LAL_CALL (ReadBinaryTemplateBank(), &status);  
-    Alpha=uvar_Alpha;   /* BINARY-MOD - Also set sky location */
-    Delta=uvar_Delta;
+    
+    /* read in source file paramters (only care about RA, dec) */
+    if (uvar_sourcefile!=NULL) {
+      
+      if (ReadSource(uvar_sourcefile,uvar_source,dummyGPS,&sourceparams)) return 1;;
+      Alpha=sourceparams.skypos.ra;
+      Delta=sourceparams.skypos.dec;
+      
+    }
+    else{
+      Alpha=uvar_Alpha;   /* BINARY-MOD - Also set sky location */
+      Delta=uvar_Delta;
+    }
   }
-  printf("read binary bank into mem\n");
+ 
 
   if (uvar_outputFstat)   
     {
@@ -549,11 +566,16 @@ initUserVars (LALStatus *stat)
   ATTATCHSTATUSPTR (stat);
 
   /* set a few defaults */
-  uvar_Dterms 	= 16;
+  uvar_dterms 	= 16;
   uvar_FreqBand = 0.0;
   uvar_dFreq = 0;
 
   uvar_binary=FALSE;       /* BINARY-MOD - Set binary flag to FALSE for safety */
+  uvar_sourcefile = LALMalloc(512);
+  uvar_source = LALMalloc(512);
+  uvar_sourcefile=NULL;
+  uvar_source=NULL;
+  uvar_overres=0.0;
 
   uvar_Alpha 	= 0.0;
   uvar_Delta 	= 0.0;
@@ -605,7 +627,7 @@ initUserVars (LALStatus *stat)
  
   /* BINARY-MOD - added binary flag, dopplermax variable, running median window size variable */ 
 
-  LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
+  LALregINTUserVar(stat,	dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
   LALregREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
   LALregREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
   LALregREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
@@ -640,6 +662,9 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
   LALregSTRINGUserVar(stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
   LALregSTRINGUserVar(stat,	binarytemplatefile,	 0,  UVAR_OPTIONAL, "Read binary templates from this file.");
+  LALregSTRINGUserVar(stat,	sourcefile,	 0,  UVAR_OPTIONAL, "Read in source parameters from this file.");
+  LALregSTRINGUserVar(stat,	source,	 0,          UVAR_OPTIONAL, "Name of the binary source to be analysed .");
+  LALregREALUserVar(stat,	overres,	 0,          UVAR_OPTIONAL, "The frequency over resolution factor.");
 
   LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
   LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
@@ -1075,7 +1100,7 @@ void CreateDemodParams (LALStatus *status)
   DemodParams->imax=GV.FreqImax;
   DemodParams->df=GV.dFreq;
 
-  DemodParams->Dterms=uvar_Dterms;
+  DemodParams->Dterms=uvar_dterms;
   DemodParams->ifmin=GV.ifmin;
 
   DemodParams->returnFaFb = uvar_EstimSigParam;
@@ -1182,7 +1207,7 @@ void CreateBinaryDemodParams (LALStatus *status)
   DemodParams->imax=GV.FreqImax;
   DemodParams->df=GV.dFreq;
 
-  DemodParams->Dterms=uvar_Dterms;
+  DemodParams->Dterms=uvar_dterms;
   DemodParams->ifmin=GV.ifmin;
 
   DemodParams->returnFaFb = uvar_EstimSigParam;
@@ -1716,9 +1741,11 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     }
   if (uvar_binary)  /* BINARY-MOD - Just a safety thing, setting default df=1/5T and df1dot=0.0 */
     {
-      /* if user has not input demodulation frequency resolution; set to 1/5*Tobs */
-      if( !LALUserVarWasSet (&uvar_dFreq) ) 
-	cfg->dFreq=1.0/(5.0*header.tbase*cfg->SFTno);
+      /* if user has not input demodulation frequency resolution; set to 1/5*Tspan */
+      if(( !LALUserVarWasSet (&uvar_dFreq) )&(!LALUserVarWasSet(&uvar_overres))) 
+	cfg->dFreq=1.0/(5.0*header.tbase*(cfg->Tf-cfg->Ti));  /* note here we use tspan !!!! */
+      else if (LALUserVarWasSet(&uvar_overres))
+	cfg->dFreq=1.0/(uvar_overres*header.tbase*(cfg->Tf-cfg->Ti));
       else
 	cfg->dFreq = uvar_dFreq;
       
@@ -1737,8 +1764,8 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 
   cfg->nsamples=header.nsamples;    /* # of freq. bins */
 
-  cfg->ifmax=ceil((1.0+uvar_dopplermax)*(uvar_Freq+uvar_FreqBand)*cfg->tsft)+uvar_Dterms;
-  cfg->ifmin=floor((1.0-uvar_dopplermax)*uvar_Freq*cfg->tsft)-uvar_Dterms;
+  cfg->ifmax=ceil((1.0+uvar_dopplermax)*(uvar_Freq+uvar_FreqBand)*cfg->tsft)+uvar_dterms;
+  cfg->ifmin=floor((1.0-uvar_dopplermax)*uvar_Freq*cfg->tsft)-uvar_dterms;
 
   /* allocate F-statistic arrays */
   Fstat.F =(REAL8*)LALMalloc(cfg->FreqImax*sizeof(REAL8));
@@ -2040,7 +2067,7 @@ INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN)
 
 
 /*    check that ReturnMaxN is sensible */
-  printf("GV.FreqImax is %d\n",GV.FreqImax);
+ 
   if (ReturnMaxN>GV.FreqImax){
     fprintf(stderr,"PrintTopValues() WARNING: resetting ReturnMaxN=%d to %d\n",
 	    ReturnMaxN, (INT4)GV.FreqImax);
@@ -2237,13 +2264,9 @@ INT4 EstimatePSDLines(LALStatus *status)
   Sp->length=nbins;
   FloorSp->length=nbins;
 
-  printf("got to here\n");
-  printf("windowsize is %d\n",windowSize);
-
+  
   j=EstimateFloor(Sp, windowSize, FloorSp);
  
-  printf("after estimatefllor\n");
-
   if (!(outliers=(Outliers *)LALMalloc(sizeof(Outliers)))){
     fprintf(stderr,"Memory allocation failure for SpOutliers\n");
     return 1;
