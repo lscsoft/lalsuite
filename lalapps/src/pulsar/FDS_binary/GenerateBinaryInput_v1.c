@@ -18,14 +18,15 @@
 #include <time.h>
 #include <getopt.h>
 #include <lal/LALDatatypes.h>
+#include "ReadSourceFile_v1.h"
 
 INT4 lalDebugLevel=3;
 
 REAL8 alpha,delta;
 REAL8 sma,period,ecc,argperi;
 INT4 tperisec,tperins;
-INT4 tsft,start,nsft,starttime,reftime,tobs;
-REAL8 f_min,band,sigma;
+INT4 tsft,start,starttime,reftime;
+REAL8 f_min,band,sigma,duration;
 CHAR noisedir[256],efiles[56],basename[256],yr[256],ifo[256],stamps[256],outfile[256];
 REAL8 phi,psi,cosiota,f0,h0;
 REAL8 f1dot,f2dot,f3dot;
@@ -33,18 +34,29 @@ REAL8 aplus,across;
 BOOLEAN stampsflag=0;
 BOOLEAN startflag=0;
 BOOLEAN noisedirflag=0;
+CHAR sourcefile[256],source[256];
+BOOLEAN sourceflag;
 
 extern char *optarg;
 extern int optind, opterr, optopt;
-int GenTimeStamps();
+int GenTimeStamps(void);
 int ReadCommandLine(int argc,char *argv[]); 
-int OutputConfigFile();
+int OutputConfigFile(void);
 
 int main(int argc,char *argv[]) 
 {
 
+  binarysource sourceparams;
+  LIGOTimeGPS *dummyGPS=NULL;
+
   if (ReadCommandLine(argc,argv)) return 1;
   
+  if (sourceflag) {
+    if (ReadSource(sourcefile,source,dummyGPS,&sourceparams)) return 2;
+    alpha = sourceparams.skypos.ra;
+    delta = sourceparams.skypos.dec;
+  }
+
   if ((stampsflag)&&(startflag)) {
     if (GenTimeStamps()) return 2;
   }
@@ -54,6 +66,7 @@ int main(int argc,char *argv[])
   return 0;
 
 }
+
 /*******************************************************************************/
 
 int GenTimeStamps() 
@@ -61,8 +74,11 @@ int GenTimeStamps()
 
   FILE *fpstamps;
   INT4 j;
+  REAL8 tobs;
+  INT4 nsft;
 
-  tobs=(REAL8)nsft*tsft;
+  tobs=tsft*floor(duration/tsft);
+  nsft=floor(duration/tsft);
 
   /* opening the output timestamps file */
   fpstamps=fopen(stamps,"w");
@@ -90,6 +106,9 @@ int GenTimeStamps()
   optarg = NULL;
   
   /* Initialize default values */
+  sprintf(sourcefile," ");
+  sprintf(source," ");
+  sourceflag=0;
   alpha=0.0; /* a */
   delta=0.0; /* d */
   sprintf(ifo,"LLO");      /* I */            
@@ -100,7 +119,7 @@ int GenTimeStamps()
   f0=600.0; /* F */
   tsft=60; /* t */
   sprintf(stamps," "); /* T */
-  nsft=0; /* N */
+  duration=0.0; /* N */
   f_min=540.0; /* f */
   band=100.0; /* b */
   starttime=0; /* S */
@@ -127,42 +146,52 @@ int GenTimeStamps()
   {
     int option_index = 0;
     static struct option long_options[] = {
-                {"alpha", required_argument, 0, 'a'},
-                {"delta", required_argument, 0, 'd'},
-                {"ifo", required_argument, 0, 'I'},
-                {"phi", required_argument, 0, 'p'},
-                {"psi", required_argument, 0, 'P'},
-                {"cosiota", required_argument, 0, 'c'},
-                {"h0", required_argument, 0, 'H'},
-                {"f0", required_argument, 0, 'F'},
-                {"tsft", required_argument, 0, 't'},
-                {"nsft", required_argument, 0, 'N'},
-		{"f_min", required_argument, 0, 'f'},
-                {"band", required_argument, 0, 'b'},
-		{"stamps", required_argument, 0, 's'},
-                {"start", required_argument, 0, 'S'},
-                {"reftime", required_argument, 0, 'R'},
-                {"sigma", required_argument, 0, 'g'},
-                {"ephem", required_argument, 0, 'E'},
-                {"yr", required_argument, 0, 'y'},
-                {"noisedir", required_argument, 0, 'n'},
-                {"basename", required_argument, 0, 'm'},
-                {"f1dot", required_argument, 0, '1'},
-                {"f2dot", required_argument, 0, '2'},
-                {"f3dot", required_argument, 0, '3'},
-		{"smaxis", required_argument, 0, 'A'},
-                {"period", required_argument, 0, 'O'},
-                {"tperisec", required_argument, 0, 'X'},
-                {"tperinan", required_argument, 0, 'x'},
-                {"ecc", required_argument, 0, 'e'},
-                {"argperi", required_argument, 0, 'u'},
-		{"outfile", required_argument, 0, 'o'},
-		{"help", required_argument, 0, 'h'}
+      {"sourcefile", required_argument, 0, 'Q'},
+      {"source", required_argument, 0, 'q'},
+      {"alpha", required_argument, 0, 'a'},
+      {"delta", required_argument, 0, 'd'},
+      {"ifo", required_argument, 0, 'I'},
+      {"phi", required_argument, 0, 'p'},
+      {"psi", required_argument, 0, 'P'},
+      {"cosiota", required_argument, 0, 'c'},
+      {"h0", required_argument, 0, 'H'},
+      {"f0", required_argument, 0, 'F'},
+      {"tsft", required_argument, 0, 't'},
+      {"duration", required_argument, 0, 'N'},
+      {"f_min", required_argument, 0, 'f'},
+      {"band", required_argument, 0, 'b'},
+      {"stamps", required_argument, 0, 's'},
+      {"start", required_argument, 0, 'S'},
+      {"reftime", required_argument, 0, 'R'},
+      {"sigma", required_argument, 0, 'g'},
+      {"ephem", required_argument, 0, 'E'},
+      {"yr", required_argument, 0, 'y'},
+      {"noisedir", required_argument, 0, 'n'},
+      {"basename", required_argument, 0, 'm'},
+      {"f1dot", required_argument, 0, '1'},
+      {"f2dot", required_argument, 0, '2'},
+      {"f3dot", required_argument, 0, '3'},
+      {"smaxis", required_argument, 0, 'A'},
+      {"period", required_argument, 0, 'O'},
+      {"tperisec", required_argument, 0, 'X'},
+      {"tperinan", required_argument, 0, 'x'},
+      {"ecc", required_argument, 0, 'e'},
+      {"argperi", required_argument, 0, 'u'},
+      {"outfile", required_argument, 0, 'o'},
+      {"help", required_argument, 0, 'h'}
     };
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt_long (argc, argv,"ha:d:I:p:P:c:H:F:t:N:f:b:s:S:R:g:E:y:n:m:1:2:3:A:O:X:x:e:u:o:",long_options, &option_index)))!=-1)
+  while (!errflg && ((c = getopt_long (argc, argv,"hQ:q:a:d:I:p:P:c:H:F:t:N:f:b:s:S:R:g:E:y:n:m:1:2:3:A:O:X:x:e:u:o:",long_options, &option_index)))!=-1)
     switch (c) {
-      
+    case 'Q':
+      temp=optarg;
+      sprintf(sourcefile,temp);
+      sourceflag=1;
+      break;
+    case 'q':
+      temp=optarg;
+      sprintf(source,temp);
+      break;
     case 'a':
       alpha=atof(optarg);
       break;
@@ -192,7 +221,7 @@ int GenTimeStamps()
       tsft=atoi(optarg);
       break;
     case 'N':
-      nsft=atoi(optarg);
+      duration=atof(optarg);
       break;
     case 'f':
       f_min=atof(optarg);
@@ -265,6 +294,8 @@ int GenTimeStamps()
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
+      fprintf(stdout,"\t--sourcefile STRING\t The name of the source file conotaining source information [DEFAULT= ]\n");
+      fprintf(stdout,"\t--source     STRING\t The name of the source [DEFAULT= ]\n");
       fprintf(stdout,"\t--alpha    FLOAT\t Sky position alpha (equatorial coordinates) in radians [DEFAULT= ]\n");
       fprintf(stdout,"\t--delta    FLOAT\t Sky position delta (equatorial coordinates) in radians [DEFAULT= ]\n");
       fprintf(stdout,"\t--ifo      STRING\t Detector (LLO,LHO,GEO,VIRGO,TAMA) [DEFAULT=LLO]\n");
@@ -274,7 +305,7 @@ int GenTimeStamps()
       fprintf(stdout,"\t--h0       FLOAT\t Gravitational wave amplitude [DEFAULT=1.0]\n");
       fprintf(stdout,"\t--f0       FLOAT\t Gravitational wave frequency in Hz [DEFAULT=600.0]\n");
       fprintf(stdout,"\t--tsft     INTEGER\t Time basefile of SFT's in seconds [DEFAULT=60]\n");
-      fprintf(stdout,"\t--nsft     INTEGER\t Number of SFT's to generate [DEFAULT=0]\n");
+      fprintf(stdout,"\t--duration REAL8\t Number of SFT's to generate [DEFAULT=0]\n");
       fprintf(stdout,"\t--f_min     FLOAT\t Minimum generation frequency in Hz [DEFAULT=40.0] \n");
       fprintf(stdout,"\t--band     FLOAT\t Bandwidth to be generated in Hz [DEFAULT=10.0]\n");
       fprintf(stdout,"\t--stamps   STRING\t Location and name of timestamps file [DEFAULT=NULL]\n");
@@ -341,8 +372,13 @@ int OutputConfigFile()
   fprintf(fp,"\n");
   fprintf(fp,"detector\t= %s\t\t\t# Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME\n",ifo);
   fprintf(fp,"ephemDir\t= %s\t\t\t# directory containing ephemeris files\n",efiles);
-  fprintf(fp,"nTsft\t\t= %d\t\t\t# number of SFTs to calculate\n",nsft);
-  fprintf(fp,"f_min\t\t= %6.12f\t# lowest SFT-frequency in Hz\n",f_min);
+  if (!stampsflag) {
+    fprintf(fp,"duration\t\t= %f\t\t\t# Duration of requested signal in seconds\n",duration);
+  }
+  else {
+    fprintf(fp,"#duration\t\t= \t\t\t# Duration of requested signal in seconds\n");
+  }
+  fprintf(fp,"fmin\t\t= %6.12f\t# lowest SFT-frequency in Hz\n",f_min);
   fprintf(fp,"Band\t\t= %6.12f\t# SFT frequency band in Hz\n",band);
   fprintf(fp,"longitude\t= %6.12f\t# source longitude (in_radians)\n",alpha);
   fprintf(fp,"latitude\t= %6.12f\t# source latitude (in radians)\n",delta);
@@ -375,23 +411,23 @@ int OutputConfigFile()
   fprintf(fp,"\n");
   if (reftime<=0) 
     {
-      fprintf(fp,"#reftime\t=\t # reference-time tRef in SSB of pulsar-parameters\n");
+      fprintf(fp,"#refTime\t=\t # reference-time tRef in SSB of pulsar-parameters\n");
     }
   else 
     {
-      fprintf(fp,"reftime\t= %d\t# reference-time tRef in SSB of pulsar-parameters\n",reftime);
+      fprintf(fp,"refTime\t= %d\t# reference-time tRef in SSB of pulsar-parameters\n",reftime);
     }
   fprintf(fp,"\n");
   fprintf(fp,"## --- maximally ONE of the following two can be specified\n");
   if (noisedirflag)
     {
       fprintf(fp,"#noiseSigma\t= \t# variance for Gaussian noise to be added to output\n");
-      fprintf(fp,"noiseDir\t= %s\t# Directory with real noise SFTs to be added\n",noisedir);
+      fprintf(fp,"noiseSFTs\t= %s\t# Directory with real noise SFTs to be added\n",noisedir);
     }
   else
     {
       fprintf(fp,"noiseSigma\t= %6.12f\t# variance for Gaussian noise to be added to output\n",sigma);
-      fprintf(fp,"#noiseDir\t= \t# Directory with real noise SFTs to be added\n");
+      fprintf(fp,"#noiseSFTs\t= \t# Directory with real noise SFTs to be added\n");
     }
    fprintf(fp,"\n");
    fprintf(fp,"outSFTbname\t= %s\t# path+basename for final SFTs, e.g. 'test_new/SFT'\n",basename);
