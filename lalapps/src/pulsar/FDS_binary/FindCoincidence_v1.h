@@ -14,8 +14,6 @@
 #include <lal/SeqFactories.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Date.h>
-#include <lal/FlatMesh.h>
-#include <lal/FindRoot.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/StackMetric.h>
@@ -47,6 +45,9 @@ typedef struct Resulttag {
   LIGOTimeGPS tp;
   REAL8 ecc;
   REAL8 argp;
+  INT4 ncluster;
+  REAL8 meantwoF;
+  REAL8 stdtwoF;
   REAL8 twoF;
 } Result;
 
@@ -68,3 +69,15 @@ typedef struct CoResultstag {
   Significance *significance;
 } CoResults;
 
+typedef struct FreqMeshtag {
+  BinaryMeshFileHeader p_header;
+  BinaryMeshFileHeader s_header;
+  REAL8 f_min;
+  REAL8 f_max;
+  REAL8 f_band;
+} FreqMesh;
+
+typedef struct FreqMeshestag {
+  INT4 Nheaders;
+  FreqMesh *freqmesh;
+} FreqMeshes;
