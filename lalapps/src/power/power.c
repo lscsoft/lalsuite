@@ -717,8 +717,8 @@ void parse_command_line(
 
 		case 'U':
 		params->tfTilingInput.minTimeBins = atoi(optarg);
-		if(params->tfTilingInput.minTimeBins <= 0) {
-			sprintf(msg,"must be > 0 (%i specified)", params->tfTilingInput.minTimeBins);
+		if(params->tfTilingInput.minTimeBins <= 0 || !is_power_of_2(params->tfTilingInput.minTimeBins)) {
+			sprintf(msg,"must be > 0 (%i specified) and a power of 2", params->tfTilingInput.minTimeBins);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -825,8 +825,8 @@ void parse_command_line(
 
 		case 'f':
 		params->tfTilingInput.overlapFactor = atoi(optarg);
-		if(params->tfTilingInput.overlapFactor <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", params->tfTilingInput.overlapFactor);
+		if(params->tfTilingInput.overlapFactor > params->tfTilingInput.minTimeBins ||  !is_power_of_2(params->tfTilingInput.overlapFactor)) {
+			sprintf(msg, "must be < params->tfTilingInput.minTimeBins(%i) (%i specified) and a power of 2", params->tfTilingInput.minTimeBins, params->tfTilingInput.overlapFactor);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -1203,7 +1203,7 @@ static void add_burst_injections(
 	INT4 startTime = series->epoch.gpsSeconds;
 	INT4 stopTime = startTime + series->data->length * series->deltaT;
 	SimBurstTable *injections = NULL;
-	INT4 calType=1;
+	INT4 calType=0;
 
 	if(!response) {
 		fprintf(stderr, "add_burst_injections(): must supply calibration information for injections\n");
