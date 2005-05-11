@@ -327,7 +327,7 @@ int ReadOrbitalParams(char *templatefile,RandomParameters *randomparams)
 
 /*******************************************************************************/
 
-int InitialiseRandParams(RandomParameters *rand) 
+int InitialiseRandParams(RandomParameters *random) 
 {
 
   /* this function just initialises the random parameters by pointing them to NULL */
@@ -335,21 +335,21 @@ int InitialiseRandParams(RandomParameters *rand)
   /* allocate some memory */
   /* rand=(RandomParameters *)LALMalloc(sizeof(RandomParameters)); */
 
-  rand->ra=NULL;
-  rand->dec=NULL;
-  rand->sma=NULL;
-  rand->tperi=NULL;
-  rand->period=NULL;
-  rand->ecc=NULL;
-  rand->argp=NULL;
-  rand->freq=NULL;
-  rand->phi=NULL;
-  rand->psi=NULL;
-  rand->cosiota=NULL;
-  rand->h0=NULL;
-  rand->ra=NULL;
-  rand->dec=NULL;
-  rand->det=NULL;
+  random->ra=NULL;
+  random->dec=NULL;
+  random->sma=NULL;
+  random->tperi=NULL;
+  random->period=NULL;
+  random->ecc=NULL;
+  random->argp=NULL;
+  random->freq=NULL;
+  random->phi=NULL;
+  random->psi=NULL;
+  random->cosiota=NULL;
+  random->h0=NULL;
+  random->ra=NULL;
+  random->dec=NULL;
+  random->det=NULL;
 
   return 0;
 
@@ -764,7 +764,7 @@ int GenRandomParams(RandomParameters *randparams)
 
 /*******************************************************************************/
 
-int OutputRandomConfigFile(char *outfile,RandomParameters *rand,RandomParameters *rand_det) 
+int OutputRandomConfigFile(char *outfile,RandomParameters *random,RandomParameters *rand_det) 
 {
 
   /* this function scans through the original input template config file and */
@@ -847,8 +847,8 @@ int OutputRandomConfigFile(char *outfile,RandomParameters *rand,RandomParameters
   fprintf(fppython,"[randomparameters]\n");
   
   /* define h0 value here */
-  if (rand->h0==NULL) h0=1.0;
-  else h0=rand->h0->value;
+  if (random->h0==NULL) h0=1.0;
+  else h0=random->h0->value;
 
 
   i=0;
@@ -870,40 +870,40 @@ int OutputRandomConfigFile(char *outfile,RandomParameters *rand,RandomParameters
       if (strcmp(name,reftimetext)==0) {
         sprintf(line,"refTime\t= %d\t\t# ?\n",rand_det->start);
       }
-      else if ((strcmp(name,longitudetext)==0)&&(rand->ra!=NULL)) {
-	sprintf(line,"longitude\t= %6.12f\t# source longitude (in_radians)\n",rand->ra->value);
-	fprintf(fppython,"ra = %6.12f\n",rand->ra->value); 
+      else if ((strcmp(name,longitudetext)==0)&&(random->ra!=NULL)) {
+	sprintf(line,"longitude\t= %6.12f\t# source longitude (in_radians)\n",random->ra->value);
+	fprintf(fppython,"ra = %6.12f\n",random->ra->value); 
       }
-      else if ((strcmp(name,latitudetext)==0)&&(rand->dec!=NULL)) {
-	sprintf(line,"latitude\t= %6.12f\t# source latitude (in radians)\n",rand->dec->value);
-	fprintf(fppython,"declination = %6.12f\n",rand->dec->value); 
+      else if ((strcmp(name,latitudetext)==0)&&(random->dec!=NULL)) {
+	sprintf(line,"latitude\t= %6.12f\t# source latitude (in radians)\n",random->dec->value);
+	fprintf(fppython,"declination = %6.12f\n",random->dec->value); 
       }
-      else if ((strcmp(name,aPlustext)==0)&&(rand->cosiota!=NULL)) {
-	aplus=0.5*h0*(1.0+rand->cosiota->value*rand->cosiota->value);
+      else if ((strcmp(name,aPlustext)==0)&&(random->cosiota!=NULL)) {
+	aplus=0.5*h0*(1.0+random->cosiota->value*random->cosiota->value);
 	sprintf(line,"aPlus\t\t= %6.12e\t# plus-polarization amplitude a_+ (strain)\n",aplus);
-	fprintf(fppython,"cosiota = %6.12f\n",rand->cosiota->value);
+	fprintf(fppython,"cosiota = %6.12f\n",random->cosiota->value);
       }
-      else if ((strcmp(name,aCrosstext)==0)&&(rand->cosiota!=NULL)) {
-	across=h0*rand->cosiota->value;
+      else if ((strcmp(name,aCrosstext)==0)&&(random->cosiota!=NULL)) {
+	across=h0*random->cosiota->value;
 	sprintf(line,"aCross\t\t= %6.12e\t# cross-polarization amplitude a_x (strain)\n",across);
       }
-      else if ((strcmp(name,psitext)==0)&&(rand->psi!=NULL)) {
-	sprintf(line,"psi\t\t= %6.12f\t# wave polarization angle Psi\n",rand->psi->value);
-	fprintf(fppython,"psi = %6.12f\n",rand->psi->value);
+      else if ((strcmp(name,psitext)==0)&&(random->psi!=NULL)) {
+	sprintf(line,"psi\t\t= %6.12f\t# wave polarization angle Psi\n",random->psi->value);
+	fprintf(fppython,"psi = %6.12f\n",random->psi->value);
       }
-      else if ((strcmp(name,phi0text)==0)&&(rand->phi!=NULL)) {
-	sprintf(line,"phi0\t\t= %6.12f\t# initial wave-phase phi0 (at reference-time tRef)\n",rand->phi->value);
-	fprintf(fppython,"phi = %6.12f\n",rand->phi->value);
+      else if ((strcmp(name,phi0text)==0)&&(random->phi!=NULL)) {
+	sprintf(line,"phi0\t\t= %6.12f\t# initial wave-phase phi0 (at reference-time tRef)\n",random->phi->value);
+	fprintf(fppython,"phi = %6.12f\n",random->phi->value);
       }
-      else if ((strcmp(name,f0text)==0)&&(rand->freq!=NULL)) {
-	sprintf(line,"f0\t\t= %6.12f\t# intrinsic signal frequency f0 (at tRef)\n",rand->freq->value);
-	fprintf(fppython,"f0 = %6.12f\n",rand->freq->value); 
+      else if ((strcmp(name,f0text)==0)&&(random->freq!=NULL)) {
+	sprintf(line,"f0\t\t= %6.12f\t# intrinsic signal frequency f0 (at tRef)\n",random->freq->value);
+	fprintf(fppython,"f0 = %6.12f\n",random->freq->value); 
       }
-      else if ((strcmp(name,fmintext)==0)&&(rand->freq!=NULL)) {
-	f_min=(REAL8)floor(rand->freq->value-((REAL8)freqband/2.0)+0.5);
+      else if ((strcmp(name,fmintext)==0)&&(random->freq!=NULL)) {
+	f_min=(REAL8)floor(random->freq->value-((REAL8)freqband/2.0)+0.5);
 	sprintf(line,"fmin\t\t= %6.12f\t# Lowest frequency in output SFT (= heterodyning frequency)\n",f_min);
       }
-      else if ((strcmp(name,fbandtext)==0)&&(rand->freq!=NULL)) {
+      else if ((strcmp(name,fbandtext)==0)&&(random->freq!=NULL)) {
 	sprintf(line,"Band\t\t= %6.12f\t# bandwidth of output SFT in Hz (= 1/2 sampling frequency)\n",freqband);
       }
       else if (strcmp(name,tstarttext)==0) {
@@ -917,32 +917,32 @@ int OutputRandomConfigFile(char *outfile,RandomParameters *rand,RandomParameters
 	sprintf(line,"outSFTbname\t= %s\t# Path and basefilename of output SFT files\n",rand_det->sftbase);
       }
       else if (strcmp(name,noisedirtext)==0) {
-	/* note that we put the /* on the end to bypass wildcard evaluation problems in the python script */
+	/* note that we put the * on the end to bypass wildcard evaluation problems in the python script */
 	sprintf(line,"noiseSFTs\t= %s/*\t# Glob-like pattern specifying noise-SFTs to be added to signal\n",rand_det->noisedir);
       }
-      else if ((strcmp(name,orbitSemiMajorAxistext)==0)&&(rand->sma!=NULL)) {
-	sprintf(line,"orbitSemiMajorAxis\t= %6.12f\t# Projected orbital semi-major axis a in seconds (i.e. a*sin(i)/c)\n",rand->sma->value);
-	fprintf(fppython,"sma = %6.12f\n",rand->sma->value); 
+      else if ((strcmp(name,orbitSemiMajorAxistext)==0)&&(random->sma!=NULL)) {
+	sprintf(line,"orbitSemiMajorAxis\t= %6.12f\t# Projected orbital semi-major axis a in seconds (i.e. a*sin(i)/c)\n",random->sma->value);
+	fprintf(fppython,"sma = %6.12f\n",random->sma->value); 
       }
-      else if ((strcmp(name,orbitEccentricitytext)==0)&&(rand->ecc!=NULL)) {
-	sprintf(line,"orbitEccentricity\t= %6.12f\t# Orbital eccentricity\n",rand->ecc->value);
-	fprintf(fppython,"ecc = %6.12f\n",rand->ecc->value); 
+      else if ((strcmp(name,orbitEccentricitytext)==0)&&(random->ecc!=NULL)) {
+	sprintf(line,"orbitEccentricity\t= %6.12f\t# Orbital eccentricity\n",random->ecc->value);
+	fprintf(fppython,"ecc = %6.12f\n",random->ecc->value); 
       }
-      else if ((strcmp(name,orbitTperiSSBsectext)==0)&&(rand->tperi!=NULL)) {
-	sprintf(line,"orbitTperiSSBsec\t= %d\t\t# 'observed' (SSB) time of periapsis passage. Seconds.\n",rand->tperi->value.gpsSeconds);
-	fprintf(fppython,"tpsec = %d\n",rand->tperi->value.gpsSeconds); 
+      else if ((strcmp(name,orbitTperiSSBsectext)==0)&&(random->tperi!=NULL)) {
+	sprintf(line,"orbitTperiSSBsec\t= %d\t\t# 'observed' (SSB) time of periapsis passage. Seconds.\n",random->tperi->value.gpsSeconds);
+	fprintf(fppython,"tpsec = %d\n",random->tperi->value.gpsSeconds); 
       }
-      else if ((strcmp(name,orbitTperiSSBnstext)==0)&&(rand->tperi!=NULL)) {
-	sprintf(line,"orbitTperiSSBns\t\t= %d\t\t# 'observed' (SSB) time of periapsis passage. Nanoseconds.\n",rand->tperi->value.gpsNanoSeconds);
-	fprintf(fppython,"tpnano = %d\n",rand->tperi->value.gpsNanoSeconds); 
+      else if ((strcmp(name,orbitTperiSSBnstext)==0)&&(random->tperi!=NULL)) {
+	sprintf(line,"orbitTperiSSBns\t\t= %d\t\t# 'observed' (SSB) time of periapsis passage. Nanoseconds.\n",random->tperi->value.gpsNanoSeconds);
+	fprintf(fppython,"tpnano = %d\n",random->tperi->value.gpsNanoSeconds); 
       }
-      else if ((strcmp(name,orbitPeriodtext)==0)&&(rand->period!=NULL)) {
-	sprintf(line,"orbitPeriod\t\t= %6.12f\t# Orbital period (seconds)\n",rand->period->value);
-	fprintf(fppython,"period = %6.12f\n",rand->period->value); 
+      else if ((strcmp(name,orbitPeriodtext)==0)&&(random->period!=NULL)) {
+	sprintf(line,"orbitPeriod\t\t= %6.12f\t# Orbital period (seconds)\n",random->period->value);
+	fprintf(fppython,"period = %6.12f\n",random->period->value); 
       }
-      else if ((strcmp(name,orbitArgPeriapsetext)==0)&&(rand->argp!=NULL)) {
-	sprintf(line,"orbitArgPeriapse\t= %6.12f\t# Argument of periapsis (radians)\n",rand->argp->value); 
-	fprintf(fppython,"argp = %6.12f\n",rand->argp->value); 
+      else if ((strcmp(name,orbitArgPeriapsetext)==0)&&(random->argp!=NULL)) {
+	sprintf(line,"orbitArgPeriapse\t= %6.12f\t# Argument of periapsis (radians)\n",random->argp->value); 
+	fprintf(fppython,"argp = %6.12f\n",random->argp->value); 
       }
       
       /* output the appropriate line to the output file */

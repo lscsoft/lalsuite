@@ -892,7 +892,6 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
   LIGOTimeGPS temp;
   REAL8Vector *sma_vec=NULL;
   UINT4 i,j;
-  INT4 *tempNORB=NULL;
 
   /* first allocate some memory for the new mesh (using all temporary local variables */
   if ((*XYmesh)->length<1) {

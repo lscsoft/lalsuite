@@ -68,7 +68,7 @@ int ReadSource(char *sourcefile, char *sourcename, LIGOTimeGPS *obsstart, binary
   REAL8 argp_max;
   REAL8 ecc_min;
   REAL8 ecc_max;
-  INT4 sign;
+  INT4 sign=1;
   LIGOTimeGPS tperi_min;
   LIGOTimeGPS tperi_max;
   INT4 nband;

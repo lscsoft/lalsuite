@@ -108,19 +108,13 @@ int PeriapseShiftBack(LIGOTimeGPS Tpstart, LIGOTimeGPS Tp0, LIGOTimeGPS TpIN,LIG
 {
 
   static LALStatus status;
-  REAL8 diff;
-  REAL8 diffMIN;
-  REAL8 diffMAX;
   REAL8 shift;
   REAL8 twoPeriod;
-  LALGPSCompareResult comp,compSHIFT,compSHIFTone,compSHIFTtwo,compSHIFTthree;
-  LALGPSCompareResult compMIN;
-  LALGPSCompareResult compMAX;
+  LALGPSCompareResult compSHIFT,compSHIFTone,compSHIFTtwo,compSHIFTthree;
   LALGPSCompareResult compone,comptwo,compthree,compfour;
   LALTimeInterval interval;
   LIGOTimeGPS tempone,temptwo,tempthree,tempfour;
-  LALTimeInterval intervalone,intervaltwo,intervalthree;
-  INT4 n;
+  LALTimeInterval intervalone,intervaltwo;
   REAL8 halfperiod;
   LIGOTimeGPS tempOUT;
 

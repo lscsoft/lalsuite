@@ -178,7 +178,7 @@ int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
 INT4 NormaliseSFTData(void);
 
-void initUserVars (LALStatus *stat);
+void initUserVars (LALStatus *Stat);
 
 /* BINARY-MOD - declaration of binary template reading function */
 INT4 ReadBinaryTemplateBank(void);
@@ -560,10 +560,10 @@ int main(int argc,char *argv[])
 
 /* register all our "user-variables", which can be read from cmd-line and config-file */
 void
-initUserVars (LALStatus *stat)
+initUserVars (LALStatus *Stat)
 {
-  INITSTATUS( stat, "initUserVars", rcsid );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( Stat, "initUserVars", rcsid );
+  ATTATCHSTATUSPTR (Stat);
 
   /* set a few defaults */
   uvar_dterms 	= 16;
@@ -627,51 +627,51 @@ initUserVars (LALStatus *stat)
  
   /* BINARY-MOD - added binary flag, dopplermax variable, running median window size variable */ 
 
-  LALregINTUserVar(stat,	dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
-  LALregREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
-  LALregREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
-  LALregREALUserVar(stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
-  LALregREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_OPTIONAL, "Directory where SFT's are located");
-  LALregSTRINGUserVar(stat,	mergedSFTFile, 	'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
-  LALregSTRINGUserVar(stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  LALregSTRINGUserVar(stat,	EphemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-  LALregSTRINGUserVar(stat,	EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  LALregSTRINGUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
-  LALregBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregBOOLUserVar(stat, 	binary, 	'u', UVAR_OPTIONAL, "Binary search flag");
-  LALregREALUserVar(stat, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
-  LALregREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
-  LALregREALUserVar(stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
-  LALregREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
-  LALregBOOLUserVar(stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
-  LALregREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-  LALregINTUserVar(stat, 	windowsize,	'k', UVAR_OPTIONAL, "Running-Median window size");
-  LALregINTUserVar(stat, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
-  LALregINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
-  LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message");
-  LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
-  LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
-  LALregSTRINGUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
-  LALregSTRINGUserVar(stat,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
-  LALregSTRINGUserVar(stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
-  LALregSTRINGUserVar(stat,	binarytemplatefile,	 0,  UVAR_OPTIONAL, "Read binary templates from this file.");
-  LALregSTRINGUserVar(stat,	sourcefile,	 0,  UVAR_OPTIONAL, "Read in source parameters from this file.");
-  LALregSTRINGUserVar(stat,	source,	 0,          UVAR_OPTIONAL, "Name of the binary source to be analysed .");
-  LALregREALUserVar(stat,	overres,	 0,          UVAR_OPTIONAL, "The frequency over resolution factor.");
+  LALregINTUserVar(Stat,	dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
+  LALregREALUserVar(Stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
+  LALregREALUserVar(Stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
+  LALregREALUserVar(Stat, 	dFreq, 		'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
+  LALregREALUserVar(Stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(Stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  LALregREALUserVar(Stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(Stat, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
+  LALregREALUserVar(Stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(Stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
+  LALregSTRINGUserVar(Stat,	DataDir, 	'D', UVAR_OPTIONAL, "Directory where SFT's are located");
+  LALregSTRINGUserVar(Stat,	mergedSFTFile, 	'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
+  LALregSTRINGUserVar(Stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
+  LALregSTRINGUserVar(Stat,	EphemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
+  LALregSTRINGUserVar(Stat,	EphemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregSTRINGUserVar(Stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
+  LALregBOOLUserVar(Stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+  LALregBOOLUserVar(Stat, 	binary, 	'u', UVAR_OPTIONAL, "Binary search flag");
+  LALregREALUserVar(Stat, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
+  LALregREALUserVar(Stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
+  LALregREALUserVar(Stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
+  LALregREALUserVar(Stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)");
+  LALregBOOLUserVar(Stat, 	EstimSigParam, 	'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
+  LALregREALUserVar(Stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
+  LALregINTUserVar(Stat, 	windowsize,	'k', UVAR_OPTIONAL, "Running-Median window size");
+  LALregINTUserVar(Stat, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
+  LALregINTUserVar(Stat, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
+  LALregREALUserVar(Stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
+  LALregBOOLUserVar(Stat, 	help, 		'h', UVAR_HELP,     "Print this message");
+  LALregSTRINGUserVar(Stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
+  LALregSTRINGUserVar(Stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
+  LALregSTRINGUserVar(Stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for the F-statistic field over the parameter-space");
+  LALregSTRINGUserVar(Stat,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
+  LALregSTRINGUserVar(Stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
+  LALregSTRINGUserVar(Stat,	binarytemplatefile,	 0,  UVAR_OPTIONAL, "Read binary templates from this file.");
+  LALregSTRINGUserVar(Stat,	sourcefile,	 0,  UVAR_OPTIONAL, "Read in source parameters from this file.");
+  LALregSTRINGUserVar(Stat,	source,	 0,          UVAR_OPTIONAL, "Name of the binary source to be analysed .");
+  LALregREALUserVar(Stat,	overres,	 0,          UVAR_OPTIONAL, "The frequency over resolution factor.");
 
-  LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
-  LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
+  LALregBOOLUserVar(Stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
+  LALregSTRINGUserVar(Stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
 
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (Stat);
+  RETURN (Stat);
 } /* initUserVars() */
 
 
@@ -888,7 +888,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       /* and Phi0_PULGROUPDOC is the one used in In.data. */
  
       /* medianbias is 1 if GV.SignalOnly==1 */
-      fprintf(fpMLEParam,"%16.8lf %22E", uvar_Freq + irec*GV.dFreq, 2.0*medianbias*Fstat.F[irec]);
+      fprintf(fpMLEParam,"%16.8f %22E", uvar_Freq + irec*GV.dFreq, 2.0*medianbias*Fstat.F[irec]);
 
 
       fprintf(fpMLEParam,"  %10.6f",(1.0+mu_mle*mu_mle)*h0mle/2.0);
@@ -1268,7 +1268,7 @@ int writeFLines(INT4 *maxIndex){
   INT4 i,j,j1,j2,k,N;
   REAL8 max,log2,mean,var,std,R,fr;
   INT4 imax;
-  INT4 err;
+  INT4 err=0;
 
   log2=medianbias;
  
@@ -1385,7 +1385,7 @@ int NormaliseSFTData(void)
 int ReadSFTData(void)
 {
   INT4 fileno=0,offset;
-  FILE *fp;
+  FILE *fp=NULL;
   size_t errorcode;
   UINT4 ndeltaf;
   INT4 k=0;

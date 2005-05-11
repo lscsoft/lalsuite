@@ -14,7 +14,7 @@
 int ReadSource(char *,char *,LIGOTimeGPS *,binarysource *); 
 int ReadData(char *,binarysource *,dataset *,REAL8,INT4,FFT ***);
 int CalculateSh(FFT ***,dataset *,REAL8 *);
-int FreeSFTs(dataset *,FFT ***,INT4);   
+int FreeSFTs(dataset *,FFT ***);   
 int GetAB(EphemerisData *,char *,dataset *,binarysource *,sensresults *); 
 int CalculateSensitivity(sensitivityparams *,binarysource *,sensresults **);
 int OutputResult(char *,sensitivityparams *,sensresults *);
@@ -43,8 +43,6 @@ int main(int argc, char **argv){
   binarysource sourceparams;
   EphemerisData *edat=NULL;
   INT4 i,j;
-  FILE *fpnob=NULL;
-  CHAR outputfile[256];
 
    /* read the command line arguments */
   if (ReadCommandLine(argc,argv)) return 1;
@@ -97,7 +95,7 @@ int main(int argc, char **argv){
 	if (CalculateSh(&tempSFTData,&sensparams.dataparams[j],&results[j].ShAV[i])) return 3; 
 
 	/* free memory */
-	if (FreeSFTs(&sensparams.dataparams[j],&tempSFTData,sensparams.dataparams[j].sftno)) return 7; 
+	if (FreeSFTs(&sensparams.dataparams[j],&tempSFTData)) return 7; 
       
       }
 
@@ -106,7 +104,7 @@ int main(int argc, char **argv){
     /*printf("*** Freeing the full dataset\n"); */
 
     /* free the full SFT data */
-    if (FreeSFTs(&fulldataparams,&SFTData,maxsftno)) return 8;
+    if (FreeSFTs(&fulldataparams,&SFTData)) return 8;
         
     /* freeing the full data set parameters structure */
     LALFree(fulldataparams.stamps);
@@ -292,7 +290,7 @@ int OutputResult(char *outputdir,sensitivityparams *sensparams,sensresults *resu
 
   FILE *fp;
   INT4 i;
-  char outputfile[512],temp[512];
+  char outputfile[512];
   
   strcpy(outputfile,outputdir);
   sprintf(outputfile,"%s/sensitivity_%s_%s_%d-%d.data",outputdir,det,sourcename,start,end);
@@ -613,7 +611,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
 
   /* if we have found no SFTs ini the range */
   if (dataparams->sftno==0) {
-    fprintf(stderr,"ERROR : No SFT's in directory %s between %d and %d !!! Exiting nicely\n",datadirectory,dataparams->start.gpsSeconds,dataparams->end.gpsSeconds+t_span);
+    fprintf(stderr,"ERROR : No SFT's in directory %s between %d and %d !!! Exiting nicely\n",datadirectory,dataparams->start.gpsSeconds,dataparams->end.gpsSeconds+(INT4)t_span);
     exit(0);
   }
 
@@ -626,7 +624,7 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
   dataparams->tobs=(REAL8)(dataparams->tsft*dataparams->sftno);*/
   dataparams->nbins=ndeltaf;
 
-  for (i=0;i<nfiles;i++) LALFree(filelist[i]);
+  for (i=0;i<(UINT4)nfiles;i++) LALFree(filelist[i]);
   LALFree(filelist);
    
   LALRealloc((*SFTData),dataparams->sftno*sizeof(FFT *));
@@ -692,7 +690,7 @@ int CalculateSh(FFT ***SFTData, dataset *dataparams,REAL8 *ShAV)
 
 /*******************************************************************************/
 
-int FreeSFTs(dataset *dataparams, FFT ***SFTData,INT4 sftno)
+int FreeSFTs(dataset *dataparams, FFT ***SFTData)
 {
 
   INT4 k;

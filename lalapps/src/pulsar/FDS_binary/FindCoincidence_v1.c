@@ -67,6 +67,7 @@ int CalculateSignificance(REAL8,REAL8 *);
 int ReadFreqMeshFile(char *, FreqMeshes **);
 int ReadDatasetParams(char *,INT4,REAL8 *);
 int GetSSBTimes(BinaryMeshFileHeader *,BinaryMeshFileHeader *);
+int isinf(double);
 
 int main(int argc,char *argv[]) 
 {
@@ -145,7 +146,6 @@ int ReadDatasetParams(char *datasetparamsfile,INT4 bins,REAL8 *df)
 
   FILE *fp;
   char line[1024],temp[256];
-  REAL8 tspan;
   char a[256],b[256];
 
   fp = fopen(datasetparamsfile,"r");
@@ -1057,7 +1057,7 @@ INT4 OutputCoincidence(char *outdir,REAL8 min_f,REAL8 max_f,CoResults *co_result
 
   /* this function outputs the coincidence events to a file in the given directory */
   
-  INT4 k,i;
+  INT4 k;
   FILE *fp;
   char temp[256];
   char outfile[256];

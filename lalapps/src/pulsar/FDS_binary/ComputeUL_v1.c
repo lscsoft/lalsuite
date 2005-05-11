@@ -117,7 +117,6 @@ int ExtrapolateUL(ULData ULdata,REAL8 confidence, REAL8 **h0conf)
   /* the requested confidence */
 
   INT4 i,j,q;
-  REAL8 *diff;
   REAL8 c1,c2,c3,h1,h2,h3,r,s,t;
   INT4 *indexes;
 
@@ -262,8 +261,7 @@ int ComputeConfidence(char *inputdir,FreqMesh freqmesh,REAL8 loudsig,REAL8 h0,RE
   INT4 nfiles;
   REAL8 a;
   INT4 A;
-  REAL8 bum,arse;
-
+ 
   /* make the template filename for searching */
   sprintf(filename,"%s/injection_%.3f-%.3f_%.3e_*.data",inputdir,freqmesh.f_min,freqmesh.f_max,h0);
       
@@ -477,8 +475,8 @@ int FindLoudest(char *resultsdir,FreqMeshes *freqmeshes,char *maxoutfile,Loudest
   glob_t globbuf;
   INT4 i,j;
   INT4 nfiles;
-  REAL8 a,b,c,d,e,f,g,h,l,m,n,o,p,q,r,s,t,u;
-  INT4 A,B,C,D;
+  REAL8 a,f;
+  INT4 A;
   REAL8 p_sig,s_sig,co_sig;
   FILE *fpmax;
 

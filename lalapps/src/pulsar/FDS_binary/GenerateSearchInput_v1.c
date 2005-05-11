@@ -9,7 +9,6 @@
 #include "GenerateBinaryMesh_v1.h"
 
 INT4 lalDebugLevel=3;
-static LALStatus status;
 
 REAL8 alpha,delta;
 REAL8 sma,period,ecc,argp;
@@ -27,8 +26,8 @@ INT4 tstart;
 extern char *optarg;
 extern int optind, opterr, optopt;
 int ReadCommandLine(int argc,char *argv[]);
-int OutputConfigFile();
-int OutputBinTemplateFile();
+int OutputConfigFile(void);
+int OutputBinTemplateFile(void);
 
 int main(int argc,char *argv[]) 
 {
@@ -47,7 +46,7 @@ int main(int argc,char *argv[])
 
 /*******************************************************************************/
 
-int OutputBinTemplateFile() 
+int OutputBinTemplateFile(void) 
 {
 
   BinaryMeshFileHeader BMFheader;
@@ -321,7 +320,7 @@ int ReadCommandLine(int argc,char *argv[])
 
 /*******************************************************************************/
 
-int OutputConfigFile() 
+int OutputConfigFile(void) 
 {
   FILE *fp;
 
@@ -395,13 +394,13 @@ int OutputConfigFile()
   fprintf(fp,"#f1dotBand      = 0.0           # Search-band for f1dot\n");
   fprintf(fp,"#df1dot         = 0.0           # Resolution for f1dot (default 1/(2*Tobs*Tsft*Nsft)\n");
   fprintf(fp,"\n");
-  fprintf(fp,"Fthreshold      = %lf\t# Signal Set the threshold for selection of 2F\n",thresh);
+  fprintf(fp,"Fthreshold      = %6.12f\t# Signal Set the threshold for selection of 2F\n",thresh);
   fprintf(fp,"\n");
   fprintf(fp,"## ---------- BINARY-SEARCH PARAMETERS:\n");
   fprintf(fp,"\n");
   fprintf(fp,"binary                  = true                          # Binary search flag\n");
   fprintf(fp,"binarytemplatefile      = %s\t# Name and location of binary template file\n",bintempfile);
-  fprintf(fp,"dopplermax              = %lf\t# Maximum safe doppler shift factor from binary\n",doppler);
+  fprintf(fp,"dopplermax              = %6.12f\t# Maximum safe doppler shift factor from binary\n",doppler);
   fprintf(fp,"windowsize              = %d\t\t# Window size used in estimation of noise floor\n",window);
   fprintf(fp,"\n");
   fprintf(fp,"## ---------- TEMPLATE-GRID PARAMETERS:\n");

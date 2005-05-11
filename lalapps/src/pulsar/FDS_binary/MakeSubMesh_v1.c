@@ -44,14 +44,14 @@ extern char *optarg;
 extern int optind, opterr, optopt;
 
 int ReadCommandLine(int argc,char *argv[]);
-int ReadFullBank();
-int OutputSortedDist();
-int FreeMem();
-int SetupBaryInput();
-int GetSSBTime(LIGOTimeGPS *TDET, LIGOTimeGPS *TSSB);
-int CalculateDistance(REAL8 *X, REAL8 *Y, REAL8 *ds);
-int OutputSortedDist();
-
+int ReadFullBank(void);
+int OutputSortedDist(void);
+int FreeMem(void);
+int SetupBaryInput(void);
+int GetSSBTime(LIGOTimeGPS *, LIGOTimeGPS *);
+int CalculateDistance(REAL8 *, REAL8 *, REAL8 *);
+int OutputSortedDist(void);
+int compare(const void *, const void *);
 
 int main(int argc,char *argv[]) 
 {
@@ -96,7 +96,7 @@ int GetSSBTime(LIGOTimeGPS *tdet, LIGOTimeGPS *tssb)
 
 /*******************************************************************************/
 
-int SetupBaryInput()
+int SetupBaryInput(void)
 {
 
   CHAR filenameE[256],filenameS[256];
@@ -154,7 +154,7 @@ int SetupBaryInput()
             
 /*******************************************************************************/
 
-int ReadFullBank() 
+int ReadFullBank(void) 
 {
 
   RTPLocation RTPloc;
@@ -269,7 +269,7 @@ int ReadFullBank()
 
 /*******************************************************************************/
 
-int FreeMem()
+int FreeMem(void)
 {
 
   LALFree(dist);
@@ -282,14 +282,14 @@ int FreeMem()
 
 /*******************************************************************************/
 
-int CalculateDistance(REAL8 *X,REAL8 *Y,REAL8 *ds)
+int CalculateDistance(REAL8 *x,REAL8 *y,REAL8 *ds)
 {
 
   /* this function simply calculates the ditance from the central location using the metric */
 
   REAL8 distSQ;
 
-  distSQ=gamXX*(*X-X0)*(*X-X0)+gamYY*(*Y-Y0)*(*Y-Y0)+2.0*gamXY*(*X-X0)*(*Y-Y0);
+  distSQ=gamXX*(*x-X0)*(*x-X0)+gamYY*(*y-Y0)*(*y-Y0)+2.0*gamXY*(*x-X0)*(*y-Y0);
   *ds=sqrt(distSQ);
 
   return 0;
@@ -316,7 +316,7 @@ int compare(const void *ip, const void *jp)
 
 /*******************************************************************************/
 
-INT4 OutputSortedDist()
+INT4 OutputSortedDist(void)
 {
 
   INT4 *indexes,i,nlow;
