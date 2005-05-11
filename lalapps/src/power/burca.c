@@ -364,12 +364,14 @@ int main(int argc, char **argv)
             }
 
 	  /* move to the end of the linked list for next input file */
-	  while (currentEvent->next != NULL)
-            {
-	      currentEvent = currentEvent->next;
-            }
-	  tmpEvent = currentEvent->next;
-        }
+	  if (currentEvent){
+	    while (currentEvent->next != NULL)
+	      {
+		currentEvent = currentEvent->next;
+	      }
+	    tmpEvent = currentEvent->next;
+	  }
+	}
 
       /* sort the triggers in time */
       if ( burstEventList[j] )
