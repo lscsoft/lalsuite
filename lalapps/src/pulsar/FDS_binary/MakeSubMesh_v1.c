@@ -38,6 +38,7 @@ EmissionTime emit;
 LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
 INT4 leap;
 BinaryMeshFileHeader BMFheader;
+INT4 exactflag;
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -163,7 +164,9 @@ int ReadFullBank()
   REAL8 tperiMINFLT;
   REAL8 tperiMAXFLT;
   REAL8 dummy;
-
+  REAL8 dist_min=999999999.0;
+  REAL8 Xmin,Ymin;
+ 
   /* here we read in the full template file and its header information */
   
   /* open the full bank file */
@@ -209,7 +212,7 @@ int ReadFullBank()
   tperi0FLT=tperi0.gpsSeconds+(1e-9)*tperi0.gpsNanoSeconds;
   tperiMINFLT=tperisecMIN+(1e-9)*tperinsMIN;
   tperiMAXFLT=tperisecMAX+(1e-9)*tperinsMAX;
-  printf("o is %lf min is %lf max is %lf\n",tperi0FLT,tperiMINFLT,tperiMAXFLT);
+  /* printf("o is %lf min is %lf max is %lf\n",tperi0FLT,tperiMINFLT,tperiMAXFLT); */
   if ((tperi0FLT<tperiMINFLT)||(tperi0FLT>tperiMAXFLT)) {
     fprintf(stderr,"ERROR : targetted value of periapse passage time outside range of input mesh\n");
     exit(1);
@@ -248,9 +251,16 @@ int ReadFullBank()
     RTPloc.tperi.gpsSeconds=tperi[i].gpsSeconds;
     RTPloc.tperi.gpsNanoSeconds=tperi[i].gpsNanoSeconds;
     if (ConvertRTperitoXY(&RTPloc,&XYloc,&dummy)) return 1; 
-    if (CalculateDistance(&XYloc.X,&XYloc.Y,&dist[i])) return 2; 
+    if (CalculateDistance(&XYloc.X,&XYloc.Y,&dist[i])) return 2;
+  
+    if (dist[i]<dist_min) {
+      dist_min = dist[i];
+      Xmin=XYloc.X;
+      Ymin=XYloc.Y;
+    }
   }
-
+  
+  
   fclose(fbfp);
 
   return 0;
@@ -324,6 +334,8 @@ INT4 OutputSortedDist()
   /*   sort array of indexes */
   qsort((void *)indexes, (size_t)Nfull, sizeof(int), compare);
 
+  
+
   sbfp=fopen(subbankfile,"w");
   if (sbfp==NULL) {
     fprintf(stderr,"Unable to open file %s\n",subbankfile);
@@ -365,15 +377,25 @@ INT4 OutputSortedDist()
   
     /* write header information to the sub mesh */
     if (WriteMeshFileHeader(sbfp,&BMFheader)) return 3;
-    
-    /*    print out the lowest Nsub ones */
-    for (nlow=0; nlow<Nsub; nlow++) {
+
+    if (exactflag==0) {
       
-      fprintf(sbfp,"%6.12f %6.12f %d %d %6.12f %6.12f\n",
-	      sma[indexes[nlow]],period,tperi[indexes[nlow]].gpsSeconds,
-	      tperi[indexes[nlow]].gpsNanoSeconds,ecc,argp);
-      
+      /*    print out the lowest Nsub ones */
+      for (nlow=0; nlow<Nsub; nlow++) {
+	
+	fprintf(sbfp,"%6.12f %6.12f %d %d %6.12f %6.12f\n",
+		sma[indexes[nlow]],period,tperi[indexes[nlow]].gpsSeconds,
+		tperi[indexes[nlow]].gpsNanoSeconds,ecc,argp);
+	
+      }
     }
+    else {
+      fprintf(sbfp,"%6.12f %6.12f %d %d %6.12f %6.12f\n",
+		sma0,period,tperi0.gpsSeconds,
+		tperi0.gpsNanoSeconds,ecc,argp);
+
+    }
+    
     fclose(sbfp);
   }
   else {
@@ -396,7 +418,8 @@ int ReadCommandLine(int argc,char *argv[])
   tperi0.gpsSeconds=0; /* T */ 
   tperi0.gpsNanoSeconds=0; /* t */
   Nsub=1; /* N */
-    
+  exactflag=0;
+ 
   sprintf(fullbankfile," "); /* f */
   sprintf(subbankfile," "); /* s */
   sprintf(ephemfile," "); /* E */
@@ -413,10 +436,11 @@ int ReadCommandLine(int argc,char *argv[])
 		{"ephem", required_argument, 0, 'E'},
                 {"yr", required_argument, 0, 'y'},
 		{"Nsub", required_argument, 0, 'N'},
+		{"exact", no_argument, 0, 'x'},
 		{"help", no_argument, 0, 'h'}
     };
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt_long (argc, argv,"hr:T:t:f:s:E:y:N:",long_options, &option_index)))!=-1)
+  while (!errflg && ((c = getopt_long (argc, argv,"hr:T:t:f:s:E:y:N:x",long_options, &option_index)))!=-1)
     switch (c) {
     case 'r':
       sma0=atof(optarg);
@@ -446,6 +470,9 @@ int ReadCommandLine(int argc,char *argv[])
     case 'N':
       Nsub=atoi(optarg);
       break;
+    case 'x':
+      exactflag=1;
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -457,6 +484,7 @@ int ReadCommandLine(int argc,char *argv[])
       fprintf(stdout,"\t--ephem\tSTRING\t The location of the ephemeris files [DEFAULT=./]\n");
       fprintf(stdout,"\t--yr\t\tSTRING\t The year of the ephemeris file to use [DEFAULT=00-04]\n");
       fprintf(stdout,"\t--Nsub\t\tINT\t The number of filters required in the sub template file [DEFAULT=1]\n");
+      fprintf(stdout,"\t--exact\t\tBOOLEAN\t Set this if you require a single template at the given coords [DEFAULT=0]\n");
       exit(0);
       break;
     default:
@@ -468,7 +496,9 @@ int ReadCommandLine(int argc,char *argv[])
     }
 
   }
-  
+ 
+  if (exactflag==1) Nsub=1;
+ 
   /* update global variable and return */
   return errflg;
 }
