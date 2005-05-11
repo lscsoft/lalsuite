@@ -25,10 +25,10 @@ static LALStatus status;
 int FreeMem(EphemerisData *);
 int GenerateMesh(GlobVar,REAL4VectorSequence **,XYparameterspace *,Metric *);
 int SetupPspaceParams(GlobVar,RTparameterspace *,XYparameterspace *);
-int GenMetricComp(GlobVar,INT4,REAL8 *,REAL8 *,Metric *);
+int GenMetricComp(GlobVar,REAL8,REAL8 *,REAL8 *,Metric *);
 int CheckRTBoundary(REAL8 *,LIGOTimeGPS *,RTparameterspace *);
 int ConvertMesh(GlobVar,REAL4VectorSequence **,RTMesh *,RTparameterspace *);
-int OutputRTMesh(GlobVar *,INT4,RTMesh *,Metric *);
+int OutputRTMesh(GlobVar *,REAL8,RTMesh *,Metric *);
 int ReadDataParams(char *, GlobVar *);
 int SetGlobalVariables(CLargs,GlobVar *,binarysource);
 int ReadCommandLine(int argc,char *argv[],CLargs *CLA);
@@ -71,36 +71,57 @@ int main(int argc, char **argv){
   /* read the source parameters from the source file */
   if (ReadSource(CLA.sourcefile,CLA.source,&GV.tstart,&sourceparams)) return 2;
 
+  /*printf("read sourcefile\n");*/
+
   /* Fill in the remaining global variables */
   if (SetGlobalVariables(CLA,&GV,sourceparams)) return 2;
+
+  /*printf("set globvar\n");*/
 
   /* set up the required things for barycentering */
   if (SetupBaryInput(&GV,&edat,&Detector)) return 2;
 
+  /*printf("setup baryinput\n");*/
+
   /* First job is to convert the observation start time from detector time to SSB time */
   if (GetSSBTime(GV,&GV.tstart,&GV.tstartSSB,&edat,Detector)) return 1;
+
+  /*printf("got SSB time as %d %d\n",GV.tstartSSB.gpsSeconds,GV.tstartSSB.gpsNanoSeconds);*/
+  
 
   /* setup the parameter space */
   if (SetupPspaceParams(GV,&RTspace,&XYspace)) return 2;
   
+  /*printf("setup pspace\n");*/
+
   /* check the validity of the input */ 
   if (CheckInput(GV)) return 2;
+
+  /*printf("checked validity\n");*/
 
   /* loop over the number of template banks we are going to generate */
   for (j=0;j<GV.nband;j++) {
 
     /* calculate the metric components for this max frequency */
     if (GenMetricComp(GV,GV.f_max[j],&(XYspace.X_0),&(XYspace.Y_0),&XYMetric)) return 3;
-    
+      
+    /*printf("set gen metric comp\n");*/
+
     /* generate the mesh in XY space */
     if (GenerateMesh(GV,&XYmesh,&XYspace,&XYMetric)) return 4;
     
+    /*printf("made XY mesh\n");*/
+
     /* convert this mesh to RT space */
     if (ConvertMesh(GV,&XYmesh,&RTmesh,&RTspace)) return 5;
-    
+   
+    /*printf("made RT mesh\n");*/
+
     /* output the mesh to file */
     if (OutputRTMesh(&GV,GV.f_max[j],&RTmesh,&XYMetric)) return 6;
     
+    /*printf("output mesh\n");*/
+
   }
   
   if (FreeMem(edat)) return 7;
@@ -119,7 +140,7 @@ int SetGlobalVariables(CLargs CLA,GlobVar *GV,binarysource sourceparams)
   /* here we just put the source params and dataparams into the global varaibles */
 
   INT4 j;
-  INT4 f;
+  REAL8 f;
 
   GV->band=CLA.band;
   GV->RA=sourceparams.skypos.ra;
@@ -135,6 +156,8 @@ int SetGlobalVariables(CLargs CLA,GlobVar *GV,binarysource sourceparams)
   GV->tperi_MAX.gpsSeconds=sourceparams.orbit.tperi_max.gpsSeconds;
   GV->tperi_MAX.gpsNanoSeconds=sourceparams.orbit.tperi_max.gpsNanoSeconds;
   GV->mismatch=CLA.mismatch;
+  GV->mismatchedflag=CLA.mismatchedflag;
+  GV->exactflag=CLA.exactflag;
   sprintf(GV->ifo,CLA.ifo);
   sprintf(GV->ephemdir,CLA.ephemdir);
   sprintf(GV->yr,CLA.yr);
@@ -142,9 +165,15 @@ int SetGlobalVariables(CLargs CLA,GlobVar *GV,binarysource sourceparams)
   sprintf(GV->source,CLA.source);
 
   /* allocate memory for the number of bands */
-  GV->nband=(INT4)ceil((sourceparams.freq.f_max[0]-sourceparams.freq.f_min[0])/GV->band);
+  if (sourceparams.freq.f_err[0]!=0.0) {
+    GV->nband=(INT4)ceil((sourceparams.freq.f_max[0]-sourceparams.freq.f_min[0])/GV->band);
+  }
+  else {
+    GV->nband=1;
+  }
+  
   if (sourceparams.freq.nband==2) GV->nband+=(INT4)ceil((sourceparams.freq.f_max[1]-sourceparams.freq.f_min[1])/GV->band);
-  GV->f_max=(INT4 *)LALMalloc(GV->nband*sizeof(INT4));
+  GV->f_max=(REAL8 *)LALMalloc(GV->nband*sizeof(REAL8));
 
   j=0;
   /* if we have two bands */
@@ -161,6 +190,7 @@ int SetGlobalVariables(CLargs CLA,GlobVar *GV,binarysource sourceparams)
 
   /* if we have one or two  bands */
   f=sourceparams.freq.f_max[0];
+  GV->f_max[0]=f;
   while (f>sourceparams.freq.f_min[0]) {    
     GV->f_max[j]=f;
     f=f-GV->band;
@@ -266,6 +296,7 @@ int ReadDataParams(char *datadir, GlobVar *GV)
       return 1;
     }
 
+
   /* read in end time */
   GV->tspan=(header.gps_sec-GV->tstart.gpsSeconds)+header.tbase;
   LALFree(filelist);
@@ -305,9 +336,14 @@ int GenerateMesh(GlobVar GV,REAL4VectorSequence **XYmesh,XYparameterspace *XYspa
   REAL4VectorSequence *MatrixVec=NULL;
   REAL4VectorSequence *InvMatrixVec=NULL;
   REAL4VectorSequence *Corners=NULL;
+  REAL4Vector *vector=NULL;
   REAL4 *dummy=NULL;
+  RandomParams *params=NULL;
   CreateVectorSequenceIn in;
-  
+  INT4 seed=0;
+  UINT4 i;
+  REAL8 a,b;
+
   /* allocate memory for matrix and inverse in sequence form (for FlatMesh routines) */
   in.length=DIM;
   in.vectorLength=DIM;
@@ -349,45 +385,107 @@ int GenerateMesh(GlobVar GV,REAL4VectorSequence **XYmesh,XYparameterspace *XYspa
   /* destroy the array form of the matrix and inverse */
   LALSDestroyArray(&status,&Matrix);
   LALSDestroyArray(&status,&InvMatrix);
+
+  /* if we are generating a single mismatched template */
+  if (GV.mismatchedflag) {
+
+    /* allocate memory for the single template */
+    in.length=1;
+    in.vectorLength=DIM;
+    LALCreateVectorSequence(&status,XYmesh,&in);
+
+    /* generate two random numbers */
+    LALCreateVector(&status,&vector,2);
+    LALCreateRandomParams(&status,&params,seed);
+
+    /* fill vector with random sequence between -1 -> 1 */
+    for (i=0;i<vector->length;i++) {
+      LALUniformDeviate(&status,vector->data+i,params);
+      vector->data[i]=-1.0 + 2.0*vector->data[i];
+    }
+    
+    /* find the length of the box */
+    a=vector->data[0]*sqrt(GV.mismatch/(2.0*XYMetric->eigenval->data[0]));
+    b=vector->data[1]*sqrt(GV.mismatch/(2.0*XYMetric->eigenval->data[1]));
+    
+    (*XYmesh)->length=1;
+    (*XYmesh)->data[0]=XYspace->X_0+(a*XYMetric->eigenvec->data[0]+b*XYMetric->eigenvec->data[1]);
+    (*XYmesh)->data[1]=XYspace->Y_0+(a*XYMetric->eigenvec->data[2]+b*XYMetric->eigenvec->data[3]);
+
+    /*printf("Xo and Y0 = %f %f\n",XYspace->X_0,XYspace->Y_0);
+      printf("mismatched = %f %f\n",(*XYmesh)->data[0],(*XYmesh)->data[1]);*/
+
+  }
+  /* else we are generating an exact template */
+  else if (GV.exactflag) {
+
+    /* allocate memory for the single template */
+    in.length=1;
+    in.vectorLength=DIM;
+    LALCreateVectorSequence(&status,XYmesh,&in);
+     
+    (*XYmesh)->length=1;
+    (*XYmesh)->data[0]=XYspace->X_0;
+    (*XYmesh)->data[1]=XYspace->Y_0;
+
+  }
+  /* else we are actually making a mesh */
+  else {
  
-  /* fill in the corners stucture */
-  Corners->data[0]=(REAL4)XYspace->X_MIN;
-  Corners->data[1]=(REAL4)XYspace->Y_MIN;
-  Corners->data[2]=(REAL4)XYspace->X_MAX;
-  Corners->data[3]=(REAL4)XYspace->Y_MAX;
+    /* fill in the corners stucture */
+    Corners->data[0]=(REAL4)XYspace->X_MIN;
+    Corners->data[1]=(REAL4)XYspace->Y_MIN;
+    Corners->data[2]=(REAL4)XYspace->X_MAX;
+    Corners->data[3]=(REAL4)XYspace->Y_MAX;
+    
+    /* fill in the params structure */
+    FMparams.matrix=MatrixVec;
+    FMparams.matrixInv=InvMatrixVec;
+    FMparams.xMin=NULL;
+    FMparams.xMax=NULL;
+    FMparams.controlPoints = Corners;
+    FMparams.intersection = LALRectIntersect;
+    
+    /* this next bit just copies corners to Xmin and Xmax structures */
+    LALSCreateVector(&status, &(FMparams.xMin), (UINT4)DIM );
+    LALSCreateVector(&status, &(FMparams.xMax), (UINT4)DIM );
+    FMparams.xMin->data[0]=Corners->data[0];
+    FMparams.xMin->data[1]=Corners->data[1];
+    FMparams.xMax->data[0]=Corners->data[2];
+    FMparams.xMax->data[1]=Corners->data[3];
 
-  /* fill in the params structure */
-  FMparams.matrix=MatrixVec;
-  FMparams.matrixInv=InvMatrixVec;
-  FMparams.xMin=NULL;
-  FMparams.xMax=NULL;
-  FMparams.controlPoints = Corners;
-  FMparams.intersection = LALRectIntersect;
+    /* Compute the mesh, and clean up local memory. */
+    LALCreateFlatMesh(&status,XYmesh, &FMparams );
+    LALSDestroyVector(&status,&(FMparams.xMin));
+    LALSDestroyVector(&status,&(FMparams.xMax));
+    LALSDestroyVectorSequence(&status,&Corners);
 
-  /* this next bit just copies corners to Xmin and Xmax structures */
-  LALSCreateVector(&status, &(FMparams.xMin), (UINT4)DIM );
-  LALSCreateVector(&status, &(FMparams.xMax), (UINT4)DIM );
-  FMparams.xMin->data[0]=Corners->data[0];
-  FMparams.xMin->data[1]=Corners->data[1];
-  FMparams.xMax->data[0]=Corners->data[2];
-  FMparams.xMax->data[1]=Corners->data[3];
+    /* check here if we have actually generated any points in XY space */
+    if ((*XYmesh)->length<1) {
+      fprintf(stderr,"ERROR : No points have been generated in the XY space\n");
+      fprintf(stderr,"        Space may be too small -> Could be a one filter target\n");
+      fprintf(stderr,"        Further investigation is required\n");
+      fprintf(stderr,"          We will output a single filter in the center of the space\n");
 
-  /* Compute the mesh, and clean up local memory. */
-  LALCreateFlatMesh(&status,XYmesh, &FMparams );
-  LALSDestroyVector(&status,&(FMparams.xMin));
-  LALSDestroyVector(&status,&(FMparams.xMax));
-  LALSDestroyVectorSequence(&status,&Corners);
+      LALDestroyVectorSequence(&status,XYmesh);
+      
+      /* allocate memory for the single template */
+      in.length=1;
+      in.vectorLength=DIM;
+      LALCreateVectorSequence(&status,XYmesh,&in);
+
+      /* define the single template */
+      (*XYmesh)->length=1;
+      (*XYmesh)->data[0]=XYspace->X_0;
+      (*XYmesh)->data[1]=XYspace->Y_0;
+
+    }
+
+  }
+  
   LALSDestroyVectorSequence(&status,&MatrixVec);
   LALSDestroyVectorSequence(&status,&InvMatrixVec);
 
-  /* check here if we have actually generated any points in XY space */
-  if ((*XYmesh)->length<1) {
-    fprintf(stderr,"ERROR : No points have been generated in the XY space\n");
-    fprintf(stderr,"        Space may be too small -> Could be a one filter target\n");
-    fprintf(stderr,"        Further investigation is required\n");
-    exit(1);
-  }
-  
   return 0;
 
 }
@@ -401,7 +499,7 @@ int SetupBaryInput(GlobVar *GV,EphemerisData **edat,LALDetector *Detector)
   INT4 leap;
   CHAR filenameE[256],filenameS[256];
   FILE *fp;
-  
+
   /* make the full file name/location for the ephemeris files */
   strcpy(filenameE,GV->ephemdir);
   strcat(filenameE,"/earth");
@@ -616,6 +714,8 @@ int SetupPspaceParams(GlobVar GV,RTparameterspace *RTspace,XYparameterspace *XYs
    RTPloc.tperi.gpsSeconds=RTspace->tperi_0.gpsSeconds;
    RTPloc.tperi.gpsNanoSeconds=RTspace->tperi_0.gpsNanoSeconds;
    if (ConvertRTperitoXY(&RTPloc,&XYloc,&dummy)) return 4;
+   XYspace->X_0=XYloc.X;
+   XYspace->Y_0=XYloc.Y;
    
    return 0;
    
@@ -623,7 +723,7 @@ int SetupPspaceParams(GlobVar GV,RTparameterspace *RTspace,XYparameterspace *XYs
 
 /***********************************************************************************/
 
-int GenMetricComp(GlobVar GV,INT4 f_max,REAL8 *X,REAL8 *Y,Metric *XYMetric)
+int GenMetricComp(GlobVar GV,REAL8 f_max,REAL8 *X,REAL8 *Y,Metric *XYMetric)
 {
  
   /* This function calculates the metric elements of the g-metric and then          */
@@ -792,17 +892,22 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
   LIGOTimeGPS temp;
   REAL8Vector *sma_vec=NULL;
   UINT4 i,j;
- 
+  INT4 *tempNORB=NULL;
+
   /* first allocate some memory for the new mesh (using all temporary local variables */
+  if ((*XYmesh)->length<1) {
+    printf("ERROR : Zero length XY mesh, strange !!!");
+    exit(1);
+  }
   RTmesh->length=(*XYmesh)->length;
   RTmesh->sma=NULL;
   LALDCreateVector(&status,&(RTmesh->sma),RTmesh->length);
 
   /* point the temp pointer to the allocated space */
   sma_vec=RTmesh->sma;
-
   RTmesh->tperi = (LIGOTimeGPS *)LALCalloc( RTmesh->length , sizeof(LIGOTimeGPS) );
 
+  j=0;
   /* point the temp pointer to the alocated space */
   tperi_vec=RTmesh->tperi;
   
@@ -812,24 +917,25 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
   XYloc.tstartSSB.gpsNanoSeconds=GV.tstartSSB.gpsNanoSeconds;
   XYloc.ecc=ECC;
   XYloc.argp=ARGP;
-
+  
+ 
   /* covert XY to RT mesh and trim */
-  j=0;
   for (i=0;i<(*XYmesh)->length;i++) {
     XYloc.X=(REAL8)(*XYmesh)->data[i*2];
     XYloc.Y=(REAL8)(*XYmesh)->data[i*2+1];
-  
+    
     /* convert this point in XY space to RT space */
     ConvertXYtoRTperi(&XYloc,&RTPloc);
+    /*printf("converted XY %f %f -> RT %f %d %d\n",XYloc.X,XYloc.Y,RTPloc.sma,RTPloc.tperi.gpsSeconds,RTPloc.tperi.gpsNanoSeconds);*/
 
     
     /* Now check if this RT point lies within the original boundaries */
     /* if it does save it to memory for later output */
     if (CheckRTBoundary(&RTPloc.sma,&RTPloc.tperi,RTspace)==1) {
-    
-      /* shift the periapse passage time back to original input boundaries */
-      if (PeriapseShiftBack(GV.tperi_MIN,GV.tperi_MAX,RTPloc.tperi,&temp,GV.period,&NORB)) return 3;
       
+      /* shift the periapse passage time back to original input boundaries */
+      if (PeriapseShiftBack(GV.tstartSSB,GV.tperi_0,RTPloc.tperi,&temp,GV.period,NORB)) return 3;
+     
       RTPloc.tperi.gpsSeconds=temp.gpsSeconds;
       RTPloc.tperi.gpsNanoSeconds=temp.gpsNanoSeconds; 
       sma_vec->data[j]=RTPloc.sma;
@@ -842,7 +948,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
   if (j>0) {
     /* define new trimmed length */
     RTmesh->length=j;
-
+    
     /* clean up the XY mesh memory */    
     LALSDestroyVectorSequence(&status,&(*XYmesh));
     
@@ -850,18 +956,70 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
     LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
     LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
   }
+  
+  /* else if we are doing a mimatched template */
+  else if (GV.mismatchedflag) {
+    
+    /* define new trimmed length */
+    RTmesh->length=1;
+
+    XYloc.X=(REAL8)(*XYmesh)->data[0];
+    XYloc.Y=(REAL8)(*XYmesh)->data[1];
+    
+    /* convert this point in XY space to RT space */
+    ConvertXYtoRTperi(&XYloc,&RTPloc);
+
+    /* shift the periapse passage time back to original input boundaries */
+    if (PeriapseShiftBack(GV.tstartSSB,GV.tperi_0,RTPloc.tperi,&temp,GV.period,NORB)) return 3;
+    
+    RTPloc.tperi.gpsSeconds=temp.gpsSeconds;
+    RTPloc.tperi.gpsNanoSeconds=temp.gpsNanoSeconds; 
+    sma_vec->data[j]=RTPloc.sma;
+    tperi_vec[j].gpsSeconds=RTPloc.tperi.gpsSeconds;
+    tperi_vec[j].gpsNanoSeconds=RTPloc.tperi.gpsNanoSeconds;
+
+    /* clean up the XY mesh memory */    
+    LALSDestroyVectorSequence(&status,&(*XYmesh));
+    
+    /* change the length of the RTmesh array */
+    LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
+    LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
+    
+    fprintf(stderr,"WARNING : a randomly mismatched signal has been put in the original parameter space.\n");
+  
+  }
+
+  /* else we are doing an exact template or just a single template at the center */
   else {
+
+    /* define new trimmed length */
+    RTmesh->length=1;
+    
+    /* define the central template */
+    sma_vec->data[0]=GV.sma_0;
+    tperi_vec[0].gpsSeconds=GV.tperi_0.gpsSeconds;
+    tperi_vec[0].gpsNanoSeconds=GV.tperi_0.gpsNanoSeconds;
+    
+    /* clean up the XY mesh memory */    
+    LALSDestroyVectorSequence(&status,&(*XYmesh));
+    
+    /* change the length of the RTmesh array */
+    LALDResizeVector(&status,&(RTmesh->sma),RTmesh->length);
+    LALRealloc(RTmesh->tperi,RTmesh->length*sizeof(LIGOTimeGPS));
+    
     fprintf(stderr,"WARNING : none of the points lie in the original parameter space.\n");
     fprintf(stderr,"          This could be a single filter target but futher investigation\n");
     fprintf(stderr,"          is required (edge effects !!)\n");
+    fprintf(stderr,"          We will place a single template at the center of the space\n");
   }
+  
   return 0;
 
 }
 
 /***********************************************************************************/
 
- int OutputRTMesh(GlobVar *GV,INT4 f_max,RTMesh *RTmesh,Metric *XYMetric) 
+ int OutputRTMesh(GlobVar *GV,REAL8 f_max,RTMesh *RTmesh,Metric *XYMetric) 
 {
 
   /* this section simply outputs the final mesh to file including the header information */
@@ -874,7 +1032,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
   /* generate file name for this fmax */
   strcpy(filename,GV->meshdir);
   strcpy(sourcename,GV->source);
-  sprintf(ext,"/mesh_%s_%s_%d.mesh",GV->ifo,sourcename,f_max);
+  sprintf(ext,"/mesh_%s_%s_%.6f.mesh",GV->ifo,sourcename,f_max);
   strcat(filename,ext);
 
   fp=fopen(filename,"w");
@@ -916,6 +1074,7 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
 
   /* output the filters in the form ready for a search */
   for (i=0;i<RTmesh->length;i++) {
+   
     fprintf(fp,"%6.12f %6.12f %d %d %6.12f %6.12f\n", \
 	    RTmesh->sma->data[i],GV->period,RTmesh->tperi[i].gpsSeconds, \
 	    RTmesh->tperi[i].gpsNanoSeconds,ECC,ARGP);
@@ -948,6 +1107,8 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
   sprintf(CLA->ifo,"LLO");
   sprintf(CLA->meshdir,"./");
   CLA->datadirflag=0;
+  CLA->mismatchedflag=0;
+  CLA->exactflag=0;
 
   {
     int option_index = 0;
@@ -963,10 +1124,12 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
       {"yr", required_argument, 0, 'y'},
       {"detector", required_argument, 0, 'I'},
       {"meshdir", required_argument, 0, 'o'},
+      {"mismatched", no_argument, 0, 'X'},
+      {"exact", no_argument, 0, 'x'},
       {"help", no_argument, 0, 'h'}
     };
     /* Scan through list of command line arguments */
-    while (!errflg && ((c = getopt_long (argc, argv,"hS:s:D:T:t:m:b:E:y:I:o:",long_options, &option_index)))!=-1)
+    while (!errflg && ((c = getopt_long (argc, argv,"hS:s:D:T:t:m:b:E:y:I:o:Xx",long_options, &option_index)))!=-1)
       switch (c) {
       case 'S':
 	temp=optarg;
@@ -1010,6 +1173,12 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
 	temp=optarg;
 	sprintf(CLA->meshdir,temp);
 	break;
+      case 'X':
+	CLA->mismatchedflag=1;
+	break;
+      case 'x':
+	CLA->exactflag=1;
+	break;	
       case 'h':
 	/* print usage/help message */
 	fprintf(stdout,"Arguments are:\n");
@@ -1017,13 +1186,15 @@ int ConvertMesh(GlobVar GV,REAL4VectorSequence **XYmesh,RTMesh *RTmesh,RTparamet
 	fprintf(stdout,"\t--source      STRING\t Name of source [DEFAULT=]\n");
 	fprintf(stdout,"\t--datadir     STRING\t Directory containing the data to be searched [DEFAULT=]\n");
 	fprintf(stdout,"\t--tstart      INT4\t The start time of the observation (GPS) [DEFAULT=]\n");
-	fprintf(stdout,"\t--tspan        REAL8\t The span of the observation (sec) [DEFAULT=]\n");
+	fprintf(stdout,"\t--tspan       REAL8\t The span of the observation (sec) [DEFAULT=]\n");
 	fprintf(stdout,"\t--mismatch    REAL8\t The mismatch to be used [DEFAULT=]\n");
 	fprintf(stdout,"\t--band        REAL8\t The size of the bands to be used [DEFAULT=]\n");
 	fprintf(stdout,"\t--ephdir      STRING\t Location of ephemeris files earth?.dat and sun?.dat [DEFAULT=NULL]\n");
 	fprintf(stdout,"\t--yr          STRING\t Year(s) specifying ephemeris files [DEFAULT=00-04]\n");
 	fprintf(stdout,"\t--detector    STRING\t Interferometer being used for the search (LLO,LHO,GEO,TAMA,CIT,VIRGO) [DEFAULT=LLO]\n");
-	fprintf(stdout,"\t--meshdir    STRING\t Name of output mesh file [DEFAULT=mesh.out]\n");
+	fprintf(stdout,"\t--meshdir     STRING\t Name of output mesh file [DEFAULT=mesh.out]\n");
+	fprintf(stdout,"\t--mismatched  BOOLEAN\t Set this flag if you require a single mismatched filter [DEFAULT=0]\n");
+	fprintf(stdout,"\t--exact       BOOLEAN\t Set this flag if you require a single exactly matched filter [DEFAULT=0]\n");
 	exit(0);
 	break;
       default:
