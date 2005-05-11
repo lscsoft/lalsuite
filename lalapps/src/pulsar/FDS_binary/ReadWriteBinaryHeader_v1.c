@@ -10,8 +10,6 @@
 
 #include "GenerateBinaryMesh_v1.h"
 
-LALStatus status;
-
 int WriteMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader) 
 {
 
@@ -19,14 +17,14 @@ int WriteMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader)
 
   /* output the header information */
   fprintf(fp,"Search_maximum_search_frequency_Hz                      %6.12f\n",BMFheader->f_max);
-  fprintf(fp,"Search_T_span_sec                                       %lf\n",BMFheader->tspan);
+  fprintf(fp,"Search_T_span_sec                                       %f\n",BMFheader->tspan);
   fprintf(fp,"Search_Tobs_start_GPS_sec                               %d\n",BMFheader->tstart.gpsSeconds);
   fprintf(fp,"Search_Tobs_start_GPS_nano                              %d\n",BMFheader->tstart.gpsNanoSeconds);
   fprintf(fp,"Search_number_of_filters                                %d\n",BMFheader->Nfilters);
-  fprintf(fp,"Search_template_mismatch                                %lf\n",BMFheader->mismatch);
+  fprintf(fp,"Search_template_mismatch                                %f\n",BMFheader->mismatch);
   fprintf(fp,"Search_detector                                         %s\n",BMFheader->det);
-  fprintf(fp,"Search_right_ascension                                  %lf\n",BMFheader->RA);
-  fprintf(fp,"Search_declination                                      %lf\n",BMFheader->dec);
+  fprintf(fp,"Search_right_ascension                                  %f\n",BMFheader->RA);
+  fprintf(fp,"Search_declination                                      %f\n",BMFheader->dec);
   fprintf(fp,"Source_projected_orbital_semi_major_axis_CENTER_sec     %6.12f\n",BMFheader->sma_0);
   fprintf(fp,"Source_projected_orbital_semi_major_axis_MIN_sec        %6.12f\n",BMFheader->sma_MIN);
   fprintf(fp,"Source_projected_orbital_semi_major_axis_MAX_sec        %6.12f\n",BMFheader->sma_MAX);
@@ -42,9 +40,9 @@ int WriteMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader)
   fprintf(fp,"Source_argument_of_periapse_MAX_rad                     %6.12f\n",BMFheader->argp_MAX);
   fprintf(fp,"Source_orbital_period_MIN_sec                           %6.12f\n",BMFheader->period_MIN);
   fprintf(fp,"Source_orbital_period_MAX_sec                           %6.12f\n",BMFheader->period_MAX);
-  fprintf(fp,"Search_XY_metric_XX_element                             %lf\n",BMFheader->metric_XX);
-  fprintf(fp,"Search_XY_metric_XY_element                             %lf\n",BMFheader->metric_XY);
-  fprintf(fp,"Search_XY_metric_YY_element                             %lf\n",BMFheader->metric_YY);
+  fprintf(fp,"Search_XY_metric_XX_element                             %f\n",BMFheader->metric_XX);
+  fprintf(fp,"Search_XY_metric_XY_element                             %f\n",BMFheader->metric_XY);
+  fprintf(fp,"Search_XY_metric_YY_element                             %f\n",BMFheader->metric_YY);
   fprintf(fp,"Search_template_generation_version                      v1\n");
   fprintf(fp,"\n");
 
@@ -65,7 +63,7 @@ int ReadMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader)
   fscanf(fp,"%s%lf",dmp,&BMFheader->tspan);
   fscanf(fp,"%s%d",dmp,&BMFheader->tstart.gpsSeconds);
   fscanf(fp,"%s%d",dmp,&BMFheader->tstart.gpsNanoSeconds);
-  fscanf(fp,"%s%d",dmp,&BMFheader->Nfilters);
+  fscanf(fp,"%s%u",dmp,&BMFheader->Nfilters);
   fscanf(fp,"%s%lf",dmp,&BMFheader->mismatch);
   fscanf(fp,"%s%s",dmp,BMFheader->det);
   fscanf(fp,"%s%lf",dmp,&BMFheader->RA);
