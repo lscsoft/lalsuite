@@ -38,7 +38,8 @@ int ReadSource(char *sourcefile, char *sourcename, LIGOTimeGPS *obsstart, binary
   LIGOTimeGPS period_epochGPS;
   REAL8 sma;
   REAL8 sma_err;
-  INT4 tperi;
+  INT4 tperi_sec;
+  INT4 tperi_nano;
   REAL8 tperi_err;
   REAL8 argp;
   REAL8 argp_err;
@@ -87,7 +88,7 @@ int ReadSource(char *sourcefile, char *sourcename, LIGOTimeGPS *obsstart, binary
   /* loop over the sources */
   while ((fgets(line,1023,fpsource)!=NULL)&&(foundsource==0)) {
 
-    /* read in the name fields */
+     /* read in the name fields */
     sscanf(line,"%s%s",source_name_one,source_name_two); 
     
     /* check if the source is in the list */
@@ -105,15 +106,16 @@ int ReadSource(char *sourcefile, char *sourcename, LIGOTimeGPS *obsstart, binary
     exit(1);
   }
 
+  
   /* read in the source variables */
-  sscanf(sourceline,"%s%s %d%d%lf%lf %d%d%lf%lf %lf%lf%lf%lf %lf%lf%d %lf%lf %d%lf %lf%lf %lf%lf",
+  sscanf(sourceline,"%s%s %d%d%lf%lf %d%d%lf%lf %lf%lf%lf%lf %lf%lf%d %lf%lf %d%d%lf %lf%lf %lf%lf",
 	 source_name_one,source_name_two,
 	 &ra_hr,&ra_min,&ra_sec,&ra_err,
 	 &dec_deg,&dec_arcmin,&dec_arcsec,&dec_err,
 	 &freq_one,&freq_one_err,&freq_two,&freq_two_err,
 	 &period,&period_err,&period_epoch,
 	 &sma,&sma_err,
-	 &tperi,&tperi_err,
+	 &tperi_sec,&tperi_nano,&tperi_err,
 	 &argp,&argp_err,
 	 &ecc,&ecc_err); 
 
@@ -124,19 +126,23 @@ int ReadSource(char *sourcefile, char *sourcename, LIGOTimeGPS *obsstart, binary
   /* could add proper motions later */
   /* first convert sky positions to radians */
   ra_rad=(LAL_TWOPI/24.0)*((REAL8)ra_hr+((REAL8)ra_min/60.0)+(ra_sec/3600.0));
-  sign=(INT4)(abs(dec_deg)/dec_deg);
+  
+  if (dec_deg<0.0) sign=-1;
+  else if (dec_deg>=0) sign=1;
+
   dec_rad=(sign*LAL_TWOPI/360.0)*((REAL8)(abs(dec_deg))+((REAL8)dec_arcmin/60.0)+(dec_arcsec/3600.0));
   ra_rad_min=ra_rad-((LAL_TWOPI*3600.0*ra_err)/24.0);
   ra_rad_max=ra_rad+((LAL_TWOPI*3600.0*ra_err)/24.0);
   dec_rad_min=dec_rad-((LAL_TWOPI*3600.0*dec_err)/360.0);
   dec_rad_max=dec_rad+((LAL_TWOPI*3600.0*dec_err)/360.0);
-
+  
   /* sort out the frequency ranges */
   freq_one_min=freq_one-freq_one_err;
   freq_one_max=freq_one+freq_one_err;
   freq_two_min=freq_two-freq_two_err;
   freq_two_max=freq_two+freq_two_err;
 
+  
   /* sort out period ranges */
   period_min=period-period_err;
   period_max=period+period_err;
@@ -147,11 +153,12 @@ int ReadSource(char *sourcefile, char *sourcename, LIGOTimeGPS *obsstart, binary
 
   /* in the future we need to sort out correct errors */
   /* sort out the tperi ranges */
-  tperi_dummy.gpsSeconds=tperi;
-  tperi_dummy.gpsNanoSeconds=0;
+  tperi_dummy.gpsSeconds=tperi_sec;
+  tperi_dummy.gpsNanoSeconds=tperi_nano;
   period_epochGPS.gpsSeconds=period_epoch;
   period_epochGPS.gpsNanoSeconds=0;
-  
+
+
   /* lets calculate the extra errors due to accumulating time (its a bit simple at present) */
   if (obsstart!=NULL) {
     LALDeltaGPS(&rsf_status,&interval,obsstart,&period_epochGPS);
@@ -165,6 +172,7 @@ int ReadSource(char *sourcefile, char *sourcename, LIGOTimeGPS *obsstart, binary
   LALFloatToInterval(&rsf_status,&interval,&tperi_err);
   LALDecrementGPS(&rsf_status,&tperi_min,&tperi_dummy,&interval);
   LALIncrementGPS(&rsf_status,&tperi_max,&tperi_dummy,&interval);
+
 
   /* sort out the argp ranges */
   argp_min=argp-argp_err;
@@ -180,7 +188,7 @@ int ReadSource(char *sourcefile, char *sourcename, LIGOTimeGPS *obsstart, binary
   source->freq.f_min=(REAL8 *)LALMalloc(nband*sizeof(REAL8));
   source->freq.f_max=(REAL8 *)LALMalloc(nband*sizeof(REAL8));
   source->freq.f_err=(REAL8 *)LALMalloc(nband*sizeof(REAL8));
-  
+
   /* fill in the source structure */
   strcpy(source->name,sourcename);
   /*printf("source name = %s\n",sourcename);*/
@@ -263,7 +271,7 @@ int ReadSource(char *sourcefile, char *sourcename, LIGOTimeGPS *obsstart, binary
   source->orbit.ecc_err=ecc_err;
   /*printf("ecc_err = %f\n",ecc_err);*/
 
-
+ 
   return 0;
 
 }
