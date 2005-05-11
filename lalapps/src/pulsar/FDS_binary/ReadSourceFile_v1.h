@@ -1,3 +1,6 @@
+#ifndef _READSOURCE_H
+#define _READSOURCE_H
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -64,3 +67,5 @@ typedef struct binarysourcetag {
 } binarysource;
 
 int ReadSource(char *, char *, LIGOTimeGPS *, binarysource *);
+
+#endif
