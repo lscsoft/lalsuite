@@ -183,6 +183,8 @@ int ConvertXYtoRTperi(XYLocation *, RTPLocation *);
 int WriteMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader);
 int ReadMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader);
 int ConvertRTperitoXY(RTPLocation *, XYLocation *, REAL8 *);
+int PeriapseShift(LIGOTimeGPS, LIGOTimeGPS *,LIGOTimeGPS, REAL8,INT4 *);
+int PeriapseShiftBack(LIGOTimeGPS, LIGOTimeGPS,LIGOTimeGPS,LIGOTimeGPS *, REAL8,INT4);
 
 #endif /* end the if over GENBINMESH_H */
 
