@@ -200,11 +200,14 @@ LALCreateTFTiling (
       timeBins = (*thisPlane)->params->timeBins;
       freqBins = (*thisPlane)->params->freqBins;
 
-    /* deltat should correspond to no. of time bins for a particular tile;   
-       * and NOTE the plane must be constructed with resolutions
-       * TWO times finer than the tile resolution
-       */
-      deltat = 2;
+      if(freqBins < input->minFreqBins){
+	fprintf(stderr," no of freqbins is less than the minimum allowed\n");
+	exit(1);
+      }
+
+    /* deltat should correspond to no. of time bins for a particular tile;*/
+      deltat = input->minTimeBins;
+
       while (deltat <= timeBins && 
 	     deltat*(*thisPlane)->params->deltaT <= input->maxTileDuration)
 	{
