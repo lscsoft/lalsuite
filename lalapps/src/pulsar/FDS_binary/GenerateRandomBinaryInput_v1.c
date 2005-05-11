@@ -20,29 +20,33 @@
 #include <getopt.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALConstants.h>
-#include "GenerateBinaryMesh_v1.h"
 #include <lal/Random.h>
+#include "GenerateBinaryMesh_v1.h"
+#include "GenerateRandomBinaryInput_v1.h"
+
 
 INT4 lalDebugLevel=3;
 static LALStatus status;
 
-REAL8 alphaMIN,alphaMAX,sindeltaMIN,sindeltaMAX;
+REAL8 raMIN,raMAX,decMIN,decMAX;
 REAL8 smaMIN,smaMAX,periodMIN,periodMAX,eccMIN,eccMAX,argpMIN,argpMAX;
 REAL8 tobsMIN,tobsMAX;
 REAL8 tstartMIN,tstartMAX;
 LIGOTimeGPS tperiMIN,tperiMAX;
-CHAR infile[256],outfile[256],stamps[256],ifo[256];
-REAL8 phi,psi,cosiota;
-REAL8 f0MIN,f0MAX,h0MIN,h0MAX;
-REAL8 f1dot,f2dot,f3dot;
-REAL8 aplus,across;
+CHAR infile[256],primarystampsfile[256],secondarystampsfile[256];
+CHAR primarytemplatefile[256],secondarytemplatefile[256];
+CHAR primaryoutputfile[256],secondaryoutputfile[256];
+CHAR primarynoisedir[256],secondarynoisedir[256];
+CHAR primarysftbase[256],secondarysftbase[256];
+REAL8 freqMIN,freqMAX,h0MIN,h0MAX;
+INT4 primarystart,secondarystart;
 INT4 seed;
-INT4 nsft,band,f_min;
-REAL8 tobs;
+REAL8 freqband,f_min;
 INT4 tstart,tsft;
-BOOLEAN alphaflag=0;
-BOOLEAN deltaflag=0;
-BOOLEAN f0flag=0;
+
+/* these flags are set from the clargs */
+BOOLEAN detflag=0;
+BOOLEAN freqflag=0;
 BOOLEAN h0flag=0;
 BOOLEAN smaflag=0;
 BOOLEAN periodflag=0;
@@ -52,42 +56,98 @@ BOOLEAN argpflag=0;
 BOOLEAN phiflag=0;
 BOOLEAN psiflag=0;
 BOOLEAN cosiotaflag=0;
-BOOLEAN aplusflag=0;
-BOOLEAN acrossflag=0;
 BOOLEAN ifoflag=0;
 BOOLEAN tobsflag=0;
 BOOLEAN tstartflag=0;
-BOOLEAN nsftflag=0;
-BOOLEAN tsftflag=0;
-BOOLEAN bandflag=0;
-BOOLEAN f_minflag=0;
+BOOLEAN bintempfileflag=0;
+BOOLEAN coflag=0;
+BOOLEAN stampsflag=0;
 BOOLEAN allskyflag=0;
-REAL8 alpha,delta,sindelta,f0,h0,sma,period,argp,ecc;
-LIGOTimeGPS tperiGPS;
-INT4 ndet=6;  /* number of detectors to choose from */
+INT4 ndet=2;  /* number of detectors to choose from */
 
 extern char *optarg;
 extern int optind, opterr, optopt;
-int GenRandomParams(); 
-int GenTimeStamps();
-int OuptutRandomConfigFile();
-int MakeSafeBinaryParams(); 
+
+int GenRandomParams(RandomParameters *); 
+int OutputRandomConfigFile(char *,RandomParameters *,RandomParameters *);
 int ReadCommandLine(int argc,char *argv[]);
-int OutputRandomConfigFile();
+int ReadOrbitalParams(char *,RandomParameters *);
+int AddRandomParams(RandomParameters *);
+int InitialiseRandParams(RandomParameters *);
 
 int main(int argc,char *argv[]) 
 {
   
+  RandomParameters primaryrandparams;
+  RandomParameters secondaryrandparams;
+  RandomParameters *randparams=NULL;
+
+  /* read the clargs */
   if (ReadCommandLine(argc,argv)) return 1;
 
-  if (GenRandomParams()) return 2;
-  
-  if (tstartflag) {
-    if (GenTimeStamps()) return 3;
-    }
+  /*printf("primary temp file is %s\n",primarytemplatefile);*/
 
-  if (OutputRandomConfigFile()) return 3;
+  /* initilise all the random boundary structures */
+  if (InitialiseRandParams(&primaryrandparams)) return 2;
+  if (InitialiseRandParams(&secondaryrandparams)) return 2;
+
+  /* read in the random parameter boundaries from the mesh files */
+  if (bintempfileflag) {
+    if (ReadOrbitalParams(primarytemplatefile,&primaryrandparams)) return 2;
+    /* primaryrandparams.start=primarystart; */
+    LALSnprintf(primaryrandparams.noisedir,256,primarynoisedir);
+    LALSnprintf(primaryrandparams.sftbase,256,primarysftbase);
+    LALSnprintf(primaryrandparams.stampsfile,256,primarystampsfile);
+    randparams=&primaryrandparams;
+
+    /*printf("done primary template read\n");*/
+
+    if (coflag) {
+      if (ReadOrbitalParams(secondarytemplatefile,&secondaryrandparams)) return 2;
+      /* secondaryrandparams.start=secondarystart; */
+      LALSnprintf(secondaryrandparams.noisedir,256,secondarynoisedir);
+      LALSnprintf(secondaryrandparams.sftbase,256,secondarysftbase);
+      LALSnprintf(secondaryrandparams.stampsfile,256,secondarystampsfile);
+      /*printf("done secondary template read\n");*/
+
+      if (primaryrandparams.start<secondaryrandparams.start) {
+	randparams=&primaryrandparams;
+      }
+      else {
+	randparams=&secondaryrandparams;
+      }
+    }
+    
+  }
+  else {
+    randparams=&primaryrandparams;
+    LALSnprintf(randparams->noisedir,256,primarynoisedir);
+    LALSnprintf(randparams->sftbase,256,primarysftbase);
+    LALSnprintf(randparams->stampsfile,256,primarystampsfile);
+  }
+
+  /*printf("sorted the template boundaries\n");*/
+
+  /* add all the other parameter ranges from clargs */
+  if (AddRandomParams(randparams)) return 3;
+
+  /*printf("added the rand cla boundaries\n");*/
+
+  /* generate the random parameters */
+  if (GenRandomParams(randparams)) return 2;
   
+  /*printf("generated the rand params\n");*/
+
+  /* output the random parameter config files */ 
+  if (OutputRandomConfigFile(primaryoutputfile,randparams,&primaryrandparams)) return 3;
+  
+  /*printf("output to primary\n");*/
+
+  if (coflag) {
+    if (OutputRandomConfigFile(secondaryoutputfile,randparams,&secondaryrandparams)) return 3;
+  }
+
+  /*printf("output to secondary\n");*/
 
   return 0;
 
@@ -95,28 +155,201 @@ int main(int argc,char *argv[])
 
 /*******************************************************************************/
 
-int GenTimeStamps() 
+int AddRandomParams(RandomParameters *randparams) 
 {
 
-  FILE *fpstamps;
-  INT4 j;
+  /* This function completes the randparams boundaries using the clargs */
 
-  nsft=floor(tobs/tsft);
-  tobs=(REAL8)nsft*tsft;
-
-  /* opening the output timestamps file */
-  fpstamps=fopen(stamps,"w");
-  if (fpstamps==NULL) {
-    fprintf(stderr,"Unable to open file %s\n",stamps);
-    return 1;
+  if (smaflag) {
+    if (!bintempfileflag) {
+      randparams->sma=(REAL8range *)LALMalloc(sizeof(REAL8range));
+    }
+    randparams->sma->min=smaMIN;
+    randparams->sma->max=smaMAX;
   }
+  if (tperiflag) {
+    if (!bintempfileflag) randparams->tperi=(LIGOTimeGPSrange *)LALMalloc(sizeof(LIGOTimeGPSrange));
+    randparams->tperi->min.gpsSeconds=tperiMIN.gpsSeconds;
+    randparams->tperi->max.gpsSeconds=tperiMAX.gpsSeconds;
+    randparams->tperi->min.gpsNanoSeconds=tperiMIN.gpsNanoSeconds;
+    randparams->tperi->max.gpsNanoSeconds=tperiMAX.gpsNanoSeconds;
+  }
+  if (periodflag) {
+    if (!bintempfileflag) randparams->period=(REAL8range *)LALMalloc(sizeof(REAL8range));
+    randparams->period->min=periodMIN;
+    randparams->period->max=periodMAX;
+  }
+  if (eccflag) {
+    if (!bintempfileflag) randparams->ecc=(REAL8range *)LALMalloc(sizeof(REAL8range));
+    randparams->ecc->min=eccMIN;
+    randparams->ecc->max=eccMAX;
+  }
+  if (argpflag) {
+    if (!bintempfileflag) randparams->argp=(REAL8range *)LALMalloc(sizeof(REAL8range));
+    randparams->argp->min=argpMIN;
+    randparams->argp->max=argpMAX;
+  }
+  if (freqflag) {
+    randparams->freq=(REAL8range *)LALMalloc(sizeof(REAL8range));
+    randparams->freq->min=freqMIN;
+    randparams->freq->max=freqMAX;
+  }
+  if (phiflag) {
+    randparams->phi=(REAL8range *)LALMalloc(sizeof(REAL8range));
+    randparams->phi->min=0.0;
+    randparams->phi->max=LAL_TWOPI;
+  }
+  if (psiflag) {
+    randparams->psi=(REAL8range *)LALMalloc(sizeof(REAL8range));
+    randparams->psi->min=0.0;
+    randparams->psi->max=LAL_TWOPI;
+  }
+  if (cosiotaflag) {
+    randparams->cosiota=(REAL8range *)LALMalloc(sizeof(REAL8range));
+    randparams->cosiota->min=-1.0;
+    randparams->cosiota->max=1.0;
+  }
+  if (h0flag) {
+    randparams->h0=(REAL8range *)LALMalloc(sizeof(REAL8range));
+    randparams->h0->min=h0MIN;
+    randparams->h0->max=h0MAX;
+  }
+  if (allskyflag) {
+    randparams->ra=(REAL8range *)LALMalloc(sizeof(REAL8range));
+    randparams->ra->min=0.0;
+    randparams->ra->max=LAL_TWOPI;
+    randparams->dec=(REAL8range *)LALMalloc(sizeof(REAL8range));
+    randparams->dec->min=-LAL_PI/2.0;
+    randparams->dec->max=LAL_PI/2.0;
+  }
+  if (detflag) {
+    randparams->det=(INT4range *)LALMalloc(sizeof(INT4range));
+    randparams->det->min=0;
+    randparams->det->max=ndet;
+  }
+
   
-  /* write out timestamps file */
-  for (j=0;j<nsft;j++) {
-    fprintf(fpstamps,"%d\t0\n",tstart+(j*tsft));
+  return 0;
+
+}
+
+/*******************************************************************************/
+
+int ReadOrbitalParams(char *templatefile,RandomParameters *randomparams) 
+{
+
+  /* this function reads in the orbital parameter space boundaries from the */
+  /* input template files.  It also gets the sky location */
+
+
+  FILE *fp;
+  char smaminname[256];
+  char smamaxname[256];
+  char raname[256];
+  char decname[256];
+  char tperisecminname[256];
+  char tperisecmaxname[256];
+  char tperinanominname[256];
+  char tperinanomaxname[256];
+  char eccminname[256];
+  char eccmaxname[256];
+  char argpminname[256];
+  char argpmaxname[256];
+  char periodminname[256];
+  char periodmaxname[256];
+  BinaryMeshFileHeader BMFheader;
+  
+  sprintf(smaminname,"Source_projected_orbital_semi_major_axis_MIN_sec");
+  sprintf(smamaxname,"Source_projected_orbital_semi_major_axis_MAX_sec");
+  sprintf(raname,"Search_right_ascension");
+  sprintf(decname,"Search_declination");
+  sprintf(tperisecminname,"Source_SSB_periapse_passage_MIN_GPS_sec");
+  sprintf(tperisecmaxname,"Source_SSB_periapse_passage_MAX_GPS_sec");
+  sprintf(tperinanominname,"Source_SSB_periapse_passage_MIN_GPS_nanosec");
+  sprintf(tperinanomaxname,"Source_SSB_periapse_passage_MAX_GPS_nanosec");
+  sprintf(eccminname,"Source_orbital_eccentricity_MIN");
+  sprintf(eccmaxname,"Source_orbital_eccentricity_MAX");
+  sprintf(argpminname,"Source_argument_of_periapse_MIN_rad");
+  sprintf(argpmaxname,"Source_argument_of_periapse_MAX_rad");
+  sprintf(periodminname,"Source_orbital_period_MIN_sec");
+  sprintf(periodmaxname,"Source_orbital_period_MAX_sec");
+  
+
+  /* open the primary binary template file */
+  fp = fopen(templatefile,"r");
+  if (fp==NULL) {
+    fprintf(stderr,"ERROR : could not open template file %s\n",templatefile);
+    exit(1);
   }
 
-  fclose(fpstamps);
+  if (ReadMeshFileHeader(fp,&BMFheader)) return 2;
+  
+  /* extract the parameters from the header */
+  LALSnprintf(randomparams->detector,256,BMFheader.det);
+
+  randomparams->sma=(REAL8range *)LALMalloc(sizeof(REAL8range));
+  randomparams->sma->min=BMFheader.sma_MIN;
+  randomparams->sma->max=BMFheader.sma_MAX;
+
+  randomparams->tperi=(LIGOTimeGPSrange *)LALMalloc(sizeof(LIGOTimeGPSrange));
+  randomparams->tperi->min.gpsSeconds=BMFheader.tperi_MIN.gpsSeconds;
+  randomparams->tperi->max.gpsSeconds=BMFheader.tperi_MAX.gpsSeconds;
+  randomparams->tperi->min.gpsNanoSeconds=BMFheader.tperi_MIN.gpsNanoSeconds;
+  randomparams->tperi->max.gpsNanoSeconds=BMFheader.tperi_MAX.gpsNanoSeconds;
+  
+  randomparams->ecc=(REAL8range *)LALMalloc(sizeof(REAL8range));
+  randomparams->ecc->min=BMFheader.ecc_MIN;
+  randomparams->ecc->max=BMFheader.ecc_MAX;
+
+  randomparams->argp=(REAL8range *)LALMalloc(sizeof(REAL8range));
+  randomparams->argp->min=BMFheader.argp_MIN;
+  randomparams->argp->max=BMFheader.argp_MAX;
+
+  randomparams->period=(REAL8range *)LALMalloc(sizeof(REAL8range));
+  randomparams->period->min=BMFheader.period_MIN;
+  randomparams->period->max=BMFheader.period_MAX;
+
+  randomparams->ra=(REAL8range *)LALMalloc(sizeof(REAL8range));
+  randomparams->ra->min=BMFheader.RA;
+  randomparams->ra->max=BMFheader.RA;
+
+  randomparams->dec=(REAL8range *)LALMalloc(sizeof(REAL8range));
+  randomparams->dec->min=BMFheader.dec;
+  randomparams->dec->max=BMFheader.dec;
+
+  randomparams->start=BMFheader.tstart.gpsSeconds;
+
+  fclose(fp);
+
+  return 0;
+  
+}
+
+/*******************************************************************************/
+
+int InitialiseRandParams(RandomParameters *rand) 
+{
+
+  /* this function just initialises the random parameters by pointing them to NULL */
+
+  /* allocate some memory */
+  /* rand=(RandomParameters *)LALMalloc(sizeof(RandomParameters)); */
+
+  rand->ra=NULL;
+  rand->dec=NULL;
+  rand->sma=NULL;
+  rand->tperi=NULL;
+  rand->period=NULL;
+  rand->ecc=NULL;
+  rand->argp=NULL;
+  rand->freq=NULL;
+  rand->phi=NULL;
+  rand->psi=NULL;
+  rand->cosiota=NULL;
+  rand->h0=NULL;
+  rand->ra=NULL;
+  rand->dec=NULL;
+  rand->det=NULL;
 
   return 0;
 
@@ -124,7 +357,7 @@ int GenTimeStamps()
 
 /*******************************************************************************/
 
-int GenRandomParams() 
+int GenRandomParams(RandomParameters *randparams) 
 {
   
   RandomParams *params=NULL;
@@ -132,31 +365,26 @@ int GenRandomParams()
   LALTimeInterval deltaT;
   REAL8 deltaTFLT;
   UINT4 i,p,k;
-  REAL8 phiMIN=0.0;
-  REAL8 phiMAX=LAL_TWOPI;
-  REAL8 psiMIN=0.0;
-  REAL8 psiMAX=LAL_TWOPI;
-  REAL8 cosiotaMIN=-1.0;
-  REAL8 cosiotaMAX=1.0;
-  REAL8 RandDeltaT,rand; 
- 
+  REAL8 RandDeltaT; 
+  REAL8 sindecMIN,sindecMAX,sindec;
 
   p=0;
   /* work out how many random variables we will require */
-  if (allskyflag) p=p+2;
-  if ((f0MAX-f0MIN)!=0.0) p++;
-  if ((h0MAX-h0MIN)!=0.0) p++;
-  if ((smaMAX-smaMIN)!=0.0) p++;
-  if ((periodMAX-periodMIN)!=0.0) p++;
-  if ((tperiMAX.gpsSeconds-tperiMIN.gpsSeconds)!=0) p++;
-  if ((eccMAX-eccMIN)!=0.0) p++;
-  if ((argpMAX-argpMIN)!=0.0) p++;
-  if (phiflag) p++;
-  if (psiflag) p++;
-  if (cosiotaflag) p++;
-  if ((tobsMAX-tobsMIN)!=0.0) p++;
-  if ((tstartMAX-tstartMIN)!=0) p++;
-  if (ifoflag) p++;
+  if (randparams->sma!=NULL) p++;
+  if (randparams->tperi!=NULL) p++;
+  if (randparams->period!=NULL) p++;
+  if (randparams->ecc!=NULL) p++;
+  if (randparams->argp!=NULL) {
+    p++;
+  }
+  if (randparams->freq!=NULL) p++;
+  if (randparams->h0!=NULL) p++;
+  if (randparams->phi!=NULL) p++;
+  if (randparams->psi!=NULL) p++;
+  if (randparams->cosiota!=NULL) p++;
+  if (randparams->ra!=NULL) p++;
+  if (randparams->dec!=NULL) p++;
+  if (randparams->det!=NULL) p++;
 
   /* create a vector of length p and generate random parameters*/
   if (p>0) {
@@ -172,180 +400,82 @@ int GenRandomParams()
 
   k=0;
   /* calculate the random numbers */ 
-  if (alphaflag) {
-    alpha=alphaMIN+vector->data[k]*(alphaMAX-alphaMIN);
+  if (randparams->ra!=NULL) {
+    randparams->ra->value=randparams->ra->min+vector->data[k]*(randparams->ra->max-randparams->ra->min);
     k++;
   }
-  if (deltaflag) {
-    sindelta=sindeltaMIN+vector->data[k]*(sindeltaMAX-sindeltaMIN);
-    delta=asin(sindelta);
+  if (randparams->dec!=NULL) {
+    sindecMIN=sin(randparams->dec->min);
+    sindecMAX=sin(randparams->dec->max);
+    sindec=sindecMIN+vector->data[k]*(sindecMAX-sindecMIN);
+    randparams->dec->value=asin(sindec);
     k++;
   }
-  if (f0flag) {
-    f0=f0MIN+vector->data[k]*(f0MAX-f0MIN);
+  if (randparams->freq!=NULL) {
+    randparams->freq->value=randparams->freq->min+vector->data[k]*(randparams->freq->max-randparams->freq->min);
     k++;
   }
-  if (h0flag) {
-    h0=h0MIN+vector->data[k]*(h0MAX-h0MIN);
+  if (randparams->h0!=NULL) {
+    randparams->h0->value=randparams->h0->min+vector->data[k]*(randparams->h0->max-randparams->h0->min);
     k++;
   }
-  if (smaflag) {
-    {
-      REAL8 a,b,smaPOW;
-      a=log10(smaMIN);
-      b=log10(smaMAX);
-      smaPOW=a+vector->data[k]*(b-a);
-      sma=pow(10.0,smaPOW);
-      k++;
-    }
+  if (randparams->sma!=NULL) {
+    randparams->sma->value=randparams->sma->min+vector->data[k]*(randparams->sma->max-randparams->sma->min);
+    k++;
   }
-  if (periodflag) {
-    {
-      REAL8 a,b,periodPOW;
-      a=log10(periodMIN);
-      b=log10(periodMAX);
-      periodPOW=a+vector->data[k]*(b-a);
-      period=pow(10.0,periodPOW);
-      k++;
-    }
+  if (randparams->period!=NULL) {
+    randparams->period->value=randparams->period->min+vector->data[k]*(randparams->period->max-randparams->period->min);
+    k++;
   }
-  if (tperiflag) {
+  if (randparams->tperi!=NULL) {
     /* find difference between min and max */
-    LALDeltaGPS(&status,&deltaT,&tperiMAX,&tperiMIN);
+    LALDeltaGPS(&status,&deltaT,&randparams->tperi->max,&randparams->tperi->min);
     LALIntervalToFloat(&status,&deltaTFLT,&deltaT);
    
     /* calculate random increment */
     RandDeltaT=vector->data[k]*deltaTFLT;
    
     /* add random increment */
-    LALAddFloatToGPS(&status,&tperiGPS,&tperiMIN,RandDeltaT);
-   
+    LALAddFloatToGPS(&status,&randparams->tperi->value,&randparams->tperi->min,RandDeltaT);
     k++;
   }
-  if (eccflag) {
-    /* do logarithmic interval */
-    if (eccMIN>0.0) {
-      REAL8 a,b,eccPOW;
-      a=log10(eccMIN);
-      b=log10(eccMAX);
-      eccPOW=a+vector->data[k]*(b-a);
-      ecc=pow(10.0,eccPOW);
-      k++;
-    }
-    else {
-      /* do uniform interval */
-      ecc=vector->data[k]*eccMAX;
-    }
-  }
-  if (argpflag) {
-    argp=argpMIN+vector->data[k]*(argpMAX-argpMIN);
+  if (randparams->ecc!=NULL) {
+    randparams->ecc->value=randparams->ecc->min+(REAL8)vector->data[k]*(randparams->ecc->max-randparams->ecc->min);
     k++;
   }
-  if (phiflag) {
-    phi=phiMIN+vector->data[k]*(phiMAX-phiMIN);
+  if (randparams->argp!=NULL) {
+    randparams->argp->value=randparams->argp->min+(REAL8)vector->data[k]*(randparams->argp->max-randparams->argp->min);
     k++;
   }
-  if (psiflag) {
-    psi=psiMIN+(REAL8)vector->data[k]*(psiMAX-psiMIN);
+  if (randparams->phi!=NULL) {
+    randparams->phi->value=randparams->phi->min+(REAL8)vector->data[k]*(randparams->phi->max-randparams->phi->min);
     k++;
   }
-  if (cosiotaflag) {
-    cosiota=cosiotaMIN+vector->data[k]*(cosiotaMAX-cosiotaMIN);
-    aplus=0.5*h0*(1.0+cosiota*cosiota);
-    across=h0*cosiota;
+  if (randparams->psi!=NULL) {
+    randparams->psi->value=randparams->psi->min+(REAL8)vector->data[k]*(randparams->psi->max-randparams->psi->min);
     k++;
   }
-  if (tobsflag) {
-    {
-      REAL8 a,b,tobsPOW;
-      a=log10(tobsMIN);
-      b=log10(tobsMAX);
-      tobsPOW=a+vector->data[k]*(b-a);
-      tobs=pow(10.0,tobsPOW);
-      k++;
-    }
-  }
-  if (tstartflag) {
-    tstart=(INT4)((REAL8)tstartMIN+vector->data[k]*(REAL8)(tstartMAX-tstartMIN));
+  if (randparams->cosiota!=NULL) {
+    randparams->cosiota->value=randparams->cosiota->min+(REAL8)vector->data[k]*(randparams->cosiota->max-randparams->cosiota->min);
     k++;
   }
-  if (ifoflag) {
-    rand=(REAL8)ndet*vector->data[k];
-    if ((rand>=0.0)&&(rand<1.0)) sprintf(ifo,"GEO");
-    if ((rand>=1.0)&&(rand<2.0)) sprintf(ifo,"LLO");
-    if ((rand>=2.0)&&(rand<3.0)) sprintf(ifo,"LHO"); 
-    if ((rand>=3.0)&&(rand<4.0)) sprintf(ifo,"VIRGO"); 
-    if ((rand>=4.0)&&(rand<5.0)) sprintf(ifo,"TAMA"); 
-    if ((rand>=5.0)&&(rand<6.0)) sprintf(ifo,"CIT"); 
+  if (randparams->det!=NULL) {
+    randparams->det->value=floor((REAL8)randparams->det->min+(REAL8)vector->data[k]*((REAL8)randparams->det->max-(REAL8)randparams->det->min));
+    if ((randparams->det->value<1.0)&&(randparams->det->value>=0.0)) sprintf(randparams->detector,"LLO");
+    else if ((randparams->det->value<2.0)&&(randparams->det->value>=1.0)) sprintf(randparams->detector,"LHO");
+    k++;
   }
-  
+    
   /* clean up memory */
   if (p>0) {
     LALDestroyRandomParams(&status,&params);
     LALDestroyVector(&status,&vector);
   }
 
-  /* calculate number of sfts */
-  if ((tsftflag) || (tobsflag)) {
-    nsft=floor(tobs/tsft);
-    tobs=(REAL8)nsft*tsft;
-    nsftflag=1;
-  }
-
-  /* calculate min frequency */
-  if ((bandflag) || (f_minflag)) {
-    f_min=floor(f0-((REAL8)band/2.0));
-  }
-
-  /* make the binary parameters realistic for the chosen sft length */
-  if (MakeSafeBinaryParams()) return 4;
-
-  /* make sure that the periapse passage is before the start time */
-  if ((tperiGPS.gpsSeconds>tstart)&&(tstartflag)) 
-    {
-      REAL8 norb=0.0;
-      norb=(REAL8)(tperiGPS.gpsSeconds-tstart+600)/period;
-      tperiGPS.gpsSeconds=tperiGPS.gpsSeconds-(INT4)((floor(norb)+1.0)*period);
-    }
-
- 
-
+  
   return 0;
  
 }
-
-/*******************************************************************************/
-
-int MakeSafeBinaryParams() 
-{
-
-  /* This section just checks wether we are going to get significant */
-  /* frequency drift within an SFT and wether we are getting into a  */
-  /* relativistic regime. */
-
-  REAL8 maxTsft,projvmax,ratio;
-  REAL8 safe=0.25;
-  REAL8 relativesafe=0.1;
-
-  /* here we test for frequency drift within an sft */
-  maxTsft=safe*sqrt((1.0-ecc)/(f0*sma))*period*(1.0-ecc)/(LAL_TWOPI*(1+ecc));
-    /* if things are extreme then reduce the period to make things safe */
-  if (maxTsft<(REAL8)tsft) {
-    ratio=floor(tsft/maxTsft)+1.0;
-      period=period*(2.0*ratio);
-    }
-
-  /* here we test for relativistic properties */
-  projvmax=LAL_TWOPI*sma*sqrt((1.0+ecc)/(1.0-ecc))/period;
-    if (projvmax>relativesafe) {
-    period=period*(floor(projvmax/relativesafe)+1.0);
-  }
-
-
-  return 0;
-
-}
-
 
 /*******************************************************************************/
 
@@ -356,23 +486,23 @@ int MakeSafeBinaryParams()
   optarg = NULL;
   
   /* Initialize default values */
-  alphaMIN=0.0; 
-  alphaMAX=LAL_TWOPI; 
-  sindeltaMIN=-1.0; 
-  sindeltaMAX=1.0; 
-  allskyflag=0; /* A */
-
+  raMIN=0.0; 
+  raMAX=LAL_TWOPI; 
+  decMIN=-LAL_PI/2.0; 
+  decMAX=LAL_PI/2.0; 
+ 
   phiflag=0; /* p */
   psiflag=0; /* P */
   cosiotaflag=0; /* c */
-  
+  allskyflag=0;
+  detflag=0;
+
   h0MIN=1.0; /* g */
   h0MAX=1.0; /* G */
-  h0=1.0;
-  f0MIN=600.0; /* f */
-  f0MAX=600.0; /* F */
-  band=0;
- 
+  freqMIN=600.0; /* f */
+  freqMAX=600.0; /* F */
+  freqband=0.0;
+  
   smaMIN=0.0; /* r */
   smaMAX=0.0; /* R */
   eccMIN=0.0; /* e */
@@ -385,219 +515,246 @@ int MakeSafeBinaryParams()
   periodMAX=0.0; /* Q */
   argpMIN=0.0; /* k */
   argpMAX=0.0; /* K */
+  sprintf(primarytemplatefile," ");
+  sprintf(secondarytemplatefile," ");
 
-  tsft=60; /* v */
-  tobsMIN=1e4; /* b */
-  tobsMAX=1e4; /* B */
-  tobs=1e4;
-  tstartMIN=731100000; /* w */
-  tstartMAX=731100000; /* W */
-  tstart=731100000;
-  ifoflag=0; /* I */
-
-  sprintf(infile,"bin.cfg"); /* i */
-  sprintf(outfile,"rand.cfg"); /* o */
-  /* sprintf(stamps,"stamps.data"); */ /* m */
+  primarystart=731100000; /* w */
+  secondarystart=731100000; /* W */
+ 
+  coflag=0;
+  sprintf(infile," "); /* i */
+  sprintf(primaryoutputfile," "); /* o */
+  sprintf(secondaryoutputfile," ");
+  sprintf(primarystampsfile," ");  /* m */
+  sprintf(secondarystampsfile," ");
+  sprintf(primarynoisedir," "); 
+  sprintf(secondarynoisedir," ");
+  sprintf(primarysftbase," ");  
+  sprintf(secondarysftbase," ");
   seed=0; /* z */
 
   {
     int option_index = 0;
     static struct option long_options[] = {
-                {"allsky", no_argument, 0, 'A'},
-		{"phi", no_argument, 0, 'p'},
-                {"psi", no_argument, 0, 'P'},
-                {"cosiota", no_argument, 0, 'c'},
-                {"h0MIN", required_argument, 0, 'g'},
-		{"h0MAX", required_argument, 0, 'G'},
-                {"f0MIN", required_argument, 0, 'f'},
-		{"f0MAX", required_argument, 0, 'F'},
-		{"smaMIN", required_argument, 0, 'r'},
-		{"smaMAX", required_argument, 0, 'R'},
-                {"periodMIN", required_argument, 0, 'q'},
-		{"periodMAX", required_argument, 0, 'Q'},
-                {"tperiMIN", required_argument, 0, 't'},
-                {"tperiMAX", required_argument, 0, 'T'},
-                {"eccMIN", required_argument, 0, 'e'},
-		{"eccMAX", required_argument, 0, 'E'},
-                {"argpMIN", required_argument, 0, 'k'},
-		{"argpMAX", required_argument, 0, 'K'},
-		{"tsft", required_argument, 0, 'v'},
-		{"tobsMIN", required_argument, 0, 'b'},
-		{"tobsMAX", required_argument, 0, 'B'},
-		{"tstartMIN", required_argument, 0, 'w'},
-		{"tstartMAX", required_argument, 0, 'W'},
-		{"det", no_argument, 0, 'I'},
-		{"band", required_argument, 0, 'n'},
-		{"stamps", required_argument, 0, 'm'},
-		{"infile", required_argument, 0, 'i'},
-		{"outfile", required_argument, 0, 'o'},
-		{"seed", required_argument, 0, 'z'},
-		{"help", no_argument, 0, 'h'}
+      {"ptemplatefile", required_argument, 0, 'S'},
+      {"stemplatefile", required_argument, 0, 's'},
+      {"pstart", required_argument, 0, 'A'},
+      {"sstart", required_argument, 0, 'a'},
+      {"phi", no_argument, 0, 'p'},
+      {"psi", no_argument, 0, 'P'},
+      {"cosiota", no_argument, 0, 'c'},
+      {"allsky", no_argument, 0, 'j'},
+      {"det", no_argument, 0, 'J'},
+      {"h0MIN", required_argument, 0, 'g'},
+      {"h0MAX", required_argument, 0, 'G'},
+      {"f0MIN", required_argument, 0, 'f'},
+      {"f0MAX", required_argument, 0, 'F'},
+      {"fband", required_argument, 0, 'b'},
+      {"smaMIN", required_argument, 0, 'r'},
+      {"smaMAX", required_argument, 0, 'R'},
+      {"periodMIN", required_argument, 0, 'q'},
+      {"periodMAX", required_argument, 0, 'Q'},
+      {"tperiMIN", required_argument, 0, 't'},
+      {"tperiMAX", required_argument, 0, 'T'},
+      {"eccMIN", required_argument, 0, 'e'},
+      {"eccMAX", required_argument, 0, 'E'},
+      {"argpMIN", required_argument, 0, 'k'},
+      {"argpMAX", required_argument, 0, 'K'},
+      {"pstampsfile", required_argument, 0, 'm'},
+      {"sstampsfile", required_argument, 0, 'M'},
+      {"pnoisedir", required_argument, 0, 'n'},
+      {"snoisedir", required_argument, 0, 'N'},
+      {"psftbase", required_argument, 0, 'd'},
+      {"ssftbase", required_argument, 0, 'D'},
+      {"infile", required_argument, 0, 'i'},
+      {"co", no_argument, 0, 'C'},
+      {"poutfile", required_argument, 0, 'o'},
+      {"soutfile", required_argument, 0, 'x'},
+      {"seed", required_argument, 0, 'z'},
+      {"help", no_argument, 0, 'h'}
     };
-  /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt_long (argc, argv,"hA:pPcg:G:f:F:r:R:q:Q:t:T:e:E:k:K:b:B:w:W:Iz:n:i:m:o:",long_options, &option_index)))!=-1)
-    switch (c) {
-      
-    case 'A':
-      alphaflag=1;
-      deltaflag=1;
-      allskyflag=1;
-      break;
-    case 'p':
-      phiflag=1;
-      break;
-    case 'P':
-      psiflag=1;
-      break;
-    case 'c':
-      cosiotaflag=1;
-      aplusflag=1;
-      acrossflag=1;
-      break;
-    case 'g':
-      h0MIN=atof(optarg);
-      h0flag=1;
-      aplusflag=1;
-      acrossflag=1;
-      break;
-    case 'G':
-      h0MAX=atof(optarg);
-      h0flag=1;
-      aplusflag=1;
-      acrossflag=1;
-      break;
-    case 'f':
-      f0MIN=atof(optarg);
-      f0flag=1;
-      break;
-    case 'F':
-      f0MAX=atof(optarg);
-      f0flag=1;
-      break;
-    case 'r':
-      smaMIN=atof(optarg);
-      smaflag=1;
-      break;
-    case 'R':
-      smaMAX=atof(optarg);
-      smaflag=1;
-      break;
-    case 'q':
-      periodMIN=atof(optarg);
-      periodflag=1;
-      break;
-    case 'Q':
-      periodMAX=atof(optarg);
-      periodflag=1;
-      break;
-    case 't':
-      tperiMIN.gpsSeconds=atoi(optarg);
-      tperiflag=1;
-      break;
-    case 'T':
-      tperiMAX.gpsSeconds=atoi(optarg);
-      tperiflag=1;
-      break;
-    case 'e':
-      eccMIN=atof(optarg);
-      eccflag=1;
-      break;
-    case 'E':
-      eccMAX=atof(optarg);
-      eccflag=1;
-      break;
-    case 'k':
-      argpMIN=atof(optarg);
-      argpflag=1;
-      break;
-    case 'K':
-      argpMAX=atof(optarg);
-      argpflag=1;
-      break;
-    case 'b':
-      tobsMIN=atof(optarg);
-      tobsflag=1;
-      break;
-    case 'B':
-      tobsMAX=atof(optarg);
-      tobsflag=1;
-      break;
-    case 'w':
-      tstartMIN=atoi(optarg);
-      tstartflag=1;
-      break;
-    case 'W':
-      tstartMAX=atoi(optarg);
-      tstartflag=1;
-      break;
-    case 'I':
-      ifoflag=1;
-      break;
-    case 'z':
-      seed=atoi(optarg);
-      break;
-    case 'v':
-      tsft=atoi(optarg);
-      tsftflag=1;
-      break;
-    case 'n':
-      band=atoi(optarg);
-      bandflag=1;
-      f_minflag=1;
-      break;
-    case 'm':
-      temp=optarg;
-      sprintf(stamps,temp);
-      break; 
-    case 'i':
-      temp=optarg;
-      sprintf(infile,temp);
-      break;
-    case 'o':
-      temp=optarg;
-      sprintf(outfile,temp);
-      break;
-    case 'h':
-      /* print usage/help message */
-      fprintf(stdout,"Arguments are:\n");
-      fprintf(stdout,"\t--allsky    BOOLEAN\t Set if random sky position required [DEFAULT=false]\n");
-      fprintf(stdout,"\t--phi       BOOLEAN\t Set if random initial phase required  [DEFAULT=false]\n");
-      fprintf(stdout,"\t--psi       BOOLEAN\t Set if random polarisation angle required  [DEFAULT=false]\n");
-      fprintf(stdout,"\t--cosiota   BOOLEAN\t Set if random Cos(iota) required [DEFAULT=false]\n");
-      fprintf(stdout,"\t--h0MIN     FLOAT\t MIN Gravitational wave amplitude [DEFAULT=1.0]\n");
-      fprintf(stdout,"\t--h0MAX     FLOAT\t MAX Gravitational wave amplitude [DEFAULT=1.0]\n");
-      fprintf(stdout,"\t--f0MIN     FLOAT\t MIN Gravitational wave frequency in Hz [DEFAULT=600.0]\n");
-      fprintf(stdout,"\t--f0MAX     FLOAT\t MAX Gravitational wave frequency in Hz [DEFAULT=600.0]\n");    
-      fprintf(stdout,"\t--smaMIN    FLOAT\t Projected semi-major axis of orbit in seconds [DEFAULT=0.0]\n");
-      fprintf(stdout,"\t--smaMAX    FLOAT\t Projected semi-major axis of orbit in seconds [DEFAULT=0.0]\n");
-      fprintf(stdout,"\t--periodMIN FLOAT\t MIN Period of orbit in seconds [DEFAULT=0.0]\n");
-      fprintf(stdout,"\t--periodMAX FLOAT\t MAX Period of orbit in seconds [DEFAULT=0.0]\n");
-      fprintf(stdout,"\t--tperiMIN  INTEGER\t MIN Observed time of periapse passage in seconds [DEFAULT=0] \n");
-      fprintf(stdout,"\t--tperiMAX  INTEGER\t MAX Observed time of periapse passage in nanoseconds [DEFAULT=0]\n");
-      fprintf(stdout,"\t--eccMIN    FLOAT\t MIN Orbital eccentricity [DEFAULT=0.0]\n");
-      fprintf(stdout,"\t--eccMAX    FLOAT\t MAX Orbital eccentricity [DEFAULT=0.0]\n");
-      fprintf(stdout,"\t--argpMIN   FLOAT\t MIN Argument of orbital periapse in radians [DEFAULT=0.0]\n");
-      fprintf(stdout,"\t--argpMAX   FLOAT\t MAX Argument of orbital periapse in radians [DEFAULT=0.0]\n");
-      fprintf(stdout,"\t--seed      INTEGER\t Seed for random number generation [DEFAULT=0 (from clock)]\n");
-      fprintf(stdout,"\t--tsft      INTEGER\t The sft length required in seconds [DEFAULT=60]\n");
-      fprintf(stdout,"\t--tobsMIN   FLOAT\t MIN value of random observation time [DEFAULT=1e4]\n");
-      fprintf(stdout,"\t--tobsMAX   FLOAT\t MAX value of random observation time [DEFAULT=1e4]\n");
-      fprintf(stdout,"\t--det       BOOLEAN\t Set if random detector required  [DEFAULT=false]\n");
-      fprintf(stdout,"\t--tstartMIN INTEGER\t MIN value of GPS start of observation time in seconds [DEFAULT=731100000]\n");
-      fprintf(stdout,"\t--tstartMAX INTEGER\t MAX value of GPS start of observation time in seconds [DEFAULT=731100000]\n");
-      fprintf(stdout,"\t--stamps    STRING\t Name of output timstamps file [DEFAULT=NULL]\n"); 
-      fprintf(stdout,"\t--infile    STRING\t Name of input configuration file [DEFAULT=NULL]\n");
-      fprintf(stdout,"\t--outfile   STRING\t Name of output random configuration file [DEFAULT=NULL]\n");
-      exit(0);
-      break;
-    default:
-      /* unrecognized option */
-      errflg++;
-      fprintf(stderr,"Unrecognized option argument %c\n",c);
-      exit(1);
-      break;
-    }
+    /* Scan through list of command line arguments */
+    while (!errflg && ((c = getopt_long (argc, argv,"hS:s:A:a:pPcJjg:G:f:F:b:r:R:q:Q:t:T:e:E:k:K:m:M:n:N:d:D:i:Co:x:z:",long_options, &option_index)))!=-1)
+      switch (c) {
+      case 'S':
+	temp=optarg;
+	sprintf(primarytemplatefile,temp);
+	bintempfileflag=1;
+	break;
+      case 's':
+	temp=optarg;
+	sprintf(secondarytemplatefile,temp);
+	break;
+      case 'A':
+	primarystart=atoi(optarg);
+	break;
+      case 'a':
+	secondarystart=atoi(optarg);
+	break;
+      case 'p':
+	phiflag=1;
+	break;
+      case 'P':
+	psiflag=1;
+	break;
+      case 'c':
+	cosiotaflag=1;
+	break;
+      case 'j':
+	allskyflag=1;
+	break;
+      case 'J':
+	detflag=1;
+	break;
+      case 'g':
+	h0MIN=atof(optarg);
+	h0flag=1;
+	break;
+      case 'G':
+	h0MAX=atof(optarg);
+	h0flag=1;
+	break;
+      case 'f':
+	freqMIN=atof(optarg);
+	freqflag=1;
+	break;
+      case 'F':
+	freqMAX=atof(optarg);
+	break;
+      case 'b':
+	freqband=atof(optarg);
+	break;
+      case 'r':
+	smaMIN=atof(optarg);
+	smaflag=1;
+	break;
+      case 'R':
+	smaMAX=atof(optarg);
+	smaflag=1;
+	break;
+      case 'q':
+	periodMIN=atof(optarg);
+	periodflag=1;
+	break;
+      case 'Q':
+	periodMAX=atof(optarg);
+	periodflag=1;
+	break;
+      case 't':
+	tperiMIN.gpsSeconds=atoi(optarg);
+	tperiflag=1;
+	break;
+      case 'T':
+	tperiMAX.gpsSeconds=atoi(optarg);
+	tperiflag=1;
+	break;
+      case 'e':
+	eccMIN=atof(optarg);
+	eccflag=1;
+	break;
+      case 'E':
+	eccMAX=atof(optarg);
+	eccflag=1;
+	break;
+      case 'k':
+	argpMIN=atof(optarg);
+	argpflag=1;
+	break;
+      case 'K':
+	argpMAX=atof(optarg);
+	argpflag=1;
+	break;
+      case 'z':
+	seed=atoi(optarg);
+	break;
+      case 'C':
+	coflag=1;
+	break;
+      case 'm':
+	temp=optarg;
+	sprintf(primarystampsfile,temp);
+	break; 
+      case 'M':
+	temp=optarg;
+	sprintf(secondarystampsfile,temp);
+	break; 
+      case 'n':
+	temp=optarg;
+	sprintf(primarynoisedir,temp);
+	break; 
+      case 'N':
+	temp=optarg;
+	sprintf(secondarynoisedir,temp);
+	break; 
+      case 'd':
+	temp=optarg;
+	sprintf(primarysftbase,temp);
+	break; 
+      case 'D':
+	temp=optarg;
+	sprintf(secondarysftbase,temp);
+	break; 
+      case 'i':
+	temp=optarg;
+	sprintf(infile,temp);
+	break;
+      case 'o':
+	temp=optarg;
+	sprintf(primaryoutputfile,temp);
+	break;
+      case 'x':
+	temp=optarg;
+	sprintf(secondaryoutputfile,temp);
+	break;
+      case 'h':
+	/* print usage/help message */
+	fprintf(stdout,"Arguments are:\n");
+	fprintf(stdout,"\t--ptemplatefile    STRING\t The name of the source file [DEFAULT=]\n");
+	fprintf(stdout,"\t--stemplatefile    STRING\t The name of the source [DEFAULT=]\n");
+	fprintf(stdout,"\t--phi              BOOLEAN\t Set if random initial phase required  [DEFAULT=false]\n");
+	fprintf(stdout,"\t--psi              BOOLEAN\t Set if random polarisation angle required  [DEFAULT=false]\n");
+	fprintf(stdout,"\t--cosiota          BOOLEAN\t Set if random Cos(iota) required [DEFAULT=false]\n");
+	fprintf(stdout,"\t--h0MIN            REAL8\t MIN Gravitational wave amplitude [DEFAULT=1.0]\n");
+	fprintf(stdout,"\t--h0MAX            REAL8\t MAX Gravitational wave amplitude [DEFAULT=1.0]\n");
+	fprintf(stdout,"\t--f0MIN            REAL8\t MIN Gravitational wave frequency in Hz [DEFAULT=600.0]\n");
+	fprintf(stdout,"\t--f0MAX            REAL8\t MAX Gravitational wave frequency in Hz [DEFAULT=600.0]\n");    
+	fprintf(stdout,"\t--fband            REAL8\t The bnadwidth of data to be genereted [DEFAULT=0.0]\n"); 
+	fprintf(stdout,"\t--smaMIN           REAL8\t Projected semi-major axis of orbit in seconds [DEFAULT=0.0]\n");
+	fprintf(stdout,"\t--smaMAX           REAL8\t Projected semi-major axis of orbit in seconds [DEFAULT=0.0]\n");
+	fprintf(stdout,"\t--periodMIN        REAL8\t MIN Period of orbit in seconds [DEFAULT=0.0]\n");
+	fprintf(stdout,"\t--periodMAX        REAL8\t MAX Period of orbit in seconds [DEFAULT=0.0]\n");
+	fprintf(stdout,"\t--tperiMIN         INT4\t MIN Observed time of periapse passage in seconds [DEFAULT=0] \n");
+	fprintf(stdout,"\t--tperiMAX         INT4\t MAX Observed time of periapse passage in nanoseconds [DEFAULT=0]\n");
+	fprintf(stdout,"\t--eccMIN           REAL8\t MIN Orbital eccentricity [DEFAULT=0.0]\n");
+	fprintf(stdout,"\t--eccMAX           REAL8\t MAX Orbital eccentricity [DEFAULT=0.0]\n");
+	fprintf(stdout,"\t--argpMIN          REAL8\t MIN Argument of orbital periapse in radians [DEFAULT=0.0]\n");
+	fprintf(stdout,"\t--argpMAX          REAL8\t MAX Argument of orbital periapse in radians [DEFAULT=0.0]\n");
+	fprintf(stdout,"\t--seed             INT4\t Seed for random number generation [DEFAULT=0 (from clock)]\n");
+	fprintf(stdout,"\t--infile           STRING\t Name of input configuration file [DEFAULT=NULL]\n");
+	fprintf(stdout,"\t--co               BOOLEAN\t Set if coincidence analysis is being performed [DEFAULT=]\n"); 
+	fprintf(stdout,"\t--pstampsfile      STRING\t Name of output timstamps file for the primary detector [DEFAULT=NULL]\n"); 
+	fprintf(stdout,"\t--sstampsfile      STRING\t Name of output timstamps file for the secondary detector [DEFAULT=NULL]\n"); 
+	fprintf(stdout,"\t--pnoisedir        STRING\t Location of the primary data to be injected into [DEFAULT=NULL]\n"); 
+	fprintf(stdout,"\t--snoisedir        STRING\t Location of the secondary data to be injected into [DEFAULT=NULL]\n"); 
+	fprintf(stdout,"\t--psftbase         STRING\t Location of the primary output dataset + sft basename [DEFAULT=NULL]\n"); 
+	fprintf(stdout,"\t--ssftbase         STRING\t Location of the secondary output dataset + sft basename [DEFAULT=NULL]\n"); 
+	fprintf(stdout,"\t--poutfile         STRING\t Name of output random configuration file for the primary detector [DEFAULT=NULL]\n");
+	fprintf(stdout,"\t--soutfile         STRING\t Name of output random configuration file for the secondary detector [DEFAULT=NULL]\n");
+	exit(0);
+	break;
+      default:
+	/* unrecognized option */
+	errflg++;
+	fprintf(stderr,"Unrecognized option argument %c\n",c);
+	exit(1);
+	break;
+      }
 
+    if ((detflag)&&(coflag)) {
+      printf("ERROR : can't select random detector and coincidence analysis !!!\n");
+      exit(1);
+    }
+    
   }
   
   /* update global variable and return */
@@ -607,161 +764,196 @@ int MakeSafeBinaryParams()
 
 /*******************************************************************************/
 
-int OutputRandomConfigFile() 
+int OutputRandomConfigFile(char *outfile,RandomParameters *rand,RandomParameters *rand_det) 
 {
-  FILE *fpin,*fpout,*fpgen,*fporb,*fpnuis;
+
+  /* this function scans through the original input template config file and */
+  /* replaces the appropriate variables with the random values */
+
+  FILE *fpin,*fpout,*fppython;
+  REAL8 aplus,across,h0;
+  INT4 errcode;
   char name[256],line[256];
+  char phi0text[256];
+  char psitext[256];
+  char longitudetext[256];
+  char latitudetext[256];
+  char ifotext[256];
+  char durationtext[256];
+  char tsfttext[256];
+  char tstarttext[256];
+  char aPlustext[256];
+  char aCrosstext[256];
+  char f0text[256];
+  char fbandtext[256];
+  char fmintext[256];
+  char orbitSemiMajorAxistext[256];
+  char orbitPeriodtext[256];
+  char orbitEccentricitytext[256];
+  char orbitArgPeriapsetext[256];
+  char orbitTperiSSBsectext[256];
+  char orbitTperiSSBnstext[256];
+  char stampstext[256];
+  char sftbasetext[256];
+  char noisedirtext[256];
+  char reftimetext[256];
+  INT4 i;
+
   /* defining the actual strings to identify in the input file */
-  char *phi0text="phi0";
-  char *psitext="psi";
-  char *longitudetext="longitude";
-  char *latitudetext="latitude";
-  char *ifotext="detector";
-  char *nsfttext="nTsft";
-  char *tsfttext="Tsft";
-  char *tstarttext="startTime";
-  char *aPlustext="aPlus";
-  char *aCrosstext="aCross";
-  char *f0text="f0";
-  char *orbitSemiMajorAxistext="orbitSemiMajorAxis";
-  char *orbitPeriodtext="orbitPeriod";
-  char *orbitEccentricitytext="orbitEccentricity";
-  char *orbitArgPeriapsetext="orbitArgPeriapse";
-  char *orbitTperiSSBsectext="orbitTperiSSBsec";
-  char *orbitTperiSSBnstext="orbitTperiSSBns";
-  char *f_mintext="f_min";
-  char *bandtext="Band";
-  int i;
- 
+  LALSnprintf(phi0text,256,"phi0");
+  LALSnprintf(psitext,256,"psi");
+  LALSnprintf(longitudetext,256,"longitude");
+  LALSnprintf(latitudetext,256,"latitude");
+  LALSnprintf(ifotext,256,"detector");
+  LALSnprintf(durationtext,256,"duration");
+  LALSnprintf(tsfttext,256,"Tsft");
+  LALSnprintf(tstarttext,256,"startTime");
+  LALSnprintf(reftimetext,256,"refTime");
+  LALSnprintf(aPlustext,256,"aPlus");
+  LALSnprintf(aCrosstext,256,"aCross");
+  LALSnprintf(f0text,256,"f0");
+  LALSnprintf(fbandtext,256,"Band");
+  LALSnprintf(fmintext,256,"fmin");
+  LALSnprintf(stampstext,256,"timestampsFile");
+  LALSnprintf(orbitSemiMajorAxistext,256,"orbitSemiMajorAxis");
+  LALSnprintf(orbitPeriodtext,256,"orbitPeriod");
+  LALSnprintf(orbitEccentricitytext,256,"orbitEccentricity");
+  LALSnprintf(orbitArgPeriapsetext,256,"orbitArgPeriapse");
+  LALSnprintf(orbitTperiSSBsectext,256,"orbitTperiSSBsec");
+  LALSnprintf(orbitTperiSSBnstext,256,"orbitTperiSSBns");
+  LALSnprintf(sftbasetext,256,"outSFTbname");
+  LALSnprintf(noisedirtext,256,"noiseSFTs");
+
   /* opening the input config file */
   fpin=fopen(infile,"r");
   if (fpin==NULL) {
     fprintf(stderr,"Unable to open file %s\n",infile);
     return 1;
   }
-  /* opening the output tconfig file */
+  /* opening the output config file */
   fpout=fopen(outfile,"w");
   if (fpout==NULL) {
     fprintf(stderr,"Unable to open file %s\n",outfile);
     return 1;
   }
 
-  /* He we are simply outputting to file a string of commandline arguments  */
-  /* which can be catted into the program lalapps_GenerateSearchInput so    */
-  /* that a search of exactly matched parameters can be done */
-  /* this file contains cla's for orbital parameters */ 
-  fporb=fopen("orbparamsfile.out","w");
-  if (fporb==NULL) {
+  /* here we are opening another output file that contains the same output */
+  /* parameters but in a python readable config file */
+  fppython=fopen("randparams_python.data","w");
+  if (fppython==NULL) {
     fprintf(stderr,"Unable to open file\n");
     return 1;
   }
-  /* this one contains cla's for general parameters */
-  fpgen=fopen("genparamsfile.out","w");
-  if (fpgen==NULL) {
-    fprintf(stderr,"Unable to open file\n");
-    return 1;
-  }
-  /* here we are opening a file to output nuisance parameters to a seperate file */
-  fpnuis=fopen("nuisancefile.out","w");
-  if (fpnuis==NULL) {
-    fprintf(stderr,"Unable to open file\n");
-    return 1;
-  }
- 
+  fprintf(fppython,"[randomparameters]\n");
+  
+  /* define h0 value here */
+  if (rand->h0==NULL) h0=1.0;
+  else h0=rand->h0->value;
+
+
   i=0;
   /* read in the input file and identify the appropriate lines */ 
   while (fgets(line,255,fpin))  
     {
 
     /* get the first column string to compare */
-    sscanf(line,"%s",name); 
-    fprintf(stdout,"name is %s\n",name);
-    
-    /* if any of the following strings are found and are to be replaced the change line */
-    if ((strcmp(name,ifotext)==0)&&(ifoflag)) {
-      sprintf(line,"detector\t= %s\t\t# Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME\n",ifo);
-      fprintf(fpgen,"ifo %s\n",ifo); 
-    }
-    else if ((strcmp(name,nsfttext)==0)&&(nsftflag)) {
-      sprintf(line,"nTsft\t\t= %d\t\t# number of SFTs to calculate\n",nsft);
-    }
-    else  if ((strcmp(name,f_mintext)==0)&&(f_minflag)) {
-      sprintf(line,"f_min\t\t= %d\t\t# lowest SFT-frequency in Hz\n",f_min);
-    }
-    else if ((strcmp(name,bandtext)==0)&&(bandflag)) {
-      sprintf(line,"Band\t\t= %d\t\t# SFT frequency band in Hz\n",band);
-    }
-    else if ((strcmp(name,longitudetext)==0)&&(alphaflag)) {
-      sprintf(line,"longitude\t= %6.12f\t# source longitude (in_radians)\n",alpha);
-      fprintf(fpgen,"alpha %6.12f\n",alpha); 
-    }
-    else if ((strcmp(name,latitudetext)==0)&&(deltaflag)) {
-      sprintf(line,"latitude\t= %6.12f\t# source latitude (in radians)\n",delta);
-      fprintf(fpgen,"delta %6.12f\n",delta); 
-    }
-    else if ((strcmp(name,aPlustext)==0)&&(aplusflag)) {
-      sprintf(line,"aPlus\t\t= %6.12f\t# plus-polarization amplitude a_+ (strain)\n",aplus);
-      fprintf(fpnuis,"cosiota %6.12f\n",cosiota);
-    }
-    else if ((strcmp(name,aCrosstext)==0)&&(acrossflag)) {
-      sprintf(line,"aCross\t\t= %6.12f\t# cross-polarization amplitude a_x (strain)\n",across);
-    }
-    else if ((strcmp(name,psitext)==0)&&(psiflag)) {
-      sprintf(line,"psi\t\t= %6.12f\t# wave polarization angle Psi\n",psi);
-      fprintf(fpnuis,"psi %6.12f\n",psi);
-    }
-    else if ((strcmp(name,phi0text)==0)&&(phiflag)) {
-      sprintf(line,"phi0\t\t= %6.12f\t# initial wave-phase phi0 (at reference-time tRef)\n",phi);
-      fprintf(fpnuis,"phi %6.12f\n",phi);
-    }
-    else if ((strcmp(name,f0text)==0)&&(f0flag)) {
-      sprintf(line,"f0\t\t= %6.12f\t# intrinsic signal frequency f0 (at tRef)\n",f0);
-      f0flag=0;
-      fprintf(fpgen,"f0 %6.12f\n",f0); 
-    }
-    else if ((strcmp(name,tsfttext)==0)&&(tsftflag)) {
-      sprintf(line,"tsft\t\t= %d\t# length of SFTs in seconds\n",tsft);
-    }
-    else if ((strcmp(name,tstarttext)==0)&&(tstartflag)) {
-      sprintf(line,"startTime\t= %d\t# GPS start time of (contiguous) output time-series\n",tstart);
-      fprintf(fpgen,"tstart %d\n",tstart); 
-    }
-    else if ((strcmp(name,orbitSemiMajorAxistext)==0)&&(smaflag)) {
-      sprintf(line,"orbitSemiMajorAxis\t= %6.12f\t# Projected orbital semi-major axis a in seconds (i.e. a*sin(i)/c)\n",sma);
-      fprintf(fporb,"sma %6.12f\n",sma); 
-    }
-    else if ((strcmp(name,orbitEccentricitytext)==0)&&(eccflag)) {
-      sprintf(line,"orbitEccentricity\t= %6.12f\t# Orbital eccentricity\n",ecc);
-      fprintf(fporb,"ecc %6.12f\n",ecc); 
-    }
-    else if ((strcmp(name,orbitTperiSSBsectext)==0)&&(tperiflag)) {
-      sprintf(line,"orbitTperiSSBsec\t= %d\t\t# 'observed' (SSB) time of periapsis passage. Seconds.\n",tperiGPS.gpsSeconds);
-      fprintf(fporb,"tpsec %d\n",tperiGPS.gpsSeconds); 
-    }
-    else if ((strcmp(name,orbitTperiSSBnstext)==0)&&(tperiflag)) {
-      sprintf(line,"orbitTperiSSBns\t\t= %d\t\t# 'observed' (SSB) time of periapsis passage. Nanoseconds.\n",tperiGPS.gpsNanoSeconds);
-      fprintf(fporb,"tpnano %d\n",tperiGPS.gpsNanoSeconds); 
-    }
-    else if ((strcmp(name,orbitPeriodtext)==0)&&(periodflag)) {
-      sprintf(line,"orbitPeriod\t\t= %6.12f\t# Orbital period (seconds)\n",period);
-      fprintf(fporb,"period %6.12f\n",period); 
-    }
-    else if ((strcmp(name,orbitArgPeriapsetext)==0)&&(argpflag)) {
-      sprintf(line,"orbitArgPeriapse\t= %6.12f\t# Argument of periapsis (radians)\n",argp); 
-      fprintf(fporb,"argp %6.12f\n",argp); 
-    }
-    
-    /* output the appropriate line to the output file */
-    fprintf(fpout,"%s",line);
+    errcode=sscanf(line,"%s",name); 
+    /* fprintf(stdout,"code is %d name is #%s#\n",errcode,name); */
+       
 
-    
+    if (errcode>0) {
+      /* if any of the following strings are found and are to be replaced the change line */
+      if (strcmp(name,ifotext)==0) {
+	sprintf(line,"detector\t= %s\t\t# Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME\n",rand_det->detector);
+	fprintf(fppython,"det = %s\n",rand_det->detector); 
+      }
+      if (strcmp(name,reftimetext)==0) {
+        sprintf(line,"refTime\t= %d\t\t# ?\n",rand_det->start);
+      }
+      else if ((strcmp(name,longitudetext)==0)&&(rand->ra!=NULL)) {
+	sprintf(line,"longitude\t= %6.12f\t# source longitude (in_radians)\n",rand->ra->value);
+	fprintf(fppython,"ra = %6.12f\n",rand->ra->value); 
+      }
+      else if ((strcmp(name,latitudetext)==0)&&(rand->dec!=NULL)) {
+	sprintf(line,"latitude\t= %6.12f\t# source latitude (in radians)\n",rand->dec->value);
+	fprintf(fppython,"declination = %6.12f\n",rand->dec->value); 
+      }
+      else if ((strcmp(name,aPlustext)==0)&&(rand->cosiota!=NULL)) {
+	aplus=0.5*h0*(1.0+rand->cosiota->value*rand->cosiota->value);
+	sprintf(line,"aPlus\t\t= %6.12e\t# plus-polarization amplitude a_+ (strain)\n",aplus);
+	fprintf(fppython,"cosiota = %6.12f\n",rand->cosiota->value);
+      }
+      else if ((strcmp(name,aCrosstext)==0)&&(rand->cosiota!=NULL)) {
+	across=h0*rand->cosiota->value;
+	sprintf(line,"aCross\t\t= %6.12e\t# cross-polarization amplitude a_x (strain)\n",across);
+      }
+      else if ((strcmp(name,psitext)==0)&&(rand->psi!=NULL)) {
+	sprintf(line,"psi\t\t= %6.12f\t# wave polarization angle Psi\n",rand->psi->value);
+	fprintf(fppython,"psi = %6.12f\n",rand->psi->value);
+      }
+      else if ((strcmp(name,phi0text)==0)&&(rand->phi!=NULL)) {
+	sprintf(line,"phi0\t\t= %6.12f\t# initial wave-phase phi0 (at reference-time tRef)\n",rand->phi->value);
+	fprintf(fppython,"phi = %6.12f\n",rand->phi->value);
+      }
+      else if ((strcmp(name,f0text)==0)&&(rand->freq!=NULL)) {
+	sprintf(line,"f0\t\t= %6.12f\t# intrinsic signal frequency f0 (at tRef)\n",rand->freq->value);
+	fprintf(fppython,"f0 = %6.12f\n",rand->freq->value); 
+      }
+      else if ((strcmp(name,fmintext)==0)&&(rand->freq!=NULL)) {
+	f_min=(REAL8)floor(rand->freq->value-((REAL8)freqband/2.0)+0.5);
+	sprintf(line,"fmin\t\t= %6.12f\t# Lowest frequency in output SFT (= heterodyning frequency)\n",f_min);
+      }
+      else if ((strcmp(name,fbandtext)==0)&&(rand->freq!=NULL)) {
+	sprintf(line,"Band\t\t= %6.12f\t# bandwidth of output SFT in Hz (= 1/2 sampling frequency)\n",freqband);
+      }
+      else if (strcmp(name,tstarttext)==0) {
+	sprintf(line,"startTime\t= %d\t# GPS start time of (contiguous) output time-series\n",rand_det->start);
+	fprintf(fppython,"tstart = %d\n",rand_det->start); 
+      }
+      else if (strcmp(name,stampstext)==0) {
+	sprintf(line,"timestampsFile\t= %s\t# Timestamps file\n",rand_det->stampsfile);
+      }
+      else if (strcmp(name,sftbasetext)==0) {
+	sprintf(line,"outSFTbname\t= %s\t# Path and basefilename of output SFT files\n",rand_det->sftbase);
+      }
+      else if (strcmp(name,noisedirtext)==0) {
+	/* note that we put the /* on the end to bypass wildcard evaluation problems in the python script */
+	sprintf(line,"noiseSFTs\t= %s/*\t# Glob-like pattern specifying noise-SFTs to be added to signal\n",rand_det->noisedir);
+      }
+      else if ((strcmp(name,orbitSemiMajorAxistext)==0)&&(rand->sma!=NULL)) {
+	sprintf(line,"orbitSemiMajorAxis\t= %6.12f\t# Projected orbital semi-major axis a in seconds (i.e. a*sin(i)/c)\n",rand->sma->value);
+	fprintf(fppython,"sma = %6.12f\n",rand->sma->value); 
+      }
+      else if ((strcmp(name,orbitEccentricitytext)==0)&&(rand->ecc!=NULL)) {
+	sprintf(line,"orbitEccentricity\t= %6.12f\t# Orbital eccentricity\n",rand->ecc->value);
+	fprintf(fppython,"ecc = %6.12f\n",rand->ecc->value); 
+      }
+      else if ((strcmp(name,orbitTperiSSBsectext)==0)&&(rand->tperi!=NULL)) {
+	sprintf(line,"orbitTperiSSBsec\t= %d\t\t# 'observed' (SSB) time of periapsis passage. Seconds.\n",rand->tperi->value.gpsSeconds);
+	fprintf(fppython,"tpsec = %d\n",rand->tperi->value.gpsSeconds); 
+      }
+      else if ((strcmp(name,orbitTperiSSBnstext)==0)&&(rand->tperi!=NULL)) {
+	sprintf(line,"orbitTperiSSBns\t\t= %d\t\t# 'observed' (SSB) time of periapsis passage. Nanoseconds.\n",rand->tperi->value.gpsNanoSeconds);
+	fprintf(fppython,"tpnano = %d\n",rand->tperi->value.gpsNanoSeconds); 
+      }
+      else if ((strcmp(name,orbitPeriodtext)==0)&&(rand->period!=NULL)) {
+	sprintf(line,"orbitPeriod\t\t= %6.12f\t# Orbital period (seconds)\n",rand->period->value);
+	fprintf(fppython,"period = %6.12f\n",rand->period->value); 
+      }
+      else if ((strcmp(name,orbitArgPeriapsetext)==0)&&(rand->argp!=NULL)) {
+	sprintf(line,"orbitArgPeriapse\t= %6.12f\t# Argument of periapsis (radians)\n",rand->argp->value); 
+	fprintf(fppython,"argp = %6.12f\n",rand->argp->value); 
+      }
+      
+      /* output the appropriate line to the output file */
+      fprintf(fpout,"%s",line);
+    }
   }
   
   fclose(fpin);
   fclose(fpout);
-  fclose(fpgen);
-  fclose(fporb);
-  fclose(fpnuis);
+  fclose(fppython);
+
   return 0;
   
 }
