@@ -50,10 +50,10 @@ class sensitivityJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['source']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/sensitivity-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/sensitivity-$(cluster)-$(process).err')
-    self.set_sub_file('sensitivity.sub')
 
+    self.set_stdout_file('logs/sensitivity-$(cluster).out')
+    self.set_stderr_file('logs/sensitivity-$(cluster).err')
+    self.set_sub_file('sensitivity.sub')
 
 class sensitivityNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
   """
@@ -87,21 +87,21 @@ class sensitivityNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     Set the code to use as detector.
     detector = code (e.g. LLO, LHO or GEO).
     """
-    self.add_var_opt('detector', detector)
+    self.add_var_opt('det', detector)
     self.__detector = detector
 
   def set_tstart(self, tstart):
     """
     Set the GPS start time of this analysis.
     """
-    self.add_var_opt('tstart',tstart)
+    self.add_var_opt('start',tstart)
     self.__tstart = tstart
 
   def set_tend(self, tend):
     """
     Set the GPS end time of the sensitivity analysis.
     """
-    self.add_var_opt('tend', tend)
+    self.add_var_opt('end', tend)
     self.__tend = tend
 
   def set_outdir(self, outdir):
@@ -131,7 +131,7 @@ class makemeshJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     """
     Static options are read from the mesh, ephemeris, and source sections
     """
-    for sec in ['mesh']:
+    for sec in ['makemesh']:
       self.add_ini_opts(cp,sec)
     
     for sec in ['ephemeris']:
@@ -140,8 +140,8 @@ class makemeshJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['source']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/makemesh-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/makemesh-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/makemesh-$(cluster).out')
+    self.set_stderr_file('logs/makemesh-$(cluster).err')
     self.set_sub_file('makemesh.sub')
 
 
@@ -160,8 +160,8 @@ class makemeshNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     initialise the job variables
     """
     self.__datadir = None
-    self.__mismatch = None
-    self.__outdir = None
+    self.__meshdir = None
+    self.__detector = None
 
   def set_datadir(self,datadir):
     """
@@ -170,12 +170,19 @@ class makemeshNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('datadir',datadir)
     self.__datadir = datadir
 
-  def set_outdir(self,outdir):
+  def set_meshdir(self,meshdir):
     """
     Set the output mesh directory.
     """
-    self.add_var_opt('outdir',outdir)
-    self.__outdir = outdir
+    self.add_var_opt('meshdir',meshdir)
+    self.__meshdir = meshdir
+
+  def set_detector(self,detector):
+    """
+    Set the output mesh directory.
+    """
+    self.add_var_opt('detector',detector)
+    self.__detector = detector
 
 #############################################################################    
 #############################################################################
@@ -200,16 +207,12 @@ class searchJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['search']:
       self.add_ini_opts(cp,sec)
     
-    for sec in ['ephemeris']:
-      self.add_ini_opts(cp,sec)
-
     for sec in ['source']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/search-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/search-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/search-$(cluster).out')
+    self.set_stderr_file('logs/search-$(cluster).err')
     self.set_sub_file('search.sub')
-
 
 class searchNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -231,48 +234,80 @@ class searchNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__detector = None
     self.__binarytemplatebank = None
     self.__workdir = None
+    self.__ephdir = None
+    self.__yr = None
+    self.__label = None
+    self.__Fthresh = None
 
   def set_datadir(self,datadir):
     """
     Set the data directory.
     """
-    self.add_var_opt('datadir',datadir)
+    self.add_var_opt('DataDir',datadir)
     self.__datadir = datadir
 
   def set_f_min(self,f_min):
     """
     Set the minimum search frequency.
     """
-    self.add_var_opt('f_min',f_min)
+    self.add_var_opt('Freq',f_min)
     self.__f_min = f_min
 
   def set_f_band(self,f_band):
     """
     Set the search frequency band.
     """
-    self.add_var_opt('f_band',f_band)
+    self.add_var_opt('FreqBand',f_band)
     self.__f_band = f_band
 
-def set_detector(self,detector):
+  def set_detector(self,detector):
     """
     Set the detector code as described earlier.
     """
-    self.add_var_opt('detector',detector)
+    self.add_var_opt('IFO',detector)
     self.__detector = detector
 
-def set_binarytemplatebank(self,binarytemplatebank):
+  def set_binarytemplatebank(self,binarytemplatebank):
     """
     Set the location of the binary template bank for the search.
     """
-    self.add_var_opt('binarytemplatebank',binarytemplatebank)
+    self.add_var_opt('binarytemplatefile',binarytemplatebank)
     self.__binarytemplatebank = binarytemplatebank
 
-def set_workdir(self,workdir):
+  def set_workdir(self,workdir):
     """
     Set the search output directory.
     """
-    self.add_var_opt('workdir',workdir)
+    self.add_var_opt('workingDir',workdir)
     self.__workdir = workdir
+
+  def set_Fthresh(self,Fthresh):
+    """
+    Set the search output directory.
+    """
+    self.add_var_opt('Fthreshold',Fthresh)
+    self.__Fthresh = Fthresh  
+
+  def set_ephdir(self,ephdir):
+    """
+    Set the search output directory.
+    """
+    self.add_var_opt('EphemDir',ephdir)
+    self.__ephdir = ephdir
+
+  def set_yr(self,yr):
+    """
+    Set the search output directory.
+    """
+    self.add_var_opt('EphemYear',yr)
+    self.__yr = yr  
+
+  def set_label(self,label):
+    """
+    Set the search output directory.
+    """
+    self.add_var_opt('outputLabel',label)
+    self.__label = label  
 
 #############################################################################    
 #############################################################################
@@ -292,13 +327,14 @@ class coincidenceJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp)
 
     """
-    No Static options for the coincidence analysis
+    Static options for the coincidence analysis
     """
-       
-    self.set_stdout_file('logs/coincidence-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/coincidence-$(cluster)-$(process).err')
+    for sec in ['ephemeris']:
+      self.add_ini_opts(cp,sec)
+      
+    self.set_stdout_file('logs/coincidence-$(cluster).out')
+    self.set_stderr_file('logs/coincidence-$(cluster).err')
     self.set_sub_file('coincidence.sub')
-
 
 class coincidenceNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -314,48 +350,56 @@ class coincidenceNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     initialise the job variables
     """
-    self.__presults = None
-    self.__sresults = None
-    self.__f_min = None
-    self.__f_max = None
-    self.__searchfreqmeshfile = None
+    self.__presultsdir = None
+    self.__sresultsdir = None
+    self.__coresultsdir = None
+    self.__fmin = None
+    self.__fmax = None
+    self.__freqmeshfile = None
     self.__sdataparamsfile = None
-    self.__outdir = None
+    self.__nbins = None
 
-  def set_presults(self,presults):
+  def set_presultsdir(self,presultsdir):
     """
     Set the primary search results directory.
     """
-    self.add_var_opt('presults',presults)
-    self.__presults = presults
+    self.add_var_opt('presultsdir',presultsdir)
+    self.__presultsdir = presultsdir
 
-  def set_sresults(self,sresults):
+  def set_sresultsdir(self,sresultsdir):
     """
     Set the secondary search results directory.
     """
-    self.add_var_opt('sresults',sresults)
-    self.__sresults = sresults
+    self.add_var_opt('sresultsdir',sresultsdir)
+    self.__sresultsdir = sresultsdir
 
-  def set_f_min(self,f_min):
+  def set_coresultsdir(self,coresultsdir):
+    """
+    Set the primary search results directory.
+    """
+    self.add_var_opt('coresultsdir',coresultsdir)
+    self.__coresultsdir = coresultsdir
+
+  def set_fmin(self,fmin):
     """
     Set the minimum primary results frequency.
     """
-    self.add_var_opt('f_min',f_min)
-    self.__f_min = f_min
+    self.add_var_opt('fmin',fmin)
+    self.__fmin = fmin
 
-  def set_f_max(self,f_max):
+  def set_fmax(self,fmax):
     """
     Set the maximum primary results frequency.
     """
-    self.add_var_opt('f_max',f_max)
-    self.__f_max = f_max
+    self.add_var_opt('fmax',fmax)
+    self.__fmax = fmax
 
-  def set_searchfreqmeshfile(self,searchfreqmeshfile):
+  def set_freqmeshfile(self,freqmeshfile):
     """
     Set the name of the file containing search frequency - mesh information.
     """
-    self.add_var_opt('searchfreqmeshfile',searchfreqmeshfile)
-    self.__searchfreqmeshfile = searchfreqmeshfile
+    self.add_var_opt('freqmeshfile',freqmeshfile)
+    self.__freqmeshfile = freqmeshfile
 
   def set_sdataparamsfile(self,sdataparamsfile):
     """
@@ -364,12 +408,12 @@ class coincidenceNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('sdataparamsfile',sdataparamsfile)
     self.__sdataparamsfile = sdataparamsfile
 
-  def set_outdir(self,outdir):
+  def set_nbins(self,nbins):
     """
-    Set the output coincidence directory.
+    Set the name of the file containing the secondary data set parameters.
     """
-    self.add_var_opt('outdir',outdir)
-    self.__outdir = outdir
+    self.add_var_opt('nbins',nbins)
+    self.__nbins = nbins
 
 #############################################################################    
 #############################################################################
@@ -392,10 +436,9 @@ class injectionsJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     No Static options for the injections analysis
     """
        
-    self.set_stdout_file('logs/injections-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/injections-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/injections-$(cluster).out')
+    self.set_stderr_file('logs/injections-$(cluster).err')
     self.set_sub_file('injections.sub')
-
 
 class injectionsNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -416,8 +459,12 @@ class injectionsNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__f_max = None
     self.__pdatadir = None
     self.__sdatadir = None
+    self.__ptemplatefile = None
+    self.__stemplatefile = None
     self.__gw_amplitude = None
     self.__ntrials = None
+    self.__id = None
+    self.__outdir = None
 
   def set_configfile(self,configfile):
     """
@@ -430,14 +477,14 @@ class injectionsNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     Set the minimum injection frequency
     """
-    self.add_var_opt('f_min',f_min)
+    self.add_var_opt('fmin',f_min)
     self.__f_min = f_min
 
   def set_f_max(self,f_max):
     """
     Set the maximum injection frequency
     """
-    self.add_var_opt('f_max',f_max)
+    self.add_var_opt('fmax',f_max)
     self.__f_max = f_max
 
   def set_pdatadir(self,pdatadir):
@@ -454,11 +501,25 @@ class injectionsNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('sdatadir',sdatadir)
     self.__sdatadir = sdatadir
 
+  def set_ptemplatefile(self,ptemplatefile):
+    """
+    Set the primary template file
+    """
+    self.add_var_opt('ptemplatefile',ptemplatefile)
+    self.__ptemplatefile = ptemplatefile
+
+  def set_stemplatefile(self,stemplatefile):
+    """
+    Set the secondary template file
+    """
+    self.add_var_opt('stemplatefile',stemplatefile)
+    self.__stemplpatefile = stemplatefile
+
   def set_gw_amplitude(self,gw_amplitude):
     """
     Set the injection signal amplitude.
     """
-    self.add_var_opt('gw_amplitude',gw_amplitude)
+    self.add_var_opt('gwamplitude',gw_amplitude)
     self.__gw_amplitude = gw_amplitude
 
   def set_ntrials(self,ntrials):
@@ -467,6 +528,20 @@ class injectionsNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     self.add_var_opt('ntrials',ntrials)
     self.__ntrials = ntrials
+
+  def set_id(self,id):
+    """
+    Set the unique id for this job
+    """
+    self.add_var_opt('id',id)
+    self.__id = id
+
+  def set_outdir(self,outdir):
+    """
+    Set the output directory
+    """
+    self.add_var_opt('outdir',outdir)
+    self.__outdir = outdir
 
 #############################################################################    
 #############################################################################    
@@ -491,8 +566,8 @@ class upperlimitJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['upperlimit']:
       self.add_ini_opts(cp,sec)
     
-    self.set_stdout_file('logs/upperlimit-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/upperlimit-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/upperlimit-$(cluster).out')
+    self.set_stderr_file('logs/upperlimit-$(cluster).err')
     self.set_sub_file('upperlimit.sub')
 
 
@@ -515,12 +590,13 @@ class upperlimitNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__injfreqmeshfile = None
     self.__injh0file = None
     self.__outfile = None
+    self.__maxoutfile = None
 
   def set_injectionsdir(self,injectionsdir):
     """
     Set the location of the directory containing the injection results.
     """
-    self.add_var_opt('injectionsdir',injectionsdir)
+    self.add_var_opt('injectiondir',injectionsdir)
     self.__injectionsdir = injectionsdir
 
   def set_coresultsdir(self,coresultsdir):
@@ -534,20 +610,27 @@ class upperlimitNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     Set the location of the file containing the injection frequencies.
     """
-    self.add_var_opt('injfreqmeshfile',injfreqmeshfile)
+    self.add_var_opt('freqmeshfile',injfreqmeshfile)
     self.__injfreqmeshfile = injfreqmeshfile
 
   def set_injh0file(self,injh0file):
     """
     Set the location of the file containing the gw injection amplitudes.
     """
-    self.add_var_opt('injh0file',injh0file)
+    self.add_var_opt('gwamplitudefile',injh0file)
     self.__injh0file = injh0file
 
+  def set_maxoutfile(self,maxoutfile):
+    """
+    Set the location of the file containing the loudest event info
+    """
+    self.add_var_opt('maxoutfile',maxoutfile)
+    self.__maxouotfile = maxoutfile
+ 
   def set_outfile(self,outfile):
     """
-    Set the ouotput file. 
+    Set the output file. 
     """
-    self.add_var_opt('outfile',outfile)
+    self.add_var_opt('uloutfile',outfile)
     self.__outfile = outfile
     
