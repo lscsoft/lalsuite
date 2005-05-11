@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <glob.h>
 #include <getopt.h>
+#include <lal/Random.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALDatatypes.h>
@@ -47,11 +48,13 @@ typedef struct CLargstag {
   CHAR ifo[256];
   CHAR meshdir[256];
   BOOLEAN datadirflag;
+  BOOLEAN mismatchedflag;
+  BOOLEAN exactflag;
 } CLargs;
 
 typedef struct GlobVartag {
   INT4 nband;
-  INT4 *f_max;
+  REAL8 *f_max;
   INT4 band;
   REAL8 tspan;
   LIGOTimeGPS tstart;
@@ -72,6 +75,8 @@ typedef struct GlobVartag {
   CHAR meshdir[256];
   CHAR sourcefile[256];
   CHAR source[256];
+  BOOLEAN mismatchedflag;
+  BOOLEAN exactflag;
 } GlobVar;
   
 typedef struct BinaryMeshFileHeadertag {
