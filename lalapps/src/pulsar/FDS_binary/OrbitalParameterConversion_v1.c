@@ -53,22 +53,24 @@ int ConvertXYtoRTperi(XYLocation *XYloc, RTPLocation *RTPloc)
   sma=sqrt(X*X+Y*Y);
   alpha=atan2(Y,X);
   /* keep the range of alpha as 0 -> 2pi */
-  if (alpha<0.0) alpha=alpha+LAL_TWOPI; 
+  /* if (alpha<0.0) alpha=alpha+LAL_TWOPI; */ 
+  /*printf("alpha is %f\n",alpha);*/
 
   /* Convert alpha and R to time since periapse as measured in SSB */
   Torb=alpha*(period)/LAL_TWOPI;
   Tlight=sma*sin(alpha);
   deltaT=Torb+Tlight;
+  /*printf("deltaT is %f\n",deltaT);*/
   
   if (alpha>=0.0) {
     LALFloatToInterval(&status,&interval,&deltaT);
     LALDecrementGPS(&status,&tperi,&tstartSSB,&interval);
   }
-  /*else if (alpha<0.0) {
+  else if (alpha<0.0) {
     deltaT=(-1.0)*deltaT;
     LALFloatToInterval(&status,&interval,&deltaT);
     LALIncrementGPS(&status,&tperi,&tstartSSB,&interval);
-    }*/
+  }
   else {
     printf("error with alpha is parameter conversion\n");
     exit(1);
