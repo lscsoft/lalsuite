@@ -14,7 +14,7 @@
 int ReadSource(char *,char *,LIGOTimeGPS *,binarysource *); 
 int ReadData(char *,binarysource *,dataset *,REAL8,INT4,FFT ***);
 int CalculateSh(FFT ***,dataset *,REAL8 *);
-int FreeSFTs(dataset *,FFT ***);   
+int FreeSFTs(dataset *,FFT ***,INT4);   
 int GetAB(EphemerisData *,char *,dataset *,binarysource *,sensresults *); 
 int CalculateSensitivity(sensitivityparams *,binarysource *,sensresults **);
 int OutputResult(char *,sensitivityparams *,sensresults *);
@@ -27,13 +27,13 @@ INT4 start;
 INT4 end;
 REAL8 tspan;
 INT4 tstep;
+INT4 maxsftno;
 static LALStatus status;
 
 int ReadCommandLine(int argc,char *argv[]);
 
 int main(int argc, char **argv){
   
-  REAL8 *ShAV;
   FFT **SFTData;
   FFT **tempSFTData;
   dataset fulldataparams;
@@ -43,15 +43,14 @@ int main(int argc, char **argv){
   binarysource sourceparams;
   EphemerisData *edat=NULL;
   INT4 i,j;
+  FILE *fpnob=NULL;
+  CHAR outputfile[256];
 
    /* read the command line arguments */
   if (ReadCommandLine(argc,argv)) return 1;
   
   /* read the required source parameters from the input source file */
   if (ReadSource(sourcefile,sourcename,obsstart,&sourceparams)) return 1; 
-
-  /* allocate memory for the Sh's for each band */
-  ShAV=(REAL8 *)LALMalloc(sourceparams.freq.nband*sizeof(REAL8));
 
   /* set up some structure inputs */
   fulldataparams.start.gpsSeconds=start;
@@ -61,24 +60,30 @@ int main(int argc, char **argv){
   sensparams.tspan=tspan;
   sensparams.overlap=tstep;
   
-  /*printf("starting loop over bands\n");*/
-
   /* start a loop over the number of bands */
   for (i=0;i<sourceparams.freq.nband;i++) {
     
+    /*printf("*** Reading in full dataset\n");*/
+
     /* read the sub data into memory */
     if (ReadData(datadir,&sourceparams,&fulldataparams,sensparams.tspan,i,&SFTData)) return 2; 
 
-    /*printf("read data\n");*/
+    /*printf("*** Setting up parameters\n");*/
 
     /* set up sensitivity parameters ie number of chunks */
     if (SetupParams(&sensparams,&fulldataparams)) return 3;
 
-    /*printf("setup params\n");*/
-
     /* allocate results space */ /* sloppy */
     if (i==0) results=(sensresults *)LALMalloc(sensparams.nchunks*sizeof(sensresults));
-   
+      
+    /*printf("*** Calculating noise floor sensitivity\n");*/
+
+    /* initialise the noise floor results */
+    for (j=0;j<sensparams.nchunks;j++) {
+      results[j].ShAV[0]=0.0;
+      results[j].ShAV[1]=0.0;
+    }
+
     /* start a loop over the time chunks */
     for (j=0;j<sensparams.nchunks;j++) {
 
@@ -88,64 +93,60 @@ int main(int argc, char **argv){
 	/* copy required SFT's to a sub area */
 	if (SelectSFTs(&SFTData,&tempSFTData,&sensparams.dataparams[j],&fulldataparams)) return 3;
 
-	/*printf("selected SFTs\n");*/
-
 	/* calculate the noise floor */
 	if (CalculateSh(&tempSFTData,&sensparams.dataparams[j],&results[j].ShAV[i])) return 3; 
-	
-	/*printf("calculated Sh\n");*/
 
 	/* free memory */
-	if (FreeSFTs(&sensparams.dataparams[j],&tempSFTData)) return 7; 
+	if (FreeSFTs(&sensparams.dataparams[j],&tempSFTData,sensparams.dataparams[j].sftno)) return 7; 
       
-	/*printf("Freed the SFTs\n");*/
-
       }
 
     }
+
+    /*printf("*** Freeing the full dataset\n"); */
+
+    /* free the full SFT data */
+    if (FreeSFTs(&fulldataparams,&SFTData,maxsftno)) return 8;
+        
+    /* freeing the full data set parameters structure */
+    LALFree(fulldataparams.stamps);
     
   }
 
-  /* free the full SFT data */
-  if (FreeSFTs(&fulldataparams,&SFTData)) return 8;
-
-  /*printf("Freed the full SFTs\n");*/
+  /*printf("*** Calculating sky postion sensitivity\n");*/
 
   /* read in epehemeris info */
   if (ReadEphemeris(ephdir,yr,&edat)) return 9;
-
-  /*printf("Read ephemeris\n");*/
 
   /* loop over the chunks again to calulate A and B */
   for (j=0;j<sensparams.nchunks;j++) {
       
     /* if we have more than 1 SFT in this chunk */
-    if (sensparams.dataparams[j].sftno>1) {
+    if (sensparams.dataparams[j].sftno>1) { 
 
       /* calculate the values of A and B */
-      if (GetAB(edat,det,&sensparams.dataparams[j],&sourceparams,&results[j])) return 4;
-  
-      /*printf("getting AB\n");*/
-
+      if (GetAB(edat,det,&sensparams.dataparams[j],&sourceparams,&results[j])) return 4;      
+    
     }
+    
+    /* freeing the timestamps in sensparams structure */
+    LALFree(sensparams.dataparams[j].stamps);
 
   }
 
   /* freeing the ephemeris data */
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
-  LALFree(edat);
+  LALFree(edat); 
+
+  /*printf("*** Calculating overall sensitivity and outputting to file\n");*/
 
   /* evaluate the sensitivity of all the chunks for this source */
   if (CalculateSensitivity(&sensparams,&sourceparams,&results)) return 5;
 
-  /*printf("calculated sensitivity\n");*/
-
   /* output the results */
   if (OutputResult(outdir,&sensparams,results)) return 6;
-  
-  LALCheckMemoryLeaks();
-  
+    
   exit(0);
   
 }
@@ -161,7 +162,7 @@ int SelectSFTs(FFT ***SFTData,FFT ***tempSFTData,dataset *dataparams,dataset *fu
   /* allocate memory */
   (*tempSFTData)=(FFT **)LALMalloc(dataparams->sftno*sizeof(FFT *));
 
-  k=0;
+    k=0;
   /* loop over all the SFT's */
   for (i=0;i<fulldataparams->sftno;i++) {
         
@@ -171,7 +172,7 @@ int SelectSFTs(FFT ***SFTData,FFT ***tempSFTData,dataset *dataparams,dataset *fu
     
       /* if the stamps match */
       if ((*SFTData)[i]->fft->epoch.gpsSeconds==dataparams->stamps[j].gpsSeconds) {
-	
+       
 	/* allocate the memory for the temporary SFTs */
 	(*tempSFTData)[k]=(FFT *)LALMalloc(sizeof(FFT));
 	(*tempSFTData)[k]->fft=(COMPLEX8FrequencySeries *)LALMalloc(sizeof(COMPLEX8FrequencySeries)); 
@@ -272,6 +273,9 @@ int SetupParams(sensitivityparams *sensparams,dataset *fulldataparams)
       sensparams->dataparams[i].nsamples=fulldataparams->nsamples;
       sensparams->dataparams[i].tobs=fulldataparams->tsft*sensparams->dataparams[i].sftno;
     }
+    else {
+      sensparams->dataparams[i].tobs=0;
+    }
 
   }
 
@@ -290,24 +294,24 @@ int OutputResult(char *outputdir,sensitivityparams *sensparams,sensresults *resu
   INT4 i;
   char outputfile[512],temp[512];
   
-  
   strcpy(outputfile,outputdir);
-  sprintf(temp,"/sensitivity_%s_%s_%d-%d.data",det,sourcename,start,end);
-  strcat(outputfile,temp);
+  sprintf(outputfile,"%s/sensitivity_%s_%s_%d-%d.data",outputdir,det,sourcename,start,end);
+ 
+  fp=fopen(outputfile,"w");
+  if (fp==NULL) {
+    printf("ERROR : could not open output file %s\n",outputfile);
+    exit(1);
+  }
 
-  if(!(fp=fopen(outputfile,"w"))){
-    printf("Cannot open output file %s\n",outputfile);
-    return 1;
-  } 
-  
   fprintf(fp,"# Sensitivity results\n");
-  fprintf(fp,"sourcefile = %s\n",sourcefile);
-  fprintf(fp,"source = %s\n",sourcename);
-  fprintf(fp,"full_start_time = %d\n",sensparams->fullstart.gpsSeconds);
-  fprintf(fp,"full_end_time = %d\n",sensparams->fullend.gpsSeconds);
-  fprintf(fp,"#--------------------------------------------------------------------------------#\n");
-  fprintf(fp,"tstart\t\ttend\t\tSh_1\t\tSh_2\t\tSh_wtd\t\tA\t\tB\t\tT_obs\t\tQ\n\n");
-  
+  fprintf(fp,"# -------------------------------------------------------------------------------- #\n");
+  fprintf(fp,"# sourcefile = %s\n",sourcefile);
+  fprintf(fp,"# source = %s\n",sourcename);
+  fprintf(fp,"# full_start_time = %d\n",sensparams->fullstart.gpsSeconds);
+  fprintf(fp,"# full_end_time = %d\n",sensparams->fullend.gpsSeconds);
+  fprintf(fp,"# -------------------------------------------------------------------------------- #\n");
+  fprintf(fp,"# tstart\ttend\t\tSh_1\t\tSh_2\t\tSh_wtd\t\tA\t\tB\t\tT_obs\t\tQ\n#\n");
+      
   for (i=0;i<sensparams->nchunks;i++) {
     
     if (sensparams->dataparams[i].sftno>1) {
@@ -321,8 +325,7 @@ int OutputResult(char *outputdir,sensitivityparams *sensparams,sensresults *resu
     }
     
   }
-  
-  
+ 
   fclose(fp);
   
   return 0;
@@ -350,18 +353,26 @@ int CalculateSensitivity(sensitivityparams *sensparams,binarysource *sourceparam
   /* loop over the number of chunks */
   for (j=0;j<sensparams->nchunks;j++) {
 
+    if (sensparams->dataparams[j].tobs>sensparams->dataparams[j].tsft) {
 
-    /* calculate the weighted ShAV */
-    bandtot=0.0;
-    (*results)[j].ShAVweight=0.0;
-    for (i=0;i<sourceparams->freq.nband;i++) {
-      band=sourceparams->freq.f_max[i]-sourceparams->freq.f_min[i];
-      (*results)[j].ShAVweight+=band*(*results)[j].ShAV[i];
-      bandtot+=band;
+      /* calculate the weighted ShAV */
+      bandtot=0.0;
+      (*results)[j].ShAVweight=0.0;
+      for (i=0;i<sourceparams->freq.nband;i++) {
+	band=sourceparams->freq.f_max[i]-sourceparams->freq.f_min[i];
+	(*results)[j].ShAVweight+=band*(*results)[j].ShAV[i];
+	bandtot+=band;
+      }
+      
+      (*results)[j].ShAVweight/=bandtot;
+      (*results)[j].Q=sqrt(5.0*(*results)[j].ShAVweight/(((*results)[j].A+(*results)[j].B)*sensparams->dataparams[j].tobs));
+
+    }
+    else {
+      (*results)[j].ShAVweight=0.0;
+      (*results)[j].Q=0.0;
     }
 
-    (*results)[j].ShAVweight/=bandtot;
-    (*results)[j].Q=sqrt(5.0*(*results)[j].ShAVweight/(((*results)[j].A+(*results)[j].B)*sensparams->dataparams[j].tobs));
   
   }
  
@@ -385,7 +396,6 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
   UINT4 i;
   INT4 ifmin,ifmax;
   REAL8 f_min,f_max;
-  INT4 maxsftno;
   INT4 fullstart;
   INT4 fullend;
   INT4 nfiles;
@@ -600,6 +610,13 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
     fclose(fp);     
       
     }
+
+  /* if we have found no SFTs ini the range */
+  if (dataparams->sftno==0) {
+    fprintf(stderr,"ERROR : No SFT's in directory %s between %d and %d !!! Exiting nicely\n",datadirectory,dataparams->start.gpsSeconds,dataparams->end.gpsSeconds+t_span);
+    exit(0);
+  }
+
   
   /* define true start and end times and observation time */
   /*dataparams->start.gpsSeconds=dataparams->stamps[0].gpsSeconds;
@@ -609,7 +626,13 @@ int ReadData(char *datadirectory, binarysource *sourceparams, dataset *dataparam
   dataparams->tobs=(REAL8)(dataparams->tsft*dataparams->sftno);*/
   dataparams->nbins=ndeltaf;
 
+  for (i=0;i<nfiles;i++) LALFree(filelist[i]);
+  LALFree(filelist);
    
+  LALRealloc((*SFTData),dataparams->sftno*sizeof(FFT *));
+  LALRealloc(dataparams->stamps,dataparams->sftno*sizeof(LIGOTimeGPS));
+
+
   return 0;  
 }
 
@@ -662,19 +685,22 @@ int CalculateSh(FFT ***SFTData, dataset *dataparams,REAL8 *ShAV)
   }
   (*ShAV)/=(REAL8)dataparams->nbins;
     
+  LALFree(Sh);
+
   return 0;
 }
 
 /*******************************************************************************/
 
-int FreeSFTs(dataset *dataparams, FFT ***SFTData)
+int FreeSFTs(dataset *dataparams, FFT ***SFTData,INT4 sftno)
 {
 
   INT4 k;
  
-   /* here we free up the SFT memory */
+  /* here we free up the SFT memory */
   for (k=0;k<dataparams->sftno;k++)
     {
+      /*printf("freeing #%d SFT\n",k);*/
       LALFree((*SFTData)[k]->fft->data->data);
       LALFree((*SFTData)[k]->fft->data);
       LALFree((*SFTData)[k]->fft);
@@ -709,10 +735,6 @@ int GetAB(EphemerisData *edat, char *detector, dataset *dataparams,binarysource 
 
   LALLeapSecs(&status,&leap,&FirstStamp,&formatAndAcc);
   (*edat).leap=leap;
-
-
-  LALInitBarycenter(&status, edat);               /* Reads in ephemeris files */
-
   
   if(strcmp(detector,"GEO")) Detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   if(strcmp(detector,"LLO")) Detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
@@ -822,6 +844,8 @@ int ReadEphemeris(char *ephemdir,char *year,EphemerisData **edat)
   (*edat)=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*(*edat)).ephiles.earthEphemeris = filenameE;     
   (*(*edat)).ephiles.sunEphemeris = filenameS;    
+
+  LALInitBarycenter(&status, *edat);               /* Reads in ephemeris files */
 
   return 0;
 
