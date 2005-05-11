@@ -67,13 +67,13 @@ int main( int argc, char *argv[] )
 {
 
   LALStatus stat = blank_status;  /* status structure */
-  REAL8Vector outputMetric; /* output argument for PulsarMetric */
+  REAL8Vector *outputMetric; /* output argument for PulsarMetric */
 
   /* Define input variables and set default values */
   int begin            = 731265908;  /* start time of integration */
   REAL4 duration       = 1.8e5;      /* duration of integration (seconds) */
   REAL4 min_spindown   = 1e10;       /* minimum spindown age (seconds) */
-  int spindown_order   = 1;          /* minimum spindown order */
+  int spindown_order   = 0;          /* minimum spindown order */
   REAL4 mismatch       = 0.05;       /* mismatch threshold of mesh */
   REAL4 max_frequency  = 1e3;        /* maximum frequency of search (Hz) */
 
@@ -92,6 +92,7 @@ int main( int argc, char *argv[] )
   int option_index = 0;  /* getopt_long option index */
   int opt;               /* Argument for switch statement with getopt_long */
   int detector_argument; /* setting of detector location */
+  int j,k;
 
 
   /* Set getopt_long option arguments */
@@ -192,7 +193,7 @@ printf( "parsed options...\n" );
    exit(1);
 
  } 
- printf( "Set metric type\n", metric_type );
+ printf( "Set metric type\n" );
 
 
  /* Set detector location  */
@@ -223,11 +224,21 @@ printf( "parsed options...\n" );
    exit(1);
 
  }
- printf( "Set detector location\n", detector );
+ printf( "Set detector location\n" );
+
 
  search.site = &lalCachedDetectors[detector_argument];
 
  LALPulsarMetric( &stat, &outputMetric, &search );
+
+ /* Print metric  */
+ printf( "\nmetric at the requested point\n" );
+   for (j=0; j<=2; j++) {
+     for (k=0; k<=j; k++) 
+       printf(" %f ", outputMetric->data[k+j*(j+1)/2] );
+     printf("\n");
+   }
+
 
   LAL_CALL( LALCheckMemoryLeaks(), &stat );
   return 0;
