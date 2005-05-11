@@ -60,7 +60,6 @@ REAL4 dec_min = -LAL_PI_2;
 REAL4 dec_max = LAL_PI_2;
 REAL4 MAX_NODES = 8e6; /* limit on number of nodes for TwoDMesh  */
 
-char *optarg = NULL; /* option argument for getopt_long() */
 REAL8Vector *tevlambda;
 
 
