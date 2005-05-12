@@ -342,7 +342,7 @@ LALFindChirpBCVCFilterSegment (
 
 
 
-#if 1 
+  if (lalDebugLevel & LALALLDBG) 
  { 
 
    FILE *K1File, *K2File, *K3File, *K4File, *V0File, *V1File,*V2File,
@@ -469,7 +469,7 @@ LALFindChirpBCVCFilterSegment (
    fclose(rho2File);
    fclose(rho3File);
  }
-#endif
+
 
   mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
     pow( 3.0 / 128.0 / psi0 , ThreeByFive );
