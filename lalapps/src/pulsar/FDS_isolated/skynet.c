@@ -65,8 +65,9 @@ int main( int argc, char *argv[] )
 {
 
   LALStatus stat = blank_status;  /* status structure */
-  REAL8Vector *outputMetric; /* output argument for PulsarMetric */
-  static PtoleMetricIn search; /* input structure for PulsarMetric() */
+  static REAL8Vector *outputMetric; /* output argument for PulsarMetric */
+  PtoleMetricIn search; /* input structure for PulsarMetric() */
+
 
   /* Define input variables and set default values */
   int begin            = 731265908;  /* start time of integration */
@@ -103,6 +104,11 @@ int main( int argc, char *argv[] )
   search.epoch.gpsSeconds = begin;
   search.duration = duration;
   search.maxFreq = max_frequency;
+  search.ephemeris = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  search.ephemeris->ephiles.earthEphemeris = "earth00-04.dat";
+  search.ephemeris->ephiles.sunEphemeris = "sun00-04.dat";
+  search.ephemeris->leap = 13; /* not valid for 2005 - must change */
+  search.position.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* Parse command-line options. */
   while( (opt = getopt_long( argc, argv, "a:bc:defghjk", long_options, &option_index )) != -1 )
@@ -179,6 +185,7 @@ printf( "parsed options...\n" );
 
  case ephemeris:
    search.metricType = LAL_PMETRIC_COH_EPHEM;
+   break;
 
  default:
    printf( "Invalid metric type\n" );
@@ -221,7 +228,7 @@ printf( "parsed options...\n" );
 
  search.site = &lalCachedDetectors[detector_argument];
 
- LALPulsarMetric( &stat, &outputMetric, &search );
+ LAL_CALL( LALPulsarMetric( &stat, &outputMetric, &search ), &stat );
 
  /* Print metric  */
  printf( "\nmetric at the requested point\n" );
@@ -231,6 +238,10 @@ printf( "parsed options...\n" );
      printf("\n");
    }
 
+
+   /* clean up and leave */
+   LALFree( search.ephemeris->ephemE );
+   LALFree( search.ephemeris->ephemS );
 
   LAL_CALL( LALCheckMemoryLeaks(), &stat );
   return 0;
