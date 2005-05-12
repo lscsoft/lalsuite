@@ -70,7 +70,7 @@
    in the time domain with S3 data, which is already aggresively
    high-pass filtered at 40 Hz.
 */
-#define HIGHPASS_FILTER 0
+#define HIGHPASS_FILTER 1
 
 
 /* debug level for LAL */
@@ -475,7 +475,7 @@ int main(int argc,char *argv[]){
   /* construct channel name */
 
 #if USETDCALDATA
-  sprintf(chname,"%s:Calibrated-Strain",argv[4]);
+  sprintf(chname,"%s:LSC-STRAIN",argv[4]);
 #else
   sprintf(chname,"%s:LSC-AS_Q",argv[4]);
 #endif
@@ -532,7 +532,7 @@ int main(int argc,char *argv[]){
 #if HIGHFREQ
   filterpar.f2 = 300.0;
 #else
-  filterpar.f2 = 100.0;
+  filterpar.f2 = 40.0;
 #endif
   filterpar.a2 = 0.5;
  
