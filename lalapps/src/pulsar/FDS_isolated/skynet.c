@@ -29,8 +29,6 @@
 #include <lal/StackMetric.h>
 #include <lal/TwoDMesh.h>
 
-#include "DopplerScan.h"
-
 
 RCSID( "$Id$" );
  
@@ -68,6 +66,7 @@ int main( int argc, char *argv[] )
 
   LALStatus stat = blank_status;  /* status structure */
   REAL8Vector *outputMetric; /* output argument for PulsarMetric */
+  static PtoleMetricIn search; /* input structure for PulsarMetric() */
 
   /* Define input variables and set default values */
   int begin            = 731265908;  /* start time of integration */
@@ -77,15 +76,6 @@ int main( int argc, char *argv[] )
   REAL4 mismatch       = 0.05;       /* mismatch threshold of mesh */
   REAL4 max_frequency  = 1e3;        /* maximum frequency of search (Hz) */
 
-
-  /* define PtoleMetricIn structure and define default values */
-  static PtoleMetricIn search;
-  search.epoch.gpsSeconds = begin;
-  search.duration = duration;
-  search.maxFreq = max_frequency;
-
-
-
   /* other useful variables */
   FILE *fp;                       /* where to write the output */
   REAL4 f1;
@@ -93,7 +83,6 @@ int main( int argc, char *argv[] )
   int opt;               /* Argument for switch statement with getopt_long */
   int detector_argument; /* setting of detector location */
   int j,k;
-
 
   /* Set getopt_long option arguments */
   static struct option long_options[] = {
@@ -111,6 +100,9 @@ int main( int argc, char *argv[] )
 
   /* Set up. */
   lal_errhandler = LAL_ERR_EXIT;
+  search.epoch.gpsSeconds = begin;
+  search.duration = duration;
+  search.maxFreq = max_frequency;
 
   /* Parse command-line options. */
   while( (opt = getopt_long( argc, argv, "a:bc:defghjk", long_options, &option_index )) != -1 )
