@@ -169,31 +169,35 @@ typedef struct CellDataTag
 /* ----------------------------------------------------------------------------- */
 /* Function declarelations */
 void ReadCommandLineArgs( LALStatus *, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA ); 
-void GetFilesListInThisDir(LALStatus *, CHAR *directory, CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
+void GetFilesListInThisDir(LALStatus *, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles );
 void ReadCandidateFiles( LALStatus *, CandidateList **Clist, PolkaConfigVars *CLA, UINT4 *datalen );
 void ReadOneCandidateFile( LALStatus *, CandidateList **CList, const CHAR *fname, UINT4 *datalen );
 
 #ifdef USE_UNZIP
-void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fname, UINT4 *candlen, INT4 *FileID);
+void ReadCandidateListFromZipFile (LALStatus *, CandidateList **CList, CHAR *fname, UINT4 *candlen, const INT4 *FileID);
 #endif
 
-void PrepareCells( LALStatus *, CellData **cell, UINT4 datalen );
+void PrepareCells( LALStatus *, CellData **cell, const UINT4 datalen );
 
 int compareNumOfCoincidences(const void *a, const void *b);
 int compareCandidates(const void *ip, const void *jp);
 int compareSignificance(const void *a, const void *b);
-int rintcompare(INT4 *idata1, INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
-int rfloatcompare(REAL8 *rdata1, REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
+int compareFrequencyCell(const void *a, const void *b);
+int rintcompare(const INT4 *idata1, const INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
+int rfloatcompare(const REAL8 *rdata1, const REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
 
-void add_int4_data(LALStatus *, struct int4_linked_list **list_ptr, INT4 *data);
+
+void add_int4_data(LALStatus *, struct int4_linked_list **list_ptr, const INT4 *data);
 void delete_int4_linked_list( LALStatus *, struct int4_linked_list *list_ptr);
-void get_info_of_the_cell( LALStatus *, CellData *cd, CandidateList *CList);
+void get_info_of_the_cell( LALStatus *, CellData *cd, const CandidateList *CList);
 
-void PrintResult(LALStatus *, PolkaConfigVars *CLA, CellData *cell, UINT4 *ncell, CandidateList *CList);
-void print_Fstat_of_the_cell( LALStatus *, FILE *fp, CellData *cd, CandidateList *CList, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr );
-void print_info_of_the_cell( LALStatus *, FILE *fp, CellData *cd, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr);
+void PrintResult( LALStatus *, const PolkaConfigVars *CLA, CellData *cell, const UINT4 *ncell, CandidateList *CList );
+void print_Fstat_of_the_cell( LALStatus *, FILE *fp, const CellData *cd, const CandidateList *CList, const INT4 icell_start, 
+			      const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr );
+void print_info_of_the_cell( LALStatus *lalStatus, FILE *fp, const CellData *cd, const INT4 icell_start, 
+			     const INT4 icell_end, const REAL8 sig_thr, const REAL8 ncand_thr);
 
-void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, UINT4 datalen);
+void FreeMemory(LALStatus *, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, const UINT4 datalen);
 void FreeConfigVars(LALStatus *, PolkaConfigVars *CLA );
 
 
@@ -333,7 +337,7 @@ int main(INT4 argc,CHAR *argv[])
 /* ------------------------------------------------------------------------------*/      
 /* Initialize the code: allocate memory, set initial values.                     */
 /* ------------------------------------------------------------------------------*/      
-void PrepareCells( LALStatus *lalStatus, CellData **cell, UINT4 CLength )
+void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength )
 {
   INITSTATUS( lalStatus, "InitCode", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -342,15 +346,14 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, UINT4 CLength )
   UINT4 icell, ncell;
   INT4 errflg = 0;
 
-
-  *cell = (CellData *) LALCalloc(sizeof(CellData),CLength);
+  *cell = (CellData *) LALCalloc( CLength, sizeof(CellData) );
   if( *cell == NULL ) {
     ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
   }
 
   for(icell=0;icell<CLength;icell++) {
     (*cell)[icell].CandID = NULL;
-    (*cell)[icell].CandID = (struct int4_linked_list *) LALCalloc(sizeof(struct int4_linked_list),1);
+    (*cell)[icell].CandID = (struct int4_linked_list *) LALCalloc( 1, sizeof(struct int4_linked_list) );
     if( (*cell)[icell].CandID == NULL ) {
       errflg = 1;
       break;
@@ -383,7 +386,7 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, UINT4 CLength )
 
 /* ########################################################################################## */
 /* Output results */
-void PrintResult(LALStatus *lalStatus, PolkaConfigVars *CLA, CellData *cell, UINT4 *ncell, CandidateList *CList)
+void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cell, const UINT4 *ncell, CandidateList *CList)
 {
   INITSTATUS( lalStatus, "PrintResult", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -392,12 +395,13 @@ void PrintResult(LALStatus *lalStatus, PolkaConfigVars *CLA, CellData *cell, UIN
   ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
 
 
-
   UINT4 icell;
   CHAR fnameSigTime[]="polka_significant_outlier_2FofTime"; /* Time variation of 2F of some significant outliers. */
   CHAR fnameSigCell[]="polka_significant_outlier_CellData"; /* Cell information of some significant outliers*/
   CHAR fnameCoiTime[]="polka_coincident_outlier_2FofTime";  /* Time variation of 2F of some coincident outliers. */
   CHAR fnameCoiCell[]="polka_coincident_outlier_CellData";  /* Cell information of some coincident outliers*/
+  /* The cell info of the maximum coincident event over each Frequency cell but all over the sky.*/
+  CHAR fnameMaxOverSky[]="polka_maxcoincident_over_each_freqcell_and_allsky"; 
   FILE *fp = NULL, *fpSigTime = NULL, *fpSigCell = NULL, *fpCoiTime = NULL, *fpCoiCell = NULL;
   INT4 *count;
   INT4 nc, nmax,idxmax = 0;
@@ -427,9 +431,7 @@ void PrintResult(LALStatus *lalStatus, PolkaConfigVars *CLA, CellData *cell, UIN
     }
   /* output for all the cells */
   print_info_of_the_cell( lalStatus->statusPtr, fp, cell, 0,(*ncell),0,0);
-  BEGINFAIL(lalStatus) {
-    fclose(fp);
-  } ENDFAIL(lalStatus);
+  BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
 
 
   /* number counts and find the most significant event. */
@@ -466,7 +468,6 @@ void PrintResult(LALStatus *lalStatus, PolkaConfigVars *CLA, CellData *cell, UIN
     fprintf(stdout,"\n");
   }
   LALFree( count );
-
 
  
   if( CLA->AutoOut || cell[0].nCand >= CLA->Nthr ) 
@@ -546,14 +547,47 @@ void PrintResult(LALStatus *lalStatus, PolkaConfigVars *CLA, CellData *cell, UIN
     fclose(fpSigCell);
   }
 
+
+
+  /* ------------------------------------------------------------- */
+  /* Output the maximum coincident event over each frequency cell and over all the sky. */
+  qsort(cell, (size_t) (*ncell), sizeof(CellData), compareFrequencyCell);
+
+  
+  {
+    if( ( fp = fopen(fnameMaxOverSky,"w") ) == NULL ) {
+      { 
+	LALPrintError("\n Cannot open file %s or %s\n",fnameCoiCell,fnameCoiTime); 
+	exit(POLKA_EXIT_ERR); 
+      }
+    }
+    INT4 prev_iFreq = -1;
+    for( icell=0; icell<(*ncell); icell++ ) {
+      if( cell[icell].iFreq != prev_iFreq ) {
+	TRY( print_info_of_the_cell( lalStatus->statusPtr, fp, cell, icell, icell+1, 0, 0), lalStatus);
+      }
+      prev_iFreq = cell[icell].iFreq;
+    }
+    fclose(fp);
+  }
+  
+
   DETATCHSTATUSPTR (lalStatus);
   RETURN (lalStatus);
 } /* PrintResult() */
 
 
+
+
 /* ########################################################################################## */
 /* Print_info_of_the_cell() */
-void print_info_of_the_cell( LALStatus *lalStatus, FILE *fp, CellData *cd, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr)
+void print_info_of_the_cell( LALStatus *lalStatus, 
+			     FILE *fp, 
+			     const CellData *cd, 
+			     const INT4 icell_start, 
+			     const INT4 icell_end, 
+			     const REAL8 sig_thr, 
+			     const REAL8 ncand_thr )
 {
   INT4 icell;
 
@@ -574,14 +608,14 @@ void print_info_of_the_cell( LALStatus *lalStatus, FILE *fp, CellData *cd, INT4 
     }
 
   RETURN (lalStatus);
-}
+} /* void print_info_of_the_cell() */
 
 
 
 
 /* ########################################################################################## */
 /* Free memory */
-void FreeMemory( LALStatus *lalStatus, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, UINT4 CLength)
+void FreeMemory( LALStatus *lalStatus, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, const UINT4 CLength)
 {
   INITSTATUS( lalStatus, "FreeMemory", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -635,7 +669,7 @@ void FreeConfigVars(LALStatus *lalStatus, PolkaConfigVars *CLA )
 
 /* ########################################################################################## */
 /* add data to linked structure */
-void add_int4_data(LALStatus *lalStatus, struct int4_linked_list **list_ptr, INT4 *data)
+void add_int4_data(LALStatus *lalStatus, struct int4_linked_list **list_ptr, const INT4 *data)
 {
   INITSTATUS( lalStatus, "add_int4_data", rcsid );
 
@@ -675,11 +709,11 @@ void delete_int4_linked_list( LALStatus *lalStatus, struct int4_linked_list *lis
   }
 
   RETURN (lalStatus);
-}
+} /* void delete_int4_linked_list() */
 
 /* ########################################################################################## */
 /* get info of this cell. */
-void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, CandidateList *CList )
+void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList )
 {
   INT4 idx, ic;
   REAL8 lfa;
@@ -713,13 +747,20 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, CandidateList *CL
   cd->Freq  /= cd->nCand;
   
   RETURN (lalStatus);
-}
+} /* void get_info_of_the_cell() */
 
 
 
 /* ########################################################################################## */
 /* print F stat. */
-void print_Fstat_of_the_cell( LALStatus *lalStatus, FILE *fp, CellData *cd, CandidateList *CList, INT4 icell_start, INT4 icell_end, REAL8 sig_thr, REAL8 ncand_thr )
+void print_Fstat_of_the_cell( LALStatus *lalStatus, 
+			      FILE *fp, 
+			      const CellData *cd, 
+			      const CandidateList *CList, 
+			      const INT4 icell_start, 
+			      const INT4 icell_end, 
+			      const REAL8 sig_thr, 
+			      const REAL8 ncand_thr )
 {
   INT4 idx, ic, icell;
   struct int4_linked_list *p;
@@ -755,7 +796,7 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus, FILE *fp, CellData *cd, Cand
 
 
   RETURN (lalStatus);
-}
+} /* void print_Fstat_of_the_cell( ) */
 
 
 
@@ -789,6 +830,28 @@ int compareCandidates(const void *a, const void *b)
   } 
   return res;
 } /* int compareCandidates() */
+
+
+/* ########################################################################################## */
+int compareFrequencyCell(const void *a, const void *b)
+{
+  const CellData *ip = a;
+  const CellData *jp = b;
+  int res;
+  INT4 ap[2],bp[2];
+
+  ap[0]=ip->iFreq; /* iFreq for cand 1.*/
+  bp[0]=jp->iFreq; /* iFreq for cand 2.*/
+
+  /* I put n1 and n2 inversely, because I would like to get decreasingly-ordered set. */ 
+  ap[1]=jp->nCand; /* nCand for cand 2.*/
+  bp[1]=ip->nCand; /* nCand for cand 1.*/
+
+  res = rintcompare( ap,  bp, 2);
+
+  return res;
+} /* int compareSignificance() */
+
 
 
 
@@ -844,7 +907,7 @@ int compareNumOfCoincidences(const void *a, const void *b)
 
 
 int 
-rfloatcompare(REAL8 *ap, REAL8 *bp, size_t n) 
+rfloatcompare(const REAL8 *ap, const REAL8 *bp, size_t n) 
 {
   if( (*ap) == (*bp) ) { 
     if ( n > 1 ){  
@@ -860,7 +923,7 @@ rfloatcompare(REAL8 *ap, REAL8 *bp, size_t n)
 
 
 int 
-rintcompare(INT4 *ap, INT4 *bp, size_t n) 
+rintcompare(const INT4 *ap, const INT4 *bp, size_t n) 
 {
   if( (*ap) == (*bp) ) { 
     if ( n > 1 ){  
@@ -920,14 +983,19 @@ void ReadCandidateFiles(LALStatus *lalStatus, CandidateList **CList, PolkaConfig
       exit(POLKA_EXIT_ERR);;
     }
 
+
+  fprintf(stderr,"\n%%Number of the candidate events in this file/directory = %u.\n",*clen);
+
   DETATCHSTATUSPTR (lalStatus);
   RETURN (lalStatus);
 } /* ReadCandidateFiles() */
 
 
 
+
+
 /* ########################################################################################## */
-void GetFilesListInThisDir(LALStatus *lalStatus, CHAR *directory, CHAR *basename, CHAR ***filelist, UINT4 *nfiles )
+void GetFilesListInThisDir(LALStatus *lalStatus, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles )
 {
 #ifdef HAVE_GLOB_H   
   CHAR command[512];
@@ -999,7 +1067,7 @@ Check if *CList is either NULL or the memory of which is previously allocated by
 (how?).
 */
 void  
-ReadCandidateListFromZipFile (LALStatus *lalStatus, CandidateList **CList, CHAR *fname, UINT4 *candlen, INT4 *FileID)
+ReadCandidateListFromZipFile (LALStatus *lalStatus, CandidateList **CList, CHAR *fname, UINT4 *candlen, const INT4 *FileID)
 {
   FILE *fp;
   const UINT4 max_num_candidates = 8000000; /* maximum tractable number of candidate events. */
@@ -1515,7 +1583,7 @@ void  ReadOneCandidateFile (LALStatus *lalStatus, CandidateList **CList, const C
 
 
 /* ########################################################################################## */
-void ReadCommandLineArgs(LALStatus *lalStatus, INT4 argc,CHAR *argv[], PolkaConfigVars *CLA) 
+void ReadCommandLineArgs(LALStatus *lalStatus, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA) 
 {
   INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
