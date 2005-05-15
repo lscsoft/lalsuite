@@ -20,6 +20,8 @@
 # 09/03/04 gam; update examples to work with new test SFTS in LALapps.
 # 11/22/04 gam; if == 0 then set band_width = 1/sft_time
 # 12/06/04 gam; include defaults for parameters set in template_file; allow more parameters to be set in this file
+# 05/13/05 gam; add searchParameterSpaceFlag
+# 05/14/05 gam; add searchLinesAndHarmonicsFile
 
 set ::CONDOR_MODE 0; # #02/27/04 default is false.
 set ::RUN 0;         #02/27/04 default value false.
@@ -219,12 +221,16 @@ set templateGPSEpochStartTimeNan 0;        # 12/06/04 gam; UINT4 GPS nanoseconds
 
 set targetName "Unknown";
 
+set searchParameterSpaceFlag 0; # 05/13/05 gam;
+
 set searchWeightFlag 0;
 
 set searchOrientationAngle 0.0;    
 set searchCosInclinationAngle 0.0; 
 
 set searchTestFlag 0;
+
+set searchLinesAndHarmonicsFile "None";  # 05/14/05 gam;
 
 set templateFreq0 0.0;  
 

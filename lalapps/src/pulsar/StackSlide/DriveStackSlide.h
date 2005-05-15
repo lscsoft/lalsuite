@@ -71,7 +71,13 @@
 /* 02/28/05 gam; add extra parameters needed by loop code to StackSlideSearchParams struct */
 /* 04/12/05 gam; LIGOLW_XML_TABLE_FOOTER removed from lal, so add as STACKSLIDE_XML_TABLE_FOOTER. */
 /* 04/12/05 gam; add BarycenterInput baryinput; */
-  
+/* 05/13/05 gam; Add function FindAveEarthAcc that finds aveEarthAccVec, the Earth's average acceleration vector during the analysis time. */
+/* 05/13/05 gam; Add function FindLongLatFromVec that find for a vector that points from the center to a position on a sphere, the latitude and longitude of this position */
+/* 05/13/05 gam; Add function RotateSkyCoordinates that transforms longIn and latIn to longOut, latOut as related by three rotations. */
+/* 05/13/05 gam; Add function RotateSkyPosData that rotates skyPosData using RotateSkyCoordinates */
+/* 05/14/05 gam; Change unused numSUMsPerCall to linesAndHarmonicsFile */
+/* 05/14/05 gam; if (params->normalizationFlag & 32) > 0 then clean SFTs using info in linesAndHarmonicsFile */
+
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
 
@@ -98,6 +104,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include "StackSlide.h"
 /* #include <lal/LALStackSlide.h> Will need to switch to this version when StackSlide is in LAL. */
+#include "SFTbin.h"
 /*********************************************/
 /*                                           */
 /* END SECTION: include header files         */
@@ -126,7 +133,7 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_ESTARTTIME 14
 #define DRIVESTACKSLIDEH_ESTOPTIME 15
 #define DRIVESTACKSLIDEH_ENTBLK 17
-#define DRIVESTACKSLIDEH_EMCOHBLKPERCALL 18
+#define DRIVESTACKSLIDEH_ELINEHARMONICS 18
 #define DRIVESTACKSLIDEH_EIFONICKNAME 19
 #define DRIVESTACKSLIDEH_EIFO 20
 #define DRIVESTACKSLIDEH_ETARGETNAME 21
@@ -140,6 +147,8 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_EOUTPUTREQUEST 29
 #define DRIVESTACKSLIDEH_ENORMPARAM 30
 #define DRIVESTACKSLIDEH_EUSERREQUESTEXIT 31
+#define DRIVESTACKSLIDEH_EAVEEARTHACCVEC 32
+#define DRIVESTACKSLIDEH_ELONGLATFROMVEC 33
 
 #define DRIVESTACKSLIDEH_MSGENULL           "Null pointer"
 #define DRIVESTACKSLIDEH_MSGEGPSTINT        "Unexpected GPS time interval"
@@ -156,7 +165,7 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_MSGESTARTTIME      "Incorrect input data start time"
 #define DRIVESTACKSLIDEH_MSGESTOPTIME       "Incorrect input data stop time"
 #define DRIVESTACKSLIDEH_MSGENTBLK          "nSamplesPerBLK and tBLK are inconsistent with deltaT"
-#define DRIVESTACKSLIDEH_MSGEMCOHBLKPERCALL "Invalid numSUMsPerCall"
+#define DRIVESTACKSLIDEH_MSGELINEHARMONICS  "Problem reading linesAndHarmonicsFile"
 #define DRIVESTACKSLIDEH_MSGEIFONICKNAME    "Invalid or null ifoNickName"
 #define DRIVESTACKSLIDEH_MSGEIFO            "Invalid or null IFO"
 #define DRIVESTACKSLIDEH_MSGETARGETNAME     "Invalid or null Target Name"
@@ -170,7 +179,8 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_MSGEOUTPUTREQUEST   "Cannot set thresholdFlag < 1 and outputEventFlag to output everything!"
 #define DRIVESTACKSLIDEH_MSGENORMPARAM       "Cannot have normalizationParameter less than ln(2) or greater than 1 when using running median."
 #define DRIVESTACKSLIDEH_MSGEUSERREQUESTEXIT "Exiting at user request..."
-
+#define DRIVESTACKSLIDEH_MSGEAVEEARTHACCVEC  "Index out of range in FindAveEarthAcc"
+#define DRIVESTACKSLIDEH_MSGELONGLATFROMVEC  "Vector has zero length in FindLongLatFromVec"
 /* Limit on size of arrays holding channel names */
 /* #define dbNameLimit 256; */ /* Should be defined in LAL? */
 
@@ -419,7 +429,7 @@ typedef struct tagStackSlideSearchParams {
   UINT4   gpsEpochStartTimeSec;      /* GPS start time of data requested seconds */
   UINT4   gpsEpochStartTimeNan;      /* GPS start time of data requested nanoseconds */
   UINT4   gpsStartTimeSec;           /* GPS start time of data requested seconds */
-    UINT4   gpsStartTimeNan;         /* GPS start time of data requested nanoseconds; currently fixed as zero. */
+  UINT4   gpsStartTimeNan;           /* GPS start time of data requested nanoseconds; currently fixed as zero. */
   REAL8   duration;                  /* Total time being analyzed  */
 
   INT4    numBLKs;                   /* Number of input BLKs.  Not duration/tBLK if gaps are present */
@@ -516,8 +526,12 @@ typedef struct tagStackSlideSearchParams {
 
   INT2    testFlag;                  /* Specifies any tests or debugging to do; 0 means no test */
 
-  INT4   numSUMsPerCall;            /* If > 0 then = number of SUMs (parameter space points) to compute during each call to ApplySearch */
-  
+  /* INT4   numSUMsPerCall;          */  /* If > 0 then = number of SUMs (parameter space points) to compute during each call to ApplySearch */
+  /* 05/14/05 gam; Change unused numSUMsPerCall to linesAndHarmonicsFile */ 
+  CHAR *linesAndHarmonicsFile;       /* File with instrument line and harmonic spectral disturbances data */
+   LineHarmonicsInfo *infoHarmonics; /* Container with line and harmonics info */
+   LineNoiseInfo     *infoLines;     /* Container with line info */
+
   /* INT2    outputFlag; */          /* Flag that specifies what to output; if > 0 then will output Sums into frame file */
   INT2   outputSUMFlag;             /* 02/17/04 gam; Flag that determines whether to output SUMs e.g., in ascii. */
   INT2   outputEventFlag;           /* 02/17/04 gam; Flag that deterines xml output */
@@ -629,6 +643,9 @@ typedef struct tagStackSlideSearchParams {
   /* gpsTimeInterval *timeIntervals; */  /* Array of time intervals; needed for building frame output */
 
   EphemerisData *edat; /* 07/10/02 gam Add EphemerisData *edat = pointer to ephemeris data to StackSlideSearchParams */
+  REAL8 aveEarthAccVec[3]; /* 05/13/05 gam; vector with Earth's average acceleration vector during the analysis*/
+  REAL8 aveEarthAccRA;     /* 05/13/05 gam; RA that Earth's average acceleration vector points to */
+  REAL8 aveEarthAccDEC;    /* 05/13/05 gam; DEC that Earth's average acceleration vector points to */
 
   BOOLEAN finishedBLKs;   /* Set equal to true when all BLKS for this job have been found in input data */
   BOOLEAN finishedSTKs;   /* Set equal to true when all STKS for this job have been created */
@@ -743,6 +760,25 @@ void printOneStackSlideSUM( const REAL4FrequencySeries *oneSUM,
                   INT4                       nBinsPerSUM,
                   INT4                       numSUMsTotal
 );
+
+/* 05/13/05 gam; Add function FindAveEarthAcc that finds aveEarthAccVec, the Earth's average acceleration vector during the analysis time. */
+void FindAveEarthAcc(LALStatus *status, REAL8 *aveEarthAccVec, REAL8 startTime, REAL8 endTime, const EphemerisData *edat);
+
+/* 05/13/05 gam; Add function FindLongLatFromVec that find for a vector that points from the center to a position on a sphere, the latitude and longitude of this position */
+void FindLongLatFromVec(LALStatus *status, REAL8 *longitude, REAL8 *latitude, const REAL8 *vec);
+
+/* 05/13/05 gam; Add function RotateSkyCoordinates that transforms longIn and latIn to longOut, latOut as related by three rotations. */
+void RotateSkyCoordinates(LALStatus *status, REAL8 *longOut, REAL8 *latOut, REAL8 longIn, REAL8 latIn, REAL8 longPole, REAL8 latPole, REAL8 longOffset);
+
+/* 05/13/05 gam; Add function RotateSkyPosData that rotates skyPosData using RotateSkyCoordinates */
+void RotateSkyPosData(LALStatus *status, REAL8 **skyPosData, INT4 numSkyPosTotal, REAL8 longPole, REAL8 latPole, REAL8 longOffset);
+
+/* 05/14/05 gam; function that reads in line and harmonics info from file; based on SFTclean.c by Krishnan, B. */
+void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHarmonics, LineNoiseInfo *infoLines, REAL8 fStart, REAL8 fBand, CHAR *linesAndHarmonicsFile);
+
+/* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */
+void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLines, INT4 numBLKs, INT4 nBinsPerNRM, INT4 maxBins);
+
 /* void FindBinaryLoudest(REAL4FrequencySeries **SUMData, StackSlideParams *stksldParams);*/
 
 /******************************************/

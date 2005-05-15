@@ -119,6 +119,14 @@
 /* 04/12/05 gam; if ((params->debugOptionFlag & 8) > 0 ) find maxPwr each SFT, replace bin with 1, all other bins with 0 */
 /* 05/06/05 gam; if ((params->debugOptionFlag & 16) > 0 ) also replace one bin to either side of bin with maxPwr with 1 */
 /* 05/06/05 gam; If params->debugOptionFlag & 128 > 0 and isolated case, just creates a SUM from the STKs without sliding */
+/* 05/13/05 gam; Add function FindAveEarthAcc that finds aveEarthAccVec, the Earth's average acceleration vector during the analysis time. */
+/* 05/13/05 gam; Add function FindLongLatFromVec that find for a vector that points from the center to a position on a sphere, the latitude and longitude of this position */
+/* 05/13/05 gam; Add function RotateSkyCoordinates that transforms longIn and latIn to longOut, latOut as related by three rotations. */
+/* 05/13/05 gam; Add function RotateSkyPosData that rotates skyPosData using RotateSkyCoordinates */
+/* 05/13/05 gam; if (params->parameterSpaceFlag & 1) > 0 rotate skyPosData into coordinates with Earth's average acceleration at the pole. */
+/* 05/13/05 gam; if (params->parameterSpaceFlag & 2) > 0 rotate skyPosData into galactic plane */
+/* 05/14/05 gam; Change unused numSUMsPerCall to linesAndHarmonicsFile; file with instrument line and harmonic spectral disturbances data. */
+/* 05/14/05 gam; if (params->normalizationFlag & 32) > 0 then clean SFTs using info in linesAndHarmonicsFile */
 
 /*********************************************/
 /*                                           */
@@ -133,6 +141,7 @@
 /* #define DEBUG_DRIVESTACKSLIDE */
 /* #define DEBUG_SUM_TEMPLATEPARAMS */
 /* #define DEBUG_EPHEMERISDATA */
+/* #define DEBUG_ROTATESKYCOORDINATES */
 /* #define DEBUG_POWER_STATS */
 /* #define DEBUG_FIND_PEAKS */
 /* #define DEBUG_STACKSLIDEARGS */
@@ -141,6 +150,7 @@
 /* #define DEBUG_DEMOD_CODE */
 /* #define DEBUG_INPUTBLK_CODE */
 /* #define DEBUG_NORMALIZEBLKS */
+/* #define DEBUG_CLEANLINESANDHARMONICS */
 /* #define DEBUG_CALIBRATEBLKS */
 /* #define DEBUG_TESTCASE */
 /* #define INCLUDE_INTERNALLALINITBARYCENTER */
@@ -236,10 +246,11 @@ void StackSlideInitSearch(
  params->ifoNickName = NULL;
  params->IFO = NULL;
  params->patchName = NULL;
-  params->sunEdatFile = NULL;
+ params->sunEdatFile = NULL;
  params->earthEdatFile = NULL;
  params->sftDirectory = NULL;
  params->outputFile = NULL;
+ params->linesAndHarmonicsFile = NULL; /* 05/14/05 gam */
 
  params->stksldSkyPatchData = (StackSlideSkyPatchParams *)LALMalloc(sizeof(StackSlideSkyPatchParams)); /* 01/31/04 gam */
  
@@ -332,9 +343,10 @@ params->nMaxTperi=0;
 		case 45: params->normalizationParameter = (REAL4)atof(argv[i]); break;
 		
 		case 46: params->testFlag = (INT2)atoi(argv[i]); break;
-
-	        case 47: params->numSUMsPerCall = (INT4)atol(argv[i]); break;
-
+		
+		case 47: params->linesAndHarmonicsFile = (CHAR *) LALMalloc( (strlen( argv[i] ) + 1) * sizeof(CHAR) );
+		         strcpy(params->linesAndHarmonicsFile, argv[i]); break;
+		
 		case 48: params->outputSUMFlag = (INT2)atoi(argv[i]); break;
 		case 49: params->outputEventFlag = (INT2)atoi(argv[i]); break;
 		case 50: params->keepThisNumber = (INT4)atoi(argv[i]); break;
@@ -427,7 +439,9 @@ params->nMaxTperi=0;
   params->numFreqDerivTotal = 0;  /* Total number of Frequency evolution models to cover */
   params->numParamSpacePts = 0;   /* Total number of points in the parameter space to cover */
 
-  if (params->parameterSpaceFlag == 0) {
+  /* 05/13/05 gam; add options */
+  /* if (params->parameterSpaceFlag == 0) */
+  if (params->parameterSpaceFlag >= 0) {
      CountOrAssignSkyPosData(params->skyPosData,&(params->numSkyPosTotal),0,params->stksldSkyPatchData);
           
      for (i=0;i<params->numSpinDown;i++) {
@@ -464,7 +478,7 @@ params->nMaxTperi=0;
      }
   } else {
      ABORT( status, DRIVESTACKSLIDEH_EPARAMSPACEFLAG, DRIVESTACKSLIDEH_MSGEPARAMSPACEFLAG); /* 02/02/04 gam */
-  } /* END if (params->parameterSpaceFlag == 0) else ...*/  
+  } /* END if (params->parameterSpaceFlag >= 0) else ...*/  
   params->numSUMsTotal = params->numSUMsPerParamSpacePt*params->numParamSpacePts;  /* Total Number of Sums = numSUMsPerParamPt*numParamSpacePts */
   #ifdef DEBUG_COMPUTED_PARAMETERS
     fprintf(stdout,"numSUMstotal is %d\n",params->numSUMsTotal);
@@ -518,7 +532,10 @@ params->nMaxTperi=0;
     	fprintf(stdout,"# Note that 0 = SFTs is only type currently supported value. \n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set parameterSpaceFlag %23d; #28 INT2 how to generate parameter space. \n", params->parameterSpaceFlag);
-    	fprintf(stdout,"# Note that 0 is the only currently supported value; this causes code to use command line arguments below to generate sky positions uniformly on the sphere and spindowns without using parameter space metric. \n");
+    	fprintf(stdout,"#The parameterSpaceFlag options are: \n");
+    	fprintf(stdout,"# if params->parameterSpaceFlag >= 0 generate sky positions uniformly on the sphere and spindowns without using parameter space metric.\n");
+    	fprintf(stdout,"# if (params->parameterSpaceFlag & 1 > 0) rotate skyPosData into coordinates with Earth's average acceleration at the pole.\n");
+    	fprintf(stdout,"# if (params->parameterSpaceFlag & 2) > 0 rotate skyPosData into galactic plane.\n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set stackTypeFlag      %23d; #29 INT2 how to generate STKs from BLKs. \n", params->stackTypeFlag);
     	fprintf(stdout,"set Dterms             %23d; #30 INT4 number of terms for Dirichlet kernel (for STKs = F-stat only). \n", params->Dterms);
@@ -558,12 +575,13 @@ params->nMaxTperi=0;
     	fprintf(stdout,"set bandNRM            %23.16e; #43 REAL8 frequency band to use when finding norms. \n", params->bandNRM);
     	fprintf(stdout,"set nBinsPerNRM        %23d; #44 INT4 number of frequency bins to use when finding norms. \n", params->nBinsPerNRM);
     	fprintf(stdout,"set normalizationParameter %23.16e; #45 REAL4 see uses below. \n", params->normalizationParameter);
-    	fprintf(stdout,"#The thresholdFlag rules are: \n");
+    	fprintf(stdout,"#The normalizationFlag rules are: \n");
     	fprintf(stdout,"# if (params->normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, \n");
     	fprintf(stdout,"# if (params->normalizationFlag & 4) > 0 normalize STKs using running median (or use medians when weightFlag > 0), \n"); /* 04/14/04 gam; now implemented */ /* 10/28/04 gam */
     	/* fprintf(stdout,"# if normalizing with the running median the normalizationParameter must be set to the expected ratio of median to mean power. This is used to correct bias in the median to get the mean.\n"); */ /* 07/09/04 gam */ /* 05/05/04 gam; */
     	fprintf(stdout,"# if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.\n");
     	fprintf(stdout,"# if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.\n"); /* 04/15/04 gam */
+    	fprintf(stdout,"# if (params->normalizationFlag & 32) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.\n"); /* 05/14/05 gam */
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set testFlag           %23d; #46 INT2 specify test case.\n", params->testFlag); /* 05/11/04 gam */
     	fprintf(stdout,"# if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.\n"); /* 05/11/04 gam */
@@ -571,7 +589,7 @@ params->nMaxTperi=0;
     	fprintf(stdout,"# if ((testFlag & 4) > 0) use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs instead of LALGeneratePulsarSignal and LALSignalToSFTs during Monte Carlo Simulations. See LAL inject package.\n"); /* 08/02/04 gam */
     	fprintf(stdout,"# if ((testFlag & 8) > 0) use fixed orientationAngle and cosInclinationAngle set above during Monte Carlo Simulations.\n"); /* 12/06/04 gam */
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set numSUMsPerCall     %23d; #47 INT4 nuber of SUMs to produce each call to StackSlide (currently unused). \n", params->numSUMsPerCall);
+    	fprintf(stdout,"set linesAndHarmonicsFile %s; #47 CHAR* file with instrument line and harmonic spectral disturbances data.\n", params->linesAndHarmonicsFile);
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set outputSUMFlag      %23d; #48 INT2 whether to output SUMs e.g., in ascii. \n", params->outputSUMFlag);
     	fprintf(stdout,"#The outputSUMFlag rules are: \n");
@@ -774,10 +792,6 @@ params->nMaxTperi=0;
     ABORT( status, DRIVESTACKSLIDEH_ETBLK, DRIVESTACKSLIDEH_MSGETBLK);
   }
 
-  if (params->numSUMsPerCall <= 0) {
-    ABORT( status, DRIVESTACKSLIDEH_EMCOHBLKPERCALL, DRIVESTACKSLIDEH_MSGEMCOHBLKPERCALL);
-  }
-
   if (params->stksldSkyPatchData->startRA < 0 || params->stksldSkyPatchData->startRA > (REAL8)LAL_TWOPI) {
     ABORT( status, DRIVESTACKSLIDEH_ERA, DRIVESTACKSLIDEH_MSGERA);
   }
@@ -837,8 +851,9 @@ params->nMaxTperi=0;
    }
  }
 
- /* 0 = use input delta for each param, 1 = params are input as vectors of data, 2 = use input param metric, 3 = create param metric */
- if (params->parameterSpaceFlag == 0) {
+ /* 05/13/05 gam; add options */
+ /* if (params->parameterSpaceFlag == 0) */
+ if (params->parameterSpaceFlag >= 0) { 
 
    /* 01/31/04 gam; now call CountOrAssignSkyPosData */
    /* INT4 iRA = 0;
@@ -900,7 +915,7 @@ params->nMaxTperi=0;
         } /* END for(k=0;k<params->numSpinDown;k++) */
    }
  /* END for(i=0;i<params->numFreqDerivTotal;i++) */
- } /* END if (params->parameterSpaceFlag == 0) */
+ } /* END if (params->parameterSpaceFlag >= 0) */
 /**********************************************/
 /*                                            */
 /* END SECTION: set up parameter space        */
@@ -1074,6 +1089,59 @@ void StackSlideConditionData(
 /* END SECTION: find correction for bias in median   */
 /*                                                   */
 /*****************************************************/  
+
+/* 05/14/05 gam; if (params->normalizationFlag & 32) > 0 then clean SFTs using info in linesAndHarmonicsFile */
+/*************************************************/
+/*                                               */
+/* START SECTION: if cleaning SFTs, read in info */
+/*                about lines and harmonics      */
+/*                                               */
+/*************************************************/
+  params->infoHarmonics = NULL;
+  params->infoLines = NULL;
+  if ( (params->normalizationFlag & 32) > 0 )  {
+
+    params->infoHarmonics = (LineHarmonicsInfo *)LALMalloc(sizeof(LineHarmonicsInfo));
+    params->infoLines = (LineNoiseInfo *)LALMalloc(sizeof(LineNoiseInfo));
+
+    params->infoHarmonics->nHarmonicSets = 0;
+    params->infoHarmonics->startFreq = NULL;
+    params->infoHarmonics->gapFreq = NULL;
+    params->infoHarmonics->numHarmonics = NULL;
+    params->infoHarmonics->leftWing = NULL;
+    params->infoHarmonics->rightWing = NULL;
+    params->infoLines->nLines = 0;
+    params->infoLines->lineFreq = NULL;
+    params->infoLines->leftWing = NULL;
+    params->infoLines->rightWing = NULL;
+  
+    StackSlideGetLinesAndHarmonics(status->statusPtr, params->infoHarmonics, params->infoLines, params->f0BLK, params->bandBLK, params->linesAndHarmonicsFile);
+    CHECKSTATUSPTR (status);
+    
+    #ifdef DEBUG_CLEANLINESANDHARMONICS
+      for(k=0;k<params->infoHarmonics->nHarmonicSets;k++) {
+        fprintf(stdout,"params->infoHarmonics->startFreq[%i] = %g\n",k,params->infoHarmonics->startFreq[k]);
+        fprintf(stdout,"params->infoHarmonics->gapFreq[%i] = %g\n",k,params->infoHarmonics->gapFreq[k]);
+        fprintf(stdout,"params->infoHarmonics->numHarmonics[%i] = %d\n",k,params->infoHarmonics->numHarmonics[k]);
+        fprintf(stdout,"params->infoHarmonics->leftWing[%i] = %g\n",k,params->infoHarmonics->leftWing[k]);
+        fprintf(stdout,"params->infoHarmonics->rightWing[%i] = %g\n",k,params->infoHarmonics->rightWing[k]);
+        fflush(stdout);
+      }        
+      for(k=0;k<params->infoLines->nLines;k++) {
+        fprintf(stdout,"params->infoLines->lineFreq[%i] = %g\n",k,params->infoLines->lineFreq[k]);
+        fprintf(stdout,"params->infoLines->leftWing[%i] = %g\n",k,params->infoLines->leftWing[k]);
+        fprintf(stdout,"params->infoLines->rightWing[%i] = %g\n",k,params->infoLines->rightWing[k]);
+        fflush(stdout);    
+      }
+    #endif
+
+  } /* END if ( (params->normalizationFlag & 32) > 0 ) */
+/*************************************************/
+/*                                               */
+/* END SECTION: if cleaning SFTs, read in info   */
+/*                about lines and harmonics      */
+/*                                               */
+/*************************************************/
    
 /**********************************************/
 /*                                            */
@@ -1226,6 +1294,53 @@ void StackSlideConditionData(
 /*                                            */
 /**********************************************/
 
+/************************************************/
+/*                                              */
+/* START SECTION: Find Earth's ave acceleration */
+/*                and rotate sky coordinates to */
+/*                form sky bands if requested   */
+/*                                              */
+/************************************************/
+
+  /* 05/13/05 gam; Add function FindAveEarthAcc that finds aveEarthAccVec, the Earth's average acceleration vector during the analysis time. */
+  /* 05/13/05 gam; Add function FindLongLatFromVec that find for a vector that points from the center to a position on a sphere, the latitude and longitude of this position */
+  FindAveEarthAcc(status->statusPtr, params->aveEarthAccVec, ((REAL8)(params->gpsStartTimeSec)),((REAL8)(params->gpsStartTimeSec) + params->duration), params->edat);
+  CHECKSTATUSPTR (status);
+  FindLongLatFromVec(status->statusPtr, &(params->aveEarthAccRA), &(params->aveEarthAccDEC), params->aveEarthAccVec);
+  CHECKSTATUSPTR (status);
+
+  if ( (params->parameterSpaceFlag & 1) >  0) {
+    /* 05/13/05 gam; if (params->parameterSpaceFlag & 1) > 0 rotate skyPosData into coordinates with Earth's average acceleration at the pole. */
+    RotateSkyPosData(status->statusPtr, params->skyPosData, params->numSkyPosTotal, params->aveEarthAccRA, params->aveEarthAccDEC, 0.0);
+    CHECKSTATUSPTR (status);
+  } else if ( (params->parameterSpaceFlag & 2) >  0) {
+    /* 05/13/05 gam; if (params->parameterSpaceFlag & 2) > 0 rotate skyPosData into galactic plane */
+    RotateSkyPosData(status->statusPtr, params->skyPosData, params->numSkyPosTotal, 4.65,((REAL8)LAL_PI_2)-0.4, 0.0);
+    CHECKSTATUSPTR (status);
+  }
+
+  #ifdef DEBUG_ROTATESKYCOORDINATES
+    fprintf(stdout,"params->aveEarthAccVec[0] = %g \n",params->aveEarthAccVec[0]);
+    fprintf(stdout,"params->aveEarthAccVec[1] = %g \n",params->aveEarthAccVec[1]);
+    fprintf(stdout,"params->aveEarthAccVec[2] = %g \n",params->aveEarthAccVec[2]);
+    fprintf(stdout,"params->aveEarthAccRA = %g \n",params->aveEarthAccRA);
+    fprintf(stdout,"params->aveEarthAccDEC = %g \n",params->aveEarthAccDEC);
+    fflush(stdout);
+    for(k=0;k<params->numSkyPosTotal;k++) {
+       fprintf(stdout, "params->skyPosData[%i][0] = %g\n",k,params->skyPosData[k][0]);
+       fprintf(stdout, "params->skyPosData[%i][1] = %g\n",k,params->skyPosData[k][1]);
+       fflush(stdout);
+    }
+  #endif
+  
+/************************************************/
+/*                                              */
+/* END SECTION: Find Earth's ave acceleration   */
+/*                and rotate sky coordinates to */
+/*                form sky bands if requested   */
+/*                                              */
+/************************************************/
+
 /* 05/26/04 gam; Move writing to stackslide search summary table to StackSlideConditionData */
 /***********************************************************/
 /*                                                         */
@@ -1360,6 +1475,25 @@ void StackSlideApplySearch(
 /* END SECTION: calibrate BLKs                */
 /*                                            */
 /**********************************************/
+
+/***********************************************************/
+/*                                                         */
+/* START SECTION: clean SFTs if option set and lines exist */
+/*                                                         */
+/***********************************************************/  
+  if ( (params->normalizationFlag & 32) > 0 )  {
+    if (params->infoLines->nLines > 0) {
+      /* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */
+      /* NOTE THAT THE MAXIMUM NUMBER OF BINS TO CLEAN IS HARDCODED TO 20 HERE! */
+      StackSlideCleanSFTs(status->statusPtr,params->BLKData,params->infoLines,params->numBLKs,params->nBinsPerNRM,20);
+      CHECKSTATUSPTR (status);
+    }
+  }
+/***********************************************************/
+/*                                                         */
+/* END SECTION: clean SFTs if option set and lines exist   */
+/*                                                         */
+/***********************************************************/
 
 /**********************************************/
 /*                                            */
@@ -2257,6 +2391,26 @@ void StackSlideFinalizeSearch(
   LALFree(params->earthEdatFile);
   LALFree(params->sftDirectory);
   LALFree(params->outputFile);
+  
+  /* 05/14/05 gam */
+  LALFree(params->linesAndHarmonicsFile); 
+  if ( (params->normalizationFlag & 32) > 0 )  {
+    if (params->infoLines->nLines > 0) {
+      LALFree(params->infoLines->lineFreq);
+      LALFree(params->infoLines->leftWing);
+      LALFree(params->infoLines->rightWing);
+    } 
+    if (params->infoHarmonics->nHarmonicSets > 0) {
+      LALFree(params->infoHarmonics->startFreq);
+      LALFree(params->infoHarmonics->gapFreq);
+      LALFree(params->infoHarmonics->numHarmonics);
+      LALFree(params->infoHarmonics->leftWing);
+      LALFree(params->infoHarmonics->rightWing);
+    }
+    LALFree(params->infoHarmonics);
+    LALFree(params->infoLines);
+  } /* END if ( (params->normalizationFlag & 32) > 0 ) */
+
   /* LALFree(params); */ /*Declared and freed in the calling function */
 
   /**********************************************/
@@ -3162,6 +3316,239 @@ void printOneStackSlideSUM( const REAL4FrequencySeries *oneSUM,
        LALFree(baseOutputFile);
     }
 } /* END void printOneSUM */
+
+/* 05/13/05 gam; Add function FindAveEarthAcc that finds aveEarthAccVec, the Earth's average acceleration vector during the analysis time. */
+void FindAveEarthAcc(LALStatus *status, REAL8 *aveEarthAccVec, REAL8 startTime, REAL8 endTime, const EphemerisData *edat)
+{
+
+  INT4 i, iStart, iEnd;
+  REAL8 count;
+
+  INITSTATUS( status, "FindAveEarthAcc", DRIVESTACKSLIDEC );
+  ATTATCHSTATUSPTR (status);
+  
+  iStart = floor( ( (startTime - edat->ephemE[0].gps)/edat->dtEtable ) + 0.5); /* finding starting Earth table entry */
+  iEnd = floor( ( (endTime - edat->ephemE[0].gps)/edat->dtEtable ) + 0.5);     /* finding ending Earth table entry   */
+  count = (REAL8)(iEnd - iStart + 1);
+
+  if ( (count <= 0) || (iStart < 0) || (iEnd < 0) || (iEnd >= edat->nentriesE) ) {
+     ABORT( status, DRIVESTACKSLIDEH_EAVEEARTHACCVEC, DRIVESTACKSLIDEH_MSGEAVEEARTHACCVEC);
+  } 
+
+  aveEarthAccVec[0] = 0.0;
+  aveEarthAccVec[1] = 0.0;
+  aveEarthAccVec[2] = 0.0;
+  for (i=iStart; i<=iEnd; i++) {
+     aveEarthAccVec[0] += edat->ephemE[i].acc[0];
+     aveEarthAccVec[1] += edat->ephemE[i].acc[1];
+     aveEarthAccVec[2] += edat->ephemE[i].acc[2];
+  }
+  aveEarthAccVec[0] = aveEarthAccVec[0]/count;
+  aveEarthAccVec[1] = aveEarthAccVec[1]/count;
+  aveEarthAccVec[2] = aveEarthAccVec[2]/count;
+  
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR (status);
+
+} /* END void FindAveEarthAcc */
+
+/* 05/13/05 gam; Add function FindLongLatFromVec that find for a vector that points from the center to a position on a sphere, the latitude and longitude of this position */
+void FindLongLatFromVec(LALStatus *status, REAL8 *longitude, REAL8 *latitude, const REAL8 *vec)
+{
+
+  REAL8 vLength;
+  
+  INITSTATUS( status, "FindAveEarthAcc", DRIVESTACKSLIDEC );
+  ATTATCHSTATUSPTR (status);
+  
+  vLength = sqrt( vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2] );
+  if (vLength <= 0.0) {
+     ABORT( status, DRIVESTACKSLIDEH_ELONGLATFROMVEC, DRIVESTACKSLIDEH_MSGELONGLATFROMVEC);
+  }
+  
+  *latitude = asin( vec[2] / vLength );
+  *longitude = atan2(vec[1],vec[0]) + ((REAL8)LAL_PI);  /* put into the range 0 to 2pi */
+  
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR (status);
+}
+
+/* 05/13/05 gam; Add function RotateSkyCoordinates that transforms longIn and latIn to longOut, latOut as related by three rotations. */
+void RotateSkyCoordinates(LALStatus *status, REAL8 *longOut, REAL8 *latOut, REAL8 longIn, REAL8 latIn, REAL8 longPole, REAL8 latPole, REAL8 longOffset)
+{
+  /*  Transforms longIn and latIn to longOut, latOut as related by three rotations.
+      The North pole of the input coordinate frame lies at
+      (longPole, latPole) in the output coordinate frame. 
+      The input coordinate system has axes: x_in, y_in, z_in.
+      The output coordinate system has axes: x_out, y_out, z_out.      
+      The input coordinate system is rotated with respect output
+      coordinate system by the following Euler Angle rotations:
+        1. Rotate by longPole - 3*pi/2 about the z_out-axis.
+        2. Rotate by pi/2 -latPol about the x_out-axis.
+           That is rotate about the line of nodes; the x_out-axis
+           points to the ascending nodes as per the right-hand rule.
+        3. Rotate about the z_in-axis by longOffset.
+  */
+
+  REAL8 longInFromAscendingNode, Xtmp, Ytmp, cosLatIn, sinLatIn, cosLatPole, sinLatPole, cosLatOut;
+  
+  INITSTATUS( status, "RotateSkyCoordinates", DRIVESTACKSLIDEC );
+  ATTATCHSTATUSPTR (status);
+
+  cosLatIn   = cos(latIn);
+  sinLatIn   = sin(latIn);
+  cosLatPole = cos(latPole);
+  sinLatPole = sin(latPole);
+
+  /* Invert the last rotation; this moves the x_in-axis back to the ascending node */  
+  longInFromAscendingNode = longIn + longOffset;
+
+  /* Compute the output latitude using spherical trig */
+  *latOut = asin ( sinLatPole * sinLatIn + cosLatPole * cosLatIn * sin(longInFromAscendingNode) );
+  
+  cosLatOut  = cos(*latOut);
+
+  if ( cosLatOut == 0.0 ) {
+     *longOut = 0.0;  /* Output latitude is at a pole; longitude can be anything, so chose zero */
+  } else {
+     if (cosLatPole == 0.0) {
+       /* The output longitude is just a simple rotation about the z_out-axis */
+       *longOut = longIn + longPole - 3.0*LAL_PI/2.0;
+     } else {
+       /* Compute the output longitude using spherical trig */
+       Xtmp = ( sinLatIn - sinLatPole * sin(*latOut) )  / ( cosLatPole * cosLatOut );
+       Ytmp = cosLatIn * cos(longInFromAscendingNode) / cosLatOut;
+       *longOut = longPole + atan2(Ytmp,Xtmp);
+     }
+     if (*longOut < 0.0) {
+        *longOut += LAL_TWOPI;  /* Make sure longOut is positive */
+     }
+     *longOut = fmod(*longOut,LAL_TWOPI);  /* Make sure longOut is between 0 and 2pi */
+  }
+
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR (status);
+
+} /* END void RotateSkyCoordinates */
+  
+/* 05/13/05 gam; Add function RotateSkyPosData that rotates skyPosData using RotateSkyCoordinates */
+void RotateSkyPosData(LALStatus *status, REAL8 **skyPosData, INT4 numSkyPosTotal, REAL8 longPole, REAL8 latPole, REAL8 longOffset)
+{
+     INT4 iSky;
+     REAL8 tmpRA, tmpDEC;
+     
+     INITSTATUS( status, "RotateSkyPosData", DRIVESTACKSLIDEC );
+     ATTATCHSTATUSPTR (status);
+
+     for(iSky=0;iSky<numSkyPosTotal;iSky++) {
+       RotateSkyCoordinates(status->statusPtr, &tmpRA, &tmpDEC, skyPosData[iSky][0], skyPosData[iSky][1], longPole, latPole, longOffset);
+       skyPosData[iSky][0] = tmpRA;
+       skyPosData[iSky][1] = tmpDEC;
+     }
+
+     CHECKSTATUSPTR (status);
+     DETATCHSTATUSPTR (status);
+
+} /* END void RotateSkyPosData */
+
+/* 05/14/05 gam; function that reads in line and harmonics info from file; based on SFTclean.c by Krishnan, B. */
+void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHarmonics, LineNoiseInfo *infoLines, REAL8 fStart, REAL8 fBand, CHAR *linesAndHarmonicsFile)
+{
+  LineNoiseInfo lines;
+  INT4 nLines, count1, nHarmonicSets;  
+
+  INITSTATUS( status, "StackSlideGetLinesAndHarmonics", DRIVESTACKSLIDEC );
+  ATTATCHSTATUSPTR (status);
+
+  lines.lineFreq  = NULL;
+  lines.leftWing  = NULL;
+  lines.rightWing = NULL;
+
+  FindNumberHarmonics(status->statusPtr, infoHarmonics, linesAndHarmonicsFile);
+  CHECKSTATUSPTR (status);
+  nHarmonicSets = infoHarmonics->nHarmonicSets;
+
+  if (nHarmonicSets > 0) {
+      infoHarmonics->startFreq = (REAL8 *)LALMalloc(nHarmonicSets * sizeof(REAL8));
+      infoHarmonics->gapFreq = (REAL8 *)LALMalloc(nHarmonicSets * sizeof(REAL8));
+      infoHarmonics->numHarmonics = (INT4 *)LALMalloc(nHarmonicSets * sizeof(INT4));
+      infoHarmonics->leftWing = (REAL8 *)LALMalloc(nHarmonicSets * sizeof(REAL8));
+      infoHarmonics->rightWing = (REAL8 *)LALMalloc(nHarmonicSets * sizeof(REAL8));
+
+      ReadHarmonicsInfo(status->statusPtr, infoHarmonics, linesAndHarmonicsFile);
+      CHECKSTATUSPTR (status);
+      
+      nLines = 0;
+      for (count1=0; count1 < nHarmonicSets; count1++) {
+        nLines += infoHarmonics->numHarmonics[count1];
+      }
+
+      lines.nLines = nLines;
+      lines.lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+
+      Harmonics2Lines(status->statusPtr, &lines, infoHarmonics);
+      CHECKSTATUSPTR (status);
+      
+      infoLines->nLines = nLines;
+      infoLines->lineFreq = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      infoLines->leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+      infoLines->rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
+
+      ChooseLines(status->statusPtr, infoLines, &lines, fStart, fStart + fBand);
+      CHECKSTATUSPTR (status);
+
+      if (nLines > 0) {
+        LALFree(lines.lineFreq);
+        LALFree(lines.leftWing);
+        LALFree(lines.rightWing);
+      }
+  }
+
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR (status);
+
+} /* END StackSlideGetLinesAndHarmonics */
+
+/* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */
+void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLines, INT4 numBLKs, INT4 nBinsPerNRM, INT4 maxBins)
+{
+  INT4 i,j, nBinsPerBLK;
+  SFTtype *oneSFT;
+
+  INITSTATUS( status, "StackSlideCleanSFTs", DRIVESTACKSLIDEC );
+  ATTATCHSTATUSPTR (status);
+  
+  oneSFT = NULL;
+  LALCreateSFTtype (status->statusPtr, &oneSFT, ((UINT4)nBinsPerBLK));
+  CHECKSTATUSPTR (status);
+  
+  nBinsPerBLK = BLKData[0]->fft->data->length;
+  
+  for(i=0;i<numBLKs;i++) {
+      /* copy the data for this BLK to oneSFT */
+      oneSFT->epoch = BLKData[i]->fft->epoch;
+      oneSFT->f0 = BLKData[i]->fft->f0;
+      oneSFT->deltaF = BLKData[i]->fft->deltaF;
+      oneSFT->data->length = BLKData[i]->fft->data->length;
+      for(j=0;j<nBinsPerBLK;j++) {
+           oneSFT->data->data[j].re = BLKData[i]->fft->data->data[j].re;
+           oneSFT->data->data[j].im = BLKData[i]->fft->data->data[j].im;
+      }
+      CleanCOMPLEX8SFT(status->statusPtr, oneSFT, maxBins, nBinsPerNRM, infoLines); /* clean this SFT */
+      CHECKSTATUSPTR (status);
+      /* copy the clean SFT data back to this BLK */
+      for(j=0;j<nBinsPerBLK;j++) {
+           BLKData[i]->fft->data->data[j].re = oneSFT->data->data[j].re;
+           BLKData[i]->fft->data->data[j].im = oneSFT->data->data[j].im;
+      }
+  }
+  LALDestroySFTtype (status->statusPtr,&oneSFT);
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR (status);
+
+} /* END StackSlideCleanSFTs */
 
 /******************************************/
 /*                                        */

@@ -3,6 +3,7 @@
 # See README_CommandLineArgument for a complete description of the ComputeStackSlideSums command line arguments.
 # See README_ComputeStackSlideSums for further details.
 # 12/06/04 gam; defaults are set for most parameters in runComputeStackSlideSums.tclsh; only set non-default values here.
+# 05/13/05 gam; add defaults for more parameters.
 
 # parameters for test pulsar
 set targetName "testBinaryPulsar"; # CHAR; identifies the target of the search
@@ -59,3 +60,14 @@ set searchKeepThisNumber  1;  # Used only if ((searchEventFlag & 2) > 0):
 
 set searchNormalizationFlag 4;        # 04/14/04 gam; use running median; print out into .Sh file estimates of PSD for each SFT.
 set searchRunningMedianBlockSize 50;  # 12/06/04 gam
+
+set searchWeightFlag 0;           # Flag that determines weighting of STKs (e.g., PowerFlux weighting)
+ 
+set searchOrientationAngle   0;   # used to find F_+ and F_x with weightFlag or MC with fixed polarization angle
+set searchCosInclinationAngle 0;  # used with MC with fixed inclination angle
+
+set searchTestFlag 0;             # used to indicate Monte Carlo Simulation, and used for test cases such as Hough mode.
+
+set searchParameterSpaceFlag 0; # 05/13/05 gam; add options to rotate sky positions.
+
+set searchLinesAndHarmonicsFile "None";  # 05/14/05 gam;
