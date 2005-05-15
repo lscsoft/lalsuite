@@ -42,7 +42,10 @@ set inputDataTypeFlag                        0; #27 INT2 input data type.
 # Note that 0 = SFTs is only type currently supported value. 
 
 set parameterSpaceFlag                       0; #28 INT2 how to generate parameter space. 
-# Note that 0 is the only currently supported value; this causes code to use command line arguments below to generate sky positions uniformly on the sphere and spindowns without using parameter space metric. 
+#The parameterSpaceFlag options are: 
+# if params->parameterSpaceFlag >= 0 generate sky positions uniformly on the sphere and spindowns without using parameter space metric.
+# if (params->parameterSpaceFlag & 1 > 0) rotate skyPosData into coordinates with Earth's average acceleration at the pole.
+# if (params->parameterSpaceFlag & 2) > 0 rotate skyPosData into galactic plane.
 
 set stackTypeFlag                            0; #29 INT2 how to generate STKs from BLKs. 
 set Dterms                                  32; #30 INT4 number of terms for Dirichlet kernel (for STKs = F-stat only). 
@@ -77,11 +80,12 @@ set f0NRM               3.0011000000000001e+02; #42 REAL8 frequency to start wit
 set bandNRM             1.7999999999999999e-01; #43 REAL8 frequency band to use when finding norms. 
 set nBinsPerNRM                             50; #44 INT4 number of frequency bins to use when finding norms. 
 set normalizationParameter  0.0000000000000000e+00; #45 REAL4 see uses below. 
-#The thresholdFlag rules are: 
+#The normalizationFlag rules are: 
 # if (params->normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, 
 # if (params->normalizationFlag & 4) > 0 normalize STKs using running median (or use medians when weightFlag > 0), 
 # if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.
 # if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.
+# if (params->normalizationFlag & 32) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.
 
 set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.
@@ -89,7 +93,7 @@ set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 4) > 0) use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs instead of LALGeneratePulsarSignal and LALSignalToSFTs during Monte Carlo Simulations. See LAL inject package.
 # if ((testFlag & 8) > 0) use fixed orientationAngle and cosInclinationAngle set above during Monte Carlo Simulations.
 
-set numSUMsPerCall                           1; #47 INT4 nuber of SUMs to produce each call to StackSlide (currently unused). 
+set linesAndHarmonicsFile None; #47 CHAR* file with instrument line and harmonic spectral disturbances data.
 
 set outputSUMFlag                            2; #48 INT2 whether to output SUMs e.g., in ascii. 
 #The outputSUMFlag rules are: 
