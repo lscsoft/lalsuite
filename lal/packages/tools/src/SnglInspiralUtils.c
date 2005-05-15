@@ -167,6 +167,26 @@ second instrument.
 </lalLaTeX>
 #endif
 
+/*
+ * A few quickies for convenience.
+ */
+
+static INT8 end_time(const SnglInspiralTable *x)
+{
+	return(XLALGPStoINT8(&x->end_time));
+}
+
+static INT4 end_time_sec(const SnglInspiralTable *x)
+{
+	return(x->end_time.gpsSeconds);
+}
+
+static INT4 end_time_nsec(const SnglInspiralTable *x)
+{
+	return(x->end_time.gpsNanoSeconds);
+}
+
+
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
 LALFreeSnglInspiral (
@@ -189,6 +209,26 @@ LALFreeSnglInspiral (
   RETURN( status );
 }
 
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+int
+XLALFreeSnglInspiral (
+    SnglInspiralTable **eventHead
+    )
+/* </lalVerbatim> */
+{
+  EventIDColumn        *eventId;
+
+  while ( (*eventHead)->event_id )
+  {
+    /* free any associated event_id's */
+    eventId = (*eventHead)->event_id;
+    (*eventHead)->event_id = (*eventHead)->event_id->next;
+    LALFree( eventId );
+  }
+  LALFree( *eventHead );
+
+  return (0);
+}
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
 void
@@ -740,6 +780,54 @@ LALTimeCutSingleInspiral(
 
 }  
 
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+int
+XLALTimeCutSingleInspiral(
+    SnglInspiralTable         **eventHead,
+    INT8                        startTimeNS,
+    INT8                        endTimeNS
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *inspiralEventList = NULL;
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+
+  /* Remove all the triggers before and after the requested */
+  /* gps start and end times */
+
+  thisEvent = *eventHead;
+
+  while ( thisEvent )
+  {
+    SnglInspiralTable *tmpEvent = thisEvent;
+    thisEvent = thisEvent->next;
+
+    if ( end_time(tmpEvent) >= startTimeNS &&
+        end_time(tmpEvent) < endTimeNS )
+    {
+      /* keep this template */
+      if ( ! inspiralEventList  )
+      {
+        inspiralEventList = tmpEvent;
+      }
+      else
+      {
+        prevEvent->next = tmpEvent;
+      }
+      tmpEvent->next = NULL;
+      prevEvent = tmpEvent;
+    }
+    else
+    {
+      /* discard this template */
+      XLALFreeSnglInspiral ( &tmpEvent );
+    }
+  }
+  *eventHead = inspiralEventList; 
+
+  return (0);
+}  
 
 
 /* <lalVerbatim file="SnglInspiralUtilsCP"> */
@@ -1435,4 +1523,83 @@ LALTamaCoincidenceTest(
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
+
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+int
+XLALMaxSnglInspiralOverIntervals(
+    SnglInspiralTable         **eventHead,
+    INT4                       deltaT
+    )
+/* </lalVerbatim> */
+{
+  SnglInspiralTable    *inspiralEventList = NULL;
+  SnglInspiralTable    *thisEvent = NULL;
+  SnglInspiralTable    *nextEvent = NULL;
+  SnglInspiralTable    *prevEvent = NULL;
+
+  /* if there are no events, then no-op */
+  if ( ! *eventHead )
+    return (0);
+
+  inspiralEventList = *eventHead;
+  thisEvent = *eventHead;
+  nextEvent = thisEvent->next;
+
+  while ( nextEvent )
+  {
+    if ( end_time_sec(nextEvent) == end_time_sec(thisEvent) &&
+        end_time_nsec(nextEvent)/deltaT == end_time_nsec(thisEvent)/deltaT )
+    {
+      if ( nextEvent->snr > thisEvent->snr )
+      {
+        /* replace thisEvent with nextEvent */
+        XLALFreeSnglInspiral ( &thisEvent );
+
+        /* deal with start of the list */
+        if (prevEvent)
+          prevEvent->next = nextEvent;
+        else
+          inspiralEventList = nextEvent;
+
+        /* standard stuff */
+        thisEvent = nextEvent;
+        nextEvent = thisEvent->next;
+      }
+      else
+      {
+        /* get rid of nextEvent */
+        thisEvent->next = nextEvent->next;
+        XLALFreeSnglInspiral ( &nextEvent );
+        nextEvent = thisEvent->next;
+      }
+    }
+    else
+    {
+      /* step to next set of events */
+      prevEvent=thisEvent;
+      thisEvent=nextEvent;
+      nextEvent = thisEvent->next;
+    }
+  }
+
+  *eventHead = inspiralEventList; 
+
+  return (0);
+}  
+
+/* <lalVerbatim file="SnglInspiralUtilsCP"> */
+INT4 XLALCountSnglInspiral( SnglInspiralTable *head )
+/* </lalVerbatim> */
+{
+  INT4 length;
+  SnglInspiralTable *event;
+  
+  /* count the number of events in the list */
+  for(length = 0, event = head; event; event = event->next)
+    length++;
+
+  return length;
+}
+
 

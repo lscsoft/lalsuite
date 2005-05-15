@@ -352,6 +352,11 @@ LALFreeSnglInspiral (
     SnglInspiralTable **eventHead
     );
 
+int
+XLALFreeSnglInspiral (
+    SnglInspiralTable **eventHead
+    );
+
 void
 LALSortSnglInspiral (
     LALStatus          *status,
@@ -407,6 +412,13 @@ LALTimeCutSingleInspiral(
     SnglInspiralTable         **eventHead,
     LIGOTimeGPS                *startTime,
     LIGOTimeGPS                *endTime
+    );
+
+int
+XLALTimeCutSingleInspiral(
+    SnglInspiralTable         **eventHead,
+    INT8                        startTimeNS,
+    INT8                        endTimeNS
     );
 
 void
@@ -476,6 +488,16 @@ LALTamaCoincidenceTest(
     SnglInspiralClusterChoice   clusterchoice
     );
 
+int
+XLALMaxSnglInspiralOverIntervals(
+    SnglInspiralTable         **eventHead,
+    INT4                       deltaT
+    );
+
+INT4 
+XLALCountSnglInspiral( 
+    SnglInspiralTable *head 
+    );
 
 /* coinc inspiral */
 void
