@@ -9,8 +9,9 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lalapps.h>
-
+   
 int snprintf(char *str, size_t size, const char *format, ...);
+long long int llabs(long long int j);
 
 RCSID("$Id$");
 
@@ -38,10 +39,11 @@ enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq } clusterchoice
 /* Usage format string. */
 #define USAGE "Usage: %s --ifo-a trigfile.a --ifo-b trigfile.b \
 --start-time startCoincidence --stop-time stopCoincidence \
---drho-plus dRhoPlus --drho-minus dRhoMinus --dt deltat \
-[--noncoincident] [--noplayground] [--help] [--user-tag]\n"
+--drho-plus dRhoPlus --drho-minus dRhoMinus  --slide-time sec.s to slide \
+--slide-time-ns nsec.s to slide --number-slides no. of slides \
+--dt deltat [--noncoincident] [--noplayground] [--help] [--user-tag]\n"
 
-         
+
  
 /************************************************************************************
  * The main program
@@ -49,7 +51,7 @@ enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq } clusterchoice
 int main(int argc, char **argv)
 {
   static LALStatus       stat;
-  INT4                   usePlayground= TRUE;
+  INT4                   usePlayground = TRUE;
   INT4                   verbose = FALSE;
   INT4                   cluster = FALSE;
   INT4                   noncoincident = FALSE;
@@ -63,14 +65,19 @@ int main(int argc, char **argv)
   INT8                   endCoincidenceNS=0;
   LIGOTimeGPS            startCoincidence={0,0};
   LIGOTimeGPS            endCoincidence={977788813,0};
+
   LIGOTimeGPS            slideData={0,0};
   INT8                   slideDataNS=0;
+  INT8                   slideStep = 0;
+  INT8                   numSlides = 0;
+  INT8                   slideNum = 0;
+  INT8                   dtSlide = 0;
 
   CHAR                 **trigFile;
   INT4                   nTrigFile[MAXIFO];
 
-  CHAR                   outfileName[256];
-  CHAR                   outnoncfileName[256];
+  CHAR                   outfileName[512];
+  CHAR                   outnoncfileName[512];
 
   SnglBurstTable         *currentEvent=NULL,*tmpEvent=NULL;
   SnglBurstTable         *prevEvent=NULL,*prevNonCEvent=NULL,*outEvent=NULL;
@@ -78,6 +85,7 @@ int main(int argc, char **argv)
   SnglBurstTable         *noncoincidentEvents = NULL;
   SnglBurstTable        **burstEventList=NULL;
   SnglBurstTable        **currentTrigger=NULL;
+ 
   SnglBurstAccuracy       accParams;
   SearchSummaryTable      *searchSummary=NULL;
   MetadataTable           myTable;
@@ -108,6 +116,7 @@ int main(int argc, char **argv)
       {"stop-time",               required_argument, 0,                's'},
       {"slide-time",              required_argument, 0,                'X'},
       {"slide-time-ns",           required_argument, 0,                'Y'},
+      {"number-slides",           required_argument, 0,                'k'},
       {"user-tag",                required_argument, 0,                'i'},
       {"help",                    no_argument,       0,                'h'}, 
       {0, 0, 0, 0}
@@ -140,7 +149,7 @@ int main(int argc, char **argv)
       int option_index = 0;
 
       c = getopt_long_only( argc, argv, 
-			    "a:b:c:d:e:f:m:t:o:r:s:h", long_options, &option_index );
+			    "a:b:c:d:f:t:r:s:i:j:k:X:Y:h", long_options, &option_index );
 
       /* detect the end of the options */
       if ( c == - 1 )
@@ -253,6 +262,14 @@ int main(int argc, char **argv)
 
 	case 'i':
 	  comment = optarg;
+	  break;
+
+	case 'k':
+	  numSlides = atoi( optarg );
+	  if( numSlides < 0 ){
+	    fprintf( stderr, "--number-slides must be > 0\n");
+	    exit ( 1 );
+	  }
 	  break;
 
 	case '?':
@@ -373,265 +390,257 @@ int main(int argc, char **argv)
     }
 
   /*****************************************************************
-   * slide the data if requested:  always slide burstEventList[0]
+   * slide the data:  always slide burstEventList[1]
    * and put it on a ring with start and end time given by 
    * startCoincidence and endCoincidence ........
    *****************************************************************/
-  LAL_CALL( LALGPStoINT8( &stat, &slideDataNS, &slideData ), &stat );
-  if ( slideDataNS )
-    {
-      INT8 tStart=0;
-      INT8 tPeak=0;
+  LAL_CALL( LALGPStoINT8( &stat, &slideStep, &slideData ), &stat );
 
-      currentEvent = burstEventList[0];
-
-      while( currentEvent != NULL ){
-
-        LAL_CALL( LALGPStoINT8( &stat, &tStart,
-				&(currentEvent->start_time)), &stat );
-        LAL_CALL( LALGPStoINT8( &stat, &tPeak,
-				&(currentEvent->peak_time)), &stat );
-
-	tStart += slideDataNS;
-	tPeak += slideDataNS;
-
-        if ( (tStart-startCoincidenceNS)*(tStart-endCoincidenceNS) > 0 )
-	  {
-	    if ( tStart < startCoincidenceNS )
-	      {
-		tStart += endCoincidenceNS - startCoincidenceNS;
-		tPeak += endCoincidenceNS - startCoincidenceNS;
-	      }
-	    if ( tStart > endCoincidenceNS )
-	      {
-		tStart += startCoincidenceNS - endCoincidenceNS;
-		tPeak += startCoincidenceNS - endCoincidenceNS;
-	      }
-	  }
-
-        LAL_CALL( LALINT8toGPS( &stat, &(currentEvent->start_time),
-				&tStart), &stat );
-        LAL_CALL( LALINT8toGPS( &stat, &(currentEvent->peak_time),
-				&tPeak), &stat );
-
-        currentEvent = currentEvent->next;
-      }
-    }
-
-
-  /*****************************************************************
-   * find the first trigger after coincidence start time
-   *****************************************************************/
-  if (verbose) fprintf(stdout,"Moving to first trigger in window\n");
-  for(j=0 ; j<2 ; j++)
-    {
-      currentTrigger[j] = burstEventList[j];
-
-      while ( (currentTrigger[j] != NULL) && 
-	      (currentTrigger[j]->start_time.gpsSeconds < startCoincidence.gpsSeconds) )
-        {
-	  currentTrigger[j] = currentTrigger[j]->next;
-        }
-    }
-
-
-  /*****************************************************************
-   * outer loop over triggers from interferometer A
-   ****************************************************************/
-  if (verbose) fprintf(stdout,"Start loop over ifo A\n");
-  while ( (currentTrigger[0] != NULL) && 
-	  (currentTrigger[0]->start_time.gpsSeconds < endCoincidence.gpsSeconds) )
-    {
-      INT8 ta, tb;
-      INT8 coin = 0;
-
-      LAL_CALL( LALGPStoINT8(&stat, &ta, &(currentTrigger[0]->peak_time)), &stat);
-
-      /*catch up triggers from ifo B */
-      while (currentTrigger[1] != NULL)
-        {
-	  LAL_CALL( LALGPStoINT8(&stat, &tb, &(currentTrigger[1]->peak_time)), &stat);
-	  if (tb > ta-deltaT)
-            {
-	      break;
-            }
-	  currentTrigger[1] = currentTrigger[1]->next;
-        }
-
-      if (verbose) fprintf(stdout,"Start loop over ifo B\n");
-
-      /* look for coincident events in B within the time window */
-      LAL_CALL( LALGPStoINT8( &stat, &triggerTime, 
-			      &(currentTrigger[0]->start_time) ), &stat );
-
-      LAL_CALL( LALINT8NanoSecIsPlayground( &stat, &isPlay, 
-					    &triggerTime ), &stat );
-
-      if ( verbose )
-        {
-          if ( isPlay )
+  for( slideNum = -numSlides; slideNum <= numSlides; slideNum++)
+    {      
+      if (slideNum == -numSlides)
+	{
+	  slideDataNS = (slideNum * slideStep);
+	  dtSlide = slideDataNS;
+	}
+      else
+	{
+	  slideDataNS = slideStep;
+	  dtSlide += slideStep;
+	  /* if doing slides and reached 0-lag then skip it */
+	  if ( numSlides && slideNum == 0 )
 	    {
-	      fprintf( stdout, "trigger is playground\n" );
-	    } 
-          else
+	      slideNum++;
+	      slideDataNS += slideStep;
+	      dtSlide += slideStep;
+	    }	 
+	}
+
+      /* slide the data only if not 0 lag analysis*/    
+      if (numSlides)
+	XLALTimeSlideSnglBurst(burstEventList[1],startCoincidenceNS,endCoincidenceNS, slideDataNS);
+	
+      /*****************************************************************
+       * find the first trigger after coincidence start time
+       *****************************************************************/
+      if (verbose) fprintf(stdout,"Moving to first trigger in window\n");
+      for(j=0 ; j<2 ; j++)
+	{
+	  currentTrigger[j] = burstEventList[j];
+	
+	  while ( (currentTrigger[j] != NULL) && 
+		  (currentTrigger[j]->start_time.gpsSeconds < startCoincidence.gpsSeconds) )
 	    {
-	      fprintf( stdout, "trigger is not playground\n" );
+	      currentTrigger[j] = currentTrigger[j]->next;
 	    }
-        }
+	}
 
-      /* if we are playground only and the trigger is in playground or
-       * we are not using playground and the trigger is not in the 
-       * playground  ... */
+      /*****************************************************************
+       * outer loop over triggers from interferometer A
+       ****************************************************************/
+      if (verbose) fprintf(stdout,"Start loop over ifo A\n");
+      while ( (currentTrigger[0] != NULL) && 
+	      (currentTrigger[0]->start_time.gpsSeconds < endCoincidence.gpsSeconds) )
+	{
+	  INT8 ta, tb;
+	  INT8 coin = 0;
+	
+	  LAL_CALL( LALGPStoINT8(&stat, &ta, &(currentTrigger[0]->peak_time)), &stat);
+	
+	  /*catch up triggers from ifo B */
+	  while (currentTrigger[1] != NULL)
+	    {
+	      LAL_CALL( LALGPStoINT8(&stat, &tb, &(currentTrigger[1]->peak_time)), &stat);
+	      if (tb > ta-deltaT)
+		{
+		  break;
+		}
+	      currentTrigger[1] = currentTrigger[1]->next;
+	    }
+	
+	  if (verbose) fprintf(stdout,"Start loop over ifo B\n");
+	
+	  /* look for coincident events in B within the time window */
+	  LAL_CALL( LALGPStoINT8( &stat, &triggerTime, 
+				  &(currentTrigger[0]->start_time) ), &stat );
+	
+	  LAL_CALL( LALINT8NanoSecIsPlayground( &stat, &isPlay, 
+						&triggerTime ), &stat );
+	
+	  if ( verbose )
+	    {
+	      if ( isPlay )
+		{
+		  fprintf( stdout, "trigger is playground\n" );
+		} 
+	      else
+		{
+		  fprintf( stdout, "trigger is not playground\n" );
+		}
+	    }
 
-      if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) )
-        {
-	  tmpEvent = currentTrigger[1];
-	  while (tmpEvent != NULL)
-            {
-	      LAL_CALL( LALGPStoINT8(&stat, &tb, &(tmpEvent->peak_time)), &stat);
-	      if (tb > ta+deltaT)
-		break;
-	      /* this is a LAL function which compares events */
-	      LAL_CALL( LALCompareSnglBurst(&stat, currentTrigger[0],
-					    tmpEvent, &accParams.difference), &stat);
-
-	      if (!accParams.difference)
-                {
-		  coin = 1;
-		  if (coincidentEvents == NULL)
-                    {
-		      outEvent = coincidentEvents = (SnglBurstTable *)
-			LALCalloc(1, sizeof(SnglBurstTable) );
+	  /* if we are playground only and the trigger is in playground or
+	   * we are not using playground and the trigger is not in the 
+	   * playground  ... */
+	
+	  if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) )
+	    {
+	      tmpEvent = currentTrigger[1];
+	      while (tmpEvent != NULL)
+		{
+		  LAL_CALL( LALGPStoINT8(&stat, &tb, &(tmpEvent->peak_time)), &stat);
+		  if (tb > ta+deltaT)
+		    break;
+		  /* this is a LAL function which compares events */
+		  LAL_CALL( LALCompareSnglBurst(&stat, currentTrigger[0],
+						tmpEvent, &accParams.difference), &stat);
+		
+		  if (!accParams.difference)
+		    {
+		      coin = 1;
+		      if (coincidentEvents == NULL)
+			{
+			  outEvent = coincidentEvents = (SnglBurstTable *)
+			    LALCalloc(1, sizeof(SnglBurstTable) );
+			  prevEvent = outEvent;
+			}
+		      else 
+			{
+			  outEvent = (SnglBurstTable *)
+			    LALCalloc(1, sizeof(SnglBurstTable) );
+			  prevEvent->next = outEvent;
+			}
+		      memcpy( outEvent, currentTrigger[0], sizeof(SnglBurstTable));
 		      prevEvent = outEvent;
-                    }
-		  else 
-                    {
-		      outEvent = (SnglBurstTable *)
-			LALCalloc(1, sizeof(SnglBurstTable) );
-		      prevEvent->next = outEvent;
-                    }
-		  memcpy( outEvent, currentTrigger[0], sizeof(SnglBurstTable));
-		  prevEvent = outEvent;
-		  outEvent = outEvent->next = NULL;
-                }
-	      tmpEvent = tmpEvent->next;
-            }
-        }
-
-      if (noncoincident && coin == 0)
-	{
-	  if (noncoincidentEvents == NULL)
+		      outEvent = outEvent->next = NULL;
+		    }
+		  tmpEvent = tmpEvent->next;
+		}
+	    }
+	
+	  if (noncoincident && coin == 0)
 	    {
-	      outEvent = noncoincidentEvents = (SnglBurstTable *)
-		LALCalloc(1, sizeof(SnglBurstTable) );
+	      if (noncoincidentEvents == NULL)
+		{
+		  outEvent = noncoincidentEvents = (SnglBurstTable *)
+		    LALCalloc(1, sizeof(SnglBurstTable) );
+		  prevNonCEvent = outEvent;
+		}
+	      else 
+		{
+		  outEvent = (SnglBurstTable *)
+		    LALCalloc(1, sizeof(SnglBurstTable) );
+		  prevNonCEvent->next = outEvent;
+		}
+	      memcpy( outEvent, currentTrigger[0], sizeof(SnglBurstTable));
 	      prevNonCEvent = outEvent;
+	      outEvent = outEvent->next = NULL;
 	    }
-	  else 
+	
+	  currentTrigger[0] = currentTrigger[0]->next;
+	}
+
+
+      /* cluster the events if asked to */
+      if(cluster && clusterchoice == clusterbypeaktimeandfreq)
+	{
+	  if (noncoincident && noncoincidentEvents)
 	    {
-	      outEvent = (SnglBurstTable *)
-		LALCalloc(1, sizeof(SnglBurstTable) );
-	      prevNonCEvent->next = outEvent;
+	      LAL_CALL(LALClusterSnglBurstTable(&stat, &noncoincidentEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
 	    }
-	  memcpy( outEvent, currentTrigger[0], sizeof(SnglBurstTable));
-	  prevNonCEvent = outEvent;
-	  outEvent = outEvent->next = NULL;
+	  if(coincidentEvents)
+	    LAL_CALL(LALClusterSnglBurstTable(&stat, &coincidentEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
 	}
-
-      currentTrigger[0] = currentTrigger[0]->next;
-    }
-
-
-  /* cluster the events if asked to */
-  if(cluster && clusterchoice == clusterbypeaktimeandfreq)
-    {
-      if (noncoincident && noncoincidentEvents)
+      else if (cluster && clusterchoice == clusterbytimeandfreq)
 	{
-	  LAL_CALL(LALClusterSnglBurstTable(&stat, &noncoincidentEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
+	  if (noncoincident && noncoincidentEvents)
+	    {
+	      LAL_CALL(LALClusterSnglBurstTable(&stat, &noncoincidentEvents, NULL, XLALCompareSnglBurst), &stat);
+	    }
+	  if(coincidentEvents)
+	    LAL_CALL(LALClusterSnglBurstTable(&stat, &coincidentEvents,  NULL, XLALCompareSnglBurst), &stat);
 	}
-      if(coincidentEvents)
-	LAL_CALL(LALClusterSnglBurstTable(&stat, &coincidentEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
-    }
-  else if (cluster && clusterchoice == clusterbytimeandfreq)
-    {
-      if (noncoincident && noncoincidentEvents)
-	{
-	  LAL_CALL(LALClusterSnglBurstTable(&stat, &noncoincidentEvents, NULL, XLALCompareSnglBurst), &stat);
-	}
-      if(coincidentEvents)
-	LAL_CALL(LALClusterSnglBurstTable(&stat, &coincidentEvents,  NULL, XLALCompareSnglBurst), &stat);
-    }
 
-  /*****************************************************************
-   * open output xml file to write coincident triggers
-   *****************************************************************/
+      /*****************************************************************
+       * open output xml file to write coincident triggers
+       *****************************************************************/
+      if ( dtSlide < 0 )
+	  snprintf(outfileName, sizeof(outfileName)-1, "%s-BURCA_M_%lld_%s-%d-%d.xml", burstEventList[0]->ifo,-dtSlide,comment,searchsumm.searchSummaryTable->in_start_time.gpsSeconds,searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);	  
+      else
+	  snprintf(outfileName, sizeof(outfileName)-1, "%s-BURCA_P_%lld_%s-%d-%d.xml", burstEventList[0]->ifo,dtSlide,comment,searchsumm.searchSummaryTable->in_start_time.gpsSeconds,searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
 
-  snprintf(outfileName, sizeof(outfileName)-1, "%s-BURCA_%s-%d-%d.xml", burstEventList[0]->ifo,comment,searchsumm.searchSummaryTable->in_start_time.gpsSeconds, searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
-  outfileName[sizeof(outfileName)-1] = '\0';
-
-  LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
-
-  /* write the search cummary table */
-
-  LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, search_summary_table ), 
-	    &stat );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, searchsumm, 
-				    search_summary_table ), &stat );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
-
-  /*write the triggers */
-
-  LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
-  myTable.snglBurstTable = coincidentEvents;
-  LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
-				    sngl_burst_table), &stat);
-  LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
-  LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
-
-  /*****************************************************************
-   * open output xml file to write non coincident triggers
-   *****************************************************************/
-  if (noncoincident)
-    { 
-      snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s-NEGBURCA_%s-%d-%d.xml", burstEventList[0]->ifo,comment,searchsumm.searchSummaryTable->in_start_time.gpsSeconds, searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
-      outnoncfileName[sizeof(outnoncfileName)-1] = '\0';
-
-      LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outnoncfileName), &stat);
-      
+      outfileName[sizeof(outfileName)-1] = '\0';
+    
+      LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
+    
       /* write the search cummary table */
+    
       LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, search_summary_table ), 
 		&stat );
       LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, searchsumm, 
 					search_summary_table ), &stat );
       LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
-      
+    
       /*write the triggers */
-      
+
       LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
-      myTable.snglBurstTable = noncoincidentEvents;
+      myTable.snglBurstTable = coincidentEvents;
       LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
 					sngl_burst_table), &stat);
       LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
       LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
-    }
- 
-  /*****************************************************************
-   * clean up the memory that has been allocated 
-   *****************************************************************/
-  while ( coincidentEvents != NULL)
-    {
-      prevEvent = coincidentEvents;
-      coincidentEvents = coincidentEvents->next;
-      LALFree( prevEvent );
-    }
 
-  if (noncoincident){
-    while ( noncoincidentEvents != NULL)
-      {
-	prevEvent = noncoincidentEvents;
-	noncoincidentEvents = noncoincidentEvents->next;
-	LALFree( prevEvent );
-      } 
-  }
+      /*****************************************************************
+       * open output xml file to write non coincident triggers
+       *****************************************************************/
+      if (noncoincident)
+	{ 
+	  if ( dtSlide < 0 )
+	    snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s-NEGBURCA_M_%lld_%s-%d-%d.xml", burstEventList[0]->ifo,-dtSlide,comment,searchsumm.searchSummaryTable->in_start_time.gpsSeconds,searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);	  
+	  else
+	    snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s-NEGBURCA_P_%lld_%s-%d-%d.xml", burstEventList[0]->ifo,dtSlide,comment,searchsumm.searchSummaryTable->in_start_time.gpsSeconds,searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
+	  
+	  outnoncfileName[sizeof(outnoncfileName)-1] = '\0';
+	
+	  LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outnoncfileName), &stat);
+      
+	  /* write the search cummary table */
+	  LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, search_summary_table ), 
+		    &stat );
+	  LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, searchsumm, 
+					    search_summary_table ), &stat );
+	  LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+	
+	  /*write the triggers */
+      
+	  LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
+	  myTable.snglBurstTable = noncoincidentEvents;
+	  LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
+					    sngl_burst_table), &stat);
+	  LAL_CALL( LALEndLIGOLwXMLTable (&stat, &xmlStream), &stat);
+	  LAL_CALL( LALCloseLIGOLwXMLFile(&stat, &xmlStream), &stat);
+	}
+ 
+      /*****************************************************************
+       * clean up the memory that has been allocated 
+       *****************************************************************/
+      while ( coincidentEvents != NULL)
+	{
+	  prevEvent = coincidentEvents;
+	  coincidentEvents = coincidentEvents->next;
+	  LALFree( prevEvent );
+	}
+    
+      if (noncoincident)
+	{
+	  while ( noncoincidentEvents != NULL)
+	    {
+	      prevEvent = noncoincidentEvents;
+	      noncoincidentEvents = noncoincidentEvents->next;
+	      LALFree( prevEvent );
+	    } 
+	}
+    }
 
   for(j=0; j<2 ; j++)
     {
