@@ -635,3 +635,48 @@ LALClusterSnglBurstTable (
 	XLALClusterSnglBurstTable(list, bailoutfunc, testfunc);
 	RETURN(status);
 }
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+void
+XLALTimeSlideSnglBurst (
+	SnglBurstTable *triggerlist,
+	INT8 startTime,
+	INT8 stopTime,
+	int slideTime
+)
+/* </lalVerbatim> */
+{
+	int tStart = 0;
+	int tPeak = 0;
+	SnglBurstTable *currentEvent = NULL;
+
+	currentEvent = triggerlist;
+
+	while( currentEvent != NULL )
+	  {
+	    tStart = XLALGPStoINT8( &(currentEvent->start_time));
+	    tPeak = XLALGPStoINT8( &(currentEvent->peak_time));
+
+	    tStart += slideTime;
+	    tPeak += slideTime;
+
+	    if ( (tStart-startTime)*(tStart-stopTime) > 0 )
+	      {
+		if ( tStart < startTime )
+		  {
+		    tStart += stopTime - startTime;
+		    tPeak += stopTime - startTime;
+		  }
+		if ( tStart > stopTime )
+		  {
+		    tStart += startTime - stopTime;
+		    tPeak += startTime - stopTime;
+		  }
+	      }
+	  
+	    XLALINT8toGPS(&(currentEvent->start_time),tStart);
+	    XLALINT8toGPS(&(currentEvent->peak_time),tPeak);
+	  
+	    currentEvent = currentEvent->next;
+	  }
+}
