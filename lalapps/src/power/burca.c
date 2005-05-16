@@ -9,7 +9,7 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lalapps.h>
-   
+
 int snprintf(char *str, size_t size, const char *format, ...);
 long long int llabs(long long int j);
 
@@ -87,16 +87,11 @@ int main(int argc, char **argv)
   SnglBurstTable        **currentTrigger=NULL;
  
   SnglBurstAccuracy       accParams;
-  SearchSummaryTable      *searchSummary=NULL;
+  SearchSummaryTable      **searchSummary=NULL;
   MetadataTable           myTable;
   MetadataTable           searchsumm;
   LIGOLwXMLStream         xmlStream;
   INT4                    i, j;
-
-  REAL8                   tmpOutStart[MAXIFO];
-  REAL8                   tmpOutEnd[MAXIFO];
-  REAL8                   tmpInStart[MAXIFO];
-  REAL8                   tmpInEnd[MAXIFO];
 
   /* getopt arguments */
   struct option long_options[] =
@@ -130,12 +125,15 @@ int main(int argc, char **argv)
   set_debug_level( "2" );
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
 
-
   trigFile = (CHAR **) LALCalloc( MAXIFO * MAXFILES, sizeof(CHAR*) );
   burstEventList = (SnglBurstTable **) LALCalloc( 2, 
 						  sizeof(SnglBurstTable) );
   currentTrigger    = (SnglBurstTable **) LALCalloc( 2, 
 						     sizeof(SnglBurstTable) );
+ 
+  searchSummary = (SearchSummaryTable **) LALCalloc( 2,
+						    sizeof(SearchSummaryTable) );
+
   memset( &accParams, 0, sizeof(SnglBurstAccuracy) );
   memset( &nTrigFile, 0, MAXIFO * sizeof(INT4) );
 
@@ -300,53 +298,12 @@ int main(int argc, char **argv)
     fprintf(stderr,"Warning: %s\n", INCA_TIMEWARNING);
 
   /****************************************************************
-   * Create the search summary table [Info form ifo-a is only     *
-   * recorded as of now ]                                         *
+   * READ IN THE SEARCH SUMMARY INFO                              *
    ***************************************************************/
-
-  for(j=0 ; j<2; j++)
-    {	
-      /* Read in the search summary info of ifo*/
-      SearchSummaryTableFromLIGOLw( &searchSummary, *(trigFile+j*MAXFILES));
-
-      LAL_CALL( LALGPStoFloat( &stat,
-			       &tmpOutStart[j], &(searchSummary->out_start_time) ),&stat );
-      LAL_CALL( LALGPStoFloat( &stat,
-			       &tmpOutEnd[j], &(searchSummary->out_end_time) ),&stat );
-      LAL_CALL( LALGPStoFloat( &stat,
-			       &tmpInStart[j], &(searchSummary->in_start_time) ),&stat );
-      LAL_CALL( LALGPStoFloat( &stat,
-			       &tmpInEnd[j], &(searchSummary->in_end_time) ),&stat );
-
-
-      while (searchSummary)
-	{
-	  SearchSummaryTable *thisEvent;
-	  thisEvent = searchSummary;
-	  searchSummary = searchSummary->next;
-	  LALFree( thisEvent );
-	}
-      searchSummary = NULL; 
+  for(j=0 ; j<2 ; j++)
+    {
+      SearchSummaryTableFromLIGOLw( &searchSummary[j], *(trigFile+j*MAXFILES));
     }
-  /* Compare to check if the two IFO's have the same search summary info*/
-  if ((tmpOutStart[0] != tmpOutStart[1]) || (tmpInEnd[0] != tmpInEnd[1]))
-    {       
-      fprintf(stderr,"Warning: %s\n",  BURCA_SEARCHSUMWARNING);
-    }
-
-  searchsumm.searchSummaryTable = (SearchSummaryTable *)
-    LALCalloc( 1, sizeof(SearchSummaryTable) );
-
-  /* Store the info. for output with the output of burca*/
-  LAL_CALL( LALFloatToGPS( &stat,
-			   &(searchsumm.searchSummaryTable->out_start_time), &tmpOutStart[0] ),&stat );
-  LAL_CALL( LALFloatToGPS( &stat,
-			   &(searchsumm.searchSummaryTable->out_end_time), &tmpOutEnd[0] ),&stat );
-  LAL_CALL( LALFloatToGPS( &stat,
-			   &(searchsumm.searchSummaryTable->in_start_time), &tmpInStart[0] ),&stat );
-  LAL_CALL( LALFloatToGPS( &stat,
-			   &(searchsumm.searchSummaryTable->in_end_time), &tmpInEnd[0] ),&stat );
-
 
   /*****************************************************************
    * loop over input files for both ifos
@@ -565,9 +522,9 @@ int main(int argc, char **argv)
        * open output xml file to write coincident triggers
        *****************************************************************/
       if ( dtSlide < 0 )
-	  snprintf(outfileName, sizeof(outfileName)-1, "%s-BURCA_M_%lld_%s-%d-%d.xml", burstEventList[0]->ifo,-dtSlide,comment,searchsumm.searchSummaryTable->in_start_time.gpsSeconds,searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);	  
+	  snprintf(outfileName, sizeof(outfileName)-1, "%s-BURCA_M_%lld_%s-%d-%d.xml", searchSummary[0]->ifos,-dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);	  
       else
-	  snprintf(outfileName, sizeof(outfileName)-1, "%s-BURCA_P_%lld_%s-%d-%d.xml", burstEventList[0]->ifo,dtSlide,comment,searchsumm.searchSummaryTable->in_start_time.gpsSeconds,searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
+	  snprintf(outfileName, sizeof(outfileName)-1, "%s-BURCA_P_%lld_%s-%d-%d.xml", searchSummary[0]->ifos,dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);
 
       outfileName[sizeof(outfileName)-1] = '\0';
     
@@ -577,7 +534,8 @@ int main(int argc, char **argv)
     
       LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, search_summary_table ), 
 		&stat );
-      LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, searchsumm, 
+      myTable.searchSummaryTable = searchSummary[0];
+      LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, myTable, 
 					search_summary_table ), &stat );
       LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
     
@@ -596,20 +554,23 @@ int main(int argc, char **argv)
       if (noncoincident)
 	{ 
 	  if ( dtSlide < 0 )
-	    snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s-NEGBURCA_M_%lld_%s-%d-%d.xml", burstEventList[0]->ifo,-dtSlide,comment,searchsumm.searchSummaryTable->in_start_time.gpsSeconds,searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);	  
+	    snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s-NEGBURCA_M_%lld_%s-%d-%d.xml", searchSummary[0]->ifos,-dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);	  
 	  else
-	    snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s-NEGBURCA_P_%lld_%s-%d-%d.xml", burstEventList[0]->ifo,dtSlide,comment,searchsumm.searchSummaryTable->in_start_time.gpsSeconds,searchsumm.searchSummaryTable->in_end_time.gpsSeconds - searchsumm.searchSummaryTable->in_start_time.gpsSeconds);
+	  snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s-NEGBURCA_P_%lld_%s-%d-%d.xml", searchSummary[0]->ifos,dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds );
 	  
 	  outnoncfileName[sizeof(outnoncfileName)-1] = '\0';
 	
 	  LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outnoncfileName), &stat);
-      
+
 	  /* write the search cummary table */
+    
 	  LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, search_summary_table ), 
 		    &stat );
-	  LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, searchsumm, 
+	  myTable.searchSummaryTable = searchSummary[0];
+	  LAL_CALL( LALWriteLIGOLwXMLTable( &stat, &xmlStream, myTable, 
 					    search_summary_table ), &stat );
-	  LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
+	  LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );      
+
 	
 	  /*write the triggers */
       
@@ -654,13 +615,21 @@ int main(int argc, char **argv)
       for (i=0; i<nTrigFile[j] ; i++){
 	LALFree( trigFile[j*MAXFILES +i] );
       }
+
+      while (searchSummary[j])
+	{
+	  SearchSummaryTable *thisEvent;
+	  thisEvent = searchSummary[j];
+	  searchSummary[j] = searchSummary[j]->next;
+	  LALFree( thisEvent );
+	}
     }
 
-  LALFree( searchsumm.searchSummaryTable );
   LALFree( currentTrigger );
   LALFree( burstEventList );
   LALFree( trigFile );
-    
+  LALFree( searchSummary );
+ 
   LALCheckMemoryLeaks();
 
   return 0;
