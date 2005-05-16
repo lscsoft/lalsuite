@@ -825,8 +825,8 @@ void parse_command_line(
 
 		case 'f':
 		params->tfTilingInput.overlapFactor = atoi(optarg);
-		if(params->tfTilingInput.overlapFactor > params->tfTilingInput.minTimeBins ||  !is_power_of_2(params->tfTilingInput.overlapFactor)) {
-			sprintf(msg, "must be < params->tfTilingInput.minTimeBins(%i) (%i specified) and a power of 2", params->tfTilingInput.minTimeBins, params->tfTilingInput.overlapFactor);
+		if(params->tfTilingInput.overlapFactor < 0 ||  !is_power_of_2(params->tfTilingInput.overlapFactor)) {
+			sprintf(msg, "must be > 0 (%i specified) and a power of 2", params->tfTilingInput.overlapFactor);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
