@@ -732,6 +732,14 @@ LALClusterSnglBurstTable(
 	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
 );
 
+void
+XLALTimeSlideSnglBurst (
+	SnglBurstTable *triggerlist,
+	INT8 startTime,
+	INT8 stopTime,
+	int slideTime
+);
+
 #if 0
 <lalLaTeX>
 \vfill{\footnotesize\input{LIGOMetadataUtilsHV}}
