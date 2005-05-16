@@ -493,6 +493,8 @@ LALRandomInspiralSignal
 	     }
 	   }
 	 randIn->coalescenceTime = iMax;
+
+         normin.fCutoff = randIn->param.fFinal;
 	 LALInspiralWaveNormaliseLSO(status->statusPtr, &buff, &norm, &normin);
          CHECKSTATUSPTR(status);
 
