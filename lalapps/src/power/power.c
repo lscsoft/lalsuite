@@ -1641,6 +1641,8 @@ static void output_results(LALStatus *stat, char *file, MetadataTable *procTable
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
 
 	/* search summary table */
+	snprintf(searchsumm->searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
+	searchsumm->searchSummaryTable->nevents = XLALCountSnglBurst(burstEvent);
 	LAL_CALL(LALBeginLIGOLwXMLTable(stat, &xml, search_summary_table), stat);
 	LAL_CALL(LALWriteLIGOLwXMLTable(stat, &xml, *searchsumm, search_summary_table), stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(stat, &xml), stat);
