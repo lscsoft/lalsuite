@@ -89,7 +89,6 @@ int main(int argc, char **argv)
   SnglBurstAccuracy       accParams;
   SearchSummaryTable      **searchSummary=NULL;
   MetadataTable           myTable;
-  MetadataTable           searchsumm;
   LIGOLwXMLStream         xmlStream;
   INT4                    i, j;
 
@@ -530,8 +529,9 @@ int main(int argc, char **argv)
     
       LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfileName), &stat);
     
-      /* write the search cummary table */
-    
+      /* write the search cummary table[Note currently we only keep events from Ifo-a */
+      snprintf(searchSummary[0]->comment, LIGOMETA_COMMENT_MAX, "%s", comment); 
+      searchSummary[0]->nevents = XLALCountSnglBurst(coincidentEvents);   
       LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, search_summary_table ), 
 		&stat );
       myTable.searchSummaryTable = searchSummary[0];
@@ -540,7 +540,6 @@ int main(int argc, char **argv)
       LAL_CALL( LALEndLIGOLwXMLTable ( &stat, &xmlStream ), &stat );
     
       /*write the triggers */
-
       LAL_CALL( LALBeginLIGOLwXMLTable (&stat, &xmlStream, sngl_burst_table), &stat);
       myTable.snglBurstTable = coincidentEvents;
       LAL_CALL( LALWriteLIGOLwXMLTable (&stat, &xmlStream, myTable,
@@ -563,7 +562,8 @@ int main(int argc, char **argv)
 	  LAL_CALL( LALOpenLIGOLwXMLFile(&stat, &xmlStream, outnoncfileName), &stat);
 
 	  /* write the search cummary table */
-    
+	  snprintf(searchSummary[0]->comment, LIGOMETA_COMMENT_MAX, "%s", comment); 
+	  searchSummary[0]->nevents = XLALCountSnglBurst(noncoincidentEvents);    
 	  LAL_CALL( LALBeginLIGOLwXMLTable( &stat, &xmlStream, search_summary_table ), 
 		    &stat );
 	  myTable.searchSummaryTable = searchSummary[0];
