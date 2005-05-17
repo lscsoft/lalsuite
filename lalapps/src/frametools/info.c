@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <FrameL.h>
 
+const char *typestr( int type );
 const char *typestr( int type )
 {
   switch ( type )
@@ -75,7 +76,7 @@ int main( int argc, char *argv[] )
           fprintf( stdout, "\t%s: (crate %u, channel %u)",
               adc->name, adc->channelGroup, adc->channelNumber );
           if ( adc->data )
-            fprintf( stdout, ", %u %s points @ %f Hz", adc->data->nData,
+            fprintf( stdout, ", %ld %s points @ %f Hz", (long)adc->data->nData,
                 typestr( adc->data->type ), adc->sampleRate );
           fprintf( stdout, "\n" );
           adc = adc->next;
@@ -87,17 +88,19 @@ int main( int argc, char *argv[] )
         while ( proc )
         {
 #if defined FR_VERS && FR_VERS < 5000
-          fprintf( stdout, "\t%s: srate = %f Hz", proc->name,
+          fprintf( stdout, "\t%s: srate = %f Hz,", proc->name,
               proc->sampleRate );
+#else
+          fprintf( stdout, "\t%s:", proc->name );
 #endif
           if ( proc->data )
           {
             int dim;
-            fprintf( stdout, ", %u %s points [%s]", proc->data->nData,
+            fprintf( stdout, " %ld %s points [%s]", (long)proc->data->nData,
                 typestr( proc->data->type ), proc->data->unitY );
-            for ( dim = 0; dim < proc->data->nDim; ++dim )
-              fprintf( stdout, ", nx(%d) = %d dx(%d) = %f %s", dim,
-                  proc->data->nx[dim], dim, proc->data->dx[dim],
+            for ( dim = 0; dim < (int)proc->data->nDim; ++dim )
+              fprintf( stdout, ", nx(%d) = %ld dx(%d) = %f %s", dim,
+                  (long)proc->data->nx[dim], dim, proc->data->dx[dim],
                   proc->data->unitX[dim] );
           }
           fprintf( stdout, "\n" );

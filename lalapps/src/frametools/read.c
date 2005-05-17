@@ -78,57 +78,87 @@ static int writeFrVectData( FILE *fp, double x0, double dx, void *data,
   {
     case FR_VECT_C:
       for ( i = 0; i < nobj; ++i )
-        fprintf( fp, "%e\t%hd\n", x0 + i * dx, *((char *)data)++ );
+      {
+        char *val = data;
+        fprintf( fp, "%e\t%hd\n", x0 + i * dx, val[i] );
+      }
       break;
     case FR_VECT_2S:
       for ( i = 0; i < nobj; ++i )
-        fprintf( fp, "%e\t%d\n", x0 + i * dx, *((short *)data)++ );
+      {
+        short *val = data;
+        fprintf( fp, "%e\t%d\n", x0 + i * dx, val[i] );
+      }
       break;
     case FR_VECT_4S:
       for ( i = 0; i < nobj; ++i )
-        fprintf( fp, "%e\t%d\n", x0 + i * dx, *((int *)data)++ );
+      {
+        int *val = data;
+        fprintf( fp, "%e\t%d\n", x0 + i * dx, val[i] );
+      }
       break;
     case FR_VECT_8S:
       for ( i = 0; i < nobj; ++i )
-        fprintf( fp, "%e\t%ld\n", x0 + i * dx, *((FRLONG *)data)++ );
+      {
+        FRLONG *val = data;
+        fprintf( fp, "%e\t%ld\n", x0 + i * dx, (long)val[i] );
+      }
       break;
     case FR_VECT_1U:
       for ( i = 0; i < nobj; ++i )
-        fprintf( fp, "%e\t%c\n", x0 + i * dx, *((unsigned char *)data)++ );
+      {
+        unsigned char *val = data;
+        fprintf( fp, "%e\t%c\n", x0 + i * dx, val[i] );
+      }
       break;
     case FR_VECT_2U:
       for ( i = 0; i < nobj; ++i )
-        fprintf( fp, "%e\t%hu\n", x0 + i * dx, *((unsigned short *)data)++ );
+      {
+        unsigned short *val = data;
+        fprintf( fp, "%e\t%hu\n", x0 + i * dx, val[i] );
+      }
       break;
     case FR_VECT_4U:
       for ( i = 0; i < nobj; ++i )
-        fprintf( fp, "%e\t%u\n", x0 + i * dx, *((unsigned int *)data)++ );
+      {
+        unsigned int *val = data;
+        fprintf( fp, "%e\t%u\n", x0 + i * dx, val[i] );
+      }
       break;
       return sizeof( unsigned int );
     case FR_VECT_8U:
       for ( i = 0; i < nobj; ++i )
-        fprintf( fp, "%e\t%lu\n", x0 + i * dx, *((FRULONG *)data)++ );
+      {
+        FRULONG *val = data;
+        fprintf( fp, "%e\t%lu\n", x0 + i * dx, (unsigned long)val[i] );
+      }
       break;
     case FR_VECT_4R:
       for ( i = 0; i < nobj; ++i )
-        fprintf( fp, "%e\t%e\n", x0 + i * dx, *((float *)data)++ );
+      {
+        float *val = data;
+        fprintf( fp, "%e\t%e\n", x0 + i * dx, val[i] );
+      }
       break;
     case FR_VECT_8R:
       for ( i = 0; i < nobj; ++i )
-        fprintf( fp, "%e\t%e\n", x0 + i * dx, *((double *)data)++ );
+      {
+        double *val = data;
+        fprintf( fp, "%e\t%e\n", x0 + i * dx, val[i] );
+      }
       break;
     case FR_VECT_C8:
       for ( i = 0; i < nobj; ++i )
       {
-        fprintf( fp, "%e\t%e\t", x0 + i * dx, *((float *)data)++ );
-        fprintf( fp, "%e\n", *((float *)data)++ );
+        float *val = data;
+        fprintf( fp, "%e\t%e\t%e\n", x0 + i * dx, val[2*i], val[2*i+1] );
       }
       break;
     case FR_VECT_C16:
       for ( i = 0; i < nobj; ++i )
       {
-        fprintf( fp, "%e\t%e\t", x0 + i * dx, *((double *)data)++ );
-        fprintf( fp, "%e\n", *((double *)data)++ );
+        double *val = data;
+        fprintf( fp, "%e\t%e\t%e\n", x0 + i * dx, val[2*i], val[2*i+1] );
       }
       break;
     default:
@@ -144,11 +174,11 @@ static int writeFrVect( FILE *fp, struct FrVect *v )
   char *ptr;
   fprintf( fp, "# name  = %s\n", v->name ? v->name : "" );
   fprintf( fp, "# type  = %s\n", typestr( v->type ) );
-  fprintf( fp, "# nData = %d\n", v->nData );
+  fprintf( fp, "# nData = %ld\n", (long)v->nData );
   fprintf( fp, "# nDim  = %d\n", v->nDim );
-  fprintf( fp, "# dims  = %d", v->nx[0] );
+  fprintf( fp, "# dims  = %ld", (long)v->nx[0] );
   for ( dim = 1; dim < v->nDim; ++dim )
-    fprintf( fp, ", %u", v->nx[dim] );
+    fprintf( fp, ", %ld", (long)v->nx[dim] );
   fprintf( fp, "\n" );
   fprintf( fp, "# unitX = %s", v->unitX[0] ? v->unitX[0] : "" );
   for ( dim = 1; dim < v->nDim; ++dim )
@@ -243,6 +273,8 @@ int main( int argc, char *argv[] )
             proc->name ? proc->name : "" );
         fprintf( fp, "## comment          = %s\n",
             proc->comment ? proc->comment : "" );
+        fprintf( fp, "## GPS time (s)     = %u.%09u\n", frame->GTimeS,
+            frame->GTimeN );
         fprintf( fp, "## freq shift (Hz)  = %f\n", proc->fShift );
         if ( proc->data )
         {
