@@ -10,6 +10,9 @@
 #if !defined HAVE_LIBLALFRAME
 #include <stdio.h>
 int main(void) {fputs("disabled, no lal frame library support.\n", stderr);return 1;}
+#elif !defined HAVE_FRAMEL_H
+#include <stdio.h>
+int main(void) {fputs("disabled, no frame library support.\n", stderr);return 1;}
 #else
 
 #include <unistd.h>
@@ -39,10 +42,16 @@ int main(void) {fputs("disabled, no lal frame library support.\n", stderr);retur
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 
+#include <FrameL.h>
+#include <series.h>
+
 extern char *optarg;
 extern int optind, opterr, optopt;
 
 #define MAXLINESEGS 10000                 /* Maximum number of science segments */
+
+#define A_CHANNEL "CAL-CAV_FAC"  /* name of alpha channel in frames */
+#define AB_CHANNEL "CAL-OLOOP_FAC"  /* name of alphabeta channel in frames */
 
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
@@ -64,6 +73,8 @@ struct CommandLineArgsTag {
   char *darm_chan;         /* darm channel name */ 
   char *asq_chan;          /* asq channel name */
   char *alphafile;         /* file to store factors */
+  int   outputframes;      /* flag to indicate that frame file output is requested */
+  char *version;           /* version of this calibration: needed for frame file output name */
 } CommandLineArgs;
 
 typedef
@@ -81,6 +92,7 @@ SegmentList SL[MAXLINESEGS];        /* Structure containing science segement inf
 INT4 numsegs;                       /* number of science segments */
 LIGOTimeGPS gpsepoch;               /* Global variables epoch and duration used to calculate the calibration factors */
 INT4 duration;                      /* they are set every science segment to GPS start time and duration of segment */
+char ifo[3];                        /* interferometer name: needed for frame file channels and output name */
 } GlobalVariables;
 
 /***************************************************************************/
@@ -117,6 +129,10 @@ int i;
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   if (ReadFiles(CommandLineArgs)) return 3;
 
+  /* get ifo name from one of the channel names (choose as_q) */
+  strncpy( GV.ifo, CommandLineArgs.asq_chan, 2 );
+  GV.ifo[2] = 0;
+
   /* create Frame cache, open frame stream and delete frame cache */
   LALFrCacheImport(&status,&framecache,CommandLineArgs.FrCacheFile);
   TESTSTATUS( &status );
@@ -151,6 +167,10 @@ int i;
 
 int GetFactors(struct CommandLineArgsTag CLA)
 {
+  struct series a;
+  struct series ab;
+  char a_name[64];
+  char ab_name[64];
 
 FrPos pos1;
 
@@ -174,6 +194,8 @@ REAL4 magexc,magasq,magdarm;
 
 INT4 k,m;
 LIGOTimeGPS localgpsepoch=GV.gpsepoch; /* Local variable epoch used to calculate the calibration factors */
+LIGOTimeGPS tend; /* end time */
+INT8 tendns; /* end time in nanoseconds */
 long double gtime=(long double)(localgpsepoch.gpsSeconds+(long double)localgpsepoch.gpsNanoSeconds*1E-9);
  
 FILE *fpAlpha=NULL;
@@ -237,6 +259,30 @@ FILE *fpAlpha=NULL;
   winparams.length=(INT4)(CLA.t/exc.deltaT +0.5);
   LALWindow(&status,excwin,&winparams);
   TESTSTATUS( &status );
+
+  /* setup series for frame file output */
+  snprintf( a_name, sizeof( a_name ), "%s:" A_CHANNEL, GV.ifo );
+  snprintf( ab_name, sizeof( ab_name ), "%s:" AB_CHANNEL, GV.ifo );
+  tendns  = (INT8)(1000000000) * (INT8)(GV.gpsepoch.gpsSeconds) + (INT8)(GV.gpsepoch.gpsNanoSeconds);
+  tendns += (INT8)(1e9 * GV.duration);
+  tend.gpsSeconds = tendns / (INT8)(1000000000);
+  tend.gpsNanoSeconds = tendns % (INT8)(1000000000);
+  a.name  = a_name;
+  ab.name = ab_name;
+  a.unit  = ab.unit = "none";
+  a.dom   = ab.dom  = Time;
+  a.type  = ab.type = FR_VECT_8C;
+  a.tbeg  = ab.tbeg = GV.gpsepoch;
+  a.tend  = ab.tend = tend;
+  a.step  = ab.step = CLA.t;
+  a.size  = ab.size = (INT4)(GV.duration/CLA.t);
+  a.data  = calloc( 2 * a.size, sizeof( *a.data ) );
+  ab.data = calloc( 2 * ab.size, sizeof( *ab.data ) );
+  if ( ! a.data || ! ab.data )
+  {
+    fprintf(stderr,"Memory allocation error!\n");
+    return 1;
+  }
 
   /* Open user input factors file */
   fpAlpha=fopen(CLA.alphafile,"w");
@@ -313,12 +359,34 @@ FILE *fpAlpha=NULL;
 	      factors.darm.re*2/CLA.t,factors.darm.im*2/CLA.t,
 	      factors.exc.re*2/CLA.t,factors.exc.im*2/CLA.t);
  
+      /* put factors into series for frame output */
+      a.data[2*m]    = factors.alpha.re;
+      a.data[2*m+1]  = factors.alpha.im;
+      ab.data[2*m]   = factors.alphabeta.re;
+      ab.data[2*m+1] = factors.alphabeta.im;
+
       gtime += CLA.t;	
       localgpsepoch.gpsSeconds = (INT4)gtime;
       localgpsepoch.gpsNanoSeconds = (INT4)((gtime-(INT4)gtime)*1E+09);      
     }
 
+  /* output frame data if desired */
+  if ( CLA.outputframes )
+  {
+    struct FrFile *frfile = NULL;
+    struct FrameH *frame = NULL;
+    char frfilename[256];
+    sprintf( frfilename, "%c-CAL_FAC_%s_%s-%d-%d.gwf", GV.ifo[0], CLA.version, GV.ifo, GV.gpsepoch.gpsSeconds, (int)ceil(GV.duration) );
+    frfile = FrFileONew( frfilename, 0 );
+    frame = fr_add_proc_data( frame, &a );
+    frame = fr_add_proc_data( frame, &ab );
+    FrameWrite( frame, frfile );
+    FrFileOEnd( frfile );
+  }
+
   /* Clean up */
+  free( a.data );
+  free( ab.data );
   LALDestroyVector(&status,&darm.data);
   TESTSTATUS( &status );
   LALDestroyVector(&status,&exc.data);
@@ -394,9 +462,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->darm_chan=NULL;
   CLA->asq_chan=NULL;
   CLA->alphafile=NULL;
+  CLA->outputframes=0;
+  CLA->version=NULL;
 
   /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt(argc, argv,"hf:F:S:A:E:D:b:t:i:j:k:l:"))!=-1))
+  while (!errflg && ((c = getopt(argc, argv,"hof:F:S:A:E:D:b:t:i:j:k:l:v:"))!=-1))
     switch (c) {
     case 'f':
       /* calibration line frequency */
@@ -446,9 +516,20 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* name of darm channel */
       CLA->alphafile=optarg;
       break;    
+    case 'o':
+      /* output frame files */
+      CLA->outputframes=1;
+      break;
+    case 'v':
+      /* calibration version string */
+      CLA->version=optarg;
+      break;
    case 'h':
       /* print usage/help message */
-      fprintf(stdout,"All arguments are required. They are:\n");
+      fprintf(stdout,"Flags and optional arguments are:\n");
+      fprintf(stdout,"\t-o\t     \t Output frame files.\n");
+      fprintf(stdout,"\t-v\tSTRING\t Calibration version for frame files.  Required with -o flag.\n");
+      fprintf(stdout,"All of the following arguments are required. They are:\n");
       fprintf(stdout,"\t-f\tFLOAT\t Calibration line frequency in Hz.\n");
       fprintf(stdout,"\t-t\tFLOAT\t Time interval to calculate factors in seconds (>0.0005).\n");
       fprintf(stdout,"\t-i\tFLOAT\t Real part of the open loop gain at the calibration line frequency.\n");
@@ -549,6 +630,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try ./ComputeFactors -h \n");
       return 1;
     }      
+   if (CLA->outputframes)
+   {
+     if (!CLA->version)
+     {
+       fprintf(stderr,"Must specify calibration version string.\n");
+       fprintf(stderr,"Try ./ComputeFactors -h \n");
+       return 1;
+     }
+   }
 
   return errflg;
 }
