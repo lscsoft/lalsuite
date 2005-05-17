@@ -13,6 +13,12 @@ stochastic.c:
   so that all bands can be analysed without rereading all the data in
 	for each band
 
+* add loop so that the code reads in the maximum amount of data that can
+  be stored within a specified amount of data, analyses that data, and
+	the reads in more data etc... this will allow the code to analyse the
+	science segments as a whole and reduce the complexity of the pipeline
+	dag scripts
+
 stopp.c:
 
 * add support for combining statistics from overlapping hann windows
@@ -30,6 +36,15 @@ stochastic_pipe.in/stochastic_bayes.in:
 
 * enable support for GEO/LIGO correlations, script currently checks for
   calibration information for all detectors - which GEO doesn't need
+
+* when the data is split up into segments to analyse, no overlapping of
+  data is performed - this means that there are 60s of data not analysed
+	at the end of one segment and the start of the next leading to 120s of
+	data being lost everytime a science segment is split
+
+stochastic.py:
+
+* get local modifications of LSCdataFind classes into glues pipeline.py
 
 General:
 
