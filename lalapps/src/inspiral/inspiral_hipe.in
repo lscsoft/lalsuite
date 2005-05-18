@@ -2609,32 +2609,32 @@ if num_slides:
   # H1-H2
   h1_h2_double_second_coinc_slides_nodes = double_coinc(h1_analyzed_h1h2,'H1',
     h2_analyzed_h1h2,'H2',h1_h2_double_data,thinca2_slides_h1h2_job,dag,
-    do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
+    do_second_coinc, do_insp_veto, usertag, 'H1H2', num_slides)
   
   # H1-L1
   h1_l1_double_second_coinc_slides_nodes = double_coinc(h1_analyzed_h1l1,'H1',
     l1_analyzed_h1l1,'L1',h1_l1_double_data,thinca2_slides_h1l1_job,dag,
-    do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
+    do_second_coinc, do_insp_veto, usertag, 'H1L1', num_slides)
 
   # H2-L1
   h2_l1_double_second_coinc_slides_nodes = double_coinc(h2_analyzed_h2l1,'H2',
     l1_analyzed_h2l1,'L1',h2_l1_double_data,thinca2_slides_h2l1_job,dag,
-    do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
+    do_second_coinc, do_insp_veto, usertag, 'H2L1', num_slides)
 
   # H1-G1
   h1_g1_double_second_coinc_slides_nodes = double_coinc(h1_analyzed_h1g1,'H1',
     g1_analyzed_h1g1,'G1',g1_h1_double_data,thinca2_slides_h1g1_job,dag,
-    do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
+    do_second_coinc, do_insp_veto, usertag, 'H1G1', num_slides)
  
   # H2-G1
   h2_g1_double_second_coinc_slides_nodes = double_coinc(h2_analyzed_h2g1,'H2',
     g1_analyzed_h2g1,'G1',g1_h2_double_data,thinca2_slides_h2g1_job,dag,
-    do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
+    do_second_coinc, do_insp_veto, usertag, 'H2G1', num_slides)
 
   # L1-G1
   l1_g1_double_second_coinc_slides_nodes = double_coinc(l1_analyzed_l1g1,'L1',
     g1_analyzed_l1g1,'G1',g1_l1_double_data,thinca2_slides_l1g1_job,dag,
-    do_second_coinc, do_insp_veto, usertag, ifotag, num_slides)
+    do_second_coinc, do_insp_veto, usertag, 'L1G1', num_slides)
 
 print "done"
 
@@ -2747,22 +2747,22 @@ if num_slides:
   # H1-H2-L1
   h1_h2_l1_triple_second_coinc_slides_nodes = triple_coinc(h1_analyzed_h1h2l1,'H1',
     h2_analyzed_h1h2l1,'H2',l1_analyzed_h1h2l1,'L1',h1_h2_l1_triple_data,
-    thinca2_slides_h1h2l1_job,dag,do_second_coinc,do_insp_veto,usertag,ifotag,num_slides)
+    thinca2_slides_h1h2l1_job,dag,do_second_coinc,do_insp_veto,usertag,'H1H2L1',num_slides)
 
   # H1-H2-G1
   h1_h2_g1_triple_second_coinc_slides_nodes = triple_coinc(h1_analyzed_h1h2g1,'H1',
     h2_analyzed_h1h2g1,'H2',g1_analyzed_h1h2g1,'G1',h1_h2_g1_triple_data,
-    thinca2_slides_h1h2g1_job,dag,do_second_coinc,do_insp_veto,usertag,ifotag,num_slides)
+    thinca2_slides_h1h2g1_job,dag,do_second_coinc,do_insp_veto,usertag,'H1H2G1',num_slides)
 
   # H1-L1-G1
   h1_l1_g1_triple_second_coinc_slides_nodes = triple_coinc(h1_analyzed_h1l1g1,'H1',
     l1_analyzed_h1l1g1,'L1',g1_analyzed_h1l1g1,'G1',h1_l1_g1_triple_data,
-    thinca2_slides_h1l1g1_job,dag,do_second_coinc,do_insp_veto,usertag,ifotag,num_slides)
+    thinca2_slides_h1l1g1_job,dag,do_second_coinc,do_insp_veto,usertag,'H1L1G1',num_slides)
 
   # H2-L1-G1
   h2_l1_g1_triple_second_coinc_slides_nodes = triple_coinc(h2_analyzed_h2l1g1,'H2',
     l1_analyzed_h2l1g1,'L1',g1_analyzed_h2l1g1,'G1',h2_l1_g1_triple_data,
-    thinca2_slides_h2l1g1_job,dag,do_second_coinc,do_insp_veto,usertag,ifotag,num_slides)
+    thinca2_slides_h2l1g1_job,dag,do_second_coinc,do_insp_veto,usertag,'H2L1G1',num_slides)
 
 print "done"
 
@@ -2824,7 +2824,7 @@ if num_slides:
   h1_h2_l1_g1_second_coinc_slides_nodes = quadro_coinc(h1_analyzed_h1h2l1g1,'H1',
     h2_analyzed_h1h2l1g1,'H2',l1_analyzed_h1h2l1g1,'L1',g1_analyzed_h1h2l1g1,'G1',
     h1_h2_l1_g1_data,thinca2_slides_h1h2l1g1_job,dag,do_second_coinc,do_insp_veto,
-    usertag,ifotag,num_slides)
+    usertag,'H1H2L1G1',num_slides)
 
 print "done"
 
