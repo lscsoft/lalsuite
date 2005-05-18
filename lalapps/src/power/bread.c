@@ -11,6 +11,8 @@
 #include <lal/FrameCache.h>
 #include <lalapps.h>
 
+int snprintf(char *str, size_t size, const char *format, ...);
+
 RCSID("$Id$");
 
 #include <unistd.h>
@@ -440,6 +442,28 @@ static INT8 read_search_summary_start_end(LALStatus *stat, char *filename, INT8 
 }
 
 
+static void populate_search_summary_ifo(char *filename, MetadataTable *searchsumm)
+{
+	SearchSummaryTable *searchSummary = NULL;
+	SearchSummaryTable *tmp;
+
+	SearchSummaryTableFromLIGOLw(&searchSummary, filename);
+
+	if(!searchSummary){
+	  fprintf(stderr,"No search summary table found in input file\n");
+	  exit(1);
+	}
+
+	snprintf(searchsumm->searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", searchSummary->ifos);
+
+	while(searchSummary) {
+		tmp = searchSummary;
+		searchSummary = searchSummary->next;
+		LALFree(tmp);
+	}
+}
+
+
 /*
  * Function tests if the given interval contains any playground data
  * FIXME: check if doing S2 or S3
@@ -687,10 +711,14 @@ int main(int argc, char **argv)
 	 */
 	/* create the search summary table */
 	searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
-	if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds)
+	if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds){
+	  searchsumm.searchSummaryTable->in_start_time.gpsSeconds = options.trigStartTime;
 	  searchsumm.searchSummaryTable->out_start_time.gpsSeconds = options.trigStartTime;
-	if(!searchsumm.searchSummaryTable->out_end_time.gpsSeconds)
+	}
+	if(!searchsumm.searchSummaryTable->out_end_time.gpsSeconds){
+	  searchsumm.searchSummaryTable->in_end_time.gpsSeconds = options.trigStopTime;
 	  searchsumm.searchSummaryTable->out_end_time.gpsSeconds = options.trigStopTime;
+	}
 
 
 	/*
@@ -739,6 +767,9 @@ int main(int argc, char **argv)
 
 		timeAnalyzed += read_search_summary_start_end(&stat, line, NULL, NULL, fpout);
 
+
+		populate_search_summary_ifo(line, &searchsumm);
+		
 		/*
 		 * Read the Sngl_Burst table
 		 */
@@ -803,6 +834,7 @@ int main(int argc, char **argv)
 	LAL_CALL(LALOpenLIGOLwXMLFile(&stat, &xmlStream, outfile), &stat);
 
 	/* search summary table */
+	searchsumm.searchSummaryTable->nevents = XLALCountSnglBurst(burstEventList);
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, search_summary_table), &stat);
 	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, searchsumm, search_summary_table), &stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
