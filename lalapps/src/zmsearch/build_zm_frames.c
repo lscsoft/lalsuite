@@ -40,7 +40,7 @@ RCSID( "$Id$" );
         "--nfiles #files --frame-length framelength(sec:Must be power of 2) " \
         "[--verbose] [--printrawdata] [--printinterpolateddata] [--help]\n"
 
-#define MAX_LENGTH 32768
+#define MAX_LENGTH 81920
 #define TRUE  1
 #define FALSE 0
 
@@ -196,7 +196,7 @@ static int readWarren(const char* fname,  float **time,  float **amplitude, floa
   fp = fopen(fname,"r");
 
   if(!fp){
-    fprintf(stderr,"File %s doesn't exit\n",fname);
+    fprintf(stderr,"File %s doesn't exist\n",fname);
     exit(6);
   }
 
@@ -248,13 +248,13 @@ static void build_interpolate ( float **h, float **t, float **h_intpolat, float 
 
   for(i=0;i<nfiles;i++){
     for(j=0;j<l;j++){
-      t_intpolat[i][j] = t[i][0] + j*dt;
+      t_intpolat[i][j] = j*dt;
       h_intpolat[i][j] = 0;
     }
   }
 
   for(i=0;i<nfiles;i++){
-    for(j=0;t_intpolat[i][j]<=t[i][N[i]-1];j++){
+    for(j=0;t_intpolat[i][j]<t[i][N[i]-1];j++){
       for(k=0;t[i][k]<=t_intpolat[i][j];k++){
       }
 
@@ -631,8 +631,11 @@ int main(int argc, char **argv)
 
   /* allocate some memory */
   t_intpolat = matrix(nfiles,l);
+  memset( t_intpolat[0], 0, nfiles*l*sizeof(float) );
   hplus_intpolat = matrix(nfiles,l);
+  memset( hplus_intpolat[0], 0, nfiles*l*sizeof(float) );
   hcross_intpolat = matrix(nfiles,l);
+  memset( hcross_intpolat[0], 0, nfiles*l*sizeof(float) );
 
   build_interpolate(hplus, t, hplus_intpolat, t_intpolat, dt, l, N, nfiles);
   build_interpolate(hcross, t, hcross_intpolat, t_intpolat, dt, l, N, nfiles);
