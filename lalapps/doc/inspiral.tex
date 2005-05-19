@@ -54,7 +54,7 @@
 \option{--chisq-threshold}~\parm{X} \newline \hspace*{0.5in}          
 \option{--cluster-method}~\parm{MTHD} \newline \hspace*{0.5in}          
 [\option{--cluster-window}~\parm{SEC}] \newline \hspace*{0.5in}        
-\option{--enable-output} \newline \hspace*{0.5in}                
+[\option{--maximization-interval}~\parm{NSEC}] \newline \hspace*{0.5in}\option{--enable-output} \newline \hspace*{0.5in}                
 \option{--disable-output} \newline \hspace*{0.5in}                
 [\option{--trig-start-time}~\parm{SEC}] \newline \hspace*{0.5in}       
 [\option{--trig-end-time}~\parm{SEC}] \newline \hspace*{0.5in}        
@@ -220,6 +220,11 @@ $(tmplt|window|noClustering)$
 
 \item[\option{--cluster-window}~\parm{SEC}] Optional. If \parm{MTHD} is
 set to window, then the window length must be specified in seconds \parm{SEC}.
+
+\item[\option{--maximization-interval}~\parm{NSEC}] Optional. The
+maximization interval is specified in nanoseconds \parm{NSEC}.  When
+this option is invoked,  the SNR is maximized in fixed intervals of
+\parm{NSEC} after all templates have been filtered against all segments. A typical number might be \parm{NSEC}=10000000 which is 10ms.
 
 \item[\option{--enable-output}] Write the results to a LIGO LW XML file.
 
