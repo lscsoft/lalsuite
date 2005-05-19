@@ -600,6 +600,9 @@ int main( int argc, char *argv[] )
   {
     /* no triggers read in so triggered bank will be empty */
     fprintf( stdout, "No triggers read in\n");
+
+    /* set numTriggers in case any cuts are made in future */
+    numTriggers = 0;
     goto cleanexit;
   }
 
@@ -633,6 +636,9 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout, 
         "No triggers remain after time and playground cuts.\n" );
+
+    /* set numTriggers after cuts were applied */
+    numTriggers = 0;
     goto cleanexit;
   }
 
