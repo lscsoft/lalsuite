@@ -26,8 +26,8 @@
 #include <FrameL.h>
 
 /* Define the parameters to make the window */
-#define WINSTART 150
-#define WINEND   200
+#define WINSTART 4096
+#define WINEND   8192
 #define WINLEN (WINEND-WINSTART)
 /* with i ranging from 0 to WINLEN... */
 #define WINFUN(i) ((sin(i*LAL_PI/(WINLEN)-LAL_PI_2)+1.0)/2.0)
@@ -61,7 +61,7 @@
 #define QUANTIZATION_TEST 0
 
 /* track memory usage under linux */
-#define TRACKMEMUSE 1
+#define TRACKMEMUSE 0
 
 /* make calibrated SFTs starting with calibrated data */
 #define USETDCALDATA 1
@@ -164,7 +164,7 @@ int getenvval(const char *valuename){
   else
     retval=0;
 
-  printf("Environment variable %s = %d\n", valuename, retval);
+  printf("%%Environment variable %s = %d\n", valuename, retval);
 
   return retval;
 }
@@ -455,7 +455,7 @@ int main(int argc,char *argv[]){
   exit(0);
 #endif
 
-  printf("Normal startup\n");
+  printf("%%Normal startup\n");
   fflush(stdout);
   
   /* check command syntax */
@@ -740,6 +740,11 @@ int main(int argc,char *argv[]){
 #endif
       }
 
+/*       for (i=0; i<npts; i++) */
+/* 	fprintf(stdout,"%e\n",chan.data->data[i]); */
+
+
+
 #if PRINT50
       print50(chan.data->data, "LAL_TIMESERIES");
 #endif
@@ -960,7 +965,7 @@ int main(int argc,char *argv[]){
     
   LALCheckMemoryLeaks();
   
-  printf("Normal exit\n");
+  printf("%%Normal exit\n");
   fflush(stdout);
  
   return 0;
