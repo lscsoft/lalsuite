@@ -192,6 +192,9 @@ REAL4 bankMaxMass       = -1;           /* maximum mass of injection    */
 CHAR  *userTag          = NULL;         /* string the user can tag with */
 CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
 CHAR   fileName[FILENAME_MAX];          /* name of output files         */
+INT4   maximizationInterval = 0;        /* Max over template in this    */ 
+                                        /* maximizationInterval Nanosec */ 
+                                        /* interval                     */
 INT8   trigStartTimeNS  = 0;            /* write triggers only after    */
 INT8   trigEndTimeNS    = 0;            /* write triggers only before   */
 INT8   outTimeNS        = 0;            /* search summ out time         */
@@ -1967,7 +1970,7 @@ int main( int argc, char *argv[] )
           }
           if ( vrbflg ) 
             fprintf( stdout, "epoch = %d\n",
-                fcFilterInput->segment->data->epoch );
+                fcFilterInput->segment->data->epoch.gpsSeconds );
         }
         else
         {
@@ -2409,6 +2412,12 @@ int main( int argc, char *argv[] )
       if ( vrbflg ) fprintf( stdout, "done\n" );
     }
 
+    if (maximizationInterval)
+    {
+      XLALMaxSnglInspiralOverIntervals( &(savedEvents.snglInspiralTable),
+          maximizationInterval);
+    }
+    
     /* if we haven't thrown all the triggers away, write sngl_inspiral table */
     if ( savedEvents.snglInspiralTable )
     {
@@ -2548,6 +2557,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --cluster-method MTHD        set maximize over chirp MTHD (tmplt|window|noClustering)\n"\
 "  --cluster-window SEC         set length of clustering time window if required\n"\
 "\n"\
+"  --maximization-interval NSEC set length of maximization interval\n"\
+"\n"\
 "  --enable-output              write the results to a LIGO LW XML file\n"\
 "  --disable-output             do not write LIGO LW XML output file\n"\
 "  --trig-start-time SEC        only output triggers after GPS time SEC\n"\
@@ -2646,6 +2657,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"version",                 no_argument,       0,                'V'},
     {"cluster-method",          required_argument, 0,                '*'},  
     {"cluster-window",          required_argument, 0,                '#'},  
+    {"maximization-interval",   required_argument, 0,                '@'},  
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -3513,7 +3525,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
-      case '#':								/*XXX*/
+      case '#':
         clusterWindow = (REAL4) atof( optarg );
         if ( clusterWindow <= 0 )
         {
@@ -3526,7 +3538,22 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "float", "%e", clusterWindow );
         break;
 
-
+      case '@':
+        {
+          long int maxns = atol( optarg );
+          if ( maxns < 0 )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "maximization interval is less than 0 nsecs: "
+                "(%ld nsecs specified)\n",
+                long_options[option_index].name, maxns );
+            exit( 1 );
+          }
+          maximizationInterval = (INT4) maxns;
+          ADD_PROCESS_PARAM( "int", "%ld", maxns );
+        }
+        break;
+          
       case '?':
         exit( 1 );
         break;
