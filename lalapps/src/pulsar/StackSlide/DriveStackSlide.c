@@ -127,7 +127,10 @@
 /* 05/13/05 gam; if (params->parameterSpaceFlag & 2) > 0 rotate skyPosData into galactic plane */
 /* 05/14/05 gam; Change unused numSUMsPerCall to linesAndHarmonicsFile; file with instrument line and harmonic spectral disturbances data. */
 /* 05/14/05 gam; if (params->normalizationFlag & 32) > 0 then clean SFTs using info in linesAndHarmonicsFile */
-
+/* 05/19/05 gam; Add INT4 *sumBinMask; params->sumBinMask == 0 if bin should be excluded from search or Monte Carlo due to cleaning */
+/* 05/19/05 gam; In LALFindStackSlidePeaks set binFlag = 0 if bin excluded; initialize binFlag with sumBinMask. */
+/* 05/19/05 gam; In LALUpdateLoudestFromSUMs exclude bins with sumBinMask == 0. */
+    
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -151,6 +154,7 @@
 /* #define DEBUG_INPUTBLK_CODE */
 /* #define DEBUG_NORMALIZEBLKS */
 /* #define DEBUG_CLEANLINESANDHARMONICS */
+/* #define DEBUG_SUMBINMASK */
 /* #define DEBUG_CALIBRATEBLKS */
 /* #define DEBUG_TESTCASE */
 /* #define INCLUDE_INTERNALLALINITBARYCENTER */
@@ -882,6 +886,19 @@ params->nMaxTperi=0;
 	}
    }
 
+  /* 05/19/05 gam; Maximum shift in frequency due to spindown */
+  params->maxSpindownFreqShift = 0;
+  for(i=0;i<params->numSpinDown;i++)
+  {
+        switch(i) {
+	   case  0: params->maxSpindownFreqShift += ((REAL8)(params->numFDeriv1-1))*fabs(params->deltaFDeriv1)*params->duration; break;
+	   case  1: params->maxSpindownFreqShift += ((REAL8)(params->numFDeriv2-1))*fabs(params->deltaFDeriv2)*pow(params->duration,2.0); break;
+	   case  2: params->maxSpindownFreqShift += ((REAL8)(params->numFDeriv3-1))*fabs(params->deltaFDeriv3)*pow(params->duration,3.0); break;
+	   case  3: params->maxSpindownFreqShift += ((REAL8)(params->numFDeriv4-1))*fabs(params->deltaFDeriv4)*pow(params->duration,4.0); break;
+	   case  4: params->maxSpindownFreqShift += ((REAL8)(params->numFDeriv5-1))*fabs(params->deltaFDeriv5)*pow(params->duration,5.0); break;
+	}
+  }
+
    /*   for(i=0;i<params->numSkyPosTotal;i++)
    {
 	iDec = i % params->stksldSkyPatchData->numDec;
@@ -1097,6 +1114,14 @@ void StackSlideConditionData(
 /*                about lines and harmonics      */
 /*                                               */
 /*************************************************/
+  params->sumBinMask = NULL; /* 05/19/05 gam; params->sumBinMask == 0 if bin should be excluded from search or Monte Carlo due to cleaning */
+  params->sumBinMask=(INT4 *)LALMalloc(params->nBinsPerSUM*sizeof(INT4));
+  for(k=0;k<params->nBinsPerSUM;k++) {
+     params->sumBinMask[k] = 1; /* always set default case: no bins are excluded! */
+  }
+  params->percentBinsExcluded = 0.0; /* default case; 0 percent of bins are excluded! */
+  
+  /* If option is set, get info about lines and harmonics */
   params->infoHarmonics = NULL;
   params->infoLines = NULL;
   if ( (params->normalizationFlag & 32) > 0 )  {
@@ -1117,7 +1142,12 @@ void StackSlideConditionData(
   
     StackSlideGetLinesAndHarmonics(status->statusPtr, params->infoHarmonics, params->infoLines, params->f0BLK, params->bandBLK, params->linesAndHarmonicsFile);
     CHECKSTATUSPTR (status);
-    
+
+    /* 05/19/05 gam; set up params->sumBinMask with bins to exclude from search or Monte Carlo due to cleaning */
+    StackSlideGetBinMask(status->statusPtr, params->sumBinMask, &(params->percentBinsExcluded), params->infoLines,
+       ((REAL8)STACKSLIDEMAXV),params->maxSpindownFreqShift, params->f0SUM, params->tEffSUM, params->nBinsPerSUM);
+    CHECKSTATUSPTR (status);
+
     #ifdef DEBUG_CLEANLINESANDHARMONICS
       for(k=0;k<params->infoHarmonics->nHarmonicSets;k++) {
         fprintf(stdout,"params->infoHarmonics->startFreq[%i] = %g\n",k,params->infoHarmonics->startFreq[k]);
@@ -1136,6 +1166,16 @@ void StackSlideConditionData(
     #endif
 
   } /* END if ( (params->normalizationFlag & 32) > 0 ) */
+
+  #ifdef DEBUG_SUMBINMASK
+    for(k=0;k<params->nBinsPerSUM;k++) {
+        fprintf(stdout,"f = %g, sumBinMask[%i] = %i\n",params->f0SUM + k/params->tEffSUM,k,params->sumBinMask[k]);
+        fflush(stdout);
+    }
+    fprintf(stdout,"params->maxSpindownFreqShift = %g\n",params->maxSpindownFreqShift);
+    fprintf(stdout,"params->percentBinsExcluded = %g\n",params->percentBinsExcluded);
+    fflush(stdout);
+  #endif
 /*************************************************/
 /*                                               */
 /* END SECTION: if cleaning SFTs, read in info   */
@@ -2110,7 +2150,8 @@ void StackSlideApplySearch(
   pLALFindStackSlidePeakParams->skyPosData = params->skyPosData;  /* 02/04/04 gam; added this and next 2 lines */
   pLALFindStackSlidePeakParams->freqDerivData = params->freqDerivData;
   pLALFindStackSlidePeakParams->numSpinDown = params->numSpinDown;
-    
+  pLALFindStackSlidePeakParams->binMask = params->sumBinMask; /* 05/19/05 gam; initialize binFlag with sumBinMask (called binMask in the struct). */
+      
   /* 03/02/04 gam; allocate and initialize output struct for LALFindStackSlidePeaks  */    
   pLALFindStackSlidePeakOutputs = (LALFindStackSlidePeakOutputs *)LALMalloc(sizeof(LALFindStackSlidePeakOutputs));
   pLALFindStackSlidePeakOutputs->pwMeanWithoutPeaks = &pwMeanWithoutPeaks;
@@ -2129,6 +2170,7 @@ void StackSlideApplySearch(
      pLALUpdateLoudestStackSlideParams->skyPosData = params->skyPosData;
      pLALUpdateLoudestStackSlideParams->freqDerivData = params->freqDerivData;
      pLALUpdateLoudestStackSlideParams->numSpinDown = params->numSpinDown;
+     pLALUpdateLoudestStackSlideParams->binMask = params->sumBinMask; /* 05/19/05 gam; In LALUpdateLoudestFromSUMs exclude bins with sumBinMask == 0 (binMask in struct). */
      totalEventCount = params->keepThisNumber; /* 02/20/04 gam; this is fixed when output is from SUMs */
   }
     
@@ -2393,7 +2435,7 @@ void StackSlideFinalizeSearch(
   LALFree(params->outputFile);
   
   /* 05/14/05 gam */
-  LALFree(params->linesAndHarmonicsFile); 
+  LALFree(params->linesAndHarmonicsFile);
   if ( (params->normalizationFlag & 32) > 0 )  {
     if (params->infoLines->nLines > 0) {
       LALFree(params->infoLines->lineFreq);
@@ -2410,6 +2452,8 @@ void StackSlideFinalizeSearch(
     LALFree(params->infoHarmonics);
     LALFree(params->infoLines);
   } /* END if ( (params->normalizationFlag & 32) > 0 ) */
+
+  LALFree(params->sumBinMask);  /* 05/19/05 gam */
 
   /* LALFree(params); */ /*Declared and freed in the calling function */
 
@@ -2565,23 +2609,36 @@ void LALUpdateLoudestFromSUMs( SnglStackSlidePeriodicTable *loudestPeaksArray, c
     REAL4 pwrMean = 0.0;
     REAL4 pwrStdDev = 0.0;        
     INT4 eventCount = 0;
-    
+    INT4 binCount = 0; /* 05/19/05 gam */
+
     for(j=0;j<oneSUM->data->length;j++) {
-        
-       pwr = oneSUM->data->data[j];
-       i = j/params->nBinsPerOutputEvent;  /* Determine which loudestPeaksArray bin this frequency belongs to */                   
        
-       if (pwr > loudestPeaksArray[i].power) {
+       /* 05/19/05 gam; In LALUpdateLoudestFromSUMs exclude bins with sumBinMask == 0 (binMask in struct). */
+       if (params->binMask[j] != 0) {
+         pwr = oneSUM->data->data[j];
+         i = j/params->nBinsPerOutputEvent;  /* Determine which loudestPeaksArray bin this frequency belongs to */                   
+       
+         if (pwr > loudestPeaksArray[i].power) {
             eventCount++;
             if (findMeanAndStdDev) {
                findMeanAndStdDev = 0;  /* Find mean and std dev only once */
                for(k=0;k<oneSUM->data->length;k++) {
-                   pwrSum += oneSUM->data->data[k];
-                   pwrSum2 += oneSUM->data->data[k]*oneSUM->data->data[k];
+                   /* 05/19/05 gam; In LALUpdateLoudestFromSUMs exclude bins with sumBinMask == 0 (binMask in struct). */
+                   if (params->binMask[k] != 0) {
+                     pwrSum += oneSUM->data->data[k];
+                     pwrSum2 += oneSUM->data->data[k]*oneSUM->data->data[k];
+                     binCount++;
+                   }
                }
-               pwrMean = pwrSum/((REAL4)oneSUM->data->length);   /* Mean pwr */
-               /* Standard Deviation of the power = sqrt of the variance */
-               pwrStdDev = pwrSum2/((REAL4)oneSUM->data->length) - pwrMean*pwrMean;
+               /* pwrMean = pwrSum/((REAL4)oneSUM->data->length); */  /* Mean pwr */ /* 05/19/05 gam; */
+               /* pwrStdDev = pwrSum2/((REAL4)oneSUM->data->length) - pwrMean*pwrMean; */ /* 05/19/05 gam; */
+               if (binCount > 0) {
+                 pwrMean = pwrSum/((REAL4)binCount);   /* Mean pwr */
+                 pwrStdDev = pwrSum2/((REAL4)binCount) - pwrMean*pwrMean;
+               } else {
+                 pwrMean = -1.0;
+                 pwrStdDev = -1.0;
+               }
                if ( pwrStdDev > 0.0 ) {
                  pwrStdDev = sqrt( pwrStdDev );
                } else {
@@ -2637,7 +2694,8 @@ void LALUpdateLoudestFromSUMs( SnglStackSlidePeriodicTable *loudestPeaksArray, c
             }
             loudestPeaksArray[i].pw_mean_thissum = pwrMean;
             loudestPeaksArray[i].pw_stddev_thissum = pwrStdDev;
-       } /* end if (pwr > loudestPeaksArray[i]->power) */
+         } /* end if (pwr > loudestPeaksArray[i]->power) */
+       } /* END if (params->binMask[j] != 0) */
     } /* endfor(j=0;j<oneSUM->data->length;j++) */
 } /* end LALUpdateLoudestFromSUMs */
 
@@ -2690,36 +2748,46 @@ void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4F
     /* powers=(REAL4 *)LALMalloc(oneSUM->data->length*sizeof(REAL4)); */ /* 02/11/04 gam; used to be amplitudes; no longer needed */
              
     for(i=0;i<oneSUM->data->length;i++) {
-        binFlag[i] = 0;
-        pwrSum += oneSUM->data->data[i];
-        pwrSum2 += oneSUM->data->data[i]*oneSUM->data->data[i];
+        /* binFlag[i] = 0; */ /* 05/19/05 gam */
+        binFlag[i] = params->binMask[i];
+        if (binFlag[i] != 0) {
+          pwrSum += oneSUM->data->data[i];
+          pwrSum2 += oneSUM->data->data[i]*oneSUM->data->data[i];
+          binCount++;
+        }
     }
-    pwrMean = pwrSum/((REAL4)oneSUM->data->length);   /* Mean pwr */
+    /* pwrMean = pwrSum/((REAL4)oneSUM->data->length); */ /* 05/19/05 gam */ /* Mean pwr */
     /* Standard Deviation of the power = sqrt of the variance */
-    pwrStdDev = pwrSum2/((REAL4)oneSUM->data->length) - pwrMean*pwrMean;
+    /* pwrStdDev = pwrSum2/((REAL4)oneSUM->data->length) - pwrMean*pwrMean; */ /* 05/19/05 gam */
+    if (binCount > 0) {    
+      pwrMean = pwrSum/((REAL4)binCount); /* Mean pwr */
+      pwrStdDev = pwrSum2/((REAL4)binCount) - pwrMean*pwrMean;      
+    } else {
+      pwrMean = -1.0;
+      pwrStdDev = -1.0;
+    }
     if ( pwrStdDev > 0.0 ) {
         pwrStdDev = sqrt( pwrStdDev );
     } else {
         pwrStdDev = -1.0; /* Should not happen except due to round off error in test data */
     }
+    binCount = oneSUM->data->length - binCount; /* 05/19/05 gam; binCount now number of excluded bins */
     
     while (findMorePeaks) {
-	pwrMax = 0.0;
-	iPwrMax = 0;
-    	for(i=0;i<oneSUM->data->length;i++) {
-		if (binFlag[i] != 1) {
-    	          if (oneSUM->data->data[i] > pwrMax) {
-		     pwrMax = oneSUM->data->data[i];
-		     iPwrMax = i;
-		  }
-		}
-    	}
+        pwrMax = 0.0;
+        iPwrMax = 0;
+        for(i=0;i<oneSUM->data->length;i++) {
+               /* if (binFlag[i] != 1) */ /* 05/19/05 gam */
+                if (binFlag[i] != 0) {
+                  if (oneSUM->data->data[i] > pwrMax) {
+                     pwrMax = oneSUM->data->data[i];
+                     iPwrMax = i;
+                  }
+                }
+        }
 	if (pwrMax > params->threshold1) {
 		/* Found a peak; analyze it */
-                /*  02/17/04 gam; Move memory allocation after measuring width */
-		/* binFlag[iPwrMax] = 1; */ /*  02/17/04 gam; set once after determining width */
 		subPeakCount = 0; /* 01/27/04 gam; initialize */
-		/* pwr = pwrMax; */ /* 01/27/04 gam; Not used. */
                 secondToLastPwr = pwrMax;  /* 02/04/04 gam */
 		lastPwr = pwrMax;
 		iPwrMin = iPwrMax;  /* 01/27/04 gam */
@@ -2732,26 +2800,21 @@ void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4F
 		     /* 01/27/04 gam; keep track of minimum */
 		     if (currentPwr < pwrMin) {
 		         pwrMin = currentPwr;
-			 iPwrMin = j;
+		         iPwrMin = j;
 		     }
-		     /* if ( binFlag[j] == 1 || powers[j] < params->threshold2 || (powers[j] > lastPwr && powers[j] < params->threshold1) ) */ /* 01/27/04 gam */
-		     if ( binFlag[j] == 1 || currentPwr < params->threshold2 ) {
+		     /* if ( binFlag[j] == 1 || currentPwr < params->threshold2 ) */ /* 05/19/05 gam */
+		     if ( binFlag[j] == 0 || currentPwr < params->threshold2 ) {
 		        jMin = j; /* 01/27/04 gam; save mimimum j */
 		        findWidth = 0;
 		     } else if ( currentPwr > lastPwr && params->fracPwDrop*currentPwr > pwrMin ) {
                         /* 01/27/04 gam; Power has gone up and pwrMin was < fracPwDrop times current power; */
 		        jMin = iPwrMin-1; /* Set jMin back to point where power was minimum minus 1 to include in width */
-                        /* reset bin as not belonging to this peak */
-    	                /* for(i=j+1;i<iPwrMin;i++) {
-		           binFlag[i] = 0;
-			} */ /*  02/17/04 gam; set once after determining width */
 		        findWidth = 0;
 		     } else {
 		       /* if ( powers[j] > params->threshold1 && powers[j] > lastPwr ) */ /* 02/04/04 gam */
 		       if ( lastPwr > secondToLastPwr && currentPwr < lastPwr ) {
 		           subPeakCount++;  /* 01/27/04 gam; a significant subpeak is included in one peak event. */
 		       }
-		       /* binFlag[j] = 1; */ /* Mark bin as belong to a peak */ /*  02/17/04 gam; set once after determining width */
                        secondToLastPwr = lastPwr;  /* 02/04/04 gam */
 		       lastPwr = currentPwr;
 		       j--;
@@ -2759,7 +2822,6 @@ void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4F
 		     /* lastPwr = powers[j];
 		     j--; */ /* 01/20/04 gam; Correct code that calculates peak width; move into else to avoid extra j-- */
 		}
-		/* peakWidth  = j; */ /* 01/27/04 gam; moved above */
                 secondToLastPwr = pwrMax;  /* 02/04/04 gam; Need to reinitialize */
 		lastPwr = pwrMax;  /* 01/27/04 gam; Need to reinitialize */
 		iPwrMin = iPwrMax;  /* 01/27/04 gam */
@@ -2774,24 +2836,19 @@ void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4F
 		         pwrMin = currentPwr;
 			 iPwrMin = j;
 		     }
-		     /* if ( binFlag[j] == 1 || powers[j] < params->threshold2 || (powers[j] > lastPwr && powers[j] < params->threshold1) ) */ /* 01/27/04 gam */
-		     if ( binFlag[j] == 1 || currentPwr < params->threshold2 ) {
+		     /* if ( binFlag[j] == 1 || currentPwr < params->threshold2 ) */ /* 05/19/05 gam */
+		     if ( binFlag[j] == 0 || currentPwr < params->threshold2 ) {
 		        jMax = j; /* 01/27/04 gam; save maximum j */
 		        findWidth = 0;
 		     } else if ( currentPwr > lastPwr && params->fracPwDrop*currentPwr > pwrMin ) {
                         /* 01/27/04 gam; Power has gone up and pwrMin was < fracPwDrop times current power; */
 		        jMax = iPwrMin+1; /* Set jMax back to point where power was minimum plus 1 to include in width. */
-                        /* reset bin as not belonging to this peak */
-    	                /* for(i=iPwrMin+1;i<j;i++) {
-		           binFlag[i] = 0; 
-			} */ /*  02/17/04 gam; set once after determining width */
 		        findWidth = 0;
 		     } else {
 		       /* if ( powers[j] > params->threshold1 && powers[j] > lastPwr ) */ /* 02/04/04 gam */
 		       if ( lastPwr > secondToLastPwr && currentPwr < lastPwr ) {
 		           subPeakCount++;  /* 01/27/04 gam; a significant subpeak is included in one peak event. */
 		       }
-		       /* binFlag[j] = 1; */ /* Mark bin as belong to a peak */ /* 02/17/04 gam; set once after determining width */
                        secondToLastPwr = lastPwr;  /* 02/04/04 gam */
 		       lastPwr = currentPwr;
 		       j++;
@@ -2802,10 +2859,10 @@ void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4F
 		peakWidth = jMax - jMin - 1;
                 /* 02/17/04 gam; always set this to avoid infinite loop of finding same peak over and over, even if not recording this peak. */
                 for(i=jMin+1;i<jMax;i++) {
-		           binFlag[i] = 1; /* set bin as belonging to this peak */
+		           /* binFlag[i] = 1; */ /* set bin as belonging to this peak */ /* 05/19/05 gam */
+		           binFlag[i] = 0; /* set bin as belonging to this peak */
                            binCount++;     /* 03/02/04 gam; keep track of number of bins belonging to a peak */
 		}
-                /*  02/17/04 gam; if (params->thresholdFlag & 2 > 0) find peaks above threshold with width less than maxWidthBins. */
                 /* 02/20/04 gam; check for vetos on peaks in overlap zone or width greater than maxWidthBins */
                 if (iPwrMax < params->ifMin || iPwrMax >= params->ifMax) {
                    overlapEvent = 1;
@@ -2822,11 +2879,9 @@ void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4F
                 } else {
                     outputThisPeak = 1; /* default */
                 }
-                /* if ( ((params->thresholdFlag & 2) == 0) || (((params->thresholdFlag & 2) > 0) && (peakWidth <= params->maxWidthBins)) ) */
                 if (outputThisPeak) {
-		  eventCount++; /* 02/04/04 gam; found a peak or a cluster of peaks; keep track of how many */
-                  /* 02/04/04 gam; allocate memory for peaks linked lists: */
-		  if (eventCount == 1) {
+                  eventCount++; /* 02/04/04 gam; found a peak or a cluster of peaks; keep track of how many */
+                  if (eventCount == 1) {
                     if (params->returnOneEventPerSUM) {
                        findMorePeaks = 0;  /* 08/30/04 gam; first event found = loudest event; return after setting this peak below. */
                     }
@@ -2838,8 +2893,8 @@ void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4F
                        {
                          fprintf(stdout,"FREQDERIV%i = %18.10f\n",k+1,params->freqDerivData[params->iDeriv][k]);
                        }  
-		       fflush(stdout);
-		    #endif
+                       fflush(stdout);
+                    #endif
 		    if (!peaks) {
                        *(outputs->pntrToPeaksPntr) = peaks = (SnglStackSlidePeriodicTable *)LALMalloc(sizeof(SnglStackSlidePeriodicTable));
                        peaks->next = NULL;
@@ -2920,9 +2975,6 @@ void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4F
 			/* peaks->fderiv_5 = 0; */
 		     }
                   }
-                  /* 02/09/04 gam; remove pw_max_thissum and freq_max_thissum */
-		  /* peaks->pw_max_thissum = -1; */
-		  /* peaks->freq_max_thissum = -1; */
 		  peaks->pw_mean_thissum = pwrMean;     /* 02/11/04 gam; set this and next value. */
 		  peaks->pw_stddev_thissum = pwrStdDev;
 		} else {
@@ -2939,7 +2991,8 @@ void LALFindStackSlidePeaks( LALFindStackSlidePeakOutputs *outputs, const REAL4F
       pwrSum = 0;
       pwrSum2 = 0;
       for(i=0;i<oneSUM->data->length;i++) {
-        if (binFlag[i] != 1) {
+        /* if (binFlag[i] != 1) */ /* 05/19/05 gam */
+        if (binFlag[i] != 0) {
           pwrSum += oneSUM->data->data[i];
           pwrSum2 += oneSUM->data->data[i]*oneSUM->data->data[i];
         }
@@ -3442,6 +3495,7 @@ void RotateSkyPosData(LALStatus *status, REAL8 **skyPosData, INT4 numSkyPosTotal
 
      for(iSky=0;iSky<numSkyPosTotal;iSky++) {
        RotateSkyCoordinates(status->statusPtr, &tmpRA, &tmpDEC, skyPosData[iSky][0], skyPosData[iSky][1], longPole, latPole, longOffset);
+       CHECKSTATUSPTR (status);
        skyPosData[iSky][0] = tmpRA;
        skyPosData[iSky][1] = tmpDEC;
      }
@@ -3510,6 +3564,46 @@ void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHa
   DETATCHSTATUSPTR (status);
 
 } /* END StackSlideGetLinesAndHarmonics */
+
+/* 05/19/05 gam; set up params->sumBinMask with bins to exclude from search or Monte Carlo due to cleaning */
+void StackSlideGetBinMask(LALStatus *status, INT4 *binMask, REAL8 *percentBinsExcluded, LineNoiseInfo *infoLines,
+     REAL8 maxDopplerVOverC, REAL8 maxSpindownFreqShift, REAL8 f0, REAL8 tBase, INT4 nBins)
+{
+  INT4 j,k,f0Bin, spindownBins,minBin,maxBin,binCount;
+  REAL8 tBaseOverOneMinusMaxDoppler, tBaseOverOnePlusMaxDoppler;
+  
+  INITSTATUS( status, "StackSlideGetBinMask", DRIVESTACKSLIDEC );
+  ATTATCHSTATUSPTR (status);
+  
+  f0Bin = floor(f0*tBase + 0.5);
+  spindownBins = ((INT4)maxSpindownFreqShift*tBase);
+  tBaseOverOneMinusMaxDoppler = tBase/(1.0 - maxDopplerVOverC);
+  tBaseOverOnePlusMaxDoppler  = tBase/(1.0 + maxDopplerVOverC);
+
+  for(k=0;k<infoLines->nLines;k++) {
+
+        /* Find min and max bin that could be affected by this line */
+        /* Assuming templates do not spinup, but spindown only */
+        minBin = floor( (infoLines->lineFreq[k] - infoLines->leftWing[k])*tBaseOverOnePlusMaxDoppler ) - f0Bin;
+        if (minBin < 0) minBin = 0;
+        maxBin = ceil(  (infoLines->lineFreq[k] + infoLines->rightWing[k])*tBaseOverOneMinusMaxDoppler ) + spindownBins - f0Bin;
+        if (maxBin >= nBins) maxBin = nBins - 1;
+        
+        /* Exclude bins that could be affected by this line; note sum from minBin to maxBin inclusive */
+        for(j=minBin;j<=maxBin;j++) {
+            binMask[j] = 0; /* exclude this bin */
+        }
+  }
+  binCount = 0;
+  for(j=0;j<nBins;j++) {
+         if (binMask[j] == 0) binCount++;
+  }
+  *percentBinsExcluded = 100.0*((REAL8)binCount)/((REAL8)nBins);
+
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR (status);
+
+} /* END StackSlideGetBinMask */
 
 /* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */
 void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLines, INT4 numBLKs, INT4 nBinsPerNRM, INT4 maxBins)

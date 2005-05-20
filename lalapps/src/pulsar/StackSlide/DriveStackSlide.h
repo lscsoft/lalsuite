@@ -77,6 +77,9 @@
 /* 05/13/05 gam; Add function RotateSkyPosData that rotates skyPosData using RotateSkyCoordinates */
 /* 05/14/05 gam; Change unused numSUMsPerCall to linesAndHarmonicsFile */
 /* 05/14/05 gam; if (params->normalizationFlag & 32) > 0 then clean SFTs using info in linesAndHarmonicsFile */
+/* 05/19/05 gam; Add INT4 *sumBinMask; params->sumBinMask == 0 if bin should be excluded from search or Monte Carlo due to cleaning */
+/* 05/19/05 gam; In LALFindStackSlidePeaks set binFlag = 0 if bin excluded; initialize binFlag with sumBinMask (binMask in struct). */
+/* 05/19/05 gam; In LALUpdateLoudestFromSUMs exclude bins with sumBinMask == 0 (binMask in struct). */
 
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -183,7 +186,8 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_MSGELONGLATFROMVEC  "Vector has zero length in FindLongLatFromVec"
 /* Limit on size of arrays holding channel names */
 /* #define dbNameLimit 256; */ /* Should be defined in LAL? */
-
+/* 05/19/05 gam; Add in maximum velocity of Earth used to find maximum doppler shift */
+#define STACKSLIDEMAXV 1.06e-04
 /*********************************************/
 /*                                           */
 /* END SECTION: define constants             */
@@ -377,6 +381,7 @@ tagLALFindStackSlidePeakParams
   REAL8 **skyPosData;     /* 02/04/04 gam; skyPosData[iSky][0] = RA, skyPosData[iSky][1] = DEC */
   REAL8 **freqDerivData;  /* 02/04/04 gam; freqDerivData[iDeriv][i] = freq deriv i */
   INT4    numSpinDown;    /* 02/04/04 gam; number of spindown */
+  INT4   *binMask;        /* 05/19/05 gam; initialize binFlag with sumBinMask (called binMask in the struct). */
 }
 LALFindStackSlidePeakParams;
 
@@ -394,6 +399,7 @@ tagLALUpdateLoudestStackSlideParams
   REAL8 **skyPosData;          /* 02/17/04 gam; skyPosData[iSky][0] = RA, skyPosData[iSky][1] = DEC */
   REAL8 **freqDerivData;       /* 02/17/04 gam; freqDerivData[iDeriv][i] = freq deriv i */
   INT4    numSpinDown;         /* 02/17/04 gam; number of spindown */
+  INT4   *binMask;             /* 05/19/05 gam; In LALUpdateLoudestFromSUMs exclude bins with sumBinMask == 0 (binMask in struct). */
 }
 LALUpdateLoudestStackSlideParams;
 
@@ -531,7 +537,9 @@ typedef struct tagStackSlideSearchParams {
   CHAR *linesAndHarmonicsFile;       /* File with instrument line and harmonic spectral disturbances data */
    LineHarmonicsInfo *infoHarmonics; /* Container with line and harmonics info */
    LineNoiseInfo     *infoLines;     /* Container with line info */
-
+   INT4 *sumBinMask;                 /* 05/19/05 gam; params->sumBinMask == 0 if bin should be excluded from search or Monte Carlo due to cleaning */
+   REAL8 percentBinsExcluded;        /* 05/19/05 gam; percent of bins being excluded */
+  
   /* INT2    outputFlag; */          /* Flag that specifies what to output; if > 0 then will output Sums into frame file */
   INT2   outputSUMFlag;             /* 02/17/04 gam; Flag that determines whether to output SUMs e.g., in ascii. */
   INT2   outputEventFlag;           /* 02/17/04 gam; Flag that deterines xml output */
@@ -662,6 +670,7 @@ typedef struct tagStackSlideSearchParams {
   REAL8 **freqDerivData;  /* Container for Frequency Derivative Data */
   INT4 numSkyPosTotal;    /* Total number of Sky positions to cover */
   INT4 numFreqDerivTotal; /* Total number of Frequency evolution models to cover */
+  REAL8 maxSpindownFreqShift; /* 05/19/05 gam; Maximum shift in frequency due to spindown */
 
   /* FreqSeriesPowerStats *SUMStats; */ /* 02/11/04 gam */ /* Container for statistics about each SUM */
   
@@ -680,7 +689,7 @@ typedef struct tagStackSlideSearchParams {
   INT4    nBinsPerOutputEvent;
 
   BarycenterInput baryinput; /* 04/12/05 gam */
-   
+
   /******************************************/
   /*                                        */
   /* END SECTION: other parameters          */
@@ -775,6 +784,10 @@ void RotateSkyPosData(LALStatus *status, REAL8 **skyPosData, INT4 numSkyPosTotal
 
 /* 05/14/05 gam; function that reads in line and harmonics info from file; based on SFTclean.c by Krishnan, B. */
 void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHarmonics, LineNoiseInfo *infoLines, REAL8 fStart, REAL8 fBand, CHAR *linesAndHarmonicsFile);
+
+/* 05/19/05 gam; set up params->sumBinMask with bins to exclude from search or Monte Carlo due to cleaning */
+void StackSlideGetBinMask(LALStatus *status, INT4 *binMask, REAL8 *percentBinsExcluded, LineNoiseInfo *infoLines,
+     REAL8 maxDopplerVOverC, REAL8 maxSpindownFreqShift, REAL8 f0, REAL8 tBase, INT4 nBins);
 
 /* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */
 void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLines, INT4 numBLKs, INT4 nBinsPerNRM, INT4 maxBins);

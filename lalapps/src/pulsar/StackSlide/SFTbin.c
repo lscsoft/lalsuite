@@ -783,6 +783,7 @@ void ChooseLines (LALStatus        *status,
   /* if there are no lines inband then free memory */
   if (nLinesOut == 0)
     {
+      outLine->nLines = nLinesOut; /* 05/19/05 gam; calling function needs to know this */
       LALFree(outLine->lineFreq);
       LALFree(outLine->leftWing);
       LALFree(outLine->rightWing);

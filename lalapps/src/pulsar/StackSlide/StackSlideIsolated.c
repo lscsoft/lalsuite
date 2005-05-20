@@ -24,6 +24,7 @@ $Id$
 /* 12/06/04 gam; add params->gpsEpochStartTimeNan; get gpsEpochStartTime, gpsEpochStartTimeNan, and gpsStartTime from command line; */ 
 /* 12/06/04 gam; if (params->testFlag & 8) > 0 use fixed values for psi and cosIota during Monte Carlo simulations */
 /* 05/06/05 gam; If params->debugOptionFlag & 128 > 0 and isolated case, just creates a SUM from the STKs without sliding */
+/* 05/19/05 gam; Add INT4 *sumBinMask; params->sumBinMask == 0 if bin should be excluded from search or Monte Carlo due to cleaning */
     
 /*********************************************/
 /*                                           */
@@ -415,6 +416,8 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   REAL8 DeltaFDeriv3 = params->deltaFDeriv3;
   REAL8 DeltaFDeriv4 = params->deltaFDeriv4;
   REAL8 DeltaFDeriv5 = params->deltaFDeriv5;
+  INT4 firstNonExcludedBin = -1; /* 05/19/05 gam */
+  INT4 lastNonExcludedBin  = -1; /* 05/19/05 gam */
 
   INITSTATUS( status, "RunStackSlideIsolatedMonteCarloSimulation", STACKSLIDEISOLATEDC );
   ATTATCHSTATUSPTR(status);
@@ -596,6 +599,17 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
      pSFTandSignalParams = NULL;
   }
 
+  /* 05/19/05 gam; find first and last nonexcluded frequency bins */
+  for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) {     
+     /* 05/19/05 gam; Only inject into bins that are not exclude */
+     if (params->sumBinMask[iFreq] != 0) {
+        if (firstNonExcludedBin == -1) {
+           firstNonExcludedBin = iFreq;
+        }
+        lastNonExcludedBin = iFreq;
+     }
+  }
+
   /*********************************************************/
   /*                                                       */
   /* START SECTION: MONTE CARLO LOOP OVER PARAMETER SPACE  */
@@ -685,14 +699,19 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     /****************************************************/    
     for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) {
     
-      if (iFreq > 0) {
-        params->startSUMs = 0;  /* Indicate that SUMs already started */
-      }
+     /* if (iFreq > 0) */ /* 05/19/05 gam */
+     if (iFreq > firstNonExcludedBin) {
+       params->startSUMs = 0;  /* Indicate that SUMs already started */
+     }
     
-      if ((kSUM == numSUMsTotalm1) && (iFreq == nBinsPerSUMm1)) {
-          params->finishSUMs = 1;  /* This is the last injection */
-      }
+     /* if ((kSUM == numSUMsTotalm1) && (iFreq == nBinsPerSUMm1)) */ /* 05/19/05 gam */
+     if ((kSUM == numSUMsTotalm1) && (iFreq == lastNonExcludedBin)) {
+         params->finishSUMs = 1;  /* This is the last injection */
+     }
 
+     /* 05/19/05 gam; Only inject into bins that are not exclude */
+     if (params->sumBinMask[iFreq] != 0) {
+     
       /* 12/06/04 gam */
       if ( (params->testFlag & 8) > 0 ) {
          pPulsarSignalParams->pulsar.psi = params->orientationAngle;
@@ -999,7 +1018,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
 
       StackSlideApplySearch(status->statusPtr,params);
       CHECKSTATUSPTR (status);
-        
+     } /* END if (params->sumBinMask[k] != 0) */
     } /* END for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) */
     /****************************************************/
     /*                                                  */
