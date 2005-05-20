@@ -146,24 +146,30 @@ data.make_chunks_from_unused(length,overlap,0,overlap,0,0)
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
 ifo2 = cp.get('pipeline','ifo2')
+ifo3 = cp.get('pipeline','ifo3')
 snr = cp.get('pipeline','threshold')
 
 datatype1 = cp.get('input','type1') 
 datatype2 = cp.get('input','type2') 
+datatype3 = cp.get('input','type3') 
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df1 = None
 prev_df2 = None
+prev_df3 = None
 prev_inject = None
 
+segment_number = -1
 for seg in data:
-  
+
+  segment_number=segment_number+1
   # find all the data for first ifo
   df1 = pipeline.LSCDataFindNode(df_job)
   df1.set_start(seg.start())
   df1.set_end(seg.end())
   df1.set_observatory(ifo1[0])
-  df1.add_var_opt('type',datatype1)
+  df1.set_type(datatype1)
+  df1.set_name("df-"+ifo1+"-"+str(segment_number))
   if prev_df1: 
     df1.add_parent(prev_df1)
   dag.add_node(df1)
@@ -174,26 +180,46 @@ for seg in data:
   df2.set_start(seg.start())
   df2.set_end(seg.end())
   df2.set_observatory(ifo2[0])
-  df2.add_var_opt('type',datatype2)
+  df2.set_type(datatype2)
+  df2.set_name("df-"+ifo2+"-"+str(segment_number))
   if prev_df2: 
     df2.add_parent(prev_df2)
   dag.add_node(df2)
   prev_df2 = df2
 
+  # find data for third ifo
+  df3 = pipeline.LSCDataFindNode(df_job)
+  df3.set_start(seg.start())
+  df3.set_end(seg.end())
+  df3.set_observatory(ifo3[0])
+  df3.set_type(datatype3)
+  df3.set_name("df-"+ifo3+"-"+str(segment_number))
+  if prev_df3: 
+    df3.add_parent(prev_df3)
+  dag.add_node(df3)
+  prev_df3 = df3
+
+
   if do_inj:
+
     # create injection jobs
     inject1  = cosmicstring.InjNode(injection_job)
-    inject1.set_start(str(int(seg.start())+overlap))
-    inject1.set_end(str(int(seg.end())-overlap))
+    injstart=int(seg.start())+overlap
+    injend=int(seg.end())-overlap
+    inject1.set_start(injstart)
+    inject1.set_end(injend)
     seed = int(1e6 * random.uniform(0.0,1.0))
     inject1.add_var_opt('seed',seed)
+    inject1.set_name("inj-"+str(segment_number))
     if prev_inject: 
       inject1.add_parent(prev_inject)
     dag.add_node(inject1)
     prev_inject = inject1
-    
+
+  chunk_number=-1    
   for chunk in seg:
     
+    chunk_number=chunk_number+1    
     #string job for first ifo
     string1 = cosmicstring.StringNode(string_job)
     string1.set_start(chunk.start())
@@ -204,6 +230,7 @@ for seg in data:
     string1.add_var_opt('trig-start-time',chunk.trig_start())
     string1.add_var_opt('outfile',string1.get_output())
     string1.add_parent(df1)
+    string1.set_name("string-"+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
     if do_inj:
       string1.add_parent(inject1)
       string1.add_var_opt('injection-file',inject1.get_output(seed))
@@ -219,33 +246,94 @@ for seg in data:
     string2.add_var_opt('trig-start-time',chunk.trig_start())
     string2.add_var_opt('outfile',string2.get_output())
     string2.add_parent(df2)
+    string2.set_name("string-"+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
     if do_inj:
       string2.add_parent(inject1)
       string2.add_var_opt('injection-file',inject1.get_output(seed))
     dag.add_node(string2)
 
-    #coincidence stage (one way)
+    #string job for second ifo  
+    string3 = cosmicstring.StringNode(string_job)
+    string3.set_start(chunk.start())
+    string3.set_end(chunk.end())
+    string3.set_ifo(ifo3)
+    string3.set_cache(df3.get_output())
+    string3.add_var_opt('threshold',snr)
+    string3.add_var_opt('trig-start-time',chunk.trig_start())
+    string3.add_var_opt('outfile',string3.get_output())
+    string3.add_parent(df3)
+    string3.set_name("string-"+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
+    if do_inj:
+      string3.add_parent(inject1)
+      string3.add_var_opt('injection-file',inject1.get_output(seed))
+    dag.add_node(string3)
+
+    # There are 3 ifos so there are six possible output files
+    #12
     burca1 = cosmicstring.BurcaNode(burca_job)
     burca1.set_start(chunk.start())
     burca1.set_end(chunk.end())
     burca1.set_ifoa(string1.get_output(),ifo1)
     burca1.set_ifob(string2.get_output(),ifo2) 
-    burca1.add_var_opt('outfile',burca1.get_output())
     burca1.add_parent(string1)
     burca1.add_parent(string2)
+    burca1.set_name("burca-"+ifo1+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
     dag.add_node(burca1)
 
-    #coincidence stage (the other way)
+    #21
     burca2 = cosmicstring.BurcaNode(burca_job)
     burca2.set_start(chunk.start())
     burca2.set_end(chunk.end())
     burca2.set_ifoa(string2.get_output(),ifo2)
     burca2.set_ifob(string1.get_output(),ifo1) 
-    burca2.add_var_opt('outfile',burca2.get_output())
     burca2.add_parent(string1)
     burca2.add_parent(string2)
+    burca2.set_name("burca-"+ifo2+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
     dag.add_node(burca2)
 
+    #13 
+    burca3 = cosmicstring.BurcaNode(burca_job)
+    burca3.set_start(chunk.start())
+    burca3.set_end(chunk.end())
+    burca3.set_ifoa(string1.get_output(),ifo1)
+    burca3.set_ifob(string3.get_output(),ifo3) 
+    burca3.add_parent(string1)
+    burca3.add_parent(string3)
+    burca3.set_name("burca-"+ifo1+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
+    dag.add_node(burca3)
+
+    #31 
+    burca4 = cosmicstring.BurcaNode(burca_job)
+    burca4.set_start(chunk.start())
+    burca4.set_end(chunk.end())
+    burca4.set_ifoa(string3.get_output(),ifo3)
+    burca4.set_ifob(string1.get_output(),ifo1) 
+    burca4.add_parent(string1)
+    burca4.add_parent(string3)
+    burca4.set_name("burca-"+ifo3+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
+    dag.add_node(burca4)
+
+    #23 
+    burca5 = cosmicstring.BurcaNode(burca_job)
+    burca5.set_start(chunk.start())
+    burca5.set_end(chunk.end())
+    burca5.set_ifoa(string2.get_output(),ifo2)
+    burca5.set_ifob(string3.get_output(),ifo3) 
+    burca5.add_parent(string2)
+    burca5.add_parent(string3)
+    burca5.set_name("burca-"+ifo2+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
+    dag.add_node(burca5)
+
+    #32 
+    burca6 = cosmicstring.BurcaNode(burca_job)
+    burca6.set_start(chunk.start())
+    burca6.set_end(chunk.end())
+    burca6.set_ifoa(string3.get_output(),ifo3)
+    burca6.set_ifob(string2.get_output(),ifo2) 
+    burca6.add_parent(string2)
+    burca6.add_parent(string3)
+    burca6.set_name("burca-"+ifo3+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
+    dag.add_node(burca6)
 
 # write out the DAG
 dag.write_sub_files()
