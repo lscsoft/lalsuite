@@ -172,7 +172,7 @@ overlap = int(cp.get('strain', 'wings'))
 
 # read science segs that are greater or equal to a chunk from the input file
 data = pipeline.ScienceData()
-data.read(segment_filename,length)
+data.read(segment_filename,0)
 
 # create the chunks from the science segments
 data.make_chunks(length+2*overlap,2*overlap,0,0,0)
