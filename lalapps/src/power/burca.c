@@ -92,6 +92,8 @@ int main(int argc, char **argv)
   LIGOLwXMLStream         xmlStream;
   INT4                    i, j;
 
+  CHAR                   *outputdir = "./";
+
   /* getopt arguments */
   struct option long_options[] =
     {
@@ -110,6 +112,7 @@ int main(int argc, char **argv)
       {"stop-time",               required_argument, 0,                's'},
       {"slide-time",              required_argument, 0,                'X'},
       {"slide-time-ns",           required_argument, 0,                'Y'},
+      {"output-dir",              required_argument, 0,                'o'},
       {"number-slides",           required_argument, 0,                'k'},
       {"user-tag",                required_argument, 0,                'i'},
       {"help",                    no_argument,       0,                'h'}, 
@@ -146,7 +149,7 @@ int main(int argc, char **argv)
       int option_index = 0;
 
       c = getopt_long_only( argc, argv, 
-			    "a:b:c:d:f:t:r:s:i:j:k:X:Y:h", long_options, &option_index );
+			    "a:b:c:d:f:t:r:s:i:j:k:X:Y:o:h", long_options, &option_index );
 
       /* detect the end of the options */
       if ( c == - 1 )
@@ -217,6 +220,11 @@ int main(int argc, char **argv)
 	case 's':
 	  /* time coincidence window */
 	  endCoincidence.gpsSeconds = atoi(optarg);
+	  break;
+
+	case 'o':
+	  /* time coincidence window */
+	  outputdir = optarg;
 	  break;
 
 	case 'X':
@@ -497,6 +505,7 @@ int main(int argc, char **argv)
 	}
 
 
+
       /* cluster the events if asked to */
       if(cluster && clusterchoice == clusterbypeaktimeandfreq)
 	{
@@ -521,9 +530,9 @@ int main(int argc, char **argv)
        * open output xml file to write coincident triggers
        *****************************************************************/
       if ( dtSlide < 0 )
-	  snprintf(outfileName, sizeof(outfileName)-1, "%s-BURCA_M_%lld_%s-%d-%d.xml", searchSummary[0]->ifos,-dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);	  
+	  snprintf(outfileName, sizeof(outfileName)-1, "%s/%s-BURCA_%s%s_M_%lld_%s-%d-%d.xml", outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,-dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);	  
       else
-	  snprintf(outfileName, sizeof(outfileName)-1, "%s-BURCA_P_%lld_%s-%d-%d.xml", searchSummary[0]->ifos,dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);
+	  snprintf(outfileName, sizeof(outfileName)-1, "%s/%s-BURCA_%s%s_P_%lld_%s-%d-%d.xml", outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);
 
       outfileName[sizeof(outfileName)-1] = '\0';
     
@@ -553,9 +562,9 @@ int main(int argc, char **argv)
       if (noncoincident)
 	{ 
 	  if ( dtSlide < 0 )
-	    snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s-NEGBURCA_M_%lld_%s-%d-%d.xml", searchSummary[0]->ifos,-dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);	  
+	    snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s/%s-NEGBURCA_%s%s_M_%lld_%s-%d-%d.xml", outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,-dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds);	  
 	  else
-	  snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s-NEGBURCA_P_%lld_%s-%d-%d.xml", searchSummary[0]->ifos,dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds );
+	    snprintf(outnoncfileName, sizeof(outnoncfileName)-1, "%s/%s-NEGBURCA_%s%s_P_%lld_%s-%d-%d.xml", outputdir,searchSummary[0]->ifos,searchSummary[0]->ifos,searchSummary[1]->ifos,dtSlide,comment,searchSummary[0]->in_start_time.gpsSeconds,searchSummary[0]->in_end_time.gpsSeconds - searchSummary[0]->in_start_time.gpsSeconds );
 	  
 	  outnoncfileName[sizeof(outnoncfileName)-1] = '\0';
 	
