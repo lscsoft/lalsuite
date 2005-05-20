@@ -97,7 +97,7 @@ struct CommandLineArgsTag {
   INT4 GPSStart;              /* GPS start time of segment to be analysed */
   INT4 GPSEnd;                /* GPS end time of segment to be analysed */
   INT4 ShortSegDuration;      /* Number of fixed length sub-segments between GPSStart and GPSEnd */
-  INT4 TruncSecs;             /* Half the number of seconds truncated at beginning and end of a chunk */
+  REAL4 TruncSecs;             /* Half the number of seconds truncated at beginning and end of a chunk */
   REAL4 power;                /* Kink (-5/3) or cusp (-4/3) frequency power law */
   REAL4 threshold;            /* event SNR threshold */
   INT4 fakenoiseflag;         /* =0 if real noise =1 if fake gaussian noise */
@@ -260,7 +260,7 @@ int ProcessData2(struct CommandLineArgsTag CLA)
 
   PassBandParamStruc highpassParams;
 
-  highpassParams.nMax =  12;
+  highpassParams.nMax =  4;
   highpassParams.f1   = -1;
   highpassParams.a1   = -1;
   highpassParams.f2   = CLA.flow;
@@ -415,6 +415,7 @@ int ClusterEvents(struct CommandLineArgsTag CLA)
   /* copy first event into cluster list */ 
   if(localcl_event)
     {
+      Nevents=Nevents+1;
       thiscl_event = cl_events = LALCalloc( 1, sizeof( *cl_events ) );
       copy_event(thiscl_event, localcl_event);
     }
@@ -426,6 +427,7 @@ int ClusterEvents(struct CommandLineArgsTag CLA)
 
       if (peak1 != peak2)
 	{
+	  Nevents=Nevents+1;	  
 	  thiscl_event->next = LALCalloc( 1, sizeof( *(cl_events->next) ) );
 	  thiscl_event = thiscl_event->next;
 	  copy_event(thiscl_event, localcl_event->next);
@@ -489,6 +491,9 @@ int OutputEvents(struct CommandLineArgsTag CLA)
   LALEndLIGOLwXMLTable(&status, &xml);
 
   /* search summary table */
+  snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
+  searchsumm.searchSummaryTable->nevents = Nevents;
+
   LALBeginLIGOLwXMLTable(&status, &xml, search_summary_table);
   LALWriteLIGOLwXMLTable(&status, &xml, searchsumm, search_summary_table);
   LALEndLIGOLwXMLTable(&status, &xml);
@@ -559,8 +564,6 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  timeNS  = (INT8)( 1000000000 ) * (INT8)(CLA.GPSStart+GV.seg_length*i/2*GV.ht_proc.deltaT);
           timeNS += (INT8)( 1e9 * GV.ht_proc.deltaT * p );
 
-	  Nevents=Nevents+1;
-	  
 	  if ( *thisEvent ) /* create a new event */
             {
               (*thisEvent)->next = LALCalloc( 1, sizeof( *(*thisEvent)->next ) );
@@ -885,11 +888,11 @@ int ProcessData(struct CommandLineArgsTag CLA)
   PassBandParamStruc highpassParams;
   int p;
 
-  highpassParams.nMax =  8;
+  highpassParams.nMax =  4;
   highpassParams.f1   = -1;
   highpassParams.a1   = -1;
   highpassParams.f2   = CLA.flow;
-  highpassParams.a2   = 0.9; /* this means 10% attenuation at f2 */
+  highpassParams.a2   = 0.5; /* this means 10% attenuation at f2 */
 
   LALButterworthREAL8TimeSeries( &status, &GV.ht, &highpassParams ); 
   TESTSTATUS( &status ); 
@@ -1066,7 +1069,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   searchsumm.searchSummaryTable = LALCalloc(1, sizeof(SearchSummaryTable));
   /* the number of nodes for a standalone job is always 1 */
   searchsumm.searchSummaryTable->nnodes = 1;
-
 
   /* Initialize default values */
   CLA->flow=0.0;
@@ -1307,7 +1309,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       {
         fprintf(stderr,"Short segment length t=%d is too small to accomodate truncation time requested.\n",
 		small_seg_length);
-	fprintf(stderr,"Need short segment t(=%d) to be >= 4 x Truncation length (%d).\n",CLA->ShortSegDuration,CLA->TruncSecs);
+	fprintf(stderr,"Need short segment t(=%d) to be >= 4 x Truncation length (%f).\n",CLA->ShortSegDuration,CLA->TruncSecs);
 	return 1;
       }    
   }
