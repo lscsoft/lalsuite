@@ -190,6 +190,9 @@ ifo2 = cp.get('detectors','detector-two')
 type1 = cp.get('datafind','type-one')
 type2 = cp.get('datafind','type-two')
 
+# get the LSCdataFind server
+server = cp.get('datafind','server')
+
 # set up stopp job
 stopp = stochastic.StoppNode(stopp_job)
 
@@ -204,6 +207,7 @@ for seg in data:
   df1.set_end(seg.end())
   df1.set_observatory(ifo1[0])
   df1.set_type(type1)
+  df1.set_server(server)
   if prev_df:
     df1.add_parent(prev_df)
   prev_df = df1
@@ -215,6 +219,7 @@ for seg in data:
     df2.set_end(seg.end())
     df2.set_observatory(ifo2[0])
     df2.set_type(type2)
+    df2.set_server(server)
     df2.add_parent(prev_df)
     prev_df = df2
 
@@ -282,18 +287,13 @@ that the grid proxy has been sucessfully created by executing the command:
 
   $ grid-cert-info -all -file /tmp/x509up_u`id -u`
 
-This will also give the expiry time of the proxy.
+This will also give the expiry time of the proxy."""
 
-You also need to set the LSC_DATAFIND_SERVER environment variable eg.
-
-  $ export LSC_DATAFIND_SERVER=ldas-gridmon.ligo.caltech.edu
-
-to point to a valid LSC DataFind Server that can be queried for the
-location of the data on the cluster."""
 print """\nThe DAG can now be summitted by executing the following command
 on a condor submit machine
 
   $ condor_submit_dag""", dag.get_dag_file()
+
 print """\nIt is currently recommended that you pass condor_submit_dag the option
 -maxjobs 30, to limit the maximum of jobs. This is due to condor being
 designed to run jobs that take several hours to complete, whereas the

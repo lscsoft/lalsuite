@@ -11,13 +11,13 @@ stochastic.c:
 
 * add loop over frequency band for bayesian search within stochastic.c,
   so that all bands can be analysed without rereading all the data in
-	for each band
+  for each band
 
 * add loop so that the code reads in the maximum amount of data that can
   be stored within a specified amount of data, analyses that data, and
-	the reads in more data etc... this will allow the code to analyse the
-	science segments as a whole and reduce the complexity of the pipeline
-	dag scripts
+  the reads in more data etc... this will allow the code to analyse the
+  science segments as a whole and reduce the complexity of the pipeline
+  dag scripts
 
 stopp.c:
 
@@ -32,15 +32,13 @@ stochastic_pipe.in/stochastic_bayes.in:
 * call lalapps_stopp for each frequency band to create a single xml file
   for each frequency band, for the bayesian search
 
-* specify the LDRdataFindServer in the config file
-
 * enable support for GEO/LIGO correlations, script currently checks for
   calibration information for all detectors - which GEO doesn't need
 
 * when the data is split up into segments to analyse, no overlapping of
   data is performed - this means that there are 60s of data not analysed
-	at the end of one segment and the start of the next leading to 120s of
-	data being lost everytime a science segment is split
+  at the end of one segment and the start of the next leading to 120s of
+  data being lost everytime a science segment is split
 
 stochastic.py:
 
@@ -54,3 +52,5 @@ Done:
 
 * add examples of .ini files for running searchs at CIT, LHO, LLO,
   etc... (20050507)
+
+* specify the LDRdataFindServer in the config file (20050521)

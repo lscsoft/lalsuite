@@ -310,6 +310,7 @@ class LSCDataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__end = 0
     self.__observatory = None
     self.__type = None
+    self.__server = None
     self.__output = None
     self.__job = job
    
@@ -360,6 +361,15 @@ class LSCDataFindNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     self.add_var_opt('type',type)
     self.__type = type
+    self.__set_output()
+
+  def set_server(self,server):
+    """
+    Set the LSCdataFind Server
+    @param server: LSCdataFind Server.
+    """
+    self.add_var_opt('server',server)
+    self.__server = server
     self.__set_output()
 
   def get_output(self):
