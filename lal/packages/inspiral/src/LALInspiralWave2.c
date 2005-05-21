@@ -179,7 +179,6 @@ LALInspiralWave2(
      of type void * rather than InspiralToffInput  */
   
   funcParams = (void *) &toffIn;
-  fprintf(stderr,"fu=%f fs=%f fHigh=%f\n",fu, fs  ,fHigh); 
   toffIn.t = 0.0;
   freq = fs;
   count=1;
