@@ -458,7 +458,7 @@ int main( int argc, char *argv[] ){
       case 'g':
         quality = atof( optarg );
         use_quality = 1;
-        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", deltaf );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", quality );
         break;
 
       case 's':
@@ -477,7 +477,7 @@ int main( int argc, char *argv[] ){
       case 'w':
         LALSnprintf( waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR), "%s",
             optarg );
-        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%le", optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%s", optarg );
         break;
 
 
