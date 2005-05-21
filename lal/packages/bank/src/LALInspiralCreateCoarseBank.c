@@ -1075,13 +1075,20 @@ LALInspiralBCVBankFcutS3 (
 	 
         /* sometimes since fMin is greater than the nyquist frequency, there
          * is no template generated. This is not acceptable. We need at least
-         * one frequency at the nyquist frequency. */
+         * one frequency at the nyquist frequency otherwise low masses
+         * systems are missed. */
         if (((fMax * (1.L - (REAL4) (nf-1) * frac)) >= (*list)[j].params.tSampling/2.0)) 
          {
            fMax = (*list)[j].params.tSampling/2.0 - 1. ;
            frac = -1;
          }
          
+        /*Similarly, for high masses. */
+        /*if (((fMax * (1.L - (REAL4) (nf-1) * frac)) <= (*list)[j].params.fLower * 1.5)) 
+         {
+           fMax = (*list)[j].params.fLower * 1.5 ;           
+         }
+        */
         for (i=0; i<nf; i++)
         {
           fendBCV = fMax * (1.L - (REAL4) i * frac);
@@ -1210,8 +1217,7 @@ LALEmpiricalPSI2MassesConversion (
   else
     {
       params->totalMass = -params->psi3/(16.L*LAL_PI * LAL_PI * params->psi0);
-      
-      params->totalMass = params->totalMass * 2  ; /* The factor 2 is purely empiricail and 
+      params->totalMass = params->totalMass * 2.  ; /* The factor 2 is purely empiricail and 
 						      comes from simulaitons. ?It seems indeed
 						      tyhat the relation between psi0 and psi3 
 						      which gives the total mass is not really
@@ -1219,7 +1225,7 @@ LALEmpiricalPSI2MassesConversion (
 						      twice as much as the estimated one.
 						   */
       params->fFinal = 1.L/( LAL_PI * pow(lightring, 1.5L) * params->totalMass );
-      params->totalMass /= LAL_MTSUN_SI;
+      params->totalMass /= LAL_MTSUN_SI; /* it it used later ? */
 
     *valid = 1;
 
@@ -1392,8 +1398,8 @@ LALExcludeTemplate(
     REAL4                 x,
     REAL4                 y)
 {
-  REAL4 psi0Int = 250000.;
-  REAL4 psi3Int = -2500.;
+  REAL4 psi0Int = 300000.;
+  REAL4 psi3Int = -3000.;
   
   REAL4 slope, bias;
 
@@ -1401,7 +1407,7 @@ LALExcludeTemplate(
       LALINSPIRALCREATECOARSEBANKC );
   ATTATCHSTATUSPTR( status );
  
-  
+ /* 
   if (x > psi0Int && bankParams->x0Max > psi0Int)
   {
     slope = (psi3Int  - (bankParams->x1Min +500.) ) / (bankParams->x0Max - psi0Int);
@@ -1414,6 +1420,10 @@ LALExcludeTemplate(
     {
       *valid = 1;
     }
+  }*/
+  if (x > psi0Int && y < psi3Int )
+  {
+    *valid = 0 ;
   }
   else 
   {
