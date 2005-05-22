@@ -19,6 +19,10 @@ stochastic.c:
   science segments as a whole and reduce the complexity of the pipeline
   dag scripts
 
+* reduce the amount of global variables, create a data structure to hold
+  variables associated with command line options to pass around when
+  needed - removing the need for global variables
+
 stopp.c:
 
 * add support for combining statistics from overlapping hann windows
