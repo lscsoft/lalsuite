@@ -20,11 +20,6 @@ static REAL4Vector X4;
 static COMPLEX8Vector *strainSegment = NULL;
 static COMPLEX8FrequencySeries       resp;
 
-void LALComputeWindowSpectrum(LALStatus *status, 
-			      INT4 numPoints, 
-			      INT4 specType, 
-			      REAL4FrequencySeries  *spec,
-			      REAL4TimeSeries *chan);
 
 static int vrbflg = 0;
 
@@ -33,8 +28,6 @@ main (INT4 argc, CHAR **argv )
 {
   /* --- Variables ---*/
   /*comments on variables will come later */
-  UINT4		nn;
-  UINT4         nby2;
   UINT4		currentTemplateNumber	= 0;
   UINT4		n;
   UINT4		k;
@@ -122,25 +115,27 @@ main (INT4 argc, CHAR **argv )
   /* any debugging options ? */
   lalDebugLevel = otherIn.lalDebug ;
 
-  /* This is used if one want to use condor script to keep track of the
-     input parameters. It creates a prototype to be read by Ascii2xml */
+  /* 
+     This is used if one want to use condor script to keep track of the
+     input parameters. It creates a prototype to be read by Ascii2xml. 
+     Useful with condor. See BankEfficiency documentation.
+  */
   if (otherIn.PrintPrototype){
     BEPrintProtoXml(coarseBankIn, randIn, otherIn);    
     exit(0);
   }
   
+
   /* --- Estimate the size of the signal --- */
   LAL_CALL(BEGetMaximumSize(&status, randIn, &(signal.length)), 
 	   &status);
   /* we multiply by 2 just for sanity */
-  signal.length *= 4 ;
+  signal.length *= 4*4;
+  /* do we want to increase the size of the segments ? */
+  signal.length *= otherIn.lengthFactor;
 
   signal.data 		= (REAL4*) LALCalloc(1, sizeof(REAL4) * signal.length);
 
-
-  /* --- now that we have the maximum length of the signal we can go ahead --- */
-  /* do we want to increase the size of the segments ? */
-  signal.length *= otherIn.lengthFactor;
 
   /* --- Allocate memory for some vectors --- */
   correlation.length 	= signal.length;
@@ -154,7 +149,9 @@ main (INT4 argc, CHAR **argv )
   LAL_CALL(BECreatePsd(&status, &coarseBankIn, randIn, otherIn), 
 	   &status);
 
-  /* copy the psd in RandIn.psd */
+
+  
+  /* c py the psd in RandIn.psd */
   for (i = 0; i< randIn.psd.length; i++){
     randIn.psd.data[i] = coarseBankIn.shf.data->data[i];
   }
@@ -181,6 +178,7 @@ main (INT4 argc, CHAR **argv )
     }
   }
 
+  
   /* --- do we want to print the bank in asccii ? in xml format ?? --- */
   if (otherIn.PrintBank){
     BEPrintBank(coarseBankIn, &list, sizeBank);		      
@@ -269,6 +267,9 @@ main (INT4 argc, CHAR **argv )
 
   srand(randIn.useed);
 
+
+
+
   /*
    * Main loop is here. We creae random signal and filter 
    * it with the template bank.
@@ -278,82 +279,17 @@ main (INT4 argc, CHAR **argv )
     {
       /* do some initialisation for the output */
       BEInitOverlapOutputIn(&OverlapOutputBestTemplate);
+  
 
       
-      /* LALCreateRandomInjection*/
-      randIn.param.approximant   = otherIn.signal; /* The waveform parameter for injection */
-      /* however, we might need to cahnge some parameters depending on the user parameters */
-	  
-
-      if (otherIn.signal == BCV) {
-	randIn.param.massChoice = fixedPsi;
+      randIn.param.fCutoff 		= coarseBankIn.fUpper; 			      
 	
-
-
-	{
-	  int valid = 0 ;
-	  
-	  /* use the random number so generated as the next seed */
-
-	  while (!valid)
-	    {
-	      REAL8 epsilon1 = (float) rand()/(float)RAND_MAX;
-	      REAL8 epsilon2 = (float) rand()/(float)RAND_MAX;
-	      
-	      randIn.param.psi0 = randIn.psi0Min + epsilon1 * (randIn.psi0Max - randIn.psi0Min);
-	      randIn.param.psi3 = randIn.psi3Min + epsilon2 * (randIn.psi3Max - randIn.psi3Min);
-
-
-	      REAL8 fend = 10000000;
-	      int trial = 0; 
-
-	      while ((fend > randIn.param.tSampling/2.) ||( fend < randIn.param.fLower) && (trial < 10) ) 
-		{ 	     
-
-		  REAL8 fLR, fLSO;
-		  REAL8 epsilon3 ;	
-		  epsilon3 = (float) rand()/(float)RAND_MAX;
-
-		  randIn.param.totalMass = -randIn.param.psi3/(16.L*LAL_PI * LAL_PI * randIn.param.psi0);
-		  randIn.param.totalMass *= 2 / LAL_MTSUN_SI;
- ;
-		  
-		  fLR = 1.L/(LAL_PI * pow (3.L,1.5) * randIn.param.totalMass * LAL_MTSUN_SI); 
-		  fLSO = 1.L/(LAL_PI * pow (6.L,1.5) * randIn.param.totalMass * LAL_MTSUN_SI);		
-
-		  fend = fLSO + (fLR - fLSO) * epsilon3;
-		  fend = fLSO + (fLR - fLSO) * epsilon3;
-
-
-
-		  randIn.param.fFinal = fend;		  
-		  randIn.param.fCutoff = fend;		  
-
-		  trial++;
-		}
-	      if (trial ==10 ) valid = 0;
-	      else valid = 1;
-	  
-	      
-	    } 
-	}
-
-      }
-      else
-	{ 
-	  randIn.param.fCutoff 		= coarseBankIn.fUpper; 			      
-          randIn.param.massChoice       = m1Andm2;
-	  randIn.param.massChoice       = totalMassUAndEta; /* TODO : an input parameter*/
-	}
-      /* Let's compute the random parameters of the waveform to inject*/
-      
-
-      
-      LAL_CALL(BEGenerateInputData(&status, &signal, &randIn, otherIn),
+      /* inject signal into some noise */
+      LAL_CALL(BEGenerateInputData(&status,  &signal, &randIn, otherIn), 
 	       &status);
+
       
-      /*
-      if (otherIn.NoiseModel == REALPSD)
+      /*      if (otherIn.NoiseModel == REALPSD)
 	{
 	  for (i=0; i<signal.length/2; i++){
 	    k = signal.length-i;
@@ -361,7 +297,6 @@ main (INT4 argc, CHAR **argv )
 	    signal.data[k] = strainSegment->data[i].im; 
 	  }	   	      
 	}
-
       */
 
       overlapin.signal 	= signal;
@@ -376,9 +311,9 @@ main (INT4 argc, CHAR **argv )
 	}
       */  
       
-      nby2 	= Filter1.length / 2;
-      nn 	= Filter1.length;
-      kMin  	= floor(randIn.param.fLower /df );
+
+
+      kMin  	= floor(coarseBankIn.fLower /df );
       df   	= randIn.param.tSampling / (REAL8)(VectorPhase.length) / 2.;
       
       /* --- we can process the data through the bank now ---        */
@@ -424,7 +359,7 @@ main (INT4 argc, CHAR **argv )
 		{
 		case BCV:	   	   	   
 		  /* let us fix the ending frequency of the template for LALOverlap function */
-
+                  
 
 
 		  fendBCV = list[currentTemplateNumber].params.fFinal ;
@@ -434,12 +369,19 @@ main (INT4 argc, CHAR **argv )
 			  fendBCV = list[currentTemplateNumber].params.fFinal =  randIn.param.fFinal; 
 
 
-
-
-
+		  /*                 if (otherIn.NoiseModel == REALPSD)
+                 {
+		   sizeBank =1 ; 
+		   list[currentTemplateNumber].params.fFinal =  620;; 
+		   list[currentTemplateNumber].params.psi0 =  226783;; 
+		   list[currentTemplateNumber].params.psi3 =  -943;; 
+		   fendBCV = 620;
+                 }
+		  */
 
 		  overlapin.param.fFinal   =  fendBCV;
 		  overlapin.param.fCutoff  =  fendBCV;
+                  
 		  
 		  /* Extract some values a11,a21,a22 parameter for template creation*/
 		  k = floor(fendBCV / df);
@@ -497,10 +439,6 @@ main (INT4 argc, CHAR **argv )
 		      overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
 		    }
 
-
-
-
-
 		  
 		  LAL_CALL(LALInspiralWaveOverlap(&status,
 						  &correlation,
@@ -512,14 +450,6 @@ main (INT4 argc, CHAR **argv )
 		      fprintf(Foutput, "%e\n",  correlation.data[i]);
 		    }
 		  fclose(Foutput);
-		  
-		  Foutput=fopen("BE_waveformIn.dat", "w");
-		  for (i=0; i<signal.length; i++)
-		    {
-		      fprintf(Foutput, "%e %e\n", i/randIn.param.tSampling , signal.data[i]);
-		    }
-		  fclose(Foutput);	
-		  
 		  */
 		  
 		  BEFillOverlapOutput(overlapout, 
@@ -575,14 +505,14 @@ main (INT4 argc, CHAR **argv )
 	      
 	    }/*end of  cheating code for non BCV code*/  
 	  
-	  
 	}/*end of the bank process*/
       
-     
       /* Then print the maximum overlap over the whole bank and the corresponding 
        * parameter of the templates, injected signal and so on. This is the main results
        * We'll print one line for each simulation (ntrials parameter)*/
-      GetResult(	   &list, 
+
+      GetResult(	   &status, 
+			   &list, 
 			   randIn.param, 
 			   OverlapOutputBestTemplate, 
 			   &result, 
@@ -617,6 +547,10 @@ main (INT4 argc, CHAR **argv )
       result.snrAtCoaTime = correlation.data[randIn.coalescenceTime];
       result.snrCAtCoaTime = correlation.data[randIn.coalescenceTime];
 #endif      
+
+
+
+
       
       if (!otherIn.quietFlag){
 	PrintResults(result);  
@@ -631,22 +565,14 @@ main (INT4 argc, CHAR **argv )
  
 
 
-
       /*Now we might want given the best template, to reproduce results and keep overlp, wavefom of the signal , template ...*/
       /* save signal */
       /* overlap     */
       /* save template and correlation */
+      if (otherIn.template == BCV)
       if (otherIn.PrintBestOverlap || otherIn.PrintBestTemplate){
 	
 	otherIn.extraFinalPrinting = 1;
-	
-
-	Foutput=fopen("BE_waveformIn.dat", "w");
-	for (i=0; i<signal.length; i++)
-	  {
-	    fprintf(Foutput, "%e %e\n", i/randIn.param.tSampling , signal.data[i]);
-	  }
-	fclose(Foutput);
 	
 	fendBCV = list[OverlapOutputBestTemplate.templateNumberConstraint].params.fFinal;
 	overlapin.param.fFinal   =  overlapin.param.fCutoff  =  fendBCV;
@@ -670,9 +596,6 @@ main (INT4 argc, CHAR **argv )
 				   matrix, 
 				   otherIn , &OverlapOutputThisTemplate), &status);
 	
-	LAL_CALL(LALInspiralParameterCalc(&status, &list[OverlapOutputBestTemplate.templateNumberConstraint].params), &status);
-	/*	   if (!otherIn.quietFlag){
-		   PrintResults(list[jmax].params, randIn.param, overlapoutmax, fMax, list[jmax].nLayer);*/
       }
       
 
@@ -796,8 +719,9 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
   randIn->mMin          	= BANKEFFICIENCY_MMIN;				/* min mass to inject			*/
   randIn->mMax          	= BANKEFFICIENCY_MMAX;				/* max mass to inject 			*/
   randIn->MMax          	= BANKEFFICIENCY_MMAX * 2;			/* total mass max 			*/
-  randIn->etaMin        = (BANKEFFICIENCY_MMIN * BANKEFFICIENCY_MMAX) 
-    /BANKEFFICIENCY_MMAX/ BANKEFFICIENCY_MMAX;
+  randIn->etaMin                = BANKEFFICIENCY_MMIN 
+    * (BANKEFFICIENCY_MMAX - BANKEFFICIENCY_MMIN) 
+    / (BANKEFFICIENCY_MMAX * 2) / (BANKEFFICIENCY_MMAX * 2);
   randIn->psi0Min  		= BANKEFFICIENCY_PSI0MIN;			/* psi0 range 				*/
   randIn->psi0Max  		= BANKEFFICIENCY_PSI0MAX;	
   randIn->psi3Min  		= BANKEFFICIENCY_PSI3MIN;	
@@ -827,7 +751,7 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->signal       	= BANKEFFICIENCY_SIGNAL;
   otherIn->m1           	= -1;
   otherIn->m2           	= -1;
-  otherIn->lengthFactor	        = 1;
+  otherIn->lengthFactor	        = 1; /* 1 means size of the initial segment size do ot change */
   otherIn->psi0         	= -1;
   otherIn->psi3         	= -1;
   otherIn->tau0         	= -1;
@@ -856,6 +780,32 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->NoiseModel           = LIGOI;
   otherIn->binaryInjection      = NoUserChoice; 
   otherIn->inputXMLBank         = NULL;
+  otherIn->maxTotalMass         = -1;
+
+  otherIn->detector = L1;
+  otherIn->run      = S3;
+  otherIn->chanName = "H1:LSC-AS_Q";
+  otherIn->calCacheName = NULL;
+  otherIn->calCacheName = NULL;
+  otherIn->startTime  =751956568LL;
+  otherIn->endTime    =-2;
+
+  otherIn->L1.chanName             = "L1:LSC-AS_Q";
+  otherIn->H1.chanName             = "H1:LSC-AS_Q";
+  otherIn->H2.chanName             = "H2:LSC-AS_Q";
+  
+  otherIn->L1.dataFile.S3.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/L1-CAL-V03-751719553-757699245.cache";
+  otherIn->L1.dataFile.S3.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_L_S3_RDS_R_L3.txt";     
+  otherIn->H1.dataFile.S3.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/H1-CAL-V03-751651153-757699245.cache";
+  otherIn->H1.dataFile.S3.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";     
+  otherIn->H2.dataFile.S3.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/H2-CAL-V03-751654453-757699245.cache";
+  otherIn->H2.dataFile.S3.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";
+  otherIn->L1.dataFile.S2.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/L1-CAL-V03-729273600-734367600.cache";
+  otherIn->L1.dataFile.S2.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_L_S3_RDS_R_L3.txt";     
+  otherIn->H1.dataFile.S2.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/H1-CAL-V03-729273600-734367600.cache";
+  otherIn->H1.dataFile.S2.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";     
+  otherIn->H2.dataFile.S2.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/H2-CAL-V03-731849076-734367576.cache";
+  otherIn->H2.dataFile.S2.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";      
 }
 
 
@@ -876,37 +826,49 @@ ParseParameters(	INT4 			*argc,
   while(i < *argc)
     {
       if ( strcmp(argv[i],	"--debug") 	== 0 ) {
-	      otherIn->lalDebug = atoi(argv[++i]);
+	otherIn->lalDebug = atoi(argv[++i]);
       }
       else if ( strcmp(argv[i],	"--fend-bcv") 	== 0 ) {
-		coarseBankIn->LowGM      	= atof(argv[++i]);
-       	      	coarseBankIn->HighGM     	= atof(argv[++i]);
-	}
-      else if ( (strcmp(argv[i],	"--fl") 	== 0 ) 
-		|| ( strcmp(argv[i],	"--fLower") 	== 0 ) ){
-  		coarseBankIn->fLower = randIn->param.fLower	= atof(argv[++i]);  
+	coarseBankIn->LowGM      	= atof(argv[++i]);
+	coarseBankIn->HighGM     	= atof(argv[++i]);
       }
-      else if ( strcmp(argv[i],	"--sampling") 	== 0 ) {
-  		coarseBankIn->tSampling = randIn->param.tSampling = atof(argv[++i]);  
-		randIn->param.fCutoff 	= coarseBankIn->tSampling/2. - 1.;
-		coarseBankIn->fUpper 	= coarseBankIn->tSampling/2. - 1.;
+      else if (strcmp(argv[i],	"--fl-signal") 	== 0 ) {
+	randIn->param.fLower	= atof(argv[++i]); 
+      }
+      else if  (strcmp(argv[i],	"--fl-template") 	== 0 ) {
+	coarseBankIn->fLower = atof(argv[++i]);  
+      }
+      else if  (strcmp(argv[i],	"--fl") 	== 0 ) {
+	coarseBankIn->fLower = atof(argv[++i]);  
+	randIn->param.fLower	= 	coarseBankIn->fLower;
 
-	}      
+      }
+      
+      else if ( strcmp(argv[i],	"--sampling") 	== 0 ) {
+	coarseBankIn->tSampling = randIn->param.tSampling = atof(argv[++i]);  
+	randIn->param.fCutoff 	= coarseBankIn->tSampling/2. - 1.;
+	coarseBankIn->fUpper 	= coarseBankIn->tSampling/2. - 1.;
+	
+      }      
+      else if (strcmp(argv[i], "--max-totalmass") == 0)  {
+        otherIn->maxTotalMass = atof(argv[++i]);
+      }
+      
       else if ( strcmp(argv[i],	"--mass-range-bank")	== 0 ) 	{	
-		coarseBankIn->mMin = atof(argv[++i]);
-		coarseBankIn->mMax = atof(argv[++i]); 
-		coarseBankIn->MMax = coarseBankIn->mMax * 2.; 
-		coarseBankIn->etamin 	= coarseBankIn->mMin *  coarseBankIn->mMax 
-		  / pow(coarseBankIn->MMax, 2.);
+	coarseBankIn->mMin = atof(argv[++i]);
+	coarseBankIn->mMax = atof(argv[++i]); 
+	
+	coarseBankIn->MMax = coarseBankIn->mMax * 2;
+	coarseBankIn->etamin = coarseBankIn->mMin * coarseBankIn->mMax 
+	  / (coarseBankIn->mMin + coarseBankIn->mMax) 
+	  / (coarseBankIn->mMin + coarseBankIn->mMax);
       }
       else if ( strcmp(argv[i],	"--mass-range")	== 0 ) 	{	
-		randIn->mMin = atof(argv[++i]);
-		randIn->param.mass1 = randIn->param.mass2 = randIn->mMin;
-		randIn->mMax = atof(argv[++i]); 
-		randIn->MMax = randIn->mMax * 2.; 
-		randIn->etaMin 	= randIn->mMin * randIn->mMax 
-			/ pow(randIn->MMax, 2.);
-	}
+	randIn->mMin = atof(argv[++i]);
+	randIn->param.mass1 = randIn->param.mass2 = randIn->mMin; /*default values for injection*/
+	randIn->mMax = atof(argv[++i]); 
+	randIn->param.massChoice = m1Andm2;
+      }
       else if ( strcmp(argv[i], "--m1") 	== 0 ){
 	otherIn->m1 = atof(argv[++i]);	      
 	randIn->param.massChoice = fixedMasses; 
@@ -1081,6 +1043,40 @@ ParseParameters(	INT4 			*argc,
 	  randIn->param.approximant = otherIn->signal;	
 	  
 	}	
+      else if ( (strcmp(argv[i], "--channel")==0))
+	{
+	  otherIn->chanName = argv[++i];	  
+	}  
+      else if ( (strcmp(argv[i], "--run")==0))
+	{
+	  if (strcmp(argv[++i],  "S2")	==0) 		otherIn->run = S2;
+	  else if (strcmp(argv[i],"S3")	==0)		otherIn->run = S3;
+
+	  else {
+	    printf("--run option error: argument = [S2, S3] only\n");
+	    exit(0);
+	  }
+	} 
+      else if ( (strcmp(argv[i], "--detector")==0))
+	{
+	  if (strcmp(argv[++i],  "L1")	==0) 		otherIn->detector = L1;
+	  else if (strcmp(argv[i],"H1")	==0)		otherIn->detector = H1;
+	  else if (strcmp(argv[i],"H2")	==0)		otherIn->detector = H2;
+	  else {
+	    printf("--detector option error: argument = [H1, H2, and L1] only\n");
+	    exit(0);
+	  }
+	}
+
+      else if ( (strcmp(argv[i], "--gps-start-time")==0))
+	{
+	  otherIn->startTime = atol(argv[++i]);;
+	  if (otherIn->startTime <0 ) {
+	    printf("--gps-start-time must be >0 and valid gps time\n");
+	    exit(0);
+	  }
+	}
+
       else 
 	{
 	  Help(*coarseBankIn, *randIn, *otherIn);
@@ -1089,6 +1085,109 @@ ParseParameters(	INT4 			*argc,
       
       i++;       
     } 
+
+  if (otherIn->maxTotalMass != -1)
+    {
+      if (otherIn->maxTotalMass < 2*randIn->mMin) 
+	{	
+	  fprintf(stderr, "maxtotalMass must be greater than twice the minimal mass provided\n"); 
+	  exit(0);
+	}
+	
+
+      if (otherIn->maxTotalMass >= (2 * randIn->mMax))
+	{
+	  randIn->MMax = 2* randIn->mMax;
+	  randIn->etaMin = randIn->mMin * randIn->mMax 
+	    / (randIn->mMin + randIn->mMax)
+	    / (randIn->mMin + randIn->mMax);
+	}
+      else
+	{
+	  randIn->MMax = otherIn->maxTotalMass;
+	  randIn->etaMin = randIn->mMin * (randIn->MMax  - randIn->mMin)
+	    / (randIn->MMax )
+	    / (randIn->MMax );
+	}
+    }               
+  
+
+
+
+  switch ( otherIn->detector)
+    {
+    case L1:
+      switch (otherIn->run)
+	{
+	case S2:
+	  otherIn->calCacheName   = otherIn->L1.dataFile.S2.calCacheName  ;
+	  otherIn->frInCacheName  = otherIn->L1.dataFile.S2.frInCacheName ;       
+	  otherIn->chanName  =  otherIn->L1.chanName;
+
+	  break;
+	case S3:
+	  otherIn->calCacheName   = otherIn->L1.dataFile.S3.calCacheName  ;
+	  otherIn->frInCacheName  = otherIn->L1.dataFile.S3.frInCacheName ;
+	  otherIn->chanName  =  otherIn->L1.chanName;
+
+	  break;
+	case S1:
+	case S4:
+	case S5:
+	case S6:
+	  break;
+	}
+      break;
+    case H1:
+      switch (otherIn->run)
+	{
+	case S1:
+	case S4:
+	case S5:
+	case S6:
+	  break;
+	case S2:
+	  otherIn->calCacheName   = otherIn->H1.dataFile.S2.calCacheName  ;
+	  otherIn->frInCacheName  = otherIn->H1.dataFile.S2.frInCacheName ;
+	  otherIn->chanName  =  otherIn->H1.chanName;
+		  
+	  break;
+	case S3:
+	  otherIn->calCacheName   = otherIn->H1.dataFile.S3.calCacheName  ;
+	  otherIn->frInCacheName  = otherIn->H1.dataFile.S3.frInCacheName        ;
+	  otherIn->chanName       = otherIn->H1.chanName;
+	  break;
+	}
+      break;
+     
+    case H2:
+      switch (otherIn->run)
+	{
+	case S1:
+	case S4:
+	case S5:
+	case S6:
+	  break;
+	case S2:
+	  otherIn->calCacheName   = otherIn->H2.dataFile.S2.calCacheName;
+	  otherIn->frInCacheName  = otherIn->H2.dataFile.S2.frInCacheName;
+	  otherIn->chanName  =  otherIn->H2.chanName;
+	  break;
+	case S3:
+	  otherIn->calCacheName   = otherIn->H2.dataFile.S3.calCacheName;
+	  otherIn->frInCacheName  = otherIn->H2.dataFile.S3.frInCacheName;
+	  otherIn->chanName       =  otherIn->H2.chanName;
+	  break;
+	}
+      break;
+      
+    case V1:break;
+      
+    case G1:break;
+    }
+
+
+
 }
 
 
@@ -1102,6 +1201,27 @@ void CheckParams(InspiralCoarseBankIn coarseBankIn,
   REAL4 temp;
   temp =randIn.param.mass1; /*just to avoid boring warning*/
 
+
+  if (otherIn.check ==1 && randIn.type == 1)
+    {
+      BEPrintError("can not check code if no injection performed. use simulation-type = 0 or 2\n");
+      exit(0);
+
+    }
+
+
+  if (coarseBankIn.approximant == (Approximant)(-1))
+    {
+      BEPrintError("template approximant must be precised\n");
+      exit(0);
+    }
+
+  if (randIn.param.approximant == (Approximant)(-1))
+    {
+      BEPrintError("signal approximant must be precised\n");
+      exit(0);
+    }
+
   if (coarseBankIn.psi0Min <=0 ) {
     BEPrintError("Psi0 must be > 0");
     exit(0);
@@ -1110,10 +1230,7 @@ void CheckParams(InspiralCoarseBankIn coarseBankIn,
     BEPrintError("psi0 Max must be > 0"); 
 	  exit(0);
   }
-  if (coarseBankIn.psi3Max >=0 ) {
-    BEPrintError("psi3 Max must be < 0"); 
-    exit(0);
-  }
+
   if (coarseBankIn.psi3Min >=0 ) {
     BEPrintError("psi3 Min must be < 0"); 
     exit(0);
@@ -1183,7 +1300,7 @@ BEPrintError(char *chaine)
   fprintf(stderr,"| BankEfficiency code						\n");
   fprintf(stderr,"| Error while parsing parameters				\n");
   fprintf(stderr,"|=============================================================|\n");
-  fprintf(stderr,"| %s \n",chaine);
+  fprintf(stderr,"--> %s ",chaine);
   fprintf(stderr,"|type BankEfficiency -h to get details\n");
   fprintf(stderr,"|=============================================================|\n");
 }
@@ -1212,8 +1329,8 @@ void Help(	InspiralCoarseBankIn   coarseBankIn,
   fprintf(stderr,"--binaryInjection[BHNS]: if argument=BHNS then system are Blackhole+neutron star\n");
   fprintf(stderr,"--debug		: debugging option for lal functions 0=no edbug, 1=debug ... (0)\n");
   fprintf(stderr,"--fast-simulation	:fast simulation in the SPA case in a box of 0.1seconds square\n");
-  fprintf(stderr,"--fLower			: lower frequency cutoff             		(%7.2f) Hz\n", BANKEFFICIENCY_FLOWER);
-  fprintf(stderr,"--fl			: lower frequency cutoff             			(%7.2f) Hz\n", BANKEFFICIENCY_FLOWER);
+  fprintf(stderr,"--fl-signal		: lower frequency cutoff             		(%7.2f) Hz\n", BANKEFFICIENCY_FLOWER);
+  fprintf(stderr,"--fl-template		: lower frequency cutoff             			(%7.2f) Hz\n", BANKEFFICIENCY_FLOWER);
   fprintf(stderr,"--length-factor	: multiply length signal by some factor(should be of unity order) ( %7.2d)\n", 1);
   fprintf(stderr,"--fend-bcv		: Lower and highest values of bcv frequency cutoff 	(%7.2d, %7.2d)\n", BANKEFFICIENCY_LOWGM, BANKEFFICIENCY_HIGHGM);
   fprintf(stderr,"--mass-range		: minimal mass of component stars    			(%7.2f, %7.2f) Mo\n", BANKEFFICIENCY_MMIN, BANKEFFICIENCY_MMAX);
@@ -1311,7 +1428,7 @@ KeepHighestValues(OverlapOutputIn resultThisTemplate,
 
 void 
 GetResult(
-	  
+	  LALStatus                  *status, 
 	  InspiralTemplateList        **list,
 	  InspiralTemplate       	injected,
 	  OverlapOutputIn 	        bestOverlap, 
@@ -1320,20 +1437,29 @@ GetResult(
 {
   INT4 templateNumber, templateNumberC;
   InspiralTemplate trigger, triggerC;
-  LALStatus status = blank_status;
+
   
-  /* INITSTATUS (status, "GetResult", BANKEFFICIENCYC);
-     ATTATCHSTATUSPTR(status);
-  */
-    templateNumberC = bestOverlap.templateNumberConstraint;
-    templateNumber = bestOverlap.templateNumberUnconstraint;
-    trigger = (*list)[templateNumber].params;
-    triggerC = (*list)[templateNumberC].params;
-    LALInspiralParameterCalc(&status, &trigger);
-    LALInspiralParameterCalc(&status, &triggerC);
+  INITSTATUS (status, "GetResult", BANKEFFICIENCYC);
+  ATTATCHSTATUSPTR(status);
+     
+  templateNumberC = bestOverlap.templateNumberConstraint;
+  templateNumber = bestOverlap.templateNumberUnconstraint;
+  trigger = (*list)[templateNumber].params;
+  triggerC = (*list)[templateNumberC].params;
 
 
+
+
+  
+  
   if (otherIn.template == BCV){
+
+    LALInspiralParameterCalc( status->statusPtr,  &triggerC );
+    CHECKSTATUSPTR(status);		
+
+    LALInspiralParameterCalc( status->statusPtr,  &trigger );
+    CHECKSTATUSPTR(status);							
+    
     result->psi0_trigger = trigger.psi0;
     result->psi3_trigger = trigger.psi3;
     result->psi0_inject  = injected.psi0;
@@ -1342,6 +1468,15 @@ GetResult(
     result->psi3_triggerC  = triggerC.psi3;     
   }
   else{
+    trigger.massChoice = m1Andm2;
+    triggerC.massChoice = m1Andm2;
+
+    LALInspiralParameterCalc( status->statusPtr,  &triggerC );
+    CHECKSTATUSPTR(status);							 
+    LALInspiralParameterCalc( status->statusPtr,  &trigger );
+    CHECKSTATUSPTR(status);							
+    
+
     result->psi0_trigger = trigger.t0;
     result->psi3_trigger = trigger.t3;
     result->psi0_inject  = injected.t0;
@@ -1375,9 +1510,9 @@ GetResult(
   result->layer       = bestOverlap.layerUnconstraint;
   
     
-  /* DETATCHSTATUSPTR(status);
+  DETATCHSTATUSPTR(status);
   RETURN (status);
-  */
+
 }
 
 
@@ -1592,211 +1727,6 @@ LALCreateFilters(	REAL4Vector 		*Filter1,
 
 
 
-void
-LALWaveOverlapBCV2(	     LALStatus               *status,
-			     REAL4Vector             *correlation,
-			     InspiralWaveOverlapIn   *overlapin,
-			     REAL4Vector             *Filter1,
-			     REAL4Vector             *Filter2,
-			     BCVMaximizationMatrix    matrix,
-			     OtherParamIn             otherIn ,
-			     OverlapOutputIn          *OverlapOutput
-		  	     )
-{
- 
-  REAL4   rhoMaxConstraint=0   ,   alphaConstraint=0,   phaseConstraint=0;
-  REAL4   rhoMaxUnconstraint=0;
-  INT4    rhoBinUnconstraint=0, rhoBinConstraint=0;
-  REAL4   alphaUnconstraint=0,   phaseUnconstraint=0;
-  REAL4   rhoConstraint=0, rhoUnconstraint=0, inter1, inter2;
-
-
-
-  
-  REAL4  thetab,thetav=0, alphaMax, a11,a22,a21, 
-	  V0, V1, V2, 								/* idem 				*/
-	  rho		= 0,							/* the SNR 				*/
-            w, thetac;
-  
-
-  InspiralWaveCorrelateIn 
-	  corrin;								/* the correlation input structure 	*/
-  UINT4 
-	  i, 									
-	  nBegin, 								/* beginning of valid correlation 	*/
-	  nEnd; 								/* end of valid correlation 		*/
-	
-  
-
-	  
-  INITSTATUS (status, "LALInspiralWaveOverlapBCV2", BANKEFFICIENCYC);
-  ATTATCHSTATUSPTR(status);
-  
-
-  overlapin->param.nStartPad 	= 0;
-  overlapin->param.startPhase 	= 0;
-  
-  /*  We want to compute <x|h1> and <x|h2>; let's prepare the correlation  
-   *  process; let's get the input data namely x and the spectrum namely psd 
-   *  */
-  corrin.fCutoff        = overlapin->param.fFinal;				/* the integral's cutoff frequency 	*/
-  corrin.samplingRate   = overlapin->param.tSampling;				/* the sampling 			*/
-  corrin.df             = overlapin->param.tSampling / 
-	  		(REAL8) overlapin->signal.length;			/* the resolution in frequency 		*/
-  corrin.psd            = overlapin->psd;					/* the spectrum 			*/
-  corrin.signal1        = overlapin->signal;					/* the signal x				*/
-  corrin.revp           = overlapin->revp;					/* fourier transform flag		*/
-  
-  /* Filter h1 and its orthonormal h1* */  
-  corrin.signal2        = *Filter1;						/* The first template 			*/
-  LALInspiralWaveCorrelate(status->statusPtr, &X1, corrin);			/* the correlation			*/
-  CHECKSTATUSPTR(status);							
-  LALGetOrthogonalFilter2(Filter1);						/* get the orthonormalized template     */
-  corrin.signal2        = *Filter1;						/* the second template 		*/
-  LALInspiralWaveCorrelate(status->statusPtr, &X3, corrin);			/* the correlation 			*/
-  CHECKSTATUSPTR(status);
-  
-  /* Filter h2 and its orthornormal filter */
-  corrin.signal2        = *Filter2;						/* The first template			*/
-  LALInspiralWaveCorrelate(status->statusPtr, &X2, corrin);			/* the correlation 			*/
-  CHECKSTATUSPTR(status);		
-  LALGetOrthogonalFilter2( Filter2);						/* get the orthonormailzed templates 	*/
-  corrin.signal2        = *Filter2;						/* the second template			*/
-  LALInspiralWaveCorrelate(status->statusPtr, &X4, corrin);			/* the correlation 			*/
-  
-  /* nbegin and end for the correlation processus 
-   * as well as overlapout affectation */
-  nBegin                = overlapin->nBegin;					/* starting bin 			*/
-  nEnd              	= Filter1->length - overlapin->nEnd;			/* ending valid bin 			*/
-
-
-  a11 = matrix.a11;
-  a22 = matrix.a22;
-  a21 = matrix.a21;
-  alphaMax = pow(corrin.fCutoff, -2./3.);
-
-  thetab = fabs(-(a11 * alphaMax)/(a22+a21*alphaMax));
-  thetab = atan(thetab);
-  rho    = 0.;
-  
-  thetac = atan(-a11/a21);
-  if(otherIn.PrintBestOverlap){
-  fprintf(stderr, "a11=%e, a21=%e a22=%e %e thetab=%e, thetac=%e\n", 
-	  matrix.a11, matrix.a21, matrix.a22,corrin.fCutoff, thetab, thetac);  
-  }
-
-  /*fprintf(stderr,"%e %e %e %e %e %e\n", alphaMax , thetab, corrin.fCutoff, a11, a22, a21);*/
-
-  /* Once we have the 4 correlations, we can search for the
-   * maximum of correlation and compute the final SNR */
-  for (i = nBegin; i < nEnd; i++) 
-    {
-      
-      inter1 = X1.data[i] * X1.data[i] +  X3.data[i] * X3.data[i];
-      inter2 = X2.data[i] * X2.data[i] +  X4.data[i] * X4.data[i];
-      V0 = inter1 + inter2;
-      V1 = inter1 - inter2;
-      V2 =  2*(X1.data[i]*X2.data[i] + X3.data[i]*X4.data[i]);
-      
-      rhoUnconstraint = ((V0 + sqrt(V1*V1+V2*V2))/2.);
-      
-
-      /* get thetav first in order to constraint alpha_F*/
-      thetav = atan2(V2,V1);
-      thetav*=.5;
-	
-      
-      if (otherIn.alphaFConstraint == ALPHAFConstraint){
-	
-	if (-thetab < thetav && thetav < 0){	  
-	  rhoConstraint = rhoUnconstraint;
-	  w = thetav;
-	}
-	else if ((0 <= thetav && thetav < thetac) ){
-	  rhoConstraint = ((V0 + V1)/2.);	  
-	  w = 0.;
-	}
-	else if( (thetac <= thetav && thetav<LAL_PI_2+1e-6)||( -LAL_PI_2-1e-6 < thetav && thetav<= -thetab)){
-	  rhoConstraint =((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);;
-	  w = -thetab;
-	}
-	else 
-	  {
-	    fprintf(stderr,"must not enter here thetac = %e thetav = %e thetab=%e\n ",thetac, thetav , thetab);
-	    exit(0);
-	    w = -1;
-	  }
-      	  
-	 if(otherIn.PrintBestOverlap || otherIn.PrintSNRHisto || otherIn.snrAtCoaTime) {
-	   correlation->data[i] = rhoConstraint;
-	 }
-
-
-
-	if ( rhoConstraint > rhoMaxConstraint)			
-	  /* Keep the position of the max only	*/
-	  {
-	    rhoMaxConstraint 	  = rhoConstraint;
-	    rhoBinConstraint 	  = i;
-	    phaseConstraint       = w;
-	    
-	  }          
-	/*we save unconstraint results as well*/
-	if ( rhoUnconstraint > rhoMaxUnconstraint)							/* Keep the position of the max only	*/
-	  {
-	    rhoMaxUnconstraint 	= rhoUnconstraint;
-	    rhoBinUnconstraint 	= i;
-	    phaseUnconstraint   = .5*atan2(V2, V1);
-	  }          
-
-
-      } 
-      else{ /*no constraint on alphaF here, we keep only results with respect to unconstraint formulaes*/
-	if(otherIn.PrintBestOverlap || otherIn.PrintSNRHisto || otherIn.snrAtCoaTime) {
-	  correlation->data[i] = rhoUnconstraint;
-	}
-	
-	if ( rhoUnconstraint > rhoMaxUnconstraint)							/* Keep the position of the max only	*/
-	  {
-	    rhoMaxUnconstraint 	= rhoUnconstraint;
-	    rhoBinUnconstraint 	= i;
-	    phaseUnconstraint   = .5*atan2(V2, V1);
-
-	  }          
-      }
-    }   
-
-  /* Finally get the alpha value corresponding to the best rho */ 
-
-
-  alphaConstraint = -(matrix.a22 * tan(phaseConstraint)) 				
-    / (matrix.a11 + matrix.a21* tan(phaseConstraint));
-  
-  alphaUnconstraint = -(matrix.a22 * tan(phaseUnconstraint)) 				
-    / (matrix.a11 + matrix.a21* tan(phaseUnconstraint));
-
- 
-  OverlapOutput->rhoMaxConstraint     = sqrt(rhoMaxConstraint);
-  OverlapOutput->rhoBinConstraint     = rhoBinConstraint;
-  OverlapOutput->alphaConstraint      = alphaConstraint;
-  OverlapOutput->phaseConstraint      = phaseConstraint;
-  OverlapOutput->rhoMaxUnconstraint   = sqrt(rhoMaxUnconstraint);
-  OverlapOutput->rhoBinUnconstraint   = rhoBinUnconstraint;
-  OverlapOutput->alphaUnconstraint    = alphaUnconstraint;
-  OverlapOutput->phaseUnconstraint    = phaseUnconstraint;
-
-
-
-
- 
-   DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
-
-
-
-
-
 
 /*  ****************************************************************************
  *  The Overlap function for BCV templates 
@@ -1818,7 +1748,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   REAL4   rhoMaxUnconstraint=0;
   INT4    rhoBinUnconstraint=0, rhoBinConstraint=0;
   REAL4   alphaUnconstraint=0,   phaseUnconstraint=0;
-  REAL4   rhoConstraint=0, rhoUnconstraint=0;
+  REAL4   rhoConstraint=0, rhoUnconstraint=0, alphaTemp =0 ;
 
 
 
@@ -1827,7 +1757,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	  x1_2, x2_2, x3_2, x4_2, 						/* some temporary data 	      		*/
 	  V0, V1, V2, 								/* idem 				*/
 	  rho		= 0,							/* the SNR 				*/
-           alpha, w, thetac;
+           alpha;
   
   REAL4Vector 
     template, 
@@ -1908,7 +1838,6 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   nEnd              	= Filter1->length - overlapin->nEnd;			/* ending valid bin 			*/
 
 
-
   /* some output for debugging, checking ... */
   if (otherIn.PrintBestOverlap && otherIn.extraFinalPrinting)
     {
@@ -1936,17 +1865,19 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   a21 = matrix.a21;
   alphaMax = pow(corrin.fCutoff, -2./3.);
 
-  thetab = fabs(-(a11 * alphaMax)/(a22+a21*alphaMax));
+
+
+  thetab = (-(a11 * alphaMax)/(a22+a21*alphaMax));
   thetab = atan(thetab);
   rho    = 0.;
   
-  thetac = atan(-a11/a21);
-  if(otherIn.PrintBestOverlap){
-  fprintf(stderr, "a11=%e, a21=%e a22=%e %e thetab=%e, thetac=%e\n", 
-	  matrix.a11, matrix.a21, matrix.a22,corrin.fCutoff, thetab, thetac);  
+  if(otherIn.PrintBestOverlap && otherIn.extraFinalPrinting){
+  fprintf(stderr,"theta_b = %e a11=%e a21=%e a22=%e\n", thetab,  a11, a21, a22);
+  fprintf(stderr,"theta_b = %e %e %e %e\n", thetab,  a11*1024, a21*1024, a22*1024*256);
   }
 
-  /*fprintf(stderr,"%e %e %e %e %e %e\n", alphaMax , thetab, corrin.fCutoff, a11, a22, a21);*/
+
+
 
   /* Once we have the 4 correlations, we can search for the
    * maximum of correlation and compute the final SNR */
@@ -1957,15 +1888,6 @@ LALWaveOverlapBCV(	     LALStatus               *status,
       x3_2 = x3.data[i] * x3.data[i];
       x4_2 = x4.data[i] * x4.data[i];      
       
-      /*
-	inter1 = x1.data[i] * x1.data[i] +  x3.data[i] * x3.data[i];
-	inter2 = x2.data[i] * x2.data[i] +  x4.data[i] * x4.data[i];
-	V0 = inter1 + inter2;
-	V1 = inter1 - inter2;
-	V2 =  2*(x1.data[i]*x2.data[i] + x3.data[i]*x4.data[i]);
-      */
-
-
       V0 = x1_2 + x2_2 + x3_2 + x4_2;
       V1 = x1_2 + x3_2 - x2_2 - x4_2;
       V2 = 2*(x1.data[i]*x2.data[i] + x3.data[i]*x4.data[i]);
@@ -1974,8 +1896,8 @@ LALWaveOverlapBCV(	     LALStatus               *status,
       
 
       /* get thetav first in order to constraint alpha_F*/
-      thetav = atan2(V2,V1);
-      thetav*=.5;
+
+      thetav =   atan2(V2,V1);
 	
       if(otherIn.PrintBestOverlap && otherIn.extraFinalPrinting){
 	rho1.data[i] = rhoUnconstraint;
@@ -1984,78 +1906,90 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	v0.data[i]   = V0;
 	v1.data[i]   = V1;
 	v2.data[i]   = V2;
-	phaseV.data[i] =thetav;		             
+        phaseV.data[i] = .5*thetav; /*used to compute alpha*/
       }
-      
-      
-      if (otherIn.alphaFConstraint == ALPHAFConstraint){
-	
-	if (-thetab < thetav && thetav < 0){	  
+             
+
+      if (thetab >= 0){
+	if ( 0  <= thetav && thetav <= 2 * thetab){	  
 	  rhoConstraint = rhoUnconstraint;
-	  w = thetav;
 	}
-	else if ((0 <= thetav && thetav < thetac) ){
+	else if (thetab-LAL_PI <= thetav && thetav < 0) {
 	  rhoConstraint = sqrt((V0 + V1)/2.);	  
-	  w = 0.;
 	}
-	else if( (thetac <= thetav && thetav<LAL_PI_2+1e-6)||( -LAL_PI_2-1e-6 < thetav && thetav<= -thetab)){
+	else if( (2*thetab  < thetav && thetav<LAL_PI )
+		 || thetab-LAL_PI>thetav){
 	  rhoConstraint =sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);;
-	  w = -thetab;
+	}
+	else  if ( 0  <= thetav && thetav <= 2 * thetab)
+	  {	
+	    rhoConstraint = rhoUnconstraint;
+	  }
+	else
+	  {
+	    fprintf(stderr,"must not enter here  thetav = %e thetab=%e\n ", thetav , thetab);
+	    exit(0);
+	  }
+      }
+      else{
+	if ( 2*thetab  <= thetav && thetav <= 0){	  
+	  rhoConstraint = rhoUnconstraint;
+	}
+	else if (0 < thetav &&  thetav  <= LAL_PI+1e-4 ) {
+	  rhoConstraint = sqrt((V0 + V1)/2.);	  
+	}
+	else if( -LAL_PI-1e-4  <= thetav && thetav < 2*thetab ){
+	  rhoConstraint =sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);;
 	}
 	else 
 	  {
-	    fprintf(stderr,"must not enter here thetac = %e thetav = %e thetab=%e\n ",thetac, thetav , thetab);
+	    fprintf(stderr,"must not enter herethetav = %e thetab=%e %e %e %d\n ",thetav , thetab, V1, V2, i);
 	    exit(0);
-	    w = -1;
 	  }
-      	  
-	 if(otherIn.PrintBestOverlap || otherIn.PrintSNRHisto || otherIn.snrAtCoaTime) {
-	   correlation->data[i] = rhoConstraint;
-	 }
-
-
-
-	if ( rhoConstraint > rhoMaxConstraint)			
-	  /* Keep the position of the max only	*/
-	  {
-	    rhoMaxConstraint 	  = rhoConstraint;
-	    rhoBinConstraint 	  = i;
-	    phaseConstraint       = w;
-	    
-	  }          
-	/*we save unconstraint results as well*/
-	if ( rhoUnconstraint > rhoMaxUnconstraint)							/* Keep the position of the max only	*/
-	  {
-	    rhoMaxUnconstraint 	= rhoUnconstraint;
-	    rhoBinUnconstraint 	= i;
-	    phaseUnconstraint   = .5*atan2(V2, V1);
-	  }          
-
-
-      } 
-      else{ /*no constraint on alphaF here, we keep only results with respect to unconstraint formulaes*/
-	if(otherIn.PrintBestOverlap || otherIn.PrintSNRHisto || otherIn.snrAtCoaTime) {
-	  correlation->data[i] = rhoUnconstraint;
-	}
-	
-	if ( rhoUnconstraint > rhoMaxUnconstraint)							/* Keep the position of the max only	*/
-	  {
-	    rhoMaxUnconstraint 	= rhoUnconstraint;
-	    rhoBinUnconstraint 	= i;
-	    phaseUnconstraint   = .5*atan2(V2, V1);
-
-	  }          
       }
-    }   
+    
+  
+      if (otherIn.alphaFConstraint == ALPHAFConstraint){
+  
+	if(otherIn.PrintBestOverlap || otherIn.PrintSNRHisto || otherIn.snrAtCoaTime) {
+	  correlation->data[i] = rhoConstraint;
+	}
+      }
+      else 
+	{
+	  if(otherIn.PrintBestOverlap || otherIn.PrintSNRHisto || otherIn.snrAtCoaTime) {
+	    correlation->data[i] = rhoUnconstraint;
+	  }
+	}
+      
 
+      if ( rhoConstraint > rhoMaxConstraint)			
+	/* Keep the position of the max only	*/
+	{
+	  rhoMaxConstraint 	  = rhoConstraint;
+	  rhoBinConstraint 	  = i;
+	  phaseConstraint   =    .5*thetav;
+	  alphaConstraint = -(matrix.a22 * tan(phaseConstraint)) 				
+	    / (matrix.a11 + matrix.a21* tan(phaseConstraint));
+	}
+
+      if ( rhoUnconstraint > rhoMaxUnconstraint)			
+	/* Keep the position of the max only	*/
+	{
+	  rhoMaxUnconstraint 	= rhoUnconstraint  ;
+	  rhoBinUnconstraint 	= i;
+	  phaseUnconstraint   = .5*thetav ; 
+	  alphaUnconstraint = -(matrix.a22 * tan(phaseUnconstraint)) 				
+	    / (matrix.a11 + matrix.a21* tan(phaseUnconstraint));
+	}
+
+
+	
+    }
+
+  
   /* Finally get the alpha value corresponding to the best rho */ 
 
-
-  alphaConstraint = -(matrix.a22 * tan(phaseConstraint)) 				
-    / (matrix.a11 + matrix.a21* tan(phaseConstraint));
-  
-  alphaUnconstraint = -(matrix.a22 * tan(phaseUnconstraint)) 				
-    / (matrix.a11 + matrix.a21* tan(phaseUnconstraint));
 
  
   OverlapOutput->rhoMaxConstraint     = rhoMaxConstraint;
@@ -2075,46 +2009,46 @@ LALWaveOverlapBCV(	     LALStatus               *status,
     /*print overlap, combinaison of the x_i filters*/
     Foutput=fopen("BE_Phase.dat","w");
     for (i=0; i< phaseV.length; i++){
-      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,phaseV.data[i]);
+      fprintf(Foutput, "%e\n",  atan2(v2.data[i],v1.data[i]));
     }
     fclose(Foutput);
     
 
   Foutput=fopen("BE_rho1.dat","w");
     for (i=0; i< phaseV.length; i++){
-      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,rho1.data[i]);
+      fprintf(Foutput, "%e\n", rho1.data[i]);
     }
     fclose(Foutput);
     
 
   Foutput=fopen("BE_rho2.dat","w");
     for (i=0; i< phaseV.length; i++){
-      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,rho2.data[i]);
+      fprintf(Foutput, "%e\n", rho2.data[i]);
     }
     fclose(Foutput);
     
 
     Foutput=fopen("BE_rho3.dat","w");
     for (i=0; i< phaseV.length; i++){
-      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,rho3.data[i]);
+      fprintf(Foutput, "%e\n",rho3.data[i]);
     }
     fclose(Foutput);
      
     Foutput=fopen("BE_v0.dat","w");
     for (i=0; i< phaseV.length; i++){
-      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,v0.data[i]);
+      fprintf(Foutput, "%e\n",v0.data[i]);
     }
     fclose(Foutput);
 
     Foutput=fopen("BE_v1.dat","w");
     for (i=0; i< phaseV.length; i++){
-      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,v1.data[i]);
+      fprintf(Foutput, "%e\n", v1.data[i]);
     }
     fclose(Foutput); 
 
     Foutput=fopen("BE_v2.dat","w");
     for (i=0; i< phaseV.length; i++){
-      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,v2.data[i]);
+      fprintf(Foutput, "%e\n", v2.data[i]);
     }
     fclose(Foutput);
     
@@ -2122,14 +2056,14 @@ LALWaveOverlapBCV(	     LALStatus               *status,
     for (i=0; i< correlation->length; i++){
       alpha = -(matrix.a22 * tan(phaseV.data[i])) 				/* Compute the final alpha parameter 	*/
 	/ (matrix.a11 + matrix.a21* tan(phaseV.data[i]));
-      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,alpha*pow(corrin.fCutoff,2./3.));
+      fprintf(Foutput, "%e \n",alpha*pow(corrin.fCutoff,2./3.));
     }
     fclose(Foutput);
 
     /*print overlap, combinaison of the x_i filters*/
     Foutput=fopen("BE_Overlap.dat","w");
     for (i=0; i< correlation->length; i++){
-      fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(correlation->data[i]));
+      fprintf(Foutput, "%e\n", fabs(correlation->data[i]));
     }
     fclose(Foutput);
   }
@@ -3232,7 +3166,7 @@ void BECreatePsd(LALStatus *status,
       break;
     case REALPSD:	
       /* Read psd dans le fichier InputPSD.dat */
-      LAL_CALL(LALCreateRealPsd (status->statusPtr, coarseBankIn, randIn ), 
+      LAL_CALL(LALCreateRealPsd (status->statusPtr, coarseBankIn, randIn , otherIn), 
 	       status->statusPtr);
       break;
      }
@@ -3254,74 +3188,164 @@ void BECreatePsd(LALStatus *status,
 
 
 
-void BEGenerateInputData(LALStatus *status, 
+void BEGenerateInputData(LALStatus *status,
 			 REAL4Vector * signal,
 			 RandomInspiralSignalIn  *randIn,
 			 OtherParamIn           otherIn)
 {
-  UINT4  i;
-  UINT4 success = 0;
-  
+  UINT4  trial ;
+  UINT4 success ;
+
+
   INITSTATUS( status, "BEGenerateInputData", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
   
   
-  for (i = 0; i < signal->length; i++) 
+  trial =0 ;
+  success =0 ;
+  /*  for (i = 0; i < signal->length; i++) 
     signal->data[i] = 0.;       
+
+  */
   
   /* we might force to compute a non random waveform giving the two
      input parameters m1 and m2 */      
-  
-  if (otherIn.m1 == -1 && otherIn.psi0 ==-1 && otherIn.tau0 == -1)
-    {   
-      if (otherIn.binaryInjection == BHNS){	 
-	randIn->param.massChoice = bhns;
-      }
-    }
-  else 
-    {
-      if (otherIn.m1!=-1) {
-	randIn->param.massChoice = fixedMasses;
-	randIn->param.mass1 = otherIn.m1;
-	randIn->param.mass2 = otherIn.m2;
-      }
-      if (otherIn.psi0!=-1) {
-	randIn->param.massChoice = fixedPsi;
-	randIn->param.psi0 = otherIn.psi0;
-	randIn->param.psi3 = otherIn.psi3;
-      }
-      if (otherIn.tau0!=-1) {
-	randIn->param.massChoice = fixedTau;
-	randIn->param.t0 = otherIn.tau0;
-	randIn->param.t3 = otherIn.tau3;
-      }
-    }
+  randIn->param.approximant = otherIn.signal; 
 
-  /* here randIn.fcutoff is used*/
-  do{     
-    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
-    if (status->statusPtr->statusCode == 0) {
-      success = 1;
+  if (randIn->type != 1){
+    if (otherIn.signal == BCV)
+      {
+	/* user parameters*/
+	if (otherIn.psi0!=-1)
+	  {
+	    randIn->param.massChoice = fixedPsi;
+	    randIn->param.psi0 = otherIn.psi0;
+	    randIn->param.psi3 = otherIn.psi3;
+	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	    CHECKSTATUSPTR(status);
+	  }
+	else /* random parameters*/
+	  {
+	    randIn->param.massChoice = fixedPsi;
+	    {
+	      int valid = 0 ;
+	      
+	      while (!valid)
+		{
+		  REAL8 epsilon1 = (float) rand()/(float)RAND_MAX;
+		  REAL8 epsilon2 = (float) rand()/(float)RAND_MAX;
+		  REAL8 fend = 10000000.;
+		  int trial = 0; 
+		  
+		  randIn->param.psi0 = randIn->psi0Min + epsilon1 * (randIn->psi0Max - randIn->psi0Min);
+		  randIn->param.psi3 = randIn->psi3Min + epsilon2 * (randIn->psi3Max - randIn->psi3Min);
+		  
+		  
+		  while (((fend > randIn->param.tSampling/2.) || ( fend < randIn->param.fLower)) && (trial < 10))
+		    { 	     
+		      
+		      REAL8 fLR, fLSO;
+		      REAL8 epsilon3 ;	
+		      epsilon3 = (float) rand()/(float)RAND_MAX;
+		      
+		      randIn->param.totalMass = -randIn->param.psi3/(16.L*LAL_PI * LAL_PI * randIn->param.psi0);
+		      randIn->param.totalMass *= 2 / LAL_MTSUN_SI;
+		      
+		      
+		      fLR = 1.L/(LAL_PI * pow (3.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI); 
+		      fLSO = 1.L/(LAL_PI * pow (6.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);		
+		      
+		      fend = fLSO + (fLR - fLSO) * epsilon3;
+		      fend = fLSO + (fLR - fLSO) * epsilon3;
+		      
+		      randIn->param.fFinal = fend;		  
+		      randIn->param.fCutoff = fend;		  
+		      
+		      trial++;
+		    }
+		  if (trial == 10 ) valid = 0;
+		  else valid = 1;
+		}
+	    }
+	    
+	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	    CHECKSTATUSPTR(status);	    	    	    
+	}
+    }
+  else /* EOB , T1 and so on*/
+    {
+      if (otherIn.m1!=-1 )
+	{
+	  randIn->param.massChoice = fixedMasses;
+	  randIn->param.mass1 = otherIn.m1;
+	  randIn->param.mass2 = otherIn.m2;
+	  LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	  CHECKSTATUSPTR(status);	  
+	}
+      else if (otherIn.tau0!=-1 ) 
+	{
+	  randIn->param.massChoice = fixedTau;
+	  randIn->param.t0 = otherIn.tau0;
+	  randIn->param.t3 = otherIn.tau3; 
+	  LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	  CHECKSTATUSPTR(status);
+	}
+      else if (otherIn.binaryInjection == BHNS)
+	{
+	  randIn->param.massChoice = bhns;
+	  LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	  CHECKSTATUSPTR(status);
+	}
+      else
+	{
+	  randIn->param.massChoice = m1Andm2;
+	  randIn->param.massChoice = totalMassUAndEta;
+
+	  LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	  CHECKSTATUSPTR(status);
+	}    
     }
   }
-  while (success == 0 );
 
+
+    if (randIn->type == 1)
+      {
+	randIn->param.massChoice = m1Andm2;
+	
+	LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	CHECKSTATUSPTR(status);
+      }    
+    
+
+
+  /*
+
+    do{     
+    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+
+        if (status->statusPtr->statusCode == 0) {
+      success = 1;
+    }  
+    trial++;
+  }
+  while (success == 0 && trial < 10 );
   CHECKSTATUSPTR(status);
-
-
-  
-
-
-  DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  */
+     
+  DETATCHSTATUSPTR(status);
+  RETURN (status);
 
 }
 
 void 
 LALCreateRealPsd(LALStatus *status, 
 		 InspiralCoarseBankIn *bankIn,
-		 RandomInspiralSignalIn randIn)
+		 RandomInspiralSignalIn randIn, 
+		 OtherParamIn userParam)
 {
+
+
+
 
   enum
     {
@@ -3329,9 +3353,32 @@ LALCreateRealPsd(LALStatus *status,
       real_4,
       real_8
     } calData = undefined;
-  
+
+  enum { unset, urandom, user } randSeedType = user;    /* sim seed type */
+  INT4  randomSeed        = 1;            /* value of sim rand seed       */
+  REAL4 gaussVar          = 1.0;         /* variance of gaussian noise   */
+  INT4  gaussianNoise     = 0;            /* make input data gaussian   0 non , 1 oui  */
+  RandomParams *randParams = NULL;
 
                  /* verbocity of lal function    */
+
+
+  
+  int i; FILE *Foutput;
+  /* lal function variables */
+
+  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
+
+  /* frame input data */
+  FrCache      *frInCache = NULL;
+  FrCache      *calCache = NULL;
+  FrStream     *frStream = NULL;
+  FrChanIn      frChan;
+  CHAR tmpChName[LALNameLength];
+
+  COMPLEX8FrequencySeries       injResp;
+  COMPLEX8FrequencySeries      *injRespPtr;
+  LIGOTimeGPS slideData   = {0,0};        /* slide data for time shifting */
 
   INT8  durationNS = 0;  
   INT8  gpsEndTimeNS     = 0;             /* input data GPS end time ns   */
@@ -3345,9 +3392,6 @@ LALCreateRealPsd(LALStatus *status,
 
 
   CHAR *injectionFile = "/home/cokelaer/Work/TestWaveOverlap/HL-INJECTIONS_1-732005208-2048.xml";
-
-  
-
   CHAR  *frInCacheName = NULL;
 
   INT4  numPoints         = (randIn.psd.length-1)*2;           /* points in a segment          */
@@ -3358,36 +3402,18 @@ LALCreateRealPsd(LALStatus *status,
   INT4   resampFiltType   = 0;           /* low pass filter used for res 0 = = ldas*/
   INT4   sampleRate       = randIn.param.tSampling;           /* sample rate of filter data   */
   INT4   highPass         = 1;           /* enable high pass on raw data */
-  REAL4  highPassFreq     = 70;            /* high pass frequency          */
+  REAL4  highPassFreq     = bankIn->fLower;            /* high pass frequency          */
   INT4   highPassOrder    = 8;           /* order of the td iir filter   */
   REAL4  highPassAtten    = 0.1;           /* attenuation of the td filter */
   REAL4  fLow             = bankIn->fLower;           /* low frequency cutoff         */
-  INT4   specType         = 1;           /* use median (1)or mean(0) psd       */
+  INT4   specType         = 1;           /* use median (1)or mean(0) psd   or gauss    */
 
   CHAR  *calCacheName     = NULL;
   INT4   pointCal         = 0;            /* don't average cal over chunk */
   REAL4  dynRangeExponent = 40;            /*onent of dynamic range    */
   REAL4 geoHighPassFreq = -1;             /* GEO high pass frequency      */
   INT4  geoHighPassOrder = -1;            /* GEO high pass filter order   */
-  REAL4 geoHighPassAtten = -1;            /* GEO high pass attenuation    */
-  
-  int i; FILE *Foutput;
-  /* lal function variables */
-
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
-  
-  /* frame input data */
-  FrCache      *frInCache = NULL;
-  FrCache      *calCache = NULL;
-  FrStream     *frStream = NULL;
-  FrChanIn      frChan;
-  CHAR tmpChName[LALNameLength];
-
-  COMPLEX8FrequencySeries       injResp;
-  COMPLEX8FrequencySeries      *injRespPtr;
-  LIGOTimeGPS slideData   = {0,0};        /* slide data for time shifting */
-
-
+  REAL4 geoHighPassAtten = -1;            /* GEO high pass attenuation    */  
   /* raw iut data storage */
   REAL4TimeSeries               chan;
   REAL8TimeSeries               geoChan;
@@ -3410,20 +3436,39 @@ LALCreateRealPsd(LALStatus *status,
   UINT4 resampleChan = 0;
   CalibrationUpdateParams calfacts, inj_calfacts;
   REAL8 dynRange = 0;
+  REAL8 inputDeltaT;
 
 
+  WindowSpectrumIn windowSpectrumParam;
+  InspiralPipelineIn inspiralPipelineIn;
 
   CHAR         *calGlobPattern;
 
   INITSTATUS( status, "LALCreatRealPsd", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
 
+  
+  /*  SetInspiralPipelineParams(&inspiralPipelineIn, randIn);*/
+
+
   /*  fprintf(stderr,"Generating real PSD\n");*/
   calData = undefined;
 
   memset( ifo, 0, sizeof(ifo));
-  memcpy( ifo, "L1", sizeof(ifo) - 1 );
 
+  switch (userParam.detector){
+  case L1: 
+    memcpy( ifo, "L1", sizeof(ifo) - 1 );
+    break;
+  case H1: 
+    memcpy( ifo, "H1", sizeof(ifo) - 1 );
+    break;
+  case H2: 
+    memcpy( ifo, "H2", sizeof(ifo) - 1 );
+    break;
+  case V1: 
+  case G1: 
+  }
 
 
   if ( dynRangeExponent )
@@ -3445,28 +3490,32 @@ LALCreateRealPsd(LALStatus *status,
   
   
 
-/*  calCacheName  =  "/netw/critical/ligoCalibration/cache_files/H1-CAL-V03-751651153-757699245.cache";*/
-  calCacheName  =  "/netw/critical/ligoCalibration/cache_files/L1-CAL-V03-751719553-757699245.cache";
-
-  frInCacheName = "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_L_S3_RDS_R_L3.txt";     
-  fqChanName    = "L1:LSC-AS_Q";        
-  
-
-  inputDataLength = numPoints * ( numSegments + 1) / 2 ;
-  /* 752232948  752243688*/
+  /* S3 */
   /*gpsStartTimeNS += (INT8) (752578908) * 1000000000LL;*/
-  gpsStartTimeNS += (INT8) (751956468) * 1000000000LL;
-  /*732005200*/
+
+  /* S2 */
+   /*   gpsStartTimeNS += (INT8) (732005200 +padData) * 1000000000LL ;
   gpsStartTimeNS += (INT8) (0);
+  */
+
+  gpsStartTimeNS += (INT8) (userParam.startTime) *  1000000000LL;
+  fqChanName    = userParam.chanName; 
+  calCacheName  = userParam.calCacheName;
+  frInCacheName = userParam.frInCacheName;
+
+  inputDataLength = numPoints   * ( numSegments + 1) / 2 ;
+
+
+  
   
   gpsEndTimeNS = gpsStartTimeNS;
-  gpsEndTimeNS += (INT8) ((UINT8)inputDataLength /(UINT8) sampleRate) 
+  gpsEndTimeNS += (INT8) ((UINT8)inputDataLength /(UINT8)sampleRate) 
     * 1000000000LL;
   gpsEndTimeNS += (INT8) (0);
  
-  LAL_CALL( LALINT8toGPS( status->statusPtr, &gpsStartTime, &gpsStartTimeNS ), 
+  LAL_CALL( LALINT8toGPS( status->statusPtr, &(gpsStartTime), &(gpsStartTimeNS) ), 
 	    status->statusPtr ); 
-  LAL_CALL( LALINT8toGPS( status->statusPtr, &gpsEndTime, &gpsEndTimeNS ), 
+  LAL_CALL( LALINT8toGPS( status->statusPtr, &(gpsEndTime), &(gpsEndTimeNS) ), 
 	    status->statusPtr );
   /** End Thomas */
 
@@ -3498,11 +3547,12 @@ LALCreateRealPsd(LALStatus *status,
     fprintf( stdout,  "reading frame file locations from cache file: %s\n", frInCacheName );
 
   /* read a frame cache from the specified file */
-  LAL_CALL( LALFrCacheImport( status->statusPtr, &frInCache, frInCacheName), status->statusPtr );
+  LAL_CALL( LALFrCacheImport( status->statusPtr, &frInCache, 
+			      frInCacheName), status->statusPtr );
   
 
   /* open the input data frame stream from the frame cache */
-  LAL_CALL( LALFrCacheOpen( status->statusPtr, &frStream, frInCache ), status->statusPtr );
+  LAL_CALL( LALFrCacheOpen( status->statusPtr, &frStream,frInCache ), status->statusPtr );
 
   /* set the mode of the frame stream to fail on gaps or time errors */
   frStream->mode = LAL_FR_VERBOSE_MODE;
@@ -3530,6 +3580,11 @@ LALCreateRealPsd(LALStatus *status,
     LAL_CALL( LALFrGetREAL4TimeSeries( status->statusPtr, &chan, &frChan, frStream ),
         status->statusPtr );
   }
+
+
+  inputDeltaT = chan.deltaT;
+
+
 
   /* determine if we need to resample the channel */
   if ( vrbflg )
@@ -3592,14 +3647,16 @@ LALCreateRealPsd(LALStatus *status,
     geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAtten);
     if ( vrbflg ) fprintf( stdout, "applying %d order high pass to GEO data: "
         "%3.2f of signal passes at %4.2f Hz\n", 
-        geoHighpassParam.nMax, geoHighpassParam.a2, geoHighpassParam.f2 );
+			   geoHighpassParam.nMax, 
+			   geoHighpassParam.a2,
+			   geoHighpassParam.f2 );
 
     LAL_CALL( LALButterworthREAL8TimeSeries( status->statusPtr, &geoChan, 
           &geoHighpassParam ), status->statusPtr );
 
     /* cast the GEO data to REAL4 in the chan time series       */
     /* which already has the correct amount of memory allocated */
-    for ( j = 0 ; j < numInputPoints ; ++j )
+    for ( j = 0 ; j <numInputPoints ; ++j )
     {
       chan.data->data[j] = (REAL4) ( geoChan.data->data[j] * dynRange );
     }
@@ -3658,6 +3715,72 @@ LALCreateRealPsd(LALStatus *status,
    * create the random seed if it will be needed
    *
    */
+
+
+  if ( randSeedType != unset )
+    {
+      
+    if ( randSeedType == urandom )
+    {
+      FILE   *fpRand = NULL;
+      INT4    randByte;
+
+      if ( vrbflg ) 
+        fprintf( stdout, "obtaining random seed from /dev/urandom: " );
+
+      randomSeed = 0;
+      fpRand = fopen( "/dev/urandom", "r" );
+      if ( fpRand )
+      {
+        for ( randByte = 0; randByte < 4 ; ++randByte )
+        {
+          INT4 tmpSeed = (INT4) fgetc( fpRand );
+          randomSeed += tmpSeed << ( randByte * 8 );
+        }
+        fclose( fpRand );
+      }
+      else
+      {
+        perror( "error obtaining random seed from /dev/urandom" );
+        exit( 1 );
+      }
+    }
+    else if ( randSeedType == user )
+    {
+      if ( vrbflg ) 
+        fprintf( stdout, "using user specified random seed: " );
+    }
+    else
+    {
+      /* should never get here */
+      fprintf( stderr, "error obtaining random seed\n" );
+      exit( 1 );
+    }
+
+    if ( vrbflg ) fprintf( stdout, "%d\n", randomSeed );
+
+    /* create the tmplt bank random parameter structure */
+    LAL_CALL( LALCreateRandomParams( status->statusPtr, &randParams, randomSeed ),
+        status->statusPtr );
+  }
+
+  /* replace the input data with gaussian noise if necessary */
+  if ( gaussianNoise )
+  {
+    if ( vrbflg ) fprintf( stdout, 
+        "setting input data to gaussian noise with variance %e... ", gaussVar );
+    memset( chan.data->data, 0, chan.data->length * sizeof(REAL4) );
+    LAL_CALL( LALNormalDeviates(status->statusPtr, chan.data, randParams ), 
+	      status->statusPtr );
+    for ( j = 0; j < chan.data->length; ++j )
+    {
+      chan.data->data[j] *= gaussVar;
+    }
+    if ( vrbflg ) fprintf( stdout, "done\n" );
+
+  }
+
+
   
 
   /*
@@ -3713,11 +3836,18 @@ LALCreateRealPsd(LALStatus *status,
   {
     calGlobPattern = NULL;        
     if ( vrbflg ) fprintf( stdout, 
-          "reading calibration data from cache: %s\n", calCacheName );
+          "reading calibration data from cache: %s ....", calCacheName );
+      if ( vrbflg ) fprintf( stdout, 
+          "reading calibration data from cache: %s ....", fqChanName );
     
+    if ( vrbflg ) fprintf( stdout, 
+          "reading calibration data from cache: %s ....", frInCacheName );
+
     LAL_CALL( LALCreateCalibFrCache( status->statusPtr, &calCache, calCacheName, 
           NULL, calGlobPattern ), status->statusPtr );
-
+    if ( vrbflg ) fprintf( stdout,  "done\n" );
+  
+    
     if ( calGlobPattern ) LALFree( calGlobPattern );
 
 
@@ -3732,8 +3862,24 @@ LALCreateRealPsd(LALStatus *status,
   }
 
 
-    injectionFile = NULL;
+  if ( gaussianNoise )
+    {
+      /* replace the response function with unity if */
+      /* we are filtering gaussian noise             */
+      if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
+      for ( k = 0; k < resp.data->length; ++k )
+	{
+	  resp.data->data[k].re = 1.0;
+	  resp.data->data[k].im = 0;
+	}
+      if ( vrbflg ) fprintf( stdout, "done\n" );
+      
+  
+    }
+  
+  /*  injectionFile = NULL;*/
     
+
 
   if ( injectionFile )
   {
@@ -3764,7 +3910,7 @@ LALCreateRealPsd(LALStatus *status,
       /* see if we need a higher resolution response to do the injections */
       if ( resampleChan )	
       {
-	fprintf(stderr, "enter resample injection\n");
+
 
         /* we need a different resolution of response function for injections */
         UINT4 rateRatio = floor( resampleParams.deltaT / chan.deltaT + 0.5 );
@@ -3829,10 +3975,22 @@ LALCreateRealPsd(LALStatus *status,
 	  LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
 	  
 
-          injRespPtr = &injResp;
-	  
-
+          injRespPtr = &injResp;	  
 	}
+	if ( gaussianNoise )
+	  {
+	    /* replace the response function with unity if */
+	    /* we are filtering gaussian noise             */
+	    if ( vrbflg ) fprintf( stdout, "setting response to unity... " );
+	    for ( k = 0; k < injResp.data->length; ++k )
+	      {
+		injResp.data->data[k].re = 1.0;
+		injResp.data->data[k].im = 0;
+	      }
+	    if ( vrbflg ) fprintf( stdout, "done\n" );
+	    
+        }
+
       }
       else
       {
@@ -3947,13 +4105,19 @@ LALCreateRealPsd(LALStatus *status,
       status->statusPtr );
 
 
-  
+  windowSpectrumParam.numPoints =  numPoints ;
+  windowSpectrumParam.gaussVar =  gaussVar ;
+  windowSpectrumParam.inputDeltaT =  inputDeltaT ;
+  windowSpectrumParam.specType =  specType ;
+
+
   LAL_CALL( LALComputeWindowSpectrum( status->statusPtr, 
-				      numPoints,
-				      specType,
+				      &windowSpectrumParam,
 				      &spec, 
 				      &chan ),
 	    status->statusPtr );
+
+
 
 
   /* set low frequency cutoff of power spectrum */
@@ -3995,10 +4159,10 @@ LALCreateRealPsd(LALStatus *status,
     
   }
   
-  fprintf(stderr,"RealPsd generated\n");
-       Foutput= fopen("spec.dat","w");
 
-  for (i = 1; i < bankIn->shf.data->length; i++)
+  Foutput= fopen("spec.dat","w");
+
+  for (i = 1; i < (int)bankIn->shf.data->length; i++)
     fprintf(Foutput, "%15.10e\n", bankIn->shf.data->data[i]);  
   fclose(Foutput); 
   /*
@@ -4028,10 +4192,6 @@ LALCreateRealPsd(LALStatus *status,
   */
 
   /* ADD on Thomas Create strain data to be process by Overlap or something else */
-
-
-
-
 
   {
     REAL4       *dataPtr;
@@ -4064,7 +4224,7 @@ LALCreateRealPsd(LALStatus *status,
 				 numPoints, 0);
     CHECKSTATUSPTR( status );
 
-    /* Foutput= fopen("raw0.dat","w");
+    /*     Foutput= fopen("raw0.dat","w");
     for (i = 1; i < rawSegment->length; i++)
       fprintf(Foutput, "%e\n", rawSegment->data[i]);  
     fclose(Foutput); 
@@ -4094,8 +4254,8 @@ LALCreateRealPsd(LALStatus *status,
       }
     
     LALDestroyRealFFTPlan(status->statusPtr,&fwdPlan);
-    /*    cut = params->fLow / dataSeg->spec->deltaF > 1 ? */
-    
+       
+
     for ( k = 0; k < cut; ++k )
       {
 	strainSegment->data[k].re = 0.0;
@@ -4103,12 +4263,12 @@ LALCreateRealPsd(LALStatus *status,
       }
       
     dynRange = (REAL8) pow( 2.0, 40);/* pour avoir meme resultat que LAL avant filtrage*/
-    /*  Foutput= fopen("finalstrainre.dat","w");
+    /*
+    Foutput= fopen("finalstrainre.dat","w");
     
     for (i = 0; i < strainSegment->length; i++)
       fprintf(Foutput, "%15.10e\n", strainSegment->data[i].re*dynRange );  
-      
-      fclose(Foutput); 
+    fclose(Foutput); 
       
       Foutput= fopen("finalstrainim.dat","w");
       
@@ -4116,8 +4276,8 @@ LALCreateRealPsd(LALStatus *status,
 	fprintf(Foutput, "%15.10e\n", strainSegment->data[i].im*dynRange );  
 	
 	fclose(Foutput); 
-      
     */
+    
   
   }
   /* END ADD on Thomas*/                                                                                                                        
@@ -4127,33 +4287,101 @@ LALCreateRealPsd(LALStatus *status,
      inspiral in FindChipSPData. */
 
 
+#if 0
+ { 
+   REAL4Vector            signal;
+   RandomInspiralSignalIn randIn;
+   UINT4 n,k;
+  RealFFTPlan 			*fwdp = NULL;
+
+
+   n 	= (strainSegment->length-1)*2;
+   signal.length = n;
+   signal.data 		= (REAL4*) LALCalloc(1, sizeof(REAL4) * signal.length);
+
+   LALCreateForwardRealFFTPlan(status->statusPtr, &fwdp, signal.length, 0);
+
+   randIn.param.tSampling  = sampleRate;
+   randIn.param.massChoice = fixedPsi;
+   randIn.param.psi0 = 226783;
+   randIn.param.psi3 = -943;
+   randIn.param.fCutoff = 620;
+   randIn.param.alpha = 1.1;
+   randIn.param.approximant = BCV;
+   randIn.param.massChoice = fixedPsi;
+   randIn.param.fLower  = 40 ; 
+   randIn.psd.length 	= strainSegment->length;
+   randIn.psd.data 	= (REAL8*) LALMalloc(sizeof(REAL8) * randIn.psd.length); 
+   randIn.type = 0;
+   randIn.param.order = twoPN;
+   randIn.fwdp = fwdp;
+   randIn.param.signalAmplitude = 1;
+   randIn.param.startPhase = 0;
+   randIn.param.nStartPad =  16384;
+
+
+   fprintf(stderr, "%d %d %d\n",n,bankIn->shf.data->length, strainSegment->length);
+   for ( k = 1; k < bankIn->shf.data->length; ++k )
+     {    
+       randIn.psd.data[k] =  bankIn->shf.data->data[k];
+     }
+      
+
+      
+   LALRandomInspiralSignal(status->statusPtr, &signal, &randIn);
+   CHECKSTATUSPTR(status);
+   
+   
+
+
+   for ( k = 0; k < n/2; ++k )
+     {
+       
+       strainSegment->data[k].re = signal.data[k] ;
+       strainSegment->data[k].im = signal.data[n - k];
+     }
+   
+      
+ }
+#endif
+
+
+
+  LALCheckMemoryLeaks();    
+
+
+
+
   DETATCHSTATUSPTR( status );
   RETURN( status );  
 }
 
 
+
 void LALComputeWindowSpectrum(LALStatus *status, 
-			      INT4 numPoints, 
-			      INT4 specType, 
+			      WindowSpectrumIn *param,
 			      REAL4FrequencySeries  *spec,
 			      REAL4TimeSeries *chan)
 {
- 
+  
   LALWindowParams               wpars;
   AverageSpectrumParams         avgSpecParams;
+  INT4 k;
   
   INITSTATUS( status, "LALCreatRealPsd", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
   
   /* compute the windowed power spectrum for the data channel */
   avgSpecParams.window = NULL;
-  avgSpecParams.plan = NULL; 
-
-  LAL_CALL( LALCreateForwardRealFFTPlan( status->statusPtr, 
-					 &(avgSpecParams.plan), numPoints, 0 ), status->statusPtr );
+  avgSpecParams.plan   = NULL; 
   
-
-  switch ( specType )
+  LAL_CALL( LALCreateForwardRealFFTPlan( status->statusPtr, 
+					 &(avgSpecParams.plan), 
+					 param->numPoints, 0 ),
+	    status->statusPtr );
+  
+  
+  switch ( param->specType )
     {
     case 0:
       avgSpecParams.method = useMean;
@@ -4163,12 +4391,16 @@ void LALComputeWindowSpectrum(LALStatus *status,
       avgSpecParams.method = useMedian;
       if ( vrbflg ) fprintf( stdout, "computing median psd" );
       break;
-  }
-
-
+    case 2:
+      avgSpecParams.method = useUnity;
+      if ( vrbflg ) fprintf( stdout, "simulation gaussian noise psd" );
+      break;
+    }
+  
+  
   wpars.type = Hann;
-  wpars.length = numPoints;
-  avgSpecParams.overlap = numPoints / 2;
+  wpars.length = param->numPoints;
+  avgSpecParams.overlap = param->numPoints / 2;
   if ( vrbflg ) 
     fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
   
@@ -4180,6 +4412,26 @@ void LALComputeWindowSpectrum(LALStatus *status,
 	    status->statusPtr );
   LAL_CALL( LALDestroyRealFFTPlan( status->statusPtr, &(avgSpecParams.plan) ), status->statusPtr );
 
+  strcpy( spec->name, chan->name );
+
+  if ( param->specType == 2 )
+  {
+    /* multiply the unit power spectrum to get a gaussian psd */
+    REAL4 gaussVarSq = param->gaussVar * param->gaussVar;
+    if ( param->inputDeltaT != chan->deltaT )
+    {
+      /* reduce the variance as we have resampled the data */
+      gaussVarSq *= param->inputDeltaT / chan->deltaT;
+    }
+    for ( k = 0; k < (int)spec->data->length; ++k )
+    {
+      spec->data->data[k] *= 2.0 * gaussVarSq * (REAL4) chan->deltaT;
+    }
+
+    if ( vrbflg ) 
+      fprintf( stdout, "set psd to constant value = %e\n", spec->data->data[0] );
+  }
+
 
   DETATCHSTATUSPTR( status );
   RETURN( status );  
@@ -4193,4 +4445,45 @@ void LALComputeWindowSpectrum(LALStatus *status,
 
 
 
+void SetInspiralPipelineParam(InspiralPipelineIn *param,
+			      RandomInspiralSignalIn randIn)
+{
 
+  /* parameters used to generate calibrated power spectrum */
+  /*  param->gpsStartTime = {0,0};
+    param->gpsEndTime = 0;
+  */
+  param->padData = 8;                
+  param->fqChanName       = NULL;
+
+
+  param->injectionFile = "/home/cokelaer/Work/TestWaveOverlap/HL-INJECTIONS_1-732005208-2048.xml";
+  param->frInCacheName = NULL;
+
+  param->numPoints         = (randIn.psd.length-1)*2;           /* points in a segment          */
+  param->numSegments       = 15;           /* number of segments           */
+  
+
+  param->inputDataLength =  -1;            
+  param->resampFiltType   = 0;           
+  param->sampleRate       = randIn.param.tSampling;    
+  param->highPass         = 1;           
+  param->highPassFreq     = randIn.param.fLower;            
+  param->highPassOrder    = 8;           
+  param->highPassAtten    = 0.1;         
+  param->fLow             = randIn.param.fLower;
+  param->specType         = 1;           
+
+  param->calCacheName     = NULL;
+  param->pointCal         = 0;            
+  param->dynRangeExponent = 40;            
+  param->geoHighPassFreq = -1;     
+  param->geoHighPassOrder = -1;    
+  param->geoHighPassAtten = -1;    
+}
+
+
+
+#if 0 
+ 
+  #endif
