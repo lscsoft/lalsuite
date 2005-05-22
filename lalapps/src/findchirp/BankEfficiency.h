@@ -139,18 +139,19 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"      Typ
 #define BANKEFFICIENCY_PSI3MAX       		-10.
 #define BANKEFFICIENCY_ORDER_SIGNAL     	twoPN
 #define BANKEFFICIENCY_ORDER_TEMPLATE   	twoPN
-#define BANKEFFICIENCY_SIGNAL  			TaylorT1
+#define BANKEFFICIENCY_SIGNAL  		       -1
 #define BANKEFFICIENCY_SIGNALAMPLITUDE 		10.
 #define BANKEFFICIENCY_SPACE    		Psi0Psi3
 #define BANKEFFICIENCY_STARTTIME       		0.
 #define BANKEFFICIENCY_STARTPHASE    		0.
-#define BANKEFFICIENCY_TEMPLATE        		BCV
+#define BANKEFFICIENCY_TEMPLATE        	       -1
 #define BANKEFFICIENCY_TYPE            		0
 #define BANKEFFICIENCY_TSAMPLING    		2048.
 #define BANKEFFICIENCY_USEED        		122888
 
 /* Other Parameters  1 = true ; 0 = false	*/
 #define BANKEFFICIENCY_ALPHAFCONSTRAINT         1 				/* alphaF between 0 and 1	       */
+#define BANKEFFICIENCY_ALPHAFUNCONSTRAINT       0 				/* alphaF between 0 and 1	       */
 #define BANKEFFICIENCY_QUIETFLAG       	        0 				/* silent 				*/ 
 #define BANKEFFICIENCY_FASTSIMULATION           0                               /* cheating code (dont use template far from injection; use with care */
 #define BANKEFFICIENCY_PRINTOVERLAP             0				/* Print Best Overlap 			*/
@@ -211,6 +212,19 @@ typedef enum{
     REALPSD
 } DetectorName;
 
+typedef enum{
+  L1, H1, H2, V1, G1
+}
+DetectorFlag;
+
+
+typedef enum{
+  S1,S2,S3,S4,S5,S6
+}
+RunFlag;
+
+
+
 /* Structure to store the value of a 2 by 2 matrix. 
  * This matrix is used in the alpha maximization 
  * process for BCV templates.
@@ -227,6 +241,30 @@ typedef enum{
   InQuadrature,
   AlphaMaximization
 } OverlapMethodIn;
+
+
+
+
+
+typedef struct{ 
+  CHAR *calCacheName;
+  CHAR *frInCacheName;
+} DataFileIn;
+
+
+typedef struct{ 
+  DataFileIn S2, S3, S4, S5, S6;
+} ScientificRunIn;
+
+
+
+typedef struct{
+  CHAR *chanName;
+  ScientificRunIn dataFile;
+} DetectorParamIn;
+
+
+
 
 /* Internal parameters for the Bank Efficiency code:
  * PrintOverlap	:
@@ -275,8 +313,21 @@ typedef struct{
   char *inputXMLBank; 
   DetectorName NoiseModel;
   char *filename;
+  REAL4   maxTotalMass;
+  char *chanName;
+  CHAR *calCacheName;
+  CHAR *frInCacheName;
+  INT4 startTime, endTime;
+  DetectorParamIn L1;
+  DetectorParamIn H1;
+  DetectorParamIn H2;
 
-} OtherParamIn;
+  DetectorFlag detector;
+  RunFlag run;
+}
+OtherParamIn;
+
+
 
 
 typedef struct{
@@ -386,7 +437,7 @@ LALCreateFilters(REAL4Vector 	*Filter1,
 
 
 
-void BEGenerateInputData(LALStatus *status, 
+void BEGenerateInputData(LALStatus *status,
 			 REAL4Vector * signal,
 			 RandomInspiralSignalIn  *randIn,
 			 OtherParamIn           otherIn);
@@ -451,11 +502,12 @@ LALGenerateWaveform(LALStatus 			*status,
 
 void 
 GetResult(
+	  LALStatus 			*status,
 	  InspiralTemplateList   	**list,
-		InspiralTemplate       	injected,
-		OverlapOutputIn 	bestOverlapout, 
-		ResultIn                *result,
-		OtherParamIn                 otherIn );
+	  InspiralTemplate       	injected,
+	  OverlapOutputIn 	bestOverlapout, 
+	  ResultIn                *result,
+	  OtherParamIn                 otherIn );
 /* Init the CoarseBank structure 
  * */
 void InitInspiralCoarseBankIn(InspiralCoarseBankIn 	*coarseIn);
@@ -586,4 +638,74 @@ BEFillOverlapOutput(InspiralWaveOverlapOut overlapout,
 void 
 LALCreateRealPsd(LALStatus *status, 
 		 InspiralCoarseBankIn *bankIn,
-		 RandomInspiralSignalIn randIn);
+		 RandomInspiralSignalIn randIn, 
+		 OtherParamIn otherIn);
+
+
+
+
+typedef struct 
+{ 
+ 
+
+  LIGOTimeGPS gpsStartTime;
+  LIGOTimeGPS gpsEndTime;
+  INT4  padData;                  
+  INT4  numPoints;
+  INT4  numSegments;
+  CHAR  ifo[3];                           
+
+  INT4  inputDataLength;
+  INT4   resampFiltType;
+  INT4   sampleRate;   
+  INT4   highPass;     
+  REAL4  highPassFreq; 
+  INT4   highPassOrder;
+  REAL4  highPassAtten;
+  REAL4  fLow;
+  INT4   specType;           
+
+  CHAR  *calCacheName;
+  INT4   pointCal;           
+  REAL4  dynRangeExponent;          
+  REAL4 geoHighPassFreq;            
+  INT4  geoHighPassOrder;           
+  REAL4 geoHighPassAtten; 
+  
+  INT4  randomSeed; 
+  REAL4 gaussVar;   
+  INT4  gaussianNoise;
+ 
+  CHAR  *fqChanName;
+  CHAR *injectionFile;
+  CHAR  *frInCacheName;
+
+
+
+
+
+}
+
+InspiralPipelineIn;
+
+
+
+void SetInspiralPipelineParams(InspiralPipelineIn *param,
+			      RandomInspiralSignalIn randIn);
+
+
+
+
+typedef struct 
+{
+  INT4 numPoints;
+  REAL4 gaussVar;
+  REAL4 inputDeltaT;
+  INT4 specType;
+}
+WindowSpectrumIn;
+
+void LALComputeWindowSpectrum(LALStatus *status, 
+			      WindowSpectrumIn *param,
+			      REAL4FrequencySeries  *spec,
+			      REAL4TimeSeries *chan);
