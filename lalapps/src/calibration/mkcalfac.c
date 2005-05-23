@@ -7,6 +7,8 @@ int isnan(double value);
 #include <series.h>
 
 int lalDebugLevel = 0;
+static int sensemon_format;
+static int skip_first_line;
 
 char *get_next_line( char *line, size_t size, FILE *fp )
 {
@@ -34,8 +36,11 @@ int read_time_series( struct series *aser, struct series *abser,
 
   fp = fopen( fname, "r" );
 
-  /* skip the first line as sensmon seems to bugger this up */
-  get_next_line( line, sizeof( line ), fp );
+  if ( skip_first_line )
+  {
+    /* skip the first line as sensmon seems to bugger this up */
+    get_next_line( line, sizeof( line ), fp );
+  }
 
   get_next_line( line, sizeof( line ), fp );
   sscanf( line, "%d", &t0 );
@@ -72,16 +77,31 @@ int read_time_series( struct series *aser, struct series *abser,
   aser->data  = calloc( 2 * n, sizeof( *aser->data  ) );
   abser->data = calloc( 2 * n, sizeof( *abser->data ) );
 
-  /* skip the first line as sensmon seems to bugger this up */
-  get_next_line( line, sizeof( line ), fp );
+  if ( skip_first_line )
+  {
+    /* skip the first line as sensmon seems to bugger this up */
+    get_next_line( line, sizeof( line ), fp );
+  }
 
   while ( get_next_line( line, sizeof( line ), fp ) )
   {
     float a;
     float b;
+    float ab;
     int t;
-    /* sensemon format is: Time Range Line Alpha Beta */
-    sscanf( line, "%d %*f %*f %f %f", &t, &a, &b );
+    
+    if ( sensemon_format )
+    {
+      /* sensemon format is: Time Range Line Alpha Beta */
+      sscanf( line, "%d %*f %*f %f %f", &t, &a, &b );
+      ab = a * b;
+    }
+    else
+    {
+      /* gaby format is: Time alpha*beta alpha beta */
+      sscanf( line, "%d %f %f", &t, &ab, &a );
+    }
+    
     if ( (t - t0) % dt )
     {
       fprintf( stderr, "warning: skipping line\n\t%s\n", line );
@@ -93,7 +113,7 @@ int read_time_series( struct series *aser, struct series *abser,
         int i;
         i = ( t - t0 ) / dt;
         aser->data[2*i]  = a;
-        abser->data[2*i] = a * b;
+        abser->data[2*i] = ab;
       }
     }
   }
@@ -105,8 +125,25 @@ int read_time_series( struct series *aser, struct series *abser,
 #define CALURL "http://blue.ligo-wa.caltech.edu/engrun/Calib_Home/html/cal_home.html"
 
 #define USAGE( s ) do { \
-fprintf( stdout, "Usage: %s --run E11 --ifo H1 --ver V01 file\n", s );\
-fprintf( stdout, "Calibration files found at URL:\n" CALURL "\n" ); \
+fprintf( stdout, "Usage: %s [options] [factorfile]\n" ); \
+fprintf( stdout, "\nOptions:\n" );\
+fprintf( stdout, "  --help                      print this message\n"):\
+fprintf( stdout, "  --run RUN                   set the frame run name to RUN (E11, S2, etc.)\n" );\
+fprintf( stdout, "  --version VER               set the frame version name to to RUN (V01, V02, etc.)\n" );\
+fprintf( stdout, "  --sensemon-format           read the text file in sensemon format\n" );\
+fprintf( stdout, "  --skip-first-line           skip the first line of the file\n" );\
+fprintf( stdout, "\nFactor File:\n" );\
+fprintf( stdout, \
+"The last argument must be a calibration factor file. This must be an ASCII\n" \
+"file in the format:\n" \
+"\n" \
+"GPStime         alpha*beta      alpha           beta" \
+"\n" \
+"If the option --sensemon-format is given, the ASCII file must be in the\n" \
+"format:\n" \
+"GPStime         range           LineAmp         alpha           beta\n" \
+"\n" \
+"Any comment lines must begin with % or #.\n" ); \
 } while ( 0 )
 
 #define A_CHANNEL "CAL-CAV_FAC"
@@ -125,6 +162,8 @@ int main( int argc, char *argv[] )
   const char *ifo = NULL;
   int arg;
   int done = 0;
+  extern int sensemon_format = 0;
+  extern int skip_first_line = 0;
 
   /* parse arguments */
   if ( argc == 1 )
@@ -135,9 +174,7 @@ int main( int argc, char *argv[] )
   for ( arg = 1; arg < argc; ++arg )
   {
     char aname[64];
-    char ailwd[64];
     char abname[64];
-    char abilwd[64];
     if ( strstr( argv[arg], "--run" ) )
     {
       run = argv[++arg];
@@ -147,7 +184,7 @@ int main( int argc, char *argv[] )
       ifo = argv[++arg];
       site = *ifo;
     }
-    else if ( strstr( argv[arg], "--ver" ) )
+    else if ( strstr( argv[arg], "--version" ) )
     {
       ver = argv[++arg];
     }
@@ -160,6 +197,14 @@ int main( int argc, char *argv[] )
     {
       USAGE( argv[0] );
       exit( 0 );
+    }
+    else if ( strstr( argv[arg], "--sensemon-format" ) )
+    {
+      sensemon_format = 1;
+    }
+    else if ( strstr( argv[arg], "--skip-first-line" ) )
+    {
+      skip_first_line = 1;
     }
     else
     {
@@ -180,9 +225,7 @@ int main( int argc, char *argv[] )
       done = 1;
       /* output file names */
       sprintf( aname, "%s\\:" A_CHANNEL, ifo );
-      sprintf( ailwd, "%s-%s-" A_CHANNEL ".ilwd", run, ifo );
       sprintf( abname, "%s\\:" AB_CHANNEL, ifo );
-      sprintf( abilwd, "%s-%s-" AB_CHANNEL ".ilwd", run, ifo );
       /* get a and ab data and metadata */
       a.name  = aname;
       a.unit  = "none";
@@ -211,20 +254,7 @@ int main( int argc, char *argv[] )
         step = a.step;
         tbeg = a.tbeg;
       }
-#if 0
-      code = write_ilwd( ailwd, &a );
-      if ( code )
-      {
-        fprintf( stderr, "Error: could not write file %s\n", ailwd );
-        return 1;
-      }
-      code = write_ilwd( abilwd, &ab );
-      if ( code )
-      {
-        fprintf( stderr, "Error: could not write file %s\n", abilwd );
-        return 1;
-      }
-#endif
+
       /* correct the end times */
       epoch_add( &a.tend, &a.tbeg, a.step * a.size );
       epoch_add( &ab.tend, &ab.tbeg, ab.step * ab.size );
@@ -236,6 +266,7 @@ int main( int argc, char *argv[] )
             a.tbeg.gpsSeconds, dt );
         frfile = FrFileONew( fname, 0 );
       }
+
       /* don't mangle the channel names for frames */
       a.name  = aname;
       ab.name = abname;
