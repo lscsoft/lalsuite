@@ -130,6 +130,7 @@
 /* 05/19/05 gam; Add INT4 *sumBinMask; params->sumBinMask == 0 if bin should be excluded from search or Monte Carlo due to cleaning */
 /* 05/19/05 gam; In LALFindStackSlidePeaks set binFlag = 0 if bin excluded; initialize binFlag with sumBinMask. */
 /* 05/19/05 gam; In LALUpdateLoudestFromSUMs exclude bins with sumBinMask == 0. */
+/* 05/22/05 gam; Fix bug in FindLongLatFromVec; when longitude positive, then OK as is, when negative need to add 2pi not pi! */
     
 /*********************************************/
 /*                                           */
@@ -3420,7 +3421,11 @@ void FindLongLatFromVec(LALStatus *status, REAL8 *longitude, REAL8 *latitude, co
   }
   
   *latitude = asin( vec[2] / vLength );
-  *longitude = atan2(vec[1],vec[0]) + ((REAL8)LAL_PI);  /* put into the range 0 to 2pi */
+  /* *longitude = atan2(vec[1],vec[0]) + ((REAL8)LAL_PI); */ /* 05/22/05 gam; Not correct; fixed below */
+  *longitude = atan2(vec[1],vec[0]);
+  if (*longitude < 0.0) {
+     *longitude += ((REAL8)LAL_TWOPI);
+  }
   
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);
