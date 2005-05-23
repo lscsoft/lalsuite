@@ -61,24 +61,26 @@ RCSID( "$Id$" );
 "  --time-interval TIME     distribute injections in interval TIME (0)\n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
-"  --min-mass MIN           set the minimum component mass to MIN (3.0)\n"\
-"  --max-mass MAX           set the maximum component mass to MAX (20.0)\n"\
-"  --min-distance DMIN      set the minimum distance to DMIN kpc (1)\n"\
-"  --max-distance DMAX      set the maximum distance to DMAX kpc (20000)\n"\
-"  --d-distr DDISTR         distribute injections uniformly over\n"\
+"    --min-mass MIN           set the minimum component mass to MIN (3.0)\n"\
+"    --max-mass MAX           set the maximum component mass to MAX (20.0)\n"\
+"    --min-distance DMIN      set the minimum distance to DMIN kpc (1)\n"\
+"    --max-distance DMAX      set the maximum distance to DMAX kpc (20000)\n"\
+"    --d-distr DDISTR         distribute injections uniformly over\n"\
 "                           d (DDISTR = 0), or over log10(d) (DDISTR = 1)\n"\
 "                           or over volume (DDISTR = 2)\n"\
 "                           (default: DDISTR = 0)\n"\
-"  --m-distr MDISTR         distribute injections uniformly over\n"\
+"    --m-distr MDISTR         distribute injections uniformly over\n"\
 "                           total mass (MDISTR = 0), or over mass1 and\n"\
 "                           over mass2 (MDISTR = 1) (default: MDISTR=0)\n"\
-"  --waveform WVF           set the injection waveform to WVF\n"\
+"    --waveform WVF           set the injection waveform to WVF\n"\
 "                           (EOB, TaylorT1, TaylorT3,PadeT1; followed by the\n"\
 "                           order: newtonian, onePN, onePointFivePN, twoPN,\n"\
 "                           twoPointFivePN, threePN) (default: EOBtwoPN)\n"\
 "\n"
 
 /* all units are in kpc since this is what GalacticInspiralParamStruc expects */
+
+
 
 extern int vrbflg;
 
@@ -145,6 +147,8 @@ int main( int argc, char *argv[] )
   LALDetAMResponse      resp;
   REAL8                 time_diff_ns;
   REAL4                 splus, scross, cosiota;
+  REAL4 maxTotalMass = 40, mass1, mass2, etaMin, eta;
+  INT4 valid;
   /* XXX END CHECK XXX */
 
 
@@ -591,22 +595,60 @@ int main( int argc, char *argv[] )
       mtotal = this_inj->mass1 + this_inj->mass2 ;
       this_inj->eta = this_inj->mass1 * this_inj->mass2 / ( mtotal * mtotal );
     }
-    else if (mdistr == 0)
-    /*uniformly distributed total mass */
-    {
-      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status);
-      mtotal = 2.0 * minMass + u * 2.0 *deltaM ;
-      LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-      this_inj->mass1 = minMass + u * deltaM;
-      this_inj->mass2 = mtotal - this_inj->mass1;
-      while (this_inj->mass1 >= mtotal || 
-          this_inj->mass2 >= maxMass || this_inj->mass2 <= minMass )
+    else if (mdistr == 0 && !maxTotalMass)
       {
-        LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
-        this_inj->mass1 = minMass + u * deltaM;
-        this_inj->mass2 = mtotal - this_inj->mass1;
+	LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status);
+	mtotal = 2.0 * minMass + u * 2.0 *deltaM ;
+	LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+	this_inj->mass1 = minMass + u * deltaM;
+	this_inj->mass2 = mtotal - this_inj->mass1;
+	while (this_inj->mass1 >= mtotal || 
+	       this_inj->mass2 >= maxMass || this_inj->mass2 <= minMass )
+	  {
+	    LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
+	    this_inj->mass1 = minMass + u * deltaM;
+	    this_inj->mass2 = mtotal - this_inj->mass1;
+	  }
+	this_inj->eta = this_inj->mass1 * this_inj->mass2 / ( mtotal * mtotal );
       }
-      this_inj->eta = this_inj->mass1 * this_inj->mass2 / ( mtotal * mtotal );
+    else if (mdistr == 0 && maxTotalMass)
+      /*uniformly distributed total mass */
+      {
+
+
+
+	LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status);
+	
+	mtotal = 2.0 * minMass + u *  (maxTotalMass - 2 * minMass) ;
+	etaMin = minMass * (maxTotalMass  -  minMass)
+	  / (maxTotalMass )
+	  / (maxTotalMass );
+	valid = 0;
+	while (valid ==0){
+
+	  LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status);
+	  eta = etaMin + u * (.25 - etaMin); 		       	       
+	  
+	  mass1 = 0.5*mtotal * ( 1.L + sqrt(1.L - 4.L*eta));
+          mass2 = 0.5*mtotal * ( 1.L - sqrt(1.L - 4.L*eta));
+	  
+	  if(
+	     mass1 >= minMass &&
+	     mass2 >= minMass &&
+	     mtotal <= maxTotalMass &&
+	     eta <= 0.25 &&    /*in principle that line is not needed ; it is always true*/
+	     eta >= etaMin &&
+	     mass1 <= maxMass && 
+	     mass2 <= maxMass )
+	    {
+	      valid = 1;
+	    }		
+	}
+	
+	
+	this_inj->mass1 = mass1;
+	this_inj->mass2 = mass2;
+	this_inj->eta = this_inj->mass1 * this_inj->mass2 / ( mtotal * mtotal );
      }
 
      /* spatial distribution */
