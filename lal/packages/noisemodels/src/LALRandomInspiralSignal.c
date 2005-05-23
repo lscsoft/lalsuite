@@ -230,19 +230,12 @@ LALRandomInspiralSignal
 		* restriction is on the total mass of the binary 
 		* and the minimum mass of the component stars
 		*/
-	       
-	       randIn->param.totalMass = 2 * randIn->mMin  + 2 * epsilon1 * (randIn->mMax - randIn->mMin ) ;
-	       randIn->etaMin = (randIn->mMax * randIn->mMin) / pow(randIn->mMax*2, 2.);
-	       randIn->MMax = randIn->mMax*2;
-		/*thomas::in principle that part of the code should be placed in the switch 
-		 * which follow that one (which check for the valididty of m1 and m2. 
-		 * However, for that case (where we can t a uniform total mass) we need to keep it
-		 * here. Otherwise there is a bias in the uniformity of the totalMass.
-		 *
-		 * So as soon as the total mass is set we search for an eta which gives 
-		 * valid values of individual masses. 
-		 * Sept 2004.
-		 * */
+              
+	       randIn->param.totalMass =  2 * randIn->mMin  +  epsilon1 * (randIn->MMax - 2 * randIn->mMin) ;
+	       randIn->etaMin = randIn->mMin * (randIn->MMax  - randIn->mMin)
+		 / (randIn->MMax )
+		 / (randIn->MMax );
+
 	       while (valid==0){
 		       randIn->param.eta = randIn->etaMin + epsilon2 * (.25 - randIn->etaMin); 		       	       
 		       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
@@ -259,6 +252,7 @@ LALRandomInspiralSignal
 				}		
 		   	epsilon2 = (float) random()/(float)RAND_MAX;
 	       }
+               
 	       break;  
 
 	     case fixedMasses: /* the user has already given individual masses*/
@@ -270,7 +264,7 @@ LALRandomInspiralSignal
  	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
  	       break;
  	     case fixedTau: /* the user has already given tau0/tau3*/
- 	       randIn->param.massChoice=t03;
+ 	       randIn->param.massChoice = t03;
  	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
  	       break;
       	     case t02: 
@@ -350,8 +344,10 @@ LALRandomInspiralSignal
 		* the following makes sure that the BCV has
 		* a well defined end-frequency
 		*/
+
 	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
-	       if (randIn->param.totalMass > 0.)
+	       valid = 1; 
+	       /*	       if (randIn->param.totalMass > 0.)
 		 {
 		   REAL8 fLR, fLSO, fend;
 		   epsilon1 = (float) random()/(float)RAND_MAX;
@@ -361,7 +357,7 @@ LALRandomInspiralSignal
 		   if (fend > randIn->param.tSampling/2. || fend < randIn->param.fLower) break;
 		   randIn->param.fFinal = fend;
 		   valid = 1;
-		 }
+		   }*/
 	       break;
 	     case t04: 
 	     default:
@@ -370,6 +366,7 @@ LALRandomInspiralSignal
 	     }
 	 }
      }
+
    
    /* set up the structure for normalising the signal */
    normin.psd = &(randIn->psd);
@@ -380,6 +377,7 @@ LALRandomInspiralSignal
    switch (randIn->type) 
      {
      case 0:
+       
 	      /* First deal with the signal only case:
 	       * if the signal is generated in the Fourier domain no
 	       * need for Fourier transform
@@ -401,6 +399,7 @@ LALRandomInspiralSignal
 	   LALREAL4VectorFFT(status->statusPtr, signal, &buff, randIn->fwdp);
 	   CHECKSTATUSPTR(status);
 	 }
+	
 
        /* we might want to know where is the signal injected*/
        maxTemp  = 0;
@@ -415,7 +414,6 @@ LALRandomInspiralSignal
        randIn->coalescenceTime = iMax;
 
        normin.fCutoff = randIn->param.fFinal;
-
 
        LALInspiralWaveNormaliseLSO(status->statusPtr, signal, &norm, &normin);
        CHECKSTATUSPTR(status);
