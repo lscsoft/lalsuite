@@ -25,18 +25,21 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
     INITSTATUS (status, "LALEvaluateInspiralChisqTest", LALEVALUATEINSPIRALCHISQTESTC);
     ATTATCHSTATUSPTR(status);
 
-    // If fCutoff > flso, we need to modify imax
+    /* If fCutoff > flso, we need to modify imax
+     */
     DeltaT = (REAL8) chisqIn->findEventsIn->signal.length /  chisqIn->findEventsIn->param.tSampling;
     df     = 1./DeltaT;
 
     imin   = (INT4) (chisqIn->findEventsIn->param.fLower/ df);
-    //imin = 1;
+    /*imin = 1;
+     */
     if (chisqIn->findEventsIn->param.fCutoff > chisqIn->flso)
           imax = (INT4) ceil(chisqIn->flso / df);
     else
           imax = (INT4) ceil(chisqIn->findEventsIn->param.fCutoff / df);
 
-    // What is the total powNorm till flso
+    /* What is the total powNorm till flso
+     */
     f       = 0.0;
     powNorm = 0.0;
     for (i=imin; i<=imax; i++) {
@@ -44,7 +47,8 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
         powNorm += pow (f, -7./3.) / chisqIn->findEventsIn->psd.data[i];
     }
 
-    // freqBndry stores the obvious - note that we need one xtra element to store the last
+    /* freqBndry stores the obvious - note that we need one xtra element to store the last
+     */
     freqBndry = (REAL8 *) LALCalloc(1, sizeof(REAL8) * (chisqIn->chisqBins+1));
 
     freqBndry[0] = df * imin;
@@ -62,7 +66,8 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
     }
     freqBndry[chisqIn->chisqBins] = df * imax;
 
-    // output1 and 2 will store the output of overlap with filter1 and filter2 respectively.
+    /* output1 and 2 will store the output of overlap with filter1 and filter2 respectively.
+     */
     output1.length = output2.length = chisqIn->findEventsIn->signal.length;
 
     if (!(output1.data = (REAL4*) LALMalloc(sizeof(REAL4)*output1.length))) {
@@ -75,25 +80,29 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
         ABORT (status, LALNOISEMODELSH_EMEM, LALNOISEMODELSH_MSGEMEM);
     }
 
-    // Init the corrin structure except fCutoff and signal2 
+    /* Init the corrin structure except fCutoff and signal2 
+     */
     corrin.df            = df;
     corrin.psd           = chisqIn->findEventsIn->psd;
     corrin.revp          = chisqIn->findEventsIn->revp;
     corrin.signal1       = chisqIn->findEventsIn->signal;
     corrin.samplingRate  = chisqIn->findEventsIn->param.tSampling;
 
-    // The correlation time series for p bands will be stored in a 2 dimensional array
-    // called pBandCorrelation[0][...] to pBandCorrelation[p-1][...] 
-    // Note the fact that pBandCorrelation[0][...] stores the correlation from fmin to freqBndry[0],
-    // pBandCorrelation[1][...] stores it from fmin to freqBndry[1] and so on. Thus in order to extract 
-    // what is the actual correlation in the band freqBndry[0] to freqBndry[1] you have to subtract 
-    // pBandCorrelation[1][...] - pBandCorrelation[0][...] term by term.
-    // First index is chisqbin, Second index is time bin
+    /* The correlation time series for p bands will be stored in a 2 dimensional array
+     */
+    /* called pBandCorrelation[0][...] to pBandCorrelation[p-1][...] 
+       Note the fact that pBandCorrelation[0][...] stores the correlation from fmin to freqBndry[0],
+       pBandCorrelation[1][...] stores it from fmin to freqBndry[1] and so on. Thus in order to extract 
+       what is the actual correlation in the band freqBndry[0] to freqBndry[1] you have to subtract 
+       pBandCorrelation[1][...] - pBandCorrelation[0][...] term by term.
+       First index is chisqbin, Second index is time bin
+     */
 
     pBandCorrelation1 = matrix (1, chisqIn->chisqBins, 0,   (long)(chisqIn->findEventsIn->signal.length-1));
     pBandCorrelation2 = matrix (1, chisqIn->chisqBins, 0,   (long)(chisqIn->findEventsIn->signal.length-1));
 
-    // Loop over the freqBndry and do the IFFTs
+    /* Loop over the freqBndry and do the IFFTs
+     */
     for (i=1; i<=chisqIn->chisqBins; i++) {
         corrin.fCutoff       = freqBndry[i];
 
@@ -105,7 +114,8 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
         LALInspiralWaveCorrelate(status->statusPtr, &output2, corrin);
         CHECKSTATUSPTR(status);
 
-        // Store it in pBandCorrelation
+        /* Store it in pBandCorrelation
+	 */
         for (j=0; j<chisqIn->findEventsIn->signal.length; j++){
             pBandCorrelation1[i][j] = output1.data[j];
             pBandCorrelation2[i][j] = output2.data[j];
@@ -115,7 +125,8 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
     pBandRho1 = (REAL4 *) LALCalloc (1, sizeof(REAL4) * (chisqIn->chisqBins+1));
     pBandRho2 = (REAL4 *) LALCalloc (1, sizeof(REAL4) * (chisqIn->chisqBins+1));
 
-    // OK Now all the IFFTs are over. We now need to calculate the chisquares properly.
+    /* OK Now all the IFFTs are over. We now need to calculate the chisquares properly.
+     */
     for (j=0; j<chisqIn->findEventsIn->signal.length; j++) {
 
         pBandRho1[1] = pBandCorrelation1[1][j];
@@ -146,7 +157,8 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
     LALFree (pBandRho1);
     LALFree (pBandRho2);
 
-    // Normal exit
+    /* Normal exit
+     */
     DETATCHSTATUSPTR(status);
     RETURN(status);	
 }

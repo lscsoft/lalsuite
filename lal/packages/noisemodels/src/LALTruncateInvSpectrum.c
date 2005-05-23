@@ -29,18 +29,22 @@ void LALTruncateInvSpectrum(
     df      = params->df;
     trunc_n = (INT4) params->psdTruncTime * (n*df);
 
-    // Hvec will contain the FFT i.e 1./sqrt(shf)
+    /* Hvec will contain the FFT i.e 1./sqrt(shf)
+     */
     LALCCreateVector ( status->statusPtr, &Hvec, n/2 + 1 );
     CHECKSTATUSPTR( status );
 
-    // hvec will contain time domain IFFT
+    /* hvec will contain time domain IFFT
+     */
     LALSCreateVector ( status->statusPtr, &hvec, n );
     CHECKSTATUSPTR( status );
 
-    // w should point at hvec->data
+    /* w should point at hvec->data
+     */
     w = hvec->data;
 
-    // Store sqrt (inv spectrum)  (f-domain) in Hvec
+    /* Store sqrt (inv spectrum)  (f-domain) in Hvec
+     */
     for (i=0; i<Hvec->length; i++){
         if (inputVec->data[i] > 0.0) {
             Hvec->data[i].re = (REAL4) (1./sqrt(inputVec->data[i]));
@@ -65,11 +69,13 @@ void LALTruncateInvSpectrum(
         fclose(out);
     }
 
-    // Set Nyquist and zero frequency components of the input spectrum to zero
+    /* Set Nyquist and zero frequency components of the input spectrum to zero
+     */
     Hvec->data[Hvec->length - 1].re = 0.0;
     Hvec->data[0].re                = 0.0;
 
-    // Inverse Fourier Transform to time domain
+    /* Inverse Fourier Transform to time domain
+     */
     LALReverseRealFFT (status->statusPtr, hvec, Hvec, params->revp);
     CHECKSTATUSPTR(status);
 
@@ -89,7 +95,8 @@ void LALTruncateInvSpectrum(
         fclose(out);
     }
 
-    // truncate in time domain 
+    /* truncate in time domain 
+     */
     memset( w + trunc_n/2, 0, (hvec->length - trunc_n) * sizeof(REAL4) );
 
     /* ---- If debugging print the time domain spectrum after truncation
@@ -108,11 +115,13 @@ void LALTruncateInvSpectrum(
         fclose(out);
     }
 
-    // transform to frequency domain
+    /* transform to frequency domain
+     */
     LALForwardRealFFT (status->statusPtr, Hvec, hvec, params->fwdp);
     CHECKSTATUSPTR(status);
 
-    // normalise fourier transform and square
+    /* normalise fourier transform and square
+     */
     norm = 1.0 / (REAL4) (n);
     for ( i = 0; i < Hvec->length; i++ )
     {
@@ -135,20 +144,24 @@ void LALTruncateInvSpectrum(
         fclose(out);
     }
 
-    // populate the input vector structure back with truncated psd
+    /* populate the input vector structure back with truncated psd
+     *
+     */
     for (i=0; i<Hvec->length; i++){
         if (Hvec->data[i].re > 0.0) 
               inputVec->data[i] = (REAL8) (1./Hvec->data[i].re);
     }
 
-    // Clear work space
+    /* Clear work space
+     */
     LALCDestroyVector (status->statusPtr, &Hvec);
     CHECKSTATUSPTR(status);
 
     LALSDestroyVector (status->statusPtr, &hvec);
     CHECKSTATUSPTR( status );
 
-    // normal exit 
+    /* normal exit 
+     */
     DETATCHSTATUSPTR( status );
     RETURN( status );
 }

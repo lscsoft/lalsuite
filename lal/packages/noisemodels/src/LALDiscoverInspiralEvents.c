@@ -319,7 +319,8 @@ static void findValidInspiralEvents ( REAL4Vector c1,
             findMax (rho, Ones, n, &mVal, &mPos);
             events ++;
 
-            //fprintf (stderr, "Found event %d at %d %f\n", events, bin[mPos], mVal);
+            /*fprintf (stderr, "Found event %d at %d %f\n", events, bin[mPos], mVal);
+	     */
             eventIdx[(*nEvents)] = bin[mPos];
             (*nEvents) ++;
 
