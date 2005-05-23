@@ -179,7 +179,7 @@ data.make_chunks(length+2*overlap,2*overlap,0,0,0)
 
 if not running_online:
   #make chunk with whatever's left over
-  data.make_short_chunks_from_unused(2*overlap+1,2*overlap,0,0,0)
+  data.make_short_chunks_from_unused(1,2*overlap,0,0,0)
 #make_short_chunks_from_unused(self, min_length, overlap=0, play=0, sl=0, excl_play=0)
 # get the ifo to filter
 ifo = cp.get('pipeline','ifo')
