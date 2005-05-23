@@ -3466,8 +3466,10 @@ LALCreateRealPsd(LALStatus *status,
   case H2: 
     memcpy( ifo, "H2", sizeof(ifo) - 1 );
     break;
-  case V1: 
-  case G1: 
+  case V1:
+		break;
+  case G1:
+		break;
   }
 
 
