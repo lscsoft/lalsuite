@@ -84,11 +84,11 @@ LALFindChirpBCVCFilterSegment (
   REAL4                 b2 = 0.0;                  
   REAL4                 templateNorm;
   REAL4                 m, psi0, psi3, fFinal;
-  /* CHAR                  infomsg[256]; */
+  
 
   
   /* for BCV constraint (Thomas)*/
-  REAL4                 alphaMax; /* intermediate variable to get thetab*/
+  REAL4                 alphaUnity; /* intermediate variable to get thetab*/
   REAL4                 thetab; /* critical angle for constraint        */
   REAL4                 thetav; /* angle between V1 and V2              */
   REAL4                 V0;     /* intermediate quantity to compute rho */
@@ -98,8 +98,8 @@ LALFindChirpBCVCFilterSegment (
   REAL4                 alphaU;   /* unconstraint alpha value for fun   */
   REAL4                 rhosqConstraint; 
   REAL4                 rhosqUnconstraint;/* before constraint          */
-  REAL4                 deltaTPower2by3;  /* alias variable             */
-  REAL4                 deltaTPower1by6;  /* alias variable             */
+  REAL4                 deltaTPower2By3;  /* alias variable             */
+  REAL4                 deltaTPower1By6;  /* alias variable             */
   REAL4                 ThreeByFive = 3.0/5.0;
   REAL4                 FiveByThree = 5.0/3.0;
   REAL4                 mchirp, eta,  SQRTNormA1; /* some aliases       */
@@ -206,8 +206,8 @@ LALFindChirpBCVCFilterSegment (
   deltaT        = params->deltaT;
   
   /* some aliases for later use (Thomas) */
-  deltaTPower2by3 = pow(params->deltaT, 2./3.);  
-  deltaTPower1by6 = pow(params->deltaT, 1./6.);  
+  deltaTPower2By3 = pow(params->deltaT, 2./3.);  
+  deltaTPower1By6 = pow(params->deltaT, 1./6.);  
 
   /* the length of the chisq bin vec is the number of bin   */
   /* _boundaries_ so the number of chisq bins is length - 1 */
@@ -599,12 +599,21 @@ LALFindChirpBCVCFilterSegment (
   SQRTNormA1 = sqrt(norm/ a1);
 
 
-  /* BCV Constraint code (Thomas)*/
+  /*BCV Constraint code (Thomas)*/
 
-  alphaMax = pow(fFinal, -2./3.) * pow(params->deltaT,-2./3.);
-  thetab   = -(a1 * alphaMax) / (b2 + b1*alphaMax);
+  alphaUnity = pow(fFinal, -2./3.) * pow(params->deltaT,-2./3.);
+  thetab   = -(a1 * alphaUnity) / (b2 + b1*alphaUnity);
   thetab   = atan(thetab);
-  
+
+  if ( lalDebugLevel & LALINFO )
+    {
+      CHAR newinfomsg[256];
+      LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+		   "thetab = %e and alphaUnity = %e\n",
+		   thetab, alphaUnity);
+      LALInfo( status, newinfomsg );  
+    }
+
   /* look for an event in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
   {
@@ -637,8 +646,8 @@ LALFindChirpBCVCFilterSegment (
       else if (thetab-LAL_PI <= thetav && thetav < 0) {
         rhosqConstraint = (V0 + V1)/2.;
       }
-      else if( (2*thetab  < thetav && thetav<LAL_PI )
-          || thetab-LAL_PI>thetav){
+     else if( (2*thetab  < thetav && thetav<=LAL_PI+1e-4 )
+		 || (-LAL_PI-1e-4<=thetav && thetav < -LAL_PI+thetab)){
         rhosqConstraint =(V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.;;
       }
       else  if ( 0  <= thetav && thetav <= 2 * thetab)
@@ -646,8 +655,13 @@ LALFindChirpBCVCFilterSegment (
         rhosqConstraint = rhosqUnconstraint;
       }
       else
-      {
-        fprintf(stderr,"must not enter here  thetav = %e thetab=%e\n ", thetav , thetab);
+      {    
+	CHAR newinfomsg[256];
+	LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+		     "thetab = %e and thetav = %e\n"
+		     "thetav not in the range allowed...V1= %e and V2 = %e\n",
+		     thetab, thetav, V1, V2 );
+	LALInfo( status, newinfomsg );
         ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
       }
     }
@@ -655,40 +669,48 @@ LALFindChirpBCVCFilterSegment (
       if ( 2*thetab  <= thetav && thetav <= 0){	  
         rhosqConstraint = rhosqUnconstraint;
       }
-      else if (0 < thetav &&  thetav  < LAL_PI ) {
+      else if (0 < thetav &&  thetav  <= LAL_PI+1e-4 ) {
         rhosqConstraint = (V0 + V1)/2.;
       }
-      else if( -LAL_PI  < thetav && thetav < 2*thetab ){
-        rhosqConstraint =(V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.;
-      }
+      else if( (-LAL_PI-1e-4  <= thetav && thetav < 2*thetab ) || 
+	       (LAL_PI +thetab <= thetav && thetav <= LAL_PI+1e-4))
+	{
+	  rhosqConstraint =(V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.;
+	}
       else 
-      {
-        fprintf(stderr,"must not enter herethetav = %e thetab=%e %e %e %d\n ",thetav , thetab, V1, V2);
-        ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
-      }
+	{ 
+	  CHAR newinfomsg[256];
+	  LALSnprintf( newinfomsg, sizeof(newinfomsg) / sizeof(*newinfomsg),
+		       "thetab = %e and thetav = %e\n"
+		       "thetav not in the range allowed...V1= %e and V2 = %e\n",
+		       thetab, thetav, V1, V2 );
+	  LALInfo( status, newinfomsg );
+	  ABORT( status, FINDCHIRPH_EALOC, FINDCHIRPH_MSGEALOC );
+	}
     }
       
     /* If one want to check that the code is equivalent to BCVFilter.c, just
      * uncomment the following lines.
      */
      /*      rhosqConstraint = rhosqUnconstraint; */
-             
       
     if ( rhosqConstraint > modqsqThresh )                  
     {
       /* alpha computation needed*/
       alphaU  =   -(b2 * tan(.5*thetav))
-        / (a1 + b1* tan(.5*thetav))*pow(params->deltaT, 2.0/3.0);
+        / (a1 + b1* tan(.5*thetav));
+
 
       /* I decided to store both constraint and unconstraint alpha */
-      if (alphaU > 1 ) {
-        alphaC = 1;
+      if (alphaU > alphaUnity) {
+        alphaC = alphaUnity * deltaTPower2By3 ;
       }
-      else if (alphaU <0  ){
+      else if (alphaU < 0  ){
         alphaC = 0; 
       }
       else {
-        alphaC = alphaU;
+         alphaU*= deltaTPower2By3;
+         alphaC = alphaU;
       }
 
       
@@ -777,7 +799,7 @@ LALFindChirpBCVCFilterSegment (
         thisEvent->sigmasq = SQRTNormA1;
         thisEvent->eff_distance =
           input->fcTmplt->tmpltNorm / norm / thisEvent->snr;
-        thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) / deltaTPower1by6;
+        thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) / deltaTPower1By6;
 	      
         thisEvent->snr *= norm;      
         thisEvent->snr = sqrt( thisEvent->snr );
@@ -882,7 +904,7 @@ LALFindChirpBCVCFilterSegment (
     thisEvent->sigmasq = SQRTNormA1;
     thisEvent->eff_distance =
       input->fcTmplt->tmpltNorm / norm / thisEvent->snr;
-    thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) / deltaTPower1by6;	     
+    thisEvent->eff_distance = sqrt( thisEvent->eff_distance ) / deltaTPower1By6;	     
 
     thisEvent->snr *=  norm ;   
     thisEvent->snr = sqrt( thisEvent->snr );

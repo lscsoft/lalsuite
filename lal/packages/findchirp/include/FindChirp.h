@@ -125,6 +125,8 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_ECHTZ 23
 #define FINDCHIRPH_EMASS 24
 #define FINDCHIRPH_EWVFM 25
+#define FINDCHIRPH_EBCVC 25
+
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPH_MSGEALOC "Memory allocation error"
@@ -146,6 +148,8 @@ NRCSID (FINDCHIRPH, "$Id$");
 #define FINDCHIRPH_MSGECHTZ "Length of chirp is zero or negative"
 #define FINDCHIRPH_MSGEMASS "Invalid mass parameters for template generation"
 #define FINDCHIRPH_MSGEWVFM "Unknown injection waveform"
+#define FINDCHIRPH_MSGEBCVC "BCVC code: thetav not in [-pi, pi]."
+
 /* </lalErrTable> */
 
 
