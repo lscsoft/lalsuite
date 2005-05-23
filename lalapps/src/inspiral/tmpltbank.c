@@ -465,6 +465,7 @@ int main ( int argc, char *argv[] )
     /* read the data channel time series from frames */
     LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
         &status );
+
     if ( calData == real_4 )
     {
       /* multiply the input data by dynRange */
@@ -523,13 +524,11 @@ int main ( int argc, char *argv[] )
       "filter data sample rate" );
   this_search_summvar->value = chan.deltaT;
 
-
   /*
    * 
    * compute a calibrated strain spectrum
    *
    */
-
 
   /* create storage for the response and spectrum */
   memset( &spec, 0, sizeof(REAL4FrequencySeries) );
@@ -837,10 +836,11 @@ int main ( int argc, char *argv[] )
   bankIn.tSampling     = (REAL8) sampleRate;
   bankIn.order         = order;
   bankIn.approximant   = approximant;
+  bankIn.gridType      = OrientedHexagonal;
   bankIn.space         = space;
   bankIn.etamin        = bankIn.mMin * ( bankIn.MMax - bankIn.mMin) /
     ( bankIn.MMax * bankIn.MMax );
-  bankIn.LowGM  = 3.;
+  bankIn.LowGM  = -2.;
   bankIn.HighGM = 6.;
   /* generate the template bank */
   if ( vrbflg )
@@ -1083,7 +1083,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --minimum-psi3 PSI3          set minimum range of BCV parameter psi3 to PSI3\n"\
 "  --maximum-psi3 PSI3          set maximum range of BCV parameter psi3 to PSI3\n"\
 "  --maximum-fcut-tmplts N      maximum number of tmplts in fcut direction is N\n"\
-"  --alpha ALPHA                set BCV amplitude correction to ALPHA\n"\
+"  --alpha ALPHA                set alpha for the BCV bank generation\n"\
 "\n"\
 "  --minimal-match M            generate bank with minimal match M\n"\
 "\n"\
