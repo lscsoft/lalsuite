@@ -704,9 +704,11 @@ LALFindChirpBCVCFilterSegment (
       /* I decided to store both constraint and unconstraint alpha */
       if (alphaU > alphaUnity) {
         alphaC = alphaUnity * deltaTPower2By3 ;
+         alphaU*= deltaTPower2By3;
       }
       else if (alphaU < 0  ){
         alphaC = 0; 
+         alphaU*= deltaTPower2By3;
       }
       else {
          alphaU*= deltaTPower2By3;
