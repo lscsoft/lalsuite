@@ -294,7 +294,8 @@ main (  int argc, char **argv )
    overlapin.signal = signal;
    overlapin.fwdp = fwdp;
    overlapin.revp = revp;
-      
+     
+   overlapin.ifExtOutput = 0;
    LALInspiralWaveOverlap (&status,&correlation,&overlapout,&overlapin);
    if (!quietFlag) for (i=0; i<correlation.length; i++) printf("%e\n", correlation.data[i]);
    fprintf (stdout, "%e %e %e %e %e %e %e %e %e\n", 
