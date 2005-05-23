@@ -25,7 +25,7 @@ int read_time_series( struct series *aser, struct series *abser,
   char line[256];
   int n;
   int t0;
-  int t1;
+  int t1 = 0;
   int dt;
   FILE *fp;
 
@@ -124,27 +124,29 @@ int read_time_series( struct series *aser, struct series *abser,
 
 #define CALURL "http://blue.ligo-wa.caltech.edu/engrun/Calib_Home/html/cal_home.html"
 
-#define USAGE( s ) do { \
-fprintf( stdout, "Usage: %s [options] [factorfile]\n" ); \
-fprintf( stdout, "\nOptions:\n" );\
-fprintf( stdout, "  --help                      print this message\n"):\
-fprintf( stdout, "  --run RUN                   set the frame run name to RUN (E11, S2, etc.)\n" );\
-fprintf( stdout, "  --version VER               set the frame version name to to RUN (V01, V02, etc.)\n" );\
-fprintf( stdout, "  --sensemon-format           read the text file in sensemon format\n" );\
-fprintf( stdout, "  --skip-first-line           skip the first line of the file\n" );\
-fprintf( stdout, "\nFactor File:\n" );\
-fprintf( stdout, \
-"The last argument must be a calibration factor file. This must be an ASCII\n" \
-"file in the format:\n" \
-"\n" \
-"GPStime         alpha*beta      alpha           beta" \
-"\n" \
-"If the option --sensemon-format is given, the ASCII file must be in the\n" \
-"format:\n" \
-"GPStime         range           LineAmp         alpha           beta\n" \
-"\n" \
-"Any comment lines must begin with % or #.\n" ); \
-} while ( 0 )
+void usage ( char *s )
+{
+  fprintf( stdout, "Usage: %s [options] [factorfile]\n", s );
+  fprintf( stdout, "\nOptions:\n" );
+  fprintf( stdout, "  --help                      print this message\n");
+  fprintf( stdout, "  --run RUN                   set the frame run name to RUN (E11, S2, etc.)\n" );
+  fprintf( stdout, "  --version VER               set the frame version name to to RUN (V01, V02, etc.)\n" );
+  fprintf( stdout, "  --sensemon-format           read the text file in sensemon format\n" );
+  fprintf( stdout, "  --skip-first-line           skip the first line of the file\n" );
+  fprintf( stdout, "\nFactor File:\n" );
+  fprintf( stdout, 
+      "The last argument must be a calibration factor file. This must be an ASCII\n" 
+      "file in the format:\n" 
+      "\n" 
+      "GPStime         alpha*beta      alpha           beta" 
+      "\n" 
+      "If the option --sensemon-format is given, the ASCII file must be in the\n" 
+      "format:\n" 
+      "GPStime         range           LineAmp         alpha           beta\n" 
+      "\n" 
+      "Any comment lines must begin with %% or #.\n" ); 
+  return;
+}
 
 #define A_CHANNEL "CAL-CAV_FAC"
 #define AB_CHANNEL "CAL-OLOOP_FAC"
@@ -162,13 +164,14 @@ int main( int argc, char *argv[] )
   const char *ifo = NULL;
   int arg;
   int done = 0;
-  extern int sensemon_format = 0;
-  extern int skip_first_line = 0;
+
+  sensemon_format = 0;
+  skip_first_line = 0;
 
   /* parse arguments */
   if ( argc == 1 )
   {
-    USAGE( argv[0] );
+    usage( argv[0] );
     exit( 1 );
   }
   for ( arg = 1; arg < argc; ++arg )
@@ -190,12 +193,12 @@ int main( int argc, char *argv[] )
     }
     else if ( strstr( argv[arg], "--help" ) )
     {
-      USAGE( argv[0] );
+      usage( argv[0] );
       exit( 0 );
     }
     else if ( strstr( argv[arg], "-h" ) )
     {
-      USAGE( argv[0] );
+      usage( argv[0] );
       exit( 0 );
     }
     else if ( strstr( argv[arg], "--sensemon-format" ) )
