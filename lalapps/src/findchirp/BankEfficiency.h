@@ -317,13 +317,14 @@ typedef struct{
   char *chanName;
   CHAR *calCacheName;
   CHAR *frInCacheName;
-  INT4 startTime, endTime;
+  INT4 startTime;
   DetectorParamIn L1;
   DetectorParamIn H1;
   DetectorParamIn H2;
-
+  INT4 numSeconds;
   DetectorFlag detector;
   RunFlag run;
+  REAL4 signalfFinal;
 }
 OtherParamIn;
 
@@ -430,8 +431,9 @@ void
 LALCreateFilters(REAL4Vector 	*Filter1,
 		 REAL4Vector 	*Filter2,
 		 BEPowerVector  *powerVector,
-		 BCVMaximizationMatrix    matrix,
+		 BEMoments      *moments,
 		 UINT4 		kMin,
+		 UINT4 		kMax,
 		 REAL8 		psi0,
 		 REAL8 		psi3);
 
@@ -460,18 +462,10 @@ LALWaveOverlapBCV(LALStatus 		  *status,
 		  InspiralWaveOverlapIn   *overlapin,
 		  REAL4Vector             *Filter1, 
 		  REAL4Vector             *Filter2,
-		  BCVMaximizationMatrix    matrix,
 		  OtherParamIn             otherIn, 
-		  OverlapOutputIn             *OverlapOutput);
-void
-LALWaveOverlapBCV2(LALStatus 		  *status,
-		  REAL4Vector             *correlation,
-		  InspiralWaveOverlapIn   *overlapin,
-		  REAL4Vector             *Filter1, 
-		  REAL4Vector             *Filter2,
-		  BCVMaximizationMatrix    matrix,
-		  OtherParamIn             otherIn, 
-		  OverlapOutputIn             *OverlapOutput);
+		  OverlapOutputIn             *OverlapOutput,
+		  BEMoments *moments);
+
 
 /* Function to store the moments needed by the BCV overlap process 
  * a11, a22, a21 are three vectors which stored the three components 
@@ -480,7 +474,8 @@ LALWaveOverlapBCV2(LALStatus 		  *status,
 void
 LALCreateMomentVector(BEMoments            *moments,
 		      REAL8FrequencySeries *psd,
-		      InspiralTemplate     *params);
+		      InspiralTemplate     *params, 
+		      INT4 length);
 
 /* Function to create Vectors of the form y(f)= f^(-a/b). 
  * where f is the frequency. 
@@ -581,13 +576,6 @@ void BEPrintBankXml(InspiralTemplateList *coarseList,
 		    OtherParamIn           otherIn
 		    );
 
-/* get the matrix involved in alpha maximization 
- * process in the BCV correlation.
- * */
-void BEGetMatrixFromVectors(BEMoments moments,
-			    UINT4 	k,
-			    BCVMaximizationMatrix *matrix2fill);
-
 void BEGetMaximumSize(LALStatus  *status, 		      
 		      RandomInspiralSignalIn  randIn, 
 		      UINT4 *length);
@@ -595,7 +583,7 @@ void BEGetMaximumSize(LALStatus  *status,
 
 void BECreatePsd(LALStatus *status, 
 		 InspiralCoarseBankIn *coarseBankIn, 
-		 RandomInspiralSignalIn  randIn,
+		 RandomInspiralSignalIn  *randIn,
 		 OtherParamIn           otherIn);
 /* print an error  message 
  * */
@@ -709,3 +697,33 @@ void LALComputeWindowSpectrum(LALStatus *status,
 			      WindowSpectrumIn *param,
 			      REAL4FrequencySeries  *spec,
 			      REAL4TimeSeries *chan);
+
+
+
+
+void BECreateBank(LALStatus *status, 
+		  InspiralCoarseBankIn   *coarseBankIn,	
+		  InspiralTemplateList      	**list,
+		  INT4 *sizeBank);
+
+
+void BECreatePowerVector(LALStatus              *status, 
+			 BEPowerVector          *powerVector,
+			 RandomInspiralSignalIn  randIn, 
+			 INT4                    length);
+
+
+
+
+void LALInspiralOverlapBCV(LALStatus *status,
+			   InspiralTemplateList   **list,
+			   BEPowerVector          *powerVector,
+			   OtherParamIn                *otherIn, 
+			   RandomInspiralSignalIn *randIn,
+			   INT4                    templateNumber, 
+			   REAL4Vector            *Filter1,
+			   REAL4Vector            *Filter2,
+			   InspiralWaveOverlapIn  *overlapin,
+			   OverlapOutputIn        *output,
+			   REAL4Vector            *correlation,
+			   BEMoments *moments);
