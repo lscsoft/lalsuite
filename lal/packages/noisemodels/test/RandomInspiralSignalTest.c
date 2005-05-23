@@ -216,6 +216,7 @@ main ( void )
 	      overlapin.signal = signal;
 	      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
 	      overlapin.param = randIn.param;
+              overlapin.ifExtOutput = 0;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
 	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  
@@ -235,6 +236,7 @@ main ( void )
 	      overlapin.signal = signal;
 	      overlapin.param = randIn.param;
 	      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
+              overlapin.ifExtOutput = 0;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
 	      fprintf(stderr, "phase_max=%e bin_max=%d overlap_max=%e\n",  
@@ -261,6 +263,7 @@ main ( void )
 		      randIn.param.fCutoff = 1./(pow(6.,1.5) * LAL_PI * randIn.param.totalMass * LAL_MTSUN_SI);
 	      else
 		      randIn.param.fCutoff = randIn.param.fFinal;
+              overlapin.ifExtOutput = 0;
 	      LALInspiralWaveOverlap(&status,&correlation,&overlapout,&overlapin);
 	      printf_timeseries (correlation.length, correlation.data, dt, t0, file) ;
 	      fprintf(stderr, "m1=%e m2=%e t0=%e t2=%e psi0=%e psi3=%e phase_max=%e bin_max=%d overlap_max=%e\n",  
