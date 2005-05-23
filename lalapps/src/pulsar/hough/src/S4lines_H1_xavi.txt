@@ -1,0 +1,9 @@
+0.0        60.0     30       0.5             0.5              /*60_Hz_lines*/  
+346.0      0.0      1        4.0	     4.0              /*violin_modes_etc*/
+688.5      0.0      1        2.0             2.0              /*second_harmonic_violin_part1*/
+694.75     0.0      1        1.25            1.25             /*second_harmonic_violin_part2*/
+46.7       0.0      1        0.0             0.0              /*Calibration_line*/
+393.1      0.0	    1	     0.0	     0.0              /*Calibration_line*/
+973.3      0.0      1        0.0             0.0              /*Calibration_line*/
+1144.3     0.0      1        0.0             0.0              /*Calibration_line*/
+0.0	   36.944   50       0.8             0.8          /*harmonics_of_36.9Hz*/
