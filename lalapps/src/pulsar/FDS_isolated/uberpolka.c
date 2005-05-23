@@ -94,8 +94,8 @@ typedef struct CandidateListTag
   REAL4 Delta;       /* latitude -> REAL4 */
   REAL4 F;           /* Maximum value of F for the cluster -> REAL4*/
   REAL4 lfa;         /* log of false alarm probability for that candidate ->REAL4*/
-  UINT4 iCand;
-  UINT4 CtagCounter; /* contains the cumulative sum of coincident candidates so far */
+  INT4 iCand;
+  INT4 CtagCounter; /* contains the cumulative sum of coincident candidates so far */
   INT4  iFreq;       /* INT2 , delete? */
   INT2 iDelta;      /* -157-157 -> INT2, delete?  */
   CHAR  Ctag;        /* tag for candidate if it's been found in coincidence, just a Bit, maybe coded as CtagC-2 */
@@ -103,8 +103,8 @@ typedef struct CandidateListTag
 
 typedef struct CoincidentPairsTag 
 {
-  UINT4 c1;             /* number in Fstats file that corresponds to first member of pair */
-  UINT4 c2;             /* number in Fstats file that corresponds to second member of pair */
+  INT4 c1;             /* number in Fstats file that corresponds to first member of pair */
+  INT4 c2;             /* number in Fstats file that corresponds to second member of pair */
   /* REAL8 fa; */       /* joint false alarm for that pair */
   REAL4 lfa;            /* log of joint false alarm for that pair */
 } CoincidentPairs; /* ~ coninc */
