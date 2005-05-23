@@ -97,7 +97,7 @@ typedef struct CandidateListTag
   UINT4 iCand;
   UINT4 CtagCounter; /* contains the cumulative sum of coincident candidates so far */
   INT4  iFreq;       /* INT2 , delete? */
-  UINT2 iDelta;      /* 0-300 -> INT2, delete?  */
+  INT2 iDelta;      /* -157-157 -> INT2, delete?  */
   CHAR  Ctag;        /* tag for candidate if it's been found in coincidence, just a Bit, maybe coded as CtagC-2 */
 } CandidateList; /* ~ Fstat lines */ 
 
