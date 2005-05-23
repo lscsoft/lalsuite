@@ -56,6 +56,8 @@ LALInspiralWaveOverlap
    ASSERT (output->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
    ASSERT (overlapin->psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
    ASSERT (overlapin->signal.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+   ASSERT (overlapin->ifExtOutput >= 0, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+   ASSERT (overlapin->ifExtOutput <= 1, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
 
    output1.length = output2.length = overlapin->signal.length;
    filter1.length = filter2.length = overlapin->signal.length;
@@ -191,10 +193,66 @@ LALInspiralWaveOverlap
    }
 
    phase = overlapout->phase;
-   for (i=0; i<(int)output->length; i++) 
-      output->data[i] = cos(phase) * output1.data[i] 
-                      + sin(phase) * output2.data[i];
+
+
+   /*      For efficiency of the code, we replicate the loop as the case maybe 
+    *      This is done so that the if ( ) conditions can be placed outside the
+    *      loop 
+    */
+
+   /* If an extended output is not requested - then just fill out the output
+    * (as before). This can be indicated by setting overlapin->ifExtOutput to zero
+    * */
+
+   if (  !(overlapin->ifExtOutput) ) 
+   {
+       /* No xcorrelation or filters requested on output - so just fill out
+        * output vector and exit
+        * */
+       for (i=0; i<(int)output->length; i++) { 
+           output->data[i] = cos(phase) * output1.data[i] 
+                   + sin(phase) * output2.data[i];
+       }
+   }
+   else { 
+
+       /* Else we assume that all of  them are requested to be output. Eventually we 
+        * would want the freedom to output any one of the 4 vectors but right now we
+        * output all the four together
+        * */
+
+       /* Check that the space has been allocated to recv the xcorr and  filters */
+       ASSERT (overlapout->xcorr1->length = overlapin->signal.length, 
+               status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+       ASSERT (overlapout->xcorr1->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+      
+       ASSERT (overlapout->xcorr2->length = overlapin->signal.length, 
+               status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+       ASSERT (overlapout->xcorr2->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+      
+       ASSERT (overlapout->filter1->length = overlapin->signal.length, 
+               status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+       ASSERT (overlapout->filter1->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+       
+       ASSERT (overlapout->filter2->length = overlapin->signal.length, 
+               status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);
+       ASSERT (overlapout->filter2->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
+
+       /* Now fill everything in the extended output */
+       for (i=0; i<(int)output->length; i++) { 
+           output->data[i] = cos(phase) * output1.data[i] 
+                   + sin(phase) * output2.data[i];
+
+           overlapout->xcorr1->data[i]  = output1.data[i];
+           overlapout->xcorr2->data[i]  = output2.data[i];
+           overlapout->filter1->data[i] = filter1.data[i];
+           overlapout->filter2->data[i] = filter2.data[i];
+       }
+   }
+
    overlapout->max = sqrt(overlapout->max);
+
+
    if (filter1.data!=NULL) LALFree(filter1.data);
    if (filter2.data!=NULL) LALFree(filter2.data);
    if (output1.data!=NULL) LALFree(output1.data);
@@ -212,16 +270,16 @@ LALInspiralWaveOverlap
 
 void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1)
 {
-	int i,n,nby2;
+    int i,n,nby2;
 
-	n = filter1->length;
-	nby2 = n/2;
-	filter2->data[0] = filter1->data[0];
-	filter2->data[nby2] = filter1->data[nby2];
-	for (i=1; i<nby2; i++)
-	{
-		filter2->data[i] = -filter1->data[n-i];
-		filter2->data[n-i] = filter1->data[i];
-	}
+    n = filter1->length;
+    nby2 = n/2;
+    filter2->data[0] = filter1->data[0];
+    filter2->data[nby2] = filter1->data[nby2];
+    for (i=1; i<nby2; i++)
+    {
+        filter2->data[i] = -filter1->data[n-i];
+        filter2->data[n-i] = filter1->data[i];
+    }
 }
 
