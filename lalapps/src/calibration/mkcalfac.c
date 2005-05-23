@@ -129,6 +129,7 @@ void usage ( char *s )
   fprintf( stdout, "Usage: %s [options] [factorfile]\n", s );
   fprintf( stdout, "\nOptions:\n" );
   fprintf( stdout, "  --help                print this message\n");
+  fprintf( stdout, "  --ifo IFO             set the frame ifo name to IFO (L1, H1, etc.)\n" );
   fprintf( stdout, "  --run RUN             set the frame run name to RUN (E11, S2, etc.)\n" );
   fprintf( stdout, "  --version VER         set the frame version name to to RUN (V01, V02, etc.)\n" );
   fprintf( stdout, "  --sensemon-format     read the text file in sensemon format\n" );
