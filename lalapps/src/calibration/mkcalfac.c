@@ -128,20 +128,21 @@ void usage ( char *s )
 {
   fprintf( stdout, "Usage: %s [options] [factorfile]\n", s );
   fprintf( stdout, "\nOptions:\n" );
-  fprintf( stdout, "  --help                      print this message\n");
-  fprintf( stdout, "  --run RUN                   set the frame run name to RUN (E11, S2, etc.)\n" );
-  fprintf( stdout, "  --version VER               set the frame version name to to RUN (V01, V02, etc.)\n" );
-  fprintf( stdout, "  --sensemon-format           read the text file in sensemon format\n" );
-  fprintf( stdout, "  --skip-first-line           skip the first line of the file\n" );
+  fprintf( stdout, "  --help                print this message\n");
+  fprintf( stdout, "  --run RUN             set the frame run name to RUN (E11, S2, etc.)\n" );
+  fprintf( stdout, "  --version VER         set the frame version name to to RUN (V01, V02, etc.)\n" );
+  fprintf( stdout, "  --sensemon-format     read the text file in sensemon format\n" );
+  fprintf( stdout, "  --skip-first-line     skip the first line of the file\n" );
   fprintf( stdout, "\nFactor File:\n" );
   fprintf( stdout, 
       "The last argument must be a calibration factor file. This must be an ASCII\n" 
       "file in the format:\n" 
       "\n" 
-      "GPStime         alpha*beta      alpha           beta" 
+      "GPStime         alpha*beta      alpha           beta\n" 
       "\n" 
       "If the option --sensemon-format is given, the ASCII file must be in the\n" 
       "format:\n" 
+      "\n"
       "GPStime         range           LineAmp         alpha           beta\n" 
       "\n" 
       "Any comment lines must begin with %% or #.\n" ); 
