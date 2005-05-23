@@ -19,7 +19,11 @@ LALRandomInspiralSignal.c\
 LALStatsREAL4Vector.c\
 LALTAMAPsd.c\
 LALVIRGOPsd.c\
-LALAdvLIGOPsd.c
+LALAdvLIGOPsd.c\
+LALDiscoverInspiralEvents.c\
+LALEstimateEffectiveDistance.c\
+LALEvaluateInspiralChisqTest.c\
+LALTruncateInvSpectrum.c\
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
