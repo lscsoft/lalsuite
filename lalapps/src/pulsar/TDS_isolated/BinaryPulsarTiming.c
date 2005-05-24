@@ -24,7 +24,8 @@
 	 \input{BinaryPulsarTimingCP}
 	 \idx{LALBinaryPulsarDeltaT()}
 	 \idx{LALReadTEMPOParFile()}
-	 \idx{degsToRads()}
+	 \idx{LALdegsToRads()}
+	 \idx{LALTTtoGPS()}
 	 
 	 \subsubsection*{Description}
 	 
@@ -49,8 +50,8 @@
 	 also many other model dependent parameters. These routines closely follow
 	 those used in the radio astronomy package TEMPO \cite{TEMPO}.
 	 
-	 Radio astronomer will fit pulsar parameters using TEMPO which will output the
-	 parameters in a \verb+.par+ file. The values allowed in this file can be
+	 Radio astronomers fit pulsar parameters using TEMPO which will output
+	 the parameters in a \verb+.par+ file. The values allowed in this file can be
 	 found in the TEMPO documentation. A function is included to extract these 
 	 parameters from the \verb+.par+ files and put them into a
 	 \verb+BinaryPulsarParams+ structure, it will set any unused parameters to
@@ -60,6 +61,14 @@
 	 declination in the format \texttt{ddd/hh:mm:ss.s} or \texttt{ddd/hhmmss.s} 
 	 (as is given in the \texttt{.par} file) into a \texttt{REAL8} value in 
 	 radians.
+	 
+	 There is a function to convert times given in terrestrial time (or
+	 Barycentre Dynamical Time TBD) into the equivalent GPS time. This function
+	 is useful when taking epochs from the \verb+.par+ files, which are always
+	 given in TBD, into GPS times which all the LAL functions use. For example
+	 the binary time of periastron parameter ($T_0$ or $T_{\rm asc}) is given in
+	 TBD but our data is in GPS, so a conversion of the time of periastron to GPS
+	 needs to be made for the code to be compatible.
 	 
 	 \subsubsection*{Notes}
 	 
@@ -136,14 +145,20 @@ LALBinaryPulsarDeltaT( LALStatus						*status,
 	Pb = params->Pb*DAYSTOSECS; /* covert period from days to secs */
 	pbdot = params->Pbdot*1.0e-12;
 	
-	T0 = (params->T0 - 44244.0)*DAYSTOSECS; /* covert T0 from MJD to UTC */
-	Tasc = (params->Tasc - 44244.0)*DAYSTOSECS; /* convert Tasc from MJD to UTC */
-	
+	/* T0 = (params->T0 - 44244.0)*DAYSTOSECS + (double)input->leapSecs; /*
+covert T0 from MJD to GPS */
+	/* Tasc = (params->Tasc - 44244.0)*DAYSTOSECS + (double)input->leapSecs;
+/* convert Tasc from MJD to GPS (= UTC + leap secs from start of GPS time =
+MJD 44244)  */
+	T0 = params->T0; /* these should have been converted to GPS prior to there
+input */
+	Tasc = params->Tasc;	
+
 	if(strstr(input->tbflag, "MJD") != NULL){
-		tb = (input->tb - 44244.0)*DAYSTOSECS;
+		tb = (input->tb - 44244.0)*DAYSTOSECS + (double)input->leapSecs;
 	}
 	else if(strstr(input->tbflag, "GPS") != NULL){
-		tb = input->tb - input->leapSecs;
+		tb = input->tb; /* - (double)input->leapSecs; */
 	}
 	else{
 		ASSERT((strstr(input->tbflag, "GPS") != NULL) || 
@@ -177,7 +192,7 @@ LALBinaryPulsarDeltaT( LALStatus						*status,
 	r = LAL_G_SI*m2/c3;
 	
 	/* if T0 is not defined, but Tasc is */
-	if(T0 == 0.0 && Tasc != 0.0){
+	if(T0 == 0.0 && Tasc != 0.0 && eps1 == 0.0 && eps2 == 0.0){
 		REAL8 fe, uasc, Dt; /* see TEMPO tasc2t0.f */
 			
 		fe = sqrt((1.0 - e)/(1.0 + e));
@@ -1038,4 +1053,26 @@ REAL8 LALDegsToRads(CHAR *degs, CHAR *coord){
 	return radians;
 }
 
-	
+/* function for converting times given in Terrestrial time (TT) or TDB in MJD to
+times in GPS - this is important for epochs given in .par files which are in
+TDB. TT and GPS are different by a factor of 51.184 secs, this is just the
+historical factor of 32.184 secs between TT and TAI (International Atomic Time)
+and the other 19 seconds come from the leap seonds added between the TAI and
+UTC up to the point of definition of GPS time at UTC 01/01/1980 (see
+http://www.stjarnhimlen.se/comp/time.html for details) */
+REAL8 LALTTtoGPS(REAL8 TT){
+	REAL8 GPS;
+
+	/* find the MJD closest to the input TT to get conversion factor */
+	/* maybe interpolate in the future */
+	if(TT < 44244.){
+		fprintf(stderr, "Input time is not in range.\n");
+		exit(0);
+	} 
+		
+	/* there is the magical number factor of 32.184 + 19 leap seconds to the
+start of GPS time */
+	GPS = (TT-44244.)*86400. - 51.184;
+
+	return GPS;
+}

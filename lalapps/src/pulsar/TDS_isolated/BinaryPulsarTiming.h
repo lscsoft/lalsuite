@@ -238,8 +238,18 @@ LALReadTEMPOParFile(	LALStatus							*status,
 	 or ddmmss.ss into the number of degrees as a float
 	 degs is the string containing the dd/hh:mm:ss.sss
 	 coords is either ra/RA or dec/DEC															*/
-double
-LALDegsToRads(char *degs, char *coords);
+REAL8
+LALDegsToRads(CHAR *degs, CHAR *coords);
+
+/* function for converting times given in Terrestrial time (TT) or TDB in MJD to
+times in GPS - this is important for epochs given in .par files which are in
+TDB. TT and GPS are different by a factor of 51.184 secs, this is just the
+historical factor of 32.184 secs between TT and TAI (International Atomic Time)
+and the other 19 seconds come from the leap seonds added between the TAI and
+UTC up to the point of definition of GPS time at UTC 01/01/1980 (see
+http://www.stjarnhimlen.se/comp/time.html for details) */
+REAL8
+LALTTtoGPS(REAL8 TT);
 
 #ifdef __cplusplus
 }
