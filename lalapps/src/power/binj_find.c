@@ -6,6 +6,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
+#include <lal/FrameCache.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
@@ -19,6 +20,8 @@ RCSID("$Id$");
 #define TRUE  1
 #define FALSE 0
 
+enum { undefined, comparebytimeandfreq, comparebytime } comparechoice = comparebytimeandfreq;
+ 
 /*
  * =============================================================================
  *                            Command Line Options
@@ -139,7 +142,7 @@ static void print_usage(FILE *handle, char *prog)
 "       --input-inspinj <filename>\n" \
 "	--output-trig <filename> --output-inj-made <filename>\n" \
 "	--output-inj-found <filename> --best-confidence|--best-peaktime\n" \
-"	[--noplayground] [--help]\n", prog);
+"	[--compare-choice comparebytimeandfreq(default)/comparebytime][--noplayground] [--help]\n", prog);
 }
 
 
@@ -163,12 +166,13 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 		{"min-centralfreq",  required_argument, NULL, 'g'},
 		{"max-centralfreq",  required_argument, NULL, 'h'},
 		{"output-inj-found", required_argument, NULL, 'i'},
+		{"compare-choice",   required_argument, NULL, 'k'},
 		{"output-trig",      required_argument, NULL, 'q'},
 		{NULL, 0, NULL, 0}
 	};
 	int c, index;
 
-	do switch(c = getopt_long(argc, argv, "a:b:j:c:d:e:f:g:h:i:oq:", long_options, &index)) {
+	do switch(c = getopt_long(argc, argv, "a:b:j:c:d:e:f:g:h:k:i:oq:", long_options, &index)) {
 	case 'a':
 		options->inputFile = optarg;
 		break;
@@ -211,6 +215,29 @@ static void parse_command_line(int argc, char *argv[], struct options_t *options
 	case 'i':
 		options->injFoundFile = optarg;
 		break;
+
+	case 'k':
+		/*
+		 * set the cluster option
+		 */			
+		{
+		  if ( ! strcmp( "comparebytimeandfreq", optarg ) )
+		    {
+		      comparechoice = comparebytimeandfreq;
+		    }
+		  else if ( ! strcmp( "comparebytime", optarg ) )
+		    {
+		      comparechoice = comparebytime ;
+		    }
+		  else
+		    {
+		      fprintf( stderr, "invalid argument to --compare-choice\n"
+			       "unknown comparechoice specified;\n"
+			       "(must be one of:comparebytimeandfreq,comparebytime )\n");
+			    }
+		}
+		break;
+		
 
 	case 'o':
 		print_usage(stderr, argv[0]);
@@ -618,7 +645,11 @@ static void find_burstinjections(LALStatus *stat, SimBurstTable *injection, Sngl
 			/* if the injection's centre frequency and peak time
 			 * don't lie within the trigger's time-frequency
 			 * volume, move to next event */
-			LAL_CALL(LALCompareSimBurstAndSnglBurst(stat, injection, event, &match), stat);
+			if (comparechoice == comparebytimeandfreq)
+			  LAL_CALL(LALCompareSimBurstAndSnglBurst(stat, injection, event, XLALCompareSimBurstAndSnglBurstByTimeandFreq, &match), stat);
+			else if (comparechoice == comparebytime)
+			  LAL_CALL(LALCompareSimBurstAndSnglBurst(stat, injection, event, XLALCompareSimBurstAndSnglBurstByTime, &match), stat);
+
 			if(!match)
 				continue;
 
