@@ -106,6 +106,13 @@ void init_image_with_file_name( char *ckpt_file_name );
 void ckpt_and_exit( void );
 #endif
 
+typedef struct
+tagFrameHNode
+{
+  FrameH *frHeader;
+  struct tagFrameHNode *next;
+}
+FrameHNode;
 
 /*
  *
@@ -229,6 +236,8 @@ int main( int argc, char *argv[] )
   /* frame output data */
   struct FrFile *frOutFile  = NULL;
   struct FrameH *outFrame   = NULL;
+  FrameHNode *coherentFrames = NULL;
+  FrameHNode *thisCoherentFrame = NULL;
   UINT4          nRhosqFr = 0;
   UINT4          nChisqFr = 0;
   UINT4          nCDataFr = 0;
@@ -1917,12 +1926,7 @@ int main( int argc, char *argv[] )
             lowerBound = gpsStartTime.gpsSeconds + numPoints/(4 * sampleRate );
             upperBound = gpsEndTime.gpsSeconds - numPoints/(4 * sampleRate );
 
-            if ( trigTime < lowerBound || trigTime > upperBound )
-            {
-              fprintf(stderr,"The trigger time is outside of the segment\n");
-              fprintf(stderr,"Not writing C-data for this segment\n");
-            }
-            else
+            if ( trigTime >= lowerBound && trigTime <= upperBound )
 	    {
 	      tempTmplt = (SnglInspiralTable *) 
 		LALCalloc(1, sizeof(SnglInspiralTable) );
@@ -1945,8 +1949,18 @@ int main( int argc, char *argv[] )
                 LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
                     "CData_%d", nCDataFr++ );
                 strcpy( coherentInputData->name, chan.name );
-                outFrame = fr_add_proc_COMPLEX8TimeSeries( outFrame,
-                    coherentInputData, "none", cdataStr );
+               	if ( ! coherentFrames )
+                {
+		  thisCoherentFrame = coherentFrames = (FrameHNode *) 
+                      LALCalloc( 1, sizeof(FrameHNode) );
+	        }
+                else
+	        {
+                  thisCoherentFrame = thisCoherentFrame->next = (FrameHNode *) 
+                      LALCalloc( 1, sizeof(FrameHNode) );
+	        }
+                thisCoherentFrame->frHeader = fr_add_proc_COMPLEX8TimeSeries( 
+                    outFrame, coherentInputData, "none", cdataStr );
                 LAL_CALL( LALCDestroyVector( &status, 
                       &(coherentInputData->data) ), &status );
                 coherentInputData = NULL;
@@ -2243,7 +2257,16 @@ int main( int argc, char *argv[] )
     }
     if ( vrbflg ) fprintf( stdout, "writing frame data to %s... ", fname );
     frOutFile = FrFileONew( fname, 0 );
-    FrameWrite( outFrame, frOutFile );
+    if ( writeRawData || writeFilterData || writeResponse || writeSpectrum ||
+        writeRhosq || writeChisq )
+    {
+      FrameWrite( outFrame, frOutFile );
+    }
+    while( coherentFrames )
+    {
+      FrameWrite( coherentFrames->frHeader, frOutFile );
+      coherentFrames = coherentFrames->next;
+    }
     FrFileOEnd( frOutFile );
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
