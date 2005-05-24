@@ -453,7 +453,7 @@ LALCompareSnglBurstSnglInspiral(
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
 int
-XLALCompareSimBurstAndSnglBurst(
+XLALCompareSimBurstAndSnglBurstByTimeandFreq(
 	const SimBurstTable * const *a,
 	const SnglBurstTable * const *b
 )
@@ -476,17 +476,42 @@ XLALCompareSimBurstAndSnglBurst(
 }
 
 /* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareSimBurstAndSnglBurstByTime(
+	const SimBurstTable * const *a,
+	const SnglBurstTable * const *b
+)
+/* </lalVerbatim> */
+{
+	INT8 ta;
+
+	if(! strcmp("ZENITH",(*a)->coordinates))
+	  ta = XLALGPStoINT8(&(*a)->geocent_peak_time);
+	else {
+	  if(! strcmp("H1",(*b)->ifo))
+	    ta = XLALGPStoINT8(&(*a)->h_peak_time);
+	  else if(! strcmp("H2",(*b)->ifo))
+	    ta = XLALGPStoINT8(&(*a)->h_peak_time);
+	  else if(! strcmp("L1",(*b)->ifo))
+	    ta = XLALGPStoINT8(&(*a)->l_peak_time);
+	}
+
+	return((start_time(*b) < ta) && (ta < end_time(*b)));
+}
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 LALCompareSimBurstAndSnglBurst(
 	LALStatus *status,
 	const SimBurstTable *a,
 	const SnglBurstTable *b,
+	int (*testfunc)(const SimBurstTable * const *, const SnglBurstTable * const *),
 	int *match
 )
 /* </lalVerbatim> */
 {
 	INITSTATUS(status, "LALCompareSimBurstAndSnglBurst", SNGLBURSTUTILSC);
-	*match = XLALCompareSimBurstAndSnglBurst(&a, &b);
+	*match = testfunc( (const SimBurstTable * const *)&a, (const SnglBurstTable * const *)&b );
 	RETURN(status);
 }
 
