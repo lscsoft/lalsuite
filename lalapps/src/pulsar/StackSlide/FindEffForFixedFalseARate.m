@@ -1,5 +1,24 @@
-function FindEffForFixedFalseARate(listSearchXMLfiles,listMCxmlFiles,injectedH0,falseAlarmRate,numSFT,inputThreshold,outputFile,graphOption)
-% Usage: FindEffForFixedFalseARate(listSearchXMLfiles,listMCxmlFiles,injectedH0,falseAlarmRate,numSFT,inputThreshold,outputFile,graphOption)
+function FindEffForFixedFalseARate(jobID,fileList,injectedH0,falseAlarmRate,numSFT,inputThreshold,outputFile,graphOption)
+% Usage: FindEffForFixedFalseARate(jobID,fileList,injectedH0,falseAlarmRate,numSFT,inputThreshold,outputFile,graphOption)
+% jobID: ID number of the job to be processed.
+% fileLIst: entire list of files for all jobs.  This files has the format <node letter+jobID> <filename>, e.g,:
+%
+%           A0 filenameA0_0.txt
+%           B0 filenameB0_0.txt
+%           B0 filenameB0_1.txt
+%           C0 filenameC0_0.txt
+%           D0 filenameD0_0.txt
+%
+%           A1 filenameA1_0.txt
+%           B1 filenameB1_0.txt
+%           B1 filenameB1_1.txt
+%           C1 filenameC1_0.txt
+%           D1 filenameD1_0.txt
+%
+%           etc...
+%
+% searchFileList is found by matching files in fileList with A+jobID.
+% listMCxmlFiles is found by matching files in fileList with B+jobID.
 % searchXMLfile: file with list of files with output of StackSlide Search
 % listMCxmlFiles: file with list of files with output of corresponding Monte Carlo Simulation
 % injectedH0: value of signal amplitude h_0 injected during Monte Carlo Simulation
@@ -26,8 +45,33 @@ end
 if (ischar(graphOption))
     graphOption=str2num(graphOption);
 end
-% Read in the search results files:
-searchFileList = textRead(listSearchXMLfiles,'%s');
+if (isnumeric(jobID))
+   jobID = num2str(jobID);
+end
+
+% set up jobIDs for A and B jobs:
+jobIDA = sprintf('A%s',jobID);
+jobIDB = sprintf('B%s',jobID);
+
+% Read in entire list of files:
+[jobIDList, entireFileList] = textread(fileList,'%s %s');
+entireFileListLength = length(entireFileList);
+
+% Find the search and Monte Carlo (mc) files:
+countA = 0;
+countB = 0;
+for i=1:entireFileListLength
+    if (char(jobIDList(i)) == jobIDA)
+       countA = countA + 1;
+       searchFileList{countA} = char(entireFileList(i));
+    elseif (char(jobIDList(i)) == jobIDB)
+       countB = countB + 1;
+       mcFileList{countB} = char(entireFileList(i));
+    end
+
+end
+
+%searchFileList = textRead(listSearchXMLfiles,'%s');
 searchFileListLength = length(searchFileList);
 start_freqs = [];
 bands = [];
@@ -83,11 +127,11 @@ else
 end
 
 % Read in the Monte Carlo Simulation Files:
-fileList = textRead(listMCxmlFiles,'%s');
-fileListLength = length(fileList);
+%mcFileList = textRead(listMCxmlFiles,'%s');
+mcFileListLength = length(mcFileList);
 power = [];
-for i=1:fileListLength;
-  fileName = char(fileList(i));
+for i=1:mcFileListLength;
+  fileName = char(mcFileList(i));
   tbl = readMeta(fileName,'sngl_stackslideperiodic');
   power = [ power; tbl.power ];
 end

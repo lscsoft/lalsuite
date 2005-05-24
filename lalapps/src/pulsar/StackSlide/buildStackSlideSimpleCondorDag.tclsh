@@ -129,9 +129,9 @@ puts $cFid "log        = childC.log";
 puts $cFid "";
 # if {$conf_or_faRate > 0.0} # 01/18/05 gam
 if {$output_type > 0} {
-   puts $cFid "arguments  = $dagWorkingDir/\$(nameFileListA) $dagWorkingDir/\$(nameFileListB) $amplitudeMC $conf_or_faRate $num_sfts 0 $outputFileChildC.\$(JobID) 0";
+   puts $cFid "arguments  = \$(JobID) $dagWorkingDir/\$(nameFileList) $amplitudeMC $conf_or_faRate $num_sfts 0 $outputFileChildC.\$(JobID) 0";
 } else {
-   puts $cFid "arguments  = $dagWorkingDir/\$(nameFileListA) $dagWorkingDir/\$(nameFileListB) $amplitudeMC 0 $outputFileChildC.\$(JobID) 0";
+   puts $cFid "arguments  = \$(JobID) $dagWorkingDir/\$(nameFileList) $amplitudeMC 0 $outputFileChildC.\$(JobID) 0";
 }
 puts $cFid "queue";
 close $cFid;
@@ -145,17 +145,17 @@ puts $dagFid "# DAG for base_name = $base_name";
 # find band_width for each job
 set band_width [expr $full_band_width/$num_sub_bands]
 
+set outputFileList $base_name;  # file with list of output files
+append outputFileList "_fileList.txt";
+set pListFid [open $outputFileList "w"];
+
 # loop over jobs:
 for {set j 0} {$j<$num_sub_bands} {incr j} {
    set freq [expr $start_freq + ($j*$band_width)];    
    # Create parent job A that finds Loudest Event.
    set outputParentA $base_name;        # Name of files with output from parent job A
    append outputParentA  "_outputA";
-   set outputFileListA $base_name;      # file with list of files with output from parent job A
-   append outputFileListA "_fileListA.txt.$j";
    set parentListA($j) "";                  # list of parent jobs that use submitFileParentA
-   # Open the file with the list of output files for parent job A.
-   set pListAFid [open $outputFileListA "w"];
    # Divide the band_width up and create jobs for each sub-band.
    set sub_band_width [expr $band_width/$numSEjobs];
    for {set i 0} {$i<$numSEjobs} {incr i} {
@@ -174,19 +174,15 @@ for {set j 0} {$j<$num_sub_bands} {incr j} {
       puts $dagFid "VARS $nodeName JobID=\"$j\" subJobID=\"$i\" argList=\"$argList\"";
       append parentListA($j) "PARENT $nodeName CHILD C$j\n";
       append outputFileName ".xml";
-      puts $pListAFid "$dagWorkingDir/$outputFileName";
-   } 
-   close $pListAFid;
+      puts $pListFid "A$j $dagWorkingDir/$outputFileName";
+   }
+   puts $pListFid "";
    puts $dagFid "";
 
    # Create parent job B that runs Monte Carlo Simulation
    set outputParentB $base_name;        # Name of files with output from parent job B
    append outputParentB  "_outputB";
-   set outputFileListB $base_name;      # file with list of files with output from parent job B
-   append outputFileListB "_fileListB.txt.$j";
    set parentListB($j) "";                  # list of parent jobs that use submitFileParentB
-   # Open the file with the list of output files for parent job B.
-   set pListBFid [open $outputFileListB "w"];
    # Divide the band_width up and create jobs for each sub-band.
    set sub_band_width [expr $band_width/$numMCjobs];
    for {set i 0} {$i<$numMCjobs} {incr i} {
@@ -205,15 +201,17 @@ for {set j 0} {$j<$num_sub_bands} {incr j} {
       puts $dagFid "VARS $nodeName JobID=\"$j\" subJobID=\"$i\" argList=\"$argList\"";
       append parentListB($j) "PARENT $nodeName CHILD C$j\n";
       append outputFileName ".xml";
-      puts $pListBFid "$dagWorkingDir/$outputFileName";
-  } 
-  close $pListBFid;
+      puts $pListFid "B$j $dagWorkingDir/$outputFileName";
+  }
+  puts $pListFid "";
   puts $dagFid "";
 
   # create child job C for parents A and B above.
   puts $dagFid "JOB C$j $submitFileChildC";
-  puts $dagFid "VARS C$j JobID=\"$j\" nameFileListA=\"$outputFileListA\" nameFileListB=\"$outputFileListB\"";
+  puts $dagFid "VARS C$j JobID=\"$j\" nameFileList=\"$outputFileList\"";
   puts $dagFid "";
+  puts $pListFid "C$j $dagWorkingDir/$outputFileChildC.$j";
+  puts $pListFid "";
 }
 # END first loop over jobs: for {set j 0} {$j<$num_sub_bands} {incr j}
 
@@ -224,5 +222,6 @@ for {set j 0} {$j<$num_sub_bands} {incr j} {
 }
 # END second loop over jobs: for {set j 0} {$j<$num_sub_bands} {incr j}
 close $dagFid;
-
+close $pListFid;
+   
 exit 0;
