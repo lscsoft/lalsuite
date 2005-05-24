@@ -157,6 +157,8 @@ REAL4 SAMPLERATE;
 
 int Nevents=0;
 
+PassBandParamStruc highpassParams;
+
 /***************************************************************************/
 
 /* FUNCTION PROTOTYPES */
@@ -168,13 +170,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 int ReadData(struct CommandLineArgsTag CLA);
 
 /* High pass filters and casts data to REAL4 */
-int ProcessData(struct CommandLineArgsTag CLA);
+int ProcessData(void);
 
 /* Adds injections if an xml injection file is given */
 int AddInjections(struct CommandLineArgsTag CLA);
 
 /* High pass filters data again if an injection has been made */
-int ProcessData2(struct CommandLineArgsTag CLA);
+int ProcessData2(void);
 
 /* DownSamples data */
 int DownSample(struct CommandLineArgsTag CLA);
@@ -218,17 +220,35 @@ int main(int argc,char *argv[])
     should be higher than BW high pass frequency */ 
  Templateflow=CommandLineArgs.flow+10.0;
 
+ highpassParams.nMax =  8;
+ highpassParams.f1   = -1;
+ highpassParams.a1   = -1;
+ highpassParams.f2   = CommandLineArgs.flow;
+ highpassParams.a2   = 0.5; /* this means 50% attenuation at f2 */
+
  if (ReadData(CommandLineArgs)) return 2;
 
- if (ProcessData(CommandLineArgs)) return 4;
+/*  { */
+/*    int p; */
+/*    for ( p = 0 ; p < (int)GV.ht.data->length; p++ ) */
+/*      { */
+/*        fprintf(stdout,"%e\n",GV.ht.data->data[p]); */
+/*      } */
+/*    return 0; */
+/*  } */
+
+ if (ProcessData()) return 4;
+
 
  if (CommandLineArgs.InjectionFile != NULL) 
    {
      if (AddInjections(CommandLineArgs)) return 3;
      /* high pass filter data again with added injection */ 
-     if (ProcessData2(CommandLineArgs)) return 3;
+     if (ProcessData2()) return 3;
    }
 
+
+  	 
  if (DownSample(CommandLineArgs)) return 5;
 
  if (AvgSpectrum(CommandLineArgs)) return 6;
@@ -255,16 +275,8 @@ int main(int argc,char *argv[])
 
 /*******************************************************************************/
 
-int ProcessData2(struct CommandLineArgsTag CLA)
+int ProcessData2(void)
 {
-
-  PassBandParamStruc highpassParams;
-
-  highpassParams.nMax =  4;
-  highpassParams.f1   = -1;
-  highpassParams.a1   = -1;
-  highpassParams.f2   = CLA.flow;
-  highpassParams.a2   = 0.5; /* this means 50% attenuation at f2 */
 
   LALDButterworthREAL4TimeSeries( &status, &GV.ht_proc, &highpassParams ); 
   TESTSTATUS( &status ); 
@@ -382,8 +394,6 @@ int ClusterEvents(struct CommandLineArgsTag CLA)
       
       /* first set clustered event to current event */
       copy_event(thiscl_event,thisEvent1);
-
-
 
       while ( thisEvent2 )
 	{
@@ -883,16 +893,9 @@ int DownSample(struct CommandLineArgsTag CLA)
 
 /*******************************************************************************/
 
-int ProcessData(struct CommandLineArgsTag CLA)
+int ProcessData(void)
 {
-  PassBandParamStruc highpassParams;
   int p;
-
-  highpassParams.nMax =  4;
-  highpassParams.f1   = -1;
-  highpassParams.a1   = -1;
-  highpassParams.f2   = CLA.flow;
-  highpassParams.a2   = 0.5; /* this means 10% attenuation at f2 */
 
   LALButterworthREAL8TimeSeries( &status, &GV.ht, &highpassParams ); 
   TESTSTATUS( &status ); 
@@ -1009,15 +1012,6 @@ int ReadData(struct CommandLineArgsTag CLA)
       LALSDestroyVector (&status, &v1);
       TESTSTATUS( &status );   
     }
-
-  /* set first second of data equal to the second second of data (this is to avoid the 
-     bang at the beginning of h(t) segments) */
-  for (p=0; p<(int)SAMPLERATE; p++)
-    {
-      GV.ht.data->data[p] = GV.ht.data->data[p+(int)SAMPLERATE];
-    }
-  /* FIXME: Should check that segment is sufficiently long */
-
 
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );
