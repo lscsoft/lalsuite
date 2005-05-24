@@ -150,11 +150,11 @@ end
 fprintf(fid,'The estimated %g confidence Upper Limit = %g +/- %g \n\n',100.0*confidence,h0UpperLimit,uncertainty);
 
 if (printToStdOut > 0)
- fprintf('Loudest Event, Start Frequency, Search Band, Estimated Upper Limit, Uncertainty = \n');
- fprintf('%20.10f %20.10f %20.10f %20.10e %20.10e\n',loudestEventPowers(iLE),startFreq,searchBand,h0UpperLimit,uncertainty);
+ fprintf('Loudest Event, Start Frequency, Search Band, Confidence, Estimated Upper Limit, Uncertainty = \n');
+ fprintf('%20.6f %20.10f %20.10f %8.2f %20.10e %20.10e\n',loudestEventPowers(iLE),startFreq,searchBand,confidence,h0UpperLimit,uncertainty); 
 end
-fprintf(fid,'Loudest Event, Start Frequency, Search Band, Estimated Upper Limit, Uncertainty = \n');
-fprintf(fid,'%20.10f %20.10f %20.10f %20.10e %20.10e\n',loudestEventPowers(iLE),startFreq,searchBand,h0UpperLimit,uncertainty);
+fprintf(fid,'Loudest Event, Start Frequency, Search Band, Confidence, Estimated Upper Limit, Uncertainty = \n');
+fprintf(fid,'%20.6f %20.10f %20.10f %8.2f %20.10e %20.10e\n',loudestEventPowers(iLE),startFreq,searchBand,confidence,h0UpperLimit,uncertainty);
 
 if graphOption > 0
   % Adjust power to h0UpperLimit
