@@ -690,7 +690,13 @@ LALCompareSnglBurstSnglInspiral(
 );
 
 int
-XLALCompareSimBurstAndSnglBurst(
+XLALCompareSimBurstAndSnglBurstByTimeandFreq(
+	const SimBurstTable * const *a,
+	const SnglBurstTable * const *b
+);
+
+int
+XLALCompareSimBurstAndSnglBurstByTime(
 	const SimBurstTable * const *a,
 	const SnglBurstTable * const *b
 );
@@ -700,6 +706,7 @@ LALCompareSimBurstAndSnglBurst(
 	LALStatus *status,
 	const SimBurstTable *a,
 	const SnglBurstTable *b,
+	int (*testfunc)(const SimBurstTable * const *, const SnglBurstTable * const *),
 	int *match
 );
 
