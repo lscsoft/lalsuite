@@ -61,14 +61,13 @@ entireFileListLength = length(entireFileList);
 countA = 0;
 countB = 0;
 for i=1:entireFileListLength
-    if (char(jobIDList(i)) == jobIDA)
+    if (strcmp(char(jobIDList(i)),jobIDA))
        countA = countA + 1;
        searchFileList{countA} = char(entireFileList(i));
-    elseif (char(jobIDList(i)) == jobIDB)
+    elseif (strcmp(char(jobIDList(i)),jobIDB))
        countB = countB + 1;
        mcFileList{countB} = char(entireFileList(i));
     end
-
 end
 
 %searchFileList = textRead(listSearchXMLfiles,'%s');
