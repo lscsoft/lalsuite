@@ -55,6 +55,7 @@ int main(int argc, char **argv)
   INT4                   verbose = FALSE;
   INT4                   cluster = FALSE;
   INT4                   noncoincident = FALSE;
+  INT4                   ignorePlayground = FALSE;
 
   CHAR                   *comment = "";
 
@@ -101,6 +102,7 @@ int main(int argc, char **argv)
       {"verbose",                 no_argument,       &verbose,           1 },
       {"noplayground",            no_argument,       &usePlayground,     0 },
       {"noncoincident",           no_argument,       &noncoincident,     1 },
+      {"ignore-playground",       no_argument,       &ignorePlayground,  1 },
       /* parameters used to generate calibrated power spectrum */
       {"ifo-a",                   required_argument, 0,                'a'},
       {"ifo-b",                   required_argument, 0,                'b'},
@@ -223,7 +225,7 @@ int main(int argc, char **argv)
 	  break;
 
 	case 'o':
-	  /* time coincidence window */
+	  /* output directory for burca files */
 	  outputdir = optarg;
 	  break;
 
@@ -447,7 +449,7 @@ int main(int argc, char **argv)
 	   * we are not using playground and the trigger is not in the 
 	   * playground  ... */
 	
-	  if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) )
+	  if ( ( usePlayground && isPlay ) || ( ! usePlayground && ! isPlay) || ignorePlayground )
 	    {
 	      tmpEvent = currentTrigger[1];
 	      while (tmpEvent != NULL)
