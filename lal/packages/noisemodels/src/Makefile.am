@@ -23,7 +23,7 @@ LALAdvLIGOPsd.c\
 LALDiscoverInspiralEvents.c\
 LALEstimateEffectiveDistance.c\
 LALEvaluateInspiralChisqTest.c\
-LALTruncateInvSpectrum.c\
+LALTruncateInvSpectrum.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
