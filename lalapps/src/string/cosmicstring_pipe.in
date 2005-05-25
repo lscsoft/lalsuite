@@ -132,16 +132,19 @@ if do_inj:
 
 # get chunk lengths from the values in the ini file
 short_seg_lenth = int(cp.get('string', 'short-segment-duration'))
-length = int(cp.get('pipeline', 'segment-length'))
-overlap = short_seg_lenth/4
+pad = int(cp.get('string', 'pad'))
+length = int(cp.get('pipeline', 'segment-length'))+2*pad
+overlap = 2*(short_seg_lenth/4+pad)
 
 # read science segs that are greater or equal to a chunk from the input file
 data = pipeline.ScienceData()
 data.read(cp.get('input','segments'),length)
 
 # create the chunks from the science segments
-data.make_chunks(length,2*overlap,0,0,0)
-data.make_chunks_from_unused(length,overlap,0,overlap,0,0)
+data.make_chunks(length,overlap,0,0,0)
+#make_chunks(self, length, overlap=0, play=0, sl=0, excl_play=0)
+data.make_chunks_from_unused(length,overlap/2,0,overlap/2,0,0)
+#make_chunks_from_unused(self, length, trig_overlap, play=0, min_length=0, sl=0, excl_play=0)
 
 # get the order of the ifos to filter
 ifo1 = cp.get('pipeline','ifo1')
@@ -233,7 +236,7 @@ for seg in data:
     string1.set_name("string-"+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
     if do_inj:
       string1.add_parent(inject1)
-      string1.add_var_opt('injection-file',inject1.get_output(seed))
+      string1.add_var_opt('injection-file',inject1.get_output())
     dag.add_node(string1)
 
     #string job for second ifo  
@@ -249,7 +252,7 @@ for seg in data:
     string2.set_name("string-"+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
     if do_inj:
       string2.add_parent(inject1)
-      string2.add_var_opt('injection-file',inject1.get_output(seed))
+      string2.add_var_opt('injection-file',inject1.get_output())
     dag.add_node(string2)
 
     #string job for second ifo  
@@ -265,7 +268,7 @@ for seg in data:
     string3.set_name("string-"+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
     if do_inj:
       string3.add_parent(inject1)
-      string3.add_var_opt('injection-file',inject1.get_output(seed))
+      string3.add_var_opt('injection-file',inject1.get_output())
     dag.add_node(string3)
 
     # There are 3 ifos so there are six possible output files
