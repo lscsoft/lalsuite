@@ -297,7 +297,7 @@ int main( int argc, char *argv[] )
   UINT4 i, j, k;
   INT4  inserted;
   INT4  currentLevel;
-  INT4  cDataForFrame;
+  INT4  cDataForFrame = 0;
   CHAR  fname[FILENAME_MAX];
   CHAR  cdataStr[LALNameLength];
   REAL8 inputLengthNS;
@@ -1943,6 +1943,9 @@ int main( int argc, char *argv[] )
                   &coherentInputData, fcFilterParams->cVec, 
                   tempTmplt, 2.0, numPoints / 4 );
 
+	      LALFree( tempTmplt->event_id );
+	      LALFree( tempTmplt );
+
               if ( coherentInputData )
               {
                 cDataForFrame = 1;
@@ -1963,6 +1966,7 @@ int main( int argc, char *argv[] )
                     outFrame, coherentInputData, "none", cdataStr );
                 LAL_CALL( LALCDestroyVector( &status, 
                       &(coherentInputData->data) ), &status );
+		LALFree( coherentInputData );
                 coherentInputData = NULL;
               }
             }
@@ -2213,6 +2217,7 @@ int main( int argc, char *argv[] )
   {
     bankCurrent = bankHead;
     bankHead = bankHead->next;
+    LALFree( bankCurrent->event_id );
     LALFree( bankCurrent );
     bankCurrent = NULL;
   }
@@ -2264,8 +2269,11 @@ int main( int argc, char *argv[] )
     }
     while( coherentFrames )
     {
+      thisCoherentFrame = coherentFrames;
       FrameWrite( coherentFrames->frHeader, frOutFile );
       coherentFrames = coherentFrames->next;
+      LALFree( thisCoherentFrame );
+      thisCoherentFrame = NULL;
     }
     FrFileOEnd( frOutFile );
     if ( vrbflg ) fprintf( stdout, "done\n" );
