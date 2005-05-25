@@ -103,7 +103,7 @@ class InjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     
-  def get_output(self, seed):
+  def get_output(self):
     """
     Returns the file name of output from the power code. This must be kept
     synchronized with the name of the output file in power.c.
@@ -111,10 +111,10 @@ class InjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end():
       raise InjError, "Start time or end time has not been set"
 
-    basename = 'HL' + '-INJECTIONS_'+str(seed)+'-'
+    basename = 'HL-INJECTIONS-'+ str(self.get_start()) + \
+               '-' +str(self.get_end() - self.get_start()) + '.xml'
 
-    return basename + str(self.get_start()) + '-' + \
-      str(self.get_end() - self.get_start()) + '.xml'
+    return basename
 
 class StringNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -199,8 +199,9 @@ class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     Return the output file, i.e. the file containing the frame cache data.
     """
     if self.__start and self.__end and self.__ifoa and self.__ifob:
-      basename = 'coincidences/' + self.__ifoa +  self.__ifob + '-' + str(self.__start)\
-                 + '-' + str(self.__end) + '.xml'
+      basename = 'coincidences/' + self.__ifoa + '-BURCA_' +  self.__ifoa +self.__ifob + \
+                 '_P_0_-' + str(self.__start)\
+                 + '-' + str(self.__end-self.__start) + '.xml'
     else:
       raise StringError, "Start time, end time or ifo has not been set"
 
