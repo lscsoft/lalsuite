@@ -257,6 +257,16 @@ int main(int argc,char *argv[])
  /* reduce duration of segment appropriately */
  GV.duration -= 2*CommandLineArgs.pad; 
 
+
+/*  { */
+/*    int p; */
+/*    for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
+/*      { */
+/*        fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
+/*      } */
+/*    return 0; */
+/*  } */
+
  if (AvgSpectrum(CommandLineArgs)) return 6;
  
  if (CreateStringFilter(CommandLineArgs)) return 7;
@@ -636,7 +646,8 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	      fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
 	      return 1;
 	    }
-	  while( (fabs(vector->data[p]) > CLA.threshold) || ((p-pstart)* GV.ht_proc.deltaT < (float)CLA.TruncSecs))
+	  while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pstart)* GV.ht_proc.deltaT < (float)CLA.TruncSecs)) 
+		 && p<(int)(3*vector->length/4))
 	    {
 	      if(fabs(vector->data[p]) > maximum) 
 		{
