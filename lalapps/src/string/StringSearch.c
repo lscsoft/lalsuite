@@ -429,94 +429,48 @@ static void copy_event(SnglBurstTable *a, SnglBurstTable *b)
 
 int ClusterEvents(struct CommandLineArgsTag CLA)
 {
-  SnglBurstTable *thisEvent1 = events, *thiscl_event = NULL, *localcl_event = NULL;
+  SnglBurstTable *thisEvent1 = events, *thiscl_event = NULL;
+  INT8 peak1, peak2;
 
-  /* this is a quadratic clustering algorithm for now (for every event 
-     (thisEvent), loop through all other events (thisEvent2))*/
+  /* This linear clustering algorithm looks for gaps between triggers that are larger
+   than the inverse of the lowest high frequency cutoff. Then clusters everything
+   between gaps to the event with the largest SNR. */
 
-  while ( thisEvent1 )
+  if ( thisEvent1 )
     {      
-      INT8 peak1 = peak_time(thisEvent1);
-      SnglBurstTable *thisEvent2 = events; /* these are the events we'll be looping over */
-
-      if ( thiscl_event ) /* create a new event */
-	{
-	  thiscl_event->next = LALCalloc( 1, sizeof( *(cl_events->next) ) );
-	  thiscl_event = thiscl_event->next;
-	}
-      else /* create the list */
-	{
-	  thiscl_event = localcl_event = LALCalloc( 1, sizeof( *cl_events ) );
-	}
-      
+      thiscl_event = cl_events = LALCalloc( 1, sizeof( *cl_events ) );
       /* first set clustered event to current event */
       copy_event(thiscl_event,thisEvent1);
+    }  
 
-      while ( thisEvent2 )
-	{
-	  INT8 peak2 = peak_time(thisEvent2);
-	  
-	  /* Is this even within the time clustering window? 
-	     The clustering window is computed using the lowest high frequency
-	     cutoff of our template bank which determines the smoothing scale of 
-	     cosmic tring burst event */
+  while ( thisEvent1 && thisEvent1->next )
+    {
+      peak1 = peak_time(thisEvent1);
+      peak2 = peak_time(thisEvent1->next);
+      
+      /* Are these within the time clustering window? 
+	 The clustering window is computed using the lowest high frequency
+	 cutoff of our template bank which determines the smoothing scale of 
+	 cosmic string burst event */
 
-	  if ( fabs((peak1-peak2)*1e-9) < 1./CLA.fbanklow ) 
-	    { 
-	      /* Now: thisEvent2 is within clustering window of thiEvent1 
-	       and snr is higher then this should be our clustered event */
-	      if ( thiscl_event->snr < thisEvent2->snr )
-		{
-		  copy_event(thiscl_event,thisEvent2);
-		}
+      if ( fabs((peak1-peak2)*1e-9) < 1./CLA.fbanklow ) 
+	{ 
+	  /* Now: thisEvent1->next is within clustering window of thiEvent1 
+	     and if its snr is higher then thisEvent1->next should be our 
+	     clustered event */
+	  if ( thiscl_event->snr < thisEvent1->next->snr )
+	    {
+	      copy_event(thiscl_event,thisEvent1->next);
 	    }
-	  
-	  thisEvent2 = thisEvent2->next;
-	}
-      thisEvent1 = thisEvent1->next;
-    }
- 
-  /* Now what I have is a list, the same size as events but with repeats */
-
-
-  /* copy first event into cluster list */ 
-  if(localcl_event)
-    {
-      Nevents=Nevents+1;
-      thiscl_event = cl_events = LALCalloc( 1, sizeof( *cl_events ) );
-      copy_event(thiscl_event, localcl_event);
-    }
-  /* then loop over events; creating a new cl_events where necessary */
-  while ( localcl_event && localcl_event->next )
-    {
-      INT8 peak1 = peak_time(localcl_event), peak2 = peak_time(localcl_event->next);
-      SnglBurstTable *next = localcl_event->next;
-
-      if (peak1 != peak2)
-	{
-	  Nevents=Nevents+1;	  
+	}else{
 	  thiscl_event->next = LALCalloc( 1, sizeof( *(cl_events->next) ) );
 	  thiscl_event = thiscl_event->next;
-	  copy_event(thiscl_event, localcl_event->next);
+	  copy_event(thiscl_event,thisEvent1->next);
 	}
-
-      LALFree( localcl_event );
-      localcl_event = next;
-    }
-  /* free last localcl event */
-  if(localcl_event)
-    {
-      LALFree( localcl_event );
+      
+      thisEvent1 = thisEvent1->next;
     }
   
-  /* Finally sort them again */
-  if (cl_events) 
-    {
-      /* first sort list in increasing GPS peak time */
-      LALSortSnglBurst(&status, &cl_events, XLALCompareSnglBurstByPeakTimeAndSNR);
-      TESTSTATUS( &status );
-    }
-
   return 0;
 }
 
