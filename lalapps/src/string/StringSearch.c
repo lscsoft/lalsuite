@@ -104,6 +104,7 @@ struct CommandLineArgsTag {
   INT4 whitespectrumflag;     /* =0 if spectrum is to be computed =1 for white spectrum */
   INT4 trigstarttime;         /* start-time of allowed triggers */
   INT4 cluster;               /* =0 if events are not to be clustered =1 otherwise */
+  INT4 pad;                   /* seconds of padding */
 } CommandLineArgs;
 
 typedef 
@@ -159,6 +160,8 @@ int Nevents=0;
 
 PassBandParamStruc highpassParams;
 
+REAL8Vector *window;
+
 /***************************************************************************/
 
 /* FUNCTION PROTOTYPES */
@@ -168,6 +171,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 
 /* Reads raw data (or puts in fake gaussian noise with a sigma=10^-20) */
 int ReadData(struct CommandLineArgsTag CLA);
+
+/* windows the data with a Tukey window */
+int WindowData(void);
 
 /* High pass filters and casts data to REAL4 */
 int ProcessData(void);
@@ -220,7 +226,7 @@ int main(int argc,char *argv[])
     should be higher than BW high pass frequency */ 
  Templateflow=CommandLineArgs.flow+10.0;
 
- highpassParams.nMax =  8;
+ highpassParams.nMax =  4;
  highpassParams.f1   = -1;
  highpassParams.a1   = -1;
  highpassParams.f2   = CommandLineArgs.flow;
@@ -228,17 +234,11 @@ int main(int argc,char *argv[])
 
  if (ReadData(CommandLineArgs)) return 2;
 
-/*  { */
-/*    int p; */
-/*    for ( p = 0 ; p < (int)GV.ht.data->length; p++ ) */
-/*      { */
-/*        fprintf(stdout,"%e\n",GV.ht.data->data[p]); */
-/*      } */
-/*    return 0; */
-/*  } */
+ if (WindowData()) return 3;
 
  if (ProcessData()) return 4;
 
+ /* after this there's no more GV.ht, only GV.ht_proc */
 
  if (CommandLineArgs.InjectionFile != NULL) 
    {
@@ -246,10 +246,16 @@ int main(int argc,char *argv[])
      /* high pass filter data again with added injection */ 
      if (ProcessData2()) return 3;
    }
-
-
   	 
  if (DownSample(CommandLineArgs)) return 5;
+	
+ /* Here I need to re-size the time series to remove the pad */
+
+ LALResizeREAL4TimeSeries(&status, &(GV.ht_proc), (int)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5),
+			  GV.ht_proc.data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5));
+ TESTSTATUS( &status );
+ /* reduce duration of segment appropriately */
+ GV.duration -= 2*CommandLineArgs.pad; 
 
  if (AvgSpectrum(CommandLineArgs)) return 6;
  
@@ -272,6 +278,47 @@ int main(int argc,char *argv[])
 }
 
 /************************************* MAIN PROGRAM ENDS *************************************/
+
+
+/*******************************************************************************/
+
+
+int WindowData(void)
+{
+  REAL8 r = 0.001;
+  int k;
+  int N=GV.ht.data->length;
+  int kl=r/2*(N-1)+1;
+  int kh=N-r/2*(N-1)+1;
+
+  LALDCreateVector(&status,&window,GV.ht.data->length);
+  TESTSTATUS( &status );
+
+  for(k = 1; k < kl; k++) 
+    {
+      window->data[k-1]=0.5*( 1 + cos( LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI));
+    }
+
+  for(k = kl; k < kh; k++) 
+    {
+      window->data[k-1]=1.0;
+    }
+
+  for(k = kh; k <= N; k++) 
+    {
+      window->data[k-1]=0.5*( 1 + cos( LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI));
+    }
+
+  for (k = 0; k < N; k++)
+    {
+      GV.ht.data->data[k] *= window->data[k];
+    }
+  
+  LALDDestroyVector(&status,&window);
+  TESTSTATUS( &status );
+
+  return 0;
+}
 
 /*******************************************************************************/
 
@@ -563,7 +610,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
     {
       REAL4 maximum = 0.0;
       INT4 pmax=p;
-      INT8 timeNS  = (INT8)( 1000000000 ) * (INT8)(CLA.GPSStart+GV.seg_length*i/2*GV.ht_proc.deltaT);
+      INT8 timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc.epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc.deltaT);
       timeNS += (INT8)( 1e9 * GV.ht_proc.deltaT * p );
 
       if ( (fabs(vector->data[p]) > CLA.threshold) && ( (double)(1e-9*timeNS) > (double)CLA.trigstarttime))
@@ -571,7 +618,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
           INT8  timeNS, peaktime;
 	  REAL8 duration;
 	  pstart=p;
-	  timeNS  = (INT8)( 1000000000 ) * (INT8)(CLA.GPSStart+GV.seg_length*i/2*GV.ht_proc.deltaT);
+	  timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc.epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc.deltaT);
           timeNS += (INT8)( 1e9 * GV.ht_proc.deltaT * p );
 
 	  if ( *thisEvent ) /* create a new event */
@@ -1043,6 +1090,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"settling-time",       required_argument, NULL,           'T'},
     {"sample-rate",         required_argument, NULL,           's'},
     {"trig-start-time",     required_argument, NULL,           'g'},
+    {"pad",                 required_argument, NULL,           'p'},
     {"cusp-search",                no_argument, NULL,          'c' },
     {"kink-search",                no_argument, NULL,          'k' },
     {"test-gaussian-data",         no_argument, NULL,          'n' },
@@ -1051,7 +1099,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",        no_argument, NULL,         'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwlf:b:t:F:C:E:S:i:d:T:s:g:o:";
+  char args[] = "hnckwlf:b:t:F:C:E:S:i:d:T:s:g:o:p:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -1083,6 +1131,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->samplerate=4096.0;
   CLA->trigstarttime=0;
   CLA->cluster=0;
+  CLA->pad=0;
  
   /* initialise ifo string */
   memset(ifo, 0, sizeof(ifo));
@@ -1166,6 +1215,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->trigstarttime=atof(optarg);
       ADD_PROCESS_PARAM("int");
       break;
+    case 'p':
+      /* start time of allowed triggers */
+      CLA->pad=atoi(optarg);
+      ADD_PROCESS_PARAM("int");
+      break;
     case 'c':
       /* cusp power law */
       CLA->power=-4.0/3.0;
@@ -1206,6 +1260,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--gps-end-time (-E)\t\tINTEGER\t GPS end time.\n");
       fprintf(stdout,"\t--settling-time (-T)\t\tINTEGER\t Number of seconds to truncate inverse square root of power spectrum.\n");
       fprintf(stdout,"\t--trig-start-time (-g)\t\tINTEGER\t GPS start time of triggers to consider.\n");
+      fprintf(stdout,"\t--pad (-p)\t\tINTEGER\t Pad the data with these many seconds at beginning and end.\n");
       fprintf(stdout,"\t--short-segment-duration (-d)\t\tINTEGER\t Duration of shor segments. They will overlap by 50%s. \n","%");
       fprintf(stdout,"\t--kink-search (-k)\t\tFLAG\t Specifies a search for string kinks.\n");
       fprintf(stdout,"\t--cusp-search (-c)\t\tFLAG\t Specifies a search for string cusps.\n");
@@ -1282,7 +1337,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
   /* Some consistency checking */
   {
-    int big_seg_length=CLA->GPSEnd-CLA->GPSStart;
+    int big_seg_length=CLA->GPSEnd-CLA->GPSStart-2*CLA->pad;
     int small_seg_length=CLA->ShortSegDuration;
 
     REAL4 x=((float)big_seg_length/(float)small_seg_length)-0.5;
@@ -1322,10 +1377,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       {
 	searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->trigstarttime;
       }else{
-	searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->GPSStart+small_seg_length/4;
+	searchsumm.searchSummaryTable->out_start_time.gpsSeconds = CLA->GPSStart+small_seg_length/4+CLA->pad;
       }
     searchsumm.searchSummaryTable->out_start_time.gpsNanoSeconds =0;
-    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = CLA->GPSEnd-small_seg_length/4;
+    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = CLA->GPSEnd-small_seg_length/4-CLA->pad;
     searchsumm.searchSummaryTable->out_end_time.gpsNanoSeconds =0;
   }
 
