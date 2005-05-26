@@ -13,7 +13,7 @@ if { $argc < 21 } {
     puts "Usage:";
     puts " ";
     puts " ";
-    puts "$argv0 <base_name> <conf_or_faRate> <ifo> <start_time> <duration> <start_freq> <full_band_width> <num_sub_bands> <sft_time> <num_sfts> <sft_path_pattern> <SEparam_file> <numSEjobs> <MCparam_file> <numMCjobs> <sun_edat_file> <earth_edat_file> <computeStackSlideSumsAndPath> <childCExeNameAndPath> <dagWorkingDir> <output_type>";
+    puts "$argv0 <base_name> <conf_or_faRate> <ifo> <start_time> <duration> <start_freq> <full_band_width> <num_sub_bands> <sft_time> <num_sfts> <sft_path_pattern> <SEparam_file> <numSEjobs> <MCparam_file> <numMCjobs> <sun_edat_file> <earth_edat_file> <computeStackSlideSumsAndPath> <childCExeNameAndPath> <dagWorkingDir> <output_type> \[lastMCparam_file\] \[numLastMCjobs\]";
     puts " ";
     puts "base_name:                    the base filename from which to create all .dag, .sub, .xml, and .txt filenames."
     puts "conf_or_faRate:               depending on output_type below; this is the False Alarm Rate (e.g., .01) or Confidence (e.g., .95)."
@@ -29,7 +29,7 @@ if { $argc < 21 } {
     puts "SEparam_file:                 parameter file to use to set up parent job A that finds the Search Events."
     puts "numSEjobs:                    number of parallel jobs to run to find the Search Events."
     puts "MCparam_file:                 parameter file to use to set up parent job B that runs the Monte Carlo simulation."
-    puts "numMCjobs:                    number of parallel jobs to run perform the Monte Carlo simulation."
+    puts "numMCjobs:                    number of parallel jobs to run to perform the Monte Carlo simulation."
     puts "sun_edat_file:                path and name of sun ephemeris file to use.";
     puts "earth_edat_file:              path and name of earth ephemeris file to use.";
     puts "computeStackSlideSumsAndPath: path and name of ComputeStackSlideSums executable for parent jobs A and B."
@@ -39,6 +39,12 @@ if { $argc < 21 } {
     puts "                              0 = output Efficiency based on the Loudest Event.";
     puts "                              1 = output Efficiency for a fixed False Alarm Rate.";
     puts "                              2 = output Estimated Upper Limit for a desired Confidence.";
+    puts "lastMCparam_file:             optional params file that sets up job D to run a last set of MC simulations."
+    puts "                              This file must contain a line exactly like this:";
+    puts " ";
+    puts "                                set searchPriorResultsFile \"\\\$inputFromJobC\"";
+    puts " ";
+    puts "numLastMCjobs:                optional number of parallel jobs to run perform job D (usually is 1)."
     puts " "; 
     return;
 }
@@ -66,10 +72,20 @@ set childCExeNameAndPath [lindex $argv 18];
 set dagWorkingDir [lindex $argv 19];
 set output_type [lindex $argv 20];
 
+if { $argc == 23 } {    
+  set lastMCparam_file [lindex $argv 21];
+  set numLastMCjobs [lindex $argv 22];
+  set includeOptionalJobD 1;
+} else {
+  set includeOptionalJobD 0;
+}
+
 # Create submit files for DAG:
 # A  B
 # \ /
 #  C
+#  |
+#  D (optional)
 
 # Write submit file for parent job A.
 set submitFileParentA $base_name;
@@ -135,6 +151,22 @@ if {$output_type > 0} {
 }
 puts $cFid "queue";
 close $cFid;
+
+if {$includeOptionalJobD} {
+# Write submit file for parent job B.
+  set submitFileParentD $base_name;
+  append submitFileParentD "_parentD.sub";
+  set pDFid [open $submitFileParentD "w"];
+  puts $pDFid "universe   = standard";
+  puts $pDFid "executable = $computeStackSlideSumsAndPath";
+  puts $pDFid "output     = parentD.out.\$(JobID).\$(subJobID)";
+  puts $pDFid "error      = parentDerr.\$(JobID).\$(subJobID)";
+  puts $pDFid "log        = parentD.log";
+  puts $pDFid "";
+  puts $pDFid "arguments = \$(argList)";
+  puts $pDFid "queue";
+  close $pDFid;
+}
 
 # Open condor dag file.
 set dagFile $base_name;
@@ -212,6 +244,37 @@ for {set j 0} {$j<$num_sub_bands} {incr j} {
   puts $dagFid "";
   puts $pListFid "C$j $dagWorkingDir/$outputFileChildC.$j";
   puts $pListFid "";
+  
+  if {$includeOptionalJobD} {
+    # Create parent job D that runs last Monte Carlo Simulations
+    set outputParentD $base_name;        # Name of files with output from parent job D
+    append outputParentD  "_outputD";
+    set parentListD($j) "";                  # list of parent jobs that use submitFileParentD
+    # Divide the band_width up and create jobs for each sub-band.
+    set sub_band_width [expr $band_width/$numLastMCjobs];
+    for {set i 0} {$i<$numLastMCjobs} {incr i} {
+      set sub_start_freq [expr $freq + ($sub_band_width*$i)];
+      set mid_freq [expr $sub_start_freq + ($sub_band_width/2.0)];
+      set jobID_subJobID "$j";
+      append jobID_subJobID "_";
+      append jobID_subJobID "$i";
+      set outputFileName "$outputParentD$jobID_subJobID";
+      set cmd "exec ./runComputeStackSlideSUM.tclsh $ifo $start_time $duration $mid_freq $sub_band_width $sft_time $num_sfts \"$sft_path_pattern\" $lastMCparam_file runStackSlideSearch.job $sun_edat_file $earth_edat_file $outputFileName condor";
+      set nodeName "D$jobID_subJobID";
+      set inputFromJobC $dagWorkingDir/$outputFileChildC.$j;
+      set argList [lindex [split [lindex [split [eval $cmd] "\n"] 1] "="] 1];
+      set argList [subst $argList]; # substitute for inputFromJobC
+      eval $cmd;
+      puts $dagFid "JOB $nodeName $submitFileParentD";
+      puts $dagFid "VARS $nodeName JobID=\"$j\" subJobID=\"$i\" argList=\"$argList\"";
+      append parentListD($j) "PARENT C$j CHILD $nodeName\n";
+      append outputFileName ".xml";
+      puts $pListFid "D$j $dagWorkingDir/$outputFileName";
+    }
+    puts $pListFid "";
+    puts $dagFid "";
+  }
+
 }
 # END first loop over jobs: for {set j 0} {$j<$num_sub_bands} {incr j}
 
@@ -219,6 +282,9 @@ for {set j 0} {$j<$num_sub_bands} {incr j} {
 for {set j 0} {$j<$num_sub_bands} {incr j} {
    puts $dagFid $parentListA($j);
    puts $dagFid $parentListB($j);
+   if {$includeOptionalJobD} {
+      puts $dagFid $parentListD($j);
+   }
 }
 # END second loop over jobs: for {set j 0} {$j<$num_sub_bands} {incr j}
 close $dagFid;

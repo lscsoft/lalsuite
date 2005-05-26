@@ -132,13 +132,13 @@ set nBinsPerSUM [expr $tEffSUM*$INPUTSUMBAND]; # Number of frequency bins in one
 set ifoNickName "$IFONICKNAME";                # H1, H2, or L1
 set IFO         "$IFOName";                    # LHO or LLO
 set patchName   $targetName;                   # Identifies the target of the search
-set patchNumber 0;                             # Number assigned to parameter space point
 
-#set tDomainChannel "\"$IFONICKNAME:LSC-AS_Q\""; # Time domain channel name # 02/27/04 gam
-set tDomainChannel "$IFONICKNAME:LSC-AS_Q"; # Time domain channel name
-set fDomainChannel "input";                     # Frequency domain channel name
+set maxMCinterations $searchMaxMCinterations; # 05/25/05 gam;
 
-set inputDataTypeFlag 0;  # 0 = SFTs; 1 = PSDs; 2 = F-stat
+set priorResultsFile $searchPriorResultsFile;      # 05/24/05 gam;
+set parameterSpaceFile $searchParameterSpaceFile;  # 05/24/05 gam;
+
+set maxMCfracErr $searchMaxMCfracErr; # 05/25/05 gam;
 
 # set parameterSpaceFlag 0; # 0 = generate flat param space from inputs; 1 = use input param space points; 2 = generate param space metric
 set parameterSpaceFlag $searchParameterSpaceFlag; # 05/13/05 gam
@@ -269,6 +269,6 @@ set nMaxTperi           $templatenMaxTperi;
 #set templateDeltaFDeriv1 0;
 #set templateNumFDeriv1   1;
 
-set FILTERPARAMS "$gpsEpochStartTime $gpsEpochStartTimeNan $gpsStartTimeSec $duration $numBLKs $tBLK $tEffBLK $f0BLK $bandBLK $nBinsPerBLK $numBLKsPerSTK $tEffSTK $f0STK $bandSTK $nBinsPerSTK $numSTKsPerSUM $tEffSUM $f0SUM $bandSUM $nBinsPerSUM $ifoNickName $IFO $patchName $patchNumber $tDomainChannel $fDomainChannel $inputDataTypeFlag $parameterSpaceFlag $stackTypeFlag $Dterms $thresholdFlag $threshold1 $threshold2 $threshold3 $threshold4 $threshold5 $maxWidthBins $weightFlag $orientationAngle $cosInclinationAngle $normalizationFlag $f0NRM $bandNRM $nBinsPerNRM $normalizationParameter $testFlag $linesAndHarmonicsFile $outputSUMFlag $outputEventFlag $keepThisNumber $startRA $stopRA $deltaRA $numRA $startDec $stopDec $deltaDec $numDec $numSpinDown $startFDeriv1 $stopFDeriv1 $deltaFDeriv1 $numFDeriv1 $startFDeriv2 $stopFDeriv2 $deltaFDeriv2 $numFDeriv2 $startFDeriv3 $stopFDeriv3 $deltaFDeriv3 $numFDeriv3 $startFDeriv4 $stopFDeriv4 $deltaFDeriv4 $numFDeriv4 $startFDeriv5 $stopFDeriv5 $deltaFDeriv5 $numFDeriv5";
+set FILTERPARAMS "$gpsEpochStartTime $gpsEpochStartTimeNan $gpsStartTimeSec $duration $numBLKs $tBLK $tEffBLK $f0BLK $bandBLK $nBinsPerBLK $numBLKsPerSTK $tEffSTK $f0STK $bandSTK $nBinsPerSTK $numSTKsPerSUM $tEffSUM $f0SUM $bandSUM $nBinsPerSUM $ifoNickName $IFO $patchName $maxMCinterations $priorResultsFile $parameterSpaceFile $maxMCfracErr $parameterSpaceFlag $stackTypeFlag $Dterms $thresholdFlag $threshold1 $threshold2 $threshold3 $threshold4 $threshold5 $maxWidthBins $weightFlag $orientationAngle $cosInclinationAngle $normalizationFlag $f0NRM $bandNRM $nBinsPerNRM $normalizationParameter $testFlag $linesAndHarmonicsFile $outputSUMFlag $outputEventFlag $keepThisNumber $startRA $stopRA $deltaRA $numRA $startDec $stopDec $deltaDec $numDec $numSpinDown $startFDeriv1 $stopFDeriv1 $deltaFDeriv1 $numFDeriv1 $startFDeriv2 $stopFDeriv2 $deltaFDeriv2 $numFDeriv2 $startFDeriv3 $stopFDeriv3 $deltaFDeriv3 $numFDeriv3 $startFDeriv4 $stopFDeriv4 $deltaFDeriv4 $numFDeriv4 $startFDeriv5 $stopFDeriv5 $deltaFDeriv5 $numFDeriv5";
 
 set FILTERBINARYPARAMS "$binaryFlag $OrbitalEccentricity $alphaSX1 $deltaSX1 $ArgPeriapse $TperiapseSSBSec $TperiapseSSBNanoSec $SMAcentral $deltaSMA $nMaxSMA $nMaxTperi"

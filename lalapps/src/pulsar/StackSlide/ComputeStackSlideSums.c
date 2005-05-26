@@ -12,21 +12,6 @@
 /* STK = one Stack of frequency domain data; Block are coherenty combined to make Stacks. */
 /* SUM = Summed Stacks after Sliding */
 
-/* TO DO LIST: */
-/* Add handling of status pointer in main function */
-/* Get units from input data.  For now these are hard coded based on input data type. */
-/* Currently inputDataTypeFlag == 0 = SFTs is the only supported input data type. Need to add types 1 = PSDs, 2 = F-stat */
-/* Currently normalization code only works when input data is SFTs */
-/* Input SFTs must be calibrated; Calibration currently cannot be done from this code. */
-/* Currently normalizationFlag == 1 only type of normalization supported */
-/* Check that all allocated memory is deallocated */
-/* Code currently assumes params->numSUMsPerParamSpacePt = params->duration/params->tSUM = 1; need to upgrade to more general case */
-/* Compute Correct Power Stats, snr, confidence, etc... */
-/* Need analysis of SUMs to search for events above threshold and width of events; time analyze SUMs to veto lines vs signals. */
-/* Input SFTs are not sorted; thus actualStartTime and actualEndTime are not always correct; this only affects search summary table but should be fixed */
-/* Check if endtime is OK, or should endtime - tBKL be used to not get SFTs with end time past gpsStartTime + duration? */
-/* For now fix DeltaRA, DeltaDec,and DeltaFDeriv1 to default values when finding mismatch during Monte Carlo; need to make these adjustable */
-
 /* REVISIONS: */
 /* 12/03/03 gam; Based code on StackSlide.c from LALWrapper DSO */
 /* 01/06/04 gam; Fix bug when deallocating BLKData and params->numBLKs != GV.SFTno. */
@@ -36,6 +21,7 @@
 /* 05/07/04 gam; add alternative to using glob */
 /* 05/07/04 gam; Do not check d_type when using readdir since it is often UNKOWN. */
 /* 04/12/05 gam; Change default Monte Carlo to use RunStackSlideIsolatedMonteCarloSimulation in StackSlideIsolated.c */
+/* 05/25/05 gam; remove obsolete inputDataTypeFlag and other obsolete code and comments */
     
 /*********************************************/
 /*                                           */
@@ -104,15 +90,11 @@ int main(int argc,char *argv[])
        
   /* Initialize params using the command line arguments */
   StackSlideInitSearch(&status,params,argc,argv);
-  INTERNAL_CHECKSTATUS_FROMMAIN(status)  
-      
+  INTERNAL_CHECKSTATUS_FROMMAIN(status)
+
   if (SetGlobalVariables(params)) return 2;
-    
-  if (params->inputDataTypeFlag == 0) {  
-     if (ReadSFTData(params)) return 3; /* Note that for now it is assumed that BLK data is SFT data */
-  } else {
-     return 3;
-  }
+
+  if (ReadSFTData(params)) return 3; /* Note that for now it is assumed that BLK data is always SFT data */
 
   StackSlideConditionData(&status,params);  
   INTERNAL_CHECKSTATUS_FROMMAIN(status)  

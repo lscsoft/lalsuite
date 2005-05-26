@@ -33,13 +33,13 @@ set nBinsPerSUM                             90; #20 INT4 number of frequency bin
 set ifoNickName                             H1; #21 CHAR* H2, H1, L1, or G1. 
 set IFO                                    LHO; #22 CHAR* LHO, LLO, or GEO. 
 set patchName                       testPulsar; #23 CHAR* a name to identify this search (e.g., S2 Galactic Center).
-set patchNumber                              0; #24 INT4 a number to identify this search. 
 
-set tDomainChannel               H1:LSC-AS_Q; #25 CHAR* time domain channel name that produced BLKs. 
-set fDomainChannel                    input; #26 CHAR* freq domain channel name of BLKs 
+set maxMCinterations                         1; #24 INT4 maximum number of times to iterate entire Monte Carlo Simulation when converging on desired confidence. 
 
-set inputDataTypeFlag                        0; #27 INT2 input data type. 
-# Note that 0 = SFTs is only type currently supported value. 
+set priorResultsFile     None; #25 CHAR* file with the loudest event and estimated UL from a prior step in the pipeline. 
+set parameterSpaceFile   None; #26 CHAR* file with parameter space data 
+
+set maxMCfracErr     5.0000000000000001e-03; #27 REAL8 maximum fractional error allowed when testing for convergence of confidence when iterating MC. 
 
 set parameterSpaceFlag                       0; #28 INT2 how to generate parameter space. 
 #The parameterSpaceFlag options are: 
@@ -92,6 +92,12 @@ set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 2) > 0) inject fake signals and run Monte Carlo Simulation; use threshold4 for h_0.
 # if ((testFlag & 4) > 0) use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs instead of LALGeneratePulsarSignal and LALSignalToSFTs during Monte Carlo Simulations. See LAL inject package.
 # if ((testFlag & 8) > 0) use fixed orientationAngle and cosInclinationAngle set above during Monte Carlo Simulations.
+# if ((testFlag & 16) > 0) use results from prior jobs in the pipeline and report on current MC results.
+# if ((testFlag & 32) > 0) iterate entire Monte Carlo Simulation to converge on desired confidence.
+# The prior results must be given in the priorResultsFile set above.
+# The maximum number of iterations is given by maxMCinterations set above.
+# The maximum fractional error allowed when testing for convergence of confidence when iterating MC is set by maxMCfracErr above.
+# The loudest event, upper limits and confidence are reported in the searchresults_stackslidemontecarlo table in the xml file.
 
 set linesAndHarmonicsFile None; #47 CHAR* file with instrument line and harmonic spectral disturbances data.
 
@@ -166,6 +172,7 @@ set debugOptionFlag                          1; #84 INT2 debugging information t
 # if (debugOptionFlag & 4) > 0 then print sky positions with debugging information.
 # if (debugOptionFlag & 8) > 0 then the STK bin with max power is set to 1, all other to 0.
 # if (debugOptionFlag & 16) > 0 also set to 1 one bin to either side of the bin with maxPwr.
+# if (debugOptionFlag & 32) > 0 print Monte Carlo Simulation results to stdout.
 # if (debugOptionFlag & 128) > 0 creates SUMs from the STKs without sliding (isolated case only).
 # Use of the debugOptionFlag provides an easy way to validate the StackSlide code! 
 # For fake data with a signal and no noise, run on the exact template for the signal with the 

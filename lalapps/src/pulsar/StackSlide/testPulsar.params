@@ -60,3 +60,7 @@ set searchTestFlag 0;             # used to indicate Monte Carlo Simulation, and
 set searchParameterSpaceFlag 0; # 05/13/05 gam; add options to rotate sky positions.
 
 set searchLinesAndHarmonicsFile "None";  # 05/14/05 gam;
+set searchPriorResultsFile      "None";  # 05/24/05 gam;
+set searchParameterSpaceFile    "None";  # 05/24/05 gam;
+set searchMaxMCinterations           1;  # 05/25/05 gam;
+set searchMaxMCfracErr           0.005;  # 05/25/05 gam;

@@ -52,7 +52,7 @@
 /* 04/15/04 gam; Add debugOptionFlag to struct StackSlideSkyPatchParams */
 /* 04/26/04 gam; Change LALStackSlide to StackSlide and LALSTACKSLIDE to STACKSLIDE for initial entry to LALapps. */
 /* 05/05/04 gam; Change params->normalizationThreshold to params->normalizationParameter.  If normalizing with running median use this to correct bias in median to get mean. */
-/* 05/26/04 gam; Change finishedSUMs to finishedSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
+/* 05/26/04 gam; Change finishedSUMs to finishSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
 /* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
 /* 07/09/04 gam; If using running median, use LALRngMedBias to set params->normalizationParameter to correct bias in the median. */
 /* 08/30/04 gam; if (outputEventFlag & 4) > 0 set returnOneEventPerSUM to TRUE; only the loudest event from each SUM is then returned. */
@@ -80,6 +80,13 @@
 /* 05/19/05 gam; Add INT4 *sumBinMask; params->sumBinMask == 0 if bin should be excluded from search or Monte Carlo due to cleaning */
 /* 05/19/05 gam; In LALFindStackSlidePeaks set binFlag = 0 if bin excluded; initialize binFlag with sumBinMask (binMask in struct). */
 /* 05/19/05 gam; In LALUpdateLoudestFromSUMs exclude bins with sumBinMask == 0 (binMask in struct). */
+/* 05/24/05 gam; make maxPower and totalEventCount part of params; change finishSUMs to finishPeriodicTable; end xml in FinalizeSearch */
+/* 05/24/05 gam; change tDomainChannel to priorResultsFile; change fDomainChannel to parameterSpaceFile */
+/* 05/25/05 gam; change patchNumber to maxMCinterations; change inputDataTypeFlag to REAL8 maxMCfracErr */
+/* 05/24/05 gam; if (params->testFlag & 16 > 0) use results from prior jobs in the pipeline and report on current MC results */
+/* 05/24/05 gam; if (params->testFlag & 32 > 0) iterate MC up to 10 times to converge on desired confidence */
+/* 05/24/05 gam; if (params->debugOptionFlag & 32 > 0) print Monte Carlo Simulation results to stdout */
+/* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
 
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
@@ -140,7 +147,6 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_EIFONICKNAME 19
 #define DRIVESTACKSLIDEH_EIFO 20
 #define DRIVESTACKSLIDEH_ETARGETNAME 21
-#define DRIVESTACKSLIDEH_ECHANNEL 22
 #define DRIVESTACKSLIDEH_EISTARTTIME 23
 #define DRIVESTACKSLIDEH_EMISSINGBLKDATA 24
 #define DRIVESTACKSLIDEH_ESTARTFREQ 25
@@ -172,7 +178,6 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_MSGEIFONICKNAME    "Invalid or null ifoNickName"
 #define DRIVESTACKSLIDEH_MSGEIFO            "Invalid or null IFO"
 #define DRIVESTACKSLIDEH_MSGETARGETNAME     "Invalid or null Target Name"
-#define DRIVESTACKSLIDEH_MSGECHANNEL        "Invalid or null tDomainChannel"
 #define DRIVESTACKSLIDEH_MSGEISTARTTIME     "Requested GPS start time resulted in invalid index to input data."
 #define DRIVESTACKSLIDEH_MSGEMISSINGBLKDATA "Some requested input BLK data is missing"
 #define DRIVESTACKSLIDEH_MSGESTARTFREQ      "Input BLK start frequency does not agree with that requested"
@@ -201,6 +206,21 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 /*********************************************/
 
 /* 02/04/04 gam; MACROS used for xml I/O */
+
+/* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
+#define LIGOLW_XML_LOCAL_SEARCHRESULTS_STACKSLIDEMONTECARLO \
+"   <Table Name=\"searchresults_stackslidemontecarlo:searchresults_stackslidemontecarlo:table\">\n" \
+"      <Column Name=\"searchresults_stackslidemontecarlogroup:searchresults_stackslidemontecarlo:process_id\" Type=\"ilwd:char\"/>\n" \
+"      <Column Name=\"searchresults_stackslidemontecarlogroup:searchresults_stackslidemontecarlo:loudest_event\" Type=\"real_4\"/>\n" \
+"      <Column Name=\"searchresults_stackslidemontecarlogroup:searchresults_stackslidemontecarlo:start_freq\" Type=\"real_8\"/>\n" \
+"      <Column Name=\"searchresults_stackslidemontecarlogroup:searchresults_stackslidemontecarlo:band\" Type=\"real_8\"/>\n" \
+"      <Column Name=\"searchresults_stackslidemontecarlogroup:searchresults_stackslidemontecarlo:upper_limit\" Type=\"real_8\"/>\n" \
+"      <Column Name=\"searchresults_stackslidemontecarlogroup:searchresults_stackslidemontecarlo:confidence\" Type=\"real_8\"/>\n" \
+"      <Column Name=\"searchresults_stackslidemontecarlogroup:searchresults_stackslidemontecarlo:converged\" Type=\"int_4s\"/>\n" \
+"      <Stream Name=\"searchresults_stackslidemontecarlogroup:searchresults_stackslidemontecarlo:table\" Type=\"Local\" Delimiter=\",\">\n"
+
+#define LOCAL_SEARCHRESULTS_STACKSLIDEMONTECARLO_ROW \
+"         \"process:process_id:0\",%e,%22.16e,%22.16e,%22.16e,%22.16e,%d"
 
 /* 02/09/04 gam; add for StackSlideSFTsSearchSummaryTable */
 /* 02/12/04 gam; Add num_sums = numSUMsTotal, freq_index = f0SUM*params->tEffSUM, and num_bins = nBinsPerSUM to StackSlideSFTsSearchSummaryTable */
@@ -279,6 +299,20 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 	REAL8 pwStdDev;
 }
 FreqSeriesPowerStats; */
+
+/* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
+typedef struct
+tagStackSlideMonteCarloResultsTable
+{
+  struct tagStackSlideMonteCarloResultsTable *next;
+  REAL4         loudest_event;
+  REAL8         start_freq;
+  REAL8         band;
+  REAL8         upper_limit;
+  REAL8         confidence;
+  INT4          converged;
+}
+StackSlideMonteCarloResultsTable;
 
 /* 02/04/04 gam; Move items here that need to recorded only once per job */ /* 02/09/04 gam; summarize for stack slide of SFTs */
 /* 02/12/04 gam; Add num_sums = numSUMsTotal, freq_index =f0SUM*params->tEffSUM, and num_bins = nBinsPerSUM to StackSlideSFTsSearchSummaryTable */
@@ -485,15 +519,13 @@ typedef struct tagStackSlideSearchParams {
   CHAR    *ifoNickName;              /* 2 character ifoNickName = H1, H2, or L1; note IFO is the site = LHO, LLO, GEO, etc.... */
   CHAR    *IFO;                      /* Identifies the interferometer site = LHO, LLO, GEO, etc.... */
   CHAR    *patchName;                /* Name of the patch in parameter space of the search (e.g, Galactic Center) */
-  INT4    patchNumber;               /* Index of the patch in parameter space of the search (will be -1 until indexing implemented) */
+  
+  INT4  maxMCinterations;             /* maximum number of times to iterate entire Monte Carlo Simulation when converging on desired confidence */
 
-  /* CHAR    tDomainChannel[dbNameLimit]; */ /* Time domain channel name used to produce blocks */
-  /* CHAR    fDomainChannel[dbNameLimit]; */ /* Frequency domain channel name that blocks are stored as */
-  
-   CHAR    tDomainChannel[256]; /* Time domain channel name used to produce blocks */
-   CHAR    fDomainChannel[256]; /* Frequency domain channel name that blocks are stored as */
-  
-  INT2    inputDataTypeFlag;         /* 0 = SFTs, 1 = PSDs, 2 = F-stat */
+  CHAR *priorResultsFile;             /* 05/24/05 gam; file with the loudest event and estimated UL from a prior step in the pipeline */
+  CHAR *parameterSpaceFile;           /* 05/24/05 gam; file with parameter space data */
+
+  REAL8 maxMCfracErr;                 /* maximum allowed fractional error allowed when Monte Carlo Simulations are converging on desired confidence */
 
   INT2    parameterSpaceFlag;        /* 0 = use input delta for each param, 1 = params are input as vectors of data, 2 = use input param metric, 3 = create param metric */
     INT4    numParamSpacePts;          /* Total number of points in the parameter space to cover */
@@ -659,7 +691,10 @@ typedef struct tagStackSlideSearchParams {
   BOOLEAN finishedSTKs;   /* Set equal to true when all STKS for this job have been created */
   /* BOOLEAN finishedSUMs; */ /* 05/26/04 gam */
   BOOLEAN startSUMs;    /* 05/26/04 gam; use to control I/O during Monte Carlo  */
-  BOOLEAN finishSUMs;   /* 05/26/04 gam; use to control I/O during Monte Carlo  */
+  BOOLEAN finishPeriodicTable;  /* 05/24/05 gam */ /* 05/26/04 gam; use to control I/O during Monte Carlo  */
+
+  REAL4 maxPower;       /* 05/25/05 gam; power in loudest event */
+  INT4 totalEventCount; /* 05/25/05 gam; total number of peaks found */
 
   INT4 whichMCSUM;      /* 05/26/04 gam; which SUM the Monte Carlo Simulation is running on. */
 

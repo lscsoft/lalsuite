@@ -84,7 +84,7 @@
 /* 05/11/04 gam; If (params->testFlag & 1) > 0 output the Hough number count */
 /* 05/11/04 gam; If (params->testFlag & 2) > 0 inject fake signals and run Monte Carlo Simulation; use threshold4 for h_0*/
 /* 05/26/04 gam; Move writing to stackslide search summary table to StackSlideConditionData */
-/* 05/26/04 gam; Change finishedSUMs to finishedSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
+/* 05/26/04 gam; Change finishedSUMs to finishSUMs; add startSUMs; defaults are TRUE; use to control I/O during Monte Carlo */
 /* 05/26/04 gam; Add whichMCSUM = which Monte Carlo SUM; default is -1. */
 /* 07/09/04 gam; If using running median, use LALRngMedBias to set params->normalizationParameter to correct bias in the median. */
 /* 08/02/04 gam; if (params->testFlag & 4) > 0 ComputeSky uses reference time: params->timeStamps[0].gpsSeconds, params->timeStamps[0].gpsNanoSeconds */
@@ -131,7 +131,14 @@
 /* 05/19/05 gam; In LALFindStackSlidePeaks set binFlag = 0 if bin excluded; initialize binFlag with sumBinMask. */
 /* 05/19/05 gam; In LALUpdateLoudestFromSUMs exclude bins with sumBinMask == 0. */
 /* 05/22/05 gam; Fix bug in FindLongLatFromVec; when longitude positive, then OK as is, when negative need to add 2pi not pi! */
-    
+/* 05/24/05 gam; make maxPower and totalEventCount part of params; change finishSUMs to finishPeriodicTable; end xml in FinalizeSearch */
+/* 05/24/05 gam; change tDomainChannel to priorResultsFile; change fDomainChannel to parameterSpaceFile */
+/* 05/25/05 gam; change patchNumber to maxMCinterations; change inputDataTypeFlag to maxMCfracErr */
+/* 05/24/05 gam; if (params->testFlag & 16 > 0) use results from prior jobs in the pipeline and report on current MC results */
+/* 05/24/05 gam; if (params->testFlag & 32 > 0) iterate MC up to 10 times to converge on desired confidence */
+/* 05/24/05 gam; if (params->debugOptionFlag & 32 > 0) print Monte Carlo Simulation results to stdout */
+/* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
+
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -251,6 +258,8 @@ void StackSlideInitSearch(
  params->ifoNickName = NULL;
  params->IFO = NULL;
  params->patchName = NULL;
+ params->priorResultsFile = NULL;   /* 05/24/05 gam */
+ params->parameterSpaceFile = NULL; /* 05/24/05 gam */
  params->sunEdatFile = NULL;
  params->earthEdatFile = NULL;
  params->sftDirectory = NULL;
@@ -316,12 +325,15 @@ params->nMaxTperi=0;
 		         strcpy(params->IFO, argv[i]); break;
 		case 23: params->patchName = (CHAR *) LALMalloc( (strlen( argv[i] ) + 1) * sizeof(CHAR) );
 		         strcpy(params->patchName, argv[i]); break;
-		case 24: params->patchNumber = (INT4)atol(argv[i]); break;
 
-		case 25: strcpy(params->tDomainChannel, argv[i]); break;
-		case 26: strcpy(params->fDomainChannel, argv[i]); break;
+		case 24: params->maxMCinterations = (INT4)atol(argv[i]); break;
 
-		case 27: params->inputDataTypeFlag = (INT2)atoi(argv[i]); break;
+		case 25: params->priorResultsFile = (CHAR *) LALMalloc( (strlen( argv[i] ) + 1) * sizeof(CHAR) );
+		         strcpy(params->priorResultsFile, argv[i]); break;
+		case 26: params->parameterSpaceFile = (CHAR *) LALMalloc( (strlen( argv[i] ) + 1) * sizeof(CHAR) );
+		         strcpy(params->parameterSpaceFile, argv[i]); break;
+
+		case 27: params->maxMCfracErr = (REAL8)atof(argv[i]); break;
 
 		case 28: params->parameterSpaceFlag = (INT2)atoi(argv[i]); break;
 
@@ -528,13 +540,13 @@ params->nMaxTperi=0;
     	fprintf(stdout,"set ifoNickName                             %s; #21 CHAR* H2, H1, L1, or G1. \n", params->ifoNickName);
     	fprintf(stdout,"set IFO                                    %s; #22 CHAR* LHO, LLO, or GEO. \n", params->IFO);
     	fprintf(stdout,"set patchName                       %s; #23 CHAR* a name to identify this search (e.g., S2 Galactic Center).\n", params->patchName);
-    	fprintf(stdout,"set patchNumber        %23d; #24 INT4 a number to identify this search. \n", params->patchNumber);
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set tDomainChannel               %s; #25 CHAR* time domain channel name that produced BLKs. \n", params->tDomainChannel);
-    	fprintf(stdout,"set fDomainChannel                    %s; #26 CHAR* freq domain channel name of BLKs \n", params->fDomainChannel);
+    	fprintf(stdout,"set maxMCinterations   %23d; #24 INT4 maximum number of times to iterate entire Monte Carlo Simulation when converging on desired confidence. \n", params->maxMCinterations);
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set inputDataTypeFlag  %23d; #27 INT2 input data type. \n", params->inputDataTypeFlag);
-    	fprintf(stdout,"# Note that 0 = SFTs is only type currently supported value. \n");
+    	fprintf(stdout,"set priorResultsFile     %s; #25 CHAR* file with the loudest event and estimated UL from a prior step in the pipeline. \n", params->priorResultsFile);
+    	fprintf(stdout,"set parameterSpaceFile   %s; #26 CHAR* file with parameter space data \n", params->parameterSpaceFile);
+    	fprintf(stdout,"\n");
+    	fprintf(stdout,"set maxMCfracErr    %23.16e; #27 REAL8 maximum fractional error allowed when testing for convergence of confidence when iterating MC. \n", params->maxMCfracErr);
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set parameterSpaceFlag %23d; #28 INT2 how to generate parameter space. \n", params->parameterSpaceFlag);
     	fprintf(stdout,"#The parameterSpaceFlag options are: \n");
@@ -593,6 +605,12 @@ params->nMaxTperi=0;
     	fprintf(stdout,"# if ((testFlag & 2) > 0) inject fake signals and run Monte Carlo Simulation; use threshold4 for h_0.\n");   /* 05/11/04 gam */
     	fprintf(stdout,"# if ((testFlag & 4) > 0) use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs instead of LALGeneratePulsarSignal and LALSignalToSFTs during Monte Carlo Simulations. See LAL inject package.\n"); /* 08/02/04 gam */
     	fprintf(stdout,"# if ((testFlag & 8) > 0) use fixed orientationAngle and cosInclinationAngle set above during Monte Carlo Simulations.\n"); /* 12/06/04 gam */
+    	fprintf(stdout,"# if ((testFlag & 16) > 0) use results from prior jobs in the pipeline and report on current MC results.\n");
+    	fprintf(stdout,"# if ((testFlag & 32) > 0) iterate entire Monte Carlo Simulation to converge on desired confidence.\n");
+    	fprintf(stdout,"# The prior results must be given in the priorResultsFile set above.\n");
+    	fprintf(stdout,"# The maximum number of iterations is given by maxMCinterations set above.\n");
+    	fprintf(stdout,"# The maximum fractional error allowed when testing for convergence of confidence when iterating MC is set by maxMCfracErr above.\n");
+    	fprintf(stdout,"# The loudest event, upper limits and confidence are reported in the searchresults_stackslidemontecarlo table in the xml file.\n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set linesAndHarmonicsFile %s; #47 CHAR* file with instrument line and harmonic spectral disturbances data.\n", params->linesAndHarmonicsFile);
     	fprintf(stdout,"\n");
@@ -667,6 +685,7 @@ params->nMaxTperi=0;
     	fprintf(stdout,"# if (debugOptionFlag & 4) > 0 then print sky positions with debugging information.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 8) > 0 then the STK bin with max power is set to 1, all other to 0.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 16) > 0 also set to 1 one bin to either side of the bin with maxPwr.\n");
+    	fprintf(stdout,"# if (debugOptionFlag & 32) > 0 print Monte Carlo Simulation results to stdout.\n");
     	fprintf(stdout,"# if (debugOptionFlag & 128) > 0 creates SUMs from the STKs without sliding (isolated case only).\n");
     	fprintf(stdout,"# Use of the debugOptionFlag provides an easy way to validate the StackSlide code! \n");
     	fprintf(stdout,"# For fake data with a signal and no noise, run on the exact template for the signal with the \n");
@@ -731,9 +750,12 @@ params->nMaxTperi=0;
   params->finishedBLKs = 0;  /* Set equal to true when all BLKS for this job have been found in input data */
   params->finishedSTKs = 0;  /* Set equal to true when all STKs for this job have been created */
   /* params->finishedSUMs = 0; */ /* 05/26/04 gam */ /* Set equal to true when all BLKS for this job have been created */
-  params->startSUMs = 1;       /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
-  params->finishSUMs = 1;      /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
-  params->whichMCSUM = -1;     /* 05/26/04 gam; which SUM the Monte Carlo Simulation is running on. Default is -1. */
+  params->startSUMs = 1;            /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
+  params->finishPeriodicTable = 1;  /* 05/24/05 gam */ /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
+  params->whichMCSUM = -1;          /* 05/26/04 gam; which SUM the Monte Carlo Simulation is running on. Default is -1. */
+
+  params->maxPower = 0;        /* 05/25/05 gam; power in loudest event */
+  params->totalEventCount = 0; /* 05/25/05 gam; total number of peaks found */
 
   params->iMinBLK = 0;                         /* Index of minimum frequency in BLK band */
   params->iMaxBLK = params->nBinsPerBLK - 1;   /* Index of maximum frequency in BLK band */
@@ -820,11 +842,6 @@ params->nMaxTperi=0;
     ABORT( status, DRIVESTACKSLIDEH_ETARGETNAME, DRIVESTACKSLIDEH_MSGETARGETNAME);
   }
 
-  /* "Invalid or null channel" */
-  if ( strstr(params->tDomainChannel, "NotSet") ){
-    ABORT( status, DRIVESTACKSLIDEH_ECHANNEL, DRIVESTACKSLIDEH_MSGECHANNEL);
-  }
-  
 /**********************************************/
 /*                                            */
 /* END SECTION: validate parameters           */
@@ -1189,42 +1206,23 @@ void StackSlideConditionData(
 /* START SECTION: set units                   */
 /*                                            */
 /**********************************************/
-	/* HARD CODE units FOR NOW */
-	{
-	   LALUnitPair  unitPair;   /* A pair of LALUnits */
-	   RAT4         unitPower;  /* Rational number and demoninator minus one to compute power on a LALUnit */
+        /* Input to code should be calibrated SFTS */
+        /* HARD CODE units as strain/sqrt(Hz) */
+        {
+           LALUnitPair  unitPair;   /* A pair of LALUnits */
+           RAT4         unitPower;  /* Rational number and demoninator minus one to compute power on a LALUnit */
            LALUnit      unitTmp;     /* Temporary place holder for units. */
 
-	   /*  inputDataTypeFlag: 0 = SFTs, 1 = PSDs, 2 = F-stat */
-           if (params->inputDataTypeFlag == 2 || params->normalizationFlag < 0) {
-	       /* Input data is F-stat or already normalized. */
-	       params->unitBLK = lalDimensionlessUnit; /* BLKData is dimensionless */
-           } else {
-	     /* Input data is unnormalized SFT or PSD data */
-             /* if (params->calibrationFlag < 0) {
-                params->unitBLK = lalStrainUnit;
-	     } else {
-                params->unitBLK = lalADCCountUnit;
-	     } */ /* 12/06/04 gam */             
-             params->unitBLK = lalStrainUnit;  /* Assume input data is already calibrated */
-             
-  	     unitPower.numerator = -1;
-  	     unitPower.denominatorMinusOne = 1;
-  	     LALUnitRaise(status->statusPtr, &unitTmp, &lalHertzUnit, &unitPower );
-    	     CHECKSTATUSPTR (status);
-	     unitPair.unitOne = &(params->unitBLK);
-	     unitPair.unitTwo = &unitTmp;
-  	     LALUnitMultiply(status->statusPtr, &params->unitBLK, &unitPair);
-    	     CHECKSTATUSPTR (status);
-             if (params->inputDataTypeFlag == 1) {
-	        /* Input data is PSD data; need to square the units of SFTs */
-	        unitPair.unitOne = &(params->unitBLK);
-	        unitPair.unitTwo = &(params->unitBLK);
-  	        LALUnitMultiply(status->statusPtr, &params->unitBLK, &unitPair);
-    	        CHECKSTATUSPTR (status);
-	     }
-	   }
-	}
+           params->unitBLK = lalStrainUnit;  /* Assume input data is already calibrated */
+           unitPower.numerator = -1;
+           unitPower.denominatorMinusOne = 1;
+           LALUnitRaise(status->statusPtr, &unitTmp, &lalHertzUnit, &unitPower );
+           CHECKSTATUSPTR (status);
+           unitPair.unitOne = &(params->unitBLK);
+           unitPair.unitTwo = &unitTmp;
+           LALUnitMultiply(status->statusPtr, &params->unitBLK, &unitPair);
+           CHECKSTATUSPTR (status);
+        }
 /**********************************************/
 /*                                            */
 /* END SECTION: set units                     */
@@ -1236,38 +1234,28 @@ void StackSlideConditionData(
 /* START SECTION: init params from BLKData and timeStamps */
 /*                                                        */
 /**********************************************************/
-      #ifdef DEBUG_DRIVESTACKSLIDE
-  	fprintf(stdout, "\nSTART SECTION: init params from BLKData and timeStamps\n");
-  	fflush(stdout);
-      #endif
-      if (params->inputDataTypeFlag == 0) {
-         params->whichSTK = 0;  /* which STK does BLK go with; Will be needed when more that one BLK per STK  */
-         params->lastWhichSTK = -1;  /* Last value of params->whichSTK does BLK go with  */
-         params->numSTKs = 0; /* Initialize to 0; will count the actual number of stacks below. Not duration/tSTK if gaps are present */
-         /* Loop through BLK data to find number of STKs */
-	 for(k=0;k<params->numBLKs;k++) {	 
-	         /* Which STK does this BKL go with */
-	         params->whichSTK = (params->BLKData[k]->fft->epoch.gpsSeconds - params->gpsStartTimeSec)/params->tSTK;
-	         /* if (params->whichSTK > params->lastWhichSTK) */ /* 09/27/04 gam; if numBLKsPerSTK == 1 ensure 1 to 1 correspondence between BLKs and STKs */
-                 if ( (params->numBLKsPerSTK == 1) || (params->whichSTK != params->lastWhichSTK) ) {
-                     params->numSTKs++;
-	         }
-                 #ifdef DEBUG_DRIVESTACKSLIDE
-	                fprintf(stdout,"Found BLK # %i, starts at %i; belongs to STK # %i; total STKs so far = %i \n",k,params->BLKData[k]->fft->epoch.gpsSeconds,params->whichSTK,params->numSTKs);
-                        fflush(stdout);
-                 #endif
-                 params->lastWhichSTK = params->whichSTK;
-	       
-	}    
-      } /* END if (params->inputDataTypeFlag == 0) */
+     #ifdef DEBUG_DRIVESTACKSLIDE
+       fprintf(stdout, "\nSTART SECTION: init params from BLKData and timeStamps\n");
+       fflush(stdout);
+     #endif
 
-      /* Set these times based on time intervals actually found (allow for missing BLKs) */     
-      /* params->times.startSec = params->timeStamps[0].gpsSeconds;
-      params->times.startNan = params->timeStamps[0].gpsNanoSeconds; */
-      /* Next two lines assume that tBLK is an integer. */      
-      /* params->times.stopSec = params->timeStamps[params->numBLKs - 1].gpsSeconds + (UINT4)params->tBLK;
-      params->times.stopNan = params->timeStamps[params->numBLKs - 1].gpsNanoSeconds;
-      params->times.timeStepSize = params->deltaT; */
+     params->whichSTK = 0;  /* which STK does BLK go with; Will be needed when more that one BLK per STK  */
+     params->lastWhichSTK = -1;  /* Last value of params->whichSTK does BLK go with  */
+     params->numSTKs = 0; /* Initialize to 0; will count the actual number of stacks below. Not duration/tSTK if gaps are present */
+     /* Loop through BLK data to find number of STKs */
+     for(k=0;k<params->numBLKs;k++) { 
+         /* Which STK does this BKL go with */
+         params->whichSTK = (params->BLKData[k]->fft->epoch.gpsSeconds - params->gpsStartTimeSec)/params->tSTK;
+         /* if (params->whichSTK > params->lastWhichSTK) */ /* 09/27/04 gam; if numBLKsPerSTK == 1 ensure 1 to 1 correspondence between BLKs and STKs */
+         if ( (params->numBLKsPerSTK == 1) || (params->whichSTK != params->lastWhichSTK) ) {
+                     params->numSTKs++;
+         }
+         #ifdef DEBUG_DRIVESTACKSLIDE
+            fprintf(stdout,"Found BLK # %i, starts at %i; belongs to STK # %i; total STKs so far = %i \n",k,params->BLKData[k]->fft->epoch.gpsSeconds,params->whichSTK,params->numSTKs);
+            fflush(stdout);
+         #endif
+         params->lastWhichSTK = params->whichSTK;
+      }    
       
       /* 02/09/04 gam; use to hold times for search summary table */
       params->actualStartTime.gpsSeconds = params->timeStamps[0].gpsSeconds;
@@ -1276,12 +1264,10 @@ void StackSlideConditionData(
       params->actualEndTime.gpsNanoSeconds = params->timeStamps[params->numBLKs - 1].gpsNanoSeconds;
         
       #ifdef DEBUG_DRIVESTACKSLIDE
-	 fprintf(stdout,"\nCheck that additional parameters are set up OK: \n");
-	 fprintf(stdout,"\nparams->numSTKs = %i \n", params->numSTKs);
-         /* fprintf(stdout,"\ntimes.startSec = %i \n", params->times.startSec);
-         fprintf(stdout,"times.startNan = %i \n", params->times.startNan); */
+         fprintf(stdout,"\nCheck that additional parameters are set up OK: \n");
+         fprintf(stdout,"\nparams->numSTKs = %i \n", params->numSTKs);
          fflush(stdout);
-    	 fprintf(stdout,"\n END SECTION: init params from BLKData and timeStamps \n\n");
+         fprintf(stdout,"\n END SECTION: init params from BLKData and timeStamps \n\n");
          fflush(stdout);
       #endif
 /**********************************************************/
@@ -1470,7 +1456,7 @@ void StackSlideApplySearch(
 
   INT4 i = 0; /* all purpose index */
   INT4 k = 0; /* another all purpose index */
-   
+
   INITSTATUS( status, "StackSlideApplySearch", DRIVESTACKSLIDEC );
   ATTATCHSTATUSPTR(status);
 
@@ -1478,7 +1464,7 @@ void StackSlideApplySearch(
   	fprintf(stdout, "\nSTART FUNCTION: StackSlideApplySearch\n");
   	fflush(stdout);
   #endif
-   
+
   /* params->searchMaster is used in LDAS; set to TRUE in this code. */
   if (params->searchMaster) {
 
@@ -1496,26 +1482,7 @@ void StackSlideApplySearch(
     INT4 nrmBinCount = 0; /* 03/03/04 gam */
     FILE *fpPSD; /* 04/15/04 gam */
     LALDetector cachedDetector;
-    REAL4 maxPower = 0;                              /* 02/09/04 gam; power in loudest event */
     SnglStackSlidePeriodicTable *loudestPeaksArray;  /* 02/17/04 gam; keep track of the loudest events */
-    INT4 totalEventCount = 0;                        /* 02/04/04 gam; found a peak or a cluster of peaks; keep track of how many */  
-        
-/**********************************************/
-/*                                            */
-/* START SECTION: calibrate BLKs              */
-/*                                            */
-/**********************************************/
-   /* FOR NOW INPUT DATA MUST BE CALIBRATED */
-   /* ANY FUTURE CALIBRATION CODE GOES HERE */
-   /* if (params->calibrationFlag > 0) {
-      if (params->inputDataTypeFlag == 0) {
-      }
-   } */ /* 12/06/04 gam */
-/**********************************************/
-/*                                            */
-/* END SECTION: calibrate BLKs                */
-/*                                            */
-/**********************************************/
 
 /***********************************************************/
 /*                                                         */
@@ -1541,20 +1508,18 @@ void StackSlideApplySearch(
 /* START SECTION: normalize BLKs              */
 /*                                            */
 /**********************************************/
-  #ifdef DEBUG_DRIVESTACKSLIDE
-  	fprintf(stdout, "\nSTART SECTION: normalize BLKs\n");
-  	fflush(stdout);
-  #endif
-  
+   #ifdef DEBUG_DRIVESTACKSLIDE
+     fprintf(stdout, "\nSTART SECTION: normalize BLKs\n");
+     fflush(stdout);
+   #endif
    /* if (params->normalizationFlag == 1) */ /* 03/01/04 gam; normalize STKs not BLKs unless second bit is set. */
    if ((params->normalizationFlag & 2) > 0) {
-      if (params->inputDataTypeFlag == 0) {
         /* Input data is SFTs */
 
         /* UINT4 iNRM = 0; */
         INT4 iNRM = 0;	
         REAL4 pwSumNRM= 0.0;
-	REAL4 blkNRM = 1.0; /* Default value: does not change BLKs. */
+        REAL4 blkNRM = 1.0; /* Default value: does not change BLKs. */
 
         params->iMinNRM = floor((params->f0NRM - params->f0BLK)*params->tBLK + 0.5);    /* Index of mimimum frequency to include when normalizing BLKs */
         params->iMaxNRM = params->iMinNRM + params->nBinsPerNRM - 1;  /* Index of maximum frequency to include when normalizing BLKs */
@@ -1590,12 +1555,8 @@ void StackSlideApplySearch(
 	        /* BLK could be all zeros; just continue */
 	    }
 	} /* END for(k=0;k<params->numBLKs;k++) */
-
-	params->unitBLK = lalDimensionlessUnit; /* BLKData is now dimensionless */
-
-      } /* END if (params->inputDataTypeFlag == 0) */
+        params->unitBLK = lalDimensionlessUnit; /* BLKData is now dimensionless */
    } /* END if ((params->normalizationFlag & 2) > 0) */
-
 /**********************************************/
 /*                                            */
 /* END SECTION: normalize BLKs                */
@@ -2172,7 +2133,7 @@ void StackSlideApplySearch(
      pLALUpdateLoudestStackSlideParams->freqDerivData = params->freqDerivData;
      pLALUpdateLoudestStackSlideParams->numSpinDown = params->numSpinDown;
      pLALUpdateLoudestStackSlideParams->binMask = params->sumBinMask; /* 05/19/05 gam; In LALUpdateLoudestFromSUMs exclude bins with sumBinMask == 0 (binMask in struct). */
-     totalEventCount = params->keepThisNumber; /* 02/20/04 gam; this is fixed when output is from SUMs */
+     params->totalEventCount = params->keepThisNumber; /* 02/20/04 gam; this is fixed when output is from SUMs */
   }
     
   if ((params->outputEventFlag > 0) && params->startSUMs) {
@@ -2198,8 +2159,6 @@ void StackSlideApplySearch(
    /* 02/28/05 gam; All loops and output of isolated events has moved to StackSlideIsolated */
    StackSlideIsolated (
       status->statusPtr,
-      &maxPower,
-      &totalEventCount,
       loudestPeaksArray,
       pLALFindStackSlidePeakOutputs,
       pLALFindStackSlidePeakParams,
@@ -2216,62 +2175,7 @@ void StackSlideApplySearch(
    CHECKSTATUSPTR (status);
 
   } /* end of if binaryFlag==1 else ...*/
-  
-  /* if (params->outputEventFlag > 0) */ /* 05/26/04 gam */
-  if ((params->outputEventFlag > 0) && params->finishSUMs) {
-     MetadataTable         searchsumm;       
-     MetadataTable         searchsummvars;
 
-    /* End the stackslide periodic table. */
-    fprintf( params->xmlStream->fp, STACKSLIDE_XML_TABLE_FOOTER ); /* 04/12/05 gam */
-    params->xmlStream->table = no_table;
-
-    /* write the search summary table */
-    searchsumm.searchSummaryTable = (SearchSummaryTable *) LALCalloc( 1, sizeof(SearchSummaryTable) );
-    LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", params->patchName );  /* Let patchName serve as the comment */
-    searchsumm.searchSummaryTable->in_start_time.gpsSeconds = params->gpsStartTimeSec;
-    searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds = params->gpsStartTimeNan;
-    searchsumm.searchSummaryTable->out_start_time.gpsSeconds = params->actualStartTime.gpsSeconds;   
-    searchsumm.searchSummaryTable->out_start_time.gpsNanoSeconds = params->actualStartTime.gpsNanoSeconds;
-    searchsumm.searchSummaryTable->in_end_time.gpsSeconds = params->gpsStartTimeSec + params->duration;
-    searchsumm.searchSummaryTable->in_end_time.gpsNanoSeconds = params->gpsStartTimeNan;
-    searchsumm.searchSummaryTable->out_end_time.gpsSeconds = params->actualEndTime.gpsSeconds;
-    searchsumm.searchSummaryTable->out_end_time.gpsNanoSeconds = params->actualEndTime.gpsNanoSeconds;
-    searchsumm.searchSummaryTable->nevents = totalEventCount;
-    searchsumm.searchSummaryTable->nnodes = 0;
-    searchsumm.searchSummaryTable->next = NULL;
-
-    LALBeginLIGOLwXMLTable( status->statusPtr, params->xmlStream, search_summary_table );
-    CHECKSTATUSPTR (status);
-    LALWriteLIGOLwXMLTable( status->statusPtr, params->xmlStream, searchsumm, search_summary_table );
-    CHECKSTATUSPTR (status);
-    LALEndLIGOLwXMLTable (  status->statusPtr, params->xmlStream );
-    CHECKSTATUSPTR (status);
-    LALFree(searchsumm.searchSummaryTable);
-
-    /* write the search summ vars table */
-    searchsummvars.searchSummvarsTable = (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    LALSnprintf( searchsummvars.searchSummvarsTable->name,LIGOMETA_NAME_MAX, "%s","max_power");
-    LALSnprintf( searchsummvars.searchSummvarsTable->string,LIGOMETA_STRING_MAX, "%s"," ");
-    searchsummvars.searchSummvarsTable->value = (REAL8)maxPower;
-    searchsummvars.searchSummvarsTable->next = NULL;
-
-    LALBeginLIGOLwXMLTable( status->statusPtr, params->xmlStream, search_summvars_table );
-    CHECKSTATUSPTR (status);
-    LALWriteLIGOLwXMLTable( status->statusPtr, params->xmlStream, searchsummvars, search_summvars_table );
-    CHECKSTATUSPTR (status);
-    LALEndLIGOLwXMLTable (  status->statusPtr, params->xmlStream );
-    CHECKSTATUSPTR (status);
-    LALFree(searchsummvars.searchSummvarsTable);
-    
-    /* Print xml file footer and close the file. */
-    LALCloseLIGOLwXMLFile (status->statusPtr,params->xmlStream);
-    CHECKSTATUSPTR (status);
-    
-    /* LALFree(xmlFile); */ /* 02/09/04 gam; Already freed in StackSlideInitSearch */
-    LALFree(params->xmlStream);
-  } /* end if (params->outputEventFlag > 0) */
-       
   /* 02/17/04 gam */
   if (params->outputLoudestFromPeaks || params->outputLoudestFromSUMs) {
      LALFree(loudestPeaksArray);
@@ -2373,9 +2277,8 @@ void StackSlideFinalizeSearch(
     StackSlideSearchParams *params
     )
 {
-  
   INT4          i = 0; /* 05/11/04 gam */
-  
+
   INITSTATUS( status, "StackSlideFinalizeSearch", DRIVESTACKSLIDEC );
   ATTATCHSTATUSPTR (status);
 
@@ -2386,6 +2289,61 @@ void StackSlideFinalizeSearch(
 
   /* params->searchMaster is used by LDAS; set to TRUE in this code */
   if (params->searchMaster) {
+
+    /* 05/24/05 gam; finish stackslide periodic table in not done previously; move to FinializeSearch */
+    if ((params->outputEventFlag > 0) && params->finishPeriodicTable) {
+      fprintf( params->xmlStream->fp, STACKSLIDE_XML_TABLE_FOOTER ); /* 04/12/05 gam */
+      params->xmlStream->table = no_table;
+    }
+    if (params->outputEventFlag > 0) {
+      MetadataTable         searchsumm;       
+      MetadataTable         searchsummvars;
+
+      /* write the search summary table */
+      searchsumm.searchSummaryTable = (SearchSummaryTable *) LALCalloc( 1, sizeof(SearchSummaryTable) );
+      LALSnprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, "%s", params->patchName );  /* Let patchName serve as the comment */
+      searchsumm.searchSummaryTable->in_start_time.gpsSeconds = params->gpsStartTimeSec;
+      searchsumm.searchSummaryTable->in_start_time.gpsNanoSeconds = params->gpsStartTimeNan;
+      searchsumm.searchSummaryTable->out_start_time.gpsSeconds = params->actualStartTime.gpsSeconds;   
+      searchsumm.searchSummaryTable->out_start_time.gpsNanoSeconds = params->actualStartTime.gpsNanoSeconds;
+      searchsumm.searchSummaryTable->in_end_time.gpsSeconds = params->gpsStartTimeSec + params->duration;
+      searchsumm.searchSummaryTable->in_end_time.gpsNanoSeconds = params->gpsStartTimeNan;
+      searchsumm.searchSummaryTable->out_end_time.gpsSeconds = params->actualEndTime.gpsSeconds;
+      searchsumm.searchSummaryTable->out_end_time.gpsNanoSeconds = params->actualEndTime.gpsNanoSeconds;
+      searchsumm.searchSummaryTable->nevents = params->totalEventCount;
+      searchsumm.searchSummaryTable->nnodes = 0;
+      searchsumm.searchSummaryTable->next = NULL;
+
+      LALBeginLIGOLwXMLTable( status->statusPtr, params->xmlStream, search_summary_table );
+      CHECKSTATUSPTR (status);
+      LALWriteLIGOLwXMLTable( status->statusPtr, params->xmlStream, searchsumm, search_summary_table );
+      CHECKSTATUSPTR (status);
+      LALEndLIGOLwXMLTable (  status->statusPtr, params->xmlStream );
+      CHECKSTATUSPTR (status);
+      LALFree(searchsumm.searchSummaryTable);
+
+      /* write the search summ vars table */
+      searchsummvars.searchSummvarsTable = (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
+      LALSnprintf( searchsummvars.searchSummvarsTable->name,LIGOMETA_NAME_MAX, "%s","max_power");
+      LALSnprintf( searchsummvars.searchSummvarsTable->string,LIGOMETA_STRING_MAX, "%s"," ");
+      searchsummvars.searchSummvarsTable->value = (REAL8)(params->maxPower);
+      searchsummvars.searchSummvarsTable->next = NULL;
+
+      LALBeginLIGOLwXMLTable( status->statusPtr, params->xmlStream, search_summvars_table );
+      CHECKSTATUSPTR (status);
+      LALWriteLIGOLwXMLTable( status->statusPtr, params->xmlStream, searchsummvars, search_summvars_table );
+      CHECKSTATUSPTR (status);
+      LALEndLIGOLwXMLTable (  status->statusPtr, params->xmlStream );
+      CHECKSTATUSPTR (status);
+      LALFree(searchsummvars.searchSummvarsTable);
+    
+      /* Print xml file footer and close the file. */
+      LALCloseLIGOLwXMLFile (status->statusPtr,params->xmlStream);
+      CHECKSTATUSPTR (status);
+    
+      /* LALFree(xmlFile); */ /* 02/09/04 gam; Already freed in StackSlideInitSearch */
+      LALFree(params->xmlStream);
+    } /* end if (params->outputEventFlag > 0) */
 
   /**********************************************/
   /*                                            */
@@ -2427,6 +2385,9 @@ void StackSlideFinalizeSearch(
   LALFree(params->ifoNickName);
   LALFree(params->IFO);
   LALFree(params->patchName);
+
+  LALFree(params->priorResultsFile);
+  LALFree(params->parameterSpaceFile);
 
   LALFree(params->dsoName);
   

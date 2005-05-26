@@ -25,13 +25,19 @@ $Id$
 /* 12/06/04 gam; if (params->testFlag & 8) > 0 use fixed values for psi and cosIota during Monte Carlo simulations */
 /* 05/06/05 gam; If params->debugOptionFlag & 128 > 0 and isolated case, just creates a SUM from the STKs without sliding */
 /* 05/19/05 gam; Add INT4 *sumBinMask; params->sumBinMask == 0 if bin should be excluded from search or Monte Carlo due to cleaning */
-    
+/* 05/24/05 gam; make maxPower and totalEventCount part of params; change finishSUMs to finishPeriodicTable; end xml in FinalizeSearch */
+/* 05/24/05 gam; if (params->testFlag & 16 > 0) use results from prior jobs in the pipeline and report on current MC results */
+/* 05/24/05 gam; if (params->testFlag & 32 > 0) iterate MC up to 10 times to converge on desired confidence */
+/* 05/24/05 gam; if (params->debugOptionFlag & 32 > 0) print Monte Carlo Simulation results to stdout */
+/* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
+
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
 /*                                           */
 /*********************************************/
 #define INCLUDE_PRINT_PEAKS_TABLE_CODE
+#define INCLUDE_PRINT_REPORTMCRESULTS_CODE
 /* #define DEBUG_STACKSLIDE_ISOLATED */
 /* #define DEBUG_SUM_TEMPLATEPARAMS */
 /* #define PRINT_STACKSLIDE_BINOFFSETS */
@@ -75,8 +81,6 @@ NRCSID( STACKSLIDEISOLATEDC,  "$Id$");
 /*********************************************************************************/
 void StackSlideIsolated (
     LALStatus                        *status,
-    REAL4                            *maxPower,
-    INT4                             *totalEventCount,
     SnglStackSlidePeriodicTable      *loudestPeaksArray,
     LALFindStackSlidePeakOutputs     *pLALFindStackSlidePeakOutputs,
     LALFindStackSlidePeakParams      *pLALFindStackSlidePeakParams,
@@ -182,7 +186,7 @@ void StackSlideIsolated (
       #ifdef PRINT_SLIDINGTURNEDOFF_WARNING
         fprintf(stdout,"\n\n !!! WARNING: SLIDING TURNED OFF !!! \n\n");
         fflush(stdout);
-      #endif      
+      #endif
       SumStacks(status->statusPtr,params->SUMData,params->STKData,stksldParams);
     } else {
       StackSlide(status->statusPtr,params->SUMData,params->STKData,pTdotsAndDeltaTs,stksldParams);
@@ -225,7 +229,7 @@ void StackSlideIsolated (
 
          while (params->peaks) {
            peakSav = params->peaks;
-           (*totalEventCount)++;
+           params->totalEventCount++; /* 05/25/05 gam */
            if (pLALFindStackSlidePeakParams->updateMeanStdDev) {
               /* 03/02/04 gam; update pw_mean_thissum, pw_stddev_thissum, pwr_snr using pwMeanWithoutPeaks and pwStdDevWithoutPeaks */              
               if ( (*(pLALFindStackSlidePeakOutputs->binsWithoutPeaks)) > 0) {
@@ -235,8 +239,8 @@ void StackSlideIsolated (
                 params->peaks->pwr_snr = params->peaks->power / (*(pLALFindStackSlidePeakOutputs->pwStdDevWithoutPeaks));
               }
            }
-           if (params->peaks->power > *maxPower) {
-              *maxPower = params->peaks->power; /* 02/09/04 gam; keep track for search summary */
+           if (params->peaks->power > params->maxPower) {
+              params->maxPower = params->peaks->power; /* 05/25/05 gam */ /* 02/09/04 gam; keep track for search summary */
            }
            
            /* 02/17/04 gam; keep an array of loudest peaks */
@@ -245,7 +249,7 @@ void StackSlideIsolated (
            } else {
               #ifdef INCLUDE_PRINT_PEAKS_TABLE_CODE
                 if ((params->debugOptionFlag & 2) > 0 ) {
-                  fprintf(stdout,"%11i %11i %10.6f %10.6f %14.6e %11.6f %10.3f %8.3f %12i \n",*totalEventCount,params->peaks->sum_no,params->peaks->sky_ra,params->peaks->sky_dec,params->peaks->fderiv_1,params->peaks->frequency,params->peaks->power,params->peaks->pwr_snr,params->peaks->width_bins);
+                  fprintf(stdout,"%11i %11i %10.6f %10.6f %14.6e %11.6f %10.3f %8.3f %12i \n",params->totalEventCount,params->peaks->sum_no,params->peaks->sky_ra,params->peaks->sky_dec,params->peaks->fderiv_1,params->peaks->frequency,params->peaks->power,params->peaks->pwr_snr,params->peaks->width_bins);
                   fflush(stdout);
                 }
               #endif
@@ -307,8 +311,8 @@ void StackSlideIsolated (
           fflush(stdout);
          }
        #endif    
-       if (loudestPeaksArray[k].power > *maxPower) {
-              *maxPower = loudestPeaksArray[k].power; /* 02/20/04 gam; keep track for search summary */
+       if (loudestPeaksArray[k].power > params->maxPower) {
+              params->maxPower = loudestPeaksArray[k].power; /* 05/25/05 gam */ /* 02/20/04 gam; keep track for search summary */
        }       
        /*  end previous row with comma */
        if ( params->xmlStream->first ) {
@@ -418,10 +422,57 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   REAL8 DeltaFDeriv5 = params->deltaFDeriv5;
   INT4 firstNonExcludedBin = -1; /* 05/19/05 gam */
   INT4 lastNonExcludedBin  = -1; /* 05/19/05 gam */
-
+  /* 05/24/05 gam; use results from prior jobs in the pipeline and report on current MC results */
+  BOOLEAN reportMCResults = 0;
+  REAL4 priorLoudestEvent = 0.0;
+  REAL8 priorStartFreq = 0.0;
+  REAL8 priorBand = 0.0;
+  REAL8 priorConfidence = 0.0;
+  REAL8 priorUL = 0.0;
+  REAL8 priorUncertainty = 0.0;
+  REAL8 nAboveLE = 0.0;
+  REAL8 nTrials = 0.0;
+  REAL8 *arrayULs = NULL;
+  REAL8 *arrayConfs = NULL;
+  INT4 *arrayConverged = NULL;
+  INT4 iMC = 0;             /* which entire MC simulation is currently running */
+  INT4 countMC = 0;         /* count of number of complted MC simulations */
+  INT4 maxMC = 1;           /* maximum number of times to run the entire MC */
+  REAL8 maxFracErr = 0.005; /* when interating, maximum fractional error to allow for convergence to desired confidence */
+      
   INITSTATUS( status, "RunStackSlideIsolatedMonteCarloSimulation", STACKSLIDEISOLATEDC );
   ATTATCHSTATUSPTR(status);
-  
+
+  if ( (params->testFlag & 16) > 0 ) {
+    /* 05/24/05 gam; use results from prior jobs in the pipeline and report on current MC results */
+    reportMCResults = 1;
+    /* get results for previous jobs in the pipeline */
+    getStackSlidePriorResults(status->statusPtr,
+                               &priorLoudestEvent,
+                               &priorStartFreq,
+                               &priorBand,
+                               &priorConfidence,
+                               &priorUL,
+                               &priorUncertainty,
+                               params->priorResultsFile);
+    CHECKSTATUSPTR (status);
+    #ifdef INCLUDE_PRINT_REPORTMCRESULTS_CODE
+      if ((params->debugOptionFlag & 32) > 0 ) {
+        fprintf(stdout,"Loudest Event, Start Frequency, Search Band, Confidence, Estimated Upper Limit, Uncertainty = \n");
+        fprintf(stdout,"%20.6f %20.10f %20.10f %8.2f %20.10e %20.10e\n",priorLoudestEvent,priorStartFreq,priorBand,priorConfidence,priorUL,priorUncertainty);
+        fflush(stdout);
+      }
+    #endif
+    if ( (params->testFlag & 32) > 0 ) {
+      /* 05/24/05 gam; iterate MC to converge on desired confidence */
+      maxMC = params->maxMCinterations;
+      maxFracErr = params->maxMCfracErr;
+    }
+    arrayULs   = (REAL8 *)LALMalloc(maxMC*sizeof(REAL8));
+    arrayConfs = (REAL8 *)LALMalloc(maxMC*sizeof(REAL8));
+    arrayConverged = (INT4 *)LALMalloc(maxMC*sizeof(INT4));
+  }
+
   /* 05/21/04 gam; save the input noise SFTs */
   savBLKData=(FFT **)LALMalloc(params->numBLKs*sizeof(FFT *));
   for (i=0;i<params->numBLKs;i++)
@@ -539,7 +590,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   
   /* 05/26/04 gam; initialize variables that keep track of which SUM we are working on */
   params->startSUMs = 1;   /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
-  params->finishSUMs = 0;  /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
+  params->finishPeriodicTable = 0; /* 05/24/05 gam */ /* 05/26/04 gam; use to control I/O during Monte Carlo. Default is TRUE. */
   params->whichMCSUM = -1; /* 05/26/04 gam; which SUM the Monte Carlo Simulation is running on. Default is -1 */
   numSUMsTotalm1 = numSUMsTotal - 1;  /* Index of last SUM */
   
@@ -609,6 +660,17 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         lastNonExcludedBin = iFreq;
      }
   }
+
+ /***********************************************************/
+ /*                                                         */
+ /* START SECTION: LOOP OVER ENTIRE MONTE CARLO SIMULATIONS */
+ /*                                                         */
+ /***********************************************************/
+ for(iMC=0;iMC<maxMC;iMC++) {
+   
+  /* This is the big loop that reruns the entire MC maxMC times or until MC has converged */
+  nAboveLE = 0.0; /* initialize at beginning of each MC */
+  nTrials = 0.0;  /* initialize at beginning of each MC */
 
   /*********************************************************/
   /*                                                       */
@@ -705,9 +767,11 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
      }
     
      /* if ((kSUM == numSUMsTotalm1) && (iFreq == nBinsPerSUMm1)) */ /* 05/19/05 gam */
-     if ((kSUM == numSUMsTotalm1) && (iFreq == lastNonExcludedBin)) {
-         params->finishSUMs = 1;  /* This is the last injection */
-     }
+     /* 05/24/05 gam */ /* This is the last injection */
+     /* 05/24/05 gam; leave params->finishPeriodicTable == 0; will finish periodic table below */
+     /* if ((kSUM == numSUMsTotalm1) && (iFreq == lastNonExcludedBin)) {
+         params->finishPeriodicTable = 1;
+     } */
 
      /* 05/19/05 gam; Only inject into bins that are not exclude */
      if (params->sumBinMask[iFreq] != 0) {
@@ -979,45 +1043,20 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         LALFree(signal);
       }
       
-      /* 07/14/04 gam; Example code */  /*
-      SkyConstAndZeroPsiAMResponse *pSkyConstAndZeroPsiAMResponse;
-      SFTandSignalParams *pSFTandSignalParams;
-
-      pSkyConstAndZeroPsiAMResponse = (SkyConstAndZeroPsiAMResponse *)LALMalloc(sizeof(SkyConstAndZeroPsiAMResponse));
-      pSkyConstAndZeroPsiAMResponse->skyConst = (REAL8 *)LALMalloc((2*params->numSpinDown*(params->numBLKs+1)+2*params->numBLKs+3)*sizeof(REAL8));
-      pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi = (REAL4 *)LALMalloc(params->numBLKs*sizeof(REAL4));
-      pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi = (REAL4 *)LALMalloc(params->numBLKs*sizeof(REAL4));
-      pSFTandSignalParams = (SFTandSignalParams *)LALMalloc(sizeof(SFTandSignalParams));
-      pSFTandSignalParams->resTrig = 64;
-      pSFTandSignalParams->trigArg = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
-      pSFTandSignalParams->sinVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
-      pSFTandSignalParams->cosVal  = (REAL8 *)LALMalloc((pSFTandSignalParams->resTrig+1)*sizeof(REAL8));
-      for (k=0; k<=pSFTandSignalParams->resTrig; k++) {
-       pSFTandSignalParams->trigArg[k]= ((REAL8)LAL_TWOPI) * ((REAL8)k) / ((REAL8)pSFTandSignalParams->resTrig);
-       pSFTandSignalParams->sinVal[k]=sin( pSFTandSignalParams->trigArg[k] );
-       pSFTandSignalParams->cosVal[k]=cos( pSFTandSignalParams->trigArg[k] );
-      }
-      pSFTandSignalParams->pSigParams = pPulsarSignalParams;
-      pSFTandSignalParams->pSFTParams = pSFTParams;
-      pSFTandSignalParams->nSamples = nSamples;
-           
-      LALComputeSkyAndZeroPsiAMResponse (status->statusPtr, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
-      CHECKSTATUSPTR (status);
-      LALFastGeneratePulsarSFTs (status->statusPtr, &outputSFTs, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
-      CHECKSTATUSPTR (status);
-      
-      LALFree(pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi);
-      LALFree(pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi);
-      LALFree(pSkyConstAndZeroPsiAMResponse->skyConst);
-      LALFree(pSkyConstAndZeroPsiAMResponse);
-      LALFree(pSFTandSignalParams->trigArg);
-      LALFree(pSFTandSignalParams->sinVal);
-      LALFree(pSFTandSignalParams->cosVal);
-      LALFree(pSFTandSignalParams);
-      */
-
+      /* Call StackSlideApplySearch to analyze this MC injection */
+      params->maxPower = 0.0; /* 05/24/05 gam; need to reinitialize */
       StackSlideApplySearch(status->statusPtr,params);
       CHECKSTATUSPTR (status);
+
+      /* 05/24/05 gam */
+      if (reportMCResults) {
+         nTrials += 1.0;  /* count total number of MC trials run */
+         /* priorLoudestEvent is the Loudest event from prior jobs in the pipeline */
+         if (params->maxPower >= priorLoudestEvent) {
+            nAboveLE += 1.0;  /* count number of MC trials that result in power >= to the loudest event */
+         }
+      }
+
      } /* END if (params->sumBinMask[k] != 0) */
     } /* END for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) */
     /****************************************************/
@@ -1032,6 +1071,112 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   /*                                                       */
   /*********************************************************/
 
+  /* 05/24/05 gam */  
+  if (reportMCResults) {
+
+     countMC++; /* count how many MC simulations have been completed */
+     
+     /* Compute confidence; note that h_0 == params->threshold4 == injection amplitude */
+     arrayULs[iMC] = h_0;
+     if (nTrials > 0.0) {
+       arrayConfs[iMC] = nAboveLE/nTrials;
+       /* Check, are we done? */     
+       if ( fabs(priorConfidence - arrayConfs[iMC])/priorConfidence <= maxFracErr ) {
+          arrayConverged[iMC] = 1;  /* converged on desired confidence */
+          break; /* We are within maxFracErr; break out of the iMC loop */
+       } else {
+           arrayConverged[iMC] = 0; /* not converged on desired confidence */
+       }       
+     } else {
+       arrayConfs[iMC] = -1;
+       arrayConverged[iMC] = 0; /* not converged on desired confidence */
+       break; /* MC not producing any trials; should not happen but stop if it does */
+     }
+
+     /* if (maxMC > 1) then interate entire MC to converge on desired confidence */
+     if (maxMC > 1) {
+        /* Compute new guess for h_0 */
+        if ( ( iMC > 0 ) && ( (arrayConfs[iMC] - arrayConfs[iMC-1]) != 0.0 ) ) {
+           /* linearly interpolate to next guess */
+           h_0 = arrayULs[iMC] + (priorConfidence - arrayConfs[iMC])*(arrayULs[iMC]
+                 - arrayULs[iMC-1])/(arrayConfs[iMC] - arrayConfs[iMC-1]);
+        } else {
+           if ( (priorConfidence - arrayConfs[iMC]) > 0.0 ) {
+              h_0 = arrayULs[iMC] + priorUncertainty; /* need to make h_0 larger */
+           } else {
+              h_0 = arrayULs[iMC] - priorUncertainty; /* need to make h_0 smaller */
+           }
+        }
+        if (h_0 <= 0.0) {
+           h_0 = priorUncertainty; /* prevent making h_0 too small */
+        }
+        params->threshold4 = h_0; /* set params->threshold4 == h_0 to new guess */
+     }
+  } /* END if (reportMCResults) */
+
+ } /* END for(iMC=0;iMC<maxMC;iMC++) */
+ /***********************************************************/
+ /*                                                         */
+ /* END SECTION: LOOP OVER ENTIRE MONTE CARLO SIMULATIONS   */
+ /*                                                         */
+ /***********************************************************/
+
+  /* 05/24/05 gam; always finishPeriodicTable table here */
+  if (params->outputEventFlag > 0) {
+      fprintf( params->xmlStream->fp, STACKSLIDE_XML_TABLE_FOOTER );
+      params->xmlStream->table = no_table;
+  }
+  
+  /* 05/24/05 gam */  
+  if (reportMCResults) {
+    if (params->outputEventFlag > 0) {
+       /* write to the StackSlide Monte Carlo Results Table. */
+       StackSlideMonteCarloResultsTable *stksldMonteCarloResultsTable;
+       stksldMonteCarloResultsTable = (StackSlideMonteCarloResultsTable *) LALCalloc( 1, sizeof(StackSlideMonteCarloResultsTable) );
+            
+       /* print the table header */
+       fprintf( params->xmlStream->fp, LIGOLW_XML_LOCAL_SEARCHRESULTS_STACKSLIDEMONTECARLO );
+
+       /* print out the rows */
+       for(iMC=0;iMC<countMC;iMC++) {
+          stksldMonteCarloResultsTable->loudest_event = priorLoudestEvent; /* from prior jobs in the pipeline */
+          stksldMonteCarloResultsTable->start_freq    = f0SUM;             /* saved value MC actually ran on  */
+          stksldMonteCarloResultsTable->band          = bandSUM;           /* saved value MC actually ran on  */
+          stksldMonteCarloResultsTable->upper_limit   = arrayULs[iMC];
+          stksldMonteCarloResultsTable->confidence    = arrayConfs[iMC];
+          stksldMonteCarloResultsTable->converged     = arrayConverged[iMC];
+          stksldMonteCarloResultsTable->next          = NULL;
+          if (iMC > 0) {
+                 fprintf( params->xmlStream->fp, ",\n" ); /* end previous row with a comma */
+          }
+          fprintf( params->xmlStream->fp, LOCAL_SEARCHRESULTS_STACKSLIDEMONTECARLO_ROW,
+            stksldMonteCarloResultsTable->loudest_event,
+            stksldMonteCarloResultsTable->start_freq,
+            stksldMonteCarloResultsTable->band,
+            stksldMonteCarloResultsTable->upper_limit,
+            stksldMonteCarloResultsTable->confidence,
+            stksldMonteCarloResultsTable->converged
+          );
+       } /* END for(iMC=0;iMC<countMC;iMC++) */
+
+       /* End the table: */
+       fprintf( params->xmlStream->fp, STACKSLIDE_XML_TABLE_FOOTER );
+       params->xmlStream->table = no_table;
+       LALFree(stksldMonteCarloResultsTable);
+    } /* END if (params->outputEventFlag > 0) */
+    #ifdef INCLUDE_PRINT_REPORTMCRESULTS_CODE
+      for(iMC=0;iMC<countMC;iMC++) {
+        if ((params->debugOptionFlag & 32) > 0 ) {
+              fprintf(stdout,"MC Trial #%i UL = %20.10e, Conf = %20.10f, Converged = %i\n",iMC,arrayULs[iMC],arrayConfs[iMC],arrayConverged[iMC]);
+              fflush(stdout);
+        }
+      }
+    #endif    
+    LALFree(arrayULs);
+    LALFree(arrayConfs);
+    LALFree(arrayConverged);
+  } /* END if (reportMCResults) */
+  
   LALDestroyRandomParams(status->statusPtr, &randPar); /* 05/28/04 gam */
   CHECKSTATUSPTR (status);
   
@@ -1097,197 +1242,37 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
 /*                                                           */
 /*************************************************************/
 
-#ifdef NOTHING
-/* <lalVerbatim file="StackSlideCP"> */
-void StackSlideOld(	LALStatus *status, 
-			REAL4FrequencySeries **SUMData, 
-			REAL4FrequencySeries **STKData, 
-			StackSlideParams *params)
+/* 05/24/05 gam; Function that reads results from previous jobs in the pipeline */
+void getStackSlidePriorResults(LALStatus *status,
+                               REAL4 *priorLoudestEvent,
+                               REAL8 *priorStartFreq,
+                               REAL8 *priorBand,
+                               REAL8 *priorConfidence,
+                               REAL8 *priorUL,
+                               REAL8 *priorUncertainty,
+                               CHAR  *priorResultsFile)
 {
-
-    INT4 iSky = 0;
-    INT4 iFreqDeriv = 0;
-    INT4 kSUM = 0;
-    INT4 iSUM = 0;
-    
-    INT4 numLoopOnSpindown;
-    
-    INT4 i,k,m;
-    INT4 binoffset = 0;
-
-    StackSlideSkyParams *csParams;
-    
-    TdotsAndDeltaTs *pTdotsAndDeltaTs;
-    EarthState earth;
-    EmissionTime emit;
-
-    REAL8 f_t;
-
-    REAL4 invNumSTKs = 1.0/((REAL4)params->numSTKs);  /* 12/03/04 gam */
-    
-    INT4 iMinSTK = floor((params->f0SUM-params->f0STK)*params->tSTK + 0.5); /* Index of mimimum frequency to include when making SUMs from STKs */
-    INT4 iMaxSTK = iMinSTK + params->nBinsPerSUM - 1;                       /* Index of maximum frequency to include when making SUMs from STKs */
-    
-    REAL8 refFreq = params->f0SUM + ((REAL8)(params->nBinsPerSUM/2))*params->dfSUM; /* 12/06/04 gam */
-    
-    INITSTATUS (status, "StackSlide", STACKSLIDEISOLATEDC);
-    ATTATCHSTATUSPTR(status);
-
-    /* Allocate space and set quantities for call to StackSlideComputeSky() */
-    csParams=(StackSlideSkyParams *)LALMalloc(sizeof(StackSlideSkyParams));
-    csParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
-    pTdotsAndDeltaTs=(TdotsAndDeltaTs *)LALMalloc(sizeof(TdotsAndDeltaTs));
-    pTdotsAndDeltaTs->vecTDots  = (REAL8 *)LALMalloc(sizeof(REAL8)*params->numSTKs);
-
-    if (params->numSpinDown>0) {
-       pTdotsAndDeltaTs->vecDeltaTs  = (REAL8 **)LALMalloc(sizeof(REAL8 *)*params->numSTKs);          
-       for(i=0;i<params->numSTKs;i++) {
-           pTdotsAndDeltaTs->vecDeltaTs[i]  = (REAL8 *)LALMalloc(sizeof(REAL8)*params->numSpinDown);          
-       }
-    }
-
-    /* if no_spindowns > 0, only pTdotsAndDeltaTs->vecDeltaTs= (REAL8 *)LALMalloc(sizeof(REAL8)*params->numSTKs); 
-       i.e. if no spindowns then you don't need to allocate the second of the two lines above */
-    /* 02/02/04 gam; moved next 5 lines from inside loops: */
-    if (params->numFreqDerivTotal==0) {
-        numLoopOnSpindown = 1;  /* Even if no spindown, need to execute iFreqDeriv loop once to handle case of zero spindown */
-    } else {
-        numLoopOnSpindown = params->numFreqDerivTotal;
-    }
-
-    for(iSky=0;iSky<params->numSkyPosTotal;iSky++) {
-        /* call ComputeSky for every sky position */
-
-        csParams->skyPos[0]=params->skyPosData[iSky][0];
-        csParams->skyPos[1]=params->skyPosData[iSky][1];
-
-        params->baryinput->alpha=params->skyPosData[iSky][0];
-        params->baryinput->delta=params->skyPosData[iSky][1];
-
-        csParams->tGPS=params->timeStamps;
-        csParams->gpsStartTimeSec = params->gpsStartTimeSec; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
-        csParams->gpsStartTimeNan = params->gpsStartTimeNan; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
-        csParams->spinDwnOrder=params->numSpinDown;
-        csParams->mObsSFT=params->numSTKs;
-        csParams->tSFT=params->tSTK;
-        csParams->edat=params->edat;
-        csParams->emit=&emit;
-        csParams->earth=&earth;
-        csParams->baryinput=params->baryinput;
-
-        for(i=0;i<params->numSTKs;i++) {
-          pTdotsAndDeltaTs->vecTDots[i] = 0.0; /* Initialize */
-          for(m=0;m<params->numSpinDown;m++) {
-              pTdotsAndDeltaTs->vecDeltaTs[i][m] = 0.0; /* Initialize */
-          }
-        }
-
-        /* get Tdot and DeltaT's for this sky position */
-        StackSlideComputeSky(status->statusPtr, pTdotsAndDeltaTs, csParams);
-        CHECKSTATUSPTR (status);
-
-        /* for all spindowns, loop */
-        for(iFreqDeriv=0;iFreqDeriv<numLoopOnSpindown;iFreqDeriv++) {
-            /* call computesky for all stacks at once */
-            /* compute offset  for each stack */
-
-			
-		kSUM = iSky*numLoopOnSpindown + iFreqDeriv; /* 01/28/04 gam; need to find index to which to SUM */
-
-            /* loop over STKs */ 
-            for(k=0;k<params->numSTKs;k++) {
-               /* compute frequency */
-               /* f_t = params->f0STK * params->tSTK; */
-               /* f_t = params->f0STK; */ /* 12/06/04 gam */
-               f_t = refFreq;
-               for (m=0; m<params->numSpinDown; m++) {
-                   /* f_t += ( params->freqDerivData[iFreqDeriv][m] * pTdotsAndDeltaTs[2*k*(params->numSpinDown)+2*(INT4)m+1]); */
-                   f_t += params->freqDerivData[iFreqDeriv][m] * pTdotsAndDeltaTs->vecDeltaTs[k][m];
-               }
-               f_t = f_t * pTdotsAndDeltaTs->vecTDots[k];
-               /* binoffset = floor(( (f_t - params->f0STK) * params->tSTK) + 0.5 ); */ /* 12/06/04 gam */
-               binoffset = floor(( (f_t - refFreq) * params->tSTK) + 0.5 );
-               
-               #ifdef PRINT_STACKSLIDE_BINMISMATCH
-                  fprintf(stdout, "%i binmismatch = %g \n",params->timeStamps[k].gpsSeconds,fabs( ((f_t - refFreq) * params->tSTK) - (REAL8)binoffset ));
-                  fflush(stdout);
-               #endif
-
-               #ifdef PRINT_STACKSLIDE_BINOFFSETS
-                  fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
-                  fflush(stdout);
-               #endif
-               
-               #ifdef PRINT_STACKSLIDE_SPECIAL_DEBUGGING_INFO
-                  /* A comparison is made between the STK bin with maximum power
-                     and the STK power when demodulating for the SUM midpoint
-                     frequency, i.e., the bin for that freq + binoffset.
-                     For an injected signal into the middle of the SUM band
-                     these should agree if StackSlide is working properly. */
-                  {
-                    INT4 iPwrMax = -1;
-                    REAL4 pwrMax = 0.0;
-                    for(i=0;i<STKData[k]->data->length; i++) {
-                      if (pwrMax < STKData[k]->data->data[i]) {
-                        iPwrMax = i;
-                        pwrMax = STKData[k]->data->data[i];
-                      }
-                    }
-                    fprintf(stdout, "In StackSlide for SFT #%i iPwrMax = %i, pwrMax = %g \n",k,iPwrMax,pwrMax);
-                  }
-                  fprintf(stdout, "In StackSlide for SFT #%i STK(binoffset-1) = %g \n",k,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset-1]);
-                  fprintf(stdout, "In StackSlide for SFT #%i ibinoffset = %i, STK(binoffset) = %g \n",k,iMinSTK + params->nBinsPerSUM/2+binoffset, STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset]);
-                  fprintf(stdout, "In StackSlide for SFT #%i STK(binoffset+1) = %g \n",k,STKData[k]->data->data[iMinSTK + params->nBinsPerSUM/2+binoffset+1]);
-                  fprintf(stdout, "In StackSlide for SFT #%i REAL8 binoffset = %g \n",k,((f_t - refFreq) * params->tSTK));
-                  fprintf(stdout, "In StackSlide for SFT #%i binoffset = %i \n",k,binoffset);
-                  fflush(stdout);
-               #endif
-
-               /* Add the power from this STK into the SUM with the appropriate binoffset */
-               for(i=iMinSTK;i<=iMaxSTK; i++) {
-                iSUM = i - iMinSTK;
-                if (k==0) {
-                   /* Starting a new SUM: initialize */
-                   SUMData[kSUM]->data->data[iSUM] = STKData[k]->data->data[i+binoffset];
-                   SUMData[kSUM]->epoch.gpsSeconds = params->gpsStartTimeSec;
-                   SUMData[kSUM]->epoch.gpsNanoSeconds = params->gpsStartTimeNan;
-                   SUMData[kSUM]->f0=params->f0SUM;
-                   SUMData[kSUM]->deltaF=params->dfSUM;
-                   SUMData[kSUM]->data->length=params->nBinsPerSUM;
-                } else {
-                   SUMData[kSUM]->data->data[iSUM] += STKData[k]->data->data[i+binoffset];
-                }
-              } /* END for(i=iMinSTK;i<=iMaxSTK; i++) */
-            } /* END for(k=0;k<params->numSTKs;k++) */
-
-            /* 12/03/04 gam; added params->divideSUMsByNumSTKs */
-            if (params->divideSUMsByNumSTKs) {
-               /* Normalize the SUMs with params->numSTKs*/
-               for(i=0;i<params->nBinsPerSUM; i++) {
-                  /* SUMData[kSUM]->data->data[i] =  SUMData[kSUM]->data->data[i]/((REAL4)params->numSTKs); */
-                  SUMData[kSUM]->data->data[i] =  SUMData[kSUM]->data->data[i]*invNumSTKs;  /* 12/03/04 gam; multiply by 1.0/numSTKs */
-               }
-            }
-            
-        }  /* for iFreqDeriv = 0 to numFreqDerivTotal */      
-    } /* for iSky = `0 to numSkyPosTotal */
-
-    /* Deallocate space for ComputeSky parameters */
-    LALFree(csParams->skyPos);
-    LALFree(csParams);
-
-    /* Deallocate memory */
-
-    if (params->numSpinDown>0) {
-        for(i=0;i<params->numSTKs;i++) {
-           LALFree(pTdotsAndDeltaTs->vecDeltaTs[i]);          
-        }
-        LALFree(pTdotsAndDeltaTs->vecDeltaTs);
-    }
-    LALFree(pTdotsAndDeltaTs->vecTDots);
-    LALFree(pTdotsAndDeltaTs);
+  INT4 i;
+  INT4 numWordsToIgnore = 43;
+  CHAR buffer[256];
+  FILE *fpPrior = NULL;
   
-    CHECKSTATUSPTR (status);
-    DETATCHSTATUSPTR (status);
-} /* END StackSlideOld() */
-#endif
+  INITSTATUS( status, "getStackSlidePriorResults", STACKSLIDEISOLATEDC );
+  ATTATCHSTATUSPTR (status);
+     
+  fpPrior = fopen( priorResultsFile, "r");
+  if (fpPrior == NULL) {
+     ABORT( status, STACKSLIDEISOLATEDH_EBADRESULTSFILE, STACKSLIDEISOLATEDH_MSGEBADRESULTSFILE);
+  }
+
+  /* skip first numWordsToIgnore words */
+  for(i=0;i<numWordsToIgnore;i++){
+     fscanf(fpPrior,"%s",buffer);
+  }
+  /* data was written using matlab format string '%20.6f %20.10f %20.10f %8.2f %20.10e %20.10e\n' */
+  fscanf(fpPrior,"%f%lf%lf%lf%le%le\n",priorLoudestEvent,priorStartFreq,priorBand,priorConfidence,priorUL,priorUncertainty);
+  fclose(fpPrior);
+
+  CHECKSTATUSPTR (status);
+  DETATCHSTATUSPTR (status);
+}

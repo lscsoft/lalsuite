@@ -6,6 +6,7 @@ $Id$
 /* REVISIONS: */
 /* 04/12/05 gam; Move from using StackSlideOld to using StackSlide function. */
 /* 04/12/05 gam; add RunStackSlideIsolatedMonteCarloSimulation to StackSlideIsolated.c */
+/* 05/24/05 gam; make maxPower and totalEventCount part of params; change finishSUMs to finishPeriodicTable; end xml in FinalizeSearch */
 
 #ifndef _STACKSLIDEISOLATED_H
 #define _STACKSLIDEISOLATED_H
@@ -52,9 +53,11 @@ NRCSID (STACKSLIDEISOLATEDH, "$Id$");
 #define STACKSLIDEISOLATEDH_ENULL 1
 #define STACKSLIDEISOLATEDH_ENNUL 2
 #define STACKSLIDEISOLATEDH_ENEGA 4
+#define STACKSLIDEISOLATEDH_EBADRESULTSFILE 4
 #define STACKSLIDEISOLATEDH_MSGENULL "Null Pointer"
 #define STACKSLIDEISOLATEDH_MSGENNUL "Non-Null Pointer"
 #define STACKSLIDEISOLATEDH_MSGENEGA "Bad Negative Value"
+#define STACKSLIDEISOLATEDH_MSGEBADRESULTSFILE "Could not open priorResultsFile"
 /*********************************************/
 /*                                           */
 /* END SECTION: define constants             */
@@ -63,8 +66,6 @@ NRCSID (STACKSLIDEISOLATEDH, "$Id$");
 
 void StackSlideIsolated (
     LALStatus                        *status,
-    REAL4                            *maxPower,
-    INT4                             *totalEventCount,
     SnglStackSlidePeriodicTable      *loudestPeaksArray,
     LALFindStackSlidePeakOutputs     *pLALFindStackSlidePeakOutputs,
     LALFindStackSlidePeakParams      *pLALFindStackSlidePeakParams,
@@ -77,12 +78,15 @@ void StackSlideIsolated (
 /* 04/12/05 gam */
 void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSearchParams *params, INT4 nSamples);
 
-#ifdef NOTHING
-void StackSlideOld(	LALStatus *status, 
-			REAL4FrequencySeries **SUMData, 
-			REAL4FrequencySeries **STKData, 
-			StackSlideParams *params);
-#endif
+/* 05/24/05 gam; Function that reads results from previous jobs in the pipeline */
+void getStackSlidePriorResults(LALStatus *status,
+                               REAL4 *priorLoudestEvent,
+                               REAL8 *priorStartFreq,
+                               REAL8 *priorBand,
+                               REAL8 *priorConfidence,
+                               REAL8 *priorUL,
+                               REAL8 *priorUncertainty,
+                               CHAR  *priorResultsFile);
 
 #ifdef __cplusplus
 }
