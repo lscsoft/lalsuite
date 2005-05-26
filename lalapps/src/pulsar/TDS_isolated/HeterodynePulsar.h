@@ -1,3 +1,9 @@
+/***************************************************************/
+/* Version of HeterodynePulsar.h with added binary parameters  */
+/* Matt Pitkin 05/05/04                                        */
+/***************************************************************/   
+
+
 /********************************* <lalVerbatim file="HeterodynePulsarHV">
 Author: Dupuis, R. J.
 $Id$
@@ -56,6 +62,9 @@ More documentation later.
 #include <lal/LALInitBarycenter.h>
 #include <lal/SkyCoordinates.h> 
 #include <lal/AVFactories.h>
+
+/* include the BinaryPulsarTiming.h header (only local in my directory at the mo*/
+#include "BinaryPulsarTiming.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -135,8 +144,12 @@ tagHeterodyneParams
   REAL8IIRFilter        *iirFilter2Re;   /* IIR filter to be applied to real part of complex heterodyned data */
   REAL8IIRFilter        *iirFilter2Im;   /* IIR filter to be applied to imaginary part of complex heterodyned data */  
   REAL8IIRFilter        *iirFilter3Re;   /* IIR filter to be applied to real part of complex heterodyned data */
-  REAL8IIRFilter        *iirFilter3Im;   /* IIR filter to be applied to imaginary part of complex heterodyned data */   
-  } HeterodyneParams;
+  REAL8IIRFilter        *iirFilter3Im;   /* IIR filter to be applied to imaginary part of complex heterodyned data */
+	
+	/* adding binary structure to the HeterodyneParams structure */
+	BinaryPulsarParams binaryParams;
+	BinaryPulsarInput binaryInput;
+} HeterodyneParams;
 
 
 /****** INCLUDE EXTERNAL GLOBAL VARIABLES ************/	     
