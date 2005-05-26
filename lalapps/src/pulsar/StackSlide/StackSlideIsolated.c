@@ -456,6 +456,8 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
                                &priorUncertainty,
                                params->priorResultsFile);
     CHECKSTATUSPTR (status);
+    params->threshold4 = priorUL; /* Change injection amplitude to estimate from prior jobs in the pipeline */
+    h_0 = params->threshold4;     /* Note that h_0 == params->threshold4 */
     #ifdef INCLUDE_PRINT_REPORTMCRESULTS_CODE
       if ((params->debugOptionFlag & 32) > 0 ) {
         fprintf(stdout,"Loudest Event, Start Frequency, Search Band, Confidence, Estimated Upper Limit, Uncertainty = \n");
@@ -1096,11 +1098,15 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
      /* if (maxMC > 1) then interate entire MC to converge on desired confidence */
      if (maxMC > 1) {
         /* Compute new guess for h_0 */
-        if ( ( iMC > 0 ) && ( (arrayConfs[iMC] - arrayConfs[iMC-1]) != 0.0 ) ) {
+        if ( iMC > 0 ) {
            /* linearly interpolate to next guess */
-           h_0 = arrayULs[iMC] + (priorConfidence - arrayConfs[iMC])*(arrayULs[iMC]
-                 - arrayULs[iMC-1])/(arrayConfs[iMC] - arrayConfs[iMC-1]);
-        } else {
+           if ( (arrayConfs[iMC] - arrayConfs[iMC-1]) != 0.0 ) {
+             h_0 = arrayULs[iMC] + (priorConfidence - arrayConfs[iMC])*(arrayULs[iMC]
+                   - arrayULs[iMC-1])/(arrayConfs[iMC] - arrayConfs[iMC-1]);
+           }
+        }
+        if ( arrayULs[iMC] == h_0 ) {
+           /* Either iMC == 0 or arrayConfs[iMC] == arrayConfs[iMC-1]; so make sure new guess differs by something */
            if ( (priorConfidence - arrayConfs[iMC]) > 0.0 ) {
               h_0 = arrayULs[iMC] + priorUncertainty; /* need to make h_0 larger */
            } else {
