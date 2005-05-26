@@ -1,4 +1,6 @@
-
+/*
+$Id$
+*/
 // standard C headers
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +28,7 @@
 INT4 lalDebugLevel = LALWARNING | LALINFO;
 
 #define SRATE 16384  // sample rate
-#define MAXSTART 2000 // maximum number of start times from input file
+#define MAXSTART 5000 // maximum number of start times from input file
 #define MAXLINES 150000 //maximum number of lines in alpha/beta file (num of min)
 #define MAXFINE 2000 // maximum number of fine heterodyned data from each node
 
@@ -45,16 +47,16 @@ INT4 lalDebugLevel = LALWARNING | LALINFO;
 #define ALPHAMIN 0.25
 
 
-#define S1_GPS_SECS 714150013.0
-#define S1_MJD 52494.625
-
 #define S2_GPS_SECS 729273613.0
 #define S2_MJD 52684.66666666665
 
 #define S3_GPS_SECS 751680013.0
 #define S3_MJD 52944.0
 
-#define MAXPSRS 50
+#define S4_GPS_SECS 793130413.0
+#define S4_MJD 53423.75
+
+#define MAXPSRS 150
 
 typedef struct
 tagFrFileInfo
@@ -88,8 +90,10 @@ FILE* tryopen(char *name, char *mode){
   while (!(fp=fopen(name, mode))){
     fprintf(stderr,"Unable to open file %s in mode %s\n", name, mode);
     fflush(stderr);
-    if (count++<10)
-      sleep(10);
+    if (count++<10){
+      continue; /* slight change as sleep() might effect Condor checkpointing */
+			/* sleep(10); */
+		}
     else
       exit(3);
   }
