@@ -239,7 +239,7 @@ LALInspiralWave1ForInjection(
   p = phi.data[count-1];
   
   params->fFinal = ff.data[count-1];
-  sprintf(message, "cycles = %f", p/LAL_TWOPI);
+  sprintf(message, "cycles = %f", p/(double)LAL_TWOPI);
   LALInfo(status, message);
 
   if ( (INT4)(p/LAL_TWOPI) < 2 ){
@@ -277,7 +277,6 @@ LALInspiralWave1ForInjection(
       }
       
       
-      
       in.length = (UINT4)(count);
       in.vectorLength = 2;
       
@@ -289,7 +288,7 @@ LALInspiralWave1ForInjection(
       
       LALDCreateVector( status->statusPtr, &( waveform->phi->data ), count );
       CHECKSTATUSPTR(status);        
-      
+     
       memcpy(waveform->f->data->data , ff.data, count*(sizeof(REAL4)));
       memcpy(waveform->a->data->data , a.data, 2*count*(sizeof(REAL4)));
       memcpy(waveform->phi->data->data ,phi.data, count*(sizeof(REAL8)));
@@ -320,11 +319,11 @@ LALInspiralWave1ForInjection(
       ppnParams->fStart   = ppnParams->fStartIn;
     } /*end of coherentGW storage */
 
-
   /* --- free memory --- */
   LALFree(ff.data);
   LALFree(a.data);
-  LALFree(phi.data);   
+  LALFree(phi.data); 
+ 
   DETATCHSTATUSPTR(status);
   RETURN (status);
 }
