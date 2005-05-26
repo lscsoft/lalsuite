@@ -46,41 +46,39 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%f,%d,%d,%d,"
+"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%d,%d,%d,"
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %f %f %f %f %d %d %d"
+"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %f %f %f %f %d %d %d "
 
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
 fputs( "   <Table Name=\"bankefficiencygroup:bankefficiency:table\">\n", fp) == EOF || \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0T\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3T\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0TC\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3TC\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0U\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3U\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0I\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3I\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:fFinalT\"       Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:fFinalTC\"      Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0I\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3I\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:fFinalU\"       Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:fFinal\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:fFinalI\"       Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:totalMassT\"    Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:etaT\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:totalMassTC\"   Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:etaTC\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1I\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2I\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snrU\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phaseU\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alphaFU\"       Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:layerU\"        Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:binU\"          Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alpha\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alphaF\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:layer\"         Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:bin\"           Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snrC\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phaseC\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alphaC\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alphaFC\"       Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:layerC\"        Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:binC\"          Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:coaTime\"       Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"      Type=\"Local\" Delimiter=\",\">\n", fp) == EOF ) 
+fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         Type=\"Local\" Delimiter=\",\">\n", fp) == EOF ) 
 
 
 
@@ -178,6 +176,7 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"      Typ
 
 /* --- temporary flag for the sampling of real psd --- */
 #define None 512
+#define RealNoise 511
 
 
 
@@ -219,57 +218,25 @@ typedef enum{
 }
 RunFlag;
 
-
-
-/* Structure to store the value of a 2 by 2 matrix. 
- * This matrix is used in the alpha maximization 
- * process for BCV templates.
- * */
-typedef struct{
-  double a11, a21, a22;
-} BCVMaximizationMatrix;
-
-/* Choice of the overlap method. InQuadrature maximize over 
- * the phase parameter; AlphaMaximization maximize over both 
- * phase and alpha parameter (BCV templates). 
- * */
 typedef enum{
   InQuadrature,
   AlphaMaximization
 } OverlapMethodIn;
-
-
-
-
 
 typedef struct{ 
   CHAR *calCacheName;
   CHAR *frInCacheName;
 } DataFileIn;
 
-
 typedef struct{ 
   DataFileIn S2, S3, S4, S5, S6;
 } ScientificRunIn;
-
-
 
 typedef struct{
   CHAR *chanName;
   ScientificRunIn dataFile;
 } DetectorParamIn;
 
-
-
-
-/* Internal parameters for the Bank Efficiency code:
- * PrintOverlap	:
- * overlapMethod: InQuadrature(classic overlap)  or AlphaMaximization
- * m1		: mass1 to inject
- * m2		: mass2 to inject
- * psi0		: psi0 to inject
- * psi3		: psi3 to inject
- * */
 typedef struct{
   AlphaConstraint alphaFConstraint;                 /* force alpha_F to be constriant between 0 and 1 */
   INT4 signal;				/* name of the random signal to inject 	*/	
@@ -283,9 +250,8 @@ typedef struct{
 
   INT4 lengthFactor;			/* multiply estimated length of filters by that factor */
   INT4 PrintSNRHisto;		
-  INT4 PrintBankOverlap;		/* print match of each templates 	*/
   INT4 PrintBank;			/* print bank of templates 		*/
-  INT4 PrintResultXml;			/* print bank of templates 		*/
+  INT4 PrintResultXml;
   INT4 PrintPrototype;
   INT4 PrintPsd;                        /* print the psd used in <x|x>          */
   BinaryInjection binaryInjection; /*injection will be set by the mass-range*/
@@ -312,8 +278,6 @@ typedef struct{
 OtherParamIn;
 
 
-
-
 typedef struct{
   REAL4  rhoMaxConstraint;
   INT4   rhoBinConstraint;
@@ -332,45 +296,37 @@ typedef struct{
   INT4   layerUnconstraint;
   INT4   templateNumberUnconstraint;
   InspiralTemplate bestUnconstraintTemplate;
-
-
-
 } OverlapOutputIn;
 
 /* strucutre to output the results */
 typedef struct{
+  REAL4 tau0_inject;
+  REAL4 tau0_trigger;
+  REAL4 tau3_inject;
+  REAL4 tau3_trigger;
+  REAL4 psi0_triggerU;
+  REAL4 psi3_triggerU;
   REAL4 psi0_trigger;
   REAL4 psi3_trigger;
-  REAL4 psi0_triggerC;
-  REAL4 psi3_triggerC;
   REAL4 psi0_inject;
   REAL4 psi3_inject;
+  REAL4 fend_triggerU;
   REAL4 fend_trigger;
-  REAL4 fend_triggerC;
   REAL4 fend_inject;
   REAL4 mass1_inject;
   REAL4 mass2_inject;
-  REAL4 totalMass_trigger;
-  REAL4 eta_trigger;
-  REAL4 totalMass_triggerC;
-  REAL4 eta_triggerC;
   INT4 layer;
+  REAL4 rho_finalU;
+  REAL4 alphaFU;
+  INT4 binU;
+  REAL4 phaseU;
+  INT4 layerU;
   REAL4 rho_final;
-  REAL4 alpha;
-  REAL4 alpha_f;
+  REAL4 alphaF;
   INT4 bin;
   REAL4 phase;
-
-  INT4 layerC;
-  REAL4 rho_finalC;
-  REAL4 alphaC;
-  REAL4 alpha_fC;
-  INT4 binC;
-  REAL4 phaseC;
-
-  INT4 coaTime;
-  REAL4 snrCAtCoaTime, snrAtCoaTime;
   UINT4 ntrial;
+  INT4 coaTime;
 } ResultIn;
 
 
@@ -417,15 +373,17 @@ LALCreateFilters(REAL4Vector 	*Filter1,
 		 BEMoments      *moments,
 		 UINT4 		kMin,
 		 UINT4 		kMax,
-		 REAL8 		psi0,
-		 REAL8 		psi3);
+		 REAL4 		psi0,
+		 REAL4 		psi3);
 
 
 
-void BEGenerateInputData(LALStatus *status,
-			 REAL4Vector * signal,
-			 RandomInspiralSignalIn  *randIn,
-			 OtherParamIn           otherIn);
+void
+BEGenerateInputData(LALStatus *status,
+		    REAL4Vector * signal,
+		    RandomInspiralSignalIn  *randIn,
+		    OtherParamIn           otherIn);
+
 void
 BEInitOverlapOutputIn(OverlapOutputIn *this);
 
@@ -486,15 +444,19 @@ GetResult(
 	  OverlapOutputIn 	bestOverlapout, 
 	  ResultIn                *result,
 	  OtherParamIn                 otherIn );
+
 /* Init the CoarseBank structure 
  * */
 void InitInspiralCoarseBankIn(InspiralCoarseBankIn 	*coarseIn);
+
 /* Init the random structure 
  * */
 void InitRandomInspiralSignalIn(RandomInspiralSignalIn 	*randIn);
+
 /* Init the OtherParamIn structure
  * */
 void InitOtherParamIn(OtherParamIn 			*otherIn);
+
 /* Function to initialize the different strucutre */
 void ParametersInitialization(	InspiralCoarseBankIn 	*coarseIn, 
 				RandomInspiralSignalIn	*randIn, 
@@ -525,15 +487,12 @@ SetDefault(InspiralCoarseBankIn 	*coarseIn,
 
 /* Help Function 
  * */
-void 	
-Help(	InspiralCoarseBankIn 	coarseIn,
-	RandomInspiralSignalIn 	randIn,
-	OtherParamIn 		otherIn);
+void 	Help();
 
 /* Print Function for final results 
  * */
 void
-PrintResults(	 ResultIn result);
+PrintResults(	 ResultIn result, RandomInspiralSignalIn rand);
 
 
 /* Print each  template bank overlap 
@@ -730,3 +689,9 @@ BEParseGetDouble2(CHAR    **argv,
 void
 BEParseGetString(  CHAR    **argv, 
 		   INT4    *index );
+
+
+void
+PrintParameters(InspiralCoarseBankIn 	coarse,
+		RandomInspiralSignalIn 	rand,
+		OtherParamIn    	other);

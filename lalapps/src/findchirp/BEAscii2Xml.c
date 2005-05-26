@@ -46,6 +46,7 @@ main (int argc, char **argv )
 {
   UINT4 start = 0;
   ResultIn trigger;
+  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3;
   FILE *input1, *input2;
   FILE *output;
   char sbuf[512];
@@ -96,36 +97,28 @@ main (int argc, char **argv )
     do  
     {
       fscanf(input1,BANKEFFICIENCY_PARAMS_ROW_SPACE,
+	     &trigger.psi0_triggerU,
+	     &trigger.psi3_triggerU,
 	     &trigger.psi0_trigger,
 	     &trigger.psi3_trigger,
-	     &trigger.psi0_triggerC,
-	     &trigger.psi3_triggerC,
-	     &trigger.psi0_inject, 
-	     &trigger.psi3_inject,
+	     &psi0, 
+	     &psi3,&tau0, &tau3, &tau0I, &tau3I,
+	     &trigger.fend_triggerU, 
 	     &trigger.fend_trigger, 
-	     &trigger.fend_triggerC, 
 	     &trigger.fend_inject,
-	     &trigger.totalMass_trigger,
-	     &trigger.eta_trigger,
-	     &trigger.totalMass_triggerC,
-	     &trigger.eta_triggerC,
 	     &trigger.mass1_inject,
 	     &trigger.mass2_inject,
+	     &trigger.rho_finalU,
+	     &trigger.phaseU,
+	     &trigger.alphaFU, 
+	     &trigger.layerU,
+	     &trigger.binU,
 	     &trigger.rho_final,
 	     &trigger.phase,
-	     &trigger.alpha,
-	     &trigger.alpha_f, 
+	     &trigger.alphaF, 
 	     &trigger.layer,
-	     &trigger.bin,
-	     &trigger.rho_finalC,
-	     &trigger.phaseC,
-	     &trigger.alphaC,
-	     &trigger.alpha_fC, 
-	     &trigger.layerC,
-	     &trigger.binC, 
-	     &trigger.coaTime,
-	     &trigger.snrAtCoaTime,
-	     &trigger.snrCAtCoaTime);
+	     &trigger.bin, 
+	     &trigger.coaTime);
 
      if (start==0){
 	      start+=1;
@@ -135,36 +128,28 @@ main (int argc, char **argv )
 	      fprintf(output,"\n");
       }
       fprintf(output, BANKEFFICIENCY_PARAMS_ROW,
-	      trigger.psi0_trigger,
-	      trigger.psi3_trigger,
-	      trigger.psi0_triggerC,
-	      trigger.psi3_triggerC,
-	      trigger.psi0_inject, 
-	      trigger.psi3_inject,
-	      trigger.fend_trigger, 
-	      trigger.fend_triggerC, 
-	      trigger.fend_inject,
-	      trigger.totalMass_trigger,
-	      trigger.eta_trigger,
-	      trigger.totalMass_triggerC,
-	      trigger.eta_triggerC,
-	      trigger.mass1_inject,
-	      trigger.mass2_inject,
-	      trigger.rho_final,
-	      trigger.phase,
-	      trigger.alpha,
-	      trigger.alpha_f, 
-	      trigger.layer,
-	      trigger.bin,
-	      trigger.rho_finalC,
-	      trigger.phaseC,
-	      trigger.alphaC,
-	      trigger.alpha_fC, 
-	      trigger.layerC,
-	      trigger.binC, 
-	      trigger.coaTime,
-	      trigger.snrAtCoaTime,
-	      trigger.snrCAtCoaTime);
+	     &trigger.psi0_triggerU,
+	     &trigger.psi3_triggerU,
+	     &trigger.psi0_trigger,
+	     &trigger.psi3_trigger,
+	     &psi0, 
+	     &psi3,&tau0, &tau3, &tau0I, &tau3I,
+	     &trigger.fend_triggerU, 
+	     &trigger.fend_trigger, 
+	     &trigger.fend_inject,
+	     &trigger.mass1_inject,
+	     &trigger.mass2_inject,
+	     &trigger.rho_finalU,
+	     &trigger.phaseU,
+	     &trigger.alphaFU, 
+	     &trigger.layerU,
+	     &trigger.binU,
+	     &trigger.rho_final,
+	     &trigger.phase,
+	     &trigger.alphaF, 
+	     &trigger.layer,
+	     &trigger.bin, 
+	     &trigger.coaTime);
     }
    while(!feof(input1));
 
