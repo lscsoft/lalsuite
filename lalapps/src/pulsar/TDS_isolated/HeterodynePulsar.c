@@ -1,3 +1,8 @@
+/***********************************************************************/
+/* Version of HeterodynePulsar.c code with binary timing added to      */
+/* the heterodyne - Matt Pitkin 05/05/04                               */
+/***********************************************************************/
+
 /************************************ <lalVerbatim file="HeterodynePulsarCV">
 Author: Dupuis, R. J.
 $Id$  
@@ -77,7 +82,9 @@ LALHeterodyneToPulsar     ( LALStatus                      *status,
   REAL8		deltaT;
   COMPLEX16Vector   *Xh, *Yh;
   REAL8 tdt,ph;
-  COMPLEX16 sum;  
+  COMPLEX16 sum;
+	
+	BinaryPulsarOutput binOut; 
     
   INITSTATUS( status, "LALHeterodyneToPulsar", HETERODYNEPULSARC );
   ATTATCHSTATUSPTR (status); 
@@ -101,7 +108,7 @@ LALHeterodyneToPulsar     ( LALStatus                      *status,
   
  /******* EXTRACT INPUTS AND PARAMETERS ************/
   
-  deltaT = (double)input->V.deltaT;
+  deltaT = (REAL8)input->V.deltaT;
   
   /* set up spin parameters */
   f0 = input->f0;
@@ -138,23 +145,42 @@ LALHeterodyneToPulsar     ( LALStatus                      *status,
       baryinput.tgps.gpsSeconds = (UINT8)floor(t);
       baryinput.tgps.gpsNanoSeconds = (UINT8)floor((fmod(t,1.0)*1.e9));	 
       LALBarycenterEarth(status->statusPtr, &earth, &baryinput.tgps, params->edat); 
-      LALBarycenter(status->statusPtr, &emit, &baryinput, &earth);  
-      T0 = input->fEpochGPS;      
-      tdt = t + (double)emit.deltaT - (double)T0;
-  
+      LALBarycenter(status->statusPtr, &emit, &baryinput, &earth);   
+			
+			T0 = input->fEpochGPS;      
+      
+			/* if binary pulsar add extra time delay */
+			if(!strcmp(params->binaryParams.model, "BT") || 
+				 !strcmp(params->binaryParams.model, "ELL1") ||
+				 !strcmp(params->binaryParams.model, "DD")){
+				/* input SSB time into binary timing function */
+			  params->binaryInput.tb = t + (REAL8)emit.deltaT;
+			
+				/* calculate binary time delay */
+				LALBinaryPulsarDeltaT(status->statusPtr, &binOut, &params->binaryInput, &params->binaryParams);
+			
+				/* add binary time delay */
+				tdt = t - T0 + (REAL8)emit.deltaT +  binOut.deltaT;
+			}
+			else{
+			  tdt = t - T0 + (REAL8)emit.deltaT;
+			}
+			
       ph = f0*tdt + 0.5*f1*tdt*tdt + f2*tdt*tdt*tdt/6.0;
+      /* store phase of time stamp i */
       phase->data[i] =  2.0*LAL_PI*fmod(ph, 1.0);
-     }
+    }
   
 
   /* do heterodyning, iir filtering, and resampling */
  for (i = 0; i < n; i++)
  { 
    Xh->data[i].re = (REAL8)input->V.data->data[i]* cos(-phase->data[i]);	
-   Yh->data[i].re = LALDIIRFilter( Xh->data[i].re, params->iirFilter1Re ); 		    	    
-   Xh->data[i].re = LALDIIRFilter( Yh->data[i].re, params->iirFilter2Re ); 
+	 Yh->data[i].re = LALDIIRFilter( Xh->data[i].re, params->iirFilter1Re ); 		    	    
+	 Xh->data[i].re = LALDIIRFilter( Yh->data[i].re, params->iirFilter2Re ); 
    Yh->data[i].re = LALDIIRFilter( Xh->data[i].re, params->iirFilter3Re ); 
-   
+
+	 
    Xh->data[i].im = (REAL8)input->V.data->data[i] * sin(-phase->data[i]);
    Yh->data[i].im = LALDIIRFilter( Xh->data[i].im, params->iirFilter1Im ); 		    	    
    Xh->data[i].im = LALDIIRFilter( Yh->data[i].im, params->iirFilter2Im ); 
