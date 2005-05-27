@@ -134,6 +134,7 @@ if do_inj:
 short_seg_lenth = int(cp.get('string', 'short-segment-duration'))
 pad = int(cp.get('string', 'pad'))
 length = int(cp.get('pipeline', 'segment-length'))+2*pad
+trig_overlap = int(cp.get('pipeline', 'trig-overlap'))
 overlap = 2*(short_seg_lenth/4+pad)
 
 # read science segs that are greater or equal to a chunk from the input file
@@ -141,9 +142,9 @@ data = pipeline.ScienceData()
 data.read(cp.get('input','segments'),length)
 
 # create the chunks from the science segments
-data.make_chunks(length,overlap,0,0,0)
+data.make_chunks(length,overlap+trig_overlap,0,0,0)
 #make_chunks(self, length, overlap=0, play=0, sl=0, excl_play=0)
-data.make_chunks_from_unused(length,overlap/2,0,overlap/2,0,0)
+data.make_chunks_from_unused(length,overlap/2+trig_overlap,0,overlap/2+trig_overlap,0,0)
 #make_chunks_from_unused(self, length, trig_overlap, play=0, min_length=0, sl=0, excl_play=0)
 
 # get the order of the ifos to filter
@@ -273,70 +274,72 @@ for seg in data:
 
     # There are 3 ifos so there are six possible output files
     #12
-    burca1 = cosmicstring.BurcaNode(burca_job)
-    burca1.set_start(chunk.start())
-    burca1.set_end(chunk.end())
-    burca1.set_ifoa(string1.get_output(),ifo1)
-    burca1.set_ifob(string2.get_output(),ifo2) 
-    burca1.add_parent(string1)
-    burca1.add_parent(string2)
-    burca1.set_name("burca-"+ifo1+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
-    dag.add_node(burca1)
+    burca12 = cosmicstring.BurcaNode(burca_job)
+    burca12.set_start(chunk.start())
+    burca12.set_end(chunk.end())
+    burca12.set_ifoa(string1.get_output(),ifo1)
+    burca12.set_ifob(string2.get_output(),ifo2) 
+    burca12.add_parent(string1)
+    burca12.add_parent(string2)
+    burca12.set_name("burca-"+ifo1+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
+    dag.add_node(burca12)
 
-    #21
-    burca2 = cosmicstring.BurcaNode(burca_job)
-    burca2.set_start(chunk.start())
-    burca2.set_end(chunk.end())
-    burca2.set_ifoa(string2.get_output(),ifo2)
-    burca2.set_ifob(string1.get_output(),ifo1) 
-    burca2.add_parent(string1)
-    burca2.add_parent(string2)
-    burca2.set_name("burca-"+ifo2+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
-    dag.add_node(burca2)
+    #123
+    burca123 = cosmicstring.BurcaNode(burca_job)
+    burca123.set_start(chunk.start())
+    burca123.set_end(chunk.end())
+    burca123.set_ifoa(burca12.get_output(),ifo1)
+    burca123.set_ifob(string3.get_output(),ifo3) 
+    burca123.add_parent(burca12)
+    burca123.add_parent(string3)
+    burca123.set_name("burca-"+ifo1+ifo2+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
+    dag.add_node(burca123)
 
-    #13 
-    burca3 = cosmicstring.BurcaNode(burca_job)
-    burca3.set_start(chunk.start())
-    burca3.set_end(chunk.end())
-    burca3.set_ifoa(string1.get_output(),ifo1)
-    burca3.set_ifob(string3.get_output(),ifo3) 
-    burca3.add_parent(string1)
-    burca3.add_parent(string3)
-    burca3.set_name("burca-"+ifo1+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
-    dag.add_node(burca3)
+    #23
+    burca23 = cosmicstring.BurcaNode(burca_job)
+    burca23.set_start(chunk.start())
+    burca23.set_end(chunk.end())
+    burca23.set_ifoa(string2.get_output(),ifo2)
+    burca23.set_ifob(string3.get_output(),ifo3) 
+    burca23.add_parent(string2)
+    burca23.add_parent(string3)
+    burca23.set_name("burca-"+ifo2+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
+    dag.add_node(burca23)
 
-    #31 
-    burca4 = cosmicstring.BurcaNode(burca_job)
-    burca4.set_start(chunk.start())
-    burca4.set_end(chunk.end())
-    burca4.set_ifoa(string3.get_output(),ifo3)
-    burca4.set_ifob(string1.get_output(),ifo1) 
-    burca4.add_parent(string1)
-    burca4.add_parent(string3)
-    burca4.set_name("burca-"+ifo3+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
-    dag.add_node(burca4)
+    #231
+    burca231 = cosmicstring.BurcaNode(burca_job)
+    burca231.set_start(chunk.start())
+    burca231.set_end(chunk.end())
+    burca231.set_ifoa(burca23.get_output(),ifo2)
+    burca231.set_ifob(string1.get_output(),ifo1) 
+    burca231.add_parent(burca23)
+    burca231.add_parent(string1)
+    burca231.set_name("burca-"+ifo2+ifo3+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
+    dag.add_node(burca231)
 
-    #23 
-    burca5 = cosmicstring.BurcaNode(burca_job)
-    burca5.set_start(chunk.start())
-    burca5.set_end(chunk.end())
-    burca5.set_ifoa(string2.get_output(),ifo2)
-    burca5.set_ifob(string3.get_output(),ifo3) 
-    burca5.add_parent(string2)
-    burca5.add_parent(string3)
-    burca5.set_name("burca-"+ifo2+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
-    dag.add_node(burca5)
+    #31
+    burca31 = cosmicstring.BurcaNode(burca_job)
+    burca31.set_start(chunk.start())
+    burca31.set_end(chunk.end())
+    burca31.set_ifoa(string3.get_output(),ifo3)
+    burca31.set_ifob(string1.get_output(),ifo1) 
+    burca31.add_parent(string3)
+    burca31.add_parent(string1)
+    burca31.set_name("burca-"+ifo3+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
+    dag.add_node(burca31)
 
-    #32 
-    burca6 = cosmicstring.BurcaNode(burca_job)
-    burca6.set_start(chunk.start())
-    burca6.set_end(chunk.end())
-    burca6.set_ifoa(string3.get_output(),ifo3)
-    burca6.set_ifob(string2.get_output(),ifo2) 
-    burca6.add_parent(string2)
-    burca6.add_parent(string3)
-    burca6.set_name("burca-"+ifo3+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
-    dag.add_node(burca6)
+    #312
+    burca312 = cosmicstring.BurcaNode(burca_job)
+    burca312.set_start(chunk.start())
+    burca312.set_end(chunk.end())
+    burca312.set_ifoa(burca31.get_output(),ifo3)
+    burca312.set_ifob(string2.get_output(),ifo2) 
+    burca312.add_parent(burca31)
+    burca312.add_parent(string2)
+    burca312.set_name("burca-"+ifo3+ifo1+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
+    dag.add_node(burca312)
+
+
 
 # write out the DAG
 dag.write_sub_files()
