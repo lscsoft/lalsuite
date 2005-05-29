@@ -164,6 +164,7 @@ print '====='
 cont=1
 confidence=0.0
 
+
 if os.path.exists(res_out):
   print 'file exists! reading ...'
   Cdata_file=open(res_out,mode='r')
@@ -191,7 +192,8 @@ if os.path.exists(res_out):
     dh0=float(sdh0)
     h0=float(sh0)
     Ninj=int(sNinj)
-    tol=float(stol)  #added updated tolerance from file
+    #tol=float(stol)  #added updated tolerance from file
+    tol=0.9/math.sqrt(Ninj)
   #endif there is a line -- we get here only if there are only data lines
   #and we are reading the last line
 
