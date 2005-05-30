@@ -764,18 +764,24 @@ int main( int argc, char *argv[] )
 		  if( verbose ) fprintf( stdout,"******> Dumping Events <******\n");
 		  if( !savedEvents.multiInspiralTable )
 		    {
+		      MultiInspiralTable *tempEvent = thisEvent;
 		      tempTable = (MultiInspiralTable *) LALCalloc( 1, sizeof(MultiInspiralTable) );
 		      memcpy(tempTable,thisEvent,sizeof(MultiInspiralTable) );
 		      savedEvents.multiInspiralTable = tempTable;
 		      thisEvent = thisEvent->next;
+		      LALFree( tempEvent );
+		      tempEvent = NULL;
 		      if( thisEvent )
 			{
 			  while( thisEvent )
 			    {
+			      MultiInspiralTable *tempEvent = thisEvent;
 			      tempTable->next = (MultiInspiralTable *) LALCalloc( 1, sizeof(MultiInspiralTable) );
 			      tempTable = tempTable->next;
 			      memcpy(tempTable, thisEvent, sizeof(MultiInspiralTable) );
 			      thisEvent = thisEvent->next;
+			      LALFree( tempEvent );
+			      tempEvent = NULL;
 			    }
 			}
 		    }
@@ -783,10 +789,13 @@ int main( int argc, char *argv[] )
 		    {
 		      while( thisEvent )
 			{
+			  MultiInspiralTable *tempEvent = thisEvent;
 			  tempTable->next = (MultiInspiralTable *) LALCalloc( 1, sizeof(MultiInspiralTable) );
 			  tempTable = tempTable->next;
 			  memcpy(tempTable, thisEvent, sizeof(MultiInspiralTable) );
 			  thisEvent = thisEvent->next;
+			  LALFree( tempEvent );
+			  tempEvent = NULL;
 			}
 		    }
 
@@ -798,6 +807,7 @@ int main( int argc, char *argv[] )
 			  MultiInspiralTable *tempEvent = thisEvent;
 			  thisEvent = thisEvent->next;
 			  LALFree( tempEvent );
+			  tempEvent = NULL;
 			}
 
 		}
@@ -913,12 +923,12 @@ int main( int argc, char *argv[] )
       LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, savedEvents, multi_inspiral_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable( &status, &results), &status );
 
-
       while( savedEvents.multiInspiralTable )
 	    {  
 	      MultiInspiralTable *tempEvent = savedEvents.multiInspiralTable;
 	      savedEvents.multiInspiralTable = savedEvents.multiInspiralTable->next;
 	      LALFree( tempEvent );
+	      tempEvent = NULL;
 	    }
       /* close the output xml file */
       LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
@@ -929,6 +939,16 @@ int main( int argc, char *argv[] )
   goto cleanexit;
 
   cleanexit:
+
+  /* Free the template bank */
+  while( bankHead )
+    {
+      InspiralTemplate *tempTmplt = bankHead;
+      bankHead = bankHead->next;
+      LALFree( tempTmplt->event_id );
+      LALFree( tempTmplt );
+      tempTmplt = NULL;
+    }
 
   if ( verbose ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
