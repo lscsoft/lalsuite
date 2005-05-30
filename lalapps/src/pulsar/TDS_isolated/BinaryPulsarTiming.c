@@ -232,12 +232,12 @@ input */
 		if(orbits < 0)
 			norbits = norbits - 1;
 			
-		phase = LAL_TWOPI*(orbits - norbits); /* called phase in TEMPO */
+		phase = LAL_TWOPI*(orbits - (REAL8)norbits); /* called phase in TEMPO */
 		/*phase = LAL_TWOPI*(orbits);*/
 		du = 1.0;
 		
 		/* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
-		u = phase + e*sin(phase)*(1 + e*cos(phase));
+		u = phase + e*sin(phase)*(1.0 + e*cos(phase));
 		while(fabs(du) > 1.0e-12){
 			du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
 			u += du;
@@ -309,7 +309,7 @@ input */
 		if(orbits < 0.0)
 			norbits = norbits - 1.0;
 			
-		phase=LAL_TWOPI*(orbits - norbits);
+		phase=LAL_TWOPI*(orbits - (REAL8)norbits);
 		/*phase=LAL_TWOPI*(orbits);*/
 		
 		x = x + xdot*tt0;
@@ -383,11 +383,11 @@ input */
 		if(orbits < 0.0)
 			norbits = norbits - 1;
 			
-		phase = LAL_TWOPI*(orbits - norbits);
+		phase = LAL_TWOPI*(orbits - (REAL8)norbits);
 		/*phase = LAL_TWOPI*(orbits);*/
 		
 		/* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
-		u = phase + e*sin(phase)*(1 + e*cos(phase));
+		u = phase + e*sin(phase)*(1.0 + e*cos(phase));
 		while(fabs(du) > 1.0e-12){
 			du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
 			u += du;
