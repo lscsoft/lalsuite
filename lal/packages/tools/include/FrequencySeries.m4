@@ -6,6 +6,7 @@
 #ifndef _FREQUENCYSERIES_H
 #define _FREQUENCYSERIES_H
 
+#include <stddef.h>
 #include <lal/LALDatatypes.h>
 
 define(`DATATYPE',COMPLEX8)

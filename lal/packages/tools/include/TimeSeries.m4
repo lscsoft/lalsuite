@@ -6,6 +6,7 @@
 #ifndef _TIMESERIES_H
 #define _TIMESERIES_H
 
+#include <stddef.h>
 #include <lal/LALDatatypes.h>
 
 define(`DATATYPE',COMPLEX8)

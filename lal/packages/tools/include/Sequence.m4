@@ -6,6 +6,7 @@
 #ifndef _SEQUENCE_H
 #define _SEQUENCE_H
 
+#include <stddef.h>
 #include <lal/LALDatatypes.h>
 
 define(`DATATYPE',COMPLEX8)
