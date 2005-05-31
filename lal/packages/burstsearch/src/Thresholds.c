@@ -63,11 +63,13 @@ static REAL8 Factorial(INT4 n)
 {
   /* returns n!  */
   
-  REAL8 temp = 1.0;
+  REAL8 nfactorial = 1.0;
   INT4 i;
-  if(n==0) return(1.0);
-  for(i=1; i<=n;i++) temp *= (REAL8)(i);
-  return(temp);
+
+  for(i = 2; i <= n; i++)
+    nfactorial *= i;
+
+  return(nfactorial);
 }
 
 
