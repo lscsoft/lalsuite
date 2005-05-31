@@ -234,7 +234,7 @@ main (INT4 argc, CHAR **argv )
 					     &correlation, &moments), 
 		       &status);
 
-	      OverlapOutputThisTemplate.freq              =  list[currentTemplateNumber].params.fFinal;
+	      OverlapOutputThisTemplate.freq              =  overlapin.param.fFinal;
 	      OverlapOutputThisTemplate.freqU             =  list[currentTemplateNumber].params.fFinal;
 	      OverlapOutputThisTemplate.templateNumber   = currentTemplateNumber;
 	      OverlapOutputThisTemplate.templateNumberU   = currentTemplateNumber;
@@ -278,9 +278,8 @@ main (INT4 argc, CHAR **argv )
 		  OverlapOutputThisTemplate.templateNumber   = currentTemplateNumber;
 		  OverlapOutputThisTemplate.phase    = overlapout.phase;
 		  OverlapOutputThisTemplate.rhoBin   = overlapout.bin;
-		  OverlapOutputThisTemplate.freq     = list[currentTemplateNumber].params.fFinal;
-		  
-
+		  OverlapOutputThisTemplate.freq     = overlapin.param.fFinal;
+		  list[currentTemplateNumber].params.fFinal = overlapin.param.fFinal;
 		}
 	      break;
 	    }
@@ -1351,6 +1350,7 @@ KeepHighestValues(OverlapOutputIn resultThisTemplate,
 		  )
 {
   if (resultThisTemplate.rhoMax > resultBestTemplate->rhoMax){    
+    printf("%e %e %e\n", resultThisTemplate.rhoMax,resultBestTemplate->rhoMax, resultBestTemplate->freq );
     resultBestTemplate->rhoMax   = resultThisTemplate.rhoMax;
     resultBestTemplate->phase    = resultThisTemplate.phase;
     resultBestTemplate->alpha    = resultThisTemplate.alpha;
@@ -1416,9 +1416,6 @@ GetResult(
     result->psi3_trigger  = triggerC.psi3;     
   }
   else{
-  /*  trigger.massChoice = m1Andm2;
-    triggerC.massChoice = m1Andm2;
-*/
     LALInspiralParameterCalc( status->statusPtr,  &triggerC );
     CHECKSTATUSPTR(status);							 
     LALInspiralParameterCalc( status->statusPtr,  &trigger );
@@ -1433,7 +1430,7 @@ GetResult(
   result->mass1_inject      = injected.mass1;
   result->mass2_inject      = injected.mass2;
   result->fend_inject       = injected.fFinal;
-  result->fend_triggerU      = trigger.fFinal;
+  result->fend_triggerU     = trigger.fFinal;
   result->fend_trigger      = triggerC.fFinal;
 
   result->rho_final   = bestOverlap.rhoMax;
@@ -1477,7 +1474,7 @@ PrintResults(   ResultIn result,
   fprintf(stdout, "%7.2f %7.2f %7.2f   %e %e ", 
 	  result.fend_triggerU, 
 	  result.fend_trigger, 
-	  randIn.param.fCutoff,
+	  randIn.param.fFinal,
 	  randIn.param.mass1,
 	  randIn.param.mass2);
 
