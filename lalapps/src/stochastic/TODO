@@ -23,6 +23,10 @@ stochastic.c:
   variables associated with command line options to pass around when
   needed - removing the need for global variables
 
+* will only need to use either tukey or hann window, therefore replace
+  the --overlap-hann and --hann-duration command line switches with
+  --hann, --tukey, and --overlap flags
+
 stopp.c:
 
 * add support for combining statistics from overlapping hann windows
