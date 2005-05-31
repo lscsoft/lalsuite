@@ -83,6 +83,13 @@ tagComputeExcessPowerIn
 ComputeExcessPowerIn;
 
 
+int
+XLALAddWhiteNoise (
+               COMPLEX8Vector                       *v,
+               REAL8                                noiseLevel
+               );
+
+
 void
 LALAddWhiteNoise (
                LALStatus                               *status,

@@ -18,6 +18,7 @@ NRCSID (THRESHOLDSC, "$Id$");
 #include <lal/LALGSL.h>
 #include <lal/LALStdlib.h>
 #include <lal/Thresholds.h>
+#include <lal/XLALError.h>
 
 extern int lalDebugLevel;
 
@@ -26,38 +27,6 @@ extern int lalDebugLevel;
  * Private functions not accessible outside this file Thresholds.c 
  *
  */
-
-
-#if 0
-static REAL8 logGamma(REAL8 z)
-{
-  /* 
-   *  natural log of Gamma function
-   */
-
-  INT4 j;
-  REAL8 lngamma;
-  REAL8 tmp;
-  const REAL8 ff[9]={0.9999999999995183, 676.5203681218835,
-              -1259.139216722289, 771.3234287757674,
-              -176.6150291498386, 12.50734324009056,
-              -0.1385710331296526, 0.9934937113930748e-05,
-		    0.1659470187408462e-06};
-  const REAL8 lnsqrt2pi=0.9189385332046727;
-
-  lngamma = 0.0;
-  tmp = z + 7.0;
-  for(j=8;j>=1;j--)
-    {
-      lngamma += ff[j]/tmp;
-      tmp -= 1.0;
-    }
-  lngamma += ff[0];
-  lngamma = log(lngamma) + lnsqrt2pi - (z+6.5) + (z-0.5)*log(z+6.5);
-  return lngamma;
-}
-#endif
-
 
 static REAL8 Factorial(INT4 n)
 {
@@ -71,65 +40,6 @@ static REAL8 Factorial(INT4 n)
 
   return(nfactorial);
 }
-
-
-#if 0
-static void
-ChisqCdf1 (
-    LALStatus                *status,
-    REAL8                 *prob,
-    REAL8                 lnchi2,
-    void                  *params
-    )
-{  
-  /* 
-   *  This is just the LALChisqCdf() function plus an added constant. 
-   *  Its used in LALChi2Threshold() in the call to DFindRoot().
-   *
-   */
-
-
-
-  ChisqCdfIn         localparams;
-  Chi2ThresholdIn    *input;
-
-  INITSTATUS (status, "ChisqCdf1", THRESHOLDSC);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT(prob, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  ASSERT(params, status, LAL_NULL_ERR, LAL_NULL_MSG);
-
-  /* 
-   * 
-   * params is actually a pointer to a structure Chi2ThresholdIn
-   * It passed to ChisqCdf1 as a pointer to void so that ChisqCdf1 will
-   * be a REAL8LALFunction and be passable to DFindRoot();
-   * see header file FindRoot.h
-   *
-   */
-  input = (Chi2ThresholdIn *)params;
-
-  /* set up parameters to be passed to LALChisqCdf()  */
-  localparams.dof = input->dof;
-  localparams.chi2 = exp(lnchi2);
-
-
-  LALOneMinusChisqCdf(status->statusPtr, prob, &localparams );
-  /* we can ignore the error where probability is 1 or 0 */
-  if(status->statusPtr->statusCode==LAL_RANGE_ERR)
-    {
-      status->statusPtr->statusCode=0;
-    }
-  /* check for any other errors */
-  CHECKSTATUSPTR (status);
-
-
-  *prob -= (input->falseAlarm);
-  
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-}
-#endif
 
 
 static void
@@ -196,15 +106,12 @@ NoncChisqCdf1 (
 
 
 /******** <lalVerbatim file="ChisqCdfP"> ********/
-void
-LALChisqCdf (
-    LALStatus        *status,
-    REAL8         *prob,
-    ChisqCdfIn    *input
-    )
+REAL8
+XLALChisqCdf (
+    ChisqCdfIn *input
+)
 /******** </lalVerbatim> ********/
 {  
-
   /*
    *  Cumulative Probability Distribution for Chi Squared distribution.
    *  
@@ -221,9 +128,35 @@ LALChisqCdf (
    *
    */
 
-  REAL8 a;
-  REAL8 x;
+  static const char *func = "XLALChisqCdf";
+  REAL8 prob;
 
+  /* Arguments chi2 and dof must be non-negative */
+  if ((input->chi2 < 0.0) || (input->dof <= 0.0))
+    XLAL_ERROR_REAL8(func, XLAL_EDOM);
+
+  /* use GSL because our previous version sucked */
+  XLAL_CALLGSL( prob = gsl_cdf_chisq_P (input->chi2, input->dof) );
+
+  /* Check that final answer is a legal probability.  The third test is
+   * necessary since there are some numbers x for which (x>0.0) evaluates as
+   * TRUE but for which 1/x evaluates to inf */
+  if ((prob < 0.0) || (prob > 1.0) || (1.0/prob < LAL_REAL8_MAX))
+    XLAL_ERROR_REAL8(func, XLAL_ERANGE);
+
+  return(prob);
+}
+
+
+/******** <lalVerbatim file="ChisqCdfP"> ********/
+void
+LALChisqCdf (
+    LALStatus        *status,
+    REAL8         *prob,
+    ChisqCdfIn    *input
+    )
+/******** </lalVerbatim> ********/
+{  
   INITSTATUS (status, "LALChisqCdf", THRESHOLDSC);
   ATTATCHSTATUSPTR (status);
 
@@ -231,24 +164,10 @@ LALChisqCdf (
   ASSERT(prob, status, LAL_NULL_ERR, LAL_NULL_MSG);
   ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
-  /* Arguments chi2 and dof must be non-negative */
-  x = input->chi2;
-  a = input->dof;
-  ASSERT((x >= 0.0) && (a > 0.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  *prob = XLALChisqCdf(input);
 
-  /* use GSL because our previous version sucked */
-  CALLGSL( *prob = gsl_cdf_chisq_P (x,a) , status);
-  CHECKSTATUSPTR (status);
-
-  /* 
-   *  check that final answer is a legal probability
-   *  third test is necessary since there are some numbers x for 
-   *  which (x>0.0) evaluates as TRUE but for which 1/x evaluates to inf
-   */
-  if ( !( (*prob >= 0.0) && (*prob <= 1.0) && 
-        ( 1.0/(*prob) < LAL_REAL8_MAX ) )){
-    ABORT(status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-  }
+  /* raise a range error if the result is no good */
+  ASSERT(!XLALIsREAL8FailNaN(*prob), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   DETATCHSTATUSPTR( status );
   RETURN (status);
@@ -258,17 +177,13 @@ LALChisqCdf (
 
 
 
-
 /******** <lalVerbatim file="OneMinusChisqCdfP"> ********/
-void
-LALOneMinusChisqCdf (
-    LALStatus        *status,
-    REAL8         *prob,
-    ChisqCdfIn    *input
-    )
+REAL8
+XLALOneMinusChisqCdf(
+    ChisqCdfIn *input
+)
 /******** </lalVerbatim> ********/
 {  
-
   /*
    *  Cumulative Probability Distribution for Chi Squared distribution.
    *   Alternative version which is more accurate for large rho.
@@ -288,9 +203,36 @@ LALOneMinusChisqCdf (
    *  the function LALChisqCdf() except for the very end.
    */
 
-  REAL8 a;
-  REAL8 x;
+  static const char *func = "XLALOneMinusChisqCdf";
+  REAL8 prob;
 
+  if ((input->chi2 < 0.0) || (input->dof <= 0.0))
+    XLAL_ERROR_REAL8(func, XLAL_EDOM);
+
+  /* Use GSL because our previous version sucked */
+  XLAL_CALLGSL( prob = gsl_cdf_chisq_Q (input->chi2, input->dof) );
+
+  /* Check that final answer is a legal probability. Third test is necessary
+   * since there are some numbers x for which (x>0.0) evaluates as TRUE but for
+   * which 1/x evaluates to inf */
+  if ((prob < 0.0) || (prob > 1.0))
+    XLAL_ERROR_REAL8(func, XLAL_ERANGE);
+  if (1.0/prob > LAL_REAL8_MAX)
+    prob = exp(-700.0);
+
+  return(prob);
+}
+
+
+/******** <lalVerbatim file="OneMinusChisqCdfP"> ********/
+void
+LALOneMinusChisqCdf (
+    LALStatus        *status,
+    REAL8         *prob,
+    ChisqCdfIn    *input
+    )
+/******** </lalVerbatim> ********/
+{  
   INITSTATUS (status, "LALOneMinusChisqCdf", THRESHOLDSC);
   ATTATCHSTATUSPTR (status);
 
@@ -298,32 +240,14 @@ LALOneMinusChisqCdf (
   ASSERT(prob, status, LAL_NULL_ERR, LAL_NULL_MSG);
   ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
-  /* Arguments chi2 and dof must be non-negative */
-  x = input->chi2;
-  a = input->dof;
-  ASSERT((x >= 0.0) && (a > 0.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+  *prob = XLALOneMinusChisqCdf(input);
 
-  /* use GSL because our previous version sucked */
-  CALLGSL( *prob = gsl_cdf_chisq_Q (x,a) , status);
-  CHECKSTATUSPTR (status);
-
-  /* 
-   *  check that final answer is a legal probability
-   *  third test is necessary since there are some numbers x for 
-   *  which (x>0.0) evaluates as TRUE but for which 1/x evaluates to inf
-   */
-  if ( !( (*prob >= 0.0) && (*prob <= 1.0) )){
-    ABORT(status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-  }
-
-  if (1.0/(*prob) > LAL_REAL8_MAX){
-    *prob = exp(-700.0);
-  }
+  /* raise a range error if the result is no good */
+  ASSERT(!XLALIsREAL8FailNaN(*prob), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
   DETATCHSTATUSPTR( status );
   RETURN (status);
 }
-
 
 
 
@@ -518,10 +442,3 @@ LALRhoThreshold (
   RETURN (status);
 
 }
-
-
-
-
-
-
-

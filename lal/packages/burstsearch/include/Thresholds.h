@@ -45,12 +45,22 @@ RhoThresholdIn;
 
 
 
+REAL8
+XLALChisqCdf (
+          ChisqCdfIn                    *input
+          );
+
 void
 LALChisqCdf (
           LALStatus                        *status,
           REAL8                         *prob,
           ChisqCdfIn                    *input
           );
+
+REAL8
+XLALOneMinusChisqCdf (
+                  ChisqCdfIn            *input
+                  );
 
 void
 LALOneMinusChisqCdf (

@@ -5,96 +5,92 @@ $Id$
 
 #include <lal/LALRCSID.h>
 
-
 NRCSID (ADDWHITENOISEC, "$Id$");
 
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-
-#include <lal/ExcessPower.h>
 #include <lal/LALErrno.h>
-#include <lal/LALConstants.h>
-#include <lal/LALStdlib.h>
+#include <lal/ExcessPower.h>
 #include <lal/Random.h>
-#include <lal/RealFFT.h>
-#include <lal/SeqFactories.h>
-#include <lal/Thresholds.h>
+#include <lal/Sequence.h>
 
 
-#define TRUE 1
-#define FALSE 0
+/*
+ *  Add white noise to complex vector
+ */
 
+/******** <lalVerbatim file="AddWhiteNoiseCP"> ********/
+int XLALAddWhiteNoise(
+	COMPLEX8Vector *v,
+	REAL8 amplitude
+)
+/******** </lalVerbatim> ********/
+{
+	static const char *func = "XLALAddWhiteNoise";
+	RandomParams *params;
+	REAL4Vector *noise_r, *noise_i;
+	INT4 i;
 
-extern INT4 lalDebugLevel;
+	/* no-op on NULL input vector */
+	if(!v)
+		return(0);
+
+	/* Seed random number generator */
+	params = XLALCreateRandomParams(0);
+
+	/* Create temporary sequences */
+	noise_r = XLALCreateREAL4Sequence(v->length);
+	noise_i = XLALCreateREAL4Sequence(v->length);
+
+	/* Check for malloc failures */
+	if(!params || !noise_r || !noise_i) {
+		XLALDestroyRandomParams(params);
+		XLALDestroyREAL4Sequence(noise_r);
+		XLALDestroyREAL4Sequence(noise_i);
+		XLAL_ERROR(func, XLAL_EFUNC);
+	}
+
+	/* Fill temporary sequences with Gaussian deviates */
+	XLALNormalDeviates(noise_r, params);
+	XLALNormalDeviates(noise_i, params);
+
+	/* Add noise to input */
+	for(i = 0; i < (INT4)v->length; i++) {
+		v->data[i].re += amplitude * noise_r->data[i];
+		v->data[i].im += amplitude * noise_i->data[i];
+	}
+
+	/* Clean up */
+	XLALDestroyRandomParams(params);
+	XLALDestroyREAL4Sequence(noise_r);
+	XLALDestroyREAL4Sequence(noise_i);
+
+	/* success */
+	return(0);
+}
+
 
 /******** <lalVerbatim file="AddWhiteNoiseCP"> ********/
 void
-LALAddWhiteNoise (
-	       LALStatus        *status,
-	       COMPLEX8Vector   *v,
-	       REAL8             noiseLevel
-	       )
+LALAddWhiteNoise(
+	LALStatus *status,
+	COMPLEX8Vector *v,
+	REAL8 noiseLevel
+)
 /******** </lalVerbatim> ********/
 {
-  /*
-   *
-   *  Add white noise to complex vector
-   *
-   */
+	INITSTATUS (status, "LALAddWhiteNoise", ADDWHITENOISEC);
+	ATTATCHSTATUSPTR (status);
 
-  RandomParams           *params=NULL;
-  REAL4Vector            *vr=NULL;
-  REAL4Vector            *vi=NULL;
-  INT4                   i;
+	/* make sure that arguments are not NULL */
+	ASSERT(v, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(v->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
-  INITSTATUS (status, "LALAddWhiteNoise", ADDWHITENOISEC);
-  ATTATCHSTATUSPTR (status);
+	/* make sure length of series is nonzero */
+	ASSERT(v->length > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
-  /* make sure that arguments are not NULL */
-  ASSERT(v, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  ASSERT(v->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	/* Wrap XLAL call in an ASSERT() */
+	ASSERT(XLALAddWhiteNoise(v, noiseLevel) == 0, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
-  /* make sure length of series is nonzero */
-  ASSERT(v->length > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-
-  
-  /* Seed Random Number Generator with current time for seed */
-  LALCreateRandomParams (status->statusPtr, &params, 0);  
-  CHECKSTATUSPTR (status);
-
-  /* create temporary vectors */
-  LALSCreateVector (status->statusPtr, &vr, v->length);
-  CHECKSTATUSPTR (status);
-  LALSCreateVector (status->statusPtr, &vi, v->length);
-  CHECKSTATUSPTR (status);
-  
-  /* Fill temporary vectors with Gaussian deviates */
-  LALNormalDeviates (status->statusPtr, vr, params);
-  CHECKSTATUSPTR (status);
-  LALNormalDeviates (status->statusPtr, vi, params);
-  CHECKSTATUSPTR (status);
-
-  for(i=0;i<(INT4)v->length;i++) 
-    {
-      v->data[i].re += noiseLevel * vr->data[i];
-      v->data[i].im += noiseLevel * vi->data[i];
-    }
-    
-  LALSDestroyVector (status->statusPtr, &vr);
-  CHECKSTATUSPTR (status);
-  
-  LALSDestroyVector (status->statusPtr, &vi);
-  CHECKSTATUSPTR (status);
-  
-  LALDestroyRandomParams (status->statusPtr, &params);
-  CHECKSTATUSPTR (status);
-  
-  /* normal exit */
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-}    
-
-
+	/* normal exit */
+	DETATCHSTATUSPTR (status);
+	RETURN (status);
+}
