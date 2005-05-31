@@ -194,6 +194,8 @@ main (INT4 argc, CHAR **argv )
       /* --- we can process the data through the bank now ---        */
       for (currentTemplateNumber = 0; currentTemplateNumber < (UINT4)sizeBank; currentTemplateNumber++) 
 	{	
+	  BEInitOverlapOutputIn(&OverlapOutputThisTemplate);
+
 	  /* trick to check the code; template == signal and we use only one template 
 	     suppose to be optimal if signal and template are equivalent. Obvisously not 
 	     if signal family <> template family -- */
@@ -231,6 +233,13 @@ main (INT4 argc, CHAR **argv )
 					     &OverlapOutputThisTemplate,
 					     &correlation, &moments), 
 		       &status);
+
+	      OverlapOutputThisTemplate.freq              =  list[currentTemplateNumber].params.fFinal;
+	      OverlapOutputThisTemplate.freqU             =  list[currentTemplateNumber].params.fFinal;
+	      OverlapOutputThisTemplate.templateNumber   = currentTemplateNumber;
+	      OverlapOutputThisTemplate.templateNumberU   = currentTemplateNumber;
+	      OverlapOutputThisTemplate.layer             = list[currentTemplateNumber].nLayer;
+	      OverlapOutputThisTemplate.layerU            = list[currentTemplateNumber].nLayer;	      
 	      
 	      break;
 	    case TaylorT1:
@@ -264,6 +273,14 @@ main (INT4 argc, CHAR **argv )
 						  &correlation,
 						  &overlapout,
 						  &overlapin), &status);
+
+		  OverlapOutputThisTemplate.rhoMax = overlapout.max;
+		  OverlapOutputThisTemplate.templateNumber   = currentTemplateNumber;
+		  OverlapOutputThisTemplate.phase    = overlapout.phase;
+		  OverlapOutputThisTemplate.rhoBin   = overlapout.bin;
+		  OverlapOutputThisTemplate.freq     = list[currentTemplateNumber].params.fFinal;
+		  
+
 		}
 	      break;
 	    }
@@ -281,17 +298,7 @@ main (INT4 argc, CHAR **argv )
 	  
 	  
 	  
-	  /* --- if overlap is the largest one, then we keep some 
-	   * other information . Later we might just use the previous 
-	   * vector. Keep everything and use it outside the bank 
-	   * process --- */	     
-	  OverlapOutputThisTemplate.freqConstraint                =  list[currentTemplateNumber].params.fFinal;
-	  OverlapOutputThisTemplate.freqUnconstraint              =  list[currentTemplateNumber].params.fFinal;
-	  OverlapOutputThisTemplate.templateNumberConstraint      = currentTemplateNumber;
-	  OverlapOutputThisTemplate.templateNumberUnconstraint    = currentTemplateNumber;
-	  OverlapOutputThisTemplate.layerConstraint               = list[currentTemplateNumber].nLayer;
-	  OverlapOutputThisTemplate.layerUnconstraint             = list[currentTemplateNumber].nLayer;
-	  
+		  
 	  
 	  KeepHighestValues(OverlapOutputThisTemplate, 
 			    &OverlapOutputBestTemplate);
@@ -331,7 +338,7 @@ main (INT4 argc, CHAR **argv )
 					 &powerVector,
 					 &otherIn,
 					 &randIn, 
-					 OverlapOutputBestTemplate.templateNumberConstraint,
+					 OverlapOutputBestTemplate.templateNumber,
 					 &FilterBCV1,
 					 &FilterBCV2, 
 					 &overlapin,
@@ -1343,26 +1350,26 @@ KeepHighestValues(OverlapOutputIn resultThisTemplate,
 		  OverlapOutputIn *resultBestTemplate
 		  )
 {
-  if (resultThisTemplate.rhoMaxConstraint > resultBestTemplate->rhoMaxConstraint){    
-      resultBestTemplate->rhoMaxConstraint   = resultThisTemplate.rhoMaxConstraint;
-      resultBestTemplate->phaseConstraint    = resultThisTemplate.phaseConstraint;
-      resultBestTemplate->alphaConstraint    = resultThisTemplate.alphaConstraint;
-      resultBestTemplate->rhoBinConstraint   = resultThisTemplate.rhoBinConstraint;
-      resultBestTemplate->freqConstraint     = resultThisTemplate.freqConstraint;
-      resultBestTemplate->layerConstraint    = resultThisTemplate.layerConstraint;
-      resultBestTemplate->templateNumberConstraint   = resultThisTemplate.templateNumberConstraint;
-      /*we do not need all template params for the time being*/
+  if (resultThisTemplate.rhoMax > resultBestTemplate->rhoMax){    
+    resultBestTemplate->rhoMax   = resultThisTemplate.rhoMax;
+    resultBestTemplate->phase    = resultThisTemplate.phase;
+    resultBestTemplate->alpha    = resultThisTemplate.alpha;
+    resultBestTemplate->rhoBin   = resultThisTemplate.rhoBin;
+    resultBestTemplate->freq     = resultThisTemplate.freq;
+    resultBestTemplate->layer    = resultThisTemplate.layer;
+    resultBestTemplate->templateNumber   = resultThisTemplate.templateNumber;
+    /*we do not need all template params for the time being*/
   }
   
   
-  if (resultThisTemplate.rhoMaxUnconstraint > resultBestTemplate->rhoMaxUnconstraint){ 
-    resultBestTemplate->rhoMaxUnconstraint   = resultThisTemplate.rhoMaxUnconstraint;
-    resultBestTemplate->phaseUnconstraint    = resultThisTemplate.phaseUnconstraint;
-    resultBestTemplate->alphaUnconstraint   = resultThisTemplate.alphaUnconstraint;
-    resultBestTemplate->rhoBinUnconstraint   = resultThisTemplate.rhoBinUnconstraint;
-    resultBestTemplate->freqUnconstraint     = resultThisTemplate.freqUnconstraint;
-    resultBestTemplate->layerUnconstraint    = resultThisTemplate.layerUnconstraint;
-    resultBestTemplate->templateNumberUnconstraint = resultThisTemplate.templateNumberUnconstraint;
+  if (resultThisTemplate.rhoMaxU > resultBestTemplate->rhoMaxU){ 
+    resultBestTemplate->rhoMaxU   = resultThisTemplate.rhoMaxU;
+    resultBestTemplate->phaseU    = resultThisTemplate.phaseU;
+    resultBestTemplate->alphaU   = resultThisTemplate.alphaU;
+    resultBestTemplate->rhoBinU   = resultThisTemplate.rhoBinU;
+    resultBestTemplate->freqU     = resultThisTemplate.freqU;
+    resultBestTemplate->layerU    = resultThisTemplate.layerU;
+    resultBestTemplate->templateNumberU = resultThisTemplate.templateNumberU;
   }
   
 }
@@ -1388,8 +1395,8 @@ GetResult(
   INITSTATUS (status, "GetResult", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
      
-  templateNumberC = bestOverlap.templateNumberConstraint;
-  templateNumber = bestOverlap.templateNumberUnconstraint;
+  templateNumberC = bestOverlap.templateNumber;
+  templateNumber = bestOverlap.templateNumberU;
   trigger = (*list)[templateNumber].params;
   triggerC = (*list)[templateNumberC].params;
 
@@ -1429,17 +1436,17 @@ GetResult(
   result->fend_triggerU      = trigger.fFinal;
   result->fend_trigger      = triggerC.fFinal;
 
-  result->rho_final   = bestOverlap.rhoMaxConstraint;
-  result->alphaF      = bestOverlap.alphaConstraint*pow(triggerC.fFinal,2./3.);
-  result->bin         = bestOverlap.rhoBinConstraint;
-  result->phase       = bestOverlap.phaseConstraint;
-  result->layer       = bestOverlap.layerConstraint;
+  result->rho_final   = bestOverlap.rhoMax;
+  result->alphaF      = bestOverlap.alpha*pow(triggerC.fFinal,2./3.);
+  result->bin         = bestOverlap.rhoBin;
+  result->phase       = bestOverlap.phase;
+  result->layer       = bestOverlap.layer;
   
-  result->rho_finalU   = bestOverlap.rhoMaxUnconstraint;
-  result->alphaFU      = bestOverlap.alphaUnconstraint*pow(trigger.fFinal,2./3.);
-  result->binU         = bestOverlap.rhoBinUnconstraint;
-  result->phaseU       = bestOverlap.phaseUnconstraint;
-  result->layerU       = bestOverlap.layerUnconstraint;
+  result->rho_finalU   = bestOverlap.rhoMaxU;
+  result->alphaFU      = bestOverlap.alphaU*pow(trigger.fFinal,2./3.);
+  result->binU         = bestOverlap.rhoBinU;
+  result->phaseU       = bestOverlap.phaseU;
+  result->layerU       = bestOverlap.layerU;
   
     
   DETATCHSTATUSPTR(status);
@@ -1453,7 +1460,7 @@ PrintResults(   ResultIn result,
                 RandomInspiralSignalIn randIn)
 {
 
-  fprintf(stdout, "%e %e %e %e %e %e",  
+  fprintf(stdout, "%e %e %e %e %e %e ",  
       result.psi0_triggerU, 
       result.psi3_triggerU,
       result.psi0_trigger, 
@@ -1461,20 +1468,20 @@ PrintResults(   ResultIn result,
       randIn.param.psi0,
       randIn.param.psi3);
  
-  fprintf(stdout, "%e %e %e %e", 
+  fprintf(stdout, "%e %e %e %e ", 
       result.tau0_trigger, 
       result.tau3_trigger,
       randIn.param.t0,
       randIn.param.t3);
 
-  fprintf(stdout, "%7.2f %7.2f %7.2f   %e %e", 
+  fprintf(stdout, "%7.2f %7.2f %7.2f   %e %e ", 
 	  result.fend_triggerU, 
 	  result.fend_trigger, 
 	  randIn.param.fCutoff,
 	  randIn.param.mass1,
 	  randIn.param.mass2);
 
-  fprintf(stdout, "%7.5f %e %e  %d %d",
+  fprintf(stdout, "%7.5f %e %e  %d %d ",
 	  result.rho_finalU, 
 	  result.phaseU, 
 	  result.alphaFU,
@@ -1928,14 +1935,14 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	}
     }
   /* Finally get the alpha value corresponding to the best rho */ 
-  OverlapOutput->rhoMaxConstraint     = rhoMaxConstraint;
-  OverlapOutput->rhoBinConstraint     = rhoBinConstraint;
-  OverlapOutput->alphaConstraint      = alphaConstraint;
-  OverlapOutput->phaseConstraint      = phaseConstraint;
-  OverlapOutput->rhoMaxUnconstraint   = rhoMaxUnconstraint;
-  OverlapOutput->rhoBinUnconstraint   = rhoBinUnconstraint;
-  OverlapOutput->alphaUnconstraint    = alphaUnconstraint;
-  OverlapOutput->phaseUnconstraint    = phaseUnconstraint;
+  OverlapOutput->rhoMax     = rhoMaxConstraint;
+  OverlapOutput->rhoBin     = rhoBinConstraint;
+  OverlapOutput->alpha      = alphaConstraint;
+  OverlapOutput->phase      = phaseConstraint;
+  OverlapOutput->rhoMaxU   = rhoMaxUnconstraint;
+  OverlapOutput->rhoBinU   = rhoBinUnconstraint;
+  OverlapOutput->alphaU    = alphaUnconstraint;
+  OverlapOutput->phaseU    = phaseUnconstraint;
 
 
   /* The final template to be print ? */
@@ -2724,21 +2731,21 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
 
 void
 BEInitOverlapOutputIn(OverlapOutputIn *this){
-  this->rhoMaxConstraint   = 0.;
-  this->phaseConstraint    = 0.;
-  this->rhoBinConstraint   = 0;
-  this->templateNumberConstraint        = 0;
-  this->alphaConstraint   = -1.;
-  this->layerConstraint    = -1;
-  this->freqConstraint     = -1.;
+  this->rhoMax   = -1.;
+  this->phase    = -1.;
+  this->rhoBin   = 0;
+  this->templateNumber = 0;
+  this->alpha    = -1.;
+  this->layer    = 0;
+  this->freq     = -1.;
 
-  this->rhoMaxUnconstraint = 0.;  
-  this->phaseUnconstraint  = 0.;  
-  this->rhoBinUnconstraint = 0;  
-  this->templateNumberUnconstraint      = 0;
-  this->alphaUnconstraint = -1.;
-  this->layerUnconstraint  = -1;
-   this->freqUnconstraint  = -1.;
+  this->rhoMaxU = -1.;  
+  this->phaseU  = -1.;  
+  this->rhoBinU = 0;  
+  this->templateNumberU      = 0;
+  this->alphaU = -1.;
+  this->layerU  = 0;
+   this->freqU  = -1.;
  /*I do not think we need any other  iniitalisation */
 }
 
@@ -2747,21 +2754,21 @@ BEFillOverlapOutput(InspiralWaveOverlapOut overlapout,
 		    OverlapOutputIn *this)
 {
 
-  this->rhoMaxConstraint         = overlapout.max;
-  this->phaseConstraint          = overlapout.phase;
-  this->rhoBinConstraint         = overlapout.bin;
-  this->alphaConstraint         = -1.;
-  this->freqConstraint           = -1;
-  this->layerConstraint          = -1;
-  this->templateNumberConstraint = -1;
+  this->rhoMax         = overlapout.max;
+  this->phase          = overlapout.phase;
+  this->rhoBin         = overlapout.bin;
+  this->alpha          = -1.;
+  this->freq           = -1;
+  this->layer          = -1;
+  this->templateNumber = -1;
   
-  this->rhoMaxUnconstraint       = overlapout.max;
-  this->phaseUnconstraint        = overlapout.phase;
-  this->rhoBinUnconstraint       = overlapout.bin;
-  this->alphaUnconstraint       = -1.;
-  this->freqConstraint           = -1;
-  this->layerConstraint          = -1;
-  this->templateNumberConstraint = -1;
+  this->rhoMaxU         = overlapout.max;
+  this->phaseU          = overlapout.phase;
+  this->rhoBinU         = overlapout.bin;
+  this->alphaU          = -1.;
+  this->freqU           = -1;
+  this->layerU          = -1;
+  this->templateNumberU = -1;
       
 }
 

@@ -279,23 +279,23 @@ OtherParamIn;
 
 
 typedef struct{
-  REAL4  rhoMaxConstraint;
-  INT4   rhoBinConstraint;
-  REAL4  alphaConstraint;
-  REAL4  phaseConstraint;
-  REAL4  freqConstraint;
-  INT4   layerConstraint;
-  INT4   templateNumberConstraint;
-  InspiralTemplate bestConstraintTemplate;
+  REAL4  rhoMax;
+  INT4   rhoBin;
+  REAL4  alpha;
+  REAL4  phase;
+  REAL4  freq;
+  INT4   layer;
+  INT4   templateNumber;
+  InspiralTemplate bestTemplate;
 
-  REAL4  rhoMaxUnconstraint;
-  INT4   rhoBinUnconstraint;
-  REAL4  alphaUnconstraint;
-  REAL4  phaseUnconstraint;
-  REAL4  freqUnconstraint;
-  INT4   layerUnconstraint;
-  INT4   templateNumberUnconstraint;
-  InspiralTemplate bestUnconstraintTemplate;
+  REAL4  rhoMaxU;
+  INT4   rhoBinU;
+  REAL4  alphaU;
+  REAL4  phaseU;
+  REAL4  freqU;
+  INT4   layerU;
+  INT4   templateNumberU;
+  InspiralTemplate bestUTemplate;
 } OverlapOutputIn;
 
 /* strucutre to output the results */
