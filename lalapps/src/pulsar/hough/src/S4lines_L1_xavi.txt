@@ -1,10 +1,22 @@
-0.0        60.0     30       0.5             0.5              /*60_Hz_lines*/  
-345.0      0.0      1        3.0	     3.0              /*violin_modes_etc*/
+0.0        60.0     30       1.0             1.0              /*60_Hz_lines*/  
+329.3      0.0      1        0.2	     0.2              /*violin_modes_etc*/
+345.0      0.0      1        10.0	     10.0              /*violin_modes_etc*/
 686.5      0.0      1        1.0             1.0              /*second_harmonic_violin_part1*/
 688.83     0.0      1        0.5             0.5             /*second_harmonic_violin_part2*/
 693.7      0.0      1        0.7             0.7             /*second_harmonic_violin_part3*/
+1029.5     0.0      1        0.25            0.25            /*third_harmonic_violin_part1*/ 
+1031       0.0      1        0.5             0.5             /*third_harmonic_violin_part2*/ 
+1033.6     0.0      1        0.2             0.2              /*third_harmonic_violin_part3*/ 
+1041       0.0      1        1.0             1.0             /*third_harmonic_violin_part4*/ 
+1372.925   0.0      1        0.075           0.075           /*fourth_harmonic_violin_part1*/ 
+1374.7     0.0      1        0.1             0.1           /*fourth_harmonic_violin_part2*/ 
+1375.2     0.0      1        0.1             0.1           /*fourth_harmonic_violin_part3*/ 
+1380       0.0      1        2.0             2.0           /*fourth_harmonic_violin_part4_and_60Hz*/
+1387.4     0.0      1        0.05            0.05           /*fourth_harmonic_violin_part5*/
+1388.5     0.0      1        0.5             0.5           /*fourth_harmonic_violin_part6*/
 54.7       0.0      1        0.0             0.0              /*Calibration_line*/
 396.1      0.0	    1	     0.0	     0.0              /*Calibration_line*/
 927.7      0.0      1        0.0             0.0              /*Calibration_line*/
 1151.5     0.0      1        0.0             0.0              /*Calibration_line*/
+0.0	   36.8725   50       0.8             0.8          /*harmonics_of_36.9Hz*/
 
