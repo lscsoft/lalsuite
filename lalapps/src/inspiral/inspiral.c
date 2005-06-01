@@ -1920,7 +1920,6 @@ int main( int argc, char *argv[] )
 
           if ( writeCData && ! strcmp(ifo,tmpltCurrent->tmpltPtr->ifo) )
           {
-            cDataForFrame = 0;
             trigTime = tmpltCurrent->tmpltPtr->end_time.gpsSeconds + 1e-9 * 
               tmpltCurrent->tmpltPtr->end_time.gpsNanoSeconds;
             lowerBound = gpsStartTime.gpsSeconds + numPoints/(4 * sampleRate );
