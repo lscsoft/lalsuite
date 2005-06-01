@@ -39,6 +39,12 @@ tagRealFFTPlan
   else (void)(0)
 
 
+/* NOTE: this function declaration, and others in this file, are overridden by
+ * a macros in RealFFT.h.  If you expect to use these functions, you'll first
+ * need to sort out the header file so that calls to these functions are not
+ * redirected by the macros.  The recommended course of action would be to
+ * rename them "Real" --> "REAL4", following the names of the equivalent
+ * functions in RealFFT.h */
 void
 LALCreateForwardRealFFTPlan(
     LALStatus    *status,
