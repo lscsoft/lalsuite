@@ -182,12 +182,12 @@ XLALErrorHandlerType ** XLALGetErrorHandlerPtr( void )
 
 
 /* set the XLAL error number to errnum */
-void XLALSetErrno( int errnum )
+int XLALSetErrno( int errnum )
 {
   if ( errnum == 0 )
   {
     xlalErrno = 0;
-    return;
+    return xlalErrno;
   }
 
   /* if this is an error indicating an internal error then set the bit
@@ -195,7 +195,7 @@ void XLALSetErrno( int errnum )
   if ( errnum & XLAL_EFUNC )
   {
     xlalErrno |= XLAL_EFUNC; /* make sure XLAL_EFUNC bit is set */
-    return;
+    return xlalErrno;
   }
 
   /* if xlalErrno is not zero, probably forgot to deal with previous error */
@@ -204,7 +204,7 @@ void XLALSetErrno( int errnum )
         "Ignoring previous error (xlalErrno=%d) %s\n",
         xlalErrno, XLALErrorString( xlalErrno ) );
   xlalErrno = errnum;
-  return;
+  return xlalErrno;
 }
 
 
@@ -216,10 +216,11 @@ int XLALGetBaseErrno( void )
 
 
 /* clears the XLAL error number */
-void XLALClearErrno( void )
+int XLALClearErrno( void )
 {
+  int olderrno = xlalErrno;
   xlalErrno = 0;
-  return;
+  return olderrno;
 }
 
 

@@ -218,14 +218,14 @@ XLALErrorHandlerType * XLALSetDefaultErrorHandler( void );
  *
  */
 
-/* sets the XLAL error number to errnum */
-void XLALSetErrno( int errnum );
+/* sets the XLAL error number to errnum, returns the new value */
+int XLALSetErrno( int errnum );
 
 /* gets the XLAL base error number ignoring the internal-function-failed flag */
 int XLALGetBaseErrno( void );
 
-/* clears the XLAL error number */
-void XLALClearErrno( void );
+/* clears the XLAL error number, returns the old value */
+int XLALClearErrno( void );
 
 /*
  *
