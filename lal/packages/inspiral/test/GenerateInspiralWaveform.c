@@ -151,7 +151,7 @@ int main (int argc , char **argv) {
   SUB( LALSCreateVector(&status, &(signal1), n), &status);
   SUB( LALSCreateVector(&status, &(signal2), n), &status);
      
-  params.ieta = 0;  /*should be zero or 1 ?? */
+  params.ieta = 1;  /*should be zero or 1 ?? */
   /* */
   
   switch (params.approximant){		   
