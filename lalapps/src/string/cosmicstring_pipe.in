@@ -153,6 +153,10 @@ ifo2 = cp.get('pipeline','ifo2')
 ifo3 = cp.get('pipeline','ifo3')
 snr = cp.get('pipeline','threshold')
 
+# get coincidence time windows
+dtHL = int(cp.get('pipeline','dtHL'))
+dtHH = int(cp.get('pipeline','dtHH'))
+
 datatype1 = cp.get('input','type1') 
 datatype2 = cp.get('input','type2') 
 datatype3 = cp.get('input','type3') 
@@ -281,6 +285,7 @@ for seg in data:
     burca12.set_ifob(string2.get_output(),ifo2) 
     burca12.add_parent(string1)
     burca12.add_parent(string2)
+    burca12.add_var_opt('dt',dtHL)
     burca12.set_name("burca-"+ifo1+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
     dag.add_node(burca12)
 
@@ -292,6 +297,7 @@ for seg in data:
     burca123.set_ifob(string3.get_output(),ifo3) 
     burca123.add_parent(burca12)
     burca123.add_parent(string3)
+    burca123.add_var_opt('dt',dtHH)
     burca123.set_name("burca-"+ifo1+ifo2+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
     dag.add_node(burca123)
 
@@ -303,6 +309,7 @@ for seg in data:
     burca23.set_ifob(string3.get_output(),ifo3) 
     burca23.add_parent(string2)
     burca23.add_parent(string3)
+    burca23.add_var_opt('dt',dtHL)
     burca23.set_name("burca-"+ifo2+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
     dag.add_node(burca23)
 
@@ -314,6 +321,7 @@ for seg in data:
     burca231.set_ifob(string1.get_output(),ifo1) 
     burca231.add_parent(burca23)
     burca231.add_parent(string1)
+    burca231.add_var_opt('dt',dtHL)
     burca231.set_name("burca-"+ifo2+ifo3+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
     dag.add_node(burca231)
 
@@ -325,6 +333,7 @@ for seg in data:
     burca31.set_ifob(string1.get_output(),ifo1) 
     burca31.add_parent(string3)
     burca31.add_parent(string1)
+    burca31.add_var_opt('dt',dtHH)
     burca31.set_name("burca-"+ifo3+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
     dag.add_node(burca31)
 
@@ -336,6 +345,7 @@ for seg in data:
     burca312.set_ifob(string2.get_output(),ifo2) 
     burca312.add_parent(burca31)
     burca312.add_parent(string2)
+    burca312.add_var_opt('dt',dtHL)
     burca312.set_name("burca-"+ifo3+ifo1+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
     dag.add_node(burca312)
 
