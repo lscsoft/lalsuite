@@ -217,6 +217,55 @@ class Tama2LigoLwJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/tama2ligolw-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('tama2ligolw.sub')
 
+class CohBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_coherent_inspiral job used by the inspiral pipeline. The static
+  options are read from the section [chia] in the ini file.  The stdout and
+  stderr from the job are directed to the logs directory.  The path to the
+  executable is determined from the ini file.
+  """
+  def __init__(self,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','cohbank')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
+    
+    for sec in ['cohbank']:
+      self.add_ini_opts(cp,sec)
+
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    self.set_stdout_file('logs/cohbank-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/cohbank-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('cohbank.sub')
+
+ class ChiaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_coherent_inspiral job used by the inspiral pipeline. The static
+  options are read from the section [chia] in the ini file.  The stdout and
+  stderr from the job are directed to the logs directory.  The path to the
+  executable is determined from the ini file.
+  """
+  def __init__(self,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','chia')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp)
+    
+    for sec in ['chia']:
+      self.add_ini_opts(cp,sec)
+
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    self.set_stdout_file('logs/chia-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/chia-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('chia.sub')   
 
 class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
@@ -340,6 +389,26 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_output_file(filename)
 
     return filename
+
+  def get_froutput(self):
+    """
+    Returns the file name of output frame from the inspiral code. This
+    must be kept synchronized with the name of the output file in inspiral.c.
+    """
+    if not self.get_start() or not self.get_end() or not self.get_ifo():
+      raise InspiralError, "Start time, end time or ifo has not been set"
+
+    basename = self.get_ifo() + '-INSPIRAL'
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '.gwf'
+
+    return filename  
 
 
 class TrigToTmpltNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
@@ -666,6 +735,19 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__usertag
 
+    def set_ifo_tag(self,ifotag):
+    """
+    Set the ifotag for a given job (for second thinca)
+    """
+    self.__ifotag = ifotag
+    self.add_var_opt('ifo-tag',ifotag)
+
+  def get_ifo_tag(self):
+    """
+    Returns the ifo tag of the job
+    """
+    return self.__ifotag
+
   def get_output(self):
     """
     Returns the file name of output from thinca.  This must be kept
@@ -680,7 +762,10 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
       basename = self.get_ifos() + '-THINCA'
 
     if self.__usertag:
-      basename += '_' + self.__usertag 
+      basename += '_' + self.__usertag
+
+    if self.__ifotag:
+      basename += '_' + self.__ifotag  
 
     return basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
@@ -796,7 +881,87 @@ class Tama2LigoLwNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__output = None
     self.__usertag = job.get_config('pipeline','user-tag')
 
+class CohBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A CohBankNode runs an instance of the coherent code in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_coherent_inspiral.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+    self.__bank = None
 
+  def set_user_tag(self,usertag):
+    """
+    Set the usertag for a given job
+    """
+    self.__usertag = usertag
+    self.add_var_opt('user-tag',usertag)
+
+  def get_user_tag(self):
+    """
+    Returns the usertag of the job
+    """
+    return self.__usertag     
+    
+  def set_bank(self,bank):
+    self.add_var_opt('bank-file', bank)
+    self.add_input_file(bank)
+    self.__bank = bank
+
+  def get_bank(self):
+    return self.__bank
+
+  def get_output(self):
+    """
+    Returns the file name of output from the inspiral code. This must be kept
+    synchronized with the name of the output file in thinca??? or sire??.
+    
+    if not self.get_ifos():
+      raise InspiralError, "Ifos have not been set"
+    """  
+    """
+    basename = self.get_ifos() + '-THINCA'
+
+    if self.get_ifo_tag():
+      basename += '_' + self.get_ifo_tag()
+    if self.__usertag:
+      basename += '_' + self.__usertag
+
+    filename = basename + '-' + str(self.get_start()) + '-' + \
+      str(self.get_end() - self.get_start()) + '-COHBANK' + '.xml'
+
+    self.add_output_file(filename)
+    """
+    basename = self.get_bank()
+    length = len(basename)
+    length -= 4
+    basename2 = basename[:length]
+    filename = basename2 + '-COHBANK' + '.xml'
+    self.add_output_file(filename)
+    return filename    
+
+
+class ChiaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
+  """
+  A ChiaNode runs an instance of the coherent_inspiral code in a Condor
+  DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_coherent_inspiral.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+
+  def set_bank(self,bank):
+    self.add_var_opt('bank-file', bank)
+    self.add_input_file(bank)
+
+    
 ##############################################################################
 # some functions to make life easier later
 
