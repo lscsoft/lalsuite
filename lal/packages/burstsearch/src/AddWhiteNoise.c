@@ -7,10 +7,11 @@ $Id$
 
 NRCSID (ADDWHITENOISEC, "$Id$");
 
-#include <lal/LALErrno.h>
 #include <lal/ExcessPower.h>
+#include <lal/LALErrno.h>
 #include <lal/Random.h>
 #include <lal/Sequence.h>
+#include <lal/XLALError.h>
 
 
 /*
@@ -88,7 +89,10 @@ LALAddWhiteNoise(
 	ASSERT(v->length > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 
 	/* Wrap XLAL call in an ASSERT() */
-	ASSERT(XLALAddWhiteNoise(v, noiseLevel) == 0, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	if(XLALAddWhiteNoise(v, noiseLevel)) {
+		XLALClearErrno();
+		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	}
 
 	/* normal exit */
 	DETATCHSTATUSPTR (status);

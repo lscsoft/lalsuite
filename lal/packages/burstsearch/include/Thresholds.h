@@ -46,9 +46,9 @@ RhoThresholdIn;
 
 
 REAL8
-XLALChisqCdf (
-          ChisqCdfIn                    *input
-          );
+XLALChisqCdf(
+	const ChisqCdfIn *input
+);
 
 void
 LALChisqCdf (
@@ -58,9 +58,9 @@ LALChisqCdf (
           );
 
 REAL8
-XLALOneMinusChisqCdf (
-                  ChisqCdfIn            *input
-                  );
+XLALOneMinusChisqCdf(
+	const ChisqCdfIn *input
+);
 
 void
 LALOneMinusChisqCdf (

@@ -104,7 +104,6 @@ main (int argc, char *argv[])
   input1.dof = dof;
   input1.nonCentral = rho*rho;
 
-
   LALChisqCdf (&status, &alpha1, &input1);
   TestStatus (&status, CODES(0), 1);
   LALOneMinusChisqCdf (&status, &alpha2, &input1);
