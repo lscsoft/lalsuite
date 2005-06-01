@@ -25,6 +25,7 @@ SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 	size_t length
 )
 {
+	static const char *func = "`XLALCreate'SEQUENCETYPE";
 	SEQUENCETYPE *new;
 	DATATYPE *data;
 
@@ -33,7 +34,7 @@ SEQUENCETYPE *`XLALCreate'SEQUENCETYPE (
 	if(!new || !data) {
 		LALFree(new);
 		LALFree(data);
-		return(NULL);
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
 
 	new->data = data;
@@ -52,7 +53,10 @@ void `LALCreate'SEQUENCETYPE (
 	INITSTATUS(status, "`LALCreate'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	*output = `XLALCreate'SEQUENCETYPE (length);
-	ASSERT(*output != NULL, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+	if(*output == NULL) {
+		XLALClearErrno();
+		ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+	}
 	RETURN(status);
 }
 
@@ -63,12 +67,14 @@ SEQUENCETYPE *`XLALCut'SEQUENCETYPE (
 	size_t length
 )
 {
+	static const char *func = "`XLALCut'SEQUENCETYPE";
 	SEQUENCETYPE *new = NULL;
 
 	if(sequence && sequence->data) {
 		new = `XLALCreate'SEQUENCETYPE (length);
-		if(new)
-			memcpy(new->data, sequence->data + first, length * sizeof(*new->data));
+		if(!new)
+			XLAL_ERROR_NULL(func, XLAL_EFUNC);
+		memcpy(new->data, sequence->data + first, length * sizeof(*new->data));
 	}
 
 	return(new);
@@ -88,7 +94,10 @@ void `LALCut'SEQUENCETYPE (
 	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(first + length <= input->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	*output = `XLALCut'SEQUENCETYPE (input, first, length);
-	ASSERT(*output != NULL, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+	if(*output == NULL) {
+		XLALClearErrno();
+		ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+	}
 	RETURN(status);
 }
 
@@ -111,7 +120,10 @@ void `LALCopy'SEQUENCETYPE (
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(input != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	*output = `XLALCopy'SEQUENCETYPE (input);
-	ASSERT(*output != NULL, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+	if(*output == NULL) {
+		XLALClearErrno();
+		ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+	}
 	RETURN(status);
 }
 
@@ -158,6 +170,8 @@ void `LALShift'SEQUENCETYPE (
 
 /* FIXME: this function does not take care to move the least number of bytes
  * possible.  A performance gain would be realized by being more careful. */
+/* FIXME: this function does not conform to the XLAL error reporting
+ * convention. */
 size_t `XLALResize'SEQUENCETYPE (
 	SEQUENCETYPE *sequence,
 	int first,
@@ -199,7 +213,10 @@ void `LALResize'SEQUENCETYPE (
 	INITSTATUS(status, "`LALResize'SEQUENCETYPE", SEQUENCEC);
 	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	new_length = `XLALResize'SEQUENCETYPE (sequence, first, length);
-	ASSERT(new_length == length, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	if(new_length != length) {
+		XLALClearErrno();
+		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	}
 	RETURN(status);
 }
 
@@ -227,6 +244,9 @@ void `LALShrink'SEQUENCETYPE (
 	ASSERT(sequence != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(first + length <= sequence->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	new_length = `XLALShrink'SEQUENCETYPE (sequence, first, length);
-	ASSERT(new_length == length, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	if(new_length != length) {
+		XLALClearErrno();
+		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	}
 	RETURN(status);
 }

@@ -11,6 +11,7 @@
 #include <lal/LALErrno.h>
 #include <lal/LALError.h>
 #include <lal/Sequence.h>
+#include <lal/XLALError.h>
 
 NRCSID(SEQUENCEC, "$Id$");
 

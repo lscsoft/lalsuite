@@ -31,6 +31,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 	size_t length
 )
 {
+	static const char *func = "`XLALCreate'SERIESTYPE";
 	SERIESTYPE *new;
 	SEQUENCETYPE *sequence;
 
@@ -39,7 +40,7 @@ SERIESTYPE *`XLALCreate'SERIESTYPE (
 	if(!new || !sequence) {
 		LALFree(new);
 		`XLALDestroy'SEQUENCETYPE (sequence);
-		return(NULL);
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
 
 	if(new->name)
@@ -70,7 +71,10 @@ void `LALCreate'SERIESTYPE (
 	INITSTATUS(status, "`LALCreate'SERIESTYPE", FREQUENCYSERIESC);
 	ASSERT(output != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	*output = `XLALCreate'SERIESTYPE (name, &epoch, f0, deltaF, &sampleUnits, length);
-	ASSERT(*output != NULL, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+	if(*output == NULL) {
+		XLALClearErrno();
+		ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+	}
 	RETURN(status);
 }
 
@@ -81,6 +85,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 	size_t length
 )
 {
+	static const char *func = "`XLALCut'SERIESTYPE";
 	SERIESTYPE *new;
 	SEQUENCETYPE *sequence;
 
@@ -92,7 +97,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 	if(!new || !sequence) {
 		LALFree(new);
 		`XLALDestroy'SEQUENCETYPE (sequence);
-		return(NULL);
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
 
 	*new = *series;
@@ -118,7 +123,10 @@ void `LALCut'SERIESTYPE (
 	ASSERT(input->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(first + length <= input->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	*output = `XLALCut'SERIESTYPE (input, first, length);
-	ASSERT(*output != NULL, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+	if(*output == NULL) {
+		XLALClearErrno();
+		ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+	}
 
 	RETURN(status);
 }
@@ -153,6 +161,9 @@ void `LALShrink'SERIESTYPE (
 	ASSERT(series->data != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(first + length <= series->data->length, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
 	new_length = `XLALShrink'SERIESTYPE (series, first, length);
-	ASSERT(new_length == length, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	if(new_length != length) {
+		XLALClearErrno();
+		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	}
 	RETURN(status);
 }

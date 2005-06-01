@@ -12,6 +12,7 @@
 #include <lal/LALError.h>
 #include <lal/Sequence.h>
 #include <lal/TimeSeries.h>
+#include <lal/XLALError.h>
 
 NRCSID(TIMESERIESC, "$Id$");
 
