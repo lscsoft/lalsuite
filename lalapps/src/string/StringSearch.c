@@ -620,6 +620,10 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  strncpy( (*thisEvent)->search, "StringCusp", sizeof( (*thisEvent)->search ) );
 	  strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
 
+	  /* give trigger a 1 sample fuzz on either side */
+	  timeNS -= GV.ht_proc.deltaT *1e9;
+	  duration += 2*GV.ht_proc.deltaT;
+
 	  (*thisEvent)->start_time.gpsSeconds     = timeNS / 1000000000;
 	  (*thisEvent)->start_time.gpsNanoSeconds = timeNS % 1000000000;
 	  (*thisEvent)->peak_time.gpsSeconds      = peaktime / 1000000000;
@@ -629,7 +633,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  (*thisEvent)->bandwidth    = strtemplate[m].f-Templateflow;				     
 	  (*thisEvent)->snr          = maximum;
 	  (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
-	  (*thisEvent)->confidence   = 0; /* FIXME */
+	  (*thisEvent)->confidence   = -maximum; /* FIXME */
 
 	}
     }
