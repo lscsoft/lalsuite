@@ -606,7 +606,77 @@ def triple_ifo(ifo1_data, ifo2_data, ifo3_data, not_ifo4_data):
    
    return triple_data
 
+###############################################################################
+# function to set up the cohbank and cohinspiral jobs for a network of 2 ifos
 
+def coherent_2ifo(segments,ifo1_name,ifo2_name,coinc_nodes,cb_job,insp_coh_job,insp_coh_job2,cohinsp_job,cb_opts,insp_opts,data_opts,cohinsp_opts,dag,do_second_coinc,do_cohbank,do_cohinspiral):
+  cb_job.add_ini_opts(cp,cb_opts)
+  insp_coh_job.add_ini_opts(cp,insp_opts)
+  insp_coh_job2.add_ini_opts(cp,insp_opts)
+  insp_coh_job.add_ini_opts(cp,data_opts)
+  insp_coh_job2.add_ini_opts(cp,data_opts)
+  channel = cp.get('input','ligo-channel')
+  insp_coh_job.set_channel(channel)
+  insp_coh_job2.set_channel(channel)
+  cohinsp_job.add_ini_opts(cp,cohinsp_opts)
+
+  frfileopt1 = ifo1_name + '-framefile'
+  frfileopt2 = ifo2_name + '-framefile' 
+
+  calibrated = None
+  for opt in cp.options(data_opts):
+     if (opt.find('calibrated') >-1):
+        calibrated = 1
+
+  for coinc_done in coinc_nodes:
+#    for chunk in seg:
+#      for coinc_done in coinc_nodes:
+    for seg in segments:
+      for chunk in seg:
+        if inspiral.overlap_test(coinc_done.get_chunk(),chunk):
+          cohbnk = inspiral.CohBankNode( cb_job )
+          cohbnk.set_bank(coinc_done.get_dag_node().get_output())
+          if do_second_coinc: cohbnk.add_parent(coinc_done.get_dag_node())
+          if do_cohbank: dag.add_node(cohbnk)
+
+          insp = inspiral.InspiralNode(insp_coh_job)
+          insp.set_start(coinc_done.get_chunk().start())
+          insp.set_start(chunk.start())
+          insp.set_end(chunk.end())
+          #insp.set_end(coinc_done.get_chunk().end())
+          insp.set_ifo(ifo1_name)
+          insp.add_var_opt('write-cdata','')
+          if not calibrated: insp.calibration()
+          if not read_cache: insp.set_cache(seg.get_df_node().get_output())
+          else: insp.set_cache(cp.get('datafind',ifo1_name+"-cache"))
+          insp.set_bank(cohbnk.get_output())
+          if do_cohbank: insp.add_parent(cohbnk)
+          dag.add_node(insp)
+
+          insp2 = inspiral.InspiralNode(insp_coh_job2)
+          insp2.set_start(chunk.start())
+          insp2.set_end(chunk.end())
+          #insp2.set_start(coinc_done.get_chunk().start())
+          #insp2.set_end(coinc_done.get_chunk().end())
+          insp2.set_ifo(ifo2_name)
+          insp2.add_var_opt('write-cdata','')
+          if not calibrated: insp2.calibration()
+          if not read_cache: insp2.set_cache(seg.get_df_node().get_output())
+          else: insp2.set_cache(cp.get('datafind',ifo2_name+"-cache"))
+          insp2.set_bank(cohbnk.get_output())
+          if do_cohbank: insp2.add_parent(cohbnk)
+          dag.add_node(insp2)
+
+          cohinsp = inspiral.ChiaNode(cohinsp_job)
+          cohinsp.set_bank(cohbnk.get_output())
+          cohinsp.add_var_opt(frfileopt1,insp.get_froutput())
+          cohinsp.add_var_opt(frfileopt2,insp2.get_froutput())
+          if do_cohinspiral: 
+            cohinsp.add_parent(insp)
+            cohinsp.add_parent(insp2)
+          if do_cohinspiral: dag.add_node(cohinsp)
+      
+  return 0
 
 
 ##############################################################################
@@ -643,7 +713,9 @@ Usage: lalapps_inspiral_hipe [options]
   -V, --inspiral-veto     run lalapps_inspiral with vetos
   -C, --second-coinc      run lalapps_thinca on the inspiral veto triggers
   -s, --sire              do sires to sweep up triggers
-  
+  -j, --cohbank           run lalapps_coherentbank to make coherent bank
+  -k, --cohinspiral       run lalapps_coherent_inspiral for coherent analysis  
+
   -R, --read-cache        use to read chache file cpecified in ini-file
                           (use it if LSCDataFind is broken)
   -P, --priority PRIO     run jobs with condor priority PRIO
@@ -656,7 +728,7 @@ Usage: lalapps_inspiral_hipe [options]
 
 ##############################################################################
 # parse the command line options to figure out what we should do
-shortop = "hvu:ablgLSDTQAdticBVCsRP:f:p:o"
+shortop = "hvu:abljkgLSDTQAdticBVCsRP:f:p:o"
 longop = [
   "help",
   "version",
@@ -679,6 +751,8 @@ longop = [
   "inspiral-veto",
   "second-coinc",
   "sire",
+  "cohbank",
+  "cohinspiral",
   "read-cache",
   "priority=",
   "config-file=",
@@ -711,6 +785,8 @@ do_trigbank = None
 do_insp_veto = None
 do_second_coinc = None
 do_sire = None
+do_cohbank = None
+do_cohinspiral = None
 
 ifotag = None
 usertag = None
@@ -772,6 +848,10 @@ for o, a in opts:
     do_second_coinc = 1
   elif o in ("-s", "--sire"):
     do_sire = 1
+  elif o in ("-j", "--cohbank"):
+    do_cohbank = 1
+  elif o in ("-k", "--cohinspiral"):
+    do_cohinspiral = 1
   elif o in ("-R", "--read-cache"):
     read_cache = 1
   elif o in ("-u", "--user-tag"):
@@ -926,6 +1006,11 @@ thinca2_slides_h1h2l1g1_job = inspiral.ThincaJob(cp)
 sire_job = inspiral.SireJob(cp)
 sire_clust_job = inspiral.SireJob(cp)
 
+cb_job = inspiral.CohBankJob(cp)
+insp_coh_h1_job = inspiral.InspiralJob(cp)
+insp_coh_h2_job = inspiral.InspiralJob(cp)
+cohinsp_job = inspiral.ChiaJob(cp)
+
 ##############################################################################
 # set better submit file names than the default
 if usertag:
@@ -1006,6 +1091,11 @@ thinca2_slides_h1h2l1g1_job.set_sub_file( basename + '.thinca2_slides_h1h2l1g1' 
 sire_job.set_sub_file( basename + '.sire' + subsuffix )
 sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
 
+cb_job.set_sub_file( basename + '.cohbank' + subsuffix )
+insp_coh_h1_job.set_sub_file( basename + '.inspcohH1' + subsuffix )
+insp_coh_h2_job.set_sub_file( basename + '.inspcohH2' + subsuffix )
+cohinsp_job.set_sub_file( basename + '.cohinspiral' + subsuffix )
+
 ##############################################################################
 # set the usertag in the jobs
 if usertag:
@@ -1081,6 +1171,10 @@ if usertag:
  
   sire_job.add_opt('user-tag',usertag)
   sire_clust_job.add_opt('user-tag',usertag)
+
+  cb_job.add_opt('user-tag',usertag)
+  insp_coh_h1_job.add_opt('user-tag',usertag)
+  insp_coh_h2_job.add_opt('user-tag',usertag)
 
 ##############################################################################
 # set the condor job priority
@@ -1161,6 +1255,11 @@ if condor_prio:
   sire_job.add_condor_cmd('priority',condor_prio)
   sire_clust_job.add_condor_cmd('priority',condor_prio)
 
+  cb_job.add_condor_cmd('priority',condor_prio)
+  insp_coh_h1_job.add_condor_cmd('priority',condor_prio)
+  insp_coh_h2_job.add_condor_cmd('priority',condor_prio)
+  cohinsp_job.add_condor_cmd('priority',condor_prio)
+
 ##############################################################################
 # read in the injection-file from the ini file 
 # and add to inspiral and sire jobs
@@ -1181,6 +1280,9 @@ if inj_file:
 
   sire_job.add_opt('injection-file',inj_file)
   sire_clust_job.add_opt('injection-file',inj_file)
+
+  insp_coh_h1_job.add_opt('injection-file',inj_file)
+  insp_coh_h2_job.add_opt('injection-file',inj_file)
 
 
 ##############################################################################
@@ -2828,7 +2930,10 @@ if num_slides:
 
 print "done"
 
+###############################################################################
+#Now do the coherent stuff
 
+coherent_2ifo(h1_data,'H1','H2',h1_h2_double_coinc,cb_job,insp_coh_h1_job,insp_coh_h2_job,cohinsp_job,'cohbank','h1-inspiral','ligo-data','chia',dag,do_second_coinc,do_cohbank,do_cohinspiral)
 
 ##############################################################################
 # Step 13: Write out the DAG, help message and log file
