@@ -438,18 +438,18 @@ LALFindChirpBCVCFilterSegment (
 
   /* For debugging purpose (Thomas)*/
  
-  /*
+/*  
    {
     FILE  *V0File, *V1File,*V2File,
     *alphaFile,  *rho1File, *rho2File, *rho3File,
     *phaseFile, *phaseFileE, *alphaFileE,  *rhoFile, *thetavFile;
 
-   fprintf(stderr, "a1=%e b1=%e b2 =%e fFinal=%e deltTa=%e\n", a1, b1, b2, fFinal, params->deltaT);
+    fprintf(stderr, "a1=%e b1=%e b2 =%e fFinal=%e deltTa=%e\n", a1, b1, b2, fFinal, params->deltaT);
    
-   alphaMax = pow(fFinal, -2./3.)*pow(params->deltaT,-2./3.);
+   alphaUnity = pow(fFinal, -2./3.)*pow(params->deltaT,-2./3.);
    
    
-   thetab   = -(a1 * alphaMax)/(b2+b1*alphaMax);
+   thetab   = -(a1 * alphaUnity)/(b2+b1*alphaUnity);
    thetab   = atan(thetab);
    fprintf(stderr, "alphaMax -->thetab = %e\n", thetab);
    
@@ -539,11 +539,6 @@ LALFindChirpBCVCFilterSegment (
 	   fprintf(rhoFile,"%e\n",rhosqConstraint);
 	   
 	 }
-	 else  if ( 0  <= thetav && thetav <= 2 * thetab)
-	   {	
-	     rhosqConstraint = rhosqUnconstraint;
-	     fprintf(rhoFile,"%e\n",-1);
-	   }
 	 else
 	   {
 	     fprintf(stderr,"must not enter here  thetav = %e thetab=%e\n ", thetav , thetab);
@@ -552,16 +547,18 @@ LALFindChirpBCVCFilterSegment (
        }
        else{
 	 if ( 2*thetab  <= thetav && thetav <= 0){	  
-	   rhosqConstraint  = sqrt(0.5 * (V0+sqrt(V1*V1+V2*V2)));
-	   fprintf(rhoFile,"%e\n",rhosqConstraint);
+	   rhosqConstraint  = 0.5 * (V0+sqrt(V1*V1+V2*V2));
+	   fprintf(rhoFile,"%e\n",sqrt(norm*rhosqConstraint));
 	 }
-	 else if (0 < thetav &&  thetav  < LAL_PI ) {
-	   rhosqConstraint = sqrt((V0 + V1)/2.);
-	   fprintf(rhoFile,"%e\n",rhosqConstraint);
+	 else if (0 < thetav &&  thetav  <= LAL_PI +thetab) {
+	   rhosqConstraint = (V0 + V1)/2.;
+	   fprintf(rhoFile,"%e\n",sqrt(norm*rhosqConstraint));
 	 }
-	 else if( -LAL_PI  < thetav && thetav < 2*thetab ){
-	   rhosqConstraint =sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);;
-	   fprintf(rhoFile,"%e\n",rhosqConstraint);
+        else if( (-LAL_PI-1e-4  <= thetav && thetav < 2*thetab ) || 
+	       (LAL_PI +thetab <= thetav && thetav <= LAL_PI+1e-4))
+        {
+	   rhosqConstraint =(V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.;
+	   fprintf(rhoFile,"%e\n",sqrt(norm*rhosqConstraint));
 	 }
 	 else 
 	   {
@@ -650,10 +647,6 @@ LALFindChirpBCVCFilterSegment (
 		 || (-LAL_PI-1e-4<=thetav && thetav < -LAL_PI+thetab)){
         rhosqConstraint =(V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.;;
       }
-      else  if ( 0  <= thetav && thetav <= 2 * thetab)
-      {	
-        rhosqConstraint = rhosqUnconstraint;
-      }
       else
       {    
 	CHAR newinfomsg[256];
@@ -669,7 +662,7 @@ LALFindChirpBCVCFilterSegment (
       if ( 2*thetab  <= thetav && thetav <= 0){	  
         rhosqConstraint = rhosqUnconstraint;
       }
-      else if (0 < thetav &&  thetav  <= LAL_PI+1e-4 ) {
+      else if (0 < thetav &&  thetav  <= LAL_PI+thetab ) {
         rhosqConstraint = (V0 + V1)/2.;
       }
       else if( (-LAL_PI-1e-4  <= thetav && thetav < 2*thetab ) || 
@@ -692,7 +685,7 @@ LALFindChirpBCVCFilterSegment (
     /* If one want to check that the code is equivalent to BCVFilter.c, just
      * uncomment the following lines.
      */
-     /*      rhosqConstraint = rhosqUnconstraint; */
+    /*rhosqConstraint = rhosqUnconstraint; */
       
     if ( rhosqConstraint > modqsqThresh )                  
     {
