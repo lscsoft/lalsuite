@@ -46,7 +46,7 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%d,%d,%d,"
+"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%d,%d,%d"
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
 "         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %f %f %f %f %d %d %d "
 
@@ -113,7 +113,6 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 #define BANKEFFICIENCY_ALPHABANK       		0.01
 #define BANKEFFICIENCY_ALPHASIGNAL    		0.
 #define BANKEFFICIENCY_FLOWER       		40.
-#define BANKEFFICIENCY_FUPPER       		1000.
 #define BANKEFFICIENCY_HIGHGM                   6 
 #define BANKEFFICIENCY_IETA	                1
 #define BANKEFFICIENCY_IFLSO           		0.
@@ -126,7 +125,7 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 #define BANKEFFICIENCY_NENDPAD         		0
 #define BANKEFFICIENCY_NFCUT           		5
 #define BANKEFFICIENCY_NOISEAMPLITUDE  		1.
-#define BANKEFFICIENCY_NSTARTPHASE  		1000
+#define BANKEFFICIENCY_NSTARTPAD  		1000
 #define BANKEFFICIENCY_NTRIALS         		1
 #define BANKEFFICIENCY_PSI0MIN        		10.
 #define BANKEFFICIENCY_PSI0MAX    		250000.
@@ -242,20 +241,21 @@ typedef struct{
   INT4 signal;				/* name of the random signal to inject 	*/	
   INT4 template;			/* name of the template in the bank 	*/
   INT4 ntrials;				/* number of simulations		*/
-  INT4 FastSimulation;                  /* target the injection in the bank --> less 
+  INT4 fastSimulation;                  /* target the injection in the bank --> less 
 					   computation but Match might be less than the
 					   optimal  is noise is injected or template and 
 					   signal are not faithful (ie: BCV against physical
 					   template */
 
   INT4 lengthFactor;			/* multiply estimated length of filters by that factor */
-  INT4 PrintSNRHisto;		
-  INT4 PrintBank;			/* print bank of templates 		*/
-  INT4 PrintResultXml;
-  INT4 PrintPrototype;
-  INT4 PrintPsd;                        /* print the psd used in <x|x>          */
+  INT4 printSNRHisto;		
+  INT4 printBank;			/* print bank of templates 		*/
+  INT4 printResultXml;
+  INT4 printPrototype;
+  INT4 printPsd;                        /* print the psd used in <x|x>          */
+  INT4 realNoise;
   BinaryInjection binaryInjection; /*injection will be set by the mass-range*/
-  INT4 PrintBestOverlap, PrintBestTemplate, extraFinalPrinting ;
+  INT4 printBestOverlap, printBestTemplate, extraFinalPrinting ;
   OverlapMethodIn overlapMethod;
 
   INT4 faithfulness;

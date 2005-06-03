@@ -90,7 +90,7 @@ main (INT4 argc, CHAR **argv )
      input parameters. It creates a prototype to be read by BEAscii2xml. 
      Useful with condor. See BankEfficiency documentation.
   */
-  if (otherIn.PrintPrototype){
+  if (otherIn.printPrototype){
     BEPrintProtoXml(coarseBankIn, randIn, otherIn);   
     exit(0);
   }
@@ -128,15 +128,26 @@ main (INT4 argc, CHAR **argv )
    
 
   /* --- create the PSd noise --- */
+  if (vrbflg){
+    fprintf(stdout, "generating PSD ...");
+  }
   LAL_CALL(BECreatePsd(&status, &coarseBankIn, &randIn, otherIn), 
 	   &status);
+  if (vrbflg){
+    fprintf(stdout, " ... done \n");
+  }
 
   /* --- create the template bank --- */
+  if (vrbflg){
+    fprintf(stdout, "generating Bank ...");
+  }
   LAL_CALL(BECreateBank(&status, &coarseBankIn, &list, &sizeBank), 
 	   &status);
-  
+  if (vrbflg){
+    fprintf(stdout, " ... done, %d templates in the bank\n", sizeBank);
+  }
   /* --- do we want to print the bank --- */
-  if (otherIn.PrintBank){
+  if (otherIn.printBank){
     BEPrintBank(coarseBankIn, &list, sizeBank);		      
     BEPrintBankXml(list,  sizeBank, coarseBankIn, randIn, otherIn);	
   }
@@ -156,8 +167,6 @@ main (INT4 argc, CHAR **argv )
   overlapin.revp 	= revp;
   overlapin.ifExtOutput = 0;  /* new option from anand WaveOverlap */
 
-  /*  list[1].params.startPhase = 0; ...???... */   
-  
   /* --- Create Matrix for BCV Maximization once for all --- */
   LAL_CALL( BECreatePowerVector(&status, &powerVector, randIn, signal.length), 
 	    &status);
@@ -168,65 +177,68 @@ main (INT4 argc, CHAR **argv )
    * it with the template bank.
    */
   /* while we want to perform one simulation */
+
+
   while (++ntrials <= otherIn.ntrials) 
-    {
-      UINT4 currentTemplateNumber = 0;
-      /* do some initialisation for the output and create data to be analysed*/
+    {     
+      UINT4 currentTemplate = 0;
+
+      if (vrbflg){
+	fprintf(stdout,"Simulation number %d/%d\n", ntrials, otherIn.ntrials);
+      }
+      
+      /* do some initialisation for the output storage of the best temlpate */
       BEInitOverlapOutputIn(&OverlapOutputBestTemplate);
-     
-      randIn.param.fCutoff 		= coarseBankIn.fUpper; 
-	
+    
+      randIn.param.fCutoff = coarseBankIn.fUpper;
+
       /* use actual psd and real data */
-      if (otherIn.NoiseModel == REALPSD && (randIn.type = RealNoise))
+      if (otherIn.NoiseModel == REALPSD && otherIn.realNoise)
 	{
+	  randIn.type = 1; /*needed ? */
 	  for (i=0; i<(INT4)signal.length/2; i++){
 	    INT4 k = signal.length-i;
 	    signal.data[i] = strainSegment->data[i].re; 
 	    signal.data[k] = strainSegment->data[i].im; 
           }
         }
-      else /* or gaussian noise */
+      else /* or gaussian noise ? */
         LAL_CALL(BEGenerateInputData(&status,  &signal, &randIn, otherIn),
 	       &status);
-      
+
       overlapin.signal 	= signal;
       
       /* --- we can process the data through the bank now ---        */
-      for (currentTemplateNumber = 0; currentTemplateNumber < (UINT4)sizeBank; currentTemplateNumber++) 
-	{	
+      
+	
+      for (currentTemplate = 0; currentTemplate < (UINT4)sizeBank; currentTemplate++) 
+	{ 
+	  if (vrbflg){
+	    
+	    fprintf(stdout,".");
+	    fflush(stdout);
+	  }	
+	  /* Set dummy values in the future output */
 	  BEInitOverlapOutputIn(&OverlapOutputThisTemplate);
-
-	  /* trick to check the code; template == signal and we use only one template 
-	     suppose to be optimal if signal and template are equivalent. Obvisously not 
-	     if signal family <> template family -- */
-	  overlapin.param 	= list[currentTemplateNumber].params;	   
-	  overlapout.max        = -1.;
-	  overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
-	  overlapin.param.fFinal  = randIn.param.tSampling/2. - 1;
-	  
-
-	  if (otherIn.faithfulness){
-	    randIn.param.fCutoff = coarseBankIn.fUpper;
-	    tempOrder = list[currentTemplateNumber].params.order;
-	    list[currentTemplateNumber].params = randIn.param;
-	    overlapin.param                    = randIn.param;
-	    overlapin.param.approximant        = otherIn.template;
-	    overlapin.param.order              = tempOrder;
-	    sizeBank                           = 1;  /* we dont need the whole bank for checking. only one template needed */ 
-	  }
-	 
-	  
 
 	  /* which template family to be used ? */
 	  switch(otherIn.template)
 	    {
 	    case BCV:	   
+	      
+	      if (otherIn.faithfulness){
+		list[currentTemplate].params = randIn.param;
+		overlapin.param              = randIn.param;
+		overlapin.param.approximant  = otherIn.template;
+		sizeBank                     = 1;  /* we dont need the whole bank for checking */ 
+	      }
+	 
 	      LAL_CALL(LALInspiralOverlapBCV(&status, 
 					     &list,
 					     &powerVector,
 					     &otherIn,
 					     &randIn, 
-					     currentTemplateNumber,
+					     currentTemplate,
 					     &FilterBCV1,
 					     &FilterBCV2, 
 					     &overlapin,
@@ -235,11 +247,11 @@ main (INT4 argc, CHAR **argv )
 		       &status);
 
 	      OverlapOutputThisTemplate.freq              =  overlapin.param.fFinal;
-	      OverlapOutputThisTemplate.freqU             =  list[currentTemplateNumber].params.fFinal;
-	      OverlapOutputThisTemplate.templateNumber   = currentTemplateNumber;
-	      OverlapOutputThisTemplate.templateNumberU   = currentTemplateNumber;
-	      OverlapOutputThisTemplate.layer             = list[currentTemplateNumber].nLayer;
-	      OverlapOutputThisTemplate.layerU            = list[currentTemplateNumber].nLayer;	      
+	      OverlapOutputThisTemplate.freqU             =  list[currentTemplate].params.fFinal;
+	      OverlapOutputThisTemplate.templateNumber   = currentTemplate;
+	      OverlapOutputThisTemplate.templateNumberU   = currentTemplate;
+	      OverlapOutputThisTemplate.layer             = list[currentTemplate].nLayer;
+	      OverlapOutputThisTemplate.layerU            = list[currentTemplate].nLayer;	      
 	      
 	      break;
 	    case TaylorT1:
@@ -251,18 +263,29 @@ main (INT4 argc, CHAR **argv )
 	    case PadeT1:
 	    case PadeF1:
 	    case SpinTaylor:
-
-	       if (otherIn.faithfulness){ /* same parameters but different templates */
-		 overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
-		 overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
+              overlapin.param 	= list[currentTemplate].params;	   
+              overlapout.max    = -1.; /* let us be sure that is has a value */
+              overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
+              overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
+	      
+              if (otherIn.faithfulness){ /* same parameters but different templates */
+randIn.param.fCutoff = coarseBankIn.fUpper;
+		tempOrder = list[currentTemplate].params.order;
+		list[currentTemplate].params = randIn.param;
+		overlapin.param                    = randIn.param;
+		overlapin.param.approximant        = otherIn.template;
+		overlapin.param.order              = tempOrder;
+		sizeBank                           = 1;  /* we dont need the whole bank for checking */ 
 	      }
 	      
 
-
+	      /* if we want to cut integration before the fFinal
+		 overlapin.param.fCutoff = 512;
+	      */ 
 	      if (
-		  (otherIn.FastSimulation == 1 ) &&
-		  ((fabs(randIn.param.t0 - list[currentTemplateNumber].params.t0)> .1) ||
-		   (fabs(randIn.param.t3 - list[currentTemplateNumber].params.t3)> .1) )
+		  (otherIn.fastSimulation == 1 ) &&
+		  ((fabs(randIn.param.t0 - list[currentTemplate].params.t0)> .1) ||
+		   (fabs(randIn.param.t3 - list[currentTemplate].params.t3)> .1) )
 		  )
 		{
 		  /*nothing dto do except plotting template paremter maybe */
@@ -275,11 +298,11 @@ main (INT4 argc, CHAR **argv )
 						  &overlapin), &status);
 
 		  OverlapOutputThisTemplate.rhoMax = overlapout.max;
-		  OverlapOutputThisTemplate.templateNumber   = currentTemplateNumber;
+		  OverlapOutputThisTemplate.templateNumber   = currentTemplate;
 		  OverlapOutputThisTemplate.phase    = overlapout.phase;
 		  OverlapOutputThisTemplate.rhoBin   = overlapout.bin;
 		  OverlapOutputThisTemplate.freq     = overlapin.param.fFinal;
-		  list[currentTemplateNumber].params.fFinal = overlapin.param.fFinal;
+		  list[currentTemplate].params.fFinal = overlapin.param.fFinal;
 		}
 	      break;
 	    }
@@ -289,7 +312,7 @@ main (INT4 argc, CHAR **argv )
 	  
 	      
 	  /* fill historgranm of the correlation output */
-	  if (otherIn.PrintSNRHisto){
+	  if (otherIn.printSNRHisto){
 	    for (i=0; i<(INT4)correlation.length; i++){
 	      gsl_histogram_increment(histogramNoise, correlation.data[i]);
 	    }		    
@@ -318,7 +341,7 @@ main (INT4 argc, CHAR **argv )
       result.ntrial  = ntrials;
       result.coaTime = randIn.coalescenceTime;
       PrintResults(result, randIn);  
-      if (otherIn.PrintResultXml)
+      if (otherIn.printResultXml)
 	{
 	  BEPrintResultsXml(coarseBankIn,randIn,otherIn,result);	 
 	}
@@ -330,7 +353,7 @@ main (INT4 argc, CHAR **argv )
       /* save template and correlation */
       
       if (otherIn.template == BCV){
-	if (otherIn.PrintBestOverlap || otherIn.PrintBestTemplate){
+	if (otherIn.printBestOverlap || otherIn.printBestTemplate){
 	  otherIn.extraFinalPrinting = 1;
 	  LAL_CALL(LALInspiralOverlapBCV(&status, 
 					 &list,
@@ -351,7 +374,7 @@ main (INT4 argc, CHAR **argv )
   
 
 
-  if (otherIn.PrintSNRHisto){
+  if (otherIn.printSNRHisto){
     Foutput=  fopen("BE_histo.dat","w");
     gsl_histogram_fprintf(Foutput, histogramNoise, "%f", "%g");
     fclose(Foutput);
@@ -418,7 +441,7 @@ void InitInspiralCoarseBankIn(InspiralCoarseBankIn *coarseBankIn)
 {
 
   coarseBankIn->fLower    	= BANKEFFICIENCY_FLOWER;
-  coarseBankIn->fUpper    	= BANKEFFICIENCY_TSAMPLING/2. - 1.;
+  coarseBankIn->fUpper    	= -1.;
   coarseBankIn->tSampling 	= BANKEFFICIENCY_TSAMPLING;
   coarseBankIn->space     	= BANKEFFICIENCY_SPACE;
   coarseBankIn->mmCoarse  	= BANKEFFICIENCY_MMCOARSE;
@@ -477,7 +500,7 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
   randIn->param.fCutoff		= BANKEFFICIENCY_TSAMPLING/2.-1;		/* sampling 				*/
   randIn->param.startTime       = BANKEFFICIENCY_STARTTIME; 
   randIn->param.startPhase      = BANKEFFICIENCY_STARTPHASE; 
-  randIn->param.nStartPad       = BANKEFFICIENCY_NSTARTPHASE;
+  randIn->param.nStartPad       = BANKEFFICIENCY_NSTARTPAD;
   randIn->param.signalAmplitude = BANKEFFICIENCY_SIGNALAMPLITUDE;
   randIn->param.nEndPad         = BANKEFFICIENCY_NENDPAD;
   randIn->NoiseAmp              = BANKEFFICIENCY_NOISEAMPLITUDE;
@@ -501,16 +524,16 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->psi3         	= -1;
   otherIn->tau0         	= -1;
   otherIn->tau3         	= -1;
-  otherIn->PrintBestOverlap 	= BANKEFFICIENCY_PRINTBESTOVERLAP;
-  otherIn->PrintBestTemplate 	= BANKEFFICIENCY_PRINTBESTTEMPLATE;
-  otherIn->PrintSNRHisto        = BANKEFFICIENCY_PRINTSNRHISTO;
-  otherIn->PrintPsd             = BANKEFFICIENCY_PRINTPSD;
-  otherIn->PrintBank    	= BANKEFFICIENCY_PRINTBANK;
-  otherIn->PrintResultXml    	= BANKEFFICIENCY_PRINTRESULTXML;
-  otherIn->PrintPrototype    	= BANKEFFICIENCY_PRINTPROTOTYPE;
+  otherIn->printBestOverlap 	= BANKEFFICIENCY_PRINTBESTOVERLAP;
+  otherIn->printBestTemplate 	= BANKEFFICIENCY_PRINTBESTTEMPLATE;
+  otherIn->printSNRHisto        = BANKEFFICIENCY_PRINTSNRHISTO;
+  otherIn->printPsd             = BANKEFFICIENCY_PRINTPSD;
+  otherIn->printBank    	= BANKEFFICIENCY_PRINTBANK;
+  otherIn->printResultXml    	= BANKEFFICIENCY_PRINTRESULTXML;
+  otherIn->printPrototype    	= BANKEFFICIENCY_PRINTPROTOTYPE;
   otherIn->faithfulness        	= BANKEFFICIENCY_FAITHFULNESS;
   otherIn->ntrials 	     	= BANKEFFICIENCY_NTRIALS;
-  otherIn->FastSimulation       = BANKEFFICIENCY_FASTSIMULATION;
+  otherIn->fastSimulation       = BANKEFFICIENCY_FASTSIMULATION;
   otherIn->NoiseModel           = LIGOI;
   otherIn->binaryInjection      = NoUserChoice; 
   otherIn->maxTotalMass         = -1;
@@ -520,9 +543,9 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->chanName = NULL;
   otherIn->calCacheName = NULL;
   otherIn->calCacheName = NULL;
-  otherIn->startTime  =751956568;
+  otherIn->startTime  = 751956568;
   otherIn->numSeconds = -1;
-
+  otherIn->realNoise   = 0;
 
   otherIn->L1.chanName             = "L1:LSC-AS_Q";
   otherIn->H1.chanName             = "H1:LSC-AS_Q";
@@ -662,6 +685,8 @@ ParseParameters(	INT4 			*argc,
         BEParseGetDouble(argv,  &i, &(otherIn->psi0));
       else if (!strcmp(argv[i], "--psi3")) 
         BEParseGetDouble(argv,  &i, &(otherIn->psi3));
+      else if (!strcmp(argv[i], "--real-noise")) 
+	otherIn->realNoise = 1;
       else if (!strcmp(argv[i], "--run"))
 	{
 	  BEParseGetString(argv, &i);	 
@@ -675,8 +700,6 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i],"--sampling")) {
         BEParseGetDouble(argv,  &i, &(coarseBankIn->tSampling));
         randIn->param.tSampling = coarseBankIn->tSampling;
-	randIn->param.fCutoff = coarseBankIn->tSampling/2. - 1.;
-	coarseBankIn->fUpper = coarseBankIn->tSampling/2. - 1.;
       }   
       else if (!strcmp(argv[i],"--seed"))
         BEParseGetInt(argv,  &i, &(randIn->useed));
@@ -712,9 +735,9 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i],	"--signal-order")) 
 	BEParseGetInt(argv,  &i, (INT4*)&(randIn->param.order));
       else if (!strcmp(argv[i],	"--signal-psi0-range")) 
-        BEParseGetDouble2(argv,  &i, &(coarseBankIn->psi0Min), &(coarseBankIn->psi0Max));
+        BEParseGetDouble2(argv,  &i, &(randIn->psi0Min), &(randIn->psi0Max));
       else if (!strcmp(argv[i],	"--signal-psi3-range"))
-        BEParseGetDouble2(argv,  &i, &(coarseBankIn->psi3Min), &(coarseBankIn->psi3Max));
+        BEParseGetDouble2(argv,  &i, &(randIn->psi3Min), &(randIn->psi3Max));
       else if (!strcmp(argv[i],	"--simulation-type"))	  
    	{
 	  BEParseGetString(argv, &i);
@@ -724,10 +747,7 @@ ParseParameters(	INT4 			*argc,
 	    randIn->type = 0;
 	  else if (!strcmp(argv[i],"NoiseAndSignal"))
 	    randIn->type = 2;
-	  else if (!strcmp(argv[i],"RealNoise"))
-            randIn->type = RealNoise;
 	  else randIn->type = None;
-	  
 	}
       else if (!strcmp(argv[i], "--tau0")) 
         BEParseGetDouble(argv,  &i, &(otherIn->tau0));
@@ -768,15 +788,17 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i],"--no-alpha-constraint"))   
         otherIn->alphaFConstraint	= ALPHAFUnconstraint;
       else if (!strcmp(argv[i],"--print-best-overlap"))  
-        otherIn->PrintBestOverlap 	= 1;
+        otherIn->printBestOverlap 	= 1;
       else if (!strcmp(argv[i],"--faithfulness"))  
+        otherIn->faithfulness    	= 1;
+      else if (!strcmp(argv[i],"--check"))  
         otherIn->faithfulness    	= 1;
       else if (!strcmp(argv[i],"--real-noise"))  
         randIn->type    	= RealNoise;
       else if (!strcmp(argv[i],"--print-psd"))  
-        otherIn->PrintPsd 		= 1;
+        otherIn->printPsd 		= 1;
       else if (!strcmp(argv[i],"--print-snr-histo")) 
-        otherIn->PrintSNRHisto 	= 1;
+        otherIn->printSNRHisto 	= 1;
       else if (!strcmp(argv[i],"--verbose")) 
         vrbflg 	= 1;
       else if (!strcmp(argv[i],"--version")) 
@@ -789,18 +811,18 @@ ParseParameters(	INT4 			*argc,
 	  exit(0);
 	}
       else if (!strcmp(argv[i],"--print-bank")) 
-        otherIn->PrintBank		= 1;
+        otherIn->printBank		= 1;
       else if (!strcmp(argv[i],"--print-bank")) 
 	{
 	  PrintParameters(*coarseBankIn, *randIn,*otherIn);
 	  exit(0);
 	}
       else if (!strcmp(argv[i],"--print-result-xml")) 
-        otherIn->PrintResultXml        = 1;
+        otherIn->printResultXml        = 1;
       else if (!strcmp(argv[i],"--print-prototype")) 
-        otherIn->PrintPrototype        = 1;
+        otherIn->printPrototype        = 1;
       else if (!strcmp(argv[i],"--fast-simulation")) 
-        otherIn->FastSimulation        = 1;           	   	    
+        otherIn->fastSimulation        = 1;           	   	    
       else 
 	{
         fprintf(stderr, "%s option does not exist. Type --help for options\n", argv[i]);
@@ -933,6 +955,14 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
   temp =randIn->param.mass1; /*just to avoid boring warning*/
 
 
+
+  if (coarseBankIn->fUpper = -1	){
+    coarseBankIn->fUpper = coarseBankIn->tSampling/2. - 1.;
+    randIn->param.fCutoff = coarseBankIn->tSampling/2. - 1.;
+  }
+
+
+
   if (coarseBankIn->alpha < 0 ){
     sprintf(msg, "--bank-alpha (%f) parameter must be positive in the range [0,1] \n",
 	    coarseBankIn->alpha);
@@ -1056,6 +1086,8 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
    randIn->param.massChoice = fixedPsi; 
    randIn->param.psi0 = otherIn->psi0;
    randIn->param.psi3 = otherIn->psi3;
+   randIn->param.fCutoff = otherIn->signalfFinal;
+
    if (otherIn->m1 != -1 ||otherIn->m2 != -1 || otherIn->tau0 != -1 || otherIn->tau3 != -1){
      sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. If particular injection is requested,  you must choose either (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
      BEPrintError(msg);
@@ -1350,7 +1382,6 @@ KeepHighestValues(OverlapOutputIn resultThisTemplate,
 		  )
 {
   if (resultThisTemplate.rhoMax > resultBestTemplate->rhoMax){    
-    printf("%e %e %e\n", resultThisTemplate.rhoMax,resultBestTemplate->rhoMax, resultBestTemplate->freq );
     resultBestTemplate->rhoMax   = resultThisTemplate.rhoMax;
     resultBestTemplate->phase    = resultThisTemplate.phase;
     resultBestTemplate->alpha    = resultThisTemplate.alpha;
@@ -1421,8 +1452,8 @@ GetResult(
     LALInspiralParameterCalc( status->statusPtr,  &trigger );
     CHECKSTATUSPTR(status);							
 
-    result->tau0_trigger = trigger.t0;
-    result->tau3_trigger = trigger.t3;
+    result->tau0_trigger = triggerC.t0;
+    result->tau3_trigger = triggerC.t3;
     result->tau0_inject  = injected.t0;
     result->tau3_inject  = injected.t3; 
   }
@@ -1731,7 +1762,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   x3.data = (REAL4*) LALMalloc(sizeof(REAL4) * x3.length);
   x4.data = (REAL4*) LALMalloc(sizeof(REAL4) * x4.length);
 
-  if (otherIn.PrintBestOverlap && otherIn.extraFinalPrinting){
+  if (otherIn.printBestOverlap && otherIn.extraFinalPrinting){
     phaseV.data = (REAL4*) LALMalloc(sizeof(REAL4) * phaseV.length);
     template.data = (REAL4*) LALMalloc(sizeof(REAL4) * template.length);
     rho1.data = (REAL4*) LALMalloc(sizeof(REAL4) * rho1.length);
@@ -1780,7 +1811,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 
 
   /* some output for debugging, checking ... */
-  if (otherIn.PrintBestOverlap && otherIn.extraFinalPrinting)
+  if (otherIn.printBestOverlap && otherIn.extraFinalPrinting)
     {
       Foutput = fopen( "BE_Filter.dat", "w");
       for (i=0; i< x1.length; i++)
@@ -1815,7 +1846,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   thetab = atan(thetab);
   rho    = 0.;
   
-  if(otherIn.PrintBestOverlap && otherIn.extraFinalPrinting){
+  if(otherIn.printBestOverlap && otherIn.extraFinalPrinting){
   fprintf(stderr,"theta_b = %e a11=%e a21=%e a22=%e alphaMax = %e fCutoff=%e\n",
 	  thetab,  a11, a21, a22, alphaMax, corrin.fCutoff);
 
@@ -1844,7 +1875,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 
       thetav =   atan2(V2,V1);
 	
-      if(otherIn.PrintBestOverlap && otherIn.extraFinalPrinting){
+      if(otherIn.printBestOverlap && otherIn.extraFinalPrinting){
 	rho1.data[i] = rhoUnconstraint;
 	rho2.data[i] = sqrt((V0 + V1)/2.);
 	rho3.data[i] = sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);
@@ -1866,10 +1897,6 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 		 || (-LAL_PI-1e-4<=thetav && thetav < -LAL_PI+thetab)){
 	  rhoConstraint =sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);;
 	}
-	else  if ( 0  <= thetav && thetav <= 2 * thetab)
-	  {	
-	    rhoConstraint = rhoUnconstraint;
-	  }
 	else
 	  {
 	    fprintf(stderr,"must not enter here  thetav = %e thetab=%e\n ", thetav , thetab);
@@ -1899,13 +1926,13 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   
       if (otherIn.alphaFConstraint == ALPHAFConstraint){
   
-	if(otherIn.PrintBestOverlap || otherIn.PrintSNRHisto) {
+	if(otherIn.printBestOverlap || otherIn.printSNRHisto) {
 	  correlation->data[i] = rhoConstraint;
 	}
       }
       else 
 	{
-	  if(otherIn.PrintBestOverlap || otherIn.PrintSNRHisto) {
+	  if(otherIn.printBestOverlap || otherIn.printSNRHisto) {
 	    correlation->data[i] = rhoUnconstraint;
 	  }
 	}
@@ -1943,7 +1970,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 
 
   /* The final template to be print ? */
-  if (otherIn.PrintBestOverlap  && otherIn.extraFinalPrinting){
+  if (otherIn.printBestOverlap  && otherIn.extraFinalPrinting){
 
     /*print overlap, combinaison of the x_i filters*/
     Foutput=fopen("BE_Phase.dat","w");
@@ -2007,7 +2034,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   }
 
 
-    if (otherIn.extraFinalPrinting && otherIn.PrintBestOverlap){
+    if (otherIn.extraFinalPrinting && otherIn.printBestOverlap){
     /* print the final template given phase, alpha ans so on*/
     
     phase 		= BestPhase;
@@ -2081,7 +2108,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   LALFree(x3.data);
   LALFree(x4.data);
 
-  if (otherIn.extraFinalPrinting && otherIn.PrintBestOverlap){
+  if (otherIn.extraFinalPrinting && otherIn.printBestOverlap){
     LALFree(phaseV.data);
     LALFree(template.data);
     LALFree(rho1.data);
@@ -2433,7 +2460,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
     ADD_PROCESS_PARAM("float", "%12.5d", "--alpha-constraint",1);
   if (!otherIn.alphaFConstraint )
     ADD_PROCESS_PARAM("float", "%12.5d", "--no-alpha-constraint",0);
-  if (!otherIn.FastSimulation )
+  if (!otherIn.fastSimulation )
     ADD_PROCESS_PARAM("float", "%12.5d", "--fast-simulation",1);
   if (otherIn.binaryInjection == BHNS)
     ADD_PROCESS_PARAM("float", "%12.5d", "--bhns-injection", BHNS);
@@ -2522,7 +2549,7 @@ BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
     
     PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp);
     
-    fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW"\n",
+    fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW",\n",
 	    trigger.psi0_triggerU,
 	    trigger.psi3_triggerU,
 	    trigger.psi0_trigger,
@@ -2562,73 +2589,44 @@ BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
     {
       xmlStream.fp = fopen(fname,"a+");
       
+      fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW,
+	      trigger.psi0_triggerU,
+	      trigger.psi3_triggerU,
+	      trigger.psi0_trigger,
+	      trigger.psi3_trigger,
+	      randIn.param.psi0, 
+	      randIn.param.psi3, 
+	      trigger.tau0_trigger,
+	      trigger.tau3_trigger,
+	      randIn.param.t0, 
+	      randIn.param.t3, 
+	      trigger.fend_triggerU, 
+	      trigger.fend_trigger, 
+	      trigger.fend_inject,
+	      trigger.mass1_inject,
+	      trigger.mass2_inject,
+	      trigger.rho_finalU,
+	      trigger.phaseU,
+	      trigger.alphaFU, 
+	      trigger.layerU,
+	      trigger.binU,
+	      trigger.rho_final,
+	      trigger.phase,
+	      trigger.alphaF, 
+	      trigger.layer,
+	      trigger.bin,
+	      trigger.coaTime);	
+
       if (trigger.ntrial == (UINT4)otherIn.ntrials){
-	
-	fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW,
-		trigger.psi0_triggerU,
-		trigger.psi3_triggerU,
-		trigger.psi0_trigger,
-		trigger.psi3_trigger,
-		randIn.param.psi0, 
-		randIn.param.psi3, 
-		trigger.tau0_trigger,
-		trigger.tau3_trigger,
-		randIn.param.t0, 
-		randIn.param.t3, 
-		trigger.fend_triggerU, 
-		trigger.fend_trigger, 
-		trigger.fend_inject,
-		trigger.mass1_inject,
-		trigger.mass2_inject,
-		trigger.rho_finalU,
-		trigger.phaseU,
-		trigger.alphaFU, 
-		trigger.layerU,
-		trigger.binU,
-		trigger.rho_final,
-		trigger.phase,
-		trigger.alphaF, 
-		trigger.layer,
-		trigger.bin,
-		trigger.coaTime
-		);	
-
-
 	PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp );
 	PRINT_LIGOLW_XML_FOOTER(xmlStream.fp );
       }
       else
 	{
-	  fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW"\n",
-		  trigger.psi0_triggerU,
-		  trigger.psi3_triggerU,
-		  trigger.psi0_trigger,
-		  trigger.psi3_trigger,
-		  randIn.param.psi0, 
-		  randIn.param.psi3, 
-		  trigger.tau0_trigger,
-		  trigger.tau3_trigger,
-		  randIn.param.t0, 
-		  randIn.param.t3, 
-		  trigger.fend_triggerU, 
-		  trigger.fend_trigger, 
-		  trigger.fend_inject,
-		  trigger.mass1_inject,
-		  trigger.mass2_inject,
-		  trigger.rho_finalU,
-		  trigger.phaseU,
-		  trigger.alphaFU, 
-		  trigger.layerU,
-		  trigger.binU,
-		  trigger.rho_final,
-		  trigger.phase,
-		  trigger.alphaF, 
-		  trigger.layer,
-		  trigger.bin,
-		  trigger.coaTime
-		  );
+	  fprintf(xmlStream.fp, ",\n");
 	}
-     
+      
+      
       fclose( xmlStream.fp );
       xmlStream.fp = NULL;
     }  
@@ -2855,7 +2853,7 @@ void BECreatePsd(LALStatus                *status,
      }
 
   /* --- save the psd in the file psd.dat if requested --- */
-  if (otherIn.PrintPsd)
+  if (otherIn.printPsd)
    {
      Foutput= fopen(BANKEFFICIENCY_PRINTPSD_FILE,"w");
      for (i = 1; i < coarseBankIn->shf.data->length; i++)
@@ -2902,6 +2900,7 @@ void BEGenerateInputData(LALStatus *status,
      input parameters m1 and m2 */      
   randIn->param.approximant = otherIn.signal; 
 
+  
   if (randIn->type != 1){
     if (otherIn.signal == BCV)
       {
@@ -2909,8 +2908,7 @@ void BEGenerateInputData(LALStatus *status,
 	if (otherIn.psi0!=-1 && otherIn.psi3!=-1)
 	  {
 	    randIn->param.massChoice = fixedPsi;
-            randIn->param.psi0 = otherIn.psi0;
-            randIn->param.psi3 = otherIn.psi3;
+
 	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
 	    CHECKSTATUSPTR(status);
 	  }
@@ -2996,8 +2994,7 @@ void BEGenerateInputData(LALStatus *status,
 
     if (randIn->type == 1)
       {
-	randIn->param.massChoice = m1Andm2;
-	
+	randIn->param.massChoice = m1Andm2;	
 	LALRandomInspiralSignal(status->statusPtr, signal, randIn);
 	CHECKSTATUSPTR(status);
       }    
@@ -3543,7 +3540,7 @@ LALCreateRealPsd(LALStatus *status,
   
     }
   
-  injectionFile = NULL;
+        injectionFile = NULL;
     
 
 
@@ -3952,7 +3949,7 @@ LALCreateRealPsd(LALStatus *status,
   /* spec, uncalibrated spec, and raw0.dat identical to 
      inspiral in FindChipSPData. */
 
-
+  /*if one want to inject BCV directly in the bcv injection*/
 #if 0
  { 
    REAL4Vector            signal;
@@ -3966,13 +3963,16 @@ LALCreateRealPsd(LALStatus *status,
    signal.data 		= (REAL4*) LALCalloc(1, sizeof(REAL4) * signal.length);
 
    LALCreateForwardRealFFTPlan(status->statusPtr, &fwdp, signal.length, 0);
+   randIn.mMin = 3; 
+   randIn.mMax =5; 
+   randIn.MMax = 10;
 
    randIn.param.tSampling  = sampleRate;
    randIn.param.massChoice = fixedPsi;
-   randIn.param.psi0 = 226783;
-   randIn.param.psi3 = -943;
-   randIn.param.fCutoff = 620;
-   randIn.param.alpha = 1.1;
+   randIn.param.psi0 = 200000;
+   randIn.param.psi3 = -500;
+   randIn.param.fCutoff = 900;
+   randIn.param.alpha = .99;
    randIn.param.approximant = BCV;
    randIn.param.massChoice = fixedPsi;
    randIn.param.fLower  = 40 ; 
@@ -3983,7 +3983,7 @@ LALCreateRealPsd(LALStatus *status,
    randIn.fwdp = fwdp;
    randIn.param.signalAmplitude = 1;
    randIn.param.startPhase = 0;
-   randIn.param.nStartPad =  16384;
+   randIn.param.nStartPad =  128 *sampleRate;
 
 
    fprintf(stderr, "%d %d %d\n",n,bankIn->shf.data->length, strainSegment->length);
@@ -4003,8 +4003,8 @@ LALCreateRealPsd(LALStatus *status,
    for ( k = 0; k < n/2; ++k )
      {
        
-       strainSegment->data[k].re = signal.data[k] ;
-       strainSegment->data[k].im = signal.data[n - k];
+       strainSegment->data[k].re += signal.data[k] *10;
+       strainSegment->data[k].im += signal.data[n - k] *10;
      }
    
       
@@ -4233,7 +4233,7 @@ void LALInspiralOverlapBCV(LALStatus *status,
 			   REAL4Vector            *FilterBCV1,
 			   REAL4Vector            *FilterBCV2,
 			   InspiralWaveOverlapIn  *overlapin,
-			   OverlapOutputIn        *output,
+			   OverlapOutputIn        *overlapout,
 			   REAL4Vector            *correlation,
 			   BEMoments              *moments)
 			   
@@ -4250,30 +4250,21 @@ void LALInspiralOverlapBCV(LALStatus *status,
   df = randIn->param.tSampling / (REAL8)(n/2) / 2.;      
 
   kMin  = floor(randIn->param.fLower /df );
+  fendBCV = (*list)[templateNumber].params.fFinal;
 
-
-
-  fendBCV = (*list)[templateNumber].params.fFinal ;
-  
 
   /* if we want to test the BCV metric by injectd BCV signal, we 
    * have to get the same final frequnecy for both template and signal */
   if (otherIn->signal == BCV) 
     fendBCV = (*list)[templateNumber].params.fFinal =  randIn->param.fFinal; 
   
-  
-  /*                 if (otherIn.NoiseModel == REALPSD)
-		     {
-		     sizeBank =1 ; 
-		     list[currentTemplateNumber].params.fFinal =  620;; 
-		     list[currentTemplateNumber].params.psi0 =  226783;; 
-		     list[currentTemplateNumber].params.psi3 =  -943;; 
-		     fendBCV = 620;
-		     }
-		  */
+		  
   overlapin->ifExtOutput = 0;
   overlapin->param.fFinal   =  fendBCV;
   overlapin->param.fCutoff  =  fendBCV;               
+  overlapin->param 	= (*list)[templateNumber].params;	   
+ 
+  overlapout->rhoMax  = -1;
   kMax = floor(fendBCV / df);
   
   /* Extract some values a11,a21,a22 parameter for template creation*/
@@ -4299,7 +4290,7 @@ void LALInspiralOverlapBCV(LALStatus *status,
 			     FilterBCV1, 
 			     FilterBCV2, 
 			     *otherIn, 
-			     output, 
+			     overlapout, 
 			     moments), 
 	   status->statusPtr);
   
@@ -4448,16 +4439,16 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  "psi3\t\t%f\t\n"
 	  "tau0\t\t%f\t\n"
 	  "tau3\t\t%f\t\n" 
-	  "PrintBestOverlap\t%d\t\n"	
-	  "PrintBestTemplate\t%d\t\n" 	
-	  "PrintSNRHisto\t\t%d\t\n"        
-	  "PrintPsd\t\t%d\t\n"             
-	  "PrintBank\t\t%d\t\n"    	
-	  "PrintResultXml\t\t%d\t\n"    	
-	  "PrintPrototype\t\t%d\t\n"    	
+	  "printBestOverlap\t%d\t\n"	
+	  "printBestTemplate\t%d\t\n" 	
+	  "printSNRHisto\t\t%d\t\n"        
+	  "printPsd\t\t%d\t\n"             
+	  "printBank\t\t%d\t\n"    	
+	  "printResultXml\t\t%d\t\n"    	
+	  "printPrototype\t\t%d\t\n"    	
 	  "faithfulness\t\t%d\t\n"        	
 	  "ntrials\t\t%d\t\n" 	     	
-	  "FastSimulation\t\t%d\t\n"       
+	  "fastSimulation\t\t%d\t\n"       
 	  "NoiseModel\t\t%d\t\n"           
 	  "binaryInjection\t\t%d\t\n"      
 	  "maxTotalMass\t\t%f\t\n"         
@@ -4495,16 +4486,16 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  other.psi3,
 	  other.tau0,
 	  other.tau3, 
-	  other.PrintBestOverlap,	
-	  other.PrintBestTemplate, 	
-	  other.PrintSNRHisto,        
-	  other.PrintPsd,             
-	  other.PrintBank,    	
-	  other.PrintResultXml,    	
-	  other.PrintPrototype,    	
+	  other.printBestOverlap,	
+	  other.printBestTemplate, 	
+	  other.printSNRHisto,        
+	  other.printPsd,             
+	  other.printBank,    	
+	  other.printResultXml,    	
+	  other.printPrototype,    	
 	  other.faithfulness,        	
 	  other.ntrials, 	     	
-	  other.FastSimulation,       
+	  other.fastSimulation,       
 	  other.NoiseModel,           
 	  other.binaryInjection,      
 	  other.maxTotalMass,         
