@@ -46,6 +46,15 @@ RCSID("$Id$");
 /* function to return the inverse complimentary error function */
 static double stopp_erfcinv(double y)
 {
+  /*
+   * based on dierfc() by Takuya OOURA:
+   *
+   * http://momonga.t.u-tokyo.ac.jp/~ooura/gamerf.html
+   * 
+   * Copyright(C) 1996 Takuya OOURA (email: ooura@mmm.t.u-tokyo.ac.jp).
+   * You may use, copy, modify this code for any purpose and
+   * without fee. You may distribute this ORIGINAL package.
+   */
   double s, t, u, w, x, z;
 
   z = y;
