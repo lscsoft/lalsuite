@@ -27,7 +27,9 @@ stochastic.c:
   the --overlap-hann and --hann-duration command line switches with
   --hann, --tukey, and --overlap flags
 
-stopp.c:
+stopp.c/stopp_bayes.c:
+
+* unify stopp.c and stopp_bayes.c into a single code
 
 * add support for combining statistics from overlapping hann windows
 

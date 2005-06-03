@@ -8,8 +8,9 @@ lalapps_stochastic_SOURCES = stochastic.c
 endif
 endif
 if LALMETAIO
-METAIOPROGRAMS = lalapps_stopp
+METAIOPROGRAMS = lalapps_stopp lalapps_stopp_bayes
 lalapps_stopp_SOURCES = stopp.c
+lalapps_stopp_bayes_SOURCES = stopp_bayes.c
 endif
 bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes
 bin_PROGRAMS = lalapps_olapredfcn ${FRAMEPROGRAMS} ${METAIOPROGRAMS}
