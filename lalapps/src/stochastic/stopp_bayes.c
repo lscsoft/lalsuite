@@ -38,7 +38,8 @@ RCSID("$Id$");
   " --verbose                    verbose mode\n"\
   " --cat-only                   only cat xml files\n"\
   " --text                       output file as text\n"\
-  " --output FILE                write output data to FILE\n"
+  " --output FILE                write output data to FILE\n"\
+  " --confidence LEVEL           set confidence to LEVEL\n"
 
 /* helper functions */
 
@@ -133,6 +134,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       {"help", no_argument, 0, 'h'},
       {"version", no_argument, 0, 'v'},
       {"output", required_argument, 0, 'o'},
+      {"confidence", required_argument, 0, 'c'},
       {0, 0, 0, 0}
     };
     int c;
@@ -141,7 +143,7 @@ INT4 main(INT4 argc, CHAR *argv[])
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only(argc, argv, "hvo:", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "hvo:c:", long_options, &option_index);
 
     /* detect the end of the options */
     if (c == - 1)
@@ -173,7 +175,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
       case 'v':
         /* display version info and exit */
-        fprintf(stdout, "Stochastic Post Processing\n" CVS_ID "\n");
+        fprintf(stdout, "Stochastic Post Processing: Bayesian\n" CVS_ID "\n");
         exit(0);
         break;
 
@@ -182,6 +184,19 @@ INT4 main(INT4 argc, CHAR *argv[])
         optarg_len = strlen(optarg) + 1;
         outputFileName = (CHAR *)calloc(optarg_len, sizeof(CHAR));
         memcpy(outputFileName, optarg, optarg_len);
+        break;
+
+      case 'c':
+        /* confidence level */
+        confidence = atof(optarg);
+        if ((confidence >= 1) || (confidence <= 0))
+        {
+          fprintf(stderr, "invalid argument to --%s\n" \
+              "confidence must be between 0 and 1, exclusive " \
+              "(%.2f specified)\n", long_options[option_index].name, \
+              confidence);
+          exit(1);
+        }
         break;
 
       case '?':
