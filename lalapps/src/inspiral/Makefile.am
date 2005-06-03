@@ -27,7 +27,7 @@ bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_gwf2xml lalapps_lt_inca \
 	       lalapps_thinca lalapps_trigbank \
 	       lalapps_spininj lalapps_coherent_inspiral \
-               lalapps_coherentbank alaninj
+               lalapps_coherentbank
 
 lalapps_inspiral_SOURCES 	= $(INSPIRALSRC)
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
@@ -46,7 +46,6 @@ lalapps_trigbank_SOURCES 	= $(TRIGBANKSRC)
 lalapps_spininj_SOURCES 	= $(SPININJSRC)
 lalapps_inspfrinj_SOURCES 	= $(INSPFRINJSRC)
 lalapps_gwf2xml_SOURCES 	= $(GWF2XMLSRC)
-alaninj_SOURCES                 = alaninj.c
 else
 bin_PROGRAMS = 
 endif
