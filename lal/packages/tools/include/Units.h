@@ -231,6 +231,10 @@ LALUnit * XLALUnitRaiseINT2( LALUnit *output, const LALUnit *input,
 LALUnit * XLALUnitSquare( LALUnit *output, const LALUnit *input );
 LALUnit * XLALUnitSqrt( LALUnit *output, const LALUnit *input );
 LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input );
+REAL8 XLALUnitPrefactor(const LALUnit *unit);
+int XLALUnitIsDimensionless(const LALUnit *unit);
+REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2);
+
 
 
 /* LALUnitNormalize will reduce the rational powers in the basic unit

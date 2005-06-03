@@ -41,10 +41,52 @@ turn.
 #define TRUE 1
 #define FALSE 0
 
+#include <math.h>
+
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 
 NRCSID( UNITCOMPAREC, "$Id$" );
+
+
+/* Return 1 if a unit is dimensionless, 0 otherwise */
+int XLALUnitIsDimensionless(const LALUnit *unit)
+{
+  int i;
+
+  if(!unit)
+    XLAL_ERROR("XLALUnitIsDimensionless", XLAL_EFAULT);
+
+  for(i = 0; i < LALNumUnits; i++)
+    if(unit->unitNumerator[i] != unit->unitDenominatorMinusOne[i])
+      return 0;
+  return 1;
+}
+
+
+/* Return the unit's prefactor */
+REAL8 XLALUnitPrefactor(const LALUnit *unit)
+{
+  if(!unit)
+    XLAL_ERROR_REAL8("XLALUnitPrefactor", XLAL_EFAULT);
+  return pow(10.0, unit->powerOfTen);
+}
+
+
+/* Return the ratio unit1 / unit2 */
+REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2)
+{
+  static const char *func = "XLALUnitRatio";
+  LALUnit tmp;
+
+  if(!unit1 || !unit2)
+    XLAL_ERROR_REAL8(func, XLAL_EFAULT);
+
+  XLALUnitDivide(&tmp, unit1, unit2);
+  if(XLALUnitIsDimensionless(&tmp))
+    return XLALUnitPrefactor(&tmp);
+  XLAL_ERROR_REAL8(func, XLAL_EDIMS);
+}
 
 
 /* returns 1 if units are the same (after normalization) or 0 if not */
