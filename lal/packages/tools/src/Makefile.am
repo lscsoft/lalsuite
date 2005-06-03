@@ -10,7 +10,9 @@ libtools_la_SOURCES = \
   Sequence.c TimeSeries.c FrequencySeries.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MAINTAINERCLEANFILES = FrequencySeries.c Sequence.c TimeSeries.c
-EXTRA_DIST = FrequencySeries.m4 Sequence.m4 TimeSeries.m4 MakeTemplateBank.c
+EXTRA_DIST = \
+  FrequencySeries.m4 Sequence.m4 TimeSeries.m4 MakeTemplateBank.c \
+  FrequencySeriesC.m4 SequenceC.m4 TimeSeriesC.m4
 EXTRA_TEXSOURCES = MakeTemplateBank.c
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
