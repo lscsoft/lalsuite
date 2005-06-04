@@ -109,3 +109,28 @@ These functions reduce an existing frequency series to a section of itself.
 \subsubsection{Author}
 
 \verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
+
+
+\subsection{Adding Functions}
+
+\subsubsection{Name}
+
+\texttt{XLALAdd}\textit{frequencyseriestype}\texttt{()}
+
+\subsubsection{Synopsis}
+
+\begin{verbatim}
+#include <lal/FrequencySeries.h>
+\end{verbatim}
+\input{FrequencySeriesAddP}
+
+\subsubsection{Description}
+
+These functions add the second argument to the first argument, returning a
+pointer to the first argument on success or NULL on failure.  The two
+series must have the same epoch and frequency resolution, and have units
+that differ only by a dimensionless factor.
+
+\subsubsection{Author}
+
+\verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|

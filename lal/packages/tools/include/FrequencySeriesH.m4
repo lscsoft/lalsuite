@@ -87,3 +87,12 @@ void `LALShrink'SERIESTYPE (
 	size_t length
 );
 /* </lalVerbatim> */
+
+/* <lalLaTeX file="FrequencySeriesAddP">
+\idx{`XLALAdd'SERIESTYPE ()}
+</lalLaTeX> <lalVerbatim file="FrequencySeriesAddP"> */
+SERIESTYPE *`XLALAdd'SERIESTYPE (
+	SERIESTYPE *arg1,
+	SERIESTYPE *arg2
+);
+/* </lalVerbatim> */
