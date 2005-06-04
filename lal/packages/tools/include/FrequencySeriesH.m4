@@ -96,3 +96,13 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 	SERIESTYPE *arg2
 );
 /* </lalVerbatim> */
+
+/* <lalLaTeX file="FrequencySeriesSubtractP">
+\idx{`XLALSubtract'SERIESTYPE ()}
+</lalLaTeX> <lalVerbatim file="FrequencySeriesSubtractP"> */
+SERIESTYPE *`XLALSubtract'SERIESTYPE (
+	SERIESTYPE *arg1,
+	SERIESTYPE *arg2
+);
+/* </lalVerbatim> */
+

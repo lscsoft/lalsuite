@@ -111,7 +111,7 @@ These functions reduce an existing frequency series to a section of itself.
 \verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
 
 
-\subsection{Adding Functions}
+\subsection{Addition Functions}
 
 \subsubsection{Name}
 
@@ -134,3 +134,29 @@ that differ only by a dimensionless factor.
 \subsubsection{Author}
 
 \verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
+
+
+\subsection{Subtraction Functions}
+
+\subsubsection{Name}
+
+\texttt{XLALSubtract}\textit{frequencyseriestype}\texttt{()}
+
+\subsubsection{Synopsis}
+
+\begin{verbatim}
+#include <lal/FrequencySeries.h>
+\end{verbatim}
+\input{FrequencySeriesSubtractP}
+
+\subsubsection{Description}
+
+These functions subtract the second argument from the first argument,
+returning a pointer to the first argument on success or NULL on failure.
+The two series must have the same epoch and frequency resolution, and have
+units that differ only by a dimensionless factor.
+
+\subsubsection{Author}
+
+\verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
+

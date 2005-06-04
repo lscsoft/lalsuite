@@ -200,3 +200,36 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 
 	return(arg1);
 }
+
+
+SERIESTYPE *`XLALSubtract'SERIESTYPE (
+	SERIESTYPE *arg1,
+	SERIESTYPE *arg2
+)
+{
+	static const char *func = "`XLALAdd'SERIESTYPE";
+	int offset = (arg2->f0 - arg1->f0) / arg1->deltaF;
+	REAL8 ratio = XLALUnitRatio(&arg1->sampleUnits, &arg2->sampleUnits);
+	unsigned int i;
+
+	/* make sure arguments are compatible */
+	if((XLALDeltaFloatGPS(&arg1->epoch, &arg2->epoch) != 0.0) || (arg1->deltaF != arg2->deltaF) || XLALIsREAL8FailNaN(ratio))
+		XLAL_ERROR_NULL(func, XLAL_EDATA);
+	/* FIXME: generalize to relax this requirement */
+	if((arg2->f0 < arg1->f0) || (offset + arg2->data->length > arg1->data->length))
+		XLAL_ERROR_NULL(func, XLAL_EBADLEN);
+	
+	/* subtract arg2 from arg1, adjusting the units */
+	for(i = 0; i < arg2->data->length; i++) {
+		ifelse(DATATYPE, COMPLEX8,
+		arg1->data->data[offset + i].re -= arg2->data->data[i].re / ratio;
+		arg1->data->data[offset + i].im -= arg2->data->data[i].im / ratio;
+		, DATATYPE, COMPLEX16,
+		arg1->data->data[offset + i].re -= arg2->data->data[i].re / ratio;
+		arg1->data->data[offset + i].im -= arg2->data->data[i].im / ratio;
+		, 
+		arg1->data->data[offset + i] -= arg2->data->data[i] / ratio;)
+	}
+
+	return(arg1);
+}
