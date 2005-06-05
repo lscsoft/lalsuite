@@ -272,8 +272,7 @@ main (int argc, char *argv[])
   input.numSigmaMin=2.0;
   input.alphaDefault=0.5;
 
-  LALComputeTFPlanes (&status, tfTiling, &fseries);
-  TestStatus (&status, CODES(0), 1);
+  XLALComputeTFPlanes (tfTiling, &fseries);
 
   LALComputeExcessPower (&status, tfTiling, &input);
   TestStatus (&status, CODES(0), 1);
@@ -565,12 +564,6 @@ main (int argc, char *argv[])
     locfseries.epoch.gpsNanoSeconds=0;
     locfseries.deltaF = 1.0;
     locfseries.f0 = 0.0;
-    /*
-     * OMITTED
-     *
-    locfseries.name = NULL;
-    locfseries.sampleUnits=NULL;
-     */
     locfseries.data=NULL;
 
     LALCCreateVector( &status, &(locfseries.data), 1000);
@@ -579,39 +572,6 @@ main (int argc, char *argv[])
 
     /* now start checking errors */
 
-    LALComputeTFPlanes( &status, tfTiling, NULL);
-    TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
-    LALComputeTFPlanes( &status, NULL, &locfseries);
-    TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
-    {
-      COMPLEX8Vector *p;
-      p = locfseries.data;
-      locfseries.data=NULL;
-      LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-      locfseries.data=p;
-    }
-
-    {
-      COMPLEX8 *p;
-      p = locfseries.data->data;
-      locfseries.data->data=NULL;
-      LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-      locfseries.data->data=p;
-    }
-
-    {
-      TFTile *p;
-      p=tfTiling->firstTile;
-      tfTiling->firstTile=NULL;
-      LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-      tfTiling->firstTile=p;
-    }
-
     {
       INT4 p;
       p = tfTiling->numPlanes;
@@ -619,49 +579,6 @@ main (int argc, char *argv[])
       LALComputeTFPlanes( &status, tfTiling, &locfseries);
       TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
       tfTiling->numPlanes=p;
-    }
-
-    {
-      COMPLEX8TimeFrequencyPlane **p;
-      p = tfTiling->tfp;
-      tfTiling->tfp=NULL;
-      LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-      tfTiling->tfp=p;
-    }
-
-    {
-      ComplexDFTParams **p;
-      p = tfTiling->dftParams;
-      tfTiling->dftParams=NULL;
-      LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-      tfTiling->dftParams=p;
-    }
-
-    {
-      INT4 ii;
-      COMPLEX8TimeFrequencyPlane **thisPlane;
-      ComplexDFTParams      **thisdftParams;
-      COMPLEX8TimeFrequencyPlane *p;
-      ComplexDFTParams *p1;
-            
-      for(ii=0;ii<tfTiling->numPlanes; ii++)
-	{
-	  thisPlane = tfTiling->tfp+ii;
-	  p=*thisPlane;
-	  *thisPlane=NULL;
-	  LALComputeTFPlanes( &status, tfTiling, &locfseries);
-	  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-	  *thisPlane=p;
-
-	  thisdftParams = tfTiling->dftParams+ii;
-	  p1=*thisdftParams;
-	  *thisdftParams=NULL;
-	  LALComputeTFPlanes( &status, tfTiling, &locfseries);
-	  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-	  *thisdftParams=p1;
-	}
     }
 
     /* clean up */
