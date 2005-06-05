@@ -66,14 +66,14 @@ int XLALPrintInfo( const char *fmt, ... );
 /* returns the value of the XLAL REAL4 failure NaN */
 static REAL4 UNUSED XLALREAL4FailNaN( void )
 {
-  const union { INT4 i; REAL4 x; } val = { XLAL_REAL4_FAIL_NAN_INT } ;
+  volatile const union { INT4 i; REAL4 x; } val = { XLAL_REAL4_FAIL_NAN_INT } ;
   return val.x;
 }
 
 /* returns the value of the XLAL REAL8 failure NaN */
 static REAL8 UNUSED XLALREAL8FailNaN( void )
 {
-  const union { INT8 i; REAL8 x; } val = { XLAL_REAL8_FAIL_NAN_INT } ;
+  volatile const union { INT8 i; REAL8 x; } val = { XLAL_REAL8_FAIL_NAN_INT } ;
   return val.x;
 }
 
