@@ -3,188 +3,148 @@ Author: Flanagan, E
 $Id$
 ********* </lalVerbatim> ********/
 
+#include <math.h>
+
 #include <lal/LALRCSID.h>
 
 NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-
 #include <lal/ExcessPower.h>
-#include <lal/LALConstants.h>
 #include <lal/LALErrno.h>
-#include <lal/LALStdlib.h>
-#include <lal/Random.h>
-#include <lal/RealFFT.h>
-#include <lal/SeqFactories.h>
 #include <lal/Thresholds.h>
-
+#include <lal/XLALError.h>
 
 #define TRUE 1
-#define FALSE 0
 
-
-extern INT4 lalDebugLevel;
 
 /******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
-void
-LALComputeExcessPower (
-		   LALStatus               *status,
-		   TFTiling                *tfTiling,
-		   ComputeExcessPowerIn    *input,
-		   REAL4                   *norm
-		   )
+int
+XLALComputeExcessPower(
+	TFTiling *tfTiling,
+	ComputeExcessPowerIn *input,
+	REAL4 *norm
+)
 /******** </lalVerbatim> ********/
 {
-  TFTile             *thisTile;
+	static const char *func = "XLALComputeExcessPower";
+	COMPLEX8TimeFrequencyPlane *tfPlane;
+	TFTile *tile;
+	REAL8 sum;
+	REAL8 dof;
+	REAL8 numsigma;
+	INT4 j;
+	INT4 nf;
+	INT4 nt;
+	INT4 t1;
+	INT4 t2;
+	INT4 k1;
+	INT4 k2;
 
-  INITSTATUS (status, "LALComputeExcessPower", COMPUTEEXCESSPOWERC);
-  ATTATCHSTATUSPTR (status);
+	/* check on some parameter values */
+	if((input->numSigmaMin < 1.0) || (input->alphaDefault < 0.0) || (input->alphaDefault > 1.0) || (tfTiling->numPlanes <= 0))
+		XLAL_ERROR(func, XLAL_EDOM);
 
-  /* make sure that arguments are not NULL */
-  ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  ASSERT(tfTiling->tfp, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  ASSERT(tfTiling->dftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	/* make sure TF planes have already been computed */
+	if(!tfTiling->planesComputed)
+		XLAL_ERROR(func, XLAL_EDATA);
 
-  /* check on some parameter values */
-  ASSERT(input->numSigmaMin >= 1.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-  ASSERT((input->alphaDefault >= 0.0) && (input->alphaDefault <= 1.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-  ASSERT(tfTiling->numPlanes > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile) {
+		/* Check plane index is in required range */
+		if((tile->whichPlane < 0 ) || (tile->whichPlane >= tfTiling->numPlanes))
+			XLAL_ERROR(func, XLAL_EDATA);
+		tfPlane = tfTiling->tfp[tile->whichPlane];
 
-  /* make sure TF planes have already been computed */
-  ASSERT(tfTiling->planesComputed, status, EXCESSPOWERH_EORDER, EXCESSPOWERH_MSGEORDER);
+		nf = tfPlane->params->freqBins;
+		nt = tfPlane->params->timeBins;
+		t1 = tile->tstart;
+		t2 = tile->tend;
+		k1 = tile->fstart;
+		k2 = tile->fend;
 
-  {
-    COMPLEX8TimeFrequencyPlane **thisPlane = tfTiling->tfp;
-    ASSERT(thisPlane, status, LAL_NULL_ERR, LAL_NULL_MSG);
-    ASSERT(*thisPlane, status, LAL_NULL_ERR, LAL_NULL_MSG);
-    ASSERT((*thisPlane)->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
-    ASSERT((*thisPlane)->params, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  }
-      
+		if((nf <= 0) || (nt <= 0) ||
+		   (t1 < 0) || (t1 > t2) || (t2 > nt) ||
+		   (k1 < 0) || (k1 > k2) || (k2 > nf))
+			XLAL_ERROR(func, XLAL_EDATA);
 
-  thisTile = tfTiling->firstTile;
+		/* Calculate the degrees of freedom of the TF tile */
+		dof = 2.0 * (t2 - t1) * tile->deltaT * (k2 - k1) * tile->deltaF;
 
-  while (thisTile != NULL)
-    {
-      COMPLEX8TimeFrequencyPlane *tfPlane;
-      REAL8 sum;
-      REAL8 dof;
-      REAL8 rho2;
-      REAL8 numsigma;
-      REAL8 sumnorm;
+		sum = 0.0;
+		for(j = t1; j < t2; j += (t2 - t1) / dof) {
+			INT4 offset = j * nf;
+			REAL8 sumnorm = 0.0;
+			COMPLEX8 sumz = { 0.0, 0.0 };
+			INT4 ii;
+			for(ii = k1; ii < k2; ii++) {
+				COMPLEX8 z = tfPlane->data[offset+ii];
+				sumz.re += z.re;
+				sumz.im += z.im;
+				sumnorm += norm[ii] * norm[ii];
+			}
+			sum += (sumz.re*sumz.re + sumz.im*sumz.im)/sumnorm;
+		}
 
-      INT4 j;
-      INT4 ii;
-      INT4 nf;
-      INT4 nt;
-      INT4 t1;
-      INT4 t2;
-      INT4 k1;
-      INT4 k2;
- 
-      /* check plane index is in required range */
-      ASSERT((thisTile->whichPlane >=0) && (thisTile->whichPlane < tfTiling->numPlanes), status, LAL_RANGE_ERR, LAL_RANGE_MSG); 
+		{
+		REAL8 rho2;
+		rho2 = sum - dof;
+		tile->excessPower = rho2;
+		numsigma = rho2 / sqrt(2.0 * dof);
+		}
+		tile->weight = 1.0;
 
-      tfPlane = *(tfTiling->tfp + thisTile->whichPlane);
-      nf = tfPlane->params->freqBins;   
-      ASSERT(nf > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-      nt = tfPlane->params->timeBins;   
-      ASSERT(nt > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+		/* Need to compute an accurate value of likelihood only if
+		 * excess power is greater than a few sigma */
 
-      t1=thisTile->tstart;
-      t2=thisTile->tend;
-      k1=thisTile->fstart;
-      k2=thisTile->fend;
+		tile->alpha =  input->alphaDefault; /* default value */
+		if(numsigma > input->numSigmaMin) {
+			ChisqCdfIn locinput;
+			REAL8 alpha; /* false alarm probability */
 
-      ASSERT((t1>=0) && (t1<=t2) && (t2<=nt), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-      ASSERT((k1>=0) && (k1<=k2) && (k2<=nf), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-    
+			tile->firstCutFlag = TRUE;
 
-      /*Calculatet the degrees of freedom of the TF tile */
-      dof = (REAL8)(2*(t2-t1)*thisTile->deltaT*(k2-k1)*thisTile->deltaF);
+			/* compute alpha value */
+			locinput.chi2 = sum;
+			locinput.dof = dof;
+			/* locinput->nonCentral not used by XLALOneMinusChisqCdf() */
+			alpha = XLALOneMinusChisqCdf(&locinput);
+			if(XLALIsREAL8FailNaN(alpha))
+				XLAL_ERROR(func, XLAL_EFUNC);
 
-      sum=0.0;
-      for(j=t1; j<t2; j+=(INT4)((t2-t1)/dof))
-	{
-	  COMPLEX8 sumz;
-	  sumnorm = 0.0; 
-	  sumz.re = 0.0;
-	  sumz.im = 0.0;
-	  for(ii=k1; ii<k2; ii++)
-	    {
-	      INT4 offset = j*nf;
-	      COMPLEX8 z;
-	      z = tfPlane->data[offset+ii];
-	      sumz.re += z.re;
-	      sumz.im += z.im;
-	      sumnorm += (norm[ii]*norm[ii]);
-	    }
-	  sum += (sumz.re*sumz.re + sumz.im*sumz.im)/sumnorm;
+			tile->alpha = alpha;
+		}
 	}
-      
-      rho2 = sum - dof;
-      thisTile->excessPower = rho2;
-      numsigma = rho2 / sqrt(2*dof);
-      thisTile->weight = 1.0;
 
-      /*
-       *  need to compute an accurate value of likelihood only if
-       *  excess power is greater than a few sigma
-       *
-       */
+	/* set flag saying alpha for each tile has been computed */
+	tfTiling->excessPowerComputed = TRUE;
 
-      thisTile->alpha =  input->alphaDefault;         /* default value */
-
-      if(numsigma > input->numSigmaMin)
-	{
-	  ChisqCdfIn locinput;
-	  REAL8 alpha; /* false alarm probability */
-
-	  thisTile->firstCutFlag=TRUE;
-
-	  /* compute alpha value */
-	  locinput.chi2= sum;
-	  locinput.dof = dof;
-	  /* locinput->nonCentral not used by LALChisqCdf() */
-	  LALOneMinusChisqCdf( status->statusPtr, &alpha, &locinput);
-
-	  /* 
-           *  trap error where alpha=0.0.
-           *  If alpha=0 we replace alpha with a small number,
-           *  otherwise code will frequently crash while testing etc.
-           *
-           */
-
-	  if( ((alpha==0.0) || (1.0/alpha > LAL_REAL8_MAX)) 
-               && (status->statusPtr->statusCode==LAL_RANGE_ERR) )
-	    {
-	      status->statusPtr->statusCode=0;
-	      alpha = exp(-700.0);
-	    }
-
-	  /* check for other possible errors from LALOneMinusChisqCdf() */
-	  CHECKSTATUSPTR (status);
-
-	  thisTile->alpha = alpha;
-	}
-      
-      /* go onto next tile */
-      thisTile = thisTile->nextTile;
-    }
-  
-
-  /* set flag saying alpha for each tile has been computed */
-  tfTiling->excessPowerComputed=TRUE;
-
-  /* normal exit */
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+	/* success */
+	return(0);
 }
 
 
+/******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
+void
+LALComputeExcessPower(
+	LALStatus            *status,
+	TFTiling             *tfTiling,
+	ComputeExcessPowerIn *input,
+	REAL4                *norm
+)
+/******** </lalVerbatim> ********/
+{
+	INITSTATUS (status, "LALComputeExcessPower", COMPUTEEXCESSPOWERC);
+	ATTATCHSTATUSPTR (status);
+
+	/* make sure that arguments are not NULL */
+	ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(tfTiling->tfp, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(tfTiling->dftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
+
+	ASSERT(XLALComputeExcessPower(tfTiling, input, norm) == 0, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+
+	/* normal exit */
+	DETATCHSTATUSPTR (status);
+	RETURN (status);
+}

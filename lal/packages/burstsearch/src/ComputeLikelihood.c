@@ -52,7 +52,7 @@ LALComputeLikelihood (
   ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
   ASSERT(lambda, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
-  /* make sure LALComputeExcessPower() has been already called */
+  /* make sure XLALComputeExcessPower() has been already called */
   ASSERT(tfTiling->excessPowerComputed, status, EXCESSPOWERH_EORDER, EXCESSPOWERH_MSGEORDER);
 
   thisTile = tfTiling->firstTile;

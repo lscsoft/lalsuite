@@ -24,6 +24,7 @@ Revision: $Id$
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 #include <lal/Window.h>
+#include <lal/XLALError.h>
 
 NRCSID(EPSEARCHC, "$Id$");
 
@@ -60,42 +61,37 @@ static void WeighTFTileList(TFTiling *tfTiling, INT4 maxDOF)
  * Compute the average spectrum for the given time series
  */
 
-static void ComputeAverageSpectrum(
+static int ComputeAverageSpectrum(
 	LALStatus *status,
 	REAL4FrequencySeries *spectrum,
 	REAL4TimeSeries *tseries,
 	EPSearchParams *params
 )
 {
-	LALWindowParams winParams;
+	static const char *func = "ComputeAverageSpectrum";
 	AverageSpectrumParams spec_params;
-
-	INITSTATUS(status, "ComputeAverageSpectrum", EPSEARCHC);
-	ATTATCHSTATUSPTR(status);
 
 	memset(&spec_params, 0, sizeof(spec_params));
 
-	winParams.type = params->windowType;
-	winParams.length = params->windowLength;
-	LALCreateREAL4Window(status->statusPtr, &spec_params.window, &winParams);
-	CHECKSTATUSPTR(status);
-	LALCreateForwardRealFFTPlan(status->statusPtr, &spec_params.plan, spec_params.window->data->length, 0);
-	CHECKSTATUSPTR(status);
+	spec_params.window = XLALCreateREAL4Window(params->windowLength, params->windowType, 0.0);
+	if(!spec_params.window)
+		XLAL_ERROR(func, XLAL_EFUNC);
+
+	spec_params.plan = XLALCreateForwardREAL4FFTPlan(spec_params.window->data->length, 0);
+	if(!spec_params.plan)
+		XLAL_ERROR(func, XLAL_EFUNC);
 
 	spec_params.overlap = spec_params.window->data->length - params->windowShift;
 	spec_params.method = params->method;
 
 	LALREAL4AverageSpectrum(status->statusPtr, spectrum, tseries, &spec_params);
-	CHECKSTATUSPTR(status);
+	if(status->statusPtr->statusCode)
+		XLAL_ERROR(func, XLAL_EFUNC);
 
-	LALDestroyREAL4Window(status->statusPtr, &spec_params.window);
-	CHECKSTATUSPTR(status);
+	XLALDestroyREAL4Window(spec_params.window);
+	XLALDestroyREAL4FFTPlan(spec_params.plan);
 
-	LALDestroyRealFFTPlan(status->statusPtr, &spec_params.plan);
-	CHECKSTATUSPTR(status);
-
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
+	return(0);
 }
 
 
@@ -235,6 +231,7 @@ EPSearch(
 )
 /******** </lalVerbatim> ********/
 { 
+	static const char *func = "EPSearch";
 	int                       start_sample, i;
 	COMPLEX8FrequencySeries  *fseries;
 	RealDFTParams            *dftparams = NULL;
@@ -263,25 +260,23 @@ EPSearch(
 	 * Compute the average spectrum.
 	 */
 
-	LALCreateREAL4FrequencySeries(status->statusPtr, &AverageSpec, "anonymous", gps_zero, 0, 0, lalDimensionlessUnit, params->windowLength / 2 + 1);
-	CHECKSTATUSPTR(status);
+	AverageSpec = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
+	if(!AverageSpec)
+		XLAL_ERROR_VOID(func, XLAL_EFUNC);
 	ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
 	CHECKSTATUSPTR(status);
 
-	LALCreateREAL4FrequencySeries(status->statusPtr, &Psd, "anonymous", gps_zero, 0, 0, lalDimensionlessUnit, params->windowLength / 2 + 1);
-	CHECKSTATUSPTR(status);
+	Psd = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
+	if(!Psd)
+		XLAL_ERROR_VOID(func, XLAL_EFUNC);
 	Psd->deltaF = AverageSpec->deltaF;
 	Psd->epoch = AverageSpec->epoch;
-	if(params->useOverWhitening){
-	  for(i=0; (unsigned)i<Psd->data->length;i++){
-	    Psd->data->data[i] = AverageSpec->data->data[i];
-	  }
-	}
-	else{
-    	  for(i=0;(unsigned)i<Psd->data->length;i++){
-	    Psd->data->data[i] = 1.0;
-	  }
-	}
+	if(params->useOverWhitening)
+		for(i = 0; (unsigned) i < Psd->data->length; i++)
+			Psd->data->data[i] = AverageSpec->data->data[i];
+	else
+		for(i = 0; (unsigned) i < Psd->data->length; i++)
+			Psd->data->data[i] = 1.0;
 
 	if(params->printSpectrum)
 		print_real4fseries(Psd, "psd.dat");
@@ -293,8 +288,9 @@ EPSearch(
 	 * Assign temporary memory for the frequency data.
 	 */
 
-	LALCreateCOMPLEX8FrequencySeries(status->statusPtr, &fseries, "anonymous", gps_zero, 0, 0, lalDimensionlessUnit, params->windowLength / 2 + 1);
-	CHECKSTATUSPTR(status);
+	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
+	if(!fseries)
+		XLAL_ERROR_VOID(func, XLAL_EFUNC);
 
 	/*
 	 * Create the dft params.
@@ -312,7 +308,7 @@ EPSearch(
 	for(start_sample = 0; start_sample + params->windowLength <= tseries->data->length; start_sample += params->windowShift) {
 		LALInfo(status->statusPtr, "Analyzing a window...");
 		CHECKSTATUSPTR(status);
-		/*Initialize the normalisation */
+		/* Initialize the normalisation */
 		normalisation = NULL;
 
 		/*
@@ -323,8 +319,9 @@ EPSearch(
 		LALInfo(status->statusPtr, "Computing the DFT");
 		CHECKSTATUSPTR(status);
 
-		LALCutREAL4TimeSeries(status->statusPtr, &cutTimeSeries, tseries,  start_sample, params->windowLength);
-		CHECKSTATUSPTR(status);
+		cutTimeSeries = XLALCutREAL4TimeSeries(tseries,  start_sample, params->windowLength);
+		if(!cutTimeSeries)
+			XLAL_ERROR_VOID(func, XLAL_EFUNC);
 
 		LALComputeFrequencySeries(status->statusPtr, fseries, cutTimeSeries, dftparams);
 		CHECKSTATUSPTR(status);
@@ -334,8 +331,7 @@ EPSearch(
 		 */ 
 		params->tfPlaneParams.timeDuration = 2*params->windowShift*cutTimeSeries->deltaT;
 		
-		LALDestroyREAL4TimeSeries(status->statusPtr, cutTimeSeries);
-		CHECKSTATUSPTR(status);
+		XLALDestroyREAL4TimeSeries(cutTimeSeries);
 		
 		/*
 		 * Normalize the frequency series to the average PSD.
@@ -361,6 +357,7 @@ EPSearch(
 		/*
 		 * Compute the TFplanes for the data segment.
 		 */
+
 		tileStartShift = (INT4)(params->windowLength/2)-params->windowShift;
 		LALInfo(status->statusPtr, "Computing the TFPlanes");
 		CHECKSTATUSPTR(status);
@@ -368,13 +365,14 @@ EPSearch(
 		LALComputeTFPlanes(status->statusPtr, tfTiling, fseries, tileStartShift, normalisation, Psd);		
 		CHECKSTATUSPTR(status);
 	
-                 /*
+		/*
 		 * Search these planes.
 		 */
+
 		LALInfo(status->statusPtr, "Computing the excess power");
 		CHECKSTATUSPTR(status);
-		LALComputeExcessPower (status->statusPtr, tfTiling, &params->compEPInput, normalisation);
-		CHECKSTATUSPTR(status);
+		if(XLALComputeExcessPower(tfTiling, &params->compEPInput, normalisation))
+			XLAL_ERROR_VOID(func, XLAL_EFUNC);
 
 		/*
 		 * Compute the likelihood for slightly better detection
@@ -422,14 +420,12 @@ EPSearch(
 
 	LALDestroyTFTiling(status->statusPtr, &tfTiling);
 	CHECKSTATUSPTR(status);
-	LALDestroyCOMPLEX8FrequencySeries(status->statusPtr, fseries);
-	CHECKSTATUSPTR(status);
+	XLALDestroyCOMPLEX8FrequencySeries(fseries);
 	LALDestroyRealDFTParams(status->statusPtr, &dftparams);
 	CHECKSTATUSPTR(status);
-	LALDestroyREAL4FrequencySeries(status->statusPtr, AverageSpec);
-	CHECKSTATUSPTR(status);
-	LALDestroyREAL4FrequencySeries(status->statusPtr, Psd);
-	CHECKSTATUSPTR(status);
+	XLALDestroyREAL4FrequencySeries(AverageSpec);
+	XLALDestroyREAL4FrequencySeries(Psd);
+
 	/*
 	 * Normal exit.
 	 */
@@ -491,8 +487,7 @@ void EPConditionData(
 	 * The filter corrupts the ends of the time series.  Chop them off.
 	 */
 
-	LALShrinkREAL4TimeSeries(status->statusPtr, series, corruption, series->data->length - 2 * corruption);
-	CHECKSTATUSPTR (status);
+	ASSERT(XLALShrinkREAL4TimeSeries(series, corruption, series->data->length - 2 * corruption) == series->data->length - 2 * corruption, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	DETATCHSTATUSPTR(status);
 	RETURN(status);

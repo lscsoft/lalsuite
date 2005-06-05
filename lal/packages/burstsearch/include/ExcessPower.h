@@ -121,6 +121,13 @@ LALComputeTFPlanes (
 		 REAL4FrequencySeries               *psd
                  );
 
+int
+XLALComputeExcessPower (
+                    TFTiling                        *tfTiling,
+                    ComputeExcessPowerIn            *input,
+                    REAL4                           *norm
+                    );
+
 void
 LALComputeExcessPower (
                     LALStatus                          *status,
