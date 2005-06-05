@@ -142,6 +142,11 @@ LALSortTFTiling (
               TFTiling                              *tfTiling
               );
 
+REAL8
+XLALComputeLikelihood (
+                   TFTiling                         *tfTiling
+                   );
+
 void
 LALComputeLikelihood (
                    LALStatus                           *status,

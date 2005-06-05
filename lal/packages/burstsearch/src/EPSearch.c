@@ -379,8 +379,11 @@ EPSearch(
 		 * method.
 		 */
 
-		/*LALComputeLikelihood(status->statusPtr, &(params->lambda),
-		tfTiling); CHECKSTATUSPTR(status);*/
+#if 0
+		params->lambda = XLALComputeLikelihood(tfTiling);
+		if(XLALIsREAL8FailNAN(params->lambda))
+			XLAL_ERROR_VOID(func, XLAL_EFUNC);
+#endif
 
 		/*
 		 * Sort the results.
