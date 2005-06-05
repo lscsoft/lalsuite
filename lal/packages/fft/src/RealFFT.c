@@ -255,7 +255,7 @@ REAL4FFTPlan * XLALCreateForwardREAL4FFTPlan( UINT4 size, int measurelvl )
 
 REAL4FFTPlan * XLALCreateReverseREAL4FFTPlan( UINT4 size, int measurelvl )
 {
-  static const char *func = "XLALCreateForwardREAL4FFTPlan";  
+  static const char *func = "XLALCreateReverseREAL4FFTPlan";  
   REAL4FFTPlan *plan;
   plan = XLALCreateREAL4FFTPlan( size, 0, measurelvl );
   if ( ! plan )
@@ -534,7 +534,7 @@ REAL8FFTPlan * XLALCreateForwardREAL8FFTPlan( UINT4 size, int measurelvl )
 
 REAL8FFTPlan * XLALCreateReverseREAL8FFTPlan( UINT4 size, int measurelvl )
 {
-  static const char *func = "XLALCreateForwardREAL8FFTPlan";  
+  static const char *func = "XLALCreateReverseREAL8FFTPlan";  
   REAL8FFTPlan *plan;
   plan = XLALCreateREAL8FFTPlan( size, 0, measurelvl );
   if ( ! plan )
