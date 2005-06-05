@@ -155,9 +155,11 @@ LALCreateTFTiling (
 
       /* Create TF plane structure */
       thisPlane = (*tfTiling)->tfp;
-      *thisPlane=NULL;
-      LALCreateTFPlane( status->statusPtr, thisPlane, planeParams);
-      CHECKSTATUSPTR (status);
+      *thisPlane = XLALCreateTFPlane(planeParams);
+      if(!*thisPlane) {
+        XLALClearErrno();
+	ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
+      }
 
       /* create the DFTParams structure */
       {

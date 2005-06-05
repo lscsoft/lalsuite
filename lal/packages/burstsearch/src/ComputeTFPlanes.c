@@ -2,98 +2,49 @@
 Author: Flanagan, E
 $Id$
 ********* </lalVerbatim> ********/
- 
+
 #include <lal/LALRCSID.h>
 
-
-NRCSID (COMPUTETFPLANESC, "$Id$");
-
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
+NRCSID(COMPUTETFPLANESC, "$Id$");
 
 #include <lal/ExcessPower.h>
-#include <lal/LALConstants.h>
 #include <lal/LALErrno.h>
-#include <lal/LALStdlib.h>
-#include <lal/Random.h>
-#include <lal/RealFFT.h>
-#include <lal/SeqFactories.h>
-#include <lal/TFTransform.h>
-#include <lal/Thresholds.h>
-
+#include <lal/XLALError.h>
 
 #define TRUE 1
 #define FALSE 0
 
-
-extern INT4 lalDebugLevel;
-
 /******** <lalVerbatim file="ComputeTFPlanesCP"> ********/
-void
-LALComputeTFPlanes (
-		 LALStatus                             *status,
-		 TFTiling                           *tfTiling,
-		 COMPLEX8FrequencySeries            *freqSeries,
-		 UINT4                              windowShift,
-		 REAL4                              *norm,
-		 REAL4FrequencySeries               *psd
-		 )
+int XLALComputeTFPlanes(
+	TFTiling * tfTiling,
+	COMPLEX8FrequencySeries * freqSeries,
+	UINT4 windowShift,
+	REAL4 * norm,
+	REAL4FrequencySeries * psd
+)
 /******** </lalVerbatim> ********/
 {
- 
-  INITSTATUS (status, "LALComputeTFPlanes", COMPUTETFPLANESC);
-  ATTATCHSTATUSPTR (status);
+	static const char *func = "XLALComputeTFPlanes";
+	HorizontalTFTransformIn transformparams;
 
+	/* check ranges */
+	if (tfTiling->numPlanes <= 0)
+		XLAL_ERROR(func, XLAL_EDOM);
 
-    /* make sure that arguments are not NULL */
-  ASSERT(freqSeries, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  ASSERT(freqSeries->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  ASSERT(freqSeries->data->data, status, LAL_NULL_ERR, LAL_NULL_MSG);
+	/* setup input structure for computing TF transform */
+	transformparams.startT = 0;	/* not used for horizontal transforms */
+	transformparams.dftParams = *tfTiling->dftParams;
+	transformparams.windowShift = windowShift;
 
-  ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  ASSERT(tfTiling->numPlanes > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
+	/* Compute TF transform */
+	if (XLALFreqSeriesToTFPlane(*tfTiling->tfp, freqSeries, &transformparams, norm, psd))
+		XLAL_ERROR(func, XLAL_EFUNC);
 
+	/* set flags saying TF planes have been computed, but not EP or sorted */
+	tfTiling->planesComputed = TRUE;
+	tfTiling->excessPowerComputed = FALSE;
+	tfTiling->tilesSorted = FALSE;
 
-  /* compute the TFPlane from input frequency series */
-  
-    {
-      COMPLEX8TimeFrequencyPlane    **thisPlane;
-      ComplexDFTParams              **thisDftParams;
-      HorizontalTFTransformIn       transformparams;
-
-      thisPlane = tfTiling->tfp;
-      ASSERT(thisPlane, status, LAL_NULL_ERR, LAL_NULL_MSG);
-      ASSERT(*thisPlane, status, LAL_NULL_ERR, LAL_NULL_MSG);
-
-      thisDftParams = tfTiling->dftParams;
-      ASSERT(thisDftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
-      ASSERT(*thisDftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
-
-
-      /* setup input structure for computing TF transform */
-      transformparams.startT=0;  /* not used for horizontal transforms */
-      transformparams.dftParams=*thisDftParams;
-      transformparams.windowShift = windowShift;
-
-      /* Compute TF transform */
-      LALInfo(status->statusPtr, "Converting Frequency series to TFPlane");
-      CHECKSTATUSPTR (status);
-      LALFreqSeriesToTFPlane( status->statusPtr, *thisPlane, freqSeries, 
-                           &transformparams, norm, psd); 
-      CHECKSTATUSPTR (status);
-    }
-
-  /* set flags saying TF planes have been computed, but not EP or sorted */
-  tfTiling->planesComputed=TRUE;
-  tfTiling->excessPowerComputed=FALSE;
-  tfTiling->tilesSorted=FALSE;
-
-  /* normal exit */
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+	/* normal exit */
+	return(0);
 }
-

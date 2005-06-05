@@ -133,10 +133,8 @@ LALComputeFrequencySeries (
                         );
 
 
-void
-LALCreateTFPlane (
-               LALStatus                               *status,
-               COMPLEX8TimeFrequencyPlane           **tfp,
+COMPLEX8TimeFrequencyPlane *
+XLALCreateTFPlane (
                TFPlaneParams                        *input
                );
 
@@ -156,16 +154,14 @@ LALTimeSeriesToTFPlane (
                      VerticalTFTransformIn         *input
                      );
 
-void
-LALFreqSeriesToTFPlane (
-                     LALStatus                         *status,
+int
+XLALFreqSeriesToTFPlane (
                      COMPLEX8TimeFrequencyPlane     *tfp,
                      COMPLEX8FrequencySeries        *freqSeries,
                      HorizontalTFTransformIn        *input,
                      REAL4                          *norm,
 		     REAL4FrequencySeries           *psd
                      );
-
 
 #ifdef  __cplusplus
 }

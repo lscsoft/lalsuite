@@ -537,7 +537,7 @@ main (int argc, char *argv[])
 
   /* 
    *
-   *  Test functions LALComputeTFPlanes()
+   *  Test functions XLALComputeTFPlanes()
    *
    */
   {
@@ -546,7 +546,7 @@ main (int argc, char *argv[])
 
     if (verbose)
       {
-	printf ("\n--- Testing LALComputeTFPlanes() \n\n");
+	printf ("\n--- Testing XLALComputeTFPlanes() \n\n");
       }
     
     params.overlapFactor = 3;
@@ -576,8 +576,7 @@ main (int argc, char *argv[])
       INT4 p;
       p = tfTiling->numPlanes;
       tfTiling->numPlanes=0;
-      LALComputeTFPlanes( &status, tfTiling, &locfseries);
-      TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
+      XTestStatus("XLALComputeTFPlanes", XLALComputeTFPlanes(tfTiling, &locfseries), XLAL_EDOM);
       tfTiling->numPlanes=p;
     }
 
@@ -639,9 +638,7 @@ main (int argc, char *argv[])
     LALComputeExcessPower( &status, tfTiling, &input);	
     TestStatus (&status, CODES(EXCESSPOWERH_EORDER), 1);
 
-    LALComputeTFPlanes( &status, tfTiling, &locfseries);
-    TestStatus (&status, CODES(0), 1);
-
+    XLALComputeTFPlanes(tfTiling, &locfseries);
 
 
     /* now start checking errors */
@@ -804,8 +801,7 @@ main (int argc, char *argv[])
     memset( locfseries.data->data, 0,
         locfseries.data->length * sizeof( *locfseries.data->data ) );
     
-    LALComputeTFPlanes( &status, tfTiling, &locfseries);
-    TestStatus (&status, CODES(0), 1);
+    XLALComputeTFPlanes(tfTiling, &locfseries);
 
     LALComputeLikelihood( &status, &loclambda, tfTiling);	
     TestStatus (&status, CODES(EXCESSPOWERH_EORDER), 1);
@@ -890,8 +886,7 @@ main (int argc, char *argv[])
       }
 
 
-    LALComputeTFPlanes( &status, tfTiling, &locfseries);
-    TestStatus (&status, CODES(0), 1);
+    XLALComputeTFPlanes(tfTiling, &locfseries);
 
     LALSortTFTiling( &status, tfTiling);
     TestStatus (&status, CODES(EXCESSPOWERH_EORDER), 1);
@@ -1055,6 +1050,16 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
   fprintf (stderr, "\nExiting to system with code %d\n", exitcode);
   exit (exitcode);
 }
+
+static void
+XTestStatus(const char *func, int result, int expected)
+{
+  if(result != expected) {
+    fprintf (stderr, "\n%s call failed: expected %d, got %d\n", func, result, expected);
+    exit(1);
+  }
+}
+
 
 
 /*

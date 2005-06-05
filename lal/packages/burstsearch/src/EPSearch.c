@@ -362,8 +362,10 @@ EPSearch(
 		LALInfo(status->statusPtr, "Computing the TFPlanes");
 		CHECKSTATUSPTR(status);
 		normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(REAL4));
-		LALComputeTFPlanes(status->statusPtr, tfTiling, fseries, tileStartShift, normalisation, Psd);		
-		CHECKSTATUSPTR(status);
+		if(XLALComputeTFPlanes(tfTiling, fseries, tileStartShift, normalisation, Psd)) {
+			XLALClearErrno();
+			ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+		}
 	
 		/*
 		 * Search these planes.

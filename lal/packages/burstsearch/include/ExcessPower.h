@@ -111,9 +111,8 @@ LALDestroyTFTiling (
                  TFTiling                           **tfTiling
                  );
 
-void
-LALComputeTFPlanes (
-                 LALStatus                             *status,
+int
+XLALComputeTFPlanes (
                  TFTiling                           *tfTiling,
                  COMPLEX8FrequencySeries            *freqSeries,
                  UINT4                              windowShift,
