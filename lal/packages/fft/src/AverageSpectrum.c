@@ -272,13 +272,7 @@ static void median_cleanup( REAL4FrequencySeries *work, UINT4 n )
 /* comparison for floating point numbers */
 static int compare_float( const void *p1, const void *p2 )
 {
-  REAL4 x1 = * ( ( const REAL4 * )p1 );
-  REAL4 x2 = * ( ( const REAL4 * )p2 );
-  if ( x1 < x2 )
-    return -1;
-  if ( x1 > x2 )
-    return 1;
-  return 0;
+  return *(const REAL4 *) p1 - *(const REAL4 *) p2;
 }
 
 
