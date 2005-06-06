@@ -193,7 +193,6 @@ LALFindChirpChisqVeto (
   UINT4                 numChisqBins;
   UINT4                *chisqBin;
   REAL4                 chisqNorm;
-  /* REAL4                 rhosq; */
 
   COMPLEX8             *qtildeBin;
 
