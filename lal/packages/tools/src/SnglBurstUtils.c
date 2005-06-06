@@ -250,7 +250,7 @@ XLALCompareSnglBurstByPeakTimeAndSNR(
 )
 /* </lalVerbatim> */
 {
-	INT4 ta, tb;
+	INT8 ta, tb;
 	REAL4 snra,snrb;
 	
 	ta = peak_time(*a);
