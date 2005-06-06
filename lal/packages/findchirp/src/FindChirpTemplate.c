@@ -155,7 +155,7 @@ LALFindChirpTemplateInit (
     case TaylorF2:
     case BCV:
     case BCVSpin:
-      /* freq domain waveforms need xfac vector containing k^(-7/6) */
+      /* freq domain waveforms need xfac vector containing k^(-1/3) */
       LALCreateVector( status->statusPtr, &(outputPtr->xfacVec), 
           params->numPoints/2 + 1 );
       BEGINFAIL( status )
