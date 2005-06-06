@@ -1600,7 +1600,7 @@ static SnglBurstTable **analyze_series(
 		LAL_CALL(LALCutREAL4TimeSeries(stat, &interval, series, start, psdlength), stat);
 
 		if(options.verbose)
-			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu (%.9lf s)\n", start, start + interval->data->length, interval->data->length * interval->deltaT);
+			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
 		LAL_CALL(EPSearch(stat, interval, params, addpoint), stat);
 		while(*addpoint)
@@ -1670,7 +1670,7 @@ int main( int argc, char *argv[])
 	EPSearchParams            params;
 	LIGOTimeGPS               epoch;
 	LIGOTimeGPS               boundepoch;
-	LALTimeInterval           overlapCorrection;
+	size_t                    overlap;
 	CHAR                      outfilename[256];
 	REAL4TimeSeries          *series = NULL;
 	SnglBurstTable           *burstEvent = NULL;
@@ -1711,20 +1711,15 @@ int main( int argc, char *argv[])
 	searchsumm.searchSummaryTable->in_start_time = options.startEpoch;
 	searchsumm.searchSummaryTable->in_end_time = options.stopEpoch;
 
-	/* determine the input time series overlap correction (LAL spec
-	 * makes us pass a pointer... sigh), and set the outer loop's upper
-	 * bound */
-	{
-	REAL8 overlap = (REAL8) (params.windowLength - params.windowShift) / options.ResampleRate;
-
-	LAL_CALL(LALFloatToInterval(&stat, &overlapCorrection, &overlap), &stat);
+	/* determine the input time series post-conditioning overlap, and set
+	 * the outer loop's upper bound */
+	overlap = params.windowLength - params.windowShift;
 	if(options.verbose)
-		fprintf(stderr, "%s: time series overlap correction is %u.%09u s\n", argv[0], overlapCorrection.seconds, overlapCorrection.nanoSeconds);
+		fprintf(stderr, "%s: time series overlap is %zu samples (%.9lf s)\n", argv[0], overlap, overlap / (double) options.ResampleRate);
 
-	LAL_CALL(LALAddFloatToGPS(&stat, &boundepoch, &options.stopEpoch, -2.0 * options.FilterCorruption / options.ResampleRate - overlap), &stat);
+	LAL_CALL(LALAddFloatToGPS(&stat, &boundepoch, &options.stopEpoch, -(2 * options.FilterCorruption + (int) overlap) / (double) options.ResampleRate), &stat);
 	if(options.verbose)
 		fprintf(stderr, "%s: time series epochs must be less than %u.%09u s\n", argv[0], boundepoch.gpsSeconds, boundepoch.gpsNanoSeconds);
-	}
 
 
 	/*
@@ -1860,12 +1855,12 @@ int main( int argc, char *argv[])
 		 *
 		 * Advancing the epoch by the post-conditioning series length
 		 * provides exactly the overlap needed to account for
-		 * conditioning corruption.  overlapCorrection provides any
-		 * additional overlap that is needed.
+		 * conditioning corruption.  The post-conditioning overlap
+		 * computed earlier provides the additional overlap that is
+		 * needed.
 		 */
 
-		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, series->data->length * series->deltaT), &stat);
-		LAL_CALL(LALDecrementGPS(&stat, &epoch, &epoch, &overlapCorrection), &stat);
+		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, (series->data->length - overlap) * series->deltaT), &stat);
 		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
 	}
 
