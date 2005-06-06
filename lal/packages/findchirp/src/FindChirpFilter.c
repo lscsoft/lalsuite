@@ -324,6 +324,7 @@ LALFindChirpFilterSegment (
     LALInfo( status, infomsg );
   }
 
+  
   /*
    *
    * compute qtilde and q
@@ -408,20 +409,20 @@ LALFindChirpFilterSegment (
     }
   }
 
- if ( params->cVec ) 
- {
-   memcpy( params->cVec->name, input->segment->data->name,
-       LALNameLength * sizeof(CHAR) );
-   memcpy( &(params->cVec->epoch), &(input->segment->data->epoch), 
-       sizeof(LIGOTimeGPS) );
-   params->cVec->deltaT = input->segment->deltaT;
+  if ( params->cVec ) 
+  {
+    memcpy( params->cVec->name, input->segment->data->name,
+        LALNameLength * sizeof(CHAR) );
+    memcpy( &(params->cVec->epoch), &(input->segment->data->epoch), 
+        sizeof(LIGOTimeGPS) );
+    params->cVec->deltaT = input->segment->deltaT;
 
-   for ( j = 0; j < numPoints; ++j )
-   {
-     params->cVec->data->data[j].re = sqrt(norm) * q[j].re;
-     params->cVec->data->data[j].im = sqrt(norm) * q[j].im;
-   }
- }
+    for ( j = 0; j < numPoints; ++j )
+    {
+      params->cVec->data->data[j].re = sqrt(norm) * q[j].re;
+      params->cVec->data->data[j].im = sqrt(norm) * q[j].im;
+    }
+  }
 
   /* look for an event in the filter output */
   for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
@@ -468,10 +469,11 @@ LALFindChirpFilterSegment (
   if ( haveEvent )
   {
     LALFindChirpClusterEvents( status->statusPtr, eventList, input,
-            params, q, kmax, numPoints, ignoreIndex, 
-            norm, modqsqThresh, chisqThreshFac, numChisqBins, searchName );
+        params, q, kmax, numPoints, ignoreIndex, 
+        norm, modqsqThresh, chisqThreshFac, numChisqBins, searchName );
     CHECKSTATUSPTR( status );
   }
+
 
   /*
    *
