@@ -239,6 +239,37 @@ XLALCompareSnglBurstByPeakTime(
 	return(0);
 }
 
+/*
+ * Compare the peak times and SNRs of two SnglBurstTable events.
+ */
+
+int
+XLALCompareSnglBurstByPeakTimeAndSNR(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+)
+/* </lalVerbatim> */
+{
+	INT4 ta, tb;
+	REAL4 snra,snrb;
+	
+	ta = peak_time(*a);
+	tb = peak_time(*b);
+
+	snra=(*a)->snr;
+	snrb=(*b)->snr;
+
+	if(ta > tb)
+	  return 1;
+	if(ta < tb)
+	  return -1;
+	if(snra < snrb)
+	  return 1;
+	if(snra > snrb)
+	  return -1;
+	return 0;
+}
+
 
 /*
  * Compare the time intervals of two SnglBurstTable events.
@@ -257,6 +288,40 @@ XLALCompareSnglBurstByTime(
 	if(end_time(*a) < start_time(*b))
 		return(-1);	/* a's interval lies before b's interval */
 	return(0);	/* a and b's intervals are continuous */
+}
+
+/*
+ * Check if two string events overlap in time. The peak times are uncertain to
+ * whatever the high frequency cutoff is
+ */
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+int
+XLALCompareStringBurstByTime(
+	const SnglBurstTable * const *a,
+	const SnglBurstTable * const *b
+)
+/* </lalVerbatim> */
+{
+  
+  INT8 ta, tb;
+  INT8 epsilon;
+  REAL4 f=hi_freq(*a);
+
+  if ( hi_freq(*a) > hi_freq(*b) )
+    f=hi_freq(*b);
+
+  epsilon=(INT8)( 1.0/f * 1e9);
+
+  ta = peak_time(*a);
+  tb = peak_time(*b);
+  
+  if(ta > tb + epsilon)
+    return(1);
+  if(ta < tb - epsilon)
+    return(-1);
+  return(0);
+
 }
 
 /*
@@ -553,6 +618,28 @@ LALCompareSimInspiralAndSnglBurst(
 
 
 /*
+ * cluster events a and b, storing result in a; takes one with largest snr
+ */
+
+static void XLALStringBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
+{
+  REAL4 snra=a->snr, snrb=b->snr;
+
+  if(snrb > snra)
+    {
+      a->central_freq =  b->central_freq;
+      a->bandwidth = b->bandwidth; 
+      a->start_time = b->start_time;
+      a->duration = b->duration;
+      a->amplitude = b->amplitude;
+      a->snr = b->snr;
+      a->confidence = b->confidence;
+      a->peak_time = b->peak_time;
+    }
+}
+
+
+/*
  * cluster events a and b, storing result in a
  */
 
@@ -600,7 +687,6 @@ static void XLALSnglBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
 	}
 }
 
-
 /*
  * Recursively cluster a linked list of SnglBurstTable events until the list
  * stops changing.  testfunc() should return 0 if the two given events are to
@@ -611,7 +697,6 @@ static void XLALSnglBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
  * algorithm from O(n^3) to order O(n log n).
  */
 
-/* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 XLALClusterSnglBurstTable (
 	SnglBurstTable **list,
@@ -633,6 +718,43 @@ XLALClusterSnglBurstTable (
 			for(prev = a, b = a->next; b; b = prev->next) {
 				if(!testfunc((const SnglBurstTable * const *) &a, (const SnglBurstTable * const *) &b)) {
 					XLALSnglBurstCluster(a, b);
+					prev->next = b->next;
+					LALFree(b);
+					did_cluster = 1;
+				} else {
+					if(bailoutfunc && bailoutfunc((const SnglBurstTable * const *) &a, (const SnglBurstTable * const *) &b))
+						break;
+					prev = b;
+				}
+			}
+	} while(did_cluster);
+}
+
+/* JUST LIKE FN. ABOVE BUT CALLS XLALStringBurstCluster instead
+ */
+
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
+void
+XLALClusterStringBurstTable (
+	SnglBurstTable **list,
+	int (*bailoutfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *),
+	int (*testfunc)(const SnglBurstTable * const *, const SnglBurstTable * const *)
+)
+/* </lalVerbatim> */
+{
+	int did_cluster;
+	SnglBurstTable *a, *b, *prev;
+
+	do {
+		did_cluster = 0;
+
+		if(bailoutfunc)
+			XLALSortSnglBurst(list, testfunc);
+
+		for(a = *list; a; a = a->next)
+			for(prev = a, b = a->next; b; b = prev->next) {
+				if(!testfunc((const SnglBurstTable * const *) &a, (const SnglBurstTable * const *) &b)) {
+					XLALStringBurstCluster(a, b);
 					prev->next = b->next;
 					LALFree(b);
 					did_cluster = 1;
