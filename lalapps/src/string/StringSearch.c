@@ -261,9 +261,11 @@ int main(int argc,char *argv[])
 
  if (FindStringBurst(CommandLineArgs)) return 9;
 
- if (CommandLineArgs.cluster == 1) 
+ if (CommandLineArgs.cluster == 1 && events) 
    {
      XLALClusterStringBurstTable(&events, NULL, XLALCompareStringBurstByTime);
+     LALSortSnglBurst(&status, &events, XLALCompareSnglBurstByPeakTimeAndSNR);
+     TESTSTATUS( &status );
    }
 
  if (OutputEvents(CommandLineArgs)) return 11;
@@ -462,7 +464,7 @@ int OutputEvents(struct CommandLineArgsTag CLA)
 
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 m, SnglBurstTable **thisEvent)
 {
-  int p,pend=0,pstart=0;
+  int p;
 
   /* Now find thisEvent in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
@@ -474,9 +476,10 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 
       if ( (fabs(vector->data[p]) > CLA.threshold) && ( (double)(1e-9*timeNS) > (double)CLA.trigstarttime))
 	{
+	  INT4 pend=-1,pstart=p;
           INT8  timeNS, peaktime;
 	  REAL8 duration;
-	  pstart=p;
+
 	  timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc.epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc.deltaT);
           timeNS += (INT8)( 1e9 * GV.ht_proc.deltaT * p );
 
@@ -503,12 +506,20 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 		  maximum=fabs(vector->data[p]);
 		  pmax=p;
 		}
+	      if ( (fabs(vector->data[p]) < CLA.threshold))
+		{
+		  pend = p-1; 
+		}
 	      p++;
 	    }
-	  pend=p-1;
+
+	  /* If we did not go below threshold before the end set 
+	     pend to last sample */
+	  if (pend == -1)
+	    pend=p-1;
 
 	  peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * (pmax-pstart) );
-	  duration = GV.ht_proc.deltaT * ( (p-1) - pstart );
+	  duration = GV.ht_proc.deltaT * ( pend - pstart );
 
 	  /* Now copy stuff into event */
 	  strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof(ifo)-1 );
