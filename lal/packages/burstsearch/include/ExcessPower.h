@@ -106,10 +106,9 @@ LALCreateTFTiling (
                 );
 
 void
-LALDestroyTFTiling (
-                 LALStatus                             *status,
-                 TFTiling                           **tfTiling
-                 );
+XLALDestroyTFTiling(
+	TFTiling *tfTiling
+);
 
 int
 XLALComputeTFPlanes (

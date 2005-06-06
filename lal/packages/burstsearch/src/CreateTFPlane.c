@@ -32,7 +32,7 @@ COMPLEX8TimeFrequencyPlane * XLALCreateTFPlane(
 	tfp = LALMalloc(sizeof(*tfp));
 	params = LALMalloc(sizeof(*params));
 	data = LALMalloc(input->timeBins * input->freqBins * sizeof(*data));
-	if(!tfp || !params) {
+	if(!tfp || !params || !data) {
 		LALFree(tfp);
 		LALFree(params);
 		LALFree(data);

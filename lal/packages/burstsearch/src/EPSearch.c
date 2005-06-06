@@ -423,8 +423,7 @@ EPSearch(
 	 * Memory clean-up.
 	 */
 
-	LALDestroyTFTiling(status->statusPtr, &tfTiling);
-	CHECKSTATUSPTR(status);
+	XLALDestroyTFTiling(tfTiling);
 	XLALDestroyCOMPLEX8FrequencySeries(fseries);
 	LALDestroyRealDFTParams(status->statusPtr, &dftparams);
 	CHECKSTATUSPTR(status);

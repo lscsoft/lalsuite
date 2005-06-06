@@ -118,10 +118,9 @@ LALCreateComplexDFTParams (
 
 
 void
-LALDestroyComplexDFTParams (
-                         LALStatus                     *status,
-                         ComplexDFTParams           **dftParams
-                         );
+XLALDestroyComplexDFTParams(
+	ComplexDFTParams *dftParams
+);
 
 
 void
@@ -140,10 +139,9 @@ XLALCreateTFPlane (
 
 
 void
-LALDestroyTFPlane (
-               LALStatus                               *status,
-               COMPLEX8TimeFrequencyPlane           **tfp
-                );
+XLALDestroyTFPlane(
+	COMPLEX8TimeFrequencyPlane *tfp
+);
 
 
 void
