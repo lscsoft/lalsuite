@@ -56,6 +56,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/GenerateBurst.h>
 
 
+#include <lal/BurstUtils.h>
+
 #include <lalapps.h>
 #include <processtable.h>
 
@@ -146,7 +148,7 @@ int NTemplates;
 
 LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
 
-SnglBurstTable *events=NULL, *cl_events=NULL;
+SnglBurstTable *events=NULL;
 MetadataTable  procTable;
 MetadataTable  procparams;
 MetadataTable  searchsumm;
@@ -203,12 +205,6 @@ int FindStringBurst(struct CommandLineArgsTag CLA);
 int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, 
 	       INT4 i, INT4 m, SnglBurstTable **thisEvent);
 
-/* Clusters events in frequency by taking highest SNR within a time window */
-int ClusterEvents(struct CommandLineArgsTag CLA);
-
-/* returns peak time of event */
-static INT8 peak_time(const SnglBurstTable *x);
-
 /* Writes out the xml file with the events it found  */
 int OutputEvents(struct CommandLineArgsTag CLA);
 
@@ -257,16 +253,6 @@ int main(int argc,char *argv[])
  /* reduce duration of segment appropriately */
  GV.duration -= 2*CommandLineArgs.pad; 
 
-
-/*  { */
-/*    int p; */
-/*    for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
-/*      { */
-/*        fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
-/*      } */
-/*    return 0; */
-/*  } */
-
  if (AvgSpectrum(CommandLineArgs)) return 6;
  
  if (CreateStringFilter(CommandLineArgs)) return 7;
@@ -277,7 +263,7 @@ int main(int argc,char *argv[])
 
  if (CommandLineArgs.cluster == 1) 
    {
-     if (ClusterEvents(CommandLineArgs)) return 10;
+     XLALClusterStringBurstTable(&events, NULL, XLALCompareStringBurstByTime);
    }
 
  if (OutputEvents(CommandLineArgs)) return 11;
@@ -387,98 +373,20 @@ int AddInjections(struct CommandLineArgsTag CLA)
 static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, 
 					      const char *type, const char *param, const char *value)
 {
-	*proc_param = LALCalloc(1, sizeof(**proc_param));
-	(*proc_param)->next = NULL;
-	snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
-	snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
-	snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
-	snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, value);
-
-	return(&(*proc_param)->next);
-}
-
-
-
-/*******************************************************************************/
-static INT8 peak_time(const SnglBurstTable *x)
-{
-        return(XLALGPStoINT8(&x->peak_time));
-}
-
-/*******************************************************************************/
-static void copy_event(SnglBurstTable *a, SnglBurstTable *b)
-{
-  strncpy( a->ifo, b->ifo, sizeof(b->ifo) );
-  strncpy( a->search, b->search, sizeof( b->search ) );
-  strncpy( a->channel, b->channel, sizeof( b->channel ) );
- 
-  a->start_time.gpsSeconds     = b->start_time.gpsSeconds;
-  a->start_time.gpsNanoSeconds = b->start_time.gpsNanoSeconds;
-  a->peak_time.gpsSeconds      = b->peak_time.gpsSeconds;
-  a->peak_time.gpsNanoSeconds  = b->peak_time.gpsNanoSeconds;
-  a->duration     = b->duration;
-  a->central_freq = b->	central_freq;   
-  a->bandwidth    = b->	bandwidth;		     
-  a->snr          = b->snr;
-  a->amplitude    = b->amplitude;
-  a->confidence   = b->confidence;
+  *proc_param = LALCalloc(1, sizeof(**proc_param));
+  (*proc_param)->next = NULL;
+  snprintf((*proc_param)->program, LIGOMETA_PROGRAM_MAX, PROGRAM_NAME);
+  snprintf((*proc_param)->type, LIGOMETA_TYPE_MAX, type);
+  snprintf((*proc_param)->param, LIGOMETA_PARAM_MAX, "--%s", param);
+  snprintf((*proc_param)->value, LIGOMETA_VALUE_MAX, value);
   
-}
-
-/*******************************************************************************/
-
-int ClusterEvents(struct CommandLineArgsTag CLA)
-{
-  SnglBurstTable *thisEvent1 = events, *thiscl_event = NULL;
-  INT8 peak1, peak2;
-
-  /* This linear clustering algorithm looks for gaps between triggers that are larger
-   than the inverse of the lowest high frequency cutoff. Then clusters everything
-   between gaps to the event with the largest SNR. */
-
-  if ( thisEvent1 )
-    {      
-      thiscl_event = cl_events = LALCalloc( 1, sizeof( *cl_events ) );
-      /* first set clustered event to current event */
-      copy_event(thiscl_event,thisEvent1);
-    }  
-
-  while ( thisEvent1 && thisEvent1->next )
-    {
-      peak1 = peak_time(thisEvent1);
-      peak2 = peak_time(thisEvent1->next);
-      
-      /* Are these within the time clustering window? 
-	 The clustering window is computed using the lowest high frequency
-	 cutoff of our template bank which determines the smoothing scale of 
-	 cosmic string burst event */
-
-      if ( fabs((peak1-peak2)*1e-9) < 1./CLA.fbanklow ) 
-	{ 
-	  /* Now: thisEvent1->next is within clustering window of thiEvent1 
-	     and if its snr is higher then thisEvent1->next should be our 
-	     clustered event */
-	  if ( thiscl_event->snr < thisEvent1->next->snr )
-	    {
-	      copy_event(thiscl_event,thisEvent1->next);
-	    }
-	}else{
-	  thiscl_event->next = LALCalloc( 1, sizeof( *(cl_events->next) ) );
-	  thiscl_event = thiscl_event->next;
-	  copy_event(thiscl_event,thisEvent1->next);
-	}
-      
-      thisEvent1 = thisEvent1->next;
-    }
-  
-  return 0;
+  return(&(*proc_param)->next);
 }
 
 /*******************************************************************************/
 
 int OutputEvents(struct CommandLineArgsTag CLA)
-{
-    
+{  
   LIGOLwXMLStream xml;
   LALLeapSecAccuracy accuracy = LALLEAPSEC_STRICT;
   MetadataTable myTable;
@@ -494,7 +402,6 @@ int OutputEvents(struct CommandLineArgsTag CLA)
       snprintf(outfilename, sizeof(outfilename)-1, "%s", CLA.outputFileName);
       outfilename[sizeof(outfilename)-1] = '\0';
     }
-
 
   memset(&xml, 0, sizeof(LIGOLwXMLStream));
   LALOpenLIGOLwXMLFile(&status, &xml, outfilename);
@@ -521,27 +428,15 @@ int OutputEvents(struct CommandLineArgsTag CLA)
 
   /* burst table */
   LALBeginLIGOLwXMLTable(&status, &xml, sngl_burst_table);
-  if(CLA.cluster == 1 )
-    {
-      myTable.snglBurstTable = cl_events;
-    }else{
-      myTable.snglBurstTable = events;      
-    }
+
+  myTable.snglBurstTable = events;      
+    
   LALWriteLIGOLwXMLTable(&status, &xml, myTable, sngl_burst_table);
   LALEndLIGOLwXMLTable(&status, &xml);
 
   LALCloseLIGOLwXMLFile(&status, &xml);
   
   /* free event list, process table, search summary and process params */
-   if(CLA.cluster == 1 )
-    {
-      while ( cl_events )
-	{
-	  SnglBurstTable *next = cl_events->next;
-	  LALFree( cl_events );
-	  cl_events = next;
-	}
-    }
 
   while ( events )
   {
