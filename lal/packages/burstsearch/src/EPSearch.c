@@ -457,6 +457,7 @@ void EPConditionData(
 	ResampleTSParams    resampleParams;
 	const REAL8         epsilon = 1.0e-8;
 	PassBandParamStruc  highpassParam;
+	size_t              newlength;
 
 	INITSTATUS (status, "LALConditionData", EPSEARCHC);
 	ATTATCHSTATUSPTR (status);
@@ -491,7 +492,8 @@ void EPConditionData(
 	 * The filter corrupts the ends of the time series.  Chop them off.
 	 */
 
-	ASSERT(XLALShrinkREAL4TimeSeries(series, corruption, series->data->length - 2 * corruption) == series->data->length - 2 * corruption, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	newlength = series->data->length - 2 * corruption;
+	ASSERT(XLALShrinkREAL4TimeSeries(series, corruption, newlength) == newlength, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
 
 	DETATCHSTATUSPTR(status);
 	RETURN(status);
