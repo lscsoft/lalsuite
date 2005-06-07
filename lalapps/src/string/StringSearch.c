@@ -471,18 +471,17 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
     {
       REAL4 maximum = 0.0;
       INT4 pmax=p;
-      INT8 timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc.epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc.deltaT);
-      timeNS += (INT8)( 1e9 * GV.ht_proc.deltaT * p );
+      INT8  timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc.epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc.deltaT);
+      timeNS  +=   (INT8)( 1e9 * GV.ht_proc.deltaT * p );
 
       /* Do we have the start of a cluster? */
       if ( (fabs(vector->data[p]) > CLA.threshold) && ( (double)(1e-9*timeNS) > (double)CLA.trigstarttime))
 	{
-	  INT4 pend=-1,pstart=p, pstart2=p;
-          INT8  timeNS, peaktime;
+	  INT4 pend=p,pstart=p;
+          INT8  peaktime, starttime;
 	  REAL8 duration;
 
 	  timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc.epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc.deltaT);
-          timeNS += (INT8)( 1e9 * GV.ht_proc.deltaT * p );
 
 	  if ( *thisEvent ) /* create a new event */
             {
@@ -501,35 +500,27 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	    }
 
 	  /* Clustering in time: While we are above threshold, or within CLA.TruncSecs of the last point above threshold... */
-	  while( ((fabs(vector->data[p]) > CLA.threshold) || ((pstart2-pstart)* GV.ht_proc.deltaT < (float)CLA.TruncSecs)) 
+	  while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc.deltaT < (float)CLA.TruncSecs)) 
 		 && p<(int)(3*vector->length/4))
 	    {
+	      /* This keeps track of the largest SNR point of the cluster */
 	      if(fabs(vector->data[p]) > maximum) 
 		{
 		  maximum=fabs(vector->data[p]);
 		  pmax=p;
 		}
-	      /* pstart2 is the last point above threshold */
+	      /* pend is the last point above threshold */
 	      if ( (fabs(vector->data[p]) > CLA.threshold))
 		{
-		  pstart2 = p; 
-		}
-	      /* If the previous point was above threshold and this one is below threshold then 
-		 we have a threshold crossing */
-	      if ( (fabs(vector->data[p]) < CLA.threshold) && (fabs(vector->data[p-1]) > CLA.threshold))
-		{
-		  pend = p-1; 
+		  pend =  p; 
 		}
 	      p++;
 	    }
 
-	  /* If we did not go below threshold before the end set 
-	     pend to last sample */
-	  if (pend == -1)
-	    pend=p-1;
-
-	  peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * (pmax-pstart) );
+	  peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * pmax );
 	  duration = GV.ht_proc.deltaT * ( pend - pstart );
+
+	  starttime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * pstart );
 
 	  /* Now copy stuff into event */
 	  strncpy( (*thisEvent)->ifo, CLA.ChannelName, sizeof(ifo)-1 );
@@ -537,11 +528,11 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  strncpy( (*thisEvent)->channel, CLA.ChannelName, sizeof( (*thisEvent)->channel ) );
 
 	  /* give trigger a 1 sample fuzz on either side */
-	  timeNS -= GV.ht_proc.deltaT *1e9;
+	  starttime -= GV.ht_proc.deltaT *1e9;
 	  duration += 2*GV.ht_proc.deltaT;
 
-	  (*thisEvent)->start_time.gpsSeconds     = timeNS / 1000000000;
-	  (*thisEvent)->start_time.gpsNanoSeconds = timeNS % 1000000000;
+	  (*thisEvent)->start_time.gpsSeconds     = starttime / 1000000000;
+	  (*thisEvent)->start_time.gpsNanoSeconds = starttime % 1000000000;
 	  (*thisEvent)->peak_time.gpsSeconds      = peaktime / 1000000000;
 	  (*thisEvent)->peak_time.gpsNanoSeconds  = peaktime % 1000000000;
 	  (*thisEvent)->duration     = duration;
