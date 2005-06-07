@@ -38,6 +38,12 @@ FrameH *fr_add_proc_REAL4TimeSeries (
     const char      *unit,
     const char      *suffix
     );
+FrameH *fr_add_proc_REAL8TimeSeries ( 
+    FrameH          *frame, 
+    REAL8TimeSeries *chan,
+    const char      *unit,
+    const char      *suffix
+    );
 FrameH *fr_add_proc_REAL4FrequencySeries ( 
     FrameH               *frame, 
     REAL4FrequencySeries *chan,

@@ -26,6 +26,7 @@ struct series
   const char *unit;
   size_t      size;
   float      *data;
+  double     *ddata;
 };
 
 double epoch_diff( const LIGOTimeGPS *t2, const LIGOTimeGPS *t1 );

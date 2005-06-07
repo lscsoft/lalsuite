@@ -116,7 +116,8 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
   struct FrProcData *proc;
   size_t i;
 
-  if ( ser->type != FR_VECT_4R && ser->type != FR_VECT_8C )
+  if ( ser->type != FR_VECT_4R && ser->type != FR_VECT_8C &&
+       ser->type != FR_VECT_8R )
   {
     fprintf( stderr, "unknown data type in series: %d\nmust be 4R or 8C\n",
         ser->type );
@@ -161,12 +162,25 @@ FrameH *fr_add_proc_data( FrameH *frame, const struct series *ser )
       vect->dataF[2*i+1] = ser->data[2*i+1];
     }
   }
-  else
+  else if ( ser->type == FR_VECT_4R )
   {
     for ( i = 0; i < ser->size; ++i )
     {
       vect->dataF[i] = ser->data[i];
     }
+  }
+  else if ( ser->type == FR_VECT_8R )
+  {
+    for ( i = 0; i < ser->size; ++i )
+    {
+      vect->dataD[i] = ser->ddata[i];
+    }
+  }
+  else
+  {
+    fprintf( stderr, "unknown data type in series: %d\nmust be 4R or 8C\n",
+        ser->type );
+    return NULL;
   }
 
   return frame;
