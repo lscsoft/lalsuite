@@ -242,7 +242,7 @@ class CohBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_stderr_file('logs/cohbank-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
     self.set_sub_file('cohbank.sub')
 
- class ChiaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+class ChiaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_coherent_inspiral job used by the inspiral pipeline. The static
   options are read from the section [chia] in the ini file.  The stdout and
@@ -735,7 +735,7 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     """
     return self.__usertag
 
-    def set_ifo_tag(self,ifotag):
+  def set_ifo_tag(self,ifotag):
     """
     Set the ifotag for a given job (for second thinca)
     """
