@@ -263,7 +263,7 @@ EPSearch(
 	AverageSpec = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
 	if(!AverageSpec)
 		XLAL_ERROR_VOID(func, XLAL_EFUNC);
-	ComputeAverageSpectrum(status->statusPtr, AverageSpec, tseries, params);
+	ComputeAverageSpectrum(status, AverageSpec, tseries, params);
 	CHECKSTATUSPTR(status);
 
 	Psd = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
