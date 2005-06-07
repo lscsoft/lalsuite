@@ -628,7 +628,8 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     self.__ifo_v1 = None
     self.__num_slides = None
     self.__usertag = job.get_config('pipeline','user-tag')
-    
+    self.__ifotag = None
+
   def set_ifo(self, ifo):
     """
     Add the interferometer to the list of ifos
