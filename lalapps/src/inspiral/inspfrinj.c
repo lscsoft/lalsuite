@@ -124,6 +124,7 @@ CHAR  *userTag          = NULL;         /* string the user can tag with */
 int    writeRawData     = 0;            /* write the raw data to frame  */
 int    writeInjOnly     = 0;            /* write the inj data to frame  */
 int    writeRawPlusInj  = 0;            /* write raw plus inj to frame  */
+int    writeReal8Frame  = 0;            /* write frames as real 8       */
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
 
@@ -161,7 +162,7 @@ int main( int argc, char *argv[] )
 
   /* counters and other variables */
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-  UINT4 k,n;
+  UINT4 k,n,j;
   CHAR  fname[FILENAME_MAX];
   UINT4 numPoints = 0;
   REAL8 tsLength;
@@ -181,7 +182,7 @@ int main( int argc, char *argv[] )
 
   /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
+  set_debug_level( "33" );
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
@@ -518,8 +519,8 @@ int main( int argc, char *argv[] )
     struct FrFile *frOutFile  = NULL;
     struct FrameH *outFrame   = NULL;
     REAL4TimeSeries output;
+    REAL8TimeSeries real8Output;
     UINT4 length;
-
 
     memset( &output, 0, sizeof(REAL4TimeSeries) );
     output.deltaT = inj.deltaT;
@@ -528,11 +529,19 @@ int main( int argc, char *argv[] )
     length = numPoints / numFiles;
     output.data->length = length;
 
+    memset( &real8Output, 0, sizeof(REAL8TimeSeries) );
+    real8Output.deltaT         = output.deltaT;
+    real8Output.sampleUnits    = output.sampleUnits;
+    LAL_CALL( LALDCreateVector( &status, &(real8Output.data), 
+         output.data->length ), &status );
+    real8Output.data->length = output.data->length;
+    
     for ( n = 0; n < numFiles; ++n )
     {
       outFrame = NULL;
       output.epoch.gpsSeconds  = gpsStartTime.gpsSeconds + n * frameLength;
-
+      real8Output.epoch        = output.epoch;
+      
       /* write the injection channel to frame */
       if ( writeInjOnly  ) 
       {
@@ -555,24 +564,59 @@ int main( int argc, char *argv[] )
       /* write the raw/raw plus inj data to frame */
       if ( writeRawData || writeRawPlusInj ) 
       {
+
         strcpy( output.name, chan.name );
         output.data->data = chan.data->data + n * length;
 
-        if ( writeRawData )
+        if ( !writeReal8Frame )
         {
-          outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
-              NULL );
+          if ( writeRawData )
+          {
+            outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
+                NULL );
+          }
+          /* perform injections into this file's data only, preserve name*/
+          LAL_CALL( LALSSInjectTimeSeries( &status, &output, &inj ), &status );
+
+          if ( writeRawPlusInj )
+          {
+            strcpy( output.name, chan.name );
+            outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
+                "PLUS_INSP_INJ" );
+          }
+        }
+        else
+        {
+          strcpy( real8Output.name, output.name );
+          
+          if ( vrbflg ) fprintf( stdout, 
+              "Casting data to real 8 before writing frame\n" );
+
+          for ( j = 0 ; j < output.data->length ; ++j )
+          {
+            real8Output.data->data[j] = (REAL8) ( output.data->data[j] );
+          }
+
+          if ( writeRawData )
+          {
+            outFrame = fr_add_proc_REAL8TimeSeries( outFrame, &real8Output, 
+                "ct", NULL );
+          }
+
+          for ( j = 0 ; j < output.data->length ; ++j )
+          {
+            real8Output.data->data[j] += (REAL8) 
+              ( inj.data->data[j + n * length] );
+          }
+
+          if ( writeRawPlusInj )
+          {
+             outFrame = fr_add_proc_REAL8TimeSeries( outFrame, &real8Output, 
+                 "ct", "PLUS_INSP_INJ" );
+          }
+
         }
 
-        /* perform injections into this file's data only, preserve name*/
-        LAL_CALL( LALSSInjectTimeSeries( &status, &output, &inj ), &status );
-
-        if ( writeRawPlusInj )
-        {
-          strcpy( output.name, chan.name );
-          outFrame = fr_add_proc_REAL4TimeSeries( outFrame, &output, "ct", 
-              "PLUS_INSP_INJ" );
-        }
       }
 
       /* set the output file name */
@@ -604,6 +648,13 @@ int main( int argc, char *argv[] )
     }
 
     LALFree ( output.data );
+
+    if( real8Output.data )
+    { 
+      LAL_CALL( LALSDestroyVector( &status, &(real8Output.data) ), &status );
+       
+      /* LALFree ( real8Output.data ); */
+    }
   }
 
   /* free the data storage */
@@ -798,6 +849,7 @@ static void print_usage(char *program)
       " [--write-raw-data]                  write out raw-data channel\n"\
       " [--write-inj-only]                  write out inj-only channel\n"\
       " [--write-raw-plus-inj]              write out raw plus inj channel\n"\
+      " [--write-real8-frame]               write out real 8 frames\n"\
       "\n"\
       " [--output-frame-length]  len        length of output frames\n"\
       " [--output-file-name]     out        set file names to out-gpstime-length.gwf\n"\
@@ -819,6 +871,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"write-inj-only",          no_argument,       &writeInjOnly,     1 },
     {"write-raw-plus-inj",      no_argument,       &writeRawPlusInj,  1 },
     {"inject-overhead",         no_argument,       &injectOverhead,   1 },
+    {"write-real8-frame",       no_argument,       &writeReal8Frame,  1 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
@@ -1290,6 +1343,18 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
+  if ( writeReal8Frame )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--write-real8-frame" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+  
   /* check inject-overhead option */
   if ( injectOverhead )
   {
