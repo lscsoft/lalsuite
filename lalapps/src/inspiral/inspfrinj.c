@@ -652,8 +652,6 @@ int main( int argc, char *argv[] )
     if( real8Output.data )
     { 
       LAL_CALL( LALSDestroyVector( &status, &(real8Output.data) ), &status );
-       
-      /* LALFree ( real8Output.data ); */
     }
   }
 
