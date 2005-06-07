@@ -78,7 +78,7 @@ FrameH *fr_add_proc_REAL8TimeSeries (
     fdata.step = (double) chan->deltaT;
     fdata.unit = unit;
     fdata.size = (size_t) chan->data->length;
-    fdata.ddata = (float *) chan->data->data;
+    fdata.ddata = (double *) chan->data->data;
     return fr_add_proc_data( frame, &fdata );
 }
 
