@@ -38,7 +38,7 @@ int gethostname(char *name, int len);
 	"--trig-start-time time --trig-stop-time time " \
 	"[--outtxt txt filename] " \
 	"[--max-confidence maximum conf] [--noplayground] [--sort] " \
-        "[--cluster clusterchoice(clusterbypeaktimeandfreq/clusterbytimeandfreq)] " \
+        "[--cluster clusterchoice(clusterbypeaktimeandfreq/clusterbytimeandfreq/stringcluster)] " \
 	"[--min-duration min dur] [--max-duration max dur] " \
 	"[--min-centralfreq min central_freq] [--max-centralfreq max central_freq] " \
 	"[--max-bandwidth max bw] [--min-bandwidth min bw] " \
@@ -58,7 +58,7 @@ int gethostname(char *name, int len);
 #define FALSE 0
 
 /* cluster options */
-enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq } clusterchoice = undefined;
+enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq , stringcluster} clusterchoice = undefined;
 
 /*
  * Command-line options
@@ -325,6 +325,11 @@ static void parse_command_line(int argc, char **argv, struct options_t *options,
 			    {
 			      options->cluster = TRUE;
 			      clusterchoice = clusterbytimeandfreq;
+			    }
+			  else if ( ! strcmp( "stringcluster", optarg ) )
+			    {
+			      options->cluster = TRUE;
+			      clusterchoice = stringcluster;
 			    }
 			  else
 			    {
@@ -793,6 +798,8 @@ int main(int argc, char **argv)
 	  LAL_CALL(LALClusterSnglBurstTable(&stat, &burstEventList, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
 	else if (options.cluster && clusterchoice == clusterbytimeandfreq)
 	  LAL_CALL(LALClusterSnglBurstTable(&stat, &burstEventList,  NULL, XLALCompareSnglBurst), &stat);
+	else if(options.cluster && clusterchoice == stringcluster)
+	  XLALClusterStringBurstTable(&burstEventList, NULL, XLALCompareStringBurstByTime);
 
 	/*
 	 * Do any requested cuts
