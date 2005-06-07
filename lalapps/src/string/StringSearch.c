@@ -474,9 +474,10 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
       INT8 timeNS  = (INT8)( 1000000000 ) * (INT8)(GV.ht_proc.epoch.gpsSeconds+GV.seg_length*i/2*GV.ht_proc.deltaT);
       timeNS += (INT8)( 1e9 * GV.ht_proc.deltaT * p );
 
+      /* Do we have the start of a cluster? */
       if ( (fabs(vector->data[p]) > CLA.threshold) && ( (double)(1e-9*timeNS) > (double)CLA.trigstarttime))
 	{
-	  INT4 pend=-1,pstart=p;
+	  INT4 pend=-1,pstart=p, pstart2=p;
           INT8  timeNS, peaktime;
 	  REAL8 duration;
 
@@ -498,7 +499,9 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	      fprintf(stderr,"Could not allocate memory for event. Memory allocation error. Exiting. \n");
 	      return 1;
 	    }
-	  while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pstart)* GV.ht_proc.deltaT < (float)CLA.TruncSecs)) 
+
+	  /* Clustering in time: While we are above threshold, or within CLA.TruncSecs of the last point above threshold... */
+	  while( ((fabs(vector->data[p]) > CLA.threshold) || ((pstart2-pstart)* GV.ht_proc.deltaT < (float)CLA.TruncSecs)) 
 		 && p<(int)(3*vector->length/4))
 	    {
 	      if(fabs(vector->data[p]) > maximum) 
@@ -506,7 +509,14 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 		  maximum=fabs(vector->data[p]);
 		  pmax=p;
 		}
-	      if ( (fabs(vector->data[p]) < CLA.threshold))
+	      /* pstart2 is the last point above threshold */
+	      if ( (fabs(vector->data[p]) > CLA.threshold))
+		{
+		  pstart2 = p; 
+		}
+	      /* If the previous point was above threshold and this one is below threshold then 
+		 we have a threshold crossing */
+	      if ( (fabs(vector->data[p]) < CLA.threshold) && (fabs(vector->data[p-1]) > CLA.threshold))
 		{
 		  pend = p-1; 
 		}
