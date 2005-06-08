@@ -1504,9 +1504,13 @@ static void add_sim_injections(
 	
 	  aData = waveform.a->data->data;
 
+	  /* copy the plus and cross data properly scaled for distance
+	   * NOTE: The waveforms in the frames are always produced at
+	   * distance of 1000 Kpc
+	   */
 	  for( i = 0; i < n; i++){
-	    *(aData++) = plusseries->data->data[i];
-	    *(aData++) = crossseries->data->data[i];
+	    *(aData++) = plusseries->data->data[i] * 1000/ simBurst->distance;
+	    *(aData++) = crossseries->data->data[i] * 1000/ simBurst->distance;
 	  }
 
 	  /* must set the epoch of signal since it's used by coherent GW */
@@ -1830,6 +1834,9 @@ int main( int argc, char *argv[])
 		}
 
 		LAL_CALL(EPConditionData(&stat, series, options.high_pass, (REAL8) 1.0 / options.ResampleRate, resampFiltType, options.FilterCorruption), &stat);
+
+		if(options.printData)
+		  LALPrintTimeSeries(series, "./condtimeseries.dat");
 
 		if(options.verbose)
 			fprintf(stderr, "%s: %u samples (%.9f s) at GPS time %d.%09d s remain after conditioning\n", argv[0], series->data->length, series->data->length * series->deltaT, series->epoch.gpsSeconds, series->epoch.gpsNanoSeconds);
