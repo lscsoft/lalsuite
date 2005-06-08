@@ -534,6 +534,7 @@ tagSimBurstTable
   REAL4            polarization;
   REAL4            hrss;
   REAL4            hpeak;
+  REAL4            distance;
   REAL4            freq;
   REAL4            tau;
   INT4             zm_number;
