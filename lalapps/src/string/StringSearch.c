@@ -517,6 +517,9 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	      p++;
 	    }
 
+
+
+
 	  peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * pmax );
 	  duration = GV.ht_proc.deltaT * ( pend - pstart );
 
