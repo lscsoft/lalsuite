@@ -6,6 +6,7 @@
 #include <lal/LALConstants.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
+#include <lal/VectorOps.h>
 #include <lal/Window.h>
 #include <lal/FrequencySeries.h>
 
