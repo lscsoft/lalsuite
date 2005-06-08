@@ -217,11 +217,13 @@ int main(int argc, char **argv)
 	case 'r':
 	  /* time coincidence window */
 	  startCoincidence.gpsSeconds = atoi(optarg);
+	  LAL_CALL( LALGPStoINT8( &stat, &startCoincidenceNS, &startCoincidence ), &stat );
 	  break;
 
 	case 's':
 	  /* time coincidence window */
 	  endCoincidence.gpsSeconds = atoi(optarg);
+	  LAL_CALL( LALGPStoINT8( &stat, &endCoincidenceNS, &endCoincidence ), &stat );
 	  break;
 
 	case 'o':
