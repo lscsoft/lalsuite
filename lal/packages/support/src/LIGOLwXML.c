@@ -580,6 +580,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.simBurstTable->polarization,
               tablePtr.simBurstTable->hrss,
               tablePtr.simBurstTable->hpeak,
+              tablePtr.simBurstTable->distance,
               tablePtr.simBurstTable->freq,
               tablePtr.simBurstTable->tau,
               tablePtr.simBurstTable->zm_number
