@@ -48,7 +48,7 @@
 #define BANKEFFICIENCY_PARAMS_ROW \
 "         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%d,%d,%d"
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %f %f %f %f %d %d %d "
+"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %f %f %f %d %d %d "
 
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
 fputs( "   <Table Name=\"bankefficiencygroup:bankefficiency:table\">\n", fp) == EOF || \
@@ -261,7 +261,7 @@ typedef struct{
   INT4 faithfulness;
   INT4 snrAtCoaTime;
   double m1,m2, psi0,psi3, tau0, tau3;
-  DetectorName NoiseModel;
+  DetectorName noiseModel;
   REAL4   maxTotalMass;
   char *chanName;
   CHAR *calCacheName;

@@ -10,6 +10,12 @@ RCSID(  "$Id$");
 #define CVS_ID_STRING_C      "$Id$"
 #define CVS_REVISION_C      "$Revision$"
 
+CHAR* GetStringFromGridType(INT4 input);
+CHAR* GetStringFromSimulationType(INT4 input);
+CHAR* GetStringFromDetector(INT4 input);
+CHAR* GetStringFromTemplate(INT4 input);
+CHAR* GetStringFromNoiseModel(INT4 input);
+CHAR* GetStringFromScientificRun(INT4 input);
 
 static COMPLEX8Vector *strainSegment = NULL;
 static COMPLEX8FrequencySeries       resp;
@@ -191,21 +197,20 @@ main (INT4 argc, CHAR **argv )
       BEInitOverlapOutputIn(&OverlapOutputBestTemplate);
     
       randIn.param.fCutoff = coarseBankIn.fUpper;
-
-      /* use actual psd and real data */
-      if (otherIn.NoiseModel == REALPSD && otherIn.realNoise)
-	{
-	  randIn.type = 1; /*needed ? */
-	  for (i=0; i<(INT4)signal.length/2; i++){
+      /* first generate some input signal. GW alone or mixed with gaussian noise. */
+      /* if realNoise is requested and simulation type is at least with noise,
+       * then we just add real noise to the simulated signal. */
+      if (otherIn.realNoise && otherIn.noiseModel == REALPSD) {
+        for (i=0; i<(INT4)signal.length/2; i++){
 	    INT4 k = signal.length-i;
 	    signal.data[i] = strainSegment->data[i].re; 
 	    signal.data[k] = strainSegment->data[i].im; 
-          }
         }
-      else /* or gaussian noise ? */
+      }
+      else
         LAL_CALL(BEGenerateInputData(&status,  &signal, &randIn, otherIn),
-	       &status);
-
+            &status);
+      
       overlapin.signal 	= signal;
       
       /* --- we can process the data through the bank now ---        */
@@ -247,8 +252,8 @@ main (INT4 argc, CHAR **argv )
 		       &status);
 
 	      OverlapOutputThisTemplate.freq              =  overlapin.param.fFinal;
-	      OverlapOutputThisTemplate.freqU             =  list[currentTemplate].params.fFinal;
-	      OverlapOutputThisTemplate.templateNumber   = currentTemplate;
+	      OverlapOutputThisTemplate.freqU             =  overlapin.param.fFinal;
+	      OverlapOutputThisTemplate.templateNumber    = currentTemplate;
 	      OverlapOutputThisTemplate.templateNumberU   = currentTemplate;
 	      OverlapOutputThisTemplate.layer             = list[currentTemplate].nLayer;
 	      OverlapOutputThisTemplate.layerU            = list[currentTemplate].nLayer;	      
@@ -307,14 +312,17 @@ randIn.param.fCutoff = coarseBankIn.fUpper;
 	      break;
 	    }
 	  
-	  
-	  
-	  
-	      
-	  /* fill historgranm of the correlation output */
+	  /* fill histogram of the correlation output. Useful to get a flavour
+           * of the output distribution in presence of noise only for
+           * instance. */
 	  if (otherIn.printSNRHisto){
 	    for (i=0; i<(INT4)correlation.length; i++){
-	      gsl_histogram_increment(histogramNoise, correlation.data[i]);
+              /* in the unconstraint case, if alphafCut is applied,
+               * correlation =-1 if alphaF > 1. Therefore we do not count it
+               * in the correlation histogram*/
+	      if (correlation.data[i]!=-1){
+                gsl_histogram_increment(histogramNoise, correlation.data[i]);
+              }
 	    }		    
 	  }	
 	  
@@ -534,7 +542,7 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->faithfulness        	= BANKEFFICIENCY_FAITHFULNESS;
   otherIn->ntrials 	     	= BANKEFFICIENCY_NTRIALS;
   otherIn->fastSimulation       = BANKEFFICIENCY_FASTSIMULATION;
-  otherIn->NoiseModel           = LIGOI;
+  otherIn->noiseModel           = LIGOI;
   otherIn->binaryInjection      = NoUserChoice; 
   otherIn->maxTotalMass         = -1;
 
@@ -663,21 +671,21 @@ ParseParameters(	INT4 			*argc,
       else if (!strcmp(argv[i],	"--noise-model")){	
 	BEParseGetString(argv, &i);
 	if (!strcmp(argv[i], "LIGOI"))	
-	  otherIn->NoiseModel = LIGOI;
+	  otherIn->noiseModel = LIGOI;
 	else if (!strcmp(argv[i], "LIGOA"))  
-            otherIn->NoiseModel = LIGOA;
+            otherIn->noiseModel = LIGOA;
 	else if (!strcmp(argv[i], "VIRGO"))  
-	  otherIn->NoiseModel = VIRGO;
+	  otherIn->noiseModel = VIRGO;
 	else if (!strcmp(argv[i], "TAMA"))  
-	  otherIn->NoiseModel = TAMA;
+	  otherIn->noiseModel = TAMA;
 	else if (!strcmp(argv[i], "GEO")) 
-            otherIn->NoiseModel = GEO;
+            otherIn->noiseModel = GEO;
 	else if (!strcmp(argv[i], "UNITY"))  
-	  otherIn->NoiseModel = UNITY;
+	  otherIn->noiseModel = UNITY;
 	else if (!strcmp(argv[i], "REALPSD"))  
-	  otherIn->NoiseModel = REALPSD;
+	  otherIn->noiseModel = REALPSD;
 	else 
-	  otherIn->NoiseModel = None;
+	  otherIn->noiseModel = None;
       }
       else if (!strcmp(argv[i], "--num-seconds")) 
         BEParseGetInt(argv,  &i, &(otherIn->numSeconds));
@@ -956,7 +964,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 
 
 
-  if (coarseBankIn->fUpper = -1	){
+  if (coarseBankIn->fUpper == -1	){
     coarseBankIn->fUpper = coarseBankIn->tSampling/2. - 1.;
     randIn->param.fCutoff = coarseBankIn->tSampling/2. - 1.;
   }
@@ -1115,9 +1123,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	   coarseBankIn->mmCoarse);
      BEPrintError(msg);  
  } 
-  
-
- if (otherIn->NoiseModel == None){
+ if (otherIn->noiseModel == None){
    sprintf(msg, "--noise-model must be <LIGOI, LIGOA, VIRGO, GEO, TAMA, REALPSD>\n");
    BEPrintError(msg);  
  } 
@@ -1126,14 +1132,11 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
    sprintf(msg, "--bank-number-fcut (%d) must be > 0>\n", coarseBankIn->numFcutTemplates);
    BEPrintError(msg);  
  } 
-  
-
+ 
  if (otherIn->run == None){
    sprintf(msg, "--run must be <S2 or S3>\n");
    BEPrintError(msg);  
  } 
-  
-
 
  if  ((randIn->mMin >= randIn->mMax ) || (randIn->mMin <=0)){
     sprintf(msg, "--signal-mass-range (%f %f) paramter must be sorted and > 0 \n",
@@ -1250,7 +1253,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 
   if (randIn->param.approximant == (Approximant)(-1))
       BEPrintError("--signal, signal approximant must be provided\n");
-
 
   if (otherIn->binaryInjection==BHNS){
     if (randIn->mMin >3 || randIn->mMax < 3 ){
@@ -1729,7 +1731,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	  x1_2, x2_2, x3_2, x4_2, 		/* some temporary data 	      		*/
 	  V0, V1, V2, 				/* idem 				*/
 	  rho		= 0,			/* the SNR 				*/
-           alpha;
+           alpha, alphaFU, fm23, fp23;
   
   REAL4Vector 
     template, 
@@ -1840,7 +1842,10 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   a21 = moments->a21.data[k];
 
 
-  alphaMax = pow(corrin.fCutoff, -2./3.);
+  fm23 = pow(corrin.fCutoff,-2./3.);
+  fp23 = pow(corrin.fCutoff,2./3.);
+
+  alphaMax = fm23;
 
   thetab = (-(a11 * alphaMax)/(a22+a21*alphaMax));
   thetab = atan(thetab);
@@ -1933,7 +1938,13 @@ LALWaveOverlapBCV(	     LALStatus               *status,
       else 
 	{
 	  if(otherIn.printBestOverlap || otherIn.printSNRHisto) {
-	    correlation->data[i] = rhoUnconstraint;
+                alphaFU =   -(a22 * tan(.5*thetav)) 				
+        	    / (a11 + a21* tan(.5*thetav)) *fp23;
+	        if (alphaFU <=1 )
+                  correlation->data[i] = rhoUnconstraint;
+                else 
+                  correlation->data[i] = -1;
+                  
 	  }
 	}
       
@@ -1948,7 +1959,11 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	    / (a11 + a21* tan(phaseConstraint));
 	}
 
-      if ( rhoUnconstraint > rhoMaxUnconstraint)			
+      alphaFU =   -(a22 * tan(.5*thetav)) 				
+	    / (a11 + a21* tan(.5*thetav)) *fp23;
+
+
+      if ( rhoUnconstraint > rhoMaxUnconstraint && alphaFU<=1)			
 	/* Keep the position of the max only	*/
 	{
 	  rhoMaxUnconstraint 	= rhoUnconstraint  ;
@@ -2021,7 +2036,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
     for (i=0; i< correlation->length; i++){
       alpha = -(a22 * tan(phaseV.data[i])) 				/* Compute the final alpha parameter 	*/
 	/ (a11 + a21* tan(phaseV.data[i]));
-      fprintf(Foutput, "%e \n",alpha*pow(corrin.fCutoff,2./3.));
+      fprintf(Foutput, "%e \n",alpha*fp23);
     }
     fclose(Foutput);
 
@@ -2358,123 +2373,257 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 
 
 
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--bank-alpha",	coarseBankIn.alpha);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--bank-mass-range",	coarseBankIn.mMin);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--bank-mass-range",	coarseBankIn.mMax);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--bank-psi0-range",	coarseBankIn.psi0Min);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--bank-psi0-range",	coarseBankIn.psi0Max);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--bank-psi3-range",	coarseBankIn.psi3Min);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--bank-psi3-range",	coarseBankIn.psi3Max);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--bank-ffinal",	coarseBankIn.fUpper);
-  ADD_PROCESS_PARAM("float",	"%12.5d",        "--bank-grid-type",	coarseBankIn.gridType);
-
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--fl",		coarseBankIn.fLower);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--fendbcv",		coarseBankIn.LowGM);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--fendbcv",		coarseBankIn.HighGM);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--fl-signal",	randIn.param.fLower);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--fl-template",      coarseBankIn.fLower);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--freq-moment-bank",	coarseBankIn.fUpper);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--mass-range-bank",	coarseBankIn.mMin);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--mass-range-bank",	coarseBankIn.mMax);
-  ADD_PROCESS_PARAM("float",	"%12.5f",       "--max-totalmass",    otherIn.maxTotalMass);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--m1",		otherIn.m1);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--m2",		otherIn.m2);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--mm",		coarseBankIn.mmCoarse);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--ntrial",		otherIn.ntrials);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--noise-amplitude",	randIn.NoiseAmp);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--number-fcut",	coarseBankIn.numFcutTemplates);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--numSeconds",	otherIn.numSeconds);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--psi0",		otherIn.psi0);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--psi3",		otherIn.psi3);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--sampling",		coarseBankIn.tSampling);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--simulation-type",	randIn.type);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--signal-amplitude",	randIn.SignalAmp);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--signal-alpha",	randIn.param.alpha);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--signal-ffinal",	otherIn.signalfFinal);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--signal-mass-range",randIn.mMin);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--signal-mass-range",randIn.mMax);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--signal-psi0-range",randIn.psi0Min);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--signal-psi0-range",randIn.psi0Max);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--signal-psi3-range",randIn.psi3Min);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--signal-psi3-range",randIn.psi3Max);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--seed",		randIn.useed);
-  switch (otherIn.NoiseModel){
-  case LIGOI:
-    ADD_PROCESS_PARAM("string",	"%6s",	"--noisemodel","LIGOI");
-    break;
-  case LIGOA:
-    ADD_PROCESS_PARAM("string",	"%6s",	"--noisemodel", "LIGOA");
-    break;
-  case VIRGO:
-    ADD_PROCESS_PARAM("string",	"%6s",	"--noisemodel", "VIRGO");
-    break;
-  case GEO:
-    ADD_PROCESS_PARAM("string",	"%6s",	"--noisemodel","GEO");
-    break;
-  case TAMA:    
-    ADD_PROCESS_PARAM("string",	"%6s",	"--noisemodel","TAMA");    
-    break; 
-  case UNITY:    
-    ADD_PROCESS_PARAM("string",	"%6s",	"--noisemodel","UNITY");    
-    break;
-  case REALPSD:
-    ADD_PROCESS_PARAM("string", "%6s",	"--noisemodel","REALPSD");    
-     switch (otherIn.detector){
-     case L1: 
-       ADD_PROCESS_PARAM("string", "%12s",	"--detector","L1");    
-       break;
-     case H1: 
-       ADD_PROCESS_PARAM("string", "%12s",	"--detector","H1");    
-       break;
-     case H2: 
-       ADD_PROCESS_PARAM("string", "%12s",	"--detector","H2");    
-       break;
-     case V1: 
-     case G1: 
-       break;
-     }
-     switch (otherIn.run){
-     case S2: 
-       ADD_PROCESS_PARAM("string", "%12s",	"--run","S2");    
-       break;
-     case S3: 
-       ADD_PROCESS_PARAM("string", "%12s",	"--run","S3");    
-       break;
-     case S1: 
-     case S4:
-     case S5:
-     case S6:
-       break;
-     }
-     ADD_PROCESS_PARAM("string", "%s",	"--channel",otherIn.chanName);    
-     ADD_PROCESS_PARAM("string", "%12.9d",	"--gps-start-time",otherIn.startTime);     
-     break;
-  } 
-  ADD_PROCESS_PARAM("int",	"%6d",		"--signal",		otherIn.signal);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--signal-order",	randIn.param.order);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--template",		otherIn.template);
-  ADD_PROCESS_PARAM("int",	"%6d",		"--template-order",	coarseBankIn.order);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--tau0",		otherIn.tau0);
-  ADD_PROCESS_PARAM("float",	"%12.5f",	"--tau3",		otherIn.tau3);
+  ADD_PROCESS_PARAM("float","%f","--bank-alpha",           
+      coarseBankIn.alpha);
+  ADD_PROCESS_PARAM("float","%f","--bank-fcut-range",
+      coarseBankIn.LowGM);
+  ADD_PROCESS_PARAM("float","%f","--bank-fcut-range",
+      coarseBankIn.HighGM);
+  ADD_PROCESS_PARAM("float","%f","--bank-ffinal",
+      coarseBankIn.fUpper);
+  ADD_PROCESS_PARAM("float","%f","--bank-mass-range",
+      coarseBankIn.mMin);
+  ADD_PROCESS_PARAM("float","%f","--bank-mass-range",
+      coarseBankIn.mMax);
+  ADD_PROCESS_PARAM("float","%f","--bank-psi0-range",
+      coarseBankIn.psi0Min);
+  ADD_PROCESS_PARAM("float","%f","--bank-psi0-range",
+      coarseBankIn.psi0Max);
+  ADD_PROCESS_PARAM("float","%f","--bank-psi3-range",
+      coarseBankIn.psi3Min);
+  ADD_PROCESS_PARAM("float","%f","--bank-psi3-range",
+      coarseBankIn.psi3Max);
+  ADD_PROCESS_PARAM("float","%f","--bank-ffinal",	 
+      coarseBankIn.fUpper);
+  ADD_PROCESS_PARAM("string","%s","--bank-grid-type",
+      GetStringFromGridType(coarseBankIn.gridType));
+  ADD_PROCESS_PARAM("string", "%s","--channel",
+      otherIn.chanName);    
+  ADD_PROCESS_PARAM("string", "%s","--detector",
+      GetStringFromDetector(otherIn.detector));
+  ADD_PROCESS_PARAM("float","%f","--fl",	
+      coarseBankIn.fLower);
+  ADD_PROCESS_PARAM("string", "%d","--gps-start-time",
+      otherIn.startTime);     
+  ADD_PROCESS_PARAM("float","%f","--signal-fl",
+      randIn.param.fLower);
+  ADD_PROCESS_PARAM("float","%f","--template-fl", 
+      coarseBankIn.fLower);
+  ADD_PROCESS_PARAM("float","%f","--max-totalmass",
+      otherIn.maxTotalMass);
+  ADD_PROCESS_PARAM("float","%f","--m1",	
+      otherIn.m1);
+  ADD_PROCESS_PARAM("float","%f","--m2",	
+      otherIn.m2);
+  ADD_PROCESS_PARAM("float","%f","--mm",	
+      coarseBankIn.mmCoarse);
+  ADD_PROCESS_PARAM("int","%d","--ntrial",	
+      otherIn.ntrials);
+  ADD_PROCESS_PARAM("float","%f","--noise-amplitude",
+      randIn.NoiseAmp);
+  ADD_PROCESS_PARAM("string", "%s","--noise-model",
+      GetStringFromNoiseModel(otherIn.noiseModel));
+  ADD_PROCESS_PARAM("int","%d","--number-fcut",	        
+      coarseBankIn.numFcutTemplates);
+  ADD_PROCESS_PARAM("int","%d","--num-seconds",
+      otherIn.numSeconds);
+  ADD_PROCESS_PARAM("float","%f","--psi0",	
+      otherIn.psi0);
+  ADD_PROCESS_PARAM("float","%f","--psi3",
+      otherIn.psi3);
+  ADD_PROCESS_PARAM("string", "%s","--run",
+      GetStringFromScientificRun(otherIn.run));
+  ADD_PROCESS_PARAM("float","%f","--sampling",
+      coarseBankIn.tSampling);
+  ADD_PROCESS_PARAM("string","%s","--simulation-type",
+      GetStringFromSimulationType(randIn.type));
+  ADD_PROCESS_PARAM("float","%f","--signal-amplitude",
+      randIn.SignalAmp);
+  ADD_PROCESS_PARAM("float","%f","--signal-alpha",
+      randIn.param.alpha);
+  ADD_PROCESS_PARAM("float","%f","--signal-ffinal",
+      otherIn.signalfFinal);
+  ADD_PROCESS_PARAM("float","%f","--signal-mass-range",
+      randIn.mMin);
+  ADD_PROCESS_PARAM("float","%f","--signal-mass-range",
+      randIn.mMax);
+  ADD_PROCESS_PARAM("float","%f","--signal-psi0-range",
+      randIn.psi0Min);
+  ADD_PROCESS_PARAM("float","%f","--signal-psi0-range",
+      randIn.psi0Max);
+  ADD_PROCESS_PARAM("float","%f","--signal-psi3-range",
+      randIn.psi3Min);
+  ADD_PROCESS_PARAM("float","%f","--signal-psi3-range",
+      randIn.psi3Max);
+  ADD_PROCESS_PARAM("int","%d","--seed",
+      randIn.useed);
+  ADD_PROCESS_PARAM("string","%s","--signal",	
+      GetStringFromTemplate(otherIn.signal));
+  ADD_PROCESS_PARAM("int","%d","--signal-order",
+      randIn.param.order);
+  ADD_PROCESS_PARAM("string","%s","--template",	
+      GetStringFromTemplate(otherIn.template));
+  ADD_PROCESS_PARAM("int","%d","--template-order",
+      coarseBankIn.order);
+  ADD_PROCESS_PARAM("float","%e","--tau0",	
+      otherIn.tau0);
+  ADD_PROCESS_PARAM("float","%e","--tau3",	
+      otherIn.tau3);
   if (otherIn.alphaFConstraint )
-    ADD_PROCESS_PARAM("float", "%12.5d", "--alpha-constraint",1);
+    ADD_PROCESS_PARAM("float", "%d", "--alpha-constraint",1);
   if (!otherIn.alphaFConstraint )
-    ADD_PROCESS_PARAM("float", "%12.5d", "--no-alpha-constraint",0);
+    ADD_PROCESS_PARAM("float", "%d", "--no-alpha-constraint",0);
   if (!otherIn.fastSimulation )
-    ADD_PROCESS_PARAM("float", "%12.5d", "--fast-simulation",1);
+    ADD_PROCESS_PARAM("float", "%d", "--fast-simulation",1);
   if (otherIn.binaryInjection == BHNS)
-    ADD_PROCESS_PARAM("float", "%12.5d", "--bhns-injection", BHNS);
+    ADD_PROCESS_PARAM("float", "%d", "--bhns-injection", BHNS);
   	  
 #undef ADD_PROCESS_PARAM
 }
 
+CHAR* GetStringFromSimulationType(INT4 input)
+{
+  switch (input){
+    case 0:
+      return "SignalOnly";
+      break;
+    case 1:
+      return "NoiseOnly";
+      break;
+    case 2:
+      return "NoiseAndSignal";
+      break;
+  }
+  return NULL;
+}
+CHAR* GetStringFromTemplate(INT4 input)
+{
+  switch (input){
+    case EOB:
+      return "EOB";
+      break;
+    case TaylorT1:
+      return "TaylorT1";
+      break;
+    case TaylorT2:
+      return "TaylorT2";
+      break;
+    case TaylorT3:
+      return "TaylorT3";
+      break;
+    case PadeT1:
+      return "PadeT1";
+      break;
+    case TaylorF2:
+      return "TaylorF2";
+      break;
+    case BCV:
+      return "BCV";
+      break;
+  }
+  return NULL;
+}
+
+CHAR* GetStringFromGridType(INT4 input)
+ {
+  switch (input){
+  case Square:
+    return "SQUARE";
+    break;
+  case OrientedSquare:
+    return "squareOriented";
+    break;
+  case OrientedHexagonal:
+    return "hexagonalOriented";
+    break;
+  case Hexagonal:
+    return "hexagonal";
+    break;
+  }
+  return NULL;
+}
+
+CHAR* GetStringFromNoiseModel(INT4 input)
+ {
+  switch (input){
+  case LIGOI:
+    return "LIGOI";
+    break;
+  case LIGOA:
+    return "LIGOA";
+    break;
+  case VIRGO:
+    return "VIRGO";
+    break;
+  case GEO:
+    return "GEO";
+    break;
+  case TAMA:    
+    return "TAMA"; 
+    break;
+  case UNITY:    
+    return "UNITY";
+    break;
+  case REALPSD:
+    return "REALPSD";
+    break;
+  } 
+  return NULL;
+ }
+
+CHAR* GetStringFromDetector(INT4 input)
+ {
+   
+  switch (input){
+  case L1: 
+    return "L1";
+    break;
+  case H1: 
+    return "H1";
+    break;
+  case H2: 
+    return "H2";
+    break;
+  case V1: 
+    return "V1";
+    break;
+  case G1: 
+    return "G1";
+    break;
+  }
+  return NULL;
+ }
+
+
+CHAR* GetStringFromScientificRun(INT4 input)
+ {
+  switch (input){
+     case S2: 
+       return "S2";
+       break;
+     case S3: 
+       return "S3";
+       break;
+     case S1: 
+       return "S4";
+       break;
+     case S4:
+       return "S5";
+       break;
+     case S5:
+       return "S6";
+       break;
+  }
+  return NULL;
+ }
+
 
 /* xml file for the standalone code */
 void 
-BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
-		   RandomInspiralSignalIn randIn,
-		   OtherParamIn           otherIn,
-		   ResultIn trigger
+BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
+		   RandomInspiralSignalIn       randIn,
+		   OtherParamIn                 otherIn,
+		   ResultIn                     trigger
 		  )
 {
   LALStatus             status = blank_status;
@@ -2495,7 +2644,7 @@ BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
 
   LALSnprintf( fname, sizeof(fname), 
 	       BANKEFFICIENCY_PRINTRESULT_FILEXML ,
-	       ifo,
+	       otherIn.detector,
 	       gpsStartTime.gpsSeconds,
 	       gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
 
@@ -2549,7 +2698,7 @@ BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
     
     PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp);
     
-    fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW",\n",
+    fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW,
 	    trigger.psi0_triggerU,
 	    trigger.psi3_triggerU,
 	    trigger.psi0_trigger,
@@ -2582,6 +2731,10 @@ BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
        PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp);
        PRINT_LIGOLW_XML_FOOTER(xmlStream.fp);
      }
+      else
+	{
+	  fprintf(xmlStream.fp, ",\n");
+	}
      fclose( xmlStream.fp );
      xmlStream.fp = NULL;
   }
@@ -2817,7 +2970,7 @@ void BECreatePsd(LALStatus                *status,
   /* --- Compute Noise Spectral Density --- */
   df = randIn->param.tSampling/(float) ((randIn->psd.length-1)*2);	 
 
-  switch (otherIn.NoiseModel)						
+  switch (otherIn.noiseModel)						
     {
     case UNITY:
       LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALLIGOIPsd, df),
@@ -4105,12 +4258,6 @@ void LALComputeWindowSpectrum(LALStatus *status,
 }
 
 
-
-
-
-
-
-
 void SetInspiralPipelineParam(InspiralPipelineIn *param,
 			      RandomInspiralSignalIn randIn)
 {
@@ -4449,7 +4596,7 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  "faithfulness\t\t%d\t\n"        	
 	  "ntrials\t\t%d\t\n" 	     	
 	  "fastSimulation\t\t%d\t\n"       
-	  "NoiseModel\t\t%d\t\n"           
+	  "noiseModel\t\t%d\t\n"           
 	  "binaryInjection\t\t%d\t\n"      
 	  "maxTotalMass\t\t%f\t\n"         
 	  "detector\t\t%d\t\n" 
@@ -4496,7 +4643,7 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  other.faithfulness,        	
 	  other.ntrials, 	     	
 	  other.fastSimulation,       
-	  other.NoiseModel,           
+	  other.noiseModel,           
 	  other.binaryInjection,      
 	  other.maxTotalMass,         
 	  other.detector, 
@@ -4520,9 +4667,5 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  other.H1.dataFile.S2.frInCacheName,        
 	  other.H2.dataFile.S2.calCacheName,         
 	  other.H2.dataFile.S2.frInCacheName);
-  
-
-
-
 }
 
