@@ -13,7 +13,7 @@ __date__ = '$Date$'
 __version__ = '$Revision$'[11:-2]
 
 # import standard modules and append the lalapps prefix to the python path
-import sys, os
+import sys, os, random
 import getopt, re, string
 import tempfile
 import ConfigParser
@@ -38,11 +38,13 @@ Usage: lalapps_power_pipe [options]
   -L, --ifo_l              run on L1
 
   -c, --makeinjfiles       create the xml files with inj parameters
-  -j, --injections TYPE    add simulated injections of type specified(burst/inspiral/burstandinspiral)
+  -j, --injections TYPE    add simulated injections of type specified(burst/inspiral/burstandinspiral/sim)
   -m, --mdcinjections      add mdc injections 
 
   -b, --coincidence        do coincidence analysis
   -t, --triplecoincidence  do triple coincidence
+
+  -s, --timeslides         do time slides
 
   -p, --playground-only    only create chunks that overlap with playground
   -P, --priority PRIO      run jobs with condor priority PRIO
@@ -53,7 +55,7 @@ Usage: lalapps_power_pipe [options]
   print >> sys.stderr, msg
  
 # pasrse the command line options to figure out what we should do
-shortop = "hvdrHKLcmbtp:j:u:P:f:l:"
+shortop = "hvdrHKLcmbtsp:j:u:P:f:l:"
 longop = [
   "help",
   "version",
@@ -67,6 +69,7 @@ longop = [
   "mdcinjections",
   "coincidence",
   "triplecoincidence",
+  "timeslides",
   "playground-only",
   "user-tag=",
   "priority=",
@@ -91,9 +94,11 @@ do_coincidence = None
 do_triplecoincidence = None
 inj_type = None
 do_burstinj = None
+do_siminj = None
 do_inspinj = None
 do_mdcinj = None
 usertag = None
+do_timeslides = None
 playground_only = 0
 condor_prio = None
 config_file = None
@@ -126,6 +131,8 @@ for o, a in opts:
     do_coincidence = 1
   elif o in ("-t", "--triplecoincidence"):
     do_triplecoincidence = 1
+  elif o in ("-s", "--timeslides"):
+    do_timeslides = 1
   elif o in ("-u", "--user-tag"):
     usertag = a
   elif o in ("-p", "--playground-only"):
@@ -152,7 +159,7 @@ if not log_path:
   sys.exit(1)
 
 if do_makeinjfiles and not inj_type:
-  print >> sys.stderr, "If u want to make them u have to inject them :))"
+  print >> sys.stderr, "You have to specify the types of injections"
   print >> sys.stderr, "Use --injection TYPE to specify the type u want to inject."
   sys.exit(1)
 
@@ -166,6 +173,9 @@ if inj_type:
   elif inj_type == "burstandinspiral":
     do_burstinj = 1
     do_inspinj = 1
+  elif inj_type == "sim":
+    do_burstinj = 1
+    do_siminj = 1
   else:
     print >> sys.stderr, "Injection type not recognised. Valid types are burst/inspiral/burstandinspiral"
     sys.exit(1)
@@ -278,6 +288,17 @@ if do_coincidence or do_triplecoincidence:
 if do_triplecoincidence:
   triple_prefix = cp.get('pipeline','triple_outfileprefix')
 
+#set the timeslide arguments
+if do_timeslides:
+  numberslides = cp.get('timeslides','number-slides')
+  slidetime = cp.get('timeslides','slide-time')
+  slidetimens = cp.get('timeslides','slide-time-ns')
+
+#get the arguments specific to running on simulated waveforms 
+if do_siminj:
+  simseconds = cp.get('simulatedinj','sim_seconds')
+  simcache = cp.get('simulatedinj','sim_cache')
+		
 # create all the LSCdataFind jobs to run in sequence
 prev_df1 = None
 prev_df2 = None
@@ -350,6 +371,8 @@ for seg in data:
   ####### set the burst injecton jobs #########
   if do_burstinj:
     binj = power.BurstInjNode(burstinj_job)
+    bseed = int(10 * random.uniform(0.0,1.0))
+    binj.add_var_opt('seed',bseed)
     binj.set_start(seg.start())
     binj.set_end(seg.end())
 
@@ -365,7 +388,9 @@ for seg in data:
   ####### set the inspiral injecton jobs #########
   if do_inspinj:
     iinj = power.InspInjNode(inspinj_job)
-    iinj.set_start(seg.start())
+    iseed = int(10 * random.uniform(0.0,1.0))
+    iinj.add_var_opt('seed',iseed)
+    iinj.set_start(seg.start() + 47)
     iinj.set_end(seg.end())
 
  
@@ -387,11 +412,15 @@ for seg in data:
     if do_mdcinj:
       pow1.set_mdccache(mdcdf1.get_output())
     if do_burstinj or do_inspinj:
-      if do_burstinj: 
-        pow1.set_burstinj(binj.get_output())
+      if do_burstinj and not do_siminj: 
+        pow1.set_burstinj(binj.get_output(bseed))
       if do_inspinj:
-        pow1.set_inspinj(iinj.get_output())
+        pow1.set_inspinj(iinj.get_output(iseed))
       pow1.add_var_opt('calibration-cache',ifo1_calibration)
+    if do_siminj:
+      pow1.set_siminj(binj.get_output(bseed))
+      pow1.add_var_opt('sim-seconds',simseconds)
+      pow1.add_var_opt('sim-cache',simcache)	
     pow1.add_var_opt('threshold',ifo1_snr)
 
     if do_datafind: 
@@ -414,11 +443,15 @@ for seg in data:
     if do_mdcinj:
       pow2.set_mdccache(mdcdf1.get_output())
     if do_burstinj or do_inspinj:
-      if do_burstinj: 
-        pow2.set_burstinj(binj.get_output())
+      if do_burstinj and not do_siminj: 
+        pow2.set_burstinj(binj.get_output(bseed))
       if do_inspinj:
-        pow2.set_inspinj(iinj.get_output())         
+        pow2.set_inspinj(iinj.get_output(iseed))         
       pow2.add_var_opt('calibration-cache',ifo2_calibration)     
+    if do_siminj:
+      pow2.set_siminj(binj.get_output(bseed))
+      pow2.add_var_opt('sim-seconds',simseconds)
+      pow2.add_var_opt('sim-cache',simcache)
     pow2.add_var_opt('threshold',ifo2_snr)
 
     if do_datafind: 
@@ -441,11 +474,15 @@ for seg in data:
     if do_mdcinj:
       pow3.set_mdccache(mdcdf2.get_output())
     if do_burstinj or do_inspinj:
-      if do_burstinj: 
-        pow3.set_burstinj(binj.get_output())
+      if do_burstinj and not do_siminj: 
+        pow3.set_burstinj(binj.get_output(bseed))
       if do_inspinj:
-        pow3.set_inspinj(iinj.get_output()) 
+        pow3.set_inspinj(iinj.get_output(iseed)) 
       pow3.add_var_opt('calibration-cache',ifo3_calibration)
+    if do_siminj:
+      pow3.set_siminj(binj.get_output(bseed))
+      pow3.add_var_opt('sim-seconds',simseconds)
+      pow3.add_var_opt('sim-cache',simcache)
     pow3.add_var_opt('threshold',ifo3_snr)
 
     if do_datafind: 
@@ -463,24 +500,34 @@ for seg in data:
   if do_coincidence or do_triplecoincidence:
     burca1 = power.BurcaNode(burca_job)
     if do_triplecoincidence:
-      do_L1=None
+      do_L1=None	
     if do_H1 and do_L1:	
       burca1.set_ifoa(pow1.get_output())
       burca1.set_ifob(pow3.get_output())
-      burca1.set_prefix(double_prefix) 
+      burca1.add_var_opt('user-tag',double_prefix)
+      if do_timeslides:	
+      	burca1.add_var_opt('number-slides',numberslides)
+      	burca1.add_var_opt('slide-time',slidetime)
+      	burca1.add_var_opt('slide-time-ns',slidetimens)
     if do_H2 and do_L1:	
       burca1.set_ifoa(pow2.get_output())
       burca1.set_ifob(pow3.get_output())
-      burca1.set_prefix(double_prefix)
+      burca1.add_var_opt('user-tag',double_prefix)
+      if do_timeslides:	
+      	burca1.add_var_opt('number-slides',numberslides)
+      	burca1.add_var_opt('slide-time',slidetime)
+      	burca1.add_var_opt('slide-time-ns',slidetimens)  
     if do_H1 and do_H2:	
       burca1.set_ifoa(pow1.get_output())
       burca1.set_ifob(pow2.get_output())
-      burca1.set_prefix(double_prefix)
+      burca1.add_var_opt('user-tag',double_prefix)
+      if do_timeslides:	
+      	burca1.add_var_opt('number-slides',0)
+      	burca1.add_var_opt('slide-time',0)
+      	burca1.add_var_opt('slide-time-ns',0)  
     burca1.set_start(seg.start())
     burca1.set_end(seg.end())
-    burca1.add_var_opt('outfile',burca1.get_output())
 
-	
     if do_power:
       if do_H1 and do_L1: 
         burca1.add_parent(pow1)
@@ -496,12 +543,15 @@ for seg in data:
   if do_triplecoincidence:
     do_L1 = 1
     burca2 = power.BurcaNode(burca_job)	
-    burca2.set_ifoa(burca1.get_output())
-    burca2.set_ifob(pow3.get_output()) 
-    burca2.set_prefix(triple_prefix)
+    burca2.set_ifoa(burca1.get_H1H2output())
+    burca2.set_ifob(pow3.get_output())
+    burca2.add_var_opt('user-tag',triple_prefix) 
     burca2.set_start(seg.start())
     burca2.set_end(seg.end())
-    burca2.add_var_opt('outfile',burca2.get_output())
+    if do_timeslides:	
+      burca2.add_var_opt('number-slides',numberslides)
+      burca2.add_var_opt('slide-time',slidetime)
+      burca2.add_var_opt('slide-time-ns',slidetimens)
 
     if do_power:
       burca2.add_parent(pow3)
