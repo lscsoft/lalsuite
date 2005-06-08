@@ -526,9 +526,10 @@ SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
           {"polarization",                 -1, 13},
           {"hrss",                         -1, 14},
           {"hpeak",                        -1, 15},
-          {"freq",                         -1, 16},
-          {"tau",                          -1, 17},
-          {"zm_number",                    -1, 18},
+          {"distance",                     -1, 16},
+          {"freq",                         -1, 17},
+          {"tau",                          -1, 18},
+          {"zm_number",                    -1, 19},
           {NULL,                            0, 0}
         };
         for ( i=0 ; tmpTableDir[i].name; ++i )
@@ -862,13 +863,17 @@ LALSimBurstTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 16 )
         {
-          thisEvent->freq = r4colData;
+          thisEvent->distance = r4colData;
         }
         else if ( tableDir[j].idx == 17 )
         {
-          thisEvent->tau = r4colData;
+          thisEvent->freq = r4colData;
         }
         else if ( tableDir[j].idx == 18 )
+        {
+          thisEvent->tau = r4colData;
+        }
+        else if ( tableDir[j].idx == 19 )
         {
           thisEvent->zm_number = i4colData;
         }
