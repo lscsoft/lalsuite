@@ -420,6 +420,7 @@ fputs( "      <Column Name=\"sim_burstgroup:sim_burst:coordinates\" Type=\"lstri
 fputs( "      <Column Name=\"sim_burstgroup:sim_burst:polarization\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_burstgroup:sim_burst:hrss\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_burstgroup:sim_burst:hpeak\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"sim_burstgroup:sim_burst:distance\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_burstgroup:sim_burst:freq\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_burstgroup:sim_burst:tau\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_burstgroup:sim_burst:zm_number\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
@@ -427,7 +428,7 @@ fputs( "      <Column Name=\"sim_burstgroup:sim_burst:simulation_id\" Type=\"ilw
 fputs( "      <Stream Name=\"sim_burstgroup:sim_burst:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define SIM_BURST_ROW \
-"         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,\"%s\",%e,%e,%e,%e,%e,%d,\"sim_burst:simulation_id:0\""
+"         \"process:process_id:0\",\"%s\",%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,\"%s\",%e,%e,%e,%e,%e,%e,%d,\"sim_burst:simulation_id:0\""
 
 #define PRINT_LIGOLW_XML_SUMM_VALUE(fp) ( \
 fputs( "   <Table Name=\"summ_valuegroup:summ_value:table\">\n" , fp ) == EOF || \
