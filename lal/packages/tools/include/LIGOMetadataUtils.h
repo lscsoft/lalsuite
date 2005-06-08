@@ -763,7 +763,7 @@ XLALTimeSlideSnglBurst (
 	SnglBurstTable *triggerlist,
 	INT8 startTime,
 	INT8 stopTime,
-	int slideTime
+	INT8 slideTime
 );
 
 #if 0

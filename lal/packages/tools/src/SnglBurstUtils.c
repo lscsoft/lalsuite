@@ -789,12 +789,12 @@ XLALTimeSlideSnglBurst (
 	SnglBurstTable *triggerlist,
 	INT8 startTime,
 	INT8 stopTime,
-	int slideTime
+	INT8 slideTime
 )
 /* </lalVerbatim> */
 {
-	int tStart = 0;
-	int tPeak = 0;
+	INT8 tStart = 0;
+	INT8 tPeak = 0;
 	SnglBurstTable *currentEvent = NULL;
 
 	currentEvent = triggerlist;
