@@ -50,8 +50,12 @@ int snprintf(char *str, size_t size, const  char  *format, ...);
 "  --hpeak HPEAK            amplitude of SG injection in strain units\n"\
 "  --log-hpeak-min LOGHMIN  min amplitude of SG injection in strain units\n"\
 "  --log-hpeak-max LOGHMAX  max amplitude of SG injection in strain units\n"\
+"  --min-distance           min distance of source in Kpc(default 100Kpc) \n"\
+"  --max-distance           max distance of source in Kpc(default 10000Kpc) \n"\
+"  --d-distr                distance distribution ( 0 = logarithmic(only one as of now!! ) \n"\
 "  --simwaveform-duration   duration of th esimulated waveform (Warren/Ott/ZM)\n"\
-"  --simwaveform-number     # of the simulated waveform \n"\
+"  --simwaveform-min-number min # of the simulated waveform \n"\
+"  --simwaveform-max-number max # of the simulated waveform \n"\
 "  --seed SEED              seed random number generator with SEED (1)\n"\
 "  --waveform NAME          set waveform type to NAME (SineGaussian)\n"\
 "  --user-tag STRING        set the usertag to STRING\n"\
@@ -279,7 +283,14 @@ int main( int argc, char *argv[] ){
   REAL4  log_hpeakMax=0.0;
   REAL4  logAmpRange=0.0;
   REAL4  simwavedur = 0.0;
-  INT4   simnumber = 0;
+  INT4   minsimnumber = 0;
+  INT4   maxsimnumber = 10;
+  INT4   deltasim = 0;
+  REAL4  dmin = 100;
+  REAL4  dmax = 10000;
+  REAL4  deltaL = 0;
+  REAL4  logdmin = 0;
+  int    ddistr = 0;
 
   /* Need to set this to true if one wants to use MDC signals*/
   INT4 mdcFlag =FALSE;
@@ -323,11 +334,15 @@ int main( int argc, char *argv[] ){
     {"quality",                 required_argument, 0,                'g'},
     {"log-hpeak-min",           required_argument, 0,                'j'},
     {"log-hpeak-max",           required_argument, 0,                'k'},
+    {"max-distance",            required_argument, 0,                'm'},
+    {"min-distance",            required_argument, 0,                'n'},
+    {"d-distr",                 required_argument, 0,                'p'},
     {"seed",                    required_argument, 0,                's'},
     {"time-step",               required_argument, 0,                't'},
     {"waveform",                required_argument, 0,                'w'},
     {"simwaveform-duration",    required_argument, 0,                'i'},
-    {"simwaveform-number",      required_argument, 0,                'l'},
+    {"simwaveform-min-number",  required_argument, 0,                'l'},
+    {"simwaveform-max-number",  required_argument, 0,                'q'},
     {"tau",                     required_argument, 0,                'x'},
     {"freq",                    required_argument, 0,                'y'},
     {"hpeak",                   required_argument, 0,                'z'},
@@ -367,7 +382,7 @@ int main( int argc, char *argv[] ){
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "ha:b:t:s:w:i:l:x:y:z:c:Z:", long_options, &option_index );
+        "ha:b:t:s:w:i:d:e:f:g:j:k:m:n:p:q:l:x:y:z:c:Z:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -511,6 +526,34 @@ int main( int argc, char *argv[] ){
         }
         break;
 
+      case 'm':
+        {
+          dmax = atof( optarg );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", dmax );
+        }
+        break;
+
+      case 'n':
+        {
+          dmin = atof( optarg );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "float", "%e", dmin );
+        }
+        break;
+
+      case 'p':
+        {
+          ddistr = atoi( optarg );
+	  if ( ddistr != 0 )
+	    {
+	      fprintf( stderr, "invalid argument to --d-distr:\n"
+		       "ddistr must be 0 as of now\n"
+		       );
+	      exit(1);
+	    }
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", ddistr );
+        }
+        break;
+
       case 'z':
         {
           hpeak = atof( optarg );
@@ -553,8 +596,15 @@ int main( int argc, char *argv[] ){
 
       case 'l':
         {
-          simnumber = atoi( optarg );
-          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", simnumber );
+          minsimnumber = atoi( optarg );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", minsimnumber );
+        }
+        break;
+
+      case 'q':
+        {
+          maxsimnumber = atoi( optarg );
+          this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "int", "%d", maxsimnumber );
         }
         break;
 
@@ -586,6 +636,14 @@ int main( int argc, char *argv[] ){
   {
     logAmpRange = (log_hpeakMax - log_hpeakMin);
   }
+
+  if (ddistr == 0)
+  {
+    logdmin = log10(dmin);
+    deltaL = log10(dmax) - logdmin;
+  }
+
+  deltasim = maxsimnumber - minsimnumber;
 
   /* initialize random number generator */
   LAL_CALL( LALCreateRandomParams( &status, &randParams, rand_seed ), &status);
@@ -713,6 +771,14 @@ int main( int argc, char *argv[] ){
 	  }*/
       }
 
+      if (ddistr == 0)
+      /* uniform distribution in log(distance) */
+      {
+	LAL_CALL(  LALUniformDeviate( &status, &deviate, randParams), &status );
+	this_sim_burst->distance = pow(10.0, (REAL4)( logdmin + deltaL * deviate ) );
+      }
+
+
       /* deal with the intrinsic signal parameters */
       this_sim_burst->hrss = sqrt( sqrt(2.0 * LAL_PI) * tau / 4.0 ) * hpeak;
       this_sim_burst->hpeak = hpeak;
@@ -726,7 +792,10 @@ int main( int argc, char *argv[] ){
 	this_sim_burst->dtplus = 4.0 * tau;
 	this_sim_burst->dtminus = 4.0 * tau;
       }
-      this_sim_burst->zm_number = simnumber;
+
+      /* set the simulated wavenumber */
+      LAL_CALL(  LALUniformDeviate( &status, &deviate, randParams), &status );
+      this_sim_burst->zm_number = (INT4)(minsimnumber + deltasim * deviate);
 
       /* set up for site arrival time calculation */
       place_and_gps->p_gps = &(this_sim_burst->geocent_peak_time);
