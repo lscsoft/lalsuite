@@ -168,8 +168,8 @@ class BurcaJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     for sec in ['burca']:
       self.add_ini_opts(cp,sec)
 
-    self.set_stdout_file('logs/burca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
-    self.set_stderr_file('logs/burca-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_stdout_file('logs/burca-$(macrostarttime)-$(macrostoptime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/burca-$(macrostarttime)-$(macrostoptime)-$(cluster)-$(process).err')
     self.set_sub_file('burca.sub')
 
 class VigilJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -337,9 +337,8 @@ class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('binjection','user-tag')
-    self.__randomseed = job.get_config('binjection','seed')
     
-  def get_output(self):
+  def get_output(self,seed):
     """
     Returns the file name of output from the power code. This must be kept
     synchronized with the name of the output file in power.c.
@@ -347,10 +346,7 @@ class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end():
       raise InjError, "Start time or end time has not been set"
 
-    basename = 'HL' + '-INJECTIONS_1'
-
-    if self.__randomseed:
-      basename = 'HL' + '-INJECTIONS' + '_' + str(self.__randomseed)
+    basename = 'HL' + '-INJECTIONS' + '_' + str(seed)
 
     if self.__usertag:
       basename += '_' + str(self.__usertag) 
@@ -369,9 +365,8 @@ class InspInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('iinjection','user-tag')
-    self.__randomseed = job.get_config('iinjection','seed')
     
-  def get_output(self):
+  def get_output(self,seed):
     """
     Returns the file name of output from the power code. This must be kept
     synchronized with the name of the output file in power.c.
@@ -379,10 +374,7 @@ class InspInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end():
       raise InjError, "Start time or end time has not been set"
 
-    basename = 'HL' + '-INJECTIONS_1'
-
-    if self.__randomseed:
-      basename = 'HL' + '-INJECTIONS' + '_' + str(self.__randomseed)
+    basename = 'HL' + '-INJECTIONS' + '_' + str(seed)
 
     if self.__usertag:
       basename += '_' + str(self.__usertag) 
@@ -449,6 +441,15 @@ class PowerNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('inspiralinjection-file', file)
     self.add_input_file(file)
 
+  def set_siminj(self,file):
+    """
+    Set the LAL frame cache to to use. The frame cache is passed to the job
+    with the --frame-cache argument.
+    @param file: calibration file to use.
+    """
+    self.add_var_opt('siminjection-file', file)
+    self.add_input_file(file)
+
 class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A BurcaNode runs an instance of the burca code in a Condor DAG.
@@ -471,7 +472,7 @@ class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     once the ifo, start and end times have been set.
     """
     if self.__start and self.__end :
-      self.__output = 'coincident/' + str(self.__prefix) + '-' + 'POWER' + '_' + str(self.__usertag) + '-' + str(self.__start) 
+      self.__output = 'H1'+ '-' + 'BURCA' + '_' + 'P' + '_' + '0' + '_' + 'H1H2' + '-' + str(self.__start) 
       self.__output = self.__output + '-' + str(self.__end - self.__start) + '.xml'
                      
   def set_ifoa(self,file):
@@ -497,6 +498,7 @@ class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     Set the start time of the datafind query.
     time = GPS start time of query.
     """
+    self.add_var_opt('start-time',time)
     self.__start = time
     self.__set_output()
 
@@ -505,6 +507,7 @@ class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     Set the end time of the datafind query.
     time = GPS end time of query.
     """
+    self.add_var_opt('stop-time',time)
     self.__end = time
     self.__set_output()
 
@@ -512,7 +515,7 @@ class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
     self.__prefix = prefix
     
-  def get_output(self):
+  def get_H1H2output(self):
     """
     Return the output file, i.e. the file containing the frame cache data.
     """
