@@ -63,6 +63,17 @@ to add the single inspirals to the coinc.  The function returns
 creates all N ifo coincidences.  Both the input and output list of
 \texttt{CoincInspiralTable}s are passed as \texttt{coincHead}.  
 
+\texttt{LALRemoveRepeatedCoincs()} will remove any lower order coincidences 
+if they are contained in a higher order coincidence.  For example, if an H1-L1
+double coincident trigger is also part of an H1-H2-L1 triple coincident 
+trigger, the double coincident trigger will be removed.  The head of the list 
+of coincident triggers is passed and returned as \texttt{coincHead}.
+
+\texttt{LALFreeCoincInspiral()} frees the memory associated to the 
+\texttt{CoincInspiralTable} pointed to by \texttt{coincPtr}.  This entails
+freeing the \texttt{CoincInspiralTable} as well as any \texttt{eventId}s
+which point to the coinc.
+
 \texttt{LALAddSnglInspiralToCoinc()} adds a pointer to a single inspiral table
 to a coinc inspiral table.  Upon entry, if \texttt{coincPtr} points to a
 \texttt{NULL} coinc inspiral table, the table is created before a pointer to
@@ -241,6 +252,7 @@ LALCreateNIFOCoincList(
   InterferometerNumber          ifoNum     = LAL_UNKNOWN_IFO;
   InterferometerNumber          firstEntry = LAL_UNKNOWN_IFO;
   CoincInspiralTable           *thisCoinc     = NULL;
+  CoincInspiralTable           *lastCoinc     = NULL;
   CoincInspiralTable           *otherCoinc    = NULL;
   CoincInspiralTable           *nIfoCoincHead = NULL;
   CoincInspiralTable           *thisNIfoCoinc = NULL;
@@ -248,12 +260,14 @@ LALCreateNIFOCoincList(
   EventIDColumn                *thisID        = NULL;
 
 
-  INITSTATUS( status, "LALCreateThreeIFOCoincList", COINCINSPIRALUTILSC );
+  INITSTATUS( status, "LALCreateNIFOCoincList", COINCINSPIRALUTILSC );
   ATTATCHSTATUSPTR( status );
 
   /* loop over all the coincidences in the list */
   for( thisCoinc = *coincHead; thisCoinc; thisCoinc = thisCoinc->next)
   {
+    lastCoinc = thisCoinc;
+
     /* check that this is an (N-1) coinc */
     if ( thisCoinc->numIfos == N - 1 )
     {
@@ -271,7 +285,7 @@ LALCreateNIFOCoincList(
       eventIDHead = thisCoinc->snglInspiral[firstEntry]->event_id;
 
       /* loop over the (N-1) ifo coincs that first entry is a member of 
-       * try to find an N ifo coinc */
+       * and try to find an N ifo coinc */
       for( thisID = eventIDHead; thisID; thisID = thisID->next )
       {
         otherCoinc = thisID->coincInspiralTable;
@@ -330,7 +344,7 @@ LALCreateNIFOCoincList(
      *              thisCoinc = thisCoinc->next) */
 
   /* append the N ifo coincs to the end of the linked list */
-  thisCoinc->next = nIfoCoincHead;
+  lastCoinc->next = nIfoCoincHead;
 
 
   DETATCHSTATUSPTR (status);
@@ -338,7 +352,160 @@ LALCreateNIFOCoincList(
 
 }
 
+void
+LALRemoveRepeatedCoincs(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincHead
+    )
+{
+  INT4                          removeThisCoinc  = 0;
+  InterferometerNumber          ifoNumber  = LAL_UNKNOWN_IFO;
+  InterferometerNumber          firstEntry = LAL_UNKNOWN_IFO;
+  CoincInspiralTable           *thisCoinc     = NULL;
+  CoincInspiralTable           *prevCoinc     = NULL;
+  CoincInspiralTable           *otherCoinc    = NULL;
+  EventIDColumn                *eventIDHead   = NULL;
+  EventIDColumn                *thisID        = NULL;
 
+
+  INITSTATUS( status, "LALRemoveRepeatedCoincs", COINCINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  /* loop over all the coincidences in the list */
+  thisCoinc = *coincHead;
+
+  while( thisCoinc )
+  {
+    /* look up the first single inspiral */
+    for ( firstEntry = 0; firstEntry < LAL_NUM_IFO; firstEntry++)
+    {
+      if ( thisCoinc->snglInspiral[firstEntry] )
+      {
+        LALInfo( status, "Found the first entry in the coinc" );
+        break;
+      }
+    }
+
+    /* get the list of event IDs for this first entry */
+    eventIDHead = thisCoinc->snglInspiral[firstEntry]->event_id;
+
+    /* loop over the coincs that firstEntry is a member of and see if
+     * thisCoinc is a subset of a higher order coinc */
+
+    removeThisCoinc = 0;
+
+    for( thisID = eventIDHead; thisID; thisID = thisID->next )
+    {
+      otherCoinc = thisID->coincInspiralTable;
+
+      if( otherCoinc->numIfos > thisCoinc->numIfos )
+      {
+        /* we have a higher (or equal) coinc, thisCoinc could be a subset 
+         * test whether all sngls in thisCoinc are also in otherCoinc */
+
+        for( ifoNumber = firstEntry + 1; ifoNumber < LAL_NUM_IFO; 
+            ifoNumber++ )
+        {
+          if ( thisCoinc->snglInspiral[ifoNumber] && 
+              !(thisCoinc->snglInspiral[ifoNumber] == 
+                otherCoinc->snglInspiral[ifoNumber]) )
+          {
+            LALInfo( status, "No Match");
+            break;
+          }
+        }
+
+        if ( ifoNumber == LAL_NUM_IFO )
+        {
+          LALInfo( status, "Removing lower order coinc");
+          removeThisCoinc = 1;
+          break;
+        }
+      }
+    }
+
+    if ( removeThisCoinc )
+    {
+      if ( !prevCoinc )
+      {
+        *coincHead = thisCoinc->next;
+        LALFreeCoincInspiral( status->statusPtr, &thisCoinc );
+        thisCoinc = *coincHead;
+      }
+      else 
+      {
+        prevCoinc->next = thisCoinc->next;
+        LALFreeCoincInspiral( status->statusPtr, &thisCoinc );
+        thisCoinc = prevCoinc->next;
+      }
+    }
+    else 
+    {
+      prevCoinc = thisCoinc;
+      thisCoinc = thisCoinc->next;
+    }
+  }
+
+  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+}
+
+void
+LALFreeCoincInspiral(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincPtr
+    )
+{
+  InterferometerNumber          ifoNumber  = LAL_UNKNOWN_IFO;
+  EventIDColumn                *prevID     = NULL;
+  EventIDColumn                *thisID     = NULL;
+  SnglInspiralTable            *thisSngl   = NULL;
+
+  INITSTATUS( status, "LALFreeCoincInspiral", COINCINSPIRALUTILSC );
+  ATTATCHSTATUSPTR( status );
+
+  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( (thisSngl = (*coincPtr)->snglInspiral[ifoNumber]) )
+    {
+      /* loop over the list of eventID's until we get to the one that 
+       * points to thisCoinc */
+      
+      thisID = thisSngl->event_id;
+      prevID = NULL;
+
+      while ( thisID )
+      {
+        /* test if thisID points to our coinc */ 
+        if ( thisID->coincInspiralTable == *coincPtr )
+        {
+          if ( !prevID )
+          {
+            thisSngl->event_id = thisID->next;
+          }
+          else
+          {
+            prevID->next = thisID->next;
+          }
+          LALFree(thisID);
+          break;
+        }
+        else
+        {
+          prevID = thisID;
+          thisID = thisID->next;
+        }
+      }
+    }
+  }
+  LALFree(*coincPtr);
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+}
+    
 
 /* <lalVerbatim file="CoincInspiralUtilsCP"> */
 void

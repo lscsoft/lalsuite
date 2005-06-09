@@ -517,6 +517,19 @@ LALCreateNIFOCoincList(
     );
 
 void
+LALRemoveRepeatedCoincs(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincHead
+    );
+
+void
+LALFreeCoincInspiral(
+    LALStatus                  *status,
+    CoincInspiralTable        **coincPtr
+    );
+
+
+void
 LALAddSnglInspiralToCoinc(
     LALStatus                  *status,
     CoincInspiralTable        **coincPtr,
