@@ -1,0 +1,9 @@
+# Input values for BBHWaveGen parameters.
+
+f_low:=40/s;   # Lower frequency cutoff - start frequency for inspiral in 1/s.
+m1:=10*M_sol;  # Mass of first binary component in solar masses (M_sol).
+m2:=10*M_sol;  # Mass of other binary component in solar masses (M_sol).
+a:=0.7;        # Spin parameter for post-coalescence Kerr black hole.
+R:=100*kpc;    # Distance to binary in kpc or meters.
+eps:=0.01;    # Fraction of final BH mass emitted in ringdown GWs.
+E_ratio:=3.0;  # Ratio of merger energy to rindown energy.
