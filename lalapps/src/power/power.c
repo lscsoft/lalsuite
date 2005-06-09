@@ -197,6 +197,7 @@ static void print_usage(char *program)
 "The following options are recognized.  Options not surrounded in [] are\n" \
 "required.\n" \
 "	 --bandwidth <bandwidth>\n" \
+"	[--calibrated-data <high pass frequency>]\n" \
 "	[--calibration-cache <cache file>]\n" \
 "	 --channel-name <string>\n" \
 "	[--cluster]\n" \
@@ -206,19 +207,19 @@ static void print_usage(char *program)
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
 "	 --frame-dir <directory>\n" \
-"	[--calibrated-data <high pass frequency>]\n" \
 "	 --gps-end-time <seconds>\n" \
 "	 --gps-end-time-ns <nanoseconds>\n" \
 "	 --gps-start-time <seconds>\n" \
 "	 --gps-start-time-ns <nanoseconds>\n" \
-"	[--help]\n" 
+"	[--help]\n" \
+"	 --high-pass <high pass frequency> \n" \        
 "	[--burstinjection-file <file name>]\n" \
 "	[--inspiralinjection-file <file name>]\n" \
 "	 --low-freq-cutoff <Hz>\n" \
-"	[--mdc-cache <cache file>]\n" \
-"	[--mdc-channel <channel name>]\n" \
 "	 --max-tileband <Hz>\n" \
 "	[--max-tileduration <samples>]\n" \
+"	[--mdc-cache <cache file>]\n" \
+"	[--mdc-channel <channel name>]\n" \
 "	 --min-freq-bin <nfbin>\n" \
 "	 --min-time-bin <ntbin>\n" \
 "	[--noise-amplitude <amplitude>]\n" \
@@ -230,10 +231,10 @@ static void print_usage(char *program)
 "	[--ram-limit <MebiBytes>]\n" \
 "	 --resample-filter <filter type>\n" \
 "	 --resample-rate <Hz>\n" \
-"	[--seed <seed>]\n" \
 "       [--sim-cache <sim cache file>]\n" \
 "       [--sim-seconds <sim seconds>]\n" \
 "	[--siminjection-file <file name>]\n" \
+"	[--seed <seed>]\n" \
 "	 --tile-overlap-factor <factor>\n" \
 "	 --threshold <threshold>\n" \
 "	[--useoverwhitening]\n" \
