@@ -112,15 +112,17 @@ simulated data.
 \option{--filter-corruption}~\parm{samples} \newline \hspace*{0.5in}
 \option{--frame-cache}~\parm{cache file} \newline \hspace*{0.5in}
 \option{--frame-dir}~\parm{directory} \newline \hspace*{0.5in}
-\option{--frame-sample-rate}~\parm{Hz} \newline \hspace*{0.5in}
 \option{--gps-end-time}~\parm{seconds} \newline \hspace*{0.5in}
 \option{--gps-end-time-ns}~\parm{nanoseconds} \newline \hspace*{0.5in}
 \option{--gps-start-time}~\parm{seconds} \newline \hspace*{0.5in}
 \option{--gps-start-time-ns}~\parm{nanoseconds} \newline \hspace*{0.5in}
 [\option{--help}] \newline \hspace*{0.5in}
 \option{--high-pass}~\parm{Hz} \newline \hspace*{0.5in}
-[\option{--injection-file}~\parm{file name}] \newline \hspace*{0.5in}
+[\option{--burstinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
+[\option{--inspiralinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
 \option{--low-freq-cutoff}~\parm{Hz} \newline \hspace*{0.5in}
+\option{--max-tileband}~\parm{Hz} \newline \hspace*{0.5in}
+\option{--max-tileduration}~\parm{sec.s} \newline \hspace*{0.5in}
 [\option{--mdc-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 [\option{--mdc-channel}~\parm{channel name}] \newline \hspace*{0.5in}
 \option{--min-freq-bin}~\parm{nfbin} \newline \hspace*{0.5in}
@@ -133,10 +135,15 @@ simulated data.
 \option{--psd-average-points}~\parm{samples} \newline \hspace*{0.5in}
 [\option{--ram-limit}~\parm{MebiBytes}] \newline \hspace*{0.5in}
 \option{--resample-filter}~\parm{filter type} \newline \hspace*{0.5in}
+\option{--resample-rate}~\parm{Hz} \newline \hspace*{0.5in}
+[\option{--sim-cache}~\parm{cache file}] \newline \hspace*{0.5in}
+[\option{--sim-seconds}~\parm{sec.s}] \newline \hspace*{0.5in}
+[\option{--siminjection-file}~\parm{injection file}] \newline \hspace*{0.5in}
 [\option{--seed}~\parm{seed}] \newline \hspace*{0.5in}
 \option{--target-sample-rate}~\parm{Hz} \newline \hspace*{0.5in}
 \option{--tile-overlap-factor}~\parm{factor} \newline \hspace*{0.5in}
 \option{--threshold}~\parm{threshold} \newline \hspace*{0.5in}
+[\option{--useoverwhitening}] \newline \hspace*{0.5in}
 [\option{--user-tag}~\parm{comment}] \newline \hspace*{0.5in}
 [\option{--verbose}] \newline \hspace*{0.5in}
 \option{--window}~\parm{window} \newline \hspace*{0.5in}
@@ -173,13 +180,13 @@ The output data is written as \verb|sngl_burst| triggers in LIGO
 lightweight XML files.  The files are named according to a standardized
 naming convention
 \begin{quote}
-\{IFO\}-\{comment\}-POWER-\{GPS Start Time\}-\{duration\}.xml
+\{IFO\}-POWER\_\{comment\}-\{GPS Start Time\}-\{duration\}.xml
 \end{quote}
 For example, if a search was run on the Hanford 4km interferometer and
 generated triiggers starting at 731488397 and the triggers cover 33 seconds
 after that time,  then the file name would be 
 \begin{quote}
-H1-test\_this\_again-POWER-731488397-33.xml
+H1-POWER\_test\_this\_again-731488397-33.xml
 \end{quote}
 where the comment was ``test\_this\_again''.  Note that the comment should
 not include spaces and should use underscores instead.
