@@ -3,12 +3,31 @@
 /*                                                                                          */
 /*               Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh           */
 /*                                                                                          */
-/*                   (takes in one Fstats files to look for coincidence)                    */
 /*                                                                                          */
 /*                                  UWM - April  2005                                       */
 /*                             Based on uberpolka written by                                */
 /*                        Xavier Siemens, Bruce Allen, Bernd Machenschalk                   */
 /********************************************************************************************/
+
+/*! 
+   @file
+   @brief the pulsar koinzidenz analysis code for einstein@home postprocess ---    count numbers of events in cells construcetd in parameters space.
+
+<ol>   
+<li> First construct a grid in the parameters space (frequency, right ascension, and declination).
+   We take the isotropic grid in the sky location, a uniform grid in the frequency.
+   We can change the grid spacing of the each parameter, and shift the grid as a whole for 
+  each parameter.  <br> 
+<li>  Then count how many candidate events are in each cell.
+  Even if a file has more than one event in a cell, we say we have one event from that file, 
+  and take the largest F statistic event among the events in the cell from that file.
+  Therefore, the largets number counts in a cell is the number of the files to be read.
+</ol>
+
+  @author Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh  
+  @date $Id$ <br> 
+  Revision: $
+*/
 
 
 
@@ -41,12 +60,12 @@
 
 
 
-/* 
+/*
    To use unzip, you need to have unzip-5.5x from, say,  the InfoZip webpage, 
    and readzipfile_util.h and .c. from yousuke. 
-#define USE_UNZIP  
-*/
 
+*/
+#define USE_UNZIP  
 
 
 
@@ -93,7 +112,7 @@ int finite(double);
 #define POLKAC_EMEM             5
 #define POLKAC_ENORMAL          6
 #define POLKAC_EUNZIP           7
-#define POLKAC_EGLOB           8
+#define POLKAC_EGLOB            8
 
 #define POLKAC_MSGENULL         "Arguments contained an unexpected null pointer"
 #define POLKAC_MSGENONULL       "Input pointer was not NULL"
@@ -181,10 +200,10 @@ void PrepareCells( LALStatus *, CellData **cell, const UINT4 datalen );
 
 int compareNumOfCoincidences(const void *a, const void *b);
 int compareCandidates(const void *ip, const void *jp);
-int compareSignificance(const void *a, const void *b);
+int compareSignificances(const void *a, const void *b);
 int compareFrequencyCell(const void *a, const void *b);
-int rintcompare(const INT4 *idata1, const INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
-int rfloatcompare(const REAL8 *rdata1, const REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
+int compareINT4arrays(const INT4 *idata1, const INT4 *idata2, size_t s); /* compare two INT4 arrays of size s.*/
+int compareREAL8arrays(const REAL8 *rdata1, const REAL8 *rdata2, size_t s); /* compare two REAL8 arrays of size s.*/
 
 
 void add_int4_data(LALStatus *, struct int4_linked_list **list_ptr, const INT4 *data);
@@ -337,6 +356,14 @@ int main(INT4 argc,CHAR *argv[])
 /* ------------------------------------------------------------------------------*/      
 /* Initialize the code: allocate memory, set initial values.                     */
 /* ------------------------------------------------------------------------------*/      
+/*!
+  Allocate memory for the cells.
+  This function initialize the celldata variable.
+
+  @param[in,out] lalStatus
+  @param[out] cell CellData structure to be initialized
+  @param[in] CLength Number of the cells
+*/
 void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength )
 {
   INITSTATUS( lalStatus, "InitCode", rcsid );
@@ -433,7 +460,6 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
   print_info_of_the_cell( lalStatus->statusPtr, fp, cell, 0,(*ncell),0,0);
   BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
 
-
   /* number counts and find the most significant event. */
   for(icell=0;icell<(*ncell);icell++) {
     nc=cell[icell].nCand;
@@ -496,15 +522,20 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 
       /* Output the info of the most coincident event. */
       /* Information of the cell. */
-      TRY( print_info_of_the_cell( lalStatus->statusPtr, fpCoiCell, cell, 0,1,0,0), lalStatus);
+      print_info_of_the_cell( lalStatus->statusPtr, fpCoiCell, cell, 0,1,0,0);
+      BEGINFAIL(lalStatus) {fclose(fpCoiCell);} ENDFAIL(lalStatus);
       /* Print F stat from each file contributed to this cell. */
-      TRY( print_Fstat_of_the_cell( lalStatus->statusPtr, fpCoiTime, cell, CList, 0,1,0,0 ), lalStatus);
-
+      print_Fstat_of_the_cell( lalStatus->statusPtr, fpCoiTime, cell, CList, 0,1,0,0 );
+      BEGINFAIL(lalStatus) {fclose(fpCoiTime);} ENDFAIL(lalStatus);
+    
       /* Output the info of the most significant event. */
       /* Information of the cell. */
-      TRY( print_info_of_the_cell( lalStatus->statusPtr, fpSigCell, cell, idxmax,idxmax+1,0,0), lalStatus);
+      print_info_of_the_cell( lalStatus->statusPtr, fpSigCell, cell, idxmax,idxmax+1,0,0);
+      BEGINFAIL(lalStatus) {fclose(fpSigCell);} ENDFAIL(lalStatus);
       /* Print F stat from each file contributed to this cell. */
-      TRY( print_Fstat_of_the_cell( lalStatus->statusPtr, fpSigTime, cell, CList, idxmax,idxmax+1,0,0 ), lalStatus);
+      print_Fstat_of_the_cell( lalStatus->statusPtr, fpSigTime, cell, CList, idxmax,idxmax+1,0,0 );
+      BEGINFAIL(lalStatus) {fclose(fpSigTime);} ENDFAIL(lalStatus);
+
 
     } /* if( CLA->AutoOut ) */ 
   else 
@@ -514,9 +545,11 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 	{
 	  
 	  /* Information of the cell. */
-	  TRY( print_info_of_the_cell( lalStatus->statusPtr, fpCoiCell, cell, 0, 0, 0, CLA->Nthr), lalStatus);
+	  print_info_of_the_cell( lalStatus->statusPtr, fpCoiCell, cell, 0, 0, 0, CLA->Nthr);
+	  BEGINFAIL(lalStatus) {fclose(fpCoiCell);} ENDFAIL(lalStatus);
 	  /* Print F stat from each file contributed to this cell. */
-	  TRY( print_Fstat_of_the_cell( lalStatus->statusPtr, fpCoiTime, cell, CList, 0, 0, 0, CLA->Nthr ), lalStatus);
+	  print_Fstat_of_the_cell( lalStatus->statusPtr, fpCoiTime, cell, CList, 0, 0, 0, CLA->Nthr );
+	  BEGINFAIL(lalStatus) {fclose(fpCoiTime);} ENDFAIL(lalStatus);
 
 	} /* if( cell[0].nCand > CLA->Nthr ) */
       
@@ -526,12 +559,14 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
       /* output only on outliers */
       if( Sigmax > CLA->Sthr ) 
 	{
-	  qsort(cell, (size_t) (*ncell), sizeof(CellData), compareSignificance);
+	  qsort(cell, (size_t) (*ncell), sizeof(CellData), compareSignificances);
 
 	  /* Information of the cell. */
-	  TRY( print_info_of_the_cell( lalStatus->statusPtr, fpSigCell, cell, 0, 0, CLA->Sthr, 0), lalStatus);
+	  print_info_of_the_cell( lalStatus->statusPtr, fpSigCell, cell, 0, 0, CLA->Sthr, 0);
+	  BEGINFAIL(lalStatus) {fclose(fpSigCell);} ENDFAIL(lalStatus);
 	  /* Print F stat from each file contributed to this cell. */
-	  TRY( print_Fstat_of_the_cell( lalStatus->statusPtr, fpSigTime, cell, CList, 0, 0, CLA->Sthr, 0 ), lalStatus);
+	  print_Fstat_of_the_cell( lalStatus->statusPtr, fpSigTime, cell, CList, 0, 0, CLA->Sthr, 0 );
+	  BEGINFAIL(lalStatus) {fclose(fpSigTime);} ENDFAIL(lalStatus);
 
 	} /* if( cell[0].significance > CLA->Sthr ) */
     } /* else of if( CLA->AutoOut ) */
@@ -564,7 +599,8 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
     INT4 prev_iFreq = -1;
     for( icell=0; icell<(*ncell); icell++ ) {
       if( cell[icell].iFreq != prev_iFreq ) {
-	TRY( print_info_of_the_cell( lalStatus->statusPtr, fp, cell, icell, icell+1, 0, 0), lalStatus);
+	print_info_of_the_cell( lalStatus->statusPtr, fp, cell, icell, icell+1, 0, 0);
+	BEGINFAIL(lalStatus) {fclose(fp);} ENDFAIL(lalStatus);
       }
       prev_iFreq = cell[icell].iFreq;
     }
@@ -607,6 +643,7 @@ void print_info_of_the_cell( LALStatus *lalStatus,
       icell++;
     }
 
+
   RETURN (lalStatus);
 } /* void print_info_of_the_cell() */
 
@@ -615,6 +652,15 @@ void print_info_of_the_cell( LALStatus *lalStatus,
 
 /* ########################################################################################## */
 /* Free memory */
+/*!
+  Free Configuration variables \b CLA, CellData variable \b cell, CandidateList var \b CList.
+
+  @param[in,out] lalStatus
+  @param[in] CLA configuration variables structure
+  @param[in] cell CellData structure
+  @param[in] CList CandidateList structure
+  @param[in] CLength Number of the cells
+*/
 void FreeMemory( LALStatus *lalStatus, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, const UINT4 CLength)
 {
   INITSTATUS( lalStatus, "FreeMemory", rcsid );
@@ -641,6 +687,12 @@ void FreeMemory( LALStatus *lalStatus, PolkaConfigVars *CLA, CellData *cell, Can
 
 
 /* ########################################################################################## */
+/*!
+  Free Configuration variables \b CLA.
+
+  @param[in,out] lalStatus
+  @param[in] CLA configuration variables structure
+*/
 void FreeConfigVars(LALStatus *lalStatus, PolkaConfigVars *CLA )
 {
   INITSTATUS( lalStatus, "FreeConfigVars", rcsid );
@@ -713,6 +765,11 @@ void delete_int4_linked_list( LALStatus *lalStatus, struct int4_linked_list *lis
 
 /* ########################################################################################## */
 /* get info of this cell. */
+/* We have indices of the candidate events contained in each cell 
+   before the call of this function. This function computes the joint 
+   significance, average alpha, average delta, and average frequency 
+   of the events in each cell and stores them into cellData sturcture.
+*/
 void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList )
 {
   INT4 idx, ic;
@@ -794,7 +851,6 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
       icell++;
     } /*   while( icell < icell_end && ...  */
 
-
   RETURN (lalStatus);
 } /* void print_Fstat_of_the_cell( ) */
 
@@ -803,6 +859,14 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
 /* ########################################################################################## */
 /* Sorting function to sort candidate indices INCREASING order of f, delta, alpha, and 
    DECREASING ORDER OF F STATISTIC. */
+/*!
+  Sorting function to sort cell indices in the INCREASING order of f, delta, alpha, and 
+  DECREASING ORDER OF a significance.
+
+  @param[in] *a CellData to be compared. 
+  @param[in] *b CellData to be compared. 
+  @return If a<b, return 1, if a==b return 0, otherwise return 1. 
+*/
 int compareCandidates(const void *a, const void *b)
 {
   const CandidateList *ip = a;
@@ -820,19 +884,35 @@ int compareCandidates(const void *a, const void *b)
   bp[2]=jp->iAlpha;
   bp[3]=jp->FileID;
 
-  res = rintcompare( ap,  bp, 4);
+  res = compareINT4arrays( ap,  bp, 4);
   if( res == 0 ) {
     REAL8 F1, F2;
     F1=ip->TwoF;
     F2=jp->TwoF;
     /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */ 
-    res = rfloatcompare( &F2,  &F1, 1);
+    res = compareREAL8arrays( &F2,  &F1, 1);
   } 
   return res;
 } /* int compareCandidates() */
 
 
 /* ########################################################################################## */
+/*!
+  Sorting function to sort cells indices in the INCREASING order of a frequency index, and 
+  the DECREASING ORDER OF a number of events in a cell.
+
+  Compare two cells in terms of a frequency index.
+  If those are the same, then compare them in terms of a number of candidates.
+  If we use qsort, we will have cells ordered as 
+  cell[0], cell[1], ....
+  where cell[0] has a smaller frequency index (or if it is equal to that of cell[1]
+  then a larger number of the candidate events) than that of cell[1].
+
+
+  @param[in] *a CellData to be compared. 
+  @param[in] *b CellData to be compared. 
+  @return If a<b, return 1, if a==b return 0, otherwise return 1. 
+*/
 int compareFrequencyCell(const void *a, const void *b)
 {
   const CellData *ip = a;
@@ -847,16 +927,32 @@ int compareFrequencyCell(const void *a, const void *b)
   ap[1]=jp->nCand; /* nCand for cand 2.*/
   bp[1]=ip->nCand; /* nCand for cand 1.*/
 
-  res = rintcompare( ap,  bp, 2);
+  res = compareINT4arrays( ap,  bp, 2);
 
   return res;
-} /* int compareSignificance() */
+} /* int compareSignificances() */
 
 
 
 
 /* ########################################################################################## */
-int compareSignificance(const void *a, const void *b)
+/*!
+  Sorting function to sort cells indices in the 
+  DECREASING ORDER OF a significanc and a number of candidate events in cells.
+
+  Compare two cells in terms of the significance.
+  If those are the same, then compare them in terms of the number of the candidates.
+  If we use qsort, we will have cells ordered as 
+  cell[0], cell[1], ....
+  where cell[0] has a largher significance (or if it is equal to that of cell[1]
+  then a larger number of the candidate events) than that of cell[1].
+
+
+  @param[in] *a CellData to be compared. 
+  @param[in] *b CellData to be compared. 
+  @return If a<b, return 1, if a==b return 0, otherwise return 1. 
+*/
+int compareSignificances(const void *a, const void *b)
 {
   const CellData *ip = a;
   const CellData *jp = b;
@@ -866,22 +962,37 @@ int compareSignificance(const void *a, const void *b)
   F1=ip->significance;
   F2=jp->significance;
   /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */ 
-  res = rfloatcompare( &F2,  &F1, 1);
+  res = compareREAL8arrays( &F2,  &F1, 1);
   if( res == 0 ) {
     INT4 n1, n2;
     n1=ip->nCand;
     n2=jp->nCand;
     /* I put n1 and n2 inversely, because I would like to get decreasingly-ordered set. */ 
-    res = rintcompare( &n2,  &n1, 1);
+    res = compareINT4arrays( &n2,  &n1, 1);
   } 
 
 
   return res;
-} /* int compareSignificance() */
+} /* int compareSignificances() */
 
 
 
 /* ########################################################################################## */
+/*!
+  Sorting function to sort cells indices in the 
+  DECREASING ORDER OF a number of candidate events and a significance in cells.
+
+  Compare two cells in terms of the number of the events in the cells. 
+  If those are the same, then compare them in terms of the significance.
+  If we use qsort, we will have cells ordered as 
+  cell[0], cell[1], ....
+  where cell[0] has a largher number of the candidate events (or if it is equal to that of cell[1]
+  then a larger significane) than that of cell[1].
+
+  @param[in] a CellData to be compared
+  @param[in] b CellData to be compared
+  @return If a<b, return 1, if a==b return 0, otherwise return 1. 
+*/
 int compareNumOfCoincidences(const void *a, const void *b)
 {
   const CellData *ip = a;
@@ -892,26 +1003,38 @@ int compareNumOfCoincidences(const void *a, const void *b)
   n1=ip->nCand;
   n2=jp->nCand;
   /* I put n1 and n2 inversely, because I would like to get decreasingly-ordered set. */ 
-  res = rintcompare( &n2,  &n1, 1);
+  res = compareINT4arrays( &n2,  &n1, 1);
   if( res == 0 ) {
     REAL8 F1, F2;
     F1=ip->significance;
     F2=jp->significance;
     /* I put F1 and F2 inversely, because I would like to get decreasingly-ordered set. */ 
-    res = rfloatcompare( &F2,  &F1, 1);
+    res = compareREAL8arrays( &F2,  &F1, 1);
   } 
 
   return res;
 } /* int compareNumOfCoincidences() */
 
 
+/*!
+  Compare two REAL8 arrays of the same size \b n.
+  First compare ap[0] and bp[0]. If ap[0] < bp[0], then 
+  return -1. If ap[0] > bp[0], then return 1. If 
+  ap[0] == bp[0], then compare ap[1] with bp[1]. Do the 
+  same untill we reach the stage where we compare ap[n-1] 
+  with bp[n-1]. If ap[n-1]==bp[n-1], then return 0.
 
+  @param[in] ap REAL8 array to be compared
+  @param[in] bp REAL8 array to be compared
+  @param[in] n  Size of the array
+  @return If ap<bp, return 1, if ap==bp return 0, otherwise return 1. 
+*/
 int 
-rfloatcompare(const REAL8 *ap, const REAL8 *bp, size_t n) 
+compareREAL8arrays(const REAL8 *ap, const REAL8 *bp, size_t n) 
 {
   if( (*ap) == (*bp) ) { 
     if ( n > 1 ){  
-      return rfloatcompare( ap+1, bp+1, n-1 );
+      return compareREAL8arrays( ap+1, bp+1, n-1 );
     } else {
       return 0;
     }
@@ -919,15 +1042,29 @@ rfloatcompare(const REAL8 *ap, const REAL8 *bp, size_t n)
   if ( (*ap) < (*bp) ) 
     return -1;    
   return 1;
-} /* int rfloatcompare() */
+} /* int compareREAL8arrays() */
 
 
+
+/*!
+  Compare two INT4 arrays of the same size \b n.
+  First compare ap[0] and bp[0]. If ap[0] < bp[0], then 
+  return -1. If ap[0] > bp[0], then return 1. If 
+  ap[0] == bp[0], then compare ap[1] with bp[1]. Do the 
+  same untill we reach the stage where we compare ap[n-1] 
+  with bp[n-1]. If ap[n-1]==bp[n-1], then return 0.
+
+  @param[in] ap INT4 array to be compared
+  @param[in] bp INT4 array to be compared
+  @param[in] n  Size of the array
+  @return If ap<bp, return 1, if ap==bp return 0, otherwise return 1. 
+*/
 int 
-rintcompare(const INT4 *ap, const INT4 *bp, size_t n) 
+compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n) 
 {
   if( (*ap) == (*bp) ) { 
     if ( n > 1 ){  
-      return rintcompare( ap+1, bp+1, n-1 );
+      return compareINT4arrays( ap+1, bp+1, n-1 );
     } else {
       return 0;
     }
@@ -935,11 +1072,19 @@ rintcompare(const INT4 *ap, const INT4 *bp, size_t n)
   if ( (*ap) < (*bp) ) 
     return -1;    
   return 1;
-} /* int rintcompare() */
+} /* int compareINT4arrays() */
 
 
 /* ########################################################################################## */
-/* We would use glob in the future to read different files ? */
+/*!
+  Read Candidate File(s)
+
+
+  @param[in] lalStatus
+  @param[in,out] CList Candidate events struecture to be filled
+  @param[in] CLA Configuration variables structure
+  @param[out] clen The total number of the candidate events in the files.
+*/
 void ReadCandidateFiles(LALStatus *lalStatus, CandidateList **CList, PolkaConfigVars *CLA, UINT4 *clen)
 {
   INITSTATUS( lalStatus, "ReadCandidateFiles", rcsid );
@@ -995,10 +1140,22 @@ void ReadCandidateFiles(LALStatus *lalStatus, CandidateList **CList, PolkaConfig
 
 
 /* ########################################################################################## */
+/*!
+  Get the list of the files which has the base name \b basename in \b directory and store the list into \b filelist. 
+  Count the number of the files \b nfiles. This function checks 
+  \li if HAVE_GLOB_H has been defined. If not, the function aborts.
+
+  @param[in] lalStatus
+  @param[in] directory Directory name for which files list will be made.
+  @param[in] basename The base name of the files to be listed. 
+  @param[out] filelist The list of the files will be stored in this strucutre.
+  @param[out] nfiles The number of the files which has the basename \b basename in the \b directory.
+
+*/
 void GetFilesListInThisDir(LALStatus *lalStatus, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles )
 {
 #ifdef HAVE_GLOB_H   
-  CHAR command[512];
+  CHAR *command = NULL;
   UINT4 fileno=0;
   glob_t globbuf;
 #endif
@@ -1013,6 +1170,11 @@ void GetFilesListInThisDir(LALStatus *lalStatus, const CHAR *directory, const CH
   LALPrintError("Cannot use GetFilesListInThisDir() without glob.");
   ABORT( lalStatus, POLKAC_EGLOB, POLKAC_MSGEGLOB);
 #endif
+
+  command = (CHAR*) LALMalloc( strlen(directory) + strlen("/*") + strlen(basename) + strlen("*") + 1 );
+  if( command == NULL ) {
+    ABORT (lalStatus, POLKAC_EMEM, POLKAC_MSGEMEM);
+  }
 
   strcpy(command, directory);
   strcat(command,"/*");
@@ -1051,6 +1213,8 @@ void GetFilesListInThisDir(LALStatus *lalStatus, const CHAR *directory, const CH
   *nfiles = fileno; /* remember this is 1 more than the index value */
 #endif
 
+  LALFree(command);
+
   DETATCHSTATUSPTR (lalStatus);
   RETURN (lalStatus);
 }
@@ -1065,6 +1229,26 @@ void GetFilesListInThisDir(LALStatus *lalStatus, const CHAR *directory, const CH
 TODO:
 Check if *CList is either NULL or the memory of which is previously allocated by alloc() or the kind.
 (how?).
+*/
+/*!
+  Read the given zipped candidate 'Fstats'-file \b fname and append the events in the file to the candidate-list \b CList. 
+  This function is invoked only when \b USE_UNZIP is defined.
+  The function aborts almost all the cases when the checks below failed.
+  This function checks 
+  \li if the file \b fname is readable. 
+  \li if the number of the candidate event is smaller than the hardcoded number 8000000.
+  \li if the file \b fname has the correct ending tag "%DONE".
+  \li if the file has sections %1, %2 and %coincidence in this order.
+  \li if the ranges of the values in the file are sensible.
+  \li if the number of each row of the file is correct.
+  \li if we could read all the events in the file.
+
+  @param[in,out] lalStatus  
+  @param[in,out] CList CandidateList str to be appended
+  @param[in] fname the name of the file to be read
+  @param[in,out] candlen total number of the candidate events so far. This will be updated after reading the file \b fname. 
+  @param[in] FileID The \b FileID of the file to be read. Assign a \b FildID 
+  to each event and record which file a certain event comes from.
 */
 void  
 ReadCandidateListFromZipFile (LALStatus *lalStatus, CandidateList **CList, CHAR *fname, UINT4 *candlen, const INT4 *FileID)
@@ -1354,6 +1538,24 @@ ReadCandidateListFromZipFile (LALStatus *lalStatus, CandidateList **CList, CHAR 
 
 /* ########################################################################################## */
 /* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
+/*!
+  Read one candidate-events file and fill CandidateList structure \b CList. 
+  Count the number of the candidate events and fill it in \b candlen.
+  The function aborts almost all the cases when the checks below failed.
+  This function checks 
+  \li if the file \b fname is readable. 
+  \li if the file \b fname has the correct ending tag "%DONE".
+  \li if the ranges of the values in the file are sensible.
+  \li if the number of each row of the file is correct.
+  \li if we could read all the events in the file.
+
+  This function prints the bytecounts and the checksum of the file \b fname.
+
+  @param[in,out] lalStatus  
+  @param[out] CList CandidateList str to be filled in this code 
+  @param[in] fname the name of the file to be read
+  @param[out] candlen total number of the candidate events
+*/
 void  ReadOneCandidateFile (LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, UINT4 *candlen)
 {
   UINT4 i;
@@ -1583,6 +1785,18 @@ void  ReadOneCandidateFile (LALStatus *lalStatus, CandidateList **CList, const C
 
 
 /* ########################################################################################## */
+/*!
+  Read command line arguments and fill a PolkaConfigVars structure \b CLA. 
+  Almost all failures in this code invoke an exit of the code.
+  This function checks 
+  \li if a user has glob and specify \b input data dir.
+  \li if a user specified either \b input data file or \b input data dir but not both.
+  \li if a user did not define USE_UNZIP but specify \b input data dir.
+  @param[in,out] lalStatus  
+  @param[in] argc 
+  @param[in] argv
+  @param[out] CLA Configuration variables
+*/
 void ReadCommandLineArgs(LALStatus *lalStatus, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA) 
 {
   INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
