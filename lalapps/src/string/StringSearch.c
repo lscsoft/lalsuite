@@ -263,7 +263,7 @@ int main(int argc,char *argv[])
 
  if (CommandLineArgs.cluster == 1 && events) 
    {
-     XLALClusterStringBurstTable(&events, NULL, XLALCompareStringBurstByTime);
+     XLALClusterStringBurstTable(&events,  XLALCompareStringBurstByTime, XLALCompareStringBurstByTime);
      LALSortSnglBurst(&status, &events, XLALCompareSnglBurstByPeakTimeAndSNR);
      TESTSTATUS( &status );
    }
@@ -431,8 +431,8 @@ int OutputEvents(struct CommandLineArgsTag CLA)
   /* burst table */
   LALBeginLIGOLwXMLTable(&status, &xml, sngl_burst_table);
 
-  myTable.snglBurstTable = events;      
-    
+  myTable.snglBurstTable = events;
+      
   LALWriteLIGOLwXMLTable(&status, &xml, myTable, sngl_burst_table);
   LALEndLIGOLwXMLTable(&status, &xml);
 
@@ -446,7 +446,6 @@ int OutputEvents(struct CommandLineArgsTag CLA)
     LALFree( events );
     events = next;
   }
-
 
   LALFree(procTable.processTable);
   LALFree(searchsumm.searchSummaryTable);
@@ -516,8 +515,6 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 		}
 	      p++;
 	    }
-
-
 
 	  peaktime = timeNS + (INT8)( 1e9 * GV.ht_proc.deltaT * pmax );
 	  duration = GV.ht_proc.deltaT * ( pend - pstart );
