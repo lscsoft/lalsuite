@@ -799,7 +799,7 @@ int main(int argc, char **argv)
 	else if (options.cluster && clusterchoice == clusterbytimeandfreq)
 	  LAL_CALL(LALClusterSnglBurstTable(&stat, &burstEventList,  NULL, XLALCompareSnglBurst), &stat);
 	else if(options.cluster && clusterchoice == stringcluster)
-	  XLALClusterStringBurstTable(&burstEventList, NULL, XLALCompareStringBurstByTime);
+	  XLALClusterStringBurstTable(&burstEventList, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime);
 
 	/*
 	 * Do any requested cuts
