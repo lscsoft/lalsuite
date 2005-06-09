@@ -217,7 +217,7 @@ static void print_usage(char *program)
 "	[--inspiralinjection-file <file name>]\n" \
 "	 --low-freq-cutoff <Hz>\n" \
 "	 --max-tileband <Hz>\n" \
-"	[--max-tileduration <samples>]\n" \
+"	 --max-tileduration <samples>\n" \
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
 "	 --min-freq-bin <nfbin>\n" \
