@@ -1,5 +1,5 @@
 /********************************************************************************************/
-/*       zellepolka - the pulsar koinzidenz analysis code for einstein@home postprocess     */
+/*       zellepolka - the pulsar koinzidenz analysis code for einstein at home postprocess  */
 /*                                                                                          */
 /*               Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh           */
 /*                                                                                          */
@@ -11,9 +11,27 @@
 
 /*! 
    @file
-   @brief the pulsar koinzidenz analysis code for einstein@home postprocess ---    count numbers of events in cells construcetd in parameters space.
+   @brief the pulsar koinzidenz analysis code for einstein at home postprocess --- count numbers of events in cells construcetd in parameters space.
 
-<ol>   
+<li>Inputs and outputs
+<ul>   
+<li> This code takes either a directory where Einstein at Home results (zipped files) or a one single file 
+generated from those zipped files by a python code combiner.py in Flalapps/src/pulsar/FDS_isolated.
+<li> This code outputs one output file whose name is specified by user, five files with default names, and 
+some information on stderr.
+<ol>
+<li> The one output file contains all the information (f,a,d,ncandidate,sig) in all the cells. This can be huge.
+<li> One file outputs time variation of 2F of some significant outliers.
+<li> One file outputs cell information of some significant outliers
+<li> One file outputs time variation of 2F of some coincident outliers.
+<li> One file outputs cell information of some coincident outliers
+<li> One file outputs the cell info of the maximum coincident event over each Frequency cell but all over the sky.
+<li> Outputs summary table on stderr. This table shows how many cells have how many counts. (e.g. 2 cells have 60 coincidences.)
+</ol>
+</ul>
+
+<li>Algorithm
+<ol>
 <li> First construct a grid in the parameters space (frequency, right ascension, and declination).
    We take the isotropic grid in the sky location, a uniform grid in the frequency.
    We can change the grid spacing of the each parameter, and shift the grid as a whole for 
@@ -24,9 +42,10 @@
   Therefore, the largets number counts in a cell is the number of the files to be read.
 </ol>
 
+
+
   @author Xavier Siemens,  Bruce Allen,  Bernd Machenschalk,  Yousuke Itoh  
-  @date $Id$ <br> 
-  Revision: $
+  $Id$ 
 */
 
 
@@ -132,56 +151,115 @@ int finite(double);
 
 /* ----------------------------------------------------------------------------- */
 /* structures */
+/*!
+Configuration variables have three categories. 
+
+Cell parameters: Define dimensions of cells and center of the cells.
+@param Deltaf     REAL8 Size of coincidence window in Hz (= Size of cell in frequency)
+@param DeltaAlpha REAL8 Size of coincidence window in radians (= Size of cell in delta)
+@param DeltaDelta REAL8 Size of coincidence window in radians (= Size of cell in alpha)
+@param Shiftf     REAL8 Parallel shift of frequency in Hz of cell 
+@param ShiftAlpha REAL8 Parallel shift of Alpha in Hz of cell
+@param ShiftDelta REAL8 Parallel shift of Delta in Hz of cell 
+
+Input: Control the way to read a file or files in a directory
+@param *FstatsFile CHAR Names of Fstat files to be read in.
+@param *InputDir   CHAR Directory name of input files 
+@param *BaseName   CHAR Base name of input files 
+@param **Filelist  CHAR Array of filenames to load Fstats file from 
+@param NFiles;     UINT4 Number of input files read
+
+Output: Control the way to return results
+@param OutputFile  CHAR Names of output file
+@param Nthr        INT4 Show exective results of cells with numbers of coincidence above Nthr.
+@param Sthr        REAL4 Show exective results of cells with significance above Sthr.
+@param AutoOut     BOOLEAN If set, output the info of the most significant and the most coincident event.
+*/
 typedef struct PolkaConfigVarsTag 
 {
-  CHAR *FstatsFile;  /**<  Names of Fstat files to be read in */
-  CHAR *OutputFile;  /**<  Names of output file */
-  CHAR *InputDir;    /**<  Directory name of input files */
-  CHAR *BaseName;    /**<  Base name of input files */
-  CHAR **Filelist;   /**<  Array of filenames to load Fstats file from */
-  UINT4 NFiles;      /**<  Number of input files read */
-  INT4 Nthr;        /**<  Show exective results of cells with numbers of coincidence above Nthr. */
-  REAL4 Sthr;        /**<  Show exective results of cells with significance above Sthr. */
+  CHAR *FstatsFile;  /*  Names of Fstat files to be read in */
+  CHAR *OutputFile;  /*  Names of output file */
+  CHAR *InputDir;    /*  Directory name of input files */
+  CHAR *BaseName;    /*  Base name of input files */
+  CHAR **Filelist;   /*  Array of filenames to load Fstats file from */
+  UINT4 NFiles;      /*  Number of input files read */
+  INT4 Nthr;         /*  Show exective results of cells with numbers of coincidence above Nthr. */
+  REAL4 Sthr;        /*  Show exective results of cells with significance above Sthr. */
   BOOLEAN AutoOut; 
-  REAL8 Deltaf;      /**<  Size of coincidence window in Hz */
-  REAL8 DeltaAlpha;  /**<  Size of coincidence window in radians */
-  REAL8 DeltaDelta;  /**<  Size of coincidence window in radians */
-  REAL8 Shiftf;      /**<  Parallel shift of frequency in Hz of cell */
-  REAL8 ShiftAlpha;  /**<  Parallel shift of Alpha in Hz of cell */
-  REAL8 ShiftDelta;  /**<  Parallel shift of Delta in Hz of cell */
+  REAL8 Deltaf;      /*  Size of coincidence window in Hz */
+  REAL8 DeltaAlpha;  /*  Size of coincidence window in radians */
+  REAL8 DeltaDelta;  /*  Size of coincidence window in radians */
+  REAL8 Shiftf;      /*  Parallel shift of frequency in Hz of cell */
+  REAL8 ShiftAlpha;  /*  Parallel shift of Alpha in Hz of cell */
+  REAL8 ShiftDelta;  /*  Parallel shift of Delta in Hz of cell */
 } PolkaConfigVars;
+
 
 /* This structure contains the indices corresponding to the 
 coarse frequency and sky bins */
+/*!
+CandidateList
+
+@param iCand         Candidate id: unique within this program.  
+@param f             Frequency of the candidate 
+@param Alpha         right ascension of the candidate
+@param Delta         declination  of the candidate 
+@param TwoF          2F of this candidate event
+@param FileID        File ID to specify from which file the candidate under consideration originaly comes. 
+@param iFreq         Frequency index of this candidate event
+@param iDelta        Declination index. This can be negative. 
+@param iAlpha        Right ascension index of this candidate event
+*/
 typedef struct CandidateListTag
 {
-  UINT4 iCand;       /**<  Candidate id: unique with in this program.  */
-  REAL8 f;           /**<  Frequency of the candidate */
-  REAL8 Alpha;       /**<  right ascension of the candidate */
-  REAL8 Delta;       /**<  declination  of the candidate */
-  REAL8 TwoF;           /**<  Maximum value of F for the cluster */
-  INT4 FileID;       /**<  File ID to specify from which file the candidate under consideration originaly comes. */
-  INT4  iFreq;       /**<  Frequency index */
-  INT4 iDelta;       /**<  Declination index. This can be negative. */
-  INT4 iAlpha;       /**<  Right ascension index */
-} CandidateList;     /**<  ~ Fstat lines */ 
+  UINT4 iCand;       /*  Candidate id: unique with in this program.  */
+  REAL8 f;           /*  Frequency of the candidate */
+  REAL8 Alpha;       /*  right ascension of the candidate */
+  REAL8 Delta;       /*  declination  of the candidate */
+  REAL8 TwoF;        /*  Maximum value of F for the cluster */
+  INT4 FileID;       /*  File ID to specify from which file the candidate under consideration originaly comes. */
+  INT4 iFreq;        /*  Frequency index */
+  INT4 iDelta;       /*  Declination index. This can be negative. */
+  INT4 iAlpha;       /*  Right ascension index */
+} CandidateList;     /*   Fstat lines */ 
 
+
+/*!
+Liked list containing one INT4 data..
+
+@param data INT4
+@param next int4_linked_list*
+*/
 struct int4_linked_list {
   INT4 data;
   struct int4_linked_list *next;
 }; 
 
+
+/*!
+Structure containg data in cells
+
+@param Freq          REAL8 Frequency index of the cell 
+@param Alpha         REAL8 Right ascension index of the cell
+@param Delta         REAL8 Declination index of the cell 
+@param iFreq         INT4 Frequency index of this candidate event
+@param iDelta        INT4 Declination index. This can be negative. 
+@param iAlpha        INT4 Right ascension index of this candidate event
+@param significance  REAL8 minus log of joint false alarm of the candidates in this cell
+@param nCand;        INT4 number of the events in this cell
+@param CandID        int4_linked_list* linked structure that has candidate id-s of the candidates in this cell
+*/
 typedef struct CellDataTag
 {
-  INT4 iFreq;          /**<  Frequency of the cell */
-  INT4 iDelta;         /**<  Declination of the cell */
-  INT4 iAlpha;         /**<  Right ascension of the cell */
-  INT4 nCand;          /**<  number of the data in this cell. */
-  REAL8 significance;  /**<  minus log of joint false alarm of the candidates in this cell. */
-  struct int4_linked_list *CandID;  /**<  linked structure that has candidate id-s of the candidates in this cell. */
-  REAL8 Freq;
-  REAL8 Alpha;
-  REAL8 Delta;
+  INT4 iFreq;          /*  Frequency index of the cell */
+  INT4 iDelta;         /*  Declination index of the cell */
+  INT4 iAlpha;         /*  Right ascension index of the cell */
+  REAL8 Freq;          /*  Frequency index of the cell */
+  REAL8 Alpha;         /*  Right ascension index of the cell */
+  REAL8 Delta;         /*  Declination index of the cell */
+  INT4 nCand;          /*  number of the events in this cell. */
+  REAL8 significance;  /*  minus log of joint false alarm of the candidates in this cell. */
+  struct int4_linked_list *CandID;  /* linked structure that has candidate id-s of the candidates in this cell. */
 } CellData;
 
 
@@ -223,10 +301,15 @@ void FreeConfigVars(LALStatus *, PolkaConfigVars *CLA );
 
 
 /* ----------------------------------------------------------------------------- */
-/* Global variables. */
+/* Global Variables */
+/*! @param global_status LALStatus Used to initialize LALStatus lalStatus. */
 LALStatus global_status;
+/*! @param lalDebugLevel INT4 Control debugging behaviours. Defined in lalapps.h */
 extern INT4 lalDebugLevel;
+/*! @param vrbflg        INT4 Control debugging messages. Defined in lalapps.h */
 extern INT4 vrbflg;
+
+
 
 RCSID ("$Id$");
 
@@ -236,6 +319,13 @@ RCSID ("$Id$");
 /* Code starts here.                                                                         */
 /* ------------------------------------------------------------------------------------------*/
 /* ########################################################################################## */
+/*!
+  Main function
+
+  @param[in] argc   INT4
+  @param[in] argv[] CHAR*
+  @return    return 0 on normal exit.  
+*/
 int main(INT4 argc,CHAR *argv[]) 
 {
   LALStatus *lalStatus = &global_status;
@@ -249,7 +339,7 @@ int main(INT4 argc,CHAR *argv[])
 
   PolkaConfigVars PCV;
 
-
+  /* Get the debuglevel from command line arg, then set laldebuglevel. */
   LAL_CALL (LALGetDebugLevel(lalStatus, argc, argv, 'v'), lalStatus);
 
   /* Reads command line arguments */
@@ -360,9 +450,9 @@ int main(INT4 argc,CHAR *argv[])
   Allocate memory for the cells.
   This function initialize the celldata variable.
 
-  @param[in,out] lalStatus
-  @param[out] cell CellData structure to be initialized
-  @param[in] CLength Number of the cells
+  @param[in,out] lalStatus LALStatus*
+  @param[out]    cell      CellData** CellData structure to be initialized
+  @param[in]     CLength   UINT4      Number of the cells
 */
 void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength )
 {
@@ -412,7 +502,17 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, const UINT4 CLength )
 
 
 /* ########################################################################################## */
-/* Output results */
+/*! 
+  Output results 
+
+
+
+  @param[in,out] lalStatus LALStatus*
+  @param[in]     CLA       PolkaConfigVars*
+  @param[in]     cell      CellData*
+  @param[in]     ncell     UINT4* Number of the cells
+  @param[in]     CList     CandidateList
+*/
 void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cell, const UINT4 *ncell, CandidateList *CList)
 {
   INITSTATUS( lalStatus, "PrintResult", rcsid );
@@ -616,7 +716,25 @@ void PrintResult(LALStatus *lalStatus, const PolkaConfigVars *CLA, CellData *cel
 
 
 /* ########################################################################################## */
-/* Print_info_of_the_cell() */
+/*! 
+  Print_info_of_the_cell
+
+  This function basically shows the information of the outliers, where 
+  those are in the parameters space and how coincident those are.
+ 
+  Print out into FILE \b fp the infos of the cells 
+  \li whose indices are between \b icell_start and \b icell_end, and 
+  \li in which numbers of the events are above \b ncand_thr, and 
+  \li in which significances are above \b sig_thr.
+
+  @param[in,out] lalStatus LALStatus*
+  @param[in]     fp        FILE*
+  @param[in]     cd        CellData*
+  @param[in]     INT4      icell_start
+  @param[in]     INT4      icell_end
+  @param[in]     REAL8     sig_thr
+  @param[in]     REAL8     ncand_thr
+*/
 void print_info_of_the_cell( LALStatus *lalStatus, 
 			     FILE *fp, 
 			     const CellData *cd, 
@@ -651,17 +769,23 @@ void print_info_of_the_cell( LALStatus *lalStatus,
 
 
 /* ########################################################################################## */
-/* Free memory */
 /*!
+  Free memory 
+
   Free Configuration variables \b CLA, CellData variable \b cell, CandidateList var \b CList.
 
-  @param[in,out] lalStatus
-  @param[in] CLA configuration variables structure
-  @param[in] cell CellData structure
-  @param[in] CList CandidateList structure
-  @param[in] CLength Number of the cells
+  @param[in,out] lalStatus LALStatus* 
+  @param[in]     CLA       PolkaConfigVars* configuration variables structure
+  @param[in]     cell      CellData*        CellData structure
+  @param[in]     CList     CandidateList*   CandidateList structure
+  @param[in]     CLength   UINT4            Number of the cells
 */
-void FreeMemory( LALStatus *lalStatus, PolkaConfigVars *CLA, CellData *cell, CandidateList *CList, const UINT4 CLength)
+void 
+FreeMemory( LALStatus *lalStatus, 
+	    PolkaConfigVars *CLA, 
+	    CellData *cell, 
+	    CandidateList *CList, 
+	    const UINT4 CLength)
 {
   INITSTATUS( lalStatus, "FreeMemory", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -690,8 +814,8 @@ void FreeMemory( LALStatus *lalStatus, PolkaConfigVars *CLA, CellData *cell, Can
 /*!
   Free Configuration variables \b CLA.
 
-  @param[in,out] lalStatus
-  @param[in] CLA configuration variables structure
+  @param[in,out] lalStatus LALStatus* 
+  @param[in]     CLA       PolkaConfigVars* configuration variables structure
 */
 void FreeConfigVars(LALStatus *lalStatus, PolkaConfigVars *CLA )
 {
@@ -720,7 +844,13 @@ void FreeConfigVars(LALStatus *lalStatus, PolkaConfigVars *CLA )
 
 
 /* ########################################################################################## */
-/* add data to linked structure */
+/*!
+  add data to linked structure 
+
+  @param[in,out] lalStatus   LALStatus* 
+  @param[in,out] list_ptr    int4_linked_list**
+  @param[in]     data        INT4*
+*/
 void add_int4_data(LALStatus *lalStatus, struct int4_linked_list **list_ptr, const INT4 *data)
 {
   INITSTATUS( lalStatus, "add_int4_data", rcsid );
@@ -740,7 +870,12 @@ void add_int4_data(LALStatus *lalStatus, struct int4_linked_list **list_ptr, con
 
 
 /* ########################################################################################## */
-/* delete data to linked structure */
+/*!
+  delete a linked structure 
+
+  @param[in,out] lalStatus   LALStatus* 
+  @param[in]     list_ptr    int4_linked_list*
+*/
 void delete_int4_linked_list( LALStatus *lalStatus, struct int4_linked_list *list_ptr )
 {
   INT4 ic;
@@ -763,12 +898,19 @@ void delete_int4_linked_list( LALStatus *lalStatus, struct int4_linked_list *lis
   RETURN (lalStatus);
 } /* void delete_int4_linked_list() */
 
+
 /* ########################################################################################## */
-/* get info of this cell. */
-/* We have indices of the candidate events contained in each cell 
-   before the call of this function. This function computes the joint 
-   significance, average alpha, average delta, and average frequency 
-   of the events in each cell and stores them into cellData sturcture.
+/*!
+  get info of this cell. 
+
+  We have indices of the candidate events contained in each cell 
+  before the call of this function. This function computes the joint 
+  significance, average alpha, average delta, and average frequency 
+  of the events in each cell and stores them into cellData sturcture.
+
+  @param[in,out] lalStatus   LALStatus* 
+  @param[in,out] cd          CellData*
+  @param[in]     CList       CandidateList*  
 */
 void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateList *CList )
 {
@@ -809,7 +951,27 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
 
 
 /* ########################################################################################## */
-/* print F stat. */
+/*!
+  print F stat. 
+
+  Print out into FILE \b fp the F stats of the cells 
+  \li whose indices are between \b icell_start and \b icell_end, and 
+  \li in which numbers of the events are above \b ncand_thr, and 
+  \li in which significances are above \b sig_thr.
+
+  This function basically shows how F statistics variers from file to file.
+
+  @param[in,out] lalStatus   LALStatus* 
+  @param[in]     fp          FILE*
+  @param[in]     cd          CellData*
+  @param[in]     CList       CandidateList*  
+  @param[in]     icell_start INT4  Starting index of a cell
+  @param[in]     icell_end   INT4  Ending index of a cell
+  @param[in]     sig_thr     REAL8 Threshold on significance of the candidate events 
+  above which results will be printed out.
+  @param[in]     ncand_thr   REAL8 Threshold on number of the candidate events 
+  above which results will be printed out.
+*/
 void print_Fstat_of_the_cell( LALStatus *lalStatus, 
 			      FILE *fp, 
 			      const CellData *cd, 
@@ -857,14 +1019,12 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
 
 
 /* ########################################################################################## */
-/* Sorting function to sort candidate indices INCREASING order of f, delta, alpha, and 
-   DECREASING ORDER OF F STATISTIC. */
 /*!
   Sorting function to sort cell indices in the INCREASING order of f, delta, alpha, and 
   DECREASING ORDER OF a significance.
 
-  @param[in] *a CellData to be compared. 
-  @param[in] *b CellData to be compared. 
+  @param[in] a CellData* to be compared. 
+  @param[in] b CellData* to be compared. 
   @return If a<b, return 1, if a==b return 0, otherwise return 1. 
 */
 int compareCandidates(const void *a, const void *b)
@@ -909,8 +1069,8 @@ int compareCandidates(const void *a, const void *b)
   then a larger number of the candidate events) than that of cell[1].
 
 
-  @param[in] *a CellData to be compared. 
-  @param[in] *b CellData to be compared. 
+  @param[in] a CellData* to be compared. 
+  @param[in] b CellData* to be compared. 
   @return If a<b, return 1, if a==b return 0, otherwise return 1. 
 */
 int compareFrequencyCell(const void *a, const void *b)
@@ -948,8 +1108,8 @@ int compareFrequencyCell(const void *a, const void *b)
   then a larger number of the candidate events) than that of cell[1].
 
 
-  @param[in] *a CellData to be compared. 
-  @param[in] *b CellData to be compared. 
+  @param[in] a CellData* to be compared. 
+  @param[in] b CellData* to be compared. 
   @return If a<b, return 1, if a==b return 0, otherwise return 1. 
 */
 int compareSignificances(const void *a, const void *b)
@@ -989,8 +1149,8 @@ int compareSignificances(const void *a, const void *b)
   where cell[0] has a largher number of the candidate events (or if it is equal to that of cell[1]
   then a larger significane) than that of cell[1].
 
-  @param[in] a CellData to be compared
-  @param[in] b CellData to be compared
+  @param[in] a CellData* to be compared
+  @param[in] b CellData* to be compared
   @return If a<b, return 1, if a==b return 0, otherwise return 1. 
 */
 int compareNumOfCoincidences(const void *a, const void *b)
@@ -1077,15 +1237,25 @@ compareINT4arrays(const INT4 *ap, const INT4 *bp, size_t n)
 
 /* ########################################################################################## */
 /*!
-  Read Candidate File(s)
+  Read Candidate File(s) and store the events into CandidateList str \b CList.
 
+  If an input directory (\b CLA->InputDir ) is specified, call \b GetFilesListInThisDir() 
+  to find the list of the files, and 
+  then call \b ReadCandidateListFromZipFile() to fill CanidateList structure \b CList.
 
-  @param[in] lalStatus
-  @param[in,out] CList Candidate events struecture to be filled
-  @param[in] CLA Configuration variables structure
-  @param[out] clen The total number of the candidate events in the files.
+  If an input file (\b CLA->FstatsFile ) is specified, call ReadOneCandidateFile() to fill 
+  CanidateList structure \b CList;
+
+  @param[in,out] lalStatus LALStatus* 
+  @param[out]    CList     CandidateList**  Candidate events struecture to be filled
+  @param[in,out] CLA       PolkaConfigVars* Configuration variables structure
+  @param[out]    clen      UINT4*           The total number of the candidate events in the files.
 */
-void ReadCandidateFiles(LALStatus *lalStatus, CandidateList **CList, PolkaConfigVars *CLA, UINT4 *clen)
+void 
+ReadCandidateFiles(LALStatus *lalStatus, 
+		   CandidateList **CList, 
+		   PolkaConfigVars *CLA, 
+		   UINT4 *clen)
 {
   INITSTATUS( lalStatus, "ReadCandidateFiles", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
@@ -1097,7 +1267,12 @@ void ReadCandidateFiles(LALStatus *lalStatus, CandidateList **CList, PolkaConfig
   if( (CLA->InputDir != NULL) && (CLA->BaseName != NULL) ) 
     {
       CLA->Filelist = NULL;
-      TRY( GetFilesListInThisDir( lalStatus->statusPtr, CLA->InputDir, CLA->BaseName, &(CLA->Filelist), &(CLA->NFiles) ), lalStatus );
+      TRY( GetFilesListInThisDir( lalStatus->statusPtr, 
+				  CLA->InputDir, 
+				  CLA->BaseName, 
+				  &(CLA->Filelist), 
+				  &(CLA->NFiles) ), 
+	   lalStatus );
       
       *clen = 0;     /* We first have to set the candidate list length zero. */
       *CList = NULL; /* We first have to nullify the list. */
@@ -1109,7 +1284,12 @@ void ReadCandidateFiles(LALStatus *lalStatus, CandidateList **CList, PolkaConfig
 
 #ifdef USE_UNZIP
 	  {INT4 FileID = 2*kc; /* the factor 2 because we have 2 sections in each file. */
-	  TRY( ReadCandidateListFromZipFile( lalStatus->statusPtr, CList, CLA->Filelist[kc], clen, &FileID), lalStatus);
+	  TRY( ReadCandidateListFromZipFile( lalStatus->statusPtr, 
+					     CList, 
+					     CLA->Filelist[kc], 
+					     clen, 
+					     &FileID), 
+	       lalStatus);
 	  }
 #endif
 	} 
@@ -1141,18 +1321,24 @@ void ReadCandidateFiles(LALStatus *lalStatus, CandidateList **CList, PolkaConfig
 
 /* ########################################################################################## */
 /*!
-  Get the list of the files which has the base name \b basename in \b directory and store the list into \b filelist. 
+  Get the list of the files which has the base name \b basename in 
+  \b directory and store the list into \b filelist. 
   Count the number of the files \b nfiles. This function checks 
   \li if HAVE_GLOB_H has been defined. If not, the function aborts.
 
-  @param[in] lalStatus
-  @param[in] directory Directory name for which files list will be made.
-  @param[in] basename The base name of the files to be listed. 
-  @param[out] filelist The list of the files will be stored in this strucutre.
-  @param[out] nfiles The number of the files which has the basename \b basename in the \b directory.
-
+  @param[in,out]  lalStatus LALStatus*
+  @param[in]      directory CHAR*   Directory name for which files list will be made.
+  @param[in]      basename  CHAR*   The base name of the files to be listed. 
+  @param[out]     filelist  CHAR*** The list of the files will be stored in this strucutre.
+  @param[out]     nfiles    UINT4*  The number of the files which has the basename 
+  \b basename in the \b directory.
 */
-void GetFilesListInThisDir(LALStatus *lalStatus, const CHAR *directory, const CHAR *basename, CHAR ***filelist, UINT4 *nfiles )
+void 
+GetFilesListInThisDir( LALStatus *lalStatus, 
+		       const CHAR *directory, 
+		       const CHAR *basename, 
+		       CHAR ***filelist, 
+		       UINT4 *nfiles )
 {
 #ifdef HAVE_GLOB_H   
   CHAR *command = NULL;
@@ -1223,7 +1409,6 @@ void GetFilesListInThisDir(LALStatus *lalStatus, const CHAR *directory, const CH
 
 
 /* ########################################################################################## */
-/* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
 #ifdef USE_UNZIP
 /*
 TODO:
@@ -1231,7 +1416,8 @@ Check if *CList is either NULL or the memory of which is previously allocated by
 (how?).
 */
 /*!
-  Read the given zipped candidate 'Fstats'-file \b fname and append the events in the file to the candidate-list \b CList. 
+  Read the given zipped candidate 'Fstats'-file \b fname and append the events in the file to 
+  the candidate-list \b CList. 
   This function is invoked only when \b USE_UNZIP is defined.
   The function aborts almost all the cases when the checks below failed.
   This function checks 
@@ -1243,15 +1429,20 @@ Check if *CList is either NULL or the memory of which is previously allocated by
   \li if the number of each row of the file is correct.
   \li if we could read all the events in the file.
 
-  @param[in,out] lalStatus  
-  @param[in,out] CList CandidateList str to be appended
-  @param[in] fname the name of the file to be read
-  @param[in,out] candlen total number of the candidate events so far. This will be updated after reading the file \b fname. 
-  @param[in] FileID The \b FileID of the file to be read. Assign a \b FildID 
+  @param[in,out] lalStatus LALStatus* 
+  @param[in,out] CList     CandidateList**  CandidateList str to be appended
+  @param[in]     fname     CHAR* the name of the file to be read
+  @param[in,out] candlen   UINT4* total number of the candidate events so far. 
+  This will be updated after reading the file \b fname. 
+  @param[in]     FileID    INT4* The \b FileID of the file to be read. Assign a \b FildID 
   to each event and record which file a certain event comes from.
 */
 void  
-ReadCandidateListFromZipFile (LALStatus *lalStatus, CandidateList **CList, CHAR *fname, UINT4 *candlen, const INT4 *FileID)
+ReadCandidateListFromZipFile( LALStatus *lalStatus, 
+			      CandidateList **CList, 
+			      CHAR *fname, 
+			      UINT4 *candlen, 
+			      const INT4 *FileID )
 {
   FILE *fp;
   const UINT4 max_num_candidates = 8000000; /* maximum tractable number of candidate events. */
@@ -1537,7 +1728,6 @@ ReadCandidateListFromZipFile (LALStatus *lalStatus, CandidateList **CList, CHAR 
 
 
 /* ########################################################################################## */
-/* read and parse the given candidate 'Fstats'-file fname into the candidate-list CList */
 /*!
   Read one candidate-events file and fill CandidateList structure \b CList. 
   Count the number of the candidate events and fill it in \b candlen.
@@ -1551,12 +1741,16 @@ ReadCandidateListFromZipFile (LALStatus *lalStatus, CandidateList **CList, CHAR 
 
   This function prints the bytecounts and the checksum of the file \b fname.
 
-  @param[in,out] lalStatus  
-  @param[out] CList CandidateList str to be filled in this code 
-  @param[in] fname the name of the file to be read
-  @param[out] candlen total number of the candidate events
+  @param[in,out] lalStatus LALStatus* 
+  @param[out]    CList     CandidateList** CandidateList str to be filled in this code 
+  @param[in]     fname     CHAR* the name of the file to be read
+  @param[out]    candlen   UINT4* total number of the candidate events
 */
-void  ReadOneCandidateFile (LALStatus *lalStatus, CandidateList **CList, const CHAR *fname, UINT4 *candlen)
+void  
+ReadOneCandidateFile( LALStatus *lalStatus, 
+		      CandidateList **CList, 
+		      const CHAR *fname, 
+		      UINT4 *candlen )
 {
   UINT4 i;
   UINT4 numlines;
@@ -1792,12 +1986,17 @@ void  ReadOneCandidateFile (LALStatus *lalStatus, CandidateList **CList, const C
   \li if a user has glob and specify \b input data dir.
   \li if a user specified either \b input data file or \b input data dir but not both.
   \li if a user did not define USE_UNZIP but specify \b input data dir.
-  @param[in,out] lalStatus  
-  @param[in] argc 
-  @param[in] argv
-  @param[out] CLA Configuration variables
+
+  @param[in,out] lalStatus LALStatus* 
+  @param[in]     argc      INT4  
+  @param[in]     argv[]    CHAR* 
+  @param[out]    CLA       PolkaConfigVars* Configuration variables
 */
-void ReadCommandLineArgs(LALStatus *lalStatus, INT4 argc, CHAR *argv[], PolkaConfigVars *CLA) 
+void 
+ReadCommandLineArgs( LALStatus *lalStatus, 
+		     INT4 argc, 
+		     CHAR *argv[], 
+		     PolkaConfigVars *CLA ) 
 {
   INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
   ATTATCHSTATUSPTR (lalStatus);
