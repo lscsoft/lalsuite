@@ -238,28 +238,41 @@ int main(int argc,char *argv[])
 
  if (CommandLineArgs.InjectionFile != NULL) 
    {
-     if (AddInjections(CommandLineArgs)) return 3;
+     if (AddInjections(CommandLineArgs)) return 5;
      /* high pass filter data again with added injection */ 
-     if (ProcessData2()) return 3;
    }
-  	 
- if (DownSample(CommandLineArgs)) return 5;
+
+ if (ProcessData2()) return 6;
+ 
+ if (DownSample(CommandLineArgs)) return 7;
 	
  /* Here I need to re-size the time series to remove the pad */
-
  LALResizeREAL4TimeSeries(&status, &(GV.ht_proc), (int)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5),
 			  GV.ht_proc.data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5));
  TESTSTATUS( &status );
+
+/*   { 	  */
+/*     int p; 	  */
+/*     for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) 	  */
+/*       { 	  */
+/* 	fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); 	  */
+/*       } 	  */
+/*     return 0; 	  */
+/*   }  */
+
  /* reduce duration of segment appropriately */
  GV.duration -= 2*CommandLineArgs.pad; 
 
- if (AvgSpectrum(CommandLineArgs)) return 6;
+ if (AvgSpectrum(CommandLineArgs)) return 8;
  
- if (CreateStringFilter(CommandLineArgs)) return 7;
- 
- if (CreateTemplateBank(CommandLineArgs)) return 8;
+/*  LALSPrintFrequencySeries( &(GV.Spec), "Spectrum.txt" ); */
+/*  return 0; */
 
- if (FindStringBurst(CommandLineArgs)) return 9;
+ if (CreateStringFilter(CommandLineArgs)) return 9;
+ 
+ if (CreateTemplateBank(CommandLineArgs)) return 10;
+
+ if (FindStringBurst(CommandLineArgs)) return 12;
 
  if (CommandLineArgs.cluster == 1 && events) 
    {
@@ -268,9 +281,9 @@ int main(int argc,char *argv[])
      TESTSTATUS( &status );
    }
 
- if (OutputEvents(CommandLineArgs)) return 11;
+ if (OutputEvents(CommandLineArgs)) return 13;
 
- if (FreeMem()) return 12;
+ if (FreeMem()) return 14;
 
  return 0;
 }
@@ -540,7 +553,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  (*thisEvent)->snr          = maximum;
 	  (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
 	  (*thisEvent)->confidence   = -maximum; /* FIXME */
-
+	  
 	}
     }
 
@@ -649,9 +662,12 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
   strtemplate[0].f=fmax;
   strtemplate[0].norm=sqrt(t1t1);
   strtemplate[0].mismatch=0.0;
-  
+  	  
   t2t2=t1t1;
   k=1;
+
+  fprintf(stdout,"Templ. frequency sigma\n");  
+  fprintf(stdout,"%d       %e        %e\n",k-1,strtemplate[0].f,strtemplate[0].norm);
 
   f_low_index = CLA.fbanklow / GV.StringFilter.deltaF;
   /* now we loop through and take away from the integral one point at a time */
@@ -670,6 +686,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
 	  strtemplate[k].norm=sqrt(t1t1);
 	  strtemplate[k].mismatch=epsilon;
 	  k++;
+	  fprintf(stdout,"%d       %e        %e\n",k-1,strtemplate[k-1].f,strtemplate[k-1].norm);
 	}
       if(k == MAXTEMPLATES)
 	{
