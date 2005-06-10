@@ -61,6 +61,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 int haveTrig[LAL_NUM_IFO];
 int checkTimes = 0;
+int multiIfoCoinc = 0;
 
 
 /*
@@ -85,6 +86,8 @@ static void print_usage(char *program)
       "   --gps-start-time start_time  GPS second of data start time\n"\
       "   --gps-end-time   end_time    GPS second of data end time\n"\
       "  [--check-times]               Check that all times were analyzed\n"\
+      "  [--multi-ifo-coinc]           Look for triple/quadruple ifo coincidence\n"\
+      "  [--maximization-interval] max_dt set length of maximization interval in ms\n"\
       "\n"\
       "  [--g1-slide]      g1_slide    Slide G1 data by multiples of g1_slide\n"\
       "  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"\
@@ -188,7 +191,11 @@ int main( int argc, char *argv[] )
   UINT4  numTrigIFO = 0;
   UINT4  numTriggers = 0;
   UINT4  numCoinc = 0;
+  UINT4  numDoubles = 0;
+  UINT4  numTriples = 0;
+  UINT4  numQuadruples = 0;
   UINT4  numTrigs[LAL_NUM_IFO];
+  UINT4  N = 0;
 
   LALDetector          aDet;
   LALDetector          bDet;
@@ -222,6 +229,7 @@ int main( int argc, char *argv[] )
   InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
   InterferometerNumber  ifoTwo    = LAL_UNKNOWN_IFO;
   INT4                  i;
+  INT4                  maximizationInterval = 0;
 
   const CHAR                   ifoList[LAL_NUM_IFO][LIGOMETA_IFO_MAX] = 
                                    {"G1", "H1", "H2", "L1", "T1", "V1"};
@@ -242,6 +250,7 @@ int main( int argc, char *argv[] )
     {"t1-triggers",         no_argument,   &(haveTrig[LAL_IFO_T1]),   1 },
     {"v1-triggers",         no_argument,   &(haveTrig[LAL_IFO_V1]),   1 },
     {"check-times",         no_argument,   &checkTimes,               1 },
+    {"multi-ifo-coinc",     no_argument,   &multiIfoCoinc,            1 },
     {"g1-slide",            required_argument, 0,                    'b'},
     {"h1-slide",            required_argument, 0,                    'c'},
     {"h2-slide",            required_argument, 0,                    'd'},
@@ -288,6 +297,7 @@ int main( int argc, char *argv[] )
     {"parameter-test",      required_argument, 0,                    'a'},
     {"gps-start-time",      required_argument, 0,                    's'},
     {"gps-end-time",        required_argument, 0,                    't'},
+    {"maximization-interval",required_argument, 0,                   '@'},    
     {"data-type",           required_argument, 0,                    'k'},
     {"comment",             required_argument, 0,                    'x'},
     {"user-tag",            required_argument, 0,                    'Z'},
@@ -332,6 +342,7 @@ int main( int argc, char *argv[] )
   memset( &slideStep, 0, LAL_NUM_IFO * sizeof(INT4) );
   memset( &slideTimes, 0, LAL_NUM_IFO * sizeof(LIGOTimeGPS) );
   memset( &slideReset, 0, LAL_NUM_IFO * sizeof(LIGOTimeGPS) );
+  memset( &haveTrig, 0, LAL_NUM_IFO * sizeof(int) );
   
   /* parse the arguments */
   while ( 1 )
@@ -344,7 +355,7 @@ int main( int argc, char *argv[] )
     c = getopt_long_only( argc, argv, 
         "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VZ:"
         "a:b:c:d:e:f:g:hi:k:m:n:o:p:q:r:s:t:x:z:"
-        "2:3:4:5:6:7:8:9:!:-:+:=:", 
+        "2:3:4:5:6:7:8:9:!:-:+:=:@:", 
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -849,6 +860,21 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg );
         break;
 
+      case '@':
+        /* set the maximization window */
+        maximizationInterval = atoi( optarg );
+        if ( maximizationInterval < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "maximization interval must be positive:\n "
+              "(%d ms specified)\n",
+              long_options[option_index].name, maximizationInterval );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%ld",  maximizationInterval );
+        break;
+  
+
       default:
         fprintf( stderr, "Error: Unknown error while parsing options\n" );
         print_usage(argv[0]);
@@ -1020,6 +1046,19 @@ int main( int argc, char *argv[] )
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
 
+  /* store the multi-ifo-coinc in the process_params table */
+  if ( multiIfoCoinc )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+        "%s", PROGRAM_NAME );
+    LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+        "--multi-ifo-coinc" );
+    LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+
   /* delete the first, empty process_params entry */
   this_proc_param = processParamsTable.processParamsTable;
   processParamsTable.processParamsTable = 
@@ -1148,6 +1187,18 @@ int main( int argc, char *argv[] )
           fprintf( stdout, "got %d sngl_inspiral rows from %s\n", 
               numFileTriggers, argv[i] );
 
+        /* maximize over a given interval */
+        if ( maximizationInterval )
+        {
+          if (vrbflg)
+          {
+            fprintf( stdout, "Clustering triggers for over %d ms window\n",
+                maximizationInterval);
+          }
+          XLALMaxSnglInspiralOverIntervals( &inputData, 
+              (1.0e6 * maximizationInterval) );
+        }
+
         /* store them */
         if ( ! inspiralEventList )
         {
@@ -1192,7 +1243,7 @@ int main( int argc, char *argv[] )
   {
     if ( vrbflg ) fprintf( stdout, 
         "Checking that we have data for all times from all IFOs\n");
-    for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ++ifoNumber )
+    for ( ifoNumber = 0; ifoNumber < numIFO; ++ifoNumber )
     {
       LAL_CALL( LALCheckOutTimeFromSearchSummary ( &status, searchSummList, 
             ifoName[ifoNumber], &startCoinc, &endCoinc ), &status);
@@ -1260,6 +1311,7 @@ int main( int argc, char *argv[] )
     {
       fprintf( stderr, "Read in triggers from %s, none expected.\n",
           ifoList[ifoNumber]);
+      exit( 1 );
     }
     if ( haveTrig[ifoNumber] && numTrigs[ifoNumber] )
     {
@@ -1301,19 +1353,51 @@ int main( int argc, char *argv[] )
 
   if ( !numSlides )
   {
-    LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
-        inspiralEventList, &accuracyParams ), &status);
+    LAL_CALL( LALCreateTwoIFOCoincList( &status, &coincInspiralList,
+        inspiralEventList, &accuracyParams ), &status );
+  
+    if ( multiIfoCoinc )
+    {
+      for( N = 3; N <= numIFO; N++)
+      {
+        LAL_CALL( LALCreateNIFOCoincList( &status, &coincInspiralList, 
+              &accuracyParams, N ), &status );
+      }
 
-  /* count the coincs */
-  if( coincInspiralList )
-  {
-       for (numCoinc = 1, thisCoinc = coincInspiralList;
-            thisCoinc->next; ++numCoinc, thisCoinc = thisCoinc->next );
-  }
+      LAL_CALL( LALRemoveRepeatedCoincs( &status, &coincInspiralList ), 
+          &status );
+    }
+
+    /* count the coincs */
+    if( coincInspiralList )
+    {
+      for (numCoinc = 0, thisCoinc = coincInspiralList;
+            thisCoinc; ++numCoinc, thisCoinc = thisCoinc->next )
+      {
+        if ( thisCoinc->numIfos == 2 )
+        {
+          ++numDoubles;
+        }
+        else if ( thisCoinc->numIfos == 3 )
+        {
+          ++numTriples;
+        }
+        else if ( thisCoinc->numIfos == 4 )
+        {
+          ++numQuadruples;
+        }
+      }     
+    }
+   
+    if ( vrbflg ) 
+    {
+      fprintf( stdout, "%d coincident triggers found.\n", numCoinc );
+      fprintf( stdout, "%d double coincident triggers\n"
+                       "%d triple coincident triggers\n"
+                       "%d quadruple coincident triggers\n",
+                       numDoubles, numTriples, numQuadruples );
+    }
     
-    if ( vrbflg ) fprintf( stdout,
-        "%d coincident triggers found.\n", numCoinc);
-
     /* write out all coincs as singles with event IDs */
     LAL_CALL( LALExtractSnglInspiralFromCoinc( &status, &snglOutput, 
           coincInspiralList, &startCoinc, slideNum), &status );
