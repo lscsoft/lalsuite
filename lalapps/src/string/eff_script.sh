@@ -38,7 +38,7 @@ echo
 echo H2:
 cat *H2single.dat
 echo
-echo H1:
+echo L1:
 cat *L1single.dat
 echo
 
@@ -76,6 +76,6 @@ echo
 echo H2:
 cat *H2triple.dat
 echo
-echo H1:
+echo L1:
 cat *L1triple.dat
 echo
