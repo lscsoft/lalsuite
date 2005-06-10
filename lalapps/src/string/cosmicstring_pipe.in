@@ -31,17 +31,19 @@ Usage: lalapps_ring_pipe [options]
   -h, --help               display this message
   -v, --version            print version information and exit
   -i, --injections         add simulated bursts
+  -s, --timeslides         do timeslides
   -f, --config-file FILE   use configuration file FILE
   -l, --log-path PATH      directory to write condor log file
 """
   print >> sys.stderr, msg
 
 # pasrse the command line options to figure out what we should do
-shortop = "hvif:l:"
+shortop = "hvisf:l:"
 longop = [
   "help",
   "version",
   "injections",
+  "timeslides",
   "config-file=",
   "log-path="
   ]
@@ -56,6 +58,7 @@ config_file = None
 do_inj = 0
 config_file = None
 log_path = None
+do_slides = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -66,6 +69,8 @@ for o, a in opts:
     sys.exit(0)
   elif o in ("-i", "--injections"):
     do_inj = 1
+  elif o in ("-s", "--timeslides"):
+    do_slides = 1
   elif o in ("-f", "--config-file"):
     config_file = a
   elif o in ("-l", "--log-path"):
@@ -159,7 +164,14 @@ dtHH = int(cp.get('pipeline','dtHH'))
 
 datatype1 = cp.get('input','type1') 
 datatype2 = cp.get('input','type2') 
-datatype3 = cp.get('input','type3') 
+datatype3 = cp.get('input','type3')
+
+#get time slides info
+slidetime = 0
+no_slides = 0
+if do_slides:
+  slidetime = cp.get('pipeline','slide-time')
+  no_slides = cp.get('pipeline','number-slides')
 
 # create all the LSCdataFind jobs to run in sequence
 prev_df1 = None
@@ -209,7 +221,6 @@ for seg in data:
 
 
   if do_inj:
-
     # create injection jobs
     inject1  = cosmicstring.InjNode(injection_job)
     injstart=int(seg.start())+overlap
@@ -276,68 +287,62 @@ for seg in data:
       string3.add_var_opt('injection-file',inject1.get_output())
     dag.add_node(string3)
 
-    # There are 3 ifos so there are six possible output files
-    #12
-    burca12 = cosmicstring.BurcaNode(burca_job)
-    burca12.set_start(chunk.start())
-    burca12.set_end(chunk.end())
-    burca12.set_ifoa(string1.get_output(),ifo1)
-    burca12.set_ifob(string2.get_output(),ifo2) 
-    burca12.add_parent(string1)
-    burca12.add_parent(string2)
-    burca12.add_var_opt('dt',dtHL)
-    burca12.set_name("burca-"+ifo1+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
-    dag.add_node(burca12)
+    # Coincidence jobs
+    #13 H1-H2 coincidences (produces H1 survivors)
+    burca13 = cosmicstring.BurcaNode(burca_job)
+    burca13.set_start(chunk.start())
+    burca13.set_end(chunk.end())
+    burca13.set_ifoa(string1.get_output(),ifo1)
+    burca13.set_ifob(string3.get_output(),ifo3) 
+    burca13.add_parent(string1)
+    burca13.add_parent(string3)
+    burca13.add_var_opt('dt',dtHH)
+    burca13.set_name("burca-"+ifo1+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
+    dag.add_node(burca13)
 
-    #123
-    burca123 = cosmicstring.BurcaNode(burca_job)
-    burca123.set_start(chunk.start())
-    burca123.set_end(chunk.end())
-    burca123.set_ifoa(burca12.get_output(),ifo1)
-    burca123.set_ifob(string3.get_output(),ifo3) 
-    burca123.add_parent(burca12)
-    burca123.add_parent(string3)
-    burca123.add_var_opt('dt',dtHH)
-    burca123.set_name("burca-"+ifo1+ifo2+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
-    dag.add_node(burca123)
-
-    #23
-    burca23 = cosmicstring.BurcaNode(burca_job)
-    burca23.set_start(chunk.start())
-    burca23.set_end(chunk.end())
-    burca23.set_ifoa(string2.get_output(),ifo2)
-    burca23.set_ifob(string3.get_output(),ifo3) 
-    burca23.add_parent(string2)
-    burca23.add_parent(string3)
-    burca23.add_var_opt('dt',dtHL)
-    burca23.set_name("burca-"+ifo2+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
-    dag.add_node(burca23)
-
-    #231
-    burca231 = cosmicstring.BurcaNode(burca_job)
-    burca231.set_start(chunk.start())
-    burca231.set_end(chunk.end())
-    burca231.set_ifoa(burca23.get_output(),ifo2)
-    burca231.set_ifob(string1.get_output(),ifo1) 
-    burca231.add_parent(burca23)
-    burca231.add_parent(string1)
-    burca231.add_var_opt('dt',dtHL)
-    burca231.set_name("burca-"+ifo2+ifo3+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
-    dag.add_node(burca231)
-
-    #31
+    #31 H2-H1 coincidences (produces H2 survivors)
     burca31 = cosmicstring.BurcaNode(burca_job)
     burca31.set_start(chunk.start())
     burca31.set_end(chunk.end())
     burca31.set_ifoa(string3.get_output(),ifo3)
     burca31.set_ifob(string1.get_output(),ifo1) 
-    burca31.add_parent(string3)
     burca31.add_parent(string1)
+    burca31.add_parent(string3)
     burca31.add_var_opt('dt',dtHH)
     burca31.set_name("burca-"+ifo3+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
     dag.add_node(burca31)
 
-    #312
+    #132 H1-H2 survivors in coincidence with L1 (gives H1 survivors)
+    burca132 = cosmicstring.BurcaNode(burca_job)
+    burca132.set_start(chunk.start())
+    burca132.set_end(chunk.end())
+    burca132.set_ifoa(burca13.get_output(),ifo1)
+    burca132.set_ifob(string2.get_output(),ifo2) 
+    burca132.add_parent(burca13)
+    burca132.add_parent(string2)
+    burca132.add_var_opt('dt',dtHL)
+    burca132.set_name("burca-"+ifo1+ifo3+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
+    if do_slides:
+      burca132.add_var_opt('slide-time',slidetime)
+      burca132.add_var_opt('number-slides',no_slides)
+    dag.add_node(burca132)
+
+    #213 L1 events in coincidence with H1-H2 survivors (gives L1 survivors)
+    burca213 = cosmicstring.BurcaNode(burca_job)
+    burca213.set_start(chunk.start())
+    burca213.set_end(chunk.end())
+    burca213.set_ifoa(string2.get_output(),ifo2) 
+    burca213.set_ifob(burca13.get_output(),ifo1)
+    burca213.add_parent(burca13)
+    burca213.add_parent(string2)
+    burca213.add_var_opt('dt',dtHL)
+    burca213.set_name("burca-"+ifo2+ifo3+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
+    if do_slides:
+      burca213.add_var_opt('slide-time',slidetime)
+      burca213.add_var_opt('number-slides',no_slides)
+    dag.add_node(burca213)
+
+    #312 H2-H1 survivors in coincidence with L1 (gives H2 survivors)
     burca312 = cosmicstring.BurcaNode(burca_job)
     burca312.set_start(chunk.start())
     burca312.set_end(chunk.end())
@@ -347,9 +352,10 @@ for seg in data:
     burca312.add_parent(string2)
     burca312.add_var_opt('dt',dtHL)
     burca312.set_name("burca-"+ifo3+ifo1+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
+    if do_slides:
+      burca312.add_var_opt('slide-time',slidetime)
+      burca312.add_var_opt('number-slides',no_slides)
     dag.add_node(burca312)
-
-
 
 # write out the DAG
 dag.write_sub_files()
@@ -357,7 +363,7 @@ dag.write_dag()
 
 # write a message telling the user that the DAG has been written
 print "\nCreated a DAG file which can be submitted by executing"
-print "\n   condor_submit_dag", dag.get_dag_file()
+print "\n   condor_submit_dag -maxjobs 200 ", dag.get_dag_file()
 print """\nfrom a condor submit machine (e.g. hydra.phys.uwm.edu)\n
 If you are running LSCdataFind jobs, do not forget to initialize your grid 
 proxy certificate on the condor submit machine by running the commands
