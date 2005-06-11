@@ -807,20 +807,17 @@ XLALTimeSlideSnglBurst (
 	    tStart += slideTime;
 	    tPeak += slideTime;
 
-	    if ( (tStart-startTime)*(tStart-stopTime) > 0 )
+	    if ( startTime && tStart < startTime )
 	      {
-		if ( tStart < startTime )
-		  {
-		    tStart += stopTime - startTime;
-		    tPeak += stopTime - startTime;
-		  }
-		if ( tStart > stopTime )
-		  {
-		    tStart += startTime - stopTime;
-		    tPeak += startTime - stopTime;
-		  }
+		tStart += stopTime - startTime;
+		tPeak += stopTime - startTime;
 	      }
-	  
+	    if ( stopTime && tStart > stopTime )
+	      {
+		tStart += startTime - stopTime;
+		tPeak += startTime - stopTime;
+	      }
+	    
 	    XLALINT8toGPS(&(currentEvent->start_time),tStart);
 	    XLALINT8toGPS(&(currentEvent->peak_time),tPeak);
 	  
