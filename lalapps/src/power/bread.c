@@ -10,6 +10,7 @@
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/FrameCache.h>
 #include <lalapps.h>
+#include <lal/BurstUtils.h>
 
 int snprintf(char *str, size_t size, const char *format, ...);
 
@@ -842,6 +843,18 @@ int main(int argc, char **argv)
 
 	/* search summary table */
 	searchsumm.searchSummaryTable->nevents = XLALCountSnglBurst(burstEventList);
+
+	if ( burstEventList )
+	  {
+	    SnglBurstTable *list =  burstEventList;
+	    searchsumm.searchSummaryTable->out_start_time=burstEventList->start_time;
+	    while (list)
+	      {
+		XLALINT8toGPS(&(searchsumm.searchSummaryTable->out_end_time), XLALGPStoINT8(&(list->start_time)) + 1e9 * list->duration);
+		list=list->next;
+	      }
+	  }
+
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, search_summary_table), &stat);
 	LAL_CALL(LALWriteLIGOLwXMLTable(&stat, &xmlStream, searchsumm, search_summary_table), &stat);
 	LAL_CALL(LALEndLIGOLwXMLTable(&stat, &xmlStream), &stat);
