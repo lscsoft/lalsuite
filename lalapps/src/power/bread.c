@@ -848,11 +848,11 @@ int main(int argc, char **argv)
 	  {
 	    SnglBurstTable *list =  burstEventList;
 	    searchsumm.searchSummaryTable->out_start_time=burstEventList->start_time;
-	    while (list)
+	    while (list->next)
 	      {
-		XLALINT8toGPS(&(searchsumm.searchSummaryTable->out_end_time), XLALGPStoINT8(&(list->start_time)) + 1e9 * list->duration);
 		list=list->next;
 	      }
+	    XLALINT8toGPS(&(searchsumm.searchSummaryTable->out_end_time), XLALGPStoINT8(&(list->start_time)) + 1e9 * list->duration);
 	  }
 
 	LAL_CALL(LALBeginLIGOLwXMLTable(&stat, &xmlStream, search_summary_table), &stat);
