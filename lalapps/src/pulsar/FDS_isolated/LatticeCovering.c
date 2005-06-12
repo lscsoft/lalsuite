@@ -72,7 +72,12 @@ NRCSID( LATTICECOVERINGC, "$Id$" );
 /*</lalErrTable> */
 
 /*---------- local types ----------*/
-
+typedef enum
+{
+  LATTICE_TYPE_CUBIC = 0,	/**< standard cubic grid: Zn */
+  LATTICE_TYPE_ANSTAR,		/**< An*: optimal covering grid */
+  LATTICE_TYPE_LAST
+} LatticeType;
 
 
 /*---------- Global variables ----------*/
@@ -93,6 +98,12 @@ XLALMetricGramSchmidt(gsl_matrix **orth,
 int
 XLALSquareGeneratingMatrix(gsl_matrix **outmatrix,
 			   const gsl_matrix *inmatrix);
+
+int
+XLALGetGeneratingMatrix (gsl_matrix **outmatrix,
+			 UINT4 dimension,
+			 LatticeType type);
+
 
 BOOLEAN isSymmetric (const gsl_matrix *Sij);
 
@@ -290,25 +301,28 @@ XLALSquareGeneratingMatrix(gsl_matrix **outmatrix, 	/**< OUT: square generating 
   gsl_matrix *basis = NULL;	/* orthonormal basis */
 
   /* check NULL-vectors on input */
-  if ( inmatrix == NULL ) {
-    LALPrintError ("NULL Input received.");
-    XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EINVAL);
-  }
+  if ( inmatrix == NULL ) 
+    {
+      LALPrintError ("NULL Input received.");
+      XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EINVAL);
+    }
   
   /* check that output 'outmatrix' points to a NULL-vector! */
-  if ( *outmatrix != NULL ) {
-    LALPrintError ("Output-vector not set to NULL");
-    XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EINVAL);
-  }
+  if ( *outmatrix != NULL ) 
+    {
+      LALPrintError ("Output-vector not set to NULL");
+      XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EINVAL);
+    }
 
   rows = inmatrix->size1;
   cols = inmatrix->size2;
 
   /* rows need to be lattice vectors, and linearly independent */
-  if ( rows > cols ) {
-    LALPrintError ("ERROR: input-matrix must have full row-rank!\n");
-    XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EINVAL);
-  }
+  if ( rows > cols ) 
+    {
+      LALPrintError ("ERROR: input-matrix must have full row-rank!\n");
+      XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EINVAL);
+    }
 
   /* allocate output matrix */
   sq = gsl_matrix_calloc (rows, rows);
@@ -351,6 +365,92 @@ XLALSquareGeneratingMatrix(gsl_matrix **outmatrix, 	/**< OUT: square generating 
 
   return 0;
 } /* XLALSquareGeneratingMatrix() */
+
+
+/** Return the (canonical, i.e. not necessarily quadratic) n-dimensional
+ * generating matrix for various lattices. The memory for the matrix
+ * is allocated here. 
+ * 
+ */
+int
+XLALGetGeneratingMatrix (gsl_matrix **outmatrix,	/**< OUT: generating matrix */
+			 UINT4 dimension,		/**< IN: number of dimensions */
+			 LatticeType type)		/**< IN: type of lattice */
+{
+  gsl_matrix *generator = NULL;	/* output: generating matrix */
+
+  /* check that output 'outmatrix' points to a NULL-vector! */
+  if ( *outmatrix != NULL ) 
+    {
+      LALPrintError ("Output-vector not set to NULL");
+      XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EINVAL);
+    }
+
+  switch (type)
+    {
+    case LATTICE_TYPE_CUBIC:
+      generator = gsl_matrix_calloc( dimension, dimension );
+      gsl_matrix_set_identity (generator);	/* trivial generating matrix */
+      break;
+
+    case LATTICE_TYPE_ANSTAR:
+      /* the generating matrix for An* can be written as:
+       * [FIXME: check that ]
+       * 
+       * | 1      -1        0       0  0  ....  0      |
+       * | 1       0       -1       0  0  ....  0      |
+       * | 1       0        0      -1  0  ....  0      | 
+       * | ...    ...      ....    ... ....    ...     |
+       * |-n/(n+1) 1/(n+1) 1/(n+1) ...        1/(n+1)  |
+       * 
+       */
+      generator = gsl_matrix_calloc( dimension, dimension+1 );
+      UINT4 row, col;
+
+      for (row=0; row < dimension; row ++)
+	{
+	  for (col=0; col < dimension + 1; col++)
+	    {
+	      /* ---------- find value for that matrix element ----------*/
+	      REAL8 val;
+	      if ( row < dimension-1 )
+		{
+		  if ( col == 0 )
+		    val = 1.0;
+		  else if (col == row + 1)
+		    val = -1.0;
+		  else
+		    continue;
+		}
+	      else
+		{
+		  if ( col == 0 )
+		    val = - 1.0 * dimension / ( dimension + 1.0);
+		  else
+		    val =   1.0 / (dimension + 1.0);
+		}
+
+	      /* ---------- set matrix element ---------- */
+	      gsl_matrix_set (generator, row, col, val);
+
+	    } /* for col < dim + 1 */
+
+	} /* for row < dim */
+
+      break;
+
+    default:
+      LALPrintError ("Illegal value for lattice-type (%d)\n", type);
+      XLAL_ERROR("XLALGetGeneratingMatrix", XLAL_EINVAL);
+      break;
+      
+    } /* switch(type) */
+
+  /* return generating matrix */
+  (*outmatrix) = generator;
+
+  return 0;
+} /* XLALGetGeneratingMatrix() */
 
 
 /** check if matrix is symmetric */
@@ -440,6 +540,7 @@ testGS(void)
   gsl_matrix_view m1, gij;
   gsl_matrix *orto = NULL;
   gsl_matrix *sGM = NULL;
+  gsl_matrix *testM = NULL;
 
   REAL8 m1data[] = { 1, 	-1, 	0,
 		    -2.0/3, 	1.0/3, 	1.0/3};
@@ -468,5 +569,9 @@ testGS(void)
 
   printf ("Square generating matrix:\n");
   print_matrix (sGM);
+
+  XLALGetGeneratingMatrix (&testM, 4, LATTICE_TYPE_ANSTAR);
+  printf ("produced Generating Matrix: \n");
+  print_matrix (testM);
 
 } /* testGS() */
