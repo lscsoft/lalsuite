@@ -1,3 +1,22 @@
+/*
+ * Copyright (C) 2005 Reinhard Prix
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
+
 /**
  * \file LatticeCovering.c
  * \author: Reinhard Prix
@@ -10,8 +29,6 @@
  * Right now this is just a playground...
  *
  */
-
-
 
 /*---------- INCLUDES ----------*/
 #include <math.h>
@@ -87,12 +104,12 @@ int print_vector (const gsl_vector *v);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/* NOTE: "vector" in the following refers to the covariant compomnents,
+/* NOTE: "(gsl_)vector" in the following refers to the contravariant compomnents,
  * while the covariant-components would be called the "covector"
  */
 
 
-/** Scalar product of two vectors with respect to given metric.
+/** Scalar product of two vectors with respect to the given metric.
  *  <v1, v2> = g_ij v1^i v^2j 
  */
 REAL8 
@@ -140,7 +157,7 @@ XLALMetricScalarProduct (const gsl_vector *v1,
  * algorithm, completely ignorant about numerically more robust or faster algorithms
  * to do this... [FIXME?].
  *
- * The set of vectors in input and output consists of the matrix-rows!
+ * The vectors in input and output are the matrix-rows!
  *
  */
 int
@@ -171,8 +188,8 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal row vects */
     XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EINVAL);
   }
 
-  numvects = invects->size1;	/* number of columns! */
-  vectdim = invects->size2;
+  numvects = invects->size1;	/* number of rows! */
+  vectdim = invects->size2;	/* number of columns */
 
   /* can't have more vectors than dimensions */
   if ( numvects > vectdim ) {
