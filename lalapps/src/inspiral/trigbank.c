@@ -80,7 +80,7 @@ static void print_usage(char *program)
       "   --input-ifo      input_ifo   the name of the input IFO triggers\n"\
       "   --output-ifo     output_ifo  the name of the IFO for which to create the bank\n"\
       "   --parameter-test test        set parameters with which to test coincidence:\n"\
-      "                                (m1_and_m2|psi0_and_psi3)\n"\
+      "                                (m1_and_m2|psi0_and_psi3|no_test)\n"\
       "  --data-type DATA_TYPE         specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
       "\n"\
@@ -238,15 +238,19 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "mchirp_and_eta test specified, not implemented for trigbank: "
-              "%s (must be m1_and_m2, psi0_and_psi3)\n",
+              "%s (must be m1_and_m2, psi0_and_psi3, no_test)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
+	else if ( ! strcmp( "no_test", optarg ) )
+	{
+	  test = no_test;
+	}
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown test specified: "
-              "%s (must be m1_and_m2, psi0_and_psi3 or mchirp_and_eta)\n",
+              "%s (must be m1_and_m2, psi0_and_psi3,no_test, or mchirp_and_eta)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -411,12 +415,6 @@ int main( int argc, char *argv[] )
   if ( endTime < 0 )
   {
     fprintf( stderr, "Error: --gps-end-time must be specified\n" );
-    exit( 1 );
-  }
-
-  if ( test == no_test )
-  {
-    fprintf( stderr, "Error: --parameter-test must be specified\n" );
     exit( 1 );
   }
 
@@ -643,8 +641,11 @@ int main( int argc, char *argv[] )
   }
 
   /* Generate the triggered bank */
-  LAL_CALL( LALCreateTrigBank( &status, &inspiralEventList, &test ), 
-      &status );
+  if( test != no_test )
+  {
+    LAL_CALL( LALCreateTrigBank( &status, &inspiralEventList, &test ), 
+	&status );
+  }
 
   /* count the number of triggers  */
   for( currentTrigger = inspiralEventList, numTriggers = 0; currentTrigger; 
