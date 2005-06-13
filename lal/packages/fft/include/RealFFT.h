@@ -231,14 +231,14 @@ REAL4FFTPlan * XLALCreateForwardREAL4FFTPlan( UINT4 size, int measurelvl );
 REAL4FFTPlan * XLALCreateReverseREAL4FFTPlan( UINT4 size, int measurelvl );
 void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan );
 
-int XLALREAL4ForwardFFT( COMPLEX8Vector *output, REAL4Vector *input,
-    REAL4FFTPlan *plan );
-int XLALREAL4ReverseFFT( REAL4Vector *output, COMPLEX8Vector *input,
-    REAL4FFTPlan *plan );
-int XLALREAL4VectorFFT( REAL4Vector *output, REAL4Vector *input,
-    REAL4FFTPlan *plan );
-int XLALREAL4PowerSpectrum( REAL4Vector *spec, REAL4Vector *data,
-    REAL4FFTPlan *plan );
+int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
+    const REAL4FFTPlan *plan );
+int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
+    const REAL4FFTPlan *plan );
+int XLALREAL4VectorFFT( REAL4Vector *output, const REAL4Vector *input,
+    const REAL4FFTPlan *plan );
+int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
+    const REAL4FFTPlan *plan );
 
 /*
  *
