@@ -592,9 +592,9 @@ int main(int argc, char **argv)
 
     /* cluster the burst triggers if asked for */
     if(cluster && clusterchoice == clusterbypeaktimeandfreq && coincidentBurstEvents)
-      LAL_CALL(LALClusterSnglBurstTable(&stat, &coincidentBurstEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
+      XLALClusterSnglBurstTable(&coincidentBurstEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
     else if (cluster && clusterchoice == clusterbytimeandfreq && coincidentBurstEvents)
-      LAL_CALL(LALClusterSnglBurstTable(&stat, &coincidentBurstEvents,  NULL, XLALCompareSnglBurst), &stat);
+      XLALClusterSnglBurstTable(&coincidentBurstEvents,  NULL, XLALCompareSnglBurst, XLALSnglBurstCluster);
 
 
     if ( coincidentInspiralEvents )

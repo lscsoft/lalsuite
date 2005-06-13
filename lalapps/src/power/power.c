@@ -212,7 +212,7 @@ static void print_usage(char *program)
 "	 --gps-start-time <seconds>\n" \
 "	 --gps-start-time-ns <nanoseconds>\n" \
 "	[--help]\n" \
-"	 --high-pass <high pass frequency> \n" \        
+"	 --high-pass <high pass frequency>\n" \
 "	[--burstinjection-file <file name>]\n" \
 "	[--inspiralinjection-file <file name>]\n" \
 "	 --low-freq-cutoff <Hz>\n" \
@@ -1877,8 +1877,8 @@ int main( int argc, char *argv[])
 	 */
 
 	if(options.cluster)
-		LAL_CALL(LALClusterSnglBurstTable(&stat, &burstEvent, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
-	LAL_CALL(LALSortSnglBurst(&stat, &burstEvent, XLALCompareSnglBurstByStartTimeAndLowFreq), &stat);
+		XLALClusterSnglBurstTable(&burstEvent, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
+	XLALSortSnglBurst(&burstEvent, XLALCompareSnglBurstByStartTimeAndLowFreq);
 
 	/*
 	 * Output the results.

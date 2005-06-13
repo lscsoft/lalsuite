@@ -514,20 +514,16 @@ int main(int argc, char **argv)
       if(cluster && clusterchoice == clusterbypeaktimeandfreq)
 	{
 	  if (noncoincident && noncoincidentEvents)
-	    {
-	      LAL_CALL(LALClusterSnglBurstTable(&stat, &noncoincidentEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
-	    }
+	    XLALClusterSnglBurstTable(&noncoincidentEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
 	  if(coincidentEvents)
-	    LAL_CALL(LALClusterSnglBurstTable(&stat, &coincidentEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
+	    XLALClusterSnglBurstTable(&coincidentEvents, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
 	}
       else if (cluster && clusterchoice == clusterbytimeandfreq)
 	{
 	  if (noncoincident && noncoincidentEvents)
-	    {
-	      LAL_CALL(LALClusterSnglBurstTable(&stat, &noncoincidentEvents, NULL, XLALCompareSnglBurst), &stat);
-	    }
+	    XLALClusterSnglBurstTable(&noncoincidentEvents, NULL, XLALCompareSnglBurst, XLALSnglBurstCluster);
 	  if(coincidentEvents)
-	    LAL_CALL(LALClusterSnglBurstTable(&stat, &coincidentEvents,  NULL, XLALCompareSnglBurst), &stat);
+	    XLALClusterSnglBurstTable(&coincidentEvents,  NULL, XLALCompareSnglBurst, XLALSnglBurstCluster);
 	}
 
       /*****************************************************************

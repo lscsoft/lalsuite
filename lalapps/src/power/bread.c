@@ -796,11 +796,11 @@ int main(int argc, char **argv)
 	 */
 
 	if(options.cluster && clusterchoice == clusterbypeaktimeandfreq)
-	  LAL_CALL(LALClusterSnglBurstTable(&stat, &burstEventList, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq), &stat);
-	else if (options.cluster && clusterchoice == clusterbytimeandfreq)
-	  LAL_CALL(LALClusterSnglBurstTable(&stat, &burstEventList,  NULL, XLALCompareSnglBurst), &stat);
+		XLALClusterSnglBurstTable(&burstEventList, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
+	else if(options.cluster && clusterchoice == clusterbytimeandfreq)
+		XLALClusterSnglBurstTable(&burstEventList,  NULL, XLALCompareSnglBurst, XLALSnglBurstCluster);
 	else if(options.cluster && clusterchoice == stringcluster)
-	  XLALClusterStringBurstTable(&burstEventList, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime);
+		XLALClusterStringBurstTable(&burstEventList, XLALCompareStringBurstByTime, XLALCompareStringBurstByTime);
 
 	/*
 	 * Do any requested cuts
@@ -812,9 +812,9 @@ int main(int argc, char **argv)
 	 * print out the total time analysed and the number of triggers found
 	 */
 	if(options.printsum){
-	  fprintf(fpout, "# Total time analysed = %lld nanosec.s\n", timeAnalyzed);
-	  fprintf(fpout, "# Total no. of triggers = %ld\n", count_events(burstEventList));
-	  fclose(fpout);
+		fprintf(fpout, "# Total time analysed = %lld nanosec.s\n", timeAnalyzed);
+		fprintf(fpout, "# Total no. of triggers = %ld\n", count_events(burstEventList));
+		fclose(fpout);
 	}
 
 
@@ -822,7 +822,7 @@ int main(int argc, char **argv)
 	 * Sort the triggers
 	 */
 
-	LAL_CALL(LALSortSnglBurst(&stat, &burstEventList, XLALCompareSnglBurstByStartTime), &stat);
+	XLALSortSnglBurst(&burstEventList, XLALCompareSnglBurstByStartTime);
 
 
 	/*
