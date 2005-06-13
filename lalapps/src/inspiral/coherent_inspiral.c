@@ -118,8 +118,17 @@ INT4   maximizeOverChirp    = 0;    /* default is no clustering */
 INT4   verbose              = 0;
 CHAR   outputPath[FILENAME_MAX];
 
+INT8  gpsStartTimeNS   = 0;         /* input data GPS start time ns */
+LIGOTimeGPS gpsStartTime;           /* input data GPS start time    */
+INT8  gpsEndTimeNS     = 0;         /* input data GPS end time ns   */
+LIGOTimeGPS gpsEndTime;             /* input data GPS end time      */
+
 LALStatus             status;
 LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
+
+CHAR  *userTag          = NULL;         /* string the user can tag with */
+CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
+INT4  globFrameData     = 0;            /* glob to get frame data */
 
 int main( int argc, char *argv[] )
 {
@@ -140,18 +149,17 @@ int main( int argc, char *argv[] )
 
   FILE *filePtr[4];
 
+  CHAR   fileName[FILENAME_MAX];
   CHAR   framename[FILENAME_MAX];
   CHAR   xmlname[FILENAME_MAX];
   CHAR   cohdataStr[LALNameLength];
   CHAR   caseIDChars[4][LIGOMETA_IFOS_MAX] = {"0","0","0","0"};
-  CHAR tempStr[FILENAME_MAX];
 
   INT4   numTmplts        = 0; /* number of templates */
   INT4   cohSegLength     = 4; /* This should match hardcoded value in inspiral.c */
   INT4   numPoints        = 0;
   INT4   startTemplate    = -1;           
   INT4   stopTemplate     = -1;
-  INT4   bankFileNameLength = 0;
   UINT4  numSegments      = 1;       /* number of segments */
   UINT4  numBeamPoints    = 0;       /* number of sky position templates */
   UINT4  nCohDataFr       = 0;
@@ -167,13 +175,19 @@ int main( int argc, char *argv[] )
   REAL8  tempTime[6]      = {0.0,0.0,0.0,0.0,0.0,0.0};
   INT4   timeptDiff[5]    = {0,0,0,0,0};
   UINT2  caseID[6]        = {0,0,0,0,0,0}; /* H1 L V G T H2 */
-  INT4   h1ChanNum        = -1;
-  INT4   h2ChanNum        = -1;
-  INT4   lChanNum         = -1;
-  INT4   geoChanNum       = -1;
-  INT4   virgoChanNum     = -1;
-  INT4   tamaChanNum      = -1;
+  INT4   h1ChanNum        = 0;
+  INT4   h2ChanNum        = 0;
+  INT4   lChanNum         = 0;
+  INT4   geoChanNum       = 0;
+  INT4   virgoChanNum     = 0;
+  INT4   tamaChanNum      = 0;
   INT4   chanNumArray[6]  = {-1, -1, -1, -1, -1, -1};
+
+  FrCache      *frGlobCache = NULL;
+  FrCache      *frInCache   = NULL;
+  FrCache      *tempCache   = NULL;
+  FrCacheSieve  sieve;
+  FrCacheSieve  tempSieve;
 
   CoherentInspiralInitParams   *cohInspInitParams = NULL;
   CoherentInspiralFilterParams *cohInspFilterParams = NULL;
@@ -210,6 +224,8 @@ int main( int argc, char *argv[] )
   for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
       this_proc_param = this_proc_param->next );
 
+  fprintf(stdout,"Reading templates from %s\n",bankFileName);
+
   /* read in the template bank from a ligo lw xml file */
     numTmplts = InspiralTmpltBankFromLIGOLw( &bankHead, bankFileName,
       startTemplate, stopTemplate );
@@ -230,13 +246,50 @@ int main( int argc, char *argv[] )
   if ( verbose ) fprintf( stdout, "parsed %d templates from %s\n", 
       numTmplts, bankFileName );
 
+  /* Now glob for frame data based on the gps start and duration in the */
+  /* thinca input file name */
 
+  if( globFrameData )
+    {
+      if ( verbose ) fprintf( stdout, "globbing for *.gwf frame files in current directory\n");
+      LAL_CALL( LALFrCacheGenerate( &status, &frGlobCache, NULL, NULL ), 
+		&status );
+      /* check we globbed at least one frame file */
+      if ( ! frGlobCache->numFrameFiles )
+	{
+	  fprintf( stderr, "error: no frame file files found\n");
+	  exit( 1 );
+	}
+
+      /* sieve out the requested data type */
+      memset( &sieve, 0, sizeof(FrCacheSieve) );
+      sieve.srcRegEx = NULL;
+      sieve.dscRegEx = NULL;
+      sieve.urlRegEx = NULL;
+      sieve.earliestTime = gpsStartTime.gpsSeconds;
+      sieve.latestTime = gpsEndTime.gpsSeconds;
+      LAL_CALL( LALFrCacheSieve( &status, &frInCache, frGlobCache, &sieve ), 
+		&status );
+      if( verbose ) fprintf(stdout,"num files after sieve: %d\n",frInCache->numFrameFiles);
+      LAL_CALL( LALDestroyFrCache( &status, &frGlobCache ), &status );
+    }
+  
   /* Loop over templates (or event id's) */
   
   numPoints = sampleRate * cohSegLength;
   bankTemp = bankHead;
   savedEvents.multiInspiralTable = NULL;
-  k = 0;   
+  k = 0; 
+
+  if( !globFrameData )
+    {
+      h1ChanNum        = -1;
+      h2ChanNum        = -1;
+      lChanNum         = -1;
+      geoChanNum       = -1;
+      virgoChanNum     = -1;
+      tamaChanNum      = -1;
+    }
 
   for( i=0; i<numTmplts; i++)
     {
@@ -260,41 +313,35 @@ int main( int argc, char *argv[] )
 		  if( !strcmp( caseIDChars[j],"H1" ) )
 		    {
 		      caseID[0] = 1;
-		      h1ChanNum++;
+		      if( !globFrameData ) h1ChanNum++;
 		    }
 		  else if( !strcmp( caseIDChars[j], "L1" ) )
 		    {
 		      caseID[1] = 1;
-		      lChanNum++;
+		      if( !globFrameData ) lChanNum++;
 		    }
 		  else if( !strcmp( caseIDChars[j], "V1" ) )
 		    {
 		      caseID[2] = 1;
-		      virgoChanNum++;
+		      if( !globFrameData ) virgoChanNum++;
 		    }
 		  else if( !strcmp( caseIDChars[j], "G1" ) )
 		    {
 	              caseID[3] = 1;
-		      geoChanNum++;
+		      if( !globFrameData ) geoChanNum++;
 		    }
 		  else if( !strcmp( caseIDChars[j], "T1" ) )
 		    {
 		      caseID[4] = 1;
-		      tamaChanNum++;
+		      if( !globFrameData ) tamaChanNum++;
 		    }
 		  else if( !strcmp( caseIDChars[j], "H2" ) )
 		    {
 		      caseID[5] = 1;
-		      h2ChanNum++;
+		      if( !globFrameData ) h2ChanNum++;
 		    }
 		}
 
-	      chanNumArray[0] = h1ChanNum;
-	      chanNumArray[1] = lChanNum;
-	      chanNumArray[2] = virgoChanNum;
-	      chanNumArray[3] = geoChanNum;
-	      chanNumArray[4] = tamaChanNum;
-	      chanNumArray[5] = h2ChanNum;
 
 	      /* Now get the number of detectors */
 	      l = 0;
@@ -307,7 +354,7 @@ int main( int argc, char *argv[] )
 		}
 	      numDetectors = l;
 
-	      /* Now check that the number of detectors matches the number of cache files provided */
+	      /* Now check that the number of detectors matches the number of frame files provided */
 
 	      l=0;
 	      if( H1file ) l++;
@@ -316,77 +363,31 @@ int main( int argc, char *argv[] )
 	      if( GEOfile ) l++;
 	      if( TAMAfile ) l++;
 	      if( VIRGOfile ) l++;
-	      if( (INT4)numDetectors != l )
+	      
+	      if( ! globFrameData )
 		{
-		  fprintf( stderr, "You have events for %d detectors, but specified frame files for %d detectors\n",numDetectors,l);
-		  if( (INT4)numDetectors > l )
+		  if( (INT4)numDetectors != l )
 		    {
-		      fprintf( stderr, "You must specify more frame files. Exiting...\n");
-		      exit(1);
-		    }
-		  else
-		    {
-		      if( verbose ) fprintf( stdout, "One or more of the frame files specified will not be used for this event since the number of detectors is less than the number of frame files you specified.\n");
+		      fprintf( stderr, "You have events for %d detectors, but specified frame files for %d detectors\n",numDetectors,l);
+		      if( (INT4)numDetectors > l )
+			{
+			  fprintf( stderr, "You must specify more frame files. Exiting...\n");
+			  exit(1);
+			}
+		      else
+			{
+			  if( verbose ) fprintf( stdout, "One or more of the frame files specified will not be used for this event since the number of detectors is less than the number of frame files you specified.\n");
+			}
 		    }
 		}
+
 	      l = 0;
 
 	      if( verbose ) fprintf(stdout,"numDetectors = %d\n", numDetectors);
 	      if( verbose ) fprintf(stdout,"caseID = %d %d %d %d %d %d (H1,L1,V1,G1,T1,H2)\n", caseID[0], caseID[1], caseID[2], caseID[3], caseID[4], caseID[5]);
 
-	      if(caseID[0])
-		{
-		  strcpy(namearray[0],H1filename);
-		  strcpy(namearray2[0],"HBeam.dat");
-		  LALSnprintf( namearray3[0], LALNameLength*sizeof(CHAR), "H1:LSC-AS_Q_CData_%d", h1ChanNum );
-		}
 
-              if(caseID[1])
-                {
-                  strcpy(namearray[1],Lfilename);
-                  strcpy(namearray2[1],"LBeam.dat");
-                  LALSnprintf( namearray3[1], LALNameLength*sizeof(CHAR), "L1:LSC-AS_Q_CData_%d", lChanNum );
-                }
-
-              if(caseID[2])
-                {
-		  /* for the moment, give virgo H2 data and beam pattern functions since */
-		  /* virgo data is not available */
-		  strcpy(namearray[2],VIRGOfilename);
-		  /*strcpy(namearray2[2],"VIRGOBeam.dat");*/ 
-		  strcpy(namearray2[2],"VIRGOBeam.dat");
-		  LALSnprintf(namearray3[2], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%d", virgoChanNum );
-		}
-
-	      if(caseID[3])
-		{
-		  strcpy(namearray[3],GEOfilename);
-		  strcpy(namearray2[3],"GEOBeam.dat");
-		  LALSnprintf(namearray3[3], LALNameLength*sizeof(CHAR), "G1:LSC-AS_Q_CData_%d", geoChanNum );
-		}
-
-              if(caseID[4])
-                { 
-                  strcpy(namearray[4],TAMAfilename);
-                  strcpy(namearray2[4],"TAMABeam.dat");
-                  LALSnprintf(namearray3[4], LALNameLength*sizeof(CHAR), "T1:LSC-AS_Q_CData_%d", tamaChanNum );
-                }
-
-              if(caseID[5])
-                {
-                  strcpy(namearray[5],H2filename);
-                  strcpy(namearray2[5],"HBeam.dat");
-                  LALSnprintf(namearray3[5], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%d", h2ChanNum );
-                }
-		  
-              if(verbose)  fprintf(stdout,"built namearrays\n");
-
-              if(verbose) {
-                  fprintf(stdout,"cache files: %s\n %s\n %s\n %s\n %s\n %s\n",namearray[0],namearray[1],namearray[2],namearray[3],namearray[4],namearray[5]);
-                  fprintf(stdout,"channels: %s\n %s\n %s\n %s\n %s\n %s\n",namearray3[0],namearray3[1],namearray3[2],namearray3[3],namearray3[4],namearray3[5]);
-	      }
-
-	      /* Now get the data for the involved detectors */
+	      /* Initialize the necessary structures */
 
 	      if( !(cohInspInitParams = (CoherentInspiralInitParams *) calloc(1,sizeof(CoherentInspiralInitParams)) ))
 		{
@@ -413,7 +414,7 @@ int main( int argc, char *argv[] )
 	      m2 = bankTemp2->mass2;
  
 	      cohInspFilterInput->tmplt = (InspiralTemplate *)
-		LALCalloc(1,sizeof(InspiralTemplate) );
+		 LALCalloc(1,sizeof(InspiralTemplate) );
 	      cohInspFilterInput->tmplt->mass1 = m1;
 	      cohInspFilterInput->tmplt->mass2 = m2;
 	      cohInspFilterInput->tmplt->totalMass = m1 + m2;
@@ -450,6 +451,336 @@ int main( int argc, char *argv[] )
 		{
 		  cohInspFilterParams->detectorVec->detector[numDetectors-1] = lalCachedDetectors[0];
 		}
+
+
+	      /* Get the data that corresponds to this event from the glob cache */
+              /* or from the specified frame files. */
+              /* First, the file names and channel names must be set correctly */
+
+	      if( globFrameData )
+		{
+		  if( caseID[0] )
+		    {
+		      memset( &tempSieve, 0, sizeof(FrCacheSieve) );
+		      /*memset( &tempCache, 0, sizeof(FrCache) );*/
+		      tempSieve.srcRegEx = "H1";
+		      tempSieve.dscRegEx = "INSPIRAL";
+		      tempSieve.urlRegEx = NULL;
+		      tempSieve.earliestTime = bankTemp2->end_time.gpsSeconds;
+		      tempSieve.latestTime = bankTemp2->end_time.gpsSeconds + 1;
+		      LAL_CALL( LALFrCacheSieve( &status, &tempCache, 
+				       frInCache, &tempSieve ), &status );
+		      if( tempCache->numFrameFiles != 1 )
+			{
+			  fprintf(stderr,"CacheSieve should only have returned 1 frame file. Exiting..\n");
+			  goto cleanexit;
+			}
+
+		      /* Need to strip the file name out of the url */
+		      char *tempName = NULL;
+		      char tempName2[256];
+		      tempName = strtok(tempCache->frameFiles->url,"//");
+		      tempName = strtok(NULL,"/");
+		      while( tempName != NULL)
+			{
+			  strcpy(tempName2,tempName);
+			  tempName = strtok(NULL,"/");
+			}
+		      free(tempName);
+		      if( !strcmp( tempName2, namearray[0] ) )
+			{
+			  /* if this file has been used, increment the chan # */
+			  h1ChanNum++;
+			}
+		      else
+			{
+			  h1ChanNum = 0;
+			  strcpy( namearray[0], tempName2 );
+			}
+		      free(tempName2);
+		      strcpy(namearray2[0],"HBeam.dat");
+		      LALSnprintf( namearray3[0], LALNameLength*sizeof(CHAR), "H1:LSC-AS_Q_CData_%d", h1ChanNum );
+		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
+		      tempCache = NULL;
+		    }
+
+		  if( caseID[1] )
+		    {
+		      memset( &tempSieve, 0, sizeof(FrCacheSieve) );
+		      tempSieve.srcRegEx = "L1";
+		      tempSieve.dscRegEx = "INSPIRAL";
+		      tempSieve.urlRegEx = NULL;
+		      tempSieve.earliestTime = bankTemp2->end_time.gpsSeconds;
+		      tempSieve.latestTime = bankTemp2->end_time.gpsSeconds + 1;
+		      LAL_CALL( LALFrCacheSieve( &status, &tempCache, 
+				       frInCache, &tempSieve ), &status );
+		      if( tempCache->numFrameFiles != 1 )
+			{
+			  fprintf(stderr,"CacheSieve should only have returned 1 frame file. Exiting..\n");
+			  goto cleanexit;
+			}
+
+		      /* Need to strip the file name out of the url */
+		      char *tempName = NULL;
+		      char *tempName2 = NULL;
+		      tempName = strtok(tempCache->frameFiles->url,"//");
+		      tempName = strtok(NULL,"/");
+		      while( tempName != NULL)
+			{
+			  strcpy(tempName2,tempName);
+			  tempName = strtok(NULL,"/");
+			}
+		      free(tempName);
+		      if( !strcmp( tempName2, namearray[1] ) )
+			{
+			  /* if this file has been used, increment the chan # */
+			  lChanNum++;
+			}
+		      else
+			{
+			  lChanNum = 0;
+			  strcpy( namearray[1], tempName2 );
+			}
+		      free(tempName2);
+		      strcpy(namearray2[1],"LBeam.dat");
+		      LALSnprintf( namearray3[1], LALNameLength*sizeof(CHAR), "L1:LSC-AS_Q_CData_%d", lChanNum );
+		    }
+
+		  if( caseID[2] )
+		    {
+		      memset( &tempSieve, 0, sizeof(FrCacheSieve) );
+		      tempSieve.srcRegEx = "V1";
+		      tempSieve.dscRegEx = "INSPIRAL";
+		      tempSieve.urlRegEx = NULL;
+		      tempSieve.earliestTime = bankTemp2->end_time.gpsSeconds;
+		      tempSieve.latestTime = bankTemp2->end_time.gpsSeconds + 1;
+		      LAL_CALL( LALFrCacheSieve( &status, &tempCache, 
+				       frInCache, &tempSieve ), &status );
+		      if( tempCache->numFrameFiles != 1 )
+			{
+			  fprintf(stderr,"CacheSieve should only have returned 1 frame file. Exiting..\n");
+			  goto cleanexit;
+			}
+		      /* Need to strip the file name out of the url */
+		      char *tempName = NULL;
+		      char *tempName2 = NULL;
+		      tempName = strtok(tempCache->frameFiles->url,"//");
+		      tempName = strtok(NULL,"/");
+		      while( tempName != NULL)
+			{
+			  strcpy(tempName2,tempName);
+			  tempName = strtok(NULL,"/");
+			}
+		      free(tempName);
+		      if( !strcmp( tempName2, namearray[2] ) )
+			{
+			  /* if this file has been used, increment the chan # */
+			  virgoChanNum++;
+			}
+		      else
+			{
+			  virgoChanNum = 0;
+			  strcpy( namearray[2], tempName2 );
+			}
+		      free(tempName2);
+		      strcpy(namearray2[2],"VIRGOBeam.dat");
+		      LALSnprintf( namearray3[2], LALNameLength*sizeof(CHAR), "V1:LSC-AS_Q_CData_%d", virgoChanNum );
+		    }
+
+		  if( caseID[3] )
+		    {
+		      memset( &tempSieve, 0, sizeof(FrCacheSieve) );
+		      tempSieve.srcRegEx = "G1";
+		      tempSieve.dscRegEx = "INSPIRAL";
+		      tempSieve.urlRegEx = NULL;
+		      tempSieve.earliestTime = bankTemp2->end_time.gpsSeconds;
+		      tempSieve.latestTime = bankTemp2->end_time.gpsSeconds + 1;
+		      LAL_CALL( LALFrCacheSieve( &status, &tempCache, 
+				       frInCache, &tempSieve ), &status );
+		      if( tempCache->numFrameFiles != 1 )
+			{
+			  fprintf(stderr,"CacheSieve should only have returned 1 frame file. Exiting..\n");
+			  goto cleanexit;
+			}
+		      /* Need to strip the file name out of the url */
+		      char *tempName = NULL;
+		      char *tempName2 = NULL;
+		      tempName = strtok(tempCache->frameFiles->url,"//");
+		      tempName = strtok(NULL,"/");
+		      while( tempName != NULL)
+			{
+			  strcpy(tempName2,tempName);
+			  tempName = strtok(NULL,"/");
+			}
+		      free(tempName);
+		      if( !strcmp(tempName2, namearray[3]) )
+			{
+			  /* if this file has been used, increment the chan # */
+			  geoChanNum++;
+			}
+		      else
+			{
+			  geoChanNum = 0;
+			  strcpy( namearray[3], tempName2 );
+			}
+		      free(tempName2);
+		      strcpy(namearray2[3],"GEOBeam.dat");
+		      LALSnprintf( namearray3[3], LALNameLength*sizeof(CHAR), "G1:LSC-AS_Q_CData_%d", geoChanNum );
+		    }
+
+		  if( caseID[4] )
+		    {
+		      memset( &tempSieve, 0, sizeof(FrCacheSieve) );
+		      tempSieve.srcRegEx = "T1";
+		      tempSieve.dscRegEx = "INSPIRAL";
+		      tempSieve.urlRegEx = NULL;
+		      tempSieve.earliestTime = bankTemp2->end_time.gpsSeconds;
+		      tempSieve.latestTime = bankTemp2->end_time.gpsSeconds + 1;
+		      LAL_CALL( LALFrCacheSieve( &status, &tempCache, 
+				       frInCache, &tempSieve ), &status );
+		      if( tempCache->numFrameFiles != 1 )
+			{
+			  fprintf(stderr,"CacheSieve should only have returned 1 frame file. Exiting..\n");
+			  goto cleanexit;
+			}
+		      /* Need to strip the file name out of the url */
+		      char *tempName = NULL;
+		      char *tempName2 = NULL;
+		      tempName = strtok(tempCache->frameFiles->url,"//");
+		      tempName = strtok(NULL,"/");
+		      while( tempName != NULL)
+			{
+			  strcpy(tempName2,tempName);
+			  tempName = strtok(NULL,"/");
+			}
+		      free(tempName);
+		      if( !strcmp(tempName2, namearray[4]) )
+			{
+			  /* if this file has been used, increment the chan # */
+			  tamaChanNum++;
+			}
+		      else
+			{
+			  tamaChanNum = 0;
+			  strcpy( namearray[4], tempName2 );
+			}
+		      free(tempName2);
+		      strcpy(namearray2[4],"TAMABeam.dat");
+		      LALSnprintf( namearray3[4], LALNameLength*sizeof(CHAR), "T1:LSC-AS_Q_CData_%d", tamaChanNum );
+		    }
+
+		  if( caseID[5] )
+		    {
+		      memset( &tempSieve, 0, sizeof(FrCacheSieve) );
+		      tempSieve.srcRegEx = "H2";
+		      tempSieve.dscRegEx = "INSPIRAL";
+		      tempSieve.urlRegEx = NULL;
+		      tempSieve.earliestTime = bankTemp2->end_time.gpsSeconds;
+		      tempSieve.latestTime = bankTemp2->end_time.gpsSeconds + 1;
+		      LAL_CALL( LALFrCacheSieve( &status, &tempCache, 
+				       frInCache, &tempSieve ), &status );
+		      if( tempCache->numFrameFiles != 1 )
+			{
+			  fprintf(stderr,"CacheSieve should only have returned 1 frame file. Exiting..\n");
+			  goto cleanexit;
+			}
+		      /* Need to strip the file name out of the url */
+		      char *tempName = NULL;
+		      char tempName2[256];
+		      tempName = strtok(tempCache->frameFiles->url,"//");
+		      tempName = strtok(NULL,"/");
+		      while( tempName != NULL)
+			{
+			  strcpy(tempName2,tempName);
+			  tempName = strtok(NULL,"/");
+			}
+		      free(tempName);
+		      if( !strcmp(tempName2, namearray[5]) )
+			{
+			  /* if this file has been used, increment the chan # */
+			  h2ChanNum++;
+			}
+		      else
+			{
+			  h2ChanNum = 0;
+			  strcpy( namearray[5], tempName2 );
+			}
+		      free(tempName2);
+		      strcpy(namearray2[5],"HBeam.dat");
+		      LALSnprintf( namearray3[5], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%d", h2ChanNum );
+		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
+		      tempCache = NULL;
+		    }
+
+		  chanNumArray[0] = h1ChanNum;
+		  chanNumArray[1] = lChanNum;
+	          chanNumArray[2] = virgoChanNum;
+	          chanNumArray[3] = geoChanNum;
+	          chanNumArray[4] = tamaChanNum;
+	          chanNumArray[5] = h2ChanNum;
+
+		}
+	      else
+		{
+		  /* If we arent globbing, names need to be set differently*/
+
+		  if(caseID[0])
+		    {
+		      strcpy(namearray[0],H1filename);
+		      strcpy(namearray2[0],"HBeam.dat");
+		      LALSnprintf( namearray3[0], LALNameLength*sizeof(CHAR), "H1:LSC-AS_Q_CData_%d", h1ChanNum );
+		    }
+
+                  if(caseID[1])
+                    {
+                      strcpy(namearray[1],Lfilename);
+                      strcpy(namearray2[1],"LBeam.dat");
+                      LALSnprintf( namearray3[1], LALNameLength*sizeof(CHAR), "L1:LSC-AS_Q_CData_%d", lChanNum );
+                    }
+
+                  if(caseID[2])
+	            {
+		      strcpy(namearray[2],VIRGOfilename);
+		      strcpy(namearray2[2],"VIRGOBeam.dat"); 
+		      LALSnprintf(namearray3[2], LALNameLength*sizeof(CHAR), "V1:LSC-AS_Q_CData_%d", virgoChanNum );
+		    }
+
+	          if(caseID[3])
+		    {
+		      strcpy(namearray[3],GEOfilename);
+		      strcpy(namearray2[3],"GEOBeam.dat");
+		      LALSnprintf(namearray3[3], LALNameLength*sizeof(CHAR), "G1:LSC-AS_Q_CData_%d", geoChanNum );
+		    }
+
+                  if(caseID[4])
+                    { 
+                      strcpy(namearray[4],TAMAfilename);
+                      strcpy(namearray2[4],"TAMABeam.dat");
+                      LALSnprintf(namearray3[4], LALNameLength*sizeof(CHAR), "T1:LSC-AS_Q_CData_%d", tamaChanNum );
+                    }
+
+                  if(caseID[5])
+                    {
+                      strcpy(namearray[5],H2filename);
+                      strcpy(namearray2[5],"HBeam.dat");
+                      LALSnprintf(namearray3[5], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%d", h2ChanNum );
+		    }
+
+		  chanNumArray[0] = h1ChanNum;
+		  chanNumArray[1] = lChanNum;
+	          chanNumArray[2] = virgoChanNum;
+	          chanNumArray[3] = geoChanNum;
+	          chanNumArray[4] = tamaChanNum;
+	          chanNumArray[5] = h2ChanNum;
+
+		}
+
+	      if(verbose) fprintf(stdout,"built namearrays\n");
+
+              if(verbose) {
+                  fprintf(stdout,"frame files: %s\n %s\n %s\n %s\n %s\n %s\n",namearray[0],namearray[1],namearray[2],namearray[3],namearray[4],namearray[5]);
+                  fprintf(stdout,"channels: %s\n %s\n %s\n %s\n %s\n %s\n",namearray3[0],namearray3[1],namearray3[2],namearray3[3],namearray3[4],namearray3[5]);
+		  }
 
               /* get beam pattern coefficients if necessary */
 	      if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 )
@@ -837,8 +1168,11 @@ int main( int argc, char *argv[] )
 	      for(j=0;j<6;j++)
 		{
 		  caseID[j] = 0;
-		  chanNumArray[j] = -1; 
-		  strcpy( namearray[j], "0" );
+		  if( !globFrameData )
+		    {
+		      chanNumArray[j] = -1; 
+		      strcpy( namearray[j], "0" );
+		    }
 		  strcpy( namearray2[j], "0" );
 		  strcpy( namearray3[j], "0" );
 		}
@@ -859,19 +1193,29 @@ int main( int argc, char *argv[] )
       k++;    
     }
 
-  bankFileNameLength = strlen(bankFileName);
-  memcpy(tempStr, bankFileName, bankFileNameLength - 4);
+  /* set the name of the output file(s) (without extension) */
+
+  if ( userTag )
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT_%s-%d-%d", ifoTag, userTag, 
+        gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ); 
+  }
+  else
+  {
+    LALSnprintf( fileName, FILENAME_MAX, "%s-COHERENT-%d-%d", ifoTag, 
+        gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds ); 
+  }
 
 
   if( cohSNROut )
     {
       if ( outputPath[0] )
 	{
-	  LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s-COHERENT.gwf", outputPath, tempStr);
+	  LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s/%s.gwf", outputPath, fileName);
 	}
       else 
 	{
-	  LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s-COHERENT.gwf", tempStr );
+	  LALSnprintf( framename, FILENAME_MAX * sizeof(CHAR), "%s.gwf", fileName );
 	}
 
       if ( verbose ) fprintf( stdout, "writing frame data to %s....", framename );
@@ -887,11 +1231,11 @@ int main( int argc, char *argv[] )
       memset( &results, 0, sizeof(LIGOLwXMLStream) );
       if ( outputPath[0] )
 	{
-	  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s-COHERENT.xml", outputPath, tempStr);
+	  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s/%s.xml", outputPath, fileName);
 	}
       else 
 	{
-	  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s-COHERENT.xml", tempStr );
+	  LALSnprintf( xmlname, FILENAME_MAX * sizeof(CHAR), "%s.xml", fileName );
 	}
       if ( verbose ) fprintf( stdout, "writing XML data to %s...\n", xmlname );
       LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, xmlname), &status );
@@ -949,6 +1293,9 @@ int main( int argc, char *argv[] )
       LALFree( tempTmplt );
       tempTmplt = NULL;
     }
+
+  /* free the frame cache */
+  if( frInCache ) LAL_CALL( LALDestroyFrCache( &status, &frInCache ), &status );
 
   if ( verbose ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
@@ -1041,12 +1388,18 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --version                    print version information and exit\n"\
 "  --debug-level LEVEL          set the LAL debug level to LEVEL\n"\
 "  --low-frequency-cutoff F     low f cutoff of previously filtered data\n"\
+"  --ifo-tag STRING             set STRING to whatever the ifo-tag of \n"\
+                                "the bank file(needed for file naming) \n"\
+"  --user-tag STRING            set STRING to tag the file names\n"\
 "\n"
 #define USAGE2 \
 "  --bank-file FILE             read template bank parameters from FILE\n"\
 "  --sample-rate N              set data sample rate to N\n"\
-"  --cohsnr-threshold RHO          set signal-to-noise threshold to RHO\n"\
+"  --cohsnr-threshold RHO       set signal-to-noise threshold to RHO\n"\
 "  --maximize-over-chirp        do clustering\n"\
+"  --glob-frame-data            glob files in the pwd to obtain frame data\n"\
+"  --gps-start-time SEC         GPS second of data start time (needed if globbing)\n"\
+"  --gps-end-time SEC           GPS second of data end time (needed if globbing)\n"\
 "\n"
 #define USAGE3 \
 "  --write-events               write events\n"\
@@ -1068,13 +1421,18 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"help",                     no_argument,       0,                 'h'},
      {"version",                  no_argument,       0,                 'v'},
      {"debug-level",              required_argument, 0,                 'd'},
+     {"ifo-tag",                  required_argument, 0,                 'I'},
+     {"user-tag",                 required_argument, 0,                 'B'},
      {"low-frequency-cutoff",     required_argument, 0,                 'f'},
      {"bank-file",                required_argument, 0,                 'u'},
      {"sample-rate",              required_argument, 0,                 'r'},
      {"cohsnr-threshold",         required_argument, 0,                 'p'},
      {"maximize-over-chirp",      no_argument,       &maximizeOverChirp, 1 },
+     {"glob-frame-data",          no_argument,       &globFrameData,     1 },
      {"write-events",             no_argument,       &eventsOut,         1 },
      {"write-cohsnr",             no_argument,       &cohSNROut,         1 },
+     {"gps-start-time",           required_argument, 0,                 'a'},
+     {"gps-end-time",             required_argument, 0,                 'b'},
      {"output-path",              required_argument, 0,                 'P'},
      {"H1-framefile",             required_argument, 0,                 'A'},
      {"H2-framefile",             required_argument, 0,                 'Z'},
@@ -1092,9 +1450,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {
        /* getopt_long stores long options here */
        int option_index = 0;
+       size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-	   "A:G:L:P:T:V:Z:d:f:h:p:r:u:v:",
+	   "A:B:a:b:G:I:L:P:T:V:Z:d:f:h:p:r:u:v:",
 	   long_options, &option_index );
 
        if ( c == -1 )
@@ -1153,6 +1512,22 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	   ADD_PROCESS_PARAM( "string", "%s", H2filename );
 	   break;
 
+         case 'B':
+           /* create storaged for the ifo-tag */
+           optarg_len = strlen( optarg ) + 1;
+           userTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+           memcpy( userTag, optarg, optarg_len );
+           ADD_PROCESS_PARAM( "string", "%s", optarg );
+           break;
+
+         case 'I':
+           /* create storaged for the ifo-tag */
+           optarg_len = strlen( optarg ) + 1;
+           ifoTag = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
+           memcpy( ifoTag, optarg, optarg_len );
+           ADD_PROCESS_PARAM( "string", "%s", optarg );
+           break;
+
 	 case 'P':
 	   memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
 	   LALSnprintf( outputPath, FILENAME_MAX * sizeof(CHAR),"%s", optarg );
@@ -1196,13 +1571,65 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	   break;
 
 	 case 'v':
-         /* print version information and exit */
+	   /* print version information and exit */
            fprintf( stdout, "LIGO/LSC Multi-Detecter Search Code\n" 
                  "Bose/Seader <sukanta@wsu.edu> <sseader@wsu.edu>\n"
                  "CVS Version: " CVS_ID_STRING "\n"
 		 "CVS Tag: " CVS_NAME_STRING "\n" );
 	   exit( 0 );
 	   break;
+
+	 case 'a':
+	   {
+	     long int gstartt = atol( optarg );
+	     if ( gstartt < 441417609 )
+	       {
+               fprintf( stderr, "invalid argument to --%s:\n"
+                   "GPS start time is prior to " 
+                   "Jan 01, 1994  00:00:00 UTC:\n"
+                   "(%ld specified)\n",
+                   long_options[option_index].name, gstartt );
+	       exit( 1 );
+	       }
+             if ( gstartt > 999999999 )
+             {
+               fprintf( stderr, "invalid argument to --%s:\n"
+                   "GPS start time is after " 
+                   "Sep 14, 2011  01:46:26 UTC:\n"
+                   "(%ld specified)\n", 
+                   long_options[option_index].name, gstartt );
+               exit( 1 );
+             }
+	     gpsStartTimeNS += (INT8) gstartt * 1000000000LL;
+             ADD_PROCESS_PARAM( "int", "%ld", gstartt );
+           }
+           break;
+
+         case 'b':
+           {
+             long int gendt = atol( optarg );
+             if ( gendt > 999999999 )
+             {
+               fprintf( stderr, "invalid argument to --%s:\n"
+                   "GPS end time is after " 
+                   "Sep 14, 2011  01:46:26 UTC:\n"
+                   "(%ld specified)\n", 
+                   long_options[option_index].name, gendt );
+               exit( 1 );
+             }
+             else if ( gendt < 441417609 )
+             {
+               fprintf( stderr, "invalid argument to --%s:\n"
+                   "GPS end time is prior to " 
+                   "Jan 01, 1994  00:00:00 UTC:\n"
+                   "(%ld specified)\n", 
+                   long_options[option_index].name, gendt );
+               exit( 1 );
+             }        
+	     gpsEndTimeNS += (INT8) gendt * 1000000000LL;
+             ADD_PROCESS_PARAM( "int", "%ld", gendt );
+           }
+           break;
 
 	 case '?':
 	   exit( 1 );
@@ -1224,6 +1651,80 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	   fprintf ( stderr, "%s\n", argv[optind++] );
 	 }
        exit( 1 );      
+     }
+
+   if ( globFrameData && (H1file || H2file || Lfile || GEOfile || VIRGOfile || TAMAfile) )
+     {
+       fprintf( stderr, "Specify frame files or to glob for frames - not both\n" );
+       exit( 1 );
+     }
+
+   /* check validity of input data time if globbing */
+   /* the times should be that spanned by the bank(trigger) file */
+   if ( ! gpsStartTimeNS )
+     {
+       fprintf( stderr, "--gps-start-time must be specified\n" );
+       exit( 1 );
+     }
+   LAL_CALL( LALINT8toGPS( &status, &gpsStartTime, &gpsStartTimeNS ),
+	     &status );
+   if ( ! gpsEndTimeNS )
+     {
+       fprintf( stderr, "--gps-end-time must be specified\n" );
+       exit( 1 );
+     }
+   LAL_CALL( LALINT8toGPS( &status, &gpsEndTime, &gpsEndTimeNS ), 
+	     &status );
+   if ( gpsEndTimeNS <= gpsStartTimeNS )
+     {
+       fprintf( stderr, "invalid gps time range: "
+           "start time: %d, end time %d\n",
+           gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds );
+       exit( 1 );
+     }
+   
+   /* check sample rate has been given */
+   if ( sampleRate < 0 )
+     {
+       fprintf( stderr, "--sample-rate must be specified\n" );
+       exit( 1 );
+     }
+
+   if ( ! bankFileName )
+     {
+       fprintf( stderr, "--bank-file must be specified\n" );
+       exit( 1 );
+     }
+
+   if ( fLow < 0 )
+     {
+       fprintf( stderr, "--low-frequency-cutoff must be specified\n" );
+       exit( 1 );
+     }
+
+   if ( cohSNRThresh < 0 )
+     {
+       fprintf( stderr, "--cohsnr-threshold must be specified\n" );
+       exit( 1 );
+     }
+
+   if( !ifoTag )
+     {
+       fprintf(stderr, "--ifo-tag must be specified for file naming\n" );
+       exit( 1 );
+     }
+
+   /* record the glob frame data option in the process params */
+   if ( globFrameData )
+     {
+       this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+	 calloc( 1, sizeof(ProcessParamsTable) );
+       LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, 
+         "%s", PROGRAM_NAME );
+       LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, 
+         "--glob-frame-data" );
+       LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+       LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
      }
   
    return 0;
