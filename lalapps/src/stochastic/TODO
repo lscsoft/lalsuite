@@ -35,6 +35,10 @@ stopp.c/stopp_bayes.c:
 
 * modularise
 
+* output bayesian pdf into a separate xml table
+
+* add option to only perform the post processing, not combine
+
 stochastic_pipe.in/stochastic_bayes.in:
 
 * unify stochastic_pipe.in and stochastic_bayes.in into a single script
