@@ -272,6 +272,11 @@ int main( int argc, char *argv[] )
 		&status );
       if( verbose ) fprintf(stdout,"num files after sieve: %d\n",frInCache->numFrameFiles);
       LAL_CALL( LALDestroyFrCache( &status, &frGlobCache ), &status );
+      /* open the input data frame stream from the frame cache */
+      /*LAL_CALL( LALFrCacheOpen( &status, &frStream, frInCache ), &status );*/
+
+      /* set the mode of the frame stream to fail on gaps or time errors */
+      /*frStream->mode = LAL_FR_DEFAULT_MODE;*/
     }
   
   /* Loop over templates (or event id's) */
@@ -486,7 +491,7 @@ int main( int argc, char *argv[] )
 			  strcpy(tempName2,tempName);
 			  tempName = strtok(NULL,"/");
 			}
-		      free(tempName);
+		      tempName = NULL;
 		      if( !strcmp( tempName2, namearray[0] ) )
 			{
 			  /* if this file has been used, increment the chan # */
@@ -497,7 +502,6 @@ int main( int argc, char *argv[] )
 			  h1ChanNum = 0;
 			  strcpy( namearray[0], tempName2 );
 			}
-		      free(tempName2);
 		      strcpy(namearray2[0],"HBeam.dat");
 		      LALSnprintf( namearray3[0], LALNameLength*sizeof(CHAR), "H1:LSC-AS_Q_CData_%d", h1ChanNum );
 		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
@@ -530,7 +534,7 @@ int main( int argc, char *argv[] )
 			  strcpy(tempName2,tempName);
 			  tempName = strtok(NULL,"/");
 			}
-		      free(tempName);
+		      tempName = NULL;
 		      if( !strcmp( tempName2, namearray[1] ) )
 			{
 			  /* if this file has been used, increment the chan # */
@@ -541,7 +545,6 @@ int main( int argc, char *argv[] )
 			  lChanNum = 0;
 			  strcpy( namearray[1], tempName2 );
 			}
-		      free(tempName2);
 		      strcpy(namearray2[1],"LBeam.dat");
 		      LALSnprintf( namearray3[1], LALNameLength*sizeof(CHAR), "L1:LSC-AS_Q_CData_%d", lChanNum );
 		    }
@@ -571,7 +574,7 @@ int main( int argc, char *argv[] )
 			  strcpy(tempName2,tempName);
 			  tempName = strtok(NULL,"/");
 			}
-		      free(tempName);
+		      tempName = NULL;
 		      if( !strcmp( tempName2, namearray[2] ) )
 			{
 			  /* if this file has been used, increment the chan # */
@@ -582,7 +585,6 @@ int main( int argc, char *argv[] )
 			  virgoChanNum = 0;
 			  strcpy( namearray[2], tempName2 );
 			}
-		      free(tempName2);
 		      strcpy(namearray2[2],"VIRGOBeam.dat");
 		      LALSnprintf( namearray3[2], LALNameLength*sizeof(CHAR), "V1:LSC-AS_Q_CData_%d", virgoChanNum );
 		    }
@@ -612,7 +614,7 @@ int main( int argc, char *argv[] )
 			  strcpy(tempName2,tempName);
 			  tempName = strtok(NULL,"/");
 			}
-		      free(tempName);
+		      tempName = NULL;
 		      if( !strcmp(tempName2, namearray[3]) )
 			{
 			  /* if this file has been used, increment the chan # */
@@ -623,7 +625,6 @@ int main( int argc, char *argv[] )
 			  geoChanNum = 0;
 			  strcpy( namearray[3], tempName2 );
 			}
-		      free(tempName2);
 		      strcpy(namearray2[3],"GEOBeam.dat");
 		      LALSnprintf( namearray3[3], LALNameLength*sizeof(CHAR), "G1:LSC-AS_Q_CData_%d", geoChanNum );
 		    }
@@ -653,7 +654,7 @@ int main( int argc, char *argv[] )
 			  strcpy(tempName2,tempName);
 			  tempName = strtok(NULL,"/");
 			}
-		      free(tempName);
+		      tempName = NULL;
 		      if( !strcmp(tempName2, namearray[4]) )
 			{
 			  /* if this file has been used, increment the chan # */
@@ -664,7 +665,6 @@ int main( int argc, char *argv[] )
 			  tamaChanNum = 0;
 			  strcpy( namearray[4], tempName2 );
 			}
-		      free(tempName2);
 		      strcpy(namearray2[4],"TAMABeam.dat");
 		      LALSnprintf( namearray3[4], LALNameLength*sizeof(CHAR), "T1:LSC-AS_Q_CData_%d", tamaChanNum );
 		    }
@@ -694,7 +694,7 @@ int main( int argc, char *argv[] )
 			  strcpy(tempName2,tempName);
 			  tempName = strtok(NULL,"/");
 			}
-		      free(tempName);
+		      tempName = NULL;
 		      if( !strcmp(tempName2, namearray[5]) )
 			{
 			  /* if this file has been used, increment the chan # */
@@ -705,7 +705,6 @@ int main( int argc, char *argv[] )
 			  h2ChanNum = 0;
 			  strcpy( namearray[5], tempName2 );
 			}
-		      free(tempName2);
 		      strcpy(namearray2[5],"HBeam.dat");
 		      LALSnprintf( namearray3[5], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%d", h2ChanNum );
 		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
@@ -1150,8 +1149,8 @@ int main( int argc, char *argv[] )
 	      free( cohInspInitParams );
 
 	      /* Destroy params structure for coherent filter code */
-	      LAL_CALL( LALCoherentInspiralFilterParamsFinalize (&status, 
-								   &cohInspFilterParams), &status );
+	      LAL_CALL( LALCoherentInspiralFilterParamsFinalize (&status,
+				   &cohInspFilterParams), &status );
               TestStatus (&status, "0", 1);
 	      ClearStatus (&status);
 
