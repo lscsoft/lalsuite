@@ -37,8 +37,6 @@ None
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
 
-#include <lal/filters-H1-S3.h>
-
 #define MAXALPHAS 10000
 
 #define N_FIR_LP_ALPHAS 8192
