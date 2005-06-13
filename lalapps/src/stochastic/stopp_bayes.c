@@ -115,6 +115,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 zeta;
   REAL8 upperlimit;
 
+  /* pdf */
+  REAL8 exponent;
+  REAL8 pdf[100];
+  REAL8 min_omega;
+  REAL8 max_omega;
+  REAL8 omega_i;
+
   /* program option variables */
   CHAR *outputFileName = NULL;
 
@@ -128,6 +135,7 @@ INT4 main(INT4 argc, CHAR *argv[])
 
   /* text output file */
   FILE *out;
+  FILE *pdf_out;
 
   /* parse command line arguments */
   while (1)
@@ -287,6 +295,29 @@ INT4 main(INT4 argc, CHAR *argv[])
       stopp_erfcinv((1 - confidence) * gsl_sf_erfc(-zeta)));
   fprintf(stdout, "upperlimit = %e\n", upperlimit);
 
+  /* calculate pdf */
+  min_omega = 0;
+  max_omega = yOpt + (3 * sigmaOpt);
+  for (i = 0; i < 100; i++)
+  {
+    omega_i = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
+    exponent = ((omega_i - yOpt) / sigmaOpt) * ((omega_i - yOpt) / sigmaOpt);
+    pdf[i] = exp(-0.5 * exponent);
+  }
+
+  /* save out pdf */
+  if ((pdf_out = fopen("pdf.dat", "w")) == NULL)
+  {
+    fprintf(stderr, "Can't open file for pdf output...\n");
+    exit(1);
+  }
+  for (i = 0; i < 100; i++)
+  {
+    omega_i = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
+    fprintf(pdf_out, "%e %e\n", omega_i, pdf[i]);
+  }
+  fclose(pdf_out);
+  
   /* output as text file */
   if (text_flag)
   {
