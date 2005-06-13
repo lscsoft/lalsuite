@@ -39,6 +39,8 @@ stopp.c/stopp_bayes.c:
 
 * add option to only perform the post processing, not combine
 
+* add process and process params tables
+
 stochastic_pipe.in/stochastic_bayes.in:
 
 * unify stochastic_pipe.in and stochastic_bayes.in into a single script
