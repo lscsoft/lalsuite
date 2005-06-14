@@ -1,11 +1,14 @@
 #include <math.h>
 #include <string.h>
+#include <lal/FrequencySeries.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
-#include <lal/Units.h>
+#include <lal/Sequence.h>
 #include <lal/TimeFreqFFT.h>
+#include <lal/Units.h>
 #include <lal/Window.h>
+
 
 /*
  *
@@ -15,15 +18,16 @@
  */
 int XLALREAL4ModifiedPeriodogram(
     REAL4FrequencySeries        *periodogram,
-    REAL4TimeSeries             *tseries,
-    REAL4Window                 *window,
-    REAL4FFTPlan                *plan
+    const REAL4TimeSeries       *tseries,
+    const REAL4Window           *window,
+    const REAL4FFTPlan          *plan
     )
 {
   static const char *func = "XLALREAL4ModifiedPeriodogram";
-  REAL4Vector *work;
+  REAL4Sequence *work;
   REAL4 normfac;
   UINT4 k;
+  int result;
 
   if ( ! periodogram || ! tseries || ! plan )
       XLAL_ERROR( func, XLAL_EFAULT );
@@ -48,49 +52,35 @@ int XLALREAL4ModifiedPeriodogram(
   {
     UINT4 j;
 
-    work = XLALCreateREAL4Vector( tseries->data->length );
+    /* make a working copy */
+    work = XLALCutREAL4Sequence( tseries->data, 0, tseries->data->length );
     if ( ! work )
       XLAL_ERROR( func, XLAL_EFUNC );
 
     /* apply windowing to data */
     for ( j = 0; j < tseries->data->length; ++j )
-      work->data[j] = tseries->data->data[j] * window->data->data[j];
+      work->data[j] *= window->data->data[j];
   }
-  else /* otherwise just set work to the timeseries data */
-  {
+  else
+    /* point to original data */
     work = tseries->data;
-  }
 
-  /* compute the power spectrum of the windowed timeseries */
+  /* compute the power spectrum of the (windowed) timeseries */
   /* CHECKME: are DC and Nyquist right? */
-  if ( XLALREAL4PowerSpectrum( periodogram->data, work, plan ) == XLAL_FAILURE )
-  {
-    if ( window ) /* need to free the workspace */
-    {
-      int saveErrno = xlalErrno;
-      xlalErrno = 0;
-      XLALDestroyREAL4Vector( work );
-      xlalErrno = saveErrno;
-    }
-    XLAL_ERROR( func, XLAL_EFUNC );
-  }
-
+  result = XLALREAL4PowerSpectrum( periodogram->data, work, plan );
   /* destroy the workspace if it was created */
   if ( window )
-  {
-    XLALDestroyREAL4Vector( work );
-    if ( xlalErrno )
-      XLAL_ERROR( func, XLAL_EFUNC );
-  }
+    XLALDestroyREAL4Sequence( work );
+  /* check for errors from the PowerSpectrum call */
+  if ( result == XLAL_FAILURE )
+    XLAL_ERROR( func, XLAL_EFUNC );
 
   /* normalize power spectrum to give correct units */
   /* CHECKME: is this the right factor? */
-  normfac = tseries->deltaT;
   if ( window )
-    normfac /= window->sumofsquares;
+    normfac = tseries->deltaT / window->sumofsquares;
   else
-    normfac /= tseries->data->length;
-
+    normfac = tseries->deltaT / tseries->data->length;
   for ( k = 0; k < periodogram->data->length; ++k )
     periodogram->data->data[k] *= normfac;
 
@@ -102,8 +92,8 @@ int XLALREAL4ModifiedPeriodogram(
   /* compute units */
   if ( ! XLALUnitSquare( &periodogram->sampleUnits, &tseries->sampleUnits ) )
     XLAL_ERROR( func, XLAL_EFUNC );
-  if ( !  XLALUnitMultiply( &periodogram->sampleUnits,
-        &periodogram->sampleUnits, &lalSecondUnit ) )
+  if ( ! XLALUnitMultiply( &periodogram->sampleUnits,
+                           &periodogram->sampleUnits, &lalSecondUnit ) )
     XLAL_ERROR( func, XLAL_EFUNC );
 
   return 0;
@@ -122,16 +112,17 @@ int XLALREAL4ModifiedPeriodogram(
  */
 int XLALREAL4AverageSpectrumWelch(
     REAL4FrequencySeries        *spectrum,
-    REAL4TimeSeries             *tseries,
+    const REAL4TimeSeries       *tseries,
     UINT4                        seglen,
     UINT4                        stride,
-    REAL4Window                 *window,
-    REAL4FFTPlan                *plan
+    const REAL4Window           *window,
+    const REAL4FFTPlan          *plan
     )
 {
   static const char *func = "XLALREAL4AverageSpectrumWelch";
-  REAL4FrequencySeries work; /* workspace */
-  UINT4 reclen; /* length of entire data record */
+  REAL4FrequencySeries *work; /* workspace */
+  REAL4Sequence sequence; /* working copy of input time series data */
+  REAL4TimeSeries tseriescopy; /* working copy of input time series */
   UINT4 numseg;
   UINT4 seg;
   UINT4 k;
@@ -143,15 +134,20 @@ int XLALREAL4AverageSpectrumWelch(
   if ( tseries->deltaT <= 0.0 )
       XLAL_ERROR( func, XLAL_EINVAL );
 
-  reclen = tseries->data->length;
-  numseg = 1 + (reclen - seglen)/stride;
+  /* construct local copy of time series */
+  sequence = *tseries->data;
+  tseriescopy = *tseries;
+  tseriescopy.data = &sequence;
+  tseriescopy.data->length = seglen;
+
+  numseg = 1 + (tseries->data->length - seglen)/stride;
 
   /* consistency check for lengths: make sure that the segments cover the
    * data record completely */
-  if ( (numseg - 1)*stride + seglen != reclen )
+  if ( (numseg - 1)*stride + seglen != tseries->data->length )
     XLAL_ERROR( func, XLAL_EBADLEN );
   if ( spectrum->data->length != seglen/2 + 1 )
-      XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( func, XLAL_EBADLEN );
 
   /* make sure window, if present, is appropriate */
   if ( window )
@@ -169,58 +165,36 @@ int XLALREAL4AverageSpectrumWelch(
       spectrum->data->length * sizeof( *spectrum->data->data ) );
 
   /* create frequency series data workspace */
-  work.data = XLALCreateREAL4Vector( spectrum->data->length );
-  if ( ! work.data )
+  work = XLALCutREAL4FrequencySeries( spectrum, 0, spectrum->data->length );
+  if( ! work )
     XLAL_ERROR( func, XLAL_EFUNC );
 
-  for ( seg = 0; seg < numseg; ++seg )
+  for ( seg = 0; seg < numseg; seg++, tseriescopy.data->data += stride )
   {
-    REAL4Vector savevec; /* save the time series data vector */
-    int code;
-
-    /* save the time series data vector */
-    savevec = *tseries->data;
-
-    /* set the data vector to be appropriate for this segment */
-    tseries->data->length  = seglen;
-    tseries->data->data   += seg * stride;
-
-    /* compute the modified periodogram */
-    code = XLALREAL4ModifiedPeriodogram( &work, tseries, window, plan );
-    
-    /* restore the time series data vector to its original state */
-    *tseries->data = savevec;
-
-    /* now check for failure of the XLAL routine */
-    if ( code == XLAL_FAILURE )
+    /* compute the modified periodogram; clean up and exit on failure */
+    if ( XLALREAL4ModifiedPeriodogram( work, &tseriescopy, window, plan ) == XLAL_FAILURE )
     {
-      /* cleanup workspace data first */
-      int saveErrno = xlalErrno;
-      xlalErrno = 0;
-      XLALDestroyREAL4Vector( work.data );
-      xlalErrno = saveErrno;
+      XLALDestroyREAL4FrequencySeries( work );
       XLAL_ERROR( func, XLAL_EFUNC );
     }
 
     /* add the periodogram to the running sum */
     for ( k = 0; k < spectrum->data->length; ++k )
-      spectrum->data->data[k] += work.data->data[k];
+      spectrum->data->data[k] += work->data->data[k];
   }
 
-  /* free the workspace data */
-  XLALDestroyREAL4Vector( work.data );
-  if ( xlalErrno )
-    XLAL_ERROR( func, XLAL_EFUNC );
-
   /* set metadata */
-  spectrum->epoch       = work.epoch;
-  spectrum->f0          = work.f0;
-  spectrum->deltaF      = work.deltaF;
-  spectrum->sampleUnits = work.sampleUnits;
+  spectrum->epoch       = work->epoch;
+  spectrum->f0          = work->f0;
+  spectrum->deltaF      = work->deltaF;
+  spectrum->sampleUnits = work->sampleUnits;
 
   /* divide spectrum data by the number of segments in average */
   for ( k = 0; k < spectrum->data->length; ++k )
     spectrum->data->data[k] /= numseg;
+
+  /* clean up */
+  XLALDestroyREAL4FrequencySeries( work );
 
   return 0;
 }
@@ -284,11 +258,11 @@ static int compare_float( const void *p1, const void *p2 )
 /* here is the median method */
 int XLALREAL4AverageSpectrumMedian(
     REAL4FrequencySeries        *spectrum,
-    REAL4TimeSeries             *tseries,
+    const REAL4TimeSeries       *tseries,
     UINT4                        seglen,
     UINT4                        stride,
-    REAL4Window                 *window,
-    REAL4FFTPlan                *plan
+    const REAL4Window           *window,
+    const REAL4FFTPlan          *plan
     )
 {
   static const char *func = "XLALREAL4AverageSpectrumMedian";
@@ -447,11 +421,11 @@ static void median_mean_cleanup( REAL4FrequencySeries *even,
 /* here is the median-mean-method */
 int XLALREAL4AverageSpectrumMedianMean(
     REAL4FrequencySeries        *spectrum,
-    REAL4TimeSeries             *tseries,
+    const REAL4TimeSeries       *tseries,
     UINT4                        seglen,
     UINT4                        stride,
-    REAL4Window                 *window,
-    REAL4FFTPlan                *plan
+    const REAL4Window           *window,
+    const REAL4FFTPlan          *plan
     )
 {
   static const char *func = "XLALREAL4AverageSpectrumMedianMean";
