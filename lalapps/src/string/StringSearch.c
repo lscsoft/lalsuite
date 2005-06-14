@@ -695,7 +695,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
 	}
     }
 
-  NTemplates=k-1;
+  NTemplates=k;
 
   return 0;
 }
@@ -930,8 +930,6 @@ int ReadData(struct CommandLineArgsTag CLA)
 	}
       fclose(devrandom);
 
-/*       seed = 8030655; */
-
       LALSCreateVector (&status, &v1, GV.ht.data->length);
       TESTSTATUS( &status );
                                                                                                                                     
@@ -947,7 +945,6 @@ int ReadData(struct CommandLineArgsTag CLA)
 	  GV.ht.data->data[p] = v1->data[p];
 	}
 
-      /* GV.ht.data->data[0]=1e7;  */
       LALSDestroyVector (&status, &v1);
       TESTSTATUS( &status );   
     }
