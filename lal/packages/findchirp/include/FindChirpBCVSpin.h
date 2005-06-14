@@ -128,7 +128,7 @@ void
 LALFindChirpBCVSpinTemplate (
     LALStatus                  *status,
     FindChirpTemplate          *fcTmplt,
-    InspiralTemplate           *tmplt,
+    InspiralTemplate           *thistmplt,
     FindChirpTmpltParams       *params,
     FindChirpDataParams        *fcDataParams
     );
