@@ -437,7 +437,7 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
 
   /* Nyquist frequency */
   if ( plan->size%2 == 0 ) /* size is even */
-    spec->data[plan->size/2] = tmp[plan->size/2] * tmp[plan->size/2];
+    spec->data[k] = tmp[k] * tmp[k];
 
   /* clenup and exit */
   LALFree( tmp );
