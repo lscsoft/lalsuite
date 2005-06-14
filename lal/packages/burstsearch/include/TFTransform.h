@@ -123,13 +123,13 @@ XLALDestroyComplexDFTParams(
 );
 
 
-void
-LALComputeFrequencySeries (
-                        LALStatus                      *status,
-                        COMPLEX8FrequencySeries     *freqSeries,
-                        REAL4TimeSeries             *timeSeries,
-                        RealDFTParams               *dftParams
-                        );
+int
+XLALComputeFrequencySeries(
+	COMPLEX8FrequencySeries *freqSeries,
+	REAL4TimeSeries *timeSeries,
+	REAL4Window *window,
+	REAL4FFTPlan *plan
+);
 
 
 COMPLEX8TimeFrequencyPlane *

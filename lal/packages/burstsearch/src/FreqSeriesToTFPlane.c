@@ -163,15 +163,20 @@ int XLALFreqSeriesToTFPlane(
 		/* PRB - Multiply the filter by the data.  Don't forget complex
 		 * conjugate and any other relevant information */
 		for (j = (fcut + (i * fseglength)); j < (fcut + (2 * fwindow) + ((i + 1) * fseglength)); j++) {
-			REAL4 reFilter = tmp->data[j - i * fseglength].re / sqrt(psd->data->data[j]);
-			REAL4 imFilter = tmp->data[j - i * fseglength].im / sqrt(psd->data->data[j]);
+			REAL4 reFilter = tmp->data[j - i * fseglength].re;
+			REAL4 imFilter = tmp->data[j - i * fseglength].im;
 			REAL4 reData = freqSeries->data->data[j].re;
 			REAL4 imData = freqSeries->data->data[j].im;
+
+			if(psd) {
+				reFilter /= sqrt(psd->data->data[j]);
+				imFilter /= sqrt(psd->data->data[j]);
+			}
 
 			fcorr->data[j].re = reFilter * reData + imFilter * imData;
 			fcorr->data[j].im = reFilter * imData - imFilter * reData;
 
-			normalisation[i] += (reFilter * reFilter + imFilter * imFilter);
+			normalisation[i] += reFilter * reFilter + imFilter * imFilter;
 		}
 
 		for (j = (fcut + (2 * fwindow) + ((i + 1) * fseglength)); (unsigned) j < freqSeries->data->length; j++) {

@@ -58,50 +58,6 @@ static void WeighTFTileList(TFTiling *tfTiling, INT4 maxDOF)
 
 
 /*
- * Compute the average spectrum for the given time series
- */
-
-static int ComputeAverageSpectrum(
-	REAL4FrequencySeries *spectrum,
-	REAL4TimeSeries *tseries,
-	size_t windowLength,
-	size_t windowShift,
-	WindowType windowType,
-	AvgSpecMethod method
-)
-{
-	static const char *func = "ComputeAverageSpectrum";
-	REAL4Window *window;
-	RealFFTPlan *plan;
-	
-	window = XLALCreateREAL4Window(windowLength, windowType, 0.0);
-	plan = XLALCreateForwardREAL4FFTPlan(windowLength, 0);
-	if(!window || !plan)
-		XLAL_ERROR(func, XLAL_EFUNC);
-
-	switch(method) {
-		case useMean:
-		XLALREAL4AverageSpectrumWelch(spectrum, tseries, windowLength, windowShift, window, plan);
-		break;
-
-		case useMedian:
-		XLALREAL4AverageSpectrumMedian(spectrum, tseries, windowLength, windowShift, window, plan);
-		break;
-
-		default:
-		XLALDestroyREAL4Window(window);
-		XLALDestroyREAL4FFTPlan(plan);
-		XLAL_ERROR(func, XLAL_EINVAL);
-		break;
-	}
-
-	XLALDestroyREAL4Window(window);
-	XLALDestroyREAL4FFTPlan(plan);
-	return(0);
-}
-
-
-/*
  * Convert a linked list of tiles to a linked list of burst events.
  */
  
@@ -238,12 +194,11 @@ LALEPSearch(
 /******** </lalVerbatim> ********/
 { 
 	static const char *func = "EPSearch";
-	int                       start_sample, i;
+	int                       start_sample;
 	COMPLEX8FrequencySeries  *fseries;
-	RealDFTParams            *dftparams = NULL;
-	LALWindowParams           winParams;
+	REAL4Window              *window;
+	RealFFTPlan              *plan;
 	REAL4FrequencySeries     *AverageSpec;
-	REAL4FrequencySeries     *Psd;
 	REAL4TimeSeries          *cutTimeSeries;
 	SnglBurstTable          **EventAddPoint = burstEvent;
 	TFTiling                 *tfTiling = NULL;
@@ -263,49 +218,42 @@ LALEPSearch(
 	ASSERT(burstEvent != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
 	/*
+	 * Create a time-domain window, an FFT plan, and allocate space for
+	 * the average spectrum, and temporary frequency series data.
+	 */
+
+	window = XLALCreateREAL4Window(params->windowLength, params->windowType, 0.0);
+	plan = XLALCreateForwardREAL4FFTPlan(window->data->length, 0);
+	AverageSpec = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
+	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
+	if(!window || !plan || !AverageSpec || !fseries) {
+		XLALDestroyREAL4Window(window);
+		XLALDestroyREAL4FFTPlan(plan);
+		XLALDestroyREAL4FrequencySeries(AverageSpec);
+		XLALDestroyCOMPLEX8FrequencySeries(fseries);
+		XLAL_ERROR_VOID(func, XLAL_EFUNC);
+	}
+
+	/*
 	 * Compute the average spectrum.
 	 */
 
-	AverageSpec = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
-	if(!AverageSpec)
-		XLAL_ERROR_VOID(func, XLAL_EFUNC);
-	if(ComputeAverageSpectrum(AverageSpec, tseries, params->windowLength, params->windowShift, params->windowType, params->method))
-		XLAL_ERROR_VOID(func, XLAL_EFUNC);
+	switch(params->method) {
+		case useMean:
+		XLALREAL4AverageSpectrumWelch(AverageSpec, tseries, window->data->length, params->windowShift, window, plan);
+		break;
 
-	Psd = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
-	if(!Psd)
-		XLAL_ERROR_VOID(func, XLAL_EFUNC);
-	Psd->deltaF = AverageSpec->deltaF;
-	Psd->epoch = AverageSpec->epoch;
-	if(params->useOverWhitening)
-		for(i = 0; (unsigned) i < Psd->data->length; i++)
-			Psd->data->data[i] = AverageSpec->data->data[i];
-	else
-		for(i = 0; (unsigned) i < Psd->data->length; i++)
-			Psd->data->data[i] = 1.0;
+		case useMedian:
+		XLALREAL4AverageSpectrumMedian(AverageSpec, tseries, window->data->length, params->windowShift, window, plan);
+		break;
 
-	if(params->printSpectrum)
-		print_real4fseries(Psd, "psd.dat");
+		default:
+		XLAL_ERROR_VOID(func, XLAL_EINVAL);
+		break;
+	}
 
 	if(params->printSpectrum)
 		print_real4fseries(AverageSpec, "average_spectrum.dat");
-
-	/*
-	 * Assign temporary memory for the frequency data.
-	 */
-
-	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
-	if(!fseries)
-		XLAL_ERROR_VOID(func, XLAL_EFUNC);
-
-	/*
-	 * Create the dft params.
-	 */
-
-	winParams.type = params->windowType;
-	winParams.length = params->windowLength;
-	LALCreateRealDFTParams(status->statusPtr , &dftparams, &winParams, 1);
-	CHECKSTATUSPTR(status);
 
 	/*
 	 * Loop over data applying excess power method.
@@ -329,12 +277,14 @@ LALEPSearch(
 		if(!cutTimeSeries)
 			XLAL_ERROR_VOID(func, XLAL_EFUNC);
 
-		LALComputeFrequencySeries(status->statusPtr, fseries, cutTimeSeries, dftparams);
-		CHECKSTATUSPTR(status);
+		if(XLALComputeFrequencySeries(fseries, cutTimeSeries, window, plan))
+			XLAL_ERROR_VOID(func, XLAL_EFUNC);
 
-		/* calculate the duration for which tiles are to be created
-		 * in the Single TFPlane
+		/*
+		 * Calculate the duration for which tiles are to be created
+		 * in the Single TFPlane.
 		 */ 
+
 		params->tfPlaneParams.timeDuration = 2*params->windowShift*cutTimeSeries->deltaT;
 		
 		XLALDestroyREAL4TimeSeries(cutTimeSeries);
@@ -368,9 +318,12 @@ LALEPSearch(
 		LALInfo(status->statusPtr, "Computing the TFPlanes");
 		CHECKSTATUSPTR(status);
 		normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(REAL4));
-		if(XLALComputeTFPlanes(tfTiling, fseries, tileStartShift, normalisation, Psd)) {
-			XLALClearErrno();
-			ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+		if(params->useOverWhitening) {
+			if(XLALComputeTFPlanes(tfTiling, fseries, tileStartShift, normalisation, AverageSpec))
+				XLAL_ERROR_VOID(func, XLAL_EFUNC);
+		} else {
+			if(XLALComputeTFPlanes(tfTiling, fseries, tileStartShift, normalisation, NULL))
+				XLAL_ERROR_VOID(func, XLAL_EFUNC);
 		}
 	
 		/*
@@ -399,8 +352,8 @@ LALEPSearch(
 
 		LALInfo(status->statusPtr, "Sorting TFTiling");
 		CHECKSTATUSPTR(status);
-		LALSortTFTiling(status->statusPtr, tfTiling);
-		CHECKSTATUSPTR(status);
+		if(XLALSortTFTiling(tfTiling))
+			XLAL_ERROR_VOID(func, XLAL_EFUNC);
 
 		/*
 		 * Determine the weighting for each tile.
@@ -431,10 +384,9 @@ LALEPSearch(
 
 	XLALDestroyTFTiling(tfTiling);
 	XLALDestroyCOMPLEX8FrequencySeries(fseries);
-	LALDestroyRealDFTParams(status->statusPtr, &dftparams);
-	CHECKSTATUSPTR(status);
 	XLALDestroyREAL4FrequencySeries(AverageSpec);
-	XLALDestroyREAL4FrequencySeries(Psd);
+	XLALDestroyREAL4Window(window);
+	XLALDestroyREAL4FFTPlan(plan);
 
 	/*
 	 * Normal exit.

@@ -134,9 +134,8 @@ LALComputeExcessPower (
                     REAL4                           *norm
                     );
 
-void
-LALSortTFTiling (
-              LALStatus                                *status,
+int
+XLALSortTFTiling (
               TFTiling                              *tfTiling
               );
 
