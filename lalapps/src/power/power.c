@@ -761,10 +761,8 @@ void parse_command_line(
 			params->method = useMean;
 		else if(!strcmp(optarg, "useMedian"))
 			params->method = useMedian;
-		else if (!strcmp(optarg, "useUnity"))
-			params->method = useUnity;
 		else {
-			sprintf(msg, "must be \"useMean\", \"useMedian\", or \"useUnity\"");
+			sprintf(msg, "must be \"useMean\", or \"useMedian\"");
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -1607,7 +1605,7 @@ static SnglBurstTable **analyze_series(
 		if(options.verbose)
 			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
-		LAL_CALL(EPSearch(stat, interval, params, addpoint), stat);
+		LAL_CALL(LALEPSearch(stat, interval, params, addpoint), stat);
 		while(*addpoint)
 			addpoint = &(*addpoint)->next;
 
@@ -1834,7 +1832,7 @@ int main( int argc, char *argv[])
 		  }
 		}
 
-		LAL_CALL(EPConditionData(&stat, series, options.high_pass, (REAL8) 1.0 / options.ResampleRate, resampFiltType, options.FilterCorruption), &stat);
+		LAL_CALL(LALEPConditionData(&stat, series, options.high_pass, (REAL8) 1.0 / options.ResampleRate, resampFiltType, options.FilterCorruption), &stat);
 
 		if(options.printData)
 		  LALPrintTimeSeries(series, "./condtimeseries.dat");
