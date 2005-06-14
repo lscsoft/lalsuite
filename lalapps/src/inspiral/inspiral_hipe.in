@@ -2976,7 +2976,7 @@ print "done"
 
 coherent_2ifo(h1_data,h2_data,'H1','H2',h1_h2_double_coinc,cb_job,trig_jobh1,
   trig_jobh2,insp_coh_h1_job,insp_coh_h2_job,cohinsp_job,'cohbank','h1-inspiral',
-  'h2-inspiral','ligo-data','ligo-data','channel','channel','chia',dag,
+  'h2-inspiral','ligo-data','ligo-data','ligo-channel','ligo-channel','chia',dag,
   do_second_coinc,do_cohbank,do_cohinspiral)
 
 ##############################################################################
