@@ -891,7 +891,7 @@ LALInspiralInit(
 
 void LALInspiralWave(
      LALStatus *status,
-     REAL4Vector *signal,
+     REAL4Vector *signalvec,
      InspiralTemplate *params);
 
 void LALInspiralWaveTemplates(
@@ -913,14 +913,14 @@ LALInspiralWaveForInjection(
 
 void LALInspiralWave1(
      LALStatus *status,
-     REAL4Vector *signal,
+     REAL4Vector *signalvec,
      InspiralTemplate *params);
 
 
 void LALInspiralWave1Templates(
      LALStatus *status,
-     REAL4Vector *signal1,
-     REAL4Vector *signal2,
+     REAL4Vector *signalvec1,
+     REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
 void LALInspiralWave1ForInjection(
@@ -936,13 +936,13 @@ void LALInspiralWave1ForInjection(
 
 void LALInspiralWave2(
      LALStatus *status,
-     REAL4Vector *signal,
+     REAL4Vector *signalvec,
      InspiralTemplate *params);
 
 void LALInspiralWave2Templates (
      LALStatus *status,
-     REAL4Vector *signal1, 
-     REAL4Vector *signal2, 
+     REAL4Vector *signalvec1, 
+     REAL4Vector *signalvec2, 
      InspiralTemplate *params);
 
 void LALInspiralWave2ForInjection(
@@ -958,13 +958,13 @@ void LALInspiralWave2ForInjection(
 
 void LALInspiralWave3 (
      LALStatus *status,
-     REAL4Vector *signal, 
+     REAL4Vector *signalvec, 
      InspiralTemplate *params);
 
 void LALInspiralWave3Templates (
      LALStatus *status,
-     REAL4Vector *signal1, 
-     REAL4Vector *signal2, 
+     REAL4Vector *signalvec1, 
+     REAL4Vector *signalvec2, 
      InspiralTemplate *params);
 
 void LALInspiralWave3ForInjection(
@@ -978,7 +978,7 @@ void LALInspiralWave3ForInjection(
 </lalLaTeX>  */
 void LALInspiralStationaryPhaseApprox1 (
      LALStatus *status,
-     REAL4Vector *signal,
+     REAL4Vector *signalvec,
      InspiralTemplate *params);
 
 /*  <lalLaTeX>
@@ -986,7 +986,7 @@ void LALInspiralStationaryPhaseApprox1 (
 </lalLaTeX>  */
 void LALInspiralStationaryPhaseApprox2 (
      LALStatus *status,
-     REAL4Vector *signal,
+     REAL4Vector *signalvec,
      InspiralTemplate *params);
 
 /*  <lalLaTeX>
@@ -995,13 +995,13 @@ void LALInspiralStationaryPhaseApprox2 (
 
 void LALEOBWaveform(
      LALStatus *status,
-     REAL4Vector *signal,
+     REAL4Vector *signalvec,
      InspiralTemplate *params);
 
 void LALEOBWaveformTemplates(
      LALStatus *status,
-     REAL4Vector *signal1,
-     REAL4Vector *signal2,
+     REAL4Vector *signalvec1,
+     REAL4Vector *signalvec2,
      InspiralTemplate *params);
 
 void LALEOBWaveformForInjection(
@@ -1016,13 +1016,13 @@ void LALEOBWaveformForInjection(
 
 void LALBCVWaveform(
      LALStatus *status,
-     REAL4Vector *signal, 
+     REAL4Vector *signalvec, 
      InspiralTemplate *params);
 
 
 void LALBCVSpinWaveform(
      LALStatus *status,
-     REAL4Vector *signal, 
+     REAL4Vector *signalvec, 
      InspiralTemplate *params);
 
 
@@ -1032,7 +1032,7 @@ void LALBCVSpinWaveform(
 
 void LALInspiralSpinModulatedWave(
      LALStatus        *status, 
-     REAL4Vector      *signal, 
+     REAL4Vector      *signalvec, 
      InspiralTemplate *in);
 
 
