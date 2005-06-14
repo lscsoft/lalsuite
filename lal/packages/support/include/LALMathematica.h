@@ -184,13 +184,13 @@ typedef struct MathNDPointList{
 
 
 void  
-LALMath3DPlot( LALStatus *stat, 
+LALMath3DPlot( LALStatus *status, 
                Math3DPointList *first, 
                INT4 *ntiles, 
                REAL4 *pointSize);
 
 void
-LALMathNDPlot( LALStatus *stat,
+LALMathNDPlot( LALStatus *status,
                MathNDPointList *first,
                INT4 *ntiles,
                REAL4 *pointSize );

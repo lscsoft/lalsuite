@@ -104,208 +104,208 @@ NRCSID(STREAMINPUTH,"$Id$");
 \newpage\input{StreamVectorInputC}
 </lalLaTeX> */
 void
-LALCHARReadVector( LALStatus  *stat, CHARVector **vector, FILE *stream );
+LALCHARReadVector( LALStatus  *status, CHARVector **vector, FILE *stream );
 
 void
-LALI2ReadVector( LALStatus  *stat, INT2Vector **vector, FILE *stream, BOOLEAN strict );
+LALI2ReadVector( LALStatus  *status, INT2Vector **vector, FILE *stream, BOOLEAN strict );
 
 void
-LALI4ReadVector( LALStatus  *stat, INT4Vector **vector, FILE *stream, BOOLEAN strict );
+LALI4ReadVector( LALStatus  *status, INT4Vector **vector, FILE *stream, BOOLEAN strict );
 
 void
-LALI8ReadVector( LALStatus  *stat, INT8Vector **vector, FILE *stream, BOOLEAN strict );
+LALI8ReadVector( LALStatus  *status, INT8Vector **vector, FILE *stream, BOOLEAN strict );
 
 void
-LALU2ReadVector( LALStatus  *stat, UINT2Vector **vector, FILE *stream, BOOLEAN strict );
+LALU2ReadVector( LALStatus  *status, UINT2Vector **vector, FILE *stream, BOOLEAN strict );
 
 void
-LALU4ReadVector( LALStatus  *stat, UINT4Vector **vector, FILE *stream, BOOLEAN strict );
+LALU4ReadVector( LALStatus  *status, UINT4Vector **vector, FILE *stream, BOOLEAN strict );
 
 void
-LALU8ReadVector( LALStatus  *stat, UINT8Vector **vector, FILE *stream, BOOLEAN strict );
+LALU8ReadVector( LALStatus  *status, UINT8Vector **vector, FILE *stream, BOOLEAN strict );
 
 void
-LALSReadVector( LALStatus  *stat, REAL4Vector **vector, FILE *stream, BOOLEAN strict );
+LALSReadVector( LALStatus  *status, REAL4Vector **vector, FILE *stream, BOOLEAN strict );
 
 void
-LALDReadVector( LALStatus  *stat, REAL8Vector **vector, FILE *stream, BOOLEAN strict );
+LALDReadVector( LALStatus  *status, REAL8Vector **vector, FILE *stream, BOOLEAN strict );
 
 /* <lalLaTeX>
 \newpage\input{StreamVectorSequenceInputC}
 </lalLaTeX> */
 void
-LALCHARReadVectorSequence( LALStatus  *stat, CHARVectorSequence **sequence, FILE *stream );
+LALCHARReadVectorSequence( LALStatus  *status, CHARVectorSequence **sequence, FILE *stream );
 
 void
-LALI2ReadVectorSequence( LALStatus  *stat, INT2VectorSequence **sequence, FILE *stream );
+LALI2ReadVectorSequence( LALStatus  *status, INT2VectorSequence **sequence, FILE *stream );
 
 void
-LALI4ReadVectorSequence( LALStatus  *stat, INT4VectorSequence **sequence, FILE *stream );
+LALI4ReadVectorSequence( LALStatus  *status, INT4VectorSequence **sequence, FILE *stream );
 
 void
-LALI8ReadVectorSequence( LALStatus  *stat, INT8VectorSequence **sequence, FILE *stream );
+LALI8ReadVectorSequence( LALStatus  *status, INT8VectorSequence **sequence, FILE *stream );
 
 void
-LALU2ReadVectorSequence( LALStatus  *stat, UINT2VectorSequence **sequence, FILE *stream );
+LALU2ReadVectorSequence( LALStatus  *status, UINT2VectorSequence **sequence, FILE *stream );
 
 void
-LALU4ReadVectorSequence( LALStatus  *stat, UINT4VectorSequence **sequence, FILE *stream );
+LALU4ReadVectorSequence( LALStatus  *status, UINT4VectorSequence **sequence, FILE *stream );
 
 void
-LALU8ReadVectorSequence( LALStatus  *stat, UINT8VectorSequence **sequence, FILE *stream );
+LALU8ReadVectorSequence( LALStatus  *status, UINT8VectorSequence **sequence, FILE *stream );
 
 void
-LALSReadVectorSequence( LALStatus  *stat, REAL4VectorSequence **sequence, FILE *stream );
+LALSReadVectorSequence( LALStatus  *status, REAL4VectorSequence **sequence, FILE *stream );
 
 void
-LALDReadVectorSequence( LALStatus  *stat, REAL8VectorSequence **sequence, FILE *stream );
+LALDReadVectorSequence( LALStatus  *status, REAL8VectorSequence **sequence, FILE *stream );
 
 /* <lalLaTeX>
 \newpage\input{StreamSequenceInputC}
 </lalLaTeX> */
 void
-LALCHARReadSequence( LALStatus *stat, CHARSequence **sequence, FILE *stream );
+LALCHARReadSequence( LALStatus *status, CHARSequence **sequence, FILE *stream );
 
 void
-LALI2ReadSequence( LALStatus *stat, INT2Sequence **sequence, FILE *stream );
+LALI2ReadSequence( LALStatus *status, INT2Sequence **sequence, FILE *stream );
 
 void
-LALI4ReadSequence( LALStatus *stat, INT4Sequence **sequence, FILE *stream );
+LALI4ReadSequence( LALStatus *status, INT4Sequence **sequence, FILE *stream );
 
 void
-LALI8ReadSequence( LALStatus *stat, INT8Sequence **sequence, FILE *stream );
+LALI8ReadSequence( LALStatus *status, INT8Sequence **sequence, FILE *stream );
 
 void
-LALU2ReadSequence( LALStatus *stat, UINT2Sequence **sequence, FILE *stream );
+LALU2ReadSequence( LALStatus *status, UINT2Sequence **sequence, FILE *stream );
 
 void
-LALU4ReadSequence( LALStatus *stat, UINT4Sequence **sequence, FILE *stream );
+LALU4ReadSequence( LALStatus *status, UINT4Sequence **sequence, FILE *stream );
 
 void
-LALU8ReadSequence( LALStatus *stat, UINT8Sequence **sequence, FILE *stream );
+LALU8ReadSequence( LALStatus *status, UINT8Sequence **sequence, FILE *stream );
 
 void
-LALSReadSequence( LALStatus *stat, REAL4Sequence **sequence, FILE *stream );
+LALSReadSequence( LALStatus *status, REAL4Sequence **sequence, FILE *stream );
 
 void
-LALDReadSequence( LALStatus *stat, REAL8Sequence **sequence, FILE *stream );
+LALDReadSequence( LALStatus *status, REAL8Sequence **sequence, FILE *stream );
 
 void
-LALCReadSequence( LALStatus *stat, COMPLEX8Sequence **sequence, FILE *stream );
+LALCReadSequence( LALStatus *status, COMPLEX8Sequence **sequence, FILE *stream );
 
 void
-LALZReadSequence( LALStatus *stat, COMPLEX16Sequence **sequence, FILE *stream );
+LALZReadSequence( LALStatus *status, COMPLEX16Sequence **sequence, FILE *stream );
 
 /* <lalLaTeX>
 \newpage\input{StreamSeriesInputC}
 </lalLaTeX> */
 void
-LALI2ReadTSeries( LALStatus *stat, INT2TimeSeries *series, FILE *stream );
+LALI2ReadTSeries( LALStatus *status, INT2TimeSeries *series, FILE *stream );
 void
-LALI4ReadTSeries( LALStatus *stat, INT4TimeSeries *series, FILE *stream );
+LALI4ReadTSeries( LALStatus *status, INT4TimeSeries *series, FILE *stream );
 void
-LALI8ReadTSeries( LALStatus *stat, INT8TimeSeries *series, FILE *stream );
+LALI8ReadTSeries( LALStatus *status, INT8TimeSeries *series, FILE *stream );
 void
-LALU2ReadTSeries( LALStatus *stat, UINT2TimeSeries *series, FILE *stream );
+LALU2ReadTSeries( LALStatus *status, UINT2TimeSeries *series, FILE *stream );
 void
-LALU4ReadTSeries( LALStatus *stat, UINT4TimeSeries *series, FILE *stream );
+LALU4ReadTSeries( LALStatus *status, UINT4TimeSeries *series, FILE *stream );
 void
-LALU8ReadTSeries( LALStatus *stat, UINT8TimeSeries *series, FILE *stream );
+LALU8ReadTSeries( LALStatus *status, UINT8TimeSeries *series, FILE *stream );
 void
-LALSReadTSeries( LALStatus *stat, REAL4TimeSeries *series, FILE *stream );
+LALSReadTSeries( LALStatus *status, REAL4TimeSeries *series, FILE *stream );
 void
-LALDReadTSeries( LALStatus *stat, REAL8TimeSeries *series, FILE *stream );
+LALDReadTSeries( LALStatus *status, REAL8TimeSeries *series, FILE *stream );
 void
-LALCReadTSeries( LALStatus *stat, COMPLEX8TimeSeries *series, FILE *stream );
+LALCReadTSeries( LALStatus *status, COMPLEX8TimeSeries *series, FILE *stream );
 void
-LALZReadTSeries( LALStatus *stat, COMPLEX16TimeSeries *series, FILE *stream );
+LALZReadTSeries( LALStatus *status, COMPLEX16TimeSeries *series, FILE *stream );
 
 void
-LALI2ReadTVectorSeries( LALStatus *stat, INT2TimeVectorSeries *series, FILE *stream );
+LALI2ReadTVectorSeries( LALStatus *status, INT2TimeVectorSeries *series, FILE *stream );
 void
-LALI4ReadTVectorSeries( LALStatus *stat, INT4TimeVectorSeries *series, FILE *stream );
+LALI4ReadTVectorSeries( LALStatus *status, INT4TimeVectorSeries *series, FILE *stream );
 void
-LALI8ReadTVectorSeries( LALStatus *stat, INT8TimeVectorSeries *series, FILE *stream );
+LALI8ReadTVectorSeries( LALStatus *status, INT8TimeVectorSeries *series, FILE *stream );
 void
-LALU2ReadTVectorSeries( LALStatus *stat, UINT2TimeVectorSeries *series, FILE *stream );
+LALU2ReadTVectorSeries( LALStatus *status, UINT2TimeVectorSeries *series, FILE *stream );
 void
-LALU4ReadTVectorSeries( LALStatus *stat, UINT4TimeVectorSeries *series, FILE *stream );
+LALU4ReadTVectorSeries( LALStatus *status, UINT4TimeVectorSeries *series, FILE *stream );
 void
-LALU8ReadTVectorSeries( LALStatus *stat, UINT8TimeVectorSeries *series, FILE *stream );
+LALU8ReadTVectorSeries( LALStatus *status, UINT8TimeVectorSeries *series, FILE *stream );
 void
-LALSReadTVectorSeries( LALStatus *stat, REAL4TimeVectorSeries *series, FILE *stream );
+LALSReadTVectorSeries( LALStatus *status, REAL4TimeVectorSeries *series, FILE *stream );
 void
-LALDReadTVectorSeries( LALStatus *stat, REAL8TimeVectorSeries *series, FILE *stream );
+LALDReadTVectorSeries( LALStatus *status, REAL8TimeVectorSeries *series, FILE *stream );
 void
-LALCReadTVectorSeries( LALStatus *stat, COMPLEX8TimeVectorSeries *series, FILE *stream );
+LALCReadTVectorSeries( LALStatus *status, COMPLEX8TimeVectorSeries *series, FILE *stream );
 void
-LALZReadTVectorSeries( LALStatus *stat, COMPLEX16TimeVectorSeries *series, FILE *stream );
+LALZReadTVectorSeries( LALStatus *status, COMPLEX16TimeVectorSeries *series, FILE *stream );
 
 void
-LALI2ReadTArraySeries( LALStatus *stat, INT2TimeArraySeries *series, FILE *stream );
+LALI2ReadTArraySeries( LALStatus *status, INT2TimeArraySeries *series, FILE *stream );
 void
-LALI4ReadTArraySeries( LALStatus *stat, INT4TimeArraySeries *series, FILE *stream );
+LALI4ReadTArraySeries( LALStatus *status, INT4TimeArraySeries *series, FILE *stream );
 void
-LALI8ReadTArraySeries( LALStatus *stat, INT8TimeArraySeries *series, FILE *stream );
+LALI8ReadTArraySeries( LALStatus *status, INT8TimeArraySeries *series, FILE *stream );
 void
-LALU2ReadTArraySeries( LALStatus *stat, UINT2TimeArraySeries *series, FILE *stream );
+LALU2ReadTArraySeries( LALStatus *status, UINT2TimeArraySeries *series, FILE *stream );
 void
-LALU4ReadTArraySeries( LALStatus *stat, UINT4TimeArraySeries *series, FILE *stream );
+LALU4ReadTArraySeries( LALStatus *status, UINT4TimeArraySeries *series, FILE *stream );
 void
-LALU8ReadTArraySeries( LALStatus *stat, UINT8TimeArraySeries *series, FILE *stream );
+LALU8ReadTArraySeries( LALStatus *status, UINT8TimeArraySeries *series, FILE *stream );
 void
-LALSReadTArraySeries( LALStatus *stat, REAL4TimeArraySeries *series, FILE *stream );
+LALSReadTArraySeries( LALStatus *status, REAL4TimeArraySeries *series, FILE *stream );
 void
-LALDReadTArraySeries( LALStatus *stat, REAL8TimeArraySeries *series, FILE *stream );
+LALDReadTArraySeries( LALStatus *status, REAL8TimeArraySeries *series, FILE *stream );
 void
-LALCReadTArraySeries( LALStatus *stat, COMPLEX8TimeArraySeries *series, FILE *stream );
+LALCReadTArraySeries( LALStatus *status, COMPLEX8TimeArraySeries *series, FILE *stream );
 void
-LALZReadTArraySeries( LALStatus *stat, COMPLEX16TimeArraySeries *series, FILE *stream );
+LALZReadTArraySeries( LALStatus *status, COMPLEX16TimeArraySeries *series, FILE *stream );
 
 void
-LALI2ReadFSeries( LALStatus *stat, INT2FrequencySeries *series, FILE *stream );
+LALI2ReadFSeries( LALStatus *status, INT2FrequencySeries *series, FILE *stream );
 void
-LALI4ReadFSeries( LALStatus *stat, INT4FrequencySeries *series, FILE *stream );
+LALI4ReadFSeries( LALStatus *status, INT4FrequencySeries *series, FILE *stream );
 void
-LALI8ReadFSeries( LALStatus *stat, INT8FrequencySeries *series, FILE *stream );
+LALI8ReadFSeries( LALStatus *status, INT8FrequencySeries *series, FILE *stream );
 void
-LALU2ReadFSeries( LALStatus *stat, UINT2FrequencySeries *series, FILE *stream );
+LALU2ReadFSeries( LALStatus *status, UINT2FrequencySeries *series, FILE *stream );
 void
-LALU4ReadFSeries( LALStatus *stat, UINT4FrequencySeries *series, FILE *stream );
+LALU4ReadFSeries( LALStatus *status, UINT4FrequencySeries *series, FILE *stream );
 void
-LALU8ReadFSeries( LALStatus *stat, UINT8FrequencySeries *series, FILE *stream );
+LALU8ReadFSeries( LALStatus *status, UINT8FrequencySeries *series, FILE *stream );
 void
-LALSReadFSeries( LALStatus *stat, REAL4FrequencySeries *series, FILE *stream );
+LALSReadFSeries( LALStatus *status, REAL4FrequencySeries *series, FILE *stream );
 void
-LALDReadFSeries( LALStatus *stat, REAL8FrequencySeries *series, FILE *stream );
+LALDReadFSeries( LALStatus *status, REAL8FrequencySeries *series, FILE *stream );
 void
-LALCReadFSeries( LALStatus *stat, COMPLEX8FrequencySeries *series, FILE *stream );
+LALCReadFSeries( LALStatus *status, COMPLEX8FrequencySeries *series, FILE *stream );
 void
-LALZReadFSeries( LALStatus *stat, COMPLEX16FrequencySeries *series, FILE *stream );
+LALZReadFSeries( LALStatus *status, COMPLEX16FrequencySeries *series, FILE *stream );
 
 /* <lalLaTeX>
 \newpage\input{StreamGridInputC}
 </lalLaTeX> */
 void
-LALI2ReadGrid( LALStatus *stat, INT2Grid **grid, FILE *stream );
+LALI2ReadGrid( LALStatus *status, INT2Grid **grid, FILE *stream );
 void
-LALI4ReadGrid( LALStatus *stat, INT4Grid **grid, FILE *stream );
+LALI4ReadGrid( LALStatus *status, INT4Grid **grid, FILE *stream );
 void
-LALI8ReadGrid( LALStatus *stat, INT8Grid **grid, FILE *stream );
+LALI8ReadGrid( LALStatus *status, INT8Grid **grid, FILE *stream );
 void
-LALU2ReadGrid( LALStatus *stat, UINT2Grid **grid, FILE *stream );
+LALU2ReadGrid( LALStatus *status, UINT2Grid **grid, FILE *stream );
 void
-LALU4ReadGrid( LALStatus *stat, UINT4Grid **grid, FILE *stream );
+LALU4ReadGrid( LALStatus *status, UINT4Grid **grid, FILE *stream );
 void
-LALU8ReadGrid( LALStatus *stat, UINT8Grid **grid, FILE *stream );
+LALU8ReadGrid( LALStatus *status, UINT8Grid **grid, FILE *stream );
 void
-LALSReadGrid( LALStatus *stat, REAL4Grid **grid, FILE *stream );
+LALSReadGrid( LALStatus *status, REAL4Grid **grid, FILE *stream );
 void
-LALDReadGrid( LALStatus *stat, REAL8Grid **grid, FILE *stream );
+LALDReadGrid( LALStatus *status, REAL8Grid **grid, FILE *stream );
 void
-LALCReadGrid( LALStatus *stat, COMPLEX8Grid **grid, FILE *stream );
+LALCReadGrid( LALStatus *status, COMPLEX8Grid **grid, FILE *stream );
 void
-LALZReadGrid( LALStatus *stat, COMPLEX16Grid **grid, FILE *stream );
+LALZReadGrid( LALStatus *status, COMPLEX16Grid **grid, FILE *stream );
 
 /* <lalLaTeX>
 \newpage\input{StreamInputTestC}

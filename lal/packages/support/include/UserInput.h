@@ -90,17 +90,17 @@ regBOOLUserVar(stat,   binaryoutput,	'b', UVAR_OPTIONAL, "Output time-domain dat
 regINTUserVar(stat,    nTsft,		'N', UVAR_REQUIRED, "Number of SFTs nTsft");
 </lalVerbatim> */
 
-#define LALregREALUserVar(stat,name,option,flag,help) \
-TRY(LALRegisterREALUserVar((stat)->statusPtr, #name, option, flag, help,&(uvar_ ## name)), stat)
+#define LALregREALUserVar(status,name,option,flag,help) \
+TRY(LALRegisterREALUserVar((status)->statusPtr, #name, option, flag, help,&(uvar_ ## name)), status)
 
-#define LALregINTUserVar(stat,name,option,flag,help) \
-TRY(LALRegisterINTUserVar((stat)->statusPtr, #name, option,flag, help,&(uvar_ ## name)), stat)
+#define LALregINTUserVar(status,name,option,flag,help) \
+TRY(LALRegisterINTUserVar((status)->statusPtr, #name, option,flag, help,&(uvar_ ## name)), status)
 
-#define LALregBOOLUserVar(stat,name,option,flag,help) \
-TRY(LALRegisterBOOLUserVar((stat)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),stat)
+#define LALregBOOLUserVar(status,name,option,flag,help) \
+TRY(LALRegisterBOOLUserVar((status)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),status)
 
-#define LALregSTRINGUserVar(stat,name,option,flag,help) \
-TRY(LALRegisterSTRINGUserVar((stat)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),stat)
+#define LALregSTRINGUserVar(status,name,option,flag,help) \
+TRY(LALRegisterSTRINGUserVar((status)->statusPtr, #name, option, flag, help, &(uvar_ ## name)),status)
 
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{UserInputHV}}
@@ -128,14 +128,14 @@ typedef enum {
 } UserVarLogFormat;
 
 /* Function prototypes */
-void LALRegisterREALUserVar(LALStatus *stat, 
+void LALRegisterREALUserVar(LALStatus *status, 
 			    const CHAR *name, 
 			    CHAR optchar, 
 			    UserVarState flag,
 			    const CHAR *helpstr, 
 			    REAL8 *cvar);
 
-void LALRegisterINTUserVar (LALStatus *stat,  
+void LALRegisterINTUserVar (LALStatus *status,  
 			    const CHAR *name, 
 			    CHAR optchar, 
 			    UserVarState flag, 
@@ -143,7 +143,7 @@ void LALRegisterINTUserVar (LALStatus *stat,
 			    INT4 *cvar);
 
 void 
-LALRegisterBOOLUserVar (LALStatus *stat, 
+LALRegisterBOOLUserVar (LALStatus *status, 
 			const CHAR *name, 
 			CHAR optchar, 
 			UserVarState flag,
@@ -151,24 +151,24 @@ LALRegisterBOOLUserVar (LALStatus *stat,
 			BOOLEAN *cvar);
 
 void
-LALRegisterSTRINGUserVar (LALStatus *stat,
+LALRegisterSTRINGUserVar (LALStatus *status,
 			  const CHAR *name,
 			  CHAR optchar, 
 			  UserVarState flag,
 			  const CHAR *helpstr, 
 			  CHAR **cvar);
 
-void LALDestroyUserVars (LALStatus *stat);
+void LALDestroyUserVars (LALStatus *status);
 
-void LALUserVarReadAllInput(LALStatus *stat, int argc, char *argv[]);
-void LALUserVarReadCmdline (LALStatus *stat, int argc, char *argv[]);
-void LALUserVarReadCfgfile (LALStatus *stat, const CHAR *cfgfile);
+void LALUserVarReadAllInput(LALStatus *status, int argc, char *argv[]);
+void LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[]);
+void LALUserVarReadCfgfile (LALStatus *status, const CHAR *cfgfile);
 
-void LALUserVarHelpString (LALStatus *stat, CHAR **helpstring, const CHAR *progname);
-void LALUserVarCheckRequired (LALStatus *stat);
+void LALUserVarHelpString (LALStatus *status, CHAR **helpstring, const CHAR *progname);
+void LALUserVarCheckRequired (LALStatus *status);
 INT4 LALUserVarWasSet (void *cvar);
-void LALGetDebugLevel (LALStatus *stat, int argc, char *argv[], CHAR optchar);
-void LALUserVarGetLog (LALStatus *stat, CHAR **logstr,  UserVarLogFormat format);
+void LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar);
+void LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format);
 
 #ifdef  __cplusplus
 }

@@ -63,112 +63,112 @@ NRCSID( STREAMOUTPUTH, "$Id$" );
 \newpage\input{StreamSeriesOutputC}
 </lalLaTeX> */
 void
-LALI2WriteTSeries( LALStatus  *stat, FILE *stream, INT2TimeSeries *series );
+LALI2WriteTSeries( LALStatus  *status, FILE *stream, INT2TimeSeries *series );
 void
-LALI4WriteTSeries( LALStatus  *stat, FILE *stream, INT4TimeSeries *series );
+LALI4WriteTSeries( LALStatus  *status, FILE *stream, INT4TimeSeries *series );
 void
-LALI8WriteTSeries( LALStatus  *stat, FILE *stream, INT8TimeSeries *series );
+LALI8WriteTSeries( LALStatus  *status, FILE *stream, INT8TimeSeries *series );
 void
-LALU2WriteTSeries( LALStatus  *stat, FILE *stream, UINT2TimeSeries *series );
+LALU2WriteTSeries( LALStatus  *status, FILE *stream, UINT2TimeSeries *series );
 void
-LALU4WriteTSeries( LALStatus  *stat, FILE *stream, UINT4TimeSeries *series );
+LALU4WriteTSeries( LALStatus  *status, FILE *stream, UINT4TimeSeries *series );
 void
-LALU8WriteTSeries( LALStatus  *stat, FILE *stream, UINT8TimeSeries *series );
+LALU8WriteTSeries( LALStatus  *status, FILE *stream, UINT8TimeSeries *series );
 void
-LALSWriteTSeries( LALStatus  *stat, FILE *stream, REAL4TimeSeries *series );
+LALSWriteTSeries( LALStatus  *status, FILE *stream, REAL4TimeSeries *series );
 void
-LALDWriteTSeries( LALStatus  *stat, FILE *stream, REAL8TimeSeries *series );
+LALDWriteTSeries( LALStatus  *status, FILE *stream, REAL8TimeSeries *series );
 void
-LALCWriteTSeries( LALStatus  *stat, FILE *stream, COMPLEX8TimeSeries *series );
+LALCWriteTSeries( LALStatus  *status, FILE *stream, COMPLEX8TimeSeries *series );
 void
-LALZWriteTSeries( LALStatus  *stat, FILE *stream, COMPLEX16TimeSeries *series );
+LALZWriteTSeries( LALStatus  *status, FILE *stream, COMPLEX16TimeSeries *series );
 
 void
-LALI2WriteTVectorSeries( LALStatus  *stat, FILE *stream, INT2TimeVectorSeries *series );
+LALI2WriteTVectorSeries( LALStatus  *status, FILE *stream, INT2TimeVectorSeries *series );
 void
-LALI4WriteTVectorSeries( LALStatus  *stat, FILE *stream, INT4TimeVectorSeries *series );
+LALI4WriteTVectorSeries( LALStatus  *status, FILE *stream, INT4TimeVectorSeries *series );
 void
-LALI8WriteTVectorSeries( LALStatus  *stat, FILE *stream, INT8TimeVectorSeries *series );
+LALI8WriteTVectorSeries( LALStatus  *status, FILE *stream, INT8TimeVectorSeries *series );
 void
-LALU2WriteTVectorSeries( LALStatus  *stat, FILE *stream, UINT2TimeVectorSeries *series );
+LALU2WriteTVectorSeries( LALStatus  *status, FILE *stream, UINT2TimeVectorSeries *series );
 void
-LALU4WriteTVectorSeries( LALStatus  *stat, FILE *stream, UINT4TimeVectorSeries *series );
+LALU4WriteTVectorSeries( LALStatus  *status, FILE *stream, UINT4TimeVectorSeries *series );
 void
-LALU8WriteTVectorSeries( LALStatus  *stat, FILE *stream, UINT8TimeVectorSeries *series );
+LALU8WriteTVectorSeries( LALStatus  *status, FILE *stream, UINT8TimeVectorSeries *series );
 void
-LALSWriteTVectorSeries( LALStatus  *stat, FILE *stream, REAL4TimeVectorSeries *series );
+LALSWriteTVectorSeries( LALStatus  *status, FILE *stream, REAL4TimeVectorSeries *series );
 void
-LALDWriteTVectorSeries( LALStatus  *stat, FILE *stream, REAL8TimeVectorSeries *series );
+LALDWriteTVectorSeries( LALStatus  *status, FILE *stream, REAL8TimeVectorSeries *series );
 void
-LALCWriteTVectorSeries( LALStatus  *stat, FILE *stream, COMPLEX8TimeVectorSeries *series );
+LALCWriteTVectorSeries( LALStatus  *status, FILE *stream, COMPLEX8TimeVectorSeries *series );
 void
-LALZWriteTVectorSeries( LALStatus  *stat, FILE *stream, COMPLEX16TimeVectorSeries *series );
+LALZWriteTVectorSeries( LALStatus  *status, FILE *stream, COMPLEX16TimeVectorSeries *series );
 
 void
-LALI2WriteTArraySeries( LALStatus  *stat, FILE *stream, INT2TimeArraySeries *series );
+LALI2WriteTArraySeries( LALStatus  *status, FILE *stream, INT2TimeArraySeries *series );
 void
-LALI4WriteTArraySeries( LALStatus  *stat, FILE *stream, INT4TimeArraySeries *series );
+LALI4WriteTArraySeries( LALStatus  *status, FILE *stream, INT4TimeArraySeries *series );
 void
-LALI8WriteTArraySeries( LALStatus  *stat, FILE *stream, INT8TimeArraySeries *series );
+LALI8WriteTArraySeries( LALStatus  *status, FILE *stream, INT8TimeArraySeries *series );
 void
-LALU2WriteTArraySeries( LALStatus  *stat, FILE *stream, UINT2TimeArraySeries *series );
+LALU2WriteTArraySeries( LALStatus  *status, FILE *stream, UINT2TimeArraySeries *series );
 void
-LALU4WriteTArraySeries( LALStatus  *stat, FILE *stream, UINT4TimeArraySeries *series );
+LALU4WriteTArraySeries( LALStatus  *status, FILE *stream, UINT4TimeArraySeries *series );
 void
-LALU8WriteTArraySeries( LALStatus  *stat, FILE *stream, UINT8TimeArraySeries *series );
+LALU8WriteTArraySeries( LALStatus  *status, FILE *stream, UINT8TimeArraySeries *series );
 void
-LALSWriteTArraySeries( LALStatus  *stat, FILE *stream, REAL4TimeArraySeries *series );
+LALSWriteTArraySeries( LALStatus  *status, FILE *stream, REAL4TimeArraySeries *series );
 void
-LALDWriteTArraySeries( LALStatus  *stat, FILE *stream, REAL8TimeArraySeries *series );
+LALDWriteTArraySeries( LALStatus  *status, FILE *stream, REAL8TimeArraySeries *series );
 void
-LALCWriteTArraySeries( LALStatus  *stat, FILE *stream, COMPLEX8TimeArraySeries *series );
+LALCWriteTArraySeries( LALStatus  *status, FILE *stream, COMPLEX8TimeArraySeries *series );
 void
-LALZWriteTArraySeries( LALStatus  *stat, FILE *stream, COMPLEX16TimeArraySeries *series );
+LALZWriteTArraySeries( LALStatus  *status, FILE *stream, COMPLEX16TimeArraySeries *series );
 
 void
-LALI2WriteFSeries( LALStatus  *stat, FILE *stream, INT2FrequencySeries *series );
+LALI2WriteFSeries( LALStatus  *status, FILE *stream, INT2FrequencySeries *series );
 void
-LALI4WriteFSeries( LALStatus  *stat, FILE *stream, INT4FrequencySeries *series );
+LALI4WriteFSeries( LALStatus  *status, FILE *stream, INT4FrequencySeries *series );
 void
-LALI8WriteFSeries( LALStatus  *stat, FILE *stream, INT8FrequencySeries *series );
+LALI8WriteFSeries( LALStatus  *status, FILE *stream, INT8FrequencySeries *series );
 void
-LALU2WriteFSeries( LALStatus  *stat, FILE *stream, UINT2FrequencySeries *series );
+LALU2WriteFSeries( LALStatus  *status, FILE *stream, UINT2FrequencySeries *series );
 void
-LALU4WriteFSeries( LALStatus  *stat, FILE *stream, UINT4FrequencySeries *series );
+LALU4WriteFSeries( LALStatus  *status, FILE *stream, UINT4FrequencySeries *series );
 void
-LALU8WriteFSeries( LALStatus  *stat, FILE *stream, UINT8FrequencySeries *series );
+LALU8WriteFSeries( LALStatus  *status, FILE *stream, UINT8FrequencySeries *series );
 void
-LALSWriteFSeries( LALStatus  *stat, FILE *stream, REAL4FrequencySeries *series );
+LALSWriteFSeries( LALStatus  *status, FILE *stream, REAL4FrequencySeries *series );
 void
-LALDWriteFSeries( LALStatus  *stat, FILE *stream, REAL8FrequencySeries *series );
+LALDWriteFSeries( LALStatus  *status, FILE *stream, REAL8FrequencySeries *series );
 void
-LALCWriteFSeries( LALStatus  *stat, FILE *stream, COMPLEX8FrequencySeries *series );
+LALCWriteFSeries( LALStatus  *status, FILE *stream, COMPLEX8FrequencySeries *series );
 void
-LALZWriteFSeries( LALStatus  *stat, FILE *stream, COMPLEX16FrequencySeries *series );
+LALZWriteFSeries( LALStatus  *status, FILE *stream, COMPLEX16FrequencySeries *series );
 
 /* <lalLaTeX>
 \newpage\input{StreamGridOutputC}
 </lalLaTeX> */
 void
-LALI2WriteGrid( LALStatus  *stat, FILE *stream, INT2Grid *grid );
+LALI2WriteGrid( LALStatus  *status, FILE *stream, INT2Grid *grid );
 void
-LALI4WriteGrid( LALStatus  *stat, FILE *stream, INT4Grid *grid );
+LALI4WriteGrid( LALStatus  *status, FILE *stream, INT4Grid *grid );
 void
-LALI8WriteGrid( LALStatus  *stat, FILE *stream, INT8Grid *grid );
+LALI8WriteGrid( LALStatus  *status, FILE *stream, INT8Grid *grid );
 void
-LALU2WriteGrid( LALStatus  *stat, FILE *stream, UINT2Grid *grid );
+LALU2WriteGrid( LALStatus  *status, FILE *stream, UINT2Grid *grid );
 void
-LALU4WriteGrid( LALStatus  *stat, FILE *stream, UINT4Grid *grid );
+LALU4WriteGrid( LALStatus  *status, FILE *stream, UINT4Grid *grid );
 void
-LALU8WriteGrid( LALStatus  *stat, FILE *stream, UINT8Grid *grid );
+LALU8WriteGrid( LALStatus  *status, FILE *stream, UINT8Grid *grid );
 void
-LALSWriteGrid( LALStatus  *stat, FILE *stream, REAL4Grid *grid );
+LALSWriteGrid( LALStatus  *status, FILE *stream, REAL4Grid *grid );
 void
-LALDWriteGrid( LALStatus  *stat, FILE *stream, REAL8Grid *grid );
+LALDWriteGrid( LALStatus  *status, FILE *stream, REAL8Grid *grid );
 void
-LALCWriteGrid( LALStatus  *stat, FILE *stream, COMPLEX8Grid *grid );
+LALCWriteGrid( LALStatus  *status, FILE *stream, COMPLEX8Grid *grid );
 void
-LALZWriteGrid( LALStatus  *stat, FILE *stream, COMPLEX16Grid *grid );
+LALZWriteGrid( LALStatus  *status, FILE *stream, COMPLEX16Grid *grid );
 
 #ifdef __cplusplus
 }

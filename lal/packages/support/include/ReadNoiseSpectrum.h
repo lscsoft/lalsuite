@@ -67,7 +67,7 @@ NRCSID (READNOISESPECTRUMH, "$Id$");
 #define LALREADNOISESPECTRUM_MAXLINELENGTH 2048
 
 void LALReadNoiseSpectrum(
-    LALStatus *stat, 
+    LALStatus *status, 
     REAL4FrequencySeries *spectrum, 
     CHAR *fname
     );

@@ -117,54 +117,54 @@ typedef struct {
 ******************************************************* </lalLaTeX> */
 
 /* Function prototypes */
-void LALParseDataFile (LALStatus *stat, LALParsedDataFile **cfgdata, const CHAR *fname);
-void LALDestroyParsedDataFile (LALStatus *stat, LALParsedDataFile **cfgdata);
+void LALParseDataFile (LALStatus *status, LALParsedDataFile **cfgdata, const CHAR *fname);
+void LALDestroyParsedDataFile (LALStatus *status, LALParsedDataFile **cfgdata);
 
 void 
-LALReadConfigBOOLVariable (LALStatus *stat, 
+LALReadConfigBOOLVariable (LALStatus *status, 
 			  BOOLEAN *varp, 
 			  const LALParsedDataFile *cfgdata, 
 			  const CHAR *varName, 
 			  BOOLEAN *wasRead);
 
 void
-LALReadConfigINT4Variable (LALStatus *stat,
+LALReadConfigINT4Variable (LALStatus *status,
 			   INT4 *varp, 
 			   const LALParsedDataFile *cfgdata, 
 			   const CHAR *varName, 
 			   BOOLEAN *wasRead);
 
 void
-LALReadConfigREAL8Variable (LALStatus *stat, 
+LALReadConfigREAL8Variable (LALStatus *status, 
 			    REAL8 *varp, 
 			    const LALParsedDataFile *cfgdata, 
 			    const CHAR *varName, 
 			    BOOLEAN *wasRead);
 
 void 
-LALReadConfigSTRINGVariable (LALStatus *stat, 
+LALReadConfigSTRINGVariable (LALStatus *status, 
 			     CHAR **varp, 
 			     const LALParsedDataFile *cfgdata, 
 			     const CHAR *varName,
 			     BOOLEAN *wasRead);
 
 void
-LALReadConfigSTRINGNVariable (LALStatus *stat, 
+LALReadConfigSTRINGNVariable (LALStatus *status, 
 			      CHARVector *varp,
 			      const LALParsedDataFile *cfgdata, 
 			      const CHAR *varName,
 			      BOOLEAN *wasRead);
 
 void
-LALReadConfigVariable (LALStatus *stat, 
+LALReadConfigVariable (LALStatus *status, 
 		       void *varp,
 		       const LALParsedDataFile *cfgdata,
 		       const LALConfigVar *param,
 		       BOOLEAN *wasRead);
 
-void LALCheckConfigReadComplete (LALStatus *stat, const LALParsedDataFile *cfgdata, ConfigStrictness strict);
+void LALCheckConfigReadComplete (LALStatus *status, const LALParsedDataFile *cfgdata, ConfigStrictness strict);
 
-void LALLowerCaseString (LALStatus *stat, CHAR *string);
+void LALLowerCaseString (LALStatus *status, CHAR *string);
 
 /* C++ protection. */
 #ifdef  __cplusplus
