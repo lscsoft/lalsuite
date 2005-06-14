@@ -440,7 +440,7 @@ LALConvertSkyCoordinates( LALStatus        *,
 			  SkyPosition      *input,
 			  ConvertSkyParams *params );
 
-void LALNormalizeSkyPosition (LALStatus *stat, SkyPosition *posOut, const SkyPosition *posIn);
+void LALNormalizeSkyPosition (LALStatus *status, SkyPosition *posOut, const SkyPosition *posIn);
 
 /* <lalLaTeX>
 \newpage\input{SkyCoordinatesTestC}
