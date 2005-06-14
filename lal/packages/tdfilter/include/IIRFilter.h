@@ -168,12 +168,12 @@ typedef struct tagREAL8IIRFilter{
 \newpage\input{CreateIIRFilterC}
 </lalLaTeX> */
 void
-LALCreateREAL4IIRFilter( LALStatus         *stat,
+LALCreateREAL4IIRFilter( LALStatus         *status,
 			 REAL4IIRFilter    **output,
 			 COMPLEX8ZPGFilter *input );
 
 void
-LALCreateREAL8IIRFilter( LALStatus          *stat,
+LALCreateREAL8IIRFilter( LALStatus          *status,
 			 REAL8IIRFilter     **output,
 			 COMPLEX16ZPGFilter *input );
 
@@ -181,24 +181,24 @@ LALCreateREAL8IIRFilter( LALStatus          *stat,
 \newpage\input{DestroyIIRFilterC}
 </lalLaTeX> */
 void
-LALDestroyREAL4IIRFilter( LALStatus      *stat,
+LALDestroyREAL4IIRFilter( LALStatus      *status,
 			  REAL4IIRFilter **input );
 
 void
-LALDestroyREAL8IIRFilter( LALStatus      *stat,
+LALDestroyREAL8IIRFilter( LALStatus      *status,
 			  REAL8IIRFilter **input );
 
 /* <lalLaTeX>
 \newpage\input{IIRFilterC}
 </lalLaTeX> */
 void
-LALIIRFilterREAL4( LALStatus      *stat,
+LALIIRFilterREAL4( LALStatus      *status,
 		   REAL4          *output,
 		   REAL4          input,
 		   REAL4IIRFilter *filter );
 
 void
-LALIIRFilterREAL8( LALStatus      *stat,
+LALIIRFilterREAL8( LALStatus      *status,
 		   REAL8          *output,
 		   REAL8          input,
 		   REAL8IIRFilter *filter );
@@ -213,17 +213,17 @@ LALDIIRFilter( REAL8 x, REAL8IIRFilter *filter );
 \newpage\input{IIRFilterVectorC}
 </lalLaTeX> */
 void
-LALIIRFilterREAL4Vector( LALStatus      *stat,
+LALIIRFilterREAL4Vector( LALStatus      *status,
 			 REAL4Vector    *vector,
 			 REAL4IIRFilter *filter );
 
 void
-LALIIRFilterREAL8Vector( LALStatus      *stat,
+LALIIRFilterREAL8Vector( LALStatus      *status,
 			 REAL8Vector    *vector,
 			 REAL8IIRFilter *filter );
 
 void
-LALDIIRFilterREAL4Vector( LALStatus      *stat,
+LALDIIRFilterREAL4Vector( LALStatus      *status,
 			  REAL4Vector    *vector,
 			  REAL8IIRFilter *filter );
 
@@ -231,17 +231,17 @@ LALDIIRFilterREAL4Vector( LALStatus      *stat,
 \newpage\input{IIRFilterVectorRC}
 </lalLaTeX> */
 void
-LALIIRFilterREAL4VectorR( LALStatus      *stat,
+LALIIRFilterREAL4VectorR( LALStatus      *status,
 			  REAL4Vector    *vector,
 			  REAL4IIRFilter *filter );
 
 void
-LALIIRFilterREAL8VectorR( LALStatus      *stat,
+LALIIRFilterREAL8VectorR( LALStatus      *status,
 			  REAL8Vector    *vector,
 			  REAL8IIRFilter *filter );
 
 void
-LALDIIRFilterREAL4VectorR( LALStatus      *stat,
+LALDIIRFilterREAL4VectorR( LALStatus      *status,
 			   REAL4Vector    *vector,
 			   REAL8IIRFilter *filter );
 

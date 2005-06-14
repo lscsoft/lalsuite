@@ -97,13 +97,13 @@ NRCSID(ZPGFILTERH,"$Id$");
 \newpage\input{CreateZPGFilterC}
 </lalLaTeX> */
 void
-LALCreateCOMPLEX8ZPGFilter( LALStatus         *stat,
+LALCreateCOMPLEX8ZPGFilter( LALStatus         *status,
 			    COMPLEX8ZPGFilter **output,
 			    INT4              numZeros,
 			    INT4              numPoles );
 
 void
-LALCreateCOMPLEX16ZPGFilter( LALStatus          *stat,
+LALCreateCOMPLEX16ZPGFilter( LALStatus          *status,
 			     COMPLEX16ZPGFilter **output,
 			     INT4               numZeros,
 			     INT4               numPoles );
@@ -112,22 +112,22 @@ LALCreateCOMPLEX16ZPGFilter( LALStatus          *stat,
 \newpage\input{DestroyZPGFilterC}
 </lalLaTeX> */
 void
-LALDestroyCOMPLEX8ZPGFilter( LALStatus         *stat,
+LALDestroyCOMPLEX8ZPGFilter( LALStatus         *status,
 			     COMPLEX8ZPGFilter **input );
 
 void
-LALDestroyCOMPLEX16ZPGFilter( LALStatus          *stat,
+LALDestroyCOMPLEX16ZPGFilter( LALStatus          *status,
 			      COMPLEX16ZPGFilter **input );
 
 /* <lalLaTeX>
 \newpage\input{BilinearTransformC}
 </lalLaTeX> */
 void
-LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
+LALWToZCOMPLEX8ZPGFilter( LALStatus         *status,
 			  COMPLEX8ZPGFilter *filter );
 
 void
-LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
+LALWToZCOMPLEX16ZPGFilter( LALStatus          *status,
 			   COMPLEX16ZPGFilter *filter );
 
 #ifdef __cplusplus
