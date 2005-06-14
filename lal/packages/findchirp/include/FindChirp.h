@@ -616,7 +616,7 @@ in a form that can be used by \texttt{FindChirpFilterSegment()}
 void
 LALFindChirpCreateTmpltNode (
     LALStatus                  *status,
-    InspiralTemplate           *tmplt,
+    InspiralTemplate           *thistmplt,
     InspiralTemplateNode      **tmpltNode
     );
 
