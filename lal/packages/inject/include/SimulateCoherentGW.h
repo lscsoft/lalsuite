@@ -384,13 +384,13 @@ typedef struct tagDetectorResponse {
 void
 LALSimulateCoherentGW( LALStatus        *,
 		       REAL4TimeSeries  *output,
-		       CoherentGW       *signal,
+		       CoherentGW       *input,
 		       DetectorResponse *detector );
 
 void
 LALSimulateCoherentGW_exp (LALStatus        *stat,
 			   REAL4TimeSeries  *output,
-			   CoherentGW       *signal,
+			   CoherentGW       *input,
 			   DetectorResponse *detector );
 
 /* <lalLaTeX>
