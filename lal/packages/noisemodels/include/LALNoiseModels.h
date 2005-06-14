@@ -514,7 +514,7 @@ extern "C" {
             LALRandomInspiralSignal
             (
              LALStatus *status, 
-             REAL4Vector *signal,
+             REAL4Vector *signalvec,
              RandomInspiralSignalIn *randIn
             );
 
