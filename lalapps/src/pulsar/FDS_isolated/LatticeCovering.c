@@ -41,6 +41,7 @@
 
 
 #include <lal/LALStdlib.h>
+#include <lal/LALDatatypes.h>
 
 NRCSID( LATTICECOVERINGC, "$Id$" );
 
@@ -66,7 +67,7 @@ NRCSID( LATTICECOVERINGC, "$Id$" );
 
 #define LATTICECOVERING_MSGENULL 	"Arguments contained an unexpected null pointer"
 #define LATTICECOVERING_MSGENONULL	"Output pointer is not NULL"
-#define LATTICECOVERING_MSGEMEM	"Out of memory"
+#define LATTICECOVERING_MSGEMEM		"Out of memory"
 #define LATTICECOVERING_MSGEINPUT	"Invald input parameter"
 
 /*</lalErrTable> */
@@ -451,6 +452,70 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,	/**< OUT: generating matrix */
 
   return 0;
 } /* XLALGetGeneratingMatrix() */
+
+
+/** Cover given parameter-space by lattice of specified type.
+ * The central function of this module: cover the parameter-space 
+ * 
+ * NOTE: the input generating-matrix (generator) needs to be scaled
+ * correctly to the required covering radius and is supposed to be
+ * expressed in the correct coordinates of the parameter-space.
+ * Also, it needs to be in canonical *square matrix* form.
+ * All this needs to be prepared before this function is called....
+ *
+ * NOTE2: as always in this module, the generating matrix contains
+ * the lattice-vectors as _rows_
+ */
+void
+LALLatticeCovering (LALStatus *lstat,
+		    REAL8VectorSequence **lattice, /**< OUT: lattice-points: array of vectors*/
+		    const gsl_matrix *generator,/**< IN: _SQUARE_ generating matrix for lattice*/
+		    const gsl_vector *startPoint, /**< IN: startpoint for covering */
+		    BOOLEAN (*isInside)(const gsl_vector *point)/**< IN: boundary-condition */
+		    )
+{
+  UINT4 dimension;
+
+  INITSTATUS( lstat, "LALLatticeCovering", LATTICECOVERINGC );
+  ATTATCHSTATUSPTR (lstat); 
+
+  /* This traps coding errors in the calling routine. */
+  ASSERT ( lattice != NULL, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );  
+  ASSERT ( *lattice == NULL,lstat, LATTICECOVERING_ENONULL, LATTICECOVERING_MSGENONULL );
+  ASSERT ( generator, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
+  ASSERT ( startPoint, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
+  ASSERT ( startPoint->data, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
+
+  if ( generator->size1 != generator->size2 )	/* need square generator */
+    {
+      LALPrintError ("\nERROR: LatticeCovering() required SQUARE generating matrix!\n\n");
+      ABORT (lstat, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);      
+    }
+
+  if ( ! (*isInside)(startPoint) )	/* startPoint has to be inside */
+    {
+      LALPrintError ("\nERROR: startPoint must lie withing the covering-region!\n\n");
+      ABORT (lstat, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
+    }
+
+  dimension = startPoint->size;	/* dimension of parameter-space to cover */
+
+  if ( (generator->size1 != dimension) )
+    {
+      LALPrintError ("\nERROR: all input-dimensions must agree (dim=%d)\n\n", dimension);
+      ABORT (lstat, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
+    }
+  
+  
+  
+
+  /* clean up */
+  DETATCHSTATUSPTR (lstat);
+
+  RETURN( lstat );
+
+} /* LALLatticeCovering() */
+
 
 
 /** check if matrix is symmetric */
