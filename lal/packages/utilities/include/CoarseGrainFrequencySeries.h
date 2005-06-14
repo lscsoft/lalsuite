@@ -26,6 +26,9 @@ which coarse-grain a frequency series.
 
 #include <lal/LALStdlib.h>
 
+#ifndef _COARSEGRAINFREQUENCYSERIES_H
+#define _COARSEGRAINFREQUENCYSERIES_H
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -136,3 +139,5 @@ LALZCoarseGrainFrequencySeries(LALStatus                        *status,
 \newpage\input{ZCoarseGrainFrequencySeriesTestC}
 
 *********************************************************** </lalLaTeX> */
+
+#endif /* _COARSEGRAINFREQUENCYSERIES_H */
