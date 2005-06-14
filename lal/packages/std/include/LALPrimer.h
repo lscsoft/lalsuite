@@ -17,10 +17,10 @@ NRCSID( LALPRIMERH, "$Id$" );
 #define LALPRIMERH_MSGEDIV0 "Division by zero"
 
 void
-REAL4Invert( LALStatus *stat, REAL4 *output, REAL4 input );
+REAL4Invert( LALStatus *status, REAL4 *output, REAL4 input );
 
 void
-REAL4Divide( LALStatus *stat, REAL4 *output, REAL4 numer, REAL4 denom);
+REAL4Divide( LALStatus *status, REAL4 *output, REAL4 numer, REAL4 denom);
 
 
 #ifdef  __cplusplus

@@ -233,47 +233,47 @@ typedef struct tagTokenList {
 \newpage\input{StringTokenC}
 </lalLaTeX> */
 void
-LALCreateTokenList( LALStatus  *stat,
+LALCreateTokenList( LALStatus  *status,
 		    TokenList  **list,
 		    const CHAR *string,
 		    const CHAR *delimiters );
 
 void
-LALDestroyTokenList( LALStatus *stat,
+LALDestroyTokenList( LALStatus *status,
 		     TokenList **list );
 
 /* <lalLaTeX>
 \newpage\input{StringConvertC}
 </lalLaTeX> */
 void
-LALStringToU2( LALStatus *stat, UINT2 *value, const CHAR *string, CHAR **endptr );
+LALStringToU2( LALStatus *status, UINT2 *value, const CHAR *string, CHAR **endptr );
 
 void
-LALStringToU4( LALStatus *stat, UINT4 *value, const CHAR *string, CHAR **endptr );
+LALStringToU4( LALStatus *status, UINT4 *value, const CHAR *string, CHAR **endptr );
 
 void
-LALStringToU8( LALStatus *stat, UINT8 *value, const CHAR *string, CHAR **endptr );
+LALStringToU8( LALStatus *status, UINT8 *value, const CHAR *string, CHAR **endptr );
 
 void
-LALStringToI2( LALStatus *stat, INT2 *value, const CHAR *string, CHAR **endptr );
+LALStringToI2( LALStatus *status, INT2 *value, const CHAR *string, CHAR **endptr );
 
 void
-LALStringToI4( LALStatus *stat, INT4 *value, const CHAR *string, CHAR **endptr );
+LALStringToI4( LALStatus *status, INT4 *value, const CHAR *string, CHAR **endptr );
 
 void
-LALStringToI8( LALStatus *stat, INT8 *value, const CHAR *string, CHAR **endptr );
+LALStringToI8( LALStatus *status, INT8 *value, const CHAR *string, CHAR **endptr );
 
 void
-LALStringToS( LALStatus *stat, REAL4 *value, const CHAR *string, CHAR **endptr );
+LALStringToS( LALStatus *status, REAL4 *value, const CHAR *string, CHAR **endptr );
 
 void
-LALStringToD( LALStatus *stat, REAL8 *value, const CHAR *string, CHAR **endptr );
+LALStringToD( LALStatus *status, REAL8 *value, const CHAR *string, CHAR **endptr );
 
 void
-LALStringToC( LALStatus *stat, COMPLEX8 *value, const CHAR *string, CHAR **endptr );
+LALStringToC( LALStatus *status, COMPLEX8 *value, const CHAR *string, CHAR **endptr );
 
 void
-LALStringToZ( LALStatus *stat, COMPLEX16 *value, const CHAR *string, CHAR **endptr );
+LALStringToZ( LALStatus *status, COMPLEX16 *value, const CHAR *string, CHAR **endptr );
 
 #ifdef __cplusplus
 #pragma {

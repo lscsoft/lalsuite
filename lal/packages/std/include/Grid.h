@@ -208,65 +208,65 @@ typedef struct tagCOMPLEX16Grid {
 \newpage\input{GridC}
 </lalLaTeX> */
 void
-LALI2CreateGrid( LALStatus *stat, INT2Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALI2CreateGrid( LALStatus *status, INT2Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
 
 void
-LALI4CreateGrid( LALStatus *stat, INT4Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALI4CreateGrid( LALStatus *status, INT4Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
 
 void
-LALI8CreateGrid( LALStatus *stat, INT8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALI8CreateGrid( LALStatus *status, INT8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
 
 void
-LALU2CreateGrid( LALStatus *stat, UINT2Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALU2CreateGrid( LALStatus *status, UINT2Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
 
 void
-LALU4CreateGrid( LALStatus *stat, UINT4Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALU4CreateGrid( LALStatus *status, UINT4Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
 
 void
-LALU8CreateGrid( LALStatus *stat, UINT8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALU8CreateGrid( LALStatus *status, UINT8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
 
 void
-LALSCreateGrid( LALStatus *stat, REAL4Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALSCreateGrid( LALStatus *status, REAL4Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
 
 void
-LALDCreateGrid( LALStatus *stat, REAL8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALDCreateGrid( LALStatus *status, REAL8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
 
 void
-LALCCreateGrid( LALStatus *stat, COMPLEX8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALCCreateGrid( LALStatus *status, COMPLEX8Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
 
 void
-LALZCreateGrid( LALStatus *stat, COMPLEX16Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
+LALZCreateGrid( LALStatus *status, COMPLEX16Grid **grid, UINT4Vector *dimLength, UINT4 dimension );
 
 
 void
-LALI2DestroyGrid( LALStatus *stat, INT2Grid **grid );
+LALI2DestroyGrid( LALStatus *status, INT2Grid **grid );
 
 void
-LALI4DestroyGrid( LALStatus *stat, INT4Grid **grid );
+LALI4DestroyGrid( LALStatus *status, INT4Grid **grid );
 
 void
-LALI8DestroyGrid( LALStatus *stat, INT8Grid **grid );
+LALI8DestroyGrid( LALStatus *status, INT8Grid **grid );
 
 void
-LALU2DestroyGrid( LALStatus *stat, UINT2Grid **grid );
+LALU2DestroyGrid( LALStatus *status, UINT2Grid **grid );
 
 void
-LALU4DestroyGrid( LALStatus *stat, UINT4Grid **grid );
+LALU4DestroyGrid( LALStatus *status, UINT4Grid **grid );
 
 void
-LALU8DestroyGrid( LALStatus *stat, UINT8Grid **grid );
+LALU8DestroyGrid( LALStatus *status, UINT8Grid **grid );
 
 void
-LALSDestroyGrid( LALStatus *stat, REAL4Grid **grid );
+LALSDestroyGrid( LALStatus *status, REAL4Grid **grid );
 
 void
-LALDDestroyGrid( LALStatus *stat, REAL8Grid **grid );
+LALDDestroyGrid( LALStatus *status, REAL8Grid **grid );
 
 void
-LALCDestroyGrid( LALStatus *stat, COMPLEX8Grid **grid );
+LALCDestroyGrid( LALStatus *status, COMPLEX8Grid **grid );
 
 void
-LALZDestroyGrid( LALStatus *stat, COMPLEX16Grid **grid );
+LALZDestroyGrid( LALStatus *status, COMPLEX16Grid **grid );
 
 /* <lalLaTeX>
 %\newpage\input{GridTestC}
