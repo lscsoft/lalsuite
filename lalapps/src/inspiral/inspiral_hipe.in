@@ -606,13 +606,41 @@ def triple_ifo(ifo1_data, ifo2_data, ifo3_data, not_ifo4_data):
    
    return triple_data
 
-###############################################################################
+##############################################################################
 # function to set up the cohbank and cohinspiral jobs for a network of 2 ifos
 
 def coherent_2ifo(ifo1segs,ifo2segs,ifo1_name,ifo2_name,
        coinc_nodes,cb_job,trig_job1,trig_job2,insp_coh_job1,insp_coh_job2,
        cohinsp_job,cb_opts,insp1_opts,insp2_opts,data1_opts,data2_opts,
        chan1,chan2,cohinsp_opts,dag,do_second_coinc,do_cohbank,do_cohinspiral):
+
+  """
+  Do a two-ifo coherent analysis
+
+  ifo1segs = data segments for ifo1
+  ifo2segs = data segments for ifo2
+  ifo1_name = two character ifo identifier for ifo1 (e.g. 'H1')
+  ifo2_name = two character ifo identifier for ifo2 (e.g. 'H1')
+  coinc_nodes = The tuple populated in the second coinc of step 10
+  cb_job = coherent bank job
+  trig_job1 = trigbank job for ifo1
+  trig_job2 = trigbank job for ifo2
+  insp_coh_job1 = inspiral job to produce c-data for ifo1
+  insp_coh_job2 = inspiral job to produce c-data for ifo2
+  cohinsp_job = the coherent_inspiral job
+  cb_opts = coherent bank options
+  insp1_opts = options for ifo1's inspiral job
+  insp2_opts = options for ifo2's inspiral job
+  data1_opts = data options for ifo1's inspiral job
+  data2_opts = data options for ifo2's inspiral job
+  chan1 = channel for ifo1's inspiral job
+  chan2 = channel for ifo2's inspiral job
+  cohinsp_opts = options for the coherent_inspiral job
+  dag = name of the dag
+  do_second_coinc = boolean to tell whether the second_coinc was done
+  do_cohbank = boolean to set up cohbank,trigbank,inspiral jobs  
+  do_cohinspiral = boolean to set up coherent_inspiral job
+  """
 
   cb_job.add_ini_opts(cp,cb_opts)
   insp_coh_job1.add_ini_opts(cp,insp1_opts)
@@ -656,6 +684,7 @@ def coherent_2ifo(ifo1segs,ifo2segs,ifo1_name,ifo2_name,
           insp1.set_end(chunk.end())
           insp1.set_ifo(ifo1_name)
           insp1.add_var_opt('write-cdata','')
+          insp1.add_var_opt('user-tag',usertag)
           calibrated1 = None
           for opt in cp.options(data1_opts):
             if (opt.find('calibrated') >-1):
@@ -689,6 +718,7 @@ def coherent_2ifo(ifo1segs,ifo2segs,ifo1_name,ifo2_name,
           insp2.set_end(chunk.end())
           insp2.set_ifo(ifo2_name)
           insp2.add_var_opt('write-cdata','')
+          insp2.add_var_opt('user-tag',usertag)
           calibrated2 = None
           for opt in cp.options(data2_opts):
             if (opt.find('calibrated') >-1):
@@ -700,7 +730,188 @@ def coherent_2ifo(ifo1segs,ifo2segs,ifo1_name,ifo2_name,
           if do_cohbank: insp2.add_parent(trigbank2)
           if do_cohbank: dag.add_node(insp2)
 
+    cohinsp = inspiral.ChiaNode(cohinsp_job)
+    cohinsp.set_bank(cohbnk.get_output())
+    cohinsp.set_start(coinc_done.get_chunk().start())
+    cohinsp.set_end(coinc_done.get_chunk().end())
+    cohinsp.add_var_opt('ifo-tag',ifotag)
+    if do_cohinspiral: 
+      cohinsp.add_parent(insp1)
+      cohinsp.add_parent(insp2)
+    if do_cohinspiral: dag.add_node(cohinsp)
+      
+  return 0
 
+##############################################################################
+# function to set up the cohbank and cohinspiral jobs for a network of 3 ifos
+
+def coherent_3ifo(ifo1segs,ifo2segs,ifo3segs,ifo1_name,ifo2_name,
+       ifo3_name,coinc_nodes,cb_job,trig_job1,trig_job2,trig_job3,
+       insp_coh_job1,insp_coh_job2,insp_coh_job3,cohinsp_job,cb_opts,
+       insp1_opts,insp2_opts,insp3_opts,data1_opts,data2_opts,
+       data3_opts,chan1,chan2,chan3,cohinsp_opts,dag,do_second_coinc,
+       do_cohbank,do_cohinspiral):
+
+  """
+  Do a three-ifo coherent analysis
+
+  ifo1segs = data segments for ifo1
+  ifo2segs = data segments for ifo2
+  ifo3segs = data segments for ifo3
+  ifo1_name = two character ifo identifier for ifo1 (e.g. 'H1')
+  ifo2_name = two character ifo identifier for ifo2 (e.g. 'H1')
+  ifo3_name = two character ifo identifier for ifo3 (e.g. 'H1')
+  coinc_nodes = tuple populated in the second coinc of step 10
+  cb_job = coherent bank job
+  trig_job1 = trigbank job for ifo1
+  trig_job2 = trigbank job for ifo2
+  trig_job3 = trigbank job for ifo3
+  insp_coh_job1 = inspiral job to produce c-data for ifo1
+  insp_coh_job2 = inspiral job to produce c-data for ifo2
+  insp_coh_job3 = inspiral job to produce c-data for ifo3
+  cohinsp_job = the coherent_inspiral job
+  cb_opts = coherent bank options
+  insp1_opts = options for ifo1's inspiral job
+  insp2_opts = options for ifo2's inspiral job
+  insp3_opts = options for ifo3's inspiral job
+  data1_opts = data options for ifo1's inspiral job
+  data2_opts = data options for ifo2's inspiral job
+  data3_opts = data options for ifo3's inspiral job
+  chan1 = channel for ifo1's inspiral job
+  chan2 = channel for ifo2's inspiral job
+  chan3 = channel for ifo3's inspiral job
+  cohinsp_opts = options for the coherent_inspiral job
+  dag = name of the dag
+  do_second_coinc = boolean to tell whether the second_coinc was done
+  do_cohbank = boolean to set up cohbank,trigbank,inspiral jobs  
+  do_cohinspiral = boolean to set up coherent_inspiral job
+  """
+
+  cb_job.add_ini_opts(cp,cb_opts)
+  insp_coh_job1.add_ini_opts(cp,insp1_opts)
+  insp_coh_job2.add_ini_opts(cp,insp2_opts)
+  insp_coh_job3.add_ini_opts(cp,insp3_opts)
+  insp_coh_job1.add_ini_opts(cp,data1_opts)
+  insp_coh_job2.add_ini_opts(cp,data2_opts)
+  insp_coh_job3.add_ini_opts(cp,data3_opts)
+  channel1 = cp.get('input',chan1)
+  channel2 = cp.get('input',chan2)
+  channel3 = cp.get('input',chan3)
+  insp_coh_job1.set_channel(channel1)
+  insp_coh_job2.set_channel(channel2)
+  insp_coh_job3.set_channel(channel3)
+  cohinsp_job.add_ini_opts(cp,cohinsp_opts)
+  
+  ifotag = ifo1_name + ifo2_name + ifo3_name
+  usertag = 'COHERENT'
+
+  for coinc_done in coinc_nodes:
+    cohbnk = inspiral.CohBankNode( cb_job )
+    cohbnk.set_bank(coinc_done.get_dag_node().get_output())
+    if do_second_coinc: cohbnk.add_parent(coinc_done.get_dag_node())
+    if do_cohbank: dag.add_node(cohbnk)
+
+    for seg in ifo1segs:
+      for chunk in seg:
+        if inspiral.overlap_test(coinc_done.get_chunk(),chunk):
+
+          trigbank1 = inspiral.TrigToTmpltNode(trig_job1)
+          trigbank1.set_user_tag(usertag)
+          trigbank1.set_output_ifo(ifo1_name)
+          trigbank1.set_input_ifo(ifo1_name)
+          trigbank1.set_start(chunk.start())
+          trigbank1.set_end(chunk.end())
+          trigbank1.add_var_opt('parameter-test','no_test')
+          trigbank1.add_var_opt('data-type','all_data')
+          trigbank1.add_var_opt('debug-level','33')
+          trigbank1.add_var_arg(cohbnk.get_output())
+          if do_cohbank: trigbank1.add_parent(cohbnk)
+          if do_cohbank: dag.add_node(trigbank1)
+
+          insp1 = inspiral.InspiralNode(insp_coh_job1)
+          insp1.set_start(chunk.start())
+          insp1.set_end(chunk.end())
+          insp1.set_ifo(ifo1_name)
+          insp1.add_var_opt('write-cdata','')
+          insp1.add_var_opt('user-tag',usertag)
+          calibrated1 = None
+          for opt in cp.options(data1_opts):
+            if (opt.find('calibrated') >-1):
+              calibrated1 = 1
+          if not calibrated1: insp1.calibration()
+          if not read_cache: insp1.set_cache(seg.get_df_node().get_output())
+          else: insp1.set_cache(cp.get('datafind',ifo1_name+"-cache"))
+          insp1.set_bank(trigbank1.get_trig_out())
+          if do_cohbank: insp1.add_parent(trigbank1)
+          if do_cohbank: dag.add_node(insp1)
+
+    for seg in ifo2segs:
+      for chunk in seg:
+        if inspiral.overlap_test(coinc_done.get_chunk(),chunk):
+
+          trigbank2 = inspiral.TrigToTmpltNode(trig_job2)
+          trigbank2.set_user_tag(usertag)
+          trigbank2.set_output_ifo(ifo2_name)
+          trigbank2.set_input_ifo(ifo2_name)
+          trigbank2.set_start(chunk.start())
+          trigbank2.set_end(chunk.end())
+          trigbank2.add_var_opt('parameter-test','no_test')
+          trigbank2.add_var_opt('data-type','all_data')
+          trigbank2.add_var_opt('debug-level','33')
+          trigbank2.add_var_arg(cohbnk.get_output())
+          if do_cohbank: trigbank2.add_parent(cohbnk)
+          if do_cohbank: dag.add_node(trigbank2)
+
+          insp2 = inspiral.InspiralNode(insp_coh_job2)
+          insp2.set_start(chunk.start())
+          insp2.set_end(chunk.end())
+          insp2.set_ifo(ifo2_name)
+          insp2.add_var_opt('write-cdata','')
+          insp2.add_var_opt('user-tag',usertag)
+          calibrated2 = None
+          for opt in cp.options(data2_opts):
+            if (opt.find('calibrated') >-1):
+              calibrated2 = 1
+          if not calibrated2: insp2.calibration()
+          if not read_cache: insp2.set_cache(seg.get_df_node().get_output())
+          else: insp2.set_cache(cp.get('datafind',ifo2_name+"-cache"))
+          insp2.set_bank(trigbank2.get_trig_out())
+          if do_cohbank: insp2.add_parent(trigbank2)
+          if do_cohbank: dag.add_node(insp2)
+
+    for seg in ifo3segs:
+      for chunk in seg:
+        if inspiral.overlap_test(coinc_done.get_chunk(),chunk):
+
+          trigbank3 = inspiral.TrigToTmpltNode(trig_job3)
+          trigbank3.set_user_tag(usertag)
+          trigbank3.set_output_ifo(ifo3_name)
+          trigbank3.set_input_ifo(ifo3_name)
+          trigbank3.set_start(chunk.start())
+          trigbank3.set_end(chunk.end())
+          trigbank3.add_var_opt('parameter-test','no_test')
+          trigbank3.add_var_opt('data-type','all_data')
+          trigbank3.add_var_opt('debug-level','33')
+          trigbank3.add_var_arg(cohbnk.get_output())
+          if do_cohbank: trigbank3.add_parent(cohbnk)
+          if do_cohbank: dag.add_node(trigbank3)
+
+          insp3 = inspiral.InspiralNode(insp_coh_job3)
+          insp3.set_start(chunk.start())
+          insp3.set_end(chunk.end())
+          insp3.set_ifo(ifo3_name)
+          insp3.add_var_opt('write-cdata','')
+          insp3.add_var_opt('user-tag',usertag)
+          calibrated3 = None
+          for opt in cp.options(data3_opts):
+            if (opt.find('calibrated') >-1):
+              calibrated3 = 1
+          if not calibrated3: insp3.calibration()
+          if not read_cache: insp3.set_cache(seg.get_df_node().get_output())
+          else: insp3.set_cache(cp.get('datafind',ifo3_name+"-cache"))
+          insp3.set_bank(trigbank3.get_trig_out())
+          if do_cohbank: insp3.add_parent(trigbank3)
+          if do_cohbank: dag.add_node(insp3)
 
     cohinsp = inspiral.ChiaNode(cohinsp_job)
     cohinsp.set_bank(cohbnk.get_output())
@@ -710,6 +921,238 @@ def coherent_2ifo(ifo1segs,ifo2segs,ifo1_name,ifo2_name,
     if do_cohinspiral: 
       cohinsp.add_parent(insp1)
       cohinsp.add_parent(insp2)
+      cohinsp.add_parent(insp3)
+    if do_cohinspiral: dag.add_node(cohinsp)
+      
+  return 0
+
+##############################################################################
+# function to set up the cohbank and cohinspiral jobs for a network of 4 ifos
+
+def coherent_4ifo(ifo1segs,ifo2segs,ifo3segs,ifo4segs,ifo1_name,
+       ifo2_name,ifo3_name,ifo4_name,coinc_nodes,cb_job,trig_job1,
+       trig_job2,trig_job3,trig_job4,insp_coh_job1,insp_coh_job2,
+       insp_coh_job3,insp_coh_job4,cohinsp_job,cb_opts,insp1_opts,
+       insp2_opts,insp3_opts,insp4_opts,data1_opts,data2_opts,
+       data3_opts,data4_opts,chan1,chan2,chan3,chan4,cohinsp_opts,
+       dag,do_second_coinc,do_cohbank,do_cohinspiral):
+
+  """
+  Do a four-ifo coherent analysis
+
+  ifo1segs = data segments for ifo1
+  ifo2segs = data segments for ifo2
+  ifo3segs = data segments for ifo3
+  ifo4segs = data segments for ifo4
+  ifo1_name = two character ifo identifier for ifo1 (e.g. 'H1')
+  ifo2_name = two character ifo identifier for ifo2 (e.g. 'H1')
+  ifo3_name = two character ifo identifier for ifo3 (e.g. 'H1')
+  ifo4_name = two character ifo identifier for ifo4 (e.g. 'H1')
+  coinc_nodes = tuple populated in the second coinc of step 10
+  cb_job = coherent bank job
+  trig_job1 = trigbank job for ifo1
+  trig_job2 = trigbank job for ifo2
+  trig_job3 = trigbank job for ifo3
+  trig_job4 = trigbank job for ifo4
+  insp_coh_job1 = inspiral job to produce c-data for ifo1
+  insp_coh_job2 = inspiral job to produce c-data for ifo2
+  insp_coh_job3 = inspiral job to produce c-data for ifo3
+  insp_coh_job4 = inspiral job to produce c-data for ifo4
+  cohinsp_job = the coherent_inspiral job
+  cb_opts = coherent bank options
+  insp1_opts = options for ifo1's inspiral job
+  insp2_opts = options for ifo2's inspiral job
+  insp3_opts = options for ifo3's inspiral job
+  insp4_opts = options for ifo4's inspiral job
+  data1_opts = data options for ifo1's inspiral job
+  data2_opts = data options for ifo2's inspiral job
+  data3_opts = data options for ifo3's inspiral job
+  data4_opts = data options for ifo4's inspiral job
+  chan1 = channel for ifo1's inspiral job
+  chan2 = channel for ifo2's inspiral job
+  chan3 = channel for ifo3's inspiral job
+  chan4 = channel for ifo4's inspiral job
+  cohinsp_opts = options for the coherent_inspiral job
+  dag = name of the dag
+  do_second_coinc = boolean to tell whether the second_coinc was done
+  do_cohbank = boolean to set up cohbank,trigbank,inspiral jobs  
+  do_cohinspiral = boolean to set up coherent_inspiral job
+  """
+
+  cb_job.add_ini_opts(cp,cb_opts)
+  insp_coh_job1.add_ini_opts(cp,insp1_opts)
+  insp_coh_job2.add_ini_opts(cp,insp2_opts)
+  insp_coh_job3.add_ini_opts(cp,insp3_opts)
+  insp_coh_job4.add_ini_opts(cp,insp4_opts)
+  insp_coh_job1.add_ini_opts(cp,data1_opts)
+  insp_coh_job2.add_ini_opts(cp,data2_opts)
+  insp_coh_job3.add_ini_opts(cp,data3_opts)
+  insp_coh_job4.add_ini_opts(cp,data4_opts)
+  channel1 = cp.get('input',chan1)
+  channel2 = cp.get('input',chan2)
+  channel3 = cp.get('input',chan3)
+  channel4 = cp.get('input',chan4)
+  insp_coh_job1.set_channel(channel1)
+  insp_coh_job2.set_channel(channel2)
+  insp_coh_job3.set_channel(channel3)
+  insp_coh_job4.set_channel(channel4)
+  cohinsp_job.add_ini_opts(cp,cohinsp_opts)
+  
+  ifotag = ifo1_name + ifo2_name + ifo3_name + ifo4_name
+  usertag = 'COHERENT'
+
+  for coinc_done in coinc_nodes:
+    cohbnk = inspiral.CohBankNode( cb_job )
+    cohbnk.set_bank(coinc_done.get_dag_node().get_output())
+    if do_second_coinc: cohbnk.add_parent(coinc_done.get_dag_node())
+    if do_cohbank: dag.add_node(cohbnk)
+
+    for seg in ifo1segs:
+      for chunk in seg:
+        if inspiral.overlap_test(coinc_done.get_chunk(),chunk):
+
+          trigbank1 = inspiral.TrigToTmpltNode(trig_job1)
+          trigbank1.set_user_tag(usertag)
+          trigbank1.set_output_ifo(ifo1_name)
+          trigbank1.set_input_ifo(ifo1_name)
+          trigbank1.set_start(chunk.start())
+          trigbank1.set_end(chunk.end())
+          trigbank1.add_var_opt('parameter-test','no_test')
+          trigbank1.add_var_opt('data-type','all_data')
+          trigbank1.add_var_opt('debug-level','33')
+          trigbank1.add_var_arg(cohbnk.get_output())
+          if do_cohbank: trigbank1.add_parent(cohbnk)
+          if do_cohbank: dag.add_node(trigbank1)
+
+          insp1 = inspiral.InspiralNode(insp_coh_job1)
+          insp1.set_start(chunk.start())
+          insp1.set_end(chunk.end())
+          insp1.set_ifo(ifo1_name)
+          insp1.add_var_opt('write-cdata','')
+          insp1.add_var_opt('user-tag',usertag)
+          calibrated1 = None
+          for opt in cp.options(data1_opts):
+            if (opt.find('calibrated') >-1):
+              calibrated1 = 1
+          if not calibrated1: insp1.calibration()
+          if not read_cache: insp1.set_cache(seg.get_df_node().get_output())
+          else: insp1.set_cache(cp.get('datafind',ifo1_name+"-cache"))
+          insp1.set_bank(trigbank1.get_trig_out())
+          if do_cohbank: insp1.add_parent(trigbank1)
+          if do_cohbank: dag.add_node(insp1)
+
+    for seg in ifo2segs:
+      for chunk in seg:
+        if inspiral.overlap_test(coinc_done.get_chunk(),chunk):
+
+          trigbank2 = inspiral.TrigToTmpltNode(trig_job2)
+          trigbank2.set_user_tag(usertag)
+          trigbank2.set_output_ifo(ifo2_name)
+          trigbank2.set_input_ifo(ifo2_name)
+          trigbank2.set_start(chunk.start())
+          trigbank2.set_end(chunk.end())
+          trigbank2.add_var_opt('parameter-test','no_test')
+          trigbank2.add_var_opt('data-type','all_data')
+          trigbank2.add_var_opt('debug-level','33')
+          trigbank2.add_var_arg(cohbnk.get_output())
+          if do_cohbank: trigbank2.add_parent(cohbnk)
+          if do_cohbank: dag.add_node(trigbank2)
+
+          insp2 = inspiral.InspiralNode(insp_coh_job2)
+          insp2.set_start(chunk.start())
+          insp2.set_end(chunk.end())
+          insp2.set_ifo(ifo2_name)
+          insp2.add_var_opt('write-cdata','')
+          insp2.add_var_opt('user-tag',usertag)
+          calibrated2 = None
+          for opt in cp.options(data2_opts):
+            if (opt.find('calibrated') >-1):
+              calibrated2 = 1
+          if not calibrated2: insp2.calibration()
+          if not read_cache: insp2.set_cache(seg.get_df_node().get_output())
+          else: insp2.set_cache(cp.get('datafind',ifo2_name+"-cache"))
+          insp2.set_bank(trigbank2.get_trig_out())
+          if do_cohbank: insp2.add_parent(trigbank2)
+          if do_cohbank: dag.add_node(insp2)
+
+    for seg in ifo3segs:
+      for chunk in seg:
+        if inspiral.overlap_test(coinc_done.get_chunk(),chunk):
+
+          trigbank3 = inspiral.TrigToTmpltNode(trig_job3)
+          trigbank3.set_user_tag(usertag)
+          trigbank3.set_output_ifo(ifo3_name)
+          trigbank3.set_input_ifo(ifo3_name)
+          trigbank3.set_start(chunk.start())
+          trigbank3.set_end(chunk.end())
+          trigbank3.add_var_opt('parameter-test','no_test')
+          trigbank3.add_var_opt('data-type','all_data')
+          trigbank3.add_var_opt('debug-level','33')
+          trigbank3.add_var_arg(cohbnk.get_output())
+          if do_cohbank: trigbank3.add_parent(cohbnk)
+          if do_cohbank: dag.add_node(trigbank3)
+
+          insp3 = inspiral.InspiralNode(insp_coh_job3)
+          insp3.set_start(chunk.start())
+          insp3.set_end(chunk.end())
+          insp3.set_ifo(ifo3_name)
+          insp3.add_var_opt('write-cdata','')
+          insp3.add_var_opt('user-tag',usertag)
+          calibrated3 = None
+          for opt in cp.options(data3_opts):
+            if (opt.find('calibrated') >-1):
+              calibrated3 = 1
+          if not calibrated3: insp3.calibration()
+          if not read_cache: insp3.set_cache(seg.get_df_node().get_output())
+          else: insp3.set_cache(cp.get('datafind',ifo3_name+"-cache"))
+          insp3.set_bank(trigbank3.get_trig_out())
+          if do_cohbank: insp3.add_parent(trigbank3)
+          if do_cohbank: dag.add_node(insp3)
+
+    for seg in ifo4segs:
+      for chunk in seg:
+        if inspiral.overlap_test(coinc_done.get_chunk(),chunk):
+
+          trigbank4 = inspiral.TrigToTmpltNode(trig_job4)
+          trigbank4.set_user_tag(usertag)
+          trigbank4.set_output_ifo(ifo4_name)
+          trigbank4.set_input_ifo(ifo4_name)
+          trigbank4.set_start(chunk.start())
+          trigbank4.set_end(chunk.end())
+          trigbank4.add_var_opt('parameter-test','no_test')
+          trigbank4.add_var_opt('data-type','all_data')
+          trigbank4.add_var_opt('debug-level','33')
+          trigbank4.add_var_arg(cohbnk.get_output())
+          if do_cohbank: trigbank4.add_parent(cohbnk)
+          if do_cohbank: dag.add_node(trigbank4)
+
+          insp4 = inspiral.InspiralNode(insp_coh_job4)
+          insp4.set_start(chunk.start())
+          insp4.set_end(chunk.end())
+          insp4.set_ifo(ifo4_name)
+          insp4.add_var_opt('write-cdata','')
+          insp4.add_var_opt('user-tag',usertag)
+          calibrated4 = None
+          for opt in cp.options(data4_opts):
+            if (opt.find('calibrated') >-1):
+              calibrated4 = 1
+          if not calibrated4: insp4.calibration()
+          if not read_cache: insp4.set_cache(seg.get_df_node().get_output())
+          else: insp4.set_cache(cp.get('datafind',ifo4_name+"-cache"))
+          insp4.set_bank(trigbank4.get_trig_out())
+          if do_cohbank: insp4.add_parent(trigbank4)
+          if do_cohbank: dag.add_node(insp4)
+
+    cohinsp = inspiral.ChiaNode(cohinsp_job)
+    cohinsp.set_bank(cohbnk.get_output())
+    cohinsp.set_start(coinc_done.get_chunk().start())
+    cohinsp.set_end(coinc_done.get_chunk().end())
+    cohinsp.add_var_opt('ifo-tag',ifotag)
+    if do_cohinspiral: 
+      cohinsp.add_parent(insp1)
+      cohinsp.add_parent(insp2)
+      cohinsp.add_parent(insp3)
+      cohinsp.add_parent(insp4)
     if do_cohinspiral: dag.add_node(cohinsp)
       
   return 0
@@ -1044,8 +1487,12 @@ sire_clust_job = inspiral.SireJob(cp)
 cb_job = inspiral.CohBankJob(cp)
 trig_jobh1 = inspiral.TrigToTmpltJob(cp)
 trig_jobh2 = inspiral.TrigToTmpltJob(cp)
+trig_jobl1 = inspiral.TrigToTmpltJob(cp)
+trig_jobg1 = inspiral.TrigToTmpltJob(cp)
 insp_coh_h1_job = inspiral.InspiralJob(cp)
 insp_coh_h2_job = inspiral.InspiralJob(cp)
+insp_coh_l1_job = inspiral.InspiralJob(cp)
+insp_coh_g1_job = inspiral.InspiralJob(cp)
 cohinsp_job = inspiral.ChiaJob(cp)
 
 ##############################################################################
@@ -1131,8 +1578,12 @@ sire_clust_job.set_sub_file( basename + '.sire_clust' + subsuffix )
 cb_job.set_sub_file( basename + '.cohbank' + subsuffix )
 trig_jobh1.set_sub_file( basename + '.trigbankH1-coherent' + subsuffix )
 trig_jobh2.set_sub_file( basename + '.trigbankH2-coherent' + subsuffix )
+trig_jobl1.set_sub_file( basename + '.trigbankL1-coherent' + subsuffix )
+trig_jobg1.set_sub_file( basename + '.trigbankG1-coherent' + subsuffix )
 insp_coh_h1_job.set_sub_file( basename + '.inspcohH1' + subsuffix )
 insp_coh_h2_job.set_sub_file( basename + '.inspcohH2' + subsuffix )
+insp_coh_l1_job.set_sub_file( basename + '.inspcohL1' + subsuffix )
+insp_coh_g1_job.set_sub_file( basename + '.inspcohG1' + subsuffix )
 cohinsp_job.set_sub_file( basename + '.cohinspiral' + subsuffix )
 
 ##############################################################################
@@ -1214,6 +1665,8 @@ if usertag:
   cb_job.add_opt('user-tag',usertag)
   insp_coh_h1_job.add_opt('user-tag',usertag)
   insp_coh_h2_job.add_opt('user-tag',usertag)
+  insp_coh_l1_job.add_opt('user-tag',usertag)
+  insp_coh_g1_job.add_opt('user-tag',usertag)
 
 ##############################################################################
 # set the condor job priority
@@ -1297,8 +1750,12 @@ if condor_prio:
   cb_job.add_condor_cmd('priority',condor_prio)
   trig_jobh1.add_condor_cmd('priority',condor_prio)
   trig_jobh2.add_condor_cmd('priority',condor_prio)
+  trig_jobl1.add_condor_cmd('priority',condor_prio)
+  trig_jobg1.add_condor_cmd('priority',condor_prio)
   insp_coh_h1_job.add_condor_cmd('priority',condor_prio)
   insp_coh_h2_job.add_condor_cmd('priority',condor_prio)
+  insp_coh_l1_job.add_condor_cmd('priority',condor_prio)
+  insp_coh_g1_job.add_condor_cmd('priority',condor_prio)
   cohinsp_job.add_condor_cmd('priority',condor_prio)
 
 ##############################################################################
@@ -1324,6 +1781,8 @@ if inj_file:
 
   insp_coh_h1_job.add_opt('injection-file',inj_file)
   insp_coh_h2_job.add_opt('injection-file',inj_file)
+  insp_coh_l1_job.add_opt('injection-file',inj_file)
+  insp_coh_g1_job.add_opt('injection-file',inj_file)
 
 
 ##############################################################################
@@ -2971,16 +3430,94 @@ if num_slides:
 
 print "done"
 
-###############################################################################
-#Now do the coherent stuff
+##############################################################################
+# Step 13: Do two-ifo coherent analyses:
 
+# H1-H2 network:
 coherent_2ifo(h1_data,h2_data,'H1','H2',h1_h2_double_coinc,cb_job,trig_jobh1,
   trig_jobh2,insp_coh_h1_job,insp_coh_h2_job,cohinsp_job,'cohbank','h1-inspiral',
   'h2-inspiral','ligo-data','ligo-data','ligo-channel','ligo-channel','chia',dag,
   do_second_coinc,do_cohbank,do_cohinspiral)
 
+# H1-L1 network:
+coherent_2ifo(h1_data,l1_data,'H1','L1',h1_l1_double_coinc,cb_job,trig_jobh1,
+  trig_jobl1,insp_coh_h1_job,insp_coh_l1_job,cohinsp_job,'cohbank','h1-inspiral',
+  'l1-inspiral','ligo-data','ligo-data','ligo-channel','ligo-channel','chia',dag,
+  do_second_coinc,do_cohbank,do_cohinspiral)
+
+# H1-G1 network:
+coherent_2ifo(h1_data,g1_data,'H1','G1',h1_g1_double_coinc,cb_job,trig_jobh1,
+  trig_jobg1,insp_coh_h1_job,insp_coh_g1_job,cohinsp_job,'cohbank','h1-inspiral',
+  'g1-inspiral','ligo-data','geo-data','ligo-channel','geo-channel','chia',dag,
+  do_second_coinc,do_cohbank,do_cohinspiral)
+
+# H2-L1 network:
+coherent_2ifo(h2_data,l1_data,'H2','L1',h2_l1_double_coinc,cb_job,trig_jobh2,
+  trig_jobl1,insp_coh_h2_job,insp_coh_l1_job,cohinsp_job,'cohbank','h2-inspiral',
+  'l1-inspiral','ligo-data','ligo-data','ligo-channel','ligo-channel','chia',dag,
+  do_second_coinc,do_cohbank,do_cohinspiral)
+
+# H2-G1 network:
+coherent_2ifo(h2_data,g1_data,'H2','G1',h2_g1_double_coinc,cb_job,trig_jobh2,
+  trig_jobg1,insp_coh_h2_job,insp_coh_g1_job,cohinsp_job,'cohbank','h2-inspiral',
+  'g1-inspiral','ligo-data','geo-data','ligo-channel','geo-channel','chia',dag,
+  do_second_coinc,do_cohbank,do_cohinspiral)
+
+# L1-G1 network:
+coherent_2ifo(l1_data,g1_data,'L1','G1',l1_g1_double_coinc,cb_job,trig_jobl1,
+  trig_jobg1,insp_coh_l1_job,insp_coh_g1_job,cohinsp_job,'cohbank','l1-inspiral',
+  'g1-inspiral','ligo-data','geo-data','ligo-channel','geo-channel','chia',dag,
+  do_second_coinc,do_cohbank,do_cohinspiral)
+
 ##############################################################################
-# Step 13: Write out the DAG, help message and log file
+# Step 14: Do three-ifo coherent analyses:
+
+# H1-H2-L1 network:
+coherent_3ifo(h1_data,h2_data,l1_data,'H1','H2','L1',h1_h2_l1_triple_coinc,
+  cb_job,trig_jobh1,trig_jobh2,trig_jobl1,insp_coh_h1_job,insp_coh_h2_job,
+  insp_coh_l1_job,cohinsp_job,'cohbank','h1-inspiral','h2-inspiral',
+  'l1-inspiral','ligo-data','ligo-data','ligo-data','ligo-channel',
+  'ligo-channel','ligo-channel','chia',dag,do_second_coinc,do_cohbank,
+  do_cohinspiral)
+
+# H1-H2-G1 network:
+coherent_3ifo(h1_data,h2_data,g1_data,'H1','H2','G1',h1_h2_g1_triple_coinc,
+  cb_job,trig_jobh1,trig_jobh2,trig_jobg1,insp_coh_h1_job,insp_coh_h2_job,
+  insp_coh_g1_job,cohinsp_job,'cohbank','h1-inspiral','h2-inspiral',
+  'g1-inspiral','ligo-data','ligo-data','geo-data','ligo-channel',
+  'ligo-channel','geo-channel','chia',dag,do_second_coinc,do_cohbank,
+  do_cohinspiral)
+ 
+# H1-L1-G1 network:
+coherent_3ifo(h1_data,l1_data,g1_data,'H1','L1','G1',h1_l1_g1_triple_coinc,
+  cb_job,trig_jobh1,trig_jobl1,trig_jobg1,insp_coh_h1_job,insp_coh_l1_job,
+  insp_coh_g1_job,cohinsp_job,'cohbank','h1-inspiral','l1-inspiral',
+  'g1-inspiral','ligo-data','ligo-data','geo-data','ligo-channel',
+  'ligo-channel','geo-channel','chia',dag,do_second_coinc,do_cohbank,
+  do_cohinspiral)
+
+# H2-L1-G1 network:
+coherent_3ifo(h2_data,l1_data,g1_data,'H2','L1','G1',h2_l1_g1_triple_coinc,
+  cb_job,trig_jobh2,trig_jobl1,trig_jobg1,insp_coh_h2_job,insp_coh_l1_job,
+  insp_coh_g1_job,cohinsp_job,'cohbank','h2-inspiral','l1-inspiral',
+  'g1-inspiral','ligo-data','ligo-data','geo-data','ligo-channel',
+  'ligo-channel','geo-channel','chia',dag,do_second_coinc,do_cohbank,
+  do_cohinspiral)
+
+##############################################################################
+# Step 15: Do four-ifo coherent analyses:
+
+# H1-H2-L1-G1 network:
+coherent_4ifo(h1_data,h2_data,l1_data,g1_data,'H1','H2','L1','G1',
+  h1_h2_l1_g1_quadro_coinc,cb_job,trig_jobh1,trig_jobh2,trig_jobl1,
+  trig_jobg1,insp_coh_h1_job,insp_coh_h2_job,insp_coh_l1_job,
+  insp_coh_g1_job,cohinsp_job,'cohbank','h1-inspiral','h2-inspiral',
+  'l1-inspiral','g1-inspiral','ligo-data','ligo-data','ligo-data',
+  'geo-data','ligo-channel','ligo-channel','ligo-channel','geo-channel',
+  'chia',dag,do_second_coinc,do_cohbank,do_cohinspiral)
+
+##############################################################################
+# Step 16: Write out the DAG, help message and log file
 dag.write_sub_files()
 dag.write_dag()
 
