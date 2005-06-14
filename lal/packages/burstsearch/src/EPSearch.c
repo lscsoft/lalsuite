@@ -62,35 +62,41 @@ static void WeighTFTileList(TFTiling *tfTiling, INT4 maxDOF)
  */
 
 static int ComputeAverageSpectrum(
-	LALStatus *status,
 	REAL4FrequencySeries *spectrum,
 	REAL4TimeSeries *tseries,
-	EPSearchParams *params
+	size_t windowLength,
+	size_t windowShift,
+	WindowType windowType,
+	AvgSpecMethod method
 )
 {
 	static const char *func = "ComputeAverageSpectrum";
-	AverageSpectrumParams spec_params;
-
-	memset(&spec_params, 0, sizeof(spec_params));
-
-	spec_params.window = XLALCreateREAL4Window(params->windowLength, params->windowType, 0.0);
-	if(!spec_params.window)
+	REAL4Window *window;
+	RealFFTPlan *plan;
+	
+	window = XLALCreateREAL4Window(windowLength, windowType, 0.0);
+	plan = XLALCreateForwardREAL4FFTPlan(windowLength, 0);
+	if(!window || !plan)
 		XLAL_ERROR(func, XLAL_EFUNC);
 
-	spec_params.plan = XLALCreateForwardREAL4FFTPlan(spec_params.window->data->length, 0);
-	if(!spec_params.plan)
-		XLAL_ERROR(func, XLAL_EFUNC);
+	switch(method) {
+		case useMean:
+		XLALREAL4AverageSpectrumWelch(spectrum, tseries, windowLength, windowShift, window, plan);
+		break;
 
-	spec_params.overlap = spec_params.window->data->length - params->windowShift;
-	spec_params.method = params->method;
+		case useMedian:
+		XLALREAL4AverageSpectrumMedian(spectrum, tseries, windowLength, windowShift, window, plan);
+		break;
 
-	LALREAL4AverageSpectrum(status->statusPtr, spectrum, tseries, &spec_params);
-	if(status->statusPtr->statusCode)
-		XLAL_ERROR(func, XLAL_EFUNC);
+		default:
+		XLALDestroyREAL4Window(window);
+		XLALDestroyREAL4FFTPlan(plan);
+		XLAL_ERROR(func, XLAL_EINVAL);
+		break;
+	}
 
-	XLALDestroyREAL4Window(spec_params.window);
-	XLALDestroyREAL4FFTPlan(spec_params.plan);
-
+	XLALDestroyREAL4Window(window);
+	XLALDestroyREAL4FFTPlan(plan);
 	return(0);
 }
 
@@ -223,7 +229,7 @@ static void normalize_to_psd(COMPLEX8FrequencySeries *fseries, REAL4FrequencySer
 
 /******** <lalVerbatim file="EPSearchCP"> ********/
 void
-EPSearch(
+LALEPSearch(
 	LALStatus        *status,
 	REAL4TimeSeries  *tseries,
 	EPSearchParams   *params,
@@ -263,8 +269,8 @@ EPSearch(
 	AverageSpec = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
 	if(!AverageSpec)
 		XLAL_ERROR_VOID(func, XLAL_EFUNC);
-	ComputeAverageSpectrum(status, AverageSpec, tseries, params);
-	CHECKSTATUSPTR(status);
+	if(ComputeAverageSpectrum(AverageSpec, tseries, params->windowLength, params->windowShift, params->windowType, params->method))
+		XLAL_ERROR_VOID(func, XLAL_EFUNC);
 
 	Psd = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
 	if(!Psd)
@@ -444,7 +450,7 @@ EPSearch(
  */
 
 /* <lalVerbatim file="EPConditionDataCP"> */
-void EPConditionData(
+void LALEPConditionData(
 	LALStatus        *status,
 	REAL4TimeSeries  *series,
 	REAL8             flow,

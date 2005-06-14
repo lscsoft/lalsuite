@@ -40,7 +40,7 @@ tagEPSearchParams {
 } EPSearchParams;
 
 void
-EPSearch(
+LALEPSearch(
 	LALStatus        *status,
 	REAL4TimeSeries  *tseries,
 	EPSearchParams   *params,
@@ -48,7 +48,7 @@ EPSearch(
 );
 
 void
-EPConditionData(
+LALEPConditionData(
 	LALStatus        *status,
 	REAL4TimeSeries  *series,
 	REAL8             flow,
