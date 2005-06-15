@@ -246,6 +246,8 @@ StringSearchInput;
  * \idx[Type]{AvgSpecParams}
  *
  **** </lalLaTeX> */
+#ifndef AVG_SPEC_DECLARED
+#define AVG_SPEC_DECLARED
 /**** <lalVerbatim> */
 typedef struct
 tagAvgSpecParams
@@ -256,6 +258,7 @@ tagAvgSpecParams
 }
 AvgSpecParams;
 /**** </lalVerbatim> */
+#endif
 /**** <lalLaTeX>
  *
  * This structure contains parameters for routines that compute average

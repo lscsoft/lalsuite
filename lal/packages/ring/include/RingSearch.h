@@ -223,6 +223,8 @@ RingSearchInput;
  * \idx[Type]{AvgSpecParams}
  *
  **** </lalLaTeX> */
+#ifndef AVG_SPEC_DECLARED
+#define AVG_SPEC_DECLARED
 /**** <lalVerbatim> */
 typedef struct
 tagAvgSpecParams
@@ -233,6 +235,14 @@ tagAvgSpecParams
 }
 AvgSpecParams;
 /**** </lalVerbatim> */
+void
+LALMedianSpectrum(
+    LALStatus            *status,
+    REAL4FrequencySeries *output,
+    REAL4TimeSeries      *input,
+    AvgSpecParams        *params
+    );
+#endif
 /**** <lalLaTeX>
  *
  * This structure contains parameters for routines that compute average
@@ -274,13 +284,6 @@ LALRingSearch(
     RingSearchParams  *params
     );
 
-void
-LALMedianSpectrum(
-    LALStatus            *status,
-    REAL4FrequencySeries *output,
-    REAL4TimeSeries      *input,
-    AvgSpecParams        *params
-    );
 
 /**** <lalLaTeX>
  * 
