@@ -42,6 +42,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
+#include <lal/AVFactories.h>
 
 NRCSID( LATTICECOVERINGC, "$Id$" );
 
@@ -61,18 +62,24 @@ NRCSID( LATTICECOVERINGC, "$Id$" );
 \subsection*{Error codes}</lalLaTeX><lalErrTable> */
 
 #define LATTICECOVERING_ENULL 		1
-#define LATTICECOVERING_ENONULL	2
+#define LATTICECOVERING_ENONULL		2
 #define LATTICECOVERING_EMEM		3
 #define LATTICECOVERING_EINPUT		4
+#define LATTICECOVERING_ELIST		5
+#define LATTICECOVERING_EFUNC		6
 
 #define LATTICECOVERING_MSGENULL 	"Arguments contained an unexpected null pointer"
 #define LATTICECOVERING_MSGENONULL	"Output pointer is not NULL"
 #define LATTICECOVERING_MSGEMEM		"Out of memory"
 #define LATTICECOVERING_MSGEINPUT	"Invald input parameter"
+#define LATTICECOVERING_MSGELIST	"Error occurred in list-handling ..."
+#define LATTICECOVERING_MSGEFUNC	"Sub-routine failed"
 
 /*</lalErrTable> */
 
 /*---------- local types ----------*/
+
+/** enum-type for denoting several types of lattice */
 typedef enum
 {
   LATTICE_TYPE_CUBIC = 0,	/**< standard cubic grid: Zn */
@@ -80,12 +87,35 @@ typedef enum
   LATTICE_TYPE_LAST
 } LatticeType;
 
+/** doubly linked list of INT4-vectors (lattice-vectors) */
+typedef struct tagINT4VectorList
+{
+  INT4Vector entry;
+  struct tagINT4VectorList *next;
+  struct tagINT4VectorList *prev;
+} INT4VectorList;
+
+/** singly linked list of REAL8-vectors (physical vectors) */
+typedef struct tagREAL8VectorList
+{
+  REAL8Vector entry;
+  struct tagREAL8VectorList *next;
+} REAL8VectorList;
+
+
+INT4VectorList empty_INT4VectorList;
 
 /*---------- Global variables ----------*/
 
 
 
 /*---------- local prototypes ----------*/
+int
+XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, 
+				 const INT4Vector *latticePoint, 
+				 const gsl_matrix *generator, 
+				 const REAL8Vector *startPoint );
+
 REAL8 XLALMetricScalarProduct (const gsl_vector *vector1,
 			       const gsl_vector *vector2,	
 			       const gsl_matrix *metric);
@@ -105,7 +135,10 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,
 			 UINT4 dimension,
 			 LatticeType type);
 
+/* list-handling functions */
+INT4VectorList *append2INT4VectorList (INT4VectorList *head, const INT4Vector *el);
 
+/* misc helper functions */
 BOOLEAN isSymmetric (const gsl_matrix *Sij);
 
 /* test-functions */
@@ -116,10 +149,155 @@ int print_vector (const gsl_vector *v);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/* NOTE: "(gsl_)vector" in the following refers to the contravariant compomnents,
- * while the covariant-components would be called the "covector"
- */
 
+/** Cover given parameter-space by lattice of specified type.
+ * The central function of this module: cover the parameter-space 
+ * 
+ * NOTE: the input generating-matrix (generator) needs to be scaled
+ * correctly to the required covering radius and is supposed to be
+ * expressed in the correct coordinates of the parameter-space.
+ * Also, it needs to be in canonical *square matrix* form.
+ * All this needs to be prepared before this function is called....
+ *
+ * NOTE2: as always in this module, the generating matrix contains
+ * the lattice-vectors as _rows_
+ */
+void
+LALLatticeCovering (LALStatus *lstat,
+		    REAL8VectorList **coveringGrid, 	/**< OUT: final covering-grid of physical points */
+		    const gsl_matrix  *generator,	/**< IN: _SQUARE_ generating matrix for lattice*/
+		    const REAL8Vector *startPoint, 	/**< IN: physical startpoint for covering grid*/
+		    BOOLEAN (*isInside)(const REAL8Vector *point) /**< IN: boundary-condition */
+		    )
+{
+  UINT4 dim;	/**< dimension of parameter-space to cover */
+  INT4VectorList openEnds = empty_INT4VectorList;	/**< list of "open ends", i.e. unhandled lattice-points */
+  INT4VectorList gridPoints = empty_INT4VectorList;	/**< list of lattice-coordinates of resulting grid */
+
+  INT4Vector  *latticePoint = NULL;		/* lattice-coordinates (Z^N) */
+  REAL8Vector *physicalPoint = NULL;		/* physical coordinates (R^N) */
+
+  INITSTATUS( lstat, "LALLatticeCovering", LATTICECOVERINGC );
+  ATTATCHSTATUSPTR (lstat); 
+
+  /* This traps coding errors in the calling routine. */
+  ASSERT ( coveringGrid != NULL, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );  
+  ASSERT ( *coveringGrid == NULL,lstat, LATTICECOVERING_ENONULL, LATTICECOVERING_MSGENONULL );
+  ASSERT ( generator, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
+  ASSERT ( startPoint, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
+  ASSERT ( startPoint->data, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
+
+  if ( generator->size1 != generator->size2 )	/* need square generator */
+    {
+      LALPrintError ("\nERROR: LatticeCovering() required SQUARE generating matrix!\n\n");
+      ABORT (lstat, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);      
+    }
+
+  if ( ! (*isInside)(startPoint) )	/* startPoint has to be inside */
+    {
+      LALPrintError ("\nERROR: startPoint must lie withing the covering-region!\n\n");
+      ABORT (lstat, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
+    }
+
+  dim = startPoint->length;	/* dimension of parameter-space to cover */
+
+  if ( (generator->size1 != dim) )
+    {
+      LALPrintError ("\nERROR: all input-dimensions must agree (dim=%d)\n\n", dim);
+      ABORT (lstat, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
+    }
+
+  /* ---------- prepare memory for one grid-coordinate and one physical grid-point */
+  TRY ( LALI4CreateVector (lstat->statusPtr, &latticePoint, dim), lstat);
+  LALDCreateVector (lstat->statusPtr, &physicalPoint, dim);
+  BEGINFAIL (lstat) {
+    TRY ( LALI4DestroyVector(lstat->statusPtr, &latticePoint), lstat);
+  } ENDFAIL(lstat);
+  /* initialize vectors to 0 */
+  memset ( latticePoint->data, 0, dim * sizeof (latticePoint->data[0]) );
+  memset ( physicalPoint->data, 0, dim * sizeof (physicalPoint->data[0]));
+  
+
+  /* ----- start by adding startPoint coordinates (0,0,0,,) to the list of 'open-ends' */
+  /* we don't need to set these coordinates, grid-point is already set to (0,0,0,,,)  */
+  if ( NULL == append2INT4VectorList (&openEnds, latticePoint)) {	/* NOTE: head always stays empty for simplicity! */
+    LALPrintError ("\nERROR: append2INT4VectorList() failed!\n\n");
+    ABORT (lstat, LATTICECOVERING_ELIST, LATTICECOVERING_MSGELIST);
+  }
+
+   
+  /* ----- (*) take coordinates of next open-end from hash-list of open-ends */
+  while ( openEnds.next )
+    {
+      INT4Vector *p1 = NULL;
+
+      /* get lattice-coordinates of this point (pointer to entry) */
+      p1 = &(openEnds.next->entry);
+      /* find its physical coordinates */
+      XLALlatticePoint2physicalPoint ( physicalPoint, p1, generator, startPoint );
+      if ( xlalErrno )
+	{
+	  int code = xlalErrno;
+	  XLALClearErrno(); 
+	  LALPrintError ("\nERROR: latticePoint2physicalPoint() failed with xlalErrno = %d!\n\n", code);
+	  ABORT (lstat, LATTICECOVERING_EFUNC, LATTICECOVERING_MSGEFUNC);
+	}
+
+      /* is it inside the covering-region?: */
+
+      /* NO: ==> move it to (hashed) list of dead-ends, 
+	         OR simply remove it from list */
+
+      /* YES: ==> move it to (hashed) list of lattice-coordinates. 
+	         generate coordinates of its 2*dim neighbors,
+		 discard all those already in list of open-ends
+		 and those already in lattice-points (via hash-algorithm..)
+		 add the other ones to hash-list of open-ends
+      */
+
+      /* start from (1) until no more open ends left */
+    } /* while (openEnds->next) */
+  
+  /* turn linked list of lattice-coordinates into array of lattice-points (in parameter-coordinates) */
+  
+
+  /* clean up */
+  DETATCHSTATUSPTR (lstat);
+
+  RETURN( lstat );
+
+} /* LALLatticeCovering() */
+
+/** function to calculate the physical coordinates of a lattice-vector with given
+ * generating-matrix and start-point of the lattice 
+ */
+int
+XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, 
+				 const INT4Vector *latticePoint, 
+				 const gsl_matrix *generator, 
+				 const REAL8Vector *startPoint )
+{
+  UINT4 dim;
+  
+  /* check validity of input */
+  if ( !physicalPoint || latticePoint || !generator || !startPoint ||
+       !physicalPoint->data || !latticePoint->data || !startPoint->data || !generator->data )
+    {
+      LALPrintError ("\nNULL Input received!\n\n");
+      XLAL_ERROR ( "XLALlatticePoint2PhysicalPoint", XLAL_EINVAL);
+    }
+
+  dim = physicalPoint->length;
+  if ( (latticePoint->length != dim) || (generator->size1 != dim) || (generator->size2 != dim) ) 
+    {
+      LALPrintError ("\nInconsistent dimensions in input-vectors/matrices!\n\n");
+      XLAL_ERROR ( "XLALlatticePoint2PhysicalPoint", XLAL_EINVAL);
+    }
+
+
+  return 0;
+
+} /* XLALlatticePoint2physicalPoint() */
 
 /** Scalar product of two vectors with respect to the given metric.
  *  <v1, v2> = g_ij v1^i v^2j 
@@ -454,69 +632,53 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,	/**< OUT: generating matrix */
 } /* XLALGetGeneratingMatrix() */
 
 
-/** Cover given parameter-space by lattice of specified type.
- * The central function of this module: cover the parameter-space 
+/*----------------------------------------------------------------------
+ * list handling tools
+ *----------------------------------------------------------------------*/
+
+/** append given INT4Vector element to the list 'head', return pointer to new list-entry.
  * 
- * NOTE: the input generating-matrix (generator) needs to be scaled
- * correctly to the required covering radius and is supposed to be
- * expressed in the correct coordinates of the parameter-space.
- * Also, it needs to be in canonical *square matrix* form.
- * All this needs to be prepared before this function is called....
- *
- * NOTE2: as always in this module, the generating matrix contains
- * the lattice-vectors as _rows_
+ * NOTE: this function is rather permissive in that it takes the dimension from
+ * the new element 'el', without requiring this to be equal to the dimension of the 
+ * previous list-entries...
  */
-void
-LALLatticeCovering (LALStatus *lstat,
-		    REAL8VectorSequence **lattice, /**< OUT: lattice-points: array of vectors*/
-		    const gsl_matrix *generator,/**< IN: _SQUARE_ generating matrix for lattice*/
-		    const gsl_vector *startPoint, /**< IN: startpoint for covering */
-		    BOOLEAN (*isInside)(const gsl_vector *point)/**< IN: boundary-condition */
-		    )
+INT4VectorList *
+append2INT4VectorList (INT4VectorList *head, const INT4Vector *el)
 {
-  UINT4 dimension;
+  UINT4 dim;
+  INT4VectorList *ptr = NULL;	/* running list-pointer */
+  INT4VectorList *newElement = NULL;	/* new list-element */
+  /* check illegal input */
+  if ( (head == NULL) || (el == NULL) )
+    return NULL;
 
-  INITSTATUS( lstat, "LALLatticeCovering", LATTICECOVERINGC );
-  ATTATCHSTATUSPTR (lstat); 
+  /* find tail of list */
+  ptr = head;
+  while ( ptr->next )
+    ptr = ptr->next;
 
-  /* This traps coding errors in the calling routine. */
-  ASSERT ( lattice != NULL, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );  
-  ASSERT ( *lattice == NULL,lstat, LATTICECOVERING_ENONULL, LATTICECOVERING_MSGENONULL );
-  ASSERT ( generator, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
-  ASSERT ( startPoint, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
-  ASSERT ( startPoint->data, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
+  /* construct new list-entry */
+  dim = el->length;
+  if ( (newElement = LALCalloc (1, sizeof (*newElement))) == NULL)
+    return NULL;
+  if ( (newElement->entry.data = LALCalloc (dim, sizeof(el->data[0]))) == NULL ) {
+    LALFree (newElement);
+    return NULL;
+  }
+  newElement->entry.length = dim;
+  memcpy (newElement->entry.data, el->data, dim * sizeof(el->data[0]) );
 
-  if ( generator->size1 != generator->size2 )	/* need square generator */
-    {
-      LALPrintError ("\nERROR: LatticeCovering() required SQUARE generating matrix!\n\n");
-      ABORT (lstat, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);      
-    }
-
-  if ( ! (*isInside)(startPoint) )	/* startPoint has to be inside */
-    {
-      LALPrintError ("\nERROR: startPoint must lie withing the covering-region!\n\n");
-      ABORT (lstat, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
-    }
-
-  dimension = startPoint->size;	/* dimension of parameter-space to cover */
-
-  if ( (generator->size1 != dimension) )
-    {
-      LALPrintError ("\nERROR: all input-dimensions must agree (dim=%d)\n\n", dimension);
-      ABORT (lstat, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
-    }
+  /* link this to the tail of list */
+  ptr->next = newElement;
+  newElement->prev = ptr;
   
-  
-  
+  return newElement;
 
-  /* clean up */
-  DETATCHSTATUSPTR (lstat);
+} /* append2INT4VectorList() */
 
-  RETURN( lstat );
-
-} /* LALLatticeCovering() */
-
-
+/*----------------------------------------------------------------------
+ * misc helper functions
+ *----------------------------------------------------------------------*/
 
 /** check if matrix is symmetric */
 BOOLEAN
@@ -585,7 +747,6 @@ print_vector (const gsl_vector *v)
 
   return 0;
 }
-
 
 
 /*--------------------------------------------------*/
