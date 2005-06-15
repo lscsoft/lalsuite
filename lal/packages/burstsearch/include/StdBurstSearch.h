@@ -88,7 +88,7 @@ typedef struct tagBurstParameter {
 /* <lalVerbatim file="StdBurstSearchH"> */
 void
 LALTFClustersETG(
-		 LALStatus *stat, 
+		 LALStatus *status, 
 		 EventIDColumn *output, 
 		 REAL4TimeVectorSeries *input, 
 		 BurstParameter *params);
@@ -166,7 +166,7 @@ typedef struct tagRiceLikelihoodParams {
 
 void 
 LALRiceLikelihood(
-		  LALStatus *stat,
+		  LALStatus *status,
 		  REAL8 *llik,
 		  REAL8 P,
 		  void *params
@@ -176,7 +176,7 @@ LALRiceLikelihood(
 /* <lalVerbatim file="StdBurstSearchH"> */
 void
 LALBurstOutput(
-	       LALStatus *stat,           
+	       LALStatus *status,           
 	       EventIDColumn *output,  /* output linked list of events */
 	       EventIDColumn *input,   /* linked list of events from ETG */ 
 	       BurstOutputParameters *params

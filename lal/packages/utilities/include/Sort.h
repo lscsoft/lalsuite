@@ -68,25 +68,25 @@ NRCSID(SORTH,"$Id$");
 /* <lalLaTeX>
 \newpage\input{HeapSortC}
 </lalLaTeX> */
-void LALSHeapSort(LALStatus      *stat,
+void LALSHeapSort(LALStatus      *status,
 	       REAL4Vector *vector);
 
-void LALSHeapIndex(LALStatus      *stat,
+void LALSHeapIndex(LALStatus      *status,
 		INT4Vector  *indx,
 		REAL4Vector *vector);
 
-void LALSHeapRank(LALStatus      *stat,
+void LALSHeapRank(LALStatus      *status,
 	       INT4Vector  *rank,
 	       REAL4Vector *vector);
 
-void LALDHeapSort(LALStatus      *stat,
+void LALDHeapSort(LALStatus      *status,
 	       REAL8Vector *vector);
 
-void LALDHeapIndex(LALStatus      *stat,
+void LALDHeapIndex(LALStatus      *status,
 		INT4Vector  *indx,
 		REAL8Vector *vector);
 
-void LALDHeapRank(LALStatus      *stat,
+void LALDHeapRank(LALStatus      *status,
 	       INT4Vector  *rank,
 	       REAL8Vector *vector);
 
