@@ -164,15 +164,15 @@ int print_vector (const gsl_vector *v);
  */
 void
 LALLatticeCovering (LALStatus *lstat,
-		    REAL8VectorList **coveringGrid, 	/**< OUT: final covering-grid of physical points */
+		    REAL8VectorList **coveringGrid, 	/**< OUT: final covering-grid (physical points)*/
 		    const gsl_matrix  *generator,	/**< IN: _SQUARE_ generating matrix for lattice*/
 		    const REAL8Vector *startPoint, 	/**< IN: physical startpoint for covering grid*/
 		    BOOLEAN (*isInside)(const REAL8Vector *point) /**< IN: boundary-condition */
 		    )
 {
   UINT4 dim;	/**< dimension of parameter-space to cover */
-  INT4VectorList openEnds = empty_INT4VectorList;	/**< list of "open ends", i.e. unhandled lattice-points */
-  INT4VectorList gridPoints = empty_INT4VectorList;	/**< list of lattice-coordinates of resulting grid */
+  INT4VectorList openEnds = empty_INT4VectorList;	/**< list of "open ends" (lattice-points) */
+  INT4VectorList gridPoints = empty_INT4VectorList;	/**< resulting grid (lattice-points) */
 
   INT4Vector  *latticePoint = NULL;		/* lattice-coordinates (Z^N) */
   REAL8Vector *physicalPoint = NULL;		/* physical coordinates (R^N) */
@@ -220,10 +220,12 @@ LALLatticeCovering (LALStatus *lstat,
 
   /* ----- start by adding startPoint coordinates (0,0,0,,) to the list of 'open-ends' */
   /* we don't need to set these coordinates, grid-point is already set to (0,0,0,,,)  */
-  if ( NULL == append2INT4VectorList (&openEnds, latticePoint)) {	/* NOTE: head always stays empty for simplicity! */
-    LALPrintError ("\nERROR: append2INT4VectorList() failed!\n\n");
-    ABORT (lstat, LATTICECOVERING_ELIST, LATTICECOVERING_MSGELIST);
-  }
+  if ( NULL == append2INT4VectorList (&openEnds, latticePoint)) 
+    {	
+      /* NOTE: head always stays empty for simplicity! */
+      LALPrintError ("\nERROR: append2INT4VectorList() failed!\n\n");
+      ABORT (lstat, LATTICECOVERING_ELIST, LATTICECOVERING_MSGELIST);
+    }
 
    
   /* ----- (*) take coordinates of next open-end from hash-list of open-ends */
@@ -239,7 +241,7 @@ LALLatticeCovering (LALStatus *lstat,
 	{
 	  int code = xlalErrno;
 	  XLALClearErrno(); 
-	  LALPrintError ("\nERROR: latticePoint2physicalPoint() failed with xlalErrno = %d!\n\n", code);
+	  LALPrintError ("\nERROR: latticePoint2physicalPoint() failed (xlalErrno = %d)!\n\n", code);
 	  ABORT (lstat, LATTICECOVERING_EFUNC, LATTICECOVERING_MSGEFUNC);
 	}
 
@@ -268,17 +270,24 @@ LALLatticeCovering (LALStatus *lstat,
 
 } /* LALLatticeCovering() */
 
-/** function to calculate the physical coordinates of a lattice-vector with given
- * generating-matrix and start-point of the lattice 
+/** calculate the physical coordinates of a lattice-vector for given
+ * generating-matrix and start-point (=0,0,0...0) of the lattice 
+ *
+ * the algorithm is simply : phys^i = sum_{l=0} lat^l basis_l^i,
+ * where the l-th basis-vector is the l-th row of the generating matrix.
  */
 int
-XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, 
-				 const INT4Vector *latticePoint, 
-				 const gsl_matrix *generator, 
-				 const REAL8Vector *startPoint )
+XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, 	/**< OUT: physical coordinates */
+				 const INT4Vector *latticePoint,/**< IN: lattice-coordinates */
+				 const gsl_matrix *generator, 	/**< IN: generating vectors as rows */
+				 const REAL8Vector *startPoint )/**< IN: phys.coordinates of (0,0,...0)*/
 {
   UINT4 dim;
-  
+  gsl_matrix *buffer; 
+  gsl_vector *res;
+  gsl_vector_view tmp;
+  UINT4 l;
+
   /* check validity of input */
   if ( !physicalPoint || latticePoint || !generator || !startPoint ||
        !physicalPoint->data || !latticePoint->data || !startPoint->data || !generator->data )
@@ -294,6 +303,39 @@ XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint,
       XLAL_ERROR ( "XLALlatticePoint2PhysicalPoint", XLAL_EINVAL);
     }
 
+  if ( (buffer = gsl_matrix_calloc (dim, dim)) == NULL ) {
+    XLAL_ERROR ( "XLALlatticePoint2PhysicalPoint", XLAL_ENOMEM);
+  }
+
+  /* create a local copy of the generating-matrix */
+  gsl_matrix_memcpy ( buffer, generator );
+
+  /* create a gsl-vector for summing up the lat^l basis_l vectors (->final result) */
+  if ( (res = gsl_vector_calloc (dim)) == NULL ) {
+    gsl_matrix_free (buffer);
+    XLAL_ERROR ( "XLALlatticePoint2PhysicalPoint", XLAL_ENOMEM);
+  }
+
+  /* get a vector-view on the startPoint and copy it into res */
+  tmp = gsl_vector_view_array (startPoint->data, dim);
+  gsl_vector_memcpy ( res, &(tmp.vector) );
+
+  /* now multiply each row-vector base_l with the integer lat^l
+   * and add this to the start-vector (already in res) */
+  for (l=0; l < dim; l++)
+    {
+      tmp = gsl_matrix_row ( buffer, l );	/* vector of row(l) of buffer */
+      gsl_vector_scale ( &(tmp.vector), latticePoint->data[l]);	/* lat^l * base_l */
+      gsl_vector_add ( res, &(tmp.vector) );			/* sum it up */
+    }
+  
+  /* convert final answer back into REAL8Vector */
+  /* !!!! NOTE: this assumes that sizeof(REAL8)==sizeof(double) !!!
+   * if that's not true, this will fall on its head!!
+   * (but that should hopefully not be a worry and 
+   * individual element-copying just seems too inefficient
+   */
+  memcpy (physicalPoint->data, res->data, dim * sizeof (res->data[0]));
 
   return 0;
 
