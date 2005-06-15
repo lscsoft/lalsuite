@@ -103,6 +103,9 @@
 /* -------------------------------------------------------------------- */
 /* ------------------------- END AUTO-DOC ----------------------------- */
 
+#ifndef _TEMPLATEBANKGENERATION_H
+#define _TEMPLATEBANKGENERATION_H
+
 #include<lal/LALStdlib.h>
 #include<lal/LALStatusMacros.h>
 #if 0
@@ -246,4 +249,6 @@ LALMakeTemplateBank(
      	MakeTemplateBankInput *,
      	MetadataTable *); 
      /* LALMakeTemplateBank(); */
+#endif
+
 #endif
