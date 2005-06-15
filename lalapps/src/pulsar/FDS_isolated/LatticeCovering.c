@@ -39,11 +39,13 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
 
+#include <lalapps.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 
+RCSID ("$Id$");
 NRCSID( LATTICECOVERINGC, "$Id$" );
 
 /*---------- DEFINES ----------*/
@@ -100,16 +102,26 @@ typedef struct tagREAL8VectorList
 {
   REAL8Vector entry;
   struct tagREAL8VectorList *next;
+  struct tagREAL8VectorList *prev;
 } REAL8VectorList;
 
 
 INT4VectorList empty_INT4VectorList;
+REAL8VectorList empty_REAL8VectorList;
 
 /*---------- Global variables ----------*/
 
 
 
 /*---------- local prototypes ----------*/
+void
+LALLatticeCovering (LALStatus *lstat,
+		    REAL8VectorList **coveringGrid,
+		    const gsl_matrix  *generator,
+		    const REAL8Vector *startPoint,
+		    BOOLEAN (*isInside)(const REAL8Vector *point)
+		    );
+
 int
 XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, 
 				 const INT4Vector *latticePoint, 
@@ -139,15 +151,19 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,
 INT4VectorList *INT4VectorListAddEntry (INT4VectorList *head, const INT4Vector *entry);
 int INT4VectorListRelinkElement (INT4VectorList *head, INT4VectorList *element);
 void INT4VectorListRemoveElement (INT4VectorList *element);
+REAL8VectorList *REAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry);
+BOOLEAN isINT4PointInList ( INT4Vector *point, INT4VectorList *list );
 
 /* misc helper functions */
 BOOLEAN isSymmetric (const gsl_matrix *Sij);
+int writeREAL8VectorList (FILE *fp, const REAL8VectorList *list);
+int print_matrix (const gsl_matrix *m);
+int print_vector (const gsl_vector *v);
 
 /* test-functions */
 int main(void);
 void testGS(void);
-int print_matrix (const gsl_matrix *m);
-int print_vector (const gsl_vector *v);
+void testCovering(void);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -166,15 +182,17 @@ int print_vector (const gsl_vector *v);
  */
 void
 LALLatticeCovering (LALStatus *lstat,
-		    REAL8VectorList **coveringGrid, 	/**< OUT: final covering-grid (physical points)*/
+		    REAL8VectorList **coveringGrid,	/**< OUT: final covering-grid (physical points)*/
 		    const gsl_matrix  *generator,	/**< IN: _SQUARE_ generating matrix for lattice*/
 		    const REAL8Vector *startPoint, 	/**< IN: physical startpoint for covering grid*/
 		    BOOLEAN (*isInside)(const REAL8Vector *point) /**< IN: boundary-condition */
 		    )
 {
   UINT4 dim;	/**< dimension of parameter-space to cover */
+  UINT4 i;
   INT4VectorList openEnds = empty_INT4VectorList;	/**< list of "open ends" (lattice-points) */
   INT4VectorList gridPoints = empty_INT4VectorList;	/**< resulting grid (lattice-points) */
+  REAL8VectorList realPoints = empty_REAL8VectorList;	/**< physical coordinates of grid-points */
 
   INT4Vector  *latticePoint = NULL;		/* lattice-coordinates (Z^N) */
   REAL8Vector *physicalPoint = NULL;		/* physical coordinates (R^N) */
@@ -225,7 +243,7 @@ LALLatticeCovering (LALStatus *lstat,
   if ( NULL == INT4VectorListAddEntry (&openEnds, latticePoint)) 
     {	
       /* NOTE: head always stays empty for simplicity! */
-      LALPrintError ("\nERROR: append2INT4VectorList() failed!\n\n");
+      LALPrintError ("\nERROR: INT4VectorListAddEntry () failed!\n\n");
       ABORT (lstat, LATTICECOVERING_ELIST, LATTICECOVERING_MSGELIST);
     }
 
@@ -262,24 +280,48 @@ LALLatticeCovering (LALStatus *lstat,
 	  INT4VectorListRelinkElement ( &gridPoints, thisElement );
 
 	  /* and store its physical coordinates in a REAL8VectorList as well (avoids
-	   * re-calculating physical coordinates again later...)
-	   */
-	  
+	   * re-calculating physical coordinates again later...) */
+	  if ( NULL == REAL8VectorListAddEntry ( &realPoints, physicalPoint) )
+	    {	
+	      /* NOTE: head always stays empty for simplicity! */
+	      LALPrintError ("\nERROR: REAL8VectorListAddEntry () failed!\n\n");
+	      ABORT (lstat, LATTICECOVERING_ELIST, LATTICECOVERING_MSGELIST);
+	    }
 
-	  /* generate coordinates of its 2*dim neighbors,
-	   * discard all those already in list of open-ends
-	   * and those already in lattice-points (via hash-algorithm..)
-	   * add the other ones to hash-list of open-ends
-	   */
+	  /* generate coordinates of this point's 2*dim neighbors, */
+	  for (i=0; i < 2 * dim ; i++)
+	    {
+	      memcpy ( latticePoint->data, thisPoint->data, dim * sizeof(thisPoint->data[0]));
+	      if ( i % 2 )
+		latticePoint->data[ i / 2 ] ++;
+	      else
+		latticePoint->data[ i / 2 ] --;
 
-	}
+	      /* discard all those already in list of open-ends
+	       * and those already in lattice-points (via hash-algorithm..)
+	       */
+	      if ( isINT4PointInList ( latticePoint, &gridPoints ) )
+		continue;
+	      if ( isINT4PointInList ( latticePoint, &openEnds ) )
+		continue;
+	      /* add the other ones to list of open-ends */
+	      if ( NULL == INT4VectorListAddEntry ( &openEnds, latticePoint ) )
+		{
+		  /* NOTE: head always stays empty for simplicity! */
+		  LALPrintError ("\nERROR: REAL8VectorListAddEntry () failed!\n\n");
+		  ABORT (lstat, LATTICECOVERING_ELIST, LATTICECOVERING_MSGELIST);
+		}
+	    
+	    } /* for i < 2 * dim */
+
+	} /* if point inside covering-region */
 
 
       /* start from (1) until no more open ends left */
     } /* while (openEnds->next) */
   
-  /* turn linked list of lattice-coordinates into array of lattice-points (in parameter-coordinates) */
-  
+  /* return linked list of physical points */
+  (*coveringGrid) = realPoints.next;
 
   /* clean up */
   DETATCHSTATUSPTR (lstat);
@@ -307,7 +349,7 @@ XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, 	/**< OUT: physical
   UINT4 l;
 
   /* check validity of input */
-  if ( !physicalPoint || latticePoint || !generator || !startPoint ||
+  if ( !physicalPoint || !latticePoint || !generator || !startPoint ||
        !physicalPoint->data || !latticePoint->data || !startPoint->data || !generator->data )
     {
       LALPrintError ("\nNULL Input received!\n\n");
@@ -737,6 +779,51 @@ INT4VectorListAddEntry (INT4VectorList *head, const INT4Vector *entry)
 
 } /* INT4VectorListAddEntry() */
 
+
+/** add a new element at the end of the list 'head', _copy_ the given entry there,
+ * and return pointer to the new list-entry. 
+ * 
+ * NOTE: this function is rather permissive in that it takes the vector-dimension 
+ * from the new entry 'el', without requiring this to be equal to the dimension of the 
+ * other list-entries...
+ */
+REAL8VectorList *
+REAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry)
+{
+  UINT4 dim;
+  REAL8VectorList *ptr = NULL;	/* running list-pointer */
+  REAL8VectorList *newElement = NULL;	/* new list-element */
+  /* check illegal input */
+  if ( (head == NULL) || (entry == NULL) )
+    return NULL;
+
+  /* find tail of list */
+  ptr = head;
+  while ( ptr->next )
+    ptr = ptr->next;
+
+  /* construct new list-element */
+  dim = entry->length;
+  if ( (newElement = LALCalloc (1, sizeof (*newElement))) == NULL)
+    return NULL;
+  if ( (newElement->entry.data = LALCalloc (dim, sizeof(entry->data[0]))) == NULL ) {
+    LALFree (newElement);
+    return NULL;
+  }
+  newElement->entry.length = dim;
+  memcpy (newElement->entry.data, entry->data, dim * sizeof(entry->data[0]) );
+
+  /* link this to the tail of list */
+  ptr->next = newElement;
+  newElement->prev = ptr;
+  
+  return newElement;
+
+} /* REAL8VectorListAddEntry() */
+
+
+
+
 /** "relink" the given element (from whatever list) to the end of the given list 'head'
  * return 0 if OK, negative number on error...
  */ 
@@ -791,6 +878,34 @@ INT4VectorListRemoveElement (INT4VectorList *element)
 
 } /* INT4VectorListRemoveElement() */
 
+/** search given list (or hash-table?) for the given point 
+ */
+BOOLEAN
+isINT4PointInList ( INT4Vector *point, INT4VectorList *list )
+{
+  UINT4 dim;
+  INT4VectorList *ptr;
+  
+  if ( !point || !list )
+    return FALSE;
+
+  dim = point->length;
+
+  /* for now: simple linear search through the list ... */
+  ptr = list;
+  do 
+    {
+      if (ptr->entry.length != dim )
+	continue;
+
+      if ( memcmp( ptr->entry.data, point->data, dim * sizeof(point->data[0])) == 0 )
+	return TRUE;	/* found it! */
+
+    } while ( (ptr = ptr->next) != NULL ); 
+
+  return FALSE;
+
+} /* isINT4PointInList() */
 
 /*----------------------------------------------------------------------
  * misc helper functions
@@ -871,10 +986,91 @@ print_vector (const gsl_vector *v)
 int main (void)
 {
   
-  testGS();
+  /*  testGS(); */
+
+  testCovering();
 
   return 0;
 }
+
+BOOLEAN testArea1 ( const REAL8Vector *point );
+
+void
+testCovering (void)
+{
+  LALStatus lstat = blank_status;
+  REAL8VectorList *covering = NULL;
+  UINT4 dim = 2;
+  FILE *fp;
+  gsl_matrix *generator = NULL;
+  gsl_matrix *generator0 = NULL;
+  REAL8Vector startPoint;
+  
+  XLALGetGeneratingMatrix (&generator0, dim, LATTICE_TYPE_ANSTAR);
+
+  gsl_matrix_scale ( generator0, 0.3 );
+
+  XLALSquareGeneratingMatrix( &generator, generator0 );
+
+  startPoint.length = dim;
+  startPoint.data = LALCalloc (dim, sizeof(startPoint.data[0]) ); /* already (0,0) */
+
+  LAL_CALL( LALLatticeCovering(&lstat, &covering, generator, &startPoint, testArea1), 
+	    &lstat);
+
+  if ( (fp = fopen ( "test_lattice.dat", "wb" )) == NULL )
+    {
+      LALPrintError ("\nFailed to open 'test_lattice.dat' for writing!\n\n");
+      return;
+    }
+  writeREAL8VectorList (fp, covering);
+
+  fclose(fp);
+
+  LALCheckMemoryLeaks(); 
+  
+} /* testCovering() */
+
+/* test boundary-conditions: [-1, 1]^N */
+BOOLEAN
+testArea1 ( const REAL8Vector *point )
+{
+  UINT4 i;
+
+  if ( !point || !point->data)
+    return FALSE;
+
+  for ( i=0; i < point->length; i++ )
+    {
+      if ( fabs( point->data[i] ) > 1.0 )
+	return FALSE;
+    }
+  
+  return TRUE;
+} /* testArea1() */
+
+/* write a REAL8VectorList to a file */
+int
+writeREAL8VectorList (FILE *fp, const REAL8VectorList *list)
+{
+  UINT4 i;
+  const REAL8VectorList *ptr;
+
+  if ( !list || !fp )
+    return -1;
+
+  ptr = list;
+  do 
+    {
+      for (i=0; i < ptr->entry.length; i++ )
+	fprintf (fp, "%g ", ptr->entry.data[i] );
+
+      fprintf (fp, "\n");
+
+    } while ( (ptr = ptr->next) != NULL );
+
+  return 0;
+} /* writeREAL8VectorList() */
 
 void
 testGS(void)
