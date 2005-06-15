@@ -33,11 +33,10 @@ int XLALComputeTFPlanes(
 
 	/* setup input structure for computing TF transform */
 	transformparams.startT = 0;	/* not used for horizontal transforms */
-	transformparams.dftParams = *tfTiling->dftParams;
 	transformparams.windowShift = windowShift;
 
 	/* Compute TF transform */
-	if (XLALFreqSeriesToTFPlane(*tfTiling->tfp, freqSeries, &transformparams, norm, psd))
+	if(XLALFreqSeriesToTFPlane(tfTiling->tfp, freqSeries, &transformparams, norm, psd))
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* set flags saying TF planes have been computed, but not EP or sorted */

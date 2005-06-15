@@ -47,14 +47,13 @@ TFTile;
 typedef struct
 tagTFTiling
 {
-  TFTile                           *firstTile;  /* linked list of Tiles */
-  INT4                             numTiles;
-  COMPLEX8TimeFrequencyPlane       **tfp;       /* Vector of pointers */
-  ComplexDFTParams                 **dftParams; /* Vector of pointers */
-  INT4                             numPlanes;
-  BOOLEAN                          planesComputed;
-  BOOLEAN                          excessPowerComputed;
-  BOOLEAN                          tilesSorted;
+  TFTile                     *firstTile;  /* linked list of Tiles */
+  INT4                        numTiles;
+  COMPLEX8TimeFrequencyPlane *tfp;
+  INT4                        numPlanes;
+  BOOLEAN                     planesComputed;
+  BOOLEAN                     excessPowerComputed;
+  BOOLEAN                     tilesSorted;
 }
 TFTiling;
 
@@ -97,13 +96,11 @@ LALAddWhiteNoise (
                REAL8                                noiseLevel
                );
 
-void
-LALCreateTFTiling (
-                LALStatus                           *status,
-                TFTiling                            **tfTiling,
-                CreateTFTilingIn                    *input,
-		TFPlaneParams                       *planeParams
-                );
+TFTiling *
+XLALCreateTFTiling(
+	CreateTFTilingIn *input,
+	TFPlaneParams *planeParams
+);
 
 void
 XLALDestroyTFTiling(

@@ -3,285 +3,134 @@ Author: Eanna Flanagan
 $Id$
 ********* </lalVerbatim> **********/
 
-
 #include <lal/LALRCSID.h>
 
-
-NRCSID (CREATETFTILINGC, "$Id$");
-
-
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
+NRCSID(CREATETFTILINGC, "$Id$");
 
 #include <lal/ExcessPower.h>
-#include <lal/LALConstants.h>
-#include <lal/LALErrno.h>
 #include <lal/LALStdlib.h>
-#include <lal/Random.h>
-#include <lal/RealFFT.h>
-#include <lal/SeqFactories.h>
-#include <lal/Thresholds.h>
+#include <lal/TFTransform.h>
+#include <lal/XLALError.h>
 
-
-#define TRUE 1
 #define FALSE 0
-
-extern INT4 lalDebugLevel;
 
 static INT4 pow1(INT4 a, INT4 b)
 {
-  /* returns a^b */
-  INT4 t=1;
-  INT4 i;
-  for(i=0;i<b;i++) t*=a;
-  return(t);
+	/* returns a^b */
+	INT4 t = 1;
+	INT4 i;
+	for(i = 0; i < b; i++)
+		t *= a;
+	return(t);
 }
 
+
+static TFTile *CreateTile(INT4 f, INT4 df, INT4 t, INT4 dt, REAL8 deltaT, REAL8 deltaF)
+{
+	TFTile *tile;
+
+	tile = LALMalloc(sizeof(*tile));
+	if(tile) {
+		tile->fstart = f;
+		tile->fend = f + df;
+		tile->tstart = t;
+		tile->tend = t + dt;
+		tile->whichPlane = 0;
+		tile->deltaT = deltaT;
+		tile->deltaF = deltaF;
+		tile->excessPower = 0.0;
+		tile->alpha = 0.0;
+		tile->weight = 1.0;
+		tile->firstCutFlag = FALSE;
+		tile->nextTile = NULL;
+	}
+
+	return(tile);
+}
+
+
 /******** <lalVerbatim file="CreateTFTilingCP"> ********/
-void
-LALCreateTFTiling (
-		 LALStatus              *status,
-		 TFTiling               **tfTiling,
-		 CreateTFTilingIn       *input,
-                 TFPlaneParams          *planeParams
-		 )
+TFTiling *XLALCreateTFTiling(
+	CreateTFTilingIn *input,
+	TFPlaneParams *planeParams
+)
 /******** </lalVerbatim> *********/
 {
-  INT4          numPlanes;
-  INT4          tileCount=0;
+	static const char *func = "XLALCreateTFTiling";
+	TFTiling *tfTiling;
+	COMPLEX8TimeFrequencyPlane *plane;
+	TFTile **tile;
 
-  REAL8         fhigh;        /* max frequency of the TF plane */
-  REAL8         flow;         /* min frequency of the TF plane */
-  REAL8         timeDuration; /* time duration of the plane    */
-
-  TFTile        **currentTile;
-
-  INITSTATUS (status, "LALCreateTFTiling", CREATETFTILINGC);
-  ATTATCHSTATUSPTR (status);
-
-  /* Check input structure: report if NULL */
-  ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
-      
-  /* 
-   * Check return structure: tfTiling should point to a valid pointer
-   * which should not yet point to anything.
-   *
-   */
-  ASSERT(tfTiling != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-  ASSERT(*tfTiling == NULL, status, LAL_NNULL_ERR, LAL_NNULL_MSG);
-
-  /*
-   *
-   *  compute some parameters 
-   *
-   */
-
-  /* lowest frequency to be used in the plane. */
-
-  flow = planeParams->flow;
-  
-  /* highest frequency to be used in the plane  */ 
-
-  fhigh = planeParams->fhigh;
-
-  /* time duration to be searched for, this will determine the no. of time
-   * bins in the plane. 
-   */
-
-  timeDuration = planeParams->timeDuration;  
-
-  /* number of time frequency planes to be constructed 
-   *  THERE IS ONLY ONE PLANE
-   */
-  numPlanes = 1;
-
-  /*  Assign memory for *tfTiling   */
-  *tfTiling = LALMalloc(sizeof(**tfTiling));
-  ASSERT(*tfTiling, status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
-
-  /* set some tile parameters */
-  (*tfTiling)->numPlanes = numPlanes;
-  (*tfTiling)->planesComputed = FALSE;
-  (*tfTiling)->excessPowerComputed = FALSE;
-  (*tfTiling)->tilesSorted = FALSE;
-  (*tfTiling)->tfp = NULL;
-  (*tfTiling)->dftParams = NULL;
-
-  /* set things up for recursive generation of linked list below */
-  currentTile = &((*tfTiling)->firstTile);
-  *currentTile = NULL;
-
-  /* allocate memory for vector of pointers to TF planes 
-   * WILL CHANGE TO REAL8TFPLANE : saikat
-   */
-  (*tfTiling)->tfp = (COMPLEX8TimeFrequencyPlane **) 
-       LALMalloc (numPlanes*sizeof(COMPLEX8TimeFrequencyPlane *));
-
-  /*  Make sure that the allocation was succesful */
-  if ( !((*tfTiling)->tfp) ){
-    LALFree( *tfTiling );
-    ABORT (status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
-  }
-
-  /* allocate memory for vector of pointers to DFTParams */
-  (*tfTiling)->dftParams = (ComplexDFTParams **) 
-       LALMalloc (numPlanes*sizeof(ComplexDFTParams *));
-
-  /*  Make sure that the allocation was succesful */
-  if ( !((*tfTiling)->dftParams) ){
-    LALFree( (*tfTiling)->tfp );
-    LALFree( *tfTiling );
-    ABORT (status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
-  }
-
-  /* 
-   *  
-   *  create the time frequency plane and DFTParams
-   *  
-   */
-
-    {
-      COMPLEX8TimeFrequencyPlane    **thisPlane;
-      ComplexDFTParams              **thisDftParams;
-
-      /* setup parameter structure for creating TF plane 
-       * 
-       */
-
-      planeParams->timeBins = timeDuration / planeParams->deltaT;
-      planeParams->freqBins = (fhigh - flow) / planeParams->deltaF;
-
-      /* Create TF plane structure */
-      thisPlane = (*tfTiling)->tfp;
-      *thisPlane = XLALCreateTFPlane(planeParams);
-      if(!*thisPlane) {
-        XLALClearErrno();
-	ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
-      }
-
-      /* create the DFTParams structure */
-      {
+	REAL8 fhigh;		/* max frequency of the TF plane */
+	REAL8 flow;		/* min frequency of the TF plane */
+	REAL8 timeDuration;	/* time duration of the plane    */
 	LALWindowParams winParams;
-	winParams.type=Rectangular;
-	winParams.length=planeParams->timeBins;
-	thisDftParams  = (*tfTiling)->dftParams;
-	*thisDftParams = NULL;
-	LALCreateComplexDFTParams( status->statusPtr, thisDftParams, 
-                             &winParams, -1);
-	CHECKSTATUSPTR (status);
-	/* Its an inverse transform instead of a forward transform */
-      }
+	/* coordinates of a TF tile */
+	INT4 fstart;
+	INT4 deltaf;
+	INT4 tstart;
+	INT4 deltat;
 
-    }
+	/* lowest frequency to be used in the plane. */
+	flow = planeParams->flow;
 
-  /* 
-   *  
-   *  compute the linked list of Time Frequency Tiles
-   *
-   */
+	/* highest frequency to be used in the plane  */
+	fhigh = planeParams->fhigh;
 
-    {
-      /* coordinates of a given TF tile */
-      INT4                          fstart;
-      INT4                          deltaf;
-      INT4                          tstart;
-      INT4                          deltat;
-      INT4                          incrementT;
-      INT4                          incrementF;
-      INT4                          timeBins ;
-      INT4                          freqBins ;
+	/* time duration to be searched for, this will determine the no. of
+	 * time bins in the plane. */
+	timeDuration = planeParams->timeDuration;
 
-      COMPLEX8TimeFrequencyPlane    **thisPlane;
+	/* set TF plane params */
+	planeParams->timeBins = timeDuration / planeParams->deltaT;
+	planeParams->freqBins = (fhigh - flow) / planeParams->deltaF;
+	if(planeParams->freqBins < input->minFreqBins) {
+		fprintf(stderr, "no of freqbins is less than the minimum allowed\n");
+		XLAL_ERROR_NULL(func, XLAL_EINVAL);
+	}
 
-      /* since only one plane now*/      
-      thisPlane = (*tfTiling)->tfp ;      
+	/* set DFT params */
+	winParams.type = Rectangular;
+	winParams.length = planeParams->timeBins;
 
-      /* copy the no. of timebins and freqbins into the variables */
-      timeBins = (*thisPlane)->params->timeBins;
-      freqBins = (*thisPlane)->params->freqBins;
+	/* Allocate memory for tfTiling  */
+	tfTiling = LALMalloc(sizeof(*tfTiling));
+	plane = XLALCreateTFPlane(planeParams);
+	if(!tfTiling || !plane) {
+		LALFree(tfTiling);
+		XLALDestroyTFPlane(tfTiling->tfp);
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	}
+	tfTiling->tfp = plane;
 
-      if(freqBins < input->minFreqBins){
-	fprintf(stderr," no of freqbins is less than the minimum allowed\n");
-	exit(1);
-      }
+	/* set tiling parameters */
+	tfTiling->numPlanes = 1;
+	tfTiling->planesComputed = FALSE;
+	tfTiling->excessPowerComputed = FALSE;
+	tfTiling->tilesSorted = FALSE;
 
-    /* deltat should correspond to no. of time bins for a particular tile;*/
-      deltat = input->minTimeBins;
+	/* 
+	 *  construct the linked list of Time Frequency Tiles
+	 */
 
-      while (deltat <= timeBins && 
-	     deltat*(*thisPlane)->params->deltaT <= input->maxTileDuration)
-	{
-	  incrementT = deltat/input->overlapFactor;
-	  tstart=0;
-	  while (tstart <= timeBins - deltat)
-	    {
-	      /* deltaf is set by the deltat, requiring that the 
-               * TF vol is >=1 
-               */
-	      deltaf = 1/(deltat*(*thisPlane)->params->deltaT*(*thisPlane)->params->deltaF);
-	      while (deltaf <= freqBins && 
-                  deltaf*(*thisPlane)->params->deltaF <= input->maxTileBand)
-		{
-		  incrementF = deltaf/input->overlapFactor;
-		  fstart=0;
-		  while (fstart <= freqBins - deltaf)
-		    {
-		      /* 
-		       * 
-		       *  add new Tile to linked list 
-		       *
-		       */
+	tfTiling->numTiles = 0;
+	tile = &tfTiling->firstTile;
+	*tile = NULL;
 
-		      /*  Assign memory for tile */
-		      *currentTile = (TFTile *) LALMalloc(sizeof(TFTile));
+	/* deltat should correspond to no. of time bins for a particular
+	 * tile */
+	for(deltat = input->minTimeBins; (deltat <= plane->params->timeBins) && (deltat * plane->params->deltaT <= input->maxTileDuration); deltat *= 2)
+		for(tstart = 0; tstart <= plane->params->timeBins - deltat; tstart += deltat / input->overlapFactor)
+			/* deltaf is set by the deltat, requiring that the
+			 * TF vol is >= 1 */
+			for(deltaf = 1 / (deltat * plane->params->deltaT * plane->params->deltaF); (deltaf <= plane->params->freqBins) && (deltaf * plane->params->deltaF <= input->maxTileBand); deltaf *= 2)
+				for(fstart = 0; fstart <= plane->params->freqBins - deltaf; fstart += deltaf / input->overlapFactor) {
+					*tile = CreateTile(fstart, deltaf, tstart, deltat, plane->params->deltaT, plane->params->deltaF);
+					if(!*tile)
+						XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+					tfTiling->numTiles++;
+					tile = &(*tile)->nextTile;
+				}
 
-		      /*  Make sure that the allocation was succesful */
-                      if ( ! (*currentTile) ){
-                        ABORT(status, LAL_NOMEM_ERR, LAL_NOMEM_MSG);
-                      }
-
-		      /* assign the various fields */
-		      (*currentTile)->fstart=fstart;
-		      (*currentTile)->fend=fstart+deltaf;
-		      (*currentTile)->tstart=tstart;
-		      (*currentTile)->tend=tstart+deltat;
-		      (*currentTile)->whichPlane=0;
-		      (*currentTile)->nextTile=NULL;
-                      (*currentTile)->deltaT=(*thisPlane)->params->deltaT;
-                      (*currentTile)->deltaF=(*thisPlane)->params->deltaF;
-		      (*currentTile)->excessPower=0.0;
-		      (*currentTile)->alpha=0.0;
-		      (*currentTile)->weight=1.0;
-		      (*currentTile)->firstCutFlag=FALSE;
-
-
-		      /* keep track of how many tiles */
-		      tileCount++;
-
-		      /* 
-		       *  update currentTile to point at location of 
-		       *  pointer to next tile
-		       *
-		       */
-		      currentTile = &((*currentTile)->nextTile);
-
-  		      fstart += incrementF;
-		    }
-		  deltaf = 2*deltaf;
-		};  /* while (deltaf .. */
-	      tstart += incrementT;
-	    }
-	  deltat = 2*deltat;
-	};  /* while (deltat .. */
-    } 
-
-    /* printf("no. of tile in the plane = %d\n",tileCount);*/
-
-  (*tfTiling)->numTiles=tileCount;
-
-  /* Normal exit */
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
+	return(tfTiling);
 }

@@ -20,18 +20,11 @@ XLALDestroyTFTiling(
 /******** </lalVerbatim> ********/
 {
 	TFTile *tile;
-	int i;
 
 	if(!tfTiling)
 		return;
 
-	for(i = 0; i < tfTiling->numPlanes; i++) {
-		XLALDestroyTFPlane(*(tfTiling->tfp + i));
-		XLALDestroyComplexDFTParams(*(tfTiling->dftParams + i));
-	}
-
-	LALFree(tfTiling->tfp);
-	LALFree(tfTiling->dftParams);
+	XLALDestroyTFPlane(tfTiling->tfp);
 
 	while(tfTiling->firstTile) {
 		tile = tfTiling->firstTile->nextTile;

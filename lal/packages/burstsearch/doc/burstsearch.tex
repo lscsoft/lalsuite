@@ -281,69 +281,6 @@ LALFree
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{CreateComplexDFTParams.c}}
-\label{ss:CreateComplexDFTParams.c}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-Creates a structure of type \verb+ComplexDFTParams+,
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{CreateComplexDFTParamsCP}
-\idx{LALCreateComplexDFTParams()}
-
-\subsubsection*{Description}
-
-The inputs to \verb+CreateComplexDFTParams()+ consist of (i) a parameter
-\verb+winParams+ of type \verb+WindowParams*+ giving the length of the vectors
-to be Fourier  transformed and the type of windowing to be used, (ii) a
-pointer \verb+dftParams+ to a pointer to a \verb+ComplexDFTParams+ structure, and
-(iii) an integer \verb+sign+ specifying the direction of the transform, with
-$+1$ indicating forward transform and $-1$ indicating inverse transform.  On
-exit, \verb+*dftParams+ will point to the newly created structure.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALCreateForwardComplexFFTPlan
-LALCreateReverseComplexFFTPlan
-LALSCreateVector
-LALWindow 
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{CreateComplexDFTParamsCV}}
-
-\newpage
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{DestroyComplexDFTParams.c}}
-\label{ss:DestroyComplexDFTParams.c}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-Destroys a structure of type \verb+ComplexDFTParams+,
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{DestroyComplexDFTParamsCP}
-\idx{LALDestroyComplexDFTParams()}
-
-\subsubsection*{Description}
-
-On exit, \verb+*dftParams+ will be NULL.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALSDestroyVector
-LALDestroyComplexFFTPlan
-LALFree
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{DestroyComplexDFTParamsCV}}
-
-\newpage
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Module \texttt{ComputeFrequencySeries.c}}
 \label{ss:ComputeFrequencySeries.c}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

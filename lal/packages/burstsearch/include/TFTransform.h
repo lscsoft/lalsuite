@@ -63,10 +63,8 @@ TFPlaneParams;
 
 typedef struct tagComplexDFTParams
 {
-  WindowType               windowType;
-  REAL4Vector              *window;
-  REAL4                    sumofsquares;
-  ComplexFFTPlan           *plan;
+  REAL4Window    *window;
+  ComplexFFTPlan *plan;
 }
 ComplexDFTParams;
 
@@ -99,28 +97,10 @@ VerticalTFTransformIn;
 
 typedef struct tagHorizontalTFTransformIn
 {
-  ComplexDFTParams             *dftParams;
   INT4                         startT;
   UINT4                        windowShift;
 }
 HorizontalTFTransformIn;
-
-
-
-
-void
-LALCreateComplexDFTParams (
-                        LALStatus                      *status,
-                        ComplexDFTParams            **dftParams,
-                        LALWindowParams                *params,
-                        INT2                        sign
-                        );
-
-
-void
-XLALDestroyComplexDFTParams(
-	ComplexDFTParams *dftParams
-);
 
 
 int

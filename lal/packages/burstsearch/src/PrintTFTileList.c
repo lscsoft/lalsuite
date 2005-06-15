@@ -68,7 +68,7 @@ PrintTFTile (
   f1 = tfTile->fstart;
   f2 = tfTile->fend;
   dof = 2*(t2-t1+1)*(f2-f1+1);
-  thisPlane = *(tfTiling->tfp + tfTile->whichPlane);
+  thisPlane = tfTiling->tfp;
   flow = thisPlane->params->flow;
   epoch = (REAL8)(thisPlane->epoch.gpsSeconds) + (REAL8)(thisPlane->epoch.gpsNanoSeconds)/1000000000.0;
   deltaT = thisPlane->params->deltaT;

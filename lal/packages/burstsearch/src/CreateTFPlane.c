@@ -14,8 +14,8 @@ NRCSID(CREATETFPLANEC, "$Id$");
 
 
 /******** <lalVerbatim file="CreateTFPlaneCP"> ********/
-COMPLEX8TimeFrequencyPlane * XLALCreateTFPlane(
-	TFPlaneParams * input
+COMPLEX8TimeFrequencyPlane *XLALCreateTFPlane(
+	TFPlaneParams *input
 )
 /******** </lalVerbatim> ********/
 {

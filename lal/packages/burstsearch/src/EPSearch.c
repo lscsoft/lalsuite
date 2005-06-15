@@ -185,11 +185,10 @@ static void normalize_to_psd(COMPLEX8FrequencySeries *fseries, REAL4FrequencySer
 
 /******** <lalVerbatim file="EPSearchCP"> ********/
 void
-LALEPSearch(
-	LALStatus        *status,
+XLALEPSearch(
+	SnglBurstTable  **burstEvent,
 	REAL4TimeSeries  *tseries,
-	EPSearchParams   *params,
-	SnglBurstTable  **burstEvent
+	EPSearchParams   *params
 )
 /******** </lalVerbatim> ********/
 { 
@@ -205,17 +204,6 @@ LALEPSearch(
 	REAL4                    *normalisation;
 	INT4                     tileStartShift;
 	const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
-
-	INITSTATUS(status, "EPSearch", EPSEARCHC);
-	ATTATCHSTATUSPTR(status);
-
-	/*
-	 * Check arguments.
-	 */
-
-	ASSERT(tseries != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(params != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(burstEvent != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
 	/*
 	 * Create a time-domain window, an FFT plan, and allocate space for
@@ -260,8 +248,7 @@ LALEPSearch(
 	 */
 
 	for(start_sample = 0; start_sample + params->windowLength <= tseries->data->length; start_sample += params->windowShift) {
-		LALInfo(status->statusPtr, "Analyzing a window...");
-		CHECKSTATUSPTR(status);
+		XLALPrintInfo("Analyzing a window...");
 		/* Initialize the normalisation */
 		normalisation = NULL;
 
@@ -270,9 +257,7 @@ LALEPSearch(
 		 * compute its DFT, then free it.
 		 */
 
-		LALInfo(status->statusPtr, "Computing the DFT");
-		CHECKSTATUSPTR(status);
-
+		XLALPrintInfo("Computing the DFT");
 		cutTimeSeries = XLALCutREAL4TimeSeries(tseries,  start_sample, params->windowLength);
 		if(!cutTimeSeries)
 			XLAL_ERROR_VOID(func, XLAL_EFUNC);
@@ -306,8 +291,9 @@ LALEPSearch(
 			/* the factor of 2 here is to account for the
 			 * overlapping */
 			params->tfTilingInput.deltaF = 2.0 * fseries->deltaF;
-			LALCreateTFTiling(status->statusPtr, &tfTiling, &params->tfTilingInput, &params->tfPlaneParams);
-			CHECKSTATUSPTR(status);
+			tfTiling = XLALCreateTFTiling(&params->tfTilingInput, &params->tfPlaneParams);
+			if(!tfTiling)
+				XLAL_ERROR_VOID(func, XLAL_EFUNC);
 		}
 
 		/*
@@ -315,8 +301,7 @@ LALEPSearch(
 		 */
 
 		tileStartShift = (INT4)(params->windowLength/2)-params->windowShift;
-		LALInfo(status->statusPtr, "Computing the TFPlanes");
-		CHECKSTATUSPTR(status);
+		XLALPrintInfo("Computing the TFPlanes");
 		normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(REAL4));
 		if(params->useOverWhitening) {
 			if(XLALComputeTFPlanes(tfTiling, fseries, tileStartShift, normalisation, AverageSpec))
@@ -330,8 +315,7 @@ LALEPSearch(
 		 * Search these planes.
 		 */
 
-		LALInfo(status->statusPtr, "Computing the excess power");
-		CHECKSTATUSPTR(status);
+		XLALPrintInfo("Computing the excess power");
 		if(XLALComputeExcessPower(tfTiling, &params->compEPInput, normalisation))
 			XLAL_ERROR_VOID(func, XLAL_EFUNC);
 
@@ -350,8 +334,7 @@ LALEPSearch(
 		 * Sort the results.
 		 */
 
-		LALInfo(status->statusPtr, "Sorting TFTiling");
-		CHECKSTATUSPTR(status);
+		XLALPrintInfo("Sorting TFTiling");
 		if(XLALSortTFTiling(tfTiling))
 			XLAL_ERROR_VOID(func, XLAL_EFUNC);
 
@@ -387,13 +370,6 @@ LALEPSearch(
 	XLALDestroyREAL4FrequencySeries(AverageSpec);
 	XLALDestroyREAL4Window(window);
 	XLALDestroyREAL4FFTPlan(plan);
-
-	/*
-	 * Normal exit.
-	 */
-
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
 }
 
 

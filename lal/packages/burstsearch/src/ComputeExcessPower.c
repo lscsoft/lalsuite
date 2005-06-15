@@ -49,10 +49,7 @@ XLALComputeExcessPower(
 		XLAL_ERROR(func, XLAL_EDATA);
 
 	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile) {
-		/* Check plane index is in required range */
-		if((tile->whichPlane < 0 ) || (tile->whichPlane >= tfTiling->numPlanes))
-			XLAL_ERROR(func, XLAL_EDATA);
-		tfPlane = tfTiling->tfp[tile->whichPlane];
+		tfPlane = tfTiling->tfp;
 
 		nf = tfPlane->params->freqBins;
 		nt = tfPlane->params->timeBins;
@@ -138,7 +135,6 @@ LALComputeExcessPower(
 	/* make sure that arguments are not NULL */
 	ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(tfTiling->tfp, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(tfTiling->dftParams, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
 	ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
 

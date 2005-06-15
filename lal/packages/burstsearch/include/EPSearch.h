@@ -40,11 +40,10 @@ tagEPSearchParams {
 } EPSearchParams;
 
 void
-LALEPSearch(
-	LALStatus        *status,
+XLALEPSearch(
+	SnglBurstTable  **burstEvent,
 	REAL4TimeSeries  *tseries,
-	EPSearchParams   *params,
-	SnglBurstTable  **burstEvent
+	EPSearchParams   *params
 );
 
 void

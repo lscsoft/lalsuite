@@ -12,7 +12,6 @@ NRCSID(SORTTFTILINGC, "$Id$");
 #include <lal/LALStdlib.h>
 #include <lal/XLALError.h>
 
-
 #define TRUE 1
 
 

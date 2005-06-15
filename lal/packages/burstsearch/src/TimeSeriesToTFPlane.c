@@ -24,7 +24,7 @@ NRCSID (TIMESERIESTOTFPLANEC, "$Id$");
 /******** <lalVerbatim file="TimeSeriesToTFPlaneCP"> ********/
 void
 LALTimeSeriesToTFPlane (
-            LALStatus                               *status,
+            LALStatus                            *status,
 	    COMPLEX8TimeFrequencyPlane           *tfp,
 	    REAL4TimeSeries                      *timeSeries,
 	    VerticalTFTransformIn                *input
@@ -48,7 +48,6 @@ LALTimeSeriesToTFPlane (
   INITSTATUS (status, "LALTimeSeriesToTFPlane", TIMESERIESTOTFPLANEC);
   ATTATCHSTATUSPTR (status);
 
-  
 
   /* make sure that arguments are not NULL */
   ASSERT(timeSeries, status, LAL_NULL_ERR, LAL_NULL_MSG);
@@ -67,15 +66,9 @@ LALTimeSeriesToTFPlane (
 
 
   /*
-   *
-   *
    *  make sure input parameters are reasonable, compatible with
    *  each other, etc.
-   *
-   *
    */
-
-
 
   nt = tfp->params->timeBins;   /* Number of time bins */
   ASSERT(nt > 0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
@@ -101,7 +94,7 @@ LALTimeSeriesToTFPlane (
    * ASSERT( tseglength == (INT4)input->dftParams->plan->size, status, 
    *        TFTRANSFORMH_EINCOMP, TFTRANSFORMH_MSGEINCOMP);
    */
-  ASSERT(tseglength == (INT4)input->dftParams->window->length, status, LAL_BADPARM_ERR, LAL_BADPARM_MSG);
+  ASSERT(tseglength == (int) input->dftParams->window->length, status, LAL_BADPARM_ERR, LAL_BADPARM_MSG);
 
   /* Input hetrydyne frequency must be non-negative */
   ASSERT(timeSeries->f0 >= 0.0, status, LAL_RANGE_ERR, LAL_RANGE_MSG);
