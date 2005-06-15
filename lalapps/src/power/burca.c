@@ -43,8 +43,6 @@ enum { undefined, clusterbypeaktimeandfreq, clusterbytimeandfreq } clusterchoice
 --slide-time-ns nsec.s to slide --number-slides no. of slides \
 --dt deltat [--noncoincident] [--noplayground] [--help] [--user-tag]\n"
 
-
- 
 /************************************************************************************
  * The main program
  ***********************************************************************************/
@@ -56,6 +54,7 @@ int main(int argc, char **argv)
   INT4                   cluster = FALSE;
   INT4                   noncoincident = FALSE;
   INT4                   ignorePlayground = FALSE;
+  INT4                   ignoreTFcomparison = FALSE;
 
   CHAR                   *comment = "";
 
@@ -103,6 +102,7 @@ int main(int argc, char **argv)
       {"noplayground",            no_argument,       &usePlayground,     0 },
       {"noncoincident",           no_argument,       &noncoincident,     1 },
       {"ignore-playground",       no_argument,       &ignorePlayground,  1 },
+      {"ignore-tfcomparison",     no_argument,       &ignoreTFcomparison,  1 },
       /* parameters used to generate calibrated power spectrum */
       {"ifo-a",                   required_argument, 0,                'a'},
       {"ifo-b",                   required_argument, 0,                'b'},
@@ -463,7 +463,7 @@ int main(int argc, char **argv)
 		  LAL_CALL( LALCompareSnglBurst(&stat, currentTrigger[0],
 						tmpEvent, &accParams.difference), &stat);
 		
-		  if (!accParams.difference)
+		  if (!accParams.difference || ignoreTFcomparison)
 		    {
 		      coin = 1;
 		      if (coincidentEvents == NULL)
