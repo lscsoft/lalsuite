@@ -686,7 +686,6 @@ static REAL4FrequencySeries *estimate_psd(LALStatus *status,
   REAL4FrequencySeries *psd;
   REAL4Window *window;
   RealFFTPlan *plan = NULL;
-  AverageSpectrumParams psd_params;
   UINT4 length;
   UINT4 overlap;
   REAL8 deltaF;
@@ -709,14 +708,8 @@ static REAL4FrequencySeries *estimate_psd(LALStatus *status,
   /* create fft plan for PSD estimation */
   plan = XLALCreateForwardREAL4FFTPlan(length, 0);
 
-  /* set parameters */
-  psd_params.window = window;
-  psd_params.overlap = overlap;
-  psd_params.method = useMean;
-  psd_params.plan = plan;
-
   /* esimate PSD */
-  LAL_CALL(LALREAL4AverageSpectrum(status, psd, series, &psd_params), status);
+  XLALREAL4AverageSpectrumWelch(psd, series, length, overlap, window, plan);
 
   /* destroy fft plan */
   XLALDestroyREAL4FFTPlan(plan);
