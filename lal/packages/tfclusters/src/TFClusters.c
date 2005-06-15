@@ -52,14 +52,14 @@ Compute the spectrogram from a time series.
 \vspace{0.1in}
 \texttt{
 void 
-LALComputeSpectrogram (
+LALComputeTFCSpectrogram (
 		       LALStatus *status, 
-		       Spectrogram *out, 
+		       TFCSpectrogram *out, 
 		       TFPlaneParams *tspec, 
 		       REAL4TimeSeries *tseries
 		       )
 }
-\idx{LALComputeSpectrogram()}
+\idx{LALComputeTFCSpectrogram()}
 
 \subsubsection*{Description}
 Computes the spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}. 
@@ -79,9 +79,9 @@ LALDestroyRealFFTPlan()
 ********* </lalLaTeX> ********/
 
 void 
-LALComputeSpectrogram (
+LALComputeTFCSpectrogram (
 		       LALStatus *status, 
-		       Spectrogram *out, 
+		       TFCSpectrogram *out, 
 		       TFPlaneParams *tspec, 
 		       REAL4TimeSeries *tseries
 		       )
@@ -100,7 +100,7 @@ LALComputeSpectrogram (
   COMPLEX8Vector *Hvec = NULL;
   REAL8 norm;
 
-  INITSTATUS (status, "LALComputeSpectrogram", TFCLUSTERSC);
+  INITSTATUS (status, "LALComputeTFCSpectrogram", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
 
   
@@ -243,14 +243,14 @@ Compute the spectrogram from a time series.
 \vspace{0.1in}
 \texttt{
 void 
-LALComputeXSpectrogram (
+LALComputeXTFCSpectrogram (
 		       LALStatus *status, 
-		       Spectrogram *out, 
+		       TFCSpectrogram *out, 
 		       TFPlaneParams *tspec, 
 		       REAL4VectorTimeSeries *tseries
 		       )
 }
-\idx{LALComputeXSpectrogram()}
+\idx{LALComputeXTFCSpectrogram()}
 
 \subsubsection*{Description}
 Computes the cross-spectrogram \texttt{*out} for the time series \texttt{*tseries}, using the parameters defined in \texttt{*tspec}. 
@@ -270,9 +270,9 @@ LALDestroyRealFFTPlan()
 ********* </lalLaTeX> ********/
 
 void 
-LALComputeXSpectrogram (
+LALComputeXTFCSpectrogram (
 		       LALStatus *status, 
-		       Spectrogram *out, 
+		       TFCSpectrogram *out, 
 		       TFPlaneParams *tspec, 
 		       REAL4TimeVectorSeries *tseries
 		       )
@@ -291,7 +291,7 @@ LALComputeXSpectrogram (
   COMPLEX8Vector *Ivec = NULL;
   REAL8 norm;
 
-  INITSTATUS (status, "LALComputeSpectrogram", TFCLUSTERSC);
+  INITSTATUS (status, "LALComputeXTFCSpectrogram", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
 
   
@@ -451,7 +451,7 @@ void
 LALGetClusters (
 		LALStatus *status, 
 		CList *clist, 
-		Spectrogram *tpower, 
+		TFCSpectrogram *tpower, 
 		CListDir *dir
 		)
 }
@@ -475,7 +475,7 @@ LALFreeCList()
 
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
-static void GetNearestNeighb(CList *, Spectrogram *, REAL8 *, UINT4, UINT4);
+static void GetNearestNeighb(CList *, TFCSpectrogram *, REAL8 *, UINT4, UINT4);
 
 static UINT4 ClustDistance(UINT4 s1, UINT4 *t1, UINT4 *f1, UINT4 s2, UINT4 *t2, UINT4 *f2);
 
@@ -488,7 +488,7 @@ void
 LALGetClusters (
 		LALStatus *status, 
 		CList *clist, 
-		Spectrogram *tpower, 
+		TFCSpectrogram *tpower, 
 		CListDir *dir
 		)
 {
@@ -1680,14 +1680,14 @@ Initialize a spectrogram with default values.
 \vspace{0.1in}
 \texttt{
 void 
-LALPlainSpectrogram(
+LALPlainTFCSpectrogram(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
 		    REAL4TimeSeries *tseries,
 		    REAL8 T
 		    )
 }
-\idx{LALPlainSpectrogram()}
+\idx{LALPlainTFCSpectrogram()}
 
 \subsubsection*{Description}
 Initialize the spectrogram \texttt{*tspec} so that it has a time resolution \texttt{T} and frequency resolution 1/\texttt{T}, with frequency ranging from 1/\texttt{T} to the Nyquist frequency of the time series \texttt{*tseries}. Also set the length of \texttt{*tspec} so it matches \texttt{*tseries}.
@@ -1695,14 +1695,14 @@ Initialize the spectrogram \texttt{*tspec} so that it has a time resolution \tex
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
 void 
-LALPlainSpectrogram(
+LALPlainTFCSpectrogram(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
 		    REAL4TimeSeries *tseries,
 		    REAL8 T
 		    )
 {
-  INITSTATUS (status, "LALPlainSpectrogram", TFCLUSTERSC);
+  INITSTATUS (status, "LALPlainTFCSpectrogram", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1730,14 +1730,14 @@ Initialize a spectrogram with default values.
 \vspace{0.1in}
 \texttt{
 void 
-LALPlainSpectrogramWin(
+LALPlainTFCSpectrogramWin(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
 		    REAL4TimeSeries *tseries,
 		    REAL8 T
 		    )
 }
-\idx{LALPlainSpectrogramWin()}
+\idx{LALPlainTFCSpectrogramWin()}
 
 \subsubsection*{Description}
 Initialize the spectrogram \texttt{*tspec} so that it has a time resolution \texttt{T}/2 and frequency resolution 1/\texttt{T}, with frequency ranging from 1/\texttt{T} to the Nyquist frequency of the time series \texttt{*tseries}. 
@@ -1745,14 +1745,14 @@ Initialize the spectrogram \texttt{*tspec} so that it has a time resolution \tex
 \vfill{\footnotesize\input{TFClustersCV}}
 ********* </lalLaTeX> ********/
 void 
-LALPlainSpectrogramWin(
+LALPlainTFCSpectrogramWin(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
 		    REAL4TimeSeries *tseries,
 		    REAL8 T
 		    )
 {
-  INITSTATUS (status, "LALPlainSpectrogram", TFCLUSTERSC);
+  INITSTATUS (status, "LALPlainTFCSpectrogram", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1949,7 +1949,7 @@ LALFreeCList(
 void 
 LALFreeSpecgram(
 		LALStatus *status, 
-		Spectrogram *power
+		TFCSpectrogram *power
 		)
 }
 \idx{LALFreeSpecgram()}
@@ -2015,7 +2015,7 @@ LALFreeCList(
 void 
 LALFreeSpecgram(
 		LALStatus *status, 
-		Spectrogram *power
+		TFCSpectrogram *power
 		)
 {
   INITSTATUS (status, "LALFreeSpecgram", TFCLUSTERSC);
@@ -2060,7 +2060,7 @@ LALFreeCListDir (
 
 
 /**************************INTERNAL FUNCTIONS***************************/
-static void GetNearestNeighb(CList *clist, Spectrogram *tpower, REAL8 *rho, UINT4 i, UINT4 j) 
+static void GetNearestNeighb(CList *clist, TFCSpectrogram *tpower, REAL8 *rho, UINT4 i, UINT4 j) 
 {
   /* first, add point to clist */
   (clist->sizes[clist->nclusters - 1])++;
@@ -2221,7 +2221,7 @@ static void incgam(LALStatus *status, REAL4 a, REAL4 x, REAL4 *retu)
   CListDir dir;\\
   CList clist, list;\\
   TFPlaneParams tspec;\\
-  Spectrogram spower;\\
+  TFCSpectrogram spower;\\
 \\
   RandomParams *params;\\
   REAL4Vector *vect;\\
@@ -2247,8 +2247,8 @@ static void incgam(LALStatus *status, REAL4 a, REAL4 x, REAL4 *retu)
   {\rm\bf\it Next compute a spectrogram for the time series }\\
   T = 1.0; {\rm\bf\it this is the resolution in seconds of the spectrogram }\\
 \\
-  LALPlainSpectrogram(\&status, \&tspec, \&tseries, T); {\rm\bf\it this creates spectrogram parameters at the 'Heisenberg limit' from DC+1/T to the Nyquist frequency }\\
-  LALComputeSpectrogram(\&status, \&spower, \&tspec, \&tseries);\\
+  LALPlainTFCSpectrogram(\&status, \&tspec, \&tseries, T); {\rm\bf\it this creates spectrogram parameters at the 'Heisenberg limit' from DC+1/T to the Nyquist frequency }\\
+  LALComputeTFCSpectrogram(\&status, \&spower, \&tspec, \&tseries);\\
 \\
 \\
   {\rm\bf\it Set thresholds }\\

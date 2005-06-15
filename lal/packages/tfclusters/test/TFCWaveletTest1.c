@@ -68,7 +68,7 @@ int main(void) {
   CList clist/*, list*/;
   TFCWParams twav;
   TFPlaneParams tspec;
-  Spectrogram spower;
+  TFCSpectrogram spower;
 
   RandomParams *params = NULL;
   REAL4Vector *vect = NULL;
@@ -130,7 +130,7 @@ int main(void) {
   spower.power = NULL;
   spower.params = NULL;
 
-  LALComputeWaveletSpectrogram(&status, &spower, &twav, &tseries);
+  LALComputeWaveletTFCSpectrogram(&status, &spower, &twav, &tseries);
   CHKST;
 
 

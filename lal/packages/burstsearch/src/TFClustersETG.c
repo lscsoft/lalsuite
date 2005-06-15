@@ -82,7 +82,7 @@ parameter index & type & description \\ \hline
   REAL4 mint, maxt, minf, maxf, trez;
   REAL8Vector *tmpv;
   TFPlaneParams tspec;
-  Spectrogram spower;
+  TFCSpectrogram spower;
   CList clist, list;
   CListDir dir;
   CHAR ifo[LIGOMETA_IFO_MAX];
@@ -159,11 +159,11 @@ parameter index & type & description \\ \hline
     tv.data = input->data->data;
     
     if(win) {
-      LALPlainSpectrogramWin(status->statusPtr, &tspec, &tmp, T);
+      LALPlainTFCSpectrogramWin(status->statusPtr, &tspec, &tmp, T);
       CHECKSTATUSPTR (status);
       trez = T / 2.0;
     } else {
-      LALPlainSpectrogram(status->statusPtr, &tspec, &tmp, T);
+      LALPlainTFCSpectrogram(status->statusPtr, &tspec, &tmp, T);
       CHECKSTATUSPTR (status);
       trez = T;
     }
@@ -172,10 +172,10 @@ parameter index & type & description \\ \hline
     spower.params = NULL;
 
     if(input->data->length == 1) {
-      LALComputeSpectrogram(status->statusPtr, &spower, &tspec, &tmp);
+      LALComputeTFCSpectrogram(status->statusPtr, &spower, &tspec, &tmp);
       CHECKSTATUSPTR (status);
     } else {
-      LALComputeXSpectrogram(status->statusPtr, &spower, &tspec, input);
+      LALComputeXTFCSpectrogram(status->statusPtr, &spower, &tspec, input);
       CHECKSTATUSPTR (status);
     }
   }

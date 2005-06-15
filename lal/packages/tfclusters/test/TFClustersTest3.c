@@ -64,7 +64,7 @@ int main(void) {
   CList clist;
   CList *list, * mainlist;
   TFPlaneParams tspec;
-  Spectrogram spower;
+  TFCSpectrogram spower;
 
   RandomParams *params = NULL;
   REAL4Vector *vect = NULL;
@@ -92,7 +92,7 @@ int main(void) {
   /* Next compute a spectrogram for the time series */
   T = 1.0; /* this is the resolution in seconds of the spectrogram */
 
-  LALPlainSpectrogram(&status, &tspec, &tseries, T); /* this creates spectrogram parameters at the 'Heisenberg limit' from DC+1/T to the Nyquist frequency */
+  LALPlainTFCSpectrogram(&status, &tspec, &tseries, T); /* this creates spectrogram parameters at the 'Heisenberg limit' from DC+1/T to the Nyquist frequency */
   CHKST;
 
   /* Set thresholds */
@@ -137,7 +137,7 @@ int main(void) {
   spower.power = NULL;
   spower.params = NULL;
 
-  LALComputeSpectrogram(&status, &spower, &tspec, &tseries);
+  LALComputeTFCSpectrogram(&status, &spower, &tspec, &tseries);
   CHKST;
 
 

@@ -80,7 +80,7 @@ NRCSID (TFCLUSTERSH, "$Id$");
 
 
 /*************************************<lalLaTeX file="TFClustersStructs">
-\subsubsection*{struct \texttt{Spectrogram}}
+\subsubsection*{struct \texttt{TFCSpectrogram}}
 \noindent A container for the power in the spectrogram.
 \begin{description}
 \item[\texttt{TFPlaneParams *params}] Parameters of the spectrogram.
@@ -88,9 +88,9 @@ NRCSID (TFCLUSTERSH, "$Id$");
 \end{description}
 ******************************************************* </lalLaTeX> */
 
-typedef struct tagSpectrogram {
+typedef struct tagTFCSpectrogram {
   REAL8 *power;
-  TFPlaneParams *params;} Spectrogram;
+  TFPlaneParams *params;} TFCSpectrogram;
 
 /*************************************<lalLaTeX file="TFClustersStructs">
 \subsubsection*{struct \texttt{CList}}
@@ -157,17 +157,17 @@ typedef struct tagCListDir
 /****************Main functions********************/
 
 void 
-LALComputeSpectrogram (
+LALComputeTFCSpectrogram (
 		       LALStatus *status, 
-		       Spectrogram *out, 
+		       TFCSpectrogram *out, 
 		       TFPlaneParams *tspec, 
 		       REAL4TimeSeries *tseries
 		       );
 
 void 
-LALComputeXSpectrogram (
+LALComputeXTFCSpectrogram (
 			LALStatus *status, 
-			Spectrogram *out, 
+			TFCSpectrogram *out, 
 			TFPlaneParams *tspec, 
 			REAL4TimeVectorSeries *tseries
 			);
@@ -176,7 +176,7 @@ void
 LALGetClusters (
 		LALStatus *status, 
 		CList *clist, 
-		Spectrogram *tpower, 
+		TFCSpectrogram *tpower, 
 		CListDir *dir
 		);
 
@@ -209,7 +209,7 @@ LALCopyCList (
 	      );
 
 void 
-LALPlainSpectrogram(
+LALPlainTFCSpectrogram(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
 		    REAL4TimeSeries *tseries,
@@ -217,7 +217,7 @@ LALPlainSpectrogram(
 		    );
 
 void 
-LALPlainSpectrogramWin(
+LALPlainTFCSpectrogramWin(
 		    LALStatus *status,
 		    TFPlaneParams *tspec,
 		    REAL4TimeSeries *tseries,
@@ -250,7 +250,7 @@ LALFreeCList(
 void 
 LALFreeSpecgram(
 		LALStatus *status, 
-		Spectrogram *power
+		TFCSpectrogram *power
 		);
 
 

@@ -85,9 +85,9 @@ LALWaveletFilter (
 
 
 void 
-LALComputeWaveletSpectrogram (
+LALComputeWaveletTFCSpectrogram (
 			      LALStatus *status, 
-			      Spectrogram *out, 
+			      TFCSpectrogram *out, 
 			      TFCWParams *tspec, 
 			      REAL4TimeSeries *tseries
 			      )

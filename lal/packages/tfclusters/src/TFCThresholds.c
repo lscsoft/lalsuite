@@ -86,7 +86,7 @@ LALTFCRiceThreshold ( LALStatus *status,
   UINT4 i;
   
 
-  INITSTATUS (status, "LALComputeSpectrogram", TFCLUSTERSC);
+  INITSTATUS (status, "LALTFCRiceThreshold", TFCLUSTERSC);
   ATTATCHSTATUSPTR (status);
 
 
