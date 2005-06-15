@@ -123,15 +123,6 @@ XLALDestroyTFPlane(
 	COMPLEX8TimeFrequencyPlane *tfp
 );
 
-
-void
-LALTimeSeriesToTFPlane (
-                     LALStatus                         *status,
-                     COMPLEX8TimeFrequencyPlane     *tfp,
-                     REAL4TimeSeries                *timeSeries,
-                     VerticalTFTransformIn         *input
-                     );
-
 int
 XLALFreqSeriesToTFPlane (
                      COMPLEX8TimeFrequencyPlane     *tfp,

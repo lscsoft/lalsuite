@@ -119,16 +119,8 @@ XLALComputeTFPlanes (
 int
 XLALComputeExcessPower (
                     TFTiling                        *tfTiling,
-                    ComputeExcessPowerIn            *input,
-                    REAL4                           *norm
-                    );
-
-void
-LALComputeExcessPower (
-                    LALStatus                          *status,
-                    TFTiling                        *tfTiling,
-                    ComputeExcessPowerIn            *input,
-                    REAL4                           *norm
+                    const ComputeExcessPowerIn      *input,
+                    const REAL4                     *norm
                     );
 
 int
@@ -142,28 +134,11 @@ XLALComputeLikelihood (
                    );
 
 void
-LALComputeLikelihood (
-                   LALStatus                           *status,
-                   REAL8                            *lambda,
-                   TFTiling                         *tfTiling
-                   );
-
-
-void
-LALPrintTFTileList (
-                 LALStatus                             *status,
-                 FILE                               *fp,
-                 TFTiling                           *tfTiling,
-                 INT4                               maxTiles
-                 );
-
-void 
-PrintTFTileList1 (
-                 LALStatus                             *status,
-                 FILE                               *fp,
-                 TFTiling                           *tfTiling,
-                 INT4                               maxTiles
-                 );
+XLALPrintTFTileList (
+	FILE *fp,
+	TFTiling *tfTiling,
+	INT4 maxTiles
+);
 
 #ifdef  __cplusplus
 }

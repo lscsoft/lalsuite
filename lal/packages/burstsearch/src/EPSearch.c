@@ -30,7 +30,6 @@ NRCSID(EPSEARCHC, "$Id$");
 
 #define FALSE 0
 
-extern INT4 lalDebugLevel;
 
 /*
  * Weight tiles according to the number present of a given time-frequency
@@ -42,10 +41,10 @@ static INT4 DegreesOfFreedom(TFTile *tile)
 	return(2 * (tile->tend - tile->tstart)*tile->deltaT * (tile->fend - tile->fstart)*tile->deltaF);
 }
 
-static void WeighTFTileList(TFTiling *tfTiling, INT4 maxDOF)
+static void WeightTFTileList(TFTiling *tfTiling, INT4 maxDOF)
 {
 	TFTile *tile;
-	INT4 *weight = LALCalloc(2 * maxDOF, sizeof(*weight));
+	int *weight = LALCalloc(maxDOF, sizeof(*weight));
 
 	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
 		weight[DegreesOfFreedom(tile)]++;
@@ -198,11 +197,11 @@ XLALEPSearch(
 	REAL4Window              *window;
 	RealFFTPlan              *plan;
 	REAL4FrequencySeries     *AverageSpec;
+	REAL4FrequencySeries     *OverWhiteningSpec;
 	REAL4TimeSeries          *cutTimeSeries;
 	SnglBurstTable          **EventAddPoint = burstEvent;
 	TFTiling                 *tfTiling = NULL;
 	REAL4                    *normalisation;
-	INT4                     tileStartShift;
 	const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
 	/*
@@ -243,14 +242,24 @@ XLALEPSearch(
 	if(params->printSpectrum)
 		print_real4fseries(AverageSpec, "average_spectrum.dat");
 
+	if(params->useOverWhitening)
+		OverWhiteningSpec = AverageSpec;
+	else
+		OverWhiteningSpec = NULL;
+
 	/*
 	 * Loop over data applying excess power method.
 	 */
 
 	for(start_sample = 0; start_sample + params->windowLength <= tseries->data->length; start_sample += params->windowShift) {
 		XLALPrintInfo("Analyzing a window...");
-		/* Initialize the normalisation */
-		normalisation = NULL;
+
+		/*
+		 * Calculate the duration for which tiles are to be created
+		 * in the Single TFPlane.
+		 */ 
+
+		params->tfPlaneParams.timeDuration = 2.0 * params->windowShift * tseries->deltaT;
 
 		/*
 		 * Extract a windowLength of data from the time series,
@@ -261,17 +270,8 @@ XLALEPSearch(
 		cutTimeSeries = XLALCutREAL4TimeSeries(tseries,  start_sample, params->windowLength);
 		if(!cutTimeSeries)
 			XLAL_ERROR_VOID(func, XLAL_EFUNC);
-
 		if(XLALComputeFrequencySeries(fseries, cutTimeSeries, window, plan))
 			XLAL_ERROR_VOID(func, XLAL_EFUNC);
-
-		/*
-		 * Calculate the duration for which tiles are to be created
-		 * in the Single TFPlane.
-		 */ 
-
-		params->tfPlaneParams.timeDuration = 2*params->windowShift*cutTimeSeries->deltaT;
-		
 		XLALDestroyREAL4TimeSeries(cutTimeSeries);
 		
 		/*
@@ -279,7 +279,6 @@ XLALEPSearch(
 		 */
 
 		normalize_to_psd(fseries, AverageSpec);
-
 		if(params->printSpectrum)
 			print_complex8fseries(fseries, "frequency_series.dat");
 
@@ -300,16 +299,10 @@ XLALEPSearch(
 		 * Compute the TFplanes for the data segment.
 		 */
 
-		tileStartShift = (INT4)(params->windowLength/2)-params->windowShift;
 		XLALPrintInfo("Computing the TFPlanes");
-		normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(REAL4));
-		if(params->useOverWhitening) {
-			if(XLALComputeTFPlanes(tfTiling, fseries, tileStartShift, normalisation, AverageSpec))
-				XLAL_ERROR_VOID(func, XLAL_EFUNC);
-		} else {
-			if(XLALComputeTFPlanes(tfTiling, fseries, tileStartShift, normalisation, NULL))
-				XLAL_ERROR_VOID(func, XLAL_EFUNC);
-		}
+		normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(*normalisation));
+		if(XLALComputeTFPlanes(tfTiling, fseries, params->windowLength / 2 - params->windowShift, normalisation, OverWhiteningSpec))
+			XLAL_ERROR_VOID(func, XLAL_EFUNC);
 	
 		/*
 		 * Search these planes.
@@ -318,6 +311,8 @@ XLALEPSearch(
 		XLALPrintInfo("Computing the excess power");
 		if(XLALComputeExcessPower(tfTiling, &params->compEPInput, normalisation))
 			XLAL_ERROR_VOID(func, XLAL_EFUNC);
+		LALFree(normalisation);
+		normalisation = NULL;
 
 		/*
 		 * Compute the likelihood for slightly better detection
@@ -342,7 +337,7 @@ XLALEPSearch(
 		 * Determine the weighting for each tile.
 		 */
 
-		WeighTFTileList(tfTiling, 10000);
+		WeightTFTileList(tfTiling, 20000);
 
 		/*
 		 * Convert the TFTiles into sngl_burst events for output.
@@ -358,7 +353,6 @@ XLALEPSearch(
 		tfTiling->planesComputed=FALSE;
 		tfTiling->excessPowerComputed=FALSE;
 		tfTiling->tilesSorted=FALSE;
-		LALFree(normalisation);
 	}
 
 	/*

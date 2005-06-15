@@ -1575,7 +1575,6 @@ static void add_sim_injections(
  */
 
 static SnglBurstTable **analyze_series(
-	LALStatus *stat,
 	SnglBurstTable **addpoint,
 	REAL4TimeSeries *series,
 	size_t psdlength,
@@ -1600,16 +1599,16 @@ static SnglBurstTable **analyze_series(
 	for(i = 0; i < series->data->length - overlap; i += psdlength - overlap) {
 		start = min(i, series->data->length - psdlength);
 		
-		LAL_CALL(LALCutREAL4TimeSeries(stat, &interval, series, start, psdlength), stat);
+		interval = XLALCutREAL4TimeSeries(series, start, psdlength);
 
 		if(options.verbose)
 			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
-		LAL_CALL(LALEPSearch(stat, interval, params, addpoint), stat);
+		XLALEPSearch(addpoint, interval, params);
 		while(*addpoint)
 			addpoint = &(*addpoint)->next;
 
-		LAL_CALL(LALDestroyREAL4TimeSeries(stat, interval), stat);
+		XLALDestroyREAL4TimeSeries(interval);
 	}
 
 	return(addpoint);
@@ -1854,7 +1853,7 @@ int main( int argc, char *argv[])
 		 * Analyze the data
 		 */
 
-		EventAddPoint = analyze_series(&stat, EventAddPoint, series, options.PSDAverageLength, &params);
+		EventAddPoint = analyze_series(EventAddPoint, series, options.PSDAverageLength, &params);
 
 		/*
 		 * Reset for next run

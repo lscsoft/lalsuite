@@ -8,7 +8,6 @@ $Id$
 NRCSID (COMPUTELIKELIHOODC, "$Id$");
 
 #include <lal/ExcessPower.h>
-#include <lal/LALErrno.h>
 #include <lal/XLALError.h>
 
 
@@ -41,36 +40,4 @@ XLALComputeLikelihood(
 
 	/* return value of statistic */
 	return(avglambda);
-}
-
-
-/******** <lalVerbatim file="ComputeLikelihoodCP"> ********/
-void
-LALComputeLikelihood(
-	LALStatus *status,
-	REAL8 *lambda,
-	TFTiling *tfTiling
-)
-/******** </lalVerbatim> ********/
-{
-	INITSTATUS (status, "LALComputeLikelihood", COMPUTELIKELIHOODC);
-	ATTATCHSTATUSPTR (status);
-
-	/* make sure that arguments are not NULL */
-	ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(lambda, status, LAL_NULL_ERR, LAL_NULL_MSG);
-
-	/* return value of statistic */
-	*lambda = XLALComputeLikelihood(tfTiling);
-
-	/* check for failure */
-	if(XLALIsREAL8FailNaN(*lambda)) {
-		XLALClearErrno();
-		ABORT(status, LAL_FAIL_ERR, LAL_FAIL_MSG);
-	}
-
-	/* normal exit */
-	DETATCHSTATUSPTR (status);
-	RETURN (status);
 }

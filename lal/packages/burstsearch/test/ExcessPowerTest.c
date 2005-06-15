@@ -274,11 +274,9 @@ main (int argc, char *argv[])
 
   XLALComputeTFPlanes (tfTiling, &fseries);
 
-  LALComputeExcessPower (&status, tfTiling, &input);
-  TestStatus (&status, CODES(0), 1);
+  XLALComputeExcessPower (tfTiling, &input);
 
-  LALComputeLikelihood  (&status, &lambda, tfTiling);
-  TestStatus (&status, CODES(0), 1);
+  XLALComputeLikelihood (&lambda, tfTiling);
 
   LALSortTFTiling (&status, tfTiling);
   TestStatus (&status, CODES(0), 1);
@@ -597,7 +595,7 @@ main (int argc, char *argv[])
 
   /* 
    *
-   *  Test function LALComputeExcessPower()
+   *  Test function XLALComputeExcessPower()
    *
    */
   {
@@ -606,7 +604,7 @@ main (int argc, char *argv[])
 
     if (verbose)
       {
-	printf ("\n--- Testing LALComputeExcessPower() \n\n");
+	printf ("\n--- Testing XLALComputeExcessPower() \n\n");
       }
     
     params.overlapFactor = 3;
@@ -635,85 +633,19 @@ main (int argc, char *argv[])
     LALCCreateVector( &status, &(locfseries.data), 1000);
     TestStatus (&status, CODES(0), 1);
     
-    LALComputeExcessPower( &status, tfTiling, &input);	
-    TestStatus (&status, CODES(EXCESSPOWERH_EORDER), 1);
+    XTestStatus("XLALComputeExcessPower", XLALComputeExcessPower(tfTiling, &input), XLAL_EDATA)
 
     XLALComputeTFPlanes(tfTiling, &locfseries);
 
 
     /* now start checking errors */
 
-    LALComputeExcessPower( &status, NULL, &input);	
-    TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
-    LALComputeExcessPower( &status, tfTiling, NULL);	
-    TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
-
-    {
-      COMPLEX8TimeFrequencyPlane **p;
-      p = tfTiling->tfp;
-      tfTiling->tfp=NULL;
-      LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-      tfTiling->tfp=p;
-    }
-
-    {
-      ComplexDFTParams **p;
-      p = tfTiling->dftParams;
-      tfTiling->dftParams=NULL;
-      LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-      tfTiling->dftParams=p;
-    }
-
-    {
-      TFTile *p;
-      p=tfTiling->firstTile;
-      tfTiling->firstTile=NULL;
-      LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-      tfTiling->firstTile=p;
-    }
-
     {
       INT4 p;
       p = tfTiling->numPlanes;
       tfTiling->numPlanes=0;
-      LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
+      XTestStatus("XLALComputeExcessPower", XLALComputeExcessPower(tfTiling, &input), XLAL_EDOM)
       tfTiling->numPlanes=p;
-    }
-
-    {
-      INT4 ii;
-      COMPLEX8TimeFrequencyPlane **thisPlane;
-      COMPLEX8TimeFrequencyPlane *p;
-      COMPLEX8 *p2;
-      TFPlaneParams *p3;
-            
-      for(ii=0;ii<tfTiling->numPlanes; ii++)
-	{
-	  thisPlane = tfTiling->tfp+ii;
-	  p=*thisPlane;
-	  *thisPlane=NULL;
-	  LALComputeExcessPower( &status, tfTiling, &input);
-	  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-	  *thisPlane=p;
-	  
-	  p2=(*thisPlane)->data;
-	  (*thisPlane)->data=NULL;
-	  LALComputeExcessPower( &status, tfTiling, &input);
-	  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-	  (*thisPlane)->data=p2;
-
-	  p3=(*thisPlane)->params;
-	  (*thisPlane)->params=NULL;
-	  LALComputeExcessPower( &status, tfTiling, &input);
-	  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-	  (*thisPlane)->params=p3;
-	}
     }
 
     {
@@ -723,23 +655,19 @@ main (int argc, char *argv[])
 
       p = t->whichPlane;
       t->whichPlane=-1;
-      LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
+      XTestStatus("XLALComputeExcessPower", XLALComputeExcessPower(tfTiling, &input), XLAL_EDOM)
       t->whichPlane = tfTiling->numPlanes;
-      LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
+      XTestStatus("XLALComputeExcessPower", XLALComputeExcessPower(tfTiling, &input), XLAL_EDOM)
       t->whichPlane=p;
       
       p = tfPlane->params->timeBins;
       tfPlane->params->timeBins=0;
-      LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
+      XTestStatus("XLALComputeExcessPower", XLALComputeExcessPower(tfTiling, &input), XLAL_EDOM)
       tfPlane->params->timeBins=p;
 
       p = tfPlane->params->freqBins;
       tfPlane->params->freqBins=0;
-      LALComputeExcessPower( &status, tfTiling, &input);
-      TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
+      XTestStatus("XLALComputeExcessPower", XLALComputeExcessPower(tfTiling, &input), XLAL_EDOM)
       tfPlane->params->freqBins=p;
     }
     
@@ -760,7 +688,7 @@ main (int argc, char *argv[])
 
   /* 
    *
-   *  Test function LALComputeLikelihood()
+   *  Test function XLALComputeLikelihood()
    *
    */
   {
@@ -770,7 +698,7 @@ main (int argc, char *argv[])
 
     if (verbose)
       {
-	printf ("\n--- Testing LALComputeLikelihood() \n\n");
+	printf ("\n--- Testing XLALComputeLikelihood() \n\n");
       }
     
     params.overlapFactor = 3;
@@ -803,30 +731,10 @@ main (int argc, char *argv[])
     
     XLALComputeTFPlanes(tfTiling, &locfseries);
 
-    LALComputeLikelihood( &status, &loclambda, tfTiling);	
-    TestStatus (&status, CODES(EXCESSPOWERH_EORDER), 1);
+    XTestStatus("XLALComputeLikelihood", XLALComputeLikelihood(&loclambda, tfTiling), XLAL_EDATA);
 
-    LALComputeExcessPower( &status, tfTiling, &input);
-    TestStatus (&status, CODES(0), 1);
+    XLALComputeExcessPower(tfTiling, &input);
       
-
-    /* now start checking errors */
-
-    LALComputeLikelihood( &status, NULL, tfTiling);
-    TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
-    LALComputeLikelihood( &status, &loclambda, NULL);
-    TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
-    {
-      TFTile *p;
-      p=tfTiling->firstTile;
-      tfTiling->firstTile=NULL;
-      LALComputeLikelihood( &status, &loclambda, tfTiling);
-      TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-      tfTiling->firstTile=p;
-    }
-
     /* clean up */
 
     LALCDestroyVector( &status, &(locfseries.data));
@@ -894,8 +802,7 @@ main (int argc, char *argv[])
     LALPrintTFTileList( &status, stdout, tfTiling, 2);
     TestStatus (&status, CODES(EXCESSPOWERH_EORDER), 1);
 
-    LALComputeExcessPower( &status, tfTiling, &input);
-    TestStatus (&status, CODES(0), 1);
+    XLALComputeExcessPower(tfTiling, &input);
 
     
 

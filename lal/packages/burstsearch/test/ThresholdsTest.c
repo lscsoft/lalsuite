@@ -104,17 +104,16 @@ main (int argc, char *argv[])
   input1.dof = dof;
   input1.nonCentral = rho*rho;
 
-  LALChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(0), 1);
-  LALOneMinusChisqCdf (&status, &alpha2, &input1);
-  TestStatus (&status, CODES(0), 1);
-  LALNoncChisqCdf( &status, &beta, &input1);
-  TestStatus (&status, CODES(0), 1);
+  alpha1 = XLALChisqCdf(input1->chi2, input1->dof);
+  if(XLALGetBaseErrno())
+  	exit(1);
+  alpha2 = XLALOneMinusChisqCdf(input1->chi2, input1->dof);
+  beta = XLALNoncChisqCdf(input1->chi2, input1->dof, input1->nonCentral);
 
   alpha = 1.0 - alpha1;
   if(verbose)
     {
-      printf("-- Test 1 of LALChisqCdf(), LALNoncChisqCdf(), LALChi2Threshold() and LALRhoThreshold() --\n");
+      printf("-- Test 1 of XLALChisqCdf(), XLALNoncChisqCdf(), XLALChi2Threshold() and LALRhoThreshold() --\n");
       printf("chi2 is %f and dof is %f\n",chi2,dof);
       printf("rho is %f\n",rho);
       printf("alpha is %f, should be 0.970406\n",alpha);
@@ -131,8 +130,7 @@ main (int argc, char *argv[])
       
   input2.falseAlarm = alpha;
   input2.dof = dof;
-  LALChi2Threshold( &status, &temp1, &input2);
-  TestStatus (&status, CODES(0), 1);
+  temp1 = XLALChi2Threshold(input2->dof, input2->falseAlarm);
   input3.chi2 = chi2;
   input3.dof = dof;
   input3.falseDismissal=beta;
@@ -164,15 +162,17 @@ main (int argc, char *argv[])
   input1.dof = dof;
   input1.nonCentral = rho*rho;
 
-  LALChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(0), 1);
-  LALNoncChisqCdf( &status, &beta, &input1);
-  TestStatus (&status, CODES(0), 1);
+  alpha1 = XLALChisqCdf(input1->chi2, input1->dof);
+  if(XLALGetBaseErrno())
+  	exit(1);
+  beta = XLALNoncChisqCdf(input1->chi2, input1->dof, input1->nonCentral);
+  if(XLALGetBaseErrno())
+  	exit(1);
 
   alpha = 1.0 - alpha1;
   if(verbose)
     {
-      printf("-- Test 2 of LALChisqCdf(), LALNoncChisqCdf(), LALChi2Threshold() and LALRhoThreshold() --\n");
+      printf("-- Test 2 of XLALChisqCdf(), XLALNoncChisqCdf(), XLALChi2Threshold() and LALRhoThreshold() --\n");
       printf("chi2 is %f and dof is %f\n",chi2,dof);
       printf("rho is %f\n",rho);
       printf("alpha is %f, should be 0.007066\n",alpha);
@@ -188,8 +188,7 @@ main (int argc, char *argv[])
       
   input2.falseAlarm = alpha;
   input2.dof = dof;
-  LALChi2Threshold( &status, &temp1, &input2);
-  TestStatus (&status, CODES(0), 1);
+  temp1 = XLALChi2Threshold(input2->dof, input2->falseAlarm);
   input3.chi2 = chi2;
   input3.dof = dof;
   input3.falseDismissal=beta;
@@ -234,24 +233,6 @@ main (int argc, char *argv[])
     printf ("\n----- Null Pointer Error: Code 1 (8 times) \n");
   }
 
-  LALChisqCdf (&status, &alpha1, NULL);
-  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
-  LALChisqCdf (&status, NULL, &input1);
-  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
-  LALNoncChisqCdf (&status, &alpha1, NULL);
-  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
-  LALNoncChisqCdf (&status, NULL, &input1);
-  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
-  LALChi2Threshold( &status, &temp1, NULL);
-  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
-  LALChi2Threshold( &status, NULL, &input2);
-  TestStatus (&status, CODES(LAL_NULL_ERR), 1);
-
   LALRhoThreshold( &status, &temp2, NULL);
   TestStatus (&status, CODES(LAL_NULL_ERR), 1);
 
@@ -269,27 +250,39 @@ main (int argc, char *argv[])
   }
 
   input1.chi2 *= -1.0;
-  LALChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
-  LALNoncChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
+  alpha1 = XLALChisqCdf(input1->chi2, input1->dof);
+  if(XLALGetBaseErrno() != XLAL_EDOM)
+  	exit(1);
+  XLALClearErrno();
+  alpha1 = XLALNoncChisqCdf(input1->chi2, input1->dof, input1->nonCentral);
+  if(XLALGetBaseErrno() != XLAL_EDOM)
+  	exit(1);
+  XLALClearErrno();
   input1.chi2 *= -1.0;  /* set it back to positive for remaining tests */
 
   input1.dof *= -1.0;
-  LALChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
-  LALNoncChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
+  alpha1 = XLALChisqCdf(input1->chi2, input1->dof);
+  if(XLALGetBaseErrno() != XLAL_EDOM)
+  	exit(1);
+  XLALClearErrno();
+  alpha1 = XLALNoncChisqCdf(input1->chi2, input1->dof, input1->nonCentral);
+  if(XLALGetBaseErrno() != XLAL_EDOM)
+  	exit(1);
+  XLALClearErrno();
   input1.dof *= -1.0;
 
   input1.nonCentral *= -1.0;
-  LALNoncChisqCdf (&status, &alpha1, &input1);
-  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
+  alpha1 = XLALNoncChisqCdf(input1->chi2, input1->dof, input1->nonCentral);
+  if(XLALGetBaseErrno() != XLAL_EDOM)
+  	exit(1);
+  XLALClearErrno();
   input1.nonCentral *= -1.0;
 
   input2.dof *= -1;
-  LALChi2Threshold( &status, &temp1, &input2);
-  TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
+  temp1 = XLALChi2Threshold(input2->dof, input2->falseAlarm);
+  if(XLALGetBaseErrno() != XLAL_EDOM)
+  	exit(1);
+  XLALClearErrno();
   input2.dof *= -1;
   
   input3.dof *= -1;
@@ -312,36 +305,15 @@ main (int argc, char *argv[])
    *
    */
 
-
-
-  /* 
-   *  Test LALNoncChisqCdf for a recursive error 
-   *
-   *  This test currently commented out since it causes a memory
-   *  leak and causes the LALCheckMemoryLeaks() test below to fail.
-   *  The memory leak is due to the way the LAL LALStatus macros are
-   *  currently written.  
-   *
-   */
-
-  /*  LALNoncChisqCdf (&status, &alpha1, &input1);
-      TestStatus (&status, CODES(-1), 1); */
-
-
-
-
   /* reset parameters to original values */
   input1.dof = dof;
   input1.chi2 = chi2;
   
   /* 
    *  There is no test here for exceeding the maximum number of
-   *  iterations in LALNoncChisqCdf() since I could not find a set
-   *   of parameters which caused this condition to occur.
+   *  iterations in XLALNoncChisqCdf() since I could not find a set
+   *  of parameters which caused this condition to occur.
    */
-
-
-
 
 
 
@@ -354,10 +326,16 @@ main (int argc, char *argv[])
 
 
   input2.falseAlarm = -1.0;
-  LALChi2Threshold (&status, &temp1, &input2);
+  temp1 = XLALChi2Threshold(input2->dof, input2->falseAlarm);
+  if(XLALGetBaseErrno() != XLAL_EDOM)
+  	exit(1);
+  XLALClearErrno();
   TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   input2.falseAlarm = 2.0;
-  LALChi2Threshold (&status, &alpha1, &input2);
+  temp1 = XLALChi2Threshold(input2->dof, input2->falseAlarm);
+  if(XLALGetBaseErrno() != XLAL_EDOM)
+  	exit(1);
+  XLALClearErrno();
   TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   /* set it back to original value for remaining tests */
   input2.falseAlarm= alpha;  

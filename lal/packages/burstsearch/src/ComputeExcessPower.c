@@ -10,7 +10,6 @@ $Id$
 NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 
 #include <lal/ExcessPower.h>
-#include <lal/LALErrno.h>
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>
 
@@ -21,8 +20,8 @@ NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 int
 XLALComputeExcessPower(
 	TFTiling *tfTiling,
-	ComputeExcessPowerIn *input,
-	REAL4 *norm
+	const ComputeExcessPowerIn *input,
+	const REAL4 *norm
 )
 /******** </lalVerbatim> ********/
 {
@@ -92,22 +91,13 @@ XLALComputeExcessPower(
 		/* Need to compute an accurate value of likelihood only if
 		 * excess power is greater than a few sigma */
 
-		tile->alpha =  input->alphaDefault; /* default value */
 		if(numsigma > input->numSigmaMin) {
-			ChisqCdfIn locinput;
-			REAL8 alpha; /* false alarm probability */
-
 			tile->firstCutFlag = TRUE;
-
-			/* compute alpha value */
-			locinput.chi2 = sum;
-			locinput.dof = dof;
-			/* locinput->nonCentral not used by XLALOneMinusChisqCdf() */
-			alpha = XLALOneMinusChisqCdf(&locinput);
-			if(XLALIsREAL8FailNaN(alpha))
+			tile->alpha = XLALOneMinusChisqCdf(sum, dof);
+			if(XLALIsREAL8FailNaN(tile->alpha))
 				XLAL_ERROR(func, XLAL_EFUNC);
-
-			tile->alpha = alpha;
+		} else {
+			tile->alpha =  input->alphaDefault; /* default value */
 		}
 	}
 
@@ -116,31 +106,4 @@ XLALComputeExcessPower(
 
 	/* success */
 	return(0);
-}
-
-
-/******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
-void
-LALComputeExcessPower(
-	LALStatus            *status,
-	TFTiling             *tfTiling,
-	ComputeExcessPowerIn *input,
-	REAL4                *norm
-)
-/******** </lalVerbatim> ********/
-{
-	INITSTATUS (status, "LALComputeExcessPower", COMPUTEEXCESSPOWERC);
-	ATTATCHSTATUSPTR (status);
-
-	/* make sure that arguments are not NULL */
-	ASSERT(tfTiling, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(tfTiling->tfp, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(tfTiling->firstTile, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
-
-	ASSERT(XLALComputeExcessPower(tfTiling, input, norm) == 0, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
-
-	/* normal exit */
-	DETATCHSTATUSPTR (status);
-	RETURN (status);
 }

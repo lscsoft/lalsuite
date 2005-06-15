@@ -47,34 +47,41 @@ RhoThresholdIn;
 
 REAL8
 XLALChisqCdf(
-	const ChisqCdfIn *input
+	REAL8 chi2,
+	REAL8 dof
 );
 
 void
-LALChisqCdf (
-          LALStatus                        *status,
-          REAL8                         *prob,
-          ChisqCdfIn                    *input
-          );
+LALChisqCdf(
+	LALStatus  *status,
+	REAL8      *prob,
+	ChisqCdfIn *input
+);
 
 REAL8
 XLALOneMinusChisqCdf(
-	const ChisqCdfIn *input
+	REAL8 chi2,
+	REAL8 dof
 );
 
-void
-LALOneMinusChisqCdf (
-                  LALStatus                *status,
-                  REAL8                 *prob,
-                  ChisqCdfIn            *input
-                  );
+REAL8
+XLALNoncChisqCdf (
+	REAL8 chi2,
+	REAL8 dof,
+	REAL8 nonCentral
+);
 
-void
-LALNoncChisqCdf (
-              LALStatus                    *status,
-              REAL8                     *prob,
-              ChisqCdfIn                *input
-              );
+REAL8
+XLALNoncChisqCdfNonSafe (
+	REAL8 chi2,
+	REAL8 dof,
+	REAL8 nonCentral
+);
+
+REAL8 XLALChi2Threshold(
+	REAL8 dof,
+	REAL8 falseAlarm
+);
 
 void
 LALChi2Threshold (
