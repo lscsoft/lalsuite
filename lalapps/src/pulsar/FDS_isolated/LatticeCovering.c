@@ -136,7 +136,9 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,
 			 LatticeType type);
 
 /* list-handling functions */
-INT4VectorList *append2INT4VectorList (INT4VectorList *head, const INT4Vector *el);
+INT4VectorList *INT4VectorListAddEntry (INT4VectorList *head, const INT4Vector *entry);
+int INT4VectorListRelinkElement (INT4VectorList *head, INT4VectorList *element);
+void INT4VectorListRemoveElement (INT4VectorList *element);
 
 /* misc helper functions */
 BOOLEAN isSymmetric (const gsl_matrix *Sij);
@@ -220,7 +222,7 @@ LALLatticeCovering (LALStatus *lstat,
 
   /* ----- start by adding startPoint coordinates (0,0,0,,) to the list of 'open-ends' */
   /* we don't need to set these coordinates, grid-point is already set to (0,0,0,,,)  */
-  if ( NULL == append2INT4VectorList (&openEnds, latticePoint)) 
+  if ( NULL == INT4VectorListAddEntry (&openEnds, latticePoint)) 
     {	
       /* NOTE: head always stays empty for simplicity! */
       LALPrintError ("\nERROR: append2INT4VectorList() failed!\n\n");
@@ -231,12 +233,13 @@ LALLatticeCovering (LALStatus *lstat,
   /* ----- (*) take coordinates of next open-end from hash-list of open-ends */
   while ( openEnds.next )
     {
-      INT4Vector *p1 = NULL;
+      INT4Vector *thisPoint = NULL;
+      INT4VectorList *thisElement = openEnds.next; 
 
       /* get lattice-coordinates of this point (pointer to entry) */
-      p1 = &(openEnds.next->entry);
+      thisPoint = &(thisElement->entry);
       /* find its physical coordinates */
-      XLALlatticePoint2physicalPoint ( physicalPoint, p1, generator, startPoint );
+      XLALlatticePoint2physicalPoint ( physicalPoint, thisPoint, generator, startPoint );
       if ( xlalErrno )
 	{
 	  int code = xlalErrno;
@@ -246,16 +249,31 @@ LALLatticeCovering (LALStatus *lstat,
 	}
 
       /* is it inside the covering-region?: */
+      if ( ! (*isInside)(physicalPoint) )
+	{ /* NO */
+	  /* remove this lattice-point from list of open ends and continue */
+	  INT4VectorListRemoveElement ( thisElement );
+	  thisPoint = NULL;
+	  continue;
+	}
+      else
+	{ /* YES */
+	  /* move this point into the list of grid-points (in lattice-coordinates) */
+	  INT4VectorListRelinkElement ( &gridPoints, thisElement );
 
-      /* NO: ==> move it to (hashed) list of dead-ends, 
-	         OR simply remove it from list */
+	  /* and store its physical coordinates in a REAL8VectorList as well (avoids
+	   * re-calculating physical coordinates again later...)
+	   */
+	  
 
-      /* YES: ==> move it to (hashed) list of lattice-coordinates. 
-	         generate coordinates of its 2*dim neighbors,
-		 discard all those already in list of open-ends
-		 and those already in lattice-points (via hash-algorithm..)
-		 add the other ones to hash-list of open-ends
-      */
+	  /* generate coordinates of its 2*dim neighbors,
+	   * discard all those already in list of open-ends
+	   * and those already in lattice-points (via hash-algorithm..)
+	   * add the other ones to hash-list of open-ends
+	   */
+
+	}
+
 
       /* start from (1) until no more open ends left */
     } /* while (openEnds->next) */
@@ -678,20 +696,21 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,	/**< OUT: generating matrix */
  * list handling tools
  *----------------------------------------------------------------------*/
 
-/** append given INT4Vector element to the list 'head', return pointer to new list-entry.
+/** add a new element at the end of the list 'head', _copy_ the given entry there,
+ * and return pointer to the new list-entry. 
  * 
- * NOTE: this function is rather permissive in that it takes the dimension from
- * the new element 'el', without requiring this to be equal to the dimension of the 
- * previous list-entries...
+ * NOTE: this function is rather permissive in that it takes the vector-dimension 
+ * from the new entry 'el', without requiring this to be equal to the dimension of the 
+ * other list-entries...
  */
 INT4VectorList *
-append2INT4VectorList (INT4VectorList *head, const INT4Vector *el)
+INT4VectorListAddEntry (INT4VectorList *head, const INT4Vector *entry)
 {
   UINT4 dim;
   INT4VectorList *ptr = NULL;	/* running list-pointer */
   INT4VectorList *newElement = NULL;	/* new list-element */
   /* check illegal input */
-  if ( (head == NULL) || (el == NULL) )
+  if ( (head == NULL) || (entry == NULL) )
     return NULL;
 
   /* find tail of list */
@@ -699,16 +718,16 @@ append2INT4VectorList (INT4VectorList *head, const INT4Vector *el)
   while ( ptr->next )
     ptr = ptr->next;
 
-  /* construct new list-entry */
-  dim = el->length;
+  /* construct new list-element */
+  dim = entry->length;
   if ( (newElement = LALCalloc (1, sizeof (*newElement))) == NULL)
     return NULL;
-  if ( (newElement->entry.data = LALCalloc (dim, sizeof(el->data[0]))) == NULL ) {
+  if ( (newElement->entry.data = LALCalloc (dim, sizeof(entry->data[0]))) == NULL ) {
     LALFree (newElement);
     return NULL;
   }
   newElement->entry.length = dim;
-  memcpy (newElement->entry.data, el->data, dim * sizeof(el->data[0]) );
+  memcpy (newElement->entry.data, entry->data, dim * sizeof(entry->data[0]) );
 
   /* link this to the tail of list */
   ptr->next = newElement;
@@ -716,7 +735,62 @@ append2INT4VectorList (INT4VectorList *head, const INT4Vector *el)
   
   return newElement;
 
-} /* append2INT4VectorList() */
+} /* INT4VectorListAddEntry() */
+
+/** "relink" the given element (from whatever list) to the end of the given list 'head'
+ * return 0 if OK, negative number on error...
+ */ 
+int
+INT4VectorListRelinkElement (INT4VectorList *head, INT4VectorList *element)
+{
+  INT4VectorList *ptr;
+
+  if ( !head || !element )
+    return -1;
+
+  /* unlink element from its list */
+  if ( element->next )
+    (element->next)->prev = element->prev;
+  if ( element->prev )
+    (element->prev)->next = element->next;
+
+  /* find tail of list */
+  ptr = head;
+  while ( ptr->next )
+    ptr = ptr->next;
+
+  /* link element at the end of given list 'head' */
+  ptr->next = element;
+  element->next = NULL;
+  element->prev = ptr;
+
+  return 0;
+
+} /* INT4VectorListRelinkElement() */
+
+
+/** remove (and free) the given list-element from the list */
+void
+INT4VectorListRemoveElement (INT4VectorList *element)
+{
+  if ( element == NULL )	/* ignore empty input */
+    return;
+
+  /* un-link the given element from list */
+  if ( element->prev )
+    (element->prev)->next = element->next;
+  
+  if ( element->next )
+    (element->next)->prev = element->prev;
+  
+  /* free the element */
+  LALFree (element->entry.data);
+  LALFree (element);
+  
+  return;
+
+} /* INT4VectorListRemoveElement() */
+
 
 /*----------------------------------------------------------------------
  * misc helper functions
