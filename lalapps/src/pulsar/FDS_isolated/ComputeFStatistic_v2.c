@@ -121,6 +121,9 @@ typedef struct {
 
 INT4 uvar_Dterms;
 CHAR* uvar_IFO;
+/*================*/
+CHAR* uvar_IFO2;
+/*================*/
 BOOLEAN uvar_SignalOnly;
 REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
@@ -141,8 +144,14 @@ INT4  uvar_metricType;
 REAL8 uvar_metricMismatch;
 CHAR *uvar_skyRegion;
 CHAR *uvar_DataDir;
+/*================*/
+CHAR *uvar_DataDir2;
+/*================*/
 CHAR *uvar_mergedSFTFile;
 CHAR *uvar_BaseName;
+/*================*/
+CHAR *uvar_BaseName2;
+/*================*/
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
@@ -551,11 +560,20 @@ initUserVars (LALStatus *stat)
   LALregREALUserVar(stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
   LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_OPTIONAL, "Directory where SFT's are located");
+  /*================*/
+  LALregSTRINGUserVar(stat,	DataDir2, 	 0, UVAR_OPTIONAL, "Directory where SFT's are located");
+  /*================*/
   LALregSTRINGUserVar(stat,	mergedSFTFile, 	'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
   LALregSTRINGUserVar(stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
+  /*================*/
+  LALregSTRINGUserVar(stat,	BaseName2, 	 0, UVAR_OPTIONAL, "The base name of the input  file you want to read");  
+  /*================*/
   LALregSTRINGUserVar(stat,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(stat,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregSTRINGUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
+  /*================*/
+  LALregSTRINGUserVar(stat, 	IFO2, 		 0, UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)"); 
+  /*================*/
   LALregBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
   LALregREALUserVar(stat, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
   LALregREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
@@ -748,18 +766,36 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
       LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
 		      "No SFT directory specified; input directory with -D option.\n"
 		      "No merged SFT file specified; input file with -B option.\n"
-		      "Try ./ComputeFStatistic -h \n\n");
+		      "Try ./ComputeFStatistic_v2 -h \n\n");
       ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
     }
 
   if(uvar_DataDir && uvar_mergedSFTFile)
     {
       LALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
-		      "Try ./ComputeFStatistic -h \n\n" );
+		      "Try ./ComputeFStatistic_v2 -h \n\n" );
       ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
-  if (uvar_ephemYear == NULL)
+ /*==========================*/
+  if(!uvar_DataDir2 && !uvar_mergedSFTFile)
+    {
+      LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
+		      "No SFT directory specified; input directory with -D option.\n"
+		      "No merged SFT file specified; input file with -B option.\n"
+		      "Try ./ComputeFStatistic_v2 -h \n\n");
+      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+    }
+
+  if(uvar_DataDir2 && uvar_mergedSFTFile)
+    {
+      LALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
+		      "Try ./ComputeFStatistic_v2 -h \n\n" );
+      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }       
+ /*==========================*/   
+    
+   if (uvar_ephemYear == NULL)
     {
       LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
       ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
@@ -801,6 +837,15 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
       len = strlen(uvar_DataDir);
     else
       len = 1;	/* '.' */
+ 
+ /*==========================*/
+    if (uvar_DataDir2) 
+      len = strlen(uvar_DataDir2);
+    else
+      len = 1;	/* '.' */ 
+ /*==========================*/     
+      
+      
     if (uvar_BaseName) 
       len += strlen(uvar_BaseName);
 
@@ -812,19 +857,50 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
 	ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
       }
 
+/*==========================*/
+    if (uvar_BaseName2) 
+      len += strlen(uvar_BaseName2);
+
+    len += 10;	/* to allow for '/' and '*' to be inserted */
+
+    if ( (fpattern = LALCalloc(1, len)) == NULL)
+      {
+	LALPrintError ("\nOut of memory !\n");
+	ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      }
+/*==========================*/
+
     if (uvar_DataDir)
       strcpy (fpattern, uvar_DataDir);
     else
       strcpy (fpattern, ".");
 
     strcat (fpattern, "/*");
+    
+/*==========================*/    
+    if (uvar_DataDir2)
+      strcpy (fpattern, uvar_DataDir2);
+    else
+      strcpy (fpattern, ".");
 
+    strcat (fpattern, "/*");   
+/*==========================*/
+    
     if (uvar_BaseName)
       {
 	strcat (fpattern, uvar_BaseName);
 	strcat (fpattern, "*");
       }
 
+/*==========================*/      
+    if (uvar_BaseName2)
+      {
+	strcat (fpattern, uvar_BaseName2);
+	strcat (fpattern, "*");
+      }
+     
+/*==========================*/      
+      
     TRY ( LALReadSFTfiles(stat->statusPtr, &SFTvect, f0, f1, uvar_Dterms, fpattern), stat);
     LALFree (fpattern);
 
@@ -904,7 +980,32 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
       LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
       ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
-
+/*========================*/
+      if ( !strcmp (uvar_IFO2, "GEO") || !strcmp (uvar_IFO, "0") ) 
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  else if ( !strcmp (uvar_IFO2, "LLO") || ! strcmp (uvar_IFO, "1") ) 
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  else if ( !strcmp (uvar_IFO2, "LHO") || !strcmp (uvar_IFO, "2") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  else if ( !strcmp (uvar_IFO2, "NAUTILUS") || !strcmp (uvar_IFO, "3"))
+    {
+      TRY (CreateNautilusDetector (stat->statusPtr, &(cfg->Detector)), stat);
+    }
+  else if ( !strcmp (uvar_IFO2, "VIRGO") || !strcmp (uvar_IFO, "4") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  else if ( !strcmp (uvar_IFO2, "TAMA") || !strcmp (uvar_IFO, "5") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+  else if ( !strcmp (uvar_IFO2, "CIT") || !strcmp (uvar_IFO, "6") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+  else
+    {
+      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
+      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+    }
+  /*========================*/  
+    
+    
+    
   /*----------------------------------------------------------------------
    * set some defaults
    */
