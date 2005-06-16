@@ -115,12 +115,12 @@ REAL8VectorList empty_REAL8VectorList;
 
 /*---------- local prototypes ----------*/
 void
-LALLatticeCovering (LALStatus *lstat,
-		    REAL8VectorList **coveringGrid,
-		    const gsl_matrix  *generator,
-		    const REAL8Vector *startPoint,
-		    BOOLEAN (*isInside)(const REAL8Vector *point)
-		    );
+LALLatticeFill (LALStatus *lstat,
+		REAL8VectorList **fillGrid,
+		const gsl_matrix  *generator,
+		const REAL8Vector *startPoint,
+		BOOLEAN (*isInside)(const REAL8Vector *point)
+		);
 
 int
 XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, 
@@ -168,27 +168,25 @@ void testCovering(void);
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 
-/** Cover given parameter-space by lattice of specified type.
- * The central function of this module: cover the parameter-space 
+/** Fill the given parameter-space by a lattice of specified 
+ * generating matrix.
  * 
  * NOTE: the input generating-matrix (generator) needs to be scaled
- * correctly to the required covering radius and is supposed to be
- * expressed in the correct coordinates of the parameter-space.
- * Also, it needs to be in canonical *square matrix* form.
- * All this needs to be prepared before this function is called....
+ * correctly to the required covering radius, also, it needs to be in 
+ * canonical _square matrix_ form. 
  *
  * NOTE2: as always in this module, the generating matrix contains
  * the lattice-vectors as _rows_
  */
 void
-LALLatticeCovering (LALStatus *lstat,
-		    REAL8VectorList **coveringGrid,	/**< OUT: final covering-grid (physical points)*/
-		    const gsl_matrix  *generator,	/**< IN: _SQUARE_ generating matrix for lattice*/
-		    const REAL8Vector *startPoint, 	/**< IN: physical startpoint for covering grid*/
-		    BOOLEAN (*isInside)(const REAL8Vector *point) /**< IN: boundary-condition */
-		    )
+LALLatticeFill (LALStatus *lstat,
+		REAL8VectorList **fillGrid,	/**< OUT: final fill-grid (physical points)*/
+		const gsl_matrix  *generator,	/**< IN: _SQUARE_ generating matrix for lattice*/
+		const REAL8Vector *startPoint, 	/**< IN: physical startpoint for filling */
+		BOOLEAN (*isInside)(const REAL8Vector *point) /**< IN: boundary-condition */
+		)
 {
-  UINT4 dim;	/**< dimension of parameter-space to cover */
+  UINT4 dim;	/**< dimension of parameter-space to fill */
   UINT4 i;
   INT4VectorList openEnds = empty_INT4VectorList;	/**< list of "open ends" (lattice-points) */
   INT4VectorList gridPoints = empty_INT4VectorList;	/**< resulting grid (lattice-points) */
@@ -197,19 +195,19 @@ LALLatticeCovering (LALStatus *lstat,
   INT4Vector  *latticePoint = NULL;		/* lattice-coordinates (Z^N) */
   REAL8Vector *physicalPoint = NULL;		/* physical coordinates (R^N) */
 
-  INITSTATUS( lstat, "LALLatticeCovering", LATTICECOVERINGC );
+  INITSTATUS( lstat, "LALLatticeFill", LATTICECOVERINGC );
   ATTATCHSTATUSPTR (lstat); 
 
   /* This traps coding errors in the calling routine. */
-  ASSERT ( coveringGrid != NULL, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );  
-  ASSERT ( *coveringGrid == NULL,lstat, LATTICECOVERING_ENONULL, LATTICECOVERING_MSGENONULL );
+  ASSERT ( fillGrid != NULL, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );  
+  ASSERT ( *fillGrid == NULL,lstat, LATTICECOVERING_ENONULL, LATTICECOVERING_MSGENONULL );
   ASSERT ( generator, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
   ASSERT ( startPoint, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
   ASSERT ( startPoint->data, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
 
   if ( generator->size1 != generator->size2 )	/* need square generator */
     {
-      LALPrintError ("\nERROR: LatticeCovering() required SQUARE generating matrix!\n\n");
+      LALPrintError ("\nERROR: LatticeFill() requires a  SQUARE generating matrix!\n\n");
       ABORT (lstat, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);      
     }
 
@@ -266,7 +264,7 @@ LALLatticeCovering (LALStatus *lstat,
 	  ABORT (lstat, LATTICECOVERING_EFUNC, LATTICECOVERING_MSGEFUNC);
 	}
 
-      /* is it inside the covering-region?: */
+      /* is it inside the filling-region?: */
       if ( ! (*isInside)(physicalPoint) )
 	{ /* NO */
 	  /* remove this lattice-point from list of open ends and continue */
@@ -314,21 +312,21 @@ LALLatticeCovering (LALStatus *lstat,
 	    
 	    } /* for i < 2 * dim */
 
-	} /* if point inside covering-region */
+	} /* if point inside filling-region */
 
 
       /* start from (1) until no more open ends left */
     } /* while (openEnds->next) */
   
   /* return linked list of physical points */
-  (*coveringGrid) = realPoints.next;
+  (*fillGrid) = realPoints.next;
 
   /* clean up */
   DETATCHSTATUSPTR (lstat);
 
   RETURN( lstat );
 
-} /* LALLatticeCovering() */
+} /* LALLatticeFill() */
 
 /** calculate the physical coordinates of a lattice-vector for given
  * generating-matrix and start-point (=0,0,0...0) of the lattice 
@@ -1006,6 +1004,8 @@ testCovering (void)
   gsl_matrix *generator0 = NULL;
   REAL8Vector startPoint;
   
+  lalDebugLevel = 1;
+
   XLALGetGeneratingMatrix (&generator0, dim, LATTICE_TYPE_ANSTAR);
 
   gsl_matrix_scale ( generator0, 0.3 );
@@ -1015,7 +1015,7 @@ testCovering (void)
   startPoint.length = dim;
   startPoint.data = LALCalloc (dim, sizeof(startPoint.data[0]) ); /* already (0,0) */
 
-  LAL_CALL( LALLatticeCovering(&lstat, &covering, generator, &startPoint, testArea1), 
+  LAL_CALL( LALLatticeFill (&lstat, &covering, generator, &startPoint, testArea1), 
 	    &lstat);
 
   if ( (fp = fopen ( "test_lattice.dat", "wb" )) == NULL )
