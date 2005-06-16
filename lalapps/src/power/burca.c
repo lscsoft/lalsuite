@@ -55,6 +55,7 @@ int main(int argc, char **argv)
   INT4                   noncoincident = FALSE;
   INT4                   ignorePlayground = FALSE;
   INT4                   ignoreTFcomparison = FALSE;
+  INT4                   ignoreTcomparison = FALSE;
 
   CHAR                   *comment = "";
 
@@ -103,6 +104,7 @@ int main(int argc, char **argv)
       {"noncoincident",           no_argument,       &noncoincident,     1 },
       {"ignore-playground",       no_argument,       &ignorePlayground,  1 },
       {"ignore-tfcomparison",     no_argument,       &ignoreTFcomparison,  1 },
+      {"ignore-tcomparison",      no_argument,       &ignoreTcomparison, 1 },
       /* parameters used to generate calibrated power spectrum */
       {"ifo-a",                   required_argument, 0,                'a'},
       {"ifo-b",                   required_argument, 0,                'b'},
@@ -461,12 +463,11 @@ int main(int argc, char **argv)
 		    break;
 
 		  /* this is a LAL function which compares events */
-		  if (!ignoreTFcomparison)
-		    {
-		      LAL_CALL( LALCompareSnglBurst(&stat, currentTrigger[0],
-						    tmpEvent, &accParams.difference), &stat);
-		    }
-
+		  if( ignoreTcomparison )
+		    accParams.difference = XLALCompareSnglBurstByFreq((const SnglBurstTable * const *)currentTrigger[0], (const SnglBurstTable * const *)tmpEvent);
+		  else
+		    accParams.difference = XLALCompareSnglBurst((const SnglBurstTable * const *)currentTrigger[0], (const SnglBurstTable * const *)tmpEvent);
+		
 		  if (!accParams.difference || ignoreTFcomparison)
 		    {
 		      coin = 1;
