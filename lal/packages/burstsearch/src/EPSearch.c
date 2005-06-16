@@ -213,11 +213,13 @@ XLALEPSearch(
 	plan = XLALCreateForwardREAL4FFTPlan(window->data->length, 0);
 	AverageSpec = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
 	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
-	if(!window || !plan || !AverageSpec || !fseries) {
+	normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(*normalisation));
+	if(!window || !plan || !AverageSpec || !fseries || !normalisation) {
 		XLALDestroyREAL4Window(window);
 		XLALDestroyREAL4FFTPlan(plan);
 		XLALDestroyREAL4FrequencySeries(AverageSpec);
 		XLALDestroyCOMPLEX8FrequencySeries(fseries);
+		LALFree(normalisation);
 		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
@@ -248,18 +250,32 @@ XLALEPSearch(
 		OverWhiteningSpec = NULL;
 
 	/*
+	 * Create time-frequency tiling of plane.
+	 */
+
+	/* Calculate the duration for which tiles are to be created in the
+	 * Single TFPlane. */ 
+	params->tfPlaneParams.timeDuration = 2.0 * params->windowShift * tseries->deltaT;
+
+	/* The factor of 2 here is to account for the overlapping */
+	params->tfTilingInput.deltaF = 2.0 * AverageSpec->deltaF;
+
+	tfTiling = XLALCreateTFTiling(&params->tfTilingInput, &params->tfPlaneParams);
+	if(!tfTiling) {
+		XLALDestroyREAL4Window(window);
+		XLALDestroyREAL4FFTPlan(plan);
+		XLALDestroyREAL4FrequencySeries(AverageSpec);
+		XLALDestroyCOMPLEX8FrequencySeries(fseries);
+		LALFree(normalisation);
+		XLAL_ERROR(func, XLAL_EFUNC);
+	}
+
+	/*
 	 * Loop over data applying excess power method.
 	 */
 
 	for(start_sample = 0; start_sample + params->windowLength <= tseries->data->length; start_sample += params->windowShift) {
 		XLALPrintInfo("Analyzing a window...");
-
-		/*
-		 * Calculate the duration for which tiles are to be created
-		 * in the Single TFPlane.
-		 */ 
-
-		params->tfPlaneParams.timeDuration = 2.0 * params->windowShift * tseries->deltaT;
 
 		/*
 		 * Extract a windowLength of data from the time series,
@@ -283,21 +299,10 @@ XLALEPSearch(
 			print_complex8fseries(fseries, "frequency_series.dat");
 
 		/*
-		 * Create time-frequency tiling of plane.  The factor of 2
-		 * here is to account for the overlapping
-		 */
-
-		params->tfTilingInput.deltaF = 2.0 * fseries->deltaF;
-		tfTiling = XLALCreateTFTiling(&params->tfTilingInput, &params->tfPlaneParams);
-		if(!tfTiling)
-			XLAL_ERROR(func, XLAL_EFUNC);
-
-		/*
 		 * Compute the TFplanes for the data segment.
 		 */
 
 		XLALPrintInfo("Computing the TFPlanes");
-		normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(*normalisation));
 		if(XLALComputeTFPlanes(tfTiling, fseries, params->windowLength / 2 - params->windowShift, normalisation, OverWhiteningSpec))
 			XLAL_ERROR(func, XLAL_EFUNC);
 	
@@ -308,8 +313,6 @@ XLALEPSearch(
 		XLALPrintInfo("Computing the excess power");
 		if(XLALComputeExcessPower(tfTiling, &params->compEPInput, normalisation))
 			XLAL_ERROR(func, XLAL_EFUNC);
-		LALFree(normalisation);
-		normalisation = NULL;
 
 		/*
 		 * Compute the likelihood for slightly better detection
@@ -347,7 +350,9 @@ XLALEPSearch(
 		 * Clean up
 		 */
 
-		XLALDestroyTFTiling(tfTiling);
+		tfTiling->planesComputed=FALSE;
+		tfTiling->excessPowerComputed=FALSE;
+		tfTiling->tilesSorted=FALSE;
 	}
 
 	/*
@@ -358,6 +363,8 @@ XLALEPSearch(
 	XLALDestroyREAL4FrequencySeries(AverageSpec);
 	XLALDestroyREAL4Window(window);
 	XLALDestroyREAL4FFTPlan(plan);
+	XLALDestroyTFTiling(tfTiling);
+	LALFree(normalisation);
 
 	return(0);
 }
