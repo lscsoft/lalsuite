@@ -331,14 +331,13 @@ XLALCompareStringBurstByTime(
 /* </lalVerbatim> */
 {
 	INT8 ta, tb;
-	INT8 epsilon;
-	REAL4 f;
+	INT8 epsilon, epsilona,epsilonb;
 
-	f = hi_freq(*a);
-	if(f > hi_freq(*b))
-		f = hi_freq(*b);
 
-	epsilon=(INT8)(1.0 / f * 1e9);
+	epsilon = epsilona = (*a)->clusterT * 1e9;
+	epsilonb = (*b)->clusterT * 1e9;
+	if( epsilona < epsilonb )
+	  epsilon = epsilonb;
 
 	ta = peak_time(*a);
 	tb = peak_time(*b);
