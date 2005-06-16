@@ -153,6 +153,8 @@ int INT4VectorListRelinkElement (INT4VectorList *head, INT4VectorList *element);
 void INT4VectorListRemoveElement (INT4VectorList *element);
 REAL8VectorList *REAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry);
 BOOLEAN isINT4PointInList ( INT4Vector *point, INT4VectorList *list );
+void INT4VectorListDestroy (INT4VectorList *head);
+void REAL8VectorListDestroy (REAL8VectorList *head);
 
 /* misc helper functions */
 BOOLEAN isSymmetric (const gsl_matrix *Sij);
@@ -321,7 +323,11 @@ LALLatticeFill (LALStatus *lstat,
   /* return linked list of physical points */
   (*fillGrid) = realPoints.next;
 
-  /* clean up */
+  /* clean up memory */
+  INT4VectorListDestroy ( gridPoints.next );	/* free list of lattice-coordinates */
+  TRY ( LALI4DestroyVector(lstat->statusPtr, &latticePoint), lstat);
+  TRY ( LALDDestroyVector(lstat->statusPtr, &physicalPoint), lstat);
+
   DETATCHSTATUSPTR (lstat);
 
   RETURN( lstat );
@@ -333,6 +339,9 @@ LALLatticeFill (LALStatus *lstat,
  *
  * the algorithm is simply : phys^i = sum_{l=0} lat^l basis_l^i,
  * where the l-th basis-vector is the l-th row of the generating matrix.
+ * 
+ * NOTE: the memory for physicalPoint needs to be allocated already, and the 
+ * dimensions of all vectors and matrices passed to this functions must agree!
  */
 int
 XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, 	/**< OUT: physical coordinates */
@@ -395,6 +404,11 @@ XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, 	/**< OUT: physical
    */
   memcpy (physicalPoint->data, res->data, dim * sizeof (res->data[0]));
 
+  /* free memory */
+  gsl_matrix_free (buffer);
+  gsl_vector_free (res);
+  
+
   return 0;
 
 } /* XLALlatticePoint2physicalPoint() */
@@ -449,6 +463,8 @@ XLALMetricScalarProduct (const gsl_vector *v1,
  *
  * The vectors in input and output are the matrix-rows!
  *
+ * NOTE2: the memory for outvects is allocated in here by gsl_matrix_alloc()
+ * and needs to be free'ed by the caller via gsl_matrix_free() !
  */
 int
 XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal row vects */
@@ -554,6 +570,7 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal row vects */
       
     } /* for i < numvects */
 
+  /* free memory */
   gsl_vector_free (para);
   LALFree (ui);
 
@@ -570,6 +587,8 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal row vects */
  * (Euclidean!) orthonormal basis out of the lattice vectors (using GramSchmidt),
  * and then expressing the lattice-vectors in this new basis.
  * 
+ * NOTE: the memory for 'outmatrix' is allocated in here via gsl_matrix_alloc()
+ *       and has to be free'ed by the caller via gsl_matrix_free() !
  */
 int
 XLALSquareGeneratingMatrix(gsl_matrix **outmatrix, 	/**< OUT: square generating matrix */
@@ -631,11 +650,23 @@ XLALSquareGeneratingMatrix(gsl_matrix **outmatrix, 	/**< OUT: square generating 
       printf ("\nOrthonormal basis:\n");
       print_matrix (basis);
 
-      /* express generating matrix in this new basis: inmatrix.basis^T */
+      /* ----- express generating matrix in this new basis: inmatrix.basis^T */
+
+      /* from the gsl-documentation:
+       * int gsl_blas_dgemm(CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, 
+       *                    double alpha, const gsl_matrix * A, const gsl_matrix * B, double beta, gsl_matrix * C)
+       * These functions compute the matrix-matrix product and 
+       * sum C = \alpha op(A) op(B) + \beta C where op(A) = A, A^T, A^H for 
+       * TransA = CblasNoTrans, CblasTrans, CblasConjTrans and similarly for the parameter TransB.
+       */
       if ( gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, inmatrix, basis, 0.0, sq)) {
 	LALPrintError ("ERROR: Call to  gsl_blas_dgemm() failed\n");
 	XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EFUNC);
       }
+
+      /* free memory of 'basis' */
+      gsl_matrix_free (basis);
+      basis = NULL;
 
     } /* if cols > rows  */
 
@@ -647,8 +678,10 @@ XLALSquareGeneratingMatrix(gsl_matrix **outmatrix, 	/**< OUT: square generating 
 
 
 /** Return the (canonical, i.e. not necessarily quadratic) n-dimensional
- * generating matrix for various lattices. The memory for the matrix
- * is allocated here. 
+ * generating matrix for various lattices. 
+ * 
+ * NOTE: the memory for 'outmatrix' is allocated in here via gsl_matrix_alloc()
+ *       and has to be free'ed by the caller via gsl_matrix_free() !
  * 
  */
 int
@@ -662,7 +695,7 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,	/**< OUT: generating matrix */
   if ( *outmatrix != NULL ) 
     {
       LALPrintError ("Output-vector not set to NULL");
-      XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EINVAL);
+      XLAL_ERROR("XLALGetGeneratingMatrix", XLAL_EINVAL);
     }
 
   switch (type)
@@ -674,7 +707,6 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,	/**< OUT: generating matrix */
 
     case LATTICE_TYPE_ANSTAR:
       /* the generating matrix for An* can be written as:
-       * [FIXME: check that ]
        * 
        * | 1      -1        0       0  0  ....  0      |
        * | 1       0       -1       0  0  ....  0      |
@@ -876,6 +908,69 @@ INT4VectorListRemoveElement (INT4VectorList *element)
 
 } /* INT4VectorListRemoveElement() */
 
+/** 'list-destructor' for INT4VectorList: free a complete list.
+ *
+ * NOTE: 'head' will be freed too, so make
+ * sure not to pass a non-freeable head (like an automatic variabe) 
+ */
+void
+INT4VectorListDestroy (INT4VectorList *head)
+{
+  INT4VectorList *ptr, *next;
+
+  if ( !head )
+    return;
+
+  next = head;
+
+  do 
+    {
+      /* step to next element */
+      ptr = next;
+      /* remember pointer to next element */
+      next = ptr->next;
+      /* free current element */
+      LALFree (ptr->entry.data);
+      LALFree (ptr);
+
+    } while ( (ptr = next) != NULL );
+  
+  return;
+} /* INT4VectorListDestroy() */
+
+/** 'list-destructor' for REAL8VectorList: free a complete list.
+ *
+ * NOTE: 'head' will be freed too, so make
+ * sure not to pass a non-freeable head (like an automatic variabe) 
+ */
+void
+REAL8VectorListDestroy (REAL8VectorList *head)
+{
+  REAL8VectorList *ptr, *next;
+
+  if ( !head )
+    return;
+
+  next = head;
+
+  do 
+    {
+      /* step to next element */
+      ptr = next;
+      /* remember pointer to next element */
+      next = ptr->next;
+      /* free current element */
+      LALFree (ptr->entry.data);
+      LALFree (ptr);
+
+    } while ( (ptr = next) != NULL );
+  
+  return;
+} /* REAL8VectorListDestroy() */
+
+
+
+
 /** search given list (or hash-table?) for the given point 
  */
 BOOLEAN
@@ -983,7 +1078,14 @@ print_vector (const gsl_vector *v)
 /*--------------------------------------------------*/
 int main (void)
 {
-  
+
+  lalDebugLevel = 1;
+
+  /* use this for production code: dont' let gsl abort on errors, but only return error-codes to caller! */
+  /*
+  gsl_set_error_handler_off ();
+  */
+
   /*  testGS(); */
 
   testCovering();
@@ -1004,8 +1106,6 @@ testCovering (void)
   gsl_matrix *generator0 = NULL;
   REAL8Vector startPoint;
   
-  lalDebugLevel = 1;
-
   XLALGetGeneratingMatrix (&generator0, dim, LATTICE_TYPE_ANSTAR);
 
   gsl_matrix_scale ( generator0, 0.3 );
@@ -1015,8 +1115,7 @@ testCovering (void)
   startPoint.length = dim;
   startPoint.data = LALCalloc (dim, sizeof(startPoint.data[0]) ); /* already (0,0) */
 
-  LAL_CALL( LALLatticeFill (&lstat, &covering, generator, &startPoint, testArea1), 
-	    &lstat);
+  LAL_CALL( LALLatticeFill (&lstat, &covering, generator, &startPoint, testArea1), &lstat);
 
   if ( (fp = fopen ( "test_lattice.dat", "wb" )) == NULL )
     {
@@ -1027,6 +1126,14 @@ testCovering (void)
 
   fclose(fp);
 
+  /* free memory */
+  gsl_matrix_free ( generator0 );
+  gsl_matrix_free ( generator );
+  LALFree ( startPoint.data );
+
+  REAL8VectorListDestroy ( covering );
+
+  /* check all (LAL-)memory for leaks... (unfortunately doesn't cover GSL!) */
   LALCheckMemoryLeaks(); 
   
 } /* testCovering() */
