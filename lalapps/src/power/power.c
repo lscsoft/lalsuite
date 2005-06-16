@@ -1604,7 +1604,10 @@ static SnglBurstTable **analyze_series(
 		if(options.verbose)
 			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
-		XLALEPSearch(addpoint, interval, params);
+		if(XLALEPSearch(addpoint, interval, params)) {
+			fprintf(stderr, "analyze_series(): fatal error: XLALEPSearch() returned failure\n");
+			exit(1);
+		}
 		while(*addpoint)
 			addpoint = &(*addpoint)->next;
 
