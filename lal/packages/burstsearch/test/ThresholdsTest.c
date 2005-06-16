@@ -104,11 +104,11 @@ main (int argc, char *argv[])
   input1.dof = dof;
   input1.nonCentral = rho*rho;
 
-  alpha1 = XLALChisqCdf(input1->chi2, input1->dof);
+  alpha1 = XLALChisqCdf(input1.chi2, input1.dof);
   if(XLALGetBaseErrno())
   	exit(1);
-  alpha2 = XLALOneMinusChisqCdf(input1->chi2, input1->dof);
-  beta = XLALNoncChisqCdf(input1->chi2, input1->dof, input1->nonCentral);
+  alpha2 = XLALOneMinusChisqCdf(input1.chi2, input1.dof);
+  beta = XLALNoncChisqCdf(input1.chi2, input1.dof, input1.nonCentral);
 
   alpha = 1.0 - alpha1;
   if(verbose)
@@ -130,7 +130,7 @@ main (int argc, char *argv[])
       
   input2.falseAlarm = alpha;
   input2.dof = dof;
-  temp1 = XLALChi2Threshold(input2->dof, input2->falseAlarm);
+  temp1 = XLALChi2Threshold(input2.dof, input2.falseAlarm);
   input3.chi2 = chi2;
   input3.dof = dof;
   input3.falseDismissal=beta;
@@ -162,10 +162,10 @@ main (int argc, char *argv[])
   input1.dof = dof;
   input1.nonCentral = rho*rho;
 
-  alpha1 = XLALChisqCdf(input1->chi2, input1->dof);
+  alpha1 = XLALChisqCdf(input1.chi2, input1.dof);
   if(XLALGetBaseErrno())
   	exit(1);
-  beta = XLALNoncChisqCdf(input1->chi2, input1->dof, input1->nonCentral);
+  beta = XLALNoncChisqCdf(input1.chi2, input1.dof, input1.nonCentral);
   if(XLALGetBaseErrno())
   	exit(1);
 
@@ -188,7 +188,7 @@ main (int argc, char *argv[])
       
   input2.falseAlarm = alpha;
   input2.dof = dof;
-  temp1 = XLALChi2Threshold(input2->dof, input2->falseAlarm);
+  temp1 = XLALChi2Threshold(input2.dof, input2.falseAlarm);
   input3.chi2 = chi2;
   input3.dof = dof;
   input3.falseDismissal=beta;
@@ -250,36 +250,36 @@ main (int argc, char *argv[])
   }
 
   input1.chi2 *= -1.0;
-  alpha1 = XLALChisqCdf(input1->chi2, input1->dof);
+  alpha1 = XLALChisqCdf(input1.chi2, input1.dof);
   if(XLALGetBaseErrno() != XLAL_EDOM)
   	exit(1);
   XLALClearErrno();
-  alpha1 = XLALNoncChisqCdf(input1->chi2, input1->dof, input1->nonCentral);
+  alpha1 = XLALNoncChisqCdf(input1.chi2, input1.dof, input1.nonCentral);
   if(XLALGetBaseErrno() != XLAL_EDOM)
   	exit(1);
   XLALClearErrno();
   input1.chi2 *= -1.0;  /* set it back to positive for remaining tests */
 
   input1.dof *= -1.0;
-  alpha1 = XLALChisqCdf(input1->chi2, input1->dof);
+  alpha1 = XLALChisqCdf(input1.chi2, input1.dof);
   if(XLALGetBaseErrno() != XLAL_EDOM)
   	exit(1);
   XLALClearErrno();
-  alpha1 = XLALNoncChisqCdf(input1->chi2, input1->dof, input1->nonCentral);
+  alpha1 = XLALNoncChisqCdf(input1.chi2, input1.dof, input1.nonCentral);
   if(XLALGetBaseErrno() != XLAL_EDOM)
   	exit(1);
   XLALClearErrno();
   input1.dof *= -1.0;
 
   input1.nonCentral *= -1.0;
-  alpha1 = XLALNoncChisqCdf(input1->chi2, input1->dof, input1->nonCentral);
+  alpha1 = XLALNoncChisqCdf(input1.chi2, input1.dof, input1.nonCentral);
   if(XLALGetBaseErrno() != XLAL_EDOM)
   	exit(1);
   XLALClearErrno();
   input1.nonCentral *= -1.0;
 
   input2.dof *= -1;
-  temp1 = XLALChi2Threshold(input2->dof, input2->falseAlarm);
+  temp1 = XLALChi2Threshold(input2.dof, input2.falseAlarm);
   if(XLALGetBaseErrno() != XLAL_EDOM)
   	exit(1);
   XLALClearErrno();
@@ -326,13 +326,13 @@ main (int argc, char *argv[])
 
 
   input2.falseAlarm = -1.0;
-  temp1 = XLALChi2Threshold(input2->dof, input2->falseAlarm);
+  temp1 = XLALChi2Threshold(input2.dof, input2.falseAlarm);
   if(XLALGetBaseErrno() != XLAL_EDOM)
   	exit(1);
   XLALClearErrno();
   TestStatus (&status, CODES(LAL_RANGE_ERR), 1);
   input2.falseAlarm = 2.0;
-  temp1 = XLALChi2Threshold(input2->dof, input2->falseAlarm);
+  temp1 = XLALChi2Threshold(input2.dof, input2.falseAlarm);
   if(XLALGetBaseErrno() != XLAL_EDOM)
   	exit(1);
   XLALClearErrno();
