@@ -788,19 +788,10 @@ int main(int argc,char *argv[])
           switch ( uvar_expLALDemod )
 	    {
 	    case 0: 
-	      LAL_CALL ( OrigLALDemod(stat, &Fstat, SFTData, DemodParams), stat);
+	      LAL_CALL ( LALDemod(stat, &Fstat, SFTData, DemodParams), stat);
 	      break;
 	    case 1:
 	      LAL_CALL ( TestLALDemod(stat, &Fstat, SFTData, DemodParams), stat);
-	      break;
-	    case 2:
-	      LAL_CALL ( TestLALDemod2(stat, &Fstat, SFTData, DemodParams), stat);
-	      break;
-	    case 3:
-	      LAL_CALL ( TestLALDemod3(stat, &Fstat, SFTData, DemodParams), stat);
-	      break;
-	    case 4:
-	      LAL_CALL ( TestLALDemodR8(stat, &Fstat, SFTData, DemodParams), stat);
 	      break;
 	    default:
 	      LALPrintError ("Error: invalid expLALDemod value %d\n", uvar_expLALDemod);

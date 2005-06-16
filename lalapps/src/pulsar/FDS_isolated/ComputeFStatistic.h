@@ -93,11 +93,7 @@ typedef struct {
 } ConfigVariables;
   
 /* LALDemod functions now put into CFSLALDemod.c */
-extern void OrigLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
 extern void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
-extern void TestLALDemod2(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
-extern void TestLALDemod3(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
-extern void TestLALDemodR8(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);
 
 #ifdef  __cplusplus
 }
