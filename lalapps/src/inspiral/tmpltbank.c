@@ -49,6 +49,7 @@
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
+#include "inspiral.h"
 
 RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
@@ -138,7 +139,6 @@ int    writeStrainSpec  = 0;            /* write computed stain spec    */
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
 
-
 int main ( int argc, char *argv[] )
 {
   /* lal function variables */
@@ -182,6 +182,7 @@ int main ( int argc, char *argv[] )
   MetadataTable         searchsumm;
   MetadataTable         searchsummvars;
   MetadataTable         candle;
+  SummValueTable      **this_summvalue = &(candle.summValueTable);
   SearchSummvarsTable  *this_search_summvar;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
@@ -765,48 +766,32 @@ int main ( int argc, char *argv[] )
 
   if ( computeCandle )
   {
-    REAL8 sigmaSqSum = 0;
+    CHAR  candleComment[LIGOMETA_SUMMVALUE_COMM_MAX];
     REAL8 distance = 0;
-    REAL8 negativeSevenOverThree = -7.0/3.0;
-    REAL8 totalMass = candleMass1 + candleMass2;
-    REAL8 mu = candleMass1 * candleMass2 / totalMass;
-    REAL8 distNorm = 2.0 * LAL_MRSUN_SI / (1.0e6 * LAL_PC_SI );
-    REAL8 a = sqrt( (5.0 * mu) / 96.0 ) *
-      pow( totalMass / ( LAL_PI * LAL_PI ), 1.0/3.0 ) *
-      pow( LAL_MTSUN_SI / chan.deltaT, -1.0/6.0 );
-    REAL8 sigmaSq = 4.0 * ( chan.deltaT / (REAL8) numPoints ) * 
-      distNorm * distNorm * a * a; 
 
-    if ( vrbflg ) fprintf( stdout, "maximum distance for (%3.2f,%3.2f) "
-        "at signal-to-noise %3.2f = ", candleMass1, candleMass2, candleSnr );
-
-    for ( k = cut; k < bankIn.shf.data->length; ++k )
+    while ( candleMass1 < 50.0 )
     {
-      sigmaSqSum += 
-        pow( (REAL8) k / (REAL8) numPoints, negativeSevenOverThree ) 
-        / bankIn.shf.data->data[k];
+      /* experimental code to ease the computation of the standard candle */
+      distance = compute_candle_distance(candleMass1, candleMass2,
+          candleSnr, chan.deltaT, numPoints, &(bankIn.shf), cut);
+
+      if ( vrbflg ) fprintf( stdout, "maximum distance for (%3.2f,%3.2f) "
+          "at signal-to-noise %3.2f = ", candleMass1, candleMass2, candleSnr );
+
+      /* experimental code to populate the summValue table */
+      LALSnprintf( candleComment, LIGOMETA_SUMMVALUE_COMM_MAX,
+          "%3.2f_%3.2f_%3.2f", candleMass1, candleMass2, candleSnr );
+
+      this_summvalue =
+        add_summvalue_table(this_summvalue, gpsStartTime, gpsEndTime,
+            PROGRAM_NAME, ifo, "inspiral_effective_distance", 
+            candleComment, distance);
+
+      if ( vrbflg ) fprintf( stdout, "%e Mpc\n", (*this_summvalue)->value );
+
+      candleMass2 = candleMass1 = candleMass1 + 1.0;
+      this_summvalue = &(*this_summvalue)->next;
     }
-
-    sigmaSq *= sigmaSqSum;
-
-    distance = sqrt( sigmaSq ) / candleSnr;
-
-    if ( vrbflg ) fprintf( stdout, "%e Mpc\n", distance );
-
-    /* add value to summ_value table */
-    candle.summValueTable = (SummValueTable *) 
-      LALCalloc( 1, sizeof(SummValueTable) );
-    LALSnprintf( candle.summValueTable->program, LIGOMETA_PROGRAM_MAX, 
-        "%s", PROGRAM_NAME );
-    candle.summValueTable->version = 0;
-    candle.summValueTable->start_time = gpsStartTime;
-    candle.summValueTable->end_time = gpsEndTime;
-    LALSnprintf( candle.summValueTable->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
-    LALSnprintf( candle.summValueTable->name, LIGOMETA_SUMMVALUE_NAME_MAX, 
-        "%s", "inspiral_effective_distance" );
-    LALSnprintf( candle.summValueTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
-        "%3.2f_%3.2f_%3.2f", candleMass1, candleMass2, candleSnr );
-    candle.summValueTable->value = distance;
   }
 
 

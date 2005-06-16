@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 # $Id$
 INSPIRALSRC 	= inspiral.c
-TMPLTBANKSRC 	= tmpltbank.c
+TMPLTBANKSRC 	= tmpltbank.c inspiralutils.c inspiral.h
 COHERESRC 	= coherent_inspiral.c
 COHEREBANK      = coherentbank.c
 INCASRC 	= inca.c
