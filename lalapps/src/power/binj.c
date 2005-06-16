@@ -946,13 +946,13 @@ int main( int argc, char *argv[] ){
     if(!mdcFlag){/* these tables are written when mdc signals are not used */
     if ( userTag )
     {
-      LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d_%s-%d-%d.xml", 
-          rand_seed, userTag, gpsStartTime, gpsEndTime - gpsStartTime );
+      LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%s-%d-%d.xml", 
+          userTag, gpsStartTime, gpsEndTime - gpsStartTime );
     }
     else
     {
-      LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS_%d-%d-%d.xml", 
-          rand_seed, gpsStartTime, gpsEndTime - gpsStartTime );
+      LALSnprintf( fname, sizeof(fname), "HL-INJECTIONS-%d-%d.xml", 
+          gpsStartTime, gpsEndTime - gpsStartTime );
     }
 
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlfp, fname), &status );
@@ -990,13 +990,13 @@ int main( int argc, char *argv[] ){
 
       if ( userTag )
       {
-        LALSnprintf( fname, sizeof(fname), "HLT-INJECTIONS_%d_%s-%d-%d.txt", 
-            rand_seed, userTag, gpsStartTime, gpsEndTime - gpsStartTime );
+        LALSnprintf( fname, sizeof(fname), "HLT-INJECTIONS_%s-%d-%d.txt", 
+            userTag, gpsStartTime, gpsEndTime - gpsStartTime );
       }
       else
       {
-        LALSnprintf( fname, sizeof(fname), "HLT-INJECTIONS_%d-%d-%d.txt", 
-            rand_seed, gpsStartTime, gpsEndTime - gpsStartTime );
+        LALSnprintf( fname, sizeof(fname), "HLT-INJECTIONS-%d-%d.txt", 
+            gpsStartTime, gpsEndTime - gpsStartTime );
       }
       fpout = fopen(fname,"w");
       ligo_tama_output(fpout,injections.simBurstTable);
