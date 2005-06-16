@@ -51,7 +51,7 @@ void init_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
     sundat_path[i] = '\0';
   }
   
-  lal_prefix = getenv("LAL");
+  lal_prefix = getenv("LAL_LOCATION");
   
   if (lal_prefix != NULL)
   {
@@ -72,34 +72,7 @@ void init_ephemeris(LALStatus *status, EphemerisData *p_ephemeris_data)
   }
   else
   {
-    if (strlen(earthdat_path) >= mystrlcat(earthdat_path, ".", LALNameLength))
-    {
-      fprintf(stderr, "oops!\n");
-      exit(7);
-    }
-    
-    if (strlen(sundat_path) >= mystrlcat(sundat_path, ".", LALNameLength))
-    {
-      fprintf(stderr, "oops!\n");
-      exit(7);
-    }
-  }
-  
-  if (strlen(earthdat_path) >= mystrlcat(earthdat_path, share_path, LALNameLength))
-  {
-    fprintf(stderr, "bah!\n");
-    exit(7);
-  }
-    
-  if (strlen(earthdat_path) >= mystrlcat(earthdat_path, fn_earthdat, LALNameLength))
-  {
-    fprintf(stderr, "bah!\n");
-    exit(7);   
-  }
-    
-  if (strlen(sundat_path) >= mystrlcat(sundat_path, share_path, LALNameLength))
-  {
-    fprintf(stderr, "bah!\n");
+    fprintf(stderr, "Cannot find ephemerides. Please install LAL properly.\n");
     exit(7);
   }
     
