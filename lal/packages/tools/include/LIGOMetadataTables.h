@@ -313,6 +313,7 @@ tagSnglBurstTable
   REAL4         amplitude;
   REAL4         snr;
   REAL4         confidence;
+  REAL4         clusterT;
   EventIDColumn *event_id;
 }
 SnglBurstTable;
