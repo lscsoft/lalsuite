@@ -137,6 +137,10 @@ int
 XLALMetricGramSchmidt(gsl_matrix **orth, 		
 		      const gsl_matrix *colvect,	
 		      const gsl_matrix *metric);
+int
+XLALCanonicalGenerator ( gsl_matrix **outmatrix,
+			 const gsl_matrix *inmatrix,
+			 const gsl_matrix *gij );	
 
 int
 XLALSquareGeneratingMatrix(gsl_matrix **outmatrix,
@@ -592,11 +596,10 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< OUT: orthonormal row vects */
  */
 int
 XLALSquareGeneratingMatrix(gsl_matrix **outmatrix, 	/**< OUT: square generating matrix */
-			   const gsl_matrix *inmatrix)	/**< generating matrix */
+			   const gsl_matrix *inmatrix)	/**< generating matrix (generally cols >= rows) */
 {
   UINT4 rows, cols;
   gsl_matrix *sq = NULL;	/* output: square generating matrix */
-  gsl_matrix *basis = NULL;	/* orthonormal basis */
 
   /* check NULL-vectors on input */
   if ( inmatrix == NULL ) 
@@ -623,14 +626,16 @@ XLALSquareGeneratingMatrix(gsl_matrix **outmatrix, 	/**< OUT: square generating 
     }
 
   /* allocate output matrix */
-  sq = gsl_matrix_calloc (rows, rows);
-  if ( sq == NULL ) {
-    XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_ENOMEM);
-  }
+
 
   /* if input-matrix is quadratic, we're done */
   if ( rows == cols )
+    {
+      if ( (sq = gsl_matrix_calloc (rows, rows)) == NULL ) {
+	XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_ENOMEM);
+      }
     gsl_matrix_memcpy ( sq, inmatrix );
+    }
   else
     {
       gsl_matrix *gij = gsl_matrix_alloc( cols, cols );
@@ -638,35 +643,18 @@ XLALSquareGeneratingMatrix(gsl_matrix **outmatrix, 	/**< OUT: square generating 
 	XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_ENOMEM);
       }
       gsl_matrix_set_identity (gij);	/* use Euklidean metric for orthonormalization*/
-      
-      /* find orthonormal basis */
-      if ( XLALMetricGramSchmidt (&basis, inmatrix, gij) ) {
-	XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EFUNC);
-      }
-      
-      /* free metric again */
+
+      /* now express generator in 'canonical coordinates' wrt. Euklidean metric */
+      XLALCanonicalGenerator ( &sq, inmatrix, gij );
+      if ( xlalErrno )
+	{
+	  int code = xlalErrno;
+	  XLALClearErrno(); 
+	  LALPrintError ("\nERROR: XLALCanonicalGenerator() failed (xlalErrno = %d)!\n\n", code);
+	  XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EFUNC);
+	}
+
       gsl_matrix_free (gij);
-
-      printf ("\nOrthonormal basis:\n");
-      print_matrix (basis);
-
-      /* ----- express generating matrix in this new basis: inmatrix.basis^T */
-
-      /* from the gsl-documentation:
-       * int gsl_blas_dgemm(CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, 
-       *                    double alpha, const gsl_matrix * A, const gsl_matrix * B, double beta, gsl_matrix * C)
-       * These functions compute the matrix-matrix product and 
-       * sum C = \alpha op(A) op(B) + \beta C where op(A) = A, A^T, A^H for 
-       * TransA = CblasNoTrans, CblasTrans, CblasConjTrans and similarly for the parameter TransB.
-       */
-      if ( gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, inmatrix, basis, 0.0, sq)) {
-	LALPrintError ("ERROR: Call to  gsl_blas_dgemm() failed\n");
-	XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_EFUNC);
-      }
-
-      /* free memory of 'basis' */
-      gsl_matrix_free (basis);
-      basis = NULL;
 
     } /* if cols > rows  */
 
@@ -676,13 +664,110 @@ XLALSquareGeneratingMatrix(gsl_matrix **outmatrix, 	/**< OUT: square generating 
   return 0;
 } /* XLALSquareGeneratingMatrix() */
 
+/** express the generating matrix in "canonical coordinates":
+ * what we mean be this is: express its coordinates in a basis that is
+ *    (a) of identical span as the space spanned by the generating matrix 'inmatrix'
+ *    (b) orthonormal with respect to the given metric gij
+ *
+ * NOTE: the metric gij must obviously be symmetric, and its dimension
+ *       MUST be identical to the space in which the generator 'inmatrix'
+ *       is expressed, i.e.   dim(gij) == columns(inmatrix)
+ *
+ * NOTE2: the resulting canonical matrix will _always_ be square
+ *        with dim(outmatrix) = rank(inmatrix) = rows(inmatrix)
+ *        (this is obvious from the construction, see condition (a) )
+ *
+ */
+int
+XLALCanonicalGenerator ( gsl_matrix **outmatrix,	/**< OUT: the resulting (SQUARE) canonical generator */
+			 const gsl_matrix *inmatrix,	/**< IN: general generating matrix */
+			 const gsl_matrix *gij )	/**< IN: metric */
+{    
+  UINT4 rows, cols;
+  gsl_matrix *basis = NULL;	/* orthonormal basis */  
+  gsl_matrix *ret = NULL;	/* resulting canonical square matrix */
+
+  /* ----- check input consistency */
+  if ( !inmatrix || !gij || !outmatrix ) {
+    LALPrintError ("\nERROR: NULL input\n");
+    XLAL_ERROR("XLALCanonicalGenerator", XLAL_EINVAL);
+  }
+
+  if ( *outmatrix != NULL ) {
+    LALPrintError ("\nERROR: *outmatrix must be NULL!\n\n");
+    XLAL_ERROR("XLALCanonicalGenerator", XLAL_EINVAL);
+  }
+
+  if (!isSymmetric (gij) ) {
+    LALPrintError ("\nERROR: metric gij must be symmetric!\n\n");
+    XLAL_ERROR("XLALCanonicalGenerator", XLAL_EINVAL);
+  }
+
+  rows = inmatrix->size1;
+  cols = inmatrix->size2;
+
+  if ( gij->size1 != cols ) {
+    LALPrintError ("\nERROR: dimension of metric gij must equal cols(inmatrix) !\n\n");
+    XLAL_ERROR("XLALCanonicalGenerator", XLAL_EINVAL);
+  }
+
+  /* ----- find orthonormal basis */
+  if ( XLALMetricGramSchmidt (&basis, inmatrix, gij) ) {
+    XLAL_ERROR("XLALCanonicalGenerator", XLAL_EFUNC);
+  }
+
+  /* prepare memory for resulting-matrix (rows x rows) : */
+  if ( (ret = gsl_matrix_calloc (rows, rows)) == NULL ) {
+    XLAL_ERROR("XLALSquareGeneratingMatrix", XLAL_ENOMEM);
+  }
+  
+  /* ----- express generating matrix in this new Euklidean basis: inmatrix.basis^T */
+  
+  /* from the gsl-documentation:
+   * int gsl_blas_dgemm(CBLAS_TRANSPOSE_t TransA, CBLAS_TRANSPOSE_t TransB, 
+   *                    double alpha, const gsl_matrix * A, const gsl_matrix * B, double beta, gsl_matrix * C)
+   * These functions compute the matrix-matrix product and 
+   * sum C = \alpha op(A) op(B) + \beta C where op(A) = A, A^T, A^H for 
+   * TransA = CblasNoTrans, CblasTrans, CblasConjTrans and similarly for the parameter TransB.
+   */
+  if ( gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, inmatrix, basis, 0.0, ret)) {
+    LALPrintError ("ERROR: Call to  gsl_blas_dgemm() failed\n");
+    XLAL_ERROR("XLALCanonicalGenerator", XLAL_EFUNC);
+  }
+  
+  /* free memory */
+  gsl_matrix_free (basis);
+  basis = NULL;
+  
+  /* return resulting canonical generator */
+  (*outmatrix) = ret;
+
+  return 0;
+
+} /* XLALCanonicalGenerator() */
+
+
+
+
 
 /** Return the (canonical, i.e. not necessarily quadratic) n-dimensional
  * generating matrix for various lattices. 
  * 
- * NOTE: the memory for 'outmatrix' is allocated in here via gsl_matrix_alloc()
+ * NOTE: because these lattices are intended for covering, we scale
+ *       them so that their covering-radius becomes unity.
+ *       This allows the user to later-on scale these easily to any
+ *       desired covering-radius without having to know the lattice...
+ *       (Remembering that if you scale the generator of a lattice by M' = c M, then
+ *       the covering radius scales as R' = c R)
+ *
+ * NOTE2: the memory for 'outmatrix' is allocated in here via gsl_matrix_alloc()
  *       and has to be free'ed by the caller via gsl_matrix_free() !
- * 
+ *
+ * REFERENCE: for the definition and properties of these lattices, see
+ *  	J.H. Conway and N.J.A. Sloane, "Sphere Packings, Lattices and Groups", 
+ *  	vol. 290 of Grundlehren der mathematischen Wissenschaften, 
+ * 	(Springer, New York, U.S.A., 1999), 3rd edition.
+ *
  */
 int
 XLALGetGeneratingMatrix (gsl_matrix **outmatrix,	/**< OUT: generating matrix */
@@ -690,6 +775,7 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,	/**< OUT: generating matrix */
 			 LatticeType type)		/**< IN: type of lattice */
 {
   gsl_matrix *generator = NULL;	/* output: generating matrix */
+  REAL8 coveringRadius;
 
   /* check that output 'outmatrix' points to a NULL-vector! */
   if ( *outmatrix != NULL ) 
@@ -703,6 +789,10 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,	/**< OUT: generating matrix */
     case LATTICE_TYPE_CUBIC:
       generator = gsl_matrix_calloc( dimension, dimension );
       gsl_matrix_set_identity (generator);	/* trivial generating matrix */
+
+      /* covering radius is sqrt(n)/2 */
+      coveringRadius = sqrt (1.0 * dimension) / 2.0;
+
       break;
 
     case LATTICE_TYPE_ANSTAR:
@@ -748,6 +838,9 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,	/**< OUT: generating matrix */
 
 	} /* for row < dim */
 
+      /* covering Radius of An* is R = sqrt( n*(n+2) / (12*(n+1)) ), see C&S */
+      coveringRadius = sqrt ( 1.0 * dimension * (dimension + 2.0) / (12.0 * (dimension + 1) ));
+
       break;
 
     default:
@@ -756,6 +849,9 @@ XLALGetGeneratingMatrix (gsl_matrix **outmatrix,	/**< OUT: generating matrix */
       break;
       
     } /* switch(type) */
+
+  /* Now scale the generating matrix by 1/R, such that its covering radius becomes R=1 */
+  gsl_matrix_scale ( generator, 1.0 / coveringRadius );
 
   /* return generating matrix */
   (*outmatrix) = generator;
