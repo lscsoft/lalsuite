@@ -459,10 +459,14 @@ int main(int argc, char **argv)
 		  LAL_CALL( LALGPStoINT8(&stat, &tb, &(tmpEvent->peak_time)), &stat);
 		  if (tb > ta+deltaT)
 		    break;
+
 		  /* this is a LAL function which compares events */
-		  LAL_CALL( LALCompareSnglBurst(&stat, currentTrigger[0],
-						tmpEvent, &accParams.difference), &stat);
-		
+		  if (!ignoreTFcomparison)
+		    {
+		      LAL_CALL( LALCompareSnglBurst(&stat, currentTrigger[0],
+						    tmpEvent, &accParams.difference), &stat);
+		    }
+
 		  if (!accParams.difference || ignoreTFcomparison)
 		    {
 		      coin = 1;
