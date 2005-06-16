@@ -512,7 +512,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	    }
 
 	  /* Clustering in time: While we are above threshold, or within 1/(high frequency cutoff)of the last point above threshold... */
-	  while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc.deltaT < (float)(1/strtemplate[m].f))) 
+	  while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc.deltaT < (float)(2*CLA.TruncSecs)) ) 
 		 && p<(int)(3*vector->length/4))
 	    {
 	      /* This keeps track of the largest SNR point of the cluster */
@@ -553,6 +553,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  (*thisEvent)->snr          = maximum;
 	  (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
 	  (*thisEvent)->confidence   = -maximum; /* FIXME */
+	  (*thisEvent)->clusterT   = 2*CLA.TruncSecs;
 	  
 	}
     }
