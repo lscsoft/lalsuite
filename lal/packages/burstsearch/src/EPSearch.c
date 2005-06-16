@@ -183,7 +183,7 @@ static void normalize_to_psd(COMPLEX8FrequencySeries *fseries, REAL4FrequencySer
  */
 
 /******** <lalVerbatim file="EPSearchCP"> ********/
-void
+int
 XLALEPSearch(
 	SnglBurstTable  **burstEvent,
 	REAL4TimeSeries  *tseries,
@@ -218,7 +218,7 @@ XLALEPSearch(
 		XLALDestroyREAL4FFTPlan(plan);
 		XLALDestroyREAL4FrequencySeries(AverageSpec);
 		XLALDestroyCOMPLEX8FrequencySeries(fseries);
-		XLAL_ERROR_VOID(func, XLAL_EFUNC);
+		XLAL_ERROR(func, XLAL_EFUNC);
 	}
 
 	/*
@@ -235,7 +235,7 @@ XLALEPSearch(
 		break;
 
 		default:
-		XLAL_ERROR_VOID(func, XLAL_EINVAL);
+		XLAL_ERROR(func, XLAL_EINVAL);
 		break;
 	}
 
@@ -269,9 +269,9 @@ XLALEPSearch(
 		XLALPrintInfo("Computing the DFT");
 		cutTimeSeries = XLALCutREAL4TimeSeries(tseries,  start_sample, params->windowLength);
 		if(!cutTimeSeries)
-			XLAL_ERROR_VOID(func, XLAL_EFUNC);
+			XLAL_ERROR(func, XLAL_EFUNC);
 		if(XLALComputeFrequencySeries(fseries, cutTimeSeries, window, plan))
-			XLAL_ERROR_VOID(func, XLAL_EFUNC);
+			XLAL_ERROR(func, XLAL_EFUNC);
 		XLALDestroyREAL4TimeSeries(cutTimeSeries);
 		
 		/*
@@ -283,17 +283,14 @@ XLALEPSearch(
 			print_complex8fseries(fseries, "frequency_series.dat");
 
 		/*
-		 * Create time-frequency tiling of plane.
+		 * Create time-frequency tiling of plane.  The factor of 2
+		 * here is to account for the overlapping
 		 */
 
-		if(!tfTiling) {
-			/* the factor of 2 here is to account for the
-			 * overlapping */
-			params->tfTilingInput.deltaF = 2.0 * fseries->deltaF;
-			tfTiling = XLALCreateTFTiling(&params->tfTilingInput, &params->tfPlaneParams);
-			if(!tfTiling)
-				XLAL_ERROR_VOID(func, XLAL_EFUNC);
-		}
+		params->tfTilingInput.deltaF = 2.0 * fseries->deltaF;
+		tfTiling = XLALCreateTFTiling(&params->tfTilingInput, &params->tfPlaneParams);
+		if(!tfTiling)
+			XLAL_ERROR(func, XLAL_EFUNC);
 
 		/*
 		 * Compute the TFplanes for the data segment.
@@ -302,7 +299,7 @@ XLALEPSearch(
 		XLALPrintInfo("Computing the TFPlanes");
 		normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(*normalisation));
 		if(XLALComputeTFPlanes(tfTiling, fseries, params->windowLength / 2 - params->windowShift, normalisation, OverWhiteningSpec))
-			XLAL_ERROR_VOID(func, XLAL_EFUNC);
+			XLAL_ERROR(func, XLAL_EFUNC);
 	
 		/*
 		 * Search these planes.
@@ -310,7 +307,7 @@ XLALEPSearch(
 
 		XLALPrintInfo("Computing the excess power");
 		if(XLALComputeExcessPower(tfTiling, &params->compEPInput, normalisation))
-			XLAL_ERROR_VOID(func, XLAL_EFUNC);
+			XLAL_ERROR(func, XLAL_EFUNC);
 		LALFree(normalisation);
 		normalisation = NULL;
 
@@ -322,7 +319,7 @@ XLALEPSearch(
 #if 0
 		params->lambda = XLALComputeLikelihood(tfTiling);
 		if(XLALIsREAL8FailNAN(params->lambda))
-			XLAL_ERROR_VOID(func, XLAL_EFUNC);
+			XLAL_ERROR(func, XLAL_EFUNC);
 #endif
 
 		/*
@@ -331,7 +328,7 @@ XLALEPSearch(
 
 		XLALPrintInfo("Sorting TFTiling");
 		if(XLALSortTFTiling(tfTiling))
-			XLAL_ERROR_VOID(func, XLAL_EFUNC);
+			XLAL_ERROR(func, XLAL_EFUNC);
 
 		/*
 		 * Determine the weighting for each tile.
@@ -347,23 +344,22 @@ XLALEPSearch(
 		EventAddPoint = TFTilesToSnglBurstTable(tfTiling->firstTile, EventAddPoint, &fseries->epoch, params);
 
 		/*
-		 * Reset the flags on the tftiles.
+		 * Clean up
 		 */
 
-		tfTiling->planesComputed=FALSE;
-		tfTiling->excessPowerComputed=FALSE;
-		tfTiling->tilesSorted=FALSE;
+		XLALDestroyTFTiling(tfTiling);
 	}
 
 	/*
 	 * Memory clean-up.
 	 */
 
-	XLALDestroyTFTiling(tfTiling);
 	XLALDestroyCOMPLEX8FrequencySeries(fseries);
 	XLALDestroyREAL4FrequencySeries(AverageSpec);
 	XLALDestroyREAL4Window(window);
 	XLALDestroyREAL4FFTPlan(plan);
+
+	return(0);
 }
 
 

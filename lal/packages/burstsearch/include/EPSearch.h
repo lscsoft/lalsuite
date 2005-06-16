@@ -39,7 +39,7 @@ tagEPSearchParams {
 	WindowType            windowType;
 } EPSearchParams;
 
-void
+int
 XLALEPSearch(
 	SnglBurstTable  **burstEvent,
 	REAL4TimeSeries  *tseries,
