@@ -68,6 +68,16 @@ NRCSID(SORTH,"$Id$");
 /* <lalLaTeX>
 \newpage\input{HeapSortC}
 </lalLaTeX> */
+
+int XLALHeapSort( void *base, UINT4 nobj, UINT4 size, void *params,
+    int (*compar)(void *, const void *, const void *) );
+
+int XLALHeapIndex( INT4 *indx, void *base, UINT4 nobj, UINT4 size, void *params,
+    int (*compar)(void *, const void *, const void *) );
+
+int XLALHeapRank( INT4 *rank, void *base, UINT4 nobj, UINT4 size, void *params,
+    int (*compar)(void *, const void *, const void *) );
+
 void LALSHeapSort(LALStatus      *status,
 	       REAL4Vector *vector);
 

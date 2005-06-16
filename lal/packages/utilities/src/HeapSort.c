@@ -24,6 +24,9 @@ algorithm.
 \subsubsection*{Prototypes}
 \vspace{0.1in}
 \input{HeapSortCP}
+\idx{XLALHeapSort()}
+\idx{XLALHeapIndex()}
+\idx{XLALHeapRank()}
 \idx{LALSHeapSort()}
 \idx{LALSHeapIndex()}
 \idx{LALSHeapRank()}
@@ -62,6 +65,23 @@ index[rank[j]] = j
 rank[index[i]] = i
 \end{verbatim}
 
+The XLAL versions of these routines, \verb@XLALHeapSort@, \verb@XLALHeapIndex@,
+and \verb@XLALHeapRank@, perform the same operations but on arrays of
+\verb@nobj@ generic objects of size \verb@size@ pointed to by \verb@base@ and
+using the comparison function \verb@compar@.  The function \verb@compar@ has
+the prototype
+\begin{verbatim}
+int compar( void *p, const void *x, const void *y )
+\end{verbatim}
+and returns $-1$ if ${\mathtt{x}}<{\mathtt{y}}$,
+$0$ if ${\mathtt{x}}={\mathtt{y}}$,
+and $+1$ if ${\mathtt{x}}>{\mathtt{y}}$.  Here \verb@p@ (which may be NULL)
+is a pointer to additional data that may be used in the comparison function.
+This pointer is passed to the comparison function unchanged from the argument
+\verb@params@ of \verb@XLALHeapSort@, \verb@XLALHeapIndex@, and
+\verb@XLALHeapRank@.
+
+
 \subsubsection*{Algorithm}
 
 These routines use the standard heap sort algorithm described in
@@ -78,6 +98,7 @@ these routines are therefore the most memory-intensive.  All of these
 algorithms are $N\log_2(N)$ algorithms, regardless of the ordering of
 the initial dataset.
 
+Note: if you can use \verb@qsort@, you should.
 
 \subsubsection*{Uses}
 \begin{verbatim}
@@ -90,11 +111,159 @@ LALI4DestroyVector()
 
 </lalLaTeX> */
 
+#include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/Sort.h>
 
 NRCSID(HEAPSORTC,"$Id$");
+
+/* helpful macros for generic routines */
+/* copy element j of array y to element i of array x; elements have size s */
+#define COPY(x,i,y,j,s) (memcpy((char*)(x)+(i)*(s),(char*)(y)+(j)*(s),(s)))
+/* compare element j of array y with element i of array x; elements have size s
+ * use compare function c with params p */
+#define CMP(x,i,y,j,s,p,c) ((c)((p),(char*)(x)+(i)*(s),(char*)(y)+(j)*(s)))
+
+/* <lalVerbatim file="HeapSortCP"> */
+int XLALHeapSort( void *base, UINT4 nobj, UINT4 size, void *params,
+    int (*compar)(void *, const void *, const void *) )
+{ /* </lalVerbatim> */
+  static const char *func = "XLALHeapSort";
+  INT4 i, j, k, n = nobj;
+  void *temp;
+
+  if ( (INT4)size <= 0 )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! base || ! compar )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  /* 0 or 1 objects are already sorted. */
+  if (n<2)
+    return 0;
+
+  temp = LALMalloc( size );
+  if ( ! temp )
+    XLAL_ERROR( func, XLAL_ENOMEM );
+
+  /* Here is the heapsort algorithm. */
+  j=n-1;
+  n >>= 1;
+  while(1){
+    if(n>0)
+      COPY(temp,0,base,--n,size);
+    else{
+      COPY(temp,0,base,j,size);
+      COPY(base,j,base,0,size);
+      if(--j==0){
+        COPY(base,0,temp,0,size);
+        break;
+      }
+    }
+    i=n;
+    k=(n << 1)+1;
+    while(k<=j){
+      if(k<j && CMP(base,k,base,k+1,size,params,compar) < 0)
+        k++;
+      if(CMP(temp,0,base,k,size,params,compar) < 0){
+        COPY(base,i,base,k,size);
+        i=k;
+        k<<=1;
+        k++;
+      }else
+        k=j+1;
+    }
+    COPY(base,i,temp,0,size);
+  }
+
+  LALFree( temp );
+  return 0;
+}
+
+/* <lalVerbatim file="HeapSortCP"> */
+int XLALHeapIndex( INT4 *indx, void *base, UINT4 nobj, UINT4 size, void *params,
+    int (*compar)(void *, const void *, const void *) )
+{ /* </lalVerbatim> */
+  static const char *func = "XLALHeapIndex";
+  INT4 i, j, k, n = nobj;
+  INT4 itemp;
+
+  if ( (INT4)size <= 0 )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! indx || ! base || ! compar )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  /* Initialize the indx vector */
+  for (i=0;i<n;++i)
+    indx[i]=i;
+
+  /* 0 or 1 objects are already sorted. */
+  if (n<2)
+    return 0;
+
+  /* Here is the heapsort algorithm. */
+  j=n-1;
+  n >>= 1;
+
+  while(1){
+    if(n>0)
+      itemp=indx[--n];
+    else{
+      itemp=indx[j];
+      indx[j]=indx[0];
+      if(--j==0){
+        indx[0]=itemp;
+        break;
+      }
+    }
+    i=n;
+    k=(n << 1)+1;
+    while(k<=j){
+      if(k<j && CMP(base,indx[k],base,indx[k+1],size,params,compar)<0)
+        k++;
+      if(CMP(base,itemp,base,indx[k],size,params,compar)<0){
+        indx[i]=indx[k];
+        i=k;
+        k<<=1;
+        k++;
+      }else
+        k=j+1;
+    }
+    indx[i]=itemp;
+  }
+
+  return 0;
+}
+
+/* <lalVerbatim file="HeapSortCP"> */
+int XLALHeapRank( INT4 *rank, void *base, UINT4 nobj, UINT4 size, void *params,
+    int (*compar)(void *, const void *, const void *) )
+{ /* </lalVerbatim> */
+  static const char *func = "XLALHeapRank";
+  INT4 i, n = nobj;
+  INT4 *indx;
+
+  if ( (INT4)size <= 0 )
+    XLAL_ERROR( func, XLAL_EINVAL );
+  if ( ! rank || ! base || ! compar )
+    XLAL_ERROR( func, XLAL_EFAULT );
+
+  indx = LALMalloc( nobj * sizeof( *rank ) );
+  if ( ! indx )
+    XLAL_ERROR( func, XLAL_ENOMEM );
+
+  if ( XLALHeapIndex( indx, base, nobj, size, params, compar ) < 0 )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  for(i=0;i<n;++i)
+    rank[indx[i]]=i;
+
+  LALFree( indx );
+  return 0;
+}
+
+#undef COPY
+#undef CMP
 
 /* <lalVerbatim file="HeapSortCP"> */
 void LALSHeapSort(LALStatus      *stat,

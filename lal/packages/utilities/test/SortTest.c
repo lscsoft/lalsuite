@@ -71,8 +71,10 @@ LALPrintError()
 
 </lalLaTeX> */
 
-#include <lal/LALStdlib.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/Random.h>
 #include <lal/Sort.h>
@@ -85,6 +87,7 @@ NRCSID(SORTTESTC,"$Id$");
 #define SORTTEST_MSGESUB "Subroutine returned error"
 
 INT4 lalDebugLevel=0;
+void test_xlal_routines( void );
 
 int main(int argc, char **argv)
 {
@@ -115,6 +118,8 @@ int main(int argc, char **argv)
     }else
       LALPrintError("%s: Ignoring argument: %s\n",argv[0],argv[i]);
   }
+
+  test_xlal_routines();
 
   /* Create vectors and random parameters. */
   LALI4CreateVector(&stat,&index,NPTS);
@@ -202,3 +207,118 @@ int main(int argc, char **argv)
   }
   return 0;
 }
+
+
+int compar( void *p, const void *a, const void *b );
+int compar( void *p, const void *a, const void *b )
+{
+  int x = *((const int *)a);
+  int y = *((const int *)b);
+  int ascend = *(int *)p;
+
+  if ( ascend )
+  {
+    if ( x < y ) 
+      return -1;
+    if ( x > y )
+      return 1;
+    return 0;
+  }
+
+  if ( x > y )
+    return -1;
+  if ( x < y )
+    return 1;
+  return 0;
+}
+
+int check( int *data, int nobj, int ascend );
+int check( int *data, int nobj, int ascend )
+{
+  int i;
+  for ( i = 1; i < nobj; ++i )
+    if ( ascend )
+    {
+      if ( data[i] < data[i-1] )
+        abort();
+    }
+    else
+    {
+      if ( data[i] > data[i-1] )
+        abort();
+    }
+  return 0;
+}
+
+void test_xlal_routines( void )
+{
+  int  nobj = 9;
+  int *data;
+  int *sort;
+  int *indx;
+  int *rank;
+  int ascend;
+  int code;
+  int i;
+
+  data = malloc(nobj*sizeof(*data));
+  sort = malloc(nobj*sizeof(*data));
+  indx = malloc(nobj*sizeof(*indx));
+  rank = malloc(nobj*sizeof(*rank));
+
+  srand(time(NULL));
+
+  /* sort in ascending order */
+
+  ascend = 1;
+
+  for ( i = 0; i < nobj; ++i )
+    sort[i] = data[i] = rand() % 100;
+
+  code = XLALHeapIndex( indx, data, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
+  code = XLALHeapRank( rank, data, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
+  code = XLALHeapSort( sort, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
+
+  for ( i = 0; i < nobj; ++i )
+    if ( sort[i] != data[indx[i]] )
+      abort();
+
+  check( sort, nobj, ascend );
+
+  /* sort in descending order */
+
+  ascend = 0;
+
+  for ( i = 0; i < nobj; ++i )
+    sort[i] = data[i] = rand() % 100;
+
+  code = XLALHeapIndex( indx, data, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
+  code = XLALHeapRank( rank, data, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
+  code = XLALHeapSort( sort, nobj, sizeof(*data), &ascend, compar );
+  if ( code < 0 )
+    abort();
+
+  for ( i = 0; i < nobj; ++i )
+    if ( sort[i] != data[indx[i]] )
+      abort();
+
+  check( sort, nobj, ascend );
+
+  free( data );
+  free( sort );
+  free( indx );
+  free( rank );
+
+  return;
+}
+
