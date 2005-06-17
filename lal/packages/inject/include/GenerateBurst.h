@@ -99,7 +99,7 @@ typedef struct tagBurstParamStruc {
 </lalLaTeX> */
 void
 LALGenerateBurst( 
-    LALStatus          *stat, 
+    LALStatus          *status, 
     CoherentGW         *output, 
     SimBurstTable      *simBurst,
     BurstParamStruc    *params 
@@ -107,7 +107,7 @@ LALGenerateBurst(
 
 void
 LALBurstInjectSignals( 
-    LALStatus               *stat, 
+    LALStatus               *status, 
     REAL4TimeSeries         *series, 
     SimBurstTable           *injections,
     COMPLEX8FrequencySeries *resp,

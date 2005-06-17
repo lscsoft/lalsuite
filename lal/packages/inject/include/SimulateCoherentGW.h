@@ -382,13 +382,13 @@ typedef struct tagDetectorResponse {
 \newpage\input{SimulateCoherentGWC}
 </lalLaTeX> */
 void
-LALSimulateCoherentGW( LALStatus        *,
+LALSimulateCoherentGW( LALStatus        *status,
 		       REAL4TimeSeries  *output,
 		       CoherentGW       *input,
 		       DetectorResponse *detector );
 
 void
-LALSimulateCoherentGW_exp (LALStatus        *stat,
+LALSimulateCoherentGW_exp (LALStatus        *status,
 			   REAL4TimeSeries  *output,
 			   CoherentGW       *input,
 			   DetectorResponse *detector );

@@ -172,18 +172,18 @@ typedef struct {
 
 
 /* Function prototypes */
-void LALGeneratePulsarSignal (LALStatus *stat, REAL4TimeSeries **signal, const PulsarSignalParams *params);
-void LALSimulatePulsarSignal (LALStatus *stat, REAL8TimeSeries **timeSeries, const PulsarSignalParams *params);
+void LALGeneratePulsarSignal (LALStatus *status, REAL4TimeSeries **signal, const PulsarSignalParams *params);
+void LALSimulatePulsarSignal (LALStatus *status, REAL8TimeSeries **timeSeries, const PulsarSignalParams *params);
 
-void LALSignalToSFTs (LALStatus *stat, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
+void LALSignalToSFTs (LALStatus *status, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
 
-void LALComputeSkyAndZeroPsiAMResponse (LALStatus *stat, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
-void LALFastGeneratePulsarSFTs (LALStatus *stat, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);
+void LALComputeSkyAndZeroPsiAMResponse (LALStatus *status, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
+void LALFastGeneratePulsarSFTs (LALStatus *status, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);
 
-void LALConvertGPS2SSB (LALStatus* stat, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
-void LALConvertSSB2GPS (LALStatus *stat, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+void LALConvertGPS2SSB (LALStatus* status, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+void LALConvertSSB2GPS (LALStatus *status, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 
-void LALMakeTimestamps (LALStatus *lstat, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
+void LALMakeTimestamps (LALStatus *lstatus, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
 
 /********************************************************** <lalLaTeX>
 %% \newpage\input{LALSampleTestC}

@@ -130,7 +130,7 @@ DetTimeAndASource;
 </lalLaTeX> */
 
 void
-LALTimeDelay( LALStatus                   *stat,
+LALTimeDelay( LALStatus                   *status,
               REAL8                       *p_delay,
               const TwoDetsTimeAndASource *p_two_detectors_time_and_source );
 
@@ -145,7 +145,7 @@ XLALLightTravelTime ( const LALDetector *aDet,
 </lalLaTeX> */
 
 void
-LALTimeDelayFromEarthCenter( LALStatus               *stat,
+LALTimeDelayFromEarthCenter( LALStatus               *status,
                              REAL8                   *p_delay,
                              const DetTimeAndASource *p_det_time_and_source );
 
