@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = Ring.h RingSearch.h LALRingDown.h LALWiener.h String.h StringSearch.h
+pkginclude_HEADERS = Ring.h RingSearch.h LALRingDown.h LALWiener.h
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 all-local: include-link
