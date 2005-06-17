@@ -126,6 +126,9 @@
  * \newpage\input{LALMathNDPlotTestC}
  * </lalLaTeX> */
 
+#ifndef _LALMATHEMATICA_H
+#define _LALMATHEMATICA_H
+
 
 #include <math.h>
 #include <stdio.h>
@@ -194,3 +197,5 @@ LALMathNDPlot( LALStatus *status,
                MathNDPointList *first,
                INT4 *ntiles,
                REAL4 *pointSize );
+
+#endif /* _LALMATHEMATICA_H */
