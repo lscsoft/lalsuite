@@ -464,9 +464,9 @@ int main(int argc, char **argv)
 
 		  /* this is a LAL function which compares events */
 		  if( ignoreTcomparison )
-		    accParams.difference = XLALCompareSnglBurstByFreq((const SnglBurstTable * const *)currentTrigger[0], (const SnglBurstTable * const *)tmpEvent);
-		  else
-		    accParams.difference = XLALCompareSnglBurst((const SnglBurstTable * const *)currentTrigger[0], (const SnglBurstTable * const *)tmpEvent);
+		    accParams.difference = XLALCompareSnglBurstByFreq((const SnglBurstTable * const *)&currentTrigger[0], (const SnglBurstTable * const *)&tmpEvent);
+		  else if ( !ignoreTFcomparison )
+		    accParams.difference = XLALCompareSnglBurst((const SnglBurstTable * const *)&currentTrigger[0], (const SnglBurstTable * const *)&tmpEvent);
 		
 		  if (!accParams.difference || ignoreTFcomparison)
 		    {
