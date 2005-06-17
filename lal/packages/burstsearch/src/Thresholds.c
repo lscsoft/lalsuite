@@ -18,50 +18,6 @@ NRCSID(THRESHOLDSC, "$Id$");
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>
 
-extern int lalDebugLevel;
-
-/*
- *
- * Private functions not accessible outside this file Thresholds.c 
- *
- */
-
-/* returns n! */
-static REAL8 Factorial(INT4 n)
-{
-	REAL8 nfactorial = 1.0;
-
-	for(; n >= 2; n--)
-		nfactorial *= n;
-
-	return(nfactorial);
-}
-
-
-static void NoncChisqCdf1(LALStatus *status, REAL8 *prob, REAL8 lnrho, void *params)
-{
-	/* This is just the XLALNoncChisqCdf() function plus an added
-	 * constant.  Its used in LALRhoThreshold() in the call to
-	 * DFindRoot().  params is actually a pointer to a structure
-	 * RhoThresholdIn It passed to NoncChisqCdf1 as a pointer to void
-	 * so that NoncChisqCdf1 will be a REAL8LALFunction and be passable
-	 * to DFindRoot(); see header file FindRoot.h */
-	REAL8 chi2 = ((RhoThresholdIn *) params)->chi2;
-	REAL8 dof = ((RhoThresholdIn *) params)->dof;
-	REAL8 nonCentral = exp(2.0 * lnrho);
-	REAL8 falseDismissal = ((RhoThresholdIn *) params)->falseDismissal;
-
-	/* use the "nonsafe" version because it's ok for the result to be 1 or
-	 * 0 */
-	*prob = XLALNoncChisqCdfNonSafe(chi2, dof, nonCentral) - falseDismissal;
-}
-
-
-
-/*
- *  Public functions
- */
-
 
 /******** <lalVerbatim file="ChisqCdfP"> ********/
 REAL8 XLALChisqCdf(
@@ -99,34 +55,6 @@ REAL8 XLALChisqCdf(
 		XLAL_ERROR_REAL8(func, XLAL_ERANGE);
 
 	return (prob);
-}
-
-
-/******** <lalVerbatim file="ChisqCdfP"> ********/
-void LALChisqCdf (
-	LALStatus  *status,
-	REAL8      *prob,
-	ChisqCdfIn *input
-)
-/******** </lalVerbatim> ********/
-{  
-	INITSTATUS (status, "LALChisqCdf", THRESHOLDSC);
-	ATTATCHSTATUSPTR (status);
-
-	/* check that arguments are reasonable */
-	ASSERT(prob, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
-
-	*prob = XLALChisqCdf(input->chi2, input->dof);
-
-	/* raise a range error if the result is no good */
-	if(XLALIsREAL8FailNaN(*prob)) {
-		XLALClearErrno();
-		ABORT(status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-	}
-
-	DETATCHSTATUSPTR( status );
-	RETURN (status);
 }
 
 
@@ -171,6 +99,18 @@ REAL8 XLALOneMinusChisqCdf(
 		prob = exp(-700.0);
 
 	return (prob);
+}
+
+
+/* returns n! */
+static REAL8 Factorial(INT4 n)
+{
+	REAL8 nfactorial = 1.0;
+
+	for(; n >= 2; n--)
+		nfactorial *= n;
+
+	return(nfactorial);
 }
 
 
@@ -283,29 +223,39 @@ REAL8 XLALChi2Threshold(
 	return(chi2);
 }
 
-/******** <lalVerbatim file="Chi2ThresholdP"> ********/
-void LALChi2Threshold(
-	LALStatus *status,
-	REAL8 *chi2,
-	Chi2ThresholdIn *input
-)
-/******** </lalVerbatim> ********/
+
+struct RhoThresholdIn
 {
-	INITSTATUS(status, "LALChi2Threshold", THRESHOLDSC);
-	ATTATCHSTATUSPTR(status);
+	REAL8 chi2;
+	REAL8 dof;
+	REAL8 falseDismissal;
+};
 
-	*chi2 = XLALChi2Threshold(input->dof, input->falseAlarm);
 
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
+static REAL8 NoncChisqCdf1(REAL8 lnrho, void *params)
+{
+	/* This is just the XLALNoncChisqCdf() function plus an added
+	 * constant.  Its used in LALRhoThreshold() in the call to
+	 * DFindRoot().  params is actually a pointer to a structure
+	 * RhoThresholdIn It passed to NoncChisqCdf1 as a pointer to void
+	 * so that NoncChisqCdf1 will be a REAL8LALFunction and be passable
+	 * to DFindRoot(); see header file FindRoot.h */
+	REAL8 chi2 = ((struct RhoThresholdIn *) params)->chi2;
+	REAL8 dof = ((struct RhoThresholdIn *) params)->dof;
+	REAL8 nonCentral = exp(2.0 * lnrho);
+	REAL8 falseDismissal = ((struct RhoThresholdIn *) params)->falseDismissal;
+
+	/* use the "nonsafe" version because it's ok for the result to be 1 or
+	 * 0 */
+	return(XLALNoncChisqCdfNonSafe(chi2, dof, nonCentral) - falseDismissal);
 }
 
 
 /******** <lalVerbatim file="RhoThresholdP"> ********/
-void LALRhoThreshold(
-	LALStatus *status,
-	REAL8 *rho,
-	RhoThresholdIn *input
+REAL8 XLALRhoThreshold(
+	REAL8 chi2,
+	REAL8 dof,
+	REAL8 falseDismissal
 )
 /******** </lalVerbatim> ********/
 {
@@ -314,41 +264,29 @@ void LALRhoThreshold(
 	 * noncChisqCdf(chi2,dof,rho^2) note that rho^2 is the same as
 	 * nonCentral
 	 */
-
-	REAL8 lnrhoAns;
+	static const char *func = "XLALRhoThreshold";
+	REAL8 lnrho;
+	REAL8 xmin = -2.0;
+	REAL8 xmax = +2.0;
 	DFindRootIn frInput;
+	struct RhoThresholdIn NoncChisqCdf1params;
 
-	INITSTATUS(status, "LALRhoThreshold", THRESHOLDSC);
-	ATTATCHSTATUSPTR(status);
+	/* Arguments dof and chi2 must be positive, supplied false
+	 * dismissal probability must be between 0 and 1 */
+	if((dof <= 0.0) ||
+	   (chi2 < 0.0) ||
+	   (falseDismissal <= 0.0) ||
+	   (falseDismissal >= 1.0))
+		XLAL_ERROR_REAL8(func, XLAL_EDOM);
 
-	/* check that pointers are not null */
-	ASSERT(rho, status, LAL_NULL_ERR, LAL_NULL_MSG);
-	ASSERT(input, status, LAL_NULL_ERR, LAL_NULL_MSG);
-
-	/* Arguments dof and chi2 must be positive */
-	ASSERT((input->dof > 0.0) && (input->chi2 >= 0.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-
-	/* Supplied false dismissal probability must be between 0 and 1 */
-	ASSERT((input->falseDismissal > 0.0) && (input->falseDismissal < 1.0), status, LAL_RANGE_ERR, LAL_RANGE_MSG);
-
-
-	/* Initialize input structure for DFindRoot() */
-	frInput.function = NoncChisqCdf1;
-	frInput.xmin = -2.0;
-	frInput.xmax = 2.0;
-	frInput.xacc = 1e-5;
-
+	/* Setup NoncChisqCdf1() parameters */
+	NoncChisqCdf1params.chi2 = chi2;
+	NoncChisqCdf1params.chi2 = dof;
+	NoncChisqCdf1params.chi2 = falseDismissal;
 
 	/* Now bracket and find the root */
-	LALDBracketRoot(status->statusPtr, &frInput, input);
-	CHECKSTATUSPTR(status);
+	XLALDBracketRoot(NoncChisqCdf1, &xmin, &xmax, &NoncChisqCdf1params);
+	lnrho = XLALDBisectionFindRoot(NoncChisqCdf1, xmin, xmax, 1e-5, &NoncChisqCdf1params);
 
-	LALDBisectionFindRoot(status->statusPtr, &lnrhoAns, &frInput, input);
-	CHECKSTATUSPTR(status);
-
-	*rho = exp(lnrhoAns);
-
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
-
+	return(exp(lnrho));
 }

@@ -3,12 +3,9 @@ Author: Flanagan, E
 $Id$
 **************************************************** </lalVerbatim> */
 
-
 #ifndef _THRESHOLDS_H
 #define _THRESHOLDS_H
 
-
-#include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALRCSID.h>
 
@@ -16,46 +13,12 @@ $Id$
 extern "C" {
 #endif
 
-
 NRCSID (THRESHOLDSH, "$Id$");
-
-
-typedef struct tagChisqCdfIn
-{
-  REAL8     chi2;               /* value of chi squared          */
-  REAL8     dof;                /* number of degrees of freedom  */
-  REAL8     nonCentral;         /* non-centrality parameter      */
-}
-ChisqCdfIn;
-
-typedef struct tagChi2ThresholdIn
-{
-  REAL8     dof;                /* number of degrees of freedom  */
-  REAL8     falseAlarm;         /* false alarm probability       */
-}
-Chi2ThresholdIn;
-
-typedef struct tagRhoThresholdIn
-{
-  REAL8     chi2;               /* value of chi squared          */
-  REAL8     dof;                /* number of degrees of freedom  */
-  REAL8     falseDismissal;     /* false dismissal probability   */
-}
-RhoThresholdIn;
-
-
 
 REAL8
 XLALChisqCdf(
 	REAL8 chi2,
 	REAL8 dof
-);
-
-void
-LALChisqCdf(
-	LALStatus  *status,
-	REAL8      *prob,
-	ChisqCdfIn *input
 );
 
 REAL8
@@ -83,31 +46,14 @@ REAL8 XLALChi2Threshold(
 	REAL8 falseAlarm
 );
 
-void
-LALChi2Threshold (
-              LALStatus                    *status,
-              REAL8                     *chi2,
-              Chi2ThresholdIn           *input
-               );
-
-void
-LALRhoThreshold (
-              LALStatus                    *status,
-              REAL8                     *rho,
-              RhoThresholdIn            *input
-              );
-
-
+REAL8 XLALRhoThreshold(
+	REAL8 chi2,
+	REAL8 dof,
+	REAL8 falseDismissal
+);
 
 #ifdef  __cplusplus
 }
 #endif  /* C++ protection. */
 
-
 #endif
-
-
-
-
-
-
