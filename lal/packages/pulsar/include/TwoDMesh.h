@@ -299,17 +299,17 @@ typedef struct tagTwoDColumnParamStruc {
 \newpage\input{TwoDMeshC}
 </lalLaTeX> */
 void
-LALCreateTwoDMesh( LALStatus          *stat,
+LALCreateTwoDMesh( LALStatus          *status,
 		   TwoDMeshNode       **mesh,
 		   TwoDMeshParamStruc *params );
 
 void
-LALDestroyTwoDMesh( LALStatus    *stat,
+LALDestroyTwoDMesh( LALStatus    *status,
 		    TwoDMeshNode **mesh,
 		    UINT4        *nFree );
 
 void
-LALRefineTwoDMesh( LALStatus    *stat,
+LALRefineTwoDMesh( LALStatus    *status,
 		   TwoDMeshNode *coarseMesh,
 		   TwoDMeshNode *fineMesh );
 
@@ -317,18 +317,18 @@ LALRefineTwoDMesh( LALStatus    *stat,
 \newpage\input{TwoDMeshInternalC}
 </lalLaTeX> */
 void
-LALTwoDMesh( LALStatus            *stat,
+LALTwoDMesh( LALStatus            *status,
 	     TwoDMeshNode         **tail,
 	     TwoDMeshParamStruc   *params );
 
 void
-LALTwoDColumn( LALStatus            *stat,
+LALTwoDColumn( LALStatus            *status,
 	       TwoDMeshNode         **tail,
 	       TwoDColumnParamStruc *columnParams,
 	       TwoDMeshParamStruc   *params );
 
 void
-LALTwoDNodeCopy( LALStatus    *stat,
+LALTwoDNodeCopy( LALStatus    *status,
 		 TwoDMeshNode **new,
 		 TwoDMeshNode *old );
 
@@ -336,19 +336,19 @@ LALTwoDNodeCopy( LALStatus    *stat,
 \newpage\input{TwoDMeshMetricsC}
 </lalLaTeX> */
 void
-LALGetNearestMetric( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *params );
+LALGetNearestMetric( LALStatus *status, REAL4 metric[3], REAL4 position[2], void *params );
 
 void
-LALInterpolateMetricGrid( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *params );
+LALInterpolateMetricGrid( LALStatus *status, REAL4 metric[3], REAL4 position[2], void *params );
 
 /* <lalLaTeX>
 \newpage\input{TwoDMeshRangesC}
 </lalLaTeX> */
 void
-LALInterpolateRangePolygon( LALStatus *stat, REAL4 range[2], REAL4 x, void *params );
+LALInterpolateRangePolygon( LALStatus *status, REAL4 range[2], REAL4 x, void *params );
 
 void
-LALInterpolateRangeGrid( LALStatus *stat, REAL4 range[2], REAL4 x, void *params );
+LALInterpolateRangeGrid( LALStatus *status, REAL4 range[2], REAL4 x, void *params );
 
 #ifdef __cplusplus
 #pragma {

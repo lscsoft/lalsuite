@@ -190,7 +190,7 @@ typedef struct FFTTag
 
 /* Function prototypes */
 
-void LALDemod (LALStatus *stat, LALFstat *Fstat, FFT **input, DemodPar *params);
+void LALDemod (LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params);
 
 	
 /* <lalLaTeX>

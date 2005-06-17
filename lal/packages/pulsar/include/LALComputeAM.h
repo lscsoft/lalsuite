@@ -119,7 +119,7 @@ typedef struct AMCoeffsParamsTag
 \newpage\input{LALComputeAMC}
 </lalLaTeX> */
 
-void LALComputeAM (LALStatus          *stat,
+void LALComputeAM (LALStatus          *status,
 		   AMCoeffs           *coe,
 		   LIGOTimeGPS        *ts,
 		   AMCoeffsParams     *params);

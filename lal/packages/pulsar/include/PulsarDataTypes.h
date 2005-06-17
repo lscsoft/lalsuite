@@ -113,14 +113,14 @@ typedef COMPLEX8FrequencySeriesVector 	SFTVector;
 /* ----------------------------------------------------------------------
  *  some prototypes for general functions handling these data-types 
  *----------------------------------------------------------------------*/
-void LALCreateSFTtype (LALStatus *stat, SFTtype **sft, UINT4 SFTlen);	
-void LALCreateSFTVector (LALStatus *stat, SFTVector **sftvect, UINT4 numSFTs, UINT4 SFTlen);
-void LALDestroySFTtype (LALStatus *stat, SFTtype **sft);
-void LALDestroySFTVector (LALStatus *stat, SFTVector **sftvect);
-void LALCopySFTtype (LALStatus *stat, SFTtype *dest, const SFTtype *src);
+void LALCreateSFTtype (LALStatus *status, SFTtype **sft, UINT4 SFTlen);	
+void LALCreateSFTVector (LALStatus *status, SFTVector **sftvect, UINT4 numSFTs, UINT4 SFTlen);
+void LALDestroySFTtype (LALStatus *status, SFTtype **sft);
+void LALDestroySFTVector (LALStatus *status, SFTVector **sftvect);
+void LALCopySFTtype (LALStatus *status, SFTtype *dest, const SFTtype *src);
 
-void LALCreateTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect, UINT4 len);
-void LALDestroyTimestampVector (LALStatus *stat, LIGOTimeGPSVector **vect);
+void LALCreateTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect, UINT4 len);
+void LALDestroyTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect);
 
   
 /********************************************************** <lalLaTeX>

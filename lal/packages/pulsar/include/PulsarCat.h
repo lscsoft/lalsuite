@@ -327,31 +327,31 @@ typedef enum {
 \newpage\input{PulsarCatC}
 </lalLaTeX> */
 void
-LALUpdatePulsarCatNode( LALStatus      *stat,
+LALUpdatePulsarCatNode( LALStatus      *status,
 			PulsarCatNode  *node,
 			LALPlaceAndGPS *detectorTime,
 			EphemerisData  *edat );
 
 void
-LALUpdatePulsarCat( LALStatus      *stat,
+LALUpdatePulsarCat( LALStatus      *status,
 		    PulsarCatNode  *head,
 		    LALPlaceAndGPS *detectorTime,
 		    EphemerisData  *edat );
 
 void
-LALDestroyPulsarCat( LALStatus     *stat,
+LALDestroyPulsarCat( LALStatus     *status,
 		     PulsarCatNode **head );
 
 /* <lalLaTeX>
 \newpage\input{PulsarCatInputC}
 </lalLaTeX> */
 void
-LALReadPulsarCatHead( LALStatus *stat,
+LALReadPulsarCatHead( LALStatus *status,
 		      INT4      indx[PULSARCATINDEX_NUM],
 		      TokenList *list );
 
 void
-LALReadPulsarCatLine( LALStatus     *stat,
+LALReadPulsarCatLine( LALStatus     *status,
 		      PulsarCatNode *node,
 		      TokenList     *list,
 		      INT4          indx[PULSARCATINDEX_NUM] );

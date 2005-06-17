@@ -134,14 +134,14 @@ WienerFormattedInput;
 
 void
 LALUnFormattedWiener( 
-     LALStatus *stat, 
+     LALStatus *status, 
      WienerOutput *output, 
      WienerUnFormattedInput *input 
      );
 
 void
 LALFormattedWiener( 
-     LALStatus *stat, 
+     LALStatus *status, 
      WienerOutput *output, 
      WienerFormattedInput *input 
      );

@@ -266,7 +266,7 @@ typedef struct tagResampleParamStruc{
 \newpage\input{CreateResampleRulesC}
 </lalLaTeX> */
 void
-LALCreateResampleRules( LALStatus          *stat,
+LALCreateResampleRules( LALStatus          *status,
 			ResampleRules      **rules,
 			PolycoStruc        *polyco,
 			ResampleParamStruc *params );
@@ -275,14 +275,14 @@ LALCreateResampleRules( LALStatus          *stat,
 \newpage\input{DestroyResampleRulesC}
 </lalLaTeX> */
 void
-LALDestroyResampleRules( LALStatus     *stat,
+LALDestroyResampleRules( LALStatus     *status,
 			 ResampleRules **rules );
 
 /* <lalLaTeX>
 \newpage\input{ApplyResampleRulesC}
 </lalLaTeX> */
 void
-LALApplyResampleRules( LALStatus       *stat,
+LALApplyResampleRules( LALStatus       *status,
 		       REAL4TimeSeries *output,
 		       REAL4TimeSeries *input,
 		       ResampleRules   *rules );
@@ -295,7 +295,7 @@ LALApplyResampleRules( LALStatus       *stat,
 \newpage\input{PolycoToTimingDifferenceC}
 </lalLaTeX> */
 void
-LALPolycoToTimingDifference( LALStatus       *stat,
+LALPolycoToTimingDifference( LALStatus       *status,
 			     REAL4TimeSeries *difference,
 			     PolycoStruc     *polyco );
 
@@ -303,7 +303,7 @@ LALPolycoToTimingDifference( LALStatus       *stat,
 \newpage\input{RulesToTimingDifferenceC}
 </lalLaTeX> */
 void
-LALRulesToTimingDifference( LALStatus       *stat,
+LALRulesToTimingDifference( LALStatus       *status,
 			    REAL4TimeSeries *difference,
 			    ResampleRules   *rules );
 

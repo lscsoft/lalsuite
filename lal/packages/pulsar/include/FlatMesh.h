@@ -189,12 +189,12 @@ typedef struct tagFlatMeshParamStruc{
 \newpage\input{FlatMeshC}
 </lalLaTeX> */
 void
-LALCreateFlatMesh( LALStatus           *stat,
+LALCreateFlatMesh( LALStatus           *status,
 		   REAL4VectorSequence **mesh,
 		   FlatMeshParamStruc  *params );
 
 void
-LALRectIntersect( LALStatus           *stat,
+LALRectIntersect( LALStatus           *status,
 		  REAL4VectorSequence *mesh,
 		  REAL4VectorSequence *controlPoints );
 
