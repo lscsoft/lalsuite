@@ -147,14 +147,14 @@ typedef enum {
 } UserVarLogFormat;
 
 /* Function prototypes */
-void LALRegisterREALUserVar(LALStatus *status, 
+void LALRegisterREALUserVar(LALStatus *, 
 			    const CHAR *name, 
 			    CHAR optchar, 
 			    UserVarState flag,
 			    const CHAR *helpstr, 
 			    REAL8 *cvar);
 
-void LALRegisterINTUserVar (LALStatus *status,  
+void LALRegisterINTUserVar (LALStatus *,  
 			    const CHAR *name, 
 			    CHAR optchar, 
 			    UserVarState flag, 
@@ -162,7 +162,7 @@ void LALRegisterINTUserVar (LALStatus *status,
 			    INT4 *cvar);
 
 void 
-LALRegisterBOOLUserVar (LALStatus *status, 
+LALRegisterBOOLUserVar (LALStatus *, 
 			const CHAR *name, 
 			CHAR optchar, 
 			UserVarState flag,
@@ -170,24 +170,24 @@ LALRegisterBOOLUserVar (LALStatus *status,
 			BOOLEAN *cvar);
 
 void
-LALRegisterSTRINGUserVar (LALStatus *status,
+LALRegisterSTRINGUserVar (LALStatus *,
 			  const CHAR *name,
 			  CHAR optchar, 
 			  UserVarState flag,
 			  const CHAR *helpstr, 
 			  CHAR **cvar);
 
-void LALDestroyUserVars (LALStatus *status);
+void LALDestroyUserVars (LALStatus *);
 
-void LALUserVarReadAllInput(LALStatus *status, int argc, char *argv[]);
-void LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[]);
-void LALUserVarReadCfgfile (LALStatus *status, const CHAR *cfgfile);
+void LALUserVarReadAllInput(LALStatus *, int argc, char *argv[]);
+void LALUserVarReadCmdline (LALStatus *, int argc, char *argv[]);
+void LALUserVarReadCfgfile (LALStatus *, const CHAR *cfgfile);
 
-void LALUserVarHelpString (LALStatus *status, CHAR **helpstring, const CHAR *progname);
-void LALUserVarCheckRequired (LALStatus *status);
+void LALUserVarHelpString (LALStatus *, CHAR **helpstring, const CHAR *progname);
+void LALUserVarCheckRequired (LALStatus *);
 INT4 LALUserVarWasSet (void *cvar);
-void LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar);
-void LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format);
+void LALGetDebugLevel (LALStatus *, int argc, char *argv[], CHAR optchar);
+void LALUserVarGetLog (LALStatus *, CHAR **logstr,  UserVarLogFormat format);
 
 #ifdef  __cplusplus
 }
