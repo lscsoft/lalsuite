@@ -19,7 +19,9 @@
 
 /**
  * \defgroup moduleLatticeCovering Lattice Covering
- *  Covering of parameter-spaces by an optimal lattice
+ *  \brief Module implementing a practical (approximate) solution to the "covering problem". 
+ *  This is achieved by producing a lattice-covering with the \f$A_n^*\f$ lattice, 
+ *  which is the best known covering up to dimension \f$n\le 23\f$ (see \ref CS99 "[CS99]" for details).
  */
 
 /**
@@ -27,7 +29,7 @@
  * \date 2005
  * \file 
  * \ingroup moduleLatticeCovering
- * \brief Module for covering metric parameter-spaces with a lattice.
+ * \brief Functions for covering metric parameter-spaces with a lattice.
  *
  * These routines should eventually become useable for implementing 
  * a covering that's practical and as "optimal" as possible.
@@ -55,13 +57,8 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_blas.h>
 
-#include <lalapps.h>
+#include "LatticeCovering.h"
 
-#include <lal/LALStdlib.h>
-#include <lal/LALDatatypes.h>
-#include <lal/AVFactories.h>
-
-RCSID ("$Id$");
 NRCSID( LATTICECOVERINGC, "$Id$" );
 
 /*---------- DEFINES ----------*/
@@ -76,100 +73,33 @@ NRCSID( LATTICECOVERINGC, "$Id$" );
 /* uncomment the following to turn off range-checking in GSL vector-functions */
 /* #define GSL_RANGE_CHECK_OFF 1*/
 
-/*----- Error-codes -----<lalLaTeX>
-\subsection*{Error codes}</lalLaTeX><lalErrTable> */
+/*---------- internal types ----------*/
 
-#define LATTICECOVERING_ENULL 		1
-#define LATTICECOVERING_ENONULL		2
-#define LATTICECOVERING_EMEM		3
-#define LATTICECOVERING_EINPUT		4
-#define LATTICECOVERING_ELIST		5
-#define LATTICECOVERING_EFUNC		6
-
-#define LATTICECOVERING_MSGENULL 	"Arguments contained an unexpected null pointer"
-#define LATTICECOVERING_MSGENONULL	"Output pointer is not NULL"
-#define LATTICECOVERING_MSGEMEM		"Out of memory"
-#define LATTICECOVERING_MSGEINPUT	"Invald input parameter"
-#define LATTICECOVERING_MSGELIST	"Error occurred in list-handling ..."
-#define LATTICECOVERING_MSGEFUNC	"Sub-routine failed"
-
-/*</lalErrTable> */
-
-/*---------- local types ----------*/
-
-/** enum-type for denoting several types of lattice */
-typedef enum
-{
-  LATTICE_TYPE_CUBIC = 0,	/**< standard cubic grid: Zn */
-  LATTICE_TYPE_ANSTAR,		/**< An*: optimal covering grid */
-  LATTICE_TYPE_LAST
-} LatticeType;
-
-/** doubly linked list of INT4-vectors (lattice-vectors) */
-typedef struct tagINT4VectorList
-{
-  INT4Vector entry;
-  struct tagINT4VectorList *next;
-  struct tagINT4VectorList *prev;
-} INT4VectorList;
-
-/** doubly linked list of REAL8-vectors (physical vectors) */
-typedef struct tagREAL8VectorList
-{
-  REAL8Vector entry;
-  struct tagREAL8VectorList *next;
-  struct tagREAL8VectorList *prev;
-} REAL8VectorList;
-
-
+/*---------- empty initializers ---------- */
 INT4VectorList empty_INT4VectorList;
 REAL8VectorList empty_REAL8VectorList;
 
 /*---------- Global variables ----------*/
 
 
-
-/*---------- local prototypes ----------*/
-void LALLatticeCovering (LALStatus *lstat, REAL8VectorList **covering, REAL8 coveringRadius, const gsl_matrix *metric,
-			 const REAL8Vector *startPoint,	BOOLEAN (*isInside)(const REAL8Vector *point) );
-
-void LALLatticeFill (LALStatus *lstat, REAL8VectorList **fillGrid, const gsl_matrix  *generator,
-		     const REAL8Vector *startPoint, BOOLEAN (*isInside)(const REAL8Vector *point) );
-
-int XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, const INT4Vector *latticePoint, 
+/*---------- internal prototypes ----------*/
+static int XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, const INT4Vector *latticePoint, 
 				     const gsl_matrix *generator, const REAL8Vector *startPoint );
 
-/* functions for handling lattice's generating matrix */
-int XLALFindCoveringGenerator (gsl_matrix **outmatrix, LatticeType type, UINT4 dimension, 
-			       REAL8 coveringRadius, const gsl_matrix *gij);
-int XLALReduceGenerator2FullRank(gsl_matrix **outmatrix, const gsl_matrix *inmatrix);
-int XLALGetLatticeGenerator (gsl_matrix **outmatrix, UINT4 dimension, LatticeType type);
-
 /* functions to deal with a non-unity metric */
-REAL8 XLALMetricScalarProduct (const gsl_vector *vector1, const gsl_vector *vector2,	
+static REAL8 XLALMetricScalarProduct (const gsl_vector *vector1, const gsl_vector *vector2,	
 			       const gsl_matrix *metric);
-int XLALMetricGramSchmidt(gsl_matrix **orth, const gsl_matrix *colvect, const gsl_matrix *metric);
-
+static int XLALMetricGramSchmidt(gsl_matrix **orth, const gsl_matrix *colvect, const gsl_matrix *metric);
 
 /* list-handling functions */
-INT4VectorList* INT4VectorListAddEntry (INT4VectorList *head, const INT4Vector *entry);
-int INT4VectorListRelinkElement (INT4VectorList *head, INT4VectorList *element);
-void INT4VectorListRemoveElement (INT4VectorList *element);
-REAL8VectorList* REAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry);
-BOOLEAN isINT4PointInList ( INT4Vector *point, INT4VectorList *list );
-void INT4VectorListDestroy (INT4VectorList *head);
-void REAL8VectorListDestroy (REAL8VectorList *head);
+static INT4VectorList* INT4VectorListAddEntry (INT4VectorList *head, const INT4Vector *entry);
+static int INT4VectorListRelinkElement (INT4VectorList *head, INT4VectorList *element);
+static void INT4VectorListRemoveElement (INT4VectorList *element);
+static BOOLEAN isINT4PointInList ( INT4Vector *point, INT4VectorList *list );
+static void INT4VectorListDestroy (INT4VectorList *head);
 
 /* misc helper functions */
-BOOLEAN isSymmetric (const gsl_matrix *Sij);
-int writeREAL8VectorList (FILE *fp, const REAL8VectorList *list);
-int print_matrix (const gsl_matrix *m);
-int print_vector (const gsl_vector *v);
-
-/* test-functions */
-int main(void);
-void testGS(void);
-void testCovering(void);
+static BOOLEAN isSymmetric (const gsl_matrix *Sij);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -606,9 +536,6 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
       
       /* view on input-vector i (convenience) */
       gsl_vector_const_view vi = gsl_matrix_const_row (invects, i);
-
-      printf ("Read row i=%d of in-matrix:\n", i);
-      print_vector ( &(vi.vector) );
 
       gsl_vector_memcpy ( &(ui[i].vector), &(vi.vector) );
       
@@ -1219,235 +1146,3 @@ isSymmetric (const gsl_matrix *Sij)
   return TRUE;
 
 } /* isSymmetric() */
-
-int
-print_matrix (const gsl_matrix *m)
-{
-  UINT4 i,j;
-
-  if ( m == NULL ) {
-    printf ("\nERROR: print_matrix called with NULL-matrix \n");
-    return -1;
-  }
-
-  printf ("[");
-  for (i=0; i < m->size1; i++)
-    {
-      for (j=0; j < m->size2; j++)
-	{
-	  printf ("\t%9.6g", gsl_matrix_get (m, i, j) );
-	}
-      printf (";\n");
-    }
-
-  printf ("]\n");
-  return 0;
-}
-
-
-int
-print_vector (const gsl_vector *v)
-{
-  UINT4 i;
-
-  if ( v == NULL ) {
-    printf ("\nERROR: print_vector called with NULL-vector \n");
-    return -1;
-  }
-
-  printf ("[");
-  for (i=0; i < v->size; i++)
-    {
-      printf ("%9.6g ", gsl_vector_get (v, i));
-    }
-  printf (" ]\n");
-
-  return 0;
-}
-
-
-/*--------------------------------------------------*/
-/* Test function(s) */
-/*--------------------------------------------------*/
-int main (void)
-{
-
-  lalDebugLevel = 1;
-
-  /* for production code: dont' let gsl abort on errors, but return error-codes to caller! */
-  /* gsl_set_error_handler_off (); */
-
-  /*  testGS(); */
-
-  testCovering();
-
-  return 0;
-}
-
-BOOLEAN testArea1 ( const REAL8Vector *point ); /* example boundary-condition */
-
-void
-testCovering (void)
-{
-  LALStatus lstat = blank_status;
-  REAL8VectorList *covering = NULL;
-  FILE *fp;
-  gsl_matrix *generatorA = NULL;
-  gsl_matrix *generator0 = NULL;
-  gsl_matrix *generatorB = NULL;
-  gsl_matrix_view gij;
-  REAL8Vector startPoint;
-
-  LatticeType type = LATTICE_TYPE_ANSTAR;
-  REAL8 radius = 0.1;
-  double gij_data[] = { 1, 0.1, 0.2,
-			0.1, 2, 0.5,
-			0.2, 0.5, 3 };
-  UINT4 dim = 3;
-
-
-  /* first method: do steps 'by hand' */
-  XLALGetLatticeGenerator (&generator0, dim, type);
-  gsl_matrix_scale ( generator0, radius );
-  XLALReduceGenerator2FullRank( &generatorA, generator0 );
-
-  /* second: use new function */
-  gij  = gsl_matrix_view_array ( gij_data, dim, dim );
-
-  XLALFindCoveringGenerator (&generatorB, type, dim, radius, &(gij.matrix) );
-  if ( xlalErrno )
-    {
-      int code = xlalErrno;
-      XLALClearErrno(); 
-      LALPrintError ("\nERROR: XLALFindCoveringGenerator() failed (xlalErrno = %d)!\n\n", code);
-      return;
-    }
-  
-
-  printf ("First generator: \n");
-  print_matrix ( generatorA );
-
-  printf ("Second generator: \n");
-  print_matrix ( generatorB );
-
-
-  startPoint.length = dim;
-  startPoint.data = LALCalloc (dim, sizeof(startPoint.data[0]) ); /* already (0,0) */
-
-  LAL_CALL( LALLatticeFill (&lstat, &covering, generatorB, &startPoint, testArea1), &lstat);
-
-  if ( (fp = fopen ( "test_lattice1.dat", "wb" )) == NULL )
-    {
-      LALPrintError ("\nFailed to open 'test_lattice1.dat' for writing!\n\n");
-      return;
-    }
-  writeREAL8VectorList (fp, covering);
-  fclose(fp);
-  REAL8VectorListDestroy ( covering );
-  covering = NULL;
-
-  /* do the same again with the new high-level function */
-  LAL_CALL( LALLatticeCovering (&lstat, &covering, radius, &(gij.matrix), &startPoint, testArea1), &lstat);
-  if ( (fp = fopen ( "test_lattice2.dat", "wb" )) == NULL )
-    {
-      LALPrintError ("\nFailed to open 'test_lattice2.dat' for writing!\n\n");
-      return;
-    }
-  writeREAL8VectorList (fp, covering);
-  fclose(fp);
-  REAL8VectorListDestroy ( covering );
-  covering = NULL;
-
-  /* free memory */
-  gsl_matrix_free ( generator0 );
-  gsl_matrix_free ( generatorA );
-  gsl_matrix_free ( generatorB );
-  LALFree ( startPoint.data );
-
-  /* check all (LAL-)memory for leaks... (unfortunately doesn't cover GSL!) */
-  LALCheckMemoryLeaks(); 
-  
-} /* testCovering() */
-
-/* test boundary-conditions: [-1, 1]^N */
-BOOLEAN
-testArea1 ( const REAL8Vector *point )
-{
-  UINT4 i;
-
-  if ( !point || !point->data)
-    return FALSE;
-
-  for ( i=0; i < point->length; i++ )
-    {
-      if ( fabs( point->data[i] ) > 1.0 )
-	return FALSE;
-    }
-  
-  return TRUE;
-} /* testArea1() */
-
-/* write a REAL8VectorList to a file */
-int
-writeREAL8VectorList (FILE *fp, const REAL8VectorList *list)
-{
-  UINT4 i;
-  const REAL8VectorList *ptr;
-
-  if ( !list || !fp )
-    return -1;
-
-  ptr = list;
-  do 
-    {
-      for (i=0; i < ptr->entry.length; i++ )
-	fprintf (fp, "%g ", ptr->entry.data[i] );
-
-      fprintf (fp, "\n");
-
-    } while ( (ptr = ptr->next) != NULL );
-
-  return 0;
-} /* writeREAL8VectorList() */
-
-void
-testGS(void)
-{
-  gsl_matrix_view m1, gij;
-  gsl_matrix *orto = NULL;
-  gsl_matrix *sGM = NULL;
-  gsl_matrix *testM = NULL;
-
-  REAL8 m1data[] = { 1, 	-1, 	0,
-		    -2.0/3, 	1.0/3, 	1.0/3};
-  
-  REAL8 gijdata[] = { 1, 0, 0,
-		      0, 1, 0,
-		      0, 0, 1  };
-
-  m1 = gsl_matrix_view_array ( m1data, 2, 3 );
-
-  gij = gsl_matrix_view_array ( gijdata, 3, 3 );
-
-  XLALMetricGramSchmidt ( &orto, &(m1.matrix), &(gij.matrix) );
-
-  printf ("\nMetric:\n");
-  print_matrix (&(gij.matrix));
-
-  printf ("\nInput-matrix:\n");
-  print_matrix (&(m1.matrix));
-
-  printf ("\nResulting orthogonal matrix: \n");
-  print_matrix (orto);
-
-
-  XLALReduceGenerator2FullRank( &sGM, &(m1.matrix) );
-
-  printf ("Square generating matrix:\n");
-  print_matrix (sGM);
-
-  XLALGetLatticeGenerator (&testM, 4, LATTICE_TYPE_ANSTAR);
-  printf ("produced Generating Matrix: \n");
-  print_matrix (testM);
-
-} /* testGS() */
