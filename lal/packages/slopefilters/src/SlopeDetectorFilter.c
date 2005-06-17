@@ -287,6 +287,18 @@ NRCSID( SLOPEDETECTORFILTERC, "$Id$" );
 /**** LALSlopeDetectorFilter ****************/
 /********************************************/
 
+static void
+CreateGaussianTaps( UINT4 ntaps,
+                    REAL4 binoffset,
+                    REAL4* tap );
+
+static void 
+CreatePeriodSineTaps( UINT4 ntaps,
+                      REAL4 binoffset,
+                      REAL4* tap );
+
+
+
 /* <lalVerbatim file="SlopeDetectorFilterCP"> */
 void
 LALSlopeDetectorFilter( LALStatus          *status,
@@ -699,7 +711,7 @@ LALSlopeConvolutionFilter( LALStatus                *status,
 
 /******** functions used interally by the slope detector library *******/
 
-void CreateGaussianTaps(UINT4 ntaps, REAL4 binoffset, REAL4* tap) {
+static void CreateGaussianTaps(UINT4 ntaps, REAL4 binoffset, REAL4* tap) {
   UINT4 i;
   REAL8 midbin,sigbins,offs;
   midbin = ((REAL8)ntaps - 1)/2;
@@ -713,7 +725,7 @@ void CreateGaussianTaps(UINT4 ntaps, REAL4 binoffset, REAL4* tap) {
   return;
 }
 
-void CreatePeriodSineTaps(UINT4 ntaps, REAL4 binoffset, REAL4* tap) {
+static void CreatePeriodSineTaps(UINT4 ntaps, REAL4 binoffset, REAL4* tap) {
   UINT4 i;
   REAL8 midbin/*,sigbins*/;
   REAL8 offs;

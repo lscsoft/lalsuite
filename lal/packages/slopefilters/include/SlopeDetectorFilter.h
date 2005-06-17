@@ -151,15 +151,6 @@ LALSlopeConvolutionFilter( LALStatus                *status,
 			   const REAL4Vector*       input_data,
 			   const SLOPEFilterParams  fparams ); 
 
-void
-CreateGaussianTaps( UINT4 ntaps,
-		    REAL4 binoffset,
-		    REAL4* tap );
-
-void 
-CreatePeriodSineTaps( UINT4 ntaps,
-		      REAL4 binoffset,
-		      REAL4* tap );
 
 #ifdef  __cplusplus
 }
