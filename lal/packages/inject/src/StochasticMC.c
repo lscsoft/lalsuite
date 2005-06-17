@@ -313,7 +313,7 @@ LALResponseConvert()
 
 NRCSID(STOCHASTICMCC, "$Id$");
 
-int verbose = 0;
+static int verbose = 0;
 
 static void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData, REAL4Vector *output, UINT4 nSpliceSegs, UINT4 offset);
  
