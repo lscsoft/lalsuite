@@ -99,7 +99,7 @@ typedef struct tagPr3In {
   InspiralDerivativesIn in3copy; 
 } pr3In;
 
-void 
+static void 
 omegaofr3PN (
 	     REAL8 *x,
 	     REAL8 r, 
@@ -402,7 +402,7 @@ LALprInit3PN(
    RETURN(status);
 }
 
-void 
+static void 
 omegaofr3PN (
 	     REAL8 *x,
 	     REAL8 r, 
