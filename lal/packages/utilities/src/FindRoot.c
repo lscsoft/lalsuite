@@ -113,7 +113,7 @@ LALSBracketRoot (
 
   /* evaluate function at endpoints */
 
-  ((REAL4LALFunction *)inout->function)(status->statusPtr, &y_1, inout->xmin, params);
+  inout->function (status->statusPtr, &y_1, inout->xmin, params);
   CHECKSTATUSPTR (status);
 
   inout->function (status->statusPtr, &y_2, inout->xmax, params);

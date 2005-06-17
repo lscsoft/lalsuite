@@ -74,20 +74,20 @@ These are function pointers to functions that map real numbers to real numbers.
 typedef struct
 tagSFindRootIn
 {
-  REAL4LALFunction *function;
-  REAL4             xmax;
-  REAL4             xmin;
-  REAL4             xacc;
+  void (*function)(LALStatus *s, REAL4 *y, REAL4 x, void *p);
+  REAL4 xmax;
+  REAL4 xmin;
+  REAL4 xacc;
 }
 SFindRootIn;
 
 typedef struct
 tagDFindRootIn
 {
-  REAL8LALFunction *function;
-  REAL8             xmax;
-  REAL8             xmin;
-  REAL8             xacc;
+  void (*function)(LALStatus *s, REAL8 *y, REAL8 x, void *p);
+  REAL8 xmax;
+  REAL8 xmin;
+  REAL8 xacc;
 }
 DFindRootIn;
 \end{verbatim}
@@ -106,26 +106,23 @@ These are the input structures to the root finding routines.  The fields are:
 #endif /* autodoc block */
 
 
-typedef void (REAL4LALFunction) (LALStatus *s, REAL4 *y, REAL4 x, void *p);
-typedef void (REAL8LALFunction) (LALStatus *s, REAL8 *y, REAL8 x, void *p);
-
 typedef struct
 tagSFindRootIn
 {
-  REAL4LALFunction *function;
-  REAL4             xmax;
-  REAL4             xmin;
-  REAL4             xacc;
+  void (*function)(LALStatus *s, REAL4 *y, REAL4 x, void *p);
+  REAL4 xmax;
+  REAL4 xmin;
+  REAL4 xacc;
 }
 SFindRootIn;
 
 typedef struct
 tagDFindRootIn
 {
-  REAL8LALFunction *function;
-  REAL8             xmax;
-  REAL8             xmin;
-  REAL8             xacc;
+  void (*function)(LALStatus *s, REAL8 *y, REAL8 x, void *p);
+  REAL8 xmax;
+  REAL8 xmin;
+  REAL8 xacc;
 }
 DFindRootIn;
 

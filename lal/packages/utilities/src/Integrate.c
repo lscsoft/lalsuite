@@ -88,6 +88,7 @@ These routines use the functions \verb+LALSPolynomialInterpolation()+ and
 
 
 #include <math.h>
+#include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/Integrate.h>
 #include <lal/Interpolate.h>

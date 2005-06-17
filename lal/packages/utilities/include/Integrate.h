@@ -64,13 +64,6 @@ NRCSID (INTEGRATEH, "$Id$");
 \subsection*{Structures}
 
 \begin{verbatim}
-typedef void (REAL4LALFunction) (LALStatus *s, REAL4 *y, REAL4 x, void *p);
-typedef void (REAL8LALFunction) (LALStatus *s, REAL8 *y, REAL8 x, void *p);
-\end{verbatim}
-
-These are function pointers to functions that map real numbers to real numbers.
-
-\begin{verbatim}
 typedef enum
 {
   ClosedInterval,
@@ -85,20 +78,20 @@ IntegralType;
 typedef struct
 tagSIntegrateIn
 {
-  REAL4LALFunction *function;
-  REAL4             xmax;
-  REAL4             xmin;
-  IntegralType      type;
+  void (*function)(LALStatus *s, REAL4 *y, REAL4 x, void *p);
+  REAL4         xmax;
+  REAL4         xmin;
+  IntegralType  type;
 }
 SIntegrateIn;
 
 typedef struct
 tagDIntegrateIn
 {
-  REAL8LALFunction *function;
-  REAL8             xmax;
-  REAL8             xmin;
-  IntegralType      type;
+  void (*function)(LALStatus *s, REAL8 *y, REAL8 x, void *p);
+  REAL8         xmax;
+  REAL8         xmin;
+  IntegralType  type;
 }
 DIntegrateIn;
 \end{verbatim}
@@ -148,10 +141,6 @@ These are input structures to the integration routines.  The fields are:
 #endif /* autodoc block */
 
 
-typedef void (REAL4LALFunction) (LALStatus *s, REAL4 *y, REAL4 x, void *p);
-typedef void (REAL8LALFunction) (LALStatus *s, REAL8 *y, REAL8 x, void *p);
-
-
 typedef enum
 {
   ClosedInterval,     /* evaluate integral on a closed interval             */
@@ -167,10 +156,10 @@ IntegralType;
 typedef struct
 tagSIntegrateIn
 {
-  REAL4LALFunction *function;
-  REAL4             xmax;
-  REAL4             xmin;
-  IntegralType      type;
+  void (*function)(LALStatus *s, REAL4 *y, REAL4 x, void *p);
+  REAL4         xmax;
+  REAL4         xmin;
+  IntegralType  type;
 }
 SIntegrateIn;
 
@@ -178,10 +167,10 @@ SIntegrateIn;
 typedef struct
 tagDIntegrateIn
 {
-  REAL8LALFunction *function;
-  REAL8             xmax;
-  REAL8             xmin;
-  IntegralType      type;
+  void (*function)(LALStatus *s, REAL8 *y, REAL8 x, void *p);
+  REAL8         xmax;
+  REAL8         xmin;
+  IntegralType  type;
 }
 DIntegrateIn;
 
