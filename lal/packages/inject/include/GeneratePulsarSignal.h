@@ -172,18 +172,18 @@ typedef struct {
 
 
 /* Function prototypes */
-void LALGeneratePulsarSignal (LALStatus *status, REAL4TimeSeries **signal, const PulsarSignalParams *params);
-void LALSimulatePulsarSignal (LALStatus *status, REAL8TimeSeries **timeSeries, const PulsarSignalParams *params);
+void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signal, const PulsarSignalParams *params);
+void LALSimulatePulsarSignal (LALStatus *, REAL8TimeSeries **timeSeries, const PulsarSignalParams *params);
 
-void LALSignalToSFTs (LALStatus *status, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
+void LALSignalToSFTs (LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries *signal, const SFTParams *params);
 
-void LALComputeSkyAndZeroPsiAMResponse (LALStatus *status, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
-void LALFastGeneratePulsarSFTs (LALStatus *status, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);
+void LALComputeSkyAndZeroPsiAMResponse (LALStatus *, SkyConstAndZeroPsiAMResponse *output, const SFTandSignalParams *params);
+void LALFastGeneratePulsarSFTs (LALStatus *, SFTVector **outputSFTs, const SkyConstAndZeroPsiAMResponse *input, const SFTandSignalParams *params);
 
-void LALConvertGPS2SSB (LALStatus* status, LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
-void LALConvertSSB2GPS (LALStatus *status, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+void LALConvertGPS2SSB (LALStatus* , LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+void LALConvertSSB2GPS (LALStatus *, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 
-void LALMakeTimestamps (LALStatus *lstatus, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
+void LALMakeTimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
 
 /********************************************************** <lalLaTeX>
 %% \newpage\input{LALSampleTestC}
