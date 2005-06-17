@@ -115,8 +115,11 @@ REAL8VectorList empty_REAL8VectorList;
 
 
 /*---------- local prototypes ----------*/
+void LALLatticeCovering (LALStatus *lstat, REAL8VectorList **covering, REAL8 coveringRadius, const gsl_matrix *metric,
+			 const REAL8Vector *startPoint,	BOOLEAN (*isInside)(const REAL8Vector *point) );
+
 void LALLatticeFill (LALStatus *lstat, REAL8VectorList **fillGrid, const gsl_matrix  *generator,
-		const REAL8Vector *startPoint, BOOLEAN (*isInside)(const REAL8Vector *point) );
+		     const REAL8Vector *startPoint, BOOLEAN (*isInside)(const REAL8Vector *point) );
 
 int XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, const INT4Vector *latticePoint, 
 				     const gsl_matrix *generator, const REAL8Vector *startPoint );
@@ -155,13 +158,72 @@ void testCovering(void);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/** Central function of this module: produce an optimal covering
+ * of the given parameter-space with constant metric.
+ *
+ * Algorithm: 1) use XLALFindCoveringGenerator() to get the generator 
+ *            of the An* lattice (which is the best known covering-lattice
+ *            up to dimension 23,see C&S) and 
+ *            2) use it to LALLatticeFill() the space.
+ *
+ */
+void
+LALLatticeCovering (LALStatus *lstat,
+		    REAL8VectorList **covering,		/**< OUT: final covering-grid */
+		    REAL8 coveringRadius,		/**< IN: covering radius */
+		    const gsl_matrix *metric,		/**< IN: constant metric */
+		    const REAL8Vector *startPoint,	/**< IN: start-point inside the covering-region */
+		    BOOLEAN (*isInside)(const REAL8Vector *point) /**< IN: boundary-condition */
+		    )
+{
+  UINT4 dim;	/* dimension of parameter-space */
+  gsl_matrix *generator = NULL;
 
-/** Fill the given parameter-space by a lattice of specified 
+
+  INITSTATUS( lstat, "LALLatticeCovering", LATTICECOVERINGC );
+  ATTATCHSTATUSPTR (lstat); 
+
+
+  /* Check validity of input params */
+  ASSERT ( covering != NULL, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );  
+  ASSERT ( *covering == NULL,lstat, LATTICECOVERING_ENONULL, LATTICECOVERING_MSGENONULL );
+  ASSERT ( metric, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
+  ASSERT ( startPoint, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
+  ASSERT ( startPoint->data, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
+
+  /* determine dimension of parameter-space from start-Point */
+  dim = startPoint->length;
+
+  ASSERT ( (metric->size1 == dim) && ( metric->size2 == dim), lstat, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
+
+
+  /* 1) get the generating matrix for a properly scaled An* lattice */
+  XLALFindCoveringGenerator (&generator, LATTICE_TYPE_ANSTAR, dim, coveringRadius, metric );
+  if ( xlalErrno ) 
+    {
+      int code = xlalErrno;
+      XLALClearErrno(); 
+      LALPrintError ("\nERROR: XLALFindCoveringGenerator() failed (xlalErrno = %d)!\n\n", code);
+      ABORT (lstat, LATTICECOVERING_EFUNC, LATTICECOVERING_MSGEFUNC);
+    }
+
+  /* 2) fill parameter-space with this lattice */
+  TRY ( LALLatticeFill(lstat->statusPtr, covering, generator, startPoint, isInside ), lstat );
+
+  /* free memory */
+  gsl_matrix_free (generator);
+
+  DETATCHSTATUSPTR (lstat);
+  RETURN( lstat );
+
+} /* LALLatticeCovering() */
+
+/** Fill the given parameter-space by a lattice defined by the specified 
  * generating matrix.
  * 
- * NOTE: the input generating-matrix (generator) needs to be scaled
+ * NOTE: the input generating-matrix (generator) must already be scaled
  * correctly to the required covering radius, also, it needs to be in 
- * canonical _square matrix_ form. 
+ * canonical full-rank square matrix form. 
  *
  * NOTE2: as always in this module, the generating matrix contains
  * the lattice-vectors as _rows_
@@ -186,7 +248,7 @@ LALLatticeFill (LALStatus *lstat,
   INITSTATUS( lstat, "LALLatticeFill", LATTICECOVERINGC );
   ATTATCHSTATUSPTR (lstat); 
 
-  /* This traps coding errors in the calling routine. */
+  /* Check input validity */
   ASSERT ( fillGrid != NULL, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );  
   ASSERT ( *fillGrid == NULL,lstat, LATTICECOVERING_ENONULL, LATTICECOVERING_MSGENONULL );
   ASSERT ( generator, lstat, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
@@ -293,7 +355,7 @@ LALLatticeFill (LALStatus *lstat,
 	      /* add the other ones to list of open-ends */
 	      if ( NULL == INT4VectorListAddEntry ( &openEnds, latticePoint ) )
 		{
-		  /* NOTE: head always stays empty for simplicity! */
+	  /* NOTE: head always stays empty for simplicity! */
 		  LALPrintError ("\nERROR: REAL8VectorListAddEntry () failed!\n\n");
 		  ABORT (lstat, LATTICECOVERING_ELIST, LATTICECOVERING_MSGELIST);
 		}
@@ -598,7 +660,7 @@ XLALFindCoveringGenerator (gsl_matrix **outmatrix, /**< OUT: generating matrix f
   gsl_matrix *generator2 = NULL;
   gsl_matrix *basis = NULL;
 
-  /* check consistency of input */
+  /* check validity of input */
   if ( !outmatrix || !gij ) {
       LALPrintError ("\nERROR: NULL Input \n\n");
       XLAL_ERROR("XLALFindCoveringGenerator", XLAL_EINVAL);
@@ -1214,11 +1276,11 @@ testCovering (void)
   gsl_matrix_view gij;
   REAL8Vector startPoint;
 
-  LatticeType type = LATTICE_TYPE_CUBIC;
+  LatticeType type = LATTICE_TYPE_ANSTAR;
   REAL8 radius = 0.1;
-  double gij_data[] = { 1, 0, 0,
-			0, 1, 0,
-			0, 0, 1 };
+  double gij_data[] = { 1, 0.1, 0.2,
+			0.1, 2, 0.5,
+			0.2, 0.5, 3 };
   UINT4 dim = 3;
 
 
@@ -1252,22 +1314,33 @@ testCovering (void)
 
   LAL_CALL( LALLatticeFill (&lstat, &covering, generatorB, &startPoint, testArea1), &lstat);
 
-  if ( (fp = fopen ( "test_lattice.dat", "wb" )) == NULL )
+  if ( (fp = fopen ( "test_lattice1.dat", "wb" )) == NULL )
     {
-      LALPrintError ("\nFailed to open 'test_lattice.dat' for writing!\n\n");
+      LALPrintError ("\nFailed to open 'test_lattice1.dat' for writing!\n\n");
       return;
     }
   writeREAL8VectorList (fp, covering);
-
   fclose(fp);
+  REAL8VectorListDestroy ( covering );
+  covering = NULL;
+
+  /* do the same again with the new high-level function */
+  LAL_CALL( LALLatticeCovering (&lstat, &covering, radius, &(gij.matrix), &startPoint, testArea1), &lstat);
+  if ( (fp = fopen ( "test_lattice2.dat", "wb" )) == NULL )
+    {
+      LALPrintError ("\nFailed to open 'test_lattice2.dat' for writing!\n\n");
+      return;
+    }
+  writeREAL8VectorList (fp, covering);
+  fclose(fp);
+  REAL8VectorListDestroy ( covering );
+  covering = NULL;
 
   /* free memory */
   gsl_matrix_free ( generator0 );
   gsl_matrix_free ( generatorA );
   gsl_matrix_free ( generatorB );
   LALFree ( startPoint.data );
-
-  REAL8VectorListDestroy ( covering );
 
   /* check all (LAL-)memory for leaks... (unfortunately doesn't cover GSL!) */
   LALCheckMemoryLeaks(); 
