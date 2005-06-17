@@ -140,7 +140,6 @@ void LALReadSFTfiles (LALStatus *status,
 		      UINT4 wingBins, 
 		      const CHAR *fpattern);
 
-void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
