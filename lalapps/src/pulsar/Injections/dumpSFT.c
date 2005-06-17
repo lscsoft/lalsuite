@@ -14,6 +14,7 @@
 
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
+#include "sft_extra.h"
 
 RCSID ("$Id");
 
@@ -144,3 +145,4 @@ initUserVars (LALStatus *stat)
   RETURN (stat);
 
 } /* initUserVars() */
+

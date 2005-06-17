@@ -11,17 +11,17 @@ bin_PROGRAMS = makefakedata_v2 lalapps_Makefakedata compareSFTs dumpSFT makefake
 
 EXTRA_PROGRAMS = s3inject
 
-lalapps_Makefakedata_SOURCES = makefakedata_v4.c	
+lalapps_Makefakedata_SOURCES = makefakedata_v4.c sft_extra.c sft_extra.h
 
-makefakedata_v2_SOURCES =  makefakedata_v2.c
+makefakedata_v2_SOURCES =  makefakedata_v2.c sft_extra.c sft_extra.h
 
 compareSFTs_SOURCES = compareSFTs.c
 
-dumpSFT_SOURCES = dumpSFT.c
+dumpSFT_SOURCES = dumpSFT.c sft_extra.c sft_extra.h
 
 makefakedatabinary_SOURCES = makefakedatabinary.c
 
-makefakedata_test_SOURCES = makefakedata_test.c
+makefakedata_test_SOURCES = makefakedata_test.c sft_extra.c sft_extra.h
 
 s3inject_SOURCES = s3inject.c
 
