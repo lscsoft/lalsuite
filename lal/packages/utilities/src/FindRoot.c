@@ -154,6 +154,59 @@ LALSBracketRoot (
 
 
 /* <lalVerbatim file="FindRootCP"> */
+int
+XLALDBracketRoot(
+    REAL8 (*y)(REAL8, void *),
+    REAL8 *xmax,
+    REAL8 *xmin,
+    void *params
+)
+{ /* </lalVerbatim> */
+  static const char *func = "XLALDBracketRoot";
+  const INT4 imax = 64;
+  INT4 i;
+  REAL8 y_1;
+  REAL8 y_2;
+
+  /* put xmin and xmax in the correct order (use y_1 as temporary storage) */
+  if(*xmin > *xmax)
+  {
+    y_1 = *xmin;
+    *xmin = *xmax;
+    *xmax = y_1;
+  }
+
+  /* evaluate function at endpoints */
+  y_1 = y(*xmin, params);
+  y_2 = y(*xmax, params);
+
+  /* loop until iteration limit exceeded or root bracketed */
+  for(i = 0; (i < imax) && (y_1 * y_2 >= 0.0); i++)
+  {
+    if(XLALIsREAL8FailNaN(y_1) || XLALIsREAL8FailNaN(y_2))
+      XLAL_ERROR(func, XLAL_EFUNC);
+    if(fabs(y_1) < fabs(y_2))
+    {
+      /* expand lower limit */
+      *xmin += LAL_SQRT2 * (*xmin - *xmax);
+      y_1 = y(*xmin, params);
+    }
+    else
+    {
+      /* expand upper limit */
+      *xmax += LAL_SQRT2 * (*xmax - *xmin);
+      y_2 = y(*xmax, params);
+    }
+  }
+
+  if(i >= imax)
+    XLAL_ERROR(func, XLAL_EMAXITER);
+
+  return(0);
+}
+
+
+/* <lalVerbatim file="FindRootCP"> */
 void
 LALDBracketRoot (
     LALStatus      *status,
@@ -311,6 +364,81 @@ LALSBisectionFindRoot (
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
+}
+
+
+/* <lalVerbatim file="FindRootCP"> */
+REAL8
+XLALDBisectionFindRoot (
+    REAL8 (*y)(REAL8, void *),
+    REAL8 xmax,
+    REAL8 xmin,
+    REAL8 xacc,
+    void *params
+)
+{ /* </lalVerbatim> */
+  static const char *func = "XLALDBisectionFindRoot";
+  const INT4 imax = 80;
+  INT4  i;
+  REAL8 y_1;
+  REAL8 y_2;
+  REAL8 xmid;
+  REAL8 ymid;
+
+  /* check arguments */
+  if(xacc < 0.0)
+    XLAL_ERROR_REAL8(func, XLAL_EDOM);
+
+  /* put xmin and xmax in the correct order, using y_1 as temporary storage */
+  if(xmin > xmax) {
+    y_1 = xmin;
+    xmin = xmax;
+    xmax = y_1;
+  }
+
+  /* evaluate function at endpoints */
+  y_1 = y(xmin, params);
+  y_2 = y(xmax, params);
+  if(XLALIsREAL8FailNaN(y_1) || XLALIsREAL8FailNaN(y_2))
+    XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+
+  /* loop until root found within requested accuracy or iteration limit
+   * exceeded */
+  for(i = 0; ((xmax - xmin) > xacc) && (i < imax); i++)
+  {
+    /* make sure a root is bracketed */
+    if(y_1 * y_2 >= 0.0)
+      XLAL_ERROR_REAL8(func, XLAL_EFAILED);
+
+    /* evaluate function at midpoint */
+    xmid = (xmin + xmax) / 2.0;
+    ymid = y(xmid, params);
+    if(XLALIsREAL8FailNaN(ymid))
+      XLAL_ERROR_REAL8(func, XLAL_EFUNC);
+
+    /* did we get lucky? */
+    if(ymid == 0.0)
+      break;
+
+    /* determine which half of the domain the root is in */
+    if(y_1 * ymid < 0.0)
+    {
+      /* root is in first half of domain */
+      xmax = xmid;
+      y_2 = ymid;
+    }
+    else
+    {
+      /* root is in second half of domain */
+      xmin = xmin;
+      y_1 = ymid;
+    }
+  }
+
+  if(i >= imax)
+    XLAL_ERROR_REAL8(func, XLAL_EMAXITER);
+
+  return((xmin + xmax) / 2.0);
 }
 
 

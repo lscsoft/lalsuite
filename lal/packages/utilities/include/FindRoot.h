@@ -144,6 +144,14 @@ LALSBracketRoot (
     void        *params
     );
 
+int
+XLALDBracketRoot(
+    REAL8 (*y)(REAL8, void *),
+    REAL8 *xmax,
+    REAL8 *xmin,
+    void *params
+);
+
 void
 LALDBracketRoot (
     LALStatus      *status,
@@ -158,6 +166,15 @@ LALSBisectionFindRoot (
     SFindRootIn *input,
     void        *params
     );
+
+REAL8
+XLALDBisectionFindRoot (
+    REAL8 (*y)(REAL8, void *),
+    REAL8 xmax,
+    REAL8 xmin,
+    REAL8 xacc,
+    void *params
+);
 
 void
 LALDBisectionFindRoot (
