@@ -54,7 +54,7 @@ static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
 
 /* <lalVerbatim file="ComputeSkyCP"> */
-void ComputeSky	(LALStatus	*status, 
+void LALComputeSky	(LALStatus	*status, 
 		 REAL8 	*skyConst, 
 		 INT8 		iSkyCoh, 
 		 CSParams 	*params)
@@ -67,7 +67,7 @@ void ComputeSky	(LALStatus	*status,
 	REAL8	dTbary;
 	REAL8	tBary;
 	REAL8	tB0;
-	INITSTATUS (status, "ComputeSky", COMPUTESKYC);
+	INITSTATUS (status, "LALComputeSky", COMPUTESKYC);
  ATTATCHSTATUSPTR(status);
  
 /* Check for non-negativity of sky positions in SkyCoh[] */

@@ -155,7 +155,7 @@ CSParams;
 \newpage\input{ComputeSkyC}
 </lalLaTeX> */
 
-void ComputeSky (LALStatus *status, 
+void LALComputeSky (LALStatus *status, 
 			REAL8 		*skyConst, 
 			INT8 		iSkyCoh,
 			CSParams 	*params);

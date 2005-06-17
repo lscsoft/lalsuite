@@ -151,7 +151,7 @@ Author: Berukoff, S.J., Papa, M.A., $Id$
    
    \item The next module begins the demodulation process.  First, the parameters
    for the demodulation routine are assigned from values previously calculated in
-   the test code.  Similarly, parameters for the \verb@ComputeSky()@ routine are
+   the test code.  Similarly, parameters for the \verb@LALComputeSky()@ routine are
    assigned.  This routine computes the coefficients $A_{s\alpha}$ and
    $B_{s\alpha}$ (see section \ref{s:ComputeSky.h}) of the spindown parameters
    for the phase model weve assumed.  These coefficients are used within the
@@ -186,7 +186,7 @@ Author: Berukoff, S.J., Papa, M.A., $Id$
    LALDestroyRealFFTPlan()
    LALGenerateTaylorCW()
    LALSimulateCoherentGW()
-   ComputeSky()
+   LALComputeSky()
    LALFree()
    LALDemod()
    LALBarycenter()
@@ -855,7 +855,7 @@ int main(int argc, char **argv)
       demParams->spinDwn[i]=templateParams->spind->spParams[i];
     }
   
-  /* Allocate space and set quantities for call to ComputeSky() */
+  /* Allocate space and set quantities for call to LALComputeSky() */
   csParams=(CSParams *)LALMalloc(sizeof(CSParams));
   csParams->skyPos=(REAL8 *)LALMalloc(2*sizeof(REAL8));
   csParams->skyPos[0]=templateParams->skyP->alpha;
@@ -872,7 +872,7 @@ int main(int argc, char **argv)
  iSkyCoh=0;
   
   /* Call COMPUTESKY() */
-  ComputeSky(&status, demParams->skyConst, iSkyCoh, csParams);
+  LALComputeSky(&status, demParams->skyConst, iSkyCoh, csParams);
   
   /* Deallocate space for ComputeSky parameters */
   LALFree(csParams->skyPos);

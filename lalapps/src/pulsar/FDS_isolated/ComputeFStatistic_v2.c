@@ -670,7 +670,7 @@ CreateDemodParams (LALStatus *stat,
   CFSparams->ifmin= (INT4) (SFTvect->data[0].f0 / SFTvect->data[0].deltaF + 0.5);
 
   /* compute the "sky-constants" A and B */
-  TRY ( ComputeSky (stat->statusPtr, CFSparams->skyConst, 0, csParams), stat);  
+  TRY ( LALComputeSky (stat->statusPtr, CFSparams->skyConst, 0, csParams), stat);  
 
   LALFree(csParams->skyPos);
   LALFree(csParams);

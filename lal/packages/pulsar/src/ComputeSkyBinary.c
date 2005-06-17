@@ -68,8 +68,8 @@ static LIGOTimeGPS Tperi;  /* Time of periapse passage as measured in SSB frame 
 static REAL8 p,q;    /* coeficients of phase model */
 static REAL8 E;      /* eccentric anomoly */
 
-/* <lalVerbatim file="ComputeSkyBinaryCP"> */
-void ComputeSkyBinary	(LALStatus	*status, 
+/* <lalVerbatim file="LALComputeSkyBinaryCP"> */
+void LALComputeSkyBinary	(LALStatus	*status, 
 		 REAL8 	*skyConst, 
 		 INT8 		iSkyCoh, 
 		 CSBParams 	*params)
@@ -90,7 +90,7 @@ void ComputeSkyBinary	(LALStatus	*status,
 	REAL8 tr0;
 	REAL8 acc;
 
- INITSTATUS (status, "ComputeSkyBinary", COMPUTESKYBINARYC);
+ INITSTATUS (status, "LALComputeSkyBinary", COMPUTESKYBINARYC);
  ATTATCHSTATUSPTR(status);
  
 /* Check for non-negativity of sky positions in SkyCoh[] */

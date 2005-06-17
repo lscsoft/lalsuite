@@ -1503,7 +1503,7 @@ void CreateDemodParams (LALStatus *status, DopplerPosition searchpos)
   DemodParams->returnFaFb = uvar_EstimSigParam;
 
   /* compute the "sky-constants" A and B */
-  TRY ( ComputeSky(status->statusPtr, DemodParams->skyConst, 0, csParams), status);  
+  TRY ( LALComputeSky(status->statusPtr, DemodParams->skyConst, 0, csParams), status);  
   LALFree(midTS);
 
   LALFree(csParams->skyPos);

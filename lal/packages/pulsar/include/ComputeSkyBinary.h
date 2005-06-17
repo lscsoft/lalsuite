@@ -223,7 +223,7 @@ CSBParams;
 \newpage\input{ComputeSkyBinaryC}
 </lalLaTeX> */
 
-void ComputeSkyBinary (LALStatus *status, 
+void LALComputeSkyBinary (LALStatus *status, 
 			REAL8 		*skyConst, 
 			INT8 		iSkyCoh,
 			CSBParams 	*params);

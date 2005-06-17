@@ -617,7 +617,7 @@ int CreateDemodParamsBinary(struct CommandLineArgsTag CLA)
 
   DemodParams->returnFaFb = GV.EstimSigParam;
 
-  ComputeSkyBinary(&status,DemodParams->skyConst,0,csbParams);        /* compute the */
+  LALComputeSkyBinary(&status,DemodParams->skyConst,0,csbParams);        /* compute the */
 						               /* "sky-constants" A and B */
   LALFree(midTS);
 
