@@ -183,7 +183,9 @@ main (INT4 argc, CHAR **argv )
    * it with the template bank.
    */
   /* while we want to perform one simulation */
-
+  if (vrbflg){
+    PrintParameters(coarseBankIn, randIn, otherIn);
+  }
 
   while (++ntrials <= otherIn.ntrials) 
     {     
@@ -195,14 +197,22 @@ main (INT4 argc, CHAR **argv )
       
       /* do some initialisation for the output storage of the best temlpate */
       BEInitOverlapOutputIn(&OverlapOutputBestTemplate);
-    
-      randIn.param.fCutoff = coarseBankIn.fUpper;
+
+      if (vrbflg){
+	fprintf(stdout,"Init ... done\n");
+      }
+      
+      randIn.param.fCutoff = coarseBankIn.fUpper; 
+      if (vrbflg){
+	fprintf(stdout,"Signal Generation ... ");
+	fflush(stdout);
+      }
       /* first generate some input signal. GW alone or mixed with gaussian noise. */
       /* if realNoise is requested and simulation type is at least with noise,
        * then we just add real noise to the simulated signal. */
       if (otherIn.realNoise && otherIn.noiseModel == REALPSD) {
         for (i=0; i<(INT4)signal.length/2; i++){
-	    INT4 k = signal.length-i;
+	  INT4 k = signal.length-i;
 	    signal.data[i] = strainSegment->data[i].re; 
 	    signal.data[k] = strainSegment->data[i].im; 
         }
@@ -210,11 +220,15 @@ main (INT4 argc, CHAR **argv )
       else
         LAL_CALL(BEGenerateInputData(&status,  &signal, &randIn, otherIn),
             &status);
-      
+
       overlapin.signal 	= signal;
-      
+       
+      if (vrbflg){
+	fprintf(stdout,"... done\n");
+      }
+
       /* --- we can process the data through the bank now ---        */
-      
+
 	
       for (currentTemplate = 0; currentTemplate < (UINT4)sizeBank; currentTemplate++) 
 	{ 
@@ -268,6 +282,8 @@ main (INT4 argc, CHAR **argv )
 	    case PadeT1:
 	    case PadeF1:
 	    case SpinTaylor:
+
+
               overlapin.param 	= list[currentTemplate].params;	   
               overlapout.max    = -1.; /* let us be sure that is has a value */
               overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
@@ -962,14 +978,14 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 
   temp =randIn->param.mass1; /*just to avoid boring warning*/
 
-
-
-  if (coarseBankIn->fUpper == -1	){
-    coarseBankIn->fUpper = coarseBankIn->tSampling/2. - 1.;
-    randIn->param.fCutoff = coarseBankIn->tSampling/2. - 1.;
-  }
-
-
+  if (coarseBankIn->fUpper >=coarseBankIn->tSampling/2. -1.)
+    coarseBankIn->fUpper = coarseBankIn->tSampling/2 -1.;
+  
+  if (randIn->param.fCutoff >=coarseBankIn->tSampling/2. -1.)
+    {
+      randIn->param.fCutoff = coarseBankIn->tSampling/2 -1.;
+    }
+  
 
   if (coarseBankIn->alpha < 0 ){
     sprintf(msg, "--bank-alpha (%f) parameter must be positive in the range [0,1] \n",
@@ -2520,6 +2536,9 @@ CHAR* GetStringFromTemplate(INT4 input)
     case BCV:
       return "BCV";
       break;
+    case SpinTaylor:
+      return "SpinTaylor";
+      break;
   }
   return NULL;
 }
@@ -3112,34 +3131,34 @@ void BEGenerateInputData(LALStatus *status,
 	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
 	    CHECKSTATUSPTR(status);	    	    	    
 	}
-    }
-  else /* EOB , T1 and so on*/
-    {
-      if (otherIn.m1!=-1 && otherIn.m2!=-1)
-	{
-	  randIn->param.massChoice = fixedMasses;
-	  LALRandomInspiralSignal(status->statusPtr, signal, randIn);
-	  CHECKSTATUSPTR(status);	  
-	}
-      else if (otherIn.tau0!=-1 && otherIn.tau3!=-1) 
-	{
-	  randIn->param.massChoice = fixedTau;
-	  LALRandomInspiralSignal(status->statusPtr, signal, randIn);
-	  CHECKSTATUSPTR(status);
-	}
-      else if (otherIn.binaryInjection == BHNS)
-	{
-	  randIn->param.massChoice = bhns;
-	  LALRandomInspiralSignal(status->statusPtr, signal, randIn);
-	  CHECKSTATUSPTR(status);
-	}
-      else
-	{
-	  randIn->param.massChoice = m1Andm2;
-	  randIn->param.massChoice = totalMassUAndEta;
-
-	  LALRandomInspiralSignal(status->statusPtr, signal, randIn);
-	  CHECKSTATUSPTR(status);
+      }
+    else /* EOB , T1 and so on*/
+      {
+	if (otherIn.m1!=-1 && otherIn.m2!=-1)
+	  {
+	    randIn->param.massChoice = fixedMasses;
+	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	    CHECKSTATUSPTR(status);	  
+	  }
+	else if (otherIn.tau0!=-1 && otherIn.tau3!=-1) 
+	  {
+	    randIn->param.massChoice = fixedTau;
+	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	    CHECKSTATUSPTR(status);
+	  }
+	else if (otherIn.binaryInjection == BHNS)
+	  {
+	    randIn->param.massChoice = bhns;
+	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	    CHECKSTATUSPTR(status);
+	  }
+	else
+	  {
+	    randIn->param.massChoice = m1Andm2;
+	    randIn->param.massChoice = totalMassUAndEta;	    
+	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
+	    CHECKSTATUSPTR(status);
+	    
 	}    
     }
   }
