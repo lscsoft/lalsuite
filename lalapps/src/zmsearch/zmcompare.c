@@ -46,11 +46,8 @@ int computeAmplitude = 0;
 
 int main ( int argc, char *argv[] )
 {
-  static LALStatus      stat;
-  ChisqCdfIn            chisqInput;
-  Chi2ThresholdIn       chisqThresholdInput;
-  RhoThresholdIn        ampThresholdInput;
-  REAL8                 chisqProb=0;
+  REAL8                 chi2;
+  REAL8                 dof;
   REAL8                 faProb=0.0;
   REAL8                 fdProb=0.0;
 
@@ -82,8 +79,8 @@ int main ( int argc, char *argv[] )
   setvbuf( stdout, NULL, _IONBF, 0 );
 
   /* default values */
-  chisqInput.chi2 = 10.0;
-  chisqInput.dof = 2;
+  chi2 = 10.0;
+  dof = 2;
 
   /* parse the arguments */
   while ( 1 )
@@ -118,11 +115,11 @@ int main ( int argc, char *argv[] )
         break;
 
       case 'c':
-        chisqInput.chi2 = atof( optarg );
+        chi2 = atof( optarg );
         break;
 
       case 'd':
-        chisqInput.dof = atof( optarg );
+        dof = atof( optarg );
         break;
 
       case 'e':
@@ -166,30 +163,15 @@ int main ( int argc, char *argv[] )
 
   if ( computeAmplitude )
   {
-    REAL8 myChisq=0;
+    REAL8 myChisq;
 
-    chisqThresholdInput.falseAlarm = faProb;
-    chisqThresholdInput.dof = chisqInput.dof;
-    
-    LAL_CALL( LALChi2Threshold( &stat, &myChisq, &chisqThresholdInput ),  &stat);
-    fprintf(stdout,"Threshold %e\n",myChisq);
-
-    ampThresholdInput.dof = chisqThresholdInput.dof;
-    ampThresholdInput.chi2 = myChisq;
-    ampThresholdInput.falseDismissal = fdProb;
-
-    LAL_CALL( LALRhoThreshold( &stat, &myChisq, &ampThresholdInput ),  &stat);
-
-    fprintf(stdout,"Amplitude %e\n",myChisq);
+    myChisq = XLALChi2Threshold(dof, faProb);
+    fprintf(stdout,"Threshold %e\n", myChisq);
+    fprintf(stdout,"Amplitude %e\n", XLALRhoThreshold(myChisq, dof, fdProb));
   }
   else
   {
-
-    chisqInput.nonCentral = 0.0;
-
-    LAL_CALL( LALChisqCdf( &stat, &chisqProb, &chisqInput ),  &stat);
-
-    fprintf(stdout,"%e\n",chisqProb);
+    fprintf(stdout,"%e\n", XLALChisqCdf(chi2, dof));
   }
 
   /***************************************************************************
