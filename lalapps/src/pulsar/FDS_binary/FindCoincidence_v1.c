@@ -67,7 +67,7 @@ int CalculateSignificance(REAL8,REAL8 *);
 int ReadFreqMeshFile(char *, FreqMeshes **);
 int ReadDatasetParams(char *,INT4,REAL8 *);
 int GetSSBTimes(BinaryMeshFileHeader *,BinaryMeshFileHeader *);
-int isinf(double);
+int (isinf)(double);
 
 int main(int argc,char *argv[]) 
 {
