@@ -63,3 +63,5 @@ stochastic.py:
 General:
 
 * XLALify core SGWB routines
+
+* use XLAL functions in precedence of LAL functions
