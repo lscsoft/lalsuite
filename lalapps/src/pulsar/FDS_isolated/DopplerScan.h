@@ -17,44 +17,34 @@
  *  MA  02111-1307  USA
  */
 
-/************************************ <lalVerbatim file="DopplerScanHV">
-Author: Prix, Reinhard
-$Id$
-************************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\section{Header \texttt{DopplerScan.h}}
-\label{s:DopplerScan.h}
-
-Header file for DopplerScan
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include "DopplerScan.h"
-\end{verbatim}
-
-******************************************************* </lalLaTeX> */
+/**
+ * \author Reinhard Prix
+ * \date 2004, 2005
+ * \file 
+ * \brief Header file defining the API for DopplerScan.
+ *
+ * $Id$
+ */
 
 #ifndef _DOPPLERSCAN_H  /* Double-include protection. */
 #define _DOPPLERSCAN_H
-
-#include <lal/LALDatatypes.h>
-#include <lal/SkyCoordinates.h>
-#include <lal/PtoleMetric.h>
-#include <lal/StackMetric.h>
-#include <lal/LALBarycenter.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
+/*---------- INCLUDES ----------*/
+#include <lal/LALDatatypes.h>
+#include <lal/SkyCoordinates.h>
+#include <lal/PtoleMetric.h>
+#include <lal/StackMetric.h>
+#include <lal/LALBarycenter.h>
+
 NRCSID( DOPPLERSCANH, "$Id$" );
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-***************************************************** <lalErrTable> */
+/*---------- DEFINES ----------*/
+
 #define DOPPLERSCANH_ENULL 		1
 #define DOPPLERSCANH_ENOTREADY 		2
 #define DOPPLERSCANH_ESYS      		3
@@ -81,8 +71,6 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 #define DOPPLERSCANH_MSGESKYREGION	"Could not parse sky-region correctly"
 #define DOPPLERSCANH_MSGEINPUT		"Invald input parameter"
 
-/*************************************************** </lalErrTable> */
-
 /* Metric indexing scheme: if g_ab for i<=j: index = i + j*(j+1)/2 */
 #define INDEX_f0_f0 (0 + 0*(0+1)/2)
 #define INDEX_f0_A  (0 + 1*(1+1)/2)
@@ -98,8 +86,9 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 
 #define INDEX_f1_f1 (3 + 3*(3+1)/2) 
 
+/*---------- external types ----------*/
 
-/** a Doppler-scan can be in one of the following states */
+/** Different 'states' a Doppler-scan can be in */
 enum {
   STATE_IDLE = 0,   	/**< not initialized yet */
   STATE_READY,		/**< initialized and ready */
@@ -188,37 +177,32 @@ typedef struct {
   DopplerScanGrid *gridNode;	/**< pointer to current grid-node in skygrid */
 } DopplerScanState;
 
+/*---------- Global variables ----------*/
 /* some empty structs for initializations */
 extern const DopplerScanGrid empty_DopplerScanGrid;
 extern const DopplerScanState empty_DopplerScanState;
 extern const DopplerScanInit empty_DopplerScanInit;
 extern const DopplerPosition empty_DopplerPosition;
 extern const DopplerRegion empty_DopplerRegion;
-  
-/********************************************************** <lalLaTeX>
-\vfill{\footnotesize\input{DopplerScanHV}}
-\newpage\input{DopplerScanC}
-******************************************************* </lalLaTeX> */
 
-/* Function prototypes */
+/*---------- external prototypes [API] ----------*/
 
 void InitDopplerScan(LALStatus *, DopplerScanState *scan, const DopplerScanInit *init);
 void NextDopplerPos(LALStatus *, DopplerPosition *pos, DopplerScanState *scan);
 void FreeDopplerScan(LALStatus *, DopplerScanState *scan);
 
-void writeSkyGridFile(LALStatus *, const DopplerScanGrid *grid, const CHAR *fname, const DopplerScanInit *init);
+void writeSkyGridFile(LALStatus *, const DopplerScanGrid *grid, const CHAR *fname, 
+		      const DopplerScanInit *init);
 void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);
-void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, REAL8 AlphaBand, REAL8 DeltaBand);
+void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, 
+		       REAL8 AlphaBand, REAL8 DeltaBand);
 
 void LALMetricWrapper(LALStatus *, REAL8Vector **metric, PtoleMetricIn *params);
 
-void getGridSpacings(LALStatus *, DopplerPosition *spacings, DopplerPosition gridpoint, const DopplerScanInit *params);
-void getMCDopplerCube (LALStatus *, DopplerRegion *cube, DopplerPosition signal, UINT4 PointsPerDim, const DopplerScanInit *params);
-
-
-/********************************************************** <lalLaTeX>
-\newpage\input{LALSampleTestC}
-******************************************************* </lalLaTeX> */
+void getGridSpacings(LALStatus *, DopplerPosition *spacings, DopplerPosition gridpoint, 
+		     const DopplerScanInit *params);
+void getMCDopplerCube (LALStatus *, DopplerRegion *cube, DopplerPosition signal, UINT4 PointsPerDim, 
+		       const DopplerScanInit *params);
 
 #ifdef  __cplusplus
 }
