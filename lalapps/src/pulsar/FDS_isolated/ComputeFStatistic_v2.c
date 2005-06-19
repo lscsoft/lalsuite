@@ -90,7 +90,8 @@ typedef struct {
   COMPLEX16Vector *Fb;	/**< Values Fb */
 } FStatisticVector;
 
-/** FIXME: OBSOLETE: used to hold result from LALDemod(). Only kept for the moment to make things work (FIXME)*/
+/** FIXME: OBSOLETE: used to hold result from LALDemod(). 
+    Only kept for the moment to make things work (FIXME)*/
 typedef struct {
   const REAL8         *F;            /* Array of value of the F statistic */
   const COMPLEX16     *Fa;           /* Results of match filter with a(t) */
@@ -180,14 +181,15 @@ Clusters HFLines, HPLines;
 
 Clusters *highSpLines=&HPLines, *highFLines=&HFLines;
 
-REAL8 medianbias=1.0;		/**< bias in running-median depending on window-size (set in NormaliseSFTDataRngMdn()) */
+REAL8 medianbias=1.0;		/**< bias in running-median depending on window-size 
+				 * (set in NormaliseSFTDataRngMdn()) */
 
 FILE *fpstat=NULL;		/**< output-file: F-statistic candidates and cluster-information */
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 
-/*----------------------------------------------------------------------*/
-/* local prototypes */
+
+/* ---------- local prototypes ---------- */
 
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *stat);
@@ -209,9 +211,11 @@ void writeFVect(LALStatus *stat, const FStatisticVector *FVect, const CHAR *fnam
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 void 
-refineCOMPLEX16Vector (LALStatus *, COMPLEX16Vector **out, const COMPLEX16Vector *in, UINT4 refineby, UINT4 Dterms);
+refineCOMPLEX16Vector (LALStatus *, COMPLEX16Vector **out, const COMPLEX16Vector *in, 
+		       UINT4 refineby, UINT4 Dterms);
 
-void NewLALDemod (LALStatus *, FStatisticVector **FVect, const SFTVector *sfts, const computeFStatPar *params);
+void NewLALDemod (LALStatus *, FStatisticVector **FVect, const SFTVector *sfts, 
+		  const computeFStatPar *params);
 
 void
 computeFStat(LALStatus *, 
@@ -269,7 +273,7 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   FILE *fpOut=NULL;
   UINT4 loopcounter;
-  FStatisticVector *FVect = NULL;		/* new type to store F-statistic results in a frequency-band */
+  FStatisticVector *FVect = NULL;   /* new type to store F-statistic results in a frequency-band */
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -397,20 +401,22 @@ int main(int argc,char *argv[])
       for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
 	{
 	  /* calculate F-statistic with given oversampling-factor */
-	  LAL_CALL( computeFStat (&status, &FVect, SFTvect, GV.CFSparams, uvar_useInterpolation), &status);
+	  LAL_CALL(computeFStat(&status, &FVect, SFTvect, GV.CFSparams, uvar_useInterpolation), &status);
 
 	  /* output F-stat at first loop: used for studying effects of interpolation */
 	  if (lalDebugLevel && (loopcounter==0) ) 
 	    {
 	      const CHAR *fname; 
 	      if (uvar_useInterpolation)
-		fname = va("F_D%d_%gx_interpolated_Order%d.dat", uvar_Dterms, uvar_overSampling, uvar_interpolationOrder);
+		fname = va("F_D%d_%gx_interpolated_Order%d.dat", 
+			   uvar_Dterms, uvar_overSampling, uvar_interpolationOrder);
 	      else
 		fname = va("F_D%d_%gx_oversampled.dat", uvar_Dterms, uvar_overSampling);
 	      LAL_CALL (writeFVect (&status, FVect, fname), &status);
 	    }
 	  
-	  /* FIXME: to keep cluster-stuff working, we provide the "translation" from FVect back into old Fstats-struct */
+	  /* FIXME: to keep cluster-stuff working, we provide the "translation" 
+	   * from FVect back into old Fstats-struct */
 	  Fstat.F  = FVect->F->data;
 	  Fstat.Fa = FVect->Fa->data;
 	  Fstat.Fb = FVect->Fb->data;
@@ -451,7 +457,7 @@ int main(int argc,char *argv[])
 
 	  
 	  /* Set the number of the clusters detected to 0 at each iteration 
-	     of the sky-direction and the spin down */
+	   * of the sky-direction and the spin down */
 	  highFLines->Nclusters=0;
 
 	} /* For GV.spinImax */
@@ -465,8 +471,8 @@ int main(int argc,char *argv[])
       FVect = NULL;
 
       loopcounter ++;
-      if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", 
-					(100.0* loopcounter / thisScan.numGridPoints));
+      if (lalDebugLevel) LALPrintError ("Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
+
     } /*  while SkyPos */
 
   if (uvar_outputFstat && fpOut)
@@ -572,7 +578,7 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregSTRINGUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
   /*================*/
-  LALregSTRINGUserVar(stat, 	IFO2, 		 0, UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)"); 
+  LALregSTRINGUserVar(stat, 	IFO2, 		 0,  UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)"); 
   /*================*/
   LALregBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
   LALregREALUserVar(stat, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
@@ -927,7 +933,8 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     {
       cfg->timestamps.data[i] = SFTvect->data[i].epoch;
       /* to get midpoints, simply add Tsft/2 to each timestamp */
-      TRY (LALAddFloatToGPS (stat->statusPtr, &(cfg->midTS.data[i]), &(cfg->timestamps.data[i]), 0.5*cfg->tSFT), stat);
+      TRY (LALAddFloatToGPS (stat->statusPtr, &(cfg->midTS.data[i]), &(cfg->timestamps.data[i]), 
+			     0.5*cfg->tSFT), stat);
     }
   
 
@@ -977,10 +984,11 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else
     {
-      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
+      LALPrintError ("\nUnknown detector. Currently allowed are \
+'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
       ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
-/*========================*/
+  /*========================*/
       if ( !strcmp (uvar_IFO2, "GEO") || !strcmp (uvar_IFO, "0") ) 
     cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   else if ( !strcmp (uvar_IFO2, "LLO") || ! strcmp (uvar_IFO, "1") ) 
@@ -999,10 +1007,11 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else
     {
-      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
+      LALPrintError ("\nUnknown detector. Currently allowed are \
+'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
       ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
-  /*========================*/  
+      /*========================*/  
     
     
     
@@ -1029,7 +1038,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
 
 
   if (LALUserVarWasSet (&uvar_f1dotBand) && (uvar_f1dotBand != 0) )
-    cfg->SpinImax=(int)(uvar_f1dotBand/uvar_df1dot+.5)+1;  /*Number of spindown values to calculate F for */
+    cfg->SpinImax=(int)(uvar_f1dotBand/uvar_df1dot+.5) + 1; 
   else
     cfg->SpinImax = 0;
 
@@ -1068,7 +1077,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
       }
     if ( useGridFile && (haveSkyRegion || haveAlphaDelta) )
       {
-	LALWarning (stat, "\nWARNING: We are using skyGridFile, but sky-region was also specified ... will be ignored!\n");
+	LALWarning (stat, "\nWARNING: Using skyGridFile, but sky-region was specified ... ignored!\n");
       }
     if ( !useMetric && haveMetric) 
       {
@@ -1561,7 +1570,10 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
 #define SMALL	0.000000001
 #define LUT_RES 64
 void 
-NewLALDemod (LALStatus *stat, FStatisticVector **FVect, const SFTVector *sfts, const computeFStatPar *params) 
+NewLALDemod (LALStatus *stat, 
+	     FStatisticVector **FVect, 
+	     const SFTVector *sfts, 
+	     const computeFStatPar *params) 
 { 
 
   INT4 alpha,i;                 /* loop indices */
@@ -1831,7 +1843,8 @@ computeFStat (LALStatus *stat,
       FbRe = (*zFb).re;
       FbIm = (*zFb).im;
       
-      (*xF) = Bt * (FaRe*FaRe + FaIm*FaIm) + At * (FbRe*FbRe + FbIm*FbIm) - 2.0*Ct*(FaRe*FbRe + FaIm*FbIm);
+      (*xF) = Bt * (FaRe*FaRe + FaIm*FaIm) + At * (FbRe*FbRe + FbIm*FbIm) 
+	- 2.0*Ct*(FaRe*FbRe + FaIm*FbIm);
       
       zFa ++;
       zFb ++;
@@ -1888,7 +1901,10 @@ writeFVect(LALStatus *stat, const FStatisticVector *FVect, const CHAR *fname)
  *  This is using DFT-interpolation (derived from zero-padding).
  */
 void
-refineCOMPLEX16Vector (LALStatus *stat, COMPLEX16Vector **out, const COMPLEX16Vector *in, UINT4 refineby, UINT4 Dterms)
+refineCOMPLEX16Vector (LALStatus *stat, 
+		       COMPLEX16Vector **out, 
+		       const COMPLEX16Vector *in, 
+		       UINT4 refineby, UINT4 Dterms)
 {
   REAL8 Yk_Re, Yk_Im;
   REAL8 b, d;
