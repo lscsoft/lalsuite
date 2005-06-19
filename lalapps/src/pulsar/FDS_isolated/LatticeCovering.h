@@ -98,10 +98,11 @@ typedef struct tagREAL8VectorList
 /*---------- Global variables ----------*/
 
 /*---------- external prototypes [API] ----------*/
-void LALLatticeCovering (LALStatus *lstat, REAL8VectorList **covering, REAL8 coveringRadius, const gsl_matrix *metric,
-			 const REAL8Vector *startPoint,	BOOLEAN (*isInside)(const REAL8Vector *point) );
+void LALLatticeCovering (LALStatus *, REAL8VectorList **covering, REAL8 coveringRadius, 
+			 const gsl_matrix *metric, const REAL8Vector *startPoint,
+			 BOOLEAN (*isInside)(const REAL8Vector *point) );
 
-void LALLatticeFill (LALStatus *lstat, REAL8VectorList **fillGrid, const gsl_matrix  *generator,
+void LALLatticeFill (LALStatus *, REAL8VectorList **fillGrid, const gsl_matrix  *generator,
 		     const REAL8Vector *startPoint, BOOLEAN (*isInside)(const REAL8Vector *point) );
 
 /* functions for handling lattice's generating matrix */
