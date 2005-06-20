@@ -112,7 +112,10 @@ typedef struct {
   const COMPLEX16     *Fb;           /* Results of match filter with b(t) */
 } LALFstat;
 
-
+typedef struct {
+  COMPLEX16 Fa;
+  COMPLEX16 Fb;
+} Fcomponents;
 
 /*----------------------------------------------------------------------*/
 /* conditional compilation-switches */
@@ -226,7 +229,7 @@ void
 refineCOMPLEX16Vector (LALStatus *, COMPLEX16Vector **out, const COMPLEX16Vector *in, 
 		       UINT4 refineby, UINT4 Dterms);
 
-void NewLALDemod (LALStatus *, FStatisticVector **FVect, const SFTVector *sfts, 
+void NewLALDemod (LALStatus *, Fcomponents *FaFb, const SFTVector *sfts, 
 		  const computeFStatPar *params);
 
 void
@@ -259,7 +262,6 @@ extern int vrbflg;
 /* empty structs for initialziations */
 
 DopplerScanState emptyScan;
-
 
 /*----------------------------------------------------------------------*/
 /* CODE starts here */
@@ -1474,12 +1476,11 @@ NormaliseSFTDataRngMdn(LALStatus *status)
  */
 void 
 NewLALDemod(LALStatus *status, 
-	     FStatisticVector **FVect, 
-	     const SFTVector *sfts, 
-	     const computeFStatPar *params) 
+	    Fcomponents *FaFb,
+	    const SFTVector *sfts, 
+	    const computeFStatPar *params) 
 { 
-
-  UINT4 alpha,i;                 /* loop indices */
+  UINT4 alpha;                 /* loop index over SFTs */
   REAL8 *xSum=NULL, *ySum=NULL; /* temp variables for computation of fs*as and fs*bs */
   INT4 s;                       /* local variable for spinDwn calcs. */
   REAL8 xTemp;                  /* temp variable for phase model */
@@ -1501,20 +1502,11 @@ NewLALDemod(LALStatus *status,
   static REAL8 sinVal[LUT_RES+1], cosVal[LUT_RES+1];        /*LUT values computed by the routine do_trig_lut*/
   static BOOLEAN firstCall = 1;
 
-  FStatisticVector *ret = NULL;	/* return-struct */
-  UINT4 nBins;			/* number of frequency-bins */
-
   UINT4 nSFTs = params->SFTno;
 
   INITSTATUS( status, "NewLALDemod", rcsid );
-  ATTATCHSTATUSPTR (status);
 
-  ASSERT ( FVect, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( *FVect == NULL, status, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
-
-
-  /* variable redefinitions for code readability */
-  nBins = params->imax;	/* number of frequency-bins to calculate Fstatistic for */
+  ASSERT ( FaFb, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
   spOrder = params->spinDwnOrder;
   spinDwn = params->spinDwn;
@@ -1523,18 +1515,12 @@ NewLALDemod(LALStatus *status,
   deltaF = sfts->data[0].deltaF;
   nDeltaF= sfts->data[0].data->length;
 
-  /* prepare output-structure */
-  /* FIXME: for now we're a bit sloppy with leaks in  case of errors  */
-  if ( (ret = (FStatisticVector*)LALCalloc(1, sizeof(FStatisticVector))) == NULL) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  TRY ( LALZCreateVector (status->statusPtr, &(ret->Fa), nBins), status);
-  TRY ( LALZCreateVector (status->statusPtr, &(ret->Fb), nBins), status);
-  ret->f0 = params->f0;
-  ret->df = params->df;
-  ret->fBand = (nBins - 1) * params->df;
-  ret->length = nBins;
+  f = params->f0;
 
+  Fa.re =0.0;
+  Fa.im =0.0;
+  Fb.re =0.0;
+  Fb.im =0.0;
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
@@ -1563,166 +1549,151 @@ NewLALDemod(LALStatus *status,
   }
 
 
-  /* Loop over frequencies to be demodulated */
-  for(i=0 ; i< nBins ; i++ )
-  {
-    Fa.re =0.0;
-    Fa.im =0.0;
-    Fb.re =0.0;
-    Fb.im =0.0;
-
-    f=params->f0+i*params->df;
-
-    /* Loop over SFTs that contribute to F-stat for a given frequency */
-    for(alpha=0;alpha<nSFTs;alpha++)
+  /* Loop over SFTs that contribute to F-stat for a given frequency */
+  for ( alpha = 0; alpha < nSFTs; alpha++ )
+    {
+      REAL8 tempFreq0, tempFreq1;
+      REAL4 tsin, tcos;
+      COMPLEX8 *Xalpha = sfts->data[alpha].data->data;
+      
+      REAL4 a = params->amcoe->a->data[alpha];
+      REAL4 b = params->amcoe->b->data[alpha];
+      REAL8 x,y;
+      REAL4 realP, imagP;             /* real and imaginary parts of P, see CVS */
+      
+      /* NOTE: sky-constants are always positive!!
+       * this can be seen from there definition (-> documentation)
+       * we will use this fact in the following! 
+       */
+      xTemp= f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];       /* >= 0 !! */
+      
+      /* find correct index into LUT -- pick closest point */
+      tempFreq0 = xTemp - (UINT4)xTemp;  /* lies in [0, +1) by definition */
+      
+      index = (UINT4)( tempFreq0 * LUT_RES + 0.5 );   /* positive! */
       {
-        REAL8 tempFreq0, tempFreq1;
-        REAL4 tsin, tcos;
-	COMPLEX8 *Xalpha = sfts->data[alpha].data->data;
-
-        REAL4 a = params->amcoe->a->data[alpha];
-        REAL4 b = params->amcoe->b->data[alpha];
-        REAL8 x,y;
-        REAL4 realP, imagP;             /* real and imaginary parts of P, see CVS */
-
-        /* NOTE: sky-constants are always positive!!
-         * this can be seen from there definition (-> documentation)
-         * we will use this fact in the following! 
-         */
-        xTemp= f * skyConst[ tempInt1[ alpha ] ] + xSum[ alpha ];       /* >= 0 !! */
-
-        /* find correct index into LUT -- pick closest point */
-        tempFreq0 = xTemp - (UINT4)xTemp;  /* lies in [0, +1) by definition */
-
-        index = (UINT4)( tempFreq0 * LUT_RES + 0.5 );   /* positive! */
-        {
-          REAL8 d=LAL_TWOPI*(tempFreq0 - (REAL8)index/(REAL8)LUT_RES);
-          REAL8 d2=0.5*d*d;
-          REAL8 ts=sinVal[index];
-          REAL8 tc=cosVal[index];
-                
-          tsin = ts+d*tc-d2*ts;
-          tcos = tc-d*ts-d2*tc-1.0;
-        }
-
-        y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
-        realQ = cos(y);
-        imagQ = sin(y);
-
-        k1 = (UINT4)xTemp - params->Dterms + 1;
-
-        sftIndex = k1 - params->ifmin;
-
-	if(sftIndex < 0){
-              fprintf(stderr,"ERROR! sftIndex = %d < 0 in NewLALDemod\n", sftIndex);
-              fprintf(stderr," alpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-                      alpha, k1, xTemp, params->Dterms, params->ifmin);
-	      ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	REAL8 d=LAL_TWOPI*(tempFreq0 - (REAL8)index/(REAL8)LUT_RES);
+	REAL8 d2=0.5*d*d;
+	REAL8 ts=sinVal[index];
+	REAL8 tc=cosVal[index];
+	
+	tsin = ts+d*tc-d2*ts;
+	tcos = tc-d*ts-d2*tc-1.0;
+      }
+      
+      y = - LAL_TWOPI * ( f * skyConst[ tempInt1[ alpha ]-1 ] + ySum[ alpha ] );
+      realQ = cos(y);
+      imagQ = sin(y);
+      
+      k1 = (UINT4)xTemp - params->Dterms + 1;
+      
+      sftIndex = k1 - params->ifmin;
+      
+      if(sftIndex < 0){
+	fprintf(stderr,"ERROR! sftIndex = %d < 0 in NewLALDemod\n", sftIndex);
+	fprintf(stderr," alpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+		alpha, k1, xTemp, params->Dterms, params->ifmin);
+	ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+      
+      tempFreq1 = tempFreq0 + params->Dterms - 1;     /* positive if Dterms > 1 (trivial) */
+      
+      x = LAL_TWOPI * tempFreq1;      /* positive! */
+      
+      /* we branch now (instead of inside the central loop)
+       * depending on wether x can ever become SMALL in the loop or not, 
+       * because it requires special treatment in the Dirichlet kernel
+       */
+      if ( tempFreq0 < LD_SMALL ) 
+	{
+	  
+	  realXP=0.0;
+	  imagXP=0.0;
+	  
+	  /* Loop over terms in Dirichlet Kernel */
+	  for(k=0; k < klim ; k++)
+	    {
+	      COMPLEX8 Xalpha_k = Xalpha[sftIndex];
+	      sftIndex ++;
+	      /* If x is small we need correct x->0 limit of Dirichlet kernel */
+	      if( fabs(x) <  LD_SMALL) 
+		{
+		  realXP += Xalpha_k.re;
+		  imagXP += Xalpha_k.im;
+		}      
+	      else
+		{
+		  realP = tsin / x;
+		  imagP = tcos / x;
+		  /* these four lines compute P*xtilde */
+		  realXP += Xalpha_k.re * realP;
+		  realXP -= Xalpha_k.im * imagP;
+		  imagXP += Xalpha_k.re * imagP;
+		  imagXP += Xalpha_k.im * realP;
+		}
+	      
+	      tempFreq1 --;
+	      x = LAL_TWOPI * tempFreq1;
+	      
+	    } /* for k < klim */
+	  
+	} /* if x could become close to 0 */
+      else
+	{
+	  COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
+	  
+	  realXP=0.0;
+	  imagXP=0.0;
+	  
+	  /* Loop over terms in dirichlet Kernel */
+	  for(k=0; k < klim ; k++)
+	    {
+	      REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
+	      COMPLEX8 Xa = *Xalpha_k;
+	      Xalpha_k ++;
+	      tempFreq1 --;
+	      
+	      realP = tsin * xinv;
+	      imagP = tcos * xinv;
+	      /* these four lines compute P*xtilde */
+	      realXP += Xa.re * realP - Xa.im * imagP;
+	      imagXP += Xa.re * imagP + Xa.im * realP;
+	      
+	    } /* for k < klim */
+	  
+	} /* if x cannot be close to 0 */
+      
+      
+      if(sftIndex > params->imax)
+	{
+	  fprintf(stderr,"ERROR! sftIndex = %d > %d in NewLALDemod\nalpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+		  sftIndex, params->imax, alpha, k1, xTemp, params->Dterms, params->ifmin);
+	  ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 	}
-
-        tempFreq1 = tempFreq0 + params->Dterms - 1;     /* positive if Dterms > 1 (trivial) */
-
-        x = LAL_TWOPI * tempFreq1;      /* positive! */
-
-        /* we branch now (instead of inside the central loop)
-         * depending on wether x can ever become SMALL in the loop or not, 
-         * because it requires special treatment in the Dirichlet kernel
-         */
-        if ( tempFreq0 < LD_SMALL ) 
-          {
-
-            realXP=0.0;
-            imagXP=0.0;
-
-            /* Loop over terms in Dirichlet Kernel */
-            for(k=0; k < klim ; k++)
-              {
-                COMPLEX8 Xalpha_k = Xalpha[sftIndex];
-                sftIndex ++;
-                /* If x is small we need correct x->0 limit of Dirichlet kernel */
-                if( fabs(x) <  LD_SMALL) 
-                  {
-                    realXP += Xalpha_k.re;
-                    imagXP += Xalpha_k.im;
-                  }      
-                else
-                  {
-                    realP = tsin / x;
-                    imagP = tcos / x;
-                    /* these four lines compute P*xtilde */
-                    realXP += Xalpha_k.re * realP;
-                    realXP -= Xalpha_k.im * imagP;
-                    imagXP += Xalpha_k.re * imagP;
-                    imagXP += Xalpha_k.im * realP;
-                  }
-                
-                tempFreq1 --;
-                x = LAL_TWOPI * tempFreq1;
-                
-              } /* for k < klim */
-
-          } /* if x could become close to 0 */
-        else
-          {
-            COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
-
-            realXP=0.0;
-            imagXP=0.0;
-
-            /* Loop over terms in dirichlet Kernel */
-            for(k=0; k < klim ; k++)
-              {
-                REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
-                COMPLEX8 Xa = *Xalpha_k;
-                Xalpha_k ++;
-                tempFreq1 --;
-                
-                realP = tsin * xinv;
-                imagP = tcos * xinv;
-                /* these four lines compute P*xtilde */
-                realXP += Xa.re * realP - Xa.im * imagP;
-                imagXP += Xa.re * imagP + Xa.im * realP;
-
-              } /* for k < klim */
-
-          } /* if x cannot be close to 0 */
-        
-
-	if(sftIndex > params->imax)
-	  {
-	    fprintf(stderr,"ERROR! sftIndex = %d > %d in NewLALDemod\nalpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
-		    sftIndex, params->imax, alpha, k1, xTemp, params->Dterms, params->ifmin);
-	    ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-	  }
-
-
-
-        /* implementation of amplitude demodulation */
-        {
-          REAL8 realQXP = realXP*realQ-imagXP*imagQ;
-          REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
-          Fa.re += a*realQXP;
-          Fa.im += a*imagQXP;
-          Fb.re += b*realQXP;
-          Fb.im += b*imagQXP;
-        }
-
-      } /* for alpha < SFTno */
-
-    ret->Fa->data[i] = Fa;
-    ret->Fb->data[i] = Fb;
-
-  } /* for i < nBins */
-
+      
+      
+      
+      /* implementation of amplitude demodulation */
+      {
+	REAL8 realQXP = realXP*realQ-imagXP*imagQ;
+	REAL8 imagQXP = realXP*imagQ+imagXP*realQ;
+	Fa.re += a*realQXP;
+	Fa.im += a*imagQXP;
+	Fb.re += b*realQXP;
+	Fb.im += b*imagQXP;
+      }
+      
+    } /* for alpha < SFTno */
+  
   /* Clean up */
   LALFree(tempInt1);
   LALFree(xSum);
   LALFree(ySum);
-
+  
   /* return result */
-  *FVect = ret;
+  FaFb->Fa = Fa;
+  FaFb->Fb = Fb;
 
-  DETATCHSTATUSPTR (status);  
   RETURN( status );
 
 } /* NewLALDemod() */
@@ -1740,13 +1711,12 @@ computeFStat (LALStatus *status,
 	      )
 {
 
-  UINT4 nbins, i; 
+  UINT4 i; 
   REAL4 At, Bt, Ct;
-  REAL8 FaRe, FaIm, FbRe, FbIm;
   REAL8 fact;
-  COMPLEX16 *zFa, *zFb;
-  REAL8 *xF;
-  FStatisticVector *FVect = NULL;
+  UINT4 nBins;
+  FStatisticVector *ret = NULL;	/* return-struct */
+  computeFStatPar demodPar = (*params);	/* local non-static copy of params */
 
   INITSTATUS( status, "calcFStat", rcsid);
   ATTATCHSTATUSPTR (status);  
@@ -1755,45 +1725,59 @@ computeFStat (LALStatus *status,
   ASSERT (*FVectOut == NULL, status, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
   ASSERT (sfts != NULL, status,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
   ASSERT (params != NULL, status,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
-  
-  TRY ( NewLALDemod (status->statusPtr, &FVect, sfts, params), status);
 
-  nbins = FVect->Fa->length;
-      
-  /* calculate F-statistic from  Fa and Fb */
-  TRY (LALDCreateVector (status->statusPtr, &(FVect->F), nbins), status);
 
+  nBins = params->imax;		/* number of frequency-bins to calculate Fstatistic for */
+
+  /* prepare output-structure */
+  /* FIXME: for now we're a bit sloppy with leaks in  case of errors  */
+  if ( (ret = (FStatisticVector*)LALCalloc(1, sizeof(FStatisticVector))) == NULL) {
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+  TRY ( LALZCreateVector (status->statusPtr, &(ret->Fa), nBins), status);
+  TRY ( LALZCreateVector (status->statusPtr, &(ret->Fb), nBins), status);
+  TRY ( LALDCreateVector (status->statusPtr, &(ret->F), nBins), status);
+
+  ret->f0 = params->f0;
+  ret->df = params->df;
+  ret->fBand = (nBins - 1) * params->df;
+  ret->length = nBins;
+
+  /* prepare quantities to calculate Fstat from Fa and Fb */
   fact = 4.0 / (sfts->length * params->amcoe->D);
   At = fact * params->amcoe->A;
   Bt = fact * params->amcoe->B;
   Ct = fact * params->amcoe->C;
 
-  zFa = FVect->Fa->data;
-  zFb = FVect->Fb->data;
-  xF = FVect->F->data;
-  for (i = 0; i < nbins; i++)
+  /* Loop over frequencies to be demodulated */
+  for(i=0 ; i< nBins ; i++ )
     {
-      FaRe = (*zFa).re;
-      FaIm = (*zFa).im;
-      FbRe = (*zFb).re;
-      FbIm = (*zFb).im;
-      
-      (*xF) = Bt * (FaRe*FaRe + FaIm*FaIm) + At * (FbRe*FbRe + FbIm*FbIm) 
-	- 2.0*Ct*(FaRe*FbRe + FaIm*FbIm);
-      
-      zFa ++;
-      zFb ++;
-      xF ++;
+      Fcomponents FaFb;
+      REAL8 FaRe, FaIm, FbRe, FbIm;
 
-    } /* for i < nbins */
+      demodPar.f0 = params->f0 + i * params->df;	/* prepare next frequency */
+
+      TRY ( NewLALDemod (status->statusPtr, &FaFb, sfts, &demodPar), status);
+
+      FaRe = ret->Fa->data[i].re = FaFb.Fa.re;
+      FaIm = ret->Fa->data[i].im = FaFb.Fa.im;
+      
+      FbRe = ret->Fb->data[i].re = FaFb.Fb.re;
+      FbIm = ret->Fb->data[i].im = FaFb.Fb.im;
+
+      /* calculate F-statistic from  Fa and Fb */
+      ret->F->data[i] = Bt * (FaRe*FaRe + FaIm*FaIm) + At * (FbRe*FbRe + FbIm*FbIm) 
+	- 2.0*Ct*(FaRe*FbRe + FaIm*FbIm);
+
+    } /* for i < nBins */
 
   /* return */
-  *FVectOut = FVect;
+  (*FVectOut) = ret;
 
   DETATCHSTATUSPTR (status);
   RETURN( status );
 
-} /* calcFStat() */
+} /* computeFStat() */
 
 
 /** write out the F-statistic over the searched frequency-band.
