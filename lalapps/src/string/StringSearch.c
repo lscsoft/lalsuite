@@ -795,10 +795,9 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
       REAL4Window  *window  = NULL;
 
       window = XLALCreateWelchREAL4Window( segmentLength );
-/*       XLALREAL4AverageSpectrumMedian */
-
-/* 	XLALREAL4AverageSpectrumWelch */
- XLALREAL4AverageSpectrumMedian( &GV.Spec, &GV.ht_proc, segmentLength,
+/*    XLALREAL4AverageSpectrumMedian */
+/*    XLALREAL4AverageSpectrumWelch */
+      XLALREAL4AverageSpectrumMedianMean( &GV.Spec, &GV.ht_proc, segmentLength,
 					  segmentStride, window, GV.fplan );
       XLALDestroyREAL4Window( window );
     }
@@ -958,29 +957,30 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   optarg = NULL;
   ProcessParamsTable **paramaddpoint = &procparams.processParamsTable;
   struct option long_options[] = {
-    {"low-freq-cutoff",     required_argument, NULL,           'f'},
-    {"bank-low-freq-cutoff",        required_argument, NULL,   'b'},
-    {"threshold",           required_argument, NULL,           't'},
-    {"frame-cache",         required_argument, NULL,           'F'},
-    {"channel-name",        required_argument, NULL,           'C'},
-    {"outfile",             required_argument, NULL,           'o'},
-    {"gps-end-time",        required_argument, NULL,           'E'},
-    {"gps-start-time",      required_argument, NULL,           'S'},
-    {"injection-file",      required_argument, NULL,           'i'},
-    {"short-segment-duration",      required_argument, NULL,   'd'},
-    {"settling-time",       required_argument, NULL,           'T'},
-    {"sample-rate",         required_argument, NULL,           's'},
-    {"trig-start-time",     required_argument, NULL,           'g'},
-    {"pad",                 required_argument, NULL,           'p'},
-    {"cusp-search",                no_argument, NULL,          'c' },
-    {"kink-search",                no_argument, NULL,          'k' },
-    {"test-gaussian-data",         no_argument, NULL,          'n' },
-    {"test-white-spectrum",        no_argument, NULL,          'w' },
-    {"cluster-events",             no_argument, NULL,          'l' },
-    {"help",        no_argument, NULL,         'h' },
+    {"bw-flow",                     required_argument, NULL,           'f'},
+    {"bank-freq-start",             required_argument, NULL,           'L'}, 
+    {"bank-lowest-hifreq-cutoff",   required_argument, NULL,           'H'},
+    {"threshold",                   required_argument, NULL,           't'},
+    {"frame-cache",                 required_argument, NULL,           'F'},
+    {"channel-name",                required_argument, NULL,           'C'},
+    {"outfile",                     required_argument, NULL,           'o'},
+    {"gps-end-time",                required_argument, NULL,           'E'},
+    {"gps-start-time",              required_argument, NULL,           'S'},
+    {"injection-file",              required_argument, NULL,           'i'},
+    {"short-segment-duration",      required_argument, NULL,           'd'},
+    {"settling-time",               required_argument, NULL,           'T'},
+    {"sample-rate",                 required_argument, NULL,           's'},
+    {"trig-start-time",             required_argument, NULL,           'g'},
+    {"pad",                         required_argument, NULL,           'p'},
+    {"cusp-search",                 no_argument, NULL,          'c' },
+    {"kink-search",                 no_argument, NULL,          'k' },
+    {"test-gaussian-data",          no_argument, NULL,          'n' },
+    {"test-white-spectrum",         no_argument, NULL,          'w' },
+    {"cluster-events",              no_argument, NULL,          'l' },
+    {"help",                        no_argument, NULL,         'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwlf:b:t:F:C:E:S:i:d:T:s:g:o:p:";
+  char args[] = "hnckwlf:L:H:t:F:C:E:S:i:d:T:s:g:o:p:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -995,6 +995,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
   /* Initialize default values */
   CLA->flow=0.0;
+  CLA->fbankstart=0.0;
+  CLA->fbankhighfcutofflow=0.0;
   CLA->FrCacheFile=NULL;
   CLA->InjectionFile=NULL;
   CLA->ChannelName=NULL;
@@ -1040,9 +1042,14 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->samplerate=atof(optarg);
       ADD_PROCESS_PARAM("float");
       break;
-    case 'b':
-      /* low frequency cutoff */
+    case 'H':
+      /* lowest high frequency cutoff */
       CLA->fbankhighfcutofflow=atof(optarg);
+      ADD_PROCESS_PARAM("float");
+      break;
+    case 'L':
+      /* low frequency cutoff */
+      CLA->fbankstart=atof(optarg);
       ADD_PROCESS_PARAM("float");
       break;
     case 't':
@@ -1129,9 +1136,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -n, -h, -w, -g, -o  and -i. One of -k or -c must be specified. They are:\n");
-      fprintf(stdout,"\t--low-freq-cutoff (-f)\t\tFLOAT\t Low frequency cut-off.\n");
+      fprintf(stdout,"\t--bw-flow (-f)\t\tFLOAT\t Low frequency cut-off.\n");
       fprintf(stdout,"\t--sample-rate (-s)\t\tFLOAT\t Desired sample rate (Hz).\n");
-      fprintf(stdout,"\t--bank-low-freq-cutoff (-b)\tFLOAT\t Template bank low frequency cut-off.\n");
+      fprintf(stdout,"\t--bank-lowest-hifreq-cutoff (-H)\tFLOAT\t Template bank lowest high frequency cut-off.\n");
+      fprintf(stdout,"\t--bank-freq-start (-L)\tFLOAT\t Template bank low frequency cut-off.\n");
       fprintf(stdout,"\t--threshold (-t)\t\tFLOAT\t SNR threshold.\n");
       fprintf(stdout,"\t--frame-cache (-F)\t\tSTRING\t Name of frame cache file.\n");
       fprintf(stdout,"\t--channel-name (-C)\t\tSTRING\t Name of channel.\n");
@@ -1167,9 +1175,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try ./StringSearch -h \n");
       return 1;
     }      
+  if(CLA->fbankstart == 0.0)
+    {
+      fprintf(stderr,"No low frequency for frequency bank specified.\n");
+      fprintf(stderr,"Try ./StringSearch -h \n");
+      return 1;
+    }      
   if(CLA->fbankhighfcutofflow == 0.0)
     {
-      fprintf(stderr,"No template bank low cutoff frequency specified.\n");
+      fprintf(stderr,"No template bank lowest high frequency cutoff specified.\n");
       fprintf(stderr,"Try ./StringSearch -h \n");
       return 1;
     }      
@@ -1242,6 +1256,15 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 	fprintf(stderr,"Need short segment t(=%d) to be >= 4 x Truncation length (%f).\n",CLA->ShortSegDuration,CLA->TruncSecs);
 	return 1;
       }    
+  }
+
+  /* check frequencies */
+  {
+    REAL4 f99=CLA->flow*pow((1/0.9-1)/(1/0.99-1),0.25);
+    if(CLA->fbankstart < f99)
+      {
+	fprintf(stderr,"WARNING: Template starting frequency and BW high pass frequency are close. f99=%e, fbw=%e\n",f99, CLA->flow);
+      } 
   }
 
   /* store the input start and end times */
