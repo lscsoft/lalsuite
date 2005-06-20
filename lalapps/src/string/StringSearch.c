@@ -89,9 +89,10 @@ RCSID( "StringSearch $Id$");
 
 /* STRUCTURES */
 struct CommandLineArgsTag {
-  REAL4 flow;                 /* Low frequency cut-off */
+  REAL4 flow;                 /* High pass filtering frequency */
   REAL8 samplerate;           /* desired sample rate */
-  REAL4 fbanklow;             /* Template bank low frequency cut-off */
+  REAL4 fbankstart;           /* lowest frequency of templates */
+  REAL4 fbankhighfcutofflow;  /* lowest high frequency cut-off */
   char *FrCacheFile;          /* Frame cache file */
   char *InjectionFile;        /* LIGO xml injection file */
   char *ChannelName;          /* Name of channel to be read in from frames */
@@ -657,7 +658,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
   fprintf(stdout,"%% Templ.    frequency      sigma\n");  
   fprintf(stdout,"%% %d       %e        %e\n",k-1,strtemplate[0].f,strtemplate[0].norm);
 
-  f_low_index = CLA.fbanklow / GV.StringFilter.deltaF;
+  f_low_index = CLA.fbankhighfcutofflow / GV.StringFilter.deltaF;
   /* now we loop through and take away from the integral one point at a time */
   for ( p = f_high_index-2 ; p >= f_low_index; p-- )
     {
@@ -1003,7 +1004,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->ShortSegDuration=0;
   CLA->TruncSecs=0;
   CLA->power=0.0;
-  CLA->fbanklow=0.0;
+  CLA->fbankhighfcutofflow=0.0;
   CLA->threshold=0.0;
   CLA->fakenoiseflag=0;
   CLA->whitespectrumflag=0;
@@ -1041,7 +1042,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'b':
       /* low frequency cutoff */
-      CLA->fbanklow=atof(optarg);
+      CLA->fbankhighfcutofflow=atof(optarg);
       ADD_PROCESS_PARAM("float");
       break;
     case 't':
@@ -1166,7 +1167,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stderr,"Try ./StringSearch -h \n");
       return 1;
     }      
-  if(CLA->fbanklow == 0.0)
+  if(CLA->fbankhighfcutofflow == 0.0)
     {
       fprintf(stderr,"No template bank low cutoff frequency specified.\n");
       fprintf(stderr,"Try ./StringSearch -h \n");
