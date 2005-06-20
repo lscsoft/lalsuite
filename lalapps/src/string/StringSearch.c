@@ -220,15 +220,24 @@ int main(int argc,char *argv[])
  
  /* set lowest frequency of template bank; 
     should be higher than BW high pass frequency */ 
- Templateflow=CommandLineArgs.flow+10.0;
+ Templateflow=CommandLineArgs.flow+23.0;
 
  highpassParams.nMax =  4;
  highpassParams.f1   = -1;
  highpassParams.a1   = -1;
  highpassParams.f2   = CommandLineArgs.flow;
- highpassParams.a2   = 0.5; /* this means 50% attenuation at f2 */
+ highpassParams.a2   = 0.9; /* this means 50% attenuation at f2 */
 
  if (ReadData(CommandLineArgs)) return 2;
+
+/*   { 	  */
+/*     int p; 	  */
+/*     for ( p = 0 ; p < (int)GV.ht.data->length; p++ ) 	  */
+/*       { 	  */
+/* 	fprintf(stdout,"%e\n",GV.ht.data->data[p]); 	  */
+/*       } 	  */
+/*     return 0; 	  */
+/*   }  */
 
  if (WindowData()) return 3;
 
@@ -478,7 +487,13 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 {
   int p;
 
-  /* Now find thisEvent in the inner half */
+  for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
+    {
+      fprintf(stdout,"%e\n",vector->data[p]);
+    }
+  return 0;
+
+ /* Now find thisEvent in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
     {
       REAL4 maximum = 0.0;
@@ -667,8 +682,8 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
   t2t2=t1t1;
   k=1;
 
-  fprintf(stdout,"Templ. frequency sigma\n");  
-  fprintf(stdout,"%d       %e        %e\n",k-1,strtemplate[0].f,strtemplate[0].norm);
+/*   fprintf(stdout,"Templ. frequency sigma\n");   */
+/*   fprintf(stdout,"%d       %e        %e\n",k-1,strtemplate[0].f,strtemplate[0].norm); */
 
   f_low_index = CLA.fbanklow / GV.StringFilter.deltaF;
   /* now we loop through and take away from the integral one point at a time */
@@ -687,7 +702,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
 	  strtemplate[k].norm=sqrt(t1t1);
 	  strtemplate[k].mismatch=epsilon;
 	  k++;
-	  fprintf(stdout,"%d       %e        %e\n",k-1,strtemplate[k-1].f,strtemplate[k-1].norm);
+/* 	  fprintf(stdout,"%d       %e        %e\n",k-1,strtemplate[k-1].f,strtemplate[k-1].norm); */
 	}
       if(k == MAXTEMPLATES)
 	{
@@ -807,7 +822,10 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
       REAL4Window  *window  = NULL;
 
       window = XLALCreateWelchREAL4Window( segmentLength );
-      XLALREAL4AverageSpectrumMedianMean( &GV.Spec, &GV.ht_proc, segmentLength,
+/*       XLALREAL4AverageSpectrumMedian */
+
+/* 	XLALREAL4AverageSpectrumWelch */
+ XLALREAL4AverageSpectrumMedian( &GV.Spec, &GV.ht_proc, segmentLength,
 					  segmentStride, window, GV.fplan );
       XLALDestroyREAL4Window( window );
     }
