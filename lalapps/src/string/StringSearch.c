@@ -230,21 +230,11 @@ int main(int argc,char *argv[])
 
  if (ReadData(CommandLineArgs)) return 2;
 
-/*   { 	  */
-/*     int p; 	  */
-/*     for ( p = 0 ; p < (int)GV.ht.data->length; p++ ) 	  */
-/*       { 	  */
-/* 	fprintf(stdout,"%e\n",GV.ht.data->data[p]); 	  */
-/*       } 	  */
-/*     return 0; 	  */
-/*   }  */
-
  if (WindowData()) return 3;
 
  if (ProcessData()) return 4;
 
  /* after this there's no more GV.ht, only GV.ht_proc */
-
  if (CommandLineArgs.InjectionFile != NULL) 
    {
      if (AddInjections(CommandLineArgs)) return 5;
@@ -260,22 +250,10 @@ int main(int argc,char *argv[])
 			  GV.ht_proc.data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5));
  TESTSTATUS( &status );
 
-/*   { 	  */
-/*     int p; 	  */
-/*     for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) 	  */
-/*       { 	  */
-/* 	fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); 	  */
-/*       } 	  */
-/*     return 0; 	  */
-/*   }  */
-
  /* reduce duration of segment appropriately */
  GV.duration -= 2*CommandLineArgs.pad; 
 
  if (AvgSpectrum(CommandLineArgs)) return 8;
- 
-/*  LALSPrintFrequencySeries( &(GV.Spec), "Spectrum.txt" ); */
-/*  return 0; */
 
  if (CreateStringFilter(CommandLineArgs)) return 9;
  
@@ -487,12 +465,6 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 {
   int p;
 
-  for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
-    {
-      fprintf(stdout,"%e\n",vector->data[p]);
-    }
-  return 0;
-
  /* Now find thisEvent in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
     {
@@ -682,8 +654,8 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
   t2t2=t1t1;
   k=1;
 
-/*   fprintf(stdout,"Templ. frequency sigma\n");   */
-/*   fprintf(stdout,"%d       %e        %e\n",k-1,strtemplate[0].f,strtemplate[0].norm); */
+  fprintf(stdout,"%% Templ.    frequency      sigma\n");  
+  fprintf(stdout,"%% %d       %e        %e\n",k-1,strtemplate[0].f,strtemplate[0].norm);
 
   f_low_index = CLA.fbanklow / GV.StringFilter.deltaF;
   /* now we loop through and take away from the integral one point at a time */
@@ -702,7 +674,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
 	  strtemplate[k].norm=sqrt(t1t1);
 	  strtemplate[k].mismatch=epsilon;
 	  k++;
-/* 	  fprintf(stdout,"%d       %e        %e\n",k-1,strtemplate[k-1].f,strtemplate[k-1].norm); */
+	  fprintf(stdout,"%% %d       %e        %e\n",k-1,strtemplate[k-1].f,strtemplate[k-1].norm);
 	}
       if(k == MAXTEMPLATES)
 	{
