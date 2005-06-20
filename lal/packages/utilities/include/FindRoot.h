@@ -167,8 +167,8 @@ LALSBisectionFindRoot (
 REAL8
 XLALDBisectionFindRoot (
     REAL8 (*y)(REAL8, void *),
-    REAL8 xmax,
     REAL8 xmin,
+    REAL8 xmax,
     REAL8 xacc,
     void *params
 );

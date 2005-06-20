@@ -370,8 +370,8 @@ LALSBisectionFindRoot (
 REAL8
 XLALDBisectionFindRoot (
     REAL8 (*y)(REAL8, void *),
-    REAL8 xmax,
     REAL8 xmin,
+    REAL8 xmax,
     REAL8 xacc,
     void *params
 )
@@ -403,11 +403,10 @@ XLALDBisectionFindRoot (
 
   /* loop until root found within requested accuracy or iteration limit
    * exceeded */
-  for(i = 0; ((xmax - xmin) > xacc) && (i < imax); i++)
+  for(i = 0; (xmax - xmin) > xacc; i++)
   {
-    /* make sure a root is bracketed */
-    if(y_1 * y_2 >= 0.0)
-      XLAL_ERROR_REAL8(func, XLAL_EFAILED);
+    if(i >= imax)
+      XLAL_ERROR_REAL8(func, XLAL_EMAXITER);
 
     /* evaluate function at midpoint */
     xmid = (xmin + xmax) / 2.0;
@@ -419,23 +418,24 @@ XLALDBisectionFindRoot (
     if(ymid == 0.0)
       break;
 
-    /* determine which half of the domain the root is in */
     if(y_1 * ymid < 0.0)
     {
       /* root is in first half of domain */
       xmax = xmid;
       y_2 = ymid;
     }
-    else
+    else if(y_2 * ymid < 0.0)
     {
       /* root is in second half of domain */
-      xmin = xmin;
+      xmin = xmid;
       y_1 = ymid;
     }
+    else
+    {
+      /* something's gone wrong */
+      XLAL_ERROR_REAL8(func, XLAL_EFAILED);
+    }
   }
-
-  if(i >= imax)
-    XLAL_ERROR_REAL8(func, XLAL_EMAXITER);
 
   return((xmin + xmax) / 2.0);
 }
