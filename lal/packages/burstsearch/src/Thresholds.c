@@ -136,12 +136,12 @@ REAL8 XLALNoncChisqCdfNonSafe(
 	 */
 
 	static const char *func = "XLALNoncChisqCdfNonSafe";
+	const REAL8 fractionalAccuracy = 1.0e-5;
+	const INT4 maxloop = 1000;
 	REAL8 temp;
 	REAL8 current;
 	REAL8 sum;
 	INT4 n;
-	const REAL8 fractionalAccuracy = 1.0e-10;
-	const INT4 maxloop = 1000;
 
 	/* Arguments chi2, dof and nonCentral must be non-negative */
 	if((dof <= 0.0) ||
@@ -169,7 +169,7 @@ REAL8 XLALNoncChisqCdfNonSafe(
 		current = exp(-nonCentral / 2.0 + n * log(nonCentral / 2.0)) * temp / Factorial(n);
 		sum += current;
 	}
-	while((current * current) / (sum * sum) > fractionalAccuracy);
+	while(fabs(current / sum) > fractionalAccuracy);
 
 	return(sum);
 }
@@ -189,7 +189,7 @@ REAL8 XLALNoncChisqCdf(
 	if(XLALIsREAL8FailNaN(prob))
 		XLAL_ERROR_REAL8(func, XLAL_EFUNC);
 
-	/* check that final answer is a legal probability third test is
+	/* check that final answer is a legal probability.  third test is
 	 * necessary since there are some numbers x for which (x > 0.0)
 	 * evaluates as TRUE but for which 1/x evaluates to inf */
 
@@ -224,7 +224,7 @@ REAL8 XLALChi2Threshold(
 }
 
 
-struct RhoThresholdIn
+struct NoncChisqCdfParams
 {
 	REAL8 chi2;
 	REAL8 dof;
@@ -232,18 +232,15 @@ struct RhoThresholdIn
 };
 
 
-static REAL8 NoncChisqCdf1(REAL8 lnrho, void *params)
+static REAL8 NoncChisqCdf(REAL8 lnrho, void *data)
 {
-	/* This is just the XLALNoncChisqCdf() function plus an added
-	 * constant.  Its used in LALRhoThreshold() in the call to
-	 * DFindRoot().  params is actually a pointer to a structure
-	 * RhoThresholdIn It passed to NoncChisqCdf1 as a pointer to void
-	 * so that NoncChisqCdf1 will be a REAL8LALFunction and be passable
-	 * to DFindRoot(); see header file FindRoot.h */
-	REAL8 chi2 = ((struct RhoThresholdIn *) params)->chi2;
-	REAL8 dof = ((struct RhoThresholdIn *) params)->dof;
+	/* Wrap XLALNoncChisqCdfNonSafe() for use with the root-finding
+	 * functions in XLALRhoThreshold() below. */
+	struct NoncChisqCdfParams *params = data;
+	REAL8 chi2 = params->chi2;
+	REAL8 dof = params->dof;
 	REAL8 nonCentral = exp(2.0 * lnrho);
-	REAL8 falseDismissal = ((struct RhoThresholdIn *) params)->falseDismissal;
+	REAL8 falseDismissal = params->falseDismissal;
 
 	/* use the "nonsafe" version because it's ok for the result to be 1 or
 	 * 0 */
@@ -265,11 +262,9 @@ REAL8 XLALRhoThreshold(
 	 * nonCentral
 	 */
 	static const char *func = "XLALRhoThreshold";
-	REAL8 lnrho;
 	REAL8 xmin = -2.0;
 	REAL8 xmax = +2.0;
-	DFindRootIn frInput;
-	struct RhoThresholdIn NoncChisqCdf1params;
+	struct NoncChisqCdfParams params;
 
 	/* Arguments dof and chi2 must be positive, supplied false
 	 * dismissal probability must be between 0 and 1 */
@@ -280,13 +275,12 @@ REAL8 XLALRhoThreshold(
 		XLAL_ERROR_REAL8(func, XLAL_EDOM);
 
 	/* Setup NoncChisqCdf1() parameters */
-	NoncChisqCdf1params.chi2 = chi2;
-	NoncChisqCdf1params.chi2 = dof;
-	NoncChisqCdf1params.chi2 = falseDismissal;
+	params.chi2 = chi2;
+	params.dof = dof;
+	params.falseDismissal = falseDismissal;
 
 	/* Now bracket and find the root */
-	XLALDBracketRoot(NoncChisqCdf1, &xmin, &xmax, &NoncChisqCdf1params);
-	lnrho = XLALDBisectionFindRoot(NoncChisqCdf1, xmin, xmax, 1e-5, &NoncChisqCdf1params);
+	XLALDBracketRoot(NoncChisqCdf, &xmin, &xmax, &params);
 
-	return(exp(lnrho));
+	return(exp(XLALDBisectionFindRoot(NoncChisqCdf, xmin, xmax, 1e-5, &params)));
 }

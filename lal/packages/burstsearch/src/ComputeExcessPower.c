@@ -10,10 +10,24 @@ $Id$
 NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 
 #include <lal/ExcessPower.h>
+#include <lal/Sequence.h>
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>
 
 #define TRUE 1
+#define FALSE 0
+
+static REAL8 square_complex8_sum(const COMPLEX8 *vec, int start, int length)
+{
+	COMPLEX8 sum = { 0.0, 0.0 };
+
+	for(vec += start; length-- > 0; vec++) {
+		sum.re += (*vec).re;
+		sum.im += (*vec).im;
+	}
+
+	return(sum.re * sum.re + sum.im * sum.im);
+}
 
 
 /******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
@@ -26,21 +40,25 @@ XLALComputeExcessPower(
 /******** </lalVerbatim> ********/
 {
 	static const char *func = "XLALComputeExcessPower";
-	COMPLEX8TimeFrequencyPlane *tfPlane;
+	COMPLEX8TimeFrequencyPlane *plane = tfTiling->tfp;
 	TFTile *tile;
 	REAL8 sum;
 	REAL8 dof;
 	REAL8 numsigma;
-	INT4 j;
-	INT4 nf;
-	INT4 nt;
+	INT4 offset;
+	INT4 nf = plane->params->freqBins;
+	INT4 nt = plane->params->timeBins;
 	INT4 t1;
 	INT4 t2;
 	INT4 k1;
 	INT4 k2;
 
 	/* check on some parameter values */
-	if((input->numSigmaMin < 1.0) || (input->alphaDefault < 0.0) || (input->alphaDefault > 1.0) || (tfTiling->numPlanes <= 0))
+	if((nf <= 0) || (nt <= 0) ||
+	   (input->numSigmaMin < 1.0) ||
+	   (input->alphaDefault < 0.0) ||
+	   (input->alphaDefault > 1.0) ||
+	   (tfTiling->numPlanes <= 0))
 		XLAL_ERROR(func, XLAL_EDOM);
 
 	/* make sure TF planes have already been computed */
@@ -48,17 +66,12 @@ XLALComputeExcessPower(
 		XLAL_ERROR(func, XLAL_EDATA);
 
 	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile) {
-		tfPlane = tfTiling->tfp;
-
-		nf = tfPlane->params->freqBins;
-		nt = tfPlane->params->timeBins;
 		t1 = tile->tstart;
 		t2 = tile->tend;
 		k1 = tile->fstart;
 		k2 = tile->fend;
 
-		if((nf <= 0) || (nt <= 0) ||
-		   (t1 < 0) || (t1 > t2) || (t2 > nt) ||
+		if((t1 < 0) || (t1 > t2) || (t2 > nt) ||
 		   (k1 < 0) || (k1 > k2) || (k2 > nf))
 			XLAL_ERROR(func, XLAL_EDATA);
 
@@ -66,37 +79,22 @@ XLALComputeExcessPower(
 		dof = 2.0 * (t2 - t1) * tile->deltaT * (k2 - k1) * tile->deltaF;
 
 		sum = 0.0;
-		for(j = t1; j < t2; j += (t2 - t1) / dof) {
-			INT4 offset = j * nf;
-			REAL8 sumnorm = 0.0;
-			COMPLEX8 sumz = { 0.0, 0.0 };
-			INT4 ii;
-			for(ii = k1; ii < k2; ii++) {
-				COMPLEX8 z = tfPlane->data[offset+ii];
-				sumz.re += z.re;
-				sumz.im += z.im;
-				sumnorm += norm[ii] * norm[ii];
-			}
-			sum += (sumz.re*sumz.re + sumz.im*sumz.im)/sumnorm;
-		}
+		for(offset = t1; offset < t2; offset += (t2 - t1) / dof)
+			sum += square_complex8_sum(&plane->data[offset * nf], k1, k2 - k1) / XLALREAL4SumSquares(norm, k1, k2 - k1);
 
-		{
-		REAL8 rho2;
-		rho2 = sum - dof;
-		tile->excessPower = rho2;
-		numsigma = rho2 / sqrt(2.0 * dof);
-		}
+		tile->excessPower = sum - dof;
 		tile->weight = 1.0;
 
 		/* Need to compute an accurate value of likelihood only if
 		 * excess power is greater than a few sigma */
-
+		numsigma = (sum - dof) / sqrt(2.0 * dof);
 		if(numsigma > input->numSigmaMin) {
 			tile->firstCutFlag = TRUE;
 			tile->alpha = XLALOneMinusChisqCdf(sum, dof);
 			if(XLALIsREAL8FailNaN(tile->alpha))
 				XLAL_ERROR(func, XLAL_EFUNC);
 		} else {
+			tile->firstCutFlag = FALSE;
 			tile->alpha =  input->alphaDefault; /* default value */
 		}
 	}

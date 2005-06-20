@@ -178,10 +178,7 @@ int main(int argc, char *argv[])
 	CHECKOUTPUT("XLALNoncChisqCdf(chi2, dof, rho * rho)", XLALNoncChisqCdf(chi2, dof, rho * rho), 0.00439452, 1e-7);
 	/* check reverse functions */
 	CHECKOUTPUT("XLALChi2Threshold(dof, 1.0 - XLALChisqCdf(chi2, dof))", XLALChi2Threshold(dof, 1.0 - XLALChisqCdf(chi2, dof)), chi2, 1e-5);
-#if 0
-	/* FIXME */
 	CHECKOUTPUT("XLALRhoThreshold(chi2, dof, XLALNoncChisqCdf(chi2, dof, rho * rho))", XLALRhoThreshold(chi2, dof, XLALNoncChisqCdf(chi2, dof, rho * rho)), rho, 1e-5);
-#endif
 
 
 	/* 
@@ -198,10 +195,7 @@ int main(int argc, char *argv[])
 	CHECKOUTPUT("XLALNoncChisqCdf(chi2, dof, rho * rho)", XLALNoncChisqCdf(chi2, dof, rho * rho), 0.822575, 1e-6);
 	/* check reverse functions */
 	CHECKOUTPUT("XLALChi2Threshold(dof, 1.0 - XLALChisqCdf(chi2, dof))", XLALChi2Threshold(dof, 1.0 - XLALChisqCdf(chi2, dof)), chi2, 1e-5);
-#if 0
-	/* FIXME */
 	CHECKOUTPUT("XLALRhoThreshold(chi2, dof, XLALNoncChisqCdf(chi2, dof, rho * rho))", XLALRhoThreshold(chi2, dof, XLALNoncChisqCdf(chi2, dof, rho * rho)), rho, 1e-5);
-#endif
 
 
 	/*
