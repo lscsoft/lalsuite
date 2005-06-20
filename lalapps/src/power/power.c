@@ -94,6 +94,7 @@ static struct {
 	int getcaltimeseries;       /* flag to read in double time series  */ 
 	REAL8 high_pass;            /* conditioning high pass freq (Hz)    */
 	REAL8 cal_high_pass;        /* double->single high pass freq (Hz)  */
+	int bandwidth;
 } options;
  
 /* global variables */
@@ -282,7 +283,7 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 	for(index = 0; long_options[index].name; index++) {
 		switch(long_options[index].val) {
 			case 'A':
-			arg_is_missing = !params->tfTilingInput.length;
+			arg_is_missing = !options.bandwidth;
 			break;
 
 			case 'C':
@@ -290,7 +291,7 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			break;
 
 			case 'E':
-			arg_is_missing = params->compEPInput.alphaDefault > 1.0;
+			arg_is_missing = params->alphaDefault > 1.0;
 			break;
 
 			case 'K':
@@ -304,11 +305,11 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			break;
 
 			case 'Q':
-			arg_is_missing = params->tfTilingInput.flow < 0.0;
+			arg_is_missing = params->tfPlaneParams.flow < 0.0;
 			break;
 
 			case 'T':
-			arg_is_missing = params->tfTilingInput.minFreqBins <= 0;
+			arg_is_missing = params->minFreqBins <= 0;
 			break;
 
 			case 'U':
@@ -320,7 +321,7 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			break;
 
 			case 'X':
-			arg_is_missing = params->compEPInput.numSigmaMin <= 0.0;
+			arg_is_missing = params->numSigmaMin <= 0.0;
 			break;
 
 			case 'Y':
@@ -434,10 +435,10 @@ void parse_command_line(
 	int useoverwhitening;
 	int c;
 	int option_index;
-	int ram = 0;	/* default */
+	int ram;
 	INT8 gpstmp;
-	INT8 gpsStartTimeNS = 0;	/* impossible */
-	INT8 gpsStopTimeNS = 0;	/* impossible */
+	INT8 gpsStartTimeNS;
+	INT8 gpsStopTimeNS;
 	ProcessParamsTable **paramaddpoint = &procparams->processParamsTable;
 	LALStatus stat = blank_status;
 	struct option long_options[] = {
@@ -499,12 +500,11 @@ void parse_command_line(
 	params->channelName = NULL;	/* impossible */
 	params->eventLimit = 999;	/* default */
 	params->method = -1;	/* impossible */
-	params->compEPInput.alphaDefault = 2.0;	/* impossible */
-	params->compEPInput.numSigmaMin = -1.0;	/* impossible */
-	params->tfTilingInput.flow = -1.0;	/* impossible */
+	params->alphaDefault = 2.0;	/* impossible */
+	params->numSigmaMin = -1.0;	/* impossible */
+	params->tfPlaneParams.flow = -1.0;	/* impossible */
 	params->tfPlaneParams.fhigh = -1.0;	/* impossible */
-	params->tfTilingInput.length = 0;	/* impossible */
-	params->tfTilingInput.minFreqBins = 0;	/* impossible */
+	params->minFreqBins = 0;	/* impossible */
 	params->tfTilingInput.minTimeBins = 0;	/* impossible */
 	params->tfTilingInput.maxTileBand = 0;  /* impossible */
 	/*params->tfTilingInput.maxTileBand = 32.0;	default */
@@ -513,6 +513,7 @@ void parse_command_line(
 	params->windowLength = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
 
+	options.bandwidth = 0;	/* impossible */
 	options.calCacheFile = NULL;	/* default */
 	options.cluster = FALSE;	/* default */
 	options.comment = "";		/* default */
@@ -531,6 +532,10 @@ void parse_command_line(
 	options.simCacheFile = NULL;	/* default */
 	options.simFrameSecs = 0;       /* default */
 	options.simdirname = NULL;      /* default */
+
+	ram = 0;	/* default */
+	gpsStartTimeNS = 0;	/* impossible */
+	gpsStopTimeNS = 0;	/* impossible */
 
 	cachefile = NULL;	        /* default */
 	dirname = NULL;	                /* default */
@@ -552,9 +557,9 @@ void parse_command_line(
 	optind = 0;	/* start scanning from argv[0] */
 	do switch(c = getopt_long(argc, argv, "", long_options, &option_index)) {
 		case 'A':
-		params->tfTilingInput.length = atoi(optarg);
-		if(params->tfTilingInput.length <= 0 || !is_power_of_2(params->tfTilingInput.length) ) {
-			sprintf(msg, "must be > 0 and a power of 2(%i specified)", params->tfTilingInput.length);
+		options.bandwidth = atoi(optarg);
+		if(options.bandwidth <= 0 || !is_power_of_2(options.bandwidth) ) {
+			sprintf(msg, "must be > 0 and a power of 2(%i specified)", options.bandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -578,9 +583,9 @@ void parse_command_line(
 		break;
 
 		case 'E':
-		params->compEPInput.alphaDefault = atof(optarg);
-		if(params->compEPInput.alphaDefault < 0.0 || params->compEPInput.alphaDefault > 1.0) {
-			sprintf(msg, "must be in range [0,1] (%f specified)", params->compEPInput.alphaDefault);
+		params->alphaDefault = atof(optarg);
+		if(params->alphaDefault < 0.0 || params->alphaDefault > 1.0) {
+			sprintf(msg, "must be in range [0,1] (%f specified)", params->alphaDefault);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -678,10 +683,9 @@ void parse_command_line(
 		break;
 
 		case 'Q':
-		params->tfTilingInput.flow = atof(optarg);
 		params->tfPlaneParams.flow = atof(optarg);
-		if((params->tfTilingInput.flow < 0.0)) {
-			sprintf(msg,"must not be negative (%f Hz specified)", params->tfTilingInput.flow);
+		if((params->tfPlaneParams.flow < 0.0)) {
+			sprintf(msg,"must not be negative (%f Hz specified)", params->tfPlaneParams.flow);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -707,9 +711,9 @@ void parse_command_line(
 		break;
 
 		case 'T':
-		params->tfTilingInput.minFreqBins = atoi(optarg);
-		if(params->tfTilingInput.minFreqBins <= 0) {
-			sprintf(msg,"must be > 0 (%i specified)", params->tfTilingInput.minFreqBins);
+		params->minFreqBins = atoi(optarg);
+		if(params->minFreqBins <= 0) {
+			sprintf(msg,"must be > 0 (%i specified)", params->minFreqBins);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -747,9 +751,9 @@ void parse_command_line(
 		break;
 
 		case 'X':
-		params->compEPInput.numSigmaMin = atof(optarg);
-		if(params->compEPInput.numSigmaMin <= 0.0) {
-			sprintf(msg, "must be > 0.0 (%f specified)", params->compEPInput.numSigmaMin);
+		params->numSigmaMin = atof(optarg);
+		if(params->numSigmaMin <= 0.0) {
+			sprintf(msg, "must be > 0.0 (%f specified)", params->numSigmaMin);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -995,17 +999,17 @@ void parse_command_line(
 	 * Sanitize filter frequencies.
 	 */
 
-	if(options.cal_high_pass > params->tfTilingInput.flow)
-		fprintf(stderr, "%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options.cal_high_pass, params->tfTilingInput.flow);
+	if(options.cal_high_pass > params->tfPlaneParams.flow)
+		fprintf(stderr, "%s: warning: calibrated data quantization high-pass frequency (%f Hz) greater than TF plane low frequency (%f Hz)\n", argv[0], options.cal_high_pass, params->tfPlaneParams.flow);
 
-	if(options.high_pass > params->tfTilingInput.flow - 10.0)
-		fprintf(stderr, "%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options.high_pass, params->tfTilingInput.flow);
+	if(options.high_pass > params->tfPlaneParams.flow - 10.0)
+		fprintf(stderr, "%s: warning: data conditioning high-pass frequency (%f Hz) greater than 10 Hz below TF plane low frequency (%f Hz)\n", argv[0], options.high_pass, params->tfPlaneParams.flow);
 
 	/*
 	 * Miscellaneous chores.
 	 */
 
-	params->tfPlaneParams.fhigh = params->tfPlaneParams.flow + params->tfTilingInput.length;
+	params->tfPlaneParams.fhigh = params->tfPlaneParams.flow + options.bandwidth;
 	params->printSpectrum = printSpectrum;
 	params->useOverWhitening = useoverwhitening;
 

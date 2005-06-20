@@ -1,5 +1,5 @@
 /******** <lalVerbatim file="SortTFTilingCV"> ********
-Author: Eanna Flanagan
+Author: Eanna Flanagan, and Cannon, K.
 $Id$
 ********* </lalVerbatim> ********/
 
@@ -29,7 +29,7 @@ static int TileCompare(const void *t1, const void *t2)
 
 /******** <lalVerbatim file="SortTFTilingCP"> ********/
 int XLALSortTFTiling(
-	TFTiling * tfTiling
+	TFTile **list
 )
 /******** </lalVerbatim> ********************************/
 {
@@ -39,28 +39,24 @@ int XLALSortTFTiling(
 	TFTile *tile;
 	TFTile **array, **addpoint;
 
-	/* make sure excess power has already been computed */
-	if(!tfTiling->excessPowerComputed)
-		XLAL_ERROR(func, XLAL_EDATA);
-
 	/* count tiles */
 	length = 0;
-	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
+	for(tile = *list; tile; tile = tile->nextTile)
 		length++;
 
 	/* convert linked list to an array */
 	array = LALMalloc(length * sizeof(*array));
 	if(!array)
-		XLAL_ERROR(func, XLAL_EFUNC);
+		XLAL_ERROR(func, XLAL_ENOMEM);
 	i = 0;
-	for(tile = tfTiling->firstTile; tile; tile = tile->nextTile)
+	for(tile = *list; tile; tile = tile->nextTile)
 		array[i++] = tile;
 
 	/* sort array */
 	qsort(array, length, sizeof(*array), TileCompare);
 
 	/* relink list according to array order */
-	addpoint = &tfTiling->firstTile;
+	addpoint = list;
 	for(i = 0; i < length; i++) {
 		*addpoint = array[i];
 		addpoint = &(*addpoint)->nextTile;
@@ -68,9 +64,6 @@ int XLALSortTFTiling(
 	*addpoint = NULL;
 
 	LALFree(array);
-
-	/* set flag saying tiles have been sorted */
-	tfTiling->tilesSorted = TRUE;
 
 	return(0);
 }

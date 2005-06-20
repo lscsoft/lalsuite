@@ -1,5 +1,5 @@
 /******** <lalVerbatim file="DestroyTFPlaneCV"> ********
-Author: Flanagan, E
+Author: Flanagan, E. and Cannon, K.
 $Id$
 ********* </lalVerbatim> ********/
 
@@ -13,13 +13,11 @@ NRCSID (DESTROYTFPLANEC, "$Id$");
 /******** <lalVerbatim file="DestroyTFPlaneCP"> ********/
 void
 XLALDestroyTFPlane(
-	COMPLEX8TimeFrequencyPlane *tfp
+	COMPLEX8TimeFrequencyPlane *plane
 )
 /******** </lalVerbatim> ********/
 {
-	if(tfp) {
-		LALFree(tfp->params);
-		LALFree(tfp->data);
-		LALFree(tfp);
-	}
+	if(plane)
+		LALFree(plane->data);
+	LALFree(plane);
 }

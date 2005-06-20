@@ -1,5 +1,5 @@
 /******** <lalVerbatim file="FreqSeriesToTFPlaneCV"> ********
-Author: Flanagan, E
+Author: Flanagan, E. and Cannon, K.
 $Id$
 ********* </lalVerbatim> ********/
 
@@ -10,14 +10,13 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
 #include <math.h>
 #include <lal/Date.h>
 #include <lal/LALConstants.h>
-#include <lal/LALErrno.h>
 #include <lal/RealFFT.h>
 #include <lal/SeqFactories.h>
 #include <lal/TFTransform.h>
 
 /******** <lalVerbatim file="FreqSeriesToTFPlaneCP"> ********/
 int XLALFreqSeriesToTFPlane(
-	COMPLEX8TimeFrequencyPlane *tfp,
+	COMPLEX8TimeFrequencyPlane *plane,
 	const COMPLEX8FrequencySeries *freqSeries,
 	UINT4 windowShift,
 	REAL4 *normalisation,
@@ -33,8 +32,8 @@ int XLALFreqSeriesToTFPlane(
 	INT4 i;
 	INT4 j;
 	INT4 numpts = 0;
-	INT4 nt = tfp->params->timeBins;
-	INT4 nf = tfp->params->freqBins;
+	INT4 nt = plane->params.timeBins;
+	INT4 nf = plane->params.freqBins;
 	INT4 ntotal;
 
 	INT4 flow1;
@@ -52,11 +51,11 @@ int XLALFreqSeriesToTFPlane(
 	RealFFTPlan *prev = NULL;
 
 	/* check input parameters */
-	if ((nt <= 0) || (nf <= 0) || (freqSeries->deltaF <= 0.0) || (tfp->params->deltaT <= 0.0) || (freqSeries->f0 < 0.0))
+	if ((nt <= 0) || (nf <= 0) || (freqSeries->deltaF <= 0.0) || (plane->params.deltaT <= 0.0) || (freqSeries->f0 < 0.0))
 		XLAL_ERROR(func, XLAL_EDOM);
 
 	/* Lowest freq of time freq plane >= lowest freq of freq series */
-	if (tfp->params->flow < freqSeries->f0)
+	if (plane->params.flow < freqSeries->f0)
 		XLAL_ERROR(func, XLAL_EDATA);
 
 	/* 
@@ -65,14 +64,14 @@ int XLALFreqSeriesToTFPlane(
 	 * Note that the frequency resolution of the frequency series does
 	 * not have to be the same as delF.
 	 */
-	delT = tfp->params->deltaT;
-	delF = tfp->params->deltaF;
+	delT = plane->params.deltaT;
+	delF = plane->params.deltaF;
 
 	/* number of bins of the frequency series corresponding to delF */
 	fseglength = 0.5 + delF / freqSeries->deltaF;
 
 	/* low frequency cutoff:  in terms of number of bins of frequency series */
-	flow1 = (tfp->params->flow - freqSeries->f0) / freqSeries->deltaF;
+	flow1 = (plane->params.flow - freqSeries->f0) / freqSeries->deltaF;
 
 	/* compute total number of data points to be used to construct TF plane */
 	ntotal = nf * fseglength;
@@ -95,7 +94,7 @@ int XLALFreqSeriesToTFPlane(
 	dt = 1.0 / (((REAL4) numpts) * freqSeries->deltaF);
 
 	/* set the epoch of the TF plane */
-	tfp->epoch = freqSeries->epoch;
+	plane->epoch = freqSeries->epoch;
 
 	/* number of points from peak of filter to first zero */
 	filterlen = numpts / fseglength;
@@ -225,8 +224,8 @@ int XLALFreqSeriesToTFPlane(
 		 * original implementation.   We'll have to look at that.  */
 		/* Copy the result into appropriate spot in output structure */
 		for (j = 0; j < nt; j++) {
-			tfp->data[j * nf + i].re = snr->data[(j * (INT4) (delT / dt)) + windowShift];
-			tfp->data[j * nf + i].im = 0.0;
+			plane->data[j * nf + i].re = snr->data[(j * (INT4) (delT / dt)) + windowShift];
+			plane->data[j * nf + i].im = 0.0;
 		}
 	}
 

@@ -1,5 +1,5 @@
 /********************************** <lalVerbatim file="ThresholdsCV">
-Author: Flanagan, E
+Author: Flanagan, E. and Cannon, K.
 $Id$
 **************************************************** </lalVerbatim> */
 

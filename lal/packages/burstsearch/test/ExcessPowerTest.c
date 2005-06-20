@@ -276,7 +276,7 @@ main (int argc, char *argv[])
 
   XLALComputeExcessPower (tfTiling, &input);
 
-  XLALComputeLikelihood (&lambda, tfTiling);
+  XLALComputeLikelihood (tfTiling->firstTile);
 
   LALSortTFTiling (&status, tfTiling);
   TestStatus (&status, CODES(0), 1);
@@ -671,70 +671,6 @@ main (int argc, char *argv[])
       tfPlane->params->freqBins=p;
     }
     
-    /* clean up */
-
-    LALCDestroyVector( &status, &(locfseries.data));
-    TestStatus (&status, CODES(0), 1);
-
-    LALDestroyTFTiling (&status, &tfTiling);
-    TestStatus (&status, CODES(0), 1);
-  }
-
-
-
-
-
-
-
-  /* 
-   *
-   *  Test function XLALComputeLikelihood()
-   *
-   */
-  {
-    CreateTFTilingIn          params;
-    COMPLEX8FrequencySeries   locfseries;
-    REAL8                     loclambda;
-
-    if (verbose)
-      {
-	printf ("\n--- Testing XLALComputeLikelihood() \n\n");
-      }
-    
-    params.overlapFactor = 3;
-    params.minFreqBins = 1;
-    params.minTimeBins = 1;
-    params.flow = 0.0;
-    params.deltaF = 1.0;
-    params.length = 16;
-    params.maxTileBand = 64.0;
-  
-    LALCreateTFTiling (&status, &tfTiling, &params);
-    TestStatus (&status, CODES(0), 1);
-
-    locfseries.epoch.gpsSeconds=0;
-    locfseries.epoch.gpsNanoSeconds=0;
-    locfseries.deltaF = 1.0;
-    locfseries.f0 = 0.0;
-    /*
-     * OMITTED
-     *
-    locfseries.name = NULL;
-    locfseries.sampleUnits=NULL;
-     */
-    locfseries.data=NULL;
-
-    LALCCreateVector( &status, &(locfseries.data), 1000);
-    TestStatus (&status, CODES(0), 1);
-    memset( locfseries.data->data, 0,
-        locfseries.data->length * sizeof( *locfseries.data->data ) );
-    
-    XLALComputeTFPlanes(tfTiling, &locfseries);
-
-    XTestStatus("XLALComputeLikelihood", XLALComputeLikelihood(&loclambda, tfTiling), XLAL_EDATA);
-
-    XLALComputeExcessPower(tfTiling, &input);
-      
     /* clean up */
 
     LALCDestroyVector( &status, &(locfseries.data));

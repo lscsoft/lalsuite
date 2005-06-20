@@ -1,5 +1,5 @@
 /******** <lalVerbatim file="DestroyTFTilingCV"> ********
-Author: Flanagan, E
+Author: Flanagan, E. and Cannon, K.
 $Id$
 ********* </lalVerbatim> ********/
  
@@ -15,22 +15,15 @@ NRCSID (DESTROYTFTILINGC, "$Id$");
 /******** <lalVerbatim file="DestroyTFTilingCP"> ********/
 void
 XLALDestroyTFTiling(
-	TFTiling *tfTiling
+	TFTile *list
 )
 /******** </lalVerbatim> ********/
 {
-	TFTile *tile;
+	TFTile *next;
 
-	if(!tfTiling)
-		return;
-
-	XLALDestroyTFPlane(tfTiling->tfp);
-
-	while(tfTiling->firstTile) {
-		tile = tfTiling->firstTile->nextTile;
-		LALFree(tfTiling->firstTile);
-		tfTiling->firstTile = tile;
+	while(list) {
+		next = list->nextTile;
+		LALFree(list);
+		list = next;
 	}
-
-	LALFree(tfTiling);
 }

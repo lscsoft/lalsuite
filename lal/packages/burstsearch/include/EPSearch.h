@@ -34,14 +34,16 @@ tagEPSearchParams {
 	AvgSpecMethod         method;
 	CreateTFTilingIn      tfTilingInput;
 	TFPlaneParams         tfPlaneParams;
-	ComputeExcessPowerIn  compEPInput;
+	REAL8                 numSigmaMin;
+	REAL8                 alphaDefault;
 	WindowType            windowType;
+	INT4                  minFreqBins;
 } EPSearchParams;
 
 int
 XLALEPSearch(
 	SnglBurstTable  **burstEvent,
-	REAL4TimeSeries  *tseries,
+	const REAL4TimeSeries  *tseries,
 	EPSearchParams   *params
 );
 

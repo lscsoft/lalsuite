@@ -37,7 +37,7 @@ typedef struct tagCOMPLEX8TimeFrequencyPlane {
 	CHAR *name;
 	LIGOTimeGPS epoch;
 	CHARVector *sampleUnits;
-	TFPlaneParams *params;
+	TFPlaneParams params;
 	COMPLEX8 *data;
 	/*
 	 * data[i*params->freqBins+j] is a complex number
@@ -58,13 +58,14 @@ XLALComputeFrequencySeries(
 
 COMPLEX8TimeFrequencyPlane *
 XLALCreateTFPlane(
-	TFPlaneParams *input
+	TFPlaneParams *params,
+	INT4 minFreqBins
 );
 
 
 void
 XLALDestroyTFPlane(
-	COMPLEX8TimeFrequencyPlane *tfp
+	COMPLEX8TimeFrequencyPlane *plane
 );
 
 

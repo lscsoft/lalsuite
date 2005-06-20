@@ -16,13 +16,6 @@ extern "C" {
 
 NRCSID(EXCESSPOWERH, "$Id$");
 
-/******** <lalErrTable file="ExcessPowerHErrTab"> ********/
-#define EXCESSPOWERH_EORDER       32
-
-
-#define EXCESSPOWERH_MSGEORDER    "Routines called in illegal order"
-/******** </lalErrTable> ********/
-
 typedef struct tagTFTile {
 	INT4 fstart;
 	INT4 fend;
@@ -38,32 +31,12 @@ typedef struct tagTFTile {
 } TFTile;
 
 
-typedef struct tagTFTiling {
-	TFTile *firstTile;	/* linked list of Tiles */
-	INT4 numTiles;
-	COMPLEX8TimeFrequencyPlane *tfp;
-	BOOLEAN planesComputed;
-	BOOLEAN excessPowerComputed;
-	BOOLEAN tilesSorted;
-} TFTiling;
-
-
 typedef struct tagCreateTFTilingIn {
 	INT4 overlapFactor;
-	INT4 minFreqBins;
 	INT4 minTimeBins;
-	REAL8 flow;	/* lowest freq to search  */
-	REAL8 deltaF;
-	INT4 length;
 	REAL8 maxTileBand;
 	REAL8 maxTileDuration;
 } CreateTFTilingIn;
-
-
-typedef struct tagComputeExcessPowerIn {
-	REAL8 numSigmaMin;
-	REAL8 alphaDefault;
-} ComputeExcessPowerIn;
 
 
 int
@@ -81,53 +54,46 @@ LALAddWhiteNoise(
 );
 
 
-TFTiling *
+TFTile *
 XLALCreateTFTiling(
 	const CreateTFTilingIn *input, 
-	TFPlaneParams *planeParams
+	const TFPlaneParams *planeparams
 );
 
 
 void
 XLALDestroyTFTiling(
-	TFTiling *tfTiling
-);
-
-
-int
-XLALComputeTFPlanes(
-	TFTiling *tfTiling,
-	const COMPLEX8FrequencySeries *freqSeries,
-	UINT4 windowShift,
-	REAL4 *norm,
-	const REAL4FrequencySeries *psd
+	TFTile *list
 );
 
 
 int
 XLALComputeExcessPower(
-	TFTiling *tfTiling,
-	const ComputeExcessPowerIn *input,
+	TFTile *list,
+	const COMPLEX8TimeFrequencyPlane *plane,
+	REAL8 numSigmaMin,
+	REAL8 alphaDefault,
 	const REAL4 *norm
 );
 
 
 int
 XLALSortTFTiling(
-	TFTiling *tfTiling
+	TFTile **list
 );
 
 
 REAL8
 XLALComputeLikelihood(
-	TFTiling *tfTiling
+	TFTile *list
 );
 
 
 void
 XLALPrintTFTileList(
 	FILE *fp,
-	const TFTiling *tfTiling,
+	const TFTile *list,
+	const COMPLEX8TimeFrequencyPlane *plane,
 	INT4 maxTiles
 );
 
