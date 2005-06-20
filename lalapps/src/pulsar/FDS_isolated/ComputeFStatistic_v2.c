@@ -166,8 +166,6 @@ INT4 uvar_windowsize;
 
 /* interpolation stuff */
 REAL8 uvar_overSampling;
-BOOLEAN uvar_useInterpolation;
-INT4 uvar_interpolationOrder;
 
 /*----------------------------------------------------------------------*/
 /* some other global variables (FIXME) */
@@ -221,8 +219,7 @@ void
 computeFStat(LALStatus *, 
 	     FStatisticVector **FVect,
 	     const SFTVector *sfts, 
-	     const computeFStatPar* params, 
-	     BOOLEAN useInterpolation);
+	     const computeFStatPar* params);
 
 
 /*----------------------------------------------------------------------*/
@@ -401,20 +398,8 @@ int main(int argc,char *argv[])
       for (spdwn=0; spdwn <= GV.SpinImax; spdwn++)
 	{
 	  /* calculate F-statistic with given oversampling-factor */
-	  LAL_CALL(computeFStat(&status, &FVect, SFTvect, GV.CFSparams, uvar_useInterpolation), &status);
+	  LAL_CALL(computeFStat(&status, &FVect, SFTvect, GV.CFSparams), &status);
 
-	  /* output F-stat at first loop: used for studying effects of interpolation */
-	  if (lalDebugLevel && (loopcounter==0) ) 
-	    {
-	      const CHAR *fname; 
-	      if (uvar_useInterpolation)
-		fname = va("F_D%d_%gx_interpolated_Order%d.dat", 
-			   uvar_Dterms, uvar_overSampling, uvar_interpolationOrder);
-	      else
-		fname = va("F_D%d_%gx_oversampled.dat", uvar_Dterms, uvar_overSampling);
-	      LAL_CALL (writeFVect (&status, FVect, fname), &status);
-	    }
-	  
 	  /* FIXME: to keep cluster-stuff working, we provide the "translation" 
 	   * from FVect back into old Fstats-struct */
 	  Fstat.F  = FVect->F->data;
@@ -509,8 +494,6 @@ initUserVars (LALStatus *status)
   uvar_FreqBand = 0.0;
 
   uvar_overSampling = 2.0;
-  uvar_useInterpolation = FALSE;	/* use LALDemod() for oversampling by default */
-  uvar_interpolationOrder = 16;		/* how many terms to use in interpolation */
 
   uvar_Alpha 	= 0.0;
   uvar_Delta 	= 0.0;
@@ -597,8 +580,6 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
   /* more experimental and unofficial stuff follows here */
   LALregREALUserVar(status, 	overSampling,	'r', UVAR_OPTIONAL, "Oversampling factor for frequency resolution.");
-  LALregBOOLUserVar(status,	useInterpolation, 0, UVAR_OPTIONAL, "Use Interpolation instead of LALDemod() for the oversampling.");
-  LALregINTUserVar(status, 	interpolationOrder,0,UVAR_OPTIONAL, "(Half the) number of terms to use in the interpolation.");
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output the F-statistic field over the parameter-space");
   LALregREALUserVar(status, 	FstatMin,	 0,  UVAR_OPTIONAL, "Minimum F-Stat value to written into outputFstat-file");
   LALregBOOLUserVar(status,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
@@ -941,14 +922,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /* if we don't use interpolation, we increase the 
    * frequency-resolution requested from LALDemod() accordingly
    */
-  if (! uvar_useInterpolation)
-    cfg->dFreq /= uvar_overSampling;
-
-  if ( uvar_useInterpolation && (uvar_overSampling != (UINT4)uvar_overSampling ) )
-    {
-      LALPrintError ("\nOversampling by interpolation only supported for integer oversampling-rates!\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
+  cfg->dFreq /= uvar_overSampling;
   
   /*Number of frequency values to calculate F for */
   cfg->FreqImax = (INT4)(uvar_FreqBand/cfg->dFreq + 0.5) + 1;  
@@ -1692,12 +1666,10 @@ void
 computeFStat (LALStatus *status, 
 	      FStatisticVector **FVectOut, 	/**< output: (oversampled) Fa,Fb,Fstat */
 	      const SFTVector *sfts, 		/**< input: SFT-vector */
-	      const computeFStatPar *params, 	/**< antenna-pattern coefficients a,b,..*/
-	      BOOLEAN useInterpolation)		/**< use interpolation for oversampling? */
+	      const computeFStatPar *params 	/**< antenna-pattern coefficients a,b,..*/
+	      )
 {
 
-  COMPLEX16Vector *FaRefined = NULL;
-  COMPLEX16Vector *FbRefined = NULL;
   UINT4 nbins, i; 
   REAL4 At, Bt, Ct;
   REAL8 FaRe, FaIm, FbRe, FbIm;
@@ -1715,30 +1687,6 @@ computeFStat (LALStatus *status,
   ASSERT (params != NULL, status,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
   
   TRY ( NewLALDemod (status->statusPtr, &FVect, sfts, params), status);
-
-  /* use 2x interpolationOrder bins for interpolation */
-  if ( useInterpolation && (params->overSampling != 1) )
-    {
-      /* increase number of bins accordingly */
-      TRY (refineCOMPLEX16Vector(status->statusPtr, 
-				 &FaRefined, FVect->Fa, uvar_overSampling, uvar_interpolationOrder), status);
-      TRY (refineCOMPLEX16Vector(status->statusPtr, 
-				 &FbRefined, FVect->Fb, uvar_overSampling, uvar_interpolationOrder), status);
-
-      if (FVect->F) {
-	TRY (LALDDestroyVector (status->statusPtr, &(FVect->F)), status);
-      }
-      TRY ( LALZDestroyVector (status->statusPtr, &(FVect->Fa)), status);
-      TRY ( LALZDestroyVector (status->statusPtr, &(FVect->Fb)), status);
-
-      FVect->Fa = FaRefined;
-      FVect->Fb = FbRefined;
-      FVect->df /= params->overSampling;
-      
-      /* truncate to original frequency-bounds */
-      FVect->length = FVect->fBand / FVect->df + 1;
-
-    } /* if useInterpolation */
 
   nbins = FVect->Fa->length;
       
