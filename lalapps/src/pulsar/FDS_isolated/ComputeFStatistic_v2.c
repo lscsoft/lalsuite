@@ -192,22 +192,22 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 /* ---------- local prototypes ---------- */
 
 int main(int argc,char *argv[]);
-void initUserVars (LALStatus *stat);
-void InitFStat (LALStatus *status, ConfigVariables *cfg);
-void CreateDemodParams (LALStatus *stat, computeFStatPar *DemodPar, ConfigVariables *cfg);
+void initUserVars (LALStatus *);
+void InitFStat (LALStatus *, ConfigVariables *cfg);
+void CreateDemodParams (LALStatus *, computeFStatPar *DemodPar, ConfigVariables *cfg);
 
-void CreateNautilusDetector (LALStatus *status, LALDetector *Detector);
-void Freemem(LALStatus *status,  ConfigVariables *cfg);
+void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
+void Freemem(LALStatus *,  ConfigVariables *cfg);
 
-void EstimateFLines(LALStatus *status, const FStatisticVector *FVect);
-void NormaliseSFTDataRngMdn (LALStatus *status);
+void EstimateFLines(LALStatus *, const FStatisticVector *FVect);
+void NormaliseSFTDataRngMdn (LALStatus *);
 INT4 writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df);
 int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
-void WriteFStatLog (LALStatus *stat, CHAR *argv[]);
+void WriteFStatLog (LALStatus *, CHAR *argv[]);
 
 
-void writeFVect(LALStatus *stat, const FStatisticVector *FVect, const CHAR *fname);
+void writeFVect(LALStatus *, const FStatisticVector *FVect, const CHAR *fname);
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 void 
@@ -499,10 +499,10 @@ int main(int argc,char *argv[])
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
 void
-initUserVars (LALStatus *stat)
+initUserVars (LALStatus *status)
 {
-  INITSTATUS( stat, "initUserVars", rcsid );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "initUserVars", rcsid );
+  ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
   uvar_Dterms 	= 16;
@@ -555,63 +555,63 @@ initUserVars (LALStatus *stat)
   uvar_windowsize = 50;	/* for running-median */
 
   /* register all our user-variables */
-  LALregBOOLUserVar(stat, 	help, 		'h', UVAR_HELP,     "Print this message"); 
-  LALregINTUserVar(stat,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
-  LALregREALUserVar(stat, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
-  LALregREALUserVar(stat, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
-  LALregREALUserVar(stat, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserVar(stat,	DataDir, 	'D', UVAR_OPTIONAL, "Directory where SFT's are located");
+  LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
+  LALregINTUserVar(status,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
+  LALregREALUserVar(status, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
+  LALregREALUserVar(status, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
+  LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  LALregREALUserVar(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
+  LALregREALUserVar(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
+  LALregSTRINGUserVar(status,	DataDir, 	'D', UVAR_OPTIONAL, "Directory where SFT's are located");
   /*================*/
-  LALregSTRINGUserVar(stat,	DataDir2, 	 0, UVAR_OPTIONAL, "Directory where SFT's are located");
+  LALregSTRINGUserVar(status,	DataDir2, 	 0, UVAR_OPTIONAL, "Directory where SFT's are located");
   /*================*/
-  LALregSTRINGUserVar(stat,	mergedSFTFile, 	'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
-  LALregSTRINGUserVar(stat,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
+  LALregSTRINGUserVar(status,	mergedSFTFile, 	'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
+  LALregSTRINGUserVar(status,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
   /*================*/
-  LALregSTRINGUserVar(stat,	BaseName2, 	 0, UVAR_OPTIONAL, "The base name of the input  file you want to read");  
+  LALregSTRINGUserVar(status,	BaseName2, 	 0, UVAR_OPTIONAL, "The base name of the input  file you want to read");  
   /*================*/
-  LALregSTRINGUserVar(stat,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-  LALregSTRINGUserVar(stat,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  LALregSTRINGUserVar(stat, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
+  LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
+  LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
   /*================*/
-  LALregSTRINGUserVar(stat, 	IFO2, 		 0,  UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)"); 
+  LALregSTRINGUserVar(status, 	IFO2, 		 0,  UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)"); 
   /*================*/
-  LALregBOOLUserVar(stat, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregREALUserVar(stat, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
-  LALregREALUserVar(stat, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
-  LALregREALUserVar(stat, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
-  LALregREALUserVar(stat, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*tSFT*Nsft)");
-  LALregREALUserVar(stat, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-  LALregINTUserVar(stat, 	windowsize,	'k', UVAR_OPTIONAL, "Running-Median window size");
-  LALregINTUserVar(stat, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
-  LALregINTUserVar(stat, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregREALUserVar(stat, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
-  LALregSTRINGUserVar(stat,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
-  LALregSTRINGUserVar(stat,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
-  LALregSTRINGUserVar(stat,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
-  LALregSTRINGUserVar(stat,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
-  LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
+  LALregBOOLUserVar(status, 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+  LALregREALUserVar(status, 	dopplermax, 	'q', UVAR_OPTIONAL, "Maximum doppler shift expected");  
+  LALregREALUserVar(status, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter f1dot");
+  LALregREALUserVar(status, 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search-band for f1dot");
+  LALregREALUserVar(status, 	df1dot, 	'e', UVAR_OPTIONAL, "Resolution for f1dot (default 1/(2*Tobs*tSFT*Nsft)");
+  LALregREALUserVar(status, 	Fthreshold,	'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
+  LALregINTUserVar(status, 	windowsize,	'k', UVAR_OPTIONAL, "Running-Median window size");
+  LALregINTUserVar(status, 	gridType,	 0 , UVAR_OPTIONAL, "Template grid: 0=flat, 1=isotropic, 2=metric, 3=file");
+  LALregINTUserVar(status, 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
+  LALregREALUserVar(status, 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal mismatch for metric tiling");
+  LALregSTRINGUserVar(status,	skyRegion, 	'R', UVAR_OPTIONAL, "Specify sky-region by polygon");
+  LALregSTRINGUserVar(status,	outputLabel,	'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
+  LALregSTRINGUserVar(status,	skyGridFile,	 0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
+  LALregSTRINGUserVar(status,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
+  LALregSTRINGUserVar(status,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
   /* more experimental and unofficial stuff follows here */
-  LALregREALUserVar(stat, 	overSampling,	'r', UVAR_OPTIONAL, "Oversampling factor for frequency resolution.");
-  LALregBOOLUserVar(stat,	useInterpolation, 0, UVAR_OPTIONAL, "Use Interpolation instead of LALDemod() for the oversampling.");
-  LALregINTUserVar(stat, 	interpolationOrder,0,UVAR_OPTIONAL, "(Half the) number of terms to use in the interpolation.");
-  LALregSTRINGUserVar(stat,	outputFstat,	 0,  UVAR_OPTIONAL, "Output the F-statistic field over the parameter-space");
-  LALregREALUserVar(stat, 	FstatMin,	 0,  UVAR_OPTIONAL, "Minimum F-Stat value to written into outputFstat-file");
-  LALregBOOLUserVar(stat,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
+  LALregREALUserVar(status, 	overSampling,	'r', UVAR_OPTIONAL, "Oversampling factor for frequency resolution.");
+  LALregBOOLUserVar(status,	useInterpolation, 0, UVAR_OPTIONAL, "Use Interpolation instead of LALDemod() for the oversampling.");
+  LALregINTUserVar(status, 	interpolationOrder,0,UVAR_OPTIONAL, "(Half the) number of terms to use in the interpolation.");
+  LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output the F-statistic field over the parameter-space");
+  LALregREALUserVar(status, 	FstatMin,	 0,  UVAR_OPTIONAL, "Minimum F-Stat value to written into outputFstat-file");
+  LALregBOOLUserVar(status,	openDX,	 	 0,  UVAR_OPTIONAL, "Make output-files openDX-readable (adds proper header)");
 
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 } /* initUserVars() */
 
 
 
 void 
-CreateDemodParams (LALStatus *stat, 
+CreateDemodParams (LALStatus *status, 
 		   computeFStatPar *CFSparams,
 		   ConfigVariables *cfg)
 {
@@ -623,8 +623,8 @@ CreateDemodParams (LALStatus *stat,
   LALDetAndSource das;
   LALSource pSource;
 
-  INITSTATUS (stat, "CreateDemodParams", rcsid);
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS (status, "CreateDemodParams", rcsid);
+  ATTATCHSTATUSPTR (status);
   
   /* Detector location: MAKE INTO INPUT!!!!! */
   baryinput.site.location[0] = cfg->Detector.location[0]/LAL_C_SI;
@@ -648,7 +648,7 @@ CreateDemodParams (LALStatus *stat,
   amParams.polAngle = amParams.das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
   amParams.leapAcc = LALLEAPSEC_STRICT;
 
-  TRY ( LALComputeAM(stat->statusPtr, CFSparams->amcoe, cfg->midTS.data, &amParams), stat); 
+  TRY ( LALComputeAM(status->statusPtr, CFSparams->amcoe, cfg->midTS.data, &amParams), status); 
 
   /* ComputeSky stuff*/
   csParams=(CSParams *)LALMalloc(sizeof(CSParams));
@@ -676,13 +676,13 @@ CreateDemodParams (LALStatus *stat,
   CFSparams->ifmin= (INT4) (SFTvect->data[0].f0 / SFTvect->data[0].deltaF + 0.5);
 
   /* compute the "sky-constants" A and B */
-  TRY ( LALComputeSky (stat->statusPtr, CFSparams->skyConst, 0, csParams), stat);  
+  TRY ( LALComputeSky (status->statusPtr, CFSparams->skyConst, 0, csParams), status);  
 
   LALFree(csParams->skyPos);
   LALFree(csParams);
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* CreateDemodParams() */
 
@@ -757,12 +757,12 @@ int writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df){
  * 
  */
 void
-InitFStat (LALStatus *stat, ConfigVariables *cfg)
+InitFStat (LALStatus *status, ConfigVariables *cfg)
 {
   UINT4 i;
 
-  INITSTATUS (stat, "InitFStat", rcsid);
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS (status, "InitFStat", rcsid);
+  ATTATCHSTATUSPTR (status);
 
   /* ----------------------------------------------------------------------
    * do some sanity checks on the user-input before we proceed 
@@ -773,14 +773,14 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
 		      "No SFT directory specified; input directory with -D option.\n"
 		      "No merged SFT file specified; input file with -B option.\n"
 		      "Try ./ComputeFStatistic_v2 -h \n\n");
-      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
     }
 
   if(uvar_DataDir && uvar_mergedSFTFile)
     {
       LALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
 		      "Try ./ComputeFStatistic_v2 -h \n\n" );
-      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
 
  /*==========================*/
@@ -790,41 +790,41 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
 		      "No SFT directory specified; input directory with -D option.\n"
 		      "No merged SFT file specified; input file with -B option.\n"
 		      "Try ./ComputeFStatistic_v2 -h \n\n");
-      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
     }
 
   if(uvar_DataDir2 && uvar_mergedSFTFile)
     {
       LALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
 		      "Try ./ComputeFStatistic_v2 -h \n\n" );
-      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }       
  /*==========================*/   
     
    if (uvar_ephemYear == NULL)
     {
       LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
-      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
   /* don't allow negative frequency-band for safety */
   if ( uvar_FreqBand < 0)
     {
       LALPrintError ("\nNegative value of frequency-band not allowed !\n\n");
-      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
   /* don't allow negative bands (for safty in griding-routines) */
   if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
     {
       LALPrintError ("\nNegative value of sky-bands not allowed (alpha or delta)!\n\n");
-      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
   /* set the current working directory */
   if(chdir(uvar_workingDir) != 0)
     {
       fprintf(stderr, "in Main: unable to change directory to %s\n", uvar_workingDir);
-      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
   /*----------------------------------------------------------------------
@@ -860,7 +860,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     if ( (fpattern = LALCalloc(1, len)) == NULL)
       {
 	LALPrintError ("\nOut of memory !\n");
-	ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
       }
 
 /*==========================*/
@@ -872,7 +872,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     if ( (fpattern = LALCalloc(1, len)) == NULL)
       {
 	LALPrintError ("\nOut of memory !\n");
-	ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
       }
 /*==========================*/
 
@@ -907,7 +907,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
      
 /*==========================*/      
       
-    TRY ( LALReadSFTfiles(stat->statusPtr, &SFTvect, f0, f1, uvar_Dterms, fpattern), stat);
+    TRY ( LALReadSFTfiles(status->statusPtr, &SFTvect, f0, f1, uvar_Dterms, fpattern), status);
     LALFree (fpattern);
 
   } /* SFT-loading */
@@ -922,19 +922,19 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
   /* and prepare SFT-data in FFT-struct to feed it into LALDemod() (FIXME)*/
   cfg->timestamps.length = cfg->SFTno;
   if ( (cfg->timestamps.data =  (LIGOTimeGPS *) LALCalloc(cfg->SFTno, sizeof(LIGOTimeGPS))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   cfg->midTS.length = cfg->SFTno;
   if ( (cfg->midTS.data = (LIGOTimeGPS *) LALCalloc(cfg->SFTno, sizeof(LIGOTimeGPS))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
 
   for (i=0; i < cfg->SFTno; i++)
     {
       cfg->timestamps.data[i] = SFTvect->data[i].epoch;
       /* to get midpoints, simply add Tsft/2 to each timestamp */
-      TRY (LALAddFloatToGPS (stat->statusPtr, &(cfg->midTS.data[i]), &(cfg->timestamps.data[i]), 
-			     0.5*cfg->tSFT), stat);
+      TRY (LALAddFloatToGPS (status->statusPtr, &(cfg->midTS.data[i]), &(cfg->timestamps.data[i]), 
+			     0.5*cfg->tSFT), status);
     }
   
 
@@ -943,7 +943,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     LIGOTimeGPS t0, t1;
     t0 = SFTvect->data[0].epoch;
     t1 = SFTvect->data[cfg->SFTno-1].epoch;
-    TRY (LALDeltaFloatGPS (stat->statusPtr, &(cfg->tObs), &t1, &t0), stat);
+    TRY (LALDeltaFloatGPS (status->statusPtr, &(cfg->tObs), &t1, &t0), status);
     cfg->tObs += cfg->tSFT;
     cfg->Tstart = t0;
   }
@@ -974,7 +974,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
   else if ( !strcmp (uvar_IFO, "NAUTILUS") || !strcmp (uvar_IFO, "3"))
     {
-      TRY (CreateNautilusDetector (stat->statusPtr, &(cfg->Detector)), stat);
+      TRY (CreateNautilusDetector (status->statusPtr, &(cfg->Detector)), status);
     }
   else if ( !strcmp (uvar_IFO, "VIRGO") || !strcmp (uvar_IFO, "4") )
     cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
@@ -986,7 +986,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     {
       LALPrintError ("\nUnknown detector. Currently allowed are \
 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
-      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
   /*========================*/
       if ( !strcmp (uvar_IFO2, "GEO") || !strcmp (uvar_IFO, "0") ) 
@@ -997,7 +997,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
   else if ( !strcmp (uvar_IFO2, "NAUTILUS") || !strcmp (uvar_IFO, "3"))
     {
-      TRY (CreateNautilusDetector (stat->statusPtr, &(cfg->Detector)), stat);
+      TRY (CreateNautilusDetector (status->statusPtr, &(cfg->Detector)), status);
     }
   else if ( !strcmp (uvar_IFO2, "VIRGO") || !strcmp (uvar_IFO, "4") )
     cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
@@ -1009,7 +1009,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     {
       LALPrintError ("\nUnknown detector. Currently allowed are \
 'GEO', 'LLO', 'LHO', 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
-      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
       /*========================*/  
     
@@ -1030,7 +1030,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
   if ( uvar_useInterpolation && (uvar_overSampling != (UINT4)uvar_overSampling ) )
     {
       LALPrintError ("\nOversampling by interpolation only supported for integer oversampling-rates!\n");
-      ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
   
   /*Number of frequency values to calculate F for */
@@ -1059,34 +1059,34 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     if ( !useGridFile && !(haveSkyRegion || haveAlphaDelta) )
       {
 	LALPrintError ("\nNeed sky-region: either use (Alpha,Delta) or skyRegion!\n\n");
-	ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
     if ( haveSkyRegion && haveAlphaDelta )
       {
 	LALPrintError ("\nOverdetermined sky-region: only use EITHER (Alpha,Delta) OR skyRegion!\n\n");
-	ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
     if ( useGridFile && !haveGridFile )
       {
 	LALPrintError ("\nERROR: gridType=FILE, but no skyGridFile specified!\n\n");
-	ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);	
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);	
       }
     if ( !useGridFile && haveGridFile )
       {
-	LALWarning (stat, "\nWARNING: skyGridFile was specified but not needed ... will be ignored\n");
+	LALWarning (status, "\nWARNING: skyGridFile was specified but not needed ... will be ignored\n");
       }
     if ( useGridFile && (haveSkyRegion || haveAlphaDelta) )
       {
-	LALWarning (stat, "\nWARNING: Using skyGridFile, but sky-region was specified ... ignored!\n");
+	LALWarning (status, "\nWARNING: Using skyGridFile, but sky-region was specified ... ignored!\n");
       }
     if ( !useMetric && haveMetric) 
       {
-	LALWarning (stat, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
+	LALWarning (status, "\nWARNING: Metric was specified for non-metric grid... will be ignored!\n");
       }
     if ( useMetric && !haveMetric) 
       {
 	LALPrintError ("\nERROR: metric grid-type selected, but no metricType selected\n\n");
-	ABORT (stat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
+	ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
       }
 
     /* pre-process template-related input */
@@ -1097,9 +1097,9 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
       }
     else if (haveAlphaDelta)	/* parse this into a sky-region */
       {
-	TRY ( SkySquare2String( stat->statusPtr, &(cfg->skyRegionString), 
+	TRY ( SkySquare2String( status->statusPtr, &(cfg->skyRegionString), 
 				uvar_Alpha, uvar_Delta, 
-				uvar_AlphaBand, uvar_DeltaBand), stat);
+				uvar_AlphaBand, uvar_DeltaBand), status);
       }
     
   } /* end: template-grid stuff */
@@ -1116,10 +1116,10 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
     cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
 
-    TRY (LALLeapSecs (stat->statusPtr, &leap, &(cfg->Tstart), &formatAndAcc), stat);
+    TRY (LALLeapSecs (status->statusPtr, &leap, &(cfg->Tstart), &formatAndAcc), status);
     cfg->edat->leap = leap;
 
-    TRY (LALInitBarycenter(stat->statusPtr, cfg->edat), stat);               
+    TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
 
   } /* end: init ephemeris data */
 
@@ -1131,14 +1131,14 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
     AMCoeffs *amc;
     /* Allocate DemodParams structure */
     if ( (cfg->CFSparams = (computeFStatPar*) LALCalloc(1, sizeof(computeFStatPar))) == NULL) {
-      ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
     }
     /* Allocate space for AMCoeffs */
     if ( (amc = LALCalloc(1, sizeof(AMCoeffs))) == NULL) {
-      ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
     }
-    TRY (LALSCreateVector(stat->statusPtr, &(amc->a), (UINT4) cfg->SFTno), stat);
-    TRY (LALSCreateVector(stat->statusPtr, &(amc->b), (UINT4) cfg->SFTno), stat);
+    TRY (LALSCreateVector(status->statusPtr, &(amc->a), (UINT4) cfg->SFTno), status);
+    TRY (LALSCreateVector(status->statusPtr, &(amc->b), (UINT4) cfg->SFTno), status);
     
     cfg->CFSparams->amcoe = amc;
   
@@ -1152,8 +1152,8 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
 
   } /* end: init AM- and demod-params */
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* InitFStat() */
 
@@ -1163,7 +1163,7 @@ InitFStat (LALStatus *stat, ConfigVariables *cfg)
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
 void
-WriteFStatLog (LALStatus *stat, char *argv[])
+WriteFStatLog (LALStatus *status, char *argv[])
 {
     CHAR *logstr = NULL;
     const CHAR *head = "Fstats";
@@ -1172,8 +1172,8 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     CHAR *fname = NULL;
     FILE *fplog;
 
-    INITSTATUS (stat, "WriteFStatLog", rcsid);
-    ATTATCHSTATUSPTR (stat);
+    INITSTATUS (status, "WriteFStatLog", rcsid);
+    ATTATCHSTATUSPTR (status);
 
     /* prepare log-file for writing */
     len = strlen(head) + strlen(".log") +10;
@@ -1181,7 +1181,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
       len += strlen(uvar_outputLabel);
 
     if ( (fname=LALCalloc(len,1)) == NULL) {
-      ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
     }
     strcpy (fname, head);
     if (uvar_outputLabel)
@@ -1191,11 +1191,11 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     if ( (fplog = fopen(fname, "w" )) == NULL) {
       LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", fname);
       LALFree (fname);
-      ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
 
     /* write out a log describing the complete user-input (in cfg-file format) */
-    TRY (LALUserVarGetLog (stat->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), stat);
+    TRY (LALUserVarGetLog (status->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), status);
 
     fprintf (fplog, "## LOG-FILE of ComputeFStatistic run\n\n");
     fprintf (fplog, "# User-input:\n");
@@ -1216,8 +1216,8 @@ WriteFStatLog (LALStatus *stat, char *argv[])
 
     LALFree (fname);
 
-    DETATCHSTATUSPTR (stat);
-    RETURN(stat);
+    DETATCHSTATUSPTR (status);
+    RETURN(status);
 
 } /* WriteFStatLog() */
 
@@ -1257,14 +1257,14 @@ CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
 /*******************************************************************************/
 /** Free all globally allocated memory. */
 void
-Freemem(LALStatus *stat,  ConfigVariables *cfg) 
+Freemem(LALStatus *status,  ConfigVariables *cfg) 
 {
 
-  INITSTATUS (stat, "Freemem", rcsid);
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS (status, "Freemem", rcsid);
+  ATTATCHSTATUSPTR (status);
 
   /* Free SFT data */
-  TRY (LALDestroySFTVector (stat->statusPtr, &SFTvect), stat);	 /* the new way*/
+  TRY (LALDestroySFTVector (status->statusPtr, &SFTvect), status);	 /* the new way*/
 
   /* Free timestamps */
   LALFree (cfg->timestamps.data);
@@ -1273,7 +1273,7 @@ Freemem(LALStatus *stat,  ConfigVariables *cfg)
   /* FIXME: quite a few missing here */
 
   /* Free config-Variables and userInput stuff */
-  TRY (LALDestroyUserVars (stat->statusPtr), stat);
+  TRY (LALDestroyUserVars (status->statusPtr), status);
 
   LALFree ( cfg->skyRegionString );
 
@@ -1292,17 +1292,17 @@ Freemem(LALStatus *stat,  ConfigVariables *cfg)
   LALFree (cfg->CFSparams->spinDwn);
   LALFree (cfg->CFSparams->skyConst);
 
-  TRY (LALSDestroyVector(stat->statusPtr, &(cfg->CFSparams->amcoe->a)), stat);
-  TRY (LALSDestroyVector(stat->statusPtr, &(cfg->CFSparams->amcoe->b)), stat);
+  TRY (LALSDestroyVector(status->statusPtr, &(cfg->CFSparams->amcoe->a)), status);
+  TRY (LALSDestroyVector(status->statusPtr, &(cfg->CFSparams->amcoe->b)), status);
   LALFree ( cfg->CFSparams->amcoe);
 
   LALFree ( cfg->CFSparams);
 
-  DETATCHSTATUSPTR (stat);
+  DETATCHSTATUSPTR (status);
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
 
-  RETURN (stat);
+  RETURN (status);
 
 } /* Freemem() */
 
@@ -1328,7 +1328,7 @@ int compare(const void *ip, const void *jp)
  * These clusters get written in the global highFLines. 
  */
 void
-EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
+EstimateFLines(LALStatus *status, const FStatisticVector *FVect)
 {
   UINT4 i,j,Ntot;   
   UINT4 nbins;                	/**< Number of bins in F */
@@ -1347,8 +1347,8 @@ EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
   INT2 smallBlock=1;
   INT4 wings;
 
-  INITSTATUS( stat, "EstimateFLines", rcsid );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "EstimateFLines", rcsid );
+  ATTATCHSTATUSPTR (status);
 
   nbins = FVect->length;
   dFreq = FVect->df;
@@ -1356,13 +1356,13 @@ EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
 
   THR=uvar_Fthreshold;
 
-/* 0.0002 is the max expected width of the F stat curve for signal */
+/* 0.0002 is the max expected width of the F status curve for signal */
 /* with ~ 10 h observation time */
 
   wings = (UINT4) (0.5 + 0.0002 / dFreq );
 
-  TRY ( LALDCreateVector(stat->statusPtr, &F1, nbins), stat);
-  TRY ( LALDCreateVector(stat->statusPtr, &FloorF1, nbins), stat);
+  TRY ( LALDCreateVector(status->statusPtr, &F1, nbins), status);
+  TRY ( LALDCreateVector(status->statusPtr, &FloorF1, nbins), status);
 
   /* loop over SFT data to estimate noise */
   for (j=0;j<nbins;j++)
@@ -1375,15 +1375,15 @@ EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
   FloorF1->length = nbins;
 
   if ( (outliers = (Outliers *)LALCalloc(1, sizeof(Outliers))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   outliers->Noutliers=0;
 
   if ( (outliersParams = (OutliersParams *)LALCalloc(1,sizeof(OutliersParams))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   if ( (outliersInput = (OutliersInput *)LALCalloc(1,sizeof(OutliersInput))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   
   outliersParams->Thr = THR/(2.0*medianbias);
@@ -1403,8 +1403,8 @@ EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
      LALFree(outliers);
      LALFree(outliersParams);
      LALFree(outliersInput);
-     TRY ( LALDDestroyVector(stat->statusPtr, &F1), stat);
-     TRY ( LALDDestroyVector(stat->statusPtr, &FloorF1), stat);
+     TRY ( LALDDestroyVector(status->statusPtr, &F1), status);
+     TRY ( LALDDestroyVector(status->statusPtr, &FloorF1), status);
 
      /*      fprintf(stderr,"Nclusters zero \n"); */
      /*      fflush(stderr); */
@@ -1416,11 +1416,11 @@ EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
 
    /* if outliers are found get ready to identify clusters of outliers*/
    if ( (SpClParams = (ClustersParams*) LALCalloc(1,sizeof(ClustersParams))) == NULL) {
-     ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
    }
    
    if ( (clustersInput = (ClustersInput *) LALCalloc(1,sizeof(ClustersInput))) == NULL) {
-     ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
    }
       
    SpClParams->wings = wings;
@@ -1431,7 +1431,7 @@ EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
    clustersInput->outliers      = outliers;     
    
    /* clusters of outliers in F get written in SpLines which is the global highFLines*/
-   TRY (DetectClusters(stat->statusPtr, clustersInput, SpClParams, SpLines), stat);
+   TRY (DetectClusters(status->statusPtr, clustersInput, SpClParams, SpLines), status);
    
    /*  sum of points in all lines */
    Ntot=0;
@@ -1439,8 +1439,8 @@ EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
      Ntot = Ntot + SpLines->NclustPoints[i];
    }
 
-   TRY ( LALDDestroyVector(stat->statusPtr, &F1), stat);
-   TRY ( LALDDestroyVector(stat->statusPtr, &FloorF1), stat);
+   TRY ( LALDDestroyVector(status->statusPtr, &F1), status);
+   TRY ( LALDDestroyVector(status->statusPtr, &FloorF1), status);
 
    LALFree(outliers->ratio);
    LALFree(outliers->outlierIndexes);
@@ -1451,8 +1451,8 @@ EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
    LALFree(clustersInput);
 
  finished:
-   DETATCHSTATUSPTR(stat);
-   RETURN(stat);
+   DETATCHSTATUSPTR(status);
+   RETURN(status);
 
 } /* EstimateFLines() */
 
@@ -1463,7 +1463,7 @@ EstimateFLines(LALStatus *stat, const FStatisticVector *FVect)
  * multiplied by F statistics.
  */
 void 
-NormaliseSFTDataRngMdn(LALStatus *stat)
+NormaliseSFTDataRngMdn(LALStatus *status)
 {
   INT4 m, il;                         /* loop indices */
   UINT4 i, j, lpc;
@@ -1474,21 +1474,21 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
   INT2 windowSize=uvar_windowsize;                  /* Running Median Window Size*/
   REAL4 xre,xim,xreNorm,ximNorm;
 
-  INITSTATUS( stat, "NormaliseSFTDataRngMdn", rcsid );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "NormaliseSFTDataRngMdn", rcsid );
+  ATTATCHSTATUSPTR (status);
 
   if ( !uvar_SignalOnly ) {
-    TRY( LALRngMedBias (stat->statusPtr, &medianbias, windowSize), stat);
+    TRY( LALRngMedBias (status->statusPtr, &medianbias, windowSize), status);
   }
 
-  TRY ( LALDCreateVector(stat->statusPtr, &Sp, GV.nsamples), stat);
-  TRY ( LALDCreateVector(stat->statusPtr, &RngMdnSp, GV.nsamples), stat);
+  TRY ( LALDCreateVector(status->statusPtr, &Sp, GV.nsamples), status);
+  TRY ( LALDCreateVector(status->statusPtr, &RngMdnSp, GV.nsamples), status);
 
   if( (N = (REAL8 *) LALCalloc(GV.nsamples,sizeof(REAL8))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
   if( (Sp1 = (REAL8 *) LALCalloc(GV.nsamples,sizeof(REAL8))) == NULL) { 
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
 
   /* loop over each SFTs */
@@ -1508,7 +1508,7 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
       }
       
       /* Compute running median */
-      TRY ( EstimateFloor(stat->statusPtr, Sp, windowSize, RngMdnSp), stat);
+      TRY ( EstimateFloor(status->statusPtr, Sp, windowSize, RngMdnSp), status);
 
       /* compute how many cluster points in all */
       /* substitute the line profiles value in RngMdnSp */
@@ -1556,11 +1556,11 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
   LALFree(N);
   LALFree(Sp1);
 
-  TRY ( LALDDestroyVector(stat->statusPtr, &RngMdnSp), stat);
-  TRY ( LALDDestroyVector(stat->statusPtr, &Sp), stat);
+  TRY ( LALDDestroyVector(status->statusPtr, &RngMdnSp), status);
+  TRY ( LALDDestroyVector(status->statusPtr, &Sp), status);
 
-  DETATCHSTATUSPTR(stat);
-  RETURN(stat);
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
   
 } /* NormaliseSFTDataRngMed() */
 
@@ -1570,7 +1570,7 @@ NormaliseSFTDataRngMdn(LALStatus *stat)
 #define SMALL	0.000000001
 #define LUT_RES 64
 void 
-NewLALDemod (LALStatus *stat, 
+NewLALDemod (LALStatus *status, 
 	     FStatisticVector **FVect, 
 	     const SFTVector *sfts, 
 	     const computeFStatPar *params) 
@@ -1605,11 +1605,11 @@ NewLALDemod (LALStatus *stat,
   static BOOLEAN firstCall = TRUE;
 
 
-  INITSTATUS( stat, "LALDemod", rcsid);
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "LALDemod", rcsid);
+  ATTATCHSTATUSPTR (status);
 
-  ASSERT ( FVect, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( *FVect == NULL, stat, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
+  ASSERT ( FVect, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( *FVect == NULL, status, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
 
   nBins = params->imax;	/* number of frequency-bins to calculate Fstatistic for */
 
@@ -1623,10 +1623,10 @@ NewLALDemod (LALStatus *stat,
   /* prepare output-structure */
   /* FIXME: for now we're a bit sloppy with leaks in  case of errors  */
   if ( (ret = (FStatisticVector*)LALCalloc(1, sizeof(FStatisticVector))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
-  TRY ( LALZCreateVector (stat->statusPtr, &(ret->Fa), nBins), stat);
-  TRY ( LALZCreateVector (stat->statusPtr, &(ret->Fb), nBins), stat);
+  TRY ( LALZCreateVector (status->statusPtr, &(ret->Fa), nBins), status);
+  TRY ( LALZCreateVector (status->statusPtr, &(ret->Fb), nBins), status);
   ret->f0 = params->f0;
   ret->df = params->df;
   ret->fBand = (params->imax-1) * params->df;
@@ -1673,7 +1673,7 @@ NewLALDemod (LALStatus *stat,
 
       f=params->f0+i*params->df;
 
-      /* Loop over SFTs that contribute to F-stat for a given frequency */
+      /* Loop over SFTs that contribute to F-status for a given frequency */
       for ( alpha=0; alpha < params->SFTno; alpha++ )
 	{
 	  REAL8 tsin, tcos, tempFreq;
@@ -1762,8 +1762,8 @@ NewLALDemod (LALStatus *stat,
   /* return result */
   *FVect = ret;
 
-  DETATCHSTATUSPTR (stat);
-  RETURN( stat );
+  DETATCHSTATUSPTR (status);
+  RETURN( status );
 
 } /* NewLALDemod() */
 
@@ -1772,7 +1772,7 @@ NewLALDemod (LALStatus *stat,
  * using DFT interpolation for oversampling.  
  */
 void
-computeFStat (LALStatus *stat, 
+computeFStat (LALStatus *status, 
 	      FStatisticVector **FVectOut, 	/**< output: (oversampled) Fa,Fb,Fstat */
 	      const SFTVector *sfts, 		/**< input: SFT-vector */
 	      const computeFStatPar *params, 	/**< antenna-pattern coefficients a,b,..*/
@@ -1789,30 +1789,30 @@ computeFStat (LALStatus *stat,
   REAL8 *xF;
   FStatisticVector *FVect = NULL;
 
-  INITSTATUS( stat, "calcFStat", rcsid);
-  ATTATCHSTATUSPTR (stat);  
+  INITSTATUS( status, "calcFStat", rcsid);
+  ATTATCHSTATUSPTR (status);  
 
-  ASSERT (FVectOut != NULL, stat,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
-  ASSERT (*FVectOut == NULL, stat, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
-  ASSERT (sfts != NULL, stat,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
-  ASSERT (params != NULL, stat,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
+  ASSERT (FVectOut != NULL, status,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
+  ASSERT (*FVectOut == NULL, status, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
+  ASSERT (sfts != NULL, status,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
+  ASSERT (params != NULL, status,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
   
-  TRY ( NewLALDemod (stat->statusPtr, &FVect, sfts, params), stat);
+  TRY ( NewLALDemod (status->statusPtr, &FVect, sfts, params), status);
 
   /* use 2x interpolationOrder bins for interpolation */
   if ( useInterpolation && (params->overSampling != 1) )
     {
       /* increase number of bins accordingly */
-      TRY (refineCOMPLEX16Vector(stat->statusPtr, 
-				 &FaRefined, FVect->Fa, uvar_overSampling, uvar_interpolationOrder), stat);
-      TRY (refineCOMPLEX16Vector(stat->statusPtr, 
-				 &FbRefined, FVect->Fb, uvar_overSampling, uvar_interpolationOrder), stat);
+      TRY (refineCOMPLEX16Vector(status->statusPtr, 
+				 &FaRefined, FVect->Fa, uvar_overSampling, uvar_interpolationOrder), status);
+      TRY (refineCOMPLEX16Vector(status->statusPtr, 
+				 &FbRefined, FVect->Fb, uvar_overSampling, uvar_interpolationOrder), status);
 
       if (FVect->F) {
-	TRY (LALDDestroyVector (stat->statusPtr, &(FVect->F)), stat);
+	TRY (LALDDestroyVector (status->statusPtr, &(FVect->F)), status);
       }
-      TRY ( LALZDestroyVector (stat->statusPtr, &(FVect->Fa)), stat);
-      TRY ( LALZDestroyVector (stat->statusPtr, &(FVect->Fb)), stat);
+      TRY ( LALZDestroyVector (status->statusPtr, &(FVect->Fa)), status);
+      TRY ( LALZDestroyVector (status->statusPtr, &(FVect->Fb)), status);
 
       FVect->Fa = FaRefined;
       FVect->Fb = FbRefined;
@@ -1826,7 +1826,7 @@ computeFStat (LALStatus *stat,
   nbins = FVect->Fa->length;
       
   /* calculate F-statistic from  Fa and Fb */
-  TRY (LALDCreateVector (stat->statusPtr, &(FVect->F), nbins), stat);
+  TRY (LALDCreateVector (status->statusPtr, &(FVect->F), nbins), status);
 
   fact = 4.0 / (params->SFTno * params->amcoe->D);
   At = fact * params->amcoe->A;
@@ -1855,8 +1855,8 @@ computeFStat (LALStatus *stat,
   /* return */
   *FVectOut = FVect;
 
-  DETATCHSTATUSPTR (stat);
-  RETURN( stat );
+  DETATCHSTATUSPTR (status);
+  RETURN( status );
 
 } /* calcFStat() */
 
@@ -1864,22 +1864,22 @@ computeFStat (LALStatus *stat,
 /** write out the F-statistic over the searched frequency-band.
  */
 void
-writeFVect(LALStatus *stat, const FStatisticVector *FVect, const CHAR *fname)
+writeFVect(LALStatus *status, const FStatisticVector *FVect, const CHAR *fname)
 {
   FILE *fp;
   UINT4 i;
   REAL8 fi;
 
-  INITSTATUS( stat, "LALDemod", rcsid);
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "LALDemod", rcsid);
+  ATTATCHSTATUSPTR (status);
 
-  ASSERT (FVect, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (fname, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (FVect, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (fname, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
   if ( (fp = fopen(fname, "wb")) == NULL) 
     {
       LALPrintError ("Failed to open file '%f' for writing.\n", fname);
-      ABORT (stat, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
+      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
 
   for (i=0; i < FVect->length; i++) {
@@ -1890,8 +1890,8 @@ writeFVect(LALStatus *stat, const FStatisticVector *FVect, const CHAR *fname)
 
   fclose (fp);
 
-  DETATCHSTATUSPTR (stat);
-  RETURN( stat );
+  DETATCHSTATUSPTR (status);
+  RETURN( status );
 
 } /* writeCOMPLEX16Vector() */
 
@@ -1901,7 +1901,7 @@ writeFVect(LALStatus *stat, const FStatisticVector *FVect, const CHAR *fname)
  *  This is using DFT-interpolation (derived from zero-padding).
  */
 void
-refineCOMPLEX16Vector (LALStatus *stat, 
+refineCOMPLEX16Vector (LALStatus *status, 
 		       COMPLEX16Vector **out, 
 		       const COMPLEX16Vector *in, 
 		       UINT4 refineby, UINT4 Dterms)
@@ -1918,12 +1918,12 @@ refineCOMPLEX16Vector (LALStatus *stat,
 
   REAL8 invOldLen, invNewLen, TWOPIOverOldLen;	/* tmp results for optimization */
 
-  INITSTATUS( stat, "refineCOMPLEX16Vector", rcsid );  
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "refineCOMPLEX16Vector", rcsid );  
+  ATTATCHSTATUSPTR (status);
 
-  ASSERT ( out, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( in, stat, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( *out == NULL, stat, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
+  ASSERT ( out, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( in, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( *out == NULL, status, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
 
   oldLen = in->length;
   newLen = oldLen * refineby;
@@ -1945,7 +1945,7 @@ refineCOMPLEX16Vector (LALStatus *stat,
   TWOPIOverOldLen = LAL_TWOPI / oldLen;
   invNewLen = 1.0 / newLen;
 
-  TRY (LALZCreateVector (stat->statusPtr, &ret, newLen), stat);
+  TRY (LALZCreateVector (status->statusPtr, &ret, newLen), status);
 
   for (k=0; k < newLen; k++)
     {
@@ -2032,8 +2032,8 @@ refineCOMPLEX16Vector (LALStatus *stat,
 
   *out = ret;
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 } /* refineCOMPLEX16Vector() */
 
 
