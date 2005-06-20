@@ -38,31 +38,41 @@ static void memshift(void *buff, size_t length, int count)
  */
 
 define(`DATATYPE',REAL4)
+define(`SQUAREDATATYPE',REAL4)
 include(SequenceC.m4)
 
 define(`DATATYPE',REAL8)
+define(`SQUAREDATATYPE',REAL8)
 include(SequenceC.m4)
 
 define(`DATATYPE',COMPLEX8)
+define(`SQUAREDATATYPE',REAL4)
 include(SequenceC.m4)
 
 define(`DATATYPE',COMPLEX16)
+define(`SQUAREDATATYPE',REAL8)
 include(SequenceC.m4)
 
 define(`DATATYPE',INT2)
+define(`SQUAREDATATYPE',UINT2)
 include(SequenceC.m4)
 
 define(`DATATYPE',UINT2)
+define(`SQUAREDATATYPE',UINT2)
 include(SequenceC.m4)
 
 define(`DATATYPE',INT4)
+define(`SQUAREDATATYPE',UINT4)
 include(SequenceC.m4)
 
 define(`DATATYPE',UINT4)
+define(`SQUAREDATATYPE',UINT4)
 include(SequenceC.m4)
 
 define(`DATATYPE',INT8)
+define(`SQUAREDATATYPE',UINT8)
 include(SequenceC.m4)
 
 define(`DATATYPE',UINT8)
+define(`SQUAREDATATYPE',UINT8)
 include(SequenceC.m4)

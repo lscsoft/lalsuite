@@ -136,3 +136,43 @@ void `LALShrink'SEQUENCETYPE (
 );
 /* </lalVerbatim> */
 
+/* <lalLaTeX file="SequenceSumP">
+\idx{`XLAL'DATATYPE`Sum' ()}
+</lalLaTeX> <lalVerbatim file="SequenceSumP"> */
+DATATYPE `XLAL'DATATYPE`Sum' (
+	const DATATYPE *data,
+	size_t first,
+	size_t count
+);
+/* </lalVerbatim> */
+
+/* <lalLaTeX file="SequenceSumP">
+\idx{`XLAL'DATATYPE`SumSquares' ()}
+</lalLaTeX> <lalVerbatim file="SequenceSumP"> */
+SQUAREDATATYPE `XLAL'DATATYPE`SumSquares' (
+	const DATATYPE *data,
+	size_t first,
+	size_t count
+);
+/* </lalVerbatim> */
+
+/* <lalLaTeX file="SequenceSumP">
+\idx{`XLAL'SEQUENCETYPE`Sum' ()}
+</lalLaTeX> <lalVerbatim file="SequenceSumP"> */
+DATATYPE `XLAL'SEQUENCETYPE`Sum' (
+	const SEQUENCETYPE *sequence,
+	size_t first,
+	size_t count
+);
+/* </lalVerbatim> */
+
+/* <lalLaTeX file="SequenceSumP">
+\idx{`XLAL'SEQUENCETYPE`SumSquares' ()}
+</lalLaTeX> <lalVerbatim file="SequenceSumP"> */
+SQUAREDATATYPE `XLAL'SEQUENCETYPE`SumSquares' (
+	const SEQUENCETYPE *sequence,
+	size_t first,
+	size_t count
+);
+/* </lalVerbatim> */
+

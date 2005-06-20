@@ -250,3 +250,88 @@ void `LALShrink'SEQUENCETYPE (
 	}
 	RETURN(status);
 }
+
+
+ifelse(DATATYPE, COMPLEX8, `#if 0', DATATYPE, COMPLEX16, `#if 0', `#if 1')
+/* FIXME: too bad we aren't C99, or we could include versions for complex
+ * data types */
+DATATYPE `XLAL'DATATYPE`Sum' (
+	const DATATYPE *data,
+	size_t first,
+	size_t count
+)
+{
+	ifelse(DATATYPE, COMPLEX8,
+	`DATATYPE sum = {0.0, 0.0};'
+	, DATATYPE, COMPLEX16,
+	`DATATYPE sum = {0.0, 0.0};'
+	,
+	DATATYPE sum = 0;)
+
+	for(data += first; count-- > 0; data++) {
+		ifelse(DATATYPE, COMPLEX8,
+		sum.re += (*data).re;
+		sum.im += (*data).im;
+		, DATATYPE, COMPLEX16,
+		sum.re += (*data).re;
+		sum.im += (*data).im;
+		, 
+		sum += *data;)
+	}
+
+	return(sum);
+}
+#endif
+
+
+SQUAREDATATYPE `XLAL'DATATYPE`SumSquares' (
+	const DATATYPE *data,
+	size_t first,
+	size_t count
+)
+{
+	SQUAREDATATYPE sum = 0;
+
+	for(data += first; count-- > 0; data++) {
+		ifelse(DATATYPE, COMPLEX8,
+		sum += (*data).re * (*data).re + (*data).im * (*data).im;
+		, DATATYPE, COMPLEX16,
+		sum += (*data).re * (*data).re + (*data).im * (*data).im;
+		, 
+		sum += *data * *data;)
+	}
+
+	return(sum);
+}
+
+
+ifelse(DATATYPE, COMPLEX8, `#if 0', DATATYPE, COMPLEX16, `#if 0', `#if 1')
+/* FIXME: too bad we aren't C99, or we could include versions for complex
+ * data types */
+DATATYPE `XLAL'SEQUENCETYPE`Sum' (
+	const SEQUENCETYPE *sequence,
+	size_t first,
+	size_t count
+)
+{
+	if(first >= sequence->length)
+		return(0);
+	if(first + count > sequence->length)
+		count = sequence->length - first;
+	return(`XLAL'DATATYPE`Sum' (sequence->data, first, count));
+}
+#endif
+
+
+SQUAREDATATYPE `XLAL'SEQUENCETYPE`SumSquares' (
+	const SEQUENCETYPE *sequence,
+	size_t first,
+	size_t count
+)
+{
+	if(first >= sequence->length)
+		return(0);
+	if(first + count > sequence->length)
+		count = sequence->length - first;
+	return(`XLAL'DATATYPE`SumSquares' (sequence->data, first, count));
+}

@@ -149,3 +149,46 @@ retained for backwards compatibility.
 \subsubsection{Author}
 
 \verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
+
+
+\subsection{Summing Functions}
+
+\subsubsection{Name}
+
+\texttt{XLAL}\textit{datatype}Sum\texttt{()},
+\texttt{XLAL}\textit{datatype}SumSquares\texttt{()},
+\texttt{XLAL}\textit{sequencetype}Sum\texttt{()}
+\texttt{XLAL}\textit{sequencetype}SumSquares\texttt{()}
+
+\subsubsection{Synopsis}
+
+\begin{verbatim}
+#include <lal/Sequence.h>
+\end{verbatim}
+\input{SequenceSumP}
+
+\subsubsection{Description}
+
+The \texttt{XLAL}\textit{datatype}Sum\texttt{()} and
+\texttt{XLAL}\textit{datatype}SumSquares\texttt{()} functions sum the
+elements and squares of the elements, respectively, in an array.
+
+The \texttt{XLAL}\textit{sequencetype}Sum\texttt{()} and
+\texttt{XLAL}\textit{sequencetype}SumSquares\texttt{()} functions sum the
+elements and the squares of the elements, respectively in a sequence.
+Bounds checking is performed.
+
+In all cases, the return value is the sum, and these functions cannot fail.
+In the case of the sequence-related functions, if the sum extends beyond
+the bounds of the sequence, then the missing values are assumed to be 0.
+
+\subsubsection{Bugs}
+
+Because LAL must conform to the C89 specification, aggregate data types
+cannot be returned from functions so the COMPLEX8 and COMPLEX16 versions of
+the sum functions (not sum-of-squares functions) are commented out at this
+time.
+
+\subsubsection{Author}
+
+\verb|Kipp Cannon <kipp@gravity.phys.uwm.edu>|
