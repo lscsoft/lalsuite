@@ -80,7 +80,7 @@ void `LALCreate'SERIESTYPE (
 
 
 SERIESTYPE *`XLALCut'SERIESTYPE (
-	SERIESTYPE *series,
+	const SERIESTYPE *series,
 	size_t first,
 	size_t length
 )
@@ -111,7 +111,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 void `LALCut'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
-	SERIESTYPE *input,
+	const SERIESTYPE *input,
 	size_t first,
 	size_t length
 )
@@ -171,7 +171,7 @@ void `LALShrink'SERIESTYPE (
 
 SERIESTYPE *`XLALAdd'SERIESTYPE (
 	SERIESTYPE *arg1,
-	SERIESTYPE *arg2
+	const SERIESTYPE *arg2
 )
 {
 	static const char *func = "`XLALAdd'SERIESTYPE";
@@ -204,7 +204,7 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 
 SERIESTYPE *`XLALSubtract'SERIESTYPE (
 	SERIESTYPE *arg1,
-	SERIESTYPE *arg2
+	const SERIESTYPE *arg2
 )
 {
 	static const char *func = "`XLALAdd'SERIESTYPE";

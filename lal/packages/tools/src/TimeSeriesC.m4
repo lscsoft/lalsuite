@@ -80,7 +80,7 @@ void `LALCreate'SERIESTYPE (
 
 
 SERIESTYPE *`XLALCut'SERIESTYPE (
-	SERIESTYPE *series,
+	const SERIESTYPE *series,
 	size_t first,
 	size_t length
 )
@@ -111,7 +111,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 void `LALCut'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
-	SERIESTYPE *input,
+	const SERIESTYPE *input,
 	size_t first,
 	size_t length
 )

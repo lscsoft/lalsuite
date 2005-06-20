@@ -49,7 +49,7 @@ void `LALCreate'SERIESTYPE (
 \idx{`XLALCut'SERIESTYPE ()}
 </lalLaTeX> <lalVerbatim file="FrequencySeriesCutP"> */
 SERIESTYPE *`XLALCut'SERIESTYPE (
-	SERIESTYPE *series,
+	const SERIESTYPE *series,
 	size_t first,
 	size_t length
 );
@@ -61,7 +61,7 @@ SERIESTYPE *`XLALCut'SERIESTYPE (
 void `LALCut'SERIESTYPE (
 	LALStatus *status,
 	SERIESTYPE **output,
-	SERIESTYPE *input,
+	const SERIESTYPE *input,
 	size_t first,
 	size_t length
 );
@@ -93,7 +93,7 @@ void `LALShrink'SERIESTYPE (
 </lalLaTeX> <lalVerbatim file="FrequencySeriesAddP"> */
 SERIESTYPE *`XLALAdd'SERIESTYPE (
 	SERIESTYPE *arg1,
-	SERIESTYPE *arg2
+	const SERIESTYPE *arg2
 );
 /* </lalVerbatim> */
 
@@ -102,7 +102,7 @@ SERIESTYPE *`XLALAdd'SERIESTYPE (
 </lalLaTeX> <lalVerbatim file="FrequencySeriesSubtractP"> */
 SERIESTYPE *`XLALSubtract'SERIESTYPE (
 	SERIESTYPE *arg1,
-	SERIESTYPE *arg2
+	const SERIESTYPE *arg2
 );
 /* </lalVerbatim> */
 
