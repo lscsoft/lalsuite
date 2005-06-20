@@ -144,8 +144,8 @@ LALSBracketRoot (
 int
 XLALDBracketRoot(
     REAL8 (*y)(REAL8, void *),
-    REAL8 *xmax,
     REAL8 *xmin,
+    REAL8 *xmax,
     void *params
 );
 

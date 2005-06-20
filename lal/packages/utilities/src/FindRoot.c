@@ -157,8 +157,8 @@ LALSBracketRoot (
 int
 XLALDBracketRoot(
     REAL8 (*y)(REAL8, void *),
-    REAL8 *xmax,
     REAL8 *xmin,
+    REAL8 *xmax,
     void *params
 )
 { /* </lalVerbatim> */
@@ -181,14 +181,16 @@ XLALDBracketRoot(
   y_2 = y(*xmax, params);
 
   /* loop until iteration limit exceeded or root bracketed */
-  for(i = 0; (i < imax) && (y_1 * y_2 >= 0.0); i++)
+  for(i = 0; y_1 * y_2 >= 0.0; i++)
   {
     if(XLALIsREAL8FailNaN(y_1) || XLALIsREAL8FailNaN(y_2))
       XLAL_ERROR(func, XLAL_EFUNC);
+    if(i >= imax)
+      XLAL_ERROR(func, XLAL_EMAXITER);
     if(fabs(y_1) < fabs(y_2))
     {
       /* expand lower limit */
-      *xmin += LAL_SQRT2 * (*xmin - *xmax);
+      *xmin -= LAL_SQRT2 * (*xmax - *xmin);
       y_1 = y(*xmin, params);
     }
     else
@@ -198,9 +200,6 @@ XLALDBracketRoot(
       y_2 = y(*xmax, params);
     }
   }
-
-  if(i >= imax)
-    XLAL_ERROR(func, XLAL_EMAXITER);
 
   return(0);
 }
