@@ -6,6 +6,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Window.h>
 #include <lal/Random.h>
+#include <lal/ResampleTimeSeries.h>
 
 
 #define TESTSTATUS( s ) \
@@ -13,12 +14,14 @@
 
 int main( void )
 {
-  UINT4 seglen = 1024 * 1024;
- /* UINT4 stride = seglen / 2; */
-  UINT4 stride = seglen;
-  UINT4 numovrlpseg = 8;
-  /* UINT4 reclen = numovrlpseg * stride + stride; */
-  UINT4 reclen = numovrlpseg * stride;
+  UINT4 resamplefac = 4;
+  UINT4 seglen = 64 * 1024; /* after resampling */
+  UINT4 numovrlpseg = 10; /* after resampling */
+  UINT4 stride = seglen / 2; /* after resampling */
+  UINT4 reclen = numovrlpseg * stride + stride; /* after resampling */
+  /* UINT4 numovrlpseg = 8; */ /* after resampling */
+  /* UINT4 stride = seglen; */ /* after resampling */
+  /* UINT4 reclen = numovrlpseg * stride; */ /* after resampling */
 
   static LALStatus status;
 
@@ -27,6 +30,8 @@ int main( void )
   static REAL4FrequencySeries   fseries;
   static REAL4TimeSeries        tseries;
   static RandomParams          *randpar;
+  static ResampleTSParams       resamplepar;
+  static PassBandParamStruc     highpasspar;
   REAL8 avg;
   UINT4 j;
   UINT4 k;
@@ -36,7 +41,7 @@ int main( void )
 
   /* allocate memory for time and frequency series */
   tseries.deltaT = 0.1;
-  LALCreateVector( &status, &tseries.data, reclen );
+  LALCreateVector( &status, &tseries.data, reclen * resamplefac );
   TESTSTATUS( &status );
   LALCreateVector( &status, &fseries.data, seglen / 2 + 1 );
   TESTSTATUS( &status );
@@ -56,6 +61,21 @@ int main( void )
   LALNormalDeviates( &status, tseries.data, randpar );
   TESTSTATUS( &status );
   LALDestroyRandomParams( &status, &randpar );
+  TESTSTATUS( &status );
+
+  /* resample */
+  resamplepar.deltaT = resamplefac * tseries.deltaT;
+  resamplepar.filterType = defaultButterworth;
+  LALResampleREAL4TimeSeries( &status, &tseries, &resamplepar );
+  TESTSTATUS( &status );
+
+  /* do some simple colouring: high-pass filter */
+  highpasspar.nMax = 4;
+  highpasspar.f1   = -1;
+  highpasspar.a1   = -1;
+  highpasspar.f2   = 0.1 / tseries.deltaT; /* ~20% of Nyquist */
+  highpasspar.a2   = 0.9; /* this means 10% attenuation at f2 */
+  LALDButterworthREAL4TimeSeries( &status, &tseries, &highpasspar );
   TESTSTATUS( &status );
 
   winpar.length = seglen;
@@ -85,7 +105,7 @@ int main( void )
   for ( k = 1; k < fseries.data->length - 1; ++k )
     avg += fseries.data->data[k];
   avg /= ( fseries.data->length - 2 );
-  printf( "%g\n", avg );
+  printf( "lal mean:\t%g\n", avg );
 
   /* use the xlal function */
   XLALREAL4AverageSpectrumWelch( &fseries, &tseries, seglen, stride,
@@ -107,7 +127,7 @@ int main( void )
   for ( k = 1; k < fseries.data->length - 1; ++k )
     avg += fseries.data->data[k];
   avg /= ( fseries.data->length - 2 );
-  printf( "%g\n", avg );
+  printf( "xlal mean:\t%g\n", avg );
 
   /* median-mean method */
   XLALREAL4AverageSpectrumMedianMean( &fseries, &tseries, seglen, stride,
@@ -129,7 +149,7 @@ int main( void )
   for ( k = 1; k < fseries.data->length - 1; ++k )
     avg += fseries.data->data[k];
   avg /= ( fseries.data->length - 2 );
-  printf( "%g\n", avg );
+  printf( "med mean:\t%g\n", avg );
 
   /* median method */
   XLALREAL4AverageSpectrumMedian( &fseries, &tseries, seglen, stride,
@@ -151,7 +171,7 @@ int main( void )
   for ( k = 1; k < fseries.data->length - 1; ++k )
     avg += fseries.data->data[k];
   avg /= ( fseries.data->length - 2 );
-  printf( "%g\n", avg );
+  printf( "median:\t\t%g\n", avg );
 
   /* cleanup */
   LALDestroyREAL4Window( &status, &specpar.window );

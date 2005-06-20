@@ -367,7 +367,7 @@ int XLALREAL4AverageSpectrumMedian(
     /* sort them and find median */
     qsort( bin, numseg, sizeof( *bin ), compare_float );
     if ( numseg % 2 ) /* odd number of evens */
-      spectrum->data->data[k] = bin[(numseg+1)/2];
+      spectrum->data->data[k] = bin[numseg/2];
     else /* even number... take average */
       spectrum->data->data[k] = 0.5*(bin[numseg/2-1] + bin[numseg/2]);
 
@@ -561,7 +561,7 @@ int XLALREAL4AverageSpectrumMedianMean(
     /* sort them and find median */
     qsort( bin, halfnumseg, sizeof( *bin ), compare_float );
     if ( halfnumseg % 2 ) /* odd number of evens */
-      evenmedian = bin[(halfnumseg+1)/2];
+      evenmedian = bin[halfnumseg/2];
     else /* even number... take average */
       evenmedian = 0.5*(bin[halfnumseg/2-1] + bin[halfnumseg/2]);
 
@@ -572,7 +572,7 @@ int XLALREAL4AverageSpectrumMedianMean(
     /* sort them and find median */
     qsort( bin, halfnumseg, sizeof( *bin ), compare_float );
     if ( halfnumseg % 2 ) /* odd number of odds */
-      oddmedian = bin[(halfnumseg+1)/2];
+      oddmedian = bin[halfnumseg/2];
     else /* even number... take average */
       oddmedian = 0.5*(bin[halfnumseg/2-1] + bin[halfnumseg/2]);
 
