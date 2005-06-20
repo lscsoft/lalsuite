@@ -17,11 +17,11 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
 
 /******** <lalVerbatim file="FreqSeriesToTFPlaneCP"> ********/
 int XLALFreqSeriesToTFPlane(
-	COMPLEX8TimeFrequencyPlane * tfp,
-	COMPLEX8FrequencySeries * freqSeries,
-	HorizontalTFTransformIn * input,
-	REAL4 * normalisation,
-	REAL4FrequencySeries * psd
+	COMPLEX8TimeFrequencyPlane *tfp,
+	const COMPLEX8FrequencySeries *freqSeries,
+	UINT4 windowShift,
+	REAL4 *normalisation,
+	const REAL4FrequencySeries *psd
 )
 /******** </lalVerbatim> ********/
 {
@@ -36,7 +36,6 @@ int XLALFreqSeriesToTFPlane(
 	INT4 nt = tfp->params->timeBins;
 	INT4 nf = tfp->params->freqBins;
 	INT4 ntotal;
-	UINT4 windowShift = input->windowShift;
 
 	INT4 flow1;
 	INT4 fseglength;
@@ -96,12 +95,7 @@ int XLALFreqSeriesToTFPlane(
 	dt = 1.0 / (((REAL4) numpts) * freqSeries->deltaF);
 
 	/* set the epoch of the TF plane */
-	/*adjust the freq series epoch determined by the windowshift */
-	XLALAddFloatToGPS(&freqSeries->epoch, windowShift * dt);
 	tfp->epoch = freqSeries->epoch;
-
-	/* This TF plane is a horizontal type */
-	tfp->planeType = horizontalPlane;
 
 	/* number of points from peak of filter to first zero */
 	filterlen = numpts / fseglength;

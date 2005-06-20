@@ -57,8 +57,7 @@ XLALComputeExcessPower(
 	if((nf <= 0) || (nt <= 0) ||
 	   (input->numSigmaMin < 1.0) ||
 	   (input->alphaDefault < 0.0) ||
-	   (input->alphaDefault > 1.0) ||
-	   (tfTiling->numPlanes <= 0))
+	   (input->alphaDefault > 1.0))
 		XLAL_ERROR(func, XLAL_EDOM);
 
 	/* make sure TF planes have already been computed */

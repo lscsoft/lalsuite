@@ -27,7 +27,7 @@ NRCSID(PRINTTFTILELISTC, "$Id$");
 
 extern INT4 lalDebugLevel;
 
-static void PrintTFTile(FILE *fp, TFTile *tfTile, TFTiling *tfTiling)
+static void PrintTFTile(FILE *fp, const TFTile *tfTile, const TFTiling *tfTiling)
 {
 	/* this function prints out information contained in one time-frequency
 	 * tile. */
@@ -53,7 +53,6 @@ static void PrintTFTile(FILE *fp, TFTile *tfTile, TFTiling *tfTiling)
 	deltaT = thisPlane->params->deltaT;
 
 	fprintf(fp, "\n");
-	fprintf(fp, " Time frequency tile in TF Plane number %d\n", tfTile->whichPlane);
 	fprintf(fp, " Frequency interval: %f Hz to %f Hz, i.e.,  bins %d to %d of %d\n", flow + (REAL8) (f1) / deltaT, flow + (REAL8) (f2 + 1) / deltaT, f1, f2, thisPlane->params->freqBins);
 	fprintf(fp, " Time interval    :  %f s to %f s, i.e.,  bins %d to %d of %d\n", epoch + (REAL8) (t1) * deltaT, epoch + (REAL8) (t2 + 1) * deltaT, t1, t2, thisPlane->params->timeBins);
 	fprintf(fp, " Total number of degrees of freedom:  %d\n", dof);
@@ -67,7 +66,7 @@ static void PrintTFTile(FILE *fp, TFTile *tfTile, TFTiling *tfTiling)
 /******** <lalVerbatim file="PrintTFTileListCP"> ********/
 void XLALPrintTFTileList(
 	FILE *fp,
-	TFTiling *tfTiling,
+	const TFTiling *tfTiling,
 	INT4 maxTiles
 )
 /******** </lalVerbatim> ********/

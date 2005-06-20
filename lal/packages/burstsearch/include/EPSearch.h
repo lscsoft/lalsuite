@@ -33,7 +33,6 @@ tagEPSearchParams {
 	REAL8                 alphaThreshold;
 	AvgSpecMethod         method;
 	CreateTFTilingIn      tfTilingInput;
-	TFPlaneMethod         tfPlaneMethod;			
 	TFPlaneParams         tfPlaneParams;
 	ComputeExcessPowerIn  compEPInput;
 	WindowType            windowType;

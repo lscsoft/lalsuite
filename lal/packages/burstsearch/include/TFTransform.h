@@ -15,92 +15,36 @@ $Id$
 #include <lal/LALRCSID.h>
 #include <lal/TimeFreqFFT.h>
 
-#ifdef  __cplusplus   /* C++ protection. */
+#ifdef  __cplusplus		/* C++ protection. */
 extern "C" {
 #endif
 
-
-NRCSID (TFTRANSFORMH, "$Id$");
-
-
-typedef enum {
-  verticalPlane,
-  /*
-   *  Constructed by dividing time domain data into chunks
-   *  and FFTing each chunk, thus producing a vertical line (the FFT)
-   *  in the TF plane for each chunk in the time domain
-   *
-   */
-  horizontalPlane
-  /*
-   *  Constructed by dividing frequency domain data into chunks
-   *  and FFTing each chunk back to time domain, thus producing a horizontal
-   *  line (the FFT) in the TF plane for each chunk in the frequency domain
-   *
-   */
-}
-TFPlaneType;
-
-typedef enum {
-  useSingleTFPlane = 1, /* tiles are created in a single TF plane */
-  useMultipleTFPlane    /*tiles are created in multiple TF planes */ 
-}
-TFPlaneMethod;
+NRCSID(TFTRANSFORMH, "$Id$");
 
 
-typedef struct tagTFPlaneParams
-{
-  INT4             timeBins;    /* Number of time bins in TF plane    */
-  INT4             freqBins;    /* Number of freq bins in TF plane    */
-  REAL8            deltaT;      /* time resolution of the plane     */
-  REAL8            deltaF;      /* freq. resolution of the plane */
-  REAL8            flow;        /* minimum frequency to search for */
-  REAL8            fhigh;       /* maximum frequency to search for */
-  REAL8            timeDuration;/* length of data to be used to create a TF plane at a time */ 
-}
-TFPlaneParams;
+typedef struct tagTFPlaneParams {
+	INT4 timeBins;	/* Number of time bins in TF plane    */
+	INT4 freqBins;	/* Number of freq bins in TF plane    */
+	REAL8 deltaT;	/* time resolution of the plane     */
+	REAL8 deltaF;	/* freq. resolution of the plane */
+	REAL8 flow;	/* minimum frequency to search for */
+	REAL8 fhigh;	/* maximum frequency to search for */
+	REAL8 timeDuration;	/* length of data to be used to create a TF plane at a time */
+} TFPlaneParams;
 
 
-typedef struct tagComplexDFTParams
-{
-  REAL4Window    *window;
-  ComplexFFTPlan *plan;
-}
-ComplexDFTParams;
-
-
-typedef struct tagCOMPLEX8TimeFrequencyPlane
-{
-  CHAR                     *name;
-  LIGOTimeGPS              epoch;
-  CHARVector               *sampleUnits;
-  TFPlaneParams            *params;
-  TFPlaneType              planeType;
-  COMPLEX8                 *data;
-  /*
-   * data[i*params->freqBins+j] is a complex number
-   * corresponding to a time t_i = epoch + i*(deltaT)
-   * and a frequency f_j = flow + j / (deltaT)
-   */
-}
-COMPLEX8TimeFrequencyPlane;
-
-
-typedef struct tagVerticalTFTransformIn
-{
-  RealDFTParams                *dftParams;
-  INT4                         startT;
-  UINT4                        windowShift;
-}
-VerticalTFTransformIn;
-
-
-typedef struct tagHorizontalTFTransformIn
-{
-  INT4                         startT;
-  UINT4                        windowShift;
-}
-HorizontalTFTransformIn;
+typedef struct tagCOMPLEX8TimeFrequencyPlane {
+	CHAR *name;
+	LIGOTimeGPS epoch;
+	CHARVector *sampleUnits;
+	TFPlaneParams *params;
+	COMPLEX8 *data;
+	/*
+	 * data[i*params->freqBins+j] is a complex number
+	 * corresponding to a time t_i = epoch + i*(deltaT)
+	 * and a frequency f_j = flow + j / (deltaT)
+	 */
+} COMPLEX8TimeFrequencyPlane;
 
 
 int
@@ -113,9 +57,9 @@ XLALComputeFrequencySeries(
 
 
 COMPLEX8TimeFrequencyPlane *
-XLALCreateTFPlane (
-               TFPlaneParams                        *input
-               );
+XLALCreateTFPlane(
+	TFPlaneParams *input
+);
 
 
 void
@@ -123,17 +67,17 @@ XLALDestroyTFPlane(
 	COMPLEX8TimeFrequencyPlane *tfp
 );
 
+
 int
-XLALFreqSeriesToTFPlane (
-                     COMPLEX8TimeFrequencyPlane     *tfp,
-                     COMPLEX8FrequencySeries        *freqSeries,
-                     HorizontalTFTransformIn        *input,
-                     REAL4                          *norm,
-		     REAL4FrequencySeries           *psd
-                     );
+XLALFreqSeriesToTFPlane(
+	COMPLEX8TimeFrequencyPlane *tfp,
+	const COMPLEX8FrequencySeries *freqSeries,
+	UINT4 windowShift,
+	REAL4 *norm,
+	const REAL4FrequencySeries *psd
+);
 
 #ifdef  __cplusplus
 }
-#endif  /* C++ protection. */
-
+#endif				/* C++ protection. */
 #endif

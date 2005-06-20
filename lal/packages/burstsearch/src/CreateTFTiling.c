@@ -35,7 +35,6 @@ static TFTile *CreateTile(INT4 f, INT4 df, INT4 t, INT4 dt, REAL8 deltaT, REAL8 
 		tile->fend = f + df;
 		tile->tstart = t;
 		tile->tend = t + dt;
-		tile->whichPlane = 0;
 		tile->deltaT = deltaT;
 		tile->deltaF = deltaF;
 		tile->excessPower = 0.0;
@@ -51,7 +50,7 @@ static TFTile *CreateTile(INT4 f, INT4 df, INT4 t, INT4 dt, REAL8 deltaT, REAL8 
 
 /******** <lalVerbatim file="CreateTFTilingCP"> ********/
 TFTiling *XLALCreateTFTiling(
-	CreateTFTilingIn *input,
+	const CreateTFTilingIn *input,
 	TFPlaneParams *planeParams
 )
 /******** </lalVerbatim> *********/
@@ -103,8 +102,7 @@ TFTiling *XLALCreateTFTiling(
 	}
 	tfTiling->tfp = plane;
 
-	/* set tiling parameters */
-	tfTiling->numPlanes = 1;
+	/* initialize tiling flags */
 	tfTiling->planesComputed = FALSE;
 	tfTiling->excessPowerComputed = FALSE;
 	tfTiling->tilesSorted = FALSE;

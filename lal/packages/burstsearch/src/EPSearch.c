@@ -289,6 +289,9 @@ XLALEPSearch(
 		if(XLALComputeFrequencySeries(fseries, cutTimeSeries, window, plan))
 			XLAL_ERROR(func, XLAL_EFUNC);
 		XLALDestroyREAL4TimeSeries(cutTimeSeries);
+
+		/* tweak the frequency series' epoch */
+		XLALAddFloatToGPS(&fseries->epoch, params->windowShift * tseries->deltaT);
 		
 		/*
 		 * Normalize the frequency series to the average PSD.
