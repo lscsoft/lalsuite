@@ -929,37 +929,6 @@ LALDestroyComplexDFTParams
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Module \texttt{LALComputeTFPlanes.c}}
-\label{ss:LALComputeTFPlanes.c}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-Computes the $p+1$ time frequency transforms according to the parameters
-(\ref{tfplanes}) and (\ref{resolutions})
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{ComputeTFPlanesCP}
-\idx{LALComputeTFPlanes()}
-
-\subsubsection*{Description}
-
-It takes as input a pointer \verb+freqSeries+ to a
-\verb+COMPLEX8FrequencySeries+, and as input/output a pointer \verb+tfTiling+
-to a \verb+TFTiling+ structure.  It computes the $p+1$ time frequency
-transforms according to the parameters (\ref{tfplanes}) and
-(\ref{resolutions}), using the routine \verb+FreqSeriesToTFPlane()+, and
-stores the resulting TF planes in the structure \verb+*tfTiling+.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALFreqSeriesToTFPlane
-\end{verbatim}
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{ComputeTFPlanesCV}}
-
-\newpage
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Module \texttt{LALComputeExcessPower.c}}
 \label{ss:LALComputeExcessPower.c}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
