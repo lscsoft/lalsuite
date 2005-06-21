@@ -204,7 +204,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
       else if (strcmp(argv[i],"--distance")==0){
 	params->distance = atof(argv[++i]); }
       else if (strcmp(argv[i],"--startPhase")==0){
-	params->signalAmplitude = atof(argv[++i]); }
+	params->startPhase = atof(argv[++i]); }
       else if (strcmp(argv[i],"--startTime")==0){
 	params->startTime = atof(argv[++i]); }
       else if (strcmp(argv[i],"--Theta")==0){
