@@ -23,24 +23,20 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
  * total bandwidth of the input frequency series.
  */
 
-/* FIXME */
-/*static COMPLEX8Vector *generate_filter(size_t length, INT4 fseglength, REAL8 dt, INT4 flow)*/
-static COMPLEX8Vector *generate_filter(size_t length, INT4 fseglength, REAL4 dt, INT4 flow)
+static COMPLEX8Vector *generate_filter(size_t length, INT4 fseglength, REAL8 dt, INT4 flow)
 {
 	static const char *func = "generate_filter";
 	REAL4Vector *tdfilter;
 	COMPLEX8Vector *fdfilter;
 	RealFFTPlan *plan;
-	/* FIXME */
-	/*REAL8 twopiOverNumpts;*/
-	REAL4 twopiOverNumpts;
+	REAL8 twopiOverNumpts;
 	INT4 firstzero;
 	int j;
 
 	tdfilter = XLALCreateREAL4Vector(2 * (length - 1));
 	fdfilter = XLALCreateCOMPLEX8Vector(length);
 	plan = XLALCreateForwardREAL4FFTPlan(tdfilter->length, 0);
-	if(!tdfilter || !fdfilter) {
+	if(!tdfilter || !fdfilter || !plan) {
 		XLALDestroyREAL4Vector(tdfilter);
 		XLALDestroyCOMPLEX8Vector(fdfilter);
 		XLALDestroyREAL4FFTPlan(plan);
@@ -56,9 +52,7 @@ static COMPLEX8Vector *generate_filter(size_t length, INT4 fseglength, REAL4 dt,
 	twopiOverNumpts = 2.0 * LAL_PI / tdfilter->length;
 	tdfilter->data[0] = twopiOverNumpts * fseglength / (LAL_PI * dt);
 	for(j = 1; j < firstzero; j++)
-		/* FIXME */
-		/*tdfilter->data[j] = tdfilter->data[tdfilter->length - j] = (sin(twopiOverNumpts * j * (flow + fseglength)) - sin(twopiOverNumpts * j * flow)) / (LAL_PI * j * dt);*/
-		tdfilter->data[j] = tdfilter->data[tdfilter->length - j] = (sin(twopiOverNumpts * j * (flow  + fseglength)) - sin(twopiOverNumpts * j * flow )) / (LAL_PI * 1.0 * ((float) j) * dt);
+		tdfilter->data[j] = tdfilter->data[tdfilter->length - j] = (sin(twopiOverNumpts * j * (flow + fseglength)) - sin(twopiOverNumpts * j * flow)) / (LAL_PI * j * dt);
 
 	if(XLALREAL4ForwardFFT(fdfilter, tdfilter, plan)) {
 		XLALDestroyREAL4Vector(tdfilter);
@@ -172,9 +166,7 @@ int XLALFreqSeriesToTFPlane(
 	INT4 fseglength;
 	INT4 fwindow;
 
-	/* FIXME */
-	/*REAL8 dt = 0;*/
-	REAL4 dt = 0;
+	REAL8 dt = 0;
 
 	RealFFTPlan *prev = NULL;
 
@@ -209,9 +201,7 @@ int XLALFreqSeriesToTFPlane(
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* sampling rate of time series which gave freqSeries */
-	/* FIXME */
-	/*dt = 1.0 / (snr->length * freqSeries->deltaF);*/
-	dt = 1.0 / (((REAL4) snr->length) * freqSeries->deltaF);
+	dt = 1.0 / (snr->length * freqSeries->deltaF);
 
 	/* set the epoch of the TF plane */
 	plane->epoch = freqSeries->epoch;
