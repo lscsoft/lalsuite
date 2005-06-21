@@ -14,6 +14,141 @@ NRCSID(FREQSERIESTOTFPLANEC, "$Id$");
 #include <lal/SeqFactories.h>
 #include <lal/TFTransform.h>
 
+
+/*
+ * Generate the frequency domain filter function by constructing the filter
+ * in the time domain and then transforming to the frequency domain.  This
+ * filter should depends on the frequency flow and the fseglength.  It
+ * should be non-zero for some amount that depends on fseglength and the
+ * total bandwidth of the input frequency series.
+ */
+
+/* FIXME */
+/*static COMPLEX8Vector *generate_filter(size_t length, INT4 fseglength, REAL8 dt, INT4 flow)*/
+static COMPLEX8Vector *generate_filter(size_t length, INT4 fseglength, REAL4 dt, INT4 flow)
+{
+	static const char *func = "generate_filter";
+	REAL4Vector *tdfilter;
+	COMPLEX8Vector *fdfilter;
+	RealFFTPlan *plan;
+	/* FIXME */
+	/*REAL8 twopiOverNumpts;*/
+	REAL4 twopiOverNumpts;
+	INT4 firstzero;
+	int j;
+
+	tdfilter = XLALCreateREAL4Vector(2 * (length - 1));
+	fdfilter = XLALCreateCOMPLEX8Vector(length);
+	plan = XLALCreateForwardREAL4FFTPlan(tdfilter->length, 0);
+	if(!tdfilter || !fdfilter) {
+		XLALDestroyREAL4Vector(tdfilter);
+		XLALDestroyCOMPLEX8Vector(fdfilter);
+		XLALDestroyREAL4FFTPlan(plan);
+		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+	}
+
+	/* zero time-domain filter */
+	memset(tdfilter->data, 0, tdfilter->length * sizeof(*tdfilter->data));
+
+	/* number of points from peak of filter to first zero */
+	firstzero = tdfilter->length / fseglength;
+
+	twopiOverNumpts = 2.0 * LAL_PI / tdfilter->length;
+	tdfilter->data[0] = twopiOverNumpts * fseglength / (LAL_PI * dt);
+	for(j = 1; j < firstzero; j++)
+		/* FIXME */
+		/*tdfilter->data[j] = tdfilter->data[tdfilter->length - j] = (sin(twopiOverNumpts * j * (flow + fseglength)) - sin(twopiOverNumpts * j * flow)) / (LAL_PI * j * dt);*/
+		tdfilter->data[j] = tdfilter->data[tdfilter->length - j] = (sin(twopiOverNumpts * j * (flow  + fseglength)) - sin(twopiOverNumpts * j * flow )) / (LAL_PI * 1.0 * ((float) j) * dt);
+
+	if(XLALREAL4ForwardFFT(fdfilter, tdfilter, plan)) {
+		XLALDestroyREAL4Vector(tdfilter);
+		XLALDestroyCOMPLEX8Vector(fdfilter);
+		XLALDestroyREAL4FFTPlan(plan);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
+
+	XLALDestroyREAL4Vector(tdfilter);
+	XLALDestroyREAL4FFTPlan(plan);
+	return(fdfilter);
+}
+
+
+/*
+ * Multiply filter by the data.  Don't forget complex conjugate and any other
+ * relevant information.
+ */
+
+#if 0
+static void apply_filter(
+	COMPLEX8Vector *output,
+	REAL4 *norm,
+	COMPLEX8Vector *data,
+	COMPLEX8Vector *filter
+)
+{
+	INT4 fwindow;
+	int j;
+
+	/* set the frequency window(bins); for each channel contributions
+	 * will be zeroed out from fwindow before and after */
+	fwindow = 100;
+
+	*norm = 0.0;
+
+	/* All values below (i * df - fwindow) to zero */
+	for (j = 0; j < flow - fwindow + i * fseglength; j++) {
+		REAL4 reFilter = 0.0;
+		REAL4 imFilter = 0.0;
+		REAL4 reData = freqSeries->data->data[j].re;
+		REAL4 imData = freqSeries->data->data[j].im;
+
+		fcorr->data[j].re = reFilter * reData + imFilter * imData;
+		fcorr->data[j].im = reFilter * imData - imFilter * reData;
+
+		*norm += reFilter * reFilter + imFilter * imFilter;
+	}
+
+	/* PRB - Multiply the filter by the data.  Don't forget complex
+	 * conjugate and any other relevant information */
+	for (; j < flow + fwindow + (i + 1) * fseglength; j++) {
+		REAL4 reFilter = filter->data[j - i * fseglength].re;
+		REAL4 imFilter = filter->data[j - i * fseglength].im;
+		REAL4 reData = freqSeries->data->data[j].re;
+		REAL4 imData = freqSeries->data->data[j].im;
+
+		if(psd) {
+			reFilter /= sqrt(psd->data->data[j]);
+			imFilter /= sqrt(psd->data->data[j]);
+		}
+
+		fcorr->data[j].re = reFilter * reData + imFilter * imData;
+		fcorr->data[j].im = reFilter * imData - imFilter * reData;
+
+		*norm += reFilter * reFilter + imFilter * imFilter;
+	}
+
+	for (; j < output->length; j++) {
+		REAL4 reFilter = 0.0;
+		REAL4 imFilter = 0.0;
+		REAL4 reData = freqSeries->data->data[j].re;
+		REAL4 imData = freqSeries->data->data[j].im;
+
+		fcorr->data[j].re = reFilter * reData + imFilter * imData;
+		fcorr->data[j].im = reFilter * imData - imFilter * reData;
+
+		*norm += reFilter * reFilter + imFilter * imFilter;
+	}
+
+	*norm = sqrt(4.0 * *norm);
+
+	/* clean up Nyquist */
+	output->data[output->length - 1].re = 0.0;
+	output->data[output->length - 1].im = 0.0;
+}
+#endif
+
+
+
 /******** <lalVerbatim file="FreqSeriesToTFPlaneCP"> ********/
 int XLALFreqSeriesToTFPlane(
 	COMPLEX8TimeFrequencyPlane *plane,
@@ -25,123 +160,77 @@ int XLALFreqSeriesToTFPlane(
 /******** </lalVerbatim> ********/
 {
 	static const char *func = "XLALFreqSeriesToTFPlane";
-	REAL4Vector *filter = NULL;
 	REAL4Vector *snr = NULL;
-	COMPLEX8Vector *tmp = NULL;
+	COMPLEX8Vector *filter = NULL;
 	COMPLEX8Vector *fcorr = NULL;
 	INT4 i;
 	INT4 j;
-	INT4 numpts = 0;
 	INT4 nt = plane->params.timeBins;
 	INT4 nf = plane->params.freqBins;
-	INT4 ntotal;
 
-	INT4 flow1;
+	INT4 flow;
 	INT4 fseglength;
-	INT4 fcut;
 	INT4 fwindow;
 
-	REAL4 delF = 0;
-	REAL4 delT = 0;
+	/* FIXME */
+	/*REAL8 dt = 0;*/
 	REAL4 dt = 0;
-	REAL4 twopiOverNumpts = 0;
-	INT4 filterlen = 0;
 
-	RealFFTPlan *pfwd = NULL;
 	RealFFTPlan *prev = NULL;
 
 	/* check input parameters */
-	if ((nt <= 0) || (nf <= 0) || (freqSeries->deltaF <= 0.0) || (plane->params.deltaT <= 0.0) || (freqSeries->f0 < 0.0))
+	if((nt <= 0) ||
+	   (nf <= 0) ||
+	   (freqSeries->deltaF <= 0.0) ||
+	   (plane->params.deltaT <= 0.0) ||
+	   (freqSeries->f0 < 0.0) ||
+	   (plane->params.flow < freqSeries->f0))
 		XLAL_ERROR(func, XLAL_EDOM);
 
-	/* Lowest freq of time freq plane >= lowest freq of freq series */
-	if (plane->params.flow < freqSeries->f0)
-		XLAL_ERROR(func, XLAL_EDATA);
+	/* number of bins of the frequency series.  Note that the frequency
+	 * resolution of the frequency series does not have to be the same
+	 * as the time-frequency plane. */
+	fseglength = 0.5 + plane->params.deltaF / freqSeries->deltaF;
 
-	/* 
-	 * delF is the frequency resoltion of the time-frequency plane.  
-	 * delT is the time resolution of the plane.
-	 * Note that the frequency resolution of the frequency series does
-	 * not have to be the same as delF.
-	 */
-	delT = plane->params.deltaT;
-	delF = plane->params.deltaF;
-
-	/* number of bins of the frequency series corresponding to delF */
-	fseglength = 0.5 + delF / freqSeries->deltaF;
-
-	/* low frequency cutoff:  in terms of number of bins of frequency series */
-	flow1 = (plane->params.flow - freqSeries->f0) / freqSeries->deltaF;
-
-	/* compute total number of data points to be used to construct TF plane */
-	ntotal = nf * fseglength;
+	/* time-frequency plane's low frequency cutoff relative to the
+	 * input series' heterodyne frequency, in units of frequency bins
+	 * */
+	flow = (plane->params.flow - freqSeries->f0) / freqSeries->deltaF;
 
 	/* make sure have enough data points in freq series */
-	if (ntotal + flow1 > (INT4) freqSeries->data->length)
+	if(flow + nf * fseglength > (INT4) freqSeries->data->length)
 		XLAL_ERROR(func, XLAL_EDATA);
 
-	/* create temporary vectors for filter and correlations */
-	numpts = 2 * (freqSeries->data->length - 1);
-	twopiOverNumpts = 2.0 * LAL_PI / (float) numpts;
-	filter = XLALCreateREAL4Vector(numpts);
-	tmp = XLALCreateCOMPLEX8Vector(freqSeries->data->length);
+	/* create vectors and FFT plans */
 	fcorr = XLALCreateCOMPLEX8Vector(freqSeries->data->length);
-	snr = XLALCreateREAL4Vector(numpts);
-	if (!filter || !tmp || !fcorr || !snr)
+	snr = XLALCreateREAL4Vector(2 * (freqSeries->data->length - 1));
+	prev = XLALCreateReverseREAL4FFTPlan(snr->length, 0);
+	if(!fcorr || !snr || !prev)
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* sampling rate of time series which gave freqSeries */
-	dt = 1.0 / (((REAL4) numpts) * freqSeries->deltaF);
+	/* FIXME */
+	/*dt = 1.0 / (snr->length * freqSeries->deltaF);*/
+	dt = 1.0 / (((REAL4) snr->length) * freqSeries->deltaF);
 
 	/* set the epoch of the TF plane */
 	plane->epoch = freqSeries->epoch;
 
-	/* number of points from peak of filter to first zero */
-	filterlen = numpts / fseglength;
-
-	/* Create FFTW plans for forward and reverse REAL4 FFTs */
-	pfwd = XLALCreateForwardREAL4FFTPlan(numpts, 0);
-	prev = XLALCreateReverseREAL4FFTPlan(numpts, 0);
-	if (!pfwd || !prev)
-		XLAL_ERROR(func, XLAL_EFUNC);
-
-	/* 
-	 * PRB - test code to add a delta function to the segment and
-	 * confirm the output of the code
-	 */
-	/*
-	   memset(filter->data, 0, numpts * sizeof(REAL4));
-	   filter->data[numpts/2] = 1.0;
-	   LALForwardRealFFT( status->statusPtr, freqSeries->data, filter, pfwd);
-	   CHECKSTATUSPTR (status);
-	 */
-
-	/* PRB - generate the time domain filter function.  This filter should
-	 * depends on the frequency flow1 and the fseglength.  It should
-	 * be non-zero for some amount that depends on fseglength and
-	 * the total bandwidth of the input frequency series.  
-	 */
-	memset(filter->data, 0, numpts * sizeof(REAL4));
-	filter->data[0] = twopiOverNumpts * fseglength / (LAL_PI * dt);
-	for (j = 1; j < filterlen; j++)
-		filter->data[j] = filter->data[numpts - j] = (sin(twopiOverNumpts * j * (flow1 + fseglength)) - sin(twopiOverNumpts * j * flow1)) / (LAL_PI * 1.0 * ((float) j) * dt);
-
-	/* PRB - Fourier transform the filter into the frequency domain */
-	if (XLALREAL4ForwardFFT(tmp, filter, pfwd))
+	/* generate the frequency domain filter function. */
+	filter = generate_filter(freqSeries->data->length, fseglength, dt, flow);
+	if(!filter)
 		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/* set the frequency window(bins); for each channel contributions
-	 * will be zeroed out from fwindow before and after
-	 */
+	 * will be zeroed out from fwindow before and after */
 	fwindow = 100;
-	fcut = flow1 - fwindow;
 
 	/* loop over different basis vectors in the frequency domain */
-	for (i = 0; i < nf; i++) {
+	for(i = 0; i < nf; i++) {
 		normalisation[i] = 0.0;
 
 		/* All values below (i * df - fwindow) to zero */
-		for (j = 0; j < (fcut + (i * fseglength)); j++) {
+		for (j = 0; j < flow - fwindow + i * fseglength; j++) {
 			REAL4 reFilter = 0.0;
 			REAL4 imFilter = 0.0;
 			REAL4 reData = freqSeries->data->data[j].re;
@@ -150,14 +239,14 @@ int XLALFreqSeriesToTFPlane(
 			fcorr->data[j].re = reFilter * reData + imFilter * imData;
 			fcorr->data[j].im = reFilter * imData - imFilter * reData;
 
-			normalisation[i] += (reFilter * reFilter + imFilter * imFilter);
+			normalisation[i] += reFilter * reFilter + imFilter * imFilter;
 		}
 
 		/* PRB - Multiply the filter by the data.  Don't forget complex
 		 * conjugate and any other relevant information */
-		for (j = (fcut + (i * fseglength)); j < (fcut + (2 * fwindow) + ((i + 1) * fseglength)); j++) {
-			REAL4 reFilter = tmp->data[j - i * fseglength].re;
-			REAL4 imFilter = tmp->data[j - i * fseglength].im;
+		for(j = flow + i * fseglength - fwindow; j < flow + (i + 1) * fseglength + fwindow; j++) {
+			REAL4 reFilter = filter->data[j - i * fseglength].re;
+			REAL4 imFilter = filter->data[j - i * fseglength].im;
 			REAL4 reData = freqSeries->data->data[j].re;
 			REAL4 imData = freqSeries->data->data[j].im;
 
@@ -172,7 +261,7 @@ int XLALFreqSeriesToTFPlane(
 			normalisation[i] += reFilter * reFilter + imFilter * imFilter;
 		}
 
-		for (j = (fcut + (2 * fwindow) + ((i + 1) * fseglength)); (unsigned) j < freqSeries->data->length; j++) {
+		for (; (unsigned) j < fcorr->length; j++) {
 			REAL4 reFilter = 0.0;
 			REAL4 imFilter = 0.0;
 			REAL4 reData = freqSeries->data->data[j].re;
@@ -181,62 +270,43 @@ int XLALFreqSeriesToTFPlane(
 			fcorr->data[j].re = reFilter * reData + imFilter * imData;
 			fcorr->data[j].im = reFilter * imData - imFilter * reData;
 
-			normalisation[i] += (reFilter * reFilter + imFilter * imFilter);
+			normalisation[i] += reFilter * reFilter + imFilter * imFilter;
 		}
 
+		/* clean up Nyquist */
+		fcorr->data[fcorr->length - 1].re = 0.0;
+		fcorr->data[fcorr->length - 1].im = 0.0;
 
 		normalisation[i] = sqrt(4.0 * normalisation[i]);
 
-		/* clean up Nyquist */
-		fcorr->data[freqSeries->data->length - 1].re = 0.0;
-		fcorr->data[freqSeries->data->length - 1].im = 0.0;
-
-		/* PRB - Inverse transform the product so that we get a time series at
-		 * the full sample rate.   Make sure to check that the sample
-		 * rate agrees with what you had before. */
-		if (XLALREAL4ReverseFFT(snr, fcorr, prev))
+		/* PRB - Inverse transform the product so that we get a time
+		 * series at the full sample rate.   Make sure to check that
+		 * the sample rate agrees with what you had before. */
+		if(XLALREAL4ReverseFFT(snr, fcorr, prev))
 			XLAL_ERROR(func, XLAL_EFUNC);
-
-		/* 
-		 * PRB & SRM - to output the time series when the delta function
-		 * is inserted instead of other data 
-		 */
-		/*
-		   {
-		   char fname[248];
-		   sprintf(fname, "z%02d.dat", i);
-		   fp = fopen(fname,"a");
-		   for(j=0; j<numpts ; j++)
-		   {
-		   fprintf(fp,"%i %f\n",j,snr->data[j]/norm);
-		   }
-		   fclose(fp);
-		   }
-		 */
 
 		/* PRB - copy the data back into the time series.  In this
 		 * process,  one only takes the samples corresponding to the
-		 * uncorupted times.   This means that the data should be longer
-		 * than the 1/dfmin.   This can mean a change compared to what
-		 * has been done before.   We'll have to check that carefully.
-		 * Notice that the originally complex plane is now real.  I still
-		 * don't understand why the difference arises with the Eanns's
-		 * original implementation.   We'll have to look at that.  */
+		 * uncorupted times.   This means that the data should be
+		 * longer than the 1/dfmin.   This can mean a change compared
+		 * to what has been done before.   We'll have to check that
+		 * carefully.  Notice that the originally complex plane is now
+		 * real.  I still don't understand why the difference arises
+		 * with the Eanns's original implementation.   We'll have to
+		 * look at that.  */
 		/* Copy the result into appropriate spot in output structure */
-		for (j = 0; j < nt; j++) {
-			plane->data[j * nf + i].re = snr->data[(j * (INT4) (delT / dt)) + windowShift];
+		for(j = 0; j < nt; j++) {
+			plane->data[j * nf + i].re = snr->data[(j * (INT4) (plane->params.deltaT / dt)) + windowShift];
 			plane->data[j * nf + i].im = 0.0;
 		}
 	}
 
 	/* Get rid of all temporary memory */
-	XLALDestroyREAL4FFTPlan(pfwd);
 	XLALDestroyREAL4FFTPlan(prev);
-	XLALDestroyREAL4Vector(filter);
-	XLALDestroyCOMPLEX8Vector(tmp);
+	XLALDestroyCOMPLEX8Vector(filter);
 	XLALDestroyCOMPLEX8Vector(fcorr);
 	XLALDestroyREAL4Vector(snr);
 
 	/* normal exit */
-	return (0);
+	return(0);
 }
