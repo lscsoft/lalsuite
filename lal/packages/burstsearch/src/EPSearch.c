@@ -157,17 +157,22 @@ static void print_complex8fseries(const COMPLEX8FrequencySeries *fseries, const 
 
 /*
  * Normalize a complex8 fseries to a real4 average psd so that the rms of Re or
- * Im is 1.
+ * Im is 1.  (i.e. whiten the data).
  */
 
-static void normalize_to_psd(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries *psd)
+static void whiten(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries *psd)
 {
 	REAL4 factor;
 	size_t i;
 
 	for(i = 0; i < fseries->data->length; i++) {
-		/* FIXME: it is an error for this to occur in the band of
-		 * interest.  The entire PSD window should be thrown out */
+		/* FIXME: the computation of the average PSD sometimes
+		 * underflows at low frequencies due to the strength of the
+		 * high-pass filter(s) used in the data conditioning phase.
+		 * This is OK when it happens outside the band of interest,
+		 * but it is an error for this to occur in the band of
+		 * interest.  We have *never* seen this happen, but it
+		 * still might be worth adding some sort of check. */
 		if(psd->data->data[i] == 0.0)
 			factor = 0.0;
 		else
@@ -292,7 +297,7 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): normalizing to the average spectrum\n");
-		normalize_to_psd(fseries, AverageSpec);
+		whiten(fseries, AverageSpec);
 		if(params->printSpectrum)
 			print_complex8fseries(fseries, "frequency_series.dat");
 
