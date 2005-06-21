@@ -47,7 +47,8 @@ RCSID ("$Id$");
 /* Prototypes for the functions defined in this file */
 void initUserVars (LALStatus *);
 void compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2 );
-void compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2 );
+void compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2,
+			REAL8 Ftol);
 
 /*----------------------------------------------------------------------*/
 static const LALStatus empty_status;
@@ -57,6 +58,7 @@ CHAR *uvar_Fname1;
 CHAR *uvar_Fname2;
 BOOLEAN uvar_help;
 BOOLEAN uvar_clusterFiles;
+REAL8 uvar_Ftolerance;
 
 #define max(x,y) ( (x) > (y) ? (x) : (y) )
 #define relError(x,y) (fabs( (x)-(y) )/ (max(fabs(x), fabs(y))))
@@ -103,7 +105,8 @@ main(int argc, char *argv[])
   if ( uvar_clusterFiles ) {
     LAL_CALL ( compareClusterFiles ( &status, &diffs, Fstats1, Fstats2 ), &status );
   } else {
-    LAL_CALL ( compareFstatFiles ( &status, &diffs, Fstats1, Fstats2 ), &status );
+    LAL_CALL ( compareFstatFiles ( &status, &diffs, Fstats1, Fstats2, uvar_Ftolerance ), 
+	       &status );
   }
 
   if ( diffs)
@@ -128,6 +131,7 @@ initUserVars (LALStatus *status)
   ATTATCHSTATUSPTR (status);
 
   uvar_clusterFiles = TRUE;	/* default: compare output-files from "cluster" */
+  uvar_Ftolerance = 100.0 * LAL_REAL4_EPS;
 
   /* now register all our user-variable */
   LALregSTRINGUserVar(status, Fname1,	'1', UVAR_REQUIRED, "Path and basefilename for first Fstats file");
@@ -135,6 +139,7 @@ initUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   help,	'h', UVAR_HELP,     "Print this help/usage message");
 
   LALregBOOLUserVar(status,   clusterFiles, 0,UVAR_OPTIONAL,"Comparing cluster results-files or pure Fstat-files"); 
+  LALregREALUserVar(status,   Ftolerance, 0, UVAR_OPTIONAL, "tolerance of relative-error in F" );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -157,7 +162,6 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
   REAL8 relErr;
   REAL8 eps8 = 10.0 * LAL_REAL8_EPS;	/* tolerances */
   REAL4 eps4 = 100.0 * LAL_REAL4_EPS;
-
 
   INITSTATUS (status, "compareClusterFiles", rcsid );
 
@@ -261,7 +265,8 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
 /** comparison specific to pure Fstat-output files (5 entries ) 
  */    
 void
-compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2 )
+compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2, 
+		   REAL8 Ftol)
 {
   const CHAR *line1, *line2;
   UINT4 nlines1, nlines2, minlines;
@@ -323,9 +328,9 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
 	  LALPrintError ("Relative error %g in f1dot ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	} 
-      if ( (relErr = relError( Fstat1, Fstat2)) > eps4 )
+      if ( (relErr = relError( Fstat1, Fstat2)) > Ftol )
 	{
-	  LALPrintError ("Relative error %g in F ecceeds %g in line %d\n", relErr, eps4, i+1);
+	  LALPrintError ("Relative error %g in F ecceeds %g in line %d\n", relErr, Ftol, i+1);
 	  (*diff) ++;
 	}
 
