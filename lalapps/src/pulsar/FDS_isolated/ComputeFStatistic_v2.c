@@ -1,9 +1,31 @@
+/*
+ * 
+ * Copyright (C) 2002, 2003, 2004 M.A. Papa, X. Siemens, Y. Itoh
+ * Copyright (C) 2004, 2005 Reinhard Prix
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
+
 /*********************************************************************************/
-/** \file ComputeFStatistic.c
+/** \author Y. Ioth, C. Messenger, M.A. Papa, R.Prix, X. Siemens 
+ * \file 
+ * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
  * Implements the so-called "F-statistic" as introduced in JKS98.
  *                                                                          
- * \author Y. Ioth, C. Messenger, M.A. Papa, R.Prix, X. Siemens 
  *                                                                          
  *                 Albert Einstein Institute/UWM - started September 2002   
  *********************************************************************************/
@@ -117,6 +139,7 @@ typedef struct {
   COMPLEX16 Fb;
 } Fcomponents;
 
+
 /*----------------------------------------------------------------------*/
 /* conditional compilation-switches */
 
@@ -128,12 +151,15 @@ typedef struct {
 #define COMPUTEFSTATC_EINPUT   		3
 #define COMPUTEFSTATC_EMEM   		4
 #define COMPUTEFSTATC_ENONULL 		5
+#define COMPUTEFSTATC_EXLAL		6
 
 #define COMPUTEFSTATC_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATC_MSGESYS		"System call failed (probably file IO)"
 #define COMPUTEFSTATC_MSGEINPUT   	"Invalid input"
 #define COMPUTEFSTATC_MSGEMEM   	"Out of memory. Bad."
 #define COMPUTEFSTATC_MSGENONULL 	"Output pointer is non-NULL"
+#define COMPUTEFSTATC_MSGEXLAL		"XLALFunction-call failed"
+
 /*----------------------------------------------------------------------
  * User-variables: can be set from config-file or command-line */
 
@@ -225,18 +251,27 @@ void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void writeFVect(LALStatus *, const FStatisticVector *FVect, const CHAR *fname);
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
-void 
-refineCOMPLEX16Vector (LALStatus *, COMPLEX16Vector **out, const COMPLEX16Vector *in, 
-		       UINT4 refineby, UINT4 Dterms);
 
-void NewLALDemod (LALStatus *, Fcomponents *FaFb, const SFTVector *sfts, 
-		  const computeFStatPar *params);
+int
+XLALNewLALDemod(Fcomponents *FaFb,
+		const SFTVector *sfts, 
+		const computeFStatPar *params);
 
 void
 computeFStat(LALStatus *, 
 	     FStatisticVector **FVect,
 	     const SFTVector *sfts, 
 	     const computeFStatPar* params);
+
+void
+LALGetSSBtimes (LALStatus *status, 
+		REAL8Vector *SSBtau,
+		REAL8Vector *SSBDtau,
+		LIGOTimeGPS refTime,
+		const LIGOTimeGPSVector *GPStimes,
+		const SkyPosition *pos,
+		const LALDetector *site,
+		const EphemerisData *ephem);
 
 
 /*----------------------------------------------------------------------*/
@@ -261,7 +296,8 @@ extern int vrbflg;
 /*----------------------------------------------------------------------*/
 /* empty structs for initialziations */
 
-DopplerScanState emptyScan;
+static const DopplerScanState empty_DopplerScanState;
+static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 
 /*----------------------------------------------------------------------*/
 /* CODE starts here */
@@ -281,12 +317,14 @@ int main(int argc,char *argv[])
   CHAR Fmaxfilename[256]; 		/* Fmax file name*/
   UINT4 spdwn;				/* counter over spindown-params */
   DopplerScanInit scanInit;		/* init-structure for DopperScanner */
-  DopplerScanState thisScan = emptyScan; /* current state of the Doppler-scan */
+  DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerPosition dopplerpos;		/* current search-parameters */
   SkyPosition thisPoint;
   FILE *fpOut=NULL;
   UINT4 loopcounter;
   FStatisticVector *FVect = NULL;   /* new type to store F-statistic results in a frequency-band */
+  REAL8Vector *DeltaT_alpha = NULL;	/* SSB times at SFT half-points: Delta T_alpha */
+  REAL8Vector *Tdot_alpha = NULL;	/* derivatives of SSB-times at SFT half-points: Tdot_alpha */
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -309,6 +347,11 @@ int main(int argc,char *argv[])
 
   /* main initialization of the code: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
+
+  /* allocate memory of the SSB-times: DeltaT_alpha and Tdot_alpha */
+  LAL_CALL ( LALDCreateVector (&status, &DeltaT_alpha, GV.SFTno), &status );
+  LAL_CALL ( LALDCreateVector (&status, &Tdot_alpha, GV.SFTno), &status );
+
 
   /* normalize SFTs by running median */
   LAL_CALL (NormaliseSFTDataRngMdn(&status), &status);
@@ -407,6 +450,27 @@ int main(int argc,char *argv[])
       LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &thisPoint), &status);
       Alpha = thisPoint.longitude;
       Delta = thisPoint.latitude;
+
+      /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
+      thisPoint.system = COORDINATESYSTEM_EQUATORIAL;
+      LAL_CALL ( LALGetSSBtimes (&status, DeltaT_alpha, Tdot_alpha, 
+				 GV.Tstart, &(GV.timestamps), &thisPoint,
+				 &(GV.Detector), GV.edat ), &status);
+
+      if ( lalDebugLevel ) 
+	{
+	  UINT4 N, i;
+	  N = GV.timestamps.length;
+	  printf ( "\nDEBUG: result from LALGetSSBtimes(): \n");
+	  for ( i=0; i < N; i++ )
+	    {
+	      printf ("i=%d: t_i = %d s, deltaTau_i = %22.20g, dTau_i = %.20g\n",
+		      i, GV.timestamps.data[i].gpsSeconds,
+		      DeltaT_alpha->data[i], Tdot_alpha->data[i] );
+	    }
+	  
+	} /* if lalDebugLevel */
+
       
       LAL_CALL (CreateDemodParams(&status, GV.CFSparams, &GV), &status);
       
@@ -489,6 +553,12 @@ int main(int argc,char *argv[])
   LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
 
   LAL_CALL ( Freemem(&status, &GV), &status);
+  
+  LAL_CALL ( LALDDestroyVector (&status, &DeltaT_alpha), &status);
+  LAL_CALL ( LALDDestroyVector (&status, &Tdot_alpha), &status);
+
+  /* did we forget anything ? */
+  LALCheckMemoryLeaks();
 
   return 0;
 
@@ -876,7 +946,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       TRY (LALAddFloatToGPS (status->statusPtr, &(cfg->midTS.data[i]), &(cfg->timestamps.data[i]), 
 			     0.5*cfg->tSFT), status);
     }
-  
 
   /* figure out total observation time */
   {
@@ -1206,9 +1275,6 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree ( cfg->CFSparams);
 
   DETATCHSTATUSPTR (status);
-  /* did we forget anything ? */
-  LALCheckMemoryLeaks();
-
   RETURN (status);
 
 } /* Freemem() */
@@ -1474,11 +1540,10 @@ NormaliseSFTDataRngMdn(LALStatus *status)
 
 /** v2-specific version of LALDemod() (based on TestLALDemod() in CFS)
  */
-void 
-NewLALDemod(LALStatus *status, 
-	    Fcomponents *FaFb,
-	    const SFTVector *sfts, 
-	    const computeFStatPar *params) 
+int
+XLALNewLALDemod(Fcomponents *FaFb,
+		const SFTVector *sfts, 
+		const computeFStatPar *params) 
 { 
   UINT4 alpha;                 /* loop index over SFTs */
   REAL8 *xSum=NULL, *ySum=NULL; /* temp variables for computation of fs*as and fs*bs */
@@ -1499,14 +1564,16 @@ NewLALDemod(LALStatus *status,
   COMPLEX16 Fa, Fb;
   UINT4 klim = 2*params->Dterms;
   REAL8 f;
-  static REAL8 sinVal[LUT_RES+1], cosVal[LUT_RES+1];        /*LUT values computed by the routine do_trig_lut*/
+  static REAL8 sinVal[LUT_RES+1]; /*LUT values computed by the routine do_trig_lut*/
+  static REAL8 cosVal[LUT_RES+1]; 
   static BOOLEAN firstCall = 1;
 
   UINT4 nSFTs = params->SFTno;
 
-  INITSTATUS( status, "NewLALDemod", rcsid );
-
-  ASSERT ( FaFb, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  if ( !FaFb ) {
+    LALPrintError ("\nOutput-pointer is NULL !\n\n");
+    XLAL_ERROR ( "XLALNewLALDemod", XLAL_EINVAL);
+  }
 
   spOrder = params->spinDwnOrder;
   spinDwn = params->spinDwn;
@@ -1593,7 +1660,7 @@ NewLALDemod(LALStatus *status,
 	fprintf(stderr,"ERROR! sftIndex = %d < 0 in NewLALDemod\n", sftIndex);
 	fprintf(stderr," alpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
 		alpha, k1, xTemp, params->Dterms, params->ifmin);
-	ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	XLAL_ERROR ( "XLALNewLALDemod", XLAL_EDOM);
       }
       
       tempFreq1 = tempFreq0 + params->Dterms - 1;     /* positive if Dterms > 1 (trivial) */
@@ -1666,11 +1733,11 @@ NewLALDemod(LALStatus *status,
       
       if(sftIndex > params->imax)
 	{
-	  fprintf(stderr,"ERROR! sftIndex = %d > %d in NewLALDemod\nalpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
+	  fprintf(stderr,"ERROR! sftIndex = %d > %d in NewLALDemod\n\
+alpha=%d, k1=%d, xTemp=%20.17f, Dterms=%d, ifmin=%d\n",
 		  sftIndex, params->imax, alpha, k1, xTemp, params->Dterms, params->ifmin);
-	  ABORT(status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+	  XLAL_ERROR ( "XLALNewLALDemod", XLAL_EDOM);
 	}
-      
       
       
       /* implementation of amplitude demodulation */
@@ -1694,9 +1761,9 @@ NewLALDemod(LALStatus *status,
   FaFb->Fa = Fa;
   FaFb->Fb = Fb;
 
-  RETURN( status );
+  return 0;
 
-} /* NewLALDemod() */
+} /* XLALNewLALDemod() */
 
 
 
@@ -1712,8 +1779,8 @@ computeFStat (LALStatus *status,
 {
 
   UINT4 i; 
-  REAL4 At, Bt, Ct;
   REAL8 fact;
+  REAL8 At, Bt, Ct;
   UINT4 nBins;
   FStatisticVector *ret = NULL;	/* return-struct */
   computeFStatPar demodPar = (*params);	/* local non-static copy of params */
@@ -1725,7 +1792,6 @@ computeFStat (LALStatus *status,
   ASSERT (*FVectOut == NULL, status, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
   ASSERT (sfts != NULL, status,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
   ASSERT (params != NULL, status,  COMPUTEFSTATC_ENULL,  COMPUTEFSTATC_MSGENULL);
-
 
   nBins = params->imax;		/* number of frequency-bins to calculate Fstatistic for */
 
@@ -1745,9 +1811,9 @@ computeFStat (LALStatus *status,
 
   /* prepare quantities to calculate Fstat from Fa and Fb */
   fact = 4.0 / (sfts->length * params->amcoe->D);
-  At = fact * params->amcoe->A;
-  Bt = fact * params->amcoe->B;
-  Ct = fact * params->amcoe->C;
+  At = params->amcoe->A;
+  Bt = params->amcoe->B;
+  Ct = params->amcoe->C;
 
   /* Loop over frequencies to be demodulated */
   for(i=0 ; i< nBins ; i++ )
@@ -1757,7 +1823,8 @@ computeFStat (LALStatus *status,
 
       demodPar.f0 = params->f0 + i * params->df;	/* prepare next frequency */
 
-      TRY ( NewLALDemod (status->statusPtr, &FaFb, sfts, &demodPar), status);
+      if ( XLALNewLALDemod (&FaFb, sfts, &demodPar) != 0)
+	break;
 
       FaRe = ret->Fa->data[i].re = FaFb.Fa.re;
       FaIm = ret->Fa->data[i].im = FaFb.Fa.im;
@@ -1766,10 +1833,19 @@ computeFStat (LALStatus *status,
       FbIm = ret->Fb->data[i].im = FaFb.Fb.im;
 
       /* calculate F-statistic from  Fa and Fb */
-      ret->F->data[i] = Bt * (FaRe*FaRe + FaIm*FaIm) + At * (FbRe*FbRe + FbIm*FbIm) 
-	- 2.0*Ct*(FaRe*FbRe + FaIm*FbIm);
+      ret->F->data[i] = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
+				+ At * (FbRe*FbRe + FbIm*FbIm) 
+				- 2.0 * Ct *(FaRe*FbRe + FaIm*FbIm) );
 
     } /* for i < nBins */
+
+  if ( xlalErrno ) 
+    {
+      int code = xlalErrno;
+      XLALClearErrno(); 
+      LALPrintError ("\nERROR: XLALNewLALDemod() failed (xlalErrno = %d)!\n\n", code);
+      ABORT (status,  COMPUTEFSTATC_EXLAL,  COMPUTEFSTATC_MSGEXLAL);
+    }
 
   /* return */
   (*FVectOut) = ret;
@@ -1815,146 +1891,98 @@ writeFVect(LALStatus *status, const FStatisticVector *FVect, const CHAR *fname)
 } /* writeCOMPLEX16Vector() */
 
 
-
-/** Interpolate frequency-series to newLen frequency-bins.
- *  This is using DFT-interpolation (derived from zero-padding).
+/** Convert a whole vector of detector-times 'GPStimes' into SSB-frame 'SSBtimes'.
+ * Using ephemeris-timing if ephem!=NULL, or using the Ptolemaic approximation otherwise.
  */
 void
-refineCOMPLEX16Vector (LALStatus *status, 
-		       COMPLEX16Vector **out, 
-		       const COMPLEX16Vector *in, 
-		       UINT4 refineby, UINT4 Dterms)
+LALGetSSBtimes (LALStatus *status, 
+		REAL8Vector *SSBtau,		/**< [out] deltaTau = tau(t_i) - tau(t0)*/
+		REAL8Vector *SSBDtau,		/**< [out] dtau/dt (t_i) */
+		LIGOTimeGPS refTime,		/**< reference-time t0 */
+		const LIGOTimeGPSVector *GPStimes,/**< input detector times t_i */
+		const SkyPosition *pos,		/**< source sky-location */
+		const LALDetector *site,	/**< detector location and orientation */  
+		const EphemerisData *ephem	/**< ephemeris-data, NULL for Ptolemaic timing*/
+		)
 {
-  REAL8 Yk_Re, Yk_Im;
-  REAL8 b, d;
-  UINT4 lstar;
-  UINT4 newLen, oldLen, k;
-  COMPLEX16Vector *ret = NULL;
+  PulsarTimesParamStruc baryParams = empty_PulsarTimesParamStruc;
+  REAL8Vector *var = NULL;	/* input-params: (t, alpha, delta) */
+  REAL8Vector *dt = NULL;	/* hold answer (tau, dtau/dt, dtau/dalpha, dtau/ddelta ) */
+  UINT4 N, i;
+  REAL8 t0;
 
-  static REAL4 sinVal[ LUT_RES + 1 ];
-  static REAL4 cosVal[ LUT_RES + 1 ];
-  static BOOLEAN firstCall = TRUE;
-
-  REAL8 invOldLen, invNewLen, TWOPIOverOldLen;	/* tmp results for optimization */
-
-  INITSTATUS( status, "refineCOMPLEX16Vector", rcsid );  
+  INITSTATUS( status, "LALConvertGPS2SSBVector", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT ( out, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( in, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( *out == NULL, status, COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
+  ASSERT (SSBtau, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (SSBDtau, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (GPStimes, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (SSBtau->length == GPStimes->length, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  ASSERT (SSBDtau->length == GPStimes->length, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  ASSERT (pos, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (site, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  /*NOTE: ephem is allowed to be NULL ==> use Ptolemaic approximation */
+  
+  ASSERT ( pos->system == COORDINATESYSTEM_EQUATORIAL, status,
+	   COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 
-  oldLen = in->length;
-  newLen = oldLen * refineby;
+  N = GPStimes->length;	/* number of timestamps */
 
-  /* calculate trig-LUT only the first time we're called */
-  if (firstCall)
+  /* Set up constant parameters for barycentre transformation. */
+  baryParams.epoch = refTime;
+  baryParams.t0 = 0;
+
+  baryParams.latitude = site->frDetector.vertexLatitudeRadians;	
+  baryParams.longitude = site->frDetector.vertexLongitudeRadians;
+
+  baryParams.site = site;
+  baryParams.ephemeris = ephem;
+
+  /* set some time-constants depending on epoch */
+  TRY ( LALGetEarthTimes( status->statusPtr, &baryParams ), status);
+
+  /* create the 'variables'-vector : (t, alpha, delta) */
+  TRY ( LALDCreateVector ( status->statusPtr, &var, 3 ), status);
+  TRY ( LALDCreateVector ( status->statusPtr, &dt, 4 ), status);
+
+  var->data[1] = pos->longitude;
+  var->data[2] = pos->latitude;
+
+  /*---------- first get reference-time t0 */
+  var->data[0] = 0.0; 
+  if ( ephem ) {
+    TRY ( LALDTEphemeris( status->statusPtr, dt, var, &baryParams ), status );
+  } else {
+    TRY ( LALDTBaryPtolemaic( status->statusPtr, dt, var, &baryParams ), status );
+  }
+  t0 = dt->data[0];
+  
+  /*---------- Now loop over timestamps */
+  for (i=0; i < N; i++ )
     {
-      /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
-      for (k=0; k <= LUT_RES ; k++)
-	{
-	  sinVal[k] = sin((LAL_TWOPI* k) / LUT_RES);
-	  cosVal[k] = cos((LAL_TWOPI* k) / LUT_RES);
-	}
-      firstCall = FALSE;
-    } /* if first call */
+      var->data[0] = XLALDeltaFloatGPS( &refTime, &(GPStimes->data[i]) );
 
-  /* the following are used to speed things up in the innermost loop */
-  invOldLen = 1.0 / oldLen;
-  TWOPIOverOldLen = LAL_TWOPI / oldLen;
-  invNewLen = 1.0 / newLen;
+      /* use timing-function for earth-motion: either ptolemaic or ephemeris */
+      if ( ephem ) {
+	TRY ( LALDTEphemeris( status->statusPtr, dt, var, &baryParams ), status );
+      } else {
+	TRY ( LALDTBaryPtolemaic( status->statusPtr, dt, var, &baryParams ), status );
+      }
 
-  TRY (LALZCreateVector (status->statusPtr, &ret, newLen), status);
+      SSBtau->data[i] = dt->data[0] - t0;	/* Delta T_alpha */
+      SSBDtau->data[i] = dt->data[1];		/* dT/dt_alpha */
 
-  for (k=0; k < newLen; k++)
-    {
-      INT4 lm;
-      UINT4 l, l0, l1;
-      REAL4 x;
-      REAL4 phaseN;
-      /* common frequency-bins remain unchanged */
-      if ( k % refineby == 0 )
-	{
-	  ret->data[k] = in->data[k / refineby];	
-	  continue;
-	}
+    } /* for i <= N */
 
-      Yk_Re = Yk_Im = 0;
+  /* free memory */
+  TRY ( LALDDestroyVector ( status->statusPtr, &var ), status);
+  TRY ( LALDDestroyVector ( status->statusPtr, &dt ), status);
 
-      lstar = (UINT4)(1.0*k * oldLen * invNewLen + 0.5);
-
-      /* boundaries for innermost loop */
-      lm = (INT4)lstar - Dterms;
-      l0 = max( lm, 0);
-
-      l1 = lstar + Dterms +1;
-      l1 = min ( l1, oldLen );
-      
-      /* Optimization: phase is defined as phase = 2*pi*( l/oldLen - k/newLen )
-       * but is implemented a bit more economically here.
-       * Start with value of phase in first iteration of inner loop:
-       */
-      x = ( l0 * invOldLen - k * invNewLen ); 
-      /* oldLen*phase doesn't actually change in the innermost loop(!), 
-       * so we calculate all its derived quantities here: 
-       */
-      phaseN = LAL_TWOPI * x * oldLen;
-      d = 0.5 * sin(phaseN);
-      b = 0.5 * (1.0 - cos(phaseN));
-
-      /* ---------- innermost loop: l over 2*Dterms around lstar ---------- */
-      for (l = l0; l < l1; l++)
-	{
-	  REAL4 cInva, Rlk_Re, Rlk_Im;
-	  REAL8 Xd_Re, Xd_Im;
-	  REAL4 tsin, tcos;
-
-	  Xd_Re = in->data[l].re;
-	  Xd_Im = in->data[l].im;
-
-	  /* find correct ind into LUT -- pick closest point */
-	  {
-	    REAL4 tempFreq, d1, d2, ts, tc;
-	    UINT4 ind;
-
-	    tempFreq = x - (INT4) x;
-	    if ( tempFreq < 0) tempFreq += 1.0;
-	    
-	    ind = (UINT4) (tempFreq * LUT_RES + 0.5);
-
-	    d1 = (REAL4)LAL_TWOPI * ( tempFreq - 1.0f * ind / LUT_RES );
-	    d2 = 0.5 * d1 * d1;
-	    ts = sinVal[ ind ];
-	    tc = cosVal[ ind ];
-		
-	    tsin = ts + d1 * tc - d2 * ts;
-	    tcos = tc - d1 * ts - d2 * tc;
-	  } /* LUT lookup */
-
-	  cInva = tsin / (1.0f - tcos);
-	      
-	  Rlk_Re = b + cInva * d;
-	  Rlk_Im = cInva * b - d;
-
-	  Yk_Re += Xd_Re * Rlk_Re - Xd_Im * Rlk_Im;
-	  Yk_Im += Xd_Im * Rlk_Re + Xd_Re * Rlk_Im;
-
-	  /* calculate phase for next iteration */
-	  x += invOldLen;
-
-	} /* ---------- innermost loop in l ---------- */
-
-      ret->data[k].re = Yk_Re * invOldLen;
-      ret->data[k].im = Yk_Im * invOldLen;
-
-    }  /* for k <= M-1 */
-
-  *out = ret;
 
   DETATCHSTATUSPTR (status);
-  RETURN (status);
-} /* refineCOMPLEX16Vector() */
+  RETURN(status);
 
+} /* LALGetSSBtimes() */
 
 /*
 ============
