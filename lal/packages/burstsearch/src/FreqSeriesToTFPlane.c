@@ -91,8 +91,6 @@ static REAL4 apply_filter(
 	for(; length--; output++, fseries++, filter++) {
 		REAL4 reFilter = filter->re;
 		REAL4 imFilter = filter->im;
-		REAL4 reData = fseries->re;
-		REAL4 imData = fseries->im;
 
 		if(psd) {
 			reFilter /= sqrt(*psd);
@@ -100,8 +98,8 @@ static REAL4 apply_filter(
 			psd++;
 		}
 
-		output->re = reFilter * reData + imFilter * imData;
-		output->im = reFilter * imData - imFilter * reData;
+		output->re = reFilter * fseries->re + imFilter * fseries->im;
+		output->im = reFilter * fseries->im - imFilter * fseries->re;
 
 		norm += reFilter * reFilter + imFilter * imFilter;
 	}
