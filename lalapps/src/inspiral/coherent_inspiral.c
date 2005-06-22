@@ -526,7 +526,7 @@ int main( int argc, char *argv[] )
 
 		      /* Need to strip the file name out of the url */
 		      char *tempName = NULL;
-		      char *tempName2 = NULL;
+		      char tempName2[256];
 		      tempName = strtok(tempCache->frameFiles->url,"//");
 		      tempName = strtok(NULL,"/");
 		      while( tempName != NULL)
@@ -547,6 +547,8 @@ int main( int argc, char *argv[] )
 			}
 		      strcpy(namearray2[1],"LBeam.dat");
 		      LALSnprintf( namearray3[1], LALNameLength*sizeof(CHAR), "L1:LSC-AS_Q_CData_%d", lChanNum );
+		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
+		      tempCache = NULL;
 		    }
 
 		  if( caseID[2] )
@@ -566,7 +568,7 @@ int main( int argc, char *argv[] )
 			}
 		      /* Need to strip the file name out of the url */
 		      char *tempName = NULL;
-		      char *tempName2 = NULL;
+		      char tempName2[256];
 		      tempName = strtok(tempCache->frameFiles->url,"//");
 		      tempName = strtok(NULL,"/");
 		      while( tempName != NULL)
@@ -587,6 +589,8 @@ int main( int argc, char *argv[] )
 			}
 		      strcpy(namearray2[2],"VIRGOBeam.dat");
 		      LALSnprintf( namearray3[2], LALNameLength*sizeof(CHAR), "V1:LSC-AS_Q_CData_%d", virgoChanNum );
+		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
+		      tempCache = NULL;
 		    }
 
 		  if( caseID[3] )
@@ -606,7 +610,7 @@ int main( int argc, char *argv[] )
 			}
 		      /* Need to strip the file name out of the url */
 		      char *tempName = NULL;
-		      char *tempName2 = NULL;
+		      char tempName2[256];
 		      tempName = strtok(tempCache->frameFiles->url,"//");
 		      tempName = strtok(NULL,"/");
 		      while( tempName != NULL)
@@ -627,6 +631,8 @@ int main( int argc, char *argv[] )
 			}
 		      strcpy(namearray2[3],"GEOBeam.dat");
 		      LALSnprintf( namearray3[3], LALNameLength*sizeof(CHAR), "G1:LSC-AS_Q_CData_%d", geoChanNum );
+		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
+		      tempCache = NULL;
 		    }
 
 		  if( caseID[4] )
@@ -646,7 +652,7 @@ int main( int argc, char *argv[] )
 			}
 		      /* Need to strip the file name out of the url */
 		      char *tempName = NULL;
-		      char *tempName2 = NULL;
+		      char tempName2[256];
 		      tempName = strtok(tempCache->frameFiles->url,"//");
 		      tempName = strtok(NULL,"/");
 		      while( tempName != NULL)
@@ -667,6 +673,8 @@ int main( int argc, char *argv[] )
 			}
 		      strcpy(namearray2[4],"TAMABeam.dat");
 		      LALSnprintf( namearray3[4], LALNameLength*sizeof(CHAR), "T1:LSC-AS_Q_CData_%d", tamaChanNum );
+		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
+		      tempCache = NULL;
 		    }
 
 		  if( caseID[5] )
