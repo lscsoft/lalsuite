@@ -74,6 +74,11 @@ Spindown is not yet included.
 #include <lal/PulsarTimes.h>
 #include <lal/StackMetric.h>
 
+/*---------- empty initializers ---------- */
+/* some empty structs for initializations */
+static const MetricParamStruc empty_MetricParamStruc;
+static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
+
 
 NRCSID( PTOLEMETRICC, "$Id$" );
 
@@ -635,10 +640,10 @@ void LALPulsarMetric ( LALStatus *stat,
 		       REAL8Vector **metric,
 		       PtoleMetricIn *input )
 { /* </lalVerbatim> */
-  static MetricParamStruc params;
-  static PulsarTimesParamStruc spinParams;
-  static PulsarTimesParamStruc baryParams;
-  static PulsarTimesParamStruc compParams;
+  MetricParamStruc params = empty_MetricParamStruc;
+  PulsarTimesParamStruc spinParams = empty_PulsarTimesParamStruc;
+  PulsarTimesParamStruc baryParams = empty_PulsarTimesParamStruc;
+  PulsarTimesParamStruc compParams = empty_PulsarTimesParamStruc;
   REAL8Vector *lambda = NULL;
   UINT4 i, nSpin, dim;
 
