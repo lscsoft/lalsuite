@@ -7,45 +7,128 @@
 /*********************************************************************************/
 
 #include <errno.h>
+
 #include <lal/AVFactories.h>
-#include "SemiAnalyticF.h"
+#include <lal/UserInput.h>
+#include <lal/LALStdio.h>
+#include <lal/LALBarycenter.h>
+#include <lal/LALInitBarycenter.h>
+#include <lal/LALComputeAM.h>
 
-LIGOTimeGPS *timestamps=NULL;       /* Time stamps from SFT data */
-INT4 lalDebugLevel=3;
-static LALStatus status;
+
+#include <lalapps.h>
+
+
+RCSID( "$Id$");
+
+/*---------- error-codes ---------- */
+#define SEMIANALYTIC_ENORM 		0
+#define SEMIANALYTIC_ESUB  		1
+#define SEMIANALYTIC_EINPUT  		2
+#define SEMIANALYTIC_EBAD  		3
+#define SEMIANALYTIC_EFILE 		4
+#define SEMIANALYTIC_ENOARG 		5
+#define SEMIANALYTIC_EMEM 		6
+#define SEMIANALYTIC_EREADFILE 		8
+
+#define SEMIANALYTIC_MSGENORM 		"Normal exit"
+#define SEMIANALYTIC_MSGESUB  		"Subroutine failed"
+#define SEMIANALYTIC_MSGEINPUT 		"Invalid input"
+#define SEMIANALYTIC_MSGEBAD  		"Bad argument values"
+#define SEMIANALYTIC_MSGEFILE 		"File IO error"
+#define SEMIANALYTIC_MSGENOARG 		"Missing argument"
+#define SEMIANALYTIC_MSGEMEM 		"Out of memory..."
+#define SEMIANALYTIC_MSGEREADFILE 	"Error reading in file"
+
+/*---------- defines ---------- */
+#define TRUE (1==1)
+#define FALSE (1==0)
+
+/*---------- local types ---------- */
+struct CommandLineArgsTag {
+  REAL8 skyalpha;
+  REAL8 skydelta;
+  REAL8 tsft;
+  UINT4 nTsft;
+  CHAR *detector;
+  CHAR *timestamps;
+  UINT4 gpsStart;
+  CHAR *efiles;
+  REAL8 phi;
+  REAL8 psi;
+  REAL8 h0;
+  REAL8 cosiota;
+  REAL8 sqrtSh;
+  REAL8 duration;
+  CHAR *ephemYear;
+  REAL8 aPlus;
+  REAL8 aCross;
+  BOOLEAN help;
+} CommandLineArgs;
+
+/*---------- global variables ---------- */
+LIGOTimeGPS *timestamps = NULL;       /* Time stamps from SFT data */
 AMCoeffs amc;
-BOOLEAN stampsflag;
 
-extern char *optarg;
-extern int optind, opterr, optopt;
+extern int vrbflg;
 
+/*---------- local prototypes ---------- */
+void InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA);
+void ReadUserInput (LALStatus *, struct CommandLineArgsTag *CLA, int argc,char *argv[]);
+void Freemem( LALStatus *);
+void CreateNautilusDetector (LALStatus *, LALDetector *detector);
+void Initialize (LALStatus *status, struct CommandLineArgsTag *CLA);
+void ComputeF(LALStatus *, struct CommandLineArgsTag CLA);
+
+int ReadTimeStamps(struct CommandLineArgsTag CLA);
+int MakeTimeStamps(struct CommandLineArgsTag CLA);
+void CheckUserInput (LALStatus *,  struct CommandLineArgsTag *CLA );
+
+/*---------- function definitions ---------- */
 int main(int argc,char *argv[]) 
 {
+  LALStatus status = blank_status;	/* initialize status */
 
-  /* Reads command line arguments into the CommandLineArgs struct. 
-     In the absence of command line arguments it sets some defaults */
-  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
+  lalDebugLevel = 0;	/* default value */
+  vrbflg = 1;		/* verbose error-messages */
 
-  if (stampsflag) {
-    if (ReadTimeStamps(CommandLineArgs)) return 2;
-  }
-  else {
-    if (MakeTimeStamps(CommandLineArgs)) return 3;
-  }
+  /* set LAL error-handler */
+  lal_errhandler = LAL_ERR_EXIT;	/* exit with returned status-code on error */
 
-  if (ComputeF(CommandLineArgs)) return 5;
+  /*----------  read user-input and set up shop ----------*/
+  LAL_CALL (LALGetDebugLevel(&status, argc, argv, 'v'), &status);
 
-  if (Freemem()) return 8;
+  /* register all user-variables */
+  LAL_CALL (InitUserVars(&status, &CommandLineArgs), &status);	  
+
+  /* read cmdline & cfgfile  */	
+  LAL_CALL (LALUserVarReadAllInput(&status, argc, argv), &status);
+  if (CommandLineArgs.help)	/* help was called, do nothing here.. */
+    return (0);
+  LAL_CALL ( CheckUserInput (&status, &CommandLineArgs), &status);
+
+  LAL_CALL ( Initialize (&status, &CommandLineArgs), &status);
+
+  /*---------- central function: compute F-statistic ---------- */
+  LAL_CALL ( ComputeF(&status, CommandLineArgs), &status); 
+
+  
+  /* Free remaining memory */
+  LAL_CALL ( LALSDestroyVector(&status, &(amc.a) ), &status);
+  LAL_CALL ( LALSDestroyVector(&status, &(amc.b) ), &status);
+  LAL_CALL ( LALDestroyUserVars(&status), &status);
+
+  LALCheckMemoryLeaks();
 
   return 0;
 
-}
+} /* main() */
 
 /*******************************************************************************/
 
 int MakeTimeStamps(struct CommandLineArgsTag CLA) 
 {
-  int i;
+  UINT4 i;
  
   /* allocate memory for timestamps */
   timestamps=(LIGOTimeGPS *)LALMalloc(CLA.nTsft*sizeof(LIGOTimeGPS)); 
@@ -64,7 +147,8 @@ int MakeTimeStamps(struct CommandLineArgsTag CLA)
 int ReadTimeStamps(struct CommandLineArgsTag CLA) 
 {
   FILE *fp;
-  int i,r;
+  UINT4 i;
+  int r;
  
  
   /*   %strcpy(filename,inDataFilename); */
@@ -91,323 +175,412 @@ int ReadTimeStamps(struct CommandLineArgsTag CLA)
 }
 /*******************************************************************************/
 
-int ComputeF(struct CommandLineArgsTag CLA)
+void 
+ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
 {
 
-  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
+  REAL8 A,B,C,D,alpha,beta,delta,kappa,A1,A2,A3,A4,h0,cosi, To,Sh,F;
+  REAL8 aPlus, aCross;
+  REAL8 twopsi, twophi;
+
+  INITSTATUS (status, "ComputeF", rcsid );
+  ATTATCHSTATUSPTR ( status);
+  
+  A = amc.A;
+  B = amc.B;
+  C = amc.C;
+  D = amc.D; 
+
+  twophi = 2.0 * CLA.phi;
+  twopsi = 2.0 * CLA.psi;
+
+  h0 = CLA.h0;
+  cosi = CLA.cosiota;
+
+  if ( h0 != 0 ) 
+    {
+      aPlus = h0 * 0.5 * (1.0 + cosi*cosi );
+      aCross= h0 * cosi;
+    } 
+  else   /* alternative way to specify amplitude (compatible with mfd_v4) */
+    {
+      aPlus = CLA.aPlus;
+      aCross = CLA.aCross;
+    }
+  
+  A1 = aPlus * cos(twopsi) * cos(twophi) - aCross * sin(twopsi) * sin(twophi);
+  A2 = aPlus * sin(twopsi) * cos(twophi) + aCross * cos(twopsi) * sin(twophi);
+  A3 =-aPlus * cos(twopsi) * sin(twophi) - aCross * sin(twopsi) * cos(twophi);
+  A4 =-aPlus * sin(twopsi) * sin(twophi) + aCross * cos(twopsi) * cos(twophi);
+  
+  alpha = 0.5 * A * A1 + 0.5 * C * A2;
+  beta  = 0.5 * B * A2 + 0.5 * C * A1;
+  delta = 0.5 * A * A3 + 0.5 * C * A4;
+  kappa = 0.5 * B * A4 + 0.5 * C * A3;
+  
+  To = CLA.nTsft * CLA.tsft;
+  
+  Sh=pow(CLA.sqrtSh,2);
+  
+  F = (B*pow(alpha,2) + A*pow(beta,2) - 2*C*alpha*beta) 
+    + (B*pow(delta,2) + A*pow(kappa,2)- 2*C*delta*kappa);
+  F *= To / (D * Sh);
+  
+  fprintf(stdout,"%e\n",F);
+  /*    fprintf(stdout,"\nSNR = %e\n",sqrt(F)); */
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* ComputeF() */
+
+
+/** 
+ * register all our "user-variables" 
+ */
+void
+InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
+{
+
+  INITSTATUS( status, "InitUserVars", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  /* Initialize default values */
+  CLA->skyalpha=0.0;
+  CLA->skydelta=0.0;
+  CLA->tsft=1800;
+  CLA->detector=0;               
+  CLA->nTsft=0;            
+  CLA->timestamps=NULL;
+  CLA->gpsStart=-1;
+  CLA->efiles=NULL;
+  CLA->phi=0.0;
+  CLA->psi=0.0;
+  CLA->cosiota=0.0;
+  CLA->h0 = 0;
+  CLA->sqrtSh=1.0;
+  
+  /** Default year-span of ephemeris-files to be used */
+#define EPHEM_YEARS  "00-04"
+  CLA->ephemYear = LALCalloc(1, strlen(EPHEM_YEARS)+1);
+  strcpy (CLA->ephemYear, EPHEM_YEARS);
+  
+#define DEFAULT_EPHEMDIR "env LAL_DATA_PATH"
+  CLA->efiles = LALCalloc(1, strlen(DEFAULT_EPHEMDIR)+1);
+  strcpy (CLA->efiles, DEFAULT_EPHEMDIR);
+  
+  CLA->help = FALSE;
+  
+  /* ---------- register all our user-variable ---------- */
+  TRY (LALRegisterBOOLUserVar(status->statusPtr, "help", 'h', UVAR_HELP, "Print this message",
+			      &(CLA->help)), status); 
+  TRY( LALRegisterREALUserVar(status->statusPtr, "latitude", 'd', UVAR_REQUIRED, 
+			      "Sky position delta (equatorial coordinates) in radians", 
+			      &(CLA->skydelta)), status);
+  
+  TRY( LALRegisterREALUserVar(status->statusPtr, "longitude", 'a', UVAR_REQUIRED, 
+			      "Sky position alpha (equatorial coordinates) in radians", 
+			      &(CLA->skyalpha)), status);
+  
+  TRY( LALRegisterREALUserVar(status->statusPtr, "phi0", 'Q', UVAR_OPTIONAL, 
+			     "Phi_0: Initial phase in radians", &(CLA->phi)), status);
+
+  TRY( LALRegisterREALUserVar(status->statusPtr, "psi", 'Y', UVAR_OPTIONAL, 
+			     "Polarisation in radians", &(CLA->psi)), status);
+
+  TRY( LALRegisterREALUserVar(status->statusPtr, "cosiota", 'i', UVAR_OPTIONAL, 
+			      "Cos(iota)", &(CLA->cosiota)), status);
+  TRY( LALRegisterREALUserVar(status->statusPtr, "h0", 's', UVAR_OPTIONAL, 
+			      "Strain amplitude h_0", &(CLA->h0)), status);
+  TRY( LALRegisterREALUserVar(status->statusPtr, "sqrtSh", 'N', UVAR_OPTIONAL, 
+			      "Noise floor (sqrt(Sh)) in 1/sqrt(Hz)", &(CLA->sqrtSh)), status);
+  
+  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "timestampsFile", 'T', UVAR_OPTIONAL, 
+				"Name of timestamps file", &(CLA->timestamps)), status);
+  
+  TRY( LALRegisterINTUserVar(status->statusPtr, "startTime", 'S', UVAR_OPTIONAL, 
+			     "GPS start time of continuous observation", &(CLA->gpsStart)), status);
+  
+  TRY( LALRegisterREALUserVar(status->statusPtr, "Tsft", 't', UVAR_OPTIONAL, 
+			      "Length of an SFT in seconds", &(CLA->tsft)), status);
+  
+  TRY( LALRegisterINTUserVar(status->statusPtr, "nTsft", 'n', UVAR_OPTIONAL, 
+			     "Number of SFTs", &(CLA->nTsft)), status);
+  
+  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "ephemDir", 'E', UVAR_OPTIONAL, 
+				"Directory where Ephemeris files are located", 
+				&(CLA->efiles)), status);
+  
+  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "detector", 'D', UVAR_REQUIRED, 
+				"Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)",
+				&(CLA->detector)), status);
+  
+  /* ----- added for mfd_v4 compatibility ---------- */
+  TRY ( LALRegisterREALUserVar(status->statusPtr, "duration", 0, UVAR_OPTIONAL,
+			       "Duration of requested signal in seconds", 
+			       &(CLA->duration)), status); 
+  
+  TRY ( LALRegisterSTRINGUserVar(status->statusPtr, "ephemYear", 0, UVAR_OPTIONAL,
+				 "Year (or range of years) of ephemeris files to be used",
+				 &(CLA->ephemYear)), status);
+  
+  TRY ( LALRegisterREALUserVar(status->statusPtr, "aPlus", 0, UVAR_OPTIONAL, 
+			       "Plus polarization amplitude aPlus", 
+			       &(CLA->aPlus)), status);
+  TRY ( LALRegisterREALUserVar(status->statusPtr, "aCross", 0, UVAR_OPTIONAL, 
+			       "Cross polarization amplitude aCross", 
+			       &(CLA->aCross)), status);
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+} /* InitUserVars() */
+  
+/** 
+ * Handle user-input and check its validity. 
+ * Load ephemeris and calculate AM-coefficients (stored globally) 
+ */
+void
+Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
+{
   EphemerisData *edat=NULL;          /* Stores earth/sun ephemeris data for barycentering */
-  LALDetector Detector;              /* Our detector*/
+  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
   EarthState earth;
   AMCoeffsParams *amParams;
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
   LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-  INT4 leap;
+  LALDetector Detector;              /* Our detector*/
+  UINT4 k;
 
-  REAL8 A,B,C,D,alpha,beta,delta,kappa,A1,A2,A3,A4,h0,cosi,psi,phi,To,Sh,F;
+  INITSTATUS (status, "Initialize", rcsid);
+  ATTATCHSTATUSPTR (status);
 
-  char filenameE[256],filenameS[256];
 
-  INT4 k;
-  
-  strcpy(filenameE,CLA.efiles);
-  strcat(filenameE,"/earth00-04.dat");
+  if ( LALUserVarWasSet (&(CLA->duration) ) )
+    CLA->nTsft = CLA->duration / CLA->tsft;	  /* we're cheating here */
 
-  strcpy(filenameS,CLA.efiles);
-  strcat(filenameS,"/sun00-04.dat");
-
-  edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = filenameE;     
-  (*edat).ephiles.sunEphemeris = filenameS;         
-
-  LALLeapSecs(&status,&leap,&timestamps[0],&formatAndAcc);
-  (*edat).leap=leap; 
-
-  LALInitBarycenter(&status, edat);               /* Reads in ephemeris files */
-
-  if(CLA.detector == 1)
-    {
-      Detector=lalCachedDetectors[LALDetectorIndexLLODIFF];   
+  /* read or generate SFT timestamps */
+  if ( LALUserVarWasSet(&(CLA->timestamps)) ) {
+    if (ReadTimeStamps(*CLA)) {
+      ABORT ( status,  SEMIANALYTIC_ESUB,  SEMIANALYTIC_MSGESUB);
     }
-  if(CLA.detector == 2)
+  } else {
+    if (MakeTimeStamps(*CLA)) {
+      ABORT ( status,  SEMIANALYTIC_ESUB,  SEMIANALYTIC_MSGESUB);
+    }
+  }
+
+
+  /*---------- initialize detector ---------- */
+  if ( !strcmp (CLA->detector, "GEO") || !strcmp (CLA->detector, "0") ) 
+    Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  else if ( !strcmp (CLA->detector, "LLO") || ! strcmp (CLA->detector, "1") ) 
+    Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  else if ( !strcmp (CLA->detector, "LHO") || !strcmp (CLA->detector, "2") )
+    Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  else if ( !strcmp (CLA->detector, "NAUTILUS") || !strcmp (CLA->detector, "3"))
     {
-      Detector=lalCachedDetectors[LALDetectorIndexLHODIFF];   
+      TRY (CreateNautilusDetector (status->statusPtr, &(Detector)), status);
+    }
+  else if ( !strcmp (CLA->detector, "VIRGO") || !strcmp (CLA->detector, "4") )
+    Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  else if ( !strcmp (CLA->detector, "TAMA") || !strcmp (CLA->detector, "5") )
+    Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+  else if ( !strcmp (CLA->detector, "CIT") || !strcmp (CLA->detector, "6") )
+    Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+  else
+    {
+      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO',"
+		     " 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
+      ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
     }
 
-  if(CLA.detector  == 3)
-    {
-        if (CreateDetector(&Detector)) return 5;
-    }
-/* Detector location: MAKE INTO INPUT!!!!! */
-  baryinput.site.location[0]=Detector.location[0]/LAL_C_SI;
-  baryinput.site.location[1]=Detector.location[1]/LAL_C_SI;
-  baryinput.site.location[2]=Detector.location[2]/LAL_C_SI;
-  baryinput.alpha=CLA.skyalpha;
-  baryinput.delta=CLA.skydelta;
-  baryinput.dInv=0.e0;
+  /* ---------- load ephemeris-files ---------- */
+#define MAXFILENAME 256
+  {
+    CHAR filenameE[MAXFILENAME], filenameS[MAXFILENAME];
+    INT4 leap;
+    
+    /* don't use absolute path if none was given, this
+     * allows LAL to find the ephemeris in LAL_DATA_PATH */
+    if ( LALUserVarWasSet (&(CLA->efiles)) ) 
+      {
+	LALSnprintf (filenameE, MAXFILENAME, "%s/earth%s.dat", CLA->efiles, CLA->ephemYear );
+	LALSnprintf (filenameS, MAXFILENAME, "%s/sun%s.dat", CLA->efiles, CLA->ephemYear );
+      }
+    else
+      {
+	LALSnprintf (filenameE, MAXFILENAME, "earth%s.dat", CLA->ephemYear );
+	LALSnprintf (filenameS, MAXFILENAME, "sun%s.dat", CLA->ephemYear );
+      }
+    filenameE[MAXFILENAME-1] = 0;
+    filenameS[MAXFILENAME-1] = 0;
 
-/* amParams structure to compute a(t) and b(t) */
+    edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+    (*edat).ephiles.earthEphemeris = filenameE;     
+    (*edat).ephiles.sunEphemeris = filenameS;         
 
-/* Allocate space for amParams stucture */
-/* Here, amParams->das is the Detector and Source info */
+    TRY ( LALLeapSecs(status->statusPtr,&leap,&timestamps[0],&formatAndAcc), status);
+    (*edat).leap=leap; 
+
+    /* Reads in ephemeris files */
+    TRY( LALInitBarycenter (status->statusPtr, edat), status );
+
+  } /* ephemeris-reading */
+
+
+  /* ---------- calculate AM-coefficients ---------- */
+
+  /* prepare call to barycentering routing */
+  baryinput.site.location[0] = Detector.location[0]/LAL_C_SI;
+  baryinput.site.location[1] = Detector.location[1]/LAL_C_SI;
+  baryinput.site.location[2] = Detector.location[2]/LAL_C_SI;
+  baryinput.alpha = CLA->skyalpha;
+  baryinput.delta = CLA->skydelta;
+  baryinput.dInv = 0.e0;
+
+  /* amParams structure to compute a(t) and b(t) */
+
+  /* Allocate space for amParams stucture */
+  /* Here, amParams->das is the Detector and Source info */
   amParams = (AMCoeffsParams *)LALMalloc(sizeof(AMCoeffsParams));
   amParams->das = (LALDetAndSource *)LALMalloc(sizeof(LALDetAndSource));
   amParams->das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
-/* Fill up AMCoeffsParams structure */
+  /* Fill up AMCoeffsParams structure */
   amParams->baryinput = &baryinput;
   amParams->earth = &earth; 
   amParams->edat = edat;
   amParams->das->pDetector = &Detector; 
-  amParams->das->pSource->equatorialCoords.latitude = CLA.skydelta;
-  amParams->das->pSource->equatorialCoords.longitude = CLA.skyalpha;
+  amParams->das->pSource->equatorialCoords.latitude = CLA->skydelta;
+  amParams->das->pSource->equatorialCoords.longitude = CLA->skyalpha;
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
-  amParams->leapAcc=formatAndAcc.accuracy;
-
-/* Allocate space for AMCoeffs */
+  amParams->leapAcc = formatAndAcc.accuracy;
+  
+  /* Allocate space for AMCoeffs */
   amc.a = NULL;
   amc.b = NULL;
-  LALSCreateVector(&status, &(amc.a), (UINT4)  CLA.nTsft);
-  LALSCreateVector(&status, &(amc.b), (UINT4)  CLA.nTsft);
+  TRY ( LALSCreateVector(status->statusPtr, &(amc.a), (UINT4)  CLA->nTsft), status);
+  TRY ( LALSCreateVector(status->statusPtr, &(amc.b), (UINT4)  CLA->nTsft), status);
+  
+  /* Mid point of each SFT */
+  midTS = (LIGOTimeGPS *)LALCalloc(CLA->nTsft,sizeof(LIGOTimeGPS));
+  for(k=0; k<CLA->nTsft; k++)
+    {
+      REAL8 teemp=0.0;
+      TRY ( LALGPStoFloat(status->statusPtr, &teemp, &(timestamps[k])), status);
+      teemp += 0.5*CLA->tsft;
+      TRY ( LALFloatToGPS(status->statusPtr, &(midTS[k]), &teemp), status);
+    }
+  
+  TRY ( LALComputeAM(status->statusPtr, &amc, midTS, amParams), status);
 
- /* Mid point of each SFT */
-   midTS = (LIGOTimeGPS *)LALCalloc(CLA.nTsft,sizeof(LIGOTimeGPS));
-   for(k=0; k<CLA.nTsft; k++)
-     {
-       REAL8 teemp=0.0;
-       LALGPStoFloat(&status,&teemp, &(timestamps[k]));
-       teemp += 0.5*CLA.tsft;
-       LALFloatToGPS(&status,&(midTS[k]), &teemp);
-     }
-   
-   LALComputeAM(&status, &amc, midTS, amParams);
+  /* Free memory */
+  LALFree(timestamps);
+  LALFree(midTS);
 
-/*    fprintf(stdout,"A = %f\n",amc.A); */
-/*    fprintf(stdout,"B = %f\n",amc.B); */
-/*    fprintf(stdout,"C = %f\n",amc.C); */
-/*    fprintf(stdout,"D = %f\n",amc.C); */
+  LALFree(edat->ephemE);
+  LALFree(edat->ephemS);
+  LALFree(edat);
 
-   A=amc.A;
-   B=amc.B;
-   C=amc.C;
-   D=amc.D; 
+  LALFree(amParams->das->pSource);
+  LALFree(amParams->das);
+  LALFree(amParams);
 
-   cosi=CLA.cosiota;
-   phi=CLA.phi;
-   psi=CLA.psi;
-   h0=CLA.h0;
 
-   A1=h0*( 0.5*(1+pow(cosi,2))*cos(2.0*psi)*cos(2*phi)-cosi*sin(2.0*psi)*sin(2.0*phi));
-   A2=h0*( 0.5*(1+pow(cosi,2))*sin(2.0*psi)*cos(2*phi)+cosi*cos(2.0*psi)*sin(2.0*phi));
-   A3=h0*(-0.5*(1+pow(cosi,2))*cos(2.0*psi)*sin(2*phi)-cosi*sin(2.0*psi)*cos(2.0*phi));
-   A4=h0*(-0.5*(1+pow(cosi,2))*sin(2.0*psi)*sin(2*phi)+cosi*cos(2.0*psi)*cos(2.0*phi));
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
 
-   alpha = 1.0/2.0*A*A1+1.0/2.0*C*A2;
-   beta  = 1.0/2.0*B*A2+1.0/2.0*C*A1;
-   delta = 1.0/2.0*A*A3+1.0/2.0*C*A4;
-   kappa = 1.0/2.0*B*A4+1.0/2.0*C*A3;
-
-   To=CLA.nTsft*CLA.tsft;
-
-   Sh=pow(CLA.sqrtSh,2);
-
-   F=((B*pow(alpha,2)+A*pow(beta,2)-2*C*alpha*beta)/D+(B*pow(delta,2)+A*pow(kappa,2)-2*C*delta*kappa)/D)*To/Sh;
-
-   fprintf(stdout,"%e\n",F);
-/*    fprintf(stdout,"\nSNR = %e\n",sqrt(F)); */
-	
-
-   LALFree(midTS);
-
-   LALFree(amParams->das->pSource);
-   LALFree(amParams->das);
-   LALFree(amParams);
-   
-   LALFree(edat->ephemE);
-   LALFree(edat->ephemS);
-   LALFree(edat);
-
-   return 0;
-}
+} /* ParseUserInput() */
 
 
 /*******************************************************************************/
-
-int CreateDetector(LALDetector *Detector){
-
-/*   LALDetector Detector;  */
+/** Set up the \em LALDetector struct representing the NAUTILUS detector */
+void
+CreateNautilusDetector (LALStatus *status, LALDetector *detector)
+{
+  /*   LALDetector Detector;  */
   LALFrDetector detector_params;
   LALDetectorType bar;
   LALDetector Detector1;
 
-/*   detector_params=(LALFrDetector )LALMalloc(sizeof(LALFrDetector)); */
- 
+  INITSTATUS (status, "CreateNautilusDetector", rcsid);
+  ATTATCHSTATUSPTR (status);
+
   bar=LALDETECTORTYPE_CYLBAR;
-  strcpy(detector_params.name,"NAUTILUS");
+  strcpy(detector_params.name, "NAUTILUS");
   detector_params.vertexLongitudeRadians=12.67*LAL_PI/180.0;
   detector_params.vertexLatitudeRadians=41.82*LAL_PI/180.0;
   detector_params.vertexElevation=300.0;
   detector_params.xArmAltitudeRadians=0.0;
   detector_params.xArmAzimuthRadians=44.0*LAL_PI/180.0;
 
-  LALCreateDetector(&status,&Detector1,&detector_params,bar);
-
-  *Detector=Detector1;
-
-  return 0;
-}
-
-/*******************************************************************************/
-
-   int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA) 
-{
-  INT4 c, errflg = 0;
-  optarg = NULL;
+  TRY (LALCreateDetector(status->statusPtr, &Detector1, &detector_params, bar), status);
   
-  /* Initialize default values */
-  CLA->skyalpha=0.0;
-  CLA->skydelta=0.0;
-  CLA->tsft=0.0;
-  CLA->detector=0;               
-  CLA->nTsft=0;            
-  CLA->timestamps=NULL;
-  CLA->gpsStart=-1;
-  stampsflag=0;
-  CLA->efiles=NULL;
-  CLA->phi=0.0;
-  CLA->psi=0.0;
-  CLA->cosiota=0.0;
-  CLA->h0=1.0;
-  CLA->sqrtSh=1.0;
+  *detector=Detector1;
 
-  /* Scan through list of command line arguments */
-  while (!errflg && ((c = getopt(argc, argv,"ha:d:E:n:T:S:D:t:Q:Y:i:s:N:"))!=-1))
-    switch (c) {
-    case 'T':
-      /* timestamps file */
-      CLA->timestamps=optarg;
-      stampsflag=1;
-      break;
-    case 'S':
-      /* start time of observation */
-      CLA->gpsStart=atoi(optarg);
-      break;
-    case 'E':
-      /* ephemeris file location */
-      CLA->efiles=optarg;
-      break;
-    case 'a':
-      /* sky position alpha */
-      CLA->skyalpha=atof(optarg);
-      break;
-    case 'd':
-      /* sky position delta */
-      CLA->skydelta=atof(optarg);
-      break;
-    case 'Q':
-      /* phi0 - initial phase */
-      CLA->phi=atof(optarg);
-      break;
-    case 'Y':
-      /* psi - polarisation */
-      CLA->psi=atof(optarg);
-      break;
-    case 'i':
-      /* iota */
-      CLA->cosiota=atof(optarg);
-      break;
-    case 's':
-      /* strain */
-      CLA->h0=atof(optarg);
-      break;
-    case 'N':
-      /* sqrt(Sh) */
-      CLA->sqrtSh=atof(optarg);
-      break;
-    case 't':
-      /* duration fo an sft */
-      CLA->tsft=atof(optarg);
-      break;
-    case 'n':
-      /* number of SFTs */
-      CLA->nTsft=atof(optarg);
-      break;
-    case 'D':
-      /* detector number */
-      CLA->detector=atof(optarg);
-      break;
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+  
+} /* CreateNautilusDetector() */
 
-    case 'h':
-      /* print usage/help message */
-      fprintf(stdout,"Arguments are:\n");
-      fprintf(stdout,"\t-a\tFLOAT\t Sky position alpha (equatorial coordinates) in radians \n");
-      fprintf(stdout,"\t-d\tFLOAT\t Sky position delta (equatorial coordinates) in radians \n");
-      fprintf(stdout,"\t-Q\tFLOAT\t Initial phase in radians (default 0.0)\n");
-      fprintf(stdout,"\t-Y\tFLOAT\t Polarisation in radians (default 0.0)\n");
-      fprintf(stdout,"\t-i\tFLOAT\t Cos(iota) (default 0.0)\n");
-      fprintf(stdout,"\t-s\tFLOAT\t Strain (default 1.0)\n");
-      fprintf(stdout,"\t-N\tFLOAT\t Noise floor (sqrt(Sh)) in 1/sqrt(Hz) (default 1.0)\n");
-      fprintf(stdout,"\t**** Only one of the following two needs to be set ****\n");
-      fprintf(stdout,"\t-T\tSTRING\t Name of timestamps file \n");
-      fprintf(stdout,"\t-S\tINTEGER\t GPS start time of continuous observation\n");
-      fprintf(stdout,"\t-t\tFLOAT\t Time baseline of SFTs \n");
-      fprintf(stdout,"\t-n\tINTEGER\t Number of data points to read from timestamps file \n");
-      fprintf(stdout,"\t-E\tSTRING\t Directory where Ephemeris files are located \n");
-      fprintf(stdout,"\t-D\tINTEGER\t Detector number (1=LLO, 2=LHO, 3=Roman Bar) \n");
-      exit(0);
-      break;
-    default:
-      /* unrecognized option */
-      errflg++;
-      fprintf(stderr,"Unrecognized option argument %c\n",c);
-      exit(1);
-      break;
+/** 
+ * Check validity of user-input
+ */
+void
+CheckUserInput (LALStatus *status,  struct CommandLineArgsTag *CLA )
+{
+  INITSTATUS (status, "CheckUserInput", rcsid);
+
+  /* set a few abbreviations */
+  BOOLEAN have_timestamps= LALUserVarWasSet (&(CLA->timestamps));
+  BOOLEAN have_gpsStart = LALUserVarWasSet  (&(CLA->gpsStart));
+  BOOLEAN have_duration  = LALUserVarWasSet (&(CLA->duration));
+  BOOLEAN have_nTsft     = LALUserVarWasSet (&(CLA->nTsft));
+  
+  if( have_timestamps && (have_gpsStart||have_duration) )
+    {
+      fprintf(stderr,"\nBoth start time/duration and timestamps file specified - just need one !!\n");
+      fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n\n");
+      ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+    }   
+  
+  if( !have_timestamps && !have_gpsStart )
+    {
+      fprintf(stderr,"\nNeed to specify gpsStart time or a timestamps file !!\n");
+      fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n\n");
+      ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+    }
+  
+  if ( have_duration && have_nTsft )
+    {
+      fprintf (stderr, "\nSpecify only one of {duration, nTsft}!\n\n");
+      ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
     }
 
-  if(CLA->efiles == NULL)
-    {
-      fprintf(stderr,"No ephemeris data (earth??.dat, sun??.dat) directory specified; input directory with -E option.\n");
-      fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n");
-      return 1;
-    }      
-  if(CLA->detector == 0)
-    {
-      fprintf(stderr,"No detector specified; set with -D option.\n");
-      fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n");
-     return 1;
-    }      
-  if((CLA->gpsStart>=0)&&(CLA->timestamps!=NULL))
-    {
-      fprintf(stderr,"Both start time and timestamps file specified - just need one !!\n");
-      fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n");
-     return 1;
-    }   
-  if((CLA->gpsStart<0)&&(CLA->timestamps==NULL))
-    {
-      fprintf(stderr,"Need to specify gpsStart time or a timestamps file !!\n");
-      fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n");
-     return 1;
-    }   
+  /* now one can either specify {h0, cosiota} OR {aPlus, aCross} */
+  {
+    BOOLEAN have_h0 = LALUserVarWasSet (&(CLA->h0));
+    BOOLEAN have_cosiota = LALUserVarWasSet (&(CLA->cosiota));
+    BOOLEAN have_aPlus = LALUserVarWasSet (&(CLA->aPlus));
+    BOOLEAN have_aCross = LALUserVarWasSet (&(CLA->aCross));
+    
+    if ( (have_h0 || have_cosiota) && (have_aPlus || have_aCross) ) 
+      {
+	fprintf (stderr, "\nSpecify only one set of {h0/cosiota} or {aPlus/aCross}\n\n");
+	ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+      }
 
+    if ( !have_h0 && !(have_aPlus) )
+      {
+	fprintf (stderr, "\nYou need to specify either h0 or aPlus/aCross\n\n");
+	ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
+      }
 
-  /* update global variable and return */
-  return errflg;
-}
+  }
 
+  RETURN (status);
 
-/*******************************************************************************/
-
-int Freemem() 
-{
-
-  /*Free timestamps*/
-  LALFree(timestamps);
-
-  /*Free DemodParams*/
-  LALSDestroyVector(&status, &(amc.a));
-  LALSDestroyVector(&status, &(amc.b));
-
-  LALCheckMemoryLeaks();
-  
-  return 0;
-}
+} /* CheckUserInput() */

@@ -39,7 +39,7 @@ lalapps_FrComputeFStatistic_SOURCES = FrComputeFStatistic.c FrComputeFStatistic.
 lalapps_FstatShapeTest_SOURCES = FstatShapeTest.c 
 lalapps_FstatShapeTestLAL_SOURCES = FstatShapeTestLAL.c
 
-lalapps_SemiAnalyticF_SOURCES =	SemiAnalyticF.c SemiAnalyticF.h
+lalapps_SemiAnalyticF_SOURCES =	SemiAnalyticF.c
 
 lalapps_polka_SOURCES = polka.c
 lalapps_uberpolka_SOURCES = uberpolka.c
