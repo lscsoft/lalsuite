@@ -132,7 +132,7 @@ main(int argc, char *argv[])
     metricpar.ephemeris = config.ephemeris;	/* needed for ephemeris-metrics */
     metricpar.metricType = uvar_metricType;
 
-    LAL_CALL ( LALMetricWrapper(&status, &metric, &metricpar), &status);
+    LAL_CALL ( LALPulsarMetric(&status, &metric, &metricpar), &status);
     LAL_CALL ( LALSDestroyVector(&status, &(metricpar.spindown)), &status);
 
     if (uvar_projectMetric) {

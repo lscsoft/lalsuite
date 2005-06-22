@@ -197,8 +197,6 @@ void ParseSkyRegionString (LALStatus *, SkyRegion *region, const CHAR *input);
 void SkySquare2String (LALStatus *, CHAR **string, REAL8 Alpha, REAL8 Delta, 
 		       REAL8 AlphaBand, REAL8 DeltaBand);
 
-void LALMetricWrapper(LALStatus *, REAL8Vector **metric, PtoleMetricIn *params);
-
 void getGridSpacings(LALStatus *, DopplerPosition *spacings, DopplerPosition gridpoint, 
 		     const DopplerScanInit *params);
 void getMCDopplerCube (LALStatus *, DopplerRegion *cube, DopplerPosition signal, UINT4 PointsPerDim, 

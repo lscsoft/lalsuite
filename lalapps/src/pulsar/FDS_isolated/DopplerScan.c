@@ -439,7 +439,7 @@ void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params )
   TRY ( LALNormalizeSkyPosition(status->statusPtr, &(metricpar.position), 
 				&(metricpar.position)), status);
 
-  TRY ( LALMetricWrapper( status->statusPtr, &metric, &metricpar), status);
+  TRY ( LALPulsarMetric( status->statusPtr, &metric, &metricpar), status);
 
   /* project metric if requested */
   if (par->projectMetric)
@@ -578,7 +578,7 @@ plotGrid (LALStatus *status,
 	  TRY( LALNormalizeSkyPosition(status->statusPtr, &(metricPar.position), 
 				       &(metricPar.position) ), status);
 
-	  TRY( LALMetricWrapper( status->statusPtr, &metric, &metricPar), status);
+	  TRY( LALPulsarMetric( status->statusPtr, &metric, &metricPar), status);
 
 	  if ( init->projectMetric ) {
 	    TRY (LALProjectMetric( status->statusPtr, metric, 0 ), status);
@@ -625,161 +625,6 @@ plotGrid (LALStatus *status,
   RETURN (status);
 
 } /* plotGrid */
-
-/*----------------------------------------------------------------------
- * this is a "wrapper" to provide a uniform interface to PtoleMetric() 
- * and CoherentMetric().
- *
- * the parameter structure of PtoleMetric() was used, because it's more 
- * compact
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="DopplerScanCP"> */
-void
-LALMetricWrapper (LALStatus *status, 
-		  REAL8Vector **metric, 	/* output: metric */
-		  PtoleMetricIn *input) 	/* input-params for the metric */
-{ /* </lalVerbatim> */
-  MetricParamStruc params = empty_MetricParamStruc;
-  PulsarTimesParamStruc spinParams = empty_PulsarTimesParamStruc;
-  PulsarTimesParamStruc baryParams = empty_PulsarTimesParamStruc;
-  PulsarTimesParamStruc compParams = empty_PulsarTimesParamStruc;
-  REAL8Vector *lambda = NULL;
-  UINT4 i, nSpin, dim;
-
-  INITSTATUS( status, "LALMetricWrapper", DOPPLERSCANC );
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT ( input, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
-  ASSERT ( metric != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL );
-  ASSERT ( *metric == NULL, status, DOPPLERSCANH_ENONULL, DOPPLERSCANH_MSGENONULL );
-
-  if (input->metricType == LAL_PMETRIC_COH_EPHEM) {
-    ASSERT ( input->ephemeris != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
-  }
-
-
-  if ( input->spindown ) 
-    nSpin = input->spindown->length;
-  else
-    nSpin = 0;
-
-
-  /* allocate the output-metric */
-  dim = 3 + nSpin;	/* dimensionality of parameter-space: Alpha,Delta,f + spindowns */
-
-  TRY ( LALDCreateVector (status->statusPtr, metric, dim * (dim+1)/2), status);
-
-  switch (input->metricType)
-    {
-    case LAL_PMETRIC_COH_PTOLE_ANALYTIC: /* use Ben&Ian's analytic ptolemaic metric */
-      LALPtoleMetric (status->statusPtr, *metric, input);
-      BEGINFAIL(status) {
-	LALDDestroyVector (status->statusPtr, metric);
-      }ENDFAIL(status);
-      break;
-
-    case LAL_PMETRIC_COH_PTOLE_NUMERIC:   /* use CoherentMetric + Ptolemaic timing */
-    case LAL_PMETRIC_COH_EPHEM:   /* use CoherentMetric + ephemeris timing */
-      /* Set up constant parameters for barycentre transformation. */
-      baryParams.epoch = input->epoch;
-      baryParams.t0 = 0;
-      /* FIXME: should be redundant now, with Detector passed */
-      baryParams.latitude = input->site->frDetector.vertexLatitudeRadians;	
-      baryParams.longitude = input->site->frDetector.vertexLongitudeRadians;
-
-      baryParams.site = input->site;
-      LALGetEarthTimes( status->statusPtr, &baryParams );
-      BEGINFAIL(status) {
-	LALDDestroyVector (status->statusPtr, metric);
-      }ENDFAIL(status);
-
-      /* set timing-function for earth-motion: either ptolemaic or ephemeris */
-      if (input->metricType == LAL_PMETRIC_COH_PTOLE_NUMERIC)
-	{
-	  baryParams.t1 = LALTBaryPtolemaic;
-	  baryParams.dt1 = LALDTBaryPtolemaic;
-	}
-      else	/* use precise ephemeris-timing */
-	{
-	  baryParams.t1 = LALTEphemeris;	/* LAL-bug: fix type of LALTEphemeris! */
-	  baryParams.dt1 = LALDTEphemeris;
-	  baryParams.ephemeris = input->ephemeris;
-	}
-
-
-      /* Set up input structure for CoherentMetric()  */
-      if (nSpin)
-	{
-	  /* Set up constant parameters for spindown transformation. */
-	  spinParams.epoch = input->epoch;
-	  spinParams.t0 = 0;
-	  
-	  /* Set up constant parameters for composed transformation. */
-	  compParams.epoch = input->epoch;
-	  compParams.t1 = baryParams.t1;
-	  compParams.dt1 = baryParams.dt1;
-	  compParams.t2 = LALTSpin;
-	  compParams.dt2 = LALDTSpin;
-	  compParams.constants1 = &baryParams;
-	  compParams.constants2 = &spinParams;
-	  compParams.nArgs = 2;
-
-	  params.dtCanon = LALDTComp;
-	  params.constants = &compParams;
-	}
-      else	/* simple case: just account for earth motion */
-	{
-	  params.dtCanon = baryParams.dt1;
-	  params.constants = &baryParams;
-	}
-
-      params.start = 0;
-      params.deltaT = (REAL8) input->duration;
-      params.n = 1; 	/* only 1 stack */
-      params.errors = 0;
-
-      /* Set up the parameter list. */
-      LALDCreateVector( status->statusPtr, &lambda, nSpin + 2 + 1 );
-      BEGINFAIL(status) {
-	LALDDestroyVector (status->statusPtr, metric);
-      }ENDFAIL(status);
-
-      lambda->data[0] = (REAL8) input->maxFreq;
-      lambda->data[1] = (REAL8) input->position.longitude;	/* Alpha */
-      lambda->data[2] = (REAL8) input->position.latitude;	/* Delta */
-
-      if ( nSpin ) 
-	{
-	  for (i=0; i < nSpin; i++)
-	    lambda->data[3 + i] = (REAL8) input->spindown->data[i];
-	}
-
-      /* _finally_ we can call the metric */
-      LALCoherentMetric( status->statusPtr, *metric, lambda, &params );
-      BEGINFAIL(status) {
-	LALDDestroyVector (status->statusPtr, metric);
-	LALDDestroyVector( status->statusPtr, &lambda );
-      }ENDFAIL(status);
-
-      LALDDestroyVector( status->statusPtr, &lambda );
-      BEGINFAIL(status) {
-	LALDDestroyVector (status->statusPtr, metric);
-      }ENDFAIL(status);
-
-      break;
-
-    default:
-      LALPrintError ("Unknown metric type `%d`\n", input->metricType);
-      ABORT (status, DOPPLERSCANH_EMETRIC,  DOPPLERSCANH_MSGEMETRIC);
-      break;
-      
-    } /* switch type */
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* LALMetricWrapper() */
-
 
 /** Function for checking if a given point lies inside or outside a given
  *  polygon, which is specified by a list of points in a SkyPositionVector.
@@ -1553,7 +1398,7 @@ getGridSpacings( LALStatus *status,
       TRY ( LALNormalizeSkyPosition(status->statusPtr, &(metricpar.position), 
 				    &(metricpar.position)), status);
 
-      TRY ( LALMetricWrapper(status->statusPtr, &metric, &metricpar), status);
+      TRY ( LALPulsarMetric (status->statusPtr, &metric, &metricpar), status);
       TRY ( LALSDestroyVector(status->statusPtr, &(metricpar.spindown)), status);
 
       g_f0_f0 = metric->data[INDEX_f0_f0];
@@ -1698,7 +1543,7 @@ getMCDopplerCube (LALStatus *status,
       metricpar.site = params->Detector;
       metricpar.ephemeris = params->ephemeris;
       metricpar.metricType = params->metricType;
-      TRY ( LALMetricWrapper(status->statusPtr, &metric, &metricpar), status);
+      TRY ( LALPulsarMetric(status->statusPtr, &metric, &metricpar), status);
       TRY ( LALSDestroyVector(status->statusPtr, &(metricpar.spindown)), status);
       TRY ( LALProjectMetric( status->statusPtr, metric, 0 ), status);
 
