@@ -74,13 +74,13 @@ trailing spaces in are ignore (except within double-quotes).
 
 The general approach of reading from such a config-file, is to first
 call\\
-\verb+LALLoadConfigFile(stat, LALConfigData *cfg, FILE *fp)+,
+\verb+LALLoadConfigFile(status, LALConfigData *cfg, FILE *fp)+,
 which loads and pre-parses the contents of the config-file into the
 structure \verb+LALConfigData+. Then one can then read in
 config-variables either using one of the custom-wrappers:\\
-\verb+LALReadConfig<TYPE>Variable(stat, <TYPE> *cvar, LALConfigData *cfg, CHAR *varname)+
+\verb+LALReadConfig<TYPE>Variable(status, <TYPE> *cvar, LALConfigData *cfg, CHAR *varname)+
 or the general-purpose reading function:\\
-\verb+LALReadConfigVariable(stat, void *cvar, LALConfigData *cfg, LALConfigVar *var)+
+\verb+LALReadConfigVariable(status, void *cvar, LALConfigData *cfg, LALConfigVar *var)+
 
 
 A boolean variable read by \verb+LALReadConfigBOOLVariable()+ can have any of the values 
@@ -92,7 +92,7 @@ If one wishes a ``tight'' sytnax for the config-file, one can check
 that there are no "illegal" entries in the config-file. This is done
 by checking at the end that all config-file entries have been
 successfully parsed, using: \\
-\verb+LALCheckConfigReadComplete (stat, LALConfigData *cfg, INT2 strictness)+,
+\verb+LALCheckConfigReadComplete (status, LALConfigData *cfg, INT2 strictness)+,
 where \verb+strictness+ is either \verb+CONFIGFILE_WARN+ or \verb+CONFIGFILE_ERROR+. 
 In the first case only a warning is issued, while in the second it is
 treated as a LAL-error if some config-file entries have not been
@@ -100,7 +100,7 @@ read-in. (The use of this function is optional).
 
 
 The configfile-data should be freed at the end using\\
-\verb+void LALDestroyConfigData (LALStatus *stat, LALConfigData *cfg)+.
+\verb+void LALDestroyConfigData (LALStatus *status, LALConfigData *cfg)+.
 
 \subsubsection*{Algorithm}
 
@@ -188,7 +188,7 @@ static const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
-LALParseDataFile (LALStatus *stat, 
+LALParseDataFile (LALStatus *status, 
 		  LALParsedDataFile **cfgdata, 	/* output: pre-parsed data-file lines */
 		  const CHAR *fname)		/* name of config-file to be read */
 { /* </lalVerbatim> */
@@ -196,49 +196,49 @@ LALParseDataFile (LALStatus *stat,
   CHARSequence *rawdata = NULL;
   FILE *fp;
 
-  INITSTATUS( stat, "LALParseDataFile", CONFIGFILEC );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "LALParseDataFile", CONFIGFILEC );
+  ATTATCHSTATUSPTR (status);
 
-  ASSERT (*cfgdata == NULL, stat, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
-  ASSERT (fname != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT (*cfgdata == NULL, status, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
+  ASSERT (fname != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
 
   if ( (fp = LALOpenDataFile (fname)) == NULL) {
     LALPrintError ("Could not open data-file: `%s`\n\n", fname);
-    ABORT (stat, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
+    ABORT (status, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
   }
 
-  LALCHARReadSequence (stat->statusPtr, &rawdata, fp);
+  LALCHARReadSequence (status->statusPtr, &rawdata, fp);
   fclose (fp);
-  CHECKSTATUSPTR (stat);
+  CHECKSTATUSPTR (status);
 
   if (rawdata == NULL) {
-    ABORT (stat, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
+    ABORT (status, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
   }
 
   /* get rid of comments and do line-continuation */
   cleanConfig (rawdata);
 
   if ( (*cfgdata = LALCalloc (1, sizeof(LALParsedDataFile))) == NULL) {
-    ABORT (stat, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
+    ABORT (status, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
   }
   
   /* parse this into individual lines */
-  LALCreateTokenList (stat->statusPtr, &((*cfgdata)->lines), rawdata->data, "\n");
+  LALCreateTokenList (status->statusPtr, &((*cfgdata)->lines), rawdata->data, "\n");
   LALFree (rawdata->data);
   LALFree (rawdata);
   
-  BEGINFAIL (stat)
+  BEGINFAIL (status)
     LALFree (*cfgdata);
-  ENDFAIL (stat);
+  ENDFAIL (status);
 
   /* initialize the 'wasRead' flags for the lines */
   if ( ((*cfgdata)->wasRead = LALCalloc (1, (*cfgdata)->lines->nTokens * sizeof( (*cfgdata)->wasRead[0]))) == NULL) {
     LALFree ((*cfgdata)->lines);
-    ABORT (stat, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
+    ABORT (status, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
   }
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* LALLoadConfigFile() */
 
@@ -247,24 +247,24 @@ LALParseDataFile (LALStatus *stat,
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
-LALDestroyParsedDataFile (LALStatus *stat, LALParsedDataFile **cfgdata)
+LALDestroyParsedDataFile (LALStatus *status, LALParsedDataFile **cfgdata)
 { /* </lalVerbatim> */
-  INITSTATUS( stat, "LALDestroyConfigData", CONFIGFILEC );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "LALDestroyConfigData", CONFIGFILEC );
+  ATTATCHSTATUSPTR (status);
 
-  ASSERT (cfgdata != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT (*cfgdata != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT ((*cfgdata)->lines != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT ( (*cfgdata)->wasRead != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT (cfgdata != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT (*cfgdata != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT ((*cfgdata)->lines != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT ( (*cfgdata)->wasRead != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
 
-  TRY ( LALDestroyTokenList (stat->statusPtr, &((*cfgdata)->lines)), stat);
+  TRY ( LALDestroyTokenList (status->statusPtr, &((*cfgdata)->lines)), status);
   LALFree ( (*cfgdata)->wasRead);
   LALFree ( *cfgdata );
   
   *cfgdata = NULL;
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 } /* LALDestroyConfigData() */
 
 
@@ -284,7 +284,7 @@ LALDestroyParsedDataFile (LALStatus *stat, LALParsedDataFile **cfgdata)
  * ----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
-LALReadConfigVariable (LALStatus *stat, 
+LALReadConfigVariable (LALStatus *status, 
 		       void *varp, 			/* output: result gets written here! */
 		       const LALParsedDataFile *cfgdata, 	/* input: pre-parsed config-data */
 		       const LALConfigVar *param,	/* var-name, fmt-string, strictness */
@@ -298,15 +298,15 @@ LALReadConfigVariable (LALStatus *stat,
   size_t len;
   size_t searchlen = strlen (param->varName);
 
-  INITSTATUS( stat, "LALReadConfigVariable", CONFIGFILEC );
+  INITSTATUS( status, "LALReadConfigVariable", CONFIGFILEC );
 
   /* This traps coding errors in the calling routine. */
-  ASSERT( cfgdata != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT( cfgdata->lines != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT( cfgdata->wasRead != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT( varp != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT( param->varName != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL );  
-  ASSERT( param->fmt != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL );  
+  ASSERT( cfgdata != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT( cfgdata->lines != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT( cfgdata->wasRead != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT( varp != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT( param->varName != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL );  
+  ASSERT( param->fmt != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL );  
 
   *wasRead = FALSE;
 
@@ -315,7 +315,7 @@ LALReadConfigVariable (LALStatus *stat,
     {
       len = strcspn (cfgdata->lines->tokens[i], WHITESPACE "=:"); /* get length of variable-name */
       if (len == 0) { /* malformed token-list */
-	ABORT (stat, CONFIGFILEH_ETOKENS, CONFIGFILEH_MSGETOKENS);
+	ABORT (status, CONFIGFILEH_ETOKENS, CONFIGFILEH_MSGETOKENS);
       }
       /* pre-select based on length of variable-name */
       if ( len != searchlen )
@@ -337,18 +337,18 @@ LALReadConfigVariable (LALStatus *stat,
       switch (param->strictness) 
 	{
 	case CONFIGFILE_IGNORE:
-	  RETURN (stat);
+	  RETURN (status);
 	  break;
 	case CONFIGFILE_WARN:
 	  if (lalDebugLevel & LALWARNING)
 	    LALPrintError ("\nWarning: Config-file variable '%s' was not found!\n", param->varName);
-	  RETURN (stat);
+	  RETURN (status);
 	  break;
 
 	case CONFIGFILE_ERROR:
 	default: 
 	  LALPrintError ("\nError: Config-file variable %s was not found!\n", param->varName);
-	  ABORT (stat, CONFIGFILEH_EVAR, CONFIGFILEH_MSGEVAR );
+	  ABORT (status, CONFIGFILEH_EVAR, CONFIGFILEH_MSGEVAR );
 	  break;
 	} /* switch (strictness) */
 
@@ -362,7 +362,7 @@ LALReadConfigVariable (LALStatus *stat,
       /* NOTE: varp here is supposed to be a pointer to CHAR* !! */
       CHAR **cstr = (CHAR**) varp;
 
-      ASSERT ( *cstr == NULL, stat, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
+      ASSERT ( *cstr == NULL, status, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
 
       (*cstr) = (CHAR*) LALMalloc( strlen (found) + 1); 
       strcpy ( (*cstr), found);
@@ -374,7 +374,7 @@ LALReadConfigVariable (LALStatus *stat,
   if ( (ret == 0) || (ret == EOF) )
     {
       LALPrintError("\nERROR: Config-file variable %s was not readable using the format %s\n\n", param->varName, param->fmt);
-      ABORT( stat, CONFIGFILEH_EFMT, CONFIGFILEH_MSGEFMT );
+      ABORT( status, CONFIGFILEH_EFMT, CONFIGFILEH_MSGEFMT );
     }
 
   /* ok, we have successfully read in the config-variable: let's make a note of it */
@@ -382,7 +382,7 @@ LALReadConfigVariable (LALStatus *stat,
   
   *wasRead = TRUE;
 
-  RETURN (stat);
+  RETURN (status);
 
 } /* LALReadConfigVariable() */
 
@@ -393,7 +393,7 @@ LALReadConfigVariable (LALStatus *stat,
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
-LALReadConfigBOOLVariable (LALStatus *stat, 
+LALReadConfigBOOLVariable (LALStatus *status, 
 			   BOOLEAN *varp, 		 /* output: variable to store result */
 			   const LALParsedDataFile *cfgdata, /* input: pre-parsed config-data */
 			   const CHAR *varName,		 /* input: variable-name to read */
@@ -403,18 +403,18 @@ LALReadConfigBOOLVariable (LALStatus *stat,
   CHAR *tmp = NULL;
   INT2 ret = -1;	/* -1 means no legal value has been parsed */
 
-  INITSTATUS( stat, "LALReadConfigBOOLVariable", CONFIGFILEC );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "LALReadConfigBOOLVariable", CONFIGFILEC );
+  ATTATCHSTATUSPTR (status);
 
   *wasRead = FALSE;
 
   /* first read the value as a string */
-  TRY (LALReadConfigSTRINGVariable (stat->statusPtr, &tmp, cfgdata, varName, wasRead), stat);
+  TRY (LALReadConfigSTRINGVariable (status->statusPtr, &tmp, cfgdata, varName, wasRead), status);
 
   if (*wasRead && tmp) /* if we read anything at all... */
     {
       /* get rid of case ambiguities */
-      TRY (LALLowerCaseString (stat->statusPtr, tmp), stat);
+      TRY (LALLowerCaseString (status->statusPtr, tmp), status);
 
       /* try to parse it as a bool */
       if (      !strcmp(tmp, "yes") || !strcmp(tmp, "true") || !strcmp(tmp,"1"))
@@ -425,7 +425,7 @@ LALReadConfigBOOLVariable (LALStatus *stat,
 	{
 	  LALPrintError ( "illegal bool-value `%s`\n", tmp);
 	  LALFree (tmp);
-	  ABORT (stat, CONFIGFILEH_EBOOL, CONFIGFILEH_MSGEBOOL);
+	  ABORT (status, CONFIGFILEH_EBOOL, CONFIGFILEH_MSGEBOOL);
 	}
       LALFree (tmp);
       
@@ -437,8 +437,8 @@ LALReadConfigBOOLVariable (LALStatus *stat,
 
     } /* if wasRead && tmp */
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* LALReadConfigBOOLVariable() */
 
@@ -447,7 +447,7 @@ LALReadConfigBOOLVariable (LALStatus *stat,
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
-LALReadConfigINT4Variable (LALStatus *stat, 
+LALReadConfigINT4Variable (LALStatus *status, 
 			   INT4 *varp, 
 			   const LALParsedDataFile *cfgdata, 
 			   const CHAR *varName,
@@ -455,15 +455,15 @@ LALReadConfigINT4Variable (LALStatus *stat,
 { /* </lalVerbatim> */
   LALConfigVar param = {0,0,0};
 
-  INITSTATUS( stat, "LALReadConfigINT4Variable", CONFIGFILEC );
+  INITSTATUS( status, "LALReadConfigINT4Variable", CONFIGFILEC );
 
   param.varName = varName;
   param.fmt = "%" LAL_INT4_FORMAT;
   param.strictness = CONFIGFILE_IGNORE;
 
-  LALReadConfigVariable (stat, (void*) varp, cfgdata, &param, wasRead);
+  LALReadConfigVariable (status, (void*) varp, cfgdata, &param, wasRead);
   
-  RETURN (stat);
+  RETURN (status);
 
 } /* LALReadConfigINT4Variable() */
 
@@ -472,7 +472,7 @@ LALReadConfigINT4Variable (LALStatus *stat,
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
-LALReadConfigREAL8Variable (LALStatus *stat, 
+LALReadConfigREAL8Variable (LALStatus *status, 
 			    REAL8 *varp, 
 			    const LALParsedDataFile *cfgdata, 
 			    const CHAR *varName,
@@ -480,15 +480,15 @@ LALReadConfigREAL8Variable (LALStatus *stat,
 { /* </lalVerbatim> */
   LALConfigVar param = {0,0,0};
 
-  INITSTATUS( stat, "LALReadConfigREAL8Variable", CONFIGFILEC );
+  INITSTATUS( status, "LALReadConfigREAL8Variable", CONFIGFILEC );
 
   param.varName = varName;
   param.fmt = "%" LAL_REAL8_FORMAT;
   param.strictness = CONFIGFILE_IGNORE;
 
-  LALReadConfigVariable (stat, (void*) varp, cfgdata, &param, wasRead);
+  LALReadConfigVariable (status, (void*) varp, cfgdata, &param, wasRead);
   
-  RETURN (stat);
+  RETURN (status);
 
 } /* LALReadConfigREAL8Variable() */
 
@@ -501,7 +501,7 @@ LALReadConfigREAL8Variable (LALStatus *stat,
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
-LALReadConfigSTRINGVariable (LALStatus *stat, 
+LALReadConfigSTRINGVariable (LALStatus *status, 
 			     CHAR **varp, 		/* output: string, allocated here! */
 			     const LALParsedDataFile *cfgdata, /* pre-parsed config-data */
 			     const CHAR *varName,	/* variable-name to be read */
@@ -511,15 +511,15 @@ LALReadConfigSTRINGVariable (LALStatus *stat,
   CHAR *str = NULL;
   CHAR *ret = NULL;
 
-  INITSTATUS( stat, "LALReadConfigSTRINGVariable", CONFIGFILEC );
+  INITSTATUS( status, "LALReadConfigSTRINGVariable", CONFIGFILEC );
 
-  ASSERT ( *varp == NULL, stat, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
+  ASSERT ( *varp == NULL, status, CONFIGFILEH_ENONULL, CONFIGFILEH_MSGENONULL);
 
   param.varName = varName;
   param.fmt = FMT_STRING;
   param.strictness = CONFIGFILE_IGNORE;
 
-  LALReadConfigVariable (stat, (void*) &str, cfgdata, &param, wasRead);
+  LALReadConfigVariable (status, (void*) &str, cfgdata, &param, wasRead);
 
   if ( *wasRead && (str!=NULL) )
     {
@@ -534,17 +534,17 @@ LALReadConfigSTRINGVariable (LALStatus *stat,
 
       /* check balanced quotes (don't allow escaping for now) */
       if ( (numQuotes !=0) && (numQuotes != 2) ) {
-	ABORT (stat, CONFIGFILEH_ESTRING, CONFIGFILEH_MSGESTRING);
+	ABORT (status, CONFIGFILEH_ESTRING, CONFIGFILEH_MSGESTRING);
       }
       if ( numQuotes==2 )  
 	{
 	  /* allowed only at end and beginning */
 	  if ( (str[0] != '"') || (str[strlen(str)-1] != '"') ) {
-	    ABORT (stat, CONFIGFILEH_ESTRING, CONFIGFILEH_MSGESTRING);
+	    ABORT (status, CONFIGFILEH_ESTRING, CONFIGFILEH_MSGESTRING);
 	  }
 	  /* quotes ok, now remove them */
 	  if ( (ret = LALMalloc( strlen(str) -2 + 1)) == NULL ) {
-	    ABORT (stat, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
+	    ABORT (status, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
 	  }
 	  str[strlen(str)-1] = 0;
 	  strcpy (ret, str+1);
@@ -559,7 +559,7 @@ LALReadConfigSTRINGVariable (LALStatus *stat,
   else
     *varp = NULL;
 
-  RETURN (stat);
+  RETURN (status);
 
 } /* LALReadConfigSTRINGVariable() */
 
@@ -584,7 +584,7 @@ LALReadConfigSTRINGVariable (LALStatus *stat,
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
-LALReadConfigSTRINGNVariable (LALStatus *stat, 
+LALReadConfigSTRINGNVariable (LALStatus *status, 
 			      CHARVector *varp, 	/* output: must be allocated! */
 			      const LALParsedDataFile *cfgdata, /* pre-parsed config-data */
 			      const CHAR *varName,	/* variable-name */
@@ -592,15 +592,15 @@ LALReadConfigSTRINGNVariable (LALStatus *stat,
 { /* </lalVerbatim> */
   CHAR *tmp = NULL;
 
-  INITSTATUS( stat, "LALReadSTRINGNVariable", CONFIGFILEC );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "LALReadSTRINGNVariable", CONFIGFILEC );
+  ATTATCHSTATUSPTR (status);
   
   /* This traps coding errors in the calling routine. */
-  ASSERT( varp != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT( varp->data != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT( varp->length != 0, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT( varp != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT( varp->data != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT( varp->length != 0, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
   
-  TRY (LALReadConfigSTRINGVariable (stat->statusPtr, &tmp, cfgdata, varName, wasRead), stat);
+  TRY (LALReadConfigSTRINGVariable (status->statusPtr, &tmp, cfgdata, varName, wasRead), status);
 
   if (*wasRead && tmp)
     {
@@ -613,8 +613,8 @@ LALReadConfigSTRINGNVariable (LALStatus *stat,
   else
     *wasRead = FALSE;
     
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);  
+  DETATCHSTATUSPTR (status);
+  RETURN (status);  
 
 } /* LALReadConfigSTRINGNVariable() */
 
@@ -626,48 +626,42 @@ LALReadConfigSTRINGNVariable (LALStatus *stat,
  *----------------------------------------------------------------------*/
 /* <lalVerbatim file="ConfigFileCP"> */
 void
-LALCheckConfigReadComplete (LALStatus *stat, 
+LALCheckConfigReadComplete (LALStatus *status, 
 			    const LALParsedDataFile *cfgdata, /* config-file data */
 			    ConfigStrictness strict)  /* what to do if unparsed lines */
 { /* </lalVerbatim> */
   UINT4 i;
 
-  INITSTATUS( stat, "LALCheckConfigReadComplete", CONFIGFILEC );  
+  INITSTATUS( status, "LALCheckConfigReadComplete", CONFIGFILEC );  
 
-  ASSERT (cfgdata != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT (cfgdata->lines != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
-  ASSERT (cfgdata->wasRead != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT (cfgdata != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT (cfgdata->lines != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT (cfgdata->wasRead != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
 
   for (i=0; i < cfgdata->lines->nTokens; i++)
-    if (cfgdata->wasRead[i] == 0)
-      break;
-
-  if (i != cfgdata->lines->nTokens)
     {
-      switch (strict)
+      if (cfgdata->wasRead[i] == 0)
 	{
-	case CONFIGFILE_IGNORE:
-	  RETURN (stat);
-	  break;
-	case CONFIGFILE_WARN:
-	  if (lalDebugLevel & LALWARNING)
+	  switch (strict)
 	    {
-	      LALPrintError ("Warning: config-file entry #%d has not been read!\n", i);
+	    case CONFIGFILE_IGNORE:
+	      continue;
+	    case CONFIGFILE_WARN:
+	      LALPrintError ("Warning: Ignoring unknown config-file entry '%s'.\n",
+			     cfgdata->lines->tokens[i] );
+	      continue;
+	    case CONFIGFILE_ERROR:
+	    default:
+	      LALPrintError ("ERROR: config-file entry #%d has not been read!\n", i);
 	      LALPrintError ("Line was: '%s'\n", cfgdata->lines->tokens[i]);
-	    }
-	  RETURN(stat);
-	  break;
-	  
-	case CONFIGFILE_ERROR:
-	default:
-	  LALPrintError ("ERROR: config-file entry #%d has not been read!\n", i);
-	  LALPrintError ("Line was: '%s'\n", cfgdata->lines->tokens[i]);
-	  ABORT (stat, CONFIGFILEH_EUNKNOWN, CONFIGFILEH_MSGEUNKNOWN);
-	  break;
-	} /* switch strict */
-    } /* if some line not read */
+	      ABORT (status, CONFIGFILEH_EUNKNOWN, CONFIGFILEH_MSGEUNKNOWN);
+	      break;
+	    } /* switch strict */
+	} /* if some line not read */
+
+    } /* for i < lines */
   
-  RETURN (stat);
+  RETURN (status);
 
 } /* LALCheckConfigReadComplete() */
 
@@ -681,18 +675,18 @@ LALCheckConfigReadComplete (LALStatus *stat,
  * little helper function:  turn a string into lowercase
  *----------------------------------------------------------------------*/
 void
-LALLowerCaseString (LALStatus *stat, CHAR *string)
+LALLowerCaseString (LALStatus *status, CHAR *string)
 {
   UINT4 i;
 
-  INITSTATUS( stat, "LALLowerCaseString", CONFIGFILEC );  
+  INITSTATUS( status, "LALLowerCaseString", CONFIGFILEC );  
 
-  ASSERT (string != NULL, stat, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
+  ASSERT (string != NULL, status, CONFIGFILEH_ENULL, CONFIGFILEH_MSGENULL);
 
   for (i=0; i < strlen (string); i++)
     string[i] = TOLOWER( string[i] );
   
-  RETURN (stat);
+  RETURN (status);
 
 } /* LALLowerCaseString() */
 

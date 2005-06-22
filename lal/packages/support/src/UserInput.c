@@ -534,7 +534,7 @@ LALUserVarReadCfgfile (LALStatus *status,
     } /* while ptr->next */
 
   /* ok, that should be it: check if there were more definitions we did not read */
-  TRY (LALCheckConfigReadComplete (status->statusPtr, cfg, CONFIGFILE_ERROR), status);	/* be strict */
+  TRY (LALCheckConfigReadComplete (status->statusPtr, cfg, CONFIGFILE_WARN), status);	/* be strict */
 
   TRY( LALDestroyParsedDataFile (status->statusPtr, &cfg), status);
 
