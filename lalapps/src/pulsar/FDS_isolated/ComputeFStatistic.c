@@ -812,12 +812,14 @@ int main(int argc,char *argv[])
                 {
 		  CHAR linebuf[1024]; 
 		  REAL8 Fval = 2.0*medianbias*Fstat.F[i];
-
-		  LALSnprintf (linebuf, 1023, "%20.17f %20.17f %20.17f %20.17g %20.17g\n", 
-			       GV.searchRegion.Freq + i * GV.dFreq, 
-			       dopplerpos.Alpha, dopplerpos.Delta, 
-			       DemodParams->spinDwn[0], Fval);
-		  linebuf[1023] = 0;
+		  if ( Fval > uvar_Fthreshold )
+		    {
+		      LALSnprintf (linebuf, 1023, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
+				   GV.searchRegion.Freq + i * GV.dFreq, 
+				   dopplerpos.Alpha, dopplerpos.Delta, 
+				   DemodParams->spinDwn[0], Fval);
+		      linebuf[1023] = 0;
+		    }
 		  if ( fpOut )
 		    fprintf (fpOut, linebuf);
 
