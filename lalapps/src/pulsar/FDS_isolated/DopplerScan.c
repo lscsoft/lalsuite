@@ -485,7 +485,8 @@ plotGrid (LALStatus *status,
 	   const SkyRegion *region, 
 	   const DopplerScanInit *init)
 {
-  FILE *fp = NULL;
+  FILE *fp = NULL;	/* output xmgrace-file */
+  FILE *fp1 = NULL;	/* output pure data */
   DopplerScanGrid *node;
   REAL8 Alpha, Delta;
   UINT4 set, i;
@@ -505,6 +506,7 @@ plotGrid (LALStatus *status,
   ATTATCHSTATUSPTR( status );
 
   fp = fopen ("mesh_debug.agr", "w");
+  fp1 = fopen ("mesh_debug.dat", "w");
 
   if( !fp ) {
     ABORT ( status, DOPPLERSCANH_ESYS, DOPPLERSCANH_MSGESYS );
@@ -522,10 +524,12 @@ plotGrid (LALStatus *status,
       for( i = 0; i < region->numVertices; i++ )
 	{
 	  fprintf( fp, "%e %e\n", region->vertices[i].longitude, region->vertices[i].latitude );
+	  fprintf( fp1,"%e %e\n", region->vertices[i].longitude, region->vertices[i].latitude );
 	}
       /* close contour */
       fprintf (fp, "%e %e\n", region->vertices[0].longitude, region->vertices[0].latitude ); 
-      
+      fprintf (fp1, "%e %e\n\n", region->vertices[0].longitude, region->vertices[0].latitude ); 
+
       set ++;
     }
       
@@ -537,8 +541,9 @@ plotGrid (LALStatus *status,
   for( node = grid; node; node = node->next )
   {
     fprintf( fp, "%e %e\n", node->Alpha, node->Delta );
+    fprintf( fp1, "%e %e\n", node->Alpha, node->Delta );
   }
-
+  fprintf( fp1, "\n");
 
   /* if metric is given: plot ellipses */
   if ( ( init->metricType > LAL_PMETRIC_NONE) && (init->metricType < LAL_PMETRIC_LAST) )
@@ -606,8 +611,12 @@ plotGrid (LALStatus *status,
 	    b = atan2 ( y, x );
 	    fprintf( fp, "%e %e\n", 
 		     Alpha + r*cos(ellipse.angle+b), Delta + r*sin(ellipse.angle+b) );
+
+	    fprintf( fp1, "%e %e\n", 
+		     Alpha + r*cos(ellipse.angle+b), Delta + r*sin(ellipse.angle+b) );
 	  }
-	  
+	  fprintf ( fp1, "\n");
+
 	  node = node -> next;
 
 	  TRY( LALDDestroyVector( status->statusPtr, &metric ), status );
