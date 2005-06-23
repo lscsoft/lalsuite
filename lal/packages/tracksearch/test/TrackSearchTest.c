@@ -8,6 +8,8 @@
 
 NRCSID (TESTSTSC,"$Id$");
 
+static void OutputInvertedMap(TimeFreqRep, TrackSearchParams);
+
 INT4 lalDebugLevel=0;
 int main( void )
 {
@@ -20,7 +22,6 @@ int main( void )
   unsigned char dummy;
   char stringd[256];
 
-  /**/static void OutputInvertedMap(TimeFreqRep, TrackSearchParams);
 
   /* set the parameters */
   params.sigma=2;  /* 2 */
