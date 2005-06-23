@@ -37,3 +37,4 @@
 648.35     0.0      1        0.15            0.15          /*Keith_Thorne_KALMAN*/ 
 777.9      0.0      1        0.05            0.05          /*Keith_Thorne_KALMAN*/ 
 1000.00    0.0      1        0.05            0.05          /*Keith_Thorne_KALMAN*/
+0.0        1.0      1500     0.0006          0.0006        /*1_Hz_COMB*/
