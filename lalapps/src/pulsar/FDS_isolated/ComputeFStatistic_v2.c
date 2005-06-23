@@ -168,6 +168,7 @@ CHAR* uvar_IFO2;
 BOOLEAN uvar_SignalOnly;
 REAL8 uvar_Freq;
 REAL8 uvar_FreqBand;
+REAL8 uvar_dFreq;
 REAL8 uvar_Alpha;
 REAL8 uvar_dAlpha;
 REAL8 uvar_AlphaBand;
@@ -204,7 +205,6 @@ REAL8 uvar_dopplermax;
 INT4 uvar_windowsize;
 
 /* interpolation stuff */
-REAL8 uvar_overSampling;
 BOOLEAN uvar_useEphemeris;
 
 /*----------------------------------------------------------------------*/
@@ -255,7 +255,8 @@ XLALNewLALDemod(Fcomponents *FaFb,
 		const SFTVector *sfts, 
 		const computeFStatPar *params);
 
-int XLALcomputeFStat (REAL8 *Fstat, const SFTVector *sfts, const computeFStatPar *params);
+int 
+XLALcomputeFStat (REAL8 *Fval, const SFTVector *sfts, const computeFStatPar *params);
 
 void
 LALGetSSBtimes (LALStatus *status, 
@@ -590,9 +591,7 @@ initUserVars (LALStatus *status)
   /* set a few defaults */
   uvar_Dterms 	= 16;
   uvar_FreqBand = 0.0;
-
-  uvar_overSampling = 2.0;
-
+  uvar_dFreq 	= 0.0;
   uvar_Alpha 	= 0.0;
   uvar_Delta 	= 0.0;
   uvar_AlphaBand = 0;
@@ -641,6 +640,7 @@ initUserVars (LALStatus *status)
   LALregINTUserVar(status,	Dterms,		't', UVAR_OPTIONAL, "Number of terms to keep in Dirichlet kernel sum");
   LALregREALUserVar(status, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
   LALregREALUserVar(status, 	FreqBand, 	'b', UVAR_OPTIONAL, "Search frequency band in Hz");
+  LALregREALUserVar(status,     dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
   LALregREALUserVar(status, 	Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
   LALregREALUserVar(status, 	AlphaBand, 	'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
@@ -678,7 +678,6 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,	outputSkyGrid,	 0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
   LALregSTRINGUserVar(status,     workingDir,     'w', UVAR_OPTIONAL, "Directory to be made the working directory, . is default");
   /* more experimental and unofficial stuff follows here */
-  LALregREALUserVar(status, 	overSampling,	'r', UVAR_OPTIONAL, "Oversampling factor for frequency resolution.");
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output the F-statistic field over the parameter-space");
   LALregREALUserVar(status, 	FstatMin,	 0,  UVAR_OPTIONAL, "Minimum F-Stat value to written into outputFstat-file");
   LALregBOOLUserVar (status,	useEphemeris,    0,  UVAR_DEVELOPER, "Use ephemeris or Ptolemaic model");
@@ -987,12 +986,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    * set some defaults
    */
   /* 'natural' FFT frequency-resolution */
-  cfg->dFreq = 1.0 / cfg->tObs;
-  
-  /* if we don't use interpolation, we increase the 
-   * frequency-resolution requested from LALDemod() accordingly
-   */
-  cfg->dFreq /= uvar_overSampling;
+  cfg->dFreq = 1.0 / (2.0 * cfg->tObs);
   
   /*Number of frequency values to calculate F for */
   cfg->FreqImax = (INT4)(uvar_FreqBand/cfg->dFreq + 0.5) + 1;  
@@ -1595,7 +1589,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
       REAL4 a = params->amcoe->a->data[alpha];
       REAL4 b = params->amcoe->b->data[alpha];
 
-      REAL8 xhat_alpha, x_alpha_k, y_alpha;	/* xhat(alpha), x(alpha,k) and y(alpha) */
+      REAL8 xhat_alpha, y_alpha;	/* xhat(alpha), x(alpha,k) and y(alpha) */
       REAL4 x0;
       REAL8 rem; 		/* remainder of x_alpha0: how close to an int? */
 
@@ -1747,7 +1741,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
 /** Caculate F-statistic using XLALNewLALDemod() 
  */
 int
-XLALcomputeFStat (REAL8 *Fstat,			/**< [out] the resulting F-statistic value */
+XLALcomputeFStat (REAL8 *Fval,			/**< [out] the resulting F-statistic value */
 		  const SFTVector *sfts, 	/**< input: SFT-vector */
 		  const computeFStatPar *params /**< antenna-pattern coefficients a,b,..*/
 		  )
@@ -1757,7 +1751,7 @@ XLALcomputeFStat (REAL8 *Fstat,			/**< [out] the resulting F-statistic value */
   REAL4 At, Bt, Ct;
   REAL8 FaRe, FaIm, FbRe, FbIm;
 
-  if (!sfts || !params || !Fstat) 
+  if (!sfts || !params || !Fval) 
     {
       LALPrintError ("\nInput contains illegal NULL-pointer !\n\n");
       XLAL_ERROR ("XLALcomputeFStat", XLAL_EINVAL);
@@ -1783,7 +1777,7 @@ XLALcomputeFStat (REAL8 *Fstat,			/**< [out] the resulting F-statistic value */
   FbIm = FaFb.Fb.im;
 
   /* calculate F-statistic from  Fa and Fb */
-  (*Fstat) = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
+  (*Fval) = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
 		     + At * (FbRe*FbRe + FbIm*FbIm) 
 		     - 2.0 * Ct *(FaRe*FbRe + FaIm*FbIm) );
   
