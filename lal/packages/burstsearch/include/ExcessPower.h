@@ -6,6 +6,8 @@ $Id$
 #ifndef _EXCESSPOWER_H
 #define _EXCESSPOWER_H
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <lal/LALDatatypes.h>
 #include <lal/TFTransform.h>
 #include <lal/LALRCSID.h>
@@ -25,10 +27,15 @@ typedef struct tagTFTile {
 	REAL8 deltaF;
 	REAL8 excessPower;
 	REAL8 alpha;
-	REAL8 weight;
+	INT4 weight;
 	BOOLEAN firstCutFlag;
-	struct tagTFTile *nextTile;
 } TFTile;
+
+
+typedef struct tagTFTiling {
+	TFTile *tile;
+	size_t numtiles;
+} TFTiling;
 
 
 typedef struct tagCreateTFTilingIn {
@@ -54,7 +61,13 @@ LALAddWhiteNoise(
 );
 
 
-TFTile *
+REAL8
+XLALTFTileDegreesOfFreedom(
+	TFTile *tile
+);
+
+
+TFTiling *
 XLALCreateTFTiling(
 	const CreateTFTilingIn *input, 
 	const TFPlaneParams *planeparams
@@ -63,13 +76,13 @@ XLALCreateTFTiling(
 
 void
 XLALDestroyTFTiling(
-	TFTile *list
+	TFTiling *tiling
 );
 
 
 int
 XLALComputeExcessPower(
-	TFTile *list,
+	TFTiling *tiling,
 	const COMPLEX8TimeFrequencyPlane *plane,
 	REAL8 numSigmaMin,
 	REAL8 alphaDefault,
@@ -77,22 +90,22 @@ XLALComputeExcessPower(
 );
 
 
-int
-XLALSortTFTiling(
-	TFTile **list
+void
+XLALSortTFTilingByAlpha(
+	TFTiling *tiling
 );
 
 
 REAL8
 XLALComputeLikelihood(
-	TFTile *list
+	TFTiling *tiling
 );
 
 
 void
 XLALPrintTFTileList(
 	FILE *fp,
-	const TFTile *list,
+	const TFTiling *tiling,
 	const COMPLEX8TimeFrequencyPlane *plane,
 	INT4 maxTiles
 );

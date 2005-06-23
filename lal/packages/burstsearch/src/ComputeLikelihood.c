@@ -13,25 +13,26 @@ NRCSID (COMPUTELIKELIHOODC, "$Id$");
 /******** <lalVerbatim file="ComputeLikelihoodCP"> ********/
 REAL8
 XLALComputeLikelihood(
-	TFTile *tile
+	TFTiling *tiling
 )
 /******** </lalVerbatim> ********/
 {
 	REAL8 avglambda = 0.0;
 	REAL8 dof;
 	REAL8 rho4;
-	int numTiles;
+	TFTile *tile;
+	size_t i;
 
-	for(numTiles = 0; tile; tile = tile->nextTile)
+	for(i = 0, tile = tiling->tile; i < tiling->numtiles; i++, tile++)
 		if(tile->firstCutFlag) {
+			/* FIXME: should this be the XLAL function? */
 			dof = 2.0 * (tile->tend - tile->tstart + 1) * (tile->fend - tile->fstart + 1);
 			rho4 = tile->excessPower * tile->excessPower;
 			avglambda += dof / (rho4 * tile->alpha) * tile->weight;
-		numTiles++;
 		}
 
 	/* compute the likelihood averaged over TF tiles */
-	avglambda /= numTiles;
+	avglambda /= tiling->numtiles;
 
 	/* return value of statistic */
 	return(avglambda);

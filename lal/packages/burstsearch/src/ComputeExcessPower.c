@@ -4,7 +4,6 @@ $Id$
 ********* </lalVerbatim> ********/
 
 #include <math.h>
-
 #include <lal/LALRCSID.h>
 
 NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
@@ -33,7 +32,7 @@ static REAL8 square_complex8_sum(const COMPLEX8 *vec, int start, int length)
 /******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
 int
 XLALComputeExcessPower(
-	TFTile *list,
+	TFTiling *tiling,
 	const COMPLEX8TimeFrequencyPlane *plane,
 	REAL8 numSigmaMin,
 	REAL8 alphaDefault,
@@ -42,10 +41,9 @@ XLALComputeExcessPower(
 /******** </lalVerbatim> ********/
 {
 	static const char *func = "XLALComputeExcessPower";
-	TFTile *tile;
+	TFTile *tile = tiling->tile;
 	REAL8 sum;
 	REAL8 dof;
-	REAL8 numsigma;
 	INT4 offset;
 	INT4 nf = plane->params.freqBins;
 	INT4 nt = plane->params.timeBins;
@@ -53,6 +51,7 @@ XLALComputeExcessPower(
 	INT4 t2;
 	INT4 k1;
 	INT4 k2;
+	size_t i;
 
 	/* check on some parameter values */
 	if((nf <= 0) || (nt <= 0) ||
@@ -61,7 +60,7 @@ XLALComputeExcessPower(
 	   (alphaDefault > 1.0))
 		XLAL_ERROR(func, XLAL_EDOM);
 
-	for(tile = list; tile; tile = tile->nextTile) {
+	for(i = 0; i < tiling->numtiles; i++, tile++) {
 		t1 = tile->tstart;
 		t2 = tile->tend;
 		k1 = tile->fstart;
@@ -71,20 +70,16 @@ XLALComputeExcessPower(
 		   (k1 < 0) || (k1 > k2) || (k2 > nf))
 			XLAL_ERROR(func, XLAL_EDATA);
 
-		/* Calculate the degrees of freedom of the TF tile */
-		dof = 2.0 * (t2 - t1) * tile->deltaT * (k2 - k1) * tile->deltaF;
+		dof = XLALTFTileDegreesOfFreedom(tile);
 
 		sum = 0.0;
 		for(offset = t1; offset < t2; offset += (t2 - t1) / dof)
 			sum += square_complex8_sum(&plane->data[offset * nf], k1, k2 - k1) / XLALREAL4SumSquares(norm, k1, k2 - k1);
-
 		tile->excessPower = sum - dof;
-		tile->weight = 1.0;
 
 		/* Need to compute an accurate value of likelihood only if
 		 * excess power is greater than a few sigma */
-		numsigma = (sum - dof) / sqrt(2.0 * dof);
-		if(numsigma > numSigmaMin) {
+		if(tile->excessPower / sqrt(2.0 * dof) > numSigmaMin) {
 			tile->firstCutFlag = TRUE;
 			tile->alpha = XLALOneMinusChisqCdf(sum, dof);
 			if(XLALIsREAL8FailNaN(tile->alpha))

@@ -5,7 +5,6 @@ $Id$
 
 #include <math.h>
 #include <stdlib.h>
-
 #include <lal/LALRCSID.h>
 
 NRCSID(THRESHOLDSC, "$Id$");
@@ -13,7 +12,6 @@ NRCSID(THRESHOLDSC, "$Id$");
 #include <gsl/gsl_cdf.h>
 #include <lal/FindRoot.h>
 #include <lal/LALConstants.h>
-#include <lal/LALErrno.h>
 #include <lal/XLALGSL.h>
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>

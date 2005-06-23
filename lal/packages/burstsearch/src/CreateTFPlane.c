@@ -3,7 +3,6 @@ Author: Flanagan, E. and Cannon, K.
 $Id$
 ********* </lalVerbatim> ********/
 
-
 #include <lal/LALRCSID.h>
 
 NRCSID(CREATETFPLANEC, "$Id$");
@@ -47,8 +46,7 @@ COMPLEX8TimeFrequencyPlane *XLALCreateTFPlane(
 	}
 
 	/* 
-	 * Fill some of the fields with nominal values pending the
-	 * allocation of correct values for these fields.
+	 * Fill some of the fields with nominal values.
 	 */
 
 	plane->epoch.gpsSeconds = 0;

@@ -5,8 +5,6 @@ Revision: $Id$
 
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/Date.h>
 #include <lal/EPSearch.h>
@@ -17,9 +15,9 @@ Revision: $Id$
 #include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/PrintFTSeries.h>
 #include <lal/RealFFT.h>
 #include <lal/ResampleTimeSeries.h>
+#include <lal/LALStatusMacros.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
@@ -28,42 +26,15 @@ Revision: $Id$
 
 NRCSID(EPSEARCHC, "$Id$");
 
-#define FALSE 0
-
 
 /*
- * Weight tiles according to the number present of a given time-frequency
- * volume.
- */
-
-static INT4 DegreesOfFreedom(TFTile *tile)
-{
-	return(2 * (tile->tend - tile->tstart)*tile->deltaT * (tile->fend - tile->fstart)*tile->deltaF);
-}
-
-static void WeightTFTileList(TFTile *list, INT4 maxDOF)
-{
-	TFTile *tile;
-	int *weight = LALCalloc(maxDOF, sizeof(*weight));
-
-	for(tile = list; tile; tile = tile->nextTile)
-		weight[DegreesOfFreedom(tile)]++;
-
-	for(tile = list; tile; tile = tile->nextTile)
-		tile->weight = weight[DegreesOfFreedom(tile)];
-
-	LALFree(weight);
-}
-
-
-/*
- * Convert a linked list of tiles to a linked list of burst events.
+ * Convert an array of tiles to a linked list of burst events.
  */
  
 static SnglBurstTable *TFTileToBurstEvent(
-	TFTile *tile,
-	LIGOTimeGPS *epoch,
-	EPSearchParams *params  
+	const TFTile *tile,
+	const LIGOTimeGPS *epoch,
+	const EPSearchParams *params  
 )
 {
 	SnglBurstTable *event = LALMalloc(sizeof(*event));
@@ -80,10 +51,10 @@ static SnglBurstTable *TFTileToBurstEvent(
 
 	/* Moving the epoch has to be fixed */ 
 	XLALAddFloatToGPS(&event->start_time, (tile->tstart * tile->deltaT));
-	event->duration = (tile->tend - tile->tstart ) * tile->deltaT;
+	event->duration = (tile->tend - tile->tstart) * tile->deltaT;
 	event->peak_time = event->start_time;
 	XLALAddFloatToGPS(&event->peak_time, 0.5 * event->duration);
-	event->bandwidth = (tile->fend - tile->fstart ) * tile->deltaF;
+	event->bandwidth = (tile->fend - tile->fstart) * tile->deltaF;
 	event->central_freq = params->tfPlaneParams.flow + tile->fstart*tile->deltaF + (0.5 * event->bandwidth);
 	event->amplitude = tile->excessPower;
 	event->snr = tile->excessPower;
@@ -101,11 +72,12 @@ static SnglBurstTable *TFTileToBurstEvent(
 }
 
 
-static SnglBurstTable **TFTilesToSnglBurstTable(TFTile *tile, SnglBurstTable **addpoint, LIGOTimeGPS *epoch, EPSearchParams *params)
+static SnglBurstTable **TFTilesToSnglBurstTable(TFTiling *tiling, SnglBurstTable **addpoint, const LIGOTimeGPS *epoch, const EPSearchParams *params)
 {
-	INT4 count;
+	TFTile *tile;
+	size_t i;
 
-	for(count = 0; tile && (tile->alpha <= params->alphaThreshold/tile->weight) && (count < params->eventLimit); tile = tile->nextTile, count++) {
+	for(i = 0, tile = tiling->tile; (i < tiling->numtiles) && (tile->alpha <= params->alphaThreshold/tile->weight) && (i < params->eventLimit); i++, tile++) {
 		*addpoint = TFTileToBurstEvent(tile, epoch, params); 
 
 		if(*addpoint)
@@ -197,18 +169,19 @@ XLALEPSearch(
 /******** </lalVerbatim> ********/
 { 
 	static const char *func = "EPSearch";
-	int                       start_sample;
-	COMPLEX8FrequencySeries  *fseries;
-	REAL4Window              *window;
-	RealFFTPlan              *plan;
-	REAL4FrequencySeries     *AverageSpec;
-	REAL4FrequencySeries     *OverWhiteningSpec;
-	REAL4TimeSeries          *cutTimeSeries;
-	SnglBurstTable          **EventAddPoint = burstEvent;
-	TFTile                   *TileList;
+	int errorcode;
+	int                         start_sample;
+	COMPLEX8FrequencySeries    *fseries;
+	REAL4Window                *window;
+	RealFFTPlan                *plan;
+	REAL4FrequencySeries       *AverageSpec;
+	REAL4FrequencySeries       *OverWhiteningSpec;
+	REAL4TimeSeries            *cutTimeSeries;
+	SnglBurstTable            **EventAddPoint = burstEvent;
+	TFTiling                   *Tiling;
 	COMPLEX8TimeFrequencyPlane *tfplane;
-	REAL4                    *normalisation;
-	const LIGOTimeGPS         gps_zero = LIGOTIMEGPSZERO;
+	REAL4                      *normalisation;
+	const LIGOTimeGPS           gps_zero = LIGOTIMEGPSZERO;
 
 	/*
 	 * Calculate the duration for which tiles are to be created in the
@@ -231,16 +204,14 @@ XLALEPSearch(
 	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
 	tfplane = XLALCreateTFPlane(&params->tfPlaneParams, params->minFreqBins);
 	normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(*normalisation));
-	TileList = XLALCreateTFTiling(&params->tfTilingInput, &tfplane->params);
-	if(!window || !plan || !AverageSpec || !fseries || !normalisation || !tfplane || !TileList) {
-		XLALDestroyREAL4Window(window);
-		XLALDestroyREAL4FFTPlan(plan);
-		XLALDestroyREAL4FrequencySeries(AverageSpec);
-		XLALDestroyCOMPLEX8FrequencySeries(fseries);
-		XLALDestroyTFPlane(tfplane);
-		LALFree(normalisation);
-		XLALDestroyTFTiling(TileList);
-		XLAL_ERROR(func, XLAL_EFUNC);
+	Tiling = XLALCreateTFTiling(&params->tfTilingInput, &tfplane->params);
+	if(!normalisation) {
+		errorcode = XLAL_ENOMEM;
+		goto error;
+	}
+	if(!window || !plan || !AverageSpec || !fseries || !tfplane || !Tiling) {
+		errorcode = XLAL_EFUNC;
+		goto error;
 	}
 
 	if(params->useOverWhitening)
@@ -262,8 +233,8 @@ XLALEPSearch(
 		break;
 
 		default:
-		XLAL_ERROR(func, XLAL_EINVAL);
-		break;
+		errorcode = XLAL_EINVAL;
+		goto error;
 	}
 
 	if(params->printSpectrum)
@@ -280,13 +251,17 @@ XLALEPSearch(
 		 */
 
 		cutTimeSeries = XLALCutREAL4TimeSeries(tseries, start_sample, params->windowLength);
-		if(!cutTimeSeries)
-			XLAL_ERROR(func, XLAL_EFUNC);
+		if(!cutTimeSeries) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
 		XLALPrintInfo("XLALEPSearch(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start_sample, start_sample + cutTimeSeries->data->length, start_sample * cutTimeSeries->deltaT, (start_sample + cutTimeSeries->data->length) * cutTimeSeries->deltaT);
 
 		XLALPrintInfo("XLALEPSearch(): computing the Fourier transform\n");
-		if(XLALComputeFrequencySeries(fseries, cutTimeSeries, window, plan))
-			XLAL_ERROR(func, XLAL_EFUNC);
+		if(XLALComputeFrequencySeries(fseries, cutTimeSeries, window, plan)) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
 		XLALDestroyREAL4TimeSeries(cutTimeSeries);
 
 		/* tweak the frequency series' epoch */
@@ -307,16 +282,21 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the time-frequency decomposition\n");
-		if(XLALFreqSeriesToTFPlane(tfplane, fseries, params->windowLength / 2 - params->windowShift, normalisation, OverWhiteningSpec))
-			XLAL_ERROR(func, XLAL_EFUNC);
+		if(XLALFreqSeriesToTFPlane(tfplane, fseries, params->windowLength / 2 - params->windowShift, normalisation, OverWhiteningSpec)) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
 	
 		/*
-		 * Search these planes.
+		 * Compute the excess power for each time-frequency tile
+		 * using the data in the time-frequency plane.
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
-		if(XLALComputeExcessPower(TileList, tfplane, params->numSigmaMin, params->alphaDefault, normalisation))
-			XLAL_ERROR(func, XLAL_EFUNC);
+		if(XLALComputeExcessPower(Tiling, tfplane, params->numSigmaMin, params->alphaDefault, normalisation)) {
+			errorcode = XLAL_EFUNC;
+			goto error;
+		}
 
 		/*
 		 * Compute the likelihood for slightly better detection
@@ -324,7 +304,7 @@ XLALEPSearch(
 		 */
 
 #if 0
-		params->lambda = XLALComputeLikelihood(TileList);
+		params->lambda = XLALComputeLikelihood(Tiling);
 #endif
 
 		/*
@@ -332,21 +312,14 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): sorting the tiles\n");
-		if(XLALSortTFTiling(&TileList))
-			XLAL_ERROR(func, XLAL_EFUNC);
-
-		/*
-		 * Determine the weighting for each tile.
-		 */
-
-		WeightTFTileList(TileList, 20000);
+		XLALSortTFTilingByAlpha(Tiling);
 
 		/*
 		 * Convert the TFTiles into sngl_burst events for output.
 		 * The threhsold cut determined by alpha is applied here
 		 */
 
-		EventAddPoint = TFTilesToSnglBurstTable(TileList, EventAddPoint, &fseries->epoch, params);
+		EventAddPoint = TFTilesToSnglBurstTable(Tiling, EventAddPoint, &fseries->epoch, params);
 	}
 
 	/*
@@ -360,9 +333,18 @@ XLALEPSearch(
 	XLALDestroyREAL4FFTPlan(plan);
 	XLALDestroyTFPlane(tfplane);
 	LALFree(normalisation);
-	XLALDestroyTFTiling(TileList);
-
+	XLALDestroyTFTiling(Tiling);
 	return(0);
+
+	error:
+	XLALDestroyREAL4Window(window);
+	XLALDestroyREAL4FFTPlan(plan);
+	XLALDestroyREAL4FrequencySeries(AverageSpec);
+	XLALDestroyCOMPLEX8FrequencySeries(fseries);
+	XLALDestroyTFPlane(tfplane);
+	LALFree(normalisation);
+	XLALDestroyTFTiling(Tiling);
+	XLAL_ERROR(func, errorcode);
 }
 
 

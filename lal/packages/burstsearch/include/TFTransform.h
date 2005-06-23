@@ -6,14 +6,10 @@ $Id$
 #ifndef _TFTRANSFORM_H
 #define _TFTRANSFORM_H
 
-
-#include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Window.h>
 #include <lal/RealFFT.h>
-#include <lal/ComplexFFT.h>
 #include <lal/LALRCSID.h>
-#include <lal/TimeFreqFFT.h>
 
 #ifdef  __cplusplus		/* C++ protection. */
 extern "C" {
@@ -50,9 +46,9 @@ typedef struct tagCOMPLEX8TimeFrequencyPlane {
 int
 XLALComputeFrequencySeries(
 	COMPLEX8FrequencySeries *freqSeries,
-	REAL4TimeSeries *timeSeries,
-	REAL4Window *window,
-	REAL4FFTPlan *plan
+	const REAL4TimeSeries *timeSeries,
+	const REAL4Window *window,
+	const REAL4FFTPlan *plan
 );
 
 

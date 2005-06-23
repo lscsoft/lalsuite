@@ -43,7 +43,7 @@ static COMPLEX8Sequence *generate_filter(size_t length, INT4 fseglength, REAL8 d
 		XLAL_ERROR_NULL(func, XLAL_ENOMEM);
 	}
 
-	/* zero time-domain filter */
+	/* zero the time-domain filter */
 	memset(tdfilter->data, 0, tdfilter->length * sizeof(*tdfilter->data));
 
 	/* number of points from peak of filter to first zero */

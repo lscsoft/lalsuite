@@ -7,6 +7,7 @@ $Id$
 
 NRCSID (ADDWHITENOISEC, "$Id$");
 
+#include <lal/LALStatusMacros.h>
 #include <lal/ExcessPower.h>
 #include <lal/LALErrno.h>
 #include <lal/Random.h>
@@ -28,7 +29,7 @@ int XLALAddWhiteNoise(
 	static const char *func = "XLALAddWhiteNoise";
 	RandomParams *params;
 	REAL4Vector *noise_r, *noise_i;
-	INT4 i;
+	size_t i;
 
 	/* no-op on NULL input vector */
 	if(!v)
@@ -54,7 +55,7 @@ int XLALAddWhiteNoise(
 	XLALNormalDeviates(noise_i, params);
 
 	/* Add noise to input */
-	for(i = 0; i < (INT4)v->length; i++) {
+	for(i = 0; i < v->length; i++) {
 		v->data[i].re += amplitude * noise_r->data[i];
 		v->data[i].im += amplitude * noise_i->data[i];
 	}

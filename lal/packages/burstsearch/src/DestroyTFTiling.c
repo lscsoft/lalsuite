@@ -2,7 +2,6 @@
 Author: Flanagan, E. and Cannon, K.
 $Id$
 ********* </lalVerbatim> ********/
- 
 
 #include <lal/LALRCSID.h>
 
@@ -15,15 +14,11 @@ NRCSID (DESTROYTFTILINGC, "$Id$");
 /******** <lalVerbatim file="DestroyTFTilingCP"> ********/
 void
 XLALDestroyTFTiling(
-	TFTile *list
+	TFTiling *tiling
 )
 /******** </lalVerbatim> ********/
 {
-	TFTile *next;
-
-	while(list) {
-		next = list->nextTile;
-		LALFree(list);
-		list = next;
-	}
+	if(tiling)
+		LALFree(tiling->tile);
+	LALFree(tiling);
 }

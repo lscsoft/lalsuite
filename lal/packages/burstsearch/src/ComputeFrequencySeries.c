@@ -19,9 +19,9 @@ NRCSID (COMPUTEFREQUENCYSERIESC, "$Id$");
 int
 XLALComputeFrequencySeries(
 	COMPLEX8FrequencySeries *freqSeries,
-	REAL4TimeSeries *timeSeries,
-	REAL4Window *window,
-	REAL4FFTPlan *plan
+	const REAL4TimeSeries *timeSeries,
+	const REAL4Window *window,
+	const REAL4FFTPlan *plan
 )
 /******** </lalVerbatim> ********/
 {

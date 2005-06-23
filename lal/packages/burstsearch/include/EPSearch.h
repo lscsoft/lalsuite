@@ -27,7 +27,7 @@ tagEPSearchParams {
 	CHAR                 *channelName;
 	BOOLEAN               printSpectrum;
 	BOOLEAN               useOverWhitening;	
-	INT4                  eventLimit;
+	size_t                eventLimit;
 	UINT4                 windowLength;
 	UINT4                 windowShift;
 	REAL8                 alphaThreshold;
