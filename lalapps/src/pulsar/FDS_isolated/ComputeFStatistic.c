@@ -819,9 +819,10 @@ int main(int argc,char *argv[])
 				   dopplerpos.Alpha, dopplerpos.Delta, 
 				   DemodParams->spinDwn[0], Fval);
 		      linebuf[1023] = 0;
+
+		      if ( fpOut )
+			fprintf (fpOut, linebuf);
 		    }
-		  if ( fpOut )
-		    fprintf (fpOut, linebuf);
 
 		  /* keep track of  loudest candidate */
 		  if ( Fval > F_loudest )
