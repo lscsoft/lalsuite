@@ -53,7 +53,7 @@ enum {
 
 /* Limits of sky search  */
 REAL4 ra_min  = 0.0;
-REAL4 ra_max  = LAL_TWOPI*0.999; /* BEN: need to fix this */
+REAL4 ra_max  = LAL_TWOPI; /* BEN: need to fix this */
 REAL4 dec_min = -LAL_PI_2;
 REAL4 dec_max = LAL_PI_2;
 REAL4 MAX_NODES = 8e6; /* limit on number of nodes for TwoDMesh  */
