@@ -421,3 +421,27 @@ void XLALError( const char *func, const char *file, int line, int errnum )
   XLALErrorHandler( func, file, line, xlalErrno );
   return;
 }
+
+
+/*
+ *
+ * Useful standard error handlers
+ *
+ */
+
+/* XLAL error handler to abort on error */
+void XLALAbortErrorHandler( const char *func, const char *file, int line,
+    int errnum )
+{
+  XLALPerror( func, file, line, errnum );
+  abort();
+}
+
+/* XLAL error handler to exit on error */
+void XLALExitErrorHandler( const char *func, const char *file, int line,
+    int errnum )
+{
+  XLALPerror( func, file, line, errnum );
+  exit(1);
+}
+

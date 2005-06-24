@@ -205,6 +205,11 @@ typedef void XLALErrorHandlerType( const char *func, const char *file, int line,
 /* the default XLAL error handler */
 void XLALDefaultErrorHandler( const char *func, const char *file, int line, int errnum );
 
+/* other useful XLAL error handlers */
+void XLALAbortErrorHandler( const char *func, const char *file, int line, int errnum );
+void XLALExitErrorHandler( const char *func, const char *file, int line, int errnum );
+
+
 /* sets the error handler to a new handler and returns the old handler */
 XLALErrorHandlerType * XLALSetErrorHandler( XLALErrorHandlerType *newHandler );
 
