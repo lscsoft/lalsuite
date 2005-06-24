@@ -52,6 +52,11 @@ returned through the function's return statement.
 NRCSID(IIRFILTERC,"$Id$");
 
 
+/*
+ *
+ * WARNING: THIS FUNCTION IS OBSOLETE
+ *
+ */
 /* <lalVerbatim file="IIRFilterCP"> */
 void
 LALIIRFilterREAL4( LALStatus      *stat,
@@ -113,11 +118,6 @@ LALIIRFilterREAL8( LALStatus      *stat,
 		   REAL8          input,
 		   REAL8IIRFilter *filter )
 { /* </lalVerbatim> */
-  INT4 j;      /* Index for filter coefficients. */
-  INT4 jmax;   /* Number of filter coefficients. */
-  REAL8 *coef; /* Values of filter coefficients. */
-  REAL8 *hist; /* Values of filter history. */
-
   INITSTATUS(stat,"LALIIRFilterREAL8",IIRFILTERC);
 
   /* Check all the passed parameters for null pointers. */
@@ -132,34 +132,18 @@ LALIIRFilterREAL8( LALStatus      *stat,
 	 IIRFILTERH_MSGENUL);
   ASSERT(filter->history->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
 
-  /* Compute the auxiliary datum. */
-  jmax=filter->recursCoef->length;
-  coef=filter->recursCoef->data+1;
-  hist=filter->history->data;
-  for(j=1;j<jmax;j++)
-    input+=(*(coef++))*(*(hist++));
-  hist-=(jmax-1);
-
-  /* Compute the filter output. */
-  jmax=filter->directCoef->length;
-  coef=filter->directCoef->data;
-  *output=(*(coef++))*input;
-  for(j=1;j<jmax;j++)
-    *output+=(*(coef++))*(*(hist++));
-  hist-=(jmax-1);
-
-  /* Updata the filter history. */
-  jmax=filter->history->length-1;
-  hist+=jmax;
-  for(j=jmax;j>0;j--,hist--)
-    *hist=hist[-1];
-  *hist=input;
+  *output=XLALIIRFilterREAL8(input,filter);
 
   /* Normal exit */
   RETURN(stat);
 }
 
 
+/*
+ *
+ * WARNING: THIS FUNCTION IS OBSOLETE
+ *
+ */
 /* <lalVerbatim file="IIRFilterCP"> */
 REAL4
 LALSIIRFilter( REAL4 x, REAL4IIRFilter *filter )
@@ -201,8 +185,7 @@ LALSIIRFilter( REAL4 x, REAL4IIRFilter *filter )
 
 
 /* <lalVerbatim file="IIRFilterCP"> */
-REAL8
-LALDIIRFilter( REAL8 x, REAL8IIRFilter *filter )
+REAL8 XLALIIRFilterREAL8( REAL8 x, REAL8IIRFilter *filter )
 { /* </lalVerbatim> */
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */
@@ -237,4 +220,10 @@ LALDIIRFilter( REAL8 x, REAL8IIRFilter *filter )
 
   /* Normal exit */
   return y;
+}
+
+/* <lalVerbatim file="IIRFilterCP"> */
+REAL4 XLALIIRFilterREAL4( REAL4 x, REAL8IIRFilter *filter )
+{ /* </lalVerbatim> */
+  return (REAL4)XLALIIRFilterREAL8((REAL8)x,filter);
 }

@@ -146,6 +146,8 @@ main(int argc, char **argv)
   static REAL4TimeSeries series;    /* Time series */
   static PassBandParamStruc params; /* Filter parameters */
 
+  XLALSetErrorHandler( XLALAbortErrorHandler );
+
   /* Set up the default filter parameters. */
   params.f1 = F1;
   params.f2 = F2;

@@ -43,33 +43,44 @@ LALZDestroyVector()
 
 NRCSID(DESTROYZPGFILTERC,"$Id$");
 
+void XLALDestroyCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
+{
+  if ( filter )
+  {
+    XLALDestroyCOMPLEX8Vector( filter->zeros );
+    XLALDestroyCOMPLEX8Vector( filter->poles );
+    LALFree( filter );
+  }
+  return;
+}
+
+void XLALDestroyCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
+{
+  if ( filter )
+  {
+    XLALDestroyCOMPLEX16Vector( filter->zeros );
+    XLALDestroyCOMPLEX16Vector( filter->poles );
+    LALFree( filter );
+  }
+  return;
+}
+
 /* <lalVerbatim file="DestroyZPGFilterCP"> */
 void
 LALDestroyCOMPLEX8ZPGFilter( LALStatus         *stat,
 			     COMPLEX8ZPGFilter **input )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALDestroyCOMPLEX8ZPGFilter",DESTROYZPGFILTERC);
-  ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null
      pointer. */
   ASSERT(input,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
   ASSERT(*input,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
 
-  /* Destroy the vector fields (if they exist). */
-  if((*input)->zeros) {
-    TRY(LALCDestroyVector(stat->statusPtr,&((*input)->zeros)),stat);
-  }
-  if((*input)->poles) {
-    TRY(LALCDestroyVector(stat->statusPtr,&((*input)->poles)),stat);
-  }
-
-  /* Free the filter, then point the handle to NULL. */
-  LALFree(*input);
-  *input=NULL;
+  XLALDestroyCOMPLEX8ZPGFilter( *input );
+  *input = NULL;
 
   /* Normal exit */
-  DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }
 
@@ -80,26 +91,15 @@ LALDestroyCOMPLEX16ZPGFilter( LALStatus          *stat,
 			      COMPLEX16ZPGFilter **input )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALDestroyCOMPLEX16ZPGFilter",DESTROYZPGFILTERC);
-  ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null
      pointer. */
   ASSERT(input,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
   ASSERT(*input,stat,ZPGFILTERH_ENUL,ZPGFILTERH_MSGENUL);
 
-  /* Destroy the vector fields. */
-  if((*input)->zeros) {
-    TRY(LALZDestroyVector(stat->statusPtr,&((*input)->zeros)),stat);
-  }
-  if((*input)->poles) {
-    TRY(LALZDestroyVector(stat->statusPtr,&((*input)->poles)),stat);
-  }
-
-  /* Free the filter, then point the handle to NULL. */
-  LALFree(*input);
-  *input=NULL;
+  XLALDestroyCOMPLEX16ZPGFilter( *input );
+  *input = NULL;
 
   /* Normal exit */
-  DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }

@@ -43,6 +43,29 @@ void LALDDestroyVector()
 
 NRCSID(DESTROYIIRFILTERC,"$Id$");
 
+void XLALDestroyREAL4IIRFilter( REAL4IIRFilter *filter )
+{
+  if ( filter )
+  {
+    XLALDestroyREAL4Vector( filter->directCoef );
+    XLALDestroyREAL4Vector( filter->recursCoef );
+    XLALDestroyREAL4Vector( filter->history );
+    LALFree( filter );
+  }
+  return;
+}
+
+void XLALDestroyREAL8IIRFilter( REAL8IIRFilter *filter )
+{
+  if ( filter )
+  {
+    XLALDestroyREAL8Vector( filter->directCoef );
+    XLALDestroyREAL8Vector( filter->recursCoef );
+    XLALDestroyREAL8Vector( filter->history );
+    LALFree( filter );
+  }
+  return;
+}
 
 /* <lalVerbatim file="DestroyIIRFilterCP"> */
 void
@@ -50,7 +73,6 @@ LALDestroyREAL4IIRFilter( LALStatus      *stat,
 			  REAL4IIRFilter **input )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALDestroyREAL4IIRFilter",DESTROYIIRFILTERC);
-  ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
      (The routine LALSDestroyVector will check that the data fields are
@@ -58,17 +80,11 @@ LALDestroyREAL4IIRFilter( LALStatus      *stat,
   ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
   ASSERT(*input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
 
-  /* Destroy the vector fields. */
-  TRY(LALSDestroyVector(stat->statusPtr,&((*input)->directCoef)),stat);
-  TRY(LALSDestroyVector(stat->statusPtr,&((*input)->recursCoef)),stat);
-  TRY(LALSDestroyVector(stat->statusPtr,&((*input)->history)),stat);
-
   /* Free the filter, then point the handle to NULL. */
-  LALFree(*input);
+  XLALDestroyREAL4IIRFilter( *input );
   *input=NULL;
 
   /* Normal exit */
-  DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }
 
@@ -79,7 +95,6 @@ LALDestroyREAL8IIRFilter( LALStatus      *stat,
 			  REAL8IIRFilter **input )
 { /* </lalVerbatim> */
   INITSTATUS(stat,"LALDestroyREAL8IIRFilter",DESTROYIIRFILTERC);
-  ATTATCHSTATUSPTR(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
      (The routine LALDDestroyVector will check that the data fields are
@@ -87,16 +102,9 @@ LALDestroyREAL8IIRFilter( LALStatus      *stat,
   ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
   ASSERT(*input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
 
-  /* Destroy the vector fields. */
-  TRY(LALDDestroyVector(stat->statusPtr,&((*input)->directCoef)),stat);
-  TRY(LALDDestroyVector(stat->statusPtr,&((*input)->recursCoef)),stat);
-  TRY(LALDDestroyVector(stat->statusPtr,&((*input)->history)),stat);
-
   /* Free the filter, then point the handle to NULL. */
-  LALFree(*input);
-  *input=NULL;
+  XLALDestroyREAL8IIRFilter( *input );
 
   /* Normal exit */
-  DETATCHSTATUSPTR(stat);
   RETURN(stat);
 }

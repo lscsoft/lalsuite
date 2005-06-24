@@ -96,6 +96,14 @@ NRCSID(ZPGFILTERH,"$Id$");
 /* <lalLaTeX>
 \newpage\input{CreateZPGFilterC}
 </lalLaTeX> */
+
+COMPLEX8ZPGFilter *XLALCreateCOMPLEX8ZPGFilter(INT4 numZeros, INT4 numPoles);
+COMPLEX16ZPGFilter *XLALCreateCOMPLEX16ZPGFilter(INT4 numZeros, INT4 numPoles);
+void XLALDestroyCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter );
+void XLALDestroyCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter );
+int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter );
+int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter );
+
 void
 LALCreateCOMPLEX8ZPGFilter( LALStatus         *status,
 			    COMPLEX8ZPGFilter **output,

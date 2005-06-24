@@ -105,11 +105,11 @@ NRCSID(CREATEIIRFILTERC,"$Id$");
 
 extern INT4 lalDebugLevel;
 
-/* <lalVerbatim file="CreateIIRFilterCP"> */
-void LALCreateREAL4IIRFilter( LALStatus         *stat,
-			      REAL4IIRFilter    **output,
-			      COMPLEX8ZPGFilter *input )
-{ /* </lalVerbatim> */
+
+REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
+{
+  static const char *func = "XLALCreateREAL4IIRFilter";
+  REAL4IIRFilter *output;
   INT4 i;          /* Index counter for zeros and poles. */
   INT4 numZeros;   /* The number of zeros. */
   INT4 numPoles;   /* The number of poles. */
@@ -122,24 +122,17 @@ void LALCreateREAL4IIRFilter( LALStatus         *stat,
   REAL4 *recurs;   /* The recursive filter coefficients. */
   REAL4 *history;  /* The filter history. */
 
-  INITSTATUS(stat,"LALCreateREAL4IIRFilter",CREATEIIRFILTERC);
-  ATTATCHSTATUSPTR(stat);
-
   /* Make sure all the input structures have been initialized. */
-  ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
-  ASSERT(input->zeros,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
-  ASSERT(input->zeros->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
-  ASSERT(input->poles,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
-  ASSERT(input->poles->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  if ( ! input )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! input->zeros || ! input->poles
+      || ! input->zeros->data || ! input->poles->data )
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+
   numZeros=input->zeros->length;
   numPoles=input->poles->length;
   zeros=input->zeros->data;
   poles=input->poles->data;
-
-  /* Make sure that the output handle exists, but points to a null
-     pointer. */
-  ASSERT(output,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
-  ASSERT(!*output,stat,IIRFILTERH_EOUT,IIRFILTERH_MSGEOUT);
 
   /* Check that zeros are appropriately paired.  Also, keep track of
      the number of zeros at z=0, since these will reduce the number of
@@ -173,16 +166,19 @@ void LALCreateREAL4IIRFilter( LALStatus         *stat,
 	  }
 	}
 	if(sep>LAL_REAL4_EPS){
-	  LALWarning(stat,"Complex zero has no conjugate pair:");
-	  LALPrintError("\tUnmatched zero z_%i = %.8e + i*%.8e\n",i,
-			zeros[i].re,zeros[i].im);
-	  LALPrintError("\tNearest pair   z_%i = %.8e + i*%.8e\n",k,
-			zeros[k].re,zeros[k].im);
+          XLALPrintWarning( "XLAL Warning - %s: ", func );
+          XLALPrintWarning("Complex zero has no conjugate pair\n");
+	  XLALPrintWarning("\tUnmatched zero z_%i = %.8e + i*%.8e\n",i,
+              zeros[i].re,zeros[i].im);
+	  XLALPrintWarning("\tNearest pair   z_%i = %.8e + i*%.8e\n",k,
+              zeros[k].re,zeros[k].im);
 	}
       }
 #endif
     }
-  ASSERT(num==numZeros,stat,IIRFILTERH_EPAIR,IIRFILTERH_MSGEPAIR);
+
+  if ( num != numZeros )
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
 
   /* Check that poles are appropriately paired.  Also, keep track of
      the number of poles at z=0, since these will reduce the number of
@@ -216,47 +212,53 @@ void LALCreateREAL4IIRFilter( LALStatus         *stat,
 	  }
 	}
 	if(sep>LAL_REAL4_EPS){
-	  LALWarning(stat,"Complex pole has no conjugate pair:");
-	  LALPrintError("\tUnmatched pole p_%i = %.8e + i*%.8e\n",i,
-			poles[i].re,poles[i].im);
-	  LALPrintError("\tNearest pair   p_%i = %.8e + i*%.8e\n",k,
-			poles[k].re,poles[k].im);
+          XLALPrintWarning( "XLAL Warning - %s: ", func );
+          XLALPrintWarning("Complex pole has no conjugate pair\n");
+	  XLALPrintWarning("\tUnmatched pole p_%i = %.8e + i*%.8e\n",i,
+              poles[i].re,poles[i].im);
+	  XLALPrintWarning("\tNearest pair   p_%i = %.8e + i*%.8e\n",k,
+              poles[k].re,poles[k].im);
 	}
       }
 #endif
     }
-  ASSERT(num==numPoles,stat,IIRFILTERH_EPAIR,IIRFILTERH_MSGEPAIR);
+
+  if ( num != numPoles )
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
 
 #ifndef NDEBUG
   if(lalDebugLevel&LALWARNING){
     /* Issue a warning if the gain is nonreal. */
     if(fabs(input->gain.im)>fabs(LAL_REAL4_EPS*input->gain.re)){
-      LALWarning(stat,"Gain is non-real:");
-      LALPrintError("\tg = %.8e + i*%.8e\n", input->gain.re,
-		    input->gain.im);
+      XLALPrintWarning( "XLAL Warning - %s: ", func );
+      XLALPrintWarning("Gain is non-real\n");
+      XLALPrintWarning("\tg = %.8e + i*%.8e\n", input->gain.re, input->gain.im);
     }
     /* Issue a warning if there are any ``removeable'' poles. */
     for(i=0;i<numPoles;i++){
       INT4 j=0;
       for(;j<numZeros;j++)
 	if((poles[i].re==zeros[j].re)&&(poles[i].im==zeros[j].im)){
-	  LALWarning(stat,"Removeable pole:");
-	  LALPrintError("\tp_%i = z_%i = %.8e + i*%.8e\n",i,j,
-			poles[i].re,poles[i].im);
+          XLALPrintWarning( "XLAL Warning - %s: ", func );
+	  XLALPrintWarning("Removeable pole\n");
+	  XLALPrintWarning("\tp_%i = z_%i = %.8e + i*%.8e\n",i,j,
+              poles[i].re,poles[i].im);
 	}
     }
     /* Issue a warning if extra factors of 1/z will be applied. */
     if(numPoles<numZeros){
-      LALWarning(stat,"Filter has more zeros than poles:");
-      LALPrintError("\t%i poles added at complex origin\n",
-		    numZeros-numPoles);
+      XLALPrintWarning( "XLAL Warning - %s: ", func );
+      XLALPrintWarning("Filter has more zeros than poles\n");
+      XLALPrintWarning("\t%i poles added at complex origin\n",
+          numZeros-numPoles);
     }
     /* Issue a warning if any poles are outside |z|=1. */
     for(i=0;i<numPoles;i++){
       REAL4 zAbs=poles[i].re*poles[i].re+poles[i].im*poles[i].im;
       if(zAbs>1.0){
-	LALWarning(stat,"Filter has pole outside of unit circle:");
-	LALPrintError("\tp_%i = %.8e + i*%.8e, |p_%i| = %.8e\n",i,
+        XLALPrintWarning( "XLAL Warning - %s: ", func );
+	XLALPrintWarning("Filter has pole outside of unit circle\n");
+	XLALPrintWarning("\tp_%i = %.8e + i*%.8e, |p_%i| = %.8e\n",i,
 		      poles[i].re,poles[i].im,i,zAbs);
       }
     }
@@ -264,32 +266,23 @@ void LALCreateREAL4IIRFilter( LALStatus         *stat,
 #endif
 
   /* Everything seems okay, so initialize the filter. */
-  *output=(REAL4IIRFilter *)LALMalloc(sizeof(REAL4IIRFilter));
-  if ( !(*output) ) {
-    ABORT(stat,IIRFILTERH_EMEM,IIRFILTERH_MSGEMEM);
-  }
-  memset(*output,0,sizeof(REAL4IIRFilter));
+  output=LALCalloc(1,sizeof(*output));
+  if ( ! output )
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   num = (numPoles>=numZeros) ? numZeros : numPoles;
   numDirect+=num;
   numRecurs+=num;
 
-  (*output)->deltaT=input->deltaT;
-  LALSCreateVector(stat->statusPtr,&((*output)->directCoef),
-		   numDirect);
-  BEGINFAIL(stat) {
-    LALFree(*output);
-    *output=NULL;
-  } ENDFAIL(stat);
-  LALSCreateVector(stat->statusPtr,&((*output)->recursCoef),
-		   numRecurs);
-  BEGINFAIL(stat) {
-    TRY(LALSDestroyVector(stat->statusPtr,&((*output)->directCoef)),
-	stat);
-    LALFree(*output);
-    *output=NULL;
-  } ENDFAIL(stat);
-  direct=(*output)->directCoef->data;
-  recurs=(*output)->recursCoef->data;
+  output->deltaT=input->deltaT;
+  output->directCoef = XLALCreateREAL4Vector( numDirect );
+  output->recursCoef = XLALCreateREAL4Vector( numRecurs );
+  if ( ! output->directCoef || ! output->recursCoef )
+  {
+    XLALDestroyREAL4IIRFilter( output );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+  direct=output->directCoef->data;
+  recurs=output->recursCoef->data;
 
   /* Expand the denominator as a polynomial in z. */
   *recurs=-1.0;
@@ -332,60 +325,47 @@ void LALCreateREAL4IIRFilter( LALStatus         *stat,
     num=numDirect-1;
   else
     num=numRecurs-1;
-  LALSCreateVector(stat->statusPtr,&((*output)->history),num);
-  BEGINFAIL(stat) {
-    TRY(LALSDestroyVector(stat->statusPtr,&((*output)->directCoef)),
-	stat);
-    TRY(LALSDestroyVector(stat->statusPtr,&((*output)->recursCoef)),
-	stat);
-    LALFree(*output);
-    *output=NULL;
-  } ENDFAIL(stat);
-  history=(*output)->history->data;
+  output->history = XLALCreateREAL4Vector( numRecurs );
+  if ( ! output->history )
+  {
+    XLALDestroyREAL4IIRFilter( output );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+  history=output->history->data;
   for(i=0;i<num;i++)
     history[i]=0.0;
 
   /* Normal exit */
-  DETATCHSTATUSPTR(stat);
-  RETURN(stat);
+  return output;
 }
 
-
-/* <lalVerbatim file="CreateIIRFilterCP"> */
-void LALCreateREAL8IIRFilter( LALStatus          *stat,
-			      REAL8IIRFilter     **output,
-			      COMPLEX16ZPGFilter *input )
-{ /* </lalVerbatim> */
-  INT4 i;           /* Index counter for zeros and poles. */
-  INT4 numZeros;    /* The number of zeros. */
-  INT4 numPoles;    /* The number of poles. */
-  INT4 numDirect;   /* The number of direct filter coefficients. */
-  INT4 numRecurs;   /* The number of recursive filter coefficients. */
-  INT4 num;         /* An extra counter for error checking. */
+REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
+{
+  static const char *func = "XLALCreateREAL8IIRFilter";
+  REAL8IIRFilter *output;
+  INT4 i;          /* Index counter for zeros and poles. */
+  INT4 numZeros;   /* The number of zeros. */
+  INT4 numPoles;   /* The number of poles. */
+  INT4 numDirect;  /* The number of direct filter coefficients. */
+  INT4 numRecurs;  /* The number of recursive filter coefficients. */
+  INT4 num;        /* An extra counter for error checking. */
   COMPLEX16 *zeros; /* The zeros of the transfer function. */
   COMPLEX16 *poles; /* The poles of the transfer function. */
-  REAL8 *direct;    /* The direct filter coefficients. */
-  REAL8 *recurs;    /* The recursive filter coefficients. */
-  REAL8 *history;   /* The filter history. */
-
-  INITSTATUS(stat,"LALCreateREAL8IIRFilter",CREATEIIRFILTERC);
-  ATTATCHSTATUSPTR(stat);
+  REAL8 *direct;   /* The direct filter coefficients. */
+  REAL8 *recurs;   /* The recursive filter coefficients. */
+  REAL8 *history;  /* The filter history. */
 
   /* Make sure all the input structures have been initialized. */
-  ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
-  ASSERT(input->zeros,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
-  ASSERT(input->zeros->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
-  ASSERT(input->poles,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
-  ASSERT(input->poles->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  if ( ! input )
+    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+  if ( ! input->zeros || ! input->poles
+      || ! input->zeros->data || ! input->poles->data )
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+
   numZeros=input->zeros->length;
   numPoles=input->poles->length;
   zeros=input->zeros->data;
   poles=input->poles->data;
-
-  /* Make sure that the output handle exists, but points to a null
-     pointer. */
-  ASSERT(output,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
-  ASSERT(!*output,stat,IIRFILTERH_EOUT,IIRFILTERH_MSGEOUT);
 
   /* Check that zeros are appropriately paired.  Also, keep track of
      the number of zeros at z=0, since these will reduce the number of
@@ -419,16 +399,19 @@ void LALCreateREAL8IIRFilter( LALStatus          *stat,
 	  }
 	}
 	if(sep>LAL_REAL8_EPS){
-	  LALWarning(stat,"Complex zero has no conjugate pair:");
-	  LALPrintError("\tUnmatched zero z_%i = %.8e + i*%.8e\n",i,
-			zeros[i].re,zeros[i].im);
-	  LALPrintError("\tNearest pair   z_%i = %.8e + i*%.8e\n",k,
-			zeros[k].re,zeros[k].im);
+          XLALPrintWarning( "XLAL Warning - %s: ", func );
+          XLALPrintWarning("Complex zero has no conjugate pair\n");
+	  XLALPrintWarning("\tUnmatched zero z_%i = %.8e + i*%.8e\n",i,
+              zeros[i].re,zeros[i].im);
+	  XLALPrintWarning("\tNearest pair   z_%i = %.8e + i*%.8e\n",k,
+              zeros[k].re,zeros[k].im);
 	}
       }
 #endif
     }
-  ASSERT(num==numZeros,stat,IIRFILTERH_EPAIR,IIRFILTERH_MSGEPAIR);
+
+  if ( num != numZeros )
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
 
   /* Check that poles are appropriately paired.  Also, keep track of
      the number of poles at z=0, since these will reduce the number of
@@ -462,47 +445,53 @@ void LALCreateREAL8IIRFilter( LALStatus          *stat,
 	  }
 	}
 	if(sep>LAL_REAL8_EPS){
-	  LALWarning(stat,"Complex pole has no conjugate pair:");
-	  LALPrintError("\tUnmatched pole p_%i = %.8e + i*%.8e\n",i,
-			poles[i].re,poles[i].im);
-	  LALPrintError("\tNearest pair   p_%i = %.8e + i*%.8e\n",k,
-			poles[k].re,poles[k].im);
+          XLALPrintWarning( "XLAL Warning - %s: ", func );
+          XLALPrintWarning("Complex pole has no conjugate pair\n");
+	  XLALPrintWarning("\tUnmatched pole p_%i = %.8e + i*%.8e\n",i,
+              poles[i].re,poles[i].im);
+	  XLALPrintWarning("\tNearest pair   p_%i = %.8e + i*%.8e\n",k,
+              poles[k].re,poles[k].im);
 	}
       }
 #endif
     }
-  ASSERT(num==numPoles,stat,IIRFILTERH_EPAIR,IIRFILTERH_MSGEPAIR);
+
+  if ( num != numPoles )
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
 
 #ifndef NDEBUG
   if(lalDebugLevel&LALWARNING){
     /* Issue a warning if the gain is nonreal. */
     if(fabs(input->gain.im)>fabs(LAL_REAL8_EPS*input->gain.re)){
-      LALWarning(stat,"Gain is non-real:");
-      LALPrintError("\tg = %.8e + i*%.8e\n", input->gain.re,
-		    input->gain.im);
+      XLALPrintWarning( "XLAL Warning - %s: ", func );
+      XLALPrintWarning("Gain is non-real\n");
+      XLALPrintWarning("\tg = %.8e + i*%.8e\n", input->gain.re, input->gain.im);
     }
     /* Issue a warning if there are any ``removeable'' poles. */
     for(i=0;i<numPoles;i++){
       INT4 j=0;
       for(;j<numZeros;j++)
 	if((poles[i].re==zeros[j].re)&&(poles[i].im==zeros[j].im)){
-	  LALWarning(stat,"Removeable pole:");
-	  LALPrintError("\tp_%i = z_%i = %.8e + i*%.8e\n",i,j,
-			poles[i].re,poles[i].im);
+          XLALPrintWarning( "XLAL Warning - %s: ", func );
+	  XLALPrintWarning("Removeable pole\n");
+	  XLALPrintWarning("\tp_%i = z_%i = %.8e + i*%.8e\n",i,j,
+              poles[i].re,poles[i].im);
 	}
     }
     /* Issue a warning if extra factors of 1/z will be applied. */
     if(numPoles<numZeros){
-      LALWarning(stat,"Filter has more zeros than poles:");
-      LALPrintError("\t%i poles added at complex origin\n",
-		    numZeros-numPoles);
+      XLALPrintWarning( "XLAL Warning - %s: ", func );
+      XLALPrintWarning("Filter has more zeros than poles\n");
+      XLALPrintWarning("\t%i poles added at complex origin\n",
+          numZeros-numPoles);
     }
     /* Issue a warning if any poles are outside |z|=1. */
     for(i=0;i<numPoles;i++){
       REAL8 zAbs=poles[i].re*poles[i].re+poles[i].im*poles[i].im;
       if(zAbs>1.0){
-	LALWarning(stat,"Filter has pole outside of unit circle:");
-	LALPrintError("\tp_%i = %.8e + i*%.8e, |p_%i| = %.8e\n",i,
+        XLALPrintWarning( "XLAL Warning - %s: ", func );
+	XLALPrintWarning("Filter has pole outside of unit circle\n");
+	XLALPrintWarning("\tp_%i = %.8e + i*%.8e, |p_%i| = %.8e\n",i,
 		      poles[i].re,poles[i].im,i,zAbs);
       }
     }
@@ -510,32 +499,23 @@ void LALCreateREAL8IIRFilter( LALStatus          *stat,
 #endif
 
   /* Everything seems okay, so initialize the filter. */
-  *output=(REAL8IIRFilter *)LALMalloc(sizeof(REAL8IIRFilter));
-  if ( !(*output) ) {
-    ABORT(stat,IIRFILTERH_EMEM,IIRFILTERH_MSGEMEM);
-  }
-  memset(*output,0,sizeof(REAL8IIRFilter));
+  output=LALCalloc(1,sizeof(*output));
+  if ( ! output )
+    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
   num = (numPoles>=numZeros) ? numZeros : numPoles;
   numDirect+=num;
   numRecurs+=num;
 
-  (*output)->deltaT=input->deltaT;
-  LALDCreateVector(stat->statusPtr,&((*output)->directCoef),
-		   numDirect);
-  BEGINFAIL(stat) {
-    LALFree(*output);
-    *output=NULL;
-  } ENDFAIL(stat);
-  LALDCreateVector(stat->statusPtr,&((*output)->recursCoef),
-		   numRecurs);
-  BEGINFAIL(stat) {
-    TRY(LALDDestroyVector(stat->statusPtr,&((*output)->directCoef)),
-	stat);
-    LALFree(*output);
-    *output=NULL;
-  } ENDFAIL(stat);
-  direct=(*output)->directCoef->data;
-  recurs=(*output)->recursCoef->data;
+  output->deltaT=input->deltaT;
+  output->directCoef = XLALCreateREAL8Vector( numDirect );
+  output->recursCoef = XLALCreateREAL8Vector( numRecurs );
+  if ( ! output->directCoef || ! output->recursCoef )
+  {
+    XLALDestroyREAL8IIRFilter( output );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+  direct=output->directCoef->data;
+  recurs=output->recursCoef->data;
 
   /* Expand the denominator as a polynomial in z. */
   *recurs=-1.0;
@@ -578,20 +558,94 @@ void LALCreateREAL8IIRFilter( LALStatus          *stat,
     num=numDirect-1;
   else
     num=numRecurs-1;
-  LALDCreateVector(stat->statusPtr,&((*output)->history),num);
-  BEGINFAIL(stat) {
-    TRY(LALDDestroyVector(stat->statusPtr,&((*output)->directCoef)),
-	stat);
-    TRY(LALDDestroyVector(stat->statusPtr,&((*output)->recursCoef)),
-	stat);
-    LALFree(*output);
-    *output=NULL;
-  } ENDFAIL(stat);
-  history=(*output)->history->data;
+  output->history = XLALCreateREAL8Vector( numRecurs );
+  if ( ! output->history )
+  {
+    XLALDestroyREAL8IIRFilter( output );
+    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+  }
+  history=output->history->data;
   for(i=0;i<num;i++)
     history[i]=0.0;
 
   /* Normal exit */
-  DETATCHSTATUSPTR(stat);
+  return output;
+}
+
+
+/* <lalVerbatim file="CreateIIRFilterCP"> */
+void LALCreateREAL4IIRFilter( LALStatus         *stat,
+			      REAL4IIRFilter    **output,
+			      COMPLEX8ZPGFilter *input )
+{ /* </lalVerbatim> */
+  INITSTATUS(stat,"LALCreateREAL4IIRFilter",CREATEIIRFILTERC);
+
+  /* Make sure all the input structures have been initialized. */
+  ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(input->zeros,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(input->zeros->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(input->poles,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(input->poles->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+
+  /* Make sure that the output handle exists, but points to a null
+     pointer. */
+  ASSERT(output,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(!*output,stat,IIRFILTERH_EOUT,IIRFILTERH_MSGEOUT);
+
+  *output = XLALCreateREAL4IIRFilter( input );
+  if ( ! *output )
+  {
+    int code = xlalErrno & ~XLAL_EFUNC;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_EINVAL:
+        ABORT(stat,IIRFILTERH_EPAIR,IIRFILTERH_MSGEPAIR);
+      case XLAL_ENOMEM:
+        ABORT(stat,IIRFILTERH_EMEM,IIRFILTERH_MSGEMEM);
+      default:
+        ABORTXLAL(stat);
+    }
+  }
+
+  RETURN(stat);
+}
+
+
+/* <lalVerbatim file="CreateIIRFilterCP"> */
+void LALCreateREAL8IIRFilter( LALStatus          *stat,
+			      REAL8IIRFilter     **output,
+			      COMPLEX16ZPGFilter *input )
+{ /* </lalVerbatim> */
+  INITSTATUS(stat,"LALCreateREAL8IIRFilter",CREATEIIRFILTERC);
+
+  /* Make sure all the input structures have been initialized. */
+  ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(input->zeros,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(input->zeros->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(input->poles,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(input->poles->data,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+
+  /* Make sure that the output handle exists, but points to a null
+     pointer. */
+  ASSERT(output,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
+  ASSERT(!*output,stat,IIRFILTERH_EOUT,IIRFILTERH_MSGEOUT);
+
+  *output = XLALCreateREAL8IIRFilter( input );
+  if ( ! *output )
+  {
+    int code = xlalErrno & ~XLAL_EFUNC;
+    XLALClearErrno();
+    switch ( code )
+    {
+      case XLAL_EINVAL:
+        ABORT(stat,IIRFILTERH_EPAIR,IIRFILTERH_MSGEPAIR);
+      case XLAL_ENOMEM:
+        ABORT(stat,IIRFILTERH_EMEM,IIRFILTERH_MSGEMEM);
+      default:
+        ABORTXLAL(stat);
+    }
+  }
+
   RETURN(stat);
 }

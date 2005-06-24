@@ -164,6 +164,25 @@ typedef struct tagREAL8IIRFilter{
 
 /* Function prototypes. */
 
+REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input );
+REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input );
+void XLALDestroyREAL4IIRFilter( REAL4IIRFilter *filter );
+void XLALDestroyREAL8IIRFilter( REAL8IIRFilter *filter );
+
+int XLALIIRFilterREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter );
+int XLALIIRFilterREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter );
+int XLALIIRFilterReverseREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter );
+int XLALIIRFilterReverseREAL8Vector( REAL8Vector *vector, REAL8IIRFilter *filter );
+
+REAL4 XLALIIRFilterREAL4( REAL4 x, REAL8IIRFilter *filter );
+REAL8 XLALIIRFilterREAL8( REAL8 x, REAL8IIRFilter *filter );
+/* WARNING: THIS FUNCTION IS OBSOLETE */
+REAL4 LALSIIRFilter( REAL4 x, REAL4IIRFilter *filter );
+/* REAL8 LALDIIRFilter( REAL8 x, REAL8IIRFilter *filter ); */
+#define LALDIIRFilter(x,f) XLALIIRFilterREAL8(x,f)
+
+
+
 /* <lalLaTeX>
 \newpage\input{CreateIIRFilterC}
 </lalLaTeX> */
@@ -202,12 +221,6 @@ LALIIRFilterREAL8( LALStatus      *status,
 		   REAL8          *output,
 		   REAL8          input,
 		   REAL8IIRFilter *filter );
-
-REAL4
-LALSIIRFilter( REAL4 x, REAL4IIRFilter *filter );
-
-REAL8
-LALDIIRFilter( REAL8 x, REAL8IIRFilter *filter );
 
 /* <lalLaTeX>
 \newpage\input{IIRFilterVectorC}

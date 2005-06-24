@@ -89,6 +89,20 @@ typedef struct tagPassBandParamStruc{
 /* <lalLaTeX>
 \newpage\input{ButterworthTimeSeriesC}
 </lalLaTeX> */
+
+int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc *params );
+int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc *params );
+int XLALLowPassREAL4TimeSeries( REAL4TimeSeries *series,
+    REAL8 frequency, REAL8 amplitude, INT4 filtorder );
+int XLALLowPassREAL8TimeSeries( REAL8TimeSeries *series,
+    REAL8 frequency, REAL8 amplitude, INT4 filtorder );
+int XLALHighPassREAL4TimeSeries( REAL4TimeSeries *series,
+    REAL8 frequency, REAL8 amplitude, INT4 filtorder );
+int XLALHighPassREAL8TimeSeries( REAL8TimeSeries *series,
+    REAL8 frequency, REAL8 amplitude, INT4 filtorder );
+
+
+
 void
 LALButterworthREAL4TimeSeries( LALStatus          *status,
 			       REAL4TimeSeries    *series,
