@@ -39,7 +39,8 @@ psi=0
 phi0=0
 
 freq=300.4
-f1dot=0
+f1dot=1e-8
+df1dot=0.3e-8	## search about 3 spindown-values
 
 IFO=LHO
 
@@ -84,8 +85,9 @@ echo "----------------------------------------------------------------------"
 echo "STEP 2: run CFS_v1 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-    
-cfs_CL="--IFO=$IFO --DataDir=$SFTdir --BaseName=testSFT --SignalOnly --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot"
+
+## common cmdline-options for v1 and v2    
+cfs_CL="--IFO=$IFO --DataDir=$SFTdir --BaseName=testSFT --SignalOnly --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0"
     
 cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=1";
 echo $cmdline;
