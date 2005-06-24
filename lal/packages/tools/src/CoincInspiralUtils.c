@@ -344,8 +344,10 @@ LALCreateNIFOCoincList(
      *              thisCoinc = thisCoinc->next) */
 
   /* append the N ifo coincs to the end of the linked list */
-  lastCoinc->next = nIfoCoincHead;
-
+  if ( lastCoinc )
+  {
+    lastCoinc->next = nIfoCoincHead;
+  }
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
