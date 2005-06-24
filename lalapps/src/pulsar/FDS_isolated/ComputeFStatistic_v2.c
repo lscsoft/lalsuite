@@ -254,7 +254,6 @@ int compare(const void *ip, const void *jp);
 INT4 writeFaFb(INT4 *maxIndex);
 
 /*---------- empty initializers ---------- */
-static const DopplerScanState empty_DopplerScanState;
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 
 /*----------------------------------------------------------------------*/
@@ -283,8 +282,6 @@ int main(int argc,char *argv[])
   REAL8Vector *Tdot = NULL;	/* derivatives of SSB-times at SFT half-points: Tdot_alpha */
 
   UINT4 nBins; 			/* number of frequency-bins */
-  UINT4 i;			/* loop index over frequency-bins */
-
 
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -445,7 +442,7 @@ int main(int argc,char *argv[])
 	    {
 	      GV.CFSparams->fkdot->data[0] = uvar_Freq + iFreq * GV.dFreq;	
 
-	      if ( XLALcomputeFStat(&(FVect->F->data[i]), SFTvect, GV.CFSparams) )
+	      if ( XLALcomputeFStat(&(FVect->F->data[iFreq]), SFTvect, GV.CFSparams) )
 		{
 		  int code = xlalErrno;
 		  XLALClearErrno(); 
