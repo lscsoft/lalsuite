@@ -126,6 +126,110 @@ memmove()
 
 NRCSID( RESAMPLETIMESERIESC, "$Id$" );
 
+int XLALResampleREAL4TimeSeries( REAL4TimeSeries *series, REAL8 dt )
+{
+  static const char *func = "XLALResampleREAL4TimeSeries";
+  const INT4 filterOrder = 20;
+  const REAL8 newNyquistAmplitude = 0.1;
+  REAL8 newNyquistFrequency;
+  UINT4 resampleFactor;
+  REAL4 *dataPtr = NULL;
+  UINT4 j;
+
+  resampleFactor = floor( dt / series->deltaT + 0.5 );
+  newNyquistFrequency = 0.5 / dt;
+
+  /* check that the resampling factor is valid */
+  if ( resampleFactor < 1 ||
+      fabs( dt - resampleFactor * series->deltaT ) > 1e-3 * series->deltaT )
+    XLAL_ERROR( func, XLAL_EINVAL );
+
+  /* just return if no resampling is required */
+  if ( resampleFactor == 1 )
+  {
+    XLALPrintInfo( "XLAL Info - %s: No resampling required", func );
+    return 0;
+  }
+
+  /* check that we are resampling by a power of two */
+  if ( ! ( resampleFactor == 0x1 || resampleFactor == 0x2 || 
+        resampleFactor == 0x4 || resampleFactor == 0x8 ||
+        resampleFactor == 0x10 || resampleFactor == 0x20 || 
+        resampleFactor == 0x40 || resampleFactor == 0x80 ) )
+    XLAL_ERROR( func, XLAL_EINVAL );
+
+  if ( XLALLowPassREAL4TimeSeries( series, newNyquistFrequency,
+        newNyquistAmplitude, filterOrder ) < 0 )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  /* decimate the time series */
+  series->deltaT = dt;
+  series->data->length /= resampleFactor;
+  dataPtr = series->data->data;
+  for ( j = 0; j < series->data->length; ++j )
+  {
+    series->data->data[j] = *dataPtr;
+    dataPtr += resampleFactor;
+  }
+  series->data->data = LALRealloc( series->data->data,
+      series->data->length * sizeof( *series->data->data ) );
+
+  return 0;
+}
+
+
+int XLALResampleREAL8TimeSeries( REAL8TimeSeries *series, REAL8 dt )
+{
+  static const char *func = "XLALResampleREAL8TimeSeries";
+  const INT4 filterOrder = 20;
+  const REAL8 newNyquistAmplitude = 0.1;
+  REAL8 newNyquistFrequency;
+  UINT4 resampleFactor;
+  REAL8 *dataPtr = NULL;
+  UINT4 j;
+
+  resampleFactor = floor( dt / series->deltaT + 0.5 );
+  newNyquistFrequency = 0.5 / dt;
+
+  /* check that the resampling factor is valid */
+  if ( resampleFactor < 1 ||
+      fabs( dt - resampleFactor * series->deltaT ) > 1e-3 * series->deltaT )
+    XLAL_ERROR( func, XLAL_EINVAL );
+
+  /* just return if no resampling is required */
+  if ( resampleFactor == 1 )
+  {
+    XLALPrintInfo( "XLAL Info - %s: No resampling required", func );
+    return 0;
+  }
+
+  /* check that we are resampling by a power of two */
+  if ( ! ( resampleFactor == 0x1 || resampleFactor == 0x2 || 
+        resampleFactor == 0x4 || resampleFactor == 0x8 ||
+        resampleFactor == 0x10 || resampleFactor == 0x20 || 
+        resampleFactor == 0x40 || resampleFactor == 0x80 ) )
+    XLAL_ERROR( func, XLAL_EINVAL );
+
+  if ( XLALLowPassREAL8TimeSeries( series, newNyquistFrequency,
+        newNyquistAmplitude, filterOrder ) < 0 )
+    XLAL_ERROR( func, XLAL_EFUNC );
+
+  /* decimate the time series */
+  series->deltaT = dt;
+  series->data->length /= resampleFactor;
+  dataPtr = series->data->data;
+  for ( j = 0; j < series->data->length; ++j )
+  {
+    series->data->data[j] = *dataPtr;
+    dataPtr += resampleFactor;
+  }
+  series->data->data = LALRealloc( series->data->data,
+      series->data->length * sizeof( *series->data->data ) );
+
+  return 0;
+}
+
+
 /* <lalVerbatim file="ResampleTimeSeriesCP"> */
 void
 LALResampleREAL4TimeSeries(

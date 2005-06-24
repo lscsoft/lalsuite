@@ -148,6 +148,9 @@ ResampleTSParams;
  *
  **** </lalLaTeX> */
 
+int XLALResampleREAL4TimeSeries( REAL4TimeSeries *series, REAL8 dt );
+int XLALResampleREAL8TimeSeries( REAL8TimeSeries *series, REAL8 dt );
+
 void
 LALResampleREAL4TimeSeries(
     LALStatus          *status,
