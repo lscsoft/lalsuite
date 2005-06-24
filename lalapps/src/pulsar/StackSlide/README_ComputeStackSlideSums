@@ -53,22 +53,26 @@ See documentation for debugOptionFlag in README_CommandLineArguments for further
 
 6. Files:
 
-a. ComputeStackSlideSums.c and ComputeStackSlideSums.h: contains "main".  The main driver code.
+a. ComputeStackSlideSums.c and ComputeStackSlideSums.h: contains "main" and reads in the SFTs.
 
-b. DriveStackSlide.c and DriveStackSlide.h: contains driver type functions used by the main driver code.
+b. DriveStackSlide.c and DriveStackSlide.h: handles command line args; initializes structs, generates STKs from SFTs and normalizes; contains important functions for searching for peaks and xml output; handles clean up 
 
 c. StackSlideIsolated.c and StackSlideIsolated.h: contains loops over the parameter space for the isolated search.
 
 d. StackSlideBinary.c and StackSlideBinary.h: contains loops over the parameter space for the binary search.
 
-e. StackSlide.c and StackSlide.h: contains the core algorithm functions; as appropriate these will be transferred to LAL.
+e. SFTbin.c and SFTbin.h: code for reading in known line information and cleaning SFTs
 
-f. runComputeStackSlideSUM.tclsh and buildStackSlideSimpleCondorDag.tclsh: scripts for running ComputeStackSlideSums and building pipelines.
+f. StackSlide.c and StackSlide.h: contains the core algorithm functions; as appropriate these will be transferred to LAL.
 
-g. testPulsar.params andtestBinaryPulsar.params: examples of the template_file that sets some of the search parameters.
+g. runComputeStackSlideSUM.tclsh and buildStackSlideSimpleCondorDag.tclsh: scripts for running ComputeStackSlideSums and building pipelines.
 
-h. runStackSlideBinarySearch.job and runStackSlideSearch.job: examples of the job_file that sets the remaining parameters not set on the command line or in the template_file file.
+h. testPulsar.params and testBinaryPulsar.params: examples of the template_file that sets some of the search parameters.
 
-i. FindEffForFixedFalseARate.m, FindEfficienyFromLEandMCdata.m, and TurnLEandMCdataIntoUL.m: matlab scripts that read in the xml output from ComputeStackSlideSums and find detection efficiencies or upper limits.
+i. runStackSlideBinarySearch.job and runStackSlideSearch.job: examples of the job_file that sets the remaining parameters not set on the command line or in the template_file file.
 
-j. Makefile_ComputeStackSlideSums and Makefile_ComputeStackSlideSumsCondor: files to use with  "make -f" for building ComputeStackSlideSums.
+j. FindEffForFixedFalseARate.m, FindEfficienyFromLEandMCdata.m, and TurnLEandMCdataIntoUL.m: matlab scripts that read in the xml output from ComputeStackSlideSums and find detection efficiencies or upper limits.
+
+k. ReportOnULsFromIteratedMC.m: Finds final UL results from iterated Monte Carlo Simulations
+
+l. Makefile_ComputeStackSlideSums and Makefile_ComputeStackSlideSumsCondor: files to use with  "make -f" for building ComputeStackSlideSums.
