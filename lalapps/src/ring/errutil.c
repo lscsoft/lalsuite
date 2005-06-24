@@ -42,6 +42,7 @@ int verbose( const char *fmt, ... )
   return 0;
 }
 
+#if 0
 /* XLAL error handler to abort on error */
 void XLALAbortErrorHandler( const char *func, const char *file, int line,
     int errnum )
@@ -57,6 +58,7 @@ void XLALExitErrorHandler( const char *func, const char *file, int line,
   XLALPerror( func, file, line, errnum );
   exit(1);
 }
+#endif
 
 /* set handlers to abort on error */
 void set_abrt_on_error( void )
