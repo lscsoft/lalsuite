@@ -234,8 +234,7 @@ static REAL4TimeSeries *get_geo_data(LALStatus *status,
   high_pass_params.f2 = geoHighPassFreq;
   high_pass_params.a1 = -1;
   high_pass_params.a2 = geoHighPassAtten;
-  LAL_CALL(LALButterworthREAL8TimeSeries(status, geo, &high_pass_params), \
-      status);
+  XLALButterworthREAL8TimeSeries(geo, &high_pass_params);
 
   if (vrbflg)
     fprintf(stdout, "Casting \"%s\" as a REAL4...\n", channel);
@@ -338,8 +337,7 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
     high_pass_params.a2 = highPassAtten;
 
     /* high pass filter */
-    LAL_CALL(LALButterworthREAL4TimeSeries(status, series, \
-          &high_pass_params), status);
+    XLALButterworthREAL4TimeSeries(series, &high_pass_params);
   }
 
   /* remove resample buffer */
