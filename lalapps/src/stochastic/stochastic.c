@@ -264,7 +264,6 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
   REAL4TimeSeries *series;
   FrStream *stream = NULL;
   FrCache *cache = NULL;
-  ResampleTSParams resample_params;
   size_t length;
   PassBandParamStruc high_pass_params;
   int mode = LAL_FR_VERBOSE_MODE;
@@ -311,13 +310,8 @@ static REAL4TimeSeries *get_time_series(LALStatus *status,
     if (vrbflg)
       fprintf(stdout, "Resampling to %d Hz...\n", resampleRate);
 
-    /* set resample parameters */
-    resample_params.deltaT = 1./resampleRate;
-    resample_params.filterType = defaultButterworth;
-
     /* resample */
-    LAL_CALL(LALResampleREAL4TimeSeries(status, series, &resample_params), \
-        status);
+    XLALResampleREAL4TimeSeries(series, 1./resampleRate);
   }
 
   /* high pass fitering */
