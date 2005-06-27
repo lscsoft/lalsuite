@@ -102,6 +102,7 @@ int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlie
 #define SFTEINSTRUMENTUNKNOWN  26
 #define SFTEBEFOREDATA         27
 #define SFTEAFTERDATA          28
+#define SFTNOTFINITE           29
 
 /* takes error code from above list and returns static human-readable
    description as null-terminated string */

@@ -187,6 +187,8 @@ const char *SFTErrorMessage(int errorcode) {
     return "SFT data requested lies before available data";
   case SFTEAFTERDATA:
     return "SFT data requested lies after available data";
+  case SFTNOTFINITE:
+    return "SFT data contains a non-FINITE (+/- Inf, NaN) value";
   }
   return "SFT Error Code not recognized";
 }

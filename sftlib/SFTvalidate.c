@@ -1,4 +1,5 @@
 /* $Id$ */
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -7,6 +8,7 @@
 
 int main(int argc, char** argv) {
   int i;
+  float *data=NULL;
   
   /* loop over all file names on command line */
   for (i=1; i<argc; i++) {
@@ -25,7 +27,7 @@ int main(int argc, char** argv) {
        checksums */
     for (count=0; 1; count++) {
       struct headertag2 info,lastinfo;
-      int err=0, swapendian, move;
+      int err=0, swapendian, move, j;
       
       err=ReadSFTHeader(fp, &info, NULL, &swapendian, 1);
 
@@ -49,7 +51,32 @@ int main(int argc, char** argv) {
 	    perror(NULL);
 	  return err;
 	}
- 
+      
+      /* check that data appears valid */
+      data=(float *)realloc((void *)data, info.nsamples*4);
+      if (!data) {
+	errno=SFTENULLPOINTER;
+	fprintf(stderr, "ran out of memory at %s. %s\n", argv[i], SFTErrorMessage(err));
+	if (errno)
+	  perror(NULL);
+	return err;
+      }
+
+      err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */NULL);
+      if (err) {
+	fprintf(stderr, "%s is not a valid SFT. %s\n", argv[i], SFTErrorMessage(err));
+	if (errno)
+	  perror(NULL);
+	return err;
+      }
+
+      for (j=0; j<info.nsamples; j++) {
+	if (!finite(data[j])) {
+	  fprintf(stderr, "%s is not a valid SFT (data infinite at freq bin %d)\n", argv[i], j+info.firstfreqindex);
+	  return SFTNOTFINITE;
+	}
+      }
+
       /* keep copy of header for comparison the next time */
       lastinfo=info;
       
