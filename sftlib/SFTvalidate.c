@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
 	}
       
       /* check that data appears valid */
-      data=(float *)realloc((void *)data, info.nsamples*4);
+      data=(float *)realloc((void *)data, info.nsamples*4*2);
       if (!data) {
 	errno=SFTENULLPOINTER;
 	fprintf(stderr, "ran out of memory at %s. %s\n", argv[i], SFTErrorMessage(err));
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 	return err;
       }
 
-      err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */NULL);
+      err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */ NULL);
       if (err) {
 	fprintf(stderr, "%s is not a valid SFT. %s\n", argv[i], SFTErrorMessage(err));
 	if (errno)
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
       }
 
       for (j=0; j<info.nsamples; j++) {
-	if (!finite(data[j])) {
+	if (!finite(data[2*j]) || !finite(data[2*j+1])) {
 	  fprintf(stderr, "%s is not a valid SFT (data infinite at freq bin %d)\n", argv[i], j+info.firstfreqindex);
 	  return SFTNOTFINITE;
 	}
