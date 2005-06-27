@@ -28,6 +28,12 @@ XLALOneMinusChisqCdf(
 );
 
 REAL8
+XLALlnOneMinusChisqCdf(
+	REAL8 chi2,
+	REAL8 dof
+);
+
+REAL8
 XLALNoncChisqCdf (
 	REAL8 chi2,
 	REAL8 dof,
