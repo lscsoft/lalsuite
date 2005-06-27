@@ -107,7 +107,7 @@ XLALPrintTFTileList(
 	FILE *fp,
 	const TFTiling *tiling,
 	const COMPLEX8TimeFrequencyPlane *plane,
-	INT4 maxTiles
+	size_t maxTiles
 );
 
 #ifdef  __cplusplus
