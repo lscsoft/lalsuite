@@ -161,8 +161,12 @@ int XLALFreqSeriesToTFPlane(
 	fcorr = XLALCreateCOMPLEX8Sequence(freqSeries->data->length);
 	snr = XLALCreateREAL4Sequence(2 * (freqSeries->data->length - 1));
 	prev = XLALCreateReverseREAL4FFTPlan(snr->length, 0);
-	if(!fcorr || !snr || !prev)
+	if(!fcorr || !snr || !prev) {
+		XLALDestroyCOMPLEX8Sequence(fcorr);
+		XLALDestroyREAL4Sequence(snr);
+		XLALDestroyREAL4FFTPlan(prev);
 		XLAL_ERROR(func, XLAL_EFUNC);
+	}
 
 	/* sampling rate of time series which gave freqSeries */
 	dt = 1.0 / (snr->length * freqSeries->deltaF);
@@ -172,8 +176,12 @@ int XLALFreqSeriesToTFPlane(
 
 	/* generate the frequency domain filter function. */
 	filter = generate_filter(freqSeries->data->length, fseglength, dt, flow);
-	if(!filter)
+	if(!filter) {
+		XLALDestroyCOMPLEX8Sequence(fcorr);
+		XLALDestroyREAL4Sequence(snr);
+		XLALDestroyREAL4FFTPlan(prev);
 		XLAL_ERROR(func, XLAL_EFUNC);
+	}
 	
 	/* heterodyne the filter */
 	XLALShiftCOMPLEX8Sequence(filter, -(flow - fwindow));
@@ -193,8 +201,13 @@ int XLALFreqSeriesToTFPlane(
 		 * time series at the full sample rate.   Make sure to
 		 * check that the sample rate agrees with what you had
 		 * before. */
-		if(XLALREAL4ReverseFFT(snr, fcorr, prev))
+		if(XLALREAL4ReverseFFT(snr, fcorr, prev)) {
+			XLALDestroyCOMPLEX8Sequence(fcorr);
+			XLALDestroyREAL4Sequence(snr);
+			XLALDestroyREAL4FFTPlan(prev);
+			XLALDestroyCOMPLEX8Sequence(filter);
 			XLAL_ERROR(func, XLAL_EFUNC);
+		}
 
 		/* PRB - copy the data back into the time series.  In this
 		 * process,  one only takes the samples corresponding to the
