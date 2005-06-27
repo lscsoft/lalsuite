@@ -40,13 +40,15 @@ void XLALPrintTFTileList(
 	FILE *file,
 	const TFTiling *tiling,
 	const COMPLEX8TimeFrequencyPlane *plane,
-	INT4 maxTiles
+	size_t maxTiles
 )
 /******** </lalVerbatim> ********/
 {
 	TFTile *tile = tiling->tile;
-	size_t i = tiling->numtiles;
 
-	for(; i-- && maxTiles--; tile++)
-		PrintTFTile(file, tile, plane);
+	if(maxTiles > tiling->numtiles)
+		maxTiles = tiling->numtiles;
+
+	while(maxTiles--)
+		PrintTFTile(file, tile++, plane);
 }
