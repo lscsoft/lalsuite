@@ -3,6 +3,7 @@ Author: Eanna Flanagan, and Cannon, K.
 $Id$
 ********* </lalVerbatim> **********/
 
+#include <math.h>
 #include <lal/LALRCSID.h>
 
 NRCSID(CREATETFTILINGC, "$Id$");
@@ -12,7 +13,7 @@ NRCSID(CREATETFTILINGC, "$Id$");
 #include <lal/TFTransform.h>
 #include <lal/XLALError.h>
 
-#define FALSE 0
+#define TRUE 1
 
 
 /*
@@ -86,9 +87,9 @@ TFTiling *XLALCreateTFTiling(
 					tile->tend = tstart + deltat;
 					tile->deltaT = planeparams->deltaT;
 					tile->deltaF = planeparams->deltaF;
-					tile->excessPower = 0.0;
-					tile->alpha = 0.0;
-					tile->firstCutFlag = FALSE;
+					tile->excessPower = XLAL_REAL8_FAIL_NAN;
+					tile->lnalpha = XLAL_REAL8_FAIL_NAN;
+					tile->PassFirstCut = TRUE;
 
 					weight[(int) XLALTFTileDegreesOfFreedom(tile)]++;
 
@@ -100,7 +101,7 @@ TFTiling *XLALCreateTFTiling(
 	 */
 
 	for(i = 0, tile = tiling->tile; i < tiling->numtiles; i++, tile++)
-		tile->weight = weight[(int) XLALTFTileDegreesOfFreedom(tile)];
+		tile->lnweight = log(weight[(int) XLALTFTileDegreesOfFreedom(tile)]);
 	LALFree(weight);
 
 	return(tiling);

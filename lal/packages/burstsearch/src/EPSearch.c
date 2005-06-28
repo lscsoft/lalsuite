@@ -58,13 +58,7 @@ static SnglBurstTable *TFTileToBurstEvent(
 	event->central_freq = params->tfPlaneParams.flow + tile->fstart*tile->deltaF + (0.5 * event->bandwidth);
 	event->amplitude = tile->excessPower;
 	event->snr = tile->excessPower;
-
-	if(tile->alpha < 0)
-		event->confidence =  LAL_REAL4_MAX;
-	else if(tile->alpha == 0)
-		event->confidence = -LAL_REAL4_MAX;
-	else
-		event->confidence =  log(tile->alpha);
+	event->confidence =  tile->lnalpha;
 
 	event->event_id = NULL;
 
@@ -77,7 +71,7 @@ static SnglBurstTable **TFTilesToSnglBurstTable(TFTiling *tiling, SnglBurstTable
 	TFTile *tile;
 	size_t i;
 
-	for(i = 0, tile = tiling->tile; (i < tiling->numtiles) && (tile->alpha <= params->alphaThreshold/tile->weight) && (i < params->eventLimit); i++, tile++) {
+	for(i = 0, tile = tiling->tile; (i < tiling->numtiles) && (tile->lnalpha <= params->lnalphaThreshold - tile->lnweight) && (i < params->eventLimit); i++, tile++) {
 		*addpoint = TFTileToBurstEvent(tile, epoch, params); 
 
 		if(*addpoint)
@@ -293,7 +287,7 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
-		if(XLALComputeExcessPower(Tiling, tfplane, params->numSigmaMin, params->alphaDefault, normalisation)) {
+		if(XLALComputeExcessPower(Tiling, tfplane, params->numSigmaMin, params->lnalphaDefault, normalisation)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}

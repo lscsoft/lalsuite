@@ -26,9 +26,9 @@ typedef struct tagTFTile {
 	REAL8 deltaT;
 	REAL8 deltaF;
 	REAL8 excessPower;
-	REAL8 alpha;
-	INT4 weight;
-	BOOLEAN firstCutFlag;
+	REAL8 lnalpha;
+	REAL8 lnweight;
+	BOOLEAN PassFirstCut;
 } TFTile;
 
 

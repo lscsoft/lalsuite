@@ -30,12 +30,12 @@ tagEPSearchParams {
 	size_t                eventLimit;
 	UINT4                 windowLength;
 	UINT4                 windowShift;
-	REAL8                 alphaThreshold;
+	REAL8                 lnalphaThreshold;
 	AvgSpecMethod         method;
 	CreateTFTilingIn      tfTilingInput;
 	TFPlaneParams         tfPlaneParams;
 	REAL8                 numSigmaMin;
-	REAL8                 alphaDefault;
+	REAL8                 lnalphaDefault;
 	WindowType            windowType;
 	INT4                  minFreqBins;
 } EPSearchParams;

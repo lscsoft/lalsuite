@@ -35,7 +35,7 @@ XLALComputeExcessPower(
 	TFTiling *tiling,
 	const COMPLEX8TimeFrequencyPlane *plane,
 	REAL8 numSigmaMin,
-	REAL8 alphaDefault,
+	REAL8 lnalphaDefault,
 	const REAL4 *norm
 )
 /******** </lalVerbatim> ********/
@@ -56,8 +56,7 @@ XLALComputeExcessPower(
 	/* check on some parameter values */
 	if((nf <= 0) || (nt <= 0) ||
 	   (numSigmaMin < 1.0) ||
-	   (alphaDefault < 0.0) ||
-	   (alphaDefault > 1.0))
+	   (lnalphaDefault > 0.0))
 		XLAL_ERROR(func, XLAL_EDOM);
 
 	for(i = 0; i < tiling->numtiles; i++, tile++) {
@@ -80,13 +79,13 @@ XLALComputeExcessPower(
 		/* Need to compute an accurate value of likelihood only if
 		 * excess power is greater than a few sigma */
 		if(tile->excessPower / sqrt(2.0 * dof) > numSigmaMin) {
-			tile->firstCutFlag = TRUE;
-			tile->alpha = XLALOneMinusChisqCdf(sum, dof);
-			if(XLALIsREAL8FailNaN(tile->alpha))
+			tile->PassFirstCut = TRUE;
+			tile->lnalpha = XLALlnOneMinusChisqCdf(sum, dof);
+			if(XLALIsREAL8FailNaN(tile->lnalpha))
 				XLAL_ERROR(func, XLAL_EFUNC);
 		} else {
-			tile->firstCutFlag = FALSE;
-			tile->alpha = alphaDefault;
+			tile->PassFirstCut = FALSE;
+			tile->lnalpha = lnalphaDefault;
 		}
 	}
 

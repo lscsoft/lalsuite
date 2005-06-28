@@ -3,6 +3,7 @@ Author: Flanagan, E. and Cannon, K.
 $Id$
 ********* </lalVerbatim> ********/
 
+#include <math.h>
 #include <lal/LALRCSID.h>
 
 NRCSID (COMPUTELIKELIHOODC, "$Id$");
@@ -24,11 +25,11 @@ XLALComputeLikelihood(
 	size_t i;
 
 	for(i = 0, tile = tiling->tile; i < tiling->numtiles; i++, tile++)
-		if(tile->firstCutFlag) {
+		if(tile->PassFirstCut) {
 			/* FIXME: should this be the XLAL function? */
 			dof = 2.0 * (tile->tend - tile->tstart + 1) * (tile->fend - tile->fstart + 1);
 			rho4 = tile->excessPower * tile->excessPower;
-			avglambda += dof / (rho4 * tile->alpha) * tile->weight;
+			avglambda += dof / rho4 * exp(tile->lnweight - tile->lnalpha);
 		}
 
 	/* compute the likelihood averaged over TF tiles */

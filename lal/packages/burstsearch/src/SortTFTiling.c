@@ -16,9 +16,9 @@ static int TileCompareByAlpha(const void *t1, const void *t2)
 {
 	const TFTile *tile1 = t1;
 	const TFTile *tile2 = t2;
-	if(tile1->alpha > tile2->alpha)
+	if(tile1->lnalpha > tile2->lnalpha)
 		return(1);
-	if(tile1->alpha < tile2->alpha)
+	if(tile1->lnalpha < tile2->lnalpha)
 		return(-1);
 	return(0);
 }
