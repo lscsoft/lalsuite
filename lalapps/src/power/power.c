@@ -203,7 +203,7 @@ static void print_usage(char *program)
 "	 --channel-name <string>\n" \
 "	[--cluster]\n" \
 "	[--debug-level <level>]\n" \
-"	 --default-alpha <alpha>\n" \
+"	 --default-lnalpha <ln alpha>\n" \
 "	[--event-limit <count>]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
@@ -237,7 +237,7 @@ static void print_usage(char *program)
 "	[--siminjection-file <file name>]\n" \
 "	[--seed <seed>]\n" \
 "	 --tile-overlap-factor <factor>\n" \
-"	 --threshold <threshold>\n" \
+"	 --lnthreshold <ln threshold>\n" \
 "	[--useoverwhitening]\n" \
 "	[--user-tag <comment>]\n" \
 "	[--verbose]\n" \
@@ -291,7 +291,7 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			break;
 
 			case 'E':
-			arg_is_missing = params->alphaDefault > 1.0;
+			arg_is_missing = params->lnalphaDefault > 0.0;
 			break;
 
 			case 'K':
@@ -349,7 +349,7 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			break;
 
 			case 'g':
-			arg_is_missing = params->alphaThreshold < 0.0;
+			arg_is_missing = params->lnalphaThreshold == XLAL_REAL8_FAIL_NAN;
 			break;
 
 			case 'i':
@@ -448,7 +448,7 @@ void parse_command_line(
 		{"channel-name",        required_argument, NULL,           'C'},
 		{"cluster",             no_argument, &options.cluster,    TRUE},
 		{"debug-level",         required_argument, NULL,           'D'},
-		{"default-alpha",       required_argument, NULL,           'E'},
+		{"default-lnalpha",     required_argument, NULL,           'E'},
 		{"event-limit",         required_argument, NULL,           'F'},
 		{"filter-corruption",	required_argument, NULL,           'j'},
 		{"frame-cache",         required_argument, NULL,           'G'},
@@ -482,7 +482,7 @@ void parse_command_line(
 		{"siminjection-file",   required_argument, NULL,           't'},
 		{"seed",                required_argument, NULL,           'c'},
 		{"tile-overlap-factor", required_argument, NULL,           'f'},
-		{"threshold",           required_argument, NULL,           'g'},
+		{"lnthreshold",         required_argument, NULL,           'g'},
 		{"useoverwhitening",    no_argument, &useoverwhitening,   TRUE},  
 		{"user-tag",            required_argument, NULL,           'h'},
 		{"verbose",             no_argument, &options.verbose,    TRUE},
@@ -496,11 +496,11 @@ void parse_command_line(
 	 * Set parameter defaults.
 	 */
 
-	params->alphaThreshold = -1.0;	/* impossible */
+	params->lnalphaThreshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
 	params->channelName = NULL;	/* impossible */
 	params->eventLimit = 999;	/* default */
 	params->method = -1;	/* impossible */
-	params->alphaDefault = 2.0;	/* impossible */
+	params->lnalphaDefault = 1.0;	/* impossible */
 	params->numSigmaMin = -1.0;	/* impossible */
 	params->tfPlaneParams.flow = -1.0;	/* impossible */
 	params->tfPlaneParams.fhigh = -1.0;	/* impossible */
@@ -583,9 +583,9 @@ void parse_command_line(
 		break;
 
 		case 'E':
-		params->alphaDefault = atof(optarg);
-		if(params->alphaDefault < 0.0 || params->alphaDefault > 1.0) {
-			sprintf(msg, "must be in range [0,1] (%f specified)", params->alphaDefault);
+		params->lnalphaDefault = atof(optarg);
+		if(params->lnalphaDefault > 0.0) {
+			sprintf(msg, "must be in range (-inf, 0] (%g specified)", params->lnalphaDefault);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -837,12 +837,7 @@ void parse_command_line(
 		break;
 
 		case 'g':
-		params->alphaThreshold = atof(optarg);
-		if(params->alphaThreshold <= 0.0) {
-			sprintf(msg, "must be > 0.0 (%f specified)", params->alphaThreshold);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
+		params->lnalphaThreshold = atof(optarg);
 		ADD_PROCESS_PARAM("float");
 		break;
 
