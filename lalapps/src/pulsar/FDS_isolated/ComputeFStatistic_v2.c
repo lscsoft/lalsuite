@@ -20,7 +20,7 @@
  */
 
 /*********************************************************************************/
-/** \author Y. Ioth, C. Messenger, M.A. Papa, R.Prix, X. Siemens 
+/** \author R. Prix, Y. Ioth, Papa, X. Siemens 
  * \file 
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
@@ -96,7 +96,6 @@ typedef struct {
   REAL8Vector	*Tdot;		/**< vector of Tdot_alpha's (depend on skyposition)*/ 
   AMCoeffs      *amcoe;         /**< Amplitude Modulation coefficients */
   INT4          Dterms;         /**< Terms used in the computation of the dirichlet kernel*/
-  REAL8 	tSFT;		/**< length of an SFT in seconds */
 } computeFStatPar;
 
 
@@ -116,9 +115,10 @@ typedef struct {
   LALDetector Detector;         /**< Our detector*/
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
-  LIGOTimeGPSVector timestamps; /**< SFT timestamps */
-  LIGOTimeGPSVector midTS;	/**< midpoints of SFT's */
-  computeFStatPar *CFSparams;  	/**< Demodulation parameters for computeFStat() */
+  LIGOTimeGPSVector *timestamps; /**< SFT timestamps */
+  LIGOTimeGPSVector *midTS;	/**< GPS midpoints of SFT's */
+  REAL8Vector *midGMSTs;	/**< GMSTs in radians for the GPS midpoints midTS */
+  computeFStatPar CFSparams;  	/**< Demodulation parameters for computeFStat() */
 } ConfigVariables;
 
 /** FIXME: OBSOLETE: used to hold result from LALDemod(). 
@@ -215,8 +215,6 @@ BOOLEAN uvar_useEphemeris;
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
 void InitFStat (LALStatus *, ConfigVariables *cfg);
-void CreateDemodParams (LALStatus *, computeFStatPar *CFSparams, const SkyPosition *pos,
-			const ConfigVariables *cfg);
 
 void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 void Freemem(LALStatus *,  ConfigVariables *cfg);
@@ -244,6 +242,20 @@ LALGetSSBtimes (LALStatus *,
 		const SkyPosition *pos,
 		const LALDetector *site,
 		const EphemerisData *ephem);
+
+void
+LALGetGMSTimestamps (LALStatus *status, REAL8Vector *GMSTimestamps, 
+		    const LIGOTimeGPSVector *GPStimestamps);
+
+void
+LALGetAMCoeffs(LALStatus *status, 
+	       AMCoeffs *coeffs, 
+	       const LALDetector *site, 
+	       SkyPosition skypos, 
+	       const REAL8Vector *GMSTimestamps);
+
+
+
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 void sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x); /* LUT-calculation of sin/cos */
@@ -279,8 +291,6 @@ int main(int argc,char *argv[])
   FILE *fpOut=NULL;
   UINT4 loopcounter;
   FStatisticVector *FVect = NULL;   /* new type to store F-statistic results in a frequency-band */
-  REAL8Vector *DeltaT = NULL;	/* SSB times at SFT half-points: DeltaT_alpha */
-  REAL8Vector *Tdot = NULL;	/* derivatives of SSB-times at SFT half-points: Tdot_alpha */
 
   UINT4 nBins; 			/* number of frequency-bins */
 
@@ -309,11 +319,6 @@ int main(int argc,char *argv[])
 
   /* main initialization of the code: */
   LAL_CALL ( InitFStat(&status, &GV), &status);
-
-  /* allocate memory of the SSB-times: DeltaT_alpha and Tdot_alpha */
-  LAL_CALL ( LALDCreateVector (&status, &DeltaT, GV.SFTno), &status );
-  LAL_CALL ( LALDCreateVector (&status, &Tdot, GV.SFTno), &status );
-
 
   /* normalize SFTs by running median */
   LAL_CALL (NormaliseSFTDataRngMdn(&status), &status);
@@ -425,25 +430,26 @@ int main(int argc,char *argv[])
 	ephem = GV.edat;
       else
 	ephem = NULL;
-      LAL_CALL ( LALGetSSBtimes (&status, DeltaT, Tdot, GV.Tstart, &(GV.midTS), 
-				 &thisPoint, &(GV.Detector), ephem ), &status);
-      GV.CFSparams->DeltaT = DeltaT;
-      GV.CFSparams->Tdot = Tdot;
 
-      /*----- prepare skypos-specific demodulation-parameters */
-      LAL_CALL (CreateDemodParams(&status, GV.CFSparams, &thisPoint, &GV), &status);
+      LAL_CALL ( LALGetSSBtimes (&status, GV.CFSparams.DeltaT, GV.CFSparams.Tdot, 
+				 GV.Tstart, GV.midTS, 
+				 &thisPoint, &(GV.Detector), ephem ), &status);
+      
+      /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
+      LAL_CALL ( LALGetAMCoeffs (&status, GV.CFSparams.amcoe, &GV.Detector, thisPoint, GV.midGMSTs),
+		 &status);
       
       /*----- loop over first-order spindown values */
       for (if1dot = 0; if1dot < nf1dot; if1dot ++)
 	{
-	  GV.CFSparams->fkdot->data[1] = uvar_f1dot + if1dot * GV.df1dot;
+	  GV.CFSparams.fkdot->data[1] = uvar_f1dot + if1dot * GV.df1dot;
 
 	  /* Loop over frequencies to be demodulated */
 	  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 	    {
-	      GV.CFSparams->fkdot->data[0] = uvar_Freq + iFreq * GV.dFreq;	
+	      GV.CFSparams.fkdot->data[0] = uvar_Freq + iFreq * GV.dFreq;	
 
-	      if ( XLALcomputeFStat(&(FVect->F->data[iFreq]), SFTvect, GV.CFSparams) )
+	      if ( XLALcomputeFStat(&(FVect->F->data[iFreq]), SFTvect, &GV.CFSparams) )
 		{
 		  int code = xlalErrno;
 		  XLALClearErrno(); 
@@ -466,7 +472,7 @@ int main(int argc,char *argv[])
 		  if ( FStat > uvar_Fthreshold )
 		    fprintf (fpOut, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
 			     freq, dopplerpos.Alpha, dopplerpos.Delta, 
-			     GV.CFSparams->fkdot->data[1], FStat);
+			     GV.CFSparams.fkdot->data[1], FStat);
 		}
 	      
 	    } /* if outputFstat */
@@ -523,9 +529,6 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
 
   LAL_CALL ( Freemem(&status, &GV), &status);
   
-  LAL_CALL ( LALDDestroyVector (&status, &DeltaT), &status);
-  LAL_CALL ( LALDDestroyVector (&status, &Tdot), &status);
-
   LAL_CALL (LALDDestroyVector (&status, &(FVect->F)), &status);
   LALFree (FVect);
 
@@ -644,57 +647,6 @@ initUserVars (LALStatus *status)
   DETATCHSTATUSPTR (status);
   RETURN (status);
 } /* initUserVars() */
-
-
-
-void 
-CreateDemodParams (LALStatus *status, 
-		   computeFStatPar *CFSparams,
-		   const SkyPosition *pos,
-		   const ConfigVariables *cfg)
-{
-  EarthState earth;
-  BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
-  AMCoeffsParams amParams;
-  LALDetAndSource das;
-  LALSource pSource;
-
-  INITSTATUS (status, "CreateDemodParams", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT ( CFSparams, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( pos, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( pos->system == COORDINATESYSTEM_EQUATORIAL, status, 
-	   COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( cfg, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  
-  /* Detector location: MAKE INTO INPUT!!!!! */
-  baryinput.site.location[0] = cfg->Detector.location[0]/LAL_C_SI;
-  baryinput.site.location[1] = cfg->Detector.location[1]/LAL_C_SI;
-  baryinput.site.location[2] = cfg->Detector.location[2]/LAL_C_SI;
-  baryinput.alpha = pos->longitude;
-  baryinput.delta = pos->latitude;
-  baryinput.dInv=0.e0;
-
-  /* Fill up AMCoeffsParams structure */
-  amParams.das = &das;
-  amParams.das->pSource = &pSource;
-  amParams.baryinput = &baryinput;
-  amParams.earth = &earth; 
-  amParams.edat = cfg->edat;
-  amParams.das->pDetector = &(cfg->Detector); 
-  amParams.das->pSource->equatorialCoords = *pos;
-  amParams.das->pSource->orientation = 0.0;
-
-  amParams.polAngle = amParams.das->pSource->orientation ; /* These two have to be the same!!!!!!!!!*/
-  amParams.leapAcc = LALLEAPSEC_STRICT;
-
-  TRY ( LALComputeAM(status->statusPtr, CFSparams->amcoe, cfg->midTS.data, &amParams), status); 
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* CreateDemodParams() */
 
 /*******************************************************************************/
 /*  for every cluster writes the information about it in file Fstats */
@@ -851,27 +803,25 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   cfg->SFTno = SFTvect->length;
   cfg->nsamples = SFTvect->data[0].data->length;
 
-  /*----------------------------------------------------------------------*/
-  /* extract timestamps-vector from SFT-data */
-  /* and prepare SFT-data in FFT-struct to feed it into LALDemod() (FIXME)*/
-  cfg->timestamps.length = cfg->SFTno;
-  if ( (cfg->timestamps.data =  (LIGOTimeGPS *) LALCalloc(cfg->SFTno, sizeof(LIGOTimeGPS))) == NULL) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  cfg->midTS.length = cfg->SFTno;
-  if ( (cfg->midTS.data = (LIGOTimeGPS *) LALCalloc(cfg->SFTno, sizeof(LIGOTimeGPS))) == NULL) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
+  /*----------  prepare vectors of timestamps ---------- */
+  {
+    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->timestamps), cfg->SFTno ), status);
+    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->midTS), cfg->SFTno ), status);
+    TRY ( LALDCreateVector ( status->statusPtr, &(cfg->midGMSTs), cfg->SFTno ), status );
 
-  for (i=0; i < cfg->SFTno; i++)
-    {
-      cfg->timestamps.data[i] = SFTvect->data[i].epoch;
-      /* to get midpoints, simply add Tsft/2 to each timestamp */
-      TRY (LALAddFloatToGPS (status->statusPtr, &(cfg->midTS.data[i]), &(cfg->timestamps.data[i]), 
-			     0.5*cfg->tSFT), status);
-    }
+    for (i=0; i < cfg->SFTno; i++)
+      {
+	cfg->timestamps->data[i] = SFTvect->data[i].epoch;	/* SFT start-timestamps */
+	/* SFT midpoints */
+	TRY (LALAddFloatToGPS(status->statusPtr, 
+			      &(cfg->midTS->data[i]), &(cfg->timestamps->data[i]),0.5*cfg->tSFT),status);
+      }/* for i < SFTno */
 
-  /* figure out total observation time */
+    /* translate midpoints into GMST in radians */
+    TRY ( LALGetGMSTimestamps (status->statusPtr, cfg->midGMSTs, cfg->midTS), status );
+  } 
+
+  /*----- figure out total observation time */
   {
     LIGOTimeGPS t0, t1;
     t0 = SFTvect->data[0].epoch;
@@ -970,22 +920,29 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    */
   {
     AMCoeffs *amc;
-    /* Allocate DemodParams structure */
-    if ( (cfg->CFSparams = (computeFStatPar*) LALCalloc(1, sizeof(computeFStatPar))) == NULL) {
-      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-    }
+    REAL8Vector *DeltaT = NULL;
+    REAL8Vector *Tdot = NULL;
+
     /* Allocate space for AMCoeffs */
     if ( (amc = LALCalloc(1, sizeof(AMCoeffs))) == NULL) {
       ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
     }
     TRY (LALSCreateVector(status->statusPtr, &(amc->a), (UINT4) cfg->SFTno), status);
     TRY (LALSCreateVector(status->statusPtr, &(amc->b), (UINT4) cfg->SFTno), status);
+
+    cfg->CFSparams.amcoe = amc;
     
-    cfg->CFSparams->amcoe = amc;
-    cfg->CFSparams->tSFT = cfg->tSFT;
-    cfg->CFSparams->Dterms = uvar_Dterms;
+    /* allocate memory of the SSB-times: DeltaT_alpha and Tdot_alpha */
+    TRY ( LALDCreateVector(status->statusPtr, &DeltaT, cfg->SFTno), status );
+    TRY ( LALDCreateVector(status->statusPtr, &Tdot,   cfg->SFTno), status );
+
+    cfg->CFSparams.DeltaT = DeltaT;
+    cfg->CFSparams.Tdot = Tdot;
+
+    cfg->CFSparams.Dterms = uvar_Dterms;
+
     /* prepare memory for fkdot - vector : (f, f1dot, f2dot, ..) */
-    TRY(LALDCreateVector(status->statusPtr, &(cfg->CFSparams->fkdot), 1 + MAX_SPINDOWN_ORDER),status );
+    TRY(LALDCreateVector(status->statusPtr, &(cfg->CFSparams.fkdot),1+MAX_SPINDOWN_ORDER), status);
     
   } /* end: init AM- and demod-params */
 
@@ -1104,10 +1061,9 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   TRY (LALDestroySFTVector (status->statusPtr, &SFTvect), status);	 /* the new way*/
 
   /* Free timestamps */
-  LALFree (cfg->timestamps.data);
-  LALFree (cfg->midTS.data);
-
-  /* FIXME: quite a few missing here */
+  TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->timestamps)), status );
+  TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->midTS)), status );
+  TRY ( LALDDestroyVector (status->statusPtr, &(cfg->midGMSTs)), status );
 
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
@@ -1126,13 +1082,12 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree(cfg->edat);
 
 
-  TRY ( LALDDestroyVector (status->statusPtr, &(cfg->CFSparams->fkdot)), status);
-
-  TRY (LALSDestroyVector(status->statusPtr, &(cfg->CFSparams->amcoe->a)), status);
-  TRY (LALSDestroyVector(status->statusPtr, &(cfg->CFSparams->amcoe->b)), status);
-  LALFree ( cfg->CFSparams->amcoe);
-
-  LALFree ( cfg->CFSparams);
+  TRY (LALDDestroyVector (status->statusPtr, &(cfg->CFSparams.fkdot)), status);
+  TRY (LALSDestroyVector(status->statusPtr, &(cfg->CFSparams.amcoe->a)), status);
+  TRY (LALSDestroyVector(status->statusPtr, &(cfg->CFSparams.amcoe->b)), status);
+  LALFree ( cfg->CFSparams.amcoe);
+  TRY (LALDDestroyVector(status->statusPtr, &(cfg->CFSparams.DeltaT)), status);
+  TRY (LALDDestroyVector(status->statusPtr, &(cfg->CFSparams.Tdot)), status);
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1415,7 +1370,8 @@ XLALNewLALDemod(Fcomponents *FaFb,
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
   UINT4 freqIndex0;		/* index of first frequency-bin in SFTs */
   COMPLEX16 Fa, Fb;
-  REAL8 f;		/* MUST be REAL8 !! */
+  REAL8 f;		/* !! MUST be REAL8, or precision breaks down !! */
+  REAL8 Tsft; 			/* length of SFTs in seconds */
 
   /* ----- check validity of input */
   if ( !FaFb ) {
@@ -1435,6 +1391,8 @@ XLALNewLALDemod(Fcomponents *FaFb,
 
   /* ----- prepare convenience variables */
   numSFTs = sfts->length;
+  Tsft = 1.0 / sfts->data[0].deltaF;
+
   freqIndex0 = (UINT4) ( sfts->data[0].f0 / sfts->data[0].deltaF + 0.5); /* lowest freqency-index */
 
   spdnOrder = params->fkdot->length - 1;
@@ -1488,7 +1446,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
 	  } /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors and complete y_alpha */
-	xhat_alpha *= params->tSFT * params->Tdot->data[alpha];	/* guaranteed > 0 ! */
+	xhat_alpha *= Tsft * params->Tdot->data[alpha];	/* guaranteed > 0 ! */
 	y_alpha -= 0.5 * xhat_alpha;
 	
 	/* real- and imaginary part of e^{-i 2 pi y } */
@@ -1674,100 +1632,6 @@ writeFVect(LALStatus *status, const FStatisticVector *FVect, const CHAR *fname)
 
 } /* writeCOMPLEX16Vector() */
 
-
-/** Convert a whole vector of detector-times 'GPStimes' into SSB-frame 'SSBtimes'.
- * Using ephemeris-timing if ephem!=NULL, or using the Ptolemaic approximation otherwise.
- */
-void
-LALGetSSBtimes (LALStatus *status, 
-		REAL8Vector *DeltaT,		/**< [out] DeltaT_alpha = T(t_alpha) - T(t0)*/
-		REAL8Vector *Tdot,		/**< [out] Tdot(t_alpha) */
-		LIGOTimeGPS refTime,		/**< reference-time t0 */
-		const LIGOTimeGPSVector *GPStimes,/**< input detector times t_i */
-		const SkyPosition *pos,		/**< source sky-location */
-		const LALDetector *site,	/**< detector location and orientation */  
-		const EphemerisData *ephem	/**< ephemeris-data, NULL for Ptolemaic timing*/
-		)
-{
-  PulsarTimesParamStruc baryParams = empty_PulsarTimesParamStruc;
-  REAL8Vector *var = NULL;	/* input-params: (t, alpha, delta) */
-  REAL8Vector *dt = NULL;	/* hold answer (tau, dtau/dt, dtau/dalpha, dtau/ddelta ) */
-  UINT4 N, i;
-  REAL8 t0;
-
-  INITSTATUS( status, "LALConvertGPS2SSBVector", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (DeltaT, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (Tdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (GPStimes, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (DeltaT->length == GPStimes->length, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-  ASSERT (Tdot->length == GPStimes->length, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-  ASSERT (pos, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (site, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  /*NOTE: ephem is allowed to be NULL ==> use Ptolemaic approximation */
-  
-  ASSERT ( pos->system == COORDINATESYSTEM_EQUATORIAL, status,
-	   COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-
-  N = GPStimes->length;	/* number of timestamps */
-
-  /* Set up constant parameters for barycentre transformation. */
-  baryParams.epoch = refTime;
-  baryParams.t0 = 0;
-
-  baryParams.latitude = site->frDetector.vertexLatitudeRadians;	
-  baryParams.longitude = site->frDetector.vertexLongitudeRadians;
-
-  baryParams.site = site;
-  baryParams.ephemeris = ephem;
-
-  /* set some time-constants depending on epoch */
-  TRY ( LALGetEarthTimes( status->statusPtr, &baryParams ), status);
-
-  /* create the 'variables'-vector : [t, alpha, delta ] */
-  TRY ( LALDCreateVector ( status->statusPtr, &var, 3 ), status);
-  /* create the times-vector [ T(t), dT(t)/dt ] */
-  TRY ( LALDCreateVector ( status->statusPtr, &dt, 2 ), status);
-
-  /*---------- first get reference-time t0 */
-  var->data[0] = 0.0; 
-  var->data[1] = pos->longitude;
-  var->data[2] = pos->latitude;
-
-  if ( ephem ) {
-    TRY ( LALDTEphemeris( status->statusPtr, dt, var, &baryParams ), status );
-  } else {
-    TRY ( LALDTBaryPtolemaic( status->statusPtr, dt, var, &baryParams ), status );
-  }
-  t0 = dt->data[0];
-  
-  /*---------- Now loop over timestamps */
-  for (i=0; i < N; i++ )
-    {
-      var->data[0] = XLALDeltaFloatGPS( &(GPStimes->data[i]), &refTime );
-
-      /* use timing-function for earth-motion: either ptolemaic or ephemeris */
-      if ( ephem ) {
-	TRY ( LALDTEphemeris( status->statusPtr, dt, var, &baryParams ), status );
-      } else {
-	TRY ( LALDTBaryPtolemaic( status->statusPtr, dt, var, &baryParams ), status );
-      }
-
-      DeltaT->data[i] = dt->data[0] - t0;	/* DeltaT_alpha */
-      Tdot->data[i] = dt->data[1];		/* Tdot_alpha */
-
-    } /* for i <= N */
-
-  /* free memory */
-  TRY ( LALDDestroyVector ( status->statusPtr, &var ), status);
-  TRY ( LALDDestroyVector ( status->statusPtr, &dt ), status);
-
-
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-
-} /* LALGetSSBtimes() */
 
 /*
 ============
@@ -1957,3 +1821,292 @@ sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
   
   return;
 } /* sin_cos_LUT() */
+
+
+/** Compute the 'amplitude coefficients' \f$a(t), b(t)\f$ as defined in 
+ * \ref JKS98.
+ * 
+ * In order to allow re-using the output-structure AMCoeffs for subsequent
+ * calls, we require the REAL4Vectors a and b to be allocated already and 
+ * to have the same length as the timestamps-vector.
+ *
+ * In order to avoid un-necessary re-calculation of the GMST sidereal times
+ * (which don't depend on detector or skyposition), we require the user
+ *  to input the GMST-timestamps (in RADIANS!) instead of the GPS-timestamps to compute
+ * a(t), b(t) for..
+ *
+ * \note This is an alternative implementation to LALComputeAM() with 
+ * the aim to be both simpler and faster.
+ * The difference being that we don't implicitly re-derive the final expression
+ * here but simply try to implement the final expressions (12), (13) in \ref JKS98
+ * in the most economical way possible.
+ */ 
+void
+LALGetAMCoeffs(LALStatus *status,
+	       AMCoeffs *coeffs,		/**< [out] amplitude-coefficients {a(t_i), b(t_i)} */
+	       const LALDetector *site,		/**< detector position and orientation */
+	       SkyPosition skypos,		/**< {alpha,delta} of the source */
+	       const REAL8Vector *GMSTimestamps	/**< vector of GMST's T_i in RADIANS!!*/
+	       )
+{
+  REAL4 ah1, ah2, ah3, ah4, ah5;
+  REAL4 a1, a2, a3, a4, a5;
+  
+  REAL4 bh1, bh2, bh3, bh4;
+  REAL4 b1, b2, b3, b4;
+
+  REAL4 delta, alpha;
+  REAL4 sin1delta, cos1delta, sin2delta, cos2delta;
+
+  REAL4 gamma, L, lambda;
+  REAL4 norm;
+  UINT4 i, numSteps;
+
+  INITSTATUS (status, "LALGetAMCoeffs", rcsid);
+
+  /*---------- check input ---------- */
+  ASSERT ( GMSTimestamps, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( coeffs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( site, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+
+  numSteps = GMSTimestamps->length;
+  /* require the coeffients-vectors to be allocated and consistent with timestamps */
+  ASSERT ( coeffs->a && coeffs->b, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( (coeffs->a->length == numSteps) && (coeffs->b->length == numSteps), status,
+	   COMPUTEFSTATC_EINPUT,  COMPUTEFSTATC_MSGEINPUT);
+
+  /* require sky-pos to be in equatorial coordinates */
+  ASSERT ( skypos.system == COORDINATESYSTEM_EQUATORIAL, status, 
+	   SKYCOORDINATESH_ESYS, SKYCOORDINATESH_MSGESYS );
+
+  /*---------- detector paramters: lambda, L, gamma */
+  {
+    /* orientation of detector arms */
+    REAL8 xAzi = site->frDetector.xArmAzimuthRadians;
+    REAL8 yAzi = site->frDetector.yArmAzimuthRadians;
+
+    /* get detector orientation gamma */
+    gamma = LAL_PI_2 - 0.5 * (xAzi + yAzi);
+    /* get detector position (longitude, latitude) */
+    lambda = site->frDetector.vertexLatitudeRadians;
+    L = site->frDetector.vertexLongitudeRadians;
+  }
+
+  /*---------- coefficient ahN, bhN dependent ONLY on detector-position  ---------- */
+  /* FIXME: eventually BUFFER these, at least if profiler shows we can gain something... */
+  {
+    REAL4 sin2gamma = sinf ( 2.0f * gamma );
+    REAL4 cos2gamma = cosf ( 2.0f * gamma );
+    REAL4 sin1lambda = sinf ( lambda );
+    REAL4 cos1lambda = cosf ( lambda );
+    REAL4 sin2lambda = 2.0f * sin1lambda * cos1lambda;
+    REAL4 cos2lambda = cos1lambda * cos1lambda - sin1lambda * sin1lambda;
+
+    /* coefficients for a(t) */
+    ah1 = 0.0625f * sin2gamma * (3.0f - cos2lambda);	/* 1/16 = 0.0625 */
+    ah2 = - 0.25f * cos2gamma * sin1lambda;
+    ah3 =   0.25f * sin2gamma * sin2lambda;
+    ah4 =  -0.5f  * cos2gamma * cos1lambda;
+    ah5 =  0.75f  * sin2gamma * cos1lambda * cos1lambda;
+
+    /* coefficients for b(t) */
+    bh1 =           cos2gamma * sin1lambda;
+    bh2 =   0.25f * sin2gamma * (3.0f - cos2lambda);
+    bh3 =           cos2gamma * cos1lambda;
+    bh4 =   0.5f  * sin2gamma * sin2lambda;
+  }
+
+  /*---------- coefficients aN, bN dependent ONLY on detector and skyposition */
+  alpha = skypos.longitude;
+  delta = skypos.latitude;
+  sin1delta = sinf (delta);
+  cos1delta = cosf (delta);
+  sin2delta = 2.0f * sin1delta * cos1delta;
+  cos2delta = cos1delta * cos1delta - sin1delta * sin1delta;
+
+  /* coefficients for a(t) */
+  a1 = ah1 * ( 3.0f - cos2delta );
+  a2 = ah2 * ( 3.0f - cos2delta );
+  a3 = ah3 * sin2delta;
+  a4 = ah4 * sin2delta;
+  a5 = ah5 * cos1delta * cos1delta;
+
+  /* coefficients for b(t) */
+  b1 = bh1 * sin1delta;
+  b2 = bh2 * sin1delta;
+  b3 = bh3 * cos1delta;
+  b4 = bh4 * cos1delta;
+
+
+  /*---------- Compute the a(t_i) and b(t_i) ---------- */
+  coeffs->A = 0;
+  coeffs->B = 0;
+  coeffs->C = 0;
+  coeffs->D = 0;
+  for ( i=0; i < numSteps; i++ )
+    {
+      REAL4 ah;
+      REAL4 lmst;
+      REAL4 cos1ah, sin1ah, cos2ah, sin2ah;
+      REAL4 ai, bi;
+
+      lmst = GMSTimestamps->data[i] + L;	/* local mean sidereal time of detector */
+      ah = alpha - lmst;
+
+      sin1ah = sinf ( ah );
+      cos1ah = cosf ( ah );
+      sin2ah = 2.0f * sin1ah * cos1ah;
+      cos2ah = cos1ah * cos1ah - sin1ah * sin1ah;
+
+      ai = a1 * cos2ah + a2 * sin2ah + a3 * cos1ah + a4 * sin1ah + a5;
+      bi = b1 * cos2ah + b2 * sin2ah + b3 * cos1ah + b4 * sin1ah;
+      coeffs->a->data[i] = ai;
+      coeffs->b->data[i] = bi;
+
+      /* sum A, B, C on the fly */
+      coeffs->A += ai * ai;
+      coeffs->B += bi * bi;
+      coeffs->C += ai * bi;
+
+    } /* for i < numSteps */
+
+  /* finish calculation of A,B,C, D */
+  norm = 2.0f / numSteps;
+  coeffs->A *= norm;
+  coeffs->B *= norm;
+  coeffs->C *= norm;
+
+  coeffs->D = coeffs->A * coeffs->B - coeffs->C * coeffs->C;
+
+  RETURN(status);
+
+} /* LALGetAMCoeffs() */
+
+
+/** Translate a vector of GPS-times into Greewich Mean Siderial Times (GMST)
+ *  in units of radians!
+ */
+void
+LALGetGMSTimestamps (LALStatus *status,
+		    REAL8Vector *GMSTimestamps,		    /**< [out] GMST's T(t_i) in radians  */
+		    const LIGOTimeGPSVector *GPStimestamps  /**< [in] GPS timestamps t_i */
+		    )
+{
+  UINT4 i, numSteps;
+  LALMSTUnitsAndAcc unitsAndAcc = { MST_RAD, LALLEAPSEC_STRICT};
+
+  INITSTATUS (status, "LALGetGMSTimestamps", rcsid);
+  ATTATCHSTATUSPTR ( status );
+
+  ASSERT ( GPStimestamps, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( GMSTimestamps, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+
+  numSteps = GPStimestamps->length;
+  ASSERT ( numSteps == GMSTimestamps->length, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+
+  for ( i=0; i < numSteps; i++ )
+    {
+      TRY ( LALGPStoGMST1( status->statusPtr, &(GMSTimestamps->data[i]), 
+			   &(GPStimestamps->data[i]), &unitsAndAcc ), status);
+    } /* for i < numSteps */
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* LALGetGMSTtimestamps() */
+
+
+/** Translate a vector of detector-times 'GPStimes' into SSB-frame 'SSBtimes'.
+ * Using ephemeris-timing if ephem!=NULL, or using the Ptolemaic approximation otherwise.
+ */
+void
+LALGetSSBtimes (LALStatus *status, 
+		REAL8Vector *DeltaT,		/**< [out] DeltaT_alpha = T(t_alpha) - T(t0)*/
+		REAL8Vector *Tdot,		/**< [out] Tdot(t_alpha) */
+		LIGOTimeGPS refTime,		/**< reference-time t0 */
+		const LIGOTimeGPSVector *GPStimes,/**< input detector times t_i */
+		const SkyPosition *pos,		/**< source sky-location */
+		const LALDetector *site,	/**< detector location and orientation */  
+		const EphemerisData *ephem	/**< ephemeris-data, NULL for Ptolemaic timing*/
+		)
+{
+  PulsarTimesParamStruc baryParams = empty_PulsarTimesParamStruc;
+  REAL8Vector *var = NULL;	/* input-params: (t, alpha, delta) */
+  REAL8Vector *dt = NULL;	/* hold answer (tau, dtau/dt, dtau/dalpha, dtau/ddelta ) */
+  UINT4 N, i;
+  REAL8 t0;
+
+  INITSTATUS( status, "LALConvertGPS2SSBVector", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+  ASSERT (DeltaT, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (Tdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (GPStimes, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (DeltaT->length == GPStimes->length, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  ASSERT (Tdot->length == GPStimes->length, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  ASSERT (pos, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (site, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  /*NOTE: ephem is allowed to be NULL ==> use Ptolemaic approximation */
+  
+  ASSERT ( pos->system == COORDINATESYSTEM_EQUATORIAL, status,
+	   COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+
+  N = GPStimes->length;	/* number of timestamps */
+
+  /* Set up constant parameters for barycentre transformation. */
+  baryParams.epoch = refTime;
+  baryParams.t0 = 0;
+
+  baryParams.latitude = site->frDetector.vertexLatitudeRadians;	
+  baryParams.longitude = site->frDetector.vertexLongitudeRadians;
+
+  baryParams.site = site;
+  baryParams.ephemeris = ephem;
+
+  /* set some time-constants depending on epoch */
+  TRY ( LALGetEarthTimes( status->statusPtr, &baryParams ), status);
+
+  /* create the 'variables'-vector : [t, alpha, delta ] */
+  TRY ( LALDCreateVector ( status->statusPtr, &var, 3 ), status);
+  /* create the times-vector [ T(t), dT(t)/dt ] */
+  TRY ( LALDCreateVector ( status->statusPtr, &dt, 2 ), status);
+
+  /*---------- first get reference-time t0 */
+  var->data[0] = 0.0; 
+  var->data[1] = pos->longitude;
+  var->data[2] = pos->latitude;
+
+  if ( ephem ) {
+    TRY ( LALDTEphemeris( status->statusPtr, dt, var, &baryParams ), status );
+  } else {
+    TRY ( LALDTBaryPtolemaic( status->statusPtr, dt, var, &baryParams ), status );
+  }
+  t0 = dt->data[0];
+  
+  /*---------- Now loop over timestamps */
+  for (i=0; i < N; i++ )
+    {
+      var->data[0] = XLALDeltaFloatGPS( &(GPStimes->data[i]), &refTime );
+
+      /* use timing-function for earth-motion: either ptolemaic or ephemeris */
+      if ( ephem ) {
+	TRY ( LALDTEphemeris( status->statusPtr, dt, var, &baryParams ), status );
+      } else {
+	TRY ( LALDTBaryPtolemaic( status->statusPtr, dt, var, &baryParams ), status );
+      }
+
+      DeltaT->data[i] = dt->data[0] - t0;	/* DeltaT_alpha */
+      Tdot->data[i] = dt->data[1];		/* Tdot_alpha */
+
+    } /* for i <= N */
+
+  /* free memory */
+  TRY ( LALDDestroyVector ( status->statusPtr, &var ), status);
+  TRY ( LALDDestroyVector ( status->statusPtr, &dt ), status);
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+} /* LALGetSSBtimes() */
