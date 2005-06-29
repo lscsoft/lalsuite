@@ -193,7 +193,7 @@ LALGPStoUTC (LALStatus                *status,
   /* we use Unix epoch as our origin */
   unixTime = p_gpsTime->gpsSeconds + UNIXGPS;
 
-  if (lalDebugLevel | LALINFO)
+  if (lalDebugLevel & LALINFO)
   {
     LALSnprintf(infostr, INFOSTR_LEN, "Max. tested GPS is %d\n", maxtestedGPS);
     LALInfo(status, infostr);
@@ -203,7 +203,7 @@ LALGPStoUTC (LALStatus                *status,
   tmptime = (22*365 + 7*366)* SECS_PER_DAY + 23;
   gmtime_r(&tmptime, &tmputc);
 
-  if (lalDebugLevel | LALINFO)
+  if (lalDebugLevel & LALINFO)
   {
     asctime_r(&tmputc, tmpstamp);
     LALSnprintf(infostr, INFOSTR_LEN, "tmputc = %s\n", tmpstamp);
@@ -272,7 +272,7 @@ LALGPStoUTC (LALStatus                *status,
       while (i < numleaps && leaps[i] + i - 1 < unixTime)
         ++i;
 
-      if (lalDebugLevel | LALINFO)
+      if (lalDebugLevel & LALINFO)
       {
         LALSnprintf(infostr, INFOSTR_LEN, "unixTime = %ld; leaps[%d] = %ld",
             unixTime, i, leaps[i]);
@@ -443,7 +443,7 @@ LALUTCtoGPS (LALStatus                *status,
   gpsref.unixDate.tm_wday = 0;
   gpsref.unixDate.tm_yday = 0;
 
-  if (lalDebugLevel | LALINFO)
+  if (lalDebugLevel & LALINFO)
   {
     LALSnprintf(infostr, INFOSTR_LEN, "Date given: %d-%d-%d %d:%d:%d %d\n",
         p_utcDate->unixDate.tm_year+1900, p_utcDate->unixDate.tm_mon+1,
@@ -687,7 +687,7 @@ LALLeapSecs (LALStatus                    *status,
           DATEH_MSGEACCPARAMOUTOFRANGE);
   
 
-  if (lalDebugLevel | LALINFO)
+  if (lalDebugLevel & LALINFO)
   {
     LALSnprintf(infostr, INFOSTR_LEN, "Max. tested GPS is %d\n", maxtestedGPS);
     LALInfo(status, infostr);
@@ -732,7 +732,7 @@ LALLeapSecs (LALStatus                    *status,
       *p_leapSecs = gpsLeaps[i-1].tai_utc;
     }
 
-  if (lalDebugLevel | LALINFO)
+  if (lalDebugLevel & LALINFO)
   {
     LALSnprintf(infostr, INFOSTR_LEN, "Format = %d\n", p_formatAndAcc->format);
     LALInfo(status, infostr);

@@ -313,7 +313,7 @@ LALGMST1 (LALStatus     *status,
       break;
     }
 
-  if (lalDebugLevel | LALINFO)
+  if (lalDebugLevel & LALINFO)
   {
     LALSnprintf(infostr, INFOSTR_LEN, "LALGMST1: *p_gmst = %g\n", *p_gmst);
     LALInfo(status, infostr);
