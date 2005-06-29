@@ -400,7 +400,8 @@ LALRemoveRepeatedCoincs(
     {
       otherCoinc = thisID->coincInspiralTable;
 
-      if( otherCoinc->numIfos > thisCoinc->numIfos )
+      if( otherCoinc->numIfos >= thisCoinc->numIfos &&
+          otherCoinc != thisCoinc )
       {
         /* we have a higher (or equal) coinc, thisCoinc could be a subset 
          * test whether all sngls in thisCoinc are also in otherCoinc */
