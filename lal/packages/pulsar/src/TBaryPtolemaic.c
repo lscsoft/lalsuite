@@ -33,9 +33,10 @@ The constant parameter fields used by these routines are
 \verb@constants->latitude@, and \verb@constants->longitude@.
 
 Note that \verb@*variables@ must have a length of at least 3, and can
-be longer, but values beyond the third are ignored.  For consistency,
-\verb@*dtBary@ must always be one element longer than
-\verb@*variables@; all elements beyond the fourth will be set to zero.
+be longer, but values beyond the third are ignored.  
+\verb@*dtBary@ must be at least of length 1, and the number of derivatives 
+computed is determined by \verb@*dtBary->length-1@. 
+All elements beyond the fourth will be set to zero. 
 
 \subsubsection*{Algorithm}
 
@@ -240,27 +241,23 @@ LALDTBaryPtolemaic( LALStatus             *stat,
   REAL8 cosi=cos(LAL_IEARTH);
   REAL8 sini=sin(LAL_IEARTH);
 
+  UINT4 numDeriv; /* number of variables wrt which to compute derivatives */
+
   INITSTATUS(stat,"DTBaryPtolemaic",TBARYPTOLEMAICC);
 
-  /* This function may be called a lot.  Do error checking only in
-     debug mode. */
-#ifndef NDEBUG
-  if(lalDebugLevel){
+  numDeriv = dtBary->length - 1;
 
-    /* Make sure parameter structures and their fields exist. */
-    ASSERT(dtBary,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-    ASSERT(dtBary->data,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-    ASSERT(variables,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-    ASSERT(variables->data,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-    ASSERT(constants,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
-
-    /* Make sure array sizes are consistent. */
-    ASSERT(dtBary->length==variables->length+1,stat,
-	   PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
-    ASSERT(variables->length>2,stat,
-	   PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
-  }
-#endif
+  /* Make sure parameter structures and their fields exist. */
+  ASSERT(dtBary,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(dtBary->data,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(variables,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(variables->data,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  ASSERT(constants,stat,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
+  
+  /* Make sure array sizes are consistent. */
+  ASSERT( dtBary->length >= 1,stat, PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
+  /* need at least (and exactly) [t, alpha, delta] */
+  ASSERT( variables->length >= 3, stat, PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
 
   /* Set some temporary variables. */
   data=variables->data;
@@ -298,33 +295,42 @@ LALDTBaryPtolemaic( LALStatus             *stat,
     t+=x[i]*n[i];
   *(data++)=t;
 
-  /* Compute time derivative. */
-  t=1.0;
-  i=3;
-  while(i--)
-    t+=v[i]*n[i];
-  *(data++)=t;
-
-  /* Get the right-ascension-derivative of the source position and
-     barycentred time. */
-  n[0]=-sin(ra)*cos(dec);
-  n[1]=cos(ra)*cos(dec);
-  t=0;
-  i=2;
-  while(i--)
-    t+=x[i]*n[i];
-  *(data++)=t;
-
-  /* Get the declination-derivative of the source position and
-     barycentred time. */
-  n[0]=-cos(ra)*sin(dec);
-  n[1]=-sin(ra)*sin(dec);
-  n[2]=cos(dec);
-  t=0;
-  i=3;
-  while(i--)
-    t+=x[i]*n[i];
-  *data=t;
+  /* only compute the following derivatives if requested */
+  if ( numDeriv >= 1 )
+    {
+      /* Compute time derivative. */
+      t=1.0;
+      i=3;
+      while(i--)
+	t+=v[i]*n[i];
+      *(data++)=t;
+    }
+  if ( numDeriv >= 2 )
+    {
+      /* Get the right-ascension-derivative of the source position and
+	 barycentred time. */
+      n[0]=-sin(ra)*cos(dec);
+      n[1]=cos(ra)*cos(dec);
+      t=0;
+      i=2;
+      while(i--)
+	t+=x[i]*n[i];
+      *(data++)=t;
+    }
+  if ( numDeriv >= 3 )
+    {
+      /* Get the declination-derivative of the source position and
+	 barycentred time. */
+      n[0]=-cos(ra)*sin(dec);
+      n[1]=-sin(ra)*sin(dec);
+      n[2]=cos(dec);
+      t=0;
+      i=3;
+      while(i--)
+	t+=x[i]*n[i];
+      *data=t;
+    }
 
   RETURN(stat);
-}
+
+} /* LALDTBaryPtolemaic() */
