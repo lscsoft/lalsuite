@@ -59,6 +59,7 @@ LALBarycenter()
 #include <lal/LALBarycenter.h>
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
+#include <lal/Date.h>
 
 
 NRCSID(DTEPHEMERISC,"$Id$");
@@ -76,16 +77,13 @@ LALDTEphemeris( LALStatus             *status,
                               /* and input structure to Barycenter()   */
   BarycenterInput baryin;     /* Input structure for Barycenter()      */
   EmissionTime emit;          /* Output structure of Barycenter()      */
-  REAL8 d_alpha;              /* alpha step size for finite differencing */
-  REAL8 d_delta;              /* delta step size for finite differencing */
+  UINT4 numDeriv; 	 /* number of derivatives to compute */
+
   REAL8 upper, lower;         /* Quantities for finite differnecing */
+  REAL8 d_alpha, d_delta;
 
   INITSTATUS(status,"DTEphemeris",DTEPHEMERISC);
   ATTATCHSTATUSPTR( status );
-
-
-  /* This function may be called a lot.  Do error checking only in
-     debug mode. */ 
 
   /* Make sure parameter structures and their fields exist. */
   ASSERT(drv,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
@@ -94,18 +92,22 @@ LALDTEphemeris( LALStatus             *status,
   ASSERT(var->data,status,PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
   ASSERT(tev,status, PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
   /* Make sure array sizes are consistent. */
-  ASSERT(drv->length==var->length+1,status, PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
-  ASSERT(var->length>2,status, PULSARTIMESH_EBAD,PULSARTIMESH_MSGEBAD);
+  /* need at least [ t, alpha, delta ] */
+  ASSERT( var->length >= 3, status, PULSARTIMESH_EBAD, PULSARTIMESH_MSGEBAD);
+  /* result has to be at least [T(t), and optionally dT/dt, dT/dalpha, dT/ddelta] */
+  ASSERT( drv->length >= 1, status, PULSARTIMESH_EBAD, PULSARTIMESH_MSGEBAD);
+  
   /* Make sure ephermis and detector data have been passed */
   ASSERT (tev->ephemeris != NULL, status, PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
   ASSERT (tev->site != NULL, status, PULSARTIMESH_ENUL,PULSARTIMESH_MSGENUL);
 
+  numDeriv = drv->length - 1; /* number of derivatives of T to compute..*/
+
   /* First compute the location, velocity, etc... of the Earth:  */
 
   /* Set the GPS time: */
-  tGPS.gpsSeconds = floor( var->data[0] ) + tev->epoch.gpsSeconds;
-  tGPS.gpsNanoSeconds = 1e9*fmod( var->data[0], 1.0 ) 
-    + tev->epoch.gpsNanoSeconds;
+  tGPS = tev->epoch;
+  XLALAddFloatToGPS ( &tGPS, var->data[0] );	/* time relative to epoch */
  
   /* Set the ephemeris data: */
   eph = tev->ephemeris;
@@ -113,12 +115,10 @@ LALDTEphemeris( LALStatus             *status,
   TRY( LALBarycenterEarth( status->statusPtr, &earth, &tGPS, eph ), status );
   /* Now "earth" contains position of center of Earth. */
 
-
   /* Now do the barycentering.  Set the input parameters: */
 
   /* Get time delay for detector vertex. */
-  baryin.tgps.gpsSeconds = tGPS.gpsSeconds;
-  baryin.tgps.gpsNanoSeconds = tGPS.gpsNanoSeconds;
+  baryin.tgps = tGPS;
 
   /* Set the detector site...*/
   baryin.site = *(tev->site);
@@ -134,68 +134,73 @@ LALDTEphemeris( LALStatus             *status,
   /* Set 1/distance to zero: */
   baryin.dInv = 0.e0;
 
-
   TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
   /* Now "emit" contains detector position, velocity, time, tdot. */
 
-
   /* Now assemble output: */
 
-  /* This is the barycentered GPS time: */
-  drv->data[0] = emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds; 
-  /* Subtract off t_gps: */
-  drv->data[0] -= tev->epoch.gpsSeconds + 1.0e-9*tev->epoch.gpsNanoSeconds;
+  /* Subtract off epoch: => barycentered time since epoch */
+  drv->data[0] = XLALDeltaFloatGPS( &(emit.te), &(tev->epoch) );
 
-  /* This is the derivative of d(barycentered time)/d(detector time): */ 
-  drv->data[1] = emit.tDot; /* dtb/dt */
+  /* ---------- calculate only the requested derivatives ---------- */
 
-  /* Need to finite difference to get d(tb)/d(alpha), d(tb)/d(delta) */
-  /* Set finite difference step sizes: */
-  d_alpha = 0.001;
-  d_delta = 0.001;    
-
-  /* Get dtb/da by finite differencing.   */
-  /* Default upper and lower alpha values: */
-  upper = var->data[1] + d_alpha;
-  lower = var->data[1] - d_alpha;
-  /* Overwrite if alpha is too close to zero or 2 PI: */
-  if(var->data[1] < d_alpha)
-    lower = var->data[1]; 
-  if(var->data[1] > (LAL_TWOPI-d_alpha))
-    upper = var->data[1]; 
-  /* Evaluate emit at upper value: */
-  baryin.alpha = upper;
-  TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
-  drv->data[2] = emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
-  /* Evaluate emit at lower value: */
-  baryin.alpha = lower;
-  TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
-  drv->data[2] -= emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
-  /* Divide by alpha interval: */
-  drv->data[2] /= (upper-lower);
-  baryin.alpha = var->data[1];
-
-  /* Get dtb/dd by finite differencing.   */
-  /* Default upper and lower alpha values: */
-  upper = var->data[2] + d_delta;
-  lower = var->data[2] - d_delta;
-  /* Overwrite if delta is too close to PI/2 or -PI/2: */
-  if(var->data[2] < (-LAL_PI_2+d_alpha))
-    lower = var->data[2]; 
-  if(var->data[2] > (LAL_PI_2-d_alpha))
-    upper = var->data[2]; 
-  /* Evaluate emit at upper value: */
-  baryin.delta = upper;
-  TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
-  drv->data[3] = emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
-  /* Evaluate emit at lower value: */
-  baryin.delta = lower;
-  TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
-  drv->data[3] -= emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
-  /* Divide by delta interval: */
-  drv->data[3] /= (upper-lower);
-  baryin.alpha = var->data[2];
-
+  /* ----- derivative dT/dt ----- */
+  if ( numDeriv >= 1 )
+    {
+      drv->data[1] = emit.tDot; /* dtb/dt */
+    }
+  d_alpha = d_delta = 0.001;	      /* Set finite difference step sizes: */
+  /* ----- dT/dalpha ----- */
+  if ( numDeriv >= 2 )
+    {
+      /* Need to finite difference to get d(tb)/d(alpha), d(tb)/d(delta) */
+      
+      /* Get dtb/da by finite differencing.   */
+      /* Default upper and lower alpha values: */
+      upper = var->data[1] + d_alpha;
+      lower = var->data[1] - d_alpha;
+      /* Overwrite if alpha is too close to zero or 2 PI: */
+      if(var->data[1] < d_alpha)
+	lower = var->data[1]; 
+      if(var->data[1] > (LAL_TWOPI-d_alpha))
+	upper = var->data[1]; 
+      /* Evaluate emit at upper value: */
+      baryin.alpha = upper;
+      TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
+      drv->data[2] = emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
+      /* Evaluate emit at lower value: */
+      baryin.alpha = lower;
+      TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
+      drv->data[2] -= emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
+      /* Divide by alpha interval: */
+      drv->data[2] /= (upper-lower);
+      baryin.alpha = var->data[1];
+    } /* if numDeriv >= 2 */
+  /* ----- dT/ddelta ----- */
+  if ( numDeriv >= 3 )
+    {
+      /* Get dtb/dd by finite differencing.   */
+      /* Default upper and lower alpha values: */
+      upper = var->data[2] + d_delta;
+      lower = var->data[2] - d_delta;
+      /* Overwrite if delta is too close to PI/2 or -PI/2: */
+      if(var->data[2] < (-LAL_PI_2+d_alpha))
+	lower = var->data[2]; 
+      if(var->data[2] > (LAL_PI_2-d_alpha))
+	upper = var->data[2]; 
+      /* Evaluate emit at upper value: */
+      baryin.delta = upper;
+      TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
+      drv->data[3] = emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
+      /* Evaluate emit at lower value: */
+      baryin.delta = lower;
+      TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
+      drv->data[3] -= emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
+      /* Divide by delta interval: */
+      drv->data[3] /= (upper-lower);
+      baryin.alpha = var->data[2];
+    } /* if numDeriv >= 3 */
+  
   /* Go home */
   DETATCHSTATUSPTR( status );
   RETURN( status );
