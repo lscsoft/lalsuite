@@ -78,7 +78,7 @@ BOOLEAN FILE_FSTATS = 1;
 #endif
 
 #ifdef MAC_LIB
-  int setMacIcon(char*fn);
+  int setMacResources(char*fn);
 #endif
 
 #ifdef NO_BOINC_GRAPHICS
@@ -3314,7 +3314,7 @@ int main(int argc, char *argv[]){
 
 
 #ifdef MAC_LIB
-  setMacIcon(argv[0]);
+  setMacResources(argv[0]);
 #endif
 
   globargc=argc;
