@@ -10,8 +10,10 @@ $Id$
 NRCSID(THRESHOLDSC, "$Id$");
 
 #include <gsl/gsl_cdf.h>
+#include <gsl/gsl_sf.h>
 #include <lal/FindRoot.h>
 #include <lal/LALConstants.h>
+#include <lal/LALDatatypes.h>
 #include <lal/XLALGSL.h>
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>
