@@ -246,6 +246,7 @@ LALGetSSBtimes (LALStatus *,
 		const EphemerisData *ephem);
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
+void sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x); /* LUT-calculation of sin/cos */
 
 /****** black list ******/
 void EstimateFLines(LALStatus *, const FStatisticVector *FVect);
@@ -1400,11 +1401,10 @@ NormaliseSFTDataRngMdn(LALStatus *status)
 /** v2-specific version of LALDemod() (based on TestLALDemod() in CFS)
  */
 #define OOTWOPI         (1.0 / LAL_TWOPI)
-#define LUT_RES         64      /* resolution of lookup-table */
 
 #define TWOPI_FLOAT     6.28318530717958f  /* 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/* 1 / (2pi) */ 
-
+#define USE_LUT		1
 int
 XLALNewLALDemod(Fcomponents *FaFb,
 		const SFTVector *sfts, 
@@ -1415,11 +1415,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
   UINT4 freqIndex0;		/* index of first frequency-bin in SFTs */
   COMPLEX16 Fa, Fb;
-#define LUT_RES         64      /* resolution of lookup-table */
-  static REAL8 sinVal[LUT_RES+1], cosVal[LUT_RES+1];/*LUT values computed by the routine do_trig_lut*/
-  static BOOLEAN firstCall = 1;
-  UINT4 index; 
-  REAL8 f;
+  REAL8 f;		/* MUST be REAL8 !! */
 
   /* ----- check validity of input */
   if ( !FaFb ) {
@@ -1436,18 +1432,6 @@ XLALNewLALDemod(Fcomponents *FaFb,
     LALPrintError ("\nIllegal NULL in input !\n\n");
     XLAL_ERROR ( "XLALNewLALDemod", XLAL_EINVAL);
   }
-
-  /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */
-  if ( firstCall )
-    {
-      UINT4 k;
-      for (k=0; k <= LUT_RES; k++)
-        {
-          sinVal[k] = sin( (LAL_TWOPI*k)/LUT_RES );
-          cosVal[k] = cos( (LAL_TWOPI*k)/LUT_RES );
-        }
-      firstCall = 0;
-    }
 
   /* ----- prepare convenience variables */
   numSFTs = sfts->length;
@@ -1469,10 +1453,8 @@ XLALNewLALDemod(Fcomponents *FaFb,
       REAL4 a = params->amcoe->a->data[alpha];
       REAL4 b = params->amcoe->b->data[alpha];
 
-      REAL8 xhat_alpha, y_alpha;	/* xhat(alpha), x(alpha,k) and y(alpha) */
+      REAL8 xhat_alpha, y_alpha;	/* xhat(alpha), y(alpha): need to be REAL8 !! */
       REAL4 x0;
-      REAL8 rem; 		/* remainder of x_alpha0: how close to an int? */
-
       UINT4 k;			/* loop index over frequency-bins */
       UINT4 kstar;		/* central frequency-bin k* = round(xhat_alpha) */
 
@@ -1480,8 +1462,8 @@ XLALNewLALDemod(Fcomponents *FaFb,
       COMPLEX8 *Xalpha_k; 	/* pointer to frequency-bin k in current SFT */
       REAL4 sinx, cosxm1;	/* sin(x_alpha) and (cos(x_alpha)-1) */
       REAL4 realXP, imagXP;	/* the sum_k X_alpha_k P_alpha_k */
-      REAL8 realQ, imagQ;	/* Re and Im of Q = e^{-i y} */
-      REAL8 realQXP, imagQXP;	/* Re/Im of Q_alpha XP_alpha */
+      REAL4 realQ, imagQ;	/* Re and Im of Q = e^{-i y} */
+      REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha XP_alpha */
       UINT4 k0;
       /* ----- calculate x(alpha,0) and y(alpha) */
       {
@@ -1509,12 +1491,9 @@ XLALNewLALDemod(Fcomponents *FaFb,
 	xhat_alpha *= params->tSFT * params->Tdot->data[alpha];	/* guaranteed > 0 ! */
 	y_alpha -= 0.5 * xhat_alpha;
 	
-	/* still missing: prefactor 2 pi in y_alpha */
-	y_alpha *= LAL_TWOPI;
-
-	/* real- and imaginary part of e^{-i y } */
-	realQ = cos(y_alpha);
-	imagQ = - sin(y_alpha);
+	/* real- and imaginary part of e^{-i 2 pi y } */
+	sin_cos_LUT ( &imagQ, &realQ, y_alpha );
+	imagQ = -imagQ;
       }
       /* ---------------------------------------- */
 
@@ -1529,25 +1508,19 @@ XLALNewLALDemod(Fcomponents *FaFb,
 
       /*-------------------- calculate sin(x), cos(x) */
       /* (1) don't use LUT */
-      /*
-      rem = xhat_alpha - kstar; 	
-      x_alpha_k = LAL_TWOPI * rem;	
-      sinx = sinf(x_alpha_k);
-      cosxm1 = cosf(x_alpha_k) - 1.0f;
-      */
-      /*  (2) use LUT */
-      rem = xhat_alpha - (UINT4)xhat_alpha;	/* positive ! */
-      index = (UINT4)( rem * LUT_RES + 0.5 );   /* positive! */
+#if !USE_LUT
       {
-	REAL8 d=LAL_TWOPI*(rem - (REAL8)index/(REAL8)LUT_RES);
-	REAL8 d2=0.5*d*d;
-	REAL8 ts=sinVal[index];
-	REAL8 tc=cosVal[index];
-                
-	sinx = ts+d*tc-d2*ts;
-	cosxm1 = tc-d*ts-d2*tc-1.0;
+	REAL4 x_alpha_k;
+	REAL4 rem = xhat_alpha - kstar; 	
+	x_alpha_k = TWOPI_FLOAT * rem;	
+	sinx = sinf(x_alpha_k);
+	cosxm1 = cosf(x_alpha_k) - 1.0f;
       }
-      /* -------------------- */
+#else
+      sin_cos_LUT ( &sinx, &cosxm1, xhat_alpha );
+      cosxm1 -= 1.0f; 
+#endif
+      /*-------------------- */
 
       realXP = 0;
       imagXP = 0;
@@ -1571,7 +1544,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
        */
 
       Xalpha_k = Xalpha + k0 - freqIndex0;  /* first frequency-bin in sum */
-      x0 = xhat_alpha - k0;	/* first xhat-value in the loop */
+      x0 = (REAL4)(xhat_alpha - (REAL8)k0);	/* first xhat-value in the loop */
       /* count down 2*Dterms values */
       for ( k = 2 * params->Dterms; k != 0;  k -- )
 	{
@@ -1629,8 +1602,8 @@ XLALcomputeFStat (REAL8 *Fval,			/**< [out] the resulting F-statistic value */
   Fcomponents FaFb;
   REAL4 fact;
   REAL4 At, Bt, Ct;
-  REAL8 FaRe, FaIm, FbRe, FbIm;
-
+  REAL4 FaRe, FaIm, FbRe, FbIm;
+  REAL4 F;
   if (!sfts || !params || !Fval) 
     {
       LALPrintError ("\nInput contains illegal NULL-pointer !\n\n");
@@ -1657,10 +1630,11 @@ XLALcomputeFStat (REAL8 *Fval,			/**< [out] the resulting F-statistic value */
   FbIm = FaFb.Fb.im;
 
   /* calculate F-statistic from  Fa and Fb */
-  (*Fval) = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
+  F = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
 		     + At * (FbRe*FbRe + FbIm*FbIm) 
-		     - 2.0 * Ct *(FaRe*FbRe + FaIm*FbIm) );
+		     - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
   
+  (*Fval) = (REAL8) F;
   return 0;
 
 } /* XLALcomputeFStat() */
@@ -1751,15 +1725,16 @@ LALGetSSBtimes (LALStatus *status,
   /* set some time-constants depending on epoch */
   TRY ( LALGetEarthTimes( status->statusPtr, &baryParams ), status);
 
-  /* create the 'variables'-vector : (t, alpha, delta) */
+  /* create the 'variables'-vector : [t, alpha, delta ] */
   TRY ( LALDCreateVector ( status->statusPtr, &var, 3 ), status);
-  TRY ( LALDCreateVector ( status->statusPtr, &dt, 4 ), status);
-
-  var->data[1] = pos->longitude;
-  var->data[2] = pos->latitude;
+  /* create the times-vector [ T(t), dT(t)/dt ] */
+  TRY ( LALDCreateVector ( status->statusPtr, &dt, 2 ), status);
 
   /*---------- first get reference-time t0 */
   var->data[0] = 0.0; 
+  var->data[1] = pos->longitude;
+  var->data[2] = pos->latitude;
+
   if ( ephem ) {
     TRY ( LALDTEphemeris( status->statusPtr, dt, var, &baryParams ), status );
   } else {
@@ -1939,3 +1914,46 @@ checkUserInputConsistency (LALStatus *status)
 
   RETURN (status);
 } /* checkUserInputConsistency() */
+
+/** Calculate sin(2 pi x) and cos(2 pi x) to roughly 1e-7 error using 
+ * a lookup-table and Tayler-expansion.
+ * This is meant to be fast, so we don't even check the input-pointers...
+ */
+void 
+sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
+{
+#define LUT_RES         64      /* resolution of lookup-table */
+  UINT4 ind; 
+  REAL8 rem;
+  static BOOLEAN firstCall = TRUE;
+  static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
+
+
+  if ( firstCall )
+    {
+      UINT4 k;
+      for (k=0; k <= LUT_RES; k++)
+        {
+          sinVal[k] = sin( (LAL_TWOPI*k)/LUT_RES );
+          cosVal[k] = cos( (LAL_TWOPI*k)/LUT_RES );
+        }
+      firstCall = FALSE;
+    }
+
+  rem = x - (UINT4)x;	/* rem in (-1, 1) */
+  if ( rem < 0 )
+    rem += 1.0;		/* rem in [0, 1) */
+			   
+  ind = (UINT4)( rem * LUT_RES + 0.5 );   /* closest LUT-entry */
+  {
+    REAL8 d = LAL_TWOPI *(rem - (REAL8)ind/(REAL8)LUT_RES);
+    REAL8 d2 = 0.5 * d * d;
+    REAL8 ts = sinVal[ind];
+    REAL8 tc = cosVal[ind];
+                
+    (*sin2pix) = ts + d * tc - d2 * ts;
+    (*cos2pix) = tc - d * ts - d2 * tc;
+  }
+  
+  return;
+} /* sin_cos_LUT() */
