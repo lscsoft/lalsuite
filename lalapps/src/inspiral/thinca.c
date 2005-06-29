@@ -1463,6 +1463,14 @@ int main( int argc, char *argv[] )
                 &startCoinc, &endCoinc, slideReset), &status) ;
           LAL_CALL( LALSortSnglInspiral( &status, &(slideOutput),
                 LALCompareSnglInspiralByTime ), &status );
+
+          while ( coincInspiralList )
+          {
+            thisCoinc = coincInspiralList;
+            coincInspiralList = coincInspiralList->next;
+            LALFree( thisCoinc );
+          }
+
         }
       }
       
