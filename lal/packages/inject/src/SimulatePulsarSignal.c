@@ -1,7 +1,118 @@
+/*
+ * Copyright (C) 2004, 2005 Reinhard Prix
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the 
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  MA  02111-1307  USA
+ */
+
 /************************************ <lalVerbatim file="SimulatePulsarSignalCV">
 Author: Prix, Reinhard
 $Id$
 ************************************* </lalVerbatim> */
+
+/**
+ * \author Reinhard Prix
+ * \date 2005
+ * \file 
+ * \brief Routines to simulate pulsar-signals "exactly".
+
+The motivation for this module is to provide functions to
+simulate pulsar signals <em>with the best possible accuracy</em>, 
+i.e. using no approximations, contrary to LALGeneratePulsarSignal(). 
+
+Obviously this is not meant as a fast code to be used in a Monte-Carlo
+simulation, but rather as a <em>reference</em> to compare other (faster)
+functions agains, in order to be able to gauge the quality of a given
+signal-generation routine.
+
+We want to calculate \f$h(t)\f$, given by
+\f[
+\label{eq:1}
+	h(t) = F_+(t)\, h_+(t) + F_\times(t) \,h_\times(t)\,,
+\f]
+where \f$F_+\f$ and \f$F_x\f$ are called the <em>beam-pattern</em> functions, 
+which depend of the wave polarization \f$\psi\f$,
+the source position \f$\alpha\f$, \f$\delta\f$ and the detector position and
+orientation (\f$\gamma\f$, \f$\lambda\f$, \f$L\f$ and \f$\xi\f$). The expressions for 
+the beam-pattern functions are given in \ref JKS98 "[JKS98]", which we write as
+\f{eqnarray}
+F_+(t) = \sin \zeta \cos 2\psi \, a(t)  + \sin \zeta \sin 2\psi \, b(t)\,,\\
+F_\times(t) = \sin\zeta  \cos 2\psi \,b(t) - \sin\zeta \sin 2\psi \, a(t) \,,
+\f}
+where \f$\zeta\f$ is the angle between the interferometer arms, and 
+\f{eqnarray}
+a(t) &=& a_1 \cos[ 2 (\alpha - T)) ] + a_2 \sin[ 2(\alpha - T)]
++ a_3 \cos[ \alpha - T ] + a_4 \sin [ \alpha - T ] + a_5\,,\\
+b(t) &=& b_1 \cos[ 2(\alpha - T)] + b_2 \sin[ 2(\alpha - T) ]
++ b_3 \cos[ \alpha - T ] + b_4 \sin[ \alpha - T]\,,
+\f}
+where \f$T\f$ is the local (mean) sidereal time of the detector, and the 
+time-independent coefficients \f$a_i\f$ and \f$b_i\f$ are given by
+\f{eqnarray}
+a_1 &=& {1\over 16} \sin 2\gamma \,(3- \cos 2\lambda)\,(3 - \cos 2\delta)\,,\\
+a_2 &=& -{1\over 4}\cos 2\gamma \,\sin \lambda \,(3 - \cos 2\delta) \,,\\
+a_3 &=& {1\over 4} \sin 2\gamma \,\sin 2\lambda \,\sin 2\delta  \,\\
+a_4 &=& -{1\over2} \cos 2\gamma \,\cos \lambda \,\sin 2 \delta\,,\\
+a_5 &=& {3\over4} \sin 2\gamma \, \cos^2 \lambda \,\cos^2 \delta\,,
+\f}
+and 
+\f{eqnarray}
+b_1 &=& \cos 2\gamma \,\sin \lambda \,\sin \delta\,,\\
+b_2 &=& {1\over 4} \sin 2\gamma \,(3-\cos 2\lambda)\, \sin \delta\,,\\
+b_3 &=& \cos 2\gamma \,\cos \lambda \,\cos\delta \,, \\
+b_4 &=& {1\over 2} \sin2\gamma \,\sin 2\lambda \,\cos\delta\,,
+\f}
+
+The source model considered is a plane-wave
+\f{eqnarray}
+h_+(t) &=& A_+\, \cos \Psi(t)\,,\\
+h_\times(t) &=& A_\times \, \sin \Psi(t)\,,
+\f}
+where the wave-phase is \f$\Psi(t) = \Phi_0 + \Phi(t)\f$, and for an
+isolated pulsar we have
+\f{equation}
+\Phi(t) = 2\pi \left[\sum_{s=0} {f^{(s)}(\tau_\mathrm{ref}) \over
+(k+1)!} \left( \tau(t) - \tau_\mathrm{ref} \right)^{k+1} \right]\,,
+\f}
+where \f$\tau_\mathrm{ref}\f$ is the "reference time" for the definition
+of the pulsar-parameters \f$f^{(s)}\f$ in the solar-system barycenter
+(SSB), and \f$\tau(t)\f$ is the SSB-time of the phase arriving at the
+detector at UTC-time \f$t\f$, which depends on the source-position
+(\f$\alpha\f$, \f$\delta\f$) and the detector-position, namely
+\f{equation}
+  \tau (t) = t + { \vec{r}(t)\cdot\vec{n} \over c}\,,
+\f}
+where \f$\vec{r}(t)\f$ is the vector from SSB to the detector, and \f$\vec{n}\f$ 
+is the unit-vector pointing \emph{to} the source.
+
+This is a standalone "clean-room" implementation using no other 
+outside-functions <em>except</em> for LALGPStoLMST1() to calculate 
+the local (mean) sidereal time at the detector for given GPS-time, 
+(which I double-checked with an independent Mathematica script),
+and and LALBarycenter() to calculate \f$\tau(t)\f$.
+
+ * $Id$
+ *
+ */
+
+/** \page References
+ * \anchor JKS98
+ *  	<b>[JKS98]</b> Jaranowski, Krolak, Schutz, PRD...
+ *
+ */
+
 
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{SimulatePulsarSignal.c}}
@@ -10,88 +121,8 @@ $Id$
 Routines to simulate pulsar-signals "exactly".
 UNDER CONSTRUCTION. NOT USEABLE YET!
 
-\subsubsection*{Prototypes}
-
-\input{SimulatePulsarSignalCP}
-
-\subsubsection*{Description}
-
-The motivation for this module is to provide functions to
-simulate pulsar signals \emph{with the best possible accuracy}, 
-i.e. using no approximations, contrary to \verb+GeneratePulsarSignal+. 
-
-Obviously this is not meant as a fast code to be used in a Monte-Carlo
-simulation, but rather as a \emph{reference} to compare other (faster)
-functions agains, in order to be able to gauge the quality of a given
-signal-generation routine.
-
-We want to calculate $h(t)$, given by
-\begin{equation}
-\label{eq:1}
-	h(t) = F_+(t)\, h_+(t) + F_\times(t) \,h_\times(t)\,,
-\end{equation}
-where $F_+$ and $F_x$ are called the \emph{beam-pattern} functions, 
-which depend of the wave polarization $\psi$,
-the source position $\alpha$, $\delta$ and the detector position and
-orientation ($\gamma$, $\lambda$, $L$ and $\xi$). The expressions for 
-the beam-pattern functions are given in \cite{JKS98}, which we write as
-\begin{eqnarray}
-F_+(t) = \sin \zeta \cos 2\psi \, a(t)  + \sin \zeta \sin 2\psi \, b(t)\,,\\
-F_\times(t) = \sin\zeta  \cos 2\psi \,b(t) - \sin\zeta \sin 2\psi \, a(t) \,,
-\end{eqnarray}
-where $\zeta$ is the angle between the interferometer arms, and 
-\begin{eqnarray}
-a(t) &=& a_1 \cos[ 2 (\alpha - T)) ] + a_2 \sin[ 2(\alpha - T)]
-+ a_3 \cos[ \alpha - T ] + a_4 \sin [ \alpha - T ] + a_5\,,\\
-b(t) &=& b_1 \cos[ 2(\alpha - T)] + b_2 \sin[ 2(\alpha - T) ]
-+ b_3 \cos[ \alpha - T ] + b_4 \sin[ \alpha - T]\,,
-\end{eqnarray}
-where $T$ is the local (mean) sidereal time of the detector, and the 
-time-independent coefficients $a_i$ and $b_i$ are given by
-\begin{eqnarray}
-a_1 &=& {1\over 16} \sin 2\gamma \,(3- \cos 2\lambda)\,(3 - \cos 2\delta)\,,\\
-a_2 &=& -{1\over 4}\cos 2\gamma \,\sin \lambda \,(3 - \cos 2\delta) \,,\\
-a_3 &=& {1\over 4} \sin 2\gamma \,\sin 2\lambda \,\sin 2\delta  \,\\
-a_4 &=& -{1\over2} \cos 2\gamma \,\cos \lambda \,\sin 2 \delta\,,\\
-a_5 &=& {3\over4} \sin 2\gamma \, \cos^2 \lambda \,\cos^2 \delta\,,
-\end{eqnarray}
-and 
-\begin{eqnarray}
-b_1 &=& \cos 2\gamma \,\sin \lambda \,\sin \delta\,,\\
-b_2 &=& {1\over 4} \sin 2\gamma \,(3-\cos 2\lambda)\, \sin \delta\,,\\
-b_3 &=& \cos 2\gamma \,\cos \lambda \,\cos\delta \,, \\
-b_4 &=& {1\over 2} \sin2\gamma \,\sin 2\lambda \,\cos\delta\,,
-\end{eqnarray}
-
-The source model considered is a plane-wave
-\begin{eqnarray}
-h_+(t) &=& A_+\, \cos \Psi(t)\,,\\
-h_\times(t) &=& A_\times \, \sin \Psi(t)\,,
-\end{eqnarray}
-where the wave-phase is $\Psi(t) = \Phi_0 + \Phi(t)$, and for an
-isolated pulsar we have
-\begin{equation}
-\Phi(t) = 2\pi \left[\sum_{s=0} {f^{(s)}(\tau_\mathrm{ref}) \over
-(k+1)!} \left( \tau(t) - \tau_\mathrm{ref} \right)^{k+1} \right]\,,
-\end{equation}
-where $\tau_\mathrm{ref}$ is the "reference time" for the definition
-of the pulsar-parameters $f^{(s)}$ in the solar-system barycenter
-(SSB), and $\tau(t)$ is the SSB-time of the phase arriving at the
-detector at UTC-time $t$, which depends on the source-position
-($\alpha$, $\delta$) and the detector-position, namely
-\begin{equation}
-  \tau (t) = t + { \vec{r}(t)\cdot\vec{n} \over c}\,,
-\end{equation}
-where $\vec{r}(t)$ is the vector from SSB to the detector, and $\vec{n}$ 
-is the unit-vector pointing \emph{to} the source.
-
-\subsubsection*{Algorithm}
-
-This is a standalone "clean-room" implementation using no other 
-outside-functions \emph{except} for \verb+LALGPStoLMST1()+ to calculate 
-the local (mean) sidereal time at the detector for given GPS-time, 
-(which I double-checked with an independent Mathematica script),
-and and \verb+LALBarycenter()+ to calculate $\tau(t)$.
+for the documentation, see doxygen:
+\verb+http://www.lsc-group.phys.uwm.edu/lal/slug/nightly/doxygen/html/+
 
 \subsubsection*{Uses}
 
