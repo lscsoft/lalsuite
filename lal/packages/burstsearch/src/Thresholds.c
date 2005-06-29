@@ -181,7 +181,7 @@ REAL8 XLALNoncChisqCdfNonSafe(
 
 	static const char *func = "XLALNoncChisqCdfNonSafe";
 	const REAL8 fractionalAccuracy = 1.0e-5;
-	const INT4 maxloop = 1000;
+	const INT4 maxloop = 170;	/* Factorial() breaks down here */
 	REAL8 temp;
 	REAL8 current;
 	REAL8 sum;
