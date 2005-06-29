@@ -233,7 +233,7 @@ LALNormalizeSkyPosition (LALStatus *stat,
   if (tmp.latitude < -LAL_PI_2)
     {
       tmp.latitude = -LAL_PI - tmp.latitude;
-      if (tmp.longitude <= LAL_PI)
+      if (tmp.longitude < LAL_PI)
 	{
 	  tmp.longitude += LAL_PI;
 	}
