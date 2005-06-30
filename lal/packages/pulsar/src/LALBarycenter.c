@@ -43,10 +43,10 @@ The emission time $t_e(t_a)$ is returned in the \verb@LIGOTimeGPS@ format,
 while the other two quantities are \verb@REAL8@s.
 
 \subsubsection*{Algorithm}
-The function ``corrects'' the pulse arrival time
+The function "corrects" the pulse arrival time
 by removing the Roemer delay, 
 (including effects of Moon, planets, and the 
-Earth's time-varying spin axis and spin rate),
+Earths time-varying spin axis and spin rate),
 Einstein delay, and Shapiro delay. Accuracy is
 better than 3 $\mu$s. Full details will be in monograph
 by Cutler in Los Alamos preprint archive.
@@ -59,7 +59,7 @@ by Cutler in Los Alamos preprint archive.
 
 #include <lal/LALBarycenter.h>
 		 
-NRCSID(LALBARYCENTERC,"$Id$");
+NRCSID(LALBARYCENTERC, "$Id$");
 		 
 /* <lalVerbatim file="LALBarycenterCP"> */
 void 
