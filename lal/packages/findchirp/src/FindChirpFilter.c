@@ -251,17 +251,6 @@ LALFindChirpFilterSegment (
   /* number of points in a segment */
   numPoints = params->qVec->length;
 
-  /* XXX XXX XXX XXX */
- if ( lalDebugLevel & LALINFO )
-  {
-    CHAR infomsg[256];
-
-    LALSnprintf( infomsg, sizeof(infomsg) / sizeof(*infomsg),
-        "249Filter_epoch.GPSseconds = %d", 
-        input->segment->data->epoch.gpsSeconds);
-    LALInfo( status, infomsg );
-  }
-
   /* template and data */
   inputData = input->segment->data->data->data;
   tmpltSignal = input->fcTmplt->data->data;
@@ -274,6 +263,7 @@ LALFindChirpFilterSegment (
   /* number of chisq bins is (length - 1) or 0 if there are no boundaries   */
   numChisqBins = input->segment->chisqBinVec->length ? 
     input->segment->chisqBinVec->length - 1 : 0;
+
 
   /*
    *
