@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+import os.path
+import re
+import string
+import sys
+from optparse import OptionParser
+
+#
+# Parse command line
+#
+
+parser = OptionParser(usage="usage: %prog [options]\n\nExample:\n\tls $PWD/*.xml | path2cache")
+parser.add_option("-i", "--input", metavar="INPUT", default="", help="read input from INPUT [stdin]")
+parser.add_option("-o", "--output", metavar="OUTPUT", default="", help="write output to OUTPUT [stdout]")
+parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="turn on verbosity")
+options, args = parser.parse_args()
+del parser
+del args
+
+
+#
+# Open input and output streams
+#
+
+if len(options.input):
+	input = file(options.input)
+else:
+	input = sys.stdin
+
+if len(options.output):
+	output = file(options.output)
+else:
+	output = sys.stdout
+
+#
+# Other initializations
+#
+
+path_count = 0
+total_duration = 0
+
+
+#
+# Filter input one line at a time
+#
+
+for line in input:
+	path, file = os.path.split(line)
+	if len(path) == 0 or path[0] != "/":
+		raise Exception, "Paths must be absolute (must start with '/')"
+	path = "file://localhost" + path + "/"
+	file = string.rstrip(file)
+	try:
+		[instrument, type, start, duration, extension] = re.split("[.-]", file)
+	except ValueError:
+		raise Exception, "Filename format not recognized"
+	print >> output, instrument[0], type, start, duration, path + file
+	path_count += 1
+	total_duration += int(duration)
+
+if options.verbose:
+	print >> sys.stderr, "number of paths: %d\ntotal duration: %d" % (path_count, total_duration)
