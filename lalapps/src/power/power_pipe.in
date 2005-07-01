@@ -421,7 +421,7 @@ for seg in data:
       pow1.set_siminj(binj.get_output(bseed))
       pow1.add_var_opt('sim-seconds',simseconds)
       pow1.add_var_opt('sim-cache',simcache)	
-    pow1.add_var_opt('threshold',ifo1_snr)
+    pow1.add_var_opt('lnthreshold',ifo1_snr)
 
     if do_datafind: 
       pow1.add_parent(df1)
@@ -452,7 +452,7 @@ for seg in data:
       pow2.set_siminj(binj.get_output(bseed))
       pow2.add_var_opt('sim-seconds',simseconds)
       pow2.add_var_opt('sim-cache',simcache)
-    pow2.add_var_opt('threshold',ifo2_snr)
+    pow2.add_var_opt('lnthreshold',ifo2_snr)
 
     if do_datafind: 
       pow2.add_parent(df1)
@@ -483,7 +483,7 @@ for seg in data:
       pow3.set_siminj(binj.get_output(bseed))
       pow3.add_var_opt('sim-seconds',simseconds)
       pow3.add_var_opt('sim-cache',simcache)
-    pow3.add_var_opt('threshold',ifo3_snr)
+    pow3.add_var_opt('lnthreshold',ifo3_snr)
 
     if do_datafind: 
       pow3.add_parent(df2)
