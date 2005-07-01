@@ -107,7 +107,6 @@ simulated data.
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
 [\option{--cluster}] \newline \hspace*{0.5in}
 [\option{--debug-level}~\parm{level}] \newline \hspace*{0.5in}
-\option{--default-alpha}~\parm{alpha} \newline \hspace*{0.5in}
 [\option{--event-limit}~\parm{count}] \newline \hspace*{0.5in}
 \option{--filter-corruption}~\parm{samples} \newline \hspace*{0.5in}
 \option{--frame-cache}~\parm{cache file} \newline \hspace*{0.5in}
@@ -128,7 +127,6 @@ simulated data.
 \option{--min-freq-bin}~\parm{nfbin} \newline \hspace*{0.5in}
 \option{--min-time-bin}~\parm{ntbin} \newline \hspace*{0.5in}
 [\option{--noise-amplitude}~\parm{amplitude}] \newline \hspace*{0.5in}
-\option{--nsigma}~\parm{sigma} \newline \hspace*{0.5in}
 [\option{--printData}] \newline \hspace*{0.5in}
 [\option{--printSpectrum}] \newline \hspace*{0.5in}
 \option{--psd-average-method}~\parm{method} \newline \hspace*{0.5in}
@@ -142,7 +140,7 @@ simulated data.
 [\option{--seed}~\parm{seed}] \newline \hspace*{0.5in}
 \option{--target-sample-rate}~\parm{Hz} \newline \hspace*{0.5in}
 \option{--tile-overlap-factor}~\parm{factor} \newline \hspace*{0.5in}
-\option{--threshold}~\parm{threshold} \newline \hspace*{0.5in}
+\option{--lnthreshold}~\parm{threshold} \newline \hspace*{0.5in}
 [\option{--useoverwhitening}] \newline \hspace*{0.5in}
 [\option{--user-tag}~\parm{comment}] \newline \hspace*{0.5in}
 [\option{--verbose}] \newline \hspace*{0.5in}
@@ -242,10 +240,6 @@ Sets the LAL debug level to \parm{level}.  The default value is
 \texttt{LALMSGLVL2}.  A useful setting is 65 which turns off memory
 padding, but keeps memory tracking and error messages.  If you want to turn
 off memory tracking completely, then use 33.
-
-\item[\option{--default-alpha} \parm{alpha}]
-Set the default alpha value for tiles with sigma $<$ numSigmaMin to
-\parm{alpha}.  See the LAL ``burstsearch'' package for details.
 
 \item[\option{--event-limit} \parm{count}]
 Limit the number of events reported in each time interval corresponding to
@@ -352,10 +346,6 @@ If this parameter is provided, then Gaussian white noise will be mixed with
 the input data.  If neither \option{--frame-cache} nor \option{--frame-dir}
 is provided, then the noise will be the only data analyzed.
 
-\item[\option{--nsigma} \parm{sigma}]
-The threshold of the number of sigma to the floating point number
-\parm{sigma}.  See the LAL ``burstsearch'' package for details.
-
 \item[\option{--printData}]
 Print the input time series at various stages of conditioning to data files
 for diagnostic purposes.  Generally a version of the input time series is
@@ -417,9 +407,9 @@ This parameter influences the amount of overlap between neighboring
 time-frequency tiles.  It must be an integer.  A reasonable value for this
 parameter is 3.  See the LAL ``burstsearch'' package for more information.
 
-\item[\option{--threshold} \parm{threshold}]
-Set the threshold in alpha above which identified events should be
-discarded.  See the LAL ``burstsearch'' package for details.
+\item[\option{--lnthreshold} \parm{threshold}]
+Set the threshold in logarithm of alpha above which identified events
+should be discarded.  See the LAL ``burstsearch'' package for details.
 
 \item[\option{--user-tag} \parm{comment}]
 Set the user tag to the string \parm{comment}.  This string must not
@@ -460,7 +450,6 @@ lalapps_power \
 --bandwidth 1024 \
 --channel-name "H1:LSC-AS_Q" \
 --cluster \
---default-alpha 0.5 \
 --filter-corruption 8192 \
 --frame-cache H-754008315-754008371.cache \
 --frame-sample-rate 16384 \
@@ -472,12 +461,11 @@ lalapps_power \
 --low-freq-cutoff 130.0 \
 --min-freq-bin 2 \
 --min-time-bin 2 \
---nsigma 2.0 \
 --psd-average-method useMedian \
 --psd-average-points 548864 \
 --resample-filter butterworth \
 --target-sample-rate 16384 \
---threshold 1.0e-9 \
+--lnthreshold -80.0 \
 --tile-overlap-factor 3 \
 --user-tag testing \
 --verbose \

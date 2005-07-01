@@ -203,7 +203,6 @@ static void print_usage(char *program)
 "	 --channel-name <string>\n" \
 "	[--cluster]\n" \
 "	[--debug-level <level>]\n" \
-"	 --default-lnalpha <ln alpha>\n" \
 "	[--event-limit <count>]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
@@ -224,7 +223,6 @@ static void print_usage(char *program)
 "	 --min-freq-bin <nfbin>\n" \
 "	 --min-time-bin <ntbin>\n" \
 "	[--noise-amplitude <amplitude>]\n" \
-"	 --nsigma <sigma>\n" \
 "	[--printData]\n" \
 "	[--printSpectrum]\n" \
 "	 --psd-average-method <method>\n" \
@@ -290,10 +288,6 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			arg_is_missing = !params->channelName;
 			break;
 
-			case 'E':
-			arg_is_missing = params->lnalphaDefault > 0.0;
-			break;
-
 			case 'K':
 			LAL_CALL(LALGPStoINT8(stat, &gpstmp, &options.stopEpoch), stat);
 			arg_is_missing = !gpstmp;
@@ -318,10 +312,6 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 
 			case 'W':
 			arg_is_missing = !params->windowLength;
-			break;
-
-			case 'X':
-			arg_is_missing = params->numSigmaMin <= 0.0;
 			break;
 
 			case 'Y':
@@ -448,7 +438,6 @@ void parse_command_line(
 		{"channel-name",        required_argument, NULL,           'C'},
 		{"cluster",             no_argument, &options.cluster,    TRUE},
 		{"debug-level",         required_argument, NULL,           'D'},
-		{"default-lnalpha",     required_argument, NULL,           'E'},
 		{"event-limit",         required_argument, NULL,           'F'},
 		{"filter-corruption",	required_argument, NULL,           'j'},
 		{"frame-cache",         required_argument, NULL,           'G'},
@@ -469,7 +458,6 @@ void parse_command_line(
 		{"min-freq-bin",        required_argument, NULL,           'T'},
 		{"min-time-bin",        required_argument, NULL,           'U'},
 		{"noise-amplitude",     required_argument, NULL,           'V'},
-		{"nsigma",              required_argument, NULL,           'X'},
 		{"printData",           no_argument, &options.printData,  TRUE},
 		{"printSpectrum",       no_argument, &printSpectrum,      TRUE},
 		{"psd-average-method",  required_argument, NULL,           'Y'},
@@ -500,8 +488,6 @@ void parse_command_line(
 	params->channelName = NULL;	/* impossible */
 	params->eventLimit = 999;	/* default */
 	params->method = -1;	/* impossible */
-	params->lnalphaDefault = 1.0;	/* impossible */
-	params->numSigmaMin = -1.0;	/* impossible */
 	params->tfPlaneParams.flow = -1.0;	/* impossible */
 	params->tfPlaneParams.fhigh = -1.0;	/* impossible */
 	params->minFreqBins = 0;	/* impossible */
@@ -580,16 +566,6 @@ void parse_command_line(
 		case 'D':
 		/* only add --debug-level to params table in this pass */
 		ADD_PROCESS_PARAM("string");
-		break;
-
-		case 'E':
-		params->lnalphaDefault = atof(optarg);
-		if(params->lnalphaDefault > 0.0) {
-			sprintf(msg, "must be in range (-inf, 0] (%g specified)", params->lnalphaDefault);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("float");
 		break;
 
 		case 'F':
@@ -748,16 +724,6 @@ void parse_command_line(
 			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int");
-		break;
-
-		case 'X':
-		params->numSigmaMin = atof(optarg);
-		if(params->numSigmaMin <= 0.0) {
-			sprintf(msg, "must be > 0.0 (%f specified)", params->numSigmaMin);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("float");
 		break;
 
 		case 'Y':
