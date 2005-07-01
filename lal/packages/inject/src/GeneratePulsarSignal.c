@@ -1005,16 +1005,18 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
 
 
 
-/*----------------------------------------------------------------------
- * convert earth-frame GPS time into barycentric-frame SSB time for given source
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="GeneratePulsarSignalCP"> */
 /*--------------- some useful helper-functions ---------------*/
+
+/** Convert earth-frame GPS time into barycentric-frame SSB time for given source.
+ * \note The only fields used in params are: \a site, \a pulsar.position 
+ * and \a ephemerides.
+ */
+/* <lalVerbatim file="GeneratePulsarSignalCP"> */
 void
 LALConvertGPS2SSB (LALStatus* status, 
-		   LIGOTimeGPS *SSBout, 	/* output: arrival-time in SSB */
-		   LIGOTimeGPS GPSin, 		/* input: GPS-arrival time at detector */
-		   const PulsarSignalParams *params) /* define source-location and detector */
+		   LIGOTimeGPS *SSBout, 	/**< [out] arrival-time in SSB */
+		   LIGOTimeGPS GPSin, 		/**< [in]  GPS-arrival time at detector */
+		   const PulsarSignalParams *params) /**< define source-location and detector */
 { /* </lalVerbatim> */
   EarthState earth;
   EmissionTime emit;
