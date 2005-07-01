@@ -13,15 +13,25 @@
 [\option{--version}] \newline \hspace*{0.5in}
 \option{--debug-level}~\parm{level} \newline \hspace*{0.5in} 
 [\option{--user-tag}~\parm{usertag}] \newline \hspace*{0.5in} 
+[\option{--ifo-tag}~\parm{ifotag}] \newline \hspace*{0.5in} 
 \option{--gps-start-time}~\parm{start\_time} \newline \hspace*{0.5in}           
 \option{--gps-end-time}~\parm{end\_time} \newline \hspace*{0.5in} 
-[\option{--check-times}] \newline \hspace*{0.5in} 
+[\option{--check-times}] \newline \hspace*{0.5in}
+[\option{--multi-ifo-coinc}] \newline \hspace*{0.5in}
+[\option{--maximization-interval}~parm{max\_dt}] \newline \hspace*{0.5in}
 [\option{--g1-triggers}]  \newline \hspace*{0.5in}
 [\option{--h1-triggers}]  \newline \hspace*{0.5in}
 [\option{--h2-triggers}]  \newline \hspace*{0.5in}
 [\option{--l1-triggers}]  \newline \hspace*{0.5in}
 [\option{--t1-triggers}]  \newline \hspace*{0.5in}
 [\option{--v1-triggers}]  \newline \hspace*{0.5in}
+[\option{--g1-slide}~\parm{g1\_slide}]  \newline \hspace*{0.5in}
+[\option{--h1-slide}~\parm{h1\_slide}]  \newline \hspace*{0.5in}
+[\option{--h2-slide}~\parm{h2\_slide}]  \newline \hspace*{0.5in}
+[\option{--l1-slide}~\parm{l1\_slide}]  \newline \hspace*{0.5in}
+[\option{--t1-slide}~\parm{t1\_slide}]  \newline \hspace*{0.5in}
+[\option{--v1-slide}~\parm{v1\_slide}]  \newline \hspace*{0.5in}
+[\option{--num-slides}~\parm{num\_slides}]  \newline \hspace*{0.5in}
 [\option{--g1-time-accuracy}~\parm{g1\_dt}]  \newline \hspace*{0.5in}
 [\option{--h1-time-accuracy}~\parm{h1\_dt}]  \newline \hspace*{0.5in}
 [\option{--h2-time-accuracy}~\parm{h2\_dt}]  \newline \hspace*{0.5in}
@@ -46,10 +56,23 @@
 [\option{--l1-eta-accuracy}~\parm{l1\_deta}]  \newline \hspace*{0.5in}
 [\option{--t1-eta-accuracy}~\parm{t1\_deta}]  \newline \hspace*{0.5in}
 [\option{--v1-eta-accuracy}~\parm{v1\_deta}]  \newline \hspace*{0.5in}
+[\option{--g1-psi0-accuracy}~\parm{g1\_dpsi0}]  \newline \hspace*{0.5in}
+[\option{--h1-psi0-accuracy}~\parm{h1\_dpsi0}]  \newline \hspace*{0.5in}
+[\option{--h2-psi0-accuracy}~\parm{h2\_dpsi0}]  \newline \hspace*{0.5in}
+[\option{--l1-psi0-accuracy}~\parm{l1\_dpsi0}]  \newline \hspace*{0.5in}
+[\option{--t1-psi0-accuracy}~\parm{t1\_dpsi0}]  \newline \hspace*{0.5in}
+[\option{--v1-psi0-accuracy}~\parm{v1\_dpsi0}]  \newline \hspace*{0.5in}
+[\option{--g1-psi3-accuracy}~\parm{g1\_dpsi3}]  \newline \hspace*{0.5in}
+[\option{--h1-psi3-accuracy}~\parm{h1\_dpsi3}]  \newline \hspace*{0.5in}
+[\option{--h2-psi3-accuracy}~\parm{h2\_dpsi3}]  \newline \hspace*{0.5in}
+[\option{--l1-psi3-accuracy}~\parm{l1\_dpsi3}]  \newline \hspace*{0.5in}
+[\option{--t1-psi3-accuracy}~\parm{t1\_dpsi3}]  \newline \hspace*{0.5in}
+[\option{--v1-psi3-accuracy}~\parm{v1\_dpsi3}]  \newline \hspace*{0.5in}
 \option{--parameter-test}
-\parm{(m1\_and\_m2|psi0\_and\_psi3|mchirp\_and\_eta)}
+\parm{(m1\_and\_m2 $\mid$ psi0\_and\_psi3 $\mid$ mchirp\_and\_eta)}
 \newline \hspace*{0.5in}
-\option{--data-type}~\parm{(playground\_only|exclude\_play|all\_data)} 
+\option{--data-type}~\parm{(playground\_only $\mid$ exclude\_play $\mid$ 
+all\_data)} 
 \newline \hspace*{0.5in}
 \option{LIGOLW XML input files} 
 
@@ -57,16 +80,18 @@
 
 \verb$lalapps_thinca$ performs a coincidence test between triggers from
 different interferometers.  It reads in triggers from up to four instruments
-and returns coincident triggers.  At present, the code returns all double
-coincident triggers --- it does not check for triple or quadruple coincidences
-even if there are more than two active detectors.
+and returns coincident triggers.  By default, the code will return all double
+coincident triggers.  If the \texttt{multi-ifo-coinc} option is specified then
+the code will also search for triple and quadruple coincidences.
 
 The user specifies which instruments there will be triggers input from with
-the \texttt{g1-triggers}, \texttt{h1-triggers} etc. options.  If less than two
-of these are specified, the program exits as there cannot be coincidence.  The
-triggers are then read in from the list of LIGO Lightweight XML files given
-after the last command line argument.  The code only keeps triggers which
-occur between the \textsc{start\_time} and the \textsc{end\_time}.  If the
+the \texttt{g1-triggers}, \texttt{h1-triggers} etc. options (if less than two
+of these are specified, the program exits as there cannot be coincidence).
+The triggers are then read in from the list of LIGO Lightweight XML files
+given after the last command line argument.  If the
+\texttt{maximization-interval} is specified, then only the loudest trigger in
+each \textsc{max\_dt} ms is retained. The code only keeps triggers which occur
+between the \textsc{start\_time} and the \textsc{end\_time}.  If the
 \texttt{check-times} option is specified, then the input search summary tables
 are checked to ensure that we have searched all data between the
 \textsc{start\_time} and \textsc{end\_time} in all relevant ifos.  Following
@@ -75,29 +100,35 @@ specified and any playground triggers if \textsc{exclude\_play} was specified.
 At this stage, we check that there are triggers from at least two instruments,
 if not, the code exits without testing for coincidences. 
 
-The code now tests for any pairs of coincident triggers.  This is done in the
-function \texttt{LALCreateTwoIFOCoincList()}.  Triggers are considered
-coincident if their end times and mass parameters pass coincidence.  We test
-either on the two component masses if \texttt{m1\_and\_m2} is specified or the
-chirp mass and mass ratio if \texttt{mchirp\_and\_eta} is specified.  To pass
-time coincidence, the end times must differ by less than \textsc{ifoa\_dt} $+$
-\textsc{ifob\_dt} $+$ light travel time.  Similarly, we require that the mass
-parameters agree within \textsc{ifoa\_dm} $+$ \textsc{ifob\_dm}.
-At the end of the process, we
-have a list of pairs of triggers from different instruments which pass the
-time and mass coincidence tests.  These need to be searched for triple and
-quadruple coincidences, but this has not yet been implemented.
+The code now tests for any pairs of coincident triggers from different
+instruments.  This is done in the function
+\texttt{LALCreateTwoIFOCoincList()}.  Triggers are considered coincident if
+their end times and mass parameters pass coincidence.  We test either on the
+two component masses if \texttt{m1\_and\_m2} is specified, on the chirp mass
+and mass ratio if \texttt{mchirp\_and\_eta} is specified or on the BCV $\psi$
+parameters if \texttt{psi0\_and\_psi3} is specified.  To pass time
+coincidence, the end times must differ by less than (\textsc{ifoa\_dt} $+$
+\textsc{ifob\_dt} $+$ light travel time).  Similarly, we require that the mass
+parameters agree within (\textsc{ifoa\_dm} $+$ \textsc{ifob\_dm}).  At the end
+of the process, we have a list of pairs of triggers from different instruments
+which pass the time and mass coincidence tests. 
+
+The list of double coincident triggers is then searched for higher ifo
+coincidences.  This is done in the function \texttt{LALCreateNIFOCoincList()}.
+If, for example, a double coincidence is a subset of a triple coincidence,
+then that double is removed.  All such repetitions are removed by
+\texttt{LALRemoveRepeatedCoincs()}.
 
 The coincident triggers are written into a single LIGO Lightweight XML file.
 In order that the coincident triggers can be easily located, the
 \textsc{event\_id} field is populated.  This is a \texttt{UINT8} which is
-populated with \textsc{start\_time} $\times 10^{9} +$ an integer identifier.
+populated with $10^{9} \times$ \textsc{start\_time} $+$ an integer identifier.
 The integer identifier is unique within the file, so the overall \textsc{id}
 will be unique.  
 
 The output file is named
 \begin{center}
-\texttt{IFOS-THINCA\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\texttt{IFOS-THINCA\_IFOTAG\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
 \end{center}
 where \textsc{IFOS} is a list of the active ifos in alphabetical order.  The
 file contains \texttt{process}, \texttt{process\_params},
@@ -107,10 +138,32 @@ the summ values which were contained in the input files (in aniticipation of
 performing a distance cut) as well as the \texttt{sngl\_inspiral} table
 containing the coincident events.
 
+If a non-zero argument is given to \texttt{num-slides}, then $2 \, \times$
+\textsc{num\_slides} time slides are performed, half with a positive
+slide and half with negative.  The amount by which the triggers of each
+instrument are slid is given by the arguments to \texttt{g1-slide} etc.  The
+slide time specified for each of the instruments must be non-negative and
+unique.  The time slides are performed ``on a ring'', so that any trigger
+which is slid past the \textsc{end\_time} is wrapped to the beginning of the
+analyzed segment.  The triggers are then searched for coincidences in an
+identical manner to the zero-lag case.  Again, a unique \textsc{event\_id} is
+associated with each event.  This is a \texttt{UINT8} which is populated with
+$\times 10^{9} \times$ \textsc{start\_time} $+ 10^{5} \times 10^{5}$ a time
+slide identifier $+$ an integer identifier.  Again, the \textsc{event\_id}s
+serve to uniquely specify the coincidences, and also encode which time slide
+the coincidence was found in.  
+
+When performing time slides, the output file is named 
+\begin{center}
+\texttt{IFOS-THINCA\_SLIDE\_IFOTAG\_USERTAG-GPSSTARTTIME-DURATION.xml}\\
+\end{center}
+
+
 \item[Options]\leavevmode
 \begin{entry}
 
-\item[\texttt{--data-type}(playground\_only|exclude\_play|all\_data)]
+\item[\texttt{--data-type} (playground\_only $\mid$ exclude\_play$\mid$
+all\_data)]
 Required.  Specify whether the code should use only the playground, exclude
 the playground or use all the data. 
 
@@ -145,7 +198,7 @@ requested interferometers was analyzed once and only once between the
 perform this check.
 
 \item[\texttt{--parameter-test}
-(m1\_and\_m2|psi0\_and\_psi3|mchirp\_and\_eta)]
+(m1\_and\_m2 $\mid$ psi0\_and\_psi3 $\mid$ mchirp\_and\_eta)]
 Required. Choose which parameters to use when testing for coincidenc.
 Depending on which test is chosen, the allowed windows on the appropriate
 parameters should be set as described below.
@@ -167,6 +220,19 @@ signal.  The chirp mass accuracy is set in solar masses.
 accuracy with which the given \texttt{ifo} can recover the mass ratio $\eta$
 of a signal.
 
+\item[\texttt{--ifo-psi0-accuracy} \textsc{ifo\_dpsi0}] Optional. Set the
+accuracy with which the given \texttt{ifo} can recover the parameter
+$\psi_{0}$ of a signal.
+
+\item[\texttt{--ifo-psi3-accuracy} \textsc{ifo\_dpsi3}] Optional. Set the
+accuracy with which the given \texttt{ifo} can recover the parameter
+$\psi_{3}$of a signal.
+
+\item[\texttt{--num-slides} \textsc{num\_slides}] Optional.  Specify the
+number of time slides to perform.  Note that if time slides are performed,
+then the zero lag coincidences are \textit{not} found.  Also the output file
+is named \texttt{THINCA\_SLIDE}.
+
 \item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string}
 to the comment field in the process table. If not specified, no comment
 is added. 
@@ -176,6 +242,9 @@ this job to be \textsc{usertag}. May also be specified on the command line as
 \texttt{-userTag} for LIGO database compatibility.  This will affect the
 naming of the output file.
 
+\item[\texttt{--ifo-tag} \textsc{ifotag}] Optional. Set the ifo tag for this
+job to be \textsc{ifotag}. This will affect the naming of the output file.
+
 \item[\texttt{--verbose}] Enable the output of informational messages.
 
 \item[\texttt{--help}] Optional.  Print a help message and exit.
@@ -184,7 +253,7 @@ naming of the output file.
 tag information and exit.
 
 \item[\texttt{--debug-level} \textsc{level}] Optional. Set the LAL debug
-level to \textsc{level}. If not specified the default is 1.
+level to \textsc{level}. If not specified the default is 33.
 
 \end{entry}
 
