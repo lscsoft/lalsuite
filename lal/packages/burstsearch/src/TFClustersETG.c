@@ -27,6 +27,10 @@ $Id$
 
 NRCSID (TFCLUSTERSETGC, "$Id$");
 
+#ifndef WORDS_BIGENDIAN
+  static void endian_swap(char * pdata, int dsize, int nelements);
+#endif
+
 /******** <lalLaTeX file="TFClustersETGC"> ********
 \noindent
 Implement the TFCLUSTERS event trigger generator.
@@ -72,9 +76,6 @@ parameter index & type & description \\ \hline
 \end{verbatim}
 ********* </lalLaTeX> ********/
 
-#ifndef WORDS_BIGENDIAN
-  static void endian_swap(char * pdata, int dsize, int nelements);
-#endif
 
   INT4 thr_method;
   UINT4 i, j, delL, minF, ip;
