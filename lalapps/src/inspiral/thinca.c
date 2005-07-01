@@ -318,7 +318,7 @@ int main( int argc, char *argv[] )
    */
 
   lal_errhandler = LAL_ERR_EXIT;
-  set_debug_level( "1" );
+  set_debug_level( "33" );
   setvbuf( stdout, NULL, _IONBF, 0 );
 
   /* create the process and process params tables */
@@ -963,13 +963,21 @@ int main( int argc, char *argv[] )
     exit ( 1 );
   }
 
-  if ( numIFO > 2 )
+  if ( numIFO > 2 && vrbflg)
   {
-    fprintf( stdout, 
-        "At present, only two IFO coincidence code is available.\n"
-        "Will find all double coincidences in %d IFO time.\n",
-        numIFO);
-  }
+    if ( !multiIfoCoinc )
+    {
+      fprintf( stdout, 
+          "Finding all double coincidences in %d IFO time.\n"
+          "If you want triples/quadruples please specify --multi-ifo-coinc.\n",
+          numIFO);
+    }
+    else
+    {
+      fprintf( stdout, 
+          "Finding all double/triple/quadruple coincidences in %d IFO time.\n"
+          numIFO);
+
   
   /* set ifos to be the alphabetical list of the ifos with triggers */
   if( numIFO == 2 )
@@ -1441,6 +1449,18 @@ int main( int argc, char *argv[] )
       {
         LAL_CALL( LALCreateTwoIFOCoincList(&status, &coincInspiralList,
           inspiralEventList, &accuracyParams ), &status);
+
+        if ( multiIfoCoinc )
+        {
+          for( N = 3; N <= numIFO; N++)
+          {
+            LAL_CALL( LALCreateNIFOCoincList( &status, &coincInspiralList, 
+                  &accuracyParams, N ), &status );
+          }
+
+          LAL_CALL( LALRemoveRepeatedCoincs( &status, &coincInspiralList ), 
+              &status );
+        }
 
         /* count the coincs, scroll to end of list */
         if( coincInspiralList )
