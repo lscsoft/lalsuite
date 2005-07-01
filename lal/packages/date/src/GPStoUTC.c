@@ -21,7 +21,7 @@ Converts between GPS time (in seconds and nanoseconds) and UTC in a
 
 \texttt{LALGPStoUTC()} and \texttt{LALUTCtoGPS} convert time in GPS seconds
 and nanoseconds (\texttt{LIGOTimeGPS}) and time in UTC (\texttt{LALDate}),
-taking into account leap seconds until 2005-Jun-30 23:59 UTC. % UPDATEME %
+taking into account leap seconds until 2005-Dec-31 23:59:59 UTC. % UPDATEME %
 
 \texttt{LALLeapSecs()} returns the number of leap seconds introduced since
 the GPS epoch 1980-Jan-06, abbreviated GPS-UTC.
@@ -53,7 +53,7 @@ included is 1999-Jan-01. % UPDATEME %
 These routines will not work for times before 1980-01-06 00:00:00 UTC (GPS
 0).  The latest leap second that can be accounted for is the one added at
 the end 1999-Dec. % UPDATEME %  These routines have accurate leap second
-information until 2005-Jun-30. % UPDATEME %
+information until 2005-Dec-31. % UPDATEME %
 
 \textbf{Example:} To convert a GPS time to UTC, and then back to GPS:
 
@@ -113,10 +113,10 @@ char *asctime_r( const struct tm *, char * );
 
 
 /* UPDATEME */
-/* latest time for which this routine will work: 2005-6-30 23:59:59 UTC */
+/* latest time for which this routine will work: 2005-12-31 23:59:59 UTC */
 /* GPS for maxtestedGPS computed using tconvert (part of ligotools) by
    P. Shawhan */
-static const INT4 maxtestedGPS = 804211212;
+static const INT4 maxtestedGPS = 820108812;
 
 /*
  * Convert GPS seconds to UTC date-time contained in LALDate structure
@@ -495,9 +495,9 @@ LALUTCtoGPS (LALStatus                *status,
    */
   if (p_utcDate->unixDate.tm_year > 105 ||
       (p_utcDate->unixDate.tm_year == 105 &&
-       (p_utcDate->unixDate.tm_mon > LALMONTH_JUN ||
-        (p_utcDate->unixDate.tm_mon == LALMONTH_JUN &&
-         p_utcDate->unixDate.tm_mday == 30 &&
+       (p_utcDate->unixDate.tm_mon > LALMONTH_DEC ||
+        (p_utcDate->unixDate.tm_mon == LALMONTH_DEC &&
+         p_utcDate->unixDate.tm_mday == 31 &&
          p_utcDate->unixDate.tm_hour == 23 &&
          p_utcDate->unixDate.tm_min  == 59 &&
          p_utcDate->unixDate.tm_sec > 59))))
