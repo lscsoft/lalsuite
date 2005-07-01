@@ -28,7 +28,6 @@ typedef struct tagTFTile {
 	REAL8 excessPower;
 	REAL8 lnalpha;
 	REAL8 lnweight;
-	BOOLEAN PassFirstCut;
 } TFTile;
 
 
@@ -84,8 +83,6 @@ int
 XLALComputeExcessPower(
 	TFTiling *tiling,
 	const COMPLEX8TimeFrequencyPlane *plane,
-	REAL8 numSigmaMin,
-	REAL8 alphaDefault,
 	const REAL4 *norm
 );
 

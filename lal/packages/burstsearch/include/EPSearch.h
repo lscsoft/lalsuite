@@ -34,8 +34,6 @@ tagEPSearchParams {
 	AvgSpecMethod         method;
 	CreateTFTilingIn      tfTilingInput;
 	TFPlaneParams         tfPlaneParams;
-	REAL8                 numSigmaMin;
-	REAL8                 lnalphaDefault;
 	WindowType            windowType;
 	INT4                  minFreqBins;
 } EPSearchParams;

@@ -89,7 +89,6 @@ TFTiling *XLALCreateTFTiling(
 					tile->deltaF = planeparams->deltaF;
 					tile->excessPower = XLAL_REAL8_FAIL_NAN;
 					tile->lnalpha = XLAL_REAL8_FAIL_NAN;
-					tile->PassFirstCut = TRUE;
 
 					weight[(int) XLALTFTileDegreesOfFreedom(tile)]++;
 

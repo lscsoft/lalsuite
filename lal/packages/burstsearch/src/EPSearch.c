@@ -287,7 +287,7 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
-		if(XLALComputeExcessPower(Tiling, tfplane, params->numSigmaMin, params->lnalphaDefault, normalisation)) {
+		if(XLALComputeExcessPower(Tiling, tfplane, normalisation)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}

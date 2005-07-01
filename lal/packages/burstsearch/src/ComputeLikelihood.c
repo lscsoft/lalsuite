@@ -24,13 +24,12 @@ XLALComputeLikelihood(
 	TFTile *tile;
 	size_t i;
 
-	for(i = 0, tile = tiling->tile; i < tiling->numtiles; i++, tile++)
-		if(tile->PassFirstCut) {
-			/* FIXME: should this be the XLAL function? */
-			dof = 2.0 * (tile->tend - tile->tstart + 1) * (tile->fend - tile->fstart + 1);
-			rho4 = tile->excessPower * tile->excessPower;
-			avglambda += dof / rho4 * exp(tile->lnweight - tile->lnalpha);
-		}
+	for(i = 0, tile = tiling->tile; i < tiling->numtiles; i++, tile++) {
+		/* FIXME: should this be the XLAL function? */
+		dof = 2.0 * (tile->tend - tile->tstart + 1) * (tile->fend - tile->fstart + 1);
+		rho4 = tile->excessPower * tile->excessPower;
+		avglambda += dof / rho4 * exp(tile->lnweight - tile->lnalpha);
+	}
 
 	/* compute the likelihood averaged over TF tiles */
 	avglambda /= tiling->numtiles;
