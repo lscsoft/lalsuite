@@ -26,23 +26,29 @@ This section is under construction!
 \begin{entry}
 
 \item[Name]
-\prog{lalapps\_power\_pipe} --- builds a one interferometer excess-power
+\prog{lalapps\_power\_pipe} --- builds a one/two/three interferometer excess-power
 search DAG   
 
 \item[Synopsis]
-\prog{lalapps\_power\_pipe}
-[\option{--mdccache}~\parm{mdccache}] \newline \hspace*{0.5in}
-[\option{--frame-cahce}~\parm{frcache}] \newline \hspace*{0.5in}
-[\option{--help}] \newline \hspace*{0.5in}
-[\option{--version}] \newline \hspace*{0.5in}
-\option{--user-tag}~\parm{tag} \newline \hspace*{0.5in}
-[\option{--datafind}] \newline \hspace*{0.5in}
-\option{--power} \newline \hspace*{0.5in}
-[\option{--injections}~\parm{file}] \newline \hspace*{0.5in}
-[\option{--playground-only}] \newline \hspace*{0.5in}
-[\option{--priority}~\parm{prio}] \newline \hspace*{0.5in}
-\option{--config-file}~\parm{file} \newline \hspace*{0.5in}
-\option{--log-path}~\parm{path}
+\prog{lalapps\_power\_pipe} \newline \hspace*{0.5in}
+[\option{-h, --help}] \newline \hspace*{0.5in}
+[\option{-v, --version}] \newline \hspace*{0.5in}
+[\option{-u, --user-tag}~\parm{tag}] \newline \hspace*{0.5in}
+[\option{-d, --datafind}] \newline \hspace*{0.5in}
+[\option{-r, --power}] \newline \hspace*{0.5in}
+[\option{-H, --ifo\_h1}] \newline \hspace*{0.5in}
+[\option{-K, --ifo\_h2}] \newline \hspace*{0.5in}
+[\option{-L, --ifo\_l}] \newline \hspace*{0.5in}
+[\option{-c, --makeinjfiles}] \newline \hspace*{0.5in}
+[\option{-j, --injections}~\parm{injection type}] \newline \hspace*{0.5in}
+[\option{-m, --mdcinjections}] \newline \hspace*{0.5in}
+[\option{-b, --coincidence}] \newline \hspace*{0.5in}
+[\option{-t, --triplecoincidence}] \newline \hspace*{0.5in}
+[\option{-s, --timeslides}] \newline \hspace*{0.5in}
+[\option{-p, --playground-only}] \newline \hspace*{0.5in}
+[\option{-P, --priority}~\parm{prio}] \newline \hspace*{0.5in}
+\option{-f, --config-file}~\parm{file} \newline \hspace*{0.5in}
+\option{-l, --log-path}~\parm{path}
 
 \item[Description] 
 \prog{lalapps\_power\_pipe} builds an excess power search DAG suitable for
@@ -54,13 +60,68 @@ construction.  This is a standard python format configuration file.
 
 \item[Options]\leavevmode
 \begin{entry}
+
+\item[\option{--help}] Prints the usage information
+
 \item[\option{--user-tag} \parm{tag}]   The tag for the job.  This will
 override the value set in the ini file
 
 \item[\option{--datafind}] run LSCdataFind as part of the DAG to create the
 cache files for each science segment
 
-\item[\option{--power}] run \prog{lalapps\_power} on the data
+\item[\option{--power}] run \prog{lalapps\_power} on the data.  To run
+the power jobs one has to specify the ifo or the combination of ifos.  This
+can be specified by a combination of the options \option{--ifo\_h1},
+ \option{--ifo\_h2} and \option{--ifo\_l}.  
+
+\item[\option{--ifo\_h1}] run \prog{lalapps\_power} on the data from H1
+
+\item[\option{--ifo\_h2}] run \prog{lalapps\_power} on the data from H2
+
+\item[\option{--ifo\_l}] run \prog{lalapps\_power} on the data from L1
+
+If one wants to run on both H1 and H2 data then the options \option{--ifo\_h1}
+and \option{--ifo\_h2} have to be specified with \option{--power} and 
+similarly for other combinations.  For example if one then wants to run on 
+all of H1,  H2 and L1 data then all the three options,  \option{--ifo\_h1},
+ \option{--ifo\_h2},  \option{--ifo\_l} have to be specified with the 
+\option{--power}.
+
+\item[\option{--makeinjfiles}] run \prog{lalapps\_binj} or 
+\prog{lalapps\_bbhinj} to generate the injection files for each science
+segment. These files are then used by the power jobs as the injection
+parameter files.  However,  specifying this option tells the dag to 
+create the injection files only.  Whether to perform the injections or not
+is specified by the option \option{--injections} along with the type of 
+waveform we would inject.    
+
+\item[\option{--injections} \parm{type}] When this option is specifed 
+simulated waveforms are injected to the data.  To use this option either
+the injection files have to be in the directory or has to be used along with
+\option{--makeinjfiles}.  The type of the injections also has to be specified 
+with this option. The valid types are \texttt{burst, inspiral, burstandinspiral
+and sim}.  \texttt{burst} indicates burst waveforms, \texttt{inspiral} 
+indicates inspiral waveforms, \texttt{burstandinspiral} indicates both
+burst and inspiral waveforms are to be injected and \texttt{sim} indicates
+waveforms like warren,  kudu.
+
+\item[\option{--mdcinjections}] run jobs with MDC injections      
+
+\item[\option{--coincidence}] run \prog{lalapps\_burca} doing double 
+coincidence analysis.  However note that to use this option either
+two of the ifo options have to be used or the trigger files from two ifos 
+have to be in the directory.
+
+\item[\option{--triplecoincidence}] triple coincidence analysis is performed.  
+As in double coincidence this option is to be used
+either with the three ifo options or the trigger files from three ifos have
+to be in the directory.
+
+\item[\option{--timeslides}] perform the timeslide analysis. Timeslides
+are currently performed only between sites, i.e. between Hanford and 
+Livingstone. So to use this option either \option{--ifo\_h1} or 
+\option{--ifo\_h2} or both have to be used with \option{--ifo\_l} or the 
+trigger files have to be in the directory. 
 
 \item[\option{--priority} \parm{prio}] run jobs with condor priority
 \parm{prio}.
@@ -74,9 +135,11 @@ cache files for each science segment
 
 
 \item[Example]
-To run the program,  type:
+To run the program which will do the datafind,  power nodes on the H1
+and L1 data with simulated injections doing a double coincidence analysis
+using the power\_pipe.ini file(which should be in the directory) type:
 \begin{verbatim}
-lalapps_power_pipe
+lalapps_power_pipe -f power_pipe.ini -d -r -H -L -b -c -j sim -l /people/saikat/log/
 \end{verbatim}
 
 \item[Author]
@@ -270,16 +333,6 @@ both \option{--frame-cache} and \option{--frame-dir} are specified,
 \option{--frame-dir} are provided, then \option{--noise-amplitude} must be
 given in order to force the creation of simulated noise.
 
-\item[\option{--frame-sample-rate} \parm{Hz}]
-Set the sample rate of the data found in the input frame files to \parm{Hz}
-samples per second.  \emph{Note:} This parameter must match the actual data
-rate found in the files;  the code's behaviour is undefined if this
-condition is not met.  The existance of this parameter is an unfortunate
-side-effect of the code's input logic, and there is an on-going effort to
-remove the need to specify this information on the command line.  A future
-version of this program will be able to obtain this information directly
-from the input files.
-
 \item[\option{--gps-end-time} \parm{seconds}]
 Set the integer part of the GPS time up to which input data should be read
 to \parm{seconds}.
@@ -306,18 +359,29 @@ In older versions of the program, this frequency has hard-coded to be
 \unit{10}{\hertz} below the lower bound of the frequency band being
 searched or \unit{150}{Hz}, which ever was lower.
 
-\item[\option{--injection-file} \parm{file name}]
+\item[\option{--burstinjection-file} \parm{file name}]
 Use \parm{file name} as a LIGO lightweight XML file containing a list of
 injections to be made.   The file should contain a \verb+sim_burst+ table
-which is used to set information about the types of injections to be made.
-This file may be constructed by hand, or one can use the
+which is used to set information about the types of burst injections to be made.
+This file may be constructed by hand, the
 \verb+lalapps_binj+ program described in Section
-\ref{program:lalapps-binj}.   
+\ref{program:lalapps-binj}.
+
+\item[\option{--inspiralinjection-file} \parm{file name}]
+Use \parm{file name} as a LIGO lightweight XML file containing a list of inspiral
+injections to be made.   The file should contain a \verb+sim_inspiral+ table
+which is used to set information about the types of inspiral injections to be made.
+This file may be constructed by hand, the
+\verb+lalapps_bbhinj+ program described in the Inspiral package   
 
 \item[\option{--low-freq-cutoff} \parm{Hz}]
 Set the lowest frequency at which to search for gravitational waves to
 \parm{Hz}.  This parameter is $f_{\mathrm{low}}$ from our description of
 the desired signal parameters above.
+
+\item[\option{--max-tileband} \parm{Hz}]
+This specifies the max frequency band(\verb+B+) that a tile can have.  This also fixes 
+the minimum time-duration of the tiles,  $\Delta t = 1/B $.
 
 \item[\option{--mdc-cache} \parm{cache file}]
 Use \parm{cache file} as a LAL format frame cache file describing the
@@ -479,7 +543,7 @@ For this to succeed, the current directory must contain the file
 samples per second for the GPS times 754008323.0 s through 754008363.0 s.
 
 \item[Authors]
-Patrick Brady,  Kipp Cannon and Saikat Ray Majumder 
+Patrick Brady, Saikat Ray-Majumder and Kipp Cannon.  
 \end{entry}
 \clearpage
 
@@ -578,14 +642,14 @@ $t = 1/ (2 b)$ and we can use a truncated time-domain filter
 \begin{array}{lrl}
 \displaystyle{
 \frac{\sin[2\pi(f_0+b)(t-t_0)] - \sin[2 \pi f_0 (t-t_0)]}{\pi (t-t_0)} 
-} & \mbox{\ \ } & |t-t_0| < 1/(2b)  \\
+} & \mbox{\ \ } & |t-t_0| < 1/(b)  \\
 0 & & \textrm{Otherwise}
 \end{array} \right. 
 \end{equation}
 which covers a time frequency volume $V = b (1/b) = 1$ and has its
 peak at time $t_0$.   Notice that
 \begin{equation}
-\lim_{t\rightarrow t_0} \Theta(t - t_0; f_0 , b) = 2 b\; .
+\lim_{t\rightarrow t_0} \Theta(t - t_0; f_0 , b) = b\; .
 \end{equation}
 
 \subsubsection{The signal-to-noise}
@@ -1119,25 +1183,54 @@ discussing till now.
 
 \item[Synopsis]
 \prog{lalapps\_burca} \newline \hspace*{0.5in}
-[\option{--start-time}~\parm{GPS seconds}] \newline \hspace*{0.5in}
-[\option{--stop-time}~\parm{GPS seconds}] \newline \hspace*{0.5in}
-[\option{--dt}~\parm{deltat}] \newline \hspace*{0.5in}
-[\option{--noplaygroud}] \newline \hspace*{0.5in}
-[\option{--help}] \newline \hspace*{0.5in}
+[\option{--verbose}] \newline \hspace*{0.5in}
+[\option{--noplayground}] \newline \hspace*{0.5in}
+[\option{--noncoincident}] \newline \hspace*{0.5in}
+[\option{--ignore-playground}] \newline \hspace*{0.5in}
+[\option{--ignore-tfcomparison}] \newline \hspace*{0.5in}
+[\option{--ignore-tcomparison}] \newline \hspace*{0.5in}
 \option{--ifo-a}~\parm{trigfile.a} \newline \hspace*{0.5in}
 \option{--ifo-b}~\parm{trigfile.b} \newline \hspace*{0.5in}
-\option{--outfile}~\parm{outfile}
+[\option{--clustertype}] \newline \hspace*{0.5in}
+[\option{--dt}~\parm{deltat}] \newline \hspace*{0.5in}
+[\option{--start-time}~\parm{GPS seconds}] \newline \hspace*{0.5in}
+[\option{--stop-time}~\parm{GPS seconds}] \newline \hspace*{0.5in}
+[\option{--slide-time}~\parm{GPS seconds}] \newline \hspace*{0.5in}
+[\option{--slide-time-ns}~\parm{GPS nanoseconds}] \newline \hspace*{0.5in}
+[\option{--output-dir}~\parm{directory}] \newline \hspace*{0.5in}
+[\option{--number-slides}~\parm{number}] \newline \hspace*{0.5in}
+[\option{--user-tag}] \newline \hspace*{0.5in}
+[\option{--help}] \newline \hspace*{0.5in}
+
 
 \item[Description] 
 \prog{lalapps\_burca} performs coincidence on triggers from the burst
-search code.  At present it works for only two interferometers.  It must be
-called with at least one input file from each instrument.  The default
-behavior outputs triggers during playground times to the file
-\option{outfile};  to obtain all triggers,  use the \option{--noplayground}
-flag.     
+search code.  It must be called with at least one input file from each 
+instrument.  Currently it outputs the triggers from \option{--ifo\_a} which
+are coincident with triggers from \option{--ifo\_b}.  One can also perform
+time-slided background analysis by using the options \option{--slide-time},
+  \option{--slide-time-ns} and \option{--number-slides}.  The output files
+are of the form H1-BURCA\_H1L1\_P\_0\_H1H2-755518013-345.xml.
+      
 
 \item[Options]\leavevmode
 \begin{entry}
+\item[\option{--verbose}]  Displays some useful messages.
+
+\item[\option{--noncoincident}]  Finds the non-coincident triggers and
+outputs in a file of the form H1-NEGBURCA\_H1L1\_P\_0\_H1H2-755518013-345.xml.
+
+\item[\option{--ignore-playground}] Considers all triggers independent of 
+whether they are playground or non-playground. 
+
+\item[\option{--ignore-tfcomparison}] While comparing triggers they are marked 
+coincident if the triggers lie within +/- \parm{deltaT}(argument of 
+\option{--dt}).
+
+\item[\option{--ignore-tcomparison}] While comparing triggers they are marked 
+coincident if the triggers lie within +/- \parm{deltaT}(argument of 
+\option{--dt}) and if they overlap in frequency band.
+
 \item[\option{--ifo-a} \parm{trigfile.a}]  LIGO lightweight XML file with
 triggers from interferometer A.  This argument can be called multiple
 times.  Triggers are sorted \emph{after} all files have been read in. 
@@ -1152,30 +1245,60 @@ times earlier than \parm{GPS seconds}.
 \item[\option{--stop-time} \parm{GPS seconds}]  Ignore triggers with stop
 times later than \parm{GPS seconds}.
 
-\item[\option{--dt} \parm{deltat}]  Accept triggers as coincident if their
-start times agree within \parm{deltat} msec.  If not supplied,  then
+\item[\option{--clustertype} \parm{cluster type}] Clusters the coincident 
+triggers and the type of clustering is specified as an option.  The valid
+types are \parm{clusterbypeaktimeandfreq, clusterbytimeandfreq}.  
+
+\item[\option{--dt} \parm{deltat}]  Accept triggers for coincidence comparison 
+if their start times agree within \parm{deltat} msec.  If not supplied,  then
 \parm{deltat} = 0.
 
-\item[\option{--outfile} \parm{outfile}]  Name of the LIGO lightweight XML
-file to be used for output.
+\item[\option{--slide-time} \parm{GPS seconds}] The time in GPS seconds by which 
+the triggers are slided in each step for background analysis.
 
-\item[\option{--noplayground}]  Record all triggers.  The default behaviour
-returns only those triggers which lie in the playground data set.  
+\item[\option{--slide-time-ns} \parm{GPS nanoseconds}] The time in GPS 
+nanoseconds by which the triggers are slided in each step for background 
+analysis.  The total time slided in each step is thus calculated from
+both \option{--slide-time} and \option{--slide-time-ns}.
+
+\item[\option{--number-slides} \parm{number}] Specifies the number of slides
+to be performed for the background analysis.  
+
+\item[\option{--user-tag} \parm{tag}] Optional user tag.  Gets appended to the 
+output file names.
+
+\item[\option{--noplayground}]  Record triggers in the non-playground times.  
+The default behaviour returns only those triggers which lie in the playground 
+data set.  
 
 \item[\option{--help}]  Print a help message.
 \end{entry}
 
-\item[Example]
+\item[Coincidence Example]
 \begin{verbatim}
 lalapps_burca \
 --ifo-a L-POWER-734357353-1024.xml \
 --ifo-b H-POWER-734357353-1024.xml \
 --dt 10 \
---outfile my.xml \
 --start-time 734357353 \
 --stop-time 734358353 \
 --noplayground
 \end{verbatim}
+
+\item[Background Example]
+\begin{verbatim}
+lalapps_burca \
+--ifo-a L-POWER-734357353-1024.xml \
+--ifo-b H-POWER-734357353-1024.xml \
+--dt 10 \
+--slide-time 4 \
+--slide-time-ns 250000000 \
+--number-slides 50 \
+--start-time 734357353 \
+--stop-time 734358353 \
+--noplayground
+\end{verbatim}
+
 \item[Author] 
 Patrick Brady and Saikat Ray-Majumder
 \end{entry}
