@@ -108,6 +108,8 @@ struct CommandLineArgsTag {
   INT4 trigstarttime;         /* start-time of allowed triggers */
   INT4 cluster;               /* =0 if events are not to be clustered =1 otherwise */
   INT4 pad;                   /* seconds of padding */
+  INT4 printspectrumflag;     /* flag set to 1 if user want to print the spectrum */
+  INT4 printfilterflag;       /* flag set to 1 if user want to print the filter */
 } CommandLineArgs;
 
 typedef 
@@ -253,9 +255,11 @@ int main(int argc,char *argv[])
 
  if (AvgSpectrum(CommandLineArgs)) return 8;
 
+ if (CommandLineArgs.printspectrumflag) LALSPrintFrequencySeries( &(GV.Spec), "Spectrum.txt" );
+
  if (CreateStringFilter(CommandLineArgs)) return 9;
 
- LALSPrintFrequencySeries( &(GV.StringFilter), "StringFilt.txt" );
+ if (CommandLineArgs.printfilterflag) LALSPrintFrequencySeries( &(GV.StringFilter), "Filter.txt" );
  
  if (CreateTemplateBank(CommandLineArgs)) return 10;
 
@@ -976,10 +980,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"test-gaussian-data",          no_argument, NULL,          'n' },
     {"test-white-spectrum",         no_argument, NULL,          'w' },
     {"cluster-events",              no_argument, NULL,          'l' },
-    {"help",                        no_argument, NULL,         'h' },
+    {"print-spectrum",              no_argument, NULL,          'a' },
+    {"print-filter",                no_argument, NULL,          'b' },    
+    {"help",                        no_argument, NULL,          'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwlf:L:H:t:F:C:E:S:i:d:T:s:g:o:p:";
+  char args[] = "hnckwlabf:L:H:t:F:C:E:S:i:d:T:s:g:o:p:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -1012,6 +1018,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->trigstarttime=0;
   CLA->cluster=0;
   CLA->pad=0;
+  CLA->printfilterflag=0;
+  CLA->printspectrumflag=0;
  
   /* initialise ifo string */
   memset(ifo, 0, sizeof(ifo));
@@ -1130,6 +1138,16 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->cluster=1;
       ADD_PROCESS_PARAM("string");
       break;
+    case 'a':
+      /* fake gaussian noise flag */
+      CLA->printspectrumflag=1;
+      ADD_PROCESS_PARAM("string");
+      break;
+    case 'b':
+      /* fake gaussian noise flag */
+      CLA->printfilterflag=1;
+      ADD_PROCESS_PARAM("string");
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -n, -h, -w, -g, -o  and -i. One of -k or -c must be specified. They are:\n");
@@ -1153,8 +1171,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--test-gaussian-data (-n)\tFLAG\t Use unit variance fake gaussian noise.\n");
       fprintf(stdout,"\t--test-white-spectrum (-w)\tFLAG\t Use constant white noise (used only in combination with fake gaussian noise; otherwise ignored).\n");
       fprintf(stdout,"\t--cluster-events (-l)\tFLAG\t Cluster events.\n");
+      fprintf(stdout,"\t--print-spectrum (-a)\tFLAG\t Prints the spectrum to Spectrum.txt.\n");
+      fprintf(stdout,"\t--print-filter (-b)\tFLAG\t Prints the filter to Filter.txt.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
-      fprintf(stdout,"eg ./lalapps_StringSearch --low-freq-cutoff 40.0 --bank-low-freq-cutoff 40.0 --threshold 80.0 --frame-cache ht_local_cache --channel-name H1:Calibrated-Strain --gps-start-time 732847600 --gps-end-time 732849648 --no-of-segments 32 --settling-time 8 --cusp-search\n");
+      fprintf(stdout,"eg ./%s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events --pad 4 --threshold 4 --outfile ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
       exit(0);
       break;
     default:
@@ -1169,61 +1189,61 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->flow == 0.0)
     {
       fprintf(stderr,"No low cutoff frequency specified.\n");
-      fprintf(stderr,"Try ./StringSearch -h \n");
+      fprintf(stderr,"Try ./%s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->fbankstart == 0.0)
     {
       fprintf(stderr,"No low frequency for frequency bank specified.\n");
-      fprintf(stderr,"Try ./StringSearch -h \n");
+      fprintf(stderr,"Try ./%s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->fbankhighfcutofflow == 0.0)
     {
       fprintf(stderr,"No template bank lowest high frequency cutoff specified.\n");
-      fprintf(stderr,"Try ./StringSearch -h \n");
+      fprintf(stderr,"Try ./%s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->threshold == 0.0)
     {
       fprintf(stderr,"No SNR threshold specified.\n");
-      fprintf(stderr,"Try ./StringSearch -h \n");
+      fprintf(stderr,"Try ./%s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->power == 0.0)
     {
       fprintf(stderr,"Cusp or kink search not specified. \n");
-      fprintf(stderr,"Try ./StringSearch -h \n");
+      fprintf(stderr,"Try ./%s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->FrCacheFile == NULL)
     {
       fprintf(stderr,"No frame cache file specified.\n");
-      fprintf(stderr,"Try ./StringSearch -h \n");
+      fprintf(stderr,"Try ./%s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->ChannelName == NULL)
     {
       fprintf(stderr,"No channel name specified.\n");
-      fprintf(stderr,"Try ./StringSearch -h \n");
+      fprintf(stderr,"Try ./%s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->GPSStart == 0)
     {
       fprintf(stderr,"No GPS start time specified.\n");
-      fprintf(stderr,"Try ./StringSearch -h \n");
+      fprintf(stderr,"Try ./%s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->GPSEnd == 0)
     {
       fprintf(stderr,"No GPS end time specified.\n");
-      fprintf(stderr,"Try ./StringSearch -h \n");
+      fprintf(stderr,"Try ./%s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->ShortSegDuration == 0)
     {
       fprintf(stderr,"Short segment duration not specified (they overlap by 50%s).\n","%");
-      fprintf(stderr,"Try ./StringSearch -h \n");
+      fprintf(stderr,"Try ./%s -h \n",argv[0]);
       return 1;
     }      
 
