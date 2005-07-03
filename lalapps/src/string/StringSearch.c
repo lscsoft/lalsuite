@@ -797,7 +797,7 @@ int AvgSpectrum(struct CommandLineArgsTag CLA)
       int segmentStride = GV.seg_length/2;
       REAL4Window  *window  = NULL;
 
-      window = XLALCreateWelchREAL4Window( segmentLength );
+      window = XLALCreateHannREAL4Window( segmentLength );
 /*    XLALREAL4AverageSpectrumMedian */
 /*    XLALREAL4AverageSpectrumWelch */
       XLALREAL4AverageSpectrumMedianMean( &GV.Spec, &GV.ht_proc, segmentLength,
