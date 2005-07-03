@@ -50,8 +50,7 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 
 /*---------- DEFINES ----------*/
 
-/*----- Error-codes -----<lalLaTeX>
-\subsection*{Error codes}</lalLaTeX><lalErrTable> */
+/*----- Error-codes -----*/
 
 #define LATTICECOVERING_ENULL 		1
 #define LATTICECOVERING_ENONULL		2
@@ -66,8 +65,6 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 #define LATTICECOVERING_MSGEINPUT	"Invald input parameter"
 #define LATTICECOVERING_MSGELIST	"Error occurred in list-handling ..."
 #define LATTICECOVERING_MSGEFUNC	"Sub-routine failed"
-
-/*</lalErrTable> */
 
 /*---------- external types ----------*/
 
