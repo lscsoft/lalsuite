@@ -24,7 +24,7 @@ fi
 # ---------- fixed parameter of our test-signal
 Tsft=1800
 startTime=714180733
-refTime=$startTime;
+refTime=$startTime
 duration=180000		## 50 hours
 
 mfd_fmin=300.0
@@ -106,7 +106,7 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat";
+cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat --refTime=$refTime";
 echo $cmdline;
 
 if ! eval time $cmdline; then
