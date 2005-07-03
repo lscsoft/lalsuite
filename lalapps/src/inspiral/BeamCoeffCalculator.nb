@@ -1,0 +1,960 @@
+(************** Content-type: application/mathematica **************
+                     CreatedBy='Mathematica 5.1'
+
+                    Mathematica-Compatible Notebook
+
+This notebook can be used with any Mathematica-compatible
+application, such as Mathematica, MathReader or Publicon. The data
+for the notebook starts with the line containing stars above.
+
+To get the notebook into a Mathematica-compatible application, do
+one of the following:
+
+* Save the data starting with the line of stars above into a file
+  with a name ending in .nb, then open the file inside the
+  application;
+
+* Copy the data starting with the line of stars above to the
+  clipboard, then use the Paste menu command inside the application.
+
+Data for notebooks contains only printable 7-bit ASCII and can be
+sent directly in email or through ftp in text mode.  Newlines can be
+CR, LF or CRLF (Unix, Macintosh or MS-DOS style).
+
+NOTE: If you modify the data for this notebook not in a Mathematica-
+compatible application, you must delete the line below containing
+the word CacheID, otherwise Mathematica-compatible applications may
+try to use invalid cache data.
+
+For more information on notebooks and Mathematica-compatible 
+applications, contact Wolfram Research:
+  web: http://www.wolfram.com
+  email: info@wolfram.com
+  phone: +1-217-398-0700 (U.S.)
+
+Notebook reader applications are available free of charge from 
+Wolfram Research.
+*******************************************************************)
+
+(*CacheID: 232*)
+
+
+(*NotebookFileLineBreakTest
+NotebookFileLineBreakTest*)
+(*NotebookOptionsPosition[     25212,        778]*)
+(*NotebookOutlinePosition[     26117,        806]*)
+(*  CellTagsIndexPosition[     26073,        802]*)
+(*WindowFrame->Normal*)
+
+
+
+Notebook[{
+Cell[BoxData[
+    \( (*\ This\ notebook\ will\ be\ used\ to\ compute\ the\ v\ \((beam - 
+            pattern)\) 
+        coefficients\ for\ the\ various\ detectors\ as\ outlined\ in\ eq . \ 
+          4.10\ of\ PRD\ 64, \ 
+      042004. \ \ This\ notebook\ outputs\ 5\ files, \ 
+      one\ for\ each\ detector\ site\ including\ Hanford, \ Livingston, \ 
+      GEO, \ VIRGO, \ 
+      TAMA . \ These\ files\ are\ needed\ by\ coherent_inspiral . 
+          c\ when\ the\ network\ it\ is\ being\ used\ for\ has\ 3\ or\ 4\ \
+sites \((not\ necessarily\ detectors ... )\) . \ 
+          These\ files\ will\ need\ to\ be\ formatted\ before\ use\ with\ the\
+\ coherent\ code . \ \ Basically\ remove\ everything\ so\ that\ you\ are\ \
+left\ with\ only\ 4\ columns\ of\ numbers\ only\ delimited\ by\ white\ space \
+. \ \((remove\ commas\ and\ braces .. )\)\ \ *) \)], "Input"],
+
+Cell[BoxData[
+    \( (*\ The\ following\ two\ params, \ numpts1, \ numpts2, \ 
+      fix\ the\ spacing\ in\ theta\ and\ phi . \ \ numpts1\ fixes\ the\ theta\
+\ spacing, \ 
+      and\ numpts2\ fixes\ the\ phi\ spacing . \ 
+          A\ larger\ numpts\ means\ a\ smaller\ \(\(spacing\)\(.\)\)\ *) \)], \
+"Input"],
+
+Cell[BoxData[
+    \(\(numpts1 = 9;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(numpts2 = 9;\)\)], "Input"],
+
+Cell[BoxData[
+    \( (*\ 
+      Orientation\ angles\ connecting\ the\ fide\ and\ detector\ frames\ \
+described\ in\ afforementioned\ \(\(paper\)\(.\)\)\ *) \)], "Input"],
+
+Cell[BoxData[
+    \(\(alphaH =  .665145;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(betaH = 4.474152;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(gammaH = 1.875007;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(alphaL =  .664796;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(betaL = 4.948707;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(gammaL = 3.436204;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(alphaV = 5.590988;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(betaV = 4.815712;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(gammaV = 2.775423;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(alphaG = 5.696929;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(betaG = 4.709946;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(gammaG = 1.926844;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(alphaT = 0.2909464;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(betaT = 3.289422;\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(gammaT = 5.695009;\)\)], "Input"],
+
+Cell[BoxData[
+    \( (*\ We\ have\ now\ specified\ all\ the\ parameters\ that\ we\ need, \ 
+      so\ crank\ out\ the\ coefficients ... \ *) \)], "Input"],
+
+Cell[BoxData[
+    \( (*\ 
+      Now\ construct\ the\ spin\ weighted\ spherical\ harmonics\ and\ the\ \
+Gel' fand\ functions\ that\ depend\ on\ them\ *) \)], "Input"],
+
+Cell[BoxData[
+    \( (*\ First, \ the\ basis\ vectors ... \ *) \)], "Input"],
+
+Cell[BoxData[
+    \(\(\(\[IndentingNewLine]\)\(nullm = {1/\((Sqrt[2])\)*\((Cos[phi] - 
+                I*Cos[theta]*Sin[phi])\), 
+          1/\((Sqrt[2])\)*\((Sin[phi] + I*Cos[theta]*Cos[phi])\), 
+          1/\((Sqrt[2])\)*I*Sin[theta]};\)\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(\(\[IndentingNewLine]\)\(mVectH = {Exp[\(-I\)*
+                gammaH]*1/\((Sqrt[2])\)*\((Cos[alphaH] - 
+                I*Cos[betaH]*Sin[alphaH])\), 
+          Exp[\(-I\)*gammaH]*1/\((Sqrt[2])\)*\((Sin[alphaH] + 
+                I*Cos[betaH]*Cos[alphaH])\), 
+          Exp[\(-I\)*gammaH]*1/\((Sqrt[2])\)*I*Sin[betaH]};\)\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(\(\[IndentingNewLine]\)\(mVectL = {Exp[\(-I\)*
+                gammaL]*1/\((Sqrt[2])\)*\((Cos[alphaL] - 
+                I*Cos[betaL]*Sin[alphaL])\), 
+          Exp[\(-I\)*gammaL]*1/\((Sqrt[2])\)*\((Sin[alphaL] + 
+                I*Cos[betaL]*Cos[alphaL])\), 
+          Exp[\(-I\)*gammaL]*1/\((Sqrt[2])\)*I*Sin[betaL]};\)\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(\(\[IndentingNewLine]\)\(mVectV = {Exp[\(-I\)*
+                gammaV]*1/\((Sqrt[2])\)*\((Cos[alphaV] - 
+                I*Cos[betaV]*Sin[alphaV])\), 
+          Exp[\(-I\)*gammaV]*1/\((Sqrt[2])\)*\((Sin[alphaV] + 
+                I*Cos[betaV]*Cos[alphaV])\), 
+          Exp[\(-I\)*gammaV]*1/\((Sqrt[2])\)*I*Sin[betaV]};\)\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(mVectG = {Exp[\(-I\)*gammaG]*1/\((Sqrt[2])\)*\((Cos[alphaG] - 
+                I*Cos[betaG]*Sin[alphaG])\), 
+          Exp[\(-I\)*gammaG]*1/\((Sqrt[2])\)*\((Sin[alphaG] + 
+                I*Cos[betaG]*Cos[alphaG])\), 
+          Exp[\(-I\)*gammaG]*1/\((Sqrt[2])\)*I*Sin[betaG]};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(mVectT = {Exp[\(-I\)*gammaT]*1/\((Sqrt[2])\)*\((Cos[alphaT] - 
+                I*Cos[betaT]*Sin[alphaT])\), 
+          Exp[\(-I\)*gammaT]*1/\((Sqrt[2])\)*\((Sin[alphaT] + 
+                I*Cos[betaT]*Cos[alphaT])\), 
+          Exp[\(-I\)*gammaT]*1/\((Sqrt[2])\)*I*Sin[betaT]};\)\)], "Input"],
+
+Cell[BoxData[
+    \( (*\ A1 \[Rule] A5\ are\ the\ spherical\ harmonics\ *) \)], "Input"],
+
+Cell[BoxData[
+    \(\(\(\ \)\(A1 = {{1*0.25*Sqrt[15/\((2*Pi)\)], 
+            I*0.25*Sqrt[15/\((2*Pi)\)], 
+            0}, {I*0.25*Sqrt[15/\((2*Pi)\)], \(-1\)*0.25*Sqrt[15/\((2*Pi)\)], 
+            0}, {0, 0, 0}};\)\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(A2 = {{0, 0, \(-1\)*0.25*Sqrt[15/\((2*Pi)\)]}, {0, 
+            0, \(-I\)*0.25*Sqrt[15/\((2*Pi)\)]}, {\(-1\)*0.25*
+              Sqrt[15/\((2*Pi)\)], \(-I\)*0.25*Sqrt[15/\((2*Pi)\)], 
+            0}};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(A3 = {{\(-1\)*0.5*Sqrt[5/\((4*Pi)\)], 0, 
+            0}, {0, \(-1\)*0.5*Sqrt[5/\((4*Pi)\)], 0}, {0, 0, 
+            Sqrt[5/\((4*Pi)\)]}};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(A4 = \(-Conjugate[A2]\);\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(A5 = Conjugate[A1];\)\)], "Input"],
+
+Cell[BoxData[
+    \( (*\ Now\ construct\ all\ the\ needed\ Gel' 
+        fand\ functions\ *) \)], "Input"],
+
+Cell[BoxData[
+    \(\(B1 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A1[\([i, j]\)]*nullm[\([i]\)]*nullm[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(B2 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A2[\([i, j]\)]\)*nullm[\([i]\)]*nullm[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(B3 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A3[\([i, j]\)]*nullm[\([i]\)]*nullm[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(B4 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A4[\([i, j]\)]\)*nullm[\([i]\)]*nullm[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(B5 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A5[\([i, j]\)]*nullm[\([i]\)]*nullm[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(C1 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A1[\([i, j]\)]*mVectH[\([i]\)]*mVectH[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(C2 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A2[\([i, j]\)]\)*mVectH[\([i]\)]*mVectH[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(C3 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A3[\([i, j]\)]*mVectH[\([i]\)]*mVectH[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(C4 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A4[\([i, j]\)]\)*mVectH[\([i]\)]*mVectH[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(C5 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A5[\([i, j]\)]*mVectH[\([i]\)]*mVectH[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(D1 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A1[\([i, j]\)]*mVectL[\([i]\)]*mVectL[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(D2 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A2[\([i, j]\)]\)*mVectL[\([i]\)]*mVectL[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(D3 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A3[\([i, j]\)]*mVectL[\([i]\)]*mVectL[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(D4 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A4[\([i, j]\)]\)*mVectL[\([i]\)]*mVectL[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(D5 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A5[\([i, j]\)]*mVectL[\([i]\)]*mVectL[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(E1 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A1[\([i, j]\)]*mVectV[\([i]\)]*mVectV[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(E2 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A2[\([i, j]\)]\)*mVectV[\([i]\)]*mVectV[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(E3 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A3[\([i, j]\)]*mVectV[\([i]\)]*mVectV[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(E4 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A4[\([i, j]\)]\)*mVectV[\([i]\)]*mVectV[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(E5 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A5[\([i, j]\)]*mVectV[\([i]\)]*mVectV[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(N1 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A1[\([i, j]\)]*mVectG[\([i]\)]*mVectG[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(N2 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A2[\([i, j]\)]\)*mVectG[\([i]\)]*mVectG[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(N3 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A3[\([i, j]\)]*mVectG[\([i]\)]*mVectG[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(N4 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A4[\([i, j]\)]\)*mVectG[\([i]\)]*mVectG[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(N5 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A5[\([i, j]\)]*mVectG[\([i]\)]*mVectG[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(P1 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A1[\([i, j]\)]*mVectT[\([i]\)]*mVectT[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(P2 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A2[\([i, j]\)]\)*mVectT[\([i]\)]*mVectT[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(P3 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A3[\([i, j]\)]*mVectT[\([i]\)]*mVectT[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(P4 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A4[\([i, j]\)]\)*mVectT[\([i]\)]*mVectT[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(P5 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A5[\([i, j]\)]*mVectT[\([i]\)]*mVectT[\([j]\)], {j, 1, 
+                3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(mVectConjH = Conjugate[mVectH];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(mVectConjL = Conjugate[mVectL];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(mVectConjV = Conjugate[mVectV];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(mVectConjG = Conjugate[mVectG];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(mVectConjT = Conjugate[mVectT];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(F1 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A1[\([i, j]\)]*mVectConjH[\([i]\)]*mVectConjH[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(F2 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A2[\([i, j]\)]\)*mVectConjH[\([i]\)]*
+                mVectConjH[\([j]\)], {j, 1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(F3 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A3[\([i, j]\)]*mVectConjH[\([i]\)]*mVectConjH[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(F4 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A4[\([i, j]\)]\)*mVectConjH[\([i]\)]*
+                mVectConjH[\([j]\)], {j, 1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(F5 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A5[\([i, j]\)]*mVectConjH[\([i]\)]*mVectConjH[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(G1 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A1[\([i, j]\)]*mVectConjL[\([i]\)]*mVectConjL[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(G2 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A2[\([i, j]\)]\)*mVectConjL[\([i]\)]*
+                mVectConjL[\([j]\)], {j, 1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(G3 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A3[\([i, j]\)]*mVectConjL[\([i]\)]*mVectConjL[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(G4 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A4[\([i, j]\)]\)*mVectConjL[\([i]\)]*
+                mVectConjL[\([j]\)], {j, 1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(G5 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A5[\([i, j]\)]*mVectConjL[\([i]\)]*mVectConjL[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(H1 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A1[\([i, j]\)]*mVectConjV[\([i]\)]*mVectConjV[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(H2 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A2[\([i, j]\)]\)*mVectConjV[\([i]\)]*
+                mVectConjV[\([j]\)], {j, 1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(H3 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A3[\([i, j]\)]*mVectConjV[\([i]\)]*mVectConjV[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(H4 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A4[\([i, j]\)]\)*mVectConjV[\([i]\)]*
+                mVectConjV[\([j]\)], {j, 1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(H5 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A5[\([i, j]\)]*mVectConjV[\([i]\)]*mVectConjV[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(R1 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A1[\([i, j]\)]*mVectConjG[\([i]\)]*mVectConjG[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(R2 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A2[\([i, j]\)]\)*mVectConjG[\([i]\)]*
+                mVectConjG[\([j]\)], {j, 1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(R3 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A3[\([i, j]\)]*mVectConjG[\([i]\)]*mVectConjG[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(R4 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A4[\([i, j]\)]\)*mVectConjG[\([i]\)]*
+                mVectConjG[\([j]\)], {j, 1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(R5 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A5[\([i, j]\)]*mVectConjG[\([i]\)]*mVectConjG[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(S1 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A1[\([i, j]\)]*mVectConjT[\([i]\)]*mVectConjT[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(S2 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A2[\([i, j]\)]\)*mVectConjT[\([i]\)]*
+                mVectConjT[\([j]\)], {j, 1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(S3 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A3[\([i, j]\)]*mVectConjT[\([i]\)]*mVectConjT[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(S4 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[\(-A4[\([i, j]\)]\)*mVectConjT[\([i]\)]*
+                mVectConjT[\([j]\)], {j, 1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(S5 = 
+        Sqrt[8*Pi/15]*
+          Sum[Sum[A5[\([i, j]\)]*mVectConjT[\([i]\)]*mVectConjT[\([j]\)], {j, 
+                1, 3}], {i, 1, 3}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(T2S0 = {B1, B2, B3, B4, B5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(T2S1 = {C1, C2, C3, C4, C5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(T2S2 = {D1, D2, D3, D4, D5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(T2S3 = {E1, E2, E3, E4, E5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(T2S4 = {N1, N2, N3, N4, N5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(T2S5 = {P1, P2, P3, P4, P5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(TmVectLS1 = {F1, F2, F3, F4, F5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(TmVectLS2 = {G1, G2, G3, G4, G5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(TmVectLS3 = {H1, H2, H3, H4, H5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(TmVectLS4 = {R1, R2, R3, R4, R5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(TmVectLS5 = {S1, S2, S3, S4, S5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(DD1 = 
+        Sum[\(-I\)*
+            T2S0[\([n]\)]*\((Conjugate[T2S1[\([n]\)]] - 
+                Conjugate[TmVectLS1[\([n]\)]])\), {n, 1, 5}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(DD2 = 
+        Sum[\(-I\)*
+            T2S0[\([n]\)]*\((Conjugate[T2S2[\([n]\)]] - 
+                Conjugate[TmVectLS2[\([n]\)]])\), {n, 1, 5}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(DD3 = 
+        Sum[\(-I\)*
+            T2S0[\([n]\)]*\((Conjugate[T2S3[\([n]\)]] - 
+                Conjugate[TmVectLS3[\([n]\)]])\), {n, 1, 5}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(DD4 = 
+        Sum[\(-I\)*
+            T2S0[\([n]\)]*\((Conjugate[T2S4[\([n]\)]] - 
+                Conjugate[TmVectLS4[\([n]\)]])\), {n, 1, 5}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(DD5 = 
+        Sum[\(-I\)*
+            T2S0[\([n]\)]*\((Conjugate[T2S5[\([n]\)]] - 
+                Conjugate[TmVectLS5[\([n]\)]])\), {n, 1, 5}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(Dplus = {DD1, DD2, DD3, DD4, DD5};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(d1vect = Re[Dplus];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(d2vect = Im[Dplus];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(d1hatvect = {d1vect[\([1]\)]/Sqrt[d1vect . d1vect], 
+          d1vect[\([2]\)]/Sqrt[d1vect . d1vect], 
+          d1vect[\([3]\)]/Sqrt[d1vect . d1vect], 
+          d1vect[\([4]\)]/Sqrt[d1vect . d1vect], 
+          d1vect[\([5]\)]/Sqrt[d1vect . d1vect]};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(d2hatvect = {d2vect[\([1]\)]/Sqrt[d2vect . d2vect], 
+          d2vect[\([2]\)]/Sqrt[d2vect . d2vect], 
+          d2vect[\([3]\)]/Sqrt[d2vect . d2vect], 
+          d2vect[\([4]\)]/Sqrt[d2vect . d2vect], 
+          d2vect[\([5]\)]/Sqrt[d2vect . d2vect]};\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(vpvect = \((d1hatvect + 
+              d2hatvect)\)/\((Sqrt[\((\((d1hatvect + 
+                      d2hatvect)\) . \((d1hatvect + 
+                      d2hatvect)\))\)])\);\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(vmvect = \((d1hatvect - 
+              d2hatvect)\)/\((Sqrt[\((\((d1hatvect - 
+                      d2hatvect)\) . \((d1hatvect - 
+                      d2hatvect)\))\)])\);\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(varray = Array[vs, {numpts1 + 1, numpts2 + 1, 4}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(For[i = 1, i \[LessEqual] numpts1 + 1, \(i++\), 
+      theta = \((Pi/numpts1)\)*\((i - 1)\); 
+      thetadegrees = theta*\((180/Pi)\); 
+      For[j = 1, j \[LessEqual] numpts2 + 1, \(j++\), 
+        phi = \((2*Pi/numpts2)\)*\((j - 1)\); value1 = vpvect[\([1]\)]; 
+        value2 = vmvect[\([1]\)]; phidegrees = phi*\((180/Pi)\); 
+        varray[\([i, j]\)] = {thetadegrees, phidegrees, value1, value2}; 
+        Clear[phi, value1, value2, phidegrees]]; 
+      Clear[theta, thetadegrees]]\)], "Input"],
+
+Cell[BoxData[
+    \(\(flattenedvarray = Flatten[varray, 1];\)\)], "Input"],
+
+Cell[BoxData[
+    \(For[i = 1, i \[LessEqual] \((numpts1 + 1)\)*\((numpts2 + 1)\), \(i++\), 
+      Write["\<HanfordBeamCoeff.dat\>", flattenedvarray[\([i]\)]]]\)], "Input"],
+
+Cell[BoxData[
+    \(\(varray2 = Array[vs2, {numpts1 + 1, numpts2 + 1, 4}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(Clear[value1, value2];\)\)], "Input"],
+
+Cell[BoxData[
+    \(For[i = 1, i \[LessEqual] numpts1 + 1, \(i++\), 
+      theta = \((Pi/numpts1)\)*\((i - 1)\); 
+      thetadegrees = theta*\((180/Pi)\); 
+      For[j = 1, j \[LessEqual] numpts2 + 1, \(j++\), 
+        phi = \((2*Pi/numpts2)\)*\((j - 1)\); value1 = vpvect[\([2]\)]; 
+        value2 = vmvect[\([2]\)]; phidegrees = phi*\((180/Pi)\); 
+        varray2[\([i, j]\)] = {thetadegrees, phidegrees, value1, value2}; 
+        Clear[phi, value1, value2, phidegrees]]; 
+      Clear[theta, thetadegrees]]\)], "Input"],
+
+Cell[BoxData[
+    \(\(flattenedvarray2 = Flatten[varray2, 1];\)\)], "Input"],
+
+Cell[BoxData[
+    \(For[i = 1, i \[LessEqual] \((numpts1 + 1)\)*\((numpts2 + 1)\), \(i++\), 
+      Write["\<LivingstonBeamCoeff.dat\>", 
+        flattenedvarray2[\([i]\)]]]\)], "Input"],
+
+Cell[BoxData[
+    \(\(varray3 = Array[vs3, {numpts1 + 1, numpts2 + 1, 4}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(Clear[value1, value2];\)\)], "Input"],
+
+Cell[BoxData[
+    \(For[i = 1, i \[LessEqual] numpts1 + 1, \(i++\), 
+      theta = \((Pi/numpts1)\)*\((i - 1)\); 
+      thetadegrees = theta*\((180/Pi)\); 
+      For[j = 1, j \[LessEqual] numpts2 + 1, \(j++\), 
+        phi = \((2*Pi/numpts2)\)*\((j - 1)\); value1 = vpvect[\([3]\)]; 
+        value2 = vmvect[\([3]\)]; phidegrees = phi*\((180/Pi)\); 
+        varray3[\([i, j]\)] = {thetadegrees, phidegrees, value1, value2}; 
+        Clear[phi, value1, value2, phidegrees]]; 
+      Clear[theta, thetadegrees]]\)], "Input"],
+
+Cell[BoxData[
+    \(\(flattenedvarray3 = Flatten[varray3, 1];\)\)], "Input"],
+
+Cell[BoxData[
+    \(For[i = 1, i \[LessEqual] \((numpts1 + 1)\)*\((numpts2 + 1)\), \(i++\), 
+      Write["\<VirgoBeamCoeff.dat\>", flattenedvarray3[\([i]\)]]]\)], "Input"],
+
+Cell[BoxData[
+    \(\(varray4 = Array[vs4, {numpts1 + 1, numpts2 + 1, 4}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(Clear[value1, value2];\)\)], "Input"],
+
+Cell[BoxData[
+    \(For[i = 1, i \[LessEqual] numpts1 + 1, \(i++\), 
+      theta = \((Pi/numpts1)\)*\((i - 1)\); 
+      thetadegrees = theta*\((180/Pi)\); 
+      For[j = 1, j \[LessEqual] numpts2 + 1, \(j++\), 
+        phi = \((2*Pi/numpts2)\)*\((j - 1)\); value1 = vpvect[\([4]\)]; 
+        value2 = vmvect[\([4]\)]; phidegrees = phi*\((180/Pi)\); 
+        varray4[\([i, j]\)] = {thetadegrees, phidegrees, value1, value2}; 
+        Clear[phi, value1, value2, phidegrees]]; 
+      Clear[theta, thetadegrees]]\)], "Input"],
+
+Cell[BoxData[
+    \(\(flattenedvarray4 = Flatten[varray4, 1];\)\)], "Input"],
+
+Cell[BoxData[
+    \(For[i = 1, i \[LessEqual] \((numpts1 + 1)\)*\((numpts2 + 1)\), \(i++\), 
+      Write["\<GeoBeamCoeff.dat\>", flattenedvarray4[\([i]\)]]]\)], "Input"],
+
+Cell[BoxData[
+    \(\(varray5 = Array[vs5, {numpts1 + 1, numpts2 + 1, 4}];\)\)], "Input"],
+
+Cell[BoxData[
+    \(\(Clear[value1, value2];\)\)], "Input"],
+
+Cell[BoxData[
+    \(For[i = 1, i \[LessEqual] numpts1 + 1, \(i++\), 
+      theta = \((Pi/numpts1)\)*\((i - 1)\); 
+      thetadegrees = theta*\((180/Pi)\); 
+      For[j = 1, j \[LessEqual] numpts2 + 1, \(j++\), 
+        phi = \((2*Pi/numpts2)\)*\((j - 1)\); value1 = vpvect[\([5]\)]; 
+        value2 = vmvect[\([5]\)]; phidegrees = phi*\((180/Pi)\); 
+        varray5[\([i, j]\)] = {thetadegrees, phidegrees, value1, value2}; 
+        Clear[phi, value1, value2, phidegrees]]; 
+      Clear[theta, thetadegrees]]\)], "Input"],
+
+Cell[BoxData[
+    \(\(flattenedvarray5 = Flatten[varray5, 1];\)\)], "Input"],
+
+Cell[BoxData[
+    \(For[i = 1, i \[LessEqual] \((numpts1 + 1)\)*\((numpts2 + 1)\), \(i++\), 
+      Write["\<TamaBeamCoeff.dat\>", flattenedvarray5[\([i]\)]]]\)], "Input"]
+},
+FrontEndVersion->"5.1 for X",
+ScreenRectangle->{{0, 1600}, {0, 1200}},
+WindowSize->{1058, 741},
+WindowMargins->{{Automatic, 177}, {97, Automatic}},
+PrintingPageRange->{Automatic, Automatic},
+PrintingOptions->{"PaperSize"->{612, 792},
+"PaperOrientation"->"Portrait",
+"PostScriptOutputFile":>FrontEnd`FileName[{"home", "bose", "PAPERS", "LIGO"}, \
+"noiseMomOwen.ps", CharacterEncoding -> "iso8859-1"],
+"Magnification"->1}
+]
+
+(*******************************************************************
+Cached data follows.  If you edit this Notebook file directly, not
+using Mathematica, you must remove the line containing CacheID at
+the top of  the file.  The cache data will then be recreated when
+you save this file from within Mathematica.
+*******************************************************************)
+
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+
+(*NotebookFileOutline
+Notebook[{
+Cell[1754, 51, 865, 14, 216, "Input"],
+Cell[2622, 67, 310, 6, 78, "Input"],
+Cell[2935, 75, 49, 1, 32, "Input"],
+Cell[2987, 78, 49, 1, 32, "Input"],
+Cell[3039, 81, 169, 3, 55, "Input"],
+Cell[3211, 86, 55, 1, 32, "Input"],
+Cell[3269, 89, 54, 1, 32, "Input"],
+Cell[3326, 92, 55, 1, 32, "Input"],
+Cell[3384, 95, 55, 1, 32, "Input"],
+Cell[3442, 98, 54, 1, 32, "Input"],
+Cell[3499, 101, 55, 1, 32, "Input"],
+Cell[3557, 104, 55, 1, 32, "Input"],
+Cell[3615, 107, 54, 1, 32, "Input"],
+Cell[3672, 110, 55, 1, 32, "Input"],
+Cell[3730, 113, 55, 1, 32, "Input"],
+Cell[3788, 116, 54, 1, 32, "Input"],
+Cell[3845, 119, 55, 1, 32, "Input"],
+Cell[3903, 122, 56, 1, 32, "Input"],
+Cell[3962, 125, 54, 1, 32, "Input"],
+Cell[4019, 128, 55, 1, 32, "Input"],
+Cell[4077, 131, 154, 2, 55, "Input"],
+Cell[4234, 135, 165, 3, 55, "Input"],
+Cell[4402, 140, 76, 1, 32, "Input"],
+Cell[4481, 143, 254, 4, 78, "Input"],
+Cell[4738, 149, 358, 6, 101, "Input"],
+Cell[5099, 157, 358, 6, 101, "Input"],
+Cell[5460, 165, 358, 6, 101, "Input"],
+Cell[5821, 173, 314, 5, 78, "Input"],
+Cell[6138, 180, 314, 5, 78, "Input"],
+Cell[6455, 187, 88, 1, 32, "Input"],
+Cell[6546, 190, 230, 4, 55, "Input"],
+Cell[6779, 196, 237, 4, 55, "Input"],
+Cell[7019, 202, 175, 3, 55, "Input"],
+Cell[7197, 207, 61, 1, 32, "Input"],
+Cell[7261, 210, 56, 1, 32, "Input"],
+Cell[7320, 213, 106, 2, 32, "Input"],
+Cell[7429, 217, 170, 4, 32, "Input"],
+Cell[7602, 223, 175, 4, 32, "Input"],
+Cell[7780, 229, 170, 4, 32, "Input"],
+Cell[7953, 235, 175, 4, 32, "Input"],
+Cell[8131, 241, 170, 4, 32, "Input"],
+Cell[8304, 247, 172, 4, 32, "Input"],
+Cell[8479, 253, 177, 4, 32, "Input"],
+Cell[8659, 259, 172, 4, 32, "Input"],
+Cell[8834, 265, 177, 4, 32, "Input"],
+Cell[9014, 271, 172, 4, 32, "Input"],
+Cell[9189, 277, 172, 4, 32, "Input"],
+Cell[9364, 283, 177, 4, 32, "Input"],
+Cell[9544, 289, 172, 4, 32, "Input"],
+Cell[9719, 295, 177, 4, 32, "Input"],
+Cell[9899, 301, 172, 4, 32, "Input"],
+Cell[10074, 307, 172, 4, 32, "Input"],
+Cell[10249, 313, 177, 4, 32, "Input"],
+Cell[10429, 319, 172, 4, 32, "Input"],
+Cell[10604, 325, 177, 4, 32, "Input"],
+Cell[10784, 331, 172, 4, 32, "Input"],
+Cell[10959, 337, 172, 4, 32, "Input"],
+Cell[11134, 343, 177, 4, 32, "Input"],
+Cell[11314, 349, 172, 4, 32, "Input"],
+Cell[11489, 355, 177, 4, 32, "Input"],
+Cell[11669, 361, 172, 4, 32, "Input"],
+Cell[11844, 367, 172, 4, 32, "Input"],
+Cell[12019, 373, 177, 4, 32, "Input"],
+Cell[12199, 379, 172, 4, 32, "Input"],
+Cell[12374, 385, 177, 4, 32, "Input"],
+Cell[12554, 391, 172, 4, 32, "Input"],
+Cell[12729, 397, 68, 1, 32, "Input"],
+Cell[12800, 400, 68, 1, 32, "Input"],
+Cell[12871, 403, 68, 1, 32, "Input"],
+Cell[12942, 406, 68, 1, 32, "Input"],
+Cell[13013, 409, 68, 1, 32, "Input"],
+Cell[13084, 412, 180, 4, 55, "Input"],
+Cell[13267, 418, 185, 4, 55, "Input"],
+Cell[13455, 424, 180, 4, 55, "Input"],
+Cell[13638, 430, 185, 4, 55, "Input"],
+Cell[13826, 436, 180, 4, 55, "Input"],
+Cell[14009, 442, 180, 4, 55, "Input"],
+Cell[14192, 448, 185, 4, 55, "Input"],
+Cell[14380, 454, 180, 4, 55, "Input"],
+Cell[14563, 460, 185, 4, 55, "Input"],
+Cell[14751, 466, 180, 4, 55, "Input"],
+Cell[14934, 472, 180, 4, 55, "Input"],
+Cell[15117, 478, 185, 4, 55, "Input"],
+Cell[15305, 484, 180, 4, 55, "Input"],
+Cell[15488, 490, 185, 4, 55, "Input"],
+Cell[15676, 496, 180, 4, 55, "Input"],
+Cell[15859, 502, 180, 4, 55, "Input"],
+Cell[16042, 508, 185, 4, 55, "Input"],
+Cell[16230, 514, 180, 4, 55, "Input"],
+Cell[16413, 520, 185, 4, 55, "Input"],
+Cell[16601, 526, 180, 4, 55, "Input"],
+Cell[16784, 532, 180, 4, 55, "Input"],
+Cell[16967, 538, 185, 4, 55, "Input"],
+Cell[17155, 544, 180, 4, 55, "Input"],
+Cell[17338, 550, 185, 4, 55, "Input"],
+Cell[17526, 556, 180, 4, 55, "Input"],
+Cell[17709, 562, 65, 1, 32, "Input"],
+Cell[17777, 565, 65, 1, 32, "Input"],
+Cell[17845, 568, 65, 1, 32, "Input"],
+Cell[17913, 571, 65, 1, 32, "Input"],
+Cell[17981, 574, 65, 1, 32, "Input"],
+Cell[18049, 577, 65, 1, 32, "Input"],
+Cell[18117, 580, 70, 1, 32, "Input"],
+Cell[18190, 583, 70, 1, 32, "Input"],
+Cell[18263, 586, 70, 1, 32, "Input"],
+Cell[18336, 589, 70, 1, 32, "Input"],
+Cell[18409, 592, 70, 1, 32, "Input"],
+Cell[18482, 595, 182, 4, 32, "Input"],
+Cell[18667, 601, 182, 4, 32, "Input"],
+Cell[18852, 607, 182, 4, 32, "Input"],
+Cell[19037, 613, 182, 4, 32, "Input"],
+Cell[19222, 619, 182, 4, 32, "Input"],
+Cell[19407, 625, 71, 1, 32, "Input"],
+Cell[19481, 628, 56, 1, 32, "Input"],
+Cell[19540, 631, 56, 1, 32, "Input"],
+Cell[19599, 634, 289, 5, 78, "Input"],
+Cell[19891, 641, 289, 5, 78, "Input"],
+Cell[20183, 648, 211, 4, 55, "Input"],
+Cell[20397, 654, 211, 4, 32, "Input"],
+Cell[20611, 660, 87, 1, 32, "Input"],
+Cell[20701, 663, 520, 9, 147, "Input"],
+Cell[21224, 674, 74, 1, 32, "Input"],
+Cell[21301, 677, 172, 2, 55, "Input"],
+Cell[21476, 681, 89, 1, 32, "Input"],
+Cell[21568, 684, 59, 1, 32, "Input"],
+Cell[21630, 687, 521, 9, 147, "Input"],
+Cell[22154, 698, 76, 1, 32, "Input"],
+Cell[22233, 701, 185, 3, 55, "Input"],
+Cell[22421, 706, 89, 1, 32, "Input"],
+Cell[22513, 709, 59, 1, 32, "Input"],
+Cell[22575, 712, 521, 9, 147, "Input"],
+Cell[23099, 723, 76, 1, 32, "Input"],
+Cell[23178, 726, 171, 2, 55, "Input"],
+Cell[23352, 730, 89, 1, 32, "Input"],
+Cell[23444, 733, 59, 1, 32, "Input"],
+Cell[23506, 736, 521, 9, 147, "Input"],
+Cell[24030, 747, 76, 1, 32, "Input"],
+Cell[24109, 750, 169, 2, 55, "Input"],
+Cell[24281, 754, 89, 1, 32, "Input"],
+Cell[24373, 757, 59, 1, 32, "Input"],
+Cell[24435, 760, 521, 9, 147, "Input"],
+Cell[24959, 771, 76, 1, 32, "Input"],
+Cell[25038, 774, 170, 2, 55, "Input"]
+}
+]
+*)
+
+
+
+(*******************************************************************
+End of Mathematica Notebook file.
+*******************************************************************)
+
