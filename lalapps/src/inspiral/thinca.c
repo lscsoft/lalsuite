@@ -963,7 +963,7 @@ int main( int argc, char *argv[] )
     exit ( 1 );
   }
 
-  if ( numIFO > 2 && vrbflg)
+  if ( numIFO > 2 && vrbflg )
   {
     if ( !multiIfoCoinc )
     {
@@ -975,10 +975,11 @@ int main( int argc, char *argv[] )
     else
     {
       fprintf( stdout, 
-          "Finding all double/triple/quadruple coincidences in %d IFO time.\n"
+          "Finding all double/triple/quadruple coincidences in %d IFO time.\n",
           numIFO);
+		}
+	}
 
-  
   /* set ifos to be the alphabetical list of the ifos with triggers */
   if( numIFO == 2 )
   {
