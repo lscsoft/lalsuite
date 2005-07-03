@@ -24,6 +24,7 @@ fi
 # ---------- fixed parameter of our test-signal
 Tsft=1800
 startTime=714180733
+refTime=$startTime;
 duration=180000		## 50 hours
 
 mfd_fmin=300.0
@@ -39,6 +40,7 @@ psi=0
 phi0=0
 
 freq=300.4
+
 f1dot=1e-8
 df1dot=0.3e-8	## search about 3 spindown-values
 
@@ -55,12 +57,14 @@ echo "----------------------------------------------------------------------"
 echo
 if [ ! -d "$SFTdir" ]; then
     mkdir $SFTdir;
+else
+    rm -f $SFTdir/*;
 fi
 
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL=${saf_CL}" --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot"
+mfd_CL=${saf_CL}" --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime"
     
 cmdline="$mfd_code $mfd_CL";
 echo $cmdline;
@@ -92,7 +96,7 @@ cfs_CL="--IFO=$IFO --DataDir=$SFTdir --BaseName=testSFT --SignalOnly --Freq=$fre
 cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=1";
 echo $cmdline;
 
-if ! eval $cmdline; then
+if ! eval time $cmdline; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1
 fi
@@ -105,7 +109,7 @@ echo
 cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat";
 echo $cmdline;
 
-if ! eval $cmdline; then
+if ! eval time $cmdline; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
