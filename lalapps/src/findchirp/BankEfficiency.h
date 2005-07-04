@@ -46,9 +46,9 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%d,%d,%d"
+"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%f,%d,%d,%d"
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %f %f %f %d %d %d "
+"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %f %f %f %f %d %d %d "
 
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
 fputs( "   <Table Name=\"bankefficiencygroup:bankefficiency:table\">\n", fp) == EOF || \
@@ -274,6 +274,7 @@ typedef struct{
   DetectorFlag detector;
   RunFlag run;
   REAL4 signalfFinal;
+  INT4 startPhase;
 }
 OtherParamIn;
 
@@ -326,7 +327,6 @@ typedef struct{
   INT4 bin;
   REAL4 phase;
   UINT4 ntrial;
-  INT4 coaTime;
 } ResultIn;
 
 
@@ -695,3 +695,10 @@ void
 PrintParameters(InspiralCoarseBankIn 	coarse,
 		RandomInspiralSignalIn 	rand,
 		OtherParamIn    	other);
+
+CHAR* GetStringFromGridType(INT4 input);
+CHAR* GetStringFromSimulationType(INT4 input);
+CHAR* GetStringFromDetector(INT4 input);
+CHAR* GetStringFromTemplate(INT4 input);
+CHAR* GetStringFromNoiseModel(INT4 input);
+CHAR* GetStringFromScientificRun(INT4 input);

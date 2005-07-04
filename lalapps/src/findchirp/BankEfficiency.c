@@ -10,16 +10,13 @@ RCSID(  "$Id$");
 #define CVS_ID_STRING_C      "$Id$"
 #define CVS_REVISION_C      "$Revision$"
 
-CHAR* GetStringFromGridType(INT4 input);
-CHAR* GetStringFromSimulationType(INT4 input);
-CHAR* GetStringFromDetector(INT4 input);
-CHAR* GetStringFromTemplate(INT4 input);
-CHAR* GetStringFromNoiseModel(INT4 input);
-CHAR* GetStringFromScientificRun(INT4 input);
 
 static COMPLEX8Vector *strainSegment = NULL;
 static COMPLEX8FrequencySeries       resp;
 static int vrbflg = 0;
+
+RandomParams *randParams = NULL;
+
 
 int
 main (INT4 argc, CHAR **argv ) 
@@ -366,7 +363,6 @@ main (INT4 argc, CHAR **argv )
 			   &result, 
 			   otherIn);
       result.ntrial  = ntrials;
-      result.coaTime = randIn.coalescenceTime;
       PrintResults(result, randIn);  
       if (otherIn.printResultXml)
 	{
@@ -410,13 +406,12 @@ main (INT4 argc, CHAR **argv )
 
   
   /* --- destroy the plans, correlation and signal --- */
+  LALDestroyRandomParams(&status, &randParams );
   
   LALFree(powerVector.fm5_3.data);
   LALFree(powerVector.fm2_3.data);
   LALFree(powerVector.fm1_2.data);
   LALFree(powerVector.fm7_6.data);
-
-  /*  LALFree(VectorPhase.data);*/
 
   LALFree(moments.a11.data);
   LALFree(moments.a21.data);
@@ -542,11 +537,11 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->alphaFConstraint     = ALPHAFConstraint;
   otherIn->extraFinalPrinting   = 0; 
   otherIn->template		= BANKEFFICIENCY_TEMPLATE;
-  otherIn->signalfFinal        =  BANKEFFICIENCY_TSAMPLING/2.-1;
+  otherIn->signalfFinal         =  BANKEFFICIENCY_TSAMPLING/2.-1;
   otherIn->signal       	= BANKEFFICIENCY_SIGNAL;
   otherIn->m1           	= -1;
   otherIn->m2           	= -1;
-  otherIn->numSeconds            = -1;
+  otherIn->numSeconds           = -1;
   otherIn->psi0         	= -1;
   otherIn->psi3         	= -1;
   otherIn->tau0         	= -1;
@@ -564,6 +559,7 @@ void InitOtherParamIn(OtherParamIn *otherIn)
   otherIn->noiseModel           = LIGOI;
   otherIn->binaryInjection      = NoUserChoice; 
   otherIn->maxTotalMass         = -1;
+  otherIn->startPhase           = 1;
 
   otherIn->detector = L1;
   otherIn->run      = S3;
@@ -776,6 +772,8 @@ ParseParameters(	INT4 			*argc,
 	    randIn->type = 2;
 	  else randIn->type = None;
 	}
+      else if (!strcmp(argv[i], "--no-start-phase"))
+	otherIn->startPhase = 0;
       else if (!strcmp(argv[i], "--tau0")) 
         BEParseGetDouble(argv,  &i, &(otherIn->tau0));
       else if (!strcmp(argv[i], "--tau3")) 
@@ -1384,6 +1382,7 @@ void Help()
 	  "\t[--no-alpha-constraint]\t\t set BCV code to be unconstrained\n"
 	  "\t[--faithfulness]\t check the code. template parameters are equal to injection parameters, size of the bank is therefore unity. It computed the faithfulness instead of effectualness\n"
 	  "\t[--real-noise]\t\t\t use real data and real PSD.force simulaion type to be Noise Only\n"
+	  "\t[--no-start-phase]\t\t\t unset random phase which is always set to zero.\n"
 	  "\t[--print-psd]\t\t\t print the psd in  a file BE_PSD_type_gpstime.dat\n"
 	  "\t[--print-best-overlap]\t\t print best overlap and other information\n"
 	  "\t[--print-snr-histo]\t\t print histogram of the correlation output\n"
@@ -1477,8 +1476,8 @@ GetResult(
     LALInspiralParameterCalc( status->statusPtr,  &trigger );
     CHECKSTATUSPTR(status);							
 
-    result->tau0_trigger = triggerC.t0;
-    result->tau3_trigger = triggerC.t3;
+    result->tau0_trigger = trigger.t0;
+    result->tau3_trigger = trigger.t3;
     result->tau0_inject  = injected.t0;
     result->tau3_inject  = injected.t3; 
   }
@@ -1494,7 +1493,8 @@ GetResult(
   result->bin         = bestOverlap.rhoBin;
   result->phase       = bestOverlap.phase;
   result->layer       = bestOverlap.layer;
-  
+  result->phase       = bestOverlap.phase;
+
   result->rho_finalU   = bestOverlap.rhoMaxU;
   result->alphaFU      = bestOverlap.alphaU*pow(trigger.fFinal,2./3.);
   result->binU         = bestOverlap.rhoBinU;
@@ -1547,7 +1547,7 @@ PrintResults(   ResultIn result,
 	  result.alphaF,
 	  result.layer,
 	  result.bin , 
-	  result.coaTime);
+	  randIn.param.nStartPad);
 
   fflush(stdout);
 }
@@ -2426,8 +2426,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       coarseBankIn.fLower);
   ADD_PROCESS_PARAM("string", "%d","--gps-start-time",
       otherIn.startTime);     
-  ADD_PROCESS_PARAM("float","%f","--signal-fl",
-      randIn.param.fLower);
   ADD_PROCESS_PARAM("float","%f","--template-fl", 
       coarseBankIn.fLower);
   ADD_PROCESS_PARAM("float","%f","--max-totalmass",
@@ -2444,6 +2442,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       randIn.NoiseAmp);
   ADD_PROCESS_PARAM("string", "%s","--noise-model",
       GetStringFromNoiseModel(otherIn.noiseModel));
+ ADD_PROCESS_PARAM("int", "%d","--no-start-phase",
+      otherIn.startPhase);
   ADD_PROCESS_PARAM("int","%d","--number-fcut",	        
       coarseBankIn.numFcutTemplates);
   ADD_PROCESS_PARAM("int","%d","--num-seconds",
@@ -2464,6 +2464,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       randIn.param.alpha);
   ADD_PROCESS_PARAM("float","%f","--signal-ffinal",
       otherIn.signalfFinal);
+  ADD_PROCESS_PARAM("float","%f","--signal-fl",
+      randIn.param.fLower);
   ADD_PROCESS_PARAM("float","%f","--signal-mass-range",
       randIn.mMin);
   ADD_PROCESS_PARAM("float","%f","--signal-mass-range",
@@ -2739,16 +2741,18 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 	    trigger.mass1_inject,
 	    trigger.mass2_inject,
 	    trigger.rho_finalU,
+	    randIn.param.startPhase,
 	    trigger.phaseU,
 	    trigger.alphaFU, 
 	    trigger.layerU,
 	    trigger.binU,
 	    trigger.rho_final,
+	    randIn.param.startPhase,
 	    trigger.phase,
 	    trigger.alphaF, 
 	    trigger.layer,
 	    trigger.bin,
-	    trigger.coaTime
+	    randIn.param.nStartPad
 	    );
 	    
      if (trigger.ntrial == (UINT4)otherIn.ntrials){
@@ -2783,16 +2787,18 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 	      trigger.mass1_inject,
 	      trigger.mass2_inject,
 	      trigger.rho_finalU,
+	      randIn.param.startPhase,
 	      trigger.phaseU,
 	      trigger.alphaFU, 
 	      trigger.layerU,
 	      trigger.binU,
 	      trigger.rho_final,
+	      randIn.param.startPhase,
 	      trigger.phase,
 	      trigger.alphaF, 
 	      trigger.layer,
 	      trigger.bin,
-	      trigger.coaTime);	
+	      randIn.param.nStartPad);	
 
       if (trigger.ntrial == (UINT4)otherIn.ntrials){
 	PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp );
@@ -3058,9 +3064,9 @@ void BEGenerateInputData(LALStatus *status,
 			 RandomInspiralSignalIn  *randIn,
 			 OtherParamIn           otherIn)
 {
-  UINT4  trial ;
+  UINT4 trial ;
   UINT4 success ;
-
+  REAL4 u;
 
   INITSTATUS( status, "BEGenerateInputData", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
@@ -3074,6 +3080,20 @@ void BEGenerateInputData(LALStatus *status,
   /* we might force to compute a non random waveform giving the two
      input parameters m1 and m2 */      
   randIn->param.approximant = otherIn.signal; 
+  if (otherIn.startPhase == 1){
+    randParams = NULL;
+    LALCreateRandomParams( status->statusPtr, &randParams, randIn->useed );
+    CHECKSTATUSPTR(status);
+
+    LALUniformDeviate( status->statusPtr, &u, randParams);
+    CHECKSTATUSPTR(status);
+
+    randIn->param.startPhase = u * LAL_PI;
+  }
+  else{
+    randIn->param.startPhase = 0;
+  }
+
 
   
   if (randIn->type != 1){
