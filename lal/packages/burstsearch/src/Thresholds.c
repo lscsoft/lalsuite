@@ -102,12 +102,67 @@ REAL8 XLALOneMinusChisqCdf(
 }
 
 
+#if 0
 /******** <lalVerbatim file="OneMinusChisqCdfP"> ********/
 REAL8 XLALlnOneMinusChisqCdf(
 	REAL8 chi2,
 	REAL8 dof
 )
 /******** </lalVerbatim> ********/
+{
+	/*
+	 * This function returns the natural logarithm of the result returned
+	 * by XLALOneMinusChisqCdf(), i.e. ln(Q(chi^2, dof))
+	 *
+	 * Notes:
+	 *
+	 * Q(chi^2, dof) = Gamma(dof/2, chi^2/2) / Gamma(dof/2)
+	 *
+	 * The incomplete gamma function, Gamma(a, x), can by approximated by
+	 * computing the first few terms of
+	 *
+	 * Gamma(a, x) = e^-x x^(a-1) [ 1 + (a-1)/x + (a-1)(a-2)/x^2 + ... ]
+	 *
+	 * See Abramowitz and Stegun, (6.5.32).
+	 */
+
+	static const char *func = "XLALlnOneMinusChisqCdf";
+	REAL8 a = dof/2;
+	REAL8 x = chi2/2;
+	REAL8 ln_prob, term;
+	int i;
+
+	if((chi2 < 0.0) || (dof <= 0.0))
+		XLAL_ERROR_REAL8(func, XLAL_EDOM);
+
+	/* start with a high precision technique for large probabilities */
+	XLAL_CALLGSL(ln_prob = log(gsl_cdf_chisq_Q(chi2, dof)));
+
+	/* if the result turned out to be very small, then recompute it using
+	 * an asymptotic approximation */
+	if(ln_prob < -600) {
+		/* calculate the log of the numerator */
+		for(i = 1, ln_prob = term = 1; (i < a) && fabs(term/ln_prob) > 1e-17; i++) {
+			term *= (a - i) / x;
+			ln_prob += term;
+		}
+		ln_prob = (a - 1) * log(x) - x + log(ln_prob);
+
+		/* subtract the log of the denominator */
+		XLAL_CALLGSL(ln_prob -= gsl_sf_lngamma(a));
+	}
+
+	/* check that the final answer is the log of a legal probability */
+	if(ln_prob > 0.0)
+		XLAL_ERROR_REAL8(func, XLAL_ERANGE);
+
+	return(ln_prob);
+}
+#else
+REAL8 XLALlnOneMinusChisqCdf(
+	REAL8 chi2,
+	REAL8 dof
+)
 {
 	/*
 	 *  Cumulative Probability Distribution for Chi Squared
@@ -146,6 +201,7 @@ REAL8 XLALlnOneMinusChisqCdf(
 
 	return (prob);
 }
+#endif
 
 
 /* returns n! */
