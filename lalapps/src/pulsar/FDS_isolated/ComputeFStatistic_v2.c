@@ -86,6 +86,8 @@ RCSID( "$Id$");
 /** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
 #define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
 
+/** convert GPS-time to REAL8 */
+#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
 /*---------- internal types ----------*/
 
@@ -243,8 +245,8 @@ CHAR *uvar_outputSkyGrid;
 CHAR *uvar_workingDir;
 REAL8 uvar_dopplermax;
 INT4 uvar_windowsize;
-BOOLEAN uvar_useEphemeris;
 REAL8 uvar_refTime;
+INT4 uvar_SSBprecision;
 
 /* ---------- local prototypes ---------- */
 
@@ -289,7 +291,7 @@ LALGetAMCoeffs(LALStatus *status,
 
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
-void sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x); /* LUT-calculation of sin/cos */
+int sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x); /* LUT-calculation of sin/cos */
 
 
 void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT4 length );
@@ -315,6 +317,7 @@ INT4 writeFaFb(INT4 *maxIndex);
 
 /*---------- empty initializers ---------- */
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
+static const BarycenterInput empty_BarycenterInput;
 
 /*----------------------------------------------------------------------*/
 /* CODE starts here */
@@ -395,7 +398,7 @@ int main(int argc,char *argv[])
   scanInit.searchRegion.skyRegionString = GV.skyRegionString;
   scanInit.skyGridFile = uvar_skyGridFile;
   
-  if (lalDebugLevel) LALPrintError ("\nSetting up template grid ...");
+  if (lalDebugLevel) printf ("\nSetting up template grid ...");
   
   LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
     
@@ -415,11 +418,11 @@ int main(int argc,char *argv[])
 	    GV.dFreq, GV.df1dot);
   }
   /*----------------------------------------------------------------------*/
-  if (lalDebugLevel) LALPrintError ("done.\n");
+  if (lalDebugLevel) printf ("done.\n");
   if ( uvar_outputSkyGrid ) {
-    LALPrintError ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+    printf ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
     LAL_CALL (writeSkyGridFile( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
-    LALPrintError (" done.\n\n");
+    printf (" done.\n\n");
   }
   
   /* if a complete output of the F-statistic file was requested,
@@ -451,7 +454,7 @@ int main(int argc,char *argv[])
    */
   LAL_CALL(LALGetDetectorStates(&status,&(GV.DetectorStates),GV.midTS,&GV.Detector,GV.edat),&status);
 
-  if (lalDebugLevel) LALPrintError ("\nStarting main search-loop.. \n");
+  if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
 
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
@@ -479,7 +482,7 @@ int main(int argc,char *argv[])
       /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
       LAL_CALL ( LALGetSSBtimes (&status, GV.CFSparams.DeltaT, GV.CFSparams.Tdot, 
 				 GV.DetectorStates, thisPoint, GV.refTime0,
-				 SSBPREC_NEWTONIAN), &status);
+				 uvar_SSBprecision), &status);
       
       /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
       LAL_CALL ( LALGetAMCoeffs (&status, GV.CFSparams.amcoe, GV.DetectorStates, thisPoint), &status);
@@ -555,7 +558,7 @@ int main(int argc,char *argv[])
 
       loopcounter ++;
       if (lalDebugLevel) 
-	LALPrintError ("\
+	printf ("\
 Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
 
     } /*  while SkyPos */
@@ -563,7 +566,7 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
   if (uvar_outputFstat && fpOut)
     fclose (fpOut);
 
-  if (lalDebugLevel) LALPrintError ("\nSearch finished.\n");
+  if (lalDebugLevel) printf ("\nSearch finished.\n");
 
   /* properly terminate Fstats-file by 'DONE' marker: */ 
   if (fpstat) fprintf(fpstat, "%%DONE\n");
@@ -640,7 +643,7 @@ initUserVars (LALStatus *status)
   uvar_dopplermax =  1.05e-4;
   uvar_windowsize = 50;	/* for running-median */
 
-  uvar_useEphemeris = TRUE;
+  uvar_SSBprecision = SSBPREC_RELATIVISTIC;
 
   /* register all our user-variables */
   LALregBOOLUserVar(status, 	help, 		'h', UVAR_HELP,     "Print this message"); 
@@ -683,7 +686,7 @@ initUserVars (LALStatus *status)
   /* more experimental and unofficial stuff follows here */
   LALregSTRINGUserVar(status,	outputFstat,	 0,  UVAR_OPTIONAL, "Output the F-statistic field over the parameter-space");
   LALregREALUserVar(status, 	FstatMin,	 0,  UVAR_OPTIONAL, "Minimum F-Stat value to written into outputFstat-file");
-  LALregBOOLUserVar (status,	useEphemeris,    0,  UVAR_DEVELOPER, "Use ephemeris or Ptolemaic model");
+  LALregINTUserVar (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -911,6 +914,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	LALPrintError ("\nERROR: XLALExtrapolatePulsarSpins() failed (xlalErrno = %d)!\n\n", code);
 	ABORT (status,  COMPUTEFSTATC_EXLAL,  COMPUTEFSTATC_MSGEXLAL);
       }
+
+    TRY ( LALDDestroyVector (status->statusPtr, &fkdotRef), status);
   }
 
 
@@ -1164,6 +1169,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree(cfg->edat->ephemS);
   LALFree(cfg->edat);
 
+  TRY (LALDDestroyVector (status->statusPtr, &(cfg->fkdot0)), status);
 
   TRY (LALDDestroyVector (status->statusPtr, &(cfg->CFSparams.fkdot)), status);
   TRY (LALSDestroyVector(status->statusPtr, &(cfg->CFSparams.amcoe->a)), status);
@@ -1171,6 +1177,12 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree ( cfg->CFSparams.amcoe);
   TRY (LALDDestroyVector(status->statusPtr, &(cfg->CFSparams.DeltaT)), status);
   TRY (LALDDestroyVector(status->statusPtr, &(cfg->CFSparams.Tdot)), status);
+
+
+  /* destroy DetectorStateSeries */
+  TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &(GV.DetectorStates) ), status);
+
+
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1536,7 +1548,9 @@ XLALNewLALDemod(Fcomponents *FaFb,
 	y_alpha -= 0.5 * xhat_alpha;
 	
 	/* real- and imaginary part of e^{-i 2 pi y } */
-	sin_cos_LUT ( &imagQ, &realQ, y_alpha );
+	if ( sin_cos_LUT ( &imagQ, &realQ, y_alpha ) ) {
+	  XLAL_ERROR ( "XLALNewLALDemod", XLAL_EFUNC);
+	}
 	imagQ = -imagQ;
       }
       /* ---------------------------------------- */
@@ -1629,7 +1643,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
   FaFb->Fa = Fa;
   FaFb->Fb = Fb;
 
-  return 0;
+  return XLAL_SUCCESS;
 
 } /* XLALNewLALDemod() */
 
@@ -1679,7 +1693,7 @@ XLALcomputeFStat (REAL8 *Fval,			/**< [out] the resulting F-statistic value */
 		     - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
   
   (*Fval) = (REAL8) F;
-  return 0;
+  return XLAL_SUCCESS;
 
 } /* XLALcomputeFStat() */
 
@@ -1701,7 +1715,7 @@ writeFVect(LALStatus *status, const FStatisticVector *FVect, const CHAR *fname)
 
   if ( (fp = fopen(fname, "wb")) == NULL) 
     {
-      LALPrintError ("Failed to open file '%f' for writing.\n", fname);
+      LALPrintError ("\nFailed to open file '%f' for writing.\n\n", fname);
       ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
     }
 
@@ -1868,8 +1882,13 @@ checkUserInputConsistency (LALStatus *status)
 /** Calculate sin(2 pi x) and cos(2 pi x) to roughly 1e-7 error using 
  * a lookup-table and Tayler-expansion.
  * This is meant to be fast, so we don't even check the input-pointers...
+ *
+ * However, for numerical sanity&safty, we *DO* check if the resulting
+ * index is within bounds, which can fail in case the argument x is too large..
+ *
+ * return = 0: OK, nonzero=ERROR
  */
-void 
+int
 sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
 {
 #define LUT_RES         64      /* resolution of lookup-table */
@@ -1890,9 +1909,17 @@ sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
       firstCall = FALSE;
     }
 
-  rem = x - (INT4)x;	/* rem in (-1, 1) */
+  rem = x - (INT8)x;	/* rem in (-1, 1) */
   if ( rem < 0 )
     rem += 1.0;		/* rem in [0, 1) */
+
+  /* security check if we didn't overstretch the numerics here (can happen for x too large) */
+  if ( (rem < 0) || (rem > 1) )
+    {
+      LALPrintError ("\nLUT-index out of bounds. Input argument was probably too large!\n\n");
+      XLAL_ERROR ( "sin_cos_LUT", XLAL_EDOM);
+    }
+  
 			   
   ind = (UINT4)( rem * LUT_RES + 0.5 );   /* closest LUT-entry */
   {
@@ -1905,7 +1932,7 @@ sin_cos_LUT (REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x)
     (*cos2pix) = tc - d * ts - d2 * tc;
   }
   
-  return;
+  return XLAL_SUCCESS;
 } /* sin_cos_LUT() */
 
 
@@ -2113,7 +2140,7 @@ LALGetSSBtimes (LALStatus *status,
 		const DetectorStateSeries *DetStates,/**< [in] detector-states at timestamps t_i */
 		SkyPosition pos,		/**< source sky-location */
 		REAL8 refTime,			/**< SSB reference-time T_0 of pulsar-parameters */
-		SSBprecision precision		/**< relativistic or Newtonian transformation? */
+		SSBprecision precision		/**< relativistic or Newtonian SSB transformation? */
 		)
 {
   UINT4 numSteps, i;
@@ -2153,19 +2180,41 @@ LALGetSSBtimes (LALStatus *status,
 	{
 	  LIGOTimeGPS *ti = &(DetStates->data[i].tGPS);
 	  /* DeltaT_alpha */
-	  DeltaT->data[i]  = 1.0 * ti->gpsSeconds + 1.e-9 * ti->gpsNanoSeconds;
+	  DeltaT->data[i]  = GPS2REAL8 ( (*ti) );
 	  DeltaT->data[i] += SCALAR(vn, DetStates->data[i].rDetector);
 	  DeltaT->data[i] -= refTime;
 
 	  /* Tdot_alpha */
 	  Tdot->data[i] = 1.0 + SCALAR(vn, DetStates->data[i].vDetector);
 	  
-	} /* for i <= N */
+	} /* for i < numSteps */
 
       break;
 
     case SSBPREC_RELATIVISTIC:	/* use LALBarycenter() to get SSB-times and derivative */
+      for (i=0; i < numSteps; i++ )
+	{
+	  BarycenterInput baryinput = empty_BarycenterInput;
+	  EmissionTime emit;
+	  DetectorState *state = &(DetStates->data[i]);
 
+	  baryinput.tgps = state->tGPS;
+	  baryinput.site = DetStates->detector;
+	  /* ARGHHH!!! */
+	  baryinput.site.location[0] /= LAL_C_SI;
+	  baryinput.site.location[1] /= LAL_C_SI;
+	  baryinput.site.location[2] /= LAL_C_SI;
+
+	  baryinput.alpha = alpha;
+	  baryinput.delta = delta;
+	  baryinput.dInv = 0;
+
+	  TRY ( LALBarycenter(status->statusPtr, &emit, &baryinput, &(state->earthState)), status);
+
+	  DeltaT->data[i] = GPS2REAL8 ( emit.te ) - refTime;
+	  Tdot->data[i] = emit.tDot;
+
+	} /* for i < numSteps */
 
       break;
     default:
@@ -2383,6 +2432,6 @@ XLALExtrapolatePulsarSpins (REAL8Vector *fkdotNew,	/**< [out] spin-parameters at
 
     } /* for s < spdnOrder */
 
-  return 0;
+  return XLAL_SUCCESS;
 
 } /* XLALExtrapolatePulsarSpins() */
