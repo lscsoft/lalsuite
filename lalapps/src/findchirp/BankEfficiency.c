@@ -285,15 +285,18 @@ main (INT4 argc, CHAR **argv )
 
 
               overlapin.param 	= list[currentTemplate].params;	   
+              LAL_CALL(LALInspiralParameterCalc( &status,  &(overlapin.param) ), &status);
               overlapout.max    = -1.; /* let us be sure that is has a value */
               overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
               overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
-	      
+              
               if (otherIn.faithfulness){ /* same parameters but different templates */
-randIn.param.fCutoff = coarseBankIn.fUpper;
+               /* randIn.param.fCutoff = coarseBankIn.fUpper;*/
 		tempOrder = list[currentTemplate].params.order;
 		list[currentTemplate].params = randIn.param;
 		overlapin.param                    = randIn.param;
+              overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
+              overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
 		overlapin.param.approximant        = otherIn.template;
 		overlapin.param.order              = tempOrder;
 		sizeBank                           = 1;  /* we dont need the whole bank for checking */ 
@@ -801,7 +804,6 @@ ParseParameters(	INT4 			*argc,
 	}
       else if (!strcmp(argv[i],	"--template-order")) {
         BEParseGetInt(argv,  &i, (INT4*)(&(coarseBankIn->order)));
-	fprintf(stderr, "%d \n", coarseBankIn->order );
 	  }
 
       /* no user parameters requeste, only flags below*/               
@@ -978,13 +980,18 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 
   temp =randIn->param.mass1; /*just to avoid boring warning*/
 
-  if (coarseBankIn->fUpper >=coarseBankIn->tSampling/2. -1.)
-    coarseBankIn->fUpper = coarseBankIn->tSampling/2 -1.;
   
-  if (randIn->param.fCutoff >=coarseBankIn->tSampling/2. -1.)
-    {
+  if (coarseBankIn->fUpper == -1 ){
+    coarseBankIn->fUpper = coarseBankIn->tSampling/2. -1.;
+  }
+  
+  if (coarseBankIn->fUpper >=coarseBankIn->tSampling/2. -1.){
+    coarseBankIn->fUpper = coarseBankIn->tSampling/2 -1.;
+  }
+  
+  if (randIn->param.fCutoff >=coarseBankIn->tSampling/2. -1.){
       randIn->param.fCutoff = coarseBankIn->tSampling/2 -1.;
-    }
+  }
   
 
   if (coarseBankIn->alpha < 0 ){
@@ -1021,7 +1028,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	{
 	  if (otherIn->maxTotalMass >= (2 * coarseBankIn->mMax))
 	    {
-	      coarseBankIn->MMax =  2 * otherIn->maxTotalMass;
+	      /*coarseBankIn->MMax =  2 * otherIn->maxTotalMass;*/
 	      coarseBankIn->etamin = coarseBankIn->mMin * coarseBankIn->mMax 
 		/ (coarseBankIn->mMin + coarseBankIn->mMax) 
 		/ (coarseBankIn->mMin + coarseBankIn->mMax);
@@ -2409,8 +2416,6 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       coarseBankIn.psi3Min);
   ADD_PROCESS_PARAM("float","%f","--bank-psi3-range",
       coarseBankIn.psi3Max);
-  ADD_PROCESS_PARAM("float","%f","--bank-ffinal",	 
-      coarseBankIn.fUpper);
   ADD_PROCESS_PARAM("string","%s","--bank-grid-type",
       GetStringFromGridType(coarseBankIn.gridType));
   ADD_PROCESS_PARAM("string", "%s","--channel",
@@ -3063,11 +3068,9 @@ void BEGenerateInputData(LALStatus *status,
   
   trial =0 ;
   success =0 ;
-  /*  for (i = 0; i < signal->length; i++) 
-    signal->data[i] = 0.;       
 
-  */
   
+ 
   /* we might force to compute a non random waveform giving the two
      input parameters m1 and m2 */      
   randIn->param.approximant = otherIn.signal; 
