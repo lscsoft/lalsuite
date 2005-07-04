@@ -146,6 +146,7 @@ main (INT4 argc, CHAR **argv )
   }
   LAL_CALL(BECreateBank(&status, &coarseBankIn, &list, &sizeBank), 
 	   &status);
+
   if (vrbflg){
     fprintf(stdout, " ... done, %d templates in the bank\n", sizeBank);
   }
@@ -292,6 +293,8 @@ main (INT4 argc, CHAR **argv )
 		tempOrder = list[currentTemplate].params.order;
 		list[currentTemplate].params = randIn.param;
 		overlapin.param                    = randIn.param;
+              LAL_CALL(LALInspiralParameterCalc( &status,  &(overlapin.param) ), &status);
+
               overlapin.param.fCutoff = randIn.param.tSampling/2. - 1;;
               overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
 		overlapin.param.approximant        = otherIn.template;
@@ -406,7 +409,8 @@ main (INT4 argc, CHAR **argv )
 
   
   /* --- destroy the plans, correlation and signal --- */
-  LALDestroyRandomParams(&status, &randParams );
+  if (randParams)
+    LALDestroyRandomParams(&status, &randParams );
   
   LALFree(powerVector.fm5_3.data);
   LALFree(powerVector.fm2_3.data);
@@ -2240,7 +2244,7 @@ BEPrintBankXml(
   CHAR  fname[256];
   LIGOTimeGPS gpsStartTime 	= { 0, 0 };    /* input data GPS start time    */
   LIGOTimeGPS gpsEndTime 	= { 0, 0 };      /* input data GPS end time      */
-  LALLeapSecAccuracy    accuracy = 1;
+  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
 
@@ -2322,6 +2326,7 @@ BEPrintBankXml(
 
   /* create the process and process params tables */
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
+  
   LAL_CALL( LALGPSTimeNow ( &status, &(proctable.processTable->start_time),
 			    &accuracy ), &status );
   LAL_CALL( populate_process_table( &status, proctable.processTable, 
@@ -2661,7 +2666,7 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
   CHAR                  fname[256];
   LIGOTimeGPS           gpsStartTime 	= { 0, 0 };    /* input data GPS start time    */
   LIGOTimeGPS           gpsEndTime 	= { 0, 0 };      /* input data GPS end time      */
-  LALLeapSecAccuracy    accuracy = 1;
+  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   CHAR                  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
 
@@ -2835,7 +2840,7 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
   CHAR                  fname[256];
   LIGOTimeGPS           gpsStartTime 	= { 0, 0 };    /* input data GPS start time    */
   LIGOTimeGPS           gpsEndTime 	= { 0, 0 };      /* input data GPS end time      */
-  LALLeapSecAccuracy    accuracy = 1;
+  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   CHAR                  ifoName[MAXIFO][LIGOMETA_IFO_MAX];
 
@@ -3231,7 +3236,7 @@ LALCreateRealPsd(LALStatus *status,
   int i; FILE *Foutput;
   /* lal function variables */
 
-  /*LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;*/
+
 
   /* frame input data */
   FrCache      *frInCache = NULL;
