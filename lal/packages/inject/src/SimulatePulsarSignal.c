@@ -84,7 +84,7 @@ where the wave-phase is \f$\Psi(t) = \Phi_0 + \Phi(t)\f$, and for an
 isolated pulsar we have
 \f{equation}
 \Phi(t) = 2\pi \left[\sum_{s=0} {f^{(s)}(\tau_\mathrm{ref}) \over
-(k+1)!} \left( \tau(t) - \tau_\mathrm{ref} \right)^{k+1} \right]\,,
+(s+1)!} \left( \tau(t) - \tau_\mathrm{ref} \right)^{s+1} \right]\,,
 \f}
 where \f$\tau_\mathrm{ref}\f$ is the "reference time" for the definition
 of the pulsar-parameters \f$f^{(s)}\f$ in the solar-system barycenter
@@ -108,8 +108,10 @@ and and LALBarycenter() to calculate \f$\tau(t)\f$.
  */
 
 /** \page References
- * \anchor JKS98
- *  	<b>[JKS98]</b> Jaranowski, Krolak, Schutz, PRD...
+ * \anchor JKS98 <b>[JKS98]</b>. 
+ * P. Jaranowski, A. Krolak, B.F. Schutz, 
+ * <em>Data analysis of gravitational-wave signals from spinning neutron stars:
+ * The signal and its detection.</em>, Phys.Rev. <b>D 58</b>, 063001 (1998)
  *
  */
 
