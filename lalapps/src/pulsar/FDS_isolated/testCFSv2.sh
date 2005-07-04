@@ -1,5 +1,8 @@
 #!/bin/sh
 
+## take user-arguments for CFS-v2:
+extra_args="$@"
+
 ##---------- names of codes and input/output files  
 saf_code="lalapps_SemiAnalyticF"
 mfd_code="lalapps_Makefakedata"
@@ -106,7 +109,7 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat --refTime=$refTime";
+cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat --refTime=$refTime $extra_args";
 echo $cmdline;
 
 if ! eval time $cmdline; then
