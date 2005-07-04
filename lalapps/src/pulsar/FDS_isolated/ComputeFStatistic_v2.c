@@ -146,7 +146,6 @@ typedef struct {
   CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
   LIGOTimeGPSVector *timestamps;/**< SFT timestamps */
   LIGOTimeGPSVector *midTS;	/**< GPS midpoints of SFT's */
-  REAL8Vector *midGMSTs;	/**< GMSTs in radians for the GPS midpoints midTS */
   DetectorStateSeries *DetectorStates;	/**< pos, vel and LMSTs for detector at times t_i */
   computeFStatPar CFSparams;  	/**< Demodulation parameters for computeFStat() */
 } ConfigVariables;
@@ -278,10 +277,6 @@ LALGetSSBtimes (LALStatus *,
 		SkyPosition pos,
 		REAL8 refTime,
 		SSBprecision precision);
-
-void
-LALGetGMSTimestamps (LALStatus *status, REAL8Vector *GMSTimestamps, 
-		    const LIGOTimeGPSVector *GPStimestamps);
 
 void
 LALGetAMCoeffs(LALStatus *status,
@@ -851,7 +846,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   {
     TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->timestamps), cfg->SFTno ), status);
     TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->midTS), cfg->SFTno ), status);
-    TRY ( LALDCreateVector ( status->statusPtr, &(cfg->midGMSTs), cfg->SFTno ), status );
 
     for (i=0; i < cfg->SFTno; i++)
       {
@@ -861,8 +855,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 			      &(cfg->midTS->data[i]), &(cfg->timestamps->data[i]),0.5*cfg->tSFT),status);
       }/* for i < SFTno */
 
-    /* translate midpoints into GMST in radians */
-    TRY ( LALGetGMSTimestamps (status->statusPtr, cfg->midGMSTs, cfg->midTS), status );
   } 
 
   /*----- figure out total observation time */
@@ -882,7 +874,8 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    * we chose as the start-time of the first SFT (*verbatim*, i.e. not translated to SSB! )
    */
   {
-    UINT4 spdnOrder;
+    UINT4 spdnOrder = 1;	/* hard-coded default FIXME. DON'T change without fixing main() */
+
     REAL8Vector *fkdotRef = NULL;
     LIGOTimeGPS refTime0;	/* internal reference-time */
 
@@ -890,11 +883,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
     } else
       cfg->refTime = cfg->startTime;
-
-    if ( LALUserVarWasSet(&uvar_f1dot) )
-      spdnOrder = 1;
-    else
-      spdnOrder = 0;
 
     TRY ( LALDCreateVector (status->statusPtr, &fkdotRef, 1 + spdnOrder), status);
     TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot0), 1 + spdnOrder), status);
@@ -904,7 +892,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
     /* currently we use the observation GPS start-time as internal SSB reference-time: */
     refTime0 = cfg->startTime;
-    cfg->refTime0 = 1.0 * refTime0.gpsSeconds + 1.e-9 * refTime0.gpsNanoSeconds;
+    cfg->refTime0 = GPS2REAL8 (refTime0);
 
     /*----- now translate spin-params to internal reference-time */
     if ( XLALExtrapolatePulsarSpins ( cfg->fkdot0, refTime0, fkdotRef, cfg->refTime) ) 
@@ -1151,7 +1139,6 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   /* Free timestamps */
   TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->timestamps)), status );
   TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->midTS)), status );
-  TRY ( LALDDestroyVector (status->statusPtr, &(cfg->midGMSTs)), status );
 
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
@@ -2089,40 +2076,6 @@ LALGetAMCoeffs(LALStatus *status,
   RETURN(status);
 
 } /* LALGetAMCoeffs() */
-
-
-/** Translate a vector of GPS-times into Greewich Mean Siderial Times (GMST)
- *  in units of radians!
- */
-void
-LALGetGMSTimestamps (LALStatus *status,
-		    REAL8Vector *GMSTimestamps,		    /**< [out] GMST's T(t_i) in radians  */
-		    const LIGOTimeGPSVector *GPStimestamps  /**< [in] GPS timestamps t_i */
-		    )
-{
-  UINT4 i, numSteps;
-  LALMSTUnitsAndAcc unitsAndAcc = { MST_RAD, LALLEAPSEC_STRICT};
-
-  INITSTATUS (status, "LALGetGMSTimestamps", rcsid);
-  ATTATCHSTATUSPTR ( status );
-
-  ASSERT ( GPStimestamps, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT ( GMSTimestamps, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-
-  numSteps = GPStimestamps->length;
-  ASSERT ( numSteps == GMSTimestamps->length, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-
-  for ( i=0; i < numSteps; i++ )
-    {
-      TRY ( LALGPStoGMST1( status->statusPtr, &(GMSTimestamps->data[i]), 
-			   &(GPStimestamps->data[i]), &unitsAndAcc ), status);
-    } /* for i < numSteps */
-
-
-  DETATCHSTATUSPTR (status);
-  RETURN (status);
-
-} /* LALGetGMSTtimestamps() */
 
 
 /** For a given vector of GPS-times, calculate the time-differences
