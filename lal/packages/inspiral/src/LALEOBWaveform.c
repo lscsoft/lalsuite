@@ -91,11 +91,18 @@ at the last stable orbit. It is recommended that a rather generous
 #include <lal/SeqFactories.h>
 
 typedef struct tagrOfOmegaIn {
-   REAL8 eta, omega;
+   REAL8 eta;
+   REAL8 omega;
 } rOfOmegaIn;
 
 typedef struct tagPr3In {
-  REAL8 eta, zeta2, omegaS, omega, vr,r,q;
+  REAL8 eta;
+  REAL8 zeta2;
+  REAL8 omegaS;
+  REAL8 omega;
+  REAL8 vr;
+  REAL8 r;
+  REAL8 q;
   InspiralDerivativesIn in3copy; 
 } pr3In;
 
@@ -106,27 +113,27 @@ omegaofr3PN (
 	     void *params) ;
 
 static 
-void LALHCapDerivatives(	REAL8Vector *values, 
-				REAL8Vector *dvalues, 
+void LALHCapDerivatives(        REAL8Vector     *values,
+				REAL8Vector     *dvalues,
 				void 		*funcParams);
 
 static 
-void LALprInit(	REAL8 		*pr, 
-				REAL8 		r, 
-				InspiralDerivativesIn 	*ak);
+void LALprInit(	REAL8                   *pr,
+    		REAL8 	                r,
+                InspiralDerivativesIn 	*ak);
 
 static 
-void LALpphiInit(	REAL8 *phase, 
-			REAL8 r, 
-			REAL8 eta);
+void LALpphiInit(       REAL8   *phase, 
+		        REAL8   r, 
+		        REAL8   eta);
 
 static 
-void LALlightRingRadius(	LALStatus 	*status,
+void LALlightRingRadius(        LALStatus       *status,
 				REAL8 		*x, 
 				REAL8 		r, 
-				void 	*params);
+				void 	        *params);
 							
-static void LALrOfOmega (	LALStatus 	*status, 
+static void LALrOfOmega (       LALStatus       *status, 
 				REAL8 		*x,
 				REAL8 		r, 
 				void 		*params);
@@ -134,22 +141,35 @@ static void LALrOfOmega (	LALStatus 	*status,
 static
 void LALHCapDerivatives3PN(	REAL8Vector 	*values,
 				REAL8Vector 	*dvalues, 
-				void 			*funcParams);
+				void 		*funcParams);
 							
 static
-void LALprInit3PN(LALStatus *status, REAL8 *pr , REAL8 , void  *params);
+void LALprInit3PN(      LALStatus       *status,
+                        REAL8           *pr,
+                        REAL8           p,
+                        void            *params);
 
 static
-void LALpphiInit3PN(REAL8 *phase, REAL8 r, REAL8 eta, REAL8 omegaS);
+void LALpphiInit3PN(    REAL8   *phase, 
+                        REAL8   r,
+                        REAL8   eta,
+                        REAL8   omegaS);
 
 static
-void LALlightRingRadius3PN(LALStatus *status, REAL8 *x, REAL8 r, void *params);
+void LALlightRingRadius3PN(     LALStatus       *status, 
+                                REAL8           *x,
+                                REAL8           r, 
+                                void            *params);
 
 static
-void LALrOfOmega3PN (LALStatus *status, REAL8 *x, REAL8 r, void *params);
+void LALrOfOmega3PN (   LALStatus       *status, 
+                        REAL8           *x,
+                        REAL8           r,
+                        void            *params);
 
 static
-void LALvr3PN(REAL8 *vr, void *params);
+void LALvr3PN(  REAL8   *vr, 
+                void    *params);
 
 
 NRCSID (LALEOBWAVEFORMC, 
@@ -159,59 +179,58 @@ NRCSID (LALEOBWAVEFORMC,
 
 static void 
 LALprInit(
-   REAL8 *pr, 
-   REAL8 r, 
-   InspiralDerivativesIn *ak
+    REAL8 *pr, 
+    REAL8 r, 
+    InspiralDerivativesIn *ak
    ) 
 { 
+  /* 
+   * This combines Eq. (4.13), (4.14) (4.16) of BD2 to get 
+   * the initial value of pr 
+   * */
+   REAL8        eta;
+   REAL8		z;
+   REAL8		omega;
+   REAL8		jadiab;
+   REAL8		djadiabdr; 
+   REAL8		H0cap;
+   REAL8		v;
+   REAL8		FDIS;
+   REAL8		A;
+   REAL8		r2;  /* temp variable */
+   REAL8		r3;  /* temp variable */
+   REAL8		cr;
+   
+   eta  = ak->coeffs->eta;
+   r2   = r * r;
+   r3   = r2 * r;
 
-/* 
-	This combines Eq. (4.13), (4.14) (4.16) of BD2 to get 
-	the initial value of pr 
-*/
-
-   REAL8 	eta,
-			z,
-			omega,
-			jadiab,
-			djadiabdr, 
-			H0cap, 
-			v,
-			FDIS,
-			A,
-			r2,  /* temp variable */
-			r3,  /* temp variable */
-			cr;
-
-   eta = ak->coeffs->eta;
-   r2 = r*r;
-   r3 = r2*r;
-
-   A = 1. - 2./r + 2.*eta/r3;
-   z = r3 * A * A/(r3 - 3.*r2 + 5.*eta);
-   omega = sqrt((1.-3*eta/r2)/(r3 * (1. + 2*eta*(sqrt(z)-1.))));
-   jadiab = sqrt (r2 * (r2 - 3.*eta)/(r3 - 3.*r2 + 5.*eta));
-   djadiabdr = (r3*r3 - 6.*r3*r2 + 3.*eta*r2*r2 +20.*eta*r3-30.*eta*eta*r)/
-               (pow(r3 - 3.*r2 + 5.*eta, 2.)*2.*jadiab);
-   H0cap = sqrt(1. + 2.*eta*(-1. + sqrt(z)))/eta;
-   cr = A*A/((1.-6.*eta/r2) * eta * H0cap * sqrt(z));
-   v = pow(omega,oneby3);
-   FDIS = -ak->flux(v, ak->coeffs)/(eta * v*v*v); 
-   *pr = FDIS/(djadiabdr*cr);
+   A    = 1. - 2/r + 2.*eta/r3;
+   z    = r3 * A * A/(r3 - 3.*r2 + 5.*eta);
+   omega        = sqrt((1.-3*eta/r2)/(r3 * (1. + 2*eta*(sqrt(z)-1.))));
+   jadiab       = sqrt (r2 * (r2 - 3.*eta)/(r3 - 3.*r2 + 5.*eta));
+   djadiabdr    = (r3*r3 - 6.*r3*r2 + 3.*eta*r2*r2 +20.*eta*r3-30.*eta*eta*r)/
+                (pow(r3 - 3.*r2 + 5.*eta, 2.)*2.*jadiab);
+   H0cap        = sqrt(1. + 2.*eta*(-1. + sqrt(z)))/eta;
+   cr   = A * A / ((1.-6.*eta/r2) * eta * H0cap * sqrt(z));
+   v    = pow(omega, oneby3);
+   FDIS = -ak->flux(v, ak->coeffs) / (eta * v*v*v); 
+   *pr  = FDIS / (djadiabdr * cr);
 }
 
 /*--------------------------------------------------------------------*/
 static void 
 LALpphiInit(
-   REAL8 *phase, 
-   REAL8 r, 
-   REAL8 eta
-   )
+    REAL8 *phase, 
+    REAL8 r, 
+    REAL8 eta
+    )
 { 
-   REAL8 r2, r3;
-   r2 = r*r;
-   r3 = r2*r;
-   *phase = pow(r2 * (r2 - 3.*eta) / (r3 - 3.* r2 + 5.*eta), 0.5);
+  REAL8 r2, r3;
+  
+  r2    = r*r;
+  r3    = r2*r;
+  *phase = pow(r2 * (r2 - 3.*eta) / (r3 - 3.* r2 + 5.*eta), 0.5);
 }
 
 /*--------------------------------------------------------------------*/
@@ -220,27 +239,29 @@ NRCSID (LALROFOMEGAC,
 
 static void 
 LALrOfOmega (
-   LALStatus *status, 
-   REAL8 *x, 
-   REAL8 r, 
-   void *params
-   ) 
+    LALStatus *status, 
+    REAL8 *x, 
+    REAL8 r, 
+    void *params
+    ) 
 { 
 
-   REAL8 r2, r3, A, z, eta, omega;
-   rOfOmegaIn *rofomegain;
+  REAL8 r2, r3, A, z, eta, omega;
+  rOfOmegaIn *rofomegain;
 
-   INITSTATUS(status, "LALrOfOmega", LALROFOMEGAC);
-   ATTATCHSTATUSPTR(status);
-   rofomegain = (rOfOmegaIn *) params;
-   eta = rofomegain->eta;
-   omega = rofomegain->omega;
-   r2 = r*r;
-   r3 = r2*r;
+  INITSTATUS(status, "LALrOfOmega", LALROFOMEGAC);
+  ATTATCHSTATUSPTR(status);
+  
+  rofomegain = (rOfOmegaIn *) params;
+  eta   = rofomegain->eta;
+  omega = rofomegain->omega;
+  r2    = r * r;
+  r3    = r2 * r;
 
-   A = 1. - 2./r + 2.*eta/r3;
-   z = r3 * A * A/(r3 - 3.*r2 + 5.*eta);
-   *x = omega - sqrt((1.-3*eta/r2)/(r3 * (1. + 2*eta*(sqrt(z)-1.))));
+  A     = 1. - 2./r + 2.*eta/r3;
+  z     = r3 * A * A/(r3 - 3.*r2 + 5.*eta);
+  *x    = omega - sqrt((1.-3*eta/r2)/(r3 * (1. + 2*eta*(sqrt(z)-1.))));
+   
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
@@ -248,113 +269,108 @@ LALrOfOmega (
 /*--------------------------------------------------------------------*/
 NRCSID (LALLIGHTRINGRADIUSC, 
 "$Id$");
+
 static void 
 LALlightRingRadius(
-   LALStatus *status, 
-   REAL8 *x, 
-   REAL8 r, 
-   void *params
-   ) 
+    LALStatus *status, 
+    REAL8 *x, 
+    REAL8 r, 
+    void *params
+    ) 
 { 
-   REAL8 eta;
-   rOfOmegaIn *rofomegain;
+  REAL8 eta;
+  rOfOmegaIn *rofomegain;
 
-   INITSTATUS(status, "LALlightRingRadius", LALLIGHTRINGRADIUSC);
-   ATTATCHSTATUSPTR(status);
-   rofomegain = (rOfOmegaIn *) params;
-   eta = rofomegain->eta;
-   *x = pow(r,3.) - 3.*r*r + 5.* eta;
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
+  INITSTATUS(status, "LALlightRingRadius", LALLIGHTRINGRADIUSC);
+  ATTATCHSTATUSPTR(status);
+ 
+  rofomegain = (rOfOmegaIn *) params;
+  eta   = rofomegain->eta;
+  *x    = pow(r,3.) - 3.*r*r + 5.* eta;
+  
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
 }
 
 
 static void 
 LALHCapDerivatives(
-   REAL8Vector *values, 
-   REAL8Vector *dvalues, 
-   void *funcParams
-   ) 
+    REAL8Vector *values, 
+    REAL8Vector *dvalues, 
+    void *funcParams
+    ) 
 { 
-   REAL8 r, s, p, q, r2, r3, p2, q2, A, B, dA, dB, hcap, Hcap, etahH;
-   REAL8 omega, v, eta;
-   InspiralDerivativesIn *ak;
+  REAL8 r, s, p, q, r2, r3, p2, q2, A, B, dA, dB, hcap, Hcap, etahH;
+  REAL8 omega, v, eta;
+  InspiralDerivativesIn *ak;
 
-   ak = (InspiralDerivativesIn *) funcParams;
+  ak    = (InspiralDerivativesIn *) funcParams;
+  eta   = ak->coeffs->eta;
 
-   eta = ak->coeffs->eta;
+  r     = values->data[0];
+  s     = values->data[1];
+  p     = values->data[2];
+  q     = values->data[3];
 
-   r = values->data[0];
-   s = values->data[1];
-   p = values->data[2];
-   q = values->data[3];
+  r2    = r*r;
+  r3    = r2*r;
+  p2    = p*p;
+  q2    = q*q;
+  A     = 1. - 2./r + 2.*eta/r3;
+  B     = (1. - 6.*eta/r2)/A;
+  dA    = 2./r2 - 6.*eta/pow(r,4.);
+  dB    = (-dA * B + 12.*eta/r3)/A;
+  hcap  = pow (A*(1. + p2/B + q2/r2), 0.5);
+  Hcap  = pow (1. + 2.*eta*(hcap - 1.), 0.5) / eta;
+  etahH = eta*hcap*Hcap;
 
-   r2 = r*r;
-   r3 = r2*r;
-   p2 = p*p;
-   q2 = q*q;
-   A = 1. - 2./r + 2.*eta/r3;
-   B = (1. - 6.*eta/r2)/A;
-   dA = 2./r2 - 6.*eta/pow(r,4.);
-   dB = (-dA * B + 12.*eta/r3)/A;
-   hcap = pow (A*(1. + p2/B + q2/r2), 0.5);
-   Hcap = pow (1. + 2.*eta*(hcap - 1.), 0.5) / eta;
-   etahH = eta*hcap*Hcap;
+  dvalues->data[0]      = A*A*p/((1. - 6.*eta/r2) * etahH);
+  dvalues->data[1]      = omega = A * q / (r2 * etahH);
+  
+  v     = pow(omega,oneby3);
 
-   dvalues->data[0] = A*A*p/((1. - 6.*eta/r2) * etahH);
-   dvalues->data[1] = omega = A * q / (r2 * etahH);
-
-   v = pow(omega,oneby3);
-
-   dvalues->data[2] = -0.5 * (dA * hcap * hcap/A - p2 * A * dB/(B*B) 
-   									- 2. * A * q2/r3) / etahH;
-   dvalues->data[3] = -ak->flux(v, ak->coeffs)/(eta * v*v*v); 
-   /*
+  dvalues->data[2]      = -0.5 * (dA * hcap * hcap/A - p2 * A * dB/(B*B)    									- 2. * A * q2/r3) / etahH;
+  dvalues->data[3]      = -ak->flux(v, ak->coeffs)/(eta * v*v*v);    
+  /*
    printf("%e %e %e %e %e %e %e %e\n", r, s, p, q, A, B, hcap, Hcap);
    */
 }
 
-
-
-/*--------------------------------------------------------------------*/
-
-  void
-LALpphiInit3PN(
-	    REAL8 *phase,
-	    REAL8 r,
-	    REAL8 eta,
-	    REAL8 omegaS
-	    )
+void
+LALpphiInit3PN( 
+    REAL8 *phase,
+    REAL8 r,
+    REAL8 eta,
+    REAL8 omegaS
+    )
 {
   REAL8 u, u2, u3,  a4, a4p4eta, a4peta2, NA, DA, A, dA;
   
-
-  u = 1./r;
-  u2 = u*u;
-  u3 = u2*u;
-  a4 = (ninty4by3etc - 2. * omegaS) * eta;
-  a4p4eta = a4 + 4. * eta;
-  a4peta2 = a4 + eta * eta;
-  NA = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
-  DA = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
-  A = NA/DA;
-  dA = ( (a4 - 16. + 8. * eta) * DA - NA * (a4p4eta + 4. * a4p4eta * u 
+  u     = 1./r;
+  u2    = u*u;
+  u3    = u2*u;
+  a4    = (ninty4by3etc - 2. * omegaS) * eta;
+  a4p4eta       = a4 + 4. * eta;
+  a4peta2       = a4 + eta * eta;
+  NA    = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
+  DA    = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
+  A     = NA/DA;
+  dA    = ( (a4 - 16. + 8. * eta) * DA - NA * (a4p4eta + 4. * a4p4eta * u 
 			+ 12. * a4peta2  * u2))/(DA*DA);
 
-  *phase = sqrt(-dA/(2.*u*A + u2 * dA));
-
+  *phase        = sqrt(-dA/(2.*u*A + u2 * dA));
 }
-/*---------------------------------------------------------------*/
 
 NRCSID (LALPRINIT3PN, 
 "$Id$");
- void 
+
+void 
 LALprInit3PN(
-	     LALStatus *status, 
-	     REAL8 *pr,
-	     REAL8 p,
-	     void *params
-	     ) 
+    LALStatus *status, 
+    REAL8 *pr,
+    REAL8 p,
+    void *params
+    ) 
 {
   REAL8   u, u2, u3, u4, p2, p3, p4, q2, A, DA, NA;
   REAL8  onebyD, AbyD, Heff, HReal, etahH;
@@ -363,40 +379,39 @@ LALprInit3PN(
   
   INITSTATUS(status, "LALprInit3PN", LALPRINIT3PN);
   ATTATCHSTATUSPTR(status);
-  ak = (pr3In *) params;
   
-  eta = ak->eta;
-  vr = ak->vr;
-  r = ak->r;
-  q = ak->q;
+  ak    = (pr3In *) params;
+  eta   = ak->eta;
+  vr    = ak->vr;
+  r     = ak->r;
+  q     = ak->q;
   omegaS = ak->omegaS;
   
-     
-   p2 = p*p;
-   p3 = p2*p;
-   p4 = p2*p2;
-   q2 = q*q;
-   u = 1./ r;
-   u2 = u*u;
-   u3 = u2 * u;
-   u4 = u2 * u2;
-   z3 = 2. * (4. - 3. * eta) * eta;
-   a4 = (ninty4by3etc - 2. * omegaS) * eta;
-   a4p4eta = a4 + 4. * eta;
-   a4peta2 = a4 + eta * eta;  
+  p2    = p*p;
+  p3    = p2*p;
+  p4    = p2*p2;
+  q2    = q*q;
+  u     = 1./ r;
+  u2    = u*u;
+  u3    = u2 * u;
+  u4    = u2 * u2;
+  z3    = 2. * (4. - 3. * eta) * eta;
+  a4    = (ninty4by3etc - 2. * omegaS) * eta;
+  a4p4eta       = a4 + 4. * eta;
+  a4peta2       = a4 + eta * eta;  
 
 /* From DJS 14, 15 */
-   NA = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
-   DA = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
-   A = NA/DA;
-   onebyD = 1. + 6.*eta*u2 + 2. * ( 26. - 3. * eta) * eta * u3;
-   AbyD = A * onebyD;   
+  NA    = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
+  DA    = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
+  A     = NA/DA;
+  onebyD        = 1. + 6.*eta*u2 + 2. * ( 26. - 3. * eta) * eta * u3;
+  AbyD  = A * onebyD;   
 
-   Heff = pow (A*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2), 0.5);
-   HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
-   etahH = eta*Heff*HReal;
+  Heff  = pow (A*(1. + AbyD * p2 + q*q * u2 + z3 * p4 * u2), 0.5);
+  HReal = pow (1. + 2.*eta*(Heff - 1.), 0.5) / eta;
+  etahH = eta*Heff*HReal;
    
-   *pr = -vr +  A*(AbyD*p + 2. * z3 * u2 * p3)/etahH; 
+  *pr   = -vr +  A*(AbyD*p + 2. * z3 * u2 * p3)/etahH; 
    
    DETATCHSTATUSPTR(status);
    RETURN(status);
@@ -404,65 +419,64 @@ LALprInit3PN(
 
 static void 
 omegaofr3PN (
-	     REAL8 *x,
-	     REAL8 r, 
-	     void *params) 
+    REAL8 *x,
+    REAL8 r, 
+    void *params) 
 {
-   REAL8 u, u2, u3, a4, a4p4eta, a4peta2, eta, NA, DA, A, dA;
-   REAL8   omegaS;
+  REAL8 u, u2, u3, a4, a4p4eta, a4peta2, eta, NA, DA, A, dA;
+  REAL8   omegaS;
+  pr3In *ak;
+  
+  ak    = (pr3In *) params;
+  omegaS        = ak->omegaS;
+  eta   = ak->eta;
 
-   /*include a status here ?*/
-   pr3In *ak;
-   ak = (pr3In *) params;
-   omegaS = ak->omegaS;
-   eta = ak->eta;
-
-   u = 1./r;
-   u2 = u*u;
-   u3 = u2*u;
-   a4 = (ninty4by3etc - 2. * omegaS) * eta;
+  u     = 1./r;
+  u2    = u*u;
+  u3    = u2*u;
+  a4    = (ninty4by3etc - 2. * omegaS) * eta;
    
-   a4p4eta = a4 + 4. * eta;
-   a4peta2 = a4 + eta * eta;
-   NA = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
-   DA = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
-   A = NA/DA;
-   dA = ( (a4 - 16. + 8. * eta) * DA - NA 
+  a4p4eta       = a4 + 4. * eta;
+  a4peta2       = a4 + eta * eta;
+  NA    = 2.*(4.-eta) + (a4 - 16. + 8. * eta) * u;
+  DA    = 2.*(4.-eta) + a4p4eta * u + 2. * a4p4eta * u2 + 4.*a4peta2 * u3;
+  A     = NA/DA;
+  dA    = ( (a4 - 16. + 8. * eta) * DA - NA 
 			* (a4p4eta + 4. * a4p4eta * u + 12. * a4peta2  * u2))/(DA*DA);
-   *x = pow(u,1.5) 
-   			* sqrt ( -0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
-
+   *x = pow(u,1.5) * sqrt ( -0.5 * dA /(1. + 2.*eta * (A/sqrt(A+0.5 * u*dA)-1.)));
 }
 
 void 
 LALrOfOmega3PN(
-	    LALStatus *status, 
-	    REAL8 *x, 
-	    REAL8 r, 
-	    void *params)
+    LALStatus *status, 
+    REAL8 *x, 
+    REAL8 r, 
+    void *params)
 {
   REAL8  omega1,omega2,eta ;
   pr3In *pr3in;
-       
-  status = NULL;
-  pr3in = (pr3In *) params;
-  eta = pr3in->eta;
 
-  omega1 = pr3in->omega;
+  /* no correct lal code here isnt it ? Thomas july 2005*/
+  status        = NULL;
+  pr3in         = (pr3In *) params;
+  eta   = pr3in->eta;
+
+  omega1        = pr3in->omega;
   omegaofr3PN(&omega2,r, params);
-  *x = -omega1 + omega2;
+  *x    = -omega1 + omega2;
 
 }
 /*--------------------------------------------------------------------*/
 NRCSID (LALLIGHTRINGRADIUS3PNC,
 "$Id$");
- void 
+
+void 
 LALlightRingRadius3PN(
-		      LALStatus *status, 
-		      REAL8 *x, 
-		      REAL8 r, 
-		      void *params
-		      ) 
+    LALStatus *status, 
+    REAL8 *x, 
+    REAL8 r, 
+    void *params
+) 
 { 
   REAL8 eta, u, u2, u3, a4, a4p4eta,a4peta2, NA, DA, A, dA;
   rOfOmegaIn *rofomegain;
@@ -628,6 +642,8 @@ LALEOBWaveform (
 
    INT4 count, nn=4;
    REAL8 eta, m, rn, r, rOld, s, p, q, dt, t, h, v, omega, f, dR;
+   REAL4  vOld = 0; /* intermediate variable to store previous v in the diff eqautions loop 
+		       integration*/
    REAL8Vector dummy, values, dvalues, newvalues, yt, dym, dyt;
    TofVIn in1;
    InspiralPhaseIn in2;
@@ -664,6 +680,10 @@ LALEOBWaveform (
    CHECKSTATUSPTR(status);
    LALInspiralChooseModel(status->statusPtr, &func, &ak, params);
    CHECKSTATUSPTR(status);
+
+
+
+
 
 /*   params->nStartPad=0.0;
    params->nEndPad=0.0;
@@ -735,29 +755,33 @@ LALEOBWaveform (
        rootIn.function = LALlightRingRadius3PN;
        break;
      default:
-       fprintf(stderr, 
-	 			"There are no EOB waveforms implemented at order %d\n", 
-	 			params->order);
+       fprintf(stderr, "There are no EOB waveforms implemented at order %d\n", 
+	       params->order);
        exit(0);
      }
-   rootIn.xmax = 2.;
-   rootIn.xmin = 4.;
+   rootIn.xmax = 1.;
+   rootIn.xmin = 100.;
    funcParams = (void *) &rofomegain;
-/*-------------------------------------------------------------------
-Userful for debugging: Make sure a solution for r exists.
---------------------------------------------------------
-   for (r=0.01; r<10.; r+=.01) {
-      LALlightRingRadius(status->statusPtr, &x, r, funcParams);
-      CHECKSTATUSPTR(status);
-      printf("%e %e\n", r, x);
+
+   /*-------------------------------------------------------------------
+     Userful for debugging: Make sure a solution for r exists.
+     --------------------------------------------------------
+   {
+     REAL8 x;
+     for (r=0.01; r<10.; r+=.01) {
+     LALlightRingRadius(status->statusPtr, &x, r, funcParams);
+     CHECKSTATUSPTR(status);
+     printf("%e %e\n", r, x);
+     }
+     printf("&\n");
+     for (r=1; r<100.; r+=.1) {
+     LALrOfOmega(status->statusPtr, &x, r, funcParams);
+     CHECKSTATUSPTR(status);
+     printf("%e %e\n", r, x);
+     }
    }
-   printf("&\n");
-   for (r=1; r<100.; r+=.1) {
-      LALrOfOmega(status->statusPtr, &x, r, funcParams);
-      CHECKSTATUSPTR(status);
-      printf("%e %e\n", r, x);
-   }
--------------------------------------------------------------------*/
+     -------------------------------------------------------------------*/
+
    LALDBisectionFindRoot(status->statusPtr, &rn, &rootIn, funcParams);
    CHECKSTATUSPTR(status);
 	
@@ -792,10 +816,12 @@ Userful for debugging: Make sure a solution for r exists.
        exit(0);
      }
 
-   /*params->rInitial = r;
-   params->vInitial = v;
-   params->rLightRing = rn;
+   /*
+     params->rInitial = r;
+     params->vInitial = v;
+     params->rLightRing = rn;
    */
+    
 /* 
    LALInspiralPhasing1(v) gives the GW phase (= twice the orbital phase).
    The ODEs we solve give the orbital phase. Therefore, set the
@@ -857,6 +883,7 @@ switch (params->order)
 
    t = 0.0;
    count = 0;
+
    while (count < params->nStartPad)
    {
       *(signal->data + count) = 0.;
@@ -878,12 +905,22 @@ switch (params->order)
       }
 
       rOld = r;
+      vOld = pow(dvalues.data[1], oneby3); /* sometimes, at the end of the integration, 
+					      RK4 stored junk in v. However, v is used 
+					      to compute ffinal. So if v is junk , I keep 
+					      vold and use it later. This piece of code 
+					      should be rewritten carefully though but for 
+					      the time being I use that trick. That problem 
+					      seems to occurs once every 1000 trails in a 
+					      range of mass quite precise between 1 and 1.5 
+					      solar mass for each masses*/
       if (params->order<threePN){
-		  LALHCapDerivatives(&values, &dvalues, funcParams);
-		  }
-      else  LALHCapDerivatives3PN(&values, &dvalues, funcParams);
-
-
+	LALHCapDerivatives(&values, &dvalues, funcParams);
+      }
+      else  
+	LALHCapDerivatives3PN(&values, &dvalues, funcParams);
+      
+      
       v = pow(dvalues.data[1], oneby3);
       h = params->signalAmplitude * v*v * cos(2.*s);
       *(signal->data + count) = (REAL4) h;
@@ -901,19 +938,28 @@ switch (params->order)
 
       dR = rOld-r;
       t = (++count-params->nStartPad) * dt;
-/*----------------------------------------------------------
-      printf("%e %e %e %e %e %e %e\n", t, r, v, s, p, q, dR);
-      if (v>ak->vlso) printf("TLSO=%e\n", t);
-      printf("&\n");
-----------------------------------------------------------*/
+
+     
+    
+
    }  
+   /* printf("%e %e %e %e %e %e %e\n", t, r, v, s, p, q, dR);*/
 
 /*----------------------------------------------------------------- 
 Record the final cutoff frequency of BD Waveforms for record keeping 
 -----------------------------------------------------------------*/
    /*params->rFinal = rOld;
    params->vFinal = v;*/
-   params->fFinal = pow(v,3.)/(LAL_PI*m);
+
+
+   /* v is monotonic therefore vold must be < than v otherwise a problem occured in RK4 scheme. */
+   if (vOld>v){
+     params->fFinal = pow(vOld,3.)/(LAL_PI*m);
+   }
+   else
+     params->fFinal = pow(v,3.)/(LAL_PI*m);
+
+
    params->tC = t;
    while (count < (INT4)signal->length) 
    {
