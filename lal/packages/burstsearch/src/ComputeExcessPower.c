@@ -50,8 +50,6 @@ XLALComputeExcessPower(
 	INT4 k1;
 	INT4 k2;
 	size_t i;
-static FILE *log = NULL;
-if(!log) log = fopen("sum_dof_lnalpha.dat", "w");
 
 	/* check on some parameter values */
 	if((nf <= 0) || (nt <= 0))
@@ -75,7 +73,6 @@ if(!log) log = fopen("sum_dof_lnalpha.dat", "w");
 		tile->excessPower = sum - dof;
 
 		tile->lnalpha = XLALlnOneMinusChisqCdf(sum, dof);
-fprintf(log, "%g %g %g\n", sum, dof, tile->lnalpha);
 		if(XLALIsREAL8FailNaN(tile->lnalpha))
 			XLAL_ERROR(func, XLAL_EFUNC);
 	}
