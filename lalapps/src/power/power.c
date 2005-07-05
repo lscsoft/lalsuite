@@ -475,7 +475,7 @@ void parse_command_line(
 
 	params->lnalphaThreshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
 	params->channelName = NULL;	/* impossible */
-	params->eventLimit = 999;	/* default */
+	params->eventLimit = 1073741824;	/* default */
 	params->method = -1;	/* impossible */
 	params->tfPlaneParams.flow = -1.0;	/* impossible */
 	params->tfPlaneParams.fhigh = -1.0;	/* impossible */
@@ -559,8 +559,8 @@ void parse_command_line(
 
 		case 'F':
 		params->eventLimit = atoi(optarg);
-		if(params->eventLimit < 1 || params->eventLimit > 999) {
-			sprintf(msg, "must be in range [1,999] (%i specified)", params->eventLimit);
+		if(params->eventLimit < 1 || params->eventLimit > 1073741824) {
+			sprintf(msg, "must be in range [1,1073741824] (%i specified)", params->eventLimit);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
