@@ -469,7 +469,13 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 {
   int p;
 
- /* Now find thisEvent in the inner half */
+/*   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ ) */
+/*     { */
+/*       fprintf(stdout,"%e\n",vector->data[p]); */
+/*     } */
+/*   return 0; */
+
+++/* Now find thisEvent in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
     {
       REAL4 maximum = 0.0;
@@ -1162,7 +1168,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--outfile (-o)\t\tSTRING\t Name of xml output file.\n");
       fprintf(stdout,"\t--gps-start-time (-S)\t\tINTEGER\t GPS start time.\n");
       fprintf(stdout,"\t--gps-end-time (-E)\t\tINTEGER\t GPS end time.\n");
-      fprintf(stdout,"\t--settling-time (-T)\t\tINTEGER\t Number of seconds to truncate inverse square root of power spectrum.\n");
+      fprintf(stdout,"\t--settling-time (-T)\t\tINTEGER\t Number of seconds to truncate filter.\n");
       fprintf(stdout,"\t--trig-start-time (-g)\t\tINTEGER\t GPS start time of triggers to consider.\n");
       fprintf(stdout,"\t--pad (-p)\t\tINTEGER\t Pad the data with these many seconds at beginning and end.\n");
       fprintf(stdout,"\t--short-segment-duration (-d)\t\tINTEGER\t Duration of shor segments. They will overlap by 50%s. \n","%");
