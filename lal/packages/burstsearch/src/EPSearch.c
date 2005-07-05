@@ -49,7 +49,7 @@ static SnglBurstTable *TFTileToBurstEvent(
 
 	event->start_time = *epoch; 
 
-	/* Moving the epoch has to be fixed */ 
+	/* FIXME: moving the epoch has to be fixed */ 
 	XLALAddFloatToGPS(&event->start_time, (tile->tstart * tile->deltaT));
 	event->duration = (tile->tend - tile->tstart) * tile->deltaT;
 	event->peak_time = event->start_time;
@@ -66,7 +66,7 @@ static SnglBurstTable *TFTileToBurstEvent(
 }
 
 
-static SnglBurstTable **TFTilesToSnglBurstTable(TFTiling *tiling, SnglBurstTable **addpoint, const LIGOTimeGPS *epoch, const EPSearchParams *params)
+static SnglBurstTable **TFTilesToSnglBurstTable(const TFTiling *tiling, SnglBurstTable **addpoint, const LIGOTimeGPS *epoch, const EPSearchParams *params)
 {
 	TFTile *tile;
 	size_t i;
