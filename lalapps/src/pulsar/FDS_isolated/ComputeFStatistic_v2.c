@@ -230,11 +230,8 @@ INT4  uvar_gridType;
 INT4  uvar_metricType;
 REAL8 uvar_metricMismatch;
 CHAR *uvar_skyRegion;
-CHAR *uvar_DataDir;
-CHAR *uvar_DataDir2;
-CHAR *uvar_mergedSFTFile;
-CHAR *uvar_BaseName;
-CHAR *uvar_BaseName2;
+CHAR *uvar_DataFiles;
+CHAR *uvar_DataFiles2;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
@@ -652,11 +649,8 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status, 	DeltaBand, 	'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
   LALregREALUserVar(status, 	dAlpha, 	'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
   LALregREALUserVar(status, 	dDelta, 	'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserVar(status,	DataDir, 	'D', UVAR_OPTIONAL, "Directory where SFT's are located");
-  LALregSTRINGUserVar(status,	DataDir2, 	 0, UVAR_OPTIONAL, "Directory where SFT's are located");
-  LALregSTRINGUserVar(status,	mergedSFTFile, 	'B', UVAR_OPTIONAL, "Merged SFT's file to be used"); 
-  LALregSTRINGUserVar(status,	BaseName, 	'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  LALregSTRINGUserVar(status,	BaseName2, 	 0, UVAR_OPTIONAL, "The base name of the input  file you want to read");  
+  LALregSTRINGUserVar(status,	DataFiles, 	'D', UVAR_REQUIRED, "Directory where SFT's are located"); 
+  LALregSTRINGUserVar(status,	DataFiles2, 	 0,  UVAR_OPTIONAL, "Directory where SFT's are located");
   LALregSTRINGUserVar(status,	ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,	ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregSTRINGUserVar(status, 	IFO, 		'I', UVAR_REQUIRED, "Detector: GEO(0), LLO(1), LHO(2), NAUTILUS(3), VIRGO(4), TAMA(5), CIT(6)");
@@ -771,9 +765,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /* min and max physical frequency to read */
   {
     REAL8 f_min, f_max; 
-    CHAR *fpattern = NULL;
-    UINT4 len = 0;
-
     f_min = uvar_Freq;			/* lower physical frequency requested by user */
     f_max = f_min + uvar_FreqBand; 	/* upper physical frequency requested by user */
 
@@ -797,43 +788,19 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	else
 	  f_max += df;
       } /* inactive code */
-
+    
     /* ----- correct for maximal dopper-shift due to earth's motion */
     f_min *= (1.0 - uvar_dopplermax);
     f_max *= (1.0 + uvar_dopplermax);
-
-    /* ----- contruct file-patterns and load the SFTs */
-    if (uvar_DataDir) 
-      len = strlen(uvar_DataDir);
-    else
-      len = 1;	/* '.' */
- 
-    if (uvar_BaseName) 
-      len += strlen(uvar_BaseName);
-
-    len += 10;	/* to allow for '/' and '*' to be inserted */
-
-    if ( (fpattern = LALCalloc(1, len)) == NULL)
-      {
-	LALPrintError ("\nOut of memory !\n");
-	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-      }
-
-    if (uvar_DataDir)
-      strcpy (fpattern, uvar_DataDir);
-    else
-      strcpy (fpattern, ".");
-
-    strcat (fpattern, "/*");
     
-    if (uvar_BaseName)
-      {
-	strcat (fpattern, uvar_BaseName);
-	strcat (fpattern, "*");
-      }
+    /* ----- contruct file-patterns and load the SFTs */
+    
+    if (!uvar_DataFiles)
+      strcpy (uvar_DataFiles, ".");
+    
       
-    TRY ( LALReadSFTfiles(status->statusPtr, &SFTvect, f_min, f_max, uvar_Dterms, fpattern), status);
-    LALFree (fpattern);
+    TRY ( LALReadSFTfiles(status->statusPtr, &SFTvect, f_min, f_max, uvar_Dterms, uvar_DataFiles), status);
+
 
   } /* SFT-loading */
 
@@ -1753,22 +1720,6 @@ checkUserInputConsistency (LALStatus *status)
 
   INITSTATUS (status, "checkUserInputConsistency", rcsid);  
   
-  if(!uvar_DataDir && !uvar_mergedSFTFile)
-    {
-      LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
-                      "No SFT directory specified; input directory with -D option.\n"
-                      "No merged SFT file specified; input file with -B option.\n"
-                      "Try ./ComputeFStatistic -h \n\n");
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
-    }
-
-  if(uvar_DataDir && uvar_mergedSFTFile)
-    {
-      LALPrintError ( "\nCannot specify both 'DataDir' and 'mergedSFTfile'.\n"
-                      "Try ./ComputeFStatistic -h \n\n" );
-      ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }      
-
   if (uvar_ephemYear == NULL)
     {
       LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");

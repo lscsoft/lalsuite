@@ -67,7 +67,7 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL=${saf_CL}" --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime"
     
 cmdline="$mfd_code $mfd_CL";
 echo $cmdline;
@@ -94,9 +94,9 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## common cmdline-options for v1 and v2    
-cfs_CL="--IFO=$IFO --DataDir=$SFTdir --BaseName=testSFT --SignalOnly --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0"
+cfs_CL="--IFO=$IFO --SignalOnly --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0"
     
-cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=1";
+cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=1 --DataDir=$SFTdir --BaseName=testSFT";
 echo $cmdline;
 
 if ! eval time $cmdline; then
@@ -109,7 +109,7 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat --refTime=$refTime $extra_args";
+cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat --refTime=$refTime --DataFiles=$SFTdir/testSFT* $extra_args";
 echo $cmdline;
 
 if ! eval time $cmdline; then
