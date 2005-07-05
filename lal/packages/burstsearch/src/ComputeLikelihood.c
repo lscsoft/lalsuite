@@ -19,16 +19,13 @@ XLALComputeLikelihood(
 /******** </lalVerbatim> ********/
 {
 	REAL8 avglambda = 0.0;
-	REAL8 dof;
 	REAL8 rho4;
 	TFTile *tile;
 	size_t i;
 
 	for(i = 0, tile = tiling->tile; i < tiling->numtiles; i++, tile++) {
-		/* FIXME: should this be the XLAL function? */
-		dof = 2.0 * (tile->tend - tile->tstart + 1) * (tile->fend - tile->fstart + 1);
 		rho4 = tile->excessPower * tile->excessPower;
-		avglambda += dof / rho4 * exp(tile->lnweight - tile->lnalpha);
+		avglambda += XLALTFTileDegreesOfFreedom(tile) / rho4 * exp(tile->lnweight - tile->lnalpha);
 	}
 
 	/* compute the likelihood averaged over TF tiles */
