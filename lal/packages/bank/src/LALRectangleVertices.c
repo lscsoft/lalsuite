@@ -68,7 +68,8 @@ LALRectangleVertices(
 ) 
 { /* </lalVerbatim> */
 
-   REAL8 x1, x2, x3, x4, myy1, y2, y3, y4;
+   REAL4 x1, x2, x3, x4, myy1, y2, y3, y4;
+   REAL4 ctheta,stheta;
    INITSTATUS(status, "LALRectangleVertices", LALRECTANGLEVERTICESC);
    ATTATCHSTATUSPTR(status);
 
@@ -102,15 +103,17 @@ LALRectangleVertices(
    y3 =  in->dy/2.;
    x4 = -in->dx/2.;
    y4 =  in->dy/2.;
+   ctheta=cos(in->theta);
+   stheta=sin(in->theta);
 
-   out->x1 = in->x0 + x1 * cos(in->theta) - myy1 * sin(in->theta);
-   out->y1 = in->y0 + myy1 * cos(in->theta) + x1 * sin(in->theta);
-   out->x2 = in->x0 + x2 * cos(in->theta) - y2 * sin(in->theta);
-   out->y2 = in->y0 + y2 * cos(in->theta) + x2 * sin(in->theta);
-   out->x3 = in->x0 + x3 * cos(in->theta) - y3 * sin(in->theta);
-   out->y3 = in->y0 + y3 * cos(in->theta) + x3 * sin(in->theta);
-   out->x4 = in->x0 + x4 * cos(in->theta) - y4 * sin(in->theta);
-   out->y4 = in->y0 + y4 * cos(in->theta) + x4 * sin(in->theta);
+   out->x1 = in->x0 + x1 * ctheta - myy1 * stheta;
+   out->y1 = in->y0 + myy1 * ctheta + x1 * stheta;
+   out->x2 = in->x0 + x2 * ctheta - y2 * stheta;
+   out->y2 = in->y0 + y2 * ctheta + x2 * stheta;
+   out->x3 = in->x0 + x3 * ctheta - y3 * stheta;
+   out->y3 = in->y0 + y3 * ctheta + x3 * stheta;
+   out->x4 = in->x0 + x4 * ctheta - y4 * stheta;
+   out->y4 = in->y0 + y4 * ctheta + x4 * stheta;
 
    out->x5 = out->x1;
    out->y5 = out->y1;
