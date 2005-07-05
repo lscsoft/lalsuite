@@ -285,9 +285,19 @@ GridType;
 </lalLaTeX>  */
 
 
+typedef enum
+  {
+    In, Above, Below, Out
+  }
+Position;
 
 
 
+typedef enum
+  {
+    Sterile, Fertile
+  }
+Generation;
 
 /* <lalVerbatim file="LALInspiralBankMassRangeH"> */
 typedef enum
@@ -322,6 +332,7 @@ InspiralMetric;
 </lalLaTeX>  */
 
 /* <lalVerbatim file="LALInspiralTemplateListH"> */
+
 typedef struct
 tagInspiralTemplateList
 {
@@ -332,6 +343,30 @@ tagInspiralTemplateList
   struct tagInspiralTemplateList *next;  
 }
 InspiralTemplateList;
+
+
+
+typedef struct 
+tagInspiralCell
+{
+
+  INT4 nTemplateMax;
+  INT4 nTemplate;
+  INT4 ID;
+  INT4 fertile;  
+  Generation status;
+  Position position;
+  Position RectPosition[5];
+  INT4 in;
+
+  REAL4  t0, t3;
+  INT4 child[6];
+  REAL4 x0Min, x1Min ,x0Max, x1Max, dx0,dx1, mm;
+  InspiralMetric metric;
+}
+InspiralCell;
+
+
 /* </lalVerbatim>  */
 /*  <lalLaTeX>
 \idx[Type]{InspiralTemplateList}
@@ -811,6 +846,54 @@ LALEmpiricalPSI2MassesConversion(
     REAL4               lightring
 );
 
+
+void 
+LALInspiralCreatePNCoarseBankHexa(
+    LALStatus            *status, 
+    InspiralTemplateList **list, 
+    INT4                 *nlist,
+    InspiralCoarseBankIn coarseIn
+    ) ;
+
+
+
+
+void
+LALCellInit(  LALStatus *status, 
+	      InspiralCell **cell,
+	      INT4 id, 
+	      InspiralBankParams *bankPars, 
+	      InspiralCoarseBankIn *coarseIn, 
+	      InspiralMomentsEtc *moments, 
+	      InspiralTemplate *paramsIn
+	      );
+
+
+
+void
+LALPopulateCell(LALStatus *status,
+		InspiralMomentsEtc *moments,
+		InspiralCell **cell, 		
+		INT4 l,
+		InspiralBankParams *temp,
+		InspiralCoarseBankIn   *coarseIn,
+		InspiralTemplate *paramsIn
+		);
+
+void 
+LALFindPosition(LALStatus *status, 
+		InspiralCell **cell,
+		INT4 id,
+		InspiralCoarseBankIn *coarseIn,
+		Position *position, 
+		InspiralTemplate *paramsIn);
+
+void
+LALSPAValidPosition(LALStatus *status, 
+		    InspiralCell **cell,
+		    INT4 id1,
+		    InspiralMomentsEtc *moments
+		    );
 
 
 /* <lalLaTeX>
