@@ -438,6 +438,8 @@ LALMSTUnitsAndAcc;
  * Function prototypes
  */
 
+int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr);
+
 /* <lalLaTeX>
 \newpage\input{JulianC}
 </lalLaTeX> */
