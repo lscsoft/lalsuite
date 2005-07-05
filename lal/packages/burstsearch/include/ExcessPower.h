@@ -62,7 +62,7 @@ LALAddWhiteNoise(
 
 REAL8
 XLALTFTileDegreesOfFreedom(
-	TFTile *tile
+	const TFTile *tile
 );
 
 

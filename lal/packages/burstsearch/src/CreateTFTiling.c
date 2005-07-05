@@ -20,7 +20,7 @@ NRCSID(CREATETFTILINGC, "$Id$");
  * The number of degrees of freedom in a tile.
  */
 
-REAL8 XLALTFTileDegreesOfFreedom(TFTile *tile)
+REAL8 XLALTFTileDegreesOfFreedom(const TFTile *tile)
 {
 	return(2.0 * (tile->tend - tile->tstart) * tile->deltaT * (tile->fend - tile->fstart) * tile->deltaF);
 }
