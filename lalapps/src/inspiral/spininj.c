@@ -883,7 +883,7 @@ void LALParserInspiralInjection(LALStatus *status,
 		     argv[++i]);
         this_proc_param = this_proc_param->next =
           next_process_param( "waveform", "string",
-			      "%s",argv[++i] );	
+			      "%s",argv[i] );	
       }
       else {
 	fprintf(stderr, "option %s unknown !!! abort\n", argv[i]);
