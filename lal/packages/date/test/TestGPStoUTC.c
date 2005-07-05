@@ -177,10 +177,10 @@ int main(int argc, char *argv[])
 
   /*
    * UPDATEME
-   * GPS 788572812 == 2004-12-31 00:00:00 (one second past expiry)
+   * GPS 835747213 == 2006-07-01 00:00:00 (one second past expiry)
    * Expect to fail with status code 5
    */
-  gpsTime.gpsSeconds     = 788572812;
+  gpsTime.gpsSeconds     = 835747213;
   gpsTime.gpsNanoSeconds = 0;
   
   LALGPStoUTC(&status, &utcDate, &gpsTime, &accuracy);
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
     }
 
   /* UPDATEME */
-  sprintf(refstamp, "2004-12-31 23:59:59 UTC Fri");
+  sprintf(refstamp, "2006-06-30 23:59:59 UTC Fri");
   
   if (lalDebugLevel > 0)
     {

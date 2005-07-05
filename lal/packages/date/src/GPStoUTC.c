@@ -21,7 +21,7 @@ Converts between GPS time (in seconds and nanoseconds) and UTC in a
 
 \texttt{LALGPStoUTC()} and \texttt{LALUTCtoGPS} convert time in GPS seconds
 and nanoseconds (\texttt{LIGOTimeGPS}) and time in UTC (\texttt{LALDate}),
-taking into account leap seconds until 2005-Dec-31 23:59:59 UTC. % UPDATEME %
+taking into account leap seconds until 2006-Jun-30 23:59:59 UTC. % UPDATEME %
 
 \texttt{LALLeapSecs()} returns the number of leap seconds introduced since
 the GPS epoch 1980-Jan-06, abbreviated GPS-UTC.
@@ -34,17 +34,17 @@ GRASP~\cite{grasp:194}.  It does the conversion by counting TAI seconds
 starting from the Unix epoch origin, 1970-Jan-01 00:00:00 UTC.  A static
 table of leap seconds is compiled in: this \emph{must} be updated whenever
 a new leap second is introduced.  The latest leap second included is
-1999-Jan-01. % UPDATEME %
+2006-Jan-01. % UPDATEME %
 
 The conversion from UTC to GPS is done by counting the amount of elapsed 
 time since the GPS epoch origin, 1980-Jan-06 00:00:00 UTC.  Again, leap
 seconds are accounted for by a static table (different from the one used in
-GPS to UTC) which \emph{must} be updated whenever a new leap seconds is
-introduced.  The latest leap second included is 1999-Jan-01. % UPDATEME %
+GPS to UTC) which \emph{must} be updated whenever a new leap second is
+introduced.  The latest leap second included is 2006-Jan-01. % UPDATEME %
 
 The computation of GPS-UTC is from a static table published by the USNO
 at \url{ftp://maia.usno.navy.mil/ser7/tai-utc.dat}.  The latest leap second
-included is 1999-Jan-01. % UPDATEME %
+included is 2006-Jan-01. % UPDATEME %
 
 \subsubsection*{Uses}
 
@@ -52,8 +52,8 @@ included is 1999-Jan-01. % UPDATEME %
 
 These routines will not work for times before 1980-01-06 00:00:00 UTC (GPS
 0).  The latest leap second that can be accounted for is the one added at
-the end 1999-Dec. % UPDATEME %  These routines have accurate leap second
-information until 2005-Dec-31. % UPDATEME %
+the end of 2005-Dec. % UPDATEME %  These routines have accurate leap second
+information until 2006-Jun-30. % UPDATEME %
 
 \textbf{Example:} To convert a GPS time to UTC, and then back to GPS:
 
@@ -113,10 +113,10 @@ char *asctime_r( const struct tm *, char * );
 
 
 /* UPDATEME */
-/* latest time for which this routine will work: 2005-12-31 23:59:59 UTC */
+/* latest time for which this routine will work: 2006-06-30 23:59:59 UTC */
 /* GPS for maxtestedGPS computed using tconvert (part of ligotools) by
    P. Shawhan */
-static const INT4 maxtestedGPS = 820108812;
+static const INT4 maxtestedGPS = 835747212;
 
 /*
  * Convert GPS seconds to UTC date-time contained in LALDate structure
@@ -132,9 +132,18 @@ LALGPStoUTC (LALStatus                *status,
                                                       LALLEAPSEC_LOOSE, or LALLEAPSEC_STRICT */
 { /* </lalVerbatim> */
   /* UPDATEME -- to update, add an entry at the end listing
-   * te Unix epoch time when a leap second is introduced */
+   * the Unix epoch time when a leap second is introduced */
   /* this is a table of Unix epoch times when leap
    * seconds were introduced */
+  /* What's the funny format? These Unix epoch times are expressed
+   * in terms of Julian Day Numbers, i.e. say JD1 = Julian Day number
+   * of the day when a leap sec was added, JD0 = Unix epoch origin (i.e. 1970-01-01),
+   * then the Unix epoch time is given by 
+   * (JD1 - JD0) * SECS_PER_DAY 
+   * FIXME: at some point, we should just dispense with this wacky Julian Day
+   * stuff. It's just confusing. */
+  /* As of 2005-07-05 08:05 UTC-4, Bulletin C has been released, but the Naval
+   * Observatory's tai-utc.dat hasn't been updated. --dwchin */
   static const time_t leaps[]={
     ((2440587-2440587)*SECS_PER_DAY),
     ((2440973-2440587)*SECS_PER_DAY),
@@ -161,6 +170,7 @@ LALGPStoUTC (LALStatus                *status,
     ((2450083-2440587)*SECS_PER_DAY),
     ((2450630-2440587)*SECS_PER_DAY),
     ((2451179-2440587)*SECS_PER_DAY),
+    ((2453736-2440587)*SECS_PER_DAY),
   };
 
   /* number of times leap seconds occur */
@@ -397,6 +407,8 @@ LALUTCtoGPS (LALStatus                *status,
   /* UPDATEME */
   /*
    * Table of leap seconds
+   * Format: Year, Month, and Day of Month in struct tm definition.
+   *    (see ctime(3))
    */
   static leap_sec_t leap_sec_data[] =
     {
@@ -422,6 +434,7 @@ LALUTCtoGPS (LALStatus                *status,
       {96, 0, 1},
       {97, 6, 1},
       {99, 0, 1},
+      {106, 0, 1},
     };
 
 
@@ -480,7 +493,7 @@ LALUTCtoGPS (LALStatus                *status,
   /* UPDATEME -- to update, fix the comment and the first if() statement */
   /*
    * Check that time asked for is not after last known leap sec
-   * Use by: 2005-Jun-30 23:59:59 UTC
+   * Use by: 2006-Jun-30 23:59:59 UTC
    * Check bulletins such as the following to see if additional ones are needed:
    * http://hpiers.obspm.fr/eoppc/bul/bulc/bulletinc.dat
    * if date is later
@@ -493,11 +506,11 @@ LALUTCtoGPS (LALStatus                *status,
    * // date is not later
    * do the conversion
    */
-  if (p_utcDate->unixDate.tm_year > 105 ||
-      (p_utcDate->unixDate.tm_year == 105 &&
-       (p_utcDate->unixDate.tm_mon > LALMONTH_DEC ||
-        (p_utcDate->unixDate.tm_mon == LALMONTH_DEC &&
-         p_utcDate->unixDate.tm_mday == 31 &&
+  if (p_utcDate->unixDate.tm_year > 106 ||
+      (p_utcDate->unixDate.tm_year == 106 &&
+       (p_utcDate->unixDate.tm_mon > LALMONTH_JUN ||
+        (p_utcDate->unixDate.tm_mon == LALMONTH_JUN &&
+         p_utcDate->unixDate.tm_mday == 30 &&
          p_utcDate->unixDate.tm_hour == 23 &&
          p_utcDate->unixDate.tm_min  == 59 &&
          p_utcDate->unixDate.tm_sec > 59))))
@@ -654,6 +667,7 @@ LALLeapSecs (LALStatus                    *status,
       {504489611, 30},  /* 1996-Jan-01 */
       {551750412, 31},  /* 1997-Jul-01 */
       {599184013, 32},  /* 1999-Jan-01 */
+      {820108813, 33},  /* 2006-Jan-01 */
     };
   
   /* number of times leap seconds occur */

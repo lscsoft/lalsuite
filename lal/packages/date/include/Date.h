@@ -88,7 +88,7 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_MSGENULLOUTPUT "Output is NULL"
 #define DATEH_MSGEDATETOOEARLY "Date too early: Julian Day can only be computed for dates >= 1900-03-01"
 /* UPDATEME */  
-#define DATEH_MSGERANGEGPSABS "Input time out of range: only able to accurately convert times between 1980-Jan-06 00:00:00 UTC (GPS 0) and 2004-Dec-31 23:59:59 UTC (GPS 788572812)"
+#define DATEH_MSGERANGEGPSABS "Input time out of range: only able to accurately convert times between 1980-Jan-06 00:00:00 UTC (GPS 0) and 2006-Jun-30 23:59:59 UTC (GPS 835747212)"
 #define DATEH_MSGEBUFFTOOSMALL "Output timestamp string too small: min. size = 26"
 #define DATEH_MSGEASCTIMEFAIL "asctimeUNDERSCOREr() failed"
 #define DATEH_MSGEGPSDATETOOEARLY "Date too early: GPS time only defined for times on or after 1980-Jan-06 00:00:00 UTC"
