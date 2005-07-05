@@ -43,8 +43,8 @@
 #include <lal/LALComputeAM.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
-#include <lal/PulsarDataTypes.h>
 #include <lal/SFTfileIO.h>
+#include <lal/ExtrapolatePulsarSpins.h>
 
 #include <lalapps.h>
 
@@ -294,12 +294,6 @@ LALGetDetectorStates (LALStatus *, DetectorStateSeries **DetStates,
 		      const LIGOTimeGPSVector *timestamps,
 		      const LALDetector *detector,
 		      const EphemerisData *edat);
-
-int
-XLALExtrapolatePulsarSpins (REAL8Vector *fkdotNew,
-			    LIGOTimeGPS epochNew,
-			    const REAL8Vector *fkdotOld,
-			    LIGOTimeGPS epochOld);
 
 /****** black list ******/
 void EstimateFLines(LALStatus *, const FStatisticVector *FVect);
@@ -2278,64 +2272,3 @@ LALDestroyDetectorStateSeries (LALStatus *status,
 
   RETURN (status);
 } /* LALDestroyDetectorStateSeries() */
-
-/** Extrapolate the Pulsar spin-paramters \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$
- *  (= \a fkdotOld) from the initial reference-epoch \f$\tau_0\f$ (= \a epochOld)
- *  to the new reference-epoch \f$\tau_1\f$ (= \a epochNew).
- *
- * \note both reference epochs \a epochOld, and \a epochNew refer to arrival
- * time in the solar-system barycenter (SSB).
- *
- * The extrapolation method used is simply the canonical pulsar spindown-model:
- * \f[ f(\tau_1) = f(\tau_0) + {\stackrel{.}{f}(\tau_0) \over 1!} \left(\tau_1 - \tau_0\right)
- *     + {\ddot{f}(\tau_0) \over 2!} \left(\tau_1 - \tau_0\right)^2 + ...\f]
- *
- */
-int
-XLALExtrapolatePulsarSpins (REAL8Vector *fkdotNew,	/**< [out] spin-parameters at epochNew */
-			    LIGOTimeGPS epochNew, 	/**< GPS SSB-time of new reference-epoch */
-			    const REAL8Vector *fkdotOld,/**< [in] spin-params at old reference epoch */
-			    LIGOTimeGPS epochOld	/**< GPS SSB-time of old reference-epoch */
-			    )
-{
-  UINT4 s, len;
-  REAL8 deltaT;	
-
-  /*---------- check input ---------- */
-  if ( !fkdotNew || !fkdotOld )
-    {
-      LALPrintError ("\nNULL Input received!\n\n");
-      XLAL_ERROR ( "XLALExtrapolatePulsarSpins", XLAL_EINVAL);
-    }
-  len = fkdotNew->length;
-  if ( len != fkdotOld->length )
-    {
-      LALPrintError ("\nSpindown-parameters fkdotNew and fkdotOld must have same length!\n\n");
-      XLAL_ERROR ( "XLALExtrapolatePulsarSpins", XLAL_EINVAL);
-    }
-  
-
-  /* ---------- apply the pulsar spindown-model ---------- */
-  deltaT = XLALDeltaFloatGPS (&epochNew, &epochOld);	/* tau_1 - tau_0 */
-
-  for ( s = 0; s < len; s++ )
-    {
-      UINT4 j;
-      REAL8 Tas;
-      UINT4 jfact;
-      fkdotNew->data[s] = 0;
-
-      Tas = 1;
-      jfact = 1;
-      for ( j=s; j < len; j++ )
-	{
-	  fkdotNew->data[s] += fkdotOld->data[j] * Tas / jfact;
-	  Tas *= deltaT;
-	  jfact *= (j - s + 1);	
-	} /* for j < spdnOrder */
-
-    } /* for s < spdnOrder */
-
-  return XLAL_SUCCESS;
-
-} /* XLALExtrapolatePulsarSpins() */
