@@ -3,7 +3,6 @@ Author: Flanagan, E. and Cannon, K.
 $Id$
 ********* </lalVerbatim> ********/
 
-#include <stdio.h>
 #include <lal/LALRCSID.h>
 
 NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
