@@ -102,7 +102,6 @@ REAL8 XLALOneMinusChisqCdf(
 }
 
 
-#if 0
 /******** <lalVerbatim file="OneMinusChisqCdfP"> ********/
 REAL8 XLALlnOneMinusChisqCdf(
 	REAL8 chi2,
@@ -158,50 +157,6 @@ REAL8 XLALlnOneMinusChisqCdf(
 
 	return(ln_prob);
 }
-#else
-REAL8 XLALlnOneMinusChisqCdf(
-	REAL8 chi2,
-	REAL8 dof
-)
-{
-	/*
-	 *  Cumulative Probability Distribution for Chi Squared
-	 *  distribution.  Alternative version which is more accurate for
-	 *  large rho.
-	 *  
-	 *  returns probability that x_1^2 + .. x_dof^2 >= chi2, where x_1,
-	 *  ..  x_dof are independent Gaussians of zero mean and unit
-	 *  variance.  The integral expression is prob =
-	 *  int_{chi^2/2}^\infty dx  x^((n/2)-1) e^(-x) / Gamma(n/2), where
-	 *  n = dof = number of degrees of freedom.  note chi2 = 2 * cal E,
-	 *  calE = variable used in paper.
-	 *  
-	 *  This function's code is the same as the function XLALChisqCdf()
-	 *  except for the very end.
-	 */
-
-	static const char *func = "XLALOneMinusChisqCdf";
-	REAL8 prob;
-
-	if ((chi2 < 0.0) || (dof <= 0.0))
-		XLAL_ERROR_REAL8(func, XLAL_EDOM);
-
-	/* Use GSL because our previous version sucked */
-	XLAL_CALLGSL(prob = gsl_cdf_chisq_Q(chi2, dof));
-
-	/* Check that final answer is a legal probability. Third test is
-	 * necessary since there are some numbers x for which (x>0.0)
-	 * evaluates as TRUE but for which 1/x evaluates to inf */
-	if ((prob < 0.0) || (prob > 1.0))
-		XLAL_ERROR_REAL8(func, XLAL_ERANGE);
-	if (1.0 / prob > LAL_REAL8_MAX)
-		prob = -700.0;
-	else
-		prob = log(prob);
-
-	return (prob);
-}
-#endif
 
 
 /* returns n! */
