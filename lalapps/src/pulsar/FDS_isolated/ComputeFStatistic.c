@@ -210,6 +210,7 @@ CHAR *uvar_skyRegion;
 CHAR *uvar_DataDir;
 CHAR *uvar_mergedSFTFile;
 CHAR *uvar_BaseName;
+CHAR *uvar_DataFiles;
 BOOLEAN uvar_help;
 CHAR *uvar_outputLabel;
 CHAR *uvar_outputFstat;
@@ -1035,6 +1036,7 @@ initUserVars (LALStatus *stat)
   LALregREALUserVar(stat,       df1dot,         'e', UVAR_OPTIONAL, "Resolution for f1dot (default: use metric or 1/(2*T^2))");
   LALregSTRINGUserVar(stat,     DataDir,        'D', UVAR_OPTIONAL, "Directory where SFT's are located");
   LALregSTRINGUserVar(stat,     BaseName,       'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
+  LALregSTRINGUserVar(stat, 	DataFiles,	 0 , UVAR_OPTIONAL, "Alternative: specify path+file-pattern of SFT-files");
   LALregSTRINGUserVar(stat,     ephemDir,       'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(stat,     ephemYear,      'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(stat,       SignalOnly,     'S', UVAR_OPTIONAL, "Signal only flag");
@@ -1915,13 +1917,19 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     */
     
   }  /* if mergedSFTFile */
-  else {
-
-    strcpy(command, uvar_DataDir);
-    strcat(command,"/*");
-    
-    strcat(command, uvar_BaseName);
-    strcat(command,"*");
+  else if ( uvar_DataDir || uvar_DataFiles )
+    {
+      if ( uvar_DataDir )
+	{
+	  strcpy(command, uvar_DataDir);
+	  strcat(command,"/*");
+	  strcat(command, uvar_BaseName);
+	  strcat(command,"*");
+	}
+      else
+	{
+	  strcpy (command, uvar_DataFiles);
+	}
     
 #ifdef HAVE_GLOB_H
     globbuf.gl_offs = 1;
@@ -2126,9 +2134,9 @@ checkUserInputConsistency (LALStatus *lstat)
     ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);      
   }
   
-  if(!uvar_DataDir && !uvar_mergedSFTFile)
+  if(!uvar_DataDir && !uvar_mergedSFTFile && !uvar_DataFiles)
     {
-      LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile'\n"
+      LALPrintError ( "\nMust specify 'DataDir' OR 'mergedSFTFile' OR 'DataFiles'\n"
                       "No SFT directory specified; input directory with -D option.\n"
                       "No merged SFT file specified; input file with -B option.\n"
                       "Try ./ComputeFStatistic -h \n\n");
