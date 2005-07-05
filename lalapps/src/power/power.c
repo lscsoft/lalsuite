@@ -208,9 +208,7 @@ static void print_usage(char *program)
 "	 --frame-cache <cache file>\n" \
 "	 --frame-dir <directory>\n" \
 "	 --gps-end-time <seconds>\n" \
-"	 --gps-end-time-ns <nanoseconds>\n" \
 "	 --gps-start-time <seconds>\n" \
-"	 --gps-start-time-ns <nanoseconds>\n" \
 "	[--help]\n" \
 "	 --high-pass <high pass frequency>\n" \
 "	[--burstinjection-file <file name>]\n" \
@@ -271,12 +269,11 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 	return(&(*proc_param)->next);
 }
 
-static int check_for_missing_parameters(LALStatus *stat, char *prog, struct option *long_options, EPSearchParams *params)
+static int check_for_missing_parameters(char *prog, struct option *long_options, EPSearchParams *params)
 {
 	int index;
 	int got_all_arguments = TRUE;
 	int arg_is_missing;
-	INT8 gpstmp;
 
 	for(index = 0; long_options[index].name; index++) {
 		switch(long_options[index].val) {
@@ -289,13 +286,11 @@ static int check_for_missing_parameters(LALStatus *stat, char *prog, struct opti
 			break;
 
 			case 'K':
-			LAL_CALL(LALGPStoINT8(stat, &gpstmp, &options.stopEpoch), stat);
-			arg_is_missing = !gpstmp;
+			arg_is_missing = !XLALGPStoINT8(&options.stopEpoch);
 			break;
 
 			case 'M':
-			LAL_CALL(LALGPStoINT8(stat, &gpstmp, &options.startEpoch), stat);
-			arg_is_missing = !gpstmp;
+			arg_is_missing = !XLALGPStoINT8(&options.startEpoch);
 			break;
 
 			case 'Q':
@@ -426,11 +421,7 @@ void parse_command_line(
 	int c;
 	int option_index;
 	int ram;
-	INT8 gpstmp;
-	INT8 gpsStartTimeNS;
-	INT8 gpsStopTimeNS;
 	ProcessParamsTable **paramaddpoint = &procparams->processParamsTable;
-	LALStatus stat = blank_status;
 	struct option long_options[] = {
 		{"bandwidth",           required_argument, NULL,           'A'},
 		{"calibrated-data",	required_argument, NULL,           'J'},
@@ -443,9 +434,7 @@ void parse_command_line(
 		{"frame-cache",         required_argument, NULL,           'G'},
 		{"frame-dir",           required_argument, NULL,           'H'},
 		{"gps-end-time",        required_argument, NULL,           'K'},
-		{"gps-end-time-ns",     required_argument, NULL,           'L'},
 		{"gps-start-time",      required_argument, NULL,           'M'},
-		{"gps-start-time-ns",   required_argument, NULL,           'N'},
 		{"help",                no_argument,       NULL,           'O'},
 		{"high-pass",           required_argument, NULL,           'o'},
 		{"burstinjection-file", required_argument, NULL,           'P'},
@@ -514,14 +503,14 @@ void parse_command_line(
 	options.getcaltimeseries = FALSE; /* default */
 	options.high_pass = -1.0;	/* impossible */
 	options.cal_high_pass = -1.0;	/* impossible */
+	XLALINT8toGPS(&options.startEpoch, 0);	/* impossible */
+	XLALINT8toGPS(&options.stopEpoch, 0);	/* impossible */
 
 	options.simCacheFile = NULL;	/* default */
 	options.simFrameSecs = 0;       /* default */
 	options.simdirname = NULL;      /* default */
 
 	ram = 0;	/* default */
-	gpsStartTimeNS = 0;	/* impossible */
-	gpsStopTimeNS = 0;	/* impossible */
 
 	cachefile = NULL;	        /* default */
 	dirname = NULL;	                /* default */
@@ -605,47 +594,29 @@ void parse_command_line(
 		break;
 
 		case 'K':
-		gpstmp = atol(optarg);
-		if(gpstmp < 441417609 || gpstmp > 999999999) {
-			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%lld specified)", gpstmp);
+		if(XLALStrToGPS(&options.stopEpoch, optarg, NULL)) {
+			sprintf(msg, "range error parsing \"%s\"", optarg);
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
+			args_are_bad = TRUE;
+		} else if(XLALGPStoINT8(&options.stopEpoch) < 441417609000000000 || XLALGPStoINT8(&options.stopEpoch) > 999999999000000000) {
+			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09d specified)", options.stopEpoch.gpsSeconds, options.stopEpoch.gpsNanoSeconds);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		gpsStopTimeNS += gpstmp * 1000000000LL;
-		ADD_PROCESS_PARAM("int");
-		break;
-
-		case 'L':
-		gpstmp = atol(optarg);
-		if(gpstmp < 0 || gpstmp > 999999999) {
-			sprintf(msg, "must be in the range [0,999999999] (%lld specified)", gpstmp);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		gpsStopTimeNS += gpstmp;
-		ADD_PROCESS_PARAM("int");
+		ADD_PROCESS_PARAM("string");
 		break;
 
 		case 'M':
-		gpstmp = atol(optarg);
-		if(gpstmp < 441417609 || gpstmp > 999999999) {
-			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%lld specified)", gpstmp);
+		if(XLALStrToGPS(&options.startEpoch, optarg, NULL)) {
+			sprintf(msg, "range error parsing \"%s\"", optarg);
+			print_bad_argument(argv[0], long_options[option_index].name, msg);
+			args_are_bad = TRUE;
+		} else if(XLALGPStoINT8(&options.startEpoch) < 441417609000000000 || XLALGPStoINT8(&options.startEpoch) > 999999999000000000) {
+			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09d specified)", options.startEpoch.gpsSeconds, options.startEpoch.gpsNanoSeconds);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
-		gpsStartTimeNS += gpstmp * 1000000000LL;
-		ADD_PROCESS_PARAM("int");
-		break;
-
-		case 'N':
-		gpstmp = atol(optarg);
-		if(gpstmp < 0 || gpstmp > 999999999) {
-			sprintf(msg, "must be in the range [0,999999999] (%lld specified)", gpstmp);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		gpsStartTimeNS += gpstmp;
-		ADD_PROCESS_PARAM("int");
+		ADD_PROCESS_PARAM("string");
 		break;
 
 		case 'O':
@@ -911,15 +882,13 @@ void parse_command_line(
 	}
 
 	/*
-	 * Convert the start and stop times to LIGOTimeGPS structures.
+	 * Check the order of the start and stop times.
 	 */
 
-	if(gpsStartTimeNS > gpsStopTimeNS) {
+	if(XLALGPStoINT8(&options.startEpoch) > XLALGPStoINT8(&options.stopEpoch)) {
 		fprintf(stderr, "%s: error: GPS start time > GPS stop time\n", argv[0]);
 		args_are_bad = TRUE;
 	}
-	LAL_CALL(LALINT8toGPS(&stat, &options.startEpoch, &gpsStartTimeNS), &stat);
-	LAL_CALL(LALINT8toGPS(&stat, &options.stopEpoch, &gpsStopTimeNS), &stat);
 
 	/*
 	 * Convert the amount of available RAM to a limit on the length of a
@@ -932,7 +901,7 @@ void parse_command_line(
 	 * Check for missing parameters
 	 */
 
-	if(!check_for_missing_parameters(&stat, argv[0], long_options, params))
+	if(!check_for_missing_parameters(argv[0], long_options, params))
 		args_are_bad = TRUE;
 
 	/*

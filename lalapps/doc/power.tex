@@ -175,9 +175,7 @@ simulated data.
 \option{--frame-cache}~\parm{cache file} \newline \hspace*{0.5in}
 \option{--frame-dir}~\parm{directory} \newline \hspace*{0.5in}
 \option{--gps-end-time}~\parm{seconds} \newline \hspace*{0.5in}
-\option{--gps-end-time-ns}~\parm{nanoseconds} \newline \hspace*{0.5in}
 \option{--gps-start-time}~\parm{seconds} \newline \hspace*{0.5in}
-\option{--gps-start-time-ns}~\parm{nanoseconds} \newline \hspace*{0.5in}
 [\option{--help}] \newline \hspace*{0.5in}
 \option{--high-pass}~\parm{Hz} \newline \hspace*{0.5in}
 [\option{--burstinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
@@ -334,20 +332,14 @@ both \option{--frame-cache} and \option{--frame-dir} are specified,
 given in order to force the creation of simulated noise.
 
 \item[\option{--gps-end-time} \parm{seconds}]
-Set the integer part of the GPS time up to which input data should be read
-to \parm{seconds}.
-
-\item[\option{--gps-end-time-ns} \parm{nanoseconds}]
-Set the fractional part of the GPS time up to which input data should be
-read to \parm{nanoseconds}.
+Set the GPS time up to which input data should be read to \parm{seconds}.
+Non-integer values are permitted, but the fractional part must not contain
+more than 9 digits (accurate to nanoseconds).
 
 \item[\option{--gps-start-time} \parm{seconds}]
-Set the integer part of the GPS time from which to start reading input data
-to \parm{seconds}.
-
-\item[\option{--gps-start-time-ns} \parm{nanoseconds}]
-Set the fractional part of the GPS time from which to start reading input
-data to \parm{seconds}.
+Set the GPS time from which to start reading input data to \parm{seconds}.
+Non-integer values are permitted, but the fractional part must not contain
+more than 9 digits (accurate to nanoseconds).
 
 \item[\option{--help}]
 Display a usage message and exit.
@@ -518,9 +510,7 @@ lalapps_power \
 --frame-cache H-754008315-754008371.cache \
 --frame-sample-rate 16384 \
 --gps-end-time 754008363 \
---gps-end-time-ns 0 \
 --gps-start-time 754008323 \
---gps-start-time-ns 0 \
 --high-pass 120.0 \
 --low-freq-cutoff 130.0 \
 --min-freq-bin 2 \
