@@ -1132,10 +1132,32 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 
   /* massChoice setting (begin)*/
 
+
+  if((otherIn->template_m1 !=-1) && (otherIn->template_m2!=-1))
+    {
+      if ((otherIn->m1 == -1) || (otherIn->m2==-1))
+	{
+	  sprintf(msg, "if --template-m1 and template-m2 are used, you must set --m1 and --m2 \n");
+	  BEPrintError(msg);
+	}       
+    }
+
+
   if ((otherIn->m1 != -1) && (otherIn->m2 != -1)){
+
     randIn->param.massChoice = fixedMasses; 
     randIn->param.mass1 = otherIn->m1;
     randIn->param.mass2 = otherIn->m2;
+    /* we need to update the mMin which is used to estimate the length of the vetors*/
+    if (otherIn->m1  > otherIn->m2){
+      randIn->mMin = otherIn->m2;
+      randIn->mMax = otherIn->m1+1e-2;
+      
+    }
+    else{
+      randIn->mMin = otherIn->m1;
+      randIn->mMax = otherIn->m2+1e-2;
+    }
     if (otherIn->psi0 != -1 ||otherIn->psi3 != -1 || otherIn->tau0 != -1 || otherIn->tau3 != -1){
       sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. If particular injection is requested,  you must choose either (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
       BEPrintError(msg);
@@ -3011,7 +3033,7 @@ void BECreatePsd(LALStatus                *status,
 		   RandomInspiralSignalIn *randIn,
 		   OtherParamIn           otherIn)
 {
-  UINT4 i;
+  UINT4 i=0;
   REAL4 df;
   REAL4 dummy; 
   FILE  *Foutput;
@@ -3072,8 +3094,12 @@ void BECreatePsd(LALStatus                *status,
      while(fscanf(Finput, "%f %le\n",&dummy, &coarseBankIn->shf.data->data[i+1]) == 2)  
          i++;
 
-     fprintf(stderr, "size = %d\n", i);
-    /* (i = 0; i < coarseBankIn->shf.data->length; i++){*/
+     if ((i+1) != coarseBankIn->shf.data->length){
+
+       fprintf(stderr, "ERROR::number of points read(%d)  in the file (%s) and size of the time vectors (using the sampling(%f) and number of seconds (%f)) do not match.Generate a new file of (%d) points  with an expected df of %f \n",  i,otherIn.inputPSD,randIn->param.tSampling, (coarseBankIn->shf.data->length-1)*2/randIn->param.tSampling,  coarseBankIn->shf.data->length-1, df);
+       exit(0);
+     }
+
      
      fclose(Finput);
       
