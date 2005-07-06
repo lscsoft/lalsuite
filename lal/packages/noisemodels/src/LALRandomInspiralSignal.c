@@ -1,15 +1,20 @@
 /*  <lalVerbatim file="LALRandomInspiralSignalCV">
-Author: Sathyaprakash, B. S.
+Author: Sathyaprakash, B. S., Thomas Cokelaer
 $Id$
 </lalVerbatim>  */
 /* <lalLaTeX>
 \subsection{Module \texttt{LALRandomInspiralSignal.c}}
-Module to generate (a) inspiral signals with random masses or chirp times 
+Module to generate 
+
+(a) inspiral signals with random masses or chirp times 
 that have values within the parameter space specified by an input struct,
-or (b) simulated Gaussian noise of PSD expected in a given interferometer 
-or (c) inspiral signal as in (a) but of a specified amplitude added 
-to simulated Gaussian noise as in (b). In all cases the returned
-vector is the Fourier transform of the relevant signal. 
+
+(b) simulated Gaussian noise of PSD expected in a given interferometer 
+
+(c) inspiral signal as in (a) but of a specified amplitude added 
+to simulated Gaussian noise as in (b).
+
+In all cases the returned vector is the Fourier transform of the relevant signal.  
 
 \subsubsection*{Prototypes}
 \vspace{0.1in}
@@ -44,12 +49,19 @@ tagRandomInspiralSignalIn
 \end{verbatim}
 
 Depending on the value of the parameter (\texttt{randIn.type}) this
-code returns the Fourier transform of (a) a pure inspiral signal of a given type
-(\texttt{randIn.type=0}), (b) simulated noise expected
-in a chosen interferometer \texttt{randIn.type=1} or (c) 
+code returns the Fourier transform of 
+
+(a) a pure inspiral signal of a given type
+(\texttt{randIn.type=0}),
+
+(b) simulated noise expected
+in a chosen interferometer \texttt{randIn.type=1} or 
+
+(c) 
 $\mathtt{SignalAmp}\times s+\mathtt{NoiseAmp}\times n$ (\texttt{randIn.type=2}), 
 where $s$ is normalised signal and $n$ random Gaussian noise whose PSD is
 that expected in a given interferometer with zero mean and unit rms.
+
 User must specify the following quantities in the input structure
 \begin{table}
 \begin{tabular}{lcl}
@@ -71,7 +83,7 @@ User must specify the following quantities in the input structure
 \texttt {p.tSampling}         &        &   sampling rate in Hz\\
 \texttt {p.order}             &        &   order of the PN approximant of the signal \\
 \texttt {p.approximant}       &        &   PN approximation to be used for inspiral signal generation\\
-\texttt {InputMasses massChoice}        & input &   space in which parameters are chosen; \texttt{m1Andm2, totalMassAndEta, t02, t03}\\\\
+\texttt {InputMasses massChoice}        & input &   space in which parameters are chosen; \texttt{m1Andm2, totalMassAndEta, totalMassUAndEta, t02, t03, bhns}\\\\
 \texttt {REAL8Vector psd}   &  input &   pre-computed power spectral density used for coloring the noise \\
 \texttt {RealFFTPlan *fwdp} &  input &   pre-computed fftw plan to compute forward Fourier transform   \\\\
 \texttt {REAL8 mMin}        &  input &   smallest component mass allowed   \\
@@ -96,15 +108,23 @@ only if \texttt{param.massChoice {\rm is} t02 {\rm or} t03}} \\
 \end{table}
 When repeatedly called, the parameters of the signal will be 
 uniformly distributed in the space of 
+
 (a) component masses in the range \texttt{[randIn.mMin, randIn.mMax]} if  
 \texttt{param.massChoice=m1Andm2},
+  
 (b) component masses greater than \texttt{randIn.mMin} and total mass 
-less than \texttt{randIn.MMax} if  
-\texttt{param.massChoice=totalMassAndEta},
-(c) Newtonian and first post-Newtonian chirp times if 
-\texttt{param.massChoice=t02} and
-(d) Newtonian and 1.5 post-Newtonian chirp times if 
-\texttt{param.massChoice=t03}.
+less than \texttt{randIn.MMax} if  \texttt{param.massChoice=totalMassAndEta},
+  
+(c) component masses greater than \texttt{randIn.mMin} and \texttt{uniform} total mass 
+less than \texttt{randIn.MMax} if  \texttt{param.massChoice=totalMassUAndEta},
+  
+(d) Newtonian and first post-Newtonian chirp times if 
+\texttt{param.massChoice=t02},
+
+(e) Newtonian and 1.5 post-Newtonian chirp times if 
+\texttt{param.massChoice=t03} and.
+
+(f) component masses in the range \texttt{[randIn.mMin, randIn.mMax]} one of them being a neutron start and the other a black hole (one above 3 solar mass and one below) if  \texttt{param.massChoice=bhns}. The function therefore checks the mass range validity i.e. randIn.mMin must be less than 3 and randIn.mMax greater than 3.
 
 \subsubsection*{Algorithm}
 No special algorithm, only a series of calls to pre-existing functions.
@@ -199,6 +219,7 @@ LALRandomInspiralSignal
 		 (randIn->mMax - 3) * epsilon2;
 	       randIn->param.massChoice=m1Andm2;
 	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+               CHECKSTATUSPTR(status);
 	       break;
 
 	     case m1Andm2: 
@@ -210,8 +231,10 @@ LALRandomInspiralSignal
 		 (randIn->mMax - randIn->mMin) * epsilon1;
 	       randIn->param.mass2 = randIn->mMin  + 
 		 (randIn->mMax - randIn->mMin) * epsilon2;
-	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
-	       break;
+	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));	       
+               CHECKSTATUSPTR(status);
+               break;
+               
 	     case totalMassAndEta: 
 	       /*
 		* restriction is on the total mass of the binary 
@@ -224,60 +247,61 @@ LALRandomInspiralSignal
 	       randIn->param.totalMass = randIn->param.mass1 + randIn->param.mass2 ;
 	       randIn->param.eta = (randIn->param.mass1*randIn->param.mass2)/pow(randIn->param.totalMass,2.L); 
 	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+               CHECKSTATUSPTR(status);
 	       break;
 	     case totalMassUAndEta: 
 	       /*
 		* restriction is on the total mass of the binary 
-		* and the minimum mass of the component stars
+		* and the etaMin which depends on max total mass.
 		*/
-              
-	       randIn->param.totalMass =  2 * randIn->mMin  +  epsilon1 * (randIn->MMax - 2 * randIn->mMin) ;
-	       randIn->etaMin = randIn->mMin * (randIn->MMax  - randIn->mMin)
-		 / (randIn->MMax )
-		 / (randIn->MMax );
-
-	       while (valid==0){
-		       randIn->param.eta = randIn->etaMin + epsilon2 * (.25 - randIn->etaMin); 		       	       
-		       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
-	       		if (
-			   randIn->param.mass1 >= randIn->mMin &&
-			   randIn->param.mass2 >= randIn->mMin &&
-			   randIn->param.totalMass <= randIn->MMax &&
-			   randIn->param.eta <= 0.25 &&    /*in principle that line is not needed ; it is always true*/
-			   randIn->param.eta >= randIn->etaMin &&
-			   randIn->param.mass1 <= randIn->mMax && 
-			   randIn->param.mass2 <= randIn->mMax )
-			   {
-				valid = 1;
-				}		
-		   	epsilon2 = (float) random()/(float)RAND_MAX;
-	       }
-               
+               {
+                 REAL4 etaMin;
+                 
+                 randIn->param.totalMass =  2*randIn->mMin  +  epsilon1 * (randIn->MMax - 2 * randIn->mMin) ;
+                
+		 if (randIn->param.totalMass < (randIn->mMin+ randIn->mMax)) {
+                   etaMin = (randIn->mMin / randIn->param.totalMass);		 
+                   etaMin = etaMin - etaMin *etaMin;
+                 }
+		 else {
+		   etaMin = (randIn->mMax / randIn->param.totalMass);		 
+		   etaMin = etaMin - etaMin *etaMin;
+		 }
+                 randIn->param.eta = etaMin + epsilon2 * (.25 - etaMin);      
+                 
+                 LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+                 CHECKSTATUSPTR(status);
+	       }               
 	       break;  
 
 	     case fixedMasses: /* the user has already given individual masses*/
  	       randIn->param.massChoice = m1Andm2;
  	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+               CHECKSTATUSPTR(status);
  	       break;
  	     case fixedPsi: /* the user has already given psi0/psi3*/
  	       randIn->param.massChoice = psi0Andpsi3;
  	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+               CHECKSTATUSPTR(status);
  	       break;
  	     case fixedTau: /* the user has already given tau0/tau3*/
  	       randIn->param.massChoice = t03;
  	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+               CHECKSTATUSPTR(status);
  	       break;
       	     case t02: 
 	       /* chirptimes t0 and t2 are required in a specified range */
 	       randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*epsilon1;
 	       randIn->param.t2 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*epsilon2;
 	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+               CHECKSTATUSPTR(status);
 	       break;
 	     case t03: 
 	       /* chirptimes t0 and t3 are required in a specified range */
 	       randIn->param.t0 = randIn->t0Min + (randIn->t0Max - randIn->t0Min)*epsilon1;
 	       randIn->param.t3 = randIn->tnMin + (randIn->tnMax - randIn->tnMin)*epsilon2;
 	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+               CHECKSTATUSPTR(status);
 	       break;
 	     case psi0Andpsi3: 
 	       /* BCV parameters are required in a specified range */
@@ -346,6 +370,7 @@ LALRandomInspiralSignal
 		*/
 
 	       LALInspiralParameterCalc(status->statusPtr, &(randIn->param));
+               CHECKSTATUSPTR(status);
 	       valid = 1; 
 	       /*	       if (randIn->param.totalMass > 0.)
 		 {
