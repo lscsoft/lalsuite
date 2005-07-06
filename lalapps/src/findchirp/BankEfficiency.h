@@ -68,11 +68,13 @@ fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:fFinalI\"       
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1I\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2I\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snrU\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phaseI\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phaseU\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alphaFU\"       Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:layerU\"        Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:binU\"          Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phaseI\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alphaF\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:layer\"         Type=\"int_4s\"/>\n", fp) == EOF ||  \
@@ -166,7 +168,7 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 #define BANKEFFICIENCY_PRINTPSD                 0				/* print psd used in <x|x>      	*/
 #define BANKEFFICIENCY_PRINTPSD_FILE		"BE_PSD.dat"			/* Print Psd in a file			*/
 #define BANKEFFICIENCY_PRINTTEMPLATE    	0				/* print the  BCV final template	*/
-#define BANKEFFICIENCY_FAITHFULNESS                    0				
+#define BANKEFFICIENCY_FAITHFULNESS             0				
 
 
 #define BANKEFFICIENCY_PRINTPROTO_FILEXML	"BE_Proto.xml"			/* print the result (xml file)  	*/
@@ -203,7 +205,8 @@ typedef enum{
     GEO,
     TAMA,
     VIRGO,
-    REALPSD
+    REALPSD,
+    READPSD
 } DetectorName;
 
 typedef enum{
@@ -260,7 +263,7 @@ typedef struct{
 
   INT4 faithfulness;
   INT4 snrAtCoaTime;
-  double m1,m2, psi0,psi3, tau0, tau3;
+  double m1,m2, psi0,psi3, tau0, tau3, template_m1, template_m2;
   DetectorName noiseModel;
   REAL4   maxTotalMass;
   char *chanName;
@@ -275,6 +278,7 @@ typedef struct{
   RunFlag run;
   REAL4 signalfFinal;
   INT4 startPhase;
+  CHAR *inputPSD;
 }
 OtherParamIn;
 
