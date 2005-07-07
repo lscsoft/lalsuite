@@ -54,6 +54,7 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 #define LALINSPIRALBANKH_ESIZE      8
 #define LALINSPIRALBANKH_EFRANGE    16
 #define LALINSPIRALBANKH_EORDER     32
+#define LALINSPIRALBANKH_EGRIDSPACING 64
 #define LALINSPIRALBANKH_MSGENULL   "Null pointer"
 #define LALINSPIRALBANKH_MSGEMEM    "Memory allocation failure"
 #define LALINSPIRALBANKH_MSGECHOICE "Invalid choice for an input parameter"
@@ -61,6 +62,7 @@ NRCSID(LALINSPIRALBANKH, "$Id$" );
 #define LALINSPIRALBANKH_MSGESIZE   "Invalid input range"
 #define LALINSPIRALBANKH_MSGEFRANGE "Limits outside range of frequency series"
 #define LALINSPIRALBANKH_MSGEORDER  "Inappropriate PN order"
+#define LALINSPIRALBANKH_MSGEGRIDSPACING "if SPA template requested, grid spacing parameter is either SquareNotOriented or Hexagonal. If BCV, it should be Hexagonal or SquareNotOriented although Square and HexagonalNotOriented can be used."
 /* </lalErrTable> */
 
 /* <lalLaTeX>
@@ -270,18 +272,18 @@ CoordinateSpace;
 </lalLaTeX>  */
 
 
-/* <lalVerbatim file="LALGridTypeH"> */
+/* <lalVerbatim file="LALGridSpacingH"> */
 typedef enum
 {
-  Square, 
-  OrientedSquare,
-  Hexagonal,
-  OrientedHexagonal
+  SquareNotOriented, 
+  Square,
+  HexagonalNotOriented,
+  Hexagonal
 }
-GridType;
+GridSpacing;
 /*  </lalVerbatim>  */
 /*  <lalLaTeX> 
-\idx[Type]{GridType} 
+\idx[Type]{GridSpacing} 
 </lalLaTeX>  */
 
 
@@ -428,7 +430,7 @@ tagInspiralCoarseBankIn
   REAL4				HighGM;
   REAL4				LowGM;
 
-  GridType                      gridType;
+  GridSpacing                   gridSpacing;
   Order                         order;        
   Approximant                   approximant;  
 }

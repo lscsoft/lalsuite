@@ -449,16 +449,16 @@ LALInspiralCreateCoarseBank(
       /* Thomas:: we can use either a square placement or an hexagonal
        * placement. The hexagonal placement is along the eigenvalues but 
        * not the square one.*/
-      if (coarseIn.gridType == Hexagonal){
+      if (coarseIn.gridSpacing == Hexagonal){
 	LALInspiralCreatePNCoarseBankHexa( status->statusPtr, list, nlist, coarseIn );
 	CHECKSTATUSPTR( status );
       }
-      else if (coarseIn.gridType == Square){
+      else if (coarseIn.gridSpacing == SquareNotOriented){
 	LALInspiralCreatePNCoarseBank( status->statusPtr, list, nlist, coarseIn );
 	CHECKSTATUSPTR( status );
       }
       else {
-        ABORT( status, LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
+        ABORT( status, LALINSPIRALBANKH_EGRIDSPACING, LALINSPIRALBANKH_MSGEGRIDSPACING );
       }
       break;
       
@@ -1840,18 +1840,18 @@ LALInspiralCreateFlatBankS3 (
   metric = bankParams->metric;
   minimalMatch = bankParams->minimalMatch;
 
-  switch (coarseIn.gridType){
-  case  OrientedHexagonal:
+  switch (coarseIn.gridSpacing){
+  case Hexagonal:
     dx0 = sqrt(2.L * (1.L - minimalMatch)/metric->g00 );
     dx1 = sqrt(2.L * (1.L - minimalMatch)/metric->g11 );
     dx0 *=3./2./sqrt(2.);
     dx1 *=sqrt(3./2.);
     break;
-  case OrientedSquare:
+  case Square:
     dx0 = sqrt(2.L * (1.L - minimalMatch)/metric->g00 );
     dx1 = sqrt(2.L * (1.L - minimalMatch)/metric->g11 );
     break;
-  case  Hexagonal:
+  case  HexagonalNotOriented:
     LALInspiralUpdateParams( status->statusPtr, 
 			     bankParams, *metric, minimalMatch );
     CHECKSTATUSPTR( status );
@@ -1859,7 +1859,7 @@ LALInspiralCreateFlatBankS3 (
     dx1 = bankParams->dx1 * sqrt(3./2.);
     break;
 
-  case  Square:
+  case  SquareNotOriented:
     LALInspiralUpdateParams( status->statusPtr, 
 			     bankParams, *metric, minimalMatch );
     CHECKSTATUSPTR( status );
@@ -1870,9 +1870,9 @@ LALInspiralCreateFlatBankS3 (
 
 
   
-  switch (coarseIn.gridType){
-  case OrientedHexagonal:
+  switch (coarseIn.gridSpacing){
   case Hexagonal:
+  case HexagonalNotOriented:
     
     /* x1==psi3 and x0==psi0 */
     for (x1 = bankParams->x1Min -1e6;  x1 <= bankParams->x1Max + 1e6; x1 += dx1)
@@ -1882,7 +1882,7 @@ LALInspiralCreateFlatBankS3 (
 	  {
 	    UINT4 ndx = 2 * nlist;
 	
-	    if ( coarseIn.gridType == OrientedHexagonal) 
+	    if ( coarseIn.gridSpacing == Hexagonal) 
 	      {
 	    
 		x =  x0 *cos(metric->theta) + sin(metric->theta)* x1;
@@ -1914,8 +1914,8 @@ LALInspiralCreateFlatBankS3 (
       }
       break;
   
-  case  OrientedSquare:
   case  Square:
+  case  SquareNotOriented:
 
     /* !! dx1 and dx0 are computed in a different way de[pending on the 
        value of BANKGRId */
@@ -1927,12 +1927,12 @@ LALInspiralCreateFlatBankS3 (
 	  {
 	    UINT4 ndx = 2 * nlist; 
 
-	    if (coarseIn.gridType == OrientedSquare)
+	    if (coarseIn.gridSpacing == Square)
 	      {
 		x =  x0 *cos(metric->theta) + sin(metric->theta)* x1 ;
 		y =  x0 *sin(metric->theta) - cos(metric->theta)* x1;
 	      }
-	    else if (coarseIn.gridType == Square)
+	    else if (coarseIn.gridSpacing == SquareNotOriented)
 	      {
 		x = x0;
 		y = x1;
