@@ -447,7 +447,8 @@ LALInspiralCreateCoarseBank(
           LALINSPIRALBANKH_ECHOICE, LALINSPIRALBANKH_MSGECHOICE );
 
       /* Thomas:: we can use either a square placement or an hexagonal
-       * placement along the eigenvalues. */
+       * placement. The hexagonal placement is along the eigenvalues but 
+       * not the square one.*/
       if (coarseIn.gridType == Hexagonal){
 	LALInspiralCreatePNCoarseBankHexa( status->statusPtr, list, nlist, coarseIn );
 	CHECKSTATUSPTR( status );
@@ -724,12 +725,13 @@ LALInspiralCreatePNCoarseBankHexa(
     InspiralCoarseBankIn coarseIn
     ) 
 {  
-  InspiralBankParams bankPars;
-  InspiralTemplate *tempPars;
-  InspiralMomentsEtc moments;
-  INT4   populate, i;
-  InspiralCell *cells;
-  REAL4 piFl;
+  InspiralBankParams    bankPars;
+  InspiralTemplate      *tempPars;
+  InspiralMomentsEtc    moments;
+  INT4                  populate;
+  INT4                  i;
+  InspiralCell          *cells;
+  REAL4                 piFl;
 
   INITSTATUS( status, "LALInspiralCreateCoarseBank", 
       LALINSPIRALCREATECOARSEBANKC );
@@ -744,65 +746,74 @@ LALInspiralCreatePNCoarseBankHexa(
 
   /* Set the elements of the metric and tempPars structures in  */
   /* conformity with the coarseIn structure                     */ 
-  if ( !
-      (tempPars = (InspiralTemplate *)LALCalloc( 1, sizeof(InspiralTemplate) ))
-      )
-  {
+  if ( !(tempPars = (InspiralTemplate *) 
+                LALCalloc( 1, sizeof(InspiralTemplate)))) {
     LALFree(tempPars);
     LALFree(cells);
     ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
   }
+
+  
   LALInspiralSetParams( status->statusPtr, tempPars, coarseIn );
   CHECKSTATUSPTR( status );
+  
   /* Identify the boundary of search and parameters for the     */
   /* first lattice point                                        */
   LALInspiralSetSearchLimits( status->statusPtr, &bankPars, coarseIn );
   CHECKSTATUSPTR( status );
-  tempPars->totalMass = coarseIn.MMax;
-  tempPars->eta = 0.25;
-  tempPars->ieta = 1.L;
-  tempPars->fLower = coarseIn.fLower;
-  tempPars->massChoice = m1Andm2;
-  tempPars->mass1 = coarseIn.mMin;
-  tempPars->mass2 = coarseIn.mMax;
+  
+  tempPars->totalMass   = coarseIn.MMax;
+  tempPars->eta         = 0.25;
+  tempPars->ieta        = 1.L;
+  tempPars->fLower      = coarseIn.fLower;
+  tempPars->massChoice  = m1Andm2;
+  tempPars->mass1       = coarseIn.mMin;
+  tempPars->mass2       = coarseIn.mMax;
+  
   LALInspiralParameterCalc( status->statusPtr, tempPars );
   CHECKSTATUSPTR( status );
+  
   /* Get the moments of the PSD integrand and other parameters */
   /* required in the computation of the metric  once for all.   */
   LALGetInspiralMoments( status->statusPtr, &moments, &coarseIn.shf, tempPars );
   CHECKSTATUSPTR( status );
- 
- 
-  cells = (InspiralCell*) LALCalloc(1,   sizeof(InspiralCell) );
-  cells->nTemplate = 1;
-  cells->nTemplateMax = 1;
-  tempPars->massChoice = t03;
-  cells[0].t0=tempPars->t0;
-  cells[0].t3=tempPars->t3;
+  
+  /* Allocate memory for one cell */
+  cells = (InspiralCell*)
+    LALCalloc(1,   sizeof(InspiralCell) );
+  
+  /* initialise that first cell */
+  cells->nTemplate      = 1;
+  cells->nTemplateMax   = 1;
+  tempPars->massChoice  = t03;
+  cells[0].t0           = tempPars->t0;
+  cells[0].t3           = tempPars->t3;
 
-  piFl 	= LAL_PI * tempPars->fLower;
-  A0 = 5./ pow(piFl, 8./3.)/256.;
-  A3 = LAL_PI / pow(piFl, 5./3.)/8.;
+  /* some aliases */
+  piFl  = LAL_PI * tempPars->fLower;
+  A0    = 5. / pow(piFl, 8./3.) / 256.;
+  A3    = LAL_PI / pow(piFl, 5./3.)/8.;
 
-  LALCellInit(status->statusPtr, &cells, 0,  &bankPars, &coarseIn, &moments, tempPars);
+  LALCellInit(status->statusPtr, 
+      &cells, 0,  &bankPars, &coarseIn, &moments, tempPars);
+  CHECKSTATUSPTR( status );
   
 
   {
-    INT4 k, temp;
+    INT4        k;
+    INT4        temp;
     
-    populate = 6;
+    populate    = 6;
     
-    while (cells->fertile){
-      temp =  cells->nTemplate;
+    while (cells->fertile) {
+      temp      = cells->nTemplate;
 
-      for (k = 0; k < temp; k++){
-	
-	if ( cells[k].status == Fertile){
-	  LALPopulateCell(status->statusPtr, &moments, &cells,
-			  k, &bankPars, &coarseIn, tempPars);
-	  CHECKSTATUSPTR( status );         
-	 
-	}
+      for (k = 0; k < temp; k++) {	
+	if ( cells[k].status == Fertile) {
+          LALPopulateCell(status->statusPtr, &moments, &cells,
+              k, &bankPars, &coarseIn, tempPars);          
+	  CHECKSTATUSPTR( status );         	 
+        }
       }
     }
   }
@@ -813,12 +824,13 @@ LALInspiralCreatePNCoarseBankHexa(
   *nlist = cells->nTemplate;
 
 
-    for (i=0; i<cells->nTemplate; i++){
-      if (cells[i].position == In )
-      {
-        *nlist = *nlist +1; 
-      }
+
+
+  for (i=0; i<cells->nTemplate; i++) {
+    if (cells[i].position == In ) {
+      *nlist = *nlist +1; 
     }
+  }
 
     /* allocate appropriate memory */
 
@@ -835,27 +847,23 @@ LALInspiralCreatePNCoarseBankHexa(
   
   {
     *nlist = 0 ;
-    for (i=0; i<cells->nTemplate; i++){
-      {
-	if (cells[i].position == In)
-	  {
-	    tempPars->t0= cells[i].t0;
-	    tempPars->t3= cells[i].t3;
+    for (i=0; i<cells->nTemplate; i++) {
+      	if (cells[i].position == In) {
+          tempPars->t0  = cells[i].t0;
+          tempPars->t3  = cells[i].t3;
 	    
-	    (*list)[*nlist].ID = *nlist; 
-	    (*list)[*nlist].params = *tempPars; 
-	    (*list)[*nlist].metric = cells[i].metric; 
-	    ++(*nlist); 
-	  }
-
-      }
+          (*list)[*nlist].ID            = *nlist; 
+          (*list)[*nlist].params        = *tempPars; 
+          (*list)[*nlist].metric        = cells[i].metric; 
+          ++(*nlist); 
+        }
     }
   }
   
-  
-
-  LALFree(cells);
+    
+  LALFree( cells );
   LALFree( tempPars );
+  
   DETATCHSTATUSPTR( status );
   RETURN ( status );
 }
@@ -865,147 +873,154 @@ LALInspiralCreatePNCoarseBankHexa(
 
 
 void
-LALPopulateCell(LALStatus *status,
-		InspiralMomentsEtc *moments,
-		InspiralCell **cell, 
-		INT4 headId,
-		InspiralBankParams   *bankPars,
-		InspiralCoarseBankIn *coarseIn, 
-		InspiralTemplate *paramsIn
+LALPopulateCell(LALStatus               *status,
+		InspiralMomentsEtc      *moments,
+		InspiralCell            **cell, 
+		INT4                     headId,
+		InspiralBankParams      *bankPars,
+		InspiralCoarseBankIn    *coarseIn, 
+		InspiralTemplate        *paramsIn
 		)
 {
   REAL4 dx0, dx1, mm, newt0, newt3;  
-  INT4 i,  id1, id2;
+  INT4 i, id1, id2;
   REAL4 theta, ctheta,stheta;
   INT4  add=0;
-  INT4 Ntmplt;
+  INT4 offSpring;
   INT4 it;
 
   INITSTATUS( status, "LALPopulateCell", 
 	      LALINSPIRALCREATECOARSEBANKC );
   ATTATCHSTATUSPTR( status );
 
-  /* aliases */  
-  mm = (*cell)[headId].mm;
-  dx0 = (*cell)[headId].dx0;
-  dx1 = (*cell)[headId].dx1;
-  theta = (*cell)[headId].metric.theta;
-  ctheta = cos(theta);
-  stheta = sin(theta);
-  Ntmplt = (*cell)->nTemplate;
-  /* for each unset child do the follwoing */
+  /* aliases to get the characteristics of the parent template, that we refer
+   * to its ID (headId) */  
+  mm            = (*cell)[headId].mm;
+  dx0           = (*cell)[headId].dx0;
+  dx1           = (*cell)[headId].dx1;
+  theta         = (*cell)[headId].metric.theta;
+  ctheta        = cos(theta);
+  stheta        = sin(theta);
+  offSpring     = (*cell)->nTemplate;
+
+  
+  /* Around the parent, the offspring can be at most 6 (hexagonal grid). 
+   * By default the child are unset. If so it is created and have the 
+   * properties of its parents. However, a child migh have been created 
+   * earlier. In that case, we do not do anything.  */  
   it = 0 ; 
 
-  for (i=0; i<6; i++){
-    if ((*cell)[headId].child[i] == -1){
+  for (i = 0; i < 6; i++) {
+    if ((*cell)[headId].child[i] == -1) {
       add++;
 
-
       /* reallocate memory by set of 1000 cells if needed*/
-      if ((Ntmplt+add)>(*cell)->nTemplateMax){
-	*cell = (InspiralCell*) 
-	  LALRealloc( *cell, sizeof(InspiralCell) * ((*cell)->nTemplateMax + 1000) );
-	if ( ! cell ){
-	  ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
-	}
-	(*cell)->nTemplateMax +=  1000;
+      if ( (offSpring+add)>(*cell)->nTemplateMax){
+        *cell = (InspiralCell*) 
+          LALRealloc( *cell, sizeof(InspiralCell) * ((*cell)->nTemplateMax + 1000) );
+        if ( ! cell ) {
+          ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+        }
+        (*cell)->nTemplateMax +=  1000;
       }
       
-      /* creates the 6 children */
+      /* creates the child connection if needed. A child heritates the
+       * properties of its parent */
    
-      switch (i){
+      switch ( i ){
       case 0:
-	newt0 = dx0 ;
-	newt3 = 0 ;
-	(*cell)[Ntmplt+it].t0 = (*cell)[headId].t0;
-	(*cell)[Ntmplt+it].t3 = (*cell)[headId].t3;
-	(*cell)[Ntmplt+it].t0 += newt0 *ctheta + stheta* newt3;
-	(*cell)[Ntmplt+it].t3 += newt0 *stheta - ctheta* newt3;
-	LALCellInit(status->statusPtr,  cell,  Ntmplt+it, bankPars, 
-		    coarseIn, moments, paramsIn);
+	newt0   = dx0 ;
+	newt3   = 0 ;
+	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+	(*cell)[offSpring + it].t0   += newt0 *ctheta + stheta* newt3;
+	(*cell)[offSpring + it].t3   += newt0 *stheta - ctheta* newt3;
+	LALCellInit(status->statusPtr,  cell,  offSpring+it, bankPars, 
+            coarseIn, moments, paramsIn);
 	break;
       case 1:
-	newt0 =   dx0/2. ;
-	newt3 =   -dx1 *sqrt(3./2) ;
-	(*cell)[Ntmplt+it].t0 = (*cell)[headId].t0;
-	(*cell)[Ntmplt+it].t3 = (*cell)[headId].t3;
-	(*cell)[Ntmplt+it].t0 += newt0 * ctheta + stheta * newt3;
-	(*cell)[Ntmplt+it].t3 += newt0 * stheta - ctheta * newt3;
-	LALCellInit(status->statusPtr,  cell,  Ntmplt+it, bankPars, 
-		    coarseIn, moments, paramsIn);
+	newt0   =   dx0/2. ;
+	newt3   =   -dx1 *sqrt(3./2) ;
+	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+	(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
+	(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
+	LALCellInit(status->statusPtr,  cell,  offSpring+it, bankPars, 
+            coarseIn, moments, paramsIn);
 	break;
       case 2:
-	newt0 =  -dx0/2 ;
-	newt3 =  -dx1 *sqrt(3./2);
-	(*cell)[Ntmplt+it].t0 = (*cell)[headId].t0;
-	(*cell)[Ntmplt+it].t3 = (*cell)[headId].t3;
-	(*cell)[Ntmplt+it].t0 += newt0 * ctheta + stheta * newt3;
-	(*cell)[Ntmplt+it].t3 += newt0 * stheta - ctheta * newt3;
-	LALCellInit(status->statusPtr,  cell,  Ntmplt+it, bankPars,
-		    coarseIn, moments, paramsIn);
+	newt0   =  -dx0/2 ;
+	newt3   =  -dx1 *sqrt(3./2);
+	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+	(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
+	(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
+	LALCellInit(status->statusPtr,  cell,  offSpring+it, bankPars,
+            coarseIn, moments, paramsIn);
 	break;
       case 3:
-	newt0 = -dx0 ;
-	newt3 = 0;
-	(*cell)[Ntmplt+it].t0 = (*cell)[headId].t0;
-	(*cell)[Ntmplt+it].t3 = (*cell)[headId].t3;
-	(*cell)[Ntmplt+it].t0 += newt0 * ctheta + stheta * newt3;
-	(*cell)[Ntmplt+it].t3 += newt0 * stheta - ctheta * newt3;
-	LALCellInit(status->statusPtr,  cell,  Ntmplt+it, bankPars, 
-		    coarseIn, moments, paramsIn);
+	newt0   = -dx0 ;
+	newt3   = 0;
+	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+	(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
+	(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
+	LALCellInit(status->statusPtr,  cell,  offSpring+it, bankPars, 
+            coarseIn, moments, paramsIn);
 	break;
       case 4:
-	newt0 =  -dx0/2. ;
-	newt3 =  dx1 *sqrt(3./2);
-	(*cell)[Ntmplt+it].t0 = (*cell)[headId].t0;
-	(*cell)[Ntmplt+it].t3 = (*cell)[headId].t3;
-	(*cell)[Ntmplt+it].t0 += newt0 * ctheta + stheta * newt3;
-	(*cell)[Ntmplt+it].t3 += newt0 * stheta - ctheta * newt3;
-	LALCellInit(status->statusPtr,  cell,  Ntmplt+it,  bankPars,
-		    coarseIn, moments, paramsIn);
+	newt0   =  -dx0/2. ;
+	newt3   =  dx1 *sqrt(3./2);
+	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+	(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
+	(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
+	LALCellInit(status->statusPtr,  cell,  offSpring+it,  bankPars,
+            coarseIn, moments, paramsIn);
 	break;
       case 5:
-	newt0 = dx0/2. ;
-	newt3 = dx1 *sqrt(3./2);
-	(*cell)[Ntmplt+it].t0 = (*cell)[headId].t0;
-	(*cell)[Ntmplt+it].t3 = (*cell)[headId].t3;
-	(*cell)[Ntmplt+it].t0 += newt0 * ctheta + stheta * newt3;
-	(*cell)[Ntmplt+it].t3 += newt0 * stheta - ctheta * newt3;
-	LALCellInit(status->statusPtr,  cell,  Ntmplt+it,  bankPars, 
-		    coarseIn, moments, paramsIn);
+	newt0   = dx0/2. ;
+	newt3   = dx1 *sqrt(3./2);
+	(*cell)[offSpring + it].t0   = (*cell)[headId].t0;
+	(*cell)[offSpring + it].t3   = (*cell)[headId].t3;
+	(*cell)[offSpring + it].t0   += newt0 * ctheta + stheta * newt3;
+	(*cell)[offSpring + it].t3   += newt0 * stheta - ctheta * newt3;
+	LALCellInit(status->statusPtr,  cell,  offSpring+it,  bankPars, 
+            coarseIn, moments, paramsIn);
 	break;
       }      
       
-      
-      /* creer la connection avec le parent*/
-      if ((*cell)[Ntmplt+it].child[(i+3)%6]==-1){
-	(*cell)[Ntmplt+it].child[(i+3)%6] = (*cell)[headId].ID;
-	(*cell)[headId].child[i] = Ntmplt+it;
-      }      
+      /* Now, tricky part, if a child has been creating, he must have a
+       * connection with its parents and vice-versa.  */
+      if ((*cell)[offSpring + it].child[(i+3)%6] == -1){
+	(*cell)[offSpring + it].child[(i+3)%6] = (*cell)[headId].ID;
+	(*cell)[headId].child[i] = offSpring+it;
+      }
+      /* a new cell index */
       it += 1;;
     }
   }
   
+  /* how many new cells ? */
   (*cell)->nTemplate += it;
 
-
-  /* le parent est a present sterile*/
+  /* Here, the parent has its 6 children set; he become sterile. */
   (*cell)[headId].status = Sterile;
   (*cell)->fertile--;
+
+  /* what shall we do with that parent. Is he valid ? inside the space,
+   * outside since eta>0.25 but close to the boundary .... */  
   {  
     REAL4  a,b, x0, tempA3;
     SFindRootIn input;
     
     PRIN  prin;
-    
-    
-    
-    tempA3 = pow(A3, -5./2.)/pow(0.25,-1.5);
-    paramsIn->t0 = (*cell)[headId].t0;
-    paramsIn->t3 = (*cell)[headId].t3;
+       
+    tempA3              = pow(A3, -5./2.)/pow(0.25,-1.5);
+    paramsIn->t0        = (*cell)[headId].t0;
+    paramsIn->t3        = (*cell)[headId].t3;
 
-    if((*cell)[headId].RectPosition[0] == Below )
-      {
+    if((*cell)[headId].RectPosition[0] == Below ) {
 	
 	a = tan((*cell)[headId].metric.theta);
 	b = (*cell)[headId].t3 - a * (*cell)[headId].t0;
@@ -1021,30 +1036,18 @@ LALPopulateCell(LALStatus *status,
 	LALSBisectionFindRoot(status->statusPtr,&x0, &input, (void *)&prin);
 	CHECKSTATUSPTR( status );         
 	
-	paramsIn->t3 = x0+1e-3; 
+	paramsIn->t3 = x0 + 1e-3; 
 	paramsIn->t0 = (paramsIn->t3 - b)/a;
-	if (paramsIn->t0 >0){
+	if (paramsIn->t0 > 0) {
 	  LALInspiralParameterCalc(status->statusPtr, paramsIn);
 	  CHECKSTATUSPTR( status );         		  
 	}
       }
-    (*cell)[headId].t0 = paramsIn->t0;
-    (*cell)[headId].t3 = paramsIn->t3;    
+    (*cell)[headId].t0  = paramsIn->t0;
+    (*cell)[headId].t3  = paramsIn->t3;    
     
-    /*    LALSPAValidPosition(status->statusPtr, cell, headId, moments);
-    CHECKSTATUSPTR( status );
-    
-    if ((*cell)[headId].RectPosition[3] == Above &&
-	(*cell)[headId].RectPosition[1] == Above)
-      {
-	(*cell)[headId].child[0] = Out;
-
-      }
-    */
-    
-
   }
-		
+  	
 
   {
     if ((*cell)[headId].RectPosition[0]==Above && (*cell)[headId].in==1)
@@ -1054,7 +1057,7 @@ LALPopulateCell(LALStatus *status,
       }
 
   }
-
+  
 
   
   /* propagate  connection annexe au freres pour eviter redondance */  
@@ -1065,23 +1068,21 @@ LALPopulateCell(LALStatus *status,
     (*cell)[id2].child[(i+4+1)%6] = (*cell)[id1].ID;   
   }
   
-  /* enfin trouver position[0] (In/out)? */
+  
+  /* enfin trouver position[0] (In/out)? of the children. */
   for (i=0; i<6; i++){/* for each child find position[0]*/
     id1 = (*cell)[headId].child[i%6];
 
-    if ((*cell)[id1].status == Fertile){
-	  LALSPAValidPosition(status->statusPtr, cell, id1, moments);
-	  CHECKSTATUSPTR( status );
+    if ((*cell)[id1].status == Fertile) {
+      LALSPAValidPosition(status->statusPtr, cell, id1, moments);
+      CHECKSTATUSPTR( status );
 	  
-	  if ((*cell)[id1].position != In ) 
-	    {
-	      if ((*cell)[id1].status == Fertile)
-		{
-		  (*cell)[id1].status= Sterile;
-		  (*cell)->fertile--;
-		}
-
-	    }
+      if ((*cell)[id1].position != In ) {
+        if ((*cell)[id1].status == Fertile) {
+          (*cell)[id1].status= Sterile;
+          (*cell)->fertile--;
+        }
+      }
     }
   }
     
@@ -1091,41 +1092,46 @@ LALPopulateCell(LALStatus *status,
 
 
 
-void LALCellInit(LALStatus *status,
-		 InspiralCell **cell, 
-		 INT4 id,
-		 InspiralBankParams   *bankParsIn,
-		 InspiralCoarseBankIn *coarseIn, 
-		 InspiralMomentsEtc   *moments, 
-		 InspiralTemplate     *paramsIn)
+void 
+LALCellInit(    LALStatus               *status,
+                InspiralCell            **cell, 
+                INT4                    id,
+                InspiralBankParams      *bankParsIn,
+                InspiralCoarseBankIn    *coarseIn, 
+                InspiralMomentsEtc      *moments, 
+                InspiralTemplate        *paramsIn)
 {
-  INT4 i;
-  RectangleIn RectIn;
-  RectangleOut RectOut;
-
+  
+  INT4          i;
+  RectangleIn   RectIn;
+  RectangleOut  RectOut;
 
   INITSTATUS( status, "LALCellInit", 
       LALINSPIRALCREATECOARSEBANKC );
   ATTATCHSTATUSPTR( status );
 
+  /* a new cell is create; by default it can created new children*/
   (*cell)->fertile++;
   (*cell)[id].status = Fertile;
 
-  for (i=0; i<6; i++){
-    (*cell)[id].child[i]= -1;
+  /* all of whom are unset */
+  for (i = 0; i < 6; i++) {
+    (*cell)[id].child[i] = -1;
   } 
  
-  (*cell)[id].ID = id;  
-  (*cell)[id].position = In;
-  (*cell)[id].mm = coarseIn->mmCoarse;
-  (*cell)[id].x0Min = bankParsIn->x0Min;
-  (*cell)[id].x0Max = bankParsIn->x0Max;
-  (*cell)[id].x1Min = bankParsIn->x1Min;
-  (*cell)[id].x1Max = bankParsIn->x1Max;
+  /* filled some values related to the space */
+  (*cell)[id].ID        = id;  
+  (*cell)[id].position  = In;
+  (*cell)[id].mm        = coarseIn->mmCoarse;
+  (*cell)[id].x0Min     = bankParsIn->x0Min;
+  (*cell)[id].x0Max     = bankParsIn->x0Max;
+  (*cell)[id].x1Min     = bankParsIn->x1Min;
+  (*cell)[id].x1Max     = bankParsIn->x1Max;
   (*cell)[id].metric.space = coarseIn->space;
 
-
-  if ((*cell)[id].t0>0 && (*cell)[id].t3>0){
+  /* before ant further computation, check that t0, t3 is positive.*/
+  if ((*cell)[id].t0 > 0 && (*cell)[id].t3 > 0){
+    /* Get the metric at the position of the cell */ 
     paramsIn->t0 = (*cell)[id].t0;
     paramsIn->t3 = (*cell)[id].t3;
 
@@ -1134,28 +1140,37 @@ void LALCellInit(LALStatus *status,
 			      paramsIn,
 			      moments);
     CHECKSTATUSPTR( status );
-    
+  
+    /* let us store the dx0 and dx3 at that point. */
     (*cell)[id].dx0 = sqrt(2.L * (1.L - (*cell)[id].mm)/(*cell)[id].metric.g00 );
     (*cell)[id].dx1 = sqrt(2.L * (1.L - (*cell)[id].mm)/(*cell)[id].metric.g11 );
-    
-    
+
+    /* where is the ellipse center ? let us use the inscribe rectangle vertex */
     LALFindPosition(status->statusPtr, &(*cell), id, coarseIn, 
 		    &((*cell)[id].RectPosition[0]), paramsIn);
     CHECKSTATUSPTR( status );
-    if ((*cell)[id].RectPosition[0]==Out){
-      (*cell)[id].position= Out;
-      for (i=0; i<5; i++){(*cell)[id].RectPosition[i] = Out;}
+    
+    /* if outside, this is a sterile cell which can not propagate */  
+    if ((*cell)[id].RectPosition[0] == Out) {
+      (*cell)[id].position      = Out;
+      for (i = 0; i < 5; i++){
+        (*cell)[id].RectPosition[i] = Out;
+      }
       (*cell)[id].status = Sterile;
       (*cell)->fertile--;
+      
       DETATCHSTATUSPTR(status);
       RETURN(status);
     }
   }
-  else{
-    for (i=0; i<5; i++){(*cell)[id].RectPosition[i] = Out;}
-    (*cell)[id].position = Out;
-    (*cell)[id].status = Sterile;
+  else{/* if t0 or t3 < 0 , this is not a valid cell*/
+    for (i=0; i<5; i++){
+      (*cell)[id].RectPosition[i] = Out;
+    }
+    (*cell)[id].position        = Out;
+    (*cell)[id].status          = Sterile;
     (*cell)->fertile--;
+    
     DETATCHSTATUSPTR(status);
     RETURN(status);     
   }
@@ -2129,12 +2144,12 @@ LALSPAValidPosition(LALStatus *status,
 
 
 void
-LALFindPosition(LALStatus *status, 
-		InspiralCell **cell,
-		INT4 id, 
-		InspiralCoarseBankIn *coarseIn,
-		Position *position, 
-		InspiralTemplate *paramsIn
+LALFindPosition(LALStatus               *status, 
+		InspiralCell            **cell,
+		INT4                    id, 
+		InspiralCoarseBankIn    *coarseIn,
+		Position                *position, 
+		InspiralTemplate        *paramsIn
 
 )
 
@@ -2147,26 +2162,23 @@ LALFindPosition(LALStatus *status,
   ATTATCHSTATUSPTR( status );
 
 
-  ieta 	= 1.;
+  ieta 	        = 1.;
   oneby4 	= 1./4.;
-  tiny 	= 1.e-10;
-  piFl 	= LAL_PI * paramsIn->fLower;
+  tiny 	        = 1.e-10;
+  piFl 	        = LAL_PI * paramsIn->fLower;
   
-  /*  LALInspiralParameterCalc(status->statusPtr,paramsIn);
-  CHECKSTATUSPTR( status );
-  */
-
   ASSERT(paramsIn->t0 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(paramsIn->t3 > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   
-  totalMass = A0 * paramsIn->t3/(A3 * paramsIn->t0);
-  eta = A0/(paramsIn->t0 * pow(totalMass, fiveby3));
+  totalMass     = A0 * paramsIn->t3/(A3 * paramsIn->t0);
+  eta           = A0/(paramsIn->t0 * pow(totalMass, fiveby3));
   
   if (eta > oneby4) {
     eta-=tiny;
   }
+  
   paramsIn->eta = eta;
-  totalMass = paramsIn->totalMass = totalMass/LAL_MTSUN_SI;
+  totalMass     = paramsIn->totalMass = totalMass/LAL_MTSUN_SI;
   if (eta <= oneby4) {
     paramsIn->mass1 = 0.5*totalMass * ( 1.L + sqrt(1.L - 4.L*eta));
     paramsIn->mass2 = 0.5*totalMass * ( 1.L - sqrt(1.L - 4.L*eta));
@@ -2208,11 +2220,8 @@ LALFindPosition(LALStatus *status,
       *position = Above;
     }    
   
-  
   DETATCHSTATUSPTR(status);
-   RETURN(status);
-
-
+  RETURN(status);
 }
 
 
