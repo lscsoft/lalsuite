@@ -532,6 +532,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     LALFree(params->freqDerivData);
     numFreqDerivTotal = params->numFreqDerivTotal;
     params->numFreqDerivTotal = 1;
+    params->numFreqDerivIncludingNoSpinDown = 1;
     params->freqDerivData=(REAL8 **)LALMalloc(params->numFreqDerivTotal*sizeof(REAL8 *));
     params->freqDerivData[0] = (REAL8 *)LALMalloc(params->numSpinDown*sizeof(REAL8));
   }
