@@ -349,19 +349,24 @@ InspiralTemplateList;
 typedef struct 
 tagInspiralCell
 {
-
-  INT4 nTemplateMax;
-  INT4 nTemplate;
-  INT4 ID;
-  INT4 fertile;  
+  INT4  nTemplateMax;
+  INT4  nTemplate;
+  INT4  ID;
+  INT4  fertile;  
+  INT4  in;
+  INT4  child[6];
+  REAL4 t0;
+  REAL4 t3;
+  REAL4 x0Min;
+  REAL4 x1Min;
+  REAL4 x0Max;
+  REAL4 x1Max;
+  REAL4 dx0;
+  REAL4 dx1;
+  REAL4 mm;
   Generation status;
   Position position;
   Position RectPosition[5];
-  INT4 in;
-
-  REAL4  t0, t3;
-  INT4 child[6];
-  REAL4 x0Min, x1Min ,x0Max, x1Max, dx0,dx1, mm;
   InspiralMetric metric;
 }
 InspiralCell;
@@ -764,8 +769,7 @@ LALInspiralValidParams (
 \newpage\input{LALInspiralValidTemplateC}
 </lalLaTeX>  */
 void
-LALInspiralValidTemplate
-(
+LALInspiralValidTemplate(
    LALStatus            *status,
    INT4                 *valid,
    InspiralBankParams   bankParams,
@@ -855,45 +859,47 @@ LALInspiralCreatePNCoarseBankHexa(
     InspiralCoarseBankIn coarseIn
     ) ;
 
+void
+LALCellInit(
+    LALStatus         *status, 
+    InspiralCell      **cell,
+    INT4              id, 
+    InspiralBankParams        *bankPars, 
+    InspiralCoarseBankIn      *coarseIn, 
+    InspiralMomentsEtc        *moments, 
+    InspiralTemplate          *paramsIn
+    );
 
 
 
 void
-LALCellInit(  LALStatus *status, 
-	      InspiralCell **cell,
-	      INT4 id, 
-	      InspiralBankParams *bankPars, 
-	      InspiralCoarseBankIn *coarseIn, 
-	      InspiralMomentsEtc *moments, 
-	      InspiralTemplate *paramsIn
-	      );
-
-
-
-void
-LALPopulateCell(LALStatus *status,
-		InspiralMomentsEtc *moments,
-		InspiralCell **cell, 		
-		INT4 l,
-		InspiralBankParams *temp,
-		InspiralCoarseBankIn   *coarseIn,
-		InspiralTemplate *paramsIn
-		);
+LALPopulateCell(
+    LALStatus               *status,
+    InspiralMomentsEtc      *moments,
+    InspiralCell            **cell, 		
+    INT4                    l,
+    InspiralBankParams      *temp,
+    InspiralCoarseBankIn    *coarseIn,
+    InspiralTemplate        *paramsIn
+    );
 
 void 
-LALFindPosition(LALStatus *status, 
-		InspiralCell **cell,
-		INT4 id,
-		InspiralCoarseBankIn *coarseIn,
-		Position *position, 
-		InspiralTemplate *paramsIn);
+LALFindPosition(
+    LALStatus               *status, 
+    InspiralCell            **cell,
+    INT4                    id,
+    InspiralCoarseBankIn    *coarseIn,
+    Position                *position, 
+    InspiralTemplate        *paramsIn
+    );
 
 void
-LALSPAValidPosition(LALStatus *status, 
-		    InspiralCell **cell,
-		    INT4 id1,
-		    InspiralMomentsEtc *moments
-		    );
+LALSPAValidPosition(
+    LALStatus           *status, 
+    InspiralCell        **cell,
+    INT4                id1,
+    InspiralMomentsEtc  *moments
+    );
 
 
 /* <lalLaTeX>
