@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpBCVCFilter.c
  *
- * Author: Brown, D. A. and Messaritaki E., Cokelaer, T.
+ * Author: Brown, D. A.,  Messaritaki E. and Cokelaer, T.
  * 
  * Revision: $Id$
  * 
@@ -62,14 +62,9 @@ LALFindChirpBCVCFilterSegment (
   UINT4                 eventStartIdx = 0;
   UINT4                *chisqBin      = NULL;
   UINT4                *chisqBinBCV   = NULL;
-  UINT4                 chisqPt; 
   REAL4                 chirpTime     = 0;
-  REAL4                 Power         = 0.0;
-  REAL4                 PowerBCV      = 0.0; 
-  REAL4                 increment, nextBin, partSum;
   REAL4                *tmpltPower    = NULL;
   REAL4                *tmpltPowerBCV = NULL; 
-  BOOLEAN               haveChisq     = 0;
   COMPLEX8             *qtilde        = NULL; 
   COMPLEX8             *qtildeBCV     = NULL; 
   COMPLEX8             *q             = NULL; 
@@ -87,26 +82,32 @@ LALFindChirpBCVCFilterSegment (
   
 
   
-  /* for BCV constraint (Thomas)*/
-  REAL4                 alphaUnity; /* intermediate variable to get thetab*/
-  REAL4                 thetab; /* critical angle for constraint        */
-  REAL4                 thetav; /* angle between V1 and V2              */
-  REAL4                 V0;     /* intermediate quantity to compute rho */
-  REAL4                 V1;     /* intermediate quantity to compute rho */
-  REAL4                 V2;     /* intermediate quantity to compute rho */
-  REAL4                 alphaC;   /* constraint alpha value             */
-  REAL4                 alphaU;   /* unconstraint alpha value for fun   */
-  REAL4                 rhosqConstraint; 
-  REAL4                 rhosqUnconstraint;/* before constraint          */
-  REAL4                 deltaTPower2By3;  /* alias variable             */
-  REAL4                 deltaTPower1By6;  /* alias variable             */
-  REAL4                 ThreeByFive = 3.0/5.0;
-  REAL4                 FiveByThree = 5.0/3.0;
-  REAL4                 mchirp, eta,  SQRTNormA1; /* some aliases       */
+  /* some declarations for the constrained  BCV codet (Thomas)*/
+  REAL4         alphaUnity;     /* intermediate variable to get thetab  */
+  REAL4         thetab;         /* critical angle for constraint        */
+  REAL4         thetav;         /* angle between V1 and V2              */
+  REAL4         V0;             /* intermediate quantity to compute rho */
+  REAL4         V1;             /* intermediate quantity to compute rho */
+  REAL4         V2;             /* intermediate quantity to compute rho */
+  REAL4         alphaC;         /* constraint alpha value               */
+  REAL4         alphaU;         /* unconstraint alpha value for fun     */
+  REAL4         rhosqConstraint; 
+  REAL4         rhosqUnconstraint;      /* before constraint            */
+  REAL4         deltaTPower2By3;        /* alias variable               */
+  REAL4         deltaTPower1By6;        /* alias variable               */
+  REAL4         ThreeByFive = 3.0/5.0;
+  REAL4         FiveByThree = 5.0/3.0;
+  REAL4         mchirp;
+  REAL4         eta;
+  REAL4         SQRTNormA1;             /* an alias                     */
+  
+  /* Most of the code below is identical and should be identical to
+   * FindChirpBCVFilter.c execpt when entering the constraint code.
+   * */
 
+  
   INITSTATUS( status, "LALFindChirpBCVCFilter", FINDCHIRPBCVCFILTERC );
   ATTATCHSTATUSPTR( status );
-
 
   /*
    *    
@@ -245,9 +246,6 @@ LALFindChirpBCVCFilterSegment (
   psi0   = input->fcTmplt->tmplt.psi0;  
   psi3   = input->fcTmplt->tmplt.psi3;
   fFinal = input->fcTmplt->tmplt.fFinal;
-
-
-
 
   {
     /* Calculate deltaEventIndex : the only acceptable clustering */
@@ -435,8 +433,11 @@ LALFindChirpBCVCFilterSegment (
     }
   }
 
-
-  /* For debugging purpose (Thomas)*/
+  /* 
+   * Here starts the actual constraint code. 
+   * */
+  
+  /* First for debugging purpose. dont erase  (Thomas)*/
  
 /*  
    {
@@ -586,19 +587,22 @@ LALFindChirpBCVCFilterSegment (
 
 */
 
-  /* some aliases (Thomas) */
+  
+  /* let us create some aliases which are going to be constantly used in the
+   * storage of the results. */
   mchirp = (1.0 / LAL_MTSUN_SI) * LAL_1_PI *
-    pow( 3.0 / 128.0 / psi0 , ThreeByFive );
+        pow( 3.0 / 128.0 / psi0 , ThreeByFive );
   m =  fabs(psi3) / 
     (16.0 * LAL_MTSUN_SI * LAL_PI * LAL_PI * psi0) ;
   eta = 3.0 / (128.0*psi0 * 
-	       pow( (m*LAL_MTSUN_SI*LAL_PI), FiveByThree) );
-  SQRTNormA1 = sqrt(norm/ a1);
+       pow( (m*LAL_MTSUN_SI*LAL_PI), FiveByThree) );
+  SQRTNormA1 = sqrt(norm / a1);
 
 
-  /*BCV Constraint code (Thomas)*/
-
+  /* BCV Constraint code (Thomas)*/
+  /* first we compute what alphaF=1 corresponds to */
   alphaUnity = pow(fFinal, -2./3.) * pow(params->deltaT,-2./3.);
+  /* and what is its corresponding angle thetab */
   thetab   = -(a1 * alphaUnity) / (b2 + b1*alphaUnity);
   thetab   = atan(thetab);
 
@@ -627,15 +631,16 @@ LALFindChirpBCVCFilterSegment (
       
     V2 =  2 * ( q[j].re * qBCV[j].re + qBCV [j].im * q[j].im); 
     
-    /* and finally the unconstraint SNR */
+    /* and finally the unconstraint SNR which is equivalent to 
+     * the unconstrained BCV situation */
     rhosqUnconstraint = 0.5*( V0 + sqrt(V1*V1 + V2*V2));
 
     /* We also get the angle between V1 and V2 vectors used later in the
      * constraint part of BCV filtering. */
     thetav = atan2(V2,V1);
 
-    /* Here, there is a trick related to the sign of the thetab angle to be
-     * compared with thetav. */    
+    /* Now, we can compare the angle with thetab. Taking care of the angle is
+     * quite important.  */    
     if (thetab >= 0){
       if ( 0  <= thetav && thetav <= 2 * thetab){	  
         rhosqConstraint = rhosqUnconstraint;
@@ -683,7 +688,7 @@ LALFindChirpBCVCFilterSegment (
     }
       
     /* If one want to check that the code is equivalent to BCVFilter.c, just
-     * uncomment the following lines.
+     * uncomment the following line.
      */
     /*rhosqConstraint = rhosqUnconstraint; */
       
@@ -692,7 +697,6 @@ LALFindChirpBCVCFilterSegment (
       /* alpha computation needed*/
       alphaU  =   -(b2 * tan(.5*thetav))
         / (a1 + b1* tan(.5*thetav));
-
 
       /* I decided to store both constraint and unconstraint alpha */
       if (alphaU > alphaUnity) {
@@ -726,6 +730,8 @@ LALFindChirpBCVCFilterSegment (
         thisEvent->end_time.gpsSeconds = j;
         thisEvent->snr   = rhosqConstraint;
         thisEvent->alpha = alphaC; 
+        /* use some variable which are not filled in BCV filterinf to keep
+         * track of different intermediate values. */
         thisEvent->tau0  = V0; 
         thisEvent->tau2  = V1;
         thisEvent->tau3  = V2;
