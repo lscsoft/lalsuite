@@ -137,6 +137,9 @@ sNpolka = cp.get('mc-params','Npolka')
 Npolka = int(sNpolka)
 
 Ninjmax=6000
+h0rand=0.0001*random.uniform(0,1.0)
+h0=h0first+h0rand
+
 
 # -------------------------------------------------------------------------------- #
 
