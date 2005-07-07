@@ -122,6 +122,7 @@ REAL4   fUpper          = -1;           /* upper frequency cutoff       */
 Order   order;                          /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
+GridSpacing gridSpacing = SquareNotOriented; /* grid spacing (square or hexa)*/
 
 /* standard candle parameters */
 INT4    computeCandle = 0;              /* should we compute a candle?  */
@@ -821,7 +822,7 @@ int main ( int argc, char *argv[] )
   bankIn.tSampling     = (REAL8) sampleRate;
   bankIn.order         = order;
   bankIn.approximant   = approximant;
-  bankIn.gridType      = OrientedHexagonal;
+  bankIn.gridSpacing   = gridSpacing;
   bankIn.space         = space;
   bankIn.etamin        = bankIn.mMin * ( bankIn.MMax - bankIn.mMin) /
     ( bankIn.MMax * bankIn.MMax );
@@ -1080,6 +1081,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3|BCVSpin)\n"\
 "  --space SPACE                grid up template bank with mass parameters SPACE\n"\
 "                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n"\
+"  --grid-spacing GRIDSPACING   grid up template bank with a square or hexagonal grid\n"\
+"                                 (Square|Hexagonal|SquareNotOriented|HexagonalNotOriented)\n"\
 "\n"\
 "  --write-raw-data             write raw data to a frame file\n"\
 "  --write-response             write the computed response function to a frame\n"\
@@ -1141,6 +1144,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"order",                   required_argument, 0,                'E'},
     {"approximant",             required_argument, 0,                'F'},
     {"space",                   required_argument, 0,                'G'},
+    {"grid-spacing",            required_argument, 0,                'v'},
     /* standard candle parameters */
     {"candle-snr",              required_argument, 0,                'k'},
     {"candle-mass1",            required_argument, 0,                'l'},
@@ -1178,7 +1182,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:c:d:e:f:g:hi:j:k:l:m:n:p:r:s:t:u:x:z:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:p:r:s:t:u:v:x:z:"
         "A:B:C:D:E:F:G:H:I:J:K:L:M:P:Q:R:S:T:U:VZ:",
         long_options, &option_index );
 
@@ -1816,6 +1820,26 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
+      case 'v':
+        if ( ! strcmp( "Hexagonal", optarg) )
+        {
+          gridSpacing = Hexagonal;
+        }
+        if ( ! strcmp( "SquareNotOriented", optarg) )
+        {
+          gridSpacing = SquareNotOriented;
+        }
+        else
+        {
+          fprintf(stderr, "invalid argument to --%s:\n"
+              "unknown grid spacing specified: "
+              "%s (must be one of  Hexagonal, SquareNotOriented )\n", 
+              long_options[option_index].name, optarg );
+          exit(1);
+        }
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+        
       case 'k':
         candleSnr = (REAL4) atof( optarg );
         if ( candleSnr <= 0 )
@@ -2180,6 +2204,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     exit( 1 );
   }
 
+  /* check validity of grid spacing with respect to approximant */
+  if (gridSpacing != SquareNotOriented || gridSpacing != Hexagonal)
+  {
+    fprintf( stderr, "--grid-spacing  must be either SquareNotOriented or Hexagonal\n" );
+    exit( 1 );
+  }
+  
   /* check that the correct range parameters have been given for the bank */
   if ( approximant == BCV )
   {
