@@ -346,7 +346,7 @@ class BurstInjNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     if not self.get_start() or not self.get_end():
       raise InjError, "Start time or end time has not been set"
 
-    basename = 'HL' + '-INJECTIONS' + '_' + str(seed)
+    basename = 'HL' + '-INJECTIONS'
 
     if self.__usertag:
       basename += '_' + str(self.__usertag) 
@@ -472,7 +472,7 @@ class BurcaNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     once the ifo, start and end times have been set.
     """
     if self.__start and self.__end :
-      self.__output = 'H1'+ '-' + 'BURCA' + '_' + 'P' + '_' + '0' + '_' + 'H1H2' + '-' + str(self.__start) 
+      self.__output = 'H1'+ '-' + 'BURCA' + '_' + 'H1H2' + '_' + 'P' + '_' + '0' + '_' + 'H1H2' + '-' + str(self.__start) 
       self.__output = self.__output + '-' + str(self.__end - self.__start) + '.xml'
                      
   def set_ifoa(self,file):
