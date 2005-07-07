@@ -284,7 +284,6 @@ main (INT4 argc, CHAR **argv )
 	    case PadeF1:
 	    case SpinTaylor:
 
-
               overlapin.param 	= list[currentTemplate].params;	   
               LAL_CALL(LALInspiralParameterCalc( &status,  &(overlapin.param) ), &status);
               overlapout.max    = -1.; /* let us be sure that is has a value */
@@ -507,7 +506,7 @@ void InitInspiralCoarseBankIn(InspiralCoarseBankIn *coarseBankIn)
   coarseBankIn->order           = BANKEFFICIENCY_ORDER_TEMPLATE;  
   coarseBankIn->LowGM     	= BANKEFFICIENCY_LOWGM;
   coarseBankIn->HighGM    	= BANKEFFICIENCY_HIGHGM;
-  coarseBankIn->gridType        = Square;
+  coarseBankIn->gridSpacing     = SquareNotOriented;
 }
 
 
@@ -638,18 +637,18 @@ ParseParameters(	INT4 			*argc,
 	}
       else if (!strcmp(argv[i],	"--bank-ffinal"))	     
         BEParseGetDouble(argv,  &i, &(coarseBankIn->fUpper)); 
-      else if (!strcmp(argv[i], "--bank-grid-type")){
+      else if (!strcmp(argv[i], "--bank-grid-spacing")){
 	BEParseGetString(argv, &i);
-	if (!strcmp(argv[i],"square"))
-	  coarseBankIn->gridType = Square;
-	else if (!strcmp(argv[i], "hexagonal"))
-	  coarseBankIn->gridType = Hexagonal;
-	else if (!strcmp(argv[i], "hexagonalOriented"))
-	  coarseBankIn->gridType = OrientedHexagonal;
-	else if (!strcmp(argv[i], "squareOriented"))
-	  coarseBankIn->gridType = OrientedSquare;
+	if (!strcmp(argv[i],"Square"))
+	  coarseBankIn->gridSpacing = Square;
+	else if (!strcmp(argv[i], "Hexagonal"))
+	  coarseBankIn->gridSpacing = Hexagonal;
+	else if (!strcmp(argv[i], "HexagonalNotOriented"))
+	  coarseBankIn->gridSpacing = HexagonalNotOriented;
+	else if (!strcmp(argv[i], "SquareNotOriented"))
+	  coarseBankIn->gridSpacing = SquareNotOriented;
 	else 
-	  coarseBankIn->gridType = None;        	  	
+	  coarseBankIn->gridSpacing = None;        	  	
       }    
       else if (!strcmp(argv[i],	"--bank-number-fcut"))  
         BEParseGetInt(argv,  &i, (INT4*)&(coarseBankIn->numFcutTemplates)); 
@@ -895,11 +894,13 @@ BEParseGetInt(  CHAR    **argv,
 {  
   CHAR *tmp;
   CHAR msg[2048];
+  CHAR *tmp1;
+  tmp1=argv[*index+1];
 
   if (argv[*index+1]!=NULL)
     {
       *data = strtol(argv[*index+1], &tmp  , 10);
-      if (*data==0 && strcmp(argv[*index+1],"0"))
+      if (*data==0 && tmp1 != '0')
 	{
 	  sprintf(msg, "Expect a float after option %s (got %s)\n ",
 		  argv[*index],
@@ -940,16 +941,18 @@ BEParseGetDouble(CHAR    **argv,
 {  
   CHAR *tmp;
   CHAR msg[2048];
+  CHAR *tmp2 ;
+  tmp2 = argv[*index+1];
 
-  if (argv[*index+1]!=NULL)
+  if (argv[*index+1] != NULL)
     {
       *data = strtod(argv[*index+1], &tmp  );
-      if (*data==0 && strcmp(argv[*index+1],"0"))
+      if (*data == 0 && tmp2[0]!='0')
 	{
-	 sprintf(msg, "Expect a float after option %s (got %s)\n ",
-	      argv[*index],
-	      argv[*index+1]);
-	 BEPrintError(msg);
+	  sprintf(msg, "Expect a float after option %s (got %s)\n ",
+		  argv[*index],
+		  argv[*index+1]);
+	  BEPrintError(msg);
 	}
     }
   else  
@@ -971,6 +974,9 @@ BEParseGetDouble2(CHAR    **argv,
 {  
   CHAR *tmp; 
   CHAR msg[2048];
+  CHAR *tmp2 , *tmp1;
+  tmp1 = argv[*index+1];
+  tmp2=  argv[*index+2];
 
   *data1 = 0 ;
   *data2 = 0 ;
@@ -979,8 +985,8 @@ BEParseGetDouble2(CHAR    **argv,
     {
       *data1 = strtod(argv[*index+1], &tmp  );
       *data2 = strtod(argv[*index+2], &tmp  );
-      if ((!(*data1) && strcmp(argv[*index+1],"0"))
-	||  (!(*data2) && strcmp(argv[*index+2],"0")))
+      if ((!(*data1) && tmp1!='0')
+	||  (!(*data2) && tmp2!='0'))
 	{   
 	  sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
 		  argv[*index],
@@ -1022,7 +1028,6 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
       randIn->param.fCutoff = coarseBankIn->tSampling/2 -1.;
   }
   
-
   if (coarseBankIn->alpha < 0 ){
     sprintf(msg, "--bank-alpha (%f) parameter must be positive in the range [0,1] \n",
 	    coarseBankIn->alpha);
@@ -1039,9 +1044,10 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
   }
   
 
-  if (coarseBankIn->gridType == None  ){
-    sprintf(msg, "--bank-grid-type (%d) parameter must be < square, hexagonal, hexagonalOriented, squareOriented> \n",
-	    coarseBankIn->gridType);
+  if (coarseBankIn->gridSpacing == None  ){
+    sprintf(msg, "--bank-grid-spacing (%d) parameter must be < square, hexagonal, hexagonalOriented, squareOriented> \n",
+	    coarseBankIn->gridSpacing);
+    
     BEPrintError(msg);
   }
 
@@ -1330,7 +1336,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 
   if (otherIn->binaryInjection == BHNS){
     if (randIn->mMin >3 || randIn->mMax < 3 ){
-      BEPrintError("if you want to inject BHNS systems then adjust the mass-range so that the minimum is less than 3 solar mass and the maximum  is greater than 3solar mass !! \n");
+      BEPrintError("if you want to inject BHNS systems then adjust the mass-range so that the minimum is less than 3 solar mass and the maximum  is greater than 3 solar mass !! \n");
     }
   }      
 }
@@ -1391,7 +1397,7 @@ void Help()
 	  "\t[--bank-alpha<float>]\t\t set the BCV alpha value in the moments computation\n"
 	  "\t[--bank-fcut-range<float float>] set the range of BCV fcut (in units of GM) \n"
 	  "\t[--bank-ffinal<float>]\t\t set the final frequency to be used in the BCV moments computation\n"
-	  "\t[--bank-grid-type <gridType>]\t set the grid type of the BCV bank (square, squareOriented, hexagonal, hexagonalOriented\t\n"
+	  "\t[--bank-grid-spacing <gridSpacing>]\t set the grid type of the BCV bank (Square, SquareNotOriented, Hexagonal, HexagonalNotOriented\t\n"
 	  "\t[--bank-number-fcut<integer>]\t set the number of BCV fcut \n"
 	  "\t[--bank-mass-range<float float>] set the range of mass to be covered by the SPA bank\n"
 	  "\t[--bank-psi0-range<float float>] set the range of psi0 to be covered by the BCV bank\n"
@@ -2471,8 +2477,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       coarseBankIn.psi0Min, coarseBankIn.psi0Max);
   ADD_2PROCESS_PARAM("float","%f %f","--bank-psi3-range",
       coarseBankIn.psi3Min, coarseBankIn.psi3Max);
-  ADD_PROCESS_PARAM("string","%s","--bank-grid-type",
-      GetStringFromGridType(coarseBankIn.gridType));
+  ADD_PROCESS_PARAM("string","%s","--bank-grid-spacing",
+      GetStringFromGridType(coarseBankIn.gridSpacing));
   ADD_PROCESS_PARAM("string", "%s","--channel",
       otherIn.chanName);    
   ADD_PROCESS_PARAM("string", "%s","--detector",
@@ -2539,6 +2545,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       otherIn.tau0);
   ADD_PROCESS_PARAM("float","%e","--tau3",	
       otherIn.tau3);
+
   if (otherIn.startPhase)
     ADD_PROCESS_PARAM("float", "%s", "--no-start-phase"," ");
   if (otherIn.alphaFConstraint ){
@@ -2549,6 +2556,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   }
   if (!otherIn.fastSimulation )
     ADD_PROCESS_PARAM("float", "%s", "--fast-simulation"," ");
+  printf("%d\n", otherIn.binaryInjection);
   if (otherIn.binaryInjection == BHNS)
     ADD_PROCESS_PARAM("float", "%s", "--bhns-injection", " ");
   	  
@@ -2606,16 +2614,16 @@ CHAR* GetStringFromGridType(INT4 input)
  {
   switch (input){
   case Square:
-    return "SQUARE";
+    return "Square";
     break;
-  case OrientedSquare:
-    return "squareOriented";
+  case SquareNotOriented:
+    return "SquareNotOriented";
     break;
-  case OrientedHexagonal:
-    return "hexagonalOriented";
+  case HexagonalNotOriented:
+    return "HexagonalNotOriented";
     break;
   case Hexagonal:
-    return "hexagonal";
+    return "Hexagonal";
     break;
   }
   return NULL;
@@ -4608,7 +4616,7 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  coarse.order,           
 	  (REAL8)coarse.LowGM,     	
 	  (REAL8)coarse.HighGM,    	
-	  (INT4)coarse.gridType);
+	  (INT4)coarse.gridSpacing);
 
   
   fprintf(stdout, "bankIn parameters\n"
