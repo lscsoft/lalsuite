@@ -1,30 +1,23 @@
 #include <processtable.h>
 #include <stdio.h>
+#include <gsl/gsl_histogram.h>
+#include <lalapps.h>
+
 #include <lal/LALNoiseModels.h>
 #include <lal/LALInspiralBank.h>
 #include <lal/RealFFT.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataTables.h>
+
 #include <lal/LIGOLwXMLHeaders.h>
-#include <lalapps.h>
-#include <lal/Date.h>
-#include <getopt.h>        /* do I still use it ?  */
-#include <lal/FindChirp.h>
-#include <gsl/gsl_histogram.h>
-
-
-
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
-#include <lal/PrintFTSeries.h>
 #include <lal/FrameStream.h>
 #include <lal/FrameCalibration.h>
 #include <lal/Window.h>
@@ -37,12 +30,14 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
+#include <lal/FindChirp.h>
 
 
 
-/* Here, I defined my own xml table outside the lal strcuture although it can be put
-   into the liXmlHeader files I guess. I dont want to use the lal definition for the
-   time being in order to avoid any overlap with other users. */
+/* Here, I defined my own xml table outside the lal strcuture although
+   it can be put  into the liXmlHeader files I guess. I dont want to
+   use the lal definition for the  time being in order to avoid any 
+   overlap with other users. */
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
@@ -111,7 +106,7 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 #define BANKEFFICIENCY_MSGPARSER "Missing arguments ??  "
 
 /* --- Some constants --- 
- * useful to fill  InspiralTemplate, Bank and otherIn structure */
+ * useful to fill  InspiralTemplate, Bank and userParam structure */
 #define BANKEFFICIENCY_ALPHABANK       		0.01
 #define BANKEFFICIENCY_ALPHASIGNAL    		0.
 #define BANKEFFICIENCY_FLOWER       		40.
@@ -146,33 +141,34 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 #define BANKEFFICIENCY_USEED        		122888
 
 /* Other Parameters  1 = true ; 0 = false	*/
-#define BANKEFFICIENCY_ALPHAFCONSTRAINT         1 				/* alphaF between 0 and 1	       */
-#define BANKEFFICIENCY_ALPHAFUNCONSTRAINT       0 				/* alphaF between 0 and 1	       */
-#define BANKEFFICIENCY_QUIETFLAG       	        0 				/* silent 				*/ 
-#define BANKEFFICIENCY_FASTSIMULATION           0                               /* cheating code (dont use template far from injection; use with care */
-#define BANKEFFICIENCY_PRINTOVERLAP             0				/* Print Best Overlap 			*/
-#define BANKEFFICIENCY_PRINTBESTOVERLAP         0				/* Print Best Overlap 			*/
-#define BANKEFFICIENCY_PRINTBESTTEMPLATE        0				/* Print Best Template 			*/
-#define BANKEFFICIENCY_PRINTSNRHISTO            0				/* Print histogram of the n template correlation. */
-#define BANKEFFICIENCY_PRINTOVERLAP_FILE        "BE_BestOverlap.dat"		/* Print Best Overlap in a file		*/
-#define BANKEFFICIENCY_PRINTFILTER              0				/* Print corresponding Filter		*/
-#define BANKEFFICIENCY_PRINTBANK		0				/* print the template bank		*/
-#define BANKEFFICIENCY_PRINTBANK_FILEASCII	"BE_Bank.dat"			/* print template bank in a file	*/
-#define BANKEFFICIENCY_PRINTBANKXML		0				/* print the template bank		*/
-#define BANKEFFICIENCY_PRINTBANK_FILEXML	"BE_Bank.xml"			/* print template bank in a file	*/
-#define BANKEFFICIENCY_PRINTRESULT		1				/* print the result (ascii)		*/
-#define BANKEFFICIENCY_PRINTRESULTXML		0				/* print the template bank		*/
-#define BANKEFFICIENCY_PRINTRESULT_FILEXML	"BE_Result.xml"			/* print the result (xml file)  	*/
-#define BANKEFFICIENCY_PRINTPROTOTYPE		0				/* print the overlap of the templates	*/
-#define BANKEFFICIENCY_PRINTBANKOVERLAP		0				/* print the overlap of the templates	*/
-#define BANKEFFICIENCY_PRINTPSD                 0				/* print psd used in <x|x>      	*/
-#define BANKEFFICIENCY_PRINTPSD_FILE		"BE_PSD.dat"			/* Print Psd in a file			*/
-#define BANKEFFICIENCY_PRINTTEMPLATE    	0				/* print the  BCV final template	*/
+#define BANKEFFICIENCY_ALPHAFCONSTRAINT         1       /* alphaF between 0 and 1	        */
+#define BANKEFFICIENCY_ALPHAFUNCONSTRAINT       0 	/* alphaF between 0 and 1	        */
+#define BANKEFFICIENCY_QUIETFLAG       	        0 	/* silent                               */ 
+#define BANKEFFICIENCY_FASTSIMULATION           0       /* cheating code (dont use template far 
+                                                           from injection; use with care        */
+#define BANKEFFICIENCY_PRINTOVERLAP             0	/* Print Best Overlap 			*/
+#define BANKEFFICIENCY_PRINTBESTOVERLAP         0	/* Print Best Overlap 			*/
+#define BANKEFFICIENCY_PRINTBESTTEMPLATE        0	/* Print Best Template 			*/
+#define BANKEFFICIENCY_PRINTSNRHISTO            0	/* Print histogram of the n template correlation.*/
+#define BANKEFFICIENCY_PRINTOVERLAP_FILE        "BE_BestOverlap.dat"	/* Print Best Overlap in a file */
+#define BANKEFFICIENCY_PRINTFILTER              0	/* Print corresponding Filter		*/
+#define BANKEFFICIENCY_PRINTBANK		0	/* print the template bank		*/
+#define BANKEFFICIENCY_PRINTBANK_FILEASCII	"BE_Bank.dat"		/* print template bank in a file*/
+#define BANKEFFICIENCY_PRINTBANKXML		0	/* print the template bank		*/
+#define BANKEFFICIENCY_PRINTBANK_FILEXML	"BE_Bank.xml"		/* print template bank in a file*/
+#define BANKEFFICIENCY_PRINTRESULT		1	/* print the result (ascii)		*/
+#define BANKEFFICIENCY_PRINTRESULTXML		0	/* print the template bank		*/
+#define BANKEFFICIENCY_PRINTRESULT_FILEXML	"BE_Result.xml"		/* print the result (xml file)  */
+#define BANKEFFICIENCY_PRINTPROTOTYPE		0	/* print the overlap of the templates	*/
+#define BANKEFFICIENCY_PRINTBANKOVERLAP		0	/* print the overlap of the templates	*/
+#define BANKEFFICIENCY_PRINTPSD                 0	/* print psd used in <x|x>      	*/
+#define BANKEFFICIENCY_PRINTPSD_FILE		"BE_PSD.dat"		/* Print Psd in a file	*/
+#define BANKEFFICIENCY_PRINTTEMPLATE    	0	/* print the  BCV final template	*/
 #define BANKEFFICIENCY_FAITHFULNESS             0				
 
 
-#define BANKEFFICIENCY_PRINTPROTO_FILEXML	"BE_Proto.xml"			/* print the result (xml file)  	*/
-#define BANKEFFICIENCY_READXMLBANK	        "InputBank.xml"			/* print the result (xml file)  	*/
+#define BANKEFFICIENCY_PRINTPROTO_FILEXML	"BE_Proto.xml"	/* print the result (xml file)  */
+#define BANKEFFICIENCY_READXMLBANK	        "InputBank.xml"	/* print the result (xml file)  */
 
 
 /* --- temporary flag for the sampling of real psd --- */
@@ -184,20 +180,24 @@ fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         
 /* ==================== local structures ==================== */
 /* 
  *  */
-typedef enum{
+
+/* used in BCV for the choice of constraint or unconstraint SNR */
+typedef enum {
   ALPHAFConstraint,
-    ALPHAFUnconstraint,
-    BOTHAlphaMethod
+  ALPHAFUnconstraint,
+  BOTHAlphaMethod
 } AlphaConstraint;
 
 
-typedef enum{
-   NoUserChoice,
-   BBH,
-   BNS,
-   BHNS
+/* what kind of injections to be performed ? */
+typedef enum {
+  NoUserChoice,
+  BBH,
+  BNS,
+  BHNS
 } BinaryInjection;
 
+/* what kind of noisemodel ?*/
 typedef enum{
     UNITY,
     LIGOI,
@@ -209,8 +209,13 @@ typedef enum{
     READPSD
 } DetectorName;
 
+/* what detectors (real noise only )*/
 typedef enum{
-  L1, H1, H2, V1, G1
+  L1,
+  H1,
+  H2,
+  V1,
+  G1
 }
 DetectorFlag;
 
@@ -220,27 +225,27 @@ typedef enum{
 }
 RunFlag;
 
-typedef enum{
-  InQuadrature,
-  AlphaMaximization
-} OverlapMethodIn;
 
 typedef struct{ 
   CHAR *calCacheName;
   CHAR *frInCacheName;
-} DataFileIn;
+}
+DataFileIn;
+
 
 typedef struct{ 
   DataFileIn S2, S3, S4, S5, S6;
-} ScientificRunIn;
+} 
+ScientificRunIn;
 
 typedef struct{
   CHAR *chanName;
   ScientificRunIn dataFile;
-} DetectorParamIn;
+}
+DetectorParamIn;
 
 typedef struct{
-  AlphaConstraint alphaFConstraint;                 /* force alpha_F to be constriant between 0 and 1 */
+  AlphaConstraint alphaFConstraint;     /* force alpha_F to be constriant between 0 and 1 */
   INT4 signal;				/* name of the random signal to inject 	*/	
   INT4 template;			/* name of the template in the bank 	*/
   INT4 ntrials;				/* number of simulations		*/
@@ -257,9 +262,8 @@ typedef struct{
   INT4 printPrototype;
   INT4 printPsd;                        /* print the psd used in <x|x>          */
   INT4 realNoise;
-  BinaryInjection binaryInjection; /*injection will be set by the mass-range*/
+  BinaryInjection binaryInjection;      /*injection will be set by the mass-range*/
   INT4 printBestOverlap, printBestTemplate, extraFinalPrinting ;
-  OverlapMethodIn overlapMethod;
 
   INT4 faithfulness;
   INT4 snrAtCoaTime;
@@ -279,10 +283,11 @@ typedef struct{
   REAL4 signalfFinal;
   INT4 startPhase;
   CHAR *inputPSD;
+  INT4 useed;
 }
-OtherParamIn;
+UserParametersIn;
 
-
+/* struct to save the results */
 typedef struct{
   REAL4  rhoMax;
   INT4   rhoBin;
@@ -303,7 +308,7 @@ typedef struct{
   InspiralTemplate bestUTemplate;
 } OverlapOutputIn;
 
-/* strucutre to output the results */
+/* structure to output the results */
 typedef struct{
   REAL4 tau0_inject;
   REAL4 tau0_trigger;
@@ -334,7 +339,7 @@ typedef struct{
 } ResultIn;
 
 
-
+/* BCV moments */
 typedef struct{
   REAL4Vector a11;
   REAL4Vector a21;
@@ -342,7 +347,7 @@ typedef struct{
 } BEMoments;
 
 
-
+/* vectors for BCV storage*/
 typedef struct{
   REAL4Vector fm5_3;
   REAL4Vector fm2_3;
@@ -386,12 +391,12 @@ void
 BEGenerateInputData(LALStatus *status,
 		    REAL4Vector * signal,
 		    RandomInspiralSignalIn  *randIn,
-		    OtherParamIn           otherIn);
+		    UserParametersIn           userParam);
 
 void
 BEInitOverlapOutputIn(OverlapOutputIn *this);
 
-/* Function to compute a orthogonal vector 
+/* Function to compute a orthogonal vector in BCV
  * */
 void
 LALGetOrthogonal(REAL4Vector *filter);
@@ -407,9 +412,9 @@ LALWaveOverlapBCV(LALStatus 		  *status,
 		  InspiralWaveOverlapIn   *overlapin,
 		  REAL4Vector             *Filter1, 
 		  REAL4Vector             *Filter2,
-		  OtherParamIn             otherIn, 
-		  OverlapOutputIn             *OverlapOutput,
-		  BEMoments *moments);
+		  UserParametersIn        userParam, 
+		  OverlapOutputIn         *OverlapOutput,
+		  BEMoments               *moments);
 
 
 /* Function to store the moments needed by the BCV overlap process 
@@ -442,44 +447,53 @@ LALGenerateWaveform(LALStatus 			*status,
 
 void 
 GetResult(
-	  LALStatus 			*status,
-	  InspiralTemplateList   	**list,
-	  InspiralTemplate       	injected,
-	  OverlapOutputIn 	bestOverlapout, 
-	  ResultIn                *result,
-	  OtherParamIn                 otherIn );
+    LALStatus 			*status,
+    InspiralTemplateList   	**list,
+    InspiralTemplate       	injected,
+    OverlapOutputIn 	        bestOverlapout, 
+    ResultIn                    *result,
+    UserParametersIn            userParam );
 
 /* Init the CoarseBank structure 
  * */
-void InitInspiralCoarseBankIn(InspiralCoarseBankIn 	*coarseIn);
+void
+InitInspiralCoarseBankIn(
+    InspiralCoarseBankIn 	*coarseIn);
 
 /* Init the random structure 
  * */
-void InitRandomInspiralSignalIn(RandomInspiralSignalIn 	*randIn);
+void
+InitRandomInspiralSignalIn(
+    RandomInspiralSignalIn 	*randIn);
 
-/* Init the OtherParamIn structure
+/* Init the UserParametersIn structure
  * */
-void InitOtherParamIn(OtherParamIn 			*otherIn);
+void
+InitUserParametersIn(
+    UserParametersIn    *userParam);
 
 /* Function to initialize the different strucutre */
-void ParametersInitialization(	InspiralCoarseBankIn 	*coarseIn, 
-				RandomInspiralSignalIn	*randIn, 
-				OtherParamIn		*otherIn);
+void
+ParametersInitialization(
+    InspiralCoarseBankIn        *coarseIn, 
+    RandomInspiralSignalIn	*randIn, 
+    UserParametersIn		*userParam);
 /* Parsing function 
  * */
 void
-ParseParameters(int 			*argc, 
-		char 			**argv,
-		InspiralCoarseBankIn 	*coarseIn,
-		RandomInspiralSignalIn 	*randIn,
-		OtherParamIn 		*otherIn);		     
+ParseParameters(
+    int         *argc, 
+    char 	**argv,
+    InspiralCoarseBankIn 	*coarseIn,
+    RandomInspiralSignalIn 	*randIn,
+    UserParametersIn 		*userParam);		     
 
 /* function to check validity of some parameters
  * */
 void 	
 UpdateParams(InspiralCoarseBankIn 	*coarseIn,
 	     RandomInspiralSignalIn 	*randIn,
-	     OtherParamIn 		*otherIn);
+	     UserParametersIn 		*userParam);
 
 
 /* Default values
@@ -487,16 +501,19 @@ UpdateParams(InspiralCoarseBankIn 	*coarseIn,
 void 
 SetDefault(InspiralCoarseBankIn 	*coarseIn, 
 	   RandomInspiralSignalIn 	*randIn,
-	   OtherParamIn 		*otherIn);
+	   UserParametersIn 		*userParam);
 
 /* Help Function 
  * */
-void 	Help();
+void
+Help();
 
 /* Print Function for final results 
  * */
 void
-PrintResults(	 ResultIn result, RandomInspiralSignalIn rand);
+PrintResults(
+    ResultIn                    result,
+    RandomInspiralSignalIn      rand);
 
 
 /* Print each  template bank overlap 
@@ -509,50 +526,65 @@ PrintBankOverlap(InspiralTemplateList 	**list,
 
 /* Print the template bank coordinates in ascii format 
  * */
-void BEPrintBank(InspiralCoarseBankIn 	coarse, 
-		 InspiralTemplateList 	**list,
-		 UINT4 			sizeBank);
+void
+BEPrintBank(
+    InspiralCoarseBankIn 	coarse, 
+    InspiralTemplateList 	**list,
+    UINT4 			sizeBank);
 
 /* print the template bank coordinates  in xml format 
  * */
-void BEPrintBankXml(InspiralTemplateList *coarseList,
-		    UINT4 		 numCoarse,
-		    InspiralCoarseBankIn   coarseIn,
-		    RandomInspiralSignalIn randIn,
-		    OtherParamIn           otherIn
-		    );
+void 
+BEPrintBankXml(
+    InspiralTemplateList        *coarseList,
+    UINT4 		        numCoarse,
+    InspiralCoarseBankIn        coarseIn,
+    RandomInspiralSignalIn      randIn,
+    UserParametersIn            userParam
+    );
 
-void BEGetMaximumSize(LALStatus  *status, 		      
-		      RandomInspiralSignalIn  randIn, 
-		      UINT4 *length);
+void 
+BEGetMaximumSize(
+    LALStatus  *status, 		      
+    RandomInspiralSignalIn  randIn, 
+    UINT4 *length
+    );
 
 
-void BECreatePsd(LALStatus *status, 
-		 InspiralCoarseBankIn *coarseBankIn, 
-		 RandomInspiralSignalIn  *randIn,
-		 OtherParamIn           otherIn);
+void
+BECreatePsd(
+    LALStatus                   *status, 
+    InspiralCoarseBankIn        *coarseBankIn, 
+    RandomInspiralSignalIn      *randIn,
+    UserParametersIn            userParam);
+
 /* print an error  message 
  * */
-void BEPrintError(char *chaine);
+void 
+BEPrintError(char *chaine);
 
-void BEFillProc(ProcessParamsTable     *proc,
-		InspiralCoarseBankIn   coarseIn,
-		RandomInspiralSignalIn randIn,
-		OtherParamIn           otherIn);
+void
+BEFillProc(
+    ProcessParamsTable          *proc,
+    InspiralCoarseBankIn        coarseIn,
+    RandomInspiralSignalIn      randIn,
+    UserParametersIn            userParam);
 
 /* xml file for the standalone code */
 void 
-BEPrintResultsXml( InspiralCoarseBankIn   coarseBankIn,
-		   RandomInspiralSignalIn randIn,
-		   OtherParamIn           otherIn,
-		   ResultIn trigger
-		   );
+BEPrintResultsXml( 
+    InspiralCoarseBankIn         coarseBankIn,
+    RandomInspiralSignalIn       randIn,
+    UserParametersIn             userParam,
+    ResultIn                     trigger
+    );
 
 void 
-BEPrintProtoXml(InspiralCoarseBankIn   coarseIn,
-		  RandomInspiralSignalIn randIn,
-		  OtherParamIn           otherIn
-		);
+BEPrintProtoXml(
+    InspiralCoarseBankIn          coarseIn,
+    RandomInspiralSignalIn        randIn,
+    UserParametersIn              userParam
+    );
 
 void
 BEReadXmlBank(  LALStatus  *status, 
@@ -563,8 +595,9 @@ BEReadXmlBank(  LALStatus  *status,
 
 
 void
-BEFillOverlapOutput(InspiralWaveOverlapOut overlapout, 
-		    OverlapOutputIn *this);
+BEFillOverlapOutput(
+    InspiralWaveOverlapOut overlapout, 
+    OverlapOutputIn *this);
 
 
 
@@ -573,53 +606,45 @@ void
 LALCreateRealPsd(LALStatus *status, 
 		 InspiralCoarseBankIn *bankIn,
 		 RandomInspiralSignalIn randIn, 
-		 OtherParamIn otherIn);
+		 UserParametersIn userParam);
 
 
 
 
 typedef struct 
-{ 
- 
+{  
+  LIGOTimeGPS   gpsStartTime;
+  LIGOTimeGPS   gpsEndTime;
+  INT4          padData;                  
+  INT4          numPoints;
+  INT4          numSegments;
+  CHAR          ifo[3];                           
 
-  LIGOTimeGPS gpsStartTime;
-  LIGOTimeGPS gpsEndTime;
-  INT4  padData;                  
-  INT4  numPoints;
-  INT4  numSegments;
-  CHAR  ifo[3];                           
+  INT4          inputDataLength;
+  INT4          resampFiltType;
+  INT4          sampleRate;   
+  INT4          highPass;     
+  REAL4         highPassFreq; 
+  INT4          highPassOrder;
+  REAL4         highPassAtten;
+  REAL4         fLow;
+  INT4          specType;           
 
-  INT4  inputDataLength;
-  INT4   resampFiltType;
-  INT4   sampleRate;   
-  INT4   highPass;     
-  REAL4  highPassFreq; 
-  INT4   highPassOrder;
-  REAL4  highPassAtten;
-  REAL4  fLow;
-  INT4   specType;           
-
-  CHAR  *calCacheName;
-  INT4   pointCal;           
-  REAL4  dynRangeExponent;          
-  REAL4 geoHighPassFreq;            
-  INT4  geoHighPassOrder;           
-  REAL4 geoHighPassAtten; 
+  CHAR          *calCacheName;
+  INT4          pointCal;           
+  REAL4         dynRangeExponent;          
+  REAL4         geoHighPassFreq;            
+  INT4          geoHighPassOrder;           
+  REAL4         geoHighPassAtten; 
   
-  INT4  randomSeed; 
-  REAL4 gaussVar;   
-  INT4  gaussianNoise;
+  INT4          randomSeed; 
+  REAL4         gaussVar;   
+  INT4          gaussianNoise;
  
-  CHAR  *fqChanName;
-  CHAR *injectionFile;
-  CHAR  *frInCacheName;
-
-
-
-
-
+  CHAR          *fqChanName;
+  CHAR          *injectionFile;
+  CHAR          *frInCacheName;
 }
-
 InspiralPipelineIn;
 
 
@@ -639,37 +664,44 @@ typedef struct
 }
 WindowSpectrumIn;
 
-void LALComputeWindowSpectrum(LALStatus *status, 
+void 
+LALComputeWindowSpectrum(LALStatus *status, 
 			      WindowSpectrumIn *param,
 			      REAL4FrequencySeries  *spec,
 			      REAL4TimeSeries *chan);
 
 
-void BECreateBank(LALStatus *status, 
-		  InspiralCoarseBankIn   *coarseBankIn,	
-		  InspiralTemplateList      	**list,
-		  INT4 *sizeBank);
+void 
+BECreateBank(
+    LALStatus                   *status, 
+    InspiralCoarseBankIn        *coarseBankIn,	
+    InspiralTemplateList      	**list,
+    INT4                        *sizeBank);
 
 
 
-void BECreatePowerVector(LALStatus              *status, 
-			 BEPowerVector          *powerVector,
-			 RandomInspiralSignalIn  randIn, 
-			 INT4                    length);
+void
+BECreatePowerVector(
+    LALStatus              *status, 
+    BEPowerVector          *powerVector,
+    RandomInspiralSignalIn  randIn, 
+    INT4                    length);
 
 
-void LALInspiralOverlapBCV(LALStatus *status,
-			   InspiralTemplateList   **list,
-			   BEPowerVector          *powerVector,
-			   OtherParamIn           *otherIn, 
-			   RandomInspiralSignalIn *randIn,
-			   INT4                    templateNumber, 
-			   REAL4Vector            *Filter1,
-			   REAL4Vector            *Filter2,
-			   InspiralWaveOverlapIn  *overlapin,
-			   OverlapOutputIn        *output,
-			   REAL4Vector            *correlation,
-			   BEMoments              *moments);
+void 
+LALInspiralOverlapBCV(
+    LALStatus                   *status,
+    InspiralTemplateList        **list,
+    BEPowerVector               *powerVector,
+    UserParametersIn            *userParam, 
+    RandomInspiralSignalIn      *randIn,
+    INT4                        templateNumber, 
+    REAL4Vector                 *Filter1,
+    REAL4Vector                 *Filter2,
+    InspiralWaveOverlapIn       *overlapin,
+    OverlapOutputIn             *output,
+    REAL4Vector                 *correlation,
+    BEMoments                   *moments);
 
 
 
@@ -698,7 +730,7 @@ BEParseGetString(  CHAR    **argv,
 void
 PrintParameters(InspiralCoarseBankIn 	coarse,
 		RandomInspiralSignalIn 	rand,
-		OtherParamIn    	other);
+		UserParametersIn    	other);
 
 CHAR* GetStringFromGridType(INT4 input);
 CHAR* GetStringFromSimulationType(INT4 input);
