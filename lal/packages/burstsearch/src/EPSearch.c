@@ -71,7 +71,7 @@ static SnglBurstTable **TFTilesToSnglBurstTable(const TFTiling *tiling, SnglBurs
 	TFTile *tile;
 	size_t i;
 
-	for(i = 0, tile = tiling->tile; (i < tiling->numtiles) && (tile->lnalpha <= params->lnalphaThreshold - tile->lnweight) && (i < params->eventLimit); i++, tile++) {
+	for(i = 0, tile = tiling->tile; (i < tiling->numtiles) && (tile->lnalpha <= params->lnalphaThreshold - tile->lnweight); i++, tile++) {
 		*addpoint = TFTileToBurstEvent(tile, epoch, params); 
 
 		if(*addpoint)
