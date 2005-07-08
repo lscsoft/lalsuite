@@ -95,6 +95,7 @@ static struct {
 	REAL8 high_pass;            /* conditioning high pass freq (Hz)    */
 	REAL8 cal_high_pass;        /* double->single high pass freq (Hz)  */
 	int bandwidth;
+	int max_event_rate;         /* safety valve (Hz), 0 == disable     */
 } options;
  
 /* global variables */
@@ -182,6 +183,21 @@ static size_t block_commensurate(
 static int is_power_of_2(int x)
 {
 	return(!((x - 1) & x));
+}
+
+
+/*
+ * Count the events in a SnglBurstTable.
+ */
+
+static int SnglBurstTableLength(SnglBurstTable *list)
+{
+	int i;
+
+	for(i = 0; list; i++)
+		list = list->next;
+
+	return(i);
 }
 
 
@@ -475,7 +491,6 @@ void parse_command_line(
 
 	params->lnalphaThreshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
 	params->channelName = NULL;	/* impossible */
-	params->eventLimit = 1073741824;	/* default */
 	params->method = -1;	/* impossible */
 	params->tfPlaneParams.flow = -1.0;	/* impossible */
 	params->tfPlaneParams.fhigh = -1.0;	/* impossible */
@@ -503,6 +518,7 @@ void parse_command_line(
 	options.getcaltimeseries = FALSE; /* default */
 	options.high_pass = -1.0;	/* impossible */
 	options.cal_high_pass = -1.0;	/* impossible */
+	options.max_event_rate = 0;	/* default */
 	XLALINT8toGPS(&options.startEpoch, 0);	/* impossible */
 	XLALINT8toGPS(&options.stopEpoch, 0);	/* impossible */
 
@@ -558,12 +574,7 @@ void parse_command_line(
 		break;
 
 		case 'F':
-		params->eventLimit = atoi(optarg);
-		if(params->eventLimit < 1 || params->eventLimit > 1073741824) {
-			sprintf(msg, "must be in range [1,1073741824] (%i specified)", params->eventLimit);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
+		options.max_event_rate = atoi(optarg);
 		ADD_PROCESS_PARAM("int");
 		break;
 
@@ -1813,6 +1824,15 @@ int main( int argc, char *argv[])
 	if(options.cluster)
 		XLALClusterSnglBurstTable(&burstEvent, XLALCompareSnglBurstByPeakTime, XLALCompareSnglBurstByPeakTimeAndFreq, XLALSnglBurstCluster);
 	XLALSortSnglBurst(&burstEvent, XLALCompareSnglBurstByStartTimeAndLowFreq);
+
+	/*
+	 * Check event rate limit.
+	 */
+
+	if((options.max_event_rate > 0) && (SnglBurstTableLength(burstEvent) > XLALDeltaFloatGPS(&searchsumm.searchSummaryTable->out_end_time, &searchsumm.searchSummaryTable->out_start_time) * options.max_event_rate)) {
+		XLALPrintError("%s: event rate limit exceeded!", argv[0]);
+		exit(1);
+	}
 
 	/*
 	 * Output the results.
