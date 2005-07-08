@@ -170,7 +170,6 @@ simulated data.
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
 [\option{--cluster}] \newline \hspace*{0.5in}
 [\option{--debug-level}~\parm{level}] \newline \hspace*{0.5in}
-[\option{--event-limit}~\parm{count}] \newline \hspace*{0.5in}
 \option{--filter-corruption}~\parm{samples} \newline \hspace*{0.5in}
 \option{--frame-cache}~\parm{cache file} \newline \hspace*{0.5in}
 \option{--frame-dir}~\parm{directory} \newline \hspace*{0.5in}
@@ -180,7 +179,9 @@ simulated data.
 \option{--high-pass}~\parm{Hz} \newline \hspace*{0.5in}
 [\option{--burstinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
 [\option{--inspiralinjection-file}~\parm{file name}] \newline \hspace*{0.5in}
+\option{--lnthreshold}~\parm{threshold} \newline \hspace*{0.5in}
 \option{--low-freq-cutoff}~\parm{Hz} \newline \hspace*{0.5in}
+[\option{--max-event-rate}~\parm{Hz}] \newline \hspace*{0.5in}
 \option{--max-tileband}~\parm{Hz} \newline \hspace*{0.5in}
 \option{--max-tileduration}~\parm{sec.s} \newline \hspace*{0.5in}
 [\option{--mdc-cache}~\parm{cache file}] \newline \hspace*{0.5in}
@@ -201,7 +202,6 @@ simulated data.
 [\option{--seed}~\parm{seed}] \newline \hspace*{0.5in}
 \option{--target-sample-rate}~\parm{Hz} \newline \hspace*{0.5in}
 \option{--tile-overlap-factor}~\parm{factor} \newline \hspace*{0.5in}
-\option{--lnthreshold}~\parm{threshold} \newline \hspace*{0.5in}
 [\option{--useoverwhitening}] \newline \hspace*{0.5in}
 [\option{--user-tag}~\parm{comment}] \newline \hspace*{0.5in}
 [\option{--verbose}] \newline \hspace*{0.5in}
@@ -302,10 +302,6 @@ Sets the LAL debug level to \parm{level}.  The default value is
 padding, but keeps memory tracking and error messages.  If you want to turn
 off memory tracking completely, then use 33.
 
-\item[\option{--event-limit} \parm{count}]
-Limit the number of events reported in each time interval corresponding to
-the PSD average length to \parm{count}.  The default value is 999.
-
 \item[\option{--filter-corruption} \parm{samples}]
 The input time series data is passed through a conditioning filter prior to
 analysis.  Generally, the conditioning filter should be expected to corrupt
@@ -366,10 +362,20 @@ which is used to set information about the types of inspiral injections to be ma
 This file may be constructed by hand, the
 \verb+lalapps_bbhinj+ program described in the Inspiral package   
 
+\item[\option{--lnthreshold} \parm{threshold}]
+Set the threshold in logarithm of alpha above which identified events
+should be discarded.  See the LAL ``burstsearch'' package for details.
+
 \item[\option{--low-freq-cutoff} \parm{Hz}]
 Set the lowest frequency at which to search for gravitational waves to
 \parm{Hz}.  This parameter is $f_{\mathrm{low}}$ from our description of
 the desired signal parameters above.
+
+\item[\option{--max-event-rate} \parm{Hz}]
+Exit with a failure if the event rate, averaged over the entire analysis
+segment, exceeds this limit.  This provides a safety valve to prevent the
+code from filling up disks if the threshold is set improperly.  A value of
+0 (the default) disables this feature.
 
 \item[\option{--max-tileband} \parm{Hz}]
 This specifies the max frequency band(\verb+B+) that a tile can have.  This also fixes 
@@ -462,10 +468,6 @@ data rate down-conversion.
 This parameter influences the amount of overlap between neighboring
 time-frequency tiles.  It must be an integer.  A reasonable value for this
 parameter is 3.  See the LAL ``burstsearch'' package for more information.
-
-\item[\option{--lnthreshold} \parm{threshold}]
-Set the threshold in logarithm of alpha above which identified events
-should be discarded.  See the LAL ``burstsearch'' package for details.
 
 \item[\option{--user-tag} \parm{comment}]
 Set the user tag to the string \parm{comment}.  This string must not

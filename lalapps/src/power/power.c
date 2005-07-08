@@ -41,6 +41,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 #include <lal/VectorOps.h>
+#include <lal/Window.h>
 
 int snprintf(char *str, size_t size, const char *format, ...);
 int vsnprintf(char *str, size_t size, const char *format, va_list ap);
@@ -96,6 +97,8 @@ static struct {
 	REAL8 cal_high_pass;        /* double->single high pass freq (Hz)  */
 	int bandwidth;
 	int max_event_rate;         /* safety valve (Hz), 0 == disable     */
+	UINT4 windowLength;
+	WindowType windowType;
 } options;
  
 /* global variables */
@@ -219,7 +222,7 @@ static void print_usage(char *program)
 "	 --channel-name <string>\n" \
 "	[--cluster]\n" \
 "	[--debug-level <level>]\n" \
-"	[--event-limit <count>]\n" \
+"	[--max-event-rate <Hz>]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
 "	 --frame-dir <directory>\n" \
@@ -322,7 +325,7 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			break;
 
 			case 'W':
-			arg_is_missing = !params->windowLength;
+			arg_is_missing = !options.windowLength;
 			break;
 
 			case 'Y':
@@ -354,7 +357,7 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			break;
 
 			case 'i':
-			arg_is_missing = params->windowType == NumberWindowTypes;
+			arg_is_missing = options.windowType == NumberWindowTypes;
 			break;
 
 			case 'j':
@@ -445,7 +448,7 @@ void parse_command_line(
 		{"channel-name",        required_argument, NULL,           'C'},
 		{"cluster",             no_argument, &options.cluster,    TRUE},
 		{"debug-level",         required_argument, NULL,           'D'},
-		{"event-limit",         required_argument, NULL,           'F'},
+		{"max-event-rate",      required_argument, NULL,           'F'},
 		{"filter-corruption",	required_argument, NULL,           'j'},
 		{"frame-cache",         required_argument, NULL,           'G'},
 		{"frame-dir",           required_argument, NULL,           'H'},
@@ -499,8 +502,6 @@ void parse_command_line(
 	params->tfTilingInput.maxTileBand = 0;  /* impossible */
 	/*params->tfTilingInput.maxTileBand = 32.0;	default */
 	params->tfTilingInput.overlapFactor = 0;	/* impossible */
-	params->windowType = NumberWindowTypes;	/* impossible */
-	params->windowLength = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
 
 	options.bandwidth = 0;	/* impossible */
@@ -519,6 +520,8 @@ void parse_command_line(
 	options.high_pass = -1.0;	/* impossible */
 	options.cal_high_pass = -1.0;	/* impossible */
 	options.max_event_rate = 0;	/* default */
+	options.windowType = NumberWindowTypes;	/* impossible */
+	options.windowLength = 0;	/* impossible */
 	XLALINT8toGPS(&options.startEpoch, 0);	/* impossible */
 	XLALINT8toGPS(&options.stopEpoch, 0);	/* impossible */
 
@@ -699,9 +702,9 @@ void parse_command_line(
 		break;
 
 		case 'W':
-		params->windowLength = atoi(optarg);
-		if(params->windowLength <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", params->windowLength);
+		options.windowLength = atoi(optarg);
+		if(options.windowLength <= 0) {
+			sprintf(msg, "must be > 0 (%i specified)", options.windowLength);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -795,9 +798,9 @@ void parse_command_line(
 		break;
 
 		case 'i':
-		params->windowType = atoi(optarg);
-		if(params->windowType >= NumberWindowTypes) {
-			sprintf(msg, "must be < %d (%i specified)", NumberWindowTypes, params->windowType);
+		options.windowType = atoi(optarg);
+		if(options.windowType >= NumberWindowTypes) {
+			sprintf(msg, "must be < %d (%i specified)", NumberWindowTypes, options.windowType);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -886,8 +889,8 @@ void parse_command_line(
 	 * Make sure windowShift and windowLength are OK.
 	 */
 
-	if(params->windowLength < 2 * params->windowShift) {
-		sprintf(msg, "must be >= 2 * --window-shift = %u (%u specified)", 2 * params->windowShift, params->windowLength);
+	if(options.windowLength < 2 * params->windowShift) {
+		sprintf(msg, "must be >= 2 * --window-shift = %u (%u specified)", 2 * params->windowShift, options.windowLength);
 		print_bad_argument(argv[0], "window-length", msg);
 		args_are_bad = TRUE;
 	}
@@ -923,18 +926,28 @@ void parse_command_line(
 		exit(1);
 
 	/*
+	 * Generate time-domain window function.
+	 */
+
+	params->window = XLALCreateREAL4Window(options.windowLength, options.windowType, 0.0);
+	if(!params->window) {
+		fprintf(stderr, "%s: failure generating time-domain window\n", argv[0]);
+		exit(1);
+	}
+
+	/*
 	 * Ensure PSDAverageLength is comensurate with the analysis window
 	 * length and its shift.
 	 */
 
-	options.PSDAverageLength = block_commensurate(options.PSDAverageLength, params->windowLength, params->windowShift);
+	options.PSDAverageLength = block_commensurate(options.PSDAverageLength, options.windowLength, params->windowShift);
 
 	/*
 	 * Ensure RAM limit is comensurate with the PSDAverageLength and
 	 * its shift.
 	 */
 
-	options.maxSeriesLength = block_commensurate(options.maxSeriesLength, options.PSDAverageLength, options.PSDAverageLength - (params->windowLength - params->windowShift));
+	options.maxSeriesLength = block_commensurate(options.maxSeriesLength, options.PSDAverageLength, options.PSDAverageLength - (options.windowLength - params->windowShift));
 
 	/*
 	 * Sanitize filter frequencies.
@@ -1528,10 +1541,10 @@ static SnglBurstTable **analyze_series(
 {
 	REAL4TimeSeries *interval;
 	size_t i, start;
-	size_t overlap = params->windowLength - params->windowShift;
+	size_t overlap = options.windowLength - params->windowShift;
 
 	if(psdlength > series->data->length) {
-		psdlength = block_commensurate(series->data->length, params->windowLength, params->windowShift);
+		psdlength = block_commensurate(series->data->length, options.windowLength, params->windowShift);
 		if(options.verbose)
 			fprintf(stderr, "analyze_series(): warning: PSD average length exceeds available data --- reducing PSD average length to %zu samples\n", psdlength);
 		if(!psdlength) {
@@ -1663,7 +1676,7 @@ int main( int argc, char *argv[])
 
 	/* determine the input time series post-conditioning overlap, and set
 	 * the outer loop's upper bound */
-	overlap = params.windowLength - params.windowShift;
+	overlap = options.windowLength - params.windowShift;
 	if(options.verbose)
 		fprintf(stderr, "%s: time series overlap is %zu samples (%.9lf s)\n", argv[0], overlap, overlap / (double) options.ResampleRate);
 
@@ -1793,8 +1806,8 @@ int main( int argc, char *argv[])
 		 */
 
 		if(!searchsumm.searchSummaryTable->out_start_time.gpsSeconds)
-			LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_start_time, &series->epoch, series->deltaT * (params.windowLength / 2 - params.windowShift)), &stat);
-		LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_end_time, &series->epoch, series->deltaT * (series->data->length - (params.windowLength / 2 - params.windowShift))), &stat);
+			LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_start_time, &series->epoch, series->deltaT * (options.windowLength / 2 - params.windowShift)), &stat);
+		LAL_CALL(LALAddFloatToGPS(&stat, &searchsumm.searchSummaryTable->out_end_time, &series->epoch, series->deltaT * (series->data->length - (options.windowLength / 2 - params.windowShift))), &stat);
 
 
 		/*
@@ -1846,6 +1859,7 @@ int main( int argc, char *argv[])
 	 * Final cleanup.
 	 */
 
+	XLALDestroyREAL4Window(params.window);
 	LALFree(procTable.processTable);
 	LALFree(searchsumm.searchSummaryTable);
 
