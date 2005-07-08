@@ -316,10 +316,6 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			arg_is_missing = params->tfPlaneParams.flow < 0.0;
 			break;
 
-			case 'T':
-			arg_is_missing = params->minFreqBins <= 0;
-			break;
-
 			case 'U':
 			arg_is_missing = params->tfTilingInput.minTimeBins <= 0;
 			break;
@@ -463,7 +459,6 @@ void parse_command_line(
 		{"max-tileduration",    required_argument, NULL,           'm'},
 		{"mdc-cache",           required_argument, NULL,           'R'},
 		{"mdc-channel",         required_argument, NULL,           'S'},
-		{"min-freq-bin",        required_argument, NULL,           'T'},
 		{"min-time-bin",        required_argument, NULL,           'U'},
 		{"noise-amplitude",     required_argument, NULL,           'V'},
 		{"printData",           no_argument, &options.printData,  TRUE},
@@ -496,8 +491,6 @@ void parse_command_line(
 	params->channelName = NULL;	/* impossible */
 	params->method = -1;	/* impossible */
 	params->tfPlaneParams.flow = -1.0;	/* impossible */
-	params->tfPlaneParams.fhigh = -1.0;	/* impossible */
-	params->minFreqBins = 0;	/* impossible */
 	params->tfTilingInput.minTimeBins = 0;	/* impossible */
 	params->tfTilingInput.maxTileBand = 0;  /* impossible */
 	/*params->tfTilingInput.maxTileBand = 32.0;	default */
@@ -669,16 +662,6 @@ void parse_command_line(
 			mdcchannelIn.type = ADCDataChannel;
 			ADD_PROCESS_PARAM("string");
 		}
-		break;
-
-		case 'T':
-		params->minFreqBins = atoi(optarg);
-		if(params->minFreqBins <= 0) {
-			sprintf(msg,"must be > 0 (%i specified)", params->minFreqBins);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("int");
 		break;
 
 		case 'U':
@@ -963,13 +946,16 @@ void parse_command_line(
 	 * Miscellaneous chores.
 	 */
 
-	params->tfPlaneParams.fhigh = params->tfPlaneParams.flow + options.bandwidth;
+	params->tfPlaneParams.timeBins = (REAL8) 2.0 * params->windowShift / (options.ResampleRate * params->tfPlaneParams.deltaT);
+	params->tfPlaneParams.freqBins = options.bandwidth / params->tfPlaneParams.deltaF;
+
 	params->printSpectrum = printSpectrum;
 	params->useOverWhitening = useoverwhitening;
 
 	if(options.verbose) {
 		fprintf(stderr, "%s: using --psd-average-points %zu\n", argv[0], options.PSDAverageLength);
 		fprintf(stderr, "%s: available RAM limits analysis to %d samples\n", argv[0], options.maxSeriesLength);
+		fprintf(stderr, "%s: time-frequency plane has %d time bins by %d frequency bins\n", argv[0], params->tfPlaneParams.timeBins, params->tfPlaneParams.freqBins);
 	}
 }
 
