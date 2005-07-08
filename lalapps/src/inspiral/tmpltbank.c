@@ -1825,7 +1825,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           gridSpacing = Hexagonal;
         }
-        if ( ! strcmp( "SquareNotOriented", optarg) )
+        else if ( ! strcmp( "SquareNotOriented", optarg) )
         {
           gridSpacing = SquareNotOriented;
         }
@@ -2205,7 +2205,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   }
 
   /* check validity of grid spacing with respect to approximant */
-  if (gridSpacing != SquareNotOriented || gridSpacing != Hexagonal)
+  if (gridSpacing != SquareNotOriented && gridSpacing != Hexagonal)
   {
     fprintf( stderr, "--grid-spacing  must be either SquareNotOriented or Hexagonal\n" );
     exit( 1 );
