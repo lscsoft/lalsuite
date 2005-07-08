@@ -1454,67 +1454,66 @@ void Help()
 
   
   fprintf(stderr, "[SYNOPSIS]\n");
-  fprintf(stderr,"\t[--help]\n");
-  fprintf(stderr,	  "\t[--verbose] \t\t\t gives some extra information on screen \n" );
-  fprintf(stderr,	  "\t[--bank-alpha<float>]\t\t set the BCV alpha value in the moments computation\n");
-  fprintf(stderr,	  "\t[--bank-fcut-range<float float>] set the range of BCV fcut (in units of GM) \n");
-  fprintf(stderr,	  "\t[--bank-ffinal<float>]\t\t set the final frequency to be used in the BCV moments computation\n");
-  fprintf(stderr,	  "\t[--bank-grid-spacing <gridSpacing>]\t set the grid type of the BCV bank (Square, SquareNotOriented, Hexagonal, HexagonalNotOriented\t\n");
+  fprintf(stderr, "\t[--help]\n");
+  fprintf(stderr, "\t[--verbose] \t\t\t gives some extra information on screen \n" );
+  fprintf(stderr, "\t[--bank-alpha<float>]\t\t set the BCV alpha value in the moments computation\n");
+  fprintf(stderr, "\t[--bank-fcut-range<float float>] set the range of BCV fcut (in units of GM) \n");
+  fprintf(stderr, "\t[--bank-ffinal<float>]\t\t set the final frequency to be used in the BCV moments computation\n");
+  fprintf(stderr, "\t[--bank-grid-spacing <gridSpacing>]\t set the grid type of the BCV bank (Square, SquareNotOriented, Hexagonal, HexagonalNotOriented\t\n");
   
   
-  fprintf(stderr,  "\t[--bank-number-fcut<integer>]\t set the number of BCV fcut \n");
-  fprintf(stderr,      "\t[--bank-mass-range<float float>] set the range of mass to be covered by the SPA bank\n");
-  fprintf(stderr,	  "\t[--bank-psi0-range<float float>] set the range of psi0 to be covered by the BCV bank\n");
-  fprintf(stderr,	  "\t[--bank-psi3-range<float float>] set the range of psi3 to be covered by the BCV bank\n");
-  fprintf(stderr,	  "\t[--channel<string>]\t\t set the channel to look at \n");
-  fprintf(stderr,	  "\t[--debug<integer>]\t\t set the debug level (same as in lal)\n");
-  fprintf(stderr,	  "\t[--detector<string>]\t\t set the detector name to look at for real data (H1, H2, L1)\n");
-  fprintf(stderr,	  "\t[--fl-signal<float>]\t\t set the lower cut off frequency of signal to inject\n");
-  fprintf(stderr,	  "\t[--fl-template<float>]\t\t set the lower cut off frequnecy of template \n");
-  fprintf(stderr,	  "\t[--fl<float>]\t\t\t set both template and signal lower cutoff frequency \n");
-  fprintf(stderr,	  "\t[--max-total-mass<float>]\t set maximum total mass to be injected\n");
-  fprintf(stderr,	  "\t[--gps-start-time<integer>]\t set gps start time if real data or psd are requested\n");
-  fprintf(stderr,	  "\t[--m1<float>]\t\t\t force injection first individual mass to be equal to m1. needs to set m2 as well then\n");
-  fprintf(stderr,	  "\t[--m2<float>]\t\t\t force injection second individual mass to be equal to m2. needs to set m1 as well then\n");
-  fprintf(stderr,	  "\t[--mm<float>]\t\t\t set minimal match of the bank\n");
-  fprintf(stderr,	  "\t[--n<float>]\t\t\t set number of trial in the simulation\n");
-  fprintf(stderr,	  "\t[--ntrial<float>]\t\t same as --n\n");
-  fprintf(stderr,	  "\t[--noise-amplitude<float>]\t set noise amplitude when using NoiseAndSignal flag simulation\n");
-  fprintf(stderr,	  "\t[--noise-model<string>]\t\t set noise model curve to be <LIGOI, LIGOA, VIRGO, GEO, TAMA, REALPSD>\n");
-  fprintf(stderr,	  "\t[--num-seconds<integer>]\t set number of seconds of data to look at.\n");
-  fprintf(stderr,	  "\t[--psi0<float>]\t\t\t force injection psi0  value; request to psi3 as well. \n");
-  fprintf(stderr,	  "\t[--psi3<float>]\t\t\t force injection psi3 value; request psi0 as well\n");
-  fprintf(stderr,	  "\t[--run<string>]\t\t\t set run <S2, S3>\n");
-  fprintf(stderr,	  "\t[--sampling<float>]\t\t set sampling frequency.\n");
-  fprintf(stderr,	  "\t[--seed<integer>]\t\t set seed for random generator.\n");
-  fprintf(stderr,	  "\t[--signal<string>]\t\t set signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylorT3)\n");
-  fprintf(stderr,	  "\t[--signal-alpha<float>]\t\t set alpha parameter of BCV injection\n");
-  fprintf(stderr,	  "\t[--signal-amplitude<float>]\t set SNR of injection in the case NoiseandSignal simulation\n");
-  fprintf(stderr,	  "\t[--signal-ffinal<float>]\t force final frequency value\n");
-  fprintf(stderr,	  "\t[--signal-mass-range<float float>]\t set range of masses to inject (SPA injection)\n");
-  fprintf(stderr,	  "\t[--signal-order<integer>]\t set PN order of injections \n");
-  fprintf(stderr,	  "\t[--signal-psi0-range<float float>] set range of BCV injection \n");
-  fprintf(stderr,	  "\t[--signal-psi3-range<float float>] set range of BCV injection\n");
-  fprintf(stderr,	  "\t[--simulation-type<string>]\t set type of simulation (SignalOnly, noiseOnly, NoiseAndSignal)\n");
-  fprintf(stderr,	  "\t[--tau0<float>]\t\t\t force injection to have tau0 value \n");
-  fprintf(stderr,	  "\t[--tau3<float>]\t\t\t force injection to have tau3 value\n");
-  fprintf(stderr,	  "\t[--template<string>]\t\tset signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylorT3)\n");
-  fprintf(stderr,	  "\t[--template-order<integer>]\t set PN order of template\n");
-  fprintf(stderr,	  "\t[--alpha-constraint]\t\t set BCV code to be constrained \n");
-  fprintf(stderr,	  "\t[--bhns-injection]\t\t set injection to be only bhbs systems\n");
-  fprintf(stderr,	  "\t[--no-alpha-constraint]\t\t set BCV code to be unconstrained\n");
-  fprintf(stderr,	  "\t[--faithfulness]\t check the code. template parameters are equal to injection parameters, size of the bank is therefore unity. It computed the faithfulness instead of effectualness\n");
-  fprintf(stderr,	  "\t[--real-noise]\t\t\t use real data and real PSD.force simulaion type to be Noise Only\n");
-  fprintf(stderr,	  "\t[--no-start-phase]\t\t\t unset random phase which is always set to zero.\n");
-  fprintf(stderr,	  "\t[--print-psd]\t\t\t print the psd in  a file BE_PSD_type_gpstime.dat\n");
-  fprintf(stderr,	  "\t[--print-best-overlap]\t\t print best overlap and other information\n");
-  fprintf(stderr,	  "\t[--print-snr-histo]\t\t print histogram of the correlation output\n");
-  fprintf(stderr,	  "\t[--print-bank]\t\t\t print the bank in ascii and xml format\n");
-  fprintf(stderr,	  "\t[--print-prototype]\t\t print a prototype to be used by condor script\n");
-  fprintf(stderr,	  "\t[--fast-simulation]\t\t perform fast simulation in the case of SPA abnk\n");
-  fprintf(stderr,  "type --print-default to get the default values of the current version\n");
+  fprintf(stderr, "\t[--bank-number-fcut<integer>]\t set the number of BCV fcut \n");
+  fprintf(stderr, "\t[--bank-mass-range<float float>] set the range of mass to be covered by the SPA bank\n");
+  fprintf(stderr, "\t[--bank-psi0-range<float float>] set the range of psi0 to be covered by the BCV bank\n");
+  fprintf(stderr, "\t[--bank-psi3-range<float float>] set the range of psi3 to be covered by the BCV bank\n");
+  fprintf(stderr, "\t[--channel<string>]\t\t set the channel to look at \n");
+  fprintf(stderr, "\t[--debug<integer>]\t\t set the debug level (same as in lal)\n");
+  fprintf(stderr, "\t[--detector<string>]\t\t set the detector name to look at for real data (H1, H2, L1)\n");
+  fprintf(stderr, "\t[--fl-signal<float>]\t\t set the lower cut off frequency of signal to inject\n");
+  fprintf(stderr, "\t[--fl-template<float>]\t\t set the lower cut off frequnecy of template \n");
+  fprintf(stderr, "\t[--fl<float>]\t\t\t set both template and signal lower cutoff frequency \n");
+  fprintf(stderr, "\t[--max-total-mass<float>]\t set maximum total mass to be injected\n");
+  fprintf(stderr, "\t[--gps-start-time<integer>]\t set gps start time if real data or psd are requested\n");
+  fprintf(stderr, "\t[--m1<float>]\t\t\t force injection first individual mass to be equal to m1. needs to set m2 as well then\n");
+  fprintf(stderr, "\t[--m2<float>]\t\t\t force injection second individual mass to be equal to m2. needs to set m1 as well then\n");
+  fprintf(stderr, "\t[--mm<float>]\t\t\t set minimal match of the bank\n");
+  fprintf(stderr, "\t[--n<float>]\t\t\t set number of trial in the simulation\n");
+  fprintf(stderr, "\t[--ntrial<float>]\t\t same as --n\n");
+  fprintf(stderr, "\t[--noise-amplitude<float>]\t set noise amplitude when using NoiseAndSignal flag simulation\n");
+  fprintf(stderr, "\t[--noise-model<string>]\t\t set noise model curve to be <LIGOI, LIGOA, VIRGO, GEO, TAMA, REALPSD>\n");
+  fprintf(stderr, "\t[--num-seconds<integer>]\t set number of seconds of data to look at.\n");
+  fprintf(stderr, "\t[--psi0<float>]\t\t\t force injection psi0  value; request to psi3 as well. \n");
+  fprintf(stderr, "\t[--psi3<float>]\t\t\t force injection psi3 value; request psi0 as well\n");
+  fprintf(stderr, "\t[--run<string>]\t\t\t set run <S2, S3>\n");
+  fprintf(stderr, "\t[--sampling<float>]\t\t set sampling frequency.\n");
+  fprintf(stderr, "\t[--seed<integer>]\t\t set seed for random generator.\n");
+  fprintf(stderr, "\t[--signal<string>]\t\t set signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylorT3)\n");
+  fprintf(stderr, "\t[--signal-alpha<float>]\t\t set alpha parameter of BCV injection\n");
+  fprintf(stderr, "\t[--signal-amplitude<float>]\t set SNR of injection in the case NoiseandSignal simulation\n");
+  fprintf(stderr, "\t[--signal-ffinal<float>]\t force final frequency value\n");
+  fprintf(stderr, "\t[--signal-mass-range<float float>]\t set range of masses to inject (SPA injection)\n");
+  fprintf(stderr, "\t[--signal-order<integer>]\t set PN order of injections \n");
+  fprintf(stderr, "\t[--signal-psi0-range<float float>] set range of BCV injection \n");
+  fprintf(stderr, "\t[--signal-psi3-range<float float>] set range of BCV injection\n");
+  fprintf(stderr, "\t[--simulation-type<string>]\t set type of simulation (SignalOnly, noiseOnly, NoiseAndSignal)\n");
+  fprintf(stderr, "\t[--tau0<float>]\t\t\t force injection to have tau0 value \n");
+  fprintf(stderr, "\t[--tau3<float>]\t\t\t force injection to have tau3 value\n");
+  fprintf(stderr, "\t[--template<string>]\t\tset signal approximant (TaylorT1, TaylorT2, TaylorT3, TaylorF2, PadeT1, EOB, SpinTaylorT3)\n");
+  fprintf(stderr, "\t[--template-order<integer>]\t set PN order of template\n");
+  fprintf(stderr, "\t[--alpha-constraint]\t\t set BCV code to be constrained \n");
+  fprintf(stderr, "\t[--bhns-injection]\t\t set injection to be only bhbs systems\n");
+  fprintf(stderr, "\t[--no-alpha-constraint]\t\t set BCV code to be unconstrained\n");
+  fprintf(stderr, "\t[--faithfulness]\t check the code. template parameters are equal to injection parameters, size of the bank is therefore unity. It computed the faithfulness instead of effectualness\n");
+  fprintf(stderr, "\t[--real-noise]\t\t\t use real data and real PSD.force simulaion type to be Noise Only\n");
+  fprintf(stderr, "\t[--no-start-phase]\t\t\t unset random phase which is always set to zero.\n");
+  fprintf(stderr, "\t[--print-psd]\t\t\t print the psd in  a file BE_PSD_type_gpstime.dat\n");
+  fprintf(stderr, "\t[--print-best-overlap]\t\t print best overlap and other information\n");
+  fprintf(stderr, "\t[--print-snr-histo]\t\t print histogram of the correlation output\n");
+  fprintf(stderr, "\t[--print-bank]\t\t\t print the bank in ascii and xml format\n");
+  fprintf(stderr, "\t[--print-prototype]\t\t print a prototype to be used by condor script\n");
+  fprintf(stderr, "\t[--fast-simulation]\t\t perform fast simulation in the case of SPA abnk\n");
+  fprintf(stderr, "type --print-default to get the default values of the current version\n");
   exit(0);
-
 }
 
 
@@ -1940,7 +1939,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   corrin.signal2        = *FilterBCV1;						/* The first template 			*/
   LALInspiralWaveCorrelate(status->statusPtr, &x1, corrin);			/* the correlation			*/
   CHECKSTATUSPTR(status);							
-  LALGetOrthogonalFilterBCV2(FilterBCV1);						/* get the orthonormalized template     */
+  LALGetOrthogonalFilterBCV2(FilterBCV1);					/* get the orthonormalized template     */
   corrin.signal2        = *FilterBCV1;						/* the second template 		*/
   LALInspiralWaveCorrelate(status->statusPtr, &x3, corrin);			/* the correlation 			*/
   CHECKSTATUSPTR(status);
@@ -1949,7 +1948,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   corrin.signal2        = *FilterBCV2;						/* The first template			*/
   LALInspiralWaveCorrelate(status->statusPtr, &x2, corrin);			/* the correlation 			*/
   CHECKSTATUSPTR(status);		
-  LALGetOrthogonalFilterBCV2( FilterBCV2);						/* get the orthonormailzed templates 	*/
+  LALGetOrthogonalFilterBCV2( FilterBCV2);					/* get the orthonormailzed templates 	*/
   corrin.signal2        = *FilterBCV2;						/* the second template			*/
   LALInspiralWaveCorrelate(status->statusPtr, &x4, corrin);			/* the correlation 			*/
   
@@ -2051,7 +2050,8 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	}
 	else
 	  {
-	    fprintf(stderr,"must not enter here  thetav = %e thetab=%e\n ", thetav , thetab);
+	    fprintf(stderr,"must not enter here  thetav = %e thetab=%e\n ",
+		    thetav , thetab);
 	    exit(0);
 	  }
       }
@@ -2090,8 +2090,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	        if (alphaFU <=1 )
                   correlation->data[i] = rhoUnconstraint;
                 else 
-                  correlation->data[i] = -1;
-                  
+                  correlation->data[i] = -1;                  
 	  }
 	}
       
@@ -3366,7 +3365,7 @@ LALCreateRealPsd(LALStatus *status,
   INT4  gaussianNoise     = 0;            /* make input data gaussian   0 non , 1 oui  */
   RandomParams *randParams = NULL;
 
-                 /* verbocity of lal function    */
+ /* verbocity of lal function    */
 
 
   
@@ -4335,15 +4334,13 @@ LALCreateRealPsd(LALStatus *status,
    CHECKSTATUSPTR(status);
    
    
-
-
    for ( k = 0; k < n/2; ++k )
      {
        
        strainSegment->data[k].re += signal.data[k] *10;
        strainSegment->data[k].im += signal.data[n - k] *10;
-     }
-   
+     
+       }
       
  }
 #endif

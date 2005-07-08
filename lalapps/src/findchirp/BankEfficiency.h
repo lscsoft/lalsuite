@@ -45,37 +45,38 @@
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
 "         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %f %f %f %f %d %d %d "
 
+/*do not use capital here for future mysql migration */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
 fputs( "   <Table Name=\"bankefficiencygroup:bankefficiency:table\">\n", fp) == EOF || \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0U\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3U\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0I\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3I\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0I\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3I\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:fFinalU\"       Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:fFinal\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:fFinalI\"       Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1I\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2I\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snrU\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phaseI\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phaseU\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alphaFU\"       Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:layerU\"        Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:binU\"          Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr\"           Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phaseI\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase\"         Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alphaF\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:layer\"         Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:bin\"           Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:coaTime\"       Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"         Type=\"Local\" Delimiter=\",\">\n", fp) == EOF ) 
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0_unconstraint\"   Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3_unconstraint\"   Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi0_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:psi3_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3\"                Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau0_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3_sim\"            Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_unconstraint\" Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_inject\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2_inject\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr_unconstraint\"    Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_inject\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_unconstraint\"  Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alpha_f_unconstraint\"Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:layer_unconstraint\"  Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:bin_unconstraint\"    Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr\"                 Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_inject\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alpha_f\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:layer\"               Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:bin\"                 Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:coaTime\"             Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"               Type=\"Local\" Delimiter=\",\">\n", fp) == EOF ) 
 
 
 
