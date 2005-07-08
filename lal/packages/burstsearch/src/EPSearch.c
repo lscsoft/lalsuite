@@ -178,24 +178,17 @@ XLALEPSearch(
 	const LIGOTimeGPS           gps_zero = LIGOTIMEGPSZERO;
 
 	/*
-	 * Calculate the duration for which tiles are to be created in the
-	 * Single TFPlane.
-	 */ 
-
-	params->tfPlaneParams.timeDuration = 2.0 * params->windowShift * tseries->deltaT;
-
-	/*
-	 * Create a time-domain window, an FFT plan, allocate space for the
-	 * average spectrum, allocate temporary storage for frequency
-	 * series data, allocate storage for the normalisation data,
-	 * allocate and initialize the time-frequency plane storage, and
-	 * construct a time-frequency tiling of the plane.
+	 * Create an FFT plan, allocate space for the average spectrum,
+	 * allocate temporary storage for frequency series data, allocate
+	 * storage for the normalisation data, allocate and initialize the
+	 * time-frequency plane storage, and construct a time-frequency
+	 * tiling of the plane.
 	 */
 
 	plan = XLALCreateForwardREAL4FFTPlan(window->data->length, 0);
 	AverageSpec = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
 	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
-	tfplane = XLALCreateTFPlane(&params->tfPlaneParams, params->minFreqBins);
+	tfplane = XLALCreateTFPlane(&params->tfPlaneParams);
 	normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(*normalisation));
 	Tiling = XLALCreateTFTiling(&params->tfTilingInput, &tfplane->params);
 	if(!normalisation) {

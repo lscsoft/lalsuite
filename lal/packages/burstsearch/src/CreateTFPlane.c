@@ -14,8 +14,7 @@ NRCSID(CREATETFPLANEC, "$Id$");
 
 /******** <lalVerbatim file="CreateTFPlaneCP"> ********/
 COMPLEX8TimeFrequencyPlane *XLALCreateTFPlane(
-	TFPlaneParams *params,
-	INT4 minFreqBins
+	TFPlaneParams *params
 )
 /******** </lalVerbatim> ********/
 {
@@ -23,17 +22,12 @@ COMPLEX8TimeFrequencyPlane *XLALCreateTFPlane(
 	COMPLEX8TimeFrequencyPlane *plane;
 	COMPLEX8 *data;
 
-	/* compute some extra TF plane params */
-	params->timeBins = params->timeDuration / params->deltaT;
-	params->freqBins = (params->fhigh - params->flow) / params->deltaF;
-
 	/* Make sure that input parameters are reasonable */
-	if((params->timeDuration <= 0) ||
-	   (params->flow < 0) ||
-	   (params->fhigh < params->flow) ||
+	if((params->flow < 0) ||
+	   (params->timeBins <= 0) ||
 	   (params->freqBins <= 0) ||
-	   (params->deltaT <= 0.0) ||
-	   (params->freqBins < minFreqBins))
+	   (params->deltaF <= 0.0) ||
+	   (params->deltaT <= 0.0))
 		XLAL_ERROR_NULL(func, XLAL_EDATA);
 
 	/* Allocate memory */

@@ -24,8 +24,6 @@ typedef struct tagTFPlaneParams {
 	REAL8 deltaT;	/* time resolution of the plane     */
 	REAL8 deltaF;	/* freq. resolution of the plane */
 	REAL8 flow;	/* minimum frequency to search for */
-	REAL8 fhigh;	/* maximum frequency to search for */
-	REAL8 timeDuration;	/* length of data to be used to create a TF plane at a time */
 } TFPlaneParams;
 
 
@@ -54,8 +52,7 @@ XLALComputeFrequencySeries(
 
 COMPLEX8TimeFrequencyPlane *
 XLALCreateTFPlane(
-	TFPlaneParams *params,
-	INT4 minFreqBins
+	TFPlaneParams *params
 );
 
 
