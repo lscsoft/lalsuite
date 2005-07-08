@@ -4,14 +4,6 @@ $Id$
 *********************************** </lalVerbatim> */
 
 /**
- * \defgroup moduleBarycenter Barycentering 
- *  \brief Provides routines for transforming from arrival time
- * at detector (GPS) to pulse emission time (TDB); ie 
- * for ``barycentering'' the measured astronomical time series.
- *
- */
-
-/**
  * \author Curt Cutler
  * \date 2001
  * \file 
