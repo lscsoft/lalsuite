@@ -107,15 +107,6 @@ and and LALBarycenter() to calculate \f$\tau(t)\f$.
  *
  */
 
-/** \page References
- * \anchor JKS98 <b>[JKS98]</b>. 
- * P. Jaranowski, A. Krolak, B.F. Schutz, 
- * <em>Data analysis of gravitational-wave signals from spinning neutron stars:
- * The signal and its detection.</em>, Phys.Rev. <b>D 58</b>, 063001 (1998)
- *
- */
-
-
 /********************************************************** <lalLaTeX>
 \subsection{Module \texttt{SimulatePulsarSignal.c}}
 \label{ss:SimulatePulsarSignal.c}
