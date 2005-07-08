@@ -342,37 +342,26 @@ XLALEPSearch(
  */
 
 /* <lalVerbatim file="EPConditionDataCP"> */
-void LALEPConditionData(
-	LALStatus        *status,
+int XLALEPConditionData(
 	REAL4TimeSeries  *series,
 	REAL8             flow,
 	REAL8             resampledeltaT,
-	ResampleTSFilter  resampFiltType,
 	INT4              corruption
 )
 /* </lalVerbatim> */
 {
-	ResampleTSParams    resampleParams;
+	const char *func = "XLALEPConditionData";
 	const REAL8         epsilon = 1.0e-8;
 	PassBandParamStruc  highpassParam;
 	size_t              newlength;
-
-	INITSTATUS (status, "LALConditionData", EPSEARCHC);
-	ATTATCHSTATUSPTR (status);
-
-	ASSERT(series != NULL, status, LAL_NULL_ERR, LAL_NULL_MSG);
 
 	/*
 	 * Resample the time series if necessary
 	 */
 
-	memset(&resampleParams, 0, sizeof(resampleParams));
-	if(!(fabs(resampledeltaT - series->deltaT) < epsilon)) {
-		resampleParams.deltaT = resampledeltaT;
-		resampleParams.filterType = resampFiltType;
-		LALResampleREAL4TimeSeries(status->statusPtr, series, &resampleParams);
-		CHECKSTATUSPTR (status);
-	}
+	if(fabs(resampledeltaT - series->deltaT) >= epsilon)
+		if(XLALResampleREAL4TimeSeries(series, resampledeltaT))
+			XLAL_ERROR(func, XLAL_EFUNC);
 
 	/*
 	 * High-pass filter the time series.
@@ -383,16 +372,16 @@ void LALEPConditionData(
 	highpassParam.f1 = -1.0;
 	highpassParam.a2 = 0.9;
 	highpassParam.a1 = -1.0;
-	LALButterworthREAL4TimeSeries(status->statusPtr, series, &highpassParam);
-	CHECKSTATUSPTR (status);
+	if(XLALButterworthREAL4TimeSeries(series, &highpassParam))
+		XLAL_ERROR(func, XLAL_EFUNC);
 
 	/*
 	 * The filter corrupts the ends of the time series.  Chop them off.
 	 */
 
 	newlength = series->data->length - 2 * corruption;
-	ASSERT(XLALShrinkREAL4TimeSeries(series, corruption, newlength) == newlength, status, LAL_FAIL_ERR, LAL_FAIL_MSG);
+	if(XLALShrinkREAL4TimeSeries(series, corruption, newlength) != newlength)
+		XLAL_ERROR(func, XLAL_EFUNC);
 
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
+	return(0);
 }

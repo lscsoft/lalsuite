@@ -42,13 +42,11 @@ XLALEPSearch(
 	EPSearchParams   *params
 );
 
-void
-LALEPConditionData(
-	LALStatus        *status,
+int
+XLALEPConditionData(
 	REAL4TimeSeries  *series,
 	REAL8             flow,
 	REAL8             resampledeltaT,
-	ResampleTSFilter  resampleFiltType,
 	INT4              corruption
 );
 
