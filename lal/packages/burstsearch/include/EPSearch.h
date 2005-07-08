@@ -27,13 +27,12 @@ tagEPSearchParams {
 	CHAR                 *channelName;
 	BOOLEAN               printSpectrum;
 	BOOLEAN               useOverWhitening;	
-	UINT4                 windowLength;
+	REAL4Window          *window;
 	UINT4                 windowShift;
 	REAL8                 lnalphaThreshold;
 	AvgSpecMethod         method;
 	CreateTFTilingIn      tfTilingInput;
 	TFPlaneParams         tfPlaneParams;
-	WindowType            windowType;
 	INT4                  minFreqBins;
 } EPSearchParams;
 

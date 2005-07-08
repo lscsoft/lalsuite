@@ -166,7 +166,7 @@ XLALEPSearch(
 	int errorcode;
 	int                         start_sample;
 	COMPLEX8FrequencySeries    *fseries;
-	REAL4Window                *window;
+	REAL4Window                *window = params->window;
 	RealFFTPlan                *plan;
 	REAL4FrequencySeries       *AverageSpec;
 	REAL4FrequencySeries       *OverWhiteningSpec;
@@ -192,10 +192,9 @@ XLALEPSearch(
 	 * construct a time-frequency tiling of the plane.
 	 */
 
-	window = XLALCreateREAL4Window(params->windowLength, params->windowType, 0.0);
 	plan = XLALCreateForwardREAL4FFTPlan(window->data->length, 0);
-	AverageSpec = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
-	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, params->windowLength / 2 + 1);
+	AverageSpec = XLALCreateREAL4FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
+	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
 	tfplane = XLALCreateTFPlane(&params->tfPlaneParams, params->minFreqBins);
 	normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(*normalisation));
 	Tiling = XLALCreateTFTiling(&params->tfTilingInput, &tfplane->params);
@@ -203,7 +202,7 @@ XLALEPSearch(
 		errorcode = XLAL_ENOMEM;
 		goto error;
 	}
-	if(!window || !plan || !AverageSpec || !fseries || !tfplane || !Tiling) {
+	if(!plan || !AverageSpec || !fseries || !tfplane || !Tiling) {
 		errorcode = XLAL_EFUNC;
 		goto error;
 	}
@@ -238,13 +237,13 @@ XLALEPSearch(
 	 * Loop over data applying excess power method.
 	 */
 
-	for(start_sample = 0; start_sample + params->windowLength <= tseries->data->length; start_sample += params->windowShift) {
+	for(start_sample = 0; start_sample + window->data->length <= tseries->data->length; start_sample += params->windowShift) {
 		/*
-		 * Extract a windowLength of data from the time series,
+		 * Extract a window-length of data from the time series,
 		 * compute its DFT, then free it.
 		 */
 
-		cutTimeSeries = XLALCutREAL4TimeSeries(tseries, start_sample, params->windowLength);
+		cutTimeSeries = XLALCutREAL4TimeSeries(tseries, start_sample, window->data->length);
 		if(!cutTimeSeries) {
 			errorcode = XLAL_EFUNC;
 			goto error;
@@ -276,7 +275,7 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the time-frequency decomposition\n");
-		if(XLALFreqSeriesToTFPlane(tfplane, fseries, params->windowLength / 2 - params->windowShift, normalisation, OverWhiteningSpec)) {
+		if(XLALFreqSeriesToTFPlane(tfplane, fseries, window->data->length / 2 - params->windowShift, normalisation, OverWhiteningSpec)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -323,7 +322,6 @@ XLALEPSearch(
 	XLALPrintInfo("XLALEPSearch(): done\n");
 	XLALDestroyCOMPLEX8FrequencySeries(fseries);
 	XLALDestroyREAL4FrequencySeries(AverageSpec);
-	XLALDestroyREAL4Window(window);
 	XLALDestroyREAL4FFTPlan(plan);
 	XLALDestroyTFPlane(tfplane);
 	LALFree(normalisation);
@@ -331,7 +329,6 @@ XLALEPSearch(
 	return(0);
 
 	error:
-	XLALDestroyREAL4Window(window);
 	XLALDestroyREAL4FFTPlan(plan);
 	XLALDestroyREAL4FrequencySeries(AverageSpec);
 	XLALDestroyCOMPLEX8FrequencySeries(fseries);
