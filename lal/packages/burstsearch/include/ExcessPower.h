@@ -82,7 +82,7 @@ XLALDestroyTFTiling(
 int
 XLALComputeExcessPower(
 	TFTiling *tiling,
-	const COMPLEX8TimeFrequencyPlane *plane,
+	const REAL4TimeFrequencyPlane *plane,
 	const REAL4 *norm
 );
 
@@ -103,7 +103,7 @@ void
 XLALPrintTFTileList(
 	FILE *fp,
 	const TFTiling *tiling,
-	const COMPLEX8TimeFrequencyPlane *plane,
+	const REAL4TimeFrequencyPlane *plane,
 	size_t maxTiles
 );
 

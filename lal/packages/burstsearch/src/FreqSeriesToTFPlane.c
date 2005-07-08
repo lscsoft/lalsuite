@@ -110,7 +110,7 @@ static REAL4 apply_filter(
 
 /******** <lalVerbatim file="FreqSeriesToTFPlaneCP"> ********/
 int XLALFreqSeriesToTFPlane(
-	COMPLEX8TimeFrequencyPlane *plane,
+	REAL4TimeFrequencyPlane *plane,
 	const COMPLEX8FrequencySeries *freqSeries,
 	UINT4 windowShift,
 	REAL4 *normalisation,
@@ -219,10 +219,8 @@ int XLALFreqSeriesToTFPlane(
 		 * with the Eanns's original implementation.   We'll have to
 		 * look at that.  */
 		/* Copy the result into appropriate spot in output structure */
-		for(j = 0; j < nt; j++) {
-			plane->data[j * nf + i].re = snr->data[j * (INT4) (plane->params.deltaT / dt) + windowShift];
-			plane->data[j * nf + i].im = 0.0;
-		}
+		for(j = 0; j < nt; j++)
+			plane->data[j * nf + i] = snr->data[j * (INT4) (plane->params.deltaT / dt) + windowShift];
 	}
 
 	/* Get rid of all temporary memory */

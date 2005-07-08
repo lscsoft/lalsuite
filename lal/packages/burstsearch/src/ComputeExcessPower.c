@@ -3,6 +3,7 @@ Author: Flanagan, E. and Cannon, K.
 $Id$
 ********* </lalVerbatim> ********/
 
+#include <math.h>
 #include <lal/LALRCSID.h>
 
 NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
@@ -15,24 +16,12 @@ NRCSID (COMPUTEEXCESSPOWERC, "$Id$");
 #define TRUE 1
 #define FALSE 0
 
-static REAL8 square_complex8_sum(const COMPLEX8 *vec, int start, int length)
-{
-	COMPLEX8 sum = { 0.0, 0.0 };
-
-	for(vec += start; length-- > 0; vec++) {
-		sum.re += (*vec).re;
-		sum.im += (*vec).im;
-	}
-
-	return(sum.re * sum.re + sum.im * sum.im);
-}
-
 
 /******** <lalVerbatim file="ComputeExcessPowerCP"> ********/
 int
 XLALComputeExcessPower(
 	TFTiling *tiling,
-	const COMPLEX8TimeFrequencyPlane *plane,
+	const REAL4TimeFrequencyPlane *plane,
 	const REAL4 *norm
 )
 /******** </lalVerbatim> ********/
@@ -68,7 +57,7 @@ XLALComputeExcessPower(
 
 		sum = 0.0;
 		for(offset = t1; offset < t2; offset += (t2 - t1) / dof)
-			sum += square_complex8_sum(&plane->data[offset * nf], k1, k2 - k1) / XLALREAL4SumSquares(norm, k1, k2 - k1);
+			sum += pow(XLALREAL4Sum(&plane->data[offset * nf], k1, k2 - k1), 2.0) / XLALREAL4SumSquares(norm, k1, k2 - k1);
 		tile->excessPower = sum - dof;
 
 		tile->lnalpha = XLALlnOneMinusChisqCdf(sum, dof);

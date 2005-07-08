@@ -164,18 +164,18 @@ XLALEPSearch(
 { 
 	static const char *func = "EPSearch";
 	int errorcode;
-	int                         start_sample;
-	COMPLEX8FrequencySeries    *fseries;
-	REAL4Window                *window = params->window;
-	RealFFTPlan                *plan;
-	REAL4FrequencySeries       *AverageSpec;
-	REAL4FrequencySeries       *OverWhiteningSpec;
-	REAL4TimeSeries            *cutTimeSeries;
-	SnglBurstTable            **EventAddPoint = burstEvent;
-	TFTiling                   *Tiling;
-	COMPLEX8TimeFrequencyPlane *tfplane;
-	REAL4                      *normalisation;
-	const LIGOTimeGPS           gps_zero = LIGOTIMEGPSZERO;
+	int                      start_sample;
+	COMPLEX8FrequencySeries *fseries;
+	REAL4Window             *window = params->window;
+	RealFFTPlan             *plan;
+	REAL4FrequencySeries    *AverageSpec;
+	REAL4FrequencySeries    *OverWhiteningSpec;
+	REAL4TimeSeries         *cutTimeSeries;
+	SnglBurstTable         **EventAddPoint = burstEvent;
+	TFTiling                *Tiling;
+	REAL4TimeFrequencyPlane *tfplane;
+	REAL4                   *normalisation;
+	const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
 	/*
 	 * Create an FFT plan, allocate space for the average spectrum,

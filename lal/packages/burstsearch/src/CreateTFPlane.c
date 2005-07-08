@@ -13,14 +13,14 @@ NRCSID(CREATETFPLANEC, "$Id$");
 
 
 /******** <lalVerbatim file="CreateTFPlaneCP"> ********/
-COMPLEX8TimeFrequencyPlane *XLALCreateTFPlane(
+REAL4TimeFrequencyPlane *XLALCreateTFPlane(
 	TFPlaneParams *params
 )
 /******** </lalVerbatim> ********/
 {
 	static const char *func = "XLALCreateTFPlane";
-	COMPLEX8TimeFrequencyPlane *plane;
-	COMPLEX8 *data;
+	REAL4TimeFrequencyPlane *plane;
+	REAL4 *data;
 
 	/* Make sure that input parameters are reasonable */
 	if((params->flow < 0) ||

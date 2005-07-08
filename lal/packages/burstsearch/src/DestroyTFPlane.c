@@ -13,7 +13,7 @@ NRCSID (DESTROYTFPLANEC, "$Id$");
 /******** <lalVerbatim file="DestroyTFPlaneCP"> ********/
 void
 XLALDestroyTFPlane(
-	COMPLEX8TimeFrequencyPlane *plane
+	REAL4TimeFrequencyPlane *plane
 )
 /******** </lalVerbatim> ********/
 {

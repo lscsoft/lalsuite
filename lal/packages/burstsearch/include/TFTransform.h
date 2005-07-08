@@ -27,18 +27,18 @@ typedef struct tagTFPlaneParams {
 } TFPlaneParams;
 
 
-typedef struct tagCOMPLEX8TimeFrequencyPlane {
+typedef struct tagREAL4TimeFrequencyPlane {
 	CHAR *name;
 	LIGOTimeGPS epoch;
 	CHARVector *sampleUnits;
 	TFPlaneParams params;
-	COMPLEX8 *data;
+	REAL4 *data;
 	/*
-	 * data[i*params->freqBins+j] is a complex number
+	 * data[i*params->freqBins+j] is a real number
 	 * corresponding to a time t_i = epoch + i*(deltaT)
 	 * and a frequency f_j = flow + j / (deltaT)
 	 */
-} COMPLEX8TimeFrequencyPlane;
+} REAL4TimeFrequencyPlane;
 
 
 int
@@ -50,7 +50,7 @@ XLALComputeFrequencySeries(
 );
 
 
-COMPLEX8TimeFrequencyPlane *
+REAL4TimeFrequencyPlane *
 XLALCreateTFPlane(
 	TFPlaneParams *params
 );
@@ -58,13 +58,13 @@ XLALCreateTFPlane(
 
 void
 XLALDestroyTFPlane(
-	COMPLEX8TimeFrequencyPlane *plane
+	REAL4TimeFrequencyPlane *plane
 );
 
 
 int
 XLALFreqSeriesToTFPlane(
-	COMPLEX8TimeFrequencyPlane *tfp,
+	REAL4TimeFrequencyPlane *tfp,
 	const COMPLEX8FrequencySeries *freqSeries,
 	UINT4 windowShift,
 	REAL4 *norm,

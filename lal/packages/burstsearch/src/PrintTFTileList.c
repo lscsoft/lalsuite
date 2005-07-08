@@ -13,7 +13,7 @@ NRCSID(PRINTTFTILELISTC, "$Id$");
 #include <lal/Thresholds.h>
 
 
-static void PrintTFTile(FILE *file, const TFTile *tile, const COMPLEX8TimeFrequencyPlane *plane)
+static void PrintTFTile(FILE *file, const TFTile *tile, const REAL4TimeFrequencyPlane *plane)
 {
 	INT4 t1 = tile->tstart;
 	INT4 t2 = tile->tend;
@@ -37,7 +37,7 @@ static void PrintTFTile(FILE *file, const TFTile *tile, const COMPLEX8TimeFreque
 void XLALPrintTFTileList(
 	FILE *file,
 	const TFTiling *tiling,
-	const COMPLEX8TimeFrequencyPlane *plane,
+	const REAL4TimeFrequencyPlane *plane,
 	size_t maxTiles
 )
 /******** </lalVerbatim> ********/
