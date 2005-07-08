@@ -113,7 +113,6 @@ CHAR *burstInjectionFile;           /* file with list of burst injections  */
 CHAR *inspiralInjectionFile;        /* file with list of burst injections  */
 CHAR *simInjectionFile;             /* file with list of sim injections  */
 CHAR *mdcCacheFile;                 /* name of mdc signal cache file       */
-ResampleTSFilter resampFiltType;
 
 
 /*
@@ -245,7 +244,6 @@ static void print_usage(char *program)
 "	 --psd-average-method <method>\n" \
 "	 --psd-average-points <samples>\n" \
 "	[--ram-limit <MebiBytes>]\n" \
-"	 --resample-filter <filter type>\n" \
 "	 --resample-rate <Hz>\n" \
 "       [--sim-cache <sim cache file>]\n" \
 "       [--sim-seconds <sim seconds>]\n" \
@@ -330,10 +328,6 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 
 			case 'Z':
 			arg_is_missing = !options.PSDAverageLength;
-			break;
-
-			case 'b':
-			arg_is_missing = resampFiltType == (unsigned) -1;
 			break;
 
 			case 'd':
@@ -466,7 +460,6 @@ void parse_command_line(
 		{"psd-average-method",  required_argument, NULL,           'Y'},
 		{"psd-average-points",  required_argument, NULL,           'Z'},
 		{"ram-limit",           required_argument, NULL,           'a'},
-		{"resample-filter",     required_argument, NULL,           'b'},
 		{"resample-rate",       required_argument, NULL,           'e'},
 		{"sim-cache",           required_argument, NULL,           'q'},
 		{"sim-seconds",         required_argument, NULL,           's'},
@@ -534,7 +527,6 @@ void parse_command_line(
 	mdcparams = NULL;	        /* default */
 	printSpectrum = FALSE;	        /* default */
 	useoverwhitening = FALSE;       /* default */
-	resampFiltType = -1;	        /* default */
 
 	/*
 	 * Parse command line.
@@ -720,19 +712,6 @@ void parse_command_line(
 			args_are_bad = TRUE;
 		}
 		ADD_PROCESS_PARAM("int");
-		break;
-
-		case 'b':
-		if(!strcmp("ldas", optarg))
-			resampFiltType = LDASfirLP;
-		else if(!strcmp("butterworth", optarg))
-			resampFiltType = defaultButterworth;
-		else {
-			sprintf(msg, "must be \"ldas\", or \"butterworth\"");
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("string");
 		break;
 
 		case 'c':
@@ -1778,7 +1757,10 @@ int main( int argc, char *argv[])
 		  }
 		}
 
-		LAL_CALL(LALEPConditionData(&stat, series, options.high_pass, (REAL8) 1.0 / options.ResampleRate, resampFiltType, options.FilterCorruption), &stat);
+		if(XLALEPConditionData(series, options.high_pass, (REAL8) 1.0 / options.ResampleRate, options.FilterCorruption)) {
+			fprintf(stderr, "%s: XLALEPConditionData() failed.\n", argv[0]);
+			exit(1);
+		}
 
 		if(options.printData)
 		  LALPrintTimeSeries(series, "./condtimeseries.dat");

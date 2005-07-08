@@ -193,7 +193,6 @@ simulated data.
 \option{--psd-average-method}~\parm{method} \newline \hspace*{0.5in}
 \option{--psd-average-points}~\parm{samples} \newline \hspace*{0.5in}
 [\option{--ram-limit}~\parm{MebiBytes}] \newline \hspace*{0.5in}
-\option{--resample-filter}~\parm{filter type} \newline \hspace*{0.5in}
 \option{--resample-rate}~\parm{Hz} \newline \hspace*{0.5in}
 [\option{--sim-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 [\option{--sim-seconds}~\parm{sec.s}] \newline \hspace*{0.5in}
@@ -439,10 +438,6 @@ it in chunks of this size, until it has completed the analysis.  If this
 parameter is not supplied, then the entire time series for the segment
 identified by the GPS start and end times will be loaded into RAM.
 
-\item[\option{--resample-filter} \parm{filter type}]
-Set the type of filter used in the data rate down-conversion to
-\parm{filter type}.  This can be ``butterworth'' or ``ldas''.
-
 \item[\option{--seed} \parm{seed}]
 When mixing noise into the input data, use \parm{seed} to seed the random
 number generator.
@@ -510,7 +505,6 @@ lalapps_power \
 --min-time-bin 2 \
 --psd-average-method useMedian \
 --psd-average-points 548864 \
---resample-filter butterworth \
 --target-sample-rate 16384 \
 --lnthreshold -80.0 \
 --tile-overlap-factor 3 \
