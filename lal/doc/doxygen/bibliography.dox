@@ -1,0 +1,59 @@
+// -*- mode: html -*-
+
+/** \page References
+  
+\anchor GRASP2000 <b>[GRASP2000]</b>.
+B. Allen, 
+<i>GRASP: a data analysis package for gravitational wave detection</i>,
+Department of Physics, P.O. Box 413, 
+University of Wisconsin, Milwaukee WI 53201, USA, 1st ed., (2000)
+http://www.lsc-group.phys.uwm.edu/~ballen/grasp-distribution.
+
+\anchor Will_C1996 <b>[Will_C1996]</b>.
+C.M. Will and A.G. Wiseman, Phys. Rev. <b>D 54</b> 8, 4813 (1996).
+
+\anchor Anderson_W2000 <b>[Anderson_W2000]</b>.
+W.G. Anderson, P.R. Brady, J.D.E. Creighton and É.É. Flanagan, 
+<i>An excess power statistic for detection of burst sources of gravitational radiation</i>,
+(2000), <tt>gr-qc/0008066</tt>
+
+\anchor Lang_K1999 <b>[Lang_K1999]</b>.
+K.R. Lang,  <i>Astrophysical Formulae, Volume II: Space, Time, Matter and Cosmology</i>,
+Astronomy and Astrophysics Library (Springer-Verlag, Berlin, 1999), 3rd ed.
+
+\anchor JKS98 <b>[JKS98]</b>. 
+P. Jaranowski, A. Krolak, B.F. Schutz, 
+<i>Data analysis of gravitational-wave signals from spinning neutron stars:
+The signal and its detection.</i>, Phys.Rev. <b>D 58</b>, 063001 (1998).
+
+\anchor Brady_P2000 <b>[Brady_P2000]</b>.
+  P.R. Brady and T. Creighton, Phys. Rev. <b>D 61</b>, 082001 (2000).
+
+
+\anchor Williams1999 <b>[Williams1999]</b>.
+Peter R. Williams, Bernard F. Schutz.  <tt>gr-qc/9912029</tt>.
+
+\anchor Schutz1999 <b>[Schutz1999]</b>.
+Bernard F. Schutz, M. A. Papa, <tt>gr-qc/9905018</tt>.
+
+
+\anchor Schutz1998 <b>[Schutz1998]</b>.
+B.F. Schutz, M.A. Papa, 
+<i>End-to-end algorithm for hierarchical area searches for
+long-duration GW sources for GEO 600</i>, in 
+''Gravitational waves and experimental gravity'',
+ Edts. J. Tran Thanh Van, J. Dumarchez, S. Reynaud, C. Salomon, S. Thorsett,
+J.Y. Vinet; World Publishers,  (2000), Hanoi-Vietnam. <tt>gr-qc/9905018</tt>
+ 
+ 
+\anchor Papa2001 <b>[Papa2001]</b>.
+M.A. Papa, B.F. Schutz, and A.M. Sintes, 
+<i>Searching for continuous gravitational wave signals. The hierarchical Hough
+transform algorithm</i> in 
+''Gravitational waves: A challenge to theoretical astrophysics'', 
+Edts. V. Ferrari, J.C. Miller, L. Rezzolla, 
+ICTP Lecture Notes Series, Volume III  (ISBN 92-95003-05-5), p. 431-442 (2001), 
+Italy. AEI-2000-077, <tt>gr-qc/0011034</tt>
+
+
+*/

@@ -1,0 +1,90 @@
+// -*- mode: html -*-
+
+/* use this file for global structuring, i.e. for defining 
+ * the global classes of "packages" 
+ */
+
+
+/*----- top level chapters ----- */
+/** \defgroup standard LAL Standard Packages */
+
+/** \defgroup general General Packages */
+
+/** \defgroup genMath General Mathematical and Signal Analysis Packages */
+
+/** \defgroup coreDA Core Data Analysis Packages  */
+
+/** \defgroup burst Burst Packages  */
+
+/** \defgroup inspiral Inspiral Packages */
+
+/** \defgroup pulsar Pulsar Packages */
+
+/** \defgroup stochastic Stochastic Packages */
+
+/** \degroup support LAL Support Interface */
+
+/** \defgroup frame LAL Framedata Interface (optional) */
+
+/** \defgroup mpi LAL MPI Interface (optional) */
+
+
+
+/***************************************************************/
+/* the original sectioning from lsd.tex is given here:
+\part{LAL Standard Package}
+\include{std}
+\include{sample}
+
+\part{General Packages}
+\include{date}
+%\include{hello}
+\include{factories}
+\include{tools}
+\include{vectorops}
+
+\part{General Mathematical and Signal Analysis Packages}
+\include{clremoval}
+\include{fft}
+\include{stats}
+\include{tdfilter}
+%\include{timefreq}
+\include{utilities}
+\include{window}
+
+\part{Core Data Analysis Packages}
+\include{inject}
+
+\part{Burst Packages}
+\include{block}
+\include{burstsearch}
+\include{ring}
+\include{slopefilters}
+\include{tfclusters}
+%\include{tracksearch}
+\include{waveburst}
+
+\part{Inspiral Packages}
+\include{bank}
+\include{fct}
+\include{findchirp}
+\include{inspiral}
+\include{noisemodels}
+
+\part{Pulsar Packages}
+\include{houghpulsar}
+\include{pulsar}
+
+\part{Stochastic Packages}
+\include{stochastic}
+
+\part{LAL Support Interface}
+\include{support}
+
+\part{LAL Framedata Interface (optional)}
+\include{framedata}
+
+\part{LAL MPI Interface (optional)}
+\include{comm}
+
+*/

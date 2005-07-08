@@ -1,0 +1,19 @@
+// -*- mode: html -*-
+
+/**
+	\mainpage notitle
+
+	\image 	html	title.png
+	\image	html 	merger.png 
+
+	\section contributors Contributors
+		many brave people ...
+
+	\section preface Preface
+	
+	blablabla, doxygen is very nice!
+
+	\section manualI Manual I: Installation guide
+
+	you're on your own here, man!
+*/
