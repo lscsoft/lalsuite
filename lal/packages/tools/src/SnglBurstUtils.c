@@ -697,9 +697,10 @@ void XLALSnglBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
 	a->duration = (ta_end - ta_start) / 1e9;
 
 	/* the amplitude, SNR, confidence, and peak time of the cluster are
-	 * those of the loudest of the two events */
+	 * those of the most confident of the two events (more negative
+	 * confidence == more confident) */
 
-	if(a->amplitude < b->amplitude) {
+	if(a->confidence > b->confidence) {
 		a->amplitude = b->amplitude;
 		a->snr = b->snr;
 		a->confidence = b->confidence;
