@@ -1,7 +1,8 @@
-#!/usr/local/bin/python2.3
+#!/usr/bin/env python2
 """
-This script has been written to produce a file containing a table
-describing the frequency bands and template banks used.
+This script has been written to inject signals inito a given dataset
+and extract them using the search pipeline.  This version injects
+signals from sources in eccentric orbits.
 """
 
 # import required modules
@@ -29,6 +30,7 @@ Usage: GenerateFreqMeshFile [options]
   -f, --fmin               the minimum injection frequency
   -F, --fmax               the maximum injection frequency
   -H, --gwamplitude        the gw amplitude
+  -e, --eccentricity       the orbital eccentricity
   -p, --pdatadir           the primary detector dataset for injecting into
   -s, --sdatadir           the secondary detector dataset for injecting into
   -T, --ptemplatefile      the name of the primary orbital template file
@@ -40,13 +42,14 @@ Usage: GenerateFreqMeshFile [options]
   print >> sys.stderr, msg
 
 # parse the command line options to figure out what we should do
-shortop = "hc:f:F:H:p:s:T:t:n:O:x:"
+shortop = "hc:f:F:H:e:p:s:T:t:n:O:x:"
 longop = [
 "help",
 "configfile=",
 "fmin=",
 "fmax=",
 "gwamplitude=",
+"eccentricity=",
 "pdatadir=",
 "sdatadir=",
 "ptemplatefile=",
@@ -67,6 +70,7 @@ configfile = None
 fmin = None
 fmax = None
 h0 = None
+ecc = None
 pdatadir = None
 sdatadir = None
 ptemplatefile = None
@@ -88,6 +92,8 @@ for o, a in opts:
     fmax = a
   elif o in ("-H", "--gwamplitude"):
     h0 = a
+  elif o in ("-e", "--eccentricity"):
+    ecc = (float)(a)
   elif o in ("-p", "--pdatadir"):
     pdatadir = a
   elif o in ("-s", "--sdatadir"):
@@ -126,6 +132,11 @@ if not h0:
   print >> sys.stderr, "No h0 value specified."
   print >> sys.stderr, "Use --h0 REAL8 to specify a value."
   sys.exit(1)
+
+if not ecc:
+  print >> sys.stderr, "No eccentricity specified."
+  print >> sys.stderr, "Setting ecc = 0.0."
+  ecc = 0.0
 
 if not pdatadir:
   print >> sys.stderr, "No primary data directory specified."
@@ -182,6 +193,7 @@ binaryrandominput_code = cp.get('condor','binaryrandominput')
 getdataparams_code = cp.get('condor','getdataparams')
 selectdata_code = cp.get('condor','selectdata')
 freqmeshfile_code = cp.get('condor','freqmeshfile')
+periapseshift_ecc_code = cp.get('condor','periapseshift_ecc')
 ephdir = cp.get('ephemeris','ephdir')
 yr = cp.get('ephemeris','yr')
 fulldata_primary = cp.get('data','fulldata_primary')
@@ -217,6 +229,12 @@ fband = cp.get('injections','fband')
 confidence = cp.get('upperlimit','confidence')
 minres = cp.get('general','minres')
 
+# define arg-periapse min and max values
+argpmin = 1.0*math.pi
+argpmax = -1.0*math.pi
+#argpmin = 1.5
+#argpmax = 1.5
+
 ######################################################################
 # determine where we are working (BE MOST TOTALLY CAREFUL)
 
@@ -224,8 +242,24 @@ minres = cp.get('general','minres')
 pwd = os.getcwd()
 #print "present working directory is %s" %(pwd)
 
+# testing only
+#os.system('ls -l /scratch/tmp')
+#temp1 = "/scratch/tmp/cm"
+#temp2 = "/scratch/tmp/chrism"
+#if os.path.exists(temp1):
+  #os.system('ls -l /scratch/tmp/cm')
+#if os.path.exists(temp2):
+  #os.system('ls -l /scratch/tmp/chrism')
+
+# check existence of and make temporary directory
+if not os.path.exists(tempworkarea):
+  try: os.mkdir(tempworkarea)
+  except:
+    print "ERROR : failed to create temporary work area [%s], exiting." %(tempworkarea)
+    sys.exit(1)
+
 # defining specific temporary work area directory name
-tempworkarea = "%s/injections_%.3f-%.3f_%s_%s" %(tempworkarea,float(fmin),float(fmax),h0,id)
+tempworkarea = "%s/injections_%.3f-%.3f_%s_%.3e_%s" %(tempworkarea,float(fmin),float(fmax),h0,ecc,id)
 
 #print tempworkarea
 
@@ -299,6 +333,7 @@ coincidence_temp = tempworkarea + '/coincidence'
 getdataparams_temp = tempworkarea + '/getdataparams'
 freqmeshfile_temp = tempworkarea + '/freqmeshfile'
 sourcefile_temp = tempworkarea + '/sourcefile'
+periapseshift_ecc_temp = tempworkarea + '/periapseshift'
 
 try: shutil.copyfile(binaryinput_code,binaryinput_temp)
 except:
@@ -350,6 +385,11 @@ except:
   print "ERROR : failed to copy %s to %s !!!" %(sourcefile,sourcefile_temp)
   sys.exit(1)
 
+try: shutil.copyfile(periapseshift_ecc_code,periapseshift_ecc_temp)
+except:
+  print "ERROR : failed to copy %s to %s !!!" %(periapseshift_ecc_code,periapseshift_ecc_temp)
+  sys.exit(1)
+
 # make all the copies of the codes executable (its a bit clunky using os.system) 
 os.system('chmod +x ' + binaryinput_temp)
 os.system('chmod +x ' + binaryrandominput_temp)
@@ -360,14 +400,15 @@ os.system('chmod +x ' + makefakedata_temp)
 os.system('chmod +x ' + coincidence_temp)
 os.system('chmod +x ' + getdataparams_temp)
 os.system('chmod +x ' + freqmeshfile_temp)
+os.system('chmod +x ' + periapseshift_ecc_temp)
   
 ######################################################################
 # define the output file name for this instance of the script
 
-output_file = "%s/injection_%.3f-%.3f_%.3e_%d.data" %(outdir,float(fmin),float(fmax),float(h0),(int)(id))
+output_file = "%s/injection_%.3f-%.3f_%.3e_%.3e_%d.data" %(outdir,float(fmin),float(fmax),float(h0),float(ecc),(int)(id))
 
 # also define null result string - consists of 30 zeros
-null_result = "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
+null_result = "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
 
 ######################################################################
 # extract some dataset parameters
@@ -423,7 +464,8 @@ fp.close()
 # define output filename
 makefakedata_templatefile = "mfd_template.input"
 
-try: os.system("%s --sourcefile %s --source %s --ifo %s --stamps %s --tsft %s --reftime %s --noisedir %s --ephem %s --yr %s --smaxis 1.0 --outfile %s" %(binaryinput_temp,sourcefile,source,det_primary,p_stampsfile,tsft,p_start,pdatadir,ephdir,yr,makefakedata_templatefile))
+# we set eccentricity here equal to ecc
+try: os.system("%s --sourcefile %s --source %s --ifo %s --stamps %s --tsft %s --ecc %f --reftime %s --noisedir %s --ephem %s --yr %s --smaxis 1.0 --outfile %s" %(binaryinput_temp,sourcefile,source,det_primary,p_stampsfile,tsft,ecc,p_start,pdatadir,ephdir,yr,makefakedata_templatefile))
 except:
   print "ERROR : failed to generate input template file !!!"
   sys.exit(1)
@@ -441,6 +483,14 @@ i=0
 while i < (int)(ntrials):
 
 ######################################################################
+# need to deal with eccentricity, argument of periapse and time of periapse passage
+
+# as we are recovering signals using a circular orbit template we need
+# to deal with signal parameters that describe eccentric orbits.  So we
+# need to alter the time of peripase passage if we are selecting a
+# random value for the argument of periapse.
+
+######################################################################
 # generate random input template file for each detector 
 
   # define some inputs
@@ -456,7 +506,7 @@ while i < (int)(ntrials):
   p_datasetbase = p_datasetdir + '/SFT'
   s_datasetbase = s_datasetdir + '/SFT'
 
-  try: os.system("%s --ptemplatefile %s --stemplatefile %s --phi --psi --cosiota --h0MIN %s --h0MAX %s --f0MIN %s --f0MAX %s --seed %s --co --pstampsfile %s --sstampsfile %s --infile %s --poutfile %s --soutfile %s --fband %s --pnoisedir %s --snoisedir %s --psftbase %s --ssftbase %s" %(binaryrandominput_temp,ptemplatefile,stemplatefile,h0,h0,fmin,fmax,seed,p_stampsfile,s_stampsfile,makefakedata_templatefile,p_makefakedata_randomfile,s_makefakedata_randomfile,fband,pdatadir,sdatadir,p_datasetbase,s_datasetbase))
+  try: os.system("%s --ptemplatefile %s --stemplatefile %s --phi --psi --cosiota --h0MIN %s --h0MAX %s --f0MIN %s --f0MAX %s --argpMIN %s --argpMAX %s --seed %s --co --pstampsfile %s --sstampsfile %s --infile %s --poutfile %s --soutfile %s --fband %s --pnoisedir %s --snoisedir %s --psftbase %s --ssftbase %s" %(binaryrandominput_temp,ptemplatefile,stemplatefile,h0,h0,fmin,fmax,argpmin,argpmax,seed,p_stampsfile,s_stampsfile,makefakedata_templatefile,p_makefakedata_randomfile,s_makefakedata_randomfile,fband,pdatadir,sdatadir,p_datasetbase,s_datasetbase))
   except:
     print "ERROR : failed to generate random input files for making fake data !!!"
     sys.exit(1)
@@ -473,9 +523,74 @@ while i < (int)(ntrials):
   sma_inj = float(p_dp.get('randomparameters','sma'))
   tperi_sec_inj = (int)(p_dp.get('randomparameters','tpsec'))
   tperi_nan_inj = (int)(p_dp.get('randomparameters','tpnano'))
+  argp_inj = float(p_dp.get('randomparameters','argp'))
+  period_inj = float(p_dp.get('randomparameters','period'))
 
   #os.system('cat randparams_python.data')
-  #print "we use the parameters %f %f %d %d" %(f_inj,sma_inj,tperi_sec_inj,tperi_nan_inj)
+  print "we use the parameters %f %f %d %d %f %d" %(f_inj,sma_inj,tperi_sec_inj,tperi_nan_inj,argp_inj,period_inj)
+
+######################################################################
+# now alter the time of periapse passage based on value of argument of periapse
+
+  try: os.system("%s --tperisec %d --tperinano %d --period %f --ecc %f --argp %f" %(periapseshift_ecc_temp,tperi_sec_inj,tperi_nan_inj,period_inj,ecc,argp_inj))
+  except:
+    print "ERROR : failed to calculate new non-circular orbit periapse passage time !!!"
+    sys.exit(1)
+
+  os.system("cat tperi_ecc.data")  
+
+  # read in the parameters from file
+  tpn_dp = ConfigParser.ConfigParser()
+  tpn_dp.read("tperi_ecc.data")
+  tperisec_new_inj = (int)(tpn_dp.get('tperi_ecc_new','tperi_new_sec'))
+  tperinano_new_inj = (int)(tpn_dp.get('tperi_ecc_new','tperi_new_nano'))
+  tempfile1 = tempworkarea + "/tempfile1"
+  tempfile2 = tempworkarea + "/tempfile2"
+  #print "tperi_new_inj is %d %d" %(tperisec_new_inj,tperinano_new_inj)
+
+  #os.system("echo 's/^\(orbitTperiSSBsec.*=\) [0-9]+/\1 %d/' %s" %(tperisec_new_inj,p_makefakedata_randomfile))
+  os.system("touch %s %s" %(tempfile1,tempfile2))
+  #os.system("cat %s" %(p_makefakedata_randomfile))
+
+  # and alter the value of Tp in the primary  mfd input files  
+  try: os.system("sed 's/^\\(orbitTperiSSBsec.*=\\) [0-9][0-9]*/\\1 %d/' %s > %s" %(tperisec_new_inj,p_makefakedata_randomfile,tempfile1))
+  except:
+    print "ERROR : failed to replace primary random periapse time with new eccentric time !!!"
+    sys.exit(1)
+  try: os.system("sed 's/^\\(orbitTperiSSBns.*=\\) [0-9][0-9]*/\\1 %d/' %s > %s" %(tperinano_new_inj,tempfile1,tempfile2))
+  except:
+    print "ERROR : failed to replace primary random periapse time with new eccentric time !!!"
+    sys.exit(1)
+  try: shutil.copyfile(tempfile2,p_makefakedata_randomfile) 
+  except:
+    print "ERROR : failed to copy temporary file to primary makefakedata input file !!!"
+    sys.exit(1)
+
+  #os.system("cat %s" %(tempfile1))
+  #os.system("cat %s" %(tempfile2))
+  #os.system("cat %s" %(p_makefakedata_randomfile))
+  #sys.exit(1)
+
+  # and alter the value of Tp in the primary  mfd input files  
+  try: os.system("sed 's/^\\(orbitTperiSSBsec.*=\\) [0-9][0-9]*/\\1 %d/' %s > %s" %(tperisec_new_inj,s_makefakedata_randomfile,tempfile1))
+  except:
+    print "ERROR : failed to replace secondary random periapse time with new eccentric time !!!"
+    sys.exit(1)
+  try: os.system("sed 's/^\\(orbitTperiSSBns.*=\\) [0-9][0-9]*/\\1 %d/' %s > %s" %(tperinano_new_inj,tempfile1,tempfile2))
+  except:
+    print "ERROR : failed to replace secondary random periapse time with new eccentric time !!!"
+    sys.exit(1)
+  try: shutil.copyfile(tempfile2,s_makefakedata_randomfile) 
+  except:
+    print "ERROR : failed to copy temporary file to secondary makefakedata input file !!!"
+    sys.exit(1)    
+
+  
+
+  #sed 's/^\(orbitT.*=\) [0-9]+/\1 '${var}'/'  FILE > tmp
+  #sed 's/^\(orbitT.*=\) [0-9][0-9]*/\1 '${var}'/'  FILE > tmp
+  #mv tmp FILE
+
 
 ######################################################################
 # make the data for each detector
@@ -520,6 +635,7 @@ while i < (int)(ntrials):
   p_fband = 2.0*float(co_nbins)*float(p_fres)
   p_fmax = p_fmin + p_fband
 
+  #print "p_searchres is %f p_fres is %f" %(p_searchres,p_fres)
   #print "p_fmin = %6.12f p_fmax = %6.12f p_fband = %6.12f\n" %(p_fmin,p_fmax,p_fband)
   
   # define secondary search frequency and band
@@ -529,6 +645,7 @@ while i < (int)(ntrials):
   s_fband = 2.0*float(co_nbins)*float(s_fres)
   s_fmax = s_fmin + s_fband
 
+  #print "s_searchres is %f s_fres is %f" %(s_searchres,s_fres)
   #print "s_fmin = %6.12f s_fmax = %6.12f s_fband = %6.12f\n" %(s_fmin,s_fmax,s_fband)
 
   # define the minimum and maximum frequencies for the coincidence analysis
@@ -545,10 +662,10 @@ while i < (int)(ntrials):
   s_outputlabel = "_%s_%.3f-%.3f.data" %(det_secondary,s_fmin,s_fmax)
 
   # testing
-  p_Fout = '/raid/1/cm/testoutputs/p_Fout.data'
-  s_Fout = '/raid/1/cm/testoutputs/s_Fout.data'
+  #p_Fout = "/raid/1/cm/p_Fout_%d_%d_%e_%f.data" %((int)(i),(int)(id),float(h0),float(argp_inj))
+  #s_Fout = "/raid/1/cm/s_Fout_%d_%d_%e_%f.data" %((int)(i),(int)(id),float(h0),float(argp_inj))
 
-  try: os.system("%s --dterms %s --Freq %s --FreqBand %s --overres %s --DataDir %s --EphemDir %s --EphemYear %s --IFO %s --binary --dopplermax %s --Fthreshold %s --windowsize %s --outputLabel %s --binarytemplatefile %s --sourcefile %s --source %s --workingDir %s --outputFstat %s" %(search_temp,dterms,p_fmin,p_fband,overres,p_datasetdir,ephdir,yr,det_primary,dopplermax,thresh_primary,windowsize,p_outputlabel,p_subbank,sourcefile,source,p_searchresultsdir,p_Fout))
+  try: os.system("%s --dterms %s --Freq %s --FreqBand %s --overres %s --DataDir %s --EphemDir %s --EphemYear %s --IFO %s --binary --dopplermax %s --Fthreshold %s --windowsize %s --outputLabel %s --binarytemplatefile %s --sourcefile %s --source %s --workingDir %s" %(search_temp,dterms,p_fmin,p_fband,overres,p_datasetdir,ephdir,yr,det_primary,dopplermax,thresh_primary,windowsize,p_outputlabel,p_subbank,sourcefile,source,p_searchresultsdir))
   except:
     print "ERROR : failed to complete search on primary injection !!!"
     sys.exit(1)
@@ -556,7 +673,7 @@ while i < (int)(ntrials):
   #os.system('cat ' + p_searchresultsdir + '/*')
   #print "done primary search"  
 
-  try: os.system("%s --dterms %s --Freq %s --FreqBand %s --overres %s --DataDir %s --EphemDir %s --EphemYear %s --IFO %s --binary --dopplermax %s --Fthreshold %s --windowsize %s --outputLabel %s --binarytemplatefile %s --sourcefile %s --source %s --workingDir %s --outputFstat %s" %(search_temp,dterms,s_fmin,s_fband,overres,s_datasetdir,ephdir,yr,det_secondary,dopplermax,thresh_secondary,windowsize,s_outputlabel,s_subbank,sourcefile,source,s_searchresultsdir,s_Fout))
+  try: os.system("%s --dterms %s --Freq %s --FreqBand %s --overres %s --DataDir %s --EphemDir %s --EphemYear %s --IFO %s --binary --dopplermax %s --Fthreshold %s --windowsize %s --outputLabel %s --binarytemplatefile %s --sourcefile %s --source %s --workingDir %s" %(search_temp,dterms,s_fmin,s_fband,overres,s_datasetdir,ephdir,yr,det_secondary,dopplermax,thresh_secondary,windowsize,s_outputlabel,s_subbank,sourcefile,source,s_searchresultsdir))
   except:
     print "ERROR : failed to complete search on secondary injection !!!"
     sys.exit(1)
@@ -627,11 +744,11 @@ while i < (int)(ntrials):
       fpo.write((str)(f_inj) + ' ' + loudest_line)
       #print "RESULT %d = %f %s" %(i,f_inj,loudest_line)
     else:
-      fpo.write((str)(f_inj) + ' event_not_detected ' + null_result)
+      fpo.write((str)(f_inj) + null_result)
       #print "RESULT %d = %f %s" %(i,f_inj,null_result)
 
   else:
-    fpo.write((str)(f_inj) + ' results_file_non_created ' + null_result)
+    fpo.write((str)(f_inj) + null_result)
     #print "RESULT %d = %f %s" %(i,f_inj,null_result)
 
   fpo.close
@@ -719,10 +836,28 @@ while i < (int)(ntrials):
       print "ERROR : failed to delete python random parameter config file in injections !!!"
       sys.exit(1)
 
+  if os.path.exists(tempfile1):
+    try: os.remove(tempfile1)
+    except:
+      print "ERROR : failed to delete temporary file in injections !!!"
+      sys.exit(1)
+
+  if os.path.exists(tempfile2):
+    try: os.remove(tempfile2)
+    except:
+      print "ERROR : failed to delete temporary file in injections !!!"
+      sys.exit(1)
+
+  if os.path.exists("tperi_ecc.data"):
+    try: os.remove("tperi_ecc.data")
+    except:
+      print "ERROR : failed to delete periapse shift outfile in injections !!!"
+      sys.exit(1)      
+
 ######################################################################
 # increment the loop and end it
   i=i+1
-  print "i is %d and ntrials is %d" %(i,(int)(ntrials))
+  #print "i is %d and ntrials is %d" %(i,(int)(ntrials))
 
 ######################################################################
 # now we need to tidy up after ourselves (BEING CAREFULL)
