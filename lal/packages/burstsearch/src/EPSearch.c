@@ -199,6 +199,11 @@ XLALEPSearch(
 		errorcode = XLAL_EFUNC;
 		goto error;
 	}
+	if(!Tiling->numtiles) {
+		/* couldn't fit any tiles into the TF plane! */
+		errorcode = XLAL_EINVAL;
+		goto error;
+	}
 
 	if(params->useOverWhitening)
 		OverWhiteningSpec = AverageSpec;
