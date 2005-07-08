@@ -187,6 +187,8 @@ int AddInjections(struct CommandLineArgsTag CLA);
 /* High pass filters data again if an injection has been made */
 int ProcessData2(void);
 
+
+
 /* DownSamples data */
 int DownSample(struct CommandLineArgsTag CLA);
 
@@ -242,6 +244,9 @@ int main(int argc,char *argv[])
    }
 
  if (ProcessData2()) return 6;
+
+
+
  
  if (DownSample(CommandLineArgs)) return 7;
 	
@@ -249,6 +254,17 @@ int main(int argc,char *argv[])
  LALResizeREAL4TimeSeries(&status, &(GV.ht_proc), (int)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5),
 			  GV.ht_proc.data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5));
  TESTSTATUS( &status );
+
+/* { */
+/*   int p; */
+/*   for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
+/*     { */
+/*       fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
+/*     } */
+/*   return 0; */
+/* } */
+
+
 
  /* reduce duration of segment appropriately */
  GV.duration -= 2*CommandLineArgs.pad; 
@@ -471,11 +487,11 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 
 /*   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ ) */
 /*     { */
-/*       fprintf(stdout,"%e\n",vector->data[p]); */
+/*       fprintf(stdout,"%d %e\n",m, vector->data[p]); */
 /*     } */
 /*   return 0; */
 
-++/* Now find thisEvent in the inner half */
+  /* Now find thisEvent in the inner half */
   for ( p = (int)vector->length/4 ; p < (int)(3*vector->length/4); p++ )
     {
       REAL4 maximum = 0.0;
@@ -600,6 +616,8 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
       for (m = 0; m < NTemplates; m++)
 	{
 	  int f_high_index = strtemplate[m].f/ GV.StringFilter.deltaF;
+
+/* 	  if (m != 1 ) continue; */
 	  
 	  /* set to zero all values greater than the high frequency cutoff of the template */
 	  memset( vtilde->data+f_high_index, 0, (vtilde->length-f_high_index) * sizeof( *vtilde->data ) );
@@ -744,8 +762,8 @@ int CreateStringFilter(struct CommandLineArgsTag CLA)
   
   if(CLA.TruncSecs != 0.0) 
     {
-      memset( vector->data + (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5), 0,
-	      ( vector->length -  2 * (INT4)(CLA.TruncSecs/GV.ht_proc.deltaT +0.5)) 
+      memset( vector->data + (INT4)(CLA.TruncSecs/2/GV.ht_proc.deltaT +0.5), 0,
+	      ( vector->length -  2 * (INT4)(CLA.TruncSecs/2/GV.ht_proc.deltaT +0.5)) 
 	      * sizeof( *vector->data ) );
     }
   
@@ -1272,6 +1290,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
         fprintf(stderr,"Should obey the following rule: T/t - 0.5 shold be an odd integer.\n");
 	return 1;
       }     
+
     if( CLA->ShortSegDuration/4  < CLA->TruncSecs)
       {
         fprintf(stderr,"Short segment length t=%d is too small to accomodate truncation time requested.\n",
