@@ -486,6 +486,26 @@ XLALCompareSimInspiralByGeocentEndTime(
 }
 
 
+/* <lalVerbatim file="SimInspiralUtilsCP"> */
+int
+XLALFreeSimInspiral (
+    SimInspiralTable **eventHead
+    )
+/* </lalVerbatim> */
+{
+  EventIDColumn        *eventId;
+
+  while ( (*eventHead)->event_id )
+  {
+    /* free any associated event_id's */
+    eventId = (*eventHead)->event_id;
+    (*eventHead)->event_id = (*eventHead)->event_id->next;
+    LALFree( eventId );
+  }
+  LALFree( *eventHead );
+
+  return (0);
+}
 
 
 

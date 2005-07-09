@@ -598,6 +598,12 @@ XLALCompareSimInspiralByGeocentEndTime(
 	const SimInspiralTable * const *b
     );
 
+int
+XLALFreeSimInspiral (
+    SimInspiralTable **eventHead
+    );
+
+
 
 
 
