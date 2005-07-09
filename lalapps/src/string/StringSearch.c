@@ -130,6 +130,7 @@ struct StringTemplateTag {
   REAL4 f;                      /* Template frequency */
   REAL4 norm;                   /* Template normalisation */
   REAL4 mismatch;               /* Template mismatch relative to last one*/
+  REAL4FrequencySeries StringFilter; /* Frequency domain filter corresponding to this template */
 } StringTemplate;
 
 /***************************************************************************/
@@ -244,9 +245,6 @@ int main(int argc,char *argv[])
    }
 
  if (ProcessData2()) return 6;
-
-
-
  
  if (DownSample(CommandLineArgs)) return 7;
 	
@@ -264,8 +262,6 @@ int main(int argc,char *argv[])
 /*   return 0; */
 /* } */
 
-
-
  /* reduce duration of segment appropriately */
  GV.duration -= 2*CommandLineArgs.pad; 
 
@@ -273,12 +269,12 @@ int main(int argc,char *argv[])
 
  if (CommandLineArgs.printspectrumflag) LALSPrintFrequencySeries( &(GV.Spec), "Spectrum.txt" );
 
- if (CreateStringFilter(CommandLineArgs)) return 9;
+ if (CreateTemplateBank(CommandLineArgs)) return 9;
+
+ if (CreateStringFilter(CommandLineArgs)) return 10;
 
  if (CommandLineArgs.printfilterflag) LALSPrintFrequencySeries( &(GV.StringFilter), "Filter.txt" );
  
- if (CreateTemplateBank(CommandLineArgs)) return 10;
-
  if (FindStringBurst(CommandLineArgs)) return 12;
 
  if (CommandLineArgs.cluster == 1 && events) 
@@ -664,14 +660,14 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
 
   fmax = (1.0/GV.ht_proc.deltaT) / 2.0;
 
-  f_low_index = CLA.fbankstart / GV.StringFilter.deltaF;
-  f_high_index = fmax / GV.StringFilter.deltaF;
+  f_low_index = CLA.fbankstart / GV.Spec.deltaF;
+  f_high_index = fmax / GV.Spec.deltaF;
   
   t1t1=0.0;
   for ( p = f_low_index ; p < f_high_index; p++ )
     {
-      f= p*GV.StringFilter.deltaF;
-      t1t1 += 4*pow(f,CLA.power)*GV.StringFilter.data->data[p]*GV.StringFilter.deltaF;
+      f= p*GV.Spec.deltaF;
+      t1t1 += 4*pow(pow(f,CLA.power),2)/GV.Spec.data->data[p]*GV.Spec.deltaF;
     }
 
   /* This is the first template, all others will be slightly smaller */ 
@@ -685,12 +681,12 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
   fprintf(stdout,"%% Templ.    frequency      sigma\n");  
   fprintf(stdout,"%% %d       %e        %e\n",k-1,strtemplate[0].f,strtemplate[0].norm);
 
-  f_low_index = CLA.fbankhighfcutofflow / GV.StringFilter.deltaF;
+  f_low_index = CLA.fbankhighfcutofflow / GV.Spec.deltaF;
   /* now we loop through and take away from the integral one point at a time */
   for ( p = f_high_index-2 ; p >= f_low_index; p-- )
     {
-      f= p*GV.StringFilter.deltaF;
-      t2t2 -= 4*pow(f,CLA.power)*GV.StringFilter.data->data[p]*GV.StringFilter.deltaF;
+      f= p*GV.Spec.deltaF;
+      t2t2 -= 4*pow(pow(f,CLA.power),2)/GV.Spec.data->data[p]*GV.Spec.deltaF;
       
       epsilon=1-sqrt(t2t2/t1t1);
       
