@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <lal/LIGOLwXMLHeaders.h>
+
 #include "BankEfficiency.h"
 
 #define BEASCII2XML_INPUT1 "Trigger.dat"
@@ -38,7 +38,8 @@
 
 
 
-void BEAscii2XmlHelp(void);
+void
+BEAscii2XmlHelp(void);
 
 
 int
@@ -46,18 +47,18 @@ main (int argc, char **argv )
 {
   UINT4 start = 0;
   ResultIn trigger;
-  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3;
+  REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3, phaseI, coaTime;
   FILE *input1, *input2;
   FILE *output;
   char sbuf[512];
   
-  if (argc>1){
-  if (strcmp(argv[1], "--help")==0){ 
-	  BEAscii2XmlHelp();
-  }  
-  if (strcmp(argv[1], "-h")==0){ 
-	  BEAscii2XmlHelp();
-  }  
+  if (argc>1) {
+    if (strcmp(argv[1], "--help")==0) {
+      BEAscii2XmlHelp();
+    }  
+    if (strcmp(argv[1], "-h")==0) { 
+      BEAscii2XmlHelp();
+    }  
   }
   /* Main program starts here */
   /* First we open the file containing the ascii results */
@@ -66,7 +67,7 @@ main (int argc, char **argv )
   fprintf(stderr,"done\n");
 
   fprintf(stderr,"opening the xml input data file -- ");
-  if  ( (input1  = fopen(BEASCII2XML_INPUT1,"r"))==NULL){
+  if  ( (input1  = fopen(BEASCII2XML_INPUT1,"r"))==NULL) {
     fprintf(stderr,"error while opening input file %s\n",BEASCII2XML_INPUT1);
     exit(0);
   }
@@ -114,15 +115,18 @@ main (int argc, char **argv )
 	     &trigger.mass2_inject,
 	     &trigger.rho_finalU,
 	     &trigger.phaseU,
+	     &phaseI,
 	     &trigger.alphaFU, 
 	     &trigger.layerU,
 	     &trigger.binU,
 	     &trigger.rho_final,
+	     &trigger.snrAtCoaTime, 
+	     &phaseI,
 	     &trigger.phase,
 	     &trigger.alphaF, 
 	     &trigger.layer,
 	     &trigger.bin, 
-	     &trigger.coaTime);
+	     &coaTime);
 
      if (start==0){
 	      start+=1;
@@ -148,16 +152,19 @@ main (int argc, char **argv )
 	      trigger.mass1_inject,
 	      trigger.mass2_inject,
 	      trigger.rho_finalU,
+	      phaseI,
 	      trigger.phaseU,
 	      trigger.alphaFU, 
 	      trigger.layerU,
 	      trigger.binU,
 	      trigger.rho_final,
+	      trigger.snrAtCoaTime,
+	      phaseI,
 	      trigger.phase,
 	      trigger.alphaF, 
 	      trigger.layer,
 	      trigger.bin, 
-	      trigger.coaTime);
+	      coaTime);
     }
    while(!feof(input1));
 

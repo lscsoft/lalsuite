@@ -348,6 +348,9 @@ main (INT4 argc, CHAR **argv )
 		  OverlapOutputThisTemplate.rhoBin   = overlapout.bin;
 		  OverlapOutputThisTemplate.freq     = overlapin.param.fFinal;
 		  list[currentTemplate].params.fFinal = overlapin.param.fFinal;
+		  OverlapOutputThisTemplate.snrAtCoaTime 
+		    =  correlation.data[randIn.param.nStartPad];
+	  
 		}
 	      break;
 	    }
@@ -365,7 +368,7 @@ main (INT4 argc, CHAR **argv )
               }
 	    }		    
 	  }	
-	  
+
 	  
 	  
 		  
@@ -1533,15 +1536,15 @@ KeepHighestValues(OverlapOutputIn resultThisTemplate,
     resultBestTemplate->rhoBin   = resultThisTemplate.rhoBin;
     resultBestTemplate->freq     = resultThisTemplate.freq;
     resultBestTemplate->layer    = resultThisTemplate.layer;
-    resultBestTemplate->templateNumber   = resultThisTemplate.templateNumber;
-    /*we do not need all template params for the time being*/
+    resultBestTemplate->templateNumber = resultThisTemplate.templateNumber;
+    resultBestTemplate->snrAtCoaTime   = resultThisTemplate.snrAtCoaTime;
   }
   
   
   if (resultThisTemplate.rhoMaxU > resultBestTemplate->rhoMaxU){ 
     resultBestTemplate->rhoMaxU   = resultThisTemplate.rhoMaxU;
     resultBestTemplate->phaseU    = resultThisTemplate.phaseU;
-    resultBestTemplate->alphaU   = resultThisTemplate.alphaU;
+    resultBestTemplate->alphaU    = resultThisTemplate.alphaU;
     resultBestTemplate->rhoBinU   = resultThisTemplate.rhoBinU;
     resultBestTemplate->freqU     = resultThisTemplate.freqU;
     resultBestTemplate->layerU    = resultThisTemplate.layerU;
@@ -1558,19 +1561,23 @@ KeepHighestValues(OverlapOutputIn resultThisTemplate,
 void 
 GetResult(
 	  LALStatus                  *status, 
-	  InspiralTemplateList        **list,
-	  InspiralTemplate       	injected,
-	  OverlapOutputIn 	        bestOverlap, 
-	  ResultIn                      *result,
-	  UserParametersIn                  userParam )
+	  InspiralTemplateList       **list,
+	  InspiralTemplate           injected,
+	  OverlapOutputIn 	     bestOverlap, 
+	  ResultIn                   *result,
+	  UserParametersIn           userParam )
 {
-  INT4 templateNumber, templateNumberC;
-  InspiralTemplate trigger, triggerC;
+  INT4 templateNumber;
+  INT4 templateNumberC;
+  InspiralTemplate trigger;
+  InspiralTemplate triggerC;
 
   
   INITSTATUS (status, "GetResult", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
      
+
+  
   templateNumberC = bestOverlap.templateNumber;
   templateNumber = bestOverlap.templateNumberU;
   trigger = (*list)[templateNumber].params;
@@ -1580,7 +1587,6 @@ GetResult(
 
     LALInspiralParameterCalc( status->statusPtr,  &triggerC );
     CHECKSTATUSPTR(status);		
-
     LALInspiralParameterCalc( status->statusPtr,  &trigger );
     CHECKSTATUSPTR(status);							
     
@@ -1592,13 +1598,12 @@ GetResult(
     result->psi3_trigger  = triggerC.psi3;     
   }
   else{
-    LALInspiralParameterCalc( status->statusPtr,  &triggerC );
-    CHECKSTATUSPTR(status);							 
+
     LALInspiralParameterCalc( status->statusPtr,  &trigger );
     CHECKSTATUSPTR(status);							
 
-    result->tau0_trigger = trigger.t0;
-    result->tau3_trigger = trigger.t3;
+    result->tau0_trigger = triggerC.t0;
+    result->tau3_trigger = triggerC.t3;
     result->tau0_inject  = injected.t0;
     result->tau3_inject  = injected.t3; 
   }
@@ -1615,7 +1620,7 @@ GetResult(
   result->phase       = bestOverlap.phase;
   result->layer       = bestOverlap.layer;
   result->phase       = bestOverlap.phase;
-
+  result->snrAtCoaTime = bestOverlap.snrAtCoaTime;
   result->rho_finalU   = bestOverlap.rhoMaxU;
   result->alphaFU      = bestOverlap.alphaU*pow(trigger.fFinal,2./3.);
   result->binU         = bestOverlap.rhoBinU;
@@ -1663,8 +1668,9 @@ PrintResults(   ResultIn result,
 	  result.layerU,
 	  result.binU);
 
-  fprintf(stdout, " %7.5f %e %e %e  %d %d %d\n",
+  fprintf(stdout, " %7.5f %7.5f %e %e %e  %d %d %d\n",
 	  result.rho_final, 
+	  result.snrAtCoaTime,
 	  randIn.param.startPhase, 
 	  result.phase, 
 	  result.alphaF,
@@ -2878,6 +2884,7 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 	    trigger.layerU,
 	    trigger.binU,
 	    trigger.rho_final,
+	    trigger.snrAtCoaTime,
 	    randIn.param.startPhase,
 	    trigger.phase,
 	    trigger.alphaF, 
@@ -2924,6 +2931,7 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 	      trigger.layerU,
 	      trigger.binU,
 	      trigger.rho_final,
+	      trigger.snrAtCoaTime, 
 	      randIn.param.startPhase,
 	      trigger.phase,
 	      trigger.alphaF, 

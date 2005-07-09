@@ -41,9 +41,9 @@
 
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
-"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%f,%d,%d,%d"
+"         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%d,%d,%d"
 #define BANKEFFICIENCY_PARAMS_ROW_SPACE \
-"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %f %f %f %f %d %d %d "
+"         %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %d %f %f %f %f %f %d %d %d "
 
 /*do not use capital here for future mysql migration */
 #define PRINT_LIGOLW_XML_BANKEFFICIENCY(fp) ( \
@@ -61,21 +61,22 @@ fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:tau3_sim\"      
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_unconstraint\" Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal\"              Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:ffinal_sim\"          Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_inject\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2_inject\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass1_sim\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:mass2_sim\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr_unconstraint\"    Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_inject\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_sim\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_unconstraint\"  Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alpha_f_unconstraint\"Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:layer_unconstraint\"  Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:bin_unconstraint\"    Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time_unconstraint\"    Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr\"                 Type=\"real_4\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_inject\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:snr_at_ta\"                 Type=\"real_4\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase_sim\"        Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:phase\"               Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:alpha_f\"             Type=\"real_4\"/>\n", fp) == EOF ||  \
 fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:layer\"               Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:bin\"                 Type=\"int_4s\"/>\n", fp) == EOF ||  \
-fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:coaTime\"             Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time\"                 Type=\"int_4s\"/>\n", fp) == EOF ||  \
+fputs( "      <Column Name=\"bankefficiencygroup:bankefficiency:time_arrival_sim\"             Type=\"int_4s\"/>\n", fp) == EOF ||  \
 fputs( "      <Stream Name=\"bankefficiencygroup:bankefficiency:table\"               Type=\"Local\" Delimiter=\",\">\n", fp) == EOF ) 
 
 
@@ -307,6 +308,7 @@ typedef struct{
   INT4   layerU;
   INT4   templateNumberU;
   InspiralTemplate bestUTemplate;
+  REAL4 snrAtCoaTime;
 } OverlapOutputIn;
 
 /* structure to output the results */
@@ -337,6 +339,7 @@ typedef struct{
   INT4 bin;
   REAL4 phase;
   UINT4 ntrial;
+  REAL4 snrAtCoaTime;
 } ResultIn;
 
 
