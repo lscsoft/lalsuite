@@ -74,7 +74,7 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 	do { paramaddpoint = add_process_param(paramaddpoint, type, long_options[option_index].name, optarg); } while(0)
 
 #define SCALE 1e20
-#define MAXTEMPLATES 10000
+#define MAXTEMPLATES 1000
 
 NRCSID( STRINGSEARCHC, "StringSearch $Id$");
 RCSID( "StringSearch $Id$");
@@ -106,7 +106,7 @@ struct CommandLineArgsTag {
   INT4 fakenoiseflag;         /* =0 if real noise =1 if fake gaussian noise */
   INT4 whitespectrumflag;     /* =0 if spectrum is to be computed =1 for white spectrum */
   INT4 trigstarttime;         /* start-time of allowed triggers */
-  INT4 cluster;               /* =0 if events are not to be clustered =1 otherwise */
+  REAL4 cluster;              /* =0.0 if events are not to be clustered = clustering time otherwise */
   INT4 pad;                   /* seconds of padding */
   INT4 printspectrumflag;     /* flag set to 1 if user want to print the spectrum */
   INT4 printfilterflag;       /* flag set to 1 if user want to print the filter */
@@ -119,7 +119,6 @@ struct GlobalVariablesTag {
   REAL8TimeSeries ht;           /* raw input data */
   REAL4TimeSeries ht_proc;      /* processed (band-pass filtered and down-sampled) input data */
   REAL4FrequencySeries Spec;    /* average spectrum */
-  REAL4FrequencySeries StringFilter;    /* inverse truncated average spectrum x f^(-4/3) or f^(-5/3) */
   RealFFTPlan *fplan;           /* fft plans */
   RealFFTPlan *rplan;           /* fft plans */
   INT4 seg_length;
@@ -188,19 +187,17 @@ int AddInjections(struct CommandLineArgsTag CLA);
 /* High pass filters data again if an injection has been made */
 int ProcessData2(void);
 
-
-
 /* DownSamples data */
 int DownSample(struct CommandLineArgsTag CLA);
 
 /* Computes the average spectrum  */
 int AvgSpectrum(struct CommandLineArgsTag CLA);
 
-/* Creates the frequency domain string cusp or kink filter  */
-int CreateStringFilter(struct CommandLineArgsTag CLA);
-
 /* Creates the template bank based on the spectrum  */
 int CreateTemplateBank(struct CommandLineArgsTag CLA);
+
+/* Creates the frequency domain string cusp or kink filters  */
+int CreateStringFilters(struct CommandLineArgsTag CLA);
 
 /* Filters the data through the template banks  */
 int FindStringBurst(struct CommandLineArgsTag CLA);
@@ -271,13 +268,13 @@ int main(int argc,char *argv[])
 
  if (CreateTemplateBank(CommandLineArgs)) return 9;
 
- if (CreateStringFilter(CommandLineArgs)) return 10;
+ if (CreateStringFilters(CommandLineArgs)) return 10;
 
- if (CommandLineArgs.printfilterflag) LALSPrintFrequencySeries( &(GV.StringFilter), "Filter.txt" );
+ if (CommandLineArgs.printfilterflag) LALSPrintFrequencySeries( &(strtemplate[0].StringFilter), "Filter.txt" );
  
  if (FindStringBurst(CommandLineArgs)) return 12;
 
- if (CommandLineArgs.cluster == 1 && events) 
+ if (CommandLineArgs.cluster != 0.0 && events) 
    {
      XLALClusterStringBurstTable(&events,  XLALCompareStringBurstByTime, XLALCompareStringBurstByTime);
      LALSortSnglBurst(&status, &events, XLALCompareSnglBurstByPeakTimeAndSNR);
@@ -521,7 +518,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	    }
 
 	  /* Clustering in time: While we are above threshold, or within 1/(high frequency cutoff)of the last point above threshold... */
-	  while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc.deltaT < (float)(2*CLA.TruncSecs)) ) 
+	  while( ((fabs(vector->data[p]) > CLA.threshold) || ((p-pend)* GV.ht_proc.deltaT < (float)(CLA.cluster)) ) 
 		 && p<(int)(3*vector->length/4))
 	    {
 	      /* This keeps track of the largest SNR point of the cluster */
@@ -562,7 +559,7 @@ int FindEvents(struct CommandLineArgsTag CLA, REAL4Vector *vector, INT4 i, INT4 
 	  (*thisEvent)->snr          = maximum;
 	  (*thisEvent)->amplitude   = vector->data[pmax]/strtemplate[m].norm;
 	  (*thisEvent)->confidence   = -maximum; /* FIXME */
-	  (*thisEvent)->clusterT   = 2*CLA.TruncSecs;
+	  (*thisEvent)->clusterT   = CLA.cluster;
 	  
 	}
     }
@@ -579,8 +576,6 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
   COMPLEX8Vector *vtilde = NULL;
   SnglBurstTable *thisEvent = NULL;
 
-  int f_low_index = CLA.fbankstart / GV.StringFilter.deltaF;
-  
   /* create vector that will hold the data for each overlapping chunk */ 
   LALSCreateVector( &status, &vector, GV.seg_length);
   TESTSTATUS( &status );
@@ -588,35 +583,25 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
   LALCCreateVector( &status, &vtilde, GV.seg_length / 2 + 1 );
   TESTSTATUS( &status );
 
-  /* loop over overlapping chunks */ 
-  for(i=0; i < 2*GV.duration/CLA.ShortSegDuration - 1 ;i++)
+  /* loop over templates  */
+  for (m = 0; m < NTemplates; m++)
     {
-      /* populate vector that will hold the data for each overlapping chunk */
-      memcpy( vector->data, GV.ht_proc.data->data + i*GV.seg_length/2,vector->length*sizeof( *vector->data ) );
-
-      /* fft it */
-      LALForwardRealFFT( &status, vtilde, vector, GV.fplan );
-      TESTSTATUS( &status );
-
-      /* this sets to zero all data below the low frequency cutoff */ 
-      memset( vtilde->data, 0, f_low_index  * sizeof( *vtilde->data ) );
-   
-      /* multiply FT of data and String Filter and deltaT (latter not included in LALForwardRealFFT) */
-      for ( p = (int)f_low_index ; p < (int)GV.StringFilter.data->length; p++ )
+      /* loop over overlapping chunks */ 
+      for(i=0; i < 2*GV.duration/CLA.ShortSegDuration - 1 ;i++)
 	{
-	  vtilde->data[p].re *= GV.StringFilter.data->data[p]*GV.ht_proc.deltaT;
-	  vtilde->data[p].im *= GV.StringFilter.data->data[p]*GV.ht_proc.deltaT;
-	}
-
-      /* loop over templates  */
-      for (m = 0; m < NTemplates; m++)
-	{
-	  int f_high_index = strtemplate[m].f/ GV.StringFilter.deltaF;
-
-/* 	  if (m != 1 ) continue; */
+	  /* populate vector that will hold the data for each overlapping chunk */
+	  memcpy( vector->data, GV.ht_proc.data->data + i*GV.seg_length/2,vector->length*sizeof( *vector->data ) );
 	  
-	  /* set to zero all values greater than the high frequency cutoff of the template */
-	  memset( vtilde->data+f_high_index, 0, (vtilde->length-f_high_index) * sizeof( *vtilde->data ) );
+	  /* fft it */
+	  LALForwardRealFFT( &status, vtilde, vector, GV.fplan );
+	  TESTSTATUS( &status );
+	      
+	  /* multiply FT of data and String Filter and deltaT (latter not included in LALForwardRealFFT) */
+	  for ( p = 0 ; p < (int) vtilde->length; p++ )
+	    {
+	      vtilde->data[p].re *= strtemplate[m].StringFilter.data->data[p]*GV.ht_proc.deltaT;
+	      vtilde->data[p].im *= strtemplate[m].StringFilter.data->data[p]*GV.ht_proc.deltaT;
+	    }
 
 	  LALReverseRealFFT( &status, vector, vtilde,  GV.rplan);
 	  TESTSTATUS( &status );
@@ -627,9 +612,9 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
 
 	  for ( p = 0 ; p < (int)vector->length; p++ )
 	    {
-	      vector->data[p] *= 2.0 * GV.StringFilter.deltaF / strtemplate[m].norm;
+	      vector->data[p] *= 2.0 * GV.Spec.deltaF / strtemplate[m].norm;
 	    }
-
+	      
 	  if(FindEvents(CLA, vector, i, m, &thisEvent)) return 1;
 	}
     }
@@ -650,6 +635,98 @@ int FindStringBurst(struct CommandLineArgsTag CLA)
   return 0;
 }
 
+
+/*******************************************************************************/
+
+int CreateStringFilters(struct CommandLineArgsTag CLA)
+{
+
+  int p, m, f_low_cutoff_index; 
+  COMPLEX8Vector *vtilde; /* frequency-domain vector workspace */
+  REAL4Vector    *vector; /* time-domain vector workspace */
+
+  vector = XLALCreateREAL4Vector( GV.seg_length);
+  vtilde = XLALCreateCOMPLEX8Vector( GV.seg_length / 2 + 1 );
+ 
+  f_low_cutoff_index = (int) (CLA.fbankstart/ GV.Spec.deltaF+0.5);
+
+  /* set all frequencies below the low freq cutoff to zero */
+  memset( vtilde->data, 0, f_low_cutoff_index  * sizeof( *vtilde->data ) );
+
+
+  for (m = 0; m < NTemplates; m++)
+    {
+      int f_high_cutoff_index = (int) (strtemplate[m].f/ GV.Spec.deltaF+0.5);
+
+      /* create the space for the filter */
+      strtemplate[m].StringFilter.deltaF=GV.Spec.deltaF;
+      LALSCreateVector( &status, &strtemplate[m].StringFilter.data, GV.Spec.data->length );
+      TESTSTATUS( &status );
+      
+      /* populate vtilde with the template divided by the noise */
+      for ( p = f_low_cutoff_index; p < (int) vtilde->length; p++ )
+	{
+	  REAL4 f=p*GV.Spec.deltaF;
+	  
+	  vtilde->data[p].re = sqrt(pow(f,CLA.power)/(GV.Spec.data->data[p]));
+	  vtilde->data[p].im = 0;
+	}
+      
+      /* set all frequencies below the low freq cutoff to zero */
+      memset( vtilde->data, 0, f_low_cutoff_index  * sizeof( *vtilde->data ) );
+
+      /* set to zero all values greater than the high frequency cutoff corresponding to this template */
+      memset( vtilde->data+f_high_cutoff_index, 0, (vtilde->length-f_high_cutoff_index) * sizeof( *vtilde->data ) );
+
+      /* set DC and Nyquist to zero anyway */
+      vtilde->data[0].re = vtilde->data[vtilde->length - 1].re = 0;
+      vtilde->data[0].im = vtilde->data[vtilde->length - 1].im = 0;
+
+
+      /* reverse FFT vtilde into vector */
+      LALReverseRealFFT( &status, vector, vtilde,  GV.rplan);
+      TESTSTATUS( &status );
+       
+      /* multiply times df to make sure units are correct */
+      for ( p = 0 ; p < (int)vector->length; p++ )
+	vector->data[p] *= GV.Spec.deltaF;
+
+      /* perform the truncation; the truncation is CLA.TruncSecs/2 because 
+	 we are dealing with the sqrt of the filter at the moment*/
+      if(CLA.TruncSecs != 0.0) 
+	{
+	  memset( vector->data + (INT4)(CLA.TruncSecs/2/GV.ht_proc.deltaT +0.5), 0,
+		  ( vector->length -  2 * (INT4)(CLA.TruncSecs/2/GV.ht_proc.deltaT +0.5)) 
+		  * sizeof( *vector->data ) );
+	}
+
+      /* forward fft the truncated vector into vtilde */
+      LALForwardRealFFT( &status, vtilde, vector,  GV.fplan);
+      TESTSTATUS( &status );
+
+      for ( p = 0 ; p < (int)vtilde->length-1; p++ )
+	{
+	  REAL4 re = vtilde->data[p].re * GV.ht_proc.deltaT;
+	  REAL4 im = vtilde->data[p].im * GV.ht_proc.deltaT;
+	  
+	  strtemplate[m].StringFilter.data->data[p] = (re * re + im * im);
+	}
+
+      /* set DC and Nyquist to 0*/
+      strtemplate[m].StringFilter.data->data[0] =
+	strtemplate[m].StringFilter.data->data[vtilde->length-1] = 0;
+
+/*       if (m == 0) LALSPrintFrequencySeries( &(strtemplate[m].StringFilter), "Filter0.txt" ); */
+/*       if (m == 1) LALSPrintFrequencySeries( &(strtemplate[m].StringFilter), "Filter1.txt" ); */
+/*       if (m == 2) LALSPrintFrequencySeries( &(strtemplate[m].StringFilter), "Filter2.txt" ); */
+
+    }
+
+  XLALDestroyCOMPLEX8Vector( vtilde );
+  XLALDestroyREAL4Vector( vector );
+  
+  return 0;
+}
 
 /*******************************************************************************/
 
@@ -712,80 +789,6 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
   return 0;
 }
 
-
-/*******************************************************************************/
-int CreateStringFilter(struct CommandLineArgsTag CLA)
-{
-  COMPLEX8Vector *vtilde = NULL;
-  REAL4Vector    *vector = NULL;
-
-  int p,f_cutoff_index; 
- 
-  /* Create vector that will hold the string filter */
-  GV.StringFilter.deltaF=GV.Spec.deltaF;
-  LALSCreateVector( &status, &GV.StringFilter.data, GV.Spec.data->length );
-  TESTSTATUS( &status );
-
-  /* We need to truncate the filter (in the time domain) to ensure it has a 
-     finite (and small) response time */
-
-  LALCCreateVector( &status, &vtilde, GV.Spec.data->length );
-  TESTSTATUS( &status );
-
-  f_cutoff_index = CLA.fbankstart/ GV.StringFilter.deltaF;
-  
-  memset( vtilde->data, 0, f_cutoff_index  * sizeof( *vtilde->data ) );
- 
-  for ( p = (int)f_cutoff_index ; p < (int)vtilde->length - 1; p++ )
-    {
-      REAL4 f=p*GV.StringFilter.deltaF;
-      
-      vtilde->data[p].re = sqrt(pow(f,CLA.power)/(GV.Spec.data->data[p]));
-      vtilde->data[p].im = 0;
-    }
-  vtilde->data[vtilde->length - 1].re = 0;
-  vtilde->data[vtilde->length - 1].im = 0;
-
-  LALSCreateVector( &status, &vector, GV.seg_length );
-  TESTSTATUS( &status );
-
-  LALReverseRealFFT( &status, vector, vtilde,  GV.rplan);
-  TESTSTATUS( &status );
-  
-  /* multiply times df to make sure units are correct */
-  for ( p = 0 ; p < (int)vector->length; p++ )
-      vector->data[p] *= GV.StringFilter.deltaF;
-  
-  if(CLA.TruncSecs != 0.0) 
-    {
-      memset( vector->data + (INT4)(CLA.TruncSecs/2/GV.ht_proc.deltaT +0.5), 0,
-	      ( vector->length -  2 * (INT4)(CLA.TruncSecs/2/GV.ht_proc.deltaT +0.5)) 
-	      * sizeof( *vector->data ) );
-    }
-  
-  LALForwardRealFFT( &status, vtilde, vector,  GV.fplan);
-  TESTSTATUS( &status );
-
-  for ( p = 0 ; p < (int)vtilde->length - 1; p++ )
-    {
-      REAL4 re = vtilde->data[p].re * GV.ht_proc.deltaT;
-      REAL4 im = vtilde->data[p].im * GV.ht_proc.deltaT;
-
-      GV.StringFilter.data->data[p] = (re * re + im * im);
-    }
-
-  /* set all values below the cutoff frequency to 0 */
-  memset( GV.StringFilter.data->data, 0, f_cutoff_index  * 
-	  sizeof( *GV.StringFilter.data->data ) );
-
-  LALCDestroyVector( &status, &vtilde );
-  TESTSTATUS( &status );
-
-  LALSDestroyVector( &status, &vector );
-  TESTSTATUS( &status );
-
-  return 0;
-}
 
 /*******************************************************************************/
 int AvgSpectrum(struct CommandLineArgsTag CLA)
@@ -999,7 +1002,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"kink-search",                 no_argument, NULL,          'k' },
     {"test-gaussian-data",          no_argument, NULL,          'n' },
     {"test-white-spectrum",         no_argument, NULL,          'w' },
-    {"cluster-events",              no_argument, NULL,          'l' },
+    {"cluster-events",              required_argument, NULL,          'l' },
     {"print-spectrum",              no_argument, NULL,          'a' },
     {"print-filter",                no_argument, NULL,          'b' },    
     {"help",                        no_argument, NULL,          'h' },
@@ -1036,7 +1039,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->whitespectrumflag=0;
   CLA->samplerate=4096.0;
   CLA->trigstarttime=0;
-  CLA->cluster=0;
+  CLA->cluster=0.0;
   CLA->pad=0;
   CLA->printfilterflag=0;
   CLA->printspectrumflag=0;
@@ -1155,7 +1158,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'l':
       /* fake gaussian noise flag */
-      CLA->cluster=1;
+      CLA->cluster=atof(optarg);
       ADD_PROCESS_PARAM("string");
       break;
     case 'a':
@@ -1190,11 +1193,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--cusp-search (-c)\t\tFLAG\t Specifies a search for string cusps.\n");
       fprintf(stdout,"\t--test-gaussian-data (-n)\tFLAG\t Use unit variance fake gaussian noise.\n");
       fprintf(stdout,"\t--test-white-spectrum (-w)\tFLAG\t Use constant white noise (used only in combination with fake gaussian noise; otherwise ignored).\n");
-      fprintf(stdout,"\t--cluster-events (-l)\tFLAG\t Cluster events.\n");
+      fprintf(stdout,"\t--cluster-events (-l)\tREAL4\t Cluster events with input timescale.\n");
       fprintf(stdout,"\t--print-spectrum (-a)\tFLAG\t Prints the spectrum to Spectrum.txt.\n");
       fprintf(stdout,"\t--print-filter (-b)\tFLAG\t Prints the filter to Filter.txt.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
-      fprintf(stdout,"eg ./%s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events --pad 4 --threshold 4 --outfile ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
+      fprintf(stdout,"eg ./%s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --outfile ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
       exit(0);
       break;
     default:
@@ -1333,7 +1336,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
 int FreeMem(void)
 {
-
+  int m;
 
   LALSDestroyVector(&status,&GV.ht_proc.data);
   TESTSTATUS( &status );
@@ -1341,8 +1344,12 @@ int FreeMem(void)
   LALSDestroyVector(&status,&GV.Spec.data);
   TESTSTATUS( &status );
 
-  LALSDestroyVector(&status,&GV.StringFilter.data);
-  TESTSTATUS( &status );
+
+  for (m=0; m < NTemplates; m++)
+    {
+      LALSDestroyVector(&status,&strtemplate[m].StringFilter.data);
+      TESTSTATUS( &status );
+    }
 
   LALDestroyRealFFTPlan( &status, &GV.fplan );
   TESTSTATUS( &status );
