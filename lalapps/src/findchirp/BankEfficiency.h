@@ -598,14 +598,6 @@ BEReadXmlBank(  LALStatus  *status,
 		InspiralCoarseBankIn coarseIn);
 
 
-void
-BEFillOverlapOutput(
-    InspiralWaveOverlapOut overlapout, 
-    OverlapOutputIn *this);
-
-
-
-
 void 
 LALCreateRealPsd(LALStatus *status, 
 		 InspiralCoarseBankIn *bankIn,
