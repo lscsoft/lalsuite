@@ -79,12 +79,12 @@ void LALAvgDetectorVel( LALStatus *status,
 		        VelocityPar *in)
 { /*-------------------------------------------------</lalVerbatim> */
 
-  REAL8           trapSum[3], average[3], tempVel[3]; 
-  REAL8           tBase, vTol, rTol, oldVeloMod, newVeloMod;
+  REAL8           pos1[3], pos2[3];
+  REAL8           tBase;
   LIGOTimeGPS     t0gps, tgps;
   REAL8           t0; 
   REAL8           t, ts, tn; 
-  INT4            n, k, points; 
+  INT4            n; 
   LALDetector     detector;
   EphemerisData   *edat;
 
@@ -98,15 +98,12 @@ void LALAvgDetectorVel( LALStatus *status,
 
   /* copy input values */
   tBase = in->tBase;
-  vTol = in->vTol;
   t0gps = in->startTime;
   detector = in->detector;
   edat = in->edat;
 
   /* basic checks that input values are sane */
   ASSERT(tBase > 0.0, status, VELOCITYH_EVAL, VELOCITYH_MSGEVAL);
-  ASSERT(vTol > 0.0, status, VELOCITYH_EVAL, VELOCITYH_MSGEVAL);
-  ASSERT(vTol < 1.0, status, VELOCITYH_EVAL, VELOCITYH_MSGEVAL);
 
   /* calculate starting time as float */
   ts = (REAL8)(t0gps.gpsSeconds) * 1.00;
@@ -117,48 +114,15 @@ void LALAvgDetectorVel( LALStatus *status,
   t = t0 + tBase;
   TRY( LALFloatToGPS( status->statusPtr, &tgps, &t), status);
 
-  /* The first approximation: (b-a)^-1 * int(f(x),x=a..b) = 0.5*(f(a)+f(b)) */
-  /* calculate velocity at starting time */
-  TRY( LALDetectorVel( status->statusPtr, tempVel, &t0gps, detector, edat), status);
-  for (n=0; n<3; n++) trapSum[n] = 0.5 * tempVel[n]; 
+  /* calculate position at start and finish time */
+  TRY( LALDetectorPos( status->statusPtr, pos1, &t0gps, detector, edat), status);
+  TRY( LALDetectorPos( status->statusPtr, pos2, &tgps, detector, edat), status);
 
-  /*calculate velocity at finish time */
-  
-  TRY( LALDetectorVel( status->statusPtr, tempVel, &tgps, detector, edat), status);
-  
-  /* first approximation to average */  
-  for (n=0; n<3; n++) 
+  /* now calculate average velocity */
+  for (n=0; n<3; n++)
     {
-      trapSum[n] += 0.5 * tempVel[n];
-      average[n] = trapSum[n];
+      v[n] = (pos2[n] - pos1[n])/tBase;
     }
-  
-  points = 1;
-  /* now add more points and stop when desired accuracy is reached*/ 
-  do {
-    points *= 2;
-    for (k=1; k<points; k+=2)
-      {
-	t = t0 + 1.0 * k * tBase / (1.0 * points);
-        TRY( LALFloatToGPS( status->statusPtr, &tgps, &t), status);
-	TRY( LALDetectorVel( status->statusPtr, tempVel, &tgps, detector, edat), status);
-	for (n=0; n<3; n++) trapSum[n] += tempVel[n];
-      }
-    oldVeloMod = newVeloMod = 0.0;
-    for (n=0; n<3; n++) 
-      {
-	oldVeloMod += average[n]*average[n];
-	average[n] = trapSum[n] / (1.0*points);
-        newVeloMod += average[n]*average[n];
-      }
-    /* now calculate the fractional change in magnitude of average */
-    /* is it sufficient to require the magnitude to converge or should
-       we look at the individual components? */
-    rTol = fabs((sqrt(oldVeloMod) - sqrt(newVeloMod))) / (sqrt(oldVeloMod));      
-  } while (rTol > vTol);
-    
-  /* copy the result to the output structure */
-  for (n=0; n<3; n++) v[n] = average[n]; 
 
   DETATCHSTATUSPTR (status);
 
@@ -208,6 +172,7 @@ void LALAvgDetectorPos( LALStatus *status,
   ASSERT(vTol > 0.0, status, VELOCITYH_EVAL, VELOCITYH_MSGEVAL);
   ASSERT(vTol < 1.0, status, VELOCITYH_EVAL, VELOCITYH_MSGEVAL);
 
+
   /* calculate starting time as float */
   ts = (REAL8)(t0gps.gpsSeconds) * 1.00;
   tn = (REAL8)(t0gps.gpsNanoSeconds) * 1.00E-9;
@@ -216,6 +181,7 @@ void LALAvgDetectorPos( LALStatus *status,
   /* calculate finish time */
   t = t0 + tBase;
   TRY( LALFloatToGPS( status->statusPtr, &tgps, &t), status);
+
 
   /* The first approximation: (b-a)^-1 * int(f(x),x=a..b) = 0.5*(f(a)+f(b)) */
   /* calculate velocity at starting time */
