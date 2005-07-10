@@ -288,6 +288,9 @@ int WindowData(void)
   int kl=r/2*(N-1)+1;
   int kh=N-r/2*(N-1)+1;
 
+  /* FIXME: Here I need to add a check to make sure the Tukey window 
+     does not eat past the pad. Need to add CLA to function args */
+
   LALDCreateVector(&status,&window,GV.ht.data->length);
   TESTSTATUS( &status );
 
@@ -872,17 +875,10 @@ int ProcessData(void)
   LALButterworthREAL8TimeSeries( &status, &GV.ht, &highpassParams ); 
   TESTSTATUS( &status ); 
   
-  TESTSTATUS( &status ); 
-
   for (p=0; p<(int)GV.ht.data->length; p++)  
     {
       GV.ht_proc.data->data[p]=GV.ht.data->data[p]; 
     } 
-
-  strncpy(GV.ht_proc.name, GV.ht.name, LALNameLength);
-  GV.ht_proc.deltaT=GV.ht.deltaT;
-  GV.ht_proc.epoch=GV.ht.epoch;
-  GV.ht_proc.sampleUnits=GV.ht.sampleUnits;
 
   /* destroy double precision vector */
   LALDDestroyVector(&status,&GV.ht.data); 
@@ -987,6 +983,12 @@ int ReadData(struct CommandLineArgsTag CLA)
       LALSDestroyVector (&status, &v1);
       TESTSTATUS( &status );   
     }
+
+  /* copy all relevant info to ht_proc */
+  strncpy(GV.ht_proc.name, GV.ht.name, LALNameLength);
+  GV.ht_proc.deltaT=GV.ht.deltaT;
+  GV.ht_proc.epoch=GV.ht.epoch;
+  GV.ht_proc.sampleUnits=GV.ht.sampleUnits;
 
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );
