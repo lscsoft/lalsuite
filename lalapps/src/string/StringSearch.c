@@ -109,8 +109,9 @@ struct CommandLineArgsTag {
   REAL4 cluster;              /* =0.0 if events are not to be clustered = clustering time otherwise */
   INT4 pad;                   /* seconds of padding */
   INT4 printspectrumflag;     /* flag set to 1 if user want to print the spectrum */
-  INT4 printfilterflag;       /* flag set to 1 if user want to print the filter */
-  INT4 printsnrflag;         /* flag set to 1 if user want to print the snr */
+  INT4 printfilterflag;       /* flag set to 1 if user want to print the filter in the frequency domain */
+  INT4 printfirflag;          /* flag set to 1 if user want to print the filter in the time domain */
+  INT4 printsnrflag;          /* flag set to 1 if user want to print the snr */
 } CommandLineArgs;
 
 typedef 
@@ -715,13 +716,46 @@ int CreateStringFilters(struct CommandLineArgsTag CLA)
       strtemplate[m].StringFilter.data->data[0] =
 	strtemplate[m].StringFilter.data->data[vtilde->length-1] = 0;
 
-      /* print out the filter */
+
+      /* print out the frequency domain filter */
       if (CLA.printfilterflag)
 	{
 	  CHAR filterfilename[256];
 	  snprintf(filterfilename, sizeof(filterfilename)-1, "Filter-%d.txt", m);
 	  filterfilename[sizeof(outfilename)-1] = '\0';
 	  LALSPrintFrequencySeries( &(strtemplate[m].StringFilter), filterfilename );
+	}
+
+      /* print out the time domain FIR filter */
+      if (CLA.printfirflag)
+	{
+	  REAL4TimeSeries series;
+	  CHAR filterfilename[256];
+
+	  series.deltaT=GV.ht_proc.deltaT;
+	  series.f0 = 0.0;
+	  strncpy(series.name, "fir filter", LALNameLength);
+	  series.epoch=GV.ht_proc.epoch;
+	  series.sampleUnits=GV.ht_proc.sampleUnits;
+
+	  for ( p = 0 ; p < (int)vtilde->length-1; p++ )
+	    {
+	      REAL4 re = vtilde->data[p].re * GV.ht_proc.deltaT;
+	      REAL4 im = vtilde->data[p].im * GV.ht_proc.deltaT;
+	      
+	      vtilde->data[p].re = (re * re + im * im);
+	      vtilde->data[p].im = 0.0;
+	    }
+	  vtilde->data[0].re = vtilde->data[0].im = 0.0;
+	  vtilde->data[vtilde->length-1].re = vtilde->data[vtilde->length-1].im =0;
+
+	  LALReverseRealFFT( &status, vector, vtilde,  GV.rplan);
+
+	  series.data = vector;
+
+	  snprintf(filterfilename, sizeof(filterfilename)-1, "FIRFilter-%d.txt", m);
+	  filterfilename[sizeof(outfilename)-1] = '\0';
+	  LALSPrintTimeSeries( &series, filterfilename );
 	}
     }
 
@@ -1007,10 +1041,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"print-spectrum",              no_argument, NULL,          'a' },
     {"print-filter",                no_argument, NULL,          'b' },    
     {"print-snr",                   no_argument, NULL,          'r' },        
+    {"print-fir",                   no_argument, NULL,          'x' },        
     {"help",                        no_argument, NULL,          'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwlabrf:L:H:t:F:C:E:S:i:d:T:s:g:o:p:";
+  char args[] = "hnckwlabrxf:L:H:t:F:C:E:S:i:d:T:s:g:o:p:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -1046,6 +1081,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->printfilterflag=0;
   CLA->printspectrumflag=0;
   CLA->printsnrflag=0;
+  CLA->printfirflag=0;
  
   /* initialise ifo string */
   memset(ifo, 0, sizeof(ifo));
@@ -1179,6 +1215,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->printsnrflag=1;
       ADD_PROCESS_PARAM("string");
       break;
+    case 'x':
+      /* fake gaussian noise flag */
+      CLA->printfirflag=1;
+      ADD_PROCESS_PARAM("string");
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -n, -h, -w, -g, -o  and -i. One of -k or -c must be specified. They are:\n");
@@ -1203,7 +1244,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--test-white-spectrum (-w)\tFLAG\t Use constant white noise (used only in combination with fake gaussian noise; otherwise ignored).\n");
       fprintf(stdout,"\t--cluster-events (-l)\tREAL4\t Cluster events with input timescale.\n");
       fprintf(stdout,"\t--print-spectrum (-a)\tFLAG\t Prints the spectrum to Spectrum.txt.\n");
-      fprintf(stdout,"\t--print-filter (-b)\tFLAG\t Prints the filter to Filter-<template number>.txt.\n");      
+      fprintf(stdout,"\t--print-filter (-b)\tFLAG\t Prints the frequency domain filter to Filter-<template number>.txt.\n");      
+      fprintf(stdout,"\t--print-fir (-r)\tFLAG\t Prints the fir filter to FIRFilter-<template number>.txt.\n");      
       fprintf(stdout,"\t--print-snr (-r)\tFLAG\t Prints the snr to stdout.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
       fprintf(stdout,"eg ./%s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --outfile ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
