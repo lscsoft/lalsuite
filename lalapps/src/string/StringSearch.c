@@ -113,6 +113,7 @@ struct CommandLineArgsTag {
   INT4 printfirflag;          /* flag set to 1 if user wants to print the filter in the time domain */
   INT4 printsnrflag;          /* flag set to 1 if user wants to print the snr */
   INT4 printdataflag;         /* flag set to 1 if user wants to print the data */  
+  INT4 printinjectionflag;    /* flag set to 1 if user wants to print the injection(s) */  
 } CommandLineArgs;
 
 typedef 
@@ -178,17 +179,14 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA);
 /* Reads raw data (or puts in fake gaussian noise with a sigma=10^-20) */
 int ReadData(struct CommandLineArgsTag CLA);
 
+/* Adds injections if an xml injection file is given */
+int AddInjections(struct CommandLineArgsTag CLA);
+
 /* windows the data with a Tukey window */
 int WindowData(void);
 
 /* High pass filters and casts data to REAL4 */
 int ProcessData(void);
-
-/* Adds injections if an xml injection file is given */
-int AddInjections(struct CommandLineArgsTag CLA);
-
-/* High pass filters data again if an injection has been made */
-int ProcessData2(void);
 
 /* DownSamples data */
 int DownSample(struct CommandLineArgsTag CLA);
@@ -222,33 +220,27 @@ int main(int argc,char *argv[])
 
  if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
  
- /* set lowest frequency of template bank; 
-    should be higher than BW high pass frequency */ 
-
  highpassParams.nMax =  4;
  highpassParams.f1   = -1;
  highpassParams.a1   = -1;
  highpassParams.f2   = CommandLineArgs.flow;
- highpassParams.a2   = 0.9; /* this means 50% attenuation at f2 */
+ highpassParams.a2   = 0.9; /* this means 90% of amplitude at f2 */
 
  if (ReadData(CommandLineArgs)) return 2;
 
- if (WindowData()) return 3;
-
- if (ProcessData()) return 4;
-
- /* after this there's no more GV.ht, only GV.ht_proc */
  if (CommandLineArgs.InjectionFile != NULL) 
    {
-     if (AddInjections(CommandLineArgs)) return 5;
-     /* high pass filter data again with added injection */ 
+     if (AddInjections(CommandLineArgs)) return 3;
+     if ( CommandLineArgs.printinjectionflag ) LALSPrintTimeSeries( &GV.ht_proc, "injection.txt" );
    }
 
- if (ProcessData2()) return 6;
+ if (WindowData()) return 4;
+
+ if (ProcessData()) return 5;
  
- if (DownSample(CommandLineArgs)) return 7;
+ if (DownSample(CommandLineArgs)) return 6;
 	
- /* Here I need to re-size the time series to remove the pad */
+ /* re-size the time series to remove the pad */
  LALResizeREAL4TimeSeries(&status, &(GV.ht_proc), (int)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5),
 			  GV.ht_proc.data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5));
  TESTSTATUS( &status );
@@ -258,15 +250,15 @@ int main(int argc,char *argv[])
 
  if ( CommandLineArgs.printdataflag ) LALSPrintTimeSeries( &GV.ht_proc, "data.txt" );
 
- if (AvgSpectrum(CommandLineArgs)) return 8;
+ if (AvgSpectrum(CommandLineArgs)) return 7;
 
  if (CommandLineArgs.printspectrumflag) LALSPrintFrequencySeries( &(GV.Spec), "Spectrum.txt" );
 
- if (CreateTemplateBank(CommandLineArgs)) return 9;
+ if (CreateTemplateBank(CommandLineArgs)) return 8;
 
- if (CreateStringFilters(CommandLineArgs)) return 10;
+ if (CreateStringFilters(CommandLineArgs)) return 9;
  
- if (FindStringBurst(CommandLineArgs)) return 12;
+ if (FindStringBurst(CommandLineArgs)) return 10;
 
  if (CommandLineArgs.cluster != 0.0 && events) 
    {
@@ -275,9 +267,9 @@ int main(int argc,char *argv[])
      TESTSTATUS( &status );
    }
 
- if (OutputEvents(CommandLineArgs)) return 13;
+ if (OutputEvents(CommandLineArgs)) return 12;
 
- if (FreeMem()) return 14;
+ if (FreeMem()) return 13;
 
  return 0;
 }
@@ -327,24 +319,13 @@ int WindowData(void)
 
 /*******************************************************************************/
 
-int ProcessData2(void)
-{
-
-  LALDButterworthREAL4TimeSeries( &status, &GV.ht_proc, &highpassParams ); 
-  TESTSTATUS( &status ); 
-
-  return 0;
-}
-
-/*******************************************************************************/
-
 int AddInjections(struct CommandLineArgsTag CLA)
 {
 
-  INT4 startTime = GV.ht.epoch.gpsSeconds;
-  INT4 stopTime = startTime + GV.ht_proc.data->length * GV.ht_proc.deltaT;
+  INT4 startTime = GV.ht.epoch.gpsSeconds+CLA.ShortSegDuration/4+CLA.pad;
+  INT4 stopTime = startTime + GV.ht_proc.data->length * GV.ht_proc.deltaT-CLA.ShortSegDuration/4-CLA.pad;
   SimBurstTable *injections = NULL;
-  int i;
+  int i,p;
   INT4 calType=0;
 
   COMPLEX8 one = {1.0, 0.0};
@@ -362,8 +343,10 @@ int AddInjections(struct CommandLineArgsTag CLA)
   for(i = 0; i < (int)response->data->length; i++)
 			response->data->data[i] = one;
 
-  /* Inject the signals into the data */
+  /* Inject the signals into ht_proc; ht_proc has been set to zero 
+     so I can print out injecitons */
   LALBurstInjectSignals(&status, &GV.ht_proc, injections, response, calType); 
+  LALDestroyCOMPLEX8FrequencySeries(&status, response);
 
   /* free the injection table */
   while(injections) {
@@ -372,7 +355,11 @@ int AddInjections(struct CommandLineArgsTag CLA)
     LALFree(thisEvent);
   }
 
-  LALDestroyCOMPLEX8FrequencySeries(&status, response);
+  /* add injections into the data */
+  for (p=0; p<(int)GV.ht.data->length; p++)  
+    {
+      GV.ht.data->data[p] += GV.ht_proc.data->data[p]; 
+    } 
 
   return 0;
 }
@@ -939,7 +926,13 @@ int ReadData(struct CommandLineArgsTag CLA)
   TESTSTATUS( &status );
 
   SAMPLERATE=1.0/GV.ht.deltaT;
-
+  
+  /* zero out data */
+  for (p=0; p<(int)GV.ht.data->length; p++)
+    {
+      GV.ht.data->data[p] = GV.ht_proc.data->data[p] = 0.0;
+    }
+  
   /* If we are reading real noise then read it*/
   if (!CLA.fakenoiseflag)
     {
@@ -1033,10 +1026,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"test-white-spectrum",         no_argument, NULL,          'w' },
     {"cluster-events",              required_argument, NULL,          'l' },
     {"print-spectrum",              no_argument, NULL,          'a' },
-    {"print-filter",                no_argument, NULL,          'b' },    
+    {"print-fd-filter",             no_argument, NULL,          'b' },    
     {"print-snr",                   no_argument, NULL,          'r' },        
-    {"print-fir",                   no_argument, NULL,          'x' },        
+    {"print-td-filter",             no_argument, NULL,          'x' },        
     {"print-data",                  no_argument, NULL,          'y' },        
+    {"print-injection",             no_argument, NULL,          'z' },        
     {"help",                        no_argument, NULL,          'h' },
     {0, 0, 0, 0}
   };
@@ -1078,6 +1072,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->printsnrflag=0;
   CLA->printfirflag=0;
   CLA->printdataflag=0;
+  CLA->printinjectionflag=0;
   
   /* initialise ifo string */
   memset(ifo, 0, sizeof(ifo));
@@ -1221,6 +1216,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->printdataflag=1;
       ADD_PROCESS_PARAM("string");
       break;
+    case 'z':
+      /* fake gaussian noise flag */
+      CLA->printinjectionflag=1;
+      ADD_PROCESS_PARAM("string");
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -n, -h, -w, -g, -o  and -i. One of -k or -c must be specified. They are:\n");
@@ -1245,12 +1245,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--test-white-spectrum (-w)\tFLAG\t Use constant white noise (used only in combination with fake gaussian noise; otherwise ignored).\n");
       fprintf(stdout,"\t--cluster-events (-l)\tREAL4\t Cluster events with input timescale.\n");
       fprintf(stdout,"\t--print-spectrum (-a)\tFLAG\t Prints the spectrum to Spectrum.txt.\n");
-      fprintf(stdout,"\t--print-filter (-b)\tFLAG\t Prints the frequency domain filter to Filter-<template number>.txt.\n");      
-      fprintf(stdout,"\t--print-fir (-r)\tFLAG\t Prints the fir filter to FIRFilter-<template number>.txt.\n");      
-      fprintf(stdout,"\t--print-snr (-r)\tFLAG\t Prints the snr to stdout.\n");      
-      fprintf(stdout,"\t--print-data (-r)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");      
+      fprintf(stdout,"\t--print-fd-filter (-b)\tFLAG\t Prints the frequency domain filter to Filter-<template number>.txt.\n");      
+      fprintf(stdout,"\t--print-td-filter (-r)\tFLAG\t Prints the time domain filter to FIRFilter-<template number>.txt.\n");      
+      fprintf(stdout,"\t--print-snr (-x)\tFLAG\t Prints the snr to stdout.\n");      
+      fprintf(stdout,"\t--print-data (-y)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");      
+      fprintf(stdout,"\t--print-injection (-z)\tFLAG\t Prints the injeciton data to injection.txt.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
-      fprintf(stdout,"eg ./%s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --outfile ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
+      fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --outfile ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
       exit(0);
       break;
     default:
@@ -1265,61 +1266,61 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->flow == 0.0)
     {
       fprintf(stderr,"No low cutoff frequency specified.\n");
-      fprintf(stderr,"Try ./%s -h \n",argv[0]);
+      fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->fbankstart == 0.0)
     {
       fprintf(stderr,"No low frequency for frequency bank specified.\n");
-      fprintf(stderr,"Try ./%s -h \n",argv[0]);
+      fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->fbankhighfcutofflow == 0.0)
     {
       fprintf(stderr,"No template bank lowest high frequency cutoff specified.\n");
-      fprintf(stderr,"Try ./%s -h \n",argv[0]);
+      fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->threshold == 0.0)
     {
       fprintf(stderr,"No SNR threshold specified.\n");
-      fprintf(stderr,"Try ./%s -h \n",argv[0]);
+      fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->power == 0.0)
     {
       fprintf(stderr,"Cusp or kink search not specified. \n");
-      fprintf(stderr,"Try ./%s -h \n",argv[0]);
+      fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->FrCacheFile == NULL)
     {
       fprintf(stderr,"No frame cache file specified.\n");
-      fprintf(stderr,"Try ./%s -h \n",argv[0]);
+      fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->ChannelName == NULL)
     {
       fprintf(stderr,"No channel name specified.\n");
-      fprintf(stderr,"Try ./%s -h \n",argv[0]);
+      fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->GPSStart == 0)
     {
       fprintf(stderr,"No GPS start time specified.\n");
-      fprintf(stderr,"Try ./%s -h \n",argv[0]);
+      fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->GPSEnd == 0)
     {
       fprintf(stderr,"No GPS end time specified.\n");
-      fprintf(stderr,"Try ./%s -h \n",argv[0]);
+      fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
   if(CLA->ShortSegDuration == 0)
     {
       fprintf(stderr,"Short segment duration not specified (they overlap by 50%s).\n","%");
-      fprintf(stderr,"Try ./%s -h \n",argv[0]);
+      fprintf(stderr,"Try %s -h \n",argv[0]);
       return 1;
     }      
 
