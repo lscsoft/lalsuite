@@ -650,10 +650,6 @@ int CreateStringFilters(struct CommandLineArgsTag CLA)
  
   f_low_cutoff_index = (int) (CLA.fbankstart/ GV.Spec.deltaF+0.5);
 
-  /* set all frequencies below the low freq cutoff to zero */
-  memset( vtilde->data, 0, f_low_cutoff_index  * sizeof( *vtilde->data ) );
-
-
   for (m = 0; m < NTemplates; m++)
     {
       int f_high_cutoff_index = (int) (strtemplate[m].f/ GV.Spec.deltaF+0.5);
