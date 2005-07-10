@@ -1038,6 +1038,7 @@ BEParseGetDouble2(CHAR    **argv,
   CHAR *tmp; 
   CHAR msg[2048];
   CHAR *tmp2 , *tmp1;
+
   tmp1 = argv[*index+1];
   tmp2=  argv[*index+2];
 
@@ -1596,12 +1597,21 @@ GetResult(
     result->psi3_inject  = injected.psi3;     
     result->psi0_trigger  = triggerC.psi0;
     result->psi3_trigger  = triggerC.psi3;     
+    result->tau0_trigger = 0.;
+    result->tau3_trigger = 0.;
+    result->tau0_inject  = 0.;
+    result->tau3_inject  = 0.; 
   }
   else{
 
     LALInspiralParameterCalc( status->statusPtr,  &trigger );
     CHECKSTATUSPTR(status);							
-
+    result->psi0_triggerU = 0.;
+    result->psi3_triggerU = 0.;
+    result->psi0_inject   = 0.;
+    result->psi3_inject   = 0.;     
+    result->psi0_trigger  = 0.;
+    result->psi3_trigger  = 0.;     
     result->tau0_trigger = triggerC.t0;
     result->tau3_trigger = triggerC.t3;
     result->tau0_inject  = injected.t0;
@@ -1640,26 +1650,26 @@ PrintResults(   ResultIn result,
 {
 
   fprintf(stdout, "%e %e %e %e %e %e ",  
-      result.psi0_triggerU, 
-      result.psi3_triggerU,
-      result.psi0_trigger, 
-      result.psi3_trigger,
-      randIn.param.psi0,
-      randIn.param.psi3);
- 
+	  result.psi0_triggerU, 
+	  result.psi3_triggerU,
+	  result.psi0_trigger, 
+	  result.psi3_trigger,
+	  randIn.param.psi0,
+	  randIn.param.psi3);
+  
   fprintf(stdout, "%e %e %e %e ", 
-      result.tau0_trigger, 
-      result.tau3_trigger,
-      randIn.param.t0,
-      randIn.param.t3);
-
+	  result.tau0_trigger, 
+	  result.tau3_trigger,
+	  randIn.param.t0,
+	  randIn.param.t3);
+  
   fprintf(stdout, "%7.2f %7.2f %7.2f   %e %e ", 
 	  result.fend_triggerU, 
 	  result.fend_trigger, 
 	  randIn.param.fFinal,
 	  randIn.param.mass1,
 	  randIn.param.mass2);
-
+  
   fprintf(stdout, "%7.5f %e %e %e  %d %d ",
 	  result.rho_finalU, 
 	  randIn.param.startPhase, 
@@ -1667,7 +1677,7 @@ PrintResults(   ResultIn result,
 	  result.alphaFU,
 	  result.layerU,
 	  result.binU);
-
+  
   fprintf(stdout, " %7.5f %7.5f %e %e %e  %d %d %d\n",
 	  result.rho_final, 
 	  result.snrAtCoaTime,
@@ -3066,29 +3076,6 @@ BEInitOverlapOutputIn(OverlapOutputIn *this){
  /*I do not think we need any other  iniitalisation */
 }
 
-void
-BEFillOverlapOutput(InspiralWaveOverlapOut overlapout, 
-		    OverlapOutputIn *this)
-{
-
-  this->rhoMax         = overlapout.max;
-  this->phase          = overlapout.phase;
-  this->rhoBin         = overlapout.bin;
-  this->alpha          = -1.;
-  this->freq           = -1;
-  this->layer          = -1;
-  this->templateNumber = -1;
-  
-  this->rhoMaxU         = overlapout.max;
-  this->phaseU          = overlapout.phase;
-  this->rhoBinU         = overlapout.bin;
-  this->alphaU          = -1.;
-  this->freqU           = -1;
-  this->layerU          = -1;
-  this->templateNumberU = -1;
-      
-}
-
 
 
 /* Estimate the size of the longest template */
@@ -3106,7 +3093,6 @@ void BEGetMaximumSize(LALStatus  *status,
  
   LAL_CALL(LALInspiralWaveLength(status->statusPtr, length, randIn.param), 
 	   status->statusPtr);
-
 
   DETATCHSTATUSPTR( status );
   RETURN( status );  
