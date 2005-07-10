@@ -108,10 +108,11 @@ struct CommandLineArgsTag {
   INT4 trigstarttime;         /* start-time of allowed triggers */
   REAL4 cluster;              /* =0.0 if events are not to be clustered = clustering time otherwise */
   INT4 pad;                   /* seconds of padding */
-  INT4 printspectrumflag;     /* flag set to 1 if user want to print the spectrum */
-  INT4 printfilterflag;       /* flag set to 1 if user want to print the filter in the frequency domain */
-  INT4 printfirflag;          /* flag set to 1 if user want to print the filter in the time domain */
-  INT4 printsnrflag;          /* flag set to 1 if user want to print the snr */
+  INT4 printspectrumflag;     /* flag set to 1 if user wants to print the spectrum */
+  INT4 printfilterflag;       /* flag set to 1 if user wants to print the filter in the frequency domain */
+  INT4 printfirflag;          /* flag set to 1 if user wants to print the filter in the time domain */
+  INT4 printsnrflag;          /* flag set to 1 if user wants to print the snr */
+  INT4 printdataflag;         /* flag set to 1 if user wants to print the data */  
 } CommandLineArgs;
 
 typedef 
@@ -252,17 +253,10 @@ int main(int argc,char *argv[])
 			  GV.ht_proc.data->length-2*(UINT4)(CommandLineArgs.pad/GV.ht_proc.deltaT+0.5));
  TESTSTATUS( &status );
 
-/* { */
-/*   int p; */
-/*   for ( p = 0 ; p < (int)GV.ht_proc.data->length; p++ ) */
-/*     { */
-/*       fprintf(stdout,"%e\n",GV.ht_proc.data->data[p]); */
-/*     } */
-/*   return 0; */
-/* } */
-
  /* reduce duration of segment appropriately */
  GV.duration -= 2*CommandLineArgs.pad; 
+
+ if ( CommandLineArgs.printdataflag ) LALSPrintTimeSeries( &GV.ht_proc, "data.txt" );
 
  if (AvgSpectrum(CommandLineArgs)) return 8;
 
@@ -1042,10 +1036,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"print-filter",                no_argument, NULL,          'b' },    
     {"print-snr",                   no_argument, NULL,          'r' },        
     {"print-fir",                   no_argument, NULL,          'x' },        
+    {"print-data",                  no_argument, NULL,          'y' },        
     {"help",                        no_argument, NULL,          'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwlabrxf:L:H:t:F:C:E:S:i:d:T:s:g:o:p:";
+  char args[] = "hnckwlabrxyf:L:H:t:F:C:E:S:i:d:T:s:g:o:p:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -1082,7 +1077,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->printspectrumflag=0;
   CLA->printsnrflag=0;
   CLA->printfirflag=0;
- 
+  CLA->printdataflag=0;
+  
   /* initialise ifo string */
   memset(ifo, 0, sizeof(ifo));
 
@@ -1220,6 +1216,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       CLA->printfirflag=1;
       ADD_PROCESS_PARAM("string");
       break;
+    case 'y':
+      /* fake gaussian noise flag */
+      CLA->printdataflag=1;
+      ADD_PROCESS_PARAM("string");
+      break;
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"All arguments are required except -n, -h, -w, -g, -o  and -i. One of -k or -c must be specified. They are:\n");
@@ -1247,6 +1248,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--print-filter (-b)\tFLAG\t Prints the frequency domain filter to Filter-<template number>.txt.\n");      
       fprintf(stdout,"\t--print-fir (-r)\tFLAG\t Prints the fir filter to FIRFilter-<template number>.txt.\n");      
       fprintf(stdout,"\t--print-snr (-r)\tFLAG\t Prints the snr to stdout.\n");      
+      fprintf(stdout,"\t--print-data (-r)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
       fprintf(stdout,"eg ./%s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --outfile ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
       exit(0);
