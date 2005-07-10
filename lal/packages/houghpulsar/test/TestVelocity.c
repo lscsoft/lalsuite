@@ -238,9 +238,9 @@ int main(int argc, char *argv[]){
 
   printf("Avg. detector velocity in a interval of %g from %ld = %g, %g, %g \n", TBASE, T0SEC, vel[0],vel[1],vel[2]);
 
-  SUB( LALAvgDetectorPos ( &status, vel, &velPar), &status );
+  SUB( LALAvgDetectorPos ( &status, pos, &velPar), &status );
 
-  printf("Avg. detector position in a interval of %g from %ld = %g, %g, %g \n", TBASE, T0SEC, vel[0],vel[1],vel[2]);
+  printf("Avg. detector position in a interval of %g from %ld = %g, %g, %g \n", TBASE, T0SEC, pos[0],pos[1],pos[2]);
 
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
