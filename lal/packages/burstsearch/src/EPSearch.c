@@ -33,6 +33,7 @@ NRCSID(EPSEARCHC, "$Id$");
  
 static SnglBurstTable *TFTileToBurstEvent(
 	const TFTile *tile,
+	const char *channelName,
 	const LIGOTimeGPS *epoch,
 	const EPSearchParams *params  
 )
@@ -42,10 +43,10 @@ static SnglBurstTable *TFTileToBurstEvent(
 		return(NULL);
 
 	event->next = NULL;
-	strncpy(event->ifo, params->channelName, 2);
+	strncpy(event->ifo, channelName, 2);
 	event->ifo[2] = '\0';
 	strncpy(event->search, "power", LIGOMETA_SEARCH_MAX);
-	strncpy(event->channel, params->channelName, LIGOMETA_CHANNEL_MAX);
+	strncpy(event->channel, channelName, LIGOMETA_CHANNEL_MAX);
 
 	event->start_time = *epoch; 
 
@@ -66,13 +67,13 @@ static SnglBurstTable *TFTileToBurstEvent(
 }
 
 
-static SnglBurstTable **TFTilesToSnglBurstTable(const TFTiling *tiling, SnglBurstTable **addpoint, const LIGOTimeGPS *epoch, const EPSearchParams *params)
+static SnglBurstTable **TFTilesToSnglBurstTable(const TFTiling *tiling, const char *channelName, SnglBurstTable **addpoint, const LIGOTimeGPS *epoch, const EPSearchParams *params)
 {
 	TFTile *tile;
 	size_t i;
 
 	for(i = 0, tile = tiling->tile; (i < tiling->numtiles) && (tile->lnalpha <= params->lnalphaThreshold - tile->lnweight); i++, tile++) {
-		*addpoint = TFTileToBurstEvent(tile, epoch, params); 
+		*addpoint = TFTileToBurstEvent(tile, channelName, epoch, params); 
 
 		if(*addpoint)
 			addpoint = &(*addpoint)->next;
@@ -310,7 +311,7 @@ XLALEPSearch(
 		 * The threhsold cut determined by alpha is applied here
 		 */
 
-		EventAddPoint = TFTilesToSnglBurstTable(Tiling, EventAddPoint, &fseries->epoch, params);
+		EventAddPoint = TFTilesToSnglBurstTable(Tiling, tseries->name, EventAddPoint, &fseries->epoch, params);
 	}
 
 	/*
