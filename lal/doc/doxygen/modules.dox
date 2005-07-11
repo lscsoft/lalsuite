@@ -22,7 +22,7 @@
 
 /** \defgroup stochastic Stochastic Packages */
 
-/** \degroup support LAL Support Interface */
+/** \defgroup support LAL Support Interface */
 
 /** \defgroup frame LAL Framedata Interface (optional) */
 
