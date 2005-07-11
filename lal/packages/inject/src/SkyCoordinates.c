@@ -1,3 +1,77 @@
+/** \file
+ * \ingroup SkyCoordinates
+ * \author Creighton, T. D.
+ * \date $Date$
+ * \brief Automatically converts among sky coordinate systems.
+ * 
+ * $Id$
+ * 
+
+\par Description
+
+The function \verb+LALConvertSkyCoordinates()+ transforms the contents
+of <tt>*input</tt> to the system  
+specified in <tt>*params</tt>, storing the result in <tt>*output</tt>
+(which may point to the same object as <tt>*input</tt> for an in-place
+transformation).  The routine makes calls to the functions in
+<tt>CelestialCoordinates.c</tt> and <tt>TerrestrialCoordinates.c</tt> as
+required; the <tt>*params</tt> object must store any data fields
+required by these functions, or an error will occur.
+
+
+The function <tt>LALNormalizeSkyPosition()</tt> ``normalizes'' any given
+(spherical) sky-position (in radians), which means it projects the
+angles into \f$[0, 2\pi) \times [-\pi/2, \pi/2]\f$ if they lie outside.
+
+
+\par Algorithm
+
+<tt>LALConvertSkyCoordinates()</tt> is structured as a simple loop over
+transformations, each of which moves the output sky position one step
+closer to the desired final coordinates system.  The usual ``flow'' of
+the algorithm is: 
+\image html inject_ConvFlow.png
+\latexonly
+\begin{center}
+horizon
+\makebox[0pt][l]{\raisebox{0.4ex}{$\rightarrow$}}%
+\makebox[0pt][l]{\raisebox{-0.2ex}{$\leftarrow$}}
+\quad geographic
+\makebox[0pt][l]{\raisebox{0.4ex}{$\rightarrow$}}%
+\makebox[0pt][l]{\raisebox{-0.2ex}{$\leftarrow$}}
+\quad equatorial
+\makebox[0pt][l]{\raisebox{2.2ex}{$\nearrow$}}%
+\makebox[0pt][l]{\raisebox{1.8ex}{$\,\swarrow$}}%
+\makebox[0pt][l]{\raisebox{-1.8ex}{$\,\searrow$}}%
+\makebox[0pt][l]{\raisebox{-2.2ex}{$\nwarrow$}}
+\quad
+\makebox[0pt][l]{\raisebox{4ex}{ecliptic}}%
+\makebox[0pt][l]{\raisebox{-4ex}{Galactic}}
+\end{center}
+\endlatexonly
+although one can also convert directly between equatorial and horizon
+coordinate systems if <tt>params->zenith</tt> is given in equatorial
+coordinates (i.e.\ if its longitudinal coordinate is the local mean
+sidereal time rather than the geographic longitude of the observer).
+This leads to the only error checking done within this function: when
+transforming to horizon coordinates, it checks that
+<tt>params->zenith</tt> is either in sky-fixed equatorial or Earth-fixed
+geographic coordinates.  Other than this, error checking is left to
+the secondary function call; if a parameter is absent or poorly
+formatted, the called function will return an error.
+
+\par Uses
+\code 
+LALHorizonToSystem()            LALSystemToHorizon()
+LALGeographicToEquatorial()     LALEquatorialToGeographic()
+LALEquatorialToEcliptic()       LALEclipticToEquatorial()
+LALEquatorialToGalactic()       LALGalacticToEquatorial()
+\endcode
+
+*/
+
+/*---------- laldoc-version of documentation follows ---------- */
+
 /******************************* <lalVerbatim file="SkyCoordinatesCV">
 Author: Creighton, T. D.
 $Id$
@@ -19,12 +93,12 @@ Automatically converts among sky coordinate systems.
 \subsubsection*{Description}
 
 The function \verb+LALConvertSkyCoordinates()+ transforms the contents
-of \verb@*input@ to the system  
-specified in \verb@*params@, storing the result in \verb@*output@
-(which may point to the same object as \verb@*input@ for an in-place
+of <tt>*input</tt> to the system  
+specified in <tt>*params</tt>, storing the result in <tt>*output</tt>
+(which may point to the same object as <tt>*input</tt> for an in-place
 transformation).  The routine makes calls to the functions in
-\verb@CelestialCoordinates.c@ and \verb@TerrestrialCoordinates.c@ as
-required; the \verb@*params@ object must store any data fields
+<tt>CelestialCoordinates.c</tt> and <tt>TerrestrialCoordinates.c</tt> as
+required; the <tt>*params</tt> object must store any data fields
 required by these functions, or an error will occur.
 
 
@@ -56,12 +130,12 @@ horizon
 \makebox[0pt][l]{\raisebox{-4ex}{Galactic}}
 \end{center}
 although one can also convert directly between equatorial and horizon
-coordinate systems if \verb@params->zenith@ is given in equatorial
+coordinate systems if <tt>params->zenith</tt> is given in equatorial
 coordinates (i.e.\ if its longitudinal coordinate is the local mean
 sidereal time rather than the geographic longitude of the observer).
 This leads to the only error checking done within this function: when
 transforming to horizon coordinates, it checks that
-\verb@params->zenith@ is either in sky-fixed equatorial or Earth-fixed
+<tt>params->zenith</tt> is either in sky-fixed equatorial or Earth-fixed
 geographic coordinates.  Other than this, error checking is left to
 the secondary function call; if a parameter is absent or poorly
 formatted, the called function will return an error.
@@ -182,16 +256,16 @@ LALConvertSkyCoordinates( LALStatus        *stat,
 
 
 
-/*----------------------------------------------------------------------
- * if sky-position is not in "normal-range", normalize it correspondingly 
- * based on Alicia's function with some additional "unwinding" added  
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="SkyCoordinatesCP"> */
+/** If sky-position is not in the canonical range 
+ * \f$(\alpha,\delta)\in [0,2\pi]\times[-\pi/2, \pi/2]\f$, normalize it
+ * by mapping it into this coordinate-interval.
+ * Based on Alicia's function with some additional "unwinding" added.  
+ */
 void
 LALNormalizeSkyPosition (LALStatus *stat, 
-			 SkyPosition *posOut, 
-			 const SkyPosition *posIn)
-{ /* </lalVerbatim> */
+			 SkyPosition *posOut, 		/**< [out] normalized sky-position */
+			 const SkyPosition *posIn)	/**< [in] general sky-position */
+{
   SkyPosition tmp;	/* allow posOut == posIn */
 
   INITSTATUS( stat, "NormalizeSkyPosition", SKYCOORDINATESC);
