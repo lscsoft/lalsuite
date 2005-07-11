@@ -18,8 +18,13 @@
  */
 
 /** \file UserInput.c
- * Convenient unified handling of user-input via config-file and/or command-line.
+ * \ingroup UserInput
+ * \author Reinhard Prix
+ * 
+ * \brief Convenient unified handling of user-input via config-file and/or command-line.
+ *
  */
+
 /* <lalVerbatim file="UserInputCV">
 Author: Prix, Reinhard
 $Id$
@@ -151,14 +156,14 @@ LALRegisterSTRINGUserVar (LALStatus *status,
 
 
 
-/*----------------------------------------------------------------------
- * "register" a user-variable with the module
- * effectively put an appropriate entry into UVAR_vars
+/** Register a user-variable with the module.
+ *  Effectively put an appropriate entry into UVAR_vars
  *
- * NOTE: don't use this directly, as it's not type-safe!!
- *      ==> use one of the 4 wrappers above!
+ *  \note don't use this directly, as it's not type-safe!!
+ *      ==> use one of the 4 wrappers: LALRegisterREALUserVar(), 
+ *    LALRegisterINTUserVar(), LALRegisterBOOLUserVar(), LALRegisterSTRINGUserVar().
  *
- *----------------------------------------------------------------------*/
+ */
 static void
 RegisterUserVar (LALStatus *status, 
 		 const CHAR *name, 
@@ -202,9 +207,8 @@ RegisterUserVar (LALStatus *status,
 
 
 
-/*--------------------------------------------------------------------------------
- * free memory associated with user-variable linked list
- *--------------------------------------------------------------------------------*/
+/** Free all memory associated with user-variable linked list
+ */
 /* <lalVerbatim file="UserInputCP"> */
 void
 LALDestroyUserVars (LALStatus *status)
@@ -248,9 +252,8 @@ LALDestroyUserVars (LALStatus *status)
 } /* LALDestroyUserVars() */
 
 
-/*----------------------------------------------------------------------
- * parse command-line into UserVariable array
- *----------------------------------------------------------------------*/
+/** Parse command-line into UserVariable array
+ */
 /* <lalVerbatim file="UserInputCP"> */
 void
 LALUserVarReadCmdline (LALStatus *status, 
@@ -376,14 +379,14 @@ LALUserVarReadCmdline (LALStatus *status,
 	   * eg, if no '=' was used, so we have to check for that case by hand: */
 
 	  /* if the next entry is not an option, take it as an argument */
-	  if (optarg == NULL && (optind < argc) && (argv[optind][0] != '-') && (argv[optind][0] != '@') )	 
+	  if (optarg == NULL && (optind<argc) && (argv[optind][0]!='-') && (argv[optind][0]!='@') )	 
 	    optarg = argv[optind];
 
 	  if ( optarg == NULL )	/* no argument found at all: defaults to TRUE */
 	    {
 	      ans = 1;
 	    }
-	  else		/* parse bool-argument: should be consistent with bool-parsing in ConfigFile!! */
+	  else	/* parse bool-argument: should be consistent with bool-parsing in ConfigFile!! */
 	    {
 	      /* get rid of case ambiguities */
 	      TRY (LALLowerCaseString (status->statusPtr, optarg), status);
@@ -409,7 +412,8 @@ LALUserVarReadCmdline (LALStatus *status,
 	case UVAR_INT4:
 	  if ( 1 != sscanf ( optarg, "%" LAL_INT4_FORMAT, (INT4*)(ptr->varp)) )
 	    {
-	      LALPrintError ("\nIllegal INT4 commandline argument to --%s: '%s'\n\n", ptr->name, optarg);
+	      LALPrintError ("\nIllegal INT4 commandline argument to --%s: '%s'\n\n", 
+			     ptr->name, optarg);
 	      ABORT (status, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
 	    }
 
@@ -419,7 +423,8 @@ LALUserVarReadCmdline (LALStatus *status,
 	case UVAR_REAL8:
 	  if ( 1 != sscanf ( optarg, "%" LAL_REAL8_FORMAT, (REAL8*)(ptr->varp)) )
 	    {
-	      LALPrintError ("\nIllegal REAL8 commandline argument to --%s: '%s'\n\n", ptr->name, optarg);
+	      LALPrintError ("\nIllegal REAL8 commandline argument to --%s: '%s'\n\n", 
+			     ptr->name, optarg);
 	      ABORT (status, USERINPUTH_ECMDLARG, USERINPUTH_MSGECMDLARG);
 	    }
 
@@ -444,7 +449,7 @@ LALUserVarReadCmdline (LALStatus *status,
 	  break; 
 
 	default:
-	  LALPrintError ("ERROR: unkown UserVariable-type encountered... this points to a coding error!\n");
+	  LALPrintError ("ERROR: unkown UserVariable-type encountered... points to a coding error!\n");
 	  ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
 	  break;
 
@@ -460,12 +465,11 @@ LALUserVarReadCmdline (LALStatus *status,
 
 } /* LALUserVarReadCmdline() */
 
-/*----------------------------------------------------------------------
- * Read config-variables from cfgfile and parse into input-structure
+/** Read config-variables from cfgfile and parse into input-structure.
  *
- * an error is reported if the config-file reading fails, but the 
+ * An error is reported if the config-file reading fails, but the 
  * individual variable-reads are treated as optional
- *----------------------------------------------------------------------*/
+ */
 /* <lalVerbatim file="UserInputCP"> */
 void
 LALUserVarReadCfgfile (LALStatus *status, 
@@ -495,23 +499,23 @@ LALUserVarReadCfgfile (LALStatus *status,
       switch (ptr->type)
 	{
 	case UVAR_BOOL:
-	  TRY( LALReadConfigBOOLVariable (status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead), status);
+	  TRY(LALReadConfigBOOLVariable(status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead), status);
 	  if (wasRead)
 	    ptr->state |= UVAR_WAS_SET;
 	  break;
 	case UVAR_INT4:
-	  TRY( LALReadConfigINT4Variable (status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead), status);
+	  TRY(LALReadConfigINT4Variable(status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead),status);
 	  if (wasRead)
 	    ptr->state |= UVAR_WAS_SET;
 	  break;
 	case UVAR_REAL8:
-	  TRY( LALReadConfigREAL8Variable (status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead), status);
+	  TRY(LALReadConfigREAL8Variable(status->statusPtr, ptr->varp, cfg, ptr->name, &wasRead),status);
 	  if (wasRead)
 	    ptr->state |= UVAR_WAS_SET;
 	  break;
 	case UVAR_STRING:
 	  stringbuf = NULL;
-	  TRY( LALReadConfigSTRINGVariable (status->statusPtr, &stringbuf, cfg, ptr->name, &wasRead), status);
+	  TRY(LALReadConfigSTRINGVariable(status->statusPtr,&stringbuf,cfg,ptr->name,&wasRead),status);
 	  if ( wasRead && stringbuf)	/* did we find something? */
 	    {
 	      if ( *(CHAR**)(ptr->varp) != NULL) {	 /* something allocated here before? */
@@ -525,7 +529,7 @@ LALUserVarReadCfgfile (LALStatus *status,
 	  break;
 
 	default:
-	  LALPrintError ("ERROR: unkown UserVariable-type encountered... this points to a coding error!\n");
+	  LALPrintError ("ERROR: unkown UserVariable-type encountered...points to a coding error!\n");
 	  ABORT (status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
 	  break;
 
@@ -534,7 +538,7 @@ LALUserVarReadCfgfile (LALStatus *status,
     } /* while ptr->next */
 
   /* ok, that should be it: check if there were more definitions we did not read */
-  TRY (LALCheckConfigReadComplete (status->statusPtr, cfg, CONFIGFILE_WARN), status);	/* be strict */
+  TRY (LALCheckConfigReadComplete (status->statusPtr, cfg, CONFIGFILE_WARN), status);
 
   TRY( LALDestroyParsedDataFile (status->statusPtr, &cfg), status);
 
@@ -544,11 +548,10 @@ LALUserVarReadCfgfile (LALStatus *status,
 } /* LALUserVarReadCfgfile() */
 
 
-/*----------------------------------------------------------------------
- * assemble all help-info from uvars into a help-string
- *----------------------------------------------------------------------*/
 #define UVAR_MAXHELPLINE  512	/* max length of one help-line */
 #define UVAR_MAXDEFSTR    100 	/* max length of default-string */
+/** Assemble all help-info from uvars into a help-string.
+ */
 /* <lalVerbatim file="UserInputCP"> */
 void
 LALUserVarHelpString (LALStatus *status, 
@@ -722,11 +725,10 @@ LALUserVarHelpString (LALStatus *status,
 } /* LALUserVarHelpString() */
 
 
-/*----------------------------------------------------------------------
- * This function puts all the above pieces together, and basically does
- * everything: get config-filename from cmd-line (if found),
+/** Put all the pieces together, and basically does everything: 
+ * get config-filename from cmd-line (if found),
  * then interpret config-file and then the command-line
- *----------------------------------------------------------------------*/
+ */
 /* <lalVerbatim file="UserInputCP"> */
 void
 LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
@@ -808,10 +810,9 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
 } /* LALReadUserInput() */
 
 
-/*----------------------------------------------------------------------
- * Has this user-variable been set by the user?
+/** Has this user-variable been set by the user?
  * return -1 on error, TRUE/FALSE otherwise
- *----------------------------------------------------------------------*/
+ */
 /* <lalVerbatim file="UserInputCP"> */
 INT4
 LALUserVarWasSet (void *cvar)
@@ -839,10 +840,9 @@ LALUserVarWasSet (void *cvar)
 
 } /* LALUserVarWasSet() */
 
-/*----------------------------------------------------------------------
- * check that all required user-variables have been set successfully
- * print error if not 
- *----------------------------------------------------------------------*/
+/** Check that all required user-variables have been set successfully.
+ * Print error if not 
+ */
 void
 LALUserVarCheckRequired (LALStatus *status)
 {
@@ -863,9 +863,8 @@ LALUserVarCheckRequired (LALStatus *status)
 
 } /* LALUserVarCheckRequired() */
 
-/*----------------------------------------------------------------------
- * treat the delicate setting of lalDebuglevel
- *----------------------------------------------------------------------*/
+/** Handle the delicate setting of lalDebuglevel.
+ */
 void
 LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
 {

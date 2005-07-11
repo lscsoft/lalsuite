@@ -17,9 +17,22 @@
  *  MA  02111-1307  USA
  */
 
-/** \file UserInput.h
- * Module for general parsing of "user input" from config-file and/or command-line.
+/** \defgroup UserInput 
+ * \ingroup support
+ * \author Reinhard Prix
+ * \date $Date$
+ * \brief Module for general parsing of "user input" from config-file and/or command-line.
+ *
+ * More documentation on how to use this module will appear here soon!!
  */
+ 
+/** \file 
+ * \ingroup UserInput
+ * \author Reinhard Prix
+ * \date $Date$
+ * \brief Header file defining the API for the UserInput modules.
+ */
+
 /* <lalVerbatim file="UserInputHV">
 Author: Prix, Reinhard
 $Id$
@@ -53,6 +66,8 @@ NRCSID( USERINPUTH, "$Id$");
 \subsection*{Error codes}
 </lalLaTeX>
 ***************************************************** <lalErrTable> */
+/** \name Error codes */
+/*@{*/
 #define USERINPUTH_ENULL 	1
 #define USERINPUTH_ENONULL	2
 #define USERINPUTH_EMEM		3
@@ -77,6 +92,7 @@ NRCSID( USERINPUTH, "$Id$");
 #define USERINPUTH_MSGEDEBUG	"lalDebugLevel can only be read before ANY mallocs(), even hidden.."
 #define USERINPUTH_MSGEONECONFIG "Currently one ONE config-file can be specified using '@'"
 #define USERINPUTH_MSGERECFORMAT   "Unknown format for recording user-input"
+/*@}*/
 /*************************************************** </lalErrTable> */
 
 /* <lalLaTeX> 
@@ -128,7 +144,7 @@ TRY(LALRegisterSTRINGUserVar((status)->statusPtr, #name, option, flag, help, &(u
 ******************************************************* </lalLaTeX> */
 
 
-/** state-flags: required, has_default, was_set */
+/** State-flags: variable is optional, required, help, developer or was_set */
 typedef enum {
   UVAR_OPTIONAL		= 0,	/**< not required, and hasn't been set */
   UVAR_REQUIRED 	= 1<<0,	/**< we require the user to set this variable */
