@@ -79,12 +79,12 @@ RCSID( "$Id$" );
 if ( this_summ_value ) \
 { \
   this_summ_value = this_summ_value->next = (SummValueTable *) \
-    LALCalloc( 1, sizeof(SummValueTable) ); \
+  LALCalloc( 1, sizeof(SummValueTable) ); \
 } \
 else \
 { \
   summvalue.summValueTable = this_summ_value = (SummValueTable *) \
-    LALCalloc( 1, sizeof(SummValueTable) ); \
+  LALCalloc( 1, sizeof(SummValueTable) ); \
 } \
 this_summ_value->version = 0; \
 this_summ_value->start_time = searchsumm.searchSummaryTable->out_start_time; \
@@ -200,8 +200,8 @@ CHAR  *userTag          = NULL;         /* string the user can tag with */
 CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
 CHAR   fileName[FILENAME_MAX];          /* name of output files         */
 INT4   maximizationInterval = 0;        /* Max over template in this    */ 
-                                        /* maximizationInterval Nanosec */ 
-                                        /* interval                     */
+/* maximizationInterval Nanosec */ 
+/* interval                     */
 INT8   trigStartTimeNS  = 0;            /* write triggers only after    */
 INT8   trigEndTimeNS    = 0;            /* write triggers only before   */
 INT8   outTimeNS        = 0;            /* search summ out time         */
@@ -216,6 +216,9 @@ int    writeCData       = 0;            /* write complex time series c  */
 
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
+
+/* This command line argument cnotrols the --fast option */
+REAL4   mmFast = -1.0;
 
 int main( int argc, char *argv[] )
 {
@@ -340,6 +343,10 @@ int main( int argc, char *argv[] )
   SimInspiralTable    *injections = NULL;
   SimInspiralTable    *thisInj = NULL;
 
+  /* --fast option related variables */
+  UINT4   *analyseThisTmplt = NULL;
+  INT4    immf = 0;
+  UINT4   analyseTag;
 
   /*
    *
@@ -468,10 +475,10 @@ int main( int argc, char *argv[] )
         "exiting without searching for events.\n", bankFileName );
 
     searchsumm.searchSummaryTable->out_start_time.gpsSeconds = 
-        gpsStartTime.gpsSeconds + (numPoints / (4 * sampleRate));
+      gpsStartTime.gpsSeconds + (numPoints / (4 * sampleRate));
 
     LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
-            &(searchsumm.searchSummaryTable->out_start_time) ), &status );
+          &(searchsumm.searchSummaryTable->out_start_time) ), &status );
 
     if ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) )
     {
@@ -479,12 +486,12 @@ int main( int argc, char *argv[] )
             &(searchsumm.searchSummaryTable->out_start_time), 
             &trigStartTimeNS ), &status );
     }
-    
+
     searchsumm.searchSummaryTable->out_end_time.gpsSeconds = 
-        gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
+      gpsEndTime.gpsSeconds - (numPoints / (4 * sampleRate));
 
     LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
-            &(searchsumm.searchSummaryTable->out_end_time) ), &status );
+          &(searchsumm.searchSummaryTable->out_end_time) ), &status );
 
     if ( trigEndTimeNS && (trigEndTimeNS < outTimeNS) )
     {
@@ -930,7 +937,7 @@ int main( int argc, char *argv[] )
           LIGOMETA_STRING_MAX * sizeof(CHAR), "%s", 
           calCache->frameFiles[i].url );
     }
-    
+
     /* get the response from the frame data */
     LAL_CALL( LALExtractFrameResponse( &status, &resp, calCache, 
           &calfacts), &status );
@@ -1077,7 +1084,7 @@ int main( int argc, char *argv[] )
                 LIGOMETA_STRING_MAX * sizeof(CHAR), "%s", 
                 calCache->frameFiles[i].url );
           }
-          
+
           /* extract the calibration from frames */
           LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCache, 
                 &inj_calfacts ), &status );
@@ -1276,29 +1283,29 @@ int main( int argc, char *argv[] )
       &status );
   tsLength += (REAL8) (numPoints / 4) * chan.deltaT;
   LAL_CALL( LALFloatToGPS( &status, 
-      &(searchsumm.searchSummaryTable->out_start_time), &tsLength ), 
+        &(searchsumm.searchSummaryTable->out_start_time), &tsLength ), 
       &status );
 
 
   LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
-      &(searchsumm.searchSummaryTable->out_start_time) ), &status );
+        &(searchsumm.searchSummaryTable->out_start_time) ), &status );
 
   if ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) )
   {
     /* override with trigger start time */
     LAL_CALL( LALINT8toGPS( &status,
-        &(searchsumm.searchSummaryTable->out_start_time), 
-        &trigStartTimeNS ), &status );
+          &(searchsumm.searchSummaryTable->out_start_time), 
+          &trigStartTimeNS ), &status );
   }
 
   LAL_CALL( LALGPStoFloat( &status, &tsLength, &(chan.epoch) ), 
       &status );
   tsLength += chan.deltaT * ((REAL8) chan.data->length - (REAL8) (numPoints/4));
   LAL_CALL( LALFloatToGPS( &status, 
-      &(searchsumm.searchSummaryTable->out_end_time), &tsLength ), 
+        &(searchsumm.searchSummaryTable->out_end_time), &tsLength ), 
       &status );
 
-  
+
   LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
         &(searchsumm.searchSummaryTable->out_end_time) ), &status );
 
@@ -1306,8 +1313,8 @@ int main( int argc, char *argv[] )
   {
     /* override with trigger end time */
     LAL_CALL( LALINT8toGPS( &status, 
-        &(searchsumm.searchSummaryTable->out_end_time), 
-        &trigEndTimeNS ), &status );
+          &(searchsumm.searchSummaryTable->out_end_time), 
+          &trigEndTimeNS ), &status );
   }
 
   /* 
@@ -1780,6 +1787,19 @@ int main( int argc, char *argv[] )
       }  
     }
 
+    if ( injectionFile ) 
+    {
+
+      /* Make space for analyseThisTmplt */
+      analyseThisTmplt = (UINT4 *) LALCalloc (numTmplts, sizeof(UINT4));
+
+      /* set the analyseThisTmplt flag on templates that are 'close' to the injections */
+      LAL_CALL (LALFindChirpSetAnalyseTemplate (&status, analyseThisTmplt, mmFast, 
+            fcSegVec->data[0].data->deltaF, sampleRate, fcDataParams, numTmplts, 
+            tmpltHead, numInjections, injections ), &status); 
+    }
+
+
 
     /*
      *
@@ -1788,9 +1808,21 @@ int main( int argc, char *argv[] )
      */
 
 
-    for ( tmpltCurrent = tmpltHead, inserted = 0; tmpltCurrent; 
-        tmpltCurrent = tmpltCurrent->next, inserted = 0 )
+    for ( tmpltCurrent = tmpltHead, inserted = 0, immf = 0; tmpltCurrent; 
+        tmpltCurrent = tmpltCurrent->next, inserted = 0, immf++ )
     {
+
+      /* If we are injecting and the analyseThisTmpltFlag is down -
+       * look no further - simply continue to the next template */
+      if ( numInjections>0 ) 
+      {
+        if ( !analyseThisTmplt[immf] )
+          continue;
+        else 
+          if ( vrbflg ) 
+            fprintf (stdout, "\n\n === Template %d going through \n\n", immf);
+      }
+
       /*  generate template */
       switch ( approximant )
       {
@@ -1849,9 +1881,22 @@ int main( int argc, char *argv[] )
           continue;
         }
 
+        /* By default assume that we are going to analyse the
+         * segment with the template (analyseTag = 1)
+         */
+        analyseTag = 1;
+
+        /* If injections are being done - check if for any reason,
+         * the analyseTag flag needs to be brought down. 
+         * */
+        if ( injectionFile ) 
+        {
+          analyseTag = XLALCmprSgmntTmpltFlags ( numInjections, analyseThisTmplt[immf], 
+              fcSegVec->data[i].analyzeSegment );
+        }
+
         /* filter data segment */ 
-        if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level &&
-            fcSegVec->data[i].analyzeSegment)
+        if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level && analyseTag )
         {
           if ( vrbflg ) fprintf( stdout, 
               "filtering segment %d/%d [%lld-%lld] "
@@ -1882,19 +1927,19 @@ int main( int argc, char *argv[] )
               LAL_CALL( LALFindChirpFilterSegment( &status, 
                     &eventList, fcFilterInput, fcFilterParams ), &status ); 
               break;
-              
+
             case BCV:
               if (!bcvConstraint){
-		      LAL_CALL( LALFindChirpBCVFilterSegment( &status,
-                    &eventList, fcFilterInput, fcFilterParams ), &status );
-	      }
-	      else
-	      { 
-		      LAL_CALL( LALFindChirpBCVCFilterSegment( &status,
-                    &eventList, fcFilterInput, fcFilterParams ), &status );
-	      }
+                LAL_CALL( LALFindChirpBCVFilterSegment( &status,
+                      &eventList, fcFilterInput, fcFilterParams ), &status );
+              }
+              else
+              { 
+                LAL_CALL( LALFindChirpBCVCFilterSegment( &status,
+                      &eventList, fcFilterInput, fcFilterParams ), &status );
+              }
               break;
-              
+
             case BCVSpin:
               LAL_CALL( LALFindChirpBCVSpinFilterSegment( &status,
                     &eventList, fcFilterInput, fcFilterParams, fcDataParams 
@@ -1926,9 +1971,9 @@ int main( int argc, char *argv[] )
             upperBound = gpsEndTime.gpsSeconds - numPoints/(4 * sampleRate );
 
             if ( trigTime >= lowerBound && trigTime <= upperBound )
-	    {
-	      tempTmplt = (SnglInspiralTable *) 
-		LALCalloc(1, sizeof(SnglInspiralTable) );
+            {
+              tempTmplt = (SnglInspiralTable *) 
+                LALCalloc(1, sizeof(SnglInspiralTable) );
               tempTmplt->event_id = (EventIDColumn *) 
                 LALCalloc(1, sizeof(EventIDColumn) );
               tempTmplt->mass1 = tmpltCurrent->tmpltPtr->mass1;
@@ -1942,8 +1987,8 @@ int main( int argc, char *argv[] )
                   &coherentInputData, fcFilterParams->cVec, 
                   tempTmplt, 2.0, numPoints / 4 );
 
-	      LALFree( tempTmplt->event_id );
-	      LALFree( tempTmplt );
+              LALFree( tempTmplt->event_id );
+              LALFree( tempTmplt );
 
               if ( coherentInputData )
               {
@@ -1951,26 +1996,26 @@ int main( int argc, char *argv[] )
                 LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
                     "CData_%d", nCDataFr++ );
                 strcpy( coherentInputData->name, chan.name );
-               	if ( ! coherentFrames )
+                if ( ! coherentFrames )
                 {
-		  thisCoherentFrame = coherentFrames = (FrameHNode *) 
-                      LALCalloc( 1, sizeof(FrameHNode) );
-	        }
+                  thisCoherentFrame = coherentFrames = (FrameHNode *) 
+                    LALCalloc( 1, sizeof(FrameHNode) );
+                }
                 else
-	        {
+                {
                   thisCoherentFrame = thisCoherentFrame->next = (FrameHNode *) 
-                      LALCalloc( 1, sizeof(FrameHNode) );
-	        }
+                    LALCalloc( 1, sizeof(FrameHNode) );
+                }
                 thisCoherentFrame->frHeader = fr_add_proc_COMPLEX8TimeSeries( 
                     outFrame, coherentInputData, "none", cdataStr );
                 LAL_CALL( LALCDestroyVector( &status, 
                       &(coherentInputData->data) ), &status );
-		LALFree( coherentInputData );
+                LALFree( coherentInputData );
                 coherentInputData = NULL;
               }
             }
-	  }
-	
+          }
+
           if ( writeChisq )
           {
             CHAR chisqStr[LALNameLength];
@@ -2447,7 +2492,7 @@ int main( int argc, char *argv[] )
       XLALMaxSnglInspiralOverIntervals( &(savedEvents.snglInspiralTable),
           maximizationInterval);
     }
-    
+
     /* if we haven't thrown all the triggers away, write sngl_inspiral table */
     if ( savedEvents.snglInspiralTable )
     {
@@ -2499,12 +2544,15 @@ int main( int argc, char *argv[] )
       LALFree( thisInj );
     }
   }
-  if ( calCacheName ) free( calCacheName );
+  if ( calCacheName )  free( calCacheName );
   if ( frInCacheName ) free( frInCacheName );
-  if ( frInType ) free( frInType );
-  if ( bankFileName ) free( bankFileName );
-  if ( channelName ) free( channelName );
-  if ( fqChanName ) free( fqChanName );
+  if ( frInType )      free( frInType );
+  if ( bankFileName )  free( bankFileName );
+  if ( channelName )   free( channelName );
+  if ( fqChanName )    free( fqChanName );
+
+  /* Free the analyseThisTmplt vector */
+  if ( analyseThisTmplt) LALFree (analyseThisTmplt);
 
   if ( vrbflg ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
@@ -2514,17 +2562,17 @@ int main( int argc, char *argv[] )
 /* ------------------------------------------------------------------------- */
 
 #define ADD_PROCESS_PARAM( pptype, format, ppvalue ) \
-this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
-  calloc( 1, sizeof(ProcessParamsTable) ); \
-  LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
-      PROGRAM_NAME ); \
-      LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
-          long_options[option_index].name ); \
-          LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
-          LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
+  this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
+calloc( 1, sizeof(ProcessParamsTable) ); \
+LALSnprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s", \
+    PROGRAM_NAME ); \
+LALSnprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--%s", \
+    long_options[option_index].name ); \
+LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "%s", pptype ); \
+LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 #define USAGE \
-"lalapps_inspiral [options]\n\n"\
+  "lalapps_inspiral [options]\n\n"\
 "  --help                       display this message\n"\
 "  --verbose                    print progress information\n"\
 "  --version                    print version information and exit\n"\
@@ -2555,6 +2603,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --point-calibration          use the first point in the chunk to calibrate\n"\
 "\n"\
 "  --injection-file FILE        inject simulated inspiral signals from FILE\n"\
+"  --fast F                     use this option to analyse injections using 'nearby' templates\n"\
+"                               (instead of the full template bank). Note that [0 <= F <= 1.0]\n"\
 "\n"\
 "  --inject-overhead            inject signals from overhead detector\n"\
 "  --bank-file FILE             read template bank parameters from FILE\n"\
@@ -2688,6 +2738,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"cluster-method",          required_argument, 0,                '*'},  
     {"cluster-window",          required_argument, 0,                '#'},  
     {"maximization-interval",   required_argument, 0,                '@'},  
+    {"fast",                    required_argument, 0,                '2'},  
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -2911,7 +2962,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
                   long_options[option_index].name, gstartt );
               exit( 1 );
             }
-          trigStartTimeNS = (INT8) gstartt * 1000000000LL;
+            trigStartTimeNS = (INT8) gstartt * 1000000000LL;
           }
           ADD_PROCESS_PARAM( "int", "%ld", gstartt );
         }
@@ -3208,10 +3259,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = BCV;
         }
-	else if ( ! strcmp( "BCVC", optarg ) )
+        else if ( ! strcmp( "BCVC", optarg ) )
         {
           approximant = BCV;
-	  bcvConstraint = 1;
+          bcvConstraint = 1;
         }
         else if ( ! strcmp( "BCVSpin", optarg ) )
         {
@@ -3535,14 +3586,14 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           clusterMethod = noClustering;
         }
-	else if ( ! strcmp( "template", optarg ) )
+        else if ( ! strcmp( "template", optarg ) )
         {
- 	  clusterMethod = tmplt;
-	} 
+          clusterMethod = tmplt;
+        } 
         else if ( ! strcmp( "window", optarg ) )
         {
- 	  clusterMethod = window;
-	} 
+          clusterMethod = window;
+        } 
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -3551,7 +3602,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
               long_options[option_index].name, optarg );
           exit( 1 );
         }
-	haveClusterMethod = 1;
+        haveClusterMethod = 1;
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
@@ -3583,7 +3634,21 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           ADD_PROCESS_PARAM( "int", "%ld", maxns );
         }
         break;
-          
+
+      case '2':
+        {
+          float  mmFastArg = atof (optarg);
+          if ( mmFastArg < (float)(0.0) || mmFastArg > (float)(1.0) )
+          {
+            fprintf( stderr, "invalid argument to --%s:\n"
+                "should be between 0.0 and 1.0: (%f specified)\n",
+                long_options[option_index].name, mmFastArg);
+            exit (1);
+          }
+          mmFast = (REAL4) mmFastArg;
+        }
+        break;
+
       case '?':
         exit( 1 );
         break;
@@ -3835,7 +3900,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( clusterWindow * sampleRate > numPoints )				
   {
     fprintf( stderr, "--cluster-window must be less than "
-	"--segment-length\n" );
+        "--segment-length\n" );
     exit( 1 );
   }
   if ( ! haveClusterMethod )
@@ -3846,13 +3911,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   if ( clusterMethod == window && clusterWindow == -1 )
   {
     fprintf( stderr, "--cluster-window must be specified "
- 	"if --clustering method 'window' chosen\n" );
+        "if --clustering method 'window' chosen\n" );
     exit( 1 );
   }
   if ( clusterMethod != window && clusterWindow != -1 )
   {
     fprintf( stderr, "--cluster-window specified "
- 	"but --clustering method 'window' not chosen\n" );
+        "but --clustering method 'window' not chosen\n" );
     exit( 1 );
   }
   if ( invSpecTrunc < 0 )
@@ -4027,6 +4092,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       fprintf( stderr, "--sim-maximum-mass must be specified "
           "--bank-simulation is given\n" );
       exit( 1 );
+    }
+  }
+
+  if (mmFast >= 0.0)
+  {
+    if (mmFast > minimalMatch)
+    {
+      fprintf (stderr, "The argument of --fast (%e) cannot exceed the minimalMatch (%e)\n",
+          mmFast, minimalMatch);
+      exit (1);
     }
   }
 
