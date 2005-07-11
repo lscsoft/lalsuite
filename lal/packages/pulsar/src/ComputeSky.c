@@ -39,6 +39,10 @@ values are calculated using the analytical formulae given in the
 
 \subsubsection*{Notes}
 
+The reference-time, at which the pulsar spin-parameters are defined, is 
+taken to be the start-time *INTERPRETED* as an SSB time (i.e. no translation 
+is done, the times are numerically equal!).
+
 \vfill{\footnotesize\input{ComputeSkyCV}}
 
 </lalLaTeX> */
@@ -90,17 +94,25 @@ void LALComputeSky	(LALStatus	*status,
  /* Check to make sure pointer to output is not NULL */
  ASSERT(skyConst!=NULL, status, COMPUTESKYH_ENNUL, COMPUTESKYH_MSGENNUL);
  
+ params->baryinput->alpha=params->skyPos[iSkyCoh];
+ params->baryinput->delta=params->skyPos[iSkyCoh+1];
+
+ /* NOTE: we DO NOT translate the start-time into the SSB frame,
+  * as this would result in a source-position dependent reference-time.
+  * Instead we simply take the GPS start-time and interpret it as the
+  * SSB reference-time 
+  */
+ /*
  params->baryinput->tgps.gpsSeconds=params->tGPS[0].gpsSeconds;
  params->baryinput->tgps.gpsNanoSeconds=params->tGPS[0].gpsNanoSeconds;
  
- params->baryinput->alpha=params->skyPos[iSkyCoh];
- params->baryinput->delta=params->skyPos[iSkyCoh+1];
- 
  LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
-  
  LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
- 
  TimeToFloat(&tB0, &(params->emit->te));
+ */
+ TimeToFloat(&tB0, &(params->tGPS[0]));
+
+
  for (n=0; n<params->mObsSFT; n++) 
    {
      t=(REAL8)(params->tGPS[n].gpsSeconds)+(REAL8)(params->tGPS[n].gpsNanoSeconds)*1.0E-9+0.5*params->tSFT; 
