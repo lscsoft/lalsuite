@@ -1247,8 +1247,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--test-white-spectrum (-w)\tFLAG\t Use constant white noise (used only in combination with fake gaussian noise; otherwise ignored).\n");
       fprintf(stdout,"\t--cluster-events (-l)\tREAL4\t Cluster events with input timescale.\n");
       fprintf(stdout,"\t--print-spectrum (-a)\tFLAG\t Prints the spectrum to Spectrum.txt.\n");
-      fprintf(stdout,"\t--print-fd-filter (-b)\tFLAG\t Prints the frequency domain filter to Filter-<template number>.txt.\n");      
-      fprintf(stdout,"\t--print-td-filter (-r)\tFLAG\t Prints the time domain filter to FIRFilter-<template number>.txt.\n");      
+      fprintf(stdout,"\t--print-fd-filter (-b)\tFLAG\t Prints the frequency domain filter to Filter-<template no>.txt.\n");      
+      fprintf(stdout,"\t--print-td-filter (-r)\tFLAG\t Prints the time domain filter to FIRFilter-<template no>.txt.\n");      
       fprintf(stdout,"\t--print-snr (-x)\tFLAG\t Prints the snr to stdout.\n");      
       fprintf(stdout,"\t--print-data (-y)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");      
       fprintf(stdout,"\t--print-injection (-z)\tFLAG\t Prints the injeciton data to injection.txt.\n");      
