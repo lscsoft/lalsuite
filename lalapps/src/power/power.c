@@ -349,7 +349,7 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			break;
 
 			case 'l':
-			arg_is_missing = !params->tfTilingInput.maxTileBandWidth;
+			arg_is_missing = !params->tfTilingInput.maxTileBandwidth;
 			break;
 
 			case 'o':
@@ -476,7 +476,7 @@ void parse_command_line(
 	params->lnalphaThreshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
 	params->method = -1;	/* impossible */
 	params->tfPlaneParams.flow = -1.0;	/* impossible */
-	params->tfTilingInput.maxTileBandWidth = 0;  /* impossible */
+	params->tfTilingInput.maxTileBandwidth = 0;  /* impossible */
 	params->tfTilingInput.overlapFactor = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
 
@@ -652,8 +652,8 @@ void parse_command_line(
 
 		case 'W':
 		options.windowLength = atoi(optarg);
-		if(options.windowLength <= 0) {
-			sprintf(msg, "must be > 0 (%i specified)", options.windowLength);
+		if((options.windowLength <= 0) || !is_power_of_2(options.windowLength)) {
+			sprintf(msg, "must be a power of 2 greater than 0 (%i specified)", options.windowLength);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -754,10 +754,10 @@ void parse_command_line(
 		break;
 
 		case 'l':
-		params->tfTilingInput.maxTileBandWidth = atof(optarg);
-		params->tfPlaneParams.deltaT = 1 / (2 * params->tfTilingInput.maxTileBandWidth);
-		if(params->tfTilingInput.maxTileBandWidth <= 0) {
-			sprintf(msg,"must be > 0 (%f specified)",params->tfTilingInput.maxTileBandWidth);
+		params->tfTilingInput.maxTileBandwidth = atof(optarg);
+		params->tfPlaneParams.deltaT = 1 / (2 * params->tfTilingInput.maxTileBandwidth);
+		if((params->tfTilingInput.maxTileBandwidth <= 0) || !is_power_of_2(params->tfTilingInput.maxTileBandwidth)) {
+			sprintf(msg,"must be a power of 2 greater than 0 (%f specified)",params->tfTilingInput.maxTileBandwidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -767,8 +767,8 @@ void parse_command_line(
 		case 'm':
 		params->tfTilingInput.maxTileDuration = atof(optarg);
 		params->tfPlaneParams.deltaF = 1 / (2 * params->tfTilingInput.maxTileDuration);
-		if(params->tfTilingInput.maxTileDuration > 1.0) {
-			sprintf(msg,"must be <= 1.0 (%f specified)", params->tfTilingInput.maxTileDuration);
+		if((params->tfTilingInput.maxTileDuration > 1.0) || !is_power_of_2(1/params->tfTilingInput.maxTileDuration)) {
+			sprintf(msg,"must be a power of 2 not greater than 1.0 (%f specified)", params->tfTilingInput.maxTileDuration);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -899,7 +899,7 @@ void parse_command_line(
 	 * Miscellaneous chores.
 	 */
 
-	params->tfPlaneParams.timeBins = (params->windowLength / 2) / (options.ResampleRate * params->tfPlaneParams.deltaT);
+	params->tfPlaneParams.timeBins = (options.windowLength / 2) / (options.ResampleRate * params->tfPlaneParams.deltaT);
 	params->tfPlaneParams.freqBins = options.bandwidth / params->tfPlaneParams.deltaF;
 
 	params->printSpectrum = printSpectrum;
