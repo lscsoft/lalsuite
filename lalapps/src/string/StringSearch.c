@@ -1225,7 +1225,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'h':
       /* print usage/help message */
-      fprintf(stdout,"All arguments are required except -n, -h, -w, -g, -o  and -i. One of -k or -c must be specified. They are:\n");
+      fprintf(stdout,"All arguments are required except -n, -h, -w, -g, -o, -x, -y, -z, -b, -r -a, -l, -p, -T  and -i. One of -k or -c must be specified. They are:\n");
       fprintf(stdout,"\t--bw-flow (-f)\t\tFLOAT\t Low frequency cut-off.\n");
       fprintf(stdout,"\t--sample-rate (-s)\t\tFLOAT\t Desired sample rate (Hz).\n");
       fprintf(stdout,"\t--bank-lowest-hifreq-cutoff (-H)\tFLOAT\t Template bank lowest high frequency cut-off.\n");
