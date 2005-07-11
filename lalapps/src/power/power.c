@@ -236,8 +236,6 @@ static void print_usage(char *program)
 "	 --max-tileduration <samples>\n" \
 "	[--mdc-cache <cache file>]\n" \
 "	[--mdc-channel <channel name>]\n" \
-"	 --min-freq-bin <nfbin>\n" \
-"	 --min-time-bin <ntbin>\n" \
 "	[--noise-amplitude <amplitude>]\n" \
 "	[--printData]\n" \
 "	[--printSpectrum]\n" \
@@ -312,10 +310,6 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 
 			case 'Q':
 			arg_is_missing = params->tfPlaneParams.flow < 0.0;
-			break;
-
-			case 'U':
-			arg_is_missing = params->tfTilingInput.minTimeBins <= 0;
 			break;
 
 			case 'W':
@@ -453,7 +447,6 @@ void parse_command_line(
 		{"max-tileduration",    required_argument, NULL,           'm'},
 		{"mdc-cache",           required_argument, NULL,           'R'},
 		{"mdc-channel",         required_argument, NULL,           'S'},
-		{"min-time-bin",        required_argument, NULL,           'U'},
 		{"noise-amplitude",     required_argument, NULL,           'V'},
 		{"printData",           no_argument, &options.printData,  TRUE},
 		{"printSpectrum",       no_argument, &printSpectrum,      TRUE},
@@ -483,7 +476,6 @@ void parse_command_line(
 	params->lnalphaThreshold = XLAL_REAL8_FAIL_NAN;	/* impossible */
 	params->method = -1;	/* impossible */
 	params->tfPlaneParams.flow = -1.0;	/* impossible */
-	params->tfTilingInput.minTimeBins = 0;	/* impossible */
 	params->tfTilingInput.maxTileBandWidth = 0;  /* impossible */
 	params->tfTilingInput.overlapFactor = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
@@ -646,16 +638,6 @@ void parse_command_line(
 		options.mdcchannelIn.name = optarg;
 		options.mdcchannelIn.type = ADCDataChannel;
 		ADD_PROCESS_PARAM("string");
-		break;
-
-		case 'U':
-		params->tfTilingInput.minTimeBins = atoi(optarg);
-		if(params->tfTilingInput.minTimeBins <= 0 || !is_power_of_2(params->tfTilingInput.minTimeBins)) {
-			sprintf(msg,"must be > 0 (%i specified) and a power of 2", params->tfTilingInput.minTimeBins);
-			print_bad_argument(argv[0], long_options[option_index].name, msg);
-			args_are_bad = TRUE;
-		}
-		ADD_PROCESS_PARAM("int");
 		break;
 
 		case 'V':

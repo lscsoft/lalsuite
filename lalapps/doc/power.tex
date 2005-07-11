@@ -186,7 +186,6 @@ simulated data.
 \option{--max-tileduration}~\parm{sec.s} \newline \hspace*{0.5in}
 [\option{--mdc-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 [\option{--mdc-channel}~\parm{channel name}] \newline \hspace*{0.5in}
-\option{--min-time-bin}~\parm{ntbin} \newline \hspace*{0.5in}
 [\option{--noise-amplitude}~\parm{amplitude}] \newline \hspace*{0.5in}
 [\option{--printData}] \newline \hspace*{0.5in}
 [\option{--printSpectrum}] \newline \hspace*{0.5in}
@@ -387,13 +386,6 @@ locations of MDC frames to be used for injections.
 Use the data found in the channel \parm{channel name} in the MDC frames for
 injections.
 
-\item[\option{--min-time-bin} \parm{ntbin}]
-Set the smallest extent in time of TF tiles to search to the integer
-\parm{ntbin}.  A reasonable value for this parameter is $2$.   The product
-$\mbox{\textsc{minfbin}} \times \mbox{\textsc{mintbin}}$ is the minimum
-time-frequency volume to be searched.  See LAL ``burstsearch'' package for
-details.
-
 \item[\option{--noise-amplitude} \parm{amplitude}]
 If this parameter is provided, then Gaussian white noise will be mixed with
 the input data.  If neither \option{--frame-cache} nor \option{--frame-dir}
@@ -502,7 +494,6 @@ lalapps_power \
 --gps-start-time 754008323 \
 --high-pass 120.0 \
 --low-freq-cutoff 130.0 \
---min-time-bin 2 \
 --psd-average-method useMedian \
 --psd-average-points 548864 \
 --target-sample-rate 16384 \

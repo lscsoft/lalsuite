@@ -39,7 +39,6 @@ typedef struct tagTFTiling {
 
 typedef struct tagCreateTFTilingIn {
 	INT4 overlapFactor;
-	INT4 minTimeBins;
 	REAL8 maxTileBandwidth;
 	REAL8 maxTileDuration;
 } CreateTFTilingIn;

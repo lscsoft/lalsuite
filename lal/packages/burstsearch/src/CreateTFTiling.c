@@ -31,7 +31,7 @@ REAL8 XLALTFTileDegreesOfFreedom(const TFTile *tile)
  */
 
 #define FOR_EACH_TILE \
-	for(tbins = min_tbins; tbins <= max_tbins; tbins *= 2) \
+	for(tbins = 2; tbins <= max_tbins; tbins *= 2) \
 		for(fbins = 1 / (tbins * planeparams->deltaT * planeparams->deltaF); fbins <= max_fbins; fbins *= 2) \
 			for(tstart = 0; tstart + tbins <= planeparams->timeBins; tstart += tbins / input->overlapFactor) \
 				for(fstart = 0; fstart + fbins <= planeparams->freqBins; fstart += fbins / input->overlapFactor)
@@ -52,7 +52,7 @@ TFTiling *XLALCreateTFTiling(
 	int numtiles;
 
 	/* tile size limits */
-	int min_tbins, max_tbins, max_fbins;
+	int max_tbins, max_fbins;
 	int maxDOF;
 
 	/* coordinates of a TF tile */
@@ -62,7 +62,6 @@ TFTiling *XLALCreateTFTiling(
 	INT4 tbins;
 
 	/* determine the tile size limits */
-	min_tbins = input->minTimeBins;
 	max_tbins = input->maxTileDuration / planeparams->deltaT;
 	if(planeparams->timeBins < max_tbins)
 		max_tbins = planeparams->timeBins;
