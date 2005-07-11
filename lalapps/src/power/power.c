@@ -355,7 +355,7 @@ static int check_for_missing_parameters(char *prog, struct option *long_options,
 			break;
 
 			case 'l':
-			arg_is_missing = !params->tfTilingInput.maxTileBand;
+			arg_is_missing = !params->tfTilingInput.maxTileBandWidth;
 			break;
 
 			case 'o':
@@ -484,8 +484,7 @@ void parse_command_line(
 	params->method = -1;	/* impossible */
 	params->tfPlaneParams.flow = -1.0;	/* impossible */
 	params->tfTilingInput.minTimeBins = 0;	/* impossible */
-	params->tfTilingInput.maxTileBand = 0;  /* impossible */
-	/*params->tfTilingInput.maxTileBand = 32.0;	default */
+	params->tfTilingInput.maxTileBandWidth = 0;  /* impossible */
 	params->tfTilingInput.overlapFactor = 0;	/* impossible */
 	params->windowShift = 0;	/* impossible */
 
@@ -773,10 +772,10 @@ void parse_command_line(
 		break;
 
 		case 'l':
-		params->tfTilingInput.maxTileBand = atof(optarg);
-		params->tfPlaneParams.deltaT = 1 / (2 * params->tfTilingInput.maxTileBand);
-		if(params->tfTilingInput.maxTileBand < 0) {
-			sprintf(msg,"must be >= 0 (%f specified)",params->tfTilingInput.maxTileBand);
+		params->tfTilingInput.maxTileBandWidth = atof(optarg);
+		params->tfPlaneParams.deltaT = 1 / (2 * params->tfTilingInput.maxTileBandWidth);
+		if(params->tfTilingInput.maxTileBandWidth <= 0) {
+			sprintf(msg,"must be > 0 (%f specified)",params->tfTilingInput.maxTileBandWidth);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
 		}
@@ -918,7 +917,7 @@ void parse_command_line(
 	 * Miscellaneous chores.
 	 */
 
-	params->tfPlaneParams.timeBins = (REAL8) 2.0 * params->windowShift / (options.ResampleRate * params->tfPlaneParams.deltaT);
+	params->tfPlaneParams.timeBins = (params->windowLength / 2) / (options.ResampleRate * params->tfPlaneParams.deltaT);
 	params->tfPlaneParams.freqBins = options.bandwidth / params->tfPlaneParams.deltaF;
 
 	params->printSpectrum = printSpectrum;
