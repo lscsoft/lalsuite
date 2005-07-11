@@ -344,6 +344,10 @@ equatorial system).
 /* <lalLaTeX>
 \newpage\input{CelestialCoordinatesLaldocC}
 </lalLaTeX> */
+  
+/* <lalLaTeX>
+\newpage\input{TerrestrialCoordinatesC}
+</lalLaTeX> */
 
 /* <lalLaTeX>
 \newpage\input{SkyCoordinatesC}
