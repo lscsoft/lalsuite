@@ -16,9 +16,9 @@ NRCSID(PRINTTFTILELISTC, "$Id$");
 static void PrintTFTile(FILE *file, const TFTile *tile, const REAL4TimeFrequencyPlane *plane)
 {
 	INT4 t1 = tile->tstart;
-	INT4 t2 = tile->tend;
+	INT4 t2 = tile->tstart + tile->tbins;
 	INT4 f1 = tile->fstart;
-	INT4 f2 = tile->fend;
+	INT4 f2 = tile->fstart + tile->fbins;
 	REAL8 flow = plane->params.flow;
 	REAL8 epoch = plane->epoch.gpsSeconds + plane->epoch.gpsNanoSeconds / (REAL8) 1e-9;
 	REAL8 deltaT = plane->params.deltaT;

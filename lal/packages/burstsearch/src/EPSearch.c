@@ -52,10 +52,10 @@ static SnglBurstTable *TFTileToBurstEvent(
 
 	/* FIXME: moving the epoch has to be fixed */ 
 	XLALAddFloatToGPS(&event->start_time, (tile->tstart * tile->deltaT));
-	event->duration = (tile->tend - tile->tstart) * tile->deltaT;
+	event->duration = tile->tbins * tile->deltaT;
 	event->peak_time = event->start_time;
 	XLALAddFloatToGPS(&event->peak_time, 0.5 * event->duration);
-	event->bandwidth = (tile->fend - tile->fstart) * tile->deltaF;
+	event->bandwidth = tile->fbins * tile->deltaF;
 	event->central_freq = params->tfPlaneParams.flow + tile->fstart*tile->deltaF + (0.5 * event->bandwidth);
 	event->amplitude = tile->excessPower;
 	event->snr = tile->excessPower;

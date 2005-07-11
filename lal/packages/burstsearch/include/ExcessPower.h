@@ -20,9 +20,9 @@ NRCSID(EXCESSPOWERH, "$Id$");
 
 typedef struct tagTFTile {
 	INT4 fstart;
-	INT4 fend;
+	INT4 fbins;
 	INT4 tstart;
-	INT4 tend;
+	INT4 tbins;
 	REAL8 deltaT;
 	REAL8 deltaF;
 	REAL8 excessPower;
@@ -40,7 +40,7 @@ typedef struct tagTFTiling {
 typedef struct tagCreateTFTilingIn {
 	INT4 overlapFactor;
 	INT4 minTimeBins;
-	REAL8 maxTileBand;
+	REAL8 maxTileBandwidth;
 	REAL8 maxTileDuration;
 } CreateTFTilingIn;
 
