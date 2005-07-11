@@ -840,6 +840,28 @@ XLALFindChirpSetAnalyzeSegment (
     SimInspiralTable           *injections
     );
 
+void
+LALFindChirpSetAnalyseTemplate (
+    LALStatus                    *status,
+    UINT4                        *analyseThisTmplt,
+    REAL4                        mmFast,
+    REAL8                        deltaF,
+    INT4                         sampleRate,
+    FindChirpDataParams          *fcDataParams,
+    int                          numTmplts,
+    InspiralTemplateNode         *tmpltHead,
+    int                          numInjections,
+    SimInspiralTable             *injections
+    );
+
+UINT4
+XLALCmprSgmntTmpltFlags (
+    UINT4 numInjections,
+    UINT4 TmpltFlag,
+    UINT4 SgmntFlag
+    );
+
+
 #ifdef  __cplusplus
 #pragma {
 }
