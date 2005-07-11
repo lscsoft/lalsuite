@@ -933,7 +933,49 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
             imagXP=0.0;
 
             /* Loop over terms in dirichlet Kernel */
+#ifdef SPLITVUNITS
+
+#ifndef VUNITS
+#define VUNITS 4
+#endif
+            for(k=0; k < klim-VUNITS ; k+=VUNITS) {
+		int ki;
+		float xinv_v[VUNITS];
+		float realXP_v[VUNITS];
+		float imagXP_v[VUNITS];
+		float Xar_v[VUNITS];
+		float Xai_v[VUNITS];
+
+		/* prepare Xa */
+		for(ki=0;ki<VUNITS;ki++) {
+		    COMPLEX8 Xa = *Xalpha_k;
+		    Xar_v[ki] = Xa.re;
+		    Xai_v[ki] = Xa.im;
+		    Xalpha_k ++;
+		}
+
+		/* inner loop */
+		for(ki=0;ki<VUNITS;ki++) {
+		    xinv_v[ki] = (float)OOTWOPI / (float)(tempFreq1 - ki);
+		    realP = tsin * xinv_v[ki];
+		    imagP = tcos * xinv_v[ki];
+		    realXP_v[ki] = Xar_v[ki] * realP - Xai_v[ki] * imagP;
+		    imagXP_v[ki] = Xar_v[ki] * imagP + Xai_v[ki] * realP;
+		}
+
+		/* increment */
+		tempFreq1 -= VUNITS;
+
+		/* reduction */
+		for(ki=0;ki<VUNITS;ki++) {
+		    realXP += realXP_v[ki];
+		    imagXP += imagXP_v[ki];
+		}
+	    }
+            for(; k < klim; k++)
+#else
             for(k=0; k < klim ; k++)
+#endif
               {
                 REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
                 COMPLEX8 Xa = *Xalpha_k;
