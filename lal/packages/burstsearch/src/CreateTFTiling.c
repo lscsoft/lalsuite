@@ -62,6 +62,7 @@ TFTiling *XLALCreateTFTiling(
 	INT4 tbins;
 
 	/* determine the tile size limits */
+	/* FIXME: should the two conditionals in fact be errors? */
 	max_tbins = input->maxTileDuration / planeparams->deltaT;
 	if(planeparams->timeBins < max_tbins)
 		max_tbins = planeparams->timeBins;
