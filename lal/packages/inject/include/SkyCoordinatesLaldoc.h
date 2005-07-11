@@ -342,7 +342,7 @@ equatorial system).
 /* Function prototypes. */
 
 /* <lalLaTeX>
-\newpage\input{CelestialCoordinatesC}
+\newpage\input{CelestialCoordinatesLaldocC}
 </lalLaTeX> */
 
 /* <lalLaTeX>
