@@ -2130,7 +2130,7 @@ int main( int argc, char *argv[] )
 
       } /* end loop over data segments */
 
-      /* delete the chisq bins for time domain templates */
+      /* delete the chisq bins for templates */
       switch ( approximant )
       {
         case TaylorT1:
@@ -2139,6 +2139,7 @@ int main( int argc, char *argv[] )
         case GeneratePPN:
         case PadeT1:
         case EOB:
+	case TaylorF2:
           /* the chisq bins need to be re-computed for the next template */
           for ( i = 0; i < fcSegVec->length ; ++i )
           {
