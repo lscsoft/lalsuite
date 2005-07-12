@@ -16,6 +16,13 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
  *  MA  02111-1307  USA
  */
+ 
+/** \file 
+ * \ingroup UserInput
+ * \author Reinhard Prix
+ * \date $Date$
+ * \brief Header file defining the API for ConfigFile.c.
+ */
 
 /************************************ <lalVerbatim file="ConfigFileHV">
 Author: Prix, Reinhard
@@ -26,7 +33,7 @@ $Id$
 \section{Header \texttt{ConfigFile.h}}
 \label{s:ConfigFile.h}
 
-Module for general config-file reading.
+Routines for general config-file reading.
 
 \subsection*{Synopsis}
 \begin{verbatim}
@@ -52,6 +59,8 @@ NRCSID( CONFIGFILEH, "$Id$");
 \subsection*{Error codes}
 </lalLaTeX>
 ***************************************************** <lalErrTable> */
+/** \name Error codes */
+/*@{*/
 #define CONFIGFILEH_ENULL 		1
 #define CONFIGFILEH_EFILE		2
 #define CONFIGFILEH_EVAR		3
@@ -73,61 +82,37 @@ NRCSID( CONFIGFILEH, "$Id$");
 #define CONFIGFILEH_MSGEMEM		"Out of memory"
 #define CONFIGFILEH_MSGEBOOL		"Illegal BOOLEAN entry"
 #define CONFIGFILEH_MSGESTRING		"Malformed quoted string"
+/*@}*/
 /*************************************************** </lalErrTable> */
 
-
-/***************************************************** <lalLaTeX>
-\subsection*{Constants}
-\idx[Constant]{CONFIGFILE\_IGNORE}
-\idx[Constant]{CONFIGFILE\_WARN}
-\idx[Constant]{CONFIGFILE\_ERROR}
-
-The following are constants used to define various \verb+ConfigStrictness+-levels.
-</lalLaTeX> */
-/* <lalVerbatim> */
+/** Levels of strictness for config-file parsing. */
 typedef enum {
-  CONFIGFILE_IGNORE = 0,	/* ignore missing config-variable or unparsed config-entries */
-  CONFIGFILE_WARN,		/* issue a warning but don't report an error. */
-  CONFIGFILE_ERROR,		/* issue an error-message and report a LAL-error */
+  CONFIGFILE_IGNORE = 0,	/**< ignore missing config-variable or unparsed config-entries */
+  CONFIGFILE_WARN,		/**< issue a warning but don't report an error. */
+  CONFIGFILE_ERROR,		/**< issue an error-message and report a LAL-error */
   CONFIGFILE_LAST
 } ConfigStrictness;
-/* </lalVerbatim> */
-/****************************************************** <lalLaTeX>
-\subsection*{Types}
 
-\subsubsection*{Structure \texttt{LALConfigVar}}
-\idx[Type]{LALConfigVar}
 
-This structure defines a config-variable to be read in using the
-general-purpose reading function \verb+LALReadConfigVariable()+:
-
-</lalLaTeX> */
-/* <lalVerbatim> */
+/** This structure defines a config-variable to be read in using the
+ * general-purpose reading function LALReadConfigVariable(). */
 typedef struct {
-  const CHAR *varName;		/* Variable-name to be read in the config-file */
-  const CHAR *fmt;		/* Format string for reading (\verb+sscanf()+-style) */
-  ConfigStrictness strictness;	/* what to do if variable not found: ignore, warn, error */
+  const CHAR *varName;		/**< Variable-name to be read in the config-file */
+  const CHAR *fmt;		/**< Format string for reading (<tt>sscanf()</tt>-style) */
+  ConfigStrictness strictness;	/**< what to do if variable not found: ignore, warn, error */
 } LALConfigVar;
-/* </lalVerbatim> */
 
-/* <lalLaTeX>
 
-\subsubsection*{Structure \texttt{LALParsedData}}
-\idx[Type]{LALParsedData}
-
-This structure is retured by \verb+LALParseDataFile()+ and holds the contents of an 
-ASCII data-file in a pre-parsed form, namely stripped from all comments (\verb+'#', ';'+), 
-spurious whitespaces, and separated into lines (taking into account line-continuation 
-by \verb+'\'+ at the end of lines).
-This is used as the input structure in the config-variable reading routines.
-
-</lalLaTeX> */
-/* <lalVerbatim> */
+/** This structure is returned by LALParseDataFile() and holds the contents of an 
+ * ASCII data-file in a pre-parsed form, namely stripped from all comments ('#', ';'+), 
+ * spurious whitespaces, and separated into lines (taking into account line-continuation 
+ * by '\' at the end of lines).
+ * This is used as the input structure in the config-variable reading routines.
+ */
 typedef struct {
-  TokenList *lines;	/* list of pre-parsed data-file lines */
-  BOOLEAN *wasRead;	/* keep track of successfully read lines for strictness-checking */
+  TokenList *lines;	/**< list of pre-parsed data-file lines */
+  BOOLEAN *wasRead;	/**< keep track of successfully read lines for strictness-checking */
 } LALParsedDataFile;
-/* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
 \vfill{\footnotesize\input{ConfigFileHV}}

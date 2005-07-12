@@ -38,7 +38,7 @@ intermediate step.
 
 \par Algorithm
 
-These routines follow the spherical angle relations on p.~13
+These routines follow the spherical angle relations on p. 13
 of \ref Lang_K1999.  Note that the actual formulae for Galactic
 longitude and right ascension in this reference are wrong; we give
 corrected formulae below derived from the sine and cosine equations.

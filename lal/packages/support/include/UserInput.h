@@ -21,7 +21,7 @@
  * \ingroup support
  * \author Reinhard Prix
  * \date $Date$
- * \brief Module for general parsing of "user input" from config-file and/or command-line.
+ * \brief Module for general parsing of user-input from config-file and/or command-line.
  *
  * More documentation on how to use this module will appear here soon!!
  */

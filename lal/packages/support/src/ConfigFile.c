@@ -17,6 +17,96 @@
  *  MA  02111-1307  USA
  */
 
+/** \file
+ * \ingroup UserInput
+ * \author Reinhard Prix
+ * 
+ * \brief General-purpose routines for config-file reading.
+ *
+ *
+\par Description
+
+This module provides routines for reading formatted
+config-files containing definitions of the form <tt>variable = value</tt>.
+The general syntax is somewhat similar to the one provided by the
+perl-module <tt>ConfigParser</tt> (cf. 
+http://www.python.org/doc/current/lib/module-ConfigParser.html)
+but (currently) without the possibility of "chapters".
+Comments are allowed using either '<tt>\#</tt>' or '<tt>;</tt>'. You can also use 
+line-continuation  using a '<tt>\\</tt>' at the end of the line.
+Also note that '<tt>\#</tt>' or '<tt>;</tt>' within double-quotes '<tt>"..."</tt>' 
+are <em>not</em> treated as comment-characters.  The general syntax is best illustrated
+using a simple example: 
+\code
+# comment line
+var1 = 1.0    ; you can also comment using semi-colons
+somevar = some text.\
+        You can also use\
+        line-continuation	
+   var3 = 4      # whatever that means
+note = "this is also possible, and # here does nothing"
+a_switch = true	 #possible values: 0,1,true,false,yes,no, case insensitive
+# etc etc.
+\endcode
+
+Note that TABS generally get replaced by a single space, which can be
+useful in the case of line-continuation (see example). All leading and
+trailing spaces in are ignore (except within double-quotes).
+
+The general approach of reading from such a config-file, is to first
+call LALParseDataFile() which loads and pre-parses the contents of the 
+config-file into the structure LALParsedDataFile. Then one can read in
+config-variables either using one of the type-strict custom-wrappers
+<tt>LALReadConfig<TYPE>Variable()</tt> or the general-purpose reading function
+LALReadConfigVariable().
+
+
+A boolean variable read by LALReadConfigBOOLVariable() can have any of the values 
+<tt>{"1", "0", "yes", "no", "true", "false"}</tt>, where the comparison is done 
+<em>case-insensitively</em>, i.e. you can also use "True" or "FALSE"....
+
+
+If one wishes a tight sytnax for the config-file, one can check
+that there are no illegal entries in the config-file. This is done
+by checking at the end that all config-file entries have been
+successfully parsed, using:
+LALCheckConfigReadComplete(), where \a strictness is either 
+CONFIGFILE_WARN or CONFIGFILE_ERROR.  
+In the first case only a warning is issued, while in the second it is
+treated as a LAL-error if some config-file entries have not been
+read-in. (The use of this function is optional).
+
+
+The configfile-data should be freed at the end using
+LALDestroyParsedDataFile().
+
+\par Uses
+\code
+LALCHARReadSequence()
+LALCreateTokenList()       LALDestroyTokenList()
+LALCalloc()                LALMalloc()             LALFree()  
+LALPrintError()            LALOpenDataFile()                 fclose()
+\endcode
+
+\par Notes
+
+LALReadConfigSTRINGVariable() and LALReadConfigSTRINGVariable() are not 
+the same as using <tt>"%s"</tt> as a format string, as they read the 
+<em>rest</em> of the logical line (excluding comments) as a string.
+
+
+In the case of LALReadConfigSTRINGVariable(), the required
+memory is allocated and has to be freed by the caller, while for   
+LALReadConfigSTRINGVariable() the caller has to provide a 
+CHARVector of length \f$N\f$, which defines the maximum length of
+string to be read.
+
+
+\note instead of using these functions directly, it might be
+more convenient to use the UserInput.c infrastructure
+
+ */
+
 /************************************ <lalVerbatim file="ConfigFileCV">
 Author: Prix, Reinhard
 $Id$
@@ -100,7 +190,7 @@ read-in. (The use of this function is optional).
 
 
 The configfile-data should be freed at the end using\\
-\verb+void LALDestroyConfigData (LALStatus *status, LALConfigData *cfg)+.
+\verb+void LALDestroyParsedDataFile(LALStatus *status, LALConfigData *cfg)+.
 
 \subsubsection*{Algorithm}
 
@@ -166,32 +256,19 @@ static int TOLOWER(int c);
 static const char upper_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 static const char lower_chars[] = "abcdefghijklmnopqrstuvwxyz";
 
-
-/* static const char digit_chars[] = "0123456789"; */
-
-#define ISDIGIT(c) \
-    ((c) && strchr(digit_chars, (c)) != NULL)
-
-/* static const char space_chars[] = " \f\n\r\t\v"; */
-
-#define ISSPACE(c) \
-    ((c) && strchr(space_chars, (c)) != NULL)
-
 
 
-/*----------------------------------------------------------------------
- * parse an ASCII data-file into a pre-cleaned array of lines
+/** Parse an ASCII data-file into a pre-cleaned array of lines.
  * 
- * the cleaning gets rid of comments ('#', ';'), empty lines, 
+ * The cleaning gets rid of comments ('#', ';'), empty lines, 
  * and performs line-continuation if '\' is found at EOL
  *
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="ConfigFileCP"> */
+ */
 void
 LALParseDataFile (LALStatus *status, 
-		  LALParsedDataFile **cfgdata, 	/* output: pre-parsed data-file lines */
-		  const CHAR *fname)		/* name of config-file to be read */
-{ /* </lalVerbatim> */
+		  LALParsedDataFile **cfgdata, 	/**< [out] pre-parsed data-file lines */
+		  const CHAR *fname)		/**< [in] name of config-file to be read */
+{ 
 
   CHARSequence *rawdata = NULL;
   FILE *fp;
@@ -232,23 +309,24 @@ LALParseDataFile (LALStatus *status,
   ENDFAIL (status);
 
   /* initialize the 'wasRead' flags for the lines */
-  if ( ((*cfgdata)->wasRead = LALCalloc (1, (*cfgdata)->lines->nTokens * sizeof( (*cfgdata)->wasRead[0]))) == NULL) {
-    LALFree ((*cfgdata)->lines);
-    ABORT (status, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
-  }
+  if ( ((*cfgdata)->wasRead = 
+	LALCalloc(1,(*cfgdata)->lines->nTokens * sizeof( (*cfgdata)->wasRead[0]))) == NULL) 
+    {
+      LALFree ((*cfgdata)->lines);
+      ABORT (status, CONFIGFILEH_EMEM, CONFIGFILEH_MSGEMEM);
+    }
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /* LALLoadConfigFile() */
 
-/*----------------------------------------------------------------------
- * free memory associated with a LALParsedDataFile structure
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="ConfigFileCP"> */
+/** Free memory associated with a LALParsedDataFile structure.
+ */
 void
-LALDestroyParsedDataFile (LALStatus *status, LALParsedDataFile **cfgdata)
-{ /* </lalVerbatim> */
+LALDestroyParsedDataFile (LALStatus *status, 
+			  LALParsedDataFile **cfgdata)	/**< [in/out] config-file data */
+{
   INITSTATUS( status, "LALDestroyConfigData", CONFIGFILEC );
   ATTATCHSTATUSPTR (status);
 
@@ -269,27 +347,25 @@ LALDestroyParsedDataFile (LALStatus *status, LALParsedDataFile **cfgdata)
 
 
 
-/*----------------------------------------------------------------------
- *  parser for config-file: can read config-variables of the form
- *	VARIABLE [=:] VALUE
- * input is a TokenList containing the 'logical' lines of the cleaned config-file
+/** Parser for config-file: can read config-variables of the form
+ *	VARIABLE [=:] VALUE.
+ * Input is a TokenList containing the 'logical' lines of the cleaned config-file
  *
- * param->varName is the name of the config-variable to read
- * param->fmt    is the format string to use for reading
+ * - <tt>param->varName</tt> is the name of the config-variable to read
+ * - <tt>param->fmt</tt>     is the format string to use for reading
  *  
- * NOTE1: a special format-string is FMT_STRING, which means read the whole remaining line 
+ * \note a special format-string is FMT_STRING, which means read the whole remaining line 
  *   which is different from "%s"! (reads only one word)
  *   In this case, this also does the memory-allocation!
  *
- * ----------------------------------------------------------------------*/
-/* <lalVerbatim file="ConfigFileCP"> */
+ */
 void
 LALReadConfigVariable (LALStatus *status, 
-		       void *varp, 			/* output: result gets written here! */
-		       const LALParsedDataFile *cfgdata, 	/* input: pre-parsed config-data */
-		       const LALConfigVar *param,	/* var-name, fmt-string, strictness */
-		       BOOLEAN *wasRead)		/* output: did we succeed in reading? */
-{ /* </lalVerbatim> */
+		       void *varp, 			/**< [out] result gets written here! */
+		       const LALParsedDataFile *cfgdata,/**< [in] pre-parsed config-data */
+		       const LALConfigVar *param,	/**< [in]  var-name, fmt-string, strictness */
+		       BOOLEAN *wasRead)		/**< [out] did we succeed in reading? */
+{ 
   CHAR *found = NULL;
   INT2 ret = 0;
 
@@ -388,18 +464,15 @@ LALReadConfigVariable (LALStatus *status,
 
 
 
-/*----------------------------------------------------------------------
- * specialization to BOOLEAN variables
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="ConfigFileCP"> */
+/** Type-specialization of generic reading-function LALReadConfigVariable() to BOOLEAN variables.
+ */
 void
 LALReadConfigBOOLVariable (LALStatus *status, 
-			   BOOLEAN *varp, 		 /* output: variable to store result */
-			   const LALParsedDataFile *cfgdata, /* input: pre-parsed config-data */
-			   const CHAR *varName,		 /* input: variable-name to read */
-			   BOOLEAN *wasRead)		 /* output: did we succeed in reading? */
-{ /* </lalVerbatim> */
-
+			   BOOLEAN *varp, 		 /**< [out] variable to store result */
+			   const LALParsedDataFile *cfgdata,/**< [in] pre-parsed config-data */
+			   const CHAR *varName,		 /**< [in] variable-name to read */
+			   BOOLEAN *wasRead)		 /**< [out] did we succeed in reading? */
+{
   CHAR *tmp = NULL;
   INT2 ret = -1;	/* -1 means no legal value has been parsed */
 
@@ -442,17 +515,16 @@ LALReadConfigBOOLVariable (LALStatus *status,
 
 } /* LALReadConfigBOOLVariable() */
 
-/*----------------------------------------------------------------------
- * specialization to INT4 variables
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="ConfigFileCP"> */
+
+/** Type-specialization of generic reading-function LALReadConfigVariable() to INT4 variables.
+ */
 void
 LALReadConfigINT4Variable (LALStatus *status, 
 			   INT4 *varp, 
 			   const LALParsedDataFile *cfgdata, 
 			   const CHAR *varName,
 			   BOOLEAN *wasRead)
-{ /* </lalVerbatim> */
+{
   LALConfigVar param = {0,0,0};
 
   INITSTATUS( status, "LALReadConfigINT4Variable", CONFIGFILEC );
@@ -467,17 +539,15 @@ LALReadConfigINT4Variable (LALStatus *status,
 
 } /* LALReadConfigINT4Variable() */
 
-/*----------------------------------------------------------------------
- * specialization to REAL8 variables
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="ConfigFileCP"> */
+/** Type-specialization of generic reading-function LALReadConfigVariable() to REAL8 variables.
+ */
 void
 LALReadConfigREAL8Variable (LALStatus *status, 
 			    REAL8 *varp, 
 			    const LALParsedDataFile *cfgdata, 
 			    const CHAR *varName,
 			    BOOLEAN *wasRead)
-{ /* </lalVerbatim> */
+{
   LALConfigVar param = {0,0,0};
 
   INITSTATUS( status, "LALReadConfigREAL8Variable", CONFIGFILEC );
@@ -492,21 +562,21 @@ LALReadConfigREAL8Variable (LALStatus *status,
 
 } /* LALReadConfigREAL8Variable() */
 
-/*----------------------------------------------------------------------
- * specialization to STRING variables 
- * NOTE: this means the rest of the line, NOT "%s"! (but excluding comments of course), 
- * NOTE2: if string is quoted by \", everything within quotes is read,
+
+/** Type-specialization of generic reading-function LALReadConfigVariable() to 
+ * STRING variables 
+ * \note this means the rest of the line, NOT "%s"! (but excluding comments of course), 
+ * \par Note2: if string is quoted by ", everything within quotes is read,
  *       and the quotes are removed here 
  *
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="ConfigFileCP"> */
+ */
 void
 LALReadConfigSTRINGVariable (LALStatus *status, 
-			     CHAR **varp, 		/* output: string, allocated here! */
-			     const LALParsedDataFile *cfgdata, /* pre-parsed config-data */
-			     const CHAR *varName,	/* variable-name to be read */
-			     BOOLEAN *wasRead)			     
-{ /* </lalVerbatim> */
+			     CHAR **varp, 		/**< [out] string, allocated here! */
+			     const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
+			     const CHAR *varName,	/**< [in] variable-name to be read */
+			     BOOLEAN *wasRead)		/**< [out] did we succeed in reading? */
+{ 
   LALConfigVar param = {0,0,0};
   CHAR *str = NULL;
   CHAR *ret = NULL;
@@ -565,31 +635,30 @@ LALReadConfigSTRINGVariable (LALStatus *status,
 
 
 
-/*----------------------------------------------------------------------
- * READING OF FIXED LENGTH STRINGS:
- * another variant of string-reading:similar to ReadConfigSTRING, but
- * here a fixed-size CHAR-array is used as input, no memory is allocated
- * NOTE: you have to provide the length of your string-array as input!
- *      in varp->length
- *
+
+/** Type-specialization of generic reading-function LALReadConfigVariable() to 
+ * reading of <em>fixed-length</em> strings.
+ * Another variant of string-reading:similar to ReadConfigSTRINGVariable(), but
+ * here a fixed-size CHAR-array is used as input, no memory is allocated by 
+ * the function.
+ * \note you have to provide the length of your string-array as input in <tt>varp->length</tt>
  * (this is basically a wrapper for ReadConfigSTRINGVariable())
  *
- * NOTE2: the behaviour is similar to strncpy, i.e. we silently clip the
+ * \par Note 2: the behaviour is similar to strncpy, i.e. we silently clip the
  *       string to the right length, BUT we also 0-terminate it properly.
  *       No error or warning is generated when clipping occurs!
  *
- * NOTE3: at return, the value varp->length is set to the length of the
+ * \par Note 3: at return, the value <tt>varp->length</tt> is set to the length of the
  *        string copied
  *
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="ConfigFileCP"> */
+ */
 void
 LALReadConfigSTRINGNVariable (LALStatus *status, 
-			      CHARVector *varp, 	/* output: must be allocated! */
-			      const LALParsedDataFile *cfgdata, /* pre-parsed config-data */
-			      const CHAR *varName,	/* variable-name */
-			      BOOLEAN *wasRead)
-{ /* </lalVerbatim> */
+			      CHARVector *varp, 	/**< [out] must be allocated! */
+			      const LALParsedDataFile *cfgdata, /**< [in] pre-parsed config-data */
+			      const CHAR *varName,	/**< [in] variable-name */
+			      BOOLEAN *wasRead)		/**< [out] did we succeed in reading? */
+{
   CHAR *tmp = NULL;
 
   INITSTATUS( status, "LALReadSTRINGNVariable", CONFIGFILEC );
@@ -620,16 +689,14 @@ LALReadConfigSTRINGNVariable (LALStatus *status,
 
 
 
-/*----------------------------------------------------------------------
- * check if all lines of config-file have been successfully read in 
- * and issue a warning or error (depending on strictness) if not
- *----------------------------------------------------------------------*/
-/* <lalVerbatim file="ConfigFileCP"> */
+/** Check if all lines of config-file have been successfully read in 
+ * and issue a warning or error (depending on strictness) if not.
+ */
 void
 LALCheckConfigReadComplete (LALStatus *status, 
-			    const LALParsedDataFile *cfgdata, /* config-file data */
-			    ConfigStrictness strict)  /* what to do if unparsed lines */
-{ /* </lalVerbatim> */
+			    const LALParsedDataFile *cfgdata, /**< [in] config-file data */
+			    ConfigStrictness strict)  	/**< [in] what to do if unparsed lines */
+{ 
   UINT4 i;
 
   INITSTATUS( status, "LALCheckConfigReadComplete", CONFIGFILEC );  
@@ -671,11 +738,11 @@ LALCheckConfigReadComplete (LALStatus *status,
  *   INTERNAL FUNCTIONS FOLLOW HERE
  *----------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------
- * little helper function:  turn a string into lowercase
- *----------------------------------------------------------------------*/
+/** Helper function:  turn a string into lowercase without using locale-functions.
+ */
 void
-LALLowerCaseString (LALStatus *status, CHAR *string)
+LALLowerCaseString (LALStatus *status, 
+		    CHAR *string)	/**< [in/out] string to convert */ 
 {
   UINT4 i;
 

@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-/** \file UserInput.c
+/** \file
  * \ingroup UserInput
  * \author Reinhard Prix
  * 
