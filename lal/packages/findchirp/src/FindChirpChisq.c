@@ -141,7 +141,7 @@ LALFindChirpComputeChisqBins(
   chisqBin[chisqPt++] = 0;
 
   /* calculate the frequencies of the chi-squared bin boundaries */
-  for ( k = 1; k < fcSeg->tmpltPowerVec->length; ++k ) 
+  for ( k = 1; k < incIdx; ++k ) 
   {
     partSum += tmpltPower[k];
     if ( partSum >= nextBin ) 
