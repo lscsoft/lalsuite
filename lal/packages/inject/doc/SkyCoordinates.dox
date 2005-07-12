@@ -41,10 +41,10 @@ plane.  The <em>latitude</em> \f$\phi\f$ is the angle in the meridian plane
 between this line and the direction to the object.  The
 <em>distance</em> \f$r\f$ is simply measured in a straight line from the
 origin to the point.  Longitude is defined to increase in the
-right-handed direction about the \f$z\f$-axis (i.e.\ the \f$y\f$-axis lies at
+right-handed direction about the \f$z\f$-axis (i.e. the \f$y\f$-axis lies at
 <em>positive</em> \f$\pi/2\f$ radians longitude), and is typically given in
 the range \f$[0,2\pi)\f$ radians.  Latitude is defined to increase towards
-the \f$z\f$-axis (i.e.\ the \f$z\f$-axis lies at <em>positive</em>
+the \f$z\f$-axis (i.e. the \f$z\f$-axis lies at <em>positive</em>
 \f$\pi/2\f$ radians latitude), and is typically given in the range
 \f$[-\pi/2,\pi/2]\f$ radians; a point with latitude \f$\pm\pi/2\f$ radians has
 arbitrary (undefined) longitude.  Distance should always be positive.
@@ -92,7 +92,7 @@ this coordinate system, the latitude coordinate is called the
 what astronomers call the <em>azimuth</em>; this sign reversal is due to
 the fact that astronomers define azimuth to increase clockwise, and
 our longitudinal coordinates uniformly increase counterclockwise about
-the \f$z\f$-axis.\\
+the \f$z\f$-axis.
 This coordinate system is related to the geographic coordinate system
 (below) by the geographic latitude \f$\phi_z\f$ and longitude \f$\lambda_z\f$
 of the observer's \f$z\f$-axis direction.
@@ -216,7 +216,7 @@ the right ascension \f$\alpha_\mathrm{NGP}\f$ and declination
 \f$\delta_\mathrm{NPG}\f$ of the North Galactic Pole (\f$z\f$-axis) in the
 equatorial coordinate system, the third is the Galactic longitude
 \f$l_\mathrm{ascend}\f$ of the point where the Galactic plane ascends
-through the equatorial plane; i.e.\ the \f$l\f$ value for the direction
+through the equatorial plane; i.e. the \f$l\f$ value for the direction
 along the intersection of the Galactic and equatorial planes, such
 that right-handed rotation about the Galactic \f$z\f$-axis moves you from
 south to north through the equator.
