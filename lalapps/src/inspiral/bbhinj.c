@@ -73,9 +73,10 @@ RCSID( "$Id$" );
 "                           total mass (MDISTR = 0), or over mass1 and\n"\
 "                           over mass2 (MDISTR = 1) (default: MDISTR=0)\n"\
 "  --waveform WVF           set the injection waveform to WVF\n"\
-"                           (EOB, TaylorT1, TaylorT3,PadeT1; followed by the\n"\
-"                           order: newtonian, onePN, onePointFivePN, twoPN,\n"\
-"                           twoPointFivePN, threePN) (default: EOBtwoPN)\n"\
+"                           (EOB, GeneratePPN, TaylorT1, TaylorT3,PadeT1);\n"\
+"                           followed by the order (newtonian, onePN,\n"\
+"                           onePointFivePN, twoPN, twoPointFivePN, threePN)\n"\
+"                           (default: EOBtwoPN)\n"\
 "\n"
 
 /* all units are in kpc since this is what GalacticInspiralParamStruc expects */
@@ -441,7 +442,8 @@ int main( int argc, char *argv[] )
             optarg);
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name, "string",
-              "%le", optarg);
+              "%s", optarg);
+        break;
 
       case 'z':
         set_debug_level( optarg );
