@@ -183,6 +183,11 @@ REAL4 clusterWindow     = -1;           /* cluster over time window     */
 Approximant approximant;                /* waveform approximant         */
 INT4 bcvConstraint      = 0;            /* constraint BCV filter        */
 
+/* rsq veto params */
+INT4 enableRsqVeto      = -1;           /* enable the r^2 veto          */
+INT4 rsqVetoWindow      = -1;           /* r^2 veto time window         */ 
+INT4 rsqVetoThresh      = -1;           /* r^2 veto threshold           */ 
+
 /* generic simulation parameters */
 enum { unset, urandom, user } randSeedType = unset;    /* sim seed type */
 INT4  randomSeed        = 0;            /* value of sim rand seed       */
@@ -200,8 +205,8 @@ CHAR  *userTag          = NULL;         /* string the user can tag with */
 CHAR  *ifoTag           = NULL;         /* string to tag parent IFOs    */
 CHAR   fileName[FILENAME_MAX];          /* name of output files         */
 INT4   maximizationInterval = 0;        /* Max over template in this    */ 
-/* maximizationInterval Nanosec */ 
-/* interval                     */
+                                        /* maximizationInterval Nanosec */ 
+                                        /* interval                     */
 INT8   trigStartTimeNS  = 0;            /* write triggers only after    */
 INT8   trigEndTimeNS    = 0;            /* write triggers only before   */
 INT8   outTimeNS        = 0;            /* search summ out time         */
@@ -1524,10 +1529,19 @@ int main( int argc, char *argv[] )
   fcFilterParams->chisqParams->approximant = approximant;
 
   /* set up parameters for the filter output veto */
+  if ( enableRsqVeto )
+  {
+    fcFilterParams->filterOutputVetoParams = (FindChirpFilterOutputVetoParams *)
+      LALCalloc( 1, sizeof(FindChirpFilterOutputVetoParams) );
 #if 0
-  fcFilterParams->filterOutputVetoParams = (FindChirpFilterOutputVetoParams *)
-    LALCalloc( 1, sizeof(FindChirpFilterOutputVetoParams) );
+    fcFilterParams->filterOutputVetoParams->rsqvetoWindow = rsqVetoWindow;
+    fcFilterParams->filterOutputVetoParams->rsqvetoThresh = rsqVetoThresh;
 #endif
+  }
+  else
+  {
+    fcFilterParams->filterOutputVetoParams = NULL;
+  }
 
   LAL_CALL( LALCreateFindChirpInput( &status, &fcFilterInput, fcInitParams ), 
       &status );
@@ -2638,6 +2652,11 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --cluster-method MTHD        max over chirp MTHD (tmplt|window|noClustering)\n"\
 "  --cluster-window SEC         set length of clustering time window if required\n"\
 "\n"\
+"  --enable-rsq-veto            enable the r^2 veto test\n"\
+"  --disable-rsq-veto           disable the r^2 veto test\n"\
+"  --rsq-veto-window MSEC       set the r^2 veto window to MSEC\n"\
+"  --rsq-veto-threshold RSQ     set r^2 veto threshold to RSQ\n"\
+"\n"\
 "  --maximization-interval NSEC set length of maximization interval\n"\
 "\n"\
 "  --enable-output              write the results to a LIGO LW XML file\n"\
@@ -2682,6 +2701,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"glob-frame-data",         no_argument,       &globFrameData,    1 },
     {"glob-calibration-data",   no_argument,       &globCalData,      1 },
     {"point-calibration",       no_argument,       &pointCal,         1 },
+    {"enable-rsq-veto",         no_argument,       &enableRsqVeto,    1 },
+    {"disable-rsq-veto",        no_argument,       &enableRsqVeto,    0 },
     /* these options don't set a flag */
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-start-time-ns",       required_argument, 0,                'A'},
@@ -2740,6 +2761,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"cluster-window",          required_argument, 0,                '#'},  
     {"maximization-interval",   required_argument, 0,                '@'},  
     {"fast",                    required_argument, 0,                '2'},  
+    {"rsq-veto-window",         required_argument, 0,                '3'},   
+    {"rsq-veto-threshold",      required_argument, 0,                '4'},  
     /* frame writing options */
     {"write-raw-data",          no_argument,       &writeRawData,     1 },
     {"write-filter-data",       no_argument,       &writeFilterData,  1 },
@@ -3650,6 +3673,32 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         break;
 
+      case '3': 
+        rsqVetoWindow = (INT4) atol( optarg ); 
+        if ( rsqVetoWindow < 0 ) 
+        { 
+          fprintf( stderr, "invalid argument to --%s:\n" 
+              "r^2 veto time window is less than or equal to 0 msec: " 
+              "(%d msecs specified)\n", 
+              long_options[option_index].name, rsqVetoWindow ); 
+          exit( 1 ); 
+        } 
+        ADD_PROCESS_PARAM( "int", "%s", optarg ); 
+        break; 
+
+      case '4': 
+        rsqVetoThresh = (INT4) atof( optarg ); 
+        if ( rsqVetoThresh < 0 ) 
+        { 
+          fprintf( stderr, "invalid argument to --%s:\n" 
+              " r^2 veto threshold must be positive: " 
+              "(%d specified)\n",  
+              long_options[option_index].name, rsqVetoThresh ); 
+          exit( 1 ); 
+        } 
+        ADD_PROCESS_PARAM( "int", "%s", optarg ); 
+        break; 
+
       case '?':
         exit( 1 );
         break;
@@ -4100,9 +4149,20 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     if (mmFast > minimalMatch)
     {
-      fprintf (stderr, "The argument of --fast (%e) cannot exceed the minimalMatch (%e)\n",
+      fprintf (stderr, "The argument of --fast (%e) cannot exceed the "
+          "minimalMatch (%e)\n",
           mmFast, minimalMatch);
       exit (1);
+    }
+  }
+
+  if ( enableRsqVeto )
+  {
+    if ( ( rsqVetoWindow < 0 ) || ( rsqVetoThresh < 0 ) )
+    {
+      fprintf( stderr, "both --rsq-veto-window and --rsq-veto-thresh must\n"
+          "be specified if the --enable-rsq-veto argument is given\n" );
+      exit( 1 );
     }
   }
 
