@@ -440,10 +440,11 @@ LALFindChirpSetAnalyseTemplate (
   ASSERT( injections, status, 
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
 
-  /* Get the approximant. If the approximant is not BCV or BCVSpin, then
-   * we try to tag the templates ... the BCV waveforms are not included
-   * yet in the scheme of things */
-  LALGetApproximantFromString(status->statusPtr, injections->waveform, &approximant);
+  /* Get the approximant. If the approximant is not BCV or BCVSpin, then */
+  /* we try to tag the templates ... the BCV waveforms are not included  */
+  /* yet in the scheme of things                                         */
+  LALGetApproximantFromString(status->statusPtr, injections->waveform, 
+      &approximant);
   CHECKSTATUSPTR (status);
 
 
@@ -453,34 +454,36 @@ LALFindChirpSetAnalyseTemplate (
        approximant != (UINT4)BCVC )
      )
   {
-    /* If mmFast option is used, assume NONE of the templates need to be
-     * analysed to begin with. Thus re-init analyseThisTmplt elements to zero
-     */
-    for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent; tmpltCurrent = tmpltCurrent->next, kj++)
+    /* If mmFast option is used, assume NONE of the templates need to be */
+    /* analysed to begin with. Thus re-init analyseThisTmplt elements to */
+    /* zero                                                              */
+    for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent; 
+        tmpltCurrent = tmpltCurrent->next, kj++ )
     {
       analyseThisTmplt[kj] = 0;
     }
-    /* Calculate the noise moments here. This is a once and for all
-     * thing as the psd won't change
-     */
-    mmFshf = (REAL8FrequencySeries *) LALCalloc (1, sizeof(REAL8FrequencySeries));
+    /* Calculate the noise moments here. This is a once and for all     */
+    /* thing as the psd won't change                                    */
+    mmFshf = (REAL8FrequencySeries *) 
+      LALCalloc (1, sizeof(REAL8FrequencySeries));
     mmFshf->f0     = 0.0;
     mmFshf->deltaF = deltaF;
     mmFshf->data   = NULL;
-    LALDCreateVector (status->statusPtr, &mmFshf->data, fcDataParams->wtildeVec->length);
+    LALDCreateVector (status->statusPtr, &mmFshf->data, 
+        fcDataParams->wtildeVec->length);
     CHECKSTATUSPTR (status);
 
     /* Populate the shf vector from the wtilde vector */
-    for (ki=0; ki<fcDataParams->wtildeVec->length ; ki++) {
-      if (fcDataParams->wtildeVec->data[ki].re) {
+    for (ki=0; ki<fcDataParams->wtildeVec->length ; ki++) 
+    {
+      if (fcDataParams->wtildeVec->data[ki].re) 
+      {
         mmFshf->data->data[ki] = 1./fcDataParams->wtildeVec->data[ki].re;
       }
-      else {
-        /* 28 June :
-         * Note that we can safely set shf to be zero as
-         * this is correctly handled in the
-         * LALGetInspiralMoments function
-         */
+      else 
+      {
+        /* Note that we can safely set shf to be zero as this is correctly */
+        /* handled in the LALGetInspiralMoments function                   */
         mmFshf->data->data[ki] = 0.0;
       }
     }
@@ -491,9 +494,11 @@ LALFindChirpSetAnalyseTemplate (
     mmFTemplate->tSampling  = (REAL4)(sampleRate);
     mmFTemplate->massChoice = m1Andm2;
     mmFTemplate->ieta       = 1.L;
-    LALGetApproximantFromString(status->statusPtr, injections->waveform, &(mmFTemplate->approximant));
+    LALGetApproximantFromString(status->statusPtr, injections->waveform, 
+        &(mmFTemplate->approximant));
     CHECKSTATUSPTR (status);
-    LALGetOrderFromString(status->statusPtr, injections->waveform, &(mmFTemplate->order));
+    LALGetOrderFromString(status->statusPtr, injections->waveform, 
+        &(mmFTemplate->order));
     CHECKSTATUSPTR (status);
 
     LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
@@ -515,9 +520,8 @@ LALFindChirpSetAnalyseTemplate (
     LALGetInspiralMoments( status->statusPtr, &mmFmoments, mmFshf, mmFTemplate);
     CHECKSTATUSPTR (status);
 
-    /* We already have the noise moments so the shf series is
-     * no longer required - free it
-     */
+    /* We already have the noise moments so the shf series is no longer */
+    /* required - free it                                               */
     LALDDestroyVector (status->statusPtr, &mmFshf->data);
     CHECKSTATUSPTR (status);
     LALFree (mmFshf);
@@ -526,13 +530,12 @@ LALFindChirpSetAnalyseTemplate (
     mmFInjection = injections;
 
     /* Loop over all the injections */
-    for (mmF_i = 0; (int)mmF_i < numInjections; mmF_i++) {
-
-      /* For this injection we must
-       * (a) Calculate the metric at the point of injection
-       * (b) Loop over all the templates and tag theie level to 0
-       * or 1 with respect to this injection.
-       */
+    for (mmF_i = 0; (int)mmF_i < numInjections; mmF_i++)
+    {
+      /* For this injection we must                                     */
+      /* (a) Calculate the metric at the point of injection             */
+      /* (b) Loop over all the templates and tag theie level to 0       */
+      /* or 1 with respect to this injection.                           */
       mmFTemplate->mass1      = mmFInjection->mass1;
       mmFTemplate->mass2      = mmFInjection->mass2;
       LALInspiralParameterCalc( status->statusPtr, mmFTemplate );
@@ -540,14 +543,16 @@ LALFindChirpSetAnalyseTemplate (
 
       LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
           "%d Injections, m1 = %e, m2 = %e eta = %e\n",
-          numInjections, mmFTemplate->mass1, mmFTemplate->mass2, mmFTemplate->eta);
+          numInjections, mmFTemplate->mass1, mmFTemplate->mass2, 
+          mmFTemplate->eta);
       LALInfo (status, myMsg);
       LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
           "%d Injections, t0 = %e, t3 = %e\n",
           numInjections, mmFTemplate->t0, mmFTemplate->t3);
       LALInfo (status, myMsg);
 
-      LALInspiralComputeMetric( status->statusPtr, &mmFmetric, mmFTemplate, &mmFmoments );
+      LALInspiralComputeMetric( status->statusPtr, &mmFmetric, mmFTemplate, 
+          &mmFmoments );
       CHECKSTATUSPTR (status);
 
       LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
@@ -556,17 +561,17 @@ LALFindChirpSetAnalyseTemplate (
       LALInfo (status, myMsg);
 
 
-      /* Now that the metric has been calculated we loop over the
-       * templates to mark their level.*/
+      /* Now that the metric has been calculated we loop over the       */
+      /* templates to mark their level.                                 */
 
-      /* kj is the index on the templates. Note that kj always starts from zero
-       * even if startTemplate and stopTemplate are specified by user
-       * while running lalapps_inspiral program
-       * */
+      /* kj is the index on the templates. Note that kj always starts   */
+      /* from zero even if startTemplate and stopTemplate are specified */
+      /* by user while running lalapps_inspiral program                 */
       kj = 0;
-      for ( tmpltCurrent = tmpltHead; tmpltCurrent; tmpltCurrent = tmpltCurrent->next)
-      {
 
+      for ( tmpltCurrent = tmpltHead; tmpltCurrent; 
+          tmpltCurrent = tmpltCurrent->next)
+      {
         dt0 = tmpltCurrent->tmpltPtr->t0 - mmFTemplate->t0;
         dt3 = tmpltCurrent->tmpltPtr->t3 - mmFTemplate->t3;
 
@@ -576,7 +581,9 @@ LALFindChirpSetAnalyseTemplate (
         match       = 1.0 - metricDist;
 
         if (match >= mmFast && match <= 1.0)
+        {
           analyseThisTmplt[kj] += (UINT4)(pow(2.0, (double)(mmF_i)));
+        }
 
         /* Advance kj for the next template */
         kj = kj + 1;
@@ -601,12 +608,15 @@ LALFindChirpSetAnalyseTemplate (
             );
         LALInfo (status, myMsg);
       } /* End of loop over templates */
+
       /* Point to the next injection */
       mmFInjection = mmFInjection->next;
     }
   }
-  else {
-    for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent; tmpltCurrent = tmpltCurrent->next, kj++)
+  else 
+  {
+    for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent; 
+        tmpltCurrent = tmpltCurrent->next, kj++)
     {
       analyseThisTmplt[kj] = pow(2.0, (double)(numInjections)) - 1 ;
     }
@@ -631,10 +641,12 @@ XLALCmprSgmntTmpltFlags (
   analyseTag = 0;
 
   /* Loop over all the injections */
-  for (k1=0; k1<numInjections; k1++) {
+  for (k1=0; k1<numInjections; k1++) 
+  {
     bitTmplt = (TmpltFlag>>k1)&01;
     bitSgmnt = (SgmntFlag>>k1)&01;
-    if (bitSgmnt && (bitTmplt == bitSgmnt)) {
+    if (bitSgmnt && (bitTmplt == bitSgmnt)) 
+    {
       analyseTag = 1;
       break;
     }
