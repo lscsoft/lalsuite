@@ -131,8 +131,6 @@ Some general-purpose routines for config-file reading
 \idx{LALReadConfigSTRINGNVariable()}
 \idx{LALCheckConfigReadComplete()}
 
-\input{ConfigFileCP}
-
 \subsubsection*{Description}
 
 This module provides routines for reading formatted
