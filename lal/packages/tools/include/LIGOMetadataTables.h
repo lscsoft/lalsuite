@@ -369,6 +369,7 @@ tagSnglInspiralTable
   REAL4         chisq;
   INT4          chisq_dof;
   REAL8         sigmasq;
+  REAL4         rsqveto_duration;
   EventIDColumn *event_id;
 }
 SnglInspiralTable;
