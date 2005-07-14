@@ -24,7 +24,6 @@ None
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
-#include <lal/FileIO.h>
 #include <lal/AVFactories.h>
 #include <lal/Window.h>
 #include <lal/BandPassTimeSeries.h>
