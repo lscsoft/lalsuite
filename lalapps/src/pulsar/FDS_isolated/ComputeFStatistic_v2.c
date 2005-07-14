@@ -1434,7 +1434,6 @@ NormaliseSFTDataRngMdn(LALStatus *status)
 
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */ 
-#define USE_LUT		1			/**< wether to use LUT or not */
 
 /** v2-specific version of LALDemod() (based on TestLALDemod() in CFS)
  */
@@ -1546,19 +1545,8 @@ XLALNewLALDemod(Fcomponents *FaFb,
        */
 
       /*-------------------- calculate sin(x), cos(x) */
-      /* (1) don't use LUT */
-#if !USE_LUT
-      {
-	REAL4 x_alpha_k;
-	REAL4 rem = xhat_alpha - kstar; 	
-	x_alpha_k = TWOPI_FLOAT * rem;	
-	sinx = sinf(x_alpha_k);
-	cosxm1 = cosf(x_alpha_k) - 1.0f;
-      }
-#else
       sin_cos_LUT ( &sinx, &cosxm1, xhat_alpha );
       cosxm1 -= 1.0f; 
-#endif
       /*-------------------- */
 
       realXP = 0;
