@@ -474,8 +474,8 @@ LALFindChirpFilterSegment (
   
   if ( params->filterOutputVetoParams )
   {
-    LALFindChirpFilterOutputVeto( status->statusPtr, eventList, params->qVec, 
-        norm, params->filterOutputVetoParams );
+    LALFindChirpFilterOutputVeto( status->statusPtr, eventList, input->segment, params->chisqVec, deltaT,
+        params->filterOutputVetoParams );
     CHECKSTATUSPTR( status );
   }
 
