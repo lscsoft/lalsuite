@@ -959,7 +959,8 @@ LALSnglInspiralTableFromLIGOLw (
     {"chisq",                   -1, 36},
     {"chisq_dof",               -1, 37},
     {"sigmasq",                 -1, 38},
-    {"event_id",                -1, 39},
+    {"rsqveto_duration",        -1, 39},
+    {"event_id",                -1, 40},
     {NULL,                       0, 0}
   };
 
@@ -1205,7 +1206,11 @@ LALSnglInspiralTableFromLIGOLw (
         {
           thisEvent->sigmasq = r8colData;
         }
-        else if ( tableDir[j].idx == 39 )
+	else if ( tableDir[j].idx == 39 )
+        {
+          thisEvent->rsqveto_duration = r4colData;
+	}
+        else if ( tableDir[j].idx == 40 )
         {
           if ( tableDir[j].pos > 0 && i8colData )
           {
