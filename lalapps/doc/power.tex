@@ -164,7 +164,7 @@ simulated data.
 
 \item[Synopsis]
 \prog{lalapps\_power} \newline \hspace*{0.5in}
-\option{--bandwidth}~\parm{bandwidth} \newline \hspace*{0.5in}
+\option{--bandwidth}~\parm{Hz} \newline \hspace*{0.5in}
 [\option{--calibrated-data}~\parm{high pass frequency}] \newline \hspace*{0.5in}
 [\option{--calibration-cache}~\parm{cache file}] \newline \hspace*{0.5in}
 \option{--channel-name}~\parm{string} \newline \hspace*{0.5in}
@@ -249,14 +249,9 @@ not include spaces and should use underscores instead.
 
 \item[Options]\leavevmode
 \begin{entry}
-\item[\option{--bandwidth} \parm{bandwidth}]
-Set the bandwidth in which the search is to be performed.  The integer
-parameter \parm{bandwidth} is related to the physical bandwidth by the
-formula
-\[
-\mbox{\parm{bandwidth}}
-   = T \times (f_{\mathrm{high}} - f_{\mathrm{low}}).
-\]
+\item[\option{--bandwidth} \parm{Hz}]
+Set the bandwidth in which the search is to be performed.  This must be a
+power of 2.
 
 \item[\option{--calibrated-data} \parm{high pass frequency}]
 When the \option{--calibrated-data} option is supplied, input time series
@@ -375,8 +370,15 @@ code from filling up disks if the threshold is set improperly.  A value of
 0 (the default) disables this feature.
 
 \item[\option{--max-tileband} \parm{Hz}]
-This specifies the max frequency band(\verb+B+) that a tile can have.  This also fixes 
-the minimum time-duration of the tiles,  $\Delta t = 1/B $.
+This specifies the max frequency bandwidth (\(B\)) that a tile can have.
+This also fixes the minimum time duration of the tiles, $\Delta t = 1/B $.
+This must be an integer power of 2.
+
+\item[\option{--max-tileduration} \parm{s}]
+This specifies the maximum duration that a tile can have.  This also fixes
+the minimum bandwidth of the tiles.  This must be a non-positive integer
+power of 2 (i.e.\ \unit{1}{\second}, \unit{0.5}{\second},
+\unit{0.25}{\second}, etc.).
 
 \item[\option{--mdc-cache} \parm{cache file}]
 Use \parm{cache file} as a LAL format frame cache file describing the
@@ -430,6 +432,11 @@ it in chunks of this size, until it has completed the analysis.  If this
 parameter is not supplied, then the entire time series for the segment
 identified by the GPS start and end times will be loaded into RAM.
 
+\item[\option{--resample-rate} \parm{Hz}]
+The sample frequency to which the data should be resampled prior to
+analysis.  This must be a power of 2 in the range \unit{2}{\hertz} to
+\unit{16386}{\hertz} inclusively.
+
 \item[\option{--seed} \parm{seed}]
 When mixing noise into the input data, use \parm{seed} to seed the random
 number generator.
@@ -445,8 +452,10 @@ data rate down-conversion.
 
 \item[\option{--tile-overlap-factor} \parm{factor}]
 This parameter influences the amount of overlap between neighboring
-time-frequency tiles.  It must be an integer.  A reasonable value for this
-parameter is 3.  See the LAL ``burstsearch'' package for more information.
+time-frequency tiles.  It must be an integer power of 2.  A reasonable
+value for this parameter is 2, which causes each tile to overlap its
+neighbours by \(\frac{1}{2}\) its duration and \(\frac{1}{2}\) its
+bandwidth.
 
 \item[\option{--user-tag} \parm{comment}]
 Set the user tag to the string \parm{comment}.  This string must not
@@ -469,7 +478,8 @@ Only the central half of the window will be analyzed, the first quarter and
 last quarter of the window are used as padding to avoid corruption at
 certain stages of the analysis.  For example, if you wish the code to
 analyze the data in 1 second windows, you need to set this parameter to the
-number of samples corresponding to 2 seconds of data.
+number of samples corresponding to 2 seconds of data.  This parameter must
+be a power of 2.
 
 \item[\option{--window-shift} \parm{samples}]
 Set the number of samples each analysis window is shifted with respect to
