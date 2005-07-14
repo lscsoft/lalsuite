@@ -868,7 +868,7 @@ LALInspiralCreatePNCoarseBankHexa(
     }
 
 
-  printf("fertility=%d and cellList length=%d\n",cellEvolution.fertile,  Length(cellList));
+
 
   }
 
@@ -876,7 +876,7 @@ LALInspiralCreatePNCoarseBankHexa(
     printf("wierd behaviour here\n");
 
 
-  printf("nTemplate before cleaning=%d\n", cellEvolution.nTemplate)  ;
+
   *nlist = cellEvolution.nTemplate;
 
   {
