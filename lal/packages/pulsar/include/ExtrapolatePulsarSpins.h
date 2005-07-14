@@ -17,10 +17,40 @@
  *  MA  02111-1307  USA
  */
 
+/** \defgroup ExtrapolatePulsarSpins
+ *  \ingroup pulsarCommon
+ *  \author Reinhard Prix
+ *  \date $Date$
+ *  \brief  Extrapolate the Pulsar spin-paramters \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$
+ *  from one SSB epoch to another.
+ * 
+ *
+ *
+ * The extrapolation method used is simply the canonical pulsar spindown-model:
+ * \f[ f(\tau_1) = f(\tau_0) + {\stackrel{.}{f}(\tau_0) \over 1!} \,\Delta\tau 
+ *     + {\ddot{f}(\tau_0) \over 2!} \,\Delta\tau^2 + ...\f]
+ * where \f$\Delta\tau \equiv \tau_1 - \tau_0\f$, and therefore
+ * \f[
+ * f^{(1)}(\tau_1) = f^{(1)}(\tau_0) + {f^{(2)}(\tau_0) \over 1!}\,\Delta\tau 
+ * + {f^{(3)}(\tau_0)\over 2!}\,\Delta\tau^2 +... 
+ * \f]
+ * \f[
+ * f^{(2)}(\tau_1) = f^{(2)}(\tau_0) + {f^{(3)}(\tau_0) \over 1!}\,\Delta\tau 
+ *  + {f^{(4)}(\tau_0) \over 2!}\, \Delta\tau^2 + ..
+ * \f]
+ *
+ * so generally:
+ * \f[
+ * f^{(s)}(\tau_1) = \sum_{j=0} { f^{(j+s)}(\tau_0) \over j! }\, \Delta\tau^j
+ * \f]
+ *
+ */
+
 /** \file 
+ * \ingroup ExtrapolatePulsarSpins
  * \author Reinhard Prix
- * \date July 2005
- * \brief Prototype for XLALExtrapolatePulsarSpins().
+ * \date $Date$
+ * \brief Contains prototype for XLALExtrapolatePulsarSpins().
  */
 
 #ifndef _EXTRAPOLATEPULSARSPINS_H  /* Double-include protection. */
