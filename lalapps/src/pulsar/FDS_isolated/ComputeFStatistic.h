@@ -24,6 +24,7 @@ extern "C" {
 #define COMPUTEFSTATC_EMEM              4
 #define COMPUTEFSTATC_ECHECKPOINT       5
 #define COMPUTEFSTATC_ECLUSTER          6
+#define COMPUTEFSTATC_EXLAL		50
 
 #define COMPUTEFSTATC_MSGENULL          "Arguments contained an unexpected null pointer"
 #define COMPUTEFSTATC_MSGESYS           "System call failed (probably file IO)"
@@ -31,6 +32,7 @@ extern "C" {
 #define COMPUTEFSTATC_MSGEMEM           "Out of memory. Bad."
 #define COMPUTEFSTATC_MSGECHECKPOINT    "Illegal checkpoint"
 #define COMPUTEFSTATC_MSGECLUSTER       "Unspecified error in cluster-related routine"
+#define COMPUTEFSTATC_MSGEXLAL		"XLALFunction-call failed"
 
 /*----------------------------------------------------------------------*/
 /* Exit values */
@@ -54,6 +56,7 @@ extern "C" {
 #define COMPUTEFSTAT_EXIT_BOINCRESOLVE   23  /* boinc_resolve_filename failed */
 #define COMPUTEFSTAT_EXIT_DLOPEN         24  /* problems with dynamic lib */
 #define COMPUTEFSTAT_EXIT_WORKER         25  /* can't start worker-thread */
+
 #define COMPUTEFSTAT_EXIT_LALCALLERROR  100  /* added to LAL status for BOINC exit value */
 
 /* Maximum fractional doppler shift */
@@ -84,6 +87,8 @@ typedef struct {
   INT4 nsamples;		/**< number of frequency-bins in an SFT */
   INT4 Ti;	        	/**< GPS seconds of start of observation */
   INT4 Tf;      	  	/**< GPS-time (seconds) of end of observation */
+  LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
+  REAL8Vector *fkdot0;		/**< start frequency- and spindowns- at internal reference-time */
   CHAR **filelist; 		/**< array of filenames to load SFTs from */
   LALDetector Detector;         /**< detector of data to be searched */
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */

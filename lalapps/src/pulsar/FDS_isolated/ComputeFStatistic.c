@@ -29,6 +29,7 @@
 #include <lal/ComputeSky.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
+#include <lal/ExtrapolatePulsarSpins.h>
 
 #include <lalapps.h>
 
@@ -223,6 +224,7 @@ BOOLEAN uvar_doCheckpointing;
 INT4 uvar_expLALDemod;
 REAL8 uvar_startTime;
 REAL8 uvar_endTime;
+REAL8 uvar_refTime;
 #if BOINC_COMPRESS
 BOOLEAN uvar_useCompression;
 #endif
@@ -442,7 +444,7 @@ int main(int argc,char *argv[])
   scanInit.obsBegin.gpsNanoSeconds = 0;
   scanInit.obsDuration = (REAL8) (GV.Tf - GV.Ti);
   scanInit.projectMetric = uvar_projectMetric;
-  scanInit.fmax  = uvar_Freq + uvar_FreqBand;
+  scanInit.fmax  = GV.fkdot0->data[0] + uvar_FreqBand;
   scanInit.Detector = &GV.Detector;
   scanInit.ephemeris = GV.edat;         /* used by Ephemeris-based metric */
   scanInit.skyGridFile = uvar_skyGridFile;      /* if applicable */
@@ -455,7 +457,7 @@ int main(int argc,char *argv[])
   if ( lalDebugLevel )
     {
       printf ("\nDEBUG: search-point Alpha=%.16g, Delta=%.16g, Freq=%.16g, f1dot=%.16g\n\n",
-	      uvar_Alpha, uvar_Delta, uvar_Freq, uvar_f1dot);
+	      uvar_Alpha, uvar_Delta, GV.fkdot0->data[0], GV.fkdot0->data[1]);
       printf ("DEBUG: Final search-region:\n");
       printf ("       skyRegion = \"%s\"\n", GV.searchRegion.skyRegionString);
       printf ("       Freq in  = [%.16g, %.16g]\n", 
@@ -1045,6 +1047,7 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,     outputLabel,    'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
   LALregREALUserVar(stat,       startTime,       0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time <  this value. Default:");
   LALregREALUserVar(stat,       endTime,         0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time >= this value. Default:");
+  LALregREALUserVar(stat,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
 
   /* the following are 'developer'-options */
 
@@ -1212,7 +1215,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A1-A1test)>fabs(A1)/(10e5)){ 
         fprintf(stderr,"Something is wrong with Estimate A1\n");
         fprintf(stderr,"Frequency index %d, %lf (Hz),A1=%f,A1test=%f\n",
-                irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
+                irec,GV.fkdot0->data[0]+irec*GV.dFreq,A1,A1test);
         fprintf(stderr,"relative error Abs((A1-A1test)/A1)=%lf\n",
                 fabs(A1-A1test)/fabs(A1));
         return 1;
@@ -1220,7 +1223,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A2-A2test)>fabs(A2)/(10e5)){ 
         fprintf(stderr,"Something is wrong with Estimate A2\n");
         fprintf(stderr,"Frequency index %d, %lf (Hz),A2=%f,A2test=%f\n",
-                irec,uvar_Freq+irec*GV.dFreq,A2,A2test);
+                irec,GV.fkdot0->data[0]+irec*GV.dFreq,A2,A2test);
         fprintf(stderr,"relative error Abs((A2-A2test)/A2)=%lf\n",
                 fabs(A2-A2test)/fabs(A2));
         return 1;
@@ -1228,7 +1231,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A3-A3test)>fabs(A3)/(10e5)){ 
         fprintf(stderr,"Something is wrong with Estimate A3\n");
         fprintf(stderr,"Frequency index %d, %lf (Hz),A3=%f,A3test=%f\n",
-                irec,uvar_Freq+irec*GV.dFreq,A3,A3test);
+                irec,GV.fkdot0->data[0]+irec*GV.dFreq,A3,A3test);
         fprintf(stderr,"relative error Abs((A3-A3test)/A3)=%lf\n",
                 fabs(A3-A3test)/fabs(A3));
         return 1;
@@ -1236,7 +1239,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(A4-A4test)>fabs(A4)/(10e5)){ 
         fprintf(stderr,"Something is wrong with Estimate A4\n");
         fprintf(stderr,"Frequency index %d, %lf (Hz),A4=%f,A4test=%f\n",
-                irec,uvar_Freq+irec*GV.dFreq,A1,A1test);
+                irec,GV.fkdot0->data[0]+irec*GV.dFreq,A1,A1test);
         fprintf(stderr,"relative error Abs((A4-A4test)/A4)=%lf\n",
                 fabs(A4-A4test)/fabs(A4));
         return 1;
@@ -1251,7 +1254,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       if(fabs(Fstat.F[irec] - Ftest)> fabs(Ftest)/10e5){ 
         fprintf(stderr,"Something is wrong with Estimate in F\n");
         fprintf(stderr,"Frequency index %d, %lf (Hz),F=%f,Ftest=%f\n",
-                irec,uvar_Freq+irec*GV.dFreq,Fstat.F[irec],Ftest);
+                irec,GV.fkdot0->data[0]+irec*GV.dFreq,Fstat.F[irec],Ftest);
         fprintf(stderr,"relative error Abs((F-Ftest)/Ftest)=%lf\n",
                 fabs(Fstat.F[irec]-Ftest)/fabs(Ftest));
         return 1;
@@ -1280,7 +1283,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
                             +hc*hc*((A+B)/2.0-(A-B)/2.0*cos(4.0*psi_mle)
                                     -C*sin(4.0*psi_mle)));
       fprintf(stderr,"A=%f,B=%f,C=%f,f=%f,h0=%f,F=%f\n",
-              A,B,C,uvar_Freq+irec*GV.dFreq,h0mle,Fstat.F[irec]*medianbias);
+              A,B,C,GV.fkdot0->data[0]+irec*GV.dFreq,h0mle,Fstat.F[irec]*medianbias);
       }
 #endif
 
@@ -1289,7 +1292,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       /* and Phi0_PULGROUPDOC is the one used in In.data. */
  
       /* medianbias is 1 if GV.SignalOnly==1 */
-      fprintf(fpMLEParam,"%16.8lf %22E", uvar_Freq + irec*GV.dFreq, 2.0*medianbias*Fstat.F[irec]);
+      fprintf(fpMLEParam,"%16.8lf %22E", GV.fkdot0->data[0] + irec*GV.dFreq, 2.0*medianbias*Fstat.F[irec]);
 
 
       fprintf(fpMLEParam,"  %10.6f",(1.0+mu_mle*mu_mle)*h0mle/2.0);
@@ -1397,7 +1400,7 @@ int writeFaFb(INT4 *maxIndex, DopplerPosition searchpos)
       fprintf(fp,"%22.16f %22.16f "
                  "%E %20.17f %20.17f "
                  "%22.16f %22.16f %22.16f %22.16f %22.16f %22.16f %22.16f\n",
-              uvar_Freq+index*GV.dFreq,Fstat.F[index]*bias*bias,
+              GV.fkdot0->data[0]+index*GV.dFreq,Fstat.F[index]*bias*bias,
               DemodParams->spinDwn[0], searchpos.Alpha, searchpos.Delta,
               Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
               Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
@@ -1407,7 +1410,7 @@ int writeFaFb(INT4 *maxIndex, DopplerPosition searchpos)
 #else
       /* Freqency, Re[Fa],Im[Fa],Re[Fb],Im[Fb], F */
       fprintf(fp,"%22.16f %22.12f %22.12f %22.12f %22.12f %22.12f\n",
-              uvar_Freq+index*GV.dFreq,
+              GV.fkdot0->data[0]+index*GV.dFreq,
               Fstat.Fa[index].re/sqrt(GV.SFTno)*bias,
               Fstat.Fa[index].im/sqrt(GV.SFTno)*bias,
               Fstat.Fb[index].re/sqrt(GV.SFTno)*bias,
@@ -2025,6 +2028,46 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     cfg->nsamples=header.nsamples;    /* # of Freq. bins in SFT*/
   }
 
+
+  /*---------- Standardise reference-time: ----------*/
+  /* translate spindown-paramters {f, fdot, fdotdot..} from the user-specified 
+   * reference-time uvar_refTime to the internal reference-time, which 
+   * we chose as the start-time of the first SFT (*verbatim*, i.e. not translated to SSB! )
+   */
+  {
+    UINT4 spdnOrder = 1;	/* hard-coded default FIXME. DON'T change without fixing main() */
+
+    REAL8Vector *fkdotRef = NULL;
+
+    if ( LALUserVarWasSet(&uvar_refTime)) 
+      {
+	TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
+      } 
+    else
+      {
+	cfg->refTime.gpsSeconds = cfg->Ti;
+	cfg->refTime.gpsNanoSeconds = 0;
+      }
+
+    TRY ( LALDCreateVector (status->statusPtr, &fkdotRef, 1 + spdnOrder), status);
+    TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot0), 1 + spdnOrder), status);
+    fkdotRef->data[0] = uvar_Freq;
+    if ( spdnOrder > 0 )
+      fkdotRef->data[1] = uvar_f1dot;	    /* currently not more spindowns implemented... */
+
+    /*----- now translate spin-params to internal reference-time (ie. startTime) */
+
+    if ( XLALExtrapolatePulsarSpins ( cfg->fkdot0, starttime, fkdotRef, cfg->refTime) ) 
+      {
+	int code = xlalErrno;
+	XLALClearErrno(); 
+	LALPrintError ("\nERROR: XLALExtrapolatePulsarSpins() failed (xlalErrno = %d)!\n\n", code);
+	ABORT (status,  COMPUTEFSTATC_EXLAL,  COMPUTEFSTATC_MSGEXLAL);
+      }
+
+    TRY ( LALDDestroyVector (status->statusPtr, &fkdotRef), status);
+  }
+
   /*----------------------------------------------------------------------
    * initialize detector 
    */
@@ -2105,7 +2148,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     {
       printf("\nDEBUG:\n");
       printf("# SFT time baseline:                  %f min\n",header.tbase/60.0);
-      printf("# Starting search frequency:          %f Hz\n",uvar_Freq);
+      printf("# Starting search frequency:          %f Hz\n",GV.fkdot0->data[0]);
       printf("# Demodulation frequency band:        %f Hz\n",uvar_FreqBand);
       printf("# Actual # of SFTs:                   %d\n", cfg->SFTno);
       printf("# total observation time:             %f hours\n",1.0*(cfg->Tf - cfg->Ti)/3600.0);
@@ -2301,9 +2344,9 @@ getSearchRegion (LALStatus *lstat,
 	   COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 
   /* ---------- start with default-values for the search-region */
-  ret.Freq      = uvar_Freq;
+  ret.Freq      = GV.fkdot0->data[0];
   ret.FreqBand  = uvar_FreqBand;
-  ret.f1dot     = uvar_f1dot;
+  ret.f1dot     = GV.fkdot0->data[1];
   ret.f1dotBand = uvar_f1dotBand;
 
   if (uvar_skyRegion)
@@ -2333,8 +2376,8 @@ getSearchRegion (LALStatus *lstat,
       
       signal.Alpha = uvar_Alpha;
       signal.Delta = uvar_Delta;
-      signal.Freq  = uvar_Freq;
-      signal.f1dot = uvar_f1dot;
+      signal.Freq  = GV.fkdot0->data[0];
+      signal.f1dot = GV.fkdot0->data[1];
 
       /* set random-seed for MC grid-randomization */
       if ( LALUserVarWasSet(&uvar_randomSeed) )
@@ -2381,12 +2424,12 @@ getSearchRegion (LALStatus *lstat,
 
     if ( haveFreqBand )		/* override Frequency-interval */
       {
-	ret.Freq = uvar_Freq;
+	ret.Freq = GV.fkdot0->data[0];
 	ret.FreqBand = uvar_FreqBand;
       }
     if ( havef1dotBand )	/* override spindown-interval */
       {
-	ret.f1dot = uvar_f1dot;
+	ret.f1dot = GV.fkdot0->data[1];
 	ret.f1dotBand = uvar_f1dotBand;
       }
 
@@ -2870,7 +2913,7 @@ EstimateFLines(LALStatus *stat)
   outliersParams->Thr=THR/(2.0*medianbias);
   outliersParams->Floor = FloorF1;
   outliersParams->wings=wings; /*these must be the same as ClustersParams->wings */
-  outliersInput->ifmin = (INT4) ((uvar_Freq/GV.dFreq)+0.5);
+  outliersInput->ifmin = (INT4) ((GV.fkdot0->data[0]/GV.dFreq)+0.5);
   outliersInput->data = F1;
 
   /*find values of F above THR and populate outliers with them */
@@ -2885,7 +2928,7 @@ EstimateFLines(LALStatus *stat)
      for (i=0;i<nbins;i++){ 
        REAL4 Freq;
        REAL8 r0,r1;
-       Freq=uvar_Freq + i*GV.dFreq;
+       Freq=GV.fkdot0->data[0] + i*GV.dFreq;
        r0=F1->data[i]*2.0*medianbias;
        r1=FloorF1->data[i]*2.0*medianbias;
        fprintf(outfile,"%f %E %E\n",Freq,r0,r1);
@@ -2946,7 +2989,7 @@ EstimateFLines(LALStatus *stat)
      REAL8 Freq;
      REAL8 r0,r1,r2;
      j=SpLines->Iclust[i];
-     Freq=(uvar_Freq+SpLines->Iclust[i]*GV.dFreq);
+     Freq=(GV.fkdot0->data[0]+SpLines->Iclust[i]*GV.dFreq);
      r0=F1->data[j];
      r1=FloorF1->data[j]*2.0*medianbias;
      r2=SpLines->clusters[i]*FloorF1->data[j]*2.0*medianbias;
@@ -2958,7 +3001,7 @@ EstimateFLines(LALStatus *stat)
    for (i=0;i<nbins;i++){ 
      REAL8 Freq;
      REAL8 r0,r1;
-     Freq=uvar_Freq + i*GV.dFreq;
+     Freq=GV.fkdot0->data[0] + i*GV.dFreq;
      r0=F1->data[i]*2.0*medianbias;
      r1=FloorF1->data[i]*2.0*medianbias;
      fprintf(outfile,"%20.17f %E %E\n",Freq,r0,r1);
