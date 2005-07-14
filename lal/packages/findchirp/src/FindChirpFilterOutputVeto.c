@@ -2,7 +2,7 @@
  * 
  * File Name: FindChirpFilterOutputVeto.c
  *
- * Author: 
+ * Author: A.C. Rodriguez
  * 
  * Revision: $Id$
  * 
@@ -54,24 +54,111 @@ double rint(double x);
 NRCSID (FINDCHIRPFILTEROUTPUTVETOC, "$Id$");
 
 /* <lalVerbatim file="FindChirpFilterOutputVetoCP"> */
-void LALFindChirpFilterOutputVeto( 
+void 
+LALFindChirpFilterOutputVeto( 
     LALStatus                          *status,
     SnglInspiralTable                 **eventList, 
-    COMPLEX8Vector                     *qVec,
-    REAL4                               qNorm,
+    FindChirpSegment                   *segment,
+    REAL4Vector                        *chisqVec,
+    REAL8                               deltaT,
     FindChirpFilterOutputVetoParams    *params
     )
 /* </lalVerbatim> */
 {
+
+  UINT4                 x; /* for loops */
+  UINT4		        rsqvetoWindow; /* the r^2 veto window */
+  UINT4		        eventIndex; /* store the event as an index */
+  UINT4		        windowIndex; /* r^2 veto window index */ 
+  UINT4                 timeaboversqThresh; /* time spent above the 
+                                               r^2 veto threshold */
+  REAL4		        rsqvetoThresh; /* the r^2 veto threshold */			     SnglInspiralTable    *event = NULL;
+  event = *eventList;
+
   INITSTATUS( status, "LALFindChirpFilterFilterOutputVeto", 
       FINDCHIRPFILTEROUTPUTVETOC );
   ATTATCHSTATUSPTR( status );
+ 
+  /*
+   *    
+   *   check that the arguments are reasonable
+   *          
+   */
+ 	 
 
-  /* JC: DOESN'T DO MUCH... MAKE IT DO SOMETHING */
-  eventList = NULL;
-  qVec = NULL;
-  qNorm = 0;
-  params = NULL;
+  /* check that the filterOutputVeto parameter structure exist */	
+  ASSERT( params->rsqvetoWindow, status, 
+      FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL);
+  ASSERT( params->rsqvetoThresh, status, 
+      FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL);
+	
+  /* check that the workspace vectors exist */
+  ASSERT( chisqVec->data, status, 
+      FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL);
+	
+  /* check that the filter output veto parameters are reasonable */	
+  ASSERT( params->rsqvetoThresh > 0, status,
+      FINDCHIRPFILTEROUTPUTVETOH_ERSQT, FINDCHIRPFILTEROUTPUTVETO_MSGECRSQT );
+  ASSERT( params->rsqvetoWindow > 0, status,
+      FINDCHIRPFILTEROUTPUTVETOH_ERSQW, FINDCHIRPFILTEROUTPUTVETO_MSGECRSQW );
+
+  /* check that deltaT is reasonable */	
+  ASSERT( deltaT > 0, status,
+      FINDCHIRPFILTEROUTPUTVETOH_EDTZO, FINDCHIRPFILTEROUTPUTVETO_MSGEDTZO );
+			
+  /* make sure that the segment structure exists */
+  ASSERT( segment, status, 
+      FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL );
+
+  /* make sure that the segment structure contains some input */
+  ASSERT( segment->data->epoch.gpsSeconds, status, 
+      FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL );
+	
+  
+  /* If an event exists, begin the r^2 veto calculations */  
+  if ( event )
+  {
+    /* convert the time of the event into an index */
+				
+    eventIndex = (UINT4) floor((REAL8) (event->end_time.gpsSeconds - 
+				  segment->data->epoch.gpsSeconds) / deltaT);
+
+    /* convert the window duration into an index */
+				    
+    windowIndex = (UINT4) floor((REAL8) (((params->rsqvetoWindow) 
+                                    / 1000.0) / deltaT));
+											
+    /* Make sure event occurs > 2 seconds after the begining of an epoch, if not, 
+       set to 0 */
+										
+    if ( eventIndex < windowIndex )
+    {
+     timeaboversqThresh = 0;
+     event->rsqveto_duration = 0;
+    }
+    else
+    {															
+     /* Initialize output to zero */ 
+				
+     timeaboversqThresh = 0;
+	     
+     /* Count the number of time samples above the given r^2 veto threshold */
+     for( x = eventIndex - windowIndex; x <= eventIndex ; ++x )
+	{if(chisqVec->data[x] >= ((REAL4) params->rsqvetoThresh))
+           ++timeaboversqThresh;
+	}
+		
+     /* Convert the output to milliseconds and record the computed values in the 
+	sngl_inspiral event */
+		
+     event->rsqveto_duration = (REAL4) timeaboversqThresh * deltaT * 1000.0 ;
+												}
+
+  if( event->next )													   
+  event = event->next;
+
+  while(event->next);
+  }
 
   /* normal exit */
   DETATCHSTATUSPTR( status );
