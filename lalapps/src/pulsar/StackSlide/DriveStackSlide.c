@@ -138,6 +138,9 @@
 /* 05/24/05 gam; if (params->testFlag & 32 > 0) iterate MC up to 10 times to converge on desired confidence */
 /* 05/24/05 gam; if (params->debugOptionFlag & 32 > 0) print Monte Carlo Simulation results to stdout */
 /* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
+/* 07/13/05 gam; if (params->normalizationFlag & 32) > 0 then ignor bins with params->sumBinMask == 0 */
+/* 07/13/05 gam; if (params->normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile */
+/* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
 
 /*********************************************/
 /*                                           */
@@ -265,7 +268,8 @@ void StackSlideInitSearch(
  params->sftDirectory = NULL;
  params->outputFile = NULL;
  params->linesAndHarmonicsFile = NULL; /* 05/14/05 gam */
-
+ params->randPar = NULL; /* 07/13/05 gam */
+ 
  params->stksldSkyPatchData = (StackSlideSkyPatchParams *)LALMalloc(sizeof(StackSlideSkyPatchParams)); /* 01/31/04 gam */
  
  params->debugOptionFlag = 0; /* 04/15/04 gam; default is to print no debugging information */
@@ -598,7 +602,9 @@ params->nMaxTperi=0;
     	/* fprintf(stdout,"# if normalizing with the running median the normalizationParameter must be set to the expected ratio of median to mean power. This is used to correct bias in the median to get the mean.\n"); */ /* 07/09/04 gam */ /* 05/05/04 gam; */
     	fprintf(stdout,"# if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.\n");
     	fprintf(stdout,"# if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.\n"); /* 04/15/04 gam */
-    	fprintf(stdout,"# if (params->normalizationFlag & 32) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.\n"); /* 05/14/05 gam */
+    	fprintf(stdout,"# if (params->normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.\n"); /* 05/14/05 gam */
+    	fprintf(stdout,"# if (params->normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.\n"); /* 07/13/05 gam */
+    	fprintf(stdout,"# Note that the (params->normalizationFlag & 32) > 0 and (params->normalizationFlag & 64) > 0 options can be set independently.\n"); /* 07/13/05 gam */
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set testFlag           %23d; #46 INT2 specify test case.\n", params->testFlag); /* 05/11/04 gam */
     	fprintf(stdout,"# if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.\n"); /* 05/11/04 gam */
@@ -1125,7 +1131,8 @@ void StackSlideConditionData(
 /*                                                   */
 /*****************************************************/  
 
-/* 05/14/05 gam; if (params->normalizationFlag & 32) > 0 then clean SFTs using info in linesAndHarmonicsFile */
+/* 05/14/05 gam; if (params->normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile */
+/* 07/13/05 gam; if (params->normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile */
 /*************************************************/
 /*                                               */
 /* START SECTION: if cleaning SFTs, read in info */
@@ -1142,8 +1149,8 @@ void StackSlideConditionData(
   /* If option is set, get info about lines and harmonics */
   params->infoHarmonics = NULL;
   params->infoLines = NULL;
-  if ( (params->normalizationFlag & 32) > 0 )  {
-
+  /* if ( (params->normalizationFlag & 32) > 0 ) */ /* 07/13/05 gam */
+  if ( ((params->normalizationFlag & 32) > 0) || ((params->normalizationFlag & 64) > 0)  )  {
     params->infoHarmonics = (LineHarmonicsInfo *)LALMalloc(sizeof(LineHarmonicsInfo));
     params->infoLines = (LineNoiseInfo *)LALMalloc(sizeof(LineNoiseInfo));
 
@@ -1157,15 +1164,30 @@ void StackSlideConditionData(
     params->infoLines->lineFreq = NULL;
     params->infoLines->leftWing = NULL;
     params->infoLines->rightWing = NULL;
-  
+
     StackSlideGetLinesAndHarmonics(status->statusPtr, params->infoHarmonics, params->infoLines, params->f0BLK, params->bandBLK, params->linesAndHarmonicsFile);
     CHECKSTATUSPTR (status);
 
-    /* 05/19/05 gam; set up params->sumBinMask with bins to exclude from search or Monte Carlo due to cleaning */
-    StackSlideGetBinMask(status->statusPtr, params->sumBinMask, &(params->percentBinsExcluded), params->infoLines,
-       ((REAL8)STACKSLIDEMAXV),params->maxSpindownFreqShift, params->f0SUM, params->tEffSUM, params->nBinsPerSUM);
-    CHECKSTATUSPTR (status);
+    /* 07/13/05 gam */  
+    if ( (params->normalizationFlag & 32) > 0 ) {
+      /* 05/19/05 gam; set up params->sumBinMask with bins to exclude from search or Monte Carlo due to cleaning */
+      StackSlideGetBinMask(status->statusPtr, params->sumBinMask, &(params->percentBinsExcluded), params->infoLines,
+         ((REAL8)STACKSLIDEMAXV),params->maxSpindownFreqShift, params->f0SUM, params->tEffSUM, params->nBinsPerSUM);
+      CHECKSTATUSPTR (status);
+    } 
 
+    /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
+    if ( (params->normalizationFlag & 64) > 0 ) {
+      INT4 seed=0;
+      FILE *fpRandom;
+      INT4 rndCount;
+      fpRandom = fopen("/dev/urandom","r");
+      rndCount = fread(&seed, sizeof(INT4),1, fpRandom);
+      fclose(fpRandom);
+      LALCreateRandomParams(status->statusPtr, &(params->randPar), seed);
+      CHECKSTATUSPTR (status);
+    }
+    
     #ifdef DEBUG_CLEANLINESANDHARMONICS
       for(k=0;k<params->infoHarmonics->nHarmonicSets;k++) {
         fprintf(stdout,"params->infoHarmonics->startFreq[%i] = %g\n",k,params->infoHarmonics->startFreq[k]);
@@ -1183,7 +1205,7 @@ void StackSlideConditionData(
       }
     #endif
 
-  } /* END if ( (params->normalizationFlag & 32) > 0 ) */
+  } /* END if ( ((params->normalizationFlag & 32) > 0) || ((params->normalizationFlag & 64) > 0)  ) */
 
   #ifdef DEBUG_SUMBINMASK
     for(k=0;k<params->nBinsPerSUM;k++) {
@@ -1488,12 +1510,13 @@ void StackSlideApplySearch(
 /*                                                         */
 /* START SECTION: clean SFTs if option set and lines exist */
 /*                                                         */
-/***********************************************************/  
-  if ( (params->normalizationFlag & 32) > 0 )  {
+/***********************************************************/
+  /* if ( (params->normalizationFlag & 32) > 0 ) */ /* 07/13/05 gam */
+  if ( (params->normalizationFlag & 64) > 0 )  {  
     if (params->infoLines->nLines > 0) {
-      /* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */
-      /* NOTE THAT THE MAXIMUM NUMBER OF BINS TO CLEAN IS HARDCODED TO 20 HERE! */
-      StackSlideCleanSFTs(status->statusPtr,params->BLKData,params->infoLines,params->numBLKs,params->nBinsPerNRM,20);
+      /* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */ /* 07/13/05 gam; add params->randPar */
+      /* 07/13/05 gam NOTE THAT THE MAXIMUM NUMBER OF BINS TO CLEAN IS NOW params->nBinsPerBLK, i.e., COULD CLEAN ENTIRE BAND! */
+      StackSlideCleanSFTs(status->statusPtr,params->BLKData,params->infoLines,params->numBLKs,params->nBinsPerNRM,params->nBinsPerBLK,params->randPar);
       CHECKSTATUSPTR (status);
     }
   }
@@ -2398,7 +2421,8 @@ void StackSlideFinalizeSearch(
   
   /* 05/14/05 gam */
   LALFree(params->linesAndHarmonicsFile);
-  if ( (params->normalizationFlag & 32) > 0 )  {
+  /* if ( (params->normalizationFlag & 32) > 0 ) */ /* 07/13/05 gam */
+  if ( ((params->normalizationFlag & 32) > 0) || ((params->normalizationFlag & 64) > 0)  )  {
     if (params->infoLines->nLines > 0) {
       LALFree(params->infoLines->lineFreq);
       LALFree(params->infoLines->leftWing);
@@ -2413,7 +2437,13 @@ void StackSlideFinalizeSearch(
     }
     LALFree(params->infoHarmonics);
     LALFree(params->infoLines);
-  } /* END if ( (params->normalizationFlag & 32) > 0 ) */
+
+    /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */    
+    if ( (params->normalizationFlag & 64) > 0 ) {    
+      LALDestroyRandomParams(status->statusPtr, &(params->randPar));
+      CHECKSTATUSPTR (status);
+    }
+  } /* END if ( ((params->normalizationFlag & 32) > 0) || ((params->normalizationFlag & 64) > 0)  ) */
 
   LALFree(params->sumBinMask);  /* 05/19/05 gam */
 
@@ -3571,8 +3601,8 @@ void StackSlideGetBinMask(LALStatus *status, INT4 *binMask, REAL8 *percentBinsEx
 
 } /* END StackSlideGetBinMask */
 
-/* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */
-void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLines, INT4 numBLKs, INT4 nBinsPerNRM, INT4 maxBins)
+/* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */  /* 07/13/05 gam; add RandomParams *randPar */
+void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLines, INT4 numBLKs, INT4 nBinsPerNRM, INT4 maxBins, RandomParams *randPar)
 {
   INT4 i,j, nBinsPerBLK;
   SFTtype *oneSFT;
@@ -3596,7 +3626,7 @@ void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLi
            oneSFT->data->data[j].re = BLKData[i]->fft->data->data[j].re;
            oneSFT->data->data[j].im = BLKData[i]->fft->data->data[j].im;
       }
-      CleanCOMPLEX8SFT(status->statusPtr, oneSFT, maxBins, nBinsPerNRM, infoLines); /* clean this SFT */
+      CleanCOMPLEX8SFT(status->statusPtr, oneSFT, maxBins, nBinsPerNRM, infoLines, randPar); /* clean this SFT */
       CHECKSTATUSPTR (status);
       /* copy the clean SFT data back to this BLK */
       for(j=0;j<nBinsPerBLK;j++) {

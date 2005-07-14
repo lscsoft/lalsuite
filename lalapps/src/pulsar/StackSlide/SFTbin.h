@@ -17,6 +17,9 @@ Author: Sintes, A.M.,
 $Id$
 ************************************* </lalVerbatim> */
 
+/* REVISIONS: */
+/* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
+
 /* <lalLaTeX>  *********************************************
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Header \texttt{SFTbin.h}}
@@ -273,11 +276,13 @@ void ReadLineInfo (LALStatus        *status,
 		   CHAR           *fname
 		   );
 
+/* 07/13/05 gam; add RandomParams *randPar */
 void CleanCOMPLEX8SFT (LALStatus          *status,
 		       SFTtype            *sft,
 		       INT4               width,
 		       INT4               window,
-		       LineNoiseInfo      *lineInfo
+		       LineNoiseInfo      *lineInfo,
+		       RandomParams       *randPar
 		       );
 
 void CleanCOMPLEX16SFT (LALStatus               *status,

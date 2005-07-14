@@ -17,6 +17,10 @@ Author: Sintes, A.M., Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
+/* REVISIONS: */
+/* 05/19/05 gam; if (nLinesOut == 0) still need outLine->nLines = nLinesOut; calling function needs to know this */
+/* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
+
 /* <lalLaTeX>  *******************************************************
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{MOdule \texttt{SFTbin.c}}
@@ -850,7 +854,8 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 		       SFTtype            *sft,
 		       INT4               width,       
 		       INT4               window,
-		       LineNoiseInfo      *lineInfo)
+		       LineNoiseInfo      *lineInfo,
+		       RandomParams       *randPar)
 { /*   *********************************************  </lalVerbatim> */
   /* function to clean the SFT based on the line information read earlier */
   
@@ -863,9 +868,9 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
   REAL8    *leftWing=NULL;
   REAL8    *rightWing=NULL;
   COMPLEX8 *inData;
-  FILE *fp=NULL;   
+  /* FILE *fp=NULL;   
   INT4 seed, ranCount;  
-  RandomParams *randPar=NULL;
+  RandomParams *randPar=NULL; */ /* 07/13/05 gam; randPar now a function argument */
   static REAL4Vector *ranVector=NULL; 
   REAL4 *randVal;
   /* --------------------------------------------- */
@@ -903,14 +908,15 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
 
   /* allocate memory for storing sft power */
   tempDataPow = LALMalloc(2*window*sizeof(REAL8));
- 
-  fp=fopen("/dev/urandom", "r");
+  
+  /* 07/13/05 gam; randPar now a function argument */
+  /* fp=fopen("/dev/urandom", "r");
   ASSERT(fp, status, SFTBINH_EFILE, SFTBINH_MSGEFILE);  
 
   ranCount = fread(&seed, sizeof(seed), 1, fp);
   ASSERT(ranCount==1, status, SFTBINH_EREAD, SFTBINH_MSGEREAD);  
 
-  fclose(fp);
+  fclose(fp); */
 
   /* calculate total number of bins to see how many random numbers must be generated */
   sumBins = 0;
@@ -923,10 +929,10 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
       } 
     }
 
-  TRY ( LALCreateRandomParams (status->statusPtr, &randPar, seed), status);
+  /* TRY ( LALCreateRandomParams (status->statusPtr, &randPar, seed), status); */ /* 07/13/05 gam; randPar now a function argument */
   TRY ( LALCreateVector (status->statusPtr, &ranVector, 2*(sumBins + nLines)), status);
   TRY ( LALNormalDeviates (status->statusPtr, ranVector, randPar), status);
-  TRY ( LALDestroyRandomParams (status->statusPtr, &randPar), status);  
+  /* TRY ( LALDestroyRandomParams (status->statusPtr, &randPar), status); */ /* 07/13/05 gam; randPar now a function argument */
 
   tempk = 0;  
   /* loop over the lines */

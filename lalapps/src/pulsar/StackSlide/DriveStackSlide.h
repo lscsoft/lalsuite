@@ -87,7 +87,8 @@
 /* 05/24/05 gam; if (params->testFlag & 32 > 0) iterate MC up to 10 times to converge on desired confidence */
 /* 05/24/05 gam; if (params->debugOptionFlag & 32 > 0) print Monte Carlo Simulation results to stdout */
 /* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
-
+/* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
+    
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
 
@@ -115,6 +116,7 @@
 #include "StackSlide.h"
 /* #include <lal/LALStackSlide.h> Will need to switch to this version when StackSlide is in LAL. */
 #include "SFTbin.h"
+#include <lal/Random.h>
 /*********************************************/
 /*                                           */
 /* END SECTION: include header files         */
@@ -725,6 +727,8 @@ typedef struct tagStackSlideSearchParams {
 
   BarycenterInput baryinput; /* 04/12/05 gam */
 
+  RandomParams *randPar;     /* 07/13/05 gam */
+        
   /******************************************/
   /*                                        */
   /* END SECTION: other parameters          */
@@ -824,8 +828,8 @@ void StackSlideGetLinesAndHarmonics(LALStatus *status, LineHarmonicsInfo *infoHa
 void StackSlideGetBinMask(LALStatus *status, INT4 *binMask, REAL8 *percentBinsExcluded, LineNoiseInfo *infoLines,
      REAL8 maxDopplerVOverC, REAL8 maxSpindownFreqShift, REAL8 f0, REAL8 tBase, INT4 nBins);
 
-/* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */
-void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLines, INT4 numBLKs, INT4 nBinsPerNRM, INT4 maxBins);
+/* 05/14/05 gam; cleans SFTs using CleanCOMPLEX8SFT by Sintes, A.M., Krishnan, B. */  /* 07/13/05 gam; add RandomParams *randPar */
+void StackSlideCleanSFTs(LALStatus *status, FFT **BLKData, LineNoiseInfo *infoLines, INT4 numBLKs, INT4 nBinsPerNRM, INT4 maxBins, RandomParams *randPar);
 
 /* void FindBinaryLoudest(REAL4FrequencySeries **SUMData, StackSlideParams *stksldParams);*/
 

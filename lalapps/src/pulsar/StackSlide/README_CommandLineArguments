@@ -85,7 +85,9 @@ set normalizationParameter  0.0000000000000000e+00; #45 REAL4 see uses below.
 # if (params->normalizationFlag & 4) > 0 normalize STKs using running median (or use medians when weightFlag > 0), 
 # if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.
 # if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.
-# if (params->normalizationFlag & 32) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.
+# if (params->normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.
+# if (params->normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.
+# Note that the (params->normalizationFlag & 32) > 0 and (params->normalizationFlag & 64) > 0 options can be set independently.
 
 set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.
