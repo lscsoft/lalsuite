@@ -349,27 +349,55 @@ InspiralTemplateList;
 
 
 typedef struct 
-tagInspiralCell
+tagHexaGridParam
 {
-  INT4  nTemplateMax;
-  INT4  nTemplate;
-  INT4  ID;
-  INT4  fertile;  
-  INT4  in;
-  INT4  child[6];
-  REAL4 t0;
-  REAL4 t3;
   REAL4 x0Min;
   REAL4 x1Min;
   REAL4 x0Max;
   REAL4 x1Max;
+  REAL4 mm;
+  REAL4 mMin; 
+  REAL4 mMax; 
+  REAL4 etaMin;
+  REAL4 space;
+}
+HexaGridParam;
+
+typedef struct 
+tagCellEvolution
+{
+  INT4 nTemplateMax;
+  INT4 nTemplate;
+  INT4 fertile;
+}
+CellEvolution;
+
+
+typedef struct 
+tagCellList
+{
+  INT4 id;
+  struct tagCellList *next;
+}
+CellList;
+
+
+typedef struct 
+tagInspiralCell
+{  
+
+  INT4  ID;
+  INT4  in;
+  INT4  child[6];
+  REAL4 t0;
+  REAL4 t3;
   REAL4 dx0;
   REAL4 dx1;
-  REAL4 mm;
   Generation status;
   Position position;
   Position RectPosition[5];
   InspiralMetric metric;
+
 }
 InspiralCell;
 
@@ -866,12 +894,12 @@ LALCellInit(
     LALStatus         *status, 
     InspiralCell      **cell,
     INT4              id, 
-    InspiralBankParams        *bankPars, 
-    InspiralCoarseBankIn      *coarseIn, 
     InspiralMomentsEtc        *moments, 
-    InspiralTemplate          *paramsIn
+    InspiralTemplate          *paramsIn,
+    HexaGridParam             *gridParam, 
+    CellEvolution             *cellEvolution, 
+    CellList                  **cellList
     );
-
 
 
 void
@@ -880,28 +908,57 @@ LALPopulateCell(
     InspiralMomentsEtc      *moments,
     InspiralCell            **cell, 		
     INT4                    l,
-    InspiralBankParams      *temp,
-    InspiralCoarseBankIn    *coarseIn,
-    InspiralTemplate        *paramsIn
+    InspiralTemplate        *paramsIn, 
+    HexaGridParam           *gridParam,
+    CellEvolution           *cellEvolution, 
+    CellList **cellList
     );
 
-void 
-LALFindPosition(
-    LALStatus               *status, 
-    InspiralCell            **cell,
-    INT4                    id,
-    InspiralCoarseBankIn    *coarseIn,
-    Position                *position, 
-    InspiralTemplate        *paramsIn
-    );
+void
+LALFindPosition(LALStatus               *status, 
+		REAL4                   dx0, 
+		REAL4                   dx1,
+		Position                *position, 
+		InspiralTemplate        *paramsIn,
+		HexaGridParam           *gridParam
+		);
+
 
 void
 LALSPAValidPosition(
     LALStatus           *status, 
     InspiralCell        **cell,
     INT4                id1,
-    InspiralMomentsEtc  *moments
+    InspiralMomentsEtc  *moments, 
+    CellEvolution *cellEvolution, 
+    CellList **list
     );
+
+void
+GetPositionRectangle(LALStatus *status, 
+		     InspiralCell **cell,
+		     INT4 id,
+		     InspiralTemplate *params, 
+		     HexaGridParam           *gridParam, 
+		     CellEvolution *cellEvolution,
+		     CellList **cellList, INT4 *valid
+		     );
+
+
+
+void append(CellList ** headRef, INT4 id);
+void DeleteList(CellList **headRef);
+int  GetIdFromIndex(CellList *head, INT4 index);
+void  Delete(CellList ** headRef, INT4 id);
+
+
+
+void
+print_list(CellList *head);
+
+int
+Length(CellList *head);
+
 
 
 /* <lalLaTeX>
