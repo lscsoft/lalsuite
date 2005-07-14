@@ -52,10 +52,18 @@ NRCSID (FINDCHIRPFILTEROUTPUTVETOH, "$Id$");
 </lalLaTeX>
 #endif
 /* <lalErrTable> */
-#define FINDCHIRPFILTEROUTPUTVETOH_ENULL 1
-#define FINDCHIRPFILTEROUTPUTVETOH_ENNUL 2
-#define FINDCHIRPFILTEROUTPUTVETOH_MSGENULL "Null pointer"
-#define FINDCHIRPFILTEROUTPUTVETOH_MSGENNUL "Non-null pointer"
+#define FINDCHIRPFILTEROUTPUTVETOH_ENULL 1 
+#define FINDCHIRPFILTEROUTPUTVETOH_ENNUL 2 
+#define FINDCHIRPFILTEROUTPUTVETOH_EALOC 3 
+#define FINDCHIRPFILTEROUTPUTVETOH_ERSQT 4 
+#define FINDCHIRPFILTEROUTPUTVETOH_EDTZO 5 
+#define FINDCHIRPFILTEROUTPUTVETOH_ERSQW 6 
+#define FINDCHIRPFILTEROUTPUTVETOH_MSGENULL "Null pointer" 
+#define FINDCHIRPFILTEROUTPUTVETOH_MSGENNUL "Non-null pointer" 
+#define FINDCHIRPFILTEROUTPUTVETOH_MSGEALOC "Memory allocation error" 
+#define FINDCHIRPFILTEROUTPUTVETO_MSGEDTZO "deltaT is zero or negative" 
+#define FINDCHIRPFILTEROUTPUTVETO_MSGECRSQT "r^2 threshold is negative" 
+#define FINDCHIRPFILTEROUTPUTVETO_MSGECRSQW "r^2 veto window is zero or negative" 
 /* </lalErrTable> */
 
 
@@ -75,9 +83,8 @@ output veto.
 typedef struct
 tagFindChirpFilterOutputVetoParams
 {
-  UINT4         window;
-  UINT4         length;
-  REAL4         cutoff;
+  INT4          rsqvetoWindow;
+  INT4          rsqvetoThresh;
 }
 FindChirpFilterOutputVetoParams;
 /* </lalVerbatim> */
@@ -85,11 +92,9 @@ FindChirpFilterOutputVetoParams;
 <lalLaTeX>
 
 \begin{description}
-\item[\texttt{UINT4 window}] Width of the veto window.
+\item[\texttt{UINT4 rsqvetoWindow}] Width of the veto window.
 
-\item[\texttt{UINT4 length}] Length of the veto window.
-
-\item[\texttt{REAL4 cutoff}] Veto cutoff.
+\item[\texttt{UINT4 rsqvetoThresh}] Threshold of the veto window.
 \end{description}
 
 \vfill{\footnotesize\input{FindChirpFilterOutputVetoHV}}
@@ -105,8 +110,9 @@ FindChirpFilterOutputVetoParams;
 void LALFindChirpFilterOutputVeto( 
     LALStatus                          *status,
     SnglInspiralTable                 **eventList, 
-    COMPLEX8Vector                     *qVec,
-    REAL4                               qNorm,
+    FindChirpSegment                   *segment,
+    REAL4Vector                        *chisqVec,
+    REAL8                              deltaT,
     FindChirpFilterOutputVetoParams    *params
     );
 
@@ -116,4 +122,3 @@ void LALFindChirpFilterOutputVeto(
 #endif
 
 #endif /* _FINDCHIRPFILTEROUTPUTVETO_H */
-
