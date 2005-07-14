@@ -1576,20 +1576,16 @@ XLALNewLALDemod(Fcomponents *FaFb,
       for ( k = 2 * params->Dterms; k != 0;  k -- )
 	{
 	  REAL4 realP, imagP;	/* real and imaginary parts of Dirichlet-kernel P_alpha_k */
-	  REAL4 Xre, Xim;
-
+	  COMPLEX8 Xa = *Xalpha_k;
 	  REAL4 xinv = OOTWOPI_FLOAT / x0;
 
 	  /* calculate P_alpha_k */
 	  realP = sinx * xinv;
 	  imagP = cosxm1 * xinv;
 
-	  Xre = Xalpha_k->re;
-	  Xim = Xalpha_k->im;
-
 	  /* calculate P_alpha_k * X_alpha_k */
-	  realXP += realP * Xre - imagP * Xim;
-	  imagXP += imagP * Xre + realP * Xim;
+	  realXP += realP * Xa.re - imagP * Xa.im;
+	  imagXP += imagP * Xa.re + realP * Xa.im;
 
 	  Xalpha_k ++;	/* point to next frequency-bin */
 	  x0 -- ;	/* x0-value for next iteration */
