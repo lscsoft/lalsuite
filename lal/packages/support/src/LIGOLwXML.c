@@ -454,6 +454,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->chisq,
               tablePtr.snglInspiralTable->chisq_dof,
               tablePtr.snglInspiralTable->sigmasq,
+	      tablePtr.snglInspiralTable->rsqveto_duration,
               id
                 );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
