@@ -27,7 +27,7 @@ fi
 # ---------- fixed parameter of our test-signal
 Tsft=1800
 startTime=714180733
-refTime=$startTime
+refTime=714160733  ## $startTime
 duration=180000		## 50 hours
 
 mfd_fmin=300.0
@@ -94,7 +94,7 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## common cmdline-options for v1 and v2    
-cfs_CL="--IFO=$IFO --SignalOnly --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles=$SFTdir/testSFT*"
+cfs_CL="--IFO=$IFO --SignalOnly --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles=$SFTdir/testSFT* --refTime=$refTime"
     
 cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=1";
 echo $cmdline;
@@ -109,7 +109,7 @@ echo "----------------------------------------------------------------------"
 echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
-cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat --refTime=$refTime $extra_args";
+cmdline="$cfsv2_code $cfs_CL --outputFstat=Fstat_v2.dat $extra_args";
 echo $cmdline;
 
 if ! eval time $cmdline; then
