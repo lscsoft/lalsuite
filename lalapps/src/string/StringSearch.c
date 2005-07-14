@@ -1036,7 +1036,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"help",                        no_argument, NULL,          'h' },
     {0, 0, 0, 0}
   };
-  char args[] = "hnckwlabrxyf:L:H:t:F:C:E:S:i:d:T:s:g:o:p:";
+  char args[] = "hnckwabrxyzl:f:L:H:t:F:C:E:S:i:d:T:s:g:o:p:";
 
   /* set up xml output stuff */
   /* create the process and process params tables */
@@ -1250,7 +1250,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\t--print-fd-filter (-b)\tFLAG\t Prints the frequency domain filter to Filter-<template no>.txt.\n");      
       fprintf(stdout,"\t--print-td-filter (-r)\tFLAG\t Prints the time domain filter to FIRFilter-<template no>.txt.\n");      
       fprintf(stdout,"\t--print-snr (-x)\tFLAG\t Prints the snr to stdout.\n");      
-      fprintf(stdout,"\t--print-data (-y)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");      
+      fprintf(stdout,"\t--print-data (-y)\tFLAG\t Prints the post-processed (HP filtered, downsampled, padding removed, with injections) data to data.txt.\n");
       fprintf(stdout,"\t--print-injection (-z)\tFLAG\t Prints the injeciton data to injection.txt.\n");      
       fprintf(stdout,"\t--help (-h)\t\t\tFLAG\t Print this message.\n");
       fprintf(stdout,"eg %s  --sample-rate 4096 --bw-flow 39 --bank-freq-start 30 --bank-lowest-hifreq-cutoff 200 --settling-time 0.1 --short-segment-duration 4 --cusp-search --cluster-events 0.1 --pad 4 --threshold 4 --outfile ladida.xml --frame-cache cache/H-H1_RDS_C01_LX-795169179-795171015.cache --channel-name H1:LSC-STRAIN --gps-start-time 795170318 --gps-end-time 795170396\n", argv[0]);
