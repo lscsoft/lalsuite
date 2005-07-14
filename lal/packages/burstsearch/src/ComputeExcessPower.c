@@ -44,7 +44,7 @@ XLALComputeExcessPower(
 		dof = XLALTFTileDegreesOfFreedom(tile);
 
 		sum = 0.0;
-		for(bin = 0; bin <= tile->tbins; bin += tile->tbins / dof)
+		for(bin = 0; bin < tile->tbins; bin += tile->tbins / dof)
 			sum += pow(XLALREAL4Sum(&plane->data[(tile->tstart + bin) * nf], tile->fstart, tile->fbins), 2.0) / XLALREAL4SumSquares(norm, tile->fstart, tile->fbins);
 		tile->excessPower = sum - dof;
 
