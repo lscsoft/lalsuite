@@ -1093,14 +1093,6 @@ int main( int argc, char *argv[] )
       SnglInspiralTable     *inputData = NULL;
       SearchSummaryTable *inputSummary = NULL;
 
-      /* if the named input file does not exist, exit with an error */
-      if ( stat( argv[i], &infileStatus ) == -1 )
-      {
-        fprintf( stderr, "Error opening input file %s\n", argv[i] );
-        perror( "failed to stat() file" );
-        exit( 1 );
-      }
-
       if ( vrbflg ) fprintf( stdout, 
           "storing input file name %s in search summvars table\n", argv[i] );
 
