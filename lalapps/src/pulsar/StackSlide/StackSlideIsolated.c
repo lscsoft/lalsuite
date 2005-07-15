@@ -30,7 +30,8 @@ $Id$
 /* 05/24/05 gam; if (params->testFlag & 32 > 0) iterate MC up to 10 times to converge on desired confidence */
 /* 05/24/05 gam; if (params->debugOptionFlag & 32 > 0) print Monte Carlo Simulation results to stdout */
 /* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
-
+/* 07/15/2005 gam; need to save params->sumBinMask[iFreq] as savSumBinMask[iFreq] and inject where savSumBinMask[iFreq] !=0, and reset params->sumBinMask[0] == 1 */
+     
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -439,6 +440,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   INT4 countMC = 0;         /* count of number of complted MC simulations */
   INT4 maxMC = 1;           /* maximum number of times to run the entire MC */
   REAL8 maxFracErr = 0.005; /* when interating, maximum fractional error to allow for convergence to desired confidence */
+  INT4 *savSumBinMask;      /* 07/15/2005 gam */
       
   INITSTATUS( status, "RunStackSlideIsolatedMonteCarloSimulation", STACKSLIDEISOLATEDC );
   ATTATCHSTATUSPTR(status);
@@ -654,7 +656,9 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   }
 
   /* 05/19/05 gam; find first and last nonexcluded frequency bins */
-  for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) {     
+  savSumBinMask=(INT4 *)LALMalloc(nBinsPerSUM*sizeof(INT4)); /* 07/15/2005 gam */
+  for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) {
+     savSumBinMask[iFreq] = params->sumBinMask[iFreq]; /* 07/15/2005 gam; save this value */
      /* 05/19/05 gam; Only inject into bins that are not exclude */
      if (params->sumBinMask[iFreq] != 0) {
         if (firstNonExcludedBin == -1) {
@@ -663,7 +667,10 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         lastNonExcludedBin = iFreq;
      }
   }
-
+  LALFree(params->sumBinMask); /* 07/15/2005 gam; reallocate and save just 1 */
+  params->sumBinMask=(INT4 *)LALMalloc(sizeof(INT4));
+  params->sumBinMask[0] = 1;   /* Will only inject into bins where savSumBinMask != 1.
+  
  /***********************************************************/
  /*                                                         */
  /* START SECTION: LOOP OVER ENTIRE MONTE CARLO SIMULATIONS */
@@ -777,8 +784,9 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
      } */
 
      /* 05/19/05 gam; Only inject into bins that are not exclude */
-     if (params->sumBinMask[iFreq] != 0) {
-     
+     /* if (params->sumBinMask[iFreq] != 0) */ /* 07/15/05 gam; need to use saved value */
+     if (savSumBinMask[iFreq] != 0) {
+
       /* 12/06/04 gam */
       if ( (params->testFlag & 8) > 0 ) {
          pPulsarSignalParams->pulsar.psi = params->orientationAngle;
@@ -1060,7 +1068,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
          }
       }
 
-     } /* END if (params->sumBinMask[k] != 0) */
+     } /* END if (savSumBinMask[iFreq] != 0) */
     } /* END for(iFreq=0;iFreq<nBinsPerSUM;iFreq++) */
     /****************************************************/
     /*                                                  */
@@ -1237,6 +1245,8 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     }
     LALFree(savFreqDerivData);
   }
+  
+  LALFree(savSumBinMask); /* 07/15/05 gam */
   
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);
