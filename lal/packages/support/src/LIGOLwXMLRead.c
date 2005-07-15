@@ -171,6 +171,39 @@ MetaTableDirectory * XLALCreateMetaTableDir(
       XLAL_ERROR_NULL( func, XLAL_EINVAL );
       break;
     case process_table:
+      {
+        MetaTableDirectory tmpTableDir[] =
+        {
+          {"program",                  -1, 0},
+          {"version",                  -1, 1},
+          {"cvs_repository",           -1, 2},
+          {"cvs_entry_time",           -1, 3},
+          {"comment",                  -1, 4},
+          {"is_online",                -1, 5},
+          {"node",                     -1, 6},
+          {"username",                 -1, 7},
+          {"start_time",               -1, 8},
+          {"end_time",                 -1, 9},
+          {"jobid",                    -1, 10},
+          {"domain",                   -1, 11},
+          {"ifos",                     -1, 12},
+          {NULL,                        0, 0}
+        };
+        for ( i=0 ; tmpTableDir[i].name; ++i )
+        {
+          if ( (tmpTableDir[i].pos = 
+                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
+          {
+            fprintf( stderr, "unable to find column %s\n", 
+                tmpTableDir[i].name );
+            XLAL_ERROR_NULL( func, XLAL_EFAILED );
+          }
+        }
+
+        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
+            sizeof(MetaTableDirectory)) ;
+        memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
+      }
       break;
     case process_params_table:
       break;
@@ -400,6 +433,151 @@ SnglBurstTable    * XLALSnglBurstTableFromLIGOLw (
       else if ( tableDir[j].idx == 12 )
       {
         thisEvent->peak_time.gpsNanoSeconds = i4colData;
+      }
+      else
+      {
+        XLAL_CLOBBER_EVENTS;
+        XLAL_ERROR_NULL( func, XLAL_EIO);
+      }
+    }
+    /* count the number of triggers parsed */
+    nrows++;
+  }
+
+  if ( mioStatus == -1 )
+  {
+    fprintf( stderr, "error parsing after row %d\n", i );
+    XLAL_CLOBBER_EVENTS;
+    MetaioClose( env );
+    XLAL_ERROR_NULL( func, XLAL_EIO);
+  }
+
+  /* Normal exit */
+  LALFree( tableDir );
+  MetaioClose( env );
+
+  return eventHead;
+}
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+ProcessTable    * XLALProcessTableFromLIGOLw (
+    CHAR               *fileName
+    )
+/* </lalVerbatim> */
+{
+  static const char   *func = "XLALProcessTableFromLIGOLw";
+  int                                   i, j, nrows;
+  int                                   mioStatus=0;
+  ProcessTable                         *thisEvent = NULL;
+  ProcessTable                         *eventHead = NULL;
+  struct MetaioParseEnvironment         parseEnv;
+  const  MetaioParseEnv                 env = &parseEnv;
+  MetaTableDirectory                   *tableDir = NULL;
+
+  /* open the XML file */
+  mioStatus = MetaioOpenTable( env, fileName, "process" );
+  if ( mioStatus )
+  {
+    XLAL_ERROR_NULL( func, XLAL_EIO );
+  }
+
+  /* create table directory to find columns in file*/
+  tableDir = XLALCreateMetaTableDir(env, process_table);
+
+  /* loop over the rows in the file */
+  i = nrows = 0;
+  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  {
+    /* count the rows in the file */
+    i++;
+
+    /* allocate memory for the template we are about to read in */
+    if ( ! eventHead )
+    {
+      thisEvent = eventHead = (ProcessTable *) 
+        LALCalloc( 1, sizeof(ProcessTable) );
+    }
+    else
+    {
+      thisEvent = thisEvent->next = (ProcessTable *) 
+        LALCalloc( 1, sizeof(ProcessTable) );
+    }
+    if ( ! thisEvent )
+    {
+      fprintf( stderr, "could not allocate process table\n" );
+      XLAL_CLOBBER_EVENTS;
+      MetaioClose( env );
+      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    }
+
+    /* parse the contents of the row into the ProcessTable structure */
+    for ( j = 0; tableDir[j].name; ++j )
+    {
+      REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
+      /* REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8; */
+      INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+
+      if ( tableDir[j].idx == 0 )
+      {
+        LALSnprintf( thisEvent->program, LIGOMETA_PROGRAM_MAX * sizeof(CHAR), 
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 1 )
+      {
+        LALSnprintf( thisEvent->version, LIGOMETA_VERSION_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 2 )
+      {
+        LALSnprintf( thisEvent->cvs_repository, LIGOMETA_CVS_REPOSITORY_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 3 )
+      {
+        thisEvent->cvs_entry_time.gpsSeconds = i4colData;
+      }
+      else if ( tableDir[j].idx == 4 )
+      {
+        LALSnprintf( thisEvent->comment, LIGOMETA_COMMENT_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 5 )
+      {
+        thisEvent->is_online = i4colData;
+      }
+      else if ( tableDir[j].idx == 6 )
+      {
+        LALSnprintf( thisEvent->node, LIGOMETA_NODE_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 7 )
+      {
+        LALSnprintf( thisEvent->username, LIGOMETA_USERNAME_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 8 )
+      {
+        thisEvent->start_time.gpsSeconds = i4colData;
+        thisEvent->start_time.gpsNanoSeconds = 0;
+      }
+      else if ( tableDir[j].idx == 9 )
+      {
+        thisEvent->end_time.gpsSeconds = i4colData;
+        thisEvent->end_time.gpsNanoSeconds = 0;
+      }
+      else if ( tableDir[j].idx == 10 )
+      {
+        thisEvent->jobid = i4colData;
+      }
+      else if ( tableDir[j].idx == 11 )
+      {
+        LALSnprintf( thisEvent->domain, LIGOMETA_DOMAIN_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 12 )
+      {
+        LALSnprintf( thisEvent->ifos, LIGOMETA_IFOS_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
       }
       else
       {

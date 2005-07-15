@@ -136,6 +136,10 @@ SnglBurstTable * XLALSnglBurstTableFromLIGOLw (
     CHAR               *fileName
     );
 
+ProcessTable    * XLALProcessTableFromLIGOLw (
+    CHAR               *fileName
+    );
+
 void
 LALSnglBurstTableFromLIGOLw (
     LALStatus          *status,
