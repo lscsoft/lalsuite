@@ -995,7 +995,8 @@ LALSnglInspiralTableFromLIGOLw (
   /* figure out the column positions of the template parameters */
   for ( i = 0; tableDir[i].name; ++i )
   {
-    if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 )
+    if ( (tableDir[i].pos = MetaioFindColumn( env, tableDir[i].name )) < 0 
+        &&  tableDir[i].idx != 39 )
     {
       fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
 
