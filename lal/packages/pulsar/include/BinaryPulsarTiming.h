@@ -123,7 +123,6 @@ LALBinaryPulsarDeltaT(	LALStatus              	*status,
 #include <lal/IIRFilter.h>
 #include <lal/ZPGFilter.h>
 #include <lal/LALBarycenter.h>
-#include <lal/LALInitBarycenter.h>
 #include <lal/SkyCoordinates.h> 
 #include <lal/AVFactories.h>
 

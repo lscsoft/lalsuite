@@ -86,7 +86,6 @@ struct AvgVelPar
 #include<lal/LALDatatypes.h>
 #include<lal/ComputeSky.h>
 #include<lal/LALBarycenter.h>
-#include<lal/LALInitBarycenter.h>
 #include<lal/LALStdlib.h>
 #include<lal/LALConstants.h>
 
