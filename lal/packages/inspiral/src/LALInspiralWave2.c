@@ -94,6 +94,12 @@ LALInspiralWave2(
 
   ASSERT(output,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
   ASSERT(output->data,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
+  ASSERT(params,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
+  ASSERT((INT4)params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((REAL8)params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((REAL8)params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   /* Initially the waveform is empty */
   memset(output->data, 0, output->length * sizeof(REAL4));
@@ -139,6 +145,12 @@ LALInspiralWave2Templates(
   ASSERT(output2,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
   ASSERT(output1->data,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
   ASSERT(output2->data,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
+  ASSERT(params,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
+  ASSERT((INT4)params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((REAL8)params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((REAL8)params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   /* Initially the waveforms are empty */
   memset(output1->data, 0, output1->length * sizeof(REAL4));
@@ -387,13 +399,6 @@ LALInspiralWave2Engine(
   INITSTATUS(status, "LALInspiralWave2Engine", LALINSPIRALWAVE2ENGINEC);
   ATTATCHSTATUSPTR(status);
 
-  ASSERT(params,status,LALINSPIRALH_ENULL,LALINSPIRALH_MSGENULL);
-  ASSERT((INT4)params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT((REAL8)params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT((REAL8)params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT((INT4)params->order >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT((INT4)params->order <= 7, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-                                                                                                                             
   ak   = paramsInit->ak;
   func = paramsInit->func;
   

@@ -106,6 +106,7 @@ LALInspiralWave3 (
 
   ASSERT(output, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(output->data, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
+  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
   ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
@@ -119,6 +120,9 @@ LALInspiralWave3 (
 
   LALInspiralParameterCalc (status->statusPtr, params);
   CHECKSTATUSPTR(status);
+
+  ASSERT(params->totalMass >0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->eta >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
   memset( output->data, 0, output->length * sizeof(REAL4) );
 
@@ -194,6 +198,9 @@ LALInspiralWave3Templates (
   LALInspiralParameterCalc (status->statusPtr, params);
   CHECKSTATUSPTR(status);
 
+  ASSERT(params->totalMass >0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  ASSERT(params->eta >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
   /* Initialise the waveforms to zero */
   memset(output1->data, 0, output1->length * sizeof(REAL4));
   memset(output2->data, 0, output2->length * sizeof(REAL4));
@@ -249,9 +256,6 @@ LALInspiralWave3ForInjection (
   ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->shift ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
-  ASSERT(params->nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT(params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
   
   /* Compute some parameters*/
   LALInspiralInit(status->statusPtr, params, &paramsInit);
