@@ -101,6 +101,19 @@ searched precisely once for the given \texttt{ifo}.
 #endif
 
 /* <lalVerbatim file="LIGOMetadataUtilsCP"> */
+int XLALCountProcessTable(ProcessTable *head)
+/* </lalVerbatim> */
+{
+	int length;
+
+	/* count the number of events in the list */
+	for(length = 0; head; head = head->next)
+		length++;
+
+	return(length);
+}
+
+/* <lalVerbatim file="LIGOMetadataUtilsCP"> */
 int 
 XLALIFONumber( 
     const char *ifo 

@@ -249,6 +249,11 @@ SnglBurstAccuracy;
  */
 
 int 
+XLALCountProcessTable(
+    ProcessTable *head
+    );
+
+int 
 XLALIFONumber( 
     const char *ifo 
     );
