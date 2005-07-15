@@ -977,7 +977,15 @@ LALSnglInspiralTableFromLIGOLw (
   }
 
   /* open the sngl_inspiral table template bank file */
-  mioStatus = MetaioOpenTable( env, fileName, "sngl_inspiral" );
+  mioStatus = MetaioOpenFile( env, fileName );
+  if ( mioStatus )
+  {
+    fprintf( stderr, "unable to open file %s\n", fileName );
+    return -1;
+  }
+
+  /* open the sngl_inspiral table template bank file */
+  mioStatus = MetaioOpenTableOnly( env, "sngl_inspiral" );
   if ( mioStatus )
   {
     fprintf( stdout, "no sngl_inspiral table in file %s\n", fileName );
