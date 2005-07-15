@@ -295,8 +295,6 @@ LALResponseConvert()
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
-#include <lal/PrintFTSeries.h>
-#include <lal/FrameStream.h>
 #include <lal/Calibration.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStatusMacros.h>
@@ -304,8 +302,6 @@ LALResponseConvert()
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 #include <lal/Units.h>
-#include <lal/StreamInput.h>
-#include <lal/PrintVector.h>
 #include <lal/Random.h>
 #include <lal/SimulateSB.h>
 #include <lal/StochasticMC.h>

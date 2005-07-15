@@ -36,9 +36,7 @@ of detectors that arises from low duty cycle astrophysical backgrounds.
 #include <lal/AVFactories.h>
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
-#include <lal/PrintFTSeries.h>
 #include <lal/Units.h>
-#include <lal/PrintVector.h>
 #include <lal/Random.h>
 #include <lal/DetectorSite.h>
 
