@@ -189,7 +189,7 @@ for seg in data:
   df1.set_end(seg.end())
   df1.set_observatory(ifo1[0])
   df1.set_type(datatype1)
-  df1.set_name("df-"+ifo1+"-"+str(segment_number))
+  df1.set_name("df_"+ifo1+"_"+str(segment_number))
   if prev_df1: 
     df1.add_parent(prev_df1)
   dag.add_node(df1)
@@ -201,7 +201,7 @@ for seg in data:
   df2.set_end(seg.end())
   df2.set_observatory(ifo2[0])
   df2.set_type(datatype2)
-  df2.set_name("df-"+ifo2+"-"+str(segment_number))
+  df2.set_name("df_"+ifo2+"_"+str(segment_number))
   if prev_df2: 
     df2.add_parent(prev_df2)
   dag.add_node(df2)
@@ -213,7 +213,7 @@ for seg in data:
   df3.set_end(seg.end())
   df3.set_observatory(ifo3[0])
   df3.set_type(datatype3)
-  df3.set_name("df-"+ifo3+"-"+str(segment_number))
+  df3.set_name("df_"+ifo3+"_"+str(segment_number))
   if prev_df3: 
     df3.add_parent(prev_df3)
   dag.add_node(df3)
@@ -229,7 +229,7 @@ for seg in data:
     inject1.set_end(injend)
     seed = int(1e6 * random.uniform(0.0,1.0))
     inject1.add_var_opt('seed',seed)
-    inject1.set_name("inj-"+str(segment_number))
+    inject1.set_name("inj_"+str(segment_number))
     if prev_inject: 
       inject1.add_parent(prev_inject)
     dag.add_node(inject1)
@@ -249,7 +249,7 @@ for seg in data:
     string1.add_var_opt('trig-start-time',chunk.trig_start())
     string1.add_var_opt('outfile',string1.get_output())
     string1.add_parent(df1)
-    string1.set_name("string-"+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
+    string1.set_name("string_"+ifo1+"_"+str(segment_number)+"_"+str(chunk_number))
     if do_inj:
       string1.add_parent(inject1)
       string1.add_var_opt('injection-file',inject1.get_output())
@@ -265,7 +265,7 @@ for seg in data:
     string2.add_var_opt('trig-start-time',chunk.trig_start())
     string2.add_var_opt('outfile',string2.get_output())
     string2.add_parent(df2)
-    string2.set_name("string-"+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
+    string2.set_name("string_"+ifo2+"_"+str(segment_number)+"_"+str(chunk_number))
     if do_inj:
       string2.add_parent(inject1)
       string2.add_var_opt('injection-file',inject1.get_output())
@@ -281,7 +281,7 @@ for seg in data:
     string3.add_var_opt('trig-start-time',chunk.trig_start())
     string3.add_var_opt('outfile',string3.get_output())
     string3.add_parent(df3)
-    string3.set_name("string-"+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
+    string3.set_name("string_"+ifo3+"_"+str(segment_number)+"_"+str(chunk_number))
     if do_inj:
       string3.add_parent(inject1)
       string3.add_var_opt('injection-file',inject1.get_output())
@@ -297,7 +297,7 @@ for seg in data:
     burca13.add_parent(string1)
     burca13.add_parent(string3)
     burca13.add_var_opt('dt',dtHH)
-    burca13.set_name("burca-"+ifo1+ifo3+"-"+str(segment_number)+"-"+str(chunk_number))
+    burca13.set_name("burca_"+ifo1+ifo3+"_"+str(segment_number)+"_"+str(chunk_number))
     dag.add_node(burca13)
 
     #31 H2-H1 coincidences (produces H2 survivors)
@@ -309,7 +309,7 @@ for seg in data:
     burca31.add_parent(string1)
     burca31.add_parent(string3)
     burca31.add_var_opt('dt',dtHH)
-    burca31.set_name("burca-"+ifo3+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
+    burca31.set_name("burca_"+ifo3+ifo1+"_"+str(segment_number)+"_"+str(chunk_number))
     dag.add_node(burca31)
 
     #132 H1-H2 survivors in coincidence with L1 (gives H1 survivors)
@@ -321,7 +321,7 @@ for seg in data:
     burca132.add_parent(burca13)
     burca132.add_parent(string2)
     burca132.add_var_opt('dt',dtHL)
-    burca132.set_name("burca-"+ifo1+ifo3+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
+    burca132.set_name("burca_"+ifo1+ifo3+ifo2+"_"+str(segment_number)+"_"+str(chunk_number))
     if do_slides:
       burca132.add_var_opt('slide-time',slidetime)
       burca132.add_var_opt('number-slides',no_slides)
@@ -336,7 +336,7 @@ for seg in data:
     burca213.add_parent(burca13)
     burca213.add_parent(string2)
     burca213.add_var_opt('dt',dtHL)
-    burca213.set_name("burca-"+ifo2+ifo3+ifo1+"-"+str(segment_number)+"-"+str(chunk_number))
+    burca213.set_name("burca_"+ifo2+ifo3+ifo1+"_"+str(segment_number)+"_"+str(chunk_number))
     if do_slides:
       burca213.add_var_opt('slide-time',slidetime)
       burca213.add_var_opt('number-slides',no_slides)
@@ -351,7 +351,7 @@ for seg in data:
     burca312.add_parent(burca31)
     burca312.add_parent(string2)
     burca312.add_var_opt('dt',dtHL)
-    burca312.set_name("burca-"+ifo3+ifo1+ifo2+"-"+str(segment_number)+"-"+str(chunk_number))
+    burca312.set_name("burca_"+ifo3+ifo1+ifo2+"_"+str(segment_number)+"_"+str(chunk_number))
     if do_slides:
       burca312.add_var_opt('slide-time',slidetime)
       burca312.add_var_opt('number-slides',no_slides)
