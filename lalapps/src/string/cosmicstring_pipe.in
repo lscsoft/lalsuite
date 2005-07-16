@@ -336,7 +336,7 @@ for seg in data:
     burca213.add_parent(burca13)
     burca213.add_parent(string2)
     burca213.add_var_opt('dt',dtHL)
-    burca213.set_name("burca_"+ifo2+ifo3+ifo1+"_"+str(segment_number)+"_"+str(chunk_number))
+    burca213.set_name("burca_"+ifo2+ifo1+ifo3+"_"+str(segment_number)+"_"+str(chunk_number))
     if do_slides:
       burca213.add_var_opt('slide-time',slidetime)
       burca213.add_var_opt('number-slides',no_slides)
