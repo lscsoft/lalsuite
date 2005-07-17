@@ -59,8 +59,8 @@ int main( int argc, char *argv[]){
   do{
      r=fscanf(fp,"%lf%lf%lf%lf%lf\n", &temp1, &temp2, x+n, &temp4, y+n); 
     if (r==5) {
-      n++;
       w[n] = 1.0/(temp2 * temp2); /* weight = 1/variance*/
+      n++;
     }
   } while (r != EOF); 
 
