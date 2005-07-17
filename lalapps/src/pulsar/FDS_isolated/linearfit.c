@@ -1,7 +1,7 @@
 
 /* B. Krishnan, July 2005 */
 /* small modification by M.A. Papa */
-
+/* $Id$
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_fit.h>
@@ -68,26 +68,27 @@ int main( int argc, char *argv[]){
   fclose(fp);
 
   /* call gsl fitting function */
-   gsl_fit_wlinear(x, 1, w, 1, y, 1, n, &c0, &c1, &cov00, &cov01, &cov11, &chisq); 
-
-  fprintf(stdout, "best fit : Y = %g + %g X\n", c0, c1);
-  fprintf(stdout, "covariance matrix:\n");
-  fprintf(stdout, "[ %g,  %g\n  %g,  %g]\n", cov00, cov01, cov01, cov11); 
-  fprintf(stdout, "chisq = %g\n", chisq); 
-
+  gsl_fit_wlinear(x, 1, w, 1, y, 1, n, &c0, &c1, &cov00, &cov01, &cov11, &chisq); 
+  
   h0 = (0.95 - c0)/c1;
-  dh0 = 0.1 * h0;
+  gsl_fit_linear_est(h0, c0, c1, cov00, cov01, cov11, &y0, &y0_err); 
 
-  fpout = fopen("fitout","w");
+  fprintf(stdout, "%11.7E  %11.7E  %11.7E  %11.7E\n", h0* 1.0e-19, c1 * 1.0e+19, y0_err, 100.0*y0_err/(c1*h0) );
 
-  for (i = 0; i< 101; i++)
-    {
-      h0_fit = (h0-dh0) + i * 0.02 * dh0;
-      gsl_fit_linear_est(h0_fit, c0, c1, cov00, cov01, cov11, &y0, &y0_err);
-      fprintf(fpout, "%g  %g  %g\n", h0_fit, y0, y0_err);
-    }
-
-  fclose(fpout);
+  /*   fprintf(stdout, "best fit : Y = %g + %g X\n", c0, c1);  */
+  /*   fprintf(stdout, "covariance matrix:\n");  */
+  /*   fprintf(stdout, "[ %g,  %g\n  %g,  %g]\n", cov00, cov01, cov01, cov11);   */
+  /*   fprintf(stdout, "chisq = %g\n", chisq);   */
+  /*   dh0 = 0.1 * h0;  */
+  /*   fpout = fopen("fitout","w");  */
+  /*   for (i = 0; i< 101; i++)  */
+  /*     {  */
+  /*       h0_fit = (h0-dh0) + i * 0.02 * dh0;  */
+  /*       gsl_fit_linear_est(h0_fit, c0, c1, cov00, cov01, cov11, &y0, &y0_err);  */
+  /*       fprintf(fpout, "%g  %g  %g\n", h0_fit, y0, y0_err);  */
+  /*     }  */
+  
+  /*   fclose(fpout);  */
 
   free(x); 
   free(y); 
