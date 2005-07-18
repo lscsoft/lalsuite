@@ -882,6 +882,8 @@ int main( int argc, char *argv[] )
                               segNormVector, &frChan, frStream), &status);
 			  cohInspFilterInput->segNorm[l] = sqrt(segNormVector->data->data[segNormVector->data->length - 1]);
 			  LAL_CALL( LALDestroyVector( &status, &(segNormVector->data) ), &status );
+			  LALFree( segNormVector );
+			  segNormVector = NULL;
 			  LAL_CALL( LALFrRewind( &status, frStream ), &status );
 			}
 
