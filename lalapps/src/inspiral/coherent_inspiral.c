@@ -160,8 +160,10 @@ int main( int argc, char *argv[] )
   INT4   numPoints        = 0;
   INT4   startTemplate    = -1;           
   INT4   stopTemplate     = -1;
+  INT4   numChannels      = 0;
+  INT4   frEnd            = 0;
   UINT4  numSegments      = 1;       /* number of segments */
-  UINT4  numBeamPoints    = 0;       /* number of sky position templates */
+  UINT4  numBeamPoints    = 65341;       /* number of sky position templates */
   UINT4  nCohDataFr       = 0;
   UINT8  eventID          = 0;
 
@@ -169,7 +171,7 @@ int main( int argc, char *argv[] )
   REAL4  m2               = 0;
 
   /* counters and other variables */
-  INT4   i,j,k,l,w;
+  INT4   i,j,k,l,w,p;
   REAL4  theta,phi,vPlus,vMinus;
   UINT4  numDetectors     = 0;
   REAL8  tempTime[6]      = {0.0,0.0,0.0,0.0,0.0,0.0};
@@ -201,10 +203,12 @@ int main( int argc, char *argv[] )
   InspiralTemplate             *bankTemp = NULL;
   InspiralTemplate             *bankTemp2 = NULL;
   COMPLEX8TimeSeries            tempSnippet;
+  REAL4FrequencySeries         *segNormVector = NULL;
 
   char namearray[6][256]  = {"0","0","0","0","0","0"}; /* input frame files */
   char namearray2[6][256] = {"0","0","0","0","0","0"}; /* beam files */
-  char namearray3[6][256] = {"0","0","0","0","0","0"}; /* chan names */
+  char namearray3[6][256] = {"0","0","0","0","0","0"}; /* cData chan names */
+  char namearray4[6][256] = {"0","0","0","0","0","0"}; /* segNorm chan names */
 
   set_debug_level( "1" ); /* change with parse option */
 
@@ -502,8 +506,9 @@ int main( int argc, char *argv[] )
 			  h1ChanNum = 0;
 			  strcpy( namearray[0], tempName2 );
 			}
-		      strcpy(namearray2[0],"HBeam.dat");
+		      strcpy(namearray2[0],"HanfordBeamCoeff.dat");
 		      LALSnprintf( namearray3[0], LALNameLength*sizeof(CHAR), "H1:LSC-AS_Q_CData_%d", h1ChanNum );
+		      LALSnprintf( namearray4[0], LALNameLength*sizeof(CHAR), "_SegNorm_%d", h1ChanNum );
 		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
 		      tempCache = NULL;
 		    }
@@ -545,8 +550,9 @@ int main( int argc, char *argv[] )
 			  lChanNum = 0;
 			  strcpy( namearray[1], tempName2 );
 			}
-		      strcpy(namearray2[1],"LBeam.dat");
+		      strcpy(namearray2[1],"LivingstonBeamCoeff.dat");
 		      LALSnprintf( namearray3[1], LALNameLength*sizeof(CHAR), "L1:LSC-AS_Q_CData_%d", lChanNum );
+		      LALSnprintf( namearray4[1], LALNameLength*sizeof(CHAR), "_SegNorm_%d", lChanNum );
 		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
 		      tempCache = NULL;
 		    }
@@ -587,8 +593,9 @@ int main( int argc, char *argv[] )
 			  virgoChanNum = 0;
 			  strcpy( namearray[2], tempName2 );
 			}
-		      strcpy(namearray2[2],"VIRGOBeam.dat");
+		      strcpy(namearray2[2],"VirgoBeamCoeff.dat");
 		      LALSnprintf( namearray3[2], LALNameLength*sizeof(CHAR), "V1:LSC-AS_Q_CData_%d", virgoChanNum );
+		      LALSnprintf( namearray4[2], LALNameLength*sizeof(CHAR), "_SegNorm_%d", virgoChanNum );
 		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
 		      tempCache = NULL;
 		    }
@@ -629,8 +636,9 @@ int main( int argc, char *argv[] )
 			  geoChanNum = 0;
 			  strcpy( namearray[3], tempName2 );
 			}
-		      strcpy(namearray2[3],"GEOBeam.dat");
+		      strcpy(namearray2[3],"GeoBeamCoeff.dat");
 		      LALSnprintf( namearray3[3], LALNameLength*sizeof(CHAR), "G1:LSC-AS_Q_CData_%d", geoChanNum );
+		      LALSnprintf( namearray4[3], LALNameLength*sizeof(CHAR), "_SegNorm_%d", geoChanNum );
 		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
 		      tempCache = NULL;
 		    }
@@ -671,8 +679,9 @@ int main( int argc, char *argv[] )
 			  tamaChanNum = 0;
 			  strcpy( namearray[4], tempName2 );
 			}
-		      strcpy(namearray2[4],"TAMABeam.dat");
+		      strcpy(namearray2[4],"TamaBeamCoeff.dat");
 		      LALSnprintf( namearray3[4], LALNameLength*sizeof(CHAR), "T1:LSC-AS_Q_CData_%d", tamaChanNum );
+		      LALSnprintf( namearray4[4], LALNameLength*sizeof(CHAR), "_SegNorm_%d", tamaChanNum );
 		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
 		      tempCache = NULL;
 		    }
@@ -713,8 +722,9 @@ int main( int argc, char *argv[] )
 			  h2ChanNum = 0;
 			  strcpy( namearray[5], tempName2 );
 			}
-		      strcpy(namearray2[5],"HBeam.dat");
+		      strcpy(namearray2[5],"HanfordBeamCoeff.dat");
 		      LALSnprintf( namearray3[5], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%d", h2ChanNum );
+		      LALSnprintf( namearray4[5], LALNameLength*sizeof(CHAR), "_SegNorm_%d", h2ChanNum );
 		      LAL_CALL( LALDestroyFrCache(&status, &tempCache), &status );
 		      tempCache = NULL;
 		    }
@@ -734,43 +744,49 @@ int main( int argc, char *argv[] )
 		  if(caseID[0])
 		    {
 		      strcpy(namearray[0],H1filename);
-		      strcpy(namearray2[0],"HBeam.dat");
+		      strcpy(namearray2[0],"HanfordBeamCoeff.dat");
 		      LALSnprintf( namearray3[0], LALNameLength*sizeof(CHAR), "H1:LSC-AS_Q_CData_%d", h1ChanNum );
+		      LALSnprintf( namearray4[0], LALNameLength*sizeof(CHAR), "_SegNorm_%d", h1ChanNum );
 		    }
 
                   if(caseID[1])
                     {
                       strcpy(namearray[1],Lfilename);
-                      strcpy(namearray2[1],"LBeam.dat");
+                      strcpy(namearray2[1],"LivingstonBeamCoeff.dat");
                       LALSnprintf( namearray3[1], LALNameLength*sizeof(CHAR), "L1:LSC-AS_Q_CData_%d", lChanNum );
+		      LALSnprintf( namearray4[1], LALNameLength*sizeof(CHAR), "_SegNorm_%d", lChanNum );
                     }
 
                   if(caseID[2])
 	            {
 		      strcpy(namearray[2],VIRGOfilename);
-		      strcpy(namearray2[2],"VIRGOBeam.dat"); 
+		      strcpy(namearray2[2],"VirgoBeamCoeff.dat"); 
 		      LALSnprintf(namearray3[2], LALNameLength*sizeof(CHAR), "V1:LSC-AS_Q_CData_%d", virgoChanNum );
+		      LALSnprintf( namearray4[2], LALNameLength*sizeof(CHAR), "_SegNorm_%d", virgoChanNum );
 		    }
 
 	          if(caseID[3])
 		    {
 		      strcpy(namearray[3],GEOfilename);
-		      strcpy(namearray2[3],"GEOBeam.dat");
+		      strcpy(namearray2[3],"GeoBeamCoeff.dat");
 		      LALSnprintf(namearray3[3], LALNameLength*sizeof(CHAR), "G1:LSC-AS_Q_CData_%d", geoChanNum );
+		      LALSnprintf( namearray4[3], LALNameLength*sizeof(CHAR), "_SegNorm_%d", geoChanNum );
 		    }
 
                   if(caseID[4])
                     { 
                       strcpy(namearray[4],TAMAfilename);
-                      strcpy(namearray2[4],"TAMABeam.dat");
+                      strcpy(namearray2[4],"TamaBeamCoeff.dat");
                       LALSnprintf(namearray3[4], LALNameLength*sizeof(CHAR), "T1:LSC-AS_Q_CData_%d", tamaChanNum );
+		      LALSnprintf( namearray4[4], LALNameLength*sizeof(CHAR), "_SegNorm_%d", tamaChanNum );
                     }
 
                   if(caseID[5])
                     {
                       strcpy(namearray[5],H2filename);
-                      strcpy(namearray2[5],"HBeam.dat");
+                      strcpy(namearray2[5],"HanfordBeamCoeff.dat");
                       LALSnprintf(namearray3[5], LALNameLength*sizeof(CHAR), "H2:LSC-AS_Q_CData_%d", h2ChanNum );
+		      LALSnprintf( namearray4[5], LALNameLength*sizeof(CHAR), "_SegNorm_%d", h2ChanNum );
 		    }
 
 		  chanNumArray[0] = h1ChanNum;
@@ -805,9 +821,7 @@ int main( int argc, char *argv[] )
 			}
 		      for ( l=0 ; l < (INT4) numBeamPoints ; l++)
 			{ 
-			  if( verbose ) fprintf(stdout,"scanning a beam file...");
 			  fscanf(filePtr[w],"%f %f %f %f",&theta,&phi,&vPlus,&vMinus);
-			  if( verbose ) fprintf(stdout,"done\n");
 			  cohInspBeamVec->detBeamArray[w].thetaPhiVs[l].data->data[0] = theta;
 			  cohInspBeamVec->detBeamArray[w].thetaPhiVs[l].data->data[1] = phi;
 			  cohInspBeamVec->detBeamArray[w].thetaPhiVs[l].data->data[2] = vPlus;
@@ -832,8 +846,47 @@ int main( int argc, char *argv[] )
 			  fprintf(stdout,"The file %s does not exist - exiting...\n", namearray[j]);
 			  goto cleanexit;
 			}
+
+		      /* Since there is a segnorm frame written at the front */
+                      /* of the frame file for each c-data frame, I need to  */
+                      /* determine the number of frames contained in the     */
+                      /* frame file so that I can advance the stream past    */
+                      /* the segNorm vectors                                 */
+
+		      p = 0;
+		      frEnd = 0;
+		      while( !frEnd )
+			{
+			  LAL_CALL( LALFrEnd( &status, &frEnd, frStream), &status);
+			  if( frEnd == 0 )
+			    {
+			      LAL_CALL( LALFrNext( &status,frStream ), &status);
+			      p++;
+			    }
+			  LAL_CALL( LALFrEnd( &status, &frEnd, frStream), &status);
+			}
+		      numChannels = p;
+		      LAL_CALL( LALFrRewind( &status, frStream ), &status );
+
+		      /* If we can estimate psi,epsilon, then get segnorm */
+		      if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 )
+			{
+			  for( w=0; w<chanNumArray[j]; w++)
+			    {
+			      LAL_CALL( LALFrNext( &status,frStream ), &status );
+			    }
+			  frChan.name = namearray4[j];
+			  segNormVector = (REAL4FrequencySeries *) 
+			      LALCalloc( 1, sizeof(REAL4FrequencySeries) );
+			  LAL_CALL( LALFrGetREAL4FrequencySeries( &status, 
+                              segNormVector, &frChan, frStream), &status);
+			  cohInspFilterInput->segNorm[l] = sqrt(segNormVector->data->data[segNormVector->data->length - 1]);
+			  LAL_CALL( LALDestroyVector( &status, &(segNormVector->data) ), &status );
+			  LAL_CALL( LALFrRewind( &status, frStream ), &status );
+			}
+
 		      /* Advance the stream to the appropriate frame */
-		      for( w=0; w<chanNumArray[j]; w++)
+		      for( w=0; w<chanNumArray[j]+numChannels/2; w++)
 			{
 			  LAL_CALL( LALFrNext( &status,frStream ), &status );
 			}
