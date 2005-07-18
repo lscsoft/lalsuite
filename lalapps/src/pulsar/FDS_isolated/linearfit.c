@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_fit.h>
-
+#include <gsl/gsl_cdf.h>
 
 
 int main( int argc, char *argv[]){
@@ -100,6 +100,7 @@ int main( int argc, char *argv[]){
   
   /*  fclose(fpout);  */
 
+  /* calculate the error bounds on h0^95 */
   {  
     double h0_err_lo, h0_err_hi;  
     h0_err_lo = h0;  
@@ -114,8 +115,17 @@ int main( int argc, char *argv[]){
       h0_err_lo -= 0.0001*h0;  
     } while (y0 + y0_err > 0.95);  
     fprintf(stdout, "%11.7E  ", (h0 - h0_err_lo)*1.0E-19);  
-    fprintf(stdout, "%g\n", 100.0*(h0_err_hi - h0_err_lo)/h0);  
+    fprintf(stdout, "%g  ", 100.0*(h0_err_hi - h0_err_lo)/h0);  
   }  
+
+
+  /* calculate chi-square quantities to test if the fit is acceptable */
+  /* distribution is chi square with n-2 degrees of freedom */
+  /* mean of chi square with k degrees of freedom is k and variance is 2k */
+  fprintf(stdout , "%d  %d  ", n-2, 2*(n-2));
+
+  /* also print area under chi-square distribution from chisq value */
+  fprintf(stdout, "%g\n", gsl_cdf_chisq_Q( chisq, n-2));
   
   free(x); 
   free(y); 
