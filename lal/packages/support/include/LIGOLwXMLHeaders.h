@@ -338,10 +338,12 @@ fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_axis_ra\" T
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_axis_dec\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_angle\" Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:ligo_angle_sig\" Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:inclination\"  Type=\"real_4\"/>\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"multi_inspiralgroup:multi_inspiral:polarization\"  Type=\"real_4\"/>\n" , fp ) == EOF || \
 fputs( "      <Stream Name=\"multi_inspiralgroup:multi_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 #define MULTI_INSPIRAL_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e"
+"         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%22.16e,%d,%d,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%d,%e,%e,%e,%e,%e,%e,%e"
 
 #define PRINT_LIGOLW_XML_SIM_INSPIRAL(fp) ( \
 fputs( "   <Table Name=\"sim_inspiralgroup:sim_inspiral:table\">\n" , fp ) == EOF || \
