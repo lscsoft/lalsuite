@@ -496,7 +496,9 @@ LALWriteLIGOLwXMLTable (
               tablePtr.multiInspiralTable->ligo_axis_ra,
               tablePtr.multiInspiralTable->ligo_axis_dec,
               tablePtr.multiInspiralTable->ligo_angle,
-              tablePtr.multiInspiralTable->ligo_angle_sig
+	      tablePtr.multiInspiralTable->ligo_angle_sig,
+	      tablePtr.multiInspiralTable->inclination,
+              tablePtr.multiInspiralTable->polarization
                 );
         tablePtr.multiInspiralTable = tablePtr.multiInspiralTable->next;
       }
