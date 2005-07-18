@@ -5,6 +5,7 @@
 echo L1ctriggers.xml > L1.txt
 echo H1ctriggers.xml > H1.txt
 echo H2ctriggers.xml > H2.txt
+ls -1 HL-* > inj.txt
 
 ~/lscsoft/lalapps/src/power/lalapps_binj_find --input-trig H1.txt --input-burstinj inj.txt \
 --output-trig H1cout.xml --output-inj-made H1cinj.xml --output-inj-found H1cinjfound.xml \
