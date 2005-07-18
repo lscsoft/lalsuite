@@ -608,6 +608,476 @@ LALCoherentInspiralFilterParamsFinalize (
 }
 
 void
+LALCoherentInspiralEstimatePsiEpsilon (
+    LALStatus                             *status,
+    INT4                                   caseID[6],
+    REAL4                                  segNorm[4],
+    REAL4                                  theta,
+    REAL4                                  phi,
+    COMPLEX8                               cData[4],
+    REAL4                                  *inclination,
+    REAL4                                  *polarization
+    )
+{
+  INT4                   i = 0;
+  INT4                   j = 0;
+  INT4                   k = 0;
+
+  REAL4                  alphaBetaGamma[6][3]; /* H1 L V G T H2 */
+  REAL4                  alphaBetaGammaH[3] = { 38.11, 256.35, 107.43 };
+  REAL4                  alphaBetaGammaL[3] = { 38.09, 283.54, 196.88 };
+  REAL4                  alphaBetaGammaV[3] = { 320.34, 275.92, 159.02 };
+  REAL4                  alphaBetaGammaG[3] = { 326.41, 269.86, 110.4 };
+  REAL4                  alphaBetaGammaT[3] = { 16.67, 188.47, 326.3 };
+  REAL4                  gelFandABGPlusRe[6][5];
+  REAL4                  gelFandABGMinusRe[6][5];
+  REAL4                  gelFandPTZPlusRe[5];
+  REAL4                  gelFandPTZMinusRe[5];
+  REAL4                  gelFandABGPlusIm[6][5];
+  REAL4                  gelFandABGMinusIm[6][5];
+  REAL4                  gelFandPTZPlusIm[5];
+  REAL4                  gelFandPTZMinusIm[5];
+  REAL4                  mPTZRe[3] = { 0.0, 0.0, 0.0 };
+  REAL4                  mPTZIm[3] = { 0.0, 0.0, 0.0 };
+  REAL4                  mABGRe[6][3];
+  REAL4                  mABGIm[6][3];
+  REAL4                  sphereHarmonicRe[5][3][3]; /* -2 -1 0 1 2 */
+  REAL4                  sphereHarmonicIm[5][3][3];
+  REAL4                  sphereHarmonicReZero[3][3] = {{1,0,0},{0,-1,0},{0,0,0}};
+  REAL4                  sphereHarmonicImZero[3][3] = {{0,-1,0},{-1,0,0},{0,0,0}};
+  REAL4                  sphereHarmonicReOne[3][3] = {{0,0,1},{0,0,0},{1,0,0}};
+  REAL4                  sphereHarmonicImOne[3][3] = {{0,0,0},{0,0,-1},{0,-1,0}};
+  REAL4                  sphereHarmonicReTwo[3][3] = {{-1,0,0},{0,-1,0},{0,0,2}};
+  REAL4                  sphereHarmonicImTwo[3][3] = {{0,0,0},{0,0,0},{0,0,0}};
+  REAL4                  sphereHarmonicReThree[3][3] = {{0,0,1},{0,0,0},{1,0,0}};
+  REAL4                  sphereHarmonicImThree[3][3] = {{0,0,0},{0,0,1},{0,1,0}};
+  REAL4                  sphereHarmonicReFour[3][3] = {{1,0,0},{0,-1,0},{0,0,0}};
+  REAL4                  sphereHarmonicImFour[3][3] = {{0,1,0},{1,0,0},{0,0,0}};
+  REAL4                  dVectorPlusRe[6]; /* H1 L V G T H2 */
+  REAL4                  dVectorPlusIm[6];
+  REAL4                  dVectorMinusRe[6];
+  REAL4                  dVectorMinusIm[6];
+  COMPLEX8               cPlus;
+  COMPLEX8               cMinus;
+  COMPLEX8               cRatio;  /* cMinus/cPlus */
+
+  INITSTATUS( status, "LALCoherentInspiralEstimatePsiEpsilon", 
+	      COHERENTINSPIRALFILTERC );
+  ATTATCHSTATUSPTR( status );
+
+  /* Must have 3 sites to estimate psi and epsilon */
+  ASSERT( segNorm[0] && segNorm[1] && segNorm[2], status,
+	  COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
+  ASSERT( cData[0].re && cData[1].re && cData[2].re, status,
+	  COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
+
+  /* Initialize the arrays */
+  for( i = 0; i < 6; i++ )
+    {
+      for( j = 0; j < 3; j++ )
+	{
+	  alphaBetaGamma[i][j] = 0.0;
+	  mABGRe[i][j] = 0.0;
+	  mABGIm[i][j] = 0.0;
+	}
+    }
+  for( i = 0; i < 6; i++ )
+    {
+      for( j = 0; j < 5; j++ )
+	{
+	  gelFandABGPlusRe[i][j] = 0.0;
+	  gelFandABGMinusRe[i][j] = 0.0;
+	  gelFandABGPlusIm[i][j] = 0.0;
+	  gelFandABGMinusIm[i][j] = 0.0;
+	}
+    }
+  for( i = 0; i < 5; i++ )
+    {
+      gelFandPTZPlusRe[i] = 0.0;
+      gelFandPTZMinusRe[i] = 0.0;
+      gelFandPTZPlusIm[i] = 0.0;
+      gelFandPTZMinusIm[i] = 0.0;
+    }
+  for( i = 0; i < 5; i++ )
+    {
+      for( j = 0; j < 3; j++ )
+	{
+	  for( k = 0; k < 3; k++ )
+	    {
+	      sphereHarmonicRe[i][j][k] = 0.0;
+	      sphereHarmonicIm[i][j][k] = 0.0;
+	    }
+	}
+    }
+  for( i = 0; i < 6; i++ )
+    {
+      dVectorPlusRe[i] = 0.0;
+      dVectorPlusIm[i] = 0.0;
+      dVectorMinusRe[i] = 0.0;
+      dVectorMinusIm[i] = 0.0;
+    }
+
+  /* Set the euler angles for the various sites */
+  for( i = 0; i < 3; i++ )
+    {
+      alphaBetaGamma[0][i] = LAL_PI_180 * alphaBetaGammaH[i];
+      alphaBetaGamma[1][i] = LAL_PI_180 * alphaBetaGammaL[i];
+      alphaBetaGamma[2][i] = LAL_PI_180 * alphaBetaGammaV[i];
+      alphaBetaGamma[3][i] = LAL_PI_180 * alphaBetaGammaG[i];
+      alphaBetaGamma[4][i] = LAL_PI_180 * alphaBetaGammaT[i];
+      alphaBetaGamma[5][i] = LAL_PI_180 * alphaBetaGammaH[i];
+    }
+
+  /* Compute the various Gel'Fand Functions */
+  mPTZRe[0] = LAL_SQRT1_2 * cos(phi);
+  mPTZRe[1] = LAL_SQRT1_2 * sin(phi);
+  mPTZRe[2] = 0;
+  mPTZIm[0] = LAL_SQRT1_2 * -cos(theta)*sin(phi);
+  mPTZIm[1] = LAL_SQRT1_2 * cos(theta)*cos(phi);
+  mPTZIm[2] = LAL_SQRT1_2 * sin(theta);
+
+  for( i = 0; i < 6; i++ )
+    {
+      mABGRe[i][0] = LAL_SQRT1_2 * (cos(alphaBetaGamma[i][0]) * 
+            cos(alphaBetaGamma[i][2]) - sin(alphaBetaGamma[i][0])*
+            cos(alphaBetaGamma[i][1])*sin(alphaBetaGamma[i][2]));
+      mABGRe[i][1] = LAL_SQRT1_2 * (sin(alphaBetaGamma[i][0]) * 
+            cos(alphaBetaGamma[i][2]) + cos(alphaBetaGamma[i][0])*
+            cos(alphaBetaGamma[i][1])*sin(alphaBetaGamma[i][2]));
+      mABGRe[i][2] = LAL_SQRT1_2 * sin(alphaBetaGamma[i][1])*
+            sin(alphaBetaGamma[i][2]);
+      mABGIm[i][0] = LAL_SQRT1_2 * -(cos(alphaBetaGamma[i][0]) * 
+            sin(alphaBetaGamma[i][2]) + sin(alphaBetaGamma[i][0])*
+            cos(alphaBetaGamma[i][1])*cos(alphaBetaGamma[i][2]));
+      mABGIm[i][1] = LAL_SQRT1_2 * (-sin(alphaBetaGamma[i][0]) * 
+            sin(alphaBetaGamma[i][2]) + cos(alphaBetaGamma[i][0])*
+            cos(alphaBetaGamma[i][1])*cos(alphaBetaGamma[i][2]));
+      mABGIm[i][2] = LAL_SQRT1_2 * sin(alphaBetaGamma[i][1])*
+            cos(alphaBetaGamma[i][2]);
+    
+    }
+
+  for( i = 0; i < 3; i++ )
+    {
+      for( j = 0;j < 3; j++ )
+	{
+	  sphereHarmonicRe[0][i][j] = 0.25*sqrt(15/(2*LAL_PI)) * sphereHarmonicReZero[i][j];
+	  sphereHarmonicIm[0][i][j] = 0.25*sqrt(15/(2*LAL_PI)) * sphereHarmonicImZero[i][j];
+	  sphereHarmonicRe[1][i][j] = 0.25*sqrt(15/(2*LAL_PI)) * sphereHarmonicReOne[i][j];
+	  sphereHarmonicIm[1][i][j] = 0.25*sqrt(15/(2*LAL_PI)) * sphereHarmonicImOne[i][j];
+	  sphereHarmonicRe[2][i][j] = 0.5*sqrt(5/(4*LAL_PI)) * sphereHarmonicReTwo[i][j];
+	  sphereHarmonicIm[2][i][j] = 0.5*sqrt(5/(4*LAL_PI)) * sphereHarmonicImTwo[i][j];
+	  sphereHarmonicRe[3][i][j] = -0.25*sqrt(15/(2*LAL_PI)) * sphereHarmonicReThree[i][j];
+	  sphereHarmonicIm[3][i][j] = -0.25*sqrt(15/(2*LAL_PI)) * sphereHarmonicImThree[i][j];
+	  sphereHarmonicRe[4][i][j] = 0.25*sqrt(15/(2*LAL_PI)) * sphereHarmonicReFour[i][j];
+	  sphereHarmonicIm[4][i][j] = 0.25*sqrt(15/(2*LAL_PI)) * sphereHarmonicImFour[i][j];
+	}
+    }
+
+  for( i = 0; i < 3; i++ )
+    {
+      for( j = 0; j < 3; j++ )
+	{
+	  gelFandPTZPlusRe[0] += sphereHarmonicRe[4][i][j]*mPTZRe[i]*mPTZRe[j] 
+                - sphereHarmonicRe[4][i][j]*mPTZIm[i]*mPTZIm[j]  
+                - sphereHarmonicIm[4][i][j]*mPTZRe[i]*mPTZIm[j]  
+                - sphereHarmonicIm[4][i][j]*mPTZIm[i]*mPTZRe[j];
+
+	  gelFandPTZPlusIm[0] += sphereHarmonicRe[4][i][j]*mPTZRe[i]*mPTZIm[j] 
+                + sphereHarmonicRe[4][i][j]*mPTZIm[i]*mPTZRe[j]  
+                + sphereHarmonicIm[4][i][j]*mPTZRe[i]*mPTZRe[j]  
+                - sphereHarmonicIm[4][i][j]*mPTZIm[i]*mPTZIm[j];
+
+	  gelFandPTZPlusRe[1] += -sphereHarmonicRe[3][i][j]*mPTZRe[i]*mPTZRe[j] 
+                + sphereHarmonicRe[3][i][j]*mPTZIm[i]*mPTZIm[j]  
+                + sphereHarmonicIm[3][i][j]*mPTZRe[i]*mPTZIm[j]  
+                + sphereHarmonicIm[3][i][j]*mPTZIm[i]*mPTZRe[j];
+
+	  gelFandPTZPlusIm[1] += -sphereHarmonicRe[3][i][j]*mPTZRe[i]*mPTZIm[j] 
+                - sphereHarmonicRe[3][i][j]*mPTZIm[i]*mPTZRe[j]  
+                - sphereHarmonicIm[3][i][j]*mPTZRe[i]*mPTZRe[j]  
+                + sphereHarmonicIm[3][i][j]*mPTZIm[i]*mPTZIm[j];
+
+	  gelFandPTZPlusRe[2] += sphereHarmonicRe[2][i][j]*mPTZRe[i]*mPTZRe[j] 
+                - sphereHarmonicRe[2][i][j]*mPTZIm[i]*mPTZIm[j]  
+                - sphereHarmonicIm[2][i][j]*mPTZRe[i]*mPTZIm[j]  
+                - sphereHarmonicIm[2][i][j]*mPTZIm[i]*mPTZRe[j];
+
+	  gelFandPTZPlusIm[2] += sphereHarmonicRe[2][i][j]*mPTZRe[i]*mPTZIm[j] 
+                + sphereHarmonicRe[2][i][j]*mPTZIm[i]*mPTZRe[j]  
+                + sphereHarmonicIm[2][i][j]*mPTZRe[i]*mPTZRe[j]  
+                - sphereHarmonicIm[2][i][j]*mPTZIm[i]*mPTZIm[j];
+
+	  gelFandPTZPlusRe[3] += -sphereHarmonicRe[1][i][j]*mPTZRe[i]*mPTZRe[j] 
+                + sphereHarmonicRe[1][i][j]*mPTZIm[i]*mPTZIm[j]  
+                + sphereHarmonicIm[1][i][j]*mPTZRe[i]*mPTZIm[j]  
+                + sphereHarmonicIm[1][i][j]*mPTZIm[i]*mPTZRe[j];
+
+	  gelFandPTZPlusIm[3] += -sphereHarmonicRe[1][i][j]*mPTZRe[i]*mPTZIm[j] 
+                - sphereHarmonicRe[1][i][j]*mPTZIm[i]*mPTZRe[j]  
+                - sphereHarmonicIm[1][i][j]*mPTZRe[i]*mPTZRe[j]  
+                + sphereHarmonicIm[1][i][j]*mPTZIm[i]*mPTZIm[j];
+
+	  gelFandPTZPlusRe[4] += sphereHarmonicRe[0][i][j]*mPTZRe[i]*mPTZRe[j] 
+                - sphereHarmonicRe[0][i][j]*mPTZIm[i]*mPTZIm[j]  
+                - sphereHarmonicIm[0][i][j]*mPTZRe[i]*mPTZIm[j]  
+                - sphereHarmonicIm[0][i][j]*mPTZIm[i]*mPTZRe[j];
+
+	  gelFandPTZPlusIm[4] += sphereHarmonicRe[0][i][j]*mPTZRe[i]*mPTZIm[j] 
+                + sphereHarmonicRe[0][i][j]*mPTZIm[i]*mPTZRe[j]  
+                + sphereHarmonicIm[0][i][j]*mPTZRe[i]*mPTZRe[j]  
+                - sphereHarmonicIm[0][i][j]*mPTZIm[i]*mPTZIm[j];
+
+	  gelFandPTZMinusRe[0] += sphereHarmonicRe[4][i][j]*mPTZRe[i]*mPTZRe[j] 
+                - sphereHarmonicRe[4][i][j]*mPTZIm[i]*mPTZIm[j]  
+                + sphereHarmonicIm[4][i][j]*mPTZRe[i]*mPTZIm[j]  
+                + sphereHarmonicIm[4][i][j]*mPTZIm[i]*mPTZRe[j];
+
+	  gelFandPTZMinusIm[0] += -sphereHarmonicRe[4][i][j]*mPTZRe[i]*mPTZIm[j] 
+                - sphereHarmonicRe[4][i][j]*mPTZIm[i]*mPTZRe[j]  
+                + sphereHarmonicIm[4][i][j]*mPTZRe[i]*mPTZRe[j]  
+                - sphereHarmonicIm[4][i][j]*mPTZIm[i]*mPTZIm[j];
+
+	  gelFandPTZMinusRe[1] += -sphereHarmonicRe[3][i][j]*mPTZRe[i]*mPTZRe[j] 
+                + sphereHarmonicRe[3][i][j]*mPTZIm[i]*mPTZIm[j]  
+                - sphereHarmonicIm[3][i][j]*mPTZRe[i]*mPTZIm[j]  
+                - sphereHarmonicIm[3][i][j]*mPTZIm[i]*mPTZRe[j];
+
+	  gelFandPTZMinusIm[1] += sphereHarmonicRe[3][i][j]*mPTZRe[i]*mPTZIm[j] 
+                + sphereHarmonicRe[3][i][j]*mPTZIm[i]*mPTZRe[j]  
+                - sphereHarmonicIm[3][i][j]*mPTZRe[i]*mPTZRe[j]  
+                + sphereHarmonicIm[3][i][j]*mPTZIm[i]*mPTZIm[j];
+
+	  gelFandPTZMinusRe[2] += sphereHarmonicRe[2][i][j]*mPTZRe[i]*mPTZRe[j] 
+                - sphereHarmonicRe[2][i][j]*mPTZIm[i]*mPTZIm[j]  
+                + sphereHarmonicIm[2][i][j]*mPTZRe[i]*mPTZIm[j]  
+                + sphereHarmonicIm[2][i][j]*mPTZIm[i]*mPTZRe[j];
+
+	  gelFandPTZMinusIm[2] += -sphereHarmonicRe[2][i][j]*mPTZRe[i]*mPTZIm[j] 
+                - sphereHarmonicRe[2][i][j]*mPTZIm[i]*mPTZRe[j]  
+                + sphereHarmonicIm[2][i][j]*mPTZRe[i]*mPTZRe[j]  
+                - sphereHarmonicIm[2][i][j]*mPTZIm[i]*mPTZIm[j];
+
+	  gelFandPTZMinusRe[3] += -sphereHarmonicRe[1][i][j]*mPTZRe[i]*mPTZRe[j] 
+                + sphereHarmonicRe[1][i][j]*mPTZIm[i]*mPTZIm[j]  
+                - sphereHarmonicIm[1][i][j]*mPTZRe[i]*mPTZIm[j]  
+                - sphereHarmonicIm[1][i][j]*mPTZIm[i]*mPTZRe[j];
+
+	  gelFandPTZMinusIm[3] += sphereHarmonicRe[1][i][j]*mPTZRe[i]*mPTZIm[j] 
+                + sphereHarmonicRe[1][i][j]*mPTZIm[i]*mPTZRe[j]  
+                - sphereHarmonicIm[1][i][j]*mPTZRe[i]*mPTZRe[j]  
+                + sphereHarmonicIm[1][i][j]*mPTZIm[i]*mPTZIm[j];
+
+	  gelFandPTZMinusRe[4] += sphereHarmonicRe[0][i][j]*mPTZRe[i]*mPTZRe[j] 
+                - sphereHarmonicRe[0][i][j]*mPTZIm[i]*mPTZIm[j]  
+                + sphereHarmonicIm[0][i][j]*mPTZRe[i]*mPTZIm[j]  
+                + sphereHarmonicIm[0][i][j]*mPTZIm[i]*mPTZRe[j];
+
+	  gelFandPTZMinusIm[4] += -sphereHarmonicRe[0][i][j]*mPTZRe[i]*mPTZIm[j] 
+                - sphereHarmonicRe[0][i][j]*mPTZIm[i]*mPTZRe[j]  
+                + sphereHarmonicIm[0][i][j]*mPTZRe[i]*mPTZRe[j]  
+                - sphereHarmonicIm[0][i][j]*mPTZIm[i]*mPTZIm[j];
+	}
+    }
+
+  for( k = 0; k < 5; k++)
+    {
+      for( i = 0; i < 3; i++ )
+	{
+	  for( j = 0; j < 3; j++ )
+	    {
+	      gelFandABGPlusRe[k][0] += sphereHarmonicRe[4][i][j]*mABGRe[k][i]*mABGRe[k][j] 
+                    - sphereHarmonicRe[4][i][j]*mABGIm[k][i]*mABGIm[k][j]  
+                    - sphereHarmonicIm[4][i][j]*mABGRe[k][i]*mABGIm[k][j]  
+	            - sphereHarmonicIm[4][i][j]*mABGIm[k][i]*mABGRe[k][j];
+
+	      gelFandABGPlusIm[k][0] += sphereHarmonicRe[4][i][j]*mABGRe[k][i]*mABGIm[k][j] 
+                    + sphereHarmonicRe[4][i][j]*mABGIm[k][i]*mABGRe[k][j]  
+                    + sphereHarmonicIm[4][i][j]*mABGRe[k][i]*mABGRe[k][j]  
+                    - sphereHarmonicIm[4][i][j]*mABGIm[k][i]*mABGIm[k][j];
+
+	      gelFandABGPlusRe[k][1] += -sphereHarmonicRe[3][i][j]*mABGRe[k][i]*mABGRe[k][j] 
+                    + sphereHarmonicRe[3][i][j]*mABGIm[k][i]*mABGIm[k][j]  
+                    + sphereHarmonicIm[3][i][j]*mABGRe[k][i]*mABGIm[k][j]  
+                    + sphereHarmonicIm[3][i][j]*mABGIm[k][i]*mABGRe[k][j];
+
+	      gelFandABGPlusIm[k][1] += -sphereHarmonicRe[3][i][j]*mABGRe[k][i]*mABGIm[k][j] 
+                    - sphereHarmonicRe[3][i][j]*mABGIm[k][i]*mABGRe[k][j]  
+                    - sphereHarmonicIm[3][i][j]*mABGRe[k][i]*mABGRe[k][j]  
+                    + sphereHarmonicIm[3][i][j]*mABGIm[k][i]*mABGIm[k][j];
+
+	      gelFandABGPlusRe[k][2] += sphereHarmonicRe[2][i][j]*mABGRe[k][i]*mABGRe[k][j] 
+                    - sphereHarmonicRe[2][i][j]*mABGIm[k][i]*mABGIm[k][j]  
+                    - sphereHarmonicIm[2][i][j]*mABGRe[k][i]*mABGIm[k][j]  
+                    - sphereHarmonicIm[2][i][j]*mABGIm[k][i]*mABGRe[k][j];
+
+	      gelFandABGPlusIm[k][2] += sphereHarmonicRe[2][i][j]*mABGRe[k][i]*mABGIm[k][j] 
+                    + sphereHarmonicRe[2][i][j]*mABGIm[k][i]*mABGRe[k][j]  
+                    + sphereHarmonicIm[2][i][j]*mABGRe[k][i]*mABGRe[k][j]  
+                    - sphereHarmonicIm[2][i][j]*mABGIm[k][i]*mABGIm[k][j];
+
+	      gelFandABGPlusRe[k][3] += -sphereHarmonicRe[1][i][j]*mABGRe[k][i]*mABGRe[k][j] 
+                    + sphereHarmonicRe[1][i][j]*mABGIm[k][i]*mABGIm[k][j]  
+                    + sphereHarmonicIm[1][i][j]*mABGRe[k][i]*mABGIm[k][j]  
+                    + sphereHarmonicIm[1][i][j]*mABGIm[k][i]*mABGRe[k][j];
+
+	      gelFandABGPlusIm[k][3] += -sphereHarmonicRe[1][i][j]*mABGRe[k][i]*mABGIm[k][j] 
+                    - sphereHarmonicRe[1][i][j]*mABGIm[k][i]*mABGRe[k][j]  
+                    - sphereHarmonicIm[1][i][j]*mABGRe[k][i]*mABGRe[k][j]  
+                    + sphereHarmonicIm[1][i][j]*mABGIm[k][i]*mABGIm[k][j];
+
+	      gelFandABGPlusRe[k][4] += sphereHarmonicRe[0][i][j]*mABGRe[k][i]*mABGRe[k][j] 
+                    - sphereHarmonicRe[0][i][j]*mABGIm[k][i]*mABGIm[k][j]  
+                    - sphereHarmonicIm[0][i][j]*mABGRe[k][i]*mABGIm[k][j]  
+                    - sphereHarmonicIm[0][i][j]*mABGIm[k][i]*mABGRe[k][j];
+
+	      gelFandABGPlusIm[k][4] += sphereHarmonicRe[0][i][j]*mABGRe[k][i]*mABGIm[k][j] 
+                    + sphereHarmonicRe[0][i][j]*mABGIm[k][i]*mABGRe[k][j]  
+                    + sphereHarmonicIm[0][i][j]*mABGRe[k][i]*mABGRe[k][j]  
+                    - sphereHarmonicIm[0][i][j]*mABGIm[k][i]*mABGIm[k][j];
+
+	      gelFandABGMinusRe[k][0] += sphereHarmonicRe[4][i][j]*mABGRe[k][i]*mABGRe[k][j] 
+                    - sphereHarmonicRe[4][i][j]*mABGIm[k][i]*mABGIm[k][j]  
+                    + sphereHarmonicIm[4][i][j]*mABGRe[k][i]*mABGIm[k][j]  
+                    + sphereHarmonicIm[4][i][j]*mABGIm[k][i]*mABGRe[k][j];
+
+	      gelFandABGMinusIm[k][0] += -sphereHarmonicRe[4][i][j]*mABGRe[k][i]*mABGIm[k][j] 
+                    - sphereHarmonicRe[4][i][j]*mABGIm[k][i]*mABGRe[k][j]  
+                    + sphereHarmonicIm[4][i][j]*mABGRe[k][i]*mABGRe[k][j]  
+                    - sphereHarmonicIm[4][i][j]*mABGIm[k][i]*mABGIm[k][j];
+
+	      gelFandABGMinusRe[k][1] += -sphereHarmonicRe[3][i][j]*mABGRe[k][i]*mABGRe[k][j] 
+                    + sphereHarmonicRe[3][i][j]*mABGIm[k][i]*mABGIm[k][j]  
+                    - sphereHarmonicIm[3][i][j]*mABGRe[k][i]*mABGIm[k][j]  
+                    - sphereHarmonicIm[3][i][j]*mABGIm[k][i]*mABGRe[k][j];
+
+	      gelFandABGMinusIm[k][1] += sphereHarmonicRe[3][i][j]*mABGRe[k][i]*mABGIm[k][j] 
+                    + sphereHarmonicRe[3][i][j]*mABGIm[k][i]*mABGRe[k][j]  
+                    - sphereHarmonicIm[3][i][j]*mABGRe[k][i]*mABGRe[k][j]  
+                    + sphereHarmonicIm[3][i][j]*mABGIm[k][i]*mABGIm[k][j];
+
+	      gelFandABGMinusRe[k][2] += sphereHarmonicRe[2][i][j]*mABGRe[k][i]*mABGRe[k][j] 
+                    - sphereHarmonicRe[2][i][j]*mABGIm[k][i]*mABGIm[k][j]  
+                    + sphereHarmonicIm[2][i][j]*mABGRe[k][i]*mABGIm[k][j]  
+                    + sphereHarmonicIm[2][i][j]*mABGIm[k][i]*mABGRe[k][j];
+
+	      gelFandABGMinusIm[k][2] += -sphereHarmonicRe[2][i][j]*mABGRe[k][i]*mABGIm[k][j] 
+                    - sphereHarmonicRe[2][i][j]*mABGIm[k][i]*mABGRe[k][j]  
+                    + sphereHarmonicIm[2][i][j]*mABGRe[k][i]*mABGRe[k][j]  
+                    - sphereHarmonicIm[2][i][j]*mABGIm[k][i]*mABGIm[k][j];
+
+	      gelFandABGMinusRe[k][3] += -sphereHarmonicRe[1][i][j]*mABGRe[k][i]*mABGRe[k][j] 
+                    + sphereHarmonicRe[1][i][j]*mABGIm[k][i]*mABGIm[k][j]  
+                    - sphereHarmonicIm[1][i][j]*mABGRe[k][i]*mABGIm[k][j]  
+                    - sphereHarmonicIm[1][i][j]*mABGIm[k][i]*mABGRe[k][j];
+
+	      gelFandABGMinusIm[k][3] += sphereHarmonicRe[1][i][j]*mABGRe[k][i]*mABGIm[k][j] 
+                    + sphereHarmonicRe[1][i][j]*mABGIm[k][i]*mABGRe[k][j]  
+                    - sphereHarmonicIm[1][i][j]*mABGRe[k][i]*mABGRe[k][j]  
+                    + sphereHarmonicIm[1][i][j]*mABGIm[k][i]*mABGIm[k][j];
+
+	      gelFandABGMinusRe[k][4] += sphereHarmonicRe[0][i][j]*mABGRe[k][i]*mABGRe[k][j] 
+                    - sphereHarmonicRe[0][i][j]*mABGIm[k][i]*mABGIm[k][j]  
+                    + sphereHarmonicIm[0][i][j]*mABGRe[k][i]*mABGIm[k][j]  
+                    + sphereHarmonicIm[0][i][j]*mABGIm[k][i]*mABGRe[k][j];
+
+	      gelFandABGMinusIm[k][4] += -sphereHarmonicRe[0][i][j]*mABGRe[k][i]*mABGIm[k][j] 
+                    - sphereHarmonicRe[0][i][j]*mABGIm[k][i]*mABGRe[k][j]  
+                    + sphereHarmonicIm[0][i][j]*mABGRe[k][i]*mABGRe[k][j]  
+                    - sphereHarmonicIm[0][i][j]*mABGIm[k][i]*mABGIm[k][j];
+	    }
+	}
+    }
+
+  /* Dont forget the coefficients... */
+
+  for( i = 0; i < 5; i++ )
+    {
+      gelFandPTZPlusRe[i] *= sqrt(8*LAL_PI/15);
+      gelFandPTZPlusIm[i] *= sqrt(8*LAL_PI/15);
+      gelFandPTZMinusRe[i] *= sqrt(8*LAL_PI/15);
+      gelFandPTZMinusIm[i] *= sqrt(8*LAL_PI/15);
+    }
+
+
+  for( i = 0; i < 6; i++ )
+    {
+      for( j = 0; j < 5; j++ )
+	{
+	  gelFandABGPlusRe[i][j] *= sqrt(8*LAL_PI/15);
+	  gelFandABGPlusIm[i][j] *= sqrt(8*LAL_PI/15);
+	  gelFandABGMinusRe[i][j] *= sqrt(8*LAL_PI/15);
+	  gelFandABGMinusIm[i][j] *= sqrt(8*LAL_PI/15);
+	}
+    }
+
+  /* Armed with the gelFand functions, the dVectors can be constructed */
+
+  for( i = 0; i < 6; i++ )
+    {
+      for( j = 0; j < 5; j++ )
+	{
+	  dVectorPlusRe[i] += gelFandPTZPlusIm[j] * ( gelFandABGPlusRe[i][j] 
+                 - gelFandABGMinusRe[i][j] ) + gelFandPTZPlusRe[j] * 
+                 ( gelFandABGMinusIm[i][j]  - gelFandABGPlusIm[i][j] );
+	  dVectorMinusRe[i] += gelFandPTZMinusIm[j] * ( gelFandABGPlusRe[i][j] 
+                 - gelFandABGMinusRe[i][j] ) + gelFandPTZMinusRe[j] * 
+                 ( gelFandABGMinusIm[i][j]  - gelFandABGPlusIm[i][j] );
+	  dVectorPlusIm[i] += gelFandPTZPlusIm[j] * ( gelFandABGMinusIm[i][j] 
+                 - gelFandABGPlusIm[i][j] ) - gelFandPTZPlusRe[j] * 
+                 ( gelFandABGPlusRe[i][j] - gelFandABGMinusRe[i][j] );
+	  dVectorMinusIm[i] += gelFandPTZMinusIm[j] * ( gelFandABGMinusIm[i][j]
+                 - gelFandABGPlusIm[i][j] ) - gelFandPTZMinusRe[j] * 
+                 ( gelFandABGPlusRe[i][j] - gelFandABGMinusRe[i][j] );
+	}
+    }
+
+  /* Now form the C's ( +2 and -2 ) */
+
+  cPlus.re = 0.0;
+  cPlus.im = 0.0;
+  cMinus.re = 0.0;
+  cMinus.im = 0.0;
+  cRatio.re = 0.0;
+  cRatio.im = 0.0;
+
+  k = 0;
+  for( i = 0; i < 6; i++ )
+    {
+      if( caseID[i] )
+	{
+	  cPlus.re += segNorm[k] * ( cData[k].re * dVectorPlusRe[i] 
+                - cData[k].im * dVectorPlusIm[i] );
+	  cPlus.im += segNorm[k] * ( cData[k].re * dVectorPlusIm[i] 
+		+ cData[k].im * dVectorPlusRe[i] );
+	  cMinus.re += segNorm[k] * ( cData[k].re * dVectorMinusRe[i] 
+                - cData[k].im * dVectorMinusIm[i] );
+	  cMinus.im += segNorm[k] * ( cData[k].re * dVectorMinusIm[i] 
+		+ cData[k].im * dVectorMinusRe[i] );
+	  k++;
+
+	} 
+    }
+
+  cRatio.re = ( cPlus.re * cMinus.re + cPlus.im * cMinus.im ) / ( cPlus.re * 
+          cPlus.re + cPlus.im * cPlus.im );
+  cRatio.im = ( cPlus.re * cMinus.im - cPlus.im * cMinus.re ) / ( cPlus.re *
+	  cPlus.re + cPlus.im * cPlus.im );
+
+  /* Now the estimates can be computed */
+
+  *inclination = acos(  ( 1 - sqrt( sqrt(cRatio.re*cRatio.re + cRatio.im*cRatio.im) ))/
+	  ( 1 + sqrt( sqrt(cRatio.re*cRatio.re + cRatio.im*cRatio.im) )) );
+  *polarization = 0.25 * atan( cRatio.im / cRatio.re );
+
+  /* normal exit */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+
+}
+ 
+
+void
 LALCoherentInspiralFilterSegment (
     LALStatus                             *status,
     MultiInspiralTable                    **eventList,
@@ -617,6 +1087,10 @@ LALCoherentInspiralFilterSegment (
 {
   INT4                                caseID[6] = {0,0,0,0,0,0};
   INT4                                i,q,w,m,j,k,l;
+  INT4                                wTemp = 0;
+  INT4                                qTemp = 0;
+  INT4                                mTemp = 0;
+  INT4                                jTemp = 0;
   CHAR                                idtag[6][3] = {"H1","L","V","G","T","H2"};
   INT4                                indexarray[4] = {0,0,0,0};
   CHAR                                caseStr[FILENAME_MAX];
@@ -625,8 +1099,8 @@ LALCoherentInspiralFilterSegment (
   UINT4                               numSegments = 0;
   UINT4                               numPoints = 0;
   UINT4                               numBeamPoints = 0;
-  UINT4                               deltaEventIndex = 0;
-  UINT4                               eventStartIdx = 0;
+  INT4                                deltaEventIndex = 0;
+  INT4                                eventStartIdx = 0;
   INT4                                slidePoints[3] = {0,0,0};
   REAL4                               buffer = 0; /*account for timing errors*/
   REAL4                               timingError = 0.00025; /* allowed timing error of 2 ms */
@@ -637,9 +1111,14 @@ LALCoherentInspiralFilterSegment (
   REAL4                               timeDelay[4] = {0,0,0,0};
   REAL4                               chirpTime = 0;
   REAL4                               cohSNRThresh = 0;
+  REAL4                               theta = 0.0;
+  REAL4                               phi = 0.0;
+  REAL4                               inclination = 0.0;
+  REAL4                               polarization = 0.0;
   REAL8                               tempTime = 0.0;
   REAL8                               fracpart = 0.0;
   REAL8                               intpart = 0.0;
+  COMPLEX8                            cDataTemp[4];
   UINT4                               cohSNROut;
   REAL4                               cohSNRLocal = 0;
   LALDetector                        *detector = NULL;
@@ -718,11 +1197,11 @@ LALCoherentInspiralFilterSegment (
   
   /* Now generate the network string for MultiInspiralTables */
 
-  /* INT4 indexarray[4];
-  for (j=0; j<numDetectors; j++)
+  for( i = 0; i < 4; i++ )
     {
-      indexarray[j] = 0;
-      }*/
+      cDataTemp[i].im = 0.0;
+      cDataTemp[i].re = 0.0;
+    }
   i = 0;  
   for (l=0 ;l<6 ;l++)
     {
@@ -1173,10 +1652,14 @@ LALCoherentInspiralFilterSegment (
 
 	for (l=0;l < (INT4) numBeamPoints; l++)
 	  {
+	    theta = 0.0;
+	    phi = 0.0;
+	    theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * (REAL4) LAL_PI_180;
+            phi   = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * (REAL4) LAL_PI_180;
 	    /* position vector to source relative to first detector */
-	    nHatVect[0] = cos(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * (REAL4) LAL_PI_180)*sin(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * (REAL4) LAL_PI_180);
-	    nHatVect[1] = sin(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * LAL_PI_180)*sin(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * LAL_PI_180);
-	    nHatVect[2] = cos(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * LAL_PI_180); 
+	    nHatVect[0] = cos(theta) * sin(phi);
+	    nHatVect[1] = sin(theta) * sin(phi);
+	    nHatVect[2] = cos(phi); 
 	    
 	    /* Now calculate the distance (in meters) projected along sky-position */
 	    distance[1] = cartesianInnerProduct(s[1],nHatVect);
@@ -1189,6 +1672,8 @@ LALCoherentInspiralFilterSegment (
 	    for(k=0;k<(INT4)numPoints;k++)
 	      {
 		REAL4 cohSNR = 0.0;
+		qTemp = 0;
+		wTemp = 0;
 		for (q = k-slidePoints[1]-buffer;q < k+slidePoints[1]+buffer;q++)
 		  {
 		    if(q >= 0 && q < (INT4) numPoints)
@@ -1202,6 +1687,8 @@ LALCoherentInspiralFilterSegment (
 				if(cohSNRLocal > cohSNR)
 				  {
 				    cohSNR = cohSNRLocal;
+				    qTemp = q;
+				    wTemp = w;
 				  }
 			      }
    
@@ -1235,6 +1722,18 @@ LALCoherentInspiralFilterSegment (
 		       thisEvent->mass1 = input->tmplt->mass1;
 		       thisEvent->mass2 = input->tmplt->mass2;
 
+		       inclination = 0.0;
+		       polarization = 0.0;
+		       cDataTemp[0].re = cData[0].data->data[k].re;
+		       cDataTemp[0].im = cData[0].data->data[k].im;
+		       cDataTemp[1].re = cData[1].data->data[qTemp].re;
+		       cDataTemp[1].im = cData[1].data->data[qTemp].im;
+		       cDataTemp[2].re = cData[2].data->data[wTemp].re;
+		       cDataTemp[2].im = cData[2].data->data[wTemp].im;
+		       LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		       thisEvent->inclination = inclination;
+		       thisEvent->polarization = polarization;
+
 		       tempTime = 0.0;
 		       fracpart = 0.0;
 		       intpart = 0.0;
@@ -1252,6 +1751,18 @@ LALCoherentInspiralFilterSegment (
 		       strcpy(thisEvent->ifos, caseStr);
 		       thisEvent->mass1 = input->tmplt->mass1;
 		       thisEvent->mass2 = input->tmplt->mass2;
+
+		       inclination = 0.0;
+		       polarization = 0.0;
+		       cDataTemp[0].re = cData[0].data->data[k].re;
+		       cDataTemp[0].im = cData[0].data->data[k].im;
+		       cDataTemp[1].re = cData[1].data->data[qTemp].re;
+		       cDataTemp[1].im = cData[1].data->data[qTemp].im;
+		       cDataTemp[2].re = cData[2].data->data[wTemp].re;
+		       cDataTemp[2].im = cData[2].data->data[wTemp].im;
+		       LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		       thisEvent->inclination = inclination;
+		       thisEvent->polarization = polarization;
 
 		       tempTime = 0.0;
 		       fracpart = 0.0;
@@ -1284,6 +1795,19 @@ LALCoherentInspiralFilterSegment (
 		       thisEvent->mass1 = input->tmplt->mass1;
 		       thisEvent->mass2 = input->tmplt->mass2;
 
+		       inclination = 0.0;
+		       polarization = 0.0;
+		       cDataTemp[0].re = cData[0].data->data[k].re;
+		       cDataTemp[0].im = cData[0].data->data[k].im;
+		       cDataTemp[1].re = cData[1].data->data[qTemp].re;
+		       cDataTemp[1].im = cData[1].data->data[qTemp].im;
+		       cDataTemp[2].re = cData[2].data->data[wTemp].re;
+		       cDataTemp[2].im = cData[2].data->data[wTemp].im;
+		       LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		       thisEvent->inclination = inclination;
+		       thisEvent->polarization = polarization;
+
+
 		       /* Need to initialize the event start index to new value */
 		       if( k > (eventStartIdx + deltaEventIndex) )
 		         {
@@ -1307,11 +1831,15 @@ LALCoherentInspiralFilterSegment (
 	
 	for (l=0;l < (INT4) numBeamPoints; l++) 
 	  {
+	    theta = 0.0;
+	    phi = 0.0;
+	    theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * (REAL4) LAL_PI_180;
+            phi   = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * (REAL4) LAL_PI_180;
 	    /* position vector to source relative to first detector */
-	    nHatVect[0] = cos(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * LAL_PI_180)*sin(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * LAL_PI_180);
-	    nHatVect[1] = sin(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * LAL_PI_180)*sin(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * LAL_PI_180);
-	    nHatVect[2] = cos(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * LAL_PI_180); 
-	    
+	    nHatVect[0] = cos(theta) * sin(phi);
+	    nHatVect[1] = sin(theta) * sin(phi);
+	    nHatVect[2] = cos(phi); 
+
 	    /* Now calculate the distance (in meters) projected along sky-position */
 	    distance[1] = cartesianInnerProduct(s[1],nHatVect);
 	    distance[2] = cartesianInnerProduct(s[2],nHatVect);
@@ -1328,6 +1856,9 @@ LALCoherentInspiralFilterSegment (
 	    for(k=0;k<(INT4)numPoints;k++)
 	      {
 		REAL4 cohSNR = 0.0;
+		mTemp = 0;
+		qTemp = 0;
+		wTemp = 0;
 		for(m=k-buffer;m<k+buffer;m++)
 		  {
 		    if(m >= 0 && m < (INT4) numPoints)
@@ -1345,6 +1876,9 @@ LALCoherentInspiralFilterSegment (
 					if(cohSNRLocal > cohSNR)
 					  {
 					    cohSNR = cohSNRLocal;
+					    mTemp = m;
+					    qTemp = q;
+					    wTemp = w;
 					  }
 				      }
 			    
@@ -1380,6 +1914,20 @@ LALCoherentInspiralFilterSegment (
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
 
+		        inclination = 0.0;
+		        polarization = 0.0;
+		        cDataTemp[0].re = cData[0].data->data[k].re;
+		        cDataTemp[0].im = cData[0].data->data[k].im;
+		        cDataTemp[1].re = cData[1].data->data[mTemp].re;
+		        cDataTemp[1].im = cData[1].data->data[mTemp].im;
+		        cDataTemp[2].re = cData[2].data->data[qTemp].re;
+		        cDataTemp[2].im = cData[2].data->data[qTemp].im;
+		        cDataTemp[3].re = cData[3].data->data[wTemp].re;
+		        cDataTemp[3].im = cData[3].data->data[wTemp].im;
+		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        thisEvent->inclination = inclination;
+		        thisEvent->polarization = polarization;
+
 		        tempTime = 0.0;
 		        fracpart = 0.0;
 		        intpart = 0.0;
@@ -1397,6 +1945,20 @@ LALCoherentInspiralFilterSegment (
 		        strcpy(thisEvent->ifos, caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
+
+		        inclination = 0.0;
+		        polarization = 0.0;
+		        cDataTemp[0].re = cData[0].data->data[k].re;
+		        cDataTemp[0].im = cData[0].data->data[k].im;
+		        cDataTemp[1].re = cData[1].data->data[mTemp].re;
+		        cDataTemp[1].im = cData[1].data->data[mTemp].im;
+		        cDataTemp[2].re = cData[2].data->data[qTemp].re;
+		        cDataTemp[2].im = cData[2].data->data[qTemp].im;
+		        cDataTemp[3].re = cData[3].data->data[wTemp].re;
+		        cDataTemp[3].im = cData[3].data->data[wTemp].im;
+		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        thisEvent->inclination = inclination;
+		        thisEvent->polarization = polarization;
 
 		        tempTime = 0.0;
 		        fracpart = 0.0;
@@ -1429,6 +1991,20 @@ LALCoherentInspiralFilterSegment (
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
 
+		        inclination = 0.0;
+		        polarization = 0.0;
+		        cDataTemp[0].re = cData[0].data->data[k].re;
+		        cDataTemp[0].im = cData[0].data->data[k].im;
+		        cDataTemp[1].re = cData[1].data->data[mTemp].re;
+		        cDataTemp[1].im = cData[1].data->data[mTemp].im;
+		        cDataTemp[2].re = cData[2].data->data[qTemp].re;
+		        cDataTemp[2].im = cData[2].data->data[qTemp].im;
+		        cDataTemp[3].re = cData[3].data->data[wTemp].re;
+		        cDataTemp[3].im = cData[3].data->data[wTemp].im;
+		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        thisEvent->inclination = inclination;
+		        thisEvent->polarization = polarization;
+
 		        /* Need to initialize the event start index to new value */
 		        if( k > (eventStartIdx + deltaEventIndex) )
 		          {
@@ -1452,11 +2028,15 @@ LALCoherentInspiralFilterSegment (
 	
 	for (l=0;l < (INT4) numBeamPoints; l++)
 	  {
+	    theta = 0.0;
+	    phi = 0.0;
+	    theta = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * (REAL4) LAL_PI_180;
+            phi   = beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * (REAL4) LAL_PI_180;
 	    /* position vector to source relative to first detector */
-	    nHatVect[0] = cos(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * LAL_PI_180)*sin(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * LAL_PI_180);
-	    nHatVect[1] = sin(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[0] * LAL_PI_180)*sin(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * LAL_PI_180);
-	    nHatVect[2] = cos(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[1] * LAL_PI_180); 
-	    
+	    nHatVect[0] = cos(theta) * sin(phi);
+	    nHatVect[1] = sin(theta) * sin(phi);
+	    nHatVect[2] = cos(phi); 
+
 	    /* Now calculate the distance (in meters) projected along sky-position */
 	    distance[1] = cartesianInnerProduct(s[1],nHatVect);
 	    distance[2] = cartesianInnerProduct(s[2],nHatVect);
@@ -1476,6 +2056,9 @@ LALCoherentInspiralFilterSegment (
 	    for(k=0;k<(INT4)numPoints;k++)
 	      {
 		REAL4 cohSNR = 0.0;
+		qTemp = 0;
+		wTemp = 0;
+		jTemp = 0;
 		for (q = k-slidePoints[1]-buffer;q < k+slidePoints[1]+buffer;q++)
 		  {
 		    if(q >= 0 && q < (INT4) numPoints)
@@ -1493,6 +2076,9 @@ LALCoherentInspiralFilterSegment (
 					if(cohSNRLocal > cohSNR)
 					  {
 					    cohSNR = cohSNRLocal;
+					    qTemp = q;
+					    wTemp = w;
+					    jTemp = j;
 					  }
 				      }
 				  }
@@ -1526,6 +2112,20 @@ LALCoherentInspiralFilterSegment (
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
 
+		        inclination = 0.0;
+		        polarization = 0.0;
+		        cDataTemp[0].re = cData[0].data->data[k].re;
+		        cDataTemp[0].im = cData[0].data->data[k].im;
+		        cDataTemp[1].re = cData[1].data->data[qTemp].re;
+		        cDataTemp[1].im = cData[1].data->data[qTemp].im;
+		        cDataTemp[2].re = cData[2].data->data[wTemp].re;
+		        cDataTemp[2].im = cData[2].data->data[wTemp].im;
+		        cDataTemp[3].re = cData[3].data->data[jTemp].re;
+		        cDataTemp[3].im = cData[3].data->data[jTemp].im;
+		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        thisEvent->inclination = inclination;
+		        thisEvent->polarization = polarization;
+
 		        tempTime = 0.0;
 		        fracpart = 0.0;
 		        intpart = 0.0;
@@ -1543,6 +2143,20 @@ LALCoherentInspiralFilterSegment (
 		        strcpy(thisEvent->ifos, caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
+
+		        inclination = 0.0;
+		        polarization = 0.0;
+		        cDataTemp[0].re = cData[0].data->data[k].re;
+		        cDataTemp[0].im = cData[0].data->data[k].im;
+		        cDataTemp[1].re = cData[1].data->data[qTemp].re;
+		        cDataTemp[1].im = cData[1].data->data[qTemp].im;
+		        cDataTemp[2].re = cData[2].data->data[wTemp].re;
+		        cDataTemp[2].im = cData[2].data->data[wTemp].im;
+		        cDataTemp[3].re = cData[3].data->data[jTemp].re;
+		        cDataTemp[3].im = cData[3].data->data[jTemp].im;
+		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        thisEvent->inclination = inclination;
+		        thisEvent->polarization = polarization;
 
 		        tempTime = 0.0;
 		        fracpart = 0.0;
@@ -1574,6 +2188,20 @@ LALCoherentInspiralFilterSegment (
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
+
+		        inclination = 0.0;
+		        polarization = 0.0;
+		        cDataTemp[0].re = cData[0].data->data[k].re;
+		        cDataTemp[0].im = cData[0].data->data[k].im;
+		        cDataTemp[1].re = cData[1].data->data[qTemp].re;
+		        cDataTemp[1].im = cData[1].data->data[qTemp].im;
+		        cDataTemp[2].re = cData[2].data->data[wTemp].re;
+		        cDataTemp[2].im = cData[2].data->data[wTemp].im;
+		        cDataTemp[3].re = cData[3].data->data[jTemp].re;
+		        cDataTemp[3].im = cData[3].data->data[jTemp].im;
+		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        thisEvent->inclination = inclination;
+		        thisEvent->polarization = polarization;
 
 		        /* Need to initialize the event start index to new value */
 		        if( k > (eventStartIdx + deltaEventIndex) )
