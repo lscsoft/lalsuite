@@ -418,6 +418,8 @@ tagMultiInspiralTable
   REAL4         ligo_axis_dec;
   REAL4         ligo_angle;
   REAL4         ligo_angle_sig;
+  REAL4         inclination;
+  REAL4         polarization;
   EventIDColumn *event_id;
 }
 MultiInspiralTable;
