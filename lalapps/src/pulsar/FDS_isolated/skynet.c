@@ -243,6 +243,6 @@ printf( "parsed options...\n" );
    LALFree( search.ephemeris->ephemE );
    LALFree( search.ephemeris->ephemS );
 
-  LAL_CALL( LALCheckMemoryLeaks(), &stat );
+  LALCheckMemoryLeaks();
   return 0;
 } /* main() */
