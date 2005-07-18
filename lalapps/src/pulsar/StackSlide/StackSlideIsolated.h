@@ -7,6 +7,10 @@ $Id$
 /* 04/12/05 gam; Move from using StackSlideOld to using StackSlide function. */
 /* 04/12/05 gam; add RunStackSlideIsolatedMonteCarloSimulation to StackSlideIsolated.c */
 /* 05/24/05 gam; make maxPower and totalEventCount part of params; change finishSUMs to finishPeriodicTable; end xml in FinalizeSearch */
+/* 07/15/2005 gam; Change RunStackSlideIsolatedMonteCarloSimulation to: */
+/*                 1. inject at a random point in the parameters space a random number of times */
+/*                 2. search nearest templates that surround parameter space point, not just nearest template */
+/*                 3. rescale SFTs for inject given number of times for repeat of search */
 
 #ifndef _STACKSLIDEISOLATED_H
 #define _STACKSLIDEISOLATED_H
@@ -75,8 +79,13 @@ void StackSlideIsolated (
     StackSlideSearchParams           *params
 );
 
-/* 04/12/05 gam */
+/* 07/15/05 gam; rewrite to choose random points in the parameter space */
 void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSearchParams *params, INT4 nSamples);
+
+#ifdef INCLUDE_RUNSTACKSLIDEISOLATEDMONTECARLO_CODEOLD
+/* 04/12/05 gam */
+void RunStackSlideIsolatedMonteCarloSimulationOld(LALStatus *status, StackSlideSearchParams *params, INT4 nSamples);
+#endif
 
 /* 05/24/05 gam; Function that reads results from previous jobs in the pipeline */
 void getStackSlidePriorResults(LALStatus *status,
@@ -87,6 +96,9 @@ void getStackSlidePriorResults(LALStatus *status,
                                REAL8 *priorUL,
                                REAL8 *priorUncertainty,
                                CHAR  *priorResultsFile);
+
+/* 07/15/2005 gam; Change RunStackSlideIsolatedMonteCarloSimulation */
+void StackSlideGetUniformDeviate(LALStatus *status, REAL8 *returnVal, REAL8 startVal, REAL8 range, RandomParams *randPar);
 
 #ifdef __cplusplus
 }

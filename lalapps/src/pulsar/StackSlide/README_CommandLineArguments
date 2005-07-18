@@ -4,6 +4,9 @@
 #STKs: The BLK data is stacked up and turned in STKs. 
 #SUMs: The STKs are slid and then summed to produce SUMs; 
 
+#For historical reasons, parameters for controlling Monte Carlo Simulations occur in several places.
+#See: maxMCinterations, maxMCfracErr, orientationAngle, cosInclinationAngle, testFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.
+
 #Example command line arguments for ComputeStackSlide: 
 
 set gpsEpochStartTimeSec               731210229; #1  UINT4 GPS seconds at the detector giving SSB epoch reference time.
@@ -29,6 +32,8 @@ set tEffSUM             1.8000000000000000e+03; #17 REAL8 effective time baselin
 set f0SUM               3.0017500000000001e+02; #18 REAL8 start frequency of SUMs. 
 set bandSUM             5.0000000000000003e-02; #19 REAL8 frequency band of SUMs. 
 set nBinsPerSUM                             90; #20 INT4 number of frequency bins in one SUM. 
+#Since the entire frequency band slides together, bandSUM cannot exceed 1.0/((v_Earth/c)_max*tEffSTK),
+#where (v_Earth/c)_max =  1.0600000000000000e-04 
 
 set ifoNickName                             H1; #21 CHAR* H2, H1, L1, or G1. 
 set IFO                                    LHO; #22 CHAR* LHO, LLO, or GEO. 
@@ -39,7 +44,7 @@ set maxMCinterations                         1; #24 INT4 maximum number of times
 set priorResultsFile     None; #25 CHAR* file with the loudest event and estimated UL from a prior step in the pipeline. 
 set parameterSpaceFile   None; #26 CHAR* file with parameter space data 
 
-set maxMCfracErr     5.0000000000000001e-03; #27 REAL8 maximum fractional error allowed when testing for convergence of confidence when iterating MC. 
+set maxMCfracErr     5.0000000000000001e-03; #27 REAL8 maximum fractional error allowed when testing for convergence of confidence when iterating Monte Carlo. 
 
 set parameterSpaceFlag                       0; #28 INT2 how to generate parameter space. 
 #The parameterSpaceFlag options are: 
@@ -94,11 +99,11 @@ set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 2) > 0) inject fake signals and run Monte Carlo Simulation; use threshold4 for h_0.
 # if ((testFlag & 4) > 0) use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs instead of LALGeneratePulsarSignal and LALSignalToSFTs during Monte Carlo Simulations. See LAL inject package.
 # if ((testFlag & 8) > 0) use fixed orientationAngle and cosInclinationAngle set above during Monte Carlo Simulations.
-# if ((testFlag & 16) > 0) use results from prior jobs in the pipeline and report on current MC results.
+# if ((testFlag & 16) > 0) use results from prior jobs in the pipeline and report on current Monte Carlo results.
 # if ((testFlag & 32) > 0) iterate entire Monte Carlo Simulation to converge on desired confidence.
 # The prior results must be given in the priorResultsFile set above.
 # The maximum number of iterations is given by maxMCinterations set above.
-# The maximum fractional error allowed when testing for convergence of confidence when iterating MC is set by maxMCfracErr above.
+# The maximum fractional error allowed when testing for convergence of confidence when iterating the Monte Carlo is set by maxMCfracErr above.
 # The loudest event, upper limits and confidence are reported in the searchresults_stackslidemontecarlo table in the xml file.
 
 set linesAndHarmonicsFile None; #47 CHAR* file with instrument line and harmonic spectral disturbances data.
@@ -155,10 +160,10 @@ set stopFDeriv4         0.0000000000000000e+00; #73 REAL8 end 4th deriv of freq 
 set deltaFDeriv4        0.0000000000000000e+00; #74 REAL8 delta 4th deriv of freq in Hz/s^4. 
 set numFDeriv4                               0; #75 INT4 number of 4th derivs of freq. 
 
-set startFDeriv5        0.0000000000000000e+00; #76 REAL8 start 5th deriv of freq in Hz/s^5. 
-set stopFDeriv5         0.0000000000000000e+00; #77 REAL8 end 5th deriv of freq in Hz/s^5. 
-set deltaFDeriv5        0.0000000000000000e+00; #78 REAL8 delta 5th deriv of freq in Hz/s^5. 
-set numFDeriv5                               0; #79 INT4 number of 5th derivs of freq. 
+set numMCInjections                          0; #76 INT4 number of Monte Carlo injections to do when (testFlag & 2) > 0.
+set numMCRescalings                          0; #77 INT4 number of times to rescale signal injection to run multiple Monte Carlo simulations in parallel. 
+set rescaleMCFraction   0.0000000000000000e+00; #78 REAL8 fraction to change injected amplitude by with each rescaling. 
+set parameterMC         0.0000000000000000e+00; #79 REAL8 unused Monte Carlo parameter. 
 
 set sunEdatFile          sun00-04.dat; #80 CHAR* name of ascii file with sun ephemeris data. 
 set earthEdatFile      earth00-04.dat; #81 CHAR* name of ascii file with earth ephemeris data. 

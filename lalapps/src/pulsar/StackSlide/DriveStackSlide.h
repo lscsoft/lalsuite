@@ -88,7 +88,8 @@
 /* 05/24/05 gam; if (params->debugOptionFlag & 32 > 0) print Monte Carlo Simulation results to stdout */
 /* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
 /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
-    
+/* 07/17/05 gam; Change ...Deriv5 command line arguments to ones that control new Monte Carlo (MC) options */
+
 #ifndef _DRIVESTACKSLIDE_H
 #define _DRIVESTACKSLIDE_H
 
@@ -160,6 +161,8 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_EUSERREQUESTEXIT 31
 #define DRIVESTACKSLIDEH_EAVEEARTHACCVEC 32
 #define DRIVESTACKSLIDEH_ELONGLATFROMVEC 33
+#define DRIVESTACKSLIDEH_ETOOMANYSPINDOWN 34
+#define DRIVESTACKSLIDEH_EBANDTOOWIDE 35
 
 #define DRIVESTACKSLIDEH_MSGENULL           "Null pointer"
 #define DRIVESTACKSLIDEH_MSGEGPSTINT        "Unexpected GPS time interval"
@@ -191,6 +194,8 @@ NRCSID( DRIVESTACKSLIDEH, "$Id$");
 #define DRIVESTACKSLIDEH_MSGEUSERREQUESTEXIT "Exiting at user request..."
 #define DRIVESTACKSLIDEH_MSGEAVEEARTHACCVEC  "Index out of range in FindAveEarthAcc"
 #define DRIVESTACKSLIDEH_MSGELONGLATFROMVEC  "Vector has zero length in FindLongLatFromVec"
+#define DRIVESTACKSLIDEH_MSGETOOMANYSPINDOWN "Command line argument, numSpindown, cannot exceed 4"
+#define DRIVESTACKSLIDEH_MSGEBANDTOOWIDE     "Since entire frequency band slides together, bandSUM cannot exceed (c/v_Earth)_max/tEffSTK"
 /* Limit on size of arrays holding channel names */
 /* #define dbNameLimit 256; */ /* Should be defined in LAL? */
 /* 05/19/05 gam; Add in maximum velocity of Earth used to find maximum doppler shift */
@@ -619,10 +624,17 @@ typedef struct tagStackSlideSearchParams {
   REAL8   deltaFDeriv4;              /* 4th deriv of freq step size in Hz/s^4 */
   INT4    numFDeriv4;                /* Number of 4th derivs to compute SUMs for */
 
+  /* 07/17/05 gam; next are currently unused but fixed as zero in DriveStackSlide.c */
   REAL8   startFDeriv5;              /* Starting 5th deriv of freq in Hz/s^5 */
   REAL8   stopFDeriv5;               /* Ending 5th deriv of freq in Hz/s^5 */
   REAL8   deltaFDeriv5;              /* 5th deriv of freq step size in Hz/s^5 */
   INT4    numFDeriv5;                /* Number of 5th derivs to compute SUMs for */
+  
+  /* 07/17/05 gam; new Monte Carlo parameters */
+  INT4    numMCInjections;
+  INT4    numMCRescalings;
+  REAL8   rescaleMCFraction;
+  REAL8   parameterMC;
   
   CHAR    *sunEdatFile;              /* File with sun ephemeris data */  
   CHAR    *earthEdatFile;            /* File with earth ephemeris data */

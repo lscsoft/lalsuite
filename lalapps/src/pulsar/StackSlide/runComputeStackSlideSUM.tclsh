@@ -22,6 +22,7 @@
 # 12/06/04 gam; include defaults for parameters set in template_file; allow more parameters to be set in this file
 # 05/13/05 gam; add searchParameterSpaceFlag
 # 05/14/05 gam; add searchLinesAndHarmonicsFile
+# 07/17/05 gam; Change ...Deriv5 command line arguments to ones that control new Monte Carlo (MC) options
 
 set ::CONDOR_MODE 0; # #02/27/04 default is false.
 set ::RUN 0;         #02/27/04 default value false.
@@ -235,6 +236,10 @@ set searchLinesAndHarmonicsFile "None";  # 05/14/05 gam;
 set searchPriorResultsFile      "None";  # 05/24/05 gam;
 set searchMaxMCinterations           1;  # 05/25/05 gam;
 set searchMaxMCfracErr           0.005;  # 05/25/05 gam;
+set searchNumMCInjections            0;  # 07/17/05 gam;
+set searchNumMCRescalings            0;  # 07/17/05 gam;
+set searchRescaleMCFraction          0;  # 07/17/05 gam;
+set searchParameterMC                0;  # 07/17/05 gam;
 
 set searchParameterSpaceFile    "None";  # 05/24/05 gam;
 
@@ -272,10 +277,10 @@ set templateStopFDeriv4  0;
 set templateDeltaFDeriv4 0;
 set templateNumFDeriv4   0; 
 
-set templateStartFDeriv5 0;
-set templateStopFDeriv5  0;
-set templateDeltaFDeriv5 0;
-set templateNumFDeriv5   0; 
+#set templateStartFDeriv5 0;
+#set templateStopFDeriv5  0;
+#set templateDeltaFDeriv5 0;
+#set templateNumFDeriv5   0;
 
 set templateOrbitalEccentricity 0;
 set templatealphaSX1 0;
@@ -286,6 +291,7 @@ set templatedeltaSMA 0;
 set binaryFlag 0;
 set templatenMaxSMA 0;
 set templatenMaxTperi 0;
+
 set searchThresholdFlag  0;
 set searchThreshold1     0;
 set searchThreshold2     0;

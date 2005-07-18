@@ -141,6 +141,7 @@
 /* 07/13/05 gam; if (params->normalizationFlag & 32) > 0 then ignor bins with params->sumBinMask == 0 */
 /* 07/13/05 gam; if (params->normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile */
 /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
+/* 07/17/05 gam; Change ...Deriv5 command line arguments to ones that control new Monte Carlo (MC) options */
 
 /*********************************************/
 /*                                           */
@@ -291,6 +292,12 @@ params->SMAcentral = 0;
 params->deltaSMA = 0;
 params->nMaxSMA=0;
 params->nMaxTperi=0;
+
+/* 07/17/05 gam; currently unused and fixed as zero: */
+params->startFDeriv5 = 0.0;
+params->stopFDeriv5  = 0.0;
+params->deltaFDeriv5 = 0.0;
+params->numFDeriv5   =   0;
  
  for (i = 1; i < argc; i++) {
 
@@ -404,11 +411,11 @@ params->nMaxTperi=0;
 		case 74: params->deltaFDeriv4 = (REAL8)atof(argv[i]); break;
 		case 75: params->numFDeriv4 = (INT4)atol(argv[i]); break;
 
-		case 76: params->startFDeriv5 = (REAL8)atof(argv[i]); break;
-		case 77: params->stopFDeriv5 = (REAL8)atof(argv[i]); break;
-		case 78: params->deltaFDeriv5 = (REAL8)atof(argv[i]); break;
-		case 79: params->numFDeriv5 = (INT4)atol(argv[i]); break;
-		
+		case 76: params->numMCInjections = (INT4)atol(argv[i]); break;
+		case 77: params->numMCRescalings = (INT4)atol(argv[i]); break;
+		case 78: params->rescaleMCFraction = (REAL8)atof(argv[i]); break;
+		case 79: params->parameterMC = (REAL8)atof(argv[i]); break;
+
 		case 80: params->sunEdatFile = (CHAR *) LALMalloc( (strlen( argv[i] ) + 1) * sizeof(CHAR) );
 		         strcpy(params->sunEdatFile, argv[i]); break;
 		case 81: params->earthEdatFile = (CHAR *) LALMalloc( (strlen( argv[i] ) + 1) * sizeof(CHAR) );
@@ -515,6 +522,9 @@ params->nMaxTperi=0;
     	fprintf(stdout,"#STKs: The BLK data is stacked up and turned in STKs. \n");
     	fprintf(stdout,"#SUMs: The STKs are slid and then summed to produce SUMs; \n");
     	fprintf(stdout,"\n");
+    	fprintf(stdout,"#For historical reasons, parameters for controlling Monte Carlo Simulations occur in several places.\n");
+    	fprintf(stdout,"#See: maxMCinterations, maxMCfracErr, orientationAngle, cosInclinationAngle, testFlag, numMCInjections, numMCRescalings, rescaleMCFraction, parameterMC, and debugOptionFlag.\n");
+    	fprintf(stdout,"\n");
     	fprintf(stdout,"#Example command line arguments for ComputeStackSlide: \n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set gpsEpochStartTimeSec %23d; #1  UINT4 GPS seconds at the detector giving SSB epoch reference time.\n", params->gpsEpochStartTimeSec);
@@ -540,6 +550,8 @@ params->nMaxTperi=0;
     	fprintf(stdout,"set f0SUM              %23.16e; #18 REAL8 start frequency of SUMs. \n", params->f0SUM);
     	fprintf(stdout,"set bandSUM            %23.16e; #19 REAL8 frequency band of SUMs. \n", params->bandSUM);
     	fprintf(stdout,"set nBinsPerSUM        %23d; #20 INT4 number of frequency bins in one SUM. \n", params->nBinsPerSUM);
+    	fprintf(stdout,"#Since the entire frequency band slides together, bandSUM cannot exceed 1.0/((v_Earth/c)_max*tEffSTK),\n");
+    	fprintf(stdout,"#where (v_Earth/c)_max = %23.16e \n", ((REAL8)STACKSLIDEMAXV));
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set ifoNickName                             %s; #21 CHAR* H2, H1, L1, or G1. \n", params->ifoNickName);
     	fprintf(stdout,"set IFO                                    %s; #22 CHAR* LHO, LLO, or GEO. \n", params->IFO);
@@ -550,7 +562,7 @@ params->nMaxTperi=0;
     	fprintf(stdout,"set priorResultsFile     %s; #25 CHAR* file with the loudest event and estimated UL from a prior step in the pipeline. \n", params->priorResultsFile);
     	fprintf(stdout,"set parameterSpaceFile   %s; #26 CHAR* file with parameter space data \n", params->parameterSpaceFile);
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set maxMCfracErr    %23.16e; #27 REAL8 maximum fractional error allowed when testing for convergence of confidence when iterating MC. \n", params->maxMCfracErr);
+    	fprintf(stdout,"set maxMCfracErr    %23.16e; #27 REAL8 maximum fractional error allowed when testing for convergence of confidence when iterating Monte Carlo. \n", params->maxMCfracErr);
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set parameterSpaceFlag %23d; #28 INT2 how to generate parameter space. \n", params->parameterSpaceFlag);
     	fprintf(stdout,"#The parameterSpaceFlag options are: \n");
@@ -611,11 +623,11 @@ params->nMaxTperi=0;
     	fprintf(stdout,"# if ((testFlag & 2) > 0) inject fake signals and run Monte Carlo Simulation; use threshold4 for h_0.\n");   /* 05/11/04 gam */
     	fprintf(stdout,"# if ((testFlag & 4) > 0) use LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs instead of LALGeneratePulsarSignal and LALSignalToSFTs during Monte Carlo Simulations. See LAL inject package.\n"); /* 08/02/04 gam */
     	fprintf(stdout,"# if ((testFlag & 8) > 0) use fixed orientationAngle and cosInclinationAngle set above during Monte Carlo Simulations.\n"); /* 12/06/04 gam */
-    	fprintf(stdout,"# if ((testFlag & 16) > 0) use results from prior jobs in the pipeline and report on current MC results.\n");
+    	fprintf(stdout,"# if ((testFlag & 16) > 0) use results from prior jobs in the pipeline and report on current Monte Carlo results.\n");
     	fprintf(stdout,"# if ((testFlag & 32) > 0) iterate entire Monte Carlo Simulation to converge on desired confidence.\n");
     	fprintf(stdout,"# The prior results must be given in the priorResultsFile set above.\n");
     	fprintf(stdout,"# The maximum number of iterations is given by maxMCinterations set above.\n");
-    	fprintf(stdout,"# The maximum fractional error allowed when testing for convergence of confidence when iterating MC is set by maxMCfracErr above.\n");
+    	fprintf(stdout,"# The maximum fractional error allowed when testing for convergence of confidence when iterating the Monte Carlo is set by maxMCfracErr above.\n");
     	fprintf(stdout,"# The loudest event, upper limits and confidence are reported in the searchresults_stackslidemontecarlo table in the xml file.\n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set linesAndHarmonicsFile %s; #47 CHAR* file with instrument line and harmonic spectral disturbances data.\n", params->linesAndHarmonicsFile);
@@ -672,10 +684,10 @@ params->nMaxTperi=0;
     	fprintf(stdout,"set deltaFDeriv4       %23.16e; #74 REAL8 delta 4th deriv of freq in Hz/s^4. \n", params->deltaFDeriv4);
 	fprintf(stdout,"set numFDeriv4         %23d; #75 INT4 number of 4th derivs of freq. \n", params->numFDeriv4);
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set startFDeriv5       %23.16e; #76 REAL8 start 5th deriv of freq in Hz/s^5. \n", params->startFDeriv5);
-    	fprintf(stdout,"set stopFDeriv5        %23.16e; #77 REAL8 end 5th deriv of freq in Hz/s^5. \n", params->stopFDeriv5);
-    	fprintf(stdout,"set deltaFDeriv5       %23.16e; #78 REAL8 delta 5th deriv of freq in Hz/s^5. \n", params->deltaFDeriv5);
-	fprintf(stdout,"set numFDeriv5         %23d; #79 INT4 number of 5th derivs of freq. \n", params->numFDeriv5);
+    	fprintf(stdout,"set numMCInjections    %23d; #76 INT4 number of Monte Carlo injections to do when (testFlag & 2) > 0.\n", params->numMCInjections);
+    	fprintf(stdout,"set numMCRescalings    %23d; #77 INT4 number of times to rescale signal injection to run multiple Monte Carlo simulations in parallel. \n", params->numMCRescalings);
+    	fprintf(stdout,"set rescaleMCFraction  %23.16e; #78 REAL8 fraction to change injected amplitude by with each rescaling. \n", params->rescaleMCFraction);
+	fprintf(stdout,"set parameterMC        %23.16e; #79 REAL8 unused Monte Carlo parameter. \n", params->parameterMC);
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set sunEdatFile        %s; #80 CHAR* name of ascii file with sun ephemeris data. \n", params->sunEdatFile);
     	fprintf(stdout,"set earthEdatFile      %s; #81 CHAR* name of ascii file with earth ephemeris data. \n", params->earthEdatFile);
@@ -846,6 +858,27 @@ params->nMaxTperi=0;
   /* "Invalid or null Target Name" */
   if ( !(params->patchName) ){
     ABORT( status, DRIVESTACKSLIDEH_ETARGETNAME, DRIVESTACKSLIDEH_MSGETARGETNAME);
+  }
+
+  /* 07/17/05 gam; currently only support a maximum of 4 spindown parameters */
+  if ( params->numSpinDown > 4 ){
+      ABORT( status, DRIVESTACKSLIDEH_ETOOMANYSPINDOWN, DRIVESTACKSLIDEH_MSGETOOMANYSPINDOWN);
+  }
+
+  /* 07/17/05 gam;  */
+  if ( params->numSpinDown > 4 ){
+      ABORT( status, DRIVESTACKSLIDEH_ETOOMANYSPINDOWN, DRIVESTACKSLIDEH_MSGETOOMANYSPINDOWN);
+  }
+  
+  /* 07/17/05 gam; since entire frequency band slides together, band cannot exceed (c/v_Earth)_max/tEffSTK  */
+  
+  /* 07/17/05 gam;  */
+  if ( params->bandSUM > 1.0/(params->tEffSTK*((REAL8)STACKSLIDEMAXV)) ){
+    if ((params->debugOptionFlag & 128) > 0 ) {
+      /* continue; sliding is turned off */
+    } else {
+      ABORT( status, DRIVESTACKSLIDEH_EBANDTOOWIDE, DRIVESTACKSLIDEH_MSGEBANDTOOWIDE);
+    }
   }
 
 /**********************************************/
