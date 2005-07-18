@@ -103,7 +103,7 @@ coincidence_band=.06
 Npolka=20
 
 # make output directory
-if os.path.exists(output_dir) == 'False':
+if not os.path.exists(output_dir):
   print output_dir
   try: os.mkdir(output_dir)
   except OSError, err:
@@ -115,7 +115,8 @@ if os.path.exists(output_dir) == 'False':
 
 subdir=''.join([output_dir,'/NewCtot'])
 print subdir
-if os.path.exists(subdir) == 'False':
+if not os.path.exists(subdir):
+  print subdir,' does not exist. Creating...'
   # make output sub-directory
   try: os.mkdir(subdir)
   except OSError, err:
@@ -135,12 +136,13 @@ while ifile < how_many:
   ifile=ifile+1
 
   res_in=''.join([input_dir,'/Ctot/Confidence.data-',str(freq)])
-  res_out=''.join([output_dir,'/NewCtot/Confidence.data-',str(freq)])
+  res_out=''.join([subdir,'/Confidence.data-',str(freq)])
   print '====='
   print res_in
   print res_out
 
   if os.path.exists(res_in):
+
     print res_in, ' file exists. Reading ...'
 
     Cdata_file=open(res_in,mode='r')
@@ -155,7 +157,7 @@ while ifile < how_many:
     while iline < length:
 
       line=line_list[iline]
-      #print line
+      print line
       [sNinj,stol,sh0,sdh0,sconfidence]=line.split(None,5)
       confidence=float(sconfidence)
       Ninj=int(sNinj)
@@ -178,7 +180,7 @@ while ifile < how_many:
     line_list=dmp_file.readlines()
     length=len(line_list)
     line=line_list[length-1]
-    print line
+    #print line
     [sh095,sSlope,sCerr,schi2,sDhh,sDhl,sDhp]=line.split(None,7)
     dmp_file.close()
 
@@ -190,7 +192,8 @@ while ifile < how_many:
 #sDhp percentage total error on h095 (Dhh+Dhl)/h095
 
     print >>h095_file,freq,sh095,sSlope,sCerr,schi2,sDhh,sDhl,sDhp
-
+  else:
+    print 'File ',res_in,'non esiste!'
   #endif this Confidence_tot_freq file exists
 #end the loop over different freq files
 
