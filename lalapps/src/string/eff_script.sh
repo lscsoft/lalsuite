@@ -2,46 +2,6 @@
 
 #must add a check here for the command line argument
 
-ls -1 HL-* > inj.txt
-
-echo L1triggers.xml > L1.txt
-echo H1triggers.xml > H1.txt
-echo H2triggers.xml > H2.txt
-
-~/lscsoft/lalapps/src/power/lalapps_binj_find --input-trig H1.txt --input-burstinj inj.txt \
---output-trig H1out.xml --output-inj-made H1inj.xml --output-inj-found H1injfound.xml \
---best-peaktime --compare-choice comparebytime  --noplayground --gps-start-time 795169179  \
---gps-end-time 795211620 --printresult --max-confidence $1 >& /dev/null
-
-mv BinjFindResults.dat BinjFindResultsH1single.dat
-
-~/lscsoft/lalapps/src/power/lalapps_binj_find --input-trig H2.txt --input-burstinj inj.txt \
---output-trig H2out.xml --output-inj-made H2inj.xml --output-inj-found H2injfound.xml \
---best-peaktime --compare-choice comparebytime --noplayground --gps-start-time  795169179 \
---gps-end-time 795211620 --printresult --max-confidence $1  >& /dev/null
-
-mv BinjFindResults.dat BinjFindResultsH2single.dat
-
-~/lscsoft/lalapps/src/power/lalapps_binj_find --input-trig L1.txt --input-burstinj inj.txt \
---output-trig L1out.xml --output-inj-made L1inj.xml --output-inj-found L1injfound.xml \
---best-peaktime --compare-choice comparebytime --noplayground --gps-start-time 795169179 \
---gps-end-time 795211620 --printresult --max-confidence $1  >& /dev/null
-
-mv BinjFindResults.dat BinjFindResultsL1single.dat
-
-echo Single IFO efficiencies at SNR threshold $1
-echo --------------------------------------------
-echo
-echo H1:
-cat *H1single.dat
-echo
-echo H2:
-cat *H2single.dat
-echo
-echo L1:
-cat *L1single.dat
-echo
-
 echo L1ctriggers.xml > L1.txt
 echo H1ctriggers.xml > H1.txt
 echo H2ctriggers.xml > H2.txt
