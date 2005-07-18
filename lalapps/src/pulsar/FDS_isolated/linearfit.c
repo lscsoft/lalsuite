@@ -82,12 +82,12 @@ int main( int argc, char *argv[]){
   gsl_fit_linear_est(h0, c0, c1, cov00, cov01, cov11, &y0, &y0_err); 
 
   /* write output */
-  fprintf(stdout, "h095:  %11.7E\n slope:   %11.7E\n y0_err:   %11.7E\n  h0_err: %11.7E\n", h0* 1.0e-19, c1 * 1.0e+19, y0_err, y0_err/(c1*1.0e+19) );
+  fprintf(stdout, "%11.7E  %11.7E  %11.7E  %11.7E  ", h0*1.0e-19, c1*1.0e+19, y0_err, chisq );
 
-  fprintf(stdout, "best fit : Y = %g + %g X\n", c0, c1);  
-  fprintf(stdout, "covariance matrix:\n");  
-  fprintf(stdout, "[ %g,  %g\n  %g,  %g]\n", cov00, cov01, cov01, cov11);   
-  fprintf(stdout, "chisq = %g\n", chisq);   
+  /*   fprintf(stdout, "best fit : Y = %g + %g X\n", c0, c1);   */
+  /*   fprintf(stdout, "covariance matrix:\n");   */
+  /*   fprintf(stdout, "[ %g,  %g\n  %g,  %g]\n", cov00, cov01, cov01, cov11);    */
+  /*   fprintf(stdout, "chisq = %g\n", chisq);    */
 
   /*  dh0 = 0.1 * h0;  */
   /* fpout = fopen("fitout","w");   */
@@ -108,13 +108,13 @@ int main( int argc, char *argv[]){
       gsl_fit_linear_est(h0_err_hi, c0, c1, cov00, cov01, cov11, &y0, &y0_err);   
       h0_err_hi += 0.0001*h0;  
     } while (y0 - y0_err < 0.95);  
-    fprintf(stdout, "deltah0hi = %11.7E\n", (h0_err_hi-h0)*1.0E-19);  
+    fprintf(stdout, "%11.7E  ", (h0_err_hi-h0)*1.0E-19);  
     do{  
       gsl_fit_linear_est(h0_err_lo, c0, c1, cov00, cov01, cov11, &y0, &y0_err);   
       h0_err_lo -= 0.0001*h0;  
     } while (y0 + y0_err > 0.95);  
-    fprintf(stdout, "deltah0lo = %11.7E\n", (h0 - h0_err_lo)*1.0E-19);  
-    fprintf(stdout, "total 1-sigma percent error  %g\n", 100.0*(h0_err_hi - h0_err_lo)/h0);  
+    fprintf(stdout, "%11.7E  ", (h0 - h0_err_lo)*1.0E-19);  
+    fprintf(stdout, "%g\n", 100.0*(h0_err_hi - h0_err_lo)/h0);  
   }  
   
   free(x); 
