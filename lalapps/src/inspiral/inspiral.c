@@ -246,6 +246,8 @@ int main( int argc, char *argv[] )
   struct FrameH *outFrame   = NULL;
   FrameHNode *coherentFrames = NULL;
   FrameHNode *thisCoherentFrame = NULL;
+  FrameHNode *segNormFrames = NULL;
+  FrameHNode *thisSegNormFrame = NULL;
   UINT4          nRhosqFr = 0;
   UINT4          nChisqFr = 0;
   UINT4          nCDataFr = 0;
@@ -257,6 +259,7 @@ int main( int argc, char *argv[] )
   COMPLEX8FrequencySeries       resp;
   DataSegmentVector            *dataSegVec = NULL;
   COMPLEX8TimeSeries           *coherentInputData = NULL;
+  REAL4FrequencySeries          tempSegNorm;
 
   /* structures for preconditioning */
   COMPLEX8FrequencySeries       injResp;
@@ -308,6 +311,7 @@ int main( int argc, char *argv[] )
   INT4  cDataForFrame = 0;
   CHAR  fname[FILENAME_MAX];
   CHAR  cdataStr[LALNameLength];
+  CHAR  segNormStr[LALNameLength];
   REAL8 inputLengthNS;
   UINT4 numInputPoints;
   const REAL8 epsilon = 1.0e-8;
@@ -2009,21 +2013,36 @@ int main( int argc, char *argv[] )
                 cDataForFrame = 1;
                 LALSnprintf( cdataStr, LALNameLength*sizeof(CHAR),
                     "CData_%d", nCDataFr++ );
+		LALSnprintf( segNormStr, LALNameLength*sizeof(CHAR),
+		    "SegNorm_%d", nCDataFr - 1 );
                 strcpy( coherentInputData->name, chan.name );
                 if ( ! coherentFrames )
                 {
                   thisCoherentFrame = coherentFrames = (FrameHNode *) 
                     LALCalloc( 1, sizeof(FrameHNode) );
+		  thisSegNormFrame = segNormFrames = (FrameHNode *) 
+                      LALCalloc( 1, sizeof(FrameHNode) );
                 }
                 else
                 {
                   thisCoherentFrame = thisCoherentFrame->next = (FrameHNode *) 
                     LALCalloc( 1, sizeof(FrameHNode) );
+		  thisSegNormFrame = thisSegNormFrame->next = (FrameHNode *) 
+                      LALCalloc( 1, sizeof(FrameHNode) );
                 }
                 thisCoherentFrame->frHeader = fr_add_proc_COMPLEX8TimeSeries( 
                     outFrame, coherentInputData, "none", cdataStr );
+		memset( &tempSegNorm, 0, sizeof(REAL4FrequencySeries) );
+		LAL_CALL( LALSCreateVector( &status, &(tempSegNorm.data), 
+                    fcSegVec->data[i].segNorm->length ), &status );
+		memcpy( tempSegNorm.data->data, fcSegVec->data[i].segNorm->data.
+                    fcSegVec->data[i].segNorm->length * sizeof(REAL4) );
+		thisSegNormFrame->frHeader = fr_add_proc_REAL4FrequencySeries( 
+		    outFrame, &tempSegNorm, "none", segNormStr );
                 LAL_CALL( LALCDestroyVector( &status, 
                       &(coherentInputData->data) ), &status );
+		LAL_CALL( LALSDestroyVector( &status,
+		      &(tempSegNorm.data) ), &status );
                 LALFree( coherentInputData );
                 coherentInputData = NULL;
               }
@@ -2329,10 +2348,15 @@ int main( int argc, char *argv[] )
     while( coherentFrames )
     {
       thisCoherentFrame = coherentFrames;
+      thisSegNormFrame = segNormFrames;
       FrameWrite( coherentFrames->frHeader, frOutFile );
+      FrameWrite( segNormFrames->frHeader, frOutFile );
       coherentFrames = coherentFrames->next;
+      segNormFrames = segNormFrames->next;
       LALFree( thisCoherentFrame );
+      LALFree( thisSegNormFrame );
       thisCoherentFrame = NULL;
+      thisSegNormFrame = NULL;
     }
     FrFileOEnd( frOutFile );
     if ( vrbflg ) fprintf( stdout, "done\n" );
