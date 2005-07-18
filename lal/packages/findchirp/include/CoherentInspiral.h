@@ -294,6 +294,7 @@ tagCoherentInspiralFilterInput
   InspiralTemplate            *tmplt;
   CoherentInspiralBeamVector  *beamVec;
   CoherentInspiralCVector     *multiCData;
+  REAL4                        segNorm[4];
 }
 CoherentInspiralFilterInput;
 /* </lalVerbatim> */
@@ -370,6 +371,18 @@ LALCoherentInspiralFilterParamsFinalize (
 \newpage\input{CoherentInspiralHV}
 </lalLaTeX>
 #endif
+
+void
+LALCoherentInspiralEstimatePsiEpsilon (
+    LALStatus                             *status,
+    INT4                                   caseID[6],
+    REAL4                                  segNorm[4],
+    REAL4                                  theta,
+    REAL4                                  phi,
+    COMPLEX8                               cData[4],
+    REAL4                                  *inclination,
+    REAL4                                  *polarization
+    ); 
 
 void
 LALCoherentInspiralFilterSegment (
