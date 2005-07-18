@@ -2035,7 +2035,7 @@ int main( int argc, char *argv[] )
 		memset( &tempSegNorm, 0, sizeof(REAL4FrequencySeries) );
 		LAL_CALL( LALSCreateVector( &status, &(tempSegNorm.data), 
                     fcSegVec->data[i].segNorm->length ), &status );
-		memcpy( tempSegNorm.data->data, fcSegVec->data[i].segNorm->data.
+		memcpy( tempSegNorm.data->data, fcSegVec->data[i].segNorm->data,
                     fcSegVec->data[i].segNorm->length * sizeof(REAL4) );
 		thisSegNormFrame->frHeader = fr_add_proc_REAL4FrequencySeries( 
 		    outFrame, &tempSegNorm, "none", segNormStr );
