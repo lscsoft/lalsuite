@@ -2336,8 +2336,8 @@ LALFindPosition(LALStatus               *status,
   }
   
   if ( 
-      (paramsIn->t0 <gridParam->x0Min - dx0/2)
-      ||(paramsIn->t0 >gridParam->x0Max + dx0/2) 
+      (paramsIn->t0 <gridParam->x0Min - dx0)
+      ||(paramsIn->t0 >gridParam->x0Max + dx0) 
           || (paramsIn->t3 <= mint3))
     {
       *position = Out;
