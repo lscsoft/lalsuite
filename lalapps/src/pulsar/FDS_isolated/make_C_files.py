@@ -164,7 +164,8 @@ while ifile < how_many:
       tol=math.sqrt(confidence*(1.0-confidence)/Ninj)
 
       if Ninj > 3000 :
-        print >>NewCdata_file,Ninj,tol,sh0,sdh0,confidence
+        if confidence > 0.925:
+          print >>NewCdata_file,Ninj,tol,sh0,sdh0,confidence
       iline = iline+1
       #endif Ninj > 1000
     #end iline
