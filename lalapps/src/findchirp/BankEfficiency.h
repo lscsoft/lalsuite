@@ -286,6 +286,7 @@ typedef struct{
   INT4 startPhase;
   CHAR *inputPSD;
   INT4 useed;
+  INT4 dataCheckPoint;
 }
 UserParametersIn;
 
@@ -734,3 +735,5 @@ CHAR* GetStringFromDetector(INT4 input);
 CHAR* GetStringFromTemplate(INT4 input);
 CHAR* GetStringFromNoiseModel(INT4 input);
 CHAR* GetStringFromScientificRun(INT4 input);
+
+

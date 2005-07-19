@@ -11,6 +11,12 @@ RCSID(  "$Id$");
 #define CVS_REVISION_C      "$Revision$"
 
 
+#ifdef LALAPPS_CONDOR
+extern int condor_compress_ckpt;
+void init_image_with_file_name( char *ckpt_file_name );
+void ckpt_and_exit( void );
+#endif
+
 static COMPLEX8Vector *strainSegment = NULL;
 static COMPLEX8FrequencySeries       resp;
 static int vrbflg = 0;
@@ -21,6 +27,14 @@ RandomParams *randParams = NULL;
 int
 main (INT4 argc, CHAR **argv ) 
 {
+
+  /* checkpointing */
+  CHAR  ckptPath[FILENAME_MAX];           /* input and ckpt file path     */
+  CHAR  outputPath[FILENAME_MAX];         /* output data file path        */
+  CHAR  fname[FILENAME_MAX];
+  CHAR   fileName[FILENAME_MAX];          /* name of output files         */
+
+
   /* --- Variables ---*/
   INT4          ntrials = 0;
   INT4 	        i;
@@ -39,6 +53,7 @@ main (INT4 argc, CHAR **argv )
   INT4  	                sizeBank = 0;
 
   /* --- filtering related --- */
+
   REAL4Vector    correlation;
   REAL4Vector    FilterBCV1;
   REAL4Vector    FilterBCV2;
@@ -88,6 +103,12 @@ main (INT4 argc, CHAR **argv )
 	       &randIn,
 	       &userParam);
  
+
+ /* zero out the checkpoint and output paths */
+  memset( ckptPath, 0, FILENAME_MAX * sizeof(CHAR) );
+  memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
+  LALSnprintf( outputPath, FILENAME_MAX * sizeof(CHAR), "bankefficiency.ckpt");
+        
 
   /* init a random structure using possibly the seed from user input*/
   LAL_CALL(LALCreateRandomParams(&status, &randParams, randIn.useed ), 
@@ -192,6 +213,36 @@ main (INT4 argc, CHAR **argv )
   if (vrbflg){
     PrintParameters(coarseBankIn, randIn, userParam);
   }
+
+
+
+
+
+  if ( userParam.dataCheckPoint )
+    {
+#ifdef LALAPPS_CONDOR
+      condor_compress_ckpt = 1;
+      if ( ckptPath[0] )
+	{
+	  LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.ckpt", 
+		       ckptPath, fileName );
+	}
+      else
+	{
+	  LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.ckpt", fileName );
+	}
+      if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
+      init_image_with_file_name( fname );
+      ckpt_and_exit();
+#else
+      fprintf( stderr, "--data-checkpoint cannot be used unless "
+	       "lalapps is condor compiled\n" );
+      exit( 1 );
+#endif
+    }
+
+
+
 
   while (++ntrials <= userParam.ntrials) 
     {     
@@ -615,6 +666,7 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->H1.dataFile.S2.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";     
   userParam->H2.dataFile.S2.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/H2-CAL-V03-731849076-734367576.cache";
   userParam->H2.dataFile.S2.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_H_Si2_RDS_R_L3.txt";      
+  userParam->dataCheckPoint                      = 0;
 }
 
 
@@ -683,6 +735,9 @@ ParseParameters(	INT4 			*argc,
 	}
       else if (!strcmp(argv[i],"--debug")) {
         BEParseGetInt(argv,  &i, &(lalDebugLevel)); 
+      }
+      else if (!strcmp(argv[i], "dataCheckPoint")) {
+	userParam->dataCheckPoint = 1;	
       }
       else if (!strcmp(argv[i], "--detector")) {
 	BEParseGetString(argv, &i);
