@@ -137,9 +137,9 @@ while ifile < how_many:
 
   res_in=''.join([input_dir,'/Ctot/Confidence.data-',str(freq)])
   res_out=''.join([subdir,'/Confidence.data-',str(freq)])
-  print '====='
-  print res_in
-  print res_out
+  #print '====='
+  #print res_in
+  #print res_out
 
   if os.path.exists(res_in):
 
@@ -157,7 +157,7 @@ while ifile < how_many:
     while iline < length:
 
       line=line_list[iline]
-      print line
+      #print line
       [sNinj,stol,sh0,sdh0,sconfidence]=line.split(None,5)
       confidence=float(sconfidence)
       Ninj=int(sNinj)
@@ -174,14 +174,14 @@ while ifile < how_many:
 
     cmd=''.join(['./linearfit.run ',res_out,' > dmp'])
     os.system(cmd)
-    print cmd
+    #print cmd
 
     dmp_file=open('dmp',mode='r')
     line_list=dmp_file.readlines()
     length=len(line_list)
     line=line_list[length-1]
     #print line
-    [sh095,sSlope,sCerr,schi2,sDhh,sDhl,sDhp]=line.split(None,7)
+    [sh095,sSlope,sCerr,schi2,sDhh,sDhl,sDhp,smu,sstd,sprob]=line.split(None,10)
     dmp_file.close()
 
 #sh095 95% confidence
@@ -191,7 +191,7 @@ while ifile < how_many:
 #sDhh,sDhl lower and upper C=95%  intercepts for the +/- 1 sigma C fits
 #sDhp percentage total error on h095 (Dhh+Dhl)/h095
 
-    print >>h095_file,freq,sh095,sSlope,sCerr,schi2,sDhh,sDhl,sDhp
+    print >>h095_file,freq,sh095,sSlope,sCerr,schi2,sDhh,sDhl,sDhp,smu,sstd,sprob
   else:
     print 'File ',res_in,'non esiste!'
   #endif this Confidence_tot_freq file exists
