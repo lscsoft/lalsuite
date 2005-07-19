@@ -565,6 +565,7 @@ LALUserVarHelpString (LALStatus *status,
   /* we need strings for UVAR_BOOL, UVAR_INT4, UVAR_REAL8, UVAR_STRING: */
   const CHAR *typestr[] = {"BOOL", "INT", "REAL", "STRING"}; 
   LALUserVariable *ptr;
+  LALUserVariable *helpptr = NULL;	/* pointer to help-option */
   CHAR *helpstr = NULL;
   size_t newlen = 0;
   BOOLEAN haveDevOpt = 0;	/* have we got any 'developer'-options */
@@ -612,7 +613,10 @@ LALUserVarHelpString (LALStatus *status,
       if (ptr->state & UVAR_REQUIRED)
 	strcpy (defaultstr, "REQUIRED");
       else if (ptr->state & UVAR_HELP)
-	strcpy (defaultstr, "");
+	{
+	  helpptr = ptr;	/* keep a pointer to the help-option for later */
+	  strcpy (defaultstr, "");
+	}
       else /* write the current default-value into a string */
 	{
 	  CHAR *valstr = NULL;
@@ -649,7 +653,24 @@ LALUserVarHelpString (LALStatus *status,
   /* ---------- SECOND PASS through user-options: 
    * show DEVELOPER-options only if lalDebugLevel >= 1 
    */
-  if ( lalDebugLevel )
+  if ( lalDebugLevel == 0)	/* only give instructions as to how to see developer-options */
+    {
+      CHAR buf[256];
+      if ( UVAR_vars.optchar )
+	sprintf (buf, "(e.g. --%s -%c1)", helpptr->name, UVAR_vars.optchar);
+      else
+	sprintf (buf, " ");
+
+      sprintf (strbuf, "\n ----- Hint: use help with lalDebugLevel > 0 %s to see all 'developer-options' ----- \n", buf);
+      newlen += strlen (strbuf);
+      helpstr = LALRealloc (helpstr, newlen);
+      if ( helpstr == NULL) {
+	ABORT (status, USERINPUTH_EMEM, USERINPUTH_MSGEMEM);
+      }
+
+      strcat (helpstr, strbuf);	/* add this line to the helpstring */
+    }
+  else	/* lalDebugLevel > 0 */
     {
       strcpy(strbuf, 
 	     "\n   ---------- The following are 'Developer'-options not useful " 
@@ -712,7 +733,6 @@ LALUserVarHelpString (LALStatus *status,
 	  
 	  strcat (helpstr, strbuf);	/* add this line to the helpstring */
 	} /* if !haveDevOpt */
-
 
     } /* if lalDebugLevel: output developer-options */
 
