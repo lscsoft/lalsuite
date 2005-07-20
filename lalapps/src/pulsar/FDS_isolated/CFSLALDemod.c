@@ -940,30 +940,37 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 #endif
             for(k=0; k+VUNITS < klim; k+=VUNITS) {
 		int ki;
-		float xinv;
-		float realXP_f = 0.0;
-		float imagXP_f = 0.0;
-		float Xar,Xai;
+		float xinv_v[VUNITS];
+		float realXP_v[VUNITS];
+		float imagXP_v[VUNITS];
+		float Xar_v[VUNITS];
+		float Xai_v[VUNITS];
 
-		/* inner loop */
+		/* prepare Xa */
 		for(ki=0;ki<VUNITS;ki++) {
 		    COMPLEX8 Xa = *Xalpha_k;
-		    Xar = Xa.re;
-		    Xai = Xa.im;
-		    xinv = (float)OOTWOPI / (float)(tempFreq1 - ki);
-		    realP = tsin * xinv;
-		    imagP = tcos * xinv;
-		    realXP_f += Xar * realP - Xai * imagP;
-		    imagXP_f += Xar * imagP + Xai * realP;
+		    Xar_v[ki] = Xa.re;
+		    Xai_v[ki] = Xa.im;
 		    Xalpha_k ++;
 		}
 
-		/* reduction */
-		realXP += realXP_f;
-		imagXP += imagXP_f;
+		/* inner loop */
+		for(ki=0;ki<VUNITS;ki++) {
+		    xinv_v[ki] = (float)OOTWOPI / (float)(tempFreq1 - ki);
+		    realP = tsin * xinv_v[ki];
+		    imagP = tcos * xinv_v[ki];
+		    realXP_v[ki] = Xar_v[ki] * realP - Xai_v[ki] * imagP;
+		    imagXP_v[ki] = Xar_v[ki] * imagP + Xai_v[ki] * realP;
+		}
 
 		/* increment */
 		tempFreq1 -= VUNITS;
+
+		/* reduction */
+		for(ki=0;ki<VUNITS;ki++) {
+		    realXP += realXP_v[ki];
+		    imagXP += imagXP_v[ki];
+		}
 	    }
             for(; k < klim; k++)
 #else
