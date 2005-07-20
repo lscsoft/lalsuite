@@ -57,7 +57,7 @@ static SnglBurstTable *TFTileToBurstEvent(
 	XLALAddFloatToGPS(&event->peak_time, 0.5 * event->duration);
 	event->bandwidth = tile->fbins * tile->deltaF;
 	event->central_freq = params->tfPlaneParams.flow + tile->fstart*tile->deltaF + (0.5 * event->bandwidth);
-	event->amplitude = tile->excessPower;
+	event->amplitude = tile->hrss;
 	event->snr = tile->excessPower;
 	event->confidence =  tile->lnalpha;
 
@@ -158,6 +158,7 @@ static void whiten(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries 
 int
 XLALEPSearch(
 	SnglBurstTable  **burstEvent,
+	const COMPLEX8FrequencySeries  *hrssresponse,
 	const REAL4TimeSeries  *tseries,
 	EPSearchParams   *params
 )
@@ -167,6 +168,7 @@ XLALEPSearch(
 	int errorcode;
 	int                      start_sample;
 	COMPLEX8FrequencySeries *fseries;
+	COMPLEX8FrequencySeries *response;
 	REAL4Window             *window = params->window;
 	RealFFTPlan             *plan;
 	REAL4FrequencySeries    *AverageSpec;
@@ -176,6 +178,8 @@ XLALEPSearch(
 	TFTiling                *Tiling;
 	REAL4TimeFrequencyPlane *tfplane;
 	REAL4                   *normalisation;
+	REAL8                   *hrssfactor;
+	REAL8                   *fachrss;
 	const LIGOTimeGPS        gps_zero = LIGOTIMEGPSZERO;
 
 	/*
@@ -191,8 +195,10 @@ XLALEPSearch(
 	fseries = XLALCreateCOMPLEX8FrequencySeries("anonymous", &gps_zero, 0, 0, &lalDimensionlessUnit, window->data->length / 2 + 1);
 	tfplane = XLALCreateTFPlane(&params->tfPlaneParams);
 	normalisation = LALMalloc(params->tfPlaneParams.freqBins * sizeof(*normalisation));
+	hrssfactor = LALMalloc(params->tfPlaneParams.freqBins * sizeof(*hrssfactor));
 	Tiling = XLALCreateTFTiling(&params->tfTilingInput, &tfplane->params);
-	if(!normalisation) {
+
+	if(!normalisation || !hrssfactor) {
 		errorcode = XLAL_ENOMEM;
 		goto error;
 	}
@@ -206,7 +212,7 @@ XLALEPSearch(
 		goto error;
 	}
 
-	if(params->useOverWhitening)
+	if(params->useOverWhitening || hrssresponse)
 		OverWhiteningSpec = AverageSpec;
 	else
 		OverWhiteningSpec = NULL;
@@ -269,12 +275,27 @@ XLALEPSearch(
 			print_complex8fseries(fseries, "frequency_series.dat");
 
 		/*
+		 * Apply the phase factor of the reponse here, if estimating h_rss
+		 * FIXME: Now we are not multiplying by the phase, will do after
+		 * implementing the rest.
+		 */
+
+		if (hrssresponse) {
+			fachrss = hrssfactor;
+			response = hrssresponse;
+		}
+		else {
+			fachrss = NULL;
+			response = NULL;
+		}
+
+		/*
 		 * Compute the time-frequency plane from the frequency
 		 * series.
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the time-frequency decomposition\n");
-		if(XLALFreqSeriesToTFPlane(tfplane, fseries, window->data->length / 2 - params->windowShift, normalisation, OverWhiteningSpec)) {
+		if(XLALFreqSeriesToTFPlane(tfplane, fseries, window->data->length / 2 - params->windowShift, hrssfactor, normalisation, response, OverWhiteningSpec)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -285,7 +306,7 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
-		if(XLALComputeExcessPower(Tiling, tfplane, normalisation)) {
+		if(XLALComputeExcessPower(Tiling, tfplane, hrssfactor, normalisation, fachrss)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -324,6 +345,7 @@ XLALEPSearch(
 	XLALDestroyREAL4FFTPlan(plan);
 	XLALDestroyTFPlane(tfplane);
 	LALFree(normalisation);
+	LALFree(hrssfactor);
 	XLALDestroyTFTiling(Tiling);
 	return(0);
 
@@ -333,6 +355,7 @@ XLALEPSearch(
 	XLALDestroyCOMPLEX8FrequencySeries(fseries);
 	XLALDestroyTFPlane(tfplane);
 	LALFree(normalisation);
+	LALFree(hrssfactor);
 	XLALDestroyTFTiling(Tiling);
 	XLAL_ERROR(func, errorcode);
 }
