@@ -537,11 +537,17 @@ fputs( "      <Column Name=\"external_trigger:obs_fov_ra_width\" Type=\"real_4\"
 fputs( "      <Column Name=\"external_trigger:obs_loc_ele\" Type=\"real_4\" />\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"external_trigger:obs_loc_lat\" Type=\"real_4\" />\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"external_trigger:obs_loc_long\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"external_trigger:ligo_fave_lho\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"external_trigger:ligo_fave_llo\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"external_trigger:ligo_delay\" Type=\"real_4\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"external_trigger:event_number_gcn\" Type=\"int_4s\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"external_trigger:event_number_grb\" Type=\"lstring\" />\n" , fp ) == EOF || \
+fputs( "      <Column Name=\"external_trigger:event_status\" Type=\"int_4s\" />\n" , fp ) == EOF || \
 fputs( "      <Stream Name=\"external_trigger:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
 
 
 #define EXT_TRIGGERS_ROW \
-"         \"process:process_id:0\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\",\"%s\",%d, %e, %e, \"%s\",\"%s\", %e , %e, %d, %d, \"%s\",%e, %e, \"%s\",\"%s\",\"%s\",%d, \"%s\",\"%s\",%e, %e,%e,%e, %e, %e, %e"
+"         \"process:process_id:0\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\",\"%s\",%d, %e, %e, \"%s\",\"%s\", %e , %e, %d, %d, \"%s\",%e, %e, \"%s\",\"%s\",\"%s\",%d, \"%s\",\"%s\",%e, %e,%e,%e, %e, %e, %e, %e, %e, %e, %d, ,\"%s\" , %d"
 
 
 #ifdef  __cplusplus

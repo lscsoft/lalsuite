@@ -733,6 +733,12 @@ tagExtTriggerTable
   REAL4         obs_loc_ele;
   REAL4         obs_loc_lat;
   REAL4         obs_loc_long;
+  REAL4         ligo_fave_lho;
+  REAL4         ligo_fave_llo;
+  REAL4         ligo_delay;
+  INT4          event_number_gcn;
+  CHAR          event_number_grb[8];
+  INT4          event_status;
   EventIDColumn *event_id;
 }
 ExtTriggerTable;

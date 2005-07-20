@@ -2882,6 +2882,12 @@ LALExtTriggerTableFromLIGOLw (
     {"obs_loc_ele",            -1, 30},
     {"obs_loc_lat",            -1, 31},
     {"obs_loc_long",           -1, 32},
+    {"ligo_fave_lho",          -1, 33},
+    {"ligo_fave_llo",          -1, 34},
+    {"ligo_delay",             -1, 35},
+    {"event_number_gcn",       -1, 36},
+    {"event_number_grb",       -1, 37},
+    {"event_status",           -1, 38},
     {NULL,                      0, 0}
   };
 
@@ -3107,6 +3113,31 @@ LALExtTriggerTableFromLIGOLw (
         else if ( tableDir[j].idx == 32 )
         {
           thisEvent->obs_loc_long = r4colData;
+        }
+	else if ( tableDir[j].idx == 33 )
+	{
+	    thisEvent->ligo_fave_lho = r4colData;
+        }
+	else if ( tableDir[j].idx == 34 )
+        {
+          thisEvent->ligo_fave_llo = r4colData;
+        }
+	else if ( tableDir[j].idx == 35 )
+        {
+          thisEvent->ligo_delay = r4colData;
+        }
+	else if ( tableDir[j].idx == 36 )
+        {
+          thisEvent->event_number_gcn= i4colData;
+        }
+	else if ( tableDir[j].idx == 37 )
+        {
+          LALSnprintf( thisEvent->event_number_grb, 8 * sizeof(CHAR),
+              "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+        }
+	else if ( tableDir[j].idx == 38 )
+	{
+          thisEvent->event_status = i4colData;
         }
         else
         {

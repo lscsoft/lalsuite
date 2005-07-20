@@ -698,10 +698,16 @@ LALWriteLIGOLwXMLTable (
               tablePtr.extTriggerTable->obs_fov_dec_width,
               tablePtr.extTriggerTable->obs_fov_ra,
               tablePtr.extTriggerTable->obs_fov_ra_width,
-              tablePtr.extTriggerTable->obs_loc_ele,
-              tablePtr.extTriggerTable->obs_loc_lat,
-              tablePtr.extTriggerTable->obs_loc_long
-                );
+	      tablePtr.extTriggerTable->obs_loc_ele,
+	      tablePtr.extTriggerTable->obs_loc_lat,
+	      tablePtr.extTriggerTable->obs_loc_long,
+	      tablePtr.extTriggerTable->ligo_fave_lho,
+	      tablePtr.extTriggerTable->ligo_fave_llo,
+	      tablePtr.extTriggerTable->ligo_delay,
+	      tablePtr.extTriggerTable->event_number_gcn,
+	      tablePtr.extTriggerTable->event_number_grb,
+	      tablePtr.extTriggerTable->event_status
+	    );
         tablePtr.extTriggerTable = tablePtr.extTriggerTable->next;
       }
       break;
