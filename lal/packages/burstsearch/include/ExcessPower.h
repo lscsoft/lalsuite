@@ -84,8 +84,7 @@ XLALComputeExcessPower(
 	TFTiling *tiling,
 	const REAL4TimeFrequencyPlane *plane,
 	const REAL8 *hrssfactor,
-	const REAL4 *norm,
-	const REAL8 *fachrss
+	const REAL4 *norm
 );
 
 
