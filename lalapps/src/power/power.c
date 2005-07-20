@@ -80,6 +80,7 @@ static struct {
  	CHAR *simdirname;           /* name of the dir. with the sim. wave */
 	REAL8 simFrameSecs;         /* number of seconds in the sim frame  */
 	int cluster;                /* TRUE == perform clustering          */
+	int estimateHrss;           /* TRUE == estimate hrss               */
 	CHAR *comment;              /* user comment                        */
 	int FilterCorruption;       /* samples corrupted by conditioning   */
 	INT4 maxSeriesLength;       /* RAM-limited input length            */
@@ -431,6 +432,7 @@ void parse_command_line(
 		{"calibration-cache",   required_argument, NULL,           'B'},
 		{"channel-name",        required_argument, NULL,           'C'},
 		{"cluster",             no_argument, &options.cluster,    TRUE},
+		{"estimatehrss",        no_argument, &options.estimateHrss, TRUE},
 		{"debug-level",         required_argument, NULL,           'D'},
 		{"max-event-rate",      required_argument, NULL,           'F'},
 		{"filter-corruption",	required_argument, NULL,           'j'},
@@ -484,6 +486,7 @@ void parse_command_line(
 	options.calCacheFile = NULL;	/* default */
 	options.channelName = NULL;	/* impossible */
 	options.cluster = FALSE;	/* default */
+	options.estimateHrss = FALSE;	/* default */
 	options.comment = "";		/* default */
 	options.FilterCorruption = -1;	/* impossible */
 	options.mdcchannelIn.name = NULL;	/* default */
@@ -879,6 +882,15 @@ void parse_command_line(
 	options.PSDAverageLength = block_commensurate(options.PSDAverageLength, options.windowLength, params->windowShift);
 
 	/*
+	 * Ensure calibration cache is given when the hrss estimation option is 
+	 * turned on
+	 */
+	if(options.estimateHrss && !options.calCacheFile) {
+		fprintf(stderr, "estimate hrss option is turned on but calibration file is missing\n");
+		exit(1);
+	}
+
+	/*
 	 * Ensure RAM limit is comensurate with the PSDAverageLength and
 	 * its shift.
 	 */
@@ -1030,7 +1042,7 @@ static void makeWhiteNoise(
 
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] *= amplitude;
-
+	
 	if(options.verbose) {
 		REAL4 norm = 0.0;
 		for(i = 0; i < series->data->length; i++)
@@ -1473,6 +1485,7 @@ static void add_sim_injections(
 
 static SnglBurstTable **analyze_series(
 	SnglBurstTable **addpoint,
+	COMPLEX8FrequencySeries  *hrssresponse,
 	REAL4TimeSeries *series,
 	size_t psdlength,
 	EPSearchParams *params
@@ -1501,7 +1514,7 @@ static SnglBurstTable **analyze_series(
 		if(options.verbose)
 			fprintf(stderr, "analyze_series(): analyzing samples %zu -- %zu (%.9lf s -- %.9lf s)\n", start, start + interval->data->length, start * interval->deltaT, (start + interval->data->length) * interval->deltaT);
 
-		if(XLALEPSearch(addpoint, interval, params)) {
+		if(XLALEPSearch(addpoint, hrssresponse, interval, params)) {
 			fprintf(stderr, "analyze_series(): fatal error: XLALEPSearch() returned failure\n");
 			exit(1);
 		}
@@ -1575,6 +1588,7 @@ int main( int argc, char *argv[])
 	size_t                    overlap;
 	CHAR                      outfilename[256];
 	REAL4TimeSeries          *series = NULL;
+	COMPLEX8FrequencySeries  *hrssresponse = NULL;
 	SnglBurstTable           *burstEvent = NULL;
 	SnglBurstTable          **EventAddPoint = &burstEvent;
 	MetadataTable             procTable;
@@ -1683,7 +1697,7 @@ int main( int argc, char *argv[])
 		 */
 
 		if(burstInjectionFile || inspiralInjectionFile || options.simCacheFile) {
-		        COMPLEX8FrequencySeries  *response = NULL;
+			COMPLEX8FrequencySeries  *response = NULL;
 
 			/* Create the response function */
 			if(options.calCacheFile)
@@ -1701,11 +1715,10 @@ int main( int argc, char *argv[])
 			else if(options.simCacheFile)
 			  add_sim_injections(&stat, series, response, options.maxSeriesLength);
 		
-
 			if(options.printData)
 				LALPrintTimeSeries(series, "./injections.dat");
 
-			/* clean up */
+			/*clean up*/
 			LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&stat, response), &stat);
 		}
 
@@ -1717,6 +1730,16 @@ int main( int argc, char *argv[])
 		        add_mdc_injections(&stat, mdcCacheFile, series);
 			if(options.printData)
 				LALPrintTimeSeries(series, "./timeseriesasqmdc.dat");
+		}
+
+		/*
+		 * Generate the response function at the right deltaf to be usd for h_rss estimation.
+		 */
+
+		if (options.estimateHrss) {
+			hrssresponse = generate_response(&stat, options.calCacheFile, options.channelName, series->deltaT, series->epoch, options.windowLength);
+			if(options.printData)
+			  LALCPrintFrequencySeries(hrssresponse, "./hrssresponse.dat");
 		}
 
 		/*
@@ -1756,7 +1779,7 @@ int main( int argc, char *argv[])
 		 * Analyze the data
 		 */
 
-		EventAddPoint = analyze_series(EventAddPoint, series, options.PSDAverageLength, &params);
+		EventAddPoint = analyze_series(EventAddPoint, hrssresponse, series, options.PSDAverageLength, &params);
 
 		/*
 		 * Reset for next run
@@ -1770,6 +1793,7 @@ int main( int argc, char *argv[])
 
 		LAL_CALL(LALAddFloatToGPS(&stat, &epoch, &epoch, (series->data->length - overlap) * series->deltaT), &stat);
 		LAL_CALL(LALDestroyREAL4TimeSeries(&stat, series), &stat);
+		LAL_CALL(LALDestroyCOMPLEX8FrequencySeries(&stat, hrssresponse), &stat);
 	}
 
 	/*
