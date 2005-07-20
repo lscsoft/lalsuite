@@ -938,7 +938,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 #ifndef VUNITS
 #define VUNITS 4
 #endif
-            for(k=0; k < klim-VUNITS ; k+=VUNITS) {
+            for(k=0; k+VUNITS < klim; k+=VUNITS) {
 		int ki;
 		float xinv;
 		float realXP_f = 0.0;
