@@ -167,12 +167,13 @@ XLALEPSearch(
 	static const char *func = "EPSearch";
 	int errorcode;
 	int                      start_sample;
+	int                      overwhiten_flag = 0; /* default */
 	COMPLEX8FrequencySeries *fseries;
-	COMPLEX8FrequencySeries *response;
+	const COMPLEX8FrequencySeries *response;
 	REAL4Window             *window = params->window;
 	RealFFTPlan             *plan;
 	REAL4FrequencySeries    *AverageSpec;
-	REAL4FrequencySeries    *OverWhiteningSpec;
+	REAL4FrequencySeries    *PsdSpec;
 	REAL4TimeSeries         *cutTimeSeries;
 	SnglBurstTable         **EventAddPoint = burstEvent;
 	TFTiling                *Tiling;
@@ -213,9 +214,13 @@ XLALEPSearch(
 	}
 
 	if(params->useOverWhitening || hrssresponse)
-		OverWhiteningSpec = AverageSpec;
-	else
-		OverWhiteningSpec = NULL;
+		PsdSpec = AverageSpec;
+	else 
+		PsdSpec = NULL;
+	
+
+	if(params->useOverWhitening)
+		overwhiten_flag = 1;
 
 	/*
 	 * Compute the average spectrum.
@@ -295,7 +300,7 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the time-frequency decomposition\n");
-		if(XLALFreqSeriesToTFPlane(tfplane, fseries, window->data->length / 2 - params->windowShift, hrssfactor, normalisation, response, OverWhiteningSpec)) {
+		if(XLALFreqSeriesToTFPlane(tfplane, fseries, window->data->length / 2 - params->windowShift, fachrss, normalisation, response, PsdSpec, overwhiten_flag)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
@@ -306,7 +311,7 @@ XLALEPSearch(
 		 */
 
 		XLALPrintInfo("XLALEPSearch(): computing the excess power for each tile\n");
-		if(XLALComputeExcessPower(Tiling, tfplane, hrssfactor, normalisation, fachrss)) {
+		if(XLALComputeExcessPower(Tiling, tfplane, fachrss, normalisation)) {
 			errorcode = XLAL_EFUNC;
 			goto error;
 		}
