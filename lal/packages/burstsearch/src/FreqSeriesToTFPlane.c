@@ -78,7 +78,8 @@ static REAL4 apply_filter(
 	const COMPLEX8 *filter,
 	const REAL4 *psd,
 	size_t start,
-	size_t length
+	size_t length,
+	int overwhiten_flag
 )
 {
 	REAL4 norm = 0.0;
@@ -86,16 +87,15 @@ static REAL4 apply_filter(
 	output += start;
 	fseries += start;
 
-	/*FIXME FIXME FIXME: I am turning off overwhitening for implementing h_rss*/
-	psd = NULL;
-	if(psd)
+
+	if(psd && overwhiten_flag)
 		psd += start;
 
 	for(; length--; output++, fseries++, filter++) {
 		REAL4 reFilter = filter->re;
 		REAL4 imFilter = filter->im;
 
-		if(psd) {
+		if(psd && overwhiten_flag ) {
 			reFilter /= sqrt(*psd);
 			imFilter /= sqrt(*psd);
 			psd++;
@@ -117,6 +117,7 @@ static REAL8 eval_hrssfactor(
 	const COMPLEX8 *response,
 	const REAL4 *psd,
 	REAL8 deltaf,
+	size_t tserieslength,
 	size_t fstart,
 	size_t length
 )
@@ -130,10 +131,10 @@ static REAL8 eval_hrssfactor(
 			REAL8 imResp = response->im;
 
 			factor += sqrt(reResp * reResp + imResp * imResp) * 0.5 * sqrt(*psd / deltaf);
-	}
+		}
 	}
 
-	return(factor / avl);
+	return(factor / (avl * tserieslength));
 }
 
 
@@ -145,7 +146,8 @@ int XLALFreqSeriesToTFPlane(
 	REAL8 *hrssfactor,
 	REAL4 *normalisation,
 	const COMPLEX8FrequencySeries *response,
-	const REAL4FrequencySeries *psd
+	const REAL4FrequencySeries *psd,
+	int overwhiten_flag
 )
 /******** </lalVerbatim> ********/
 {
@@ -161,7 +163,7 @@ int XLALFreqSeriesToTFPlane(
 	INT4 flow;
 	INT4 fseglength;
 	REAL8 dt;
-	FILE *fp;
+
 	/* the frequency window in bins; for each channel contributions
 	 * will be zeroed out from fwindow before and after */
 	const INT4 fwindow = 100;
@@ -219,17 +221,17 @@ int XLALFreqSeriesToTFPlane(
 	XLALShiftCOMPLEX8Sequence(filter, -(flow - fwindow));
 
 	/* loop over different basis vectors in the frequency domain */
-	for(i = 0; i < nf; i++, normalisation++, hrssfactor++) {
+	for(i = 0; i < nf; i++, normalisation++) {
 		/* zero the product vector */
 		memset(fcorr->data, 0, fcorr->length * sizeof(*fcorr->data));
 
-		*normalisation = apply_filter(fcorr->data, freqSeries->data->data, filter->data, psd ? psd->data->data : NULL, flow + i * fseglength - fwindow, fseglength + 2 * fwindow);
+		*normalisation = apply_filter(fcorr->data, freqSeries->data->data, filter->data, psd ? psd->data->data : NULL, flow + i * fseglength - fwindow, fseglength + 2 * fwindow, overwhiten_flag);
 
-		*hrssfactor = eval_hrssfactor(response ? response->data->data : NULL, psd ? psd->data->data : NULL, freqSeries->deltaF, flow + i * fseglength,  fseglength ); 
+		if (hrssfactor) {
+			*hrssfactor = eval_hrssfactor(response ? response->data->data : NULL, psd ? psd->data->data : NULL, freqSeries->deltaF, snr->length, flow + i * fseglength,  fseglength ); 
+			hrssfactor++ ;
+		}
 
-		/*fp = fopen("factor.dat","a");
-		fprintf(fp,"%d %e\n",i, *hrssfactor);
-		fclose(fp);*/
 		/* clean up Nyquist */
 		fcorr->data[fcorr->length - 1].re = 0.0;
 		fcorr->data[fcorr->length - 1].im = 0.0;

@@ -70,7 +70,8 @@ XLALFreqSeriesToTFPlane(
 	REAL8 *hrssfactor,
 	REAL4 *norm,
 	const COMPLEX8FrequencySeries *response,
-	const REAL4FrequencySeries *psd
+	const REAL4FrequencySeries *psd,
+	int overwhiten_flag
 );
 
 #ifdef  __cplusplus
