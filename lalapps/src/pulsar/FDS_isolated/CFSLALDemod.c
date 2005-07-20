@@ -941,8 +941,8 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
             for(k=0; k < klim-VUNITS ; k+=VUNITS) {
 		int ki;
 		float xinv;
-		float realXP_v[VUNITS];
-		float imagXP_v[VUNITS];
+		float realXP_f = 0.0;
+		float imagXP_f = 0.0;
 		float Xar,Xai;
 
 		/* inner loop */
@@ -953,16 +953,14 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 		    xinv = (float)OOTWOPI / (float)(tempFreq1 - ki);
 		    realP = tsin * xinv;
 		    imagP = tcos * xinv;
-		    realXP_v[ki] = Xar * realP - Xai * imagP;
-		    imagXP_v[ki] = Xar * imagP + Xai * realP;
+		    realXP_f += Xar * realP - Xai * imagP;
+		    imagXP_f += Xar * imagP + Xai * realP;
 		    Xalpha_k ++;
 		}
 
 		/* reduction */
-		for(ki=0;ki<VUNITS;ki++) {
-		    realXP += realXP_v[ki];
-		    imagXP += imagXP_v[ki];
-		}
+		realXP += realXP_f;
+		imagXP += imagXP_f;
 
 		/* increment */
 		tempFreq1 -= VUNITS;
