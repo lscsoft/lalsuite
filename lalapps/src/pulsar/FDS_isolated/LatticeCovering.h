@@ -18,6 +18,16 @@
  */
 
 /**
+ * \defgroup moduleLatticeCovering Lattice Covering
+ * \ingroup coreDA
+ *
+ * \brief Module implementing a practical (approximate) solution to the "covering problem". 
+ *  This is achieved by producing a lattice-covering with the \f$A_n^*\f$ lattice, 
+ *  which is the best known covering up to dimension \f$n\le 23\f$ 
+ *  (see \ref CS99 for details).
+ */
+
+/**
  * \author Reinhard Prix
  * \date 2005
  * \file 
@@ -66,7 +76,7 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 #define LATTICECOVERING_MSGELIST	"Error occurred in list-handling ..."
 #define LATTICECOVERING_MSGEFUNC	"Sub-routine failed"
 
-/*---------- external types ----------*/
+/*---------- exported types ----------*/
 
 /** enum-type for denoting several types of lattice */
 typedef enum
@@ -94,7 +104,7 @@ typedef struct tagREAL8VectorList
 
 /*---------- Global variables ----------*/
 
-/*---------- external prototypes [API] ----------*/
+/*---------- exported prototypes [API] ----------*/
 void LALLatticeCovering (LALStatus *, REAL8VectorList **covering, REAL8 coveringRadius, 
 			 const gsl_matrix *metric, const REAL8Vector *startPoint,
 			 BOOLEAN (*isInside)(const REAL8Vector *point) );

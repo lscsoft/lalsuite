@@ -18,14 +18,6 @@
  */
 
 /**
- * \defgroup moduleLatticeCovering Lattice Covering
- *  \brief Module implementing a practical (approximate) solution to the "covering problem". 
- *  This is achieved by producing a lattice-covering with the \f$A_n^*\f$ lattice, 
- *  which is the best known covering up to dimension \f$n\le 23\f$ 
- *  (see \ref CS99 "[CS99]" for details).
- */
-
-/**
  * \author Reinhard Prix
  * \date 2005
  * \file 
@@ -39,15 +31,6 @@
  * $Id$
  *
  */
-
-/** \page References
- * \anchor CS99
- *  	<b>[CS99]</b> J.H. Conway and N.J.A. Sloane, "Sphere Packings, Lattices and Groups", 
- *  	vol. 290 of Grundlehren der mathematischen Wissenschaften, 
- * 	(Springer, New York, U.S.A., 1999), 3rd edition.
- *
- */
-
 
 /*---------- INCLUDES ----------*/
 #include <math.h>
