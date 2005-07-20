@@ -67,7 +67,9 @@ XLALFreqSeriesToTFPlane(
 	REAL4TimeFrequencyPlane *tfp,
 	const COMPLEX8FrequencySeries *freqSeries,
 	UINT4 windowShift,
+	REAL8 *hrssfactor,
 	REAL4 *norm,
+	const COMPLEX8FrequencySeries *response,
 	const REAL4FrequencySeries *psd
 );
 
