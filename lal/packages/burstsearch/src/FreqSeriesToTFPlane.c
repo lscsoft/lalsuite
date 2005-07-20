@@ -85,6 +85,9 @@ static REAL4 apply_filter(
 
 	output += start;
 	fseries += start;
+
+	/*FIXME FIXME FIXME: I am turning off overwhitening for implementing h_rss*/
+	psd = NULL;
 	if(psd)
 		psd += start;
 
@@ -107,13 +110,41 @@ static REAL4 apply_filter(
 	return(sqrt(4.0 * norm));
 }
 
+/*
+ *Evaluate the h_rss estimation factor for each channel
+ */
+static REAL8 eval_hrssfactor(
+	const COMPLEX8 *response,
+	const REAL4 *psd,
+	REAL8 deltaf,
+	size_t fstart,
+	size_t length
+)
+{
+	REAL8 factor = 0.0;
+	size_t avl = length;
+
+	if(psd && response) {
+		for(psd += fstart, response += fstart; length-- > 0; response++, psd++){
+			REAL8 reResp = response->re;
+			REAL8 imResp = response->im;
+
+			factor += sqrt(reResp * reResp + imResp * imResp) * 0.5 * sqrt(*psd / deltaf);
+	}
+	}
+
+	return(factor / avl);
+}
+
 
 /******** <lalVerbatim file="FreqSeriesToTFPlaneCP"> ********/
 int XLALFreqSeriesToTFPlane(
 	REAL4TimeFrequencyPlane *plane,
 	const COMPLEX8FrequencySeries *freqSeries,
 	UINT4 windowShift,
+	REAL8 *hrssfactor,
 	REAL4 *normalisation,
+	const COMPLEX8FrequencySeries *response,
 	const REAL4FrequencySeries *psd
 )
 /******** </lalVerbatim> ********/
@@ -130,6 +161,7 @@ int XLALFreqSeriesToTFPlane(
 	INT4 flow;
 	INT4 fseglength;
 	REAL8 dt;
+	FILE *fp;
 	/* the frequency window in bins; for each channel contributions
 	 * will be zeroed out from fwindow before and after */
 	const INT4 fwindow = 100;
@@ -187,12 +219,17 @@ int XLALFreqSeriesToTFPlane(
 	XLALShiftCOMPLEX8Sequence(filter, -(flow - fwindow));
 
 	/* loop over different basis vectors in the frequency domain */
-	for(i = 0; i < nf; i++, normalisation++) {
+	for(i = 0; i < nf; i++, normalisation++, hrssfactor++) {
 		/* zero the product vector */
 		memset(fcorr->data, 0, fcorr->length * sizeof(*fcorr->data));
 
 		*normalisation = apply_filter(fcorr->data, freqSeries->data->data, filter->data, psd ? psd->data->data : NULL, flow + i * fseglength - fwindow, fseglength + 2 * fwindow);
 
+		*hrssfactor = eval_hrssfactor(response ? response->data->data : NULL, psd ? psd->data->data : NULL, freqSeries->deltaF, flow + i * fseglength,  fseglength ); 
+
+		/*fp = fopen("factor.dat","a");
+		fprintf(fp,"%d %e\n",i, *hrssfactor);
+		fclose(fp);*/
 		/* clean up Nyquist */
 		fcorr->data[fcorr->length - 1].re = 0.0;
 		fcorr->data[fcorr->length - 1].im = 0.0;
