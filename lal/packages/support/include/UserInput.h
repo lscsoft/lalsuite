@@ -201,7 +201,7 @@ void LALUserVarReadCfgfile (LALStatus *, const CHAR *cfgfile);
 
 void LALUserVarHelpString (LALStatus *, CHAR **helpstring, const CHAR *progname);
 void LALUserVarCheckRequired (LALStatus *);
-INT4 LALUserVarWasSet (void *cvar);
+INT4 LALUserVarWasSet (const void *cvar);
 void LALGetDebugLevel (LALStatus *, int argc, char *argv[], CHAR optchar);
 void LALUserVarGetLog (LALStatus *, CHAR **logstr,  UserVarLogFormat format);
 

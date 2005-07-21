@@ -835,7 +835,7 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
  */
 /* <lalVerbatim file="UserInputCP"> */
 INT4
-LALUserVarWasSet (void *cvar)
+LALUserVarWasSet (const void *cvar)
 { /* </lalVerbatim> */
 
   LALUserVariable *ptr;
