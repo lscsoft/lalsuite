@@ -650,115 +650,58 @@ e^{2 \pi i ft_0} df
 \end{equation}
 
 The Excess Power search then identifies triggers which may be
-gravitational wave bursts using the following algorithm.  For each
-segment $\hat{s}_k$,  construct multiple time-frequency planes
-${\cal{P}}^a$ such that the frequency resolution of each plane is
-$2^a \times 1 \textrm{ Hz}$ and the time resolution $2^{-a} \times 1
-\textrm{ s}$ where $a$ can have a range of values depending on the 
-minimum and maximum time-frequency resolutions one wants to tolerate 
-in the search.  However this approach allows
-multi-resolution analysis of the time-frequency structure of the input
-time series $s_j$ while insuring that all pixels have unit
-time-frequency volume (the product of time resolution by frequency
-resolution).   The power in a given pixel of time-frequency plane
-${\cal{P}}^b$ is given by
-\begin{equation}
-{\cal E}^b(t,f) = {\cal E}^b( 2^{-b} J, 2^b \Sigma ) = 4 | H^b_{J\Sigma} |^2
-\end{equation}
-where 
-\begin{equation}
-H^b_{J\Sigma} = \sum_{\gamma=0}^{N_T} e^{ 2 \pi i J \gamma / N_T }
-\tilde{w}_{N_T \Sigma + \gamma}
-\end{equation}
-and $N_T = 2^b$.
-
-The method owes its name to the fact that it searches for excess
-signal power in all the rectangular regions, called tiles, of each
-time-frequency plane.  The list of tiles is designed to explore all
-possible start times, frequency bands and durations subject to the
-following constraints.  Tiles have a minimum time duration either
-equal to the minimum time resolution of the particular time-frequency
-plane or equal to $2/64 \textrm{ s}$,  whichever is greater.  The
-maximum frequency band of any tile is $64 \textrm{ Hz}$.  The tiles
-have a maximum time duration of $0.5 \textrm{ s}$ and corresponding
-minimum frequency band of $2 \textrm{ Hz}$;  tiles always have integer
-numbers of pixels on each side and hence have time-frequency volume
-greater than or equal to unity.  For each allowed tile duration and
-bandwidth,  the associated time-frequency plane is tiled and each tile
-searched for excess power
-\begin{equation}
-{\cal{E}} = \sum_{J=J_1}^{J2-1} \sum_{\Sigma=\Sigma_1}^{\Sigma_2-1}
-{\cal E}^b( 2^{-b} J , 2^b \Sigma ) \;.
-\end{equation}
-
-In Gaussian noise,  the power in a given tile is $\chi^2$-distributed
-with $2 V$ degrees of freedom where $V$ is the time-frequency volume
-of the tile.    A burst trigger is identified if the probability of
-obtaining the excess power in a tile from Gaussian noise is smaller
-than some threshold $\alpha$.   For large bursts in the data stream,
-many tiles can be identified as triggers with different sizes and
-aspect ratios.   When the search over a particular segment is
-complete,   triggers are clustered and the clustering is described in 
-Section~\ref{section:clustering} .
-
-\subsubsection{An alternate Time-Frequency Plane construction}
-In the previous section we described an algorithmic implementation
-where multiple time-frequency planes are constructed and then all 
-possible tiles in a plane are searched for excess power.  Each plane 
-in that implementation has a unique time-frequency resolution.  However
-while searching the tiles it is very likely that we consider many 
-duplicate tiles from different planes.
-  
-Here we describe an alternate implementation where we construct a single
+gravitational wave bursts using the following algorithm.  
+We construct a single
 time frequency plane and then search over all possible tiles of different
-time durations and frequency bands.  One first has to decide the maximum 
+time durations and frequency bands.  One first decides the maximum 
 frequency band and the maximum time duration that are to be tolerated in
 the search.  The maximum frequency band determines the minimum duration
-a tile can have requiring the time-frequency volume be $1$ and 
+a tile requiring the time-frequency volume be $1$ and 
 similarly the maximum time duration determines the minimum frequency band
 of the tile.  The time frequency plane is then constructed with a 
 time-frequency resolution finer by at least a factor of $2$ compared to
 the minimum resolutions of the tiles.  As a concrete example,  
-suppose one wants to search for a
- maximum time duration of  $0.5 sec$  and a maximum frequency band of 
-$32 Hz$.  This implies the minimum duration of a tile in the search will
-be  $1/32 sec (31.2 msec)$  and the minimum frequency band will be  $2 Hz$.
+suppose the maximum allowed time duration of  a tile is $\Delta T sec = 2^{-(a+1)} sec$  
+and the maximum frequency band is 
+$\Delta F Hz = 2^{(b-1)} Hz$.  This implies the minimum duration of a tile in the search will
+be  $\Delta t^{tile} sec = 2^{-(b-1)} sec$  and the minimum frequency band will be  
+$\Delta f^{tile} Hz = 2^{(a+1)} Hz$.
  The time-frequency plane is then constructed with a timing resolution
-of $1/64 sec (15.6 msec.)$ and a frequency resolution of $1 Hz$.         
+of $\delta t sec = 2^{-b} sec.$ and a frequency resolution of $\delta f Hz = 2^a Hz$.
 
-The way one approaches towards this is almost similar to the implementation
-described in the previous section.  For each whitened segment
+
+For each whitened segment
 $\hat{s}_k$, one constructs multiple channels,  each of which is an
-inverse Fourier tranform of $b Hz$ of data,  where $b Hz$
- is the frequency resolution of the plane.  The elements of the 
-time-frequency plane are then selected from these channels depending
-on the timing resolution of the plane.  If we consider the example
-that we were discussing above,  under the assumption that the
-bandwidth over which we want to search is $128 Hz$,  there will be
-$128$ channels given the fact that the frequency resolution of our
-time-frequency plane is $1 Hz$.  Each of these channels is thus a time
-series constructed by the inverse Fourier transform of $1 Hz$ of 
-whitened data.          
+inverse Fourier tranform of $\delta f Hz$ of data.  Now suppose the bandwidth over which we 
+want to search is $ F Hz$ and the time duration is $ T sec $.
+Therefore there will be
+$n_{chan} = \frac{ F Hz}{\delta f Hz}$ channels and $n_{timebins} = \frac{T sec}{ \delta t sec}$
+timebins in each channel. $n_{timebins} \times n_{chan}$ number of elements 
+will then represent this time-frequency plane.
 
-The elements of a channel whose lower frequency is,  say,  $k_1$ can 
-be represented as:
+If we consider a channel whose low frequency index is $k_0$ 
+(where $k_0 = \frac{flow Hz}{ \delta f Hz}$,  $flow Hz$ being the low frequency of the channel) 
+and the channel width in number of sample points is $ b = \frac{\delta f Hz }{\Delta f Hz} $
+($\Delta f Hz $ is the frequency resolution of the fully sampled frequency series),   
+it's elements can be represented as:
 \begin{equation}
-z_{jk_1} = \sum_{k=k_1}^{k_1+b-1} ( \hat{s}_k \tilde{\Theta}^\ast e^{2 \pi ijk/N}
-                                  + c.c )
-\end{equation},  where $b = \frac{b Hz}{\delta f}$, $\delta f$ being the 
-frequency resolution of the data and $j = 0,\cdots, N-1$.  Note,  the timing
-resolution of $z_{jk_1}$ is equal to that of the sampled detector data $s_j$.
- The elements of the time-frequency plane which can be picked from this 
-particular channel $z_{jk_1}$ will then be 
+z_{j}(k_0,  b) = \sum_{k=0}^{N-1}  \hat{s}_k \tilde{\Theta}_k^\ast(k_0,  b) e^{2 \pi ijk/N},
+\end{equation}  where $j = 0,\cdots, N-1$.  Note,  the timing
+resolution of $z_j(k_0,  b)$ is equal to that of the sampled detector data $s_j$.
+ The elements of the time-frequency plane corresponding to this 
+particular channel $z_j(k_0,  b)$ will then be 
 \begin{equation}
-H_{l_1k_1} = H_{l_1n_f + k_1} = z_{l_1\frac{\Delta T}{\delta t} , k_1}
-\end{equation}, where $n_f = 128$ , the number of frequency bins, 
-$l_1$ can lie between $0, \cdots, n_t - 1$ , $n_t$ being the number of 
-time bins in the plane,  $\Delta T$ is the timing resolution of the
-plane and $\delta t$ is that of $z_{jk_1}$.  Thus $n_t$ elements can be
- picked from each one of the $n_f$ number of channels and hence there will be 
-$n_t \times n_f$ number of elements representing the time-frequency plane.
+Z_J(k_0,  b)   = z_{Jn_t}(k_0,  b),
+\end{equation} where $n_t = \frac{\delta t sec}{\Delta sec}$ are the number of sample
+points in one time-frequency plane time bin ($\Delta sec$ being the full sampling
+rate of the timing series)  and $J = 0, \cdots, n_{timebins} - 1$.
 
+Each channel is normalised so that a sample point in the channel represents
+a Gaussian random variable with zero mean and unit variance. The normalisation constant is given
+by 
+\begin{equation}
+\sigma^2(k_0,  b) = \langle z_j^2(k_0, b) \rangle = \sum_{k=0}^{N-1}\sum_{l=0}^{N-1}\langle \hat{s}_k \hat{s}_l^\ast \rangle \tilde{\Theta}_k^\ast(k_0,  b) \tilde{\Theta}_l(k_0,  b) e^{2 \pi ij(k-l)/N}
+\end{equation}
 A tile in this plane can be denoted as $\tau ={J_1, J_2, K_1, K_2}$,  where
 $J_1$ and $J_2$ represent the indices corresponding to the start and 
 stop times of the tile respectively while $K_1$ and $K_2$ represent the
@@ -769,6 +712,16 @@ $\tau$ will then be $dof_{\tau} = 2 \times (J_2 - J_1) \times \Delta T \times (K
 \end{equation}
 ,  where $m\frac{J_2-J_1}{dof_\tau} = J_2$.
 
+
+In Gaussian noise,  the power in a given tile is $\chi^2$-distributed
+with $2 V$ degrees of freedom where $V$ is the time-frequency volume
+of the tile.    A burst trigger is identified if the probability of
+obtaining the excess power in a tile from Gaussian noise is smaller
+than some threshold $\alpha$.   For large bursts in the data stream,
+many tiles can be identified as triggers with different sizes and
+aspect ratios.   When the search over a particular segment is
+complete,   triggers are clustered and the clustering is described in 
+Section~\ref{section:clustering} .
 
 
 \subsection{Time Domain Segmentation}
