@@ -217,8 +217,68 @@ LALFlatPulsarMetric ( LALStatus *status,
   ret->data[ PMETRIC_INDEX(0,1) ] = rX_rY_av - rX_av * rY_av;	/* cos(rX, rY) */
 
   /* ---------- mixed sky-spin components ---------- */
+  { /* < t^1 r_i > */
+    REAL8 t_1_cos_o_av = (1.0 / pow(delta_phi_o,2)) * 
+      ( delta_phi_o * sin(phi_o_1) + cos(phi_o_1) - cos(phi_o_0) );
+    REAL8 t_1_cos_s_av = (1.0 / pow(delta_phi_s,2)) * 
+      ( delta_phi_s * sin(phi_s_1) + cos(phi_s_1) - cos(phi_s_0) ); /* o -> s */
+
+    REAL8 t_1_sin_o_av = (1.0 / pow(delta_phi_o,2)) * 
+      (-delta_phi_o * cos(phi_o_1) + sin(phi_o_1) - sin(phi_o_0) );
+    REAL8 t_1_sin_s_av = (1.0 / pow(delta_phi_s,2)) * 
+      (-delta_phi_s * cos(phi_s_1) + sin(phi_s_1) - sin(phi_s_0) );
+
+    REAL8 t_1_rX_av = t_1_cos_o_av + REX * t_1_cos_s_av;
+    REAL8 t_1_rY_av = t_1_sin_o_av + REY * t_1_sin_s_av;
+
+    REAL8 t_1_av = 1.0 / 2.0;
+
+    ret->data[ PMETRIC_INDEX(0,2) ] = t_1_rX_av - t_1_av * rX_av;   /* g_w0_X */
+    ret->data[ PMETRIC_INDEX(1,2) ] = t_1_rY_av - t_1_av * rY_av;   /* g_w0_Y */
+  }
+  {  /* < t^2 r_i > */
+    REAL8 t_2_cos_o_av = (1.0 / pow(delta_phi_o,3)) * 
+      ( (pow(delta_phi_o,2) - 2.0) * sin(phi_o_1) + 2.0*delta_phi_o * cos(phi_o_1) + 2.0*sin(phi_o_0));
+    REAL8 t_2_cos_s_av = (1.0 / pow(delta_phi_s,3)) * 
+      ( (pow(delta_phi_s,2) - 2.0) * sin(phi_s_1) + 2.0*delta_phi_s * cos(phi_s_1) + 2.0*sin(phi_s_0));
+    
+    REAL8 t_2_sin_o_av = (1.0 / pow(delta_phi_o,3)) * 
+      (-(pow(delta_phi_o,2) - 2.0) * cos(phi_o_1) + 2.0*delta_phi_o * sin(phi_o_1) - 2.0*cos(phi_o_0));
+    REAL8 t_2_sin_s_av = (1.0 / pow(delta_phi_s,3)) * 
+      (-(pow(delta_phi_s,2) - 2.0) * cos(phi_s_1) + 2.0*delta_phi_s * sin(phi_s_1) - 2.0*cos(phi_s_0));
 
 
+    REAL8 t_2_rX_av = t_2_cos_o_av + REX * t_2_cos_s_av;
+    REAL8 t_2_rY_av = t_2_sin_o_av + REY * t_2_sin_s_av;
+
+    REAL8 t_2_av = 1.0 / 3.0;
+
+    ret->data[ PMETRIC_INDEX(0,3) ] = t_2_rX_av - t_2_av * rX_av;   /* g_w1_X */
+    ret->data[ PMETRIC_INDEX(1,3) ] = t_2_rY_av - t_2_av * rY_av;   /* g_w1_Y */
+  }
+  { /* < t^3 r_i > */
+    REAL8 t_3_cos_o_av = (1.0 / pow(delta_phi_o,4)) * 
+      ( (pow(delta_phi_o,3) - 6.0*delta_phi_o) * sin(phi_o_1) 
+	+ (3.0*pow(delta_phi_o,2)-6.0) * cos(phi_o_1) + 6.0*cos(phi_o_0) );
+    REAL8 t_3_cos_s_av = (1.0 / pow(delta_phi_s,4)) * 
+      ( (pow(delta_phi_s,3) - 6.0*delta_phi_s) * sin(phi_s_1) 
+	+ (3.0*pow(delta_phi_s,2)-6.0) * cos(phi_s_1) + 6.0*cos(phi_s_0) );
+
+    REAL8 t_3_sin_o_av = (1.0 / pow(delta_phi_o,4)) * 
+      (-(pow(delta_phi_o,3) - 6.0*delta_phi_o) * cos(phi_o_1) 
+	+ (3.0*pow(delta_phi_o,2)-6.0) * sin(phi_o_1) + 6.0*sin(phi_o_0) );
+    REAL8 t_3_sin_s_av = (1.0 / pow(delta_phi_s,4)) * 
+      (-(pow(delta_phi_s,3) - 6.0*delta_phi_s) * cos(phi_s_1) 
+	+ (3.0*pow(delta_phi_s,2)-6.0) * sin(phi_s_1) + 6.0*sin(phi_s_0) );
+    
+    REAL8 t_3_rX_av = t_3_cos_o_av + REX * t_3_cos_s_av;
+    REAL8 t_3_rY_av = t_3_sin_o_av + REY * t_3_sin_s_av;
+
+    REAL8 t_3_av = 1.0 / 4.0;
+
+    ret->data[ PMETRIC_INDEX(0,4) ] = t_3_rX_av - t_3_av * rX_av;   /* g_w2_X */
+    ret->data[ PMETRIC_INDEX(1,4) ] = t_3_rY_av - t_3_av * rY_av;   /* g_w2_Y */
+  }
 
   
   (*metric) = ret;
