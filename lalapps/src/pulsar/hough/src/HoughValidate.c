@@ -97,7 +97,7 @@ int main(int argc, char *argv[]){
   CHAR *fnameLog=NULL;
   FILE *fpLog = NULL;
   CHAR *logstr=NULL;
-
+  REAL8 asq, bsq; /* square of amplitude modulation functions a and b */
   /******************************************************************/
   /*    Set up the default parameters.      */
   /* ****************************************************************/
@@ -413,7 +413,63 @@ int main(int argc, char *argv[]){
     }  
   }
 
-    
+
+  
+  /* amplitude modulation stuff */
+  {
+    AMCoeffs amc; 
+    AMCoeffsParams *amParams;
+    EarthState earth;
+    UINT4 ii;
+    BarycenterInput baryinput;  /* Stores detector location and other barycentering data */
+
+    /* detector location */
+    baryinput.site.location[0] = detector.location[0]/LAL_C_SI;
+    baryinput.site.location[1] = detector.location[1]/LAL_C_SI;
+    baryinput.site.location[2] = detector.location[2]/LAL_C_SI;
+    baryinput.dInv = 0.e0;
+    /* alpha and delta must come from the skypatch */
+    /* for now set it to something arbitrary */
+    baryinput.alpha = 0.0;
+    baryinput.delta = 0.0;
+
+    /* Allocate space for amParams stucture */
+    /* Here, amParams->das is the Detector and Source info */
+    amParams = (AMCoeffsParams *)LALMalloc(sizeof(AMCoeffsParams));
+    amParams->das = (LALDetAndSource *)LALMalloc(sizeof(LALDetAndSource));
+    amParams->das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
+    /* Fill up AMCoeffsParams structure */
+    amParams->baryinput = &baryinput;
+    amParams->earth = &earth; 
+    amParams->edat = edat;
+    amParams->das->pDetector = &detector; 
+    /* make sure alpha and delta are correct */
+    amParams->das->pSource->equatorialCoords.latitude = baryinput.delta;
+    amParams->das->pSource->equatorialCoords.longitude = baryinput.alpha;
+    amParams->das->pSource->orientation = 0.0;
+    amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
+    amParams->polAngle = amParams->das->pSource->orientation ; /* These two have to be the same!!*/
+    amParams->leapAcc = LALLEAPSEC_STRICT;
+
+    /* timeV is start time ---> change to mid time */    
+    SUB (LALComputeAM(&status, &amc, timeV.data, amParams), &status); 
+
+    /* calculate a^2 and b^2 */
+    for (ii=0, asq=0.0, bsq=0.0; ii<mObsCoh; ii++)
+      {
+	REAL8 *a, *b;
+	a = amc.a + ii;
+	b = amc.b + ii;
+	asq += (*a) * (*a);
+	bsq += (*b) * (*b);
+      }
+
+    /* free amParams */
+    LALFree(amParams->das->pSource);
+    LALFree(amParams->das);
+    LALFree(amParams);
+
+  }
 
   /* loop over templates */    
   for(loopId=0; loopId < nTemplates; ++loopId){
