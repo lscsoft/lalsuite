@@ -81,16 +81,30 @@ LALFlatPulsarMetric ( LALStatus *status,
 		      const LALDetector *site 	/**< [in] detector location */
 		      )
 {
-  REAL8 phi_o_i;          /* Phase of Earth's orbit at startTime */
-  REAL8 phi_s_i;          /* Phase of Earth's spin at startTime */
-  PulsarTimesParamStruc zero_phases; /* Needed to calculate initial phases */
-  REAL8 lat, lon;	/* Detector latitude and longitude */
-  REAL8Vector *ret = NULL;	/* return final metric */
+  REAL8Vector *ret = NULL;		/* return final metric */
 
-  UINT4 spdnOrder = 3;	/* number of spindowns to include: now set to 3 */
-  UINT4 dim = 2 + spdnOrder;	/* parameter-space dimension : 2 sky + spindowns */
-  UINT4 s0, s1; 	/* spin-indices */
-  
+  PulsarTimesParamStruc zero_phases; 	/* Needed to calculate initial phases */
+  REAL8 lat, lon;			/* Detector latitude and longitude */
+
+  UINT4 spinOrder = 3;			/* number of spin-parameters to include */
+  UINT4 dim = 2 + spinOrder;		/* parameter-space dimension : 2 sky + spin-params */
+  UINT4 s0, s1; 			/* spin-parameter indices */
+
+  /* parameters */
+  REAL8 phi_o_0, phi_s_0;       	/* Initial phases of orbital- and spin- motion */
+  REAL8 phi_o_1, phi_s_1;       	/* Final phases of orbital- and spin- motion */
+  REAL8 delta_phi_o, delta_phi_s;	/* phase-differences (final - intial) */
+  REAL8 omega_o, omega_s;		/* orbital- and spin- rotation rates */
+  REAL8 REX, REY;			/* detector spin-motion amplitudes in units of 1AU */
+
+  /* intermediate results */
+  REAL8 rX_av, rY_av;			/* averages of rX(t) and rY(t) over observation-time */
+  REAL8 rX_2_av, rY_2_av;		/* averages of rX(t)^2 and rY(t)^2 over observation-time */
+  REAL8 rX_rY_av;			/* average  of rX(t)*rY(t) over observation-time */
+  REAL8 cosLambda;			/* lambda = detector's latitude */
+  REAL8 cosEps;				/* Eps = ecliptic inclination of earth-spin (ca 23.4deg) */
+
+  /*----------*/
   INITSTATUS( status, "LALFlatPulsarMetric", FLATPULSARMETRICC );
   ATTATCHSTATUSPTR (status);
 
@@ -98,25 +112,19 @@ LALFlatPulsarMetric ( LALStatus *status,
   lon = site->frDetector.vertexLongitudeRadians;
   lat = site->frDetector.vertexLatitudeRadians;
 
-  /* Calculation of phases of spin and orbit at start: */
-  zero_phases.epoch = startTime;
-  TRY (LALGetEarthTimes( status->statusPtr, &zero_phases), status);
-  phi_o_i = LAL_TWOPI - zero_phases.tAutumn/LAL_YRSID_SI*LAL_TWOPI;
-  phi_s_i = LAL_TWOPI - zero_phases.tMidnight/LAL_DAYSID_SI*LAL_TWOPI + lon;
-
   /* allocate memory for resulting metric components */
   TRY ( LALDCreateVector( status->statusPtr, &ret, dim * (dim+1) / 2 ), status);
 
   
-  /* ----- pure spin-spin components g_{s0 s1} ----- */
+  /* ---------- pure spin-spin components g_{s0 s1} ---------- */
   {
     UINT4 s0fact = 1, s1fact = 1;	/* factorials of s0 and s1 */
 
-    for ( s0 = 0; s0 < spdnOrder; s0 ++ )
+    for ( s0 = 0; s0 < spinOrder; s0 ++ )
       {
 	s0fact *= (s0 ? s0 : 1);
 	s1fact = 1;
-	for ( s1 = s0; s1 < spdnOrder; s1 ++ )
+	for ( s1 = s0; s1 < spinOrder; s1 ++ )
 	  {
 	    UINT4 tmp;
 	    REAL8 gs0s1;
@@ -128,13 +136,87 @@ LALFlatPulsarMetric ( LALStatus *status,
 
 	    ret->data[ PMETRIC_INDEX (s0+2, s1+2) ] = gs0s1;
 	
-	  } /* for s0 <= s1 < spdnOrder */
+	  } /* for s0 <= s1 < spinOrder */
       }
 
   } /* spin-spin components */
-  /* ----- pure sky-components ----- */
 
-  /* ----- mixed sky-spin components ----- */
+  /* ---------- pure sky-sky components ---------- */
+
+  /* amplitudes of detector spin-motion in ecliptic plane, in units of 1AU */
+  cosLambda = cos(lat);
+  cosEps = cos(LAL_IEARTH);
+  REX = LAL_REARTH_SI * cosLambda / LAL_AU_SI;
+  REY = REX * cosEps;
+
+  /* Angular velocities: */
+  omega_s = LAL_TWOPI / LAL_DAYSID_SI;
+  omega_o = LAL_TWOPI / LAL_YRSID_SI;
+
+  /* Calculation of phases of spin and orbit at start: */
+  zero_phases.epoch = startTime;
+  TRY (LALGetEarthTimes( status->statusPtr, &zero_phases), status);
+  phi_o_0 = LAL_TWOPI - zero_phases.tAutumn/LAL_YRSID_SI*LAL_TWOPI;
+  phi_s_0 = LAL_TWOPI - zero_phases.tMidnight/LAL_DAYSID_SI*LAL_TWOPI + lon;
+
+  /* phases at end of observation-time */
+  delta_phi_o = omega_o * duration;
+  delta_phi_s = omega_s * duration;
+  phi_o_1 = phi_o_0 + delta_phi_o;
+  phi_s_1 = phi_s_0 + delta_phi_s;
+
+  /* rX, rY are in units of 1AU ! */
+  rX_av  = 
+    1.0 * ( sin(phi_o_1) - sin(phi_o_0) ) / delta_phi_o + 
+    REX * ( sin(phi_s_1) - sin(phi_s_0) ) / delta_phi_s;
+
+  rY_av = 
+    1.0 * (-cos(phi_o_1) + cos(phi_o_0) ) / delta_phi_o + 
+    REY * (-cos(phi_s_1) + cos(phi_s_0) ) / delta_phi_s;
+
+  /* calculate <rX^2>, <rY^2>, and <rX rY> */
+  {
+    /* intermediate values for making calculation of <ri rj>  more readable */
+    REAL8 cos_o_2_av = 0.5 + (0.25 / delta_phi_o) * ( sin(2.0*phi_o_1) - sin(2.0*phi_o_0) );
+    REAL8 cos_s_2_av = 0.5 + (0.25 / delta_phi_s) * ( sin(2.0*phi_s_1) - sin(2.0*phi_s_0) );
+
+    REAL8 sin_o_2_av = 0.5 - (0.25 / delta_phi_o) * ( sin(2.0*phi_o_1) - sin(2.0*phi_o_0) );
+    REAL8 sin_s_2_av = 0.5 - (0.25 / delta_phi_s) * ( sin(2.0*phi_s_1) - sin(2.0*phi_s_0) );
+
+    REAL8 cos_o_cos_s_av = 
+      ( 0.5 / (delta_phi_s + delta_phi_o) ) * ( sin(phi_s_1 + phi_o_1) - sin(phi_s_0 + phi_o_0) ) + 
+      ( 0.5 / (delta_phi_s - delta_phi_o) ) * ( sin(phi_s_1 - phi_o_1) - sin(phi_s_0 - phi_o_0) );
+
+    REAL8 sin_o_sin_s_av = 
+      (-0.5 / (delta_phi_s + delta_phi_o) ) * ( sin(phi_s_1 + phi_o_1) - sin(phi_s_0 + phi_o_0) ) +
+      ( 0.5 / (delta_phi_s - delta_phi_o) ) * ( sin(phi_s_1 - phi_o_1) - sin(phi_s_0 - phi_o_0) );
+
+    REAL8 cos_o_sin_o_av = (-0.25 / delta_phi_o) * ( cos(2.0*phi_o_1) - cos(2.0*phi_o_0) );
+    REAL8 cos_s_sin_s_av = (-0.25 / delta_phi_s) * ( cos(2.0*phi_s_1) - cos(2.0*phi_s_0) );
+    
+    REAL8 cos_o_sin_s_av = 
+      (-0.5 / (delta_phi_s + delta_phi_o) ) * ( cos(phi_s_1 + phi_o_1) - cos(phi_s_0 + phi_o_0) ) +
+      (-0.5 / (delta_phi_s - delta_phi_o) ) * ( cos(phi_s_1 - phi_o_1) - cos(phi_s_0 - phi_o_0) );
+
+    /* simply exchange s <--> o for this next one: */
+    REAL8 cos_s_sin_o_av = 
+      (-0.5 / (delta_phi_o + delta_phi_s) ) * ( cos(phi_o_1 + phi_s_1) - cos(phi_o_0 + phi_s_0) ) +
+      (-0.5 / (delta_phi_o - delta_phi_s) ) * ( cos(phi_o_1 - phi_s_1) - cos(phi_o_0 - phi_s_0) );
+
+
+    /* therefore we can now write: */
+    rX_2_av = cos_o_2_av  + REX*REX * cos_s_2_av     + 2.0 * REX * cos_o_cos_s_av;
+    rY_2_av = sin_o_2_av  + REY*REY * sin_s_2_av     + 2.0 * REY * sin_o_sin_s_av;
+
+    rX_rY_av= cos_o_sin_o_av + REX*REY*cos_s_sin_s_av + REX*cos_s_sin_o_av + REY*cos_o_sin_s_av;
+  }
+
+  /* ==> sky-sky metric components: */
+  ret->data[ PMETRIC_INDEX(0,0) ] = rX_2_av  - rX_av * rX_av;	/* cov(rX, rX) */
+  ret->data[ PMETRIC_INDEX(1,1) ] = rY_2_av  - rY_av * rY_av;	/* cov(rY, rY) */
+  ret->data[ PMETRIC_INDEX(0,1) ] = rX_rY_av - rX_av * rY_av;	/* cos(rX, rY) */
+
+  /* ---------- mixed sky-spin components ---------- */
 
 
 
