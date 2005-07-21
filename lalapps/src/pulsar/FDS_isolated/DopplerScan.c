@@ -37,6 +37,8 @@
 #include <lal/ConfigFile.h>
 #include <lal/Velocity.h>
 
+#include "FlatPulsarMetric.h"
+
 #include "DopplerScan.h"
 
 
@@ -46,6 +48,24 @@
 
 #define TRUE (1==1)
 #define FALSE (1==0)
+
+/* Metric indexing scheme: if g_ij for i<=j: index = i + j*(j+1)/2 */
+/* the variable-order of PulsarMetric is {f, alpha, delta, f1, f2, ... } */
+
+#define INDEX_f0_f0	PMETRIC_INDEX(0,0)
+#define INDEX_f0_A  	PMETRIC_INDEX(0,1)
+#define INDEX_f0_D  	PMETRIC_INDEX(0,2)
+#define INDEX_f0_f1 	PMETRIC_INDEX(0,3)
+
+#define INDEX_A_A	PMETRIC_INDEX(1,1)
+#define INDEX_D_D	PMETRIC_INDEX(2,2)
+#define INDEX_A_D	PMETRIC_INDEX(1,2)
+#define INDEX_A_f1	PMETRIC_INDEX(1,3)
+
+#define INDEX_D_f1	PMETRIC_INDEX(2,3)
+
+#define INDEX_f1_f1	PMETRIC_INDEX(3,3)
+
 
 NRCSID( DOPPLERSCANC, "$Id$" );
 

@@ -18,7 +18,7 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 	lalapps_polka lalapps_uberpolka lalapps_FstatShapeTestLAL compareFstats\
 	ComputeFStatistic_v2 lalapps_makeInvetofile lalapps_extractSFTband lalapps_FindSh \
 	lalapps_monteint lalapps_skynet getMetric getMesh lalapps_zellepolka	\
-	testLatticeCovering
+	testLatticeCovering testFlatPulsarMetric
 
 EXTRA_PROGRAMS = $(FRAMEPROGRAMS)
 
@@ -60,11 +60,11 @@ ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c clusters.c clusters.h  \
 
 TESTS = testFStat.sh
 
-getMetric_SOURCES = getMetric.c DopplerScan.c DopplerScan.h
+getMetric_SOURCES = getMetric.c DopplerScan.c DopplerScan.h FlatPulsarMetric.c FlatPulsarMetric.h
 
 getMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h 
 
 testLatticeCovering_SOURCES = LatticeCovering.c LatticeCovering.h testLatticeCovering.c
 
-
+testFlatPulsarMetric_SOURCES = testFlatPulsarMetric.c FlatPulsarMetric.c FlatPulsarMetric.h
 
