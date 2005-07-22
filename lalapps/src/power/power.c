@@ -78,7 +78,7 @@ static struct {
 	CHAR *calCacheFile;         /* name of the calibration cache file  */
  	CHAR *simCacheFile;         /* name of the sim waveform cache file */
  	CHAR *simdirname;           /* name of the dir. with the sim. wave */
-	REAL8 simFrameSecs;         /* number of seconds in the sim frame  */
+
 	int cluster;                /* TRUE == perform clustering          */
 	int estimateHrss;           /* TRUE == estimate hrss               */
 	CHAR *comment;              /* user comment                        */
@@ -222,6 +222,7 @@ static void print_usage(char *program)
 "	 --channel-name <string>\n" \
 "	[--cluster]\n" \
 "	[--debug-level <level>]\n" \
+"	[--estimatehrss]\n" \
 "	[--max-event-rate <Hz>]\n" \
 "	 --filter-corruption <samples>\n" \
 "	 --frame-cache <cache file>\n" \
@@ -457,7 +458,6 @@ void parse_command_line(
 		{"ram-limit",           required_argument, NULL,           'a'},
 		{"resample-rate",       required_argument, NULL,           'e'},
 		{"sim-cache",           required_argument, NULL,           'q'},
-		{"sim-seconds",         required_argument, NULL,           's'},
 		{"siminjection-file",   required_argument, NULL,           't'},
 		{"seed",                required_argument, NULL,           'c'},
 		{"tile-overlap-factor", required_argument, NULL,           'f'},
@@ -507,7 +507,6 @@ void parse_command_line(
 	XLALINT8toGPS(&options.stopEpoch, 0);	/* impossible */
 
 	options.simCacheFile = NULL;	/* default */
-	options.simFrameSecs = 0;       /* default */
 	options.simdirname = NULL;      /* default */
 
 	ram = 0;	/* default */
@@ -791,11 +790,6 @@ void parse_command_line(
 		case 'q':
 		options.simCacheFile = optarg;
 		ADD_PROCESS_PARAM("string");
-		break;
-
-		case 's':
-		options.simFrameSecs = atof(optarg);
-		ADD_PROCESS_PARAM("float");
 		break;
 
 		case 't':
@@ -1414,7 +1408,10 @@ static void add_sim_injections(
 
 	  /* copy the plus and cross data properly scaled for distance
 	   * NOTE: The waveforms in the frames are always produced at
-	   * distance of 1000 Kpc
+	   * distance of 1000 Kpc. However the distance in the 
+	   * parameter file, BBHWaveGen.in, shu'd be 100 Kpc., since 
+	   * in the wave generation script the 
+	   * definition of pc is off by a factor of 10.
 	   */
 	  for( i = 0; i < n; i++){
 	    *(aData++) = plusseries->data->data[i] * 1000/ simBurst->distance;
