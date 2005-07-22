@@ -163,7 +163,7 @@ int main( int argc, char *argv[] )
   INT4   numChannels      = 0;
   INT4   frEnd            = 0;
   UINT4  numSegments      = 1;       /* number of segments */
-  UINT4  numBeamPoints    = 65341;       /* number of sky position templates */
+  UINT4  numBeamPoints    = 3721;       /* number of sky position templates */
   UINT4  nCohDataFr       = 0;
   UINT8  eventID          = 0;
 
