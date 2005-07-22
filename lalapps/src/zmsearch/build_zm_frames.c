@@ -701,7 +701,7 @@ int main(int argc, char **argv)
     /* print out the interpolated data */
     for(i=0;i<nfiles;i++){
       snprintf(filename,30,"%s-%d-padded.dat", options.infileindex, i);
-      /* write out the ZM waveforms */
+      /* write out the waveforms */
       fp = fopen(filename,"w");
       for(j=0;j<lframe;j++){  
 	fprintf(fp, "%e\t%e\t%e\n", t_pad[i][j], hplus_pad[i][j], hcross_pad[i][j]);
