@@ -254,6 +254,11 @@ XLALCountProcessTable(
     );
 
 int 
+XLALCountProcessParamsTable(
+    ProcessParamsTable *head
+    );
+
+int 
 XLALIFONumber( 
     const char *ifo 
     );
