@@ -140,6 +140,10 @@ ProcessTable    * XLALProcessTableFromLIGOLw (
     CHAR               *fileName
     );
 
+ProcessParamsTable    * XLALProcessParamsTableFromLIGOLw (
+    CHAR               *fileName
+    );
+
 void
 LALSnglBurstTableFromLIGOLw (
     LALStatus          *status,

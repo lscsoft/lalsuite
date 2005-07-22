@@ -206,6 +206,30 @@ MetaTableDirectory * XLALCreateMetaTableDir(
       }
       break;
     case process_params_table:
+      {
+        MetaTableDirectory tmpTableDir[] =
+        {
+          {"program",                  -1, 0},
+          {"param",                    -1, 1},
+          {"type",                     -1, 2},
+          {"value",                    -1, 3},
+          {NULL,                        0, 0}
+        };
+        for ( i=0 ; tmpTableDir[i].name; ++i )
+        {
+          if ( (tmpTableDir[i].pos = 
+                MetaioFindColumn( env, tmpTableDir[i].name )) < 0 )
+          {
+            fprintf( stderr, "unable to find column %s\n", 
+                tmpTableDir[i].name );
+            XLAL_ERROR_NULL( func, XLAL_EFAILED );
+          }
+        }
+
+        tableDir = (MetaTableDirectory *) LALMalloc( (i+1) * 
+            sizeof(MetaTableDirectory)) ;
+        memcpy(tableDir, tmpTableDir, (i+1)*sizeof(MetaTableDirectory) );
+      }
       break;
     case search_summary_table:
       break;
@@ -605,6 +629,105 @@ ProcessTable    * XLALProcessTableFromLIGOLw (
 }
 
 
+
+/* <lalVerbatim file="LIGOLwXMLReadCP"> */
+ProcessParamsTable    * XLALProcessParamsTableFromLIGOLw (
+    CHAR               *fileName
+    )
+/* </lalVerbatim> */
+{
+  static const char   *func = "XLALProcessParamsTableFromLIGOLw";
+  int                                   i, j, nrows;
+  int                                   mioStatus=0;
+  ProcessParamsTable                       *thisEvent = NULL;
+  ProcessParamsTable                       *eventHead = NULL;
+  struct MetaioParseEnvironment         parseEnv;
+  const  MetaioParseEnv                 env = &parseEnv;
+  MetaTableDirectory                   *tableDir = NULL;
+
+  /* open the process params XML file */
+  mioStatus = MetaioOpenTable( env, fileName, "process_params" );
+  if ( mioStatus )
+  {
+    XLAL_ERROR_NULL( func, XLAL_EIO );
+  }
+
+  /* create table directory to find columns in file*/
+  tableDir = XLALCreateMetaTableDir(env, process_params_table);
+
+  /* loop over the rows in the file */
+  i = nrows = 0;
+  while ( (mioStatus = MetaioGetRow(env)) == 1 ) 
+  {
+    /* count the rows in the file */
+    i++;
+
+    /* allocate memory for the template we are about to read in */
+    if ( ! eventHead )
+    {
+      thisEvent = eventHead = (ProcessParamsTable *) 
+        LALCalloc( 1, sizeof(ProcessParamsTable) );
+    }
+    else
+    {
+      thisEvent = thisEvent->next = (ProcessParamsTable *) 
+        LALCalloc( 1, sizeof(ProcessParamsTable) );
+    }
+    if ( ! thisEvent )
+    {
+      fprintf( stderr, "could not allocate process params event\n" );
+      XLAL_CLOBBER_EVENTS;
+      MetaioClose( env );
+      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    }
+
+    /* parse the contents of the row into the process params structure */
+    for ( j = 0; tableDir[j].name; ++j )
+    {
+      if ( tableDir[j].idx == 0 )
+      {
+        LALSnprintf( thisEvent->program, LIGOMETA_PROGRAM_MAX * sizeof(CHAR), 
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 1 )
+      {
+        LALSnprintf( thisEvent->param, LIGOMETA_PARAM_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 2 )
+      {
+        LALSnprintf( thisEvent->type, LIGOMETA_TYPE_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else if ( tableDir[j].idx == 3 )
+      {
+        LALSnprintf( thisEvent->value, LIGOMETA_VALUE_MAX * sizeof(CHAR),
+            "%s", env->ligo_lw.table.elt[tableDir[j].pos].data.lstring.data );
+      }
+      else
+      {
+        XLAL_CLOBBER_EVENTS;
+        XLAL_ERROR_NULL( func, XLAL_EIO);
+      }
+    }
+    /* count the number of triggers parsed */
+    nrows++;
+  }
+
+  if ( mioStatus == -1 )
+  {
+    fprintf( stderr, "error parsing after row %d\n", i );
+    XLAL_CLOBBER_EVENTS;
+    MetaioClose( env );
+    XLAL_ERROR_NULL( func, XLAL_EIO);
+  }
+
+  /* Normal exit */
+  LALFree( tableDir );
+  MetaioClose( env );
+
+  return eventHead;
+}
 
 /*
  *
