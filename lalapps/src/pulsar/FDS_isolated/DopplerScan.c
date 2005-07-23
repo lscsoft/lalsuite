@@ -235,7 +235,7 @@ InitDopplerScan( LALStatus *status,
 
     gridpoint.Alpha = scan->grid->Alpha;
     gridpoint.Delta = scan->grid->Delta;
-    gridpoint.Freq  = init->fmax;
+    gridpoint.Freq  = init->searchRegion.Freq + init->searchRegion.FreqBand;
     gridpoint.f1dot = 0;
 
     TRY ( getGridSpacings( status->statusPtr, &gridSpacings, gridpoint, init), status);
@@ -439,7 +439,7 @@ void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params )
 
   metricpar.epoch = par->obsBegin;
   metricpar.duration = par->obsDuration;
-  metricpar.maxFreq = par->fmax;
+  metricpar.maxFreq = par->searchRegion.Freq + par->searchRegion.FreqBand;
   metricpar.site = par->Detector;
   metricpar.ephemeris = par->ephemeris;
 
@@ -582,7 +582,7 @@ plotGrid (LALStatus *status,
       metricPar.spindown->data=NULL;
       metricPar.epoch = init->obsBegin;
       metricPar.duration = init->obsDuration;
-      metricPar.maxFreq = init->fmax;
+      metricPar.maxFreq = init->searchRegion.Freq + init->searchRegion.FreqBand;
       metricPar.site = init->Detector;
       metricPar.ephemeris = init->ephemeris;
       metricPar.metricType = init->metricType;

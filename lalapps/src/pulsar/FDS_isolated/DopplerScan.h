@@ -146,7 +146,6 @@ typedef struct {
   LIGOTimeGPS obsBegin; 	/**< GPS start-time of time-series */
   REAL8 obsDuration;		/**< length of time-series in seconds */
   BOOLEAN projectMetric;	/**< project the metric orthogonal to Freq? */
-  REAL8 fmax; 			/**< max frequency of search (for projection)*/
   LALDetector *Detector; 	/**< Current detector */
   EphemerisData *ephemeris;	/**< ephemeris-data for "exact" metric */
   CHAR *skyGridFile;		/**< file containing a sky-grid (list of points) if GRID_FILE */
