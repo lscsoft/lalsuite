@@ -562,6 +562,14 @@ getSearchRegion (LALStatus *status,
   ASSERT ( searchRegion->skyRegionString == NULL, status, 
 	   GETMESH_EINPUT, GETMESH_MSGEINPUT);
 
+  /* set defaults */
+  ret.Freq = uvar_Freq;
+  ret.FreqBand = uvar_FreqBand;
+
+  ret.f1dot = uvar_f1dot;
+  ret.f1dotBand = uvar_f1dotBand;
+
+
   /* if user specified the option -searchNeighbors=N, we generate an 
    * automatic search-region of N grid-steps in each dimension
    * around the given search-point
@@ -602,12 +610,9 @@ getSearchRegion (LALStatus *status,
    * e.g. by setting certain bands to zero.
    */ 
   {
-    BOOLEAN haveAlphaBand = LALUserVarWasSet(&uvar_AlphaBand);
-    BOOLEAN haveDeltaBand = LALUserVarWasSet(&uvar_DeltaBand);
-    BOOLEAN haveFreqBand  = LALUserVarWasSet(&uvar_FreqBand);
-    BOOLEAN havef1dotBand = LALUserVarWasSet(&uvar_f1dotBand);
-    
-    if ( haveAlphaBand || haveDeltaBand )     /* override skyRegion */
+    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
+
+    if ( haveAlphaDelta )     /* manually set skyRegion */
       {
 	CHAR *str = NULL;
 	TRY ( SkySquare2String( status->statusPtr, &str,
@@ -626,12 +631,12 @@ getSearchRegion (LALStatus *status,
 	strcpy ( ret.skyRegionString, uvar_skyRegion);
       }
 
-    if ( haveFreqBand )		/* override Frequency-interval */
+    if ( LALUserVarWasSet(&uvar_FreqBand) )	/* manually set Frequency-interval */
       {
 	ret.Freq = uvar_Freq;
 	ret.FreqBand = uvar_FreqBand;
       }
-    if ( havef1dotBand )	/* override spindown-interval */
+    if ( LALUserVarWasSet(&uvar_f1dotBand) )	/* manually set spindown-interval */
       {
 	ret.f1dot = uvar_f1dot;
 	ret.f1dotBand = uvar_f1dotBand;
