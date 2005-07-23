@@ -391,7 +391,7 @@ int main(int argc,char *argv[])
       scanInit.metricMismatch = uvar_metricMismatch;
       scanInit.obsBegin = GV.startTime;
       scanInit.obsDuration = GV.tObs;
-      scanInit.fmax  = uvar_Freq + uvar_FreqBand;
+      /*      scanInit.fmax  = uvar_Freq + uvar_FreqBand; !! FIXME !! */
       scanInit.Detector = &GV.Detector;
       scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
       scanInit.searchRegion.skyRegionString = GV.skyRegionString;
