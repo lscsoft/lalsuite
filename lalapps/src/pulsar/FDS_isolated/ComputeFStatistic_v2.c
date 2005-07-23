@@ -125,6 +125,17 @@ typedef struct {
 } computeFStatPar;
 
 
+/** Detectors Vector; specify's the number of detectors and SFTs.*/
+typedef struct {
+  UINT4 length;
+  LALDetector *Detectors;         
+  SFTVector **sftVects;
+  DetectorStateSeries **detStates;
+  LIGOTimeGPSVector **timestamps;	/**< SFT timestamps */
+  LIGOTimeGPSVector **midTS;		/**< GPS midpoints of SFT's */
+  DetectorStateSeries **DetectorStates;	/**< pos, vel and LMSTs for detector at times t_i */
+} IFOspecifics;
+
 /** Configuration settings required for and defining a coherent pulsar search.
  * These are 'pre-processed' settings, which have been derived from the user-input.
  */
@@ -137,17 +148,10 @@ typedef struct {
   LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
   REAL8 refTime0;		/**< *internal* SSB reference time: e.g. start of observation */
   REAL8Vector *fkdot0;		/**< start frequency- and spindowns- at internal reference-time */
-  REAL8 tSFT;			/**< length of an SFT in seconds */
-  REAL8 tObs;			/**< total observation time in seconds */
-  UINT4 SFTno;			/**< number of SFTs in input */
-  UINT4 nsamples;		/**< number of frequency-bins in an SFT */
-  LALDetector Detector;         /**< Our detector*/
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
-  LIGOTimeGPSVector *timestamps;/**< SFT timestamps */
-  LIGOTimeGPSVector *midTS;	/**< GPS midpoints of SFT's */
-  DetectorStateSeries *DetectorStates;	/**< pos, vel and LMSTs for detector at times t_i */
   computeFStatPar CFSparams;  	/**< Demodulation parameters for computeFStat() */
+  IFOspecifics ifos;		/**< IFO-specific configuration parameters */
 } ConfigVariables;
 
 /** FIXME: OBSOLETE: used to hold result from LALDemod(). 
@@ -186,10 +190,13 @@ typedef enum {
   SSBPREC_LAST			/**< end marker */
 } SSBprecision;
 
+
+
+
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
 
-SFTVector *SFTvect = NULL;	/**< holds the SFT-data to analyze */
+/* *ifos.sftVects[0] = NULL;*/	/**< holds the SFT-data to analyze */
 LALFstat Fstat;			/**< output from LALDemod(): F-statistic and amplitudes Fa and Fb */
 REAL8 Alpha,Delta;		/**< sky-position currently searched (equatorial coords, radians) */
 Clusters HFLines;		/**< stores information about outliers/clusters in F-statistic */
@@ -331,11 +338,10 @@ int main(int argc,char *argv[])
   FStatisticVector *FVect = NULL;   /* new type to store F-statistic results in a frequency-band */
 
   UINT4 nBins; 			/* number of frequency-bins */
-  int nD, nDetector=1;         /** number of Detectors**/
+  UINT4 nD;         /** index over number of Detectors**/
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
-
-
+  
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
@@ -359,231 +365,282 @@ int main(int argc,char *argv[])
   /* like ephemeries data and template grids: */
   LAL_CALL ( InitFStatCommon(&status, &GV), &status);
 
-
   /**---------------------------------------------------------**/
   /** Starting the Loop for different Detectors **/
   /** At this moment we are trying to match it for singel detector **/
 
-  for(nD=1; nD<=nDetector; nD++)
+
+  for(nD=0; nD < GV.ifos.length ; nD++)
     {
       /* main initialization of the code: */
       LAL_CALL ( InitFStat(&status, &GV), &status);
-
+      
       /* normalize SFTs by running median */
       LAL_CALL (NormaliseSFTDataRngMdn(&status), &status);
+      
+    }
+  
 
-      /*      open file */
-      strcpy(Fstatsfilename,"Fstats");
-      if ( uvar_outputLabel )
-	strcat(Fstatsfilename, uvar_outputLabel);
 
-      if ( FILE_FSTATS && !(fpstat=fopen(Fstatsfilename,"w")))
+  /*      open file */
+  strcpy(Fstatsfilename,"Fstats");
+  if ( uvar_outputLabel )
+    strcat(Fstatsfilename, uvar_outputLabel);
+  
+  if ( FILE_FSTATS && !(fpstat=fopen(Fstatsfilename,"w")))
+    {
+      fprintf(stderr,"in Main: unable to open Fstats file\n");
+      return 2;
+    }
+  
+  /* prepare initialization of DopplerScanner to step through paramter space */
+  scanInit.dAlpha = uvar_dAlpha;
+  scanInit.dDelta = uvar_dDelta;
+  scanInit.gridType = uvar_gridType;
+  scanInit.metricType = uvar_metricType;
+  scanInit.metricMismatch = uvar_metricMismatch;
+
+  /*----- figure out total observation time */
+  {
+    LIGOTimeGPS t0, t1;
+    UINT4 numSFTs = GV.ifos.sftVects[0]->length;
+    REAL8 tObs;
+
+    t0 = GV.ifos.sftVects[0]->data[0].epoch;
+    t1 = GV.ifos.sftVects[0]->data[numSFTs-1].epoch;
+    LAL_CALL (LALDeltaFloatGPS (&status, &tObs, &t1, &t0), &status);	/* t1 - t0 */
+    tObs += 1.0 / (GV.ifos.sftVects[0]->data[0].deltaF );			/* +tSFT */
+    GV.startTime = t0;
+
+    scanInit.obsDuration = tObs;
+  }
+
+  scanInit.obsBegin = GV.startTime;
+  /* scanInit.fmax  = uvar_Freq + uvar_FreqBand;*/
+  scanInit.Detector = &(GV.ifos.Detectors[0]);
+  scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
+  scanInit.searchRegion.skyRegionString = GV.skyRegionString;
+  scanInit.skyGridFile = uvar_skyGridFile;
+  
+  if (lalDebugLevel) printf ("\nSetting up template grid ...");
+  
+  LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
+  
+  /* ---------- set Frequency- and spindown-resolution if not input by user ----------*/
+  if ( !LALUserVarWasSet( &uvar_dFreq ) )
+    GV.dFreq = thisScan.dFreq;
+  else
+    GV.dFreq = uvar_dFreq;
+  
+  if( !LALUserVarWasSet( &uvar_df1dot) ) 
+    GV.df1dot = thisScan.df1dot;
+  else
+    GV.df1dot = uvar_df1dot;
+  
+  if ( lalDebugLevel ) {
+    printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
+	    GV.dFreq, GV.df1dot);
+  }
+  /*----------------------------------------------------------------------*/
+  if (lalDebugLevel) printf ("done.\n");
+  if ( uvar_outputSkyGrid ) {
+    printf ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
+    LAL_CALL (writeSkyGridFile( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
+    printf (" done.\n\n");
+  }
+  
+  /* if a complete output of the F-statistic file was requested,
+   * we open and prepare the output-file here */
+  if (uvar_outputFstat) 
+    {
+      if ( (fpOut = fopen (uvar_outputFstat, "wb")) == NULL)
 	{
-	  fprintf(stderr,"in Main: unable to open Fstats file\n");
-	  return 2;
+	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
+	  exit(-1);
 	}
-
-      /* prepare initialization of DopplerScanner to step through paramter space */
-      scanInit.dAlpha = uvar_dAlpha;
-      scanInit.dDelta = uvar_dDelta;
-      scanInit.gridType = uvar_gridType;
-      scanInit.metricType = uvar_metricType;
-      scanInit.metricMismatch = uvar_metricMismatch;
-      scanInit.obsBegin = GV.startTime;
-      scanInit.obsDuration = GV.tObs;
-      /*      scanInit.fmax  = uvar_Freq + uvar_FreqBand; !! FIXME !! */
-      scanInit.Detector = &GV.Detector;
-      scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
-      scanInit.searchRegion.skyRegionString = GV.skyRegionString;
-      scanInit.skyGridFile = uvar_skyGridFile;
+    } /* if outputFstat */
   
-      if (lalDebugLevel) printf ("\nSetting up template grid ...");
-  
-      LAL_CALL ( InitDopplerScan ( &status, &thisScan, &scanInit), &status); 
-    
-      /* ---------- set Frequency- and spindown-resolution if not input by user ----------*/
-      if ( !LALUserVarWasSet( &uvar_dFreq ) )
-	GV.dFreq = thisScan.dFreq;
-      else
-	GV.dFreq = uvar_dFreq;
-
-      if( !LALUserVarWasSet( &uvar_df1dot) ) 
-	GV.df1dot = thisScan.df1dot;
-      else
-	GV.df1dot = uvar_df1dot;
-
-      if ( lalDebugLevel ) {
-	printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
-		GV.dFreq, GV.df1dot);
-      }
-      /*----------------------------------------------------------------------*/
-      if (lalDebugLevel) printf ("done.\n");
-      if ( uvar_outputSkyGrid ) {
-	printf ("\nNow writing sky-grid into file '%s' ...", uvar_outputSkyGrid);
-	LAL_CALL (writeSkyGridFile( &status, thisScan.grid, uvar_outputSkyGrid, &scanInit), &status);
-	printf (" done.\n\n");
-      }
-  
-      /* if a complete output of the F-statistic file was requested,
-       * we open and prepare the output-file here */
-      if (uvar_outputFstat) 
-	{
-	  if ( (fpOut = fopen (uvar_outputFstat, "wb")) == NULL)
-	    {
-	      LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	      exit(-1);
-	    }
-	} /* if outputFstat */
-
       /* prepare memory to hold F-statistic array over frequency (for cluster-stuff) [FIXME]*/
-      nBins =  (UINT4)(uvar_FreqBand/GV.dFreq + 0.5) + 1;
-      if ( (FVect = (FStatisticVector*)LALCalloc(1, sizeof(FStatisticVector))) == NULL) {
-	LALPrintError ("\nOut of memory..!\n\n");
-	return (COMPUTEFSTATC_EMEM);
-      }
-      LAL_CALL ( LALDCreateVector (&status, &(FVect->F), nBins), &status);
-
-      FVect->f0 = GV.fkdot0->data[0];
-      FVect->df = GV.dFreq;
-      FVect->fBand = (nBins - 1) * FVect->df;
-      FVect->length = nBins;
-
-      /* obtain detector positions and velocities, together with LMSTs for the 
-       * SFT midpoints 
-       */
-      LAL_CALL(LALGetDetectorStates(&status,&(GV.DetectorStates),GV.midTS,&GV.Detector,GV.edat),&status);
-
-      if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
-
-      /*----------------------------------------------------------------------
-       * main loop: demodulate data for each point in the sky-position grid
-       * and for each value of the frequency-spindown
-       */
-      loopcounter = 0;
-      while (1)
+  nBins =  (UINT4)(uvar_FreqBand/GV.dFreq + 0.5) + 1;
+  if ( (FVect = (FStatisticVector*)LALCalloc(1, sizeof(FStatisticVector))) == NULL) {
+    LALPrintError ("\nOut of memory..!\n\n");
+    return (COMPUTEFSTATC_EMEM);
+  }
+  LAL_CALL ( LALDCreateVector (&status, &(FVect->F), nBins), &status);
+  
+  FVect->f0 = GV.fkdot0->data[0];
+  FVect->df = GV.dFreq;
+  FVect->fBand = (nBins - 1) * FVect->df;
+  FVect->length = nBins;
+  
+  /* obtain detector positions and velocities, together with LMSTs for the 
+   * SFT midpoints 
+   */
+  LAL_CALL(LALGetDetectorStates(&status, &(GV.ifos.DetectorStates[0]), GV.ifos.midTS[0], &(GV.ifos.Detectors[0]), GV.edat), &status);
+  
+  if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
+  
+  /*----------------------------------------------------------------------
+   * main loop: demodulate data for each point in the sky-position grid
+   * and for each value of the frequency-spindown
+   */
+  loopcounter = 0;
+  while (1)
+    {
+      UINT4 nFreq, nf1dot;	/* number of frequency- and f1dot-bins */
+      UINT4 iFreq, if1dot;  	/* counters over freq- and f1dot- bins */
+      
+      nFreq =  (UINT4)(uvar_FreqBand  / GV.dFreq + 0.5) + 1;  
+      nf1dot = (UINT4)(uvar_f1dotBand / GV.df1dot+ 0.5) + 1; 
+      
+      LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
+      if (thisScan.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
+	break;
+      
+      /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
+      thisPoint.longitude = dopplerpos.Alpha;
+      thisPoint.latitude = dopplerpos.Delta;
+      thisPoint.system = COORDINATESYSTEM_EQUATORIAL;
+      LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &thisPoint), &status);
+      
+      
+      /*----- loop over first-order spindown values */
+      for (if1dot = 0; if1dot < nf1dot; if1dot ++)
 	{
-	  UINT4 nFreq, nf1dot;	/* number of frequency- and f1dot-bins */
-	  UINT4 iFreq, if1dot;  	/* counters over freq- and f1dot- bins */
-
-	  nFreq =  (UINT4)(uvar_FreqBand  / GV.dFreq + 0.5) + 1;  
-	  nf1dot = (UINT4)(uvar_f1dotBand / GV.df1dot+ 0.5) + 1; 
-
-	  LAL_CALL (NextDopplerPos( &status, &dopplerpos, &thisScan ), &status);
-	  if (thisScan.state == STATE_FINISHED) /* scanned all DopplerPositions yet? */
-	    break;
-
-	  /* normalize skyposition: correctly map into [0,2pi]x[-pi/2,pi/2] */
-	  thisPoint.longitude = dopplerpos.Alpha;
-	  thisPoint.latitude = dopplerpos.Delta;
-	  thisPoint.system = COORDINATESYSTEM_EQUATORIAL;
-	  LAL_CALL (LALNormalizeSkyPosition(&status, &thisPoint, &thisPoint), &status);
-
-	  /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
-	  LAL_CALL ( LALGetSSBtimes (&status, GV.CFSparams.DeltaT, GV.CFSparams.Tdot, 
-				     GV.DetectorStates, thisPoint, GV.refTime0,
-				     uvar_SSBprecision), &status);
-      
-	  /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
-	  LAL_CALL ( LALGetAMCoeffs (&status, GV.CFSparams.amcoe, GV.DetectorStates, thisPoint), &status);
-      
-	  /*----- loop over first-order spindown values */
-	  for (if1dot = 0; if1dot < nf1dot; if1dot ++)
+	  GV.CFSparams.fkdot->data[1] = GV.fkdot0->data[1] + if1dot * GV.df1dot;
+	  
+	  /* Loop over frequencies to be demodulated */
+	  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 	    {
-	      GV.CFSparams.fkdot->data[1] = GV.fkdot0->data[1] + if1dot * GV.df1dot;
-
-	      /* Loop over frequencies to be demodulated */
-	      for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
+	      GV.CFSparams.fkdot->data[0] = GV.fkdot0->data[0] + iFreq * GV.dFreq;	
+	      
+	      for(nD=0; nD < GV.ifos.length; nD++)
 		{
-		  GV.CFSparams.fkdot->data[0] = GV.fkdot0->data[0] + iFreq * GV.dFreq;	
-
-		  if ( XLALcomputeFStat(&(FVect->F->data[iFreq]), SFTvect, &GV.CFSparams) )
-		    {
-		      int code = xlalErrno;
-		      XLALClearErrno(); 
-		      LALPrintError ("\nERROR: XLALcomputeFStat() failed (xlalErrno = %d)!\n\n", code);
-		      return (COMPUTEFSTATC_EXLAL);
-		    }
-
-		} /* for i < nBins: loop over frequency-bins */
-
+		  
+		  /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
+		  LAL_CALL ( LALGetSSBtimes (&status, GV.CFSparams.DeltaT, GV.CFSparams.Tdot, 
+					     GV.ifos.DetectorStates[nD], thisPoint, GV.refTime0,
+					     uvar_SSBprecision), &status);
+		  
+		  /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
+		  LAL_CALL ( LALGetAMCoeffs (&status, GV.CFSparams.amcoe, GV.ifos.DetectorStates[nD], thisPoint), &status);
+		  
+		  /** Caculate F-statistic using XLALNewLALDemod() */
+		  
+		  {
+		    Fcomponents FaFb;
+		    REAL4 fact;
+		    REAL4 At, Bt, Ct;
+		    REAL4 FaRe, FaIm, FbRe, FbIm;
+		    
+		    /* prepare quantities to calculate Fstat from Fa and Fb */
+		    fact = 4.0f / (1.0f * GV.ifos.sftVects[0]->length * GV.CFSparams.amcoe->D);
+		    At = GV.CFSparams.amcoe->A;
+		    Bt = GV.CFSparams.amcoe->B;
+		    Ct = GV.CFSparams.amcoe->C;
+		    
+		    if ( XLALNewLALDemod (&FaFb, GV.ifos.sftVects[nD], &(GV.CFSparams)) != 0) 
+		      {
+			LALPrintError ("\nXALNewLALDemod() failed\n");
+			XLAL_ERROR ("XLALcomputeFStat", XLAL_EFUNC);
+		      }
+		    
+		    
+		    FaRe = FaFb.Fa.re;
+		    FaIm = FaFb.Fa.im;
+		    
+		    FbRe = FaFb.Fb.re;
+		    FbIm = FaFb.Fb.im;
+		    
+		    /* calculate F-statistic from  Fa and Fb */
+		    FVect->F->data[iFreq] = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
+						    + At * (FbRe*FbRe + FbIm*FbIm) 
+						    - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
+		    
+		  } /* XLALcomputeFStat() */
+		  
+		} /* End of loop over detectors */
+	      
+	    } /* for i < nBins: loop over frequency-bins */
+	  
 	  
 	      /* now, if user requested it, we output ALL F-statistic results above threshold */
-	      if ( fpOut )
+	  if ( fpOut )
+	    {
+	      UINT4 j;
+	      for(j=0; j < FVect->length; j++)
 		{
-		  UINT4 j;
-		  for(j=0; j < FVect->length; j++)
-		    {
-		      REAL8 FStat = 2.0 * medianbias * FVect->F->data[j];
-		      REAL8 freq = uvar_Freq + j * GV.dFreq;
+		  REAL8 FStat = 2.0 * medianbias * FVect->F->data[j];
+		  REAL8 freq = uvar_Freq + j * GV.dFreq;
 		  
-		      if ( FStat > uvar_Fthreshold )
-			fprintf (fpOut, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
-				 freq, dopplerpos.Alpha, dopplerpos.Delta, 
-				 GV.CFSparams.fkdot->data[1], FStat);
-		    }
+		  if ( FStat > uvar_Fthreshold )
+		    fprintf (fpOut, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
+			     freq, dopplerpos.Alpha, dopplerpos.Delta, 
+			     GV.CFSparams.fkdot->data[1], FStat);
+		}
 	      
-		} /* if outputFstat */
-
-
+	    } /* if outputFstat */
+	  
+	  
 	      /* FIXME: to keep cluster-stuff working, we provide the "translation" 
 	       * from FVect back into old Fstats-struct */
-	      Fstat.F  = FVect->F->data;
+	  Fstat.F  = FVect->F->data;
 	  
-	      /*  This fills-in highFLines */
-	      if (nFreq > 5) {
-		LAL_CALL (EstimateFLines(&status, FVect), &status);
-	      }
+	  /*  This fills-in highFLines */
+	  if (nFreq > 5) {
+	    LAL_CALL (EstimateFLines(&status, FVect), &status);
+	  }
 	  
-	      /*  This fills-in highFLines  */
-	      if (highFLines != NULL && highFLines->Nclusters > 0)
-		{
-		  maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
+	  /*  This fills-in highFLines  */
+	  if (highFLines != NULL && highFLines->Nclusters > 0)
+	    {
+	      maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
 	      
-		  /*  for every cluster writes the information about it in file Fstats */
-		  if (writeFLines(maxIndex, FVect->f0, FVect->df)){
-		    fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
-		    return 6;
-		  }
+	      /*  for every cluster writes the information about it in file Fstats */
+	      if (writeFLines(maxIndex, FVect->f0, FVect->df)){
+		fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
+		return 6;
+	      }
+	      
+	      LALFree(maxIndex);
+	    } /* if highFLines found */
 	  
-		  LALFree(maxIndex);
-		} /* if highFLines found */
-
 	  
 	      /* Set the number of the clusters detected to 0 at each iteration 
 	       * of the sky-direction and the spin down */
-	      highFLines->Nclusters=0;
-
-	    } /* For GV.spinImax */
-
-	  loopcounter ++;
-	  if (lalDebugLevel) 
-	    printf ("\
+	  highFLines->Nclusters=0;
+	  
+	} /* For GV.spinImax */
+      
+      loopcounter ++;
+      if (lalDebugLevel) 
+	printf ("\
 Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
-
-	} /*  while SkyPos */
-
-      if (uvar_outputFstat && fpOut)
-	fclose (fpOut);
-
-      if (lalDebugLevel) printf ("\nSearch finished.\n");
-
-      /* properly terminate Fstats-file by 'DONE' marker: */ 
-      if (fpstat) fprintf(fpstat, "%%DONE\n");
-      if (fpstat) fclose(fpstat);
-
-      /* Free memory */
-      LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
-
-      LAL_CALL ( Freemem(&status, &GV), &status);
+      
+    } /*  while SkyPos */
   
-      LAL_CALL (LALDDestroyVector (&status, &(FVect->F)), &status);
-      LALFree (FVect);
-
-      /* did we forget anything ? */
-      LALCheckMemoryLeaks();
-    }
+  if (uvar_outputFstat && fpOut)
+    fclose (fpOut);
+  
+  if (lalDebugLevel) printf ("\nSearch finished.\n");
+  
+  /* properly terminate Fstats-file by 'DONE' marker: */ 
+  if (fpstat) fprintf(fpstat, "%%DONE\n");
+  if (fpstat) fclose(fpstat);
+  
+  /* Free memory */
+  LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
+  
+  LAL_CALL ( Freemem(&status, &GV), &status);
+  
+  LAL_CALL (LALDDestroyVector (&status, &(FVect->F)), &status);
+  LALFree (FVect);
+  
+  /* did we forget anything ? */
+  LALCheckMemoryLeaks();
+    
   return 0;
-
+  
 } /* main() */
 
 
@@ -761,6 +818,7 @@ int writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df){
 void
 InitFStatCommon (LALStatus *status, ConfigVariables *cfg)
 {
+  UINT4 nDet;
 
   INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -822,7 +880,23 @@ InitFStatCommon (LALStatus *status, ConfigVariables *cfg)
     TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
 
   } /* end: init ephemeris data */
-  
+
+
+  /* ----- count number of detectors */
+  if ( LALUserVarWasSet(&uvar_DataFiles2) )
+    nDet = 2;
+  else
+    nDet = 1;
+
+  cfg->ifos.length = nDet;
+
+  /* ----- set up detector-specific data */
+  cfg->ifos.Detectors = LALCalloc ( nDet,  sizeof( *(cfg->ifos.Detectors) ) );
+  cfg->ifos.sftVects =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.sftVects) ) );
+  cfg->ifos.detStates =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.detStates) ) );
+  cfg->ifos.timestamps =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.timestamps) ) );
+  cfg->ifos.midTS =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.midTS) ) );
+  cfg->ifos.DetectorStates =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.DetectorStates) ) );
 
 
   DETATCHSTATUSPTR (status);
@@ -858,7 +932,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
      * focus of v2-development [FIXME]
      */
     /* correct for spindown-shift of frequency: extend the frequency-band */
-    if (0)
+#if 0
       {
 	REAL8 f1dot_1 = uvar_f1dot;
 	REAL8 f1dot_2 = f1dot_1 + uvar_f1dotBand;
@@ -868,7 +942,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	  f_min += df;
 	else
 	  f_max += df;
-      } /* inactive code */
+#endif
     
     /* ----- correct for maximal dopper-shift due to earth's motion */
     f_min *= (1.0 - uvar_dopplermax);
@@ -879,42 +953,24 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if (!uvar_DataFiles)
       strcpy (uvar_DataFiles, ".");
     
-      
-    TRY ( LALReadSFTfiles(status->statusPtr, &SFTvect, f_min, f_max, uvar_Dterms, uvar_DataFiles), status);
-
+    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[0]), f_min, f_max, uvar_Dterms, uvar_DataFiles), status);
 
   } /* SFT-loading */
 
-  /* deduce search-parameters determined by input-data */
-  cfg->tSFT = 1.0 / SFTvect->data[0].deltaF;
-  cfg->SFTno = SFTvect->length;
-  cfg->nsamples = SFTvect->data[0].data->length;
-
   /*----------  prepare vectors of timestamps ---------- */
   {
-    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->timestamps), cfg->SFTno ), status);
-    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->midTS), cfg->SFTno ), status);
+    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.timestamps[0]), cfg->ifos.length ), status);
+    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.midTS[0]), cfg->ifos.length ), status);
 
-    for (i=0; i < cfg->SFTno; i++)
+    for (i=0; i < cfg->ifos.length; i++)
       {
-	cfg->timestamps->data[i] = SFTvect->data[i].epoch;	/* SFT start-timestamps */
+	cfg->ifos.timestamps[0]->data[i] = cfg->ifos.sftVects[0]->data[i].epoch;	/* SFT start-timestamps */
 	/* SFT midpoints */
 	TRY (LALAddFloatToGPS(status->statusPtr, 
-			      &(cfg->midTS->data[i]), &(cfg->timestamps->data[i]),0.5*cfg->tSFT),status);
-      }/* for i < SFTno */
+			      &(cfg->ifos.midTS[0]->data[i]), &(cfg->ifos.timestamps[0]->data[i]),0.5*1.0 / (GV.ifos.sftVects[0]->data[0].deltaF )),status);
+      }/* for i < ifos.length */
 
   } 
-
-  /*----- figure out total observation time */
-  {
-    LIGOTimeGPS t0, t1;
-    t0 = SFTvect->data[0].epoch;
-    t1 = SFTvect->data[cfg->SFTno-1].epoch;
-    TRY (LALDeltaFloatGPS (status->statusPtr, &(cfg->tObs), &t1, &t0), status);
-    cfg->tObs += cfg->tSFT;
-    cfg->startTime = t0;
-  }
-
 
   /*---------- Standardise reference-time: ----------*/
   /* translate spindown-paramters {f, fdot, fdotdot..} from the user-specified 
@@ -960,21 +1016,21 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    * initialize detector 
    */
   if ( !strcmp (uvar_IFO, "GEO") || !strcmp (uvar_IFO, "0") ) 
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   else if ( !strcmp (uvar_IFO, "LLO") || ! strcmp (uvar_IFO, "1") ) 
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexLLODIFF];
   else if ( !strcmp (uvar_IFO, "LHO") || !strcmp (uvar_IFO, "2") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexLHODIFF];
   else if ( !strcmp (uvar_IFO, "NAUTILUS") || !strcmp (uvar_IFO, "3"))
     {
-      TRY (CreateNautilusDetector (status->statusPtr, &(cfg->Detector)), status);
+      TRY (CreateNautilusDetector (status->statusPtr, &(cfg->ifos.Detectors[0])), status);
     }
   else if ( !strcmp (uvar_IFO, "VIRGO") || !strcmp (uvar_IFO, "4") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
   else if ( !strcmp (uvar_IFO, "TAMA") || !strcmp (uvar_IFO, "5") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
   else if ( !strcmp (uvar_IFO, "CIT") || !strcmp (uvar_IFO, "6") )
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else
     {
       LALPrintError ("\nUnknown detector. Currently allowed are \
@@ -995,14 +1051,14 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if ( (amc = LALCalloc(1, sizeof(AMCoeffs))) == NULL) {
       ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
     }
-    TRY (LALSCreateVector(status->statusPtr, &(amc->a), (UINT4) cfg->SFTno), status);
-    TRY (LALSCreateVector(status->statusPtr, &(amc->b), (UINT4) cfg->SFTno), status);
+    TRY (LALSCreateVector(status->statusPtr, &(amc->a), (UINT4) cfg->ifos.length), status);
+    TRY (LALSCreateVector(status->statusPtr, &(amc->b), (UINT4) cfg->ifos.length), status);
 
     cfg->CFSparams.amcoe = amc;
     
     /* allocate memory of the SSB-times: DeltaT_alpha and Tdot_alpha */
-    TRY ( LALDCreateVector(status->statusPtr, &DeltaT, cfg->SFTno), status );
-    TRY ( LALDCreateVector(status->statusPtr, &Tdot,   cfg->SFTno), status );
+    TRY ( LALDCreateVector(status->statusPtr, &DeltaT, cfg->ifos.length), status );
+    TRY ( LALDCreateVector(status->statusPtr, &Tdot,   cfg->ifos.length), status );
 
     cfg->CFSparams.DeltaT = DeltaT;
     cfg->CFSparams.Tdot = Tdot;
@@ -1128,11 +1184,11 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   ATTATCHSTATUSPTR (status);
 
   /* Free SFT data */
-  TRY (LALDestroySFTVector (status->statusPtr, &SFTvect), status);	 /* the new way*/
+  TRY (LALDestroySFTVector (status->statusPtr, &(cfg->ifos.sftVects[0]) ), status);	 /* the new way*/
 
   /* Free timestamps */
-  TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->timestamps)), status );
-  TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->midTS)), status );
+  TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->ifos.timestamps[0]) ), status );
+  TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->ifos.midTS[0]) ), status );
 
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
@@ -1161,7 +1217,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 
 
   /* destroy DetectorStateSeries */
-  TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &(GV.DetectorStates) ), status);
+  TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &(GV.ifos.DetectorStates[0]) ), status);
 
 
 
@@ -1345,29 +1401,29 @@ NormaliseSFTDataRngMdn(LALStatus *status)
     TRY( LALRngMedBias (status->statusPtr, &medianbias, windowSize), status);
   }
 
-  TRY ( LALDCreateVector(status->statusPtr, &Sp, GV.nsamples), status);
-  TRY ( LALDCreateVector(status->statusPtr, &RngMdnSp, GV.nsamples), status);
+  TRY ( LALDCreateVector(status->statusPtr, &Sp, GV.ifos.sftVects[0]->data[0].data->length), status);
+  TRY ( LALDCreateVector(status->statusPtr, &RngMdnSp, GV.ifos.sftVects[0]->data[0].data->length), status);
 
-  if( (N = (REAL8 *) LALCalloc(GV.nsamples,sizeof(REAL8))) == NULL) {
+  if( (N = (REAL8 *) LALCalloc(GV.ifos.sftVects[0]->data[0].data->length,sizeof(REAL8))) == NULL) {
     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
-  if( (Sp1 = (REAL8 *) LALCalloc(GV.nsamples,sizeof(REAL8))) == NULL) { 
+  if( (Sp1 = (REAL8 *) LALCalloc(GV.ifos.sftVects[0]->data[0].data->length,sizeof(REAL8))) == NULL) { 
     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
 
   /* loop over each SFTs */
-  for (i=0;i<GV.SFTno;i++)         
+  for (i=0;i<GV.ifos.length;i++)         
     {
       /* Set to zero the values */
-      for (j=0;j<GV.nsamples;j++){
+      for (j=0;j<GV.ifos.sftVects[0]->data[0].data->length;j++){
 	RngMdnSp->data[j] = 0.0;
 	Sp->data[j]       = 0.0;
       }
       
       /* loop over SFT data to estimate noise */
-      for (j=0;j<GV.nsamples;j++){
-	xre=SFTvect->data[i].data->data[j].re;
-	xim=SFTvect->data[i].data->data[j].im;
+      for (j=0;j<GV.ifos.sftVects[0]->data[0].data->length;j++){
+	xre=GV.ifos.sftVects[0]->data[i].data->data[j].re;
+	xim=GV.ifos.sftVects[0]->data[i].data->data[j].im;
 	Sp->data[j]=(REAL8)(xre*xre+xim*xim);
       }
       
@@ -1389,15 +1445,15 @@ NormaliseSFTDataRngMdn(LALStatus *status)
 
       /*Compute Normalization factor*/
       /* for signal only case as well */  
-      for (lpc=0;lpc<GV.nsamples;lpc++){
+      for (lpc=0;lpc<GV.ifos.sftVects[0]->data[0].data->length;lpc++){
 	N[lpc]=1.0/sqrt(2.0*RngMdnSp->data[lpc]);
       }
       
       if(uvar_SignalOnly == 1){
-	B=(1.0*GV.nsamples)/(1.0*GV.tSFT);
+	B=(1.0*GV.ifos.sftVects[0]->data[0].data->length)/(1.0 / (GV.ifos.sftVects[0]->data[0].deltaF ));
 	deltaT=1.0/(2.0*B);
-	norm=deltaT/sqrt(GV.tSFT);
-	for (lpc=0;lpc<GV.nsamples;lpc++){
+	norm=deltaT/sqrt(1.0 / (GV.ifos.sftVects[0]->data[0].deltaF ));
+	for (lpc=0;lpc<GV.ifos.sftVects[0]->data[0].data->length;lpc++){
 	  N[lpc]=norm;
 	}
       }
@@ -1405,13 +1461,13 @@ NormaliseSFTDataRngMdn(LALStatus *status)
       /*  loop over SFT data to normalise it (with N) */
       /*  also compute Sp1, average normalized PSD */
       /*  and the sum of the PSD in the band, SpSum */
-      for (j=0;j<GV.nsamples;j++){
-	xre=SFTvect->data[i].data->data[j].re;
-	xim=SFTvect->data[i].data->data[j].im;
+      for (j=0;j<GV.ifos.sftVects[0]->data[0].data->length;j++){
+	xre=GV.ifos.sftVects[0]->data[i].data->data[j].re;
+	xim=GV.ifos.sftVects[0]->data[i].data->data[j].im;
 	xreNorm=N[j]*xre; 
 	ximNorm=N[j]*xim; 
-	SFTvect->data[i].data->data[j].re = xreNorm;    
-	SFTvect->data[i].data->data[j].im = ximNorm;
+	GV.ifos.sftVects[0]->data[i].data->data[j].re = xreNorm;    
+	GV.ifos.sftVects[0]->data[i].data->data[j].im = ximNorm;
 	Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }
       
@@ -1611,56 +1667,6 @@ XLALNewLALDemod(Fcomponents *FaFb,
   return XLAL_SUCCESS;
 
 } /* XLALNewLALDemod() */
-
-
-
-/** Caculate F-statistic using XLALNewLALDemod() 
- */
-int
-XLALcomputeFStat (REAL8 *Fval,			/**< [out] the resulting F-statistic value */
-		  const SFTVector *sfts, 	/**< input: SFT-vector */
-		  const computeFStatPar *params /**< antenna-pattern coefficients a,b,..*/
-		  )
-{
-  Fcomponents FaFb;
-  REAL4 fact;
-  REAL4 At, Bt, Ct;
-  REAL4 FaRe, FaIm, FbRe, FbIm;
-  REAL4 F;
-  if (!sfts || !params || !Fval) 
-    {
-      LALPrintError ("\nInput contains illegal NULL-pointer !\n\n");
-      XLAL_ERROR ("XLALcomputeFStat", XLAL_EINVAL);
-    }
-
-  /* prepare quantities to calculate Fstat from Fa and Fb */
-  fact = 4.0f / (1.0f * sfts->length * params->amcoe->D);
-  At = params->amcoe->A;
-  Bt = params->amcoe->B;
-  Ct = params->amcoe->C;
-  
-  if ( XLALNewLALDemod (&FaFb, sfts, params) != 0) 
-    {
-      LALPrintError ("\nXALNewLALDemod() failed\n");
-      XLAL_ERROR ("XLALcomputeFStat", XLAL_EFUNC);
-    }
-
-
-  FaRe = FaFb.Fa.re;
-  FaIm = FaFb.Fa.im;
-      
-  FbRe = FaFb.Fb.re;
-  FbIm = FaFb.Fb.im;
-
-  /* calculate F-statistic from  Fa and Fb */
-  F = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
-		     + At * (FbRe*FbRe + FbIm*FbIm) 
-		     - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
-  
-  (*Fval) = (REAL8) F;
-  return XLAL_SUCCESS;
-
-} /* XLALcomputeFStat() */
 
 
 /** write out the F-statistic over the searched frequency-band.
