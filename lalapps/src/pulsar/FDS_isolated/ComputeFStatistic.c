@@ -444,7 +444,6 @@ int main(int argc,char *argv[])
   scanInit.obsBegin.gpsNanoSeconds = 0;
   scanInit.obsDuration = (REAL8) (GV.Tf - GV.Ti);
   scanInit.projectMetric = uvar_projectMetric;
-  scanInit.fmax  = GV.fkdot0->data[0] + uvar_FreqBand;
   scanInit.Detector = &GV.Detector;
   scanInit.ephemeris = GV.edat;         /* used by Ephemeris-based metric */
   scanInit.skyGridFile = uvar_skyGridFile;      /* if applicable */
@@ -452,19 +451,9 @@ int main(int argc,char *argv[])
   /* figure out searchRegion from UserInput and possibly --searchNeighbors */
   scanInit.searchRegion = empty_DopplerRegion;	/* set to empty first */
   LAL_CALL ( getSearchRegion(stat, &(GV.searchRegion), &scanInit ), stat);
-  scanInit.searchRegion = GV.searchRegion;   /* initialize DopplerScan with result */
 
-  if ( lalDebugLevel )
-    {
-      printf ("\nDEBUG: search-point Alpha=%.16g, Delta=%.16g, Freq=%.16g, f1dot=%.16g\n\n",
-	      uvar_Alpha, uvar_Delta, GV.fkdot0->data[0], GV.fkdot0->data[1]);
-      printf ("DEBUG: Final search-region:\n");
-      printf ("       skyRegion = \"%s\"\n", GV.searchRegion.skyRegionString);
-      printf ("       Freq in  = [%.16g, %.16g]\n", 
-	      GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
-      printf ("       f1dot in = [%.16g, %.16g]\n\n",
-	      GV.searchRegion.f1dot, GV.searchRegion.f1dot + GV.searchRegion.f1dotBand);
-    }
+  scanInit.searchRegion = GV.searchRegion;   /* initialize DopplerScan with result */
+  scanInit.fmax  = GV.searchRegion.Freq + GV.searchRegion.FreqBand;
 
   /* the following call generates a skygrid plus determines dFreq, df1dot,..
    * Currently the complete template-grid is more like a 'foliation' of
@@ -492,22 +481,32 @@ int main(int argc,char *argv[])
   else
     GV.df1dot = uvar_df1dot;
 
-  if ( lalDebugLevel ) {
-    printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
-	    GV.dFreq, GV.df1dot);
-  }
-
   /* Number of Freq- and spindown values to calculate F for */
   GV.FreqImax = (INT4)(GV.searchRegion.FreqBand / GV.dFreq + 1e-6) + 1;  
   GV.SpinImax = (INT4)(GV.searchRegion.f1dotBand/ GV.df1dot + 1e-6) + 1;  
 
-  if (lalDebugLevel >= 1)
+  /* debug output about search-parameters */
+  if ( lalDebugLevel )
     {
+      printf ("\nDEBUG: search-point Alpha=%.16g, Delta=%.16g, Freq=%.16g, f1dot=%.16g\n\n",
+	      uvar_Alpha, uvar_Delta, GV.fkdot0->data[0], GV.fkdot0->data[1]);
+      printf ("DEBUG: Final search-region:\n");
+      printf ("       skyRegion = \"%s\"\n", GV.searchRegion.skyRegionString);
+      printf ("       Freq in  = [%.16g, %.16g]\n", 
+	      GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
+      printf ("       f1dot in = [%.16g, %.16g]\n",
+	      GV.searchRegion.f1dot, GV.searchRegion.f1dot + GV.searchRegion.f1dotBand);
+
+      printf ("\nDEBUG: actual grid-spacings: dFreq = %g, df1dot = %g\n\n",
+	      GV.dFreq, GV.df1dot);
+
       printf ("Frequency-templates: %d, first frequency-value: %.16g\n", 
 	      GV.FreqImax, GV.searchRegion.Freq);
       printf ("Spindown-templates: %d, first spindown-value: %.16g\n\n", 
 	      GV.SpinImax, GV.searchRegion.f1dot);
     }
+
+
   /* determine smallest required band of frequency-bins for the search-parameters */
   {
     REAL8 f_min, f_max;
@@ -750,7 +749,7 @@ int main(int argc,char *argv[])
       }
 #endif
       if (lalDebugLevel >= 2) 
-	printf (""
+	fprintf (stderr, ""
 		       "Search progress: %5.1f%%", 
 		       (100.0* loopcounter / thisScan.numGridPoints));
       
@@ -2148,7 +2147,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     {
       printf("\nDEBUG:\n");
       printf("# SFT time baseline:                  %f min\n",header.tbase/60.0);
-      printf("# Starting search frequency:          %f Hz\n",GV.fkdot0->data[0]);
+      printf("# Starting search frequency:          %f Hz\n",cfg->fkdot0->data[0]);
       printf("# Demodulation frequency band:        %f Hz\n",uvar_FreqBand);
       printf("# Actual # of SFTs:                   %d\n", cfg->SFTno);
       printf("# total observation time:             %f hours\n",1.0*(cfg->Tf - cfg->Ti)/3600.0);
@@ -2198,12 +2197,6 @@ checkUserInputConsistency (LALStatus *lstat)
       LALPrintError ("\nNo ephemeris year specified (option 'ephemYear')\n\n");
       ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }      
-  /* don't allow negative frequency-band for safety */
-  if ( uvar_FreqBand < 0)
-    {
-      LALPrintError ("\nNegative value of frequency-band not allowed !\n\n");
-      ABORT (lstat, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-    }
 
   /* don't allow negative bands (for safty in griding-routines) */
   if ( (uvar_AlphaBand < 0) ||  (uvar_DeltaBand < 0) )
@@ -2433,7 +2426,20 @@ getSearchRegion (LALStatus *lstat,
 	ret.f1dotBand = uvar_f1dotBand;
       }
 
-  } /* final user-override of search-bands */
+  } /* user-override of search-bands */
+
+
+  /* 'normalize' all spin-bands to be positive */
+  if ( ret.FreqBand < 0 )
+    {
+      ret.FreqBand  *= -1.0;
+      ret.Freq  -= ret.FreqBand;
+    }
+  if ( ret.f1dotBand < 0 )
+    {
+      ret.f1dotBand *= -1.0;
+      ret.f1dot -= ret.f1dotBand;
+    }
 
   *searchRegion = ret;	/* return the result */
 
