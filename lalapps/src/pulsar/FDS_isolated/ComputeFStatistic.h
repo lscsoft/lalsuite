@@ -80,15 +80,11 @@ typedef struct {
   CHAR EphemSun[MAXFILENAMELENGTH];	/**< filename of sun-ephemeris data */
   INT4 ifmax;			/**< highest frequency-bin needed in calculation */
   INT4 ifmin;			/**< lowest frequency-bin needed */
-  REAL8 dFreq;			/**< search frequency spacing  */
-  REAL8 df1dot;			/**< spindown resolution (f1 = df/dt!!) */
   REAL8 tsft;			/**< length of an SFT in seconds */
   INT4 SFTno;			/**< number of SFTs in input */
   INT4 nsamples;		/**< number of frequency-bins in an SFT */
   INT4 Ti;	        	/**< GPS seconds of start of observation */
   INT4 Tf;      	  	/**< GPS-time (seconds) of end of observation */
-  LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
-  REAL8Vector *fkdot0;		/**< start frequency- and spindowns- at internal reference-time */
   CHAR **filelist; 		/**< array of filenames to load SFTs from */
   LALDetector Detector;         /**< detector of data to be searched */
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
