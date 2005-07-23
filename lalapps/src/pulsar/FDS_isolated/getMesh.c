@@ -98,6 +98,8 @@ REAL8 uvar_AlphaBand;		/**< Sky-region interval in Alpha */
 REAL8 uvar_DeltaBand;		/**< Sky-region interval in Delta */
 REAL8 uvar_FreqBand;		/**< Frequency-band */
 REAL8 uvar_f1dotBand;		/**< spindown-band for f1dot */
+REAL8 uvar_dFreq;
+REAL8 uvar_df1dot;
 INT4  uvar_gridType;		/**< GRID_FLAT, GRID_ISOTROPIC, GRID_METRIC or GRID_FILE */
 INT4  uvar_metricType;		/**< if GRID_METRIC: what type of metric to use? */
 REAL8 uvar_metricMismatch;	/**< what's the maximal mismatch of the grid? */
@@ -170,7 +172,14 @@ main(int argc, char *argv[])
    * not a full 4D metric template-grid
    */
   LAL_CALL ( InitDopplerScan( &status, &thisScan, &scanInit), &status); 
-    
+
+  /* ---------- overload Frequency- and spindown-resolution if input by user ----------*/
+  if ( LALUserVarWasSet( &uvar_dFreq ) )
+    thisScan.dFreq = uvar_dFreq;
+
+  if( LALUserVarWasSet( &uvar_df1dot) ) 
+    thisScan.df1dot = uvar_df1dot;
+
   /* we write the sky-grid to disk? */
   if ( uvar_outputSkyGrid ) 
     {
@@ -293,6 +302,9 @@ initUserVars (LALStatus *stat)
 		    "first spindown-value df/dt");
   LALregREALUserVar(stat,       FreqBand,       'b', UVAR_OPTIONAL, "Search frequency band in Hz");
   LALregREALUserVar(stat,       f1dotBand,      'm', UVAR_OPTIONAL, "Search-band for f1dot");
+
+  LALregREALUserVar(stat,       dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
+  LALregREALUserVar(stat,       df1dot,         'e', UVAR_OPTIONAL, "Resolution for f1dot (default: use metric or 1/(2*T^2))");
 
   LALregINTUserVar(stat,        metricType,     'M', UVAR_OPTIONAL, 
 		   "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
