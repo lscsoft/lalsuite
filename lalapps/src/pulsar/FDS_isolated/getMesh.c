@@ -217,7 +217,7 @@ main(int argc, char *argv[])
    * Total Number of templates:
    */
   if ( ! LALUserVarWasSet (&uvar_searchNeighbors) )
-    printf ("\n%ld\n\n", (UINT8) thisScan.numGridPoints * nFreq *  nf1dot );
+    printf ("\n%g\n\n", (REAL8)thisScan.numGridPoints * nFreq *  nf1dot );
 
 
   /* ----- clean up and exit ----- */
