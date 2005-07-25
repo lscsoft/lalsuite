@@ -183,7 +183,7 @@ InitDopplerScan( LALStatus *status,
 
     default:
       LALPrintError ("\nUnknown grid-type `%d`\n\n", init->gridType);
-      ABORT ( status, DOPPLERSCANH_EMETRIC, DOPPLERSCANH_MSGEMETRIC);
+      ABORT ( status, DOPPLERSCANH_EMETRICTYPE, DOPPLERSCANH_MSGEMETRICTYPE);
       break;
 
     } /* switch (metric) */
@@ -484,6 +484,26 @@ void getMetric( LALStatus *status, REAL4 g[3], REAL4 skypos[2], void *params )
     }
 
   g[2] = metric->data[INDEX_A_D]; /* g12: 1 + 2*(2+1)/2 = 4; */
+
+  /* check positivity */
+  if ( lalDebugLevel ) 
+    {
+      REAL8 det = g[0] * g[1] - g[2]*g[2];
+      if ( (g[0] <=0) || ( g[1] <= 0 ) || ( det <= 0 ) ) 
+	{
+	  LALPrintError ("\nERROR: negative sky-metric found!\n");
+	  LALPrintError ("Skypos = [%16g, %16g],\n\n"
+			 "metric = [ %16g, %16g ;\n"
+			 "           %16g, %16g ],\n\n"
+			 "det = %16g\n\n",
+			 metricpar.position.longitude, metricpar.position.latitude,
+			 metric->data[INDEX_A_A], metric->data[INDEX_A_D],
+			 metric->data[INDEX_A_D], metric->data[INDEX_D_D],
+			 det);
+	  ABORT ( status, DOPPLERSCANH_ENEGMETRIC, DOPPLERSCANH_MSGENEGMETRIC);
+	} /* if negative metric */
+    } /* if lalDebugLevel() */
+
 
   /* Clean up and leave. */
   TRY( LALDDestroyVector( status->statusPtr, &metric ), status );
