@@ -433,16 +433,20 @@ printMetric (LALStatus *status, const REAL8Vector *metric )
 
   dim = find_metric_dim ( metric->length );
 
-  /* print metric components */
+  /* print metric components (in octave/matlab format) */
+  printf  ("[ ");
   for ( a=0; a < dim; a++ )
     {
-      for ( b = 0; b <= a; b ++ )
+      if ( a > 0 ) printf ("  ");
+      for ( b = 0; b < dim; b ++ )
 	{
-	  printf (" %g ", metric->data[ PMETRIC_INDEX(a,b) ] );
+	  if ( b > 0 ) printf (",");
+	  printf (" %16g", metric->data[ PMETRIC_INDEX(a,b) ] );
 	}
-      printf ("\n");
+      if ( a == dim - 1 ) printf (";\n");
+      else printf("];\n");
     }
-  printf("\n");
+
 
   RETURN(status);
 
