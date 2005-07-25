@@ -178,7 +178,7 @@ int main( int argc, char *argv[] )
     {"gps-start-time",          required_argument, 0,                'a'},
     {"gps-end-time",            required_argument, 0,                'b'},
     {"time-step",               required_argument, 0,                't'},
-    {"time-interval",		required_argument, 0,		     'i'},
+    {"time-interval",           required_argument, 0,                'i'},
     {"seed",                    required_argument, 0,                's'},
     {"min-mass",                required_argument, 0,                'A'},
     {"max-mass",                required_argument, 0,                'B'},
@@ -229,7 +229,7 @@ int main( int argc, char *argv[] )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:A:b:B:hi:p:q:r:s:t:vz:Z:w:", long_options, &option_index );
+        "a:A:b:B:d:hi:m:p:q:r:s:t:vz:Z:w:", long_options, &option_index );
 
     /* detect the end of the options */
     if ( c == - 1 )
@@ -406,7 +406,7 @@ int main( int argc, char *argv[] )
         break;
 
       case 'd':
-        ddistr = (UINT4) atof( optarg );
+        ddistr = (UINT4) atoi( optarg );
         if ( ddistr != 0 && ddistr != 1 && ddistr != 2)
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -414,10 +414,14 @@ int main( int argc, char *argv[] )
               long_options[option_index].name);
           exit(1);
         }
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "int", "%d", ddistr );
+
         break;
 
       case 'm':
-        mdistr = (UINT4) atof( optarg );
+        mdistr = (UINT4) atoi( optarg );
         if ( mdistr != 0 && mdistr != 1 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -425,6 +429,11 @@ int main( int argc, char *argv[] )
               long_options[option_index].name);
           exit(1);
         }
+        this_proc_param = this_proc_param->next = 
+          next_process_param( long_options[option_index].name, 
+              "int", "%d", mdistr );
+
+  
         break;
 
       case 'Z':
@@ -592,6 +601,8 @@ int main( int argc, char *argv[] )
       this_inj->mass2 = minMass + u * deltaM;
       mtotal = this_inj->mass1 + this_inj->mass2 ;
       this_inj->eta = this_inj->mass1 * this_inj->mass2 / ( mtotal * mtotal );
+      this_inj->mchirp = (this_inj->mass1 + this_inj->mass2) * 
+        pow(this_inj->eta, 0.6);
     }
     else if (mdistr == 0)
     /*uniformly distributed total mass */
@@ -609,6 +620,9 @@ int main( int argc, char *argv[] )
         this_inj->mass2 = mtotal - this_inj->mass1;
       }
       this_inj->eta = this_inj->mass1 * this_inj->mass2 / ( mtotal * mtotal );
+      this_inj->mchirp = (this_inj->mass1 + this_inj->mass2) * 
+        pow(this_inj->eta, 0.6);
+
      }
 
      /* spatial distribution */
