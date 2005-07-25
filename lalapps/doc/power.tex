@@ -623,6 +623,7 @@ $t = 1/ (2 b)$ and we can use a truncated time-domain filter
 } & \mbox{\ \ } & |t-t_0| < 1/(b)  \\
 0 & & \textrm{Otherwise}
 \end{array} \right. 
+\label{eq:filter}
 \end{equation}
 which covers a time frequency volume $V = b (1/b) = 1$ and has its
 peak at time $t_0$.   Notice that
@@ -697,11 +698,48 @@ points in one time-frequency plane time bin ($\Delta sec$ being the full samplin
 rate of the timing series)  and $J = 0, \cdots, n_{timebins} - 1$.
 
 Each channel is normalised so that a sample point in the channel represents
-a Gaussian random variable with zero mean and unit variance. The normalisation constant is given
-by 
+a Gaussian random variable with zero mean and unit variance. The normalisation constant is given by 
 \begin{equation}
-\sigma^2(k_0,  b) = \langle z_j^2(k_0, b) \rangle = \sum_{k=0}^{N-1}\sum_{l=0}^{N-1}\langle \hat{s}_k \hat{s}_l^\ast \rangle \tilde{\Theta}_k^\ast(k_0,  b) \tilde{\Theta}_l(k_0,  b) e^{2 \pi ij(k-l)/N}
+\sigma^2(k_0,  b) = \langle z_j^2(k_0, b) \rangle = \sum_{k=0}^{N-1}\sum_{l=0}^{N-1}\langle \hat{s}_k \hat{s}_l^\ast \rangle \tilde{\Theta}_k^\ast(k_0,  b) \tilde{\Theta}_l(k_0,  b) e^{2 \pi ij(k-l)/N},
 \end{equation}
+where $\langle \hat{s}_k \hat{s}_l^\ast \rangle = 2\delta(k-l)$.  Hence,  the 
+normalisation simplifies to 
+\begin{equation}
+\sigma^2(k_0,  b) = 2\sum_{k=0}^{N-1}\mid \tilde{\Theta}_k^2(k_0,  b) \mid .
+\end{equation}
+
+Now suppose we have a channel with the same low frequency $k_0$ but
+twice the frequency band,  i.e. $2b$ compared to the previous channel.
+We therefore have 
+\begin{equation}
+z_j(k_0,  2b) = \sum_{k=0}^{N-1}  \hat{s}_k \tilde{\Theta}_k^\ast(k_0,  2b) e^{2 \pi ijk/N},
+\end{equation}
+where $\tilde{\Theta}_k^\ast(k_0,  2b)$ from Eq~\ref{eq:filter} is given by
+\begin{equation}
+\tilde{\Theta}(k_0,  2b) = \sum_{j=0}^{N-1}\frac{sin[2\pi/N(k_0 + 2b)j] - sin[2\pi/Nk_0j]}{\pi j \Delta}e^{-12\pi jk/N}
+\end{equation}
+However we can write
+\begin{equation}
+sin[2\pi/N(k_0 + 2b)j] - sin[2\pi/Nk_0j] = sin[2\pi/N(k_0 + b)j] - sin[2\pi/Nk_0j] + sin[2\pi/N(k_0 + 2b)j] - sin[2\pi/N(k_0 + b)j]
+\label{eq:sines}
+\end{equation}
+and hence we get
+\begin{equation}
+\tilde{\Theta}(k_0,  2b) = \tilde{\Theta}(k_0,  b) + \tilde{\Theta}(k_0 + b,  b)
+\end{equation}
+which implies
+\begin{equation}
+z_j(k_0,  2b) = z_j(k_0,  b) + z_j(k_0 +b,  b)
+\end{equation}
+The corresponding normalisation,  
+\begin{equation}
+\sigma^2(k_0,  2b) = \sigma^2(k_0,  b) + \sigma^2(k_0+b,  b) + 2\sum_{k=0}^{N-1}\tilde{\Theta}_k^\ast(k_0,  b)\tilde{\Theta}_k^\ast(k_0,  b)
+\label{eq:norm}
+\end{equation}
+
+Now,  the filter being orthogonal(almost),  the cross term in Eq~\ref{eq:norm} will be negligible.  
+
+
 A tile in this plane can be denoted as $\tau ={J_1, J_2, K_1, K_2}$,  where
 $J_1$ and $J_2$ represent the indices corresponding to the start and 
 stop times of the tile respectively while $K_1$ and $K_2$ represent the
