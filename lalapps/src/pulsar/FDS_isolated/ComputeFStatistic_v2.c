@@ -256,14 +256,14 @@ INT4 uvar_SSBprecision;
 int main(int argc,char *argv[]);
 void initUserVars (LALStatus *);
 
-void InitFStatCommon (LALStatus *, ConfigVariables *cfg);
 void InitFStat (LALStatus *, ConfigVariables *cfg);
+void InitFStatDetector (LALStatus *, ConfigVariables *cfg, UINT4 nD);
 
 void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 
-void NormaliseSFTDataRngMdn (LALStatus *);
+void NormaliseSFTDataRngMdn (LALStatus *, UINT4 nD);
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void writeFVect(LALStatus *, const FStatisticVector *FVect, const CHAR *fname);
 void checkUserInputConsistency (LALStatus *lstat);
@@ -363,24 +363,11 @@ int main(int argc,char *argv[])
 
   /* Initialization the common variables of the code, */
   /* like ephemeries data and template grids: */
-  LAL_CALL ( InitFStatCommon(&status, &GV), &status);
+  LAL_CALL ( InitFStat(&status, &GV), &status);
 
   /**---------------------------------------------------------**/
   /** Starting the Loop for different Detectors **/
   /** At this moment we are trying to match it for singel detector **/
-
-
-  for(nD=0; nD < GV.ifos.length ; nD++)
-    {
-      /* main initialization of the code: */
-      LAL_CALL ( InitFStat(&status, &GV), &status);
-      
-      /* normalize SFTs by running median */
-      LAL_CALL (NormaliseSFTDataRngMdn(&status), &status);
-      
-    }
-  
-
 
   /*      open file */
   strcpy(Fstatsfilename,"Fstats");
@@ -816,10 +803,10 @@ int writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df){
  * 
  */
 void
-InitFStatCommon (LALStatus *status, ConfigVariables *cfg)
+InitFStat (LALStatus *status, ConfigVariables *cfg)
 {
   UINT4 nDet;
-
+  UINT4 nD;
   INITSTATUS (status, "InitFStat", rcsid);
   ATTATCHSTATUSPTR (status);
 
@@ -899,19 +886,30 @@ InitFStatCommon (LALStatus *status, ConfigVariables *cfg)
   cfg->ifos.DetectorStates =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.DetectorStates) ) );
 
 
+  for(nD=0; nD < cfg->ifos.length; nD++)
+    {
+      /* main initialization of the code: */
+      LAL_CALL ( InitFStatDetector(&status, &GV, nD), &status);
+      
+      /* normalize SFTs by running median */
+      LAL_CALL (NormaliseSFTDataRngMdn(&status, nD), &status);      
+    }
+
+
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
 
-} /* InitFStatCommon() */
+} /* InitFStat() */
 
 
 void
-InitFStat (LALStatus *status, ConfigVariables *cfg)
+InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
 {
   UINT4 i;
+  CHAR *IFO;
 
-  INITSTATUS (status, "InitFStat", rcsid);
+  INITSTATUS (status, "InitFStatDetector", rcsid);
   ATTATCHSTATUSPTR (status);
 
   /*----------------------------------------------------------------------
@@ -953,21 +951,21 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     if (!uvar_DataFiles)
       strcpy (uvar_DataFiles, ".");
     
-    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[0]), f_min, f_max, uvar_Dterms, uvar_DataFiles), status);
+    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, uvar_Dterms, uvar_DataFiles), status);
 
   } /* SFT-loading */
 
   /*----------  prepare vectors of timestamps ---------- */
   {
-    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.timestamps[0]), cfg->ifos.length ), status);
-    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.midTS[0]), cfg->ifos.length ), status);
+    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.timestamps[nD]), cfg->ifos.length ), status);
+    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.midTS[nD]), cfg->ifos.length ), status);
 
     for (i=0; i < cfg->ifos.length; i++)
       {
-	cfg->ifos.timestamps[0]->data[i] = cfg->ifos.sftVects[0]->data[i].epoch;	/* SFT start-timestamps */
+	cfg->ifos.timestamps[nD]->data[i] = cfg->ifos.sftVects[nD]->data[i].epoch;	/* SFT start-timestamps */
 	/* SFT midpoints */
 	TRY (LALAddFloatToGPS(status->statusPtr, 
-			      &(cfg->ifos.midTS[0]->data[i]), &(cfg->ifos.timestamps[0]->data[i]),0.5*1.0 / (GV.ifos.sftVects[0]->data[0].deltaF )),status);
+			      &(cfg->ifos.midTS[nD]->data[i]), &(cfg->ifos.timestamps[nD]->data[i]),0.5*1.0 / (GV.ifos.sftVects[nD]->data[0].deltaF )),status);
       }/* for i < ifos.length */
 
   } 
@@ -979,7 +977,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
    */
   {
     UINT4 spdnOrder = 1;	/* hard-coded default FIXME. DON'T change without fixing main() */
-
+ 
     REAL8Vector *fkdotRef = NULL;
     LIGOTimeGPS refTime0;	/* internal reference-time */
 
@@ -1009,28 +1007,32 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
     TRY ( LALDDestroyVector (status->statusPtr, &fkdotRef), status);
   }
-
+  
+  if(nD == 0)
+    IFO=uvar_IFO;
+  else if(nD == 1)
+    IFO=uvar_IFO2;
 
 
   /*----------------------------------------------------------------------
    * initialize detector 
    */
-  if ( !strcmp (uvar_IFO, "GEO") || !strcmp (uvar_IFO, "0") ) 
-    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  else if ( !strcmp (uvar_IFO, "LLO") || ! strcmp (uvar_IFO, "1") ) 
-    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  else if ( !strcmp (uvar_IFO, "LHO") || !strcmp (uvar_IFO, "2") )
-    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  else if ( !strcmp (uvar_IFO, "NAUTILUS") || !strcmp (uvar_IFO, "3"))
+  if ( !strcmp (IFO, "GEO") || !strcmp (IFO, "0") ) 
+    cfg->ifos.Detectors[nD] = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  else if ( !strcmp (IFO, "LLO") || ! strcmp (IFO, "1") ) 
+    cfg->ifos.Detectors[nD] = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  else if ( !strcmp (IFO, "LHO") || !strcmp (IFO, "2") )
+    cfg->ifos.Detectors[nD] = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  else if ( !strcmp (IFO, "NAUTILUS") || !strcmp (IFO, "3"))
     {
       TRY (CreateNautilusDetector (status->statusPtr, &(cfg->ifos.Detectors[0])), status);
     }
-  else if ( !strcmp (uvar_IFO, "VIRGO") || !strcmp (uvar_IFO, "4") )
-    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  else if ( !strcmp (uvar_IFO, "TAMA") || !strcmp (uvar_IFO, "5") )
-    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  else if ( !strcmp (uvar_IFO, "CIT") || !strcmp (uvar_IFO, "6") )
-    cfg->ifos.Detectors[0] = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
+  else if ( !strcmp (IFO, "VIRGO") || !strcmp (IFO, "4") )
+    cfg->ifos.Detectors[nD] = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  else if ( !strcmp (IFO, "TAMA") || !strcmp (IFO, "5") )
+    cfg->ifos.Detectors[nD] = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
+  else if ( !strcmp (IFO, "CIT") || !strcmp (IFO, "6") )
+    cfg->ifos.Detectors[nD] = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
   else
     {
       LALPrintError ("\nUnknown detector. Currently allowed are \
@@ -1075,7 +1077,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
-} /* InitFStat() */
+} /* InitFStatDetector() */
 
 /***********************************************************************/
 /** Log the all relevant parameters of the present search-run to a log-file.
@@ -1383,7 +1385,7 @@ EstimateFLines(LALStatus *status, const FStatisticVector *FVect)
  * multiplied by F statistics.
  */
 void 
-NormaliseSFTDataRngMdn(LALStatus *status)
+NormaliseSFTDataRngMdn(LALStatus *status, UINT4 nD)
 {
   INT4 m, il;                         /* loop indices */
   UINT4 i, j, lpc;
