@@ -669,7 +669,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
           ++stream->pos )
       {
         tbeg  = stream->file->toc->GTimeS[stream->pos];
-        tbeg += 1e9 * stream->file->toc->GTimeN[stream->pos];
+        tbeg += 1e-9 * stream->file->toc->GTimeN[stream->pos];
         tend  = tbeg + stream->file->toc->dt[stream->pos];
         if ( twant >= tbeg && twant < tend ) /* this is the frame */
         {
