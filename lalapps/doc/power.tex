@@ -729,26 +729,45 @@ and hence we get
 \end{equation}
 which implies
 \begin{equation}
-z_j(k_0,  2b) = z_j(k_0,  b) + z_j(k_0 +b,  b)
+z_j(k_0,  2b) = z_j(k_0,  b) + z_j(k_0 +b,  b).
 \end{equation}
+This is shown in Fig~\ref{fig:sumfilters}.  
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figures/sumoffilters}
+\caption{Response to a 4 hz wide filter compared to the sum of two 2 Hz wide filters}
+\label{fig:sumfilters}
+\end{center}
+\end{figure}
+The data used to generate this plot is a delta function in the time domain(so that 
+it is a flat line in the frequency domain, as shown by the green curve in the Fig~\ref{fig:sumfilters}).
+The black curve shows the output when the channel width is $4 Hz$, while the red curve 
+shows the sum of the output of two $2 Hz$ wide channels. 
+
+
 The corresponding normalisation,  
 \begin{equation}
-\sigma^2(k_0,  2b) = \sigma^2(k_0,  b) + \sigma^2(k_0+b,  b) + 2\sum_{k=0}^{N-1}\tilde{\Theta}_k^\ast(k_0,  b)\tilde{\Theta}_k^\ast(k_0,  b)
+\sigma^2(k_0,  2b) = \sigma^2(k_0,  b) + \sigma^2(k_0+b,  b) + 2\sum_{k=0}^{N-1}\tilde{\Theta}_k^\ast(k_0,  b)\tilde{\Theta}_k(k_0 + b,  b)
 \label{eq:norm}
 \end{equation}
+The filter being orthogonal(almost),  the cross term in Eq~\ref{eq:norm} will be negligible.  
 
-Now,  the filter being orthogonal(almost),  the cross term in Eq~\ref{eq:norm} will be negligible.  
-
-
-A tile in this plane can be denoted as $\tau ={J_1, J_2, K_1, K_2}$,  where
-$J_1$ and $J_2$ represent the indices corresponding to the start and 
-stop times of the tile respectively while $K_1$ and $K_2$ represent the
-minimum and maximum frequencies.  The degrees of freedom assosciated with
-$\tau$ will then be $dof_{\tau} = 2 \times (J_2 - J_1) \times \Delta T \times (K_2 - K_1) \times \Delta F $ and the signal to noise ratio will be 
+A tile in this plane can be denoted as $\tau =\{J_1, \Delta n_t, K_1, \Delta n_f\}$,  where
+$J_1$ and $K_1$ represent the indices corresponding to the start time and 
+start frequency of the tile respectively while $n_t$ and $n_f$ are respectively the
+time and frequency bins.  The degrees of freedom assosciated with
+$\tau$ will then be $dof_{\tau} = 2 \times n_t \times \Delta t \times n_f \times \Delta f $.
+  Requiring that there are at least two sample points in the unit time-frequency volume tile 
+we see that the time-frequency sample points have to be picked at every 
+$\Delta t^{tile} sec = 1 / (2 \times n_f \times \delta f)$,  where $\delta f$ is the time-frequency 
+plane frequency resolution.  In terms of sample points then every $\Delta t^{tile} / \delta t $ sample point 
+has to be considered while calculating the power of the tile.  Now,  
+$\Delta t^{tile} / \delta t = \frac{1}{(2 \times n_f \times \delta f) \times \delta t} = n_t / dof_{\tau}$  
+and the power in the tile will then be 
 \begin{equation}
-\rho_{\tau} = \frac{\sum_{n=0}^{m-1}(\sum_{k=K1}^{K2}H_{[J_1 + n\frac{J_2-J_1}{dof_{\tau}}],k})^2}{\sigma ^2}
+\rho_{\tau} = \sum_{n=0}^{dof_{\tau}-1}(\sum_{k=K1}^{K2}\frac{Z^2_{[J_1 + n\frac{n_t}{dof_{\tau}}]}(k,b)}{\sigma^2(k,b)}).
 \end{equation}
-,  where $m\frac{J_2-J_1}{dof_\tau} = J_2$.
+
 
 
 In Gaussian noise,  the power in a given tile is $\chi^2$-distributed
