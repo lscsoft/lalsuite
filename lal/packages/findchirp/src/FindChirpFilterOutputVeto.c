@@ -98,9 +98,9 @@ LALFindChirpFilterOutputVeto(
 	
   /* check that the filter output veto parameters are reasonable */	
   ASSERT( params->rsqvetoThresh > 0, status,
-      FINDCHIRPFILTEROUTPUTVETOH_ERSQT, FINDCHIRPFILTEROUTPUTVETO_MSGECRSQT );
+      FINDCHIRPFILTEROUTPUTVETOH_ERSQT, FINDCHIRPFILTEROUTPUTVETO_MSGERSQT );
   ASSERT( params->rsqvetoWindow > 0, status,
-      FINDCHIRPFILTEROUTPUTVETOH_ERSQW, FINDCHIRPFILTEROUTPUTVETO_MSGECRSQW );
+      FINDCHIRPFILTEROUTPUTVETOH_ERSQW, FINDCHIRPFILTEROUTPUTVETO_MSGERSQW );
 
   /* check that deltaT is reasonable */	
   ASSERT( deltaT > 0, status,
