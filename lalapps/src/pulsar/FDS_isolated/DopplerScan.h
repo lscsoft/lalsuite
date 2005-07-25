@@ -52,11 +52,13 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 #define DOPPLERSCANH_E2DSTEP		5
 #define DOPPLERSCANH_EGRIDCRPT		6
 #define DOPPLERSCANH_ESKYPARAM		7
-#define DOPPLERSCANH_EMETRIC		8
+#define DOPPLERSCANH_EMETRICTYPE	8
 #define DOPPLERSCANH_ENONULL		9
 #define DOPPLERSCANH_EMEM		10
 #define DOPPLERSCANH_ESKYREGION		11
 #define DOPPLERSCANH_EINPUT		12
+#define DOPPLERSCANH_ENEGMETRIC		13
+
 
 #define DOPPLERSCANH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define DOPPLERSCANH_MSGENOTREADY 	"Doppler scan is uninitialized or has finished"
@@ -65,12 +67,12 @@ NRCSID( DOPPLERSCANH, "$Id$" );
 #define DOPPLERSCANH_MSGE2DSTEP		"If not using the metric, you need to specify _both_ dDelta and dAlpha"
 #define DOPPLERSCANH_MSGEGRIDCRPT	"Unexpected NULL in grid-list. This points to a bug in the code... "
 #define DOPPLERSCANH_MSGESKYPARAM	"Invalid sky region! We need 0<= alpha < 2Pi and -Pi/2 <= delta <= PI/2"
-#define DOPPLERSCANH_MSGEMETRIC		"Unknown type of metric specified."
+#define DOPPLERSCANH_MSGEMETRICTYPE	"Unknown type of metric specified."
 #define DOPPLERSCANH_MSGENONULL		"Output pointer is not NULL"
 #define DOPPLERSCANH_MSGEMEM		"Out of memory"
 #define DOPPLERSCANH_MSGESKYREGION	"Could not parse sky-region correctly"
 #define DOPPLERSCANH_MSGEINPUT		"Invald input parameter"
-
+#define DOPPLERSCANH_MSGENEGMETRIC	"Negative metric encountered"
 
 /*---------- external types ----------*/
 
