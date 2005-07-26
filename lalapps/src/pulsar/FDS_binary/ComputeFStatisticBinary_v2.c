@@ -315,8 +315,11 @@ int main(int argc,char *argv[])
     scanInit.obsBegin = t0;
     LAL_CALL ( LALDeltaFloatGPS ( &status, &duration, &t1, &t0), &status);
     scanInit.obsDuration = duration + GV.tsft;
+    /* FIXME: temporariliy disable these lines to allow compiling. Call to InitDopplerScan() 
+     * needs to be adjusted to new API...
     scanInit.fmax  = uvar_Freq;
     if (uvar_FreqBand > 0) scanInit.fmax += uvar_FreqBand;
+    */
     scanInit.Detector = &GV.Detector;
     scanInit.ephemeris = GV.edat;		/* used by Ephemeris-based metric */
     scanInit.skyGridFile = uvar_skyGridFile;
