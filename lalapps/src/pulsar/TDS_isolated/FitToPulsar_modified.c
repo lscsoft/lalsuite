@@ -294,8 +294,13 @@ LALFitToPulsarStudentT	( 	LALStatus            *status,
 
 		if((input->t[i+1].gpsSeconds - input->t[i].gpsSeconds)>180.0 || count==input->N){
 			kVec->data[j] = count;
-			j++;
 			count = 0;
+			
+			/* check if last segment is found this loop */
+			if(i+1 > n-1)
+				break;
+				
+			j++;
 		}
 
 		i++;
@@ -308,12 +313,13 @@ LALFitToPulsarStudentT	( 	LALStatus            *status,
 		}
 	}
 
-	kVec->length = j-1;
+	kVec->length = j+1;
  
- 	for(i=0;i<j;i++){
+ 	for(i=0;i<kVec->length;i++){
 		meanSegLength += kVec->data[i];
 	}
- 	fprintf(stderr, "Mean segment length = %f.\n", meanSegLength/(double)j);
+ 	fprintf(stderr, "Mean segment length = %f.\n",
+	meanSegLength/(double)kVec->length);
  
 	j=i=count=0;
 
@@ -342,7 +348,9 @@ LALFitToPulsarStudentT	( 	LALStatus            *status,
      	cos2phase = cos(2.0*phase);
      	sin2phase = sin(2.0*phase);
      	for (iCosIota = 0; iCosIota < params->meshCosIota[2]; iCosIota++){
-       	cosIota = params->meshCosIota[0] + (REAL8)iCosIota*params->meshCosIota[1];
+       	INT4 tempLength;
+				
+				cosIota = params->meshCosIota[0] + (REAL8)iCosIota*params->meshCosIota[1];
        	cosIota2 = 1.0 + cosIota*cosIota; 
        	Xp.re = 0.25*cosIota2 * cos2phase;
        	Xp.im = 0.25*cosIota2 * sin2phase;
@@ -358,8 +366,10 @@ LALFitToPulsarStudentT	( 	LALStatus            *status,
 
         /*k = input->N;*/
 				count=0;     
-      	for (i = 0; i < n-kVec->data[kVec->length]; i+=kVec->data[count]){ 
-       		/* don't include data segments under 5 mins long */
+      	for (i = 0; i < n-kVec->data[kVec->length-1]; i+=tempLength){ 
+       		tempLength = kVec->data[count];
+					
+					/* don't include data segments under 5 mins long */
 					if(kVec->data[count] < 5){
 						count++;
 						continue;
