@@ -91,8 +91,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 /* input data parameters */
 
-INT4   sampleRate           = -1;            /* sample rate of filter data   */
-REAL4  fLow                 = -1;            /* low frequency cutoff         */
+INT4   sampleRate           = -1;       /* sample rate of filter data   */
+INT4   numPointsSeg         = -1;/* set to segment-length used in inspiral.c */
+REAL4  fLow                 = -1;       /* low frequency cutoff         */
+REAL4  dynRangeExponent     = -1;/* set to same value used in inspiral.c */
 
 /*Coherent code specific inputs*/
 
@@ -167,8 +169,9 @@ int main( int argc, char *argv[] )
   UINT4  nCohDataFr       = 0;
   UINT8  eventID          = 0;
 
-  REAL4  m1               = 0;
-  REAL4  m2               = 0;
+  REAL4  m1               = 0.0;
+  REAL4  m2               = 0.0;
+  REAL4  dynRange         = 0.0;
 
   /* counters and other variables */
   INT4   i,j,k,l,w,p;
@@ -282,6 +285,9 @@ int main( int argc, char *argv[] )
       /* set the mode of the frame stream to fail on gaps or time errors */
       /*frStream->mode = LAL_FR_DEFAULT_MODE;*/
     }
+
+  /* Set the dynamic range */
+  dynRange = pow( 2.0, dynRangeExponent );
   
   /* Loop over templates (or event id's) */
   
@@ -868,8 +874,8 @@ int main( int argc, char *argv[] )
 		      numChannels = p;
 		      LAL_CALL( LALFrRewind( &status, frStream ), &status );
 
-		      /* If we can estimate psi,epsilon, then get segnorm */
-		      if ( (numDetectors == 3 && !( caseID[0] && caseID[5])) || numDetectors == 4 )
+		      /* We always need segNorm for at lease dist estimates */
+		      if ( numDetectors > 1 )
 			{
 			  for( w=0; w<chanNumArray[j]; w++)
 			    {
@@ -880,7 +886,7 @@ int main( int argc, char *argv[] )
 			      LALCalloc( 1, sizeof(REAL4FrequencySeries) );
 			  LAL_CALL( LALFrGetREAL4FrequencySeries( &status, 
                               segNormVector, &frChan, frStream), &status);
-			  cohInspFilterInput->segNorm[l] = sqrt(segNormVector->data->data[segNormVector->data->length - 1]);
+			  cohInspFilterParams->segNorm[l] = sqrt(segNormVector->data->data[segNormVector->data->length - 1]);
 			  LAL_CALL( LALDestroyVector( &status, &(segNormVector->data) ), &status );
 			  LALFree( segNormVector );
 			  segNormVector = NULL;
@@ -899,6 +905,30 @@ int main( int argc, char *argv[] )
 		      LAL_CALL( LALFrClose( &status, &frStream ), &status );
 		      l++;
 		    }
+		}
+
+	      /* If we can estimate distance then compute templateNorm */
+              /* At present, this is only good for frequency domain tmplts */
+              /* Since each detectors data has been filtered with a templates*/
+              /* that have the same mass pair, templateNorm is the same for */
+              /* every detector and needs to be computed only once.         */
+
+	      if ( numDetectors > 1 )
+		{
+		  REAL4 cannonDist = 1.0; /* Mpc */
+		  REAL4 m  = cohInspFilterInput->tmplt->totalMass;
+		  REAL4 mu = cohInspFilterInput->tmplt->mu;
+		  REAL4 deltaT = cohInspFilterParams->deltaT;
+		  REAL4 distNorm = 2.0 * 
+                       LAL_MRSUN_SI / (cannonDist * 1e6 * LAL_PC_SI);
+                  REAL4 templateNorm = sqrt( (5.0*mu) / 96.0 ) *
+                       pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
+                       pow( LAL_MTSUN_SI / deltaT, -1.0/6.0 );
+		  distNorm *= dynRange;
+		  templateNorm *= templateNorm;
+		  templateNorm *= distNorm * distNorm;
+		  cohInspFilterParams->templateNorm = templateNorm;
+		  cohInspFilterParams->segmentLength = numPointsSeg;
 		}
 
 	      if (verbose) fprintf(stdout,"filtering the data..\n");
@@ -1457,6 +1487,8 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 #define USAGE2 \
 "  --bank-file FILE             read template bank parameters from FILE\n"\
 "  --sample-rate N              set data sample rate to N\n"\
+"  --segment-length N           set N to same value used in inspiral.c\n"\
+"  --dynamic-range-exponent N   set N to same value used in inspiral.c\n"\
 "  --cohsnr-threshold RHO       set signal-to-noise threshold to RHO\n"\
 "  --maximize-over-chirp        do clustering\n"\
 "  --glob-frame-data            glob files in the pwd to obtain frame data\n"\
@@ -1488,6 +1520,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
      {"low-frequency-cutoff",     required_argument, 0,                 'f'},
      {"bank-file",                required_argument, 0,                 'u'},
      {"sample-rate",              required_argument, 0,                 'r'},
+     {"segment-length",           required_argument, 0,                 'l'},
+     {"dynamic-range-exponent",   required_argument, 0,                 'e'}, 
      {"cohsnr-threshold",         required_argument, 0,                 'p'},
      {"maximize-over-chirp",      no_argument,       &maximizeOverChirp, 1 },
      {"glob-frame-data",          no_argument,       &globFrameData,     1 },
@@ -1515,7 +1549,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
        size_t optarg_len;
 
        c = getopt_long_only( argc, argv,
-	   "A:B:a:b:G:I:L:P:T:V:Z:d:f:h:p:r:u:v:",
+	   "A:B:a:b:G:I:L:l:e:P:T:V:Z:d:f:h:p:r:u:v:",
 	   long_options, &option_index );
 
        if ( c == -1 )
@@ -1616,6 +1650,16 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 	 case 'p': /* set coherent SNR threshold */
 	   cohSNRThresh = atof (optarg);
 	   ADD_PROCESS_PARAM( "float", "%e", cohSNRThresh );
+	   break;
+
+	 case 'l':
+	   numPointsSeg = atof(optarg);
+	   ADD_PROCESS_PARAM("float", "%e", numPointsSeg );
+	   break;
+
+	 case 'e':
+	   dynRangeExponent = atof(optarg);
+	   ADD_PROCESS_PARAM("float", "%e", dynRangeExponent );
 	   break;
 
 	 case 'r': 
@@ -1749,6 +1793,20 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
    if ( sampleRate < 0 )
      {
        fprintf( stderr, "--sample-rate must be specified\n" );
+       exit( 1 );
+     }
+
+   if ( numPointsSeg < 0 )
+     {
+       fprintf( stderr, "--segment-length must be specified.\n" );
+       fprintf( stderr,"It must be set to the same value as was used in inspiral.c when the C-data was generated.\n");
+       exit( 1 );
+     }
+
+   if ( dynRangeExponent < 0 )
+     {
+       fprintf( stderr, "--dynamic-range-exponent must be specified.\n" );
+       fprintf( stderr,"It must be set to the same value as was used in inspiral.c when the C-data was generated.\n");
        exit( 1 );
      }
 
