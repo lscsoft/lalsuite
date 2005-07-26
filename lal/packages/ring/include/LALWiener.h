@@ -16,6 +16,23 @@ This Package passes input through a wiener filter
 
 \noindent 
 
+The algorithm used in this package is:
+
+\begin{equation}
+  q(\textrm{TotalLength}) = \sum h(\textrm{TotalLength}) \times s(\textrm{TotalLength})
+\end{equation}
+Where $h(\textrm{TotalLenth})$ is the data that is zero padded in the front and
+$s(\textrm{TotalLength})$ is the signal that one is
+looking for and this is zero padded in the back. This algorithm is time
+consuming so the package makes use of
+fourier transforms. The actual algorithm is:
+
+\begin{equation}
+q(\textrm{TotalLength})=\sum \widetilde{\tilde{h}(\textrm{TotalLength}) \times
+\tilde{s}^\ast(\textrm{TotalLength})}
+\end{equation}
+
+
 *********************************************************** </lalLaTeX> */
 
 #ifndef _LALWIENER_H  /* Double-include protection. */
