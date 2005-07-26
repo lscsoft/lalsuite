@@ -608,15 +608,16 @@ LALCoherentInspiralFilterParamsFinalize (
 }
 
 void
-LALCoherentInspiralEstimatePsiEpsilon (
+LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
     LALStatus                             *status,
     INT4                                   caseID[6],
     REAL4                                  segNorm[4],
     REAL4                                  theta,
     REAL4                                  phi,
     COMPLEX8                               cData[4],
-    REAL4                                  *inclination,
-    REAL4                                  *polarization
+    REAL4                                 *inclination,
+    REAL4                                 *polarization,
+    REAL4                                 *coaPhase
     )
 {
   INT4                   i = 0;
@@ -637,6 +638,10 @@ LALCoherentInspiralEstimatePsiEpsilon (
   REAL4                  gelFandABGMinusIm[6][5];
   REAL4                  gelFandPTZPlusIm[5];
   REAL4                  gelFandPTZMinusIm[5];
+  REAL4                  gelFandPEZPlusRe = 0.0;
+  REAL4                  gelFandPEZPlusIm = 0.0;
+  REAL4                  gelFandPEZMinusRe = 0.0;
+  REAL4                  gelFandPEZMinusIm = 0.0;
   REAL4                  mPTZRe[3] = { 0.0, 0.0, 0.0 };
   REAL4                  mPTZIm[3] = { 0.0, 0.0, 0.0 };
   REAL4                  mABGRe[6][3];
@@ -657,6 +662,13 @@ LALCoherentInspiralEstimatePsiEpsilon (
   REAL4                  dVectorPlusIm[6];
   REAL4                  dVectorMinusRe[6];
   REAL4                  dVectorMinusIm[6];
+  REAL4                  eVectorRe[6];
+  REAL4                  eVectorIm[6];
+  REAL4                  eVectorNorm = 0.0;
+  REAL4                  qVectorRe[6];
+  REAL4                  qVectorIm[6];
+  REAL4                  cDotqRe = 0.0;
+  REAL4                  cDotqIm = 0.0;
   COMPLEX8               cPlus;
   COMPLEX8               cMinus;
   COMPLEX8               cRatio;  /* cMinus/cPlus */
@@ -715,6 +727,10 @@ LALCoherentInspiralEstimatePsiEpsilon (
       dVectorPlusIm[i] = 0.0;
       dVectorMinusRe[i] = 0.0;
       dVectorMinusIm[i] = 0.0;
+      eVectorRe[i] = 0.0;
+      eVectorIm[i] = 0.0;
+      qVectorRe[i] = 0.0;
+      qVectorIm[i] = 0.0;
     }
 
   /* Set the euler angles for the various sites */
@@ -1070,13 +1086,109 @@ LALCoherentInspiralEstimatePsiEpsilon (
 	  ( 1 + sqrt( sqrt(cRatio.re*cRatio.re + cRatio.im*cRatio.im) )) );
   *polarization = 0.25 * atan( cRatio.im / cRatio.re );
 
+  /* To estimate the coaphase, I need to construct the eVectors */
+
+  gelFandPEZMinusRe = 0.25 * (cos(*inclination) - 1)*(cos(*inclination) - 1) * cos(2 * (*polarization));
+  gelFandPEZMinusIm = 0.25 * (cos(*inclination) - 1)*(cos(*inclination) - 1) * sin(2 * (*polarization));
+  gelFandPEZPlusRe = 0.25 * (cos(*inclination) + 1)*(cos(*inclination) + 1) * cos(2 * (*polarization));
+  gelFandPEZPlusIm = -0.25 * (cos(*inclination) + 1)*(cos(*inclination) + 1) * sin(2 * (*polarization));
+
+  k = 0;
+  for( i = 0; i < 6; i++ )
+    {
+      if( caseID[i] )
+	{
+	  eVectorRe[i] = segNorm[k] * (gelFandPEZPlusRe*dVectorPlusRe[i] - gelFandPEZPlusIm*dVectorPlusIm[i] + gelFandPEZMinusRe*dVectorPlusRe[i] + gelFandPEZMinusIm*dVectorPlusIm[i]);
+	  eVectorIm[i] = segNorm[k] * (gelFandPEZPlusRe*dVectorPlusIm[i] + gelFandPEZPlusIm*dVectorPlusRe[i] + gelFandPEZMinusIm*dVectorPlusRe[i] - gelFandPEZMinusRe*dVectorPlusIm[i]);
+	  k++;
+	}
+    }
+
+  /* Now form the Q's */
+
+  for( i = 0; i < 6; i++ )
+    {
+      eVectorNorm += eVectorRe[i]*eVectorRe[i] + eVectorIm[i]*eVectorIm[i];
+    }
+
+  eVectorNorm = sqrt( eVectorNorm );
+
+  for( i = 0; i < 6; i++ )
+    {
+      qVectorRe[i] = eVectorRe[i] / eVectorNorm;
+      qVectorIm[i] = eVectorIm[i] / eVectorNorm;
+    }
+
+  /* Now for the phase estimate */
+
+  k = 0;
+  for( i = 0; i < 6; i++ )
+    {
+      if( caseID[i] )
+	{
+	  cDotqRe += cData[k].re * qVectorRe[i] + cData[k].im * qVectorIm[i];
+	  cDotqIm += cData[k].re * qVectorIm[i] - cData[k].im * qVectorRe[i];
+	  k++;
+	}
+    }
+
+  *coaPhase = atan( cDotqIm / cDotqRe );
+
   /* normal exit */
   DETATCHSTATUSPTR( status );
   RETURN( status );
+}
 
+void
+LALCoherentInspiralEstimateDistance (
+    LALStatus                             *status,
+    REAL4                                  segNorm[4],
+    REAL4                                  templateNorm,
+    REAL4                                  deltaT,
+    INT4                                   segmentLength,  /* time pts */
+    REAL4                                  coherentSNR,
+    REAL4                                 *distance
+    )
+{
+  INT4                 i = 0;
+  REAL4                sigmaSq[4] = {0.0, 0.0, 0.0, 0.0};
+  REAL4                sigmaCoherent = 0.0;
+
+  INITSTATUS( status, "LALCoherentInspiralEstimateDistance", 
+	      COHERENTINSPIRALFILTERC );
+  ATTATCHSTATUSPTR( status );
+
+  /* Check the validity of the input params */
+  /* Must have 3 sites to estimate psi and epsilon */
+  ASSERT( segNorm[0] && segNorm[1] && segNorm[2], status,
+	  COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
+  ASSERT( coherentSNR > 0, status, 
+      COHERENTINSPIRALH_ESEGZ, COHERENTINSPIRALH_MSGESEGZ );
+  ASSERT( templateNorm > 0, status, 
+      COHERENTINSPIRALH_ESEGZ, COHERENTINSPIRALH_MSGESEGZ );
+  ASSERT( deltaT > 0, status, 
+      COHERENTINSPIRALH_ESEGZ, COHERENTINSPIRALH_MSGESEGZ );
+  ASSERT( segmentLength > 0, status, 
+      COHERENTINSPIRALH_ESEGZ, COHERENTINSPIRALH_MSGESEGZ );
+
+  /* Now estimate the distance coherently */
+  for( i = 0; i < 4; i++ )
+    {
+      sigmaSq[i] = 4 * deltaT * segNorm[i] * templateNorm / segmentLength;
+    }
+  for( i = 0; i < 4; i++ )
+    {
+      sigmaCoherent += sigmaSq[i];
+    }
+
+  sigmaCoherent = sqrt( sigmaCoherent );
+  *distance = sigmaCoherent / coherentSNR;
+
+  /* normal exit */
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
 }
  
-
 void
 LALCoherentInspiralFilterSegment (
     LALStatus                             *status,
@@ -1102,6 +1214,7 @@ LALCoherentInspiralFilterSegment (
   INT4                                deltaEventIndex = 0;
   INT4                                eventStartIdx = 0;
   INT4                                slidePoints[3] = {0,0,0};
+  INT4                                segmentLength = 0;
   REAL4                               buffer = 0; /*account for timing errors*/
   REAL4                               timingError = 0.00025; /* allowed timing error of 2 ms */
   REAL4                               s[4][3];/*up to 4 distances;in 3D space*/
@@ -1115,6 +1228,8 @@ LALCoherentInspiralFilterSegment (
   REAL4                               phi = 0.0;
   REAL4                               inclination = 0.0;
   REAL4                               polarization = 0.0;
+  REAL4                               distanceEstimate = 0.0;
+  REAL4                               coaPhase = 0.0;
   REAL8                               tempTime = 0.0;
   REAL8                               fracpart = 0.0;
   REAL8                               intpart = 0.0;
@@ -1182,7 +1297,7 @@ LALCoherentInspiralFilterSegment (
   cohSNRThresh = params->cohSNRThresh;
   cohSNROut = params->cohSNROut;
   deltaT = params->deltaT;
-  
+  segmentLength = params->segmentLength;
 
   /* if the full coherent snr vector is required, set it to zero */
   if ( cohSNROut ) {
@@ -1246,8 +1361,6 @@ LALCoherentInspiralFilterSegment (
 	  beamVec = input->beamVec;
 	}
   
-  /*** get detector c outputs ***/
-  
   /* read in the c-data for multiple detectors */
   cData = input->multiCData->cData;
 
@@ -1304,7 +1417,11 @@ LALCoherentInspiralFilterSegment (
 	      {
 		if(m >=0 && m < (INT4) numPoints)
 		  {
-		    cohSNRLocal = sqrt( (cData[0].data->data[k].re + cData[1].data->data[m].re)*(cData[0].data->data[k].re + cData[1].data->data[m].re) + (cData[0].data->data[k].im + cData[1].data->data[m].im)*(cData[0].data->data[k].im + cData[1].data->data[m].im));
+		    cohSNRLocal = sqrt( (cData[0].data->data[k].re + 
+                         cData[1].data->data[m].re) * (cData[0].data->data[k].re + 
+                         cData[1].data->data[m].re) + (cData[0].data->data[k].im + 
+                         cData[1].data->data[m].im) * (cData[0].data->data[k].im + 
+                         cData[1].data->data[m].im));
 
 		    if(cohSNRLocal > cohSNR)
 		      {
@@ -1337,6 +1454,10 @@ LALCoherentInspiralFilterSegment (
 		    strcpy(thisEvent->ifos,caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
+		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		    thisEvent->eta = input->tmplt->eta;
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    thisEvent->eff_distance = distanceEstimate;
 
 		    tempTime = 0.0;
 		    fracpart = 0.0;
@@ -1355,6 +1476,10 @@ LALCoherentInspiralFilterSegment (
 		    strcpy(thisEvent->ifos, caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
+		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		    thisEvent->eta = input->tmplt->eta;
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    thisEvent->eff_distance = distanceEstimate;
 
 		    tempTime = 0.0;
 		    fracpart = 0.0;
@@ -1386,6 +1511,10 @@ LALCoherentInspiralFilterSegment (
 		    strcpy(thisEvent->ifos,caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
+		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		    thisEvent->eta = input->tmplt->eta;
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    thisEvent->eff_distance = distanceEstimate;
 
 		    /* Need to initialize the event start index to new value */
 		    if( k > (eventStartIdx + deltaEventIndex) )
@@ -1413,6 +1542,7 @@ LALCoherentInspiralFilterSegment (
 	
 	k = 0;
 	q = 0;
+	w = 0;
 
 	for(k=0;k<(INT4)numPoints;k++)
 	  {
@@ -1422,10 +1552,15 @@ LALCoherentInspiralFilterSegment (
 	      {
 		if(q >= 0 && q < (INT4) numPoints)
 		  {
-		    cohSNRLocal = sqrt(cData[0].data->data[k].re*cData[0].data->data[k].re + cData[1].data->data[q].re*cData[1].data->data[q].re + cData[0].data->data[k].im*cData[0].data->data[k].im + cData[1].data->data[q].im*cData[1].data->data[q].im);
+		    cohSNRLocal = sqrt(cData[0].data->data[k].re * 
+                         cData[0].data->data[k].re + cData[1].data->data[q].re * 
+                         cData[1].data->data[q].re + cData[0].data->data[k].im * 
+                         cData[0].data->data[k].im + cData[1].data->data[q].im * 
+                         cData[1].data->data[q].im);
 		    if(cohSNRLocal > cohSNR)
 		      {
 			cohSNR = cohSNRLocal; 
+			w = q;
 		      }
 		  }
 	      }
@@ -1455,7 +1590,19 @@ LALCoherentInspiralFilterSegment (
 		strcpy(thisEvent->ifos,caseStr);
 		thisEvent->mass1 = input->tmplt->mass1;
 		thisEvent->mass2 = input->tmplt->mass2;
-
+		thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		thisEvent->eta = input->tmplt->eta;
+		LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		thisEvent->eff_distance = distanceEstimate;
+		thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
+		if( (k-w) > 0 )
+		  {
+		    thisEvent->ligo_angle_sig = 1;
+		  }
+		else
+		  {
+		    thisEvent->ligo_angle_sig = -1;
+		  }
 		tempTime = 0.0;
 		fracpart = 0.0;
 		intpart = 0.0;
@@ -1473,6 +1620,19 @@ LALCoherentInspiralFilterSegment (
 		strcpy(thisEvent->ifos, caseStr);
 		thisEvent->mass1 = input->tmplt->mass1;
 		thisEvent->mass2 = input->tmplt->mass2;
+		thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		thisEvent->eta = input->tmplt->eta;
+		LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		thisEvent->eff_distance = distanceEstimate;
+		thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
+		if( (k-w) > 0 )
+		  {
+		    thisEvent->ligo_angle_sig = 1;
+		  }
+		else
+		  {
+		    thisEvent->ligo_angle_sig = -1;
+		  }
 
 		tempTime = 0.0;
 		fracpart = 0.0;
@@ -1504,6 +1664,19 @@ LALCoherentInspiralFilterSegment (
 		strcpy(thisEvent->ifos,caseStr);
 		thisEvent->mass1 = input->tmplt->mass1;
 		thisEvent->mass2 = input->tmplt->mass2;
+		thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		thisEvent->eta = input->tmplt->eta;
+		LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		thisEvent->eff_distance = distanceEstimate;
+		thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
+		if( (k-w) > 0 )
+		  {
+		    thisEvent->ligo_angle_sig = 1;
+		  }
+		else
+		  {
+		    thisEvent->ligo_angle_sig = -1;
+		  }
 
 		/* Need to initialize the event start index to new value */
 		if( k > (eventStartIdx + deltaEventIndex) )
@@ -1530,6 +1703,7 @@ LALCoherentInspiralFilterSegment (
 	k = 0;
 	q = 0;
 	m = 0;
+	w = 0;
 
 	for(k=0;k<(INT4)numPoints;k++)
 	  {
@@ -1542,11 +1716,18 @@ LALCoherentInspiralFilterSegment (
 		      {
 			if(q >= 0 && q < (INT4) numPoints)
 			  {
-			    cohSNRLocal = sqrt( ((cData[0].data->data[k].re + cData[2].data->data[m].re)*(cData[0].data->data[k].re + cData[2].data->data[m].re) + (cData[0].data->data[k].im + cData[2].data->data[m].im)*(cData[0].data->data[k].im + cData[2].data->data[m].im)) + cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im);
+			    cohSNRLocal = sqrt( ((cData[0].data->data[k].re + 
+                               cData[2].data->data[m].re)*(cData[0].data->data[k].re +
+                               cData[2].data->data[m].re) + (cData[0].data->data[k].im
+                               + cData[2].data->data[m].im)*(cData[0].data->data[k].im
+                               + cData[2].data->data[m].im)) + 
+                               cData[1].data->data[q].re*cData[1].data->data[q].re + 
+                               cData[1].data->data[q].im*cData[1].data->data[q].im);
 		    		    		  
 			    if(cohSNRLocal > cohSNR)
 			      {
 				cohSNR = cohSNRLocal;
+				w = q;
 			      }
 			  }
 		      }
@@ -1577,6 +1758,19 @@ LALCoherentInspiralFilterSegment (
 		    strcpy(thisEvent->ifos,caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
+		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		    thisEvent->eta = input->tmplt->eta;
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    thisEvent->eff_distance = distanceEstimate;
+		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
+		if( (k-w) > 0 )
+		  {
+		    thisEvent->ligo_angle_sig = 1;
+		  }
+		else
+		  {
+		    thisEvent->ligo_angle_sig = -1;
+		  }
 
 		    tempTime = 0.0;
 		    fracpart = 0.0;
@@ -1595,6 +1789,19 @@ LALCoherentInspiralFilterSegment (
 		    strcpy(thisEvent->ifos, caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
+		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		    thisEvent->eta = input->tmplt->eta;
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    thisEvent->eff_distance = distanceEstimate;
+		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
+		if( (k-w) > 0 )
+		  {
+		    thisEvent->ligo_angle_sig = 1;
+		  }
+		else
+		  {
+		    thisEvent->ligo_angle_sig = -1;
+		  }
 
 		    tempTime = 0.0;
 		    fracpart = 0.0;
@@ -1626,6 +1833,19 @@ LALCoherentInspiralFilterSegment (
 		    strcpy(thisEvent->ifos,caseStr);
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
+		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		    thisEvent->eta = input->tmplt->eta;
+		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    thisEvent->eff_distance = distanceEstimate;
+		    thisEvent->ligo_angle = acos( LAL_C_SI * deltaT * abs(k-w) / distance[1] );
+		if( (k-w) > 0 )
+		  {
+		    thisEvent->ligo_angle_sig = 1;
+		  }
+		else
+		  {
+		    thisEvent->ligo_angle_sig = -1;
+		  }
 
 		    /* Need to initialize the event start index to new value */
 		    if( k > (eventStartIdx + deltaEventIndex) )
@@ -1682,7 +1902,43 @@ LALCoherentInspiralFilterSegment (
 			  {
 			    if (w >= 0 && w < (INT4) numPoints)
 			      {
-				cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( cData[0].data->data[k].re*cData[0].data->data[k].re + cData[0].data->data[k].im*cData[0].data->data[k].im ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( cData[2].data->data[w].re*cData[2].data->data[w].re + cData[2].data->data[w].im*cData[2].data->data[w].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re * cData[1].data->data[q].re + cData[0].data->data[k].im * cData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[2].data->data[w].re + cData[0].data->data[k].im * cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re * cData[2].data->data[w].re + cData[1].data->data[q].im *cData[2].data->data[w].im));
+			      cohSNRLocal = sqrt( ( 
+                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
+                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] +
+                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
+                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )
+                                *( cData[0].data->data[k].re*cData[0].data->data[k].re
+                                +cData[0].data->data[k].im*cData[0].data->data[k].im )
+                                +(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]
+                                *beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] 
+                                + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]
+                                *beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])
+                                *( cData[1].data->data[q].re*cData[1].data->data[q].re
+                                + cData[1].data->data[q].im*cData[1].data->data[q].im)
+                                +(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]
+                                *beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] 
+                                + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]
+                                *beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])
+                                *( cData[2].data->data[w].re*cData[2].data->data[w].re
+                                + cData[2].data->data[w].im*cData[2].data->data[w].im)
+                                +2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]
+                                *beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + 
+                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]
+                                *beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])
+                                *(cData[0].data->data[k].re * cData[1].data->data[q].re + 
+                                cData[0].data->data[k].im * cData[1].data->data[q].im) + 
+                                2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] 
+                                *beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
+                                beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*
+                                beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*
+                                (cData[0].data->data[k].re*cData[2].data->data[w].re + 
+                                cData[0].data->data[k].im * cData[2].data->data[w].im) + 
+                                2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
+                                beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
+                                beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
+                                beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
+                                (cData[1].data->data[q].re * cData[2].data->data[w].re + 
+                                cData[1].data->data[q].im *cData[2].data->data[w].im));
 			      
 				if(cohSNRLocal > cohSNR)
 				  {
@@ -1721,6 +1977,8 @@ LALCoherentInspiralFilterSegment (
 		       strcpy(thisEvent->ifos,caseStr);
 		       thisEvent->mass1 = input->tmplt->mass1;
 		       thisEvent->mass2 = input->tmplt->mass2;
+		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		       thisEvent->eta = input->tmplt->eta;
 
 		       inclination = 0.0;
 		       polarization = 0.0;
@@ -1730,9 +1988,14 @@ LALCoherentInspiralFilterSegment (
 		       cDataTemp[1].im = cData[1].data->data[qTemp].im;
 		       cDataTemp[2].re = cData[2].data->data[wTemp].re;
 		       cDataTemp[2].im = cData[2].data->data[wTemp].im;
-		       LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		       thisEvent->inclination = inclination;
 		       thisEvent->polarization = polarization;
+		       thisEvent->coa_phase = coaPhase;
+		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		       thisEvent->eff_distance = distanceEstimate;
+		       thisEvent->ligo_axis_ra = phi;
+		       thisEvent->ligo_axis_dec = theta;
 
 		       tempTime = 0.0;
 		       fracpart = 0.0;
@@ -1751,6 +2014,8 @@ LALCoherentInspiralFilterSegment (
 		       strcpy(thisEvent->ifos, caseStr);
 		       thisEvent->mass1 = input->tmplt->mass1;
 		       thisEvent->mass2 = input->tmplt->mass2;
+		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		       thisEvent->eta = input->tmplt->eta;
 
 		       inclination = 0.0;
 		       polarization = 0.0;
@@ -1760,9 +2025,14 @@ LALCoherentInspiralFilterSegment (
 		       cDataTemp[1].im = cData[1].data->data[qTemp].im;
 		       cDataTemp[2].re = cData[2].data->data[wTemp].re;
 		       cDataTemp[2].im = cData[2].data->data[wTemp].im;
-		       LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		       thisEvent->inclination = inclination;
 		       thisEvent->polarization = polarization;
+		       thisEvent->coa_phase = coaPhase;
+		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		       thisEvent->eff_distance = distanceEstimate;
+		       thisEvent->ligo_axis_ra = phi;
+		       thisEvent->ligo_axis_dec = theta;
 
 		       tempTime = 0.0;
 		       fracpart = 0.0;
@@ -1794,6 +2064,8 @@ LALCoherentInspiralFilterSegment (
 		       strcpy(thisEvent->ifos,caseStr);
 		       thisEvent->mass1 = input->tmplt->mass1;
 		       thisEvent->mass2 = input->tmplt->mass2;
+		       thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+		       thisEvent->eta = input->tmplt->eta;
 
 		       inclination = 0.0;
 		       polarization = 0.0;
@@ -1803,10 +2075,14 @@ LALCoherentInspiralFilterSegment (
 		       cDataTemp[1].im = cData[1].data->data[qTemp].im;
 		       cDataTemp[2].re = cData[2].data->data[wTemp].re;
 		       cDataTemp[2].im = cData[2].data->data[wTemp].im;
-		       LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		       LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		       thisEvent->inclination = inclination;
 		       thisEvent->polarization = polarization;
-
+		       thisEvent->coa_phase = coaPhase;
+		       LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		       thisEvent->eff_distance = distanceEstimate;
+		       thisEvent->ligo_axis_ra = phi;
+		       thisEvent->ligo_axis_dec = theta;
 
 		       /* Need to initialize the event start index to new value */
 		       if( k > (eventStartIdx + deltaEventIndex) )
@@ -1871,7 +2147,49 @@ LALCoherentInspiralFilterSegment (
 				  {
 				    if (w >= 0 && w < (INT4) numPoints)
 				      {
-					cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( (cData[0].data->data[k].re + cData[3].data->data[m].re)*(cData[0].data->data[k].re + cData[3].data->data[m].re) + (cData[0].data->data[k].im + cData[3].data->data[m].im)*(cData[0].data->data[k].im + cData[3].data->data[m].im) ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]  + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( cData[2].data->data[w].re*cData[2].data->data[w].re + cData[2].data->data[w].im*cData[2].data->data[w].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[1].data->data[q].re + cData[0].data->data[k].im*cData[1].data->data[q].im + cData[3].data->data[m].re*cData[1].data->data[q].re + cData[3].data->data[m].im*cData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[2].data->data[w].re + cData[0].data->data[k].im*cData[2].data->data[w].im + cData[3].data->data[m].re*cData[2].data->data[w].re + cData[3].data->data[m].im*cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re*cData[2].data->data[w].re + cData[1].data->data[q].im*cData[2].data->data[w].im));
+				      cohSNRLocal = sqrt( ( 
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]) *
+                                        ((cData[0].data->data[k].re + cData[3].data->data[m].re)
+                                        *(cData[0].data->data[k].re + cData[3].data->data[m].re)
+                                        +(cData[0].data->data[k].im + cData[3].data->data[m].im)
+                                        *(cData[0].data->data[k].im + cData[3].data->data[m].im)) 
+                                        +(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]) *
+                                        ( cData[1].data->data[q].re*cData[1].data->data[q].re + 
+                                        cData[1].data->data[q].im*cData[1].data->data[q].im ) + 
+                                        ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]  + 
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] ) *
+                                        ( cData[2].data->data[w].re*cData[2].data->data[w].re + 
+                                        cData[2].data->data[w].im*cData[2].data->data[w].im ) + 
+                                        2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]) *
+                                        (cData[0].data->data[k].re*cData[1].data->data[q].re + 
+                                        cData[0].data->data[k].im*cData[1].data->data[q].im + 
+                                        cData[3].data->data[m].re*cData[1].data->data[q].re + 
+                                        cData[3].data->data[m].im*cData[1].data->data[q].im) + 
+                                        2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
+                                        (cData[0].data->data[k].re*cData[2].data->data[w].re + 
+                                        cData[0].data->data[k].im*cData[2].data->data[w].im + 
+                                        cData[3].data->data[m].re*cData[2].data->data[w].re + 
+                                        cData[3].data->data[m].im*cData[2].data->data[w].im) + 
+                                        2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
+                                        (cData[1].data->data[q].re*cData[2].data->data[w].re + 
+                                        cData[1].data->data[q].im*cData[2].data->data[w].im));
 			      
 					if(cohSNRLocal > cohSNR)
 					  {
@@ -1913,6 +2231,8 @@ LALCoherentInspiralFilterSegment (
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+			thisEvent->eta = input->tmplt->eta;
 
 		        inclination = 0.0;
 		        polarization = 0.0;
@@ -1924,9 +2244,14 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[qTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[wTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
+			thisEvent->coa_phase = coaPhase;
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        thisEvent->eff_distance = distanceEstimate;
+		        thisEvent->ligo_axis_ra = phi;
+		        thisEvent->ligo_axis_dec = theta;
 
 		        tempTime = 0.0;
 		        fracpart = 0.0;
@@ -1945,6 +2270,8 @@ LALCoherentInspiralFilterSegment (
 		        strcpy(thisEvent->ifos, caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+			thisEvent->eta = input->tmplt->eta;
 
 		        inclination = 0.0;
 		        polarization = 0.0;
@@ -1956,9 +2283,14 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[qTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[wTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
+			thisEvent->coa_phase = coaPhase;
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        thisEvent->eff_distance = distanceEstimate;
+		        thisEvent->ligo_axis_ra = phi;
+		        thisEvent->ligo_axis_dec = theta;
 
 		        tempTime = 0.0;
 		        fracpart = 0.0;
@@ -1990,6 +2322,8 @@ LALCoherentInspiralFilterSegment (
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+			thisEvent->eta = input->tmplt->eta;
 
 		        inclination = 0.0;
 		        polarization = 0.0;
@@ -2001,9 +2335,14 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[qTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[wTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[wTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
+			thisEvent->coa_phase = coaPhase;
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        thisEvent->eff_distance = distanceEstimate;
+		        thisEvent->ligo_axis_ra = phi;
+		        thisEvent->ligo_axis_dec = theta;
 
 		        /* Need to initialize the event start index to new value */
 		        if( k > (eventStartIdx + deltaEventIndex) )
@@ -2071,7 +2410,67 @@ LALCoherentInspiralFilterSegment (
 				  {
 				    if(j >=0 && j < (INT4) numPoints)
 				      {
-					cohSNRLocal = sqrt( ( beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] )*( cData[0].data->data[k].re*cData[0].data->data[k].re + cData[0].data->data[k].im*cData[0].data->data[k].im ) + ( beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] )*( cData[1].data->data[q].re*cData[1].data->data[q].re + cData[1].data->data[q].im*cData[1].data->data[q].im ) + ( beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] )*( cData[2].data->data[w].re*cData[2].data->data[w].re + cData[2].data->data[w].im*cData[2].data->data[w].im ) + ( beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3] )*( cData[3].data->data[j].re*cData[3].data->data[j].re + cData[3].data->data[j].im*cData[3].data->data[j].im ) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re * cData[1].data->data[q].re + cData[0].data->data[k].im * cData[1].data->data[q].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[2].data->data[w].re + cData[0].data->data[k].im * cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(cData[0].data->data[k].re*cData[3].data->data[j].re + cData[0].data->data[k].im*cData[3].data->data[j].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re * cData[2].data->data[w].re + cData[1].data->data[q].im*cData[2].data->data[w].im) + 2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(cData[1].data->data[q].re*cData[3].data->data[j].re + cData[1].data->data[q].im*cData[3].data->data[j].im) + 2*(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]*beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3])*(cData[2].data->data[w].re*cData[3].data->data[j].re + cData[2].data->data[w].im * cData[3].data->data[j].im));
+				      cohSNRLocal = sqrt( ( 
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3]) *
+                                        (cData[0].data->data[k].re*cData[0].data->data[k].re + 
+                                        cData[0].data->data[k].im*cData[0].data->data[k].im ) + 
+                                        (beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]) *
+                                        (cData[1].data->data[q].re*cData[1].data->data[q].re + 
+                                        cData[1].data->data[q].im*cData[1].data->data[q].im ) + 
+                                        (beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
+                                        (cData[2].data->data[w].re*cData[2].data->data[w].re + 
+                                        cData[2].data->data[w].im*cData[2].data->data[w].im ) + 
+                                        (beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]) *
+                                        (cData[3].data->data[j].re*cData[3].data->data[j].re + 
+                                        cData[3].data->data[j].im*cData[3].data->data[j].im ) + 
+                                        2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3]) *
+                                        (cData[0].data->data[k].re * cData[1].data->data[q].re + 
+                                        cData[0].data->data[k].im * cData[1].data->data[q].im) + 
+                                        2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
+                                        (cData[0].data->data[k].re*cData[2].data->data[w].re + 
+                                        cData[0].data->data[k].im * cData[2].data->data[w].im) + 
+                                        2*(beamVec->detBeamArray[0].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[0].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]) *
+                                        (cData[0].data->data[k].re*cData[3].data->data[j].re + 
+                                        cData[0].data->data[k].im*cData[3].data->data[j].im) + 
+                                        2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3]) *
+                                        (cData[1].data->data[q].re * cData[2].data->data[w].re + 
+                                        cData[1].data->data[q].im*cData[2].data->data[w].im) + 
+                                        2*(beamVec->detBeamArray[1].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[1].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]) *
+                                        (cData[1].data->data[q].re*cData[3].data->data[j].re + 
+                                        cData[1].data->data[q].im*cData[3].data->data[j].im) + 
+                                        2*(beamVec->detBeamArray[2].thetaPhiVs[l].data->data[2] *
+                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[2] + 
+                                        beamVec->detBeamArray[2].thetaPhiVs[l].data->data[3] *
+                                        beamVec->detBeamArray[3].thetaPhiVs[l].data->data[3]) *
+                                        (cData[2].data->data[w].re*cData[3].data->data[j].re + 
+                                        cData[2].data->data[w].im * cData[3].data->data[j].im));
 				      
 					if(cohSNRLocal > cohSNR)
 					  {
@@ -2111,6 +2510,8 @@ LALCoherentInspiralFilterSegment (
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+			thisEvent->eta = input->tmplt->eta;
 
 		        inclination = 0.0;
 		        polarization = 0.0;
@@ -2122,9 +2523,14 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[wTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[jTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[jTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
+			thisEvent->coa_phase = coaPhase;
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        thisEvent->eff_distance = distanceEstimate;
+		        thisEvent->ligo_axis_ra = phi;
+		        thisEvent->ligo_axis_dec = theta;
 
 		        tempTime = 0.0;
 		        fracpart = 0.0;
@@ -2143,6 +2549,8 @@ LALCoherentInspiralFilterSegment (
 		        strcpy(thisEvent->ifos, caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+			thisEvent->eta = input->tmplt->eta;
 
 		        inclination = 0.0;
 		        polarization = 0.0;
@@ -2154,9 +2562,14 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[wTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[jTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[jTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
+			thisEvent->coa_phase = coaPhase;
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        thisEvent->eff_distance = distanceEstimate;
+		        thisEvent->ligo_axis_ra = phi;
+		        thisEvent->ligo_axis_dec = theta;
 
 		        tempTime = 0.0;
 		        fracpart = 0.0;
@@ -2188,6 +2601,8 @@ LALCoherentInspiralFilterSegment (
 		        strcpy(thisEvent->ifos,caseStr);
 		        thisEvent->mass1 = input->tmplt->mass1;
 		        thisEvent->mass2 = input->tmplt->mass2;
+			thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
+			thisEvent->eta = input->tmplt->eta;
 
 		        inclination = 0.0;
 		        polarization = 0.0;
@@ -2199,9 +2614,14 @@ LALCoherentInspiralFilterSegment (
 		        cDataTemp[2].im = cData[2].data->data[wTemp].im;
 		        cDataTemp[3].re = cData[3].data->data[jTemp].re;
 		        cDataTemp[3].im = cData[3].data->data[jTemp].im;
-		        LALCoherentInspiralEstimatePsiEpsilon( status->statusPtr, caseID, input->segNorm, theta, phi, cDataTemp, &inclination, &polarization ); 
+		        LALCoherentInspiralEstimatePsiEpsilonCoaPhase( status->statusPtr, caseID, params->segNorm, theta, phi, cDataTemp, &inclination, &polarization, &coaPhase ); 
 		        thisEvent->inclination = inclination;
 		        thisEvent->polarization = polarization;
+			thisEvent->coa_phase = coaPhase;
+		        LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		        thisEvent->eff_distance = distanceEstimate;
+		        thisEvent->ligo_axis_ra = phi;
+		        thisEvent->ligo_axis_dec = theta;
 
 		        /* Need to initialize the event start index to new value */
 		        if( k > (eventStartIdx + deltaEventIndex) )
