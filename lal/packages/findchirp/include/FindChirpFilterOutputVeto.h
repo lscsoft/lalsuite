@@ -62,9 +62,9 @@ NRCSID (FINDCHIRPFILTEROUTPUTVETOH, "$Id$");
 #define FINDCHIRPFILTEROUTPUTVETOH_MSGENULL "Null pointer" 
 #define FINDCHIRPFILTEROUTPUTVETOH_MSGENNUL "Non-null pointer" 
 #define FINDCHIRPFILTEROUTPUTVETOH_MSGEALOC "Memory allocation error" 
-#define FINDCHIRPFILTEROUTPUTVETO_MSGERSQT "r^2 threshold is negative" 
+#define FINDCHIRPFILTEROUTPUTVETO_MSGERSQT "rsq threshold is negative" 
 #define FINDCHIRPFILTEROUTPUTVETO_MSGEDTZO "deltaT is zero or negative" 
-#define FINDCHIRPFILTEROUTPUTVETO_MSGERSQW "r^2 veto window is zero or negative" 
+#define FINDCHIRPFILTEROUTPUTVETO_MSGERSQW "rsq veto window is zero or negative" 
 /* </lalErrTable> */
 
 
