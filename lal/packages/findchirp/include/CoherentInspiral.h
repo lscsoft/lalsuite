@@ -209,6 +209,9 @@ tagCoherentInspiralFilterParams
   REAL4                         fLow;
   REAL4                         deltaT;
   REAL4                         cohSNRThresh;
+  REAL4                         segNorm[4];
+  REAL4                         templateNorm;
+  INT4                          segmentLength; /* time points */
   UINT4                         cohSNROut;
   UINT2Vector                  *detIDVec; /* Note: H1, H2 are from same site, but are different detectors */
   DetectorVector               *detectorVec; /*stores detectors' site info */
@@ -294,7 +297,6 @@ tagCoherentInspiralFilterInput
   InspiralTemplate            *tmplt;
   CoherentInspiralBeamVector  *beamVec;
   CoherentInspiralCVector     *multiCData;
-  REAL4                        segNorm[4];
 }
 CoherentInspiralFilterInput;
 /* </lalVerbatim> */
@@ -373,16 +375,28 @@ LALCoherentInspiralFilterParamsFinalize (
 #endif
 
 void
-LALCoherentInspiralEstimatePsiEpsilon (
+LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
     LALStatus                             *status,
     INT4                                   caseID[6],
     REAL4                                  segNorm[4],
     REAL4                                  theta,
     REAL4                                  phi,
     COMPLEX8                               cData[4],
-    REAL4                                  *inclination,
-    REAL4                                  *polarization
+    REAL4                                 *inclination,
+    REAL4                                 *polarization,
+    REAL4                                 *coaPhase
     ); 
+
+void
+LALCoherentInspiralEstimateDistance (
+    LALStatus                             *status,
+    REAL4                                  segNorm[4],
+    REAL4                                  templateNorm,
+    REAL4                                  deltaT,
+    INT4                                   segmentLength,  /* time pts */
+    REAL4                                  coherentSNR,
+    REAL4                                 *distance
+    );
 
 void
 LALCoherentInspiralFilterSegment (
