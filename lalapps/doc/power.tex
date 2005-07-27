@@ -662,45 +662,52 @@ similarly the maximum time duration determines the minimum frequency band
 of the tile.  The time frequency plane is then constructed with a 
 time-frequency resolution finer by at least a factor of $2$ compared to
 the minimum resolutions of the tiles.  As a concrete example,  
-suppose the maximum allowed time duration of  a tile is $\Delta T sec = 2^{-(a+1)} sec$  
-and the maximum frequency band is 
-$\Delta F Hz = 2^{(b-1)} Hz$.  This implies the minimum duration of a tile in the search will
-be  $\Delta t^{tile} sec = 2^{-(b-1)} sec$  and the minimum frequency band will be  
-$\Delta f^{tile} Hz = 2^{(a+1)} Hz$.
+suppose the maximum allowed time duration of a tile is 
+$\Delta T sec = 2^{-(a+1)} sec$  and the maximum frequency band is 
+$\Delta F Hz = 2^{(b-1)} Hz$.  This implies the minimum duration of a tile 
+in the search will be  $\Delta t^{tile} sec = 2^{-(b-1)} sec$  and the 
+minimum frequency band will be  $\Delta f^{tile} Hz = 2^{(a+1)} Hz$.
  The time-frequency plane is then constructed with a timing resolution
-of $\delta t sec = 2^{-b} sec.$ and a frequency resolution of $\delta f Hz = 2^a Hz$.
+of $\delta t sec = 2^{-b} sec.$ and a frequency resolution of 
+$\delta f Hz = 2^a Hz$.
 
-
-For each whitened segment
-$\hat{s}_k$, one constructs multiple channels,  each of which is an
-inverse Fourier tranform of $\delta f Hz$ of data.  Now suppose the bandwidth over which we 
-want to search is $ F Hz$ and the time duration is $ T sec $.
-Therefore there will be
-$n_{chan} = \frac{ F Hz}{\delta f Hz}$ channels and $n_{timebins} = \frac{T sec}{ \delta t sec}$
-timebins in each channel. $n_{timebins} \times n_{chan}$ number of elements 
-will then represent this time-frequency plane.
+For each whitened segment $\hat{s}_k$, one constructs multiple channels,  
+each of which is an inverse Fourier tranform of $\delta f Hz$ of data.  
+Now suppose the bandwidth over which we want to search is $ F Hz$ and the 
+time duration is $ T sec $. Therefore there will be
+$n_{chan} = \frac{ F Hz}{\delta f Hz}$ channels and $n_{timebins} 
+= \frac{T sec}{ \delta t sec}$ timebins in each channel. 
+$n_{timebins} \times n_{chan}$ number of elements will then represent 
+this time-frequency plane.
 
 If we consider a channel whose low frequency index is $k_0$ 
-(where $k_0 = \frac{flow Hz}{ \delta f Hz}$,  $flow Hz$ being the low frequency of the channel) 
-and the channel width in number of sample points is $ b = \frac{\delta f Hz }{\Delta f Hz} $
-($\Delta f Hz $ is the frequency resolution of the fully sampled frequency series),   
-it's elements can be represented as:
+(where $k_0 = \frac{flow Hz}{ \delta f Hz}$,  $flow Hz$ being the low 
+frequency of the channel) and the channel width in number of sample 
+points is $ b = \frac{\delta f Hz }{\Delta f Hz} $ ($\Delta f Hz $ is the
+ frequency resolution of the fully sampled frequency series),  it's elements 
+can be represented as:
 \begin{equation}
-z_{j}(k_0,  b) = \sum_{k=0}^{N-1}  \hat{s}_k \tilde{\Theta}_k^\ast(k_0,  b) e^{2 \pi ijk/N},
+z_{j}(k_0,  b) = \sum_{k=0}^{N-1}  \hat{s}_k \tilde{\Theta}_k^\ast(k_0,  b) 
+e^{2 \pi ijk/N},
+\label{eq:tfplanecountspoints}
 \end{equation}  where $j = 0,\cdots, N-1$.  Note,  the timing
-resolution of $z_j(k_0,  b)$ is equal to that of the sampled detector data $s_j$.
- The elements of the time-frequency plane corresponding to this 
+resolution of $z_j(k_0,  b)$ is equal to that of the sampled detector 
+data $s_j$.  The elements of the time-frequency plane corresponding to this 
 particular channel $z_j(k_0,  b)$ will then be 
 \begin{equation}
 Z_J(k_0,  b)   = z_{Jn_t}(k_0,  b),
-\end{equation} where $n_t = \frac{\delta t sec}{\Delta sec}$ are the number of sample
-points in one time-frequency plane time bin ($\Delta sec$ being the full sampling
-rate of the timing series)  and $J = 0, \cdots, n_{timebins} - 1$.
+\end{equation} where $n_t = \frac{\delta t sec}{\Delta sec}$ are the number 
+of sample points in one time-frequency plane time bin ($\Delta sec$ being 
+the full sampling rate of the timing series)  and $J = 0, \cdots, 
+n_{timebins} - 1$.
 
 Each channel is normalised so that a sample point in the channel represents
-a Gaussian random variable with zero mean and unit variance. The normalisation constant is given by 
+a Gaussian random variable with zero mean and unit variance. The normalisation 
+constant is given by 
 \begin{equation}
-\sigma^2(k_0,  b) = \langle z_j^2(k_0, b) \rangle = \sum_{k=0}^{N-1}\sum_{l=0}^{N-1}\langle \hat{s}_k \hat{s}_l^\ast \rangle \tilde{\Theta}_k^\ast(k_0,  b) \tilde{\Theta}_l(k_0,  b) e^{2 \pi ij(k-l)/N},
+\sigma^2(k_0,  b) = \langle z_j^2(k_0, b) \rangle = \sum_{k=0}^{N-1}
+\sum_{l=0}^{N-1}\langle \hat{s}_k \hat{s}_l^\ast \rangle 
+\tilde{\Theta}_k^\ast(k_0,  b) \tilde{\Theta}_l(k_0,  b) e^{2 \pi ij(k-l)/N},
 \end{equation}
 where $\langle \hat{s}_k \hat{s}_l^\ast \rangle = 2\delta(k-l)$.  Hence,  the 
 normalisation simplifies to 
@@ -712,20 +719,24 @@ Now suppose we have a channel with the same low frequency $k_0$ but
 twice the frequency band,  i.e. $2b$ compared to the previous channel.
 We therefore have 
 \begin{equation}
-z_j(k_0,  2b) = \sum_{k=0}^{N-1}  \hat{s}_k \tilde{\Theta}_k^\ast(k_0,  2b) e^{2 \pi ijk/N},
+z_j(k_0,  2b) = \sum_{k=0}^{N-1}  \hat{s}_k \tilde{\Theta}_k^\ast(k_0,  2b) 
+e^{2 \pi ijk/N},
 \end{equation}
 where $\tilde{\Theta}_k^\ast(k_0,  2b)$ from Eq~\ref{eq:filter} is given by
 \begin{equation}
-\tilde{\Theta}(k_0,  2b) = \sum_{j=0}^{N-1}\frac{sin[2\pi/N(k_0 + 2b)j] - sin[2\pi/Nk_0j]}{\pi j \Delta}e^{-12\pi jk/N}
+\tilde{\Theta}(k_0,  2b) = \sum_{j=0}^{N-1}\frac{sin[2\pi/N(k_0 + 2b)j] 
+- sin[2\pi/Nk_0j]}{\pi j \Delta}e^{-12\pi jk/N}
 \end{equation}
 However we can write
 \begin{equation}
-sin[2\pi/N(k_0 + 2b)j] - sin[2\pi/Nk_0j] = sin[2\pi/N(k_0 + b)j] - sin[2\pi/Nk_0j] + sin[2\pi/N(k_0 + 2b)j] - sin[2\pi/N(k_0 + b)j]
+sin[2\pi/N(k_0 + 2b)j] - sin[2\pi/Nk_0j] = sin[2\pi/N(k_0 + b)j] - 
+sin[2\pi/Nk_0j] + sin[2\pi/N(k_0 + 2b)j] - sin[2\pi/N(k_0 + b)j]
 \label{eq:sines}
 \end{equation}
 and hence we get
 \begin{equation}
-\tilde{\Theta}(k_0,  2b) = \tilde{\Theta}(k_0,  b) + \tilde{\Theta}(k_0 + b,  b)
+\tilde{\Theta}(k_0,  2b) = \tilde{\Theta}(k_0,  b) + 
+\tilde{\Theta}(k_0 + b,  b)
 \end{equation}
 which implies
 \begin{equation}
@@ -735,37 +746,45 @@ This is shown in Fig~\ref{fig:sumfilters}.
 \begin{figure}
 \begin{center}
 \includegraphics[width=0.9\textwidth]{figures/sumoffilters}
-\caption{Response to a 4 hz wide filter compared to the sum of two 2 Hz wide filters}
+\caption{Response to a 4 hz wide filter compared to the sum of two 2 Hz wide 
+filters}
 \label{fig:sumfilters}
 \end{center}
 \end{figure}
-The data used to generate this plot is a delta function in the time domain(so that 
-it is a flat line in the frequency domain, as shown by the green curve in the Fig~\ref{fig:sumfilters}).
-The black curve shows the output when the channel width is $4 Hz$, while the red curve 
-shows the sum of the output of two $2 Hz$ wide channels. 
+The data used to generate this plot is a delta function in the time domain
+(so that it is a flat line in the frequency domain, as shown by the green 
+curve in the Fig~\ref{fig:sumfilters}). The black curve shows the output when 
+the channel width is $4 Hz$, while the red curve shows the sum of the output 
+of two $2 Hz$ wide channels. 
 
 
 The corresponding normalisation,  
 \begin{equation}
-\sigma^2(k_0,  2b) = \sigma^2(k_0,  b) + \sigma^2(k_0+b,  b) + 2\sum_{k=0}^{N-1}\tilde{\Theta}_k^\ast(k_0,  b)\tilde{\Theta}_k(k_0 + b,  b)
+\sigma^2(k_0,  2b) = \sigma^2(k_0,  b) + \sigma^2(k_0+b,  b) + 
+2\sum_{k=0}^{N-1}\tilde{\Theta}_k^\ast(k_0,  b)\tilde{\Theta}_k(k_0 + b,  b)
 \label{eq:norm}
 \end{equation}
-The filter being orthogonal(almost),  the cross term in Eq~\ref{eq:norm} will be negligible.  
+The filter being orthogonal(almost),  the cross term in Eq~\ref{eq:norm} 
+will be negligible.  
 
-A tile in this plane can be denoted as $\tau =\{J_1, \Delta n_t, K_1, \Delta n_f\}$,  where
-$J_1$ and $K_1$ represent the indices corresponding to the start time and 
-start frequency of the tile respectively while $n_t$ and $n_f$ are respectively the
-time and frequency bins.  The degrees of freedom assosciated with
-$\tau$ will then be $dof_{\tau} = 2 \times n_t \times \Delta t \times n_f \times \Delta f $.
-  Requiring that there are at least two sample points in the unit time-frequency volume tile 
-we see that the time-frequency sample points have to be picked at every 
-$\Delta t^{tile} sec = 1 / (2 \times n_f \times \delta f)$,  where $\delta f$ is the time-frequency 
-plane frequency resolution.  In terms of sample points then every $\Delta t^{tile} / \delta t $ sample point 
-has to be considered while calculating the power of the tile.  Now,  
-$\Delta t^{tile} / \delta t = \frac{1}{(2 \times n_f \times \delta f) \times \delta t} = n_t / dof_{\tau}$  
+A tile in this plane can be denoted as $\tau =\{J_1, \Delta n_t, K_1, \Delta 
+n_f\}$,  where $J_1$ and $K_1$ represent the indices corresponding to the 
+start time and start frequency of the tile respectively while $\Delta n_t$ 
+and $\Delta n_f$ are respectively the time and frequency bins.  The degrees 
+of freedom assosciated with $\tau$ will then be $dof_{\tau} = 2 \times n_t 
+\times \Delta t \times n_f \times \Delta f $.  Requiring that there are at 
+least two sample points in the unit time-frequency volume tile we see that 
+the time-frequency sample points have to be picked at every  $\Delta t^{tile} 
+sec = 1 / (2 \times n_f \times \delta f)$,  where $\delta f$ is the 
+time-frequency plane frequency resolution.  In terms of sample points then 
+every $\Delta t^{tile} / \delta t $ sample point has to be considered while 
+calculating the power of the tile.  Now,  $\Delta t^{tile} / \delta t = 
+\frac{1}{(2 \times n_f \times \delta f) \times \delta t} = n_t / dof_{\tau}$  
 and the power in the tile will then be 
 \begin{equation}
-\rho_{\tau} = \sum_{n=0}^{dof_{\tau}-1}(\sum_{k=K1}^{K2}\frac{Z^2_{[J_1 + n\frac{n_t}{dof_{\tau}}]}(k,b)}{\sigma^2(k,b)}).
+\varepsilon_{\tau} = \sum_{n=0}^{dof_{\tau}-1}\frac{(\sum_{k=K1}^{\Delta 
+n_f -1}Z_{[J_1 + n\frac{n_t}{dof_{\tau}}]}(k,b))^2}{\sum_{k=K1}^{\Delta 
+n_f -1}\sigma^2(k,b)}.
 \end{equation}
 
 In Gaussian noise,  the power in a given tile is $\chi^2$-distributed
@@ -785,10 +804,9 @@ here.  By definition,
 \begin{equation}
 h_{rss}^2 =  \int h^2(t)dt = \sum h^2_j \delta t,
 \end{equation}
-where $h_j$ is the gravitational wave strain data. This in the 
-frequency domain is related to 
-the data in counts units(which has been used for all the documentation 
-till now) by: 
+where $h_j$ is the gravitational wave strain data. This in the frequency 
+domain is related to the data in counts units(which has been used for all 
+the documentation till now) by: 
 \begin{equation}
 \tilde h_k = R_k \tilde s_k,
 \end{equation}  
@@ -800,21 +818,43 @@ normalised data:
 \end{equation}
 The corresponding time-frequency plane points are 
 \begin{eqnarray}
-H_J(k_0, b) &=& \frac{1}{N}\sum_{k=0}^{N-1}\tilde h_k \tilde \Theta^\ast_k(k_0, b)
-e^{i 2 \pi jk/N} \\
-&=& \frac{1}{N}\sum_{k=0}^{N-1} \frac{R_k \sqrt P_k}{2\sqrt {\Delta f }}\hat s_k 
-\tilde \Theta^\ast_k(k_0, b)e^{i 2 \pi jk/N}
+H_j(k_0, b) &=& \frac{1}{N}\sum_{k=0}^{N-1}\tilde h_k \tilde 
+\Theta^\ast_k(k_0, b)e^{i 2 \pi jk/N} \\
+&=& \frac{1}{N}\sum_{k=0}^{N-1} \frac{R_k(k_0, b)\sqrt P_k(k_0, b)}
+{2\sqrt {\Delta f }}\hat s_k \tilde \Theta^\ast_k(k_0, b)e^{i 2 \pi jk/N}
 \end{eqnarray}
-For the present implementation we have assumed that over the channel width
-the response and the average spectrum remains constant and so we can pull them out
-of the sum. If,  $F_k = \frac{R_k \sqrt P_k}{2\sqrt {\Delta f }}$ we have 
+For the present implementation we have assumed 
+\begin{itemize}
+\item the response and the average spectrum can be replaced by their average 
+values over the channel width and 
+\item effect of the response phase is negligible.  
+\end{itemize}
+So we can pull their contributions out of the sum and let us denote that by 
+$F(k_0, b) = \frac{R_k(k_0, b)\sqrt {P_k(k_0, b)}}{2N\sqrt {\Delta f }}$.
+Therefore we get 
 \begin{equation}
-H_J(k_0, b) = F_k / N Z_J(k_0, b) , 
+H_j(k_0, b) = F(k_0, b) z_j(k_0, b) , 
 \end{equation} 
-where $Z_J$ are the time-frequency sample points obtained by using the data in counts 
-as described in the previous section.
-
-
+where $z_j$ are the time-frequency sample points obtained by using the data 
+in counts as given in Eq~\ref{eq:tfplanecountspoints}.  The $h_{rss}$ 
+corresponding to the tile $\tau$ will then be 
+\begin{equation}
+h_{rss}^2 = \sum_{n=0}^{dof_{\tau}-1}(\sum_{k=K1}^{\Delta n_f - 1}
+F(k,b)Z_{[J_1 + n\frac{n_t}{dof_{\tau}}]}(k,b))^2\Delta t^{tile}.
+\end{equation}
+How well can we estimate the $h_{rss}$ under the above assumptions
+are shown by Fig~\ref{fig:hrss}.  We have plotted the injected
+$h_{rss}$ on the x-axis and the estimated $h_{rss}$ on the y-axis. Ideally
+we would expect them to lie on a straight line at 45 degrees with the
+x-axis(as marked by the red line in the plot). 
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.9\textwidth]{figures/inj_det_hrss}
+\caption{Injected vs Detected $h_{rss}$}
+\label{fig:hrss}
+\end{center}
+\end{figure}
+\clearpage
  
 \subsection{Time Domain Segmentation}
 The excess power analysis code does not process the input data as a
