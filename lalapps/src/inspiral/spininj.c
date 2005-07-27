@@ -377,19 +377,51 @@ void LALSetSpin(LALStatus                   *status,
 		SimInspiralTable            *this_inj  )
 {       
   REAL4 u; 
+  REAL4 spin1Mag;
+  REAL4 spin2Mag;
+  REAL4 r1;
+  REAL4 r2;
+  REAL4 phi1;
+  REAL4 phi2;
 
-  LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-  this_inj->spin1x = params.spin1.min + u * (params.spin1.max - params.spin1.min);
-  LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-  this_inj->spin1y = params.spin1.min + u * (params.spin1.max - params.spin1.min);
-  LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-  this_inj->spin1z = params.spin1.min + u * (params.spin1.max - params.spin1.min);
-  LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-  this_inj->spin2x = params.spin2.min + u * (params.spin2.max - params.spin2.min);
-  LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-  this_inj->spin2y = params.spin2.min + u * (params.spin2.max - params.spin2.min);
-  LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
-  this_inj->spin2z = params.spin2.min + u * (params.spin2.max - params.spin2.min);
+ /* spin1Mag */
+ LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
+ spin1Mag =  params.spin1.min +  u * (params.spin1.max - params.spin1.min);
+
+ /* spin1z */
+ LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
+ this_inj->spin1z = (u - 0.5) * 2 * (spin1Mag);
+
+ r1 = pow( ((spin1Mag * spin1Mag) - (this_inj->spin1z * this_inj->spin1z)) , 0.5); 
+
+ /* phi1 */
+ LAL_CALL( LALUniformDeviate( status, &u, randParams ), status ); 
+ phi1 = u * LAL_TWOPI;
+ 
+ /* spin1x and spin1y */  
+ this_inj->spin1x = r1 * cos(phi1);
+ this_inj->spin1y = r1 * sin(phi1);
+
+  /* spin2Mag */
+ LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
+ spin2Mag = params.spin2.min + u * (params.spin2.max - params.spin2.min);
+                                                                                                                             
+ /* spin2z */
+ LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
+ this_inj->spin2z = (u - 0.5) * 2 * (spin2Mag);
+                                                                                                                             
+ r2 = pow( ((spin2Mag * spin2Mag) - (this_inj->spin2z * this_inj->spin2z)) , 0.5);
+                                                                                                                             
+ /* phi2 */
+ LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
+ phi2 = u * LAL_TWOPI;
+                                                                                                                             
+ /* spin2x and spin2y */
+ this_inj->spin2x = r2 * cos(phi2);
+ this_inj->spin2y = r2 * sin(phi2);
+
+ fprintf (stdout, "%e\t %e\t %e\t %e\t \n", spin1Mag, phi1, spin2Mag, phi2 );
+
 }
 
 
@@ -1082,6 +1114,43 @@ void LALCheckInspiralInjectionParameters(LALStatus *status,
 	       "maximum coa_phase max (%f) must be > coa_phase min (%f)",
 	       "coa-phase-range",params.coa_phase.max, params.coa_phase.min);
       
+      exit( 1 );
+    }
+
+
+   if (  params.spin1.min < 0 || params.spin1.max < 0)
+    {
+      fprintf( stderr, "invalid argument to --%s:\n"
+               "spin1-min (%f) and spin1-max (%f) must be > 0 \n",
+               "spin1-min or spin1-max",params.spin1.min, params.spin1.max);
+                                                                                                                             
+      exit( 1 );
+    }
+
+    if (  params.spin1.max < params.spin1.min)
+    {
+      fprintf( stderr, "invalid argument to --%s:\n"
+               "spin1-min (%f) must be < spin1-max (%f) \n",
+               "spin1-min or spin1-max",params.spin1.min, params.spin1.max);
+                                                                                                                             
+      exit( 1 );
+    }
+
+   if (  params.spin2.min < 0 || params.spin2.max < 0)
+    {
+      fprintf( stderr, "invalid argument to --%s:\n"
+               "spin2-min (%f) and spin2-max (%f) must be > 0 \n",
+               "spin2-min or spin2-max",params.spin2.min, params.spin2.max);
+                                                                                                                             
+      exit( 1 );
+    }
+                                                                                                                             
+    if (  params.spin2.max < params.spin2.min)
+    {
+      fprintf( stderr, "invalid argument to --%s:\n"
+               "spin2-min (%f) must be < spin2-max (%f) \n",
+               "spin2-min or spin2-max",params.spin2.min, params.spin2.max);
+                                                                                                                             
       exit( 1 );
     }
 
