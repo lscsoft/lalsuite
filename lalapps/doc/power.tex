@@ -777,6 +777,7 @@ many tiles can be identified as triggers with different sizes and
 aspect ratios.   When the search over a particular segment is
 complete,   triggers are clustered and the clustering is described in 
 Section~\ref{section:clustering} .
+\clearpage
 
 \subsubsection{$h_{rss}$ Estimation}
 The way we estimate $h_{rss}$ corresponding to a tile $\tau$ is described 
@@ -792,8 +793,29 @@ till now) by:
 \tilde h_k = R_k \tilde s_k,
 \end{equation}  
 where $R_k$ is the detector response function with units $strain / counts$ 
-while the unit of $h_k$ is strain and of $s_k$ is counts.
-  
+while the unit of $h_k$ is strain and of $s_k$ is counts.  In terms of the 
+normalised data:
+\begin{equation}
+\tilde h_k = \frac{R_k \sqrt P_k}{2\sqrt {\Delta f }}\hat s_k
+\end{equation}
+The corresponding time-frequency plane points are 
+\begin{eqnarray}
+H_J(k_0, b) &=& \frac{1}{N}\sum_{k=0}^{N-1}\tilde h_k \tilde \Theta^\ast_k(k_0, b)
+e^{i 2 \pi jk/N} \\
+&=& \frac{1}{N}\sum_{k=0}^{N-1} \frac{R_k \sqrt P_k}{2\sqrt {\Delta f }}\hat s_k 
+\tilde \Theta^\ast_k(k_0, b)e^{i 2 \pi jk/N}
+\end{eqnarray}
+For the present implementation we have assumed that over the channel width
+the response and the average spectrum remains constant and so we can pull them out
+of the sum. If,  $F_k = \frac{R_k \sqrt P_k}{2\sqrt {\Delta f }}$ we have 
+\begin{equation}
+H_J(k_0, b) = F_k / N Z_J(k_0, b) , 
+\end{equation} 
+where $Z_J$ are the time-frequency sample points obtained by using the data in counts 
+as described in the previous section.
+
+
+ 
 \subsection{Time Domain Segmentation}
 The excess power analysis code does not process the input data as a
 continuous time series;  rather the time series is split into a sequence of
