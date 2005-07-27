@@ -160,6 +160,7 @@ int main( int argc, char *argv[] )
   int                   numEvents = 0;
   int                   numEventsInXML = 0;
   int                   numEventsKept = 0;
+  int                   numEventsInIFO = 0;
   int                   numEventsCoinc = 0;
   int                   numEventsDiscard = 0;
   int                   numEventsProcessed = 0;
@@ -1072,6 +1073,9 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, 
         "keeping only triggers from %s, discarding others...", ifoName );
     LAL_CALL( LALIfoCutSingleInspiral( &stat, &eventHead, ifoName ), &stat );
+    LAL_CALL( LALIfoCountSingleInspiral( &stat, &numEventsInIFO, eventHead, 
+          XLALIFONumber(ifoName) ), &stat );
+
     if ( vrbflg ) fprintf( stdout, "done\n" );
   }
 
@@ -1497,6 +1501,12 @@ int main( int argc, char *argv[] )
     else
     {
       fprintf( fp, "number of triggers in input data %d \n", numEventsKept );
+    }
+
+    if ( ifoName )
+    {
+      fprintf( fp, "number of triggers from %s ifo %d \n", ifoName, 
+          numEventsInIFO );
     }
 
     LAL_CALL( LALINT8toGPS( &stat, &triggerTime, &triggerInputTimeNS ), &stat );
