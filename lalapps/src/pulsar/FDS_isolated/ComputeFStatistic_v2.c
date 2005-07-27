@@ -115,16 +115,6 @@ typedef struct
 } DetectorStateSeries;
 
 
-
-typedef struct {
-  REAL8Vector	*fkdot;		/**< vector of frequency + derivatives (spindowns) */
-  REAL8Vector	*DeltaT;	/**< vector of DeltaT_alpha's (depend on skyposition)*/
-  REAL8Vector	*Tdot;		/**< vector of Tdot_alpha's (depend on skyposition)*/ 
-  AMCoeffs      *amcoe;         /**< Amplitude Modulation coefficients */
-  INT4          Dterms;         /**< Terms used in the computation of the dirichlet kernel*/
-} computeFStatPar;
-
-
 /** Detectors Vector; specify's the number of detectors and SFTs.*/
 typedef struct {
   UINT4 length;
@@ -134,6 +124,9 @@ typedef struct {
   LIGOTimeGPSVector **timestamps;	/**< SFT timestamps */
   LIGOTimeGPSVector **midTS;		/**< GPS midpoints of SFT's */
   DetectorStateSeries **DetectorStates;	/**< pos, vel and LMSTs for detector at times t_i */
+  REAL8Vector	**DeltaT;	/**< vector of DeltaT_alpha's (depend on skyposition)*/
+  REAL8Vector	**Tdot;		/**< vector of Tdot_alpha's (depend on skyposition)*/ 
+  AMCoeffs      **amcoe;         /**< Amplitude Modulation coefficients */
 } IFOspecifics;
 
 /** Configuration settings required for and defining a coherent pulsar search.
@@ -148,9 +141,9 @@ typedef struct {
   LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
   REAL8 refTime0;		/**< *internal* SSB reference time: e.g. start of observation */
   REAL8Vector *fkdot0;		/**< start frequency- and spindowns- at internal reference-time */
+  REAL8Vector *fkdot;		/**< */
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
-  computeFStatPar CFSparams;  	/**< Demodulation parameters for computeFStat() */
   IFOspecifics ifos;		/**< IFO-specific configuration parameters */
 } ConfigVariables;
 
@@ -271,10 +264,12 @@ void checkUserInputConsistency (LALStatus *lstat);
 int
 XLALNewLALDemod(Fcomponents *FaFb,
 		const SFTVector *sfts, 
-		const computeFStatPar *params);
+		const REAL8Vector *fkdot,
+		const REAL8Vector *DeltaT,
+		const REAL8Vector *Tdot,
+		const AMCoeffs *amcoe,
+		INT4          Dterms);
 
-int 
-XLALcomputeFStat (REAL8 *Fval, const SFTVector *sfts, const computeFStatPar *params);
 
 void
 LALGetSSBtimes (LALStatus *, 
@@ -476,7 +471,7 @@ int main(int argc,char *argv[])
     {
       UINT4 nFreq, nf1dot;	/* number of frequency- and f1dot-bins */
       UINT4 iFreq, if1dot;  	/* counters over freq- and f1dot- bins */
-      
+
       nFreq =  (UINT4)(uvar_FreqBand  / GV.dFreq + 0.5) + 1;  
       nf1dot = (UINT4)(uvar_f1dotBand / GV.df1dot+ 0.5) + 1; 
       
@@ -494,23 +489,23 @@ int main(int argc,char *argv[])
       /*----- loop over first-order spindown values */
       for (if1dot = 0; if1dot < nf1dot; if1dot ++)
 	{
-	  GV.CFSparams.fkdot->data[1] = GV.fkdot0->data[1] + if1dot * GV.df1dot;
+	  GV.fkdot->data[1] = GV.fkdot0->data[1] + if1dot * GV.df1dot;
 	  
 	  /* Loop over frequencies to be demodulated */
 	  for ( iFreq = 0 ; iFreq < nFreq ; iFreq ++ )
 	    {
-	      GV.CFSparams.fkdot->data[0] = GV.fkdot0->data[0] + iFreq * GV.dFreq;	
+	      GV.fkdot->data[0] = GV.fkdot0->data[0] + iFreq * GV.dFreq;	
 	      
 	      for(nD=0; nD < GV.ifos.length; nD++)
 		{
 		  
 		  /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
-		  LAL_CALL ( LALGetSSBtimes (&status, GV.CFSparams.DeltaT, GV.CFSparams.Tdot, 
+		  LAL_CALL ( LALGetSSBtimes (&status, GV.ifos.DeltaT[nD], GV.ifos.Tdot[nD], 
 					     GV.ifos.DetectorStates[nD], thisPoint, GV.refTime0,
 					     uvar_SSBprecision), &status);
 		  
 		  /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
-		  LAL_CALL ( LALGetAMCoeffs (&status, GV.CFSparams.amcoe, GV.ifos.DetectorStates[nD], thisPoint), &status);
+		  LAL_CALL ( LALGetAMCoeffs (&status, GV.ifos.amcoe[nD], GV.ifos.DetectorStates[nD], thisPoint), &status);
 		  
 		  /** Caculate F-statistic using XLALNewLALDemod() */
 		  
@@ -519,14 +514,16 @@ int main(int argc,char *argv[])
 		    REAL4 fact;
 		    REAL4 At, Bt, Ct;
 		    REAL4 FaRe, FaIm, FbRe, FbIm;
-		    
+
 		    /* prepare quantities to calculate Fstat from Fa and Fb */
-		    fact = 4.0f / (1.0f * GV.ifos.sftVects[0]->length * GV.CFSparams.amcoe->D);
-		    At = GV.CFSparams.amcoe->A;
-		    Bt = GV.CFSparams.amcoe->B;
-		    Ct = GV.CFSparams.amcoe->C;
-		    
-		    if ( XLALNewLALDemod (&FaFb, GV.ifos.sftVects[nD], &(GV.CFSparams)) != 0) 
+		    fact = 4.0f / (1.0f * GV.ifos.sftVects[nD]->length * GV.ifos.amcoe[nD]->D);
+		    At = GV.ifos.amcoe[nD]->A;
+		    Bt = GV.ifos.amcoe[nD]->B;
+		    Ct = GV.ifos.amcoe[nD]->C;
+
+		    if ( XLALNewLALDemod (&FaFb, GV.ifos.sftVects[nD], GV.fkdot, 
+					  GV.ifos.DeltaT[nD], GV.ifos.Tdot[nD], GV.ifos.amcoe[nD],
+					  uvar_Dterms) != 0)
 		      {
 			LALPrintError ("\nXALNewLALDemod() failed\n");
 			XLAL_ERROR ("XLALcomputeFStat", XLAL_EFUNC);
@@ -544,7 +541,7 @@ int main(int argc,char *argv[])
 						    + At * (FbRe*FbRe + FbIm*FbIm) 
 						    - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
 		    
-		  } /* XLALcomputeFStat() */
+		  } /* Calculate F-statistic */
 		  
 		} /* End of loop over detectors */
 	      
@@ -563,7 +560,7 @@ int main(int argc,char *argv[])
 		  if ( FStat > uvar_Fthreshold )
 		    fprintf (fpOut, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
 			     freq, dopplerpos.Alpha, dopplerpos.Delta, 
-			     GV.CFSparams.fkdot->data[1], FStat);
+			     GV.fkdot->data[1], FStat);
 		}
 	      
 	    } /* if outputFstat */
@@ -849,26 +846,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     
   } /* end: template-grid stuff */
 
-  /* ----------------------------------------------------------------------*/
-  /*
-   * initialize Ephemeris-data 
-   */
-  {
-    LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    INT4 leap;
-
-    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
-    cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
-    cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
-
-    TRY (LALLeapSecs (status->statusPtr, &leap, &(cfg->startTime), &formatAndAcc), status);
-    cfg->edat->leap = leap;
-
-    TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
-
-  } /* end: init ephemeris data */
-
-
   /* ----- count number of detectors */
   if ( LALUserVarWasSet(&uvar_DataFiles2) )
     nDet = 2;
@@ -889,11 +866,75 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   for(nD=0; nD < cfg->ifos.length; nD++)
     {
       /* main initialization of the code: */
-      LAL_CALL ( InitFStatDetector(&status, &GV, nD), &status);
+      TRY ( InitFStatDetector(status->statusPtr, &GV, nD), status);
       
       /* normalize SFTs by running median */
-      LAL_CALL (NormaliseSFTDataRngMdn(&status, nD), &status);      
+      TRY (NormaliseSFTDataRngMdn(status->statusPtr, nD), status);      
     }
+
+  /* determine start-time from first set of SFTs */
+  cfg->startTime = cfg->ifos.sftVects[0]->data[0].epoch;
+
+  /* ----------------------------------------------------------------------*/
+  /*
+   * initialize Ephemeris-data 
+   */
+  {
+    LALLeapSecFormatAndAcc formatAndAcc = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
+    INT4 leap;
+
+    cfg->edat = LALCalloc(1, sizeof(EphemerisData));
+    cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
+    cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
+
+    TRY (LALLeapSecs (status->statusPtr, &leap, &(cfg->startTime), &formatAndAcc), status);
+    cfg->edat->leap = leap;
+
+    TRY (LALInitBarycenter(status->statusPtr, cfg->edat), status);               
+
+  } /* end: init ephemeris data */
+
+
+
+  /*---------- Standardise reference-time: ----------*/
+  /* translate spindown-paramters {f, fdot, fdotdot..} from the user-specified 
+   * reference-time uvar_refTime to the internal reference-time, which 
+   * we chose as the start-time of the first SFT (*verbatim*, i.e. not translated to SSB! )
+   */
+  {
+    UINT4 spdnOrder = 1;	/* hard-coded default FIXME. DON'T change without fixing main() */
+ 
+    REAL8Vector *fkdotRef = NULL;
+    LIGOTimeGPS refTime0;	/* internal reference-time */
+
+    if ( LALUserVarWasSet(&uvar_refTime)) {
+      TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
+    } else
+      cfg->refTime = cfg->startTime;
+
+    TRY ( LALDCreateVector (status->statusPtr, &fkdotRef, 1 + spdnOrder), status);
+    TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot0), 1 + spdnOrder), status);
+    fkdotRef->data[0] = uvar_Freq;
+    if ( spdnOrder > 0 )
+      fkdotRef->data[1] = uvar_f1dot;	    /* currently not more spindowns implemented... */
+
+    /* currently we use the observation GPS start-time as internal SSB reference-time: */
+    refTime0 = cfg->startTime;
+    cfg->refTime0 = GPS2REAL8 (refTime0);
+
+    /*----- now translate spin-params to internal reference-time */
+    if ( XLALExtrapolatePulsarSpins ( cfg->fkdot0, refTime0, fkdotRef, cfg->refTime) ) 
+      {
+	int code = xlalErrno;
+	XLALClearErrno(); 
+	LALPrintError ("\nERROR: XLALExtrapolatePulsarSpins() failed (xlalErrno = %d)!\n\n", code);
+	ABORT (status,  COMPUTEFSTATC_EXLAL,  COMPUTEFSTATC_MSGEXLAL);
+      }
+
+    TRY ( LALDDestroyVector (status->statusPtr, &fkdotRef), status);
+  }
+
+
 
 
   DETATCHSTATUSPTR (status);
@@ -940,6 +981,7 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
 	  f_min += df;
 	else
 	  f_max += df;
+      }
 #endif
     
     /* ----- correct for maximal dopper-shift due to earth's motion */
@@ -952,7 +994,7 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
       strcpy (uvar_DataFiles, ".");
     
     TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, uvar_Dterms, uvar_DataFiles), status);
-
+  
   } /* SFT-loading */
 
   /*----------  prepare vectors of timestamps ---------- */
@@ -969,48 +1011,10 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
       }/* for i < ifos.length */
 
   } 
-
-  /*---------- Standardise reference-time: ----------*/
-  /* translate spindown-paramters {f, fdot, fdotdot..} from the user-specified 
-   * reference-time uvar_refTime to the internal reference-time, which 
-   * we chose as the start-time of the first SFT (*verbatim*, i.e. not translated to SSB! )
-   */
-  {
-    UINT4 spdnOrder = 1;	/* hard-coded default FIXME. DON'T change without fixing main() */
- 
-    REAL8Vector *fkdotRef = NULL;
-    LIGOTimeGPS refTime0;	/* internal reference-time */
-
-    if ( LALUserVarWasSet(&uvar_refTime)) {
-      TRY ( LALFloatToGPS (status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
-    } else
-      cfg->refTime = cfg->startTime;
-
-    TRY ( LALDCreateVector (status->statusPtr, &fkdotRef, 1 + spdnOrder), status);
-    TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot0), 1 + spdnOrder), status);
-    fkdotRef->data[0] = uvar_Freq;
-    if ( spdnOrder > 0 )
-      fkdotRef->data[1] = uvar_f1dot;	    /* currently not more spindowns implemented... */
-
-    /* currently we use the observation GPS start-time as internal SSB reference-time: */
-    refTime0 = cfg->startTime;
-    cfg->refTime0 = GPS2REAL8 (refTime0);
-
-    /*----- now translate spin-params to internal reference-time */
-    if ( XLALExtrapolatePulsarSpins ( cfg->fkdot0, refTime0, fkdotRef, cfg->refTime) ) 
-      {
-	int code = xlalErrno;
-	XLALClearErrno(); 
-	LALPrintError ("\nERROR: XLALExtrapolatePulsarSpins() failed (xlalErrno = %d)!\n\n", code);
-	ABORT (status,  COMPUTEFSTATC_EXLAL,  COMPUTEFSTATC_MSGEXLAL);
-      }
-
-    TRY ( LALDDestroyVector (status->statusPtr, &fkdotRef), status);
-  }
-  
+    
   if(nD == 0)
     IFO=uvar_IFO;
-  else if(nD == 1)
+  else 
     IFO=uvar_IFO2;
 
 
@@ -1056,19 +1060,18 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     TRY (LALSCreateVector(status->statusPtr, &(amc->a), (UINT4) cfg->ifos.length), status);
     TRY (LALSCreateVector(status->statusPtr, &(amc->b), (UINT4) cfg->ifos.length), status);
 
-    cfg->CFSparams.amcoe = amc;
+    cfg->ifos.amcoe[nD] = amc;
     
     /* allocate memory of the SSB-times: DeltaT_alpha and Tdot_alpha */
     TRY ( LALDCreateVector(status->statusPtr, &DeltaT, cfg->ifos.length), status );
     TRY ( LALDCreateVector(status->statusPtr, &Tdot,   cfg->ifos.length), status );
 
-    cfg->CFSparams.DeltaT = DeltaT;
-    cfg->CFSparams.Tdot = Tdot;
+    cfg->ifos.DeltaT[nD] = DeltaT;
+    cfg->ifos.Tdot[nD] = Tdot;
 
-    cfg->CFSparams.Dterms = uvar_Dterms;
 
     /* prepare memory for fkdot - vector : (f, f1dot, f2dot, ..) */
-    TRY(LALDCreateVector(status->statusPtr, &(cfg->CFSparams.fkdot), cfg->fkdot0->length), status);
+    TRY(LALDCreateVector(status->statusPtr, &(GV.fkdot), cfg->fkdot0->length), status);
     
   } /* end: init AM- and demod-params */
 
@@ -1210,12 +1213,12 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 
   TRY (LALDDestroyVector (status->statusPtr, &(cfg->fkdot0)), status);
 
-  TRY (LALDDestroyVector (status->statusPtr, &(cfg->CFSparams.fkdot)), status);
-  TRY (LALSDestroyVector(status->statusPtr, &(cfg->CFSparams.amcoe->a)), status);
-  TRY (LALSDestroyVector(status->statusPtr, &(cfg->CFSparams.amcoe->b)), status);
-  LALFree ( cfg->CFSparams.amcoe);
-  TRY (LALDDestroyVector(status->statusPtr, &(cfg->CFSparams.DeltaT)), status);
-  TRY (LALDDestroyVector(status->statusPtr, &(cfg->CFSparams.Tdot)), status);
+  TRY (LALDDestroyVector (status->statusPtr, &(GV.fkdot)), status);
+  TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos.amcoe[0]->a)), status);
+  TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos.amcoe[0]->b)), status);
+  LALFree ( cfg->ifos.amcoe[0]);
+  TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos.DeltaT[0])), status);
+  TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos.Tdot[0])), status);
 
 
   /* destroy DetectorStateSeries */
@@ -1497,8 +1500,12 @@ NormaliseSFTDataRngMdn(LALStatus *status, UINT4 nD)
  */
 int
 XLALNewLALDemod(Fcomponents *FaFb,
-		const SFTVector *sfts, 
-		const computeFStatPar *params) 
+		const SFTVector *sfts,
+		const REAL8Vector *fkdot,
+		const REAL8Vector *DeltaT, 
+		const REAL8Vector *Tdot, 
+		const AMCoeffs *amcoe,
+		INT4           Dterms) 
 { 
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
@@ -1519,10 +1526,11 @@ XLALNewLALDemod(Fcomponents *FaFb,
     XLAL_ERROR ( "XLALNewLALDemod", XLAL_EINVAL);
   }
   
-  if ( !params || !params->fkdot ) {
-    LALPrintError ("\nIllegal NULL in input !\n\n");
-    XLAL_ERROR ( "XLALNewLALDemod", XLAL_EINVAL);
-  }
+  if ( !fkdot || !DeltaT || !Tdot || !amcoe )
+    {
+      LALPrintError ("\nIllegal NULL in input !\n\n");
+      XLAL_ERROR ( "XLALNewLALDemod", XLAL_EINVAL);
+    }
 
   /* ----- prepare convenience variables */
   numSFTs = sfts->length;
@@ -1530,9 +1538,9 @@ XLALNewLALDemod(Fcomponents *FaFb,
 
   freqIndex0 = (UINT4) ( sfts->data[0].f0 / sfts->data[0].deltaF + 0.5); /* lowest freqency-index */
 
-  spdnOrder = params->fkdot->length - 1;
+  spdnOrder = fkdot->length - 1;
 
-  f = params->fkdot->data[0];
+  f = fkdot->data[0];
 
   Fa.re = 0.0;
   Fa.im = 0.0;
@@ -1543,8 +1551,8 @@ XLALNewLALDemod(Fcomponents *FaFb,
   /* Loop over all SFTs  */
   for ( alpha = 0; alpha < numSFTs; alpha++ )
     {
-      REAL4 a = params->amcoe->a->data[alpha];
-      REAL4 b = params->amcoe->b->data[alpha];
+      REAL4 a = amcoe->a->data[alpha];
+      REAL4 b = amcoe->b->data[alpha];
 
       REAL8 xhat_alpha, y_alpha;	/* xhat(alpha), y(alpha): need to be REAL8 !! */
       REAL4 x0;
@@ -1563,7 +1571,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
 	UINT4 s; 		/* loop-index over spindown-order */
 	REAL8 Tas; 		/* temporary variable to calculate (DeltaT_alpha)^2 */
 	UINT4 sfact = 1;	/* store for s! */
-	REAL8 DeltaTalpha = params->DeltaT->data[alpha];
+	REAL8 DeltaTalpha = DeltaT->data[alpha];
 	Tas = 1.0; 	/* DeltaT_alpha = T^1 */
 
 	/* Step 1: s = 0 */
@@ -1574,7 +1582,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
 	/* Step 2: sum s >= 1 */
 	for (s=1; s <= spdnOrder; s++)
 	  {
-	    REAL8 fsdot = params->fkdot->data[s];
+	    REAL8 fsdot = fkdot->data[s];
 	    xhat_alpha += fsdot * Tas / sfact; 	/* Tas = T^s here, sfact=s! */
 	    Tas *= DeltaTalpha; 		/* T^(s+1) */
 	    sfact *= (s+1);			/* (s+1)! */	  
@@ -1582,7 +1590,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
 	  } /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors and complete y_alpha */
-	xhat_alpha *= Tsft * params->Tdot->data[alpha];	/* guaranteed > 0 ! */
+	xhat_alpha *= Tsft * Tdot->data[alpha];	/* guaranteed > 0 ! */
 	y_alpha -= 0.5 * xhat_alpha;
 	
 	/* real- and imaginary part of e^{-i 2 pi y } */
@@ -1610,7 +1618,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
       realXP = 0;
       imagXP = 0;
 
-      k0 = kstar - params->Dterms;
+      k0 = kstar - Dterms;
       if ( k0 < freqIndex0 ) {
 	LALPrintError ("\nLowest frequency-index k0=%d outside of SFT-interval (%d)\n\n",
 		       k0, freqIndex0 );
@@ -1631,7 +1639,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
       Xalpha_k = Xalpha + k0 - freqIndex0;  /* first frequency-bin in sum */
       x0 = (REAL4)(xhat_alpha - (REAL8)k0);	/* first xhat-value in the loop */
       /* count down 2*Dterms values */
-      for ( k = 2 * params->Dterms; k != 0;  k -- )
+      for ( k = 2 * Dterms; k != 0;  k -- )
 	{
 	  REAL4 realP, imagP;	/* real and imaginary parts of Dirichlet-kernel P_alpha_k */
 	  COMPLEX8 Xa = *Xalpha_k;
