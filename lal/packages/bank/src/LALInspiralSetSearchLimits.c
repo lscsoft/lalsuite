@@ -33,7 +33,7 @@ We start with the definition of the chirp times $\tau_{0}$ and $\tau_{3}$,
 and
 
 \begin{equation}
-\tau_{3} = \frac{1}{8 (\pi^{2} f_{a}^{3} )^{1/3} m^{2/3} \eta}
+\tau_{3} = \frac{1}{8 (\pi^{2} f_{a}^{5} )^{1/3} m^{2/3} \eta}
 \end{equation}
 
 $\tau_{0}$ is minimised when $\eta=1/4$ and $\mathtt{m=MMax}$.
