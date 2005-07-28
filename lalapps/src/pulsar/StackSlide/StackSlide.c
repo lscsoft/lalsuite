@@ -17,7 +17,9 @@ $Id$
 /* 04/12/05 gam; move variables not used by StackSlide function into StackSlideIsolated or StackSlideBinary */
 /* 04/12/05 gam; Simplify StackSlideParams struct; change REAL8 **freqDerivData to REAL8 *freqDerivData; */
 /* 05/06/05 gam; Add function SumStacks with just creates a SUM from the STKs without sliding */
-
+/* 07/27/05 gam; Replace TimeToFloat and FloatToTime in StackSlideComputeSky with LAL functions used in StackSlideComputeSkyBinary */
+/* 07/27/05 gam; In StackSlideComputeSky should ASSERT params->mObsSFT>0, not params->mObsSFT>=0. */
+/* 07/27/05 gam; Add missing check of status pointer, CHECKSTATUSPTR(status), to StackSlideComputeSky */
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -256,8 +258,8 @@ void SumStacks( 	LALStatus *status,
 /*********************************************************************************/
 
 /* Internal routines copied from ComputeSky.c */ 
-static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
-static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
+/* static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
+static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f); */ /* 07/27/05 gam */
  
 /* <lalVerbatim file="StackSlideCP"> */
 void StackSlideComputeSky (LALStatus            *status,
@@ -266,12 +268,15 @@ void StackSlideComputeSky (LALStatus            *status,
 {  /* </lalVerbatim> */
   
   INT4 m, n;
-  REAL8 t;
-  REAL8 basedTbary;
-
-  REAL8 dTbary;
-  REAL8 tBary;
-  REAL8 tB0;
+  /* REAL8 t; */                  /* 07/27/05 gam; this and next variable are no longer used */
+  /* REAL8 tBary; */
+  REAL8 dTbary;                   /* T - T0 */
+  REAL8 basedTbary;               /* temporary container for (T - T0)^m */
+  /* REAL8 tB0; */                /* 07/27/05 gam; use next four variable to compute T - T0 in SSB using LAL functions */
+  LIGOTimeGPS ssbT0;              /* T0 in the Solar System BaryCenter */
+  LALTimeInterval dTBaryInterval; /* T - T0 in the Solar System BaryCenter */
+  LALTimeInterval HalfSFT;        /* timebase of SFT/2 as GPS interval  */
+  REAL8 HalfSFTfloat;             /* timebase of SFT/2 as REAL8 number */
 
   INITSTATUS (status, "StackSlideComputeSky", STACKSLIDEC);
   #ifdef DEBUG_STACKSLIDECOMPUTESKY_FNC
@@ -290,7 +295,8 @@ void StackSlideComputeSky (LALStatus            *status,
  
   /* Check to make sure parameters are loaded and reasonable */
   ASSERT(params->spinDwnOrder>=0, status, STACKSLIDECOMPUTESKYH_ENEGA, STACKSLIDECOMPUTESKYH_MSGENEGA);
-  ASSERT(params->mObsSFT>=0, status, STACKSLIDECOMPUTESKYH_ENEGA, STACKSLIDECOMPUTESKYH_MSGENEGA);
+  /* ASSERT(params->mObsSFT>=0, status, STACKSLIDECOMPUTESKYH_ENEGA, STACKSLIDECOMPUTESKYH_MSGENEGA); */ /* 07/27/05 gam */
+  ASSERT(params->mObsSFT>0, status, STACKSLIDECOMPUTESKYH_ENEGA, STACKSLIDECOMPUTESKYH_MSGENEGA);
   ASSERT(params->tSFT>=0, status, STACKSLIDECOMPUTESKYH_ENEGA, STACKSLIDECOMPUTESKYH_MSGENEGA);
  
   for(n=0;n<params->mObsSFT;n++) {
@@ -300,26 +306,35 @@ void StackSlideComputeSky (LALStatus            *status,
   /* Check to make sure pointer to output is not NULL */
   ASSERT(pTdotsAndDeltaTs!=NULL, status, STACKSLIDECOMPUTESKYH_ENNUL, STACKSLIDECOMPUTESKYH_MSGENNUL);
  
+  /* 07/27/05 gam; note that the gpsStartTime refers to the start of the epoch that defines the template spindown parameters. */
+  /* Next lines of code find ssbT0 == T0, the SSB time that defines this epoch */  
   params->baryinput->tgps.gpsSeconds = params->gpsStartTimeSec; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
   params->baryinput->tgps.gpsNanoSeconds = params->gpsStartTimeNan; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
- 
-  LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
-  
-  LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
- 
-  TimeToFloat(&tB0, &(params->emit->te));
-  for (n=0; n<params->mObsSFT; n++) {
-     t=(REAL8)(params->tGPS[n].gpsSeconds)+(REAL8)(params->tGPS[n].gpsNanoSeconds)*1.0E-9+0.5*params->tSFT; 
-     
-     FloatToTime(&(params->baryinput->tgps), &t);
+  LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat); CHECKSTATUSPTR(status);
+  LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth); CHECKSTATUSPTR(status);
+  /* TimeToFloat(&tB0, &(params->emit->te)); */ /* 07/27/05 gam; replace tB0 with ssbT0 */
+  ssbT0.gpsSeconds = params->emit->te.gpsSeconds;
+  ssbT0.gpsNanoSeconds = params->emit->te.gpsNanoSeconds;
 
-     LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
-     LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
-     
-     TimeToFloat(&tBary, &(params->emit->te));
+  /* 07/27/05 gam; Find GPS interval the represent 1/2 the SFT time baseline */
+  HalfSFTfloat=params->tSFT/2.0;
+  LALFloatToInterval(status->statusPtr,&HalfSFT,&HalfSFTfloat); CHECKSTATUSPTR(status);
 
-     dTbary = tBary-tB0;		
-     
+  /* Find T - T0, dT/dt, powers of T - T0 for midpoint time of each SFT; save in pTdotsAndDeltaTs struct */
+  for (n=0; n<params->mObsSFT; n++) {     
+     /* 07/27/05 gam; set params->baryinput->tgps to the midpoint time of the current SFT */
+     /*t=(REAL8)(params->tGPS[n].gpsSeconds)+(REAL8)(params->tGPS[n].gpsNanoSeconds)*1.0E-9+0.5*params->tSFT;
+     FloatToTime(&(params->baryinput->tgps), &t);*/ /* Instead use LALIncrementGPS: */
+     LALIncrementGPS(status->statusPtr, &(params->baryinput->tgps),&(params->tGPS[n]),&HalfSFT);
+          
+     /* 07/27/05 gam; find T - T0 in SSB and tDot = dT/dt for midpoint time of current SFT */
+     LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat); CHECKSTATUSPTR(status);
+     LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth); CHECKSTATUSPTR(status);
+     /* TimeToFloat(&tBary, &(params->emit->te));  
+     dTbary = tBary-tB0; */ /* 07/27/05 gam; replace tB0 with ssbT0 */
+     /* Subtract two LIGOTimeGPS to get LALTimeInterval; convert to REAL8 */
+     LALDeltaGPS(status->statusPtr,&dTBaryInterval,&(params->emit->te),&ssbT0); CHECKSTATUSPTR(status);
+     LALIntervalToFloat(status->statusPtr,&dTbary,&dTBaryInterval); CHECKSTATUSPTR(status);
      pTdotsAndDeltaTs->vecTDots[n]= params->emit->tDot;
      
      /* for (m=0; m<params->spinDwnOrder+1; m++) */
@@ -334,29 +349,29 @@ void StackSlideComputeSky (LALStatus            *status,
   RETURN(status);
 } /* END StackSlideComputeSky() */
 
-static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps)
+/* static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps)
 {
   INT4 x, y;
 
   x=tgps->gpsSeconds;
   y=tgps->gpsNanoSeconds;
   *f=(REAL8)x+(REAL8)y*1.e-9;
-}
+} */ /* 07/27/05 gam; obsolete */
 
-static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f)
+/* static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f)
 {
   REAL8 temp0, temp2, temp3;
   REAL8 temp1, temp4;
   
-  temp0 = floor(*f);     /* this is tgps.S */
-  temp1 = (*f) * 1.e10;
+  temp0 = floor(*f); */    /* this is tgps.S */
+/*  temp1 = (*f) * 1.e10;
   temp2 = fmod(temp1, 1.e10);
   temp3 = fmod(temp1, 1.e2); 
   temp4 = (temp2-temp3) * 0.1;
 
   tgps->gpsSeconds = (INT4)temp0;
   tgps->gpsNanoSeconds = (INT4)temp4;
-}
+} */ /* 07/27/05 gam; obsolete */
 
 /*********************************************************************************/
 /*              END function: StackSlideComputeSkY                               */
