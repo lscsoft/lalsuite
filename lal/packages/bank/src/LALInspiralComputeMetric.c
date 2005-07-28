@@ -228,7 +228,7 @@ metric without recourse to $(m,\eta)$ coordinates. It is of interest to see
 whether this yields the same results as the previous method.
 
 The starting point of our derivation is Eq.~(3.7) of Owen and Sathyaprakash
-(Phys. Rev. D 62, 022002, 1999) for the Fourier domain phase which we shall
+(Phys. Rev. D 60, 022002, 1999) for the Fourier domain phase which we shall
 write as:
 
 \begin{eqnarray}
