@@ -65,7 +65,8 @@ m_{1} = m - m_{2}
 \end{equation}
 This may be substituted into Eq.(\ref{eta}) to give
 \begin{equation}
-\eta = \frac{(m - m_{2}) m_{2}}{\left[ (m - m{2}) + m_{2} \right]^{2}}
+\eta = \frac{(m - m_{2}) m_{2}}{\left[ (m - m_{2}) + m_{2} \right]^{2}}
+     = \frac{(m - m_{2}) m_{2}}{m^{2}}
 \end{equation}
 which may be re--arranged to give
 \begin{equation}
