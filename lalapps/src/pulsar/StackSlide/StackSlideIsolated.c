@@ -32,10 +32,11 @@ $Id$
 /* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
 /* 07/15/2005 gam; need to save params->sumBinMask[iFreq] as savSumBinMask[iFreq] and inject where savSumBinMask[iFreq] !=0, and reset params->sumBinMask[0] == 1 */
 /* 07/15/2005 gam; Change RunStackSlideIsolatedMonteCarloSimulation to: */
-/*                 1. inject at a random point in the parameters space a random number of times */
-/*                 2. search nearest templates that surround parameter space point, not just nearest template */
-/*                 3. rescale SFTs for inject given number of times for repeat of search */
-     
+/*                 inject at a random point in the parameters space a random number of times */
+/* 07/29/05 gam; if (params->testFlag & 64) > 0 set searchSurroundingPts == 1 and   */
+/*               search surrounding parameters space pts; else search nearest only  */
+/* 07/29/05 gam; rescale SFTs for inject given number of times for repeat of search */
+
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -53,7 +54,7 @@ $Id$
 /* #define DEBUG_MONTECARLOSFT_DATA */
 /* #define PRINT_MONTECARLOSFT_DATA */
 /* #define PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA */
-/* #define DEBUG_RANDOMTRIALPARAMETERS */
+#define DEBUG_RANDOMTRIALPARAMETERS
 /* #define DEBUG_LALFASTGENERATEPULSARSFTS */
 /* #define DEBUG_SETFIXED_RANDVAL */
 /* #define PRINT_ONEMONTECARLO_OUTPUTSFT */
@@ -375,7 +376,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
 {
   INT4    i = 0; /* all purpose index */
   INT4    j = 0; /* all purpose index */
-  INT4    k = 0; /* all purpose index */  
+  INT4    k = 0; /* all purpose index */
   PulsarSignalParams *pPulsarSignalParams = NULL;
   REAL4TimeSeries *signal = NULL;
   LIGOTimeGPS GPSin;            /* reference-time for pulsar parameters at the detector; will convert to SSB! */
@@ -462,9 +463,22 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   INT4  *arrayAvailableFreqBins; /* 07/15/2005 gam */
   INT4  nAvailableBins;          /* 07/15/2005 gam */
   REAL8 real8NAvailableBins;     /* 07/15/2005 gam */
+  BOOLEAN searchSurroundingPts;  /* 07/29/05 gam; if (params->testFlag & 64) > 0 search surrounding parameters space pts */
 
   INITSTATUS( status, "RunStackSlideIsolatedMonteCarloSimulation", STACKSLIDEISOLATEDC );
   ATTATCHSTATUSPTR(status);
+
+  /* 07/29/05 gam; check that parameters are set to search SUM for loudest event; not search above threshold needed */
+  if ( !( ((params->outputEventFlag & 2) > 0) && (params->thresholdFlag <= 0) ) ) {
+      ABORT( status, STACKSLIDEISOLATEDH_EMCEVENTTHRESHOLDFLAGS, STACKSLIDEISOLATEDH_MSGEMCEVENTTHRESHOLDFLAGS);
+  }
+
+  /* 07/29/05 gam; if testFlag if (params->testFlag & 64) > 0 search all parameters spaces points surrounding the injection; else search nearest only */
+  if ( (params->testFlag & 64) > 0 ) {
+       searchSurroundingPts = 1;  /* Search only the surrounding paremeters space point, in the Euclidean sense. */
+  } else {
+       searchSurroundingPts = 0;  /* Search only the nearest paremeters space point, in the Euclidean sense. */
+  }
 
   if ( (params->testFlag & 16) > 0 ) {
     /* 05/24/05 gam; use results from prior jobs in the pipeline and report on current MC results */
@@ -532,11 +546,23 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   }
   LALFree(params->skyPosData);
   numSkyPosTotal = params->numSkyPosTotal;  /* sav original number of sky positions */
-  params->numSkyPosTotal = 1;               /* Set up to run on one sky position at a time */
+  /* 07/29/05 gam */
+  if (searchSurroundingPts) {
+    params->numSkyPosTotal = 4;               /* Set up to search 4 surrounding sky position */
+  } else {
+    params->numSkyPosTotal = 1;               /* Set up to run on nearest sky position */
+  }
   params->skyPosData=(REAL8 **)LALMalloc(params->numSkyPosTotal*sizeof(REAL8 *));
-  params->skyPosData[0] = (REAL8 *)LALMalloc(2*sizeof(REAL8));
-  
-  /* 05/21/04 gam; save the input freqDerivData */
+  /* params->skyPosData[0] = (REAL8 *)LALMalloc(2*sizeof(REAL8)); */ /* 07/29/05 gam */
+  for(i=0;i<params->numSkyPosTotal;i++) {
+        params->skyPosData[i] = (REAL8 *)LALMalloc(2*sizeof(REAL8));
+  }
+
+  /* 05/21/04 gam; save the input freqDerivData and related parameters: */
+  numParamSpacePts = params->numParamSpacePts;
+  numSUMsTotal = params->numSUMsTotal;
+  numFreqDerivTotal = params->numFreqDerivTotal;
+  numFreqDerivIncludingNoSpinDown = params->numFreqDerivIncludingNoSpinDown;
   if (params->numSpinDown > 0) {
     savFreqDerivData=(REAL8 **)LALMalloc(params->numFreqDerivTotal*sizeof(REAL8 *));
     for(i=0;i<params->numFreqDerivTotal;i++)
@@ -553,21 +579,28 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         LALFree(params->freqDerivData[i]);
     }
     LALFree(params->freqDerivData);
-    numFreqDerivTotal = params->numFreqDerivTotal;
-    params->numFreqDerivTotal = 1;
-    params->numFreqDerivIncludingNoSpinDown = 1;
+    /* 07/29/05 gam */
+    if (searchSurroundingPts) {
+       params->numFreqDerivTotal = (INT4)pow(2.0,((REAL8)params->numSpinDown)); /* Set up to search surrounding frequency deriviatives */
+    } else {
+       params->numFreqDerivTotal = 1;                                  /* Set up to search nearest frequency deriviatives */
+    }
     params->freqDerivData=(REAL8 **)LALMalloc(params->numFreqDerivTotal*sizeof(REAL8 *));
-    params->freqDerivData[0] = (REAL8 *)LALMalloc(params->numSpinDown*sizeof(REAL8));
-  }
-  numParamSpacePts = params->numParamSpacePts;
-  numSUMsTotal = params->numSUMsTotal;
-  params->numParamSpacePts = 1;
-  params->numSUMsTotal = 1;
-  if (numFreqDerivTotal != 0) {
-     numFreqDerivIncludingNoSpinDown = numFreqDerivTotal;
+    /* params->freqDerivData[0] = (REAL8 *)LALMalloc(params->numSpinDown*sizeof(REAL8)); */ /* 07/29/05 gam */
+    for(i=0;i<params->numFreqDerivTotal;i++) {
+      params->freqDerivData[i] = (REAL8 *)LALMalloc(params->numSpinDown*sizeof(REAL8));
+    }    
+  } /* END if (params->numSpinDown > 0) */
+  /* 07/29/05 gam */
+  if (params->numFreqDerivTotal != 0) {
+    params->numFreqDerivIncludingNoSpinDown = params->numFreqDerivTotal;
   } else {
-     numFreqDerivIncludingNoSpinDown = 1;  /* Even if numSpinDown = 0 still need to count case of zero spindown. */
+    params->numFreqDerivIncludingNoSpinDown = 1;  /* Even if numSpinDown = 0 still need to count case of zero spindown. */
   }
+  /* params->numParamSpacePts = 1;
+  params->numSUMsTotal = 1;  */ /* 07/29/05 gam */
+  params->numParamSpacePts = params->numSkyPosTotal*params->numFreqDerivIncludingNoSpinDown;
+  params->numSUMsTotal = params->numSUMsPerParamSpacePt*params->numParamSpacePts;
    
   /* Allocate memory for PulsarSignalParams and initialize */
   pPulsarSignalParams = (PulsarSignalParams *)LALMalloc(sizeof(PulsarSignalParams));
@@ -592,7 +625,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
       cachedDetector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
   } else {
       /* "Invalid or null IFO" */
-      /* ABORT( status, DRIVESTACKSLIDEH_EIFO, DRIVESTACKSLIDEH_MSGEIFO); */
+      ABORT( status, STACKSLIDEISOLATEDH_EIFO, STACKSLIDEISOLATEDH_MSGEIFO);
   }    
   pPulsarSignalParams->site = &cachedDetector;     
   pPulsarSignalParams->ephemerides = params->edat;
@@ -628,12 +661,13 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   nBinsPerSUMm1 = nBinsPerSUM - 1;
   params->keepThisNumber = 1;      /* During MC only keep 1 event; this will be the injected event */
 
-  /* check whether we are outputing just the loudest events */
-  if ( ((params->outputEventFlag & 2) > 0) && (params->thresholdFlag <= 0) ) {
-        params->bandSUM = params->dfSUM;
-        params->nBinsPerSUM = 1;
+  /* 07/29/05 gam */
+  if (searchSurroundingPts) {
+      params->bandSUM = 2.0*params->dfSUM;
+      params->nBinsPerSUM = 2;              /* Search surrounding frequencies */
   } else {
-     /* TO DO: MAYBE SHOULD ABORT ?? */
+      params->bandSUM = params->dfSUM;      /* Search nearest frequencies */
+      params->nBinsPerSUM = 1;
   }
 
   /* 05/28/04 gam; Initial seed and randPar to use LALUniformDeviate to generate random mismatch during Monte Carlo. */
@@ -690,8 +724,15 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
      }
   }
   LALFree(params->sumBinMask); /* 07/15/2005 gam; reallocate and save just 1 */
-  params->sumBinMask=(INT4 *)LALMalloc(sizeof(INT4));
-  params->sumBinMask[0] = 1;   /* Will only inject into bins where savSumBinMask != 0. */
+  /* 07/29/05 gam */
+  if (searchSurroundingPts) {
+    params->sumBinMask=(INT4 *)LALMalloc(2*sizeof(INT4));
+    params->sumBinMask[0] = 1;   /* Default value; will check when injected frequency is set up below */
+    params->sumBinMask[1] = 1;   /* Default value; will check when injected frequency is set up below */
+  } else {
+    params->sumBinMask=(INT4 *)LALMalloc(sizeof(INT4));
+    params->sumBinMask[0] = 1;   /* Will only inject next bins where savSumBinMask != 0. */
+  }
 
   /* 07/15/2005 gam; initialize array with available frequency; i.e., bins not excluded due to instrument lines */ 
   arrayAvailableFreqBins=(INT4 *)LALMalloc(nBinsPerSUM*sizeof(INT4));
@@ -703,9 +744,13 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         i++;
      }
   }
-  nAvailableBins = i; /* should ABORT if i == 0 */
+  nAvailableBins = i;
+  if (nAvailableBins <= 0) {
+     /* 07/29/05 gam; should ABORT if cleaning or avoiding all freq bins */
+     ABORT( status, STACKSLIDEISOLATEDH_ENOFREQBINS, STACKSLIDEISOLATEDH_MSGENOFREQBINS);
+  }
   real8NAvailableBins = ((REAL8)nAvailableBins);
-  
+
  /***********************************************************/
  /*                                                         */
  /* START SECTION: LOOP OVER ENTIRE MONTE CARLO SIMULATIONS */
@@ -769,6 +814,42 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     }
     params->skyPosData[0][0] = startRA + ((REAL8)iRA)*tmpDeltaRA;
 
+    /* 07/29/05 gam; find 3 other surrounding sky positions */
+    if (searchSurroundingPts) {
+       /* !!! WARNING: Signs are chooses such that DeltaDec and DeltaRA are always positive !!! */
+       /* Go to next nearest RA; keep DEC the same */
+       if (params->skyPosData[0][0] < tmpRA) {
+          params->skyPosData[1][0] = params->skyPosData[0][0] + tmpDeltaRA;
+       } else {
+          params->skyPosData[1][0] = params->skyPosData[0][0] - tmpDeltaRA;
+       }
+       params->skyPosData[1][1] = params->skyPosData[0][1];
+       
+       /* Go to next nearest DEC; keep RA the same */
+       if (params->skyPosData[0][1] < tmpDec) {
+          params->skyPosData[2][1] = params->skyPosData[0][1] + DeltaDec;
+       } else {
+          params->skyPosData[2][1] = params->skyPosData[0][1] - DeltaDec;
+       }
+       params->skyPosData[2][0] = params->skyPosData[0][0];
+       
+       /* Find tmpDeltaRA at next nearest DEC: */
+       cosTmpDEC = cos(params->skyPosData[2][1]);
+       if (cosTmpDEC != 0.0) {
+          tmpDeltaRA = DeltaRA/cosTmpDEC;
+       } else {
+          tmpDeltaRA = 0.0; /* We are at a celestial pole */
+       }
+       
+       /* Change both DEC and RA to find last corner of square that surrounds injected sky position */
+       params->skyPosData[3][1] = params->skyPosData[2][1]; /* same DEC as skyPosData[2] */
+       if (params->skyPosData[2][0] < tmpRA) {
+          params->skyPosData[3][0] = params->skyPosData[2][0] + tmpDeltaRA;
+       } else {
+          params->skyPosData[3][0] = params->skyPosData[2][0] - tmpDeltaRA;
+       }
+    } /* END if (searchSurroundingPts) */
+    
     /* Check if sky frame is rotated and act accordingly */
     if ( (params->parameterSpaceFlag & 1) >  0) {
       /* rotate skyPosData into coordinates with Earth's average acceleration at the pole. */
@@ -787,8 +868,16 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     pPulsarSignalParams->pulsar.position.latitude = tmpDec;
 
     #ifdef DEBUG_RANDOMTRIALPARAMETERS
-        fprintf(stdout,"\nkSUM = %i, search RA = %23.10e, inject RA = %23.10e \n",kSUM,params->skyPosData[0][0],pPulsarSignalParams->pulsar.position.longitude);
-        fprintf(stdout,"kSUM = %i, search DEC = %23.10e, inject DEC = %23.10e \n",kSUM,params->skyPosData[0][1],pPulsarSignalParams->pulsar.position.latitude);
+        fprintf(stdout,"\nkSUM = %i, search  RA[0] = %23.10e, inject RA = %23.10e \n",kSUM,params->skyPosData[0][0],pPulsarSignalParams->pulsar.position.longitude);
+        fprintf(stdout,"kSUM = %i, search DEC[0] = %23.10e, inject DEC = %23.10e \n",kSUM,params->skyPosData[0][1],pPulsarSignalParams->pulsar.position.latitude);
+        if (searchSurroundingPts) {
+          fprintf(stdout,"search  RA[1] = %23.10e \n",params->skyPosData[1][0]);
+          fprintf(stdout,"search DEC[1] = %23.10e \n",params->skyPosData[1][1]);
+          fprintf(stdout,"search  RA[2] = %23.10e \n",params->skyPosData[2][0]);
+          fprintf(stdout,"search DEC[2] = %23.10e \n",params->skyPosData[2][1]);
+          fprintf(stdout,"search  RA[3] = %23.10e \n",params->skyPosData[3][0]);
+          fprintf(stdout,"search DEC[3] = %23.10e \n",params->skyPosData[3][1]);
+        }
         fflush(stdout);      
     #endif
 
@@ -875,11 +964,78 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
           }
           params->freqDerivData[0][k] = startFDeriv5 + ((REAL8)iDeriv)*DeltaFDeriv5;
         } /* END if (k == 0) ELSE ... */
+
         #ifdef DEBUG_RANDOMTRIALPARAMETERS
           fprintf(stdout,"kSUM = %i, search fDeriv[%i] = %23.10e, inject fDeriv[%i] = %23.10e \n",kSUM,k,params->freqDerivData[0][k],k,pPulsarSignalParams->pulsar.spindown->data[k]);
-          fflush(stdout);      
+          fflush(stdout);
         #endif
       } /* END for(k=0;k<params->numSpinDown;k++) */
+
+      /* 07/29/05 gam; find other surrounding frequency derivatives */
+      if (searchSurroundingPts) {
+         /* Note i starts at 1; add in surrounding points */
+         for(i=1;i<params->numFreqDerivTotal;i++) {
+            for(k=0;k<params->numSpinDown;k++) {
+                /* !!! WARNING: Signs are chooses such that deltaFDeriv is negative for odd derivatives; positive for even derivative !!! */
+                if (k == 0) {
+                   if ( (i % 2) > 0 ) {
+                     if (params->freqDerivData[0][k] < pPulsarSignalParams->pulsar.spindown->data[k]) {
+                       params->freqDerivData[i][k] = params->freqDerivData[0][k] - params->deltaFDeriv1;
+                     } else {
+                       params->freqDerivData[i][k] = params->freqDerivData[0][k] + params->deltaFDeriv1;
+                     }
+                   } else {
+                     params->freqDerivData[i][k] = params->freqDerivData[0][k];
+                   }
+                } else if (k == 1) {
+                   if ( floor((i % 4)/2) > 0 ) {
+                     if (params->freqDerivData[0][k] < pPulsarSignalParams->pulsar.spindown->data[k]) {
+                       params->freqDerivData[i][k] = params->freqDerivData[0][k] + params->deltaFDeriv2;
+                     } else {
+                       params->freqDerivData[i][k] = params->freqDerivData[0][k] - params->deltaFDeriv2;
+                     }
+                   } else {
+                     params->freqDerivData[i][k] = params->freqDerivData[0][k];
+                   }
+                } else if (k == 2) {
+                   if ( floor((i % 8)/4) > 0 ) {
+                     if (params->freqDerivData[0][k] < pPulsarSignalParams->pulsar.spindown->data[k]) {
+                       params->freqDerivData[i][k] = params->freqDerivData[0][k] - params->deltaFDeriv3;
+                     } else {
+                       params->freqDerivData[i][k] = params->freqDerivData[0][k] + params->deltaFDeriv3;
+                     }
+                   } else {
+                     params->freqDerivData[i][k] = params->freqDerivData[0][k];
+                   }
+                } else if (k == 3) {
+                   if ( floor((i % 16)/8) > 0 ) {
+                     if (params->freqDerivData[0][k] < pPulsarSignalParams->pulsar.spindown->data[k]) {
+                       params->freqDerivData[i][k] = params->freqDerivData[0][k] + params->deltaFDeriv4;
+                     } else {
+                       params->freqDerivData[i][k] = params->freqDerivData[0][k] - params->deltaFDeriv4;
+                     }
+                   } else {
+                     params->freqDerivData[i][k] = params->freqDerivData[0][k];
+                   }
+                } else if (k == 4) {
+                   if ( floor((i % 32)/16) > 0 ) {
+                     if (params->freqDerivData[0][k] < pPulsarSignalParams->pulsar.spindown->data[k]) {
+                       params->freqDerivData[i][k] = params->freqDerivData[0][k] - params->deltaFDeriv5;
+                     } else {
+                       params->freqDerivData[i][k] = params->freqDerivData[0][k] + params->deltaFDeriv5;
+                     }
+                   } else {
+                     params->freqDerivData[i][k] = params->freqDerivData[0][k];
+                   }
+                } /* END if (k == 0) ELSE ... */
+                #ifdef DEBUG_RANDOMTRIALPARAMETERS
+                   fprintf(stdout,"next fDeriv[%i][%i] = %23.10e\n",i,k,params->freqDerivData[i][k]);
+                   fflush(stdout);
+                #endif
+            } /* for(k=0;k<params->numSpinDown;k++) */
+         } /* END for(i=1;i<params->numFreqDerivTotal;i++) */
+      } /* END if (searchSurroundingPts) */
+
     } /* END if (params->numSpinDown > 0) */
 
     /* update the reference time for the injected sky position */
@@ -895,7 +1051,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
         CHECKSTATUSPTR (status);
     }
 
-    /* FIND RANDOM FREQUENCIES THAT IS NOT EXCLUDED */              
+    /* FIND RANDOM FREQUENCY THAT IS NOT EXCLUDED */
     StackSlideGetUniformDeviate(status->statusPtr, &real8RandVal, 0.0, real8NAvailableBins, randPar); CHECKSTATUSPTR (status);
     i = floor( real8RandVal );    /* nearest bin arrayAvailableFreqBins */
     if (i >= nAvailableBins) i = nAvailableBins - 1; if (i < 0) i = 0; /* make sure i in range */
@@ -904,6 +1060,42 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
     params->f0SUM = f0SUM + iFreq*params->dfSUM;
     StackSlideGetUniformDeviate(status->statusPtr, &real8RandVal, params->f0SUM-(0.5*params->dfSUM), params->dfSUM, randPar); CHECKSTATUSPTR (status);
     pPulsarSignalParams->pulsar.f0 = real8RandVal; /* injected frequency + random mismatch */
+    
+    /* 07/29/05 gam; search is over 2 freq bins; find the other bin */
+    if (searchSurroundingPts) {    
+        if (params->f0SUM < pPulsarSignalParams->pulsar.f0) {
+           /* Check if iFreq + 1 is a valid frequency bin */
+           if ( (iFreq+1) < nBinsPerSUM ) {
+              /* Set up to search the closest bin and the one AFTER it */
+              params->bandSUM = 2.0*params->dfSUM;
+              params->nBinsPerSUM = 2;
+              params->sumBinMask[0] = 1; /* By contruction above it is an available bin */
+              params->sumBinMask[1] = savSumBinMask[iFreq+1];
+           } else {
+              /* Only the closest bin is in the search parameter space */
+              params->bandSUM = params->dfSUM;
+              params->nBinsPerSUM = 1;
+              params->sumBinMask[0] = 1; /* By contruction above it is an available bin */
+              params->sumBinMask[1] = 0; 
+           }
+        } else {
+           /* Check if iFreq - 1 is a valid frequency bin */
+           if ( (iFreq-1) >= 0 ) {
+              /* Set up to search the closest bin and the one BEFORE it */
+              params->bandSUM = 2.0*params->dfSUM;
+              params->nBinsPerSUM = 2;
+              params->f0SUM = params->f0SUM - params->dfSUM; /* start search one bin before injected freq */
+              params->sumBinMask[0] = savSumBinMask[iFreq-1];
+              params->sumBinMask[1] = 1; /* By contruction above it is an available bin */
+           } else {
+              /* Only the closest bin is in the search parameter space */
+              params->bandSUM = params->dfSUM;
+              params->nBinsPerSUM = 1;
+              params->sumBinMask[0] = 1; /* By contruction above it is an available bin */
+              params->sumBinMask[1] = 0;
+           }
+        } /* END if (params->f0SUM < pPulsarSignalParams->pulsar.f0) */
+    } /* END if (searchSurroundingPts) */
 
     /* 12/06/04 gam */
     if ( (params->testFlag & 8) > 0 ) {
