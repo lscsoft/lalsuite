@@ -292,7 +292,7 @@ int main(int argc, char *argv[]){
 
   /* real line noise information */
   /* find number of harmonics */
-  SUB( FindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
+  SUB( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
   
   /* convert harmonics to explicit lines */
@@ -307,7 +307,7 @@ int main(int argc, char *argv[]){
       harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
     
 
-      SUB( ReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
+      SUB( LALReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
       
       for (count1=0; count1 < nHarmonicSets; count1++)
 	{
@@ -325,10 +325,10 @@ int main(int argc, char *argv[]){
       lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       
-      SUB( Harmonics2Lines( &status, &lines2, &harmonics), &status);
+      SUB( LALHarmonics2Lines( &status, &lines2, &harmonics), &status);
       
       dopplerFreq = (uvar_f0 + uvar_fSearchBand)*VTOT;
-      SUB( ChooseLines (&status, &lines, &lines2, uvar_f0 - dopplerFreq, 
+      SUB( LALChooseLines (&status, &lines, &lines2, uvar_f0 - dopplerFreq, 
 			uvar_f0 + uvar_fSearchBand + dopplerFreq), &status); 
       nLines = lines.nLines;
       
@@ -356,7 +356,7 @@ int main(int argc, char *argv[]){
     for (j=0; j<100; j++)
       {
 	sampFreq = uvar_f0 - dopplerWing + j*stepFreq;
-	SUB( CheckLines (&status, &flag, &lines, sampFreq), &status); 
+	SUB( LALCheckLines (&status, &flag, &lines, sampFreq), &status); 
 	if ( flag>0 ) counter++;
       }
     /* exit if more than 90% is covered by lines */
@@ -1030,7 +1030,7 @@ void GenerateInjectParams(LALStatus   *status,
     INT4 veto=1;
     while( veto > 0 ){
 
-      TRY( CheckLines (status->statusPtr, &veto, lines, f0 ), status); 
+      TRY( LALCheckLines (status->statusPtr, &veto, lines, f0 ), status); 
       if ( veto > 0 )
 	{
 	  TRY( LALUniformDeviate(status->statusPtr, &randval, randPar), status);

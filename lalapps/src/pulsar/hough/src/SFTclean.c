@@ -20,7 +20,7 @@ $Id$
 *********************************************** </lalLaTeX> */
 
 
-#include "./SFTbin.h"
+#include <lal/SFTClean.h>
 #include <glob.h> 
 
 
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]){
   }
   /*end of logging*********************************************************/
  
-  SUB( FindNumberHarmonics (&status, &harmonics, uvar_harmonicfname), &status); 
+  SUB( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicfname), &status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
 
   if (nHarmonicSets > 0)
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]){
       harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
     
 
-      SUB( ReadHarmonicsInfo( &status, &harmonics, uvar_harmonicfname ), &status);
+      SUB( LALReadHarmonicsInfo( &status, &harmonics, uvar_harmonicfname ), &status);
       
       nLines = 0;
       for (count1=0; count1 < nHarmonicSets; count1++)
@@ -239,7 +239,7 @@ int main(int argc, char *argv[]){
       lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
 
-      SUB( Harmonics2Lines( &status, &lines, &harmonics), &status);
+      SUB( LALHarmonics2Lines( &status, &lines, &harmonics), &status);
 
 
       lines2.nLines = nLines;
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]){
       lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
 
-      SUB( ChooseLines( &status, &lines2, &lines, uvar_fStart, uvar_fStart + uvar_fBand), &status);
+      SUB( LALChooseLines( &status, &lines2, &lines, uvar_fStart, uvar_fStart + uvar_fBand), &status);
       nLines = lines2.nLines;
     }
 
@@ -292,7 +292,7 @@ int main(int argc, char *argv[]){
 
       /* clean the sft */
       if (nLines > 0)
-	SUB( CleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines2), &status);
+	SUB( LALCleanCOMPLEX8SFT( &status, sft, uvar_maxBins, uvar_window, &lines2), &status);
       
       /* make the output sft filename */
       sprintf(tempstr1, "%d", sft->epoch.gpsSeconds);

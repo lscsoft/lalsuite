@@ -270,6 +270,8 @@ int main(int argc, char *argv[]){
       sft=NULL;
       SUB (LALReadSFTfile (&status, &sft, uvar_fStart, uvar_fStart + uvar_fBand, filelist[j]), &status);
 
+      /* for debugging */
+      fprintf(stdout, "Working on SFT No. %d\n", j);
       for (count= 0; count < nBins; count++)
 	{
 	  REAL4 re, im;
@@ -298,6 +300,7 @@ int main(int argc, char *argv[]){
    /*********************************************************************/
 
   /* write periodo to the output file */
+  fprintf(stdout, "Now writing output...\n");
   if (  (fpOut = fopen(uvar_outputPSDFILE, "w")) == NULL)
     {
       fprintf(stderr, "Unable to open output file %s for writing...exiting \n", uvar_outputPSDFILE);

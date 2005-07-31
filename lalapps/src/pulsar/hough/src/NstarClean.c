@@ -20,7 +20,7 @@ $Id$
 *********************************************** </lalLaTeX> */
 
 
-#include "./SFTbin.h"
+#include <lal/SFTClean.h>
 #include <glob.h> 
 
 
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]){
   
 
   /* find number of harmonics */
-  SUB( FindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
+  SUB( LALFindNumberHarmonics (&status, &harmonics, uvar_harmonicsfile), &status); 
   nHarmonicSets = harmonics.nHarmonicSets; 
 
   /* convert harmonics to explicit lines */
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]){
       harmonics.rightWing = (REAL8 *)LALMalloc(harmonics.nHarmonicSets * sizeof(REAL8));
     
 
-      SUB( ReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
+      SUB( LALReadHarmonicsInfo( &status, &harmonics, uvar_harmonicsfile ), &status);
       
       nLines = 0;
       for (count1=0; count1 < nHarmonicSets; count1++)
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]){
       lines.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
       lines.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
 
-      SUB( Harmonics2Lines( &status, &lines, &harmonics), &status);
+      SUB( LALHarmonics2Lines( &status, &lines, &harmonics), &status);
     }
 
 
@@ -229,8 +229,8 @@ int main(int argc, char *argv[]){
   lines2.leftWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
   lines2.rightWing = (REAL8 *)LALMalloc(nLines * sizeof(REAL8));
 
-  SUB( ChooseLines (&status, &lines2, &lines, minFreq, maxFreq), &status); 
-  SUB( CheckLines (&status, &flag, &lines2, 202.0), &status); 
+  SUB( LALChooseLines (&status, &lines2, &lines, minFreq, maxFreq), &status); 
+  SUB( LALCheckLines (&status, &flag, &lines2, 202.0), &status); 
 
 
   /* clean the nstarVec */

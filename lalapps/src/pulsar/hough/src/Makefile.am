@@ -10,8 +10,8 @@
 
 bin_PROGRAMS = NstarClean SFTclean MCInjectS2 DriveHough_v3 HoughValidate ComputePSD
 
-NstarClean_SOURCES = NstarClean.c SFTbin.h SFTbin.c
-SFTclean_SOURCES = SFTclean.c SFTbin.h SFTbin.c
+NstarClean_SOURCES = NstarClean.c
+SFTclean_SOURCES = SFTclean.c 
 ComputePSD_SOURCES = ComputePSD.c 
 MCInjectS2_SOURCES = MCInjectHoughS2.c MCInjectHoughS2.h SFTbin.h SFTbin.c DriveHoughColor.h PeakSelect.h PeakSelect.c
 DriveHough_v3_SOURCES = DriveHough_v3.c  DriveHoughColor.h SFTbin.c PeakSelect.c

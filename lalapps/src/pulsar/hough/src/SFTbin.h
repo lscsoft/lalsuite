@@ -180,21 +180,7 @@ NRCSID (SFTBINH, "$Id$");
     REAL8        *data;  /* pointer to the data */
   } REAL8Periodogram1;
 
-  typedef struct tagLineNoiseInfo{
-    INT4         nLines; /* number of lines */ 
-    REAL8        *lineFreq; /* central frequency of the lines */
-    REAL8        *leftWing; /* width to the left from central ferquency */
-    REAL8        *rightWing; /* width to the right */
-  } LineNoiseInfo; 
 
-  typedef struct tagLineHarmonicsInfo{
-    INT4         nHarmonicSets; /* number of sets of harmonics */
-    REAL8        *startFreq; /* starting frequency of set */
-    REAL8        *gapFreq;  /* frequency difference between adjacent harmonics */
-    INT4         *numHarmonics; /* Number of harmonics */  
-    REAL8        *leftWing; /* width to the left of each line in set */
-    REAL8        *rightWing; /* width to the right */
-  } LineHarmonicsInfo; 
 
 /*
  * 11. Extern Global variables. (discouraged) 
@@ -233,58 +219,6 @@ void COMPLEX16SFT2Periodogram1 (LALStatus  *status,
                    REAL8Periodogram1    *peri,
 		   COMPLEX16SFTData1    *sft		   
 		   );
-
-void FindNumberHarmonics (LALStatus           *status,
-			  LineHarmonicsInfo   *harmonicInfo,
-			  CHAR                *fname
-			  );
-
-void  ReadHarmonicsInfo (LALStatus          *status,
-			 LineHarmonicsInfo  *lineInfo,
-			 CHAR               *fname
-			 );
-
-void  Harmonics2Lines (LALStatus          *status,
-		       LineNoiseInfo      *lineInfo,
-		       LineHarmonicsInfo  *harmonicsInfo
-		       );
-
-void ChooseLines (LALStatus        *status,
-		  LineNoiseInfo    *outLine,
-		  LineNoiseInfo    *inLine,
-		  REAL8            freqMin,
-		  REAL8            freqMax
-		  );
-
-
-void CheckLines ( LALStatus           *status,
-		  INT4                *flag,
-		  LineNoiseInfo       *lines,
-		  REAL8               freq);
-
-
-void FindNumberLines (LALStatus        *status,
-		      LineNoiseInfo    *lineInfo,
-		      CHAR             *fname
-		      );
-
-void ReadLineInfo (LALStatus        *status,
-		   LineNoiseInfo  *lineInfo,
-		   CHAR           *fname
-		   );
-
-void CleanCOMPLEX8SFT (LALStatus          *status,
-		       SFTtype            *sft,
-		       INT4               width,
-		       INT4               window,
-		       LineNoiseInfo      *lineInfo
-		       );
-
-void CleanCOMPLEX16SFT (LALStatus               *status,
-			COMPLEX16FrequencySeries *sft,
-			INT4                    width,
-			LineNoiseInfo           *lineInfo
-			);
 
 void WriteCOMPLEX8SFT (LALStatus          *status,
 		       COMPLEX8SFTData1   *sft,

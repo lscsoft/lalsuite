@@ -25,6 +25,7 @@
 #include <lal/SFTfileIO.h>
 #include <lal/UserInput.h>
 #include <lal/GeneratePulsarSignal.h> 
+#include <lal/SFTClean.h>
 #include "./DriveHoughColor.h" /* proper path*/
 
 #ifdef TIMING
