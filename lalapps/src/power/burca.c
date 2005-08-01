@@ -390,6 +390,13 @@ int main(int argc, char **argv)
       if (numSlides)
 	XLALTimeSlideSnglBurst(burstEventList[1],startCoincidenceNS,endCoincidenceNS, slideDataNS);
 	
+      /* sort the triggers in time */
+      if ( burstEventList[1] )
+        {
+	  LAL_CALL( LALSortSnglBurst(&stat, &(burstEventList[1]), 
+				     XLALCompareSnglBurstByStartTime ), &stat);
+        }
+
       /*****************************************************************
        * find the first trigger after coincidence start time
        *****************************************************************/
