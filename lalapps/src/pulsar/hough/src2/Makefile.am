@@ -8,6 +8,7 @@
 ## not usable before automake-1.6:
 ## AM_LDFLAGS = -all-static
 
-bin_PROGRAMS = HoughValidateAM
+bin_PROGRAMS = HoughValidateAM HoughMismatch
 
 HoughValidateAM_SOURCES = HoughValidateAM.c HoughValidateAM.h ../src/SFTbin.h ../src/SFTbin.c ../src/DriveHoughColor.h ../src/PeakSelect.h ../src/PeakSelect.c
+HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h ../src/SFTbin.h ../src/SFTbin.c ../src/DriveHoughColor.h ../src/PeakSelect.h ../src/PeakSelect.c
