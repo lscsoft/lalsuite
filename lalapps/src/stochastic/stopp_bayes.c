@@ -37,6 +37,7 @@ RCSID("$Id$");
   " --version                    display version\n"\
   " --verbose                    verbose mode\n"\
   " --cat-only                   only cat xml files\n"\
+  " --analyse-only               only combine statistics\n"\
   " --text                       output file as text\n"\
   " --output FILE                write output data to FILE\n"\
   " --confidence LEVEL           set confidence to LEVEL\n"
@@ -84,8 +85,7 @@ static double stopp_erfcinv(double y)
       1.05375024970847138) * u + 1.21448730779995237) * u + \
       1.16374581931560831) * u + 0.956464974744799006) * u + \
       0.686265948274097816) * u + 0.434397492331430115) * u + \
-      0.244044510593190935) * t - \
-      z * exp(x * x - 0.120782237635245222);
+      0.244044510593190935) * t - z * exp(x * x - 0.120782237635245222);
   x += s * (x * s + 1);
 
   if (y > 1)
@@ -102,6 +102,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* getopt flags */
   static int text_flag;
   static int cat_flag;
+  static int analyse_flag;
 
   /* counters */
   INT4 i;
@@ -147,6 +148,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       {"verbose", no_argument, &vrbflg, 1},
       {"text", no_argument, &text_flag, 1},
       {"cat-only", no_argument, &cat_flag, 1},
+      {"analyse-only", no_argument, &analyse_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
       {"version", no_argument, 0, 'v'},
@@ -321,49 +323,52 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(pdf_out, "%e %e\n", omega_i, pdf[i]);
   }
   fclose(pdf_out);
-  
-  /* output as text file */
-  if (text_flag)
+
+  if (!analyse_flag)
   {
-    /* open output file */
-    if ((out = fopen(outputFileName, "w")) == NULL)
+    /* output as text file */
+    if (text_flag)
     {
-      fprintf(stderr, "Can't open file \"%s\" for output...\n", \
-          outputFileName);
-      exit(1);
+      /* open output file */
+      if ((out = fopen(outputFileName, "w")) == NULL)
+      {
+        fprintf(stderr, "Can't open file \"%s\" for output...\n", \
+            outputFileName);
+        exit(1);
+      }
+
+      /* write details of events */
+      for (thisStoch = stochHead; thisStoch; thisStoch = thisStoch->next)
+      {
+        fprintf(out, "%d %e %e\n", thisStoch->start_time.gpsSeconds, \
+            thisStoch->cc_stat, thisStoch->cc_sigma);
+      }
+
+      /* close output file */
+      fclose(out);
     }
-
-    /* write details of events */
-    for (thisStoch = stochHead; thisStoch; thisStoch = thisStoch->next)
+    /* output as xml file */
+    else
     {
-      fprintf(out, "%d %e %e\n", thisStoch->start_time.gpsSeconds, \
-          thisStoch->cc_stat, thisStoch->cc_sigma);
-    }
-
-    /* close output file */
-    fclose(out);
-  }
-  /* output as xml file */
-  else
-  {
-    /* open xml file stream */
-    memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
-    LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlStream, outputFileName), \
-        &status);
-
-    /* write stochastic table */
-    if (stochHead)
-    {
-      outputTable.stochasticTable = stochHead;
-      LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, stochastic_table), \
+      /* open xml file stream */
+      memset(&xmlStream, 0, sizeof(LIGOLwXMLStream));
+      LAL_CALL(LALOpenLIGOLwXMLFile(&status, &xmlStream, outputFileName), \
           &status);
-      LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, \
-            stochastic_table), &status);
-      LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
-    }
 
-    /* close xml file */
-    LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
+      /* write stochastic table */
+      if (stochHead)
+      {
+        outputTable.stochasticTable = stochHead;
+        LAL_CALL(LALBeginLIGOLwXMLTable(&status, &xmlStream, \
+              stochastic_table), &status);
+        LAL_CALL(LALWriteLIGOLwXMLTable(&status, &xmlStream, outputTable, \
+              stochastic_table), &status);
+        LAL_CALL(LALEndLIGOLwXMLTable(&status, &xmlStream), &status);
+      }
+
+      /* close xml file */
+      LAL_CALL(LALCloseLIGOLwXMLFile(&status, &xmlStream), &status);
+    }
   }
 
   /* check for memory leaks and exit */
