@@ -229,9 +229,11 @@ accuracy with which the given \texttt{ifo} can recover the parameter
 $\psi_{3}$of a signal.
 
 \item[\texttt{--num-slides} \textsc{num\_slides}] Optional.  Specify the
-number of time slides to perform.  Note that if time slides are performed,
-then the zero lag coincidences are \textit{not} found.  Also the output file
-is named \texttt{THINCA\_SLIDE}.
+number of time slides to perform.  The output file containing time slide 
+triggers contains the string \texttt{THINCA\_SLIDE} rather than the usual
+\texttt{THINCA} which is used for files containing zero lag triggers.  
+Note that if time slides are performed, then the zero lag coincidences 
+\textit{are} still found.
 
 \item[\texttt{--comment} \textsc{string}] Optional. Add \textsc{string}
 to the comment field in the process table. If not specified, no comment
