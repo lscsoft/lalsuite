@@ -256,7 +256,7 @@ void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 
-void NormaliseSFTDataRngMdn (LALStatus *, UINT4 nD);
+void NormaliseSFTDataRngMdn (LALStatus *, const SFTVector *sfts);
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void writeFVect(LALStatus *, const FStatisticVector *FVect, const CHAR *fname);
 void checkUserInputConsistency (LALStatus *lstat);
@@ -278,8 +278,7 @@ LALGetSSBtimes (LALStatus *,
 		const DetectorStateSeries *DetectorStates, 
 		SkyPosition pos,
 		REAL8 refTime,
-		SSBprecision precision,
-		UINT4 nD);
+		SSBprecision precision);
 
 void
 LALGetAMCoeffs(LALStatus *status,
@@ -296,11 +295,11 @@ void LALCreateDetectorStateSeries (LALStatus *, DetectorStateSeries **vect, UINT
 void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );
 
 void
-LALGetDetectorStates (LALStatus *, DetectorStateSeries *DetectorStates,
+LALGetDetectorStates (LALStatus *, 
+		      DetectorStateSeries *DetectorStates,
 		      const LIGOTimeGPSVector *timestamps,
 		      const LALDetector *detector,
-		      const EphemerisData *edat,
-		      UINT4 nD);
+		      const EphemerisData *edat);
 
 /****** black list ******/
 void EstimateFLines(LALStatus *, const FStatisticVector *FVect);
@@ -337,7 +336,7 @@ int main(int argc,char *argv[])
 
   UINT4 nBins; 			/* number of frequency-bins */
   UINT4 nD;         /** index over number of Detectors**/
-  lalDebugLevel = 0;  
+  lalDebugLevel = 1;  
   vrbflg = 1;	/* verbose error-messages */
   
   /* set LAL error-handler */
@@ -498,7 +497,7 @@ int main(int argc,char *argv[])
 		  /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
 		  LAL_CALL ( LALGetSSBtimes (&status, GV.ifos.DeltaT[nD], GV.ifos.Tdot[nD], 
 					     GV.ifos.DetectorStates[nD], thisPoint, GV.refTime0,
-					     uvar_SSBprecision, nD), &status);
+					     uvar_SSBprecision), &status);
 		  
 		  /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
 		  LAL_CALL ( LALGetAMCoeffs (&status, GV.ifos.amcoe[nD], GV.ifos.DetectorStates[nD], thisPoint), &status);
@@ -863,28 +862,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot), 2), status);
 
 
-  /**---------------------------------------------------------**/
-  /** Starting the Loop for different Detectors **/
-  /** At this moment we are trying to match it for single detector **/
-
-  for(nD=0; nD < cfg->ifos.length; nD++)
-    {
-      /* main initialization of the code: */
-      TRY ( InitFStatDetector(status->statusPtr, &GV, nD), status);
-      
-      /* normalize SFTs by running median */
-      TRY (NormaliseSFTDataRngMdn(status->statusPtr, nD), status);      
-
-  /* obtain detector positions and velocities, together with LMSTs for the 
-   * SFT midpoints 
-   */
-  TRY (LALGetDetectorStates(status->statusPtr, &(GV.ifos.DetectorStates[nD]), GV.ifos.timestamps[nD], &(GV.ifos.Detectors[nD]), GV.edat, nD), status);
-
-    }
-
-  /* determine start-time from first set of SFTs */
-  cfg->startTime = cfg->ifos.sftVects[0]->data[0].epoch;
-
   /* ----------------------------------------------------------------------*/
   /*
    * initialize Ephemeris-data 
@@ -896,6 +873,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
     cfg->edat = LALCalloc(1, sizeof(EphemerisData));
     cfg->edat->ephiles.earthEphemeris = cfg->EphemEarth;
     cfg->edat->ephiles.sunEphemeris = cfg->EphemSun;
+    
 
     TRY (LALLeapSecs (status->statusPtr, &leap, &(cfg->startTime), &formatAndAcc), status);
     cfg->edat->leap = leap;
@@ -904,6 +882,29 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
   } /* end: init ephemeris data */
 
+
+
+  /**---------------------------------------------------------**/
+  /** Starting the Loop for different Detectors **/
+  /** At this moment we are trying to match it for single detector **/
+
+  for(nD=0; nD < cfg->ifos.length; nD++)
+    {
+      /* main initialization of the code: */
+      TRY ( InitFStatDetector(status->statusPtr, &GV, nD), status);
+      
+      /* normalize SFTs by running median */
+      TRY (NormaliseSFTDataRngMdn(status->statusPtr, GV.ifos.sftVects[nD]), status);      
+
+  /* obtain detector positions and velocities, together with LMSTs for the 
+   * SFT midpoints 
+   */
+  TRY (LALGetDetectorStates(status->statusPtr, GV.ifos.DetectorStates[nD], GV.ifos.timestamps[nD], &(GV.ifos.Detectors[nD]), cfg->edat), status);
+
+    }
+
+  /* determine start-time from first set of SFTs */
+  cfg->startTime = cfg->ifos.sftVects[0]->data[0].epoch;
 
 
   /*---------- Standardise reference-time: ----------*/
@@ -1205,37 +1206,36 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
       /* Free timestamps */
       TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->ifos.timestamps[i]) ), status );
       TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->ifos.midTS[i]) ), status );
-      
-      /* Free config-Variables and userInput stuff */
-      TRY (LALDestroyUserVars (status->statusPtr), status);
-      
-      LALFree ( cfg->skyRegionString );
-      
-      /* this comes from clusters.c */
-      if (highFLines->clusters) LALFree(highFLines->clusters);
-      if (highFLines->Iclust) LALFree(highFLines->Iclust);
-      if (highFLines->NclustPoints) LALFree(highFLines->NclustPoints);
-      
-      
-      /* Free ephemeris data */
-      LALFree(cfg->edat->ephemE);
-      LALFree(cfg->edat->ephemS);
-      LALFree(cfg->edat);
-      
-      TRY (LALDDestroyVector (status->statusPtr, &(cfg->fkdot0)), status);
-      
-      TRY (LALDDestroyVector (status->statusPtr, &(GV.fkdot)), status);
+                  
       TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos.amcoe[i]->a)), status);
       TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos.amcoe[i]->b)), status);
-      LALFree ( cfg->ifos.amcoe[0]);
+      LALFree ( cfg->ifos.amcoe[i]);
       TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos.DeltaT[i])), status);
       TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos.Tdot[i])), status);
       
       /* destroy DetectorStateSeries */
-      TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &(GV.ifos.DetectorStates[i]) ), status);
+      TRY ( LALDestroyDetectorStateSeries (status->statusPtr, GV.ifos.DetectorStates[i] ), status);
     }
   
+  /* Free config-Variables and userInput stuff */
+  TRY (LALDestroyUserVars (status->statusPtr), status);
   
+  LALFree ( cfg->skyRegionString );
+  
+  /* this comes from clusters.c */
+  if (highFLines->clusters) LALFree(highFLines->clusters);
+  if (highFLines->Iclust) LALFree(highFLines->Iclust);
+  if (highFLines->NclustPoints) LALFree(highFLines->NclustPoints);
+  
+  
+  /* Free ephemeris data */
+  LALFree(cfg->edat->ephemE);
+  LALFree(cfg->edat->ephemS);
+  LALFree(cfg->edat);
+    
+  TRY (LALDDestroyVector (status->statusPtr, &(cfg->fkdot0)), status);
+  TRY (LALDDestroyVector (status->statusPtr, &(GV.fkdot)), status);
+    
   DETATCHSTATUSPTR (status);
   RETURN (status);
 
@@ -1398,7 +1398,9 @@ EstimateFLines(LALStatus *status, const FStatisticVector *FVect)
  * multiplied by F statistics.
  */
 void 
-NormaliseSFTDataRngMdn(LALStatus *status, UINT4 nD)
+NormaliseSFTDataRngMdn(LALStatus *status, 
+		       const SFTVector *sfts
+		       )
 {
   INT4 m, il;                         /* loop indices */
   UINT4 i, j, lpc;
@@ -1416,13 +1418,13 @@ NormaliseSFTDataRngMdn(LALStatus *status, UINT4 nD)
     TRY( LALRngMedBias (status->statusPtr, &medianbias, windowSize), status);
   }
 
-  TRY ( LALDCreateVector(status->statusPtr, &Sp, GV.ifos.sftVects[nD]->data[0].data->length), status);
-  TRY ( LALDCreateVector(status->statusPtr, &RngMdnSp, GV.ifos.sftVects[nD]->data[0].data->length), status);
+  TRY ( LALDCreateVector(status->statusPtr, &Sp, sfts->data[0].data->length), status);
+  TRY ( LALDCreateVector(status->statusPtr, &RngMdnSp, sfts->data[0].data->length), status);
 
-  if( (N = (REAL8 *) LALCalloc(GV.ifos.sftVects[nD]->data[0].data->length,sizeof(REAL8))) == NULL) {
+  if( (N = (REAL8 *) LALCalloc(sfts->data[0].data->length,sizeof(REAL8))) == NULL) {
     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
-  if( (Sp1 = (REAL8 *) LALCalloc(GV.ifos.sftVects[nD]->data[0].data->length,sizeof(REAL8))) == NULL) { 
+  if( (Sp1 = (REAL8 *) LALCalloc(sfts->data[0].data->length,sizeof(REAL8))) == NULL) { 
     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
   }
 
@@ -1430,15 +1432,15 @@ NormaliseSFTDataRngMdn(LALStatus *status, UINT4 nD)
   for (i=0;i<GV.ifos.length;i++)         
     {
       /* Set to zero the values */
-      for (j=0;j<GV.ifos.sftVects[nD]->data[0].data->length;j++){
+      for (j=0;j<sfts->data[0].data->length;j++){
 	RngMdnSp->data[j] = 0.0;
 	Sp->data[j]       = 0.0;
       }
       
       /* loop over SFT data to estimate noise */
-      for (j=0;j<GV.ifos.sftVects[nD]->data[0].data->length;j++){
-	xre=GV.ifos.sftVects[nD]->data[i].data->data[j].re;
-	xim=GV.ifos.sftVects[nD]->data[i].data->data[j].im;
+      for (j=0;j<sfts->data[0].data->length;j++){
+	xre=sfts->data[i].data->data[j].re;
+	xim=sfts->data[i].data->data[j].im;
 	Sp->data[j]=(REAL8)(xre*xre+xim*xim);
       }
       
@@ -1460,15 +1462,15 @@ NormaliseSFTDataRngMdn(LALStatus *status, UINT4 nD)
 
       /*Compute Normalization factor*/
       /* for signal only case as well */  
-      for (lpc=0;lpc<GV.ifos.sftVects[nD]->data[0].data->length;lpc++){
+      for (lpc=0;lpc<sfts->data[0].data->length;lpc++){
 	N[lpc]=1.0/sqrt(2.0*RngMdnSp->data[lpc]);
       }
       
       if(uvar_SignalOnly == 1){
-	B=(1.0*GV.ifos.sftVects[nD]->data[0].data->length)/(1.0 / (GV.ifos.sftVects[nD]->data[0].deltaF ));
+	B=(1.0*sfts->data[0].data->length)/(1.0 / (sfts->data[0].deltaF ));
 	deltaT=1.0/(2.0*B);
-	norm=deltaT/sqrt(1.0 / (GV.ifos.sftVects[nD]->data[0].deltaF ));
-	for (lpc=0;lpc<GV.ifos.sftVects[0]->data[nD].data->length;lpc++){
+	norm=deltaT/sqrt(1.0 / (sfts->data[0].deltaF ));
+	for (lpc=0;lpc<sfts->data[0].data->length;lpc++){
 	  N[lpc]=norm;
 	}
       }
@@ -1476,13 +1478,13 @@ NormaliseSFTDataRngMdn(LALStatus *status, UINT4 nD)
       /*  loop over SFT data to normalise it (with N) */
       /*  also compute Sp1, average normalized PSD */
       /*  and the sum of the PSD in the band, SpSum */
-      for (j=0;j<GV.ifos.sftVects[nD]->data[0].data->length;j++){
-	xre=GV.ifos.sftVects[nD]->data[i].data->data[j].re;
-	xim=GV.ifos.sftVects[0]->data[i].data->data[j].im;
+      for (j=0;j<sfts->data[0].data->length;j++){
+	xre=sfts->data[i].data->data[j].re;
+	xim=sfts->data[i].data->data[j].im;
 	xreNorm=N[j]*xre; 
 	ximNorm=N[j]*xim; 
-	GV.ifos.sftVects[nD]->data[i].data->data[j].re = xreNorm;    
-	GV.ifos.sftVects[nD]->data[i].data->data[j].im = ximNorm;
+	sfts->data[i].data->data[j].re = xreNorm;    
+	sfts->data[i].data->data[j].im = ximNorm;
 	Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
       }
       
@@ -2081,8 +2083,7 @@ LALGetSSBtimes (LALStatus *status,
 		const DetectorStateSeries *DetectorStates,/**< [in] detector-states at timestamps t_i */
 		SkyPosition pos,		/**< source sky-location */
 		REAL8 refTime,			/**< SSB reference-time T_0 of pulsar-parameters */
-		SSBprecision precision,		/**< relativistic or Newtonian SSB transformation? */
-		UINT4 nD
+		SSBprecision precision		/**< relativistic or Newtonian SSB transformation? */
 		)
 {
   UINT4 numSteps, i;
@@ -2093,13 +2094,13 @@ LALGetSSBtimes (LALStatus *status,
   ATTATCHSTATUSPTR (status);
 
   ASSERT (DetectorStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  numSteps = DetectorStates[nD].length;		/* number of timestamps */
+  numSteps = DetectorStates->length;		/* number of timestamps */
 
   ASSERT (DeltaT, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
   ASSERT (Tdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
-  ASSERT (DeltaT[nD].length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-  ASSERT (Tdot[nD].length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  ASSERT (DeltaT->length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  ASSERT (Tdot->length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 
   ASSERT (precision < SSBPREC_LAST, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
   ASSERT ( pos.system == COORDINATESYSTEM_EQUATORIAL, status,
@@ -2120,14 +2121,14 @@ LALGetSSBtimes (LALStatus *status,
 
       for (i=0; i < numSteps; i++ )
 	{
-	  LIGOTimeGPS *ti = &(DetectorStates[nD].data[i].tGPS);
+	  LIGOTimeGPS *ti = &(DetectorStates->data[i].tGPS);
 	  /* DeltaT_alpha */
-	  DeltaT[nD].data[i]  = GPS2REAL8 ( (*ti) );
-	  DeltaT[nD].data[i] += SCALAR(vn, DetectorStates[nD].data[i].rDetector);
-	  DeltaT[nD].data[i] -= refTime;
+	  DeltaT->data[i]  = GPS2REAL8 ( (*ti) );
+	  DeltaT->data[i] += SCALAR(vn, DetectorStates->data[i].rDetector);
+	  DeltaT->data[i] -= refTime;
 
 	  /* Tdot_alpha */
-	  Tdot[nD].data[i] = 1.0 + SCALAR(vn, DetectorStates[nD].data[i].vDetector);
+	  Tdot->data[i] = 1.0 + SCALAR(vn, DetectorStates->data[i].vDetector);
 	  
 	} /* for i < numSteps */
 
@@ -2138,10 +2139,10 @@ LALGetSSBtimes (LALStatus *status,
 	{
 	  BarycenterInput baryinput = empty_BarycenterInput;
 	  EmissionTime emit;
-	  DetectorState *state = &(DetectorStates[nD].data[i]);
+	  DetectorState *state = &(DetectorStates->data[i]);
 
 	  baryinput.tgps = state->tGPS;
-	  baryinput.site = DetectorStates[nD].detector;
+	  baryinput.site = DetectorStates->detector;
 	  /* ARGHHH!!! */
 	  baryinput.site.location[0] /= LAL_C_SI;
 	  baryinput.site.location[1] /= LAL_C_SI;
@@ -2153,8 +2154,8 @@ LALGetSSBtimes (LALStatus *status,
 
 	  TRY ( LALBarycenter(status->statusPtr, &emit, &baryinput, &(state->earthState)), status);
 
-	  DeltaT[nD].data[i] = GPS2REAL8 ( emit.te ) - refTime;
-	  Tdot[nD].data[i] = emit.tDot;
+	  DeltaT->data[i] = GPS2REAL8 ( emit.te ) - refTime;
+	  Tdot->data[i] = emit.tDot;
 
 	} /* for i < numSteps */
 
@@ -2190,8 +2191,7 @@ LALGetDetectorStates (LALStatus *status,
 		      DetectorStateSeries *DetectorStates,	/**< [out] series of DetectorStates */
 		      const LIGOTimeGPSVector *timestamps,	/**< array of GPS timestamps t_i */
 		      const LALDetector *detector,		/**< detector info */
-		      const EphemerisData *edat,		/**< ephemeris-files */	
-		      UINT4 nD
+		      const EphemerisData *edat		/**< ephemeris-files */	
 		      )
 {
   UINT4 i, j, numSteps;
@@ -2200,14 +2200,13 @@ LALGetDetectorStates (LALStatus *status,
   INITSTATUS( status, "LALGetDetectorStates", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT ( DetectorStates, status,  COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  /*  ASSERT ( *DetectorStates == NULL, status,  COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);*/
+  ASSERT ( DetectorStates == NULL, status,  COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
 
   ASSERT ( timestamps, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
   ASSERT ( detector, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
   ASSERT ( edat, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
-  numSteps = timestamps[nD].length;
+  numSteps = timestamps->length;
 
   TRY ( LALCreateDetectorStateSeries (status->statusPtr, &ret, numSteps), status);
 
