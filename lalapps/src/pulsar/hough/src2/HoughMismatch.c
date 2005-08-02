@@ -15,8 +15,8 @@
 INT4 lalDebugLevel;
 
 /* defaults */
-#define EARTHEPHEMERIS "./earth00-04.dat"
-#define SUNEPHEMERIS "./sun00-04.dat"
+#define EARTHEPHEMERIS "../src/earth00-04.dat"
+#define SUNEPHEMERIS "../src/sun00-04.dat"
 #define MAXFILES 3000 /* maximum number of files to read in a directory */
 #define MAXFILENAMELENGTH 256 /* maximum # of characters  of a SFT filename */
 #define IFO 2         /*  detector, 1:GEO, 2:LLO, 3:LHO */
@@ -25,18 +25,18 @@ INT4 lalDebugLevel;
 #define BLOCKSRNGMED 101 /* Running median window size */
 
 /* default injected pulsar parameters */
-#define F0 250.0          /*  frequency to build the LUT and start search */
+#define F0 255.0          /*  frequency to build the LUT and start search */
 #define FDOT 0.0 /* default spindown parameter */
 #define ALPHA 0.0		/* center of the sky patch (in radians) */
-#define DELTA  (-LAL_PI_2)
+#define DELTA  0.0
 #define COSIOTA 0.5
 #define PHI0 0.0
 #define PSI 0.0
 #define H0 (1.0e-23)
 
 /* default file and directory names */
-#define SFTDIRECTORY "/home/badkri/L1sfts"
-#define FILEOUT "./MismatchOut"      /* prefix file output */
+#define SFTDIRECTORY "/local_data/badkri/fakesfts/"
+#define FILEOUT "./MismatchOut"   
 #define TRUE (1==1)
 #define FALSE (1==0)
 
@@ -71,16 +71,13 @@ int main( int argc, char *argv[]){
   CHAR  *logstr=NULL; /* log string containing user input variables */
   CHAR  *fnamelog=NULL; /* name of log file */
   INT4  nfSizeCylinder;
-  CHAR  filelist[MAXFILES][MAXFILENAMELENGTH];
   
   EphemerisData   *edat = NULL;
 
   INT4   mObsCoh, j, numberCount;
-  INT8   f0Bin, fLastBin;  
+  REAL8  sftBand;  
   REAL8  timeBase, deltaF, normalizeThr, threshold;
   UINT4  sftlength; 
-  INT4   sftHeaderlength, fWings;
-  REAL4  sftRenorm; 
   INT4   sftFminBin;
   REAL8  fHeterodyne;
   REAL8  tSamplingRate;
@@ -225,88 +222,34 @@ int main( int argc, char *argv[]){
   pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(sizeof(REAL8));
   pulsarTemplate.spindown.data[0] = uvar_fdot;
 
+  /* read sfts */
+  strcat(uvar_sftDir, "/*SFT*.*"); 
+  sftBand = 0.5; 
+  SUB( LALReadSFTfiles ( &status, &inputSFTs, uvar_f0 - sftBand, uvar_f0 + sftBand, nfSizeCylinder + uvar_blocksRngMed , uvar_sftDir), &status);
 
+  /* get sft parameters */
+  mObsCoh = inputSFTs->length;
+  sftlength = inputSFTs->data->data->length;
+  deltaF = inputSFTs->data->deltaF;
+  timeBase = 1.0/deltaF;
+  sftFminBin = floor( timeBase * inputSFTs->data->f0 + 0.5);
+  fHeterodyne = sftFminBin*deltaF;
+  tSamplingRate = 2.0*deltaF*(sftlength -1.);
 
-  /* now read sfts and set velocity, timestamps etc. */
-  /* looking into the SFT data files to get the names and how many there are*/
-  { 
-    CHAR     command[256];
-    glob_t   globbuf;
-    INT4    j;
-     
-    strcpy(command, uvar_sftDir);
-    strcat(command, "/*SFT*.*");
-    
-    globbuf.gl_offs = 1;
-    glob(command, GLOB_ERR, NULL, &globbuf);
-    
-    if(globbuf.gl_pathc==0)
-      {
-	fprintf(stderr,"No SFTs in directory %s ... Exiting.\n", uvar_sftDir);
-	return 1;  /* stop the program */
-      }
-    
-    /* we will read up to a certain number of SFT files, but not all 
-       if there are too many ! */ 
-    mObsCoh = MIN (MAXFILES, globbuf.gl_pathc);
-    
-    for (j=0; j < mObsCoh; j++){
-      strcpy(filelist[j],globbuf.gl_pathv[j]);
-    }
-    globfree(&globbuf);	
-  }
-
-
-  /*  read the first headerfile of the first SFT  */
-  {
-    SFTHeader    header;
-    CHAR   *fname = NULL;
-    
-    fname = filelist[0];
-    SUB( LALReadSFTheader( &status, &header, fname ), &status );
-   /* SUB( ReadSFTbinHeader1( &status, &header,&(filelist[0]) ), &status ); */
- 
-    timeBase= header.timeBase; /* Coherent integration time */
-    deltaF = 1./timeBase;  /* the frequency resolution */ 
-    sftHeaderlength = header.length;   
-  }
-   
-  /* computing sftLength, sftFminBin, fHeterodyne, tSamplingRate */
-  /* bandwith to be read should account for Doppler effects and  */
-  /*     possible spin-down-up  and running median block size    */
-
-  {    
-    INT4   length;
- 
-    f0Bin = floor(uvar_f0*timeBase + 0.5);     /* initial frequency to be analyzed */
-    length =  0.1*timeBase; /* read in 1Hz of sfts (note: initial sfts must be long enough) */
-    fLastBin = f0Bin+length;   /* final frequency to be analyzed */
-    fWings =  floor( fLastBin * VTOT +0.5) + nfSizeCylinder + uvar_blocksRngMed;
-
-    sftlength = 1 + length + 2*fWings;
-    sftFminBin= f0Bin-fWings;
-    fHeterodyne = sftFminBin*deltaF;
-    tSamplingRate = 2.0*deltaF*(sftlength -1.);
-    sftRenorm= 1.0 * sftlength/sftHeaderlength;
-  } 
-   
-  /* reading  SFTs timestamps */
+  /* create timestamp vector */
   timeV.length = mObsCoh;
   timeV.data = NULL;  
   timeV.data = (LIGOTimeGPS *)LALMalloc(mObsCoh*sizeof(LIGOTimeGPS));
-  SUB(LALCreateSFTVector(&status, &inputSFTs, mObsCoh, sftlength),&status );
-  
+
+  /* read timestamps */
   { 
-    INT4    j; 
-    CHAR     *fname = NULL; 
+    INT4    i; 
     SFTtype  *sft= NULL; 
     
     sft = inputSFTs->data;
-    for (j=0; j < mObsCoh; j++){
-      fname = filelist[j];
-      SUB( LALReadSFTdata( &status, sft, fname, sftFminBin), &status ); 
-      timeV.data[j].gpsSeconds = sft->epoch.gpsSeconds;
-      timeV.data[j].gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
+    for (i=0; i < mObsCoh; i++){
+      timeV.data[i].gpsSeconds = sft->epoch.gpsSeconds;
+      timeV.data[i].gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
       ++sft;
     }    
   }
@@ -393,15 +336,6 @@ int main( int argc, char *argv[]){
   periPSD.psd.data = NULL;
   periPSD.psd.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
 
-  /* allocate memory for sft structure sft1 which is used in Hough routines */
-  sft1.length = sftlength;
-  sft1.fminBinIndex = sftFminBin;
-  sft1.epoch.gpsSeconds = timeV.data[0].gpsSeconds;
-  sft1.epoch.gpsNanoSeconds = timeV.data[0].gpsNanoSeconds;
-  sft1.timeBase = timeBase;
-  sft1.data = NULL;
-  sft1.data = (COMPLEX8 *)LALMalloc(sftlength* sizeof(COMPLEX8));
-
   /* allocate memory for peakgram */
   pg1.length = sftlength;
   pg1.data = NULL;
@@ -411,7 +345,7 @@ int main( int argc, char *argv[]){
   /* parameters for output sfts */
   sftParams.Tsft = timeBase;
   sftParams.timestamps = &(timeV);
-  sftParams.noiseSFTs = inputSFTs;       /* or =inputSFTs; */
+  sftParams.noiseSFTs = inputSFTs;  
   
   /* signal generation parameters */
   params.orbit = NULL;
@@ -438,23 +372,21 @@ int main( int argc, char *argv[]){
   params.pulsar.spindown = &pulsarInject.spindown ;
 
   SUB( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
-  SUB( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), 
-       &status);
+  SUB( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), &status); 
 
+  
+  /* fill in elements of sft structure sft1 used in peak selection */
+  sft1.length = sftlength;
+  sft1.fminBinIndex = sftFminBin;
+  sft1.timeBase = timeBase;
   numberCount = 0;
   /* now calculate the number count for the template */
   for (j=0; j < mObsCoh; j++)  {
-    INT4 i, index;
-    COMPLEX8 *temp1SFT, *temp2SFT;
+    INT4 index;
 
-    for (i=0; (UINT4)i < sftlength; i++)  {
-      temp1SFT = sft1.data;
-      temp2SFT = outputSFTs->data[j].data->data;
-      temp1SFT->re = temp2SFT->re;     
-      temp1SFT->im = temp2SFT->im;     
-      ++temp1SFT;
-      ++temp2SFT;
-    }
+    sft1.epoch.gpsSeconds = timeV.data[j].gpsSeconds;
+    sft1.epoch.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
+    sft1.data = outputSFTs->data[j].data->data;
     
     SUB( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, &sft1), &status );	
    
@@ -465,9 +397,10 @@ int main( int argc, char *argv[]){
 
     SUB( ComputeFoft(&status, &foft, &pulsarTemplate, &timeDiffV, &velV, timeBase), &status);
     
-    index = floor( foft.data[j]*timeBase -sftFminBin+0.5); 
-    numberCount+=pg1.data[index]; /* adds 0 or 1 to the counter*/
- 
+    index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
+
+    numberCount += pg1.data[index];
+
   }
 
   /* print the number count */
@@ -479,21 +412,25 @@ int main( int argc, char *argv[]){
   LALFree(signalTseries);
   signalTseries =NULL;
   SUB(LALDestroySFTVector(&status, &outputSFTs),&status );
-  outputSFTs = NULL;
+
+  /* destroy input sfts */
+  SUB(LALDestroySFTVector(&status, &inputSFTs),&status );
 
   /* free other structures */
+  LALFree(foft.data);  
   LALFree(pulsarInject.spindown.data);
   LALFree(pulsarTemplate.spindown.data);
   LALFree(timeV.data);
+  LALFree(timeDiffV.data);
   LALFree(velV.data);
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
   LALFree(periPSD.periodogram.data);
   LALFree(periPSD.psd.data);
-  LALFree(sft1.data);
+
   LALFree(pg1.data);
-  SUB(LALDestroySFTVector(&status, &outputSFTs),&status );
+
   SUB (LALDestroyUserVars(&status), &status);  
   LALCheckMemoryLeaks();
   
