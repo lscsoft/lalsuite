@@ -123,6 +123,7 @@ Order   order;                          /* post-Newtonian order         */
 Approximant approximant;                /* approximation method         */
 CoordinateSpace space;                  /* coordinate space used        */
 GridSpacing gridSpacing = SquareNotOriented; /* grid spacing (square or hexa)*/
+INT4   	isMaxTotMass    = 0;            /* Use a maximum total mass?	*/
 
 /* standard candle parameters */
 INT4    computeCandle = 0;              /* should we compute a candle?  */
@@ -804,10 +805,19 @@ int main ( int argc, char *argv[] )
 
 
   /* bank generation parameters */
-  bankIn.massRange     = MinMaxComponentMass;
+  if (isMaxTotMass)
+    bankIn.massRange   = MinComponentMassMaxTotalMass;
+  else
+    bankIn.massRange     = MinMaxComponentMass;
   bankIn.mMin          = (REAL8) minMass;
   bankIn.mMax          = (REAL8) maxMass;
-  bankIn.MMax          = bankIn.mMax * 2.0;
+  if (isMaxTotMass)
+  {
+    bankIn.MMax	       = (REAL8) maxMass;
+    bankIn.mMax	       = bankIn.MMax - bankIn.mMin;
+  }
+  else
+    bankIn.MMax          = bankIn.mMax * 2.0;
   bankIn.psi0Min       = (REAL8) psi0Min;
   bankIn.psi0Max       = (REAL8) psi0Max;
   bankIn.psi3Min       = (REAL8) psi3Min;
@@ -1063,6 +1073,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "\n"\
 "  --minimum-mass MASS          set minimum component mass of bank to MASS\n"\
 "  --maximum-mass MASS          set maximum component mass of bank to MASS\n"\
+"  --maximum-total-mass         make --maximum-mass refer to total mass\n"\
 "\n"\
 "  --minimum-psi0 PSI0          set minimum range of BCV parameter psi0 to PSI0\n"\
 "  --maximum-psi0 PSI0          set maximum range of BCV parameter psi0 to PSI0\n"\
@@ -1145,6 +1156,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"approximant",             required_argument, 0,                'F'},
     {"space",                   required_argument, 0,                'G'},
     {"grid-spacing",            required_argument, 0,                'v'},
+    {"maximum-total-mass", 	no_argument, 	   0,		     'y'},
     /* standard candle parameters */
     {"candle-snr",              required_argument, 0,                'k'},
     {"candle-mass1",            required_argument, 0,                'l'},
@@ -1182,7 +1194,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv, 
-        "a:b:c:d:e:f:g:hi:j:k:l:m:n:p:r:s:t:u:v:x:z:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:p:r:s:t:u:v:x:yz:"
         "A:B:C:D:E:F:G:H:I:J:K:L:M:P:Q:R:S:T:U:VZ:",
         long_options, &option_index );
 
@@ -1839,7 +1851,12 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
-        
+
+      case 'y':
+        isMaxTotMass = 1;
+        ADD_PROCESS_PARAM( "int", "%d", 1 );
+        break;
+         
       case 'k':
         candleSnr = (REAL4) atof( optarg );
         if ( candleSnr <= 0 )
