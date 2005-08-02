@@ -35,7 +35,7 @@ INT4 lalDebugLevel;
 #define H0 (1.0e-23)
 
 /* default file and directory names */
-#define SFTDIRECTORY "/local_data/badkri/fakesfts/"
+#define SFTDIRECTORY "/home/badkri/fakesfts/"
 #define FILEOUT "./MismatchOut"   
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -223,9 +223,16 @@ int main( int argc, char *argv[]){
   pulsarTemplate.spindown.data[0] = uvar_fdot;
 
   /* read sfts */
-  strcat(uvar_sftDir, "/*SFT*.*"); 
-  sftBand = 0.5; 
-  SUB( LALReadSFTfiles ( &status, &inputSFTs, uvar_f0 - sftBand, uvar_f0 + sftBand, nfSizeCylinder + uvar_blocksRngMed , uvar_sftDir), &status);
+  {
+    CHAR *tempDir;
+    tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
+    strcpy(tempDir, uvar_sftDir);
+    strcat(tempDir, "/*SFT*.*"); 
+    sftBand = 0.5; 
+    SUB( LALReadSFTfiles ( &status, &inputSFTs, uvar_f0 - sftBand, uvar_f0 + sftBand, nfSizeCylinder + uvar_blocksRngMed , tempDir), &status);
+    LALFree(tempDir);
+  }
+
 
   /* get sft parameters */
   mObsCoh = inputSFTs->length;
