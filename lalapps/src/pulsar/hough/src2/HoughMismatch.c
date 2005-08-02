@@ -75,7 +75,7 @@ int main( int argc, char *argv[]){
   
   EphemerisData   *edat = NULL;
 
-  INT4   mObsCoh, j;
+  INT4   mObsCoh, j, numberCount;
   INT8   f0Bin, fLastBin;  
   REAL8  timeBase, deltaF, normalizeThr, threshold;
   UINT4  sftlength; 
@@ -193,8 +193,11 @@ int main( int argc, char *argv[]){
     LALFree(fnamelog); 
   }
 
+  /* set peak selection threshold */
   SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
   threshold = uvar_peakThreshold/normalizeThr; 
+
+  /* set detector */
   if (uvar_ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
   if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
@@ -376,6 +379,12 @@ int main( int argc, char *argv[]){
     }  
   }
 
+
+  /* allocate memory for f(t) pattern */
+  foft.length = mObsCoh;
+  foft.data = NULL;
+  foft.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
+
   /* allocate memory for Hough peripsd structure */
   periPSD.periodogram.length = sftlength;
   periPSD.periodogram.data = NULL;
@@ -432,9 +441,10 @@ int main( int argc, char *argv[]){
   SUB( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), 
        &status);
 
+  numberCount = 0;
   /* now calculate the number count for the template */
   for (j=0; j < mObsCoh; j++)  {
-    INT4 i, index, numberCount;
+    INT4 i, index;
     COMPLEX8 *temp1SFT, *temp2SFT;
 
     for (i=0; (UINT4)i < sftlength; i++)  {
@@ -447,18 +457,21 @@ int main( int argc, char *argv[]){
     }
     
     SUB( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, &sft1), &status );	
-    /* for color noise */    
+   
     SUB( LALPeriodo2PSDrng( &status, 
 			    &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
-    /* SUB( Periodo2PSDrng( &status, 
-       &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed),  &status ); */	
+   
     SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	
+
+    SUB( ComputeFoft(&status, &foft, &pulsarTemplate, &timeDiffV, &velV, timeBase), &status);
     
     index = floor( foft.data[j]*timeBase -sftFminBin+0.5); 
     numberCount+=pg1.data[index]; /* adds 0 or 1 to the counter*/
  
   }
 
+  /* print the number count */
+  fprintf(stdout, "%d\n", numberCount);
 
   /* free structures created by signal generation routines */
   LALFree(signalTseries->data->data);
@@ -486,5 +499,67 @@ int main( int argc, char *argv[]){
   
   INFO( DRIVEHOUGHCOLOR_MSGENORM );
   return DRIVEHOUGHCOLOR_ENORM;
-
 }
+
+
+/******************************************************************/
+void ComputeFoft(LALStatus   *status,
+		 REAL8Vector          *foft,
+                 HoughTemplate        *pulsarTemplate,
+		 REAL8Vector          *timeDiffV,
+		 REAL8Cart3CoorVector *velV,
+                 REAL8                 timeBase){
+  
+  INT4   mObsCoh;
+  REAL8   f0new, vcProdn, timeDiffN;
+  INT4    f0newBin;
+  REAL8   sourceDelta, sourceAlpha, cosDelta;
+  INT4    j,i, nspin, factorialN; 
+  REAL8Cart3Coor  sourceLocation;
+  
+  /* --------------------------------------------- */
+  INITSTATUS (status, "ComputeFoft", HOUGHMISMATCHC);
+  ATTATCHSTATUSPTR (status);
+  
+  /*   Make sure the arguments are not NULL: */
+  ASSERT (foft,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (pulsarTemplate,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (timeDiffV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (velV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  
+  ASSERT (foft->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (timeDiffV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (velV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  
+  sourceDelta = pulsarTemplate->latitude;
+  sourceAlpha = pulsarTemplate->longitude;
+  cosDelta = cos(sourceDelta);
+  
+  sourceLocation.x = cosDelta* cos(sourceAlpha);
+  sourceLocation.y = cosDelta* sin(sourceAlpha);
+  sourceLocation.z = sin(sourceDelta);
+    
+  mObsCoh = foft->length;    
+  nspin = pulsarTemplate->spindown.length;
+  
+  for (j=0; j<mObsCoh; ++j){  /* loop for all different time stamps */
+    vcProdn = velV->data[j].x * sourceLocation.x
+      + velV->data[j].y * sourceLocation.y
+      + velV->data[j].z * sourceLocation.z;
+    f0new = pulsarTemplate->f0;
+    factorialN = 1;
+    timeDiffN = timeDiffV->data[j];
+    
+    for (i=0; i<nspin;++i){ /* loop for spin-down values */
+      factorialN *=(i+1);
+      f0new += pulsarTemplate->spindown.data[i]* timeDiffN / factorialN;
+      timeDiffN *= timeDiffN;
+    }
+    f0newBin = floor( f0new * timeBase + 0.5);
+    foft->data[j] = f0newBin * (1.0 +vcProdn) / timeBase;
+  }    
+    
+  DETATCHSTATUSPTR (status);
+  /* normal exit */
+  RETURN (status);
+}			
