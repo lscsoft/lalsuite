@@ -420,8 +420,6 @@ void LALSetSpin(LALStatus                   *status,
  this_inj->spin2x = r2 * cos(phi2);
  this_inj->spin2y = r2 * sin(phi2);
 
- fprintf (stdout, "%e\t %e\t %e\t %e\t \n", spin1Mag, phi1, spin2Mag, phi2 );
-
 }
 
 
