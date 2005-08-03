@@ -664,7 +664,9 @@ static void XLALStringBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
  * cluster events a and b, storing result in a
  */
 
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
 void XLALSnglBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
+/* </lalVerbatim> */
 {
 	REAL4 f_lo, f_hi;
 	INT8 ta_start, ta_end, tb_start, tb_end;
@@ -721,6 +723,7 @@ void XLALSnglBurstCluster(SnglBurstTable *a, const SnglBurstTable *b)
  * of that event and the event pointed to by the second argument.
  */
 
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
 void
 XLALClusterSnglBurstTable (
 	SnglBurstTable **list,
