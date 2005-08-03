@@ -277,6 +277,7 @@ XLALCompareSnglBurstBySNR(
  * Compare the peak times and SNRs of two SnglBurstTable events.
  */
 
+/* <lalVerbatim file="SnglBurstUtilsCP"> */
 int
 XLALCompareSnglBurstByPeakTimeAndSNR(
 	const SnglBurstTable * const *a,
