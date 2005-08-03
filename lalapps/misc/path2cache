@@ -15,8 +15,7 @@ parser.add_option("-i", "--input", metavar="INPUT", default="", help="read input
 parser.add_option("-o", "--output", metavar="OUTPUT", default="", help="write output to OUTPUT [stdout]")
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="turn on verbosity")
 options, args = parser.parse_args()
-del parser
-del args
+del parser, args
 
 
 #
