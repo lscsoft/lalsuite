@@ -1733,6 +1733,7 @@ PSItoMasses (
 
 
 
+/*  <lalVerbatim file="LALInspiralBCVFcutBankCP"> */
 void 
 LALInspiralBCVBankFcutS3 (
     LALStatus            *status, 
