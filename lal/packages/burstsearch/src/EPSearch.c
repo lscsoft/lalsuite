@@ -49,8 +49,7 @@ static SnglBurstTable *TFTileToBurstEvent(
 	strncpy(event->channel, channelName, LIGOMETA_CHANNEL_MAX);
 
 	event->start_time = *epoch; 
-
-	/* FIXME: moving the epoch has to be fixed */ 
+ 
 	XLALAddFloatToGPS(&event->start_time, (tile->tstart * tile->deltaT));
 	event->duration = tile->tbins * tile->deltaT;
 	event->peak_time = event->start_time;
