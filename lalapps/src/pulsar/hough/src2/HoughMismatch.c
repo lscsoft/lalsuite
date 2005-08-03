@@ -35,7 +35,7 @@ INT4 lalDebugLevel;
 #define H0 (1.0e-23)
 
 /* default file and directory names */
-#define SFTDIRECTORY "/home/badkri/fakesfts/"
+#define SFTDIRECTORY "/local_data/badkri/fakesfts/"
 #define FILEOUT "./MismatchOut"   
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -64,7 +64,7 @@ int main( int argc, char *argv[]){
   static PulsarData           pulsarInject;
 
   /* the template */
-  static HoughTemplate        pulsarTemplate;
+  static HoughTemplate  pulsarTemplate, pulsarTemplate1;
 
   FILE  *fpOUT = NULL; /* output file pointer */
   FILE  *fpLog = NULL; /* log file pointer */
@@ -81,6 +81,11 @@ int main( int argc, char *argv[]){
   INT4   sftFminBin;
   REAL8  fHeterodyne;
   REAL8  tSamplingRate;
+
+
+  /* grid spacings */
+  REAL8 deltaTheta, deltaFdot;
+  INT4 mm, mmP, mmT; /* for loop over mismatched templates */
 
   /* user input variables */
   BOOLEAN uvar_help;
@@ -199,6 +204,7 @@ int main( int argc, char *argv[]){
   if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
   if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
 
+
   /* copy user input values */
   pulsarInject.f0 = uvar_f0;
   pulsarInject.latitude = uvar_delta;
@@ -221,6 +227,11 @@ int main( int argc, char *argv[]){
   pulsarTemplate.spindown.data = NULL;
   pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(sizeof(REAL8));
   pulsarTemplate.spindown.data[0] = uvar_fdot;
+
+  /* allocate memory for mismatched spindown template */
+  pulsarTemplate1.spindown.length = 1;
+  pulsarTemplate1.spindown.data = NULL;
+  pulsarTemplate1.spindown.data = (REAL8 *)LALMalloc(sizeof(REAL8));
 
   /* read sfts */
   {
@@ -329,6 +340,16 @@ int main( int argc, char *argv[]){
     }  
   }
 
+  /* set grid spacings */
+  {
+    REAL8 vel2;
+
+    /* use start velocity to set delta Theta */    
+    vel2 = velV.data[0].x * velV.data[0].x + velV.data[0].y * velV.data[0].y + velV.data[0].z * velV.data[0].z;
+    
+    deltaTheta = 1.0 / ( VTOT * uvar_f0 * timeBase );
+    deltaFdot = deltaF / timeBase;
+  }
 
   /* allocate memory for f(t) pattern */
   foft.length = mObsCoh;
@@ -386,33 +407,49 @@ int main( int argc, char *argv[]){
   sft1.length = sftlength;
   sft1.fminBinIndex = sftFminBin;
   sft1.timeBase = timeBase;
-  numberCount = 0;
-  /* now calculate the number count for the template */
-  for (j=0; j < mObsCoh; j++)  {
-    INT4 index;
 
-    sft1.epoch.gpsSeconds = timeV.data[j].gpsSeconds;
-    sft1.epoch.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
-    sft1.data = outputSFTs->data[j].data->data;
-    
-    SUB( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, &sft1), &status );	
-   
-    SUB( LALPeriodo2PSDrng( &status, 
-			    &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
-   
-    SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	
-
-    SUB( ComputeFoft(&status, &foft, &pulsarTemplate, &timeDiffV, &velV, timeBase), &status);
-    
-    index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
-
-    numberCount += pg1.data[index];
-
-  }
-
-  /* print the number count */
-  fprintf(stdout, "%d\n", numberCount);
-
+  /* loop over mismatched templates */
+  for (mmT = -2; mmT <= 2; mmT++)
+    { 
+      for (mmP = -2; mmP <= 2; mmP++)
+	{
+	  INT4 mmFactor;
+	  
+	  /* displace the template */
+	  mmFactor = 1.0;
+	  pulsarTemplate1.f0 = pulsarTemplate.f0 /*+ mmFactor * mm * deltaF*/; 
+	  pulsarTemplate1.latitude = pulsarTemplate.latitude + mmFactor * mmT * deltaTheta;
+	  pulsarTemplate1.longitude = pulsarTemplate.longitude + mmFactor * mmP * deltaTheta;
+	  pulsarTemplate1.spindown.data[0] = pulsarTemplate.spindown.data[0] /*+ mmFactor * mm * deltaFdot*/;
+	  
+	  numberCount = 0;
+	  /* now calculate the number count for the template */
+	  for (j=0; j < mObsCoh; j++)  
+	    {
+	      INT4 index;
+	      
+	      sft1.epoch.gpsSeconds = timeV.data[j].gpsSeconds;
+	      sft1.epoch.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
+	      sft1.data = outputSFTs->data[j].data->data;
+	      
+	      SUB( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, &sft1), &status );	
+	      
+	      SUB( LALPeriodo2PSDrng( &status, 
+				      &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
+	      
+	      SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	 
+	      
+	      SUB( ComputeFoft(&status, &foft, &pulsarTemplate1, &timeDiffV, &velV, timeBase), &status);
+	      
+	      index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
+	      
+	      numberCount += pg1.data[index]; 
+	    } 
+	  /* print the number count */
+	  fprintf(stdout, "%d    %d    %d\n", mmT, mmP, numberCount);
+	}
+    }
+  
   /* free structures created by signal generation routines */
   LALFree(signalTseries->data->data);
   LALFree(signalTseries->data);
@@ -427,6 +464,7 @@ int main( int argc, char *argv[]){
   LALFree(foft.data);  
   LALFree(pulsarInject.spindown.data);
   LALFree(pulsarTemplate.spindown.data);
+  LALFree(pulsarTemplate1.spindown.data);
   LALFree(timeV.data);
   LALFree(timeDiffV.data);
   LALFree(velV.data);
