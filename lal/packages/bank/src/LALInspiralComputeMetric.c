@@ -83,12 +83,12 @@ $$
 \eta +
 \frac{617}{144} \eta^{2} \right).
 \end{equation}
-Up to second post-Newtonian approximation the $\psi_{k}$ are given by
+Up to second post-Newtonian approximation the $\Psi_{k}$ are given by
 \begin{equation}
-\psi_{0} = \frac{6}{5 \nu^{5/3}},\ \ 
-\psi_{2} = \frac{2}{\nu},\ \ 
-\psi_{3} = - \frac{3}{\nu^{2/3}},\ \ 
-\psi_{4} = \frac{6}{\nu^{1/3}}.
+\Psi_{0} = \frac{6}{5 \nu^{5/3}},\ \ 
+\Psi_{2} = \frac{2}{\nu},\ \ 
+\Psi_{3} = - \frac{3}{\nu^{2/3}},\ \ 
+\Psi_{4} = \frac{6}{\nu^{1/3}}.
 \end{equation}
 where $\nu = f/f_{0}$.
 
@@ -222,7 +222,7 @@ g_{mn} = \gamma_{mn} - \frac{\gamma_{0m} \gamma_{0n}}{\gamma_{00}}.
 The metric cannot be directly computed in the $(\tau_0,\tau_2)$ space.
 Therefore, in the previous Section we first computed the metric
 in the $(m,\eta)$ space and then transformed to $(\tau_0,\tau_2)$ space.
-The same method was also be used to find the metric in the $(\tau_0,\tau_3)$ space.
+The same method can also be used to find the metric in the $(\tau_0,\tau_3)$ space.
 However, in $(\tau_0,\tau_3)$ space one can directly compute the
 metric without recourse to $(m,\eta)$ coordinates. It is of interest to see
 whether this yields the same results as the previous method.
@@ -230,9 +230,8 @@ whether this yields the same results as the previous method.
 The starting point of our derivation is Eq.~(3.7) of Owen and Sathyaprakash
 (Phys. Rev. D 60, 022002, 1999) for the Fourier domain phase which we shall
 write as:
-
 \begin{eqnarray}
-\psi(f; \theta_1, \theta_2) & = & a_{01}\theta_1 v^{-5}  
+\Psi(f; \theta_1, \theta_2) & = & a_{01}\theta_1 v^{-5}  
 + \left [a_{21} \frac {\theta_1}{\theta_2} + a_{22} \left ( \theta_1 \theta_2^2 \right )^{1/3} \right ] v^{-3}
 + a_{31} \theta_2 v^{-2} \nonumber \\
 & + & \left [a_{41} \frac {\theta_1}{\theta_2^2} + a_{42} \left ( \frac {\theta_1}{\theta_2} \right )^{1/3} 
@@ -250,7 +249,7 @@ a_{43} = \frac {15293365}{10838016} \left ( \frac{5}{4\pi^4} \right )^{1/3}.
 Differentials of the phase with respect to the coordinates $\theta_1$ and $\theta_2$ appear in the
 metric which we write as:
 \begin{equation}
-\psi_m = \frac{\partial \psi}{\partial \theta_m} = \sum_0^N \Psi_{mk} v^{k-5}.
+\psi_m \equiv \frac{\partial \Psi}{\partial \theta_m} = \sum_0^N \Psi_{mk} v^{k-5}.
 \end{equation}
 where $N$ is the post-Newtonian order up to which the phase is known, or the post-Newtonian
 order at which the metric is desired.
