@@ -1013,7 +1013,7 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.timestamps[nD]), cfg->ifos.sftVects[nD]->length ), status);
     TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.midTS[nD]), cfg->ifos.sftVects[nD]->length ), status);
 
-    for (i=0; i < cfg->ifos.length; i++)
+    for (i=0; i < cfg->ifos.timestamps[nD]->length; i++)
       {
 	cfg->ifos.timestamps[nD]->data[i] = cfg->ifos.sftVects[nD]->data[i].epoch;	/* SFT start-timestamps */
 	/* SFT midpoints */
@@ -1214,7 +1214,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
       TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos.Tdot[i])), status);
       
       /* destroy DetectorStateSeries */
-      TRY ( LALDestroyDetectorStateSeries (status->statusPtr, GV.ifos.DetectorStates[i] ), status);
+      TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &(GV.ifos.DetectorStates[i]) ), status);
     }
   
   /* Free config-Variables and userInput stuff */
