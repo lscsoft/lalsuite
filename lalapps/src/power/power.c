@@ -101,7 +101,7 @@ static struct {
 	UINT4 windowLength;
 	WindowType windowType;
 	char *channelName;
-	FrChanIn mdcchannelIn;      /* mdc signal only channnel info       */
+	char *mdcchannelName;         /* mdc signal only channnel info       */
 } options;
  
 /* global variables */
@@ -114,7 +114,7 @@ CHAR *burstInjectionFile;           /* file with list of burst injections  */
 CHAR *inspiralInjectionFile;        /* file with list of burst injections  */
 CHAR *simInjectionFile;             /* file with list of sim injections  */
 CHAR *mdcCacheFile;                 /* name of mdc signal cache file       */
-
+CHAR *mdcDirName;                 /* name of mdc signal cache file       */
 
 /*
  * ============================================================================
@@ -489,7 +489,7 @@ void parse_command_line(
 	options.estimateHrss = FALSE;	/* default */
 	options.comment = "";		/* default */
 	options.FilterCorruption = -1;	/* impossible */
-	options.mdcchannelIn.name = NULL;	/* default */
+	options.mdcchannelName = NULL;	/* default */
 	options.noiseAmpl = -1.0;	/* default */
 	options.printData = FALSE;	/* default */
 	options.PSDAverageLength = 0;	/* impossible */
@@ -518,6 +518,7 @@ void parse_command_line(
 	simInjectionFile = NULL;	/* default */
 	inspiralInjectionFile = NULL;	/* default */
 	mdcCacheFile = NULL;	        /* default */
+	mdcDirName = NULL;	        /* default */
 	printSpectrum = FALSE;	        /* default */
 	useoverwhitening = FALSE;       /* default */
 
@@ -637,8 +638,7 @@ void parse_command_line(
 		break;
 
 		case 'S':
-		options.mdcchannelIn.name = optarg;
-		options.mdcchannelIn.type = ADCDataChannel;
+		options.mdcchannelName = optarg;
 		ADD_PROCESS_PARAM("string");
 		break;
 
@@ -991,10 +991,11 @@ static REAL4TimeSeries *get_time_series(
 	stream->mode = LAL_FR_VERBOSE_MODE;
 
 	/* Get the data */
-	if(options.calibrated && getcaltimeseries)
+	if(getcaltimeseries)
 		series = get_calibrated_data(stat, stream, chname, &start, duration, lengthlimit);
 	else
 		series = XLALFrReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
+
 
 	/* Check for missing data */
 	if(stream->state & LAL_FR_GAP) {
@@ -1187,29 +1188,25 @@ static void add_inspiral_injections(
  * ============================================================================
  */
 
-static void add_mdc_injections(LALStatus *stat, const char *mdcCacheFile, REAL4TimeSeries *series)
+static void add_mdc_injections(
+	LALStatus *stat, 
+	const char *mdcCacheFile, 
+	REAL4TimeSeries *series,
+	LIGOTimeGPS epoch,
+	LIGOTimeGPS stopepoch,
+	size_t lengthlimit
+)
 {
-	REAL4TimeSeries *mdc;
-	FrStream *frstream = NULL;
-	FrCache *frcache = NULL;
+	REAL4TimeSeries *mdc = NULL;
 	size_t i;
 
 	if(options.verbose)
 		fprintf(stderr, "add_mdc_injections(): using MDC frames for injections\n");
 
-	/* open mdc cache */
-	LAL_CALL(LALFrCacheImport(stat, &frcache, mdcCacheFile), stat);
-	LAL_CALL(LALFrCacheOpen(stat, &frstream, frcache), stat);
-	LAL_CALL(LALDestroyFrCache(stat, &frcache), stat);
+	options.getcaltimeseries = TRUE;
+	options.cal_high_pass = 40.0;
 
-	/* create and initialize the mdc time series vector */
-	LAL_CALL(LALCreateREAL4TimeSeries(stat, &mdc, options.mdcchannelIn.name, series->epoch, series->f0, series->deltaT, series->sampleUnits, series->data->length), stat);
-
-	/* get the mdc signal data */
-	LAL_CALL(LALFrGetREAL4TimeSeries(stat, mdc, &options.mdcchannelIn, frstream), stat);
-	mdc->epoch = series->epoch;
-	LAL_CALL(LALFrSeek(stat, &mdc->epoch, frstream), stat);
-	LAL_CALL(LALFrGetREAL4TimeSeries(stat, mdc, &options.mdcchannelIn, frstream), stat);
+	mdc = get_time_series(stat, mdcDirName, mdcCacheFile, options.mdcchannelName, epoch, stopepoch, lengthlimit, options.getcaltimeseries );
 
 	/* write diagnostic info to disk */
 	if(options.printData)
@@ -1220,8 +1217,8 @@ static void add_mdc_injections(LALStatus *stat, const char *mdcCacheFile, REAL4T
 		series->data->data[i] += mdc->data->data[i];
 
 	/* clean up */
+	options.getcaltimeseries = FALSE;
 	LAL_CALL(LALDestroyREAL4TimeSeries(stat, mdc), stat);
-	LAL_CALL(LALFrClose(stat, &frstream), stat);
 }
 
 /*
@@ -1649,7 +1646,7 @@ int main( int argc, char *argv[])
 		 * Get the data, if reading calibrated data set the flag
 		 */
 		if (options.calibrated)
-		  options.getcaltimeseries = TRUE;
+			options.getcaltimeseries = TRUE;
 
 		series = get_time_series(&stat, dirname, cachefile, options.channelName, epoch, options.stopEpoch, options.maxSeriesLength, options.getcaltimeseries);
 
@@ -1724,7 +1721,7 @@ int main( int argc, char *argv[])
 		 */
 
 		if(mdcCacheFile) {
-		        add_mdc_injections(&stat, mdcCacheFile, series);
+		        add_mdc_injections(&stat, mdcCacheFile, series, epoch, options.stopEpoch, options.maxSeriesLength);
 			if(options.printData)
 				LALPrintTimeSeries(series, "./timeseriesasqmdc.dat");
 		}
