@@ -296,7 +296,7 @@ void LALDestroyDetectorStateSeries(LALStatus *, DetectorStateSeries **vect );
 
 void
 LALGetDetectorStates (LALStatus *, 
-		      DetectorStateSeries *DetectorStates,
+		      DetectorStateSeries **DetectorStates,
 		      const LIGOTimeGPSVector *timestamps,
 		      const LALDetector *detector,
 		      const EphemerisData *edat);
@@ -336,7 +336,7 @@ int main(int argc,char *argv[])
 
   UINT4 nBins; 			/* number of frequency-bins */
   UINT4 nD;         /** index over number of Detectors**/
-  lalDebugLevel = 1;  
+  lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
   
   /* set LAL error-handler */
@@ -899,7 +899,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /* obtain detector positions and velocities, together with LMSTs for the 
    * SFT midpoints 
    */
-  TRY (LALGetDetectorStates(status->statusPtr, GV.ifos.DetectorStates[nD], GV.ifos.timestamps[nD], &(GV.ifos.Detectors[nD]), cfg->edat), status);
+  TRY (LALGetDetectorStates(status->statusPtr, &(GV.ifos.DetectorStates[nD]), GV.ifos.timestamps[nD], &(GV.ifos.Detectors[nD]), cfg->edat), status);
 
     }
 
@@ -2188,7 +2188,7 @@ LALGetSSBtimes (LALStatus *status,
  */
 void
 LALGetDetectorStates (LALStatus *status,
-		      DetectorStateSeries *DetectorStates,	/**< [out] series of DetectorStates */
+		      DetectorStateSeries **DetectorStates,	/**< [out] series of DetectorStates */
 		      const LIGOTimeGPSVector *timestamps,	/**< array of GPS timestamps t_i */
 		      const LALDetector *detector,		/**< detector info */
 		      const EphemerisData *edat		/**< ephemeris-files */	
@@ -2200,7 +2200,8 @@ LALGetDetectorStates (LALStatus *status,
   INITSTATUS( status, "LALGetDetectorStates", rcsid);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT ( DetectorStates == NULL, status,  COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
+  ASSERT ( DetectorStates != NULL, status,  COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT ( *DetectorStates == NULL, status,  COMPUTEFSTATC_ENONULL, COMPUTEFSTATC_MSGENONULL);
 
   ASSERT ( timestamps, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
   ASSERT ( detector, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
@@ -2258,7 +2259,7 @@ LALGetDetectorStates (LALStatus *status,
     } /* for i < numSteps */
 
   /* return result */
-  (DetectorStates) = ret;
+  (*DetectorStates) = ret;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
