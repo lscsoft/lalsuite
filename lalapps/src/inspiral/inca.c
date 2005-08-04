@@ -16,7 +16,6 @@
 #include <string.h>
 #include <getopt.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
@@ -738,7 +737,6 @@ int main( int argc, char *argv[] )
   {
     for( i = optind; i < argc; ++i )
     {
-      struct stat infileStatus;
       INT4 haveSearchSum = 0;
       INT4 numFileTriggers = 0;
       SnglInspiralTable *inputData = NULL;
