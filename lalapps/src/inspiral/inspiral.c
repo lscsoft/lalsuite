@@ -169,7 +169,8 @@ CHAR  *calCacheName     = NULL;         /* location of calibration data */
 INT4   globCalData      = 0;            /* glob for calibration frames  */
 INT4   pointCal         = 0;            /* don't average cal over chunk */
 CHAR  *injectionFile    = NULL;         /* name of file containing injs */
-int   injectOverhead    = 0;            /* inject h+ into detector      */
+int    injectOverhead   = 0;            /* inject h+ into detector      */
+REAL4  mmFast           = -1.0;         /* match for the --fast option  */
 
 /* matched filter parameters */
 CHAR *bankFileName      = NULL;         /* name of input template bank  */
@@ -221,9 +222,6 @@ int    writeCData       = 0;            /* write complex time series c  */
 
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
-
-/* This command line argument cnotrols the --fast option */
-REAL4   mmFast = -1.0;
 
 int main( int argc, char *argv[] )
 {
@@ -348,13 +346,13 @@ int main( int argc, char *argv[] )
   MetadataTable simResults;
 
   /* injection information */
-  int  numInjections = 0;
+  int                  numInjections = 0;
   SimInspiralTable    *injections = NULL;
   SimInspiralTable    *thisInj = NULL;
 
   /* --fast option related variables */
-  UINT4   *analyseThisTmplt = NULL;
-  INT4    immf = 0;
+  UINT4  *analyseThisTmplt = NULL;
+  INT4    thisTemplateIndex = 0;
   UINT4   analyseTag;
 
   /*
@@ -1554,9 +1552,9 @@ int main( int argc, char *argv[] )
         fcInitParams->numChisqBins, fcInitParams->numPoints ), 
       &status );
 
-  /* initialize findchirp clustering params */     /*XXX*/
-  fcFilterParams->clusterMethod = clusterMethod;   /*XXX*/
-  fcFilterParams->clusterWindow = clusterWindow;   /*XXX*/
+  /* initialize findchirp clustering params */
+  fcFilterParams->clusterMethod = clusterMethod;
+  fcFilterParams->clusterWindow = clusterWindow;
 
   /* parse the thresholds */
   fcFilterParams->rhosqThresh = snrThresh * snrThresh;
@@ -1832,16 +1830,15 @@ int main( int argc, char *argv[] )
 
     if ( injectionFile ) 
     {
-
       /* Make space for analyseThisTmplt */
       analyseThisTmplt = (UINT4 *) LALCalloc (numTmplts, sizeof(UINT4));
 
-      /* set the analyseThisTmplt flag on templates that are 'close' to the injections */
-      LAL_CALL (LALFindChirpSetAnalyseTemplate (&status, analyseThisTmplt, mmFast, 
-            fcSegVec->data[0].data->deltaF, sampleRate, fcDataParams, numTmplts, 
-            tmpltHead, numInjections, injections ), &status); 
+      /* set the analyseThisTmplt flag on templates     */
+      /* that are 'close' to the injections             */
+      LAL_CALL( LALFindChirpSetAnalyseTemplate( &status, analyseThisTmplt, 
+            mmFast, fcSegVec->data[0].data->deltaF, sampleRate, fcDataParams,
+            numTmplts, tmpltHead, numInjections, injections ), &status ); 
     }
-
 
 
     /*
@@ -1851,19 +1848,20 @@ int main( int argc, char *argv[] )
      */
 
 
-    for ( tmpltCurrent = tmpltHead, inserted = 0, immf = 0; tmpltCurrent; 
-        tmpltCurrent = tmpltCurrent->next, inserted = 0, immf++ )
+    for ( tmpltCurrent = tmpltHead, inserted = 0, thisTemplateIndex = 0; 
+        tmpltCurrent; 
+        tmpltCurrent = tmpltCurrent->next, inserted = 0, thisTemplateIndex++ )
     {
 
       /* If we are injecting and the analyseThisTmpltFlag is down -
        * look no further - simply continue to the next template */
       if ( numInjections>0 ) 
       {
-        if ( !analyseThisTmplt[immf] )
+        if ( ! analyseThisTmplt[thisTemplateIndex] )
           continue;
         else 
-          if ( vrbflg ) 
-            fprintf (stdout, "\n\n === Template %d going through \n\n", immf);
+          if ( vrbflg ) fprintf( stdout, 
+              "\n\n === Template %d going through \n\n", thisTemplateIndex );
       }
 
       /*  generate template */
@@ -1924,22 +1922,22 @@ int main( int argc, char *argv[] )
           continue;
         }
 
-        /* By default assume that we are going to analyse the
-         * segment with the template (analyseTag = 1)
-         */
+        /* By default assume that we are going to analyse the   */
+        /* segment with the template (analyseTag = 1)           */
         analyseTag = 1;
 
-        /* If injections are being done - check if for any reason,
-         * the analyseTag flag needs to be brought down. 
-         * */
+        /* If injections are being done - check if for any      */
+        /* reason the analyseTag flag needs to be brought down. */
         if ( injectionFile ) 
         {
-          analyseTag = XLALCmprSgmntTmpltFlags ( numInjections, analyseThisTmplt[immf], 
+          analyseTag = XLALCmprSgmntTmpltFlags( numInjections, 
+              analyseThisTmplt[thisTemplateIndex], 
               fcSegVec->data[i].analyzeSegment );
         }
 
         /* filter data segment */ 
-        if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level && analyseTag )
+        if ( fcSegVec->data[i].level == tmpltCurrent->tmpltPtr->level && 
+            analyseTag )
         {
           if ( vrbflg ) fprintf( stdout, 
               "filtering segment %d/%d [%lld-%lld] "
@@ -2026,9 +2024,9 @@ int main( int argc, char *argv[] )
                 tmpltCurrent->tmpltPtr->end_time.gpsNanoSeconds;
               tempTmplt->event_id->id = tmpltCurrent->tmpltPtr->event_id->id;
 
-              LALFindChirpCreateCoherentInput( &status,
+              LAL_CALL( LALFindChirpCreateCoherentInput( &status,
                   &coherentInputData, fcFilterParams->cVec, 
-                  tempTmplt, 2.0, numPoints / 4 );
+                  tempTmplt, 2.0, numPoints / 4 ), &status );
 
               LALFree( tempTmplt->event_id );
               LALFree( tempTmplt );
