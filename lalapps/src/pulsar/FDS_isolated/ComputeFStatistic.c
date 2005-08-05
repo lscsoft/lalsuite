@@ -445,7 +445,7 @@ int main(int argc,char *argv[])
   /* debug output about search-parameters */
   if ( lalDebugLevel )
     {
-      printf ("DEBUG: Search-region:\n");
+      printf ("DEBUG: Search-region (at start-time of observation):\n");
       printf ("       skyRegion = \"%s\"\n", GV.searchRegion.skyRegionString);
       printf ("       Freq in  = [%.16g, %.16g]\n", 
 	      GV.searchRegion.Freq, GV.searchRegion.Freq + GV.searchRegion.FreqBand);
@@ -746,11 +746,13 @@ int main(int argc,char *argv[])
                 {
 		  CHAR linebuf[1024]; 
 		  REAL8 Fval = 2.0*medianbias*Fstat.F[i];
+		  /* correct frequency back to reference-time: assume maximaly 1 spindown */
+		  REAL8 freq = GV.searchRegion.Freq + i * thisScan.dFreq + GV.DeltaFreqRef; 
+
 		  if ( Fval > uvar_Fthreshold )
 		    {
 		      LALSnprintf (linebuf, 1023, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
-				   GV.searchRegion.Freq + i * thisScan.dFreq, 
-				   dopplerpos.Alpha, dopplerpos.Delta, 
+				   freq, dopplerpos.Alpha, dopplerpos.Delta, 
 				   DemodParams->spinDwn[0], Fval);
 		      linebuf[1023] = 0;
 
@@ -1457,7 +1459,8 @@ void CreateDemodParams (LALStatus *status, DopplerPosition searchpos)
 int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosition searchpos)
 {
   INT4 i,j,j1,j2,k,N;
-  REAL8 max,log2val,mean,var,std,R,fr;
+  REAL8 max,log2val,mean,var,std,R;
+  REAL8 freq;
   INT4 imax;
   int numBytes = 0;
   unsigned char tmpline[1024];
@@ -1498,14 +1501,15 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosi
     }/*  end j loop over points of i-th cluster  */
     var=var/N;
     std=sqrt(var);
-    fr = GV.searchRegion.Freq + imax * DemodParams->df;
+    /* correct frequency back to reference-time: assume maximally 1 spindown */
+    freq = GV.searchRegion.Freq + imax * DemodParams->df + GV.DeltaFreqRef;
 
     /*    print the output */
     if (fpstat) {
       int l;
       int howmany2=0;
       int howmany=sprintf((char *)tmpline, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
-                         fr, searchpos.Alpha, searchpos.Delta, N, mean, std, max);
+                         freq, searchpos.Alpha, searchpos.Delta, N, mean, std, max);
       
       if (howmany <= 0) {
         fprintf(stderr,"writeFLines couldn't print to Fstats-file placeholder!\n");
@@ -1988,6 +1992,13 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 	LALPrintError ("\nERROR: XLALExtrapolatePulsarSpins() failed (xlalErrno = %d)!\n\n", code);
 	ABORT (status,  COMPUTEFSTATC_EXLAL,  COMPUTEFSTATC_MSGEXLAL);
       }
+    /* we assume for now that we only have 1 spindown, which is therefore
+     * constant over time, and we only need to correct frequencies by a constant
+     * accounting for the difference between reference-time and data start-time,
+     * i.e. DeltaFreqRef =  f(tRef) - f(tStart)
+     */
+    cfg->DeltaFreqRef = fkdotRef->data[0] - fkdot0->data[0];
+
 
     cfg->searchRegion.Freq = fkdot0->data[0];
     if ( spdnOrder > 0 )
