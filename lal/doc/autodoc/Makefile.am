@@ -19,9 +19,9 @@ dvi-local:
           done
 	${LATEX} lalspec ${TEXFLAGS} && ${LATEX} lalspec ${TEXFLAGS} \
 	  && ${LATEX} lalspec ${TEXFLAGS}
-	max_strings=20000 pool_size=400000 ${LATEX} lsd ${TEXFLAGS} && \
-	max_strings=20000 pool_size=400000 ${LATEX} lsd ${TEXFLAGS} && ${MKIND} lsd && \
-	max_strings=20000 pool_size=400000 ${LATEX} lsd ${TEXFLAGS}
+	max_strings=40000 pool_size=400000 ${LATEX} lsd ${TEXFLAGS} && \
+	max_strings=40000 pool_size=400000 ${LATEX} lsd ${TEXFLAGS} && ${MKIND} lsd && \
+	max_strings=40000 pool_size=400000 ${LATEX} lsd ${TEXFLAGS}
 	@ for file in lalspec.dvi lalspec.pdf lalspec.ps lsd.dvi lsd.pdf lsd.ps; do \
 	    if test -f $$file ; then \
 	      cmd="cp $$file .."; echo "$$cmd"; $$cmd; \
