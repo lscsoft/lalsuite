@@ -935,7 +935,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
             /* Loop over terms in Dirichlet Kernel */
 
 #ifdef SPLITVUNITS
-/* the following are variants of the main loop split up for CPU SIMD units such as SSE.
+/* The following are variants of the main loop split up for CPU SIMD units such as SSE.
    They are switched "on" by defining the macro SPLITVUNITS. They all have a special
    treatment for groups of VUNITS (4 by default) items in the Dirichlet Kernel, and then
    process the remaining ones with the usual generic loop.
@@ -951,7 +951,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
 #ifdef VUNITS_TWOLOOPS
 /* This version splits up the main loop into two loops (counting the reduction below)
-   It has to be shown the fastest version when compiling without auto-vectorization,
+   It has shown to be the fastest version when compiling without auto-vectorization,
    but with SSE(2) support, e.g. with MSC 7.1
 */
 		float xinv;
