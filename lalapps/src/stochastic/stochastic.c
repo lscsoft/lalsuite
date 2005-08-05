@@ -33,7 +33,9 @@
 #include <processtable.h>
 
 /* C99 prototypes */
-double round(double x);
+/* double round(double x); */
+static double myround(double x) {return(x<0?ceil(x-0.5):floor(x+0.5));}
+#define round(x) myround(x)
 
 NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
