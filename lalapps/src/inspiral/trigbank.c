@@ -16,7 +16,6 @@
 #include <string.h>
 #include <getopt.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/Date.h>
@@ -468,19 +467,11 @@ int main( int argc, char *argv[] )
   {
     for( i = optind; i < argc; ++i )
     {
-      struct stat infileStatus;
       INT4 haveSearchSum = 0;
       INT4 numFileTriggers = 0;
       SnglInspiralTable  *inputData = NULL;
       SearchSummaryTable *inputSummary = NULL;
 
-      /* if the named input file does not exist, exit with an error */
-      if ( stat( argv[i], &infileStatus ) == -1 )
-      {
-        fprintf( stderr, "Error opening input file %s\n", argv[i] );
-        perror( "failed to stat() file" );
-        exit( 1 );
-      }
 
       /* store the file name in search summvars */
       if ( vrbflg ) fprintf( stdout, 
