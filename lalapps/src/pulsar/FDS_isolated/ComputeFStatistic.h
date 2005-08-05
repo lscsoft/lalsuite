@@ -91,7 +91,22 @@ typedef struct {
   DopplerRegion searchRegion;	/**< parameter-space region to search over */
   INT4 FreqImax;		/**< number of frequency-bins to run LALDemod for */
   INT4 SpinImax;		/**< number of spindown-values */
+  REAL8 DeltaFreqRef;		/**< difference f(tRef) - f(tStart) */
 } ConfigVariables;
+
+
+/** Type to hold the fields that will be output in clustered 'Fstats' file
+ */
+typedef struct {
+  REAL8 Freq;			/**< Frequency at maximum (?) of the cluster */
+  REAL8 f1dot;			/**< spindown value f1dot = df/dt */
+  REAL8 Alpha; 			/**< Skyposition: longitude in equatorial coords, radians */
+  REAL8 Delta;			/**< skyposition: latitude */
+  INT4  Nbins;			/**< number of frequency-bins in this cluster */
+  REAL8 mean;			/**< mean-value of 2F in this cluster */
+  REAL8 std;			/**< standard-deviation of 2F in this cluster */
+  REAL8 max;			/**< maximum value of 2F in this cluster */
+} FstatsClusterOutput;
   
 /* LALDemod functions now put into CFSLALDemod.c */
 extern void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);

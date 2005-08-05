@@ -51,6 +51,10 @@ RCSID( "$Id$");
 #define DEBG_ESTSIGPAR
 */
 
+/* Uncomment the following if you want to activate output f1dot in 'Fstats' */
+/* #define OUTPUT_F1DOT  1 */
+
+
 /* If FILE_FILENAME is defined, then print the corresponding file  */
 
 BOOLEAN FILE_FSTATS = 1;
@@ -1465,6 +1469,7 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosi
   int numBytes = 0;
   unsigned char tmpline[1024];
   UINT4 localchecksum=*checksum;
+  FstatsClusterOutput outputLine;
 
   log2val=medianbias;
  
@@ -1504,12 +1509,36 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosi
     /* correct frequency back to reference-time: assume maximally 1 spindown */
     freq = GV.searchRegion.Freq + imax * DemodParams->df + GV.DeltaFreqRef;
 
+
+    /* prepare output into dummy entry of new FstatsClusterOutput struct.
+     * this will eventually be the point to insert this candidate into
+     * a top-candidate list
+     */
+    outputLine.Freq  = freq;
+    outputLine.f1dot = DemodParams->spinDwn[0];
+    outputLine.Alpha = searchpos.Alpha;
+    outputLine.Delta = searchpos.Delta;
+    outputLine.Nbins = N;
+    outputLine.mean  = mean;
+    outputLine.std   = std;
+    outputLine.max   = max;
+
+
     /*    print the output */
     if (fpstat) {
       int l;
       int howmany2=0;
+
+
+#ifdef OUTPUT_F1DOT
+      int howmany=sprintf((char *)tmpline, "%16.12f %.12g %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
+			  outputLine.Freq, outputLine.f1dot, outputLine.Alpha, outputLine.Delta, 
+			  outputLine.Nbins, outputLine.mean, outputLine.std, outputLine.max);
+#else
       int howmany=sprintf((char *)tmpline, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
-                         freq, searchpos.Alpha, searchpos.Delta, N, mean, std, max);
+			  outputLine.Freq, outputLine.Alpha, outputLine.Delta, 
+			  outputLine.Nbins, outputLine.mean, outputLine.std, outputLine.max);      
+#endif
       
       if (howmany <= 0) {
         fprintf(stderr,"writeFLines couldn't print to Fstats-file placeholder!\n");
