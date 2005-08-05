@@ -932,17 +932,50 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
             realXP=0.0;
             imagXP=0.0;
 
-            /* Loop over terms in dirichlet Kernel */
+            /* Loop over terms in Dirichlet Kernel */
+
 #ifdef SPLITVUNITS
+/* the following are variants of the main loop split up for CPU SIMD units such as SSE.
+   They are switched "on" by defining the macro SPLITVUNITS. They all have a special
+   treatment for groups of VUNITS (4 by default) items in the Dirichlet Kernel, and then
+   process the remaining ones with the usual generic loop.
+*/
 
 #ifndef VUNITS
 #define VUNITS 4
 #endif
             for(k=0; k+VUNITS < klim; k+=VUNITS) {
 		int ki;
-		float xinv_v[VUNITS];
 		float realXP_v[VUNITS];
 		float imagXP_v[VUNITS];
+
+#ifdef VUNITS_TWOLOOPS
+/* This version splits up the main loop into two loops (counting the reduction below)
+   It has to be shown the fastest version when compiling without auto-vectorization,
+   but with SSE(2) support, e.g. with MSC 7.1
+*/
+		float xinv;
+		float Xar,Xai;
+
+		/* inner loop */
+		for(ki=0;ki<VUNITS;ki++) {
+		    COMPLEX8 Xa = *Xalpha_k;
+		    Xar = Xa.re;
+		    Xai = Xa.im;
+		    xinv = (float)OOTWOPI / (float)(tempFreq1 - ki);
+		    realP = tsin * xinv;
+		    imagP = tcos * xinv;
+		    realXP_v[ki] = Xar * realP - Xai * imagP;
+		    imagXP_v[ki] = Xar * imagP + Xai * realP;
+		    Xalpha_k ++;
+		}
+
+#else /* VUNITS_TWOLOOPS */
+/* This version splits up the main loop into three loops (counting the reduction below)
+   It's the only version (so far) that convinces the icc 8.1 to actually vectorize the
+   "inner" loop.
+*/
+		float xinv_v[VUNITS];
 		float Xar_v[VUNITS];
 		float Xai_v[VUNITS];
 
@@ -963,19 +996,22 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 		    imagXP_v[ki] = Xar_v[ki] * imagP + Xai_v[ki] * realP;
 		}
 
-		/* increment */
-		tempFreq1 -= VUNITS;
+#endif /* VUNITS_TWOLOOPS */
 
 		/* reduction */
 		for(ki=0;ki<VUNITS;ki++) {
 		    realXP += realXP_v[ki];
 		    imagXP += imagXP_v[ki];
 		}
+
+		/* increment */
+		tempFreq1 -= VUNITS;
 	    }
             for(; k < klim; k++)
-#else
+#else /* SPLITVUNITS */
+
             for(k=0; k < klim ; k++)
-#endif
+#endif /* SPLITVUNITS */
               {
                 REAL4 xinv = (REAL4)OOTWOPI / (REAL4)tempFreq1;
                 COMPLEX8 Xa = *Xalpha_k;
@@ -984,7 +1020,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
                 
                 realP = tsin * xinv;
                 imagP = tcos * xinv;
-                /* these four lines compute P*xtilde */
+                /* these lines compute P*xtilde */
                 realXP += Xa.re * realP - Xa.im * imagP;
                 imagXP += Xa.re * imagP + Xa.im * realP;
 
