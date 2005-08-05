@@ -38,6 +38,7 @@ RCSID("$Id$");
   " --verbose                    verbose mode\n"\
   " --cat-only                   only cat xml files\n"\
   " --analyse-only               only combine statistics\n"\
+  " --powerlaw-pdf               calculate powerlaw pdf\n"\
   " --text                       output file as text\n"\
   " --output FILE                write output data to FILE\n"\
   " --confidence LEVEL           set confidence to LEVEL\n"
@@ -103,9 +104,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   static int text_flag;
   static int cat_flag;
   static int analyse_flag;
+  static int powerlaw_flag;
 
   /* counters */
-  INT4 i;
+  INT4 i, j;
 
   /* combined statistics variables */
   REAL8 numerator = 0;
@@ -122,6 +124,13 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 min_omega;
   REAL8 max_omega;
   REAL8 omega_i;
+  REAL8 min_alpha = -1;
+  REAL8 max_alpha = 1;
+  REAL8 omega_r;
+  REAL8 alpha;
+  REAL8 pdf_powerlaw[100][100];
+  REAL8 freq;
+  REAL8 freq_ref = 100;
 
   /* program option variables */
   CHAR *outputFileName = NULL;
@@ -149,6 +158,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       {"text", no_argument, &text_flag, 1},
       {"cat-only", no_argument, &cat_flag, 1},
       {"analyse-only", no_argument, &analyse_flag, 1},
+      {"powerlaw-pdf", no_argument, &powerlaw_flag, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'h'},
       {"version", no_argument, 0, 'v'},
@@ -302,13 +312,51 @@ INT4 main(INT4 argc, CHAR *argv[])
   fprintf(stdout, "upperlimit = %e\n", upperlimit);
 
   /* calculate pdf */
-  min_omega = 0;
-  max_omega = yOpt + (3 * sigmaOpt);
-  for (i = 0; i < 100; i++)
+  if (!powerlaw_flag)
   {
-    omega_i = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
-    exponent = ((omega_i - yOpt) / sigmaOpt) * ((omega_i - yOpt) / sigmaOpt);
-    pdf[i] = exp(-0.5 * exponent);
+    /* pdf for constant spectra */
+    min_omega = 0;
+    max_omega = yOpt + (3 * sigmaOpt);
+    for (i = 0; i < 100; i++)
+    {
+      omega_i = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
+      exponent = ((omega_i - yOpt) / sigmaOpt) * ((omega_i - yOpt) / sigmaOpt);
+      pdf[i] = exp(-0.5 * exponent);
+    }
+  }
+  else
+  {
+    /* pdf for power law spectra */
+    min_omega = 0;
+    max_omega = (10 * yOpt)/stochHead->duration.gpsSeconds;
+    min_alpha = -1;
+    max_alpha = 1;
+
+    /* loop for \Omega_R */
+    for (i = 0; i < 100; i++)
+    {
+      /* loop for \alpha */
+      for (j = 0; j < 100; j++)
+      {
+        omega_r = min_omega + ((i/99.) * (max_omega - min_omega));
+        alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
+
+        /* initialise pdf_powerlaw */
+        pdf_powerlaw[i][j] = 1;
+
+        /* loop over segments */
+        for (thisStoch = stochHead; thisStoch; thisStoch = thisStoch->next)
+        {
+          freq = thisStoch->f_min + ((thisStoch->f_max - \
+                thisStoch->f_min) / 2.);
+          exponent = (thisStoch->cc_stat - \
+              (thisStoch->duration.gpsSeconds * omega_r) * \
+              pow((freq/freq_ref), alpha));
+          pdf_powerlaw[i][j] *= exp((-0.5 * exponent * exponent) / \
+              (thisStoch->cc_sigma * thisStoch->cc_sigma));
+        }
+      }
+    }
   }
 
   /* save out pdf */
@@ -317,10 +365,25 @@ INT4 main(INT4 argc, CHAR *argv[])
     fprintf(stderr, "Can't open file for pdf output...\n");
     exit(1);
   }
-  for (i = 0; i < 100; i++)
+  if (powerlaw_flag)
   {
-    omega_i = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
-    fprintf(pdf_out, "%e %e\n", omega_i, pdf[i]);
+    for (i = 0; i < 100; i++)
+    {
+      for (j = 0; j < 100; j++)
+      {
+        omega_r = min_omega + ((i/99.) * (max_omega - min_omega));
+        alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
+        fprintf(pdf_out, "%e %e %g\n", omega_r, alpha, pdf_powerlaw[i][j]);
+      }
+    }
+  }
+  else
+  {
+    for (i = 0; i < 100; i++)
+    {
+      omega_i = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
+      fprintf(pdf_out, "%e %e\n", omega_i, pdf[i]);
+    }
   }
   fclose(pdf_out);
 
