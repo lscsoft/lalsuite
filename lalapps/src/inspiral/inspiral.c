@@ -1253,7 +1253,7 @@ int main( int argc, char *argv[] )
         "%3.2f of signal passes at %4.2f Hz\n", 
         highpassParam.nMax, highpassParam.a2, highpassParam.f2 );
 
-    LAL_CALL( LALButterworthREAL4TimeSeries( &status, &chan, &highpassParam ),
+    LAL_CALL( LALDButterworthREAL4TimeSeries( &status, &chan, &highpassParam ),
         &status );
   }
 
