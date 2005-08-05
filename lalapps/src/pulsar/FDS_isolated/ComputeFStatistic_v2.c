@@ -1214,8 +1214,17 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
       TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos.Tdot[i])), status);
       
       /* destroy DetectorStateSeries */
-      TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &(GV.ifos.DetectorStates[i]) ), status);
+      TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &(cfg->ifos.DetectorStates[i]) ), status);
     }
+  
+  LALFree ( cfg->ifos.Detectors );
+  LALFree ( cfg->ifos.sftVects );
+  LALFree ( cfg->ifos.timestamps );
+  LALFree ( cfg->ifos.midTS );
+  LALFree ( cfg->ifos.DetectorStates );
+  LALFree ( cfg->ifos.DeltaT );
+  LALFree ( cfg->ifos.Tdot );
+  LALFree ( cfg->ifos.amcoe );
   
   /* Free config-Variables and userInput stuff */
   TRY (LALDestroyUserVars (status->statusPtr), status);
@@ -1234,7 +1243,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree(cfg->edat);
     
   TRY (LALDDestroyVector (status->statusPtr, &(cfg->fkdot0)), status);
-  TRY (LALDDestroyVector (status->statusPtr, &(GV.fkdot)), status);
+  TRY (LALDDestroyVector (status->statusPtr, &(cfg->fkdot)), status);
     
   DETATCHSTATUSPTR (status);
   RETURN (status);
