@@ -351,27 +351,27 @@ main( int argc, char **argv )
     sky.system = COORDINATESYSTEM_GALACTIC;
 
     /* Convert to Ecliptic and back. */
-    fprintf( stdout, "Galactic   (%7.3Lf,%7.3Lf)\n",
+    fprintf( stdout, "Galactic   (%7.3f,%7.3f)\n",
 	     LAL_180_PI*sky.latitude, LAL_180_PI*sky.longitude );
     params.system = COORDINATESYSTEM_EQUATORIAL;
     SUB( LALConvertSkyCoordinates( &stat, &sky2, &sky, &params ),
 	 &stat );
-    fprintf( stdout, "Equatorial (%7.3Lf,%7.3Lf)\n",
+    fprintf( stdout, "Equatorial (%7.3f,%7.3f)\n",
 	     LAL_180_PI*sky2.latitude, LAL_180_PI*sky2.longitude );
     params.system = COORDINATESYSTEM_ECLIPTIC;
     SUB( LALConvertSkyCoordinates( &stat, &sky2, &sky2, &params ),
 	 &stat );
-    fprintf( stdout, "Ecliptic   (%7.3Lf,%7.3Lf)\n",
+    fprintf( stdout, "Ecliptic   (%7.3f,%7.3f)\n",
 	     LAL_180_PI*sky2.latitude, LAL_180_PI*sky2.longitude );
     params.system = COORDINATESYSTEM_EQUATORIAL;
     SUB( LALConvertSkyCoordinates( &stat, &sky2, &sky2, &params ),
 	 &stat );
-    fprintf( stdout, "Equatorial (%7.3Lf,%7.3Lf)\n",
+    fprintf( stdout, "Equatorial (%7.3f,%7.3f)\n",
 	     LAL_180_PI*sky2.latitude, LAL_180_PI*sky2.longitude );
     params.system = COORDINATESYSTEM_GALACTIC;
     SUB( LALConvertSkyCoordinates( &stat, &sky2, &sky2, &params ),
 	 &stat );
-    fprintf( stdout, "Galactic   (%7.3Lf,%7.3Lf)\n",
+    fprintf( stdout, "Galactic   (%7.3f,%7.3f)\n",
 	     LAL_180_PI*sky2.latitude, LAL_180_PI*sky2.longitude );
 
     /* Make sure conversion is consistent. */
@@ -442,24 +442,24 @@ main( int argc, char **argv )
   fprintf( stdout, "\n" );
   if ( gc && !gd ) {
     fprintf( stdout, "TERRESTRIAL COORDINATES\n"
-	     "Geocentric: latitude = %6.2Lf deg, longitude = %6.2Lf deg,"
-	     " radius = %.0Lfm\n", LAL_180_PI*earth.geocentric.latitude,
-	     LAL_180_PI*earth.geocentric.longitude, 1.0L*earth.radius );
+	     "Geocentric: latitude = %6.2f deg, longitude = %6.2f deg,"
+	     " radius = %.0fm\n", LAL_180_PI*earth.geocentric.latitude,
+	     LAL_180_PI*earth.geocentric.longitude, 1.0*earth.radius );
     earth.x = earth.radius*cos( earth.geocentric.latitude )
       *cos( earth.geocentric.longitude );
     earth.y = earth.radius*cos( earth.geocentric.latitude )
       *sin( earth.geocentric.longitude );
     earth.z = earth.radius*sin( earth.geocentric.latitude );
     fprintf( stdout,
-	     "            x = %.0Lfm, y = %.0Lfm, z = %.0Lfm\n",
-	     1.0L*earth.x, 1.0L*earth.y, 1.0L*earth.z );
+	     "            x = %.0fm, y = %.0fm, z = %.0fm\n",
+	     1.0*earth.x, 1.0*earth.y, 1.0*earth.z );
     SUB( LALGeocentricToGeodetic( &stat, &earth ), &stat );
     fprintf( stdout,
-	     "Geodetic:   latitude = %6.2Lf deg, longitude = %6.2Lf"
-	     " deg, elevation = %.0Lfm\n",
+	     "Geodetic:   latitude = %6.2f deg, longitude = %6.2f"
+	     " deg, elevation = %.0fm\n",
 	     LAL_180_PI*earth.geodetic.latitude,
 	     LAL_180_PI*earth.geodetic.longitude,
-	     1.0L*earth.elevation );
+	     1.0*earth.elevation );
     params.zenith = &(earth.geodetic);
     fprintf( stdout, "\n" );
   }
@@ -467,19 +467,19 @@ main( int argc, char **argv )
   /* Convert geodetic to geocentric, if required. */
   else if ( gd ) {
     fprintf( stdout, "TERRESTRIAL COORDINATES\n"
-	     "Geodetic:   latitude = %6.2Lf deg, longitude = %6.2Lf"
+	     "Geodetic:   latitude = %6.2f deg, longitude = %6.2f"
 	     " deg", LAL_180_PI*earth.geodetic.latitude,
 	     LAL_180_PI*earth.geodetic.longitude );
     if ( alt ) {
-      fprintf( stdout, ", elevation = %.0Lfm\n", 1.0L*earth.elevation );
+      fprintf( stdout, ", elevation = %.0fm\n", 1.0*earth.elevation );
       SUB( LALGeodeticToGeocentric( &stat, &earth ), &stat );
       fprintf( stdout,
-	       "Geocentric: latitude = %6.2Lf deg, longitude = %6.2Lf"
-	       " deg, radius = %.0Lfm\n"
-	       "            x = %.0Lfm, y = %.0Lfm, z = %.0Lfm\n",
+	       "Geocentric: latitude = %6.2f deg, longitude = %6.2f"
+	       " deg, radius = %.0fm\n"
+	       "            x = %.0fm, y = %.0fm, z = %.0fm\n",
 	       LAL_180_PI*earth.geocentric.latitude,
-	       LAL_180_PI*earth.geocentric.longitude, 1.0L*earth.radius,
-	       1.0L*earth.x, 1.0L*earth.y, 1.0L*earth.z );
+	       LAL_180_PI*earth.geocentric.longitude, 1.0*earth.radius,
+	       1.0*earth.x, 1.0*earth.y, 1.0*earth.z );
     } else
       fprintf( stdout, "\n" );
 
@@ -525,12 +525,12 @@ main( int argc, char **argv )
 
       /* Convert to Julian date. */
       SUB( LALJulianDate( &stat, &jDate, &date ), &stat );
-      fprintf( stdout, "Julian date: J%.4Lf\n", 1.0L*jDate );
+      fprintf( stdout, "Julian date: J%.4f\n", 1.0*jDate );
 
       /* Convert to Greenwich mean sidereal time. */
       SUB( LALGPStoGMST1( &stat, &gmst, &gpsTime, &uAcc ), &stat );
-      fprintf( stdout, "Greenwich mean sidereal time: %6.2Lf deg\n",
-	       1.0L*gmst );
+      fprintf( stdout, "Greenwich mean sidereal time: %6.2f deg\n",
+	       1.0*gmst );
     } else
       fprintf( stdout, "GPS time: %i.%09is\n", gpsTime.gpsSeconds,
 	       -gpsTime.gpsNanoSeconds );
@@ -561,7 +561,7 @@ main( int argc, char **argv )
       break;
     default: fprintf( stdout, "Unknown   " );
     }
-    fprintf( stdout, ": latitude = %6.2Lf deg, longitude = %6.2Lf deg\n",
+    fprintf( stdout, ": latitude = %6.2f deg, longitude = %6.2f deg\n",
 	     LAL_180_PI*sky.latitude, LAL_180_PI*sky.longitude );
 
     /* Print the output coordinates. */
@@ -581,7 +581,7 @@ main( int argc, char **argv )
 	break;
       default: fprintf( stdout, "Unknown   " );
       }
-      fprintf( stdout, ": latitude = %6.2Lf deg, longitude = %6.2Lf deg\n",
+      fprintf( stdout, ": latitude = %6.2f deg, longitude = %6.2f deg\n",
 	       LAL_180_PI*sky.latitude, LAL_180_PI*sky.longitude );
     }
     fprintf( stdout, "\n" );
