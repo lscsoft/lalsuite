@@ -1613,7 +1613,32 @@ int main( int argc, char *argv[] )
         ( ( bankInjection.mass1 + bankInjection.mass2 ) *
           ( bankInjection.mass1 + bankInjection.mass2 ) );
 
-      if ( bankSimApproximant == TaylorT2 )
+      if ( bankSimApproximant == TaylorT1 )
+      {
+        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+            "TaylorT1twoPN" );
+      }
+      else if ( bankSimApproximant == TaylorT2 )
+      {
+        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+            "TaylorT2twoPN" );
+      }
+      else if ( bankSimApproximant == TaylorT3 )
+      {
+        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+            "TaylorT3twoPN" );
+      }
+      else if ( bankSimApproximant == PadeT1 )
+      {
+        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+            "PadeT1twoPN" );
+      }
+      else if ( bankSimApproximant == EOB )
+      {
+        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+            "EOBtwoPN" );
+      }
+      else if ( bankSimApproximant == GeneratePPN )
       {
         LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
             "GeneratePPNtwoPN" );
@@ -3496,15 +3521,35 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case 'L':
-        if ( ! strcmp( "TaylorT2", optarg ) )
+        if ( ! strcmp( "TaylorT1", optarg ) )
+        {
+          bankSimApproximant = TaylorT1;
+        }
+        else if ( ! strcmp( "TaylorT2", optarg ) )
         {
           bankSimApproximant = TaylorT2;
+        }
+        else if ( ! strcmp( "TaylorT3", optarg ) )
+        {
+          bankSimApproximant = TaylorT3;
+        }
+        else if ( ! strcmp( "PadeT1", optarg ) )
+        {
+          bankSimApproximant = PadeT1;
+        }
+        else if ( ! strcmp( "EOB", optarg ) )
+        {
+          bankSimApproximant = EOB;
+        }
+        else if ( ! strcmp( "GeneratePPN", optarg ) )
+        {
+          bankSimApproximant = GeneratePPN;
         }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
-              "unknown order specified: "
-              "%s (must be TaylorT2)\n", 
+              "unknown order specified: %s\n(must be one of "
+              "TaylorT1, TaylorT2, TaylorT3, PadeT1, EOB, GeneratePPN)\n", 
               long_options[option_index].name, optarg );
           exit( 1 );
         }
