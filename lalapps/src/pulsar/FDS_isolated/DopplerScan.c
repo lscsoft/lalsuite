@@ -66,6 +66,7 @@
 
 #define INDEX_f1_f1	PMETRIC_INDEX(3,3)
 
+#define SKYREGION_ALLSKY  "(0, -1.570796), (6.283185, -1.570796), (6.283185, 1.570796), (0, 1.570796)"
 
 NRCSID( DOPPLERSCANC, "$Id$" );
 
@@ -1259,20 +1260,26 @@ getDopplermax(EphemerisData *edat)
 
 } /* getDopplermax() */
 
-/*----------------------------------------------------------------------*/
+
 /**
  * parse a skyRegion-string into a SkyRegion structure: the expected 
  * string-format is
  *   " (ra1, dec1), (ra2, dec2), (ra3, dec3), ... "
+ *
+ * One special string "allsky" is current understood ==> replace by a 
+ * sky-region covering the whole sky.
  *
  * <lalVerbatim file="DopplerScanCP"> */
 void
 ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
 { /* </lalVerbatim> */
   const CHAR *pos;
+  const CHAR *skyRegion = NULL;
+  CHAR buf[100];
   UINT4 i;
 
   INITSTATUS( status, "ParseSkyRegionString", DOPPLERSCANC );
+  ATTATCHSTATUSPTR (status);
 
   ASSERT (region != NULL, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT (region->vertices == NULL, status, DOPPLERSCANH_ENONULL,  DOPPLERSCANH_MSGENONULL);
@@ -1285,8 +1292,19 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
   region->upperRight.latitude = 0;
   region->lowerLeft.system = region->upperRight.system = COORDINATESYSTEM_EQUATORIAL;
 
+  /* ----- first check if special skyRegion string was specified: */
+  strncpy (buf, input, 99);
+  buf[99] = 0;
+  TRY ( LALLowerCaseString (status->statusPtr, buf), status);
+  /* check if "allsky" was given: replace input by allsky-skyRegion */
+  if ( !strcmp( buf, "allsky" ) )	/* All-sky search */
+    skyRegion = SKYREGION_ALLSKY;
+  else
+    skyRegion = input;
+
+
   /* count number of entries (by # of opening parantheses) */
-  pos = input;
+  pos = skyRegion;
   while ( (pos = strchr (pos, '(')) != NULL )
     {
       region->numVertices ++;
@@ -1294,7 +1312,7 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
     }
 
   if (region->numVertices == 0) {
-    LALPrintError ("Failed to parse sky-region: `%s`\n", input);
+    LALPrintError ("Failed to parse sky-region: `%s`\n", skyRegion);
     ABORT (status, DOPPLERSCANH_ESKYREGION, DOPPLERSCANH_MSGESKYREGION);
   }
     
@@ -1312,7 +1330,7 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
 
 
   /* and parse list of vertices from input-string */
-  pos = input;
+  pos = skyRegion;
   for (i = 0; i < region->numVertices; i++)
     {
       if ( sscanf (pos, "(%" LAL_REAL8_FORMAT ", %" LAL_REAL8_FORMAT ")", 
@@ -1334,6 +1352,7 @@ ParseSkyRegionString (LALStatus *status, SkyRegion *region, const CHAR *input)
 
     } /* for numVertices */
 
+  DETATCHSTATUSPTR(status);
   RETURN (status);
 
 } /* ParseSkyRegionString() */
