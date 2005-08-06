@@ -61,6 +61,7 @@ typedef struct {
   LALDetector Detector;         /**< detector of data to be searched */
   EphemerisData *ephemeris;	/**< ephemeris data (from LALInitBarycenter()) */
   LIGOTimeGPS startTimeGPS;	/**< starttime of observation */
+  REAL8 duration;		/**< total observation-time spanned */
 } ConfigVariables;
 
 /*---------- empty structs for initializations ----------*/
@@ -88,9 +89,9 @@ CHAR *uvar_ephemYear;		/**< year-range of ephemeris-file to use */
 INT4  uvar_metricType;		/**< Metric function to use: ptole_analytic, ptole-numeric, ... */
 REAL8 uvar_metricMismatch;	/**< metric mismatch */
 REAL8 uvar_startTime;		/**< GPS start time of observation */
-REAL8 uvar_duration;		/**< length of observation in seconds */
+REAL8 uvar_endTime;		/**< GPS end time of observation */
+REAL8 uvar_duration;		/**< OR alternatively: length of observation in seconds */
 BOOLEAN uvar_projectMetric;		/**< project out frequency-component of metric */
-
 
 REAL8 uvar_dAlpha;		/**< Alpha-resolution if GRID_FLAT or GRID_ISOTROPIC */
 REAL8 uvar_dDelta;		/**< Delta-resolution if ... */
@@ -156,7 +157,7 @@ main(int argc, char *argv[])
   scanInit.gridType = (DopplerGridType) uvar_gridType;
   scanInit.metricMismatch = uvar_metricMismatch;
   scanInit.obsBegin = config.startTimeGPS;
-  scanInit.obsDuration = uvar_duration;
+  scanInit.obsDuration = config.duration;
   scanInit.projectMetric = uvar_projectMetric;
   scanInit.Detector = &(config.Detector);
   scanInit.ephemeris = config.ephemeris;       /* used by Ephemeris-based metric */
@@ -260,6 +261,7 @@ initUserVars (LALStatus *stat)
   uvar_help = FALSE;
 
   uvar_startTime = 714180733;
+  uvar_endTime = 0;
 
   uvar_projectMetric = TRUE;
 
@@ -312,8 +314,10 @@ initUserVars (LALStatus *stat)
 		    "Project metric onto frequency-surface");
   LALregREALUserVar(stat,       startTime,      't', UVAR_OPTIONAL, 
 		    "GPS start time of observation");
-  LALregREALUserVar(stat,	duration,	'T', UVAR_REQUIRED, 
-		    "Duration of observation in seconds");
+  LALregREALUserVar(stat,       endTime,      't',   UVAR_OPTIONAL, 
+		    "GPS end time of observation");
+  LALregREALUserVar(stat,	duration,	'T', UVAR_OPTIONAL,
+		    "Alternative: Duration of observation in seconds");
 
   LALregSTRINGUserVar(stat,     ephemDir,       'E', UVAR_OPTIONAL, 
 		      "Directory where Ephemeris files are located");
@@ -347,7 +351,14 @@ initGeneral (LALStatus *status, ConfigVariables *cfg)
   INITSTATUS( status, "initGeneral", rcsid );
   ATTATCHSTATUSPTR (status);
 
+  /* ----- set up Tspan */
   TRY ( LALFloatToGPS (status->statusPtr, &(cfg->startTimeGPS), &uvar_startTime), status);
+
+  if ( LALUserVarWasSet (&uvar_endTime) )
+    cfg->duration = uvar_endTime - uvar_startTime;
+  else
+    cfg->duration = uvar_duration;
+  
 
   /* ---------- init ephemeris if needed ---------- */
   if ( uvar_metricType ==  LAL_PMETRIC_COH_EPHEM )
@@ -528,6 +539,30 @@ checkUserInputConsistency (LALStatus *status)
       }
 
   } /* grid-related checks */
+
+
+  /* check that observation start+duration were specified correctly */
+  {
+    BOOLEAN haveEndTime = LALUserVarWasSet(&uvar_endTime);
+    BOOLEAN haveDuration =LALUserVarWasSet(&uvar_duration);
+    if ( !haveEndTime && !haveDuration )
+      {
+	LALPrintError ("\nERROR: need either --endTime or --duration!\n\n");
+        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);      
+      }
+    if ( haveEndTime && haveDuration )
+      {
+	LALPrintError ("\nERROR: can specify only one of --endTime or --duration!\n\n");
+        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);      
+      }
+
+    if ( haveEndTime && (uvar_endTime < uvar_startTime) )
+      {
+	LALPrintError ("\nERROR: endTime must be later than startTime!\n\n");
+        ABORT (status, GETMESH_EINPUT, GETMESH_MSGEINPUT);      
+      }
+      
+  } /* check Tspan */
 
   RETURN (status);
 } /* checkUserInputConsistency() */
