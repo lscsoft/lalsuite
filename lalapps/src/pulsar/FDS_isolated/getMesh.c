@@ -604,6 +604,19 @@ getSearchRegion (LALStatus *status,
   ret.f1dot = uvar_f1dot;
   ret.f1dotBand = uvar_f1dotBand;
 
+  /* 'normalize' if negative bands where given */
+  if ( ret.FreqBand < 0 )
+    {
+      ret.FreqBand *= -1.0;
+      ret.Freq -= ret.FreqBand;
+    }
+  if ( ret.f1dotBand < 0 )
+    {
+      ret.f1dotBand *= -1.0;
+      ret.f1dot -= ret.f1dotBand;
+    }
+
+
 
   /* if user specified the option -searchNeighbors=N, we generate an 
    * automatic search-region of N grid-steps in each dimension
