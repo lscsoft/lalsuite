@@ -32,11 +32,6 @@
 #include <lalapps.h>
 #include <processtable.h>
 
-/* C99 prototypes */
-/* double round(double x); */
-static double myround(double x) {return(x<0?ceil(x-0.5):floor(x+0.5));}
-#define round(x) myround(x)
-
 NRCSID(STOCHASTICC, "$Id$");
 RCSID("$Id$");
 
@@ -134,6 +129,12 @@ INT4 maskBin = -1;
 CHAR *outputPath = NULL;
 
 /* helper functions */
+
+/* can't use round() as its not C89 */
+static double myround(double x)
+{
+  return(x < 0 ? ceil(x - 0.5): floor(x + 0.5));
+}
 
 /* read a LIGO time series */
 static REAL4TimeSeries *get_ligo_data(LALStatus *status,
@@ -1778,9 +1779,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
         }
         /* check that min frequency can be represented by the
          * sampling rate of the data and round accordingly */
-        if (fMin != round(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
+        if (fMin != myround(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
         {
-          fMin = round(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
+          fMin = myround(fMin * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
           fprintf(stderr, "warning: fMin has been rounded to %f\n", fMin);
         }
         ADD_PROCESS_PARAM("float", "%e", fMin);
@@ -1798,9 +1799,9 @@ static void parse_options(INT4 argc, CHAR *argv[])
         }
         /* check that the max frequency can be represented by the
          * sampling rate of the data and round accordingly */
-        if (fMax != round(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
+        if (fMax != myround(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION)
         {
-          fMax = round(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
+          fMax = myround(fMax * PSD_WINDOW_DURATION) / PSD_WINDOW_DURATION;
           fprintf(stderr, "warning: fMax has been rounded to %f\n", fMax);
         }
         ADD_PROCESS_PARAM("float", "%e", fMax);
