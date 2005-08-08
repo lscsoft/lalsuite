@@ -53,9 +53,13 @@ extern "C" {
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 
+/* we need these until we put them in some better LAL-place (FIXME) */
+#include <lal/PtoleMetric.h>
+#include "FlatPulsarMetric.h"
 
 
-NRCSID( DOPPLERSCANH, "$Id$" );
+
+NRCSID( LATTICECOVERINGH, "$Id$" );
 
 
 /*---------- DEFINES ----------*/
@@ -106,7 +110,7 @@ typedef struct tagREAL8VectorList
 
 /*---------- exported prototypes [API] ----------*/
 void LALLatticeCovering (LALStatus *, REAL8VectorList **covering, REAL8 coveringRadius, 
-			 const gsl_matrix *metric, const REAL8Vector *startPoint,
+			 const REAL8Vector *metric, const REAL8Vector *startPoint,
 			 BOOLEAN (*isInside)(const REAL8Vector *point) );
 
 void LALLatticeFill (LALStatus *, REAL8VectorList **fillGrid, const gsl_matrix  *generator,
@@ -122,6 +126,9 @@ int XLALGetLatticeGenerator (gsl_matrix **outmatrix, UINT4 dimension, LatticeTyp
 REAL8VectorList* REAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry);
 void REAL8VectorListDestroy (REAL8VectorList *head);
 
+/* convert a symmetric gsl_matrix into a 'LAL-encoded' vector containing only 
+ * the independent symmetric-matrix elements (see PMETRIC_INDEX) */
+REAL8Vector *XLALgsl2LALmetric (const gsl_matrix *gmetric);
 
 
 #ifdef  __cplusplus

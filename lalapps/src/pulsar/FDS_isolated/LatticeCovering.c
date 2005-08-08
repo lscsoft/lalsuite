@@ -96,53 +96,79 @@ static BOOLEAN isSymmetric (const gsl_matrix *Sij);
  *            up to dimension 23, see \ref CS99 "[CS99]"
  *	\li 2) use it to LALLatticeFill() the space.
  *
+ * \note The encoding of the symmetric matrix 'metric' is the same
+ * as conventionally used in the Pulsar-metric modules, namely
+ * the vector-index l is given in terms of l = a + b*(b+1)/2, if
+ * a <= b are the matrix-indices (a,b). This encoding is implemented
+ * in the macro PMETRIC_INDEX(a,b)
+ *
  */
 void
 LALLatticeCovering (LALStatus *status,
 		    REAL8VectorList **covering,		/**< [out] final covering-grid */
 		    REAL8 coveringRadius,		/**< [in] covering radius */
-		    const gsl_matrix *metric,		/**< [in] constant metric */
+		    const REAL8Vector *metric,		/**< [in] constant metric */
 		    const REAL8Vector *startPoint,	/**< [in] start-point in the covering-region */
 		    BOOLEAN (*isInside)(const REAL8Vector *point) /**< [in] boundary-condition */
 		    )
 {
   UINT4 dim;	/* dimension of parameter-space */
+  INT4 tmp;
   gsl_matrix *generator = NULL;
-
+  gsl_matrix *gmetric = NULL;
+  UINT4 i, j;
 
   INITSTATUS( status, "LALLatticeCovering", LATTICECOVERINGC );
   ATTATCHSTATUSPTR (status); 
 
-
-  /* Check validity of input params */
+  /* ----- Check validity of input params */
   ASSERT ( covering != NULL, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );  
   ASSERT ( *covering == NULL,status, LATTICECOVERING_ENONULL, LATTICECOVERING_MSGENONULL );
   ASSERT ( metric, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
   ASSERT ( startPoint, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
   ASSERT ( startPoint->data, status, LATTICECOVERING_ENULL, LATTICECOVERING_MSGENULL );
 
-  /* determine dimension of parameter-space from start-Point */
-  dim = startPoint->length;
+  /* determine dimension of parameter-space from metric */
+  tmp = XLALFindMetricDim (metric);
+  if ( tmp <= 0 ) {
+    LALPrintError ("\nERROR: input metric has illegal dimensions\n\n");
+    ABORT (status, LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
+  }
+  else
+    dim = (UINT4) tmp;
 
-  ASSERT ( (metric->size1 == dim) && ( metric->size2 == dim), status, 
+  /* check that startPoint has dimensions consistent with metric */
+  ASSERT ( dim == startPoint->length, status, 
 	   LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
 
-
-  /* 1) get the generating matrix for a properly scaled An* lattice */
-  XLALFindCoveringGenerator (&generator, LATTICE_TYPE_ANSTAR, dim, coveringRadius, metric );
-  if ( xlalErrno ) 
+  /* ----- translate 'LAL'-encoded metric into a gsl_matrix: */
+  if ( (gmetric = gsl_matrix_calloc (dim, dim)) == NULL ) { 
+    ABORT ( status, LATTICECOVERING_EMEM, LATTICECOVERING_MSGEMEM);
+  }
+  for (i=0; i < dim; i++ )
+    for (j=0; j < dim; j++ )
+      gsl_matrix_set (gmetric, i, j, metric->data[PMETRIC_INDEX(i,j)] );
+  
+  /* 1) ----- get the generating matrix for a properly scaled An* lattice */
+  if (XLALFindCoveringGenerator (&generator, LATTICE_TYPE_ANSTAR, dim, coveringRadius, gmetric ) < 0)
     {
       int code = xlalErrno;
       XLALClearErrno(); 
       LALPrintError ("\nERROR: XLALFindCoveringGenerator() failed (xlalErrno = %d)!\n\n", code);
+      gsl_matrix_free (gmetric);
       ABORT (status, LATTICECOVERING_EFUNC, LATTICECOVERING_MSGEFUNC);
     }
 
-  /* 2) fill parameter-space with this lattice */
-  TRY ( LALLatticeFill(status->statusPtr, covering, generator, startPoint, isInside ), status );
-
+  /* 2) ----- fill parameter-space with this lattice */
+  LALLatticeFill(status->statusPtr, covering, generator, startPoint, isInside );
+  BEGINFAIL (status) {
+    gsl_matrix_free (generator);
+    gsl_matrix_free (gmetric);
+  } ENDFAIL(status);
+  
   /* free memory */
   gsl_matrix_free (generator);
+  gsl_matrix_free (gmetric);
 
   DETATCHSTATUSPTR (status);
   RETURN( status );
@@ -1133,3 +1159,38 @@ isSymmetric (const gsl_matrix *Sij)
   return TRUE;
 
 } /* isSymmetric() */
+
+/** Translate a symmetric gsl_matrix into a 'LAL-encoded' REAL8Vector, using
+ * the index-convention l = a + b*(b+1) if a <= b, see PMETRIC_INDEX(a,b).
+ */
+REAL8Vector *
+XLALgsl2LALmetric (const gsl_matrix *gmetric)
+{
+  REAL8Vector *metric = NULL;
+  UINT4 dim, length, i, j;
+
+  if ( gmetric == NULL ) {
+    LALPrintError ("\nNULL Input received!\n\n");
+    XLAL_ERROR_NULL ( "XLALgsl2LALmetric", XLAL_EINVAL);
+  }
+
+  if ( !isSymmetric(gmetric) ) {
+    LALPrintError ("\nInput matrix is not symmetric!\n\n");
+    XLAL_ERROR_NULL ( "XLALgsl2LALmetric", XLAL_EINVAL);
+  }
+    
+  dim = gmetric->size1;
+  length = dim * (dim+1) /2;	/* independent elements in symmetric  matrix */
+
+  metric = XLALCreateREAL8Vector ( length );
+  if ( ! metric ) {
+    XLAL_ERROR_NULL( "XLALgsl2LALmetric", XLAL_EFUNC);
+  }
+
+  for (i=0; i < dim; i++)
+    for (j=i; j < dim; j++)
+       metric->data[ PMETRIC_INDEX(i,j) ] = gsl_matrix_get (gmetric, i, j);
+
+  return metric;
+
+} /* XLALgsl2LALmetric() */
