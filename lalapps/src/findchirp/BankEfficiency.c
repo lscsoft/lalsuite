@@ -470,6 +470,29 @@ main (INT4 argc, CHAR **argv )
 	}
       }
       
+  if ( userParam.dataCheckPoint && (ntrials%10)==0 )
+    {
+fprintf(stderr, "checkpoiting at trial number %d\n", ntrials);
+#ifdef LALAPPS_CONDOR
+      condor_compress_ckpt = 1;
+      if ( ckptPath[0] )
+	{
+	  LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s/%s.ckpt", 
+		       ckptPath, fileName );
+	}
+      else
+	{
+	  LALSnprintf( fname, FILENAME_MAX * sizeof(CHAR), "%s.ckpt", fileName );
+	}
+      if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
+      init_image_with_file_name( fname );
+      ckpt_and_exit();
+#else
+      fprintf( stderr, "--data-checkpoint cannot be used unless "
+	       "lalapps is condor compiled\n" );
+      exit( 1 );
+#endif
+    }
     }  /*end while(trial)*/
   
 
@@ -654,18 +677,26 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->H1.chanName             = "H1:LSC-AS_Q";
   userParam->H2.chanName             = "H2:LSC-AS_Q";
   
-  userParam->L1.dataFile.S3.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/L1-CAL-V03-751719553-757699245.cache";
-  userParam->L1.dataFile.S3.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_L_S3_RDS_R_L3.txt";     
-  userParam->H1.dataFile.S3.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/H1-CAL-V03-751651153-757699245.cache";
-  userParam->H1.dataFile.S3.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";     
-  userParam->H2.dataFile.S3.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/H2-CAL-V03-751654453-757699245.cache";
-  userParam->H2.dataFile.S3.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";
-  userParam->L1.dataFile.S2.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/L1-CAL-V03-729273600-734367600.cache";
-  userParam->L1.dataFile.S2.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_L_S2_RDS_R_L3.txt";     
-  userParam->H1.dataFile.S2.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/H1-CAL-V03-729273600-734367600.cache";
-  userParam->H1.dataFile.S2.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";     
-  userParam->H2.dataFile.S2.calCacheName         =  "/netw/critical/ligoCalibration/cache_files/H2-CAL-V03-731849076-734367576.cache";
-  userParam->H2.dataFile.S2.frInCacheName        =  "/home/cokelaer/Work/inspiralRuns/cacheFiles/CacheFile_H_Si2_RDS_R_L3.txt";      
+  userParam->L1.dataFile.S4.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/L1-CAL-V03-793126813-796025053.cache";
+  userParam->L1.dataFile.S4.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/L-RDS_R_L3-793131485-795679161.cache";     
+  userParam->H1.dataFile.S4.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/H1-CAL-V03-793126813-796025053.cache";
+  userParam->H1.dataFile.S4.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/H-RDS_R_L3-793139225-795679221.cache";     
+  userParam->H2.dataFile.S4.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/H2-CAL-V03-793126813-796025053.cache";
+  userParam->H2.dataFile.S4.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/H-RDS_R_L3-793139225-795679221.cache";
+
+  userParam->L1.dataFile.S3.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/L1-CAL-V03-751719553-757687393.cache";
+  userParam->L1.dataFile.S3.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/L-S3_RDS_R_L3-751787954-757664301.cache";     
+  userParam->H1.dataFile.S3.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/H1-CAL-V03-751651153-757672093.cache";
+  userParam->H1.dataFile.S3.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/H-S3_RDS_R_L3-751784320-757669742.cache";     
+  userParam->H2.dataFile.S3.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/H2-CAL-V03-751654453-757699693.cache";
+  userParam->H1.dataFile.S3.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/H-S3_RDS_R_L3-751784320-757669742.cache";     
+
+  userParam->L1.dataFile.S2.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibrationcache_files/L1-CAL-V03-729273600-734367600.cache";
+  userParam->L1.dataFile.S2.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns//cacheFiles/CacheFile_L_S2_RDS_R_L3.txt";     
+  userParam->H1.dataFile.S2.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibrationcache_files/H1-CAL-V03-729273600-734367600.cache";
+  userParam->H1.dataFile.S2.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";     
+  userParam->H2.dataFile.S2.calCacheName         =  "/archive/home/cokelaer/inspiralRuns/Calibration/cache_files/H2-CAL-V03-731849076-734367576.cache";
+  userParam->H2.dataFile.S2.frInCacheName        =  "/archive/home/cokelaer/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";      
   userParam->dataCheckPoint                      = 0;
 }
 
@@ -846,6 +877,9 @@ ParseParameters(	INT4 			*argc,
 	}
 	else if (!strcmp(argv[i],"S3")){
 	    userParam->run = S3;	  
+	}
+	else if (!strcmp(argv[i],"S4")){
+	    userParam->run = S4;	  
 	}
 	else {
 	    userParam->run = None;
@@ -1393,6 +1427,10 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	  break;
 	case S1:
 	case S4:
+	  userParam->calCacheName   = userParam->L1.dataFile.S4.calCacheName  ;
+	  userParam->frInCacheName  = userParam->L1.dataFile.S4.frInCacheName ;
+	  if (!userParam->chanName) userParam->chanName  =  userParam->L1.chanName;
+	  break;
 	case S5:
 	case S6:
 	  break;
@@ -1403,6 +1441,10 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	{
 	case S1:
 	case S4:
+	  userParam->calCacheName   = userParam->H1.dataFile.S4.calCacheName  ;
+	  userParam->frInCacheName  = userParam->H1.dataFile.S4.frInCacheName ;
+	 if (!userParam->chanName)  userParam->chanName  =  userParam->H1.chanName;
+    	  break;
 	case S5:
 	case S6:
 	  break;
@@ -1425,6 +1467,10 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	{
 	case S1:
 	case S4:
+	  userParam->calCacheName   = userParam->H2.dataFile.S4.calCacheName;
+	  userParam->frInCacheName  = userParam->H2.dataFile.S4.frInCacheName;
+	  if (!userParam->chanName) userParam->chanName  =  userParam->H2.chanName;
+	  break;
 	case S5:
 	case S6:
 	  break;
@@ -2833,13 +2879,13 @@ CHAR* GetStringFromScientificRun(INT4 input)
        return "S3";
        break;
      case S1: 
-       return "S4";
+       return "S1";
        break;
      case S4:
-       return "S5";
+       return "S4";
        break;
      case S5:
-       return "S6";
+       return "S5";
        break;
   }
   return NULL;
@@ -3445,7 +3491,8 @@ LALCreateRealPsd(LALStatus *status,
   CHAR  *fqChanName       = NULL;
 
 
-  CHAR *injectionFile = "/home/cokelaer/Work/TestWaveOverlap/HL-INJECTIONS_1-732005208-2048.xml";
+  /*CHAR *injectionFile = "/home/cokelaer/Work/TestWaveOverlap/HL-INJECTIONS_1-732005208-2048.xml";*/
+  CHAR *injectionFile = NULL;
   CHAR  *frInCacheName = NULL;
 
   INT4  numPoints         = (randIn.psd.length-1)*2;           /* points in a segment          */
@@ -3507,6 +3554,7 @@ LALCreateRealPsd(LALStatus *status,
 
   /*  fprintf(stderr,"Generating real PSD\n");*/
   calData = undefined;
+  calData = real_4;
 
   memset( ifo, 0, sizeof(ifo));
 
