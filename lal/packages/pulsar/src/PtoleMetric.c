@@ -780,3 +780,38 @@ void LALPulsarMetric ( LALStatus *stat,
   RETURN (stat);
 
 } /* LALPulsarMetric() */
+
+
+/** Figure out dimension of a REAL8Vector-encoded (see PMETRIC_INDEX) metric.
+ * Return error if input-vector is NULL or not consistent with a quadratic matrix */
+int
+XLALFindMetricDim ( const REAL8Vector *metric )
+{
+  UINT4 dim;
+  UINT4 length;
+  UINT4 trylength;
+
+  if ( !metric )
+    {
+      LALPrintError ("\nNULL Input received!\n\n");
+      XLAL_ERROR ( "XLALFindMetricDim", XLAL_EINVAL);
+    }
+
+  length = metric->length;
+  if ( length == 0 )
+    return 0;
+
+  dim=1; 
+  while ( (trylength = dim * (dim + 1)/2 ) <= length )
+    {
+      if ( length == trylength )
+	return dim;
+      else
+	dim ++;
+    }
+  
+  /* no fitting dimension found ==> error */
+  LALPrintError ("\nInput vector is inconsisten with symmetric quadratic matrix!\n\n");
+  XLAL_ERROR ( "XLALFindMetricDim", XLAL_EINVAL);
+
+}/* XLALFindMetricDim() */

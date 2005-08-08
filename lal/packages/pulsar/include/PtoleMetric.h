@@ -154,6 +154,8 @@ LALPulsarMetric( LALStatus      *status,
                  REAL8Vector    **metric,
                  PtoleMetricIn  *input );
 
+int XLALFindMetricDim ( const REAL8Vector *metric );
+
 /**************************************************************** <lalLaTeX>
 \newpage\input{PtoleMetricTestC}
 \newpage\input{PtoleMeshTestC}
