@@ -1,4 +1,4 @@
-// ****************************************************************************
+/* ***************************************************************************
 // File:        coinExt.c
 // Created:     2004/10/22
 // Rev:         2005/07/25 16:13
@@ -6,11 +6,20 @@
 // Author:      Alexander Dietz
 // Description: C(!) program for automatic search for coincidences
 //              between Inspiral trigger and External triggers (e.g. GRB)
-// ****************************************************************************
+*************************************************************************** */
 
-// ******************************
-// include
-// ******************************
+/*
+// 05-07-25 16:13  implemented status code for multiple IFO's: use three independend status values
+//              implemented and seeming to work!
+// 05-08-05 10:49  implemented two other segment formats for segFind: Science_Up, Commissioning_Up
+// 05-08-05        implemented test for grid proxy
+// 05-08-05        implemented test for existance of directory
+// 05-08-05        implemented new lines to handle 'online.ini' 
+*/
+
+/******************************
+include
+*******************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h> 
@@ -63,18 +72,31 @@ typedef struct S_InspiralList {
 typedef struct S_ExternalList {
   long             gps;
   long             gpsNano;
-  int              status;
+  int              status[3];
   ExtTriggerTable* table;
 } ExternalList;
 
-char* basename1( char* name);
-void sigint_handler(int sig); 
-void writeCGN( void );
-void checkInspiralTrigger( void );
-char* getIFOname(int index);
-void restart( void );
-void startAnalysisJob(ExternalList* eList, int ifo);
 
+int checkCGNtrigger( void );
+int checkCGNtrigger2( void );
+int readCGN( void );
+void writeCGN( void );	
+void checkInspiralTrigger( void );
+int coinInspiralCGN( void );
+int createInspiralTable( int lifo );
+int writeXML( int ifo, int cgnIndex );
+void startAnalysisJob(ExternalList* eList, int ifo);
+char* getIFOname(int index);
+int checkGPS( long gps, long gpsNano );
+int checkProxy( void );
+int ce_startup( void );
+int ce_shutdown( void );
+int printOut(char* text);
+int ce_wait(int minutes);
+void ce_restart(void);
+char* basename1( char* name);
+void sigint_handler(int sig);
+int arg_parse_check( int argc, char *argv[]);
 
 /******************************
    variables
@@ -106,7 +128,6 @@ char* nameSaveInspiralList = "saveInspiral.cel";
 char* nameInputList        = "triggers.xml";  
 char* nameInputList2       = "triggersIsabel.list";  
 char* nameSaveExternalList = "externalTriggers.cel";
-//char* dirData              = "this text will never ne used, just for memory allocation";
 char* dirData=NULL;
 char* dirInspiral          = "/data2/dietz/S4/CoinExt/cluster";
 char* destCopyURL          = "gsiftp://adietz.phys.lsu.edu/home/alex/Work/E_ExtTrigger/Online/Data/";
@@ -142,7 +163,7 @@ double snrCut=7.0;
 long timeWindow=1800;
 
 /* standard waiting time in minutes */
-int waitingTime=180; // 3 hours
+int waitingTime=180;
 
 /* loop boundaries */
 int startIFO=0;
@@ -159,9 +180,10 @@ ExtTriggerTable*      thisNewExt[1000]; /* vector for 100 new externals maximum 
 
 MetadataTable    proctable;
 MetadataTable    processParamsTable;
-ProcessParamsTable* this_proc_param=NULL;  // usage??? 
+ProcessParamsTable* this_proc_param=NULL;  
 
-SummValueTable* listSumm=NULL;  // tables to use for summary (times of each used xml file)
+/* tables to use for summary (times of each used xml file) */
+SummValueTable* listSumm=NULL;  
 MetadataTable   listSummTable;
 
 /* LALStatus */
@@ -179,13 +201,13 @@ int main(int argc, char* argv[])
   char* env;
 
   /* create the process and process params tables */  
-  LALLeapSecAccuracy    accuracy = LALLEAPSEC_LOOSE;
+
   proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  LALGPSTimeNow ( &status, &(proctable.processTable->start_time), &accuracy );
-  populate_process_table( &status, proctable.processTable, 
-			  PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE );
-  this_proc_param = processParamsTable.processParamsTable = 
-    (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) ); // ????
+  /* LALGPSTimeNow ( &status, &(proctable.processTable->start_time), &accuracy ); */
+  /*populate_process_table( &status, proctable.processTable,   PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ); */
+  this_proc_param = processParamsTable.processParamsTable =  
+    (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
+  
 
   /* first of all set default dirData */
   env=getenv("PWD");
@@ -196,17 +218,19 @@ int main(int argc, char* argv[])
   /* call the argument parse and check function */
   arg_parse_check( argc, argv);
 
+
   /*  startup */
-  startup();
+  ce_startup();
   if (signal(SIGINT, sigint_handler) == SIG_ERR) {
     perror("signal");
     exit(1);
   }	
 
+
   /* check if to restart all */
   if (flagRestart) {
     printOut("--- RESTARTING program. Deleting all data files...");
-    restart();
+    ce_restart();
   }
 
   if (!flagRestart) {
@@ -219,7 +243,7 @@ int main(int argc, char* argv[])
   /* setting some loop parameters */
   if (strcmp (ifo,"LLO") == 0) {
     startIFO=0;
-    endIFO=1;
+    endIFO=0;
   } else {
     startIFO=1;
     endIFO=2;
@@ -247,12 +271,7 @@ int main(int argc, char* argv[])
   /* start 'endless' loop */
   do {
     
-    /* check latest GRB... */
-    //downloadCGN();
-    /* and check if there are some new CGN */
-    //int number=analyzeNewCGN();  
-    //printf("--- Number of unanalyzed CGN triggers: %d \n",number);
-
+    /* download latest list of external trigger */
     if (checkCGNtrigger2()) {
 
       /* store all CGN triggers to file */
@@ -267,7 +286,7 @@ int main(int argc, char* argv[])
 
 
     /* waiting for some time... */
-    wait(waitingTime);
+    ce_wait(waitingTime);
 
   } while(1);
 
@@ -282,14 +301,14 @@ checkCGNtrigger
 int checkCGNtrigger( void )
 {
   /* specify used variables here ... */
-  int i,ifo;
+  int i,nifo;
   int counter=0;
   int numEvents=0;
   int index=0;
-  int triggersUnanalyzed=0;
+  int newTrigger=0;
   char command[256];
   char message[256];
-  char dirJob[256];
+  /* char dirJob[256];*/
   LIGOTimeGPS* gps;
   LALDate* date;
 
@@ -339,35 +358,17 @@ int checkCGNtrigger( void )
       if (index==-1) {
 
 	/* store new trigger in external triggers structure */
-	//extList[numberStoredCGN].table=(ExtTriggerTable*)LALCalloc( 1, sizeof(ExtTriggerTable) );
-	//memcpy( extList[numberStoredCGN].table, thisExt, sizeof(ExtTriggerTable));
-
 	extList[numberStoredCGN].gps=thisExt->start_time;
 	extList[numberStoredCGN].gpsNano=thisExt->start_time_ns;
-	extList[numberStoredCGN].status=0;
-	/* extList[numberStoredCGN].table=thisExt;*/  /* just setting the pointer */	
+	extList[numberStoredCGN].status[0]=0;
+	extList[numberStoredCGN].status[1]=0;
+	extList[numberStoredCGN].status[2]=0;
 	extList[numberStoredCGN].table=(ExtTriggerTable*)LALCalloc( 1, sizeof(ExtTriggerTable) );
 	memcpy( extList[numberStoredCGN].table, thisExt, sizeof(ExtTriggerTable));
 
-	//printf("CGN gps: %d\n",thisExt->start_time);
-	/*
-	sprintf(message,"creating trigger table for CGN %d",numberStoredCGN);
-	printOut(message);
-	if (extList[numberStoredCGN].table) {
-	  sprintf(message,"table allocated...");
-	} else {
-	  sprintf(message,"table NOT allocated...");
-	}
-	  printOut(message);
-	*/
-
-	/* increase number of stored triggers from the C... GRB Network */
-	//	numberStoredCGN++;
-	/* number increased at the end... */
 	/* getting user friendly date and time */
 	gps->gpsSeconds=thisExt->start_time;
 	gps->gpsNanoSeconds=thisExt->start_time_ns;
-	LALLeapSecAccuracy accuracy= LALLEAPSEC_STRICT;
 	LALGPStoUTC(&status, date, gps, &accuracy); 
 
 	/* generate output saying that there is a new CGN trigger */
@@ -378,16 +379,15 @@ int checkCGNtrigger( void )
 		gps->gpsSeconds);
 	printOut(message);
 
-	// start special analysis job if data should be recalculated
+	/* start special analysis job if data should be recalculated */
 	if (flagRecalc) {
-	  for ( ifo=startIFO;ifo<endIFO;ifo++) {
-	    startAnalysisJob( &extList[numberStoredCGN], ifo );
+	  for ( nifo=startIFO;nifo<=endIFO;nifo++) {
+	    startAnalysisJob( &extList[numberStoredCGN], nifo );
 	  }
 	}
 
 	/* increase number of stored triggers from the Global GRB Network */
         numberStoredCGN++;
-
 
       }  else {
 
@@ -397,14 +397,21 @@ int checkCGNtrigger( void )
     }
   }
 
-  /* get the number of unanalyzed triggers */
-  triggersUnanalyzed=0;
-  for (i=0;i<numberStoredCGN;i++) {
-    if (extList[i].status==0) triggersUnanalyzed++;
+  /* check if there is a new E.T. */
+  newTrigger=0;
+  for (nifo=startIFO;nifo<=endIFO;nifo++) {
+    for (i=0;i<numberStoredCGN;i++) {
+      if (extList[i].status[nifo]==0) {
+	
+	/* set flag and exit loop */
+	newTrigger=1;
+	continue;
+      }
+    }
   }
 
-  /* return number of new E.T. */
-  return triggersUnanalyzed;
+  /* return flag if a new E.T. is recorded */
+  return newTrigger;
 }
 
 
@@ -415,11 +422,11 @@ checkCGNtrigger2
 int checkCGNtrigger2( void )
 {
   /* specify used variables here ... */
-  int i,ifo;
+  int i,nifo;
   int counter=0;
   int numEvents=0;
   int index=0;
-  int triggersUnanalyzed=0;
+  int newTrigger=0;
 
   char command[256];
   char message[256];
@@ -472,37 +479,37 @@ int checkCGNtrigger2( void )
     
     thisExt->event_number_gcn=atoi(input);
 
-    // reading GRB number 
+    /* reading GRB number  */
     fscanf(fileTrigger, "%s", input);
     strncpy(thisExt->event_number_grb, input,8);
 
-    // reading UT time -- not stored
+    /* reading UT time -- not stored */
     fscanf(fileTrigger, "%s", input);    
 
-    // reading  GPS time 
+    /* reading  GPS time  */
     fscanf(fileTrigger, "%s", inputGPS);
     strncpy(input1, inputGPS, 9);
     strncpy(input2, inputGPS+9, strlen(inputGPS)-10);
     thisExt->start_time=atol(input1);    
     thisExt->start_time_ns=(long)(atof(input2)*1.0e+9);
 
-    // reading RA
+    /*  reading RA */
     fscanf(fileTrigger, "%s", input);
     thisExt->event_ra=atof(input);
 
-    // reading DEC
+    /* reading DEC */
     fscanf(fileTrigger, "%s", input);
     thisExt->event_dec=atof(input);
 
-    // reading fave LHO
+    /* reading fave LHO */
     fscanf(fileTrigger, "%s", input);
     thisExt->ligo_fave_lho=atof(input);
 
-    // reading  fave LLO
+    /* reading  fave LLO */
     fscanf(fileTrigger, "%s", input);
     thisExt->ligo_fave_llo=atof(input);   
 
-    // reading   
+    /* reading    */
     fscanf(fileTrigger, "%s", input);
     thisExt->ligo_delay=atof(input);
 
@@ -541,29 +548,15 @@ int checkCGNtrigger2( void )
 	/* store new trigger in external triggers structure */
 	extList[numberStoredCGN].gps=thisExt->start_time;
 	extList[numberStoredCGN].gpsNano=thisExt->start_time_ns;
-	extList[numberStoredCGN].status=0;
+	extList[numberStoredCGN].status[0]=0;
+	extList[numberStoredCGN].status[1]=0;
+	extList[numberStoredCGN].status[2]=0;
 	extList[numberStoredCGN].table=(ExtTriggerTable*)LALCalloc( 1, sizeof(ExtTriggerTable) );
 	memcpy( extList[numberStoredCGN].table, thisExt, sizeof(ExtTriggerTable));
 
-	//printf("CGN gps: %d\n",thisExt->start_time);
-	/*
-	sprintf(message,"creating trigger table for CGN %d",numberStoredCGN);
-	printOut(message);
-	if (extList[numberStoredCGN].table) {
-	  sprintf(message,"table allocated...");
-	} else {
-	  sprintf(message,"table NOT allocated...");
-	}
-	  printOut(message);
-	*/
-
-	/* increase number of stored triggers from the C... GRB Network */
-	//	numberStoredCGN++;
-	/* number increased at the end... */
 	/* getting user friendly date and time */
 	gps->gpsSeconds=thisExt->start_time;
 	gps->gpsNanoSeconds=thisExt->start_time_ns;
-	LALLeapSecAccuracy accuracy= LALLEAPSEC_STRICT;
 	LALGPStoUTC(&status, date, gps, &accuracy); 
 
 	/* generate output saying that there is a new CGN trigger */
@@ -574,10 +567,10 @@ int checkCGNtrigger2( void )
 		gps->gpsSeconds);
 	printOut(message);
 
-	// start special analysis job if data should be recalculated
+	/* start special analysis job if data should be recalculated */
 	if (flagRecalc) {
-	  for ( ifo=startIFO;ifo<endIFO;ifo++) {
-	    startAnalysisJob( &extList[numberStoredCGN], ifo );
+	  for ( nifo=startIFO;nifo<=endIFO;nifo++) {
+	    startAnalysisJob( &extList[numberStoredCGN], nifo );
 	  }
 	}
 
@@ -592,16 +585,23 @@ int checkCGNtrigger2( void )
       }
     }
   }
-
-  /* get the number of unanalyzed triggers */
-  triggersUnanalyzed=0;
-  for (i=0;i<numberStoredCGN;i++) {
-    if (extList[i].status==0) triggersUnanalyzed++;
+  
+  /* check if there is a new E.T. */
+  newTrigger=0;
+  for (nifo=startIFO;nifo<=endIFO;nifo++) {
+    for (i=0;i<numberStoredCGN;i++) {
+      if (extList[i].status[nifo]==0) {
+	
+	/* set flag and exit loop */
+	newTrigger=1;
+	continue;
+      }
+    }
   }
-
-
-  /* return number of new E.T. */
-  return triggersUnanalyzed;
+  
+  /* return flag if a new E.T. is recorded */
+  return newTrigger;
+ 
 }
 
 /******************************
@@ -616,8 +616,7 @@ int readCGN( void )
   int c=0;
   long gps;
   long gpsNano;
-  int status;
-  int i=0;
+  int status0, status1, status2;
 
   /* open file for reading data */
   file=fopen( nameSaveExternalList , "r" );
@@ -635,10 +634,12 @@ int readCGN( void )
   do {
 
     /* read next line and store data */
-    fscanf(file, "%ld,%ld,%d", &gps, &gpsNano, &status); 
+    fscanf(file, "%ld,%ld,%d,%d,%d", &gps, &gpsNano, &status0, &status1, &status2); 
     extList[c].gps      = gps;
     extList[c].gpsNano  = gpsNano;
-    extList[c].status   = status;
+    extList[c].status[0]= status0;
+    extList[c].status[1]= status1;
+    extList[c].status[2]= status2;
     extList[c].table    = NULL;
     
     /* increase counter */
@@ -663,14 +664,14 @@ writeCGN:
 void writeCGN( void )
 {	
   FILE* file;
-  char message[256];
   int i;
 
   /* open output file for overwriting all data! */
   file=fopen(nameSaveExternalList,"w");
   for ( i=0; i<numberStoredCGN; i++ ) {    
-    fprintf( file, "%ld,%ld,%d\n",
-	     extList[i].gps, extList[i].gpsNano, extList[i].status);
+    fprintf( file, "%ld,%ld,%d,%d,%d\n",
+	     extList[i].gps, extList[i].gpsNano, 
+	     extList[i].status[0], extList[i].status[1], extList[i].status[2] );
   }
   fclose(file);
 
@@ -686,7 +687,6 @@ checkInspiralTrigger:
 void checkInspiralTrigger( void )
 {
   int i,j,c=0;
-  char* ifo;
   char dummy[256];
   char command[256];
   char text[256];
@@ -696,20 +696,17 @@ void checkInspiralTrigger( void )
   FILE* out;
 
   /* loop over IFO's to take into account */
-  for ( i=startIFO;i<endIFO;i++) {
+  for ( i=startIFO;i<=endIFO;i++) {
 
-    /* get name of IFO */
-    ifo=ifoName[i];
         
     /* create new file containing all present inspiral trigger lists */
     if (flagRecalc) {
       /* use directory for recalculated trigger */
-      sprintf( command, "ls -1 ../Trigger/%s/*.xml > namesInspiral.cel",ifo);
+      sprintf( command, "ls -1 ../Trigger/%s/*.xml > namesInspiral.cel", ifoName[i]);
     } else{
       /* use directory for online created triggers */
-      sprintf( command,"ls -1 %s%s/*.xml > namesInspiral.cel",dirInspiral,ifo );
+      sprintf( command,"ls -1 %s%s/*.xml > namesInspiral.cel", dirInspiral, ifoName[i] );
     }
-    //printOut(command);
     system( command );
     
     /* read list and extract time data */
@@ -720,7 +717,6 @@ void checkInspiralTrigger( void )
       /* read next filename and remove directory path from it */
       fscanf(file, "%s", &text); 
       filename = basename1( (char*)text );
-      //printf("before: %s | after: %s \n",text, filename);
 
       /* extracting relevant parts of the filename
          assuming the length are always the same! */
@@ -730,8 +726,6 @@ void checkInspiralTrigger( void )
       strncpy(dummy, filename+18, 4);dummy[4]='\0';
       inspiralList[i][c].timeLength=atoi(dummy);
       inspiralList[i][c].coin=0;
-
-      //printf("filename: %s  | start: %ld  length: %ld\n",filename, inspiralList[i][c].timeStart,  inspiralList[i][c].timeLength);
 
       /* increasing counter */
       c++;
@@ -746,15 +740,16 @@ void checkInspiralTrigger( void )
     sprintf(savename, "%s%s",ifo, nameSaveInspiralList);    
     out=fopen( savename, "w" );
     for (j=0;j<numberInspiralList[i]; j++) {
-      fprintf(  out, "%s %d %d\n",inspiralList[i][j].filename,
+      fprintf(  out, "%s %ld %ld\n",inspiralList[i][j].filename,
 		inspiralList[i][j].timeStart,inspiralList[i][j].timeLength);
     }
     fclose(out);
 
   } 
 
+  /* TODO remove outcomment command some time... */
   /* removing unused file */
-  //system( "rm -f namesInspiral.cel" );
+  /* system( "rm -f namesInspiral.cel" ); */
 }
 
 /********************************
@@ -776,27 +771,28 @@ int coinInspiralCGN( void )
   /* loop over ALL CGN triggers  */
   for ( cgn=0; cgn<numberStoredCGN; cgn++ ) {
     
-    /* check status of the current CGN triggers */
-    if (extList[cgn].status<4) {
-      
-      /* get pointer to corresponding E.T. structure */
-      table=extList[cgn].table;
-      if ( !table ) {
-	printf("WARNING in coinInspiralCGN: A ExtTriggerTable does not exist for cgn %d. " 
-	       "Check program!\n",cgn);
-	continue;
-      }
+    /* loop over IFO's */
+    for (lifo=startIFO;lifo<=endIFO;lifo++) { 
 
-      /* get time of CGN trigger */
-      timeCGN=(double)table->start_time + (double)table->start_time_ns/1.0e+9;
-      
-      /* loop over IFO's */
-      for (lifo=startIFO;lifo<endIFO;lifo++) { 
-
+      /* check status of the current CGN triggers */
+      if (extList[cgn].status[lifo]<4) {
+	
+	/* get pointer to corresponding E.T. structure */
+	table=extList[cgn].table;
+	if ( !table ) {
+	  printf("WARNING in coinInspiralCGN: A ExtTriggerTable does not exist for cgn %d. " 
+		 "Check program!\n",cgn);
+	  continue;
+	}
+	
+	/* get time of CGN trigger */
+	timeCGN=(double)table->start_time + (double)table->start_time_ns/1.0e+9;
+	
+	
 	/* loop over accessible inspiral-trigger XML files */
 	numberFound=0;
 	for (insp=0; insp<numberInspiralList[lifo]; insp++ ) {
-
+	  
 	  inspiralList[lifo][insp].coin=0;
 
 	  /* get starting end ending time of the time period
@@ -809,16 +805,15 @@ int coinInspiralCGN( void )
 	  if ( (timeStart>=timeCGN-timeWindow && timeStart<=timeCGN+timeWindow) || 
 	       (timeEnd>=timeCGN-timeWindow && timeEnd<=timeCGN+timeWindow) ) {
 	    
-	    //printf("timeStart: %d  timeEnd: %d   timeCGN: %f\n",timeStart, timeEnd, timeCGN);
 	    /* mark corresponding Inspiral file */
 	    numberFound++;
 	    inspiralList[lifo][insp].coin=1;
 	  }
 	}
 	
-	// set status: inspiral data found
-	//	extList[cgn].status=4;
-
+	
+	/* happy: coincidence trigger found!!! 
+	   Create xml file and copy data for end-analysis !! */
 	if (numberFound) {
 
 	  /* output */
@@ -830,7 +825,7 @@ int coinInspiralCGN( void )
 	  writeXML( lifo, cgn );
 
 	  /* set new status */
-	  extList[cgn].status=5;
+	  extList[cgn].status[lifo]=5;
 
 	  /* delete old inspiral triggers */
 	  while ( list )  {
@@ -845,6 +840,7 @@ int coinInspiralCGN( void )
     }
   }
 
+  return 0;
 }
 
 /********************************
@@ -855,15 +851,15 @@ int createInspiralTable( int lifo )
 {
   /* variables */
   int insp,numTrig, numSum,flag;
-  int numberDiscard;
+  int numberDiscard=0;
   char filename[256];  
   SnglInspiralTable* head;
   SnglInspiralTable* tail;
   SnglInspiralTable* mainPointer;
-  SnglInspiralTable* prevElement;
+  SnglInspiralTable* prevElement=NULL;
   SnglInspiralTable* element;
   SummValueTable* summary;
-  SummValueTable* tailSumm;
+  SummValueTable* tailSumm=NULL;
   tail=NULL;
 
   /* loop over all inspiral files */
@@ -953,8 +949,8 @@ int createInspiralTable( int lifo )
 	flag=1;
 
 	/* set inspiral data into table ONLY IF there are some inspiral data */	
-	//if (numTrig-numberDiscard>0)
-	//list=head;
+	/*if (numTrig-numberDiscard>0)
+	//list=head; */
 
 	/* set summ values in table */
 	listSumm=summary;
@@ -962,8 +958,8 @@ int createInspiralTable( int lifo )
       } else {
 
 	/* set inpiral data into table */
-	//if (numTrig-numberDiscard>0)
-	//tail->next=head;
+	/*if (numTrig-numberDiscard>0)
+	//tail->next=head;*/
 
 	/* set summ values in table */
 	tailSumm->next=summary;
@@ -973,15 +969,15 @@ int createInspiralTable( int lifo )
 
       /* store last element in the total list 
 	 (to set the 'next' parameter to next part of list */
-      //if (prevElement) 
-      //tail=prevElement;
+      /*if (prevElement) 
+      //tail=prevElement;*/
 
 
       /* searching last entry in (inspiral) table */
-      //if (numTrig-numberDiscard>0) {
+      /*if (numTrig-numberDiscard>0) {
       //tail=head;
       //while (tail->next) { tail=tail->next; }
-      //}
+      //}*/
 
       /* setting values in the summ-value table */
       LALSnprintf( tailSumm->name, LIGOMETA_SUMMVALUE_NAME_MAX, "length" ); 
@@ -992,6 +988,8 @@ int createInspiralTable( int lifo )
    
     }
   }
+
+  return 0;
 }
 
 
@@ -999,7 +997,7 @@ int createInspiralTable( int lifo )
 writeXML:
   writing XML file with all needed informations
 *********************************/
-int writeXML( int ifo, int cgnIndex )
+int writeXML( int nifo, int cgnIndex )
 {
   /* variables */
   char message[256];
@@ -1012,7 +1010,7 @@ int writeXML( int ifo, int cgnIndex )
   SnglInspiralTable*    thisInsp = NULL;
  
   /* create filename for output file */
-  sprintf(filename, "externalTrig%d-%s.xml", extList[cgnIndex].gps, getIFOname(ifo));
+  sprintf(filename, "externalTrig%d-%s.xml", extList[cgnIndex].gps, getIFOname(nifo));
   sprintf( filenameOut, "%s%s", dirData, filename);
   sprintf( message, "+++ Creating output file %s", filenameOut );
   printOut(message);
@@ -1071,30 +1069,44 @@ int writeXML( int ifo, int cgnIndex )
   printf("%s\n",command);
   system(command);
 
+  return 0;
 }
 
 /****************************** 
 startAnalysisJob
    creates and starts a special analysis job
 ********************************/
-void startAnalysisJob(ExternalList* eList, int ifo)
+void startAnalysisJob(ExternalList* eList, int nifo)
 {
-  int i,indexPeriod;
+  int i, indexPeriod, code;
+  int dirNumber=0;
   char dirJob[256];
   char command[256];
   char message[256];
   int flagPrint=1;
   FILE* fileSegment;
-  double a,b,c,d,sumTime=0,maxSegment=0;
+  FILE* fileSED; 
+  struct stat file;
+  double d, sumTime=0, maxSegment=0;
   char dummy[256];
 
-  if (ifo>0) {
+  if (nifo>0) {
     serverName="ldas.ligo-wa.caltech.edu";
   }
 
-  // discard any times before S4
-  if (eList->gps<793130413) 
+  /* discard any times before S4 */
+  if (eList->gps<793130413) {
+    sprintf(message,"WARNING: GPS time %9ld lies before run S4! Discarded...",eList->gps);
+    printOut(message);
     return;
+  }
+
+  /* check user proxy */
+  if ( !checkProxy() ) {
+    sprintf(message,"ERROR: No valid user grid-proxy found. Unable to proceed...");
+    printOut(message);
+    return;
+  }
 
   /* search for corresponding time period */
   indexPeriod=-1;
@@ -1106,14 +1118,14 @@ void startAnalysisJob(ExternalList* eList, int ifo)
 
   /* check if a correct period was found */
   if (indexPeriod==-1) {
-    sprintf(message,"ERROR: GPS time %9d lies outside of senseful range!",eList->gps);
+    sprintf(message,"ERROR: GPS time %9ld lies outside of senseful range!",eList->gps);
     printOut(message);
     return;
   }
 
   /* find possible segments that can be used */
-  sprintf(command, "LSCsegFind --server=%s --interferometer %s --type Science --output-format segwizard --gps-start-time %9d --gps-end-time %9d > segment.txt 2> .notfound.cel ", 
-	  serverName, ifoName[ifo], eList->gps-timeWindow, eList->gps+timeWindow );
+  sprintf(command, "LSCsegFind --server=%s --interferometer %s --type Science,Science_Up,Commissioning_Up --output-format segwizard --gps-start-time %9ld --gps-end-time %9ld > segment.txt 2> .notfound.cel ", 
+	  serverName, ifoName[nifo], eList->gps-timeWindow, eList->gps+timeWindow );
   if (flagPrint) printOut(command);
   system (command);
 
@@ -1124,25 +1136,37 @@ void startAnalysisJob(ExternalList* eList, int ifo)
     fscanf(fileSegment, "%s",dummy);
     fscanf(fileSegment, "%s",dummy);
     fscanf(fileSegment, "%s",dummy);
-
-    //    fscanf(fileSegment, "%f %f %f %f",a,b,c,d);
     d=atof(dummy);
     
-    // get sum of times and maximum segment (has to be > 2048 seconds)
+    /* get sum of times and maximum segment (has to be > 2048 seconds) */
     if (!feof(fileSegment)) {
       if (d>maxSegment) maxSegment=d;
-
       sumTime=sumTime+d;
     }
   } while (!feof(fileSegment));
 
-  printf("sum: %f\n",sumTime);
+  /* printout */
+  printf("--- Sum of time in the segment: %f seconds.\n",sumTime);
 
   if (d>=2048) {
 
     /* create name of new directory for job execution */
-    sprintf(dirJob,"../OnlineAnalysis/Jobs/%s%s-%9d", ifoName[ifo], namePeriod[indexPeriod], eList->gps);
+    sprintf(dirJob,"../OnlineAnalysis/Jobs/%s%s-%9ld", ifoName[nifo], namePeriod[indexPeriod], eList->gps);
     
+    /* check for directory already */
+    code=stat(dirJob, & file);
+    if (code==0) {
+
+      /* loop to find a directory that is NOT already existing */
+      do {
+	dirNumber++;
+	sprintf(dirJob,"../OnlineAnalysis/Jobs/%s%s-%9ld_%d", 
+		ifoName[nifo], namePeriod[indexPeriod], eList->gps,dirNumber);
+	code=stat( dirJob, &file );
+      } while (code==0);
+      
+    }
+
     /* create directory */
     sprintf(command,"mkdir %s",dirJob);
     if (flagPrint) printOut(command);
@@ -1158,50 +1182,53 @@ void startAnalysisJob(ExternalList* eList, int ifo)
     if (flagPrint) printOut(command);
     system(command);
     
+    /* create sed-file */
+    fileSED=fopen("sed.file", "w");
+    fprintf(fileSED, "s/sedifo/%s/\n",ifoName[nifo]);
+    fprintf(fileSED, "s/sedrun/%s/\n", namePeriod[indexPeriod]);
+    fprintf(fileSED, "s/sedchannel/LSC-DARM_ERR/\n");
+    fclose(fileSED);
+
+
     /* create ini file for job execution */
-    sprintf(command,"cp ../OnlineAnalysis/ProgInspiral/online%s%s.ini %s", 
-	    ifoName[ifo], namePeriod[indexPeriod], dirJob);
+    sprintf(command,"sed -f sed.file ../OnlineAnalysis/ProgInspiral/online.ini > %s/online.ini", 
+	    dirJob);
     if (flagPrint) printOut(command);
     system(command);
-    
     
     /* copy the segment to the directory */
     sprintf(command, "cp segment.txt %s", dirJob);
     if (flagPrint) printOut(command);
     system (command);
 
-    /* find the segments that can be used */
-    //sprintf(command, "cd %s; LSCsegFind --server=%s --interferometer %s --type Science --output-format segwizard --gps-start-time %9d --gps-end-time %9d > segment.txt", dirJob, serverName, ifoName[ifo], eList->gps-timeWindow, eList->gps+timeWindow );
-    //if (flagPrint) printOut(command);
-    //system (command);
-    
-    sprintf(command,"cd %s; ./lalapps_inspiral_online_pipe --config-file online%s%s.ini --log-path /usr1/dietz",
-	    dirJob,ifoName[ifo], namePeriod[indexPeriod] );
+   
+    /* create the DAG */ 
+    sprintf(command,"cd %s; ./lalapps_inspiral_online_pipe --config-file online.ini --log-path /usr1/dietz",
+	    dirJob );
     if (flagPrint) printOut(command);
     system(command);
     
     sprintf(command,"+++ Starting DAG for analysis in directory %s",dirJob);
     printOut(command);
-    sprintf(command, "cd %s; condor_submit_dag online%s%s.dag",
-	    dirJob,ifoName[ifo], namePeriod[indexPeriod]);
+    sprintf(command, "cd %s; condor_submit_dag online.dag",dirJob);
     if (flagPrint) printOut(command);
     system (command);
     
-    // set status 
-    eList->status=2;
+    /* set status */
+    eList->status[nifo]=2;
 
   } else {
 
     /* set status */
-    eList->status=4;
+    eList->status[nifo]=4;
 
     /* output */
     if (d==0) {
-      printf("--- No segments found for times %d to %d on %s\n",
-	     eList->gps-timeWindow, eList->gps+timeWindow, ifoName[ifo] );      
+      printf("--- No segments found for times %ld to %ld on %s\n",
+	     eList->gps-timeWindow, eList->gps+timeWindow, ifoName[nifo] );      
     } else {
-      printf("--- Maximum segment for times %d to %d on %s is only %f seconds long\n",
-	     eList->gps-timeWindow, eList->gps+timeWindow, ifoName[ifo], maxSegment );
+      printf("--- Maximum segment for times %ld to %ld on %s is only %f seconds long\n",
+	     eList->gps-timeWindow, eList->gps+timeWindow, ifoName[nifo], maxSegment );
       
     }
   }
@@ -1250,18 +1277,37 @@ int checkGPS( long gps, long gpsNano )
   return -1;
 }
 
+/*******************************
+checkProxy:
+   check if a valid proxy is set-up
+*******************************/
+int checkProxy( void )
+{
+  char command[256];
+  struct stat file;
+
+  sprintf(command, "grid-proxy-info > .proxy 2>.err");
+  system(command);
+    
+  if(!stat(".proxy",&file)) {
+    if (file.st_size==0) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
 
 /******************************
-startup:
+ce_startup:
    startup function: looks for existence of the file .coinExt.lock
    if that file exist -> abort. Program running.
    if not exist -> create this file with command stopping this program 
    (sending kill signal 2 to this program, which is fetched by the function sigint_handler)
 *******************************/
-int startup( void )
+int ce_startup( void )
 { 
   FILE* out;
-  int num;
   char message[256];
   time_t rawtime;
   struct tm * timeinfo;
@@ -1293,30 +1339,30 @@ int startup( void )
   printOut(message);
 
   /* reading already stored CGN triggers */
-  //num=readCGN();
+  /*num=readCGN();
   //sprintf(message, "--- Reading %d events from file %s",num, nameSaveExternalList);
-  //printOut(message);
+  //printOut(message);*/
 
   startPeriod=(long*)LALCalloc( numberPeriods, sizeof(long) );
   endPeriod=(long*)LALCalloc( numberPeriods, sizeof(long) );
-  startPeriod[0]=793130413; // S4
+  startPeriod[0]=793130413; /* S4 */
   endPeriod[0]=795679213;
-  startPeriod[1]=795813760; // A4
+  startPeriod[1]=795813760; /* A4 */
   endPeriod[1]=811711310;
-  startPeriod[2]=811711311; //S5 (preliminary)
+  startPeriod[2]=811711311; /* S5 (preliminary) */
   endPeriod[2]=999999999;
-  //long startPeriod=
-  //long endPeriod[3]={800000000, 900000000, 1000000000};
-  //{700000001, 800000001, 900000001};  // TODO
 
   return 1;
 }
 
+
+
+
 /*******************************
-shutdown:
+ce_shutdown:
    shutdown function
 *******************************/
-int shutdown( void )
+int ce_shutdown( void )
 {
   char message[256];
   time_t rawtime;
@@ -1375,10 +1421,10 @@ char* basename1( char* name )
 }
 
 /******************************
-wait:
+ce_wait:
    waiting for some time: executing sleep command
 *******************************/
-int wait(int minutes)
+int ce_wait(int minutes)
 {
   /* printing message */
   char message[256];
@@ -1393,11 +1439,11 @@ int wait(int minutes)
 
 
 /*******************************
-restart:
+ce_restart:
    restarting program, beginning from scratch 
    -> deleting all 'cel' files
 ********************************/
-void restart(void)
+void ce_restart(void)
 {
   char command[256];
   sprintf( command, "rm -f *.cel");
@@ -1412,8 +1458,36 @@ sigint_handler:
 *******************************/
 void sigint_handler(int sig)
 {
-  shutdown();
+  ce_shutdown();
 }
+
+
+/******************************
+print_usage:
+   prints the usage of the code
+*******************************/
+static void print_usage(char *program)
+{
+  fprintf(stderr,
+	  "Usage:  %s [options] \n" \
+	  "The following options are recognized.  Options are required unless \n"\
+	  "surrounded in []\n" \
+	  "  [--help]                      display this message\n"\
+	  "  [--version]                   print version information and exit\n"\
+	  "  [--dirInspiral]               specifies the directory where to find the inspiral XML\n"\
+	  "                                Either this option must be specified or --recalc\n"\
+	  "  [--dirData]                   Specifies the directoet where to put the data\n"\
+	  "  [--refresh]                   Specifies the refresh cycle in minutes. Default: 30 minutes\n"\
+	  "  [--timeWindow]                Specifies the time window to analyze around a external trigger\n"\
+	  "  [--snrCut]                    Specifies a general SNR cut\n"\
+	  "  [--restart]                   restarts the program, delets any intermediate data\n"\
+	  "  [--recalc]                    starts a seperate DAG for each found external trigger\n"
+          "  [--ifo]                       need to be specified if running on LHO. Choices: (LLO, LHO)\n"\
+	  "  [--trigger]                   Besides downloading the latest trigger file, this option can be used\n"\
+	  "                                to choose a specific trigger file\n"\
+	  "\n", program);
+}
+
 
 
 /*------------------------------
@@ -1422,7 +1496,6 @@ void sigint_handler(int sig)
   ------------------------------ */
 int arg_parse_check( int argc, char *argv[])
 {
-  // char* dummy;  
 
   /* getopt arguments */
   struct option long_options[] =
@@ -1439,6 +1512,9 @@ int arg_parse_check( int argc, char *argv[])
       {"snrCut",               required_argument, 0,                'd'},
       {"ifo",                  required_argument, 0,                'C'},
       {"trigger",              required_argument, 0,                'c'},
+      {"help",                no_argument,       0,                    'h'}, 
+      {"version",             no_argument,       0,                    'V'},
+
       {0, 0, 0, 0}
     };
   
@@ -1492,7 +1568,6 @@ int arg_parse_check( int argc, char *argv[])
       
       /* get name for directory to put the data in */
       optarg_len = strlen( optarg ) + 1;
-      //if (dirData) free(dirData);
       dirData = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
       memcpy( dirData, optarg, optarg_len );	      
       ADD_PROCESS_PARAM( "string" , "%s", optarg);
@@ -1535,7 +1610,7 @@ int arg_parse_check( int argc, char *argv[])
       ADD_PROCESS_PARAM( "float" , "%s", snrCut);	      
     }
       break;
-	
+      
     case 'C': {
       /* get name for data to put inh */
       optarg_len = strlen( optarg ) + 1;
@@ -1544,7 +1619,7 @@ int arg_parse_check( int argc, char *argv[])
       ADD_PROCESS_PARAM( "string" , "%s", optarg);	      	      
       break;
     }
-
+      
     case 'c': {
       /* get name for data to put inh */
       optarg_len = strlen( optarg ) + 1;
@@ -1554,8 +1629,24 @@ int arg_parse_check( int argc, char *argv[])
       flagTriggerFile=1;	      	      
       break;
     }
-
-
+      
+    case 'h': {
+      /* help message */
+      print_usage(argv[0]);
+      exit( 1 );
+      break;
+    }
+      
+    case 'V': {
+      /* print version information and exit */
+      fprintf( stdout, "COINcidences with EXTernal triggers\n" 
+	       "Alexander Dietz\n"
+	       "CVS Version: " CVS_ID_STRING "\n"
+	       "CVS Tag: " CVS_NAME_STRING "\n" );
+      exit( 0 );
+      break;
+    }
+    
     }
   }
   
@@ -1566,7 +1657,7 @@ int arg_parse_check( int argc, char *argv[])
     }
     exit( 1 );
   }
-
+    
   /* setting flags into table */
   
   /* restart-flag */
@@ -1580,7 +1671,7 @@ int arg_parse_check( int argc, char *argv[])
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
-
+  
   /* test-flag */
   if ( flagTest ) {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
@@ -1592,8 +1683,8 @@ int arg_parse_check( int argc, char *argv[])
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
-
- /* recalc-flag */
+  
+  /* recalc-flag */
   if ( flagRecalc ) {
     this_proc_param = this_proc_param->next = (ProcessParamsTable *)
       calloc( 1, sizeof(ProcessParamsTable) );
@@ -1604,7 +1695,10 @@ int arg_parse_check( int argc, char *argv[])
     LALSnprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
     LALSnprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
   }
+  
+  return 0;
 }
+
 
 
 
