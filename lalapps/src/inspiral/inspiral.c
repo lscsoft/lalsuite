@@ -2707,10 +2707,9 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --point-calibration          use the first point in the chunk to calibrate\n"\
 "\n"\
 "  --injection-file FILE        inject simulated inspiral signals from FILE\n"\
-"  --fast F                     use this option to analyse injections using 'nearby' templates\n"\
-"                               (instead of the full template bank). Note that [0 <= F <= 1.0]\n"\
-"\n"\
+"  --fast F                     analyse injections templates withing a match F\n"\
 "  --inject-overhead            inject signals from overhead detector\n"\
+"\n"\
 "  --bank-file FILE             read template bank parameters from FILE\n"\
 "  --minimal-match M            override bank minimal match with M (sets delta)\n"\
 "  --start-template N           start filtering at template number N in bank\n"\

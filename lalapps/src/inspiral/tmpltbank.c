@@ -1092,8 +1092,9 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "                                 PadeT1|PadeT2|EOB|BCV|SpinTaylorT3|BCVSpin)\n"\
 "  --space SPACE                grid up template bank with mass parameters SPACE\n"\
 "                                 (Tau0Tau2|Tau0Tau3|Psi0Psi3)\n"\
-"  --grid-spacing GRIDSPACING   grid up template bank with a square or hexagonal grid\n"\
-"                                 (Square|Hexagonal|SquareNotOriented|HexagonalNotOriented)\n"\
+"  --grid-spacing GRIDSPACING   grid up template bank with GRIDSPACING\n"\
+"                                 (Square|Hexagonal|SquareNotOriented|\n"\
+"                                 HexagonalNotOriented)\n"\
 "\n"\
 "  --write-raw-data             write raw data to a frame file\n"\
 "  --write-response             write the computed response function to a frame\n"\
