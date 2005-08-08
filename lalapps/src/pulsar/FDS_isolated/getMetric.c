@@ -90,8 +90,6 @@ void printPulsarMetric(LALStatus *, const UserInput *uvar, const ConfigVariables
 void printFlatPulsarMetric (LALStatus *, const UserInput *uvar, const ConfigVariables *config);
 void printMetric (LALStatus *status, const REAL8Vector *metric );
 
-static UINT4 find_metric_dim ( UINT4 length );
-
 extern int vrbflg;
 
 /*----------------------------------------------------------------------
@@ -347,7 +345,7 @@ printPulsarMetric(LALStatus *status, const UserInput *uvar, const ConfigVariable
   }
   
   /* convert f1 to f1dot: f1 = f1dot / f */
-  dim = find_metric_dim (metric->length );
+  dim = XLALFindMetricDim (metric );
   for ( a = 0; a < dim; a++ ) 
     {
       metric->data [ PMETRIC_INDEX(3,a) ] /= uvar->Freq;
@@ -373,7 +371,6 @@ printFlatPulsarMetric (LALStatus *status, const UserInput *uvar, const ConfigVar
   REAL8Vector *metric = NULL;
   REAL8Vector *physmetric = NULL;
   UINT4 dim, a, b;
-  REAL8 tmp;
 
   INITSTATUS (status, "printFlatPulsarMetric", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -389,7 +386,7 @@ printFlatPulsarMetric (LALStatus *status, const UserInput *uvar, const ConfigVar
   /* translate coefficients into physical coordinates {f, alpha, delta, f1, f2 }*/
   TRY ( LALDCreateVector ( status->statusPtr, &physmetric, metric->length ), status );
 
-  dim = find_metric_dim ( metric->length );
+  dim = XLALFindMetricDim ( metric );
   for ( a=2; a < dim; a ++ )
     for ( b=a; b < dim; b++ )
       {
@@ -431,7 +428,7 @@ printMetric (LALStatus *status, const REAL8Vector *metric )
   ASSERT ( metric, status, GETMETRIC_EBAD, GETMETRIC_MSGEBAD);
   ASSERT ( metric->length, status, GETMETRIC_EBAD, GETMETRIC_MSGEBAD);
 
-  dim = find_metric_dim ( metric->length );
+  dim = XLALFindMetricDim ( metric );
 
   /* print metric components (in octave/matlab format) */
   printf  ("[ ");
@@ -451,28 +448,3 @@ printMetric (LALStatus *status, const REAL8Vector *metric )
   RETURN(status);
 
 } /* printMetric() */
-
-
-/* figure out dimension of metric */
-static 
-UINT4 find_metric_dim ( UINT4 length )
-{
-  UINT4 dim;
-  BOOLEAN found = 0;
-
-  if ( length == 0 )
-    return 0;
-
-  for ( dim=1; dim < 10; dim ++ )
-    if ( length == dim*(dim+1)/2 )
-      {
-	found = 1;
-	break;
-      }
-
-  if ( found ) 
-    return dim;
-  else
-    return 0;
-
-}/* find_metric_dim() */
