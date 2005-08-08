@@ -194,6 +194,7 @@ enum { unset, urandom, user } randSeedType = unset;    /* sim seed type */
 INT4  randomSeed        = 0;            /* value of sim rand seed       */
 REAL4 gaussVar          = 64.0;         /* variance of gaussian noise   */
 INT4  gaussianNoise     = 0;            /* make input data gaussian     */
+INT4  unitResponse      = 0;            /* set the response to unity    */
 
 /* template bank simulation params */
 INT4  bankSim           = 0;            /* number of template bank sims */
@@ -960,7 +961,7 @@ int main( int argc, char *argv[] )
           "strain/ct", "RESPONSE" );
   }
 
-  if ( gaussianNoise )
+  if ( unitResponse )
   {
     /* replace the response function with unity if */
     /* we are filtering gaussian noise             */
@@ -973,7 +974,7 @@ int main( int argc, char *argv[] )
     if ( vrbflg ) fprintf( stdout, "done\n" );
 
     if ( writeResponse ) outFrame = fr_add_proc_COMPLEX8FrequencySeries( 
-        outFrame, &resp, "strain/ct", "RESPONSE_GAUSSIAN" );
+        outFrame, &resp, "strain/ct", "RESPONSE_UNITY" );
   }
 
   /* slide the channel back to the fake time for background studies */
@@ -1378,9 +1379,14 @@ int main( int argc, char *argv[] )
       if ( vrbflg ) fprintf( stdout, "computing median psd" );
       break;
     case 2:
+    case 3:
+    case 4:
       avgSpecParams.method = useUnity;
-      if ( vrbflg ) fprintf( stdout, "simulation gaussian noise psd" );
+      if ( vrbflg ) fprintf( stdout, "computing constant psd with unit value" );
       break;
+    default:
+      fprintf( stderr, "Error: unknown PSD estimation type: %d\n", specType );
+      exit( 1 );
   }
 
   /* use the fft plan created by findchirp */
@@ -1424,6 +1430,32 @@ int main( int argc, char *argv[] )
 
     if ( vrbflg ) 
       fprintf( stdout, "set psd to constant value = %e\n", spec.data->data[0] );
+  }
+  else if ( specType == 3 )
+  {
+    /* replace the spectrum with the Initial LIGO design noise curve */
+    for ( k = 0; k < spec.data->length; ++k )
+    {
+      REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
+      REAL8 sim_psd_value;
+      LALLIGOIPsd( NULL, &sim_psd_value, sim_psd_freq );
+      spec.data->data[k] = 9.0e-46 * sim_psd_value;
+    }
+    
+    if ( vrbflg ) fprintf( stdout, "set psd to Initial LIGO design\n" );
+  }
+  else if ( specType == 4 )
+  {
+    /* replace the spectrum with the Advanced LIGO design noise curve */
+    for ( k = 0; k < spec.data->length; ++k )
+    {
+      REAL8 sim_psd_freq = (REAL8) k * spec.deltaF;
+      REAL8 sim_psd_value;
+      LALAdvLIGOPsd( NULL, &sim_psd_value, sim_psd_freq );
+      spec.data->data[k] = 9.0e-46 * sim_psd_value;
+    }
+    
+    if ( vrbflg ) fprintf( stdout, "set psd to Advanced LIGO design\n" );
   }
 
   /* write the spectrum data to a file */
@@ -1598,15 +1630,25 @@ int main( int argc, char *argv[] )
       memset( chan.data->data, 0, chan.data->length * sizeof(REAL4) );
       memset( &bankInjection, 0, sizeof(SimInspiralTable) );
 
-      /* generate random parameters for the injection */
-      LAL_CALL( LALUniformDeviate( &status, &(bankInjection.mass1), 
-            randParams ), &status );
-      bankInjection.mass1 *= (bankMaxMass - bankMinMass);
-      bankInjection.mass1 += bankMinMass;
-      LAL_CALL( LALUniformDeviate( &status, &(bankInjection.mass2), 
-            randParams ), &status );
-      bankInjection.mass2 *= (bankMaxMass - bankMinMass);
-      bankInjection.mass2 += bankMinMass;
+      /* set up the injection masses */
+      if ( bankMaxMass == bankMinMass )
+      {
+        bankInjection.mass1 = bankMaxMass;
+        bankInjection.mass2 = bankMaxMass;
+      }
+      else
+      {
+        /* generate random parameters for the injection */
+        LAL_CALL( LALUniformDeviate( &status, &(bankInjection.mass1), 
+              randParams ), &status );
+        bankInjection.mass1 *= (bankMaxMass - bankMinMass);
+        bankInjection.mass1 += bankMinMass;
+        LAL_CALL( LALUniformDeviate( &status, &(bankInjection.mass2), 
+              randParams ), &status );
+        bankInjection.mass2 *= (bankMaxMass - bankMinMass);
+        bankInjection.mass2 += bankMinMass;
+      }
+
       bankInjection.eta = bankInjection.mass1 * bankInjection.mass2 /
         ( ( bankInjection.mass1 + bankInjection.mass2 ) *
           ( bankInjection.mass1 + bankInjection.mass2 ) );
@@ -3207,6 +3249,22 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           fprintf( stderr,
               "WARNING: replacing psd with white gaussian spectrum\n" );
         }
+        else if ( ! strcmp( "LIGO", optarg ) )
+        {
+          specType = 3;
+          unitResponse = 1;
+          fprintf( stderr,
+              "WARNING: replacing psd with Initial LIGO design spectrum\n"
+              "WARNING: replacing response function with unity\n" );
+        }
+        else if ( ! strcmp( "AdvLIGO", optarg ) )
+        {
+          specType = 4;
+          unitResponse = 1;
+          fprintf( stderr,
+              "WARNING: replacing psd with Advanced LIGO design spectrum\n"
+              "WARNING: replacing response function with unity\n" );
+        }
         else
         {
           fprintf( stderr, "invalid argument to --%s:\n"
@@ -3607,6 +3665,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         ADD_PROCESS_PARAM( "float", "%e", gaussVar );
         gaussianNoise = 1;
+        unitResponse = 1;
         fprintf( stderr,
             "WARNING: replacing input data with white gaussian noise\n"
             "WARNING: replacing response function with unity\n" );
