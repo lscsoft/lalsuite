@@ -32,9 +32,12 @@
 /*---------- INCLUDES ----------*/
 #include <math.h>
 
-#include "LatticeCovering.h"
-
 #include <lalapps.h>
+
+#include "LatticeCovering.h"
+#include "DopplerScan.h"
+
+
 
 RCSID ("$Id$");
 
@@ -47,11 +50,16 @@ RCSID ("$Id$");
 int main(void);
 void testGS(void);
 void testCovering(void);
+BOOLEAN testArea1 ( const REAL8Vector *point ); /* example boundary-condition */
+
+void testCovering2(void);
 
 static int writeREAL8VectorList (FILE *fp, const REAL8VectorList *list);
 static int print_matrix (const gsl_matrix *m);
 static int print_vector (const gsl_vector *v);
 
+int plot2DCovering (FILE *fp, const REAL8VectorList *list, const REAL8Vector *metric, 
+		    REAL8 mismatch);
 
 /*--------------------------------------------------*/
 /* Test function(s) */
@@ -66,17 +74,83 @@ int main (void)
 
   /*  testGS(); */
 
-  testCovering();
+  /* testCovering(); */
+
+  testCovering2();
 
   return 0;
 }
 
-BOOLEAN testArea1 ( const REAL8Vector *point ); /* example boundary-condition */
+/* generate a covering for given metric and dimensions and write it to disk */
+void
+testCovering2 (void)
+{
+  LALStatus status = blank_status;
+  REAL8VectorList *covering = NULL;
+  REAL8Vector *metric = NULL;
+  FILE *fp;
+  UINT4 dim;
+  REAL8Vector startPoint;
+  REAL8 radius = 0.1;
+  CHAR *fname;
+
+  /* metric */
+  gsl_matrix_view gij;
+  
+  double gij_data2a[] = { 1, 0 ,
+			  0, 1 };
+
+  double gij_data2b[] = { 1,   0.2,
+			  0.2, 0.5 };
+
+  double gij_data3b[] = { 1, 0.1, 0.2,
+			  0.1, 2, 0.5,
+			  0.2, 0.5, 3 };
+
+  /* get matrix-view of the metric */
+  dim = 2;
+  gij  = gsl_matrix_view_array ( gij_data2a, dim, dim );
+  if ( NULL == (metric = XLALgsl2LALmetric ( &(gij.matrix) )) )
+    {
+      LALPrintError ("\nFailed to get proper metric set up \n\n");
+      return;
+    }
+
+  /* setup start-point */
+  startPoint.length = dim;
+  startPoint.data = LALCalloc (dim, sizeof(startPoint.data[0]) ); /* already (0,0) */
+
+
+  /* generate covering */
+  LAL_CALL( LALLatticeCovering(&status, &covering, radius, metric, &startPoint, testArea1), 
+	    &status);
+  
+  /* output result into a file */
+  fname = "test_covering.dat";
+  if ( (fp = fopen ( fname, "wb" )) == NULL ) {
+    LALPrintError ("\nFailed to open '%s' for writing!\n\n", fname);
+    return;
+  }
+  printf ("Now writing lattice-covering into '%s' ... ", fname);
+  plot2DCovering (fp, covering, metric, radius*radius);
+  printf ("done.\n\n");
+  fclose(fp);
+
+
+  /* free memory */
+  REAL8VectorListDestroy ( covering );
+  LALFree ( startPoint.data );
+  LAL_CALL ( LALDDestroyVector (&status, &metric), &status);
+
+  /* check all (LAL-)memory for leaks... (unfortunately doesn't cover GSL!) */
+  LALCheckMemoryLeaks(); 
+
+} /* testCovering2() */
 
 void
 testCovering (void)
 {
-  LALStatus lstat = blank_status;
+  LALStatus status = blank_status;
   REAL8VectorList *covering = NULL;
   FILE *fp;
   gsl_matrix *generatorA = NULL;
@@ -84,6 +158,7 @@ testCovering (void)
   gsl_matrix *generatorB = NULL;
   gsl_matrix_view gij;
   REAL8Vector startPoint;
+  REAL8Vector *metric = NULL;
 
   LatticeType type = LATTICE_TYPE_ANSTAR;
   REAL8 radius = 0.1;
@@ -109,7 +184,6 @@ testCovering (void)
       LALPrintError ("\nERROR: XLALFindCoveringGenerator() failed (xlalErrno = %d)!\n\n", code);
       return;
     }
-  
 
   printf ("First generator: \n");
   print_matrix ( generatorA );
@@ -121,7 +195,7 @@ testCovering (void)
   startPoint.length = dim;
   startPoint.data = LALCalloc (dim, sizeof(startPoint.data[0]) ); /* already (0,0) */
 
-  LAL_CALL( LALLatticeFill (&lstat, &covering, generatorB, &startPoint, testArea1), &lstat);
+  LAL_CALL( LALLatticeFill (&status, &covering, generatorB, &startPoint, testArea1), &status);
 
   if ( (fp = fopen ( "test_lattice1.dat", "wb" )) == NULL )
     {
@@ -134,7 +208,8 @@ testCovering (void)
   covering = NULL;
 
   /* do the same again with the new high-level function */
-  LAL_CALL( LALLatticeCovering (&lstat, &covering, radius, &(gij.matrix), &startPoint, testArea1), &lstat);
+  metric = XLALgsl2LALmetric ( &(gij.matrix) );
+  LAL_CALL( LALLatticeCovering (&status, &covering, radius, metric, &startPoint, testArea1), &status);
   if ( (fp = fopen ( "test_lattice2.dat", "wb" )) == NULL )
     {
       LALPrintError ("\nFailed to open 'test_lattice2.dat' for writing!\n\n");
@@ -267,20 +342,66 @@ int
 writeREAL8VectorList (FILE *fp, const REAL8VectorList *list)
 {
   UINT4 i;
-  const REAL8VectorList *ptr;
+  const REAL8VectorList *node;
 
   if ( !list || !fp )
     return -1;
 
-  ptr = list;
-  do 
+  for (node = list; node; node=node->next )
     {
-      for (i=0; i < ptr->entry.length; i++ )
-	fprintf (fp, "%g ", ptr->entry.data[i] );
-
+      for (i=0; i < node->entry.length; i++ )
+	fprintf (fp, "%g ", node->entry.data[i] );
+      
       fprintf (fp, "\n");
 
-    } while ( (ptr = ptr->next) != NULL );
+    } /* for node=node->next */
 
   return 0;
 } /* writeREAL8VectorList() */
+
+#define SPOKES 60  /* spokes for ellipse-plots */
+/** write 2D covering-lattice into file, add metric ellipses */
+int 
+plot2DCovering (FILE *fp, const REAL8VectorList *list, const REAL8Vector *metric, REAL8 mismatch)
+{
+  REAL8 Alpha, Delta;
+  const REAL8VectorList *node;
+  MetricEllipse ellipse;
+  PtoleMetricIn metricPar;
+  LALStatus status = blank_status;
+  UINT4 i;
+
+  /* ----- first output all grid-points */
+  writeREAL8VectorList( fp, list );
+  
+  /* ----- if metric is given: output all metric ellipses */
+  if ( metric ) 
+    {
+      fprintf (fp, "\n\n");
+      getMetricEllipse(&status, &ellipse, mismatch, metric, 0);
+      for( node = list; node; node = node->next ) 
+	{
+	  Alpha =  node->entry.data[0];
+	  Delta =  node->entry.data[1];
+	  
+	  /* Loop around patch ellipse. */
+	  for (i=0; i<=SPOKES; i++) {
+	    float c, r, b, x, y;
+	
+	    c = LAL_TWOPI*i/SPOKES;
+	    x = ellipse.smajor * cos(c);
+	    y = ellipse.sminor * sin(c);
+	    r = sqrt( x*x + y*y );
+	    b = atan2 ( y, x );
+	    fprintf( fp, "%e %e\n", 
+		     Alpha + r*cos(ellipse.angle+b), Delta + r*sin(ellipse.angle+b) );
+	  }
+	  fprintf ( fp, "\n\n");
+      
+	} /* for node=node->next */
+
+    } /* if metric */
+
+  return 0;
+
+} /* plot2DCovering() */
