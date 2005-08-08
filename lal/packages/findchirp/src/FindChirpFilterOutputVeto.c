@@ -122,8 +122,8 @@ LALFindChirpFilterOutputVeto(
 
     /* convert the window duration into an index */
 				    
-    windowIndex = (UINT4) floor((REAL8) (((params->rsqvetoWindow) 
-                                    / 1000.0) / deltaT));
+    windowIndex = (UINT4) floor((REAL8) ((params->rsqvetoWindow) 
+                                            / deltaT));
 											
      /* Initialize output to zero */ 
 				
