@@ -1,0 +1,86 @@
+\section{Program \texttt{lalapps\_coinext}}
+\label{program:lalapps-coinext}
+\idx[Program]{lalapps\_coinext}
+
+\begin{entry}
+\item[Name]
+\verb$lalapps_coinext$ --- analyzing coincident external triggers online
+\item[Synopsis]
+\prog{coinExt} \newline 
+[\option{--help}] \newline
+[\option{--test}] \newline
+[\option{--dirInspiral} \parm{dir\_insp}] \newline 
+[\option{--dirData}     \parm{dir\_data}] \newline 
+[\option{--refresh}     \parm{t\_refresh}] \newline
+[\option{--timeWindow}  \parm{t\_window}]  \newline
+[\option{--snrCut}      \parm{snr}]       \newline
+[\option{--ifo}         \parm{name\_ifo}]  \newline
+[\option{--trigger}     \parm{trigger\_file}] \newline
+[\option{--restart}] \newline
+[\option{--recalc}] \newline
+
+\item[Description]
+This online looks for coincidences on external and inspiral triggers, creating and transfering a XML file containing both data.\\
+
+After a time \parm{t\_refresh} has elapsed the actual list of external triggers, placed on {\tt http://www.uoregon.edu/~ileonor/ligo/a4/grb/online/currentgrbs\_html\_A4.txt}, is downloaded. This file is updated when ever an external trigger from the GCN (The GRB Coordinates Network, see {\tt http://gcn.gsfc.nasa.gov/}) has been recieved. Since it takes some time from the observation of a Gamma-Ray Burst to the notification, about 10-20 minutes elapses until the trigger is placed into the downloaded file.\\
+
+
+{\tt coinext} looks either for inspiral triggers specified in the directory \parm{dir\_insp} or it creates an own DAG for creating the inspiral triggers by itself (when setting the option \option{--recalc}). The DAG is run in the directory  {\tt OnlineAnalysis/Jobs} and the final inspiral triggers are put into {\tt Trigger}. \\
+
+All inspiral triggers within a time window of \parm{t\_window} and the information of the external trigger are stored into a XML file in the directory {\tt Data} or \parm{dir\_data}. The XML file also is transfered to the machine {\tt adietz.phys.lsu.edu} for further analysis.\\
+
+If the option \option{--restart} is specified, all intermediate daa files will be deleted, such as the local list of external triggers with the state of each trigger ({\it later more}).
+
+\item[Options]\leavevmode
+\begin{entry}
+
+ 
+\item[\option{--dirData} \parm{dir\_data}]
+Optional argument, specifying the directory where the resulting XML files are written to. The default directory is \option{CoinExt/Data}.
+
+\item[\option{--dirInspiral} \parm{dir\_insp}]
+Optional argument, specifying the directory searched for inspiral trigger XML-files. The default directory is \option{Triggers/Inspiral/???}
+
+\item[\option{--help}]
+Prints a help message and exits.
+
+\item[\option{--refresh} \parm{t\_refresh}]
+Setting the refresh rate to \parm{t\_refresh} minutes. This is the time the program waits until it checks for new external triggers. The default value is 30 minutes.
+
+\item[\option{--test}]
+With this option set the test mode is activated. The external triggers are read from a file {\tt CoinExt/ProgCoin/Test/triggers.xml???} and the refresh rate is set to 60 seconds.
+
+\item[\option{--timeWindow} \parm{t\_window}]
+Sets the coincident time window that is searched for coincidences.
+
+\item[\option{--snrCut} \parm{cut}]
+Sets a thresold for the selection of inspiral triggers. Only triggers with a SNR value greater than \parm{cut} are considered.
+
+\item[\option{--ifo} \parm{ifo\_name}]
+Specifies at which site the code it running. Possible parameters are {\tt LLO} and {\tt LHO}.
+
+\item[\option{--trigger} \parm{trigger\_file}]
+When specifying this option coinExt used always the trigger file {\tt trigger\_file} instead downloading a new one.
+
+\item[\option{--restart}]
+With this option the whole analysis on the triggers is restarted.
+
+\item[\option{--recalc}]
+With this option set for each GRb trigger an inspiral DAG will be run on the cluster to calculate the inspiral triggers. 
+
+\end{entry}
+
+
+
+\item[Example 1] 
+{\it will follow soon}
+
+\item[Notes]
+This program requires {\tt tconvert} to be installed.
+
+
+\item[Author] 
+Alexander Dietz
+\end{entry}
+
+
