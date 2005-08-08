@@ -135,7 +135,7 @@ typedef struct {
   REAL8 smajor;
   REAL8 sminor;
   REAL8 angle;
-} SkyEllipse;
+} MetricEllipse;
 
 /** initialization-structure passed to InitDopplerScan() */  
 typedef struct {
@@ -188,6 +188,12 @@ void getGridSpacings(LALStatus *, DopplerPosition *spacings, DopplerPosition gri
 		     const DopplerScanInit *params);
 void getMCDopplerCube (LALStatus *, DopplerRegion *cube, DopplerPosition signal, UINT4 PointsPerDim, 
 		       const DopplerScanInit *params);
+
+void getMetricEllipse(LALStatus *, 
+		      MetricEllipse *ellipse, 
+		      REAL8 mismatch, 
+		      const REAL8Vector *metric, 
+		      UINT4 dim0);
 
 #ifdef  __cplusplus
 }

@@ -116,7 +116,6 @@ void plotGrid (LALStatus *, DopplerScanGrid *grid, const SkyRegion *region, cons
 
 void freeGrid(DopplerScanGrid *grid);
 void printFrequencyShifts(LALStatus *, const DopplerScanState *scan, const DopplerScanInit *init);
-void getSkyEllipse(LALStatus *status, SkyEllipse *ellipse, REAL8 mismatch, const REAL8Vector *metric);
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 
@@ -584,13 +583,13 @@ plotGrid (LALStatus *status,
     fprintf( fp, "%e %e\n", node->Alpha, node->Delta );
     fprintf( fp1, "%e %e\n", node->Alpha, node->Delta );
   }
-  fprintf( fp1, "\n");
+  fprintf( fp1, "\n\n");
 
   /* if metric is given: plot ellipses */
   if ( ( init->metricType > LAL_PMETRIC_NONE) && (init->metricType < LAL_PMETRIC_LAST) )
     {
       REAL8Vector  *metric = NULL;   /* Parameter-space metric: for plotting ellipses */
-      SkyEllipse ellipse;
+      MetricEllipse ellipse;
       REAL8 mismatch = init->metricMismatch;
       PtoleMetricIn metricPar;
 
@@ -630,7 +629,7 @@ plotGrid (LALStatus *status,
 	    TRY (LALProjectMetric( status->statusPtr, metric, 0 ), status);
 	  }
 
-	  TRY (getSkyEllipse(status->statusPtr, &ellipse, mismatch, metric), status);
+	  TRY (getMetricEllipse(status->statusPtr, &ellipse, mismatch, metric, 1), status);
 
 	  /*
 	  printf ("Alpha=%f Delta=%f\ngaa=%f gdd=%f gad=%f\n", Alpha, Delta, gaa, gdd, gad);
@@ -656,7 +655,7 @@ plotGrid (LALStatus *status,
 	    fprintf( fp1, "%e %e\n", 
 		     Alpha + r*cos(ellipse.angle+b), Delta + r*sin(ellipse.angle+b) );
 	  }
-	  fprintf ( fp1, "\n");
+	  fprintf ( fp1, "\n\n");
 
 	  node = node -> next;
 
@@ -1596,7 +1595,7 @@ getMCDopplerCube (LALStatus *status,
       REAL8 DopplerFreqBand;
       REAL8 fB = FreqBand;
       PtoleMetricIn metricpar = empty_metricpar;/* we need to know metric for this..:( */
-      SkyEllipse ellipse;
+      MetricEllipse ellipse;
       REAL8Vector *metric = NULL;
 
       /* setup metric parameters */
@@ -1615,7 +1614,7 @@ getMCDopplerCube (LALStatus *status,
       TRY ( LALSDestroyVector(status->statusPtr, &(metricpar.spindown)), status);
       TRY ( LALProjectMetric( status->statusPtr, metric, 0 ), status);
 
-      TRY ( getSkyEllipse(status->statusPtr, &ellipse, params->metricMismatch, metric), status);
+      TRY ( getMetricEllipse(status->statusPtr, &ellipse, params->metricMismatch, metric, 1), status);
       TRY ( LALDDestroyVector(status->statusPtr, &metric), status);
 
       /* now we can estimate the Doppler-Band on f: |dFreq| < Freq * 1e-4 * smajor */
@@ -1658,22 +1657,28 @@ getMCDopplerCube (LALStatus *status,
 
 /*----------------------------------------------------------------------*/
 /** get "sky-ellipse" for given metric.
+ * \note This function uses only 2 dimensions starting from dim0 of the given metric!
  */
 void
-getSkyEllipse(LALStatus *status, SkyEllipse *ellipse, REAL8 mismatch, const REAL8Vector *metric)
+getMetricEllipse(LALStatus *status, 
+		 MetricEllipse *ellipse, 
+		 REAL8 mismatch, 
+		 const REAL8Vector *metric,
+		 UINT4 dim0)
 {
 	
   REAL8 gaa, gad, gdd;
   REAL8 smin, smaj, angle;
-
-  INITSTATUS( status, "getSkyEllipse", DOPPLERSCANC );
+  UINT4 dim;
+  INITSTATUS( status, "getMetricEllipse", DOPPLERSCANC );
 
   ASSERT ( metric, status, DOPPLERSCANH_ENULL ,  DOPPLERSCANH_MSGENULL );
-  ASSERT ( metric->length >= 6, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+  dim = dim0 + 2;
+  ASSERT ( metric->length >= dim*(dim+1)/2, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 
-  gaa = metric->data[INDEX_A_A];
-  gad = metric->data[INDEX_A_D];
-  gdd = metric->data[INDEX_D_D];
+  gaa = metric->data[ PMETRIC_INDEX(dim0 + 0, dim0 + 0) ];
+  gad = metric->data[ PMETRIC_INDEX(dim0 + 0, dim0 + 1) ];
+  gdd = metric->data[ PMETRIC_INDEX(dim0 + 1, dim0 + 1) ];
 	  
   /* Semiminor axis from larger eigenvalue of metric. */
   smin = gaa+gdd + sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
@@ -1694,4 +1699,4 @@ getSkyEllipse(LALStatus *status, SkyEllipse *ellipse, REAL8 mismatch, const REAL
 
   RETURN(status);
 
-} /* getSkyEllipse() */
+} /* getMetricEllipse() */
