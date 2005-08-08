@@ -55,16 +55,12 @@ NRCSID (FINDCHIRPFILTEROUTPUTVETOH, "$Id$");
 #define FINDCHIRPFILTEROUTPUTVETOH_ENULL 1 
 #define FINDCHIRPFILTEROUTPUTVETOH_ENNUL 2 
 #define FINDCHIRPFILTEROUTPUTVETOH_EALOC 3 
-#define FINDCHIRPFILTEROUTPUTVETOH_ERSQT 4 
-#define FINDCHIRPFILTEROUTPUTVETOH_EDTZO 5 
-#define FINDCHIRPFILTEROUTPUTVETOH_ERSQW 6 
+#define FINDCHIRPFILTEROUTPUTVETOH_EDTZO 4
 
 #define FINDCHIRPFILTEROUTPUTVETOH_MSGENULL "Null pointer" 
 #define FINDCHIRPFILTEROUTPUTVETOH_MSGENNUL "Non-null pointer" 
 #define FINDCHIRPFILTEROUTPUTVETOH_MSGEALOC "Memory allocation error" 
-#define FINDCHIRPFILTEROUTPUTVETO_MSGERSQT "rsq threshold is negative" 
-#define FINDCHIRPFILTEROUTPUTVETO_MSGEDTZO "deltaT is zero or negative" 
-#define FINDCHIRPFILTEROUTPUTVETO_MSGERSQW "rsq veto window is zero or negative" 
+#define FINDCHIRPFILTEROUTPUTVETOH_MSGEDTZO "deltaT is zero or negative" 
 /* </lalErrTable> */
 
 
@@ -84,8 +80,8 @@ output veto.
 typedef struct
 tagFindChirpFilterOutputVetoParams
 {
-  INT4          rsqvetoWindow;
-  INT4          rsqvetoThresh;
+  REAL4          rsqvetoWindow;
+  REAL4          rsqvetoThresh;
 }
 FindChirpFilterOutputVetoParams;
 /* </lalVerbatim> */
@@ -93,9 +89,9 @@ FindChirpFilterOutputVetoParams;
 <lalLaTeX>
 
 \begin{description}
-\item[\texttt{UINT4 rsqvetoWindow}] Width of the veto window.
+\item[\texttt{REAL4 rsqvetoWindow}] Width of the veto window.
 
-\item[\texttt{UINT4 rsqvetoThresh}] Threshold of the veto window.
+\item[\texttt{REAL4 rsqvetoThresh}] Threshold of the veto window.
 \end{description}
 
 \vfill{\footnotesize\input{FindChirpFilterOutputVetoHV}}
@@ -113,7 +109,9 @@ void LALFindChirpFilterOutputVeto(
     SnglInspiralTable                 **eventList, 
     FindChirpSegment                   *segment,
     REAL4Vector                        *chisqVec,
-    REAL8                              deltaT,
+    REAL8                               deltaT,
+    COMPLEX8Vector                     *qVec,
+    REAL4                               qNorm,
     FindChirpFilterOutputVetoParams    *params
     );
 

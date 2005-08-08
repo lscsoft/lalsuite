@@ -61,18 +61,21 @@ LALFindChirpFilterOutputVeto(
     FindChirpSegment                   *segment,
     REAL4Vector                        *chisqVec,
     REAL8                               deltaT,
+    COMPLEX8Vector                     *qVec,
+    REAL4                               qNorm,
     FindChirpFilterOutputVetoParams    *params
     )
 /* </lalVerbatim> */
 {
 
   UINT4                 x; /* for loops */
-  UINT4		        rsqvetoWindow; /* the r^2 veto window */
+  REAL4		        rsqvetoWindow; /* the r^2 veto window */
   UINT4		        eventIndex; /* store the event as an index */
   UINT4		        windowIndex; /* r^2 veto window index */ 
   UINT4                 timeaboversqThresh; /* time spent above the 
                                                r^2 veto threshold */
-  REAL4		        rsqvetoThresh; /* the r^2 veto threshold */			     SnglInspiralTable    *event = NULL;
+  REAL4		        rsqvetoThresh; /* the r^2 veto threshold */	
+  SnglInspiralTable    *event = NULL;
   event = *eventList;
 
   INITSTATUS( status, "LALFindChirpFilterFilterOutputVeto", 
@@ -96,15 +99,9 @@ LALFindChirpFilterOutputVeto(
   ASSERT( chisqVec->data, status, 
       FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL);
 	
-  /* check that the filter output veto parameters are reasonable */	
-  ASSERT( params->rsqvetoThresh > 0, status,
-      FINDCHIRPFILTEROUTPUTVETOH_ERSQT, FINDCHIRPFILTEROUTPUTVETO_MSGERSQT );
-  ASSERT( params->rsqvetoWindow > 0, status,
-      FINDCHIRPFILTEROUTPUTVETOH_ERSQW, FINDCHIRPFILTEROUTPUTVETO_MSGERSQW );
-
   /* check that deltaT is reasonable */	
   ASSERT( deltaT > 0, status,
-      FINDCHIRPFILTEROUTPUTVETOH_EDTZO, FINDCHIRPFILTEROUTPUTVETO_MSGEDTZO );
+      FINDCHIRPFILTEROUTPUTVETOH_EDTZO, FINDCHIRPFILTEROUTPUTVETOH_MSGEDTZO );
 			
   /* make sure that the segment structure exists */
   ASSERT( segment, status, 
@@ -116,28 +113,18 @@ LALFindChirpFilterOutputVeto(
 	
   
   /* If an event exists, begin the r^2 veto calculations */  
-  if ( event )
+  while ( event )
   {
     /* convert the time of the event into an index */
-				
-    eventIndex = (UINT4) floor((REAL8) (event->end_time.gpsSeconds - 
-				  segment->data->epoch.gpsSeconds) / deltaT);
+    eventIndex = (UINT4) floor( ( (REAL8) (event->end_time.gpsSeconds - 
+            segment->data->epoch.gpsSeconds) + 
+          (REAL8) (event->end_time.gpsNanoSeconds + 1) * 1.0e-9 ) / deltaT );
 
     /* convert the window duration into an index */
 				    
     windowIndex = (UINT4) floor((REAL8) (((params->rsqvetoWindow) 
                                     / 1000.0) / deltaT));
 											
-    /* Make sure event occurs > 2 seconds after the begining of an epoch, if not, 
-       set to 0 */
-										
-    if ( eventIndex < windowIndex )
-    {
-     timeaboversqThresh = 0;
-     event->rsqveto_duration = 0;
-    }
-    else
-    {															
      /* Initialize output to zero */ 
 				
      timeaboversqThresh = 0;
@@ -151,13 +138,9 @@ LALFindChirpFilterOutputVeto(
      /* Convert the output to milliseconds and record the computed values in the 
 	sngl_inspiral event */
 		
-     event->rsqveto_duration = (REAL4) timeaboversqThresh * deltaT * 1000.0 ;
-												}
+     event->rsqveto_duration = (REAL4) timeaboversqThresh * deltaT;
 
-  if( event->next )													   
-  event = event->next;
-
-  while(event->next);
+     event = event->next;
   }
 
   /* normal exit */
