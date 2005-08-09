@@ -1,5 +1,8 @@
 #include <stdlib.h>
 #include "FstatToplist.h"
+#include <lal/StringInput.h>
+
+RCSID("$Id$");
 
 /* this is defined in C99 and *should* be in math.h. Long term
    protect this with a HAVE_FINITE */
@@ -125,16 +128,15 @@ int read_toplist_from_fp(toplist*l, FILE*fp) {
 	    return -1;
 	}
       
-
-	items = sscanf (inline, 
+	items = sscanf (inline,
 			"%" LAL_REAL8_FORMAT
-			"%" LAL_REAL8_FORMAT
-			"%" LAL_REAL8_FORMAT
-			"%" LAL_REAL8_FORMAT
-			"%" LAL_REAL8_FORMAT
-			"%" LAL_INT4_FORMAT
-			"%" LAL_REAL8_FORMAT
-			"%" LAL_REAL8_FORMAT
+			" %" LAL_REAL8_FORMAT
+			" %" LAL_REAL8_FORMAT
+			" %" LAL_REAL8_FORMAT
+			" %" LAL_INT4_FORMAT
+			" %" LAL_REAL8_FORMAT
+			" %" LAL_REAL8_FORMAT
+			" %" LAL_REAL8_FORMAT
 			"%c",
 			&FstatLine.Freq,
 			&FstatLine.f1dot,
@@ -147,7 +149,8 @@ int read_toplist_from_fp(toplist*l, FILE*fp) {
 			&lastchar);
 
 	/* check the values scanned */
-	if (
+	if (items != 9 ||
+
 	    !finite(FstatLine.Freq)	||
 	    !finite(FstatLine.f1dot)	||
 	    !finite(FstatLine.Alpha)	||
@@ -254,4 +257,8 @@ int test_toplist(UINT8 n, char*filename) {
 	   (tl->data[i].max   - tl2->data[i].max > epsilon))
 	    LALPrintError("line %d differs\n",i);
 
+    free_toplist(&tl);
+    free_toplist(&tl2);
+
+    return(0);
 }
