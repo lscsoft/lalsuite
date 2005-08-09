@@ -25,31 +25,38 @@
 	gcc BEAscii2Xml.c -o BEAscii2Xml -I/<include file>
 */
 
-#include <stdio.h>
-#include <stdlib.h>
 
 
 #include "BankEfficiency.h"
-
 #define BEASCII2XML_INPUT1 "Trigger.dat"
 #define BEASCII2XML_INPUT2 "BE_Proto.xml"
 #define BEASCII2XML_OUTPUT "Trigger.xml"
-
-
+#define BEASCII2XML_BANK   "BE_Bank.xml"
 
 
 void
 BEAscii2XmlHelp(void);
 
 
+
 int
 main (int argc, char **argv ) 
 {
+  UINT4 line=0, i;
+UINT8  id=0;
   UINT4 start = 0;
   ResultIn trigger;
   REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3, phaseI, coaTime;
-  FILE *input1, *input2;
-  FILE *output;
+  FILE *input1, *input2, *bank;
+  FILE *output;      
+  SnglInspiralTable     *inputData = NULL;
+  INT4 numFileTriggers = 0;
+
+  MetadataTable         templateBank;
+
+
+
+
   char sbuf[512];
   
   if (argc>1) {
@@ -62,11 +69,11 @@ main (int argc, char **argv )
   }
   /* Main program starts here */
   /* First we open the file containing the ascii results */
-  fprintf(stderr,"opening the xml output data file -- ");
+  fprintf(stderr,"opening the xml output data file -- %s", BEASCII2XML_OUTPUT);
   output = fopen(BEASCII2XML_OUTPUT,"w");
   fprintf(stderr,"done\n");
 
-  fprintf(stderr,"opening the xml input data file -- ");
+  fprintf(stderr,"opening the xml input data file -- %s", BEASCII2XML_INPUT1);
   if  ( (input1  = fopen(BEASCII2XML_INPUT1,"r"))==NULL) {
     fprintf(stderr,"error while opening input file %s\n",BEASCII2XML_INPUT1);
     exit(0);
@@ -74,28 +81,100 @@ main (int argc, char **argv )
   fprintf(stderr,"done\n");
 
   fprintf(stderr,"opening the xml prototype (argument of BankEfficiency code) -- ");
-  if  ( (input2  = fopen(BEASCII2XML_INPUT2,"r"))==NULL){
-    fprintf(stderr,"error while opening input file %s\n",BEASCII2XML_INPUT2);
-    fprintf(stderr,"the xml file will not contains parameters information\n");
-    PRINT_LIGOLW_XML_HEADER(output);
-    fprintf(stderr,"creating the header file -- done\n");
-  }
+  if  ( (input2  = fopen(BEASCII2XML_INPUT2,"r"))==NULL)
+    {
+      fprintf(stderr,"error while opening input file %s\n",BEASCII2XML_INPUT2);
+      fprintf(stderr,"the xml file will not contains parameters information\n");
+      PRINT_LIGOLW_XML_HEADER(output);
+      fprintf(stderr,"creating the header file -- done\n");
+    }
   else 
     {
       /* read prototype and save in outputfile */
       fprintf(stderr,"parsing the prototype  -- ");
       while(fgets(sbuf,1024,input2) !=NULL)
 	fputs(sbuf, output);
-    fprintf(stderr," done\n");
+      fprintf(stderr," done\n");
+
       
     }
+  
 
-    fprintf(stderr,"Print the header of the xml file -- ");
-    PRINT_LIGOLW_XML_BANKEFFICIENCY(output);
-    fprintf(stderr,"done\n");
+  /* insert the template bank here */
+  if  ( (bank  = fopen(BEASCII2XML_BANK,"r"))==NULL)
+    {
+      fprintf(stderr,"error while opening input file %s\n",BEASCII2XML_BANK);
+      fprintf(stderr,"the xml file will not contains the bank table\n");
+    }
+  else 
+    {
+      /* read prototype and save in outputfile */
+      fprintf(stderr,"parsing the bank  -- ");
+      fprintf( stdout, "reading triggers from file: %s\n", BEASCII2XML_BANK );
+      numFileTriggers = 
+        LALSnglInspiralTableFromLIGOLw( &inputData,BEASCII2XML_BANK , 0, -1 );
+      fprintf(stderr," done %d\n", numFileTriggers);      
+       myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
+       while(inputData)
+	{
+	  /*	  id = inputData->event_id->id;*/
+	  
+	  fprintf(output, SNGL_INSPIRAL_ROW, 
+		  inputData->ifo,
+		  inputData->search,
+		  inputData->channel,
+		  inputData->end_time.gpsSeconds,
+		  inputData->end_time.gpsNanoSeconds,
+		  inputData->end_time_gmst,
+		  inputData->impulse_time.gpsSeconds,
+		  inputData->impulse_time.gpsNanoSeconds,
+		  inputData->template_duration,
+		  inputData->event_duration,
+		  inputData->amplitude,
+		  inputData->eff_distance,
+		  inputData->coa_phase,
+		  inputData->mass1,
+		  inputData->mass2,
+		  inputData->mchirp,
+		  inputData->mtotal,
+		  inputData->eta,
+		  inputData->tau0,
+		  inputData->tau2,
+		  inputData->tau3,
+		  inputData->tau4,
+		  inputData->tau5,
+		  inputData->ttotal,
+		  inputData->psi0,
+		  inputData->psi3,
+		  inputData->alpha,
+		  inputData->alpha1,
+		  inputData->alpha2,
+		  inputData->alpha3,
+		  inputData->alpha4,
+		  inputData->alpha5,
+		  inputData->alpha6,
+		  inputData->beta,
+		  inputData->f_final,
+		  inputData->snr,
+		  inputData->chisq,
+		  inputData->chisq_dof,
+		  inputData->sigmasq,
+		  id);
+	  inputData = inputData->next;
+	  fprintf(output, "\n");
+
+	}
+       myfprintf(output, LIGOLW_XML_TABLE_FOOTER );
+
+    }
+
+
+
+  PRINT_LIGOLW_XML_BANKEFFICIENCY(output);
+  fprintf(stderr,"done\n");
   /* read ascii input and save in xml format */
-    fprintf(stderr,"reading the ascii file -- ");
-    do  
+  fprintf(stderr,"reading the ascii file -- and saving xml file");
+  do  
     {
       fscanf(input1,BANKEFFICIENCY_PARAMS_ROW_SPACE,
 	     &trigger.psi0_triggerU,
@@ -165,10 +244,11 @@ main (int argc, char **argv )
 	      trigger.layer,
 	      trigger.bin, 
 	      coaTime);
+         line++;
     }
    while(!feof(input1));
 
-    fprintf(stderr,"done\n");
+    fprintf(stderr,"read %d lines...done\n", line);
   PRINT_LIGOLW_XML_TABLE_FOOTER(output);
   PRINT_LIGOLW_XML_FOOTER(output);
 
