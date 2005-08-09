@@ -34,6 +34,9 @@ int test_toplist(UINT8 n, char*filename) {
 
 	if(insert_into_toplist(tl, FstatLine))
 	    ins++;
+
+	if(i==n)
+	    fprintf(stderr,"array filled now\n");
     }
     fprintf(stderr,"%d inserts actually done of %d\n",(int)ins,2*(int)n);
     
