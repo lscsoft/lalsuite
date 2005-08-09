@@ -39,6 +39,9 @@
    use the lal definition for the  time being in order to avoid any 
    overlap with other users. */
 
+
+#define myfprintf(fp,oldmacro) PRINT_ ## oldmacro(fp)
+
 #define MAXIFO 2
 #define BANKEFFICIENCY_PARAMS_ROW \
 "         %f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%d,%d,%f,%f,%f,%f,%f,%d,%d,%d"
