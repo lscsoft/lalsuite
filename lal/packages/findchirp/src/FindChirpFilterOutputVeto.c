@@ -69,25 +69,26 @@ LALFindChirpFilterOutputVeto(
 {
 
   UINT4                 x; /* for loops */
-  REAL4		        rsqvetoWindow; /* the r^2 veto window */
   UINT4		        eventIndex; /* store the event as an index */
   UINT4		        windowIndex; /* r^2 veto window index */ 
-  UINT4                 timeaboversqThresh; /* time spent above the 
-                                               r^2 veto threshold */
+  UINT4                 timeaboversqThresh; /* time spent above the r^2 veto threshold */
+  REAL4                 rsqvetoWindow; /* the r^2 veto window */
   REAL4		        rsqvetoThresh; /* the r^2 veto threshold */	
-  SnglInspiralTable    *event = NULL;
+  SnglInspiralTable    *event = NULL; 
   event = *eventList;
 
   INITSTATUS( status, "LALFindChirpFilterFilterOutputVeto", 
       FINDCHIRPFILTEROUTPUTVETOC );
   ATTATCHSTATUSPTR( status );
- 
+
+
   /*
    *    
    *   check that the arguments are reasonable
    *          
    */
- 	 
+ 	
+
 
   /* check that the filterOutputVeto parameter structure exist */	
   ASSERT( params->rsqvetoWindow, status, 
@@ -111,35 +112,30 @@ LALFindChirpFilterOutputVeto(
   ASSERT( segment->data->epoch.gpsSeconds, status, 
       FINDCHIRPFILTEROUTPUTVETOH_ENULL, FINDCHIRPFILTEROUTPUTVETOH_MSGENULL );
 	
-  
   /* If an event exists, begin the r^2 veto calculations */  
   while ( event )
   {
     /* convert the time of the event into an index */
-    eventIndex = (UINT4) floor( ( (REAL8) (event->end_time.gpsSeconds - 
-            segment->data->epoch.gpsSeconds) + 
-          (REAL8) (event->end_time.gpsNanoSeconds + 1) * 1.0e-9 ) / deltaT );
+    eventIndex = (UINT4) floor( ( (REAL8) ( event->end_time.gpsSeconds - 
+            segment->data->epoch.gpsSeconds ) + 
+          (REAL8) ( event->end_time.gpsNanoSeconds + 1 ) * 1.0e-9 ) / deltaT );
 
     /* convert the window duration into an index */
-				    
-    windowIndex = (UINT4) floor((REAL8) ((params->rsqvetoWindow) 
-                                            / deltaT));
+    windowIndex = (UINT4) floor( (REAL8) ( ( params->rsqvetoWindow ) / deltaT ) );
 											
      /* Initialize output to zero */ 
-				
      timeaboversqThresh = 0;
 	     
      /* Count the number of time samples above the given r^2 veto threshold */
-     for( x = eventIndex - windowIndex; x <= eventIndex ; ++x )
-	{if(chisqVec->data[x] >= ((REAL4) params->rsqvetoThresh))
+     for( x = eventIndex - windowIndex; x <= eventIndex; ++x )
+     {
+       if ( chisqVec->data[x] >= params->rsqvetoThresh )
            ++timeaboversqThresh;
-	}
+     }
 		
      /* Convert the output to milliseconds and record the computed values in the 
-	sngl_inspiral event */
-		
+        sngl_inspiral event */
      event->rsqveto_duration = (REAL4) timeaboversqThresh * deltaT;
-
      event = event->next;
   }
 
