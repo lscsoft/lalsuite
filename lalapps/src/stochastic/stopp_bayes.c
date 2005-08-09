@@ -95,6 +95,7 @@ static double stopp_erfcinv(double y)
   return x;
 }
 
+/* main program loop */
 INT4 main(INT4 argc, CHAR *argv[])
 {
   /* status */
