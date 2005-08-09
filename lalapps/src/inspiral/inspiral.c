@@ -1763,6 +1763,7 @@ int main( int argc, char *argv[] )
     {
       /* compute the minimal match normalization */
       REAL4 *tmpltPower = fcDataParams->tmpltPowerVec->data;
+      COMPLEX8 *wtilde = fcDataParams->wtildeVec->data;
       COMPLEX8 *fcData = fcSegVec->data->data->data->data;
 
       if ( vrbflg ) fprintf( stdout,
@@ -1770,14 +1771,39 @@ int main( int argc, char *argv[] )
 
       matchNorm = 0;
 
-      for ( k = 0; k < fcDataParams->tmpltPowerVec->length; ++k )
+      /* compute sigmasq for the injected waveform and store in matchNorm */
+      switch ( approximant )
       {
-        if ( tmpltPower[k] ) matchNorm += ( fcData[k].re * fcData[k].re +
-            fcData[k].im * fcData[k].im ) / tmpltPower[k];
+        case TaylorF2:
+          for ( k = 0; k < fcDataParams->tmpltPowerVec->length; ++k )
+          {
+            if ( tmpltPower[k] ) matchNorm += ( fcData[k].re * fcData[k].re +
+                fcData[k].im * fcData[k].im ) / tmpltPower[k];
+          }
+          break;
+
+        case TaylorT1:
+        case TaylorT2:
+        case TaylorT3:
+        case PadeT1:
+        case EOB:
+        case GeneratePPN:
+          for ( k = 0; k < fcDataParams->wtildeVec->length; ++k )
+          {
+            if ( wtilde[k].re ) matchNorm += ( fcData[k].re * fcData[k].re +
+                fcData[k].im * fcData[k].im ) / wtilde[k].re;
+          }
+          break;
+
+        default:
+          fprintf( stderr, "Error: unknown approximant\n" );
+          exit( 1 );
       }
 
       matchNorm *= ( 4.0 * (REAL4) fcSegVec->data->deltaT ) / 
         (REAL4) dataSegVec->data->chan->data->length;
+
+      /* square root to get minimal match normalization \sqrt{(s|s)} */
       matchNorm = sqrt( matchNorm );
 
       if ( vrbflg ) fprintf( stdout, "%e\n", matchNorm );
