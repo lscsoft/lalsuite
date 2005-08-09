@@ -1,5 +1,5 @@
-#include "ComputeFStatistic.h"
 #include <stdlib.h>
+#include "FstatToplist.h"
 
 /* this is defined in C99 and *should* be in math.h. Long term
    protect this with a HAVE_FINITE */
@@ -10,15 +10,6 @@
 int finite(double);
 #endif
 
-
-
-/* toplist structure based on FstatsClusterOutput */
-typedef struct {
-    UINT8 length;   /* the length (maximal number of entries) of the toplist */
-    UINT8 elems;    /* number of elements currently in the toplist */
-    UINT8 smallest; /* index of the smallest element in the toplist */
-    FstatsClusterOutput *data; /* points to the actual data */
-} toplist;
 
 
 /* creates a toplist with length elements,
