@@ -352,9 +352,12 @@ INT4 main(INT4 argc, CHAR *argv[])
           exponent = (thisStoch->cc_stat - \
               (thisStoch->duration.gpsSeconds * omega_r) * \
               pow((freq/freq_ref), alpha));
-          pdf_powerlaw[i][j] *= exp((-0.5 * exponent * exponent) / \
-              (thisStoch->cc_sigma * thisStoch->cc_sigma));
+          pdf_powerlaw[i][j] += (-0.5 * exponent * exponent) / \
+              (thisStoch->cc_sigma * thisStoch->cc_sigma);
         }
+
+        /* take exponential */
+        pdf_powerlaw[i][j] = exp(pdf_powerlaw[i][j])
       }
     }
   }
@@ -373,7 +376,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       {
         omega_r = min_omega + ((i/99.) * (max_omega - min_omega));
         alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
-        fprintf(pdf_out, "%e %e %g\n", omega_r, alpha, pdf_powerlaw[i][j]);
+        fprintf(pdf_out, "%e %e %e\n", omega_r, alpha, pdf_powerlaw[i][j]);
       }
     }
   }
