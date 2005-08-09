@@ -36,6 +36,7 @@ int test_toplist(UINT8 n, char*filename) {
     }
 
     
+    fprintf(stderr,"open file %s for writing...\n",filename);
     fp=fopen(filename,"w");
     if(!fp) {
 	LALPrintError("Couldn't open file %s for writing\n",filename);
@@ -44,6 +45,7 @@ int test_toplist(UINT8 n, char*filename) {
 	return(-2);
     }
 
+    fprintf(stderr,"writing...\n");
     if(write_toplist_to_fp(tl,fp)<0) {
 	LALPrintError("Couldn't write toplist\n",filename);
 	fclose(fp);
@@ -54,6 +56,7 @@ int test_toplist(UINT8 n, char*filename) {
 
     fclose(fp);
 
+    fprintf(stderr,"open file %s for reading...\n",filename);
     fp=fopen(filename,"r");
     if(!fp) {
 	LALPrintError("Couldn't open file %s for reading\n",filename);
@@ -62,8 +65,10 @@ int test_toplist(UINT8 n, char*filename) {
 	return(-2);
     }
 
+    fprintf(stderr,"reading...\n");
     read_toplist_from_fp(tl2,fp);
 
+    fprintf(stderr,"comparing...\n");
     for(i=0;i<n;i++)
 	if((tl->data[i].Freq  - tl2->data[i].Freq > epsilon) ||
 	   (tl->data[i].f1dot - tl2->data[i].f1dot > epsilon) ||
@@ -75,6 +80,7 @@ int test_toplist(UINT8 n, char*filename) {
 	   (tl->data[i].max   - tl2->data[i].max > epsilon))
 	    LALPrintError("line %d differs\n",i);
 
+    fprintf(stderr,"cleanup...\n");
     free_toplist(&tl);
     free_toplist(&tl2);
 
