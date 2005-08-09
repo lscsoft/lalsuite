@@ -133,7 +133,7 @@ LALFindChirpFilterOutputVeto(
           ++timeaboversqThresh;
     }
 		
-    /* Convert the output to milliseconds and record the computed values in the 
+    /* Convert the output to seconds and record the computed values in the 
        sngl_inspiral event */
     event->rsqveto_duration = (REAL4) timeaboversqThresh * deltaT;
     event = event->next;
