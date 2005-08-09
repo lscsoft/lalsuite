@@ -149,7 +149,8 @@ int read_toplist_from_fp(toplist*l, FILE*fp) {
 			&lastchar);
 
 	/* check the values scanned */
-	if (items != 9 ||
+	if (
+	    items != 9 ||
 
 	    !finite(FstatLine.Freq)	||
 	    !finite(FstatLine.f1dot)	||
@@ -187,6 +188,7 @@ int read_toplist_from_fp(toplist*l, FILE*fp) {
     return 0;
 }
 
+/* short test for the basic functions of this lib. */
 int test_toplist(UINT8 n, char*filename) {
     REAL8 epsilon=1e-5;
     FILE*fp;
@@ -226,7 +228,7 @@ int test_toplist(UINT8 n, char*filename) {
 	return(-2);
     }
 
-    if(write_toplist_to_fp(tl,fp)) {
+    if(write_toplist_to_fp(tl,fp)<0) {
 	LALPrintError("Couldn't write toplist\n",filename);
 	fclose(fp);
 	free_toplist(&tl);
