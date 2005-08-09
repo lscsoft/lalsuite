@@ -17,6 +17,7 @@ int finite(double);
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
 int create_toplist(toplist**tl, UINT8 length) {
+    UINT8 i;
 
     toplist *thetoplist = malloc(sizeof(toplist));
     if(!thetoplist)
@@ -31,6 +32,16 @@ int create_toplist(toplist**tl, UINT8 length) {
 	free(thetoplist);
 	return(-1);
     }
+
+    thetoplist->sorted = malloc(length * sizeof(FstatsClusterOutput*));
+    if(!thetoplist->sorted) {
+	free(thetoplist->data);
+	free(thetoplist);
+	return(-1);
+    }
+
+    for(i=0; i<length; i++)
+	thetoplist->sorted[i] = &(thetoplist->data[i]);
 
     *tl=thetoplist;
     return(0);
@@ -91,16 +102,39 @@ int insert_into_toplist(toplist*tl, FstatsClusterOutput elem) {
 int write_toplist_to_fp(toplist*tl, FILE*fp) {
    UINT8 i,c=0;
    for(i=0;i<tl->elems;i++)
-       c += fprintf(fp,"%e %e %e %e %d %e %e %e\n",
-		    tl->data[i].Freq,
-		    tl->data[i].f1dot,
-		    tl->data[i].Alpha,
-		    tl->data[i].Delta,
-		    tl->data[i].Nbins,
-		    tl->data[i].mean,
-		    tl->data[i].std,
-		    tl->data[i].max);
+       c += fprintf(fp,"%e %e %e %e %d %e %e %1.15e\n",
+		    tl->sorted[i]->Freq,
+		    tl->sorted[i]->f1dot,
+		    tl->sorted[i]->Alpha,
+		    tl->sorted[i]->Delta,
+		    tl->sorted[i]->Nbins,
+		    tl->sorted[i]->mean,
+		    tl->sorted[i]->std,
+		    tl->sorted[i]->max);
    return(c);
+}
+
+
+/* ordering function for sorting the list */
+static int _toplist_qsort_function(const void *pa, const void *pb) {
+    const FstatsClusterOutput**a = pa;
+    const FstatsClusterOutput**b = pb;
+
+    if ((**a).max < (**b).max)
+	return -1;
+    else if ((**a).max > (**b).max)
+	return 1;
+    else
+	return 0;
+}
+
+/* (q)sort the toplist according to the sorting function.
+   This actually only updates the "sorted" pointers */
+void sort_toplist(toplist*l) {
+    qsort(l->sorted,
+	  l->elems,
+	  sizeof(l->sorted),
+	  _toplist_qsort_function);
 }
 
 /* reads a (created!) toplist from an open filepointer

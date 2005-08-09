@@ -8,7 +8,8 @@ typedef struct {
     UINT8 length;   /* the length (maximal number of entries) of the toplist */
     UINT8 elems;    /* number of elements currently in the toplist */
     UINT8 smallest; /* index of the smallest element in the toplist */
-    FstatsClusterOutput *data; /* points to the actual data */
+    FstatsClusterOutput *data;    /* points to the actual data */
+    FstatsClusterOutput **sorted; /* an array of sorted pointers to data */
 } toplist;
 
 /* creates a toplist with length elements,
@@ -33,6 +34,8 @@ extern int write_toplist_to_fp(toplist*, FILE*);
 /* reads a (created!) toplist from an open filepointer
    returns -1 if the file contained a syntax error, -2 if given an improper toplist */
 extern int read_toplist_from_fp(toplist*, FILE*);
+
+extern void sort_toplist(toplist*);
 
 #endif /* FSTATTOPLIST_H */
 
