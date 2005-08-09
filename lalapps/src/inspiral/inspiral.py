@@ -762,11 +762,11 @@ class ThincaNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
     else:
       basename = self.get_ifos() + '-THINCA'
 
-    if self.__usertag:
-      basename += '_' + self.__usertag
-
     if self.__ifotag:
       basename += '_' + self.__ifotag  
+
+    if self.__usertag:
+      basename += '_' + self.__usertag
 
     return basename + '-' + str(self.get_start()) + '-' + \
       str(self.get_end() - self.get_start()) + '.xml'
