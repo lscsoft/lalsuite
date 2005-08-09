@@ -65,7 +65,7 @@ RCSID( "$Id$");
 
 /*----- SWITCHES -----*/
 #define FILE_FSTATS 1		/**< write out an 'Fstats' file containing cluster-output */
-
+ 
 
 /*----- Error-codes -----*/
 #define COMPUTEFSTATC_ENULL 		1
@@ -495,8 +495,10 @@ int main(int argc,char *argv[])
 		{
 		  
 		  /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
-		  LAL_CALL ( LALGetSSBtimes (&status, GV.ifos.DeltaT[nD], GV.ifos.Tdot[nD], 
-					     GV.ifos.DetectorStates[nD], thisPoint, GV.refTime0,
+		  LAL_CALL ( LALGetSSBtimes (&status, GV.ifos.DeltaT[nD], 
+					     GV.ifos.Tdot[nD], 
+					     GV.ifos.DetectorStates[nD], 
+					     thisPoint, GV.refTime0,
 					     uvar_SSBprecision), &status);
 		  
 		  /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
@@ -516,8 +518,12 @@ int main(int argc,char *argv[])
 		    Bt = GV.ifos.amcoe[nD]->B;
 		    Ct = GV.ifos.amcoe[nD]->C;
 
-		    if ( XLALNewLALDemod (&FaFb, GV.ifos.sftVects[nD], GV.fkdot, 
-					  GV.ifos.DeltaT[nD], GV.ifos.Tdot[nD], GV.ifos.amcoe[nD],
+		    if ( XLALNewLALDemod (&FaFb, 
+					  GV.ifos.sftVects[nD], 
+					  GV.fkdot, 
+					  GV.ifos.DeltaT[nD], 
+					  GV.ifos.Tdot[nD], 
+					  GV.ifos.amcoe[nD],
 					  uvar_Dterms) != 0)
 		      {
 			LALPrintError ("\nXALNewLALDemod() failed\n");
@@ -899,7 +905,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   /* obtain detector positions and velocities, together with LMSTs for the 
    * SFT midpoints 
    */
-  TRY (LALGetDetectorStates(status->statusPtr, &(GV.ifos.DetectorStates[nD]), GV.ifos.timestamps[nD], &(GV.ifos.Detectors[nD]), cfg->edat), status);
+  TRY (LALGetDetectorStates(status->statusPtr, &(GV.ifos.DetectorStates[nD]), GV.ifos.midTS[nD], &(GV.ifos.Detectors[nD]), cfg->edat), status);
 
     }
 
@@ -1438,7 +1444,7 @@ NormaliseSFTDataRngMdn(LALStatus *status,
   }
 
   /* loop over each SFTs */
-  for (i=0;i<GV.ifos.length;i++)         
+  for (i=0; i < sfts->length; i++)         
     {
       /* Set to zero the values */
       for (j=0;j<sfts->data[0].data->length;j++){
