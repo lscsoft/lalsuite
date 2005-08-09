@@ -357,7 +357,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         }
 
         /* take exponential */
-        pdf_powerlaw[i][j] = exp(pdf_powerlaw[i][j])
+        pdf_powerlaw[i][j] = exp(pdf_powerlaw[i][j]);
       }
     }
   }
