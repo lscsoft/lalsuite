@@ -132,6 +132,11 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 pdf_powerlaw[100][100];
   REAL8 freq;
   REAL8 freq_ref = 100;
+  REAL8 omega_numerator;
+  REAL8 omega_denominator;
+  REAL8 sigma_denominator;
+  REAL8 omega_hat;
+  REAL8 sigma_omega_hat;
 
   /* program option variables */
   CHAR *outputFileName = NULL;
@@ -342,23 +347,40 @@ INT4 main(INT4 argc, CHAR *argv[])
         omega_r = min_omega + ((i/99.) * (max_omega - min_omega));
         alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
 
-        /* initialise pdf_powerlaw */
-        pdf_powerlaw[i][j] = 1;
+        /* initialise numerator */
+        omega_numerator = 0;
+        omega_denominator = 0;
+        sigma_denominator = 0;
 
         /* loop over segments */
         for (thisStoch = stochHead; thisStoch; thisStoch = thisStoch->next)
         {
+          /* get frequency of middle of the band */
           freq = thisStoch->f_min + ((thisStoch->f_max - \
                 thisStoch->f_min) / 2.);
-          exponent = (thisStoch->cc_stat - \
-              (thisStoch->duration.gpsSeconds * omega_r) * \
-              pow((freq/freq_ref), alpha));
-          pdf_powerlaw[i][j] += (-0.5 * exponent * exponent) / \
-              (thisStoch->cc_sigma * thisStoch->cc_sigma);
+
+          /* \hat{\Omega}_R */
+          omega_numerator += (thisStoch->cc_stat / (thisStoch->cc_sigma * \
+                thisStoch->cc_sigma)) * pow((freq/freq_ref), alpha);
+          omega_denominator += (1 / (thisStoch->cc_sigma * \
+                thisStoch->cc_sigma)) * pow((freq/freq_ref), alpha);
+
+          /* sigma^2_{\hat{\Omega}_R} */
+          sigma_denominator += (1 / (thisStoch->cc_sigma * \
+                thisStoch->cc_sigma)) * pow((freq/freq_ref), 2 * alpha);
         }
 
-        /* take exponential */
-        pdf_powerlaw[i][j] = exp(pdf_powerlaw[i][j]);
+        /* construct \hat{\Omega}_R */
+        omega_hat = omega_numerator / (stochHead->duration.gpsSeconds * \
+            omega_denominator);
+
+        /* construct sigma^2_{\hat{\Omega}_R} */
+        sigma_omega_hat = (1 / (stochHead->duration.gpsSeconds * \
+              stochHead->duration.gpsSeconds) * sigma_denominator);
+
+        /* construct pdf */
+        pdf_powerlaw[i][j] = exp(-0.5 * ((omega_r - omega_hat) / \
+              sigma_omega_hat) * ((omega_r - omega_hat) / sigma_omega_hat));
       }
     }
   }
