@@ -107,7 +107,7 @@ int write_toplist_to_fp(toplist*tl, FILE*fp) {
    returns -1 if the file contained a syntax error, -2 if given an improper toplist
 */
 int read_toplist_from_fp(toplist*l, FILE*fp) {
-    char inline[255]; /* buffer for reading a line */
+    char inline[256]; /* buffer for reading a line */
     UINT4 items, lines; /* number of items read from a line, linecounter */
     char lastchar;    /* last character of a line read, should be newline */
     FstatsClusterOutput FstatLine;
@@ -117,18 +117,21 @@ int read_toplist_from_fp(toplist*l, FILE*fp) {
     if(!l)
 	return -2;
 
+    /* make sure the inline buffer is terminated correctly */
+    inline[sizeof(inline)-1]='\0';
+	    
     lines=1;
-    while(fgets(inline,sizeof(inline),fp)) {
+    while(fgets(inline,sizeof(inline)-1,fp)) {
 
 	if (strlen(inline)==0 || inline[strlen(inline)-1] != '\n') {
 	    LALPrintError(
                 "Line too long or has no NEWLINE.  First %d chars are:\n%s\n",
-                sizeof(inline), inline);
+                sizeof(inline)-1, inline);
 	    return -1;
 	}
       
 	items = sscanf (inline,
-			"%" LAL_REAL8_FORMAT
+			 "%" LAL_REAL8_FORMAT
 			" %" LAL_REAL8_FORMAT
 			" %" LAL_REAL8_FORMAT
 			" %" LAL_REAL8_FORMAT
@@ -167,17 +170,18 @@ int read_toplist_from_fp(toplist*l, FILE*fp) {
 	    FstatLine.Delta < -0.5*LAL_PI - epsilon  ||
 	    FstatLine.Delta >  0.5*LAL_PI + epsilon  ||
 
-	    lastchar != '\0'
+	    lastchar != '\n'
 	    ) {
 	    LALPrintError(
 		"Line %d has invalid values.\n"
-		"First 255 chars are:\n"
+		"First %d chars are:\n"
 		"%s\n"
 		"All fields should be finite\n",
 		"1st and 2nd field should be positive.\n" 
 		"3rd field should lie between 0 and %1.15f.\n" 
 		"4th field should lie between %1.15f and %1.15f.\n",
-		lines, inline, (double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
+		lines, sizeof(inline)-1, inline,
+		(double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
 	    return -1;
         }
 	
