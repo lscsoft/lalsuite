@@ -123,20 +123,20 @@ LALFindChirpFilterOutputVeto(
     /* convert the window duration into an index */
     windowIndex = (UINT4) floor( (REAL8) ( ( params->rsqvetoWindow ) / deltaT ) );
 											
-     /* Initialize output to zero */ 
+    /* Initialize output to zero */ 
      timeaboversqThresh = 0;
 	     
-     /* Count the number of time samples above the given r^2 veto threshold */
-     for( x = eventIndex - windowIndex; x <= eventIndex; ++x )
-     {
-       if ( chisqVec->data[x] >= params->rsqvetoThresh )
-           ++timeaboversqThresh;
-     }
+    /* Count the number of time samples above the given r^2 veto threshold */
+    for( x = eventIndex - windowIndex; x <= eventIndex; ++x )
+    {
+      if ( chisqVec->data[x] >= params->rsqvetoThresh )
+          ++timeaboversqThresh;
+    }
 		
-     /* Convert the output to milliseconds and record the computed values in the 
-        sngl_inspiral event */
-     event->rsqveto_duration = (REAL4) timeaboversqThresh * deltaT;
-     event = event->next;
+    /* Convert the output to milliseconds and record the computed values in the 
+       sngl_inspiral event */
+    event->rsqveto_duration = (REAL4) timeaboversqThresh * deltaT;
+    event = event->next;
   }
 
   /* normal exit */
