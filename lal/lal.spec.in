@@ -5,7 +5,7 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
 Summary: LSC Algorithm Library
-Copyright: LSC
+License: LSC
 Group: LAL
 Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
