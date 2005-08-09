@@ -7,7 +7,7 @@ int test_toplist(UINT8 n, char*filename) {
     FILE*fp;
     toplist *tl=NULL, *tl2=NULL;
     FstatsClusterOutput FstatLine;
-    UINT8 i;
+    UINT8 i,ins=0;
 
     fprintf(stderr,"creating first toplist...\n");
     if(create_toplist(&tl,n)) {
@@ -32,9 +32,10 @@ int test_toplist(UINT8 n, char*filename) {
 	FstatLine.std = (double)rand() / (double)RAND_MAX;
 	FstatLine.max = (double)rand() / (double)RAND_MAX;
 
-	insert_into_toplist(tl, FstatLine);
+	if(insert_into_toplist(tl, FstatLine))
+	    ins++;
     }
-
+    fprintf(stderr,"%d inserts actually done of %d\n",(int)ins,2*(int)n);
     
     fprintf(stderr,"open file %s for writing...\n",filename);
     fp=fopen(filename,"w");
