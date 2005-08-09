@@ -13,46 +13,59 @@ import os
 
 
 # init
-path  		= '/home/cokelaer/Dev/lalapps/src/findchirp/'
+path  		= '/archive//home/cokelaer/lalapps/src/findchirp/'
 executable_name = 'lalapps_BankEfficiency'
 # 
-
+# injection parameters for TD
 min_mass       	=  3  	   	# miminal individaul mass to inject
-max_mass       	=  20.  	# maximal individua lmass to inject
+max_mass       	=  49  	# maximal individua lmass to inject
+maxTotalMass    = 99 
+# bank parameters for TD 
 min_massb      	=  3.  		# maximal individua lmass to inject
-max_massb      	=  20.  	# maximal individua lmass to inject
-signal_psi0_min	= 10000
+max_massb      	=  49  	# maximal individua lmass to inject
+#injection parameters for BCV
+signal_psi0_min	= 1000
 signal_psi0_max	= 550000
-signal_psi3_min	= -4000
-signal_psi3_max	= -10
+signal_psi3_min	= -5000
+signal_psi3_max	= -1000
+#bank parametesr for BCV 
 bank_psi0_min	= 10000
 bank_psi0_max	= 550000
-bank_psi3_min	= -4000
+bank_psi3_min	= -5000
 bank_psi3_max	= -10
+alpha_bank	= 0.0001
+fend_min	=  -2  
+fend_max	=  6 
+number_fcut	=  3 
+# common bank parameters 
 minimal_match 	=  0.95     	# minimal match in bank creation
-
-lower_frequency = 70		# lower freqency cutoff. identical for both signal and templates for the time being
-
+lower_frequency = 20		# lower freqency cutoff. identical for both signal and templates for the time being
+freq_moment_bank = 1023
+sampling = 2048
+#injection
 signal 		= 'EOB'
-signal_order 	= 4 
-template 	= 'BCV'
+signal_order 	=  6
+# template bank
+template 	= 'EOB'
+template_order  =  6
 
-#for BCV
-fend_min	= -2  
-fend_max	= 6 
-number_fcut	= 6 
-alpha_bank	= 0.01
-freq_moment_bank= 2047
+noisemodel	= 'VIRGO'
+simulation_type = 'SignalOnly'       	# 0 for signal only 1 for noise only and 2 for noise+signal
+signal_amplitude = 8 
 
-
-noisemodel	= 'LIGOI'
-simulation_type = 0       	# 0 for signal only 1 for noise only and 2 for noise+signal
+#condor parameters 
 number_of_jobs 	= 100 
-signal_amplitude = 0 
-number_of_trials_per_job = 20
+number_of_trials_per_job = 100
 
-others = '--print-result-xml  --sampling  4096 --bank-grid-type square'
-#others=''
+#real data parameters 
+run = "S3"
+channel = "H1:LSC-AS_Q"
+startTime = 752058105
+#startTime = 755512721
+#startTime = 757575852
+
+
+others = '--print-result-xml  --bank-grid-spacing Hexagonal --fast-simulation --debug 33'
 
 
 space 		= ' '
@@ -72,25 +85,31 @@ def checkargs():
 
 
 
-arguments = ' --n	' 		+ str(number_of_trials_per_job) \
-         +' --mass-range ' 	 + str(min_mass)+ space +str(max_mass) \
-         +' --mass-range-bank '	 + str(min_massb)+ space +str(max_massb) \
-       	 +' --mm ' 		 + str(minimal_match) \
-         +' --fl ' 		 + str(lower_frequency) \
-         +' --signal ' 		 + str(signal) \
-         +' --signal-order ' 	 + str(signal_order) \
-         +' --template ' 	 + str(template) \
-         +' --simulation-type '	 + str(simulation_type) \
-         +' --signal-amplitude ' + str(signal_amplitude) \
-         +' --alpha-bank ' 	 + str(alpha_bank) \
-	 +' --noise-model ' 	 + noisemodel \
-         +' --fend-bcv ' 	 + str(fend_min) + space + str(fend_max) \
-         +' --number-fcut ' 	 + str(number_fcut) \
-         +' --bank-psi0-range '	 + str(bank_psi0_min) + space + str(bank_psi0_max) \
-         +' --signal-psi0-range '+ str(signal_psi0_min) + space + str(signal_psi0_max) \
-         +' --bank-psi3-range '	 + str(bank_psi3_max) + space + str(bank_psi3_min)\
-         +' --signal-psi3-range '+ str(signal_psi3_max) + space + str(signal_psi3_min)\
-         +' --freq-moment-bank ' + str(freq_moment_bank)\
+arguments = ' --n	' 	  + str(number_of_trials_per_job) \
+         +' --max-total-mass '  +str(maxTotalMass) \
+         +' --signal-mass-range ' + str(min_mass)+ space +str(max_mass) \
+         +' --bank-mass-range '	  + str(min_massb)+ space +str(max_massb) \
+       	 +' --mm ' 		  + str(minimal_match) \
+         +' --fl ' 		  + str(lower_frequency) \
+         +' --signal ' 		  + str(signal) \
+         +' --signal-order ' 	  + str(signal_order) \
+         +' --template ' 	  + str(template) \
+         +' --template-order ' 	  + str(template_order) \
+         +' --simulation-type '	  + str(simulation_type) \
+         +' --signal-amplitude '  + str(signal_amplitude) \
+         +' --bank-alpha ' 	  + str(alpha_bank) \
+	 +' --noise-model ' 	  + noisemodel \
+         +' --bank-fcut-range '	  + str(fend_min) + space + str(fend_max) \
+         +' --bank-number-fcut '  + str(number_fcut) \
+         +' --bank-psi0-range '	  + str(bank_psi0_min) + space + str(bank_psi0_max) \
+         +' --signal-psi0-range ' + str(signal_psi0_min) + space + str(signal_psi0_max) \
+         +' --bank-psi3-range '	  + str(bank_psi3_min) + space + str(bank_psi3_max)\
+         +' --signal-psi3-range ' + str(signal_psi3_min) + space + str(signal_psi3_max)\
+         +' --bank-ffinal '       + str(freq_moment_bank)\
+         +' --run '               + str(run) \
+         +' --channel '           + str(channel) \
+         +' --gps-start-time '    + str(startTime) \
+         +' --sampling '          + str(sampling) \
 	 +space + others
 
 
@@ -98,32 +117,43 @@ arguments = ' --n	' 		+ str(number_of_trials_per_job) \
 fp =open('BankEfficiency_condor_submit_job','w');
 fp.write('Executable   = ' + path + executable_name +'\n')
 fp.write('Universe     = vanilla\n')
-fp.write('Environment  = LD_LIBRARY_PATH=/software/geopptools/lib\n')
-fp.write('Requirements = Memory >=128 && OpSys == "LINUX" && FileSystemDomain == "explorer" && UidDomain == "explorer"\n')
-fp.write('+MaxHours =40\n\n')
+#fp.write('Universe     = vanilla\n')
+#fp.write('Environment  = LD_LIBRARY_PATH=/software/geopptools/lib\n')
+#fp.write('Requirements = Memory >=128 && OpSys == "LINUX" && FileSystemDomain == "explorer" && UidDomain == "explorer"\n')
+#fp.write('+MaxHours =40\n\n')
 fp.write('Arguments = '+ '--seed $(Process) ' + arguments)
 fp.write('\n\n')
+fp.write('priority = 10\n')
 fp.write('Log         = log.$(Process)\n')
 fp.write('Output      = out.$(Process)\n')
 fp.write('Error       = err.$(Process)\n\n')
 fp.write('Queue '+str(number_of_jobs))
 fp.close()
 
-print 'Script for BankEfficiency code associated to condor'
-print '1 ................................................. BankEfficiency_condor_submit_job created'
-print ' a - use the following command to use it : \'condor_submit BankEfficiency_condor_submit_file\''
-print ' b - Once the condor script is finished, you\'ll get '+str(number_of_jobs)+' files. '
-print '     Merge them with a  command like ''cat out.* > Trigger.dat''\n'
-command = path + executable_name + space + arguments +' --print-prototype '
-print '\nNow we try to create the xml prototype which might be needed. (same command as in the condor'
-print 'script but with the option \'--print-prototype\'):\n'
-print ' \t'+command +'\n'
+# create bank
+print '###'
+print ' We are creating the template bank for sanity check (could be long with real data)'
+fp =open('BankEfficiency_createbank','w');
+fp.write( path + executable_name + arguments+' --n 1 --faithfulness --print-bank 1> out 2>err'+'\n')
+fp.close()
+os.system('chmod 755 BankEfficiency_createbank')
+a=os.system('./BankEfficiency_createbank')
+
+if a==0:
+	print '... done (your parameters seems correct). See BE_Bank.xml file.'
+else:
+	print '... failed (your parameters seems correct)'
+	quit
+
+print 'Generating the prototype xml file for merging condor job'
+command = path + executable_name + space + arguments +' --print-prototype 1>out 2>err'
 os.system(command)
+print 'done'
 
-print '2 ................................................................... xml  prototype created'
-print '  its name is BE_Proto.xml'
-print '3 Once the condor script is finished and the ascii file \'Trigger.dat \' with all the results'
-print 'available you can create the xml file if you wish. Use the  BEAscii2Xml file provided in the'
-print 'lalapps/src//findchirp/ package'
-
-
+print ' creating the condor script ... BankEfficiency_condor_submit_job created'
+print '------'
+print ' type ''condor_submit BankEfficiency_condor_submit_job'' to launch the job '
+print '------'
+print ' Once the condor scripts are finished, you\'ll get '+str(number_of_jobs)+' files. '
+print ' Merge them with ''cat out.* > Trigger.dat'' and type ''BEAscii2Xml'' which search for BE_Proto.xml and Trigger.dat files'
+print ''
