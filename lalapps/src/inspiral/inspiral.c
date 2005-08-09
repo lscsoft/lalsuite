@@ -2765,7 +2765,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --chisq-bins P               set number of chisq veto bins to P\n"\
 "  --snr-threshold RHO          set signal-to-noise threshold to RHO\n"\
 "  --chisq-threshold X          threshold on chi^2 < X * ( p + rho^2 * delta^2 )\n"\
-"  --cluster-method MTHD        max over chirp MTHD (tmplt|window|noClustering)\n"\
+"  --cluster-method MTHD        max over chirp MTHD (tmplt|window|none)\n"\
 "  --cluster-window SEC         set length of clustering time window if required\n"\
 "\n"\
 "  --enable-rsq-veto            enable the r^2 veto test\n"\
