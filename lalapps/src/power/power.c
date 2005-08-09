@@ -1235,7 +1235,7 @@ static void add_sim_injections(
 {
 	REAL4TimeSeries   *signal;
 	DetectorResponse   detector;
-	LALDetector       *tmpDetector=NULL;
+	LALDetector       *tmpDetector = NULL;
 	CoherentGW         waveform;
 	REAL4             *aData;
 	LALTimeInterval   epochCorrection;
@@ -1330,8 +1330,8 @@ static void add_sim_injections(
 	
 	simBurst = injections;
 	while ( simBurst ){
-	  REAL4TimeSeries    *plusseries;
-	  REAL4TimeSeries    *crossseries;
+	  REAL4TimeSeries    *plusseries = NULL;
+	  REAL4TimeSeries    *crossseries = NULL;
 	  
 	  /* set the burst params */
 	  burstParam.deltaT = series->deltaT;
@@ -1403,16 +1403,18 @@ static void add_sim_injections(
 	
 	  aData = waveform.a->data->data;
 
-	  /* copy the plus and cross data properly scaled for distance
+	  /* copy the plus and cross data properly scaled for distance.
+	   *
 	   * NOTE: The waveforms in the frames are always produced at
-	   * distance of 1000 Kpc. However the distance in the 
-	   * parameter file, BBHWaveGen.in, shu'd be 100 Kpc., since 
-	   * in the wave generation script the 
-	   * definition of pc is off by a factor of 10.
+	   * distance of 10000 Kpc. However the distance in the 
+	   * parameter file, BBHWaveGen.in, shu'd be 1000 Kpc., since 
+	   * in the wave generation script the definition of kpc 
+	   * is 1 kpc = 3.086e20 m . where as the right definition is
+	   * 1 kpc = 3.086e19 m.
 	   */
 	  for( i = 0; i < n; i++){
-	    *(aData++) = plusseries->data->data[i] * 1000/ simBurst->distance;
-	    *(aData++) = crossseries->data->data[i] * 1000/ simBurst->distance;
+	    *(aData++) = plusseries->data->data[i] * 10000/ simBurst->distance;
+	    *(aData++) = crossseries->data->data[i] * 10000/ simBurst->distance;
 	  }
 
 	  /* must set the epoch of signal since it's used by coherent GW */
