@@ -2722,7 +2722,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --enable-high-pass F         high pass data above F Hz using an IIR filter\n"\
 "  --high-pass-order O          set the order of the high pass filter to O\n"\
 "  --high-pass-attenuation A    set the attenuation of the high pass filter to A\n"\
-"  --spectrum-type TYPE         use PSD estimator TYPE (mean|median|gaussian)\n"\
+"  --spectrum-type TYPE         use PSD estimator TYPE\n"\
+"                                 (mean|median|gaussian|LIGO|AdvLIGO)\n"\
 "\n"\
 "  --segment-length N           set data segment length to N points\n"\
 "  --number-of-segments N       set number of data segments to N\n"\
@@ -2733,7 +2734,8 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "  --dynamic-range-exponent X   set dynamic range scaling to 2^X\n"\
 "\n"\
 "  --approximant APPROX         set approximant of the waveform to APPROX\n"\
-"                                 (TaylorF2|BCV|BCVSpin)\n"\
+"                                 (TaylorF2|BCV|BCVC|BCVSpin|TaylorT1|TaylorT2|\n"\
+"                                  TaylorT3|PadeT1|EOB|GeneratePPN)\n"\
 "  --chisq-bins P               set number of chisq veto bins to P\n"\
 "  --snr-threshold RHO          set signal-to-noise threshold to RHO\n"\
 "  --chisq-threshold X          threshold on chi^2 < X * ( p + rho^2 * delta^2 )\n"\
@@ -2758,6 +2760,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "\n"\
 "  --bank-simulation N          perform N injections to test the template bank\n"\
 "  --sim-approximant APX        set approximant of the injected waveform to APX\n"\
+"                                 (TaylorT1|TaylorT2|TaylorT3|PadeT1|EOB|GeneratePPN)\n"\
 "  --sim-minimum-mass M         set minimum mass of bank injected signal to M\n"\
 "  --sim-maximum-mass M         set maximum mass of bank injected signal to M\n"\
 "\n"\
