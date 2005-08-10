@@ -1,4 +1,4 @@
-/*----------------------------------------------------------------------- 
+s*----------------------------------------------------------------------- 
  * 
  * File Name: inspiral.c
  *
@@ -1565,10 +1565,8 @@ int main( int argc, char *argv[] )
   {
     fcFilterParams->filterOutputVetoParams = (FindChirpFilterOutputVetoParams *)
       LALCalloc( 1, sizeof(FindChirpFilterOutputVetoParams) );
-#if 0
     fcFilterParams->filterOutputVetoParams->rsqvetoWindow = rsqVetoWindow;
     fcFilterParams->filterOutputVetoParams->rsqvetoThresh = rsqVetoThresh;
-#endif
   }
   else
   {
