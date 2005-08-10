@@ -488,7 +488,7 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
           &(searchsumm.searchSummaryTable->out_start_time) ), &status );
 
-    if ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) )
+    if ( ! bankSim && ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) ) )
     {
       LAL_CALL( LALINT8toGPS( &status, 
             &(searchsumm.searchSummaryTable->out_start_time), 
@@ -501,7 +501,7 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
           &(searchsumm.searchSummaryTable->out_end_time) ), &status );
 
-    if ( trigEndTimeNS && (trigEndTimeNS < outTimeNS) )
+    if ( ! bankSim && ( trigEndTimeNS && (trigEndTimeNS < outTimeNS) ) )
     {
       LAL_CALL( LALINT8toGPS( &status, 
             &(searchsumm.searchSummaryTable->out_end_time), 
@@ -1294,11 +1294,10 @@ int main( int argc, char *argv[] )
         &(searchsumm.searchSummaryTable->out_start_time), &tsLength ), 
       &status );
 
-
   LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
         &(searchsumm.searchSummaryTable->out_start_time) ), &status );
 
-  if ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) )
+  if ( ! bankSim && ( trigStartTimeNS && (trigStartTimeNS > outTimeNS) ) )
   {
     /* override with trigger start time */
     LAL_CALL( LALINT8toGPS( &status,
@@ -1313,11 +1312,10 @@ int main( int argc, char *argv[] )
         &(searchsumm.searchSummaryTable->out_end_time), &tsLength ), 
       &status );
 
-
   LAL_CALL( LALGPStoINT8( &status, &outTimeNS,
         &(searchsumm.searchSummaryTable->out_end_time) ), &status );
 
-  if ( trigEndTimeNS && (trigEndTimeNS < outTimeNS) )
+  if ( ! bankSim && ( trigEndTimeNS && (trigEndTimeNS < outTimeNS) ) )
   {
     /* override with trigger end time */
     LAL_CALL( LALINT8toGPS( &status, 
@@ -1979,8 +1977,9 @@ int main( int argc, char *argv[] )
           ( (REAL8) numPoints * 1e9 * fcSegVec->data[i].deltaT );
 
         /* skip segment if it is not contained in the trig start or end times */
-        if ( (trigStartTimeNS && (trigStartTimeNS > fcSegEndTimeNS)) || 
-            (trigEndTimeNS && (trigEndTimeNS < fcSegStartTimeNS)) )
+        if ( ! bankSim && 
+            ( (trigStartTimeNS && (trigStartTimeNS > fcSegEndTimeNS)) || 
+            (trigEndTimeNS && (trigEndTimeNS < fcSegStartTimeNS)) ) )
         { 
           if ( vrbflg ) fprintf( stdout, 
               "skipping segment %d/%d [%lld-%lld] (outside trig time)\n", 
@@ -2574,7 +2573,7 @@ int main( int argc, char *argv[] )
 
     /* discard any triggers outside the trig start/end time window */
     event = savedEvents.snglInspiralTable;
-    if ( trigStartTimeNS || trigEndTimeNS )
+    if ( ! bankSim && ( trigStartTimeNS || trigEndTimeNS ) )
     {
       if ( vrbflg ) fprintf( stdout, 
           "  discarding triggers outside trig start/end time... " );
