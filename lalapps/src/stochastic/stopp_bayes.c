@@ -135,8 +135,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 omega_numerator;
   REAL8 omega_denominator;
   REAL8 sigma_denominator;
-  REAL8 omega_hat;
-  REAL8 sigma_omega_hat;
+  REAL8 omega_hat[100];
+  REAL8 sigma_omega_hat[100];
 
   /* program option variables */
   CHAR *outputFileName = NULL;
@@ -152,6 +152,10 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* text output file */
   FILE *out;
   FILE *pdf_out;
+  FILE *omega_out;
+  FILE *sigma_out;
+  CHAR omega_out_filename[FILENAME_MAX];
+  CHAR sigma_out_filename[FILENAME_MAX];
 
   /* parse command line arguments */
   while (1)
@@ -371,19 +375,43 @@ INT4 main(INT4 argc, CHAR *argv[])
         }
 
         /* construct \hat{\Omega}_R */
-        omega_hat = omega_numerator / (stochHead->duration.gpsSeconds * \
+        omega_hat[j] = omega_numerator / (stochHead->duration.gpsSeconds * \
             omega_denominator);
 
         /* construct sigma^2_{\hat{\Omega}_R} */
-        sigma_omega_hat = (1 / (stochHead->duration.gpsSeconds * \
-              stochHead->duration.gpsSeconds) * sigma_denominator);
+        sigma_omega_hat[j] = (1 / (stochHead->duration.gpsSeconds * \
+              stochHead->duration.gpsSeconds) / sigma_denominator);
 
         /* construct pdf */
-        pdf_powerlaw[i][j] = exp(-0.5 * ((omega_r - omega_hat) / \
-              sigma_omega_hat) * ((omega_r - omega_hat) / sigma_omega_hat));
+        pdf_powerlaw[i][j] = exp(-0.5 * ((omega_r - omega_hat[j]) / \
+              sigma_omega_hat[j]) * ((omega_r - omega_hat[j]) / \
+                sigma_omega_hat[j]));
       }
     }
   }
+
+  /* open omega and sigma output files */
+  if ((omega_out = fopen("omega.dat", "w")) == NULL)
+  {
+    fprintf(stderr, "Can't open file for omega output...\n");
+    exit(1);
+  }
+  if ((sigma_out = fopen("sigma.dat", "w")) == NULL)
+  {
+    fprintf(stderr, "Can't open file for sigma output...\n");
+    exit(1);
+  }
+
+  /* save out omega and sigma */
+  for (j = 0; j < 100; j++)
+  {
+    fprintf(omega_out, "%d %e\n", j, omega_hat[j]);
+    fprintf(sigma_out, "%d %e\n", j, sigma_omega_hat[j]);
+  }
+
+  /* close files */
+  fclose(omega_out);
+  fclose(sigma_out);
 
   /* save out pdf */
   if ((pdf_out = fopen("pdf.dat", "w")) == NULL)
