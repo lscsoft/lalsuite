@@ -1,5 +1,5 @@
 /* ***************************************************************************
-// File:        coinExt.c
+// File:        coinext.c
 // Created:     2004/10/22
 // Rev:         2005/07/25 16:13
 // Version:     1.0.0
@@ -123,7 +123,7 @@ int numberNewCGN=0;
 ExternalList extNewList[2000];
 
 /* directories and filenames */
-char* nameLogfile          = "coinExt.log";
+char* nameLogfile          = "coinext.log";
 char* nameSaveInspiralList = "saveInspiral.cel";
 char* nameInputList        = "triggers.xml";  
 char* nameInputList2       = "triggersIsabel.list";  
@@ -229,7 +229,8 @@ int main(int argc, char* argv[])
 
   /* check if to restart all */
   if (flagRestart) {
-    printOut("--- RESTARTING program. Deleting all data files...");
+    printf(message,"--- RESTARTING program. Deleting all data files...");
+    printOut(message);
     ce_restart();
   }
 
@@ -261,10 +262,9 @@ int main(int argc, char* argv[])
     printf("--- starting analysis dag for every GRB\n");
   }
   if (flagTest) {
-    printOut("--- TEST mode activated!");
+    printf("--- TEST mode activated!");
     waitingTime=1;
   }
-
   printf("\n");
 
 
@@ -442,17 +442,19 @@ int checkCGNtrigger2( void )
   date=(LALDate*)LALCalloc(1, sizeof(LALDate));
   gps=(LIGOTimeGPS*)LALCalloc(1, sizeof(LIGOTimeGPS));
 
-  if (flagTest) {
-
+  /* check if to get some trigger file or not */
+  if (!flagTriggerFile) {
+    
     /* copy test file if it is a test */
-    system( "cp Test/triggersIsabel.list ." );
-
-  } else {
-
-    /* downloading file */
-    sprintf(command, "wget %s -O triggersIsabel.list > download2.log 2>&1",
-	    webPage2);
-    system(command);
+    if (flagTest) {
+      system( "cp Test/triggersIsabel.list ." );
+      
+      /* downloading file */
+    } else {
+      sprintf(command, "wget %s -O triggersIsabel.list > download2.log 2>&1",
+	      webPage2);
+      system(command);
+    }
   }
 
   /* delete something, (only neccessary for C code) */
@@ -878,7 +880,7 @@ int createInspiralTable( int lifo )
 	sprintf( filename,  "../Trigger/%s/%s", getIFOname(lifo), inspiralList[lifo][insp].filename);
       } else{
 	/* use directory for online created triggers */
-	sprintf( filename, " %s%s/$s",
+	sprintf( filename, " %s%s/%s",
 		 dirInspiral, getIFOname(lifo), inspiralList[lifo][insp].filename);
       }
       numTrig=LALSnglInspiralTableFromLIGOLw(&head, filename, 1,100000);  
@@ -1005,8 +1007,6 @@ int writeXML( int nifo, int cgnIndex )
   char filename[256];
   char filenameOut[256];
   MetadataTable outputTable; 
-  ExtTriggerTable* exTrig;
-  ExtTriggerTable* table;
   SnglInspiralTable*    thisInsp = NULL;
  
   /* create filename for output file */
@@ -1087,7 +1087,7 @@ void startAnalysisJob(ExternalList* eList, int nifo)
   FILE* fileSegment;
   FILE* fileSED; 
   struct stat file;
-  double d, sumTime=0, maxSegment=0;
+  double d=0, sumTime=0, maxSegment=0;
   char dummy[256];
 
   if (nifo>0) {
@@ -1148,7 +1148,7 @@ void startAnalysisJob(ExternalList* eList, int nifo)
   /* printout */
   printf("--- Sum of time in the segment: %f seconds.\n",sumTime);
 
-  if (d>=2048) {
+  if (maxSegment>=2048) {
 
     /* create name of new directory for job execution */
     sprintf(dirJob,"../OnlineAnalysis/Jobs/%s%s-%9ld", ifoName[nifo], namePeriod[indexPeriod], eList->gps);
@@ -1313,16 +1313,16 @@ int ce_startup( void )
   struct tm * timeinfo;
 
   /* checking/creating lock-file */
-  out=fopen( ".coinExt.lock" ,"r");
+  out=fopen( ".coinext.lock" ,"r");
   if (out) {
     if (!flagTest) {
       printf("ERROR: Program already running!\n");
       exit(0);
     }
   } else {
-    out=fopen( ".coinExt.lock", "w" );
+    out=fopen( ".coinext.lock", "w" );
     fprintf( out, "kill -2 %d\n", getpid());
-    fprintf( out, "rm -f .coinExt.lock\n" );
+    fprintf( out, "rm -f .coinext.lock\n" );
     fclose(out);
   }
 
@@ -1334,7 +1334,7 @@ int ce_startup( void )
   timeinfo = localtime ( &rawtime );
 
   /* create startup message */
-  sprintf(message, "-------------------------------------------------\n--- Starting coinExt at %s",
+  sprintf(message, "-------------------------------------------------\n--- Starting coinext at %s",
 	   asctime (timeinfo));
   printOut(message);
 
@@ -1376,7 +1376,7 @@ int ce_shutdown( void )
   timeinfo = localtime ( &rawtime );
 
   /* creating shutdown message */
-  sprintf(message, "--- Stopping coinExt at %s "
+  sprintf(message, "--- Stopping coinext at %s "
 	  "\n-------------------------------------------------",
 	  asctime (timeinfo));
   printOut(message);  
@@ -1385,7 +1385,7 @@ int ce_shutdown( void )
   fclose(logfile);
 
   /* deleting lock file */
-  sprintf(message,"rm -f .coinExt.lock");
+  sprintf(message,"rm -f .coinext.lock");
   system( message );
   
   /* ... and exit program (good style?) */
@@ -1458,6 +1458,11 @@ sigint_handler:
 *******************************/
 void sigint_handler(int sig)
 {
+  /* the next two lines just to avoid warning .... */
+  int dummy;
+  dummy=sig;  
+
+  /* shutdown */
   ce_shutdown();
 }
 
@@ -1612,7 +1617,7 @@ int arg_parse_check( int argc, char *argv[])
       break;
       
     case 'C': {
-      /* get name for data to put inh */
+      /* read IFO site */
       optarg_len = strlen( optarg ) + 1;
       ifo = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
       memcpy( ifo, optarg, optarg_len );	
@@ -1621,7 +1626,7 @@ int arg_parse_check( int argc, char *argv[])
     }
       
     case 'c': {
-      /* get name for data to put inh */
+      /* read triger file */
       optarg_len = strlen( optarg ) + 1;
       nameInputList2 = (CHAR *) calloc( optarg_len, sizeof(CHAR) );
       memcpy( nameInputList2, optarg, optarg_len );	
