@@ -2770,7 +2770,7 @@ LALSnprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 "\n"\
 "  --enable-rsq-veto            enable the r^2 veto test\n"\
 "  --disable-rsq-veto           disable the r^2 veto test\n"\
-"  --rsq-veto-window MSEC       set the r^2 veto window to MSEC\n"\
+"  --rsq-veto-window SEC        set the r^2 veto window to SEC\n"\
 "  --rsq-veto-threshold RSQ     set r^2 veto threshold to RSQ\n"\
 "\n"\
 "  --maximization-interval NSEC set length of maximization interval\n"\
