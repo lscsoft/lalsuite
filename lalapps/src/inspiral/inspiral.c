@@ -186,8 +186,8 @@ INT4 bcvConstraint      = 0;            /* constraint BCV filter        */
 
 /* rsq veto params */
 INT4 enableRsqVeto      = -1;           /* enable the r^2 veto          */
-INT4 rsqVetoWindow      = -1;           /* r^2 veto time window         */ 
-INT4 rsqVetoThresh      = -1;           /* r^2 veto threshold           */ 
+REAL4 rsqVetoWindow     = -1;           /* r^2 veto time window         */ 
+REAL4 rsqVetoThresh     = -1;           /* r^2 veto threshold           */ 
 
 /* generic simulation parameters */
 enum { unset, urandom, user } randSeedType = unset;    /* sim seed type */
@@ -3827,29 +3827,29 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         break;
 
       case '3': 
-        rsqVetoWindow = (INT4) atol( optarg ); 
+        rsqVetoWindow = atol( optarg ); 
         if ( rsqVetoWindow < 0 ) 
         { 
           fprintf( stderr, "invalid argument to --%s:\n" 
               "r^2 veto time window is less than or equal to 0 msec: " 
-              "(%d msecs specified)\n", 
+              "(%f msecs specified)\n", 
               long_options[option_index].name, rsqVetoWindow ); 
           exit( 1 ); 
         } 
-        ADD_PROCESS_PARAM( "int", "%s", optarg ); 
+        ADD_PROCESS_PARAM( "float", "%s", optarg ); 
         break; 
 
       case '4': 
-        rsqVetoThresh = (INT4) atof( optarg ); 
+        rsqVetoThresh = atof( optarg ); 
         if ( rsqVetoThresh < 0 ) 
         { 
           fprintf( stderr, "invalid argument to --%s:\n" 
               " r^2 veto threshold must be positive: " 
-              "(%d specified)\n",  
+              "(%f specified)\n",  
               long_options[option_index].name, rsqVetoThresh ); 
           exit( 1 ); 
         } 
-        ADD_PROCESS_PARAM( "int", "%s", optarg ); 
+        ADD_PROCESS_PARAM( "float", "%s", optarg ); 
         break; 
 
       case '?':
