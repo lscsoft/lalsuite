@@ -128,6 +128,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 max_alpha = 1;
   REAL8 omega;
   REAL8 alpha;
+
+  /* powerlaw pdf */
   REAL8 pdf_powerlaw[100][100];
   REAL8 freq;
   REAL8 freq_ref = 100;
