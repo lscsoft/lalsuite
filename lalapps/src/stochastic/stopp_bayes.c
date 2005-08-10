@@ -363,7 +363,7 @@ INT4 main(INT4 argc, CHAR *argv[])
           omega_numerator += (thisStoch->cc_stat / (thisStoch->cc_sigma * \
                 thisStoch->cc_sigma)) * pow((freq/freq_ref), alpha);
           omega_denominator += (1 / (thisStoch->cc_sigma * \
-                thisStoch->cc_sigma)) * pow((freq/freq_ref), alpha);
+                thisStoch->cc_sigma)) * pow((freq/freq_ref), 2 * alpha);
 
           /* sigma^2_{\hat{\Omega}_R} */
           sigma_denominator += (1 / (thisStoch->cc_sigma * \
