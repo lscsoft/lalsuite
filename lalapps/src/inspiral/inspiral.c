@@ -2385,7 +2385,10 @@ int main( int argc, char *argv[] )
   {
     bankCurrent = bankHead;
     bankHead = bankHead->next;
-    LALFree( bankCurrent->event_id );
+    if ( bankCurrent->event_id )
+    {
+      LALFree( bankCurrent->event_id );
+    }
     LALFree( bankCurrent );
     bankCurrent = NULL;
   }
