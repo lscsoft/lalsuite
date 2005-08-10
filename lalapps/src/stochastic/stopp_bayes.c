@@ -124,10 +124,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   REAL8 pdf[100];
   REAL8 min_omega;
   REAL8 max_omega;
-  REAL8 omega_i;
   REAL8 min_alpha = -1;
   REAL8 max_alpha = 1;
-  REAL8 omega_r;
+  REAL8 omega;
   REAL8 alpha;
   REAL8 pdf_powerlaw[100][100];
   REAL8 freq;
@@ -154,8 +153,6 @@ INT4 main(INT4 argc, CHAR *argv[])
   FILE *pdf_out;
   FILE *omega_out;
   FILE *sigma_out;
-  CHAR omega_out_filename[FILENAME_MAX];
-  CHAR sigma_out_filename[FILENAME_MAX];
 
   /* parse command line arguments */
   while (1)
@@ -329,8 +326,8 @@ INT4 main(INT4 argc, CHAR *argv[])
     max_omega = yOpt + (3 * sigmaOpt);
     for (i = 0; i < 100; i++)
     {
-      omega_i = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
-      exponent = ((omega_i - yOpt) / sigmaOpt) * ((omega_i - yOpt) / sigmaOpt);
+      omega = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
+      exponent = ((omega - yOpt) / sigmaOpt) * ((omega - yOpt) / sigmaOpt);
       pdf[i] = exp(-0.5 * exponent);
     }
   }
@@ -348,7 +345,7 @@ INT4 main(INT4 argc, CHAR *argv[])
       /* loop for \alpha */
       for (j = 0; j < 100; j++)
       {
-        omega_r = min_omega + ((i/99.) * (max_omega - min_omega));
+        omega = min_omega + ((i/99.) * (max_omega - min_omega));
         alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
 
         /* initialise numerator */
@@ -383,8 +380,8 @@ INT4 main(INT4 argc, CHAR *argv[])
               stochHead->duration.gpsSeconds) / sigma_denominator);
 
         /* construct pdf */
-        pdf_powerlaw[i][j] = exp(-0.5 * ((omega_r - omega_hat[j]) / \
-              sigma_omega_hat[j]) * ((omega_r - omega_hat[j]) / \
+        pdf_powerlaw[i][j] = exp(-0.5 * ((omega - omega_hat[j]) / \
+              sigma_omega_hat[j]) * ((omega - omega_hat[j]) / \
                 sigma_omega_hat[j]));
       }
     }
@@ -425,9 +422,9 @@ INT4 main(INT4 argc, CHAR *argv[])
     {
       for (j = 0; j < 100; j++)
       {
-        omega_r = min_omega + ((i/99.) * (max_omega - min_omega));
+        omega = min_omega + ((i/99.) * (max_omega - min_omega));
         alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
-        fprintf(pdf_out, "%e %e %e\n", omega_r, alpha, pdf_powerlaw[i][j]);
+        fprintf(pdf_out, "%e %e %e\n", omega, alpha, pdf_powerlaw[i][j]);
       }
     }
   }
@@ -435,8 +432,8 @@ INT4 main(INT4 argc, CHAR *argv[])
   {
     for (i = 0; i < 100; i++)
     {
-      omega_i = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
-      fprintf(pdf_out, "%e %e\n", omega_i, pdf[i]);
+      omega = min_omega + (((i - 1)/99.) * (max_omega - min_omega));
+      fprintf(pdf_out, "%e %e\n", omega, pdf[i]);
     }
   }
   fclose(pdf_out);
