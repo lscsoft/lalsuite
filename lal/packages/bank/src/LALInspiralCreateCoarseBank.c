@@ -993,6 +993,11 @@ LALInspiralCreatePNCoarseBankHexa(
       	if (cells[i].position == In) {
           tempPars->t0  = cells[i].t0;
           tempPars->t3  = cells[i].t3;
+          tempPars->massChoise = t03;
+          tempPars->fLower = coarseIn.fLower;
+
+          LALInspiralParameterCalc( status->statusPtr, tempPars );
+          CHECKSTATUSPTR( status );
 	    
           (*list)[*nlist].ID            = *nlist; 
           (*list)[*nlist].params        = *tempPars; 
