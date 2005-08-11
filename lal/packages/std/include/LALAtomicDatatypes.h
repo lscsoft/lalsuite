@@ -160,6 +160,21 @@ typedef unsigned char BOOLEAN;
 #include <lal/LALRCSID.h>
 NRCSID( LALATOMICDATATYPESH, "$Id$" );
 
+/* If INT8 etc. are already defined, undefine them */
+#undef CHAR
+#undef UCHAR
+#undef INT2
+#undef INT4
+#undef INT8
+#undef UINT2
+#undef UINT4
+#undef UINT8
+#undef REAL4
+#undef REAL8
+#undef COMPLEX8
+#undef COMPLEX16
+
+
 /* Integer types */
 
 /* could do this... but want this file to be independent of stdint.h */
