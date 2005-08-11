@@ -1159,8 +1159,8 @@ LALCoherentInspiralEstimateDistance (
   ATTATCHSTATUSPTR( status );
 
   /* Check the validity of the input params */
-  /* Must have 3 sites to estimate psi and epsilon */
-  ASSERT( segNorm[0] && segNorm[1] && segNorm[2], status,
+  
+  ASSERT( segNorm[0] && segNorm[1], status,
 	  COHERENTINSPIRALH_ENUMZ, COHERENTINSPIRALH_MSGENUMZ );
   ASSERT( coherentSNR > 0, status, 
       COHERENTINSPIRALH_ESEGZ, COHERENTINSPIRALH_MSGESEGZ );
@@ -1455,8 +1455,8 @@ LALCoherentInspiralFilterSegment (
 		    thisEvent->mass1 = input->tmplt->mass1;
 		    thisEvent->mass2 = input->tmplt->mass2;
 		    thisEvent->mchirp = input->tmplt->totalMass * pow( input->tmplt->eta, 3.0/5.0 );
-		    thisEvent->eta = input->tmplt->eta;
-		    LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
+		    thisEvent->eta = input->tmplt->eta;		       
+                    LALCoherentInspiralEstimateDistance( status->statusPtr, params->segNorm, params->templateNorm, deltaT, segmentLength, cohSNR, &distanceEstimate );
 		    thisEvent->eff_distance = distanceEstimate;
 
 		    tempTime = 0.0;
