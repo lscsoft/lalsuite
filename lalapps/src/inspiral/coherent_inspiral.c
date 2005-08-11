@@ -775,7 +775,7 @@ int main( int argc, char *argv[] )
 		    {
 		      strcpy(namearray[3],GEOfilename);
 		      strcpy(namearray2[3],"GeoBeamCoeff.dat");
-		      LALSnprintf(namearray3[3], LALNameLength*sizeof(CHAR), "G1:LSC-AS_Q_CData_%d", geoChanNum );
+		      LALSnprintf(namearray3[3], LALNameLength*sizeof(CHAR), "G1:DER_DATA_H_CData_%d", geoChanNum );
 		      LALSnprintf( namearray4[3], LALNameLength*sizeof(CHAR), "_SegNorm_%d", geoChanNum );
 		    }
 
@@ -874,24 +874,23 @@ int main( int argc, char *argv[] )
 		      numChannels = p;
 		      LAL_CALL( LALFrRewind( &status, frStream ), &status );
 
-		      /* We always need segNorm for at lease dist estimates */
-		      if ( numDetectors > 1 )
-			{
-			  for( w=0; w<chanNumArray[j]; w++)
-			    {
-			      LAL_CALL( LALFrNext( &status,frStream ), &status );
-			    }
-			  frChan.name = namearray4[j];
-			  segNormVector = (REAL4FrequencySeries *) 
-			      LALCalloc( 1, sizeof(REAL4FrequencySeries) );
-			  LAL_CALL( LALFrGetREAL4FrequencySeries( &status, 
-                              segNormVector, &frChan, frStream), &status);
-			  cohInspFilterParams->segNorm[l] = sqrt(segNormVector->data->data[segNormVector->data->length - 1]);
-			  LAL_CALL( LALDestroyVector( &status, &(segNormVector->data) ), &status );
-			  LALFree( segNormVector );
-			  segNormVector = NULL;
-			  LAL_CALL( LALFrRewind( &status, frStream ), &status );
-			}
+		      /* get segnorm */
+			
+			for( w=0; w<chanNumArray[j]; w++)
+			  {
+			    LAL_CALL( LALFrNext( &status,frStream ), &status );
+			  }
+			frChan.name = namearray4[j];
+			segNormVector = (REAL4FrequencySeries *) 
+			    LALCalloc( 1, sizeof(REAL4FrequencySeries) );
+			LAL_CALL( LALFrGetREAL4FrequencySeries( &status, 
+                            segNormVector, &frChan, frStream), &status);
+			cohInspFilterParams->segNorm[l] = sqrt(segNormVector->data->data[segNormVector->data->length - 1]);
+			LAL_CALL( LALDestroyVector( &status, &(segNormVector->data) ), &status );
+			LALFree( segNormVector );
+			segNormVector = NULL;
+			LAL_CALL( LALFrRewind( &status, frStream ), &status );
+			
 
 		      /* Advance the stream to the appropriate frame */
 		      for( w=0; w<chanNumArray[j]+numChannels/2; w++)
@@ -913,24 +912,21 @@ int main( int argc, char *argv[] )
               /* that have the same mass pair, templateNorm is the same for */
               /* every detector and needs to be computed only once.         */
 
-	      if ( numDetectors > 1 )
-		{
-		  REAL4 cannonDist = 1.0; /* Mpc */
-		  REAL4 m  = cohInspFilterInput->tmplt->totalMass;
-		  REAL4 mu = cohInspFilterInput->tmplt->mu;
-		  REAL4 deltaT = cohInspFilterParams->deltaT;
-		  REAL4 distNorm = 2.0 * 
-                       LAL_MRSUN_SI / (cannonDist * 1e6 * LAL_PC_SI);
-                  REAL4 templateNorm = sqrt( (5.0*mu) / 96.0 ) *
-                       pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
-                       pow( LAL_MTSUN_SI / deltaT, -1.0/6.0 );
-		  distNorm *= dynRange;
-		  templateNorm *= templateNorm;
-		  templateNorm *= distNorm * distNorm;
-		  cohInspFilterParams->templateNorm = templateNorm;
-		  cohInspFilterParams->segmentLength = numPointsSeg;
-		}
-
+		REAL4 cannonDist = 1.0; /* Mpc */
+		REAL4 m  = cohInspFilterInput->tmplt->totalMass;
+		REAL4 mu = cohInspFilterInput->tmplt->mu;
+		REAL4 deltaT = cohInspFilterParams->deltaT;
+		REAL4 distNorm = 2.0 * 
+                     LAL_MRSUN_SI / (cannonDist * 1e6 * LAL_PC_SI);
+                REAL4 templateNorm = sqrt( (5.0*mu) / 96.0 ) *
+                     pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
+                     pow( LAL_MTSUN_SI / deltaT, -1.0/6.0 );
+		distNorm *= dynRange;
+		templateNorm *= templateNorm;
+		templateNorm *= distNorm * distNorm;
+		cohInspFilterParams->templateNorm = templateNorm;
+		cohInspFilterParams->segmentLength = numPointsSeg;
+		
 	      if (verbose) fprintf(stdout,"filtering the data..\n");
 	      if ( maximizeOverChirp && verbose )
 		{
