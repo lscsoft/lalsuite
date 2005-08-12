@@ -9,37 +9,45 @@
 /*                         BIRMINGHAM UNIVERISTY -  2005                            */
 /************************************************************************************/
 
-#include "ComputeUL_v1.h"
+#include "ComputeUL_v2.h"
 #include "GenerateBinaryMesh_v1.h"
 #include "FindCoincidence_v1.h" 
 
-
+static LALStatus status;
 /* clargs */
 char outfile[256],freqmeshfile[256],h0file[256],maxfile[256],coresultsdir[256],injectiondir[256];
 REAL8 conf;
+INT4 nsplit;
 
 /* needs to be globally visible */
-REAL8 *tempULdataconf;
+REAL8 *tempULdataconf_lower;
+REAL8 *tempULdataconf_higher;
 
 int ReadCommandLine(int argc,char *argv[]);
 int ReadFreqMeshFile(char *,FreqMeshes **);
 int Readh0File(char *,INT4 *,REAL8 **);
 int FindLoudest(char *,FreqMeshes *,char *,Loudest **);
-int ComputeConfidence(char *,FreqMesh,REAL8,REAL8,REAL8 *,REAL8 *);
+int ComputeConfidence(REAL8Vector *,REAL8,REAL8 *);
 int ExtrapolateUL(ULData,REAL8,REAL8 **);
-int OutputConfidence(char *,ULData,REAL8,REAL8 *);
-int compare(const void *, const void *);
+int compare_lower(const void *, const void *);
+int compare_higher(const void *, const void *);
+int ReadInjections(char *,FreqMesh,REAL8,REAL8Vector **);
+int Interpolateh0(SingleSplitULData *,INT4,REAL8 *,REAL8);
+int CalculateStats(SingleULData *,INT4);
+int OutputConfidence(char *,ULData,REAL8); 
 
 int main(int argc, char **argv){
   
-  INT4 i,j;
+  INT4 i,j,k=0,q;
   FreqMeshes *freqmeshdata;
   INT4 Nh0;
+  INT4 start;
   REAL8 *h0data;
   Loudest *loudest;
-  REAL8 *h0conf=NULL;
   ULData ULdata;
-  REAL8 temp_conf,temp_conf_err;
+  REAL8Vector *results=NULL;
+  REAL8Vector *tempresults=NULL;
+  REAL8 confsum;
 
    /* read the command line arguments */
   if (ReadCommandLine(argc,argv)) return 1;
@@ -56,14 +64,22 @@ int main(int argc, char **argv){
   /* allocate memory to the UL data structure */
   ULdata.UL=(SingleULData *)LALMalloc(freqmeshdata->Nheaders*sizeof(SingleULData));
   ULdata.N_h0=Nh0;
+  ULdata.N_split=nsplit;
   ULdata.N_UL=freqmeshdata->Nheaders;
   for (i=0;i<freqmeshdata->Nheaders;i++) {
+    /* allocate memory for each subgroup of injections */
+    ULdata.UL[i].SSULdata=(SingleSplitULData *)LALMalloc(ULdata.N_split*sizeof(SingleSplitULData));
+    /* allocate memory for each final confidence */
+    ULdata.UL[i].final_conf=(REAL8 *)LALMalloc(Nh0*sizeof(REAL8));
+    ULdata.UL[i].final_conf_err=(REAL8 *)LALMalloc(Nh0*sizeof(REAL8));
     ULdata.UL[i].h0=(REAL8 *)LALMalloc(Nh0*sizeof(REAL8));
-    ULdata.UL[i].conf=(REAL8 *)LALMalloc(Nh0*sizeof(REAL8));
-    ULdata.UL[i].conf_err=(REAL8 *)LALMalloc(Nh0*sizeof(REAL8));
+    for (j=0;j<ULdata.N_split;j++) {
+      /* allocate memory for each value of conf */
+      ULdata.UL[i].SSULdata[j].conf=(REAL8 *)LALMalloc(Nh0*sizeof(REAL8));
+    }
   }
-  if (Nh0>3) h0conf=(REAL8 *)LALMalloc(Nh0*sizeof(REAL8));
-
+  printf("*** allocated memory for the new UL structure\n");
+ 
   /* loop over each upper-limit band */
   for (i=0;i<freqmeshdata->Nheaders;i++) {
     
@@ -73,164 +89,332 @@ int main(int argc, char **argv){
     ULdata.UL[i].p_loudestsig=loudest[i].p_sig;
     ULdata.UL[i].s_loudestsig=loudest[i].s_sig;
     ULdata.UL[i].co_loudestsig=loudest[i].co_sig;
+    confsum=0.0;
 
-    /* loop over the h0 values */
+    /* loop over the chunks that we have split the dataset into */
     for (j=0;j<Nh0;j++) {
       
+      /* read in injections results into memory */
+      if (ReadInjections(injectiondir,freqmeshdata->freqmesh[i],h0data[j],&results)) return 4;
+      /*printf("*** read injections\n");*/
+
+      /* calculate the value of N_per_split */
+      ULdata.UL[i].N_per_split=floor(results->length/(REAL8)ULdata.N_split);
+      /* printf("N_per_slit is %d\n",ULdata.UL[i].N_per_split);*/
+
       /* fill in the UL data */
       ULdata.UL[i].h0[j]=h0data[j];
 
-      /* find confidence */
-      if (ComputeConfidence(injectiondir,freqmeshdata->freqmesh[i],ULdata.UL[i].co_loudestsig,h0data[j],&temp_conf,&temp_conf_err)) return 5;
-      ULdata.UL[i].conf[j]=temp_conf;
-      ULdata.UL[i].conf_err[j]=temp_conf_err;
+      /* loop over the h0 values */
+      for (k=0;k<ULdata.N_split;k++) {
+   
+	/* extract the required chunk from the results */
+	start=k*ULdata.UL[i].N_per_split;
+	LALDCreateVector(&status,&tempresults,ULdata.UL[i].N_per_split);
+	for (q=0;q<ULdata.UL[i].N_per_split;q++) {
+	  tempresults->data[q]=results->data[q+start];
+	}
+	
+	/* find confidence */
+	if (ComputeConfidence(tempresults,ULdata.UL[i].co_loudestsig,&ULdata.UL[i].SSULdata[k].conf[j])) return 5;
+	/* free vector */
+	LALDDestroyVector(&status,&tempresults);
+	
+      } /* end of loop over N_split */
 
+    } /* end loop over h0 */
+
+  } /* end loop over frequency bands */
+
+  /* loop over frequency again */
+  for (i=0;i<ULdata.N_UL;i++) {
+    
+    /* initialise the confidence results */
+    for (k=0;k<Nh0;k++) {
+      ULdata.UL[i].final_conf[k]=0.0;
+      ULdata.UL[i].final_conf_err[k]=0.0;
     }
 
+    /* loop over N_split */
+    for (j=0;j<ULdata.N_split;j++) {
+
+      /* compute interpolated best h0 value for confidence */
+      if (Interpolateh0(&ULdata.UL[i].SSULdata[j],Nh0,ULdata.UL[i].h0,conf)) return 8;
+      /* printf("interpolated result = %e\n",ULdata.UL[i].SSULdata[j].est_h0); */
+
+      /* loop over h0 values */
+      for (k=0;k<Nh0;k++) {
+	
+	/* compute total confidences */
+	ULdata.UL[i].final_conf[k]+=ULdata.UL[i].SSULdata[j].conf[k]/ULdata.N_split;
+	ULdata.UL[i].final_conf_err[k]=1.0/sqrt(ULdata.N_split*ULdata.UL[i].N_per_split);
+	/*printf("final conf = %f +/- %f\n",ULdata.UL[i].SSULdata[j].final_conf,ULdata.UL[i].SSULdata[j].final_conf_err);*/
+
+      }
+
+    } /* end loop over N_split */
+
+    /* calculate the average interpolated result + errors */
+    if (CalculateStats(&ULdata.UL[i],ULdata.N_split)) return 9;
+
+    
+  } /* end loop over frequency bands */
+
+  /* output the results */
+  if (OutputConfidence(outfile,ULdata,conf)) return 10;
+
+  /* free the memory */
+  for (i=0;i<ULdata.N_UL;i++) {
+    for(j=0;j<ULdata.N_split;j++) LALFree(ULdata.UL[i].SSULdata[j].conf);
+    LALFree(ULdata.UL[i].SSULdata);
+    LALFree(ULdata.UL[i].final_conf);
+    LALFree(ULdata.UL[i].final_conf_err);
+    LALFree(ULdata.UL[i].h0);
   }
-
-  /* extrapolate the requested confidence from the descrete values */
-  if (h0conf!=NULL) {
-
-    if (ExtrapolateUL(ULdata,conf,&h0conf)) return 6;
-
-  }
-
-
-    /* output UL results to file */
-  if (OutputConfidence(outfile,ULdata,conf,h0conf)) return 7;
-
-  /* free all memory */
-  
+  LALFree(ULdata.UL);
 
   return 0;
   
 }
 
-/******************************************************************************/
-
-int ExtrapolateUL(ULData ULdata,REAL8 confidence, REAL8 **h0conf)
+/*********************************************************************************************/
+int OutputConfidence(char *outputfile,ULData ULdata,REAL8 confidence) 
 {
 
-  /* this function finds the three closest points in confidence to the requested */
-  /* confidence and fits a quadratic to the points to estimate the location of */
-  /* the requested confidence */
+  /* this function outputs the final upperlimit results to a single file */
 
-  INT4 i,j,q;
-  REAL8 c1,c2,c3,h1,h2,h3,r,s,t;
-  INT4 *indexes;
+  FILE *fp;
+  INT4 i,j;
+  char outputfilename[256];
 
-  /* allocate space for diff */
-  tempULdataconf=(REAL8 *)LALMalloc(ULdata.N_h0*sizeof(REAL8));
-
-  /* create an array of indexes */
-  indexes=(INT4 *)LALMalloc(sizeof(INT4)*ULdata.N_h0);
-  
-
-  /* loop over the frequency bands */
+  /* output a series of files for plotting */
   for (i=0;i<ULdata.N_UL;i++) {
     
-    /* first find the three closest points to the requested confidence */
-    for (j=0;j<ULdata.N_h0;j++) {
-      
-      tempULdataconf[j]=fabs(confidence-ULdata.UL[i].conf[j]);
+    sprintf(outputfilename,"%s_%.3f-%.3f.data",outputfile,ULdata.UL[i].f_min,ULdata.UL[i].f_max);
+    fp=fopen(outputfilename,"w");
+    if (fp==NULL) {
+      printf("ERROR : cannot open file %s\n",outputfilename);
+      exit(1);
+    }
+    printf("*** outputting to %s\n",outputfilename);
 
+    fprintf(fp,"*** Upperlimit results file for freq = [%.3f - %.3f] ***\n***\n",ULdata.UL[i].f_min,ULdata.UL[i].f_max);
+    printf("*** Upperlimit results file for freq = [%.3f - %.3f] ***\n***\n",ULdata.UL[i].f_min,ULdata.UL[i].f_max);
+    for (j=0;j<ULdata.N_h0;j++) {
+      fprintf(fp,"%e\t%f\t%f\n",ULdata.UL[i].h0[j],ULdata.UL[i].final_conf[j],ULdata.UL[i].final_conf_err[j]);
+      printf("%e\t%f\t%f\n",ULdata.UL[i].h0[j],ULdata.UL[i].final_conf[j],ULdata.UL[i].final_conf_err[j]);
     }
 
-    /* populate it */
-    for (q=0;q<ULdata.N_h0;q++) {
+    fclose(fp);
+
+  }
+
+  /* output main full upperlimit results file */
+  sprintf(outputfilename,"%s_FULL.data",outputfile);
+  fp=fopen(outputfilename,"w");
+  if (fp==NULL) {
+    printf("ERROR : cannot open file %s\n",outputfilename);
+    exit(1);
+  }
+
+  fprintf(fp,"*** Upperlimit results file ***\n***\n");
+  fprintf(fp,"injection results = %s\n",injectiondir);
+  fprintf(fp,"coincidence results = %s\n",coresultsdir);
+  fprintf(fp,"h0 injection values file = %s\n***\n",h0file);
+  fprintf(fp,"f_min\t\tf_max\t\tp_loudest_log10(1-sig)\ts_loudest_log10(1-sig)\tco_loudest_log10(1-sig)\t");
+  for (i=0;i<ULdata.N_h0;i++) fprintf(fp,"%e\t\t",ULdata.UL[0].h0[i]);
+  fprintf(fp,"UL_(%f)\t\tUL_(%f)_err\n--------------------------------------------------------------------------------------------------------------------\n",confidence,confidence);
+  
+  /* loop over each band */
+  for (i=0;i<ULdata.N_UL;i++) {
+    fprintf(fp,"%f\t%f\t%f\t\t%f\t\t%f\t\t",ULdata.UL[i].f_min,ULdata.UL[i].f_max,ULdata.UL[i].p_loudestsig,ULdata.UL[i].s_loudestsig,ULdata.UL[i].co_loudestsig);
+    for (j=0;j<ULdata.N_h0;j++) fprintf(fp,"%f\t\t",ULdata.UL[i].final_conf[j]);
+    fprintf(fp,"%e\t\t%e\n",ULdata.UL[i].final_h0,ULdata.UL[i].final_h0_err);
+  }
+
+  fclose(fp);
+
+  /* output to file ready for plotting freq vs UL */
+  /* output main full upperlimit results file */
+  sprintf(outputfilename,"%s_freq_vs_UL.data",outputfile);
+  fp=fopen(outputfilename,"w");
+  if (fp==NULL) {
+    printf("ERROR : cannot open file %s\n",outputfilename);
+    exit(1);
+  }
+
+  fprintf(fp,"*** Upperlimit results file for freq vs UL ***\n***\n");
+  fprintf(fp,"%.3f %e\n",ULdata.UL[0].f_max,ULdata.UL[0].final_h0);
+  for (i=1;i<ULdata.N_UL;i++) {
+    fprintf(fp,"%.3f %e\n",ULdata.UL[i-1].f_min,ULdata.UL[i-1].final_h0);
+    fprintf(fp,"%.3f %e\n",ULdata.UL[i].f_max,ULdata.UL[i].final_h0);
+  }
+  fprintf(fp,"%.3f %e\n",ULdata.UL[ULdata.N_UL-1].f_min,ULdata.UL[ULdata.N_UL-1].final_h0);
+  
+  fclose(fp);
+
+  printf("*** finished outputting results\n");
+
+  return 0;
+
+}
+
+/*******************************************************************************/
+int CalculateStats(SingleULData *UL,INT4 N_split)
+{
+
+  REAL8 av=0.0;
+  REAL8 var=0.0;
+  REAL8 std;
+  INT4 i;
+  INT4 count;
+
+  /* loop over the number of injection subgroups to get average */
+  count=0;
+  for (i=0;i<N_split;i++) {
+    if (UL->SSULdata[i].est_h0>0.0) {
+      av+=UL->SSULdata[i].est_h0;
+      count++;
+    }
+  }
+
+  /* if we have any results above confidence */
+  if (count>0) {
+    
+    av/=(REAL8)count;
+    
+    /* calculate variance */
+    for (i=0;i<N_split;i++) {
+      var+=(av-UL->SSULdata[i].est_h0)*(av-UL->SSULdata[i].est_h0);
+    }
+    
+    /* calculate std */
+    var/=(REAL8)(count-1);
+    std=sqrt(var);
+    
+    UL->final_h0=av;
+    UL->final_h0_err=std/sqrt((REAL8)count-1.0);
+    
+  }
+  else {
+     UL->final_h0=0.0;
+     UL->final_h0_err=0.0;
+  }    
+
+  
+  printf("final h0 = %e +/- %e\n",UL->final_h0,UL->final_h0_err);
+    
+  return 0;
+  
+}
+  
+/*******************************************************************************/
+int Interpolateh0(SingleSplitULData *UL,INT4 N_h0,REAL8 *h0,REAL8 confidence)
+{
+
+  INT4 j,q,r;
+  REAL8 c1,c2,h1,h2;
+  INT4 *indexes;
+  REAL8 grad;
+  
+  
+  /* allocate space for diff */
+  tempULdataconf_lower=(REAL8 *)LALMalloc(N_h0*sizeof(REAL8));
+  tempULdataconf_higher=(REAL8 *)LALMalloc(N_h0*sizeof(REAL8));
+
+  /* create an array of indexes */
+  indexes=(INT4 *)LALMalloc(sizeof(INT4)*N_h0);
+  
+  /* fill in the temporary data structures */
+  q=0;
+  r=0;
+  for (j=0;j<N_h0;j++) {
+    if (conf>=(*UL).conf[j]) {
+      tempULdataconf_lower[j]=fabs(confidence-UL->conf[j]);
+      tempULdataconf_higher[j]=1.1;
+      q++;
+    }
+    else if (conf<(*UL).conf[j]) {
+      tempULdataconf_higher[j]=fabs(confidence-UL->conf[j]);
+      tempULdataconf_lower[j]=1.1;
+      r++;
+    }
+  }
+  
+  /* if we have a result either side of the confidence */
+  if ((q>0)&&(r>0)) {
+
+    /* populate indexes */
+    for (q=0;q<N_h0;q++) {
       indexes[q]=q;
     }
     
     /* sort array of indexes */
-    qsort((void *)indexes, (size_t)ULdata.N_h0, sizeof(INT4), compare);
-
-    /* need to pick three points that are close and either side of the target in confidence */
-    c1=ULdata.UL[i].conf[indexes[0]];
-    c2=ULdata.UL[i].conf[indexes[1]];
-    c3=-1.0;
-    h1=log10(ULdata.UL[i].h0[indexes[0]]);
-    h2=log10(ULdata.UL[i].h0[indexes[1]]);
-    h3=-1.0;
-
-    if ((c1<conf)&&(c2<conf)) {
-
-      q=0;
-      while (q<ULdata.N_h0) {
-	if (ULdata.UL[i].conf[indexes[q]]>conf) {
-	  c3=ULdata.UL[i].conf[indexes[q]];
-	  h3=log10(ULdata.UL[i].h0[indexes[q]]);
-	  q=ULdata.N_h0+1;
-	}
-	q++;
-      }
-
+    qsort((void *)indexes, (size_t)N_h0, sizeof(INT4), compare_lower);
+    
+    /* need to pick point closest to the confidence but lower than it */
+    c1=UL->conf[indexes[0]];
+    h1=h0[indexes[0]];
+    
+    /* populate indexes */
+    for (q=0;q<N_h0;q++) {
+      indexes[q]=q;
     }
-    else if ((c1>conf)&&(c2>conf)) {
+    
+    /* sort array of indexes */
+    qsort((void *)indexes, (size_t)N_h0, sizeof(INT4), compare_higher);
+    
+    /* need to pick point closest to the confidence but higher than it */
+    c2=UL->conf[indexes[0]];
+    h2=h0[indexes[0]];
+    
+    /* approximate a straight line through these points */
+    grad=(c2-c1)/(h2-h1);
+    (*UL).est_h0=h1+(confidence-c1)/grad;
+    
 
-      q=0;
-      while (q<ULdata.N_h0) {
-	if (ULdata.UL[i].conf[indexes[q]]<conf) {
-	  c3=ULdata.UL[i].conf[indexes[q]];
-	  h3=log10(ULdata.UL[i].h0[indexes[q]]);
-	  q=ULdata.N_h0+1;
-	}
-	q++;
-      }
-
-    }
-    else if (((c1>conf)&&(c2<conf))||((c1<conf)&&(c2>conf))){
-
-      c3=ULdata.UL[i].conf[indexes[3]];
-      h3=log10(ULdata.UL[i].h0[indexes[3]]);
-
-    }
-   
-    if (c3>0.0) {
-
-      
-      /*printf("three closest that span conf are %f %e\n",c1,h1);
-      printf("three closest that span conf are %f %e\n",c2,h2);
-      printf("three closest that span conf are %f %e\n",c3,h3);*/
-      
-            
-      s=( ((c2-c3)*(c2+c3)*(h1-h2)) - ((h2-h3)*(c1-c2)*(c1+c2)) ) / ( ((c1-c2)*(c2-c3)*(c2+c3)) - ((c2-c3)*(c1-c2)*(c1+c2)) );
-      r=( (h2-h3) - (s*(c2-c3)) ) / ((c2-c3)*(c2+c3));
-      t=h1-(r*c1*c1)-s*c1;
-      
-            
-      (*h0conf)[i]=pow(10,r*conf*conf+s*conf+t);
-      
-      /*printf("done the conf it is %e\n",(*h0conf)[i]);*/
-   
-    }
-    else {
-      
-      (*h0conf)[i]=0.0;
-      
-    }
-     
   }
- 
-  LALFree(tempULdataconf);
+  else (*UL).est_h0=0.0;
+
+  /* free some memory */
+  LALFree(tempULdataconf_lower);
+  LALFree(tempULdataconf_higher);
   LALFree(indexes);
 
-  
-
-  
   return 0;
 
 }
 /*******************************************************************************/
 
 /* Sorting function to sort into DECREASING order */
-int compare(const void *ip, const void *jp)
+int compare_lower(const void *ip, const void *jp)
 {
   
   REAL8 di,dj;
 
-  di=tempULdataconf[*(const int *)ip];
-  dj=tempULdataconf[*(const int *)jp];
+  di=tempULdataconf_lower[*(const int *)ip];
+  dj=tempULdataconf_lower[*(const int *)jp];
+
+  
+  if (di>dj)
+    return 1;
+  
+  if (di==dj)
+    return 0;
+
+  return -1;
+}
+
+/*******************************************************************************/
+
+/* Sorting function to sort into DECREASING order */
+int compare_higher(const void *ip, const void *jp)
+{
+  
+  REAL8 di,dj;
+
+  di=tempULdataconf_higher[*(const int *)ip];
+  dj=tempULdataconf_higher[*(const int *)jp];
 
   
   if (di>dj)
@@ -243,8 +427,7 @@ int compare(const void *ip, const void *jp)
 }
 
 /******************************************************************************/
-
-int ComputeConfidence(char *inputdir,FreqMesh freqmesh,REAL8 loudsig,REAL8 h0,REAL8 *confidence,REAL8 *conf_err)
+int ReadInjections(char *inputdir,FreqMesh freqmesh,REAL8 h0,REAL8Vector **results)
 {
 
   /* this function takes a frequency band and value of h0 and computes the */
@@ -253,7 +436,7 @@ int ComputeConfidence(char *inputdir,FreqMesh freqmesh,REAL8 loudsig,REAL8 h0,RE
   char filename[512];
   char line[1024];
   FILE *fp;
-  INT4 tot,count,i;
+  INT4 count,i;
   INT4 fileno=0;
   REAL8 sig;
   char **filelist;
@@ -273,8 +456,6 @@ int ComputeConfidence(char *inputdir,FreqMesh freqmesh,REAL8 loudsig,REAL8 h0,RE
   if(globbuf.gl_pathc==0)
     {
       fprintf (stderr,"\nNo files in directory %s ... Exiting.\n", inputdir);
-      *confidence=-1.0;
-      *conf_err=-1.0;
       return 0;
     }
   
@@ -295,11 +476,9 @@ int ComputeConfidence(char *inputdir,FreqMesh freqmesh,REAL8 loudsig,REAL8 h0,RE
     }
   globfree(&globbuf);
   nfiles=fileno;
-  
- 
-  tot=0;
+
   count=0;
-  /* loop over these files */
+  /* loop over these files to ocount results first*/
   for (i=0;i<nfiles;i++) {
     
     fp=fopen(filelist[i],"r");
@@ -310,26 +489,61 @@ int ComputeConfidence(char *inputdir,FreqMesh freqmesh,REAL8 loudsig,REAL8 h0,RE
     
     while (fgets(line,1023,fp)!=NULL) {
     
-
       sscanf(line,"%lf %lf%lf%lf%lf%lf %d%d %lf%lf %d %lf%lf%lf%lf %lf%lf%lf%lf%lf%d%d%lf%lf%d%lf%lf%lf%lf%lf",&a,&a,&a,&a,&a,&a,&A,&A,&a,&a,&A,&a,&a,&a,&a,&a,&a,&a,&a,&a,&A,&A,&a,&a,&A,&a,&a,&a,&a,&sig);  
-      /* printf("sig is %f\n",sig); */
-      if (sig<=loudsig) {
-	/* printf("sig read as %f loudest is %f -> counting as louder !!! [count = %d]\n",sig,loudsig,count); */
-	count++;
-      }
-      /* else {
-	printf("sig read as %f loudest is %f -> counting as quieter !!!\n",sig,loudsig);
-	}*/
-      tot++;
+      count++;
+    }
+   
+    fclose(fp);
+    
+  }
+
+  /* allocate memory */
+  LALDCreateVector(&status,results,count);
+
+  count=0;
+  /* loop over these files to record results */
+  for (i=0;i<nfiles;i++) {
+    
+    fp=fopen(filelist[i],"r");
+    if (fp==NULL) {
+      printf("ERROR : cannot open the file %s\n",filelist[i]);
+      exit(1);
+    }
+    
+    while (fgets(line,1023,fp)!=NULL) {
+    
+      sscanf(line,"%lf %lf%lf%lf%lf%lf %d%d %lf%lf %d %lf%lf%lf%lf %lf%lf%lf%lf%lf%d%d%lf%lf%d%lf%lf%lf%lf%lf",&a,&a,&a,&a,&a,&a,&A,&A,&a,&a,&A,&a,&a,&a,&a,&a,&a,&a,&a,&a,&A,&A,&a,&a,&A,&a,&a,&a,&a,&sig);  
+      (*results)->data[count]=sig;
+      count++;
     }
    
     fclose(fp);
     
   }
   
-  *confidence=(REAL8)((REAL8)count/(REAL8)tot);
-  *conf_err=(REAL8)(1.0/sqrt((REAL8)tot));
+ 
+  for (i=0;i<nfiles;i++) LALFree(filelist[i]);
+  LALFree(filelist);
+
+  return 0;
+
+}
+/******************************************************************************/
+int ComputeConfidence(REAL8Vector *results,REAL8 loudsig,REAL8 *confidence)
+{
+
+  /* this function takes a frequency band and value of h0 and computes the */
+  /* upperlimit confidence */
+
+  INT4 tot=0,count=0;
+  UINT4 i; 
+ 
+  for (i=0;i<results->length;i++) {  
+    if (results->data[i]<=loudsig) count++;
+    tot++;
+  }
   
+  *confidence=(REAL8)((REAL8)count/(REAL8)tot);
   
   return 0;
 
@@ -583,82 +797,6 @@ int FindLoudest(char *resultsdir,FreqMeshes *freqmeshes,char *maxoutfile,Loudest
 
 /*********************************************************************************************/
 
- int OutputConfidence(char *outputfile,ULData ULdata,REAL8 confidence,REAL8 *h0conf) 
-{
-
-  /* this function outputs the final upperlimit results to a single file */
-
-  FILE *fp;
-  INT4 i,j;
-  char outputfilename[256];
-
-  /* output a series of files for plotting */
-  for (i=0;i<ULdata.N_UL;i++) {
-    
-    sprintf(outputfilename,"%s_%.3f-%.3f.data",outputfile,ULdata.UL[i].f_min,ULdata.UL[i].f_max);
-    fp=fopen(outputfilename,"w");
-    if (fp==NULL) {
-      printf("ERROR : cannot open file %s\n",outputfilename);
-      exit(1);
-    }
-
-    fprintf(fp,"*** Upperlimit results file for freq = [%.3f - %.3f] ***\n***\n",ULdata.UL[i].f_min,ULdata.UL[i].f_max);
-    for (j=0;j<ULdata.N_h0;j++) fprintf(fp,"%e\t%f\t%f\n",ULdata.UL[i].h0[j],ULdata.UL[i].conf[j],ULdata.UL[i].conf_err[j]);
-
-    fclose(fp);
-
-}
-
-  /* output main full upperlimit results file */
-  sprintf(outputfilename,"%s_FULL.data",outputfile);
-  fp=fopen(outputfilename,"w");
-  if (fp==NULL) {
-    printf("ERROR : cannot open file %s\n",outputfilename);
-    exit(1);
-  }
-
-  fprintf(fp,"*** Upperlimit results file ***\n***\n");
-  fprintf(fp,"injection results = %s\n",injectiondir);
-  fprintf(fp,"coincidence results = %s\n",coresultsdir);
-  fprintf(fp,"h0 injection values file = %s\n***\n",h0file);
-  fprintf(fp,"f_min\t\tf_max\t\tp_loudest_log10(1-sig)\ts_loudest_log10(1-sig)\tco_loudest_log10(1-sig)\t");
-  for (i=0;i<ULdata.N_h0;i++) fprintf(fp,"%e\t",ULdata.UL[0].h0[i]);
-  fprintf(fp,"UL_(%f)\n--------------------------------------------------------------------------------------------------------------------\n",confidence);
-  
-  /* loop over each band */
-  for (i=0;i<ULdata.N_UL;i++) {
-    fprintf(fp,"%f\t%f\t%f\t\t%f\t\t%f\t\t",ULdata.UL[i].f_min,ULdata.UL[i].f_max,ULdata.UL[i].p_loudestsig,ULdata.UL[i].s_loudestsig,ULdata.UL[i].co_loudestsig);
-    for (j=0;j<ULdata.N_h0;j++) fprintf(fp,"%f\t",ULdata.UL[i].conf[j]);
-    fprintf(fp,"%e\n",h0conf[i]);
-  }
-
-  fclose(fp);
-
-  /* output to file ready for plotting freq vs UL */
-  /* output main full upperlimit results file */
-  sprintf(outputfilename,"%s_freq_vs_UL.data",outputfile);
-  fp=fopen(outputfilename,"w");
-  if (fp==NULL) {
-    printf("ERROR : cannot open file %s\n",outputfilename);
-    exit(1);
-  }
-
-  fprintf(fp,"*** Upperlimit results file for freq vs UL ***\n***\n");
-  fprintf(fp,"%.3f %e\n",ULdata.UL[0].f_max,h0conf[0]);
-  for (i=1;i<ULdata.N_UL;i++) {
-    fprintf(fp,"%.3f %e\n",ULdata.UL[i-1].f_min,h0conf[i-1]);
-    fprintf(fp,"%.3f %e\n",ULdata.UL[i].f_max,h0conf[i]);
-  }
-  fprintf(fp,"%.3f %e\n",ULdata.UL[ULdata.N_UL-1].f_min,h0conf[ULdata.N_UL-1]);
-  
-  fclose(fp);
-
-  return 0;
-
-}
-
-/*********************************************************************************************/
-
  int ReadCommandLine(int argc,char *argv[]) 
 {
   INT4 c, errflg = 0;
@@ -672,6 +810,7 @@ int FindLoudest(char *resultsdir,FreqMeshes *freqmeshes,char *maxoutfile,Loudest
   sprintf(outfile," ");
   sprintf(maxfile," ");
   conf=0.95;
+  nsplit=10;
 
    
   {
@@ -684,10 +823,11 @@ int FindLoudest(char *resultsdir,FreqMeshes *freqmeshes,char *maxoutfile,Loudest
       {"uloutfile", required_argument, 0, 'U'},
       {"maxoutfile", required_argument, 0, 'x'},
       {"confidence", required_argument, 0, 'C'},
+      {"nsplit", required_argument, 0, 'n'},
       {"help", no_argument, 0, 'h'}
     };
     /* Scan through list of command line arguments */
-    while (!errflg && ((c = getopt_long (argc, argv,"hi:c:f:H:U:x:C:",long_options, &option_index)))!=-1)
+    while (!errflg && ((c = getopt_long (argc, argv,"hi:c:f:H:U:x:C:n:",long_options, &option_index)))!=-1)
       switch (c) {
       case 'i':
 	temp=optarg;
@@ -716,16 +856,20 @@ int FindLoudest(char *resultsdir,FreqMeshes *freqmeshes,char *maxoutfile,Loudest
       case 'C':
 	conf=atof(optarg);
 	break;
+      case 'n':
+	nsplit=atoi(optarg);
+	break;
       case 'h':
 	/* print usage/help message */
 	fprintf(stdout,"Arguments are:\n");
 	fprintf(stdout,"\t--injectiondir       STRING\t Name of the directory where injection data is stored [DEFAULT= ]\n");
 	fprintf(stdout,"\t--coresultsdir       STRING\t Name of the directory where coincident results are stored [DEFAULT= ]\n");
 	fprintf(stdout,"\t--freqmeshfile       STRING\t Name of the file containing freq-mesh information [DEFAULT= ]\n");
-	fprintf(stdout,"\t--gwamplpitudefile   STRING\t Name of the file containing h0 injection values [DEFAULT = ]\n");
+	fprintf(stdout,"\t--gwamplitudefile    STRING\t Name of the file containing h0 injection values [DEFAULT = ]\n");
 	fprintf(stdout,"\t--uloutfile          STRING\t Name of the upperlimit output file [DEFAULT = ]\n");
 	fprintf(stdout,"\t--maxoutfile         STRING\t Name of the loudest event output file [DEFAULT = 0.0]\n");
 	fprintf(stdout,"\t--confidence         REAL8\t Confidence for which h0_UL(conf) will be calculated [DEFAULT = 0.0]\n");
+	fprintf(stdout,"\t--nsplit             INT4\t Number of subsets to split each injection set into for error estimation [DEFAULT = 10]\n");
 	exit(0);
 	break;
       default:
