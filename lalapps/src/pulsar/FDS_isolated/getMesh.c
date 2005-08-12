@@ -112,6 +112,8 @@ CHAR *uvar_outputSkyGrid;	/**< write sky-grid into this file */
 INT4 uvar_searchNeighbors;	/**< number of desired gridpoints/dimension around central point*/
 INT4 uvar_randomSeed;		/**< random-seed for searchNeighbors grid randomization */
 
+CHAR *uvar_mergedSFTFile;	/**< dummy for CFS-compatibility */
+
 extern int vrbflg;
 
 /*----------------------------------------------------------------------
@@ -334,6 +336,8 @@ initUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat,     outputSkyGrid,   0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
   LALregINTUserVar(stat, 	searchNeighbors, 0,  UVAR_OPTIONAL, "Determine search-params with resulting in a grid with roughly this many points/dimension");
   LALregINTUserVar(stat, 	randomSeed, 	 0,  UVAR_OPTIONAL, "Random-seed to use for searchNeighbors grid-randomization");
+
+  LALregSTRINGUserVar(stat, 	mergedSFTFile, 	 0,  UVAR_DEVELOPER, "Dummy for CFS-compatibility ");
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
