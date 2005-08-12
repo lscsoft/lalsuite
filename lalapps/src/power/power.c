@@ -1009,7 +1009,7 @@ static REAL4TimeSeries *get_time_series(
 		fprintf(stderr, "get_time_series(): read %u samples (%.9lf s) at GPS time %u.%09u s\n", series->data->length, series->data->length * series->deltaT, start.gpsSeconds, start.gpsNanoSeconds);
 
 	/* Clean up */
-	LAL_CALL(LALFrClose(stat, &stream), stat);
+	XLALFrClose(stream);
 
 	return(series);
 }
