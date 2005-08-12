@@ -591,7 +591,7 @@ void parse_command_line(
 			sprintf(msg, "range error parsing \"%s\"", optarg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
-		} else if(XLALGPStoINT8(&options.stopEpoch) < 441417609000000000 || XLALGPStoINT8(&options.stopEpoch) > 999999999000000000) {
+		} else if(XLALGPStoINT8(&options.stopEpoch) < 441417609000000000ll || XLALGPStoINT8(&options.stopEpoch) > 999999999000000000ll) {
 			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09d specified)", options.stopEpoch.gpsSeconds, options.stopEpoch.gpsNanoSeconds);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
@@ -604,7 +604,7 @@ void parse_command_line(
 			sprintf(msg, "range error parsing \"%s\"", optarg);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
-		} else if(XLALGPStoINT8(&options.startEpoch) < 441417609000000000 || XLALGPStoINT8(&options.startEpoch) > 999999999000000000) {
+		} else if(XLALGPStoINT8(&options.startEpoch) < 441417609000000000ll || XLALGPStoINT8(&options.startEpoch) > 999999999000000000ll) {
 			sprintf(msg, "must be in the range [Jan 01 1994 00:00:00 UTC, Sep 14 2011 01:46:26 UTC] (%d.%09d specified)", options.startEpoch.gpsSeconds, options.startEpoch.gpsNanoSeconds);
 			print_bad_argument(argv[0], long_options[option_index].name, msg);
 			args_are_bad = TRUE;
