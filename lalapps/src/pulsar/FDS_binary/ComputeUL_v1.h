@@ -24,20 +24,30 @@
 
 #define MAXFILES 50000
 
+typedef struct SingleSplitULDatatag {
+  REAL8 *conf;
+  REAL8 est_h0;
+} SingleSplitULData;
+
 typedef struct SingleULDatatag {
   REAL8 f_min;
   REAL8 f_max;
   REAL8 p_loudestsig;
   REAL8 s_loudestsig;
   REAL8 co_loudestsig;
+  INT4 N_per_split;
+  SingleSplitULData *SSULdata;
+  REAL8 *final_conf;
+  REAL8 *final_conf_err;
   REAL8 *h0;
-  REAL8 *conf;
-  REAL8 *conf_err;
+  REAL8 final_h0;
+  REAL8 final_h0_err;
 } SingleULData;
 
 typedef struct ULDatatag {
   INT4 N_UL;
   INT4 N_h0;
+  INT4 N_split;
   SingleULData *UL;
 } ULData;
 
