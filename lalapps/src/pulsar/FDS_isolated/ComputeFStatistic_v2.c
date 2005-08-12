@@ -1,6 +1,6 @@
 /*
- * 
- * Copyright (C) 2004, 2005 Reinhard Prix
+ * Copyright (C) 2005 Reinhard Prix, Iraj Gholami
+ * Copyright (C) 2004 Reinhard Prix
  * Copyright (C) 2002, 2003, 2004 M.A. Papa, X. Siemens, Y. Itoh
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -141,7 +141,7 @@ typedef struct {
   LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
   REAL8 refTime0;		/**< *internal* SSB reference time: e.g. start of observation */
   REAL8Vector *fkdot0;		/**< start frequency- and spindowns- at internal reference-time */
-  REAL8Vector *fkdot;		/**< */
+  REAL8Vector *fkdot;		/**< vector of frequency + derivatives (spindowns)*/
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
   IFOspecifics ifos;		/**< IFO-specific configuration parameters */
@@ -901,18 +901,18 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       
       /* normalize SFTs by running median */
       TRY (NormaliseSFTDataRngMdn(status->statusPtr, GV.ifos.sftVects[nD]), status);      
-
-  /* obtain detector positions and velocities, together with LMSTs for the 
-   * SFT midpoints 
-   */
-  TRY (LALGetDetectorStates(status->statusPtr, &(GV.ifos.DetectorStates[nD]), GV.ifos.midTS[nD], &(GV.ifos.Detectors[nD]), cfg->edat), status);
-
-    }
-
+      
+      /* obtain detector positions and velocities, together with LMSTs for the 
+       * SFT midpoints 
+       */
+      TRY (LALGetDetectorStates(status->statusPtr, &(GV.ifos.DetectorStates[nD]), GV.ifos.midTS[nD], &(GV.ifos.Detectors[nD]), cfg->edat), status);
+      
+    } /* end of loop over different detectors */
+  
   /* determine start-time from first set of SFTs */
   cfg->startTime = cfg->ifos.sftVects[0]->data[0].epoch;
-
-
+  
+  
   /*---------- Standardise reference-time: ----------*/
   /* translate spindown-paramters {f, fdot, fdotdot..} from the user-specified 
    * reference-time uvar_refTime to the internal reference-time, which 
@@ -950,9 +950,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
     TRY ( LALDDestroyVector (status->statusPtr, &fkdotRef), status);
   }
-
-
-
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
