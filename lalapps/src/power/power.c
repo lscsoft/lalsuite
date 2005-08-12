@@ -926,7 +926,6 @@ void parse_command_line(
  */
 
 static REAL4TimeSeries *get_calibrated_data(
-	LALStatus *stat,
 	FrStream *stream,
 	const char *chname,
 	LIGOTimeGPS *start,
@@ -934,6 +933,7 @@ static REAL4TimeSeries *get_calibrated_data(
 	size_t lengthlimit
 )
 {
+	static const char func[] = "get_calibrated_data";
 	REAL8TimeSeries *calibrated;
 	REAL4TimeSeries *series;
 	PassBandParamStruc highpassParam;
@@ -941,6 +941,8 @@ static REAL4TimeSeries *get_calibrated_data(
 
 	/* retrieve calibrated data as REAL8 time series */
 	calibrated = XLALFrReadREAL8TimeSeries(stream, chname, start, duration, lengthlimit);
+	if(!calibrated)
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
 
 	/* high pass filter before casting REAL8 to REAL4 */
 	highpassParam.nMax = 4;
@@ -948,14 +950,21 @@ static REAL4TimeSeries *get_calibrated_data(
 	highpassParam.f1 = -1.0;
 	highpassParam.a2 = 0.9;
 	highpassParam.a1 = -1.0;
-	LAL_CALL(LALButterworthREAL8TimeSeries(stat, calibrated, &highpassParam), stat);
+	if(XLALButterworthREAL8TimeSeries(calibrated, &highpassParam) < 0) {
+		XLALDestroyREAL8TimeSeries(calibrated);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
 
 	/* copy data into a REAL4 time series */
-	LAL_CALL(LALCreateREAL4TimeSeries(stat, &series, calibrated->name, calibrated->epoch, calibrated->f0, calibrated->deltaT, calibrated->sampleUnits, calibrated->data->length), stat);
+	series = XLALCreateREAL4TimeSeries(calibrated->name, &calibrated->epoch, calibrated->f0, calibrated->deltaT, &calibrated->sampleUnits, calibrated->data->length);
+	if(!series) {
+		XLALDestroyREAL8TimeSeries(calibrated);
+		XLAL_ERROR_NULL(func, XLAL_EFUNC);
+	}
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] = calibrated->data->data[i];
-	LAL_CALL(LALDestroyREAL8TimeSeries(stat, calibrated), stat);
 
+	XLALDestroyREAL8TimeSeries(calibrated);
 	return(series);
 }
 
@@ -992,7 +1001,7 @@ static REAL4TimeSeries *get_time_series(
 
 	/* Get the data */
 	if(getcaltimeseries)
-		series = get_calibrated_data(stat, stream, chname, &start, duration, lengthlimit);
+		series = get_calibrated_data(stream, chname, &start, duration, lengthlimit);
 	else
 		series = XLALFrReadREAL4TimeSeries(stream, chname, &start, duration, lengthlimit);
 
@@ -1000,7 +1009,7 @@ static REAL4TimeSeries *get_time_series(
 	/* Check for missing data */
 	if(stream->state & LAL_FR_GAP) {
 		fprintf(stderr, "get_time_series(): error: gap in data detected between GPS times %d.%09d s and %d.%09d s\n", start.gpsSeconds, start.gpsNanoSeconds, end.gpsSeconds, end.gpsNanoSeconds);
-		LAL_CALL(LALDestroyREAL4TimeSeries(stat, series), stat);
+		XLALDestroyREAL4TimeSeries(series);
 		series = NULL;
 	}
 
