@@ -58,69 +58,71 @@ static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
 
 /* <lalVerbatim file="ComputeSkyCP"> */
-void LALComputeSky	(LALStatus	*status, 
-		 REAL8 	*skyConst, 
-		 INT8 		iSkyCoh, 
-		 CSParams 	*params)
+void 
+LALComputeSky (LALStatus *status, 
+	       REAL8 *skyConst, 
+	       INT8 iSkyCoh, 
+	       CSParams	*params)
 {  /* </lalVerbatim> */
   
   INT4	m, n;
-	REAL8	t;
-	REAL8	basedTbary;
-	
-	REAL8	dTbary;
-	REAL8	tBary;
-	REAL8	tB0;
-	INITSTATUS (status, "LALComputeSky", COMPUTESKYC);
- ATTATCHSTATUSPTR(status);
+  REAL8	t;
+  REAL8	basedTbary;
+  
+  REAL8	dTbary;
+  REAL8	tBary;
+  REAL8	tB0;
+  INITSTATUS (status, "LALComputeSky", COMPUTESKYC);
+  ATTATCHSTATUSPTR(status);
  
-/* Check for non-negativity of sky positions in SkyCoh[] */
- ASSERT(iSkyCoh>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
+  /* Check for non-negativity of sky positions in SkyCoh[] */
+  ASSERT(iSkyCoh>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
  
-/* Check to make sure sky positions are loaded */
- ASSERT(params->skyPos!=NULL, status, COMPUTESKYH_ENULL, COMPUTESKYH_MSGENULL);
- ASSERT(params->skyPos!=NULL, status, COMPUTESKYH_ENULL, COMPUTESKYH_MSGENULL);
- 
-/* Check to make sure parameters are loaded and reasonable */
- ASSERT(params->spinDwnOrder>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
- ASSERT(params->mObsSFT>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
- ASSERT(params->tSFT>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
- 
- for(n=0;n<params->mObsSFT;n++)
-   {
-     ASSERT(params->tGPS[n].gpsSeconds>=0, status, COMPUTESKYH_ENEGA, 	COMPUTESKYH_MSGENEGA);
-   }
- 
- /* Check to make sure pointer to output is not NULL */
- ASSERT(skyConst!=NULL, status, COMPUTESKYH_ENNUL, COMPUTESKYH_MSGENNUL);
- 
- params->baryinput->alpha=params->skyPos[iSkyCoh];
- params->baryinput->delta=params->skyPos[iSkyCoh+1];
-
- /* NOTE: we DO NOT translate the start-time into the SSB frame,
-  * as this would result in a source-position dependent reference-time.
-  * Instead we simply take the GPS start-time and interpret it as the
-  * SSB reference-time 
+  /* Check to make sure sky positions are loaded */
+  ASSERT(params->skyPos!=NULL, status, COMPUTESKYH_ENULL, COMPUTESKYH_MSGENULL);
+  ASSERT(params->skyPos!=NULL, status, COMPUTESKYH_ENULL, COMPUTESKYH_MSGENULL);
+  
+  /* Check to make sure parameters are loaded and reasonable */
+  ASSERT(params->spinDwnOrder>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
+  ASSERT(params->mObsSFT>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
+  ASSERT(params->tSFT>=0, status, COMPUTESKYH_ENEGA, COMPUTESKYH_MSGENEGA);
+  
+  for(n=0;n<params->mObsSFT;n++)
+    {
+      ASSERT(params->tGPS[n].gpsSeconds>=0, status, COMPUTESKYH_ENEGA, 	COMPUTESKYH_MSGENEGA);
+    }
+  
+  /* Check to make sure pointer to output is not NULL */
+  ASSERT(skyConst!=NULL, status, COMPUTESKYH_ENNUL, COMPUTESKYH_MSGENNUL);
+  
+  params->baryinput->alpha=params->skyPos[iSkyCoh];
+  params->baryinput->delta=params->skyPos[iSkyCoh+1];
+  
+  /* NOTE: we DO NOT translate the start-time into the SSB frame,
+   * as this would result in a source-position dependent reference-time.
+   * Instead we simply take the GPS start-time and interpret it as the
+   * SSB reference-time 
+   */
+  /*
+    params->baryinput->tgps.gpsSeconds=params->tGPS[0].gpsSeconds;
+    params->baryinput->tgps.gpsNanoSeconds=params->tGPS[0].gpsNanoSeconds;
+    
+    LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
+    LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
+    TimeToFloat(&tB0, &(params->emit->te));
   */
- /*
- params->baryinput->tgps.gpsSeconds=params->tGPS[0].gpsSeconds;
- params->baryinput->tgps.gpsNanoSeconds=params->tGPS[0].gpsNanoSeconds;
- 
- LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
- LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
- TimeToFloat(&tB0, &(params->emit->te));
- */
- TimeToFloat(&tB0, &(params->tGPS[0]));
+  TimeToFloat(&tB0, &(params->tGPS[0]));
 
 
- for (n=0; n<params->mObsSFT; n++) 
+  for (n=0; n<params->mObsSFT; n++) 
    {
      t=(REAL8)(params->tGPS[n].gpsSeconds)+(REAL8)(params->tGPS[n].gpsNanoSeconds)*1.0E-9+0.5*params->tSFT; 
      
      FloatToTime(&(params->baryinput->tgps), &t);
 	
-     LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat);
-     LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth);
+     TRY( LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat),
+	  status);
+     TRY( LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth), status);
      
      TimeToFloat(&tBary, &(params->emit->te));
 
@@ -133,9 +135,9 @@ void LALComputeSky	(LALStatus	*status,
 	 skyConst[2*n*(params->spinDwnOrder+1)+2*(INT4)m+1]= params->tSFT*params->emit->tDot*basedTbary;
        }
    } 
- /* Normal Exit */
- DETATCHSTATUSPTR(status);
- RETURN(status);
+  /* Normal Exit */
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
 }
 
 
