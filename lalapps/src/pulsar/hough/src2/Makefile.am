@@ -10,5 +10,5 @@
 
 bin_PROGRAMS = HoughValidateAM HoughMismatch
 
-HoughValidateAM_SOURCES = HoughValidateAM.c HoughValidateAM.h ../src/SFTbin.h ../src/SFTbin.c ../src/DriveHoughColor.h ../src/PeakSelect.h ../src/PeakSelect.c
+HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h ../src/SFTbin.h ../src/SFTbin.c ../src/DriveHoughColor.h ../src/PeakSelect.h ../src/PeakSelect.c
 HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h ../src/SFTbin.h ../src/SFTbin.c ../src/DriveHoughColor.h ../src/PeakSelect.h ../src/PeakSelect.c
