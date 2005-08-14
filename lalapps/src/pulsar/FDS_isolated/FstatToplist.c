@@ -123,9 +123,17 @@ static int _toplist_qsort_function(const void *ppa, const void *ppb) {
     const FstatsClusterOutput*a = *pa;
     const FstatsClusterOutput*b = *pb;
 
-    if (a->max < b->max)
+    if (a->Freq < b->Freq)
 	return -1;
-    else if (a->max > b->max)
+    else if (a->Freq > b->Freq)
+	return 1;
+    else if (a->Alpha < b->Alpha)
+	return -1;
+    else if (a->Alpha > b->Alpha)
+	return 1;
+    else if (a->Delta < b->Delta)
+	return -1;
+    else if (a->Delta > b->Delta)
 	return 1;
     else
 	return 0;
@@ -231,7 +239,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp) {
 /* writes an FstatsClusterOutput line to an open filepointer.
    Returns the number of chars written */
 int write_toplist_item_to_fp(FstatsClusterOutput fline,FILE*fp) {
-    return(fprintf(fp,"%e %e %e %e %d %e %e %1.15e\n",
+    return(fprintf(fp,"%1.13e %e %e %e %d %e %e %1.15e\n",
 		   fline.Freq,
 		   fline.f1dot,
 		   fline.Alpha,
