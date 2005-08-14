@@ -103,15 +103,7 @@ int insert_into_toplist(toplist_t*tl, FstatsClusterOutput elem) {
 int write_toplist_to_fp(toplist_t*tl, FILE*fp) {
    UINT8 i,c=0;
    for(i=0;i<tl->elems;i++)
-       c += fprintf(fp,"%e %e %e %e %d %e %e %1.15e\n",
-		    tl->sorted[i]->Freq,
-		    tl->sorted[i]->f1dot,
-		    tl->sorted[i]->Alpha,
-		    tl->sorted[i]->Delta,
-		    tl->sorted[i]->Nbins,
-		    tl->sorted[i]->mean,
-		    tl->sorted[i]->std,
-		    tl->sorted[i]->max);
+       c += write_toplist_item_to_fp(*(tl->sorted[i]),fp);
    return(c);
 }
 
