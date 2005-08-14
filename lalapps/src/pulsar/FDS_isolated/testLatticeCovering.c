@@ -31,6 +31,7 @@
 
 /*---------- INCLUDES ----------*/
 #include <math.h>
+#include <stdlib.h>
 
 #include <lalapps.h>
 
@@ -45,6 +46,7 @@ RCSID ("$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#define myrand() (1.0*rand()/RAND_MAX)
 
 /* prototypes */
 int main(void);
@@ -58,15 +60,18 @@ static int writeREAL8VectorList (FILE *fp, const REAL8VectorList *list);
 static int print_matrix (const gsl_matrix *m);
 static int print_vector (const gsl_vector *v);
 
-int plot2DCovering (FILE *fp, const REAL8VectorList *list, const REAL8Vector *metric, 
-		    REAL8 mismatch);
+int plot2DCovering (FILE *fp, const REAL8VectorList *list, const REAL8Vector *metric, REAL8 mismatch);
+
+int MC_MeasureCovering(const REAL8VectorList *covering, const REAL8Vector *metric);
+int ChooseRandomPoint ( REAL8Vector *point );
+REAL8 FindMinDistance (const REAL8Vector *samplePoint, const REAL8VectorList *covering, 
+		       const gsl_matrix *metric );
 
 /*--------------------------------------------------*/
 /* Test function(s) */
 /*--------------------------------------------------*/
-int main (void)
+int main()
 {
-
   lalDebugLevel = 1;
 
   /* for production code: dont' let gsl abort on errors, but return error-codes to caller! */
@@ -122,8 +127,8 @@ testCovering2 (void)
 
 
   /* generate covering */
-  LAL_CALL( LALLatticeCovering(&status, &covering, radius, metric, &startPoint, testArea1), 
-	    &status);
+  LAL_CALL( LALLatticeCovering(&status, &covering, radius, metric, &startPoint, testArea1, 
+			       LATTICE_TYPE_ANSTAR), &status);
   
   /* output result into a file */
   fname = "test_covering.dat";
@@ -131,11 +136,13 @@ testCovering2 (void)
     LALPrintError ("\nFailed to open '%s' for writing!\n\n", fname);
     return;
   }
-  printf ("Now writing lattice-covering into '%s' ... ", fname);
+  /* ("Now writing lattice-covering into '%s' ... ", fname); */
   plot2DCovering (fp, covering, metric, radius*radius);
-  printf ("done.\n\n");
+  /*  printf ("done.\n\n"); */
   fclose(fp);
 
+  /* produce a histogram of minimal distances of randomly picked points in Rn */
+  MC_MeasureCovering(covering, metric);
 
   /* free memory */
   REAL8VectorListDestroy ( covering );
@@ -209,7 +216,8 @@ testCovering (void)
 
   /* do the same again with the new high-level function */
   metric = XLALgsl2LALmetric ( &(gij.matrix) );
-  LAL_CALL( LALLatticeCovering (&status, &covering, radius, metric, &startPoint, testArea1), &status);
+  LAL_CALL( LALLatticeCovering (&status, &covering, radius, metric, &startPoint, testArea1,
+				LATTICE_TYPE_ANSTAR), &status);
   if ( (fp = fopen ( "test_lattice2.dat", "wb" )) == NULL )
     {
       LALPrintError ("\nFailed to open 'test_lattice2.dat' for writing!\n\n");
@@ -367,7 +375,6 @@ plot2DCovering (FILE *fp, const REAL8VectorList *list, const REAL8Vector *metric
   REAL8 Alpha, Delta;
   const REAL8VectorList *node;
   MetricEllipse ellipse;
-  PtoleMetricIn metricPar;
   LALStatus status = blank_status;
   UINT4 i;
 
@@ -405,3 +412,110 @@ plot2DCovering (FILE *fp, const REAL8VectorList *list, const REAL8Vector *metric
   return 0;
 
 } /* plot2DCovering() */
+
+/** Monte-Carlo run to measure the covering-radius (and distribution) of 
+ * a given covering. 
+ * Algorithm: pick a point at random within [-1,1]^n, get the minimal distance
+ * to one of the lattice-points, and write this distance into a file, etc.
+ * The covering-radius is given as the cutoff-distance of this distribution.
+ *
+ * Return -1 on error, 0 if ok.
+ */
+int
+MC_MeasureCovering(const REAL8VectorList *covering, const REAL8Vector *metric)
+{
+  UINT4 numRuns = 10000;	/* number of points to sample */
+  UINT4 run;
+  gsl_matrix *gij;
+  UINT4 dim;
+  REAL8Vector *samplePoint = NULL;
+  int seed = 1;
+
+  if ( !covering || !metric )
+    return -1;
+
+  if ( ( gij = XLALmetric2gsl (metric)) == NULL )
+    return -1;
+
+  dim = gij->size1;
+  
+  if ( covering->entry.length != dim )
+    return -1;
+
+  if ( (samplePoint = XLALCreateREAL8Vector ( dim )) == NULL )
+    return -1;
+
+  srand(seed);
+
+  for (run = 0; run < numRuns; run ++)
+    {
+      REAL8 dist;
+      ChooseRandomPoint ( samplePoint );
+      
+      dist = FindMinDistance (samplePoint, covering, gij );
+
+      printf ("%f\n", dist );
+      
+    } /* for run < numRuns */
+
+  gsl_matrix_free(gij);
+  XLALDestroyREAL8Vector (samplePoint);
+  
+  return 0;
+
+} /* MC_MeasureCovering() */
+
+/* pick a random-point within [-0.8,0.8]^n */
+int
+ChooseRandomPoint ( REAL8Vector *point )
+{
+  UINT4 dim, i;
+
+  if (!point)
+    return -1;
+
+  dim = point->length;
+
+  for (i = 0; i < dim; i++)
+      point->data[i] = (1.6 * myrand() - 0.8);
+  
+  return 0;
+
+} /* PickRandomPoint() */
+
+REAL8
+FindMinDistance (const REAL8Vector *samplePoint, 
+		 const REAL8VectorList *covering, 
+		 const gsl_matrix *metric )
+{
+  const REAL8VectorList *node;
+  UINT4 dim = metric->size1;
+  gsl_vector_view p1, p2;
+  gsl_vector *diff;
+  REAL8 mindist2 = -1;
+
+  p1  = gsl_vector_view_array ( samplePoint->data, dim );
+  diff = gsl_vector_calloc (dim);
+
+
+  for ( node = covering; node; node = node->next )
+    {
+      REAL8 dist2;
+      p2  = gsl_vector_view_array ( node->entry.data, dim );
+
+      gsl_vector_memcpy (diff, &(p2.vector) );
+
+      gsl_vector_sub (diff, &(p1.vector) );
+
+      dist2 = XLALMetricScalarProduct (diff, diff, metric);
+
+      if ( (mindist2 < 0) || ( dist2 < mindist2 ) )
+	mindist2 = dist2;
+
+    } /* for node=node->next */
+
+  gsl_vector_free(diff);
+
+  return ( sqrt(mindist2) );
+
+}/* FindMinDistance() */

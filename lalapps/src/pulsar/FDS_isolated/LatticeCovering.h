@@ -85,8 +85,8 @@ NRCSID( LATTICECOVERINGH, "$Id$" );
 /** enum-type for denoting several types of lattice */
 typedef enum
 {
-  LATTICE_TYPE_CUBIC = 0,	/**< standard cubic grid: Zn */
-  LATTICE_TYPE_ANSTAR,		/**< An*: optimal covering grid */
+  LATTICE_TYPE_ANSTAR = 0,	/**< An*: optimal covering grid */
+  LATTICE_TYPE_CUBIC,		/**< standard cubic grid: Zn */
   LATTICE_TYPE_LAST
 } LatticeType;
 
@@ -111,7 +111,8 @@ typedef struct tagREAL8VectorList
 /*---------- exported prototypes [API] ----------*/
 void LALLatticeCovering (LALStatus *, REAL8VectorList **covering, REAL8 coveringRadius, 
 			 const REAL8Vector *metric, const REAL8Vector *startPoint,
-			 BOOLEAN (*isInside)(const REAL8Vector *point) );
+			 BOOLEAN (*isInside)(const REAL8Vector *point),
+			 LatticeType latticeType);
 
 void LALLatticeFill (LALStatus *, REAL8VectorList **fillGrid, const gsl_matrix  *generator,
 		     const REAL8Vector *startPoint, BOOLEAN (*isInside)(const REAL8Vector *point) );
@@ -122,6 +123,10 @@ int XLALFindCoveringGenerator (gsl_matrix **outmatrix, LatticeType type, UINT4 d
 int XLALReduceGenerator2FullRank(gsl_matrix **outmatrix, const gsl_matrix *inmatrix);
 int XLALGetLatticeGenerator (gsl_matrix **outmatrix, UINT4 dimension, LatticeType type);
 
+REAL8 XLALMetricScalarProduct (const gsl_vector *vector1, const gsl_vector *vector2,	
+			       const gsl_matrix *metric);
+
+
 /* some REAL8 list-handling functions that might be useful to users of the above functions */
 REAL8VectorList* REAL8VectorListAddEntry (REAL8VectorList *head, const REAL8Vector *entry);
 void REAL8VectorListDestroy (REAL8VectorList *head);
@@ -130,6 +135,8 @@ void REAL8VectorListDestroy (REAL8VectorList *head);
  * the independent symmetric-matrix elements (see PMETRIC_INDEX) */
 REAL8Vector *XLALgsl2LALmetric (const gsl_matrix *gmetric);
 
+/* convert LAL-encoded metric into a symmetric gsl-matrix */
+gsl_matrix *XLALmetric2gsl (const REAL8Vector *metric);
 
 #ifdef  __cplusplus
 }

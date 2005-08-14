@@ -71,8 +71,6 @@ static int XLALlatticePoint2physicalPoint ( REAL8Vector *physicalPoint, const IN
 				     const gsl_matrix *generator, const REAL8Vector *startPoint );
 
 /* functions to deal with a non-unity metric */
-static REAL8 XLALMetricScalarProduct (const gsl_vector *vector1, const gsl_vector *vector2,	
-			       const gsl_matrix *metric);
 static int XLALMetricGramSchmidt(gsl_matrix **orth, const gsl_matrix *colvect, const gsl_matrix *metric);
 
 /* list-handling functions */
@@ -87,13 +85,18 @@ static BOOLEAN isSymmetric (const gsl_matrix *Sij);
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Central function of this module: produce an optimal covering
- * of the given parameter-space with constant metric.
+/** Central function of this module: produce a lattice-covering
+ *  of given lattice-type for the given parameter-space with constant 
+ *  metric.
  *
+ * For optimal covering, use latticeType=0, namely the An* lattice,
+ * which is the best known covering-lattice up to dimension 23, 
+ * see \ref CS99 "[CS99]"
+ * 
  * \par Algorithm: 
  * 	\li 1) use XLALFindCoveringGenerator() to get the generator 
- *            of the An* lattice (which is the best known covering-lattice
- *            up to dimension 23, see \ref CS99 "[CS99]"
+ *            of the given lattice.
+ * 
  *	\li 2) use it to LALLatticeFill() the space.
  *
  * \note The encoding of the symmetric matrix 'metric' is the same
@@ -109,14 +112,13 @@ LALLatticeCovering (LALStatus *status,
 		    REAL8 coveringRadius,		/**< [in] covering radius */
 		    const REAL8Vector *metric,		/**< [in] constant metric */
 		    const REAL8Vector *startPoint,	/**< [in] start-point in the covering-region */
-		    BOOLEAN (*isInside)(const REAL8Vector *point) /**< [in] boundary-condition */
-		    )
+		    BOOLEAN (*isInside)(const REAL8Vector *point), /**< [in] boundary-condition */
+		    LatticeType latticeType )
 {
   UINT4 dim;	/* dimension of parameter-space */
   INT4 tmp;
   gsl_matrix *generator = NULL;
   gsl_matrix *gmetric = NULL;
-  UINT4 i, j;
 
   INITSTATUS( status, "LALLatticeCovering", LATTICECOVERINGC );
   ATTATCHSTATUSPTR (status); 
@@ -141,16 +143,15 @@ LALLatticeCovering (LALStatus *status,
   ASSERT ( dim == startPoint->length, status, 
 	   LATTICECOVERING_EINPUT, LATTICECOVERING_MSGEINPUT);
 
-  /* ----- translate 'LAL'-encoded metric into a gsl_matrix: */
-  if ( (gmetric = gsl_matrix_calloc (dim, dim)) == NULL ) { 
-    ABORT ( status, LATTICECOVERING_EMEM, LATTICECOVERING_MSGEMEM);
-  }
-  for (i=0; i < dim; i++ )
-    for (j=0; j < dim; j++ )
-      gsl_matrix_set (gmetric, i, j, metric->data[PMETRIC_INDEX(i,j)] );
+  /* translate 'LAL'-encoded metric into a gsl_matrix: */
+  if ( (gmetric = XLALmetric2gsl (metric)) == NULL ) 
+    {
+      XLALClearErrno(); 
+      ABORT (status, LATTICECOVERING_EFUNC, LATTICECOVERING_MSGEFUNC);
+    }
   
   /* 1) ----- get the generating matrix for a properly scaled An* lattice */
-  if (XLALFindCoveringGenerator (&generator, LATTICE_TYPE_ANSTAR, dim, coveringRadius, gmetric ) < 0)
+  if (XLALFindCoveringGenerator (&generator, latticeType, dim, coveringRadius, gmetric ) < 0)
     {
       int code = xlalErrno;
       XLALClearErrno(); 
@@ -1194,3 +1195,29 @@ XLALgsl2LALmetric (const gsl_matrix *gmetric)
   return metric;
 
 } /* XLALgsl2LALmetric() */
+
+/** Convert a LAL-encoded metric (REAL8Vector) into a symmetric gsl_matrix 
+ */
+gsl_matrix *
+XLALmetric2gsl (const REAL8Vector *metric)
+{
+  gsl_matrix *gij;
+  INT4 dim;
+  INT4 i,j;
+
+  if ( !metric )
+    XLAL_ERROR_NULL ("XLALmetric2gsl", XLAL_EINVAL);
+
+  if ( (dim = XLALFindMetricDim ( metric )) <= 0 )
+    XLAL_ERROR_NULL ("XLALmetric2gsl", XLAL_EFUNC);
+  
+  if ( (gij = gsl_matrix_calloc( dim, dim )) == NULL )
+    XLAL_ERROR_NULL ("XLALmetric2gsl", XLAL_ENOMEM);
+
+  for (i=0; i < dim; i++ )
+    for (j=0; j < dim; j++ )
+      gsl_matrix_set (gij, i, j, metric->data[PMETRIC_INDEX(i,j)] );
+
+  return gij;
+  
+} /* XLALmetric2gsl() */
