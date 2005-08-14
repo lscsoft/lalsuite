@@ -5,7 +5,7 @@
 int test_toplist(UINT8 n, char*filename) {
     REAL8 epsilon=1e-5;
     FILE*fp;
-    toplist *tl=NULL, *tl2=NULL;
+    toplist_t *tl=NULL, *tl2=NULL;
     FstatsClusterOutput FstatLine;
     UINT8 i,ins=0;
 

@@ -20,7 +20,7 @@ int finite(double);
 int create_toplist(toplist_t**tl, UINT8 length) {
     UINT8 i;
 
-    toplist *thetoplist = malloc(sizeof(toplist));
+    toplist_t *thetoplist = malloc(sizeof(toplist_t));
     if(!thetoplist)
 	return(-1);
 
@@ -117,13 +117,15 @@ int write_toplist_to_fp(toplist_t*tl, FILE*fp) {
 
 
 /* ordering function for sorting the list */
-static int _toplist_qsort_function(const void *pa, const void *pb) {
-    const FstatsClusterOutput**a = pa;
-    const FstatsClusterOutput**b = pb;
+static int _toplist_qsort_function(const void *ppa, const void *ppb) {
+    const FstatsClusterOutput**pa = ppa;
+    const FstatsClusterOutput**pb = ppb;
+    const FstatsClusterOutput*a = *pa;
+    const FstatsClusterOutput*b = *pb;
 
-    if ((**a).max < (**b).max)
+    if (a->max < b->max)
 	return -1;
-    else if ((**a).max > (**b).max)
+    else if (a->max > b->max)
 	return 1;
     else
 	return 0;
@@ -228,7 +230,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp) {
 
 /* writes an FstatsClusterOutput line to an open filepointer.
    Returns the number of chars written */
-int write_toplist_item_to_fp(FstatsClusterOutput fline,fp) {
+int write_toplist_item_to_fp(FstatsClusterOutput fline,FILE*fp) {
     return(fprintf(fp,"%e %e %e %e %d %e %e %1.15e\n",
 		   fline.Freq,
 		   fline.f1dot,
@@ -244,14 +246,15 @@ int write_toplist_item_to_fp(FstatsClusterOutput fline,fp) {
    temporary file to filename. The name of the temporary file is
    derived from the filename by appending ".tmp". Returns the number
    of chars written or -1 if the temp file could not be opened. */
-int atomic_write_toplist_to_file(toplist *l, char *filename,) {
+int atomic_write_toplist_to_file(toplist_t *l, char *filename) {
+    UINT4 length;
     char tempname[256];
     strncpy(tempname,filename,sizeof(tempname)-4);
     strcat(tempname,".tmp");
     FILE *fpnew=fopen(tempname, "w");
     if(!fpnew)
 	return -1;
-    length = write_toplist_to_fp(fpnew, l);
+    length = write_toplist_to_fp(l,fpnew);
     fclose(fpnew);
     rename(tempname, filename);
     return length;
