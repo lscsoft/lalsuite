@@ -703,8 +703,8 @@ void LALParserInspiralInjection(LALStatus *status,
   params->meanTimeStep                = 2630 / LAL_PI;  
   params->distance.min                = 1.0;
   params->distance.max                = 20000.0;
-  params->mdistr                      = 0;
-  params->ddistr                      = 0;
+  params->mdistr                      = SPININJ_totalMassU;
+  params->ddistr                      = SPININJ_distanceLogUniform;
   params->userTag                     = NULL;
   LALSnprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
 	       "EOBtwoPN");  
