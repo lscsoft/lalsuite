@@ -43,15 +43,7 @@ int test_toplist(UINT8 n, char*filename) {
 
 	if(insert_into_toplist(tl, FstatLine)) {
 	    ins++;
-	    fprintf(fp,"%e %e %e %e %d %e %e %1.15e\n",
-		    FstatLine.Freq,
-		    FstatLine.f1dot,
-		    FstatLine.Alpha,
-		    FstatLine.Delta,
-		    FstatLine.Nbins,
-		    FstatLine.mean,
-		    FstatLine.std,
-		    FstatLine.max);
+	    write_toplist_item_to_fp(FstatLine,fp);
 	}
 
 	if(i==n)
