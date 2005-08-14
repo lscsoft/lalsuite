@@ -77,7 +77,7 @@ int main( int argc, char *argv[]){
 
   INT4   mObsCoh, j, numberCount1, numberCount2;
   REAL8  sftBand;  
-  REAL8  timeBase, deltaF, normalizeThr, threshold;
+  REAL8  timeBase, deltaF, normalizeThr, threshold, thresholdAM;
   UINT4  sftlength; 
   INT4   sftFminBin;
   REAL8  fHeterodyne;
@@ -504,12 +504,11 @@ int main( int argc, char *argv[]){
 	      /* construct peakgram with usual threshold */
 	      SUB( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	 
 
-
 	      /*adjust threshold for amplitude modulation */
 	      a = aVec->data[j];
 	      b = bVec->data[j];
-	      threshold *= A / (2.0 * ( a*a + b*b));
-	      SUB( LALSelectPeakColorNoise(&status,&pg2,&threshold,&periPSD), &status); 	 
+	      thresholdAM = threshold * 0.5 * A / ( a*a + b*b);
+	      SUB( LALSelectPeakColorNoise(&status,&pg2,&thresholdAM,&periPSD), &status); 	 
 	   
 	      SUB( ComputeFoft(&status, &foft, &pulsarTemplate1, &timeDiffV, &velV, timeBase), &status);
 	      
