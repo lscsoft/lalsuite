@@ -33,6 +33,8 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include <lal/UserInput.h>
+
 #include <lalapps.h>
 
 #include "LatticeCovering.h"
@@ -48,21 +50,59 @@ RCSID ("$Id$");
 
 #define myrand() (1.0*rand()/RAND_MAX)
 
-/* prototypes */
-int main(void);
+/*---------- User variables ---------- */
+BOOLEAN uvar_help;
+INT4 uvar_dimension;
+INT4 uvar_latticeType;
+REAL8 uvar_coveringRadius;
+INT4 uvar_numMCpoints;
+INT4 uvar_metricType;
+
+/*---------- global vars ---------- */
+extern int vrbflg;
+
+
+/* non-unit metrics to use in various dimensions */
+#define MAX_DIMENSION	4
+REAL8 nonUnitMetric[MAX_DIMENSION][ MAX_DIMENSION * MAX_DIMENSION] = 
+  {
+    { /* 2D */ 
+      1,   0.2,
+      0.2, 0.5 
+    },
+    { /* 3D */
+      1.0, 0.1, 0.2,
+      0.1, 2.0, 0.5,
+      0.2, 0.5, 3.0 
+    },
+    { /* 4D */
+      1.0, 0.4, 0.2, -0.1, 
+      0.4, 2.0, 0.3, 0.1,
+      0.2, 0.3, 1.5, -0.3,
+      -0.1,0.1, -0.3, 1.0
+    } 
+
+  };
+
+
+
+/* ---------- prototypes ---------- */
+int main(int argc, char *argv[]);
+
 void testGS(void);
 void testCovering(void);
 BOOLEAN testArea1 ( const REAL8Vector *point ); /* example boundary-condition */
 
-void testCovering2(void);
-
+int testCovering2(void);
+void initUserVars (LALStatus *status);
 static int writeREAL8VectorList (FILE *fp, const REAL8VectorList *list);
 static int print_matrix (const gsl_matrix *m);
 static int print_vector (const gsl_vector *v);
 
 int plot2DCovering (FILE *fp, const REAL8VectorList *list, const REAL8Vector *metric, REAL8 mismatch);
 
-int MC_MeasureCovering(const REAL8VectorList *covering, const REAL8Vector *metric);
+int MC_MeasureCovering(FILE *fp, const REAL8VectorList *covering, 
+		       const REAL8Vector *metric, UINT4 numPoints);
 int ChooseRandomPoint ( REAL8Vector *point );
 REAL8 FindMinDistance (const REAL8Vector *samplePoint, const REAL8VectorList *covering, 
 		       const gsl_matrix *metric );
@@ -70,9 +110,22 @@ REAL8 FindMinDistance (const REAL8Vector *samplePoint, const REAL8VectorList *co
 /*--------------------------------------------------*/
 /* Test function(s) */
 /*--------------------------------------------------*/
-int main()
+int main(int argc, char *argv[])
 {
-  lalDebugLevel = 1;
+  LALStatus status = blank_status;  
+
+  lalDebugLevel = 0;  
+  vrbflg = 1;	/* verbose error-messages */
+
+  /* set LAL error-handler */
+  lal_errhandler = LAL_ERR_EXIT;
+
+  /* register user-variables */
+  LAL_CALL (LALGetDebugLevel (&status, argc, argv, 'v'), &status);
+  LAL_CALL (initUserVars (&status), &status);	  
+
+  /* read cmdline & cfgfile  */	
+  LAL_CALL (LALUserVarReadAllInput (&status, argc,argv), &status);  
 
   /* for production code: dont' let gsl abort on errors, but return error-codes to caller! */
   /* gsl_set_error_handler_off (); */
@@ -86,73 +139,176 @@ int main()
   return 0;
 }
 
-/* generate a covering for given metric and dimensions and write it to disk */
 void
+initUserVars (LALStatus *status)
+{
+  INITSTATUS( status, "initUserVars", rcsid );
+  ATTATCHSTATUSPTR ( status );
+
+  uvar_dimension = 2;
+  uvar_latticeType = LATTICE_TYPE_ANSTAR;
+  uvar_coveringRadius = 0.1;
+  uvar_numMCpoints = 0;
+  uvar_metricType = 0;
+
+  LALregBOOLUserVar(status,	help,		'h', UVAR_HELP, "Print this help/usage message");
+  LALregINTUserVar(status,	dimension, 	'd', UVAR_OPTIONAL, "Number of dimensions to cover");
+  LALregINTUserVar(status,	latticeType, 	'l', UVAR_OPTIONAL, "Lattice-type: 0=An*, 1=cubic");
+  LALregINTUserVar(status,	metricType, 	'M', UVAR_OPTIONAL, "Metric use: 0=unity, 1=non-unity");
+  LALregREALUserVar(status,	coveringRadius,	'R', UVAR_OPTIONAL, "Covering-radius (distance)");
+  LALregINTUserVar(status,	numMCpoints,      0, UVAR_OPTIONAL, "Nr of points for MC-sampling");
+
+  DETATCHSTATUSPTR ( status );
+  RETURN(status);
+
+} /* initUserVars() */
+
+/* generate a covering for given metric and dimensions and write it to disk */
+int
 testCovering2 (void)
 {
   LALStatus status = blank_status;
   REAL8VectorList *covering = NULL;
   REAL8Vector *metric = NULL;
   FILE *fp;
-  UINT4 dim;
   REAL8Vector startPoint;
-  REAL8 radius = 0.1;
-  CHAR *fname;
+  const CHAR *fname = NULL;
+  gsl_matrix_view tmp;
+  gsl_matrix *gij;
+  CHAR fnameRoot[4096];
 
-  /* metric */
-  gsl_matrix_view gij;
-  
-  double gij_data2a[] = { 1, 0 ,
-			  0, 1 };
+  if ( uvar_metricType > 0 && uvar_dimension > MAX_DIMENSION ) {
+    printf ("No non-unity metric available for dim > %d.\n", MAX_DIMENSION );
+    return -1;
+  }
 
-  double gij_data2b[] = { 1,   0.2,
-			  0.2, 0.5 };
+  /* prepare root for output-filenames */
+  sprintf (fnameRoot, "%s_%dD_%s_R%.2f",
+	   (uvar_latticeType==0) ? "Ans" : "cubic", 
+	   uvar_dimension, 
+	   (uvar_metricType == 0 )? "Unity" : "NonUnity",
+	   uvar_coveringRadius
+	   );
+   
+  if ( (gij = gsl_matrix_calloc (uvar_dimension, uvar_dimension)) == NULL )
+    return -1;
 
-  double gij_data3b[] = { 1, 0.1, 0.2,
-			  0.1, 2, 0.5,
-			  0.2, 0.5, 3 };
+  if ( uvar_metricType == 0 )
+    gsl_matrix_set_identity (gij);
+  else
+    {
+      /* get matrix-view of the non-unity metric */
+      tmp  = gsl_matrix_view_array ( nonUnitMetric[uvar_dimension-2], uvar_dimension, uvar_dimension );
+      gsl_matrix_memcpy ( gij, &(tmp.matrix) );
+    } /* if metricType == 1 */
 
-  /* get matrix-view of the metric */
-  dim = 2;
-  gij  = gsl_matrix_view_array ( gij_data2a, dim, dim );
-  if ( NULL == (metric = XLALgsl2LALmetric ( &(gij.matrix) )) )
+
+  if ( NULL == (metric = XLALgsl2LALmetric ( gij )) )
     {
       LALPrintError ("\nFailed to get proper metric set up \n\n");
-      return;
+      return -1;
     }
+  gsl_matrix_free (gij);
 
   /* setup start-point */
-  startPoint.length = dim;
-  startPoint.data = LALCalloc (dim, sizeof(startPoint.data[0]) ); /* already (0,0) */
-
+  startPoint.length = uvar_dimension;
+  startPoint.data = LALCalloc (uvar_dimension, sizeof(startPoint.data[0]) ); /* already (0,0) */
 
   /* generate covering */
-  LAL_CALL( LALLatticeCovering(&status, &covering, radius, metric, &startPoint, testArea1, 
-			       LATTICE_TYPE_ANSTAR), &status);
-  
+  LAL_CALL( LALLatticeCovering(&status, &covering, uvar_coveringRadius, metric, &startPoint, testArea1, 
+			       uvar_latticeType), &status);
+
+
   /* output result into a file */
-  fname = "test_covering.dat";
-  if ( (fp = fopen ( fname, "wb" )) == NULL ) {
-    LALPrintError ("\nFailed to open '%s' for writing!\n\n", fname);
-    return;
-  }
-  /* ("Now writing lattice-covering into '%s' ... ", fname); */
-  plot2DCovering (fp, covering, metric, radius*radius);
-  /*  printf ("done.\n\n"); */
-  fclose(fp);
+  {
+    CHAR buf[4096];
+    sprintf (buf, "%s_lattice.dat", fnameRoot);
+
+    if ( lalDebugLevel ) 
+      printf ("Outputting lattice into '%s'\n", buf );
+
+    if ( (fp = fopen ( buf, "wb" )) == NULL ) {
+      LALPrintError ("\nFailed to open '%s' for writing!\n\n", buf );
+      return -1;
+    }
+    if ( writeREAL8VectorList( fp, covering ) < 0 )
+      return -1;
+    fclose(fp);      
+
+  } /* output lattice */
+
+  
+  /* if 2D-lattice AND debugLevel > 0, we output the 2D lattice
+   * plus the metric ellipses 
+   */
+  if ( (uvar_dimension == 2) && (lalDebugLevel > 0) )
+    {
+      fname = "2DCoveringPlot.dat";
+      printf ("Plotting 2D lattice + ellipses into '%s' ... ", fname);
+      if ( (fp = fopen (fname, "wb")) == NULL ) {
+	printf ("Failed to open '%s' for writing!\n\n", fname);
+	return -1;
+      }
+      plot2DCovering (fp, covering, metric, uvar_coveringRadius * uvar_coveringRadius );
+      fclose(fp);
+      printf ("done.\n\n");
+    }
+
 
   /* produce a histogram of minimal distances of randomly picked points in Rn */
-  MC_MeasureCovering(covering, metric);
+  if ( uvar_numMCpoints )
+    {
+      CHAR buf[4096];
+      sprintf (buf, "%s_MCcovering.dat", fnameRoot);
+
+      if ( lalDebugLevel ) 
+	printf ("Outputting MCcovering results into '%s'\n", buf );
+
+      if ( (fp = fopen ( buf, "wb" )) == NULL ) {
+	LALPrintError ("\nFailed to open '%s' for writing!\n\n", buf );
+	return -1;
+      }
+      
+      MC_MeasureCovering(fp, covering, metric, uvar_numMCpoints);
+
+      fclose(fp);      
+    } /* if uvar_numMCpoints */
 
   /* free memory */
   REAL8VectorListDestroy ( covering );
   LALFree ( startPoint.data );
   LAL_CALL ( LALDDestroyVector (&status, &metric), &status);
 
+  LAL_CALL ( LALDestroyUserVars(&status), &status);
+
   /* check all (LAL-)memory for leaks... (unfortunately doesn't cover GSL!) */
   LALCheckMemoryLeaks(); 
 
+  return 0;
+
 } /* testCovering2() */
+
+
+/* test boundary-conditions: [-1, 1]^N */
+BOOLEAN
+testArea1 ( const REAL8Vector *point )
+{
+  UINT4 i;
+
+  if ( !point || !point->data)
+    return FALSE;
+
+  for ( i=0; i < point->length; i++ )
+    {
+      if ( fabs( point->data[i] ) > 1.0 )
+	return FALSE;
+    }
+  
+  return TRUE;
+} /* testArea1() */
+
+
+
 
 void
 testCovering (void)
@@ -218,6 +374,7 @@ testCovering (void)
   metric = XLALgsl2LALmetric ( &(gij.matrix) );
   LAL_CALL( LALLatticeCovering (&status, &covering, radius, metric, &startPoint, testArea1,
 				LATTICE_TYPE_ANSTAR), &status);
+
   if ( (fp = fopen ( "test_lattice2.dat", "wb" )) == NULL )
     {
       LALPrintError ("\nFailed to open 'test_lattice2.dat' for writing!\n\n");
@@ -238,25 +395,6 @@ testCovering (void)
   LALCheckMemoryLeaks(); 
   
 } /* testCovering() */
-
-/* test boundary-conditions: [-1, 1]^N */
-BOOLEAN
-testArea1 ( const REAL8Vector *point )
-{
-  UINT4 i;
-
-  if ( !point || !point->data)
-    return FALSE;
-
-  for ( i=0; i < point->length; i++ )
-    {
-      if ( fabs( point->data[i] ) > 1.0 )
-	return FALSE;
-    }
-  
-  return TRUE;
-} /* testArea1() */
-
 
 void
 testGS(void)
@@ -422,16 +560,18 @@ plot2DCovering (FILE *fp, const REAL8VectorList *list, const REAL8Vector *metric
  * Return -1 on error, 0 if ok.
  */
 int
-MC_MeasureCovering(const REAL8VectorList *covering, const REAL8Vector *metric)
+MC_MeasureCovering(FILE *fp, 
+		   const REAL8VectorList *covering, 
+		   const REAL8Vector *metric, 
+		   UINT4 numPoints)
 {
-  UINT4 numRuns = 10000;	/* number of points to sample */
   UINT4 run;
   gsl_matrix *gij;
   UINT4 dim;
   REAL8Vector *samplePoint = NULL;
   int seed = 1;
 
-  if ( !covering || !metric )
+  if ( !covering || !metric || !fp )
     return -1;
 
   if ( ( gij = XLALmetric2gsl (metric)) == NULL )
@@ -447,14 +587,14 @@ MC_MeasureCovering(const REAL8VectorList *covering, const REAL8Vector *metric)
 
   srand(seed);
 
-  for (run = 0; run < numRuns; run ++)
+  for (run = 0; run < numPoints; run ++)
     {
       REAL8 dist;
       ChooseRandomPoint ( samplePoint );
       
       dist = FindMinDistance (samplePoint, covering, gij );
 
-      printf ("%f\n", dist );
+      fprintf (fp, "%f\n", dist );
       
     } /* for run < numRuns */
 
