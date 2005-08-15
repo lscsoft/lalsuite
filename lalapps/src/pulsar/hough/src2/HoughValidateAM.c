@@ -12,6 +12,7 @@
 #include "../src/MCInjectHoughS2.h"
 #include <lal/LALComputeAM.h>
 #include <lal/ComputeSky.h>
+#include <gsl/gsl_cdf.h>
 
 INT4 lalDebugLevel;
 
@@ -76,6 +77,7 @@ int main( int argc, char *argv[]){
   EphemerisData   *edat = NULL;
 
   INT4   mObsCoh, j, numberCount1, numberCount2;
+  REAL8  nth1, nth2, erfc, houghFalseAlarm;
   REAL8  sftBand;  
   REAL8  timeBase, deltaF, normalizeThr, threshold, thresholdAM;
   UINT4  sftlength; 
@@ -490,6 +492,7 @@ int main( int argc, char *argv[]){
 	  for (j=0; j < mObsCoh; j++)  
 	    {
 	      INT4 index;
+	      REAL8 erfcInv;
 	      
 	      sft1.epoch.gpsSeconds = timeV.data[j].gpsSeconds;
 	      sft1.epoch.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
@@ -516,9 +519,15 @@ int main( int argc, char *argv[]){
 	      
 	      numberCount1 += pg1.data[index]; 
 	      numberCount2 += pg2.data[index]; 
+	      
+	      /* calculate the number count thresholds */
+	      houghFalseAlarm = 1.0e-10;
+	      erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);    
+	      nth1 = mObsCoh* exp(-threshold) + sqrt(2*mObsCoh*exp(-threshold)*(1-exp(-threshold)))*erfcInv; 
+	      nth2 = mObsCoh* exp(-thresholdAM) + sqrt(2*mObsCoh*exp(-thresholdAM)*(1-exp(-thresholdAM)))*erfcInv; 
 	    } 
 	  /* print the number count */
-	  fprintf(stdout, "%d    %d    %d    %d\n", mmT, mmP, numberCount1, numberCount2);
+	  fprintf(stdout, "%d    %d    %g    %g\n", numberCount1, numberCount2, nth1, nth2);
 	}
     }
   
