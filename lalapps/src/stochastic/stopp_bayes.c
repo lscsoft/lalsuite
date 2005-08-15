@@ -404,8 +404,9 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* save out omega and sigma */
   for (j = 0; j < 100; j++)
   {
-    fprintf(omega_out, "%d %e\n", j, omega_hat[j]);
-    fprintf(sigma_out, "%d %e\n", j, sigma_omega_hat[j]);
+    alpha = min_alpha + ((j/99.) * (max_alpha - min_alpha));
+    fprintf(omega_out, "%e %e\n", alpha, omega_hat[j]);
+    fprintf(sigma_out, "%e %e\n", alpha, sigma_omega_hat[j]);
   }
 
   /* close files */
