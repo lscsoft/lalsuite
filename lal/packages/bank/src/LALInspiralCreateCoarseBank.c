@@ -830,18 +830,22 @@ LALInspiralCreatePNCoarseBankHexa(
 
     INT4       *list=NULL;
     CellList *ptr=NULL;
-    INT4 length;
+    INT4 length=1;
 
+    if (! (list =  LALMalloc(length*sizeof(INT4))))
+      {
+	ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+	
+      }
 
     while (cellEvolution.fertile) {
       length = Length(cellList);
-
-      if (list!=NULL) 
-	free(list);
-
-      if (! (list =  LALMalloc(length*sizeof(INT4))))
+      
+      
+      if (! (list =  LALRealloc(list, length*sizeof(INT4))))
       {
 	ABORT( status, LALINSPIRALBANKH_EMEM, LALINSPIRALBANKH_MSGEMEM );
+	/* freeing memory here ? */
       }
       ptr = cellList;
 
@@ -861,11 +865,12 @@ LALInspiralCreatePNCoarseBankHexa(
           LALPopulateCell(status->statusPtr, &moments, &cells,
               k,  tempPars, &gridParam, &cellEvolution, &cellList);          
 	  CHECKSTATUSPTR( status );         	 	  
-
-
         }
       }
     }
+
+    LALFree(list);
+
 
 
 
@@ -874,7 +879,6 @@ LALInspiralCreatePNCoarseBankHexa(
 
   if (cellList != NULL)
     printf("wierd behaviour here\n");
-
 
 
   *nlist = cellEvolution.nTemplate;
@@ -921,7 +925,7 @@ LALInspiralCreatePNCoarseBankHexa(
 	
 	  cells[k].t0  = tempPars->t0;
 	  cells[k].t3  = tempPars->t3;    
-	  
+
 	  /* update its position values */
 	  valid = 1;
 	  GetPositionRectangle(status->statusPtr, &cells, k,  tempPars , 
@@ -960,11 +964,8 @@ LALInspiralCreatePNCoarseBankHexa(
 	    if (above == 2 && cells[k].position == In){
 	      cells[cells[k].child[0]].position = Out;
 	    }
-	    
 	  }
-		
 	} 
-		
       }
   }
 
@@ -1200,6 +1201,7 @@ LALPopulateCell(LALStatus               *status,
     
   DETATCHSTATUSPTR( status );
   RETURN ( status );
+
 }
 
 
