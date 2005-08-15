@@ -7,6 +7,7 @@
  *                                                                          
  *          Albert Einstein Institute/UWM - started September 2002   
  *********************************************************************************/
+
 #include "config.h"
 
 /* System includes */
@@ -37,6 +38,10 @@
 #include "ComputeFStatistic.h"
 #include "clusters.h"
 #include "DopplerScan.h"
+
+#ifdef USE_TOPLIST
+#include "FstatToplist.h"
+#endif
 
 /* this is defined in C99 and *should* be in math.h.  Long term
    protect this with a HAVE_FINITE */
@@ -232,6 +237,10 @@ REAL8 uvar_refTime;
 BOOLEAN uvar_useCompression;
 #endif
 
+UINT4 uvar_OutputBufferKB;
+UINT4 uvar_MaxFileSizeKB;
+UINT4 uvar_NumEventsToKeep;
+
 BOOLEAN uvar_projectMetric;
 
 /*----------------------------------------------------------------------*/
@@ -258,6 +267,10 @@ CHAR Fstatsfilename[256]; /**< Fstats file name*/
 CHAR ckp_fname[260];	/**< filename of checkpoint-file, global for polka */
 CHAR *Outputfilename;	/**< Name of output file, either Fstats- or Polka file name*/
 INT4 cfsRunNo = 0;	/**< CFS run-number: 0=run only once, 1=first run, 2=second run */
+
+#ifdef USE_TOPLIST
+toplist_t* toplist;
+#endif
 
 /*----------------------------------------------------------------------*/
 /* local prototypes */
@@ -538,6 +551,11 @@ int main(int argc,char *argv[])
   strcpy(Fstatsfilename,"Fstats");
   if ( uvar_outputLabel )
     strcat(Fstatsfilename,uvar_outputLabel);
+
+#ifdef USE_TOPLIST
+  create_toplist(&toplist,uvar_NumEventsToKeep);
+#endif
+
   /* prepare checkpointing file */
   strcpy(ckp_fname, Fstatsfilename);
   strcat(ckp_fname, ".ckp");
@@ -605,9 +623,8 @@ int main(int argc,char *argv[])
        a stream and BEFORE ANY OTHER OPERATIONS HAVE BEEN PERFORMED ON
        IT."
     */
-    const int bsize=2*1024*1024;
-    if ((fstatbuff=(char *)LALCalloc(bsize, 1)))
-      setvbuf(fpstat, fstatbuff, _IOFBF, bsize);
+    if ((fstatbuff=(char *)LALCalloc(uvar_OutputBufferKB * 1024, 1)))
+      setvbuf(fpstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
     else {
       LALPrintError ("Failed to allocate memory for Fstats file buffering. Exiting.\n");
       return COMPUTEFSTAT_EXIT_NOMEM;
@@ -819,12 +836,22 @@ int main(int argc,char *argv[])
     } /*  while SkyPos */
 
   if (fpstat) {
+#ifdef USE_TOPLIST
+    fclose(fpstat);
+    /* final compactification */
+    atomic_write_toplist_to_file(toplist,Fstatsfilename);
+#else /* USE_TOPLIST */
     /* this is our marker indicating 'finished'.  What appears in the file is:
     %DONE
     on the final line */
     fprintf(fpstat, "%%DONE\n");
     fclose(fpstat);
+#endif /* USE_TOPLIST */
   }
+
+#ifdef USE_TOPLIST
+  free_toplist(&toplist);
+#endif /* USE_TOPLIST */
 
 #ifdef RUN_POLKA
   } /* if (!fstats_completed) */
@@ -941,13 +968,20 @@ initUserVars (LALStatus *stat)
 #if USE_BOINC
   uvar_doCheckpointing = TRUE;
   uvar_expLALDemod = 1;
+  uvar_OutputBufferKB = 2048;
 #else
   uvar_doCheckpointing = FALSE;
   uvar_expLALDemod = 0;
+  uvar_OutputBufferKB = 0;
 #endif
 
 #if BOINC_COMPRESS
   uvar_useCompression = TRUE;
+#endif
+
+#ifdef USE_TOPLIST
+  uvar_MaxFileSizeKB = 5*1024;
+  uvar_NumEventsToKeep = 0;
 #endif
 
   /* register all our user-variables */
@@ -1000,6 +1034,13 @@ initUserVars (LALStatus *stat)
 		      "Output-file for the F-statistic field over the parameter-space");
   LALregSTRINGUserVar(stat,     outputLoudest,	0,  UVAR_DEVELOPER, 
 		      "Output-file for the loudest F-statistic candidate in this search");
+
+  LALregINTUserVar(stat,        OutputBufferKB, 0, UVAR_DEVELOPER, "Size of the output buffer in [kB]");
+#ifdef USE_TOPLIST
+  LALregINTUserVar(stat,        MaxFileSizeKB,  0, UVAR_DEVELOPER, "Size to which the output file grows until it is rewritten [kB]");
+  LALregINTUserVar(stat,        NumEventsToKeep,  0, UVAR_DEVELOPER, "Number of events to keep");
+
+#endif
 
   DETATCHSTATUSPTR (stat);
   RETURN (stat);
@@ -1524,11 +1565,23 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosi
     outputLine.max   = max;
 
 
-    /*    print the output */
+    /* print the output */
     if (fpstat) {
       int l;
       int howmany2=0;
 
+#ifdef USE_TOPLIST
+      /* TODO: errorhandling */
+      if(insert_into_toplist(toplist, outputLine)) {	
+	  numBytes += write_toplist_item_to_fp(outputLine,fpstat);
+      }
+      if (numBytes > uvar_MaxFileSizeKB * 1024) {
+	  fclose(fpstat);
+	  numBytes = atomic_write_toplist_to_file(toplist, "file1");
+	  fpstat=fopen("file1", "a");
+	  setvbuf(fpstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
+      }
+#else  /* USE_TOPLIST */
 
 #ifdef OUTPUT_F1DOT
       int howmany=sprintf((char *)tmpline, "%16.12f %.12g %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
@@ -1551,13 +1604,15 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosi
         fprintf(stderr,"writeFLines couldn't print to Fstats-file!\n");
         return 4;
       }
-      
+
       /* update bytecount */
       numBytes+=howmany;
       
       /* update checksum sum */
       for (l=0; l<howmany; l++)
         localchecksum+=(int)tmpline[l];
+
+#endif /* USE_TOPLIST */
       
     } /* if fpstat */
     
