@@ -839,7 +839,10 @@ int main(int argc,char *argv[])
 #ifdef USE_TOPLIST
     fclose(fpstat);
     /* final compactification */
-    atomic_write_toplist_to_file(toplist,Fstatsfilename);
+    if(atomic_write_toplist_to_file(toplist,Fstatsfilename)<0) {
+	fprintf(stderr,"Couldn't write compacted toplist\n");
+	return (COMPUTEFSTAT_EXIT_OPENFSTAT);
+    }
 #else /* USE_TOPLIST */
     /* this is our marker indicating 'finished'.  What appears in the file is:
     %DONE
@@ -1573,13 +1576,27 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosi
 #ifdef USE_TOPLIST
       /* TODO: errorhandling */
       if(insert_into_toplist(toplist, outputLine)) {	
-	  numBytes += write_toplist_item_to_fp(outputLine,fpstat);
+	  howmany2 = write_toplist_item_to_fp(outputLine,fpstat);
+	  if (howmany2<0) {
+	      fclose(fpstat);
+	      return (COMPUTEFSTAT_EXIT_WRITEFSTAT);
+	  } else
+	      numBytes += howmany2;
       }
 #if USE_BOINC
       if (numBytes > uvar_MaxFileSizeKB * 1024) {
 	  fclose(fpstat);
-	  numBytes = atomic_write_toplist_to_file(toplist, "file1");
-	  fpstat=fopen("file1", "a");
+	  howmany2 = atomic_write_toplist_to_file(toplist, "file1");
+	  if (howmany2 < 0) {
+	      fprintf(stderr,"Couldn't write compacted toplist\n");
+	      return (COMPUTEFSTAT_EXIT_OPENFSTAT);
+	  }
+	  numBytes = howmany2;
+	  fpstat = fopen("file1", "a");
+	  if (!fpstat) {
+	      fprintf(stderr,"Couldn't open compacted toplist for appending\n");
+	      return (COMPUTEFSTAT_EXIT_OPENFSTAT2);
+	  }
 	  setvbuf(fpstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
       }
 #endif /* USE_BOINC */
