@@ -29,7 +29,7 @@ INT4 lalDebugLevel;
 /* default injected pulsar parameters */
 #define F0 255.0          /*  frequency to build the LUT and start search */
 #define FDOT 0.0 /* default spindown parameter */
-#define ALPHA 0.0		/* center of the sky patch (in radians) */
+#define ALPHA 1.57
 #define DELTA  0.0
 #define COSIOTA 0.5
 #define PHI0 0.0
@@ -77,7 +77,7 @@ int main( int argc, char *argv[]){
   EphemerisData   *edat = NULL;
 
   INT4   mObsCoh, j, numberCount1, numberCount2;
-  REAL8  nth1, nth2, erfc, houghFalseAlarm;
+  REAL8  nth1, nth2, erfcInv, houghFalseAlarm, meanAM, sigmaAM;
   REAL8  sftBand;  
   REAL8  timeBase, deltaF, normalizeThr, threshold, thresholdAM;
   UINT4  sftlength; 
@@ -472,6 +472,7 @@ int main( int argc, char *argv[]){
   sft1.fminBinIndex = sftFminBin;
   sft1.timeBase = timeBase;
 
+
   /* loop over mismatched templates */
   for (mmT = 0; mmT <= 0; mmT++)
     { 
@@ -488,11 +489,12 @@ int main( int argc, char *argv[]){
 	  
 	  numberCount1 = 0; /* usual number count */
 	  numberCount2 = 0; /* number count with amplitude modulation */
+	  meanAM = 0.0;  /* mean and variance for new distribution */
+	  sigmaAM = 0.0;
 	  /* now calculate the number count for the template */
 	  for (j=0; j < mObsCoh; j++)  
 	    {
 	      INT4 index;
-	      REAL8 erfcInv;
 	      
 	      sft1.epoch.gpsSeconds = timeV.data[j].gpsSeconds;
 	      sft1.epoch.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
@@ -519,14 +521,18 @@ int main( int argc, char *argv[]){
 	      
 	      numberCount1 += pg1.data[index]; 
 	      numberCount2 += pg2.data[index]; 
-	      
-	      /* calculate the number count thresholds */
-	      houghFalseAlarm = 1.0e-10;
-	      erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);    
-	      nth1 = mObsCoh* exp(-threshold) + sqrt(2*mObsCoh*exp(-threshold)*(1-exp(-threshold)))*erfcInv; 
-	      nth2 = mObsCoh* exp(-thresholdAM) + sqrt(2*mObsCoh*exp(-thresholdAM)*(1-exp(-thresholdAM)))*erfcInv; 
+
+	      meanAM += exp(-thresholdAM);	      
+	      sigmaAM += exp(-thresholdAM) * (1.0 - exp(-thresholdAM));
 	    } 
 	  /* print the number count */
+
+	  /* calculate the number count thresholds */
+	  houghFalseAlarm = 1.0e-10;
+	  erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);    
+	  nth1 = mObsCoh* exp(-threshold) + sqrt(2*mObsCoh*exp(-threshold)*(1-exp(-threshold)))*erfcInv; 
+	  /* use mean and variance to get approximate threshold in Gaussian approximatio */
+	  nth2 = meanAM + sqrt( 2 * sigmaAM )* erfcInv; 
 	  fprintf(stdout, "%d    %d    %g    %g\n", numberCount1, numberCount2, nth1, nth2);
 	}
     }
