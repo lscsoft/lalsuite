@@ -968,7 +968,7 @@ initUserVars (LALStatus *stat)
 #if USE_BOINC
   uvar_doCheckpointing = TRUE;
   uvar_expLALDemod = 1;
-  uvar_OutputBufferKB = 2048;
+  uvar_OutputBufferKB = 2048; /* to keep the previous behavior so far */
 #else
   uvar_doCheckpointing = FALSE;
   uvar_expLALDemod = 0;
@@ -1575,12 +1575,15 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosi
       if(insert_into_toplist(toplist, outputLine)) {	
 	  numBytes += write_toplist_item_to_fp(outputLine,fpstat);
       }
+#if USE_BOINC
       if (numBytes > uvar_MaxFileSizeKB * 1024) {
 	  fclose(fpstat);
 	  numBytes = atomic_write_toplist_to_file(toplist, "file1");
 	  fpstat=fopen("file1", "a");
 	  setvbuf(fpstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
       }
+#endif /* USE_BOINC */
+
 #else  /* USE_TOPLIST */
 
 #ifdef OUTPUT_F1DOT
