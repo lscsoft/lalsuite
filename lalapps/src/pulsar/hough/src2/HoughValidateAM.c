@@ -510,7 +510,7 @@ int main( int argc, char *argv[]){
 	      /*adjust threshold for amplitude modulation */
 	      a = aVec->data[j];
 	      b = bVec->data[j];
-	      thresholdAM = threshold * 0.5 * A / ( a*a + b*b);
+	      thresholdAM = threshold * 0.5 * (A+B) / ( a*a + b*b);
 	      SUB( LALSelectPeakColorNoise(&status,&pg2,&thresholdAM,&periPSD), &status); 	 
 	   
 	      SUB( ComputeFoft(&status, &foft, &pulsarTemplate1, &timeDiffV, &velV, timeBase), &status);
