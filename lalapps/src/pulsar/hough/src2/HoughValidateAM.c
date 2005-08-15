@@ -531,9 +531,9 @@ int main( int argc, char *argv[]){
 	  houghFalseAlarm = 1.0e-10;
 	  erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);    
 	  nth1 = mObsCoh* exp(-threshold) + sqrt(2*mObsCoh*exp(-threshold)*(1-exp(-threshold)))*erfcInv; 
-	  /* use mean and variance to get approximate threshold in Gaussian approximatio */
+	  /* use mean and variance to get approximate threshold in Gaussian approximation */
 	  nth2 = meanAM + sqrt( 2 * sigmaAM )* erfcInv; 
-	  fprintf(stdout, "%d    %d    %g    %g\n", numberCount1, numberCount2, nth1, nth2);
+	  fprintf(stdout, "%g    %g    %d    %d    %g    %g\n", uvar_alpha, uvar_delta, numberCount1, numberCount2, nth1, nth2);
 	}
     }
   
