@@ -710,10 +710,15 @@ int main(int argc,char *argv[]){
       chan.deltaT = 1.0/SRATE;
       chan.epoch = epoch;
       chan.data->length = npts;
-      
-      /* copy data */
+
+/* copy data */            
+#if USETDCALDATA
       for (i=0;i<npts;i++){
-	chan.data->data[i]=frvect->dataD[i];
+        chan.data->data[i]=frvect->dataD[i];
+#else
+      for (i=0;i<npts;i++){
+        chan.data->data[i]=frvect->dataF[i];
+#endif
 
 #if QUANTIZATION_TEST
 	{
