@@ -243,9 +243,11 @@ testCovering2 (void)
    */
   if ( (uvar_dimension == 2) && (lalDebugLevel > 0) )
     {
-      fname = "2DCoveringPlot.dat";
-      printf ("Plotting 2D lattice + ellipses into '%s' ... ", fname);
-      if ( (fp = fopen (fname, "wb")) == NULL ) {
+      CHAR buf[4096];
+      sprintf (buf, "%s_EllipsePlot.dat", fnameRoot);
+
+      printf ("Plotting 2D lattice + ellipses into '%s' ... ", buf);
+      if ( (fp = fopen (buf, "wb")) == NULL ) {
 	printf ("Failed to open '%s' for writing!\n\n", fname);
 	return -1;
       }
@@ -300,7 +302,7 @@ testArea1 ( const REAL8Vector *point )
 
   for ( i=0; i < point->length; i++ )
     {
-      if ( fabs( point->data[i] ) > 1.0 )
+      if ( fabs( point->data[i] ) >= 1.0 )
 	return FALSE;
     }
   
