@@ -100,10 +100,12 @@ int insert_into_toplist(toplist_t*tl, FstatsClusterOutput elem) {
 /* Writes the toplist to an (already open) filepointer
    Returns the number of written charactes
    Returns something <0 on error */
-int write_toplist_to_fp(toplist_t*tl, FILE*fp) {
+int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    UINT8 i,c=0;
+   if(checksum)
+       *checksum = 0;
    for(i=0;i<tl->elems;i++)
-       c += write_toplist_item_to_fp(*(tl->sorted[i]),fp);
+       c += write_toplist_item_to_fp(*(tl->sorted[i]), fp, checksum);
    return(c);
 }
 
@@ -112,8 +114,8 @@ int write_toplist_to_fp(toplist_t*tl, FILE*fp) {
 static int _toplist_qsort_function(const void *ppa, const void *ppb) {
     const FstatsClusterOutput**pa = ppa;
     const FstatsClusterOutput**pb = ppb;
-    const FstatsClusterOutput*a = *pa;
-    const FstatsClusterOutput*b = *pb;
+    const FstatsClusterOutput*a = *pa;;
+    const FstatsClusterOutput*b = *pb;;
 
     if (a->Freq < b->Freq)
 	return -1;
@@ -141,12 +143,15 @@ void sort_toplist(toplist_t*l) {
 }
 
 /* reads a (created!) toplist from an open filepointer
-   returns -1 if the file contained a syntax error, -2 if given an improper toplist
+   returns the number of bytes read,
+   -1 if the file contained a syntax error, -2 if given an improper toplist
 */
-int read_toplist_from_fp(toplist_t*l, FILE*fp) {
-    char inline[256]; /* buffer for reading a line */
-    UINT4 items, lines; /* number of items read from a line, linecounter */
-    char lastchar;    /* last character of a line read, should be newline */
+int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum) {
+    char inline[256];     /* buffer for reading a line */
+    UINT4 items, lines;   /* number of items read from a line, linecounter */
+    UINT4 len, chars = 0; /* length of a line, total characters read from the file */
+    UINT4 i;              /* loop counter */
+    char lastchar;        /* last character of a line read, should be newline */
     FstatsClusterOutput FstatLine;
     REAL8 epsilon=1e-5;
 
@@ -156,13 +161,20 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp) {
 
     /* make sure the inline buffer is terminated correctly */
     inline[sizeof(inline)-1]='\0';
-	    
+
+    /* init the checksum if given */
+    if(checksum)
+	*checksum = 0;
+
     lines=1;
     while(fgets(inline,sizeof(inline)-1,fp)) {
 
-	if (strlen(inline)==0 || inline[strlen(inline)-1] != '\n') {
+	len = strlen(inline);
+	chars += len;
+
+	if (len==0 || inline[len-1] != '\n') {
 	    LALPrintError(
-                "Line too long or has no NEWLINE.  First %d chars are:\n%s\n",
+                "Line too long or has no NEWLINE. First %d chars are:\n%s\n",
                 sizeof(inline)-1, inline);
 	    return -1;
 	}
@@ -221,6 +233,10 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp) {
 		(double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
 	    return -1;
         }
+
+	if (checksum)
+	    for(i=0;i<len;i++)
+		*checksum += inline[i];
 	
 	insert_into_toplist(l, FstatLine);
 	lines++;
@@ -229,32 +245,48 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp) {
 }
 
 /* writes an FstatsClusterOutput line to an open filepointer.
-   Returns the number of chars written */
-int write_toplist_item_to_fp(FstatsClusterOutput fline,FILE*fp) {
-    return(fprintf(fp,"%1.13e %e %e %e %d %e %e %1.15e\n",
-		   fline.Freq,
-		   fline.f1dot,
-		   fline.Alpha,
-		   fline.Delta,
-		   fline.Nbins,
-		   fline.mean,
-		   fline.std,
-		   fline.max));
+   Returns the number of chars written, -1 if in error
+   Updates checksum if given */
+int write_toplist_item_to_fp(FstatsClusterOutput fline, FILE*fp, UINT4*checksum) {
+    char linebuf[256];
+    UINT4 i;
+
+    UINT4 length =
+	snprintf(linebuf, sizeof(linebuf),
+		 "%1.13e %e %e %e %d %e %e %1.15e\n",
+		 fline.Freq,
+		 fline.f1dot,
+		 fline.Alpha,
+		 fline.Delta,
+		 fline.Nbins,
+		 fline.mean,
+		 fline.std,
+		 fline.max);
+
+    if(length>sizeof(linebuf))
+	return -1;
+
+    if (checksum)
+	for(i=0;i<length;i++)
+	    *checksum += linebuf[i];
+
+    return(fprintf(fp,"%s",linebuf));
 }
 
 /* writes the given toplitst to a temporary file, then renames the
    temporary file to filename. The name of the temporary file is
    derived from the filename by appending ".tmp". Returns the number
    of chars written or -1 if the temp file could not be opened. */
-int atomic_write_toplist_to_file(toplist_t *l, char *filename) {
-    UINT4 length;
+int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
     char tempname[256];
+    UINT4 length;
+
     strncpy(tempname,filename,sizeof(tempname)-4);
     strcat(tempname,".tmp");
     FILE *fpnew=fopen(tempname, "w");
     if(!fpnew)
 	return -1;
-    length = write_toplist_to_fp(l,fpnew);
+    length = write_toplist_to_fp(l,fpnew,checksum);
     fclose(fpnew);
     rename(tempname, filename);
     return length;

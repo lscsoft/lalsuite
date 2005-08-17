@@ -8,6 +8,7 @@ int test_toplist(UINT8 n, char*filename) {
     toplist_t *tl=NULL, *tl2=NULL;
     FstatsClusterOutput FstatLine;
     UINT8 i,ins=0;
+    UINT4 checksum;
 
     fprintf(stderr,"creating first toplist...\n");
     if(create_toplist(&tl,n)) {
@@ -30,6 +31,8 @@ int test_toplist(UINT8 n, char*filename) {
 	return(-2);
     }
 
+    checksum = 0;
+
     fprintf(stderr,"filling first toplist...\n");
     for(i=0;i<n*2;i++) {
 	FstatLine.Freq = (double)rand() / (double)RAND_MAX;
@@ -43,7 +46,7 @@ int test_toplist(UINT8 n, char*filename) {
 
 	if(insert_into_toplist(tl, FstatLine)) {
 	    ins++;
-	    write_toplist_item_to_fp(FstatLine,fp);
+	    write_toplist_item_to_fp(FstatLine,fp,&checksum);
 	}
 
 	if(i==n)
@@ -52,6 +55,8 @@ int test_toplist(UINT8 n, char*filename) {
     fprintf(stderr,"%d inserts actually done of %d\n",(int)ins,2*(int)n);
 
     fclose(fp);
+
+    fprintf(stderr,"checksum: %d\n",checksum);
 
     fprintf(stderr,"open file %s for reading...\n",filename);
     fp=fopen(filename,"r");
@@ -63,9 +68,11 @@ int test_toplist(UINT8 n, char*filename) {
     }
 
     fprintf(stderr,"reading...\n");
-    read_toplist_from_fp(tl2,fp);
+    read_toplist_from_fp(tl2, fp, &checksum);
 
     fclose(fp);
+
+    fprintf(stderr,"checksum: %d\n",checksum);
 
     sort_toplist(tl);
 
@@ -79,13 +86,15 @@ int test_toplist(UINT8 n, char*filename) {
     }
     
     fprintf(stderr,"writing...\n");
-    if(write_toplist_to_fp(tl,fp)<0) {
+    if(write_toplist_to_fp(tl, fp, &checksum)<0) {
 	LALPrintError("Couldn't write toplist\n",filename);
 	fclose(fp);
 	free_toplist(&tl);
 	free_toplist(&tl2);
 	return(-2);
     }
+
+    fprintf(stderr,"checksum: %d\n",checksum);
 
     fclose(fp);
 
