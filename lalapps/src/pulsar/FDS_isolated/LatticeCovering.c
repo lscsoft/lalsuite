@@ -24,12 +24,11 @@
  * \ingroup moduleLatticeCovering
  * \brief Functions for covering metric parameter-spaces with a lattice.
  *
- * These routines should eventually become useable for implementing 
- * a covering that's practical and as "optimal" as possible.
- * Right now this is just a playground...
- *
  * $Id$
  *
+ * \todo 
+ *  - iterative generation of lattice
+ *  - optimize for speed
  */
 
 /*---------- INCLUDES ----------*/
