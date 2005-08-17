@@ -114,8 +114,8 @@ int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
 static int _toplist_qsort_function(const void *ppa, const void *ppb) {
     const FstatsClusterOutput**pa = ppa;
     const FstatsClusterOutput**pb = ppb;
-    const FstatsClusterOutput*a = *pa;;
-    const FstatsClusterOutput*b = *pb;;
+    const FstatsClusterOutput*a = *pa;
+    const FstatsClusterOutput*b = *pb;
 
     if (a->Freq < b->Freq)
 	return -1;
