@@ -42,7 +42,7 @@ extern "C" {
 #define COMPUTEFSTAT_EXIT_OPENFMAX        9  /* error opening Fmax file */
 #define COMPUTEFSTAT_EXIT_OPENFSTAT      10  /* error opening FStats file */
 #define COMPUTEFSTAT_EXIT_OPENFSTAT2     11  /* error opening FStats file for append (chkpt) */
-#define COMPUTEFSTAT_EXIT_WRITEFSTAT     12  /* error opening FStats file */
+#define COMPUTEFSTAT_EXIT_WRITEFSTAT     12  /* error writing FStats file */
 #define COMPUTEFSTAT_EXIT_WRITEFAFB      13  /* writeFaFb failed */
 #define COMPUTEFSTAT_EXIT_ESTSIGPAR      14  /* EstimateSignalParameters failed */
 #define COMPUTEFSTAT_EXIT_NOMEM          15  /* out of memory */
