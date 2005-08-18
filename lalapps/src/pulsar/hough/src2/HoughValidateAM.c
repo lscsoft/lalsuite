@@ -522,6 +522,7 @@ int main( int argc, char *argv[]){
 	  for (j=0; j < mObsCoh; j++)  
 	    {
 	      INT4 index;
+	      REAL8 realThrAM;
 	      
 	      sft1.epoch.gpsSeconds = timeV.data[j].gpsSeconds;
 	      sft1.epoch.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
@@ -547,20 +548,23 @@ int main( int argc, char *argv[]){
 	      index = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
 	      
 	      numberCount1 += pg1.data[index]; 
-	      numberCount2 += pg2.data[index]; 
-
-	      meanAM += exp(-thresholdAM);	      
-	      sigmaAM += exp(-thresholdAM) * (1.0 - exp(-thresholdAM));
+	      numberCount2 += pg2.data[index];
+	      
+	      realThrAM = thresholdAM * normalizeThr;
+	
+	      meanAM += exp(-realThrAM);	      
+	      sigmaAM += exp(-realThrAM) * (1.0 - exp(-realThrAM));
 	    } 
 	  /* print the number count */
 
 	  /* calculate the number count thresholds */
 	  houghFalseAlarm = 1.0e-10;
 	  erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);    
-	  nth1 = mObsCoh* exp(-threshold) + sqrt(2*mObsCoh*exp(-threshold)*(1-exp(-threshold)))*erfcInv; 
+	  nth1 = mObsCoh* exp(-uvar_peakThreshold) + sqrt(2*mObsCoh*exp(-uvar_peakThreshold)*(1-exp(-uvar_peakThreshold)))*erfcInv; 
 	  /* use mean and variance to get approximate threshold in Gaussian approximation */
 	  nth2 = meanAM + sqrt( 2 * sigmaAM )* erfcInv; 
-	  fprintf(stdout, "%g    %g    %d    %d    %g    %g\n", uvar_alpha, uvar_delta, numberCount1, numberCount2, nth1, nth2);
+	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %g    %g    %g\n", uvar_alpha,
+	  uvar_delta, numberCount1, numberCount2, nth1, nth2, uvar_peakThreshold, meanAM, sigmaAM );
 	}
     }
   
