@@ -77,7 +77,7 @@ int main( int argc, char *argv[]){
   EphemerisData   *edat = NULL;
 
   INT4   mObsCoh, j, numberCount1, numberCount2;
-  REAL8  nth1, nth2, erfcInv, houghFalseAlarm, meanAM, sigmaAM;
+  REAL8  nth1, nth2, erfcInv, houghFalseAlarm, meanAM, sigmaAM,varAM;
   REAL8  sftBand;  
   REAL8  timeBase, deltaF, normalizeThr, threshold, thresholdAM;
   UINT4  sftlength; 
@@ -423,6 +423,29 @@ int main( int argc, char *argv[]){
   C = amc.C;
   D = amc.D;
   
+  /* *********************************************************************** */
+  /* computing varAM */
+  {
+    UINT4 j;
+    REAL8  x;
+    /* REAL8  y; */
+    
+    varAM = 0.0;
+    
+    /* y=0.0; */
+    for(j=0; j<mObsCoh; j++){
+      a = aVec->data[j];
+      b = bVec->data[j];
+      x = 2.0*(a*a + b*b)/(A+B) -1.0;
+      varAM += x*x;
+      /* y+=x; */
+    }
+    varAM = varAM/mObsCoh;
+    /* fprintf(stdout, "zero ?= %g\n", y); */
+
+  }
+ 
+  
   
   /* *********************************************************************** */
   /* set grid spacings */
@@ -563,10 +586,10 @@ int main( int argc, char *argv[]){
 	  nth1 = mObsCoh* exp(-uvar_peakThreshold) + sqrt(2*mObsCoh*exp(-uvar_peakThreshold)*(1-exp(-uvar_peakThreshold)))*erfcInv; 
 	  /* use mean and variance to get approximate threshold in Gaussian approximation */
 	  nth2 = meanAM + sqrt( 2 * sigmaAM )* erfcInv; 
-	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %d    %g    %g    %g\n", 
+	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %d    %g    %g    %g    %g\n", 
 	          uvar_alpha, uvar_delta, numberCount1, numberCount2, 
 	          nth1, nth2, mObsCoh, uvar_peakThreshold, 
-	          meanAM, sqrt(sigmaAM) );
+	          meanAM, sqrt(sigmaAM), varAM );
 	}
     }
   
