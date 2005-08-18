@@ -112,9 +112,11 @@ int main( int argc, char *argv[]){
   lalDebugLevel = 0;
 
   nfSizeCylinder = NFSIZE;
+  
   /* LALDebugLevel must be called before anything else */
   SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
+  /* *********************************************************************** */
   /* set other user input variables */
   uvar_help = FALSE;
   uvar_peakThreshold = THRESHOLD;
@@ -144,6 +146,7 @@ int main( int argc, char *argv[]){
   uvar_fnameout = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_fnameout, FILEOUT);
 
+  /* *********************************************************************** */
   /* register user input variables */
   SUB( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
   SUB( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ),            &status);
@@ -169,6 +172,7 @@ int main( int argc, char *argv[]){
   if (uvar_help)
     exit(0); 
   
+  /* *********************************************************************** */
   /* write the log file */
   fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
   strcpy(fnamelog, uvar_fnameout);
@@ -204,16 +208,19 @@ int main( int argc, char *argv[]){
     LALFree(fnamelog); 
   }
 
+  /* *********************************************************************** */
   /* set peak selection threshold */
   SUB( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
   threshold = uvar_peakThreshold/normalizeThr; 
 
+  /* *********************************************************************** */
   /* set detector */
   if (uvar_ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
   if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
 
 
+  /* *********************************************************************** */
   /* copy user input values */
   pulsarInject.f0 = uvar_f0;
   pulsarInject.latitude = uvar_delta;
@@ -227,6 +234,7 @@ int main( int argc, char *argv[]){
   pulsarInject.spindown.data = (REAL8 *)LALMalloc(sizeof(REAL8));
   pulsarInject.spindown.data[0] = uvar_fdot;
 
+  /* *********************************************************************** */
   /* copy these values also to the pulsar template */
   /* template is complately matched at this point */
   pulsarTemplate.f0 = uvar_f0;
@@ -237,11 +245,13 @@ int main( int argc, char *argv[]){
   pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(sizeof(REAL8));
   pulsarTemplate.spindown.data[0] = uvar_fdot;
 
+  /* *********************************************************************** */
   /* allocate memory for mismatched spindown template */
   pulsarTemplate1.spindown.length = 1;
   pulsarTemplate1.spindown.data = NULL;
   pulsarTemplate1.spindown.data = (REAL8 *)LALMalloc(sizeof(REAL8));
 
+  /* *********************************************************************** */
   /* read sfts */
   {
     CHAR *tempDir;
@@ -254,6 +264,7 @@ int main( int argc, char *argv[]){
   }
 
 
+  /* *********************************************************************** */
   /* get sft parameters */
   mObsCoh = inputSFTs->length;
   sftlength = inputSFTs->data->data->length;
@@ -263,11 +274,13 @@ int main( int argc, char *argv[]){
   fHeterodyne = sftFminBin*deltaF;
   tSamplingRate = 2.0*deltaF*(sftlength -1.);
 
+  /* *********************************************************************** */
   /* create timestamp vector */
   timeV.length = mObsCoh;
   timeV.data = NULL;  
   timeV.data = (LIGOTimeGPS *)LALMalloc(mObsCoh*sizeof(LIGOTimeGPS));
 
+  /* *********************************************************************** */
   /* read timestamps */
   { 
     INT4    i; 
@@ -281,6 +294,7 @@ int main( int argc, char *argv[]){
     }    
   }
 
+  /* *********************************************************************** */
   /* compute the time difference relative to startTime for all SFT */
   timeDiffV.length = mObsCoh;
   timeDiffV.data = NULL; 
@@ -303,11 +317,13 @@ int main( int argc, char *argv[]){
     }  
   }
 
+  /* *********************************************************************** */
   /* setting of ephemeris info */ 
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
   (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
   
+  /* *********************************************************************** */
   /* compute detector velocity for those time stamps  */ 
   velV.length = mObsCoh; 
   velV.data = NULL;
@@ -350,6 +366,9 @@ int main( int argc, char *argv[]){
   }
 
 
+  /* *********************************************************************** */
+
+  /* *********************************************************************** */
   /* amplitude modulation stuff */
 
 
@@ -358,10 +377,14 @@ int main( int argc, char *argv[]){
   baryinput.site.location[1] = detector.location[1]/LAL_C_SI;
   baryinput.site.location[2] = detector.location[2]/LAL_C_SI;
   baryinput.dInv = 0.e0;
+
   /* alpha and delta must come from the skypatch */
   /* for now set it to something arbitrary */
-  baryinput.alpha = 0.0;
-  baryinput.delta = 0.0;
+  /* baryinput.alpha = 0.0; */
+  /* baryinput.delta = 0.0; */
+  
+  baryinput.alpha = uvar_alpha;
+  baryinput.delta = uvar_delta;
   
   /* Allocate space for amParams stucture */
   /* Here, amParams->das is the Detector and Source info */
@@ -400,7 +423,8 @@ int main( int argc, char *argv[]){
   C = amc.C;
   D = amc.D;
   
-
+  
+  /* *********************************************************************** */
   /* set grid spacings */
   {
     REAL8 vel2;
@@ -412,6 +436,7 @@ int main( int argc, char *argv[]){
     deltaFdot = deltaF / timeBase;
   }
 
+  /* *********************************************************************** */
   /* allocate memory for f(t) pattern */
   foft.length = mObsCoh;
   foft.data = NULL;
@@ -434,6 +459,7 @@ int main( int argc, char *argv[]){
   pg2.data = NULL;
   pg2.data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR));
 
+  /* *********************************************************************** */
   /* generate signal and add to input sfts */  
   /* parameters for output sfts */
   sftParams.Tsft = timeBase;
@@ -473,6 +499,7 @@ int main( int argc, char *argv[]){
   sft1.timeBase = timeBase;
 
 
+  /* *********************************************************************** */
   /* loop over mismatched templates */
   for (mmT = 0; mmT <= 0; mmT++)
     { 
@@ -537,6 +564,7 @@ int main( int argc, char *argv[]){
 	}
     }
   
+  /* *********************************************************************** */
   /* free structures created by signal generation routines */
   LALFree(signalTseries->data->data);
   LALFree(signalTseries->data);
