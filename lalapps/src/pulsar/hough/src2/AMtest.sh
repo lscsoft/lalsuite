@@ -31,8 +31,8 @@ startdir=`pwd`
 
 h0=5.0e-24
 sftdir=/local_data/sintes/fakesfts/
-th=1.6
-outfile=AMtest
+th=1.8
+outfile=AMtest_$th
 
 # choose sky location
 alpha=0.0
@@ -40,7 +40,7 @@ delta=-1.570796327
 pi2=1.570796327
 # number of times signal is injected
 
-top=5
+top=50
 j=0
 
 # loop $top times over code

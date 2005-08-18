@@ -1,4 +1,4 @@
-kk=load(AMtest);
+kk=load('AMtest');
 
 a=exp(-kk(:,8) );
 N=kk(:,7);
