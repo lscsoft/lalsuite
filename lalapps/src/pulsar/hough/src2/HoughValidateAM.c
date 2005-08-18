@@ -563,8 +563,10 @@ int main( int argc, char *argv[]){
 	  nth1 = mObsCoh* exp(-uvar_peakThreshold) + sqrt(2*mObsCoh*exp(-uvar_peakThreshold)*(1-exp(-uvar_peakThreshold)))*erfcInv; 
 	  /* use mean and variance to get approximate threshold in Gaussian approximation */
 	  nth2 = meanAM + sqrt( 2 * sigmaAM )* erfcInv; 
-	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %g    %g    %g\n", uvar_alpha,
-	  uvar_delta, numberCount1, numberCount2, nth1, nth2, uvar_peakThreshold, meanAM, sigmaAM );
+	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %d    %g    %g    %g\n", 
+	          uvar_alpha, uvar_delta, numberCount1, numberCount2, 
+	          nth1, nth2, mObsCoh, uvar_peakThreshold, 
+	          meanAM, sqrt(sigmaAM) );
 	}
     }
   
