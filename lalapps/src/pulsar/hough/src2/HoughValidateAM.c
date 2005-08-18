@@ -1,10 +1,10 @@
 /****************************************************
  *
- * Filename: HoughMismatch.c
+ * Filename:  HoughValidateAM.c
  *
  * Revision: $Id$
  * 
- * Estimating mismatch of grid used in Hough search
+ * Checking improvements if amplitude modulation is considered
  * 
  ****************************************************/
 
@@ -38,7 +38,7 @@ INT4 lalDebugLevel;
 
 /* default file and directory names */
 #define SFTDIRECTORY "/home/badkri/fakesfts/"
-#define FILEOUT "./MismatchOut"   
+#define FILEOUT "./ValidateAMOut"   
 #define TRUE (1==1)
 #define FALSE (1==0)
 
@@ -187,7 +187,7 @@ int main( int argc, char *argv[]){
   /* get the log string */
   SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
 
-  fprintf( fpLog, "## Log file for HoughMismatch\n\n");
+  fprintf( fpLog, "## Log file for HoughValidateAM \n\n");
   fprintf( fpLog, "# User Input:\n");
   fprintf( fpLog, "#-------------------------------------------\n");
   fprintf( fpLog, logstr);
