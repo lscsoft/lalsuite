@@ -1,0 +1,63 @@
+% $Id$
+
+\section{Program \prog{lalapps\_stopp\_bayes}}
+\label{program:lalapps-stopp-bayes}
+\idx[Program]{lalapps\_stopp\_bayes}
+
+\begin{entry}
+\item[Name]
+\prog{lalapps\_stopp\_bayes} --- Bayesian Stochastic Post Processing.
+
+\item[Synopsis]
+\prog{lalapps\_stopp\_bayes} \parm{options} \parm{xml files}\newline \hspace*{0.5in}
+\option{--help} \newline \hspace*{0.5in}
+\option{--version} \newline \hspace*{0.5in}
+\option{--verbose} \newline \hspace*{0.5in}
+\option{--cat-only} \newline \hspace*{0.5in}
+\option{--analyse-only} \newline \hspace*{0.5in}
+\option{--powerlaw-pdf} \newline \hspace*{0.5in}
+\option{--text} \newline \hspace*{0.5in}
+\option{--output} \parm{FILE} \newline \hspace*{0.5in}
+\option{--confidence} \parm{LEVEL}
+
+\item[Description]
+\prog{lalapps\_stopp\_bayes} performs Bayesian post processing upon output
+from \prog{lalapps\_stochastic}.
+
+\item[Options]\leavevmode
+\begin{entry}
+\item[\option{--help}]
+Display usage information
+\item[\option{--version}]
+Display version information
+\item[\option{--verbose}]
+Verbose mode
+\item[\option{--cat-only}]
+Only cat XML files together, don't perform post processing
+\item[\option{--analyse-only}]
+Only perform post processing
+\item[\option{--powerlaw-pdf}]
+Calculcate powerlaw PDF
+\item[\option{--text}]
+Output file as text
+\item[\option{--output} \parm{FILE}]
+Write output data to \parm{FILE}
+\item[\option{--confidence} \parm{LEVEL}]
+Set confidence to \parm{LEVEL} for calculating upperlimit
+\end{entry}
+
+\item[Example]
+An example usage of \prog{lalapps\_stopp\_bayes} can be seen below.
+
+\begin{verbatim}
+> lalapps_stopp_bayes --output S3-H1L1-STOCHASTIC.xml \
+>   H1L1-STOCHASTIC-753601044-753601242.xml \
+>   H1L1-STOCHASTIC-753620042-753620352.xml \
+>   H1L1-STOCHASTIC-753638864-753639462.xml \
+>   H1L1-STOCHASTIC-753785374-753785707.xml \
+>   H1L1-STOCHASTIC-753791744-753792342.xml
+\end{verbatim}
+
+\item[Author]
+Adam Mercer
+\end{entry}
