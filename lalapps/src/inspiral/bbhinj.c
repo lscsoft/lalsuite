@@ -31,8 +31,7 @@ int main( void ) { fprintf( stderr, "no gsl: disabled\n" ); return 77; }
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
+#include <lal/LIGOMetadataTables.h>#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
@@ -63,6 +62,7 @@ RCSID( "$Id$" );
 "  --user-tag STRING        set the usertag to STRING\n"\
 "  --min-mass MIN           set the minimum component mass to MIN (3.0)\n"\
 "  --max-mass MAX           set the maximum component mass to MAX (20.0)\n"\
+"  --max-total-mass TOTAL   set the total mass of the two components\n"\ 
 "  --min-distance DMIN      set the minimum distance to DMIN kpc (1)\n"\
 "  --max-distance DMAX      set the maximum distance to DMAX kpc (20000)\n"\
 "  --d-distr DDISTR         distribute injections uniformly over\n"\
@@ -124,6 +124,8 @@ int main( int argc, char *argv[] )
   CHAR         *userTag = NULL;
   REAL4         minMass = 3.0;       /* minimum component mass */
   REAL4         maxMass = 20.0;      /* maximum component mass */
+  REAL4         sumMaxMass = 0.0;    /* maximum total mass sum */
+  UINT4         sumMaxMassUse=0;     /* flag indicating to use the sumMaxMass */
   REAL4         dmin = 1.0;          /* minimum distance from earth (kpc) */
   REAL4         dmax = 20000.0 ;     /* maximum distance from earth (kpc) */
  /* REAL4         Rcore = 0.0; */
@@ -182,6 +184,7 @@ int main( int argc, char *argv[] )
     {"seed",                    required_argument, 0,                's'},
     {"min-mass",                required_argument, 0,                'A'},
     {"max-mass",                required_argument, 0,                'B'},
+    {"max-total-mass",          required_argument, 0,                'x'},
     {"min-distance",            required_argument, 0,                'p'},
     {"max-distance",            required_argument, 0,                'r'},
     {"d-distr",                 required_argument, 0,                'd'},
@@ -371,6 +374,23 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next = 
           next_process_param( long_options[option_index].name, 
               "float", "%e", maxMass );
+        break;
+
+    case 'x':
+      /* maximum sum of components */
+      sumMaxMass = (REAL4) atof( optarg );
+      if ( sumMaxMass <= 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "sum of two component masses must be > 0: "
+		   "(%f solar masses specified)\n",
+		   long_options[option_index].name, sumMaxMass );
+          exit( 1 );
+        }
+      sumMaxMassUse=1;
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+			      "float", "%e", sumMaxMass );
         break;
 
       case 'p':
@@ -609,9 +629,18 @@ int main( int argc, char *argv[] )
     {
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status);
       mtotal = 2.0 * minMass + u * 2.0 *deltaM ;
+
+      if (sumMaxMassUse==1) {
+	while (mtotal > sumMaxMass) {
+	  LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status);
+	  mtotal = 2.0 * minMass + u * 2.0 *deltaM ;	  
+	}
+      }
+
       LAL_CALL( LALUniformDeviate( &status, &u, randParams ), &status );
       this_inj->mass1 = minMass + u * deltaM;
       this_inj->mass2 = mtotal - this_inj->mass1;
+
       while (this_inj->mass1 >= mtotal || 
           this_inj->mass2 >= maxMass || this_inj->mass2 <= minMass )
       {
@@ -623,7 +652,7 @@ int main( int argc, char *argv[] )
       this_inj->mchirp = (this_inj->mass1 + this_inj->mass2) * 
         pow(this_inj->eta, 0.6);
 
-     }
+    }
 
      /* spatial distribution */
 
