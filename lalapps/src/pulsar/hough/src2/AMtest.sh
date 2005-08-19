@@ -29,10 +29,11 @@ echo $1 $2 | awk '{print $1/$2}'
 # save initial working directory
 startdir=`pwd`
 
-h0=5.0e-24
+h0=1.0e-24
 sftdir=/local_data/sintes/fakesfts/
-th=1.8
-outfile=AMtest_$th
+th=4.0
+outfile=AM_1_test_1.0e-24_${th}
+cosiota=1.0
 
 # choose sky location
 alpha=0.0
@@ -58,7 +59,7 @@ while [ $j -lt $top ] ; do
         # first create psi, cosiota and phi0
         alpha=`echo $allangles | awk '{print $1}'`
         delta=`echo $allangles | awk '{print $2}'`
-	./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -t $th -m $h0 >> $outfile
+	./HoughValidateAM -E ./earth00-04.dat -S ./sun00-04.dat -D $sftdir -r $alpha -l $delta -t $th -m $h0 -c $cosiota >> $outfile
 
         let j+=1
 done
