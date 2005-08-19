@@ -342,7 +342,13 @@ int main( int argc, char *argv[] )
   memset( &slideTimes, 0, LAL_NUM_IFO * sizeof(LIGOTimeGPS) );
   memset( &slideReset, 0, LAL_NUM_IFO * sizeof(LIGOTimeGPS) );
   memset( &haveTrig, 0, LAL_NUM_IFO * sizeof(int) );
-  
+
+  /* initialize array first */
+  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ++ifoNumber )
+    {      
+      numTrigs[ifoNumber]=0;
+    }
+
   /* parse the arguments */
   while ( 1 )
   {
