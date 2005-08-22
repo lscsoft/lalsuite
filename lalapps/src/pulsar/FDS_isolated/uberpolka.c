@@ -249,7 +249,7 @@ int main(int argc,char *argv[])
   
   /* Ouput candidates */
   if (OutputCoincidences( PolkaCommandLineArgs )) {
-    fprintf(stderr,"OutputCoincidences failed");
+    fprintf(stderr,"OutputCoincidences failed\n");
     return UBERPOLKA_EXIT_OUTFAIL;
   }
   
@@ -294,8 +294,16 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
     boinc_finish(2);
   }
   fpOut=fopen(resolved_filename,"wb");
+  if (!fpOut){
+    LALPrintError("Unable to open output file \"%s\" for writing\n", resolved_filename);
+    return 1;
+  }
 #else
-  fpOut=fopen(CLA.OutputFile,"wb");       
+  fpOut=fopen(CLA.OutputFile,"wb");
+  if (!fpOut){
+    LALPrintError("Unable to open output file \"%s\" for writing\n", CLA.OutputFile);
+    return 1;
+  }
 #endif
   if (!CLA.EAH)
     {
