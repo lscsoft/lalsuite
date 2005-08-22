@@ -98,10 +98,18 @@ None
 
 #define  INSPIRALTEMPLATE_INCLINATION 	0.
 #define  INSPIRALTEMPLATE_ECCENTRICITY 	0.
-#define  INSPIRALTEMPLATE_ORBITTHETA0 	0.
-#define  INSPIRALTEMPLATE_ORBITPHI0 	0.
-#define  INSPIRALTEMPLATE_SOURCETHETA 	0.
-#define  INSPIRALTEMPLATE_SOURCEPHI 	0.
+#define  INSPIRALTEMPLATE_ORBITTHETA0 	0.7
+#define  INSPIRALTEMPLATE_ORBITPHI0 	0.1
+#define  INSPIRALTEMPLATE_SPIN1X        0.1
+#define  INSPIRALTEMPLATE_SPIN1Y        0.2
+#define  INSPIRALTEMPLATE_SPIN1Z        0.3
+#define  INSPIRALTEMPLATE_SPIN2X        0.4
+#define  INSPIRALTEMPLATE_SPIN2Y        0.5
+#define  INSPIRALTEMPLATE_SPIN2Z        0.6
+
+
+#define  INSPIRALTEMPLATE_SOURCETHETA 	1.
+#define  INSPIRALTEMPLATE_SOURCEPHI 	2.
 
 NRCSID (LALINSPIRALPARSEPARAMETERSC, "");
 
@@ -145,6 +153,8 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	    params->approximant = PadeF1;}
 	  else if (strcmp(argv[i],"EOB")==0){
 	    params->approximant = EOB;}
+	  else if (strcmp(argv[i],"SpinTaylor")==0){
+	    params->approximant = SpinTaylor;}
 	  else if (strcmp(argv[i],"BCV")==0){
 	    params->approximant = BCV;
 	    params->massChoice  = psi0Andpsi3;
@@ -438,18 +448,21 @@ void LALInspiralITStructureSetDefault(LALStatus *status,
   params->psi0         = INSPIRALTEMPLATE_PSI0;
   params->psi3         = INSPIRALTEMPLATE_PSI3;
    
-
   params->alpha1       = INSPIRALTEMPLATE_ALPHA1;
   params->alpha2       = INSPIRALTEMPLATE_ALPHA2;
   params->beta         = INSPIRALTEMPLATE_BETA;
     
-
   params->inclination  = INSPIRALTEMPLATE_INCLINATION;
   params->orbitTheta0  = INSPIRALTEMPLATE_ORBITTHETA0;
   params->orbitPhi0    = INSPIRALTEMPLATE_ORBITPHI0;
   params->sourceTheta  = INSPIRALTEMPLATE_SOURCETHETA;
   params->sourcePhi    = INSPIRALTEMPLATE_SOURCEPHI;
-    
+  params->spin1[0]        = INSPIRALTEMPLATE_SPIN1X;  
+  params->spin1[1]        = INSPIRALTEMPLATE_SPIN1Y;  
+  params->spin1[2]        = INSPIRALTEMPLATE_SPIN1Z;  
+  params->spin2[0]        = INSPIRALTEMPLATE_SPIN2X;  
+  params->spin2[1]        = INSPIRALTEMPLATE_SPIN2Y;  
+  params->spin2[2]        = INSPIRALTEMPLATE_SPIN2Z;  
   params->eccentricity = INSPIRALTEMPLATE_ECCENTRICITY;   
   
   params->ieta         = 1.;  
