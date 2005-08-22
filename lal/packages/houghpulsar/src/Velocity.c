@@ -185,12 +185,12 @@ void LALAvgDetectorPos( LALStatus *status,
 
   /* The first approximation: (b-a)^-1 * int(f(x),x=a..b) = 0.5*(f(a)+f(b)) */
   /* calculate velocity at starting time */
-  TRY( LALDetectorVel( status->statusPtr, tempVel, &t0gps, detector, edat), status);
+  TRY( LALDetectorPos( status->statusPtr, tempVel, &t0gps, detector, edat), status);
   for (n=0; n<3; n++) trapSum[n] = 0.5 * tempVel[n]; 
 
   /*calculate velocity at finish time */
   
-  TRY( LALDetectorVel( status->statusPtr, tempVel, &tgps, detector, edat), status);
+  TRY( LALDetectorPos( status->statusPtr, tempVel, &tgps, detector, edat), status);
   
   /* first approximation to average */  
   for (n=0; n<3; n++) 
