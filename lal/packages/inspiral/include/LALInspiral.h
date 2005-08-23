@@ -826,6 +826,13 @@ tagInspiralInit
 
 /* Function prototypes */
 
+/*  <lalLaTeX>
+\newpage\input{LALInspiralGetStringFromApproximantC}
+</lalLaTeX>  */
+void 
+LALInspiralGetStringFromApproximant(
+    Approximant input);
+
 
 /* --- HERE ARE SOME USEFUL PROTOTYPE FOR LENGTH, PARAMETER CALCULATION... --- */
 /*  <lalLaTeX>
@@ -1053,6 +1060,31 @@ LALSTPNWaveformForInjection (
 			    CoherentGW       *waveform,
 			    InspiralTemplate *params,
 			    PPNParamStruc  *ppnParams);
+void 
+LALSTPNWaveformEngine (
+                LALStatus        *status,
+                REAL4Vector      *signal1,
+                REAL4Vector      *signal2,
+                REAL4Vector      *a,
+                REAL4Vector      *ff,
+                REAL8Vector      *phi,
+		REAL4Vector      *shift,
+                UINT4            *countback,
+                InspiralTemplate *params,
+                InspiralInit     *paramsInit
+                );
+void 
+LALSTPNWaveformTemplates (
+   LALStatus        *status,
+   REAL4Vector      *signal1,
+   REAL4Vector      *signal2,
+   InspiralTemplate *params
+   ) ;
+
+void LALSTPNWaveform(
+     LALStatus *status,
+     REAL4Vector *signalvec,
+     InspiralTemplate *params);
 
 
 /* --- OTHER PROTOTYPES --- */
