@@ -77,7 +77,7 @@ int main( int argc, char *argv[]){
   EphemerisData   *edat = NULL;
 
   INT4   mObsCoh, j, numberCount1, numberCount2;
-  REAL8  nth1, nth2, erfcInv, houghFalseAlarm, meanAM, sigmaAM,varAM;
+  REAL8  nth1, nth2, erfcInv, houghFalseAlarm, meanAM, sigmaAM, varAM, mean, sigma;
   REAL8  sftBand;  
   REAL8  timeBase, deltaF, normalizeThr, threshold, thresholdAM;
   UINT4  sftlength; 
@@ -426,7 +426,7 @@ int main( int argc, char *argv[]){
   /* *********************************************************************** */
   /* computing varAM */
   {
-    UINT4 j;
+    INT4 j;
     REAL8  x;
     /* REAL8  y; */
     
@@ -578,18 +578,23 @@ int main( int argc, char *argv[]){
 	      meanAM += exp(-realThrAM);	      
 	      sigmaAM += exp(-realThrAM) * (1.0 - exp(-realThrAM));
 	    } 
-	  /* print the number count */
 
 	  /* calculate the number count thresholds */
+	  mean = mObsCoh * exp(-uvar_peakThreshold);
+	  sigma = mean * ( 1.0 - exp(-uvar_peakThreshold));
+
 	  houghFalseAlarm = 1.0e-10;
 	  erfcInv = gsl_cdf_ugaussian_Qinv (houghFalseAlarm)/sqrt(2);    
-	  nth1 = mObsCoh* exp(-uvar_peakThreshold) + sqrt(2*mObsCoh*exp(-uvar_peakThreshold)*(1-exp(-uvar_peakThreshold)))*erfcInv; 
+	  nth1 = mean + sqrt( 2 * sigma ) * erfcInv; 
 	  /* use mean and variance to get approximate threshold in Gaussian approximation */
-	  nth2 = meanAM + sqrt( 2 * sigmaAM )* erfcInv; 
-	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %d    %g    %g    %g    %g\n", 
+	  nth2 = meanAM + sqrt( 2 * sigmaAM ) * erfcInv; 
+	  /* 	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %d    %g    %g    %g    %g\n",  */
+	  /* 	          uvar_alpha, uvar_delta, numberCount1, numberCount2,  */
+	  /* 	          nth1, nth2, mObsCoh, uvar_peakThreshold,  */
+	  /* 	          meanAM, sqrt(sigmaAM), varAM ); */
+	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %g    %g \n", 
 	          uvar_alpha, uvar_delta, numberCount1, numberCount2, 
-	          nth1, nth2, mObsCoh, uvar_peakThreshold, 
-	          meanAM, sqrt(sigmaAM), varAM );
+	          nth1, nth2, (numberCount1 -mean)/sqrt(sigma), (numberCount2 - meanAM)/sqrt(sigmaAM) );
 	}
     }
   
