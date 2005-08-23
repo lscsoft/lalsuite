@@ -1,5 +1,5 @@
 /*  <lalVerbatim file="LALVIRGOPsdCV">
-Author: Sathyaprakash, B. S.
+Author: Sathyaprakash, B. S., Cokelaer T.
 $Id$
 </lalVerbatim>  */
 
@@ -19,46 +19,39 @@ Module to calculate the noise power spectral density for the VIRGO detector.
 The module takes as an input a frequency $f$ in Hz, and it 
 calculates the noise spectral density (per Hz) $S_{h}(f)$ 
 for that frequency. The noise PSD is based on data provided by
-J-Y. Vinet (see T. Damour, B.R. Iyer and B.S. Sathyaprakash,
-Phys. Rev. D 63, 044023 (2001)) and is approximated by
+J-Y. Vinet and is approximated by
 the following:
 \begin{equation}
    S_h(f) = 
-   s_1 \left ( \frac {10f}{f_0} \right )^{-5} + s_2 \frac{f_0}{f}
-   + s_3 \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
+   s_0 \left ( \frac {7.87f}{f_0} \right )^{-4.8} + \frac{6}{17} \frac{f_0}{f}
+   + \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
 \end{equation}
-where $s_1=34.6,$ $s_2=6.6,$ and $s_3=3.24.$
-The returned value is scaled up by $s_0 = 10^{46}/3.24.$ In otherwords, 
-the expected noise PSD is $3.24 \times 10^{-46}$ times the returned value.
-
+where $s_0=10.2e-46$
 \subsubsection*{Algorithm}
-
 \subsubsection*{Uses}
 None.
-
 \subsubsection*{Notes}
-
 \vfill{\footnotesize\input{LALVIRGOPsdCV}}
-
 </lalLaTeX>  */
-
-
 
 #include <lal/LALNoiseModels.h>
 
 /*  <lalVerbatim file="LALVIRGOPsdCP"> */
 void LALVIRGOPsd (LALStatus *status, REAL8 *psd, REAL8 f) 
 { /* </lalVerbatim> */
-
-   REAL8 s1, s2, s3, x;
+   REAL8 s0, x;
 
    status = NULL;
    x = f/500.;
-   s1 = 34.6;
+/*
+ * s1 = 34.6;
    s2 = 6.60;
    s3 = 3.24;
-/*
-   *psd = s1*pow(10.*x,-5.) + s2/x + s3 * (1. + x*x);
-*/
    *psd = pow(6.23*x,-5.) + 2.04/x + 1. + x*x;
+   */
+   
+   /*new psds from fitted on the Design sensitivity curve from virgo web site*/
+   s0 = 10.2e-46;
+   *psd = s0*( pow(7.87*x,-4.8) + 6./17./x + 1. + x*x);
+
 }
