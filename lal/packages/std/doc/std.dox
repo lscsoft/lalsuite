@@ -1,0 +1,12 @@
+// -*- mode: html -*-
+
+/*---------- define the inject package ---------- */
+
+/**
+   \defgroup std Standard Routines
+   \ingroup coreDA
+
+This package contains the basic datatypes, constants, macros,
+and essential routines that support the LAL standard.
+
+*/
