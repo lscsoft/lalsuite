@@ -325,9 +325,13 @@ LALFindChirpInjectSignals (
     LALDDestroyVector( status->statusPtr, &(waveform.phi->data) );
     CHECKSTATUSPTR( status );
 
+    LALSDestroyVector( status->statusPtr, &(waveform.shift->data) );
+    CHECKSTATUSPTR( status );
+    
     LALFree( waveform.a );
     LALFree( waveform.f );
     LALFree( waveform.phi );
+    LALFree( waveform.shift );
   }
 
   LALCDestroyVector( status->statusPtr, &( detector.transfer->data ) );
