@@ -1,3 +1,12 @@
+/** \file
+ * \ingroup std
+ * \author Creighton, J. D. E.
+ * \date $Date$
+ * \brief Standard XLAL error routines.
+ *
+ * $Id$
+ */
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -12,7 +21,7 @@ NRCSID( XLALERRORC, "$Id$" );
  *
  */
 
-/* prints an error message if error printing is enabled by lalDebugLevel */
+/** Prints an error message if error printing is enabled by lalDebugLevel. */
 int XLALPrintError( const char *fmt, ... )
 {
   int n = 0;
@@ -26,7 +35,7 @@ int XLALPrintError( const char *fmt, ... )
   return n;
 }
 
-/* prints a warning message if warning printing is enabled by lalDebugLevel */
+/** Prints a warning message if warning printing is enabled by lalDebugLevel. */
 int XLALPrintWarning( const char *fmt, ... )
 {
   int n = 0;
@@ -40,7 +49,7 @@ int XLALPrintWarning( const char *fmt, ... )
   return n;
 }
 
-/* prints a warning message if warning printing is enabled by lalDebugLevel */
+/** Prints a warning message if warning printing is enabled by lalDebugLevel. */
 int XLALPrintInfo( const char *fmt, ... )
 {
   int n = 0;
@@ -181,7 +190,7 @@ XLALErrorHandlerType ** XLALGetErrorHandlerPtr( void )
  */
 
 
-/* set the XLAL error number to errnum */
+/** Set the XLAL error number to errnum. */
 int XLALSetErrno( int errnum )
 {
   if ( errnum == 0 )
@@ -208,14 +217,14 @@ int XLALSetErrno( int errnum )
 }
 
 
-/* gets the basic error number ignoring the internal-function-failed flag */
+/** Gets the basic error number ignoring the internal-function-failed flag. */
 int XLALGetBaseErrno( void )
 {
   return xlalErrno & ~XLAL_EFUNC;
 }
 
 
-/* clears the XLAL error number */
+/** Clears the XLAL error number. */
 int XLALClearErrno( void )
 {
   int olderrno = xlalErrno;
@@ -224,7 +233,7 @@ int XLALClearErrno( void )
 }
 
 
-/* set the XLAL error handler to newHandler; return the old handler */
+/** Set the XLAL error handler to newHandler; return the old handler. */
 XLALErrorHandlerType * XLALSetErrorHandler( XLALErrorHandlerType *newHandler )
 {
   XLALErrorHandlerType *oldHandler;
@@ -234,7 +243,7 @@ XLALErrorHandlerType * XLALSetErrorHandler( XLALErrorHandlerType *newHandler )
 }
 
 
-/* set the XLAL error handler to the default handler; return the old handler */
+/** Set the XLAL error handler to the default handler; return the old handler. */
 XLALErrorHandlerType * XLALSetDefaultErrorHandler( void )
 {
   XLALErrorHandlerType *oldHandler;
@@ -251,7 +260,7 @@ XLALErrorHandlerType * XLALSetDefaultErrorHandler( void )
  */
 
 
-/* return the error message associated with an error number or return value */
+/** Return the error message associated with an error number or return value. */
 const char * XLALErrorString( int code )
 {
 
@@ -376,7 +385,7 @@ const char * XLALErrorString( int code )
   return NULL; /* impossible to get here */
 }
 
-/* print an error message associated with an error number or return code */
+/** Print an error message associated with an error number or return code. */
 void XLALPerror( const char *func, const char *file, int line, int code )
 {
   if ( code > 0 )
@@ -400,6 +409,7 @@ void XLALPerror( const char *func, const char *file, int line, int code )
  *
  */
 
+/** Default XLAL error handler */
 void XLALDefaultErrorHandler( const char *func, const char *file, int line, int errnum )
 {
   XLALPerror( func, file, line, errnum );
@@ -407,12 +417,11 @@ void XLALDefaultErrorHandler( const char *func, const char *file, int line, int 
 }
 
 
-/*
+/**
  *
  * Routine to set the error number and invoke the current error handler.
  *
  */
-
 void XLALError( const char *func, const char *file, int line, int errnum )
 {
   XLALSetErrno( errnum );
@@ -429,7 +438,7 @@ void XLALError( const char *func, const char *file, int line, int errnum )
  *
  */
 
-/* XLAL error handler to abort on error */
+/** XLAL error handler to abort on error. */
 void XLALAbortErrorHandler( const char *func, const char *file, int line,
     int errnum )
 {
@@ -437,7 +446,7 @@ void XLALAbortErrorHandler( const char *func, const char *file, int line,
   abort();
 }
 
-/* XLAL error handler to exit on error */
+/** XLAL error handler to exit on error. */
 void XLALExitErrorHandler( const char *func, const char *file, int line,
     int errnum )
 {
