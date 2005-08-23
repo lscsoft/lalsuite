@@ -122,7 +122,7 @@ void LALGenerateInspiral(
   CHECKSTATUSPTR(status);
   LALGetOrderFromString( status->statusPtr, thisEvent->waveform, &order);
   CHECKSTATUSPTR(status);
-  
+    
   /* when entering here, approximant is in principle well defined. 
    * We dont need any else if or ABORT in the if statement. 
    * Depending on the apporixmant we use inject or inspiral package 
@@ -230,7 +230,7 @@ void LALGetOrderFromString(LALStatus *status,
   ATTATCHSTATUSPTR( status );
   
   ASSERT( thisEvent, status, GENERATEINSPIRALH_ENULL,  GENERATEINSPIRALH_MSGENULL);
-  
+ 
   if (  (ptr = strstr(thisEvent, 	"newtonian") ) ){
     {*order = newtonian;}}
   else if (  (ptr = strstr(thisEvent, 	"oneHalfPN") ) ){
@@ -249,7 +249,7 @@ void LALGetOrderFromString(LALStatus *status,
     {*order = threePointFivePN;}}
   else {
     LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-		 "Unknown injection waveform\n");
+		 "Unknown order specified: %s\n", thisEvent);
     LALInfo( status, warnMsg );    
     ABORT(status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
   }
@@ -291,7 +291,7 @@ void LALGetApproximantFromString(LALStatus   *status,
     {*approximant = PPN;}}
   else {
     LALSnprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
-		 "Unknown injection waveform\n");
+		 "Unknown injection waveform: %s \n", ptr);
     LALInfo( status, warnMsg );
     ABORT(status, LALINSPIRALH_EAPPROXIMANT, LALINSPIRALH_MSGEAPPROXIMANT);    
   }
@@ -412,77 +412,3 @@ void LALGenerateInspiralPopulateInspiral(LALStatus		*status,
   RETURN( status );  
 }
 
-/*  This is just a dummy function which fill waveform structure even 
- *  though values provided by thisEvent are wrong. I've done that 
- *  function sothat the inspiral code do not stop. Sould add warning 
- *   or something equivalent though.
- */
-void 
-LALInspiralDummyWaveformForInjection (LALStatus        *status,
-				      CoherentGW       *waveform,
-				      InspiralTemplate *params,
-				      PPNParamStruc    *ppnParams) 
-{
-  INT4 length = 2;
-  CreateVectorSequenceIn in;
-  
-  INITSTATUS(status, "LALDummyWaveformForInjection", GENERATEINSPIRALC);
-  ATTATCHSTATUSPTR(status);
-
-  /** -- Now we can fill the coherent GW strucuture for injection -- */  
-  if ( ( waveform->a = (REAL4TimeVectorSeries *)
-	 LALCalloc(length,  sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
-    
-    ABORT( status, LALINSPIRALH_EMEM,
-	   LALINSPIRALH_MSGEMEM );
-  }
-  memset( waveform->a, 0, sizeof(REAL4TimeVectorSeries) );
-  if ( ( waveform->f = (REAL4TimeSeries *)
-	 LALCalloc(length, sizeof(REAL4TimeSeries) ) ) == NULL ) {
-    LALFree( waveform->a ); waveform->a = NULL;
-    ABORT( status, LALINSPIRALH_EMEM,
-	   LALINSPIRALH_MSGEMEM );
-  }
-  memset( waveform->f, 0, sizeof(REAL4TimeSeries) );
-  if ( ( waveform->phi = (REAL8TimeSeries *)
-	 LALCalloc(length, sizeof(REAL8TimeSeries) ) ) == NULL ) {
-    LALFree( waveform->a ); waveform->a = NULL;
-    LALFree( waveform->f ); waveform->f = NULL;
-    ABORT( status, LALINSPIRALH_EMEM,
-	   LALINSPIRALH_MSGEMEM );
-  }
-  memset( waveform->phi, 0, sizeof(REAL8TimeSeries) );
-
-  in.length = length;
-  in.vectorLength = 2;
-
-  LALSCreateVectorSequence( status->statusPtr, &( waveform->a->data ), &in );
-  CHECKSTATUSPTR(status);      
-  LALSCreateVector( status->statusPtr,  &( waveform->f->data ), length);
-  CHECKSTATUSPTR(status);      
-  LALDCreateVector( status->statusPtr,  &( waveform->phi->data ), length );
-  CHECKSTATUSPTR(status);   
-
-  waveform->a->deltaT = waveform->f->deltaT = waveform->phi->deltaT
-    = 1./params->tSampling;
-  
-  waveform->a->sampleUnits = lalStrainUnit;
-  waveform->f->sampleUnits = lalHertzUnit;
-  waveform->phi->sampleUnits = lalDimensionlessUnit;
-
-  LALSnprintf( waveform->a->name,   LALNameLength, "Dummy waveform" );
-  LALSnprintf( waveform->f->name,   LALNameLength, "Dummy waveform" ); 
-  LALSnprintf( waveform->phi->name, LALNameLength, "Dummy waveform" );
-
-  /* --- fill some output --- */
-  ppnParams->tc     	= 0.;
-  ppnParams->length 	= 2;
-  ppnParams->dfdt   	= 1.; /*waht should we put here ?*/
-  ppnParams->fStop  	= params->fLower;
-  ppnParams->termCode   = GENERATEPPNINSPIRALH_EFBAD;
-  ppnParams->termDescription = GENERATEPPNINSPIRALH_MSGEFBAD; 
-  ppnParams->fStart   	= ppnParams->fStartIn;
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-}
