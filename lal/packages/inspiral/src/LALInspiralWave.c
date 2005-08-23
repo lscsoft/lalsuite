@@ -176,8 +176,10 @@ LALInspiralWave(
 	   LALInspiralSpinModulatedWave(status->statusPtr, signal, params); 
            CHECKSTATUSPTR(status);
 	   break;
-      case SpinTaylor: /* implemented only for inject package for the time being*/
-           break;
+      case SpinTaylor:
+	   LALSTPNWaveform(status->statusPtr, signal, params); 
+           CHECKSTATUSPTR(status);
+	   break;
       default:
            ABORT( status, 9999, "Unknown case in switch." );
    }
@@ -240,8 +242,10 @@ LALInspiralWaveTemplates(
       case PadeF1:
       case BCV:
       case BCVSpin:
-      case SpinTaylorT3:
-           ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+      case SpinTaylor:
+           LALSTPNWaveformTemplates(status->statusPtr, signal1, signal2, params);
+           CHECKSTATUSPTR(status);
+           break; 
       break;
       default: 
       break;
