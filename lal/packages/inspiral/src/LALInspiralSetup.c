@@ -415,7 +415,7 @@ LALInspiralSetup (
    ak->ST[threePN] = ( (16447322263.0/139708800.0)
 		- (1712.0/105.0)* ak->EulerC 
 		- (273811877.0/1088640.0)*eta - (88.0/3.0)*ak->thetahat*eta 
-		+ (541.0/806.0)*eta*eta - (5605.0/2592.0)*eta*eta*eta
+		+ (541.0/896.0)*eta*eta - (5605.0/2592.0)*eta*eta*eta
 		+ (1.0/48.0) * LAL_PI*LAL_PI * (256.0 + 451.0*eta)
 		- (856.0/105.0)*log(16.0) );                          
    ak->ST[threePN+1] = ( -(1712.0/315.0) );     /* extra 3PN component */
