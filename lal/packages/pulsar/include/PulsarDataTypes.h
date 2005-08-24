@@ -54,6 +54,12 @@ typedef struct {
   COMPLEX8FrequencySeries 	*data;		/**< array of SFTs */
 } COMPLEX8FrequencySeriesVector;
 
+/** a vector of periodograms */
+typedef struct {
+  UINT4                  length;
+  REAL8FrequencySeries   *data;
+} REAL8FrequencySeriesVector;
+
 /** a vector of 'timestamps' of type LIGOTimeGPS */
 typedef struct {
   UINT4 	length;	/**< number of timestamps */
