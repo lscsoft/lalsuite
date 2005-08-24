@@ -87,8 +87,14 @@ void LALFindNumberHarmonics (LALStatus    *status,
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
-  /* ASSERT (LineHarmonicsInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL ); 
-  ASSERT (fname, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL ); */
+  ASSERT (harmonicInfo, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL ); 
+  ASSERT (harmonicInfo->nHarmonicSets > 0, status, SFTCLEANH_EVAL, SFTCLEANH_MSGEVAL);
+  ASSERT (harmonicInfo->startFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+  ASSERT (harmonicInfo->gapFreq, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+  ASSERT (harmonicInfo->numHarmonics, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL);
+  ASSERT (harmonicInfo->leftWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); 
+  ASSERT (harmonicInfo->rightWing, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL); 
+  ASSERT (fname, status, SFTCLEANH_ENULL, SFTCLEANH_MSGENULL ); 
 
   /* open harmonics file for reading */
   fp = fopen( fname, "r");
