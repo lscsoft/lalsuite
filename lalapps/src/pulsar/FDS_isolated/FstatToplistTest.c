@@ -68,7 +68,7 @@ int test_toplist(UINT8 n, char*filename) {
     }
 
     fprintf(stderr,"reading...\n");
-    read_toplist_from_fp(tl2, fp, &checksum);
+    read_toplist_from_fp(tl2, fp, &checksum, 0);
 
     fclose(fp);
 

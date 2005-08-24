@@ -13,7 +13,9 @@ RCSID("$Id$");
 int finite(double);
 #endif
 
-
+#ifndef min
+#define min(a,b) ((a)<(b)?(a):(b))
+#endif
 
 /* creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
@@ -146,7 +148,7 @@ void sort_toplist(toplist_t*l) {
    returns the number of bytes read,
    -1 if the file contained a syntax error, -2 if given an improper toplist
 */
-int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum) {
+int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
     char inline[256];     /* buffer for reading a line */
     UINT4 items, lines;   /* number of items read from a line, linecounter */
     UINT4 len, chars = 0; /* length of a line, total characters read from the file */
@@ -166,8 +168,12 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum) {
     if(checksum)
 	*checksum = 0;
 
+    /* set maxbytes to maximum if zero */
+    if (maxbytes == 0)
+	maxbytes--;
+
     lines=1;
-    while(fgets(inline,sizeof(inline)-1,fp)) {
+    while(fgets(inline,min(sizeof(inline)-1,maxbytes-chars),fp)) {
 
 	len = strlen(inline);
 	chars += len;
