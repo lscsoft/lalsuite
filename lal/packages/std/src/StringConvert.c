@@ -69,7 +69,7 @@ These functions emulate the standard C functions \verb@strtol()@,
 calling conventions and return values of the appropriate LAL
 datatypes.  For integer conversion, only base-ten (decimal)
 representations are supported.  Otherwise, the valid format is as for
-the corresponding C funcions, which we summarize below:
+the corresponding C functions, which we summarize below:
 
 A string to be converted to an \verb@INT@$n$ (where $n$=2, 4, or 8)
 consists of zero or more whitespace characters as determined by
@@ -102,7 +102,7 @@ A string to be converted to a complex number (\verb@COMPLEX8@ or
 \verb@COMPLEX16@) consists of two floating-point format substrings
 concatenated together, where the first character of the second
 substring cannot be interpreted as a continuation of the first number.
-Usually this means that the second substring will contain at lead one
+Usually this means that the second substring will contain at least one
 leading whitespace character, though this is not strictly necessary.
 Overflow or underflow is dealt with as above.
 
