@@ -3486,7 +3486,6 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
     RETURN(stat);
   }
 
-
   /* seek to end of fstats file */
   if (fseek( fp, 0, SEEK_END)) {        /* something gone wrong seeking .. */
     if (lalDebugLevel) printf ("broken fstats-file.\nStarting main-loop from beginning.\n");
@@ -3506,6 +3505,16 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
     goto exit;
   }
   
+#ifdef USE_TOPLIST
+  if (fseek(fp, 0, SEEK_SET)) { /* something gone wrong seeking .. */
+    if (lalDebugLevel) printf ("broken fstats-file.\nStarting main-loop from beginning.\n");
+    goto exit;
+  }
+  if(read_toplist_from_fp(toplist,fp,&computecksum,bcount) <0) {
+    if (lalDebugLevel) printf ("couldn't read toplist.\nStarting main-loop from beginning.\n");
+    goto exit;
+  }
+#else
   /* compute checksum */
   computecksum=0;
   if (fseek( fp, 0, SEEK_SET)) {        /* something gone wrong seeking .. */
@@ -3519,6 +3528,7 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
     else
       computecksum+=onechar;
   }
+#endif
   if (computecksum!=cksum) {
     if (lalDebugLevel) 
       printf ("fstats file seems corrupted: has incorrect checksum.\nStarting main-loop from beginning.\n");
