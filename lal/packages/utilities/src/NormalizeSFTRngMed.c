@@ -12,26 +12,24 @@
  *-----------------------------------------------------------------------
  */
 
-/************************************ <lalVerbatim file="SFTCleanCV">
+/************************************ <lalVerbatim file="NormalizeSFTRngMedCV">
 Author: Krishnan, B.
 $Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>  *******************************************************
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Module \texttt{SFTClean.c}}
-\label{ss:SFTClean.c}
+\section{Module \texttt{NormalizeSFTRngMed.c}}
+\label{ss:NormalizeSFTRngMed.c}
 
+
+Normalizing SFTs using the Running median
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Prototypes}
 \vspace{0.1in}
-\input{SFTCleanD}
-\index{\verb&ReadSFTCleanHeader1()&}
-\index{\verb&ReadCOMPLEX8SFTCleanData1()&}
-\index{\verb&ReadCOMPLEX16SFTCleanData1()&}
-\index{\verb&COMPLEX8SFT2Periodogram1()&}
-\index{\verb&COMPLEX16SFT2Periodogram1()&}
+\input{NormalizeSFTRngMedD}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsubsection*{Description}
 
@@ -48,7 +46,7 @@ LALHO()
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{SFTCleanCV}}
+\vfill{\footnotesize\input{NormalizeSFTRngMedCV}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 *********************************************** </lalLaTeX> */
@@ -65,7 +63,10 @@ NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
  */
 
 
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
+
+/*>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<*/
 /********************************* <lalVerbatim file="NormalizeSFTRngMedD"> */
 void LALSFTtoPeriodogram (LALStatus    *status,
 			  REAL8FrequencySeries    *periodo,
@@ -119,7 +120,8 @@ void LALSFTtoPeriodogram (LALStatus    *status,
 
 
 
-
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
 void LALSFTVecToPeriodogram (LALStatus    *status,
 			     REAL8FrequencySeriesVector    *periodoVect,
 			     COMPLEX8FrequencySeriesVector *sftVect)
@@ -164,13 +166,14 @@ void LALSFTVecToPeriodogram (LALStatus    *status,
 }
 
 
-
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
 /* calculates running median for a periodogram */
 void LALPeriodoToPSDRngMed (LALStatus  *status,
 			    REAL8FrequencySeries  *psd,
 			    REAL8FrequencySeries  *periodo,
 			    INT4                  blockSize)
-{
+{/*   *********************************************  </lalVerbatim> */
   INT4 blocks2, j, length;
   LALRunningMedianPar rngMedPar;
   REAL8Sequence mediansV, inputV;
@@ -232,13 +235,14 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
   RETURN (status);
 }
 
-
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
 /* calculates running median for a periodogram */
 void LALPeriodoVecToPSDRngMed (LALStatus  *status,
 			       REAL8FrequencySeriesVector  *psdVect,
 			       REAL8FrequencySeriesVector  *periodoVect,
 			       INT4                        blockSize)
-{
+{/*   *********************************************  </lalVerbatim> */
   INT4 j, length;
 
 
@@ -277,11 +281,14 @@ void LALPeriodoVecToPSDRngMed (LALStatus  *status,
   RETURN (status);
 }
 
+
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
 /* normalizes a sft based on RngMed */
 void LALNormalizeSFT (LALStatus  *status,
 		      SFTtype  *sft,
 		      INT4     blockSize)
-{
+{/*   *********************************************  </lalVerbatim> */
   INT4 j, length;
   REAL8FrequencySeries psd, periodo;
 
@@ -328,12 +335,13 @@ void LALNormalizeSFT (LALStatus  *status,
 
 
 
-
-/* normalizes a sft vector using RngMed */
+/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
 void LALNormalizeSFTVect (LALStatus  *status,
 			  SFTVector  *sftVect,
 			  INT4     blockSize)
-{
+{/*   *********************************************  </lalVerbatim> */
+  /* normalizes a sft vector using RngMed */
   INT4 j, length;
 
   INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
@@ -366,7 +374,7 @@ void LALNormalizeSFTVect (LALStatus  *status,
 
 
 
-/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
+
 
 
 
