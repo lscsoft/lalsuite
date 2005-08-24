@@ -18,6 +18,7 @@ INSPFRINJSRC 	= inspfrinj.c
 GWF2XMLSRC 	= gwf2xml.c
 SPININJSRC 	= spininj.c
 COINEXTSRC      = coinext.c
+RANDOMBANKSRC 	= randombank.c
 if LALFRAME
 if LALMETAIO
 bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
@@ -28,7 +29,8 @@ bin_PROGRAMS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_gwf2xml lalapps_lt_inca \
 	       lalapps_thinca lalapps_trigbank \
 	       lalapps_spininj lalapps_coherent_inspiral \
-               lalapps_coherentbank lalapps_coinext
+               lalapps_coherentbank lalapps_coinext \
+               lalapps_randombank
 
 lalapps_inspiral_SOURCES 	= $(INSPIRALSRC)
 lalapps_coherent_inspiral_SOURCES = $(COHERESRC)
@@ -48,6 +50,7 @@ lalapps_spininj_SOURCES 	= $(SPININJSRC)
 lalapps_inspfrinj_SOURCES 	= $(INSPFRINJSRC)
 lalapps_gwf2xml_SOURCES 	= $(GWF2XMLSRC)
 lalapps_coinext_SOURCES         = $(COINEXTSRC)
+lalapps_randombank_SOURCES 	= $(RANDOMBANKSRC)
 else
 bin_PROGRAMS = 
 endif
