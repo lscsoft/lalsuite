@@ -186,6 +186,7 @@ int main (int argc , char **argv) {
   case TaylorT3:
   case EOB:
   case PadeT1:
+  case SpinTaylor:
     SUB(LALInspiralWave(&status, signal2, &params), &status);
     if (status.statusCode == 0){
       printf_timeseries(signal2->length, signal2->data, dt, params.startTime);   	  
@@ -203,7 +204,6 @@ int main (int argc , char **argv) {
 	   params.totalMass,params.eta, params.fLower);
     break;
   case PadeF1:
-  case SpinTaylor:
   default:
 	    fprintf(stderr, " not available\n");
 	    break;

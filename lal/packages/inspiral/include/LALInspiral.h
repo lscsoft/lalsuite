@@ -826,13 +826,6 @@ tagInspiralInit
 
 /* Function prototypes */
 
-/*  <lalLaTeX>
-\newpage\input{LALInspiralGetStringFromApproximantC}
-</lalLaTeX>  */
-void 
-LALInspiralGetStringFromApproximant(
-    Approximant input);
-
 
 /* --- HERE ARE SOME USEFUL PROTOTYPE FOR LENGTH, PARAMETER CALCULATION... --- */
 /*  <lalLaTeX>
