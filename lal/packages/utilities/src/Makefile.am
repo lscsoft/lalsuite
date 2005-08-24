@@ -4,7 +4,7 @@ libutilities_la_SOURCES = \
   Random.c MersenneRandom.c FindRoot.c Integrate.c Interpolate.c \
   HeapSort.c ODE.c CoarseGrainFrequencySeries.c Dirichlet.c \
   MatrixOps.c DetInverse.c DetInverseInternal.c Eigen.c EigenInternal.c \
-  LALRunningMedian.c RngMedBias.c SFTClean.c
+  LALRunningMedian.c RngMedBias.c SFTClean.c NormalizeSFTRngMed.c
 MAINTAINERCLEANFILES = MatrixOps.c
 EXTRA_DIST = MatrixOps.m4 LALMatrixOps.m4
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
