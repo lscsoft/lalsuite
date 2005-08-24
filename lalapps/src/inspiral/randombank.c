@@ -242,6 +242,11 @@ int main ( int argc, char *argv[] )
     thisTmplt->f_final = newTmplt.fFinal;
     thisTmplt->eta = newTmplt.eta;
     thisTmplt->beta = newTmplt.beta;
+    LALSnprintf( thisTmplt->ifo, LIGOMETA_IFO_MAX * sizeof(CHAR), "P1" );
+    LALSnprintf( thisTmplt->search, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+        "randombank" );
+    LALSnprintf( thisTmplt->channel, LIGOMETA_CHANNEL_MAX * sizeof(CHAR),
+        "SIM-BANK" );
   }
 
 
@@ -255,13 +260,13 @@ int main ( int argc, char *argv[] )
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( userTag )
   {
-    LALSnprintf( fname, sizeof(fname), "P1-TMPLTBANK_%s-%d-%d.xml",
+    LALSnprintf( fname, sizeof(fname), "P-TMPLTBANK_%s-%d-%d.xml",
         userTag, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
-    LALSnprintf( fname, sizeof(fname), "P1-TMPLTBANK-%d-%d.xml",
+    LALSnprintf( fname, sizeof(fname), "P-TMPLTBANK-%d-%d.xml",
         gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }

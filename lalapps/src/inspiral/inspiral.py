@@ -45,6 +45,32 @@ class TmpltBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.set_sub_file('tmpltbank.sub')
 
 
+class RandomBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
+  """
+  A lalapps_randombank job used by the inspiral pipeline. The static options
+  are read from the section [randombank] in the ini file. The stdout and
+  stderr from the job are directed to the logs directory. The job runs in the
+  universe specfied in the ini file. The path to the executable is determined
+  from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','randombank')
+    self.__universe = cp.get('condor','universe')
+    pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    pipeline.AnalysisJob.__init__(self,cp,dax)
+
+    self.add_ini_opts(cp,'randombank')
+
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+    self.set_stdout_file('logs/randombank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/randombank-$(macrochannelname)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err')
+    self.set_sub_file('randombank.sub')
+
+
 class SplitBankJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_splitbank job used by the inspiral pipeline. The static options
@@ -292,6 +318,38 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
       bank = bank + str(self.get_start())
     else:
       bank = self.get_ifo() + '-TMPLTBANK-' + str(self.get_start())
+    bank = bank + '-' + str(self.get_end() - self.get_start()) + '.xml'
+
+    self.add_output_file(bank)
+
+    return bank
+
+
+class RandomBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
+  """
+  A RandomBankNode runs an instance of the random bank generation job in a
+  Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_randombank.
+    """
+    pipeline.CondorDAGNode.__init__(self,job)
+    pipeline.AnalysisNode.__init__(self)
+    self.__usertag = job.get_config('pipeline','user-tag')
+
+  def get_output(self):
+    """
+    Returns the file name of output from the template bank code. This must
+    be kept synchronized with the name of the output file in randombank.c.
+    """
+    if not self.get_start() or not self.get_end():
+      raise InspiralError, "Start time or end time has not been set"
+    if self.__usertag:
+      bank = 'P-TMPLTBANK_' + self.__usertag + '-' 
+      bank = bank + str(self.get_start())
+    else:
+      bank = 'P-TMPLTBANK-' + str(self.get_start())
     bank = bank + '-' + str(self.get_end() - self.get_start()) + '.xml'
 
     self.add_output_file(bank)
