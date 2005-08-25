@@ -2330,9 +2330,11 @@ int main( int argc, char *argv[] )
           (SimInstParamsTable *) LALCalloc( 1, sizeof(SimInstParamsTable) );
       }
 
-      /* put the masses of the injection into the name field */
+      /* put the masses of the injection into the comment field */
       /* this isn't necessary but it is nice for bookkeeping */
       LALSnprintf( thisSimInstParams->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX,
+          "match" );
+      LALSnprintf( thisSimInstParams->comment, LIGOMETA_SIMINSTPARAMS_NAME_MAX,
           "%e,%e", bankInjection->mass1, bankInjection->mass2 );
 
       /* store the match in the sim_inst_params structure */
