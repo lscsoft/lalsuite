@@ -296,6 +296,7 @@ int main( int argc, char *argv[] )
   MetadataTable         procparams;
   MetadataTable         searchsumm;
   MetadataTable         searchsummvars;
+  MetadataTable         siminspiral;
   SearchSummvarsTable  *this_search_summvar;
   MetadataTable         summvalue;
   SummValueTable       *this_summ_value = NULL;
@@ -336,14 +337,13 @@ int main( int argc, char *argv[] )
   UINT4 cut = 0;
   REAL4 psdMin = 0;
   INT4  bankSimCount = 0;
-  SimInspiralTable bankInjection;
+  SimInspiralTable *bankInjection = NULL;
   REAL4 matchNorm = 0;
   const REAL8 psdScaleFac = 1.0e-40;
   SnglInspiralTable *loudestEvent = NULL;
   SnglInspiralTable *prevLoudestEvent = NULL;
   SnglInspiralTable *loudestEventHead = NULL;
   SimInstParamsTable *thisSimInstParams = NULL;
-  SimInstParamsTable *prevSimInstParams = NULL;
   MetadataTable simResults;
 
   /* injection information */
@@ -444,6 +444,9 @@ int main( int argc, char *argv[] )
 
   /* make sure the pointer to the first event is null */
   savedEvents.snglInspiralTable = NULL;
+
+  /* make sure the sim inspiral table is null */
+  siminspiral.simInspiralTable = NULL;
 
   /* create the standard candle and database table */
   memset( &candle, 0, sizeof(FindChirpStandardCandle) );
@@ -1624,59 +1627,70 @@ int main( int argc, char *argv[] )
 
       /* zero out the input data segment and the injection params */
       memset( chan.data->data, 0, chan.data->length * sizeof(REAL4) );
-      memset( &bankInjection, 0, sizeof(SimInspiralTable) );
 
+      /* create memory for the bank simulation */
+      if ( ! siminspiral.simInspiralTable )
+      {
+        bankInjection = siminspiral.simInspiralTable =
+          (SimInspiralTable *) LALCalloc( 1, sizeof(SimInspiralTable) );
+      }
+      else
+      {
+        bankInjection = bankInjection->next =
+          (SimInspiralTable *) LALCalloc( 1, sizeof(SimInspiralTable) );
+      }
+      
       /* set up the injection masses */
       if ( bankMaxMass == bankMinMass )
       {
-        bankInjection.mass1 = bankMaxMass;
-        bankInjection.mass2 = bankMaxMass;
+        bankInjection->mass1 = bankMaxMass;
+        bankInjection->mass2 = bankMaxMass;
       }
       else
       {
         /* generate random parameters for the injection */
-        LAL_CALL( LALUniformDeviate( &status, &(bankInjection.mass1), 
+        LAL_CALL( LALUniformDeviate( &status, &(bankInjection->mass1), 
               randParams ), &status );
-        bankInjection.mass1 *= (bankMaxMass - bankMinMass);
-        bankInjection.mass1 += bankMinMass;
-        LAL_CALL( LALUniformDeviate( &status, &(bankInjection.mass2), 
+        bankInjection->mass1 *= (bankMaxMass - bankMinMass);
+        bankInjection->mass1 += bankMinMass;
+        LAL_CALL( LALUniformDeviate( &status, &(bankInjection->mass2), 
               randParams ), &status );
-        bankInjection.mass2 *= (bankMaxMass - bankMinMass);
-        bankInjection.mass2 += bankMinMass;
+        bankInjection->mass2 *= (bankMaxMass - bankMinMass);
+        bankInjection->mass2 += bankMinMass;
       }
 
-      bankInjection.eta = bankInjection.mass1 * bankInjection.mass2 /
-        ( ( bankInjection.mass1 + bankInjection.mass2 ) *
-          ( bankInjection.mass1 + bankInjection.mass2 ) );
+      bankInjection->eta = bankInjection->mass1 * bankInjection->mass2 /
+        ( ( bankInjection->mass1 + bankInjection->mass2 ) *
+          ( bankInjection->mass1 + bankInjection->mass2 ) );
 
       if ( bankSimApproximant == TaylorT1 )
       {
-        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "TaylorT1twoPN" );
       }
       else if ( bankSimApproximant == TaylorT2 )
       {
-        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "TaylorT2twoPN" );
       }
       else if ( bankSimApproximant == TaylorT3 )
       {
-        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "TaylorT3twoPN" );
       }
       else if ( bankSimApproximant == PadeT1 )
       {
-        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "PadeT1twoPN" );
       }
       else if ( bankSimApproximant == EOB )
       {
-        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "EOBtwoPN" );
       }
       else if ( bankSimApproximant == GeneratePPN )
       {
-        LALSnprintf( bankInjection.waveform, LIGOMETA_WAVEFORM_MAX,
+        LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
             "GeneratePPNtwoPN" );
       }
       else
@@ -1687,7 +1701,7 @@ int main( int argc, char *argv[] )
       }
 
       /* set the injection distance to 1 Mpc */
-      bankInjection.distance = 1.0;
+      bankInjection->distance = 1.0;
 
       /* inject the signals, preserving the channel name (Tev mangles it) */
       LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", 
@@ -1695,7 +1709,7 @@ int main( int argc, char *argv[] )
       /* make sure the injection is hplus with no time delays */
       dataSegVec->data->chan->name[0] = 'P';
       LAL_CALL( LALFindChirpInjectSignals( &status, dataSegVec->data->chan, 
-            &bankInjection, &resp ), &status );
+            bankInjection, &resp ), &status );
       /* restore the saved channel name */
       LALSnprintf( dataSegVec->data->chan->name,  
           LALNameLength * sizeof(CHAR), "%s", tmpChName );
@@ -2304,34 +2318,25 @@ int main( int argc, char *argv[] )
       if ( prevLoudestEvent ) prevLoudestEvent->next = loudestEvent;
       prevLoudestEvent = loudestEvent;
 
-      /* create sim_inst_params structure for mass1 */
-      thisSimInstParams = (SimInstParamsTable *) 
-        LALCalloc( 1, sizeof(SimInstParamsTable) );
-      LALSnprintf( thisSimInstParams->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX,
-          "mass1" );
-      thisSimInstParams->value = bankInjection.mass1;
-
-      /* link the linked list */
+      /* create the match output table */
       if ( ! simResults.simInstParamsTable )
-        simResults.simInstParamsTable = thisSimInstParams;
-      if ( prevSimInstParams ) prevSimInstParams->next = thisSimInstParams;
+      {
+        thisSimInstParams = simResults.simInstParamsTable = 
+          (SimInstParamsTable *) LALCalloc( 1, sizeof(SimInstParamsTable) );
+      }
+      else
+      {
+        thisSimInstParams = thisSimInstParams->next = 
+          (SimInstParamsTable *) LALCalloc( 1, sizeof(SimInstParamsTable) );
+      }
 
-      /* create sim_inst_params structure for mass2 */
-      thisSimInstParams = thisSimInstParams->next = (SimInstParamsTable *) 
-        LALCalloc( 1, sizeof(SimInstParamsTable) );
+      /* put the masses of the injection into the name field */
+      /* this isn't necessary but it is nice for bookkeeping */
       LALSnprintf( thisSimInstParams->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX,
-          "mass2" );
-      thisSimInstParams->value = bankInjection.mass2;
+          "%e,%e", bankInjection->mass1, bankInjection->mass2 );
 
-      /* create sim_inst_params structure for minimal_match */
-      thisSimInstParams = thisSimInstParams->next = (SimInstParamsTable *) 
-        LALCalloc( 1, sizeof(SimInstParamsTable) );
-      LALSnprintf( thisSimInstParams->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX,
-          "minimal_match" );
+      /* store the match in the sim_inst_params structure */
       thisSimInstParams->value = loudestEvent->snr / matchNorm;
-
-      /* store the last created sim_inst_params table */
-      prevSimInstParams = thisSimInstParams;
     }
 
     ++bankSimCount;
@@ -2639,6 +2644,23 @@ int main( int argc, char *argv[] )
     event = savedEvents.snglInspiralTable;
     savedEvents.snglInspiralTable = savedEvents.snglInspiralTable->next;
     LALFree( event );
+  }
+
+  /* write the signals injected in a template bank simulation */
+  if ( bankSim && siminspiral.simInspiralTable )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sim_inspiral_table ), 
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, siminspiral, 
+          sim_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+
+    while ( siminspiral.simInspiralTable )
+    {
+      bankInjection = siminspiral.simInspiralTable;
+      siminspiral.simInspiralTable = siminspiral.simInspiralTable->next;
+      LALFree( bankInjection );
+    }
   }
 
   /* write the template bank simulation results to the xml */
