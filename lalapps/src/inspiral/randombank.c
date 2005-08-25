@@ -260,13 +260,13 @@ int main ( int argc, char *argv[] )
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( userTag )
   {
-    LALSnprintf( fname, sizeof(fname), "P-TMPLTBANK_%s-%d-%d.xml",
+    LALSnprintf( fname, sizeof(fname), "P1-TMPLTBANK_%s-%d-%d.xml",
         userTag, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
   else
   {
-    LALSnprintf( fname, sizeof(fname), "P-TMPLTBANK-%d-%d.xml",
+    LALSnprintf( fname, sizeof(fname), "P1-TMPLTBANK-%d-%d.xml",
         gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
