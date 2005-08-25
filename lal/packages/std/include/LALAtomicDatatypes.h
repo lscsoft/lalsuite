@@ -1,3 +1,37 @@
+/** \file
+ * \ingroup std
+ * \author Creighton, J. D. E., and Creighton, T. D.
+ * \date $Id$
+ * \brief The primative LAL datatypes.
+ *
+ * This header defines the primative LAL datatypes.  These datatypes 
+ * are: CHAR, INT2, INT4, INT8 (signed integer types); UCHAR, UINT2
+ * UINT4, UINT8 (unsigned integer types); REAL4, REAL8 (single- and
+ * double-precision floating point types); and COMPLEX8 and COMPLEX16
+ * (single- and double-precision floating point complex types).
+ * Note that the complex types are implemented as structures.  This is
+ * because LAL conforms to the C89 standard rather than the C99
+ * standard.  The non-complex datatypes are known as <em>atomic</em>
+ * datatypes: these may be passed directly to functions or used as
+ * the return value of XLAL functions.
+ *
+ * The number in the name of each of these types (other than
+ * CHAR and UCHAR) is the number of 8-bit bytes that the datatype
+ * occupies.  E.g., INT4 is a four-byte integer.  In C99 it would be
+ * called <tt>int32_t</tt>. While the size of types such as <tt>int</tt> and
+ * <tt>long int</tt> are platform dependent, the sizes of INT4 and INT8
+ * is always 4- and 8-bytes respectively (platform independent).
+ * REAL4 and REAL8 are always type <tt>float</tt> and <tt>double</tt>
+ * but LAL is only supported on platforms in which these types conform
+ * to the IEEE 754 standard.
+ *
+ * This documentation shows how the datatypes are defined on today's
+ * most common (32-bit) platform.  Be careful in particular about
+ * the integer type INT8.  On 64-bit platforms it will usually be
+ * equivalent to type <tt>long int</tt> rather than type
+ * <tt>long long int</tt>.
+ */
+
 /*************************** <lalVerbatim file="LALAtomicDatatypesHV">
 Author: J. D. E. Creighton, T. D. Creighton
 $Id$
@@ -92,6 +126,59 @@ conversion to binary, the second is the number of digits required to
 represent a unique binary quantity.
 
 </lalLaTeX> */
+
+/** \var typedef char CHAR
+ * \brief One-byte signed integer.
+ */
+/** \var typedef unsigned char UCHAR
+ * \brief One-byte unsigned integer.
+ */
+/** \var typedef short INT2
+ * \brief Two-byte signed integer.
+ */
+/** \var typedef short UINT2
+ * \brief Two-byte unsigned integer.
+ */
+/** \var typedef int INT4
+ * \brief Four-byte signed integer.
+ */
+/** \var typedef int UINT4
+ * \brief Four-byte unsigned integer.
+ */
+/** \var typedef long long INT8
+ * \brief Eight-byte signed integer.
+ *
+ * On some platforms this is equivalent to <tt>long int</tt> instead.
+ */
+/** \var typedef long long UINT8
+ * \brief Eight-byte unsigned integer.
+ *
+ * On some platforms this is equivalent to <tt>unsigned long int</tt> instead.
+ */
+/** \var typedef float REAL4
+ * \brief Single precision real floating-point number (4 bytes).
+ */
+/** \var typedef double REAL8
+ * \brief Double precision real floating-point number (8 bytes).
+ */
+/** \def LAL_INT8_C(v) (v ## LL)
+ * \brief Macro for use in defining \a v as an INT8 constant.
+ *
+ * This macro affixes the appropriate qualifier to form an INT8 constant.
+ * For example:
+ * \code
+ * const INT8 jan_1_2000_gps_nanosec = LAL_INT8_C(63072001300000000)
+ * \endcode
+ */
+/** \def LAL_UINT8_C(v) (v ## ULL)
+ * \brief Macro for use in defining \a v as an UINT8 constant.
+ *
+ * This macro affixes the appropriate qualifier to form an UINT8 constant.
+ * For example:
+ * \code
+ * const UINT8 jan_1_2000_gps_nanosec = LAL_UINT8_C(63072001300000000)
+ * \endcode
+ */
 
 #ifndef _LALATOMICDATATYPES_H
 #define _LALATOMICDATATYPES_H
@@ -197,6 +284,8 @@ typedef uint64_t UINT8;
   typedef int INT2;
   typedef unsigned int UINT2;
 #else
+  typedef short INT2;
+  typedef unsigned short UINT2;
 # error "ERROR: NO 2 BYTE INTEGER FOUND"
 #endif
 
@@ -207,6 +296,8 @@ typedef uint64_t UINT8;
   typedef long INT4;
   typedef unsigned long UINT4;
 #else
+  typedef int INT4;
+  typedef unsigned int UINT4;
 # error "ERROR: NO 4 BYTE INTEGER FOUND"
 #endif
 
@@ -222,6 +313,8 @@ typedef uint64_t UINT8;
   typedef unsigned long long UINT8;
 #endif /* __GNUC__ */
 #else
+  typedef long long INT8;
+  typedef unsigned long long UINT8;
 # error "ERROR: NO 8 BYTE INTEGER FOUND"
 #endif
 
@@ -230,7 +323,7 @@ typedef uint64_t UINT8;
 /* Macros for integer constants */
 #if LAL_SIZEOF_LONG == 8
 #define LAL_INT8_C(v) (v ## L)
-#define LAL_UINT8_C(v) (v ## UL)
+#define LAL_UINT8_C(v) (v ## UL) 
 #elif LAL_SIZEOF_LONG_LONG == 8
 #ifdef __GNUC__
 #define LAL_INT8_C(v) (__extension__ v ## LL)
@@ -240,6 +333,8 @@ typedef uint64_t UINT8;
 #define LAL_UINT8_C(v) (v ## ULL)
 #endif
 #else
+#define LAL_INT8_C(v) (v ## LL)
+#define LAL_UINT8_C(v) (v ## ULL)
 # error "ERROR: NO 8 BYTE INTEGER FOUND"
 #endif
 
@@ -248,12 +343,14 @@ typedef uint64_t UINT8;
 #if LAL_SIZEOF_FLOAT == 4
   typedef float REAL4;
 #else
+  typedef float REAL4;
 # error "ERROR: NO 4 BYTE REAL FOUND"
 #endif
 
 #if LAL_SIZEOF_DOUBLE == 8
   typedef double REAL8;
 #else
+  typedef double REAL8;
 # error "ERROR: NO 8 BYTE REAL FOUND"
 #endif
 
@@ -294,19 +391,21 @@ memory.  The fields are:
 
 </lalLaTeX> */
 
+/** Single-precision floating-point complex number (8 bytes total) */
 typedef struct
 tagCOMPLEX8
 {
-  REAL4 re;
-  REAL4 im;
+  REAL4 re; /**< The real part. */
+  REAL4 im; /**< The imaginary part. */
 }
 COMPLEX8;
 
+/** Double-precision floating-point complex number (16 bytes total) */
 typedef struct
 tagCOMPLEX16
 {
-  REAL8 re;
-  REAL8 im;
+  REAL8 re; /**< The real part. */
+  REAL8 im; /**< The imaginary part. */
 }
 COMPLEX16;
 

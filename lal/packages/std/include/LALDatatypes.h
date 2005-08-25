@@ -1,3 +1,21 @@
+/** \file
+ * \ingroup std
+ * \author Creighton, J. D. E., and Creighton, T. D.
+ * \date $Id$
+ * \brief Provides the basic LAL datatypes.
+ *
+ * \noindent This header defines the standard data types and data
+ * structures that are used throughout LAL.  They fall into three general
+ * categories: primitive datatypes, aggregates of primitive
+ * datatypes, and structured datatypes.  The LAL status structure
+ * is a special case of a structured datatype that is used in every
+ * standard LAL function.
+ * 
+ * This header file is automatically included by the header
+ * <tt>LALStdlib.h</tt>.  In turn, this header file starts by including the
+ * header <tt>LALAtomicDatatypes.h</tt>.
+ *
+ */
 /********************************* <lalVerbatim file="LALDatatypesHV">
 Author: J. D. E. Creighton, T. D. Creighton
 $Id$
@@ -151,40 +169,42 @@ following section.
  **** </lalLaTeX> */
 
 /* constants */
-/* type size constants */
+
+/** Type size constants. */
 enum
 {
-  LAL_1_BYTE_TYPE_SIZE  = 000,   /*      0 = 0 */
-  LAL_2_BYTE_TYPE_SIZE  = 001,   /*      1 = 1 */
-  LAL_4_BYTE_TYPE_SIZE  = 002,   /*     10 = 2 */
-  LAL_8_BYTE_TYPE_SIZE  = 003,   /*     11 = 3 */
-  LAL_16_BYTE_TYPE_SIZE = 004,   /*    100 = 4 */
-  LAL_TYPE_SIZE_MASK    = 007    /*    111 = 7 */
+  LAL_1_BYTE_TYPE_SIZE  = 000,   /**< One byte size 00 = 0 */
+  LAL_2_BYTE_TYPE_SIZE  = 001,   /**< Two byte size 01 = 1 */
+  LAL_4_BYTE_TYPE_SIZE  = 002,   /**< Four byte size 010 = 2 */
+  LAL_8_BYTE_TYPE_SIZE  = 003,   /**< Eight byte size 011 = 3 */
+  LAL_16_BYTE_TYPE_SIZE = 004,   /**< Sixteen byte size 0100 = 4 */
+  LAL_TYPE_SIZE_MASK    = 007    /**< Type size mask 0111 = 7 */
 };
 
-/* type flag constants */
+/** Type flag constants. */
 enum
 {
-  LAL_FLTPT_TYPE_FLAG   = 010,   /*   1000 =  8 */
-  LAL_CMPLX_TYPE_FLAG   = 020,   /*  10000 = 16 */
-  LAL_UNSGN_TYPE_FLAG   = 040    /* 100000 = 32 */
+  LAL_FLTPT_TYPE_FLAG   = 010,   /**< Floating-point (vs integer) type 01000 =  8 */
+  LAL_CMPLX_TYPE_FLAG   = 020,   /**< Complex (vs real) type  010000 = 16 */
+  LAL_UNSGN_TYPE_FLAG   = 040    /**< Unsigned (vs signed) type 0100000 = 32 */
 };
 
-/* type codes */
+/** Type codes: use these type codes to identify a LAL atomic data type.
+ */
 typedef enum
 {
-  LAL_CHAR_TYPE_CODE    = LAL_1_BYTE_TYPE_SIZE, /* 0 */
-  LAL_I2_TYPE_CODE      = LAL_2_BYTE_TYPE_SIZE, /* 1 */
-  LAL_I4_TYPE_CODE      = LAL_4_BYTE_TYPE_SIZE, /* 2 */
-  LAL_I8_TYPE_CODE      = LAL_8_BYTE_TYPE_SIZE, /* 3 */
-  LAL_UCHAR_TYPE_CODE   = LAL_1_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /* 32 */
-  LAL_U2_TYPE_CODE      = LAL_2_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /* 33 */
-  LAL_U4_TYPE_CODE      = LAL_4_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /* 34 */
-  LAL_U8_TYPE_CODE      = LAL_8_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /* 35 */
-  LAL_S_TYPE_CODE       = LAL_4_BYTE_TYPE_SIZE | LAL_FLTPT_TYPE_FLAG,   /* 18 */
-  LAL_D_TYPE_CODE       = LAL_8_BYTE_TYPE_SIZE | LAL_FLTPT_TYPE_FLAG,   /* 19 */
-  LAL_C_TYPE_CODE       = LAL_8_BYTE_TYPE_SIZE | LAL_CMPLX_TYPE_FLAG | LAL_FLTPT_TYPE_FLAG,     /* 27 */
-  LAL_Z_TYPE_CODE       = LAL_16_BYTE_TYPE_SIZE | LAL_CMPLX_TYPE_FLAG | LAL_FLTPT_TYPE_FLAG     /* 28 */
+  LAL_CHAR_TYPE_CODE    = LAL_1_BYTE_TYPE_SIZE, /**< CHAR type code (0) */
+  LAL_I2_TYPE_CODE      = LAL_2_BYTE_TYPE_SIZE, /**< INT2 type code (1) */
+  LAL_I4_TYPE_CODE      = LAL_4_BYTE_TYPE_SIZE, /**< INT4 type code (2) */
+  LAL_I8_TYPE_CODE      = LAL_8_BYTE_TYPE_SIZE, /**< INT8 type code (3) */
+  LAL_UCHAR_TYPE_CODE   = LAL_1_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /**< UCHAR type code (32) */
+  LAL_U2_TYPE_CODE      = LAL_2_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /**< UINT2 type code (33) */
+  LAL_U4_TYPE_CODE      = LAL_4_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /**< UINT4 type code (34) */
+  LAL_U8_TYPE_CODE      = LAL_8_BYTE_TYPE_SIZE | LAL_UNSGN_TYPE_FLAG,   /**< UINT8 type code (35) */
+  LAL_S_TYPE_CODE       = LAL_4_BYTE_TYPE_SIZE | LAL_FLTPT_TYPE_FLAG,   /**< REAL4 type code (18) */
+  LAL_D_TYPE_CODE       = LAL_8_BYTE_TYPE_SIZE | LAL_FLTPT_TYPE_FLAG,   /**< REAL8 type code (19) */
+  LAL_C_TYPE_CODE       = LAL_8_BYTE_TYPE_SIZE | LAL_CMPLX_TYPE_FLAG | LAL_FLTPT_TYPE_FLAG,     /**< COMPLEX8 type code (27) */
+  LAL_Z_TYPE_CODE       = LAL_16_BYTE_TYPE_SIZE | LAL_CMPLX_TYPE_FLAG | LAL_FLTPT_TYPE_FLAG     /**< COMPLEX16 type code (28) */
 }
 LALTYPECODE;
 
@@ -226,88 +246,156 @@ are stored sequentially as \verb@data[@$0,\ldots,n-1$\verb@]@.
 
 </lalLaTeX> */
 
+/** \name Aggregate datatypes.
+ *
+ * These datatypes store arbitrarily large sets or collections of
+ * primitive datatypes.  At this level there is no physical
+ * interpretation assigned to the objects (such as names or units); the
+ * aggregate datatypes simply collect and arrange the primitive
+ * datatypes.  The following types of aggregate datatypes are defines:
+ * vectors, arrays, sequences, vector sequences, and array sequences.
+ *
+ * \b Vector structures store an ordered set of \a n elements of any
+ * primative datatype.
+ *
+ * \b Sequence structures are synonyms for Vector structures.
+ *
+ * \b Array structures store a set of elements of any primative
+ * datatype, arranged as an \a m dimensional
+ * array.  That is, each element can be thought of as having \a m
+ * indecies, \f$A_{i_0\cdots i_{m-1}}\f$, where each index \f$i_k\f$
+ * runs over its own range \f$0,\ldots,n_k-1\f$.  The total number of
+ * elements is then \f$N=n_0\times\cdots\times n_{m-1}\f$.  In memory the
+ * array is flattened so that the elements are stored sequentially in
+ * a contiguous block.  That is, the array of memory is packed so that
+ * element \f$A_{i_0\cdots i_{m-1}}\f$ is stored as
+ * \f$\mathtt{data[}i_{m-1} + n_{m-2}\times(i_{m-2} +
+ * n_{m-3}\times(\cdots(i_1 + n_0\times i_0)\cdots))\mathtt{]}\f$.
+ *
+ * \b VectorSequence structures store an ordered set of \a l elements of type
+ * \c \<datatype\>Vector, where \c \<datatype\> can be any primitive
+ * datatype.  Mathematically the sequence can be written as
+ * \f$\{\vec{v}^{(0)},\ldots,\vec{v}^{(l-1)}\}\f$, where each element
+ * \f$\vec{v}^{(j)}=(v^{(j)}_0,\ldots,v^{(i)}_{n-1})\f$ is a vector of length
+ * \f$n\f$.  In memory the elements are flattened; that is, they are
+ * stored sequentially in a contiguous block of memory such that
+ * element \f$v^{(j)}_i\f$ is stored as
+ * \f$\mathtt{data[}j\times n + i\mathtt{]}\f$.
+ *
+ * \b ArraySequence structures stores an ordered set of \a l elements of type
+ * \c \<datatype\>Array where \c \<datatype\> can be any primitive
+ * datatype.  The indexing of an array sequence can get quite
+ * complicated; it helps to read first the documentation for data arrays,
+ * above.  Mathematically the data can be written as a set
+ * \f$\{A^{(j)}_{i_0\cdots i_{m-1}}\f$, where the sequence number
+ * \f$j\f$ runs from 0 to \f$l-1\f$, and each array index \f$i_k\f$ runs over its own
+ * range \f$0,\ldots,n_k-1\f$.  The total number of data in a given array
+ * element is then \f$N=n_0\times\cdots\times n_{m-1}\f$, and the total
+ * number of data in the sequence is \f$N\times l\f$.  In memory the array is
+ * flattened so that the elements are stored sequentially in a
+ * contiguous block.
+ * The element
+ * \f$A^{(j)}_{i_0\cdots i_{m-1}}\f$ is stored as
+ * \f$\mathtt{data[}j\times N + i_{m-1} + n_{m-2}\times(i_{m-2} +
+ * n_{m-3}\times(\cdots(i_1 + n_0\times i_0)\cdots))\mathtt{]}\f$; that is,
+ * the index of \c data[] runs over the internal indecies of each
+ * array element before incrementing to the next array element.
+ *
+ */
+/*@{*/
+/** Vector of type CHAR. */
 typedef struct
 tagCHARVector
 {
-  UINT4  length;
-  CHAR  *data;
+  UINT4  length; /**< Number of elements in array. */
+  CHAR  *data;   /**< Pointer to the data array. */
 }
 CHARVector;
 
+/** Vector of type INT2. */
 typedef struct
 tagINT2Vector
 {
-  UINT4  length;
-  INT2  *data;
+  UINT4  length; /**< Number of elements in array. */
+  INT2  *data; /**< Pointer to the data array. */
 }
 INT2Vector;
 
+/** Vector of type UINT2. */
 typedef struct
 tagUINT2Vector
 {
-  UINT4  length;
-  UINT2 *data;
+  UINT4  length; /**< Number of elements in array. */
+  UINT2 *data; /**< Pointer to the data array. */
 }
 UINT2Vector;
 
+/** Vector of type INT4. */
 typedef struct
 tagINT4Vector
 {
-  UINT4  length;
-  INT4  *data;
+  UINT4  length; /**< Number of elements in array. */
+  INT4  *data; /**< Pointer to the data array. */
 }
 INT4Vector;
 
+/** Vector of type UINT4. */
 typedef struct
 tagUINT4Vector
 {
-  UINT4  length;
-  UINT4  *data;
+  UINT4  length; /**< Number of elements in array. */
+  UINT4  *data; /**< Pointer to the data array. */
 }
 UINT4Vector;
 
+/** Vector of type INT8. */
 typedef struct
 tagINT8Vector
 {
-  UINT4  length;
-  INT8  *data;
+  UINT4  length; /**< Number of elements in array. */
+  INT8  *data; /**< Pointer to the data array. */
 }
 INT8Vector;
 
+/** Vector of type UINT8. */
 typedef struct
 tagUINT8Vector
 {
-  UINT4  length;
-  UINT8 *data;
+  UINT4  length; /**< Number of elements in array. */
+  UINT8 *data; /**< Pointer to the data array. */
 }
 UINT8Vector;
 
+/** Vector of type REAL4. */
 typedef struct
 tagREAL4Vector
 {
-  UINT4  length;
-  REAL4 *data;
+  UINT4  length; /**< Number of elements in array. */
+  REAL4 *data; /**< Pointer to the data array. */
 }
 REAL4Vector;
 
+/** Vector of type REAL8. */
 typedef struct tagREAL8Vector
 {
-  UINT4  length;
-  REAL8 *data;
+  UINT4  length; /**< Number of elements in array. */
+  REAL8 *data; /**< Pointer to the data array. */
 }
 REAL8Vector;
 
+/** Vector of type COMPLEX8. */
 typedef struct tagCOMPLEX8Vector
 {
-  UINT4     length;
-  COMPLEX8 *data;
+  UINT4     length; /**< Number of elements in array. */
+  COMPLEX8 *data; /**< Pointer to the data array. */
 }
 COMPLEX8Vector;
 
+/** Vector of type COMPLEX16. */
 typedef struct tagCOMPLEX16Vector
 {
-  UINT4      length;
-  COMPLEX16 *data;
+  UINT4      length; /**< Number of elements in array. */
+  COMPLEX16 *data; /**< Pointer to the data array. */
 }
 COMPLEX16Vector;
 
@@ -339,83 +427,93 @@ $i_{k+1}$ before incrementing $i_k$.
 
 </lalLaTeX> */
 
+/** Multidimentional array of INT2. */
 typedef struct
 tagINT2Array
 {
-  UINT4Vector *dimLength;
-  INT2        *data;
+  UINT4Vector *dimLength; /**< Vector of array dimensions. */
+  INT2        *data; /**< Pointer to the data array. */
 }
 INT2Array;
 
+/** Multidimentional array of UINT2. */
 typedef struct
 tagUINT2Array
 {
-  UINT4Vector *dimLength;
-  UINT2       *data;
+  UINT4Vector *dimLength; /**< Vector of array dimensions. */
+  UINT2       *data; /**< Pointer to the data array. */
 }
 UINT2Array;
 
+/** Multidimentional array of INT4. */
 typedef struct
 tagINT4Array
 {
-  UINT4Vector *dimLength;
-  INT4        *data;
+  UINT4Vector *dimLength; /**< Vector of array dimensions. */
+  INT4        *data; /**< Pointer to the data array. */
 }
 INT4Array;
 
+/** Multidimentional array of UINT4. */
 typedef struct
 tagUINT4Array
 {
-  UINT4Vector *dimLength;
-  UINT4       *data;
+  UINT4Vector *dimLength; /**< Vector of array dimensions. */
+  UINT4       *data; /**< Pointer to the data array. */
 }
 UINT4Array;
 
+/** Multidimentional array of INT8. */
 typedef struct
 tagINT8Array
 {
-  UINT4Vector *dimLength;
-  INT8        *data;
+  UINT4Vector *dimLength; /**< Vector of array dimensions. */
+  INT8        *data; /**< Pointer to the data array. */
 }
 INT8Array;
 
+/** Multidimentional array of UINT8. */
 typedef struct
 tagUINT8Array
 {
-  UINT4Vector *dimLength;
-  UINT8       *data;
+  UINT4Vector *dimLength; /**< Vector of array dimensions. */
+  UINT8       *data; /**< Pointer to the data array. */
 }
 UINT8Array;
 
+/** Multidimentional array of REAL4. */
 typedef struct
 tagREAL4Array
 {
-  UINT4Vector *dimLength;
-  REAL4       *data;
+  UINT4Vector *dimLength; /**< Vector of array dimensions. */
+  REAL4       *data; /**< Pointer to the data array. */
 }
 REAL4Array;
 
+/** Multidimentional array of REAL8. */
 typedef struct
 tagREAL8Array
 {
-  UINT4Vector *dimLength;
-  REAL8       *data;
+  UINT4Vector *dimLength; /**< Vector of array dimensions. */
+  REAL8       *data; /**< Pointer to the data array. */
 }
 REAL8Array;
 
+/** Multidimentional array of COMPLEX8. */
 typedef struct
 tagCOMPLEX8Array
 {
-  UINT4Vector *dimLength;
-  COMPLEX8    *data;
+  UINT4Vector *dimLength; /**< Vector of array dimensions. */
+  COMPLEX8    *data; /**< Pointer to the data array. */
 }
 COMPLEX8Array;
 
+/** Multidimentional array of COMPLEX16. */
 typedef struct
 tagCOMPLEX16Array
 {
-  UINT4Vector *dimLength;
-  COMPLEX16   *data;
+  UINT4Vector *dimLength; /**< Vector of array dimensions. */
+  COMPLEX16   *data; /**< Pointer to the data array. */
 }
 COMPLEX16Array;
 
@@ -476,102 +574,113 @@ each vector element before incrementing to the next vector element.
 
 </lalLaTeX> */
 
+/** Sequence of CHAR Vectors. */
 typedef struct
 tagCHARVectorSequence
 {
-  UINT4  length;
-  UINT4  vectorLength;
-  CHAR  *data;
+  UINT4  length; /**< The number \a l of vectors. */
+  UINT4  vectorLength; /**< The length \a n of each vector. */
+  CHAR  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
 }
 CHARVectorSequence;
 
+/** Sequence of INT2 Vectors. */
 typedef struct
 tagINT2VectorSequence
 {
-  UINT4  length;
-  UINT4  vectorLength;
-  INT2  *data;
+  UINT4  length; /**< The number \a l of vectors. */
+  UINT4  vectorLength; /**< The length \a n of each vector. */
+  INT2  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
 }
 INT2VectorSequence;
 
+/** Sequence of UINT2 Vectors. */
 typedef struct
 tagUINT2VectorSequence
 {
-  UINT4  length;
-  UINT4  vectorLength;
-  UINT2 *data;
+  UINT4  length; /**< The number \a l of vectors. */
+  UINT4  vectorLength; /**< The length \a n of each vector. */
+  UINT2 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
 }
 UINT2VectorSequence;
 
+/** Sequence of INT4 Vectors. */
 typedef struct
 tagINT4VectorSequence
 {
-  UINT4  length;
-  UINT4  vectorLength;
-  INT4  *data;
+  UINT4  length; /**< The number \a l of vectors. */
+  UINT4  vectorLength; /**< The length \a n of each vector. */
+  INT4  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
 }
 INT4VectorSequence;
 
+/** Sequence of UINT4 Vectors. */
 typedef struct
 tagUINT4VectorSequence
 {
-  UINT4  length;
-  UINT4  vectorLength;
-  UINT4 *data;
+  UINT4  length; /**< The number \a l of vectors. */
+  UINT4  vectorLength; /**< The length \a n of each vector. */
+  UINT4 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
 }
 UINT4VectorSequence;
 
+/** Sequence of INT8 Vectors. */
 typedef struct
 tagINT8VectorSequence
 {
-  UINT4  length;
-  UINT4  vectorLength;
-  INT8  *data;
+  UINT4  length; /**< The number \a l of vectors. */
+  UINT4  vectorLength; /**< The length \a n of each vector. */
+  INT8  *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
 }
 INT8VectorSequence;
 
+/** Sequence of UINT8 Vectors. */
 typedef struct
 tagUINT8VectorSequence
 {
-  UINT4  length;
-  UINT4  vectorLength;
-  UINT8 *data;
+  UINT4  length; /**< The number \a l of vectors. */
+  UINT4  vectorLength; /**< The length \a n of each vector. */
+  UINT8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
 }
 UINT8VectorSequence;
 
+/** Sequence of REAL4 Vectors. */
 typedef struct
 tagREAL4VectorSequence
 {
-  UINT4  length;
-  UINT4  vectorLength;
-  REAL4 *data;
+  UINT4  length; /**< The number \a l of vectors. */
+  UINT4  vectorLength; /**< The length \a n of each vector. */
+  REAL4 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
 }
 REAL4VectorSequence;
 
+/** Sequence of REAL8 Vectors. */
 typedef struct
 tagREAL8VectorSequence
 {
-  UINT4  length;
-  UINT4  vectorLength;
-  REAL8 *data;
+  UINT4  length; /**< The number \a l of vectors. */
+  UINT4  vectorLength; /**< The length \a n of each vector. */
+  REAL8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
 }
 REAL8VectorSequence;
 
+/** Sequence of COMPLEX8 Vectors. */
 typedef struct
 tagCOMPLEX8VectorSequence
 {
-  UINT4     length;
-  UINT4     vectorLength;
-  COMPLEX8 *data;
+  UINT4     length; /**< The number \a l of vectors. */
+  UINT4     vectorLength; /**< The length \a n of each vector. */
+  COMPLEX8 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
 }
 COMPLEX8VectorSequence;
 
+/** Sequence of COMPLEX16 Vectors. */
 typedef struct
 tagCOMPLEX16VectorSequence
 {
-  UINT4      length;
-  UINT4      vectorLength;
-  COMPLEX16 *data;
+  UINT4      length; /**< The number \a l of vectors. */
+  UINT4      vectorLength; /**< The length \a n of each vector. */
+  COMPLEX16 *data; /**< Pointer to the data array.  Element \a i of vector \a j is \c data[ \a jn + \a i \c]. */
 }
 COMPLEX16VectorSequence;
 
@@ -611,105 +720,116 @@ array element before incrementing to the next array element.
 
 </lalLaTeX> */
 
+/** Sequency of INT2 multidimensional arrays. */
 typedef struct
 tagINT2ArraySequence
 {
-  UINT4        length;
-  UINT4        arrayDim;
-  UINT4Vector *dimLength;
-  INT2        *data;
+  UINT4        length; /**< The number \a l of vectors. */
+  UINT4        arrayDim; /**< The number of data \a N in each array element (this is not the number \a m of indices). */
+  UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
+  INT2        *data; /**< Pointer to the data array. */
 }
 INT2ArraySequence;
 
+/** Sequency of UINT2 multidimensional arrays. */
 typedef struct
 tagUINT2ArraySequence
 {
-  UINT4        length;
-  UINT4        arrayDim;
-  UINT4Vector *dimLength;
-  UINT2       *data;
+  UINT4        length; /**< The number \a l of vectors. */
+  UINT4        arrayDim; /**< The number of data \a N in each array element (this is not the number \a m of indices). */
+  UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
+  UINT2       *data; /**< Pointer to the data array. */
 }
 UINT2ArraySequence;
 
+/** Sequency of INT4 multidimensional arrays. */
 typedef struct
 tagINT4ArraySequence
 {
-  UINT4        length;
-  UINT4        arrayDim;
-  UINT4Vector *dimLength;
-  INT4        *data;
+  UINT4        length; /**< The number \a l of vectors. */
+  UINT4        arrayDim; /**< The number of data \a N in each array element (this is not the number \a m of indices). */
+  UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
+  INT4        *data; /**< Pointer to the data array. */
 }
 INT4ArraySequence;
 
+/** Sequency of UINT4 multidimensional arrays. */
 typedef struct
 tagUINT4ArraySequence
 {
-  UINT4        length;
-  UINT4        arrayDim;
-  UINT4Vector *dimLength;
-  UINT4       *data;
+  UINT4        length; /**< The number \a l of vectors. */
+  UINT4        arrayDim; /**< The number of data \a N in each array element (this is not the number \a m of indices). */
+  UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
+  UINT4       *data; /**< Pointer to the data array. */
 }
 UINT4ArraySequence;
 
+/** Sequency of INT8 multidimensional arrays. */
 typedef struct
 tagINT8ArraySequence
 {
-  UINT4        length;
-  UINT4        arrayDim;
-  UINT4Vector *dimLength;
-  INT8        *data;
+  UINT4        length; /**< The number \a l of vectors. */
+  UINT4        arrayDim; /**< The number of data \a N in each array element (this is not the number \a m of indices). */
+  UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
+  INT8        *data; /**< Pointer to the data array. */
 }
 INT8ArraySequence;
 
+/** Sequency of UINT8 multidimensional arrays. */
 typedef struct
 tagUINT8ArraySequence
 {
-  UINT4        length;
-  UINT4        arrayDim;
-  UINT4Vector *dimLength;
-  UINT8       *data;
+  UINT4        length; /**< The number \a l of vectors. */
+  UINT4        arrayDim; /**< The number of data \a N in each array element (this is not the number \a m of indices). */
+  UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
+  UINT8       *data; /**< Pointer to the data array. */
 }
 UINT8ArraySequence;
 
+/** Sequency of REAL4 multidimensional arrays. */
 typedef struct
 tagREAL4ArraySequence
 {
-  UINT4        length;
-  UINT4        arrayDim;
-  UINT4Vector *dimLength;
-  REAL4       *data;
+  UINT4        length; /**< The number \a l of vectors. */
+  UINT4        arrayDim; /**< The number of data \a N in each array element (this is not the number \a m of indices). */
+  UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
+  REAL4       *data; /**< Pointer to the data array. */
 }
 REAL4ArraySequence;
 
+/** Sequency of REAL8 multidimensional arrays. */
 typedef struct
 tagREAL8ArraySequence
 {
-  UINT4        length;
-  UINT4        arrayDim;
-  UINT4Vector *dimLength;
-  REAL8       *data;
+  UINT4        length; /**< The number \a l of vectors. */
+  UINT4        arrayDim; /**< The number of data \a N in each array element (this is not the number \a m of indices). */
+  UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
+  REAL8       *data; /**< Pointer to the data array. */
 }
 REAL8ArraySequence;
 
+/** Sequency of COMPLEX8 multidimensional arrays. */
 typedef struct
 tagCOMPLEX8ArraySequence
 {
-  UINT4        length;
-  UINT4        arrayDim;
-  UINT4Vector *dimLength;
-  COMPLEX8    *data;
+  UINT4        length; /**< The number \a l of vectors. */
+  UINT4        arrayDim; /**< The number of data \a N in each array element (this is not the number \a m of indices). */
+  UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
+  COMPLEX8    *data; /**< Pointer to the data array. */
 }
 COMPLEX8ArraySequence;
 
+/** Sequency of COMPLEX16 multidimensional arrays. */
 typedef struct
 tagCOMPLEX16ArraySequence
 {
-  UINT4        length;
-  UINT4        arrayDim;
-  UINT4Vector *dimLength;
-  COMPLEX16   *data;
+  UINT4        length; /**< The number \a l of vectors. */
+  UINT4        arrayDim; /**< The number of data \a N in each array element (this is not the number \a m of indices). */
+  UINT4Vector *dimLength; /**< Pointer to a vector of length \a m storing the array dimensions */
+  COMPLEX16   *data; /**< Pointer to the data array. */
 }
 COMPLEX16ArraySequence;
+/*@}*/
 
 
 /* <lalLaTeX>
@@ -753,11 +873,24 @@ The macro \verb@LIGOTIMEGPSZERO@ can be used to statically initialize a
 
 </lalLaTeX> */
 
+/** \name Structured datatypes.
+ *
+ * These datatypes embed primitive and aggregate datatypes inside
+ * structures that define their physical meaning.  Most of these
+ * structures are wrappers for aggregate datatypes that store a physical
+ * quantity as a function of time or frequency.  Other structures store
+ * specific physical information, such as the GPS time, or the factored
+ * response function of a filter.
+ *
+ */
+/*@{*/
+
+/** Epoch relative to GPS epoch */
 typedef struct
 tagLIGOTimeGPS
 {
-  INT4 gpsSeconds;
-  INT4 gpsNanoSeconds;
+  INT4 gpsSeconds; /**< Seconds since 0h UTC 6 Jan 1980. */
+  INT4 gpsNanoSeconds; /**< Residual nanoseconds. */
 }
 LIGOTimeGPS;
 
@@ -798,24 +931,50 @@ while \texttt{LALNumUnits} is the total number of units.
 
 </lalLaTeX> */
 
+/** Indices of arrays corresponding to particular units.
+ *
+ * The LALUnit structure has arrays giving the numerators
+ * and denominators-minus-one of the powers of various units.
+ * These are the indices for the particular units.
+ */
 enum
 {
-  LALUnitIndexMeter,
-  LALUnitIndexKiloGram,
-  LALUnitIndexSecond,
-  LALUnitIndexAmpere,
-  LALUnitIndexKelvin,
-  LALUnitIndexStrain,
-  LALUnitIndexADCCount,
-  LALNumUnits
+  LALUnitIndexMeter, /**< The meter index. */
+  LALUnitIndexKiloGram, /**< The kilogram index. */
+  LALUnitIndexSecond, /**< The second index. */
+  LALUnitIndexAmpere, /**< The ampere index. */
+  LALUnitIndexKelvin, /**< The kelvin index. */
+  LALUnitIndexStrain, /**< The strain index. */
+  LALUnitIndexADCCount, /**< The ADC counts index. */
+  LALNumUnits /**< The number of units. */
 };
 
+/** Unit in the mksA system.
+ *
+ * This structure stores units in the mksA system (plus Kelvin, Strain,
+ * and ADC Count).  It also stores an overall power-of-ten \a p scaling factor.
+ * The units are represented by an array of integer numerators \a N
+ * and denominators-minus-one \a D representing the powers of the various
+ * units.  The units are given by
+ * \f[
+ * 10^p\times\textrm{m}^{N_0/(1+D_0)}\times\textrm{kg}^{N_1/(1+D_1)}
+ * \times\textrm{s}^{N_2/(1+D_2)}\times\textrm{A}^{N_3/(1+D_3)}
+ * \times\textrm{K}^{N_4/(1+D_4)}\times\textrm{strain}^{N_5/(1+D_5)}
+ * \times\textrm{count}^{N_6/(1+D_6)}
+ * \f]
+ * The indexes of the units can be specified using the constants
+ * LALUnitIndexMeter, LALUnitIndexKiloGram,
+ * LALUnitIndexSecond, LALUnitIndexAmpere,
+ * LALUnitIndexKelvin, LALUnitIndexStrain,
+ * LALUnitIndexADCCount,  while LALNumUnits is the total number of units.
+ *
+ */
 typedef struct
 tagLALUnit
 {
-  INT2  powerOfTen;
-  INT2  unitNumerator[LALNumUnits];
-  UINT2 unitDenominatorMinusOne[LALNumUnits];
+  INT2  powerOfTen; /**< Overall power-of-ten scaling is 10^\c powerOfTen. */
+  INT2  unitNumerator[LALNumUnits]; /**< Array of unit power numerators. */
+  UINT2 unitDenominatorMinusOne[LALNumUnits]; /**< Array of unit power denominators-minus-one. */
 }
 LALUnit;
 
@@ -850,125 +1009,136 @@ quantity being sampled.
 
 </lalLaTeX> */
 
+/** Length of name fields of LAL structured data types. */
 enum { LALNameLength = 64 };
 
+/** Time series of INT2 data. */
 typedef struct
 tagINT2TimeSeries
 {
-  CHAR          name[LALNameLength];
-  LIGOTimeGPS   epoch;
-  REAL8         deltaT;
-  REAL8         f0;
-  LALUnit       sampleUnits;
-  INT2Sequence *data;
+  CHAR          name[LALNameLength]; /**< The name of the time series. */
+  LIGOTimeGPS   epoch; /**< The start time of the time series. */
+  REAL8         deltaT; /**< The time step between samples of the time series in seconds. */
+  REAL8         f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit       sampleUnits; /**< The physical units of the quantity being sampled. */
+  INT2Sequence *data; /**< The sequence of sampled data. */
 }
 INT2TimeSeries;
 
+/** Time series of UINT2 data. */
 typedef struct
 tagUINT2TimeSeries
 {
-  CHAR           name[LALNameLength];
-  LIGOTimeGPS    epoch;
-  REAL8          deltaT;
-  REAL8          f0;
-  LALUnit        sampleUnits;
-  UINT2Sequence *data;
+  CHAR           name[LALNameLength]; /**< The name of the time series. */
+  LIGOTimeGPS    epoch; /**< The start time of the time series. */
+  REAL8          deltaT; /**< The time step between samples of the time series in seconds. */
+  REAL8          f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit        sampleUnits; /**< The physical units of the quantity being sampled. */
+  UINT2Sequence *data; /**< The sequence of sampled data. */
 }
 UINT2TimeSeries;
 
+/** Time series of INT4 data. */
 typedef struct
 tagINT4TimeSeries
 {
-  CHAR          name[LALNameLength];
-  LIGOTimeGPS   epoch;
-  REAL8         deltaT;
-  REAL8         f0;
-  LALUnit       sampleUnits;
-  INT4Sequence *data;
+  CHAR          name[LALNameLength]; /**< The name of the time series. */
+  LIGOTimeGPS   epoch; /**< The start time of the time series. */
+  REAL8         deltaT; /**< The time step between samples of the time series in seconds. */
+  REAL8         f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit       sampleUnits; /**< The physical units of the quantity being sampled. */
+  INT4Sequence *data; /**< The sequence of sampled data. */
 }
 INT4TimeSeries;
 
+/** Time series of UINT4 data. */
 typedef struct
 tagUINT4TimeSeries
 {
-  CHAR           name[LALNameLength];
-  LIGOTimeGPS    epoch;
-  REAL8          deltaT;
-  REAL8          f0;
-  LALUnit        sampleUnits;
-  UINT4Sequence *data;
+  CHAR           name[LALNameLength]; /**< The name of the time series. */
+  LIGOTimeGPS    epoch; /**< The start time of the time series. */
+  REAL8          deltaT; /**< The time step between samples of the time series in seconds. */
+  REAL8          f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit        sampleUnits; /**< The physical units of the quantity being sampled. */
+  UINT4Sequence *data; /**< The sequence of sampled data. */
 }
 UINT4TimeSeries;
 
+/** Time series of INT8 data. */
 typedef struct
 tagINT8TimeSeries
 {
-  CHAR          name[LALNameLength];
-  LIGOTimeGPS   epoch;
-  REAL8         deltaT;
-  REAL8         f0;
-  LALUnit       sampleUnits;
-  INT8Sequence *data;
+  CHAR          name[LALNameLength]; /**< The name of the time series. */
+  LIGOTimeGPS   epoch; /**< The start time of the time series. */
+  REAL8         deltaT; /**< The time step between samples of the time series in seconds. */
+  REAL8         f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit       sampleUnits; /**< The physical units of the quantity being sampled. */
+  INT8Sequence *data; /**< The sequence of sampled data. */
 }
 INT8TimeSeries;
 
+/** Time series of UINT8 data. */
 typedef struct
 tagUINT8TimeSeries
 {
-  CHAR           name[LALNameLength];
-  LIGOTimeGPS    epoch;
-  REAL8          deltaT;
-  REAL8          f0;
-  LALUnit        sampleUnits;
-  UINT8Sequence *data;
+  CHAR           name[LALNameLength]; /**< The name of the time series. */
+  LIGOTimeGPS    epoch; /**< The start time of the time series. */
+  REAL8          deltaT; /**< The time step between samples of the time series in seconds. */
+  REAL8          f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit        sampleUnits; /**< The physical units of the quantity being sampled. */
+  UINT8Sequence *data; /**< The sequence of sampled data. */
 }
 UINT8TimeSeries;
 
+/** Time series of REAL4 data. */
 typedef struct
 tagREAL4TimeSeries
 {
-  CHAR           name[LALNameLength];
-  LIGOTimeGPS    epoch;
-  REAL8          deltaT;
-  REAL8          f0;
-  LALUnit        sampleUnits;
-  REAL4Sequence *data;
+  CHAR           name[LALNameLength]; /**< The name of the time series. */
+  LIGOTimeGPS    epoch; /**< The start time of the time series. */
+  REAL8          deltaT; /**< The time step between samples of the time series in seconds. */
+  REAL8          f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit        sampleUnits; /**< The physical units of the quantity being sampled. */
+  REAL4Sequence *data; /**< The sequence of sampled data. */
 }
 REAL4TimeSeries;
 
+/** Time series of REAL8 data. */
 typedef struct
 tagREAL8TimeSeries
 {
-  CHAR           name[LALNameLength];
-  LIGOTimeGPS    epoch;
-  REAL8          deltaT;
-  REAL8          f0;
-  LALUnit        sampleUnits;
-  REAL8Sequence *data;
+  CHAR           name[LALNameLength]; /**< The name of the time series. */
+  LIGOTimeGPS    epoch; /**< The start time of the time series. */
+  REAL8          deltaT; /**< The time step between samples of the time series in seconds. */
+  REAL8          f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit        sampleUnits; /**< The physical units of the quantity being sampled. */
+  REAL8Sequence *data; /**< The sequence of sampled data. */
 }
 REAL8TimeSeries;
 
+/** Time series of COMPLEX8 data. */
 typedef struct
 tagCOMPLEX8TimeSeries
 {
-  CHAR              name[LALNameLength];
-  LIGOTimeGPS       epoch;
-  REAL8             deltaT;
-  REAL8             f0;
-  LALUnit           sampleUnits;
-  COMPLEX8Sequence *data;
+  CHAR              name[LALNameLength]; /**< The name of the time series. */
+  LIGOTimeGPS       epoch; /**< The start time of the time series. */
+  REAL8             deltaT; /**< The time step between samples of the time series in seconds. */
+  REAL8             f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit           sampleUnits; /**< The physical units of the quantity being sampled. */
+  COMPLEX8Sequence *data; /**< The sequence of sampled data. */
 }
 COMPLEX8TimeSeries;
 
+/** Time series of COMPLEX16 data. */
 typedef struct
 tagCOMPLEX16TimeSeries
 {
-  CHAR               name[LALNameLength];
-  LIGOTimeGPS        epoch;
-  REAL8              deltaT;
-  REAL8              f0;
-  LALUnit            sampleUnits;
-  COMPLEX16Sequence *data;
+  CHAR               name[LALNameLength]; /**< The name of the time series. */
+  LIGOTimeGPS        epoch; /**< The start time of the time series. */
+  REAL8              deltaT; /**< The time step between samples of the time series in seconds. */
+  REAL8              f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit            sampleUnits; /**< The physical units of the quantity being sampled. */
+  COMPLEX16Sequence *data; /**< The sequence of sampled data. */
 }
 COMPLEX16TimeSeries;
 
@@ -996,123 +1166,133 @@ data.
 
 </lalLaTeX> */
 
+/** Time series of INT2 vectors. */
 typedef struct
 tagINT2TimeVectorSeries
 {
-  CHAR                 name[LALNameLength];
-  LIGOTimeGPS          epoch;
-  REAL8                deltaT;
-  REAL8                f0;
-  LALUnit              sampleUnits;
-  INT2VectorSequence  *data;
+  CHAR                 name[LALNameLength]; /**< The name of the time series of vectors. */
+  LIGOTimeGPS          epoch; /**< The start time of the time series of vectors. */
+  REAL8                deltaT; /**< The time step between samples of the time series of vectors in seconds. */
+  REAL8                f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit              sampleUnits; /**< The physical units of the quantity being sampled. */
+  INT2VectorSequence  *data; /**< The sequence of sampled data vectors. */
 }
 INT2TimeVectorSeries;
 
+/** Time series of UINT2 vectors. */
 typedef struct
 tagUINT2TimeVectorSeries
 {
-  CHAR                 name[LALNameLength];
-  LIGOTimeGPS          epoch;
-  REAL8                deltaT;
-  REAL8                f0;
-  LALUnit              sampleUnits;
-  UINT2VectorSequence *data;
+  CHAR                 name[LALNameLength]; /**< The name of the time series of vectors. */
+  LIGOTimeGPS          epoch; /**< The start time of the time series of vectors. */
+  REAL8                deltaT; /**< The time step between samples of the time series of vectors in seconds. */
+  REAL8                f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit              sampleUnits; /**< The physical units of the quantity being sampled. */
+  UINT2VectorSequence *data; /**< The sequence of sampled data vectors. */
 }
 UINT2TimeVectorSeries;
 
+/** Time series of INT4 vectors. */
 typedef struct
 tagINT4TimeVectorSeries
 {
-  CHAR                 name[LALNameLength];
-  LIGOTimeGPS          epoch;
-  REAL8                deltaT;
-  REAL8                f0;
-  LALUnit              sampleUnits;
-  INT4VectorSequence  *data;
+  CHAR                 name[LALNameLength]; /**< The name of the time series of vectors. */
+  LIGOTimeGPS          epoch; /**< The start time of the time series of vectors. */
+  REAL8                deltaT; /**< The time step between samples of the time series of vectors in seconds. */
+  REAL8                f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit              sampleUnits; /**< The physical units of the quantity being sampled. */
+  INT4VectorSequence  *data; /**< The sequence of sampled data vectors. */
 }
 INT4TimeVectorSeries;
 
+/** Time series of UINT4 vectors. */
 typedef struct
 tagUINT4TimeVectorSeries
 {
-  CHAR                 name[LALNameLength];
-  LIGOTimeGPS          epoch;
-  REAL8                deltaT;
-  REAL8                f0;
-  LALUnit              sampleUnits;
-  UINT4VectorSequence *data;
+  CHAR                 name[LALNameLength]; /**< The name of the time series of vectors. */
+  LIGOTimeGPS          epoch; /**< The start time of the time series of vectors. */
+  REAL8                deltaT; /**< The time step between samples of the time series of vectors in seconds. */
+  REAL8                f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit              sampleUnits; /**< The physical units of the quantity being sampled. */
+  UINT4VectorSequence *data; /**< The sequence of sampled data vectors. */
 }
 UINT4TimeVectorSeries;
 
+/** Time series of INT8 vectors. */
 typedef struct
 tagINT8TimeVectorSeries
 {
-  CHAR                 name[LALNameLength];
-  LIGOTimeGPS          epoch;
-  REAL8                deltaT;
-  REAL8                f0;
-  LALUnit              sampleUnits;
-  INT8VectorSequence  *data;
+  CHAR                 name[LALNameLength]; /**< The name of the time series of vectors. */
+  LIGOTimeGPS          epoch; /**< The start time of the time series of vectors. */
+  REAL8                deltaT; /**< The time step between samples of the time series of vectors in seconds. */
+  REAL8                f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit              sampleUnits; /**< The physical units of the quantity being sampled. */
+  INT8VectorSequence  *data; /**< The sequence of sampled data vectors. */
 }
 INT8TimeVectorSeries;
 
+/** Time series of UINT8 vectors. */
 typedef struct
 tagUINT8TimeVectorSeries
 {
-  CHAR                 name[LALNameLength];
-  LIGOTimeGPS          epoch;
-  REAL8                deltaT;
-  REAL8                f0;
-  LALUnit              sampleUnits;
-  UINT8VectorSequence *data;
+  CHAR                 name[LALNameLength]; /**< The name of the time series of vectors. */
+  LIGOTimeGPS          epoch; /**< The start time of the time series of vectors. */
+  REAL8                deltaT; /**< The time step between samples of the time series of vectors in seconds. */
+  REAL8                f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit              sampleUnits; /**< The physical units of the quantity being sampled. */
+  UINT8VectorSequence *data; /**< The sequence of sampled data vectors. */
 }
 UINT8TimeVectorSeries;
 
+/** Time series of REAL4 vectors. */
 typedef struct
 tagREAL4TimeVectorSeries
 {
-  CHAR                 name[LALNameLength];
-  LIGOTimeGPS          epoch;
-  REAL8                deltaT;
-  REAL8                f0;
-  LALUnit              sampleUnits;
-  REAL4VectorSequence *data;
+  CHAR                 name[LALNameLength]; /**< The name of the time series of vectors. */
+  LIGOTimeGPS          epoch; /**< The start time of the time series of vectors. */
+  REAL8                deltaT; /**< The time step between samples of the time series of vectors in seconds. */
+  REAL8                f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit              sampleUnits; /**< The physical units of the quantity being sampled. */
+  REAL4VectorSequence *data; /**< The sequence of sampled data vectors. */
 }
 REAL4TimeVectorSeries;
 
+/** Time series of REAL8 vectors. */
 typedef struct
 tagREAL8TimeVectorSeries
 {
-  CHAR                 name[LALNameLength];
-  LIGOTimeGPS          epoch;
-  REAL8                deltaT;
-  REAL8                f0;
-  LALUnit              sampleUnits;
-  REAL8VectorSequence *data;
+  CHAR                 name[LALNameLength]; /**< The name of the time series of vectors. */
+  LIGOTimeGPS          epoch; /**< The start time of the time series of vectors. */
+  REAL8                deltaT; /**< The time step between samples of the time series of vectors in seconds. */
+  REAL8                f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit              sampleUnits; /**< The physical units of the quantity being sampled. */
+  REAL8VectorSequence *data; /**< The sequence of sampled data vectors. */
 }
 REAL8TimeVectorSeries;
 
+/** Time series of COMPLEX8 vectors. */
 typedef struct
 tagCOMPLEX8TimeVectorSeries
 {
-  CHAR                     name[LALNameLength];
-  LIGOTimeGPS              epoch;
-  REAL8                    deltaT;
-  REAL8                    f0;
-  LALUnit                  sampleUnits;
-  COMPLEX8VectorSequence  *data;
+  CHAR                     name[LALNameLength]; /**< The name of the time series of vectors. */
+  LIGOTimeGPS              epoch; /**< The start time of the time series of vectors. */
+  REAL8                    deltaT; /**< The time step between samples of the time series of vectors in seconds. */
+  REAL8                    f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit                  sampleUnits; /**< The physical units of the quantity being sampled. */
+  COMPLEX8VectorSequence  *data; /**< The sequence of sampled data vectors. */
 }
 COMPLEX8TimeVectorSeries;
 
+/** Time series of COMPLEX16 vectors. */
 typedef struct
 tagCOMPLEX16TimeVectorSeries
 {
-  CHAR                      name[LALNameLength];
-  LIGOTimeGPS               epoch;
-  REAL8                     deltaT;
-  REAL8                     f0;
-  LALUnit                   sampleUnits;
-  COMPLEX16VectorSequence  *data;
+  CHAR                      name[LALNameLength]; /**< The name of the time series of vectors. */
+  LIGOTimeGPS               epoch; /**< The start time of the time series of vectors. */
+  REAL8                     deltaT; /**< The time step between samples of the time series of vectors in seconds. */
+  REAL8                     f0; /**< The heterodyning frequency, in Hertz (zero if not heterodyned). */
+  LALUnit                   sampleUnits; /**< The physical units of the quantity being sampled. */
+  COMPLEX16VectorSequence  *data; /**< The sequence of sampled data vectors. */
 }
 COMPLEX16TimeVectorSeries;
 
@@ -1470,6 +1650,7 @@ tagCOMPLEX16ZPGFilter
   COMPLEX16        gain;
 }
 COMPLEX16ZPGFilter;
+/*@}*/
 
 
 /* <lalLaTeX>
