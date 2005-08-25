@@ -275,6 +275,9 @@ LALStringToC( LALStatus *status, COMPLEX8 *value, const CHAR *string, CHAR **end
 void
 LALStringToZ( LALStatus *status, COMPLEX16 *value, const CHAR *string, CHAR **endptr );
 
+void
+LALStringToGPS( LALStatus *status, LIGOTimeGPS *value, const CHAR *string, CHAR **endptr );
+
 #ifdef __cplusplus
 #pragma {
 }

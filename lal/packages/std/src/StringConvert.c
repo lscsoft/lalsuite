@@ -1,5 +1,6 @@
 /******************************** <lalVerbatim file="StringConvertCV">
-Author: Creighton, T. D.
+Authors: Creighton, T. D.
+         Shawhan, P. S.   (LALStringToGPS)
 $Id$
 **************************************************** </lalVerbatim> */
 
@@ -23,6 +24,7 @@ Converts a string into a numerical value.
 \idx{LALStringToD()}
 \idx{LALStringToC()}
 \idx{LALStringToZ()}
+\idx{LALStringToGPS()}
 
 \subsubsection*{Description}
 
@@ -62,9 +64,17 @@ as $-1.03+0.5i$ (since the conversion of the real part stops at the
 second \verb@'.'@ character), which may or may not be the intended
 conversion.
 
+GPS conversion is similar to floating-point conversion, but the result
+is stored in a \verb@LIGOTimeGPS@ structure as two integer values
+representing seconds and nanoseconds.  The \verb@LALStringToGPS@
+function does {\it not} convert the string to an intermediate
+\verb@REAL8@ value, but parses the string specially to retain the
+full precision of the string representation to the nearest nanosecond.
+
 \subsubsection*{Algorithm}
 
-These functions emulate the standard C functions \verb@strtol()@,
+These functions (other than \verb@LALStringToGPS@)
+emulate the standard C functions \verb@strtol()@,
 \verb@strtoul()@, and \verb@strtod()@, except that they follow LAL
 calling conventions and return values of the appropriate LAL
 datatypes.  For integer conversion, only base-ten (decimal)
@@ -105,6 +115,16 @@ substring cannot be interpreted as a continuation of the first number.
 Usually this means that the second substring will contain at least one
 leading whitespace character, though this is not strictly necessary.
 Overflow or underflow is dealt with as above.
+
+A string to be converted to a GPS time can have the format of an integer
+or a floating-point number, as described above.  The optional exponent
+in the floating-point form is supported, and both positive and negative
+GPS times are permitted.  If the result would overflow the
+\verb@LIGOTimeGPS@ representation (too far in the future), then the
+\verb@gpsSeconds@ and \verb@gpsNanoSeconds@ fields are set to
+\verb@LAL_INT4_MAX@ and $999999999$, respectively.
+For an underflow (too far in the past), the fields
+are set to \verb@LAL_INT4_MIN@ and $-999999999$~.
 
 Internally, the floating-point conversion routines call
 \verb@strtod()@, then cap and cast the result as necessary.  The
@@ -560,6 +580,239 @@ LALStringToZ( LALStatus *stat, COMPLEX16 *value, const CHAR *string, CHAR **endp
   value->im = im;
   if ( endptr )
     *endptr = end;
+  DETATCHSTATUSPTR( stat );
+  RETURN( stat );
+}
+
+
+/* <lalVerbatim file="StringConvertCP"> */
+void
+LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **endptr )
+{ /* </lalVerbatim> */
+
+  CHAR *here = (CHAR *) string;   /* current position in string */
+  INT4 signval;       /* sign of value (+1 or -1) */
+  CHAR mantissa[64];  /* local string to store mantissa digits */
+  INT4 mdigits;       /* number of digits in mantissa */
+  INT4 dppos;         /* position of decimal point in mantissa, i.e. the
+                         number of mantissa digits preceding the decimal point
+                         (initially -1 if no decimal point in input.) */
+  CHAR intstring[16]; /* local string to store integer part of time */
+  CHAR *ehere;        /* string pointer for parsing exponent */
+  INT4 exponent;      /* exponent given in string */
+  INT2 esignval;      /* sign of exponent value (+1 or -1) */
+  UINT8 absValue;     /* magnitude of parsed number */
+  CHAR *eend;         /* substring following parsed number */
+  INT4 nanosecSet;    /* flag to indicate if nanoseconds field has been set */
+  CHAR *nptr;         /* pointer to where nanoseconds begin in mantissa */
+  INT4 idigit;
+
+  INITSTATUS( stat, "LALStringToGPS", STRINGCONVERTC );
+  ATTATCHSTATUSPTR( stat );
+
+  /* Check for valid input arguments. */
+  ASSERT( value, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL );
+  ASSERT( string, stat, STRINGINPUTH_ENUL, STRINGINPUTH_MSGENUL );
+
+  /* Skip leading space, and read sign character, if any. */
+  signval = 1;
+  while ( isspace( *here ) )
+    here++;
+  if ( *here == '+' )
+    here++;
+  else if ( *here == '-' ) {
+    signval = -1;
+    here++;
+  }
+
+  /* Copy the mantissa into a local string, keeping track of the
+     location of the decimal point */
+  mdigits = 0;
+  dppos = -1;
+  while ( (*here >= '0' && *here <= '9') || (*here == '.') ) {
+
+    if ( *here == '.' ) {
+      /* This is a decimal point */
+      if ( dppos >= 0 ) {
+	/* This is second decimal point encountered, so parsing must stop */
+	break;
+      } else {
+	/* Record the position of the decimal point */
+	dppos = (INT4) mdigits;
+      }
+
+    } else {
+      /* This is a digit.  Append it to the local mantissa string, unless
+	 the mantissa string is already full, in which case ignore it */
+      if ( (UINT4) mdigits < sizeof(mantissa)-1 ) {
+	mantissa[mdigits] = *here;
+	mdigits++;
+      }
+    }
+
+    here++;
+
+  }
+
+  /* If there is no mantissa, then return without consuming any characters
+     and without modifying 'value' */
+  if ( mdigits == 0 ) {
+    if ( endptr )
+      *endptr = string;
+    DETATCHSTATUSPTR( stat );
+    RETURN( stat );
+  }
+
+  /* Null-terminate the mantissa string */
+  mantissa[mdigits] = '\0';
+
+  /* If there was no explicit decimal point, then it is implicitly
+     after all of the mantissa digits */
+  if ( dppos == -1 ) { dppos = (INT4) mdigits; }
+
+  /* Read the exponent, if present */
+  exponent = 0;
+  if ( *here == 'E' || *here == 'e' ) {
+    /* So far, this looks like an exponent.  Set working pointer. */
+    ehere = here + 1;
+
+    /* Parse the exponent value */
+    absValue = LALStringToU8AndSign( &esignval, ehere, &eend );
+    if ( eend == ehere ) {
+      /* Nothing was parsed, so this isn't a valid exponent.  Leave
+	 things as they are, with 'here' pointing to the 'E' or 'e'
+	 that we thought introduced an exponent. */
+    } else {
+      /* We successfully parsed the exponent */
+      exponent = (INT4) ( esignval * absValue );
+      /* Update the 'here' pointer to just after the exponent */
+      here = eend;
+    }
+
+  }
+
+  /* The exponent simply modifies the decimal point position */
+  dppos += exponent;
+
+  /* OK, now we have the sign ('signval'), mantissa string, and
+     decimal point location, and the 'here' pointer points to the
+     first character after the part of the string we parsed. */
+
+  nanosecSet = 0;
+
+  if ( dppos > 10 ) {
+    /* This is an overflow (positive) or underflow (negative) */
+    if ( signval == 1 ) {
+      value->gpsSeconds = (INT4) LAL_INT4_MAX;
+      value->gpsNanoSeconds = 999999999;
+    } else {
+      value->gpsSeconds = (INT4)( -LAL_INT4_ABSMIN );
+      value->gpsNanoSeconds = -999999999;
+    }
+
+  } else if ( dppos < -9 ) {
+    /* The time is effectively zero */
+    value->gpsSeconds = 0;
+    value->gpsNanoSeconds = 0;
+
+  } else {
+
+    /* See whether there is an integer part... */
+    if ( dppos > 0 ) {
+
+      /* Pick out the integer part */
+      memcpy( intstring, mantissa, dppos );
+      intstring[dppos] = '\0';
+      absValue = LALStringToU8AndSign( &esignval, intstring, &eend );
+      /* We ignore the 'esignval' and 'eend' variables */
+
+      /* If the mantissa had too few digits, need to multiply by tens */
+      for ( idigit=mdigits; idigit<dppos; idigit++ ) { absValue *= 10; }
+
+      /* Cap (if necessary) and cast */
+      if ( signval > 0 ) {
+	if ( absValue > LAL_INT4_MAX ) {
+	  value->gpsSeconds = (INT4)( LAL_INT4_MAX );
+          value->gpsNanoSeconds = 999999999;
+	  nanosecSet = 1;
+	} else
+	  value->gpsSeconds = (INT4)( absValue );
+      } else {
+	if ( absValue > LAL_INT4_ABSMIN ) {
+	  value->gpsSeconds = (INT4)( -LAL_INT4_ABSMIN );
+          value->gpsNanoSeconds = -999999999;
+	  nanosecSet = 1;
+	} else
+	  value->gpsSeconds = (INT4)( -absValue );
+      }
+
+    } else {
+      /* There is no integer part */
+      value->gpsSeconds = 0;
+    }
+
+    /* Finally, set the nanoseconds field (if not already set) */
+    if ( ! nanosecSet ) {
+
+      if ( dppos >= mdigits ) {
+	value->gpsNanoSeconds = 0;
+
+      } else {
+
+	if ( dppos >= 0 ) {
+	  nptr = mantissa + dppos;
+	  /* Revise dppos to refer to the substring pointed to by 'nptr' */
+	  dppos = 0;
+	} else {
+	  nptr = mantissa;
+	  /* Leave dppos with its current negative value */
+	}
+	/* Revise mdigits to be the number of digits in the nanoseconds part */
+	mdigits = strlen(nptr);
+	if ( mdigits == 0 ) {
+	  /* The nanoseconds field is absent, thus equal to zero */
+	  absValue = 0;
+	} else if ( mdigits >= 9+dppos ) {
+	  memcpy( intstring, nptr, 9+dppos );
+	  intstring[9+dppos] = '\0';
+	  absValue = strtol(intstring,NULL,10);
+	  /* If there is another digit, use it to round */
+	  if ( mdigits >= 10+dppos ) {
+	    if ( *(nptr+9+dppos) >= '5' ) {
+	      absValue++;
+	    }
+	  }
+	} else {
+	  /* Digits are not given all the way to nanoseconds, so have to
+	     multiply by a power of 10 */
+	  absValue = strtol(nptr,NULL,10);
+	  while ( mdigits < 9+dppos ) {
+	    absValue *= 10;
+	    mdigits++;
+	  }
+	}
+
+	value->gpsNanoSeconds = (INT4) ( signval * absValue );
+
+	/* Check for wraparound due to rounding */
+	if ( value->gpsNanoSeconds >= 1000000000 ) {
+	  value->gpsNanoSeconds -= 1000000000;
+	  value->gpsSeconds += 1;
+	}
+	if ( value->gpsNanoSeconds <= -1000000000 ) {
+	  value->gpsNanoSeconds += 1000000000;
+	  value->gpsSeconds -= 1;
+	}
+
+      }
+
+    }
+
+  }
+
+  /* Set end pointer (if passed) and return. */
+  if ( endptr )
+    *endptr = here;
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
