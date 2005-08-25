@@ -64,7 +64,7 @@ getMetric_SOURCES = getMetric.c DopplerScan.c DopplerScan.h FlatPulsarMetric.c F
 
 getMesh_SOURCES = getMesh.c DopplerScan.c DopplerScan.h 
 
-testLatticeCovering_SOURCES = LatticeCovering.c LatticeCovering.h testLatticeCovering.c  DopplerScan.c
+testLatticeCovering_SOURCES = testLatticeCovering.c  DopplerScan.c
 
 testFlatPulsarMetric_SOURCES = testFlatPulsarMetric.c FlatPulsarMetric.c FlatPulsarMetric.h
 
