@@ -590,7 +590,7 @@ void
 LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **endptr )
 { /* </lalVerbatim> */
 
-  CHAR *here = (CHAR *) string;   /* current position in string */
+  const CHAR *here = string;   /* current position in string */
   INT4 signval;       /* sign of value (+1 or -1) */
   CHAR mantissa[64];  /* local string to store mantissa digits */
   INT4 mdigits;       /* number of digits in mantissa */
@@ -598,7 +598,7 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
                          number of mantissa digits preceding the decimal point
                          (initially -1 if no decimal point in input.) */
   CHAR intstring[16]; /* local string to store integer part of time */
-  CHAR *ehere;        /* string pointer for parsing exponent */
+  const CHAR *ehere;  /* string pointer for parsing exponent */
   INT4 exponent;      /* exponent given in string */
   INT2 esignval;      /* sign of exponent value (+1 or -1) */
   UINT8 absValue;     /* magnitude of parsed number */
