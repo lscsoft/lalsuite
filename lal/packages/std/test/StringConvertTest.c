@@ -1,11 +1,7 @@
-/* To compile:
-  gcc StringConvertTest.c -I$LAL_LOCATION/include -L$LAL_LOCATION/lib -llal -o StringConvertTest
-
-  OR
-
-  pushd ../ ; make ; popd
-  gcc StringConvertTest.c ../src/StringConvert.o -I$LAL_LOCATION/include -L$LAL_LOCATION/lib -llal -o StringConvertTest
-*/
+/********************************
+Author: Shawhan, P. S.
+$Id$
+**************************************************** */
 
 /* <lalVerbatim> */
 #include <stdlib.h>
