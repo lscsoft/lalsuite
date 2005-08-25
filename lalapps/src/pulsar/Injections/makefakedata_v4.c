@@ -746,10 +746,10 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
  * register all our "user-variables" 
  */
 void
-InitUserVars (LALStatus *stat)
+InitUserVars (LALStatus *status)
 {
-  INITSTATUS( stat, "InitUserVars", rcsid );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "InitUserVars", rcsid );
+  ATTATCHSTATUSPTR (status);
 
   /* ---------- set a few defaults ----------  */
   uvar_ephemYear = LALCalloc(1, strlen(EPHEM_YEARS)+1);
@@ -785,66 +785,66 @@ InitUserVars (LALStatus *stat)
   /* ---------- register all our user-variable ---------- */
 
   /* output options */
-  LALregSTRINGUserVar(stat, outSFTbname,'n', UVAR_OPTIONAL, "Path and basefilename of output SFT files");
+  LALregSTRINGUserVar(status, outSFTbname,'n', UVAR_OPTIONAL, "Path and basefilename of output SFT files");
 
-  LALregSTRINGUserVar(stat, TDDfile,	't', UVAR_OPTIONAL, "Filename for output of time-series");
-  LALregBOOLUserVar(stat,   hardwareTDD,'b', UVAR_OPTIONAL, "Hardware injection: output TDD in binary format (implies generationMode=1)");
+  LALregSTRINGUserVar(status, TDDfile,	't', UVAR_OPTIONAL, "Filename for output of time-series");
+  LALregBOOLUserVar(status,   hardwareTDD,'b', UVAR_OPTIONAL, "Hardware injection: output TDD in binary format (implies generationMode=1)");
 
-  LALregSTRINGUserVar(stat, logfile,	'l', UVAR_OPTIONAL, "Filename for log-output");
+  LALregSTRINGUserVar(status, logfile,	'l', UVAR_OPTIONAL, "Filename for log-output");
 
   /* detector and ephemeris */
-  LALregSTRINGUserVar(stat, detector,  	'I', UVAR_REQUIRED, 
+  LALregSTRINGUserVar(status, detector,  	'I', UVAR_REQUIRED, 
 		      "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)");
 
-  LALregSTRINGUserVar(stat, actuation,   0,  UVAR_OPTIONAL, "Filname containing actuation function of this detector");
+  LALregSTRINGUserVar(status, actuation,   0,  UVAR_OPTIONAL, "Filname containing actuation function of this detector");
 
-  LALregSTRINGUserVar(stat, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
-  LALregSTRINGUserVar(stat, ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregSTRINGUserVar(status, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
+  LALregSTRINGUserVar(status, ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
 
   /* start + duration of timeseries */
-  LALregINTUserVar(stat,   startTime,	'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
-  LALregINTUserVar(stat,   duration,	 0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
-  LALregSTRINGUserVar(stat,timestampsFile,0, UVAR_OPTIONAL, "Timestamps file");
+  LALregINTUserVar(status,   startTime,	'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
+  LALregINTUserVar(status,   duration,	 0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
+  LALregSTRINGUserVar(status,timestampsFile,0, UVAR_OPTIONAL, "Timestamps file");
   
   /* generation-mode of timeseries: all-at-once or per-sft */
-  LALregINTUserVar(stat,   generationMode, 0,  UVAR_OPTIONAL, "How to generate timeseries: 0=all-at-once, 1=per-sft");
+  LALregINTUserVar(status,   generationMode, 0,  UVAR_OPTIONAL, "How to generate timeseries: 0=all-at-once, 1=per-sft");
 
   /* sampling and heterodyning frequencies */
-  LALregREALUserVar(stat,   fmin,	 0 , UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
-  LALregREALUserVar(stat,   Band,	 0 , UVAR_OPTIONAL, "bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
+  LALregREALUserVar(status,   fmin,	 0 , UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
+  LALregREALUserVar(status,   Band,	 0 , UVAR_OPTIONAL, "bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
 
   /* SFT properties */
-  LALregREALUserVar(stat,   Tsft, 	 0 , UVAR_OPTIONAL, "Time baseline Tsft in seconds");
+  LALregREALUserVar(status,   Tsft, 	 0 , UVAR_OPTIONAL, "Time baseline Tsft in seconds");
 
   /* pulsar params */
-  LALregREALUserVar(stat,   refTime, 	'S', UVAR_OPTIONAL, "Pulsar reference time tRef in SSB (if 0: use startTime -> SSB)");
-  LALregREALUserVar(stat,   longitude,	 0 , UVAR_REQUIRED, "Right ascension [radians] alpha of pulsar");
-  LALregREALUserVar(stat,   latitude, 	 0 , UVAR_REQUIRED, "Declination [radians] delta of pulsar");
-  LALregREALUserVar(stat,   aPlus,	 0 , UVAR_REQUIRED, "Plus polarization amplitude aPlus");
-  LALregREALUserVar(stat,   aCross, 	 0 , UVAR_REQUIRED, "Cross polarization amplitude aCross");
-  LALregREALUserVar(stat,   psi,  	 0 , UVAR_REQUIRED, "Polarization angle psi");
-  LALregREALUserVar(stat,   phi0,	 0 , UVAR_REQUIRED, "Initial phase phi");
-  LALregREALUserVar(stat,   f0,  	 0 , UVAR_REQUIRED, "Gravitational wave-frequency f0 at tRef");
-  LALregREALUserVar(stat,   f1dot,  	 0 , UVAR_OPTIONAL, "First spindown parameter f'");
-  LALregREALUserVar(stat,   f2dot,  	 0 , UVAR_OPTIONAL, "Second spindown parameter f''");
-  LALregREALUserVar(stat,   f3dot,  	 0 , UVAR_OPTIONAL, "Third spindown parameter f'''");
+  LALregREALUserVar(status,   refTime, 	'S', UVAR_OPTIONAL, "Pulsar reference time tRef in SSB (if 0: use startTime -> SSB)");
+  LALregREALUserVar(status,   longitude,	 0 , UVAR_REQUIRED, "Right ascension [radians] alpha of pulsar");
+  LALregREALUserVar(status,   latitude, 	 0 , UVAR_REQUIRED, "Declination [radians] delta of pulsar");
+  LALregREALUserVar(status,   aPlus,	 0 , UVAR_REQUIRED, "Plus polarization amplitude aPlus");
+  LALregREALUserVar(status,   aCross, 	 0 , UVAR_REQUIRED, "Cross polarization amplitude aCross");
+  LALregREALUserVar(status,   psi,  	 0 , UVAR_REQUIRED, "Polarization angle psi");
+  LALregREALUserVar(status,   phi0,	 0 , UVAR_REQUIRED, "Initial phase phi");
+  LALregREALUserVar(status,   f0,  	 0 , UVAR_REQUIRED, "Gravitational wave-frequency f0 at tRef");
+  LALregREALUserVar(status,   f1dot,  	 0 , UVAR_OPTIONAL, "First spindown parameter f'");
+  LALregREALUserVar(status,   f2dot,  	 0 , UVAR_OPTIONAL, "Second spindown parameter f''");
+  LALregREALUserVar(status,   f3dot,  	 0 , UVAR_OPTIONAL, "Third spindown parameter f'''");
 
   /* binary-system orbital parameters */
-  LALregREALUserVar(stat,   orbitSemiMajorAxis, 0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
-  LALregREALUserVar(stat,   orbitEccentricity,  0, UVAR_OPTIONAL, "Orbital eccentricity");
-  LALregINTUserVar(stat,    orbitTperiSSBsec,   0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Seconds.");
-  LALregINTUserVar(stat,    orbitTperiSSBns,    0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Nanoseconds.");
-  LALregREALUserVar(stat,   orbitPeriod,        0, UVAR_OPTIONAL, "Orbital period (seconds)");
-  LALregREALUserVar(stat,   orbitArgPeriapse,   0, UVAR_OPTIONAL, "Argument of periapsis (radians)");                            
+  LALregREALUserVar(status,   orbitSemiMajorAxis, 0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
+  LALregREALUserVar(status,   orbitEccentricity,  0, UVAR_OPTIONAL, "Orbital eccentricity");
+  LALregINTUserVar(status,    orbitTperiSSBsec,   0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Seconds.");
+  LALregINTUserVar(status,    orbitTperiSSBns,    0, UVAR_OPTIONAL, "'observed' (SSB) time of periapsis passage. Nanoseconds.");
+  LALregREALUserVar(status,   orbitPeriod,        0, UVAR_OPTIONAL, "Orbital period (seconds)");
+  LALregREALUserVar(status,   orbitArgPeriapse,   0, UVAR_OPTIONAL, "Argument of periapsis (radians)");                            
 
   /* noise */
-  LALregREALUserVar(stat,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise variance sigma");
-  LALregSTRINGUserVar(stat, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");  
+  LALregREALUserVar(status,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise variance sigma");
+  LALregSTRINGUserVar(status, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");  
 
-  LALregBOOLUserVar(stat,   help,	'h', UVAR_HELP    , "Print this help/usage message");
+  LALregBOOLUserVar(status,   help,	'h', UVAR_HELP    , "Print this help/usage message");
   
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* InitUserVars() */
 
@@ -852,34 +852,34 @@ InitUserVars (LALStatus *stat)
 /** 
  * This routine frees up all the memory.
  */
-void FreeMem (LALStatus* stat, ConfigVars_t *cfg)
+void FreeMem (LALStatus* status, ConfigVars_t *cfg)
 {
 
-  INITSTATUS( stat, "FreeMem", rcsid );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "FreeMem", rcsid );
+  ATTATCHSTATUSPTR (status);
 
   
   /* Free config-Variables and userInput stuff */
-  TRY (LALDestroyUserVars(stat->statusPtr), stat);
+  TRY (LALDestroyUserVars(status->statusPtr), status);
 
   /* free timestamps if any */
   if (cfg->timestamps){
-    TRY (LALDestroyTimestampVector(stat->statusPtr, &(cfg->timestamps)), stat);
+    TRY (LALDestroyTimestampVector(status->statusPtr, &(cfg->timestamps)), status);
   }
 
   /* free spindown-vector (REAL8) */
   if (cfg->spindown) {
-    TRY (LALDDestroyVector(stat->statusPtr, &(cfg->spindown)), stat);
+    TRY (LALDDestroyVector(status->statusPtr, &(cfg->spindown)), status);
   }
 
   /* free noise-SFTs */
   if (cfg->noiseSFTs) {
-    TRY (LALDestroySFTVector(stat->statusPtr, &(cfg->noiseSFTs)), stat);
+    TRY (LALDestroySFTVector(status->statusPtr, &(cfg->noiseSFTs)), status);
   }
 
   /* free transfer-function if we have one.. */
   if ( cfg->transfer ) {
-    TRY ( LALCDestroyVector(stat->statusPtr, &(cfg->transfer->data)), stat);
+    TRY ( LALCDestroyVector(status->statusPtr, &(cfg->transfer->data)), status);
     LALFree (cfg->transfer);
   }
 
@@ -887,8 +887,8 @@ void FreeMem (LALStatus* stat, ConfigVars_t *cfg)
   LALFree(cfg->edat.ephemE);
   LALFree(cfg->edat.ephemS);
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* FreeMem() */
 
@@ -897,26 +897,26 @@ void FreeMem (LALStatus* stat, ConfigVars_t *cfg)
  * reads timestamps file and fills-in timestamps vector
  **/
 void
-ReadTimestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR *fname)
+ReadTimestamps (LALStatus* status, LIGOTimeGPSVector **timestamps, const CHAR *fname)
 {  
   FILE *fp;
   LIGOTimeGPSVector *ts = NULL;
 
-  INITSTATUS( stat, "ReadTimestamps", rcsid );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "ReadTimestamps", rcsid );
+  ATTATCHSTATUSPTR (status);
 
-  ASSERT (fname, stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
-  ASSERT (timestamps, stat, MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-  ASSERT (*timestamps == NULL, stat, MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+  ASSERT (fname, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );
+  ASSERT (timestamps, status, MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+  ASSERT (*timestamps == NULL, status, MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 
   if ( (fp = fopen( fname, "r")) == NULL) {
     LALPrintError("\nUnable to open timestampsname file %s\n\n", fname);
-    ABORT (stat, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
+    ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
   }
 
   /* initialize empty timestamps-vector*/
   if ( (ts = LALCalloc(1, sizeof(LIGOTimeGPSVector))) == NULL) {
-    ABORT (stat, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
+    ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
   }
 
   while(1)
@@ -928,7 +928,7 @@ ReadTimestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR *fna
       /* make space for the new entry */
       ts->length ++;
       if ( (ts->data = LALRealloc(ts->data, ts->length * sizeof(ts->data[0])) ) == NULL) {
-	ABORT (stat, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
+	ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
       }
       
       ts->data[ts->length - 1].gpsSeconds = secs;
@@ -940,8 +940,8 @@ ReadTimestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR *fna
   /* hand over timestamps vector */
   (*timestamps) = ts;
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* ReadTimestamps() */
 
@@ -1031,7 +1031,7 @@ AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries
  * 
  */
 void
-GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit)
+GetOrbitalParams (LALStatus *status, BinaryOrbitParams *orbit)
 {
   REAL8 OneMEcc;
   REAL8 OnePEcc;
@@ -1039,8 +1039,8 @@ GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit)
   LIGOTimeGPS TperiTrue;
   LIGOTimeGPS TperiSSB;
   
-  INITSTATUS( stat, "GetOrbitalParams", rcsid );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "GetOrbitalParams", rcsid );
+  ATTATCHSTATUSPTR (status);
   
   OneMEcc = 1.0 - uvar_orbitEccentricity;
   OnePEcc = 1.0 + uvar_orbitEccentricity;
@@ -1052,7 +1052,7 @@ GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit)
   TperiSSB.gpsNanoSeconds = uvar_orbitTperiSSBns;
   correction = uvar_orbitSemiMajorAxis * OneMEcc * sin(uvar_orbitArgPeriapse);
 
-  TRY (LALAddFloatToGPS(stat->statusPtr, &TperiTrue, &TperiSSB, -correction), stat);
+  TRY (LALAddFloatToGPS(status->statusPtr, &TperiTrue, &TperiSSB, -correction), status);
 
   orbit->orbitEpoch = TperiTrue;
   orbit->omega = uvar_orbitArgPeriapse;
@@ -1060,8 +1060,8 @@ GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit)
   orbit->oneMinusEcc = OneMEcc;
   orbit->angularSpeed = (LAL_TWOPI/uvar_orbitPeriod) * sqrt(OnePEcc/(OneMEcc*OneMEcc*OneMEcc));
 
-  DETATCHSTATUSPTR (stat);
-  RETURN(stat);
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
 
 } /* GetOrbitalParams() */
 
@@ -1072,28 +1072,28 @@ GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit)
  * <em>NOTE:</em> Currently this function only logs the user-input and code-versions.
  */
 void
-WriteMFDlog (LALStatus *stat, char *argv[], const char *logfile)
+WriteMFDlog (LALStatus *status, char *argv[], const char *logfile)
 {
     CHAR *logstr = NULL;
     CHAR command[512] = "";
     FILE *fplog;
 
-    INITSTATUS (stat, "WriteMFDlog", rcsid);
-    ATTATCHSTATUSPTR (stat);
+    INITSTATUS (status, "WriteMFDlog", rcsid);
+    ATTATCHSTATUSPTR (status);
 
     if ( logfile == NULL )
       {
 	LALPrintError ("\nERROR: WriteMFDlog() called with NULL logfile-name\n\n");
-	ABORT( stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+	ABORT( status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
       }
 
     if ( (fplog = fopen(uvar_logfile, "wb" )) == NULL) {
       LALPrintError ("\nFailed to open log-file '%f' for writing.\n\n", uvar_logfile);
-      ABORT (stat, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
+      ABORT (status, MAKEFAKEDATAC_EFILE, MAKEFAKEDATAC_MSGEFILE);
     }
 
     /* write out a log describing the complete user-input (in cfg-file format) */
-    TRY (LALUserVarGetLog(stat->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), stat);
+    TRY (LALUserVarGetLog(status->statusPtr, &logstr,  UVAR_LOGFMT_CFGFILE), status);
 
     fprintf (fplog, "## LOG-FILE of Makefakedata run\n\n");
     fprintf (fplog, "# User-input:\n");
@@ -1113,8 +1113,8 @@ WriteMFDlog (LALStatus *stat, char *argv[], const char *logfile)
                         /* therefore the CVS-versions will simply not be logged */
 
 
-    DETATCHSTATUSPTR (stat);
-    RETURN(stat);
+    DETATCHSTATUSPTR (status);
+    RETURN(status);
 
 } /* WriteMFDLog() */
 
@@ -1124,7 +1124,7 @@ WriteMFDlog (LALStatus *stat, char *argv[], const char *logfile)
  * The transfer-function T is simply the inverse of the actuation A, so T=A^-1.
  */
 void
-LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **transfer, const CHAR *fname)
+LoadTransferFunctionFromActuation(LALStatus *status, COMPLEX8FrequencySeries **transfer, const CHAR *fname)
 {
   LALParsedDataFile *fileContents = NULL;
   CHAR *thisline;
@@ -1135,29 +1135,29 @@ LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **tra
   REAL8 amp, phi;
   REAL8 f0, f1;
 
-  INITSTATUS (stat, "ReadActuationFunction", rcsid);
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS (status, "ReadActuationFunction", rcsid);
+  ATTATCHSTATUSPTR (status);
 
-  ASSERT (transfer, stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-  ASSERT (*transfer == NULL, stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
-  ASSERT (fname != NULL, stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+  ASSERT (transfer, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+  ASSERT (*transfer == NULL, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+  ASSERT (fname != NULL, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
 
-  TRY ( LALParseDataFile (stat->statusPtr, &fileContents, fname), stat);
+  TRY ( LALParseDataFile (status->statusPtr, &fileContents, fname), status);
   /* skip first line if containing NaN's ... */
   startline = 0;
   if ( strstr(fileContents->lines->tokens[startline], "NaN" ) != NULL )
     startline ++;
 
-  LALCCreateVector (stat->statusPtr, &data, fileContents->lines->nTokens - startline);
-  BEGINFAIL(stat)
-    TRY ( LALDestroyParsedDataFile(stat->statusPtr, &fileContents), stat);    
-  ENDFAIL(stat);
+  LALCCreateVector (status->statusPtr, &data, fileContents->lines->nTokens - startline);
+  BEGINFAIL(status)
+    TRY ( LALDestroyParsedDataFile(status->statusPtr, &fileContents), status);    
+  ENDFAIL(status);
 
   if ( (ret = LALCalloc(1, sizeof(COMPLEX8FrequencySeries))) == NULL)
     {
-      LALDestroyParsedDataFile(stat->statusPtr, &fileContents);
+      LALDestroyParsedDataFile(status->statusPtr, &fileContents);
       LALFree (data);
-      ABORT (stat, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
+      ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM);
     }
 
   LALSnprintf ( ret->name, LALNameLength-1, "Transfer-function from: %s", fname );
@@ -1207,21 +1207,21 @@ LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **tra
 
   goto success;
  failed:
-  LALDestroyParsedDataFile(stat->statusPtr, &fileContents);
+  LALDestroyParsedDataFile(status->statusPtr, &fileContents);
   LALFree (data);
   LALFree (ret);
-  ABORT (stat, MAKEFAKEDATAC_EREADFILE, MAKEFAKEDATAC_MSGEREADFILE);
+  ABORT (status, MAKEFAKEDATAC_EREADFILE, MAKEFAKEDATAC_MSGEREADFILE);
       
  success:
 
-  TRY ( LALDestroyParsedDataFile(stat->statusPtr, &fileContents), stat);
+  TRY ( LALDestroyParsedDataFile(status->statusPtr, &fileContents), status);
 
   ret->data = data;
   (*transfer) = ret;
   
   
-  DETATCHSTATUSPTR (stat);
-  RETURN(stat);
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
 
 } /* ReadActuationFunction() */
 
