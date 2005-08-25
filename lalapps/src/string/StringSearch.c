@@ -789,7 +789,7 @@ int CreateTemplateBank(struct CommandLineArgsTag CLA)
       epsilon=1-sqrt(t2t2/t1t1);
       
       /* FIXME: epsilon should be a command line argument */
-      if(epsilon >= 0.02)
+      if(epsilon >= 0.05)
 	{
 	  t1t1=t2t2;
 	  strtemplate[k].f=f;
