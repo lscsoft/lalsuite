@@ -2136,9 +2136,10 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       }
     else if (haveAlphaDelta)    /* parse this into a sky-region */
       {
+	REAL8 eps = 1e-9;	/* hack for backwards compatbility */
 	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
-				uvar_Alpha, uvar_Delta, 
-				uvar_AlphaBand, uvar_DeltaBand), status);
+				uvar_Alpha, uvar_Delta,
+				uvar_AlphaBand + eps, uvar_DeltaBand + eps), status);
       }
   } /* find search-region */
 
