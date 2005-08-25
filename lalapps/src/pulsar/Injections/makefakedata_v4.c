@@ -66,7 +66,7 @@ typedef struct
 
   LIGOTimeGPS refTime;		/**< reference-time for pulsar-parameters in SBB frame */
   REAL8 fmin_eff;		/**< 'effective' fmin: round down such that fmin*Tsft = integer! */
-  REAL8 fBand_eff;		/**< 'effective' frequency-band such that numer of samples/SFT is integer */
+  REAL8 fBand_eff;		/**< 'effective' frequency-band such that samples/SFT is integer */
   REAL8Vector *spindown;	/**< vector of frequency-derivatives of GW signal */
 
   SFTVector *noiseSFTs;		/**< vector of noise-SFTs to be added to signal */
@@ -77,19 +77,18 @@ typedef struct
 /** Default year-span of ephemeris-files to be used */
 #define EPHEM_YEARS  "00-04"
 
-/* local prototypes */
-/* Prototypes for the functions defined in this file */
-void FreeMem (LALStatus* stat, ConfigVars_t *cfg);
-void InitUserVars (LALStatus *stat);
-void ReadTimestamps (LALStatus* stat, LIGOTimeGPSVector **timestamps, const CHAR *fname);
-void InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[]);
-void AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma);
-void GetOrbitalParams (LALStatus *stat, BinaryOrbitParams *orbit);
-void WriteMFDlog (LALStatus *stat, char *argv[], const char *logfile);
+/* ---------- local prototypes ---------- */
+void FreeMem (LALStatus *, ConfigVars_t *cfg);
+void InitUserVars (LALStatus *);
+void ReadTimestamps (LALStatus*, LIGOTimeGPSVector **timestamps, const CHAR *fname);
+void InitMakefakedata (LALStatus *, ConfigVars_t *cfg, int argc, char *argv[]);
+void AddGaussianNoise (LALStatus *, REAL4TimeSeries *outSeries, REAL4TimeSeries *inSeries, REAL4 sigma);
+void GetOrbitalParams (LALStatus *, BinaryOrbitParams *orbit);
+void WriteMFDlog (LALStatus *, char *argv[], const char *logfile);
 
 
-void LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **transfer, const CHAR *fname);
-
+void LoadTransferFunctionFromActuation(LALStatus *, COMPLEX8FrequencySeries **transfer, const CHAR *fname);
+void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 
 extern void write_timeSeriesR4 (FILE *fp, const REAL4TimeSeries *series);
 extern void write_timeSeriesR8 (FILE *fp, const REAL8TimeSeries *series);
@@ -399,24 +398,24 @@ main(int argc, char *argv[])
  * consistency-checks on user-input.
  */
 void
-InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
+InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 {
  
-  INITSTATUS( stat, "InitMakefakedata", rcsid );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "InitMakefakedata", rcsid );
+  ATTATCHSTATUSPTR (status);
 
   /* register all user-variables */
-  TRY (InitUserVars(stat->statusPtr), stat);	  
+  TRY (InitUserVars(status->statusPtr), status);	  
 
   /* read cmdline & cfgfile  */	
-  TRY (LALUserVarReadAllInput(stat->statusPtr, argc,argv), stat);  
+  TRY (LALUserVarReadAllInput(status->statusPtr, argc,argv), status);  
 
   if (uvar_help) 	/* if help was requested, we're done */
     exit (0);
 
   /* if requested, log all user-input and code-versions */
   if ( uvar_logfile ) {
-    TRY ( WriteMFDlog(stat->statusPtr, argv, uvar_logfile), stat);
+    TRY ( WriteMFDlog(status->statusPtr, argv, uvar_logfile), status);
   }
 
   /* ---------- prepare vector of spindown parameters ---------- */
@@ -427,7 +426,7 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
     else if (uvar_f1dot != 0)	msp = 1;
     else 				msp = 0;
     if (msp) {
-      TRY (LALDCreateVector(stat->statusPtr, &(cfg->spindown), msp), stat);
+      TRY (LALDCreateVector(status->statusPtr, &(cfg->spindown), msp), status);
     }
     switch (msp) 
       {
@@ -442,28 +441,34 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
 	break;
       default:
 	LALPrintError ("\nmsp = %d makes no sense to me...\n\n", msp);
-	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       } /* switch(msp) */
 
   } /* END: prepare spindown parameters */
 
   /* ---------- prepare detector ---------- */
-  if      (!strcmp(uvar_detector,"LHO"))   
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
-  else if (!strcmp(uvar_detector,"LLO"))   
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
-  else if (!strcmp(uvar_detector,"VIRGO")) 
-    cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  else if (!strcmp(uvar_detector,"GEO"))   
+  if ( !strcmp (uvar_detector, "GEO") || !strcmp (uvar_detector, "0") ) 
     cfg->Detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  else if (!strcmp(uvar_detector,"TAMA"))  
+  else if ( !strcmp (uvar_detector, "LLO") || ! strcmp (uvar_detector, "1") ) 
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  else if ( !strcmp (uvar_detector, "LHO") || !strcmp (uvar_detector, "2") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  else if ( !strcmp (uvar_detector, "NAUTILUS") || !strcmp (uvar_detector, "3"))
+    {
+      TRY (CreateNautilusDetector (status->statusPtr, &(cfg->Detector)), status);
+    }
+  else if ( !strcmp (uvar_detector, "VIRGO") || !strcmp (uvar_detector, "4") )
+    cfg->Detector = lalCachedDetectors[LALDetectorIndexVIRGODIFF];
+  else if ( !strcmp (uvar_detector, "TAMA") || !strcmp (uvar_detector, "5") )
     cfg->Detector = lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  else if (!strcmp(uvar_detector,"CIT"))   
+  else if ( !strcmp (uvar_detector, "CIT") || !strcmp (uvar_detector, "6") )
     cfg->Detector = lalCachedDetectors[LALDetectorIndexCIT40DIFF];
-  else {
-    LALPrintError ("\nUnknown detector specified: `%s\n\n", uvar_detector);
-    ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
-  }
+  else
+    {
+      LALPrintError ("\nUnknown detector. Currently allowed are 'GEO', 'LLO', 'LHO',"
+		     " 'NAUTILUS', 'VIRGO', 'TAMA', 'CIT' or '0'-'6'\n\n");
+      ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+    }
 
   /* ---------- determine requested signal- start + duration ---------- */
   {
@@ -480,19 +485,19 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
 	if (haveTimestamps || !( haveStart && haveDuration ) ) 
 	  {
 	    LALPrintError ("\nHardware injection: please specify 'startTime' and 'duration'\n\n");
-	    ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
 	if ( LALUserVarWasSet( &uvar_outSFTbname ) )
 	  {
 	    LALPrintError ("\nHardware injection mode is incompatible with producing SFTs\n\n");
-	    ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
 	if ( uvar_duration < uvar_Tsft )
 	  {
 	    LALPrintError ("\nERROR: requested duration of %d sec is less than minimal "
 			   "chunk-size of Tsft =%.0f sec.\n\n",
 			   uvar_duration, uvar_Tsft);
-	    ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	    ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	  }
 
       } /* ----- if hardware-injection ----- */
@@ -501,19 +506,19 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
       {
 	LALPrintError ("\nCould not infer start of observation-period (need either"
 		       "'startTime' or 'timestampsFile')\n\n");
-	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
     if ( (haveStart || haveDuration) && haveTimestamps )
       {
 	LALPrintError ("\nOverdetermined observation-period (both 'startTime'/'duration'"
 		       "and 'timestampsFile' given)\n\n");
-	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
 
     if ( haveStart && !haveDuration )
       {
 	LALPrintError ("\nCould not infer duration of observation-period (need 'duration')\n\n");
-	ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
 
     /* determine observation period (start + duration) */
@@ -523,11 +528,11 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
 	LIGOTimeGPS t1, t0;
 	REAL8 duration;
 
-	TRY (ReadTimestamps(stat->statusPtr, &timestamps, uvar_timestampsFile), stat);
+	TRY (ReadTimestamps(status->statusPtr, &timestamps, uvar_timestampsFile), status);
 
 	t1 = timestamps->data[timestamps->length - 1 ];
 	t0 = timestamps->data[0];
-	TRY (LALDeltaFloatGPS(stat->statusPtr, &duration, &t1, &t0), stat);
+	TRY (LALDeltaFloatGPS(status->statusPtr, &duration, &t1, &t0), status);
 	duration += uvar_Tsft;
 
 	cfg->startTimeGPS = timestamps->data[0];
@@ -541,8 +546,8 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
 	cfg->duration = (UINT4)uvar_duration;
 	/* for simplicity we *ALWAYS* use timestamps, 
 	 * so we generate them now as the user didnt' specify them */
-	TRY(LALMakeTimestamps(stat->statusPtr, &(cfg->timestamps), cfg->startTimeGPS, 
-			      uvar_duration, uvar_Tsft ), stat);
+	TRY(LALMakeTimestamps(status->statusPtr, &(cfg->timestamps), cfg->startTimeGPS, 
+			      uvar_duration, uvar_Tsft ), status);
       } /* !haveTimestamps */
  
   } /* END: setup signal start + duration */
@@ -564,7 +569,7 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
     {
       LALPrintError ("\nIllegal input for 'generationMode': must lie within [0, %d]\n\n", 
 		     GENERATE_LAST -1);
-      ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
     }
 
   /* this is a violation of the UserInput-paradigm that no user-variables 
@@ -623,10 +628,10 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
       len += strlen (uvar_ephemDir);
       
     if ( (earthdata = LALCalloc(1, len)) == NULL) {
-      ABORT (stat, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM );
+      ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM );
     }
     if ( (sundata = LALCalloc(1, len)) == NULL) {
-      ABORT (stat, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM );
+      ABORT (status, MAKEFAKEDATAC_EMEM, MAKEFAKEDATAC_MSGEMEM );
     }
 
     if (LALUserVarWasSet(&uvar_ephemDir) ) 
@@ -646,11 +651,11 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
     /* get leap-seconds since start of GPS-time */
     leapParams.format =  LALLEAPSEC_GPSUTC;
     leapParams.accuracy = LALLEAPSEC_STRICT;	/* complain about missing leap-info */
-    TRY ( LALLeapSecs(stat->statusPtr, &leapSecs,  &(cfg->startTimeGPS), &leapParams), stat);
+    TRY ( LALLeapSecs(status->statusPtr, &leapSecs,  &(cfg->startTimeGPS), &leapParams), status);
     edat.leap = (INT2) leapSecs;
 
     /* Init ephemerides */  
-    TRY( LALInitBarycenter(stat->statusPtr, &edat), stat);   
+    TRY( LALInitBarycenter(status->statusPtr, &edat), status);   
     LALFree(earthdata);
     LALFree(sundata);
 
@@ -673,14 +678,14 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
       if ( (uvar_orbitSemiMajorAxis > 0) && !(set1 && set2 && set3 && set4 && set5) ) 
 	{
 	  LALPrintError("\nPlease either specify  ALL orbital parameters or NONE!\n\n");
-	  ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
 	}
       cfg->binaryPulsar = TRUE;
 
       if ( (uvar_orbitEccentricity < 0) || (uvar_orbitEccentricity > 1) )
 	{
 	  LALPrintError ("\nEccentricity has to lie within [0, 1]\n\n");
-	  ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+	  ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
 	}
 
     } /* if one or more orbital parameters were set */
@@ -693,7 +698,7 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
     if ( LALUserVarWasSet(&uvar_noiseSFTs) && LALUserVarWasSet(&uvar_noiseSigma) )
       {
 	LALPrintError("\nERROR: only one of 'noiseSFTs' or 'noiseSigma' can be specified!\n\n");
-	ABORT (stat, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
+	ABORT (status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
       }
 
     /* if real noise-SFTs: load them in now */
@@ -702,14 +707,15 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
 	REAL8 fMin, fMax;
 	fMin = cfg->fmin_eff;
 	fMax = fMin + cfg->fBand_eff;
-	TRY ( LALReadSFTfiles(stat->statusPtr, &(cfg->noiseSFTs), fMin, fMax, 0, uvar_noiseSFTs), stat);
+	TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->noiseSFTs), fMin, fMax, 0, uvar_noiseSFTs), 
+	      status);
       } /* if uvar_noiseSFTs */
 
   } /* END: Noise params */
 
 
   /* ----- set "pulsar reference time", i.e. SSB-time at which pulsar params are defined ---------- */
-  TRY ( LALFloatToGPS(stat->statusPtr, &(cfg->refTime), &uvar_refTime), stat);
+  TRY ( LALFloatToGPS(status->statusPtr, &(cfg->refTime), &uvar_refTime), status);
 
   /* ---------- has the user specified an actuation-function file ? ---------- */
   if ( uvar_actuation ) 
@@ -717,18 +723,20 @@ InitMakefakedata (LALStatus *stat, ConfigVars_t *cfg, int argc, char *argv[])
       /* currently we only allow using a transfer-function for hardware-injections */
       if (!uvar_hardwareTDD )
 	{
-	  LALPrintError ("\nError: use of an actuation/transfer function restricted to hardare-injections\n\n");
-	  ABORT (stat,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	  LALPrintError ("\nError: use of an actuation/transfer function "
+			 "restricted to hardare-injections\n\n");
+	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	}
       else {
-	TRY ( LoadTransferFunctionFromActuation( stat->statusPtr, &(cfg->transfer), uvar_actuation), stat);
+	TRY ( LoadTransferFunctionFromActuation( status->statusPtr, &(cfg->transfer), uvar_actuation), 
+	      status);
       }
 
     } /* if uvar_actuation */
 
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 
 } /* InitMakefakedata() */
 
@@ -769,7 +777,8 @@ InitUserVars (LALStatus *stat)
 
   uvar_logfile = NULL;
 
-  uvar_generationMode = GENERATE_ALL_AT_ONCE;	/* per default we generate the whole timeseries first (except for hardware-injections)*/
+  /* per default we generate the whole timeseries first (except for hardware-injections)*/
+  uvar_generationMode = GENERATE_ALL_AT_ONCE;
 
   uvar_refTime = 0.0;
 
@@ -784,7 +793,9 @@ InitUserVars (LALStatus *stat)
   LALregSTRINGUserVar(stat, logfile,	'l', UVAR_OPTIONAL, "Filename for log-output");
 
   /* detector and ephemeris */
-  LALregSTRINGUserVar(stat, detector,  	'I', UVAR_REQUIRED, "Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME");
+  LALregSTRINGUserVar(stat, detector,  	'I', UVAR_REQUIRED, 
+		      "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)");
+
   LALregSTRINGUserVar(stat, actuation,   0,  UVAR_OPTIONAL, "Filname containing actuation function of this detector");
 
   LALregSTRINGUserVar(stat, ephemDir,	'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
@@ -1215,3 +1226,33 @@ LoadTransferFunctionFromActuation(LALStatus *stat, COMPLEX8FrequencySeries **tra
 } /* ReadActuationFunction() */
 
 
+/** Set up the \em LALDetector struct representing the NAUTILUS detector */
+void
+CreateNautilusDetector (LALStatus *status, LALDetector *Detector)
+{
+  /*   LALDetector Detector;  */
+  LALFrDetector detector_params;
+  LALDetectorType bar;
+  LALDetector Detector1;
+
+  INITSTATUS (status, "CreateNautilusDetector", rcsid);
+  ATTATCHSTATUSPTR (status);
+
+/*   detector_params=(LALFrDetector )LALMalloc(sizeof(LALFrDetector)); */
+ 
+  bar=LALDETECTORTYPE_CYLBAR;
+  strcpy(detector_params.name, "NAUTILUS");
+  detector_params.vertexLongitudeRadians=12.67*LAL_PI/180.0;
+  detector_params.vertexLatitudeRadians=41.82*LAL_PI/180.0;
+  detector_params.vertexElevation=300.0;
+  detector_params.xArmAltitudeRadians=0.0;
+  detector_params.xArmAzimuthRadians=44.0*LAL_PI/180.0;
+
+  TRY (LALCreateDetector(status->statusPtr, &Detector1, &detector_params, bar), status);
+  
+  *Detector=Detector1;
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+  
+} /* CreateNautilusDetector() */
