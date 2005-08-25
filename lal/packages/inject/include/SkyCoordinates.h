@@ -55,7 +55,7 @@ typedef struct tagSkyPosition {
 
 /** This structure stores the location of a point on (or near) the surface
  * of the Earth in both geodetic and geocentric coordinates, as described
- * in <tt>TerrestrialCoordinates.c</tt>.
+ * in TerrestrialCoordinates.c .
  */
 typedef struct tagEarthPosition {
   SkyPosition geodetic; 	/**< The geographic coordinates of the

@@ -9,24 +9,24 @@
 
 \par Description
 
-The function \verb+LALConvertSkyCoordinates()+ transforms the contents
-of <tt>*input</tt> to the system  
-specified in <tt>*params</tt>, storing the result in <tt>*output</tt>
-(which may point to the same object as <tt>*input</tt> for an in-place
+The function LALConvertSkyCoordinates() transforms the contents
+of \a *input to the system  
+specified in \a *params, storing the result in \a *output
+(which may point to the same object as \a *input for an in-place
 transformation).  The routine makes calls to the functions in
-<tt>CelestialCoordinates.c</tt> and <tt>TerrestrialCoordinates.c</tt> as
-required; the <tt>*params</tt> object must store any data fields
+CelestialCoordinates.c and TerrestrialCoordinates.c as
+required; the \a *params object must store any data fields
 required by these functions, or an error will occur.
 
 
-The function <tt>LALNormalizeSkyPosition()</tt> ``normalizes'' any given
+The function LALNormalizeSkyPosition() ``normalizes'' any given
 (spherical) sky-position (in radians), which means it projects the
 angles into \f$[0, 2\pi) \times [-\pi/2, \pi/2]\f$ if they lie outside.
 
 
 \par Algorithm
 
-<tt>LALConvertSkyCoordinates()</tt> is structured as a simple loop over
+LALConvertSkyCoordinates() is structured as a simple loop over
 transformations, each of which moves the output sky position one step
 closer to the desired final coordinates system.  The usual ``flow'' of
 the algorithm is: 
@@ -50,12 +50,12 @@ horizon
 \end{center}
 \endlatexonly
 although one can also convert directly between equatorial and horizon
-coordinate systems if <tt>params->zenith</tt> is given in equatorial
+coordinate systems if \a params->zenith is given in equatorial
 coordinates (i.e.\ if its longitudinal coordinate is the local mean
 sidereal time rather than the geographic longitude of the observer).
 This leads to the only error checking done within this function: when
 transforming to horizon coordinates, it checks that
-<tt>params->zenith</tt> is either in sky-fixed equatorial or Earth-fixed
+\a params->zenith is either in sky-fixed equatorial or Earth-fixed
 geographic coordinates.  Other than this, error checking is left to
 the secondary function call; if a parameter is absent or poorly
 formatted, the called function will return an error.

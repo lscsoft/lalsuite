@@ -9,8 +9,8 @@
 
 \par Description
 
-The functions <tt>LALEquatorialToGeographic()</tt> and
-<tt>LALGeographicToEquatorial()</tt> convert between equatorial and
+The functions LALEquatorialToGeographic() and
+LALGeographicToEquatorial() convert between equatorial and
 geographic coordinate systems, reading coordinates in the first system
 from <tt>*input</tt> and storing the new coordinates in <tt>*output</tt>.
 The two pointers may point to the same object, in which case the
@@ -19,7 +19,7 @@ conversion is done in place.  The functions will also check
 Because the geographic coordinate system is not fixed, one must also
 specify the time of the transformation in <tt>*gpsTime</tt>.
 
-The function <tt>LALSystemToHorizon()</tt> transforms coordinates from
+The function LALSystemToHorizon() transforms coordinates from
 either celestial equatorial coordinates or geographic coordinates to a
 horizon coordinate system, reading coordinates in the first system
 from <tt>*input</tt> and storing the horizon coordinates in
@@ -33,7 +33,7 @@ coordinates of the observer; if converting from equatorial
 coordinates, <tt>zenith->longitude</tt> should store the local mean
 sidereal time of the horizon system.
 
-The function <tt>LALHorizonToSystem()</tt> does the reverse of the
+The function LALHorizonToSystem() does the reverse of the
 above, transforming coordinates from horizon coordinates to either
 equatorial or geographic coordinates as specified by
 <tt>zenith->system</tt>; the value of <tt>output->system</tt> is set to
@@ -42,18 +42,18 @@ agree with <tt>zenith->system</tt>.
 Although it is conventional to specify an observation location by its
 <em>geodetic</em> coordinates, some routines may provide or require
 <em>geocentric</em> coordinates.  The routines
-<tt>LALGeocentricToGeodetic()</tt> and <tt>LALGeodeticToGeocentric()</tt>
+LALGeocentricToGeodetic() and LALGeodeticToGeocentric()
 perform this computation, reading and writing to the variable
 parameter structure <tt>*location</tt>.  The function
-<tt>LALGeocentricToGeodetic()</tt> reads the fields <tt>location->x</tt>,
+LALGeocentricToGeodetic() reads the fields <tt>location->x</tt>,
 <tt>y</tt>, <tt>z</tt>, and computes <tt>location->zenith</tt> and
 <tt>location->altitude</tt>.  The function
-<tt>LALGeodeticToGeocentric()</tt> does the reverse, and also sets the
+LALGeodeticToGeocentric() does the reverse, and also sets the
 fields <tt>location->position</tt> and <tt>location->radius</tt>.
 
 \par Algorithm
 
-These routines follow the formulae in Sec.~5.1 of~\cite{Lang_K:1999},
+These routines follow the formulae in Sec.5.1 of \ref Lang_K1999,
 which we reproduce below.
 
 \paragraph{Geographic coordinates:} Since geographic and equatorial
@@ -73,11 +73,11 @@ simple enough, it does involve several function calls, so it is
 convenient to collect these into one routine.
 
 \paragraph{Horizon coordinates:} We correct a typographical
-error on the second line of Eq.~5.45 of~\cite{Lang_K:1999} (it should
+error on the second line of Eq.(5.45) of \ref Lang_K1999 (it should
 have \f$\cos A\f$, not \f$\sin A\f$).  We also note that while our latitudinal
 coordinate is just the altitude \f$a\f$ in this system, our longitudinal
 coordinate increases counterclockwise, and thus corresponds to the
-<em>negative</em> of the azimuth \f$A\f$ as defined by~\cite{Lang_K:1999}.
+<em>negative</em> of the azimuth \f$A\f$ as defined by \ref Lang_K1999.
 So we have:
 \f{eqnarray}
 \label{eq:altitude-horizon}
@@ -130,7 +130,7 @@ vertical axis of a point on the Earth's surface does not pass through
 the geometric centre of the Earth.  This means that the geodetic
 latitude of a location (defined as the latitude angle
 \f$\phi_\mathrm{geodetic}\f$ of that location's zenith direction) is
-typically some 10~arcminutes larger than its geocentric latitude
+typically some 10 arcminutes larger than its geocentric latitude
 (defined as the latitude angle \f$\phi_\mathrm{geographic}\f$ of the
 position vector from the geocentre through the location).
 Cartographers traditionally refer to locations by their geodetic
@@ -179,8 +179,8 @@ before computing the sum of squares, to avoid floating-point overflow;
 however this should be unnecessary for radii near the surface of the
 Earth.
 
-The inverse transformation is somewhat trickier.  Eq.~5.29
-of~\cite{Lang_K:1999} conveniently gives the transformation in terms
+The inverse transformation is somewhat trickier.  Eq.(5.29)
+of \ref Lang_K1999 conveniently gives the transformation in terms
 of a sequence of intermediate variables, but unfortunately these
 variables are not particularly computer-friendly, in that they are
 prone to underflow or overflow errors.  The following equations
