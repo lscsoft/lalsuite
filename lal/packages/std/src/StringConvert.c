@@ -590,6 +590,9 @@ void
 LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **endptr )
 { /* </lalVerbatim> */
 
+  /* Trick borrowed from LALStringToU8AndSign() to avoid compiler warnings */
+  union { char *s; const char *cs; } bad;/* there is a REASON for warnings... */
+
   const CHAR *here = string;   /* current position in string */
   INT4 signval;       /* sign of value (+1 or -1) */
   CHAR mantissa[64];  /* local string to store mantissa digits */
@@ -657,8 +660,10 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
   /* If there is no mantissa, then return without consuming any characters
      and without modifying 'value' */
   if ( mdigits == 0 ) {
-    if ( endptr )
-      *endptr = string;
+    if ( endptr ) {
+      bad.cs = string; /* ... and this avoids the warnings... BAD! */
+      *endptr = bad.s;
+    }
     DETATCHSTATUSPTR( stat );
     RETURN( stat );
   }
@@ -811,8 +816,10 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
   }
 
   /* Set end pointer (if passed) and return. */
-  if ( endptr )
-    *endptr = here;
+  if ( endptr ) {
+    bad.cs = here; /* ... and this avoids the warnings... BAD! */
+    *endptr = bad.s;
+  }
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
