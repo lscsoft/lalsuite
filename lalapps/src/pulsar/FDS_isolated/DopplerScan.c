@@ -1544,7 +1544,9 @@ getGridSpacings( LALStatus *status,
  *  The region will be randomized wrt the central point within one
  *  grid-spacing in order to avoid systematic effects in MC simulations.
  *
- *  PointsPerDim == 0||1: DopplerRegion will be only one point (randomized within one cell)
+ *  PointsPerDim == 0: trivial search-region consisting just of the signal-location
+ * 			( no randomization! )
+ *  PointsPerDim == 1: DopplerRegion is only one point (randomized within one cell)
  */
 void
 getMCDopplerCube (LALStatus *status, 
@@ -1585,13 +1587,13 @@ getMCDopplerCube (LALStatus *status,
   FreqBand  = (dFreq  * numSteps);	/* 'canonical' value if not projecting */
 
   /* 
-   * ok, if projected sky-metric is used, we need to estimate
+   * if projected sky-metric is used, we need to estimate
    * the maximal Delta_n now, so that we can get a reasonable 
    * bound on the required Frequency-band (the whole Doppler-window
    * just gets too large for longer observation times... 
    */
-  if ( params->projectMetric )	/* choose large-enough FreqBand if projecting */
-    {
+  if ( (PointsPerDim > 0) && params->projectMetric )
+    { /* choose large-enough FreqBand if projecting */
       REAL8 DopplerFreqBand;
       REAL8 fB = FreqBand;
       PtoleMetricIn metricpar = empty_metricpar;/* we need to know metric for this..:( */
@@ -1636,11 +1638,14 @@ getMCDopplerCube (LALStatus *status,
 
   /* randomize center-point within one grid-cell *
    * (we assume seed has been set elsewhere) */
+  if ( PointsPerDim > 0 )
+    {
 #define randShift() (1.0 * rand()/RAND_MAX)
-  Alpha += dAlpha * randShift();
-  Delta += dDelta * randShift();
-  Freq  += dFreq  * randShift();
-  f1dot += df1dot * randShift();
+      Alpha += dAlpha * randShift();
+      Delta += dDelta * randShift();
+      Freq  += dFreq  * randShift();
+      f1dot += df1dot * randShift();
+    }
 
   /* convert sky-square into a skyRegionString */
   TRY ( SkySquare2String (status->statusPtr, &(cube->skyRegionString), 
@@ -1656,7 +1661,7 @@ getMCDopplerCube (LALStatus *status,
 } /* getMCDopplerCube() */
 
 /*----------------------------------------------------------------------*/
-/** get "sky-ellipse" for given metric.
+/** get "metric-ellipse" for given metric.
  * \note This function uses only 2 dimensions starting from dim0 of the given metric!
  */
 void
