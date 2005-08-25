@@ -220,8 +220,42 @@ main(int argc, char *argv[])
    * Total Number of templates:
    */
   if ( ! LALUserVarWasSet (&uvar_searchNeighbors) )
-    printf ("\n%g\n\n", (REAL8)thisScan.numGridPoints * nFreq *  nf1dot );
+    {
+      printf ("\n%g\n\n", (REAL8)thisScan.numGridPoints * nFreq *  nf1dot );
+    }
+  /* output octave-compatible 'search-range' as a matrix: 
+   * [ Alpha, AlphaBand; Delta, DeltaBand; Freq, FreqBand; f1dot, f1dotBand ]
+   */
+  else 
+    {
+      SkyRegion skyregion;
+      DopplerRegion *searchRegion = &(scanInit.searchRegion);
+      REAL8 Alpha, AlphaBand, Delta, DeltaBand;
+      REAL8 Freq, FreqBand, f1dot, f1dotBand;
 
+      /* we need to parse the skyRegion string into a SkyRegion, which is easier to handle */
+      LAL_CALL (ParseSkyRegionString(&status, &skyregion, searchRegion->skyRegionString), &status);
+      if ( skyregion.vertices) 
+	LALFree ( skyregion.vertices );
+
+      Alpha = skyregion.lowerLeft.longitude; 
+      AlphaBand = skyregion.upperRight.longitude - Alpha;
+      Delta = skyregion.lowerLeft.latitude;
+      DeltaBand = skyregion.upperRight.latitude - Delta;
+      
+      Freq = searchRegion->Freq;
+      FreqBand = searchRegion->FreqBand;
+      f1dot = searchRegion->f1dot;
+      f1dotBand = searchRegion->f1dotBand;
+      
+      /* now write octave-compatible matrix containing the search-region */
+      printf ("[%.12g, %.12g; %.12g, %.12g; %.12g, %.12g; %.12g, %.12g ]\n", 
+	      Alpha, AlphaBand,
+	      Delta, DeltaBand,
+	      Freq, FreqBand,
+	      f1dot, f1dotBand );
+      
+    } /* if uvar_searchNeighbors */
 
   /* ----- clean up and exit ----- */
   /* Free DopplerScan-stuff (grid) */
@@ -662,9 +696,9 @@ getSearchRegion (LALStatus *status,
    * e.g. by setting certain bands to zero.
    */ 
   {
-    BOOLEAN haveAlphaDelta = LALUserVarWasSet(&uvar_Alpha) && LALUserVarWasSet(&uvar_Delta);
+    BOOLEAN haveSkyBands = LALUserVarWasSet(&uvar_AlphaBand) && LALUserVarWasSet(&uvar_DeltaBand);
 
-    if ( haveAlphaDelta )     /* manually set skyRegion */
+    if ( haveSkyBands )     /* manually set skyRegion */
       {
 	CHAR *str = NULL;
 	TRY ( SkySquare2String( status->statusPtr, &str,
