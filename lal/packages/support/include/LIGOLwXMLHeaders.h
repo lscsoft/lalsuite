@@ -347,7 +347,7 @@ fputs( "      <Stream Name=\"multi_inspiralgroup:multi_inspiral:table\" Type=\"L
 
 #define PRINT_LIGOLW_XML_SIM_INSPIRAL(fp) ( \
 fputs( "   <Table Name=\"sim_inspiralgroup:sim_inspiral:table\">\n" , fp ) == EOF || \
-fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:process_id\" Type=\"ilwd:char\"/>\n", fp ) &&  \
+fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF ||  \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:waveform\" Type=\"lstring\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:geocent_end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
 fputs( "      <Column Name=\"sim_inspiralgroup:sim_inspiral:geocent_end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
