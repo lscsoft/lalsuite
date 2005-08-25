@@ -7,11 +7,12 @@ $Id$
 /* 04/12/05 gam; Move from using StackSlideOld to using StackSlide function. */
 /* 04/12/05 gam; add RunStackSlideIsolatedMonteCarloSimulation to StackSlideIsolated.c */
 /* 05/24/05 gam; make maxPower and totalEventCount part of params; change finishSUMs to finishPeriodicTable; end xml in FinalizeSearch */
-/* 07/15/2005 gam; Change RunStackSlideIsolatedMonteCarloSimulation to: */
-/*                 inject at a random point in the parameters space a random number of times */
-/* 07/29/05 gam; if (params->testFlag & 64) > 0 set searchSurroundingPts == 1 and   */
-/*               search surrounding parameters space pts; else search nearest only  */
-/* 07/29/05 gam; rescale SFTs for inject given number of times for repeat of search */
+/* 07/15/2005 gam; Change RunStackSlideIsolatedMonteCarloSimulation to inject at a */
+/*                 random point in the parameters space a random number of times.  */
+/* 07/29/05 gam; if (params->testFlag & 64) > 0 set searchSurroundingPts == 1 and  */
+/*               search surrounding parameters space pts; else search nearest only */
+/* 07/29/05 gam; If params->numMCRescalings > 0 use this and params->rescaleMCFractionSFTs to */
+/*               rescale SFTs to run numMCRescalings Monte Carlo simulations in parallel.     */
 
 #ifndef _STACKSLIDEISOLATED_H
 #define _STACKSLIDEISOLATED_H

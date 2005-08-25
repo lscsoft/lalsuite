@@ -12,7 +12,11 @@
 set gpsEpochStartTimeSec               731210229; #1  UINT4 GPS seconds at the detector giving SSB epoch reference time.
 set gpsEpochStartTimeNan                       0; #2  UINT4 GPS nanoseconds at the detector giving SSB epoch reference time.
 set gpsStartTimeSec                    731210229; #3  UINT4 analysis GPS start-time seconds at the detector. 
-set params->duration      1.8000000000000000e+04; #4  REAL8 analysis duration 
+set duration      1.8000000000000000e+04; #4  REAL8 analysis duration 
+#Note that duration is used to find SFTs with start time in the
+#interval [gpsStartTimeSec, gpsStartTimeSec+duration) until 
+#numBLKs SFTs are found. Thus, the actual duration of the
+#search is numBLKs*tBLK. See the next two parameters.
 
 set numBLKs                                 10; #5  INT4 input number of blocks of data (e.g., actual number of SFTs used in this job). 
 set tBLK                1.8000000000000000e+03; #6  REAL8 time baseline of input BLKs (e.g., of SFTs). 
@@ -20,18 +24,21 @@ set tEffBLK             1.8000000000000000e+03; #7  REAL8 effective time baselin
 set f0BLK               3.0011000000000001e+02; #8  REAL8 start frequency of the input BLKs. 
 set bandBLK             1.7999999999999999e-01; #9  REAL8 frequency band of input BLKs. 
 set nBinsPerBLK                            324; #10 INT4 number of frequency bins one BLKs. 
+#Note that nBinsPerBLK takes precedence. An error is thrown if this does not correspond to tEffBLK*bandBLK rounded to the nearest integer. 
 
 set numBLKsPerSTK                            1; #11 INT4 number BLKs used to make one STK. 
 set tEffSTK             1.8000000000000000e+03; #12 REAL8 effective time baseline of STKs (deltaF = 1/tEffSTK). 
 set f0STK               3.0011000000000001e+02; #13 REAL8 start frequency of STKs. 
 set bandSTK             1.7999999999999999e-01; #14 REAL8 frequency band of STKs. 
 set nBinsPerSTK                            324; #15 INT4 number of frequency bins in one STK. 
+#Note that nBinsPerSTK takes precedence. An error is thrown if this does not correspond to tEffSTK*bandSTK rounded to the nearest integer. 
 
 set numSTKsPerSUM                           10; #16 INT4 number of STKs used to make one SUM. 
 set tEffSUM             1.8000000000000000e+03; #17 REAL8 effective time baseline of SUMs (deltaF = 1/tEffSUM). 
 set f0SUM               3.0017500000000001e+02; #18 REAL8 start frequency of SUMs. 
 set bandSUM             5.0000000000000003e-02; #19 REAL8 frequency band of SUMs. 
 set nBinsPerSUM                             90; #20 INT4 number of frequency bins in one SUM. 
+#Note that nBinsPerSUM takes precedence. An error is thrown if this does not correspond to tEffSUM*bandSUM rounded to the nearest integer. 
 #Since the entire frequency band slides together, bandSUM cannot exceed 1.0/((v_Earth/c)_max*tEffSTK),
 #where (v_Earth/c)_max =  1.0600000000000000e-04 
 
@@ -48,34 +55,34 @@ set maxMCfracErr     5.0000000000000001e-03; #27 REAL8 maximum fractional error 
 
 set parameterSpaceFlag                       0; #28 INT2 how to generate parameter space. 
 #The parameterSpaceFlag options are: 
-# if params->parameterSpaceFlag >= 0 generate sky positions uniformly on the sphere and spindowns without using parameter space metric.
-# if (params->parameterSpaceFlag & 1 > 0) rotate skyPosData into coordinates with Earth's average acceleration at the pole.
-# if (params->parameterSpaceFlag & 2) > 0 rotate skyPosData into galactic plane.
+# if parameterSpaceFlag >= 0 generate sky positions uniformly on the sphere and spindowns without using parameter space metric.
+# if (parameterSpaceFlag & 1 > 0) rotate skyPosData into coordinates with Earth's average acceleration at the pole.
+# if (parameterSpaceFlag & 2) > 0 rotate skyPosData into galactic plane.
 
 set stackTypeFlag                            0; #29 INT2 how to generate STKs from BLKs. 
-set Dterms                                  32; #30 INT4 number of terms for Dirichlet kernel (for STKs = F-stat only). 
-# Note that 0 means stacks are PSDs from SFTs (the only option currently support); 1 means stacks are F-statistic from SFTs. 
+set Dterms                                  32; #30 INT4 number of terms for Dirichlet kernel (when generating the F-stat or fake SFTs with a signal). 
+# Note that 0 means stacks are PSDs from SFTs (the only option currently supported); 1 means stacks are F-statistic from SFTs. 
 
 set thresholdFlag                            1; #31 INT2 how to apply the thresholds. 
 set threshold1          2.7999999523162842e+00; #32 REAL4 peak found if power is above this. 
 set threshold2          1.0700000524520874e+00; #33 REAL4 peak ends if power drops below this. 
 set threshold3          2.0000000298023224e-01; #34 REAL4 ratio peak height to valley depth that indicates a new peak rather than subpeak in a cluster. 
-set threshold4          0.0000000000000000e+00; #35 REAL4 unused (except when params->testFlag & 2 > 0; see below).
-set threshold5          0.0000000000000000e+00; #36 REAL4 unused (except when params->testFlag & 1 > 0 or params->weightFlag & 8 > 0; see below).
+set threshold4          0.0000000000000000e+00; #35 REAL4 unused (except when testFlag & 2 > 0; see below).
+set threshold5          0.0000000000000000e+00; #36 REAL4 unused (except when testFlag & 1 > 0 or weightFlag & 8 > 0; see below).
 set maxWidthBins                             3; #37 REAL4 maximum width in bins. 
 #The thresholdFlag rules are: 
-# if (params->thresholdFlag <= 0) do not analyze SUMs for peaks about threshold,
-# if (params->thresholdFlag > 0) analyze SUMs for peaks above threshold,
-# if (params->thresholdFlag & 2 > 0) find peaks above threshold with width less than maxWidthBins; else find peaks above threshold of any width,
-# if (params->thresholdFlag & 4 > 0) ignore overlap events within maxWidthBins of edge of SUM band (useful when overlapping adjacent search bands by 2*maxWidthBins),
-# if (params->thresholdFlag & 8 > 0) then update pw_mean_thissum, pw_stddev_thissum, pwr_snr ignoring peak bins.
+# if (thresholdFlag <= 0) do not analyze SUMs for peaks about threshold,
+# if (thresholdFlag > 0) analyze SUMs for peaks above threshold,
+# if (thresholdFlag & 2 > 0) find peaks above threshold with width less than maxWidthBins; else find peaks above threshold of any width,
+# if (thresholdFlag & 4 > 0) ignore overlap events within maxWidthBins of edge of SUM band (useful when overlapping adjacent search bands by 2*maxWidthBins),
+# if (thresholdFlag & 8 > 0) then update pw_mean_thissum, pw_stddev_thissum, pwr_snr ignoring peak bins.
 
 set weightFlag                               0; #38 INT2 how to weight STKs. 
 #The weightFlag rules are: 
-# if (params->weightFlag & 1 > 0) use powerFlux style weights; must using running median (see normalizationFlag rules),
-# if (params->weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,
-# if (params->weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,
-# if (params->weightFlag & 8 > 0) rescale STKs with threshold5 to prevent dynamic range issues.
+# if (weightFlag & 1 > 0) use powerFlux style weights; must using running median (see normalizationFlag rules),
+# if (weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,
+# if (weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,
+# if (weightFlag & 8 > 0) rescale STKs with threshold5 to prevent dynamic range issues.
 
 set orientationAngle     0.0000000000000000e+00; #39 REAL8 orientation angle in radians used to find F_+ and F_x when used to weight STKs or if using fixed polarization for a Monte Carlo Simulation. 
 set cosInclinationAngle  0.0000000000000000e+00; #40 REAL8 cosine inclination angle if using fixed value for a Monte Carlo Simulation. 
@@ -86,13 +93,14 @@ set bandNRM             1.7999999999999999e-01; #43 REAL8 frequency band to use 
 set nBinsPerNRM                             50; #44 INT4 number of frequency bins to use when finding norms. 
 set normalizationParameter  0.0000000000000000e+00; #45 REAL4 see uses below. 
 #The normalizationFlag rules are: 
-# if (params->normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, 
-# if (params->normalizationFlag & 4) > 0 normalize STKs using running median (or use medians when weightFlag > 0), 
-# if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.
-# if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.
-# if (params->normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.
-# if (params->normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.
-# Note that the (params->normalizationFlag & 32) > 0 and (params->normalizationFlag & 64) > 0 options can be set independently.
+# if (normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, 
+# if (normalizationFlag & 4) > 0 normalize STKs using running median (or use medians in weights when weightFlag > 0), 
+#The running median block size is given by nBinsPerNRM.
+# if (normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.
+# if (normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.
+# if (normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.
+# if (normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.
+# Note that the (normalizationFlag & 32) > 0 and (normalizationFlag & 64) > 0 options can be set independently.
 
 set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.
@@ -101,6 +109,7 @@ set testFlag                                 0; #46 INT2 specify test case.
 # if ((testFlag & 8) > 0) use fixed orientationAngle and cosInclinationAngle set above during Monte Carlo Simulations.
 # if ((testFlag & 16) > 0) use results from prior jobs in the pipeline and report on current Monte Carlo results.
 # if ((testFlag & 32) > 0) iterate entire Monte Carlo Simulation to converge on desired confidence.
+# if ((testFlag & 64) > 0) search surrounding parameters space pts during Monte Carlo Simulations; else search nearest only.
 # The prior results must be given in the priorResultsFile set above.
 # The maximum number of iterations is given by maxMCinterations set above.
 # The maximum fractional error allowed when testing for convergence of confidence when iterating the Monte Carlo is set by maxMCfracErr above.
@@ -120,8 +129,8 @@ set keepThisNumber                           1; #50 INT4 how many events to keep
 # if (outputEventFlag <= 0) do not output xml file,
 # if (outputEventFlag > 0) output xml file.
 # if (((outputEventFlag & 2) > 0) && (keepThisNumber > 0)) keep only keepThisNumber loudest events based on this criteria: 
-#  keep the loudest event for every eventBandWidth = params->bandSUM/keepThisNumber, which is the same as, 
-#  keep the loudest event for every nBinsPerOutputEvent = params->nBinsPerSUM/keepThisNumber; 
+#  keep the loudest event for every eventBandWidth = bandSUM/keepThisNumber, which is the same as, 
+#  keep the loudest event for every nBinsPerOutputEvent = nBinsPerSUM/keepThisNumber; 
 #  thus if keepThisNumber == 1 then we only output the loudest event; if keepThisNumber == nBinsPerSUM we output the loudest event for every bin.
 # if ((outputEventFlag & 4) > 0) the loudest event from each template (i.e., each sky position and set of spindown parameters) is output. 
 
@@ -129,16 +138,22 @@ set startRA             0.0000000000000000e+00; #51 REAL8 start right ascension 
 set stopRA              0.0000000000000000e+00; #52 REAL8 end right ascension in radians. 
 set deltaRA             0.0000000000000000e+00; #53 REAL8 delta right ascension in radians. 
 set numRA                                    1; #54 INT4 number of right ascensions for DEC = 0.  
-#Note that for each DEC deltaRA = deltaRA/cos(DEC) is used to cover interval [stopRA stopRA). 
+#Note that deltaRA >= 0.0 must be true, otherwise an error is thrown! 
+#Note that deltaRA takes precedence; numRA just indicates the number of RA's for DEC = 0. An error is thrown if its value is not consistent with startRA, stopRA, and deltaRA.
+#For each declination, deltaRA = deltaRA/cos(DEC) is used to cover interval [startRA stopRA). 
 
 set startDec            0.0000000000000000e+00; #55 REAL8 start declination in radians. 
 set stopDec             0.0000000000000000e+00; #56 REAL8 end declination in radians. 
 set deltaDec            0.0000000000000000e+00; #57 REAL8 delta declination in radians. 
 set numDec                                   1; #58 INT4 number of declinations. 
-#Note that DECs are generated by DEC = startDec + i*deltaDec for i = 0 to numDec - 1. 
+#Note that deltaDec >= 0.0 must be true, otherwise an error is thrown! 
+#Note that numDec takes precedence; an error is thrown if this is not consistent with deltaDec and either the interval [startDec, stopDec) or [startDec, stopDec].
+#The DECs are generated by DEC = startDec + i*deltaDec for i = 0 to numDec - 1. 
 
-set numSpinDown                              1; #59 INT4 number of nonzero spindown parameters. 
+set numSpinDown                              1; #59 INT4 number of spindown parameters to include in the search. 
 #Note when numSpinDown > 0 that derivs are generated by FDerivN = startFDerivN + i*deltaFDerivN for i = 0 to numFDerivN - 1. 
+#In this case deltaFDerivN <= 0.0 must be true for N odd and deltaFDerivN >= 0.0 must be true for N even, otherwise an error is thrown! 
+#Note that numFDerivN takes precedence; an error is thrown if this is not consistent with deltaFDerivN and either the interval [startFDerivN, stopFDerivN) or [startFDerivN, stopFDerivN].
 
 set startFDeriv1        0.0000000000000000e+00; #60 REAL8 start 1st deriv of freq in Hz/s. 
 set stopFDeriv1         0.0000000000000000e+00; #61 REAL8 end 1st deriv of freq in Hz/s. 

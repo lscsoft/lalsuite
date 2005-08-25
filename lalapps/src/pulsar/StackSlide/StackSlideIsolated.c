@@ -31,11 +31,12 @@ $Id$
 /* 05/24/05 gam; if (params->debugOptionFlag & 32 > 0) print Monte Carlo Simulation results to stdout */
 /* 05/24/05 gam; add StackSlideMonteCarloResultsTable */
 /* 07/15/2005 gam; need to save params->sumBinMask[iFreq] as savSumBinMask[iFreq] and inject where savSumBinMask[iFreq] !=0, and reset params->sumBinMask[0] == 1 */
-/* 07/15/2005 gam; Change RunStackSlideIsolatedMonteCarloSimulation to: */
-/*                 inject at a random point in the parameters space a random number of times */
-/* 07/29/05 gam; if (params->testFlag & 64) > 0 set searchSurroundingPts == 1 and   */
-/*               search surrounding parameters space pts; else search nearest only  */
-/* 07/29/05 gam; rescale SFTs for inject given number of times for repeat of search */
+/* 07/15/2005 gam; Change RunStackSlideIsolatedMonteCarloSimulation to inject at a */
+/*                 random point in the parameters space a random number of times.  */
+/* 07/29/05 gam; if (params->testFlag & 64) > 0 set searchSurroundingPts == 1 and  */
+/*               search surrounding parameters space pts; else search nearest only */
+/* 07/29/05 gam; If params->numMCRescalings > 0 use this and params->rescaleMCFractionSFTs to */
+/*               rescale SFTs to run numMCRescalings Monte Carlo simulations in parallel.     */
 
 /*********************************************/
 /*                                           */
@@ -54,7 +55,7 @@ $Id$
 /* #define DEBUG_MONTECARLOSFT_DATA */
 /* #define PRINT_MONTECARLOSFT_DATA */
 /* #define PRINTCOMPARISON_INPUTVSMONTECARLOSFT_DATA */
-#define DEBUG_RANDOMTRIALPARAMETERS
+/* #define DEBUG_RANDOMTRIALPARAMETERS */
 /* #define DEBUG_LALFASTGENERATEPULSARSFTS */
 /* #define DEBUG_SETFIXED_RANDVAL */
 /* #define PRINT_ONEMONTECARLO_OUTPUTSFT */

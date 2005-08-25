@@ -142,6 +142,9 @@
 /* 07/13/05 gam; if (params->normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile */
 /* 07/13/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT; initialze RandomParams *randPar once to avoid repeatly opening /dev/urandom */
 /* 07/17/05 gam; Change ...Deriv5 command line arguments to ones that control new Monte Carlo (MC) options */
+/* 07/29/05 gam; if (params->testFlag & 64) > 0 set searchSurroundingPts == 1 and  */
+/*               search surrounding parameters space pts; else search nearest only */
+/* 08/24/05 gam; Fix off by one error when computing tmpNumRA in CountOrAssignSkyPosData */
 
 /*********************************************/
 /*                                           */
@@ -530,7 +533,11 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set gpsEpochStartTimeSec %23d; #1  UINT4 GPS seconds at the detector giving SSB epoch reference time.\n", params->gpsEpochStartTimeSec);
     	fprintf(stdout,"set gpsEpochStartTimeNan %23d; #2  UINT4 GPS nanoseconds at the detector giving SSB epoch reference time.\n", params->gpsEpochStartTimeNan);
     	fprintf(stdout,"set gpsStartTimeSec      %23d; #3  UINT4 analysis GPS start-time seconds at the detector. \n", params->gpsStartTimeSec);
-    	fprintf(stdout,"set params->duration     %23.16e; #4  REAL8 analysis duration \n", params->duration);
+    	fprintf(stdout,"set duration     %23.16e; #4  REAL8 analysis duration \n", params->duration);
+    	fprintf(stdout,"#Note that duration is used to find SFTs with start time in the\n");
+    	fprintf(stdout,"#interval [gpsStartTimeSec, gpsStartTimeSec+duration) until \n");
+    	fprintf(stdout,"#numBLKs SFTs are found. Thus, the actual duration of the\n");
+    	fprintf(stdout,"#search is numBLKs*tBLK. See the next two parameters.\n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set numBLKs            %23d; #5  INT4 input number of blocks of data (e.g., actual number of SFTs used in this job). \n", params->numBLKs);
     	fprintf(stdout,"set tBLK               %23.16e; #6  REAL8 time baseline of input BLKs (e.g., of SFTs). \n", params->tBLK);
@@ -538,18 +545,21 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set f0BLK              %23.16e; #8  REAL8 start frequency of the input BLKs. \n", params->f0BLK);
     	fprintf(stdout,"set bandBLK            %23.16e; #9  REAL8 frequency band of input BLKs. \n", params->bandBLK);
     	fprintf(stdout,"set nBinsPerBLK        %23d; #10 INT4 number of frequency bins one BLKs. \n", params->nBinsPerBLK);
+    	fprintf(stdout,"#Note that nBinsPerBLK takes precedence. An error is thrown if this does not correspond to tEffBLK*bandBLK rounded to the nearest integer. \n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set numBLKsPerSTK      %23d; #11 INT4 number BLKs used to make one STK. \n", params->numBLKsPerSTK);
     	fprintf(stdout,"set tEffSTK            %23.16e; #12 REAL8 effective time baseline of STKs (deltaF = 1/tEffSTK). \n", params->tEffSTK);
     	fprintf(stdout,"set f0STK              %23.16e; #13 REAL8 start frequency of STKs. \n", params->f0STK);
     	fprintf(stdout,"set bandSTK            %23.16e; #14 REAL8 frequency band of STKs. \n", params->bandSTK);
     	fprintf(stdout,"set nBinsPerSTK        %23d; #15 INT4 number of frequency bins in one STK. \n", params->nBinsPerSTK);
+    	fprintf(stdout,"#Note that nBinsPerSTK takes precedence. An error is thrown if this does not correspond to tEffSTK*bandSTK rounded to the nearest integer. \n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set numSTKsPerSUM      %23d; #16 INT4 number of STKs used to make one SUM. \n", params->numSTKsPerSUM);
     	fprintf(stdout,"set tEffSUM            %23.16e; #17 REAL8 effective time baseline of SUMs (deltaF = 1/tEffSUM). \n", params->tEffSUM);
     	fprintf(stdout,"set f0SUM              %23.16e; #18 REAL8 start frequency of SUMs. \n", params->f0SUM);
     	fprintf(stdout,"set bandSUM            %23.16e; #19 REAL8 frequency band of SUMs. \n", params->bandSUM);
     	fprintf(stdout,"set nBinsPerSUM        %23d; #20 INT4 number of frequency bins in one SUM. \n", params->nBinsPerSUM);
+    	fprintf(stdout,"#Note that nBinsPerSUM takes precedence. An error is thrown if this does not correspond to tEffSUM*bandSUM rounded to the nearest integer. \n");
     	fprintf(stdout,"#Since the entire frequency band slides together, bandSUM cannot exceed 1.0/((v_Earth/c)_max*tEffSTK),\n");
     	fprintf(stdout,"#where (v_Earth/c)_max = %23.16e \n", ((REAL8)STACKSLIDEMAXV));
     	fprintf(stdout,"\n");
@@ -566,37 +576,37 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set parameterSpaceFlag %23d; #28 INT2 how to generate parameter space. \n", params->parameterSpaceFlag);
     	fprintf(stdout,"#The parameterSpaceFlag options are: \n");
-    	fprintf(stdout,"# if params->parameterSpaceFlag >= 0 generate sky positions uniformly on the sphere and spindowns without using parameter space metric.\n");
-    	fprintf(stdout,"# if (params->parameterSpaceFlag & 1 > 0) rotate skyPosData into coordinates with Earth's average acceleration at the pole.\n");
-    	fprintf(stdout,"# if (params->parameterSpaceFlag & 2) > 0 rotate skyPosData into galactic plane.\n");
+    	fprintf(stdout,"# if parameterSpaceFlag >= 0 generate sky positions uniformly on the sphere and spindowns without using parameter space metric.\n");
+    	fprintf(stdout,"# if (parameterSpaceFlag & 1 > 0) rotate skyPosData into coordinates with Earth's average acceleration at the pole.\n");
+    	fprintf(stdout,"# if (parameterSpaceFlag & 2) > 0 rotate skyPosData into galactic plane.\n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set stackTypeFlag      %23d; #29 INT2 how to generate STKs from BLKs. \n", params->stackTypeFlag);
-    	fprintf(stdout,"set Dterms             %23d; #30 INT4 number of terms for Dirichlet kernel (for STKs = F-stat only). \n", params->Dterms);
-    	fprintf(stdout,"# Note that 0 means stacks are PSDs from SFTs (the only option currently support); 1 means stacks are F-statistic from SFTs. \n");
+    	fprintf(stdout,"set Dterms             %23d; #30 INT4 number of terms for Dirichlet kernel (when generating the F-stat or fake SFTs with a signal). \n", params->Dterms);
+    	fprintf(stdout,"# Note that 0 means stacks are PSDs from SFTs (the only option currently supported); 1 means stacks are F-statistic from SFTs. \n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set thresholdFlag      %23d; #31 INT2 how to apply the thresholds. \n", params->thresholdFlag);
     	fprintf(stdout,"set threshold1         %23.16e; #32 REAL4 peak found if power is above this. \n", params->threshold1);
     	fprintf(stdout,"set threshold2         %23.16e; #33 REAL4 peak ends if power drops below this. \n", params->threshold2);
     	fprintf(stdout,"set threshold3         %23.16e; #34 REAL4 ratio peak height to valley depth that indicates a new peak rather than subpeak in a cluster. \n", params->threshold3); /* 01/20/04 gam */
-    	fprintf(stdout,"set threshold4         %23.16e; #35 REAL4 unused (except when params->testFlag & 2 > 0; see below).\n", params->threshold4); /* 05/11/04 gam */ /* 01/27/04 gam */
-    	fprintf(stdout,"set threshold5         %23.16e; #36 REAL4 unused (except when params->testFlag & 1 > 0 or params->weightFlag & 8 > 0; see below).\n", params->threshold5); /* 05/11/04 gam */ /* 01/27/04 gam */ /* 11/01/04 gam */
+    	fprintf(stdout,"set threshold4         %23.16e; #35 REAL4 unused (except when testFlag & 2 > 0; see below).\n", params->threshold4); /* 05/11/04 gam */ /* 01/27/04 gam */
+    	fprintf(stdout,"set threshold5         %23.16e; #36 REAL4 unused (except when testFlag & 1 > 0 or weightFlag & 8 > 0; see below).\n", params->threshold5); /* 05/11/04 gam */ /* 01/27/04 gam */ /* 11/01/04 gam */
     	fprintf(stdout,"set maxWidthBins       %23d; #37 REAL4 maximum width in bins. \n", params->maxWidthBins); /* 02/20/04 gam */ /* 02/23/04 gam */
     	fprintf(stdout,"#The thresholdFlag rules are: \n");
-    	fprintf(stdout,"# if (params->thresholdFlag <= 0) do not analyze SUMs for peaks about threshold,\n");
-    	fprintf(stdout,"# if (params->thresholdFlag > 0) analyze SUMs for peaks above threshold,\n");
-    	fprintf(stdout,"# if (params->thresholdFlag & 2 > 0) find peaks above threshold with width less than maxWidthBins; else find peaks above threshold of any width,\n");
-    	fprintf(stdout,"# if (params->thresholdFlag & 4 > 0) ignore overlap events within maxWidthBins of edge of SUM band (useful when overlapping adjacent search bands by 2*maxWidthBins),\n");
-    	fprintf(stdout,"# if (params->thresholdFlag & 8 > 0) then update pw_mean_thissum, pw_stddev_thissum, pwr_snr ignoring peak bins.\n");
+    	fprintf(stdout,"# if (thresholdFlag <= 0) do not analyze SUMs for peaks about threshold,\n");
+    	fprintf(stdout,"# if (thresholdFlag > 0) analyze SUMs for peaks above threshold,\n");
+    	fprintf(stdout,"# if (thresholdFlag & 2 > 0) find peaks above threshold with width less than maxWidthBins; else find peaks above threshold of any width,\n");
+    	fprintf(stdout,"# if (thresholdFlag & 4 > 0) ignore overlap events within maxWidthBins of edge of SUM band (useful when overlapping adjacent search bands by 2*maxWidthBins),\n");
+    	fprintf(stdout,"# if (thresholdFlag & 8 > 0) then update pw_mean_thissum, pw_stddev_thissum, pwr_snr ignoring peak bins.\n");
     	fprintf(stdout,"\n");
     	/* fprintf(stdout,"set calibrationFlag    %23d; #38 INT2 whether to calibrate input data (< 0 already done, 0 no, 1 yes). \n", params->calibrationFlag);
     	fprintf(stdout,"# Note that < 0 and 0 are only options currently supported. \n"); 
     	fprintf(stdout,"\n"); */ /* 12/06/04 gam */
     	fprintf(stdout,"set weightFlag         %23d; #38 INT2 how to weight STKs. \n", params->weightFlag);
     	fprintf(stdout,"#The weightFlag rules are: \n");        
-    	fprintf(stdout,"# if (params->weightFlag & 1 > 0) use powerFlux style weights; must using running median (see normalizationFlag rules),\n");
-    	fprintf(stdout,"# if (params->weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,\n");
-    	fprintf(stdout,"# if (params->weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,\n");
-    	fprintf(stdout,"# if (params->weightFlag & 8 > 0) rescale STKs with threshold5 to prevent dynamic range issues.\n"); /* 11/01/04 gam */
+    	fprintf(stdout,"# if (weightFlag & 1 > 0) use powerFlux style weights; must using running median (see normalizationFlag rules),\n");
+    	fprintf(stdout,"# if (weightFlag & 2 > 0) include beam pattern F_+ in calculation of weights,\n");
+    	fprintf(stdout,"# if (weightFlag & 4 > 0) include beam pattern F_x in calculation of weights,\n");
+    	fprintf(stdout,"# if (weightFlag & 8 > 0) rescale STKs with threshold5 to prevent dynamic range issues.\n"); /* 11/01/04 gam */
     	fprintf(stdout,"\n");
     	/* fprintf(stdout,"set windowFilterFlag   %23d; #40 INT2 whether to window or filter data (< 0 already done, 0 no, 1 yes) \n", params->windowFilterFlag); */ /* 10/28/04 gam */
     	/* fprintf(stdout,"# Note that < 0 and 0 are only options currently supported. \n"); */ /* 10/28/04 gam */
@@ -609,14 +619,15 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set nBinsPerNRM        %23d; #44 INT4 number of frequency bins to use when finding norms. \n", params->nBinsPerNRM);
     	fprintf(stdout,"set normalizationParameter %23.16e; #45 REAL4 see uses below. \n", params->normalizationParameter);
     	fprintf(stdout,"#The normalizationFlag rules are: \n");
-    	fprintf(stdout,"# if (params->normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, \n");
-    	fprintf(stdout,"# if (params->normalizationFlag & 4) > 0 normalize STKs using running median (or use medians when weightFlag > 0), \n"); /* 04/14/04 gam; now implemented */ /* 10/28/04 gam */
+    	fprintf(stdout,"# if (normalizationFlag & 2) > 0 normalize BLKs else normalize STKs, \n");
+    	fprintf(stdout,"# if (normalizationFlag & 4) > 0 normalize STKs using running median (or use medians in weights when weightFlag > 0), \n"); /* 04/14/04 gam; now implemented */ /* 10/28/04 gam */
+    	fprintf(stdout,"#The running median block size is given by nBinsPerNRM.\n");
     	/* fprintf(stdout,"# if normalizing with the running median the normalizationParameter must be set to the expected ratio of median to mean power. This is used to correct bias in the median to get the mean.\n"); */ /* 07/09/04 gam */ /* 05/05/04 gam; */
-    	fprintf(stdout,"# if (params->normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.\n");
-    	fprintf(stdout,"# if (params->normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.\n"); /* 04/15/04 gam */
-    	fprintf(stdout,"# if (params->normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.\n"); /* 05/14/05 gam */
-    	fprintf(stdout,"# if (params->normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.\n"); /* 07/13/05 gam */
-    	fprintf(stdout,"# Note that the (params->normalizationFlag & 32) > 0 and (params->normalizationFlag & 64) > 0 options can be set independently.\n"); /* 07/13/05 gam */
+    	fprintf(stdout,"# if (normalizationFlag & 8) > 0 normalize with veto on power above normalizationParameter = max_power_allowed/mean_power.\n");
+    	fprintf(stdout,"# if (normalizationFlag & 16) > 0 then output into .Sh file GPS startTime and PSD estimate for each SFT.\n"); /* 04/15/04 gam */
+    	fprintf(stdout,"# if (normalizationFlag & 32) > 0 then ignore bins using info in linesAndHarmonicsFile.\n"); /* 05/14/05 gam */
+    	fprintf(stdout,"# if (normalizationFlag & 64) > 0 then clean SFTs using info in linesAndHarmonicsFile before normalizing.\n"); /* 07/13/05 gam */
+    	fprintf(stdout,"# Note that the (normalizationFlag & 32) > 0 and (normalizationFlag & 64) > 0 options can be set independently.\n"); /* 07/13/05 gam */
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set testFlag           %23d; #46 INT2 specify test case.\n", params->testFlag); /* 05/11/04 gam */
     	fprintf(stdout,"# if ((testFlag & 1) > 0) output Hough number counts instead of power; use threshold5 for Hough cutoff.\n"); /* 05/11/04 gam */
@@ -625,6 +636,7 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if ((testFlag & 8) > 0) use fixed orientationAngle and cosInclinationAngle set above during Monte Carlo Simulations.\n"); /* 12/06/04 gam */
     	fprintf(stdout,"# if ((testFlag & 16) > 0) use results from prior jobs in the pipeline and report on current Monte Carlo results.\n");
     	fprintf(stdout,"# if ((testFlag & 32) > 0) iterate entire Monte Carlo Simulation to converge on desired confidence.\n");
+    	fprintf(stdout,"# if ((testFlag & 64) > 0) search surrounding parameters space pts during Monte Carlo Simulations; else search nearest only.\n");
     	fprintf(stdout,"# The prior results must be given in the priorResultsFile set above.\n");
     	fprintf(stdout,"# The maximum number of iterations is given by maxMCinterations set above.\n");
     	fprintf(stdout,"# The maximum fractional error allowed when testing for convergence of confidence when iterating the Monte Carlo is set by maxMCfracErr above.\n");
@@ -644,8 +656,8 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"# if (outputEventFlag <= 0) do not output xml file,\n");
     	fprintf(stdout,"# if (outputEventFlag > 0) output xml file.\n");
     	fprintf(stdout,"# if (((outputEventFlag & 2) > 0) && (keepThisNumber > 0)) keep only keepThisNumber loudest events based on this criteria: \n");
-    	fprintf(stdout,"#  keep the loudest event for every eventBandWidth = params->bandSUM/keepThisNumber, which is the same as, \n");
-    	fprintf(stdout,"#  keep the loudest event for every nBinsPerOutputEvent = params->nBinsPerSUM/keepThisNumber; \n");
+    	fprintf(stdout,"#  keep the loudest event for every eventBandWidth = bandSUM/keepThisNumber, which is the same as, \n");
+    	fprintf(stdout,"#  keep the loudest event for every nBinsPerOutputEvent = nBinsPerSUM/keepThisNumber; \n");
     	fprintf(stdout,"#  thus if keepThisNumber == 1 then we only output the loudest event; if keepThisNumber == nBinsPerSUM we output the loudest event for every bin.\n");
     	fprintf(stdout,"# if ((outputEventFlag & 4) > 0) the loudest event from each template (i.e., each sky position and set of spindown parameters) is output. \n"); /* 08/30/04 gam */
     	fprintf(stdout,"\n");
@@ -653,16 +665,22 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"set stopRA             %23.16e; #52 REAL8 end right ascension in radians. \n", params->stksldSkyPatchData->stopRA);
     	fprintf(stdout,"set deltaRA            %23.16e; #53 REAL8 delta right ascension in radians. \n", params->stksldSkyPatchData->deltaRA);
     	fprintf(stdout,"set numRA              %23d; #54 INT4 number of right ascensions for DEC = 0.  \n", params->stksldSkyPatchData->numRA);
-    	fprintf(stdout,"#Note that for each DEC deltaRA = deltaRA/cos(DEC) is used to cover interval [stopRA stopRA). \n");
+    	fprintf(stdout,"#Note that deltaRA >= 0.0 must be true, otherwise an error is thrown! \n");
+    	fprintf(stdout,"#Note that deltaRA takes precedence; numRA just indicates the number of RA's for DEC = 0. An error is thrown if its value is not consistent with startRA, stopRA, and deltaRA.\n");
+    	fprintf(stdout,"#For each declination, deltaRA = deltaRA/cos(DEC) is used to cover interval [startRA stopRA). \n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set startDec           %23.16e; #55 REAL8 start declination in radians. \n", params->stksldSkyPatchData->startDec);
     	fprintf(stdout,"set stopDec            %23.16e; #56 REAL8 end declination in radians. \n", params->stksldSkyPatchData->stopDec);
     	fprintf(stdout,"set deltaDec           %23.16e; #57 REAL8 delta declination in radians. \n", params->stksldSkyPatchData->deltaDec);
     	fprintf(stdout,"set numDec             %23d; #58 INT4 number of declinations. \n", params->stksldSkyPatchData->numDec);
-    	fprintf(stdout,"#Note that DECs are generated by DEC = startDec + i*deltaDec for i = 0 to numDec - 1. \n");
+    	fprintf(stdout,"#Note that deltaDec >= 0.0 must be true, otherwise an error is thrown! \n");
+    	fprintf(stdout,"#Note that numDec takes precedence; an error is thrown if this is not consistent with deltaDec and either the interval [startDec, stopDec) or [startDec, stopDec].\n");
+    	fprintf(stdout,"#The DECs are generated by DEC = startDec + i*deltaDec for i = 0 to numDec - 1. \n");
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set numSpinDown        %23d; #59 INT4 number of nonzero spindown parameters. \n", params->numSpinDown);
+    	fprintf(stdout,"set numSpinDown        %23d; #59 INT4 number of spindown parameters to include in the search. \n", params->numSpinDown);
     	fprintf(stdout,"#Note when numSpinDown > 0 that derivs are generated by FDerivN = startFDerivN + i*deltaFDerivN for i = 0 to numFDerivN - 1. \n");
+    	fprintf(stdout,"#In this case deltaFDerivN <= 0.0 must be true for N odd and deltaFDerivN >= 0.0 must be true for N even, otherwise an error is thrown! \n");
+    	fprintf(stdout,"#Note that numFDerivN takes precedence; an error is thrown if this is not consistent with deltaFDerivN and either the interval [startFDerivN, stopFDerivN) or [startFDerivN, stopFDerivN].\n");
     	fprintf(stdout,"\n");
     	fprintf(stdout,"set startFDeriv1       %23.16e; #60 REAL8 start 1st deriv of freq in Hz/s. \n", params->startFDeriv1);
     	fprintf(stdout,"set stopFDeriv1        %23.16e; #61 REAL8 end 1st deriv of freq in Hz/s. \n", params->stopFDeriv1);
@@ -3077,7 +3095,8 @@ void CountOrAssignSkyPosData(REAL8 **skyPosData, INT4 *numSkyPosTotal, BOOLEAN r
 	      }
             #endif
 	    if ((tmpDeltaRA > 0.0) && (params->stopRA > params->startRA)) {
-	       tmpNumRA = floor((params->stopRA - params->startRA)/tmpDeltaRA);
+	       /* tmpNumRA = floor((params->stopRA - params->startRA)/tmpDeltaRA); */ /* 08/24/05 gam */
+	       tmpNumRA = ceil((params->stopRA - params->startRA)/tmpDeltaRA);
 	       if (tmpNumRA < 1) {
 	          tmpNumRA = 1;  /* Always do at least one point in the Sky for each DEC */
 	       }
