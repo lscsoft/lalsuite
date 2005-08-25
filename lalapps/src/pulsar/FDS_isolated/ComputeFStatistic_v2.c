@@ -559,9 +559,9 @@ int main(int argc,char *argv[])
 		  REAL8 freq = uvar_Freq + j * GV.dFreq;
 		  
 		  if ( FStat > uvar_Fthreshold )
-		    fprintf (fpOut, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
-			     freq, dopplerpos.Alpha, dopplerpos.Delta, 
-			     GV.fkdot->data[1], FStat);
+		    fprintf (fpOut, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
+			     dopplerpos.Alpha, dopplerpos.Delta, 
+			     freq, GV.fkdot->data[1], FStat);
 		}
 	      
 	    } /* if outputFstat */

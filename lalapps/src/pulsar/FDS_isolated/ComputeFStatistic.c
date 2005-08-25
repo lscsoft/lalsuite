@@ -772,9 +772,9 @@ int main(int argc,char *argv[])
 
 		  if ( Fval > uvar_Fthreshold )
 		    {
-		      LALSnprintf (linebuf, 1023, "%16.12f %8.7f %8.7f %.17g %10.6g\n", 
-				   freq, dopplerpos.Alpha, dopplerpos.Delta, 
-				   DemodParams->spinDwn[0], Fval);
+		      LALSnprintf (linebuf, 1023, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
+				   dopplerpos.Alpha, dopplerpos.Delta, 
+				   freq, DemodParams->spinDwn[0], Fval);
 		      linebuf[1023] = 0;
 
 		      if ( fpOut )
