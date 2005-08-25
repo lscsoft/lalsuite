@@ -1,6 +1,8 @@
-clear
+% clear
 
 path(path,'/home/siemens/ligotools/matlab')
+
+cd /scratch2/xavi/CosmicStrings
 
 H1trigfile='H1triggers.xml'
 H2trigfile='H2triggers.xml'
@@ -8,22 +10,21 @@ L1trigfile='L1triggers.xml'
 H1ctrigfile='H1ctriggers.xml'
 H2ctrigfile='H2ctriggers.xml'
 L1ctrigfile='L1ctriggers.xml'
-
-cd /home/siemens/lscsoft/lalapps/src/ring/CShtNoiseLONG/
-
-H1trig = readMeta(H1trigfile,'sngl_burst');
-H2trig = readMeta(H2trigfile,'sngl_burst');
-L1trig = readMeta(L1trigfile,'sngl_burst');
+% 
+% H1trig = readMeta(H1trigfile,'sngl_burst');
+% H2trig = readMeta(H2trigfile,'sngl_burst');
+% L1trig = readMeta(L1trigfile,'sngl_burst');
 H1ctrig = readMeta(H1ctrigfile,'sngl_burst');
 H2ctrig = readMeta(H2ctrigfile,'sngl_burst');
 L1ctrig = readMeta(L1ctrigfile,'sngl_burst');
 
-
 T=41872;
+
+fid=fopen('/home/siemens/lscsoft/lalapps/src/ring/fa_data.txt','w');
 
 for i=1:400
 
-    thres=3+(i-1)*0.25;
+    thres=3.75+(i-1)*0.25;
     %H1:
     [j,k]=find(H1trig.snr>=thres);
     RH1=size(H1trig.snr(j),1)/T;
@@ -47,9 +48,9 @@ for i=1:400
     FA(i,9)=FA(i,2)*FA(1,3)*FA(1,4)*(2*0.004)*(2*0.020);
     FA(i,10)=FA(1,2)*FA(i,3)*FA(1,4)*(2*0.004)*(2*0.020);
     FA(i,11)=FA(1,2)*FA(1,3)*FA(i,4)*(2*0.004)*(2*0.020);
-
+    fprintf(fid,'%e %e %e %e %e %e %e %e %e %e %e\n',FA(i,1),FA(i,2),FA(i,3),FA(i,4),FA(i,5),FA(i,6),FA(i,7),FA(i,8),FA(i,9),FA(i,10),FA(i,11));
 end
-
+fclose(fid);
 figure
 semilogy(FA(:,1),FA(:,2),'r-')
 hold on
