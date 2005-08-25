@@ -1369,7 +1369,6 @@ SkySquare2String (LALStatus *status,
 		  REAL8 AlphaBand,	/**< longitude-interval */
 		  REAL8 DeltaBand)	/**< latitude-interval */
 {
-  REAL8 eps = 1.0e-9;
   REAL8 Da, Dd;
   BOOLEAN onePoint, region2D;
   CHAR *ret, *buf;
@@ -1382,9 +1381,8 @@ SkySquare2String (LALStatus *status,
 
   ASSERT ( onePoint || region2D, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
 
-  /* slightly push boundaries outwards to make sure boundary-points are included */
-  Da = AlphaBand + eps;      
-  Dd = DeltaBand + eps;
+  Da = AlphaBand;
+  Dd = DeltaBand;
 
   /* get enough memory for max 4 points... */
   if ( (buf = LALMalloc (1024)) == NULL ) {
