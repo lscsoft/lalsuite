@@ -4,7 +4,7 @@ check_PROGRAMS = RandomTest MersenneRandomTest FindRootTest \
   DetInverseTest EigenTest LALRunningMedianTest RngMedBiasTest \
   SCoarseGrainFrequencySeriesTest DCoarseGrainFrequencySeriesTest \
   CCoarseGrainFrequencySeriesTest ZCoarseGrainFrequencySeriesTest \
-  SFTCleanTest
+  SFTCleanTest NormalizeSFTRngMedTest
 RandomTest_SOURCES = RandomTest.c
 RandomTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 MersenneRandomTest_SOURCES = MersenneRandomTest.c
@@ -39,6 +39,8 @@ RngMedBiasTest_SOURCES = RngMedBiasTest.c
 RngMedBiasTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 SFTCleanTest_SOURCES = SFTCleanTest.c
 SFTCleanTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+NormalizeSFTRngMedTest_SOURCES = NormalizeSFTRngMedTest.c
+NormalizeSFTRngMedTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 EXTRA_DIST = CheckStatus.c CheckStatus.h
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = RandomTest MersenneRandomTest FindRootTest IntegrateTest \
