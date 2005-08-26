@@ -486,6 +486,7 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
   UINT4 i, j;
   gsl_matrix *orth = NULL;
   gsl_vector_view *ui = NULL;	/* array of orthonormal result-vectors */
+  gsl_vector *para = NULL;
 
   /* check NULL-vectors on input */
   if ( (!invects) || (!gij) || (!outvects) ) {
@@ -520,7 +521,6 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
     XLAL_ERROR("XLALMetricGramSchmidt", XLAL_EINVAL);
   }
 
-
   /* prepare output-matrix for orthonormalized vectors in rows*/
   orth = gsl_matrix_calloc ( numvects, vectdim);
   if ( orth == NULL ) {
@@ -534,7 +534,7 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
 
 
   /* placeholder for temporary vector */
-  gsl_vector *para = gsl_vector_alloc(vectdim);
+  para = gsl_vector_alloc(vectdim);
   if ( para == NULL ) {
     XLAL_ERROR("XLALMetricGramSchmidt", XLAL_ENOMEM);
   }
@@ -577,6 +577,7 @@ XLALMetricGramSchmidt(gsl_matrix **outvects,	/**< [out] orthonormal row vects */
       }
       
     } /* for i < numvects */
+
 
   /* free memory */
   gsl_vector_free (para);
@@ -815,6 +816,7 @@ XLALGetLatticeGenerator (gsl_matrix **outmatrix,	/**< [out] generating matrix */
 {
   gsl_matrix *generator = NULL;	/* output: generating matrix */
   REAL8 coveringRadius;
+  UINT4 row, col;
 
   /* check that output 'outmatrix' points to a NULL-vector! */
   if ( *outmatrix != NULL ) 
@@ -845,7 +847,6 @@ XLALGetLatticeGenerator (gsl_matrix **outmatrix,	/**< [out] generating matrix */
        * 
        */
       generator = gsl_matrix_calloc( dimension, dimension+1 );
-      UINT4 row, col;
 
       for (row=0; row < dimension; row ++)
 	{
