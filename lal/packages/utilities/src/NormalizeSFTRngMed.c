@@ -120,51 +120,6 @@ void LALSFTtoPeriodogram (LALStatus    *status,
 
 
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
-void LALSFTVecToPeriodogram (LALStatus    *status,
-			     REAL8FrequencySeriesVector    *periodoVect,
-			     COMPLEX8FrequencySeriesVector *sftVect)
-{/*   *********************************************  </lalVerbatim> */
- /* Calculates the periodogram for a given SFT */
-
-  INT4     length, j;
-
-  INITSTATUS (status, "LALSFTVecToPeriodogram", NORMALIZESFTRNGMEDC);
-  ATTATCHSTATUSPTR (status);
-
-  /* check argments are not NULL */
-  ASSERT (periodoVect, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (periodoVect->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (periodoVect->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-
-  ASSERT (sftVect, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
-  ASSERT (sftVect->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (sftVect->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
-
-
-  length = sftVect->length;
-  /* check lengths are same */
-  ASSERT (length == periodoVect->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-  /* loop over the sfts and calculate the periodograms */
-  for (j=0; j<length; j++) {
-    REAL8FrequencySeries *periodo;
-    COMPLEX8FrequencySeries *sft;
-
-    ASSERT (sftVect->data + j, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-    ASSERT (periodoVect->data + j, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-
-    sft = sftVect->data + j;
-    periodo = periodoVect->data + j;
-
-    TRY( LALSFTtoPeriodogram(status->statusPtr, periodo, sft), status);
-  }
-  
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-}
-
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
@@ -215,10 +170,10 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
   TRY( LALDRunningMedian2(status->statusPtr, &mediansV, &inputV, rngMedPar), status);
 
   for (j=0; j<blocks2; j++)
-    psd->data->data[j] = medians[0];
+    psd->data->data[j] = psd->data->data[blocks2];
 
   for (j=blocks2+length-blockSize+1; j<length; j++)
-    psd->data->data[j] = medians[length-blockSize];
+    psd->data->data[j] = psd->data->data[blocks2 + length-blockSize];
 
 
   /* get the bias factor */
@@ -235,51 +190,7 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
   RETURN (status);
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
-/* calculates running median for a periodogram */
-void LALPeriodoVecToPSDRngMed (LALStatus  *status,
-			       REAL8FrequencySeriesVector  *psdVect,
-			       REAL8FrequencySeriesVector  *periodoVect,
-			       INT4                        blockSize)
-{/*   *********************************************  </lalVerbatim> */
-  INT4 j, length;
 
-
-  INITSTATUS (status, "LALPeriodoVecToPSDRngMed", NORMALIZESFTRNGMEDC);
-  ATTATCHSTATUSPTR (status);
-
-  /* check argments are not NULL */
-  ASSERT (periodoVect, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (periodoVect->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (periodoVect->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-
-  ASSERT (psdVect, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL);  
-  ASSERT (psdVect->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-  ASSERT (psdVect->length > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
-
-  ASSERT (blockSize > 0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-
-  length = periodoVect->length;
-  /* check lengths are same */
-  ASSERT (length == psdVect->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
-  /* loop over sfts and calculate running median psd */
-  for (j=0; j<length; j++) {
-    REAL8FrequencySeries *psd, *periodo;
-
-    ASSERT (periodoVect->data + j, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-    ASSERT (psdVect->data + j, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-
-    periodo = periodoVect->data + j;
-    psd = psdVect->data + j;
-    
-    TRY ( LALPeriodoToPSDRngMed( status->statusPtr, psd, periodo, blockSize ), status);    
-  }
-
-  DETATCHSTATUSPTR (status);
-  /* normal exit */
-  RETURN (status);
-}
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
@@ -290,7 +201,7 @@ void LALNormalizeSFT (LALStatus  *status,
 		      INT4     blockSize)
 {/*   *********************************************  </lalVerbatim> */
   INT4 j, length;
-  REAL8FrequencySeries psd, periodo;
+  REAL8FrequencySeries *psd=NULL, *periodo=NULL;
 
   INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
   ATTATCHSTATUSPTR (status);
@@ -304,29 +215,38 @@ void LALNormalizeSFT (LALStatus  *status,
 
   length = sft->data->length;
   
-  periodo.data = NULL;
-  psd.data = NULL;
-  periodo.data->length = length;
-  periodo.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
-  psd.data->length = length;
-  psd.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+  psd = (REAL8FrequencySeries *)LALMalloc(sizeof(REAL8FrequencySeries));
+  psd->data = NULL;
+  psd->data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  psd->data->length = length;
+  psd->data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+
+  periodo = (REAL8FrequencySeries *)LALMalloc(sizeof(REAL8FrequencySeries));
+  periodo->data = NULL;
+  periodo->data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  periodo->data->length = length;
+  periodo->data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
 
   /* calculate the periodogram */
-  TRY (LALSFTtoPeriodogram (status->statusPtr, &(periodo), sft), status);
+  TRY (LALSFTtoPeriodogram (status->statusPtr, periodo, sft), status);
 
   /* calculate the psd */
-  TRY (LALPeriodoToPSDRngMed (status->statusPtr, &(psd), &(periodo), blockSize), status);
+  TRY (LALPeriodoToPSDRngMed (status->statusPtr, psd, periodo, blockSize), status);
 
   /* loop over sft and normalize */
   for (j=0; j<length; j++) {
     REAL8 Sn;
-    Sn = psd.data->data[j]; 
+    Sn = psd->data->data[j]; 
     sft->data->data[j].re *= sft->deltaF/sqrt(Sn); /* check */
     sft->data->data[j].im *= sft->deltaF/sqrt(Sn); /* check */
   }
 
-  LALFree(psd.data);
-  LALFree(periodo.data);
+  LALFree(psd->data->data);
+  LALFree(psd->data);
+  LALFree(psd);
+  LALFree(periodo->data->data);
+  LALFree(periodo->data);
+  LALFree(periodo);
 
   DETATCHSTATUSPTR (status);
   /* normal exit */
