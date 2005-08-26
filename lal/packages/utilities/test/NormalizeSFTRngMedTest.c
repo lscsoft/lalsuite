@@ -49,10 +49,10 @@ INT4 lalDebugLevel=0;
 
 
 #define MAXFILENAMELENGTH 256
-#define INPUTSFTDIR "/home/badkri/fakesfts/SFT.00000"
+#define INPUTSFTDIR "/home/badkri/fakesfts/"
 #define OUTPUTSFTDIR "./test/"
 #define FMIN 255.0
-#define FMAX 256.0
+#define FMAX 255.1
 #define BLKSIZE 25
 
 /*********************************************************************/
@@ -97,8 +97,11 @@ char *lalWatch;
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){ 
-  static LALStatus       status;  /* LALStatus pointer */ 
-  static SFTtype         *sft;
+  static LALStatus    status;  /* LALStatus pointer */ 
+
+  static SFTVector  *sft=NULL;
+
+  CHAR *fname=NULL;
 
   /* user input variables */
   BOOLEAN uvar_help;
@@ -140,14 +143,18 @@ int main(int argc, char *argv[]){
   if (uvar_help)
     exit(0); 
 
+  fname = (CHAR *)LALMalloc(256*sizeof(CHAR));
+  strcpy(fname, uvar_inputSFTDir);
+  strcat(fname, "/*SFT*");
+  SUB ( LALReadSFTfiles( &status, &sft, uvar_fmin, uvar_fmax,0, fname), &status);
 
-  SUB ( LALReadSFTfile( &status, &sft, uvar_fmin, uvar_fmax, uvar_inputSFTDir), &status);
+  SUB ( LALNormalizeSFTVect(&status, sft, uvar_blockSize), &status);
 
-  SUB ( LALNormalizeSFT(&status, sft, uvar_blockSize), &status);
-
-  SUB ( LALDestroySFTtype (&status, &sft), &status);
+  SUB ( LALDestroySFTVector (&status, &sft), &status);
 
   SUB (LALDestroyUserVars(&status), &status);
+
+  LALFree(fname);
 
   LALCheckMemoryLeaks(); 
 
