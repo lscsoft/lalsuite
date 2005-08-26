@@ -161,15 +161,6 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
 			    REAL8FrequencySeries  *psd,
 			    REAL8FrequencySeries  *periodo,
 			    INT4                  blockSize);
-  
-void LALSFTVecToPeriodogram (LALStatus    *status,
-			     REAL8FrequencySeriesVector    *periodoVect,
-			     COMPLEX8FrequencySeriesVector *sftVect);
-
-void LALPeriodoVecToPSDRngMed (LALStatus  *status,
-			       REAL8FrequencySeriesVector  *psdVect,
-			       REAL8FrequencySeriesVector  *periodoVect,
-			       INT4                        blockSize);
 
 void LALNormalizeSFT (LALStatus  *status,
 		      SFTtype  *sft,
