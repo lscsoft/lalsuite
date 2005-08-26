@@ -38,7 +38,7 @@ RCSID( "$Id$");
 #define FALSE (1==0)
 
 
-INT4 lalDebugLevel;
+extern int lalDebugLevel;
 
 /* default values for input variables */
 #define EARTHEPHEMERIS "../src/earth00-04.dat"

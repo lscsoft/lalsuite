@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   CHARVector          *timestamp = NULL;
   time_t               sec;
   BOOLEAN uvar_help;
-  UINT4 uvar_year, uvar_month, uvar_day, uvar_hour, uvar_min, uvar_sec;
+  INT4 uvar_year, uvar_month, uvar_day, uvar_hour, uvar_min, uvar_sec;
 
   /*  set up the default parameters  */
   lalDebugLevel = 0;
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
 
   LALUTCtoGPS(&status, &gpsTime, &utcDate, &accuracy);
 
-  fprintf(stdout, "%ld\n", gpsTime.gpsSeconds);
+  fprintf(stdout, "%d\n", gpsTime.gpsSeconds);
 
   LALDestroyUserVars(&status);   
 

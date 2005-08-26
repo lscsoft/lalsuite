@@ -237,9 +237,9 @@ REAL8 uvar_refTime;
 BOOLEAN uvar_useCompression;
 #endif
 
-UINT4 uvar_OutputBufferKB;
-UINT4 uvar_MaxFileSizeKB;
-UINT4 uvar_NumEventsToKeep;
+INT4 uvar_OutputBufferKB;
+INT4 uvar_MaxFileSizeKB;
+INT4 uvar_NumEventsToKeep;
 
 BOOLEAN uvar_projectMetric;
 
