@@ -595,6 +595,35 @@ in a form that can be used by \texttt{FindChirpFilterSegment()}
 in a form that can be used by \texttt{FindChirpFilterSegment()}
 \end{description}
 
+
+</lalLaTeX>
+#endif
+/* <lalVerbatim> */
+typedef struct
+tagFindChirpBankSimParams
+{
+  Approximant           approx;
+  Order                 order;
+  REAL4                 minMass;
+  REAL4                 maxMass;
+  RandomParams         *randParams;
+  INT4                  maxMatch;
+}
+FindChirpBankSimParams;
+/* </lalVerbatim> */
+#if 0
+<lalLaTeX>
+
+\begin{description}
+\item[\texttt{Approximant approx}] Waveform pproximant to use for injection.
+
+\item[\texttt{Approximant order}] Waveform order to use for injection.
+
+\item[\texttt{REAL4 minMass}] Minimum mass of injected signals.
+
+\item[\texttt{REAL4 maxMass}] Maximum mass of injected signals.
+\end{description}
+
 \vfill{\footnotesize\input{FindChirpHV}}
 </lalLaTeX> 
 #endif
@@ -804,20 +833,20 @@ LALFindChirpStoreEvent (
 
 void
 LALFindChirpClusterEvents (
-		LALStatus                  *status,
-		SnglInspiralTable         **eventList,
-		FindChirpFilterInput       *input,
-		FindChirpFilterParams      *params,
-		COMPLEX8                   *q,
-		UINT4                       kmax,
-                UINT4                 numPoints,
-                UINT4                       ignoreIndex,
-		REAL4                       norm,
-                REAL4                 modqsqThresh,
-                REAL4                 chisqThreshFac,
-		UINT4                       numChisqBins,
-		CHAR                        searchName[LIGOMETA_SEARCH_MAX] 
-		);
+    LALStatus                  *status,
+    SnglInspiralTable         **eventList,
+    FindChirpFilterInput       *input,
+    FindChirpFilterParams      *params,
+    COMPLEX8                   *q,
+    UINT4                       kmax,
+    UINT4                       numPoints,
+    UINT4                       ignoreIndex,
+    REAL4                       norm,
+    REAL4                       modqsqThresh,
+    REAL4                       chisqThreshFac,
+    UINT4                       numChisqBins,
+    CHAR                        searchName[LIGOMETA_SEARCH_MAX] 
+    );
 
 
 #if 0
@@ -861,6 +890,39 @@ XLALCmprSgmntTmpltFlags (
     UINT4 SgmntFlag
     );
 
+UINT4 
+XLALFindChirpBankSimInitialize (
+    REAL4FrequencySeries       *spec,
+    COMPLEX8FrequencySeries    *resp,
+    REAL8                       fLow
+    );
+
+SimInspiralTable *
+XLALFindChirpBankSimInjectSignal (
+    DataSegmentVector          *dataSegVec,
+    COMPLEX8FrequencySeries    *resp,
+    SimInspiralTable           *injParams,
+    FindChirpBankSimParams     *simParams
+    );
+
+REAL4
+XLALFindChirpBankSimSignalNorm( 
+    FindChirpDataParams         *fcDataParams,
+    FindChirpSegmentVector      *fcSegVec,
+    UINT4                        cut
+    );
+
+SimInstParamsTable *
+XLALFindChirpBankSimMaxMatch (
+    SnglInspiralTable         **bestTmplt,
+    REAL4                       matchNorm
+    );
+
+SimInstParamsTable *
+XLALFindChirpBankSimComputeMatch (
+    SnglInspiralTable   *tmplt,
+    REAL4                matchNorm
+    );
 
 #ifdef  __cplusplus
 #pragma {

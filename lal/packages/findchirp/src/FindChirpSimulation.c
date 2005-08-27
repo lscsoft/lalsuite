@@ -447,8 +447,6 @@ LALFindChirpSetAnalyseTemplate (
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( fcDataParams->wtildeVec->data, status, 
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  /*ASSERT( injections, status,                  */ 
-  /*    FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL ); */
 
   /* Get the approximant. If the approximant is not BCV or BCVSpin, then */
   /* we try to tag the templates ... the BCV waveforms are not included  */
@@ -476,165 +474,166 @@ LALFindChirpSetAnalyseTemplate (
     /* Go through the next steps only if injections is non-NULL */
     if (injections)
     {
-        /* Calculate the noise moments here. This is a once and for all     */
-        /* thing as the psd won't change                                    */
-        mmFshf = (REAL8FrequencySeries *) 
-                LALCalloc (1, sizeof(REAL8FrequencySeries));
-        mmFshf->f0     = 0.0;
-        mmFshf->deltaF = deltaF;
-        mmFshf->data   = NULL;
-        LALDCreateVector (status->statusPtr, &mmFshf->data, 
-                fcDataParams->wtildeVec->length);
-        CHECKSTATUSPTR (status);
+      /* Calculate the noise moments here. This is a once and for all     */
+      /* thing as the psd won't change                                    */
+      mmFshf = (REAL8FrequencySeries *) 
+        LALCalloc (1, sizeof(REAL8FrequencySeries));
+      mmFshf->f0     = 0.0;
+      mmFshf->deltaF = deltaF;
+      mmFshf->data   = NULL;
+      LALDCreateVector (status->statusPtr, &mmFshf->data, 
+          fcDataParams->wtildeVec->length);
+      CHECKSTATUSPTR (status);
 
-        /* Populate the shf vector from the wtilde vector */
-        for (ki=0; ki<fcDataParams->wtildeVec->length ; ki++) 
+      /* Populate the shf vector from the wtilde vector */
+      for (ki=0; ki<fcDataParams->wtildeVec->length ; ki++) 
+      {
+        if (fcDataParams->wtildeVec->data[ki].re) 
         {
-            if (fcDataParams->wtildeVec->data[ki].re) 
-            {
-                mmFshf->data->data[ki] = 1./fcDataParams->wtildeVec->data[ki].re;
-            }
-            else 
-            {
-                /* Note that we can safely set shf to be zero as this is correctly */
-                /* handled in the LALGetInspiralMoments function                   */
-                mmFshf->data->data[ki] = 0.0;
-            }
+          mmFshf->data->data[ki] = 1./fcDataParams->wtildeVec->data[ki].re;
         }
-        /* Init the template */
-        mmFTemplate = (InspiralTemplate *) LALCalloc(1, sizeof(InspiralTemplate));
-        mmFTemplate->fLower     = fcDataParams->fLow;
-        mmFTemplate->fCutoff    = (REAL4)(sampleRate/2) - mmFshf->deltaF;
-        mmFTemplate->tSampling  = (REAL4)(sampleRate);
-        mmFTemplate->massChoice = m1Andm2;
-        mmFTemplate->ieta       = 1.L;
-        LALGetApproximantFromString(status->statusPtr, injections->waveform, 
-                &(mmFTemplate->approximant));
-        CHECKSTATUSPTR (status);
-        LALGetOrderFromString(status->statusPtr, injections->waveform, 
-                &(mmFTemplate->order));
-        CHECKSTATUSPTR (status);
+        else 
+        {
+          /* Note that we can safely set shf to be zero as this is correctly */
+          /* handled in the LALGetInspiralMoments function                   */
+          mmFshf->data->data[ki] = 0.0;
+        }
+      }
+      /* Init the template */
+      mmFTemplate = (InspiralTemplate *) LALCalloc(1, sizeof(InspiralTemplate));
+      mmFTemplate->fLower     = fcDataParams->fLow;
+      mmFTemplate->fCutoff    = (REAL4)(sampleRate/2) - mmFshf->deltaF;
+      mmFTemplate->tSampling  = (REAL4)(sampleRate);
+      mmFTemplate->massChoice = m1Andm2;
+      mmFTemplate->ieta       = 1.L;
+      LALGetApproximantFromString(status->statusPtr, injections->waveform, 
+          &(mmFTemplate->approximant));
+      CHECKSTATUSPTR (status);
+      LALGetOrderFromString(status->statusPtr, injections->waveform, 
+          &(mmFTemplate->order));
+      CHECKSTATUSPTR (status);
 
-        LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
-                "%d Injections, Order = %d, Approx = %d\n\n",
-                numInjections, mmFTemplate->order, mmFTemplate->approximant);
-        LALInfo (status, myMsg);
+      LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+          "%d Injections, Order = %d, Approx = %d\n\n",
+          numInjections, mmFTemplate->order, mmFTemplate->approximant);
+      LALInfo (status, myMsg);
 
-        mmFTemplate->mass1      = injections->mass1;
-        mmFTemplate->mass2      = injections->mass2;
+      mmFTemplate->mass1      = injections->mass1;
+      mmFTemplate->mass2      = injections->mass2;
+      LALInspiralParameterCalc( status->statusPtr, mmFTemplate );
+      CHECKSTATUSPTR (status);
+
+      LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+          "%d Injections, t0 = %e, t3 = %e\n",
+          numInjections, mmFTemplate->t0, mmFTemplate->t3);
+      LALInfo (status, myMsg);
+
+      /* Now we are ready to calculate the noise moments */
+      LALGetInspiralMoments( status->statusPtr, 
+          &mmFmoments, mmFshf, mmFTemplate);
+      CHECKSTATUSPTR (status);
+
+      /* We already have the noise moments so the shf series is no longer */
+      /* required - free it                                               */
+      LALDDestroyVector (status->statusPtr, &mmFshf->data);
+      CHECKSTATUSPTR (status);
+      LALFree (mmFshf);
+
+      /* Starting with the head node of injections */
+      mmFInjection = injections;
+
+      /* Loop over all the injections */
+      for (mmF_i = 0; (int)mmF_i < numInjections; mmF_i++)
+      {
+        /* For this injection we must                                     */
+        /* (a) Calculate the metric at the point of injection             */
+        /* (b) Loop over all the templates and tag theie level to 0       */
+        /* or 1 with respect to this injection.                           */
+        mmFTemplate->mass1      = mmFInjection->mass1;
+        mmFTemplate->mass2      = mmFInjection->mass2;
         LALInspiralParameterCalc( status->statusPtr, mmFTemplate );
         CHECKSTATUSPTR (status);
 
         LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
-                "%d Injections, t0 = %e, t3 = %e\n",
-                numInjections, mmFTemplate->t0, mmFTemplate->t3);
+            "%d Injections, m1 = %e, m2 = %e eta = %e\n",
+            numInjections, mmFTemplate->mass1, mmFTemplate->mass2, 
+            mmFTemplate->eta);
+        LALInfo (status, myMsg);
+        LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+            "%d Injections, t0 = %e, t3 = %e\n",
+            numInjections, mmFTemplate->t0, mmFTemplate->t3);
         LALInfo (status, myMsg);
 
-        /* Now we are ready to calculate the noise moments */
-        LALGetInspiralMoments( status->statusPtr, &mmFmoments, mmFshf, mmFTemplate);
+        LALInspiralComputeMetric( status->statusPtr, &mmFmetric, mmFTemplate, 
+            &mmFmoments );
         CHECKSTATUSPTR (status);
 
-        /* We already have the noise moments so the shf series is no longer */
-        /* required - free it                                               */
-        LALDDestroyVector (status->statusPtr, &mmFshf->data);
-        CHECKSTATUSPTR (status);
-        LALFree (mmFshf);
+        LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+            "%d Injections, G00 = %e, G01 = %e, G11 = %e\n\n",
+            numInjections, mmFmetric.G00, mmFmetric.G01, mmFmetric.G11);
+        LALInfo (status, myMsg);
 
-        /* Starting with the head node of injections */
-        mmFInjection = injections;
 
-        /* Loop over all the injections */
-        for (mmF_i = 0; (int)mmF_i < numInjections; mmF_i++)
+        /* Now that the metric has been calculated we loop over the       */
+        /* templates to mark their level.                                 */
+
+        /* kj is the index on the templates. Note that kj always starts   */
+        /* from zero even if startTemplate and stopTemplate are specified */
+        /* by user while running lalapps_inspiral program                 */
+        kj = 0;
+
+        for ( tmpltCurrent = tmpltHead; tmpltCurrent; 
+            tmpltCurrent = tmpltCurrent->next)
         {
-            /* For this injection we must                                     */
-            /* (a) Calculate the metric at the point of injection             */
-            /* (b) Loop over all the templates and tag theie level to 0       */
-            /* or 1 with respect to this injection.                           */
-            mmFTemplate->mass1      = mmFInjection->mass1;
-            mmFTemplate->mass2      = mmFInjection->mass2;
-            LALInspiralParameterCalc( status->statusPtr, mmFTemplate );
-            CHECKSTATUSPTR (status);
+          dt0 = tmpltCurrent->tmpltPtr->t0 - mmFTemplate->t0;
+          dt3 = tmpltCurrent->tmpltPtr->t3 - mmFTemplate->t3;
 
-            LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
-                    "%d Injections, m1 = %e, m2 = %e eta = %e\n",
-                    numInjections, mmFTemplate->mass1, mmFTemplate->mass2, 
-                    mmFTemplate->eta);
-            LALInfo (status, myMsg);
-            LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
-                    "%d Injections, t0 = %e, t3 = %e\n",
-                    numInjections, mmFTemplate->t0, mmFTemplate->t3);
-            LALInfo (status, myMsg);
+          metricDist  = (mmFmetric.G00 * (dt0*dt0));
+          metricDist += (2.0* mmFmetric.G01 * (dt0*dt3));
+          metricDist += (mmFmetric.G11 * (dt3*dt3));
+          match       = 1.0 - metricDist;
 
-            LALInspiralComputeMetric( status->statusPtr, &mmFmetric, mmFTemplate, 
-                    &mmFmoments );
-            CHECKSTATUSPTR (status);
+          if (match >= mmFast && match <= 1.0)
+          {
+            analyseThisTmplt[kj] += (UINT4)(pow(2.0, (double)(mmF_i)));
+          }
 
-            LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
-                    "%d Injections, G00 = %e, G01 = %e, G11 = %e\n\n",
-                    numInjections, mmFmetric.G00, mmFmetric.G01, mmFmetric.G11);
-            LALInfo (status, myMsg);
+          /* Advance kj for the next template */
+          kj = kj + 1;
 
+          LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
+              "%-5d %d %e %e %e %e %e %e %e %e %e %e %e %e %e\n",
+              kj-1,
+              analyseThisTmplt[kj-1],
+              mmFTemplate->t0,
+              mmFTemplate->t3,
+              tmpltCurrent->tmpltPtr->t0,
+              tmpltCurrent->tmpltPtr->t3,
+              match,
+              dt0,
+              dt3,
+              mmFmetric.G00,
+              mmFmetric.G01,
+              mmFmetric.G11,
+              mmFmetric.theta,
+              mmFmetric.g00,
+              mmFmetric.g11
+              );
+          LALInfo (status, myMsg);
+        } /* End of loop over templates */
 
-            /* Now that the metric has been calculated we loop over the       */
-            /* templates to mark their level.                                 */
-
-            /* kj is the index on the templates. Note that kj always starts   */
-            /* from zero even if startTemplate and stopTemplate are specified */
-            /* by user while running lalapps_inspiral program                 */
-            kj = 0;
-
-            for ( tmpltCurrent = tmpltHead; tmpltCurrent; 
-                    tmpltCurrent = tmpltCurrent->next)
-            {
-                dt0 = tmpltCurrent->tmpltPtr->t0 - mmFTemplate->t0;
-                dt3 = tmpltCurrent->tmpltPtr->t3 - mmFTemplate->t3;
-
-                metricDist  = (mmFmetric.G00 * (dt0*dt0));
-                metricDist += (2.0* mmFmetric.G01 * (dt0*dt3));
-                metricDist += (mmFmetric.G11 * (dt3*dt3));
-                match       = 1.0 - metricDist;
-
-                if (match >= mmFast && match <= 1.0)
-                {
-                    analyseThisTmplt[kj] += (UINT4)(pow(2.0, (double)(mmF_i)));
-                }
-
-                /* Advance kj for the next template */
-                kj = kj + 1;
-
-                LALSnprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
-                        "%-5d %d %e %e %e %e %e %e %e %e %e %e %e %e %e\n",
-                        kj-1,
-                        analyseThisTmplt[kj-1],
-                        mmFTemplate->t0,
-                        mmFTemplate->t3,
-                        tmpltCurrent->tmpltPtr->t0,
-                        tmpltCurrent->tmpltPtr->t3,
-                        match,
-                        dt0,
-                        dt3,
-                        mmFmetric.G00,
-                        mmFmetric.G01,
-                        mmFmetric.G11,
-                        mmFmetric.theta,
-                        mmFmetric.g00,
-                        mmFmetric.g11
-                        );
-                LALInfo (status, myMsg);
-            } /* End of loop over templates */
-
-            /* Point to the next injection */
-            mmFInjection = mmFInjection->next;
-        }
+        /* Point to the next injection */
+        mmFInjection = mmFInjection->next;
+      }
     } /* End of if (injections) */
   }
   else 
   {
-      for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent; 
-              tmpltCurrent = tmpltCurrent->next, kj++)
-      {
-          analyseThisTmplt[kj] = pow(2.0, (double)(numInjections)) - 1 ;
-      }
+    for ( tmpltCurrent = tmpltHead, kj = 0; tmpltCurrent; 
+        tmpltCurrent = tmpltCurrent->next, kj++)
+    {
+      analyseThisTmplt[kj] = pow(2.0, (double)(numInjections)) - 1 ;
+    }
   }
   DETATCHSTATUSPTR( status );
   RETURN( status );
@@ -670,3 +669,272 @@ XLALCmprSgmntTmpltFlags (
     return analyseTag;
 }
 
+
+/* <lalVerbatim file="FindChirpSimulationCP"> */
+UINT4 
+XLALFindChirpBankSimInitialize (
+    REAL4FrequencySeries       *spec,
+    COMPLEX8FrequencySeries    *resp,
+    REAL8                       fLow
+    )
+/* </lalVerbatim> */
+{
+  UINT4 k, cut;
+  REAL4 psdMin = 0;
+  const REAL8 psdScaleFac = 1.0e-40;
+
+  /* set low frequency cutoff index of the psd and    */
+  /* the value the psd at cut                         */
+  cut = fLow / spec->deltaF > 1 ? fLow / spec->deltaF : 1;
+
+  psdMin = spec->data->data[cut] * 
+    ( ( resp->data->data[cut].re * resp->data->data[cut].re +
+        resp->data->data[cut].im * resp->data->data[cut].im ) / psdScaleFac );
+
+  /* calibrate the input power spectrum, scale to the */
+  /* range of REAL4 and store the as S_v(f)           */
+  for ( k = 0; k < cut; ++k )
+  {
+    spec->data->data[k] = psdMin;
+  }
+  for ( k = cut; k < spec->data->length; ++k )
+  {
+    REAL4 respRe = resp->data->data[k].re;
+    REAL4 respIm = resp->data->data[k].im;
+    spec->data->data[k] = spec->data->data[k] *
+      ( ( respRe * respRe + respIm * respIm ) / psdScaleFac );
+  }
+
+  /* set the response function to the sqrt of the inverse */ 
+  /* of the psd scale factor since S_h = |R|^2 S_v        */
+  for ( k = 0; k < resp->data->length; ++k )
+  {
+    resp->data->data[k].re = sqrt( psdScaleFac );
+    resp->data->data[k].im = 0;
+  }
+
+  return cut;
+}
+
+SimInspiralTable *
+XLALFindChirpBankSimInjectSignal (
+    DataSegmentVector          *dataSegVec,
+    COMPLEX8FrequencySeries    *resp,
+    SimInspiralTable           *injParams,
+    FindChirpBankSimParams     *simParams
+    )
+{
+  static const char    *func = "XLALFindChirpBankSimInjectSignal";
+  LALStatus             status;
+  SimInspiralTable     *bankInjection;
+  CHAR                  tmpChName[LALNameLength];
+
+  memset( &status, 0, sizeof(LALStatus) );
+
+  if ( injParams && simParams )
+  {
+    XLALPrintError( 
+        "XLAL Error: specify either a sim_inspiral table or sim params\n" );
+    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+  }
+
+  /* create memory for the bank simulation */
+  bankInjection = (SimInspiralTable *) 
+    LALCalloc( 1, sizeof(SimInspiralTable) );
+
+  if ( injParams )
+  {
+    /* copy the parameters from the input table */
+    memcpy( bankInjection, injParams, sizeof(SimInspiralTable) );
+  }
+  else
+  {
+    /* set up the injection masses */
+    if ( simParams->maxMass == simParams->minMass )
+    {
+      bankInjection->mass1 = simParams->maxMass;
+      bankInjection->mass2 = simParams->maxMass;
+    }
+    else
+    {
+      /* generate random parameters for the injection */
+      bankInjection->mass1 = XLALUniformDeviate( simParams->randParams );
+      bankInjection->mass1 *= (simParams->maxMass - simParams->minMass);
+      bankInjection->mass1 += simParams->minMass;
+
+      bankInjection->mass2 = XLALUniformDeviate( simParams->randParams );
+      bankInjection->mass2 *= (simParams->maxMass - simParams->minMass);
+      bankInjection->mass2 += simParams->minMass;
+    }
+
+    bankInjection->eta = bankInjection->mass1 * bankInjection->mass2 /
+      ( ( bankInjection->mass1 + bankInjection->mass2 ) *
+        ( bankInjection->mass1 + bankInjection->mass2 ) );
+
+    if ( simParams->approx == TaylorT1 )
+    {
+      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+          "TaylorT1twoPN" );
+    }
+    else if ( simParams->approx == TaylorT2 )
+    {
+      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+          "TaylorT2twoPN" );
+    }
+    else if ( simParams->approx == TaylorT3 )
+    {
+      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+          "TaylorT3twoPN" );
+    }
+    else if ( simParams->approx == PadeT1 )
+    {
+      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+          "PadeT1twoPN" );
+    }
+    else if ( simParams->approx == EOB )
+    {
+      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+          "EOBtwoPN" );
+    }
+    else if ( simParams->approx == GeneratePPN )
+    {
+      LALSnprintf( bankInjection->waveform, LIGOMETA_WAVEFORM_MAX,
+          "GeneratePPNtwoPN" );
+    }
+    else
+    {
+      XLALPrintError( 
+          "error: unknown waveform for bank simulation injection\n" );
+      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    }
+
+    /* set the injection distance to 1 Mpc */
+    bankInjection->distance = 1.0;
+  }
+
+  /* inject the signals, preserving the channel name (Tev mangles it) */
+  LALSnprintf( tmpChName, LALNameLength * sizeof(CHAR), "%s", 
+      dataSegVec->data->chan->name );
+  
+  /* make sure the injection is hplus with no time delays */
+  dataSegVec->data->chan->name[0] = 'P';
+  LALFindChirpInjectSignals( &status, 
+      dataSegVec->data->chan, bankInjection, resp );
+  if ( status.statusCode )
+  {
+    REPORTSTATUS( &status );
+    XLAL_ERROR_NULL( func, XLAL_EFAILED );
+  }
+  
+  /* restore the saved channel name */
+  LALSnprintf( dataSegVec->data->chan->name,  
+      LALNameLength * sizeof(CHAR), "%s", tmpChName );
+
+  /* return a pointer to the created sim_inspiral table */
+  return bankInjection;
+} 
+
+
+REAL4
+XLALFindChirpBankSimSignalNorm( 
+    FindChirpDataParams         *fcDataParams,
+    FindChirpSegmentVector      *fcSegVec,
+    UINT4                        cut
+    )
+{
+  /* compute the minimal match normalization */
+  static const char *func = "XLALFindChirpBankSimSignalNorm";
+  UINT4 k;
+  REAL4 matchNorm = 0;
+  REAL4 *tmpltPower = fcDataParams->tmpltPowerVec->data;
+  COMPLEX8 *wtilde = fcDataParams->wtildeVec->data;
+  COMPLEX8 *fcData = fcSegVec->data->data->data->data;
+
+  /* compute sigmasq for the injected waveform and store in matchNorm */
+  switch ( fcDataParams->approximant )
+  {
+    case TaylorF2:
+      for ( k = cut; k < fcDataParams->tmpltPowerVec->length; ++k )
+      {
+        if ( tmpltPower[k] ) matchNorm += ( fcData[k].re * fcData[k].re +
+            fcData[k].im * fcData[k].im ) / tmpltPower[k];
+      }
+      break;
+
+    case TaylorT1:
+    case TaylorT2:
+    case TaylorT3:
+    case PadeT1:
+    case EOB:
+    case GeneratePPN:
+      for ( k = cut; k < fcDataParams->wtildeVec->length; ++k )
+      {
+        if ( wtilde[k].re ) matchNorm += ( fcData[k].re * fcData[k].re +
+            fcData[k].im * fcData[k].im ) / wtilde[k].re;
+      }
+      break;
+
+    default:
+      XLALPrintError( "Error: unknown approximant\n" );
+      XLAL_ERROR_REAL4( func, XLAL_EINVAL );
+  }
+
+  matchNorm *= ( 4.0 * (REAL4) fcSegVec->data->deltaT ) / 
+    (REAL4) ( 2 * (fcSegVec->data->data->data->length - 1) );
+
+  /* square root to get minimal match normalization \sqrt{(s|s)} */
+  matchNorm = sqrt( matchNorm );
+
+  return matchNorm;
+}
+
+
+SimInstParamsTable *
+XLALFindChirpBankSimMaxMatch (
+    SnglInspiralTable         **bestTmplt,
+    REAL4                       matchNorm
+    )
+{
+  SnglInspiralTable     *loudestEvent = NULL;
+
+  /* allocate memory for the loudest event over the template bank */
+  loudestEvent = (SnglInspiralTable *) LALCalloc( 1, sizeof(SnglInspiralTable) );
+
+  /* find the loudest snr over the template bank */
+  while ( *bestTmplt )
+  {
+    SnglInspiralTable *tmpEvent = *bestTmplt;
+
+    if ( (*bestTmplt)->snr > loudestEvent->snr )
+      memcpy( loudestEvent, *bestTmplt, sizeof(SnglInspiralTable) );
+
+    *bestTmplt = (*bestTmplt)->next;
+    LALFree( tmpEvent );
+  }
+
+  /* make sure we return a null terminated list containing only the best tmplt */
+  loudestEvent->next = NULL;
+  *bestTmplt = loudestEvent;
+
+  /* return the match for the loudest event */
+  return XLALFindChirpBankSimComputeMatch( *bestTmplt, matchNorm );
+} 
+
+
+SimInstParamsTable *
+XLALFindChirpBankSimComputeMatch (
+    SnglInspiralTable   *tmplt,
+    REAL4                matchNorm
+    )
+{
+  SimInstParamsTable    *maxMatch = NULL;
+  
+  /* create the match output table */
+  maxMatch = (SimInstParamsTable *) LALCalloc( 1, sizeof(SimInstParamsTable) );
+  LALSnprintf( maxMatch->name, LIGOMETA_SIMINSTPARAMS_NAME_MAX, "match" );
+
+  /* store the match in the sim_inst_params structure */
+  maxMatch->value = tmplt->snr / matchNorm;
+
+  return maxMatch;
+}
