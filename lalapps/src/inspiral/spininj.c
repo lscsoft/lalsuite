@@ -59,42 +59,51 @@ RCSID( "$Id$" );
 "                           (EOB, TaylorT1, TaylorT3,PadeT1; followed by the\n"\
 "                           order: newtonian, onePN, onePointFivePN, twoPN,\n"\
 "                           twoPointFivePN, threePN) (default: EOBtwoPN)\n"\
-"  --fLower                 set the lower cutoff frequency of the isnpiral waveform (40)\n"\
+"  --fLower                 set the lower cutoff frequency of the isnpiral waveform (40)\n\n"\
+"  --dist-distr DDISTR      set method of simulated source distance distr to DDISTR \n"\
+"                             SPININJ_distance    : uniform distr of sources in distance \n"\
+"                             SPININJ_logDistance : uniform distr of sources in log(distance) \n"\
+"                             SPININJ_volume      : uniform distr of sources in volume \n"\
+"                           Default is SPININJ_logDistance \n"\
+"  --distance-min           set minimal value of simulated sources distance in kpc \n"\
+"  --distance-max           set maximal value of simulated sources distance in kpc \n\n"\
 "  --theta0-min             set minimal value of the initial orbital angle theta0  (0.1)\n"\
 "  --theta0-max             set maximal value of the initial orbital angle theta0  (1)\n"\
 "  --theta0-range           set range of the initial orbital angle theta0  (0.1 -  1)\n\n"\
 "  --phi0-min               set minimal value of the initial orbital angle phi0  (0)\n"\
 "  --phi0-max               set maximal value of the initial orbital angle phi0  (1)\n"\
 "  --phi0-range             set range of the initial orbital angle phi0  (0 -  1)\n\n"\
-"  --coa-phase-min               set minimal value of the initial orbital angle coa-phase  (0)\n"\
-"  --coa-phase-max               set maximal value of the initial orbital angle coa-phase  (2*Pi)\n"\
-"  --coa-phase-range             set range of the initial orbital angle coa-pahse  (0 -  2*pi)\n\n"\
-"  --spin1-min               set minimal value of the initial orbital angle spin  (0)\n"\
-"  --spin1-max               set maximal value of the initial orbital angle spin  (2*Pi)\n"\
-"  --spin1-range             set range of the initial orbital angle coa-pahse  (0 -  2*pi)\n\n"\
-"  --spin2-min               set minimal value of the initial orbital angle spin  (0)\n"\
-"  --spin2-max               set maximal value of the initial orbital angle spin  (2*Pi)\n"\
-"  --spin2-range             set range of the initial orbital angle coa-pahse  (0 -  2*pi)\n\n"\
-"  --mass1-range             set range of the first mass (3 - 20 )\n\n"\
-"  --mass2-range             set range of the second mass (3 - 20)\n\n"\
+"  --coa-phase-min          set minimal value of the initial orbital angle coa-phase  (0)\n"\
+"  --coa-phase-max          set maximal value of the initial orbital angle coa-phase  (2*Pi)\n"\
+"  --coa-phase-range        set range of the initial orbital angle coa-pahse  (0 -  2*pi)\n\n"\
+"  --spin1-min              set minimal value of the initial spin  (>=0)\n"\
+"  --spin1-max              set maximal value of the initial spin  (<=1)\n"\
+"  --spin1-range            set range of the initial spin (0 -  1)\n\n"\
+"  --spin2-min              set minimal value of the initial spin (>=0)\n"\
+"  --spin2-max              set maximal value of the initial spin (<=1)\n"\
+"  --spin2-range            set range of the initial spin (0 - 1)\n\n"\
+"  --mass-distr MDISTR      set method of simulated source mass distr to MDISTR \n"\
+"                             SPININJ_m1Andm2     : uniform distr of sources component mass \n"\
+"                             SPININJ_totalMass   : uniform distr of sources total mass \n"\
+"                           Default is SPININJ_totalMass \n"\
+"  --mass1-range            set range of the first mass (3 - 20 )\n"\
+"  --mass2-range            set range of the second mass (3 - 20)\n\n"\
 "\n"
 
 const INT4            S2StartTime = 729273613; /* Feb 14 2003 16:00:00 UTC */
 const INT4            S2StopTime  = 734367613; /* Apr 14 2003 15:00:00 UTC */
 
 
-typedef enum{
-  SPININJ_m1Andm2,
-  SPININJ_totalMassU
+typedef enum{ 
+  SPININJ_m1Andm2, 
+  SPININJ_totalMass 
 } massEnum;
 
 typedef enum{
-  SPININJ_distanceUniform,
-    SPININJ_distanceLogUniform, 
-    SPININJ_volumeUniform
+  SPININJ_distance,
+  SPININJ_logDistance, 
+  SPININJ_volume
 } distributionEnum;
-
-
 
 typedef struct{
   double  min;
@@ -349,7 +358,7 @@ void LALSetIndividualMasses(LALStatus                   *status,
     mtotal = this_inj->mass1 + this_inj->mass2 ;
     this_inj->eta = this_inj->mass1 * this_inj->mass2 / ( mtotal * mtotal );
     break;
-  case SPININJ_totalMassU:
+  case SPININJ_totalMass:
     mtotal = params.m1.min + params.m2.min;
     LAL_CALL( LALUniformDeviate( status, &u, randParams ), status);
     mtotal += u* (deltaM1+deltaM2);
@@ -444,15 +453,14 @@ void LALSetDistance(LALStatus *status,
 {
   REAL4 u,  deltaL, lmin,lmax, d3min,d3max,deltad3,d3, exponent;
 
-
   switch (params.ddistr){
-  case SPININJ_distanceUniform:
+  case SPININJ_distance:
     LAL_CALL( LALUniformDeviate( status, &u, randParams ), status );
     this_inj->distance = params.distance.min + u * (params.distance.max - params.distance.min);
 
     break;
     
-  case SPININJ_distanceLogUniform:
+  case SPININJ_logDistance:
     lmin = log10(params.distance.min);
     lmax = log10(params.distance.max);
     deltaL = lmax - lmin;
@@ -461,7 +469,7 @@ void LALSetDistance(LALStatus *status,
     this_inj->distance = pow(10.0,(REAL4) exponent);
     break;
     
-  case SPININJ_volumeUniform:
+  case SPININJ_volume:
     d3min = params.distance.min * params.distance.min * params.distance.min;
     d3max = params.distance.max * params.distance.max * params.distance.max;
     deltad3 = d3max - d3min ;
@@ -703,8 +711,8 @@ void LALParserInspiralInjection(LALStatus *status,
   params->meanTimeStep                = 2630 / LAL_PI;  
   params->distance.min                = 1.0;
   params->distance.max                = 20000.0;
-  params->mdistr                      = SPININJ_totalMassU;
-  params->ddistr                      = SPININJ_distanceLogUniform;
+  params->mdistr                      = SPININJ_totalMass;
+  params->ddistr                      = SPININJ_logDistance;
   params->userTag                     = NULL;
   LALSnprintf( params->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
 	       "EOBtwoPN");  
@@ -914,6 +922,46 @@ void LALParserInspiralInjection(LALStatus *status,
         this_proc_param = this_proc_param->next =
           next_process_param( "waveform", "string",
 			      "%s",argv[i] );	
+      }
+      else if ( strcmp(argv[i] , "--mass-distr") == 0 ){
+	 if ( ! strcmp( "SPININJ_m1Andm2", argv[++i] ) )
+          {
+            params->mdistr = SPININJ_m1Andm2;
+          }
+          else if ( ! strcmp( "SPININJ_totalMass", argv[i] ) )
+          {
+            params->mdistr = SPININJ_totalMass;
+          }
+          else
+          {
+            fprintf( stderr, "invalid arg to --mass-distr \n");
+            exit(1); 
+          }
+        this_proc_param = this_proc_param->next =
+          next_process_param( "mdistr", "string",
+			      "%s",argv[i] );	
+      }
+       else if ( strcmp(argv[i] , "--dist-distr") == 0 ){
+         if ( ! strcmp( "SPININJ_distance", argv[++i] ) )
+          {
+            params->ddistr = SPININJ_distance;
+          }
+          else if ( ! strcmp( "SPININJ_logDistance", argv[i] ) )
+          {
+            params->ddistr = SPININJ_logDistance;
+          }
+          else if ( ! strcmp( "SPININJ_volume", argv[i] ) )
+          {
+            params->ddistr = SPININJ_volume;
+          }
+          else
+          {
+            fprintf( stderr, "invalid arg to --dist-distr \n");
+            exit(1);
+          }
+        this_proc_param = this_proc_param->next =
+          next_process_param( "ddistr", "string",
+                              "%s",argv[i] );
       }
       else {
 	fprintf(stderr, "option %s unknown !!! abort\n", argv[i]);
