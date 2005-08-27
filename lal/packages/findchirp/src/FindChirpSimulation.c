@@ -728,6 +728,7 @@ XLALFindChirpBankSimInjectSignal (
   LALStatus             status;
   SimInspiralTable     *bankInjection;
   CHAR                  tmpChName[LALNameLength];
+  REAL4                 M, mu;
 
   memset( &status, 0, sizeof(LALStatus) );
 
@@ -767,9 +768,10 @@ XLALFindChirpBankSimInjectSignal (
       bankInjection->mass2 += simParams->minMass;
     }
 
-    bankInjection->eta = bankInjection->mass1 * bankInjection->mass2 /
-      ( ( bankInjection->mass1 + bankInjection->mass2 ) *
-        ( bankInjection->mass1 + bankInjection->mass2 ) );
+    M = bankInjection->mass1 + bankInjection->mass2;
+    mu = bankInjection->mass1 * bankInjection->mass2 / M;
+    bankInjection->eta =  mu / M;
+    bankInjection->mchirp = pow( mu, 3.0/5.0) * pow( M, 2.0/5.0 );
 
     if ( simParams->approx == TaylorT1 )
     {
