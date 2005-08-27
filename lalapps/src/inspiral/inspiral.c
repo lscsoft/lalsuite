@@ -2169,11 +2169,12 @@ int main( int argc, char *argv[] )
 
         /* append all the inspiral templates to the loudest event list */
         if ( ! loudestEventHead )
-          loudestEventHead = savedEvents.snglInspiralTable;
+          thisLoudestEvent = loudestEventHead = savedEvents.snglInspiralTable;
         else
-          thisLoudestEvent->next = savedEvents.snglInspiralTable;
+          thisLoudestEvent = thisLoudestEvent->next = 
+            savedEvents.snglInspiralTable;
 
-        while ( thisLoudestEvent->next )
+        while ( thisLoudestEvent && thisLoudestEvent->next )
           thisLoudestEvent = thisLoudestEvent->next;
       }
 
