@@ -75,7 +75,7 @@ int main( int argc, char *argv[]) {
   INT4 sftlength; /* number of bins in each sft */
   REAL8 deltaF, timeBase; /* frequency resolution */
   INT8 sftFminBin; /* first sft bin index */
-  INT4 medianBias; /* running median bias */
+  REAL8 medianBias; /* running median bias */
 
   /* LALdemod related stuff */
   LALFstat *Fstat;	
