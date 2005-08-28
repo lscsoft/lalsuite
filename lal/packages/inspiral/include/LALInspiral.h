@@ -117,7 +117,6 @@ Enum that tells which post-Newtonian order is being used.
 \item \texttt{threePN:} Both energy and flux to order $O(v^6)$
 \item \texttt{threePointFivePN:} Energy to order $O(v^6)$ and flux to order $O(v^7)$
 \end{itemize}
-\end{itemize}
 In all cases, the gravitational wave phase (also frequency and time)
 as an expansion of the gauge invariant parameter $v$ is given up to 
 the order specified by flux.  Note that there are certain undetermined 
