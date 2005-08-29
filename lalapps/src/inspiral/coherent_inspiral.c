@@ -885,7 +885,12 @@ int main( int argc, char *argv[] )
 			    LALCalloc( 1, sizeof(REAL4FrequencySeries) );
 			LAL_CALL( LALFrGetREAL4FrequencySeries( &status, 
                             segNormVector, &frChan, frStream), &status);
-			cohInspFilterParams->segNorm[l] = sqrt(segNormVector->data->data[segNormVector->data->length - 1]);
+
+			REAL4 fFinal = 1.0 / (6.0 * sqrt(6.0) * LAL_PI * cohInspFilterInput->tmplt->totalMass * LAL_MTSUN_SI);
+			REAL4 deltaF = 1.0 / ( cohInspFilterParams->deltaT * (REAL4) numPointsSeg );
+                        INT4 kmax = fFinal / deltaF < numPointsSeg/2 ? 
+                                fFinal / deltaF : numPointsSeg/2;
+			cohInspFilterParams->segNorm[l] = segNormVector->data->data[kmax];
 			LAL_CALL( LALDestroyVector( &status, &(segNormVector->data) ), &status );
 			LALFree( segNormVector );
 			segNormVector = NULL;
@@ -922,8 +927,7 @@ int main( int argc, char *argv[] )
                      pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
                      pow( LAL_MTSUN_SI / deltaT, -1.0/6.0 );
 		distNorm *= dynRange;
-		templateNorm *= templateNorm;
-		templateNorm *= distNorm * distNorm;
+		templateNorm *= distNorm;
 		cohInspFilterParams->templateNorm = templateNorm;
 		cohInspFilterParams->segmentLength = numPointsSeg;
 		
