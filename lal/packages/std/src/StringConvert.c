@@ -704,7 +704,7 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
 
   nanosecSet = 0;
 
-  if ( dppos > 10 ) {
+  if ( dppos > 11 ) {
     /* This is an overflow (positive) or underflow (negative) */
     if ( signval == 1 ) {
       value->gpsSeconds = (INT4) LAL_INT4_MAX;
