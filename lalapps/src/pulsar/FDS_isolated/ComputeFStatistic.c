@@ -650,7 +650,7 @@ int main(int argc,char *argv[])
    * page says "The setvbuf function may only be used after opening
    * a stream and BEFORE ANY OTHER OPERATIONS HAVE BEEN PERFORMED ON IT."
    */
-  if ( fpFstat )
+  if ( fpFstat && uvar_OutputBufferKB )
     {
       if ( (fstatbuff=(char *)LALCalloc(uvar_OutputBufferKB * 1024, 1)))
 	setvbuf(fpFstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
@@ -856,7 +856,8 @@ int main(int argc,char *argv[])
 		  fprintf(stderr,"Couldn't open compacted toplist for appending\n");
 		  return (COMPUTEFSTAT_EXIT_OPENFSTAT2);
 		}
-	      setvbuf(fpFstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
+	      if ( fstatbuff )
+		setvbuf(fpFstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
 	    } /* if maxFileSizeKB atteined => re-compactify output file by toplist */
 	  	  
           
@@ -1047,16 +1048,16 @@ initUserVars (LALStatus *status)
   uvar_startTime = -1.0e308;
   uvar_endTime   =  1.0e308;
 
+  uvar_OutputBufferKB = 2048; /* to keep the previous behavior so far */
+
 /* some BOINC-defaults differ: checkpointing is ON, and we use experimental LALDemod() */
 #if USE_BOINC
   uvar_doCheckpointing = TRUE;
   uvar_expLALDemod = 1;
-  uvar_OutputBufferKB = 2048; /* to keep the previous behavior so far */
   uvar_outputClusters = NULL;	/* by default: no more cluster-output */
 #else
   uvar_doCheckpointing = FALSE;
   uvar_expLALDemod = 0;
-  uvar_OutputBufferKB = 0;
 #define CLUSTERED_FNAME "Fstats"	/* provide backwards-compatible default for now */
   uvar_outputClusters = LALCalloc(1, strlen(CLUSTERED_FNAME) + 1);
   strcpy ( uvar_outputClusters, CLUSTERED_FNAME );
