@@ -927,7 +927,8 @@ int main( int argc, char *argv[] )
                      pow( m / (LAL_PI*LAL_PI) , 1.0/3.0 ) *
                      pow( LAL_MTSUN_SI / deltaT, -1.0/6.0 );
 		distNorm *= dynRange;
-		templateNorm *= distNorm;
+		templateNorm *= templateNorm;
+		templateNorm *= distNorm * distNorm;
 		cohInspFilterParams->templateNorm = templateNorm;
 		cohInspFilterParams->segmentLength = numPointsSeg;
 		
