@@ -124,7 +124,7 @@ GPS times are permitted.  If the result would overflow the
 \verb@gpsSeconds@ and \verb@gpsNanoSeconds@ fields are set to
 \verb@LAL_INT4_MAX@ and $999999999$, respectively.
 For an underflow (too far in the past), the fields
-are set to \verb@LAL_INT4_MIN@ and $-999999999$~.
+are set to \verb@LAL_INT4_MIN@ and $0$.
 
 Internally, the floating-point conversion routines call
 \verb@strtod()@, then cap and cast the result as necessary.  The
@@ -712,7 +712,7 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
       value->gpsNanoSeconds = 999999999;
     } else {
       value->gpsSeconds = (INT4)( -LAL_INT4_ABSMIN );
-      value->gpsNanoSeconds = -999999999;
+      value->gpsNanoSeconds = 0;
     }
 
   } else if ( dppos < -9 ) {
@@ -745,7 +745,7 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
       } else {
 	if ( absValue > LAL_INT4_ABSMIN ) {
 	  value->gpsSeconds = (INT4)( -LAL_INT4_ABSMIN );
-          value->gpsNanoSeconds = -999999999;
+          value->gpsNanoSeconds = 0;
 	  nanosecSet = 1;
 	} else
 	  value->gpsSeconds = (INT4)( -absValue );
@@ -804,7 +804,7 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
 	  value->gpsNanoSeconds -= 1000000000;
 	  value->gpsSeconds += 1;
 	}
-	if ( value->gpsNanoSeconds <= -1000000000 ) {
+	if ( value->gpsNanoSeconds < 0 ) {
 	  value->gpsNanoSeconds += 1000000000;
 	  value->gpsSeconds -= 1;
 	}
