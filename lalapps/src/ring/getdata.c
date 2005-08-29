@@ -156,6 +156,9 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
   /* if this is strain data, correct the units */
   if ( strainData )
     series->sampleUnits = lalStrainUnit;
+		
+	/* destroy REAL8 time series */
+	XLALDestroyREAL8Vector( dblser->data );
 
   return series;
 }
@@ -274,6 +277,7 @@ int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency )
   LALStatus status = blank_status;
   char name[LALNameLength];
   PassBandParamStruc highpasspar;
+
   if ( frequency > 0.0 )
   {
     highpasspar.nMax = 8;
@@ -298,6 +302,7 @@ int highpass_REAL8TimeSeries( REAL8TimeSeries *series, REAL8 frequency )
   LALStatus status = blank_status;
   char name[LALNameLength];
   PassBandParamStruc highpasspar;
+
   if ( frequency > 0.0 )
   {
     highpasspar.nMax = 8;
