@@ -642,6 +642,10 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
 	dppos = mdigits;
       }
 
+    } else if ( *here == '0' && mdigits == 1 && mantissa[0] == '0' ) {
+      /* We only want to keep at most one leading zero.  This is an
+	 additional leading zero, so simply ignore it. */
+
     } else {
       /* This is a digit.  Append it to the local mantissa string, unless
 	 the mantissa string is already full, in which case ignore it */
