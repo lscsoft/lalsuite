@@ -142,6 +142,7 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
       return NULL;
     }
   }
+  stream->file->relocation = FR_NO;
   tstart  = stream->file->toc->GTimeS[stream->pos];
   tstart += 1e-9 * stream->file->toc->GTimeN[stream->pos];
   ts = stream->file->toc->adc;
