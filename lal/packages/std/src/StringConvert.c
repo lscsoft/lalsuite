@@ -595,20 +595,18 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
 
   const CHAR *here = string;   /* current position in string */
   INT4 signval;       /* sign of value (+1 or -1) */
-  CHAR mantissa[64];  /* local string to store mantissa digits */
+  CHAR mantissa[32];  /* local string to store mantissa digits */
   INT4 mdigits;       /* number of digits in mantissa */
   INT4 dppos;         /* position of decimal point in mantissa, i.e. the
                          number of mantissa digits preceding the decimal point
                          (initially -1 if no decimal point in input.) */
-  CHAR intstring[16]; /* local string to store integer part of time */
   const CHAR *ehere;  /* string pointer for parsing exponent */
   INT4 exponent;      /* exponent given in string */
   INT2 esignval;      /* sign of exponent value (+1 or -1) */
   UINT8 absValue;     /* magnitude of parsed number */
   CHAR *eend;         /* substring following parsed number */
   INT4 nanosecSet;    /* flag to indicate if nanoseconds field has been set */
-  CHAR *nptr;         /* pointer to where nanoseconds begin in mantissa */
-  INT4 idigit;
+  INT4 idigit;        /* Digit value: 0 for 1s digit, 1 for 10s digit, etc. */
 
   INITSTATUS( stat, "LALStringToGPS", STRINGCONVERTC );
   ATTATCHSTATUSPTR( stat );
@@ -641,13 +639,13 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
 	break;
       } else {
 	/* Record the position of the decimal point */
-	dppos = (INT4) mdigits;
+	dppos = mdigits;
       }
 
     } else {
       /* This is a digit.  Append it to the local mantissa string, unless
 	 the mantissa string is already full, in which case ignore it */
-      if ( (UINT4) mdigits < sizeof(mantissa)-1 ) {
+      if ( (UINT4) mdigits < sizeof(mantissa) ) {
 	mantissa[mdigits] = *here;
 	mdigits++;
       }
@@ -668,12 +666,9 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
     RETURN( stat );
   }
 
-  /* Null-terminate the mantissa string */
-  mantissa[mdigits] = '\0';
-
   /* If there was no explicit decimal point, then it is implicitly
      after all of the mantissa digits */
-  if ( dppos == -1 ) { dppos = (INT4) mdigits; }
+  if ( dppos == -1 ) { dppos = mdigits; }
 
   /* Read the exponent, if present */
   exponent = 0;
@@ -722,93 +717,64 @@ LALStringToGPS( LALStatus *stat, LIGOTimeGPS *value, const CHAR *string, CHAR **
 
   } else {
 
-    /* See whether there is an integer part... */
-    if ( dppos > 0 ) {
-
-      /* Pick out the integer part */
-      memcpy( intstring, mantissa, dppos );
-      intstring[dppos] = '\0';
-      absValue = LALStringToU8AndSign( &esignval, intstring, &eend );
-      /* We ignore the 'esignval' and 'eend' variables */
-
-      /* If the mantissa had too few digits, need to multiply by tens */
-      for ( idigit=mdigits; idigit<dppos; idigit++ ) { absValue *= 10; }
-
-      /* Cap (if necessary) and cast */
-      if ( signval > 0 ) {
-	if ( absValue > LAL_INT4_MAX ) {
-	  value->gpsSeconds = (INT4)( LAL_INT4_MAX );
-          value->gpsNanoSeconds = 999999999;
-	  nanosecSet = 1;
-	} else
-	  value->gpsSeconds = (INT4)( absValue );
-      } else {
-	if ( absValue > LAL_INT4_ABSMIN ) {
-	  value->gpsSeconds = (INT4)( -LAL_INT4_ABSMIN );
-          value->gpsNanoSeconds = 0;
-	  nanosecSet = 1;
-	} else
-	  value->gpsSeconds = (INT4)( -absValue );
-      }
-
-    } else {
-      /* There is no integer part */
-      value->gpsSeconds = 0;
+    /* Pick out the integer part */
+    absValue = 0;
+    for ( idigit=0; idigit<dppos && idigit<mdigits; idigit++ ) {
+      absValue = 10*absValue + (UINT8) ( mantissa[idigit]-'0' );
+    }
+    /* Fill in missing powers of ten if not all digits were present */
+    for ( ; idigit<dppos; idigit++ ) {
+      absValue *= 10;
     }
 
-    /* Finally, set the nanoseconds field (if not already set) */
+    /* Cap (if necessary) and cast */
+    if ( signval > 0 ) {
+      if ( absValue > LAL_INT4_MAX ) {
+	value->gpsSeconds = (INT4)( LAL_INT4_MAX );
+	value->gpsNanoSeconds = 999999999;
+	nanosecSet = 1;
+      } else
+	value->gpsSeconds = (INT4)( absValue );
+    } else {
+      if ( absValue >= LAL_INT4_ABSMIN ) {
+	value->gpsSeconds = (INT4)( -LAL_INT4_ABSMIN );
+	value->gpsNanoSeconds = 0;
+	nanosecSet = 1;
+      } else
+	value->gpsSeconds = (INT4)( -absValue );
+    }
+
+    /* Finally, set nanoseconds field (if not already set by over/underflow) */
     if ( ! nanosecSet ) {
 
-      if ( dppos >= mdigits ) {
-	value->gpsNanoSeconds = 0;
-
-      } else {
-
-	if ( dppos >= 0 ) {
-	  nptr = mantissa + dppos;
-	  /* Revise dppos to refer to the substring pointed to by 'nptr' */
-	  dppos = 0;
-	} else {
-	  nptr = mantissa;
-	  /* Leave dppos with its current negative value */
+      absValue = 0;
+      for ( idigit=dppos; idigit<dppos+9 && idigit<mdigits; idigit++ ) {
+	if ( idigit >= 0 ) {
+	  absValue = 10*absValue + (UINT8) ( mantissa[idigit]-'0' );
 	}
-	/* Revise mdigits to be the number of digits in the nanoseconds part */
-	mdigits = strlen(nptr);
-	if ( mdigits == 0 ) {
-	  /* The nanoseconds field is absent, thus equal to zero */
-	  absValue = 0;
-	} else if ( mdigits >= 9+dppos ) {
-	  memcpy( intstring, nptr, 9+dppos );
-	  intstring[9+dppos] = '\0';
-	  absValue = strtol(intstring,NULL,10);
-	  /* If there is another digit, use it to round */
-	  if ( mdigits >= 10+dppos ) {
-	    if ( *(nptr+9+dppos) >= '5' ) {
-	      absValue++;
-	    }
-	  }
-	} else {
-	  /* Digits are not given all the way to nanoseconds, so have to
-	     multiply by a power of 10 */
-	  absValue = strtol(nptr,NULL,10);
-	  while ( mdigits < 9+dppos ) {
-	    absValue *= 10;
-	    mdigits++;
-	  }
+      }
+      /* If there is another digit, use it to round */
+      if ( idigit==dppos+9 && idigit<mdigits ) {
+	if ( mantissa[idigit] >= '5' ) {
+	  absValue++;
 	}
+      }
+      /* Fill in missing powers of ten if not all digits were present */
+      for ( ; idigit<dppos+9; idigit++ ) {
+	absValue *= 10;
+      }
 
-	value->gpsNanoSeconds = (INT4) ( signval * absValue );
+      value->gpsNanoSeconds = (INT4) ( signval * absValue );
 
-	/* Check for wraparound due to rounding */
-	if ( value->gpsNanoSeconds >= 1000000000 ) {
-	  value->gpsNanoSeconds -= 1000000000;
-	  value->gpsSeconds += 1;
-	}
-	if ( value->gpsNanoSeconds < 0 ) {
-	  value->gpsNanoSeconds += 1000000000;
-	  value->gpsSeconds -= 1;
-	}
-
+      /* Check for wraparound due to rounding */
+      if ( value->gpsNanoSeconds >= 1000000000 ) {
+	value->gpsNanoSeconds -= 1000000000;
+	value->gpsSeconds += 1;
+      }
+      /* Ensure that nanoseconds field is nonnegative */
+      while ( value->gpsNanoSeconds < 0 ) {
+	value->gpsNanoSeconds += 1000000000;
+	value->gpsSeconds -= 1;
       }
 
     }
