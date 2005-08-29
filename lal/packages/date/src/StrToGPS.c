@@ -8,18 +8,22 @@
  * Check if a string is a number in scientific notation.
  */
 
+static const char *skipsign(const char *s)
+{
+	if(*s == '+' || *s == '-')
+		s++;
+	return(s);
+}
+
 static int isscientific(const char *s)
 {
 	int radix_count = 0;
 	const char *p;
 
-	/* skip leading white space */
+	/* skip leading white space, and an optional sign */
 	while(isspace(*s))
 		s++;
-
-	/* allow a sign */
-	if(*s == '+' || *s == '-')
-		s++;
+	s = skipsign(s);
 
 	/* check for a hex prefix */
 	if(*s == '0' && (*(s + 1) == 'X' || *(s + 1) == 'x')) {
@@ -42,12 +46,8 @@ static int isscientific(const char *s)
 		if(p == s || radix_count > 1 || (*s != 'P' && *s != 'p'))
 			return(0);
 
-		/* skip exponent prefix */
-		s++;
-
-		/* allow a sign */
-		if(*s == '+' || *s == '-')
-			s++;
+		/* skip exponent prefix, and an optional sign */
+		s = skipsign(++s);
 
 		/* if the next character is not a hex digit then the answer is
 		 * no */
@@ -69,12 +69,8 @@ static int isscientific(const char *s)
 		if(p == s || radix_count > 1 || (*s != 'E' && *s != 'e'))
 			return(0);
 
-		/* skip exponent prefix */
-		s++;
-
-		/* allow a sign */
-		if(*s == '+' || *s == '-')
-			s++;
+		/* skip exponent prefix, and an optional sign */
+		s = skipsign(++s);
 
 		/* if the next character is not a decimal digit then the answer
 		 * is no */
