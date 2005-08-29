@@ -30,13 +30,13 @@ int create_toplist(toplist_t**tl, UINT8 length) {
     thetoplist->elems = 0;
     thetoplist->smallest = 0;
     
-    thetoplist->data = malloc(length * sizeof(FstatsClusterOutput));
+    thetoplist->data = malloc(length * sizeof());
     if(!thetoplist->data) {
 	free(thetoplist);
 	return(-1);
     }
 
-    thetoplist->sorted = malloc(length * sizeof(FstatsClusterOutput*));
+    thetoplist->sorted = malloc(length * sizeof(TOPLISTLINE*));
     if(!thetoplist->sorted) {
 	free(thetoplist->data);
 	free(thetoplist);
@@ -68,7 +68,7 @@ void free_toplist(toplist_t**l) {
    In the latter case, remove the smallest element from the toplist and
    look for the now smallest one.
    Returns 1 if the element was actually inserted, 0 if not. */
-int insert_into_toplist(toplist_t*tl, FstatsClusterOutput elem) {
+int insert_into_toplist(toplist_t*tl, TOPLISTLINE elem) {
  
     /* check if the toplist is full, if not, just add the new element */
     if (tl->elems < tl->length) {
@@ -114,10 +114,10 @@ int write_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
 
 /* ordering function for sorting the list */
 static int _toplist_qsort_function(const void *ppa, const void *ppb) {
-    const FstatsClusterOutput**pa = ppa;
-    const FstatsClusterOutput**pb = ppb;
-    const FstatsClusterOutput*a = *pa;
-    const FstatsClusterOutput*b = *pb;
+    const TOPLISTLINE**pa = ppa;
+    const TOPLISTLINE**pb = ppb;
+    const TOPLISTLINE*a = *pa;
+    const TOPLISTLINE*b = *pb;
 
     if (a->Freq < b->Freq)
 	return -1;
@@ -154,7 +154,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
     UINT4 len, chars = 0; /* length of a line, total characters read from the file */
     UINT4 i;              /* loop counter */
     char lastchar;        /* last character of a line read, should be newline */
-    FstatsClusterOutput FstatLine;
+    TOPLISTLINE FstatLine;
     REAL8 epsilon=1e-5;
 
     /* basic check that the list argument is valid */
@@ -250,10 +250,10 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
     return 0;
 }
 
-/* writes an FstatsClusterOutput line to an open filepointer.
+/* writes an TOPLISTLINE line to an open filepointer.
    Returns the number of chars written, -1 if in error
    Updates checksum if given */
-int write_toplist_item_to_fp(FstatsClusterOutput fline, FILE*fp, UINT4*checksum) {
+int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
     char linebuf[256];
     UINT4 i;
 

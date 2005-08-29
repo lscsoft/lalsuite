@@ -3,13 +3,15 @@
 
 #include "ComputeFStatistic.h"
 
-/* toplist structure based on FstatsClusterOutput */
+#define TOPLISTLINE FstatsClusterOutput
+
+/* toplist structure based on TOPLISTLINE */
 typedef struct {
     UINT8 length;   /* the length (maximal number of entries) of the toplist */
     UINT8 elems;    /* number of elements currently in the toplist */
     UINT8 smallest; /* index of the smallest element in the toplist */
-    FstatsClusterOutput *data;    /* points to the actual data */
-    FstatsClusterOutput **sorted; /* an array of sorted pointers to data */
+    TOPLISTLINE *data;    /* points to the actual data */
+    TOPLISTLINE **sorted; /* an array of sorted pointers to data */
 } toplist_t;
 
 /* creates a toplist with length elements,
@@ -24,7 +26,7 @@ extern void free_toplist(toplist_t**list);
    In the latter case, remove the smallest element from the toplist and
    look for the now smallest one.
    Returns 1 if the element was actually inserted, 0 if not. */
-extern int insert_into_toplist(toplist_t*list, FstatsClusterOutput line);
+extern int insert_into_toplist(toplist_t*list, TOPLISTLINE line);
 
 /* Writes the toplist to an (already open) filepointer
    Returns the number of written charactes
@@ -43,10 +45,10 @@ extern int read_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 m
    used before finally writing it */
 extern void sort_toplist(toplist_t*list);
 
-/* writes an FstatsClusterOutput line to an open filepointer.
+/* writes an TOPLISTLINE line to an open filepointer.
    Returns the number of chars written, -1 if in error
    Updates checksum if given */
-extern int write_toplist_item_to_fp(FstatsClusterOutput line, FILE*fp, UINT4*checksum);
+extern int write_toplist_item_to_fp(TOPLISTLINE line, FILE*fp, UINT4*checksum);
 
 /* writes the given toplitst to a temporary file, then renames the
    temporary file to filename. The name of the temporary file is
