@@ -156,9 +156,10 @@ REAL4TimeSeries * get_frame_data_dbl_convert(
   /* if this is strain data, correct the units */
   if ( strainData )
     series->sampleUnits = lalStrainUnit;
-		
-	/* destroy REAL8 time series */
-	XLALDestroyREAL8Vector( dblser->data );
+
+  /* destroy REAL8 time series */
+  XLALDestroyREAL8Vector( dblser->data );
+  LALFree(dblser);
 
   return series;
 }
