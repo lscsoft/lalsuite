@@ -1158,9 +1158,9 @@ int main( int argc, char *argv[] )
 		}
 
 	      /* Now that the time series are commensurate, do the filtering... */
-                
+              cohInspFilterParams->cohSNRVec->epoch = cohInspCVec->cData[0].epoch;  
 	      LALCoherentInspiralFilterSegment (&status, &thisEvent, cohInspFilterInput, cohInspFilterParams);
-	      cohInspFilterParams->cohSNRVec->epoch = cohInspCVec->cData[0].epoch;
+	      
 
 	      if ( cohSNROut )
 		{
