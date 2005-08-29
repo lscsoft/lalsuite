@@ -533,6 +533,9 @@ void LALGPStoFloat (LALStatus *status,
                     REAL8     *output, 
                     const LIGOTimeGPS *input);
 
+void XLALFloatToGPS(LIGOTimeGPS *output, 
+                    const REAL8 input);
+
 void LALFloatToGPS(LALStatus *status, 
                    LIGOTimeGPS *output, 
                    const REAL8 *input);
