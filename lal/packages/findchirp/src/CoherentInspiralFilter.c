@@ -1174,15 +1174,14 @@ LALCoherentInspiralEstimateDistance (
   /* Now estimate the distance coherently */
   for( i = 0; i < 4; i++ )
     {
-      sigmaSq[i] = 4 * deltaT * segNorm[i] * templateNorm / segmentLength;
+      sigmaSq[i] = segNorm[i] * templateNorm;
     }
   for( i = 0; i < 4; i++ )
     {
       sigmaCoherent += sigmaSq[i];
     }
 
-  sigmaCoherent = sqrt( sigmaCoherent );
-  *distance = sigmaCoherent / coherentSNR;
+  *distance = (2 / coherentSNR) * sqrt( (sigmaCoherent * deltaT) / segmentLength );
 
   /* normal exit */
   DETATCHSTATUSPTR( status );
