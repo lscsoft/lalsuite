@@ -30,7 +30,7 @@ int create_toplist(toplist_t**tl, UINT8 length) {
     thetoplist->elems = 0;
     thetoplist->smallest = 0;
     
-    thetoplist->data = malloc(length * sizeof());
+    thetoplist->data = malloc(length * sizeof(TOPLISTLINE));
     if(!thetoplist->data) {
 	free(thetoplist);
 	return(-1);
@@ -70,26 +70,29 @@ void free_toplist(toplist_t**l) {
    Returns 1 if the element was actually inserted, 0 if not. */
 int insert_into_toplist(toplist_t*tl, TOPLISTLINE elem) {
  
+  if ( !tl )
+    return 0;
+
     /* check if the toplist is full, if not, just add the new element */
     if (tl->elems < tl->length) {
 	/* just add the new element if the toplist is not full yet */
 	tl->data[tl->elems] = elem;
 	/* update the smallest if necessary */
-	if ((tl->elems==0) || (elem.max < tl->data[tl->smallest].max))
+	if ((tl->elems==0) || (elem.Fstat < tl->data[tl->smallest].Fstat))
 	    tl->smallest = tl->elems;
 	tl->elems++;
 	return(1); /* element was inserted */
 
     /* if the toplist is full, we don't need to do anything if the new
        element is even smaller than the smallest one in the toplist */
-    } else if (elem.max > tl->data[tl->smallest].max) {
+    } else if (elem.Fstat > tl->data[tl->smallest].Fstat) {
 	UINT8 i; /* loop counter */
 	/* replace the smaleest element so far with the new one */
 	tl->data[tl->smallest] = elem;
 	/* find smallest element again */
 	tl->smallest = 0;
 	for(i=1; i<tl->elems; i++)
-	   if(tl->data[i].max < tl->data[tl->smallest].max)
+	   if(tl->data[i].Fstat < tl->data[tl->smallest].Fstat)
 	      tl->smallest = i;
 	return(1); /* element was inserted */
     }
@@ -195,14 +198,11 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 			" %" LAL_REAL8_FORMAT
 			" %" LAL_REAL8_FORMAT
 			"%c",
-			&FstatLine.Freq,
-			&FstatLine.f1dot,
 			&FstatLine.Alpha,
 			&FstatLine.Delta,
-			&FstatLine.Nbins,
-			&FstatLine.mean,
-			&FstatLine.std,
-			&FstatLine.max,
+			&FstatLine.Freq,
+			&FstatLine.f1dot,
+			&FstatLine.Fstat,
 			&lastchar);
 
 	/* check the values scanned */
@@ -213,10 +213,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 	    !finite(FstatLine.f1dot)	||
 	    !finite(FstatLine.Alpha)	||
 	    !finite(FstatLine.Delta)	||
-	    !finite(FstatLine.Nbins)	||
-	    !finite(FstatLine.mean)	||
-	    !finite(FstatLine.std)	||
-	    !finite(FstatLine.max)	||
+	    !finite(FstatLine.Fstat)	||
 
 	    FstatLine.Freq  < 0.0                    ||
 	    FstatLine.f1dot < 0.0                    ||
@@ -259,15 +256,12 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 
     UINT4 length =
 	snprintf(linebuf, sizeof(linebuf),
-		 "%1.13e %e %e %e %d %e %e %1.15e\n",
-		 fline.Freq,
-		 fline.f1dot,
+		 "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
 		 fline.Alpha,
 		 fline.Delta,
-		 fline.Nbins,
-		 fline.mean,
-		 fline.std,
-		 fline.max);
+		 fline.Freq,
+		 fline.f1dot,
+		 fline.Fstat);
 
     if(length>sizeof(linebuf))
 	return -1;

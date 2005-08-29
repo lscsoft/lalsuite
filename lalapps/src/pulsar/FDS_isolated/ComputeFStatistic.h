@@ -95,18 +95,15 @@ typedef struct {
 } ConfigVariables;
 
 
-/** Type to hold the fields that will be output in clustered 'Fstats' file
- */
+/** Type to hold the fields that will be output in unclustered output file  */
 typedef struct {
   REAL8 Freq;			/**< Frequency at maximum (?) of the cluster */
   REAL8 f1dot;			/**< spindown value f1dot = df/dt */
   REAL8 Alpha; 			/**< Skyposition: longitude in equatorial coords, radians */
   REAL8 Delta;			/**< skyposition: latitude */
-  INT4  Nbins;			/**< number of frequency-bins in this cluster */
-  REAL8 mean;			/**< mean-value of 2F in this cluster */
-  REAL8 std;			/**< standard-deviation of 2F in this cluster */
-  REAL8 max;			/**< maximum value of 2F in this cluster */
-} FstatsClusterOutput;
+  REAL8 Fstat;			/**< value of 2F */
+} FstatOutputEntry;
+
   
 /* LALDemod functions now put into CFSLALDemod.c */
 extern void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params);

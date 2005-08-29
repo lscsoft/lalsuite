@@ -3,7 +3,7 @@
 
 #include "ComputeFStatistic.h"
 
-#define TOPLISTLINE FstatsClusterOutput
+#define TOPLISTLINE FstatOutputEntry
 
 /* toplist structure based on TOPLISTLINE */
 typedef struct {

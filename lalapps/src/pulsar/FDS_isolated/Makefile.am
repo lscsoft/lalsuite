@@ -28,7 +28,8 @@ lalapps_monteint_SOURCES = monteint.c
 
 CFSsources = 	ComputeFStatistic.h	\
 		clusters.c clusters.h  	\
-		DopplerScan.c DopplerScan.h NeighboringGridPoints.c
+		DopplerScan.c DopplerScan.h \
+		FstatToplist.c FstatToplist.h
 
 lalapps_ComputeFStatistic_SOURCES = ComputeFStatistic.c CFSLALDemod.c $(CFSsources)
 

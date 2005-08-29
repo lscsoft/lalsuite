@@ -39,9 +39,8 @@
 #include "clusters.h"
 #include "DopplerScan.h"
 
-#ifdef USE_TOPLIST
 #include "FstatToplist.h"
-#endif
+
 
 /* this is defined in C99 and *should* be in math.h.  Long term
    protect this with a HAVE_FINITE */
@@ -59,10 +58,6 @@ RCSID( "$Id$");
 /* Uncomment the following if you want to activate output f1dot in 'Fstats' */
 /* #define OUTPUT_F1DOT  1 */
 
-
-/* If FILE_FILENAME is defined, then print the corresponding file  */
-
-BOOLEAN FILE_FSTATS = 1;
 /*
 #define FINDFWHM
 #define FILE_FMAX
@@ -146,7 +141,6 @@ BOOLEAN FILE_FSTATS = 1;
 #define fopen boinc_fopen
 #define remove boinc_delete_file
 
-char *fstatbuff = NULL;
 int boincmain(int argc, char *argv[]);
 void worker();
 
@@ -233,13 +227,15 @@ INT4 uvar_expLALDemod;
 REAL8 uvar_startTime;
 REAL8 uvar_endTime;
 REAL8 uvar_refTime;
+CHAR *uvar_outputClusters;
+
 #if BOINC_COMPRESS
 BOOLEAN uvar_useCompression;
 #endif
 
 INT4 uvar_OutputBufferKB;
 INT4 uvar_MaxFileSizeKB;
-INT4 uvar_NumEventsToKeep;
+INT4 uvar_NumCandidatesToKeep;
 
 BOOLEAN uvar_projectMetric;
 
@@ -259,18 +255,20 @@ REAL8 medianbias=1.0;	/**< median-bias depending on window-size */
 
 FILE *fp_mergedSFT;	/**< input-file containing merged SFTs */
 FILE *fpmax;		/**< output-file: maximum of F-statistic over frequency-range */
-FILE *fpstat=NULL;	/**< output-file: F-statistic candidates and cluster-information */
+FILE *fpClusters;	/**< output-file pointer to clustered Fstat output */
+FILE *fpFstat;		/**< output-file pointer to *unclustered* Fstat output */
 
 ConfigVariables GV;	/**< global container for various derived configuration settings */
 int reverse_endian=-1;	/**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
-CHAR Fstatsfilename[256]; /**< Fstats file name*/
+CHAR *FstatFilename; 	/**< (unclustered) Fstats file name*/
 CHAR ckp_fname[260];	/**< filename of checkpoint-file, global for polka */
 CHAR *Outputfilename;	/**< Name of output file, either Fstats- or Polka file name*/
 INT4 cfsRunNo = 0;	/**< CFS run-number: 0=run only once, 1=first run, 2=second run */
 
-#ifdef USE_TOPLIST
 toplist_t* toplist;
-#endif
+char *fstatbuff = NULL;
+
+FstatOutputEntry empty_FstatOutputEntry;
 
 /*----------------------------------------------------------------------*/
 /* local prototypes */
@@ -287,7 +285,7 @@ extern "C" {
   void EstimateFLines(LALStatus *);
   void NormaliseSFTDataRngMdn (LALStatus *);
   INT4 EstimateSignalParameters(INT4 * maxIndex);
-  int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosition searchpos);
+  int writeFLines(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut);
   INT4 PrintTopValues(REAL8 TwoFthr, INT4 ReturnMaxN, DopplerPosition searchpos);
   int compare(const void *ip, const void *jp);
   INT4 writeFaFb(INT4 *maxIndex, DopplerPosition searchpos);
@@ -380,12 +378,10 @@ int main(int argc,char *argv[])
   DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerPosition dopplerpos;           /* current search-parameters */
   SkyPosition thisPoint;
-  FILE *fpOut = NULL;
   UINT4 loopcounter;            /* Checkpoint-counters for restarting checkpointed search */
   long fstat_bytecounter;
-  UINT4 checksum=0;             /* Checksum of fstats file contents */
-  CHAR loudest[1024];		/**< result-line for loudest canidate in search-region */
-  REAL8 F_loudest = 0.0;	/**< F-statistic value of loudest (so far) canidate */
+  UINT4 fstat_checksum = 0;             /* Checksum of fstats file contents */
+  FstatOutputEntry loudest = empty_FstatOutputEntry; /* loudest canidate in search-region */
 
 #ifdef RUN_POLKA
   INT4 fstats_completed = FALSE; /* did we find a completed fstats file? */
@@ -537,33 +533,66 @@ int main(int argc,char *argv[])
   }
 #endif
 
+  /* ----- prepare cluster-output filename if given and append outputLabel */
+  if ( uvar_outputClusters && (strlen(uvar_outputClusters) > 0) )
+    {
+      CHAR *buf = NULL;
+      UINT4 len = strlen( uvar_outputClusters );
+      if ( uvar_outputLabel )
+	len += strlen ( uvar_outputLabel );
 
-  /* if a complete output of the F-statistic file was requested,
-   * we open and prepare the output-file here */
-  if (uvar_outputFstat) 
-    if ( (fpOut = fopen (uvar_outputFstat, "wb")) == NULL)
-      {
-	LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputFstat);
-	return COMPUTEFSTAT_EXIT_OPENFSTAT;
+      if ( (buf = LALCalloc(1, len + 1 )) == NULL ) {
+	LALPrintError ("\nOut of memory!\n\n");
+	return (COMPUTEFSTATC_EMEM);
       }
+      strcpy ( buf, uvar_outputClusters );
+      if ( uvar_outputLabel )
+	strcat ( buf, uvar_outputLabel );
 
-  /* prepare main output-file "Fstats": get actual filename */
-  strcpy(Fstatsfilename,"Fstats");
-  if ( uvar_outputLabel )
-    strcat(Fstatsfilename,uvar_outputLabel);
+      if ( (fpClusters = fopen (buf, "wb")) == NULL ) {
+	LALPrintError ("\nError: failed to open Clusters-file '%s' for writing!\n\n", buf );
+	return ( COMPUTEFSTATC_ESYS );
+      }
+      LALFree ( buf );
+    }
+  else
+    fpClusters = NULL;
 
-#ifdef USE_TOPLIST
-  create_toplist(&toplist,uvar_NumEventsToKeep);
-#endif
+  /* ----- prepare (unclustered) Fstat-output filename if given and apprend outputLabel */ 
+  if ( uvar_outputFstat )
+    {
+      UINT4 len = strlen (uvar_outputFstat );
+      if ( uvar_outputLabel )
+	len += strlen ( uvar_outputLabel );
+
+      if ( (FstatFilename = LALCalloc(1, len + 1 )) == NULL ) {
+	LALPrintError ("\nOut of memory!\n\n");
+	return (COMPUTEFSTATC_EMEM);
+      }
+      
+      strcpy ( FstatFilename, uvar_outputFstat );
+      if ( uvar_outputLabel )
+	strcat ( FstatFilename, uvar_outputLabel );
+    }
+  else
+    FstatFilename = NULL;
+
+
+  if ( uvar_NumCandidatesToKeep > 0 )
+    create_toplist(&toplist, uvar_NumCandidatesToKeep);
+
 
   /* prepare checkpointing file */
-  strcpy(ckp_fname, Fstatsfilename);
+  if ( FstatFilename ) 
+    strcpy(ckp_fname, FstatFilename);
+  else
+    strcpy(ckp_fname, "Fstats");
   strcat(ckp_fname, ".ckp");
 
 #if USE_BOINC
   /* only boinc_resolve the filename if we run CFS once */
   if (cfsRunNo == 0)
-          use_boinc_filename0(Fstatsfilename);
+          use_boinc_filename0(FstatFilename);
   /* use_boinc_filename0(ckp_fname); */
 #endif /* USE_BOINC */
 
@@ -580,12 +609,12 @@ int main(int argc,char *argv[])
 
   loopcounter = 0;
   fstat_bytecounter = 0;
-  checksum =0;
+  fstat_checksum =0;
 
 #ifdef RUN_POLKA
   /* look for a Fstat file ending in "%DONE" and quit (boinc)main if found */
-  fpstat=fopen( Fstatsfilename,"r");
-  if(fpstat){
+  fpFstat = fopen( FstatFilename,"rb");
+  if(fpFstat){
     char done[6];
     done[0] = '\0';
     if(!fseek(fpstat,-6,SEEK_END))
@@ -594,7 +623,8 @@ int main(int argc,char *argv[])
           fprintf(stderr,"detected finished Fstat file - skipping Fstat run %d\n",cfsRunNo);
 	  fstats_completed = TRUE;
         }
-    fclose(fpstat);
+    fclose(fpFstat);
+    fpFstat = NULL;
   }
 
   if (!fstats_completed) {
@@ -602,59 +632,63 @@ int main(int argc,char *argv[])
 
   /* Checkpointed information is retrieved from checkpoint-file (if found) */
   if (uvar_doCheckpointing)
-    LAL_CALL (getCheckpointCounters( status, &loopcounter, &checksum, &fstat_bytecounter, 
-				     Fstatsfilename, ckp_fname ), status); 
-
+    LAL_CALL (getCheckpointCounters( status, &loopcounter, &fstat_checksum, &fstat_bytecounter, 
+				     FstatFilename, ckp_fname ), status); 
 
   /* allow for checkpointing: 
-   * open fstats file for writing or appending, depending on loopcounter. 
+   * open Fstat file for writing or appending, depending on loopcounter. 
    */
-  if ( FILE_FSTATS 
-       && ( (fpstat=fopen( Fstatsfilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
+  if ( FstatFilename 
+       && ( (fpFstat = fopen( FstatFilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
     {
-      fprintf(stderr,"in Main: unable to open Fstats file\n");
+      fprintf(stderr,"in Main: unable to open Fstats file '%s'\n", FstatFilename);
       return COMPUTEFSTAT_EXIT_OPENFSTAT2;
     }
 
-#if USE_BOINC
-  { /* set a buffer large enough that no output is written to disk
-       unless we fflush().  Policy is fully buffered. Note: the man
-       page says "The setvbuf function may only be used after opening
-       a stream and BEFORE ANY OTHER OPERATIONS HAVE BEEN PERFORMED ON
-       IT."
-    */
-    if ((fstatbuff=(char *)LALCalloc(uvar_OutputBufferKB * 1024, 1)))
-      setvbuf(fpstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
-    else {
-      LALPrintError ("Failed to allocate memory for Fstats file buffering. Exiting.\n");
-      return COMPUTEFSTAT_EXIT_NOMEM;
+  /* set a buffer large enough that no output is written to disk
+   *  unless we fflush().  Policy is fully buffered. Note: the man
+   * page says "The setvbuf function may only be used after opening
+   * a stream and BEFORE ANY OTHER OPERATIONS HAVE BEEN PERFORMED ON IT."
+   */
+  if ( fpFstat )
+    {
+      if ( (fstatbuff=(char *)LALCalloc(uvar_OutputBufferKB * 1024, 1)))
+	setvbuf(fpFstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
+      else {
+	LALPrintError ("Failed to allocate memory for Fstats file buffering. Exiting.\n");
+	return COMPUTEFSTAT_EXIT_NOMEM;
+      }
     }
-  }
-#endif
 
   /* if we checkpointed we need to "spool forward" to the right entry in the sky-position list */
-  if ( loopcounter > 0 ) {
-    UINT4 i;
-    for (i=0; i < loopcounter; i++) {
-      LAL_CALL (NextDopplerPos( status, &dopplerpos, &thisScan ), status);
-      if (thisScan.state == STATE_FINISHED) {
-        LALPrintError ("Error: checkpointed loopcounter already at the end of main-loop\n");
-        return COMPUTEFSTATC_ECHECKPOINT; 
+  if ( loopcounter > 0 ) 
+    {
+      UINT4 i;
+      for (i=0; i < loopcounter; i++) {
+	LAL_CALL (NextDopplerPos( status, &dopplerpos, &thisScan ), status);
+	if (thisScan.state == STATE_FINISHED) {
+	  LALPrintError ("Error: checkpointed loopcounter already at the end of main-loop\n");
+	  return COMPUTEFSTATC_ECHECKPOINT; 
+	}
       }
-    }
-    /* seek to right point of fstats file (truncate what's left over) */
-    if ( 0 != fseek( fpstat, fstat_bytecounter, SEEK_SET) ) 
-      {   /* something gone wrong seeking .. */
-	if (lalDebugLevel) 
-	  LALPrintError ("broken fstats-file.\nStarting main-loop from beginning.\n");
-	return COMPUTEFSTATC_ECHECKPOINT;;
-      }
-  } /* if loopcounter > 0 */
+      /* seek to right point of fstats file (truncate what's left over) */
+      if ( fpFstat )
+	{
+	  if ( 0 != fseek( fpFstat, fstat_bytecounter, SEEK_SET) ) 
+	    {   /* something gone wrong seeking .. */
+	      if (lalDebugLevel) 
+		LALPrintError ("broken Fstat-file '%s'.\nStarting main-loop from beginning.\n", 
+			       FstatFilename);
+	      return COMPUTEFSTATC_ECHECKPOINT;;
+	    }
+	} /* if fpFstat */
+
+    } /* if loopcounter > 0 */
   
   while (1)
     {
       /* flush fstats-file and write checkpoint-file */
-      if (uvar_doCheckpointing && fpstat)
+      if ( uvar_doCheckpointing && fpFstat )
         {
 #if USE_BOINC
           /* make sure the last checkpoint is written even if is not time_to_checkpoint */
@@ -662,13 +696,13 @@ int main(int argc,char *argv[])
             {
 #endif
               FILE *fp;
-              fflush (fpstat);
+              fflush (fpFstat);
               if ( (fp = fopen(ckp_fname, "wb")) == NULL) {
-                LALPrintError ("Failed to open checkpoint-file for writing. Exiting.\n");
+                LALPrintError ("Failed to open checkpoint-file '%s' for writing. Exiting.\n", ckp_fname);
                 return COMPUTEFSTATC_ECHECKPOINT;
               }
               if ( fprintf (fp, "%" LAL_UINT4_FORMAT " %" LAL_UINT4_FORMAT " %ld\nDONE\n", 
-			    loopcounter, checksum, fstat_bytecounter) < 0) {
+			    loopcounter, fstat_checksum, fstat_bytecounter) < 0) {
                 LALPrintError ("Error writing to checkpoint-file. Exiting.\n");
                 return COMPUTEFSTATC_ECHECKPOINT;
               }
@@ -753,116 +787,160 @@ int main(int argc,char *argv[])
 	      return COMPUTEFSTATC_EINPUT;
 	    }
 	  
-	  
-          /*  This fills-in highFLines that contains the outliers of F*/
-          if (GV.FreqImax > 5) {
-            LAL_CALL (EstimateFLines(status), status);
-          }
+          /*  CLUSTER-OUTPUT: This fills-in highFLines that contains the outliers of F*/
+          if ( fpClusters && (GV.FreqImax > 5) ) {
+	    LAL_CALL (EstimateFLines(status), status);
+	  }
           
-          /* if user requested it, we output ALL F-statistic results or the loudest */
+          /* output top unclustered F-statistic results or the loudest */
           if (uvar_outputFstat || uvar_outputLoudest) 
             {
               INT4 i;
+	      FstatOutputEntry outputLine;
+
               for(i=0;i < GV.FreqImax ;i++)
                 {
-		  CHAR linebuf[1024]; 
 		  REAL8 Fval = 2.0*medianbias*Fstat.F[i];
 		  /* correct frequency back to reference-time: assume maximaly 1 spindown */
 		  REAL8 freq = GV.searchRegion.Freq + i * thisScan.dFreq + GV.DeltaFreqRef; 
 
 		  if ( Fval > uvar_Fthreshold )
 		    {
-		      LALSnprintf (linebuf, 1023, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
-				   dopplerpos.Alpha, dopplerpos.Delta, 
-				   freq, DemodParams->spinDwn[0], Fval);
-		      linebuf[1023] = 0;
+		      /* candidate found: insert into Top-candidate list and output */
+		      outputLine.Freq  = freq;
+		      outputLine.f1dot = DemodParams->spinDwn[0];
+		      outputLine.Alpha = dopplerpos.Alpha;
+		      outputLine.Delta = dopplerpos.Delta;
+		      outputLine.Fstat = Fval;
 
-		      if ( fpOut )
-			fprintf (fpOut, linebuf);
-		    }
+		      /* we append this candidate to the fpFstat file if either
+		       * 1) we don't use a toplist of NumCandidatesToKeep at all, or if
+		       * 2) we use a toplist and the candidate was inserted.
+		       */
+		      if ( uvar_outputFstat && 
+			   ((uvar_NumCandidatesToKeep<=0)|| insert_into_toplist(toplist,outputLine)))
+			{	
+			  INT4 howmany = write_toplist_item_to_fp(outputLine, fpFstat, &fstat_checksum );
+			  if (howmany < 0 ) 
+			    {
+			      fclose(fpFstat);
+			      return (COMPUTEFSTAT_EXIT_WRITEFSTAT);
+			    } else
+			      fstat_bytecounter += howmany;
+			} /* if candidate is to be written to fpFstat file */
+
+		    } /* if Fval > Ftheshold */
 
 		  /* keep track of  loudest candidate */
-		  if ( Fval > F_loudest )
-		    {
-		      F_loudest = Fval;
-		      strcpy ( loudest, linebuf );
-		    }
+		  if ( Fval > loudest.Fstat )
+		    loudest = outputLine;
 
                 } /* for i < FreqImax */
 
-            } /* if fpOut */
+            } /* if outputFstat || outputLoudest */
 
+	  
+	  if ((uvar_NumCandidatesToKeep>0) && (fstat_bytecounter > uvar_MaxFileSizeKB * 1024) )
+	    {
+	      INT4 howmany;
+	      fclose(fpFstat);
+	      howmany = atomic_write_toplist_to_file(toplist, FstatFilename, &fstat_checksum);
+	      if (howmany < 0) {
+		fprintf(stderr,"Couldn't write compacted toplist\n");
+		return (COMPUTEFSTAT_EXIT_OPENFSTAT);
+	      }
+	      fstat_bytecounter = howmany;
+
+	      if ( (fpFstat = fopen(FstatFilename, "ab")) == NULL )
+		{
+		  fprintf(stderr,"Couldn't open compacted toplist for appending\n");
+		  return (COMPUTEFSTAT_EXIT_OPENFSTAT2);
+		}
+	      setvbuf(fpFstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
+	    } /* if maxFileSizeKB atteined => re-compactify output file by toplist */
+	  	  
           
-          /*  This fills-in highFLines  */
-          if (highFLines != NULL && highFLines->Nclusters > 0)
-            {
-              int bytesWritten = 0;
+          /* CLUSTER-OUTPUT: This fills-in highFLines  */
+          if (fpClusters)
+	    {
+	      if ( (highFLines != NULL) && (highFLines->Nclusters > 0) )
+		{
+		  maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
+		  
+		  /*  for every cluster writes the information about it in file fpClusters */
+		  if (writeFLines(maxIndex, dopplerpos, fpClusters))
+		    {
+		      fprintf(stderr, "\nError in writeFLines()\n\n" );
+		      return COMPUTEFSTAT_EXIT_WRITEFSTAT;
+		    }
+		  
+		  if (uvar_EstimSigParam)
+		    {
+		      if(writeFaFb(maxIndex, dopplerpos))
+			return COMPUTEFSTAT_EXIT_WRITEFAFB;
+		      if (EstimateSignalParameters(maxIndex))
+			return COMPUTEFSTAT_EXIT_ESTSIGPAR;
+		    } /* if signal-estimation */
+          
+		  LALFree(maxIndex);
+		} /* if highFLines found */
+
+	      if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1, dopplerpos))
+		LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
+
+	      /* Set the number of the clusters detected to 0 at each iteration 
+		 of the sky-direction and the spin down */
+	      highFLines->Nclusters=0;
+
+	    } /* if fpClusters */
 	      
-              maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
-            
-              /*  for every cluster writes the information about it in file Fstats */
-              if (writeFLines(maxIndex, &bytesWritten, &checksum, dopplerpos))
-                {
-                  fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
-                  return COMPUTEFSTAT_EXIT_WRITEFSTAT;
-                }
-	      /* bookkeeping of nominal length of Fstats-file */
-              fstat_bytecounter += (long)bytesWritten;  
-                  
-              if (uvar_EstimSigParam)
-                {
-                  if(writeFaFb(maxIndex, dopplerpos))
-		    return COMPUTEFSTAT_EXIT_WRITEFAFB;
-                  if (EstimateSignalParameters(maxIndex))
-		    return COMPUTEFSTAT_EXIT_ESTSIGPAR;
-                } /* if signal-estimation */
-          
-          
-              LALFree(maxIndex);
-            } /* if highFLines found */
-
-          if (PrintTopValues(/* thresh */ 0.0, /* max returned */ 1, dopplerpos))
-            LALPrintError ("%s: trouble making files Fmax and/or Fstats\n", argv[0]);
-
-          
-          /* Set the number of the clusters detected to 0 at each iteration 
-             of the sky-direction and the spin down */
-          highFLines->Nclusters=0;
-
-        } /* For GV.spinImax */
+        } /* For spdwn < GV.spinImax */
 
       loopcounter ++;           /* number of *completed* loops */
 
     } /*  while SkyPos */
 
-  if (fpstat) {
-#ifdef USE_TOPLIST
-    fclose(fpstat);
-    /* final compactification */
-    if(atomic_write_toplist_to_file(toplist,Fstatsfilename,&checksum)<0) {
-	fprintf(stderr,"Couldn't write compacted toplist\n");
-	return (COMPUTEFSTAT_EXIT_OPENFSTAT);
+  if ( fpClusters )
+    {
+      fprintf(fpClusters, "%%DONE\n");
+      fclose(fpClusters);
     }
-#else /* USE_TOPLIST */
-    /* this is our marker indicating 'finished'.  What appears in the file is:
-    %DONE
-    on the final line */
-    fprintf(fpstat, "%%DONE\n");
-    fclose(fpstat);
-#endif /* USE_TOPLIST */
-  }
 
-#ifdef USE_TOPLIST
-  free_toplist(&toplist);
-#endif /* USE_TOPLIST */
+  if (fpFstat) 
+    {
+      fclose(fpFstat);
+    
+      /* final compactification */
+      if ( uvar_NumCandidatesToKeep > 0 )
+	{
+	  if( atomic_write_toplist_to_file ( toplist, FstatFilename, &fstat_checksum ) < 0 ) 
+	    {
+	      fprintf(stderr,"Couldn't write compacted toplist\n");
+	      return (COMPUTEFSTAT_EXIT_OPENFSTAT);
+	    }
+	}
+      /* this is our marker indicating 'finished'.  What appears in the file is:
+	 %DONE
+	 on the final line */
+      if ( (fpFstat = fopen (FstatFilename, "ab")) == NULL ) 
+	{
+	  fprintf(stderr, "\nFailed to open Fstat-file '%s' for final '%%DONE' marker!\n\n", 
+		  FstatFilename);
+	  fprintf(fpFstat, "%%DONE\n");
+	  fclose(fpFstat);
+	}
+
+      LALFree ( FstatFilename );
+      FstatFilename = NULL;
+
+    } /* if fpFstat */
+
+  if ( toplist ) 
+    free_toplist(&toplist);
 
 #ifdef RUN_POLKA
   } /* if (!fstats_completed) */
 #endif  
-
-  if (uvar_outputFstat && fpOut)
-    fclose (fpOut);
-
 
   /* now write loudest canidate into separate file ".loudest" */
   if ( uvar_outputLoudest )
@@ -873,7 +951,9 @@ int main(int argc,char *argv[])
 	  LALPrintError ("\nError opening file '%s' for writing..\n\n", uvar_outputLoudest);
 	  return COMPUTEFSTAT_EXIT_OPENFSTAT;
 	}
-      fprintf (fpLoudest, loudest);
+      fprintf (fpLoudest, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
+	       loudest.Alpha, loudest.Delta, loudest.Freq, loudest.f1dot, loudest.Fstat );
+
       fclose(fpLoudest);
     } /* write loudest candidate to file */
 
@@ -903,10 +983,10 @@ int main(int argc,char *argv[])
  * Here we set defaults for some user-variables and register them with the UserInput module.
  */
 void
-initUserVars (LALStatus *stat)
+initUserVars (LALStatus *status)
 {
-  INITSTATUS( stat, "initUserVars", rcsid );
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( status, "initUserVars", rcsid );
+  ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
   uvar_Dterms   = 16;
@@ -972,81 +1052,90 @@ initUserVars (LALStatus *stat)
   uvar_doCheckpointing = TRUE;
   uvar_expLALDemod = 1;
   uvar_OutputBufferKB = 2048; /* to keep the previous behavior so far */
+  uvar_outputClusters = NULL;	/* by default: no more cluster-output */
 #else
   uvar_doCheckpointing = FALSE;
   uvar_expLALDemod = 0;
   uvar_OutputBufferKB = 0;
+#define CLUSTERED_FNAME "Fstats"	/* provide backwards-compatible default for now */
+  uvar_outputClusters = LALCalloc(1, strlen(CLUSTERED_FNAME) + 1);
+  strcpy ( uvar_outputClusters, CLUSTERED_FNAME );
 #endif
 
 #if BOINC_COMPRESS
   uvar_useCompression = TRUE;
 #endif
 
-#ifdef USE_TOPLIST
   uvar_MaxFileSizeKB = 5*1024;
-  uvar_NumEventsToKeep = 0;
-#endif
+  uvar_NumCandidatesToKeep = 0;	/* default: 0 = don't use toplist at all*/
+
 
   /* register all our user-variables */
-  LALregBOOLUserVar(stat,       help,           'h', UVAR_HELP,     "Print this message"); 
-  LALregSTRINGUserVar(stat,     IFO,            'I', UVAR_REQUIRED, "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)");
-  LALregREALUserVar(stat,       Freq,           'f', UVAR_REQUIRED, "Starting search frequency in Hz");
-  LALregREALUserVar(stat,       FreqBand,       'b', UVAR_OPTIONAL, "Search frequency band in Hz");
-  LALregREALUserVar(stat,       dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
-  LALregREALUserVar(stat,       Alpha,          'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat,       Delta,          'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
-  LALregREALUserVar(stat,       AlphaBand,      'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat,       DeltaBand,      'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserVar(stat,     skyRegion,      'R', UVAR_OPTIONAL, "ALTERNATIVE: specify sky-region by polygon");
-  LALregINTUserVar(stat,        gridType,        0 , UVAR_OPTIONAL, "Template SKY-grid: 0=flat, 1=isotropic, 2=metric, 3=file");
-  LALregINTUserVar(stat,        metricType,     'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  LALregREALUserVar(stat,       metricMismatch, 'X', UVAR_OPTIONAL, "Maximal mismatch for SKY-grid (adjust value for more dimensions)");
-  LALregREALUserVar(stat,       dAlpha,         'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
-  LALregREALUserVar(stat,       dDelta,         'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
-  LALregSTRINGUserVar(stat,     skyGridFile,     0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
-  LALregSTRINGUserVar(stat,     outputSkyGrid,   0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
-  LALregREALUserVar(stat,       f1dot,          's', UVAR_OPTIONAL, "First spindown parameter f1dot");
-  LALregREALUserVar(stat,       f1dotBand,      'm', UVAR_OPTIONAL, "Search-band for f1dot");
-  LALregREALUserVar(stat,       df1dot,         'e', UVAR_OPTIONAL, "Resolution for f1dot (default: use metric or 1/(2*T^2))");
-  LALregSTRINGUserVar(stat,     DataDir,        'D', UVAR_OPTIONAL, "Directory where SFT's are located");
-  LALregSTRINGUserVar(stat,     BaseName,       'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  LALregSTRINGUserVar(stat, 	DataFiles,	 0 , UVAR_OPTIONAL, "Alternative: specify path+file-pattern of SFT-files");
-  LALregSTRINGUserVar(stat,     ephemDir,       'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
-  LALregSTRINGUserVar(stat,     ephemYear,      'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
-  LALregBOOLUserVar(stat,       SignalOnly,     'S', UVAR_OPTIONAL, "Signal only flag");
-  LALregBOOLUserVar(stat,       EstimSigParam,  'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
-  LALregREALUserVar(stat,       Fthreshold,     'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
-  LALregSTRINGUserVar(stat,     outputLabel,    'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
-  LALregREALUserVar(stat,       startTime,       0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time <  this value. Default:");
-  LALregREALUserVar(stat,       endTime,         0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time >= this value. Default:");
-  LALregREALUserVar(stat,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
+  LALregBOOLUserVar(status,       help,           'h', UVAR_HELP,     "Print this message"); 
+  LALregSTRINGUserVar(status,     IFO,            'I', UVAR_REQUIRED, "Detector: GEO(0),LLO(1),LHO(2),NAUTILUS(3),VIRGO(4),TAMA(5),CIT(6)");
+  LALregREALUserVar(status,       Freq,           'f', UVAR_REQUIRED, "Starting search frequency in Hz");
+  LALregREALUserVar(status,       FreqBand,       'b', UVAR_OPTIONAL, "Search frequency band in Hz");
+  LALregREALUserVar(status,       dFreq,          'r', UVAR_OPTIONAL, "Frequency resolution in Hz (default: 1/(2*Tsft*Nsft)");
+  LALregREALUserVar(status,       Alpha,          'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(status,       Delta,          'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
+  LALregREALUserVar(status,       AlphaBand,      'z', UVAR_OPTIONAL, "Band in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(status,       DeltaBand,      'c', UVAR_OPTIONAL, "Band in delta (equatorial coordinates) in radians");
+  LALregSTRINGUserVar(status,     skyRegion,      'R', UVAR_OPTIONAL, "ALTERNATIVE: specify sky-region by polygon");
+  LALregINTUserVar(status,        gridType,        0 , UVAR_OPTIONAL, "Template SKY-grid: 0=flat, 1=isotropic, 2=metric, 3=file");
+  LALregINTUserVar(status,        metricType,     'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
+  LALregREALUserVar(status,       metricMismatch, 'X', UVAR_OPTIONAL, "Maximal mismatch for SKY-grid (adjust value for more dimensions)");
+  LALregREALUserVar(status,       dAlpha,         'l', UVAR_OPTIONAL, "Resolution in alpha (equatorial coordinates) in radians");
+  LALregREALUserVar(status,       dDelta,         'g', UVAR_OPTIONAL, "Resolution in delta (equatorial coordinates) in radians");
+  LALregSTRINGUserVar(status,     skyGridFile,     0,  UVAR_OPTIONAL, "Load sky-grid from this file.");
+  LALregSTRINGUserVar(status,     outputSkyGrid,   0,  UVAR_OPTIONAL, "Write sky-grid into this file.");
+  LALregREALUserVar(status,       f1dot,          's', UVAR_OPTIONAL, "First spindown parameter f1dot");
+  LALregREALUserVar(status,       f1dotBand,      'm', UVAR_OPTIONAL, "Search-band for f1dot");
+  LALregREALUserVar(status,       df1dot,         'e', UVAR_OPTIONAL, "Resolution for f1dot (default: use metric or 1/(2*T^2))");
+  LALregSTRINGUserVar(status,     DataDir,        'D', UVAR_OPTIONAL, "Directory where SFT's are located");
+  LALregSTRINGUserVar(status,     BaseName,       'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
+  LALregSTRINGUserVar(status, 	DataFiles,	 0 , UVAR_OPTIONAL, "Alternative: specify path+file-pattern of SFT-files");
+  LALregSTRINGUserVar(status,     ephemDir,       'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
+  LALregSTRINGUserVar(status,     ephemYear,      'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregBOOLUserVar(status,       SignalOnly,     'S', UVAR_OPTIONAL, "Signal only flag");
+  LALregBOOLUserVar(status,       EstimSigParam,  'p', UVAR_OPTIONAL, "Do Signal Parameter Estimation");
+  LALregREALUserVar(status,       Fthreshold,     'F', UVAR_OPTIONAL, "Signal Set the threshold for selection of 2F");
+  LALregSTRINGUserVar(status,     outputLabel,    'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
+  LALregREALUserVar(status,       startTime,       0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time <  this value. Default:");
+  LALregREALUserVar(status,       endTime,         0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time >= this value. Default:");
+  LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
+
+  LALregSTRINGUserVar(status,     outputFstat,	0,  UVAR_OPTIONAL,
+		      "Output-file for the (unclustered) F-statistic field over the parameter-space");
+  LALregSTRINGUserVar(status,     outputClusters,	0,  UVAR_OPTIONAL,
+		      "Output-file for the *clustered* F-statistic field over the parameter-space");
+
 
   /* the following are 'developer'-options */
-  LALregSTRINGUserVar(stat,     workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory.");
-  LALregBOOLUserVar(stat,       doCheckpointing, 0,  UVAR_DEVELOPER, "Do checkpointing and resume for previously checkpointed state.");
-  LALregINTUserVar(stat,        expLALDemod,     0,  UVAR_DEVELOPER, "Type of LALDemod to use. 0=standard, 1=exp1, 2=REAL4");
-  LALregINTUserVar(stat,        Dterms,         't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
-  LALregSTRINGUserVar(stat,     mergedSFTFile,  'B', UVAR_DEVELOPER, "Merged SFT's file to be used"); 
+  LALregSTRINGUserVar(status,     workingDir,     'w', UVAR_DEVELOPER, "Directory to be made the working directory.");
+  LALregBOOLUserVar(status,       doCheckpointing, 0,  UVAR_DEVELOPER, "Do checkpointing and resume for previously checkpointed statuse.");
+  LALregINTUserVar(status,        expLALDemod,     0,  UVAR_DEVELOPER, "Type of LALDemod to use. 0=standard, 1=exp1, 2=REAL4");
+  LALregINTUserVar(status,        Dterms,         't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
+  LALregSTRINGUserVar(status,     mergedSFTFile,  'B', UVAR_DEVELOPER, "Merged SFT's file to be used"); 
 #if BOINC_COMPRESS
-  LALregBOOLUserVar(stat,       useCompression,  0,  UVAR_DEVELOPER, "BOINC: use compression for download/uploading data");
+  LALregBOOLUserVar(status,       useCompression,  0,  UVAR_DEVELOPER, "BOINC: use compression for download/uploading data");
 #endif
 
-  LALregBOOLUserVar(stat,	projectMetric,	0,   UVAR_DEVELOPER, 
+  LALregBOOLUserVar(status,	projectMetric,	0,   UVAR_DEVELOPER, 
 		    "Use projected metric for skygrid");
-  LALregSTRINGUserVar(stat,     outputFstat,	0,  UVAR_DEVELOPER, 
-		      "Output-file for the F-statistic field over the parameter-space");
-  LALregSTRINGUserVar(stat,     outputLoudest,	0,  UVAR_DEVELOPER, 
+  LALregSTRINGUserVar(status,     outputLoudest,	0,  UVAR_DEVELOPER, 
 		      "Output-file for the loudest F-statistic candidate in this search");
 
-  LALregINTUserVar(stat,        OutputBufferKB, 0, UVAR_DEVELOPER, "Size of the output buffer in [kB]");
-#ifdef USE_TOPLIST
-  LALregINTUserVar(stat,        MaxFileSizeKB,  0, UVAR_DEVELOPER, "Size to which the output file grows until it is rewritten [kB]");
-  LALregINTUserVar(stat,        NumEventsToKeep,  0, UVAR_DEVELOPER, "Number of events to keep");
+  LALregINTUserVar(status,        OutputBufferKB, 0, UVAR_DEVELOPER, 
+		   "Size of the output buffer in kB");
 
-#endif
+  LALregINTUserVar(status,        MaxFileSizeKB,  0, UVAR_DEVELOPER, 
+		   "Size to which the Fstat-output file can grow until re-compactified (in kB)");
+  LALregINTUserVar(status,        NumCandidatesToKeep,0, UVAR_DEVELOPER, 
+		   "Number of Fstat 'canidates' to keep. (0 = All)");
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
 } /* initUserVars() */
 
 
@@ -1264,7 +1353,7 @@ int EstimateSignalParameters(INT4 * maxIndex)
       /* and Phi0_PULGROUPDOC is the one used in In.data. */
  
       /* medianbias is 1 if GV.SignalOnly==1 */
-      fprintf(fpMLEParam,"%16.8lf %22E", GV.searchRegion.Freq + irec*DemodParams->df, 
+      fprintf(fpMLEParam,"%16.8f %22E", GV.searchRegion.Freq + irec*DemodParams->df, 
 	      2.0*medianbias*Fstat.F[irec]);
 
 
@@ -1504,16 +1593,13 @@ void CreateDemodParams (LALStatus *status, DopplerPosition searchpos)
 /*  for every cluster writes the information about it in file Fstats */
 /*  precisely it writes: */
 /*  fr_max alpha delta N_points_of_cluster mean std max (of 2F) */
-int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosition searchpos)
+int 
+writeFLines(INT4 *maxIndex, DopplerPosition searchpos, FILE *fpOut)
 {
   INT4 i,j,j1,j2,k,N;
   REAL8 max,log2val,mean,var,std,R;
   REAL8 freq;
   INT4 imax;
-  int numBytes = 0;
-  unsigned char tmpline[1024];
-  UINT4 localchecksum=*checksum;
-  FstatsClusterOutput outputLine;
 
   log2val=medianbias;
  
@@ -1553,95 +1639,13 @@ int writeFLines(INT4 *maxIndex, int *bytes_written, UINT4 *checksum, DopplerPosi
     /* correct frequency back to reference-time: assume maximally 1 spindown */
     freq = GV.searchRegion.Freq + imax * DemodParams->df + GV.DeltaFreqRef;
 
-
-    /* prepare output into dummy entry of new FstatsClusterOutput struct.
-     * this will eventually be the point to insert this candidate into
-     * a top-candidate list
-     */
-    outputLine.Freq  = freq;
-    outputLine.f1dot = DemodParams->spinDwn[0];
-    outputLine.Alpha = searchpos.Alpha;
-    outputLine.Delta = searchpos.Delta;
-    outputLine.Nbins = N;
-    outputLine.mean  = mean;
-    outputLine.std   = std;
-    outputLine.max   = max;
-
-
     /* print the output */
-    if (fpstat) {
-      int l;
-      int howmany2=0;
-
-#ifdef USE_TOPLIST
-      /* TODO: errorhandling */
-      if(insert_into_toplist(toplist, outputLine)) {	
-	  howmany2 = write_toplist_item_to_fp(outputLine,fpstat,&localchecksum);
-	  if (howmany2<0) {
-	      fclose(fpstat);
-	      return (COMPUTEFSTAT_EXIT_WRITEFSTAT);
-	  } else
-	      numBytes += howmany2;
-      }
-#if USE_BOINC
-      if (numBytes > uvar_MaxFileSizeKB * 1024) {
-	  fclose(fpstat);
-	  howmany2 = atomic_write_toplist_to_file(toplist, "file1",&localchecksum);
-	  if (howmany2 < 0) {
-	      fprintf(stderr,"Couldn't write compacted toplist\n");
-	      return (COMPUTEFSTAT_EXIT_OPENFSTAT);
-	  }
-	  numBytes = howmany2;
-	  fpstat = fopen("file1", "a");
-	  if (!fpstat) {
-	      fprintf(stderr,"Couldn't open compacted toplist for appending\n");
-	      return (COMPUTEFSTAT_EXIT_OPENFSTAT2);
-	  }
-	  setvbuf(fpstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
-      }
-#endif /* USE_BOINC */
-
-#else  /* USE_TOPLIST */
-
-#ifdef OUTPUT_F1DOT
-      int howmany=sprintf((char *)tmpline, "%16.12f %.12g %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
-			  outputLine.Freq, outputLine.f1dot, outputLine.Alpha, outputLine.Delta, 
-			  outputLine.Nbins, outputLine.mean, outputLine.std, outputLine.max);
-#else
-      int howmany=sprintf((char *)tmpline, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
-			  outputLine.Freq, outputLine.Alpha, outputLine.Delta, 
-			  outputLine.Nbins, outputLine.mean, outputLine.std, outputLine.max);      
-#endif
-      
-      if (howmany <= 0) {
-        fprintf(stderr,"writeFLines couldn't print to Fstats-file placeholder!\n");
-        return 4;
-      }
-      
-      howmany2=fwrite(tmpline, 1, howmany, fpstat);
-      
-      if (howmany2!=howmany) {
-        fprintf(stderr,"writeFLines couldn't print to Fstats-file!\n");
-        return 4;
-      }
-
-      /* update bytecount */
-      numBytes+=howmany;
-      
-      /* update checksum sum */
-      for (l=0; l<howmany; l++)
-        localchecksum+=(int)tmpline[l];
-
-#endif /* USE_TOPLIST */
-      
-    } /* if fpstat */
+    if (fpOut) 
+      fprintf( fpOut, "%16.12f %10.8f %10.8f    %d %10.5f %10.5f %20.17f\n",
+	       freq, searchpos.Alpha, searchpos.Delta, N, mean, std, max );
     
-  }/*  end i loop over different clusters */
+  } /*  end i loop over different clusters */
   
-  /* return total number of bytes written into fstats-file */
-  *bytes_written = numBytes;
-  *checksum=localchecksum;
-
   return 0;
 
 } /* writeFLines() */
@@ -2546,13 +2550,11 @@ void Freemem(LALStatus *status)
   LALFree(GV.edat);
   GV.edat = NULL;
 
-#if USE_BOINC
   /* free buffer used for fstat.  Its safe to do this because we already did fclose(fpstat) earlier */
   if (fstatbuff) {
     LALFree(fstatbuff);
     fstatbuff = NULL;
   }
-#endif
   
   DETATCHSTATUSPTR (status);
 
