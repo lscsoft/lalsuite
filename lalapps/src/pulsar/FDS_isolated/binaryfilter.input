@@ -1,7 +1,0 @@
-2.1		%Orbital_semimajor_axis(sec) 
-1e5	 	%Orbital_period(sec)
-731100000 	%Observed_time_of_periapse_passage_in_SSB_frame(GPS_sec)
-0 		%Observed_time_of_periapse_passage_in_SSB_frame(GPS_nanosec)
-0.0 		%Argument_of_periapse(rad)
-0.0		%Orbital_eccentricity
-0.0		%First_spin_down_parameter(Hz/sec)
