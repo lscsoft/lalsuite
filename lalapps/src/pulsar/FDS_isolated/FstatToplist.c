@@ -152,11 +152,11 @@ void sort_toplist(toplist_t*l) {
    -1 if the file contained a syntax error, -2 if given an improper toplist
 */
 int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
-    char inline[256];     /* buffer for reading a line */
+    CHAR line[256];       /* buffer for reading a line */
     UINT4 items, lines;   /* number of items read from a line, linecounter */
     UINT4 len, chars = 0; /* length of a line, total characters read from the file */
     UINT4 i;              /* loop counter */
-    char lastchar;        /* last character of a line read, should be newline */
+    CHAR lastchar;        /* last character of a line read, should be newline */
     TOPLISTLINE FstatLine;
     REAL8 epsilon=1e-5;
 
@@ -164,8 +164,8 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
     if(!l)
 	return -2;
 
-    /* make sure the inline buffer is terminated correctly */
-    inline[sizeof(inline)-1]='\0';
+    /* make sure the line buffer is terminated correctly */
+    line[sizeof(line)-1]='\0';
 
     /* init the checksum if given */
     if(checksum)
@@ -176,19 +176,19 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 	maxbytes--;
 
     lines=1;
-    while(fgets(inline,min(sizeof(inline)-1,maxbytes-chars),fp)) {
+    while(fgets(line,min(sizeof(line)-1,maxbytes-chars),fp)) {
 
-	len = strlen(inline);
+	len = strlen(line);
 	chars += len;
 
-	if (len==0 || inline[len-1] != '\n') {
+	if (len==0 || line[len-1] != '\n') {
 	    LALPrintError(
                 "Line too long or has no NEWLINE. First %d chars are:\n%s\n",
-                sizeof(inline)-1, inline);
+                sizeof(line)-1, line);
 	    return -1;
 	}
       
-	items = sscanf (inline,
+	items = sscanf (line,
 			 "%" LAL_REAL8_FORMAT
 			" %" LAL_REAL8_FORMAT
 			" %" LAL_REAL8_FORMAT
@@ -229,14 +229,14 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 		"1st and 2nd field should be positive.\n" 
 		"3rd field should lie between 0 and %1.15f.\n" 
 		"4th field should lie between %1.15f and %1.15f.\n",
-		lines, sizeof(inline)-1, inline,
+		lines, sizeof(line)-1, line,
 		(double)LAL_TWOPI, (double)-LAL_PI/2.0, (double)LAL_PI/2.0);
 	    return -1;
         }
 
 	if (checksum)
 	    for(i=0;i<len;i++)
-		*checksum += inline[i];
+		*checksum += line[i];
 	
 	insert_into_toplist(l, FstatLine);
 	lines++;
