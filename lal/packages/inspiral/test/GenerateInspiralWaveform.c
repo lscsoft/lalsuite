@@ -127,7 +127,7 @@ int main (int argc , char **argv) {
   
   
   if (otherIn.PrintParameters){
-    fprintf(stderr, "the inspiral structure (your parameters) before the call to the waveform generation:\n")
+    fprintf(stderr, "the inspiral structure (your parameters) before the call to the waveform generation:\n");
       SUB( LALInspiralITStructurePrint(&status, params),  &status); 
   }
      
@@ -201,7 +201,7 @@ int main (int argc , char **argv) {
   }
   
   if (otherIn.PrintParameters){
-    fprintf(stderr, "the inspiral structure after the call to the waveform generation:\n")
+    fprintf(stderr, "the inspiral structure after the call to the waveform generation:\n");
       SUB( LALInspiralITStructurePrint(&status, params),  &status); 
   }
   

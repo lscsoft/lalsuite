@@ -120,7 +120,6 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 {
   UINT4 i	= 1;
 
-
   INITSTATUS( status, "LALInspiralParseParameters", LALINSPIRALPARSEPARAMETERSC);
   ATTATCHSTATUSPTR( status );
   
@@ -175,8 +174,6 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	else if (strcmp(argv[i],"psi")==0){ 
 	  params->massChoice = psi0Andpsi3;}
       }
-      else if (strcmp(argv[i],"--fFinal")==0){
-	params->fFinal = atof(argv[++i]);}
       else if (strcmp(argv[i],"--fLower")==0){
 	params->fLower = atof(argv[++i]);}
       else if (strcmp(argv[i],"--tSampling")==0){
@@ -256,6 +253,7 @@ void LALInspiralITStructurePrint(LALStatus *status,
   printf("# mass1       = %-15.12f\n", params.mass1); 
   printf("# mass2       = %-15.12f\n", params.mass2);
   printf("# fFinal      = %-15.12f\n", params.fFinal);
+  printf("# fCutoff     = %-15.12f\n", params.fCutoff);
   printf("# fLower      = %-15.12f\n", params.fLower);
   printf("# tSampling   = %-15.12f\n", params.tSampling);
   printf("# distance    = %-15.12f\n", params.distance);
