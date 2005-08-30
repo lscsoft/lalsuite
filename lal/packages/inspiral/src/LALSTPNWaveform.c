@@ -140,14 +140,12 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
 				 (2.0/3.0) * (1.0/v) * params->epnorb[0]
 				 + params->epnorb[1]
 				 + (4.0/3.0) * v * (params->epnorb[2]
-				 + (5.0/3.0) * v * (params->epnorb[3]
-				 +  2.0      * v * (params->epnorb[4]
-				 + (7.0/3.0) * v * (params->epnorb[5]
-				 + (8.0/3.0) * v * (params->epnorb[6]
-				 +  3.0      * v * (params->epnorb[7]
-				 + (10.0/3.0)* v *  params->epnorb[8] )))))) );
-
-    
+				 + (5.0/4.0) * v * (params->epnorb[3]
+				 + (6.0/5.0) * v * (params->epnorb[4]
+				 + (7.0/6.0) * v * (params->epnorb[5]
+				 + (8.0/7.0) * v * (params->epnorb[6]
+				 + (9.0/8.0) * v * (params->epnorb[7]
+				 + (10.0/9.0)* v *  params->epnorb[8] )))))) );
     
     domega += params->wspin15 * omega * 
 	( LNhx * (113.0 * S1x + 113.0 * S2x + 75.0 * params->m2m1 * S1x + 75.0 * params->m1m2 * S2x) +
@@ -172,15 +170,13 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     
     if(params->wspin15 != 0.0)
       test += -0.5 * params->eta *
-	(5.0/3.0) * v2 * ( (8.0/3.0 + 2.0*params->m2m1)*dotLNS1 +
-			   (8.0/3.0 + 2.0*params->m1m2)*dotLNS2 );
-    
+	(5.0/3.0) * v2 * ( (8.0/3.0 + 2.0*params->m2m1)*dotLNS1 + (8.0/3.0 + 2.0*params->m1m2)*dotLNS2 );
     /* Michele-041208: here we multiply and divide by eta to keep parallelism
        with the formula above; hopefully the compiler will simplify*/
     
     if(params->wspin20 != 0.0)
-      test += -0.5 * params->eta *
-	2.0       * v  * (dotS1S2 - 3.0 * dotLNS1 * dotLNS2) / params->eta;
+          test += -v  * (dotS1S2 - 3.0 * dotLNS1 * dotLNS2);
+
     /* dLN, 1.5PN*/
     
     omega2 = omega * omega;
@@ -269,9 +265,11 @@ void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams
     dvalues->data[9] = dS2y;
     dvalues->data[10]= dS2z; 
 
+    dvalues->data[11] = 0;
+
     /* Michele-041208: not a derivative, but pass it back here anyway */ 
 
-    dvalues->data[11] = test;
+    values->data[11] = test;
 
 }
  
@@ -317,11 +315,9 @@ LALSTPNWaveform (
    CHECKSTATUSPTR(status);
 
    memset(signal->data, 0, signal->length * sizeof( REAL4 ));
-   fprintf(stderr, "before engine\n");
    /* Call the engine function */
    LALSTPNWaveformEngine(status->statusPtr, signal, NULL,NULL, NULL, NULL, NULL, &count, params, &paramsInit);
    CHECKSTATUSPTR( status );
-   fprintf(stderr, "after\n");
 
    DETATCHSTATUSPTR(status);
    RETURN(status);
@@ -770,7 +766,11 @@ LALSTPNWaveformEngine (
   mparams = &STPNparameters;
 
   /* -? I hope the units in the following are correct*/
-  apcommon = -4.0 * params->mu * LAL_MRSUN_SI/params->distance;
+  /* MV-050829: they are correct if the distance is given in meters;
+     use (1e6 * LAL_PC_SI * params->distance) if distance is given
+     in Mpc; notice the minus here */
+
+  apcommon = -4.0 * params->mu * LAL_MRSUN_SI/(params->distance);
 
   /* set units*/
 
@@ -996,9 +996,8 @@ LALSTPNWaveformEngine (
      step does not exit already, which is probably acceptable */
 
   /* Thomas-10Dev04: I do not remember why I did .... but not for nothing for sure. 
-   It might be an empty bin at beginning or a shit im time of one bin in the coherent 
+   It might be an empty bin at beginning or a shift im time of one bin in the coherent 
    code...*/
-
 
   if (a || signal2)
     params->nStartPad = 0; /* must be zero for templates and injection */
@@ -1042,18 +1041,21 @@ LALSTPNWaveformEngine (
 	  amp = params->signalAmplitude*v*v;
 
 
-	  h1= amp * 0.5 * (1+LNhz*LNhz) * cos(2.*vphi);
+	  h1 = -0.5 * amp * cos(2.*vphi) * cos(2.*alpha) * (1. + LNhz*LNhz) + amp * sin(2.*vphi) * sin(2.*alpha) * LNhz;
 	  *(signal1->data + count) = (REAL4) h1;
 
 	  if (signal2)
 	    {
-	      h2 = amp * LNhz * cos(2.*vphi + LAL_PI_2);
+	      h2 = -0.5 * amp * cos(2.*vphi) * sin(2.*alpha) * (1. + LNhz*LNhz) - amp * sin(2.*vphi) * cos(2.*alpha) * LNhz;
 	      *(signal2->data + count) = (REAL4) h2;
 	    }
 
 	}
       else if (a)
 	{ 
+	  /* MV-050829: note that the two amplitudes here differ by a
+             minus w.r.t. the definitions commented above. But these are the correct ones. */
+
 	  ff->data[count]= (REAL4)(omega/unitHz);
 	  a->data[2*count]          = (REAL4)(apcommon * f2a * 0.5 * (1 + LNhz*LNhz));
 	  a->data[2*count+1]        = (REAL4)(apcommon * f2a * LNhz);                        
@@ -1096,6 +1098,8 @@ LALSTPNWaveformEngine (
 
       LALSTPNderivatives(&values,&dvalues,(void*)mparams);
       omegadot = dvalues.data[1];
+      
+      test = values.data[11];
 
       t = (++count - params->nStartPad) * dt;
 
@@ -1110,10 +1114,14 @@ LALSTPNWaveformEngine (
   
 
   /* -? the EOB version saves some final values in params; I'm doing only fFinal*/
-
-  params->fFinal = pow(v,3.)/(LAL_PI*m);
-  /*params->Final =ff->data[count-1];*/
-
+  
+  if (signal1 || signal2){
+    params->fFinal = pow(v,3.)/(LAL_PI*m);
+  }
+  else if (a){
+    params->fFinal =ff->data[count-1];
+  }
+  
   /* -? this looks like the final phase is being subtracted from the phase history*/
   /*    this operations negates the use of initphi, which is set to 0.0 anyway*/
   /* -? I will comment this out to compare with my Mathematica code*/
