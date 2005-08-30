@@ -18,17 +18,13 @@ Module to work with the inspiralTemplate Structure.
 \input{LALInspiralITStructureParseParametersCP}
 \input{LALInspiralITStructurePrintCP}
 \input{LALInspiralITStructureSetDefaultCP}
-\input{LALInspiralITStructureInit2DummyCP}
 \input{LALInspiralITStructureHelpCP}
-\input{LALInspiralITStructureCheckCP}
 
 
 \idx{LALInspiralITStructureParseParameters}
 \idx{LALInspiralITStructurePrint}
 \idx{LALInspiralITStructureSetDefault}
-\idx{LALInspiralITStructureInit2Dummy}
 \idx{LALInspiralITStructureHelp}
-\idx{LALInspiralITStructureCheck}
 
 
 \idx{LALInspiralParseParametersForInjection}
@@ -38,11 +34,14 @@ Module to work with the inspiralTemplate Structure.
 
 \subsubsection*{Description}
 This module is a set of functions to play with the inspiralTemplate structure of the 
-inspiral package.
+inspiral package. It allows to set default values to the inspiral strcuture, to parse 
+parameters from the inspiral strcuture and to print the inspiral structure. 
+
+Has to check and finalized...
 
 \begin{itemize}
 \item  The \texttt{LALInspiralITSructureParseParameters} function allows 
-the user to parsea string with respect to that structure. Each variable in the 
+the user to parse string with respect to that structure. Each variable in the 
 inspiralTemplate structure might be parse with a string like "--(name of the variable)+(value)"
  i.e. \textit{--approximant TaylorT1}. Each argument starts with a double dash character
 followed by a key word which is exactly as written in the InspiralTemplate Structure such as
@@ -54,8 +53,6 @@ Once the string is parsed, the checking function is called.
 of the InspiralTemplate structure.
 \item The \texttt{LALInspiralITStructureSetDefault} set default values to the variables. 
 Those values are written in the C-code.
-\item \texttt{LALInspiralITStructureInit2Dummy}
-\item \texttt{LALInspiralITStructureCheck}
 \item \texttt{LALInspiralITStructureHelp}
 \end{itemize}
 
@@ -112,11 +109,6 @@ None
 #define  INSPIRALTEMPLATE_SOURCEPHI 	2.
 
 NRCSID (LALINSPIRALPARSEPARAMETERSC, "");
-
-
-void LALInspiralITStrucutreInit2Dummy(LALStatus *status, 
-				      InspiralTemplate *params);
-
 
 
 /* <lalVerbatim file="LALInspiralITStructureParseParametersCP"> */
@@ -183,8 +175,6 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	else if (strcmp(argv[i],"psi")==0){ 
 	  params->massChoice = psi0Andpsi3;}
       }
-      else if (strcmp(argv[i],"--fCutoff")==0){
-	params->fCutoff = atof(argv[++i]);}
       else if (strcmp(argv[i],"--fFinal")==0){
 	params->fFinal = atof(argv[++i]);}
       else if (strcmp(argv[i],"--fLower")==0){
@@ -203,16 +193,6 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	else if (strcmp(argv[i],"psi")==0){ 
 	  params->massChoice = psi0Andpsi3;}
       }
-      else if (strcmp(argv[i],"--fCutoff")==0){
-	params->fCutoff = atof(argv[++i]);}
-      else if (strcmp(argv[i],"--fFinal")==0){
-	params->fFinal = atof(argv[++i]);}
-      else if (strcmp(argv[i],"--fLower")==0){
-	params->fLower = atof(argv[++i]);}
-      else if (strcmp(argv[i],"--tSampling")==0){
-	params->tSampling = atof(argv[++i]); }
-      else if (strcmp(argv[i],"--distance")==0){
-	params->distance = atof(argv[++i]); }
       else if (strcmp(argv[i],"--startPhase")==0){
 	params->startPhase = atof(argv[++i]); }
       else if (strcmp(argv[i],"--startTime")==0){
@@ -244,125 +224,26 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
       else if (strcmp(argv[i],"--sourcePhi")==0){
 	params->sourcePhi = atof(argv[++i]); }
       /* we need also the spin .Has to be checked*/
-      else if (strcmp(argv[i],"--spin")==0)
-	{	 
-	  params->spin1[0]= atof(argv[++i]);
-	  params->spin2[0]= atof(argv[++i]);
-	}
-      else if (strcmp(argv[i],"--angle")==0)
-	{	 
-	  params->spin1[1]= atof(argv[++i]);
-	  params->spin1[2]= atof(argv[++i]);
-	  params->spin2[1]= atof(argv[++i]);
-	  params->spin2[2]= atof(argv[++i]);
-	  
-	}
-      else if (strcmp(argv[i],"--eccentricity")==0){
-	params->sourcePhi = atof(argv[++i]); }
-       /* if the option is not recongnized, we skip the next 
-		   argument and go ahead. We don't want to quit */      
+      else if (strcmp(argv[i],"--spin1x")==0){	 
+	params->spin1[0]= atof(argv[++i]);}
+      else if (strcmp(argv[i],"--spin1y")==0){	 
+	params->spin1[1]= atof(argv[++i]); } 
+      else if (strcmp(argv[i],"--spin1z")==0){	 
+	params->spin1[2]= atof(argv[++i]); }
+      else if (strcmp(argv[i],"--spin2x")==0){	 
+	params->spin2[0]= atof(argv[++i]);} 
+      else if (strcmp(argv[i],"--spin2y")==0){	 
+	  params->spin2[1]= atof(argv[++i]);}
+      else if  (strcmp(argv[i],"--spin2z")==0){	 
+	  params->spin2[2]= atof(argv[++i]);}
       i++;       
    }
   
-  LALInspiralITStructureCheck(status->statusPtr, *params);
-  CHECKSTATUSPTR(status);
   
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
 
-
-/* <lalVerbatim file="LALInspiralITStructureInit2DummyCP"> */
-void LALInspiralITStrucutreInit2Dummy(LALStatus *status, 
-				      InspiralTemplate *params)
-/* </lalVerbatim> */
-{
-  params->approximant  = -1;
-  params->order        = -1;
-  params->mass1        = -1;
-  params->mass2        = -1;
-  params->fCutoff      = -1;
-  params->fLower       = -1;
-  params->tSampling    = -1; 
-  params->distance     = -1; 
-  params->signalAmplitude = -1;
-  params->startPhase   =-1;
-  params->startTime    =-1;
-  
-  params->Theta        = -1;
-  params->Zeta2        = -1;
-
-  params->alpha        = -1;
-  params->psi0         = -1;
-  params->psi3         = -1;
-  
-  params->alpha1       = -1;
-  params->alpha2       = -1;
-  params->beta         = -1;
-  
-  params->Theta        = -1;
-  params->Zeta2        = -1;
-
-  params->inclination  = -1;
-  params->orbitTheta0  = -1;
-  params->orbitPhi0    = -1;
-  params->sourceTheta  = -1;
-  params->sourcePhi    = -1;
-  
-  params->eccentricity  = -1;  
-  RETURN(status);
-
-}
-
-
-/* <lalVerbatim file="LALInspiralITStructureCheckCP"> */
-void LALInspiralITStructureCheck(LALStatus *status, 
-				 InspiralTemplate params)
-/* </lalVerbatim> */
-{
-
-  INITSTATUS( status, "LALInspiralITSStrucutreCheck", LALINSPIRALPARSEPARAMETERSC);
-  ATTATCHSTATUSPTR( status );
-
-  switch (params.approximant)
-    {
-    case BCV:
-/*      if (params.alpha < 0) {  
-	ABORT(status, LALINSPIRALH_EALPHA, LALINSPIRALH_MSGEALPHA);
-      }*/
-       if (params.fCutoff < 0){
-	ABORT(status, LALINSPIRALH_EFCUTOFF,  LALINSPIRALH_MSGEFCUTOFF);
-      }
-      else if (params.psi0 < 0) {
-	ABORT(status, LALINSPIRALH_EPSI0,  LALINSPIRALH_MSGEPSI0);
-      }
-      else if (params.psi3 > 0) {
-	ABORT(status, LALINSPIRALH_EPSI3,  LALINSPIRALH_MSGEPSI3);
-      }
-       
-      break;
-    case PadeF1:    
-      ABORT(status, LALINSPIRALH_EAPPROXIMANT, LALINSPIRALH_MSGEAPPROXIMANT );
-      break;
-    case TaylorT1: 
-    case TaylorT2: 
-    case TaylorT3:
-    case BCVSpin:
-    case PadeT1:
-    case TaylorF1:
-    case EOB:
-    case TaylorF2:
-    case SpinTaylorT3:
-    case SpinTaylor:
-      break;
- default:
-   ABORT( status, 9999, "Unknown case in switch." );
-
-  }
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);    
-}
 
 /* <lalVerbatim file="LALInspiralITStructurePrintCP"> */
 void LALInspiralITStructurePrint(LALStatus *status, 
@@ -374,7 +255,7 @@ void LALInspiralITStructurePrint(LALStatus *status,
   printf("# order       = %-15.12d\n", params.order);
   printf("# mass1       = %-15.12f\n", params.mass1); 
   printf("# mass2       = %-15.12f\n", params.mass2);
-  printf("# fcutoff     = %-15.12f\n", params.fCutoff);
+  printf("# fFinal      = %-15.12f\n", params.fFinal);
   printf("# fLower      = %-15.12f\n", params.fLower);
   printf("# tSampling   = %-15.12f\n", params.tSampling);
   printf("# distance    = %-15.12f\n", params.distance);
@@ -396,6 +277,13 @@ void LALInspiralITStructurePrint(LALStatus *status,
   printf("# orbitPhi0   = %-15.12f\n", params.orbitPhi0);
   printf("# sourceTheta = %-15.12f\n", params.sourceTheta);
   printf("# sourcePhi   = %-15.12f\n", params.sourcePhi);
+  printf("# spin1 x     = %-15.12f\n", params.spin1[0]);
+  printf("# spin1 y     = %-15.12f\n", params.spin1[1]);
+  printf("# spin1 z     = %-15.12f\n", params.spin1[2]);
+  printf("# spin2 x     = %-15.12f\n", params.spin2[0]);
+  printf("# spin2 y     = %-15.12f\n", params.spin2[1]);
+  printf("# spin2 z     = %-15.12f\n", params.spin2[2]);
+
 
   printf("# eccentricity= %-15.12f\n", params.eccentricity);
 
@@ -457,12 +345,13 @@ void LALInspiralITStructureSetDefault(LALStatus *status,
   params->orbitPhi0    = INSPIRALTEMPLATE_ORBITPHI0;
   params->sourceTheta  = INSPIRALTEMPLATE_SOURCETHETA;
   params->sourcePhi    = INSPIRALTEMPLATE_SOURCEPHI;
-  params->spin1[0]        = INSPIRALTEMPLATE_SPIN1X;  
-  params->spin1[1]        = INSPIRALTEMPLATE_SPIN1Y;  
-  params->spin1[2]        = INSPIRALTEMPLATE_SPIN1Z;  
-  params->spin2[0]        = INSPIRALTEMPLATE_SPIN2X;  
-  params->spin2[1]        = INSPIRALTEMPLATE_SPIN2Y;  
-  params->spin2[2]        = INSPIRALTEMPLATE_SPIN2Z;  
+  params->spin1[0]     = INSPIRALTEMPLATE_SPIN1X;  
+  params->spin1[1]     = INSPIRALTEMPLATE_SPIN1Y;  
+  params->spin1[2]     = INSPIRALTEMPLATE_SPIN1Z;  
+  params->spin2[0]     = INSPIRALTEMPLATE_SPIN2X;  
+  params->spin2[1]     = INSPIRALTEMPLATE_SPIN2Y;  
+  params->spin2[2]     = INSPIRALTEMPLATE_SPIN2Z;  
+
   params->eccentricity = INSPIRALTEMPLATE_ECCENTRICITY;   
   
   params->ieta         = 1.;  
