@@ -277,10 +277,11 @@ int write_toplist_item_to_fp(TOPLISTLINE fline, FILE*fp, UINT4*checksum) {
 int atomic_write_toplist_to_file(toplist_t *l, char *filename, UINT4*checksum) {
     char tempname[256];
     UINT4 length;
+    FILE * fpnew;
 
     strncpy(tempname,filename,sizeof(tempname)-4);
     strcat(tempname,".tmp");
-    FILE *fpnew=fopen(tempname, "w");
+    fpnew=fopen(tempname, "w");
     if(!fpnew)
 	return -1;
     length = write_toplist_to_fp(l,fpnew,checksum);
