@@ -127,18 +127,14 @@ int main (int argc , char **argv) {
   
   
   if (otherIn.PrintParameters){
-    SUB( LALInspiralITStructurePrint(&status, params),  &status); 
+    fprintf(stderr, "the inspiral structure (your parameters) before the call to the waveform generation:\n")
+      SUB( LALInspiralITStructurePrint(&status, params),  &status); 
   }
      
   /* force those parameters */
 
   dt 	= 1./params.tSampling;
   n 	= paramsInit.nbins;   
-
-  if (n<=10) {  
-      LALWarning(&status, "#nothing to compute; length is too short. You might reduce the fLower or masses values.");
-    return 0; 
-  }
   
   if (otherIn.PrintParameters)
     {
@@ -198,17 +194,16 @@ int main (int argc , char **argv) {
 	SUB( LALSDestroyVector(&status, &signal1), &status);
 	SUB( LALSDestroyVector(&status, &signal2), &status);	
       }
-    printf("%f %d %f %f %f\n",
-	   params.tC*params.tSampling,
-	   n ,
-	   params.totalMass,params.eta, params.fLower);
     break;
   case PadeF1:
   default:
-	    fprintf(stderr, " not available\n");
 	    break;
   }
-     
+  
+  if (otherIn.PrintParameters){
+    fprintf(stderr, "the inspiral structure after the call to the waveform generation:\n")
+      SUB( LALInspiralITStructurePrint(&status, params),  &status); 
+  }
   
   LALCheckMemoryLeaks();
   return 0;
@@ -268,7 +263,7 @@ void printf_timeseries (UINT4 n, REAL4 *signal, REAL8 delta, REAL8 t0)
   UINT4 i=0;
   FILE *outfile1;
 
-  outfile1=fopen("wave1.dat","a");
+  outfile1=fopen("wave1.dat","w");
 
   do 
      fprintf (outfile1,"%e %e\n", i*delta+t0, *(signal+i)  );
