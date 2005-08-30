@@ -176,7 +176,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 	maxbytes--;
 
     lines=1;
-    while(fgets(line,min(sizeof(line)-1,maxbytes-chars),fp)) {
+    while(fgets(line,min(sizeof(line)-1, maxbytes - chars + 1),fp)) {
 
 	len = strlen(line);
 	chars += len;
@@ -204,7 +204,7 @@ int read_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 maxbytes) {
 
 	/* check the values scanned */
 	if (
-	    items != 9 ||
+	    items != 6 ||
 
 	    !finite(FstatLine.Freq)	||
 	    !finite(FstatLine.f1dot)	||
