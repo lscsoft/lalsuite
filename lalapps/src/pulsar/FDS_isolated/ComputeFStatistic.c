@@ -617,8 +617,8 @@ int main(int argc,char *argv[])
   if(fpFstat){
     char done[6];
     done[0] = '\0';
-    if(!fseek(fpstat,-6,SEEK_END))
-      if(fread(done,6,1,fpstat)==1)
+    if(!fseek(fpFstat,-6,SEEK_END))
+      if(fread(done,6,1,fpFstat)==1)
         if(strncmp(done,"%DONE",5)==0){
           fprintf(stderr,"detected finished Fstat file - skipping Fstat run %d\n",cfsRunNo);
 	  fstats_completed = TRUE;
@@ -3173,7 +3173,7 @@ void worker() {
 
 #ifndef RUN_POLKA
   int retval=boincmain(globargc,globargv);
-  Outputfilename=Fstatsfilename;
+  Outputfilename=FstatFilename;
 #else
   int a1,a2,retval;
   CHAR ckptfname1[260];
@@ -3189,8 +3189,8 @@ void worker() {
   /* if there was no //, globargc==a1 and this is old-style command line */
   if(a1<globargc) {
     /* remember first file names */
-    strncpy(Fstatsfilename1,Fstatsfilename,260);
-    strncpy(ckptfname1,ckp_fname,260);
+    strncpy(Fstatsfilename1,FstatFilename,sizeof(Fstatsfilename1));
+    strncpy(ckptfname1,ckp_fname,sizeof(ckptfname1));
     if (!retval){
       /* find second // delimiter */ 
       for(a2=a1+1;(a2<globargc)&&(strncmp(globargv[a2],"//",3));a2++);
@@ -3207,11 +3207,11 @@ void worker() {
     remove (ckptfname1);
     /* keep Fstats files while testing - should be deleted as
        temp files with the BOINC slots directory anyway
-      remove (Fstatsfilename);
+      remove (FstatFilename);
       remove (Fstatsfilename1);
     */
   } else {
-    Outputfilename=Fstatsfilename;
+    Outputfilename=FstatFilename;
     remove (ckp_fname);
   }
 #endif
