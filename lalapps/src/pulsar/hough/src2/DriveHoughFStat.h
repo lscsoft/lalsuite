@@ -28,8 +28,6 @@
  ****/
 
 
-
-
 #ifndef _DRIVEHOUGHCOLOR_H
 #define _DRIVEHOUGHCOLOR_H
 
@@ -60,6 +58,7 @@
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/Date.h>
 #include <lal/LUT.h> 
+#include <lal/NormalizeSFTRngMed.h>
 
 #include <lalapps.h>
 
@@ -98,22 +97,10 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
 
 
+
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
  */
-
-/** structure containing Fstat values in a frequency range for a single alpha, delta, fdot */
-  typedef struct tagFstatVector {
-    REAL8 alpha;   /**< right ascension */
-    REAL8 delta;   /**< declination */
-    INT4  msp;     /**< largest spindown order */
-    REAL8 *fdot;   /**< vector of length msp -- first, second and higher spindowns */
-    INT8  length;  /**< number of frequency values */
-    REAL8 fStart;  /**< starting frequency in Hz */
-    REAL8 deltaF;  /**< frequency resolution in Hz*/
-    REAL8 fBand;   /**< frequency band in Hz */
-    REAL8 *data;   /**< Fstat values for the corresponding frequency values */ 
-  } FstatVector;
 
 
   /** structure containing dtector velocity and position for set of timestamps */
@@ -127,7 +114,30 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 *posy;     /**< y-component of position in equatorial coordinates */
     REAL8 *posz;     /**< z-component of position in equatorial coordinates */
   } TimeVelPosVector; 
-    
+
+
+  /** parameters for calculating Fstatistic for multiple stacks */ 
+  typedef struct tagFstatStackParams {
+    INT4 mCohSft;           /**< number of sfts in each stack */
+    INT4 Nstacks;           /**< number of stacks */
+    INT4 Dterms;            /**< value of Dterms for LALDemod */
+    REAL8 fStart;           /**< start calculating Fstat at this frequency */
+    REAL8 fBand;            /**< calculate Fstat for this frequency band */
+    LALDetector detector;   /**< detector */
+    EphemerisData *edat;    /**< ephemeris info */ 
+    LIGOTimeGPSVector **ts; /**< timestamp vector for each stack */
+    REAL8 alpha;            /**< sky-location -- right acsension */
+    REAL8 delta;            /**< sky-location -- declination */
+    REAL8Vector *spindown;  /**< vector containing spindown values */
+  } FstatStackParams;
+
+
+void ComputeFstatStack (LALStatus *status, 
+			LALFstat **out, 
+			SFTVector *sfts, 
+			FstatStackParams *params);
+
+
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif

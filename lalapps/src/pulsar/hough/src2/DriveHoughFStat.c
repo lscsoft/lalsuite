@@ -66,7 +66,7 @@ int main( int argc, char *argv[]) {
   LALDetector detector;
   EphemerisData *edat = NULL;
   TimeVelPosVector *timeVelPos=NULL;   
-  LIGOTimeGPSVector *midTs=NULL; /* time stamps of mid points of SFTs */
+  LIGOTimeGPSVector **midTs=NULL; /* time stamps of mid points of SFTs */
 
   /* sft related stuff */
   SFTVector *inputSFTs=NULL;  /* vector of SFTtypes and SFTtype is COMPLEX8FrequencySeries */
@@ -75,21 +75,12 @@ int main( int argc, char *argv[]) {
   INT4 sftlength; /* number of bins in each sft */
   REAL8 deltaF, timeBase; /* frequency resolution */
   INT8 sftFminBin; /* first sft bin index */
-  REAL8 medianBias; /* running median bias */
+
 
   /* LALdemod related stuff */
-  LALFstat *Fstat;	
-  /* FFT is a structure containing *SFTtype 
-     --- for some reason COMPLEX8FrequencySeriesVector is not used */
-  FFT **SFTData=NULL;
-  DemodPar *DemodParams;
-  CSParams *csParams  = NULL;  /* ComputeSky parameters */
-  AMCoeffsParams *amParams;
-  AMCoeffs amc;   
-  EarthState earth;
-  EmissionTime emit;
-  BarycenterInput baryinput; /* Stores detector location and other barycentering data */
-  
+  LALFstat **Fstat=NULL;	
+  FstatStackParams FstatPar;
+
   /* hough variables */
   INT4  nfSizeCylinder=NFSIZE;
 
@@ -178,8 +169,6 @@ int main( int argc, char *argv[]) {
   if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
   if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
 
-  LAL_CALL ( LALRngMedBias( &status, &medianBias, uvar_blocksRngMed ), &status);
-
   /* write the log file */
   fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
   strcpy(fnamelog, uvar_fnameout);
@@ -224,6 +213,10 @@ int main( int argc, char *argv[]) {
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*"); 
     LAL_CALL( LALReadSFTfiles ( &status, &inputSFTs, uvar_fStart, uvar_fStart + uvar_fBand, nfSizeCylinder + uvar_blocksRngMed , tempDir), &status);
+
+    /* normalize sfts */
+    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
+
     LALFree(tempDir);
   }
 
@@ -268,17 +261,18 @@ int main( int argc, char *argv[]) {
     }
   }  
   /* calculate mid time stamps of sfts */
-  midTs = (LIGOTimeGPSVector *)LALMalloc( mCohSft * sizeof(LIGOTimeGPSVector));
+  midTs = (LIGOTimeGPSVector **)LALMalloc( Nstacks * sizeof(LIGOTimeGPSVector *));
   for (k=0; k<Nstacks; k++) {
-    midTs[k].length = mCohSft;
-    midTs[k].data  = NULL;
-    midTs[k].data = (LIGOTimeGPS *)LALMalloc( mCohSft * sizeof(LIGOTimeGPS));
+    midTs[k] = (LIGOTimeGPSVector *)LALMalloc(sizeof(LIGOTimeGPSVector));
+    midTs[k]->length = mCohSft;
+    midTs[k]->data  = NULL;
+    midTs[k]->data = (LIGOTimeGPS *)LALMalloc( mCohSft * sizeof(LIGOTimeGPS));
     for (j=0; j<mCohSft; j++) {
       REAL8 tempTime;
 
       LAL_CALL( LALGPStoFloat ( &status, &tempTime, &(timeVelPos[k].ts[j])), &status);
       tempTime += 0.5 * timeBase;
-      LAL_CALL( LALFloatToGPS ( &status, &(midTs[k].data[j]), &tempTime), &status);
+      LAL_CALL( LALFloatToGPS ( &status, &(midTs[k]->data[j]), &tempTime), &status);
     }
   }
 
@@ -328,14 +322,99 @@ int main( int argc, char *argv[]) {
     }
   }
 
+
+  FstatPar.mCohSft = mCohSft;
+  FstatPar.Nstacks = Nstacks;
+  FstatPar.Dterms = uvar_Dterms;
+  FstatPar.detector = detector;
+  FstatPar.alpha = uvar_alpha;
+  FstatPar.delta = uvar_delta;
+  FstatPar.fStart = uvar_fStart;
+  FstatPar.fBand = uvar_fBand;
+  FstatPar.ts = midTs;
+  FstatPar.edat = edat;
+  FstatPar.spindown = NULL;
+  LAL_CALL( LALDCreateVector( &status, &(FstatPar.spindown),1), &status);
+
+  LAL_CALL( ComputeFstatStack( &status, Fstat, inputSFTs, &FstatPar), &status);
+
+  /* free timestamp and Vel/Pos vectors */
+  for (k=0; k<Nstacks; k++) {
+      LALFree(timeVelPos[k].ts);
+      LALFree(timeVelPos[k].posx);
+      LALFree(timeVelPos[k].posy);
+      LALFree(timeVelPos[k].posz);
+      LALFree(timeVelPos[k].velx);
+      LALFree(timeVelPos[k].vely);
+      LALFree(timeVelPos[k].velz);
+      LALFree(midTs[k]->data);
+      LALFree(midTs[k]);
+    }  
+  LALFree(timeVelPos);
+  LALFree(midTs);
+
+  /* free ephemeris */
+  LALFree(edat->ephemE);
+  LALFree(edat->ephemS);
+  LALFree(edat);
+
+  /* free Fstat structure */
+  for (k=0; k<Nstacks; k++) {
+    LALFree(Fstat[k]->F);
+    LALFree(Fstat[k]);
+  }
+  LALFree(Fstat);
+
+  LAL_CALL (LALDestroySFTVector(&status, &inputSFTs),&status );
+  LAL_CALL (LALDDestroyVector (&status, &(FstatPar.spindown)), &status);
+  LAL_CALL (LALDestroyUserVars(&status), &status);  
+
+  LALCheckMemoryLeaks();
+
+  return 0;
+}
+
+
+void ComputeFstatStack (LALStatus *status, 
+			LALFstat **Fstat, 
+			SFTVector *inputSFTs, 
+			FstatStackParams *params)
+{
+
+ 
+  INT4 mCohSft, j, k, Nstacks;
+  REAL8 deltaF, timeBase;
+  LALDetector detector;
+  DemodPar *DemodParams;
+  CSParams *csParams  = NULL;  /* ComputeSky parameters */
+  AMCoeffsParams *amParams;
+  AMCoeffs amc;   
+  EarthState earth;
+  EmissionTime emit;
+  BarycenterInput baryinput; /* Stores detector location and other barycentering data */
+  LIGOTimeGPSVector **ts=NULL;
+  /* FFT is a structure containing *SFTtype 
+     --- for some reason COMPLEX8FrequencySeriesVector is not used */
+  FFT **SFTData=NULL;
+  EphemerisData *edat;   
+
+  INITSTATUS( status, "ComputeFstatStack", rcsid );
+  ATTATCHSTATUSPTR (status);
+
   /************ setup parameters for calling  LALDemod**********/
 
+  mCohSft = params->mCohSft;
+  Nstacks = params->Nstacks;
+  deltaF = inputSFTs->data->deltaF;
+  timeBase = 1.0/deltaF;
+
   /* Detector location */
+  detector = params->detector;
   baryinput.site.location[0] = detector.location[0]/LAL_C_SI;
   baryinput.site.location[1] = detector.location[1]/LAL_C_SI;
   baryinput.site.location[2] = detector.location[2]/LAL_C_SI;
-  baryinput.alpha = uvar_alpha;
-  baryinput.delta = uvar_delta;
+  baryinput.alpha = params->alpha;
+  baryinput.delta = params->delta;
   baryinput.dInv = 0.e0;
 
   /* amParams stuff */
@@ -346,8 +425,8 @@ int main( int argc, char *argv[]) {
   amParams->earth = &earth; 
   amParams->edat = edat;
   amParams->das->pDetector = &detector; 
-  amParams->das->pSource->equatorialCoords.latitude = uvar_delta;
-  amParams->das->pSource->equatorialCoords.longitude = uvar_alpha;
+  amParams->das->pSource->equatorialCoords.latitude = params->delta;
+  amParams->das->pSource->equatorialCoords.longitude = params->alpha;
   amParams->das->pSource->orientation = 0.0;
   amParams->das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
   amParams->polAngle = amParams->das->pSource->orientation ;
@@ -355,8 +434,8 @@ int main( int argc, char *argv[]) {
   /* memory for output of LALComputeAM */
   amc.a = NULL;
   amc.b = NULL;
-  LAL_CALL (LALSCreateVector( &status, &(amc.a), mCohSft), &status);
-  LAL_CALL (LALSCreateVector( &status, &(amc.b), mCohSft), &status);
+  LAL_CALL (LALSCreateVector( status, &(amc.a), (UINT4)mCohSft), status);
+  LAL_CALL (LALSCreateVector( status, &(amc.b), (UINT4)mCohSft), status);
 
   /* ComputeSky stuff*/
   csParams = (CSParams *)LALMalloc(sizeof(CSParams));
@@ -366,8 +445,8 @@ int main( int argc, char *argv[]) {
   csParams->edat = edat;
   csParams->baryinput = &baryinput;
   csParams->spinDwnOrder = 1;
-  csParams->skyPos[0] = uvar_alpha;
-  csParams->skyPos[1] = uvar_delta;
+  csParams->skyPos[0] = params->alpha;
+  csParams->skyPos[1] = params->delta;
   csParams->earth = &earth;
   csParams->emit = &emit;
 
@@ -379,18 +458,22 @@ int main( int argc, char *argv[]) {
   DemodParams->skyConst = (REAL8 *)LALMalloc(4 * mCohSft * sizeof(REAL8));
   /* space for spin down params */
   DemodParams->spinDwnOrder = 1;
+  /* only first order  spindown for now */
   DemodParams->spinDwn = (REAL8 *)LALMalloc(sizeof(REAL8));
-  DemodParams->spinDwn[0] = uvar_fdot; /* needs correction for reference time */
+  DemodParams->spinDwn[0] = params->spindown->data[0]; /* needs correction for reference time */
   DemodParams->SFTno = mCohSft;
-  DemodParams->f0 = uvar_fStart;
-  DemodParams->imax = (INT4)(uvar_fBand/deltaF + 1e-6) + 1;
-  DemodParams->Dterms = uvar_Dterms;
+  DemodParams->f0 = params->fStart;
+  DemodParams->imax = (INT4)(params->fBand/deltaF + 1e-6) + 1;
+  DemodParams->Dterms = params->Dterms;
   DemodParams->df   = deltaF;
-  DemodParams->ifmin = (INT4) floor( (1.0 - VTOT)* uvar_fStart * timeBase) - uvar_Dterms;;
+  DemodParams->ifmin = (INT4) floor( (1.0 - VTOT)* params->fStart * timeBase) - params->Dterms;;
   DemodParams->returnFaFb = FALSE; /* don't require Fa and Fb */
 
   /* allocate memory for Fstat structure for each stack -- output from LALDemod*/
-  Fstat = (LALFstat *)LALMalloc( Nstacks * sizeof(LALFstat));
+  Fstat = (LALFstat **)LALMalloc( Nstacks * sizeof(LALFstat *));
+  for (k=0; k<Nstacks; k++)
+    Fstat[k] = (LALFstat *)LALMalloc( sizeof(LALFstat));
+
   /* allocate memory for SFTData */
   SFTData = (FFT **)LALMalloc( mCohSft * sizeof(FFT *));  
   for (j=0; j<mCohSft; j++) {
@@ -401,73 +484,46 @@ int main( int argc, char *argv[]) {
   /* calculate Fstat for each stack */
   for (k=0; k<Nstacks; k++) {
     
-    Fstat[k].F = (REAL8 *)LALMalloc( DemodParams->imax * sizeof(REAL8));
+    Fstat[k]->F = (REAL8 *)LALMalloc( DemodParams->imax * sizeof(REAL8));
 
     /* compute a(t) and b(t) and A,B,C,D */
-    LAL_CALL ( LALComputeAM( &status, &amc, midTs[k].data, amParams), &status); 
+    ts = params->ts;
+    LAL_CALL ( LALComputeAM( status, &amc, ts[k]->data, amParams), status); 
     DemodParams->amcoe = &amc;
 
     /* compute the "sky-constants" */
-    csParams->tGPS = timeVelPos[k].ts;
-    LAL_CALL ( LALComputeSky( &status, DemodParams->skyConst, 0, csParams), &status);  
+    csParams->tGPS = ts[k]->data;
+    LAL_CALL ( LALComputeSky( status, DemodParams->skyConst, 0, csParams), status);  
 
     for (j=0; j<mCohSft; j++) {
       SFTData[j]->fft = &(inputSFTs->data[k*mCohSft + j]);
     }
 
-    LAL_CALL ( LALDemod(&status, Fstat + k, SFTData, DemodParams), &status);    
+    LAL_CALL ( LALDemod( status, Fstat[k], SFTData, DemodParams), status);    
   }
-
-  /* free timestamp and Vel/Pos vectors */
-  for (k=0; k<Nstacks; k++) {
-      LALFree(timeVelPos[k].ts);
-      LALFree(timeVelPos[k].posx);
-      LALFree(timeVelPos[k].posy);
-      LALFree(timeVelPos[k].posz);
-      LALFree(timeVelPos[k].velx);
-      LALFree(timeVelPos[k].vely);
-      LALFree(timeVelPos[k].velz);
-      LALFree(midTs[k].data);
-    }  
-  LALFree(timeVelPos);
-  LALFree(midTs);
-
-  /* free ephemeris */
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
 
   /* free amParams */
   LALFree(amParams->das->pSource);
   LALFree(amParams->das);
   LALFree(amParams);
-  LAL_CALL ( LALSDestroyVector( &status, &(amc.a)), &status);
-  LAL_CALL ( LALSDestroyVector( &status, &(amc.b)), &status);
+  LAL_CALL ( LALSDestroyVector( status, &(amc.a)), status);
+  LAL_CALL ( LALSDestroyVector( status, &(amc.b)), status);
 
   /* free ComputeSky Params */
   LALFree(csParams->skyPos);
   LALFree(csParams);
 
-  /* free Fstat structure */
-  for (k=0; k<Nstacks; k++)
-    LALFree(Fstat[k].F);
-  LALFree(Fstat);
-
+  /* free Demod params */
+  LALFree(DemodParams->skyConst);
+  LALFree(DemodParams->spinDwn);
+  LALFree(DemodParams);  
+  
   for (j=0; j<mCohSft; j++)
     LALFree(SFTData[j]);
   LALFree(SFTData);
 
-
-  /* free Demod params */
-  LALFree(DemodParams->skyConst);
-  LALFree(DemodParams->spinDwn);
-  LALFree(DemodParams);
-
-  LAL_CALL (LALDestroySFTVector(&status, &inputSFTs),&status );
-
-  LAL_CALL (LALDestroyUserVars(&status), &status);  
-
-  LALCheckMemoryLeaks();
-
-  return 0;
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+  
 }
+
