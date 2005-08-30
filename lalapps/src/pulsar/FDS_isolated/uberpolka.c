@@ -56,6 +56,17 @@ RCSID ("$Id$");
 extern CHAR *Outputfilename;
 /* communicating the progress to the graphics thread */
 extern double *fraction_done_hook;
+/* define LALPrintError locally again, otherwise the stderr redirection
+   doesn't seem to work on the Mac */
+LALPrintError( const char *fmt, ... )
+{
+  int n;
+  va_list ap;
+  va_start( ap, fmt );
+  n = vfprintf( stderr, fmt, ap );
+  va_end( ap );
+  return n;
+}
 #endif
 
 /* this is defined in C99 and *should* be in math.h.  Long term
