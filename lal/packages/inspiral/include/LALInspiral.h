@@ -1,6 +1,6 @@
 /* <lalVerbatim file="LALInspiralHV">
 
-Author: Churches, D. K and B. S. Sathyaprakash.
+Author: Churches, D. K ,  B. S. Sathyaprakash,  T. Cokelaer.
 $Id$
 
 </lalVerbatim>  */
@@ -1395,16 +1395,6 @@ LALInspiralITStructureParseParameters(
 	UINT4 argc,
 	CHAR **argv,
 	InspiralTemplate *params);
-
-void
-LALInspiralITStructureInit2Dummy(
-	LALStatus *status, 
-	InspiralTemplate *params);
-
-void
-LALInspiralITStructureCheck(
-	LALStatus *status, 
-	InspiralTemplate  params);
 
 void 
 LALInspiralITStructureSetDefault(
