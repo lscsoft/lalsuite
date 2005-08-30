@@ -58,7 +58,7 @@ extern CHAR *Outputfilename;
 extern double *fraction_done_hook;
 /* define LALPrintError locally again, otherwise the stderr redirection
    doesn't seem to work on the Mac */
-LALPrintError( const char *fmt, ... )
+int LALPrintError( const char *fmt, ... )
 {
   int n;
   va_list ap;
