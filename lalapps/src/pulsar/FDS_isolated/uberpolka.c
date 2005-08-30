@@ -58,7 +58,7 @@ extern CHAR *Outputfilename;
 extern double *fraction_done_hook;
 /* define LALPrintError locally again, otherwise the stderr redirection
    doesn't seem to work on the Mac */
-int LALPrintError( const char *fmt, ... )
+int myPrintError( const char *fmt, ... )
 {
   int n;
   va_list ap;
@@ -67,6 +67,8 @@ int LALPrintError( const char *fmt, ... )
   va_end( ap );
   return n;
 }
+#else
+#define myPrintError LALPrintError
 #endif
 
 /* this is defined in C99 and *should* be in math.h.  Long term
@@ -287,7 +289,7 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
   /* allocate space */
   if (numCoincidences != 0){ 
     if (!(indicesCCfa=(INT4 *)LALMalloc(sizeof(INT4) * numCoincidences))){
-      LALPrintError("Unable to allocate index array in main\n");
+      myPrintError("Unable to allocate index array in main\n");
       return 1;
     }
   }
@@ -298,7 +300,7 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
   /* open and write the file */
 #if USE_BOINC
   if (boinc_resolve_filename(CLA.OutputFile, resolved_filename, sizeof(resolved_filename))) {
-    LALPrintError(
+    myPrintError(
             "Can't resolve file \"%s\"\n"
             "If running a non-BOINC test, create [INPUT] or touch [OUTPUT] file\n",
             CLA.OutputFile);
@@ -306,13 +308,13 @@ int OutputCoincidences(struct PolkaCommandLineArgsTag CLA)
   }
   fpOut=fopen(resolved_filename,"wb");
   if (!fpOut){
-    LALPrintError("Unable to open output file \"%s\" for writing\n", resolved_filename);
+    myPrintError("Unable to open output file \"%s\" for writing\n", resolved_filename);
     return 1;
   }
 #else
   fpOut=fopen(CLA.OutputFile,"wb");
   if (!fpOut){
-    LALPrintError("Unable to open output file \"%s\" for writing\n", CLA.OutputFile);
+    myPrintError("Unable to open output file \"%s\" for writing\n", CLA.OutputFile);
     return 1;
   }
 #endif
@@ -609,7 +611,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   fp=fopen(fname,"rb");
   if (fp==NULL) 
     {
-      LALPrintError("File %s doesn't exist!\n",fname);
+      myPrintError("File %s doesn't exist!\n",fname);
       return 1;
     }
   while(fgets(line1,sizeof(line1),fp)) {
@@ -619,7 +621,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
     /* check that each line ends with a newline char (no overflow of
        line1 or null chars read) */
     if (!len || line1[len-1] != '\n') {
-      LALPrintError(
+      myPrintError(
               "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
               i+1, fname, line1);
       fclose(fp);
@@ -640,17 +642,17 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 
   if ( numlines == 0) 
     {
-      LALPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
+      myPrintError ("ERROR: File '%s' has no lines so is not properly terminated by: %s", fname, DONE_MARKER);
       return 1;
     }
 
   /* output a record of the running checksun amd byte count */
-  LALPrintError( "%s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
+  myPrintError( "%s: bytecount %" LAL_UINT4_FORMAT " checksum %" LAL_UINT4_FORMAT "\n", fname, bytecount, checksum);
 
   /* check validity of this Fstats-file */
   if ( strcmp(line1, DONE_MARKER ) ) 
     {
-      LALPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
+      myPrintError ("ERROR: File '%s' is not properly terminated by: %sbut has %s instead", fname, DONE_MARKER, line1);
       return 1;
     }
   else
@@ -664,7 +666,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
       *CList = (CandidateList *)LALMalloc (numlines*sizeof(CandidateList));
       if ( !CList )
         {
-          LALPrintError ("Could not allocate memory for candidate file %s\n\n", fname);
+          myPrintError ("Could not allocate memory for candidate file %s\n\n", fname);
           return 1;
         }
     }
@@ -674,7 +676,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
   fp=fopen(fname,"rb");
   if (fp==NULL) 
     {
-      LALPrintError("fopen(%s) failed!\n", fname);
+      myPrintError("fopen(%s) failed!\n", fname);
       LALFree ((*CList));
       return 1;
     }
@@ -685,7 +687,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
       CandidateList *cl=&(*CList)[i];
 
       if (strlen(line1)==0 || line1[strlen(line1)-1] != '\n') {
-        LALPrintError(
+        myPrintError(
                 "Line %d of file %s is too long or has no NEWLINE.  First 255 chars are:\n%s\n",
                 i+1, fname, line1);
         LALFree ((*CList));
@@ -717,7 +719,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
           !finite(dmp3)                      ||
           !finite(cl->F)
           ) {
-          LALPrintError(
+          myPrintError(
                   "Line %d of file %s has invalid values.\n"
                   "First 255 chars are:\n"
                   "%s\n"
@@ -737,7 +739,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
          newline.  Note deliberate LACK OF WHITE SPACE char before %c
          above */
       if (newline != '\n') {
-        LALPrintError(
+        myPrintError(
                 "Line %d of file %s had extra chars after F value and before newline.\n"
                 "First 255 chars are:\n"
                 "%s\n",
@@ -750,7 +752,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
       /* check that we read 7 quantities with exactly the right format */
       if ( read != 8 )
         {
-          LALPrintError ("Found %d not %d values on line %d in file '%s'\n"
+          myPrintError ("Found %d not %d values on line %d in file '%s'\n"
                          "Line in question is\n%s",
                          read, 8, i+1, fname, line1);               
           LALFree ((*CList));
@@ -762,7 +764,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
     }
   /* check that we read ALL lines! */
   if (i != numlines) {
-    LALPrintError(
+    myPrintError(
             "Read of file %s terminated after %d line but numlines=%d\n",
             fname, i, numlines);
     LALFree((*CList));
@@ -772,7 +774,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 
   /* read final line with %DONE\n marker */
   if (!fgets(line1, sizeof(line1), fp)) {
-    LALPrintError(
+    myPrintError(
             "Failed to find marker line of file %s\n",
             fname);
     LALFree((*CList));
@@ -782,7 +784,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 
   /* check for %DONE\n marker */
   if (strcmp(line1, DONE_MARKER)) {
-    LALPrintError(
+    myPrintError(
             "Failed to parse marker: 'final' line of file %s contained %s not %s",
             fname, line1, DONE_MARKER);
     LALFree ((*CList));
@@ -792,7 +794,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
 
   /* check that we are now at the end-of-file */
   if (fgetc(fp) != EOF) {
-    LALPrintError(
+    myPrintError(
             "File %s did not terminate after %s",
             fname, DONE_MARKER);
     LALFree ((*CList));
@@ -809,7 +811,7 @@ int  ReadOneCandidateFile (CandidateList **CList, const char *fname)
     {
       if(compareCdaf(*CList+j,*CList+j+1) != -1)
         {
-          LALPrintError( "Candidates in line %d and %d in Fstats file %s are not in the correct order. Exiting.\n", 
+          myPrintError( "Candidates in line %d and %d in Fstats file %s are not in the correct order. Exiting.\n", 
                   j+1,j+2, fname);
           LALFree ((*CList));
           return 1;
@@ -903,23 +905,23 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
         break;
       case 'h':
         /* print usage/help message */
-        LALPrintError("Arguments are (defaults):\n");
-        LALPrintError("\t--fstatsfile1 (-1)\tSTRING\tFirst candidates Fstats file\n");
-        LALPrintError("\t--fstatsfile2 (-2)\tSTRING\tSecond candidates Fstats file\n");
-        LALPrintError("\t--outputfile  (-o)\tSTRING\tName of ouput candidates file\n");
-        LALPrintError("\t--frequency-window (-f)\tFLOAT\tFrequency window in Hz (0.0)\n");
-        LALPrintError("\t--alpha-window (-a)\tFLOAT\tAlpha window in radians (0.0)\n");
-        LALPrintError("\t--delta-window (-d)\tFLOAT\tDelta window in radians (0.0)\n");
-        LALPrintError("\t--fmin (-s)\tFLOAT\t Minimum frequency of candidate in 1st IFO\n");
-        LALPrintError("\t--fmax (-e)\tFLOAT\t Maximum frequency of candidate in 1st IFO\n");
-        LALPrintError("\t--EAHoutput (-b)\tFLAG\t Einstein at home output flag. \n");
-        LALPrintError("\t--help        (-h)\t\tThis message\n");
+        myPrintError("Arguments are (defaults):\n");
+        myPrintError("\t--fstatsfile1 (-1)\tSTRING\tFirst candidates Fstats file\n");
+        myPrintError("\t--fstatsfile2 (-2)\tSTRING\tSecond candidates Fstats file\n");
+        myPrintError("\t--outputfile  (-o)\tSTRING\tName of ouput candidates file\n");
+        myPrintError("\t--frequency-window (-f)\tFLOAT\tFrequency window in Hz (0.0)\n");
+        myPrintError("\t--alpha-window (-a)\tFLOAT\tAlpha window in radians (0.0)\n");
+        myPrintError("\t--delta-window (-d)\tFLOAT\tDelta window in radians (0.0)\n");
+        myPrintError("\t--fmin (-s)\tFLOAT\t Minimum frequency of candidate in 1st IFO\n");
+        myPrintError("\t--fmax (-e)\tFLOAT\t Maximum frequency of candidate in 1st IFO\n");
+        myPrintError("\t--EAHoutput (-b)\tFLAG\t Einstein at home output flag. \n");
+        myPrintError("\t--help        (-h)\t\tThis message\n");
         exit(0);
         break;
       default:
         /* unrecognized option */
         errflg++;
-        LALPrintError("Unrecognized option argument %c\n",c);
+        myPrintError("Unrecognized option argument %c\n",c);
         exit(1);
         break;
       }
@@ -927,34 +929,34 @@ int ReadCommandLine(int argc,char *argv[],struct PolkaCommandLineArgsTag *CLA)
 
   if(CLA->FstatsFile1 == NULL)
     {
-      LALPrintError("No 1st candidates file specified; input with -1 option.\n");
-      LALPrintError("For help type %s -h\n", argv[0]);
+      myPrintError("No 1st candidates file specified; input with -1 option.\n");
+      myPrintError("For help type %s -h\n", argv[0]);
       return 1;
     }      
   if(CLA->FstatsFile2 == NULL)
     {
-      LALPrintError("No 2nd candidates file specified; input with -2 option.\n");
-      LALPrintError("For help type %s -h\n", argv[0]);
+      myPrintError("No 2nd candidates file specified; input with -2 option.\n");
+      myPrintError("For help type %s -h\n", argv[0]);
       return 1;
     }      
   if(CLA->OutputFile == NULL)
     {
-      LALPrintError("No ouput filename specified; input with -o option.\n");
-      LALPrintError("For help type %s -h\n", argv[0]);
+      myPrintError("No ouput filename specified; input with -o option.\n");
+      myPrintError("For help type %s -h\n", argv[0]);
       return 1;
     }      
 
   if(CLA->fmin == 0.0)
     {
-      LALPrintError("No minimum frequency specified.\n");
-      LALPrintError("For help type %s -h\n", argv[0]);
+      myPrintError("No minimum frequency specified.\n");
+      myPrintError("For help type %s -h\n", argv[0]);
       return 1;
     }      
 
   if(CLA->fmax == 0.0)
     {
-      LALPrintError("No maximum frequency specified.\n");
-      LALPrintError("For help type %s -h\n", argv[0]);
+      myPrintError("No maximum frequency specified.\n");
+      myPrintError("For help type %s -h\n", argv[0]);
       return 1;
     }      
 
