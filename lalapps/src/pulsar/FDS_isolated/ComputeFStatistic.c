@@ -265,7 +265,7 @@ CHAR ckp_fname[260];	/**< filename of checkpoint-file, global for polka */
 CHAR *Outputfilename;	/**< Name of output file, either Fstats- or Polka file name*/
 INT4 cfsRunNo = 0;	/**< CFS run-number: 0=run only once, 1=first run, 2=second run */
 
-toplist_t* toplist;
+toplist_t* toplist = NULL;
 char *fstatbuff = NULL;
 
 FstatOutputEntry empty_FstatOutputEntry;
@@ -3509,30 +3509,40 @@ getCheckpointCounters(LALStatus *stat, UINT4 *loopcounter, UINT4 *checksum, long
     goto exit;
   }
   
-#ifdef USE_TOPLIST
-  if (fseek(fp, 0, SEEK_SET)) { /* something gone wrong seeking .. */
-    if (lalDebugLevel) printf ("broken fstats-file.\nStarting main-loop from beginning.\n");
-    goto exit;
-  }
-  if(read_toplist_from_fp(toplist,fp,&computecksum,bcount) <0) {
-    if (lalDebugLevel) printf ("couldn't read toplist.\nStarting main-loop from beginning.\n");
-    goto exit;
-  }
-#else
-  /* compute checksum */
-  computecksum=0;
-  if (fseek( fp, 0, SEEK_SET)) {        /* something gone wrong seeking .. */
-    if (lalDebugLevel) printf ("broken fstats-file.\nStarting main-loop from beginning.\n");
-    goto exit;
-  }
-  for (i=0; i<bcount; i++) {
-    int onechar=getc(fp);
-    if (onechar==EOF)
-      goto exit;
-    else
-      computecksum+=onechar;
-  }
-#endif
+  /* if we're using a toplist, read the Fstat-file into the toplist, giving also 
+   * the checksum 
+   */
+  if ( toplist ) 
+    {
+      if (fseek(fp, 0, SEEK_SET)) /* something gone wrong seeking .. */
+	{ 
+	  if (lalDebugLevel) printf ("broken fstats-file.\nStarting main-loop from beginning.\n");
+	  goto exit;
+	}
+      if( read_toplist_from_fp( toplist, fp, &computecksum, bcount) <0 ) 
+	{
+	  if (lalDebugLevel) printf ("couldn't read toplist.\nStarting main-loop from beginning.\n");
+	  goto exit;
+	}
+    } /* if toplist */
+  else
+    {
+      /* compute checksum */
+      computecksum=0;
+      if (fseek( fp, 0, SEEK_SET)) {        /* something gone wrong seeking .. */
+	if (lalDebugLevel) printf ("broken fstats-file.\nStarting main-loop from beginning.\n");
+	goto exit;
+      }
+      for (i=0; i<bcount; i++) {
+	int onechar=getc(fp);
+	if (onechar==EOF)
+	  goto exit;
+	else
+	  computecksum+=onechar;
+      }
+    } /* if !toplist */
+
+
   if (computecksum!=cksum) {
     if (lalDebugLevel) 
       printf ("fstats file seems corrupted: has incorrect checksum.\nStarting main-loop from beginning.\n");
