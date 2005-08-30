@@ -1,3 +1,9 @@
+/** \file
+ * \ingroup std
+ * \author Chin, D. W. and Creighton, J. D. E.
+ * \brief Routines for converting between various time representations.
+ *
+ */
 /* <lalVerbatim file="DateHV">
 
 Author: David Chin <dwchin@umich.edu> +1-734-709-9119
@@ -96,9 +102,107 @@ NRCSID (DATEH, "$Id$");
 #define DATEH_MSGEACCPARAMOUTOFRANGE "Accuracy parameter out of range: must be one of LALLEAPSECunderscoreSTRICT or LALLEAPSECunderscoreLOOSE"
 #define DATEH_MSGEDECRTIMETOOLARGE "Decrement amount too large: GPS time cannot be decremented to before the start of the GPS epoch."
 
-/* </lalErrTable>
+/* </lalErrTable> */
 
-<lalLaTeX>
+/** The UNIX time of the GPS origin epoch.
+ *
+ * 1980 6 JAN 0h UTC is 3657 days after 1970 1 JAN 0h UTC:
+ * 8 standard years of 365 days = 2920 days
+ * 2 leap years of 366 days = 734 days
+ * 5 extra days.
+ * Hence 3657*86400=315964800.
+ *
+ * Note that this deliberately does not account for any leap seconds in the
+ * interval.  POSIX:2001 defines the relation between the UNIX time
+ * \c time_t \c t and a broken down time \c struct \c tm \c utc as
+ * \code
+ * t = utc.tm_sec + utc.tm_min*60 + utc.tm_hour*3600 
+ *     + utc.tm_yday*86400 + (utc.tm_year-70)*31536000
+ *     + ((utc.tm_year-69)/4)*86400 - ((utc.tm_year-1)/100)*86400
+ *     + ((utc.tm_year+299)/400)*86400;
+ * \endcode
+ * so if you were to set \c utc.tm_sec=utc.tm_min=utc.tm_hour=0,
+ * \c utc.tm_yday=5, and \c utc.tm_year=80, then you get
+ * \c t=315964800.  That is what this is.
+ */
+#define XLAL_EPOCH_UNIX_GPS 315964800
+#define XLAL_EPOCH_J2000_0_JD 2451545.0 /**< Julian Day of the J2000.0 epoch (2000 JAN 1 12h UTC). */ 
+#define XLAL_EPOCH_J2000_0_TAI_UTC 32 /**< Leap seconds (TAI-UTC) on the J2000.0 epoch (2000 JAN 1 12h UTC). */ 
+#define XLAL_EPOCH_J2000_0_GPS 630763213 /**< GPS seconds of the J2000.0 epoch (2000 JAN 1 12h UTC). */ 
+#define XLAL_EPOCH_GPS_JD 2444244.5 /**< Julian Day of the GPS epoch (1980 JAN 6 0h UTC) */
+#define XLAL_EPOCH_GPS_TAI_UTC 19 /**< Leap seconds (TAI-UTC) on the GPS epoch (1980 JAN 6 0h UTC) */
+#define XLAL_MJD_REF 2400000.5 /**< Reference Julian Day for Mean Julian Day. */
+#define XLAL_MODIFIED_JULIEN_DAY(utc) (XLALJulianDay(utc)-XLAL_MJD_REF) /**< Modified Julian Day for specified civil time structure. */
+
+/** Converts GPS time to nano seconds stored as an INT8. */
+INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch );
+
+/** Converts nano seconds stored as an INT8 to GPS time. */
+LIGOTimeGPS * XLALINT8NSToGPS( LIGOTimeGPS *epoch, INT8 ns );
+
+/** Sets GPS time given GPS integer seconds and residual nanoseconds. */
+LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT4 gpsnan );
+
+/** Sets GPS time given GPS seconds as a REAL8. */
+LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t );
+
+/** Adds dt to a GPS time. */
+LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt );
+
+/** Difference between two GPS times. */
+REAL8 XLALGPSDiff( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 );
+
+/** Compares two GPS times.
+ * Returns:
+ *  - -1 if t0 < t1
+ *  - 0 if t0 == t1
+ *  - 1 if t0 > t1.
+ */
+int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 );
+
+/** Returns the leap seconds TAI-UTC at a given GPS second. */
+int XLALLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ );
+
+/** Returns the leap seconds TAI-UTC for a given UTC broken down time. */
+int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time.*/ );
+
+/** Returns the GPS seconds since the GPS epoch for a
+ * specified UTC time structure. */
+INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ );
+
+/** Returns a pointer to a tm structure representing the time
+ * specified in seconds since the GPS epoch.  */
+struct tm * XLALGPSToUTC(
+    struct tm *utc, /**< [Out] Pointer to tm struct where result is stored. */
+    INT4 gpssec /**< [In] Seconds since the GPS epoch. */
+    );
+
+/** Returns the Julian Day (JD) corresponding to the date given in a broken
+ * down time structure. */
+REAL8 XLALJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ );
+
+/** Returns the Modified Julian Day (MJD) corresponding to the date given
+ * in a broken down time structure.
+ *
+ * Note:
+ *   - By convention, MJD is an integer.
+ *   - MJD number starts at midnight rather than noon.
+ *
+ * If you want a Modified Julian Day that has a fractional part, simply use
+ * the macro:
+ *
+ * #define XLAL_MODIFIED_JULIAN_DAY(utc) (XLALJulianDay(utc)-XLAL_MJD_REF)
+ */
+INT4 XLALModifiedJulianDay( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ );
+  
+/** Returns the Greenwich Mean Sidereal Time in RADIANS for a specified GPS
+ * epoch. */
+REAL8 XLALGreenwichMeanSiderealTime(
+    const LIGOTimeGPS *epoch /**< [In] GPS time. */
+    );
+
+
+/* <lalLaTeX>
 
 
 \subsection*{Structures}
@@ -438,7 +542,7 @@ LALMSTUnitsAndAcc;
  * Function prototypes
  */
 
-int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr);
+int XLALStrToGPS(LIGOTimeGPS *epoch, const char *nptr, char **endptr);
 
 /* <lalLaTeX>
 \newpage\input{JulianC}
