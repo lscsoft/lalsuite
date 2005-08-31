@@ -195,6 +195,7 @@ AC_OUTPUT( 				\
 	src/stochastic/Makefile		\
 	src/power/Makefile		\
 	src/ring/Makefile		\
+	src/string/Makefile		\
 	src/pulsar/Makefile		\
 	src/pulsar/FDS_isolated/Makefile \
 	src/pulsar/Injections/Makefile	 \
