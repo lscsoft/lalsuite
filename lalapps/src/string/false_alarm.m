@@ -1,4 +1,4 @@
-% clear
+clear
 
 path(path,'/home/siemens/ligotools/matlab')
 
@@ -10,13 +10,19 @@ L1trigfile='L1triggers.xml'
 H1ctrigfile='H1ctriggers.xml'
 H2ctrigfile='H2ctriggers.xml'
 L1ctrigfile='L1ctriggers.xml'
-% 
-% H1trig = readMeta(H1trigfile,'sngl_burst');
-% H2trig = readMeta(H2trigfile,'sngl_burst');
-% L1trig = readMeta(L1trigfile,'sngl_burst');
+
+H1dctrigfile='H1dctriggers.xml'
+L1dctrigfile='L1dctriggers.xml'
+ 
+H1trig = readMeta(H1trigfile,'sngl_burst');
+H2trig = readMeta(H2trigfile,'sngl_burst');
+L1trig = readMeta(L1trigfile,'sngl_burst');
 H1ctrig = readMeta(H1ctrigfile,'sngl_burst');
 H2ctrig = readMeta(H2ctrigfile,'sngl_burst');
 L1ctrig = readMeta(L1ctrigfile,'sngl_burst');
+
+H1dctrig = readMeta(H1dctrigfile,'sngl_burst');
+L1dctrig = readMeta(L1dctrigfile,'sngl_burst');
 
 T=41872;
 
@@ -30,12 +36,16 @@ for i=1:400
     RH1=size(H1trig.snr(j),1)/T;
     [j,k]=find(H1ctrig.snr>=thres);
     RcH1=size(H1ctrig.snr(j),1)/T;
+    [j,k]=find(H1dctrig.snr>=thres);
+    RdcH1=size(H1dctrig.snr(j),1)/T;
 
     %L1:
     [j,k]=find(L1trig.snr>=thres);
     RL1=size(L1trig.snr(j),1)/T;
     [j,k]=find(L1ctrig.snr>=thres);
     RcL1=size(L1ctrig.snr(j),1)/T;
+    [j,k]=find(L1dctrig.snr>=thres);
+    RdcL1=size(L1dctrig.snr(j),1)/T;
 
     %H2:
     [j,k]=find(H2trig.snr>=thres);
@@ -48,9 +58,20 @@ for i=1:400
     FA(i,9)=FA(i,2)*FA(1,3)*FA(1,4)*(2*0.004)*(2*0.020);
     FA(i,10)=FA(1,2)*FA(i,3)*FA(1,4)*(2*0.004)*(2*0.020);
     FA(i,11)=FA(1,2)*FA(1,3)*FA(i,4)*(2*0.004)*(2*0.020);
+
+    FA(i,12)=RdcL1; 
+    FA(i,13)=RdcH1;
+
+    FA(i,14)=FA(i,2)*FA(1,3)*(2*0.020); 
+    FA(i,15)=FA(1,2)*FA(i,3)*(2*0.020);
+    FA(i,16)=FA(i,2)*FA(i,3)*(2*0.020);
+    
     fprintf(fid,'%e %e %e %e %e %e %e %e %e %e %e\n',FA(i,1),FA(i,2),FA(i,3),FA(i,4),FA(i,5),FA(i,6),FA(i,7),FA(i,8),FA(i,9),FA(i,10),FA(i,11));
+
 end
+
 fclose(fid);
+
 figure
 semilogy(FA(:,1),FA(:,2),'r-')
 hold on
@@ -72,6 +93,24 @@ semilogy(FA(:,1),FA(:,8),'k:')
 ylabel('Event rate (Hz)')
 xlabel('SNR')
 title('Single IFO and triple coincidence false alarm rates for H1 (blue), H2 (green), L1 (red)')
+
+
+figure
+semilogy(FA(:,1),FA(:,2),'r-')
+hold on
+semilogy(FA(:,1),FA(:,2),'ro')
+semilogy(FA(:,1),FA(:,3),'bo')
+semilogy(FA(:,1),FA(:,3),'b-')
+semilogy(FA(:,1),FA(:,12),'r-')
+semilogy(FA(:,1),FA(:,12),'ro')
+semilogy(FA(:,1),FA(:,13),'bo')
+semilogy(FA(:,1),FA(:,13),'b-')
+semilogy(FA(:,1),FA(:,14),'r--')
+semilogy(FA(:,1),FA(:,15),'b--')
+semilogy(FA(:,1),FA(:,16),'k:')
+ylabel('Event rate (Hz)')
+xlabel('SNR')
+title('Single IFO and double coincident false alarm rates for H1 (blue), L1 (red)')
 
 
 tH1=H1trig.peak_time+1e-9*H1trig.peak_time_ns;
