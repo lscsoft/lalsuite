@@ -117,16 +117,6 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 		nptr += 2;
 	} else
 		base = 10;
-	/*if(*nptr != '0')
-		base = 10;
-	else {
-		*nptr++;
-		if(*nptr == 'X' || *nptr == 'x') {
-			base = 16;
-			nptr++;
-		} else
-			base = 8;
-	}*/
 
 	/* count the number of digits including the radix but not including
 	 * the exponent.  FIXME: radix character should be obtained from
