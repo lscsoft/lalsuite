@@ -57,8 +57,9 @@
 #include <lal/LALDemod.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/Date.h>
-#include <lal/LUT.h> 
+#include <lal/HoughMap.h> 
 #include <lal/NormalizeSFTRngMed.h>
+
 
 #include <lalapps.h>
 
@@ -132,11 +133,29 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   } FstatStackParams;
 
 
+  /** vector of peakgrams */
+  typedef struct tagINT4FrequencySeriesVector {
+    INT4                length; /**< number of peakgrams */
+    INT4FrequencySeries *data;  /**< peakgrams */
+  } INT4FrequencySeriesVector;
+
+  typedef INT4FrequencySeriesVector PeakGramVector;
+
 void ComputeFstatStack (LALStatus *status, 
 			LALFstat **out, 
 			SFTVector *sfts, 
 			FstatStackParams *params);
 
+void ComputeFstatStackv2 (LALStatus *status, 
+			LALFstat **out, 
+			SFTVector *sfts, 
+			FstatStackParams *params);
+
+
+void ComputeFstatHoughMap (LALStatus *status,
+			   HOUGHMapTotal  *ht,  
+			   PeakGramVector *pgV,
+			   FstatStackParams *params);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

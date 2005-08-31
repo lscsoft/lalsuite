@@ -54,6 +54,7 @@ extern int lalDebugLevel;
 #define DELTA  0.0
 #define NFSIZE  21
 #define DTERMS 8
+#define FSTATTHRESHOLD 2.6
 #define SFTDIRECTORY "/home/badkri/fakesfts/"
 #define FNAMEOUT "./OutHoughFStat"
 
@@ -94,6 +95,7 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_alpha, uvar_delta;  /* sky-location angles */
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fStart, uvar_fBand;
+  REAL8 uvar_FstatThr; /* threshold of Fstst to select peaks */
   INT4 uvar_ifo, uvar_blocksRngMed, uvar_Nstacks, uvar_Dterms;
   CHAR *uvar_earthEphemeris=NULL;
   CHAR *uvar_sunEphemeris=NULL;
@@ -120,6 +122,7 @@ int main( int argc, char *argv[]) {
   uvar_fBand = FBAND;
   uvar_ifo = IFO;
   uvar_blocksRngMed = BLOCKSRNGMED;
+  uvar_FstatThr = FSTATTHRESHOLD;
   uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
@@ -136,7 +139,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ),            &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "Nstacks",         'N', UVAR_OPTIONAL, "Number of stacks",              &uvar_Nstacks ),        &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",          'N', UVAR_OPTIONAL, "For Dirichlet Kernel approx.",  &uvar_Dterms ),         &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",          'n', UVAR_OPTIONAL, "For Dirichlet Kernel approx.",  &uvar_Dterms ),         &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",            &uvar_sunEphemeris),    &status);
@@ -146,6 +149,7 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "delta",           'l', UVAR_OPTIONAL, "Declination",                   &uvar_delta),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_fStart),          &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",            'd', UVAR_OPTIONAL, "Spindown parameter",            &uvar_fdot),            &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",            't', UVAR_OPTIONAL, "Threshold on Fstatistic",       &uvar_FstatThr),        &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -161,6 +165,11 @@ int main( int argc, char *argv[]) {
   }
   if ( uvar_blocksRngMed < 1 ) {
     fprintf(stderr, "Invalid Running Median block size\n");
+    exit(1);
+  }
+
+  if ( uvar_FstatThr < 0 ) {
+    fprintf(stderr, "Invalid value of Fstatistic threshold\n");
     exit(1);
   }
 
@@ -338,6 +347,11 @@ int main( int argc, char *argv[]) {
 
   LAL_CALL( ComputeFstatStack( &status, Fstat, inputSFTs, &FstatPar), &status);
 
+
+  /* select frequency bins */
+  
+
+
   /* free timestamp and Vel/Pos vectors */
   for (k=0; k<Nstacks; k++) {
       LALFree(timeVelPos[k].ts);
@@ -380,7 +394,6 @@ void ComputeFstatStack (LALStatus *status,
 			SFTVector *inputSFTs, 
 			FstatStackParams *params)
 {
-
  
   INT4 mCohSft, j, k, Nstacks;
   REAL8 deltaF, timeBase;
@@ -527,3 +540,38 @@ void ComputeFstatStack (LALStatus *status,
   
 }
 
+
+
+void ComputeFstatStackv2 (LALStatus *status, 
+			LALFstat **Fstat, 
+			SFTVector *inputSFTs, 
+			FstatStackParams *params)
+{
+
+  INITSTATUS( status, "ComputeFstatStackv2", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+  
+}
+
+
+
+void ComputeFstatHoughMap(LALStatus *status,
+			  HOUGHMapTotal   *ht,   /* the total Hough map */
+			  PeakGramVector *pgV,
+			  FstatStackParams *params)
+{
+
+  INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
+
+}
