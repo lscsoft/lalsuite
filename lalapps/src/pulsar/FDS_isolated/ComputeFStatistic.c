@@ -1055,14 +1055,13 @@ initUserVars (LALStatus *status)
 #if USE_BOINC
   uvar_doCheckpointing = TRUE;
   uvar_expLALDemod = 1;
-  uvar_outputClusters = NULL;	/* by default: no more cluster-output */
 #else
   uvar_doCheckpointing = FALSE;
   uvar_expLALDemod = 0;
+#endif
 #define CLUSTERED_FNAME "Fstats"	/* provide backwards-compatible default for now */
   uvar_outputClusters = LALCalloc(1, strlen(CLUSTERED_FNAME) + 1);
   strcpy ( uvar_outputClusters, CLUSTERED_FNAME );
-#endif
 
 #if BOINC_COMPRESS
   uvar_useCompression = TRUE;
