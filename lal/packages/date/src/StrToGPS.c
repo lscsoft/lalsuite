@@ -109,10 +109,7 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 		sign = +1;
 
 	/* determine the base */
-	if(isbase8(nptr)) {
-		base = 8;
-		nptr++;
-	} else if(isbase16(nptr)) {
+	if(isbase16(nptr)) {
 		base = 16;
 		nptr += 2;
 	} else
@@ -123,18 +120,6 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 	 * the locale */
 	radixpos = -1;
 	switch(base) {
-	case 8:
-		for(len = 0; 1; len++) {
-			if(isodigit(nptr[len]))
-				continue;
-			if(nptr[len] == '.' && radixpos < 0) {
-				radixpos = len;
-				continue;
-			}
-			break;
-		}
-		break;
-	
 	case 10:
 		for(len = 0; 1; len++) {
 			if(isdigit(nptr[len]))
@@ -186,11 +171,6 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 	/* check for and parse an exponent, performing an adjustment of the
 	 * radix position */
 	switch(base) {
-	case 8:
-		/* C library has no format for octal exponents */
-		exppart = 1;
-		break;
-
 	case 10:
 		/* exponent is the number of powers of 10 */
 		if(isdecimalexp(nptr))
@@ -203,7 +183,12 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 		if(isbinaryexp(nptr)) {
 			exppart = strtol(++nptr, &nptr, 10);
 			radixpos += exppart / 4;
-			exppart = 1 << (exppart % 4);
+			exppart %= 4;
+			if(exppart < 0) {
+				radixpos--;
+				exppart += 4;
+			}
+			exppart = 1 << exppart;
 		} else
 			exppart = 1;
 		break;
@@ -237,9 +222,6 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 	/* parse the fractional part */
 	if(errno != ERANGE) {
 		switch(base) {
-		case 8:
-			break;
-
 		case 10:
 			break;
 
