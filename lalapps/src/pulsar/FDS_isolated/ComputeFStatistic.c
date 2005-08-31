@@ -261,6 +261,9 @@ FILE *fpFstat;		/**< output-file pointer to *unclustered* Fstat output */
 ConfigVariables GV;	/**< global container for various derived configuration settings */
 int reverse_endian=-1;	/**< endian order of SFT data.  -1: unknown, 0: native, 1: reversed */
 CHAR *FstatFilename; 	/**< (unclustered) Fstats file name*/
+CHAR *FstatClusterFilename; /**< (clustered) Fstats file name*/
+CHAR *CheckpointedFilename; /**< name of the checkpointed output file.
+			         Points either to FstatFilename or FstatClusterFilename */
 CHAR ckp_fname[260];	/**< filename of checkpoint-file, global for polka */
 CHAR *Outputfilename;	/**< Name of output file, either Fstats- or Polka file name*/
 INT4 cfsRunNo = 0;	/**< CFS run-number: 0=run only once, 1=first run, 2=second run */
@@ -536,27 +539,27 @@ int main(int argc,char *argv[])
   /* ----- prepare cluster-output filename if given and append outputLabel */
   if ( uvar_outputClusters && (strlen(uvar_outputClusters) > 0) )
     {
-      CHAR *buf = NULL;
       UINT4 len = strlen( uvar_outputClusters );
       if ( uvar_outputLabel )
 	len += strlen ( uvar_outputLabel );
 
-      if ( (buf = LALCalloc(1, len + 1 )) == NULL ) {
+      if ( (FstatClusterFilename = LALCalloc(1, len + 1 )) == NULL ) {
 	LALPrintError ("\nOut of memory!\n\n");
 	return (COMPUTEFSTATC_EMEM);
       }
-      strcpy ( buf, uvar_outputClusters );
+      strcpy ( FstatClusterFilename, uvar_outputClusters );
       if ( uvar_outputLabel )
-	strcat ( buf, uvar_outputLabel );
+	strcat ( FstatClusterFilename, uvar_outputLabel );
 
-      if ( (fpClusters = fopen (buf, "wb")) == NULL ) {
-	LALPrintError ("\nError: failed to open Clusters-file '%s' for writing!\n\n", buf );
+      if ( (fpClusters = fopen (FstatClusterFilename, "wb")) == NULL ) {
+	LALPrintError ("\nError: failed to open Clusters-file '%s' for writing!\n\n", FstatClusterFilename );
 	return ( COMPUTEFSTATC_ESYS );
       }
-      LALFree ( buf );
     }
-  else
+  else {
     fpClusters = NULL;
+    FstatClusterFilename = NULL;
+  }
 
   /* ----- prepare (unclustered) Fstat-output filename if given and apprend outputLabel */ 
   if ( uvar_outputFstat )
@@ -577,23 +580,29 @@ int main(int argc,char *argv[])
   else
     FstatFilename = NULL;
 
+  /* point to checkpointed file */
+  if (FstatClusterFilename)
+    CheckpointedFilename = FstatClusterFilename;
+  else
+    CheckpointedFilename = FstatFilename;
 
   if ( uvar_NumCandidatesToKeep > 0 )
     create_toplist(&toplist, uvar_NumCandidatesToKeep);
 
 
   /* prepare checkpointing file */
-  if ( FstatFilename ) 
-    strcpy(ckp_fname, FstatFilename);
+  if ( CheckpointedFilename ) 
+    strcpy(ckp_fname, CheckpointedFilename);
   else
     strcpy(ckp_fname, "Fstats");
   strcat(ckp_fname, ".ckp");
 
 #if USE_BOINC
   /* only boinc_resolve the filename if we run CFS once */
-  if (cfsRunNo == 0)
-          use_boinc_filename0(FstatFilename);
-  /* use_boinc_filename0(ckp_fname); */
+  if (cfsRunNo == 0) {
+    if (CheckpointedFilename)
+      use_boinc_filename0(CheckpointedFilename);
+  }
 #endif /* USE_BOINC */
 
   /*----------------------------------------------------------------------
@@ -613,20 +622,22 @@ int main(int argc,char *argv[])
 
 #ifdef RUN_POLKA
   /* look for a Fstat file ending in "%DONE" and quit (boinc)main if found */
-  fpFstat = fopen( FstatFilename,"rb");
-  if(fpFstat){
-    char done[6];
-    done[0] = '\0';
-    if(!fseek(fpFstat,-6,SEEK_END))
-      if(fread(done,6,1,fpFstat)==1)
-        if(strncmp(done,"%DONE",5)==0){
-          fprintf(stderr,"detected finished Fstat file - skipping Fstat run %d\n",cfsRunNo);
-	  fstats_completed = TRUE;
-        }
-    fclose(fpFstat);
-    fpFstat = NULL;
+  if (FstatClusterFilename) {
+    fpFstat = fopen( FstatClusterFilename,"rb");
+    if(fpFstat){
+      char done[6];
+      done[0] = '\0';
+      if(!fseek(fpFstat,-6,SEEK_END))
+	if(fread(done,6,1,fpFstat)==1)
+	  if(strncmp(done,"%DONE",5)==0){
+	    fprintf(stderr,"detected finished Fstat file - skipping Fstat run %d\n",cfsRunNo);
+	    fstats_completed = TRUE;
+	  }
+      fclose(fpFstat);
+      fpFstat = NULL;
+    }
   }
-
+  
   if (!fstats_completed) {
 #endif /* RUN_POLKA */
 
@@ -638,10 +649,10 @@ int main(int argc,char *argv[])
   /* allow for checkpointing: 
    * open Fstat file for writing or appending, depending on loopcounter. 
    */
-  if ( FstatFilename 
-       && ( (fpFstat = fopen( FstatFilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
+  if ( CheckpointedFilename 
+       && ( (fpFstat = fopen( CheckpointedFilename, fstat_bytecounter>0 ? "rb+" : "wb")) == NULL) )
     {
-      fprintf(stderr,"in Main: unable to open Fstats file '%s'\n", FstatFilename);
+      fprintf(stderr,"in Main: unable to open Fstats file '%s'\n", CheckpointedFilename);
       return COMPUTEFSTAT_EXIT_OPENFSTAT2;
     }
 
@@ -678,7 +689,7 @@ int main(int argc,char *argv[])
 	    {   /* something gone wrong seeking .. */
 	      if (lalDebugLevel) 
 		LALPrintError ("broken Fstat-file '%s'.\nStarting main-loop from beginning.\n", 
-			       FstatFilename);
+			       CheckpointedFilename);
 	      return COMPUTEFSTATC_ECHECKPOINT;;
 	    }
 	} /* if fpFstat */
@@ -844,14 +855,14 @@ int main(int argc,char *argv[])
 	    {
 	      INT4 howmany;
 	      fclose(fpFstat);
-	      howmany = atomic_write_toplist_to_file(toplist, FstatFilename, &fstat_checksum);
+	      howmany = atomic_write_toplist_to_file(toplist, CheckpointedFilename, &fstat_checksum);
 	      if (howmany < 0) {
 		fprintf(stderr,"Couldn't write compacted toplist\n");
 		return (COMPUTEFSTAT_EXIT_OPENFSTAT);
 	      }
 	      fstat_bytecounter = howmany;
 
-	      if ( (fpFstat = fopen(FstatFilename, "ab")) == NULL )
+	      if ( (fpFstat = fopen(CheckpointedFilename, "ab")) == NULL )
 		{
 		  fprintf(stderr,"Couldn't open compacted toplist for appending\n");
 		  return (COMPUTEFSTAT_EXIT_OPENFSTAT2);
@@ -915,7 +926,7 @@ int main(int argc,char *argv[])
       if ( uvar_NumCandidatesToKeep > 0 )
 	{
 	  sort_toplist(toplist);
-	  if( atomic_write_toplist_to_file ( toplist, FstatFilename, &fstat_checksum ) < 0 ) 
+	  if( atomic_write_toplist_to_file ( toplist, CheckpointedFilename, &fstat_checksum ) < 0 ) 
 	    {
 	      fprintf(stderr,"Couldn't write compacted toplist\n");
 	      return (COMPUTEFSTAT_EXIT_OPENFSTAT);
@@ -924,16 +935,20 @@ int main(int argc,char *argv[])
       /* this is our marker indicating 'finished'.  What appears in the file is:
 	 %DONE
 	 on the final line */
-      if ( (fpFstat = fopen (FstatFilename, "ab")) == NULL ) 
+      if ( (fpFstat = fopen (CheckpointedFilename, "ab")) == NULL ) 
 	{
 	  fprintf(stderr, "\nFailed to open Fstat-file '%s' for final '%%DONE' marker!\n\n", 
-		  FstatFilename);
+		  CheckpointedFilename);
 	  fprintf(fpFstat, "%%DONE\n");
 	  fclose(fpFstat);
 	}
 
-      LALFree ( FstatFilename );
-      FstatFilename = NULL;
+
+      /* we still need the name if we are running polka... */
+#ifndef RUN_POLKA
+      LALFree ( CheckpointedFilename );
+      CheckpointedFilename = NULL;
+#endif
 
     } /* if fpFstat */
 
@@ -1094,7 +1109,7 @@ initUserVars (LALStatus *status)
   LALregREALUserVar(status,       df1dot,         'e', UVAR_OPTIONAL, "Resolution for f1dot (default: use metric or 1/(2*T^2))");
   LALregSTRINGUserVar(status,     DataDir,        'D', UVAR_OPTIONAL, "Directory where SFT's are located");
   LALregSTRINGUserVar(status,     BaseName,       'i', UVAR_OPTIONAL, "The base name of the input  file you want to read");
-  LALregSTRINGUserVar(status, 	DataFiles,	 0 , UVAR_OPTIONAL, "Alternative: specify path+file-pattern of SFT-files");
+  LALregSTRINGUserVar(status, 	  DataFiles,	   0 , UVAR_OPTIONAL, "Alternative: specify path+file-pattern of SFT-files");
   LALregSTRINGUserVar(status,     ephemDir,       'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserVar(status,     ephemYear,      'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregBOOLUserVar(status,       SignalOnly,     'S', UVAR_OPTIONAL, "Signal only flag");
@@ -1103,11 +1118,11 @@ initUserVars (LALStatus *status)
   LALregSTRINGUserVar(status,     outputLabel,    'o', UVAR_OPTIONAL, "Label to be appended to all output file-names");
   LALregREALUserVar(status,       startTime,       0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time <  this value. Default:");
   LALregREALUserVar(status,       endTime,         0,  UVAR_OPTIONAL, "Ignore SFTs with GPS_time >= this value. Default:");
-  LALregREALUserVar(status,	refTime,	 0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
+  LALregREALUserVar(status,	  refTime,	   0,  UVAR_OPTIONAL, "SSB reference time for pulsar-paramters");
 
-  LALregSTRINGUserVar(status,     outputFstat,	0,  UVAR_OPTIONAL,
+  LALregSTRINGUserVar(status,     outputFstat,     0,  UVAR_OPTIONAL,
 		      "Output-file for the (unclustered) F-statistic field over the parameter-space");
-  LALregSTRINGUserVar(status,     outputClusters,	0,  UVAR_OPTIONAL,
+  LALregSTRINGUserVar(status,     outputClusters,  0,  UVAR_OPTIONAL,
 		      "Output-file for the *clustered* F-statistic field over the parameter-space");
 
 
@@ -1121,15 +1136,15 @@ initUserVars (LALStatus *status)
   LALregBOOLUserVar(status,       useCompression,  0,  UVAR_DEVELOPER, "BOINC: use compression for download/uploading data");
 #endif
 
-  LALregBOOLUserVar(status,	projectMetric,	0,   UVAR_DEVELOPER, 
+  LALregBOOLUserVar(status,	  projectMetric,   0,   UVAR_DEVELOPER, 
 		    "Use projected metric for skygrid");
-  LALregSTRINGUserVar(status,     outputLoudest,	0,  UVAR_DEVELOPER, 
+  LALregSTRINGUserVar(status,     outputLoudest,   0,  UVAR_DEVELOPER, 
 		      "Output-file for the loudest F-statistic candidate in this search");
 
-  LALregINTUserVar(status,        OutputBufferKB, 0, UVAR_DEVELOPER, 
+  LALregINTUserVar(status,        OutputBufferKB,  0, UVAR_DEVELOPER, 
 		   "Size of the output buffer in kB");
 
-  LALregINTUserVar(status,        MaxFileSizeKB,  0, UVAR_DEVELOPER, 
+  LALregINTUserVar(status,        MaxFileSizeKB,   0, UVAR_DEVELOPER, 
 		   "Size to which the Fstat-output file can grow until re-compactified (in kB)");
   LALregINTUserVar(status,        NumCandidatesToKeep,0, UVAR_DEVELOPER, 
 		   "Number of Fstat 'canidates' to keep. (0 = All)");
@@ -3173,7 +3188,7 @@ void worker() {
 
 #ifndef RUN_POLKA
   int retval=boincmain(globargc,globargv);
-  Outputfilename=FstatFilename;
+  Outputfilename=CheckpointedFilename;
 #else
   int a1,a2,retval;
   CHAR ckptfname1[260];
@@ -3189,15 +3204,19 @@ void worker() {
   /* if there was no //, globargc==a1 and this is old-style command line */
   if(a1<globargc) {
     /* remember first file names */
-    strncpy(Fstatsfilename1,FstatFilename,sizeof(Fstatsfilename1));
+    strncpy(Fstatsfilename1,CheckpointedFilename,sizeof(Fstatsfilename1));
     strncpy(ckptfname1,ckp_fname,sizeof(ckptfname1));
+    if (CheckpointedFilename) {
+      LALFree ( CheckpointedFilename );
+      CheckpointedFilename = NULL;
+    }
     if (!retval){
       /* find second // delimiter */ 
       for(a2=a1+1;(a2<globargc)&&(strncmp(globargv[a2],"//",3));a2++);
       cfsRunNo = 2;
       if(a2==globargc)
         retval=COMPUTEFSTAT_EXIT_NOPOLKADEL;
-      else
+      else 
         retval=boincmain(a2-a1,&(globargv[a1]));
       if (!retval)
         retval=polka(globargc-a2, &(globargv[a2]));
@@ -3207,11 +3226,11 @@ void worker() {
     remove (ckptfname1);
     /* keep Fstats files while testing - should be deleted as
        temp files with the BOINC slots directory anyway
-      remove (FstatFilename);
+      remove (CheckpointedFilename);
       remove (Fstatsfilename1);
     */
   } else {
-    Outputfilename=FstatFilename;
+    Outputfilename=CheckpointedFilename;
     remove (ckp_fname);
   }
 #endif
@@ -3241,6 +3260,11 @@ void worker() {
     }
   } /* if useCompression && ok */
 #endif
+  if (CheckpointedFilename) {
+    LALFree ( CheckpointedFilename );
+    CheckpointedFilename = NULL;
+  }
+
   boinc_finish(retval);
   return;
 }
