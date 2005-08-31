@@ -4,14 +4,23 @@
 
 RCSID("$Id$");
 
-/* this is defined in C99 and *should* be in math.h. Long term
-   protect this with a HAVE_FINITE */
+/* MSC specifics */
 #ifdef _MSC_VER
+
+/* snprintf */
+#define snprintf _snprintf
+
+/* finite */
 #include <float.h>
 #define finite _finite
-#else
+
+#else /* MSC */
+
+/* this is defined in C99 and *should* be in math.h. Long term
+   protect this with a HAVE_FINITE */
 int finite(double);
-#endif
+
+#endif  /* MSC */
 
 #ifndef min
 #define min(a,b) ((a)<(b)?(a):(b))
