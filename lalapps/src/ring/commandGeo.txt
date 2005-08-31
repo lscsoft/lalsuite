@@ -1,2 +1,0 @@
-./lalapps_ring --verbose --frame-cache   geo.cache
---geo-data --geo-scale 1e10 --geo-high-pass-freq 70 --geo-high-pass-order 8  --geo-high-pass-atten 0.1 --channel-name G1:DER_DATA_H  --sample-rate  2048 --gps-start-time 752193600 --gps-end-time  752193670  --filter-segsz 65536  --filter-speclen 32768  --filter-flow 60  --filter-fmin 1500 --filter-fmax 4000 --filter-qmin 500  --filter-qmax 2500  --filter-maxmm 0.05 --filter-thresh 10  --output-format=ascii
