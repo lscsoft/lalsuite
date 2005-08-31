@@ -6,27 +6,15 @@
 
 
 /*
- * Return true if x is an octal numeral.
+ * Check for a base 10 or base 16 number.
  */
 
-static int isodigit(int x)
+static int isbase10(const char *s)
 {
-	return(x >= '0' && x <= '7');
-}
-
-
-/*
- * Check for a base 8 or base 16 number.
- */
-
-static int isbase8(const char *s)
-{
-	if(*s == '0') {
-		while(*s == '0')
-			s++;
-		if(isdigit(*s))
-			return(1);
-	}
+	if(*s == '.')
+		s++;
+	if(isdigit(*s))
+		return(1);
 	return(0);
 }
 
@@ -36,7 +24,9 @@ static int isbase16(const char *s)
 		s++;
 		if(*s == 'X' || *s == 'x') {
 			s++;
-			if(isxdigit(*s) || *s == '.')
+			if(*s == '.')
+				s++;
+			if(isxdigit(*s))
 				return(1);
 		}
 	}
@@ -112,8 +102,13 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 	if(isbase16(nptr)) {
 		base = 16;
 		nptr += 2;
-	} else
+	} else if(isbase10(nptr)) {
 		base = 10;
+	} else {
+		/* this isn't a number */
+		XLALGPSSet(time, 0, 0);
+		return(0);
+	}
 
 	/* count the number of digits including the radix but not including
 	 * the exponent.  FIXME: radix character should be obtained from
@@ -143,12 +138,6 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 			break;
 		}
 		break;
-	}
-
-	/* check that we have a number */
-	if(!len) {
-		XLALGPSSet(time, 0, 0);
-		return(0);
 	}
 
 	/* copy the digits into a scratch space, removing the radix character
@@ -194,7 +183,7 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 		break;
 	}
 
-	/* save pointer to first character after converted characters */
+	/* save end of converted characters */
 	if(endptr)
 		*endptr = nptr;
 
