@@ -19,6 +19,8 @@ int lalDebugLevel = 0;
 
 int main(void)
 {
+	/* Most of these test were shamelessly stolen from Peter's original
+	 * code for testing LALStringToGPS() */
 	struct TESTCASE testcases[] = {
 		{"1234.5", 1234, 500000000, "", 0},
 		{"712345678", 712345678, 0, "", 0},
@@ -128,7 +130,7 @@ int main(void)
 
 		fprintf(stdout, "Input = \"%s\"\n\tOutput =\t%lld ns with \"%s\" remainder, errno %d\n\tCorrect =\t%lld ns with \"%s\" remainder, errno %d\n\t\t===>", testcase->string, XLALGPSToINT8NS(&gps), endptr, XLALGetBaseErrno(), XLALGPSToINT8NS(&gpsCorrect), testcase->remainder, testcase->xlal_errno);
 
-		if(retval == 0) {
+		if(retval == 0 && testcase->xlal_errno == 0) {
 			if(XLALGPSCmp(&gps, &gpsCorrect) || strcmp(endptr, testcase->remainder)) {
 				fprintf(stdout, "*** FAIL ***\n");
 				failures++;
