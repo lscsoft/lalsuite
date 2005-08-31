@@ -4,7 +4,7 @@
 #
 check_PROGRAMS = TestJulianDay TestLMST TestLMST2 TestDelay TestDateString \
                  TestGPStoUTC TestUTCtoGPS TestGPStoGMST1 TestLeapSecs \
-				 TestGPStoFloat TestIncrementGPS
+		 TestGPStoFloat TestIncrementGPS TestStrToGPS
 TestJulianDay_SOURCES = TestJulianDay.c
 TestJulianDay_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 TestLMST_SOURCES = TestLMST.c
@@ -29,9 +29,11 @@ TestGPStoFloat_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(t
 #TestGPStoMST_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 TestIncrementGPS_SOURCES = TestIncrementGPS.c
 TestIncrementGPS_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
+TestStrToGPS_SOURCES = TestStrToGPS.c
+TestStrToGPS_LDADD = $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = TestJulianDay TestLMST TestDelay TestDateString TestGPStoUTC \
-        TestUTCtoGPS TestLeapSecs TestGPStoFloat TestIncrementGPS
+        TestUTCtoGPS TestLeapSecs TestGPStoFloat TestIncrementGPS TestStrToGPS
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex
 dvi-local: .dvi-dep
