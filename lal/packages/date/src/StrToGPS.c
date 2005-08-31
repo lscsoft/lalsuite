@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <errno.h>
+#include <locale.h>
 #include <stdlib.h>
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
@@ -9,22 +10,22 @@
  * Check for a base 10 or base 16 number.
  */
 
-static int isbase10(const char *s)
+static int isbase10(const char *s, int radix)
 {
-	if(*s == '.')
+	if(*s == radix)
 		s++;
 	if(isdigit(*s))
 		return(1);
 	return(0);
 }
 
-static int isbase16(const char *s)
+static int isbase16(const char *s, int radix)
 {
 	if(*s == '0') {
 		s++;
 		if(*s == 'X' || *s == 'x') {
 			s++;
-			if(*s == '.')
+			if(*s == radix)
 				s++;
 			if(isxdigit(*s))
 				return(1);
@@ -71,6 +72,7 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 {
 	const char *func = "XLALStrToGPS";
 	int olderrno;
+	int radix;
 	char *digits;
 	int len;
 	int sign;
@@ -81,6 +83,9 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 	/* save and clear C library errno so we can check for failures */
 	olderrno = errno;
 	errno = 0;
+
+	/* retrieve the radix character */
+	radix = localeconv()->decimal_point[0];
 
 	/* consume leading white space */
 	while(isspace(*nptr))
@@ -99,27 +104,26 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 		sign = +1;
 
 	/* determine the base */
-	if(isbase16(nptr)) {
+	if(isbase16(nptr, radix)) {
 		base = 16;
 		nptr += 2;
-	} else if(isbase10(nptr)) {
+	} else if(isbase10(nptr, radix)) {
 		base = 10;
 	} else {
-		/* this isn't a number */
+		/* this isn't a recognized number */
 		XLALGPSSet(time, 0, 0);
 		return(0);
 	}
 
 	/* count the number of digits including the radix but not including
-	 * the exponent.  FIXME: radix character should be obtained from
-	 * the locale */
+	 * the exponent. */
 	radixpos = -1;
 	switch(base) {
 	case 10:
 		for(len = 0; 1; len++) {
 			if(isdigit(nptr[len]))
 				continue;
-			if(nptr[len] == '.' && radixpos < 0) {
+			if(nptr[len] == radix && radixpos < 0) {
 				radixpos = len;
 				continue;
 			}
@@ -131,7 +135,7 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 		for(len = 0; 1; len++) {
 			if(isxdigit(nptr[len]))
 				continue;
-			if(nptr[len] == '.' && radixpos < 0) {
+			if(nptr[len] == radix && radixpos < 0) {
 				radixpos = len;
 				continue;
 			}
@@ -203,7 +207,7 @@ int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 	} else {
 		memmove(digits + radixpos + 1, digits + radixpos, len - radixpos + 1);
 	}
-	digits[radixpos] = '.';
+	digits[radixpos] = radix;
 
 	/* parse the integer part */
 	XLALINT8NSToGPS(time, sign * strtol(digits, NULL, base) * exppart * 1000000000ll);
