@@ -38,3 +38,19 @@ cp coincidences/L1*L1H1*P* L1ctriggers/
 ~/lscsoft/lalapps/src/power/lalapps_bread  --output L1ctriggers.xml --globtrig L1ctriggers  --cluster stringcluster
 echo L1 triple coincidence survivors:
 ~/ligotools/bin/lwtprint L1ctriggers.xml -t sngl_burst |wc -l
+
+
+rm -rf H1dctriggers/;mkdir H1dctriggers/ >& /dev/null
+cp doublecoincidencesH1L1/H1*H1L1*M* H1dctriggers/
+cp doublecoincidencesH1L1/H1*H1L1*P* H1dctriggers/
+~/lscsoft/lalapps/src/power/lalapps_bread  --output H1dctriggers.xml --globtrig H1dctriggers  --cluster stringcluster
+echo H1-L1 double coincidence survivors:
+~/ligotools/bin/lwtprint H1dctriggers.xml -t sngl_burst |wc -l
+
+rm -rf L1dctriggers/;mkdir L1dctriggers/ >& /dev/null
+cp doublecoincidencesH1L1/L1*L1H1*M* L1dctriggers/
+cp doublecoincidencesH1L1/L1*L1H1*P* L1dctriggers/
+~/lscsoft/lalapps/src/power/lalapps_bread  --output L1dctriggers.xml --globtrig L1dctriggers  --cluster stringcluster
+echo L1-H1 double coincidence survivors:
+~/ligotools/bin/lwtprint L1dctriggers.xml -t sngl_burst |wc -l
+
