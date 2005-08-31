@@ -4,78 +4,72 @@
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
 
+
 /*
- * Check if a string is a number in scientific notation.
+ * Return true if x is an octal numeral.
  */
 
-static const char *skipsign(const char *s)
+static int isodigit(int x)
 {
-	if(*s == '+' || *s == '-')
-		s++;
-	return(s);
+	return(x >= '0' && x <= '7');
 }
 
-static int isscientific(const char *s)
+
+/*
+ * Check for a base 8 or base 16 number.
+ */
+
+static int isbase8(const char *s)
 {
-	int radix_count = 0;
-	const char *p;
-
-	/* skip leading white space, and an optional sign */
-	while(isspace(*s))
-		s++;
-	s = skipsign(s);
-
-	/* check for a hex prefix */
-	if(*s == '0' && (*(s + 1) == 'X' || *(s + 1) == 'x')) {
-		/* skip hex prefix */
-		s += 2;
-
-		/* mark current location */
-		p = s;
-
-		/* allow hex digits and the radix character.  FIXME: radix
-		 * character should be obtained from current locale .*/
-		while(isxdigit(*s) || *s == '.') {
-			radix_count += *s == '.';
+	if(*s == '0') {
+		while(*s == '0')
 			s++;
-		}
-
-		/* if no digits were found, or more than one radix was found,
-		 * or the next character is not the exponent prefix the answer
-		 * is no */
-		if(p == s || radix_count > 1 || (*s != 'P' && *s != 'p'))
-			return(0);
-
-		/* skip exponent prefix, and an optional sign */
-		s = skipsign(++s);
-
-		/* if the next character is not a hex digit then the answer is
-		 * no */
-		return(isxdigit(*s));
-	} else {
-		/* mark current location */
-		p = s;
-
-		/* allow decimal digits and the radix character.  FIXME: radix
-		 * character should be obtained from current locale. */
-		while(isdigit(*s) || *s == '.') {
-			radix_count += *s == '.';
-			s++;
-		}
-
-		/* if no digits were found, or more than one radix was found,
-		 * or the next character is not the exponent prefix the answer
-		 * is no */
-		if(p == s || radix_count > 1 || (*s != 'E' && *s != 'e'))
-			return(0);
-
-		/* skip exponent prefix, and an optional sign */
-		s = skipsign(++s);
-
-		/* if the next character is not a decimal digit then the answer
-		 * is no */
-		return(isdigit(*s));
+		if(isdigit(*s))
+			return(1);
 	}
+	return(0);
+}
+
+static int isbase16(const char *s)
+{
+	if(*s == '0') {
+		s++;
+		if(*s == 'X' || *s == 'x') {
+			s++;
+			if(isxdigit(*s) || *s == '.')
+				return(1);
+		}
+	}
+	return(0);
+}
+
+
+/*
+ * Check that a string contains an exponent.
+ */
+
+static int isdecimalexp(const char *s)
+{
+	if(*s == 'E' || *s == 'e') {
+		s++;
+		if(*s == '+' || *s == '-')
+			s++;
+		if(isdigit(*s))
+			return(1);
+	}
+	return(0);
+}
+
+static int isbinaryexp(const char *s)
+{
+	if(*s == 'P' || *s == 'p') {
+		s++;
+		if(*s == '+' || *s == '-')
+			s++;
+		if(isdigit(*s))
+			return(1);
+	}
+	return(0);
 }
 
 
@@ -86,44 +80,190 @@ static int isscientific(const char *s)
 int XLALStrToGPS(LIGOTimeGPS *time, const char *nptr, char **endptr)
 {
 	const char *func = "XLALStrToGPS";
-	char *p, *q;
-	int olderrno, i;
+	int olderrno;
+	char *digits;
+	int len;
+	int sign;
+	int base;
+	int radixpos;
+	int exppart;
 
 	/* save and clear C library errno so we can check for failures */
 	olderrno = errno;
 	errno = 0;
 
-	/* parse as a double if in scientific notation */
-	if(isscientific(nptr)) {
-		XLALFloatToGPS(time, strtod(nptr, &q));
-	} else {
-		/* parse the integer part */
-		time->gpsSeconds = strtol(nptr, &p, 10);
-		time->gpsNanoSeconds = 0;
+	/* consume leading white space */
+	while(isspace(*nptr))
+		nptr++;
+	if(endptr)
+		*endptr = nptr;
 
-		/* check for and parse a fractional part */
-		if(*p == '.') {
-			if(isdigit(*++p)) {
-				time->gpsNanoSeconds = strtol(p, &q, 10);
-				/* move the decimal place to the correct location */
-				for(i = q - p - 9; i > 0; i--)
-					time->gpsNanoSeconds /= 10;
-				for(; i < 0; i++)
-					time->gpsNanoSeconds *= 10;
-				/* non-integer negative times require a correction */
-				if((time->gpsSeconds < 0) && time->gpsNanoSeconds) {
-					time->gpsSeconds--;
-					time->gpsNanoSeconds = 1000000000 - time->gpsNanoSeconds;
-				}
-			} else
-				q = p;
+	/* determine the sign */
+	if(*nptr == '-') {
+		sign = -1;
+		nptr++;
+	} else if(*nptr == '+') {
+		sign = +1;
+		nptr++;
+	} else
+		sign = +1;
+
+	/* determine the base */
+	if(isbase8(nptr)) {
+		base = 8;
+		nptr++;
+	} else if(isbase16(nptr)) {
+		base = 16;
+		nptr += 2;
+	} else
+		base = 10;
+	/*if(*nptr != '0')
+		base = 10;
+	else {
+		*nptr++;
+		if(*nptr == 'X' || *nptr == 'x') {
+			base = 16;
+			nptr++;
 		} else
-			q = p;
+			base = 8;
+	}*/
+
+	/* count the number of digits including the radix but not including
+	 * the exponent.  FIXME: radix character should be obtained from
+	 * the locale */
+	radixpos = -1;
+	switch(base) {
+	case 8:
+		for(len = 0; 1; len++) {
+			if(isodigit(nptr[len]))
+				continue;
+			if(nptr[len] == '.' && radixpos < 0) {
+				radixpos = len;
+				continue;
+			}
+			break;
+		}
+		break;
+	
+	case 10:
+		for(len = 0; 1; len++) {
+			if(isdigit(nptr[len]))
+				continue;
+			if(nptr[len] == '.' && radixpos < 0) {
+				radixpos = len;
+				continue;
+			}
+			break;
+		}
+		break;
+	
+	case 16:
+		for(len = 0; 1; len++) {
+			if(isxdigit(nptr[len]))
+				continue;
+			if(nptr[len] == '.' && radixpos < 0) {
+				radixpos = len;
+				continue;
+			}
+			break;
+		}
+		break;
+	}
+
+	/* check that we have a number */
+	if(!len) {
+		XLALGPSSet(time, 0, 0);
+		return(0);
+	}
+
+	/* copy the digits into a scratch space, removing the radix character
+	 * if one was found */
+	if(radixpos >= 0) {
+		digits = malloc(len + 1);
+		memcpy(digits, nptr, radixpos);
+		memcpy(digits + radixpos, nptr + radixpos + 1, len - radixpos - 1);
+		digits[len - 1] = '\0';
+		nptr += len;
+		len--;
+	} else {
+		digits = malloc(len + 2);
+		memcpy(digits, nptr, len);
+		digits[len] = '\0';
+		radixpos = len;
+		nptr += len;
+	}
+
+	/* check for and parse an exponent, performing an adjustment of the
+	 * radix position */
+	switch(base) {
+	case 8:
+		/* C library has no format for octal exponents */
+		exppart = 1;
+		break;
+
+	case 10:
+		/* exponent is the number of powers of 10 */
+		if(isdecimalexp(nptr))
+			radixpos += strtol(++nptr, &nptr, 10);
+		exppart = 1;
+		break;
+
+	case 16:
+		/* exponent is the number of powers of 2 */
+		if(isbinaryexp(nptr)) {
+			exppart = strtol(++nptr, &nptr, 10);
+			radixpos += exppart / 4;
+			exppart = 1 << (exppart % 4);
+		} else
+			exppart = 1;
+		break;
 	}
 
 	/* save pointer to first character after converted characters */
 	if(endptr)
-		*endptr = q;
+		*endptr = nptr;
+
+	/* insert the radix character, padding the scratch digits with zeroes
+	 * if needed */
+	if(radixpos < 2) {
+		digits = realloc(digits, len + 2 + (2 - radixpos));
+		memmove(digits + (2 - radixpos) + 1, digits, len + 1);
+		memset(digits, '0', (2 - radixpos) + 1);
+		if(radixpos == 1)
+			digits[1] = digits[2];
+		radixpos = 2;
+	} else if(radixpos > len) {
+		digits = realloc(digits, radixpos + 2);
+		memset(digits + len, '0', radixpos - len);
+		digits[radixpos + 1] = '\0';
+	} else {
+		memmove(digits + radixpos + 1, digits + radixpos, len - radixpos + 1);
+	}
+	digits[radixpos] = '.';
+
+	/* parse the integer part */
+	XLALINT8NSToGPS(time, sign * strtol(digits, NULL, base) * exppart * 1000000000ll);
+
+	/* parse the fractional part */
+	if(errno != ERANGE) {
+		switch(base) {
+		case 8:
+			break;
+
+		case 10:
+			break;
+
+		case 16:
+			digits[radixpos - 2] = '0';
+			digits[radixpos - 1] = 'x';
+			radixpos -= 2;
+			break;
+		}
+		XLALGPSAdd(time, sign * strtod(digits + radixpos, NULL) * exppart);
+	}
+
+	/* free the scratch space */
+	free(digits);
 
 	/* check for failures and restore errno if there weren't any */
 	if(errno == ERANGE)
