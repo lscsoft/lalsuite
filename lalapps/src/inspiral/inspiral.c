@@ -4197,6 +4197,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   {
     fprintf( stderr, 
         "one of --enable-rsq-veto or --disable-rsq-veto must be specified\n" );
+    exit( 1 );
   }
 
   if ( enableRsqVeto )
