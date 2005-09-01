@@ -55,7 +55,7 @@ extern int lalDebugLevel;
 #define NFSIZE  21
 #define DTERMS 8
 #define FSTATTHRESHOLD 2.6
-#define SFTDIRECTORY "/home/badkri/fakesfts/"
+#define SFTDIRECTORY "/local_data/badkri/fakesfts/"
 #define FNAMEOUT "./OutHoughFStat"
 
 int main( int argc, char *argv[]) {
@@ -74,16 +74,20 @@ int main( int argc, char *argv[]) {
   INT4 mCohSft, nSFTs; /* number of SFTs in each stack and total number of SFTs */
   INT4 Nstacks; /* number of stacks -- not necessarily same as uvar_Nstacks! */
   INT4 sftlength; /* number of bins in each sft */
-  REAL8 deltaF, timeBase; /* frequency resolution */
+  REAL8 deltaF, timeBase; /* frequency resolution of SFTs */
   INT8 sftFminBin; /* first sft bin index */
-
+  INT4 fSearchBinIni, fSearchBinFin; /* frequency bins of start and end search frequencies */
+  REAL8 tStack, deltaFstack; /* frequency resolution of Fstat calculation */
 
   /* LALdemod related stuff */
-  LALFstat **Fstat=NULL;	
+  LALFstat **Fstat=NULL;   /* delete later */
+  FstatVectorStack *FstatVect;
   FstatStackParams FstatPar;
+  INT4 binsFstat; /* number of frequency values where Fstat is calculated */
 
   /* hough variables */
   INT4  nfSizeCylinder=NFSIZE;
+  HOUGHPeakGramVector pgV;
 
   /* variables for logging */
   CHAR *fnamelog=NULL;
@@ -95,7 +99,7 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_alpha, uvar_delta;  /* sky-location angles */
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fStart, uvar_fBand;
-  REAL8 uvar_FstatThr; /* threshold of Fstst to select peaks */
+  REAL8 uvar_FstatThr; /* threshold of Fstat to select peaks */
   INT4 uvar_ifo, uvar_blocksRngMed, uvar_Nstacks, uvar_Dterms;
   CHAR *uvar_earthEphemeris=NULL;
   CHAR *uvar_sunEphemeris=NULL;
@@ -108,7 +112,7 @@ int main( int argc, char *argv[]) {
   /************/
   /* set defaults, read user variables, log user variables and log cvs tags */
   /* LALDebugLevel must be called before anything else */
-  lalDebugLevel = 0;
+  lalDebugLevel = 1;
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   /* now set the defaults */
@@ -148,8 +152,8 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",           'r', UVAR_OPTIONAL, "Right ascension",               &uvar_alpha),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "delta",           'l', UVAR_OPTIONAL, "Declination",                   &uvar_delta),           &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_fStart),          &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",            'd', UVAR_OPTIONAL, "Spindown parameter",            &uvar_fdot),            &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",            't', UVAR_OPTIONAL, "Threshold on Fstatistic",       &uvar_FstatThr),        &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",            'p', UVAR_OPTIONAL, "Spindown parameter",            &uvar_fdot),            &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "FstatThr",        't', UVAR_OPTIONAL, "Threshold on Fstatistic",       &uvar_FstatThr),        &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -250,10 +254,18 @@ int main( int argc, char *argv[]) {
   deltaF = inputSFTs->data->deltaF;
   timeBase = 1.0/deltaF;
   sftFminBin = floor( timeBase * inputSFTs->data->f0 + 0.5);
+
+  /* bin index for start and finish of SEARCH frequency (not SFT frequency) */
+  tStack = timeBase * mCohSft; /* duration of each stack */
+  /* frequency resolution of fstat calculation is 1/tStack */
+  fSearchBinIni = floor( tStack * uvar_fStart + 0.5);
+  binsFstat = floor( uvar_fBand * tStack + 0.5);
+  fSearchBinFin = fSearchBinIni + binsFstat - 1;
   
   /* create and fill timestamp vectors */
   timeVelPos = (TimeVelPosVector *)LALMalloc( Nstacks * sizeof(TimeVelPosVector));
   for (k=0; k<Nstacks; k++) {
+
     timeVelPos[k].length = mCohSft;
     timeVelPos[k].ts = (LIGOTimeGPS *)LALMalloc( mCohSft * sizeof(LIGOTimeGPS));
     timeVelPos[k].velx = (REAL8 *)LALMalloc( mCohSft * sizeof(REAL8));
@@ -332,6 +344,28 @@ int main( int argc, char *argv[]) {
   }
 
 
+  /* memory for Fstatistic Vector */
+  FstatVect = (FstatVectorStack *)LALMalloc(sizeof(FstatVectorStack));
+  FstatVect->length = Nstacks;
+  FstatVect->data = (FStatisticVector *)LALMalloc( Nstacks * sizeof(FStatisticVector));
+  for (k=0; k<Nstacks; k++) {
+
+    FStatisticVector *tempVect=FstatVect->data + k;
+
+    tempVect->length = binsFstat;
+    tempVect->f0 = uvar_fStart;
+    tempVect->fBand = uvar_fBand;
+    tempVect->df = deltaF;
+    tempVect->Fa = NULL;
+    LAL_CALL ( LALZCreateVector( &status, &(tempVect->Fa), binsFstat), &status);
+    tempVect->Fb = NULL;
+    LAL_CALL ( LALZCreateVector( &status, &(tempVect->Fb), binsFstat), &status);
+    tempVect->F = NULL;
+    LAL_CALL ( LALDCreateVector( &status, &(tempVect->F), binsFstat), &status);
+
+  }
+  
+
   FstatPar.mCohSft = mCohSft;
   FstatPar.Nstacks = Nstacks;
   FstatPar.Dterms = uvar_Dterms;
@@ -344,13 +378,27 @@ int main( int argc, char *argv[]) {
   FstatPar.edat = edat;
   FstatPar.spindown = NULL;
   LAL_CALL( LALDCreateVector( &status, &(FstatPar.spindown),1), &status);
+  FstatPar.spindown->data[0] = uvar_fdot;
+
+  /* memory allocation for **Fstat */
+  Fstat = (LALFstat **)LALMalloc( Nstacks * sizeof(LALFstat *));
 
   LAL_CALL( ComputeFstatStack( &status, Fstat, inputSFTs, &FstatPar), &status);
 
 
-  /* select frequency bins */
-  
 
+  /* select frequency bins */
+  /* create peakgram vector */ 
+  pgV.length = Nstacks;
+  pgV.pg = (HOUGHPeakGram *)LALMalloc( Nstacks * sizeof(HOUGHPeakGram));
+  for (k=0; k<Nstacks; k++) {
+    pgV.pg[k].deltaF = deltaF;
+    pgV.pg[k].fBinIni = fSearchBinIni;
+    pgV.pg[k].fBinFin = fSearchBinFin;
+  }
+
+  /* compute the peakgrams */
+  LAL_CALL( FstatVectToPeakGram( &status, &pgV, FstatVect, uvar_FstatThr), &status);
 
   /* free timestamp and Vel/Pos vectors */
   for (k=0; k<Nstacks; k++) {
@@ -378,6 +426,25 @@ int main( int argc, char *argv[]) {
     LALFree(Fstat[k]);
   }
   LALFree(Fstat);
+
+
+  /* free Fstat vector */
+  for (k=0; k<Nstacks; k++) {
+
+    FStatisticVector *tempVect=FstatVect->data + k;
+    
+    LAL_CALL ( LALZDestroyVector ( &status, &(tempVect->Fa)), &status);
+    LAL_CALL ( LALZDestroyVector ( &status, &(tempVect->Fb)), &status);
+    LAL_CALL ( LALDDestroyVector ( &status, &(tempVect->F)), &status);
+    LALFree( tempVect);
+  }
+  LALFree(FstatVect->data);
+  LALFree(FstatVect);
+
+  /* free peakgrams */
+  for (k=0; k<Nstacks; k++) 
+    LALFree(pgV.pg[k].peak);
+  LALFree(pgV.pg);
 
   LAL_CALL (LALDestroySFTVector(&status, &inputSFTs),&status );
   LAL_CALL (LALDDestroyVector (&status, &(FstatPar.spindown)), &status);
@@ -409,7 +476,7 @@ void ComputeFstatStack (LALStatus *status,
   /* FFT is a structure containing *SFTtype 
      --- for some reason COMPLEX8FrequencySeriesVector is not used */
   FFT **SFTData=NULL;
-  EphemerisData *edat;   
+  EphemerisData *edat=params->edat;   
 
   INITSTATUS( status, "ComputeFstatStack", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -447,8 +514,8 @@ void ComputeFstatStack (LALStatus *status,
   /* memory for output of LALComputeAM */
   amc.a = NULL;
   amc.b = NULL;
-  LAL_CALL (LALSCreateVector( status, &(amc.a), (UINT4)mCohSft), status);
-  LAL_CALL (LALSCreateVector( status, &(amc.b), (UINT4)mCohSft), status);
+  TRY (LALSCreateVector( status->statusPtr, &(amc.a), (UINT4)mCohSft), status);
+  TRY (LALSCreateVector( status->statusPtr, &(amc.b), (UINT4)mCohSft), status);
 
   /* ComputeSky stuff*/
   csParams = (CSParams *)LALMalloc(sizeof(CSParams));
@@ -483,7 +550,6 @@ void ComputeFstatStack (LALStatus *status,
   DemodParams->returnFaFb = FALSE; /* don't require Fa and Fb */
 
   /* allocate memory for Fstat structure for each stack -- output from LALDemod*/
-  Fstat = (LALFstat **)LALMalloc( Nstacks * sizeof(LALFstat *));
   for (k=0; k<Nstacks; k++)
     Fstat[k] = (LALFstat *)LALMalloc( sizeof(LALFstat));
 
@@ -501,26 +567,26 @@ void ComputeFstatStack (LALStatus *status,
 
     /* compute a(t) and b(t) and A,B,C,D */
     ts = params->ts;
-    LAL_CALL ( LALComputeAM( status, &amc, ts[k]->data, amParams), status); 
+    TRY ( LALComputeAM( status->statusPtr, &amc, ts[k]->data, amParams), status); 
     DemodParams->amcoe = &amc;
 
     /* compute the "sky-constants" */
     csParams->tGPS = ts[k]->data;
-    LAL_CALL ( LALComputeSky( status, DemodParams->skyConst, 0, csParams), status);  
+    TRY ( LALComputeSky( status->statusPtr, DemodParams->skyConst, 0, csParams), status);  
 
     for (j=0; j<mCohSft; j++) {
       SFTData[j]->fft = &(inputSFTs->data[k*mCohSft + j]);
     }
 
-    LAL_CALL ( LALDemod( status, Fstat[k], SFTData, DemodParams), status);    
+    TRY ( LALDemod( status->statusPtr, Fstat[k], SFTData, DemodParams), status);    
   }
 
   /* free amParams */
   LALFree(amParams->das->pSource);
   LALFree(amParams->das);
   LALFree(amParams);
-  LAL_CALL ( LALSDestroyVector( status, &(amc.a)), status);
-  LAL_CALL ( LALSDestroyVector( status, &(amc.b)), status);
+  TRY ( LALSDestroyVector( status->statusPtr, &(amc.a)), status);
+  TRY ( LALSDestroyVector( status->statusPtr, &(amc.b)), status);
 
   /* free ComputeSky Params */
   LALFree(csParams->skyPos);
@@ -562,7 +628,7 @@ void ComputeFstatStackv2 (LALStatus *status,
 
 void ComputeFstatHoughMap(LALStatus *status,
 			  HOUGHMapTotal   *ht,   /* the total Hough map */
-			  PeakGramVector *pgV,
+			  HOUGHPeakGramVector *pgV,
 			  FstatStackParams *params)
 {
 
@@ -574,4 +640,39 @@ void ComputeFstatHoughMap(LALStatus *status,
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
+}
+
+
+void FstatVectToPeakGram (LALStatus *status,
+			  HOUGHPeakGramVector *pgV,
+			  FstatVectorStack *FstatVect,
+			  REAL8  thr)
+{
+  INT4 j, k;
+  INT4 Nstacks, nSearchBins;
+  UCHARPeakGram upg;  
+
+  INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+
+  Nstacks = pgV->length;
+  nSearchBins = FstatVect->data->length;
+  for (k=0; k<Nstacks; k++) {
+    REAL8Vector *tempVect = FstatVect->data[k].F;
+
+    upg.nPeaks = 0;
+    upg.length = nSearchBins;
+    for(j=0; j<nSearchBins; j++) {
+      if (tempVect->data[j] > thr) {
+	upg.nPeaks++;
+      }
+    }
+  }
+
+  pgV->pg[k].length = nSearchBins; 
+  pgV->pg[k].peak = (INT4 *)LALMalloc( nSearchBins * sizeof(INT4)); 
+
+  DETATCHSTATUSPTR (status);
+  RETURN(status);
 }

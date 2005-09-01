@@ -57,7 +57,7 @@
 #include <lal/LALDemod.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/Date.h>
-#include <lal/HoughMap.h> 
+#include <lal/LALHough.h> 
 #include <lal/NormalizeSFTRngMed.h>
 
 
@@ -124,6 +124,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     INT4 Dterms;            /**< value of Dterms for LALDemod */
     REAL8 fStart;           /**< start calculating Fstat at this frequency */
     REAL8 fBand;            /**< calculate Fstat for this frequency band */
+    REAL8 deltaF;           /**< Frequency resolution */
     LALDetector detector;   /**< detector */
     EphemerisData *edat;    /**< ephemeris info */ 
     LIGOTimeGPSVector **ts; /**< timestamp vector for each stack */
@@ -131,31 +132,56 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 delta;            /**< sky-location -- declination */
     REAL8Vector *spindown;  /**< vector containing spindown values */
   } FstatStackParams;
+  
+  /** vector of 0s and 1s obtained by thresholding Fstat vector */
+  typedef struct tagUCHARPeakGram{ 
+    LIGOTimeGPS  epoch;        /**< time stamp of stack*/
+    REAL8        deltaF;       /**< frequency resolution */
+    INT4         fminBinIndex; /**< start index (change to start frequency value?) */ 
+    INT4         length;       /**< number of elements in data */
+    INT4         nPeaks;       /**< number of peaks selected in data */
+    UCHAR       *data;         /**< pointer to the data {0,1} (UCHAR used to minimize memory) */
+  } UCHARPeakGram; 
+
+  /** copied from ComputeFstatistic_v2 -- delete when it goes into LAL */
+  typedef struct {
+    UINT4 length;	  /**< number of frequency-bins */
+    REAL8 f0;		  /**< lowest frequency in the band */
+    REAL8 fBand;	  /**< user-requested frequency-band */
+    REAL8 df;	          /**< frequency-resolution */
+    REAL8Vector *F;	  /**< Values of the F-statistic proper (F) over frequency-bins */
+    COMPLEX16Vector *Fa;  /**< Values Fa over frequency-bins */
+    COMPLEX16Vector *Fb;  /**< Values Fb */
+  } FStatisticVector;
+
+  /** collection of Fstat vectors --- one for for each stack */
+  typedef struct {
+    INT4 length;            /**< number of stacks */
+    FStatisticVector *data; /**< the Fstat vectors */
+  } FstatVectorStack;
 
 
-  /** vector of peakgrams */
-  typedef struct tagINT4FrequencySeriesVector {
-    INT4                length; /**< number of peakgrams */
-    INT4FrequencySeries *data;  /**< peakgrams */
-  } INT4FrequencySeriesVector;
+  void ComputeFstatStack (LALStatus *status, 
+			  LALFstat **out, 
+			  SFTVector *sfts, 
+			  FstatStackParams *params);
 
-  typedef INT4FrequencySeriesVector PeakGramVector;
-
-void ComputeFstatStack (LALStatus *status, 
-			LALFstat **out, 
-			SFTVector *sfts, 
-			FstatStackParams *params);
-
-void ComputeFstatStackv2 (LALStatus *status, 
-			LALFstat **out, 
-			SFTVector *sfts, 
-			FstatStackParams *params);
+  void ComputeFstatStackv2 (LALStatus *status, 
+			    LALFstat **out, 
+			    SFTVector *sfts, 
+			    FstatStackParams *params);
 
 
-void ComputeFstatHoughMap (LALStatus *status,
-			   HOUGHMapTotal  *ht,  
-			   PeakGramVector *pgV,
-			   FstatStackParams *params);
+  void ComputeFstatHoughMap (LALStatus *status,
+			     HOUGHMapTotal  *ht,  
+			     HOUGHPeakGramVector *pgV,
+			     FstatStackParams *params);
+
+  void FstatVectToPeakGram (LALStatus *status,
+			    HOUGHPeakGramVector *pgV,
+			    FstatVectorStack *FstatVect,
+			    REAL8  thr);
+			    
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
