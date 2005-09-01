@@ -56,8 +56,7 @@ lalapps_skynet_SOURCES = skynet.c
 
 compareFstats_SOURCES = compareFstats.c
 
-ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c clusters.c clusters.h  \
-	DopplerScan.c DopplerScan.h NeighboringGridPoints.c
+ComputeFStatistic_v2_SOURCES = ComputeFStatistic_v2.c  DopplerScan.c DopplerScan.h 
 
 TESTS = testFStat.sh
 

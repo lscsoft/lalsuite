@@ -28,6 +28,7 @@
  *                                                                          
  *********************************************************************************/
 #include "config.h"
+#include <lal/LALRunningMedian.h>
 
 /* System includes */
 #include <stdio.h>
@@ -49,7 +50,6 @@
 #include <lalapps.h>
 
 /* local includes */
-#include "clusters.h"
 #include "DopplerScan.h"
 
 RCSID( "$Id$");
@@ -64,7 +64,6 @@ RCSID( "$Id$");
 #define FALSE (1==0)
 
 /*----- SWITCHES -----*/
-#define FILE_FSTATS 1		/**< write out an 'Fstats' file containing cluster-output */
  
 
 /*----- Error-codes -----*/
@@ -147,14 +146,6 @@ typedef struct {
   IFOspecifics ifos;		/**< IFO-specific configuration parameters */
 } ConfigVariables;
 
-/** FIXME: OBSOLETE: used to hold result from LALDemod(). 
-    Only kept for the moment to make things work (FIXME)*/
-typedef struct {
-  const REAL8         *F;       /* Array of value of the F statistic */
-  const COMPLEX16     *Fa;      /* Results of match filter with a(t) */
-  const COMPLEX16     *Fb;      /* Results of match filter with b(t) */
-} LALFstat;
-
 
 /** Local type for storing F-statistic output from NewLALDemod().
  * Note that length has to be the same for all vectors, anything else
@@ -183,26 +174,11 @@ typedef enum {
   SSBPREC_LAST			/**< end marker */
 } SSBprecision;
 
-
-
-
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
 
-/* *ifos.sftVects[0] = NULL;*/	/**< holds the SFT-data to analyze */
-LALFstat Fstat;			/**< output from LALDemod(): F-statistic and amplitudes Fa and Fb */
-REAL8 Alpha,Delta;		/**< sky-position currently searched (equatorial coords, radians) */
-Clusters HFLines;		/**< stores information about outliers/clusters in F-statistic */
-Clusters HPLines;		/**< stores information about outliers/clusters in SFT-power spectrum */
-
-Clusters HFLines, HPLines;
-
-Clusters *highSpLines=&HPLines, *highFLines=&HFLines;
-
 REAL8 medianbias=1.0;		/**< bias in running-median depending on window-size 
 				 * (set in NormaliseSFTDataRngMdn()) */
-
-FILE *fpstat=NULL;		/**< output-file: F-statistic candidates and cluster-information */
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 
@@ -258,8 +234,8 @@ void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void NormaliseSFTDataRngMdn (LALStatus *, const SFTVector *sfts);
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
-void writeFVect(LALStatus *, const FStatisticVector *FVect, const CHAR *fname);
 void checkUserInputConsistency (LALStatus *lstat);
+void EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector *output);
 
 int
 XLALNewLALDemod(Fcomponents *FaFb,
@@ -283,7 +259,7 @@ LALGetSSBtimes (LALStatus *,
 void
 LALGetAMCoeffs(LALStatus *status,
 	       AMCoeffs *coeffs, 
-	       const DetectorStateSeries *DetctorStates,
+	       const DetectorStateSeries *DetectorStates,
 	       SkyPosition skypos);
 
 
@@ -300,12 +276,6 @@ LALGetDetectorStates (LALStatus *,
 		      const LIGOTimeGPSVector *timestamps,
 		      const LALDetector *detector,
 		      const EphemerisData *edat);
-
-/****** black list ******/
-void EstimateFLines(LALStatus *, const FStatisticVector *FVect);
-INT4 writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df);
-int compare(const void *ip, const void *jp);
-INT4 writeFaFb(INT4 *maxIndex);
 
 /*---------- empty initializers ---------- */
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
@@ -324,8 +294,6 @@ int main(int argc,char *argv[])
 {
   LALStatus status = blank_status;	/* initialize status */
 
-  INT4 *maxIndex=NULL; 			/*  array that contains indexes of maximum of each cluster */
-  CHAR Fstatsfilename[256]; 		/* Fstats file name*/
   DopplerScanInit scanInit;		/* init-structure for DopperScanner */
   DopplerScanState thisScan = empty_DopplerScanState; /* current state of the Doppler-scan */
   DopplerPosition dopplerpos;		/* current search-parameters */
@@ -363,17 +331,6 @@ int main(int argc,char *argv[])
   LAL_CALL ( InitFStat(&status, &GV), &status);
 
 
-  /*      open file */
-  strcpy(Fstatsfilename,"Fstats");
-  if ( uvar_outputLabel )
-    strcat(Fstatsfilename, uvar_outputLabel);
-  
-  if ( FILE_FSTATS && !(fpstat=fopen(Fstatsfilename,"w")))
-    {
-      fprintf(stderr,"in Main: unable to open Fstats file\n");
-      return 2;
-    }
-  
   /* prepare initialization of DopplerScanner to step through paramter space */
   scanInit.dAlpha = uvar_dAlpha;
   scanInit.dDelta = uvar_dDelta;
@@ -566,35 +523,6 @@ int main(int argc,char *argv[])
 	      
 	    } /* if outputFstat */
 	  
-	  
-	      /* FIXME: to keep cluster-stuff working, we provide the "translation" 
-	       * from FVect back into old Fstats-struct */
-	  Fstat.F  = FVect->F->data;
-	  
-	  /*  This fills-in highFLines */
-	  if (nFreq > 5) {
-	    LAL_CALL (EstimateFLines(&status, FVect), &status);
-	  }
-	  
-	  /*  This fills-in highFLines  */
-	  if (highFLines != NULL && highFLines->Nclusters > 0)
-	    {
-	      maxIndex=(INT4 *)LALMalloc(highFLines->Nclusters*sizeof(INT4));
-	      
-	      /*  for every cluster writes the information about it in file Fstats */
-	      if (writeFLines(maxIndex, FVect->f0, FVect->df)){
-		fprintf(stderr, "%s: trouble making file Fstats\n", argv[0]);
-		return 6;
-	      }
-	      
-	      LALFree(maxIndex);
-	    } /* if highFLines found */
-	  
-	  
-	      /* Set the number of the clusters detected to 0 at each iteration 
-	       * of the sky-direction and the spin down */
-	  highFLines->Nclusters=0;
-	  
 	} /* For GV.spinImax */
       
       loopcounter ++;
@@ -608,10 +536,6 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
     fclose (fpOut);
   
   if (lalDebugLevel) printf ("\nSearch finished.\n");
-  
-  /* properly terminate Fstats-file by 'DONE' marker: */ 
-  if (fpstat) fprintf(fpstat, "%%DONE\n");
-  if (fpstat) fclose(fpstat);
   
   /* Free memory */
   LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
@@ -730,67 +654,6 @@ initUserVars (LALStatus *status)
   RETURN (status);
 } /* initUserVars() */
 
-/*******************************************************************************/
-/*  for every cluster writes the information about it in file Fstats */
-/*  precisely it writes: */
-/*  fr_max alpha delta N_points_of_cluster mean std max (of 2F) */
-int writeFLines(INT4 *maxIndex, REAL8 f0, REAL8 df){
-
-  INT4 i,j,j1,j2,k,N;
-  REAL8 max,logof2,mean,var,std,R,fr;
-  INT4 imax;
-  INT4 err = 0;
-
-  logof2=medianbias;
- 
-  j1=0;
-  j2=0;
-
-  for (i=0;i<highFLines->Nclusters;i++){
-    N=highFLines->NclustPoints[i];
-    
-    /*  determine maximum of j-th cluster */
-    /*  and compute mean */
-    max=0.0;
-    imax=0;
-    mean=0.0;
-    std=0.0;
-    for (j=0;j<N;j++){
-      R=2.0*logof2*highFLines->clusters[j1];
-      k=highFLines->Iclust[j1];
-      j1=j1+1;
-      mean=mean+R;
-      if( R > max){
-	max=R;
-	imax=k;
-      }
-    }/*  end j loop over points of i-th cluster  */
-    /*  and start again to compute variance */
-    maxIndex[i]=imax;
-    mean=mean/N;
-    var=0.0;
-    for (j=0;j<N;j++){
-      R=2.0*logof2*highFLines->clusters[j2];
-      j2=j2+1;
-      var=var+(R-mean)*(R-mean);
-    }/*  end j loop over points of i-th cluster  */
-    var=var/N;
-    std=sqrt(var);
-    fr = f0 + imax * df;
-    /*    print the output */
-    if (fpstat)
-      err=fprintf(fpstat,"%16.12f %10.8f %10.8f    %d %10.5f %10.5f %10.5f\n",fr,
-		Alpha, Delta, N, mean, std, max);
-
-    if (err<=0) {
-    fprintf(stderr,"writeFLines couldn't print to Fstas!\n");
-    return 4;
-  }
-
-  }/*  end i loop over different clusters */
-
-  return 0;
-}
 
 /** Do some basic initializations of the F-statistic code before starting the main-loop.
  * Things we do in this function: 
@@ -1234,12 +1097,6 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   
   LALFree ( cfg->skyRegionString );
   
-  /* this comes from clusters.c */
-  if (highFLines->clusters) LALFree(highFLines->clusters);
-  if (highFLines->Iclust) LALFree(highFLines->Iclust);
-  if (highFLines->NclustPoints) LALFree(highFLines->NclustPoints);
-  
-  
   /* Free ephemeris data */
   LALFree(cfg->edat->ephemE);
   LALFree(cfg->edat->ephemS);
@@ -1252,266 +1109,6 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   RETURN (status);
 
 } /* Freemem() */
-
-/*******************************************************************************/
-/** Sorting function to sort into DECREASING order. Used in PrintTopValues(). */
-int compare(const void *ip, const void *jp)
-{
-  REAL8 di, dj;
-
-  di=Fstat.F[*(const int *)ip];
-  dj=Fstat.F[*(const int *)jp];
-
-  if (di<dj)
-    return 1;
-  
-  if (di==dj)
-    return 0;
-
-  return -1;
-}
-
-/** Find outliers and then clusters in the F-statistic array over frequency. 
- * These clusters get written in the global highFLines. 
- */
-void
-EstimateFLines(LALStatus *status, const FStatisticVector *FVect)
-{
-  UINT4 i,j,Ntot;   
-  UINT4 nbins;                	/**< Number of bins in F */
-  REAL8Vector *F1=NULL; 
-  REAL8Vector *FloorF1=NULL;             /* Square of SFT */
-  REAL4 THR=10.0;
-  REAL8 dFreq, f0;
-  
-  OutliersInput  *outliersInput;
-  OutliersParams *outliersParams;
-  Outliers       *outliers;
-  ClustersInput  *clustersInput;
-  ClustersParams *SpClParams;
-  Clusters       *SpLines=highFLines;
-    
-  INT2 smallBlock=1;
-  INT4 wings;
-
-  INITSTATUS( status, "EstimateFLines", rcsid );
-  ATTATCHSTATUSPTR (status);
-
-  nbins = FVect->length;
-  dFreq = FVect->df;
-  f0 = FVect->f0;
-
-  THR=uvar_Fthreshold;
-
-/* 0.0002 is the max expected width of the F status curve for signal */
-/* with ~ 10 h observation time */
-
-  wings = (UINT4) (0.5 + 0.0002 / dFreq );
-
-  TRY ( LALDCreateVector(status->statusPtr, &F1, nbins), status);
-  TRY ( LALDCreateVector(status->statusPtr, &FloorF1, nbins), status);
-
-  /* loop over SFT data to estimate noise */
-  for (j=0;j<nbins;j++)
-    {
-      F1->data[j] = FVect->F->data[j];
-      FloorF1->data[j] = 1.0;
-    }
-  
-  F1->length = nbins;
-  FloorF1->length = nbins;
-
-  if ( (outliers = (Outliers *)LALCalloc(1, sizeof(Outliers))) == NULL) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  outliers->Noutliers=0;
-
-  if ( (outliersParams = (OutliersParams *)LALCalloc(1,sizeof(OutliersParams))) == NULL) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  if ( (outliersInput = (OutliersInput *)LALCalloc(1,sizeof(OutliersInput))) == NULL) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  
-  outliersParams->Thr = THR/(2.0*medianbias);
-  outliersParams->Floor = FloorF1;
-  outliersParams->wings = wings; /*these must be the same as ClustersParams->wings */
-  outliersInput->ifmin = (INT4) ((f0 / dFreq) + 0.5);
-  outliersInput->data = F1;
-
-  /*find values of F above THR and populate outliers with them */
-  ComputeOutliers(outliersInput, outliersParams, outliers);
-
-
-  /*if no outliers were found clean and exit */
-   if (outliers->Noutliers == 0){
-
-     LALFree(outliers->ratio);
-     LALFree(outliers);
-     LALFree(outliersParams);
-     LALFree(outliersInput);
-     TRY ( LALDDestroyVector(status->statusPtr, &F1), status);
-     TRY ( LALDDestroyVector(status->statusPtr, &FloorF1), status);
-
-     /*      fprintf(stderr,"Nclusters zero \n"); */
-     /*      fflush(stderr); */
-
-     goto finished;
-
-   } /* if Noutliers == 0 */
-  
-
-   /* if outliers are found get ready to identify clusters of outliers*/
-   if ( (SpClParams = (ClustersParams*) LALCalloc(1,sizeof(ClustersParams))) == NULL) {
-     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-   }
-   
-   if ( (clustersInput = (ClustersInput *) LALCalloc(1,sizeof(ClustersInput))) == NULL) {
-     ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-   }
-      
-   SpClParams->wings = wings;
-   SpClParams->smallBlock = smallBlock;
-   
-   clustersInput->outliersInput = outliersInput;
-   clustersInput->outliersParams= outliersParams;
-   clustersInput->outliers      = outliers;     
-   
-   /* clusters of outliers in F get written in SpLines which is the global highFLines*/
-   TRY (DetectClusters(status->statusPtr, clustersInput, SpClParams, SpLines), status);
-   
-   /*  sum of points in all lines */
-   Ntot=0;
-   for (i=0; i < (UINT4)SpLines->Nclusters; i++){ 
-     Ntot = Ntot + SpLines->NclustPoints[i];
-   }
-
-   TRY ( LALDDestroyVector(status->statusPtr, &F1), status);
-   TRY ( LALDDestroyVector(status->statusPtr, &FloorF1), status);
-
-   LALFree(outliers->ratio);
-   LALFree(outliers->outlierIndexes);
-   LALFree(outliers);
-   LALFree(outliersParams);
-   LALFree(outliersInput);
-   LALFree(SpClParams);
-   LALFree(clustersInput);
-
- finished:
-   DETATCHSTATUSPTR(status);
-   RETURN(status);
-
-} /* EstimateFLines() */
-
-
-/** Normalise the SFT-array \em SFTData by the running median.
- * The running median windowSize in this routine determines 
- * the sample bias which, instead of log(2.0), must be 
- * multiplied by F statistics.
- */
-void 
-NormaliseSFTDataRngMdn(LALStatus *status, 
-		       const SFTVector *sfts
-		       )
-{
-  INT4 m, il;                         /* loop indices */
-  UINT4 i, j, lpc;
-  UINT4 Ntot;
-  REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
-  REAL8 B;                          /* SFT Bandwidth */
-  REAL8 deltaT,norm,*N, *Sp1;
-  INT2 windowSize=uvar_windowsize;                  /* Running Median Window Size*/
-  REAL4 xre,xim,xreNorm,ximNorm;
-
-  INITSTATUS( status, "NormaliseSFTDataRngMdn", rcsid );
-  ATTATCHSTATUSPTR (status);
-
-  if ( !uvar_SignalOnly ) {
-    TRY( LALRngMedBias (status->statusPtr, &medianbias, windowSize), status);
-  }
-
-  TRY ( LALDCreateVector(status->statusPtr, &Sp, sfts->data[0].data->length), status);
-  TRY ( LALDCreateVector(status->statusPtr, &RngMdnSp, sfts->data[0].data->length), status);
-
-  if( (N = (REAL8 *) LALCalloc(sfts->data[0].data->length,sizeof(REAL8))) == NULL) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  if( (Sp1 = (REAL8 *) LALCalloc(sfts->data[0].data->length,sizeof(REAL8))) == NULL) { 
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-
-  /* loop over each SFTs */
-  for (i=0; i < sfts->length; i++)         
-    {
-      /* Set to zero the values */
-      for (j=0;j<sfts->data[0].data->length;j++){
-	RngMdnSp->data[j] = 0.0;
-	Sp->data[j]       = 0.0;
-      }
-      
-      /* loop over SFT data to estimate noise */
-      for (j=0;j<sfts->data[0].data->length;j++){
-	xre=sfts->data[i].data->data[j].re;
-	xim=sfts->data[i].data->data[j].im;
-	Sp->data[j]=(REAL8)(xre*xre+xim*xim);
-      }
-      
-      /* Compute running median */
-      TRY ( EstimateFloor(status->statusPtr, Sp, windowSize, RngMdnSp), status);
-
-      /* compute how many cluster points in all */
-      /* substitute the line profiles value in RngMdnSp */
-      Ntot=0;
-      if (highSpLines != NULL){
-	for (il=0;il<highSpLines->Nclusters;il++){
-	  Ntot=Ntot+highSpLines->NclustPoints[il];
-	}
-	for (j=0;j<Ntot;j++){
-	  m=highSpLines->Iclust[j];
-	  RngMdnSp->data[m]=RngMdnSp->data[m]*highSpLines->clusters[j];	
-	}
-      }
-
-      /*Compute Normalization factor*/
-      /* for signal only case as well */  
-      for (lpc=0;lpc<sfts->data[0].data->length;lpc++){
-	N[lpc]=1.0/sqrt(2.0*RngMdnSp->data[lpc]);
-      }
-      
-      if(uvar_SignalOnly == 1){
-	B=(1.0*sfts->data[0].data->length)/(1.0 / (sfts->data[0].deltaF ));
-	deltaT=1.0/(2.0*B);
-	norm=deltaT/sqrt(1.0 / (sfts->data[0].deltaF ));
-	for (lpc=0;lpc<sfts->data[0].data->length;lpc++){
-	  N[lpc]=norm;
-	}
-      }
-      
-      /*  loop over SFT data to normalise it (with N) */
-      /*  also compute Sp1, average normalized PSD */
-      /*  and the sum of the PSD in the band, SpSum */
-      for (j=0;j<sfts->data[0].data->length;j++){
-	xre=sfts->data[i].data->data[j].re;
-	xim=sfts->data[i].data->data[j].im;
-	xreNorm=N[j]*xre; 
-	ximNorm=N[j]*xim; 
-	sfts->data[i].data->data[j].re = xreNorm;    
-	sfts->data[i].data->data[j].im = ximNorm;
-	Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
-      }
-      
-    } /* end loop over SFTs*/
-
-  LALFree(N);
-  LALFree(Sp1);
-
-  TRY ( LALDDestroyVector(status->statusPtr, &RngMdnSp), status);
-  TRY ( LALDDestroyVector(status->statusPtr, &Sp), status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-  
-} /* NormaliseSFTDataRngMed() */
 
 
 #define LD_SMALL        (1.0e-9 / LAL_TWOPI)	/**< "small" number */
@@ -1701,41 +1298,6 @@ XLALNewLALDemod(Fcomponents *FaFb,
   return XLAL_SUCCESS;
 
 } /* XLALNewLALDemod() */
-
-
-/** write out the F-statistic over the searched frequency-band.
- */
-void
-writeFVect(LALStatus *status, const FStatisticVector *FVect, const CHAR *fname)
-{
-  FILE *fp;
-  UINT4 i;
-  REAL8 fi;
-
-  INITSTATUS( status, "LALDemod", rcsid);
-  ATTATCHSTATUSPTR (status);
-
-  ASSERT (FVect, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (fname, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-
-  if ( (fp = fopen(fname, "wb")) == NULL) 
-    {
-      LALPrintError ("\nFailed to open file '%f' for writing.\n\n", fname);
-      ABORT (status, COMPUTEFSTATC_ESYS, COMPUTEFSTATC_MSGESYS);
-    }
-
-  for (i=0; i < FVect->length; i++) {
-    fi = FVect->f0 + 1.0*i*(FVect->df);
-
-    fprintf (fp, "%20.17f %20.17f\n", fi, FVect->F->data[i]);
-  } /* for i < FVect->length */
-
-  fclose (fp);
-
-  DETATCHSTATUSPTR (status);
-  RETURN( status );
-
-} /* writeCOMPLEX16Vector() */
 
 
 /*
@@ -2329,3 +1891,167 @@ LALDestroyDetectorStateSeries (LALStatus *status,
 
   RETURN (status);
 } /* LALDestroyDetectorStateSeries() */
+
+
+/** Estimates the floor of a givendata set by the running median.
+ * input : vector (N points) over which the running median code is ran with a  
+ * blocksize = windowsize 
+ * the output of the running median code has N - blocksize+1 points. 
+ * the output of this routine has N points. The missing blocksize points 
+ * are set equal to the nearest last value of the output of th erunnning median.
+ */
+void
+EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector *output)
+{
+  UINT4 start,start2;
+  UINT4 lpc;
+  UINT4 nbins=input->length;
+  REAL4 halfWindow;
+  REAL8 *dmp;
+  INT4 M;
+
+  INITSTATUS( stat, "EstimateFloor", rcsid);
+  ATTATCHSTATUSPTR (stat); 
+
+  M = nbins-windowSize+1;
+  if( (dmp = (REAL8 *) LALCalloc(M,sizeof(REAL8))) == NULL) {
+    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+  
+  /* wrapper for the LALrngmed function to work in here: 
+     the original call here was:
+     > rngmed(input->data, nbins, windowSize, dmp)
+     with the prototype: 
+     > int rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians);
+     while the new prototype is :
+     > LALDRunningMedian2(LALStatus*, REAL8Sequence *medians,const REAL8Sequence *input, LALRunningMedianPar param)
+  */
+  {      
+    LALRunningMedianPar par;
+    REAL8Vector medians;
+    par.blocksize = windowSize;
+    medians.length = M;
+    medians.data = dmp;
+    /* now cross your fingers and make a sacrifice to the gods.. */
+    TRY ( LALDRunningMedian2(stat->statusPtr, &medians, input, par), stat);
+  }
+
+
+  /* start is the index of outdata at which the actual rmgmed begins*/
+  halfWindow=windowSize/2.0;
+  start=((int)(halfWindow))-1;
+  start2=(start+nbins-windowSize);
+  
+  /*Fill-in RngMdnSp */
+  for (lpc=0;lpc<start;lpc++){
+    output->data[lpc]=dmp[0];
+  }
+  for (lpc=start;lpc<start2;lpc++){
+    output->data[lpc]=dmp[lpc-start];
+  }
+  for (lpc=start2;lpc<nbins;lpc++){
+    output->data[lpc]=dmp[nbins-windowSize];
+  }
+  
+  LALFree(dmp);
+
+  DETATCHSTATUSPTR(stat);
+  RETURN(stat);
+
+} /* EstimateFloor() */
+
+
+/** Normalise the SFT-array \em SFTData by the running median.
+ * The running median windowSize in this routine determines 
+ * the sample bias which, instead of log(2.0), must be 
+ * multiplied by F statistics.
+ */
+void 
+NormaliseSFTDataRngMdn(LALStatus *status, 
+		       const SFTVector *sfts
+		       )
+{
+  UINT4 i, j, lpc;
+  REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
+  REAL8 B;                          /* SFT Bandwidth */
+  REAL8 deltaT,norm,*N, *Sp1;
+  INT2 windowSize=uvar_windowsize;                  /* Running Median Window Size*/
+  REAL4 xre,xim,xreNorm,ximNorm;
+
+  INITSTATUS( status, "NormaliseSFTDataRngMdn", rcsid );
+  ATTATCHSTATUSPTR (status);
+
+  if ( !uvar_SignalOnly ) {
+    TRY( LALRngMedBias (status->statusPtr, &medianbias, windowSize), status);
+  }
+
+  TRY ( LALDCreateVector(status->statusPtr, &Sp, sfts->data[0].data->length), status);
+  TRY ( LALDCreateVector(status->statusPtr, &RngMdnSp, sfts->data[0].data->length), status);
+
+  if( (N = (REAL8 *) LALCalloc(sfts->data[0].data->length,sizeof(REAL8))) == NULL) {
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+  if( (Sp1 = (REAL8 *) LALCalloc(sfts->data[0].data->length,sizeof(REAL8))) == NULL) { 
+    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+  }
+
+  /* loop over each SFTs */
+  for (i=0; i < sfts->length; i++)         
+    {
+      /* Set to zero the values */
+      for (j=0;j<sfts->data[0].data->length;j++){
+	RngMdnSp->data[j] = 0.0;
+	Sp->data[j]       = 0.0;
+      }
+      
+      /* loop over SFT data to estimate noise */
+      for (j=0;j<sfts->data[0].data->length;j++){
+	xre=sfts->data[i].data->data[j].re;
+	xim=sfts->data[i].data->data[j].im;
+	Sp->data[j]=(REAL8)(xre*xre+xim*xim);
+      }
+      
+      /* Compute running median */
+      TRY ( EstimateFloor(status->statusPtr, Sp, windowSize, RngMdnSp), status);
+
+      /*Compute Normalization factor*/
+      /* for signal only case as well */  
+      for (lpc=0;lpc<sfts->data[0].data->length;lpc++){
+	N[lpc]=1.0/sqrt(2.0*RngMdnSp->data[lpc]);
+      }
+      
+      if(uvar_SignalOnly == 1){
+	B=(1.0*sfts->data[0].data->length)/(1.0 / (sfts->data[0].deltaF ));
+	deltaT=1.0/(2.0*B);
+	norm=deltaT/sqrt(1.0 / (sfts->data[0].deltaF ));
+	for (lpc=0;lpc<sfts->data[0].data->length;lpc++){
+	  N[lpc]=norm;
+	}
+      }
+      
+      /*  loop over SFT data to normalise it (with N) */
+      /*  also compute Sp1, average normalized PSD */
+      /*  and the sum of the PSD in the band, SpSum */
+      for (j=0;j<sfts->data[0].data->length;j++){
+	xre=sfts->data[i].data->data[j].re;
+	xim=sfts->data[i].data->data[j].im;
+	xreNorm=N[j]*xre; 
+	ximNorm=N[j]*xim; 
+	sfts->data[i].data->data[j].re = xreNorm;    
+	sfts->data[i].data->data[j].im = ximNorm;
+	Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
+      }
+      
+    } /* end loop over SFTs*/
+
+  LALFree(N);
+  LALFree(Sp1);
+
+  TRY ( LALDDestroyVector(status->statusPtr, &RngMdnSp), status);
+  TRY ( LALDDestroyVector(status->statusPtr, &Sp), status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+  
+} /* NormaliseSFTDataRngMed() */
+
