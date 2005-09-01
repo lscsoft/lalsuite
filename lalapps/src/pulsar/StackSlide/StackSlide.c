@@ -20,6 +20,8 @@ $Id$
 /* 07/27/05 gam; Replace TimeToFloat and FloatToTime in StackSlideComputeSky with LAL functions used in StackSlideComputeSkyBinary */
 /* 07/27/05 gam; In StackSlideComputeSky should ASSERT params->mObsSFT>0, not params->mObsSFT>=0. */
 /* 07/27/05 gam; Add missing check of status pointer, CHECKSTATUSPTR(status), to StackSlideComputeSky */
+/* 08/31/05 gam; In StackSlideComputeSky set ssbT0 to gpsStartTime; this now gives the epoch that defines T_0 at the SSB! */
+  
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
@@ -308,13 +310,17 @@ void StackSlideComputeSky (LALStatus            *status,
  
   /* 07/27/05 gam; note that the gpsStartTime refers to the start of the epoch that defines the template spindown parameters. */
   /* Next lines of code find ssbT0 == T0, the SSB time that defines this epoch */  
-  params->baryinput->tgps.gpsSeconds = params->gpsStartTimeSec; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
-  params->baryinput->tgps.gpsNanoSeconds = params->gpsStartTimeNan; /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */
+  /* 06/05/04 gam; set these to epoch that gives T0 at SSB. */  
+  /* params->baryinput->tgps.gpsSeconds = params->gpsStartTimeSec;
+  params->baryinput->tgps.gpsNanoSeconds = params->gpsStartTimeNan;
   LALBarycenterEarth(status->statusPtr, params->earth, &(params->baryinput->tgps), params->edat); CHECKSTATUSPTR(status);
-  LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth); CHECKSTATUSPTR(status);
+  LALBarycenter(status->statusPtr, params->emit, params->baryinput, params->earth); CHECKSTATUSPTR(status); */
   /* TimeToFloat(&tB0, &(params->emit->te)); */ /* 07/27/05 gam; replace tB0 with ssbT0 */
-  ssbT0.gpsSeconds = params->emit->te.gpsSeconds;
-  ssbT0.gpsNanoSeconds = params->emit->te.gpsNanoSeconds;
+  /* ssbT0.gpsSeconds = params->emit->te.gpsSeconds;
+  ssbT0.gpsNanoSeconds = params->emit->te.gpsNanoSeconds; */
+  /* 08/31/05 gam; set ssbT0 to gpsStartTime; this now gives the epoch that defines T0 at the SSB! */
+  ssbT0.gpsSeconds = ((INT4)params->gpsStartTimeSec);
+  ssbT0.gpsNanoSeconds = ((INT4)params->gpsStartTimeNan);
 
   /* 07/27/05 gam; Find GPS interval the represent 1/2 the SFT time baseline */
   HalfSFTfloat=params->tSFT/2.0;

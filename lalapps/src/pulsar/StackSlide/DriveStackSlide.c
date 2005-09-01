@@ -145,6 +145,7 @@
 /* 07/29/05 gam; if (params->testFlag & 64) > 0 set searchSurroundingPts == 1 and  */
 /*               search surrounding parameters space pts; else search nearest only */
 /* 08/24/05 gam; Fix off by one error when computing tmpNumRA in CountOrAssignSkyPosData */
+/* 08/31/05 gam; In StackSlideComputeSky set ssbT0 to gpsStartTime, which is gpsEpochStartTime in this code; this now gives the epoch that defines T_0 at the SSB! */
 
 /*********************************************/
 /*                                           */
@@ -530,12 +531,17 @@ params->numFDeriv5   =   0;
     	fprintf(stdout,"\n");
     	fprintf(stdout,"#Example command line arguments for ComputeStackSlide: \n");
     	fprintf(stdout,"\n");
-    	fprintf(stdout,"set gpsEpochStartTimeSec %23d; #1  UINT4 GPS seconds at the detector giving SSB epoch reference time.\n", params->gpsEpochStartTimeSec);
-    	fprintf(stdout,"set gpsEpochStartTimeNan %23d; #2  UINT4 GPS nanoseconds at the detector giving SSB epoch reference time.\n", params->gpsEpochStartTimeNan);
+    	fprintf(stdout,"set gpsEpochStartTimeSec %23d; #1  UINT4 GPS seconds at the SSB giving reference time that defines the start of the epoch at the SSB.\n", params->gpsEpochStartTimeSec);
+    	fprintf(stdout,"set gpsEpochStartTimeNan %23d; #2  UINT4 GPS nanoseconds at the SSB giving reference time that defines the start of the epoch at the SSB.\n", params->gpsEpochStartTimeNan);
     	fprintf(stdout,"set gpsStartTimeSec      %23d; #3  UINT4 analysis GPS start-time seconds at the detector. \n", params->gpsStartTimeSec);
+    	fprintf(stdout,"#Note that for the isolated search case, to make Monte Carlo simulations with spindown work properly and self-consistently with the search one needs to:\n");
+    	fprintf(stdout,"# 1. Use lal/packages/pulsar/src/ComputeSky.c version 1.11 or higher.\n");
+    	fprintf(stdout,"# 2. Use lal/packages/inject/src/GeneratePulsarSignal.c version 1.40 or higher.\n");
+    	fprintf(stdout,"# 3. Make sure gpsEpochStartTimeSec == gpsStartTimeSec = start time of the first BLK of data (i.e., the first SFT) and that gpsEpochStartTimeNan == 0.\n");
+    	fprintf(stdout,"#When not running a Monte Carlo simulation set gpsEpochStartTimeSec and gpsEpochStartTimeNan to any T_0 desired, giving the start of the epoch at the SSB.\n");
     	fprintf(stdout,"set duration     %23.16e; #4  REAL8 analysis duration \n", params->duration);
     	fprintf(stdout,"#Note that duration is used to find SFTs with start time in the\n");
-    	fprintf(stdout,"#interval [gpsStartTimeSec, gpsStartTimeSec+duration) until \n");
+    	fprintf(stdout,"#interval [gpsStartTimeSec, gpsStartTimeSec+duration-tBLK] until \n");
     	fprintf(stdout,"#numBLKs SFTs are found. Thus, the actual duration of the\n");
     	fprintf(stdout,"#search is numBLKs*tBLK. See the next two parameters.\n");
     	fprintf(stdout,"\n");

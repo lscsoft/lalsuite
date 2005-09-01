@@ -90,11 +90,6 @@ void StackSlideIsolated (
 /* 07/15/05 gam; rewrite to choose random points in the parameter space */
 void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSearchParams *params, INT4 nSamples);
 
-#ifdef INCLUDE_RUNSTACKSLIDEISOLATEDMONTECARLO_CODEOLD
-/* 04/12/05 gam */
-void RunStackSlideIsolatedMonteCarloSimulationOld(LALStatus *status, StackSlideSearchParams *params, INT4 nSamples);
-#endif
-
 /* 05/24/05 gam; Function that reads results from previous jobs in the pipeline */
 void getStackSlidePriorResults(LALStatus *status,
                                REAL4 *priorLoudestEvent,

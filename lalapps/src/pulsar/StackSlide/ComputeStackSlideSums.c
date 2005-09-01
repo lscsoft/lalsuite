@@ -9,8 +9,8 @@
 /*********************************************************************************/
 /* Notes: */
 /* BLK = one Block of frequency domain data */
-/* STK = one Stack of frequency domain data; Block are coherenty combined to make Stacks. */
-/* SUM = Summed Stacks after Sliding */
+/* STK = one Stack of frequency domain data; one or more Blocks are combined to make Stacks. */
+/* SUM = Sum of Stacks after Sliding */
 
 /* REVISIONS: */
 /* 12/03/03 gam; Based code on StackSlide.c from LALWrapper DSO */
@@ -22,13 +22,19 @@
 /* 05/07/04 gam; Do not check d_type when using readdir since it is often UNKOWN. */
 /* 04/12/05 gam; Change default Monte Carlo to use RunStackSlideIsolatedMonteCarloSimulation in StackSlideIsolated.c */
 /* 05/25/05 gam; remove obsolete inputDataTypeFlag and other obsolete code and comments */
-    
+/* 08/31/05 gam; Sort the list of SFT files: GV.filelist. The ideas is that sorting by filename */
+/*               == sorting by GPS time for properly named SFT files! */
+/* 08/31/05 gam; For clarity, change the condition when reading in BLKs of data from until blkno >= params->numBLKs to until blkno == params->numBLKs. */
+/* 08/31/05 gam; Fix a few misleading comments; remove old comments; add new ones where clarification is needed */
+/* 08/31/05 gam; Change stoptime to require input data to exist strickly in the interval [params->gpsStartTimeSec, params->gpsStartTimeSec + params->duration) */
+
 /*********************************************/
 /*                                           */
 /* START SECTION: define preprocessor flags  */
 /*                                           */
 /*********************************************/
 /* #define DEBUG_READSFT_CODE */
+/* #define DEBUG_FILELIST_SORTING */
 /*********************************************/
 /*                                           */
 /* END SECTION: define preprocessor flags    */
@@ -71,10 +77,9 @@ GlobalVariables GV;
 int main(int argc,char *argv[]) 
 { 
   static LALStatus status;
-  StackSlideSearchParams *params;  
+  StackSlideSearchParams *params;  /* This is the main container for all the parameters used to run a search */
 
   if (argc < 2) {
-        /* fprintf(stdout, "No command line arguments found.  See README_STACKSLIDE or LAL StackSlide documentation for help\n"); */
         fprintf(stdout, "No command line arguments found. For help see README_ComputeStackSlideSums or check for StackSlide documentation in LAL.\n");
         fflush(stdout);
         return 1;
@@ -94,7 +99,7 @@ int main(int argc,char *argv[])
 
   if (SetGlobalVariables(params)) return 2;
 
-  if (ReadSFTData(params)) return 3; /* Note that for now it is assumed that BLK data is always SFT data */
+  if (ReadSFTData(params)) return 3; /* Note that for now BLK data is always SFT data */
 
   StackSlideConditionData(&status,params);  
   INTERNAL_CHECKSTATUS_FROMMAIN(status)  
@@ -141,19 +146,15 @@ int ReadSFTData(StackSlideSearchParams *params)
   FILE *fp;
   size_t errorcode;
  
-  /* INITSTATUS( status, "ReadSFTData", COMPUTESTACKSLIDESUMSC);
-  ATTATCHSTATUSPTR (status); */
-  
-  /* params->BLKData=(FFT **)LALMalloc(GV.SFTno*sizeof(FFT *));
-  params->timeStamps=(LIGOTimeGPS *)LALMalloc(GV.SFTno*sizeof(LIGOTimeGPS)); */
-  /* Code copied from StackSlide.c DSO LALConditionData function: */  
+  /* Allocate memory for BLK data */  
   params->BLKData=(FFT **)LALMalloc(params->numBLKs*sizeof(FFT *));
   params->timeStamps=(LIGOTimeGPS *)LALMalloc(params->numBLKs*sizeof(LIGOTimeGPS));
   /* params->timeIntervals =(gpsTimeInterval *)LALCalloc(params->numBLKs, sizeof(gpsTimeInterval)); */
-	
+
   ndeltaf=GV.ifmax-GV.ifmin+1; 
-  stoptime = params->gpsStartTimeSec + (UINT4)floor(params->duration);
-  
+  /* stoptime = params->gpsStartTimeSec + (UINT4)floor(params->duration); */ /* 08/31/05 gam */
+  stoptime = params->gpsStartTimeSec + ((UINT4)floor(params->duration)) - ((UINT4)ceil(params->tBLK));
+
   for (fileno=0;fileno<GV.SFTno;fileno++)
   {
       /* open FIRST file and get info from it*/
@@ -199,9 +200,10 @@ int ReadSFTData(StackSlideSearchParams *params)
 		  header.firstfreqindex+header.nsamples,GV.filelist[fileno]);
 	  return 4;
 	}
-		
-      /* Check that this SFT is within the times requested */			
-      if (((UINT4)header.gps_sec >= params->gpsStartTimeSec) && ((UINT4)header.gps_sec < stoptime)) {	
+
+      /* Check that this SFT is within the times requested */
+      /* if (((UINT4)header.gps_sec >= params->gpsStartTimeSec) && ((UINT4)header.gps_sec < stoptime)) */ /* 08/31/05 gam */
+      if (((UINT4)header.gps_sec >= params->gpsStartTimeSec) && ((UINT4)header.gps_sec <= stoptime)) {
         /* Put time stamps from file into array */
         params->timeStamps[blkno].gpsSeconds=header.gps_sec;
         params->timeStamps[blkno].gpsNanoSeconds=header.gps_nsec;
@@ -229,30 +231,27 @@ int ReadSFTData(StackSlideSearchParams *params)
         params->BLKData[blkno]->fft->f0=GV.ifmin*GV.df;
         params->BLKData[blkno]->fft->deltaF=GV.df;
         params->BLKData[blkno]->fft->data->length=ndeltaf;
-	      
-        blkno++;	
+
+        blkno++;
      
-    } /* end if ((header.gps_sec >= params->gpsStartTimeSec) && (header.gps_sec < stoptime)) */
-    
+    } /* end if ((header.gps_sec >= params->gpsStartTimeSec) && (header.gps_sec <= stoptime)) */
+
     fclose(fp);     /* close file */
-    
-    if (blkno >= params->numBLKs) {
-      	params->finishedBLKs = 1;
-      	break;
+
+    /* if (blkno >= params->numBLKs) */ /* 08/31/05 gam; this will not change anything, but make it clear blkno is precisly == params->numBLKs */
+    if (blkno == params->numBLKs) {
+        params->finishedBLKs = 1;
+        break;
     }
 
   } /* end for (fileno=0;fileno<GV.SFTno;fileno++) */
 
   /* Some requested input BLK data is missing */
   if (!params->finishedBLKs) {
-     /* ABORT( status, DRIVESTACKSLIDEH_EMISSINGBLKDATA, DRIVESTACKSLIDEH_MSGEMISSINGBLKDATA); */
      fprintf(stderr,"Some requested input BLK data is missing\n");
      return 6;     
   }
-  
-  /* CHECKSTATUSPTR (status);
-  DETATCHSTATUSPTR (status); */
-  
+
   return 0;  
 }
 /******************************************/
@@ -279,10 +278,7 @@ int SetGlobalVariables(StackSlideSearchParams *params)
   struct dirent *dirEntry;  /* 05/07/04 gam; structure that holds a directory entry */
   INT2 i, j, sftDirNameLen, indSlash, asteriskCount; /* 05/07/04 gam; Used when parsing params->sftDirectory */
   CHAR sftDirectory[256],sftPattern[256];            /* 05/07/04 gam; parse params->sftDirectory to get sftDirectory and sftPattern. */
-    
-  /* INITSTATUS( status, "ReadSFTData", COMPUTESTACKSLIDESUMSC);
-  ATTATCHSTATUSPTR (status); */
-  
+
   /* 05/07/04 gam; START add alternative to using glob */
   sftDirNameLen = strlen(params->sftDirectory);
   if (sftDirNameLen > 256) {
@@ -410,7 +406,36 @@ int SetGlobalVariables(StackSlideSearchParams *params)
 #endif
 
   GV.SFTno=fileno; /* remember this is 1 more than the index value */
-        
+
+  /* 08/31/05 gam */  
+  /***********************************************************/
+  /*                                                         */
+  /* START SECTION: sort the list of SFT files: GV.filelist. */
+  /*                                                         */
+  /***********************************************************/
+   #ifdef DEBUG_FILELIST_SORTING  
+     for (fileno=0;fileno<GV.SFTno;fileno++) {
+       fprintf(stdout,"Before sorting GV.filelist[%i] = %s\n",fileno,GV.filelist[fileno]);
+       fflush(stdout);
+     }
+     fileno = GV.SFTno; /* restore value */
+   #endif
+  
+   qsort(GV.filelist,GV.SFTno,sizeof(GV.filelist[0]), (__compar_fn_t)strcmp); /* 08/31/05 gam; sort the filelist! */
+
+   #ifdef DEBUG_FILELIST_SORTING  
+     for (fileno=0;fileno<GV.SFTno;fileno++) {
+       fprintf(stdout,"After sorting GV.filelist[%i] = %s\n",fileno,GV.filelist[fileno]);
+       fflush(stdout);
+     }
+     fileno = GV.SFTno; /* restore value */
+   #endif
+  /***********************************************************/
+  /*                                                         */
+  /* END SECTION: sort the list of SFT files: GV.filelist.   */
+  /*                                                         */
+  /***********************************************************/
+
   #ifdef DEBUG_READSFT_CODE
           fprintf(stdout,"The first SFT in GV.filelist is %s\n",GV.filelist[0]);
           fflush(stdout);
@@ -481,9 +506,6 @@ int SetGlobalVariables(StackSlideSearchParams *params)
   /* Set up index of min and max frequency to get from SFTs */  
   GV.ifmin = floor(params->f0BLK*params->tEffBLK + 0.5);
   GV.ifmax = GV.ifmin + params->nBinsPerBLK -1;
-  
-  /* CHECKSTATUSPTR (status);
-  DETATCHSTATUSPTR (status); */
 
   return 0;  
 }
@@ -503,9 +525,6 @@ int Freemem(StackSlideSearchParams *params)
 
   INT4 i;
 
-/*  INITSTATUS( status, "Freemem", COMPUTESTACKSLIDESUMSC);
-  ATTATCHSTATUSPTR (status); */
-
   /*Free BLKData*/
   /* 01/06/04 gam; Fix bug when deallocating BLKData and params->numBLKs != GV.SFTno. */
   /* for (i=0;i<GV.SFTno;i++) */ /* 01/06/04 gam */
@@ -522,10 +541,7 @@ int Freemem(StackSlideSearchParams *params)
   LALFree(params->timeStamps);
 
   LALCheckMemoryLeaks();
-  
-/*  CHECKSTATUSPTR (status);
-  DETATCHSTATUSPTR (status); */
-  
+
   return 0;
 }
 /******************************************/
