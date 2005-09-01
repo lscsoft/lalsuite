@@ -818,6 +818,7 @@ int main(int argc, char **argv)
 	if(options.printsum){
 		fprintf(fpout, "# Total time analysed = %lld nanosec.s\n", timeAnalyzed);
 		fprintf(fpout, "# Total no. of triggers = %ld\n", count_events(burstEventList));
+		fprintf(fpout, "# Trigger rate = %e Hz\n", count_events(burstEventList) * pow(10,9) / timeAnalyzed);
 		fclose(fpout);
 	}
 
