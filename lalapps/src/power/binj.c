@@ -40,7 +40,7 @@ int snprintf(char *str, size_t size, const  char  *format, ...);
 "  --help                   display this message\n"\
 "  --gps-start-time TIME    start injections at GPS time TIME (729273613)\n"\
 "  --gps-end-time TIME      end injections at GPS time TIME (734367613)\n"\
-"  --time-step STEP         space injections STEP / pi seconds appart (2630)\n"\
+"  --time-step STEP         space injections STEP / pi seconds appart (210)\n"\
 "  --coordinates COORDS     coordinate system to use for injections\n"\
 "  --flow FLOW              first frequency of injection (150.0)\n"\
 "  --fhigh FHIGH            only inject frequencies smaller than FHIGH (1000.0)\n"\
@@ -568,7 +568,7 @@ int main( int argc, char *argv[] ){
         if( !(strcmp( coordinates, "ZENITH" )) )
           useZenith=1;
 
-        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%le", optarg );
+        this_proc_param = this_proc_param->next = next_process_param( long_options[option_index].name, "string", "%s", optarg );
         break;
 
       case 'Z':
