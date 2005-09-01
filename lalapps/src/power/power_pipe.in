@@ -45,6 +45,7 @@ Usage: lalapps_power_pipe [options]
   -t, --triplecoincidence  do triple coincidence
 
   -s, --timeslides         do time slides
+  -e, --estimatehrss       estimate h_rss
 
   -p, --playground-only    only create chunks that overlap with playground
   -P, --priority PRIO      run jobs with condor priority PRIO
@@ -55,7 +56,7 @@ Usage: lalapps_power_pipe [options]
   print >> sys.stderr, msg
  
 # pasrse the command line options to figure out what we should do
-shortop = "hvdrHKLcmbtsp:j:u:P:f:l:"
+shortop = "hvdrHKLcmtsep:j:b:u:P:f:l:"
 longop = [
   "help",
   "version",
@@ -70,6 +71,7 @@ longop = [
   "coincidence",
   "triplecoincidence",
   "timeslides",
+  "estimatehrss",
   "playground-only",
   "user-tag=",
   "priority=",
@@ -91,6 +93,9 @@ do_H2 = None
 do_L1 = None
 do_makeinjfiles = None
 do_coincidence = None
+coin_type = None
+do_H1L1coin = None
+do_L1H1coin = None
 do_triplecoincidence = None
 inj_type = None
 do_burstinj = None
@@ -99,10 +104,12 @@ do_inspinj = None
 do_mdcinj = None
 usertag = None
 do_timeslides = None
+do_estimatehrss = None
 playground_only = 0
 condor_prio = None
 config_file = None
 log_path = None
+mdcifo = None
 
 for o, a in opts:
   if o in ("-v", "--version"):
@@ -128,11 +135,13 @@ for o, a in opts:
   elif o in ("-m", "--mdcinjections"):
     do_mdcinj = 1
   elif o in ("-b", "--coincidence"):
-    do_coincidence = 1
+    coin_type = a
   elif o in ("-t", "--triplecoincidence"):
     do_triplecoincidence = 1
   elif o in ("-s", "--timeslides"):
     do_timeslides = 1
+  elif o in ("-e", "--estimatehrss"):
+    do_estimatehrss = 1
   elif o in ("-u", "--user-tag"):
     usertag = a
   elif o in ("-p", "--playground-only"):
@@ -179,6 +188,26 @@ if inj_type:
   else:
     print >> sys.stderr, "Injection type not recognised. Valid types are burst/inspiral/burstandinspiral"
     sys.exit(1)
+
+# coin type 
+
+if coin_type == "H1L1":
+  do_coincidence = 1
+  do_H1L1coin = 1
+elif coin_type == "L1H1":
+  do_coincidence = 1
+  do_L1H1coin = 1
+elif coin_type == "H1L1H1":
+  do_coincidence = 1
+  do_H1L1coin = 1
+  do_L1H1coin = 1
+else:
+  if do_H1 and do_L1:
+    print >> sys.stderr, "Double coincidence type not recognised. Valid types are H1L1/L1H1/H1L1H1"
+    sys.exit(1)
+  else:
+    print >> sys.stderr, "warning: looks like we are not doing H1-L1 coincidence, in which case the order is unimportant"
+    do_coincidence = 1
      
 # try and make a directory to store the cache files and job logs
 try: os.mkdir('cache')
@@ -262,25 +291,31 @@ if condor_prio:
 # get the pad and chunk lengths from the values in the ini file
 pad = int(cp.get('segmentation', 'pad-data'))
 minduration = int(cp.get('segmentation', 'min-duration'))
+length = int(cp.get('chunks', 'chunk-duration'))
+overlap = int(cp.get('chunks', 'chunk-overlap'))
 
 # read science segs that are >= to min duration from the input file
 data = pipeline.ScienceData()
 data.read(cp.get('input','segments'),minduration)
-
+data.make_chunks(length,overlap,playground_only,0,overlap/2)
+data.make_short_chunks_from_unused(minduration,overlap,playground_only,0,overlap/2)
 
 #get the order of ifos to filter
 if do_H1:
   ifo1 = cp.get('pipeline','ifo1')
   ifo1_snr = cp.get('pipeline','thresholdifo1')
-  ifo1_calibration = cp.get('calibration','H1') 
+  ifo1_calibration = cp.get('calibration','H1')
+  ifo1_mdcchan = cp.get('pipeline','ifo1mdcchan') 
 if do_H2:
   ifo2 = cp.get('pipeline','ifo2')
   ifo2_snr = cp.get('pipeline','thresholdifo2')
   ifo2_calibration = cp.get('calibration','H2')
+  ifo2_mdcchan = cp.get('pipeline','ifo2mdcchan') 
 if do_L1:
   ifo3 = cp.get('pipeline','ifo3')
   ifo3_snr = cp.get('pipeline','thresholdifo3')
   ifo3_calibration = cp.get('calibration','L1')
+  ifo3_mdcchan = cp.get('pipeline','ifo3mdcchan') 
 
 #set the proper prefixes for burca jobs
 if do_coincidence or do_triplecoincidence:
@@ -296,7 +331,6 @@ if do_timeslides:
 
 #get the arguments specific to running on simulated waveforms 
 if do_siminj:
-  simseconds = cp.get('simulatedinj','sim_seconds')
   simcache = cp.get('simulatedinj','sim_cache')
 		
 # create all the LSCdataFind jobs to run in sequence
@@ -311,254 +345,257 @@ first_mdcdf2 = None
 burst_nodes = []
 
 for seg in data:
-  ######### find all the data ##########
-  if do_H1 or do_H2: 
-    df1 = pipeline.LSCDataFindNode(df_job)
-    df1.set_start(seg.start() - pad)
-    df1.set_end(seg.end() + pad)
-    if do_H1:
-      df1.set_observatory(ifo1[0])
-    else:
-      df1.set_observatory(ifo2[0])    
-    if prev_df1: 
-      df1.add_parent(prev_df1)
 
-    if do_datafind:
-      dag.add_node(df1)
+  for chunk in seg:
 
-    prev_df1 = df1
+    ######### find all the data ##########
+    if do_H1 or do_H2: 
+      df1 = pipeline.LSCDataFindNode(df_job)
+      df1.set_start(seg.start() - pad)
+      df1.set_end(seg.end() + pad)
+      if do_H1:
+        df1.set_observatory(ifo1[0])
+      else:
+        df1.set_observatory(ifo2[0])    
+      if prev_df1: 
+        df1.add_parent(prev_df1)
+
+      if do_datafind:
+        dag.add_node(df1)
+
+      prev_df1 = df1
   
-  if do_L1:
-    df2 = pipeline.LSCDataFindNode(df_job)
-    df2.set_start(seg.start() - pad)
-    df2.set_end(seg.end() + pad)
-    df2.set_observatory(ifo3[0])
-    if prev_df2: 
-      df2.add_parent(prev_df2)
+    if do_L1:
+      df2 = pipeline.LSCDataFindNode(df_job)
+      df2.set_start(seg.start() - pad)
+      df2.set_end(seg.end() + pad)
+      df2.set_observatory(ifo3[0])
+      if prev_df2: 
+        df2.add_parent(prev_df2)
 
-    if do_datafind:
-      dag.add_node(df2)
+      if do_datafind:
+        dag.add_node(df2)
 
-    prev_df2 = df2
+      prev_df2 = df2
 
-  ####### find all the mdc data ###########
-  if do_H1 or do_H2:
+    ####### find all the mdc data ###########
     mdcdf1 = power.MdcDataFindNode(mdcinj_job)
     mdcdf1.set_start(seg.start() - pad)
     mdcdf1.set_end(seg.end() + pad)
-    if do_H1:
-      mdcdf1.set_observatory(ifo1[0])
-    else:
-      mdcdf1.set_observatory(ifo2[0])
 
     if do_datafind: 
       mdcdf1.add_parent(df1)
     if do_mdcinj:
       dag.add_node(mdcdf1)
 
-  if do_L1:
-    mdcdf2 = power.MdcDataFindNode(mdcinj_job)
-    mdcdf2.set_start(seg.start() - pad)
-    mdcdf2.set_end(seg.end() + pad)
-    mdcdf2.set_observatory(ifo3[0])
-
-    if do_datafind: 
-      mdcdf2.add_parent(df2)
-    if do_mdcinj:
-      dag.add_node(mdcdf2)
-
-
-  ####### set the burst injecton jobs #########
-  if do_burstinj:
-    binj = power.BurstInjNode(burstinj_job)
-    bseed = int(10 * random.uniform(0.0,1.0))
-    binj.add_var_opt('seed',bseed)
-    binj.set_start(seg.start())
-    binj.set_end(seg.end())
+    ####### set the burst injecton jobs #########
+    if do_burstinj:
+      binj = power.BurstInjNode(burstinj_job)
+      bseed = int(10 * random.uniform(0.0,1.0))
+      binj.add_var_opt('seed',bseed)
+      binj.set_start(seg.start())
+      binj.set_end(seg.end())
 
  
-    if do_datafind: 
-      if do_H1 or do_H2:
-        binj.add_parent(df1)
-      if do_L1:
-        binj.add_parent(df2)
-    if do_makeinjfiles:
-      dag.add_node(binj)
+      if do_datafind: 
+        if do_H1 or do_H2:
+          binj.add_parent(df1)
+        if do_L1:
+          binj.add_parent(df2)
+      if do_makeinjfiles:
+        dag.add_node(binj)
 
-  ####### set the inspiral injecton jobs #########
-  if do_inspinj:
-    iinj = power.InspInjNode(inspinj_job)
-    iseed = int(10 * random.uniform(0.0,1.0))
-    iinj.add_var_opt('seed',iseed)
-    iinj.set_start(seg.start() + 47)
-    iinj.set_end(seg.end())
+    ####### set the inspiral injecton jobs #########
+    if do_inspinj:
+      iinj = power.InspInjNode(inspinj_job)
+      iseed = int(10 * random.uniform(0.0,1.0))
+      iinj.add_var_opt('seed',iseed)
+      iinj.set_start(seg.start())
+      iinj.set_end(seg.end())
 
  
-    if do_datafind: 
-      if do_H1 or do_H2:
-        iinj.add_parent(df1)
-      if do_L1:
-        iinj.add_parent(df2)
-    if do_makeinjfiles:
-      dag.add_node(iinj)
+      if do_datafind: 
+        if do_H1 or do_H2:
+          iinj.add_parent(df1)
+        if do_L1:
+          iinj.add_parent(df2)
+      if do_makeinjfiles:
+        dag.add_node(iinj)
 
-  ####### set the power jobs ########
-  if do_H1:
-    pow1 = power.PowerNode(pow_job)
-    pow1.set_start(seg.start())
-    pow1.set_end(seg.end())
-    pow1.set_ifo(ifo1)
-    pow1.set_cache(df1.get_output())
-    if do_mdcinj:
-      pow1.set_mdccache(mdcdf1.get_output())
-    if do_burstinj or do_inspinj:
-      if do_burstinj and not do_siminj: 
-        pow1.set_burstinj(binj.get_output(bseed))
-      if do_inspinj:
-        pow1.set_inspinj(iinj.get_output(iseed))
-      pow1.add_var_opt('calibration-cache',ifo1_calibration)
-    if do_siminj:
-      pow1.set_siminj(binj.get_output(bseed))
-      pow1.add_var_opt('sim-seconds',simseconds)
-      pow1.add_var_opt('sim-cache',simcache)	
-    pow1.add_var_opt('lnthreshold',ifo1_snr)
+    ####### set the power jobs ########
+    if do_H1:
+      pow1 = power.PowerNode(pow_job)
+      pow1.set_start(chunk.start())
+      pow1.set_end(chunk.end())
+      pow1.set_ifo(ifo1)
+      pow1.set_cache(df1.get_output())
+      if do_mdcinj:
+        pow1.set_mdccache(mdcdf1.get_output())
+	pow1.add_var_opt('mdc-channel',ifo1_mdcchan)
+      if do_burstinj or do_inspinj or do_estimatehrss:
+        if do_burstinj and not do_siminj: 
+          pow1.set_burstinj(binj.get_output(bseed))
+        if do_inspinj:
+          pow1.set_inspinj(iinj.get_output(iseed))
+        pow1.add_var_opt('calibration-cache',ifo1_calibration)
+      if do_siminj:
+        pow1.set_siminj(binj.get_output(bseed))
+        pow1.add_var_opt('sim-cache',simcache)	
+      pow1.add_var_opt('lnthreshold',ifo1_snr)
 
-    if do_datafind: 
-      pow1.add_parent(df1)
-    if do_mdcinj: 
-      pow1.add_parent(mdcdf1)
-    if do_makeinjfiles and do_burstinj:
-      pow1.add_parent(binj)
-    if do_makeinjfiles and do_inspinj:
-      pow1.add_parent(iinj)	
-    if do_power: 
-      dag.add_node(pow1)
+      if do_datafind: 
+        pow1.add_parent(df1)
+      if do_mdcinj: 
+        pow1.add_parent(mdcdf1)
+      if do_makeinjfiles and do_burstinj:
+        pow1.add_parent(binj)
+      if do_makeinjfiles and do_inspinj:
+        pow1.add_parent(iinj)	
+      if do_power: 
+        dag.add_node(pow1)
 
-  if do_H2:
-    pow2 = power.PowerNode(pow_job)
-    pow2.set_start(seg.start())
-    pow2.set_end(seg.end())
-    pow2.set_ifo(ifo2)
-    pow2.set_cache(df1.get_output())
-    if do_mdcinj:
-      pow2.set_mdccache(mdcdf1.get_output())
-    if do_burstinj or do_inspinj:
-      if do_burstinj and not do_siminj: 
-        pow2.set_burstinj(binj.get_output(bseed))
-      if do_inspinj:
-        pow2.set_inspinj(iinj.get_output(iseed))         
-      pow2.add_var_opt('calibration-cache',ifo2_calibration)     
-    if do_siminj:
-      pow2.set_siminj(binj.get_output(bseed))
-      pow2.add_var_opt('sim-seconds',simseconds)
-      pow2.add_var_opt('sim-cache',simcache)
-    pow2.add_var_opt('lnthreshold',ifo2_snr)
+    if do_H2:
+      pow2 = power.PowerNode(pow_job)
+      pow2.set_start(chunk.start())
+      pow2.set_end(chunk.end())
+      pow2.set_ifo(ifo2)
+      pow2.set_cache(df1.get_output())
+      if do_mdcinj:
+        pow2.set_mdccache(mdcdf1.get_output())
+	pow2.add_var_opt('mdc-channel',ifo2_mdcchan)
+      if do_burstinj or do_inspinj or do_estimatehrss:
+        if do_burstinj and not do_siminj: 
+          pow2.set_burstinj(binj.get_output(bseed))
+        if do_inspinj:
+          pow2.set_inspinj(iinj.get_output(iseed))         
+        pow2.add_var_opt('calibration-cache',ifo2_calibration)     
+      if do_siminj:
+        pow2.set_siminj(binj.get_output(bseed))
+        pow2.add_var_opt('sim-cache',simcache)
+      pow2.add_var_opt('lnthreshold',ifo2_snr)
 
-    if do_datafind: 
-      pow2.add_parent(df1)
-    if do_mdcinj: 
-      pow2.add_parent(mdcdf1)
-    if do_makeinjfiles and do_burstinj:
-      pow2.add_parent(binj)
-    if do_makeinjfiles and do_inspinj:
-      pow2.add_parent(iinj)	
-    if do_power: 
-      dag.add_node(pow2)
+      if do_datafind: 
+        pow2.add_parent(df1)
+      if do_mdcinj: 
+        pow2.add_parent(mdcdf1)
+      if do_makeinjfiles and do_burstinj:
+        pow2.add_parent(binj)
+      if do_makeinjfiles and do_inspinj:
+        pow2.add_parent(iinj)	
+      if do_power: 
+        dag.add_node(pow2)
 
-  if do_L1:
-    pow3 = power.PowerNode(pow_job)
-    pow3.set_start(seg.start())
-    pow3.set_end(seg.end())
-    pow3.set_ifo(ifo3)
-    pow3.set_cache(df2.get_output())
-    if do_mdcinj:
-      pow3.set_mdccache(mdcdf2.get_output())
-    if do_burstinj or do_inspinj:
-      if do_burstinj and not do_siminj: 
-        pow3.set_burstinj(binj.get_output(bseed))
-      if do_inspinj:
-        pow3.set_inspinj(iinj.get_output(iseed)) 
-      pow3.add_var_opt('calibration-cache',ifo3_calibration)
-    if do_siminj:
-      pow3.set_siminj(binj.get_output(bseed))
-      pow3.add_var_opt('sim-seconds',simseconds)
-      pow3.add_var_opt('sim-cache',simcache)
-    pow3.add_var_opt('lnthreshold',ifo3_snr)
+    if do_L1:
+      pow3 = power.PowerNode(pow_job)
+      pow3.set_start(chunk.start())
+      pow3.set_end(chunk.end())
+      pow3.set_ifo(ifo3)
+      pow3.set_cache(df2.get_output())
+      if do_mdcinj:
+        pow3.set_mdccache(mdcdf1.get_output())
+	pow3.add_var_opt('mdc-channel',ifo3_mdcchan)
+      if do_burstinj or do_inspinj or do_estimatehrss:
+        if do_burstinj and not do_siminj: 
+          pow3.set_burstinj(binj.get_output(bseed))
+        if do_inspinj:
+          pow3.set_inspinj(iinj.get_output(iseed)) 
+        pow3.add_var_opt('calibration-cache',ifo3_calibration)
+      if do_siminj:
+        pow3.set_siminj(binj.get_output(bseed))
+        pow3.add_var_opt('sim-cache',simcache)
+      pow3.add_var_opt('lnthreshold',ifo3_snr)
 
-    if do_datafind: 
-      pow3.add_parent(df2)
-    if do_mdcinj: 
-      pow3.add_parent(mdcdf2)
-    if do_makeinjfiles and do_burstinj:
-      pow3.add_parent(binj)
-    if do_makeinjfiles and do_inspinj:
-      pow3.add_parent(iinj)	
-    if do_power: 
-      dag.add_node(pow3)
+      if do_datafind: 
+        pow3.add_parent(df2)
+      if do_mdcinj: 
+        pow3.add_parent(mdcdf1)
+      if do_makeinjfiles and do_burstinj:
+        pow3.add_parent(binj)
+      if do_makeinjfiles and do_inspinj:
+        pow3.add_parent(iinj)	
+      if do_power: 
+        dag.add_node(pow3)
 
-  ########set the burca jobs ###########
-  if do_coincidence or do_triplecoincidence:
-    burca1 = power.BurcaNode(burca_job)
-    if do_triplecoincidence:
-      do_L1=None	
-    if do_H1 and do_L1:	
-      burca1.set_ifoa(pow1.get_output())
-      burca1.set_ifob(pow3.get_output())
-      burca1.add_var_opt('user-tag',double_prefix)
-      if do_timeslides:	
-      	burca1.add_var_opt('number-slides',numberslides)
-      	burca1.add_var_opt('slide-time',slidetime)
-      	burca1.add_var_opt('slide-time-ns',slidetimens)
-    if do_H2 and do_L1:	
-      burca1.set_ifoa(pow2.get_output())
-      burca1.set_ifob(pow3.get_output())
-      burca1.add_var_opt('user-tag',double_prefix)
-      if do_timeslides:	
-      	burca1.add_var_opt('number-slides',numberslides)
-      	burca1.add_var_opt('slide-time',slidetime)
-      	burca1.add_var_opt('slide-time-ns',slidetimens)  
-    if do_H1 and do_H2:	
-      burca1.set_ifoa(pow1.get_output())
-      burca1.set_ifob(pow2.get_output())
-      burca1.add_var_opt('user-tag',double_prefix)
-      if do_timeslides:	
-      	burca1.add_var_opt('number-slides',0)
-      	burca1.add_var_opt('slide-time',0)
-      	burca1.add_var_opt('slide-time-ns',0)  
-    burca1.set_start(seg.start())
-    burca1.set_end(seg.end())
+    ########set the burca jobs ###########
+    if do_coincidence or do_triplecoincidence:
+      burca1 = power.BurcaNode(burca_job)
+      burca3 = power.BurcaNode(burca_job)
+      if do_triplecoincidence:
+        do_L1=None	
+      if do_H1 and do_L1 and do_H1L1coin:	
+        burca1.set_ifoa(pow1.get_output())
+        burca1.set_ifob(pow3.get_output())
+        burca1.add_var_opt('user-tag',double_prefix)
+        if do_timeslides:	
+          burca1.add_var_opt('number-slides',numberslides)
+          burca1.add_var_opt('slide-time',slidetime)
+          burca1.add_var_opt('slide-time-ns',slidetimens)
+      if do_H1 and do_L1 and do_L1H1coin:	
+        burca3.set_ifoa(pow3.get_output())
+        burca3.set_ifob(pow1.get_output())
+        burca3.add_var_opt('user-tag',double_prefix)
+        if do_timeslides:	
+          burca3.add_var_opt('number-slides',numberslides)
+          burca3.add_var_opt('slide-time',slidetime)
+          burca3.add_var_opt('slide-time-ns',slidetimens)
+      if do_H2 and do_L1:	
+        burca1.set_ifoa(pow2.get_output())
+        burca1.set_ifob(pow3.get_output())
+        burca1.add_var_opt('user-tag',double_prefix)
+        if do_timeslides:	
+      	  burca1.add_var_opt('number-slides',numberslides)
+      	  burca1.add_var_opt('slide-time',slidetime)
+      	  burca1.add_var_opt('slide-time-ns',slidetimens)  
+      if do_H1 and do_H2:	
+        burca1.set_ifoa(pow1.get_output())
+        burca1.set_ifob(pow2.get_output())
+        burca1.add_var_opt('user-tag',double_prefix)
+        if do_timeslides:	
+      	  burca1.add_var_opt('number-slides',0)
+      	  burca1.add_var_opt('slide-time',0)
+      	  burca1.add_var_opt('slide-time-ns',0)  
+      burca1.set_start(chunk.start())
+      burca1.set_end(chunk.end())
+      burca3.set_start(chunk.start())
+      burca3.set_end(chunk.end())
 
-    if do_power:
-      if do_H1 and do_L1: 
-        burca1.add_parent(pow1)
-        burca1.add_parent(pow3)
-      if do_H2 and do_L1: 
-        burca1.add_parent(pow2)
-        burca1.add_parent(pow3)
-      if do_H1 and do_H2: 
-        burca1.add_parent(pow1)
-        burca1.add_parent(pow2)
-    dag.add_node(burca1)
+      if do_power:
+        if do_H1 and do_L1 and do_H1L1coin: 
+          burca1.add_parent(pow1)
+          burca1.add_parent(pow3)
+        if do_H1 and do_L1 and do_L1H1coin: 
+          burca3.add_parent(pow1)
+          burca3.add_parent(pow3)
+        if do_H2 and do_L1: 
+          burca1.add_parent(pow2)
+          burca1.add_parent(pow3)
+        if do_H1 and do_H2: 
+          burca1.add_parent(pow1)
+          burca1.add_parent(pow2)
+      if do_H2 or do_H1 and do_L1 and do_H1L1coin: 
+        dag.add_node(burca1)
+      if do_H1 and do_L1 and do_L1H1coin: 
+        dag.add_node(burca3)
           
-  if do_triplecoincidence:
-    do_L1 = 1
-    burca2 = power.BurcaNode(burca_job)	
-    burca2.set_ifoa(burca1.get_H1H2output())
-    burca2.set_ifob(pow3.get_output())
-    burca2.add_var_opt('user-tag',triple_prefix) 
-    burca2.set_start(seg.start())
-    burca2.set_end(seg.end())
-    if do_timeslides:	
-      burca2.add_var_opt('number-slides',numberslides)
-      burca2.add_var_opt('slide-time',slidetime)
-      burca2.add_var_opt('slide-time-ns',slidetimens)
+    if do_triplecoincidence:
+      do_L1 = 1
+      burca2 = power.BurcaNode(burca_job)	
+      burca2.set_ifoa(burca1.get_H1H2output())
+      burca2.set_ifob(pow3.get_output())
+      burca2.add_var_opt('user-tag',triple_prefix) 
+      burca2.set_start(chunk.start())
+      burca2.set_end(chunk.end())
+      if do_timeslides:	
+        burca2.add_var_opt('number-slides',numberslides)
+        burca2.add_var_opt('slide-time',slidetime)
+        burca2.add_var_opt('slide-time-ns',slidetimens)
 
-    if do_power:
-      burca2.add_parent(pow3)
-    burca2.add_parent(burca1)
-    dag.add_node(burca2)
+      if do_power:
+        burca2.add_parent(pow3)
+      burca2.add_parent(burca1)
+      dag.add_node(burca2)
 
-  #########################################################
+      #########################################################
 
 # write out the DAG
 dag.write_sub_files()
