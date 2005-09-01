@@ -120,11 +120,11 @@ NRCSID( VELOCITYH, "$Id$");
 /* parameters required by LALBarycenter to calculate Earth velocity at 
    a given detector location */
 typedef struct tagVelocityPar {
-  LALDetector    detector;
-  EphemerisData  *edat;  /* ephemeris data pointer from LALInitBarycenter */
-  LIGOTimeGPS    startTime; /* start of time interval */
-  REAL8          tBase; /* duration of interval */
-  REAL8          vTol;  /* fractional accuracy required for velocity */
+  LALDetector    detector; /**< the detector */
+  EphemerisData  *edat;  /**< ephemeris data pointer from LALInitBarycenter */
+  LIGOTimeGPS    startTime; /**< start of time interval */
+  REAL8          tBase; /**< duration of interval */
+  REAL8          vTol;  /**< fractional accuracy required for velocity (redundant for average velocity calculation) */ 
 } VelocityPar;
 
 

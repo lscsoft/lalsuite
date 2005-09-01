@@ -207,27 +207,28 @@ NRCSID (PHMDH, "$Id$");
 /* **************************************************************
  * 10. Structure, enum, union, etc., typdefs.
  */
-  
+
+/** structure to store peakgrams */
 typedef struct tagHOUGHPeakGram{
-  INT2    timeIndex;  /* time index of the Peakgram */
-  REAL8   deltaF;     /* df=1/TCOH */
-  UINT8   fBinIni;    /* freq. bin of the zero peak (initial offset) */
-  UINT8   fBinFin;    /* max freq. bin of the peakgram */
-  UINT4   length;     /* number of peaks present in the peakgram  */
-  INT4    *peak;      /* the peak indexes relative to fBinIni*/
+  INT2    timeIndex;  /**< time index of the Peakgram */
+  REAL8   deltaF;     /**< df=1/TCOH */
+  UINT8   fBinIni;    /**< freq. bin of the zero peak (initial offset) */
+  UINT8   fBinFin;    /**< max freq. bin of the peakgram */
+  UINT4   length;     /**< number of peaks present in the peakgram  */
+  INT4    *peak;      /**< the peak indexes relative to fBinIni*/
 } HOUGHPeakGram;
   
-
+  /** partial hough map derivative structure */
 typedef struct tagHOUGHphmd{
-  UINT8          fBin;  /* frequency bin of this partial map deriv. */
-  UINT2          lengthLeft; /* exact number of Left borders */
-  UINT2          lengthRight;/* exact number of Right borders */
-  UINT2          maxNBorders; /* maximun number of borders of each type (for
+  UINT8          fBin;  /**< frequency bin of this partial map deriv. */
+  UINT2          lengthLeft; /**< exact number of Left borders */
+  UINT2          lengthRight;/**< exact number of Right borders */
+  UINT2          maxNBorders; /**< maximun number of borders of each type (for
  					 memory allocation purposes) */
-  HOUGHBorder    **leftBorderP; /* pointer the borders[x] +1 */
-  HOUGHBorder    **rightBorderP; /* pointer the borders[x] -1 */
-  UINT2          ySide;  /* number of elements of firstColumn */
-  UCHAR          *firstColumn; /* border corrections on 1st column */
+  HOUGHBorder    **leftBorderP; /**< pointer the borders[x] +1 */
+  HOUGHBorder    **rightBorderP; /**< pointer the borders[x] -1 */
+  UINT2          ySide;  /**< number of elements of firstColumn */
+  UCHAR          *firstColumn; /**< border corrections on 1st column */
 } HOUGHphmd;
 
 
