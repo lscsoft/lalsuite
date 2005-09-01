@@ -61,7 +61,6 @@ void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
   REAL8 Tsft, freqBand;
   REAL8 f0, df, ff;
   UINT4 nsamples;
-  REAL4 norm;
   REAL4 P_k;
 
   f0 = sft->f0;
@@ -69,8 +68,6 @@ void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
   nsamples = sft->data->length;
   Tsft = 1.0 / sft->deltaF;
   freqBand = (nsamples-1.0) * df;
-
-  norm = (REAL4)( Tsft / nsamples);
 
   /* if openDX format: add a header with number of points..*/
   if ( format == 0)
@@ -102,8 +99,8 @@ void dump_SFT (FILE *fp, const SFTtype *sft, INT4 format)
   for (i=0; i < nsamples; i++)
   {
     ff = f0 + i*df;
-    valre = norm * sft->data->data[i].re;
-    valim = norm * sft->data->data[i].im;
+    valre = sft->data->data[i].re;
+    valim = sft->data->data[i].im;
     if ( (i==0) && (i == nsamples-1) )
       P_k = sqrt(valre*valre + valim*valim);
     else
