@@ -297,7 +297,7 @@ int main( int argc, char *argv[]) {
     }
   }
 
-  /* calculate velocity and position */
+  /********** calculate velocity and position ***********/
   /* setting of ephemeris info */ 
   edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
   (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
@@ -343,7 +343,7 @@ int main( int argc, char *argv[]) {
     }
   }
 
-
+  /************ calculate F statistic for each stack **********/
   /* memory for Fstatistic Vector */
   FstatVect = (FstatVectorStack *)LALMalloc(sizeof(FstatVectorStack));
   FstatVect->length = Nstacks;
@@ -365,7 +365,7 @@ int main( int argc, char *argv[]) {
 
   }
   
-
+  /* fill parameter for calculating Fstat */
   FstatPar.mCohSft = mCohSft;
   FstatPar.Nstacks = Nstacks;
   FstatPar.Dterms = uvar_Dterms;
@@ -383,12 +383,12 @@ int main( int argc, char *argv[]) {
   /* memory allocation for **Fstat */
   Fstat = (LALFstat **)LALMalloc( Nstacks * sizeof(LALFstat *));
 
+  /***** now calculate F-statistic ******/
   LAL_CALL( ComputeFstatStack( &status, Fstat, inputSFTs, &FstatPar), &status);
 
 
-
-  /* select frequency bins */
-  /* create peakgram vector */ 
+  /****** create peakgram vector *********/ 
+  /* first allocate some memory */
   pgV.length = Nstacks;
   pgV.pg = (HOUGHPeakGram *)LALMalloc( Nstacks * sizeof(HOUGHPeakGram));
   for (k=0; k<Nstacks; k++) {
@@ -400,6 +400,12 @@ int main( int argc, char *argv[]) {
   /* compute the peakgrams */
   LAL_CALL( FstatVectToPeakGram( &status, &pgV, FstatVect, uvar_FstatThr), &status);
 
+
+  /*************** calculate Hough map *************/
+  /* set up the Hough parameters */
+
+
+  /*********** free all remaining memory **********/
   /* free timestamp and Vel/Pos vectors */
   for (k=0; k<Nstacks; k++) {
       LALFree(timeVelPos[k].ts);
@@ -649,29 +655,49 @@ void FstatVectToPeakGram (LALStatus *status,
 			  REAL8  thr)
 {
   INT4 j, k;
-  INT4 Nstacks, nSearchBins;
-  UCHARPeakGram upg;  
+  INT4 Nstacks, nSearchBins, nPeaks;
+  UCHAR *upg;  
 
   INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
   ATTATCHSTATUSPTR (status);
 
-
   Nstacks = pgV->length;
   nSearchBins = FstatVect->data->length;
-  for (k=0; k<Nstacks; k++) {
-    REAL8Vector *tempVect = FstatVect->data[k].F;
 
-    upg.nPeaks = 0;
-    upg.length = nSearchBins;
+  upg = (UCHAR *)LALMalloc( nSearchBins * sizeof(UCHAR));
+
+  /* loop over each stack and set peakgram */
+  for (k=0; k<Nstacks; k++) {
+    INT4 *pInt; /* temporary pointer */
+    REAL8 *pV;  /* temporary pointer */
+
+    pV = FstatVect->data[k].F->data;
+
+    /* loop over stack, count peaks, and set upg values */
+    nPeaks = 0;
     for(j=0; j<nSearchBins; j++) {
-      if (tempVect->data[j] > thr) {
-	upg.nPeaks++;
+      if ( pV[j] > thr ) {
+	nPeaks++;	
+	upg[j] = 1; 
+      }
+      else
+	upg[j] = 0;
+    }
+
+    pgV->pg[k].length = nPeaks; 
+    pgV->pg[k].peak = (INT4 *)LALMalloc( nPeaks * sizeof(INT4)); 
+    pInt = pgV->pg[k].peak;
+    /* do loop again and fill peakgram vector */
+    for (j=0; j<nSearchBins; j++) {
+      if ( upg[j] == 1) {
+	*pInt = j;
+	pInt++;
       }
     }
   }
 
-  pgV->pg[k].length = nSearchBins; 
-  pgV->pg[k].peak = (INT4 *)LALMalloc( nSearchBins * sizeof(INT4)); 
+  /* free the UCHAR peakgram */
+  LALFree(upg);
 
   DETATCHSTATUSPTR (status);
   RETURN(status);

@@ -133,15 +133,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8Vector *spindown;  /**< vector containing spindown values */
   } FstatStackParams;
   
-  /** vector of 0s and 1s obtained by thresholding Fstat vector */
-  typedef struct tagUCHARPeakGram{ 
-    LIGOTimeGPS  epoch;        /**< time stamp of stack*/
-    REAL8        deltaF;       /**< frequency resolution */
-    INT4         fminBinIndex; /**< start index (change to start frequency value?) */ 
-    INT4         length;       /**< number of elements in data */
-    INT4         nPeaks;       /**< number of peaks selected in data */
-    UCHAR       *data;         /**< pointer to the data {0,1} (UCHAR used to minimize memory) */
-  } UCHARPeakGram; 
 
   /** copied from ComputeFstatistic_v2 -- delete when it goes into LAL */
   typedef struct {
