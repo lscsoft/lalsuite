@@ -195,7 +195,8 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
 /* normalizes a sft based on RngMed */
 void LALNormalizeSFT (LALStatus  *status,
 		      SFTtype  *sft,
-		      INT4     blockSize)
+		      INT4     blockSize, 
+		      UCHAR    normSwitch)
 {/*   *********************************************  </lalVerbatim> */
   INT4 j, length;
   REAL8FrequencySeries psd, periodo;
@@ -232,8 +233,16 @@ void LALNormalizeSFT (LALStatus  *status,
   for (j=0; j<length; j++) {
     REAL8 Sn;
     Sn = psd.data->data[j]; 
-    sft->data->data[j].re /= sqrt(Sn);
-    sft->data->data[j].im /= sqrt(Sn);
+    if ( normSwitch == 0 ) {
+      /* frequency domain normalization */
+      sft->data->data[j].re /= sqrt(Sn);
+      sft->data->data[j].im /= sqrt(Sn);
+    }
+    if ( normSwitch == 1 ) {
+      /* time domain normalization */
+      sft->data->data[j].re *= sqrt(2.0 * length / Sn);
+      sft->data->data[j].im *= sqrt(2.0 * length / Sn);
+    }
   }
 
   LALFree(psd.data->data);
@@ -254,7 +263,8 @@ void LALNormalizeSFT (LALStatus  *status,
 /* *******************************  <lalVerbatim file="NormalizeSFTRngMedD"> */
 void LALNormalizeSFTVect (LALStatus  *status,
 			  SFTVector  *sftVect,
-			  INT4     blockSize)
+			  INT4     blockSize,
+			  UCHAR    normSwitch)
 {/*   *********************************************  </lalVerbatim> */
   /* normalizes a sft vector using RngMed */
   INT4 j, length;
@@ -279,7 +289,7 @@ void LALNormalizeSFTVect (LALStatus  *status,
     ASSERT (sft->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
     ASSERT (sft->data->length>0, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL); 
     ASSERT (sft->data->data, status, NORMALIZESFTRNGMEDH_ENULL, NORMALIZESFTRNGMEDH_MSGENULL); 
-    TRY (LALNormalizeSFT (status->statusPtr, sft, blockSize), status);
+    TRY (LALNormalizeSFT (status->statusPtr, sft, blockSize, normSwitch), status);
   }
 
   DETATCHSTATUSPTR (status);

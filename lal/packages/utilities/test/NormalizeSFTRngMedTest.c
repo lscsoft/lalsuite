@@ -49,11 +49,11 @@ INT4 lalDebugLevel=0;
 
 
 #define MAXFILENAMELENGTH 256
-#define INPUTSFTDIR "/home/badkri/fakesfts/"
+#define INPUTSFTDIR "/local_data/badkri/fakesfts/"
 #define OUTPUTSFTDIR "./test/"
-#define FMIN 255.0
-#define FMAX 255.1
-#define BLKSIZE 25
+#define FMIN 251.0
+#define FMAX 259.0
+#define BLKSIZE 101
 
 /*********************************************************************/
 /* Macros for printing errors & testing subroutines (from Creighton) */
@@ -148,7 +148,9 @@ int main(int argc, char *argv[]){
   strcat(fname, "/*SFT*");
   SUB ( LALReadSFTfiles( &status, &sft, uvar_fmin, uvar_fmax,0, fname), &status);
 
-  SUB ( LALNormalizeSFTVect(&status, sft, uvar_blockSize), &status);
+  SUB ( LALNormalizeSFTVect(&status, sft, uvar_blockSize, 0), &status);
+
+  SUB ( LALWriteSFTfile ( &status,  sft->data,  "./outSFT.0001"), &status);
 
   SUB ( LALDestroySFTVector (&status, &sft), &status);
 

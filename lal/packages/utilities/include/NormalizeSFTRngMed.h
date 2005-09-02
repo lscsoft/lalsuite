@@ -164,11 +164,14 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
 
 void LALNormalizeSFT (LALStatus  *status,
 		      SFTtype  *sft,
-		      INT4     blockSize);
+		      INT4     blockSize,
+		      UCHAR    normSwitch);
 
 void LALNormalizeSFTVect (LALStatus  *status,
 			  SFTVector  *sftVect,
-			  INT4     blockSize);
+			  INT4     blockSize,
+			  UCHAR    normSwitch); /* normSwitch == 0 for frequency domain 
+						   normalization and == 1 for time domain */
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
