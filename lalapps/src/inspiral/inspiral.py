@@ -306,6 +306,30 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user-tag')
 
+  def set_start(self,time):
+    """
+    Set the GPS start time of the analysis node by setting a --gps-start-time
+    option to the node when it is executed. We override the default method to
+    cope with the data padding.
+    @param time: GPS start time of job.
+    """
+    self.add_var_opt('gps-start-time',time)
+    self.__start = time
+    pad = int(job.get_config('data','pad-data'))
+    self.__data_start = time - pad
+
+  def set_end(self,time):
+    """
+    Set the GPS end time of the analysis node by setting a --gps-end-time
+    option to the node when it is executed. We override the default method to
+    cope with the data padding.
+    @param time: GPS end time of job.
+    """
+    self.add_var_opt('gps-end-time',time)
+    self.__end = time
+    pad = int(job.get_config('data','pad-data'))
+    self.__data_end = time + pad
+
   def get_output(self):
     """
     Returns the file name of output from the template bank code. This must
@@ -414,6 +438,30 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
     self.__usertag = job.get_config('pipeline','user-tag')
+
+  def set_start(self,time):
+    """
+    Set the GPS start time of the analysis node by setting a --gps-start-time
+    option to the node when it is executed. We override the default method to
+    cope with the data padding.
+    @param time: GPS start time of job.
+    """
+    self.add_var_opt('gps-start-time',time)
+    self.__start = time
+    pad = int(job.get_config('data','pad-data'))
+    self.__data_start = time - pad
+
+  def set_end(self,time):
+    """
+    Set the GPS end time of the analysis node by setting a --gps-end-time
+    option to the node when it is executed. We override the default method to
+    cope with the data padding.
+    @param time: GPS end time of job.
+    """
+    self.add_var_opt('gps-end-time',time)
+    self.__end = time
+    pad = int(job.get_config('data','pad-data'))
+    self.__data_end = time + pad
 
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
