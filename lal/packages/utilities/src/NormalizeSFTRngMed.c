@@ -75,7 +75,7 @@ void LALSFTtoPeriodogram (LALStatus    *status,
  /* Calculates the periodogram for a given SFT */
 
   INT4     length, j;
-  REAL8    *out, re, im, factor;
+  REAL8    *out, re, im;
   COMPLEX8 *in;
 
   INITSTATUS (status, "LALSFTtoPeriodogram", NORMALIZESFTRNGMEDC);
@@ -101,14 +101,13 @@ void LALSFTtoPeriodogram (LALStatus    *status,
   length = SFT->data->length;
   ASSERT (length == periodo->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
 
-  factor = periodo->deltaF; /* normalization factor */
   out = periodo->data->data;
   in = SFT->data->data;
 
   for (j=0; j<length; j++) {
     re = in->re;
     im = in->im;
-    *out = (re*re + im*im) * factor;
+    *out = re*re + im*im;
     ++out;
     ++in;
   }
@@ -159,7 +158,7 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
   length = periodo->data->length;
   ASSERT (length == psd->data->length, status, NORMALIZESFTRNGMEDH_EVAL, NORMALIZESFTRNGMEDH_MSGEVAL);  
 
-  blocks2 = blockSize/2;
+  blocks2 = blockSize/2; /* integer division */
 
   rngMedPar.blocksize = (UINT4)blockSize;
   inputV.length = length;
@@ -169,21 +168,19 @@ void LALPeriodoToPSDRngMed (LALStatus  *status,
 
   TRY( LALDRunningMedian2(status->statusPtr, &mediansV, &inputV, rngMedPar), status);
 
+  /* copy values in the wings */
   for (j=0; j<blocks2; j++)
     psd->data->data[j] = psd->data->data[blocks2];
 
   for (j=blocks2+length-blockSize+1; j<length; j++)
     psd->data->data[j] = psd->data->data[blocks2 + length-blockSize];
 
-
-  /* get the bias factor */
+  /* get the bias factor -- for estimating the mean from the median */
   TRY ( LALRngMedBias( status->statusPtr, &medianBias, blockSize ), status);
 
   /* normalize by the bias factor */
   for (j=0; j<length; j++)
     psd->data->data[j] /= medianBias;
-
-  /* normalize according to RngMedBias */
 
   DETATCHSTATUSPTR (status);
   /* normal exit */
@@ -201,7 +198,7 @@ void LALNormalizeSFT (LALStatus  *status,
 		      INT4     blockSize)
 {/*   *********************************************  </lalVerbatim> */
   INT4 j, length;
-  REAL8FrequencySeries *psd=NULL, *periodo=NULL;
+  REAL8FrequencySeries psd, periodo;
 
   INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
   ATTATCHSTATUSPTR (status);
@@ -215,38 +212,36 @@ void LALNormalizeSFT (LALStatus  *status,
 
   length = sft->data->length;
   
-  psd = (REAL8FrequencySeries *)LALMalloc(sizeof(REAL8FrequencySeries));
-  psd->data = NULL;
-  psd->data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-  psd->data->length = length;
-  psd->data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+  psd.data = NULL;
+  psd.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  psd.data->length = length;
+  psd.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
 
-  periodo = (REAL8FrequencySeries *)LALMalloc(sizeof(REAL8FrequencySeries));
-  periodo->data = NULL;
-  periodo->data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
-  periodo->data->length = length;
-  periodo->data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
+  periodo.data = NULL;
+  periodo.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  periodo.data->length = length;
+  periodo.data->data = (REAL8 *)LALMalloc( length * sizeof(REAL8));
 
   /* calculate the periodogram */
-  TRY (LALSFTtoPeriodogram (status->statusPtr, periodo, sft), status);
+  TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
 
   /* calculate the psd */
-  TRY (LALPeriodoToPSDRngMed (status->statusPtr, psd, periodo, blockSize), status);
+  TRY (LALPeriodoToPSDRngMed (status->statusPtr, &psd, &periodo, blockSize), status);
 
   /* loop over sft and normalize */
   for (j=0; j<length; j++) {
     REAL8 Sn;
-    Sn = psd->data->data[j]; 
-    sft->data->data[j].re *= sft->deltaF/sqrt(Sn); /* check */
-    sft->data->data[j].im *= sft->deltaF/sqrt(Sn); /* check */
+    Sn = psd.data->data[j]; 
+    sft->data->data[j].re /= sqrt(Sn);
+    sft->data->data[j].im /= sqrt(Sn);
   }
 
-  LALFree(psd->data->data);
-  LALFree(psd->data);
-  LALFree(psd);
-  LALFree(periodo->data->data);
-  LALFree(periodo->data);
-  LALFree(periodo);
+  LALFree(psd.data->data);
+  LALFree(psd.data);
+
+  LALFree(periodo.data->data);
+  LALFree(periodo.data);
+
 
   DETATCHSTATUSPTR (status);
   /* normal exit */
