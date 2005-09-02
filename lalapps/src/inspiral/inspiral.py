@@ -315,7 +315,7 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     self.add_var_opt('gps-start-time',time)
     self.__start = time
-    pad = int(job.get_config('data','pad-data'))
+    pad = int(self.job().get_config('data','pad-data'))
     self.__data_start = time - pad
 
   def set_end(self,time):
@@ -327,7 +327,7 @@ class TmpltBankNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     self.add_var_opt('gps-end-time',time)
     self.__end = time
-    pad = int(job.get_config('data','pad-data'))
+    pad = int(self.job().get_config('data','pad-data'))
     self.__data_end = time + pad
 
   def get_output(self):
@@ -448,7 +448,7 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     self.add_var_opt('gps-start-time',time)
     self.__start = time
-    pad = int(job.get_config('data','pad-data'))
+    pad = int(self.job().get_config('data','pad-data'))
     self.__data_start = time - pad
 
   def set_end(self,time):
@@ -460,7 +460,7 @@ class InspiralNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     """
     self.add_var_opt('gps-end-time',time)
     self.__end = time
-    pad = int(job.get_config('data','pad-data'))
+    pad = int(self.job().get_config('data','pad-data'))
     self.__data_end = time + pad
 
   def set_bank(self,bank):
