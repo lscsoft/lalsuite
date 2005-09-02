@@ -132,6 +132,21 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     REAL8 delta;            /**< sky-location -- declination */
     REAL8Vector *spindown;  /**< vector containing spindown values */
   } FstatStackParams;
+
+  /** parameters for calculating a Hough Map */
+  typedef struct tagHoughParams {
+    INT4 mCohSft;          /**< number of SFTs in each stack */
+    INT4 Nstacks;          /**< number ofs tacks */
+    REAL8 fStart;          /**< start frequency */
+    REAL8 fBand;           /**< frequency band */
+    REAL8 deltaF;          /**< frequency resolution */
+    LALDetector detector;  /**< detector */
+    EphemerisData *edat;   /**< ephemeris data */
+    TimeVelPosVector *tvp; /**< time, velocity and position */
+    REAL8 alpha;           /**< right ascension */
+    REAL8 delta;           /**< declination */
+    REAL8Vector *spindown; /**< spindown parameters */
+  } HoughParams;
   
 
   /** copied from ComputeFstatistic_v2 -- delete when it goes into LAL */
@@ -166,7 +181,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   void ComputeFstatHoughMap (LALStatus *status,
 			     HOUGHMapTotal  *ht,  
 			     HOUGHPeakGramVector *pgV,
-			     FstatStackParams *params);
+			     HoughParams *params);
 
   void FstatVectToPeakGram (LALStatus *status,
 			    HOUGHPeakGramVector *pgV,

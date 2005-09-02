@@ -635,7 +635,7 @@ void ComputeFstatStackv2 (LALStatus *status,
 void ComputeFstatHoughMap(LALStatus *status,
 			  HOUGHMapTotal   *ht,   /* the total Hough map */
 			  HOUGHPeakGramVector *pgV,
-			  FstatStackParams *params)
+			  HoughParams *params)
 {
 
   INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
