@@ -1,6 +1,6 @@
 /*-----------------------------------------------------------------------
  *
- * File Name: SFTClean.h
+ * File Name: NormalizeSFTRngMed.h
  *
  * Authors: Krishnan, B.
  *
@@ -54,8 +54,6 @@ them to clean SFT data
 
 /**
  * Routines for cleaning SFT files using known spectral disturbances. 
- *
- * Also contains format for list of known spectral disturbances 
  *
  **/
 

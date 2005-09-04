@@ -1,16 +1,48 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: NormalizeSFTRndMed.c
- *
- * Authors: Krishnan, B and Sintes, A
- *
- * Revision: $Id$
- *
+/** 
+ * \file 
+ * \ingroup NormalizeSFTRndMed.c
+ * \authors Krishnan, B and Sintes, A
+ * \date $Date$
+ * \brief Normalizes SFTs based on their noise floor calculated using the running median
+ * 
+ * $Id$ 
+ * 
  * History: Created by B. Krishnan Aug, 2004
  *       Taken from SFTbin.c and PeakSelect.c from hough dir in lalapps
  * 
- *-----------------------------------------------------------------------
- */
+ *
+
+ \par Description 
+
+This module contains functions for normalizing SFTs.  Currently two normalizations 
+are supported.  Given SFT data \f$\tilde{x}_k \f$ where k labels a frequency bin, 
+the normalized SFT is either \f$ \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$ or 
+\f$ \sqrt{2N} \tilde{x}_k/\sqrt{ < |\tilde{x}_k|^2 >} \f$.   The first normalization
+ensures that the SFT power follows an exponential distribution with unit mean, 
+while the second normalization is appropriate in the time domain.  In either case, 
+the mean of \f$ |\tilde{x}_k|^2 \f$ is estimated using the median, suitably 
+normalized assuming that the power is distributed is exponentially.
+
+
+\par Uses
+\code
+LALSFTtoPeriodogram ()
+LALPeriodoToPSDRngMed ()
+LALNormalizeSFT ()
+LALNormalizeSFTVect ()
+\endcode				      
+
+
+The function LALNormalizeSFTVect takes as input a vector of SFTs and normalizes
+them.  This function calls the functions LALNormalizeSFT (which normalizes a
+single SFT), LALSFTtoPeriodogram (which calculates the \f$ |\tilde{x}|^2 \f$) and 
+LALPeriodoToPSDRngMed which applies the running median algorithm to find a vector
+of medians. 
+
+*/
+
+
+/*----------- laldoc documentation -------------- */
 
 /************************************ <lalVerbatim file="NormalizeSFTRngMedCV">
 Author: Krishnan, B.
