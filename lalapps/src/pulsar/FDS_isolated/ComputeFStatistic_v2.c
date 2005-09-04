@@ -30,6 +30,8 @@
 #include "config.h"
 #include <lal/LALRunningMedian.h>
 
+#include <lal/NormalizeSFTRngMed.h>
+
 /* System includes */
 #include <stdio.h>
 #define __USE_ISOC99 1
@@ -471,6 +473,12 @@ int main(int argc,char *argv[])
 
 		    /* prepare quantities to calculate Fstat from Fa and Fb */
 		    fact = 4.0f / (1.0f * GV.ifos.sftVects[nD]->length * GV.ifos.amcoe[nD]->D);
+
+		    /* NOTE: we normalized the data by a double-sided PSD, therefore we
+		     * apply another factor of 1/2 now with respect to the equation in JKS:
+		     */
+		    fact *= 0.5f;
+
 		    At = GV.ifos.amcoe[nD]->A;
 		    Bt = GV.ifos.amcoe[nD]->B;
 		    Ct = GV.ifos.amcoe[nD]->C;
@@ -512,13 +520,13 @@ int main(int argc,char *argv[])
 	      UINT4 j;
 	      for(j=0; j < FVect->length; j++)
 		{
-		  REAL8 FStat = 2.0 * medianbias * FVect->F->data[j];
+		  REAL8 TwoFStat = 2.0 * FVect->F->data[j];
 		  REAL8 freq = uvar_Freq + j * GV.dFreq;
 		  
-		  if ( FStat > uvar_Fthreshold )
+		  if ( TwoFStat > uvar_Fthreshold )
 		    fprintf (fpOut, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
 			     dopplerpos.Alpha, dopplerpos.Delta, 
-			     freq, GV.fkdot->data[1], FStat);
+			     freq, GV.fkdot->data[1], TwoFStat);
 		}
 	      
 	    } /* if outputFstat */
@@ -763,7 +771,9 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
       TRY ( InitFStatDetector(status->statusPtr, &GV, nD), status);
       
       /* normalize SFTs by running median */
+      /*
       TRY (NormaliseSFTDataRngMdn(status->statusPtr, GV.ifos.sftVects[nD]), status);      
+      */
       
       /* obtain detector positions and velocities, together with LMSTs for the 
        * SFT midpoints 
@@ -872,6 +882,12 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     
     TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, uvar_Dterms, uvar_DataFiles), status);
   
+    /* this normalized by 1/sqrt(Sh), where Sh is the median of |X|^2  
+     * NOTE: this corresponds to a double-sided PSD, therefore we need to 
+     * divide by another factor of 2 with respect to the JKS formulae.
+     */
+    TRY ( LALNormalizeSFTVect (status->statusPtr, cfg->ifos.sftVects[nD], uvar_windowsize, 0 ), status );
+    
   } /* SFT-loading */
 
   /*----------  prepare vectors of timestamps ---------- */
@@ -883,8 +899,9 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
       {
 	cfg->ifos.timestamps[nD]->data[i] = cfg->ifos.sftVects[nD]->data[i].epoch;	/* SFT start-timestamps */
 	/* SFT midpoints */
-	TRY (LALAddFloatToGPS(status->statusPtr, 
-			      &(cfg->ifos.midTS[nD]->data[i]), &(cfg->ifos.timestamps[nD]->data[i]),0.5*1.0 / (GV.ifos.sftVects[nD]->data[0].deltaF )),status);
+	TRY (LALAddFloatToGPS(status->statusPtr, &(cfg->ifos.midTS[nD]->data[i]), 
+			      &(cfg->ifos.timestamps[nD]->data[i]), 
+			      0.5*1.0 / (GV.ifos.sftVects[nD]->data[0].deltaF )), status);
       }/* for i < ifos.length */
 
   } 
@@ -1891,167 +1908,3 @@ LALDestroyDetectorStateSeries (LALStatus *status,
 
   RETURN (status);
 } /* LALDestroyDetectorStateSeries() */
-
-
-/** Estimates the floor of a givendata set by the running median.
- * input : vector (N points) over which the running median code is ran with a  
- * blocksize = windowsize 
- * the output of the running median code has N - blocksize+1 points. 
- * the output of this routine has N points. The missing blocksize points 
- * are set equal to the nearest last value of the output of th erunnning median.
- */
-void
-EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector *output)
-{
-  UINT4 start,start2;
-  UINT4 lpc;
-  UINT4 nbins=input->length;
-  REAL4 halfWindow;
-  REAL8 *dmp;
-  INT4 M;
-
-  INITSTATUS( stat, "EstimateFloor", rcsid);
-  ATTATCHSTATUSPTR (stat); 
-
-  M = nbins-windowSize+1;
-  if( (dmp = (REAL8 *) LALCalloc(M,sizeof(REAL8))) == NULL) {
-    ABORT (stat, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  
-  /* wrapper for the LALrngmed function to work in here: 
-     the original call here was:
-     > rngmed(input->data, nbins, windowSize, dmp)
-     with the prototype: 
-     > int rngmed(const double *data, unsigned int lendata, unsigned int nblocks, double *medians);
-     while the new prototype is :
-     > LALDRunningMedian2(LALStatus*, REAL8Sequence *medians,const REAL8Sequence *input, LALRunningMedianPar param)
-  */
-  {      
-    LALRunningMedianPar par;
-    REAL8Vector medians;
-    par.blocksize = windowSize;
-    medians.length = M;
-    medians.data = dmp;
-    /* now cross your fingers and make a sacrifice to the gods.. */
-    TRY ( LALDRunningMedian2(stat->statusPtr, &medians, input, par), stat);
-  }
-
-
-  /* start is the index of outdata at which the actual rmgmed begins*/
-  halfWindow=windowSize/2.0;
-  start=((int)(halfWindow))-1;
-  start2=(start+nbins-windowSize);
-  
-  /*Fill-in RngMdnSp */
-  for (lpc=0;lpc<start;lpc++){
-    output->data[lpc]=dmp[0];
-  }
-  for (lpc=start;lpc<start2;lpc++){
-    output->data[lpc]=dmp[lpc-start];
-  }
-  for (lpc=start2;lpc<nbins;lpc++){
-    output->data[lpc]=dmp[nbins-windowSize];
-  }
-  
-  LALFree(dmp);
-
-  DETATCHSTATUSPTR(stat);
-  RETURN(stat);
-
-} /* EstimateFloor() */
-
-
-/** Normalise the SFT-array \em SFTData by the running median.
- * The running median windowSize in this routine determines 
- * the sample bias which, instead of log(2.0), must be 
- * multiplied by F statistics.
- */
-void 
-NormaliseSFTDataRngMdn(LALStatus *status, 
-		       const SFTVector *sfts
-		       )
-{
-  UINT4 i, j, lpc;
-  REAL8Vector *Sp=NULL, *RngMdnSp=NULL;   /* |SFT|^2 and its rngmdn  */
-  REAL8 B;                          /* SFT Bandwidth */
-  REAL8 deltaT,norm,*N, *Sp1;
-  INT2 windowSize=uvar_windowsize;                  /* Running Median Window Size*/
-  REAL4 xre,xim,xreNorm,ximNorm;
-
-  INITSTATUS( status, "NormaliseSFTDataRngMdn", rcsid );
-  ATTATCHSTATUSPTR (status);
-
-  if ( !uvar_SignalOnly ) {
-    TRY( LALRngMedBias (status->statusPtr, &medianbias, windowSize), status);
-  }
-
-  TRY ( LALDCreateVector(status->statusPtr, &Sp, sfts->data[0].data->length), status);
-  TRY ( LALDCreateVector(status->statusPtr, &RngMdnSp, sfts->data[0].data->length), status);
-
-  if( (N = (REAL8 *) LALCalloc(sfts->data[0].data->length,sizeof(REAL8))) == NULL) {
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-  if( (Sp1 = (REAL8 *) LALCalloc(sfts->data[0].data->length,sizeof(REAL8))) == NULL) { 
-    ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-  }
-
-  /* loop over each SFTs */
-  for (i=0; i < sfts->length; i++)         
-    {
-      /* Set to zero the values */
-      for (j=0;j<sfts->data[0].data->length;j++){
-	RngMdnSp->data[j] = 0.0;
-	Sp->data[j]       = 0.0;
-      }
-      
-      /* loop over SFT data to estimate noise */
-      for (j=0;j<sfts->data[0].data->length;j++){
-	xre=sfts->data[i].data->data[j].re;
-	xim=sfts->data[i].data->data[j].im;
-	Sp->data[j]=(REAL8)(xre*xre+xim*xim);
-      }
-      
-      /* Compute running median */
-      TRY ( EstimateFloor(status->statusPtr, Sp, windowSize, RngMdnSp), status);
-
-      /*Compute Normalization factor*/
-      /* for signal only case as well */  
-      for (lpc=0;lpc<sfts->data[0].data->length;lpc++){
-	N[lpc]=1.0/sqrt(2.0*RngMdnSp->data[lpc]);
-      }
-      
-      if(uvar_SignalOnly == 1){
-	B=(1.0*sfts->data[0].data->length)/(1.0 / (sfts->data[0].deltaF ));
-	deltaT=1.0/(2.0*B);
-	norm=deltaT/sqrt(1.0 / (sfts->data[0].deltaF ));
-	for (lpc=0;lpc<sfts->data[0].data->length;lpc++){
-	  N[lpc]=norm;
-	}
-      }
-      
-      /*  loop over SFT data to normalise it (with N) */
-      /*  also compute Sp1, average normalized PSD */
-      /*  and the sum of the PSD in the band, SpSum */
-      for (j=0;j<sfts->data[0].data->length;j++){
-	xre=sfts->data[i].data->data[j].re;
-	xim=sfts->data[i].data->data[j].im;
-	xreNorm=N[j]*xre; 
-	ximNorm=N[j]*xim; 
-	sfts->data[i].data->data[j].re = xreNorm;    
-	sfts->data[i].data->data[j].im = ximNorm;
-	Sp1[j]=Sp1[j]+xreNorm*xreNorm+ximNorm*ximNorm;
-      }
-      
-    } /* end loop over SFTs*/
-
-  LALFree(N);
-  LALFree(Sp1);
-
-  TRY ( LALDDestroyVector(status->statusPtr, &RngMdnSp), status);
-  TRY ( LALDDestroyVector(status->statusPtr, &Sp), status);
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
-  
-} /* NormaliseSFTDataRngMed() */
-
