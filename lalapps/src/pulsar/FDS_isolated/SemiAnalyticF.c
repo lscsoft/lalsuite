@@ -44,6 +44,8 @@ RCSID( "$Id$");
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#define SQ(x) ((x)*(x))
+
 /*---------- local types ---------- */
 struct CommandLineArgsTag {
   REAL8 skyalpha;
@@ -182,6 +184,7 @@ ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
   REAL8 A,B,C,D,alpha,beta,delta,kappa,A1,A2,A3,A4,h0,cosi, To,Sh,F;
   REAL8 aPlus, aCross;
   REAL8 twopsi, twophi;
+  REAL8 lambda;
 
   INITSTATUS (status, "ComputeF", rcsid );
   ATTATCHSTATUSPTR ( status);
@@ -225,8 +228,11 @@ ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
   F = (B*pow(alpha,2) + A*pow(beta,2) - 2*C*alpha*beta) 
     + (B*pow(delta,2) + A*pow(kappa,2)- 2*C*delta*kappa);
   F *= To / (D * Sh);
+
+  lambda = SQ(A1) * A + 2.0 * C * A1 * A2 + SQ(A2) * B + SQ(A3) * A + 2.0 * C * A3 * A4 + SQ(A4) * B;
+  lambda *= 0.5 * To / Sh;
   
-  fprintf(stdout,"%e\n",F);
+  fprintf( stdout, "%g\n", F );
   /*    fprintf(stdout,"\nSNR = %e\n",sqrt(F)); */
 
 
@@ -294,7 +300,7 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   TRY( LALRegisterREALUserVar(status->statusPtr, "h0", 's', UVAR_OPTIONAL, 
 			      "Strain amplitude h_0", &(CLA->h0)), status);
   TRY( LALRegisterREALUserVar(status->statusPtr, "sqrtSh", 'N', UVAR_OPTIONAL, 
-			      "Noise floor (sqrt(Sh)) in 1/sqrt(Hz)", &(CLA->sqrtSh)), status);
+			      "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)", &(CLA->sqrtSh)), status);
   
   TRY( LALRegisterSTRINGUserVar(status->statusPtr, "timestampsFile", 'T', UVAR_OPTIONAL, 
 				"Name of timestamps file", &(CLA->timestamps)), status);
@@ -358,7 +364,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
 
 
   if ( LALUserVarWasSet (&(CLA->duration) ) )
-    CLA->nTsft = CLA->duration / CLA->tsft;	  /* we're cheating here */
+    CLA->nTsft = (UINT4) (CLA->duration / CLA->tsft + 0.5);	  /* we're cheating here */
 
   /* read or generate SFT timestamps */
   if ( LALUserVarWasSet(&(CLA->timestamps)) ) {
