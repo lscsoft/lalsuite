@@ -36,8 +36,8 @@ mfd_FreqBand=0.7
 Alpha=0.8
 Delta=0.5
 
-aPlus=0.5
-aCross=0
+aPlus=1.0
+aCross=0.0
 
 psi=0
 phi0=0
@@ -46,6 +46,8 @@ freq=300.4
 
 f1dot=1e-8
 df1dot=0.3e-8	## search about 3 spindown-values
+
+noiseSigma=0.1
 
 IFO=LHO
 
@@ -67,7 +69,7 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL="--latitude=$Delta  --longitude=$Alpha --detector=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --f0=$freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot  --refTime=$refTime --noiseSigma=$noiseSigma"
     
 cmdline="$mfd_code $mfd_CL";
 echo $cmdline;
@@ -78,7 +80,9 @@ fi
 
 echo 
 echo -n "Running '$saf_code' ... "
-cmdline="$saf_code $saf_CL"
+sqrtSh=`echo $noiseSigma $mfd_FreqBand | awk '{printf "%g", $1 / sqrt($2) }'` ## sqrt(Sh) = sigma/ sqrt(Band)
+cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"	
+echo $cmdline
 if ! resF=`eval $cmdline 2> /dev/null`; then
     echo "Error ... something failed running '$saf_code' ..."
     exit 1;
@@ -94,7 +98,7 @@ echo "----------------------------------------------------------------------"
 echo
 
 ## common cmdline-options for v1 and v2    
-cfs_CL="--IFO=$IFO --SignalOnly --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles=$SFTdir/testSFT* --refTime=$refTime"
+cfs_CL="--IFO=$IFO --Freq=$freq --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --f1dotBand=$f1dot --df1dot=$df1dot --Fthreshold=0 --DataFiles=$SFTdir/testSFT* --refTime=$refTime"
     
 cmdline="$cfs_code $cfs_CL  --outputFstat=Fstat_v1.dat --expLALDemod=1";
 echo $cmdline;
