@@ -233,11 +233,8 @@ void InitFStatDetector (LALStatus *, ConfigVariables *cfg, UINT4 nD);
 void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
-
-void NormaliseSFTDataRngMdn (LALStatus *, const SFTVector *sfts);
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
 void checkUserInputConsistency (LALStatus *lstat);
-void EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector *output);
 
 int
 XLALNewLALDemod(Fcomponents *FaFb,
@@ -461,7 +458,8 @@ int main(int argc,char *argv[])
 					     uvar_SSBprecision), &status);
 		  
 		  /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
-		  LAL_CALL ( LALGetAMCoeffs (&status, GV.ifos.amcoe[nD], GV.ifos.DetectorStates[nD], thisPoint), &status);
+		  LAL_CALL ( LALGetAMCoeffs (&status, GV.ifos.amcoe[nD], GV.ifos.DetectorStates[nD], 
+					     thisPoint), &status);
 		  
 		  /** Caculate F-statistic using XLALNewLALDemod() */
 		  
@@ -474,10 +472,29 @@ int main(int argc,char *argv[])
 		    /* prepare quantities to calculate Fstat from Fa and Fb */
 		    fact = 4.0f / (1.0f * GV.ifos.sftVects[nD]->length * GV.ifos.amcoe[nD]->D);
 
-		    /* NOTE: we normalized the data by a double-sided PSD, therefore we
-		     * apply another factor of 1/2 now with respect to the equation in JKS:
+
+		    /* In the signal-only case (only for testing using fake data),
+		     * we did not apply any normalization to the data, and we need
+		     * the use the correct factor now (taken from CFS_v1)
+		     * [see Xavie's notes on LALDemod() for details]
 		     */
-		    fact *= 0.5f;
+		    if ( uvar_SignalOnly )
+		      {
+			REAL8 Ns = 2.0 * GV.ifos.sftVects[0]->data[0].data->length;
+			REAL8 Tsft = 1.0 / (GV.ifos.sftVects[0]->data[0].deltaF );
+			REAL8 norm = Tsft / ( Ns * Ns ); 
+
+			fact *= norm;
+		      }
+		    else
+		      {
+			/* NOTE: we normalized the data by a double-sided PSD, (LALNormalizeSFTVect),
+			 * therefore we apply another factor of 1/2 now with respect to the 
+			 * equations in JKS, which are based on the single-sided PSD:
+			 */
+			fact *= 0.5f;
+		      }
+
 
 		    At = GV.ifos.amcoe[nD]->A;
 		    Bt = GV.ifos.amcoe[nD]->B;
@@ -880,30 +897,36 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     if (!uvar_DataFiles)
       strcpy (uvar_DataFiles, ".");
     
-    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, uvar_Dterms, uvar_DataFiles), status);
+    TRY ( LALReadSFTfiles(status->statusPtr, &(cfg->ifos.sftVects[nD]), f_min, f_max, uvar_Dterms, 
+			  uvar_DataFiles), status);
   
     /* this normalized by 1/sqrt(Sh), where Sh is the median of |X|^2  
      * NOTE: this corresponds to a double-sided PSD, therefore we need to 
      * divide by another factor of 2 with respect to the JKS formulae.
      */
-    TRY ( LALNormalizeSFTVect (status->statusPtr, cfg->ifos.sftVects[nD], uvar_windowsize, 0 ), status );
+    if ( ! uvar_SignalOnly ) {
+      TRY ( LALNormalizeSFTVect (status->statusPtr, cfg->ifos.sftVects[nD], uvar_windowsize, 0 ), 
+	    status );
+    }
     
   } /* SFT-loading */
 
   /*----------  prepare vectors of timestamps ---------- */
   {
-    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.timestamps[nD]), cfg->ifos.sftVects[nD]->length ), status);
-    TRY ( LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.midTS[nD]), cfg->ifos.sftVects[nD]->length ), status);
+    TRY (LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.timestamps[nD]), 
+				   cfg->ifos.sftVects[nD]->length ), status);
+    TRY (LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.midTS[nD]), 
+				   cfg->ifos.sftVects[nD]->length ), status);
 
     for (i=0; i < cfg->ifos.timestamps[nD]->length; i++)
       {
-	cfg->ifos.timestamps[nD]->data[i] = cfg->ifos.sftVects[nD]->data[i].epoch;	/* SFT start-timestamps */
+	/* SFT start-timestamps */
+	cfg->ifos.timestamps[nD]->data[i] = cfg->ifos.sftVects[nD]->data[i].epoch;	
 	/* SFT midpoints */
 	TRY (LALAddFloatToGPS(status->statusPtr, &(cfg->ifos.midTS[nD]->data[i]), 
 			      &(cfg->ifos.timestamps[nD]->data[i]), 
 			      0.5*1.0 / (GV.ifos.sftVects[nD]->data[0].deltaF )), status);
       }/* for i < ifos.length */
-
   } 
     
   if(nD == 0)
