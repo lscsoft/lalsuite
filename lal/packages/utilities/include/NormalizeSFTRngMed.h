@@ -1,9 +1,10 @@
-/*-----------------------------------------------------------------------
- *
- * File Name: NormalizeSFTRngMed.h
- *
- * Authors: Krishnan, B.
- *
+/**
+ * \file 
+ * \ingroup NormalizeSFTRngMed.h
+ * \author Krishnan, B.
+ * \date $Date$
+ * \brief Header file for SFT normalization routines
+ * 
  * Revision: $Id$
  *
  * History:   Moved from LALAPPS 31/7/05

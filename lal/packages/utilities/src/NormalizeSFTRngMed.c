@@ -1,7 +1,7 @@
 /** 
  * \file 
  * \ingroup NormalizeSFTRndMed.c
- * \authors Krishnan, B and Sintes, A
+ * \author Krishnan, B and Sintes, A
  * \date $Date$
  * \brief Normalizes SFTs based on their noise floor calculated using the running median
  * 
