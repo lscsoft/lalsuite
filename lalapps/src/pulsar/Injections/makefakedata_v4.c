@@ -134,7 +134,7 @@ REAL8 uvar_Tsft;		/**< SFT time baseline Tsft */
 
 /* noise to add [OPTIONAL] */
 CHAR *uvar_noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
-REAL8 uvar_noiseSigma;		/**< Gaussian noise variance sigma */
+REAL8 uvar_noiseSigma;		/**< Gaussian noise with standard-deviation sigma */
 
 /* Detector and ephemeris */
 CHAR *uvar_detector;		/**< Detector: LHO, LLO, VIRGO, GEO, TAMA, CIT, ROME */
@@ -838,7 +838,7 @@ InitUserVars (LALStatus *status)
   LALregREALUserVar(status,   orbitArgPeriapse,   0, UVAR_OPTIONAL, "Argument of periapsis (radians)");                            
 
   /* noise */
-  LALregREALUserVar(status,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise variance sigma");
+  LALregREALUserVar(status,   noiseSigma,	 0 , UVAR_OPTIONAL, "Gaussian noise with standard-deviation sigma");
   LALregSTRINGUserVar(status, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");  
 
   LALregBOOLUserVar(status,   help,	'h', UVAR_HELP    , "Print this help/usage message");
@@ -946,7 +946,7 @@ ReadTimestamps (LALStatus* status, LIGOTimeGPSVector **timestamps, const CHAR *f
 } /* ReadTimestamps() */
 
 /**
- * Generate Gaussian noise with variance sigma, add it to inSeries.
+ * Generate Gaussian noise with standard-deviation sigma, add it to inSeries.
  * returns outSeries
  *
  * NOTE: inSeries is allowed to be identical to outSeries!
