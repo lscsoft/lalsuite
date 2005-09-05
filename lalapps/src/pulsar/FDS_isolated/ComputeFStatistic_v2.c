@@ -129,8 +129,6 @@ typedef struct {
   UINT4 length;
   LALDetector *Detectors;         
   SFTVector **sftVects;
-  LIGOTimeGPSVector **timestamps;	/**< SFT timestamps */
-  LIGOTimeGPSVector **midTS;		/**< GPS midpoints of SFT's */
   DetectorStateSeries **DetectorStates;	/**< pos, vel and LMSTs for detector at times t_i */
   SSBtimes **tSSB;			/**< SSB-times DeltaT_alpha and Tdot_alpha */
   AMCoeffs **amcoe;         		/**< Amplitude Modulation coefficients */
@@ -260,7 +258,8 @@ LALGetDetectorStates (LALStatus *,
 		      DetectorStateSeries **DetectorStates,
 		      const LIGOTimeGPSVector *timestamps,
 		      const LALDetector *detector,
-		      const EphemerisData *edat);
+		      const EphemerisData *edat,
+		      REAL8 tOffset);
 
 /*---------- empty initializers ---------- */
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
@@ -705,8 +704,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   cfg->ifos.Detectors = LALCalloc ( nDet,  sizeof( *(cfg->ifos.Detectors) ) );
   cfg->ifos.sftVects =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.sftVects) ) );
   /* cfg->ifos.DetStates =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.DetStates) ) );*/
-  cfg->ifos.timestamps =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.timestamps) ) );
-  cfg->ifos.midTS =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.midTS) ) );
   cfg->ifos.DetectorStates =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.DetectorStates) ) );
   cfg->ifos.tSSB = LALCalloc( nDet, sizeof( *(cfg->ifos.tSSB) ) );
   cfg->ifos.amcoe = LALCalloc ( nDet,  sizeof( *(cfg->ifos.amcoe) ) );
@@ -741,19 +738,29 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 
   for(nD=0; nD < cfg->ifos.length; nD++)
     {
+      REAL8 tSFT;
+      LIGOTimeGPSVector *timestamps = NULL;
+      UINT4 i;
+
       /* main initialization of the code: */
-      TRY ( InitFStatDetector(status->statusPtr, &GV, nD), status);
+      TRY ( InitFStatDetector(status->statusPtr, cfg, nD), status);
       
-      /* normalize SFTs by running median */
-      /*
-      TRY (NormaliseSFTDataRngMdn(status->statusPtr, GV.ifos.sftVects[nD]), status);      
-      */
+      /* figure out duration of an SFT */
+      tSFT = 1.0 / cfg->ifos.sftVects[nD]->data[0].deltaF ;
+
+      /* extract vector of timestamps from SFT-vector (for call to GetDetectorStates()) */
+      TRY (LALCreateTimestampVector (status->statusPtr, &timestamps, cfg->ifos.sftVects[nD]->length ), status);
+      for (i=0; i < timestamps->length; i++)
+	timestamps->data[i] = cfg->ifos.sftVects[nD]->data[i].epoch;	
       
-      /* obtain detector positions and velocities, together with LMSTs for the 
-       * SFT midpoints 
-       */
-      TRY (LALGetDetectorStates(status->statusPtr, &(GV.ifos.DetectorStates[nD]), GV.ifos.midTS[nD], &(GV.ifos.Detectors[nD]), cfg->edat), status);
-      
+      /* obtain detector positions and velocities, together with LMSTs for the SFT midpoints (i.e. shifted by tSFT/2) */
+      TRY (LALGetDetectorStates(status->statusPtr, &(GV.ifos.DetectorStates[nD]), timestamps, 
+				&(GV.ifos.Detectors[nD]), cfg->edat, tSFT / 2.0 ), status);
+
+      /* free timstamps-vector */
+      TRY ( LALDestroyTimestampVector (status->statusPtr, &timestamps), status );
+      timestamps = NULL;
+
     } /* end of loop over different detectors */
   
   /* determine start-time from first set of SFTs */
@@ -808,7 +815,6 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
 void
 InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
 {
-  UINT4 i;
   CHAR *IFO;
 
   INITSTATUS (status, "InitFStatDetector", rcsid);
@@ -868,24 +874,6 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
     
   } /* SFT-loading */
 
-  /*----------  prepare vectors of timestamps ---------- */
-  {
-    TRY (LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.timestamps[nD]), 
-				   cfg->ifos.sftVects[nD]->length ), status);
-    TRY (LALCreateTimestampVector (status->statusPtr, &(cfg->ifos.midTS[nD]), 
-				   cfg->ifos.sftVects[nD]->length ), status);
-
-    for (i=0; i < cfg->ifos.timestamps[nD]->length; i++)
-      {
-	/* SFT start-timestamps */
-	cfg->ifos.timestamps[nD]->data[i] = cfg->ifos.sftVects[nD]->data[i].epoch;	
-	/* SFT midpoints */
-	TRY (LALAddFloatToGPS(status->statusPtr, &(cfg->ifos.midTS[nD]->data[i]), 
-			      &(cfg->ifos.timestamps[nD]->data[i]), 
-			      0.5*1.0 / (GV.ifos.sftVects[nD]->data[0].deltaF )), status);
-      }/* for i < ifos.length */
-  } 
-    
   if(nD == 0)
     IFO=uvar_IFO;
   else 
@@ -1063,10 +1051,6 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
       
       /* Free SFT data */
       TRY (LALDestroySFTVector (status->statusPtr, &(cfg->ifos.sftVects[i]) ), status);	 /* the new way*/
-      
-      /* Free timestamps */
-      TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->ifos.timestamps[i]) ), status );
-      TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->ifos.midTS[i]) ), status );
                   
       /* Free AM-coefficients */
       TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos.amcoe[i]->a)), status);
@@ -1083,8 +1067,6 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   
   LALFree ( cfg->ifos.Detectors );
   LALFree ( cfg->ifos.sftVects );
-  LALFree ( cfg->ifos.timestamps );
-  LALFree ( cfg->ifos.midTS );
   LALFree ( cfg->ifos.DetectorStates );
   LALFree ( cfg->ifos.tSSB );
   LALFree ( cfg->ifos.amcoe );
@@ -1744,13 +1726,15 @@ LALGetSSBtimes (LALStatus *status,
 
 
 /** Get the 'detector state' (ie position, velocity, etc) for the given
- * vector of timestamps.
+ * vector of timestamps, shifted by a common time-shift \a tOffset.
  *
  * This function just calls LALBarycenterEarth() and LALBarycenter() for the
- * given vector of timestamps and returns the positions, velocities and LMSTs
- * of the detector, stored in a DetectorStateSeries. There is also an entry
- * containing the EarthState at each timestamp, which can be used as input for
- * subsequent calls to LALBarycenter().
+ * given vector of timestamps (shifted by tOffset) and returns the positions, 
+ * velocities and LMSTs of the detector, stored in a DetectorStateSeries. 
+ * There is also an entry containing the EarthState at each timestamp, which 
+ * can be used as input for subsequent calls to LALBarycenter().
+ *
+ * \a tOffset allows one to easily use the midpoints of SFT-timestamps, for example.
  *
  * \note the DetectorStateSeries is allocated here and should be free'ed with
  * LALDestroyDetectorStateSeries().
@@ -1761,7 +1745,8 @@ LALGetDetectorStates (LALStatus *status,
 		      DetectorStateSeries **DetectorStates,	/**< [out] series of DetectorStates */
 		      const LIGOTimeGPSVector *timestamps,	/**< array of GPS timestamps t_i */
 		      const LALDetector *detector,		/**< detector info */
-		      const EphemerisData *edat		/**< ephemeris-files */	
+		      const EphemerisData *edat,		/**< ephemeris-files */	
+		      REAL8 tOffset
 		      )
 {
   UINT4 i, j, numSteps;
@@ -1791,15 +1776,18 @@ LALGetDetectorStates (LALStatus *status,
       EmissionTime emit;
       DetectorState *state = &(ret->data[i]);
       EarthState *earth = &(state->earthState);
-      LIGOTimeGPS *tgps = &(timestamps->data[i]);
+      LIGOTimeGPS tgps;
+
+      /* shift timestamp by tOffset */
+      TRY ( LALAddFloatToGPS(status->statusPtr, &tgps, &timestamps->data[i], tOffset ), status);
 
       /*----- first get earth-state */
-      LALBarycenterEarth (status->statusPtr, earth, tgps, edat );
+      LALBarycenterEarth (status->statusPtr, earth, &tgps, edat );
       BEGINFAIL(status){
 	TRY ( LALDestroyDetectorStateSeries(status->statusPtr, &ret), status);
       }ENDFAIL(status);
       /*----- then get detector-specific info */
-      baryinput.tgps = (*tgps);			/* irrelevant here! */
+      baryinput.tgps = tgps;			/* irrelevant here! */
       baryinput.site = (*detector);
       baryinput.site.location[0] /= LAL_C_SI;
       baryinput.site.location[1] /= LAL_C_SI;
@@ -1823,8 +1811,8 @@ LALGetDetectorStates (LALStatus *status,
       state->LMST = earth->gmstRad + detector->frDetector.vertexLongitudeRadians;
       state->LMST = fmod (state->LMST, LAL_TWOPI );	/* normalize */
 
-      /* enter timestamps */
-      state->tGPS = (*tgps);
+      /* insert timestamp */
+      state->tGPS = tgps;
 
     } /* for i < numSteps */
 
