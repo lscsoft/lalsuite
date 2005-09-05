@@ -1,9 +1,10 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = FlatMesh.h TwoDMesh.h PulsarTimes.h StackMetric.h \
-	Resample.h LALComputeAM.h ComputeSky.h ComputeSkyBinary.h \
-	LALDemod.h FoldAmplitudes.h LALBarycenter.h PtoleMetric.h \
-	PulsarCat.h HeterodynePulsar.h FitToPulsar.h BinaryPulsarTiming.h \
-	PulsarDataTypes.h ExtrapolatePulsarSpins.h LatticeCovering.h
+pkginclude_HEADERS = FlatMesh.h TwoDMesh.h PulsarTimes.h StackMetric.h 		\
+	Resample.h LALComputeAM.h ComputeSky.h ComputeSkyBinary.h 		\
+	LALDemod.h FoldAmplitudes.h LALBarycenter.h PtoleMetric.h 		\
+	PulsarCat.h HeterodynePulsar.h FitToPulsar.h BinaryPulsarTiming.h 	\
+	PulsarDataTypes.h ExtrapolatePulsarSpins.h LatticeCovering.h		\
+	ComputeFstat.h
 
 MOSTLYCLEANFILES = .dvi-dep
 DISTCLEANFILES = *.tex

@@ -9,7 +9,8 @@ libpulsar_la_SOURCES = \
   FoldAmplitudes.c TwoDMesh.c TwoDMeshInternal.c TwoDMeshMetrics.c       \
   TwoDMeshRanges.c LALBarycenter.c PtoleMetric.c HeterodynePulsar.c      \
   FitToPulsar.c BinaryPulsarTiming.c PulsarCat.c PulsarCatInput.c        \
-  ComputeSkyBinary.c ExtrapolatePulsarSpins.c LatticeCovering.c
+  ComputeSkyBinary.c ExtrapolatePulsarSpins.c LatticeCovering.c		\
+  ComputeFstat.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 MOSTLYCLEANFILES = .dvi-dep
