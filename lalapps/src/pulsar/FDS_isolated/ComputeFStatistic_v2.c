@@ -116,18 +116,24 @@ typedef struct
 } DetectorStateSeries;
 
 
-/** Detectors Vector; specify's the number of detectors and SFTs.*/
+/** Simple container for two REAL8-vectors, namely the SSB-timings DeltaT_alpha  and Tdot_alpha,
+ * with one entry per SFT-timestamp. These are required input for XLALNewDemod().
+ */
+typedef struct {
+  REAL8Vector *DeltaT;		/**< Time-difference of SFT-alpha and SFT-0 in SSB-frame */
+  REAL8Vector *Tdot;		/**< dT/dt : time-derivative of SSB-time wrt local time for SFT-alpha */
+} SSBtimes;
+
+/** Detectors Vector; contains all quantities that are 'detector-specific', i.e for which we need an entry per detector */
 typedef struct {
   UINT4 length;
   LALDetector *Detectors;         
   SFTVector **sftVects;
-  /* DetectorStateSeries **DetStates;*/
   LIGOTimeGPSVector **timestamps;	/**< SFT timestamps */
   LIGOTimeGPSVector **midTS;		/**< GPS midpoints of SFT's */
   DetectorStateSeries **DetectorStates;	/**< pos, vel and LMSTs for detector at times t_i */
-  REAL8Vector	**DeltaT;	/**< vector of DeltaT_alpha's (depend on skyposition)*/
-  REAL8Vector	**Tdot;		/**< vector of Tdot_alpha's (depend on skyposition)*/ 
-  AMCoeffs      **amcoe;         /**< Amplitude Modulation coefficients */
+  SSBtimes **tSSB;			/**< SSB-times DeltaT_alpha and Tdot_alpha */
+  AMCoeffs **amcoe;         		/**< Amplitude Modulation coefficients */
 } IFOspecifics;
 
 /** Configuration settings required for and defining a coherent pulsar search.
@@ -145,10 +151,11 @@ typedef struct {
   REAL8Vector *fkdot;		/**< vector of frequency + derivatives (spindowns)*/
   EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
   CHAR *skyRegionString;	/**< sky-region to search (polygon defined by list of points) */
-  IFOspecifics ifos;		/**< IFO-specific configuration parameters */
+  IFOspecifics ifos;		/**< IFO-specific configuration data  */
 } ConfigVariables;
 
-
+/** Simple collection of two COMPLEX16: Fa and Fb, for easy return from XLALNewDemod()
+ */
 typedef struct {
   COMPLEX16 Fa;
   COMPLEX16 Fb;
@@ -216,22 +223,19 @@ void CreateNautilusDetector (LALStatus *, LALDetector *Detector);
 void Freemem(LALStatus *,  ConfigVariables *cfg);
 
 void WriteFStatLog (LALStatus *, CHAR *argv[]);
-void checkUserInputConsistency (LALStatus *lstat);
+void checkUserInputConsistency (LALStatus *);
 
 int
-XLALNewLALDemod(Fcomponents *FaFb,
-		const SFTVector *sfts, 
-		const REAL8Vector *fkdot,
-		const REAL8Vector *DeltaT,
-		const REAL8Vector *Tdot,
-		const AMCoeffs *amcoe,
-		INT4          Dterms);
-
+XLALNewDemod(Fcomponents *FaFb,
+	     const SFTVector *sfts, 
+	     const REAL8Vector *fkdot,
+	     const SSBtimes *tSSB,
+	     const AMCoeffs *amcoe,
+	     UINT4 Dterms);
 
 void
 LALGetSSBtimes (LALStatus *, 
-		REAL8Vector *DeltaT, 
-		REAL8Vector *Tdot, 
+		SSBtimes *tSSB,
 		const DetectorStateSeries *DetectorStates, 
 		SkyPosition pos,
 		REAL8 refTime,
@@ -282,7 +286,6 @@ int main(int argc,char *argv[])
   FILE *fpOut=NULL;
   UINT4 loopcounter;
 
-  UINT4 nBins; 			/* number of frequency-bins */
   UINT4 nD;         /** index over number of Detectors**/
   lalDebugLevel = 0;  
   vrbflg = 1;	/* verbose error-messages */
@@ -418,10 +421,10 @@ int main(int argc,char *argv[])
 		{
 		  
 		  /*----- calculate SSB-times DeltaT_alpha and Tdot_alpha for this skyposition */
-		  LAL_CALL ( LALGetSSBtimes (&status, GV.ifos.DeltaT[nD], 
-					     GV.ifos.Tdot[nD], 
+		  LAL_CALL ( LALGetSSBtimes (&status, GV.ifos.tSSB[nD],
 					     GV.ifos.DetectorStates[nD], 
-					     thisPoint, GV.refTime0,
+					     thisPoint, 
+					     GV.refTime0,
 					     uvar_SSBprecision), &status);
 		  
 		  /*----- calculate skypos-specific coefficients a_i, b_i, A, B, C, D */
@@ -468,13 +471,7 @@ int main(int argc,char *argv[])
 		    Bt = GV.ifos.amcoe[nD]->B;
 		    Ct = GV.ifos.amcoe[nD]->C;
 
-		    if ( XLALNewLALDemod (&FaFb, 
-					  GV.ifos.sftVects[nD], 
-					  GV.fkdot, 
-					  GV.ifos.DeltaT[nD], 
-					  GV.ifos.Tdot[nD], 
-					  GV.ifos.amcoe[nD],
-					  uvar_Dterms) != 0)
+		    if ( XLALNewDemod (&FaFb, GV.ifos.sftVects[nD], GV.fkdot, GV.ifos.tSSB[nD], GV.ifos.amcoe[nD], uvar_Dterms) != 0)
 		      {
 			LALPrintError ("\nXALNewLALDemod() failed\n");
 			XLAL_ERROR ("XLALcomputeFStat", XLAL_EFUNC);
@@ -711,8 +708,7 @@ InitFStat (LALStatus *status, ConfigVariables *cfg)
   cfg->ifos.timestamps =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.timestamps) ) );
   cfg->ifos.midTS =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.midTS) ) );
   cfg->ifos.DetectorStates =  LALCalloc ( nDet,  sizeof( *(cfg->ifos.DetectorStates) ) );
-  cfg->ifos.DeltaT = LALCalloc ( nDet,  sizeof( *(cfg->ifos.DeltaT) ) );
-  cfg->ifos.Tdot = LALCalloc ( nDet,  sizeof( *(cfg->ifos.Tdot) ) );
+  cfg->ifos.tSSB = LALCalloc( nDet, sizeof( *(cfg->ifos.tSSB) ) );
   cfg->ifos.amcoe = LALCalloc ( nDet,  sizeof( *(cfg->ifos.amcoe) ) );
   TRY ( LALDCreateVector (status->statusPtr, &(cfg->fkdot), 2), status);
 
@@ -924,33 +920,31 @@ InitFStatDetector (LALStatus *status, ConfigVariables *cfg, UINT4 nD)
 
 
   /* ----------------------------------------------------------------------
-   * initialize + allocate space for AM-coefficients and Demod-params
+   * initialize + allocate space for AM-coefficients and SSB-times 
    */
   {
-    AMCoeffs *amc;
-    REAL8Vector *DeltaT = NULL;
-    REAL8Vector *Tdot = NULL;
+    AMCoeffs *amc = NULL;
+    SSBtimes *tSSB = NULL;
 
     /* Allocate space for AMCoeffs */
-    if ( (amc = LALCalloc(1, sizeof(AMCoeffs))) == NULL) 
-      {
-	ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-      }
+    if ( (amc = LALCalloc(1, sizeof(AMCoeffs))) == NULL) {
+      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    }
     TRY (LALSCreateVector(status->statusPtr, &(amc->a), (UINT4) cfg->ifos.sftVects[nD]->length), status);
     TRY (LALSCreateVector(status->statusPtr, &(amc->b), (UINT4) cfg->ifos.sftVects[nD]->length), status);
     
     cfg->ifos.amcoe[nD] = amc;
     
     /* allocate memory of the SSB-times: DeltaT_alpha and Tdot_alpha */
-    TRY ( LALDCreateVector(status->statusPtr, &DeltaT, cfg->ifos.sftVects[nD]->length), status );
-    TRY ( LALDCreateVector(status->statusPtr, &Tdot,   cfg->ifos.sftVects[nD]->length), status );
+    if ( (tSSB = LALCalloc(1, sizeof(SSBtimes))) == NULL) {
+      ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+    }
+    TRY ( LALDCreateVector(status->statusPtr, &(tSSB->DeltaT), cfg->ifos.sftVects[nD]->length), status );
+    TRY ( LALDCreateVector(status->statusPtr, &(tSSB->Tdot),   cfg->ifos.sftVects[nD]->length), status );
 
-    cfg->ifos.DeltaT[nD] = DeltaT;
-    cfg->ifos.Tdot[nD] = Tdot;
+    cfg->ifos.tSSB[nD] = tSSB;
 
-
-  } /* end: init AM- and demod-params */
-
+  } /* end: init AM- and SSBtimes */
 
   
   DETATCHSTATUSPTR (status);
@@ -1074,12 +1068,15 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
       TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->ifos.timestamps[i]) ), status );
       TRY ( LALDestroyTimestampVector (status->statusPtr, &(cfg->ifos.midTS[i]) ), status );
                   
+      /* Free AM-coefficients */
       TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos.amcoe[i]->a)), status);
       TRY (LALSDestroyVector(status->statusPtr, &(cfg->ifos.amcoe[i]->b)), status);
       LALFree ( cfg->ifos.amcoe[i]);
-      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos.DeltaT[i])), status);
-      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos.Tdot[i])), status);
-      
+      /* Free SSB-times */
+      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos.tSSB[i]->DeltaT)), status);
+      TRY (LALDDestroyVector(status->statusPtr, &(cfg->ifos.tSSB[i]->Tdot)), status);
+      LALFree ( cfg->ifos.tSSB[i] );
+
       /* destroy DetectorStateSeries */
       TRY ( LALDestroyDetectorStateSeries (status->statusPtr, &(cfg->ifos.DetectorStates[i]) ), status);
     }
@@ -1089,8 +1086,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
   LALFree ( cfg->ifos.timestamps );
   LALFree ( cfg->ifos.midTS );
   LALFree ( cfg->ifos.DetectorStates );
-  LALFree ( cfg->ifos.DeltaT );
-  LALFree ( cfg->ifos.Tdot );
+  LALFree ( cfg->ifos.tSSB );
   LALFree ( cfg->ifos.amcoe );
   
   /* Free config-Variables and userInput stuff */
@@ -1121,13 +1117,12 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 /** v2-specific version of LALDemod() (based on TestLALDemod() in CFS)
  */
 int
-XLALNewLALDemod(Fcomponents *FaFb,
-		const SFTVector *sfts,
-		const REAL8Vector *fkdot,
-		const REAL8Vector *DeltaT, 
-		const REAL8Vector *Tdot, 
-		const AMCoeffs *amcoe,
-		INT4           Dterms) 
+XLALNewDemod(Fcomponents *FaFb,
+	     const SFTVector *sfts,
+	     const REAL8Vector *fkdot,
+	     const SSBtimes *tSSB,
+	     const AMCoeffs *amcoe,
+	     UINT4 Dterms) 
 { 
   UINT4 alpha;                 	/* loop index over SFTs */
   UINT4 spdnOrder;		/* maximal spindown-orders */
@@ -1148,7 +1143,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
     XLAL_ERROR ( "XLALNewLALDemod", XLAL_EINVAL);
   }
   
-  if ( !fkdot || !DeltaT || !Tdot || !amcoe )
+  if ( !fkdot || !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b )
     {
       LALPrintError ("\nIllegal NULL in input !\n\n");
       XLAL_ERROR ( "XLALNewLALDemod", XLAL_EINVAL);
@@ -1193,7 +1188,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
 	UINT4 s; 		/* loop-index over spindown-order */
 	REAL8 Tas; 		/* temporary variable to calculate (DeltaT_alpha)^2 */
 	UINT4 sfact = 1;	/* store for s! */
-	REAL8 DeltaTalpha = DeltaT->data[alpha];
+	REAL8 DeltaTalpha = tSSB->DeltaT->data[alpha];
 	Tas = 1.0; 	/* DeltaT_alpha = T^1 */
 
 	/* Step 1: s = 0 */
@@ -1212,7 +1207,7 @@ XLALNewLALDemod(Fcomponents *FaFb,
 	  } /* for s <= spdnOrder */
 
 	/* Step 3: apply global factors and complete y_alpha */
-	xhat_alpha *= Tsft * Tdot->data[alpha];	/* guaranteed > 0 ! */
+	xhat_alpha *= Tsft * tSSB->Tdot->data[alpha];	/* guaranteed > 0 ! */
 	y_alpha -= 0.5 * xhat_alpha;
 	
 	/* real- and imaginary part of e^{-i 2 pi y } */
@@ -1653,8 +1648,7 @@ LALGetAMCoeffs(LALStatus *status,
  */
 void
 LALGetSSBtimes (LALStatus *status, 
-		REAL8Vector *DeltaT,		/**< [out] DeltaT_alpha = T(t_alpha) - T_0*/
-		REAL8Vector *Tdot,		/**< [out] Tdot(t_alpha) */
+		SSBtimes *tSSB,			/**< [out] DeltaT_alpha = T(t_alpha) - T_0; and Tdot(t_alpha) */
 		const DetectorStateSeries *DetectorStates,/**< [in] detector-states at timestamps t_i */
 		SkyPosition pos,		/**< source sky-location */
 		REAL8 refTime,			/**< SSB reference-time T_0 of pulsar-parameters */
@@ -1671,11 +1665,12 @@ LALGetSSBtimes (LALStatus *status,
   ASSERT (DetectorStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
   numSteps = DetectorStates->length;		/* number of timestamps */
 
-  ASSERT (DeltaT, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
-  ASSERT (Tdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (tSSB, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (tSSB->DeltaT, status,COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
+  ASSERT (tSSB->Tdot, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
 
-  ASSERT (DeltaT->length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-  ASSERT (Tdot->length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  ASSERT (tSSB->DeltaT->length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  ASSERT (tSSB->Tdot->length == numSteps, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 
   ASSERT (precision < SSBPREC_LAST, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
   ASSERT ( pos.system == COORDINATESYSTEM_EQUATORIAL, status,
@@ -1698,12 +1693,12 @@ LALGetSSBtimes (LALStatus *status,
 	{
 	  LIGOTimeGPS *ti = &(DetectorStates->data[i].tGPS);
 	  /* DeltaT_alpha */
-	  DeltaT->data[i]  = GPS2REAL8 ( (*ti) );
-	  DeltaT->data[i] += SCALAR(vn, DetectorStates->data[i].rDetector);
-	  DeltaT->data[i] -= refTime;
+	  tSSB->DeltaT->data[i]  = GPS2REAL8 ( (*ti) );
+	  tSSB->DeltaT->data[i] += SCALAR(vn, DetectorStates->data[i].rDetector);
+	  tSSB->DeltaT->data[i] -= refTime;
 
 	  /* Tdot_alpha */
-	  Tdot->data[i] = 1.0 + SCALAR(vn, DetectorStates->data[i].vDetector);
+	  tSSB->Tdot->data[i] = 1.0 + SCALAR(vn, DetectorStates->data[i].vDetector);
 	  
 	} /* for i < numSteps */
 
@@ -1729,8 +1724,8 @@ LALGetSSBtimes (LALStatus *status,
 
 	  TRY ( LALBarycenter(status->statusPtr, &emit, &baryinput, &(state->earthState)), status);
 
-	  DeltaT->data[i] = GPS2REAL8 ( emit.te ) - refTime;
-	  Tdot->data[i] = emit.tDot;
+	  tSSB->DeltaT->data[i] = GPS2REAL8 ( emit.te ) - refTime;
+	  tSSB->Tdot->data[i] = emit.tDot;
 
 	} /* for i < numSteps */
 
