@@ -61,7 +61,7 @@
 #include <lal/Date.h>
 #include <lal/LALHough.h> 
 #include <lal/NormalizeSFTRngMed.h>
-
+#include <lal/ComputeFstat.h>
 
 #include <lalapps.h>
 
@@ -112,23 +112,24 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     LIGOTimeGPS *ts; /**< time stamps */
   } TimeVelPosVector; 
 
-
+  /** sequence of SFT vectors -- for each stack */
   typedef struct tagSFTVectorSequence {
-    INT4 length;
-    SFTVector *data;
+    UINT4 length;     /**< number of stacks */
+    SFTVector *data; /**< the SFT vectors */
   } SFTVectorSequence;
 
   /** parameters for calculating Fstatistic for multiple stacks */ 
   typedef struct tagFstatStackParams {
-    INT4 mCohSft;           /**< number of sfts in each stack */
+    INT4 *mCohSft;          /**< number of sfts in each stack */
+    REAL8 *tStack;          /**< duration of each stack */
     INT4 nStacks;           /**< number of stacks */
     INT4 Dterms;            /**< value of Dterms for LALDemod */
     REAL8 fStart;           /**< start calculating Fstat at this frequency */
-    REAL8 fBand;            /**< calculate Fstat for this frequency band */
-    REAL8 deltaF;           /**< Frequency resolution */
+    INT4 binsFstat;         /**< calculate Fstat for this frequency band */
+    REAL8 deltaF;           /**< Frequency resolution for calculating Fstat */
     LALDetector detector;   /**< detector */
     EphemerisData *edat;    /**< ephemeris info */ 
-    LIGOTimeGPSVector **ts; /**< timestamp vector for each stack */
+    LIGOTimeGPSVector *ts;  /**< timestamp vector for each sft */
     REAL8 alpha;            /**< sky-location -- right acsension */
     REAL8 delta;            /**< sky-location -- declination */
     REAL8Vector *spindown;  /**< vector containing spindown values */
@@ -136,48 +137,27 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   /** parameters for calculating a Hough Map */
   typedef struct tagHoughParams {
-    INT4 mCohSft;          /**< number of SFTs in each stack */
-    INT4 nStacks;          /**< number ofs tacks */
-    REAL8 fStart;          /**< start frequency */
-    REAL8 fBand;           /**< frequency band */
-    REAL8 deltaF;          /**< frequency resolution */
-    LALDetector detector;  /**< detector */
-    EphemerisData *edat;   /**< ephemeris data */
-    TimeVelPosVector *tvp; /**< time, velocity and position */
-    REAL8 alpha;           /**< right ascension */
-    REAL8 delta;           /**< declination */
-    REAL8Vector *spindown; /**< spindown parameters */
+    INT4 mCohSft;              /**< number of SFTs in each stack */
+    INT4 nStacks;              /**< number ofs tacks */
+    REAL8 fStart;              /**< start frequency */
+    REAL8 fBand;               /**< frequency band */
+    REAL8 deltaF;              /**< frequency resolution */
+    LALDetector detector;      /**< detector */
+    EphemerisData *edat;       /**< ephemeris data */
+    LIGOTimeGPSVector *ts;     /**< timestamps of mid points of stacks */
+    REAL8VectorSequence *vel;  /**< detector velocity for each stack */
+    REAL8VectorSequence *pos;  /**< detector position for each stack */
+    REAL8 alpha;               /**< right ascension */
+    REAL8 delta;               /**< declination */
+    REAL8Vector *spindown;     /**< spindown parameters */
   } HoughParams;
   
 
-  /** copied from ComputeFstatistic_v2 -- delete when it goes into LAL */
-  typedef struct {
-    UINT4 length;	  /**< number of frequency-bins */
-    REAL8 f0;		  /**< lowest frequency in the band */
-    REAL8 fBand;	  /**< user-requested frequency-band */
-    REAL8 df;	          /**< frequency-resolution */
-    REAL8Vector *F;	  /**< Values of the F-statistic proper (F) over frequency-bins */
-    COMPLEX16Vector *Fa;  /**< Values Fa over frequency-bins */
-    COMPLEX16Vector *Fb;  /**< Values Fb */
-  } FStatisticVector;
-
-  /** collection of Fstat vectors --- one for for each stack */
-  typedef struct {
-    INT4 length;            /**< number of stacks */
-    FStatisticVector *data; /**< the Fstat vectors */
-  } FstatVectorStack;
-
 
   void ComputeFstatStack (LALStatus *status, 
-			  LALFstat **out, 
+			  REAL8FrequencySeriesVector *out, 
 			  SFTVector *sfts, 
 			  FstatStackParams *params);
-
-  void ComputeFstatStackv2 (LALStatus *status, 
-			    LALFstat **out, 
-			    SFTVector *sfts, 
-			    FstatStackParams *params);
-
 
   void ComputeFstatHoughMap (LALStatus *status,
 			     HOUGHMapTotal  *ht,  
@@ -186,9 +166,18 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   void FstatVectToPeakGram (LALStatus *status,
 			    HOUGHPeakGramVector *pgV,
-			    FstatVectorStack *FstatVect,
+			    REAL8FrequencySeriesVector *FstatVect,
 			    REAL8  thr);
-			    
+
+  void SetUpStacks1( LALStatus *status,
+		    SFTVectorSequence *out,
+		    const SFTVector *sftVect,
+		    INT4 nStacks);
+
+  void SetUpStacks1( LALStatus *status,
+		    SFTVectorSequence *out,
+		    const SFTVector *sftVect,
+		    INT4 nStacks);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
