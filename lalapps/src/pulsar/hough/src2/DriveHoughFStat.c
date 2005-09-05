@@ -73,6 +73,7 @@ int main( int argc, char *argv[]) {
   INT4 tmpLeap; 
   REAL8 tObs, tStart, tEnd;
   REAL8  *tStack, tStackAvg; /* duration of each stack */
+  REAL8 refTime;
 
   /* sft related stuff */
   SFTVector *inputSFTs=NULL;  /* vector of SFTtypes and SFTtype is COMPLEX8FrequencySeries */
@@ -106,6 +107,8 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_fStart, uvar_fBand;
   REAL8 uvar_FstatThr; /* threshold of Fstat to select peaks */
   INT4 uvar_ifo, uvar_blocksRngMed, uvar_nStacks, uvar_Dterms;
+  REAL8 uvar_refTime;
+  INT4 uvar_SSBprecision = SSBPREC_RELATIVISTIC;
   CHAR *uvar_earthEphemeris=NULL;
   CHAR *uvar_sunEphemeris=NULL;
   CHAR *uvar_sftDir=NULL;
@@ -159,6 +162,8 @@ int main( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_fStart),          &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",            'p', UVAR_OPTIONAL, "Spindown parameter",            &uvar_fdot),            &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "FstatThr",        't', UVAR_OPTIONAL, "Threshold on Fstatistic",       &uvar_FstatThr),        &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "refTime",          0,  UVAR_OPTIONAL, "Reference time for pulsar par", &uvar_refTime),         &status);
+  LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision",	   0,  UVAR_DEVELOPER,"Precision for SSB transform.",  &uvar_SSBprecision),    &status);
 
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
@@ -255,6 +260,12 @@ int main( int argc, char *argv[]) {
     tEnd += timeBase;
     tObs = tEnd - tStart;
 
+    /* set reference time for pular parameters */
+    if ( LALUserVarWasSet(&uvar_refTime)) 
+      refTime = uvar_refTime;
+    else
+      refTime = tStart;
+
   } /* end of sft reading block */
 
 
@@ -314,6 +325,7 @@ int main( int argc, char *argv[]) {
   for (k=0; k<nStacks; k++)
     tStackAvg += tStack[k];
   tStackAvg /= nStacks;
+  deltaFstack = 1.0/tStackAvg;
   /* starting bin, number of bins and final bin for calculating Fstat */
   fSearchBinIni = floor( tStackAvg * uvar_fStart + 0.5);
   binsFstat = floor( uvar_fBand * tStackAvg + 0.5);
@@ -358,7 +370,7 @@ int main( int argc, char *argv[]) {
   FstatVect.data = (REAL8FrequencySeries *)LALMalloc(nStacks * sizeof(REAL8FrequencySeries));
   for (k=0; k<nStacks; k++) {
     FstatVect.data[k].epoch = midTstack.data[k];
-    FstatVect.data[k].deltaF = 1.0/tStackAvg;
+    FstatVect.data[k].deltaF = deltaFstack;
     FstatVect.data[k].f0 = uvar_fStart;
     FstatVect.data[k].data->length = binsFstat;
     FstatVect.data[k].data->data = (REAL8 *)LALMalloc( binsFstat * sizeof(REAL8));
@@ -418,7 +430,7 @@ int main( int argc, char *argv[]) {
   LALFree(pgV.pg);
 
   LAL_CALL (LALDestroySFTVector(&status, &inputSFTs),&status );
-  LAL_CALL (LALDDestroyVector (&status, &(FstatPar.spindown)), &status);
+  LAL_CALL (LALDDestroyVector (&status, &(FstatPar.fkdot)), &status);
   LAL_CALL (LALDestroyUserVars(&status), &status);  
 
   LALCheckMemoryLeaks();
@@ -429,33 +441,103 @@ int main( int argc, char *argv[]) {
 
 void ComputeFstatStack (LALStatus *status, 
 			REAL8FrequencySeriesVector *Fstat, 
-			SFTVectorSequence *inputSFTs, 
+			SFTVectorSequence *stackSFTs, 
 			FstatStackParams *params)
 {
-  Fcomponents FaFb;
-  SSBtimes *tSSB;
-  AMCoeffs *amcoe;
+  SSBtimes *tSSB=NULL;
+  AMCoeffs *amcoe=NULL;
   SkyPosition skyPoint;
-
-  INT4 k, nStacks;
+  DetectorStateSeries *DetectorStates=NULL;
+  LIGOTimeGPSVector timeStack;
+  REAL8 timeBase = params->timeBase;
+  REAL8 refTime = params->refTime;
+  REAL8 deltaF = Fstat->data->deltaF;
+  INT4 k, j, indexSft;
+  INT4 binsFstat = params->binsFstat;
+  INT4 nStacks = params->nStacks;
+  REAL8Vector *fkdot = params->fkdot;
 
   INITSTATUS( status, "ComputeFstatStack", rcsid );
   ATTATCHSTATUSPTR (status);
+
+  /*   DetectorStates = (DetectorStateSeries *)LALCalloc( 1,sizeof(DetectorStateSeries)); */
+  /*   tSSB = (SSBtimes *)LALCalloc(1, sizeof(SSBtimes)); */
+  /*   amcoe = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs)); */
 
   skyPoint.longitude = params->alpha;
   skyPoint.latitude = params->delta;
   skyPoint.system = COORDINATESYSTEM_EQUATORIAL;
   LAL_CALL (LALNormalizeSkyPosition( status, &skyPoint, &skyPoint), status);
 
-  nStacks = params->nStacks;
+  indexSft = 0;
   for(k=0; k<nStacks; k++) {
+
+    timeStack.length = params->mCohSft[k];
+    timeStack.data = params->ts->data + indexSft;
+
+    /* obtain detector positions and velocities, together with LMSTs for the SFT midpoints (i.e. shifted by tSFT/2) */
+    LAL_CALL ( LALGetDetectorStates ( status, &DetectorStates, &timeStack, 
+				      &(params->detector), params->edat, 
+				      timeBase / 2.0 ), status);
+
+    for(j=0; j<binsFstat; j++) {
+
+      /* increase frequency value */
+      fkdot->data[0] += j * deltaF;
+
+      /* transform to SSB frame */
+      LAL_CALL ( LALGetSSBtimes ( status, tSSB, DetectorStates, skyPoint, 
+				  refTime, params->SSBprecision), status);
+      
+      /* calculate amplitude modulation coefficients */
+      LAL_CALL ( LALGetAMCoeffs( status, amcoe, DetectorStates, skyPoint), status);
+      
+
+      {
+	/* get the F statistic */
+	Fcomponents FaFb;
+	REAL4 fact;
+	REAL4 At, Bt, Ct;
+	REAL4 FaRe, FaIm, FbRe, FbIm;
+	REAL8 Fstat;
+	
+	XLALComputeFaFb ( &FaFb, stackSFTs->data + k, params->fkdot, tSSB, 
+			  amcoe, params->Dterms);
+	At = amcoe->A;
+	Bt = amcoe->B;
+	Ct = amcoe->C;
+	
+	FaRe = FaFb.Fa.re;
+	FaIm = FaFb.Fa.im;	    
+	FbRe = FaFb.Fb.re;
+	FbIm = FaFb.Fb.im;
+	
+	fact = 2.0f / (1.0f * stackSFTs->data[k].length * amcoe->D);    
+	
+	Fstat = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
+			+ At * (FbRe*FbRe + FbIm*FbIm) 
+			- 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
+      } /* fstat calculation block */
     
-  }
+    } /* loop over frequencies */
+
+    indexSft += params->mCohSft[k];
+
+    /* destroy DetectorStateSeries */
+    LAL_CALL ( LALDestroyDetectorStateSeries (status, &DetectorStates), status);
+
+      /* Free AM-coefficients */
+    LAL_CALL (LALSDestroyVector(status, &(amcoe->a)), status);
+    LAL_CALL (LALSDestroyVector(status, &(amcoe->b)), status);
+    /* Free SSB-times */
+    LAL_CALL (LALDDestroyVector(status, &(tSSB->DeltaT)), status);
+    LAL_CALL (LALDDestroyVector(status, &(tSSB->Tdot)), status);
+
+  } /* loop over stacks */
   
   DETATCHSTATUSPTR (status);
   RETURN(status); 
 }
-
 
 
 

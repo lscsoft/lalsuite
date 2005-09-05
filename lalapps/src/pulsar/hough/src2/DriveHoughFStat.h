@@ -123,16 +123,17 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
     INT4 *mCohSft;          /**< number of sfts in each stack */
     REAL8 *tStack;          /**< duration of each stack */
     INT4 nStacks;           /**< number of stacks */
+    REAL8 timeBase;         /**< time baseline of SFTs */
+    REAL8 refTime;          /**< reference time for pulsar frequency and spndn. */
+    INT4 SSBprecision;      /**< precision for transformation from detector to SSB times*/
     INT4 Dterms;            /**< value of Dterms for LALDemod */
-    REAL8 fStart;           /**< start calculating Fstat at this frequency */
     INT4 binsFstat;         /**< calculate Fstat for this frequency band */
-    REAL8 deltaF;           /**< Frequency resolution for calculating Fstat */
     LALDetector detector;   /**< detector */
     EphemerisData *edat;    /**< ephemeris info */ 
     LIGOTimeGPSVector *ts;  /**< timestamp vector for each sft */
     REAL8 alpha;            /**< sky-location -- right acsension */
     REAL8 delta;            /**< sky-location -- declination */
-    REAL8Vector *spindown;  /**< vector containing spindown values */
+    REAL8Vector *fkdot;     /**< vector containing frequency and spindown values */
   } FstatStackParams;
 
   /** parameters for calculating a Hough Map */
