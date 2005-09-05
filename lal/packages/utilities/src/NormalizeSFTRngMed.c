@@ -102,7 +102,7 @@ NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
 /********************************* <lalVerbatim file="NormalizeSFTRngMedD"> */
 void LALSFTtoPeriodogram (LALStatus    *status,
 			  REAL8FrequencySeries    *periodo,
-			  COMPLEX8FrequencySeries *SFT)
+			  const COMPLEX8FrequencySeries *SFT)
 {/*   *********************************************  </lalVerbatim> */
  /* Calculates the periodogram for a given SFT */
 
@@ -157,7 +157,7 @@ void LALSFTtoPeriodogram (LALStatus    *status,
 /* calculates running median for a periodogram */
 void LALPeriodoToPSDRngMed (LALStatus  *status,
 			    REAL8FrequencySeries  *psd,
-			    REAL8FrequencySeries  *periodo,
+			    const REAL8FrequencySeries  *periodo,
 			    INT4                  blockSize)
 {/*   *********************************************  </lalVerbatim> */
   INT4 blocks2, j, length;
