@@ -429,19 +429,29 @@ int main( int argc, char *argv[]) {
 
 void ComputeFstatStack (LALStatus *status, 
 			REAL8FrequencySeriesVector *Fstat, 
-			SFTVector *inputSFTs, 
+			SFTVectorSequence *inputSFTs, 
 			FstatStackParams *params)
 {
   Fcomponents FaFb;
   SSBtimes *tSSB;
   AMCoeffs *amcoe;
+  SkyPosition skyPoint;
 
+  INT4 k, nStacks;
 
   INITSTATUS( status, "ComputeFstatStack", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  
+  skyPoint.longitude = params->alpha;
+  skyPoint.latitude = params->delta;
+  skyPoint.system = COORDINATESYSTEM_EQUATORIAL;
+  LAL_CALL (LALNormalizeSkyPosition( status, &skyPoint, &skyPoint), status);
 
+  nStacks = params->nStacks;
+  for(k=0; k<nStacks; k++) {
+    
+  }
+  
   DETATCHSTATUSPTR (status);
   RETURN(status); 
 }

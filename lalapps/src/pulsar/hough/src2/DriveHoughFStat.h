@@ -156,7 +156,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
   void ComputeFstatStack (LALStatus *status, 
 			  REAL8FrequencySeriesVector *out, 
-			  SFTVector *sfts, 
+			  SFTVectorSequence *sfts, 
 			  FstatStackParams *params);
 
   void ComputeFstatHoughMap (LALStatus *status,
