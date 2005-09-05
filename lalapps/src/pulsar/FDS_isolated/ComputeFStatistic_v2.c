@@ -149,21 +149,6 @@ typedef struct {
 } ConfigVariables;
 
 
-/** Local type for storing F-statistic output from NewLALDemod().
- * Note that length has to be the same for all vectors, anything else
- * is considered an error.
- */
-typedef struct {
-  UINT4 length;		/**< number of frequency-bins */
-  REAL8 f0;		/**< lowest frequency in the band */
-  REAL8 fBand;		/**< user-requested frequency-band */
-  REAL8 df;		/**< frequency-resolution */
-  REAL8Vector *F;	/**< Values of the F-statistic proper (F) over frequency-bins */
-  COMPLEX16Vector *Fa;	/**< Values Fa over frequency-bins */
-  COMPLEX16Vector *Fb;	/**< Values Fb */
-} FStatisticVector;
-
-
 typedef struct {
   COMPLEX16 Fa;
   COMPLEX16 Fb;
@@ -178,9 +163,6 @@ typedef enum {
 
 /*---------- Global variables ----------*/
 extern int vrbflg;		/**< defined in lalapps.c */
-
-REAL8 medianbias=1.0;		/**< bias in running-median depending on window-size 
-				 * (set in NormaliseSFTDataRngMdn()) */
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 
@@ -299,7 +281,6 @@ int main(int argc,char *argv[])
   SkyPosition thisPoint;
   FILE *fpOut=NULL;
   UINT4 loopcounter;
-  FStatisticVector *FVect = NULL;   /* new type to store F-statistic results in a frequency-band */
 
   UINT4 nBins; 			/* number of frequency-bins */
   UINT4 nD;         /** index over number of Detectors**/
@@ -397,20 +378,6 @@ int main(int argc,char *argv[])
 	}
     } /* if outputFstat */
   
-      /* prepare memory to hold F-statistic array over frequency (for cluster-stuff) [FIXME]*/
-  nBins =  (UINT4)(uvar_FreqBand/GV.dFreq + 0.5) + 1;
-  if ( (FVect = (FStatisticVector*)LALCalloc(1, sizeof(FStatisticVector))) == NULL) {
-    LALPrintError ("\nOut of memory..!\n\n");
-    return (COMPUTEFSTATC_EMEM);
-  }
-  LAL_CALL ( LALDCreateVector (&status, &(FVect->F), nBins), &status);
-  
-  FVect->f0 = GV.fkdot0->data[0];
-  FVect->df = GV.dFreq;
-  FVect->fBand = (nBins - 1) * FVect->df;
-  FVect->length = nBins;
-  
-  
   if (lalDebugLevel) printf ("\nStarting main search-loop.. \n");
   
   /*----------------------------------------------------------------------
@@ -468,6 +435,7 @@ int main(int argc,char *argv[])
 		    REAL4 fact;
 		    REAL4 At, Bt, Ct;
 		    REAL4 FaRe, FaIm, FbRe, FbIm;
+		    REAL8 Fstat;
 
 		    /* prepare quantities to calculate Fstat from Fa and Fb */
 		    fact = 4.0f / (1.0f * GV.ifos.sftVects[nD]->length * GV.ifos.amcoe[nD]->D);
@@ -512,7 +480,6 @@ int main(int argc,char *argv[])
 			XLAL_ERROR ("XLALcomputeFStat", XLAL_EFUNC);
 		      }
 		    
-		    
 		    FaRe = FaFb.Fa.re;
 		    FaIm = FaFb.Fa.im;
 		    
@@ -520,33 +487,30 @@ int main(int argc,char *argv[])
 		    FbIm = FaFb.Fb.im;
 		    
 		    /* calculate F-statistic from  Fa and Fb */
-		    FVect->F->data[iFreq] = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
-						    + At * (FbRe*FbRe + FbIm*FbIm) 
-						    - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
-		    
+		    Fstat = fact * (Bt * (FaRe*FaRe + FaIm*FaIm) 
+				    + At * (FbRe*FbRe + FbIm*FbIm) 
+				    - 2.0f * Ct *(FaRe*FbRe + FaIm*FbIm) );
+
+
+		    /* now, if user requested it, we output ALL F-statistic results above threshold */
+		    if ( fpOut )
+		      {
+
+			REAL8 TwoFStat = 2.0 * Fstat;
+			REAL8 freq = GV.fkdot->data[0];
+
+			if ( TwoFStat > uvar_Fthreshold )
+			  fprintf (fpOut, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
+				   dopplerpos.Alpha, dopplerpos.Delta, 
+				   freq, GV.fkdot->data[1], TwoFStat);
+		      } /* if fpOut */
+	      
 		  } /* Calculate F-statistic */
 		  
 		} /* End of loop over detectors */
 	      
 	    } /* for i < nBins: loop over frequency-bins */
 	  
-	  
-	      /* now, if user requested it, we output ALL F-statistic results above threshold */
-	  if ( fpOut )
-	    {
-	      UINT4 j;
-	      for(j=0; j < FVect->length; j++)
-		{
-		  REAL8 TwoFStat = 2.0 * FVect->F->data[j];
-		  REAL8 freq = uvar_Freq + j * GV.dFreq;
-		  
-		  if ( TwoFStat > uvar_Fthreshold )
-		    fprintf (fpOut, "%8.7f %8.7f %16.12f %.17g %10.6g\n", 
-			     dopplerpos.Alpha, dopplerpos.Delta, 
-			     freq, GV.fkdot->data[1], TwoFStat);
-		}
-	      
-	    } /* if outputFstat */
 	  
 	} /* For GV.spinImax */
       
@@ -566,9 +530,6 @@ Search progress: %5.1f%%", (100.0* loopcounter / thisScan.numGridPoints));
   LAL_CALL ( FreeDopplerScan(&status, &thisScan), &status);
   
   LAL_CALL ( Freemem(&status, &GV), &status);
-  
-  LAL_CALL (LALDDestroyVector (&status, &(FVect->F)), &status);
-  LALFree (FVect);
   
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
