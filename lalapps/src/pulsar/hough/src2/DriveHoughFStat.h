@@ -1,4 +1,6 @@
 /*  
+ *  Copyright (C) 2005 Badri Krishnan, Alicia Sintes
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -20,7 +22,7 @@
 
 /**
  * DriveHoughFStat.h 
- * \author Badri Krishnan
+ * \author Badri Krishnan, Alicia Sintes
  * Date : August 2005
  * \brief
  * Header file for DriveHoughFStat.c 
@@ -108,19 +110,18 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   typedef struct tagTimeVelPosVector {
     INT4 length;     /**< number of time stamps */
     LIGOTimeGPS *ts; /**< time stamps */
-    REAL8 *velx;     /**< x-component of velocity in equatorial coordinates */
-    REAL8 *vely;     /**< y-component of velocity in equatorial coordinates */
-    REAL8 *velz;     /**< z-component of velocity in equatorial coordinates */
-    REAL8 *posx;     /**< x-component of position in equatorial coordinates */
-    REAL8 *posy;     /**< y-component of position in equatorial coordinates */
-    REAL8 *posz;     /**< z-component of position in equatorial coordinates */
   } TimeVelPosVector; 
 
+
+  typedef struct tagSFTVectorSequence {
+    INT4 length;
+    SFTVector *data;
+  } SFTVectorSequence;
 
   /** parameters for calculating Fstatistic for multiple stacks */ 
   typedef struct tagFstatStackParams {
     INT4 mCohSft;           /**< number of sfts in each stack */
-    INT4 Nstacks;           /**< number of stacks */
+    INT4 nStacks;           /**< number of stacks */
     INT4 Dterms;            /**< value of Dterms for LALDemod */
     REAL8 fStart;           /**< start calculating Fstat at this frequency */
     REAL8 fBand;            /**< calculate Fstat for this frequency band */
@@ -136,7 +137,7 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
   /** parameters for calculating a Hough Map */
   typedef struct tagHoughParams {
     INT4 mCohSft;          /**< number of SFTs in each stack */
-    INT4 Nstacks;          /**< number ofs tacks */
+    INT4 nStacks;          /**< number ofs tacks */
     REAL8 fStart;          /**< start frequency */
     REAL8 fBand;           /**< frequency band */
     REAL8 deltaF;          /**< frequency resolution */
@@ -195,3 +196,6 @@ NRCSID( DRIVEHOUGHFSTATH, "$Id$" );
 
 
 #endif     /* Close double-include protection _DRIVEHOUGHFSTAT_H */
+
+
+

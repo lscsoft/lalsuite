@@ -67,17 +67,23 @@ int main( int argc, char *argv[]) {
   LALDetector detector;
   EphemerisData *edat = NULL;
   TimeVelPosVector *timeVelPos=NULL;   
-  LIGOTimeGPSVector **midTs=NULL; /* time stamps of mid points of SFTs */
+  LIGOTimeGPSVector **midTs=NULL; /* time stamps of mid points of sfts */
+  LIGOTimeGPSVector midTstack, startTstack, startTsft; 
+  REAL8VectorSequence *velStack, *posStack; /* velocities and positions at midTstack */
+  LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
+  INT4 tmpLeap; 
+  REAL8 tObs, tStart, tEnd, tStack;
 
   /* sft related stuff */
   SFTVector *inputSFTs=NULL;  /* vector of SFTtypes and SFTtype is COMPLEX8FrequencySeries */
+  SFTVectorSequence stackSFTs;
   INT4 mCohSft, nSFTs; /* number of SFTs in each stack and total number of SFTs */
-  INT4 Nstacks; /* number of stacks -- not necessarily same as uvar_Nstacks! */
+  INT4 nStacks; /* number of stacks -- not necessarily same as uvar_nStacks! */
   INT4 sftlength; /* number of bins in each sft */
   REAL8 deltaF, timeBase; /* frequency resolution of SFTs */
   INT8 sftFminBin; /* first sft bin index */
   INT4 fSearchBinIni, fSearchBinFin; /* frequency bins of start and end search frequencies */
-  REAL8 tStack, deltaFstack; /* frequency resolution of Fstat calculation */
+  REAL8 deltaFstack; /* frequency resolution of Fstat calculation */
 
   /* LALdemod related stuff */
   LALFstat **Fstat=NULL;   /* delete later */
@@ -100,7 +106,7 @@ int main( int argc, char *argv[]) {
   REAL8 uvar_fdot; /* first spindown value */
   REAL8 uvar_fStart, uvar_fBand;
   REAL8 uvar_FstatThr; /* threshold of Fstat to select peaks */
-  INT4 uvar_ifo, uvar_blocksRngMed, uvar_Nstacks, uvar_Dterms;
+  INT4 uvar_ifo, uvar_blocksRngMed, uvar_nStacks, uvar_Dterms;
   CHAR *uvar_earthEphemeris=NULL;
   CHAR *uvar_sunEphemeris=NULL;
   CHAR *uvar_sftDir=NULL;
@@ -117,7 +123,7 @@ int main( int argc, char *argv[]) {
 
   /* now set the defaults */
   uvar_help = FALSE;
-  uvar_Nstacks = NSTACKS;
+  uvar_nStacks = NSTACKS;
   uvar_Dterms = DTERMS;
   uvar_alpha = ALPHA;
   uvar_delta = DELTA;
@@ -142,7 +148,7 @@ int main( int argc, char *argv[]) {
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ),            &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "Nstacks",         'N', UVAR_OPTIONAL, "Number of stacks",              &uvar_Nstacks ),        &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "nStacks",         'N', UVAR_OPTIONAL, "Number of stacks",              &uvar_nStacks ),        &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",          'n', UVAR_OPTIONAL, "For Dirichlet Kernel approx.",  &uvar_Dterms ),         &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",          &uvar_earthEphemeris),  &status);
@@ -162,8 +168,8 @@ int main( int argc, char *argv[]) {
   if (uvar_help)
     exit(0); 
 
-  /* some sanity checks on user vars */
-  if ( uvar_Nstacks < 1) {
+  /* some very basic sanity checks on user vars */
+  if ( uvar_nStacks < 1) {
     fprintf(stderr, "Invalid number of stacks\n");
     exit(1);
   }
@@ -215,45 +221,132 @@ int main( int argc, char *argv[]) {
     			/* therefore the CVS-versions will not be logged */
 
     LALFree(fnamelog); 
-  }
-  /********* end of user var reading etc. ******/
+  } /* end of user var reading */
 
 
-  /** read sfts and set up timestamp vectors **/
+  /*------------- read sfts and set up timestamp vectors ----------*/
   {
     CHAR *tempDir;
+
     tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*"); 
     LAL_CALL( LALReadSFTfiles ( &status, &inputSFTs, uvar_fStart, uvar_fStart + uvar_fBand, nfSizeCylinder + uvar_blocksRngMed , tempDir), &status);
 
     /* normalize sfts */
-    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed, 1), &status);
+    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed, 0), &status);
 
     LALFree(tempDir);
+  
+    /* get start time of sfts */
+    startTsft.data = (LIGOTimeGPS *)LALMalloc( nSFTs * sizeof(LIGOTimeGPS));
+    for (j=0; j<nSFTs; j++) 
+      startTsft.data[j] = inputSFTs->data[j].epoch;
+    
+    /* set other sft parameters */
+    nSFTs = inputSFTs->length;
+    sftlength = inputSFTs->data->data->length;
+    deltaF = inputSFTs->data->deltaF;
+    timeBase = 1.0/deltaF;
+    sftFminBin = floor( timeBase * inputSFTs->data->f0 + 0.5);
+
+    /* calculate start and end times and tobs */
+    LAL_CALL( LALGPStoFloat ( &status, &tStart, startTsft.data), &status);
+    LAL_CALL( LALGPStoFloat ( &status, &tEnd, startTsft.data + nSFTs), &status);
+    tEnd += timeBase;
+    tObs = tEnd - tStart;
+
+  } /* end of sft reading block */
+
+
+
+  /*---------- set up stacks -----------------*/
+  {
+    nStacks = uvar_nStacks;
+    if (nStacks > nSFTs) {
+      fprintf(stderr, "invalid number of stacks...exiting\n");
+      exit(1);
+    }
+
+    tStack = tObs/nStacks;
+    /* get starting and mid times of stacks */    
+    startTstack.length = nStacks;
+    startTstack.data = (LIGOTimeGPS *)LALMalloc(nStacks * sizeof(LIGOTimeGPS));
+
+    midTstack.length = nStacks;
+    midTstack.data = (LIGOTimeGPS *)LALMalloc( nStacks * sizeof(LIGOTimeGPS));
+    for (k=0; k<nStacks; k++) {
+      REAL8 tempT, tempT2;
+      tempT = tStart + k*tStack;
+      LAL_CALL( LALFloatToGPS ( &status, startTstack.data + k, &tempT), &status);
+      tempT2 = tempT + tStack/2.0;
+      LAL_CALL( LALFloatToGPS ( &status, midTstack.data + k, &tempT), &status);
+    }
+
+    stackSFTs.length = nStacks;
+    stackSFTs.data = (SFTVector *)LALMalloc(nStacks * sizeof(SFTVector));
+    
+    for (k=0; k<nStacks; k++) {
+      INT4 tempNsft=0;
+
+    }
+
   }
 
+
+
+  /*------------- calculate velocity and position ------------*/
+  /* setting of ephemeris info */ 
+  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
+  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
+  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
+
+  /* create velocity and position vectors */
+  {
+    CreateVectorSequenceIn createPar;
+    createPar.length = nStacks; /* number of vectors */
+    createPar.vectorLength = 3; /* length of each vector */
+    LAL_CALL( LALDCreateVectorSequence ( &status,  &velStack, &createPar), &status);
+    LAL_CALL( LALDCreateVectorSequence ( &status,  &posStack, &createPar), &status);
+  }
+    
+  /* Leap seconds for the first timestamp */   
+  LAL_CALL( LALLeapSecs(&status, &tmpLeap, midTstack.data, &lsfas), &status);
+  (*edat).leap = (INT2)tmpLeap;
+  
+  /* read in ephemeris data */
+  LAL_CALL( LALInitBarycenter( &status, edat), &status);
+  
+  /* calculate detector velocity and position at mid time of stacks*/
+  /* maybe calculate average over stack as well? */
+  for (k=0; k<nStacks; k++){
+    LAL_CALL (LALDetectorVel ( &status, velStack->data + k*nStacks, midTstack.data + k, detector, edat), &status);
+    LAL_CALL (LALDetectorPos ( &status, posStack->data + k*nStacks, midTstack.data + k, detector, edat), &status);
+  }
+
+
+
+
   /* set number of stacks */
-  nSFTs = inputSFTs->length;
-  Nstacks = uvar_Nstacks;
-  mCohSft = nSFTs/Nstacks;
+  /* the way this is done here, each stack consists of the same 
+     number of sfts but could therefore span different time 
+     durations because of gaps between the sfts.  
+     Perhaps it is better to break up the total time duration into 
+     equal segments?  Then each stack would have different numbers 
+     of sfts. */
+  mCohSft = nSFTs/nStacks;
   
   /* if too many stacks were chosen by user */  
   if ( mCohSft == 0 ) {
-    Nstacks = nSFTs;
+    nStacks = nSFTs;
     mCohSft = 1;
     if ( lalDebugLevel > 0)
-      fprintf(stderr, "Warning: requested number of stacks exceeds number of SFTs...setting Nstacks = nSFTs\n"); 
+      fprintf(stderr, "Warning: requested number of stacks exceeds number of SFTs...setting nStacks = nSFTs\n"); 
   }
   /* notify user about any discarded sfts */
-  if ( (lalDebugLevel > 0) && (nSFTs - mCohSft*Nstacks) )
-    fprintf(stderr, "Warning: last %d SFTs are discarded due to rounding off\n", nSFTs - mCohSft*Nstacks);
+  if ( (lalDebugLevel > 0) && (nSFTs - mCohSft*nStacks) )
+    fprintf(stderr, "Warning: last %d SFTs are discarded due to rounding off\n", nSFTs - mCohSft*nStacks);
   
-  /* set other sft parameters */
-  sftlength = inputSFTs->data->data->length;
-  deltaF = inputSFTs->data->deltaF;
-  timeBase = 1.0/deltaF;
-  sftFminBin = floor( timeBase * inputSFTs->data->f0 + 0.5);
 
   /* bin index for start and finish of SEARCH frequency (not SFT frequency) */
   tStack = timeBase * mCohSft; /* duration of each stack */
@@ -263,17 +356,11 @@ int main( int argc, char *argv[]) {
   fSearchBinFin = fSearchBinIni + binsFstat - 1;
   
   /* create and fill timestamp vectors */
-  timeVelPos = (TimeVelPosVector *)LALMalloc( Nstacks * sizeof(TimeVelPosVector));
-  for (k=0; k<Nstacks; k++) {
+  timeVelPos = (TimeVelPosVector *)LALMalloc( nStacks * sizeof(TimeVelPosVector));
+  for (k=0; k<nStacks; k++) {
 
     timeVelPos[k].length = mCohSft;
     timeVelPos[k].ts = (LIGOTimeGPS *)LALMalloc( mCohSft * sizeof(LIGOTimeGPS));
-    timeVelPos[k].velx = (REAL8 *)LALMalloc( mCohSft * sizeof(REAL8));
-    timeVelPos[k].vely = (REAL8 *)LALMalloc( mCohSft * sizeof(REAL8));
-    timeVelPos[k].velz = (REAL8 *)LALMalloc( mCohSft * sizeof(REAL8));
-    timeVelPos[k].posx = (REAL8 *)LALMalloc( mCohSft * sizeof(REAL8));
-    timeVelPos[k].posy = (REAL8 *)LALMalloc( mCohSft * sizeof(REAL8));
-    timeVelPos[k].posz = (REAL8 *)LALMalloc( mCohSft * sizeof(REAL8));
 
     /* assign timestamp values from SFTs */  
     for (j = 0; j<mCohSft; j++) {
@@ -281,9 +368,11 @@ int main( int argc, char *argv[]) {
       timeVelPos[k].ts[j].gpsNanoSeconds = inputSFTs->data[j+mCohSft*k].epoch.gpsNanoSeconds;	
     }
   }  
+
+
   /* calculate mid time stamps of sfts */
-  midTs = (LIGOTimeGPSVector **)LALMalloc( Nstacks * sizeof(LIGOTimeGPSVector *));
-  for (k=0; k<Nstacks; k++) {
+  midTs = (LIGOTimeGPSVector **)LALMalloc( nStacks * sizeof(LIGOTimeGPSVector *));
+  for (k=0; k<nStacks; k++) {
     midTs[k] = (LIGOTimeGPSVector *)LALMalloc(sizeof(LIGOTimeGPSVector));
     midTs[k]->length = mCohSft;
     midTs[k]->data  = NULL;
@@ -297,58 +386,17 @@ int main( int argc, char *argv[]) {
     }
   }
 
-  /********** calculate velocity and position ***********/
-  /* setting of ephemeris info */ 
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-  {  
-    VelocityPar   velPar;
-    REAL8     vel[3], pos[3]; 
-    
-    LALLeapSecFormatAndAcc lsfas = {LALLEAPSEC_GPSUTC, LALLEAPSEC_STRICT};
-    INT4 tmpLeap; /* need this because Date pkg defines leap seconds as
-		     INT4, while EphemerisData defines it to be INT2. This won't
-                   cause problems before, oh, I don't know, the Earth has been 
-                   destroyed in nuclear holocaust. -- dwchin 2004-02-29 */
-    
-    velPar.detector = detector;
-    velPar.tBase = timeBase;
-    velPar.vTol = 0.01; /* accuracy for position calculation */
-    velPar.edat = NULL;
-    
-    /* Leap seconds for the start time of the run */   
-    LAL_CALL( LALLeapSecs(&status, &tmpLeap, &(timeVelPos[0].ts[0]), &lsfas), &status);
-    (*edat).leap = (INT2)tmpLeap;
-    
-    /* read in ephemeris data */
-    LAL_CALL( LALInitBarycenter( &status, edat), &status);
-    velPar.edat = edat;
 
-    /* calculate detector velocity and position */
-    for (k=0; k<Nstacks; k++){
-      for (j=0; j<mCohSft; ++j){
-	velPar.startTime.gpsSeconds     = timeVelPos[k].ts[j].gpsSeconds;
-	velPar.startTime.gpsNanoSeconds = timeVelPos[k].ts[j].gpsNanoSeconds;
-	
-	LAL_CALL( LALAvgDetectorVel ( &status, vel, &velPar), &status );
-	LAL_CALL( LALAvgDetectorPos ( &status, pos, &velPar), &status );
-	timeVelPos[k].velx[j] = vel[0];
-	timeVelPos[k].vely[j] = vel[1];
-	timeVelPos[k].velz[j] = vel[2];   
-	timeVelPos[k].posx[j] = pos[0];
-	timeVelPos[k].posy[j] = pos[1];  
-	timeVelPos[k].posz[j] = pos[2];    	
-      }  
-    }
-  }
+
+
+
 
   /************ calculate F statistic for each stack **********/
   /* memory for Fstatistic Vector */
   FstatVect = (FstatVectorStack *)LALMalloc(sizeof(FstatVectorStack));
-  FstatVect->length = Nstacks;
-  FstatVect->data = (FStatisticVector *)LALMalloc( Nstacks * sizeof(FStatisticVector));
-  for (k=0; k<Nstacks; k++) {
+  FstatVect->length = nStacks;
+  FstatVect->data = (FStatisticVector *)LALMalloc( nStacks * sizeof(FStatisticVector));
+  for (k=0; k<nStacks; k++) {
 
     FStatisticVector *tempVect=FstatVect->data + k;
 
@@ -367,7 +415,7 @@ int main( int argc, char *argv[]) {
   
   /* fill parameter for calculating Fstat */
   FstatPar.mCohSft = mCohSft;
-  FstatPar.Nstacks = Nstacks;
+  FstatPar.nStacks = nStacks;
   FstatPar.Dterms = uvar_Dterms;
   FstatPar.detector = detector;
   FstatPar.alpha = uvar_alpha;
@@ -381,7 +429,7 @@ int main( int argc, char *argv[]) {
   FstatPar.spindown->data[0] = uvar_fdot;
 
   /* memory allocation for **Fstat */
-  Fstat = (LALFstat **)LALMalloc( Nstacks * sizeof(LALFstat *));
+  Fstat = (LALFstat **)LALMalloc( nStacks * sizeof(LALFstat *));
 
   /***** now calculate F-statistic ******/
   LAL_CALL( ComputeFstatStack( &status, Fstat, inputSFTs, &FstatPar), &status);
@@ -389,9 +437,9 @@ int main( int argc, char *argv[]) {
 
   /****** create peakgram vector *********/ 
   /* first allocate some memory */
-  pgV.length = Nstacks;
-  pgV.pg = (HOUGHPeakGram *)LALMalloc( Nstacks * sizeof(HOUGHPeakGram));
-  for (k=0; k<Nstacks; k++) {
+  pgV.length = nStacks;
+  pgV.pg = (HOUGHPeakGram *)LALMalloc( nStacks * sizeof(HOUGHPeakGram));
+  for (k=0; k<nStacks; k++) {
     pgV.pg[k].deltaF = deltaF;
     pgV.pg[k].fBinIni = fSearchBinIni;
     pgV.pg[k].fBinFin = fSearchBinFin;
@@ -407,19 +455,21 @@ int main( int argc, char *argv[]) {
 
   /*********** free all remaining memory **********/
   /* free timestamp and Vel/Pos vectors */
-  for (k=0; k<Nstacks; k++) {
+  for (k=0; k<nStacks; k++) {
       LALFree(timeVelPos[k].ts);
-      LALFree(timeVelPos[k].posx);
-      LALFree(timeVelPos[k].posy);
-      LALFree(timeVelPos[k].posz);
-      LALFree(timeVelPos[k].velx);
-      LALFree(timeVelPos[k].vely);
-      LALFree(timeVelPos[k].velz);
       LALFree(midTs[k]->data);
       LALFree(midTs[k]);
     }  
   LALFree(timeVelPos);
+
+  LALFree(startTsft.data);
+  LALFree(startTstack.data);
   LALFree(midTs);
+  LALFree(midTstack.data);
+  LAL_CALL( LALDDestroyVectorSequence (&status,  &velStack), &status);
+  LAL_CALL( LALDDestroyVectorSequence (&status,  &posStack), &status);
+
+  LALFree(stackSFTs.data);
 
   /* free ephemeris */
   LALFree(edat->ephemE);
@@ -427,7 +477,7 @@ int main( int argc, char *argv[]) {
   LALFree(edat);
 
   /* free Fstat structure */
-  for (k=0; k<Nstacks; k++) {
+  for (k=0; k<nStacks; k++) {
     LALFree(Fstat[k]->F);
     LALFree(Fstat[k]);
   }
@@ -435,7 +485,7 @@ int main( int argc, char *argv[]) {
 
 
   /* free Fstat vector */
-  for (k=0; k<Nstacks; k++) {
+  for (k=0; k<nStacks; k++) {
 
     FStatisticVector *tempVect=FstatVect->data + k;
     
@@ -448,7 +498,7 @@ int main( int argc, char *argv[]) {
   LALFree(FstatVect);
 
   /* free peakgrams */
-  for (k=0; k<Nstacks; k++) 
+  for (k=0; k<nStacks; k++) 
     LALFree(pgV.pg[k].peak);
   LALFree(pgV.pg);
 
@@ -468,7 +518,7 @@ void ComputeFstatStack (LALStatus *status,
 			FstatStackParams *params)
 {
  
-  INT4 mCohSft, j, k, Nstacks;
+  INT4 mCohSft, j, k, nStacks;
   REAL8 deltaF, timeBase;
   LALDetector detector;
   DemodPar *DemodParams;
@@ -490,7 +540,7 @@ void ComputeFstatStack (LALStatus *status,
   /************ setup parameters for calling  LALDemod**********/
 
   mCohSft = params->mCohSft;
-  Nstacks = params->Nstacks;
+  nStacks = params->nStacks;
   deltaF = inputSFTs->data->deltaF;
   timeBase = 1.0/deltaF;
 
@@ -556,7 +606,7 @@ void ComputeFstatStack (LALStatus *status,
   DemodParams->returnFaFb = FALSE; /* don't require Fa and Fb */
 
   /* allocate memory for Fstat structure for each stack -- output from LALDemod*/
-  for (k=0; k<Nstacks; k++)
+  for (k=0; k<nStacks; k++)
     Fstat[k] = (LALFstat *)LALMalloc( sizeof(LALFstat));
 
   /* allocate memory for SFTData */
@@ -567,7 +617,7 @@ void ComputeFstatStack (LALStatus *status,
   }
 
   /* calculate Fstat for each stack */
-  for (k=0; k<Nstacks; k++) {
+  for (k=0; k<nStacks; k++) {
     
     Fstat[k]->F = (REAL8 *)LALMalloc( DemodParams->imax * sizeof(REAL8));
 
@@ -655,19 +705,19 @@ void FstatVectToPeakGram (LALStatus *status,
 			  REAL8  thr)
 {
   INT4 j, k;
-  INT4 Nstacks, nSearchBins, nPeaks;
+  INT4 nStacks, nSearchBins, nPeaks;
   UCHAR *upg;  
 
   INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
   ATTATCHSTATUSPTR (status);
 
-  Nstacks = pgV->length;
+  nStacks = pgV->length;
   nSearchBins = FstatVect->data->length;
 
   upg = (UCHAR *)LALMalloc( nSearchBins * sizeof(UCHAR));
 
   /* loop over each stack and set peakgram */
-  for (k=0; k<Nstacks; k++) {
+  for (k=0; k<nStacks; k++) {
     INT4 *pInt; /* temporary pointer */
     REAL8 *pV;  /* temporary pointer */
 
