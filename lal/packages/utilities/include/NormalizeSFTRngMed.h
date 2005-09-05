@@ -154,11 +154,11 @@ NRCSID (NORMALIZESFTRNGMEDH, "$Id$");
 
 void LALSFTtoPeriodogram (LALStatus    *status,
 			  REAL8FrequencySeries    *periodo,
-			  COMPLEX8FrequencySeries *SFT);
+			  const COMPLEX8FrequencySeries *SFT);
 
 void LALPeriodoToPSDRngMed (LALStatus  *status,
 			    REAL8FrequencySeries  *psd,
-			    REAL8FrequencySeries  *periodo,
+			    const REAL8FrequencySeries  *periodo,
 			    INT4                  blockSize);
 
 void LALNormalizeSFT (LALStatus  *status,
