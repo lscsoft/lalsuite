@@ -54,7 +54,7 @@ Also, the Hough map is a histogram, thus additive. It can be seen as
 
  In practice this means that in order to obtain the HM for a given
  frequency and all possible residual spin-down parameters, we  have to construct 
-  a \lq\lq CYLINDER" of {\sc phmd} around the frequency $f_0$.   All of the {\sc
+  a CYLINDER of {\sc phmd} around the frequency $f_0$.   All of the {\sc
   phmd} coming 
   from data demodulated with the same parameters. 
  The coordinates of the {\sc phmd} locate the position of the source in
@@ -296,48 +296,49 @@ NRCSID (LALHOUGHH, "$Id$");
  */
 
 typedef struct tagUINT8FrequencyIndexVector{
-  UINT4      length;  /* number of elements */
-  REAL8      deltaF;  /* frequency resolution */
-  UINT8      *data;   /* the frequency indexes */
+  UINT4      length;  /**< number of elements */
+  REAL8      deltaF;  /**< frequency resolution */
+  UINT8      *data;   /**< the frequency indexes */
 } UINT8FrequencyIndexVector;  
 
 typedef struct tagUINT8FrequencyIndexVectorSequence{
-  UINT4                          length;        /* number of elements */
-  UINT4                          vectorLength;  /* frequency resolution */
-  UINT8FrequencyIndexVector      *freqIndV;     /* the frequency indexes */
+  UINT4                          length;        /**< number of elements */
+  UINT4                          vectorLength;  /**< frequency resolution */
+  UINT8FrequencyIndexVector      *freqIndV;     /**< the frequency indexes */
 } UINT8FrequencyIndexVectorSequence;
 
 typedef struct tagHOUGHPeakGramVector{
-  UINT4             length; /* number of elements */
-  HOUGHPeakGram     *pg;    /* the Peakgrams */
+  UINT4             length; /**< number of elements */
+  HOUGHPeakGram     *pg;    /**< the Peakgrams */
 } HOUGHPeakGramVector;  
 
 typedef struct tagHOUGHptfLUTVector{
-  UINT4            length; /* number of elements */
-  HOUGHptfLUT     *lut;    /* the partial Look Up Tables */
+  UINT4            length; /**< number of elements */
+  HOUGHptfLUT     *lut;    /**< the partial Look Up Tables */
 } HOUGHptfLUTVector;  
 
 typedef struct tagHOUGHMapTotalVector{
-  UINT4            length; /* number of elements */
-  HOUGHMapTotal    *ht;    /* the Hough maps */
+  UINT4            length; /**< number of elements */
+  HOUGHMapTotal    *ht;    /**< the Hough maps */
 } HOUGHMapTotalVector;
 
 typedef struct tagPHMDVectorSequence{
-  UINT4       nfSize;    /* number of different frequencies */
-  UINT4       length;    /* number of elements for each frequency */
-  UINT8       fBinMin;   /* frequency index of smallest intr.freq. in circ. buffer */
-  REAL8       deltaF;    /* frequency resolution */
-  UINT4       breakLine; /* mark [0,nfSize) (of the circular buffer)
+  UINT4       nfSize;    /**<*< number of different frequencies */
+  UINT4       length;    /**<*< number of elements for each frequency */
+  UINT8       fBinMin;   /**< frequency index of smallest intrinsic 
+			    frequnecy in circular buffer */
+  REAL8       deltaF;    /**< frequency resolution */
+  UINT4       breakLine; /**< mark [0,nfSize) (of the circular buffer)
 			    pointing to the starting of the fBinMin line */
-  HOUGHphmd   *phmd;     /* the partial Hough map derivatives */
+  HOUGHphmd   *phmd;     /**< the partial Hough map derivatives */
 } PHMDVectorSequence;   
 
 typedef struct tagHOUGHResidualSpinPar{
-  REAL8          deltaF;   /*  frequency resolution;  df=1/TCOH */
-  REAL8          timeDiff; /*   T(t)-T(t0) */
-  REAL8Vector    spinRes; /* length: Maximum order of spdwn parameter */
-                       /*   *data: pointer to residual Spin parameter set fk */
-} HOUGHResidualSpinPar;
+  REAL8          deltaF;   /**<  frequency resolution;  df=1/TCOH */
+  REAL8          timeDiff; /**<   T(t)-T(t0) */
+  REAL8Vector    spinRes; /**< length: Maximum order of spdwn parameter */
+                       /**<   *data: pointer to residual Spin parameter set fk */
+} HOUGHResidualSpinPar; 
 
 
 /*

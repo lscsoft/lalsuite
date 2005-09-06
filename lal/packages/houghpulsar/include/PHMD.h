@@ -212,8 +212,8 @@ NRCSID (PHMDH, "$Id$");
 typedef struct tagHOUGHPeakGram{
   INT2    timeIndex;  /**< time index of the Peakgram */
   REAL8   deltaF;     /**< df=1/TCOH */
-  UINT8   fBinIni;    /**< freq. bin of the zero peak (initial offset) */
-  UINT8   fBinFin;    /**< max freq. bin of the peakgram */
+  UINT8   fBinIni;    /**< frequency bin of the zero peak (initial offset) */
+  UINT8   fBinFin;    /**< maximum frequency bin of the peakgram */
   UINT4   length;     /**< number of peaks present in the peakgram  */
   INT4    *peak;      /**< the peak indexes relative to fBinIni*/
 } HOUGHPeakGram;
